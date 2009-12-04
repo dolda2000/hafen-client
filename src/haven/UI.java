@@ -162,7 +162,8 @@ public class UI {
 	    Widget pwdg = widgets.get(parent);
 	    if(pwdg == null)
 		throw(new UIException("Null parent widget " + parent + " for " + id, type, args));
-	    Widget wdg = f.create(c, pwdg, args);
+	    Object[] pargs = new Object[] {c};
+	    Widget wdg = pwdg.makechild(f, pargs, args);
 	    bind(wdg, id);
 	    if(wdg instanceof MapView)
 		mainview = (MapView)wdg;

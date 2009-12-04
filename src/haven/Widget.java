@@ -96,6 +96,11 @@ public class Widget {
 	    link();
 	}
     }
+    
+    public Widget makechild(WidgetFactory fac, Object[] pargs, Object[] cargs) {
+	Coord c = (Coord)pargs[0];
+	return(fac.create(c, this, cargs));
+    }
 	
     public void link() {
 	synchronized(ui) {
