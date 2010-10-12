@@ -31,10 +31,10 @@ import java.awt.image.BufferedImage;
 import javax.media.opengl.*;
 
 public class GOut {
-    GL gl;
+    public final GL gl;
     public Coord ul, sz;
     private Color color = Color.WHITE;
-    final GLContext ctx;
+    public final GLContext ctx;
     private Shared sh;
 	
     private static class Shared {
@@ -137,7 +137,7 @@ public class GOut {
 	gl.glVertex2i(c.x + ul.x, c.y + ul.y);
     }
 	
-    void texsel(int id) {
+    public void texsel(int id) {
 	if(id != sh.curtex) {
 	    HavenPanel.texmiss++;
 	    if(id == -1) {
