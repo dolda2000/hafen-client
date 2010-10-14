@@ -24,9 +24,8 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven;
 
-import haven.*;
 import static haven.GOut.checkerr;
 import javax.media.opengl.*;
 

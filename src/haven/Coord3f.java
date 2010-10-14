@@ -24,7 +24,7 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven;
 
 public class Coord3f {
     public float x, y, z;
