@@ -29,84 +29,36 @@ package haven;
 import static haven.GOut.checkerr;
 import javax.media.opengl.*;
 
-public class PView extends Widget {
-    float a = 0.0f;
-    Coord3f camo = Coord3f.o;
-    float camd = 5.0f, came, cama;
+public abstract class PView extends Widget {
+    private RenderList rls = new RenderList();
+    public Transform camera;
     
     public PView(Coord c, Coord sz, Widget parent) {
 	super(c, sz, parent);
     }
     
-    private void cube(GL gl) {
-	gl.glBegin(gl.GL_QUADS);
-	gl.glNormal3f(0.0f, 0.0f, 1.0f);
-	gl.glColor3f(1.0f, 0.0f, 0.0f);
-	gl.glVertex3f(-1.0f, 1.0f, 1.0f);
-	gl.glVertex3f(-1.0f, -1.0f, 1.0f);
-	gl.glVertex3f(1.0f, -1.0f, 1.0f);
-	gl.glVertex3f(1.0f, 1.0f, 1.0f);
+    protected abstract void setup(RenderList rls);
 
-	gl.glNormal3f(1.0f, 0.0f, 0.0f);
-	gl.glColor3f(0.0f, 1.0f, 0.0f);
-	gl.glVertex3f(1.0f, 1.0f, 1.0f);
-	gl.glVertex3f(1.0f, -1.0f, 1.0f);
-	gl.glVertex3f(1.0f, -1.0f, -1.0f);
-	gl.glVertex3f(1.0f, 1.0f, -1.0f);
-
-	gl.glNormal3f(-1.0f, 0.0f, 0.0f);
-	gl.glColor3f(0.0f, 0.0f, 1.0f);
-	gl.glVertex3f(-1.0f, 1.0f, 1.0f);
-	gl.glVertex3f(-1.0f, 1.0f, -1.0f);
-	gl.glVertex3f(-1.0f, -1.0f, -1.0f);
-	gl.glVertex3f(-1.0f, -1.0f, 1.0f);
-
-	gl.glNormal3f(0.0f, 1.0f, 0.0f);
-	gl.glColor3f(0.0f, 1.0f, 1.0f);
-	gl.glVertex3f(-1.0f, 1.0f, 1.0f);
-	gl.glVertex3f(1.0f, 1.0f, 1.0f);
-	gl.glVertex3f(1.0f, 1.0f, -1.0f);
-	gl.glVertex3f(-1.0f, 1.0f, -1.0f);
-
-	gl.glNormal3f(0.0f, -1.0f, 0.0f);
-	gl.glColor3f(1.0f, 0.0f, 1.0f);
-	gl.glVertex3f(-1.0f, -1.0f, 1.0f);
-	gl.glVertex3f(-1.0f, -1.0f, -1.0f);
-	gl.glVertex3f(1.0f, -1.0f, -1.0f);
-	gl.glVertex3f(1.0f, -1.0f, 1.0f);
-
-	gl.glNormal3f(0.0f, 0.0f, -1.0f);
-	gl.glColor3f(1.0f, 1.0f, 0.0f);
-	gl.glVertex3f(-1.0f, 1.0f, -1.0f);
-	gl.glVertex3f(1.0f, 1.0f, -1.0f);
-	gl.glVertex3f(1.0f, -1.0f, -1.0f);
-	gl.glVertex3f(-1.0f, -1.0f, -1.0f);
-	gl.glEnd();
+    private void transform(GOut g, int i) {
+	RenderList.Slot s = rls.list[i];
+	if(s.p != -1)
+	    transform(g, s.p);
+	if(s.t != null)
+	    s.t.apply(g);
     }
 
-    public void render(GOut g) {
+    protected void render(GOut g) {
+	rls.rewind();
+	setup(rls);
 	GL gl = g.gl;
-	gl.glPushMatrix();
-	gl.glTranslatef(-1.5f, 0.0f, 0.0f);
-	//gl.glRotatef(a, 1.0f, 1.0f, 1.0f);
-	cube(gl);
-	gl.glPopMatrix();
-
-	gl.glPushMatrix();
-	gl.glTranslatef(1.5f, 0.0f, 0.0f);
-	//gl.glRotatef(a, 1.0f, 1.0f, 1.0f);
-	cube(gl);
-	gl.glPopMatrix();
-    }
-
-    protected void setcam(GOut g) {
-	GL gl = g.gl;
-	camo = Coord3f.o.sadd(0, a, 1.5f);
-	a += 0.1;
-	gl.glTranslatef(0.0f, 0.0f, -camd);
-	gl.glRotatef(90.0f - (float)(came * 180.0 / Math.PI), -1.0f, 0.0f, 0.0f);
-	gl.glRotatef(90.0f + (float)(cama * 180.0 / Math.PI), 0.0f, 0.0f, -1.0f);
-	gl.glTranslatef(-camo.x, -camo.y, -camo.z);
+	for(int i = 0; i < rls.cur; i++) {
+	    if(rls.list[i].r == null)
+		continue;
+	    gl.glPushMatrix();
+	    transform(g, i);
+	    rls.list[i].r.draw(g);
+	    gl.glPopMatrix();
+	}
     }
 
     public void draw(GOut g) {
@@ -134,7 +86,7 @@ public class PView extends Widget {
 	    double r = ((double)sz.y) / ((double)sz.x);
 	    gl.glFrustum(-1, 1, -r, r, 1, 50);
 	    gl.glMatrixMode(gl.GL_MODELVIEW);
-	    setcam(g);
+	    camera.apply(g);
 	    render(g);
 	} finally {
 	    gl.glMatrixMode(gl.GL_PROJECTION);
@@ -151,12 +103,5 @@ public class PView extends Widget {
 	    gl.glScissor(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
 	}
 	checkerr(gl);
-    }
-    
-    public void mousemove(Coord c) {
-	if(c.x < 0 || c.x >= sz.x || c.y < 0 || c.y >= sz.y)
-	    return;
-	came = (float)Math.PI / 2 * ((float)c.y / (float)sz.y);
-	cama = (float)Math.PI * 2 * ((float)c.x / (float)sz.x);
     }
 }
