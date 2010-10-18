@@ -62,6 +62,8 @@ public abstract class PView extends Widget {
     }
 
     public void draw(GOut g) {
+	if(camera == null)
+	    return;
 	GL gl = g.gl;
 	g.texsel(-1);
 	gl.glScissor(g.ul.x, ui.root.sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
