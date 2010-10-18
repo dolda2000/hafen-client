@@ -29,6 +29,14 @@ package haven;
 import javax.media.opengl.*;
 
 public class TestView extends PView {
+    static final Resource tmesh;
+    static {
+	Resource res = Resource.load("gfx/test");
+	res.loadwait();
+	tmesh = res;
+	VertexBuf v = tmesh.layer(VertexBuf.VertexRes.class).b;
+    }
+    
     public TestView(Coord c, Coord sz, Widget parent) {
 	super(c, sz, parent);
 	PointedCam cam;
@@ -92,8 +100,12 @@ public class TestView extends PView {
     }
 
     protected void setup(RenderList rls) {
+	for(FastMesh.MeshRes m : tmesh.layers(FastMesh.MeshRes.class))
+	    rls.add(m.m, null);
+	/*
 	rls.add(new Cube(), Transform.xlate(new Coord3f(-1.5f, 0, 0)));
 	rls.add(new Cube(), Transform.xlate(new Coord3f(1.5f, 0, 0)));
+	*/
     }
 
     public void mousemove(Coord c) {

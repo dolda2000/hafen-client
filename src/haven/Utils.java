@@ -28,6 +28,7 @@ package haven;
 
 import java.awt.RenderingHints;
 import java.io.*;
+import java.nio.*;
 import java.util.prefs.*;
 import java.util.*;
 import java.awt.Graphics;
@@ -238,6 +239,22 @@ public class Utils {
 	}
 	off[0] = i + 1;
 	return(ret);
+    }
+    
+    static double floatd(byte[] buf, int off) {
+	int e = buf[off];
+	long t = uint32d(buf, off + 1);
+	int m = (int)(t & 0x7fffffffL);
+	boolean s = (t & 0x80000000L) != 0;
+	if(e == -128) {
+	    if(m == 0)
+		return(0.0);
+	    throw(new RuntimeException("Invalid special float encoded (" + m + ")"));
+	}
+	double v = (((double)m) / 2147483648.0) + 1.0;
+	if(s)
+	    v = -v;
+	return(Math.pow(2.0, e) * v);
     }
 	
     static char num2hex(int num) {
@@ -576,6 +593,20 @@ public class Utils {
 	return(def);
     }
     
+    /* Just in case anyone doubted that Java is stupid. :-/ */
+    public static FloatBuffer bufcp(float[] a) {
+	FloatBuffer b = ByteBuffer.allocateDirect(a.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+	b.put(a);
+	b.rewind();
+	return(b);
+    }
+    public static ShortBuffer bufcp(short[] a) {
+	ShortBuffer b = ByteBuffer.allocateDirect(a.length * 2).order(ByteOrder.nativeOrder()).asShortBuffer();
+	b.put(a);
+	b.rewind();
+	return(b);
+    }
+
     static {
 	Console.setscmd("die", new Console.Command() {
 		public void run(Console cons, String[] args) {

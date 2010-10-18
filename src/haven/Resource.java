@@ -52,6 +52,11 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public static Class<AButton> action = AButton.class;
     public static Class<Audio> audio = Audio.class;
     public static Class<Tooltip> tooltip = Tooltip.class;
+    
+    static {
+	ltypes.put("vbuf", VertexBuf.VertexRes.class);
+	ltypes.put("mesh", FastMesh.MeshRes.class);
+    }
 
     static {
 	if(!Config.nolocalres)
@@ -451,6 +456,10 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	
     public abstract class Layer implements Serializable {
 	public abstract void init();
+	
+	public Resource getres() {
+	    return(Resource.this);
+	}
     }
 	
     public class Image extends Layer implements Comparable<Image> {
