@@ -115,4 +115,13 @@ public class TestView extends PView {
 	cam.e = (float)Math.PI / 2 * ((float)c.y / (float)sz.y);
 	cam.a = (float)Math.PI * 2 * ((float)c.x / (float)sz.x);
     }
+    
+    public boolean mousewheel(Coord c, int amount) {
+	PointedCam cam = (PointedCam)camera;
+	float d = cam.dist + (amount * 5);
+	if(d < 5)
+	    d = 5;
+	cam.dist = d;
+	return(true);
+    }
 }
