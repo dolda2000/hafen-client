@@ -52,9 +52,7 @@ public class FastMesh implements Rendered {
 	gl.glEnd();
     }
 
-    public void draw(GOut g) {
-	GL gl = g.gl;
-	gl.glColor3f(1.0f, 1.0f, 1.0f);
+    public void cdraw(GL gl) {
 	gl.glEnableClientState(GL.GL_VERTEX_ARRAY);
 	gl.glEnableClientState(GL.GL_NORMAL_ARRAY);
 	vert.posb.rewind();
@@ -65,6 +63,12 @@ public class FastMesh implements Rendered {
 	gl.glDrawElements(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, indb);
 	gl.glDisableClientState(GL.GL_VERTEX_ARRAY);
 	gl.glDisableClientState(GL.GL_NORMAL_ARRAY);
+    }
+
+    public void draw(GOut g) {
+	GL gl = g.gl;
+	gl.glColor3f(1.0f, 1.0f, 1.0f);
+	cdraw(gl);
 	GOut.checkerr(gl);
     }
     
