@@ -39,4 +39,13 @@ public abstract class Transform {
 		}
 	    });
     }
+    
+    public static Transform rot(final Coord3f axis, final float angle) {
+	return(new Transform() {
+		public void apply(GOut g) {
+		    GL gl = g.gl;
+		    gl.glRotatef(angle, axis.x, axis.y, axis.z);
+		}
+	    });
+    }
 }
