@@ -26,16 +26,20 @@
 
 package haven;
 
+import java.util.*;
 import javax.media.opengl.*;
 
 public class TestView extends PView {
-    static final Resource tmesh;
+    static final FastMesh[] tmesh;
     static {
 	Resource res = Resource.load("gfx/test");
 	res.loadwait();
-	tmesh = res;
-	VertexBuf v = tmesh.layer(VertexBuf.VertexRes.class).b;
+	List<FastMesh> l = new ArrayList<FastMesh>();
+	for(FastMesh.MeshRes m : res.layers(FastMesh.MeshRes.class))
+	    l.add(m.m);
+	tmesh = l.toArray(new FastMesh[0]);
     }
+    int sel = -1;
     
     public TestView(Coord c, Coord sz, Widget parent) {
 	super(c, sz, parent);
@@ -43,6 +47,7 @@ public class TestView extends PView {
 	camera = cam = new PointedCam();
 	cam.a = (float)Math.PI * 3 / 2;
 	cam.e = (float)Math.PI / 2;
+	setcanfocus(true);
     }
 
     public static class Cube implements Rendered {
@@ -100,12 +105,14 @@ public class TestView extends PView {
     }
 
     protected void setup(RenderList rls) {
-	for(FastMesh.MeshRes m : tmesh.layers(FastMesh.MeshRes.class))
-	    rls.add(m.m, null);
-	/*
+	int i = 0;
+	for(FastMesh m : tmesh) {
+	    if((sel == -1) || (i == sel))
+		rls.add(m, Transform.rot(new Coord3f(1, 0, 0), 180));
+	    i++;
+	}
 	rls.add(new Cube(), Transform.xlate(new Coord3f(-1.5f, 0, 0)));
 	rls.add(new Cube(), Transform.xlate(new Coord3f(1.5f, 0, 0)));
-	*/
     }
 
     public void mousemove(Coord c) {
@@ -123,5 +130,16 @@ public class TestView extends PView {
 	    d = 5;
 	cam.dist = d;
 	return(true);
+    }
+    
+    public boolean type(char key, java.awt.event.KeyEvent ev) {
+	if(key == ' ') {
+	    sel = -1;
+	    return(true);
+	} else if((key >= '0') && (key < '0' + tmesh.length)) {
+	    sel = key - '0';
+	    return(true);
+	}
+	return(false);
     }
 }
