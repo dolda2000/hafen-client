@@ -49,7 +49,7 @@ public class Widget {
 			       Label.class, Progress.class, VMeter.class, Partyview.class,
 			       MenuGrid.class, SlenHud.class, HWindow.class, CheckBox.class, Logwindow.class,
 			       ISBox.class, Fightview.class, IMeter.class,
-			       GiveButton.class, Charlist.class, CharWnd.class, BuddyWnd.class,
+			       GiveButton.class, Charlist.class, BuddyWnd.class,
 			       ChatHW.class, Speedget.class, Bufflist.class, GameUI.class};
 	
     static {
