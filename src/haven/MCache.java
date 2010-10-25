@@ -34,15 +34,20 @@ import java.util.zip.Inflater;
 public class MCache {
     Tileset[] sets = null;
     Grid last = null;
-    java.util.Map<Coord, Grid> req = new TreeMap<Coord, Grid>();
-    java.util.Map<Coord, Grid> grids = new TreeMap<Coord, Grid>();
+    Map<Coord, Request> req = new TreeMap<Coord, Request>();
+    Map<Coord, Grid> grids = new TreeMap<Coord, Grid>();
     Session sess;
     Set<Overlay> ols = new HashSet<Overlay>();
     public static final Coord tilesz = new Coord(11, 11);
     public static final Coord cmaps = new Coord(100, 100);
     Random gen;
-    java.util.Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
+    Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
 	
+    private static class Request {
+	private long lastreq = 0;
+	private int reqs = 0;
+    }
+
     public class Overlay {
 	Coord c1, c2;
 	int mask;
@@ -71,8 +76,6 @@ public class MCache {
 	public int ol[][];
 	Collection<Gob> fo = new LinkedList<Gob>();
 	boolean regged = false;
-	public long lastreq = 0;
-	public int reqs = 0;
 	Coord gc;
 	OCache oc = sess.glob.oc;
 	String mnm;
@@ -178,7 +181,7 @@ public class MCache {
     public void invalidate(Coord cc) {
 	synchronized(req) {
 	    if(req.get(cc) == null)
-		req.put(cc, new Grid(cc));
+		req.put(cc, new Request());
 	}
     }
     
@@ -346,7 +349,7 @@ public class MCache {
 	    synchronized(grids) {
 		if(req.containsKey(c)) {
 		    int i = 0;
-		    Grid g = req.get(c);
+		    Grid g = new Grid(c);
 		    g.mnm = mmname;
 		    for(int y = 0; y < cmaps.y; y++) {
 			for(int x = 0; x < cmaps.x; x++) {
@@ -437,8 +440,6 @@ public class MCache {
     public void trimall() {
 	synchronized(req) {
 	    synchronized(grids) {
-		for(Grid g : req.values())
-		    g.remove();
 		for(Grid g : grids.values())
 		    g.remove();
 		grids.clear();
@@ -460,14 +461,10 @@ public class MCache {
 	    }
 	}
 	synchronized(req) {
-	    for(Iterator<Map.Entry<Coord, Grid>> i = req.entrySet().iterator(); i.hasNext();) {
-		Map.Entry<Coord, Grid> e = i.next();
-		Coord gc = e.getKey();
-		Grid g = e.getValue();
-		if((gc.x < ul.x) || (gc.y < ul.y) || (gc.x > lr.x) || (gc.y > lr.y)) {
+	    for(Iterator<Coord> i = req.keySet().iterator(); i.hasNext();) {
+		Coord gc = i.next();
+		if((gc.x < ul.x) || (gc.y < ul.y) || (gc.x > lr.x) || (gc.y > lr.y))
 		    i.remove();
-		    g.remove();
-		}
 	    }
 	}
     }
@@ -475,20 +472,20 @@ public class MCache {
     public void request(Coord gc) {
 	synchronized(req) {
 	    if(!req.containsKey(gc))
-		req.put(gc, new Grid(gc));
+		req.put(gc, new Request());
 	}
     }
 	
     public void sendreqs() {
 	long now = System.currentTimeMillis();
 	synchronized(req) {
-	    for(Iterator<Map.Entry<Coord, Grid>> i = req.entrySet().iterator(); i.hasNext();) {
-		Map.Entry<Coord, Grid> e = i.next();
+	    for(Iterator<Map.Entry<Coord, Request>> i = req.entrySet().iterator(); i.hasNext();) {
+		Map.Entry<Coord, Request> e = i.next();
 		Coord c = e.getKey();
-		Grid gr = e.getValue();
-		if(now - gr.lastreq > 1000) {
-		    gr.lastreq = now;
-		    if(++gr.reqs >= 5) {
+		Request r = e.getValue();
+		if(now - r.lastreq > 1000) {
+		    r.lastreq = now;
+		    if(++r.reqs >= 5) {
 			i.remove();
 		    } else {
 			Message msg = new Message(Session.MSG_MAPREQ);
