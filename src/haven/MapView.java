@@ -632,31 +632,19 @@ public class MapView extends Widget implements DTarget, Console.Directory {
     }
 	
     private int gettilen(Coord tc) {
-	int r = map.gettilen(tc);
-	if(r == -1)
-	    throw(new Loading());
-	return(r);
+	throw(new Loading());
     }
 	
     private Tile getground(Coord tc) {
-	Tile r = map.getground(tc);
-	if(r == null)
-	    throw(new Loading());
-	return(r);
+	throw(new Loading());
     }
 	
     private Tile[] gettrans(Coord tc) {
-	Tile[] r = map.gettrans(tc);
-	if(r == null)
-	    throw(new Loading());
-	return(r);
+	throw(new Loading());
     }
 
     private int getol(Coord tc) {
-	int ol = map.getol(tc);
-	if(ol == -1)
-	    throw(new Loading());
-	return(ol);
+	throw(new Loading());
     }
 	
     private void drawtile(GOut g, Coord tc, Coord sc) {

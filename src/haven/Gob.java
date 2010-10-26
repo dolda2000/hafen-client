@@ -63,7 +63,7 @@ public class Gob implements Sprite.Owner {
     }
 	
     public Gob(Glob glob, Coord c) {
-	this(glob, c, 0, 0);
+	this(glob, c, -1, 0);
     }
 	
     public static interface ANotif<T extends GAttrib> {
@@ -168,10 +168,7 @@ public class Gob implements Sprite.Owner {
     }
     
     public Random mkrandoom() {
-	if(id < 0)
-	    return(MCache.mkrandoom(rc));
-	else
-	    return(new Random(id));
+	return(new Random(id));
     }
     
     public Resource.Neg getneg() {
