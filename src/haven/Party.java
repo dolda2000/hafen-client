@@ -50,7 +50,7 @@ public class Party {
 	    return(glob.oc.getgob(gobid));
 	}
 	
-	public Coord3f getc() throws MCache.LoadingMap {
+	public Coord3f getc() {
 	    Gob gob;
 	    if((gob = getgob()) != null)
 		return(gob.getc());

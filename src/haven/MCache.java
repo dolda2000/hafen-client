@@ -43,7 +43,7 @@ public class MCache {
     Random gen = new Random();
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
 
-    public static class LoadingMap extends Throwable {
+    public static class LoadingMap extends RuntimeException {
 	private LoadingMap() {}
     }
 
@@ -113,7 +113,7 @@ public class MCache {
 	    return(ol[tc.x + (tc.y * cmaps.x)]);
 	}
 
-	private void makeflavor() throws LoadingMap {
+	private void makeflavor() {
 	    Collection<Gob> fo = new LinkedList<Gob>();
 	    fo.clear();
 	    Coord c = new Coord(0, 0);
@@ -136,7 +136,7 @@ public class MCache {
 	    this.fo = fo;
 	}
 
-	public Collection<Gob> getfo() throws LoadingMap {
+	public Collection<Gob> getfo() {
 	    if(fo == null)
 		makeflavor();
 	    return(fo);
@@ -168,7 +168,7 @@ public class MCache {
     }
 
     private Grid cached = null;
-    public Grid getgrid(Coord gc) throws LoadingMap {
+    public Grid getgrid(Coord gc) {
 	synchronized(grids) {
 	    if((cached == null) || !cached.gc.equals(cached)) {
 		cached = grids.get(gc);
@@ -181,21 +181,21 @@ public class MCache {
 	}
     }
 
-    public Grid getgridt(Coord tc) throws LoadingMap {
+    public Grid getgridt(Coord tc) {
 	return(getgrid(tc.div(cmaps)));
     }
 
-    public int gettile(Coord tc) throws LoadingMap {
+    public int gettile(Coord tc) {
 	Grid g = getgridt(tc);
 	return(g.gettile(tc.sub(g.ul)));
     }
 
-    public int getz(Coord tc) throws LoadingMap {
+    public int getz(Coord tc) {
 	Grid g = getgridt(tc);
 	return(g.getz(tc.sub(g.ul)));
     }
 
-    public float getcz(float px, float py) throws LoadingMap {
+    public float getcz(float px, float py) {
 	float tw = tilesz.x, th = tilesz.y;
 	Coord ul = new Coord((int)(px / tw), (int)(py / th));
 	float sx = (px % tw) / tw;
@@ -204,11 +204,11 @@ public class MCache {
 	       (sy * (((1.0f - sx) * getz(ul.add(0, 1))) + (sx * getz(ul.add(1, 1))))));
     }
 
-    public float getcz(Coord pc) throws LoadingMap {
+    public float getcz(Coord pc) {
 	return(getcz(pc.x, pc.y));
     }
 
-    public int getol(Coord tc) throws LoadingMap {
+    public int getol(Coord tc) {
 	Grid g = getgridt(tc);
 	int ol = g.getol(tc.sub(g.ul));
 	for(Overlay lol : ols) {
@@ -323,7 +323,7 @@ public class MCache {
 	}
     }
 
-    public Tileset tileset(int i) throws LoadingMap {
+    public Tileset tileset(int i) {
 	if(csets[i] == null) {
 	    if(sets[i].loading)
 		throw(new LoadingMap());

@@ -39,7 +39,7 @@ public class Homing extends Moving {
 	this.v = v;
     }
 	
-    public Coord3f getc() throws MCache.LoadingMap {
+    public Coord3f getc() {
 	Coord tc = this.tc;
 	Gob tgt = gob.glob.oc.getgob(this.tgt);
 	if(tgt != null)

@@ -112,7 +112,7 @@ public class Gob implements Sprite.Owner {
 	this.rc = c;
     }
 	
-    public Coord3f getc() throws MCache.LoadingMap {
+    public Coord3f getc() {
 	Moving m = getattr(Moving.class);
 	if(m != null)
 	    return(m.getc());
@@ -120,7 +120,7 @@ public class Gob implements Sprite.Owner {
 	    return(getrc());
     }
     
-    public Coord3f getrc() throws MCache.LoadingMap {
+    public Coord3f getrc() {
 	return(new Coord3f(rc.x, rc.y, glob.map.getcz(rc)));
     }
 	

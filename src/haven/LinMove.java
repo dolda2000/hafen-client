@@ -39,7 +39,7 @@ public class LinMove extends Moving {
 		this.a = 0;
 	}
     
-	public Coord3f getc() throws MCache.LoadingMap {
+	public Coord3f getc() {
 		float cx, cy;
 		cx = (float)(t.x - s.x) * (float)a;
 		cy = (float)(t.y - s.y) * (float)a;
