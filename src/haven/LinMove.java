@@ -39,12 +39,12 @@ public class LinMove extends Moving {
 		this.a = 0;
 	}
     
-	public Coord getc() {
-		double dx, dy;
-		dx = t.x - s.x;
-		dy = t.y - s.y;
-		Coord m = new Coord((int)(dx * a), (int)(dy * a));
-		return(s.add(m));
+	public Coord3f getc() throws MCache.LoadingMap {
+		float cx, cy;
+		cx = (float)(t.x - s.x) * (float)a;
+		cy = (float)(t.y - s.y) * (float)a;
+		cx += s.x; cy += s.y;
+		return(new Coord3f(cx, cy, gob.glob.map.getcz(cx, cy)));
 	}
     
 	/*

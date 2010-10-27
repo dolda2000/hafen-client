@@ -40,7 +40,11 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     public Coord(Coord c) {
 	this(c.x, c.y);
     }
-	
+    
+    public Coord(Coord3f c) {
+	this((int)c.x, (int)c.y);
+    }
+    
     public Coord() {
 	this(0, 0);
     }

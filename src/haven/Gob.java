@@ -112,12 +112,16 @@ public class Gob implements Sprite.Owner {
 	this.rc = c;
     }
 	
-    public Coord getc() {
+    public Coord3f getc() throws MCache.LoadingMap {
 	Moving m = getattr(Moving.class);
 	if(m != null)
 	    return(m.getc());
 	else
-	    return(rc);
+	    return(getrc());
+    }
+    
+    public Coord3f getrc() throws MCache.LoadingMap {
+	return(new Coord3f(rc.x, rc.y, glob.map.getcz(rc)));
     }
 	
     private Class<? extends GAttrib> attrclass(Class<? extends GAttrib> cl) {

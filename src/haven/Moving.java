@@ -33,5 +33,5 @@ public abstract class Moving extends GAttrib {
 	
     public void move(Coord c) {}
 	
-    public abstract Coord getc();
+    public abstract Coord3f getc() throws MCache.LoadingMap;
 }

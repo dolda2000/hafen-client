@@ -39,14 +39,15 @@ public class Homing extends Moving {
 	this.v = v;
     }
 	
-    public Coord getc() {
+    public Coord3f getc() throws MCache.LoadingMap {
 	Coord tc = this.tc;
 	Gob tgt = gob.glob.oc.getgob(this.tgt);
 	if(tgt != null)
 	    tc = tgt.rc;
 	Coord d = tc.add(gob.rc.inv());
 	double e = gob.rc.dist(tc);
-	return(gob.rc.add((int)((d.x / e) * dist), (int)((d.y / e) * dist)));
+	Coord c = gob.rc.add((int)((d.x / e) * dist), (int)((d.y / e) * dist));
+	return(new Coord3f(c.x, c.y, gob.glob.map.getcz(c)));
     }
 	
     public void move(Coord c) {

@@ -202,7 +202,12 @@ public class MiniMap extends Widget {
 	    if(!plx.loading) {
 		synchronized(ui.sess.glob.party.memb) {
 		    for(Party.Member m : ui.sess.glob.party.memb.values()) {
-			Coord ptc = m.getc();
+			Coord ptc;
+			try {
+			    ptc = new Coord(m.getc());
+			} catch(MCache.LoadingMap e) {
+			    ptc = null;
+			}
 			if(ptc == null)
 			    continue;
 			ptc = ptc.div(tilesz).add(tc.inv()).add(sz.div(2));

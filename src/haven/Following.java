@@ -38,12 +38,11 @@ public class Following extends Moving {
 	this.szo = szo;
     }
 	
-    public Coord getc() {
+    public Coord3f getc() throws MCache.LoadingMap {
 	Gob tgt = gob.glob.oc.getgob(this.tgt);
 	if(tgt == null)
-	    return(gob.rc);
-	Coord c = tgt.getc();
-	return(c);
+	    return(gob.getrc());
+	return(tgt.getc());
     }
     
     public Gob tgt() {
