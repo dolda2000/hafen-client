@@ -55,9 +55,12 @@ public abstract class PView extends Widget {
 	    if(rls.list[i].r == null)
 		continue;
 	    gl.glPushMatrix();
-	    transform(g, i);
-	    rls.list[i].r.draw(g);
-	    gl.glPopMatrix();
+	    try {
+		transform(g, i);
+		rls.list[i].r.draw(g);
+	    } finally {
+		gl.glPopMatrix();
+	    }
 	}
     }
 
