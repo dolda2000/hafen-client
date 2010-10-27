@@ -33,7 +33,10 @@ public class PointedCam extends Transform {
     float dist = 5.0f, e, a;
 
     public void apply(GOut g) {
-	GL gl = g.gl;
+	apply(g.gl, base, dist, e, a);
+    }
+    
+    public static void apply(GL gl, Coord3f base, float dist, float e, float a) {
 	gl.glTranslatef(0.0f, 0.0f, -dist);
 	gl.glRotatef(90.0f - (float)(e * 180.0 / Math.PI), -1.0f, 0.0f, 0.0f);
 	gl.glRotatef(90.0f + (float)(a * 180.0 / Math.PI), 0.0f, 0.0f, -1.0f);
