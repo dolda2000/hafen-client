@@ -195,6 +195,19 @@ public class MCache {
 	return(g.getz(tc.sub(g.ul)));
     }
 
+    public float getcz(float px, float py) throws LoadingMap {
+	float tw = tilesz.x, th = tilesz.y;
+	Coord ul = new Coord((int)(px / tw), (int)(py / th));
+	float sx = (px % tw) / tw;
+	float sy = (py % th) / th;
+	return(((1.0f - sy) * (((1.0f - sx) * getz(ul)) + (sx * getz(ul.add(1, 0))))) +
+	       (sy * (((1.0f - sx) * getz(ul.add(0, 1))) + (sx * getz(ul.add(1, 1))))));
+    }
+
+    public float getcz(Coord pc) throws LoadingMap {
+	return(getcz(pc.x, pc.y));
+    }
+
     public int getol(Coord tc) throws LoadingMap {
 	Grid g = getgridt(tc);
 	int ol = g.getol(tc.sub(g.ul));
