@@ -97,7 +97,8 @@ public class OptWnd extends Window {
 	    else                                                editmode.check("PC");
 	}
 
-	{ /* CAMERA TAB */
+	/*
+	{ -* CAMERA TAB *-
 	    curcam = Utils.getpref("defcam", "border");
 	    tab = body.new Tab(new Coord(70, 0), 60, "Camera");
 
@@ -115,7 +116,7 @@ public class OptWnd extends Window {
 
 	    final Tabs cambox = new Tabs(new Coord(100, 60), new Coord(300, 200), tab);
 	    Tabs.Tab ctab;
-	    /* clicktgt arg */
+	    -* clicktgt arg *-
 	    ctab = cambox.new Tab();
 	    new Label(new Coord(45, 10),  ctab, "Fast");
 	    new Label(new Coord(45, 180), ctab, "Slow");
@@ -137,7 +138,7 @@ public class OptWnd extends Window {
 		    return(String.valueOf(Math.cbrt(Math.cbrt(val / 24.0))));
 		}};
 	    addinfo("clicktgt", "The Target Seeker", "The camera recenters smoothly where you left-click." + dragcam, ctab);
-	    /* fixedcake arg */
+	    -* fixedcake arg *-
 	    ctab = cambox.new Tab();
 	    new Label(new Coord(45, 10),  ctab, "Fast");
 	    new Label(new Coord(45, 180), ctab, "Slow");
@@ -187,6 +188,7 @@ public class OptWnd extends Window {
 		cameras.add(camname, new Coord(10, y += 25));
 	    cameras.check(caminfomap.containsKey(curcam) ? caminfomap.get(curcam).name : curcam);
 	}
+	*/
 
 	{ /* AUDIO TAB */
 	    tab = body.new Tab(new Coord(140, 0), 60, "Audio");
@@ -219,6 +221,7 @@ public class OptWnd extends Window {
 	}
     }
 
+    /*
     private void setcamera(String camtype) {
 	curcam = camtype;
 	Utils.setpref("defcam", curcam);
@@ -237,6 +240,7 @@ public class OptWnd extends Window {
 	    }
 	}
     }
+    */
 
     private void setcamargs(String camtype, String... args) {
 	camargs.put(camtype, args);

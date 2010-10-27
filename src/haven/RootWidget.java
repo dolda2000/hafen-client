@@ -43,12 +43,8 @@ public class RootWidget extends ConsoleHost {
     public boolean globtype(char key, KeyEvent ev) {
 	if(!super.globtype(key, ev)) {
 	    if(Config.profile && (key == '`')) {
-		new Profwnd(findchild(SlenHud.class), findchild(MapView.class).prof, "MV prof");
-	    } else if(Config.profile && (key == '~')) {
 		new Profwnd(findchild(SlenHud.class), gprof, "Glob prof");
 	    } else if(Config.profile && (key == '!')) {
-		new Profwnd(findchild(SlenHud.class), findchild(MapView.class).mask.prof, "ILM prof");
-	    } else if(key == ':') {
 		entercmd();
 	    } else if(key != 0) {
 		wdgmsg("gk", (int)key);

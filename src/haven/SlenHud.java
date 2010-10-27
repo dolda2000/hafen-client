@@ -167,6 +167,7 @@ public class SlenHud extends ConsoleHost implements DTarget, DropTarget, Console
 	budb = new IButton(mc, this, Resource.loadimg("gfx/hud/slen/budu"), Resource.loadimg("gfx/hud/slen/budd"));
 	optb = new IButton(mc, this, Resource.loadimg("gfx/hud/slen/optu"), Resource.loadimg("gfx/hud/slen/optd"));
 	{
+	    /*
 	    new IButton(dispc, this, Resource.loadimg("gfx/hud/slen/dispauth"), Resource.loadimg("gfx/hud/slen/dispauthd")) {
 		private boolean v = false;
 		
@@ -181,8 +182,10 @@ public class SlenHud extends ConsoleHost implements DTarget, DropTarget, Console
 		    }
 		}
 	    };
+	    */
 	}
 	{
+	    /*
 	    new IButton(dispc, this, Resource.loadimg("gfx/hud/slen/dispclaim"), Resource.loadimg("gfx/hud/slen/dispclaimd")) {
 		private boolean v = false;
 		
@@ -197,6 +200,7 @@ public class SlenHud extends ConsoleHost implements DTarget, DropTarget, Console
 		    }
 		}
 	    };
+	    */
 	}
 	vc = new VC(this, fb = new FoldButton(new Coord(380, 600), parent) {
 		public void click() {

@@ -567,7 +567,6 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	
     public class Neg extends Layer {
 	public Coord cc;
-	public Coord bc, bs;
 	public Coord sz;
 	public Coord[][] ep;
 		
@@ -575,11 +574,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    int off;
 			
 	    cc = cdec(buf, 0);
-	    bc = cdec(buf, 4);
-	    bs = cdec(buf, 8);
 	    sz = cdec(buf, 12);
-	    bc = MapView.s2m(bc);
-	    bs = MapView.s2m(bs).add(bc.inv());
 	    ep = new Coord[8][0];
 	    int en = buf[16];
 	    off = 17;
