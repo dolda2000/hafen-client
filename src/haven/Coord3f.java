@@ -59,11 +59,39 @@ public class Coord3f {
     public Coord3f mul(float f) {
 	return(new Coord3f(x * f, y * f, z * f));
     }
+
+    public Coord3f div(float f) {
+	return(new Coord3f(x / f, y / f, z / f));
+    }
     
     public Coord3f inv() {
 	return(new Coord3f(-x, -y, -z));
     }
     
+    public float dmul(float X, float Y, float Z) {
+	return(x * X + y * Y + z * Z);
+    }
+    
+    public float dmul(Coord3f b) {
+	return(dmul(b.x, b.y, b.z));
+    }
+
+    public Coord3f cmul(float X, float Y, float Z) {
+	return(new Coord3f(y * Z - z * Y, z * X - x * Z, x * Y - y * X));
+    }
+
+    public Coord3f cmul(Coord3f b) {
+	return(cmul(b.x, b.y, b.z));
+    }
+
+    public float abs() {
+	return((float)Math.sqrt((x * x) + (y * y) + (z * z)));
+    }
+
+    public Coord3f norm() {
+	return(div(abs()));
+    }
+
     public float dist(Coord3f o) {
 	float dx = o.x - x;
 	float dy = o.y - y;
