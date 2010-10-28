@@ -310,6 +310,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		g.image(curs.layer(Resource.imgc), dc);
 	    }
 	}
+	g.texsel(-1);
     }
 	
     void dispatch() {
