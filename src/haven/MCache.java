@@ -256,9 +256,9 @@ public class MCache {
 		    g.mnm = mmname;
 		    for(int i = 0; i < g.tiles.length; i++)
 			g.tiles[i] = blob.uint8();
-		    for(int i = 0, y = 0; y < cmaps.y; y++, i++) {
-			for(int x = 0; x < cmaps.x; x++)
-			    g.z[i] = (int)(Math.sin((g.ul.x + x) / 2.0) + Math.sin((g.ul.y + y) / 2.0));
+		    for(int i = 0, y = 0; y < cmaps.y; y++) {
+			for(int x = 0; x < cmaps.x; x++, i++)
+			    g.z[i] = (int)((Math.sin((g.ul.x + x) / 2.0) + Math.sin((g.ul.y + y) / 2.0)) * 16);
 		    }
 		    for(int i = 0; i < g.ol.length; i++)
 			g.ol[i] = 0;
