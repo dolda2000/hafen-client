@@ -156,6 +156,8 @@ public class UI {
 	} else {
 	    f = Widget.gettype(type);
 	}
+	if(f == null)
+	    throw(new RuntimeException("No such widget widget type: " + type));
 	synchronized(this) {
 	    Widget pwdg = widgets.get(parent);
 	    if(pwdg == null)
