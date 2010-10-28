@@ -34,6 +34,8 @@ import java.util.zip.Inflater;
 public class MCache {
     public static final Coord tilesz = new Coord(11, 11);
     public static final Coord cmaps = new Coord(100, 100);
+    public static final Coord cutsz = new Coord(10, 10);
+    public static final Coord cutn = cmaps.div(cutsz);
     private final Resource[] sets = new Resource[256];
     private final Tileset[] csets = new Tileset[256];
     Map<Coord, Request> req = new HashMap<Coord, Request>();
@@ -77,6 +79,7 @@ public class MCache {
 	public final int tiles[] = new int[cmaps.x * cmaps.y];
 	public final int z[] = new int[cmaps.x * cmaps.y];
 	public final int ol[] = new int[cmaps.x * cmaps.y];
+	public final MapMesh cuts[] = new MapMesh[cutn.x * cutn.y];
 	private Collection<Gob> fo;
 	public final Coord gc, ul;
 	public final long id;
@@ -140,6 +143,13 @@ public class MCache {
 	    if(fo == null)
 		makeflavor();
 	    return(fo);
+	}
+	
+	public MapMesh getcut(Coord cc) {
+	    int i = cc.x + (cc.y * cutn.x);
+	    if(cuts[i] == null)
+		cuts[i] = MapMesh.build(MCache.this, ul.add(cc.mul(cutsz)), cutsz);
+	    return(cuts[i]);
 	}
     }
 
@@ -216,6 +226,10 @@ public class MCache {
 		ol |= lol.mask;
 	}
 	return(ol);
+    }
+    
+    public MapMesh getcut(Coord cc) {
+	return(getgrid(cc.div(cutn)).getcut(cc.mod(cutn)));
     }
 
     public void mapdata2(Message msg) {
