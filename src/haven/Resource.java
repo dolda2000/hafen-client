@@ -675,12 +675,13 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    Graphics g = packbuf.graphics();
 	    int x = 0, y = 0;
 	    for(Tile t :  tiles) {
+		if(y >= minh)
+		    throw(new LoadException("Could not pack tiles into calculated minimum texture", Resource.this));
 		g.drawImage(t.img, x, y, null);
 		t.tex = new TexSI(packbuf, new Coord(x, y), tsz);
 		if((x += tsz.x) > (minw - tsz.x)) {
 		    x = 0;
-		    if((y += tsz.y) >= minh)
-			throw(new LoadException("Could not pack tiles into calculated minimum texture", Resource.this));
+		    y += tsz.y;
 		}
 	    }
 	    packbuf.update();
