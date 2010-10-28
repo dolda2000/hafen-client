@@ -89,7 +89,7 @@ public abstract class PView extends Widget {
 	try {
 	    checkerr(gl);
 	    double r = ((double)sz.y) / ((double)sz.x);
-	    gl.glFrustum(-1, 1, -r, r, 1, 500);
+	    gl.glFrustum(-1, 1, -r, r, 1, 5000);
 	    gl.glMatrixMode(gl.GL_MODELVIEW);
 	    camera.apply(g);
 	    render(g);
