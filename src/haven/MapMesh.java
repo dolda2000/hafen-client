@@ -131,6 +131,10 @@ public class MapMesh implements Rendered {
 	    for(int o = 0; o < 4; o++) {
 		if(tr[bx[o]][by[o]] == i)
 		    bm |= 1 << o;
+	    }
+	    for(int o = 0; o < 4; o++) {
+		if((bm & ((1 << o) | (1 << ((o + 1) % 4)))) != 0)
+		    continue;
 		if(tr[cx[o]][cy[o]] == i)
 		    cm |= 1 << o;
 	    }
