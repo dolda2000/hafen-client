@@ -29,6 +29,7 @@ package haven;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import javax.media.opengl.*;
+import java.nio.*;
 
 public class GOut {
     public final GL gl;
@@ -249,5 +250,17 @@ public class GOut {
 	g.ul = this.ul.add(ul);
 	g.sz = sz;
 	return(g);
+    }
+    
+    public Color getpixel(Coord c) {
+	IntBuffer tgt = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+	tgt.rewind();
+	gl.glReadPixels(c.x + ul.x, sh.root.sz.y - c.y - ul.y, 1, 1, GL.GL_RGBA, GL.GL_UNSIGNED_INT_8_8_8_8, tgt);
+	checkerr();
+	long rgb = ((long)tgt.get(0)) & 0xffffffffl;
+	int r = (int)((rgb & 0xff000000l) >> 24);
+	int g = (int)((rgb & 0x00ff0000l) >> 16);
+	int b = (int)((rgb & 0x0000ff00l) >> 8);
+	return(new Color(r, g, b));
     }
 }
