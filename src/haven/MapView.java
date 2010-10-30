@@ -40,6 +40,7 @@ public class MapView extends PView {
     float dist = 500.0f;
     float elev = (float)Math.PI / 4.0f;
     float angl = 0.0f;
+    int view = 1;
     
     private class Camera extends Transform {
 	public void apply(GOut g) {
@@ -72,8 +73,8 @@ public class MapView extends PView {
     private void setupmap(RenderList rl) {
 	Coord cc = this.cc.div(tilesz).div(MCache.cutsz);
 	Coord o = new Coord();
-	for(o.y = -2; o.y <= 2; o.y++) {
-	    for(o.x = -2; o.x <= 2; o.x++) {
+	for(o.y = -view; o.y <= view; o.y++) {
+	    for(o.x = -view; o.x <= view; o.x++) {
 		Coord pc = cc.add(o).mul(MCache.cutsz).mul(tilesz);
 		MapMesh cut = glob.map.getcut(cc.add(o));
 		rl.add(cut, Transform.xlate(new Coord3f(pc.x, pc.y, 0)));
@@ -155,5 +156,13 @@ public class MapView extends PView {
 	    d = 5;
 	dist = d;
 	return(true);
+    }
+    
+    public boolean globtype(char c, java.awt.event.KeyEvent ev) {
+	if(c >= '1' && c <= '9') {
+	    view = c - '1';
+	    return(true);
+	}
+	return(false);
     }
 }
