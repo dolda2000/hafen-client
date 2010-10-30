@@ -26,7 +26,6 @@
 
 package haven;
 
-public interface Rendered {
-    public void draw(GOut g);
-    public boolean setup(RenderList r);
+public interface FRendered extends Rendered {
+    public void drawflat(GOut g);
 }

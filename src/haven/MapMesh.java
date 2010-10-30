@@ -30,11 +30,12 @@ import static haven.MCache.tilesz;
 import java.util.*;
 import javax.media.opengl.*;
 
-public class MapMesh implements Rendered {
-    public final Coord sz;
+public class MapMesh implements FRendered {
+    public final Coord ul, sz;
     public final MCache map;
     private SPoint[] surf;
     private List<Layer> layers;
+    public int clickmode;
 
     public static class SPoint {
 	public final Coord3f pos, nrm;
@@ -97,8 +98,9 @@ public class MapMesh implements Rendered {
 	Collection<Plane> pl = new LinkedList<Plane>();
     }
     
-    private MapMesh(MCache map, Coord sz) {
+    private MapMesh(MCache map, Coord ul, Coord sz) {
 	this.map = map;
+	this.ul = ul;
 	this.sz = sz;
     }
 	
@@ -144,7 +146,7 @@ public class MapMesh implements Rendered {
     }
 
     public static MapMesh build(MCache mc, Random rnd, Coord ul, Coord sz) {
-	MapMesh m = new MapMesh(mc, sz);
+	MapMesh m = new MapMesh(mc, ul, sz);
 	m.surf = new SPoint[(sz.x + 1) * (sz.y + 1)];
 	Coord c = new Coord();
 	int i, o;
@@ -194,7 +196,40 @@ public class MapMesh implements Rendered {
 	g.texsel(-1);
     }
     
+    public void drawflat(GOut g) {
+	GL gl = g.gl;
+	gl.glBegin(GL.GL_TRIANGLES);
+	Coord c = new Coord();
+	for(c.y = 0; c.y < sz.y; c.y++) {
+	    for(c.x = 0; c.x < sz.x; c.x++) {
+		if(clickmode == 1)
+		    gl.glColor3f((c.x + 1) / 256.0f, (c.y + 1) / 256.0f, 0.0f);
+		if(clickmode == 2)
+		    gl.glColor3f(0.0f, 0.0f, 0.0f);
+		gl.glVertex3f(c.x * tilesz.x, c.y * -tilesz.y, map.getz(ul.add(c)));
+		if(clickmode == 2)
+		    gl.glColor3f(0.0f, 1.0f, 0.0f);
+		gl.glVertex3f(c.x * tilesz.x, (c.y + 1) * -tilesz.y, map.getz(ul.add(c.x, c.y + 1)));
+		if(clickmode == 2)
+		    gl.glColor3f(1.0f, 1.0f, 0.0f);
+		gl.glVertex3f((c.x + 1) * tilesz.x, (c.y + 1) * -tilesz.y, map.getz(ul.add(c.x + 1, c.y + 1)));
+		if(clickmode == 2)
+		    gl.glColor3f(0.0f, 0.0f, 0.0f);
+		gl.glVertex3f(c.x * tilesz.x, c.y * -tilesz.y, map.getz(ul.add(c)));
+		if(clickmode == 2)
+		    gl.glColor3f(1.0f, 1.0f, 0.0f);
+		gl.glVertex3f((c.x + 1) * tilesz.x, (c.y + 1) * -tilesz.y, map.getz(ul.add(c.x + 1, c.y + 1)));
+		if(clickmode == 2)
+		    gl.glColor3f(1.0f, 0.0f, 0.0f);
+		gl.glVertex3f((c.x + 1) * tilesz.x, c.y * -tilesz.y, map.getz(ul.add(c.x + 1, c.y)));
+	    }
+	}	
+	gl.glEnd();
+	GOut.checkerr(gl);
+    }
+    
     public boolean setup(RenderList rl) {
+	clickmode = 0;
 	return(true);
     }
 }

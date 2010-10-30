@@ -32,19 +32,23 @@ import haven.Resource.Tile;
 import java.awt.Color;
 import java.util.*;
 import java.lang.reflect.*;
+import javax.media.opengl.*;
 
 public class MapView extends PView {
     public int plgob = -1;
     public Coord cc;
     private final Glob glob;
-    float dist = 500.0f;
-    float elev = (float)Math.PI / 4.0f;
-    float angl = 0.0f;
-    int view = 1;
+    private float dist = 500.0f;
+    private float elev = (float)Math.PI / 4.0f;
+    private float angl = 0.0f;
+    private int view = 1;
+    private Coord clickc = null;
+    private int clickb;
     
     private class Camera extends Transform {
 	public void apply(GOut g) {
 	    Coord3f cc = getcc();
+	    cc.y = -cc.y;
 	    PointedCam.apply(g.gl, cc, dist, elev, angl);
 	}
     }
@@ -85,7 +89,9 @@ public class MapView extends PView {
     private void setupgobs(RenderList rl) {
 	synchronized(glob.oc) {
 	    for(Gob g : glob.oc) {
-		rl.add(TestView.tmesh[0], Transform.xlate(g.getc()));
+		Coord3f c = g.getc();
+		c.y = -c.y;
+		rl.add(TestView.tmesh[0], Transform.xlate(c));
 	    }
 	}
     }
@@ -106,6 +112,92 @@ public class MapView extends PView {
 	    return(pl.getc());
 	else
 	    return(new Coord3f(cc.x, cc.y, glob.map.getcz(cc)));
+    }
+
+    private static class Clicklist implements Renderer {
+	private Map<Color, Rendered> rmap = new HashMap<Color, Rendered>();
+	private int i = 1;
+	
+	public void render(GOut g, Rendered r) {
+	    if(r instanceof FRendered) {
+		GL gl = g.gl;
+		int cr = i & 0xff,
+		    cg = (i & 0xff00) >> 8,
+		    cb = (i & 0xff0000) >> 16;
+		Color col = new Color(cr, cg, cb);
+		i++;
+		rmap.put(col, r);
+		gl.glColor3f(cr / 256.0f, cg / 256.0f, cb / 256.0f);
+		((FRendered)r).drawflat(g);
+	    }
+	}
+	
+	public Rendered get(GOut g, Coord c) {
+	    return(rmap.get(g.getpixel(c)));
+	}
+    }
+
+    private Coord checkmapclick(GOut g, Coord c) {
+	GL gl = g.gl;
+	gl.glDisable(GL.GL_LIGHTING);
+	try {
+	    g.texsel(-1);
+	    RenderList rl = new RenderList();
+	    setupmap(rl);
+	    Rendered hit;
+	    {
+		Clicklist cl = new Clicklist();
+		renderlist(g, rl, cl);
+		hit = cl.get(g, c);
+		if((hit == null) || !(hit instanceof MapMesh))
+		    return(null);
+	    }
+	    final MapMesh mesh = (MapMesh)hit;
+	    Coord tile;
+	    {
+		renderlist(g, rl, new Renderer() {
+			public void render(GOut g, Rendered r) {
+			    if(r == mesh) {
+				mesh.clickmode = 1;
+				mesh.drawflat(g);
+			    }
+			}
+		    });
+		Color hitcol = g.getpixel(c);
+		tile = new Coord(hitcol.getRed() - 1, hitcol.getGreen() - 1);
+		if(!tile.isect(Coord.z, mesh.sz))
+		    return(null);
+	    }
+	    Coord pixel;
+	    {
+		renderlist(g, rl, new Renderer() {
+			public void render(GOut g, Rendered r) {
+			    if(r == mesh) {
+				mesh.clickmode = 2;
+				mesh.drawflat(g);
+			    }
+			}
+		    });
+		Color hitcol = g.getpixel(c);
+		if(hitcol.getBlue() != 0)
+		    return(null);
+		pixel = new Coord((hitcol.getRed() * tilesz.x) / 255, (hitcol.getGreen() * tilesz.y) / 255);
+	    }
+	    return(mesh.ul.add(tile).mul(tilesz).add(pixel));
+	} finally {
+	    gl.glEnable(GL.GL_LIGHTING);
+	}
+    }
+
+    protected void render(GOut g) {
+	Coord mapcl = null;
+	if(clickc != null)
+	    mapcl = checkmapclick(g, clickc);
+	super.render(g);
+	if(mapcl != null) {
+	    wdgmsg("click", clickc, mapcl, clickb, ui.modflags());
+	}
+	clickc = null;
     }
 
     public void draw(GOut g) {
@@ -129,6 +221,9 @@ public class MapView extends PView {
 	    elevorig = elev;
 	    anglorig = angl;
 	    dragorig = c;
+	} else {
+	    clickb = button;
+	    clickc = c;
 	}
 	return(true);
     }
