@@ -187,12 +187,6 @@ public class MapMesh implements Rendered {
     }
     
     public void draw(GOut g) {
-	GL gl = g.gl;
-	gl.glBegin(GL.GL_POINTS);
-	gl.glColor3f(1.0f, 0.0f, 0.0f);
-	gl.glVertex3f(0.0f, 0.0f, 0.0f);
-	gl.glEnd();
-	GOut.checkerr(gl);
 	for(Layer l : layers) {
 	    g.texsel(l.tex.glid(g));
 	    l.mesh.draw(g);
