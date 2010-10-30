@@ -48,7 +48,7 @@ public class WeightList<T> implements java.io.Serializable {
 	p %= tw;
 	int i = 0;
 	while(true) {
-	    if((p -= w.get(i)) <= 0)
+	    if((p -= w.get(i)) < 0)
 		break;
 	    i++;
 	}
