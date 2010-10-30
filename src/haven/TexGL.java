@@ -73,7 +73,15 @@ public abstract class TexGL extends Tex {
 	return(n);
     }
 	
-    public void render(GOut g, Coord c, Coord ul, Coord br, Coord sz) {
+    public float tcx(int x) {
+	return(((float)x) / ((float)tdim.x));
+    }
+
+    public float tcy(int y) {
+	return(((float)y) / ((float)tdim.y));
+    }
+
+    public int glid(GOut g) {
 	GL gl = g.gl;
 	synchronized(idmon) {
 	    if((id != -1) && (mygl != gl)) {
@@ -82,8 +90,13 @@ public abstract class TexGL extends Tex {
 	    }
 	    if(id < 0)
 		create(g);
-	    g.texsel(id);
+	    return(id);
 	}
+    }
+
+    public void render(GOut g, Coord c, Coord ul, Coord br, Coord sz) {
+	GL gl = g.gl;
+	g.texsel(glid(g));
 	Color amb = blend(g, setenv(gl));
 	checkerr(gl);
 	if(!disableall) {

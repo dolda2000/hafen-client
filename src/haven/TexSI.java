@@ -36,6 +36,14 @@ public class TexSI extends Tex {
 	this.ul = ul;
     }
 	
+    public float tcx(int x) {
+	return(parent.tcx(x + ul.x));
+    }
+    
+    public float tcy(int y) {
+	return(parent.tcy(y + ul.y));
+    }
+
     public void render(GOut g, Coord c, Coord ul, Coord br, Coord sz) {
 	parent.render(g, c, this.ul.add(ul), this.ul.add(br), sz);
     }
