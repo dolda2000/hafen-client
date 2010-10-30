@@ -50,9 +50,9 @@ public class MapMesh implements Rendered {
 	
 	public Plane(Coord sc, int z, Tex tex) {
 	    vrt = new SPoint[]{spoint(sc),
-			       spoint(sc.add(1, 0)),
+			       spoint(sc.add(0, 1)),
 			       spoint(sc.add(1, 1)),
-			       spoint(sc.add(0, 1))};
+			       spoint(sc.add(1, 0))};
 	    this.z = z;
 	    this.tex = tex;
 	    reg();
@@ -61,9 +61,9 @@ public class MapMesh implements Rendered {
 	private void build(MeshBuf buf) {
 	    int r = tex.sz().x, b = tex.sz().y;
 	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm, new Coord3f(tex.tcx(0), tex.tcy(0), 0.0f));
-	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm, new Coord3f(tex.tcx(r), tex.tcy(0), 0.0f));
+	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm, new Coord3f(tex.tcx(0), tex.tcy(b), 0.0f));
 	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm, new Coord3f(tex.tcx(r), tex.tcy(b), 0.0f));
-	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm, new Coord3f(tex.tcx(0), tex.tcy(b), 0.0f));
+	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm, new Coord3f(tex.tcx(r), tex.tcy(0), 0.0f));
 	    buf.new Face(v1, v2, v3);
 	    buf.new Face(v1, v3, v4);
 	}
@@ -151,12 +151,12 @@ public class MapMesh implements Rendered {
 	i = 0;
 	for(c.y = 0; c.y <= sz.y; c.y++) {
 	    for(c.x = 0; c.x <= sz.x; c.x++) {
-		Coord3f s = new Coord3f(c.x * tilesz.x, (c.y + 1) * tilesz.y, mc.getz(ul.add(c.x, c.y + 1)));
-		Coord3f w = new Coord3f((c.x - 1) * tilesz.x, c.y * tilesz.y, mc.getz(ul.add(c.x - 1, c.y)));
-		Coord3f n = new Coord3f(c.x * tilesz.x, (c.y - 1) * tilesz.y, mc.getz(ul.add(c.x, c.y - 1)));
-		Coord3f e = new Coord3f((c.x + 1) * tilesz.x, c.y * tilesz.y, mc.getz(ul.add(c.x + 1, c.y)));
-		Coord3f nrm = (s.cmul(w)).add(e.cmul(s)).add(n.cmul(e)).add(w.cmul(n)).norm();
-		m.surf[i++] = new SPoint(new Coord3f(c.x * tilesz.x, c.y * tilesz.y, mc.getz(ul.add(c))), nrm);
+		Coord3f s = new Coord3f(0, -tilesz.y, mc.getz(ul.add(c.x, c.y + 1)));
+		Coord3f w = new Coord3f(-tilesz.x, 0, mc.getz(ul.add(c.x - 1, c.y)));
+		Coord3f n = new Coord3f(0, tilesz.y, mc.getz(ul.add(c.x, c.y - 1)));
+		Coord3f e = new Coord3f(tilesz.x, 0, mc.getz(ul.add(c.x + 1, c.y)));
+		Coord3f nrm = (n.cmul(w)).add(e.cmul(n)).add(s.cmul(e)).add(w.cmul(s)).norm();
+		m.surf[i++] = new SPoint(new Coord3f(c.x * tilesz.x, c.y * -tilesz.y, mc.getz(ul.add(c))), nrm);
 	    }
 	}
 	m.layers = new ArrayList<Layer>();

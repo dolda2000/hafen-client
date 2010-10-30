@@ -77,7 +77,7 @@ public class MapView extends PView {
 	    for(o.x = -view; o.x <= view; o.x++) {
 		Coord pc = cc.add(o).mul(MCache.cutsz).mul(tilesz);
 		MapMesh cut = glob.map.getcut(cc.add(o));
-		rl.add(cut, Transform.xlate(new Coord3f(pc.x, pc.y, 0)));
+		rl.add(cut, Transform.xlate(new Coord3f(pc.x, -pc.y, 0)));
 	    }
 	}
     }
