@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.lang.reflect.*;
 import haven.Resource.Tileset;
 import haven.Resource.Tile;
 import java.util.zip.Inflater;
@@ -38,6 +39,7 @@ public class MCache {
     public static final Coord cutn = cmaps.div(cutsz);
     private final Resource[] sets = new Resource[256];
     private final Tileset[] csets = new Tileset[256];
+    private final Tiler[] tiles = new Tiler[256];
     Map<Coord, Request> req = new HashMap<Coord, Request>();
     Map<Coord, Grid> grids = new HashMap<Coord, Grid>();
     Session sess;
@@ -147,8 +149,12 @@ public class MCache {
 	
 	public MapMesh getcut(Coord cc) {
 	    int i = cc.x + (cc.y * cutn.x);
-	    if(cuts[i] == null)
-		cuts[i] = MapMesh.build(MCache.this, ul.add(cc.mul(cutsz)), cutsz);
+	    if(cuts[i] == null) {
+		Random rnd = new Random(id);
+		rnd.setSeed(rnd.nextInt() ^ cc.x);
+		rnd.setSeed(rnd.nextInt() ^ cc.y);
+		cuts[i] = MapMesh.build(MCache.this, rnd, ul.add(cc.mul(cutsz)), cutsz);
+	    }
 	    return(cuts[i]);
 	}
     }
@@ -342,12 +348,33 @@ public class MCache {
     }
 
     public Tileset tileset(int i) {
-	if(csets[i] == null) {
-	    if(sets[i].loading)
-		throw(new LoadingMap());
-	    csets[i] = sets[i].layer(Resource.tileset);
+	synchronized(csets) {
+	    if(csets[i] == null) {
+		if(sets[i] == null)
+		    return(null);
+		if(sets[i].loading)
+		    throw(new LoadingMap());
+		csets[i] = sets[i].layer(Resource.tileset);
+	    }
+	    return(csets[i]);
 	}
-	return(csets[i]);
+    }
+
+    public Tiler tiler(int i) {
+	synchronized(tiles) {
+	    if(tiles[i] == null) {
+		Tileset set = tileset(i);
+		if(set == null)
+		    return(null);
+		try {
+		    Constructor<? extends Tiler> m = set.tclass.getConstructor(Integer.TYPE, Tileset.class);
+		    tiles[i] = m.newInstance(i, set);
+		} catch(Exception e) {
+		    throw(new RuntimeException(e));
+		}
+	    }
+	    return(tiles[i]);
+	}
     }
 
     public void tilemap(Message msg) {
