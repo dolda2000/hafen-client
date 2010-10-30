@@ -33,35 +33,46 @@ public abstract class PView extends Widget {
     private RenderList rls = new RenderList();
     public Transform camera;
     
+    public interface Renderer {
+	public void render(GOut g, Rendered r);
+    }
+
     public PView(Coord c, Coord sz, Widget parent) {
 	super(c, sz, parent);
     }
     
     protected abstract void setup(RenderList rls);
 
-    private void transform(GOut g, int i) {
+    private static void transform(GOut g, RenderList rls, int i) {
 	RenderList.Slot s = rls.list[i];
 	if(s.p != -1)
-	    transform(g, s.p);
+	    transform(g, rls, s.p);
 	if(s.t != null)
 	    s.t.apply(g);
     }
 
-    protected void render(GOut g) {
-	rls.rewind();
-	setup(rls);
+    public static void renderlist(GOut g, RenderList rls, Renderer out) {
 	GL gl = g.gl;
 	for(int i = 0; i < rls.cur; i++) {
 	    if(rls.list[i].r == null)
 		continue;
 	    gl.glPushMatrix();
 	    try {
-		transform(g, i);
-		rls.list[i].r.draw(g);
+		transform(g, rls, i);
+		if(out == null)
+		    rls.list[i].r.draw(g);
+		else
+		    out.render(g, rls.list[i].r);
 	    } finally {
 		gl.glPopMatrix();
 	    }
 	}
+    }
+
+    protected void render(GOut g) {
+	rls.rewind();
+	setup(rls);
+	renderlist(g, this.rls, null);
     }
 
     public void draw(GOut g) {
