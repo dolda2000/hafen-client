@@ -629,10 +629,11 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	private String[] fln;
 	private int[] flv;
 	private int[] flw;
-	WeightList<Resource> flavobjs;
-	WeightList<Tile> ground;
-	WeightList<Tile>[] ctrans, btrans;
-	int flavprob;
+	public Class<? extends Tiler> tclass = haven.resutil.GroundTile.class;
+	public WeightList<Resource> flavobjs;
+	public WeightList<Tile> ground;
+	public WeightList<Tile>[] ctrans, btrans;
+	public int flavprob;
 		
 	public Tileset(byte[] buf) {
 	    int[] off = new int[1];
