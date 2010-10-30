@@ -53,16 +53,21 @@ public class FastMesh implements Rendered {
     }
 
     public void cdraw(GL gl) {
-	gl.glEnableClientState(GL.GL_VERTEX_ARRAY);
-	gl.glEnableClientState(GL.GL_NORMAL_ARRAY);
 	vert.posb.rewind();
 	vert.nrmb.rewind();
 	indb.rewind();
+	gl.glEnableClientState(GL.GL_VERTEX_ARRAY);
 	gl.glVertexPointer(3, GL.GL_FLOAT, 0, vert.posb);
+	gl.glEnableClientState(GL.GL_NORMAL_ARRAY);
 	gl.glNormalPointer(GL.GL_FLOAT, 0, vert.nrmb);
+	if(vert.texb != null) {
+	    gl.glEnableClientState(GL.GL_TEXTURE_COORD_ARRAY);
+	    gl.glTexCoordPointer(2, GL.GL_FLOAT, 0, vert.texb);
+	}
 	gl.glDrawElements(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, indb);
 	gl.glDisableClientState(GL.GL_VERTEX_ARRAY);
 	gl.glDisableClientState(GL.GL_NORMAL_ARRAY);
+	gl.glDisableClientState(GL.GL_TEXTURE_COORD_ARRAY);
     }
 
     public void draw(GOut g) {
