@@ -45,8 +45,13 @@ public class FastMesh implements Rendered {
     public void sdraw(GL gl) {
 	gl.glBegin(GL.GL_TRIANGLES);
 	for(int i = 0; i < num * 3; i++) {
-	    int o = indb.get(i) * 3;
+	    int idx = indb.get(i);
+	    int o = idx * 3;
 	    gl.glNormal3f(vert.nrmb.get(o), vert.nrmb.get(o + 1), vert.nrmb.get(o + 2));
+	    if(vert.texb != null) {
+		int u = idx * 2;
+		gl.glTexCoord2f(vert.texb.get(u), vert.texb.get(u + 1));
+	    }
 	    gl.glVertex3f(vert.posb.get(o), vert.posb.get(o + 1), vert.posb.get(o + 2));
 	}
 	gl.glEnd();
