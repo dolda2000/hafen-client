@@ -47,6 +47,7 @@ public class StaticSprite extends Sprite {
 			Material mat = mr.mat;
 			
 			public void draw(GOut g) {
+			    g.matsel(mat);
 			    m.draw(g);
 			}
 			

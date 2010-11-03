@@ -47,4 +47,8 @@ public class TexSI extends Tex {
     public void render(GOut g, Coord c, Coord ul, Coord br, Coord sz) {
 	parent.render(g, c, this.ul.add(ul), this.ul.add(br), sz);
     }
+    
+    public void select(GOut g) {
+	parent.select(g);
+    }
 }

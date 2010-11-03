@@ -189,6 +189,7 @@ public class MapMesh implements FRendered {
     }
     
     public void draw(GOut g) {
+	g.matsel(null);
 	for(Layer l : layers) {
 	    g.texsel(l.tex.glid(g));
 	    l.mesh.draw(g);

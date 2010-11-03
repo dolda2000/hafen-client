@@ -47,6 +47,7 @@ public abstract class Tex {
     public abstract void render(GOut g, Coord c, Coord ul, Coord br, Coord sz);
     public abstract float tcx(int x);
     public abstract float tcy(int y);
+    public abstract void select(GOut g);
 
     public void render(GOut g, Coord c) {
 	render(g, c, Coord.z, dim, dim);

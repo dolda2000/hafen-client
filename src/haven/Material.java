@@ -30,7 +30,7 @@ import java.awt.Color;
 
 public class Material {
     public final int id;
-    public Color amb, dif, spc, emi;
+    public float[] amb, dif, spc, emi;
     public float shine;
     public Tex tex;
     
@@ -40,11 +40,24 @@ public class Material {
 
     public Material(int id, Color amb, Color dif, Color spc, Color emi, float shine) {
 	this(id);
-	this.amb = amb;
-	this.dif = dif;
-	this.spc = spc;
-	this.emi = emi;
+	build(amb, dif, spc, emi);
 	this.shine = shine;
+    }
+    
+    private static float[] fc(Color c) {
+	return(new float[] {
+		((float)c.getRed() / 1.0f),
+		((float)c.getGreen() / 1.0f),
+		((float)c.getBlue() / 1.0f),
+		((float)c.getAlpha() / 1.0f)
+	    });
+    }
+
+    public void build(Color amb, Color dif, Color spc, Color emi) {
+	this.amb = fc(amb);
+	this.dif = fc(dif);
+	this.spc = fc(spc);
+	this.emi = fc(emi);
     }
     
     public static class Res extends Resource.Layer {

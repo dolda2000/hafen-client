@@ -67,6 +67,7 @@ public abstract class PView extends Widget {
 		gl.glPopMatrix();
 	    }
 	}
+	g.matsel(null);
     }
 
     protected void render(GOut g) {
@@ -94,6 +95,7 @@ public abstract class PView extends Widget {
 	gl.glEnable(gl.GL_LIGHTING);
 	gl.glEnable(gl.GL_LIGHT0);
 	gl.glEnable(gl.GL_COLOR_MATERIAL);
+	gl.glLightModeli(gl.GL_LIGHT_MODEL_COLOR_CONTROL, gl.GL_SEPARATE_SPECULAR_COLOR);
 	gl.glClearDepth(1.0);
 	gl.glDepthFunc(gl.GL_LEQUAL);
 	gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);

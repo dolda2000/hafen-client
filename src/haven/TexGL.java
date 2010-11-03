@@ -80,6 +80,10 @@ public abstract class TexGL extends Tex {
     public float tcy(int y) {
 	return(((float)y) / ((float)tdim.y));
     }
+    
+    public void select(GOut g) {
+	g.texsel(glid(g));
+    }
 
     public int glid(GOut g) {
 	GL gl = g.gl;
