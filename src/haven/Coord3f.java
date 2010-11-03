@@ -29,6 +29,9 @@ package haven;
 public class Coord3f {
     public float x, y, z;
     public static Coord3f o = new Coord3f(0, 0, 0);
+    public static Coord3f xu = new Coord3f(1, 0, 0);
+    public static Coord3f yu = new Coord3f(0, 1, 0);
+    public static Coord3f zu = new Coord3f(0, 0, 1);
     
     public Coord3f(float x, float y, float z) {
 	this.x = x;

@@ -205,7 +205,8 @@ public class Session {
 			    oc.remove(id, frame);
 			} else if(type == OD_MOVE) {
 			    Coord c = msg.coord();
-			    oc.move(id, frame, c);
+			    int ia = msg.uint8();
+			    oc.move(id, frame, c, (ia / 255.0) * Math.PI * 2);
 			} else if(type == OD_RES) {
 			    int resid = msg.uint16();
 			    Message sdt;

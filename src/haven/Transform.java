@@ -48,4 +48,14 @@ public abstract class Transform {
 		}
 	    });
     }
+    
+    public static Transform seq(final Transform... seq) {
+	return(new Transform() {
+		public void apply(GOut g) {
+		    for(Transform t : seq) {
+			t.apply(g);
+		    }
+		}
+	    });
+    }
 }

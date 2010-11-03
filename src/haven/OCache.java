@@ -111,11 +111,11 @@ public class OCache implements Iterable<Gob> {
 	/* XXX: Clean up in deleted */
     }
     
-    public synchronized void move(int id, int frame, Coord c) {
+    public synchronized void move(int id, int frame, Coord c, double a) {
 	Gob g = getgob(id, frame);
 	if(g == null)
 	    return;
-	g.move(c);
+	g.move(c, a);
     }
 	
     public synchronized void cres(int id, int frame, Indir<Resource> res, Message sdt) {

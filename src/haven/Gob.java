@@ -30,6 +30,7 @@ import java.util.*;
 
 public class Gob implements Sprite.Owner, Rendered {
     public Coord rc, sc;
+    public double a;
     int clprio = 0;
     public int id, frame, initdelay = (int)(Math.random() * 3000);
     public final Glob glob;
@@ -105,11 +106,12 @@ public class Gob implements Sprite.Owner, Rendered {
 	    a.tick();
     }
 	
-    public void move(Coord c) {
+    public void move(Coord c, double a) {
 	Moving m = getattr(Moving.class);
 	if(m != null)
 	    m.move(c);
 	this.rc = c;
+	this.a = a;
     }
 	
     public Coord3f getc() {
