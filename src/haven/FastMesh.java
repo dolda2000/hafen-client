@@ -83,13 +83,16 @@ public class FastMesh implements Rendered {
     
     public static class MeshRes extends Resource.Layer {
 	public transient FastMesh m;
+	public transient Material mat;
 	private transient short[] tmp;
+	private int matid;
 	
 	public MeshRes(Resource res, byte[] buf) {
 	    res.super();
 	    int fl = Utils.ub(buf[0]);
 	    int num = Utils.uint16d(buf, 1);
-	    int off = 3;
+	    matid = Utils.int16d(buf, 3);
+	    int off = 5;
 	    short[] ind = new short[num * 3];
 	    for(int i = 0; i < num * 3; i++)
 		ind[i] = (short)Utils.int16d(buf, off + (i * 2));
@@ -100,6 +103,14 @@ public class FastMesh implements Rendered {
 	    VertexBuf v = getres().layer(VertexBuf.VertexRes.class).b;
 	    this.m = new FastMesh(v, this.tmp);
 	    this.tmp = null;
+	    if(matid >= 0) {
+		for(Material.Res mr : getres().layers(Material.Res.class)) {
+		    if(mr.m.id == matid)
+			this.mat = mr.m;
+		}
+		if(this.mat == null)
+		    throw(new Resource.LoadException("Could not find specified material: " + matid, getres()));
+	    }
 	}
     }
 }

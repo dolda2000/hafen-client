@@ -56,6 +56,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     static {
 	ltypes.put("vbuf", VertexBuf.VertexRes.class);
 	ltypes.put("mesh", FastMesh.MeshRes.class);
+	ltypes.put("mat", Material.Res.class);
     }
 
     static {
