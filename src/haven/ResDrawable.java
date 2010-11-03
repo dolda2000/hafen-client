@@ -26,6 +26,8 @@
 
 package haven;
 
+import java.awt.Color;
+
 public class ResDrawable extends Drawable {
     final Indir<Resource> res;
     final Message sdt;
@@ -53,8 +55,16 @@ public class ResDrawable extends Drawable {
 	
     public void setup(RenderList rl) {
 	init();
-	if(spr != null)
+	if(spr != null) {
+	    if(res.get().name.equals("gfx/borka/body")) {
+		Color amb = new Color(128, 64, 0);
+		Color col = new Color(255, 224, 192);
+		PosLight spot = new PosLight(amb, col, Color.WHITE, new Coord3f(2.0f, 0.0f, 4.5f));
+		spot.att(1.0f, 0.5f / 55.0f, 1.0f / 5500.0f);
+		rl.add(spot);
+	    }
 	    spr.setup(rl);
+	}
     }
 	
     public void ctick(int dt) {

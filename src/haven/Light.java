@@ -26,58 +26,47 @@
 
 package haven;
 
-import java.util.*;
+import java.awt.Color;
+import javax.media.opengl.*;
+import static haven.Utils.c2fa;
 
-public class RenderList {
-    Slot[] list = new Slot[100];
-    int cur = 0;
-    private int curp = -1;
-    Collection<LSlot> lights = new ArrayList<LSlot>();
+public class Light {
+    public float[] amb, dif, spc;
     
-    class Slot {
-	Rendered r;
-	Transform t;
-	int p;
+    private static final float[] defamb = {0.0f, 0.0f, 0.0f, 1.0f};
+    private static final float[] defdif = {1.0f, 1.0f, 1.0f, 1.0f};
+    private static final float[] defspc = {1.0f, 1.0f, 1.0f, 1.0f};
+
+    public Light() {
+	this.amb = defamb;
+	this.dif = defdif;
+	this.spc = defspc;
     }
     
-    class LSlot {
-	Light l;
-	int p;
+    public Light(Color col) {
+	this.amb = defamb;
+	this.dif = this.spc = c2fa(col);
+    }
+
+    public Light(Color amb, Color dif, Color spc) {
+	this.amb = c2fa(amb);
+	this.dif = c2fa(dif);
+	this.spc = c2fa(spc);
+    }
+
+    public void enable(GOut g, int idx) {
+	GL gl = g.gl;
+	gl.glEnable(GL.GL_LIGHT0 + idx);
+	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_AMBIENT, amb, 0);
+	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_DIFFUSE, dif, 0);
+	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_SPECULAR, spc, 0);
     }
     
-    public void add(Rendered r, Transform t) {
-	int i = cur++;
-	if(i >= list.length) {
-	    Slot[] n = new Slot[i * 2];
-	    System.arraycopy(list, 0, n, 0, i);
-	    list = n;
-	}
-	Slot s;
-	if((s = list[i]) == null)
-	    s = list[i] = new Slot();
-	s.r = r;
-	s.t = t;
-	int pp = s.p = curp;
-	try {
-	    curp = i;
-	    if(!r.setup(this))
-		s.r = null;
-	} finally {
-	    curp = pp;
-	}
-    }
-    
-    public void rewind() {
-	if(curp != -1)
-	    throw(new RuntimeException("Tried to rewind RenderList while adding to it."));
-	cur = 0;
-	lights.clear();
-    }
-    
-    public void add(Light l) {
-	LSlot s = new LSlot();
-	s.l = l;
-	s.p = curp;
-	lights.add(s);
+    public void disable(GOut g, int idx) {
+	GL gl = g.gl;
+	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_AMBIENT, defamb, 0);
+	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_DIFFUSE, defdif, 0);
+	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_SPECULAR, defspc, 0);
+	gl.glDisable(GL.GL_LIGHT0 + idx);
     }
 }

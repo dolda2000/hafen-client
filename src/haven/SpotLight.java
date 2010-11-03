@@ -26,58 +26,42 @@
 
 package haven;
 
-import java.util.*;
+import java.awt.Color;
+import javax.media.opengl.*;
 
-public class RenderList {
-    Slot[] list = new Slot[100];
-    int cur = 0;
-    private int curp = -1;
-    Collection<LSlot> lights = new ArrayList<LSlot>();
+public class SpotLight extends PosLight {
+    public float[] dir;
+    public float exp, cut;
     
-    class Slot {
-	Rendered r;
-	Transform t;
-	int p;
+    private static final float[] defdir = {0.0f, 0.0f, -1.0f};
+
+    public SpotLight(Color col, Coord3f pos, Coord3f dir, float exp) {
+	super(col, pos);
+	this.dir = dir.to3a();
+	this.exp = exp;
+	this.cut = 90.0f;
     }
     
-    class LSlot {
-	Light l;
-	int p;
+    public SpotLight(Color amb, Color dif, Color spc, Coord3f pos, Coord3f dir, float exp) {
+	super(amb, dif, spc, pos);
+	this.dir = dir.norm().to3a();
+	this.exp = exp;
+	this.cut = 90.0f;
     }
     
-    public void add(Rendered r, Transform t) {
-	int i = cur++;
-	if(i >= list.length) {
-	    Slot[] n = new Slot[i * 2];
-	    System.arraycopy(list, 0, n, 0, i);
-	    list = n;
-	}
-	Slot s;
-	if((s = list[i]) == null)
-	    s = list[i] = new Slot();
-	s.r = r;
-	s.t = t;
-	int pp = s.p = curp;
-	try {
-	    curp = i;
-	    if(!r.setup(this))
-		s.r = null;
-	} finally {
-	    curp = pp;
-	}
+    public void enable(GOut g, int idx) {
+	super.enable(g, idx);
+	GL gl = g.gl;
+	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_SPOT_DIRECTION, dir, 0);
+	gl.glLightf(GL.GL_LIGHT0 + idx, GL.GL_SPOT_EXPONENT, exp);
+	gl.glLightf(GL.GL_LIGHT0 + idx, GL.GL_SPOT_CUTOFF, cut);
     }
     
-    public void rewind() {
-	if(curp != -1)
-	    throw(new RuntimeException("Tried to rewind RenderList while adding to it."));
-	cur = 0;
-	lights.clear();
-    }
-    
-    public void add(Light l) {
-	LSlot s = new LSlot();
-	s.l = l;
-	s.p = curp;
-	lights.add(s);
+    public void disable(GOut g, int idx) {
+	GL gl = g.gl;
+	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_SPOT_DIRECTION, defdir, 0);
+	gl.glLightf(GL.GL_LIGHT0 + idx, GL.GL_SPOT_EXPONENT, 0.0f);
+	gl.glLightf(GL.GL_LIGHT0 + idx, GL.GL_SPOT_CUTOFF, 180.0f);
+	super.disable(g, idx);
     }
 }

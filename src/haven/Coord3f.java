@@ -51,6 +51,10 @@ public class Coord3f {
 	return(add((float)Math.cos(a) * (float)Math.cos(e) * r, (float)Math.sin(a) * (float)Math.cos(e) * r, (float)Math.sin(e) * r));
     }
     
+    public Coord3f neg() {
+	return(new Coord3f(-x, -y, -z));
+    }
+    
     public Coord3f sub(float ax, float ay, float az) {
 	return(new Coord3f(x - ax, y - ay, z - az));
     }
@@ -100,6 +104,14 @@ public class Coord3f {
 	float dy = o.y - y;
 	float dz = o.z - z;
 	return((float)Math.sqrt((dx * dx) + (dy * dy) + (dz * dz)));
+    }
+    
+    public float[] to3a() {
+	return(new float[] {x, y, z});
+    }
+    
+    public float[] to4a(float w) {
+	return(new float[] {x, y, z, w});
     }
     
     public String toString() {

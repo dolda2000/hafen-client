@@ -98,6 +98,7 @@ public class MapView extends PView {
 
     public void setup(RenderList rl) {
 	this.cc = new Coord(getcc());
+	//rl.add(new DirLight(new Color(255, 192, 64), new Coord3f(2.0f, 1.0f, 1.0f)));
  	setupmap(rl);
 	setupgobs(rl);
     }
@@ -139,7 +140,6 @@ public class MapView extends PView {
 
     private Coord checkmapclick(GOut g, Coord c) {
 	GL gl = g.gl;
-	gl.glDisable(GL.GL_LIGHTING);
 	try {
 	    g.texsel(-1);
 	    RenderList rl = new RenderList();
@@ -185,7 +185,7 @@ public class MapView extends PView {
 	    }
 	    return(mesh.ul.add(tile).mul(tilesz).add(pixel));
 	} finally {
-	    gl.glEnable(GL.GL_LIGHTING);
+	    gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
 	}
     }
 

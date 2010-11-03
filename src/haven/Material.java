@@ -27,6 +27,7 @@
 package haven;
 
 import java.awt.Color;
+import static haven.Utils.c2fa;
 
 public class Material {
     public final int id;
@@ -44,20 +45,11 @@ public class Material {
 	this.shine = shine;
     }
     
-    private static float[] fc(Color c) {
-	return(new float[] {
-		((float)c.getRed() / 1.0f),
-		((float)c.getGreen() / 1.0f),
-		((float)c.getBlue() / 1.0f),
-		((float)c.getAlpha() / 1.0f)
-	    });
-    }
-
     public void build(Color amb, Color dif, Color spc, Color emi) {
-	this.amb = fc(amb);
-	this.dif = fc(dif);
-	this.spc = fc(spc);
-	this.emi = fc(emi);
+	this.amb = c2fa(amb);
+	this.dif = c2fa(dif);
+	this.spc = c2fa(spc);
+	this.emi = c2fa(emi);
     }
     
     public static class Res extends Resource.Layer {

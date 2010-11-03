@@ -32,7 +32,9 @@ import javax.media.opengl.*;
 public abstract class PView extends Widget {
     private RenderList rls = new RenderList();
     public Transform camera;
-    
+    public float[] ambient = {0.0f, 0.0f, 0.0f, 1.0f};
+    private static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
+
     public interface Renderer {
 	public void render(GOut g, Rendered r);
     }
@@ -70,10 +72,59 @@ public abstract class PView extends Widget {
 	g.matsel(null);
     }
 
+    private Light[] elights(GOut g, RenderList rls) {
+	int[] buf = new int[1];
+	GL gl = g.gl;
+	gl.glGetIntegerv(GL.GL_MAX_LIGHTS, buf, 0);
+	int nl = rls.lights.size();
+	if(buf[0] < nl)
+	    nl = buf[0];
+	Light[] ret = new Light[nl];
+	int i = 0;
+	gl.glEnable(GL.GL_LIGHTING);
+	gl.glLightModeli(gl.GL_LIGHT_MODEL_COLOR_CONTROL, gl.GL_SEPARATE_SPECULAR_COLOR);
+	gl.glLightModelfv(GL.GL_LIGHT_MODEL_AMBIENT, ambient, 0);
+	for(RenderList.LSlot ls : rls.lights) {
+	    ret[i] = ls.l;
+	    gl.glPushMatrix();
+	    try {
+		if(ls.p != -1)
+		    transform(g, rls, ls.p);
+		ls.l.enable(g, i);
+	    } finally {
+		gl.glPopMatrix();
+	    }
+	    if(++i >= ret.length)
+		break;
+	    checkerr(gl);
+	}
+	return(ret);
+    }
+
+    private void dlights(GOut g, Light[] ll) {
+	GL gl = g.gl;
+	try {
+	    for(int i = 0; i < ll.length; i++) {
+		ll[i].disable(g, i);
+		checkerr(gl);
+	    }
+	} finally {
+	    gl.glLightModelfv(GL.GL_LIGHT_MODEL_AMBIENT, defamb, 0);
+	    gl.glDisable(GL.GL_LIGHTING);
+	}
+	checkerr(gl);
+    }
+
     protected void render(GOut g) {
 	rls.rewind();
 	setup(rls);
-	renderlist(g, this.rls, null);
+	Light[] ll = new Light[0];
+	try {
+	    ll = elights(g, rls);
+	    renderlist(g, this.rls, null);
+	} finally {
+	    dlights(g, ll);
+	}
     }
 
     public void draw(GOut g) {
@@ -92,10 +143,7 @@ public abstract class PView extends Widget {
 	gl.glEnable(gl.GL_DEPTH_TEST);
 	gl.glEnable(gl.GL_CULL_FACE);
 	gl.glEnable(gl.GL_SCISSOR_TEST);
-	gl.glEnable(gl.GL_LIGHTING);
-	gl.glEnable(gl.GL_LIGHT0);
 	gl.glEnable(gl.GL_COLOR_MATERIAL);
-	gl.glLightModeli(gl.GL_LIGHT_MODEL_COLOR_CONTROL, gl.GL_SEPARATE_SPECULAR_COLOR);
 	gl.glClearDepth(1.0);
 	gl.glDepthFunc(gl.GL_LEQUAL);
 	gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
@@ -114,8 +162,6 @@ public abstract class PView extends Widget {
 	    gl.glDisable(gl.GL_DEPTH_TEST);
 	    gl.glDisable(gl.GL_CULL_FACE);
 	    gl.glDisable(gl.GL_SCISSOR_TEST);
-	    gl.glDisable(gl.GL_LIGHTING);
-	    gl.glDisable(gl.GL_LIGHT0);
 	    gl.glDisable(gl.GL_COLOR_MATERIAL);
 	    gl.glViewport(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
 	    gl.glScissor(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);

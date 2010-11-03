@@ -26,58 +26,43 @@
 
 package haven;
 
-import java.util.*;
+import java.awt.Color;
+import javax.media.opengl.*;
 
-public class RenderList {
-    Slot[] list = new Slot[100];
-    int cur = 0;
-    private int curp = -1;
-    Collection<LSlot> lights = new ArrayList<LSlot>();
-    
-    class Slot {
-	Rendered r;
-	Transform t;
-	int p;
+public class PosLight extends Light {
+    public float[] pos;
+    public float ac = 1.0f, al = 0.0f, aq = 0.0f;
+
+    public PosLight(Color col, Coord3f pos) {
+	super(col);
+	this.pos = pos.to4a(1);
+    }
+
+    public PosLight(Color amb, Color dif, Color spc, Coord3f pos) {
+	super(amb, dif, spc);
+	this.pos = pos.to4a(1);
     }
     
-    class LSlot {
-	Light l;
-	int p;
+    public void att(float c, float l, float q) {
+	ac = c;
+	al = l;
+	aq = q;
     }
     
-    public void add(Rendered r, Transform t) {
-	int i = cur++;
-	if(i >= list.length) {
-	    Slot[] n = new Slot[i * 2];
-	    System.arraycopy(list, 0, n, 0, i);
-	    list = n;
-	}
-	Slot s;
-	if((s = list[i]) == null)
-	    s = list[i] = new Slot();
-	s.r = r;
-	s.t = t;
-	int pp = s.p = curp;
-	try {
-	    curp = i;
-	    if(!r.setup(this))
-		s.r = null;
-	} finally {
-	    curp = pp;
-	}
+    public void enable(GOut g, int idx) {
+	super.enable(g, idx);
+	GL gl = g.gl;
+	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_POSITION, pos, 0);
+	gl.glLightf(GL.GL_LIGHT0 + idx, GL.GL_CONSTANT_ATTENUATION, ac);
+	gl.glLightf(GL.GL_LIGHT0 + idx, GL.GL_LINEAR_ATTENUATION, al);
+	gl.glLightf(GL.GL_LIGHT0 + idx, GL.GL_QUADRATIC_ATTENUATION, aq);
     }
     
-    public void rewind() {
-	if(curp != -1)
-	    throw(new RuntimeException("Tried to rewind RenderList while adding to it."));
-	cur = 0;
-	lights.clear();
-    }
-    
-    public void add(Light l) {
-	LSlot s = new LSlot();
-	s.l = l;
-	s.p = curp;
-	lights.add(s);
+    public void disable(GOut g, int idx) {
+	GL gl = g.gl;
+	gl.glLightf(GL.GL_LIGHT0 + idx, GL.GL_CONSTANT_ATTENUATION, 1.0f);
+	gl.glLightf(GL.GL_LIGHT0 + idx, GL.GL_LINEAR_ATTENUATION, 0.0f);
+	gl.glLightf(GL.GL_LIGHT0 + idx, GL.GL_QUADRATIC_ATTENUATION, 0.0f);
+	super.disable(g, idx);
     }
 }

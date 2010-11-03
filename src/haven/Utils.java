@@ -607,6 +607,15 @@ public class Utils {
 	return(b);
     }
 
+    public static float[] c2fa(Color c) {
+	return(new float[] {
+		((float)c.getRed() / 255.0f),
+		((float)c.getGreen() / 255.0f),
+		((float)c.getBlue() / 255.0f),
+		((float)c.getAlpha() / 255.0f)
+	    });
+    }
+
     static {
 	Console.setscmd("die", new Console.Command() {
 		public void run(Console cons, String[] args) {
