@@ -50,7 +50,7 @@ public class MapView extends PView {
 	public void apply(GOut g) {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
-	    PointedCam.apply(g.gl, cc, dist, elev, angl);
+	    PointedCam.apply(g.gl, cc.add(0.0f, 0.0f, 3.0f), dist, elev, angl);
 	}
     }
     
