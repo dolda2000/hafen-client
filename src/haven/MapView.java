@@ -44,6 +44,7 @@ public class MapView extends PView {
     private int view = 1;
     private Coord clickc = null;
     private int clickb;
+    public static int lighting = 0;
     
     private class Camera extends Transform {
 	public void apply(GOut g) {
@@ -98,7 +99,11 @@ public class MapView extends PView {
 
     public void setup(RenderList rl) {
 	this.cc = new Coord(getcc());
-	//rl.add(new DirLight(new Color(255, 192, 64), new Coord3f(2.0f, 1.0f, 1.0f)));
+	if(lighting == 0) {
+	    rl.add(new DirLight(new Color(128, 128, 128), Color.WHITE, Color.WHITE, new Coord3f(2.0f, 1.0f, 5.0f)));
+	} else if(lighting == 1) {
+	    rl.add(new DirLight(new Color(255, 192, 64), new Coord3f(2.0f, 1.0f, 1.0f)));
+	}
  	setupmap(rl);
 	setupgobs(rl);
     }
@@ -254,8 +259,14 @@ public class MapView extends PView {
     }
     
     public boolean globtype(char c, java.awt.event.KeyEvent ev) {
+	/*
 	if(c >= '1' && c <= '9') {
 	    view = c - '1';
+	    return(true);
+	}
+	*/
+	if((c >= '0') && (c <= '2')) {
+	    lighting = c - '0';
 	    return(true);
 	}
 	return(false);

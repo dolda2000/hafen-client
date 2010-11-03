@@ -56,7 +56,7 @@ public class ResDrawable extends Drawable {
     public void setup(RenderList rl) {
 	init();
 	if(spr != null) {
-	    if(res.get().name.equals("gfx/borka/body")) {
+	    if((MapView.lighting == 2) && res.get().name.equals("gfx/borka/body")) {
 		Color amb = new Color(128, 64, 0);
 		Color col = new Color(255, 224, 192);
 		PosLight spot = new PosLight(amb, col, Color.WHITE, new Coord3f(2.0f, 0.0f, 4.5f));
