@@ -105,7 +105,7 @@ public class FastMesh implements Rendered {
 	    this.tmp = null;
 	    if(matid >= 0) {
 		for(Material.Res mr : getres().layers(Material.Res.class)) {
-		    if(mr.m.id == matid)
+		    if(mr.id == matid)
 			this.mat = mr.m;
 		}
 		if(this.mat == null)

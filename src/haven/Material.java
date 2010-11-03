@@ -30,21 +30,27 @@ import java.awt.Color;
 import static haven.Utils.c2fa;
 
 public class Material {
-    public final int id;
     public float[] amb, dif, spc, emi;
     public float shine;
     public Tex tex;
     
-    public Material(int id) {
-	this.id = id;
+    public Material() {
+	amb = new float[] {0.2f, 0.2f, 0.2f, 1.0f};
+	dif = new float[] {0.8f, 0.8f, 0.8f, 1.0f};
+	spc = new float[] {0.0f, 0.0f, 0.0f, 1.0f};
+	emi = new float[] {0.0f, 0.0f, 0.0f, 1.0f};
     }
 
-    public Material(int id, Color amb, Color dif, Color spc, Color emi, float shine) {
-	this(id);
+    public Material(Color amb, Color dif, Color spc, Color emi, float shine) {
 	build(amb, dif, spc, emi);
 	this.shine = shine;
     }
     
+    public Material(Tex tex) {
+	this();
+	this.tex = tex;
+    }
+
     public void build(Color amb, Color dif, Color spc, Color emi) {
 	this.amb = c2fa(amb);
 	this.dif = c2fa(dif);
@@ -53,6 +59,7 @@ public class Material {
     }
     
     public static class Res extends Resource.Layer {
+	public final int id;
 	public final transient Material m;
 	private int texid = -1;
 	
@@ -66,14 +73,14 @@ public class Material {
 
 	public Res(Resource res, byte[] buf) {
 	    res.super();
-	    int id = Utils.uint16d(buf, 0);
+	    id = Utils.uint16d(buf, 0);
 	    int t = buf[2];
 	    Color amb = col(buf, 3);
 	    Color dif = col(buf, 23);
 	    Color spc = col(buf, 43);
 	    double shine = Utils.floatd(buf, 63);
 	    Color emi = col(buf, 68);
-	    this.m = new Material(id, amb, dif, spc, emi, (float)shine);
+	    this.m = new Material(amb, dif, spc, emi, (float)shine);
 	    if(t == 1) {
 	    } else if(t == 2) {
 		texid = Utils.uint16d(buf, 88);
