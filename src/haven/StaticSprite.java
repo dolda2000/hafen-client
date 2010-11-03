@@ -28,30 +28,40 @@ package haven;
 
 import java.util.*;
 
-public class StaticSprite extends ImageSprite {
-    private final Object id;
+public class StaticSprite extends Sprite {
+    Rendered[] parts;
     
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
-		if(res.layer(Resource.animc) != null)
-		    return(null);
 		return(new StaticSprite(owner, res, sdt));
 	    }
 	};
-
-    private StaticSprite(Owner owner, Resource res, Message sdt) {
-	super(owner, res, sdt);
-	Collection<Part> f = new LinkedList<Part>();
-	boolean[] flags = decflags(sdt);
-	for(Resource.Image img : res.layers(Resource.imgc)) {
-	    if((img.id < 0) || ((flags.length > img.id) && flags[img.id]))
-		f.add(new ImagePart(img));
+    
+    public StaticSprite(Owner owner, Resource res, Message sdt) {
+	super(owner, res);
+	Collection<Rendered> rl = new LinkedList<Rendered>();
+	for(final FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
+	    if(mr.mat != null) {
+		rl.add(new Rendered() {
+			FastMesh m = mr.m;
+			Material mat = mr.mat;
+			
+			public void draw(GOut g) {
+			    m.draw(g);
+			}
+			
+			public boolean setup(RenderList l) {
+			    return(true);
+			}
+		    });
+	    }
 	}
-	this.curf = f;
-	this.id = res;
+	this.parts = rl.toArray(new Rendered[0]);
     }
     
-    public Object stateid() {
-	return(id);
+    public boolean setup(RenderList r) {
+	for(Rendered p : parts)
+	    r.add(p, null);
+	return(false);
     }
 }

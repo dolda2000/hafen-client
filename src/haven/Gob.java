@@ -28,7 +28,7 @@ package haven;
 
 import java.util.*;
 
-public class Gob implements Sprite.Owner {
+public class Gob implements Sprite.Owner, Rendered {
     public Coord rc, sc;
     int clprio = 0;
     public int id, frame, initdelay = (int)(Math.random() * 3000);
@@ -160,36 +160,26 @@ public class Gob implements Sprite.Owner {
 	return(ret);
     }
 	
-    public void drawsetup(Sprite.Drawer drawer, Coord dc, Coord sz) {
+    public void draw(GOut g) {}
+
+    public boolean setup(RenderList rl) {
 	Drawable d = getattr(Drawable.class);
-	Coord dro = drawoff();
+	d.setup(rl);
 	for(Overlay ol : ols) {
 	    if(ol.spr != null)
-		ol.spr.setup(drawer, dc, dro);
+		ol.spr.setup(rl);
 	}
-	if(d != null)
-	    d.setup(drawer, dc, dro);
+	return(false);
     }
-    
+
     public Random mkrandoom() {
 	return(new Random(id));
     }
     
     public Resource.Neg getneg() {
 	Drawable d = getattr(Drawable.class);
-	if(d instanceof ResDrawable) {
-	    ResDrawable rd = (ResDrawable)d;
-	    Resource r;
-	    if((r = rd.res.get()) == null)
-		return(null);
-	    return(r.layer(Resource.negc));
-	} else if(d instanceof Layered) {
-	    Layered l = (Layered)d;
-	    Resource r;
-	    if((r = l.base.get()) == null)
-		return(null);
-	    return(r.layer(Resource.negc));
-	}
+	if(d != null)
+	    return(d.getneg());
 	return(null);
     }
 }

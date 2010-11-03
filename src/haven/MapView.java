@@ -91,7 +91,7 @@ public class MapView extends PView {
 	    for(Gob g : glob.oc) {
 		Coord3f c = g.getc();
 		c.y = -c.y;
-		rl.add(TestView.tmesh[0], Transform.xlate(c));
+		rl.add(g, Transform.xlate(c));
 	    }
 	}
     }

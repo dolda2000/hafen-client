@@ -31,6 +31,6 @@ public abstract class Drawable extends GAttrib {
 	super(gob);
     }
 	
-    public abstract boolean checkhit(Coord c);
-    public abstract void setup(Sprite.Drawer d, Coord cc, Coord off);
+    public abstract void setup(RenderList rl);
+    public abstract Resource.Neg getneg();
 }

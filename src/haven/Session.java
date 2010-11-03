@@ -228,10 +228,7 @@ public class Session {
 			    Coord off = msg.coord();
 			    String text = msg.string();
 			    oc.speak(id, frame, off, text);
-			} else if((type == OD_LAYERS) || (type == OD_AVATAR)) {
-			    Indir<Resource> baseres = null;
-			    if(type == OD_LAYERS)
-				baseres = getres(msg.uint16());
+			} else if(type == OD_AVATAR) {
 			    List<Indir<Resource>> layers = new LinkedList<Indir<Resource>>();
 			    while(true) {
 				int layer = msg.uint16();
@@ -239,10 +236,7 @@ public class Session {
 				    break;
 				layers.add(getres(layer));
 			    }
-			    if(type == OD_LAYERS)
-				oc.layers(id, frame, baseres, layers);
-			    else
-				oc.avatar(id, frame, layers);
+			    oc.avatar(id, frame, layers);
 			} else if(type == OD_DRAWOFF) {
 			    Coord off = msg.coord();
 			    oc.drawoff(id, frame, off);

@@ -51,17 +51,10 @@ public class ResDrawable extends Drawable {
 	spr = Sprite.create(gob, res.get(), sdt.clone());
     }
 	
-    public boolean checkhit(Coord c) {
+    public void setup(RenderList rl) {
 	init();
 	if(spr != null)
-	    return(spr.checkhit(c));
-	return(false);
-    }
-	
-    public void setup(Sprite.Drawer d, Coord cc, Coord off) {
-	init();
-	if(spr != null)
-	    spr.setup(d, cc, off);
+	    spr.setup(rl);
     }
 	
     public void ctick(int dt) {
@@ -71,5 +64,12 @@ public class ResDrawable extends Drawable {
 	    spr.tick(delay + dt);
 	    delay = 0;
 	}
+    }
+    
+    public Resource.Neg getneg() {
+	Resource r = res.get();
+	if(r == null)
+	    return(null);
+	return(r.layer(Resource.negc));
     }
 }

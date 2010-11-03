@@ -263,7 +263,6 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	    Runtime rt = Runtime.getRuntime();
 	    long free = rt.freeMemory(), total = rt.totalMemory();
 	    g.atext(String.format("Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory()), new Coord(10, 500), 0, 1);
-	    g.atext(String.format("LCache: %d/%d", Layered.cache.size(), Layered.cache.cached()), new Coord(10, 485), 0, 1);
 	    g.atext(String.format("RT-current: %d", TexRT.current.get(gl).size()), new Coord(10, 470), 0, 1);
 	    if(Resource.qdepth() > 0)
 		g.atext(String.format("RQ depth: %d (%d)", Resource.qdepth(), Resource.numloaded()), new Coord(10, 455), 0, 1);

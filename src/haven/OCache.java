@@ -167,18 +167,6 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 	
-    public synchronized void layers(int id, int frame, Indir<Resource> base, List<Indir<Resource>> layers) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
-	Layered lay = (Layered)g.getattr(Drawable.class);
-	if((lay == null) || (lay.base != base)) {
-	    lay = new Layered(g, base);
-	    g.setattr(lay);
-	}
-	lay.setlayers(layers);
-    }
-	
     public synchronized void avatar(int id, int frame, List<Indir<Resource>> layers) {
 	Gob g = getgob(id, frame);
 	if(g == null)
