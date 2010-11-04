@@ -194,15 +194,20 @@ public class MapView extends PView {
 	}
     }
 
-    protected void render(GOut g) {
-	Coord mapcl = null;
-	if(clickc != null)
-	    mapcl = checkmapclick(g, clickc);
-	super.render(g);
-	if(mapcl != null) {
-	    wdgmsg("click", clickc, mapcl, clickb, ui.modflags());
+    private void checkclick(GOut g) {
+	Coord clickc = this.clickc;
+	this.clickc = null;
+	if(clickc != null) {
+	    Coord mapcl = checkmapclick(g, clickc);
+	    if(mapcl != null) {
+		wdgmsg("click", clickc, mapcl, clickb, ui.modflags());
+	    }
 	}
-	clickc = null;
+    }
+
+    protected void render(GOut g) {
+	checkclick(g);
+	super.render(g);
     }
 
     public void draw(GOut g) {
