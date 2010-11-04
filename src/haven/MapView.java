@@ -38,7 +38,7 @@ public class MapView extends PView {
     public int plgob = -1;
     public Coord cc;
     private final Glob glob;
-    private float dist = 500.0f;
+    private float dist = 50.0f;
     private float elev = (float)Math.PI / 4.0f;
     private float angl = 0.0f;
     private int view = 1;
