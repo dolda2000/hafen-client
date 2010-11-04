@@ -29,7 +29,7 @@ package haven;
 import java.nio.*;
 import javax.media.opengl.*;
 
-public class FastMesh implements Rendered {
+public class FastMesh implements FRendered {
     public final VertexBuf vert;
     public final ShortBuffer indb;
     public final int num;
@@ -77,7 +77,12 @@ public class FastMesh implements Rendered {
 
     public void draw(GOut g) {
 	GL gl = g.gl;
-	gl.glColor3f(1.0f, 1.0f, 1.0f);
+	cdraw(gl);
+	GOut.checkerr(gl);
+    }
+    
+    public void drawflat(GOut g) {
+	GL gl = g.gl;
 	cdraw(gl);
 	GOut.checkerr(gl);
     }

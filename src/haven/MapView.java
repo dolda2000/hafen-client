@@ -144,69 +144,91 @@ public class MapView extends PView {
     }
 
     private Coord checkmapclick(GOut g, Coord c) {
-	GL gl = g.gl;
-	try {
-	    g.texsel(-1);
-	    RenderList rl = new RenderList();
-	    setupmap(rl);
-	    Rendered hit;
-	    {
-		Clicklist cl = new Clicklist();
-		renderlist(g, rl, cl);
-		hit = cl.get(g, c);
-		if((hit == null) || !(hit instanceof MapMesh))
-		    return(null);
-	    }
-	    final MapMesh mesh = (MapMesh)hit;
-	    Coord tile;
-	    {
-		renderlist(g, rl, new Renderer() {
-			public void render(GOut g, Rendered r) {
-			    if(r == mesh) {
-				mesh.clickmode = 1;
-				mesh.drawflat(g);
-			    }
-			}
-		    });
-		Color hitcol = g.getpixel(c);
-		tile = new Coord(hitcol.getRed() - 1, hitcol.getGreen() - 1);
-		if(!tile.isect(Coord.z, mesh.sz))
-		    return(null);
-	    }
-	    Coord pixel;
-	    {
-		renderlist(g, rl, new Renderer() {
-			public void render(GOut g, Rendered r) {
-			    if(r == mesh) {
-				mesh.clickmode = 2;
-				mesh.drawflat(g);
-			    }
-			}
-		    });
-		Color hitcol = g.getpixel(c);
-		if(hitcol.getBlue() != 0)
-		    return(null);
-		pixel = new Coord((hitcol.getRed() * tilesz.x) / 255, (hitcol.getGreen() * tilesz.y) / 255);
-	    }
-	    return(mesh.ul.add(tile).mul(tilesz).add(pixel));
-	} finally {
-	    gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
+	g.texsel(-1);
+	RenderList rl = new RenderList();
+	setupmap(rl);
+	Rendered hit;
+	{
+	    Clicklist cl = new Clicklist();
+	    renderlist(g, rl, cl);
+	    hit = cl.get(g, c);
+	    if((hit == null) || !(hit instanceof MapMesh))
+		return(null);
 	}
+	final MapMesh mesh = (MapMesh)hit;
+	Coord tile;
+	{
+	    renderlist(g, rl, new Renderer() {
+		    public void render(GOut g, Rendered r) {
+			if(r == mesh) {
+			    mesh.clickmode = 1;
+			    mesh.drawflat(g);
+			}
+		    }
+		});
+	    Color hitcol = g.getpixel(c);
+	    tile = new Coord(hitcol.getRed() - 1, hitcol.getGreen() - 1);
+	    if(!tile.isect(Coord.z, mesh.sz))
+		return(null);
+	}
+	Coord pixel;
+	{
+	    renderlist(g, rl, new Renderer() {
+		    public void render(GOut g, Rendered r) {
+			if(r == mesh) {
+			    mesh.clickmode = 2;
+			    mesh.drawflat(g);
+			}
+		    }
+		});
+	    Color hitcol = g.getpixel(c);
+	    if(hitcol.getBlue() != 0)
+		return(null);
+	    pixel = new Coord((hitcol.getRed() * tilesz.x) / 255, (hitcol.getGreen() * tilesz.y) / 255);
+	}
+	return(mesh.ul.add(tile).mul(tilesz).add(pixel));
+    }
+    
+    private Gob checkgobclick(GOut g, Coord c) {
+	final Map<Rendered, Gob> gobmap = new IdentityHashMap<Rendered, Gob>();
+	RenderList rl = new RenderList() {
+		Gob cur;
+		public void add(Rendered r, Transform t) {
+		    if(r instanceof Gob)
+			cur = (Gob)r;
+		    gobmap.put(r, cur);
+		    super.add(r, t);
+		}
+	    };
+	setupgobs(rl);
+	Clicklist cl = new Clicklist();
+	renderlist(g, rl, cl);
+	Rendered hr = cl.get(g, c);
+	if(hr == null)
+	    return(null);
+	return(gobmap.get(hr));
     }
 
-    private void checkclick(GOut g) {
-	Coord clickc = this.clickc;
-	this.clickc = null;
-	if(clickc != null) {
-	    Coord mapcl = checkmapclick(g, clickc);
-	    if(mapcl != null) {
+    private void checkclick(GOut g, Coord clickc) {
+	GL gl = g.gl;
+	Coord mapcl = checkmapclick(g, clickc);
+	gl.glClear(GL.GL_COLOR_BUFFER_BIT);
+	Gob gobcl = checkgobclick(g, clickc);
+	gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
+	gl.glColor3f(1.0f, 1.0f, 1.0f);
+	if(mapcl != null) {
+	    if(gobcl == null)
 		wdgmsg("click", clickc, mapcl, clickb, ui.modflags());
-	    }
+	    else
+		wdgmsg("click", clickc, mapcl, clickb, ui.modflags(), gobcl.id, gobcl.rc);
 	}
     }
 
     protected void render(GOut g) {
-	checkclick(g);
+	Coord clickc = this.clickc;
+	this.clickc = null;
+	if(clickc != null)
+	    checkclick(g, clickc);
 	super.render(g);
     }
 

@@ -42,13 +42,18 @@ public class StaticSprite extends Sprite {
 	Collection<Rendered> rl = new LinkedList<Rendered>();
 	for(final FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if(mr.mat != null) {
-		rl.add(new Rendered() {
+		rl.add(new FRendered() {
 			FastMesh m = mr.m;
 			Material mat = mr.mat;
 			
 			public void draw(GOut g) {
 			    g.matsel(mat);
 			    m.draw(g);
+			}
+			
+			public void drawflat(GOut g) {
+			    g.matsel(null);
+			    m.drawflat(g);
 			}
 			
 			public boolean setup(RenderList l) {
