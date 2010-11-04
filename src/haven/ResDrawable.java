@@ -59,7 +59,7 @@ public class ResDrawable extends Drawable {
 	    if((MapView.lighting == 2) && res.get().name.equals("gfx/borka/body")) {
 		Color amb = new Color(128, 64, 0);
 		Color col = new Color(255, 224, 192);
-		PosLight spot = new PosLight(amb, col, Color.WHITE, new Coord3f(2.0f, 0.0f, 4.5f));
+		PosLight spot = new PosLight(amb, col, Color.WHITE, new Coord3f(0.0f, 4.0f, 15.0f));
 		spot.att(1.0f, 0.5f / 55.0f, 1.0f / 5500.0f);
 		rl.add(spot);
 	    }
