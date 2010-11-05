@@ -38,19 +38,56 @@ public class MapView extends PView {
     public int plgob = -1;
     public Coord cc;
     private final Glob glob;
-    private float dist = 50.0f;
-    private float elev = (float)Math.PI / 4.0f;
-    private float angl = 0.0f;
     private int view = 1;
     private Coord clickc = null;
     private int clickb;
     public static int lighting = 0;
     
-    private class Camera extends Transform {
+    private abstract class Camera extends Transform {
+	public boolean click(Coord sc) {
+	    return(false);
+	}
+	public void drag(Coord sc) {}
+	public void release() {}
+	public boolean wheel(Coord sc, int amount) {
+	    return(false);
+	}
+    }
+    
+    private class FreeCam extends Camera {
+	private float dist = 50.0f;
+	private float elev = (float)Math.PI / 4.0f;
+	private float angl = 0.0f;
+	private Coord dragorig = null;
+	private float elevorig, anglorig;
+
 	public void apply(GOut g) {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
 	    PointedCam.apply(g.gl, cc.add(0.0f, 0.0f, 3.0f), dist, elev, angl);
+	}
+	
+	public boolean click(Coord c) {
+	    elevorig = elev;
+	    anglorig = angl;
+	    dragorig = c;
+	    return(true);
+	}
+	
+	public void drag(Coord c) {
+	    elev = elevorig - ((float)(c.y - dragorig.y) / 100.0f);
+	    if(elev < 0.0f) elev = 0.0f;
+	    if(elev > (Math.PI / 2.0)) elev = (float)Math.PI / 2.0f;
+	    angl = anglorig + ((float)(c.x - dragorig.x) / 100.0f);
+	    angl = angl % ((float)Math.PI * 2.0f);
+	}
+
+	public boolean wheel(Coord c, int amount) {
+	    float d = dist + (amount * 5);
+	    if(d < 5)
+		d = 5;
+	    dist = d;
+	    return(true);
 	}
     }
     
@@ -72,7 +109,7 @@ public class MapView extends PView {
 	glob = ui.sess.glob;
 	this.cc = cc;
 	this.plgob = plgob;
- 	camera = new Camera();
+ 	camera = new FreeCam();
     }
     
     private void setupmap(RenderList rl) {
@@ -245,14 +282,14 @@ public class MapView extends PView {
 	}
     }
     
-    private Coord dragorig = null;
-    private float elevorig, anglorig;
+    private boolean camdrag = false;
     
     public boolean mousedown(Coord c, int button) {
 	if(button == 2) {
-	    elevorig = elev;
-	    anglorig = angl;
-	    dragorig = c;
+	    if(((Camera)camera).click(c)) {
+		ui.grabmouse(this);
+		camdrag = true;
+	    }
 	} else {
 	    clickb = button;
 	    clickc = c;
@@ -261,30 +298,26 @@ public class MapView extends PView {
     }
     
     public void mousemove(Coord c) {
-	if(dragorig != null) {
-	    elev = elevorig - ((float)(c.y - dragorig.y) / 100.0f);
-	    if(elev < 0.0f) elev = 0.0f;
-	    if(elev > (Math.PI / 2.0)) elev = (float)Math.PI / 2.0f;
-	    angl = anglorig + ((float)(c.x - dragorig.x) / 100.0f);
-	    angl = angl % ((float)Math.PI * 2.0f);
+	if(camdrag) {
+	    ((Camera)camera).drag(c);
 	}
     }
     
     public boolean mouseup(Coord c, int button) {
 	if(button == 2) {
-	    dragorig = null;
+	    if(camdrag) {
+		((Camera)camera).release();
+		ui.grabmouse(null);
+		camdrag = false;
+	    }
 	}
 	return(true);
     }
 
     public boolean mousewheel(Coord c, int amount) {
-	float d = dist + (amount * 5);
-	if(d < 5)
-	    d = 5;
-	dist = d;
-	return(true);
+	return(((Camera)camera).wheel(c, amount));
     }
-    
+
     public boolean globtype(char c, java.awt.event.KeyEvent ev) {
 	/*
 	if(c >= '1' && c <= '9') {
