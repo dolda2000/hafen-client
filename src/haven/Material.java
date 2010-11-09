@@ -59,6 +59,44 @@ public class Material {
 	this.emi = c2fa(emi);
     }
     
+    private class Wrapping implements Rendered {
+	private final Rendered r;
+	
+	private Wrapping(Rendered r) {
+	    this.r = r;
+	}
+	
+	public void draw(GOut g) {
+	    g.matsel(Material.this);
+	    r.draw(g);
+	}
+
+	public boolean setup(RenderList rl) {
+	    return(r.setup(rl));
+	}
+    }
+    
+    private class FWrapping extends Wrapping implements FRendered {
+	private final FRendered f; /* :-P */
+
+	private FWrapping(FRendered r) {
+	    super(r);
+	    this.f = r;
+	}
+	
+	public void drawflat(GOut g) {
+	    g.matsel(null);
+	    f.drawflat(g);
+	}
+    }
+
+    public Rendered apply(Rendered r) {
+	if(r instanceof FRendered)
+	    return(new FWrapping((FRendered)r));
+	else
+	    return(new Wrapping(r));
+    }
+    
     public static class Res extends Resource.Layer {
 	public final int id;
 	public final transient Material m;
