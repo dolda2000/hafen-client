@@ -140,9 +140,11 @@ public abstract class PView extends Widget {
 	gl.glMatrixMode(gl.GL_PROJECTION);
 	gl.glPushMatrix();
 	gl.glLoadIdentity();
+	gl.glAlphaFunc(gl.GL_GREATER, 0.5f);
 	gl.glEnable(gl.GL_DEPTH_TEST);
 	gl.glEnable(gl.GL_CULL_FACE);
 	gl.glEnable(gl.GL_SCISSOR_TEST);
+	gl.glEnable(gl.GL_ALPHA_TEST);
 	gl.glClearDepth(1.0);
 	gl.glDepthFunc(gl.GL_LEQUAL);
 	gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
@@ -161,6 +163,7 @@ public abstract class PView extends Widget {
 	    gl.glDisable(gl.GL_DEPTH_TEST);
 	    gl.glDisable(gl.GL_CULL_FACE);
 	    gl.glDisable(gl.GL_SCISSOR_TEST);
+	    gl.glDisable(gl.GL_ALPHA_TEST);
 	    gl.glViewport(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
 	    gl.glScissor(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
 	}

@@ -33,6 +33,7 @@ public class Material {
     public float[] amb, dif, spc, emi;
     public float shine;
     public Tex tex;
+    public boolean facecull = true;
     
     public Material() {
 	amb = new float[] {0.2f, 0.2f, 0.2f, 1.0f};
@@ -74,19 +75,24 @@ public class Material {
 	public Res(Resource res, byte[] buf) {
 	    res.super();
 	    id = Utils.uint16d(buf, 0);
-	    int t = buf[2];
-	    Color amb = col(buf, 3);
-	    Color dif = col(buf, 23);
-	    Color spc = col(buf, 43);
-	    double shine = Utils.floatd(buf, 63);
-	    Color emi = col(buf, 68);
-	    this.m = new Material(amb, dif, spc, emi, (float)shine);
-	    if(t == 1) {
-	    } else if(t == 2) {
-		texid = Utils.uint16d(buf, 88);
+	    int fl = buf[2];
+	    int off = 3;
+	    if((fl & 1) != 0) {
+		Color amb = col(buf, off); off += 20;
+		Color dif = col(buf, off); off += 20;
+		Color spc = col(buf, off); off += 20;
+		double shine = Utils.floatd(buf, off); off += 5;
+		Color emi = col(buf, off); off += 20;
+		this.m = new Material(amb, dif, spc, emi, (float)shine);
 	    } else {
-		throw(new Resource.LoadException("Unknown material type: " + t, getres()));
+		this.m = new Material();
 	    }
+	    if((fl & 2) != 0)
+		texid = Utils.uint16d(buf, off); off += 2;
+	    if((fl & 4) != 0)
+		this.m.facecull = false;
+	    if((fl & ~7) != 0)
+		throw(new Resource.LoadException("Unknown material flags: " + fl, getres()));
 	}
 	
 	public void init() {
