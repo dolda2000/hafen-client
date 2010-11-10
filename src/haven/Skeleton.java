@@ -170,7 +170,7 @@ public class Skeleton {
 	     * for performance? */
 	    d0 = 1.0f - t; d1 = t;
 	} else {
-	    float da = (float)Math.acos(cos);
+	    float da = (float)Math.acos(Utils.clip(cos, 0.0, 1.0));
 	    float nf = 1.0f / (float)Math.sin(da);
 	    d0 = (float)Math.sin((1.0f - t) * da) * nf;
 	    d1 = (float)Math.sin(t * da) * nf;
