@@ -27,10 +27,15 @@
 package haven;
 
 import java.nio.*;
+import java.util.*;
 
 public class VertexBuf {
     public final FloatBuffer posb, nrmb, texb;
     public final int num;
+    public int apv = 0;
+    public int[] assbones;
+    public float[] assweights;
+    public String[] bones;
     
     public VertexBuf(float[] pos, float[] nrm, float[] tex) {
 	if((pos == null) || (nrm == null))
@@ -56,7 +61,10 @@ public class VertexBuf {
 	
 	public VertexRes(Resource res, byte[] buf) {
 	    res.super();
-	    float[] pos = null, nrm = null, tex = null;
+	    float[] pos = null, nrm = null, tex = null, bw = null;
+	    int mba = 0;
+	    int[] ba = null;
+	    String[] bn = null;
 	    int fl = Utils.ub(buf[0]);
 	    int num = Utils.uint16d(buf, 1);
 	    int off = 3;
@@ -83,9 +91,49 @@ public class VertexBuf {
 		    for(int i = 0; i < num * 2; i++)
 			tex[i] = (float)Utils.floatd(buf, off + (i * 5));
 		    off += num * 5 * 2;
+		} else if(id == 3) {
+		    if(ba != null)
+			throw(new Resource.LoadException("Duplicate vertex bone information", getres()));
+		    mba = Utils.ub(buf[off++]);
+		    ba = new int[num * mba];
+		    bw = new float[num * mba];
+		    int[] na = new int[num];
+		    List<String> bones = new ArrayList<String>();
+		    while(true) {
+			int[] ob = {off};
+			String bone = Utils.strd(buf, ob);
+			off = ob[0];
+			if(bone.length() == 0)
+			    break;
+			int bidx = bones.size();
+			bones.add(bone);
+			while(true) {
+			    int run = Utils.uint16d(buf, off); off += 2;
+			    int st = Utils.uint16d(buf, off); off += 2;
+			    if(run == 0)
+				break;
+			    for(int i = 0; i < run; i++) {
+				float w = (float)Utils.floatd(buf, off);
+				off += 5;
+				int v = i + st;
+				int cna = na[v]++;
+				if(cna >= mba)
+				    continue;
+				bw[v * mba + cna] = w;
+				ba[v * mba + cna] = bidx;
+			    }
+			}
+		    }
+		    bn = bones.toArray(new String[0]);
 		}
 	    }
 	    this.b = new VertexBuf(pos, nrm, tex);
+	    if(ba != null) {
+		this.b.apv = mba;
+		this.b.assbones = ba;
+		this.b.assweights = bw;
+		this.b.bones = bn;
+	    }
 	}
 	
 	public void init() {}
