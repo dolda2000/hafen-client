@@ -28,28 +28,53 @@ package haven;
 
 import java.util.*;
 
-public class StaticSprite extends Sprite {
+public class SkelSprite extends Sprite {
+    private final Skeleton skel;
+    private Skeleton.Pose pose;
     private final Rendered[] parts;
     
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
-		return(new StaticSprite(owner, res, sdt));
+		if(res.layer(Skeleton.Res.class) == null)
+		    return(null);
+		return(new SkelSprite(owner, res, sdt));
 	    }
 	};
     
-    public StaticSprite(Owner owner, Resource res, Message sdt) {
+    private Skeleton.Bone modb = null;
+    private Skeleton.PoseMod mod = null;
+    private SkelSprite(Owner owner, Resource res, Message sdt) {
 	super(owner, res);
+	skel = res.layer(Skeleton.Res.class).s;
+	pose = skel.new Pose(skel.bindpose);
 	Collection<Rendered> rl = new LinkedList<Rendered>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if(mr.mat != null)
-		rl.add(mr.mat.apply(mr.m));
+		rl.add(mr.mat.apply(new MorphedMesh(mr.m, pose)));
 	}
 	this.parts = rl.toArray(new Rendered[0]);
+	
+	modb = skel.bones.get("Bone.013_R.002");
+	mod = skel.new PoseMod();
     }
     
-    public boolean setup(RenderList r) {
+    public boolean setup(RenderList rl) {
 	for(Rendered p : parts)
-	    r.add(p, null);
+	    rl.add(p, null);
+	rl.add(pose.debug, null);
+	return(false);
+    }
+    
+    double at = 0.0;
+    public boolean tick(int dt) {
+	if(modb != null) {
+	    at += dt / 1000.0;
+	    mod.reset();
+	    mod.rot(modb.idx, (float)Math.sin(at * 5.0) * 0.2f, 1f, 0f, 0f);
+	    pose.reset();
+	    mod.apply(pose);
+	    pose.gbuild();
+	}
 	return(false);
     }
 }

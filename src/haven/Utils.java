@@ -595,7 +595,7 @@ public class Utils {
     
     /* Just in case anyone doubted that Java is stupid. :-/ */
     public static FloatBuffer bufcp(float[] a) {
-	FloatBuffer b = ByteBuffer.allocateDirect(a.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+	FloatBuffer b = mkfbuf(a.length);
 	b.put(a);
 	b.rewind();
 	return(b);
@@ -605,6 +605,9 @@ public class Utils {
 	b.put(a);
 	b.rewind();
 	return(b);
+    }
+    public static FloatBuffer mkfbuf(int n) {
+	return(ByteBuffer.allocateDirect(n * 4).order(ByteOrder.nativeOrder()).asFloatBuffer());
     }
 
     public static float[] c2fa(Color c) {

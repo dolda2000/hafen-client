@@ -32,6 +32,7 @@ import java.util.*;
 public class VertexBuf {
     public final FloatBuffer posb, nrmb, texb;
     public final int num;
+    public VertexBuf from = null;
     public int apv = 0;
     public int[] assbones;
     public float[] assweights;
@@ -56,6 +57,37 @@ public class VertexBuf {
 	}
     }
     
+    private static FloatBuffer bufdup(FloatBuffer in) {
+	if(in == null)
+	    return(null);
+	in.rewind();
+	FloatBuffer ret = Utils.mkfbuf(in.remaining());
+	ret.put(in);
+	ret.rewind();
+	return(ret);
+    }
+
+    public VertexBuf(VertexBuf from, boolean posk, boolean nrmk, boolean texk) {
+	this.from = from;
+	if(posk)
+	    this.posb = from.posb;
+	else
+	    this.posb = bufdup(from.posb);
+	if(nrmk)
+	    this.nrmb = from.nrmb;
+	else
+	    this.nrmb = bufdup(from.nrmb);
+	if(!texk)
+	    this.texb = from.texb;
+	else
+	    this.texb = bufdup(from.texb);
+	this.num = from.num;
+	this.apv = from.apv;
+	this.assbones = from.assbones;
+	this.assweights = from.assweights;
+	this.bones = from.bones;
+    }
+
     public static class VertexRes extends Resource.Layer {
 	public transient final VertexBuf b;
 	
@@ -96,6 +128,8 @@ public class VertexBuf {
 			throw(new Resource.LoadException("Duplicate vertex bone information", getres()));
 		    mba = Utils.ub(buf[off++]);
 		    ba = new int[num * mba];
+		    for(int i = 0; i < ba.length; i++)
+			ba[i] = -1;
 		    bw = new float[num * mba];
 		    int[] na = new int[num];
 		    List<String> bones = new ArrayList<String>();

@@ -65,7 +65,7 @@ public class Skeleton {
 	    if(!f)
 		throw(new RuntimeException("Cyclical bone hierarchy"));
 	}
-	bindpose = new Pose();
+	bindpose = mkbindpose();
     }
     
     public static class Bone {
@@ -103,12 +103,45 @@ public class Skeleton {
     private static float[] vqrot(float[] d, float[] v, float[] q) {
 	float vx = v[0], vy = v[1], vz = v[2];
 	float qw = q[0], qx = q[1], qy = q[2], qz = q[3];
+	/* I dearly wonder how the JIT's common-subexpression
+	 * eliminator does on these. */
 	d[0] = (qw * qw * vx) + (2 * qw * qy * vz) - (2 * qw * qz * vy) + (qx * qx * vx) +
 	    (2 * qx * qy * vy) + (2 * qx * qz * vz) - (qz * qz * vx) - (qy * qy * vx);
 	d[1] = (2 * qx * qy * vx) + (qy * qy * vy) + (2 * qy * qz * vz) + (2 * qw * qz * vx) -
 	    (qz * qz * vy) + (qw * qw * vy) - (2 * qw * qx * vz) - (qx * qx * vy);
 	d[2] = (2 * qx * qz * vx) + (2 * qy * qz * vy) + (qz * qz * vz) - (2 * qw * qy * vx) -
 	    (qy * qy * vz) + (2 * qw * qx * vy) - (qx * qx * vz) + (qw * qw * vz);
+	return(d);
+    }
+    
+    private static float[] vset(float[] d, float[] s) {
+	d[0] = s[0];
+	d[1] = s[1];
+	d[2] = s[2];
+	return(d);
+    }
+    
+    private static float[] qset(float[] d, float[] s) {
+	d[0] = s[0];
+	d[1] = s[1];
+	d[2] = s[2];
+	d[3] = s[3];
+	return(d);
+    }
+    
+    private static float[] vinv(float[] d, float[] s) {
+	d[0] = -s[0];
+	d[1] = -s[1];
+	d[2] = -s[2];
+	return(d);
+    }
+    
+    private static float[] qinv(float[] d, float[] s) {
+	/* Assumes |s| = 1.0 */
+	d[0] = s[0];
+	d[1] = -s[1];
+	d[2] = -s[2];
+	d[3] = -s[3];
 	return(d);
     }
     
@@ -121,24 +154,47 @@ public class Skeleton {
 	return(d);
     }
 
+    public Pose mkbindpose() {
+	Pose p = new Pose();
+	for(int i = 0; i < blist.length; i++) {
+	    Bone b = blist[i];
+	    p.lpos[i][0] = b.ipos.x; p.lpos[i][1] = b.ipos.y; p.lpos[i][2] = b.ipos.z;
+	    rotasq(p.lrot[i], b.irax.to3a(), b.irang);
+	}
+	p.gbuild();
+	return(p);
+    }
+	
     public class Pose {
 	public float[][] lpos, gpos;
 	public float[][] lrot, grot;
+	private Pose from = null;
+	public int seq = 0;
 	
-	public Pose() {
+	private Pose() {
 	    int nb = blist.length;
 	    lpos = new float[nb][3];
 	    gpos = new float[nb][3];
 	    lrot = new float[nb][4];
 	    grot = new float[nb][4];
-	    for(int i = 0; i < nb; i++) {
-		Bone b = blist[i];
-		lpos[i][0] = b.ipos.x; lpos[i][1] = b.ipos.y; lpos[i][2] = b.ipos.z;
-		rotasq(lrot[i], b.irax.to3a(), b.irang);
-	    }
-	    gbuild();
 	}
 	
+	public Pose(Pose from) {
+	    this();
+	    this.from = from;
+	}
+	
+	public Skeleton skel() {
+	    return(Skeleton.this);
+	}
+	
+	public void reset() {
+	    for(int i = 0; i < blist.length; i++) {
+		vset(lpos[i], from.lpos[i]);
+		qset(lrot[i], from.lrot[i]);
+	    }
+	}
+
 	public void gbuild() {
 	    int nb = blist.length;
 	    for(int i = 0; i < nb; i++) {
@@ -158,6 +214,32 @@ public class Skeleton {
 		    vvadd(gpos[i], gpos[i], gpos[pi]);
 		}
 	    }
+	    seq++;
+	}
+	
+	public void boneoff(int bone, float[] offtrans) {
+	    /* It would be nice if these "new float"s get
+	     * stack-allocated. */
+	    float[] rot = new float[4], xlate = new float[3];
+	    rot = qqmul(rot, grot[bone], qinv(rot, bindpose.grot[bone]));
+	    xlate = vvadd(xlate, gpos[bone], vqrot(xlate, vinv(xlate, bindpose.gpos[bone]), rot));
+	    offtrans[3] = 0; offtrans[7] = 0; offtrans[11] = 0; offtrans[15] = 1;
+	    offtrans[12] = xlate[0]; offtrans[13] = xlate[1]; offtrans[14] = xlate[2];
+	    /* I must admit I don't /quite/ understand why the
+	     * rotation needs to be inverted... */
+	    float w = -rot[0], x = rot[1], y = rot[2], z = rot[3];
+	    float xw = x * w * 2, xx = x * x * 2, xy = x * y * 2, xz = x * z * 2;
+	    float yw = y * w * 2, yy = y * y * 2, yz = y * z * 2;
+	    float zw = z * w * 2, zz = z * z * 2;
+	    offtrans[ 0] = 1 - (yy + zz);
+	    offtrans[ 5] = 1 - (xx + zz);
+	    offtrans[10] = 1 - (xx + yy);
+	    offtrans[ 1] = xy - zw;
+	    offtrans[ 2] = xz + yw;
+	    offtrans[ 4] = xy + zw;
+	    offtrans[ 6] = yz - xw;
+	    offtrans[ 8] = xz - yw;
+	    offtrans[ 9] = yz + xw;
 	}
 	
 	public final Rendered debug = new Rendered() {
@@ -185,6 +267,37 @@ public class Skeleton {
 		    return(true);
 		}
 	    };
+    }
+    
+    public class PoseMod {
+	public float[][] lpos, lrot;
+	
+	public PoseMod() {
+	    int nb = blist.length;
+	    lpos = new float[nb][3];
+	    lrot = new float[nb][4];
+	    for(int i = 0; i < nb; i++)
+		lrot[i][0] = 1;
+	}
+	
+	public void reset() {
+	    for(int i = 0; i < blist.length; i++) {
+		lpos[i][0] = 0; lpos[i][1] = 0; lpos[i][2] = 0;
+		lrot[i][0] = 1; lrot[i][1] = 0; lrot[i][2] = 0; lrot[i][3] = 0;
+	    }
+	}
+	
+	public void rot(int bone, float ang, float ax, float ay, float az) {
+	    float[] x = {ax, ay, az};
+	    qqmul(lrot[bone], lrot[bone], rotasq(new float[4], x, ang));
+	}
+
+	public void apply(Pose p) {
+	    for(int i = 0; i < blist.length; i++) {
+		vvadd(p.lpos[i], p.lpos[i], lpos[i]);
+		qqmul(p.lrot[i], p.lrot[i], lrot[i]);
+	    }
+	}
     }
     
     public static class Res extends Resource.Layer {

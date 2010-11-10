@@ -33,6 +33,7 @@ public class FastMesh implements FRendered {
     public final VertexBuf vert;
     public final ShortBuffer indb;
     public final int num;
+    public FastMesh from;
     
     public FastMesh(VertexBuf vert, short[] ind) {
 	this.vert = vert;
@@ -40,6 +41,15 @@ public class FastMesh implements FRendered {
 	if(ind.length != num * 3)
 	    throw(new RuntimeException("Invalid index array length"));
 	indb = Utils.bufcp(ind);
+    }
+
+    public FastMesh(FastMesh from, VertexBuf vert) {
+	this.from = from;
+	if(from.vert.num != vert.num)
+	    throw(new RuntimeException("V-buf sizes must match"));
+	this.vert = vert;
+	this.indb = from.indb;
+	this.num = from.num;
     }
 
     public void sdraw(GL gl) {
@@ -74,7 +84,7 @@ public class FastMesh implements FRendered {
 	gl.glDisableClientState(GL.GL_NORMAL_ARRAY);
 	gl.glDisableClientState(GL.GL_TEXTURE_COORD_ARRAY);
     }
-
+    
     public void draw(GOut g) {
 	GL gl = g.gl;
 	cdraw(gl);
@@ -89,6 +99,35 @@ public class FastMesh implements FRendered {
     
     public boolean setup(RenderList r) {
 	return(true);
+    }
+    
+    public boolean boned() {
+	if(vert.apv == 0)
+	    return(false);
+	for(int i = 0; i < num; i++) {
+	    if(vert.assbones[indb.get(i) * vert.apv] != -1)
+		return(true);
+	}
+	return(false);
+    }
+
+    public String boneidp() {
+	int retb = -1;
+	for(int i = 0; i < num; i++) {
+	    int vi = indb.get(i) * vert.apv;
+	    int curb = vert.assbones[vi];
+	    if(curb == -1)
+		return(null);
+	    if(retb == -1)
+		retb = curb;
+	    else if(retb != curb)
+		return(null);
+	    if(vert.assweights[vi] != 1.0f)
+		return(null);
+	    if((vert.apv != 1) && (vert.assbones[vi + 1] != -1))
+		return(null);
+	}
+	return(vert.bones[retb]);
     }
     
     public static class MeshRes extends Resource.Layer {
