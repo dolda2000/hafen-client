@@ -153,6 +153,34 @@ public class Skeleton {
 	d[2] = az + bz;
 	return(d);
     }
+    
+    private static float[] qqslerp(float[] d, float[] a, float[] b, float t) {
+	float aw = a[0], ax = a[1], ay = a[2], az = a[3];
+	float bw = b[0], bx = b[1], by = b[2], bz = b[3];
+	if((aw == bw) && (ax == bx) && (ay == by) && (az == bz))
+	    return(qset(d, a));
+	float cos = (aw * bw) + (ax * bx) + (ay * by) + (az * bz);
+	if(cos < 0) {
+	    bw = -bw; bx = -bx; by = -by; bz = -bz;
+	    cos = -cos;
+	}
+	float d0, d1;
+	if(cos > 0.9f) {
+	    /* Reasonable threshold? Is this function even critical
+	     * for performance? */
+	    d0 = 1.0f - t; d1 = t;
+	} else {
+	    float da = (float)Math.acos(cos);
+	    float nf = 1.0f / (float)Math.sin(da);
+	    d0 = (float)Math.sin((1.0f - t) * da) * nf;
+	    d1 = (float)Math.sin(t * da) * nf;
+	}
+	d[0] = (d0 * aw) + (d1 * bw);
+	d[1] = (d0 * ax) + (d1 * bx);
+	d[2] = (d0 * ay) + (d1 * by);
+	d[3] = (d0 * az) + (d1 * bz);
+	return(d);
+    }
 
     public Pose mkbindpose() {
 	Pose p = new Pose();
