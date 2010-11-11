@@ -89,7 +89,7 @@ public class SkelSprite extends Sprite {
     public boolean setup(RenderList rl) {
 	for(Rendered p : parts)
 	    rl.add(p, null);
-	rl.add(pose.debug, null);
+	/* rl.add(pose.debug, null); */
 	return(false);
     }
     
