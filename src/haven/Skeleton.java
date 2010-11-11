@@ -210,6 +210,8 @@ public class Skeleton {
 	public Pose(Pose from) {
 	    this();
 	    this.from = from;
+	    reset();
+	    gbuild();
 	}
 	
 	public Skeleton skel() {
@@ -360,6 +362,128 @@ public class Skeleton {
 		}
 	    }
 	    s = new Skeleton(bones.values());
+	}
+	
+	public void init() {}
+    }
+    
+    public class TrackMod extends PoseMod {
+	public final Track[] tracks;
+	public final float len;
+	public final boolean stat;
+	public float time = 0.0f;
+	
+	public TrackMod(Track[] tracks, float len) {
+	    this.tracks = tracks;
+	    this.len = len;
+	    for(Track t : tracks) {
+		if((t != null) && (t.frames.length > 1)) {
+		    stat = false;
+		    return;
+		}
+	    }
+	    stat = true;
+	    aupdate(0.0f);
+	}
+	
+	public void aupdate(float time) {
+	    if(time > len)
+		time = len;
+	    this.time = time;
+	    reset();
+	    for(int i = 0; i < tracks.length; i++) {
+		Track t = tracks[i];
+		if((t == null) || (t.frames.length == 0))
+		    continue;
+		Track.Frame cf, nf;
+		int l = 0, r = t.frames.length;
+		while(true) {
+		    /* c should never be able to be >= frames.length */
+		    int c = l + ((r - l) >> 1);
+		    float ct = t.frames[c].time;
+		    float nt = (c < t.frames.length - 1)?(t.frames[c + 1].time):len;
+		    if(ct > time) {
+			r = c;
+		    } else if(nt < time) {
+			l = c + 1;
+		    } else {
+			cf = t.frames[c];
+			nf = t.frames[(c + 1) % t.frames.length];
+			break;
+		    }
+		}
+		float d = (time - cf.time) / (nf.time - cf.time);
+		qqslerp(lrot[i], cf.rot, nf.rot, d);
+		lpos[i][0] = cf.trans[0] + ((nf.trans[0] - cf.trans[0]) * d);
+		lpos[i][1] = cf.trans[1] + ((nf.trans[1] - cf.trans[1]) * d);
+		lpos[i][2] = cf.trans[2] + ((nf.trans[2] - cf.trans[2]) * d);
+	    }
+	}
+	
+	public void update(float dt) {
+	    if(stat)
+		return;
+	    aupdate((time + dt) % len);
+	}
+    }
+
+    public static class Track {
+	public final String bone;
+	public final Frame[] frames;
+	    
+	public static class Frame {
+	    public final float time;
+	    public final float[] trans, rot;
+		
+	    public Frame(float time, float[] trans, float[] rot) {
+		this.time = time;
+		this.trans = trans;
+		this.rot = rot;
+	    }
+	}
+	    
+	public Track(String bone, Frame[] frames) {
+	    this.bone = bone;
+	    this.frames = frames;
+	}
+    }
+    public static class ResPose extends Resource.Layer {
+	public final int id;
+	public final float len;
+	public final Track[] tracks;
+	
+	public ResPose(Resource res, byte[] buf) {
+	    res.super();
+	    this.id = Utils.int16d(buf, 0);
+	    this.len = (float)Utils.floatd(buf, 2);
+	    int[] off = {7};
+	    Collection<Track> tracks = new LinkedList<Track>();
+	    while(off[0] < buf.length) {
+		String bnm = Utils.strd(buf, off);
+		Track.Frame[] frames = new Track.Frame[Utils.uint16d(buf, off[0])]; off[0] += 2;
+		for(int i = 0; i < frames.length; i++) {
+		    float tm = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    float[] trans = new float[3];
+		    for(int o = 0; o < 3; o++) {
+			trans[o] = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    }
+		    float rang = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    float[] rax = new float[3];
+		    for(int o = 0; o < 3; o++) {
+			rax[o] = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    }
+		    frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang));
+		}
+		tracks.add(new Track(bnm, frames));
+	    }
+	    this.tracks = tracks.toArray(new Track[0]);
+	}
+	
+	public TrackMod forskel(Skeleton skel) {
+	    Track[] remap = new Track[skel.blist.length];
+	    for(Track t : tracks)
+		remap[skel.bones.get(t.bone).idx] = t;
+	    return(skel.new TrackMod(remap, len));
 	}
 	
 	public void init() {}

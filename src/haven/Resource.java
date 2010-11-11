@@ -58,6 +58,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	ltypes.put("mesh", FastMesh.MeshRes.class);
 	ltypes.put("mat", Material.Res.class);
 	ltypes.put("skel", Skeleton.Res.class);
+	ltypes.put("skan", Skeleton.ResPose.class);
     }
 
     static {
