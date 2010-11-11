@@ -395,28 +395,33 @@ public class Skeleton {
 		Track t = tracks[i];
 		if((t == null) || (t.frames.length == 0))
 		    continue;
-		Track.Frame cf, nf;
-		int l = 0, r = t.frames.length;
-		while(true) {
-		    /* c should never be able to be >= frames.length */
-		    int c = l + ((r - l) >> 1);
-		    float ct = t.frames[c].time;
-		    float nt = (c < t.frames.length - 1)?(t.frames[c + 1].time):len;
-		    if(ct > time) {
-			r = c;
-		    } else if(nt < time) {
-			l = c + 1;
-		    } else {
-			cf = t.frames[c];
-			nf = t.frames[(c + 1) % t.frames.length];
-			break;
+		if(t.frames.length == 1) {
+		    qset(lrot[i], t.frames[0].rot);
+		    vset(lpos[i], t.frames[0].trans);
+		} else {
+		    Track.Frame cf, nf;
+		    int l = 0, r = t.frames.length;
+		    while(true) {
+			/* c should never be able to be >= frames.length */
+			int c = l + ((r - l) >> 1);
+			float ct = t.frames[c].time;
+			float nt = (c < t.frames.length - 1)?(t.frames[c + 1].time):len;
+			if(ct > time) {
+			    r = c;
+			} else if(nt < time) {
+			    l = c + 1;
+			} else {
+			    cf = t.frames[c];
+			    nf = t.frames[(c + 1) % t.frames.length];
+			    break;
+			}
 		    }
+		    float d = (time - cf.time) / (nf.time - cf.time);
+		    qqslerp(lrot[i], cf.rot, nf.rot, d);
+		    lpos[i][0] = cf.trans[0] + ((nf.trans[0] - cf.trans[0]) * d);
+		    lpos[i][1] = cf.trans[1] + ((nf.trans[1] - cf.trans[1]) * d);
+		    lpos[i][2] = cf.trans[2] + ((nf.trans[2] - cf.trans[2]) * d);
 		}
-		float d = (time - cf.time) / (nf.time - cf.time);
-		qqslerp(lrot[i], cf.rot, nf.rot, d);
-		lpos[i][0] = cf.trans[0] + ((nf.trans[0] - cf.trans[0]) * d);
-		lpos[i][1] = cf.trans[1] + ((nf.trans[1] - cf.trans[1]) * d);
-		lpos[i][2] = cf.trans[2] + ((nf.trans[2] - cf.trans[2]) * d);
 	    }
 	}
 	
