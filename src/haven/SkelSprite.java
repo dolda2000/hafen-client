@@ -72,14 +72,17 @@ public class SkelSprite extends Sprite {
     private void chposes(int mask) {
 	Collection<TrackMod> poses = new LinkedList<TrackMod>();
 	stat = true;
+	pose.reset();
 	for(Skeleton.ResPose p : res.layers(Skeleton.ResPose.class)) {
 	    if((p.id < 0) || ((mask & (1 << p.id)) != 0)) {
 		TrackMod mod = p.forskel(skel);
 		if(!mod.stat)
 		    stat = false;
 		poses.add(mod);
+		mod.apply(pose);
 	    }
 	}
+	pose.gbuild();
 	this.mods = poses.toArray(this.mods);
     }
     
