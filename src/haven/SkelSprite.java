@@ -27,10 +27,14 @@
 package haven;
 
 import java.util.*;
+import haven.Skeleton.Pose;
+import haven.Skeleton.TrackMod;
 
 public class SkelSprite extends Sprite {
     private final Skeleton skel;
-    private Skeleton.Pose pose;
+    private Pose pose;
+    private TrackMod[] mods = new TrackMod[0];
+    private boolean stat = true;
     private final Rendered[] parts;
     
     public static final Factory fact = new Factory() {
@@ -41,8 +45,17 @@ public class SkelSprite extends Sprite {
 	    }
 	};
     
-    private Skeleton.Bone modb = null;
-    private Skeleton.PoseMod mod = null;
+    public static int decnum(Message sdt) {
+	if(sdt == null)
+	    return(0);
+	int ret = 0, off = 0;
+	while(!sdt.eom()) {
+	    ret |= sdt.uint8() << off;
+	    off += 8;
+	}
+	return(ret);
+    }
+
     private SkelSprite(Owner owner, Resource res, Message sdt) {
 	super(owner, res);
 	skel = res.layer(Skeleton.Res.class).s;
@@ -53,9 +66,21 @@ public class SkelSprite extends Sprite {
 		rl.add(mr.mat.apply(new MorphedMesh(mr.m, pose)));
 	}
 	this.parts = rl.toArray(new Rendered[0]);
-	
-	modb = skel.bones.get("Bone.013_R.002");
-	mod = skel.new PoseMod();
+	chposes(decnum(sdt));
+    }
+    
+    private void chposes(int mask) {
+	Collection<TrackMod> poses = new LinkedList<TrackMod>();
+	stat = true;
+	for(Skeleton.ResPose p : res.layers(Skeleton.ResPose.class)) {
+	    if((p.id < 0) || ((mask & (1 << p.id)) != 0)) {
+		TrackMod mod = p.forskel(skel);
+		if(!mod.stat)
+		    stat = false;
+		poses.add(mod);
+	    }
+	}
+	this.mods = poses.toArray(this.mods);
     }
     
     public boolean setup(RenderList rl) {
@@ -65,14 +90,13 @@ public class SkelSprite extends Sprite {
 	return(false);
     }
     
-    double at = 0.0;
     public boolean tick(int dt) {
-	if(modb != null) {
-	    at += dt / 1000.0;
-	    mod.reset();
-	    mod.rot(modb.idx, (float)Math.sin(at * 5.0) * 0.2f, 1f, 0f, 0f);
+	if(!stat) {
 	    pose.reset();
-	    mod.apply(pose);
+	    for(TrackMod m : mods) {
+		m.update(dt / 1000.0f);
+		m.apply(pose);
+	    }
 	    pose.gbuild();
 	}
 	return(false);
