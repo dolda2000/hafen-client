@@ -40,8 +40,7 @@ public class GOut {
 	
     private static class Shared {
 	int curtex = -1;
-	Material curmat = null;
-	boolean facecull = true;
+	GLState curstate = null;
 	GOut root;
     }
 	
@@ -140,41 +139,22 @@ public class GOut {
 	gl.glVertex2i(c.x + ul.x, c.y + ul.y);
     }
 	
-    private static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
-    private static final float[] defdif = {0.8f, 0.8f, 0.8f, 1.0f};
-    private static final float[] defspc = {0.0f, 0.0f, 0.0f, 1.0f};
-    private static final float[] defemi = {0.0f, 0.0f, 0.0f, 1.0f};
-    public void matsel(Material mat) {
-	if(mat == sh.curmat)
+    public void matsel(GLState ns) {
+	if(ns == sh.curstate)
 	    return;
-	if(mat == null) {
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_AMBIENT, defamb, 0);
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE, defdif, 0);
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_SPECULAR, defspc, 0);
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_EMISSION, defemi, 0);
-	    gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL.GL_SHININESS, 0.0f);
-	    if(!sh.facecull) {
-		gl.glEnable(GL.GL_CULL_FACE);
-		sh.facecull = true;
+	if(sh.curstate != null) {
+	    if(ns == null) {
+		sh.curstate.unapply(this);
+	    } else {
+		if(!ns.applyfrom(this, sh.curstate)) {
+		    sh.curstate.unapply(this);
+		    ns.apply(this);
+		}
 	    }
-	    texsel(-1);
 	} else {
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_AMBIENT, mat.amb, 0);
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE, mat.dif, 0);
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_SPECULAR, mat.spc, 0);
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_EMISSION, mat.emi, 0);
-	    gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL.GL_SHININESS, mat.shine);
-	    if(mat.facecull && !sh.facecull) {
-		gl.glEnable(GL.GL_CULL_FACE);
-		sh.facecull = true;
-	    } else if(!mat.facecull && sh.facecull) {
-		gl.glDisable(GL.GL_CULL_FACE);
-		sh.facecull = false;
-	    }
-	    if(mat.tex != null)
-		mat.tex.select(this);
+	    ns.apply(this);
 	}
-	sh.curmat = mat;
+	sh.curstate = ns;
     }
 
     public void texsel(int id) {

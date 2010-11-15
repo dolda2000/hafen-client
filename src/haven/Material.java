@@ -27,19 +27,24 @@
 package haven;
 
 import java.awt.Color;
+import javax.media.opengl.*;
 import static haven.Utils.c2fa;
 
-public class Material {
+public class Material extends GLState {
     public float[] amb, dif, spc, emi;
     public float shine;
     public Tex tex;
     public boolean facecull = true, mipmap = false;
     
+    private static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
+    private static final float[] defdif = {0.8f, 0.8f, 0.8f, 1.0f};
+    private static final float[] defspc = {0.0f, 0.0f, 0.0f, 1.0f};
+    private static final float[] defemi = {0.0f, 0.0f, 0.0f, 1.0f};
     public Material() {
-	amb = new float[] {0.2f, 0.2f, 0.2f, 1.0f};
-	dif = new float[] {0.8f, 0.8f, 0.8f, 1.0f};
-	spc = new float[] {0.0f, 0.0f, 0.0f, 1.0f};
-	emi = new float[] {0.0f, 0.0f, 0.0f, 1.0f};
+	amb = defamb;
+	dif = defdif;
+	spc = defspc;
+	emi = defemi;
     }
 
     public Material(Color amb, Color dif, Color spc, Color emi, float shine) {
@@ -57,6 +62,45 @@ public class Material {
 	this.dif = c2fa(dif);
 	this.spc = c2fa(spc);
 	this.emi = c2fa(emi);
+    }
+    
+    private void apply(GOut g, Material cur) {
+	GL gl = g.gl;
+	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_AMBIENT, amb, 0);
+	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE, dif, 0);
+	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_SPECULAR, spc, 0);
+	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_EMISSION, emi, 0);
+	gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL.GL_SHININESS, shine);
+	if(!facecull && ((cur == null) || (cur.facecull)))
+	    gl.glDisable(GL.GL_CULL_FACE);
+	else if(facecull && (cur != null) && !cur.facecull)
+	    gl.glEnable(GL.GL_CULL_FACE);
+	if(tex != null)
+	    tex.select(g);
+    }
+
+    public void apply(GOut g) {
+	apply(g, null);
+    }
+    
+    public void unapply(GOut g) {
+	GL gl = g.gl;
+	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_AMBIENT, defamb, 0);
+	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE, defdif, 0);
+	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_SPECULAR, defspc, 0);
+	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_EMISSION, defemi, 0);
+	gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL.GL_SHININESS, 0.0f);
+	if(!facecull)
+	    gl.glEnable(GL.GL_CULL_FACE);
+	g.texsel(-1);
+    }
+    
+    public boolean applyfrom(GOut g, GLState from) {
+	if(from instanceof Material) {
+	    apply(g, (Material)from);
+	    return(true);
+	}
+	return(super.applyfrom(g, from));
     }
     
     private class Wrapping implements Rendered {
