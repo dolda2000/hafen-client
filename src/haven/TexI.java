@@ -58,6 +58,49 @@ public class TexI extends TexGL {
 	GL gl = g.gl;
 	ByteBuffer data = ByteBuffer.wrap(pixels);
 	gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, fmt, tdim.x, tdim.y, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, data);
+	if(mipmap)
+	    genmipmap(gl, 1, tdim, pixels);
+    }
+    
+    private void genmipmap(GL gl, int lev, Coord dim, byte[] data) {
+	dim = dim.div(2);
+	if(dim.x < 1) dim.x = 1;
+	if(dim.y < 1) dim.y = 1;
+	byte[] ndata = new byte[data.length / 4];
+	int[] r = new int[4], g = new int[4], b = new int[4], a = new int[4];
+	int na = 0, da = 0;
+	int dst = dim.x * 8;
+	for(int y = 0; y < dim.y; y++) {
+	    for(int x = 0; x < dim.x; x++) {
+		r[0] = ((int)data[da + 0]) & 0xff; r[1] = ((int)data[da + 0 + 4]) & 0xff; r[2] = ((int)data[da + 0 + dst]) & 0xff; r[3] = ((int)data[da + 0 + dst + 4]) & 0xff;
+		g[0] = ((int)data[da + 1]) & 0xff; g[1] = ((int)data[da + 1 + 4]) & 0xff; g[2] = ((int)data[da + 1 + dst]) & 0xff; g[3] = ((int)data[da + 1 + dst + 4]) & 0xff;
+		b[0] = ((int)data[da + 2]) & 0xff; b[1] = ((int)data[da + 2 + 4]) & 0xff; b[2] = ((int)data[da + 2 + dst]) & 0xff; b[3] = ((int)data[da + 2 + dst + 4]) & 0xff;
+		a[0] = ((int)data[da + 3]) & 0xff; a[1] = ((int)data[da + 3 + 4]) & 0xff; a[2] = ((int)data[da + 3 + dst]) & 0xff; a[3] = ((int)data[da + 3 + dst + 4]) & 0xff;
+		int n = 0, cr = 0, cg = 0, cb = 0;
+		for(int i = 0; i < 4; i++) {
+		    if(a[i] < 128)
+			continue;
+		    cr += r[i];
+		    cg += g[i];
+		    cb += b[i];
+		    n++;
+		}
+		if(n <= 1) {
+		    ndata[na + 3] = 0;
+		} else {
+		    ndata[na + 0] = (byte)(cr / n);
+		    ndata[na + 1] = (byte)(cg / n);
+		    ndata[na + 2] = (byte)(cb / n);
+		    ndata[na + 3] = (byte)255;
+		}
+		na += 4;
+		da += 8;
+	    }
+	    da += dst;
+	}
+	gl.glTexImage2D(GL.GL_TEXTURE_2D, lev, fmt, dim.x, dim.y, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(ndata));
+	if((dim.x > 1) || (dim.y > 1))
+	    genmipmap(gl, lev + 1, dim, ndata);
     }
 	
     protected void update(byte[] n) {

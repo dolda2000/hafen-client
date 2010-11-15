@@ -33,7 +33,7 @@ public class Material {
     public float[] amb, dif, spc, emi;
     public float shine;
     public Tex tex;
-    public boolean facecull = true;
+    public boolean facecull = true, mipmap = false;
     
     public Material() {
 	amb = new float[] {0.2f, 0.2f, 0.2f, 1.0f};
@@ -129,15 +129,20 @@ public class Material {
 		texid = Utils.uint16d(buf, off); off += 2;
 	    if((fl & 4) != 0)
 		this.m.facecull = false;
-	    if((fl & ~7) != 0)
+	    if((fl & 8) != 0)
+		this.m.mipmap = true;
+	    if((fl & ~15) != 0)
 		throw(new Resource.LoadException("Unknown material flags: " + fl, getres()));
 	}
 	
 	public void init() {
 	    if(texid >= 0) {
 		for(Resource.Image img : getres().layers(Resource.imgc)) {
-		    if(img.id == texid)
+		    if(img.id == texid) {
 			m.tex = img.tex();
+			if(m.mipmap)
+			    ((TexGL)m.tex).mipmap();
+		    }
 		}
 		if(m.tex == null)
 		    throw(new Resource.LoadException("Specified texture not found: " + texid, getres()));

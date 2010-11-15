@@ -35,6 +35,7 @@ public abstract class TexGL extends Tex {
     protected int id = -1;
     protected GL mygl = null;
     private Object idmon = new Object();
+    protected boolean mipmap = false;
     protected Coord tdim;
     protected static Map<GL, Collection<Integer>> disposed = new HashMap<GL, Collection<Integer>>();
     public static boolean disableall = false;
@@ -53,7 +54,10 @@ public abstract class TexGL extends Tex {
 	id = buf[0];
 	mygl = gl;
 	gl.glBindTexture(GL.GL_TEXTURE_2D, id);
-	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
+	if(mipmap)
+	    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST_MIPMAP_NEAREST);
+	else
+	    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
 	fill(g);
 	checkerr(gl);
@@ -83,6 +87,11 @@ public abstract class TexGL extends Tex {
     
     public void select(GOut g) {
 	g.texsel(glid(g));
+    }
+    
+    public void mipmap() {
+	mipmap = true;
+	dispose();
     }
 
     public int glid(GOut g) {
