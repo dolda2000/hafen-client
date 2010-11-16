@@ -26,7 +26,83 @@
 
 package haven;
 
+import javax.media.opengl.*;
+
 public interface Rendered {
     public void draw(GOut g);
     public boolean setup(RenderList r);
+    
+    public static class Dot implements Rendered {
+	public void draw(GOut g) {
+	    GL gl = g.gl;
+	    g.matsel(null);
+	    gl.glDisable(GL.GL_LIGHTING);
+	    gl.glDisable(GL.GL_DEPTH_TEST);
+	    gl.glBegin(GL.GL_POINTS);
+	    gl.glColor3f(1.0f, 0.0f, 0.0f);
+	    gl.glVertex3f(0.0f, 0.0f, 0.0f);
+	    gl.glEnd();
+	    gl.glEnable(GL.GL_LIGHTING);
+	    gl.glEnable(GL.GL_DEPTH_TEST);
+	}
+	
+	public boolean setup(RenderList r) {
+	    return(true);
+	}
+    }
+
+    public static class Cube implements Rendered {
+	public void draw(GOut g) {
+	    GL gl = g.gl;
+	    g.matsel(null);
+	    
+	    gl.glBegin(gl.GL_QUADS);
+	    gl.glNormal3f(0.0f, 0.0f, 1.0f);
+	    gl.glColor3f(0.0f, 0.0f, 1.0f);
+	    gl.glVertex3f(-1.0f, 1.0f, 1.0f);
+	    gl.glVertex3f(-1.0f, -1.0f, 1.0f);
+	    gl.glVertex3f(1.0f, -1.0f, 1.0f);
+	    gl.glVertex3f(1.0f, 1.0f, 1.0f);
+
+	    gl.glNormal3f(1.0f, 0.0f, 0.0f);
+	    gl.glColor3f(1.0f, 0.0f, 0.0f);
+	    gl.glVertex3f(1.0f, 1.0f, 1.0f);
+	    gl.glVertex3f(1.0f, -1.0f, 1.0f);
+	    gl.glVertex3f(1.0f, -1.0f, -1.0f);
+	    gl.glVertex3f(1.0f, 1.0f, -1.0f);
+
+	    gl.glNormal3f(-1.0f, 0.0f, 0.0f);
+	    gl.glColor3f(0.0f, 1.0f, 1.0f);
+	    gl.glVertex3f(-1.0f, 1.0f, 1.0f);
+	    gl.glVertex3f(-1.0f, 1.0f, -1.0f);
+	    gl.glVertex3f(-1.0f, -1.0f, -1.0f);
+	    gl.glVertex3f(-1.0f, -1.0f, 1.0f);
+
+	    gl.glNormal3f(0.0f, 1.0f, 0.0f);
+	    gl.glColor3f(0.0f, 1.0f, 0.0f);
+	    gl.glVertex3f(-1.0f, 1.0f, 1.0f);
+	    gl.glVertex3f(1.0f, 1.0f, 1.0f);
+	    gl.glVertex3f(1.0f, 1.0f, -1.0f);
+	    gl.glVertex3f(-1.0f, 1.0f, -1.0f);
+
+	    gl.glNormal3f(0.0f, -1.0f, 0.0f);
+	    gl.glColor3f(1.0f, 0.0f, 1.0f);
+	    gl.glVertex3f(-1.0f, -1.0f, 1.0f);
+	    gl.glVertex3f(-1.0f, -1.0f, -1.0f);
+	    gl.glVertex3f(1.0f, -1.0f, -1.0f);
+	    gl.glVertex3f(1.0f, -1.0f, 1.0f);
+
+	    gl.glNormal3f(0.0f, 0.0f, -1.0f);
+	    gl.glColor3f(1.0f, 1.0f, 0.0f);
+	    gl.glVertex3f(-1.0f, 1.0f, -1.0f);
+	    gl.glVertex3f(1.0f, 1.0f, -1.0f);
+	    gl.glVertex3f(1.0f, -1.0f, -1.0f);
+	    gl.glVertex3f(-1.0f, -1.0f, -1.0f);
+	    gl.glEnd();
+	}
+	
+	public boolean setup(RenderList rls) {
+	    return(true);
+	}
+    }
 }
