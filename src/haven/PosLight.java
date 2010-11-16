@@ -42,6 +42,10 @@ public class PosLight extends Light {
 	super(amb, dif, spc);
 	this.pos = pos.to4a(1);
     }
+
+    public void move(Coord3f pos) {
+	this.pos = pos.to4a(1);
+    }
     
     public void att(float c, float l, float q) {
 	ac = c;

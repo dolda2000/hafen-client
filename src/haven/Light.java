@@ -69,4 +69,66 @@ public class Light {
 	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_SPECULAR, defspc, 0);
 	gl.glDisable(GL.GL_LIGHT0 + idx);
     }
+    
+    public static class Res extends Resource.Layer {
+	public final int id;
+	public final Color amb, dif, spc;
+	public boolean hatt, hexp;
+	public float ac, al, aq, exp;
+	public Coord3f dir;
+	
+	private static Color cold(byte[] buf, int[] off) {
+	    double r, g, b, a;
+	    r = Utils.floatd(buf, off[0]); off[0] += 5;
+	    g = Utils.floatd(buf, off[0]); off[0] += 5;
+	    b = Utils.floatd(buf, off[0]); off[0] += 5;
+	    a = Utils.floatd(buf, off[0]); off[0] += 5;
+	    return(new Color((int)(r * 255.0), (int)(g * 255.0), (int)(b * 255.0), (int)(a * 255.0)));
+	}
+	
+	public Res(Resource res, byte[] buf) {
+	    res.super();
+	    int[] off = {0};
+	    this.id = Utils.int16d(buf, off[0]); off[0] += 2;
+	    this.amb = cold(buf, off);
+	    this.dif = cold(buf, off);
+	    this.spc = cold(buf, off);
+	    while(off[0] < buf.length) {
+		int t = buf[off[0]]; off[0]++;
+		if(t == 1) {
+		    hatt = true;
+		    ac = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    al = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    aq = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		} else if(t == 2) {
+		    float x = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    float y = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    float z = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    dir = new Coord3f(x, y, z);
+		} else if(t == 3) {
+		    hexp = true;
+		    exp = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		} else {
+		    throw(new Resource.LoadException("Unknown light data: " + t, getres()));
+		}
+	    }
+	}
+	
+	public Light make() {
+	    if(hatt) {
+		PosLight ret;
+		if(hexp)
+		    ret = new SpotLight(amb, dif, spc, Coord3f.o, dir, exp);
+		else
+		    ret = new PosLight(amb, dif, spc, Coord3f.o);
+		ret.att(ac, al, aq);
+		return(ret);
+	    } else {
+		return(new DirLight(amb, dif, spc, dir));
+	    }
+	}
+	
+	public void init() {
+	}
+    }
 }

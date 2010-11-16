@@ -85,6 +85,23 @@ public class Composite extends Drawable {
 	    return(false);
 	}
     }
+    
+    private class LightEqu extends Equ {
+	private final Light l;
+	
+	private LightEqu(ED ed) {
+	    super(ed);
+	    this.l = ed.res.get().layer(Light.Res.class).make();
+	}
+	
+	public void draw(GOut g) {
+	}
+	
+	public boolean setup(RenderList rl) {
+	    rl.add(l);
+	    return(false);
+	}
+    }
 
     private abstract class Equ implements Rendered {
 	private final Transform et;
@@ -197,6 +214,8 @@ public class Composite extends Drawable {
 		continue;
 	    if(ed.t == 0)
 		this.equ.add(new SpriteEqu(ed));
+	    else if(ed.t == 1)
+		this.equ.add(new LightEqu(ed));
 	    i.remove();
 	}
 	if(nequ.isEmpty())
