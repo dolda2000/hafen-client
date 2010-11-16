@@ -26,6 +26,8 @@
 
 package haven;
 
+import javax.media.opengl.*;
+
 public abstract class GLState {
     public abstract void apply(GOut g);
     public abstract void unapply(GOut g);
@@ -33,4 +35,52 @@ public abstract class GLState {
     public boolean applyfrom(GOut g, GLState from) {
 	return(false);
     }
+
+    private class Wrapping implements Rendered {
+	private final Rendered r;
+	
+	private Wrapping(Rendered r) {
+	    this.r = r;
+	}
+	
+	public void draw(GOut g) {
+	    g.matsel(GLState.this);
+	    r.draw(g);
+	}
+
+	public boolean setup(RenderList rl) {
+	    return(r.setup(rl));
+	}
+    }
+    
+    private class FWrapping extends Wrapping implements FRendered {
+	private final FRendered f; /* :-P */
+
+	private FWrapping(FRendered r) {
+	    super(r);
+	    this.f = r;
+	}
+	
+	public void drawflat(GOut g) {
+	    g.matsel(null);
+	    f.drawflat(g);
+	}
+    }
+
+    public Rendered apply(Rendered r) {
+	if(r instanceof FRendered)
+	    return(new FWrapping((FRendered)r));
+	else
+	    return(new Wrapping(r));
+    }
+    
+    public static final GLState xray = new GLState() {
+	    public void apply(GOut g) {
+		g.gl.glDisable(GL.GL_DEPTH_TEST);
+	    }
+	    
+	    public void unapply(GOut g) {
+		g.gl.glEnable(GL.GL_DEPTH_TEST);
+	    }
+	};
 }
