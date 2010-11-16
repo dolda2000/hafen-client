@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.lang.reflect.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.TrackMod;
 
@@ -36,6 +37,7 @@ public class Composite extends Drawable {
     private Pose pose;
     private Collection<Model> mod = new LinkedList<Model>();
     private TrackMod[] mods = new TrackMod[0];
+    private Collection<Equ> equ = new LinkedList<Equ>();
     private boolean stat = true;
     private List<Indir<Resource>> nposes = null;
     private List<MD> nmod = null;
@@ -61,7 +63,40 @@ public class Composite extends Drawable {
 	}
     }
     
-    private class Equ {
+    private class SpriteEqu extends Equ {
+	private final Sprite spr;
+	private final Transform st;
+	
+	private SpriteEqu(ED ed) {
+	    super(ed);
+	    this.spr = Sprite.create(gob, ed.res.get(), new Message(0));
+	    Skeleton.BoneOffset off = ed.res.get().layer(Skeleton.BoneOffset.class);
+	    if(off == null)
+		this.st = null;
+	    else
+		this.st = off.xf();
+	}
+	
+	public void draw(GOut g) {
+	}
+
+	public boolean setup(RenderList rl) {
+	    rl.add(spr, st);
+	    return(false);
+	}
+    }
+
+    private abstract class Equ implements Rendered {
+	private final Transform et;
+	
+	private Equ(ED ed) {
+	    Skeleton.Bone bone = skel.bones.get(ed.at);
+	    Transform bt = pose.bonetrans(bone.idx);
+	    if((ed.off.x != 0.0f) || (ed.off.y != 0.0f) || (ed.off.z != 0.0f))
+		this.et = Transform.seq(bt, Transform.xlate(ed.off));
+	    else
+		this.et = bt;
+	}
     }
 
     public static class MD {
@@ -155,12 +190,26 @@ public class Composite extends Drawable {
 	    nmod = null;
     }
 
-    private void changes() {
-	if(nposes != null) {
-	    nposes();
+    private void nequ() {
+	for(Iterator<ED> i = nequ.iterator(); i.hasNext();) {
+	    ED ed = i.next();
+	    if((ed.res != null) && (ed.res.get() == null))
+		continue;
+	    if(ed.t == 0)
+		this.equ.add(new SpriteEqu(ed));
+	    i.remove();
 	}
+	if(nequ.isEmpty())
+	    nequ = null;
+    }
+
+    private void changes() {
+	if(nposes != null)
+	    nposes();
 	if(nmod != null)
 	    nmod();
+	if(nequ != null)
+	    nequ();
     }
 
     public void setup(RenderList rl) {
@@ -170,6 +219,8 @@ public class Composite extends Drawable {
 	changes();
 	for(Model mod : this.mod)
 	    rl.add(mod, null);
+	for(Equ equ : this.equ)
+	    rl.add(equ, equ.et);
     }
 	
     public void ctick(int dt) {
@@ -200,6 +251,7 @@ public class Composite extends Drawable {
     }
     
     public void chequ(List<ED> equ) {
+	this.equ = new LinkedList<Equ>();
 	nequ = equ;
     }
 }
