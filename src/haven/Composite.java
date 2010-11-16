@@ -73,6 +73,10 @@ public class Composite extends Drawable {
 	    this.mod = mod;
 	    this.tex = tex;
 	}
+	
+	public String toString() {
+	    return(mod + "+" + tex);
+	}
     }
     
     public static class ED {

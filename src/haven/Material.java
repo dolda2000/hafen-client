@@ -143,6 +143,12 @@ public class Material extends GLState {
 	    return(new Wrapping(r));
     }
     
+    public String toString() {
+	return(String.format("((%.1f, %.1f, %.1f), (%.1f, %.1f, %.1f), (%.1f, %.1f, %.1f @ %.1f), %s)",
+			     amb[0], amb[1], amb[2], dif[0], dif[1], dif[2], spc[0], spc[1], spc[2], shine,
+			     (tex == null)?"untextured":"textured"));
+    }
+    
     public static class Res extends Resource.Layer {
 	public final int id;
 	public final transient Material m;
