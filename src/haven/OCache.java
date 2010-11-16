@@ -166,7 +166,24 @@ public class OCache implements Iterable<Gob> {
 	    }
 	}
     }
-	
+    
+    public synchronized void composite(int id, int frame, Indir<Resource> base, List<Indir<Resource>> poses, List<Composite.MD> mod, List<Composite.ED> equ) {
+	Gob g = getgob(id, frame);
+	if(g == null)
+	    return;
+	Composite cmp = (Composite)g.getattr(Drawable.class);
+	if(cmp == null) {
+	    cmp = new Composite(g, base);
+	    g.setattr(cmp);
+	}
+	if(poses != null)
+	    cmp.chposes(poses);
+	if(mod != null)
+	    cmp.chmod(mod);
+	if(equ != null)
+	    cmp.chequ(equ);
+    }
+    
     public synchronized void avatar(int id, int frame, List<Indir<Resource>> layers) {
 	Gob g = getgob(id, frame);
 	if(g == null)

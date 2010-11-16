@@ -170,6 +170,11 @@ public class Message implements java.io.Serializable {
 	return(Utils.ub(blob[off++]));
     }
 	
+    public int int16() {
+	off += 2;
+	return(Utils.int16d(blob, off - 2));
+    }
+	
     public int uint16() {
 	off += 2;
 	return(Utils.uint16d(blob, off - 2));

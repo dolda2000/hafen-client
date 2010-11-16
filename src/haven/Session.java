@@ -48,7 +48,7 @@ public class Session {
     public static final int OD_LINBEG = 3;
     public static final int OD_LINSTEP = 4;
     public static final int OD_SPEECH = 5;
-    public static final int OD_LAYERS = 6;
+    public static final int OD_COMPOSE = 6;
     public static final int OD_DRAWOFF = 7;
     public static final int OD_LUMIN = 8;
     public static final int OD_AVATAR = 9;
@@ -229,6 +229,75 @@ public class Session {
 			    Coord off = msg.coord();
 			    String text = msg.string();
 			    oc.speak(id, frame, off, text);
+			} else if(type == OD_COMPOSE) {
+			    Indir<Resource> base = null;
+			    List<Indir<Resource>> poses = null;
+			    List<Composite.MD> mod = null;
+			    List<Composite.ED> equ = null;
+			    while(true) {
+				int t = msg.uint8();
+				if(t == 0) {
+				    base = getres(msg.uint16());
+				} else if(t == 1) {
+				    poses = new LinkedList<Indir<Resource>>();
+				    while(true) {
+					int resid = msg.uint16();
+					if(resid == 65535)
+					    break;
+					poses.add(getres(resid));
+				    }
+				} else if(t == 2) {
+				    mod = new LinkedList<Composite.MD>();
+				    while(true) {
+					int modid = msg.uint16();
+					if(modid == 65535)
+					    break;
+					Indir<Resource> modr = getres(modid);
+					List<Indir<Resource>> tex = new LinkedList<Indir<Resource>>();
+					while(true) {
+					    int resid = msg.uint16();
+					    if(resid == 65535)
+						break;
+					    tex.add(getres(resid));
+					}
+					mod.add(new Composite.MD(modr, tex));
+				    }
+				} else if(t == 3) {
+				    equ = new LinkedList<Composite.ED>();
+				    while(true) {
+					int h = msg.uint8();
+					if(h == 255)
+					    break;
+					int ef = h & 0x80;
+					int et = h & 0x7f;
+					String at = msg.string();
+					Indir<Resource> res;
+					int resid = msg.uint16();
+					if(resid == 65535)
+					    res = null;
+					else
+					    res = getres(resid);
+					Coord3f off;
+					if((ef & 128) != 0) {
+					    int x = msg.int16(), y = msg.int16(), z = msg.int16();
+					    off = new Coord3f(x / 1000.0f, y / 1000.0f, z / 1000.0f);
+					} else {
+					    off = Coord3f.o;
+					}
+					equ.add(new Composite.ED(et, at, res, off));
+				    }
+				} else if(t == 255) {
+				    break;
+				} else {
+				    throw(new MessageException("Unknown compose delta: " + t, msg));
+				}
+			    }
+			    oc.composite(id, frame, base, poses, mod, equ);
+			} else if(type == OD_DRAWOFF) {
+			    Coord off = msg.coord();
+			    oc.drawoff(id, frame, off);
+			} else if(type == OD_LUMIN) {
+			    oc.lumin(id, frame, msg.coord(), msg.uint16(), msg.uint8());
 			} else if(type == OD_AVATAR) {
 			    List<Indir<Resource>> layers = new LinkedList<Indir<Resource>>();
 			    while(true) {
@@ -238,11 +307,6 @@ public class Session {
 				layers.add(getres(layer));
 			    }
 			    oc.avatar(id, frame, layers);
-			} else if(type == OD_DRAWOFF) {
-			    Coord off = msg.coord();
-			    oc.drawoff(id, frame, off);
-			} else if(type == OD_LUMIN) {
-			    oc.lumin(id, frame, msg.coord(), msg.uint16(), msg.uint8());
 			} else if(type == OD_FOLLOW) {
 			    int oid = msg.int32();
 			    Coord off = Coord.z;
