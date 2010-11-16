@@ -77,6 +77,8 @@ public class Material extends GLState {
 	    gl.glEnable(GL.GL_CULL_FACE);
 	if(tex != null)
 	    tex.select(g);
+	else
+	    g.texsel(-1);
     }
 
     public void apply(GOut g) {
