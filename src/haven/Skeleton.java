@@ -493,4 +493,26 @@ public class Skeleton {
 	
 	public void init() {}
     }
+    
+    public static class BoneOffset extends Resource.Layer {
+	public final String bone;
+	public final Coord3f off, rax;
+	public final float rang;
+	
+	public BoneOffset(Resource res, byte[] buf) {
+	    res.super();
+	    int[] off = {0};
+	    this.bone = Utils.strd(buf, off);
+	    this.off = new Coord3f((float)Utils.floatd(buf, off[0]), (float)Utils.floatd(buf, off[0] + 5), (float)Utils.floatd(buf, off[0] + 10)); off[0] += 15;
+	    this.rax = new Coord3f((float)Utils.floatd(buf, off[0]), (float)Utils.floatd(buf, off[0] + 5), (float)Utils.floatd(buf, off[0] + 10)); off[0] += 15;
+	    this.rang = (float)Utils.floatd(buf, off[0]);
+	}
+	
+	public void init() {
+	}
+	
+	public Transform xf() {
+	    return(Transform.seq(Transform.xlate(off), Transform.rot(rax, rang)));
+	}
+    }
 }
