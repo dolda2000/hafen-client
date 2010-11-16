@@ -247,6 +247,17 @@ public class Skeleton {
 	    seq++;
 	}
 	
+	public Transform bonetrans(final int bone) {
+	    return(new Transform() {
+		    public void apply(GOut g) {
+			GL gl = g.gl;
+			gl.glTranslatef(gpos[bone][0], gpos[bone][1], gpos[bone][2]);
+			float ang = (float)Math.acos(grot[bone][0]) * 2.0f;
+			gl.glRotatef((float)(ang / Math.PI * 180.0), grot[bone][1], grot[bone][2], grot[bone][3]);
+		    }
+		});
+	}
+
 	public void boneoff(int bone, float[] offtrans) {
 	    /* It would be nice if these "new float"s get
 	     * stack-allocated. */
@@ -452,6 +463,7 @@ public class Skeleton {
 	    this.frames = frames;
 	}
     }
+
     public static class ResPose extends Resource.Layer {
 	public final int id;
 	public final float len;
