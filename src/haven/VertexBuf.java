@@ -158,6 +158,7 @@ public class VertexBuf {
 			    }
 			}
 		    }
+		    normweights(bw, ba, mba);
 		    bn = bones.toArray(new String[0]);
 		}
 	    }
@@ -167,6 +168,25 @@ public class VertexBuf {
 		this.b.assbones = ba;
 		this.b.assweights = bw;
 		this.b.bones = bn;
+	    }
+	}
+	
+	private static void normweights(float[] bw, int[] ba, int mba) {
+	    int i = 0;
+	    while(i < bw.length) {
+		float tw = 0.0f;
+		int n = 0;
+		for(int o = 0; o < mba; o++) {
+		    if(ba[i + o] < 0)
+			break;
+		    tw += bw[i + o];
+		    n++;
+		}
+		if(tw != 1.0f) {
+		    for(int o = 0; o < n; o++)
+			bw[i + o] = bw[i + o] / tw;
+		}
+		i += mba;
 	    }
 	}
 	
