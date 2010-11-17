@@ -32,14 +32,15 @@ import haven.Skeleton.Pose;
 import haven.Skeleton.TrackMod;
 
 public class Composite extends Drawable {
-    private final Indir<Resource> base;
+    public final Indir<Resource> base;
     private Skeleton skel;
     private Pose pose;
     private Collection<Model> mod = new LinkedList<Model>();
     private TrackMod[] mods = new TrackMod[0];
     private Collection<Equ> equ = new LinkedList<Equ>();
     private boolean stat = true;
-    private List<Indir<Resource>> nposes = null, cposes = new LinkedList<Indir<Resource>>();
+    public int pseq;
+    private List<Indir<Resource>> nposes = null;
     private List<MD> nmod = null, cmod = new LinkedList<MD>();
     private List<ED> nequ = null, cequ = new LinkedList<ED>();
     
@@ -301,9 +302,7 @@ public class Composite extends Drawable {
     }
     
     public void chposes(List<Indir<Resource>> poses) {
-	if(poses.equals(cposes))
-	    return;
-	nposes = cposes = poses;
+	nposes = poses;
     }
     
     public void chmod(List<MD> mod) {

@@ -58,6 +58,9 @@ public class Session {
     /* public static final int OD_AUTH = 13; -- Removed */
     public static final int OD_HEALTH = 14;
     public static final int OD_BUDDY = 15;
+    public static final int OD_CMPPOSE = 16;
+    public static final int OD_CMPMOD = 17;
+    public static final int OD_CMPEQU = 18;
     public static final int OD_END = 255;
     public static final int SESSERR_AUTH = 1;
     public static final int SESSERR_BUSY = 2;
@@ -241,70 +244,78 @@ public class Session {
 			    if(gob != null)
 				oc.speak(gob, off, text);
 			} else if(type == OD_COMPOSE) {
-			    Indir<Resource> base = null;
-			    List<Indir<Resource>> poses = null;
-			    List<Composite.MD> mod = null;
-			    List<Composite.ED> equ = null;
-			    while(true) {
-				int t = msg.uint8();
-				if(t == 0) {
-				    base = getres(msg.uint16());
-				} else if(t == 1) {
-				    poses = new LinkedList<Indir<Resource>>();
-				    while(true) {
-					int resid = msg.uint16();
-					if(resid == 65535)
-					    break;
-					poses.add(getres(resid));
-				    }
-				} else if(t == 2) {
-				    mod = new LinkedList<Composite.MD>();
-				    while(true) {
-					int modid = msg.uint16();
-					if(modid == 65535)
-					    break;
-					Indir<Resource> modr = getres(modid);
-					List<Indir<Resource>> tex = new LinkedList<Indir<Resource>>();
-					while(true) {
-					    int resid = msg.uint16();
-					    if(resid == 65535)
-						break;
-					    tex.add(getres(resid));
-					}
-					mod.add(new Composite.MD(modr, tex));
-				    }
-				} else if(t == 3) {
-				    equ = new LinkedList<Composite.ED>();
-				    while(true) {
-					int h = msg.uint8();
-					if(h == 255)
-					    break;
-					int ef = h & 0x80;
-					int et = h & 0x7f;
-					String at = msg.string();
-					Indir<Resource> res;
-					int resid = msg.uint16();
-					if(resid == 65535)
-					    res = null;
-					else
-					    res = getres(resid);
-					Coord3f off;
-					if((ef & 128) != 0) {
-					    int x = msg.int16(), y = msg.int16(), z = msg.int16();
-					    off = new Coord3f(x / 1000.0f, y / 1000.0f, z / 1000.0f);
-					} else {
-					    off = Coord3f.o;
-					}
-					equ.add(new Composite.ED(et, at, res, off));
-				    }
-				} else if(t == 255) {
-				    break;
-				} else {
-				    throw(new MessageException("Unknown compose delta: " + t, msg));
+			    Indir<Resource> base = getres(msg.uint16());
+			    if(gob != null)
+				oc.composite(gob, base);
+			} else if(type == OD_CMPPOSE) {
+			    List<Indir<Resource>> poses = null, tposes = null;
+			    int pfl = msg.uint8();
+			    int seq = msg.uint8();
+			    boolean interp = (pfl & 1) != 0;
+			    if((pfl & 2) != 0) {
+				poses = new LinkedList<Indir<Resource>>();
+				while(true) {
+				    int resid = msg.uint16();
+				    if(resid == 65535)
+					break;
+				    poses.add(getres(resid));
+				}
+			    }
+			    if((pfl & 4) != 0) {
+				tposes = new LinkedList<Indir<Resource>>();
+				while(true) {
+				    int resid = msg.uint16();
+				    if(resid == 65535)
+					break;
+				    tposes.add(getres(resid));
 				}
 			    }
 			    if(gob != null)
-				oc.composite(gob, base, poses, mod, equ);
+				oc.cmppose(gob, seq, poses, tposes, interp);
+			} else if(type == OD_CMPMOD) {
+			    List<Composite.MD> mod = new LinkedList<Composite.MD>();
+			    while(true) {
+				int modid = msg.uint16();
+				if(modid == 65535)
+				    break;
+				Indir<Resource> modr = getres(modid);
+				List<Indir<Resource>> tex = new LinkedList<Indir<Resource>>();
+				while(true) {
+				    int resid = msg.uint16();
+				    if(resid == 65535)
+					break;
+				    tex.add(getres(resid));
+				}
+				mod.add(new Composite.MD(modr, tex));
+			    }
+			    if(gob != null)
+				oc.cmpmod(gob, mod);
+			} else if(type == OD_CMPEQU) {
+			    List<Composite.ED> equ = new LinkedList<Composite.ED>();
+			    while(true) {
+				int h = msg.uint8();
+				if(h == 255)
+				    break;
+				int ef = h & 0x80;
+				int et = h & 0x7f;
+				String at = msg.string();
+				Indir<Resource> res;
+				int resid = msg.uint16();
+				if(resid == 65535)
+				    res = null;
+				else
+				    res = getres(resid);
+				Coord3f off;
+				if((ef & 128) != 0) {
+				    int x = msg.int16(), y = msg.int16(), z = msg.int16();
+				    off = new Coord3f(x / 1000.0f, y / 1000.0f, z / 1000.0f);
+				} else {
+				    off = Coord3f.o;
+				}
+				equ.add(new Composite.ED(et, at, res, off));
+			    }
+			    if(gob != null)
+				oc.cmpequ(gob, equ);
 			} else if(type == OD_DRAWOFF) {
 			    Coord off = msg.coord();
 			    if(gob != null)
