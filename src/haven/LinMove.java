@@ -27,43 +27,43 @@
 package haven;
 
 public class LinMove extends Moving {
-	Coord s, t;
-	int c;
-	double a;
+    Coord s, t;
+    int c;
+    double a;
     
-	public LinMove(Gob gob, Coord s, Coord t, int c) {
-		super(gob);
-		this.s = s;
-		this.t = t;
-		this.c = c;
-		this.a = 0;
-	}
+    public LinMove(Gob gob, Coord s, Coord t, int c) {
+	super(gob);
+	this.s = s;
+	this.t = t;
+	this.c = c;
+	this.a = 0;
+    }
     
-	public Coord3f getc() {
-		float cx, cy;
-		cx = (float)(t.x - s.x) * (float)a;
-		cy = (float)(t.y - s.y) * (float)a;
-		cx += s.x; cy += s.y;
-		return(new Coord3f(cx, cy, gob.glob.map.getcz(cx, cy)));
-	}
+    public Coord3f getc() {
+	float cx, cy;
+	cx = (float)(t.x - s.x) * (float)a;
+	cy = (float)(t.y - s.y) * (float)a;
+	cx += s.x; cy += s.y;
+	return(new Coord3f(cx, cy, gob.glob.map.getcz(cx, cy)));
+    }
     
-	/*
-	public void tick() {
-		if(l < c)
-			l++;
-	}
-	*/
-	
-	public void ctick(int dt) {
-		double da = ((double)dt / 1000) / (((double)c) * 0.06);
-		a += da * 0.9;
-		if(a > 1)
-			a = 1;
-	}
-	
-	public void setl(int l) {
-		double a = ((double)l) / ((double)c);
-		if(a > this.a)
-			this.a = a;
-	}
+    /*
+    public void tick() {
+	if(l < c)
+	    l++;
+    }
+    */
+    
+    public void ctick(int dt) {
+	double da = ((double)dt / 1000) / (((double)c) * 0.06);
+	a += da * 0.9;
+	if(a > 1)
+	    a = 1;
+    }
+    
+    public void setl(int l) {
+	double a = ((double)l) / ((double)c);
+	if(a > this.a)
+	    this.a = a;
+    }
 }
