@@ -31,14 +31,14 @@ public class Homing extends Moving {
     Coord tc;
     int v;
     double dist;
-	
+    
     public Homing(Gob gob, int tgt, Coord tc, int v) {
 	super(gob);
 	this.tgt = tgt;
 	this.tc = tc;
 	this.v = v;
     }
-	
+    
     public Coord3f getc() {
 	Coord tc = this.tc;
 	Gob tgt = gob.glob.oc.getgob(this.tgt);
@@ -49,11 +49,15 @@ public class Homing extends Moving {
 	Coord c = gob.rc.add((int)((d.x / e) * dist), (int)((d.y / e) * dist));
 	return(new Coord3f(c.x, c.y, gob.glob.map.getcz(c)));
     }
-	
+    
+    public double getv() {
+	return((v / 100.0) * 0.06);
+    }
+    
     public void move(Coord c) {
 	dist = 0;
     }
-	
+    
     public void ctick(int dt) {
 	double da = ((double)dt / 1000) / 0.06;
 	dist += (da * 0.9) * ((double)v / 100);

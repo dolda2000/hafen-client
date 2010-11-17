@@ -47,6 +47,10 @@ public class LinMove extends Moving {
 	return(new Coord3f(cx, cy, gob.glob.map.getcz(cx, cy)));
     }
     
+    public double getv() {
+	return((double)s.dist(t) / (((double)c) * 0.06));
+    }
+    
     /*
     public void tick() {
 	if(l < c)

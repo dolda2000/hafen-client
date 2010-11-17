@@ -30,6 +30,7 @@ public class Following extends Moving {
     int tgt;
     Coord doff;
     int szo;
+    double lastv = 0.0;
 	
     public Following(Gob gob, int tgt, Coord doff, int szo) {
 	super(gob);
@@ -45,6 +46,18 @@ public class Following extends Moving {
 	return(tgt.getc());
     }
     
+    public double getv() {
+	Gob tgt = gob.glob.oc.getgob(this.tgt);
+	if(tgt != null) {
+	    Moving mv = tgt.getattr(Moving.class);
+	    if(mv == null)
+		lastv = 0.0;
+	    else
+		lastv = mv.getv();
+	}
+	return(lastv);
+    }
+
     public Gob tgt() {
 	return(gob.glob.oc.getgob(this.tgt));
     }

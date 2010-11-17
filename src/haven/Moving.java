@@ -34,4 +34,5 @@ public abstract class Moving extends GAttrib {
     public void move(Coord c) {}
 	
     public abstract Coord3f getc();
+    public abstract double getv();
 }
