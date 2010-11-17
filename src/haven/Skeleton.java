@@ -413,12 +413,13 @@ public class Skeleton {
 		    vset(lpos[i], t.frames[0].trans);
 		} else {
 		    Track.Frame cf, nf;
+		    float ct, nt;
 		    int l = 0, r = t.frames.length;
 		    while(true) {
 			/* c should never be able to be >= frames.length */
 			int c = l + ((r - l) >> 1);
-			float ct = t.frames[c].time;
-			float nt = (c < t.frames.length - 1)?(t.frames[c + 1].time):len;
+			ct = t.frames[c].time;
+			nt = (c < t.frames.length - 1)?(t.frames[c + 1].time):len;
 			if(ct > time) {
 			    r = c;
 			} else if(nt < time) {
@@ -429,7 +430,7 @@ public class Skeleton {
 			    break;
 			}
 		    }
-		    float d = (time - cf.time) / (nf.time - cf.time);
+		    float d = (time - ct) / (nt - ct);
 		    qqslerp(lrot[i], cf.rot, nf.rot, d);
 		    lpos[i][0] = cf.trans[0] + ((nf.trans[0] - cf.trans[0]) * d);
 		    lpos[i][1] = cf.trans[1] + ((nf.trans[1] - cf.trans[1]) * d);
