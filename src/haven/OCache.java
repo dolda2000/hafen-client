@@ -41,17 +41,17 @@ public class OCache implements Iterable<Gob> {
     }
 	
     public synchronized void remove(int id, int frame) {
-	    if(objs.containsKey(id)) {
-		objs.remove(id);
-		deleted.put(id, frame);
-	    }
+	if(objs.containsKey(id)) {
+	    objs.remove(id);
+	    deleted.put(id, frame);
 	}
+    }
 	
     public synchronized void tick() {
-	    for(Gob g : objs.values()) {
-		g.tick();
-	    }
+	for(Gob g : objs.values()) {
+	    g.tick();
 	}
+    }
 	
     public void ctick() {
 	long now;
