@@ -496,6 +496,31 @@ public class Utils {
 	g.dispose();
 	return(ol);
     }
+    
+    public static int floordiv(int a, int b) {
+	if(a < 0)
+	    return(((a + 1) / b) - 1);
+	else
+	    return(a / b);
+    }
+    
+    public static int floormod(int a, int b) {
+	int r = a % b;
+	if(r < 0)
+	    r += b;
+	return(r);
+    }
+
+    public static int floordiv(float a, float b) {
+	return((int)Math.floor(a / b));
+    }
+    
+    public static float floormod(float a, float b) {
+	float r = a % b;
+	if(r < 0)
+	    r += b;
+	return(r);
+    }
 
     public static int floordiv(int a, int b) {
 	if(a < 0)

@@ -109,15 +109,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     }
 	
     public Coord div(Coord d) {
-	int v, w;
-		
-	v = ((x < 0)?(x + 1):x) / d.x;
-	w = ((y < 0)?(y + 1):y) / d.y;
-	if(x < 0)
-	    v--;
-	if(y < 0)
-	    w--;
-	return(new Coord(v, w));
+	return(new Coord(Utils.floordiv(x, d.x), Utils.floordiv(y, d.y)));
     }
 	
     public Coord div(int d) {
@@ -125,15 +117,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     }
 	
     public Coord mod(Coord d) {
-	int v, w;
-		
-	v = x % d.x;
-	w = y % d.y;
-	if(v < 0)
-	    v += d.x;
-	if(w < 0)
-	    w += d.y;
-	return(new Coord(v, w));
+	return(new Coord(Utils.floormod(x, d.x), Utils.floormod(y, d.y)));
     }
 	
     public boolean isect(Coord c, Coord s) {

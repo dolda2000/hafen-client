@@ -213,9 +213,9 @@ public class MCache {
 
     public float getcz(float px, float py) {
 	float tw = tilesz.x, th = tilesz.y;
-	Coord ul = new Coord((int)(px / tw), (int)(py / th));
-	float sx = (px % tw) / tw;
-	float sy = (py % th) / th;
+	Coord ul = new Coord(Utils.floordiv(px, tw), Utils.floordiv(py, th));
+	float sx = Utils.floormod(px, tw) / tw;
+	float sy = Utils.floormod(py, th) / th;
 	return(((1.0f - sy) * (((1.0f - sx) * getz(ul)) + (sx * getz(ul.add(1, 0))))) +
 	       (sy * (((1.0f - sx) * getz(ul.add(0, 1))) + (sx * getz(ul.add(1, 1))))));
     }
