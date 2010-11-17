@@ -166,7 +166,8 @@ public class Gob implements Sprite.Owner, Rendered {
 
     public boolean setup(RenderList rl) {
 	Drawable d = getattr(Drawable.class);
-	d.setup(rl);
+	if(d != null)
+	    d.setup(rl);
 	for(Overlay ol : ols) {
 	    if(ol.spr != null)
 		ol.spr.setup(rl);
