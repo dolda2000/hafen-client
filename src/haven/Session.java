@@ -195,10 +195,12 @@ public class Session {
 		int fl = msg.uint8();
 		int id = msg.int32();
 		int frame = msg.int32();
-		if((fl & 1) != 0) {
-		    oc.remove(id, frame - 1);
-		}
 		synchronized(oc) {
+		    if((fl & 1) != 0)
+			oc.remove(id, frame - 1);
+		    Gob gob = oc.getgob(id, frame);
+		    if(gob != null)
+			gob.frame = frame;
 		    while(true) {
 			int type = msg.uint8();
 			if(type == OD_REM) {
@@ -206,7 +208,8 @@ public class Session {
 			} else if(type == OD_MOVE) {
 			    Coord c = msg.coord();
 			    int ia = msg.uint8();
-			    oc.move(id, frame, c, (ia / 255.0) * Math.PI * 2);
+			    if(gob != null)
+				oc.move(gob, c, (ia / 255.0) * Math.PI * 2);
 			} else if(type == OD_RES) {
 			    int resid = msg.uint16();
 			    Message sdt;
@@ -216,19 +219,23 @@ public class Session {
 			    } else {
 				sdt = new Message(0);
 			    }
-			    oc.cres(id, frame, getres(resid), sdt);
+			    if(gob != null)
+				oc.cres(gob, getres(resid), sdt);
 			} else if(type == OD_LINBEG) {
 			    Coord s = msg.coord();
 			    Coord t = msg.coord();
 			    int c = msg.int32();
-			    oc.linbeg(id, frame, s, t, c);
+			    if(gob != null)
+				oc.linbeg(gob, s, t, c);
 			} else if(type == OD_LINSTEP) {
 			    int l = msg.int32();
-			    oc.linstep(id, frame, l);
+			    if(gob != null)
+				oc.linstep(gob, l);
 			} else if(type == OD_SPEECH) {
 			    Coord off = msg.coord();
 			    String text = msg.string();
-			    oc.speak(id, frame, off, text);
+			    if(gob != null)
+				oc.speak(gob, off, text);
 			} else if(type == OD_COMPOSE) {
 			    Indir<Resource> base = null;
 			    List<Indir<Resource>> poses = null;
@@ -292,12 +299,18 @@ public class Session {
 				    throw(new MessageException("Unknown compose delta: " + t, msg));
 				}
 			    }
-			    oc.composite(id, frame, base, poses, mod, equ);
+			    if(gob != null)
+				oc.composite(gob, base, poses, mod, equ);
 			} else if(type == OD_DRAWOFF) {
 			    Coord off = msg.coord();
-			    oc.drawoff(id, frame, off);
+			    if(gob != null)
+				oc.drawoff(gob, off);
 			} else if(type == OD_LUMIN) {
-			    oc.lumin(id, frame, msg.coord(), msg.uint16(), msg.uint8());
+			    Coord off = msg.coord();
+			    int sz = msg.uint16();
+			    int str = msg.uint8();
+			    if(gob != null)
+				oc.lumin(gob, off, sz, str);
 			} else if(type == OD_AVATAR) {
 			    List<Indir<Resource>> layers = new LinkedList<Indir<Resource>>();
 			    while(true) {
@@ -306,7 +319,8 @@ public class Session {
 				    break;
 				layers.add(getres(layer));
 			    }
-			    oc.avatar(id, frame, layers);
+			    if(gob != null)
+				oc.avatar(gob, layers);
 			} else if(type == OD_FOLLOW) {
 			    int oid = msg.int32();
 			    Coord off = Coord.z;
@@ -315,19 +329,23 @@ public class Session {
 				szo = msg.int8();
 				off = msg.coord();
 			    }
-			    oc.follow(id, frame, oid, off, szo);
+			    if(gob != null)
+				oc.follow(gob, oid, off, szo);
 			} else if(type == OD_HOMING) {
 			    int oid = msg.int32();
 			    if(oid == -1) {
-				oc.homostop(id, frame);
+				if(gob != null)
+				    oc.homostop(gob);
 			    } else if(oid == -2) {
 				Coord tgtc = msg.coord();
 				int v = msg.uint16();
-				oc.homocoord(id, frame, tgtc, v);
+				if(gob != null)
+				    oc.homocoord(gob, tgtc, v);
 			    } else {
 				Coord tgtc = msg.coord();
 				int v = msg.uint16();
-				oc.homing(id, frame, oid, tgtc, v);
+				if(gob != null)
+				    oc.homing(gob, oid, tgtc, v);
 			    }
 			} else if(type == OD_OVERLAY) {
 			    int olid = msg.int32();
@@ -348,24 +366,24 @@ public class Session {
 				}
 				res = getres(resid);
 			    }
-			    oc.overlay(id, frame, olid, prs, res, sdt);
+			    if(gob != null)
+				oc.overlay(gob, olid, prs, res, sdt);
 			} else if(type == OD_HEALTH) {
 			    int hp = msg.uint8();
-			    oc.health(id, frame, hp);
+			    if(gob != null)
+				oc.health(gob, hp);
 			} else if(type == OD_BUDDY) {
 			    String name = msg.string();
 			    int group = msg.uint8();
 			    int btype = msg.uint8();
-			    oc.buddy(id, frame, name, group, btype);
+			    if(gob != null)
+				oc.buddy(gob, null, 0, 0);
 			} else if(type == OD_END) {
 			    break;
 			} else {
 			    throw(new MessageException("Unknown objdelta type: " + type, msg));
 			}
 		    }
-		    Gob g = oc.getgob(id, frame);
-		    if(g != null)
-			g.frame = frame;
 		}
 		synchronized(objacks) {
 		    if(objacks.containsKey(id)) {

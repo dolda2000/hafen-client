@@ -42,8 +42,10 @@ public class OCache implements Iterable<Gob> {
 	
     public synchronized void remove(int id, int frame) {
 	if(objs.containsKey(id)) {
-	    objs.remove(id);
-	    deleted.put(id, frame);
+	    if(!deleted.containsKey(id) || deleted.get(id) < frame) {
+		objs.remove(id);
+		deleted.put(id, frame);
+	    }
 	}
     }
 	
@@ -106,40 +108,32 @@ public class OCache implements Iterable<Gob> {
 		return(g);
 	    }
 	} else {
-	    return(objs.get(id));
+	    Gob ret = objs.get(id);
+	    if(ret.frame >= frame)
+		return(null);
+	    else
+		return(ret);
 	}
 	/* XXX: Clean up in deleted */
     }
     
-    public synchronized void move(int id, int frame, Coord c, double a) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void move(Gob g, Coord c, double a) {
 	g.move(c, a);
     }
 	
-    public synchronized void cres(int id, int frame, Indir<Resource> res, Message sdt) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void cres(Gob g, Indir<Resource> res, Message sdt) {
 	ResDrawable d = (ResDrawable)g.getattr(Drawable.class);
 	if((d == null) || (d.res != res) || (d.sdt.blob.length > 0) || (sdt.blob.length > 0)) {
 	    g.setattr(new ResDrawable(g, res, sdt));
 	}
     }
 	
-    public synchronized void linbeg(int id, int frame, Coord s, Coord t, int c) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void linbeg(Gob g, Coord s, Coord t, int c) {
 	LinMove lm = new LinMove(g, s, t, c);
 	g.setattr(lm);
     }
 	
-    public synchronized void linstep(int id, int frame, int l) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void linstep(Gob g, int l) {
 	Moving m = g.getattr(Moving.class);
 	if((m == null) || !(m instanceof LinMove))
 	    return;
@@ -150,10 +144,7 @@ public class OCache implements Iterable<Gob> {
 	    lm.setl(l);
     }
 	
-    public synchronized void speak(int id, int frame, Coord off, String text) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void speak(Gob g, Coord off, String text) {
 	if(text.length() < 1) {
 	    g.delattr(Speaking.class);
 	} else {
@@ -167,10 +158,7 @@ public class OCache implements Iterable<Gob> {
 	}
     }
     
-    public synchronized void composite(int id, int frame, Indir<Resource> base, List<Indir<Resource>> poses, List<Composite.MD> mod, List<Composite.ED> equ) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void composite(Gob g, Indir<Resource> base, List<Indir<Resource>> poses, List<Composite.MD> mod, List<Composite.ED> equ) {
 	Composite cmp = (Composite)g.getattr(Drawable.class);
 	if(cmp == null) {
 	    cmp = new Composite(g, base);
@@ -184,10 +172,7 @@ public class OCache implements Iterable<Gob> {
 	    cmp.chequ(equ);
     }
     
-    public synchronized void avatar(int id, int frame, List<Indir<Resource>> layers) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void avatar(Gob g, List<Indir<Resource>> layers) {
 	Avatar ava = g.getattr(Avatar.class);
 	if(ava == null) {
 	    ava = new Avatar(g);
@@ -196,10 +181,7 @@ public class OCache implements Iterable<Gob> {
 	ava.setlayers(layers);
     }
 	
-    public synchronized void drawoff(int id, int frame, Coord off) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void drawoff(Gob g, Coord off) {
 	if((off.x == 0) && (off.y == 0)) {
 	    g.delattr(DrawOffset.class);
 	} else {
@@ -213,17 +195,11 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 	
-    public synchronized void lumin(int id, int frame, Coord off, int sz, int str) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void lumin(Gob g, Coord off, int sz, int str) {
 	g.setattr(new Lumin(g, off, sz, str));
     }
 	
-    public synchronized void follow(int id, int frame, int oid, Coord off, int szo) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void follow(Gob g, int oid, Coord off, int szo) {
 	if(oid == -1) {
 	    g.delattr(Following.class);
 	} else {
@@ -239,24 +215,15 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    public synchronized void homostop(int id, int frame) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void homostop(Gob g) {
 	g.delattr(Homing.class);
     }
 
-    public synchronized void homing(int id, int frame, int oid, Coord tc, int v) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void homing(Gob g, int oid, Coord tc, int v) {
 	g.setattr(new Homing(g, oid, tc, v));
     }
 	
-    public synchronized void homocoord(int id, int frame, Coord tc, int v) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void homocoord(Gob g, Coord tc, int v) {
 	Homing homo = g.getattr(Homing.class);
 	if(homo != null) {
 	    homo.tc = tc;
@@ -264,10 +231,7 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 	
-    public synchronized void overlay(int id, int frame, int olid, boolean prs, Indir<Resource> resid, Message sdt) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void overlay(Gob g, int olid, boolean prs, Indir<Resource> resid, Message sdt) {
 	Gob.Overlay ol = g.findol(olid);
 	if(resid != null) {
 	    if(ol == null) {
@@ -285,17 +249,11 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    public synchronized void health(int id, int frame, int hp) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void health(Gob g, int hp) {
 	g.setattr(new GobHealth(g, hp));
     }
 	
-    public synchronized void buddy(int id, int frame, String name, int group, int type) {
-	Gob g = getgob(id, frame);
-	if(g == null)
-	    return;
+    public synchronized void buddy(Gob g, String name, int group, int type) {
 	if((name.length() == 0) && (group == 0) && (type == 0)) {
 	    g.delattr(KinInfo.class);
 	} else {
