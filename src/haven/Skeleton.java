@@ -483,7 +483,6 @@ public class Skeleton {
 	    } else {
 		nspeed = -1;
 	    }
-	    System.err.println(res + ", " + id + ", " + fl + ", " + len + ", " + nspeed);
 	    Collection<Track> tracks = new LinkedList<Track>();
 	    while(off[0] < buf.length) {
 		String bnm = Utils.strd(buf, off);
