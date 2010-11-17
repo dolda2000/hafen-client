@@ -383,6 +383,8 @@ public class Skeleton {
 	public final float len;
 	public final boolean stat;
 	public float time = 0.0f;
+	public boolean speedmod = false;
+	public double nspeed = 0.0;
 	
 	public TrackMod(Track[] tracks, float len) {
 	    this.tracks = tracks;
@@ -468,12 +470,20 @@ public class Skeleton {
 	public final int id;
 	public final float len;
 	public final Track[] tracks;
+	public final double nspeed;
 	
 	public ResPose(Resource res, byte[] buf) {
 	    res.super();
 	    this.id = Utils.int16d(buf, 0);
-	    this.len = (float)Utils.floatd(buf, 2);
-	    int[] off = {7};
+	    int fl = buf[2];
+	    this.len = (float)Utils.floatd(buf, 3);
+	    int[] off = {8};
+	    if((fl & 1) != 0) {
+		nspeed = Utils.floatd(buf, off[0]); off[0] += 5;
+	    } else {
+		nspeed = -1;
+	    }
+	    System.err.println(res + ", " + id + ", " + fl + ", " + len + ", " + nspeed);
 	    Collection<Track> tracks = new LinkedList<Track>();
 	    while(off[0] < buf.length) {
 		String bnm = Utils.strd(buf, off);
@@ -500,7 +510,12 @@ public class Skeleton {
 	    Track[] remap = new Track[skel.blist.length];
 	    for(Track t : tracks)
 		remap[skel.bones.get(t.bone).idx] = t;
-	    return(skel.new TrackMod(remap, len));
+	    TrackMod ret = skel.new TrackMod(remap, len);
+	    if(nspeed > 0) {
+		ret.speedmod = true;
+		ret.nspeed = nspeed;
+	    }
+	    return(ret);
 	}
 	
 	public void init() {}
