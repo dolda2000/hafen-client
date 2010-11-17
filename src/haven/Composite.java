@@ -279,9 +279,14 @@ public class Composite extends Drawable {
 	
     public void ctick(int dt) {
 	if(!stat) {
+	    Moving mv = gob.getattr(Moving.class);
+	    double v = 0;
+	    if(mv != null)
+		v = mv.getv();
+	    double d = dt / 1000.0;
 	    pose.reset();
 	    for(TrackMod m : mods) {
-		m.update(dt / 1000.0f);
+		m.update((float)((m.speedmod)?(d * (v / m.nspeed)):d));
 		m.apply(pose);
 	    }
 	    pose.gbuild();
