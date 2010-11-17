@@ -28,22 +28,20 @@ package haven;
 
 public class Following extends Moving {
     int tgt;
-    Coord doff;
-    int szo;
+    float zo;
     double lastv = 0.0;
 	
-    public Following(Gob gob, int tgt, Coord doff, int szo) {
+    public Following(Gob gob, int tgt, float zo) {
 	super(gob);
 	this.tgt = tgt;
-	this.doff = doff;
-	this.szo = szo;
+	this.zo = zo;
     }
 	
     public Coord3f getc() {
 	Gob tgt = gob.glob.oc.getgob(this.tgt);
 	if(tgt == null)
 	    return(gob.getrc());
-	return(tgt.getc());
+	return(tgt.getc().add(0.0f, 0.0f, zo));
     }
     
     public double getv() {

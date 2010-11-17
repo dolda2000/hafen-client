@@ -199,18 +199,17 @@ public class OCache implements Iterable<Gob> {
 	g.setattr(new Lumin(g, off, sz, str));
     }
 	
-    public synchronized void follow(Gob g, int oid, Coord off, int szo) {
+    public synchronized void follow(Gob g, int oid, float zo) {
 	if(oid == -1) {
 	    g.delattr(Following.class);
 	} else {
 	    Following flw = g.getattr(Following.class);
 	    if(flw == null) {
-		flw = new Following(g, oid, off, szo);
+		flw = new Following(g, oid, zo);
 		g.setattr(flw);
 	    } else {
 		flw.tgt = oid;
-		flw.doff = off;
-		flw.szo = szo;
+		flw.zo = zo;
 	    }
 	}
     }

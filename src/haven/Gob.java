@@ -151,17 +151,6 @@ public class Gob implements Sprite.Owner, Rendered {
 	attr.remove(attrclass(c));
     }
 	
-    public Coord drawoff() {
-	Coord ret = Coord.z;
-	DrawOffset dro = getattr(DrawOffset.class);
-	if(dro != null)
-	    ret = ret.add(dro.off);
-	Following flw = getattr(Following.class);
-	if(flw != null)
-	    ret = ret.add(flw.doff);
-	return(ret);
-    }
-	
     public void draw(GOut g) {}
 
     public boolean setup(RenderList rl) {
