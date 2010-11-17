@@ -39,9 +39,9 @@ public class Composite extends Drawable {
     private TrackMod[] mods = new TrackMod[0];
     private Collection<Equ> equ = new LinkedList<Equ>();
     private boolean stat = true;
-    private List<Indir<Resource>> nposes = null;
-    private List<MD> nmod = null;
-    private List<ED> nequ = null;
+    private List<Indir<Resource>> nposes = null, cposes = new LinkedList<Indir<Resource>>();
+    private List<MD> nmod = null, cmod = new LinkedList<MD>();
+    private List<ED> nequ = null, cequ = new LinkedList<ED>();
     
     private class Model implements Rendered {
 	private final MorphedMesh m;
@@ -116,7 +116,7 @@ public class Composite extends Drawable {
 	}
     }
 
-    public static class MD {
+    public static class MD implements Cloneable {
 	public Indir<Resource> mod;
 	public List<Indir<Resource>> tex;
 	private Model real;
@@ -126,12 +126,30 @@ public class Composite extends Drawable {
 	    this.tex = tex;
 	}
 	
+	public boolean equals(Object o) {
+	    if(!(o instanceof MD))
+		return(false);
+	    MD m = (MD)o;
+	    return(mod.equals(m.mod) && tex.equals(m.tex));
+	}
+	
+	public MD clone() {
+	    try {
+		MD ret = (MD)super.clone();
+		ret.tex = new LinkedList<Indir<Resource>>(tex);
+		return(ret);
+	    } catch(CloneNotSupportedException e) {
+		/* This is ridiculous. */
+		throw(new RuntimeException(e));
+	    }
+	}
+	
 	public String toString() {
 	    return(mod + "+" + tex);
 	}
     }
     
-    public static class ED {
+    public static class ED implements Cloneable {
 	public int t;
 	public String at;
 	public Indir<Resource> res;
@@ -142,6 +160,23 @@ public class Composite extends Drawable {
 	    this.at = at;
 	    this.res = res;
 	    this.off = off;
+	}
+	
+	public boolean equals(Object o) {
+	    if(!(o instanceof ED))
+		return(false);
+	    ED e = (ED)o;
+	    return((t == e.t) && at.equals(e.at) && res.equals(e.res));
+	}
+
+	public ED clone() {
+	    try {
+		ED ret = (ED)super.clone();
+		return(ret);
+	    } catch(CloneNotSupportedException e) {
+		/* This is ridiculous. */
+		throw(new RuntimeException(e));
+	    }
 	}
     }
     
@@ -261,16 +296,28 @@ public class Composite extends Drawable {
     }
     
     public void chposes(List<Indir<Resource>> poses) {
-	nposes = poses;
+	if(poses.equals(cposes))
+	    return;
+	nposes = cposes = poses;
     }
     
     public void chmod(List<MD> mod) {
+	if(mod.equals(cmod))
+	    return;
 	this.mod = new LinkedList<Model>();
 	nmod = mod;
+	cmod = new ArrayList<MD>(mod.size());
+	for(MD md : mod)
+	    cmod.add(md.clone());
     }
     
     public void chequ(List<ED> equ) {
+	if(equ.equals(cequ))
+	    return;
 	this.equ = new LinkedList<Equ>();
 	nequ = equ;
+	cequ = new ArrayList<ED>(equ.size());
+	for(ED ed : equ)
+	    cequ.add(ed.clone());
     }
 }
