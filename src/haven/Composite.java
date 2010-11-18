@@ -214,7 +214,7 @@ public class Composite extends Drawable {
 	    }
 	}
 	pose.gbuild();
-	this.mods = nposes.toArray(this.mods);
+	this.mods = nposes.toArray(new TrackMod[0]);
 	this.nposes = null;
     }
     

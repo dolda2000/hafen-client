@@ -83,7 +83,7 @@ public class SkelSprite extends Sprite {
 	    }
 	}
 	pose.gbuild();
-	this.mods = poses.toArray(this.mods);
+	this.mods = poses.toArray(new TrackMod[0]);
     }
     
     public boolean setup(RenderList rl) {
