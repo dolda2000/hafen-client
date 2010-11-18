@@ -323,7 +323,7 @@ public class Composite extends Drawable {
     
     public void chposes(List<Indir<Resource>> poses, boolean interp) {
 	nposes = poses;
-	if(interp) {
+	if(interp && (skel != null)) {
 	    old = skel.new Pose(pose);
 	    ipold = -1.0f;
 	}
