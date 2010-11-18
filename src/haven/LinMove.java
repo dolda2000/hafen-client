@@ -48,6 +48,8 @@ public class LinMove extends Moving {
     }
     
     public double getv() {
+	if(c == 0)
+	    return(0.0);
 	return((double)s.dist(t) / (((double)c) * 0.06));
     }
     
