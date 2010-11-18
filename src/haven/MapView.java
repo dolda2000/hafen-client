@@ -87,9 +87,13 @@ public class MapView extends PView {
 		curc = cc;
 	    float dx = cc.x - curc.x, dy = cc.y - curc.y;
 	    if(Math.sqrt((dx * dx) + (dy * dy)) > fr) {
+		Coord3f oc = curc;
+		float pd = (float)Math.cos(elev) * dist(elev);
+		Coord3f cambase = new Coord3f(curc.x + ((float)Math.cos(angl) * pd), curc.y + ((float)Math.sin(angl) * pd), 0.0f);
 		float a = cc.xyangle(curc);
 		float nx = cc.x + ((float)Math.cos(a) * fr), ny = cc.y + ((float)Math.sin(a) * fr);
 		curc = new Coord3f(nx, ny, glob.map.getcz(nx, ny));
+		angl = curc.xyangle(cambase);
 	    }
 	    PointedCam.apply(g.gl, curc.add(0.0f, 0.0f, h), dist(elev), elev, angl);
 	}
