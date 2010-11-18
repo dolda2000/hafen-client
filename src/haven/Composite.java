@@ -278,8 +278,6 @@ public class Composite extends Drawable {
 	    rl.add(mod, null);
 	for(Equ equ : this.equ)
 	    rl.add(equ, equ.et);
-	if(old != null)
-	    rl.add(old.debug, null);
     }
 	
     private void rebuild() {
