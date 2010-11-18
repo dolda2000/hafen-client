@@ -56,7 +56,8 @@ public interface Rendered {
 	    GL gl = g.gl;
 	    g.matsel(null);
 	    
-	    gl.glBegin(gl.GL_QUADS);
+	    gl.glEnable(GL.GL_COLOR_MATERIAL);
+	    gl.glBegin(GL.GL_QUADS);
 	    gl.glNormal3f(0.0f, 0.0f, 1.0f);
 	    gl.glColor3f(0.0f, 0.0f, 1.0f);
 	    gl.glVertex3f(-1.0f, 1.0f, 1.0f);
@@ -99,6 +100,7 @@ public interface Rendered {
 	    gl.glVertex3f(1.0f, -1.0f, -1.0f);
 	    gl.glVertex3f(-1.0f, -1.0f, -1.0f);
 	    gl.glEnd();
+	    gl.glDisable(GL.GL_COLOR_MATERIAL);
 	}
 	
 	public boolean setup(RenderList rls) {
