@@ -203,25 +203,19 @@ public class Composite extends Drawable {
 	    if(res.get() == null)
 		return;
 	}
-	if(ipold < -0.5f) {
-	    old = skel.new Pose(pose);
+	if(ipold < -0.5f)
 	    ipold = 1.0f;
-	}
 	List<TrackMod> nposes = new LinkedList<TrackMod>();
 	stat = true;
-	pose.reset();
 	for(Indir<Resource> res : this.nposes) {
 	    for(Skeleton.ResPose p : res.get().layers(Skeleton.ResPose.class)) {
 		TrackMod mod = p.forskel(skel);
 		if(!mod.stat)
 		    stat = false;
 		nposes.add(mod);
-		mod.apply(pose);
 	    }
 	}
-	if(ipold > 0.0f)
-	    pose.blend(old, ipold);
-	pose.gbuild();
+	rebuild();
 	this.mods = nposes.toArray(new TrackMod[0]);
 	this.nposes = null;
     }
@@ -284,31 +278,40 @@ public class Composite extends Drawable {
 	    rl.add(mod, null);
 	for(Equ equ : this.equ)
 	    rl.add(equ, equ.et);
+	if(old != null)
+	    rl.add(old.debug, null);
     }
 	
+    private void rebuild() {
+	pose.reset();
+	for(TrackMod m : mods)
+	    m.apply(pose);
+	if(ipold > 0.0f)
+	    pose.blend(old, ipold);
+	pose.gbuild();
+    }
+
     public void ctick(int dt) {
-	boolean build = !stat || (ipold > 0.0f);
-	if(build) {
+	boolean build = false;
+	if(!stat) {
+	    double d = dt / 1000.0;
 	    Moving mv = gob.getattr(Moving.class);
 	    double v = 0;
 	    if(mv != null)
 		v = mv.getv();
-	    double d = dt / 1000.0;
-	    pose.reset();
-	    for(TrackMod m : mods) {
+	    for(TrackMod m : mods)
 		m.update((float)((m.speedmod)?(d * (v / m.nspeed)):d));
-		m.apply(pose);
-	    }
-	    if(ipold > 0.0f) {
-		if((ipold -= (dt / 1000.0f / ipollen)) < 0.0f) {
-		    ipold = 0.0f;
-		    old = null;
-		} else {
-		    pose.blend(old, ipold);
-		}
-	    }
-	    pose.gbuild();
+	    build = true;
 	}
+	if(ipold > 0.0f) {
+	    if((ipold -= (dt / 1000.0f / ipollen)) < 0.0f) {
+		ipold = 0.0f;
+		old = null;
+	    }
+	    build = true;
+	}
+	if(build)
+	    rebuild();
     }
     
     public Resource.Neg getneg() {
@@ -320,8 +323,10 @@ public class Composite extends Drawable {
     
     public void chposes(List<Indir<Resource>> poses, boolean interp) {
 	nposes = poses;
-	if(interp)
+	if(interp) {
+	    old = skel.new Pose(pose);
 	    ipold = -1.0f;
+	}
     }
     
     public void chmod(List<MD> mod) {
