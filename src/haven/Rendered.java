@@ -100,6 +100,7 @@ public interface Rendered {
 	    gl.glVertex3f(1.0f, -1.0f, -1.0f);
 	    gl.glVertex3f(-1.0f, -1.0f, -1.0f);
 	    gl.glEnd();
+	    gl.glColor3f(1.0f, 1.0f, 1.0f);
 	    gl.glDisable(GL.GL_COLOR_MATERIAL);
 	}
 	
