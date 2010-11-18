@@ -219,6 +219,8 @@ public class Composite extends Drawable {
 		mod.apply(pose);
 	    }
 	}
+	if(ipold > 0.0f)
+	    pose.blend(old, ipold);
 	pose.gbuild();
 	this.mods = nposes.toArray(new TrackMod[0]);
 	this.nposes = null;
