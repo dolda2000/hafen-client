@@ -58,6 +58,8 @@ public class MapView extends PView {
 	private final float ca = (float)sz.y / (float)sz.x;
 	private final float h = 10.0f, cd = 400.0f * ca;
 	private final float da = (float)Math.atan(ca * 0.5f);
+	private final float fr = 0.0f;
+	private Coord3f curc = null;
 	private float elev = (float)Math.PI / 4.0f;
 	private float angl = 0.0f;
 	private Coord dragorig = null;
@@ -81,7 +83,15 @@ public class MapView extends PView {
 	public void apply(GOut g) {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
-	    PointedCam.apply(g.gl, cc.add(0.0f, 0.0f, h), dist(elev), elev, angl);
+	    if(curc == null)
+		curc = cc;
+	    float dx = cc.x - curc.x, dy = cc.y - curc.y;
+	    if(Math.sqrt((dx * dx) + (dy * dy)) > fr) {
+		float a = cc.xyangle(curc);
+		float nx = cc.x + ((float)Math.cos(a) * fr), ny = cc.y + ((float)Math.sin(a) * fr);
+		curc = new Coord3f(nx, ny, glob.map.getcz(nx, ny));
+	    }
+	    PointedCam.apply(g.gl, curc.add(0.0f, 0.0f, h), dist(elev), elev, angl);
 	}
 	
 	public boolean wheel(Coord c, int amount) {

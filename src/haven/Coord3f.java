@@ -26,6 +26,8 @@
 
 package haven;
 
+import static java.lang.Math.PI;
+
 public class Coord3f {
     public float x, y, z;
     public static Coord3f o = new Coord3f(0, 0, 0);
@@ -104,6 +106,25 @@ public class Coord3f {
 	float dy = o.y - y;
 	float dz = o.z - z;
 	return((float)Math.sqrt((dx * dx) + (dy * dy) + (dz * dz)));
+    }
+    
+    public float xyangle(Coord3f o) {
+	Coord3f c = o.sub(this);
+	if(c.x == 0) {
+	    if(c.y < 0)
+		return((float)-PI / 2);
+	    else
+		return((float)PI / 2);
+	} else {
+	    if(c.x < 0) {
+		if(c.y < 0)
+		    return((float)(-PI + Math.atan(c.y / c.x)));
+		else
+		    return((float)(PI + Math.atan(c.y / c.x)));
+	    } else {
+		return((float)Math.atan(c.y / c.x));
+	    }
+	}
     }
     
     public float[] to3a() {
