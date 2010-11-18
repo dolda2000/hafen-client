@@ -44,7 +44,7 @@ public abstract class Transform {
 	return(new Transform() {
 		public void apply(GOut g) {
 		    GL gl = g.gl;
-		    gl.glRotatef(angle, axis.x, axis.y, axis.z);
+		    gl.glRotatef(angle * 180.0f / (float)Math.PI, axis.x, axis.y, axis.z);
 		}
 	    });
     }

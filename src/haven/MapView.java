@@ -129,7 +129,7 @@ public class MapView extends PView {
 	    for(Gob g : glob.oc) {
 		Coord3f c = g.getc();
 		c.y = -c.y;
-		rl.add(g, Transform.seq(Transform.xlate(c), Transform.rot(Coord3f.zu, -(float)(360.0 * g.a / (Math.PI * 2)))));
+		rl.add(g, Transform.seq(Transform.xlate(c), Transform.rot(Coord3f.zu, (float)-g.a)));
 	    }
 	}
     }
