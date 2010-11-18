@@ -32,9 +32,11 @@ import haven.Skeleton.Pose;
 import haven.Skeleton.TrackMod;
 
 public class Composite extends Drawable {
+    public final static float ipollen = 0.2f;
     public final Indir<Resource> base;
     private Skeleton skel;
-    private Pose pose;
+    private Pose pose, old;
+    private float ipold = 0.0f;
     private Collection<Model> mod = new LinkedList<Model>();
     private TrackMod[] mods = new TrackMod[0];
     private Collection<Equ> equ = new LinkedList<Equ>();
@@ -201,6 +203,10 @@ public class Composite extends Drawable {
 	    if(res.get() == null)
 		return;
 	}
+	if(ipold < -0.5f) {
+	    old = skel.new Pose(pose);
+	    ipold = 1.0f;
+	}
 	List<TrackMod> nposes = new LinkedList<TrackMod>();
 	stat = true;
 	pose.reset();
@@ -279,7 +285,8 @@ public class Composite extends Drawable {
     }
 	
     public void ctick(int dt) {
-	if(!stat) {
+	boolean build = !stat || (ipold > 0.0f);
+	if(build) {
 	    Moving mv = gob.getattr(Moving.class);
 	    double v = 0;
 	    if(mv != null)
@@ -289,6 +296,14 @@ public class Composite extends Drawable {
 	    for(TrackMod m : mods) {
 		m.update((float)((m.speedmod)?(d * (v / m.nspeed)):d));
 		m.apply(pose);
+	    }
+	    if(ipold > 0.0f) {
+		if((ipold -= (dt / 1000.0f / ipollen)) < 0.0f) {
+		    ipold = 0.0f;
+		    old = null;
+		} else {
+		    pose.blend(old, ipold);
+		}
 	    }
 	    pose.gbuild();
 	}
@@ -301,8 +316,10 @@ public class Composite extends Drawable {
 	return(r.layer(Resource.negc));
     }
     
-    public void chposes(List<Indir<Resource>> poses) {
+    public void chposes(List<Indir<Resource>> poses, boolean interp) {
 	nposes = poses;
+	if(interp)
+	    ipold = -1.0f;
     }
     
     public void chmod(List<MD> mod) {

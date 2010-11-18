@@ -247,6 +247,15 @@ public class Skeleton {
 	    seq++;
 	}
 	
+	public void blend(Pose o, float d) {
+	    for(int i = 0; i < blist.length; i++) {
+		qqslerp(lrot[i], lrot[i], o.lrot[i], d);
+		lpos[i][0] = lpos[i][0] + ((o.lpos[i][0] - lpos[i][0]) * d);
+		lpos[i][1] = lpos[i][1] + ((o.lpos[i][1] - lpos[i][1]) * d);
+		lpos[i][2] = lpos[i][2] + ((o.lpos[i][2] - lpos[i][2]) * d);
+	    }
+	}
+	
 	public Transform bonetrans(final int bone) {
 	    return(new Transform() {
 		    public void apply(GOut g) {
