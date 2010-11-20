@@ -368,10 +368,16 @@ public class Composite extends Drawable {
 	p.mode = mode;
 	if(time > 0)
 	    p.limit = time;
+	Poses seq;
 	if(nposes != null)
-	    p.seq = new Poses(nposes.loading, ipollen);
+	    seq = nposes;
 	else
-	    p.seq = new Poses(poses.loading, ipollen);
+	    seq = poses;
+	if(seq.seq != null)
+	    seq = seq.seq;
+	else
+	    seq = new Poses(seq.loading, ipollen);
+	p.seq = seq;
 	nposes = p;
     }
     
