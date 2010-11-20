@@ -298,7 +298,7 @@ public class Composite extends Drawable {
 	    if(mv != null)
 		v = mv.getv();
 	    for(TrackMod m : mods)
-		m.update((float)((m.speedmod)?(d * (v / m.nspeed)):d));
+		m.tick((float)((m.speedmod)?(d * (v / m.nspeed)):d));
 	    build = true;
 	}
 	if(ipold > 0.0f) {

@@ -28,12 +28,12 @@ package haven;
 
 import java.util.*;
 import haven.Skeleton.Pose;
-import haven.Skeleton.TrackMod;
+import haven.Skeleton.PoseMod;
 
 public class SkelSprite extends Sprite {
     private final Skeleton skel;
     private Pose pose;
-    private TrackMod[] mods = new TrackMod[0];
+    private PoseMod[] mods = new PoseMod[0];
     private boolean stat = true;
     private final Rendered[] parts;
     
@@ -70,12 +70,12 @@ public class SkelSprite extends Sprite {
     }
     
     private void chposes(int mask) {
-	Collection<TrackMod> poses = new LinkedList<TrackMod>();
+	Collection<PoseMod> poses = new LinkedList<PoseMod>();
 	stat = true;
 	pose.reset();
 	for(Skeleton.ResPose p : res.layers(Skeleton.ResPose.class)) {
 	    if((p.id < 0) || ((mask & (1 << p.id)) != 0)) {
-		TrackMod mod = p.forskel(skel);
+		Skeleton.TrackMod mod = p.forskel(skel);
 		if(!mod.stat)
 		    stat = false;
 		poses.add(mod);
@@ -83,7 +83,7 @@ public class SkelSprite extends Sprite {
 	    }
 	}
 	pose.gbuild();
-	this.mods = poses.toArray(new TrackMod[0]);
+	this.mods = poses.toArray(new PoseMod[0]);
     }
     
     public boolean setup(RenderList rl) {
@@ -96,8 +96,8 @@ public class SkelSprite extends Sprite {
     public boolean tick(int dt) {
 	if(!stat) {
 	    pose.reset();
-	    for(TrackMod m : mods) {
-		m.update(dt / 1000.0f);
+	    for(PoseMod m : mods) {
+		m.tick(dt / 1000.0f);
 		m.apply(pose);
 	    }
 	    pose.gbuild();

@@ -348,6 +348,9 @@ public class Skeleton {
 		qqmul(p.lrot[i], p.lrot[i], lrot[i]);
 	    }
 	}
+	
+	public void tick(float dt) {
+	}
     }
     
     public static class Res extends Resource.Layer {
@@ -448,7 +451,7 @@ public class Skeleton {
 	    }
 	}
 	
-	public void update(float dt) {
+	public void tick(float dt) {
 	    if(stat)
 		return;
 	    aupdate((time + dt) % len);
