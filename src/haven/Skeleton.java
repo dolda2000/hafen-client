@@ -394,13 +394,17 @@ public class Skeleton {
 	public final Track[] tracks;
 	public final float len;
 	public final boolean stat;
+	public final WrapMode mode;
+	public boolean done;
 	public float time = 0.0f;
 	public boolean speedmod = false;
 	public double nspeed = 0.0;
+	private boolean back = false;
 	
-	public TrackMod(Track[] tracks, float len) {
+	public TrackMod(Track[] tracks, float len, WrapMode mode) {
 	    this.tracks = tracks;
 	    this.len = len;
+	    this.mode = mode;
 	    for(Track t : tracks) {
 		if((t != null) && (t.frames.length > 1)) {
 		    stat = false;
@@ -454,7 +458,37 @@ public class Skeleton {
 	public void tick(float dt) {
 	    if(stat)
 		return;
-	    aupdate((time + dt) % len);
+	    float nt = time + (back?-dt:dt);
+	    switch(mode) {
+	    case LOOP:
+		nt %= len;
+		break;
+	    case ONCE:
+		if(nt > len) {
+		    nt = len;
+		    done = true;
+		}
+		break;
+	    case PONG:
+		if(!back && (nt > len)) {
+		    nt = len;
+		    back = true;
+		} else if(back && (nt < 0)) {
+		    nt = 0;
+		    done = true;
+		}
+		break;
+	    case PONGLOOP:
+		if(!back && (nt > len)) {
+		    nt = len;
+		    back = true;
+		} else if(back && (nt < 0)) {
+		    nt = 0;
+		    back = false;
+		}
+		break;
+	    }
+	    aupdate(nt);
 	}
     }
 
@@ -518,11 +552,11 @@ public class Skeleton {
 	    this.tracks = tracks.toArray(new Track[0]);
 	}
 	
-	public TrackMod forskel(Skeleton skel) {
+	public TrackMod forskel(Skeleton skel, WrapMode mode) {
 	    Track[] remap = new Track[skel.blist.length];
 	    for(Track t : tracks)
 		remap[skel.bones.get(t.bone).idx] = t;
-	    TrackMod ret = skel.new TrackMod(remap, len);
+	    TrackMod ret = skel.new TrackMod(remap, len, mode);
 	    if(nspeed > 0) {
 		ret.speedmod = true;
 		ret.nspeed = nspeed;

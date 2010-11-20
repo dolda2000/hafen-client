@@ -209,7 +209,7 @@ public class Composite extends Drawable {
 	stat = true;
 	for(Indir<Resource> res : this.nposes) {
 	    for(Skeleton.ResPose p : res.get().layers(Skeleton.ResPose.class)) {
-		TrackMod mod = p.forskel(skel);
+		TrackMod mod = p.forskel(skel, WrapMode.LOOP);
 		if(!mod.stat)
 		    stat = false;
 		nposes.add(mod);

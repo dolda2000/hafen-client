@@ -75,7 +75,7 @@ public class SkelSprite extends Sprite {
 	pose.reset();
 	for(Skeleton.ResPose p : res.layers(Skeleton.ResPose.class)) {
 	    if((p.id < 0) || ((mask & (1 << p.id)) != 0)) {
-		Skeleton.TrackMod mod = p.forskel(skel);
+		Skeleton.TrackMod mod = p.forskel(skel, WrapMode.LOOP);
 		if(!mod.stat)
 		    stat = false;
 		poses.add(mod);
