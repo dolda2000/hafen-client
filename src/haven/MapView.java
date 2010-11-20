@@ -190,7 +190,9 @@ public class MapView extends PView {
     }
 
     public void setup(RenderList rl) {
-	this.cc = new Coord(getcc());
+	Gob pl = player();
+	if(pl != null)
+	    this.cc = new Coord(pl.getc());
 	if(lighting == 0) {
 	    rl.add(new DirLight(new Color(128, 128, 128), Color.WHITE, Color.WHITE, new Coord3f(2.0f, 1.0f, 5.0f)));
 	} else if(lighting == 1) {
