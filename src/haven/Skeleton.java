@@ -418,7 +418,6 @@ public class Skeleton {
 	public void aupdate(float time) {
 	    if(time > len)
 		time = len;
-	    this.time = time;
 	    reset();
 	    for(int i = 0; i < tracks.length; i++) {
 		Track t = tracks[i];
@@ -456,8 +455,6 @@ public class Skeleton {
 	}
 	
 	public void tick(float dt) {
-	    if(stat)
-		return;
 	    float nt = time + (back?-dt:dt);
 	    switch(mode) {
 	    case LOOP:
@@ -488,7 +485,9 @@ public class Skeleton {
 		}
 		break;
 	    }
-	    aupdate(nt);
+	    this.time = nt;
+	    if(!stat)
+		aupdate(this.time);
 	}
     }
 

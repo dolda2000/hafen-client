@@ -35,17 +35,103 @@ public class Composite extends Drawable {
     public final static float ipollen = 0.2f;
     public final Indir<Resource> base;
     private Skeleton skel;
-    private Pose pose, old;
-    private float ipold = 0.0f;
+    private Pose pose;
     private Collection<Model> mod = new LinkedList<Model>();
-    private TrackMod[] mods = new TrackMod[0];
+    private Poses poses = null, nposes = new Poses();
     private Collection<Equ> equ = new LinkedList<Equ>();
-    private boolean stat = true;
     public int pseq;
-    private List<Indir<Resource>> nposes = null;
     private List<MD> nmod = null, cmod = new LinkedList<MD>();
     private List<ED> nequ = null, cequ = new LinkedList<ED>();
     
+    private class Poses {
+	TrackMod[] mods = new TrackMod[0];
+	final List<Indir<Resource>> loading;
+	Poses seq;
+	Pose old;
+	float ipold = 0.0f, ipol = 0.0f;
+	float limit = -1.0f;
+	boolean stat, ldone;
+	WrapMode mode = WrapMode.LOOP;
+	
+	private Poses() {
+	    this.loading = Collections.emptyList();
+	}
+
+	private Poses(List<Indir<Resource>> rl, float ipol) {
+	    this.loading = rl;
+	    this.ipol = ipol;
+	}
+	
+	boolean load() {
+	    for(Indir<Resource> res : loading) {
+		if(res.get() == null)
+		    return(false);
+	    }
+	    if(ipol > 0) {
+		old = skel.new Pose(pose);
+		ipold = 1.0f;
+	    }
+	    List<TrackMod> mods = new LinkedList<TrackMod>();
+	    stat = true;
+	    for(Indir<Resource> res : loading) {
+		for(Skeleton.ResPose p : res.get().layers(Skeleton.ResPose.class)) {
+		    TrackMod mod = p.forskel(skel, mode);
+		    if(!mod.stat)
+			stat = false;
+		    mods.add(mod);
+		}
+	    }
+	    this.mods = mods.toArray(new TrackMod[0]);
+	    poses = this;
+	    rebuild();
+	    return(true);
+	}
+	
+	void rebuild() {
+	    pose.reset();
+	    for(TrackMod m : mods)
+		m.apply(pose);
+	    if(ipold > 0.0f)
+		pose.blend(old, ipold);
+	    pose.gbuild();
+	}
+	
+	void tick(float dt) {
+	    boolean build = false;
+	    Moving mv = gob.getattr(Moving.class);
+	    double v = 0;
+	    if(mv != null)
+		v = mv.getv();
+	    boolean done = true;
+	    for(TrackMod m : mods) {
+		m.tick((m.speedmod)?(dt * (float)(v / m.nspeed)):dt);
+		if(!m.done)
+		    done = false;
+	    }
+	    if(!stat)
+		build = true;
+	    if(ipold > 0.0f) {
+		if((ipold -= (dt / ipol)) < 0.0f) {
+		    ipold = 0.0f;
+		    old = null;
+		}
+		build = true;
+	    }
+	    if(build)
+		rebuild();
+	    if(limit > 0) {
+		if((limit -= dt) < 0)
+		    ldone = true;
+	    }
+	    if(mode.ends && !ldone)
+		done = false;
+	    if(!mode.ends && ldone)
+		done = true;
+	    if(done && (seq != null))
+		nposes = seq;
+	}
+    }
+
     private class Model implements Rendered {
 	private final MorphedMesh m;
 	private final List<Material> lay = new ArrayList<Material>();
@@ -198,28 +284,6 @@ public class Composite extends Drawable {
 	pose = skel.new Pose(skel.bindpose);
     }
     
-    private void nposes() {
-	for(Indir<Resource> res : this.nposes) {
-	    if(res.get() == null)
-		return;
-	}
-	if(ipold < -0.5f)
-	    ipold = 1.0f;
-	List<TrackMod> nposes = new LinkedList<TrackMod>();
-	stat = true;
-	for(Indir<Resource> res : this.nposes) {
-	    for(Skeleton.ResPose p : res.get().layers(Skeleton.ResPose.class)) {
-		TrackMod mod = p.forskel(skel, WrapMode.LOOP);
-		if(!mod.stat)
-		    stat = false;
-		nposes.add(mod);
-	    }
-	}
-	rebuild();
-	this.mods = nposes.toArray(new TrackMod[0]);
-	this.nposes = null;
-    }
-    
     private void nmod() {
 	for(Iterator<MD> i = nmod.iterator(); i.hasNext();) {
 	    MD md = i.next();
@@ -261,8 +325,6 @@ public class Composite extends Drawable {
     }
 
     private void changes() {
-	if(nposes != null)
-	    nposes();
 	if(nmod != null)
 	    nmod();
 	if(nequ != null)
@@ -280,38 +342,16 @@ public class Composite extends Drawable {
 	    rl.add(equ, equ.et);
     }
 	
-    private void rebuild() {
-	pose.reset();
-	for(TrackMod m : mods)
-	    m.apply(pose);
-	if(ipold > 0.0f)
-	    pose.blend(old, ipold);
-	pose.gbuild();
+    public void ctick(int dt) {
+	if(skel == null)
+	    return;
+	if(nposes != null) {
+	    if(nposes.load())
+		nposes = null;
+	}
+	poses.tick(dt / 1000.0f);
     }
 
-    public void ctick(int dt) {
-	boolean build = false;
-	if(!stat) {
-	    double d = dt / 1000.0;
-	    Moving mv = gob.getattr(Moving.class);
-	    double v = 0;
-	    if(mv != null)
-		v = mv.getv();
-	    for(TrackMod m : mods)
-		m.tick((float)((m.speedmod)?(d * (v / m.nspeed)):d));
-	    build = true;
-	}
-	if(ipold > 0.0f) {
-	    if((ipold -= (dt / 1000.0f / ipollen)) < 0.0f) {
-		ipold = 0.0f;
-		old = null;
-	    }
-	    build = true;
-	}
-	if(build)
-	    rebuild();
-    }
-    
     public Resource.Neg getneg() {
 	Resource r = base.get();
 	if(r == null)
@@ -320,12 +360,28 @@ public class Composite extends Drawable {
     }
     
     public void chposes(List<Indir<Resource>> poses, boolean interp) {
-	nposes = poses;
-	if(interp && (skel != null)) {
-	    old = skel.new Pose(pose);
-	    ipold = -1.0f;
-	}
+	nposes = new Poses(poses, interp?ipollen:0.0f);
     }
+    
+    public void tposes(List<Indir<Resource>> tposes, WrapMode mode, float time) {
+	Poses p = new Poses(tposes, ipollen);
+	p.mode = mode;
+	if(time > 0)
+	    p.limit = time;
+	if(nposes != null)
+	    p.seq = new Poses(nposes.loading, ipollen);
+	else
+	    p.seq = new Poses(poses.loading, ipollen);
+	nposes = p;
+    }
+    
+    /*
+    public void tpose(List<Indir<Resource>> poses, WrapMode mode, float time) {
+	this.tposes = poses;
+	this.tpmode = mode;
+	this.tptime = time;
+    }
+    */
     
     public void chmod(List<MD> mod) {
 	if(mod.equals(cmod))
