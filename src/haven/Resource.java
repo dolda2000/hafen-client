@@ -657,6 +657,11 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		off[0] += 2;
 		flw[i] = Utils.ub(buf[off[0]++]);
 	    }
+	    
+	    if(name.equals("gfx/tiles/water"))
+		tclass = haven.resutil.WaterTile.Shallows.class;
+	    else if(name.equals("gfx/tiles/deep"))
+		tclass = haven.resutil.WaterTile.Deep.class;
 	}
 		
 	private void packtiles(Collection<Tile> tiles, Coord tsz) {
