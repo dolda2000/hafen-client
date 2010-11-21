@@ -46,9 +46,9 @@ public class GroundTile extends Tiler {
     public void trans(MapMesh m, Random rnd, Coord lc, Coord gc, int z, int bmask, int cmask) {
 	if(m.map.gettile(gc) <= id)
 	    return;
-	if(bmask > 0)
+	if((set.btrans != null) && (bmask > 0))
 	    m.new Plane(m.gnd(), lc, z, set.btrans[bmask - 1].pick(rnd));
-	if(cmask > 0)
+	if((set.ctrans != null) && (cmask > 0))
 	    m.new Plane(m.gnd(), lc, z, set.ctrans[cmask - 1].pick(rnd));
     }
 }
