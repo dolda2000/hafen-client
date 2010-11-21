@@ -147,7 +147,7 @@ public class Composite extends Drawable {
 	    }
 	}
 	
-	public boolean setup(RenderList r) {
+	public Order setup(RenderList r) {
 	    return(m.setup(r));
 	}
     }
@@ -169,9 +169,9 @@ public class Composite extends Drawable {
 	public void draw(GOut g) {
 	}
 
-	public boolean setup(RenderList rl) {
+	public Order setup(RenderList rl) {
 	    rl.add(spr, st);
-	    return(false);
+	    return(null);
 	}
     }
     
@@ -186,9 +186,9 @@ public class Composite extends Drawable {
 	public void draw(GOut g) {
 	}
 	
-	public boolean setup(RenderList rl) {
+	public Order setup(RenderList rl) {
 	    rl.add(l);
-	    return(false);
+	    return(null);
 	}
     }
 

@@ -37,6 +37,7 @@ public class RenderList {
     class Slot {
 	Rendered r;
 	Transform t;
+	Rendered.Order o;
 	Slot p;
     }
     
@@ -60,18 +61,10 @@ public class RenderList {
 	Slot pp = s.p = curp;
 	try {
 	    curp = list[i];
-	    if(!r.setup(this))
-		s.r = null;
+	    s.o = r.setup(this);
 	} finally {
 	    curp = pp;
 	}
-    }
-    
-    public void rewind() {
-	if(curp != null)
-	    throw(new RuntimeException("Tried to rewind RenderList while adding to it."));
-	cur = 0;
-	lights.clear();
     }
     
     public void add(Light l) {
@@ -79,5 +72,34 @@ public class RenderList {
 	s.l = l;
 	s.p = curp;
 	lights.add(s);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static final Comparator<Slot> cmp = new Comparator<Slot>() {
+	public int compare(Slot a, Slot b) {
+	    if((a.o == null) && (b.o == null))
+		return(0);
+	    if((a.o != null) && (b.o == null))
+		return(-1);
+	    if((a.o == null) && (b.o != null))
+		return(1);
+	    int az = a.o.mainz(), bz = b.o.mainz();
+	    if(az != bz)
+		return(az - bz);
+	    if(a.o != b.o)
+		throw(new RuntimeException("Found two different orderings with the same main-Z: " + a.o + " and " + b.o));
+	    return(a.o.cmp().compare(a.r, b.r));
+	}
+    };
+    
+    public void sort() {
+	Arrays.sort(list, 0, cur, cmp);
+    }
+    
+    public void rewind() {
+	if(curp != null)
+	    throw(new RuntimeException("Tried to rewind RenderList while adding to it."));
+	cur = 0;
+	lights.clear();
     }
 }

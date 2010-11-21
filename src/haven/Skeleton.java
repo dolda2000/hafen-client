@@ -313,8 +313,8 @@ public class Skeleton {
 		    gl.glEnable(GL.GL_DEPTH_TEST);
 		}
 	    
-		public boolean setup(RenderList rl) {
-		    return(true);
+		public Order setup(RenderList rl) {
+		    return(deflt);
 		}
 	    };
     }

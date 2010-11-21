@@ -99,8 +99,8 @@ public class TestView extends PView {
 	    gl.glEnd();
 	}
 	
-	public boolean setup(RenderList rls) {
-	    return(true);
+	public Order setup(RenderList rls) {
+	    return(deflt);
 	}
     }
 

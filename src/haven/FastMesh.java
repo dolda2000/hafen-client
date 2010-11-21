@@ -97,8 +97,8 @@ public class FastMesh implements FRendered {
 	GOut.checkerr(gl);
     }
     
-    public boolean setup(RenderList r) {
-	return(true);
+    public Order setup(RenderList r) {
+	return(deflt);
     }
     
     public boolean boned() {

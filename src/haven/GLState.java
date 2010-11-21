@@ -48,7 +48,7 @@ public abstract class GLState {
 	    r.draw(g);
 	}
 
-	public boolean setup(RenderList rl) {
+	public Order setup(RenderList rl) {
 	    return(r.setup(rl));
 	}
     }

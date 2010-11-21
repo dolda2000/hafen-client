@@ -55,7 +55,7 @@ public abstract class PView extends Widget {
     public static void renderlist(GOut g, RenderList rls, Renderer out) {
 	GL gl = g.gl;
 	for(int i = 0; i < rls.cur; i++) {
-	    if(rls.list[i].r == null)
+	    if(rls.list[i].o == null)
 		continue;
 	    gl.glPushMatrix();
 	    try {
@@ -117,6 +117,7 @@ public abstract class PView extends Widget {
     protected void render(GOut g) {
 	rls.rewind();
 	setup(rls);
+	rls.sort();
 	Light[] ll = new Light[0];
 	try {
 	    ll = elights(g, rls);

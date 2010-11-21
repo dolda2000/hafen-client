@@ -153,7 +153,7 @@ public class Gob implements Sprite.Owner, Rendered {
 	
     public void draw(GOut g) {}
 
-    public boolean setup(RenderList rl) {
+    public Order setup(RenderList rl) {
 	Drawable d = getattr(Drawable.class);
 	if(d != null)
 	    d.setup(rl);
@@ -161,7 +161,7 @@ public class Gob implements Sprite.Owner, Rendered {
 	    if(ol.spr != null)
 		ol.spr.setup(rl);
 	}
-	return(false);
+	return(null);
     }
 
     public Random mkrandoom() {

@@ -26,12 +26,36 @@
 
 package haven;
 
+import java.util.Comparator;
 import javax.media.opengl.*;
 
 public interface Rendered {
     public void draw(GOut g);
-    public boolean setup(RenderList r);
+    public Order setup(RenderList r);
     
+    public static interface Order<T extends Rendered> {
+	public int mainz();
+	public Comparator<? super T> cmp();
+	
+	public static class Default implements Order<Rendered> {
+	    public int mainz() {
+		return(0);
+	    }
+	    
+	    private Comparator<Rendered> cmp = new Comparator<Rendered>() {
+		public int compare(Rendered a, Rendered b) {
+		    return(0);
+		}
+	    };
+	    
+	    public Comparator<Rendered> cmp() {
+		return(cmp);
+	    }
+	}
+    }
+
+    public final static Order deflt = new Order.Default();
+
     public static class Dot implements Rendered {
 	public void draw(GOut g) {
 	    GL gl = g.gl;
@@ -46,11 +70,11 @@ public interface Rendered {
 	    gl.glEnable(GL.GL_DEPTH_TEST);
 	}
 	
-	public boolean setup(RenderList r) {
-	    return(true);
+	public Order setup(RenderList r) {
+	    return(deflt);
 	}
     }
-
+    
     public static class Cube implements Rendered {
 	public void draw(GOut g) {
 	    GL gl = g.gl;
@@ -104,8 +128,8 @@ public interface Rendered {
 	    gl.glDisable(GL.GL_COLOR_MATERIAL);
 	}
 	
-	public boolean setup(RenderList rls) {
-	    return(true);
+	public Order setup(RenderList rls) {
+	    return(deflt);
 	}
     }
 }

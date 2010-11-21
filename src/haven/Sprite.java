@@ -131,7 +131,7 @@ public abstract class Sprite implements Rendered {
 
     public void draw(GOut g) {}
 
-    public abstract boolean setup(RenderList d);
+    public abstract Order setup(RenderList d);
 
     public boolean tick(int dt) {
 	return(false);

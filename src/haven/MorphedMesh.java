@@ -56,7 +56,7 @@ public class MorphedMesh extends FastMesh {
         super(mesh, buf(mesh.vert, pose));
     }
     
-    public boolean setup(RenderList rl) {
+    public Order setup(RenderList rl) {
 	((MorphedBuf)vert).update();
 	return(super.setup(rl));
     }

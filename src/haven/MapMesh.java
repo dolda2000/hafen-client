@@ -308,8 +308,8 @@ public class MapMesh implements FRendered {
 	GOut.checkerr(gl);
     }
     
-    public boolean setup(RenderList rl) {
+    public Order setup(RenderList rl) {
 	clickmode = 0;
-	return(true);
+	return(deflt);
     }
 }
