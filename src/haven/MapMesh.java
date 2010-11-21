@@ -156,11 +156,36 @@ public class MapMesh implements FRendered {
 	}
     }
     
-    private static class Layer {
+    private static final Order mmorder = new Order<Layer>() {
+	public int mainz() {
+	    return(1000);
+	}
+	
+	private final Comparator<Layer> cmp = new Comparator<Layer>() {
+	    public int compare(Layer a, Layer b) {
+		return(a.z - b.z);
+	    }
+	};
+	
+	public Comparator<Layer> cmp() {
+	    return(cmp);
+	}
+    };
+
+    private static class Layer implements Rendered {
 	GLState st;
 	int z;
 	FastMesh mesh;
 	Collection<Plane> pl = new LinkedList<Plane>();
+	
+	public void draw(GOut g) {
+	    g.matsel(st);
+	    mesh.draw(g);
+	}
+	
+	public Order setup(RenderList rl) {
+	    return(mmorder);
+	}
     }
     
     private MapMesh(MCache map, Coord ul, Coord sz) {
@@ -270,10 +295,6 @@ public class MapMesh implements FRendered {
     }
     
     public void draw(GOut g) {
-	for(Layer l : layers) {
-	    g.matsel(l.st);
-	    l.mesh.draw(g);
-	}
     }
     
     public void drawflat(GOut g) {
@@ -310,6 +331,8 @@ public class MapMesh implements FRendered {
     
     public Order setup(RenderList rl) {
 	clickmode = 0;
+	for(Layer l : layers)
+	    rl.add(l, null);
 	return(deflt);
     }
 }
