@@ -35,6 +35,7 @@ public class Material extends GLState {
     public float shine;
     public Tex tex;
     public boolean facecull = true, mipmap = false;
+    public boolean alphatest = true;
     
     public static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
     public static final float[] defdif = {0.8f, 0.8f, 0.8f, 1.0f};
@@ -75,6 +76,10 @@ public class Material extends GLState {
 	    gl.glDisable(GL.GL_CULL_FACE);
 	else if(facecull && (cur != null) && !cur.facecull)
 	    gl.glEnable(GL.GL_CULL_FACE);
+	if(!alphatest && ((cur == null) || cur.alphatest))
+	    gl.glDisable(GL.GL_ALPHA_TEST);
+	else if(alphatest && ((cur != null) && !cur.alphatest))
+	    gl.glEnable(GL.GL_ALPHA_TEST);
 	if(tex != null)
 	    tex.select(g);
 	else
@@ -94,6 +99,8 @@ public class Material extends GLState {
 	gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL.GL_SHININESS, 0.0f);
 	if(!facecull)
 	    gl.glEnable(GL.GL_CULL_FACE);
+	if(!alphatest)
+	    gl.glEnable(GL.GL_ALPHA_TEST);
 	g.texsel(-1);
     }
     
