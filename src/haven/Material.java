@@ -36,10 +36,10 @@ public class Material extends GLState {
     public Tex tex;
     public boolean facecull = true, mipmap = false;
     
-    private static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
-    private static final float[] defdif = {0.8f, 0.8f, 0.8f, 1.0f};
-    private static final float[] defspc = {0.0f, 0.0f, 0.0f, 1.0f};
-    private static final float[] defemi = {0.0f, 0.0f, 0.0f, 1.0f};
+    public static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
+    public static final float[] defdif = {0.8f, 0.8f, 0.8f, 1.0f};
+    public static final float[] defspc = {0.0f, 0.0f, 0.0f, 1.0f};
+    public static final float[] defemi = {0.0f, 0.0f, 0.0f, 1.0f};
     public Material() {
 	amb = defamb;
 	dif = defdif;
