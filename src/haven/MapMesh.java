@@ -33,58 +33,123 @@ import javax.media.opengl.*;
 public class MapMesh implements FRendered {
     public final Coord ul, sz;
     public final MCache map;
-    private SPoint[] surf;
+    private Map<Class<? extends Surface>, Surface> surfmap = new HashMap<Class<? extends Surface>, Surface>();
+    private Map<Tex, GLState> texmap = new HashMap<Tex, GLState>();
     private List<Layer> layers;
     public int clickmode;
 
     public static class SPoint {
-	public final Coord3f pos, nrm;
-	public SPoint(Coord3f pos, Coord3f nrm) {
-	    this.pos = pos; this.nrm = nrm;
+	public Coord3f pos, nrm = Coord3f.zu;
+	public SPoint(Coord3f pos) {
+	    this.pos = pos;
 	}
     }
+    
+    public GLState stfor(Tex tex) {
+	TexGL gt;
+	if(tex instanceof TexGL)
+	    gt = (TexGL)tex;
+	else if((tex instanceof TexSI) && (((TexSI)tex).parent instanceof TexGL))
+	    gt = (TexGL)((TexSI)tex).parent;
+	else
+	    throw(new RuntimeException("Cannot use texture for map rendering: " + tex));
+	GLState ret = texmap.get(gt);
+	if(ret == null)
+	    texmap.put(gt, ret = new Material(gt));
+	return(ret);
+    }
 
+    public class Surface {
+	public final SPoint[] surf;
+	
+	public Surface() {
+	    surf = new SPoint[(sz.x + 3) * (sz.y + 3)];
+	    Coord c = new Coord();
+	    int i = 0;
+	    for(c.y = -1; c.y <= sz.y + 1; c.y++) {
+		for(c.x = -1; c.x <= sz.x + 1; c.x++) {
+		    surf[i++] = new SPoint(new Coord3f(c.x * tilesz.x, c.y * -tilesz.y, map.getz(ul.add(c))));
+		}
+	    }
+	}
+	
+	public int idx(Coord lc) {
+	    return((lc.x + 1) + ((lc.y + 1) * (sz.x + 3)));
+	}
+	
+	public SPoint spoint(Coord lc) {
+	    return(surf[idx(lc)]);
+	}
+
+	public void calcnrm() {
+	    Coord c = new Coord();
+	    int i = idx(Coord.z), r = (sz.x + 3);
+	    for(c.y = 0; c.y <= sz.y; c.y++) {
+		for(c.x = 0; c.x <= sz.x; c.x++) {
+		    SPoint p = surf[i];
+		    Coord3f s = surf[i + r].pos.sub(p.pos);
+		    Coord3f w = surf[i - 1].pos.sub(p.pos);
+		    Coord3f n = surf[i - r].pos.sub(p.pos);
+		    Coord3f e = surf[i + 1].pos.sub(p.pos);
+		    Coord3f nrm = (n.cmul(w)).add(e.cmul(n)).add(s.cmul(e)).add(w.cmul(s)).norm();
+		    p.nrm = nrm;
+		    i++;
+		}
+		i += 2;
+	    }
+	}
+    }
+    
     public class Plane {
 	public SPoint[] vrt;
 	public int z;
-	public Tex tex;
+	public GLState st;
+	public Tex tex = null;
 	
-	public Plane(Coord sc, int z, Tex tex) {
-	    vrt = new SPoint[]{spoint(sc),
-			       spoint(sc.add(0, 1)),
-			       spoint(sc.add(1, 1)),
-			       spoint(sc.add(1, 0))};
+	public Plane(Surface surf, Coord sc, int z, GLState st) {
+	    vrt = new SPoint[] {surf.spoint(sc),
+				surf.spoint(sc.add(0, 1)),
+				surf.spoint(sc.add(1, 1)),
+				surf.spoint(sc.add(1, 0))};
 	    this.z = z;
-	    this.tex = tex;
+	    this.st = st;
 	    reg();
+	}
+
+	public Plane(Surface surf, Coord sc, int z, Tex tex) {
+	    this(surf, sc, z, stfor(tex));
+	    this.tex = tex;
+	}
+	
+	public Plane(Surface surf, Coord sc, int z, Resource.Tile tile) {
+	    this(surf, sc, z, tile.tex());
 	}
 	
 	private void build(MeshBuf buf) {
-	    int r = tex.sz().x, b = tex.sz().y;
-	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm, new Coord3f(tex.tcx(0), tex.tcy(0), 0.0f));
-	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm, new Coord3f(tex.tcx(0), tex.tcy(b), 0.0f));
-	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm, new Coord3f(tex.tcx(r), tex.tcy(b), 0.0f));
-	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm, new Coord3f(tex.tcx(r), tex.tcy(0), 0.0f));
+	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm);
+	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
+	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
+	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm);
+	    if(tex != null) {
+		int r = tex.sz().x, b = tex.sz().y;
+		v1.tex = new Coord3f(tex.tcx(0), tex.tcy(0), 0.0f);
+		v2.tex = new Coord3f(tex.tcx(0), tex.tcy(b), 0.0f);
+		v3.tex = new Coord3f(tex.tcx(r), tex.tcy(b), 0.0f);
+		v4.tex = new Coord3f(tex.tcx(r), tex.tcy(0), 0.0f);
+	    }
 	    buf.new Face(v1, v2, v3);
 	    buf.new Face(v1, v3, v4);
 	}
 	
 	private void reg() {
-	    TexGL tex;
-	    if(this.tex instanceof TexGL)
-		tex = (TexGL)this.tex;
-	    else if((this.tex instanceof TexSI) && (((TexSI)this.tex).parent instanceof TexGL))
-		tex = (TexGL)((TexSI)this.tex).parent;
-	    else
-		throw(new RuntimeException("Cannot use texture for map rendering: " + this.tex));
 	    for(Layer l : layers) {
-		if((l.tex == tex) && (l.z == z)) {
+		if((l.st == st) && (l.z == z)) {
 		    l.pl.add(this);
 		    return;
 		}
 	    }
 	    Layer l = new Layer();
-	    l.tex = tex;
+	    l.st = st;
 	    l.z = z;
 	    l.pl.add(this);
 	    layers.add(l);
@@ -92,7 +157,7 @@ public class MapMesh implements FRendered {
     }
     
     private static class Layer {
-	TexGL tex;
+	GLState st;
 	int z;
 	FastMesh mesh;
 	Collection<Plane> pl = new LinkedList<Plane>();
@@ -104,10 +169,6 @@ public class MapMesh implements FRendered {
 	this.sz = sz;
     }
 	
-    public SPoint spoint(Coord lc) {
-	return(surf[lc.x + (lc.y * (sz.y + 1))]);
-    }
-    
     private static void dotrans(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	int tr[][] = new int[3][3];
 	int max = -1;
@@ -145,22 +206,35 @@ public class MapMesh implements FRendered {
 	}
     }
 
-    public static MapMesh build(MCache mc, Random rnd, Coord ul, Coord sz) {
-	MapMesh m = new MapMesh(mc, ul, sz);
-	m.surf = new SPoint[(sz.x + 1) * (sz.y + 1)];
-	Coord c = new Coord();
-	int i, o;
-	i = 0;
-	for(c.y = 0; c.y <= sz.y; c.y++) {
-	    for(c.x = 0; c.x <= sz.x; c.x++) {
-		Coord3f s = new Coord3f(0, -tilesz.y, mc.getz(ul.add(c.x, c.y + 1)));
-		Coord3f w = new Coord3f(-tilesz.x, 0, mc.getz(ul.add(c.x - 1, c.y)));
-		Coord3f n = new Coord3f(0, tilesz.y, mc.getz(ul.add(c.x, c.y - 1)));
-		Coord3f e = new Coord3f(tilesz.x, 0, mc.getz(ul.add(c.x + 1, c.y)));
-		Coord3f nrm = (n.cmul(w)).add(e.cmul(n)).add(s.cmul(e)).add(w.cmul(s)).norm();
-		m.surf[i++] = new SPoint(new Coord3f(c.x * tilesz.x, c.y * -tilesz.y, mc.getz(ul.add(c))), nrm);
+    public <T extends Surface> T surf(Class<T> cl) {
+	Surface ret = surfmap.get(cl);
+	if(ret == null) {
+	    try {
+		java.lang.reflect.Constructor<T> c = cl.getConstructor(MapMesh.class);
+		ret = c.newInstance(this);
+		surfmap.put(cl, ret);
+	    } catch(NoSuchMethodException e) {
+		throw(new RuntimeException(e));
+	    } catch(InstantiationException e) {
+		throw(new RuntimeException(e));
+	    } catch(IllegalAccessException e) {
+		throw(new RuntimeException(e));
+	    } catch(java.lang.reflect.InvocationTargetException e) {
+		if(e.getCause() instanceof RuntimeException)
+		    throw((RuntimeException)e.getCause());
+		throw(new RuntimeException(e));
 	    }
 	}
+	return(cl.cast(ret));
+    }
+    
+    public Surface gnd() {
+	return(surf(Surface.class));
+    }
+
+    public static MapMesh build(MCache mc, Random rnd, Coord ul, Coord sz) {
+	MapMesh m = new MapMesh(mc, ul, sz);
+	Coord c = new Coord();
 	m.layers = new ArrayList<Layer>();
 	int tz = 1;
 	for(c.y = 0; c.y < sz.y; c.y++) {
@@ -170,6 +244,8 @@ public class MapMesh implements FRendered {
 		dotrans(m, rnd, c, gc);
 	    }
 	}
+	for(Surface s : m.surfmap.values())
+	    s.calcnrm();
 	for(Layer l : m.layers) {
 	    MeshBuf buf = new MeshBuf();
 	    if(l.pl.isEmpty())
@@ -184,17 +260,20 @@ public class MapMesh implements FRendered {
 		    return(a.z - b.z);
 		}
 	    });
-	m.surf = null;
+	m.clean();
 	return(m);
     }
     
+    private void clean() {
+	surfmap = null;
+	texmap = null;
+    }
+    
     public void draw(GOut g) {
-	g.matsel(null);
 	for(Layer l : layers) {
-	    g.texsel(l.tex.glid(g));
+	    g.matsel(l.st);
 	    l.mesh.draw(g);
 	}
-	g.texsel(-1);
     }
     
     public void drawflat(GOut g) {

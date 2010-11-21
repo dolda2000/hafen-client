@@ -40,15 +40,15 @@ public class GroundTile extends Tiler {
     
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	Tile g = set.ground.pick(rnd);
-	m.new Plane(lc, 0, g.tex());
+	m.new Plane(m.gnd(), lc, 0, g);
     }
     
     public void trans(MapMesh m, Random rnd, Coord lc, Coord gc, int z, int bmask, int cmask) {
 	if(m.map.gettile(gc) <= id)
 	    return;
 	if(bmask > 0)
-	    m.new Plane(lc, z, set.btrans[bmask - 1].pick(rnd).tex());
+	    m.new Plane(m.gnd(), lc, z, set.btrans[bmask - 1].pick(rnd));
 	if(cmask > 0)
-	    m.new Plane(lc, z, set.ctrans[cmask - 1].pick(rnd).tex());
+	    m.new Plane(m.gnd(), lc, z, set.ctrans[cmask - 1].pick(rnd));
     }
 }

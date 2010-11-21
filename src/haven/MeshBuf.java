@@ -33,7 +33,7 @@ public class MeshBuf {
     public final Collection<Face> f = new LinkedList<Face>();
     
     public class Vertex {
-	public final Coord3f pos, nrm, tex;
+	public Coord3f pos, nrm, tex;
 	private short idx;
 	
 	public Vertex(Coord3f pos, Coord3f nrm, Coord3f tex) {

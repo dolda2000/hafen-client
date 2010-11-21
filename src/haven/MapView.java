@@ -198,8 +198,8 @@ public class MapView extends PView {
 	} else if(lighting == 1) {
 	    rl.add(new DirLight(new Color(255, 192, 64), new Coord3f(2.0f, 1.0f, 1.0f)));
 	}
- 	setupmap(rl);
 	setupgobs(rl);
+ 	setupmap(rl);
     }
     
     public Gob player() {
