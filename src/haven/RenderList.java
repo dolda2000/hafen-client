@@ -31,18 +31,18 @@ import java.util.*;
 public class RenderList {
     Slot[] list = new Slot[100];
     int cur = 0;
-    private int curp = -1;
+    private Slot curp = null;
     Collection<LSlot> lights = new ArrayList<LSlot>();
     
     class Slot {
 	Rendered r;
 	Transform t;
-	int p;
+	Slot p;
     }
     
     class LSlot {
 	Light l;
-	int p;
+	Slot p;
     }
     
     public void add(Rendered r, Transform t) {
@@ -57,9 +57,9 @@ public class RenderList {
 	    s = list[i] = new Slot();
 	s.r = r;
 	s.t = t;
-	int pp = s.p = curp;
+	Slot pp = s.p = curp;
 	try {
-	    curp = i;
+	    curp = list[i];
 	    if(!r.setup(this))
 		s.r = null;
 	} finally {
@@ -68,7 +68,7 @@ public class RenderList {
     }
     
     public void rewind() {
-	if(curp != -1)
+	if(curp != null)
 	    throw(new RuntimeException("Tried to rewind RenderList while adding to it."));
 	cur = 0;
 	lights.clear();

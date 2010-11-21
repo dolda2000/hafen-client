@@ -45,9 +45,8 @@ public abstract class PView extends Widget {
     
     protected abstract void setup(RenderList rls);
 
-    private static void transform(GOut g, RenderList rls, int i) {
-	RenderList.Slot s = rls.list[i];
-	if(s.p != -1)
+    private static void transform(GOut g, RenderList rls, RenderList.Slot s) {
+	if(s.p != null)
 	    transform(g, rls, s.p);
 	if(s.t != null)
 	    s.t.apply(g);
@@ -60,7 +59,7 @@ public abstract class PView extends Widget {
 		continue;
 	    gl.glPushMatrix();
 	    try {
-		transform(g, rls, i);
+		transform(g, rls, rls.list[i]);
 		if(out == null)
 		    rls.list[i].r.draw(g);
 		else
@@ -88,7 +87,7 @@ public abstract class PView extends Widget {
 	    ret[i] = ls.l;
 	    gl.glPushMatrix();
 	    try {
-		if(ls.p != -1)
+		if(ls.p != null)
 		    transform(g, rls, ls.p);
 		ls.l.enable(g, i);
 	    } finally {
