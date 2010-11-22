@@ -128,12 +128,16 @@ public class TexI extends TexGL {
 	return(tgt);
     }
 	
-    public static byte[] convert(BufferedImage img, Coord tsz) {
+    public static byte[] convert(BufferedImage img, Coord tsz, Coord ul, Coord sz) {
 	WritableRaster buf = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, tsz.x, tsz.y, 4, null);
 	BufferedImage tgt = new BufferedImage(glcm, buf, false, null);
 	Graphics g = tgt.createGraphics();
-	g.drawImage(img, 0, 0, null);
+	g.drawImage(img, 0, 0, sz.x, sz.y, ul.x, ul.y, ul.x + sz.x, ul.y + sz.y, null);
 	g.dispose();
 	return(((DataBufferByte)buf.getDataBuffer()).getData());
+    }
+
+    public static byte[] convert(BufferedImage img, Coord tsz) {
+	return(convert(img, tsz, Coord.z, Utils.imgsz(img)));
     }
 }

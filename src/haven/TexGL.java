@@ -131,7 +131,7 @@ public abstract class TexGL extends Tex {
 	}
     }
 	
-    private static void dispose(GL gl, int id) {
+    static void dispose(GL gl, int id) {
 	Collection<Integer> dc;
 	synchronized(disposed) {
 	    dc = disposed.get(gl);
