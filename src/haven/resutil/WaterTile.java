@@ -46,12 +46,12 @@ public class WaterTile extends Tiler {
 	    this.m = m;
 	    Coord sz = m.sz;
 	    MCache map = m.map;
-	    int[] d = new int[(sz.x + 3) * (sz.y + 3)];
+	    int[] d = new int[(sz.x + 5) * (sz.y + 5)];
 	    s = new boolean[(sz.x + 3) * (sz.y + 3)];
 	    Coord c = new Coord();
 	    int i = 0;
-	    for(c.y = -1; c.y <= sz.y + 1; c.y++) {
-		for(c.x = -1; c.x <= sz.x + 1; c.x++) {
+	    for(c.y = -2; c.y <= sz.y + 2; c.y++) {
+		for(c.x = -2; c.x <= sz.x + 2; c.x++) {
 		    Tiler t = map.tiler(map.gettile(c.add(m.ul)));
 		    if(t instanceof WaterTile)
 			d[i] = ((WaterTile)t).depth;
@@ -60,10 +60,10 @@ public class WaterTile extends Tiler {
 		    i++;
 		}
 	    }
-	    i = idx(Coord.z);
-	    int r = sz.x + 3;
-	    for(c.y = 0; c.y <= sz.y; c.y++) {
-		for(c.x = 0; c.x <= sz.x; c.x++) {
+	    i = 1 + (sz.x + 5);
+	    int r = sz.x + 5;
+	    for(c.y = -1; c.y <= sz.y + 1; c.y++) {
+		for(c.x = -1; c.x <= sz.x + 1; c.x++) {
 		    int td = d[i];
 		    if(d[i - r - 1] < td)
 			td = d[i - r - 1];
@@ -73,7 +73,7 @@ public class WaterTile extends Tiler {
 			td = d[i - 1];
 		    spoint(c).pos.z -= td;
 		    if(td == 0)
-			s[i] = true;
+			s[idx(c)] = true;
 		    i++;
 		}
 		i += 2;
