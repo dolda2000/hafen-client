@@ -349,7 +349,8 @@ public class Composite extends Drawable {
 	    if(nposes.load())
 		nposes = null;
 	}
-	poses.tick(dt / 1000.0f);
+	if(poses != null)
+	    poses.tick(dt / 1000.0f);
     }
 
     public Resource.Neg getneg() {
