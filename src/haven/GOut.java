@@ -36,6 +36,7 @@ public class GOut {
     public Coord ul, sz;
     private Color color = Color.WHITE;
     public final GLContext ctx;
+    public Coord3f camdir = Coord3f.zu.inv();
     private Shared sh;
 	
     private static class Shared {

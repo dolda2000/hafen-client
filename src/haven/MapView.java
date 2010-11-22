@@ -95,7 +95,7 @@ public class MapView extends PView {
 		curc = new Coord3f(nx, ny, cc.z);
 		angl = curc.xyangle(cambase);
 	    }
-	    PointedCam.apply(g.gl, curc.add(0.0f, 0.0f, h), dist(elev), elev, angl);
+	    PointedCam.apply(g, curc.add(0.0f, 0.0f, h), dist(elev), elev, angl);
 	}
 	
 	public boolean wheel(Coord c, int amount) {
@@ -119,7 +119,7 @@ public class MapView extends PView {
 	public void apply(GOut g) {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
-	    PointedCam.apply(g.gl, cc.add(0.0f, 0.0f, 15f), dist, elev, angl);
+	    PointedCam.apply(g, cc.add(0.0f, 0.0f, 15f), dist, elev, angl);
 	}
 	
 	public boolean click(Coord c) {
