@@ -92,30 +92,54 @@ public class WaterTile extends Tiler {
 	}
     }
     
-    static final Tex sky = Resource.loadtex("gfx/tiles/sky");
+    static final TexCube sky = new TexCube(Resource.loadimg("gfx/tiles/skycube"));
+    static final Tex srf = Resource.loadtex("gfx/tiles/watertex");
     public static final GLState surfmat = new GLState() {
 	    public void apply(GOut g) {
 		GL gl = g.gl;
-		gl.glTexGeni(GL.GL_S, GL.GL_TEXTURE_GEN_MODE, GL.GL_SPHERE_MAP);
-		gl.glTexGeni(GL.GL_T, GL.GL_TEXTURE_GEN_MODE, GL.GL_SPHERE_MAP);
+		gl.glTexGeni(GL.GL_S, GL.GL_TEXTURE_GEN_MODE, GL.GL_REFLECTION_MAP);
+		gl.glTexGeni(GL.GL_T, GL.GL_TEXTURE_GEN_MODE, GL.GL_REFLECTION_MAP);
+		gl.glTexGeni(GL.GL_R, GL.GL_TEXTURE_GEN_MODE, GL.GL_REFLECTION_MAP);
 		gl.glEnable(GL.GL_TEXTURE_GEN_S);
 		gl.glEnable(GL.GL_TEXTURE_GEN_T);
-		sky.select(g);
+		gl.glEnable(GL.GL_TEXTURE_GEN_R);
+		gl.glEnable(GL.GL_TEXTURE_CUBE_MAP);
+		gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
 		gl.glDisable(GL.GL_ALPHA_TEST);
 		gl.glDisable(GL.GL_LIGHTING);
 		gl.glColor4f(1, 1, 1, 0.25f);
+		gl.glMatrixMode(GL.GL_TEXTURE);
+		gl.glPushMatrix();
+		/* XXX */
+		gl.glRotatef(90 + (float)(g.camdir.xyangle(Coord3f.o) * 180 / Math.PI), 0, 0, 1);
+		float a = (float)(new Coord3f(g.camdir.z, (float)Math.sqrt(g.camdir.x * g.camdir.x + g.camdir.y * g.camdir.y), 0).xyangle(Coord3f.o) * 180 / Math.PI);
+		gl.glRotatef(a, -1, 0, 0);
+		gl.glMatrixMode(GL.GL_MODELVIEW);
 	    }
 	    
 	    public void unapply(GOut g) {
 		GL gl = g.gl;
+		gl.glMatrixMode(GL.GL_TEXTURE);
+		gl.glPopMatrix();
+		gl.glMatrixMode(GL.GL_MODELVIEW);
+		gl.glDisable(GL.GL_TEXTURE_CUBE_MAP);
 		gl.glDisable(GL.GL_TEXTURE_GEN_S);
 		gl.glDisable(GL.GL_TEXTURE_GEN_T);
+		gl.glDisable(GL.GL_TEXTURE_GEN_R);
 		gl.glEnable(GL.GL_ALPHA_TEST);
 		gl.glEnable(GL.GL_LIGHTING);
 		gl.glColor3f(1, 1, 1);
-		g.texsel(-1);
 	    }
 	};
+    public static final Material surf2 = new Material(new Color(0, 0, 0, 0),
+						      new Color(255, 255, 255, 32),
+						      new Color(16, 16, 16, 64),
+						      new Color(0, 0, 0, 0),
+						      2);
+    static {
+	surf2.alphatest = false;
+	surf2.tex = srf;
+    }
 
     public static class Shallows extends WaterTile {
 	public Shallows(int id, Resource.Tileset set) {
@@ -138,9 +162,16 @@ public class WaterTile extends Tiler {
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	Tile g = set.ground.pick(rnd);
 	m.new Plane(m.surf(Bottom.class), lc, 0, g);
-	m.new Plane(m.gnd(), lc, 256, surfmat);
+	m.new Plane(m.gnd(), lc, 256, surf2);
+	m.new Plane(m.gnd(), lc, 257, surfmat);
     }
     
     public void trans(MapMesh m, Random rnd, Coord lc, Coord gc, int z, int bmask, int cmask) {
+	if(m.map.gettile(gc) <= id)
+	    return;
+	if((set.btrans != null) && (bmask > 0))
+	    m.new Plane(m.surf(Bottom.class), lc, z, set.btrans[bmask - 1].pick(rnd));
+	if((set.ctrans != null) && (cmask > 0))
+	    m.new Plane(m.surf(Bottom.class), lc, z, set.ctrans[cmask - 1].pick(rnd));
     }
 }
