@@ -130,6 +130,9 @@ public class MapMesh implements FRendered {
 	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
 	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
 	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm);
+	    Tex tex = this.tex;
+	    if((tex == null) && (st instanceof Material))
+		tex = ((Material)st).tex;
 	    if(tex != null) {
 		int r = tex.sz().x, b = tex.sz().y;
 		v1.tex = new Coord3f(tex.tcx(0), tex.tcy(0), 0.0f);
