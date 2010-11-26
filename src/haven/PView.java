@@ -34,6 +34,7 @@ public abstract class PView extends Widget {
     public static final GLState.Slot<RenderState> proj = new GLState.Slot<RenderState>(RenderState.class, HavenPanel.proj2d);
     public static final GLState.Slot<Camera> cam = new GLState.Slot<Camera>(Camera.class, proj);
     public static final GLState.Slot<Location> loc = new GLState.Slot<Location>(Location.class, cam);
+    protected Light.Model lm;
     private GLState pstate;
     
     public class RenderState extends GLState {
@@ -88,6 +89,8 @@ public abstract class PView extends Widget {
     public PView(Coord c, Coord sz, Widget parent) {
 	super(c, sz, parent);
 	pstate = new RenderState();
+	lm = new Light.Model();
+	lm.cc = GL.GL_SEPARATE_SPECULAR_COLOR;
     }
     
     protected GLState.Buffer basic(GOut g) {
@@ -114,6 +117,9 @@ public abstract class PView extends Widget {
 	GLState.Buffer bk = g.st.copy();
 	GLState.Buffer def = basic(g);
 	try {
+	    lm.prep(def);
+	    new Light.LightList().prep(def);
+	    Light.elights.prep(def);
 	    rls.setup(scene, def);
 	    g.st.set(def);
 	    g.apply();
