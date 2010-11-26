@@ -38,7 +38,6 @@ public class PointedCam extends Camera {
     
     public static void apply(GOut g, Coord3f base, float dist, float e, float a) {
 	apply(g.gl, base, dist, e, a);
-	g.camdir = new Coord3f((float)(-Math.cos(a) * Math.cos(e)), (float)(-Math.sin(a) * Math.cos(e)), (float)-Math.sin(e));
     }
 
     public static void apply(GL gl, Coord3f base, float dist, float e, float a) {

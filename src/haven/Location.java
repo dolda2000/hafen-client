@@ -39,6 +39,7 @@ public abstract class Location extends Transform {
 
     public final void apply(GOut g) {
 	GL gl = g.gl;
+	g.st.matmode(GL.GL_MODELVIEW);
 	gl.glPushMatrix();
 	chain(g);
     }

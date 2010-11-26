@@ -33,12 +33,14 @@ public abstract class Transform extends GLState {
     
     public void apply(GOut g) {
 	GL gl = g.gl;
+	g.st.matmode(GL.GL_MODELVIEW);
 	gl.glPushMatrix();
 	xf(g);
     }
     
     public void unapply(GOut g) {
 	GL gl = g.gl;
+	g.st.matmode(GL.GL_MODELVIEW);
 	gl.glPopMatrix();
     }
     

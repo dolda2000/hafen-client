@@ -36,7 +36,6 @@ public class GOut {
     public Coord ul, sz;
     private States.ColState color = new States.ColState(Color.WHITE);
     public final GLContext ctx;
-    public Coord3f camdir = Coord3f.zu.inv();
     private final GOut root;
     public final GLState.Applier st;
     private final GLState.Buffer def2d;

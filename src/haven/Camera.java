@@ -29,9 +29,12 @@ package haven;
 import javax.media.opengl.*;
 
 public abstract class Camera extends Transform {
+    public final Matrix4f tm = new Matrix4f();
+
     public void apply(GOut g) {
 	super.apply(g);
-	/* XXX */
+	tm.getgl(g.gl, GL.GL_MODELVIEW_MATRIX);
+	GOut.checkerr(g.gl);
     }
     
     public void prep(Buffer b) {
