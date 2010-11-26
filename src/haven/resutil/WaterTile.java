@@ -105,8 +105,6 @@ public class WaterTile extends Tiler {
 		gl.glEnable(GL.GL_TEXTURE_GEN_R);
 		gl.glEnable(GL.GL_TEXTURE_CUBE_MAP);
 		gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
-		gl.glDisable(GL.GL_ALPHA_TEST);
-		gl.glDisable(GL.GL_LIGHTING);
 		gl.glColor4f(1, 1, 1, 0.25f);
 		gl.glMatrixMode(GL.GL_TEXTURE);
 		gl.glPushMatrix();
@@ -126,14 +124,14 @@ public class WaterTile extends Tiler {
 		gl.glDisable(GL.GL_TEXTURE_GEN_S);
 		gl.glDisable(GL.GL_TEXTURE_GEN_T);
 		gl.glDisable(GL.GL_TEXTURE_GEN_R);
-		gl.glEnable(GL.GL_ALPHA_TEST);
-		gl.glEnable(GL.GL_LIGHTING);
 		gl.glColor3f(1, 1, 1);
 	    }
 	    
 	    public void prep(Buffer buf) {
 		buf.put(Tex.slot, null);
 		buf.put(States.color, null);
+		buf.put(Light.lighting, null);
+		Material.noalpha.prep(buf);
 		super.prep(buf);
 	    }
 	};
