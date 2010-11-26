@@ -52,6 +52,7 @@ public abstract class PView extends Widget {
 	    gl.glEnable(gl.GL_SCISSOR_TEST);
 	    gl.glEnable(gl.GL_ALPHA_TEST);
 	    gl.glDepthFunc(gl.GL_LEQUAL);
+	    gl.glClearDepth(1.0);
 
 	    g.st.matmode(GL.GL_PROJECTION);
 	    gl.glPushMatrix();
@@ -124,7 +125,6 @@ public abstract class PView extends Widget {
 	    g.st.set(def);
 	    g.apply();
 	    GL gl = g.gl;
-	    gl.glClearDepth(1.0);
 	    gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
 	    rls.render(g);
 	} finally {

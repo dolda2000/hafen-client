@@ -230,6 +230,11 @@ public class MapView extends PView {
     private static class Clicklist extends RenderList {
 	private Map<Color, Rendered> rmap = new HashMap<Color, Rendered>();
 	private int i = 1;
+	private GLState.Buffer plain;
+	
+	private Clicklist(GLState.Buffer plain) {
+	    this.plain = plain;
+	}
 	
 	protected void newcol(GOut g, Rendered r) {
 	    GL gl = g.gl;
@@ -239,7 +244,8 @@ public class MapView extends PView {
 	    Color col = new Color(cr, cg, cb);
 	    i++;
 	    rmap.put(col, r);
-	    gl.glColor3f(cr / 256.0f, cg / 256.0f, cb / 256.0f);
+	    States.ColState st = new States.ColState(col);
+	    g.state(st);
 	}
 
 	protected void render(GOut g, Rendered r) {
@@ -254,13 +260,21 @@ public class MapView extends PView {
 	}
 	
 	protected void setup(Slot s, Rendered r) {
-	    System.err.println(s.os);
+	    Location loc = s.os.get(PView.loc);
+	    plain.copy(s.os);
+	    s.os.put(PView.loc, loc);
+	    //System.err.println(r + ": " + s.os);
+	    super.setup(s, r);
 	}
     }
     
     private static class Maplist extends Clicklist {
 	private int mode = 0;
 	private MapMesh limit = null;
+	
+	private Maplist(GLState.Buffer plain) {
+	    super(plain);
+	}
 	
 	protected void render(GOut g, Rendered r) {
 	    if(r instanceof MapMesh) {
@@ -274,7 +288,7 @@ public class MapView extends PView {
     }
 
     private Coord checkmapclick(GOut g, Coord c) {
-	Maplist rl = new Maplist();
+	Maplist rl = new Maplist(basic(g));
 	rl.setup(map, basic(g));
 	{
 	    rl.render(g);
@@ -306,7 +320,7 @@ public class MapView extends PView {
     
     private Gob checkgobclick(GOut g, Coord c) {
 	final Map<Rendered, Gob> gobmap = new IdentityHashMap<Rendered, Gob>();
-	Clicklist rl = new Clicklist() {
+	Clicklist rl = new Clicklist(basic(g)) {
 		Gob cur;
 		public void add(Rendered r, GLState t) {
 		    if(r instanceof Gob)
@@ -325,14 +339,14 @@ public class MapView extends PView {
 
     private void checkclick(GOut g, Coord clickc) {
 	GL gl = g.gl;
+	g.st.set(basic(g));
+	g.apply();
+	gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
 	Coord mapcl = checkmapclick(g, clickc);
 	g.st.set(basic(g));
 	g.apply();
 	gl.glClear(GL.GL_COLOR_BUFFER_BIT);
 	Gob gobcl = checkgobclick(g, clickc);
-	g.st.set(basic(g));
-	g.apply();
-	gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
 	if(mapcl != null) {
 	    if(gobcl == null)
 		wdgmsg("click", clickc, mapcl, clickb, ui.modflags());
@@ -344,8 +358,13 @@ public class MapView extends PView {
     protected void undelay(GOut g) {
 	Coord clickc = this.clickc;
 	this.clickc = null;
-	if(clickc != null)
-	    checkclick(g, clickc);
+	GLState.Buffer bk = g.st.copy();
+	try {
+	    if(clickc != null)
+		checkclick(g, clickc);
+	} finally {
+	    g.st.set(bk);
+	}
     }
 
     public void draw(GOut g) {

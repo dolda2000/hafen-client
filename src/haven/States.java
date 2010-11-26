@@ -35,17 +35,16 @@ public abstract class States extends GLState {
     public static final Slot<ColState> color = new Slot<ColState>(ColState.class, HavenPanel.global);
     public static class ColState extends GLState {
 	public final Color c;
+	public final float[] ca;
 	
 	public ColState(Color c) {
 	    this.c = c;
+	    this.ca = Utils.c2fa(c);
 	}
 	
 	public void apply(GOut g) {
 	    GL gl = g.gl;
-	    gl.glColor4f((float)c.getRed() / 255.0f,
-			 (float)c.getGreen() / 255.0f,
-			 (float)c.getBlue() / 255.0f,
-			 (float)c.getAlpha() / 255.0f);
+	    gl.glColor4fv(ca, 0);
 	}
 	
 	public int capply() {
