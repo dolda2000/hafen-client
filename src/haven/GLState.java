@@ -56,6 +56,7 @@ public abstract class GLState {
     
     private static int slotnum = 0;
     private static Slot<?>[] deplist = new Slot<?>[0];
+    private static Slot<?>[] idlist = new Slot<?>[0];
     
     public static class Slot<T extends GLState> {
 	private static boolean dirty = false;
@@ -71,6 +72,10 @@ public abstract class GLState {
 	    synchronized(Slot.class) {
 		this.id = slotnum++;
 		dirty = true;
+		Slot<?>[] nlist = new Slot<?>[slotnum];
+		System.arraycopy(idlist, 0, nlist, 0, idlist.length);
+		nlist[this.id] = this;
+		idlist = nlist;
 		all.add(this);
 	    }
 	    if(dep == null)
@@ -235,8 +240,8 @@ public abstract class GLState {
 			    repl[i] = true;
 		    }
 		}
-		for(Slot ds : deplist[i].grdep) {
-		    int id = ds.depid;
+		for(Slot ds : idlist[i].grdep) {
+		    int id = ds.id;
 		    if(repl[id])
 			continue;
 		    if(trans != null)
