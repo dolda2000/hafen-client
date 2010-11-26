@@ -158,13 +158,13 @@ public abstract class GLState {
 	
 	public Buffer copy() {
 	    Buffer ret = new Buffer();
-	    System.arraycopy(ret.states, 0, states, 0, states.length);
+	    System.arraycopy(states, 0, ret.states, 0, states.length);
 	    return(ret);
 	}
 	
 	public void copy(Buffer dest) {
 	    dest.adjust();
-	    System.arraycopy(dest.states, 0, states, 0, states.length);
+	    System.arraycopy(states, 0, dest.states, 0, states.length);
 	    for(int i = states.length; i < dest.states.length; i++)
 		dest.states[i] = null;
 	}
