@@ -210,6 +210,7 @@ public abstract class GLState {
     }
     
     public static int bufdiff(Buffer f, Buffer t, boolean[] trans, boolean[] repl) {
+	Slot.update();
 	int cost = 0;
 	f.adjust(); t.adjust();
 	if(trans != null) {
@@ -263,7 +264,6 @@ public abstract class GLState {
 	
 	public Applier(GL gl) {
 	    this.gl = gl;
-	    Slot.update();
 	}
 	
 	public <T extends GLState> void put(Slot<? super T> slot, T state) {
