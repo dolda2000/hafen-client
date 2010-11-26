@@ -29,7 +29,6 @@ package haven;
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 import haven.Resource.Tile;
-import haven.RenderList.Renderer;
 import java.awt.Color;
 import java.util.*;
 import java.lang.reflect.*;
@@ -228,20 +227,24 @@ public class MapView extends PView {
 	    return(new Coord3f(cc.x, cc.y, glob.map.getcz(cc)));
     }
 
-    private static class Clicklist implements Renderer {
+    private static class Clicklist extends RenderList {
 	private Map<Color, Rendered> rmap = new HashMap<Color, Rendered>();
 	private int i = 1;
 	
-	public void render(GOut g, Rendered r) {
+	protected void newcol(GOut g, Rendered r) {
+	    GL gl = g.gl;
+	    int cr = i & 0xff,
+		cg = (i & 0xff00) >> 8,
+		cb = (i & 0xff0000) >> 16;
+	    Color col = new Color(cr, cg, cb);
+	    i++;
+	    rmap.put(col, r);
+	    gl.glColor3f(cr / 256.0f, cg / 256.0f, cb / 256.0f);
+	}
+
+	protected void render(GOut g, Rendered r) {
 	    if(r instanceof FRendered) {
-		GL gl = g.gl;
-		int cr = i & 0xff,
-		    cg = (i & 0xff00) >> 8,
-		    cb = (i & 0xff0000) >> 16;
-		Color col = new Color(cr, cg, cb);
-		i++;
-		rmap.put(col, r);
-		gl.glColor3f(cr / 256.0f, cg / 256.0f, cb / 256.0f);
+		newcol(g, r);
 		((FRendered)r).drawflat(g);
 	    }
 	}
@@ -249,56 +252,61 @@ public class MapView extends PView {
 	public Rendered get(GOut g, Coord c) {
 	    return(rmap.get(g.getpixel(c)));
 	}
+	
+	protected void setup(Slot s, Rendered r) {
+	    System.err.println(s.os);
+	}
+    }
+    
+    private static class Maplist extends Clicklist {
+	private int mode = 0;
+	private MapMesh limit = null;
+	
+	protected void render(GOut g, Rendered r) {
+	    if(r instanceof MapMesh) {
+		MapMesh m = (MapMesh)r;
+		if(mode == 0)
+		    newcol(g, m);
+		if((limit == null) || (limit == m))
+		    m.drawflat(g, mode);
+	    }
+	}
     }
 
     private Coord checkmapclick(GOut g, Coord c) {
-	RenderList rl = new RenderList();
+	Maplist rl = new Maplist();
 	rl.setup(map, basic(g));
-	Rendered hit;
 	{
-	    Clicklist cl = new Clicklist();
-	    rl.render(g, cl);
-	    hit = cl.get(g, c);
+	    rl.render(g);
+	    Rendered hit = rl.get(g, c);
 	    if((hit == null) || !(hit instanceof MapMesh))
 		return(null);
+	    rl.limit = (MapMesh)hit;
 	}
-	final MapMesh mesh = (MapMesh)hit;
 	Coord tile;
 	{
-	    rl.render(g, new Renderer() {
-		    public void render(GOut g, Rendered r) {
-			if(r == mesh) {
-			    mesh.clickmode = 1;
-			    mesh.drawflat(g);
-			}
-		    }
-		});
+	    rl.mode = 1;
+	    rl.render(g);
 	    Color hitcol = g.getpixel(c);
 	    tile = new Coord(hitcol.getRed() - 1, hitcol.getGreen() - 1);
-	    if(!tile.isect(Coord.z, mesh.sz))
+	    if(!tile.isect(Coord.z, rl.limit.sz))
 		return(null);
 	}
 	Coord pixel;
 	{
-	    rl.render(g, new Renderer() {
-		    public void render(GOut g, Rendered r) {
-			if(r == mesh) {
-			    mesh.clickmode = 2;
-			    mesh.drawflat(g);
-			}
-		    }
-		});
+	    rl.mode = 2;
+	    rl.render(g);
 	    Color hitcol = g.getpixel(c);
 	    if(hitcol.getBlue() != 0)
 		return(null);
 	    pixel = new Coord((hitcol.getRed() * tilesz.x) / 255, (hitcol.getGreen() * tilesz.y) / 255);
 	}
-	return(mesh.ul.add(tile).mul(tilesz).add(pixel));
+	return(rl.limit.ul.add(tile).mul(tilesz).add(pixel));
     }
     
     private Gob checkgobclick(GOut g, Coord c) {
 	final Map<Rendered, Gob> gobmap = new IdentityHashMap<Rendered, Gob>();
-	RenderList rl = new RenderList() {
+	Clicklist rl = new Clicklist() {
 		Gob cur;
 		public void add(Rendered r, GLState t) {
 		    if(r instanceof Gob)
@@ -308,9 +316,8 @@ public class MapView extends PView {
 		}
 	    };
 	rl.setup(gobs, basic(g));
-	Clicklist cl = new Clicklist();
-	rl.render(g, cl);
-	Rendered hr = cl.get(g, c);
+	rl.render(g);
+	Rendered hr = rl.get(g, c);
 	if(hr == null)
 	    return(null);
 	return(gobmap.get(hr));
@@ -319,10 +326,13 @@ public class MapView extends PView {
     private void checkclick(GOut g, Coord clickc) {
 	GL gl = g.gl;
 	Coord mapcl = checkmapclick(g, clickc);
+	g.st.set(basic(g));
+	g.apply();
 	gl.glClear(GL.GL_COLOR_BUFFER_BIT);
 	Gob gobcl = checkgobclick(g, clickc);
+	g.st.set(basic(g));
+	g.apply();
 	gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
-	gl.glColor3f(1.0f, 1.0f, 1.0f);
 	if(mapcl != null) {
 	    if(gobcl == null)
 		wdgmsg("click", clickc, mapcl, clickb, ui.modflags());

@@ -53,7 +53,7 @@ public class RenderList {
 	return(s);
     }
 
-    private void setup(Slot s, Rendered r) {
+    protected void setup(Slot s, Rendered r) {
 	s.r = r;
 	Slot pp = s.p = curp;
 	try {
@@ -64,20 +64,17 @@ public class RenderList {
 	}
     }
 
-    public interface Renderer {
-	public void render(GOut g, Rendered r);
+    protected void render(GOut g, Rendered r) {
+	r.draw(g);
     }
-    
-    public void render(GOut g, Renderer r) {
+
+    public void render(GOut g) {
 	for(int i = 0; i < cur; i++) {
 	    Slot s = list[i];
 	    if(s.o == null)
 		break;
 	    g.st.set(s.os);
-	    if(r == null)
-		s.r.draw(g);
-	    else
-		r.render(g, s.r);
+	    render(g, s.r);
 	}
     }
 

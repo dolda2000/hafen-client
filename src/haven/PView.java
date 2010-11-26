@@ -126,7 +126,7 @@ public abstract class PView extends Widget {
 	    GL gl = g.gl;
 	    gl.glClearDepth(1.0);
 	    gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
-	    rls.render(g, null);
+	    rls.render(g);
 	} finally {
 	    g.st.set(bk);
 	}

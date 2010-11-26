@@ -30,13 +30,12 @@ import static haven.MCache.tilesz;
 import java.util.*;
 import javax.media.opengl.*;
 
-public class MapMesh implements FRendered {
+public class MapMesh implements Rendered {
     public final Coord ul, sz;
     public final MCache map;
     private Map<Class<? extends Surface>, Surface> surfmap = new HashMap<Class<? extends Surface>, Surface>();
     private Map<Tex, GLState> texmap = new HashMap<Tex, GLState>();
     private List<Layer> layers;
-    public int clickmode;
 
     public static class SPoint {
 	public Coord3f pos, nrm = Coord3f.zu;
@@ -300,30 +299,31 @@ public class MapMesh implements FRendered {
     public void draw(GOut g) {
     }
     
-    public void drawflat(GOut g) {
+    public void drawflat(GOut g, int mode) {
+	g.apply();
 	GL gl = g.gl;
 	gl.glBegin(GL.GL_TRIANGLES);
 	Coord c = new Coord();
 	for(c.y = 0; c.y < sz.y; c.y++) {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
-		if(clickmode == 1)
+		if(mode == 1)
 		    gl.glColor3f((c.x + 1) / 256.0f, (c.y + 1) / 256.0f, 0.0f);
-		if(clickmode == 2)
+		if(mode == 2)
 		    gl.glColor3f(0.0f, 0.0f, 0.0f);
 		gl.glVertex3f(c.x * tilesz.x, c.y * -tilesz.y, map.getz(ul.add(c)));
-		if(clickmode == 2)
+		if(mode == 2)
 		    gl.glColor3f(0.0f, 1.0f, 0.0f);
 		gl.glVertex3f(c.x * tilesz.x, (c.y + 1) * -tilesz.y, map.getz(ul.add(c.x, c.y + 1)));
-		if(clickmode == 2)
+		if(mode == 2)
 		    gl.glColor3f(1.0f, 1.0f, 0.0f);
 		gl.glVertex3f((c.x + 1) * tilesz.x, (c.y + 1) * -tilesz.y, map.getz(ul.add(c.x + 1, c.y + 1)));
-		if(clickmode == 2)
+		if(mode == 2)
 		    gl.glColor3f(0.0f, 0.0f, 0.0f);
 		gl.glVertex3f(c.x * tilesz.x, c.y * -tilesz.y, map.getz(ul.add(c)));
-		if(clickmode == 2)
+		if(mode == 2)
 		    gl.glColor3f(1.0f, 1.0f, 0.0f);
 		gl.glVertex3f((c.x + 1) * tilesz.x, (c.y + 1) * -tilesz.y, map.getz(ul.add(c.x + 1, c.y + 1)));
-		if(clickmode == 2)
+		if(mode == 2)
 		    gl.glColor3f(1.0f, 0.0f, 0.0f);
 		gl.glVertex3f((c.x + 1) * tilesz.x, c.y * -tilesz.y, map.getz(ul.add(c.x + 1, c.y)));
 	    }
@@ -333,7 +333,6 @@ public class MapMesh implements FRendered {
     }
     
     public Order setup(RenderList rl) {
-	clickmode = 0;
 	for(Layer l : layers)
 	    rl.add(l, null);
 	return(deflt);
