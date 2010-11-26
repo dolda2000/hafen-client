@@ -84,8 +84,8 @@ public abstract class TexRT extends TexGL {
 	    return;
 	if(curf != null)
 	    curf.tick("render");
-	g.texsel(id);
-	GOut.checkerr(gl);
+	g.st.prep(this);
+	g.apply();
 	gl.glCopyTexSubImage2D(GL.GL_TEXTURE_2D, 0, 0, 0, 0, 0, dim.x, dim.y);
 	GOut.checkerr(gl);
 	if(curf != null) {

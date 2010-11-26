@@ -29,6 +29,7 @@ package haven;
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 import haven.Resource.Tile;
+import haven.RenderList.Renderer;
 import java.awt.Color;
 import java.util.*;
 import java.lang.reflect.*;
@@ -42,8 +43,9 @@ public class MapView extends PView {
     private Coord clickc = null;
     private int clickb;
     public static int lighting = 0;
+    private Camera camera = new FollowCam();
     
-    private abstract class Camera extends Transform {
+    private abstract class Camera extends haven.Camera {
 	public boolean click(Coord sc) {
 	    return(false);
 	}
@@ -80,7 +82,7 @@ public class MapView extends PView {
 	    return((float)(((cd - (h / Math.tan(elev))) * Math.sin(elev - da) / Math.sin(da)) - (h / Math.sin(elev))));
 	}
 
-	public void apply(GOut g) {
+	public void xf(GOut g) {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
 	    if(curc == null)
@@ -116,7 +118,7 @@ public class MapView extends PView {
 	private Coord dragorig = null;
 	private float elevorig, anglorig;
 
-	public void apply(GOut g) {
+	public void xf(GOut g) {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
 	    PointedCam.apply(g, cc.add(0.0f, 0.0f, 15f), dist, elev, angl);
@@ -164,29 +166,41 @@ public class MapView extends PView {
 	glob = ui.sess.glob;
 	this.cc = cc;
 	this.plgob = plgob;
- 	camera = new FollowCam();
     }
     
-    private void setupmap(RenderList rl) {
-	Coord cc = this.cc.div(tilesz).div(MCache.cutsz);
-	Coord o = new Coord();
-	for(o.y = -view; o.y <= view; o.y++) {
-	    for(o.x = -view; o.x <= view; o.x++) {
-		Coord pc = cc.add(o).mul(MCache.cutsz).mul(tilesz);
-		MapMesh cut = glob.map.getcut(cc.add(o));
-		rl.add(cut, Transform.xlate(new Coord3f(pc.x, -pc.y, 0)));
+    private final Rendered map = new Rendered() {
+	    public void draw(GOut g) {}
+	    
+	    public Order setup(RenderList rl) {
+		Coord cc = MapView.this.cc.div(tilesz).div(MCache.cutsz);
+		Coord o = new Coord();
+		for(o.y = -view; o.y <= view; o.y++) {
+		    for(o.x = -view; o.x <= view; o.x++) {
+			Coord pc = cc.add(o).mul(MCache.cutsz).mul(tilesz);
+			MapMesh cut = glob.map.getcut(cc.add(o));
+			rl.add(cut, Location.xlate(new Coord3f(pc.x, -pc.y, 0)));
+		    }
+		}
+		return(null);
 	    }
-	}
-    }
+	};
+    private final Rendered gobs = new Rendered() {
+	    public void draw(GOut g) {}
+	    
+	    public Order setup(RenderList rl) {
+		synchronized(glob.oc) {
+		    for(Gob g : glob.oc) {
+			Coord3f c = g.getc();
+			c.y = -c.y;
+			rl.add(g, GLState.compose(Location.xlate(c), Location.rot(Coord3f.zu, (float)-g.a)));
+		    }
+		}
+		return(null);
+	    }
+	};
 
-    private void setupgobs(RenderList rl) {
-	synchronized(glob.oc) {
-	    for(Gob g : glob.oc) {
-		Coord3f c = g.getc();
-		c.y = -c.y;
-		rl.add(g, Transform.seq(Transform.xlate(c), Transform.rot(Coord3f.zu, (float)-g.a)));
-	    }
-	}
+    public Camera camera() {
+	return(camera);
     }
 
     public void setup(RenderList rl) {
@@ -194,12 +208,12 @@ public class MapView extends PView {
 	if(pl != null)
 	    this.cc = new Coord(pl.getc());
 	if(lighting == 0) {
-	    rl.add(new DirLight(new Color(128, 128, 128), Color.WHITE, Color.WHITE, new Coord3f(2.0f, 1.0f, 5.0f)));
+	    rl.add(new DirLight(new Color(128, 128, 128), Color.WHITE, Color.WHITE, new Coord3f(2.0f, 1.0f, 5.0f)), null);
 	} else if(lighting == 1) {
-	    rl.add(new DirLight(new Color(255, 192, 64), new Coord3f(2.0f, 1.0f, 1.0f)));
+	    rl.add(new DirLight(new Color(255, 192, 64), new Coord3f(2.0f, 1.0f, 1.0f)), null);
 	}
-	setupgobs(rl);
- 	setupmap(rl);
+	rl.add(map, null);
+	rl.add(gobs, null);
     }
     
     public Gob player() {
@@ -238,13 +252,12 @@ public class MapView extends PView {
     }
 
     private Coord checkmapclick(GOut g, Coord c) {
-	g.texsel(-1);
 	RenderList rl = new RenderList();
-	setupmap(rl);
+	rl.setup(map, basic(g));
 	Rendered hit;
 	{
 	    Clicklist cl = new Clicklist();
-	    renderlist(g, rl, cl);
+	    rl.render(g, cl);
 	    hit = cl.get(g, c);
 	    if((hit == null) || !(hit instanceof MapMesh))
 		return(null);
@@ -252,7 +265,7 @@ public class MapView extends PView {
 	final MapMesh mesh = (MapMesh)hit;
 	Coord tile;
 	{
-	    renderlist(g, rl, new Renderer() {
+	    rl.render(g, new Renderer() {
 		    public void render(GOut g, Rendered r) {
 			if(r == mesh) {
 			    mesh.clickmode = 1;
@@ -267,7 +280,7 @@ public class MapView extends PView {
 	}
 	Coord pixel;
 	{
-	    renderlist(g, rl, new Renderer() {
+	    rl.render(g, new Renderer() {
 		    public void render(GOut g, Rendered r) {
 			if(r == mesh) {
 			    mesh.clickmode = 2;
@@ -287,16 +300,16 @@ public class MapView extends PView {
 	final Map<Rendered, Gob> gobmap = new IdentityHashMap<Rendered, Gob>();
 	RenderList rl = new RenderList() {
 		Gob cur;
-		public void add(Rendered r, Transform t) {
+		public void add(Rendered r, GLState t) {
 		    if(r instanceof Gob)
 			cur = (Gob)r;
 		    gobmap.put(r, cur);
 		    super.add(r, t);
 		}
 	    };
-	setupgobs(rl);
+	rl.setup(gobs, basic(g));
 	Clicklist cl = new Clicklist();
-	renderlist(g, rl, cl);
+	rl.render(g, cl);
 	Rendered hr = cl.get(g, c);
 	if(hr == null)
 	    return(null);
@@ -318,17 +331,17 @@ public class MapView extends PView {
 	}
     }
 
-    protected void render(GOut g) {
+    protected void undelay(GOut g) {
 	Coord clickc = this.clickc;
 	this.clickc = null;
 	if(clickc != null)
 	    checkclick(g, clickc);
-	super.render(g);
     }
 
     public void draw(GOut g) {
 	glob.map.sendreqs();
 	try {
+	    undelay(g);
 	    super.draw(g);
 	} catch(MCache.LoadingMap e) {
 	    String text = "Loading...";

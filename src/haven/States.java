@@ -26,52 +26,63 @@
 
 package haven;
 
+import javax.media.opengl.*;
 import java.awt.Color;
 
-public class ResDrawable extends Drawable {
-    final Indir<Resource> res;
-    final Message sdt;
-    Sprite spr = null;
-    int delay = 0;
+public abstract class States extends GLState {
+    private States() {}
+    
+    public static final Slot<ColState> color = new Slot<ColState>(ColState.class, HavenPanel.global);
+    public static class ColState extends GLState {
+	public final Color c;
 	
-    public ResDrawable(Gob gob, Indir<Resource> res, Message sdt) {
-	super(gob);
-	this.res = res;
-	this.sdt = sdt;
-	init();
-    }
+	public ColState(Color c) {
+	    this.c = c;
+	}
 	
-    public ResDrawable(Gob gob, Resource res) {
-	this(gob, res.indir(), new Message(0));
-    }
+	public void apply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glColor4f((float)c.getRed() / 255.0f,
+			 (float)c.getGreen() / 255.0f,
+			 (float)c.getBlue() / 255.0f,
+			 (float)c.getAlpha() / 255.0f);
+	}
 	
-    public void init() {
-	if(spr != null)
-	    return;
-	if(res.get() == null)
-	    return;
-	spr = Sprite.create(gob, res.get(), sdt.clone());
-    }
+	public int capply() {
+	    return(1);
+	}
 	
-    public void setup(RenderList rl) {
-	init();
-	if(spr != null)
-	    spr.setup(rl);
-    }
+	public void unapply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glColor3f(1, 1, 1);
+	}
 	
-    public void ctick(int dt) {
-	if(spr == null) {
-	    delay += dt;
-	} else {
-	    spr.tick(delay + dt);
-	    delay = 0;
+	public int capplyfrom(GLState o) {
+	    if(o instanceof ColState)
+		return(1);
+	    return(-1);
+	}
+	
+	public void applyfrom(GOut g, GLState o) {
+	    apply(g);
+	}
+	
+	public void prep(Buffer buf) {
+	    buf.put(color, this);
+	}
+	
+	public boolean equals(Object o) {
+	    return((o instanceof ColState) && (((ColState)o).c == c));
 	}
     }
-    
-    public Resource.Neg getneg() {
-	Resource r = res.get();
-	if(r == null)
-	    return(null);
-	return(r.layer(Resource.negc));
-    }
+
+    public static final StandAlone xray = new StandAlone(PView.proj) {
+	    public void apply(GOut g) {
+		g.gl.glDisable(GL.GL_DEPTH_TEST);
+	    }
+	    
+	    public void unapply(GOut g) {
+		g.gl.glEnable(GL.GL_DEPTH_TEST);
+	    }
+	};
 }

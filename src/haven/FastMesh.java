@@ -86,12 +86,14 @@ public class FastMesh implements FRendered {
     }
     
     public void draw(GOut g) {
+	g.apply();
 	GL gl = g.gl;
 	cdraw(gl);
 	GOut.checkerr(gl);
     }
     
     public void drawflat(GOut g) {
+	g.apply();
 	GL gl = g.gl;
 	cdraw(gl);
 	GOut.checkerr(gl);

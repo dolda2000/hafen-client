@@ -26,52 +26,43 @@
 
 package haven;
 
-import java.awt.Color;
+import javax.media.opengl.*;
 
-public class ResDrawable extends Drawable {
-    final Indir<Resource> res;
-    final Message sdt;
-    Sprite spr = null;
-    int delay = 0;
-	
-    public ResDrawable(Gob gob, Indir<Resource> res, Message sdt) {
-	super(gob);
-	this.res = res;
-	this.sdt = sdt;
-	init();
+public abstract class Location extends Transform {
+    private Location p = null;
+
+    private void chain(GOut g) {
+	if(p != null)
+	    p.chain(g);
+	xf(g);
     }
-	
-    public ResDrawable(Gob gob, Resource res) {
-	this(gob, res.indir(), new Message(0));
+
+    public final void apply(GOut g) {
+	GL gl = g.gl;
+	gl.glPushMatrix();
+	chain(g);
     }
-	
-    public void init() {
-	if(spr != null)
-	    return;
-	if(res.get() == null)
-	    return;
-	spr = Sprite.create(gob, res.get(), sdt.clone());
-    }
-	
-    public void setup(RenderList rl) {
-	init();
-	if(spr != null)
-	    spr.setup(rl);
-    }
-	
-    public void ctick(int dt) {
-	if(spr == null) {
-	    delay += dt;
-	} else {
-	    spr.tick(delay + dt);
-	    delay = 0;
-	}
+
+    public void prep(Buffer b) {
+	p = b.get(PView.loc);
+	b.put(PView.loc, this);
     }
     
-    public Resource.Neg getneg() {
-	Resource r = res.get();
-	if(r == null)
-	    return(null);
-	return(r.layer(Resource.negc));
+    public static Location xlate(final Coord3f c) {
+	return(new Location() {
+		public void xf(GOut g) {
+		    GL gl = g.gl;
+		    gl.glTranslatef(c.x, c.y, c.z);
+		}
+	    });
+    }
+    
+    public static Location rot(final Coord3f axis, final float angle) {
+	return(new Location() {
+		public void xf(GOut g) {
+		    GL gl = g.gl;
+		    gl.glRotatef(angle * 180.0f / (float)Math.PI, axis.x, axis.y, axis.z);
+		}
+	    });
     }
 }

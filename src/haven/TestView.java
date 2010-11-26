@@ -39,15 +39,20 @@ public class TestView extends PView {
 	    l.add(m.m);
 	tmesh = l.toArray(new FastMesh[0]);
     }
+    final PointedCam camera;
     int sel = -1;
     
     public TestView(Coord c, Coord sz, Widget parent) {
 	super(c, sz, parent);
 	PointedCam cam;
-	camera = cam = new PointedCam();
-	cam.a = (float)Math.PI * 3 / 2;
-	cam.e = (float)Math.PI / 2;
+	camera = new PointedCam();
+	camera.a = (float)Math.PI * 3 / 2;
+	camera.e = (float)Math.PI / 2;
 	setcanfocus(true);
+    }
+    
+    protected Camera camera() {
+	return(camera);
     }
 
     public static class Cube implements Rendered {
@@ -108,27 +113,25 @@ public class TestView extends PView {
 	int i = 0;
 	for(FastMesh m : tmesh) {
 	    if((sel == -1) || (i == sel))
-		rls.add(m, Transform.rot(new Coord3f(1, 0, 0), 180));
+		rls.add(m, Location.rot(new Coord3f(1, 0, 0), 180));
 	    i++;
 	}
-	rls.add(new Cube(), Transform.xlate(new Coord3f(-1.5f, 0, 0)));
-	rls.add(new Cube(), Transform.xlate(new Coord3f(1.5f, 0, 0)));
+	rls.add(new Cube(), Location.xlate(new Coord3f(-1.5f, 0, 0)));
+	rls.add(new Cube(), Location.xlate(new Coord3f(1.5f, 0, 0)));
     }
 
     public void mousemove(Coord c) {
-	PointedCam cam = (PointedCam)camera;
 	if(c.x < 0 || c.x >= sz.x || c.y < 0 || c.y >= sz.y)
 	    return;
-	cam.e = (float)Math.PI / 2 * ((float)c.y / (float)sz.y);
-	cam.a = (float)Math.PI * 2 * ((float)c.x / (float)sz.x);
+	camera.e = (float)Math.PI / 2 * ((float)c.y / (float)sz.y);
+	camera.a = (float)Math.PI * 2 * ((float)c.x / (float)sz.x);
     }
     
     public boolean mousewheel(Coord c, int amount) {
-	PointedCam cam = (PointedCam)camera;
-	float d = cam.dist + (amount * 5);
+	float d = camera.dist + (amount * 5);
 	if(d < 5)
 	    d = 5;
-	cam.dist = d;
+	camera.dist = d;
 	return(true);
     }
     

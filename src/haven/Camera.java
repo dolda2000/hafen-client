@@ -26,52 +26,15 @@
 
 package haven;
 
-import java.awt.Color;
+import javax.media.opengl.*;
 
-public class ResDrawable extends Drawable {
-    final Indir<Resource> res;
-    final Message sdt;
-    Sprite spr = null;
-    int delay = 0;
-	
-    public ResDrawable(Gob gob, Indir<Resource> res, Message sdt) {
-	super(gob);
-	this.res = res;
-	this.sdt = sdt;
-	init();
-    }
-	
-    public ResDrawable(Gob gob, Resource res) {
-	this(gob, res.indir(), new Message(0));
-    }
-	
-    public void init() {
-	if(spr != null)
-	    return;
-	if(res.get() == null)
-	    return;
-	spr = Sprite.create(gob, res.get(), sdt.clone());
-    }
-	
-    public void setup(RenderList rl) {
-	init();
-	if(spr != null)
-	    spr.setup(rl);
-    }
-	
-    public void ctick(int dt) {
-	if(spr == null) {
-	    delay += dt;
-	} else {
-	    spr.tick(delay + dt);
-	    delay = 0;
-	}
+public abstract class Camera extends Transform {
+    public void apply(GOut g) {
+	super.apply(g);
+	/* XXX */
     }
     
-    public Resource.Neg getneg() {
-	Resource r = res.get();
-	if(r == null)
-	    return(null);
-	return(r.layer(Resource.negc));
+    public void prep(Buffer b) {
+	b.put(PView.cam, this);
     }
 }

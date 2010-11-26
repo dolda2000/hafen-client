@@ -34,16 +34,12 @@ import java.nio.*;
 public class GOut {
     public final GL gl;
     public Coord ul, sz;
-    private Color color = Color.WHITE;
+    private States.ColState color = new States.ColState(Color.WHITE);
     public final GLContext ctx;
     public Coord3f camdir = Coord3f.zu.inv();
-    private Shared sh;
-	
-    private static class Shared {
-	int curtex = -1;
-	GLState curstate = null;
-	GOut root;
-    }
+    private final GOut root;
+    public final GLState.Applier st;
+    private final GLState.Buffer def2d;
 	
     protected GOut(GOut o) {
 	this.gl = o.gl;
@@ -51,16 +47,19 @@ public class GOut {
 	this.sz = o.sz;
 	this.color = o.color;
 	this.ctx = o.ctx;
-	this.sh = o.sh;
+	this.root = o.root;
+	this.st = o.st;
+	this.def2d = o.def2d;
     }
 
-    public GOut(GL gl, GLContext ctx, Coord sz) {
+    public GOut(GL gl, GLContext ctx, GLState.Applier st, GLState.Buffer def2d, Coord sz) {
 	this.gl = gl;
 	this.ul = Coord.z;
 	this.sz = sz;
 	this.ctx = ctx;
-	this.sh = new Shared();
-	this.sh.root = this;
+	this.st = st;
+	this.root = this;
+	this.def2d = def2d;
     }
     
     public static class GLException extends RuntimeException {
@@ -85,15 +84,8 @@ public class GOut {
 	checkerr(gl);
     }
 	
-    private void glcolor() {
-	gl.glColor4f((float)color.getRed() / 255.0f,
-		     (float)color.getGreen() / 255.0f,
-		     (float)color.getBlue() / 255.0f,
-		     (float)color.getAlpha() / 255.0f);
-    }
-
     public GOut root() {
-	return(sh.root);
+	return(root);
     }
 
     public void image(BufferedImage img, Coord c) {
@@ -113,6 +105,7 @@ public class GOut {
     public void image(Tex tex, Coord c) {
 	if(tex == null)
 	    return;
+	st.set(def2d);
 	tex.crender(this, c.add(ul), ul, sz);
 	checkerr();
     }
@@ -125,6 +118,7 @@ public class GOut {
     public void image(Tex tex, Coord c, Coord sz) {
 	if(tex == null)
 	    return;
+	st.set(def2d);
 	tex.crender(this, c.add(ul), ul, this.sz, sz);
 	checkerr();
     }
@@ -132,6 +126,7 @@ public class GOut {
     public void image(Tex tex, Coord c, Coord ul, Coord sz) {
 	if(tex == null)
 	    return;
+	st.set(def2d);
 	tex.crender(this, c.add(this.ul), this.ul.add(ul), sz);
 	checkerr();
     }
@@ -140,44 +135,20 @@ public class GOut {
 	gl.glVertex2i(c.x + ul.x, c.y + ul.y);
     }
 	
-    public void matsel(GLState ns) {
-	if(ns == sh.curstate)
-	    return;
-	if(sh.curstate != null) {
-	    if(ns == null) {
-		sh.curstate.unapply(this);
-	    } else {
-		if(!ns.applyfrom(this, sh.curstate)) {
-		    sh.curstate.unapply(this);
-		    ns.apply(this);
-		}
-	    }
-	} else {
-	    ns.apply(this);
-	}
-	sh.curstate = ns;
+    public void apply() {
+	st.apply(this);
     }
-
-    public void texsel(int id) {
-	if(id != sh.curtex) {
-	    HavenPanel.texmiss++;
-	    if(id == -1) {
-		gl.glDisable(GL.GL_TEXTURE_2D);
-	    } else {
-		gl.glEnable(GL.GL_TEXTURE_2D);
-		gl.glBindTexture(GL.GL_TEXTURE_2D, id);
-	    }
-	    sh.curtex = id;
-	} else {
-	    HavenPanel.texhit++;
-	}
+    
+    public void state(GLState st) {
+	this.st.prep(st);
     }
-	
+    
     public void line(Coord c1, Coord c2, double w) {
-	texsel(-1);
+	st.set(def2d);
+	state(color);
+	apply();
 	gl.glLineWidth((float)w);
 	gl.glBegin(GL.GL_LINES);
-	glcolor();
 	vertex(c1);
 	vertex(c2);
 	gl.glEnd();
@@ -198,8 +169,9 @@ public class GOut {
     }
     
     public void frect(Coord ul, Coord sz) {
-	glcolor();
-	texsel(-1);
+	st.set(def2d);
+	state(color);
+	apply();
 	gl.glBegin(GL.GL_QUADS);
 	vertex(ul);
 	vertex(ul.add(new Coord(sz.x, 0)));
@@ -210,8 +182,9 @@ public class GOut {
     }
 	
     public void frect(Coord c1, Coord c2, Coord c3, Coord c4) {
-	glcolor();
-	texsel(-1);
+	st.set(def2d);
+	state(color);
+	apply();
 	gl.glBegin(GL.GL_QUADS);
 	vertex(c1);
 	vertex(c2);
@@ -222,8 +195,9 @@ public class GOut {
     }
 	
     public void fellipse(Coord c, Coord r, int a1, int a2) {
-	glcolor();
-	texsel(-1);
+	st.set(def2d);
+	state(color);
+	apply();
 	gl.glBegin(GL.GL_TRIANGLE_FAN);
 	vertex(c);
 	for(int i = a1; i <= a2; i += 5) {
@@ -250,7 +224,9 @@ public class GOut {
     }
 	
     public void chcolor(Color c) {
-	this.color = c;
+	if(c.equals(this.color.c))
+	    return;
+	this.color = new States.ColState(c);
     }
     
     public void chcolor(int r, int g, int b, int a) {
@@ -262,7 +238,7 @@ public class GOut {
     }
     
     Color getcolor() {
-	return(color);
+	return(color.c);
     }
 	
     public GOut reclip(Coord ul, Coord sz) {
@@ -275,7 +251,7 @@ public class GOut {
     public Color getpixel(Coord c) {
 	IntBuffer tgt = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
 	tgt.rewind();
-	gl.glReadPixels(c.x + ul.x, sh.root.sz.y - c.y - ul.y, 1, 1, GL.GL_RGBA, GL.GL_UNSIGNED_INT_8_8_8_8, tgt);
+	gl.glReadPixels(c.x + ul.x, root.sz.y - c.y - ul.y, 1, 1, GL.GL_RGBA, GL.GL_UNSIGNED_INT_8_8_8_8, tgt);
 	checkerr();
 	long rgb = ((long)tgt.get(0)) & 0xffffffffl;
 	int r = (int)((rgb & 0xff000000l) >> 24);

@@ -33,22 +33,26 @@ public interface Rendered {
     public void draw(GOut g);
     public Order setup(RenderList r);
     
+    public static interface RComparator<T extends Rendered> {
+	public int compare(T a, T b, GLState.Buffer sa, GLState.Buffer sb);
+    }
+
     public static interface Order<T extends Rendered> {
 	public int mainz();
-	public Comparator<? super T> cmp();
+	public RComparator<? super T> cmp();
 	
 	public static class Default implements Order<Rendered> {
 	    public int mainz() {
 		return(0);
 	    }
 	    
-	    private Comparator<Rendered> cmp = new Comparator<Rendered>() {
-		public int compare(Rendered a, Rendered b) {
+	    private RComparator<Rendered> cmp = new RComparator<Rendered>() {
+		public int compare(Rendered a, Rendered b, GLState.Buffer sa, GLState.Buffer sb) {
 		    return(0);
 		}
 	    };
 	    
-	    public Comparator<Rendered> cmp() {
+	    public RComparator<Rendered> cmp() {
 		return(cmp);
 	    }
 	}
@@ -59,15 +63,13 @@ public interface Rendered {
     public static class Dot implements Rendered {
 	public void draw(GOut g) {
 	    GL gl = g.gl;
-	    g.matsel(null);
-	    gl.glDisable(GL.GL_LIGHTING);
-	    gl.glDisable(GL.GL_DEPTH_TEST);
+	    g.st.put(Light.lighting, null);
+	    g.state(States.xray);
+	    g.apply();
 	    gl.glBegin(GL.GL_POINTS);
 	    gl.glColor3f(1.0f, 0.0f, 0.0f);
 	    gl.glVertex3f(0.0f, 0.0f, 0.0f);
 	    gl.glEnd();
-	    gl.glEnable(GL.GL_LIGHTING);
-	    gl.glEnable(GL.GL_DEPTH_TEST);
 	}
 	
 	public Order setup(RenderList r) {
@@ -78,7 +80,7 @@ public interface Rendered {
     public static class Cube implements Rendered {
 	public void draw(GOut g) {
 	    GL gl = g.gl;
-	    g.matsel(null);
+	    g.apply();
 	    
 	    gl.glEnable(GL.GL_COLOR_MATERIAL);
 	    gl.glBegin(GL.GL_QUADS);

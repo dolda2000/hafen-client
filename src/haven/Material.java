@@ -31,91 +31,125 @@ import javax.media.opengl.*;
 import static haven.Utils.c2fa;
 
 public class Material extends GLState {
-    public float[] amb, dif, spc, emi;
-    public float shine;
+    public Colors col;
     public Tex tex;
     public boolean facecull = true, mipmap = false;
-    public boolean alphatest = true;
+    
+    public static final GLState nofacecull = new GLState.StandAlone(PView.proj) {
+	    public void apply(GOut g) {
+		g.gl.glDisable(GL.GL_CULL_FACE);
+	    }
+	    
+	    public void unapply(GOut g) {
+		g.gl.glEnable(GL.GL_CULL_FACE);
+	    }
+	};
+    
+    public static final GLState noalpha = new GLState.StandAlone(PView.proj) {
+	    public void apply(GOut g) {
+		g.gl.glDisable(GL.GL_ALPHA_TEST);
+	    }
+	    
+	    public void unapply(GOut g) {
+		g.gl.glEnable(GL.GL_ALPHA_TEST);
+	    }
+	};
     
     public static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
     public static final float[] defdif = {0.8f, 0.8f, 0.8f, 1.0f};
     public static final float[] defspc = {0.0f, 0.0f, 0.0f, 1.0f};
     public static final float[] defemi = {0.0f, 0.0f, 0.0f, 1.0f};
-    public Material() {
-	amb = defamb;
-	dif = defdif;
-	spc = defspc;
-	emi = defemi;
-    }
+    
+    public static final GLState.Slot<Colors> colors = new GLState.Slot<Colors>(Colors.class);
+    public static class Colors extends GLState {
+	public float[] amb, dif, spc, emi;
+	public float shine;
+    
+	public Colors() {
+	    amb = defamb;
+	    dif = defdif;
+	    spc = defspc;
+	    emi = defemi;
+	}
 
+	public Colors(Color amb, Color dif, Color spc, Color emi, float shine) {
+	    build(amb, dif, spc, emi);
+	    this.shine = shine;
+	}
+    
+	public void build(Color amb, Color dif, Color spc, Color emi) {
+	    this.amb = c2fa(amb);
+	    this.dif = c2fa(dif);
+	    this.spc = c2fa(spc);
+	    this.emi = c2fa(emi);
+	}
+    
+	public void apply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_AMBIENT, amb, 0);
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE, dif, 0);
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_SPECULAR, spc, 0);
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_EMISSION, emi, 0);
+	    gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL.GL_SHININESS, shine);
+	}
+
+	public void unapply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_AMBIENT, defamb, 0);
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE, defdif, 0);
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_SPECULAR, defspc, 0);
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_EMISSION, defemi, 0);
+	    gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL.GL_SHININESS, 0.0f);
+	}
+    
+	public int capplyfrom(GLState from) {
+	    if(from instanceof Colors)
+		return(5);
+	    return(-1);
+	}
+
+	public void applyfrom(GOut g, GLState from) {
+	    if(from instanceof Colors)
+		apply(g);
+	}
+	
+	public void prep(Buffer buf) {
+	    buf.put(colors, this);
+	}
+    
+	public String toString() {
+	    return(String.format("(%.1f, %.1f, %.1f), (%.1f, %.1f, %.1f), (%.1f, %.1f, %.1f @ %.1f)",
+				 amb[0], amb[1], amb[2], dif[0], dif[1], dif[2], spc[0], spc[1], spc[2], shine));
+	}
+    }
+    
+    public void apply(GOut g) {}
+    
+    public void unapply(GOut g) {}
+    
+    public Material() {
+	col = new Colors();
+    }
+    
     public Material(Color amb, Color dif, Color spc, Color emi, float shine) {
-	build(amb, dif, spc, emi);
-	this.shine = shine;
+	col = new Colors(amb, dif, spc, emi, shine);
     }
     
     public Material(Tex tex) {
 	this();
 	this.tex = tex;
     }
-
-    public void build(Color amb, Color dif, Color spc, Color emi) {
-	this.amb = c2fa(amb);
-	this.dif = c2fa(dif);
-	this.spc = c2fa(spc);
-	this.emi = c2fa(emi);
-    }
-    
-    private void apply(GOut g, Material cur) {
-	GL gl = g.gl;
-	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_AMBIENT, amb, 0);
-	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE, dif, 0);
-	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_SPECULAR, spc, 0);
-	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_EMISSION, emi, 0);
-	gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL.GL_SHININESS, shine);
-	if(!facecull && ((cur == null) || (cur.facecull)))
-	    gl.glDisable(GL.GL_CULL_FACE);
-	else if(facecull && (cur != null) && !cur.facecull)
-	    gl.glEnable(GL.GL_CULL_FACE);
-	if(!alphatest && ((cur == null) || cur.alphatest))
-	    gl.glDisable(GL.GL_ALPHA_TEST);
-	else if(alphatest && ((cur != null) && !cur.alphatest))
-	    gl.glEnable(GL.GL_ALPHA_TEST);
-	if(tex != null)
-	    tex.select(g);
-	else
-	    g.texsel(-1);
-    }
-
-    public void apply(GOut g) {
-	apply(g, null);
-    }
-    
-    public void unapply(GOut g) {
-	GL gl = g.gl;
-	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_AMBIENT, defamb, 0);
-	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE, defdif, 0);
-	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_SPECULAR, defspc, 0);
-	gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_EMISSION, defemi, 0);
-	gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL.GL_SHININESS, 0.0f);
-	if(!facecull)
-	    gl.glEnable(GL.GL_CULL_FACE);
-	if(!alphatest)
-	    gl.glEnable(GL.GL_ALPHA_TEST);
-	g.texsel(-1);
-    }
-    
-    public boolean applyfrom(GOut g, GLState from) {
-	if(from instanceof Material) {
-	    apply(g, (Material)from);
-	    return(true);
-	}
-	return(super.applyfrom(g, from));
-    }
     
     public String toString() {
-	return(String.format("((%.1f, %.1f, %.1f), (%.1f, %.1f, %.1f), (%.1f, %.1f, %.1f @ %.1f), %s)",
-			     amb[0], amb[1], amb[2], dif[0], dif[1], dif[2], spc[0], spc[1], spc[2], shine,
-			     (tex == null)?"untextured":"textured"));
+	return("(" + col.toString() + ", " + ((tex == null)?"textured":"non-textured") + ")");
+    }
+    
+    public void prep(Buffer buf) {
+	col.prep(buf);
+	if(tex != null)
+	    tex.prep(buf);
+	if(!facecull)
+	    nofacecull.prep(buf);
     }
     
     public static class Res extends Resource.Layer {

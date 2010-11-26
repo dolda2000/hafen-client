@@ -58,6 +58,10 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	caps.setGreenBits(8);
 	caps.setBlueBits(8);
     }
+    public static final GLState.Slot<GLState> global = new GLState.Slot<GLState>(GLState.class);
+    public static final GLState.Slot<GLState> proj2d = new GLState.Slot<GLState>(GLState.class, global);
+    private GLState gstate, rtstate, ostate;
+    private GLState.Applier state = null;
 	
     public HavenPanel(int w, int h) {
 	super(caps);
@@ -88,18 +92,54 @@ public class HavenPanel extends GLCanvas implements Runnable {
 			h.lsetprop("gl.exts", Arrays.asList(gl.glGetString(gl.GL_EXTENSIONS).split(" ")));
 			h.lsetprop("gl.caps", d.getChosenGLCapabilities().toString());
 		    }
-		    gl.glColor3f(1, 1, 1);
-		    gl.glPointSize(4);
-		    gl.setSwapInterval(1);
-		    gl.glEnable(GL.GL_BLEND);
-		    //gl.glEnable(GL.GL_LINE_SMOOTH);
-		    gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-		    GOut.checkerr(gl);
+		    gstate = new GLState() {
+			    public void apply(GOut g) {
+				GL gl = g.gl;
+				gl.glColor3f(1, 1, 1);
+				gl.glPointSize(4);
+				gl.setSwapInterval(1);
+				gl.glEnable(GL.GL_BLEND);
+				//gl.glEnable(GL.GL_LINE_SMOOTH);
+				gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+				GOut.checkerr(gl);
+			    }
+			    public void unapply(GOut g) {
+			    }
+			    public void prep(Buffer buf) {
+				buf.put(global, this);
+			    }
+			};
 		}
 
-		public void reshape(GLAutoDrawable d, int x, int y, int w, int h) {
+		public void reshape(GLAutoDrawable d, final int x, final int y, final int w, final int h) {
+		    ostate = new GLState() {
+			    public void apply(GOut g) {
+				GL gl = g.gl;
+				g.st.matmode(GL.GL_PROJECTION);
+				gl.glLoadIdentity();
+				gl.glOrtho(0, w, 0, h, -1, 1);
+			    }
+			    public void unapply(GOut g) {
+			    }
+			    public void prep(Buffer buf) {
+				buf.put(proj2d, this);
+			    }
+			};
+		    rtstate = new GLState() {
+			    public void apply(GOut g) {
+				GL gl = g.gl;
+				g.st.matmode(GL.GL_PROJECTION);
+				gl.glLoadIdentity();
+				gl.glOrtho(0, w, h, 0, -1, 1);
+			    }
+			    public void unapply(GOut g) {
+			    }
+			    public void prep(Buffer buf) {
+				buf.put(proj2d, this);
+			    }
+			};
 		}
-			
+		
 		public void displayChanged(GLAutoDrawable d, boolean cp1, boolean cp2) {}
 	    });
     }
@@ -234,18 +274,21 @@ public class HavenPanel extends GLCanvas implements Runnable {
     }
 
     void redraw(GL gl) {
-	GOut g = new GOut(gl, getContext(), new Coord(800, 600));
+	if((state == null) || (state.gl != gl))
+	    state = new GLState.Applier(gl);
+	GLState.Buffer ibuf = new GLState.Buffer();
+	gstate.prep(ibuf);
+	ostate.prep(ibuf);
+	GOut g = new GOut(gl, getContext(), state, ibuf, new Coord(800, 600));
+	state.set(ibuf);
 
-	gl.glMatrixMode(GL.GL_PROJECTION);
-	gl.glLoadIdentity();
-	gl.glOrtho(0, getWidth(), 0, getHeight(), -1, 1);
+	g.state(rtstate);
 	TexRT.renderall(g);
 	if(curf != null)
 	    curf.tick("texrt");
 
-	gl.glMatrixMode(GL.GL_PROJECTION);
-	gl.glLoadIdentity();
-	gl.glOrtho(0, getWidth(), getHeight(), 0, -1, 1);
+	g.state(ostate);
+	g.apply();
 	gl.glClearColor(0, 0, 0, 1);
 	gl.glClear(GL.GL_COLOR_BUFFER_BIT);
 	if(curf != null)
@@ -309,7 +352,6 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		g.image(curs.layer(Resource.imgc), dc);
 	    }
 	}
-	g.texsel(-1);
     }
 	
     void dispatch() {

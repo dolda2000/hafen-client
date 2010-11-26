@@ -28,34 +28,21 @@ package haven;
 
 import javax.media.opengl.*;
 
-public abstract class Transform {
-    public abstract void apply(GOut g);
+public abstract class Transform extends GLState {
+    public abstract void xf(GOut g);
     
-    public static Transform xlate(final Coord3f c) {
-	return(new Transform() {
-		public void apply(GOut g) {
-		    GL gl = g.gl;
-		    gl.glTranslatef(c.x, c.y, c.z);
-		}
-	    });
+    public void apply(GOut g) {
+	GL gl = g.gl;
+	gl.glPushMatrix();
+	xf(g);
     }
     
-    public static Transform rot(final Coord3f axis, final float angle) {
-	return(new Transform() {
-		public void apply(GOut g) {
-		    GL gl = g.gl;
-		    gl.glRotatef(angle * 180.0f / (float)Math.PI, axis.x, axis.y, axis.z);
-		}
-	    });
+    public void unapply(GOut g) {
+	GL gl = g.gl;
+	gl.glPopMatrix();
     }
     
-    public static Transform seq(final Transform... seq) {
-	return(new Transform() {
-		public void apply(GOut g) {
-		    for(Transform t : seq) {
-			t.apply(g);
-		    }
-		}
-	    });
+    public int capply() {
+	return(2);
     }
 }

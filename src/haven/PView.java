@@ -31,142 +31,98 @@ import javax.media.opengl.*;
 
 public abstract class PView extends Widget {
     private RenderList rls = new RenderList();
-    public Transform camera;
-    public float[] ambient = {0.0f, 0.0f, 0.0f, 1.0f};
-    private static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
-
-    public interface Renderer {
-	public void render(GOut g, Rendered r);
-    }
-
-    public PView(Coord c, Coord sz, Widget parent) {
-	super(c, sz, parent);
-    }
+    public static final GLState.Slot<RenderState> proj = new GLState.Slot<RenderState>(RenderState.class, HavenPanel.proj2d);
+    public static final GLState.Slot<Camera> cam = new GLState.Slot<Camera>(Camera.class, proj);
+    public static final GLState.Slot<Location> loc = new GLState.Slot<Location>(Location.class, cam);
+    private GLState pstate;
     
-    protected abstract void setup(RenderList rls);
+    public class RenderState extends GLState {
+	public final float field = 0.5f;
+	public final float aspect = ((float)sz.y) / ((float)sz.x);
+	
+	public void apply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glScissor(g.ul.x, ui.root.sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
+	    gl.glViewport(g.ul.x, ui.root.sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
 
-    private static void transform(GOut g, RenderList rls, RenderList.Slot s) {
-	if(s.p != null)
-	    transform(g, rls, s.p);
-	if(s.t != null)
-	    s.t.apply(g);
-    }
+	    gl.glAlphaFunc(gl.GL_GREATER, 0.5f);
+	    gl.glEnable(gl.GL_DEPTH_TEST);
+	    gl.glEnable(gl.GL_CULL_FACE);
+	    gl.glEnable(gl.GL_SCISSOR_TEST);
+	    gl.glEnable(gl.GL_ALPHA_TEST);
+	    gl.glDepthFunc(gl.GL_LEQUAL);
 
-    public static void renderlist(GOut g, RenderList rls, Renderer out) {
-	GL gl = g.gl;
-	for(int i = 0; i < rls.cur; i++) {
-	    if(rls.list[i].o == null)
-		continue;
+	    g.st.matmode(GL.GL_PROJECTION);
 	    gl.glPushMatrix();
-	    try {
-		transform(g, rls, rls.list[i]);
-		if(out == null)
-		    rls.list[i].r.draw(g);
-		else
-		    out.render(g, rls.list[i].r);
-	    } finally {
-		gl.glPopMatrix();
-	    }
-	}
-	g.matsel(null);
-    }
+	    gl.glLoadIdentity();
+	    gl.glFrustum(-field, field, -aspect * field, aspect * field, 1, 5000);
 
-    private Light[] elights(GOut g, RenderList rls) {
-	int[] buf = new int[1];
-	GL gl = g.gl;
-	gl.glGetIntegerv(GL.GL_MAX_LIGHTS, buf, 0);
-	int nl = rls.lights.size();
-	if(buf[0] < nl)
-	    nl = buf[0];
-	Light[] ret = new Light[nl];
-	int i = 0;
-	gl.glEnable(GL.GL_LIGHTING);
-	gl.glLightModeli(gl.GL_LIGHT_MODEL_COLOR_CONTROL, gl.GL_SEPARATE_SPECULAR_COLOR);
-	gl.glLightModelfv(GL.GL_LIGHT_MODEL_AMBIENT, ambient, 0);
-	for(RenderList.LSlot ls : rls.lights) {
-	    ret[i] = ls.l;
+	    g.st.matmode(gl.GL_MODELVIEW);
 	    gl.glPushMatrix();
-	    try {
-		if(ls.p != null)
-		    transform(g, rls, ls.p);
-		ls.l.enable(g, i);
-	    } finally {
-		gl.glPopMatrix();
-	    }
-	    if(++i >= ret.length)
-		break;
-	    checkerr(gl);
+	    gl.glLoadIdentity();
 	}
-	return(ret);
-    }
+	
+	public void unapply(GOut g) {
+	    GL gl = g.gl;
 
-    private void dlights(GOut g, Light[] ll) {
-	GL gl = g.gl;
-	try {
-	    for(int i = 0; i < ll.length; i++) {
-		ll[i].disable(g, i);
-		checkerr(gl);
-	    }
-	} finally {
-	    gl.glLightModelfv(GL.GL_LIGHT_MODEL_AMBIENT, defamb, 0);
-	    gl.glDisable(GL.GL_LIGHTING);
-	}
-	checkerr(gl);
-    }
-
-    protected void render(GOut g) {
-	rls.rewind();
-	setup(rls);
-	rls.sort();
-	Light[] ll = new Light[0];
-	try {
-	    ll = elights(g, rls);
-	    renderlist(g, this.rls, null);
-	} finally {
-	    dlights(g, ll);
-	}
-    }
-
-    public void draw(GOut g) {
-	if(camera == null)
-	    return;
-	GL gl = g.gl;
-	g.texsel(-1);
-	gl.glScissor(g.ul.x, ui.root.sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
-	gl.glViewport(g.ul.x, ui.root.sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
-	gl.glMatrixMode(gl.GL_MODELVIEW);
-	gl.glPushMatrix();
-	gl.glLoadIdentity();
-	gl.glMatrixMode(gl.GL_PROJECTION);
-	gl.glPushMatrix();
-	gl.glLoadIdentity();
-	gl.glAlphaFunc(gl.GL_GREATER, 0.5f);
-	gl.glEnable(gl.GL_DEPTH_TEST);
-	gl.glEnable(gl.GL_CULL_FACE);
-	gl.glEnable(gl.GL_SCISSOR_TEST);
-	gl.glEnable(gl.GL_ALPHA_TEST);
-	gl.glClearDepth(1.0);
-	gl.glDepthFunc(gl.GL_LEQUAL);
-	gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
-	try {
-	    checkerr(gl);
-	    double r = ((double)sz.y) / ((double)sz.x);
-	    gl.glFrustum(-0.5, 0.5, -r * 0.5, r * 0.5, 1, 5000);
-	    gl.glMatrixMode(gl.GL_MODELVIEW);
-	    camera.apply(g);
-	    render(g);
-	} finally {
-	    gl.glMatrixMode(gl.GL_PROJECTION);
+	    g.st.matmode(gl.GL_MODELVIEW);
 	    gl.glPopMatrix();
-	    gl.glMatrixMode(gl.GL_MODELVIEW);
+
+	    g.st.matmode(gl.GL_PROJECTION);
 	    gl.glPopMatrix();
+
 	    gl.glDisable(gl.GL_DEPTH_TEST);
 	    gl.glDisable(gl.GL_CULL_FACE);
 	    gl.glDisable(gl.GL_SCISSOR_TEST);
 	    gl.glDisable(gl.GL_ALPHA_TEST);
+
 	    gl.glViewport(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
 	    gl.glScissor(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
 	}
-	checkerr(gl);
+	
+	public void prep(Buffer b) {
+	    b.put(proj, this);
+	}
+    }
+    
+    public PView(Coord c, Coord sz, Widget parent) {
+	super(c, sz, parent);
+	pstate = new RenderState();
+    }
+    
+    protected GLState.Buffer basic(GOut g) {
+	GLState.Buffer buf = g.st.copy();
+	pstate.prep(buf);
+	camera().prep(buf);
+	return(buf);
+    }
+
+    protected abstract Camera camera();
+    protected abstract void setup(RenderList rls);
+
+    private final Rendered scene = new Rendered() {
+	    public void draw(GOut g) {
+	    }
+	    
+	    public Order setup(RenderList rl) {
+		PView.this.setup(rl);
+		return(null);
+	    }
+	};
+
+    public void draw(GOut g) {
+	GLState.Buffer bk = g.st.copy();
+	GLState.Buffer def = basic(g);
+	try {
+	    rls.setup(scene, def);
+	    g.st.set(def);
+	    g.apply();
+	    GL gl = g.gl;
+	    gl.glClearDepth(1.0);
+	    gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
+	    rls.render(g, null);
+	} finally {
+	    g.st.set(bk);
+	}
     }
 }

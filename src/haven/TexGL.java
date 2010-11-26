@@ -47,6 +47,35 @@ public abstract class TexGL extends Tex {
 	
     protected abstract void fill(GOut gl);
 
+    public void apply(GOut g) {
+	GL gl = g.gl;
+	g.st.texunit(0);
+	gl.glEnable(GL.GL_TEXTURE_2D);
+	gl.glBindTexture(GL.GL_TEXTURE_2D, glid(g));
+    }
+    
+    public void unapply(GOut g) {
+	GL gl = g.gl;
+	g.st.texunit(0);
+	gl.glDisable(GL.GL_TEXTURE_2D);
+    }
+    
+    public int capply() {
+	return(100);
+    }
+    
+    public int capplyfrom(GLState from) {
+	if(from instanceof TexGL)
+	    return(99);
+	return(-1);
+    }
+    
+    public void applyfrom(GOut g, GLState from) {
+	GL gl = g.gl;
+	g.st.texunit(0);
+	gl.glBindTexture(GL.GL_TEXTURE_2D, glid(g));
+    }
+
     private void create(GOut g) {
 	GL gl = g.gl;
 	int[] buf = new int[1];
@@ -85,16 +114,12 @@ public abstract class TexGL extends Tex {
 	return(((float)y) / ((float)tdim.y));
     }
     
-    public void select(GOut g) {
-	g.texsel(glid(g));
-    }
-    
     public void mipmap() {
 	mipmap = true;
 	dispose();
     }
 
-    public int glid(GOut g) {
+    private int glid(GOut g) {
 	GL gl = g.gl;
 	synchronized(idmon) {
 	    if((id != -1) && (mygl != gl)) {
@@ -109,7 +134,8 @@ public abstract class TexGL extends Tex {
 
     public void render(GOut g, Coord c, Coord ul, Coord br, Coord sz) {
 	GL gl = g.gl;
-	g.texsel(glid(g));
+	g.st.prep(this);
+	g.apply();
 	Color amb = blend(g, setenv(gl));
 	checkerr(gl);
 	if(!disableall) {

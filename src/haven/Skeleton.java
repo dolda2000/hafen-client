@@ -256,9 +256,9 @@ public class Skeleton {
 	    }
 	}
 	
-	public Transform bonetrans(final int bone) {
-	    return(new Transform() {
-		    public void apply(GOut g) {
+	public Location bonetrans(final int bone) {
+	    return(new Location() {
+		    public void xf(GOut g) {
 			GL gl = g.gl;
 			gl.glTranslatef(gpos[bone][0], gpos[bone][1], gpos[bone][2]);
 			float ang = (float)Math.acos(grot[bone][0]) * 2.0f;
@@ -295,9 +295,9 @@ public class Skeleton {
 	public final Rendered debug = new Rendered() {
 		public void draw(GOut g) {
 		    GL gl = g.gl;
-		    g.matsel(null);
-		    gl.glDisable(GL.GL_LIGHTING);
-		    gl.glDisable(GL.GL_DEPTH_TEST);
+		    g.st.put(Light.lighting, null);
+		    g.state(States.xray);
+		    g.apply();
 		    gl.glBegin(GL.GL_LINES);
 		    for(int i = 0; i < blist.length; i++) {
 			if(blist[i].parent != null) {
@@ -309,8 +309,6 @@ public class Skeleton {
 			}
 		    }
 		    gl.glEnd();
-		    gl.glEnable(GL.GL_LIGHTING);
-		    gl.glEnable(GL.GL_DEPTH_TEST);
 		}
 	    
 		public Order setup(RenderList rl) {
@@ -583,9 +581,9 @@ public class Skeleton {
 	public void init() {
 	}
 	
-	public Transform xf() {
-	    return(new Transform() {
-		    public void apply(GOut g) {
+	public Location xf() {
+	    return(new Location() {
+		    public void xf(GOut g) {
 			GL gl = g.gl;
 			gl.glTranslatef(off.x, off.y, off.z);
 			gl.glRotatef(rang * 180.0f / (float)Math.PI, rax.x, rax.y, rax.z);

@@ -32,21 +32,15 @@ public class RenderList {
     Slot[] list = new Slot[100];
     int cur = 0;
     private Slot curp = null;
-    Collection<LSlot> lights = new ArrayList<LSlot>();
     
     class Slot {
 	Rendered r;
-	Transform t;
+	GLState.Buffer os = new GLState.Buffer(), cs = new GLState.Buffer();
 	Rendered.Order o;
 	Slot p;
     }
     
-    class LSlot {
-	Light l;
-	Slot p;
-    }
-    
-    public void add(Rendered r, Transform t) {
+    private Slot getslot() {
 	int i = cur++;
 	if(i >= list.length) {
 	    Slot[] n = new Slot[i * 2];
@@ -56,22 +50,64 @@ public class RenderList {
 	Slot s;
 	if((s = list[i]) == null)
 	    s = list[i] = new Slot();
+	return(s);
+    }
+
+    private void setup(Slot s, Rendered r) {
 	s.r = r;
-	s.t = t;
 	Slot pp = s.p = curp;
 	try {
-	    curp = list[i];
+	    curp = s;
 	    s.o = r.setup(this);
 	} finally {
 	    curp = pp;
 	}
     }
+
+    public interface Renderer {
+	public void render(GOut g, Rendered r);
+    }
     
-    public void add(Light l) {
-	LSlot s = new LSlot();
-	s.l = l;
-	s.p = curp;
-	lights.add(s);
+    public void render(GOut g, Renderer r) {
+	for(int i = 0; i < cur; i++) {
+	    Slot s = list[i];
+	    if(s.o == null)
+		break;
+	    g.st.set(s.os);
+	    if(r == null)
+		s.r.draw(g);
+	    else
+		r.render(g, s.r);
+	}
+    }
+
+    public void setup(Rendered r, GLState.Buffer t) {
+	rewind();
+	Slot s = getslot();
+	t.copy(s.os); t.copy(s.cs);
+	setup(s, r);
+	sort();
+    }
+
+    public void add(Rendered r, GLState t) {
+	Slot s = getslot();
+	if(curp == null)
+	    throw(new RuntimeException("Tried to set up relative slot with no parent"));
+	curp.cs.copy(s.os);
+	curp.cs.copy(s.cs);
+	setup(s, r);
+    }
+    
+    public GLState.Buffer state() {
+	return(curp.os);
+    }
+    
+    public void prepo(GLState t) {
+	t.prep(curp.os);
+    }
+    
+    public void propc(GLState t) {
+	t.prep(curp.cs);
     }
     
     @SuppressWarnings("unchecked")
@@ -88,7 +124,7 @@ public class RenderList {
 		return(az - bz);
 	    if(a.o != b.o)
 		throw(new RuntimeException("Found two different orderings with the same main-Z: " + a.o + " and " + b.o));
-	    return(a.o.cmp().compare(a.r, b.r));
+	    return(a.o.cmp().compare(a.r, b.r, a.os, b.os));
 	}
     };
     
@@ -100,6 +136,5 @@ public class RenderList {
 	if(curp != null)
 	    throw(new RuntimeException("Tried to rewind RenderList while adding to it."));
 	cur = 0;
-	lights.clear();
     }
 }

@@ -164,13 +164,13 @@ public class MapMesh implements FRendered {
 	    return(1000);
 	}
 	
-	private final Comparator<Layer> cmp = new Comparator<Layer>() {
-	    public int compare(Layer a, Layer b) {
+	private final RComparator<Layer> cmp = new RComparator<Layer>() {
+	    public int compare(Layer a, Layer b, GLState.Buffer sa, GLState.Buffer sb) {
 		return(a.z - b.z);
 	    }
 	};
 	
-	public Comparator<Layer> cmp() {
+	public RComparator<Layer> cmp() {
 	    return(cmp);
 	}
     };
@@ -182,11 +182,11 @@ public class MapMesh implements FRendered {
 	Collection<Plane> pl = new LinkedList<Plane>();
 	
 	public void draw(GOut g) {
-	    g.matsel(st);
 	    mesh.draw(g);
 	}
 	
 	public Order setup(RenderList rl) {
+	    rl.prepo(st);
 	    return(mmorder);
 	}
     }

@@ -94,7 +94,7 @@ public class WaterTile extends Tiler {
     
     static final TexCube sky = new TexCube(Resource.loadimg("gfx/tiles/skycube"));
     static final Tex srf = Resource.loadtex("gfx/tiles/watertex");
-    public static final GLState surfmat = new GLState() {
+    public static final GLState surfmat = new GLState.StandAlone(PView.cam) {
 	    public void apply(GOut g) {
 		GL gl = g.gl;
 		gl.glTexGeni(GL.GL_S, GL.GL_TEXTURE_GEN_MODE, GL.GL_REFLECTION_MAP);
@@ -130,14 +130,24 @@ public class WaterTile extends Tiler {
 		gl.glEnable(GL.GL_LIGHTING);
 		gl.glColor3f(1, 1, 1);
 	    }
+	    
+	    public void prep(Buffer buf) {
+		buf.put(Tex.slot, null);
+		buf.put(States.color, null);
+		super.prep(buf);
+	    }
 	};
     public static final Material surf2 = new Material(new Color(0, 0, 0, 0),
 						      new Color(255, 255, 255, 32),
 						      new Color(16, 16, 16, 64),
 						      new Color(0, 0, 0, 0),
-						      2);
+						      2) {
+	    public void prep(Buffer b) {
+		super.prep(b);
+		noalpha.prep(b);
+	    }
+	};
     static {
-	surf2.alphatest = false;
 	surf2.tex = srf;
     }
 

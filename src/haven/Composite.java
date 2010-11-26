@@ -142,7 +142,7 @@ public class Composite extends Drawable {
 	
 	public void draw(GOut g) {
 	    for(Material lay : this.lay) {
-		g.matsel(lay);
+		g.state(lay);
 		m.draw(g);
 	    }
 	}
@@ -187,19 +187,19 @@ public class Composite extends Drawable {
 	}
 	
 	public Order setup(RenderList rl) {
-	    rl.add(l);
+	    rl.add(l, null);
 	    return(null);
 	}
     }
 
     private abstract class Equ implements Rendered {
-	private final Transform et;
+	private final GLState et;
 	
 	private Equ(ED ed) {
 	    Skeleton.Bone bone = skel.bones.get(ed.at);
 	    Transform bt = pose.bonetrans(bone.idx);
 	    if((ed.off.x != 0.0f) || (ed.off.y != 0.0f) || (ed.off.z != 0.0f))
-		this.et = Transform.seq(bt, Transform.xlate(ed.off));
+		this.et = GLState.compose(bt, Location.xlate(ed.off));
 	    else
 		this.et = bt;
 	}

@@ -26,11 +26,12 @@
 
 package haven;
 
+import java.util.*;
 import java.awt.Color;
 import javax.media.opengl.*;
 import static haven.Utils.c2fa;
 
-public class Light {
+public class Light implements Rendered {
     public float[] amb, dif, spc;
     
     private static final float[] defamb = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -68,6 +69,120 @@ public class Light {
 	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_DIFFUSE, defdif, 0);
 	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_SPECULAR, defspc, 0);
 	gl.glDisable(GL.GL_LIGHT0 + idx);
+    }
+    
+    public static final GLState.Slot<LightList> lights = new GLState.Slot<LightList>(LightList.class, PView.cam);
+    public static final GLState.Slot<Model> model = new GLState.Slot<Model>(Model.class, PView.proj);
+    public static final GLState.Slot<GLState> lighting = new GLState.Slot<GLState>(GLState.class, model, lights);
+    
+    public static final GLState elights = new GLState() {
+	    public void apply(GOut g) {
+		GL gl = g.gl;
+		gl.glEnable(GL.GL_LIGHTING);
+	    }
+	    
+	    public void unapply(GOut g) {
+		GL gl = g.gl;
+		gl.glDisable(GL.GL_LIGHTING);
+	    }
+	    
+	    public void prep(Buffer buf) {
+		buf.put(lighting, this);
+	    }
+	};
+    
+    public static class LightList extends GLState {
+	private final List<Light> ll = new ArrayList<Light>();
+	private final List<Location> sl = new ArrayList<Location>();
+	private final List<Light> en = new ArrayList<Light>();
+	
+	public void apply(GOut g) {
+	    int[] buf = new int[1];
+	    GL gl = g.gl;
+	    gl.glGetIntegerv(GL.GL_MAX_LIGHTS, buf, 0);
+	    int nl = ll.size();
+	    if(buf[0] < nl)
+		nl = buf[0];
+	    en.clear();
+	    for(int i = 0; i < nl; i++) {
+		Location loc = sl.get(i);
+		Light l = ll.get(i);
+		if(loc != null)
+		    loc.apply(g);
+		try {
+		    en.add(l);
+		    l.enable(g, i);
+		} finally {
+		    if(loc != null)
+			loc.unapply(g);
+		}
+		GOut.checkerr(gl);
+	    }
+	}
+	
+	public void unapply(GOut g) {
+	    for(int i = 0; i < en.size(); i++) {
+		en.get(i).disable(g, i);
+		GOut.checkerr(g.gl);
+	    }
+	}
+	
+	public int capply() {
+	    return(1000);
+	}
+	
+	public int cunapply() {
+	    return(1000);
+	}
+	
+	public void prep(Buffer buf) {
+	    buf.put(lights, this);
+	}
+	
+	private void add(Light l, Location loc) {
+	    ll.add(l);
+	    sl.add(loc);
+	    if(ll.size() != sl.size())
+		throw(new RuntimeException());
+	}
+    }
+    
+    public static class Model extends GLState {
+	public float[] amb;
+	public int cc = GL.GL_SINGLE_COLOR;
+	private static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
+	
+	public Model(Color amb) {
+	    this.amb = c2fa(amb);
+	}
+	
+	public Model() {
+	    this(Color.BLACK);
+	}
+	
+	public void apply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glLightModelfv(GL.GL_LIGHT_MODEL_AMBIENT, amb, 0);
+	    gl.glLightModeli(GL.GL_LIGHT_MODEL_COLOR_CONTROL, cc);
+	}
+	
+	public void unapply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glLightModelfv(GL.GL_LIGHT_MODEL_AMBIENT, defamb, 0);
+	    gl.glLightModeli(GL.GL_LIGHT_MODEL_COLOR_CONTROL, GL.GL_SINGLE_COLOR);
+	}
+	
+	public void prep(Buffer buf) {
+	    buf.put(model, this);
+	}
+    }
+
+    public void draw(GOut g) {}
+    public Order setup(RenderList rl) {
+	LightList l = rl.state().get(lights);
+	if(l != null)
+	    l.add(this, rl.state().get(PView.loc));
+	return(null);
     }
     
     public static class Res extends Resource.Layer {

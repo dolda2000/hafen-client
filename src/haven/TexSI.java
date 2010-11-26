@@ -48,7 +48,19 @@ public class TexSI extends Tex {
 	parent.render(g, c, this.ul.add(ul), this.ul.add(br), sz);
     }
     
-    public void select(GOut g) {
-	parent.select(g);
+    public void apply(GOut g) {
+	parent.apply(g);
+    }
+    
+    public void unapply(GOut g) {
+	parent.unapply(g);
+    }
+    
+    public int capplyfrom(GLState from) {
+	return(parent.capplyfrom(from));
+    }
+    
+    public void applyfrom(GOut g, GLState from) {
+	parent.applyfrom(g, from);
     }
 }
