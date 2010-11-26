@@ -94,7 +94,9 @@ public class RenderList {
 	if(curp == null)
 	    throw(new RuntimeException("Tried to set up relative slot with no parent"));
 	curp.cs.copy(s.os);
-	curp.cs.copy(s.cs);
+	if(t != null)
+	    t.prep(s.os);
+	s.os.copy(s.cs);
 	setup(s, r);
     }
     
