@@ -207,6 +207,21 @@ public abstract class GLState {
 	    }
 	    return(true);
 	}
+	
+	public String toString() {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append('[');
+	    for(int i = 0; i < states.length; i++) {
+		if(i > 0)
+		    buf.append(", ");
+		if(states[i] == null)
+		    buf.append("null");
+		else
+		    buf.append(states[i].toString());
+	    }
+	    buf.append(']');
+	    return(buf.toString());
+	}
     }
     
     public static int bufdiff(Buffer f, Buffer t, boolean[] trans, boolean[] repl) {

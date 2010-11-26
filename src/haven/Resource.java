@@ -497,7 +497,11 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public synchronized Tex tex() {
 		if(tex != null)
 		    return(tex);
-		tex = new TexI(img);
+		tex = new TexI(img) {
+			public String toString() {
+			    return("TexI(" + Resource.this.name + ")");
+			}
+		    };
 		return(tex);
 	    }
 		
@@ -682,7 +686,11 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		    minh = h;
 		}
 	    }
-	    TexIM packbuf = new TexIM(new Coord(minw, minh));
+	    TexIM packbuf = new TexIM(new Coord(minw, minh)) {
+		    public String toString() {
+			return("TileTex(" + Resource.this.name + ")");
+		    }
+		};
 	    Graphics g = packbuf.graphics();
 	    int x = 0, y = 0;
 	    for(Tile t :  tiles) {

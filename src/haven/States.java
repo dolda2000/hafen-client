@@ -73,6 +73,10 @@ public abstract class States extends GLState {
 	public boolean equals(Object o) {
 	    return((o instanceof ColState) && (((ColState)o).c == c));
 	}
+	
+	public String toString() {
+	    return("ColState(" + c + ")");
+	}
     }
 
     public static final StandAlone xray = new StandAlone(PView.proj) {
