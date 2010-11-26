@@ -117,7 +117,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 				GL gl = g.gl;
 				g.st.matmode(GL.GL_PROJECTION);
 				gl.glLoadIdentity();
-				gl.glOrtho(0, w, 0, h, -1, 1);
+				gl.glOrtho(0, w, h, 0, -1, 1);
 			    }
 			    public void unapply(GOut g) {
 			    }
@@ -130,7 +130,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 				GL gl = g.gl;
 				g.st.matmode(GL.GL_PROJECTION);
 				gl.glLoadIdentity();
-				gl.glOrtho(0, w, h, 0, -1, 1);
+				gl.glOrtho(0, w, 0, h, -1, 1);
 			    }
 			    public void unapply(GOut g) {
 			    }
