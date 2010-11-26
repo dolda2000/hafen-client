@@ -227,7 +227,7 @@ public abstract class GLState {
 			cat = t.states[i].capplyto(f.states[i]);
 			caf = f.states[i].capplyfrom(t.states[i]);
 		    }
-		    if((cat > 0) && (caf > 0)) {
+		    if((cat >= 0) && (caf >= 0)) {
 			cost += cat + caf;
 			if(trans != null)
 			    trans[i] = true;
