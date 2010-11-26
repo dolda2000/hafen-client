@@ -338,15 +338,23 @@ public class MapView extends PView {
     }
 
     private void checkclick(GOut g, Coord clickc) {
-	GL gl = g.gl;
-	g.st.set(basic(g));
-	g.apply();
-	gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
-	Coord mapcl = checkmapclick(g, clickc);
-	g.st.set(basic(g));
-	g.apply();
-	gl.glClear(GL.GL_COLOR_BUFFER_BIT);
-	Gob gobcl = checkgobclick(g, clickc);
+	GLState.Buffer bk = g.st.copy();
+	Coord mapcl;
+	Gob gobcl;
+	try {
+	    GL gl = g.gl;
+	    g.st.set(basic(g));
+	    g.apply();
+	    gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
+	    mapcl = checkmapclick(g, clickc);
+	    g.st.set(bk);
+	    g.st.set(basic(g));
+	    g.apply();
+	    gl.glClear(GL.GL_COLOR_BUFFER_BIT);
+	    gobcl = checkgobclick(g, clickc);
+	} finally {
+	    g.st.set(bk);
+	}
 	if(mapcl != null) {
 	    if(gobcl == null)
 		wdgmsg("click", clickc, mapcl, clickb, ui.modflags());
@@ -358,13 +366,8 @@ public class MapView extends PView {
     protected void undelay(GOut g) {
 	Coord clickc = this.clickc;
 	this.clickc = null;
-	GLState.Buffer bk = g.st.copy();
-	try {
-	    if(clickc != null)
-		checkclick(g, clickc);
-	} finally {
-	    g.st.set(bk);
-	}
+	if(clickc != null)
+	    checkclick(g, clickc);
     }
 
     public void draw(GOut g) {
