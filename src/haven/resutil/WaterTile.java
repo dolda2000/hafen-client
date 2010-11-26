@@ -106,20 +106,20 @@ public class WaterTile extends Tiler {
 		gl.glEnable(GL.GL_TEXTURE_CUBE_MAP);
 		gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
 		gl.glColor4f(1, 1, 1, 0.25f);
-		gl.glMatrixMode(GL.GL_TEXTURE);
+		g.st.matmode(GL.GL_TEXTURE);
 		gl.glPushMatrix();
 		/* XXX */
 		gl.glRotatef(90 + (float)(g.camdir.xyangle(Coord3f.o) * 180 / Math.PI), 0, 0, 1);
 		float a = (float)(new Coord3f(g.camdir.z, (float)Math.sqrt(g.camdir.x * g.camdir.x + g.camdir.y * g.camdir.y), 0).xyangle(Coord3f.o) * 180 / Math.PI);
 		gl.glRotatef(a, -1, 0, 0);
-		gl.glMatrixMode(GL.GL_MODELVIEW);
+		g.st.matmode(GL.GL_MODELVIEW);
 	    }
 	    
 	    public void unapply(GOut g) {
 		GL gl = g.gl;
-		gl.glMatrixMode(GL.GL_TEXTURE);
+		g.st.matmode(GL.GL_TEXTURE);
 		gl.glPopMatrix();
-		gl.glMatrixMode(GL.GL_MODELVIEW);
+		g.st.matmode(GL.GL_MODELVIEW);
 		gl.glDisable(GL.GL_TEXTURE_CUBE_MAP);
 		gl.glDisable(GL.GL_TEXTURE_GEN_S);
 		gl.glDisable(GL.GL_TEXTURE_GEN_T);
