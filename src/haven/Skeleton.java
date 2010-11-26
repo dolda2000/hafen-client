@@ -581,15 +581,17 @@ public class Skeleton {
 	public void init() {
 	}
 	
+	public class Transform extends Location {
+	    public void xf(GOut g) {
+		GL gl = g.gl;
+		gl.glTranslatef(off.x, off.y, off.z);
+		gl.glRotatef(rang * 180.0f / (float)Math.PI, rax.x, rax.y, rax.z);
+		gl.glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+	    }
+	}
+
 	public Location xf() {
-	    return(new Location() {
-		    public void xf(GOut g) {
-			GL gl = g.gl;
-			gl.glTranslatef(off.x, off.y, off.z);
-			gl.glRotatef(rang * 180.0f / (float)Math.PI, rax.x, rax.y, rax.z);
-			gl.glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-		    }
-		});
+	    return(new Transform());
 	    /*
 	    return(Transform.seq(Transform.xlate(off), Transform.rot(rax, rang)));
 	    */
