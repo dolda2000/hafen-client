@@ -349,34 +349,16 @@ public abstract class GLState {
 	    this.r = r;
 	}
 	
-	public void draw(GOut g) {
-	    g.state(GLState.this);
-	    r.draw(g);
-	}
-
+	public void draw(GOut g) {}
+	
 	public Order setup(RenderList rl) {
-	    return(r.setup(rl));
+	    rl.add(r, GLState.this);
+	    return(null);
 	}
     }
     
-    private class FWrapping extends Wrapping implements FRendered {
-	private final FRendered f; /* :-P */
-
-	private FWrapping(FRendered r) {
-	    super(r);
-	    this.f = r;
-	}
-	
-	public void drawflat(GOut g) {
-	    f.drawflat(g);
-	}
-    }
-
     public Rendered apply(Rendered r) {
-	if(r instanceof FRendered)
-	    return(new FWrapping((FRendered)r));
-	else
-	    return(new Wrapping(r));
+	return(new Wrapping(r));
     }
     
     public static GLState compose(final GLState... states) {
