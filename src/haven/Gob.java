@@ -30,6 +30,7 @@ import java.util.*;
 
 public class Gob implements Sprite.Owner, Rendered {
     public Coord rc, sc;
+    public Coord3f sczu;
     public double a;
     int clprio = 0;
     public int id, frame, initdelay = (int)(Math.random() * 3000);

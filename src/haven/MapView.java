@@ -196,9 +196,9 @@ public class MapView extends PView {
 				public void xf(GOut g) {
 				    Matrix4f tm = Matrix4f.fromgl(g.gl, GL.GL_MODELVIEW_MATRIX);
 				    PView.RenderState proj = g.st.cur(PView.proj);
-				    float[] o = proj.projmat.mul4(tm.mul4(new float[] {0, 0, 0, 1}));
-				    o[0] /= o[3]; o[1] /= o[3];
-				    gob.sc = new Coord((int)(((o[0] + 1) / 2) * sz.x), (int)(((-o[1] + 1) / 2) * sz.y));
+				    Coord3f s = proj.toscreen(tm.mul4(Coord3f.o), sz);
+				    gob.sc = new Coord(s);
+				    gob.sczu = proj.toscreen(tm.mul4(Coord3f.zu), sz).sub(s);
 				}
 			    };
 			rl.add(gob, GLState.compose(Location.xlate(c), Location.rot(Coord3f.zu, (float)-gob.a), save));
