@@ -669,7 +669,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
 		
 	private void packtiles(Collection<Tile> tiles, Coord tsz) {
-	    int min = -1, minw = -1, minh = -1;
+	    int min = -1, minw = -1, minh = -1, mine = -1;
 	    int nt = tiles.size();
 	    for(int i = 1; i <= nt; i++) {
 		int w = Tex.nextp2(tsz.x * i);
@@ -680,10 +680,12 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		    h = (nt / i) + 1;
 		h = Tex.nextp2(tsz.y * h);
 		int a = w * h;
-		if((min == -1) || (a < min)) {
+		int e = (w < h)?h:w;
+		if((min == -1) || (a < min) || ((a == min) && (e < mine))) {
 		    min = a;
 		    minw = w;
 		    minh = h;
+		    mine = e;
 		}
 	    }
 	    TexIM packbuf = new TexIM(new Coord(minw, minh)) {
