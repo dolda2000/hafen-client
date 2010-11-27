@@ -74,6 +74,21 @@ public class Matrix4f {
 	return(n);
     }
     
+    public Coord3f mul4(Coord3f b) {
+	float x = (m[ 0] * b.x) + (m[ 4] * b.y) + (m[ 8] * b.z) + m[12];
+	float y = (m[ 1] * b.x) + (m[ 5] * b.y) + (m[ 9] * b.z) + m[13];
+	float z = (m[ 2] * b.x) + (m[ 6] * b.y) + (m[10] * b.z) + m[14];
+	return(new Coord3f(x, y, z));
+    }
+    
+    public float[] mul4(float[] b) {
+	float x = (m[ 0] * b[0]) + (m[ 4] * b[1]) + (m[ 8] * b[2]) + (m[12] * b[3]);
+	float y = (m[ 1] * b[0]) + (m[ 5] * b[1]) + (m[ 9] * b[2]) + (m[13] * b[3]);
+	float z = (m[ 2] * b[0]) + (m[ 6] * b[1]) + (m[10] * b[2]) + (m[14] * b[3]);
+	float w = (m[ 3] * b[0]) + (m[ 7] * b[1]) + (m[11] * b[2]) + (m[15] * b[3]);
+	return(new float[] {x, y, z, w});
+    }
+    
     public Matrix4f transpose() {
 	Matrix4f n = new Matrix4f();
 	for(int y = 0; y < 4; y++) {

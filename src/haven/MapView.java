@@ -183,15 +183,25 @@ public class MapView extends PView {
 		return(null);
 	    }
 	};
+    
     private final Rendered gobs = new Rendered() {
 	    public void draw(GOut g) {}
 	    
 	    public Order setup(RenderList rl) {
 		synchronized(glob.oc) {
-		    for(Gob g : glob.oc) {
-			Coord3f c = g.getc();
+		    for(final Gob gob : glob.oc) {
+			Coord3f c = gob.getc();
 			c.y = -c.y;
-			rl.add(g, GLState.compose(Location.xlate(c), Location.rot(Coord3f.zu, (float)-g.a)));
+			Location save = new Location() {
+				public void xf(GOut g) {
+				    Matrix4f tm = Matrix4f.fromgl(g.gl, GL.GL_MODELVIEW_MATRIX);
+				    PView.RenderState proj = g.st.cur(PView.proj);
+				    float[] o = proj.projmat.mul4(tm.mul4(new float[] {0, 0, 0, 1}));
+				    o[0] /= o[3]; o[1] /= o[3];
+				    gob.sc = new Coord((int)(((o[0] + 1) / 2) * sz.x), (int)(((-o[1] + 1) / 2) * sz.y));
+				}
+			    };
+			rl.add(gob, GLState.compose(Location.xlate(c), Location.rot(Coord3f.zu, (float)-gob.a), save));
 		    }
 		}
 		return(null);
