@@ -31,7 +31,7 @@ import java.util.*;
 import java.io.*;
 
 public class Session {
-    public static final int PVER = 4;
+    public static final int PVER = 5;
     
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
@@ -239,10 +239,10 @@ public class Session {
 			    if(gob != null)
 				oc.linstep(gob, l);
 			} else if(type == OD_SPEECH) {
-			    Coord off = msg.coord();
+			    float zo = msg.int16() / 100.0f;
 			    String text = msg.string();
 			    if(gob != null)
-				oc.speak(gob, off, text);
+				oc.speak(gob, zo, text);
 			} else if(type == OD_COMPOSE) {
 			    Indir<Resource> base = getres(msg.uint16());
 			    if(gob != null)

@@ -399,6 +399,13 @@ public class MapView extends PView {
 	    g.chcolor(Color.WHITE);
 	    g.atext(text, sz.div(2), 0.5, 0.5);
 	}
+	synchronized(glob.oc) {
+	    for(Gob gob : glob.oc) {
+		Speaking sp = gob.getattr(Speaking.class);
+		if((sp != null) && (gob.sc != null))
+		    sp.draw(g, gob.sc.add(new Coord(gob.sczu.mul(sp.zo))));
+	    }
+	}
     }
     
     private boolean camdrag = false;

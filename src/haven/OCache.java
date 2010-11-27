@@ -144,15 +144,15 @@ public class OCache implements Iterable<Gob> {
 	    lm.setl(l);
     }
 	
-    public synchronized void speak(Gob g, Coord off, String text) {
+    public synchronized void speak(Gob g, float zo, String text) {
 	if(text.length() < 1) {
 	    g.delattr(Speaking.class);
 	} else {
 	    Speaking m = g.getattr(Speaking.class);
 	    if(m == null) {
-		g.setattr(new Speaking(g, off, text));
+		g.setattr(new Speaking(g, zo, text));
 	    } else {
-		m.off = off;
+		m.zo = zo;
 		m.update(text);
 	    }
 	}

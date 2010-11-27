@@ -29,18 +29,18 @@ package haven;
 import java.awt.*;
 
 public class Speaking extends GAttrib {
-    Coord off;
+    float zo;
     Text text;
     static IBox sb = null;
     Tex svans;
     static final int sx = 3;
 	
-    public Speaking(Gob gob, Coord off, String text) {
+    public Speaking(Gob gob, float zo, String text) {
 	super(gob);
 	if(sb == null)
 	    sb = new IBox("gfx/hud/emote", "tl", "tr", "bl", "br", "el", "er", "et", "eb");
 	svans = Resource.loadtex("gfx/hud/emote/svans");
-	this.off = off;
+	this.zo = zo;
 	this.text = Text.render(text, Color.BLACK);
     }
 	
