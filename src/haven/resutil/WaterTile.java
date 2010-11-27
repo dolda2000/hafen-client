@@ -165,7 +165,7 @@ public class WaterTile extends Tiler {
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	Tile g = set.ground.pick(rnd);
 	m.new Plane(m.surf(Bottom.class), lc, 0, g);
-	m.new Plane(m.gnd(), lc, 256, surf2);
+	//m.new Plane(m.gnd(), lc, 256, surf2);
 	m.new Plane(m.gnd(), lc, 257, surfmat);
     }
     
