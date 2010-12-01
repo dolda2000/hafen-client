@@ -27,7 +27,8 @@
 package haven;
 
 public class Inventory extends Widget implements DTarget {
-    public static Tex invsq = Resource.loadtex("gfx/hud/invsq");
+    public static final Tex invsq = Resource.loadtex("gfx/hud/invsq");
+    public static final Coord sqsz = new Coord(31, 31);
     Coord isz;
 
     static {
@@ -62,8 +63,13 @@ public class Inventory extends Widget implements DTarget {
 	return(true);
     }
     
+    public Widget makechild(WidgetFactory fac, Object[] pargs, Object[] cargs) {
+	Coord c = (Coord)pargs[0];
+	return(fac.create(c.mul(sqsz).add(1, 1), this, cargs));
+    }
+	
     public boolean drop(Coord cc, Coord ul) {
-	wdgmsg("drop", ul.add(new Coord(15, 15)).div(invsq.sz()));
+	wdgmsg("drop", ul.add(sqsz.div(2)).div(invsq.sz()));
 	return(true);
     }
 	
