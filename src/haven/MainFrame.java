@@ -107,8 +107,16 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
     {
 	cmdmap.put("sz", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    p.setSize(Integer.parseInt(args[1]), Integer.parseInt(args[2]));
-		    pack();
+		    if(args.length == 3) {
+			p.setSize(Integer.parseInt(args[1]), Integer.parseInt(args[2]));
+			pack();
+		    } else if(args.length == 2) {
+			if(args[1].equals("dyn")) {
+			    setResizable(true);
+			} else if(args[1].equals("lock")) {
+			    setResizable(false);
+			}
+		    }
 		}
 	    });
     }
