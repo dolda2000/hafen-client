@@ -89,12 +89,12 @@ public class TestClient implements Runnable {
 	    super(sz, sess);
 	}
 	
-	public void newwidget(int id, String type, Coord c, int parent, Object... args) throws InterruptedException {
-	    super.newwidget(id, type, c, parent, args);
+	public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
+	    super.newwidget(id, type, parent, pargs, cargs);
 	    Widget w = widgets.get(id);
 	    synchronized(robots) {
 		for(Robot r : robots)
-		    r.newwdg(id, w, args);
+		    r.newwdg(id, w, cargs);
 	    }
 	}
 	

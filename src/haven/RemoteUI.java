@@ -52,10 +52,10 @@ public class RemoteUI implements UI.Receiver {
 		if(msg.type == Message.RMSG_NEWWDG) {
 		    int id = msg.uint16();
 		    String type = msg.string();
-		    Coord c = msg.coord();
 		    int parent = msg.uint16();
-		    Object[] args = msg.list();
-		    ui.newwidget(id, type, c, parent, args);
+		    Object[] pargs = msg.list();
+		    Object[] cargs = msg.list();
+		    ui.newwidget(id, type, parent, pargs, cargs);
 		} else if(msg.type == Message.RMSG_WDGMSG) {
 		    int id = msg.uint16();
 		    String name = msg.string();

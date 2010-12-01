@@ -142,7 +142,7 @@ public class UI {
 	afterdraws = null;
     }
 	
-    public void newwidget(int id, String type, Coord c, int parent, Object... args) throws InterruptedException {
+    public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
 	WidgetFactory f;
 	if(type.indexOf('/') >= 0) {
 	    int ver = -1, p;
@@ -161,9 +161,8 @@ public class UI {
 	synchronized(this) {
 	    Widget pwdg = widgets.get(parent);
 	    if(pwdg == null)
-		throw(new UIException("Null parent widget " + parent + " for " + id, type, args));
-	    Object[] pargs = new Object[] {c};
-	    Widget wdg = pwdg.makechild(f, pargs, args);
+		throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
+	    Widget wdg = pwdg.makechild(f, pargs, cargs);
 	    bind(wdg, id);
 	    if(wdg instanceof MapView)
 		mainview = (MapView)wdg;
