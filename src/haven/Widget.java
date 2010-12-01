@@ -75,7 +75,7 @@ public class Widget {
 	}
     }
 	
-    public static WidgetFactory gettype(String name) throws InterruptedException {
+    public static WidgetFactory gettype2(String name) throws InterruptedException {
 	if(name.indexOf('/') < 0) {
 	    synchronized(types) {
 		return(types.get(name));
@@ -91,7 +91,21 @@ public class Widget {
 	    return(res.layer(Resource.CodeEntry.class).get(WidgetFactory.class));
 	}
     }
-	
+    
+    public static WidgetFactory gettype(String name) {
+	WidgetFactory f;
+	try {
+	    f = gettype2(name);
+	} catch(InterruptedException e) {
+	    /* XXX: This is not proper behavior. On the other hand,
+	     * InterruptedException should not be checked. :-/ */
+	    throw(new RuntimeException("Interrupted while loading resource widget", e));
+	}
+	if(f == null)
+	    throw(new RuntimeException("No such widget type: " + name));
+	return(f);
+    }
+    
     public Widget(UI ui, Coord c, Coord sz) {
 	this.ui = ui;
 	this.c = c;
@@ -108,9 +122,9 @@ public class Widget {
 	}
     }
     
-    public Widget makechild(WidgetFactory fac, Object[] pargs, Object[] cargs) {
+    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
 	Coord c = (Coord)pargs[0];
-	return(fac.create(c, this, cargs));
+	return(gettype(type).create(c, this, cargs));
     }
 	
     public void link() {

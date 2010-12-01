@@ -143,14 +143,11 @@ public class UI {
     }
 	
     public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
-	WidgetFactory f = Widget.gettype(type);
-	if(f == null)
-	    throw(new RuntimeException("No such widget widget type: " + type));
 	synchronized(this) {
 	    Widget pwdg = widgets.get(parent);
 	    if(pwdg == null)
 		throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
-	    Widget wdg = pwdg.makechild(f, pargs, cargs);
+	    Widget wdg = pwdg.makechild(type.intern(), pargs, cargs);
 	    bind(wdg, id);
 	    if(wdg instanceof MapView)
 		mainview = (MapView)wdg;

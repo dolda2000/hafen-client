@@ -63,11 +63,11 @@ public class Inventory extends Widget implements DTarget {
 	return(true);
     }
     
-    public Widget makechild(WidgetFactory fac, Object[] pargs, Object[] cargs) {
+    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
 	Coord c = (Coord)pargs[0];
-	return(fac.create(c.mul(sqsz).add(1, 1), this, cargs));
+	return(gettype(type).create(c.mul(sqsz).add(1, 1), this, cargs));
     }
-	
+    
     public boolean drop(Coord cc, Coord ul) {
 	wdgmsg("drop", ul.add(sqsz.div(2)).div(invsq.sz()));
 	return(true);
