@@ -208,7 +208,7 @@ public class MainFrame extends Frame implements Runnable, FSMan {
 	Config.cmdline(args);
 	ThreadGroup g = HackThread.tg();
 	setupres();
-	MainFrame f = new MainFrame(800, 600);
+	MainFrame f = new MainFrame(Config.wndsz.x, Config.wndsz.y);
 	if(Config.fullscreen)
 	    f.setfs();
 	f.g = g;

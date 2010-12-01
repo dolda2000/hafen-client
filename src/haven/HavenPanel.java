@@ -138,6 +138,8 @@ public class HavenPanel extends GLCanvas implements Runnable {
 				buf.put(proj2d, this);
 			    }
 			};
+		    HavenPanel.this.w = w;
+		    HavenPanel.this.h = h;
 		}
 		
 		public void displayChanged(GLAutoDrawable d, boolean cp1, boolean cp2) {}
@@ -279,7 +281,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	GLState.Buffer ibuf = new GLState.Buffer();
 	gstate.prep(ibuf);
 	ostate.prep(ibuf);
-	GOut g = new GOut(gl, getContext(), state, ibuf, new Coord(800, 600));
+	GOut g = new GOut(gl, getContext(), state, ibuf, new Coord(w, h));
 	state.set(ibuf);
 
 	g.state(rtstate);

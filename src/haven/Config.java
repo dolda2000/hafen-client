@@ -44,6 +44,8 @@ public class Config {
     public static String resdir;
     public static boolean nopreload;
     public static String loadwaited, allused;
+    public static Coord wndsz = new Coord(800, 600);
+    public static boolean wndlock = true;
     
     static {
 	try {
