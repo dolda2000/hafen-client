@@ -44,7 +44,7 @@ public class RootWidget extends ConsoleHost {
 	if(!super.globtype(key, ev)) {
 	    if(Config.profile && (key == '`')) {
 		new Profwnd(findchild(SlenHud.class), gprof, "Glob prof");
-	    } else if(Config.profile && (key == '!')) {
+	    } else if(key == ':') {
 		entercmd();
 	    } else if(key != 0) {
 		wdgmsg("gk", (int)key);
