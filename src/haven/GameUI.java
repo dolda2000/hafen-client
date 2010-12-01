@@ -37,6 +37,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public static final Text.Foundry errfoundry = new Text.Foundry(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 14), new Color(192, 0, 0));
     private Text lasterr;
     private long errtime;
+    private Window invwnd;
     
     static {
 	addtype("gameui", new WidgetFactory() {
@@ -59,11 +60,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
     
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	if(type == "mapview") {
+	String place = ((String)pargs[0]).intern();
+	if(place == "mapview") {
 	    Coord cc = (Coord)cargs[0];
 	    map = new MapView(Coord.z, sz, this, cc, plid);
 	    map.lower();
 	    return(map);
+	} else if(place == "inv") {
+	    invwnd = new Window(new Coord(100, 100), Coord.z, this, "Inventory");
+	    Widget inv = gettype(type).create(Coord.z, invwnd, cargs);
+	    invwnd.pack();
+	    return(inv);
 	} else {
 	    throw(new UI.UIException("Illegal gameui child", type, pargs));
 	}
@@ -99,9 +106,26 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	super.wdgmsg(sender, msg, args);
     }
 
+    private void showinv(boolean show) {
+	if(invwnd.visible = show) {
+	    if(invwnd.c.x < 0)
+		invwnd.c.x = 0;
+	    if(invwnd.c.y < 0)
+		invwnd.c.y = 0;
+	    if(invwnd.c.x + invwnd.sz.x > sz.x)
+		invwnd.c.x = sz.x - invwnd.sz.x;
+	    if(invwnd.c.y + invwnd.sz.y > sz.y)
+		invwnd.c.y = sz.y - invwnd.sz.y;
+	}
+    }
+
     public boolean globtype(char key, java.awt.event.KeyEvent ev) {
 	if(key == ':') {
 	    entercmd();
+	    return(true);
+	} else if(key == 9) {
+	    if(invwnd != null)
+		showinv(!invwnd.visible);
 	    return(true);
 	}
 	return(super.globtype(key, ev));
