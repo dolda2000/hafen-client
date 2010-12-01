@@ -32,6 +32,7 @@ import java.io.*;
 public class Console {
     static private Map<String, Command> scommands = new TreeMap<String, Command>();
     private Map<String, Command> commands = new TreeMap<String, Command>();
+    private Collection<Directory> dirs = new LinkedList<Directory>();
     public PrintWriter out;
     
     {
@@ -66,7 +67,19 @@ public class Console {
 	synchronized(commands) {
 	    ret.putAll(commands);
 	}
+	synchronized(dirs) {
+	    for(Directory dir : dirs) {
+		Map<String, Command> cmds = dir.findcmds();
+		ret.putAll(cmds);
+	    }
+	}
 	return(ret);
+    }
+    
+    public void add(Directory dir) {
+	synchronized(dirs) {
+	    dirs.add(dir);
+	}
     }
     
     public Command findcmd(String name) {
