@@ -263,6 +263,8 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	ui = new UI(new Coord(w, h), sess);
 	ui.root.gprof = prof;
 	ui.fsm = this.fsm;
+	if(getParent() instanceof Console.Directory)
+	    ui.cons.add((Console.Directory)getParent());
 	return(ui);
     }
 	

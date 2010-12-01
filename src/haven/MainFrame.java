@@ -31,7 +31,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.*;
 
-public class MainFrame extends Frame implements Runnable, FSMan {
+public class MainFrame extends Frame implements Runnable, FSMan, Console.Directory {
     HavenPanel p;
     ThreadGroup g;
     DisplayMode fsmode = null, prefs = null;
@@ -101,6 +101,19 @@ public class MainFrame extends Frame implements Runnable, FSMan {
 	    setfs();
 	else
 	    setwnd();
+    }
+
+    private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
+    {
+	cmdmap.put("sz", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    p.setSize(Integer.parseInt(args[1]), Integer.parseInt(args[2]));
+		    pack();
+		}
+	    });
+    }
+    public Map<String, Console.Command> findcmds() {
+	return(cmdmap);
     }
 
     private void seticon() {
