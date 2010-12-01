@@ -143,19 +143,7 @@ public class UI {
     }
 	
     public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
-	WidgetFactory f;
-	if(type.indexOf('/') >= 0) {
-	    int ver = -1, p;
-	    if((p = type.indexOf(':')) > 0) {
-		ver = Integer.parseInt(type.substring(p + 1));
-		type = type.substring(0, p);
-	    }
-	    Resource res = Resource.load(type, ver);
-	    res.loadwaitint();
-	    f = res.layer(Resource.CodeEntry.class).get(WidgetFactory.class);
-	} else {
-	    f = Widget.gettype(type);
-	}
+	WidgetFactory f = Widget.gettype(type);
 	if(f == null)
 	    throw(new RuntimeException("No such widget widget type: " + type));
 	synchronized(this) {

@@ -75,9 +75,20 @@ public class Widget {
 	}
     }
 	
-    public static WidgetFactory gettype(String name) {
-	synchronized(types) {
-	    return(types.get(name));
+    public static WidgetFactory gettype(String name) throws InterruptedException {
+	if(name.indexOf('/') < 0) {
+	    synchronized(types) {
+		return(types.get(name));
+	    }
+	} else {
+	    int ver = -1, p;
+	    if((p = name.indexOf(':')) > 0) {
+		ver = Integer.parseInt(name.substring(p + 1));
+		name = name.substring(0, p);
+	    }
+	    Resource res = Resource.load(name, ver);
+	    res.loadwaitint();
+	    return(res.layer(Resource.CodeEntry.class).get(WidgetFactory.class));
 	}
     }
 	
