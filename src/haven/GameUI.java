@@ -53,6 +53,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	this.chrid = chrid;
 	this.plid = plid;
 	menu = new MenuGrid(Coord.z, this);
+	new Avaview(new Coord(10, 10), this, plid);
+	new Bufflist(new Coord(95, 50), this);
 	resize(sz);
     }
     
