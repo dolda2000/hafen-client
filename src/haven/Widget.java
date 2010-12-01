@@ -50,7 +50,7 @@ public class Widget {
 			       MenuGrid.class, SlenHud.class, HWindow.class, CheckBox.class, Logwindow.class,
 			       ISBox.class, ComMeter.class, Fightview.class, IMeter.class,
 			       GiveButton.class, Charlist.class, ComWin.class, CharWnd.class, BuddyWnd.class,
-			       ChatHW.class, Speedget.class, Bufflist.class};
+			       ChatHW.class, Speedget.class, Bufflist.class, GameUI.class};
 	
     static {
 	addtype("cnt", new WidgetFactory() {
@@ -135,6 +135,17 @@ public class Widget {
 		parent.child = this;
 	    this.prev = parent.lchild;
 	    parent.lchild = this;
+	}
+    }
+    
+    public void linkfirst() {
+	synchronized(ui) {
+	    if(parent.child != null)
+		parent.child.prev = this;
+	    if(parent.lchild == null)
+		parent.lchild = this;
+	    this.next = parent.child;
+	    parent.child = this;
 	}
     }
 	
@@ -461,6 +472,13 @@ public class Widget {
 	synchronized(ui) {
 	    unlink();
 	    link();
+	}
+    }
+    
+    public void lower() {
+	synchronized(ui) {
+	    unlink();
+	    linkfirst();
 	}
     }
     
