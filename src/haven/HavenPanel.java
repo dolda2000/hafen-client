@@ -148,7 +148,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	
     public void init() {
 	setFocusTraversalKeysEnabled(false);
-	ui = new UI(new Coord(w, h), null);
+	newui(null);
 	addKeyListener(new KeyAdapter() {
 		public void keyTyped(KeyEvent e) {
 		    checkfs();
@@ -416,6 +416,8 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		    if(ui.sess != null)
 			ui.sess.glob.oc.ctick();
 		    dispatch();
+		    if((ui.root.sz.x != w) || (ui.root.sz.y != h))
+			ui.root.resize(new Coord(w, h));
 		}
 		if(curf != null)
 		    curf.tick("dsp");

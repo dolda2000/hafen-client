@@ -192,6 +192,10 @@ public class LoginScreen extends Widget {
 	    }
 	}
     }
+    
+    public void presize() {
+	c = parent.sz.div(2).sub(sz.div(2));
+    }
 	
     public void draw(GOut g) {
 	super.draw(g);

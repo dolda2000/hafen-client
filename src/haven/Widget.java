@@ -467,6 +467,15 @@ public class Widget {
 	}
 	return(false);
     }
+    
+    public void resize(Coord sz) {
+	this.sz = sz;
+	for(Widget ch = child; ch != null; ch = ch.next)
+	    ch.presize();
+    }
+    
+    public void presize() {
+    }
 	
     public void raise() {
 	synchronized(ui) {

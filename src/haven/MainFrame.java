@@ -121,7 +121,7 @@ public class MainFrame extends Frame implements Runnable, FSMan {
 	fsmode = findmode(w, h);
 	add(p);
 	pack();
-	setResizable(false);
+	setResizable(!Config.wndlock);
 	p.requestFocus();
 	seticon();
 	setVisible(true);

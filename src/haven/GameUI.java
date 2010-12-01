@@ -53,7 +53,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	this.chrid = chrid;
 	this.plid = plid;
 	menu = new MenuGrid(Coord.z, this);
-	menu.c = sz.sub(menu.sz);
+	resize(sz);
     }
     
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {
@@ -103,6 +103,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return(true);
 	}
 	return(super.globtype(key, ev));
+    }
+    
+    public void resize(Coord sz) {
+	super.resize(sz);
+	menu.c = sz.sub(menu.sz);
+	if(map != null)
+	    map.resize(sz);
+    }
+    
+    public void presize() {
+	resize(parent.sz);
     }
     
     public void error(String msg) {

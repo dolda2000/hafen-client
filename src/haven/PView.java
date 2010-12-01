@@ -113,6 +113,11 @@ public abstract class PView extends Widget {
 
     protected abstract Camera camera();
     protected abstract void setup(RenderList rls);
+    
+    public void resize(Coord sz) {
+	super.resize(sz);
+	pstate = new RenderState();
+    }
 
     private final Rendered scene = new Rendered() {
 	    public void draw(GOut g) {
