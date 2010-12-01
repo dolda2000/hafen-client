@@ -49,6 +49,7 @@ public class GOut {
 	this.root = o.root;
 	this.st = o.st;
 	this.def2d = o.def2d;
+	st.set(def2d);
     }
 
     public GOut(GL gl, GLContext ctx, GLState.Applier st, GLState.Buffer def2d, Coord sz) {
