@@ -249,9 +249,9 @@ public class MapView extends PView {
 	}
 	
 	protected Color newcol(T t) {
-	    int cr = i & 0xff,
-		cg = (i & 0xff00) >> 8,
-		cb = (i & 0xff0000) >> 16;
+	    int cr = ((i & 0x00000f) << 4) | ((i & 0x00f000) >> 12),
+		cg = ((i & 0x0000f0) << 0) | ((i & 0x0f0000) >> 16),
+		cb = ((i & 0x000f00) >> 4) | ((i & 0xf00000) >> 20);
 	    Color col = new Color(cr, cg, cb);
 	    i++;
 	    rmap.put(col, t);
