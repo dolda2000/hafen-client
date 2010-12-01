@@ -38,6 +38,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private Text lasterr;
     private long errtime;
     private Window invwnd;
+    private Equipory equ;
     
     static {
 	addtype("gameui", new WidgetFactory() {
@@ -72,6 +73,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    invwnd.pack();
 	    invwnd.visible = false;
 	    return(inv);
+	} else if(place == "equ") {
+	    equ = (Equipory)gettype(type).create(new Coord(400, 10), this, cargs);
+	    equ.visible = false;
+	    return(equ);
 	} else {
 	    throw(new UI.UIException("Illegal gameui child", type, pargs));
 	}
@@ -107,17 +112,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	super.wdgmsg(sender, msg, args);
     }
 
-    private void showinv(boolean show) {
-	if(invwnd.visible = show) {
-	    if(invwnd.c.x < 0)
-		invwnd.c.x = 0;
-	    if(invwnd.c.y < 0)
-		invwnd.c.y = 0;
-	    if(invwnd.c.x + invwnd.sz.x > sz.x)
-		invwnd.c.x = sz.x - invwnd.sz.x;
-	    if(invwnd.c.y + invwnd.sz.y > sz.y)
-		invwnd.c.y = sz.y - invwnd.sz.y;
-	}
+    private void fitwdg(Widget wdg) {
+	if(wdg.c.x < 0)
+	    wdg.c.x = 0;
+	if(wdg.c.y < 0)
+	    wdg.c.y = 0;
+	if(wdg.c.x + wdg.sz.x > sz.x)
+	    wdg.c.x = sz.x - wdg.sz.x;
+	if(wdg.c.y + wdg.sz.y > sz.y)
+	    wdg.c.y = sz.y - wdg.sz.y;
     }
 
     public boolean globtype(char key, java.awt.event.KeyEvent ev) {
@@ -125,8 +128,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    entercmd();
 	    return(true);
 	} else if(key == 9) {
-	    if(invwnd != null)
-		showinv(!invwnd.visible);
+	    if((invwnd != null) && (invwnd.visible = !invwnd.visible))
+		fitwdg(invwnd);
+	    return(true);
+	} else if(key == 5) {
+	    if((equ != null) && (equ.visible = !equ.visible))
+		fitwdg(equ);
 	    return(true);
 	}
 	return(super.globtype(key, ev));
