@@ -236,6 +236,7 @@ public class MenuGrid extends Widget {
 		curoff += 14;
 	} else {
 	    wdgmsg("act", (Object[])r.layer(Resource.action).ad);
+	    cur = null;
 	}
     }
 	
