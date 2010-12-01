@@ -70,6 +70,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    invwnd = new Window(new Coord(100, 100), Coord.z, this, "Inventory");
 	    Widget inv = gettype(type).create(Coord.z, invwnd, cargs);
 	    invwnd.pack();
+	    invwnd.visible = false;
 	    return(inv);
 	} else {
 	    throw(new UI.UIException("Illegal gameui child", type, pargs));
