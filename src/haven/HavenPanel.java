@@ -40,8 +40,6 @@ public class HavenPanel extends GLCanvas implements Runnable {
     boolean inited = false, rdr = false;
     int w, h;
     long fd = 20, fps = 0;
-    int dth = 0, dtm = 0;
-    public static int texhit = 0, texmiss = 0;
     Queue<InputEvent> events = new LinkedList<InputEvent>();
     private String cursmode = "tex";
     private Resource lastcursor = null;
@@ -304,15 +302,14 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	    curf.tick("draw");
 
 	if(Config.dbtext) {
-	    g.atext("FPS: " + fps, new Coord(10, 545), 0, 1);
-	    g.atext("Texhit: " + dth, new Coord(10, 530), 0, 1);
-	    g.atext("Texmiss: " + dtm, new Coord(10, 515), 0, 1);
+	    int y = h - 20;
+	    FastText.aprint(g, new Coord(10, y -= 15), 0, 1, "FPS: " + fps);
 	    Runtime rt = Runtime.getRuntime();
 	    long free = rt.freeMemory(), total = rt.totalMemory();
-	    g.atext(String.format("Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory()), new Coord(10, 500), 0, 1);
-	    g.atext(String.format("RT-current: %d", TexRT.current.get(gl).size()), new Coord(10, 470), 0, 1);
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "RT-current: %d", TexRT.current.get(gl).size());
 	    if(Resource.qdepth() > 0)
-		g.atext(String.format("RQ depth: %d (%d)", Resource.qdepth(), Resource.numloaded()), new Coord(10, 455), 0, 1);
+		FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "RQ depth: %d (%d)", Resource.qdepth(), Resource.numloaded());
 	}
         Object tooltip = ui.root.tooltip(mousepos, true);
 	Tex tt = null;
@@ -438,9 +435,6 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		if(now - fthen > 1000) {
 		    fps = frames;
 		    frames = 0;
-		    dth = texhit;
-		    dtm = texmiss;
-		    texhit = texmiss = 0;
 		    fthen = now;
 		}
 		if(curf != null)
