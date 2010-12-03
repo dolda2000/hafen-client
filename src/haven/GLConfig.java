@@ -30,7 +30,7 @@ import java.util.*;
 import javax.media.opengl.*;
 
 public class GLConfig implements java.io.Serializable, Console.Directory {
-    public boolean usedl = false;
+    public boolean usedl = true;
     
     private GLConfig() {
     }

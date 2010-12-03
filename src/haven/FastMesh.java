@@ -98,9 +98,10 @@ public class FastMesh implements FRendered {
 	} else {
 	    if(compile() && g.gc.usedl) {
 		list = new DisplayList(gl);
-		gl.glNewList(list.id, GL.GL_COMPILE_AND_EXECUTE);
+		gl.glNewList(list.id, GL.GL_COMPILE);
 		sdraw(gl);
 		gl.glEndList();
+		gl.glCallList(list.id);
 	    } else {
 		cdraw(gl);
 	    }
