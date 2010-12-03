@@ -83,6 +83,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 			
 		public void init(GLAutoDrawable d) {
 		    GL gl = d.getGL();
+		    glconf = GLConfig.fromgl(gl, d.getContext());
 		    if(caller.getThreadGroup() instanceof haven.error.ErrorHandler) {
 			haven.error.ErrorHandler h = (haven.error.ErrorHandler)caller.getThreadGroup();
 			h.lsetprop("gl.vendor", gl.glGetString(gl.GL_VENDOR));
@@ -90,6 +91,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 			h.lsetprop("gl.renderer", gl.glGetString(gl.GL_RENDERER));
 			h.lsetprop("gl.exts", Arrays.asList(gl.glGetString(gl.GL_EXTENSIONS).split(" ")));
 			h.lsetprop("gl.caps", d.getChosenGLCapabilities().toString());
+			h.lsetprop("gl.conf", glconf);
 		    }
 		    gstate = new GLState() {
 			    public void apply(GOut g) {
@@ -277,10 +279,8 @@ public class HavenPanel extends GLCanvas implements Runnable {
     }
 
     void redraw(GL gl) {
-	if((state == null) || (state.gl != gl)) {
+	if((state == null) || (state.gl != gl))
 	    state = new GLState.Applier(gl);
-	    glconf = GLConfig.fromgl(gl, getContext());
-	}
 	GLState.Buffer ibuf = new GLState.Buffer();
 	gstate.prep(ibuf);
 	ostate.prep(ibuf);
