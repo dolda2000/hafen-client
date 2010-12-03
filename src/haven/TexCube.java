@@ -31,11 +31,11 @@ import java.awt.image.*;
 import java.util.*;
 import java.nio.*;
 import javax.media.opengl.*;
+import haven.TexGL.TexOb;
 import static haven.GOut.checkerr;
 
 public class TexCube {
-    protected int id = -1;
-    protected GL mygl = null;
+    protected TexOb t = null;
     private Object idmon = new Object();
     protected int tdim;
     protected final BufferedImage back;
@@ -69,11 +69,8 @@ public class TexCube {
 
     private void create(GOut g) {
 	GL gl = g.gl;
-	int[] buf = new int[1];
-	gl.glGenTextures(1, buf, 0);
-	id = buf[0];
-	mygl = gl;
-	gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, id);
+	t = new TexOb(gl);
+	gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, t.id);
 	gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
 	gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
 	fill(g);
@@ -83,25 +80,20 @@ public class TexCube {
     public int glid(GOut g) {
 	GL gl = g.gl;
 	synchronized(idmon) {
-	    if((id == -1) && (mygl != gl))
+	    if((t != null) && (t.gl != gl))
 		dispose();
-	    if(id < 0)
+	    if(t == null)
 		create(g);
-	    return(id);
+	    return(t.id);
 	}
     }
     
     public void dispose() {
 	synchronized(idmon) {
-	    if(id == -1)
-		return;
-	    TexGL.dispose(mygl, id);
-	    id = -1;
-	    mygl = null;
+	    if(t != null) {
+		t.dispose();
+		t = null;
+	    }
 	}
-    }
-
-    protected void finalize() {
-	dispose();
     }
 }

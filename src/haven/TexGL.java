@@ -32,13 +32,28 @@ import javax.media.opengl.*;
 import static haven.GOut.checkerr;
 
 public abstract class TexGL extends Tex {
-    protected int id = -1;
-    protected GL mygl = null;
+    protected TexOb t = null;
     private Object idmon = new Object();
     protected boolean mipmap = false;
     protected Coord tdim;
     protected static Map<GL, Collection<Integer>> disposed = new HashMap<GL, Collection<Integer>>();
     public static boolean disableall = false;
+    
+    public static class TexOb extends GLObject {
+	public final int id;
+	
+	public TexOb(GL gl) {
+	    super(gl);
+	    int[] buf = new int[1];
+	    gl.glGenTextures(1, buf, 0);
+	    this.id = buf[0];
+	}
+	
+	protected void delete() {
+	    int[] buf = {id};
+	    gl.glDeleteTextures(1, buf, 0);
+	}
+    }
     
     public TexGL(Coord sz) {
 	super(sz);
@@ -78,11 +93,8 @@ public abstract class TexGL extends Tex {
 
     private void create(GOut g) {
 	GL gl = g.gl;
-	int[] buf = new int[1];
-	gl.glGenTextures(1, buf, 0);
-	id = buf[0];
-	mygl = gl;
-	gl.glBindTexture(GL.GL_TEXTURE_2D, id);
+	t = new TexOb(gl);
+	gl.glBindTexture(GL.GL_TEXTURE_2D, t.id);
 	if(mipmap)
 	    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST_MIPMAP_NEAREST);
 	else
@@ -122,13 +134,11 @@ public abstract class TexGL extends Tex {
     private int glid(GOut g) {
 	GL gl = g.gl;
 	synchronized(idmon) {
-	    if((id != -1) && (mygl != gl)) {
-		dispose(mygl, id);
-		id = -1;
-	    }
-	    if(id < 0)
+	    if((t != null) && (t.gl != gl))
+		dispose();
+	    if(t == null)
 		create(g);
-	    return(id);
+	    return(t.id);
 	}
     }
 
@@ -157,52 +167,15 @@ public abstract class TexGL extends Tex {
 	}
     }
 	
-    static void dispose(GL gl, int id) {
-	Collection<Integer> dc;
-	synchronized(disposed) {
-	    dc = disposed.get(gl);
-	    if(dc == null) {
-		dc = new LinkedList<Integer>();
-		disposed.put(gl, dc);
-	    }
-	}
-	synchronized(dc) {
-	    dc.add(id);
-	}
-    }
-	
     public void dispose() {
 	synchronized(idmon) {
-	    if(id == -1)
-		return;
-	    dispose(mygl, id);
-	    id = -1;
+	    if(t != null) {
+		t.dispose();
+		t = null;
+	    }
 	}
     }
 	
-    protected void finalize() {
-	dispose();
-    }
-	
-    public static void disposeall(GL gl) {
-	Collection<Integer> dc;
-	synchronized(disposed) {
-	    dc = disposed.get(gl);
-	    if(dc == null)
-		return;
-	}
-	synchronized(dc) {
-	    if(dc.isEmpty())
-		return;
-	    int[] da = new int[dc.size()];
-	    int i = 0;
-	    for(int id : dc)
-		da[i++] = id;
-	    dc.clear();
-	    gl.glDeleteTextures(da.length, da, 0);
-	}
-    }
-    
     static {
 	Console.setscmd("texdis", new Console.Command() {
 		public void run(Console cons, String[] args) {

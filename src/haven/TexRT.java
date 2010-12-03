@@ -75,7 +75,7 @@ public abstract class TexRT extends TexGL {
     }
 	
     private void subrend2(GOut g) {
-	if(id < 0)
+	if(t == null)
 	    return;
 	GL gl = g.gl;
 	if(Config.profile)
