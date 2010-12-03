@@ -60,6 +60,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
     public static final GLState.Slot<GLState> proj2d = new GLState.Slot<GLState>(GLState.class, global);
     private GLState gstate, rtstate, ostate;
     private GLState.Applier state = null;
+    private GLConfig glconf = null;
 	
     public HavenPanel(int w, int h) {
 	super(caps);
@@ -276,12 +277,14 @@ public class HavenPanel extends GLCanvas implements Runnable {
     }
 
     void redraw(GL gl) {
-	if((state == null) || (state.gl != gl))
+	if((state == null) || (state.gl != gl)) {
 	    state = new GLState.Applier(gl);
+	    glconf = GLConfig.fromgl(gl, getContext());
+	}
 	GLState.Buffer ibuf = new GLState.Buffer();
 	gstate.prep(ibuf);
 	ostate.prep(ibuf);
-	GOut g = new GOut(gl, getContext(), state, ibuf, new Coord(w, h));
+	GOut g = new GOut(gl, getContext(), glconf, state, ibuf, new Coord(w, h));
 	state.set(ibuf);
 
 	g.state(rtstate);

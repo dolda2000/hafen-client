@@ -33,6 +33,7 @@ import java.nio.*;
 
 public class GOut {
     public final GL gl;
+    public final GLConfig gc;
     public Coord ul, sz;
     private States.ColState color = new States.ColState(Color.WHITE);
     public final GLContext ctx;
@@ -42,6 +43,7 @@ public class GOut {
 	
     protected GOut(GOut o) {
 	this.gl = o.gl;
+	this.gc = o.gc;
 	this.ul = o.ul;
 	this.sz = o.sz;
 	this.color = o.color;
@@ -52,8 +54,9 @@ public class GOut {
 	st.set(def2d);
     }
 
-    public GOut(GL gl, GLContext ctx, GLState.Applier st, GLState.Buffer def2d, Coord sz) {
+    public GOut(GL gl, GLContext ctx, GLConfig cfg, GLState.Applier st, GLState.Buffer def2d, Coord sz) {
 	this.gl = gl;
+	this.gc = cfg;
 	this.ul = Coord.z;
 	this.sz = sz;
 	this.ctx = ctx;
