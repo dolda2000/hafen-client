@@ -84,6 +84,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		public void init(GLAutoDrawable d) {
 		    GL gl = d.getGL();
 		    glconf = GLConfig.fromgl(gl, d.getContext());
+		    ui.cons.add(glconf);
 		    if(caller.getThreadGroup() instanceof haven.error.ErrorHandler) {
 			haven.error.ErrorHandler h = (haven.error.ErrorHandler)caller.getThreadGroup();
 			h.lsetprop("gl.vendor", gl.glGetString(gl.GL_VENDOR));
@@ -266,9 +267,11 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	ui.fsm = this.fsm;
 	if(getParent() instanceof Console.Directory)
 	    ui.cons.add((Console.Directory)getParent());
+	if(glconf != null)
+	    ui.cons.add(glconf);
 	return(ui);
     }
-	
+    
     private static Cursor makeawtcurs(BufferedImage img, Coord hs) {
 	java.awt.Dimension cd = Toolkit.getDefaultToolkit().getBestCursorSize(img.getWidth(), img.getHeight());
 	BufferedImage buf = TexI.mkbuf(new Coord((int)cd.getWidth(), (int)cd.getHeight()));
@@ -277,7 +280,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	g.dispose();
 	return(Toolkit.getDefaultToolkit().createCustomCursor(buf, new java.awt.Point(hs.x, hs.y), ""));
     }
-
+    
     void redraw(GL gl) {
 	if((state == null) || (state.gl != gl))
 	    state = new GLState.Applier(gl);

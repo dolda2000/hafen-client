@@ -26,9 +26,10 @@
 
 package haven;
 
+import java.util.*;
 import javax.media.opengl.*;
 
-public class GLConfig implements java.io.Serializable {
+public class GLConfig implements java.io.Serializable, Console.Directory {
     public boolean usedl = false;
     
     private GLConfig() {
@@ -37,5 +38,24 @@ public class GLConfig implements java.io.Serializable {
     public static GLConfig fromgl(GL gl, GLContext ctx) {
 	GLConfig c = new GLConfig();
 	return(c);
+    }
+    
+    private transient Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
+    {
+	cmdmap.put("gl", new Console.Command() {
+		public void run(Console cons, String[] args) throws Exception {
+		    if(args.length >= 2) {
+			String var = args[1].intern();
+			if(var == "usedl") {
+			    usedl = Utils.parsebool(args[2], false);
+			} else {
+			    throw(new Exception("No such setting: " + var));
+			}
+		    }
+		}
+	    });
+    }
+    public Map<String, Console.Command> findcmds() {
+	return(cmdmap);
     }
 }
