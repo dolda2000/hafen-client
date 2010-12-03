@@ -36,6 +36,7 @@ public class MapMesh implements Rendered {
     private Map<Class<? extends Surface>, Surface> surfmap = new HashMap<Class<? extends Surface>, Surface>();
     private Map<Tex, GLState> texmap = new HashMap<Tex, GLState>();
     private List<Layer> layers;
+    private float[] zmap;
 
     public static class SPoint {
 	public Coord3f pos, nrm = Coord3f.zu;
@@ -263,7 +264,7 @@ public class MapMesh implements Rendered {
 	MapMesh m = new MapMesh(mc, ul, sz);
 	Coord c = new Coord();
 	m.layers = new ArrayList<Layer>();
-	int tz = 1;
+	
 	for(c.y = 0; c.y < sz.y; c.y++) {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
 		Coord gc = c.add(ul);
@@ -287,6 +288,16 @@ public class MapMesh implements Rendered {
 		    return(a.z - b.z);
 		}
 	    });
+	
+	Surface g = m.gnd();
+	m.zmap = new float[(sz.x + 1) * (sz.y + 1)];
+	int i = 0;
+	for(c.y = 0; c.y <= sz.y; c.y++) {
+	    for(c.x = 0; c.x <= sz.x; c.x++) {
+		m.zmap[i++] = g.spoint(c).pos.z;
+	    }
+	}
+	
 	m.clean();
 	return(m);
     }
@@ -299,6 +310,10 @@ public class MapMesh implements Rendered {
     public void draw(GOut g) {
     }
     
+    private float fz(int x, int y) {
+	return(zmap[x + (y * (sz.x + 1))]);
+    }
+
     public void drawflat(GOut g, int mode) {
 	g.apply();
 	GL gl = g.gl;
@@ -310,22 +325,22 @@ public class MapMesh implements Rendered {
 		    gl.glColor3f((c.x + 1) / 256.0f, (c.y + 1) / 256.0f, 0.0f);
 		if(mode == 2)
 		    gl.glColor3f(0.0f, 0.0f, 0.0f);
-		gl.glVertex3f(c.x * tilesz.x, c.y * -tilesz.y, map.getz(ul.add(c)));
+		gl.glVertex3f(c.x * tilesz.x, c.y * -tilesz.y, fz(c.x, c.y));
 		if(mode == 2)
 		    gl.glColor3f(0.0f, 1.0f, 0.0f);
-		gl.glVertex3f(c.x * tilesz.x, (c.y + 1) * -tilesz.y, map.getz(ul.add(c.x, c.y + 1)));
+		gl.glVertex3f(c.x * tilesz.x, (c.y + 1) * -tilesz.y, fz(c.x, c.y + 1));
 		if(mode == 2)
 		    gl.glColor3f(1.0f, 1.0f, 0.0f);
-		gl.glVertex3f((c.x + 1) * tilesz.x, (c.y + 1) * -tilesz.y, map.getz(ul.add(c.x + 1, c.y + 1)));
+		gl.glVertex3f((c.x + 1) * tilesz.x, (c.y + 1) * -tilesz.y, fz(c.x + 1, c.y + 1));
 		if(mode == 2)
 		    gl.glColor3f(0.0f, 0.0f, 0.0f);
-		gl.glVertex3f(c.x * tilesz.x, c.y * -tilesz.y, map.getz(ul.add(c)));
+		gl.glVertex3f(c.x * tilesz.x, c.y * -tilesz.y, fz(c.x, c.y));
 		if(mode == 2)
 		    gl.glColor3f(1.0f, 1.0f, 0.0f);
-		gl.glVertex3f((c.x + 1) * tilesz.x, (c.y + 1) * -tilesz.y, map.getz(ul.add(c.x + 1, c.y + 1)));
+		gl.glVertex3f((c.x + 1) * tilesz.x, (c.y + 1) * -tilesz.y, fz(c.x + 1, c.y + 1));
 		if(mode == 2)
 		    gl.glColor3f(1.0f, 0.0f, 0.0f);
-		gl.glVertex3f((c.x + 1) * tilesz.x, c.y * -tilesz.y, map.getz(ul.add(c.x + 1, c.y)));
+		gl.glVertex3f((c.x + 1) * tilesz.x, c.y * -tilesz.y, fz(c.x + 1, c.y));
 	    }
 	}	
 	gl.glEnd();
