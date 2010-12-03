@@ -34,6 +34,7 @@ public class FastMesh implements FRendered {
     public final ShortBuffer indb;
     public final int num;
     public FastMesh from;
+    private DisplayList list = null;
     
     public FastMesh(VertexBuf vert, short[] ind) {
 	this.vert = vert;
@@ -88,8 +89,36 @@ public class FastMesh implements FRendered {
     public void draw(GOut g) {
 	g.apply();
 	GL gl = g.gl;
-	cdraw(gl);
+	if((list != null) && (!g.gc.usedl || (list.gl != gl))) {
+	    list.dispose();
+	    list = null;
+	}
+	if(list != null) {
+	    gl.glCallList(list.id);
+	} else {
+	    if(compile() && g.gc.usedl) {
+		list = new DisplayList(gl);
+		gl.glNewList(list.id, GL.GL_COMPILE_AND_EXECUTE);
+		sdraw(gl);
+		gl.glEndList();
+	    } else {
+		cdraw(gl);
+	    }
+	}
 	GOut.checkerr(gl);
+    }
+    
+    protected boolean compile() {
+	return(true);
+    }
+    
+    public void updated() {
+	synchronized(this) {
+	    if(list != null) {
+		list.dispose();
+		list = null;
+	    }
+	}
     }
     
     public void drawflat(GOut g) {

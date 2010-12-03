@@ -60,6 +60,10 @@ public class MorphedMesh extends FastMesh {
 	((MorphedBuf)vert).update();
 	return(super.setup(rl));
     }
+    
+    protected boolean compile() {
+	return(false);
+    }
 
     private static class MorphedBuf extends VertexBuf {
 	private final WeakReference<Pose> poseref;
