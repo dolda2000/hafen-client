@@ -69,7 +69,7 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 	    setVisible(true);
 	    dev.setFullScreenWindow(this);
 	    dev.setDisplayMode(fsmode);
-			
+	    pack();
 	} catch(Exception e) {
 	    throw(new RuntimeException(e));
 	}
