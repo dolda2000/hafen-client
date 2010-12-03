@@ -119,6 +119,16 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 		    }
 		}
 	    });
+	cmdmap.put("fsmode", new Console.Command() {
+		public void run(Console cons, String[] args) throws Exception {
+		    if(args.length == 3) {
+			DisplayMode mode = findmode(Integer.parseInt(args[1]), Integer.parseInt(args[2]));
+			if(mode == null)
+			    throw(new Exception("No such mode is available"));
+			fsmode = mode;
+		    }
+		}
+	    });
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);
