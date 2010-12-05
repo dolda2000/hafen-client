@@ -126,8 +126,8 @@ public class Window extends Widget implements DTarget {
     }
     
     public void resize(Coord sz) {
-	sz = sz.add(wbox.bsz().add(mrgn.mul(2)).add(tlo).add(rbo)).add(-1, -1);
-	wsz = sz.add(tlo.inv()).add(rbo.inv());
+	this.sz = sz.add(wbox.bsz().add(mrgn.mul(2)).add(tlo).add(rbo)).add(-1, -1);
+	wsz = this.sz.add(tlo.inv()).add(rbo.inv());
 	asz = new Coord(wsz.x - wbox.bl.sz().x - wbox.br.sz().x, wsz.y - wbox.bt.sz().y - wbox.bb.sz().y).add(mrgn.mul(2).inv());
 	placecbtn();
 	for(Widget ch = child; ch != null; ch = ch.next)
