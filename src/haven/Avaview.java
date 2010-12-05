@@ -120,7 +120,7 @@ public class Avaview extends Widget {
 	    at = missing;
 	    yo = 0;
 	} else {
-	    g2.image(Equipory.bg, new Coord(Equipory.bg.sz().x / 2 - asz.x / 2, 20).inv());
+	    // g2.image(Equipory.bg, new Coord(Equipory.bg.sz().x / 2 - asz.x / 2, 20).inv());
 	    yo = (20 * asz.y) / dasz.y;
 	}
 	Coord tsz = new Coord((at.sz().x * asz.x) / dasz.x, (at.sz().y * asz.y) / dasz.y);
