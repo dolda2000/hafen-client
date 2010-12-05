@@ -468,6 +468,18 @@ public class Widget {
 	return(false);
     }
     
+    public void pack() {
+	Coord max = new Coord(0, 0);
+	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
+	    Coord br = wdg.c.add(wdg.sz);
+	    if(br.x > max.x)
+		max.x = br.x;
+	    if(br.y > max.y)
+		max.y = br.y;
+	}
+	resize(max);
+    }
+    
     public void resize(Coord sz) {
 	this.sz = sz;
 	for(Widget ch = child; ch != null; ch = ch.next)
