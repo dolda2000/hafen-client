@@ -27,31 +27,37 @@
 package haven;
 
 import java.util.*;
+import static haven.Inventory.invsq;
 
-public class Equipory extends Window implements DTarget {
-    List<Inventory> epoints;
-    List<Item> equed;
-    static final Tex bg = Resource.loadtex("gfx/hud/equip/bg");
-    int avagob = -1;
-	
+public class Equipory extends Widget implements DTarget {
     static Coord ecoords[] = {
 	new Coord(0, 0),
-	new Coord(244, 0),
+	new Coord(31, 0),
 	new Coord(0, 31),
-	new Coord(244, 31),
+	new Coord(31, 31),
 	new Coord(0, 62),
-	new Coord(244, 62),
+	new Coord(31, 62),
 	new Coord(0, 93),
-	new Coord(244, 93),
+	new Coord(31, 93),
 	new Coord(0, 124),
-	new Coord(244, 124),
+	new Coord(31, 124),
 	new Coord(0, 155),
-	new Coord(244, 155),
+	new Coord(31, 155),
 	new Coord(0, 186),
-	new Coord(244, 186),
+	new Coord(31, 186),
 	new Coord(0, 217),
-	new Coord(244, 217),
+	new Coord(31, 217),
     };
+    static Coord isz;
+    static {
+	isz = new Coord();
+	for(Coord ec : ecoords) {
+	    if(ec.x + invsq.sz().x > isz.x)
+		isz.x = ec.x + invsq.sz().x;
+	    if(ec.y + invsq.sz().y > isz.y)
+		isz.y = ec.y + invsq.sz().y;
+	}
+    }
 	
     static {
 	Widget.addtype("epry", new WidgetFactory() {
@@ -62,92 +68,33 @@ public class Equipory extends Window implements DTarget {
     }
 	
     public Equipory(Coord c, Widget parent) {
-	super(c, new Coord(0, 0), parent, "Equipment");
-	epoints = new ArrayList<Inventory>();
-	equed = new ArrayList<Item>(ecoords.length);
-	//new Img(new Coord(32, 0), bg, this);
-	for(int i = 0; i < ecoords.length; i++) {
-	    epoints.add(new Inventory(ecoords[i], new Coord(1, 1), this));
-	    equed.add(null);
-	}
-	pack();
+	super(c, isz, parent);
     }
 	
-    public void uimsg(String msg, Object... args) {
-	if(msg == "set") {
-	    synchronized(ui) {
-		int i = 0, o = 0;
-		while(i < equed.size()) {
-		    if(equed.get(i) != null)
-			equed.get(i).unlink();
-		    int res = (Integer)args[o++];
-		    if(res >= 0) {
-			int q = (Integer)args[o++];
-			Item ni = new Item(Coord.z, res, q, epoints.get(i), null);
-			equed.set(i++, ni);
-			if((o < args.length) && (args[o] instanceof String))
-			    ni.tooltip = (String)args[o++];
-		    } else {
-			equed.set(i++, null);
-		    }
-		}
-	    }
-	} else if(msg == "setres") {
-	    int i = (Integer)args[0];
-	    Indir<Resource> res = ui.sess.getres((Integer)args[1]);
-	    equed.get(i).chres(res, (Integer)args[2]);
-	} else if(msg == "settt") {
-	    int i = (Integer)args[0];
-	    String tt = (String)args[1];
-	    equed.get(i).tooltip = tt;
-	} else if(msg == "ava") {
-	    avagob = (Integer)args[0];
-	}
+    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
+	int ep = (Integer)pargs[0];
+	return(gettype(type).create(ecoords[ep], this, cargs));
     }
-	
-    public void wdgmsg(Widget sender, String msg, Object... args) {
-	int ep;
-	if((ep = epoints.indexOf(sender)) != -1) {
-	    if(msg == "drop") {
-		wdgmsg("drop", ep);
-		return;
-	    } else if(msg == "xfer") {
-		return;
-	    }
-	}
-	if((ep = equed.indexOf(sender)) != -1) {
-	    if(msg == "take")
-		wdgmsg("take", ep, args[0]);
-	    else if(msg == "itemact")
-		wdgmsg("itemact", ep);
-	    else if(msg == "transfer")
-		wdgmsg("transfer", ep, args[0]);
-	    else if(msg == "iact")
-		wdgmsg("iact", ep, args[0]);
-	    return;
-	}
-	super.wdgmsg(sender, msg, args);
-    }
-	
+    
     public boolean drop(Coord cc, Coord ul) {
+	ul = ul.add(invsq.sz().div(2));
+	for(int i = 0; i < ecoords.length; i++) {
+	    if(ul.isect(ecoords[i], invsq.sz())) {
+		wdgmsg("drop", i);
+		return(true);
+	    }
+	}
 	wdgmsg("drop", -1);
 	return(true);
+    }
+    
+    public void draw(GOut g) {
+	for(Coord ec : ecoords)
+	    g.image(invsq, ec);
+	super.draw(g);
     }
 	
     public boolean iteminteract(Coord cc, Coord ul) {
 	return(false);
-    }
-	
-    public void cdraw(GOut g) {
-	Coord avac = new Coord(32, 0);
-	g.image(bg, avac);
-	if(avagob != -1) {
-	    Gob gob = ui.sess.glob.oc.getgob(avagob);
-	    if(gob != null) {
-		Avatar ava = gob.getattr(Avatar.class);
-		if(ava != null)
-		    g.image(ava.rend, avac);
-	    }
-	}
     }
 }

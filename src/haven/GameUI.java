@@ -37,8 +37,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public static final Text.Foundry errfoundry = new Text.Foundry(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 14), new Color(192, 0, 0));
     private Text lasterr;
     private long errtime;
-    private Window invwnd;
-    private Equipory equ;
+    private Window invwnd, equwnd;
     
     static {
 	addtype("gameui", new WidgetFactory() {
@@ -74,8 +73,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    invwnd.visible = false;
 	    return(inv);
 	} else if(place == "equ") {
-	    equ = (Equipory)gettype(type).create(new Coord(400, 10), this, cargs);
-	    equ.visible = false;
+	    equwnd = new Window(new Coord(400, 10), Coord.z, this, "Equipment");
+	    Widget equ = gettype(type).create(Coord.z, equwnd, cargs);
+	    equwnd.pack();
+	    equwnd.visible = false;
 	    return(equ);
 	} else {
 	    throw(new UI.UIException("Illegal gameui child", type, pargs));
@@ -132,8 +133,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		fitwdg(invwnd);
 	    return(true);
 	} else if(key == 5) {
-	    if((equ != null) && (equ.visible = !equ.visible))
-		fitwdg(equ);
+	    if((equwnd != null) && (equwnd.visible = !equwnd.visible))
+		fitwdg(equwnd);
 	    return(true);
 	}
 	return(super.globtype(key, ev));
