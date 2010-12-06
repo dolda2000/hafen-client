@@ -33,7 +33,7 @@ import static haven.Utils.c2fa;
 public class Material extends GLState {
     public Colors col;
     public Tex tex;
-    public boolean facecull = true, mipmap = false;
+    public boolean facecull = true, mipmap = false, linear = false;
     
     public static final GLState nofacecull = new GLState.StandAlone(PView.proj) {
 	    public void apply(GOut g) {
@@ -186,7 +186,9 @@ public class Material extends GLState {
 		this.m.facecull = false;
 	    if((fl & 8) != 0)
 		this.m.mipmap = true;
-	    if((fl & ~15) != 0)
+	    if((fl & 16) != 0)
+		this.m.linear = true;
+	    if((fl & ~31) != 0)
 		throw(new Resource.LoadException("Unknown material flags: " + fl, getres()));
 	}
 	
@@ -197,6 +199,8 @@ public class Material extends GLState {
 			m.tex = img.tex();
 			if(m.mipmap)
 			    ((TexGL)m.tex).mipmap();
+			if(m.linear)
+			    ((TexGL)m.tex).magfilter(GL.GL_LINEAR);
 		    }
 		}
 		if(m.tex == null)

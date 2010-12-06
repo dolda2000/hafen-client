@@ -35,6 +35,7 @@ public abstract class TexGL extends Tex {
     protected TexOb t = null;
     private Object idmon = new Object();
     protected boolean mipmap = false;
+    protected int magfilter = GL.GL_NEAREST;
     protected Coord tdim;
     protected static Map<GL, Collection<Integer>> disposed = new HashMap<GL, Collection<Integer>>();
     public static boolean disableall = false;
@@ -99,7 +100,7 @@ public abstract class TexGL extends Tex {
 	    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST_MIPMAP_NEAREST);
 	else
 	    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
-	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
+	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, magfilter);
 	fill(g);
 	checkerr(gl);
     }
@@ -128,6 +129,11 @@ public abstract class TexGL extends Tex {
     
     public void mipmap() {
 	mipmap = true;
+	dispose();
+    }
+
+    public void magfilter(int filter) {
+	magfilter = filter;
 	dispose();
     }
 
