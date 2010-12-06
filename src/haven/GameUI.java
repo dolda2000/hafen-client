@@ -59,6 +59,20 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	resize(sz);
     }
     
+    static class Hidewnd extends Window {
+	Hidewnd(Coord c, Coord sz, Widget parent, String cap) {
+	    super(c, sz, parent, cap);
+	}
+	
+	public void wdgmsg(Widget sender, String msg, Object... args) {
+	    if((sender == this) && msg.equals("close")) {
+		this.hide();
+		return;
+	    }
+	    super.wdgmsg(sender, msg, args);
+	}
+    }
+
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {
 	String place = ((String)pargs[0]).intern();
 	if(place == "mapview") {
@@ -67,13 +81,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    map.lower();
 	    return(map);
 	} else if(place == "inv") {
-	    invwnd = new Window(new Coord(100, 100), Coord.z, this, "Inventory");
+	    invwnd = new Hidewnd(new Coord(100, 100), Coord.z, this, "Inventory");
 	    Widget inv = gettype(type).create(Coord.z, invwnd, cargs);
 	    invwnd.pack();
 	    invwnd.visible = false;
 	    return(inv);
 	} else if(place == "equ") {
-	    equwnd = new Window(new Coord(400, 10), Coord.z, this, "Equipment");
+	    equwnd = new Hidewnd(new Coord(400, 10), Coord.z, this, "Equipment");
 	    Widget equ = gettype(type).create(Coord.z, equwnd, cargs);
 	    equwnd.pack();
 	    equwnd.visible = false;

@@ -65,6 +65,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
     public HavenPanel(int w, int h) {
 	super(caps);
 	setSize(this.w = w, this.h = h);
+	newui(null);
 	initgl();
 	if(Toolkit.getDefaultToolkit().getMaximumCursorColors() >= 256)
 	    cursmode = "awt";
