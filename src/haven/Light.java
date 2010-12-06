@@ -97,12 +97,10 @@ public class Light implements Rendered {
 	private final List<Light> en = new ArrayList<Light>();
 	
 	public void apply(GOut g) {
-	    int[] buf = new int[1];
 	    GL gl = g.gl;
-	    gl.glGetIntegerv(GL.GL_MAX_LIGHTS, buf, 0);
 	    int nl = ll.size();
-	    if(buf[0] < nl)
-		nl = buf[0];
+	    if(g.gc.maxlights < nl)
+		nl = g.gc.maxlights;
 	    en.clear();
 	    for(int i = 0; i < nl; i++) {
 		Location loc = sl.get(i);

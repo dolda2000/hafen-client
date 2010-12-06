@@ -31,12 +31,16 @@ import javax.media.opengl.*;
 
 public class GLConfig implements java.io.Serializable, Console.Directory {
     public boolean usedl = true;
+    public int maxlights;
     
     private GLConfig() {
     }
     
     public static GLConfig fromgl(GL gl, GLContext ctx) {
 	GLConfig c = new GLConfig();
+	int[] buf = {0};
+	gl.glGetIntegerv(GL.GL_MAX_LIGHTS, buf, 0);
+	c.maxlights = buf[0];
 	return(c);
     }
     
