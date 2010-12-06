@@ -64,6 +64,10 @@ public class MorphedMesh extends FastMesh {
     protected boolean compile() {
 	return(false);
     }
+    
+    public String toString() {
+	return("morphed(" + from + ")");
+    }
 
     private static class MorphedBuf extends VertexBuf {
 	private final WeakReference<Pose> poseref;
