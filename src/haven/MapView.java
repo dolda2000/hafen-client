@@ -38,7 +38,7 @@ public class MapView extends PView {
     public int plgob = -1;
     public Coord cc;
     private final Glob glob;
-    private int view = 1;
+    private int view = 2;
     private Coord clickc = null;
     private int clickb;
     public static int lighting = 0;
