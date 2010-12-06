@@ -88,4 +88,36 @@ public abstract class States extends GLState {
 		g.gl.glEnable(GL.GL_DEPTH_TEST);
 	    }
 	};
+    
+    public static final Slot<Fog> fog = new Slot<Fog>(Fog.class, PView.proj);
+    public static class Fog extends GLState {
+	public final Color c;
+	public final float[] ca;
+	public final float s, e;
+	
+	public Fog(Color c, float s, float e) {
+	    this.c = c;
+	    this.ca = Utils.c2fa(c);
+	    this.s = s;
+	    this.e = e;
+	}
+	
+	public void apply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glFogi(GL.GL_FOG_MODE, GL.GL_LINEAR);
+	    gl.glFogf(GL.GL_FOG_START, s);
+	    gl.glFogf(GL.GL_FOG_END, e);
+	    gl.glFogfv(GL.GL_FOG_COLOR, ca, 0);
+	    gl.glEnable(GL.GL_FOG);
+	}
+	
+	public void unapply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glDisable(GL.GL_FOG);
+	}
+	
+	public void prep(Buffer buf) {
+	    buf.put(fog, this);
+	}
+    }
 }
