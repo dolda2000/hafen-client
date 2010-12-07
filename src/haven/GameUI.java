@@ -143,12 +143,16 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    entercmd();
 	    return(true);
 	} else if(key == 9) {
-	    if((invwnd != null) && (invwnd.visible = !invwnd.visible))
+	    if((invwnd != null) && (invwnd.visible = !invwnd.visible)) {
+		invwnd.raise();
 		fitwdg(invwnd);
+	    }
 	    return(true);
 	} else if(key == 5) {
-	    if((equwnd != null) && (equwnd.visible = !equwnd.visible))
+	    if((equwnd != null) && (equwnd.visible = !equwnd.visible)) {
+		equwnd.raise();
 		fitwdg(equwnd);
+	    }
 	    return(true);
 	}
 	return(super.globtype(key, ev));
