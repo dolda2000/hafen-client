@@ -181,6 +181,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    wdgmsg("afk");
 		}
 	    });
+	cmdmap.put("act", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    Object[] ad = new Object[args.length - 1];
+		    System.arraycopy(args, 1, ad, 0, ad.length);
+		    wdgmsg("act", ad);
+		}
+	    });
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);
