@@ -37,7 +37,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public static final Text.Foundry errfoundry = new Text.Foundry(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 14), new Color(192, 0, 0));
     private Text lasterr;
     private long errtime;
-    private Window invwnd, equwnd;
+    private Window invwnd, equwnd, makewnd;
     
     static {
 	addtype("gameui", new WidgetFactory() {
@@ -92,6 +92,26 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    equwnd.pack();
 	    equwnd.visible = false;
 	    return(equ);
+	} else if(place == "craft") {
+	    final Widget[] mk = {null};
+	    makewnd = new Window(new Coord(200, 100), Coord.z, this, "Crafting") {
+		    public void wdgmsg(Widget sender, String msg, Object... args) {
+			if((sender == this) && msg.equals("close")) {
+			    mk[0].wdgmsg("close");
+			    return;
+			}
+			super.wdgmsg(sender, msg, args);
+		    }
+		    public void cdestroy(Widget w) {
+			if(w == mk[0]) {
+			    ui.destroy(this);
+			    makewnd = null;
+			}
+		    }
+		};
+	    mk[0] = gettype(type).create(Coord.z, makewnd, cargs);
+	    makewnd.pack();
+	    return(mk[0]);
 	} else {
 	    throw(new UI.UIException("Illegal gameui child", type, pargs));
 	}

@@ -29,52 +29,55 @@ package haven;
 import java.util.*;
 import java.awt.Font;
 
-public class Makewindow extends HWindow {
+public class Makewindow extends Widget {
     Widget obtn, cbtn;
     List<Widget> inputs;
     List<Widget> outputs;
     static Coord boff = new Coord(7, 9);
+    final int xoff = 40;
     public static final Text.Foundry nmf = new Text.Foundry(new Font("Serif", Font.PLAIN, 20));
 
     static {
 	Widget.addtype("make", new WidgetFactory() {
 		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Makewindow(parent, (String)args[0]));
+		    return(new Makewindow(c, parent, (String)args[0]));
 		}
 	    });
     }
 	
-    public Makewindow(Widget parent, String rcpnm) {
-	super(parent, "Crafting", true);
-	Label nm = new Label(new Coord(10, 10), this, rcpnm, nmf);
-	nm.c = new Coord(sz.x - 10 - nm.sz.x, 10);
-	new Label(new Coord(10, 18), this, "Input:");
-	new Label(new Coord(10, 73), this, "Result:");
+    public Makewindow(Coord c, Widget parent, String rcpnm) {
+	super(c, Coord.z, parent);
+	Label nm = new Label(new Coord(0, 0), this, rcpnm, nmf);
+	nm.c = new Coord(sz.x - nm.sz.x, 0);
+	new Label(new Coord(0, 8), this, "Input:");
+	new Label(new Coord(0, 63), this, "Result:");
 	obtn = new Button(new Coord(290, 71), 60, this, "Craft");
 	cbtn = new Button(new Coord(360, 71), 60, this, "Craft All");
+	pack();
     }
 	
     public void uimsg(String msg, Object... args) {
-	if(msg == "pop") {
-	    final int xoff = 50;
+	if(msg == "inpop") {
 	    if(inputs != null) {
 		for(Widget w : inputs)
 		    w.unlink();
-		for(Widget w : outputs)
-		    w.unlink();
 	    }
 	    inputs = new LinkedList<Widget>();
-	    outputs = new LinkedList<Widget>();
-	    int i;
-	    Coord c = new Coord(xoff, 10);
-	    for(i = 0; (Integer)args[i] >= 0; i += 2) {
+	    Coord c = new Coord(xoff, 0);
+	    for(int i = 0; i < args.length; i += 2) {
 		Widget box = new Inventory(c, new Coord(1, 1), this);
 		inputs.add(box);
 		c = c.add(new Coord(31, 0));
 		new Item(Coord.z, (Integer)args[i], -1, box, null, (Integer)args[i + 1]);
 	    }
-	    c = new Coord(xoff, 65);
-	    for(i++; (i < args.length) && ((Integer)args[i] >= 0); i += 2) {
+	} else if(msg == "opop") {
+	    if(outputs != null) {
+		for(Widget w : outputs)
+		    w.unlink();
+	    }
+	    outputs = new LinkedList<Widget>();
+	    Coord c = new Coord(xoff, 55);
+	    for(int i = 0; i < args.length; i += 2) {
 		Widget box = new Inventory(c, new Coord(1, 1), this);
 		outputs.add(box);
 		c = c.add(new Coord(31, 0));
