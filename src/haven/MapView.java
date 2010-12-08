@@ -407,6 +407,7 @@ public class MapView extends PView {
 
     private class Plob extends Gob {
 	Coord lastmc = null;
+	boolean freerot = false;
 	
 	private Plob(Resource res) {
 	    super(MapView.this.glob, Coord.z);
@@ -438,7 +439,10 @@ public class MapView extends PView {
 		    g.st.set(bk);
 		}
 		if(mc != null)
-		    move(mc, a);
+		    rc = mc;
+		Gob pl = player();
+		if((pl != null) && !freerot)
+		    a = rc.angle(pl.rc);
 		lastmc = mouse;
 	    }
 	}
@@ -535,8 +539,10 @@ public class MapView extends PView {
 
     public boolean mousewheel(Coord c, int amount) {
 	if(ui.modshift) {
-	    if(placing != null)
+	    if(placing != null) {
+		placing.freerot = true;
 		placing.a += amount * 0.2;
+	    }
 	    return(true);
 	}
 	return(((Camera)camera).wheel(c, amount));
