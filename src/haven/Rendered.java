@@ -42,8 +42,14 @@ public interface Rendered {
 	public RComparator<? super T> cmp();
 	
 	public static class Default implements Order<Rendered> {
+	    private final int z;
+	    
+	    public Default(int z) {
+		this.z = z;
+	    }
+	    
 	    public int mainz() {
-		return(0);
+		return(z);
 	    }
 	    
 	    private RComparator<Rendered> cmp = new RComparator<Rendered>() {
@@ -58,7 +64,8 @@ public interface Rendered {
 	}
     }
 
-    public final static Order deflt = new Order.Default();
+    public final static Order deflt = new Order.Default(0);
+    public final static Order last = new Order.Default(Integer.MAX_VALUE);
 
     public static class Dot implements Rendered {
 	public void draw(GOut g) {
@@ -73,7 +80,33 @@ public interface Rendered {
 	}
 	
 	public Order setup(RenderList r) {
-	    return(deflt);
+	    return(last);
+	}
+    }
+    
+    public static class Line implements Rendered {
+	public final Coord3f end;
+	
+	public Line(Coord3f end) {
+	    this.end = end;
+	}
+	
+	public void draw(GOut g) {
+	    GL gl = g.gl;
+	    g.apply();
+	    gl.glBegin(GL.GL_LINES);
+	    gl.glColor3f(1, 0, 0);
+	    gl.glVertex3f(0, 0, 0);
+	    gl.glColor3f(0, 1, 0);
+	    gl.glVertex3f(end.x, end.y, end.z);
+	    gl.glEnd();
+	}
+	
+	public Order setup(RenderList r) {
+	    r.state().put(States.color, null);
+	    r.state().put(Light.lighting, null);
+	    r.prepo(States.xray);
+	    return(last);
 	}
     }
     
@@ -131,7 +164,7 @@ public interface Rendered {
 	}
 	
 	public Order setup(RenderList rls) {
-	    return(deflt);
+	    return(last);
 	}
     }
 }

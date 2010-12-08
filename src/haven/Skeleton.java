@@ -312,7 +312,7 @@ public class Skeleton {
 		}
 	    
 		public Order setup(RenderList rl) {
-		    return(deflt);
+		    return(last);
 		}
 	    };
     }
