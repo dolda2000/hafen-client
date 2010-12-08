@@ -40,6 +40,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
     boolean inited = false, rdr = false;
     int w, h;
     long fd = 20, fps = 0;
+    double idle = 0.0;
     Queue<InputEvent> events = new LinkedList<InputEvent>();
     private String cursmode = "tex";
     private Resource lastcursor = null;
@@ -310,7 +311,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 
 	if(Config.dbtext) {
 	    int y = h - 20;
-	    FastText.aprint(g, new Coord(10, y -= 15), 0, 1, "FPS: " + fps);
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%% idle)", fps, (int)(idle * 100.0));
 	    Runtime rt = Runtime.getRuntime();
 	    long free = rt.freeMemory(), total = rt.totalMemory();
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
@@ -412,7 +413,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
     public void run() {
 	try {
 	    long now, fthen, then;
-	    int frames = 0;
+	    int frames = 0, waited = 0;
 	    fthen = System.currentTimeMillis();
 	    while(true) {
 		then = System.currentTimeMillis();
@@ -436,12 +437,15 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		    synchronized(events) {
 			events.wait(fd - (now - then));
 		    }
+		    waited += System.currentTimeMillis() - now;
 		}
 		if(curf != null)
 		    curf.tick("wait");
 		if(now - fthen > 1000) {
 		    fps = frames;
+		    idle = ((double)waited) / ((double)(now - fthen));
 		    frames = 0;
+		    waited = 0;
 		    fthen = now;
 		}
 		if(curf != null)
