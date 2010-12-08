@@ -276,6 +276,7 @@ public abstract class GLState {
 	private Buffer cur = new Buffer(), next = new Buffer();
 	public final GL gl;
 	private boolean[] trans = new boolean[0], repl = new boolean[0];
+	public long time = 0;
 	
 	public Applier(GL gl) {
 	    this.gl = gl;
@@ -310,6 +311,8 @@ public abstract class GLState {
 	}
 	
 	public void apply(GOut g) {
+	    long st = 0;
+	    if(Config.profile) st = System.nanoTime();
 	    if(trans.length < slotnum) {
 		synchronized(Slot.class) {
 		    trans = new boolean[slotnum];
@@ -336,6 +339,8 @@ public abstract class GLState {
 		}
 	    }
 	    checkerr(gl);
+	    if(Config.profile)
+		time += System.nanoTime() - st;
 	}
 
 	/* "Meta-states" */

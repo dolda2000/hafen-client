@@ -34,6 +34,7 @@ public abstract class PView extends Widget {
     public static final GLState.Slot<RenderState> proj = new GLState.Slot<RenderState>(RenderState.class, HavenPanel.proj2d);
     public static final GLState.Slot<Camera> cam = new GLState.Slot<Camera>(Camera.class, proj);
     public static final GLState.Slot<Location> loc = new GLState.Slot<Location>(Location.class, cam);
+    public Profile prof = new Profile(300);
     protected Light.Model lm;
     private GLState pstate;
     
@@ -130,6 +131,9 @@ public abstract class PView extends Widget {
 	};
 
     public void draw(GOut g) {
+	Profile.Frame curf = null;
+	if(Config.profile)
+	    curf = prof.new Frame();
 	GLState.Buffer bk = g.st.copy();
 	GLState.Buffer def = basic(g);
 	try {
@@ -137,13 +141,22 @@ public abstract class PView extends Widget {
 	    new Light.LightList().prep(def);
 	    Light.elights.prep(def);
 	    rls.setup(scene, def);
+	    if(curf != null)
+		curf.tick("setup");
 	    g.st.set(def);
 	    g.apply();
+	    if(curf != null)
+		curf.tick("cls");
 	    GL gl = g.gl;
 	    gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
+	    g.st.time = 0;
 	    rls.render(g);
+	    if(curf != null)
+		curf.tick("render", "apply", g.st.time);
 	} finally {
 	    g.st.set(bk);
 	}
+	if(curf != null)
+	    curf.fin();
     }
 }

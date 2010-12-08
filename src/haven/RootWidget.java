@@ -44,6 +44,10 @@ public class RootWidget extends ConsoleHost {
 	if(!super.globtype(key, ev)) {
 	    if(Config.profile && (key == '`')) {
 		new Profwnd(new Coord(100, 100), this, gprof, "Glob prof");
+	    } else if(Config.profile && (key == '~')) {
+		GameUI gi = findchild(GameUI.class);
+		if((gi != null) && (gi.map != null))
+		    new Profwnd(new Coord(100, 100), this, gi.map.prof, "MV prof");
 	    } else if(key == ':') {
 		entercmd();
 	    } else if(key != 0) {
