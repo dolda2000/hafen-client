@@ -165,7 +165,7 @@ public class Skeleton {
 	    cos = -cos;
 	}
 	float d0, d1;
-	if(cos > 0.9f) {
+	if(cos > 0.9999f) {
 	    /* Reasonable threshold? Is this function even critical
 	     * for performance? */
 	    d0 = 1.0f - t; d1 = t;
