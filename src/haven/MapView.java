@@ -39,11 +39,15 @@ public class MapView extends PView {
     public Coord cc;
     private final Glob glob;
     private int view = 2;
-    private Coord clickc = null;
-    private int clickb;
+    private Collection<Delayed> delayed = new LinkedList<Delayed>();
     public static int lighting = 0;
     private Camera camera = new FollowCam();
+    private Plob placing = null;
     
+    private interface Delayed {
+	public void run(GOut g);
+    }
+
     private abstract class Camera extends haven.Camera {
 	public boolean click(Coord sc) {
 	    return(false);
@@ -192,25 +196,28 @@ public class MapView extends PView {
 	    }
 	};
     
+    void addgob(RenderList rl, final Gob gob) {
+	Coord3f c = gob.getc();
+	c.y = -c.y;
+	Location save = new Location() {
+		public void xf(GOut g) {
+		    Matrix4f tm = Matrix4f.fromgl(g.gl, GL.GL_MODELVIEW_MATRIX);
+		    PView.RenderState proj = g.st.cur(PView.proj);
+		    Coord3f s = proj.toscreen(tm.mul4(Coord3f.o), sz);
+		    gob.sc = new Coord(s);
+		    gob.sczu = proj.toscreen(tm.mul4(Coord3f.zu), sz).sub(s);
+		}
+	    };
+	rl.add(gob, GLState.compose(Location.xlate(c), Location.rot(Coord3f.zu, (float)-gob.a), save));
+    }
+
     private final Rendered gobs = new Rendered() {
 	    public void draw(GOut g) {}
 	    
 	    public Order setup(RenderList rl) {
 		synchronized(glob.oc) {
-		    for(final Gob gob : glob.oc) {
-			Coord3f c = gob.getc();
-			c.y = -c.y;
-			Location save = new Location() {
-				public void xf(GOut g) {
-				    Matrix4f tm = Matrix4f.fromgl(g.gl, GL.GL_MODELVIEW_MATRIX);
-				    PView.RenderState proj = g.st.cur(PView.proj);
-				    Coord3f s = proj.toscreen(tm.mul4(Coord3f.o), sz);
-				    gob.sc = new Coord(s);
-				    gob.sczu = proj.toscreen(tm.mul4(Coord3f.zu), sz).sub(s);
-				}
-			    };
-			rl.add(gob, GLState.compose(Location.xlate(c), Location.rot(Coord3f.zu, (float)-gob.a), save));
-		    }
+		    for(Gob gob : glob.oc)
+			addgob(rl, gob);
 		}
 		return(null);
 	    }
@@ -231,6 +238,8 @@ public class MapView extends PView {
 	}
 	rl.add(map, null);
 	rl.add(gobs, null);
+	if(placing != null)
+	    addgob(rl, placing);
     }
     
     public Gob player() {
@@ -362,37 +371,12 @@ public class MapView extends PView {
 	return(rl.get(g, c));
     }
 
-    private void checkclick(GOut g, Coord clickc) {
-	GLState.Buffer bk = g.st.copy();
-	Coord mapcl;
-	Gob gobcl;
-	try {
-	    GL gl = g.gl;
-	    g.st.set(basic(g));
-	    g.apply();
-	    gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
-	    mapcl = checkmapclick(g, clickc);
-	    g.st.set(bk);
-	    g.st.set(basic(g));
-	    g.apply();
-	    gl.glClear(GL.GL_COLOR_BUFFER_BIT);
-	    gobcl = checkgobclick(g, clickc);
-	} finally {
-	    g.st.set(bk);
-	}
-	if(mapcl != null) {
-	    if(gobcl == null)
-		wdgmsg("click", clickc, mapcl, clickb, ui.modflags());
-	    else
-		wdgmsg("click", clickc, mapcl, clickb, ui.modflags(), gobcl.id, gobcl.rc);
-	}
-    }
-
     protected void undelay(GOut g) {
-	Coord clickc = this.clickc;
-	this.clickc = null;
-	if(clickc != null)
-	    checkclick(g, clickc);
+	synchronized(delayed) {
+	    for(Delayed d : delayed)
+		d.run(g);
+	    delayed.clear();
+	}
     }
 
     public void draw(GOut g) {
@@ -421,17 +405,107 @@ public class MapView extends PView {
 	camera.resized();
     }
 
+    private class Plob extends Gob {
+	Coord lastmc = null;
+	
+	private Plob(Resource res) {
+	    super(MapView.this.glob, Coord.z);
+	    setattr(new ResDrawable(this, res));
+	    if(ui.mc.isect(rootpos(), sz)) {
+		synchronized(delayed) {
+		    delayed.add(new Adjust(ui.mc.sub(rootpos())));
+		}
+	    }
+	}
+
+	private class Adjust implements Delayed {
+	    Coord mouse;
+	    
+	    Adjust(Coord c) {
+		mouse = c;
+	    }
+	    
+	    public void run(GOut g) {
+		GLState.Buffer bk = g.st.copy();
+		Coord mc;
+		try {
+		    GL gl = g.gl;
+		    g.st.set(basic(g));
+		    g.apply();
+		    gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
+		    mc = checkmapclick(g, mouse);
+		} finally {
+		    g.st.set(bk);
+		}
+		if(mc != null)
+		    move(mc, a);
+		lastmc = mouse;
+	    }
+	}
+    }
+
+    public void uimsg(String msg, Object... args) {
+	if(msg == "place") {
+	    Resource res = Resource.load((String)args[0], (Integer)args[1]);
+	    placing = new Plob(res);
+	} else if(msg == "unplace") {
+	    placing = null;
+	} else {
+	    super.uimsg(msg, args);
+	}
+    }
+
     private boolean camdrag = false;
     
+    private class Click implements Delayed {
+	Coord clickc;
+	int clickb;
+	
+	private Click(Coord c, int b) {
+	    clickc = c;
+	    clickb = b;
+	}
+
+	public void run(GOut g) {
+	    GLState.Buffer bk = g.st.copy();
+	    Coord mapcl;
+	    Gob gobcl;
+	    try {
+		GL gl = g.gl;
+		g.st.set(basic(g));
+		g.apply();
+		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
+		mapcl = checkmapclick(g, clickc);
+		g.st.set(bk);
+		g.st.set(basic(g));
+		g.apply();
+		gl.glClear(GL.GL_COLOR_BUFFER_BIT);
+		gobcl = checkgobclick(g, clickc);
+	    } finally {
+		g.st.set(bk);
+	    }
+	    if(mapcl != null) {
+		if(gobcl == null)
+		    wdgmsg("click", clickc, mapcl, clickb, ui.modflags());
+		else
+		    wdgmsg("click", clickc, mapcl, clickb, ui.modflags(), gobcl.id, gobcl.rc);
+	    }
+	}
+    }
+
     public boolean mousedown(Coord c, int button) {
 	if(button == 2) {
 	    if(((Camera)camera).click(c)) {
 		ui.grabmouse(this);
 		camdrag = true;
 	    }
+	} else if(placing != null) {
+	    if(placing.lastmc != null)
+		wdgmsg("place", placing.rc, (int)(placing.a * 180 / Math.PI), button, ui.modflags());
 	} else {
-	    clickb = button;
-	    clickc = c;
+	    synchronized(delayed) {
+		delayed.add(new Click(c, button));
+	    }
 	}
 	return(true);
     }
@@ -439,6 +513,12 @@ public class MapView extends PView {
     public void mousemove(Coord c) {
 	if(camdrag) {
 	    ((Camera)camera).drag(c);
+	} else if(placing != null) {
+	    if((placing.lastmc == null) || !placing.lastmc.equals(c)) {
+		synchronized(delayed) {
+		    delayed.add(placing.new Adjust(c));
+		}
+	    }
 	}
     }
     
@@ -454,6 +534,11 @@ public class MapView extends PView {
     }
 
     public boolean mousewheel(Coord c, int amount) {
+	if(ui.modshift) {
+	    if(placing != null)
+		placing.a += amount * 0.2;
+	    return(true);
+	}
 	return(((Camera)camera).wheel(c, amount));
     }
 
