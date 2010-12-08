@@ -443,7 +443,11 @@ public class Skeleton {
 			    break;
 			}
 		    }
-		    float d = (time - ct) / (nt - ct);
+		    float d;
+		    if(nt == ct)
+			d = 0;
+		    else
+			d = (time - ct) / (nt - ct);
 		    qqslerp(lrot[i], cf.rot, nf.rot, d);
 		    lpos[i][0] = cf.trans[0] + ((nf.trans[0] - cf.trans[0]) * d);
 		    lpos[i][1] = cf.trans[1] + ((nf.trans[1] - cf.trans[1]) * d);
