@@ -28,17 +28,17 @@ package haven;
 
 import java.util.*;
 
-public class Profwnd extends HWindow {
+public class Profwnd extends Window {
     public final Profile prof;
     public long mt = 50000000;
     private static final int h = 80;
     
-    public Profwnd(Widget parent, Profile prof, String title) {
-	super(parent, title, true);
+    public Profwnd(Coord c, Widget parent, Profile prof, String title) {
+	super(c, new Coord(prof.hist.length, h), parent, title);
 	this.prof = prof;
     }
     
-    public void draw(GOut g) {
+    public void cdraw(GOut g) {
 	long[] ttl = new long[prof.hist.length];
 	for(int i = 0; i < prof.hist.length; i++) {
 	    if(prof.hist[i] != null)
@@ -56,13 +56,14 @@ public class Profwnd extends HWindow {
 	    mt = ttl[ti];
 	else
 	    mt = 50000000;
-	g.image(prof.draw(h, mt / h), new Coord(10, 10));
+	g.image(prof.draw(h, mt / h), Coord.z);
     }
     
     public String tooltip(Coord c, boolean again) {
-	if((c.x >= 10) && (c.x < 10 + prof.hist.length) && (c.y >= 10) && (c.y < 10 + h)) {
-	    int x = c.x - 10;
-	    int y = c.y - 10;
+	c = xlate(c, false);
+	if((c.x >= 0) && (c.x < prof.hist.length) && (c.y >= 0) && (c.y < h)) {
+	    int x = c.x;
+	    int y = c.y;
 	    long t = (h - y) * (mt / h);
 	    Profile.Frame f = prof.hist[x];
 	    if(f != null) {
@@ -76,7 +77,7 @@ public class Profwnd extends HWindow {
     }
     
     public void wdgmsg(Widget sender, String msg, Object... args) {
-	if(sender == cbtn) {
+	if(msg.equals("close")) {
 	    ui.destroy(this);
 	} else {
 	    super.wdgmsg(sender, msg, args);
