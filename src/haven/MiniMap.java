@@ -161,10 +161,7 @@ public class MiniMap extends Widget {
     }
 
     public void draw(GOut g) {
-	/*
-	Coord tc = mv.mc.div(tilesz);
-	*/
-	Coord tc = Coord.z;
+	Coord tc = mv.cc.div(tilesz);
 	Coord ulg = tc.div(cmaps);
 	while((ulg.x * cmaps.x) - tc.x + (sz.x / 2) > 0)
 	    ulg.x--;

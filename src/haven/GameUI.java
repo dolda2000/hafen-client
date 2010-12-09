@@ -34,6 +34,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public final int plid;
     public MenuGrid menu;
     public MapView map;
+    public MiniMap mmap;
     public static final Text.Foundry errfoundry = new Text.Foundry(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 14), new Color(192, 0, 0));
     private Text lasterr;
     private long errtime;
@@ -79,6 +80,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    Coord cc = (Coord)cargs[0];
 	    map = new MapView(Coord.z, sz, this, cc, plid);
 	    map.lower();
+	    if(mmap != null)
+		ui.destroy(mmap);
+	    mmap = new MiniMap(new Coord(0, sz.y - 125), new Coord(125, 125), this, map);
 	    return(map);
 	} else if(place == "inv") {
 	    invwnd = new Hidewnd(new Coord(100, 100), Coord.z, this, "Inventory");
@@ -183,6 +187,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	menu.c = sz.sub(menu.sz);
 	if(map != null)
 	    map.resize(sz);
+	if(mmap != null)
+	    mmap.c = new Coord(0, sz.y - mmap.sz.y);
     }
     
     public void presize() {
