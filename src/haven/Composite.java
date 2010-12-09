@@ -148,7 +148,14 @@ public class Composite extends Drawable {
 	}
 	
 	public Order setup(RenderList r) {
-	    return(m.setup(r));
+	    if(lay.size() == 0) {
+		return(null);
+	    } else if(lay.size() == 1) {
+		r.add(m, lay.get(0));
+		return(null);
+	    } else {
+		return(m.setup(r));
+	    }
 	}
     }
     
