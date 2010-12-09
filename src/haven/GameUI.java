@@ -82,7 +82,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    map.lower();
 	    if(mmap != null)
 		ui.destroy(mmap);
-	    mmap = new MiniMap(new Coord(0, sz.y - 125), new Coord(125, 125), this, map);
+	    // mmap = new MiniMap(new Coord(0, sz.y - 125), new Coord(125, 125), this, map);
 	    return(map);
 	} else if(place == "inv") {
 	    invwnd = new Hidewnd(new Coord(100, 100), Coord.z, this, "Inventory");
