@@ -132,8 +132,25 @@ public class Composite extends Drawable {
 	}
     }
 
+    private static final Rendered.Order modorder = new Rendered.Order<Model>() {
+	public int mainz() {
+	    return(1);
+	}
+	
+	private final Rendered.RComparator<Model> cmp = new Rendered.RComparator<Model>() {
+	    public int compare(Model a, Model b, GLState.Buffer sa, GLState.Buffer sb) {
+		return(a.z - b.z);
+	    }
+	};
+	
+	public Rendered.RComparator<Model> cmp() {
+	    return(cmp);
+	}
+    };
+
     private class Model implements Rendered {
 	private final MorphedMesh m;
+	int z = 0;
 	private final List<Material> lay = new ArrayList<Material>();
 	
 	private Model(FastMesh m) {
@@ -148,7 +165,8 @@ public class Composite extends Drawable {
 	}
 	
 	public Order setup(RenderList r) {
-	    return(m.setup(r));
+	    m.setup(r);
+	    return(modorder);
 	}
     }
     
@@ -292,6 +310,10 @@ public class Composite extends Drawable {
 		    continue;
 		FastMesh.MeshRes mr = md.mod.get().layer(FastMesh.MeshRes.class);
 		md.real = new Model(mr.m);
+		/* This is really ugly, but I can't really think of
+		 * anything less ugly right now. */
+		if(md.mod.get().name.equals("gfx/borka/kjol"))
+		    md.real.z = 1;
 		this.mod.add(md.real);
 	    }
 	    for(Iterator<Indir<Resource>> o = md.tex.iterator(); o.hasNext();) {
