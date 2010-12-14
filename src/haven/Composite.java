@@ -148,7 +148,7 @@ public class Composite extends Drawable {
 	}
     };
 
-    private class Model implements Rendered {
+    private class Model implements FRendered {
 	private final MorphedMesh m;
 	int z = 0;
 	private final List<Material> lay = new ArrayList<Material>();
@@ -162,6 +162,10 @@ public class Composite extends Drawable {
 		g.state(lay);
 		m.draw(g);
 	    }
+	}
+	
+	public void drawflat(GOut g) {
+	    m.drawflat(g);
 	}
 	
 	public Order setup(RenderList r) {
