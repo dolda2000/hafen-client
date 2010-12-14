@@ -31,7 +31,7 @@ import java.util.*;
 import java.io.*;
 
 public class Session {
-    public static final int PVER = 6;
+    public static final int PVER = 7;
     
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
@@ -261,6 +261,7 @@ public class Session {
 				    poses.add(getres(resid));
 				}
 			    }
+			    float ttime = 0;
 			    if((pfl & 4) != 0) {
 				tposes = new LinkedList<Indir<Resource>>();
 				while(true) {
@@ -269,9 +270,10 @@ public class Session {
 					break;
 				    tposes.add(getres(resid));
 				}
+				ttime = (msg.uint8() / 10.0f);
 			    }
 			    if(gob != null)
-				oc.cmppose(gob, seq, poses, tposes, interp);
+				oc.cmppose(gob, seq, poses, tposes, interp, ttime);
 			} else if(type == OD_CMPMOD) {
 			    List<Composite.MD> mod = new LinkedList<Composite.MD>();
 			    while(true) {
