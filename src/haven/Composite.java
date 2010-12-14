@@ -119,7 +119,7 @@ public class Composite extends Drawable {
 	    }
 	    if(build)
 		rebuild();
-	    if(limit > 0) {
+	    if(limit >= 0) {
 		if((limit -= dt) < 0)
 		    ldone = true;
 	    }
@@ -393,7 +393,7 @@ public class Composite extends Drawable {
     public void tposes(List<Indir<Resource>> tposes, WrapMode mode, float time) {
 	Poses p = new Poses(tposes, ipollen);
 	p.mode = mode;
-	if(time > 0)
+	if(time >= 0)
 	    p.limit = time;
 	Poses seq;
 	if(nposes != null)
