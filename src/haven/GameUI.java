@@ -178,6 +178,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		fitwdg(equwnd);
 	    }
 	    return(true);
+	} else if(key == 1) {
+	    wdgmsg("atkm");
+	    return(true);
 	}
 	return(super.globtype(key, ev));
     }
