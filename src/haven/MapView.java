@@ -325,6 +325,7 @@ public class MapView extends PView {
     private Coord checkmapclick(GOut g, Coord c) {
 	Maplist rl = new Maplist(basic(g));
 	rl.setup(map, basic(g));
+	rl.sort();
 	{
 	    rl.render(g);
 	    MapMesh hit = rl.get(g, c);
@@ -367,6 +368,7 @@ public class MapView extends PView {
 		}
 	    };
 	rl.setup(gobs, basic(g));
+	rl.sort();
 	rl.render(g);
 	return(rl.get(g, c));
     }

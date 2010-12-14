@@ -83,7 +83,6 @@ public class RenderList {
 	Slot s = getslot();
 	t.copy(s.os); t.copy(s.cs);
 	setup(s, r);
-	sort();
     }
 
     public void add(Rendered r, GLState t) {
