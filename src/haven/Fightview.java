@@ -32,10 +32,10 @@ public class Fightview extends Widget {
     static Tex bg = Resource.loadtex("gfx/hud/bosq");
     static int height = 5;
     static int ymarg = 5;
+    static int width = 135;
     static Coord avasz = new Coord(27, 27);
-    static Coord cavac = new Coord(700, 10);
-    static Coord cgivec = new Coord(665, 10);
-    static Coord meterc = new Coord(333, 10);
+    static Coord cavac = new Coord(35, 10);
+    static Coord cgivec = new Coord(0, 10);
     LinkedList<Relation> lsrel = new LinkedList<Relation>();
     public Relation current = null;
     public Indir<Resource> blk, batk, iatk;
@@ -43,13 +43,9 @@ public class Fightview extends Widget {
     public int off, def;
     private GiveButton curgive;
     private Avaview curava;
-    private Widget comwdg, comwin;
     
     public class Relation {
         int gobid;
-        int bal, intns;
-	int off, def;
-	int ip, oip;
         Avaview ava;
 	GiveButton give;
         
@@ -85,44 +81,52 @@ public class Fightview extends Widget {
     }
     
     public Fightview(Coord c, Widget parent) {
-        super(c.add(-bg.sz().x, 0), new Coord(bg.sz().x, (bg.sz().y + ymarg) * height), parent);
-	SlenHud s = ui.root.findchild(SlenHud.class);
-	curgive = new GiveButton(cgivec, ui.root, 0) {
-		public void wdgmsg(String name, Object... args) {
-		    if(name == "click")
-			Fightview.this.wdgmsg("give", current.gobid, args[0]);
-		}
-	    };
-	curava = new Avaview(cavac, ui.root, -1) {
-		public void wdgmsg(String name, Object... args) {
-		    if(name == "click")
-			Fightview.this.wdgmsg("click", current.gobid, args[0]);
-		}
-	    };
-	comwdg = new ComMeter(meterc, ui.root, this);
-	comwin = new ComWin(s, this);
+        super(c, new Coord(width, (bg.sz().y + ymarg) * height), parent);
+    }
+
+    private void setcur(Relation rel) {
+	if((current == null) && (rel != null)) {
+	    curgive = new GiveButton(cgivec, this, 0) {
+		    public void wdgmsg(String name, Object... args) {
+			if(name == "click")
+			    Fightview.this.wdgmsg("give", current.gobid, args[0]);
+		    }
+		};
+	    curava = new Avaview(cavac, this, -1) {
+		    public void wdgmsg(String name, Object... args) {
+			if(name == "click")
+			    Fightview.this.wdgmsg("click", current.gobid, args[0]);
+		    }
+		};
+	} else if((current != null) && (rel == null)) {
+	    ui.destroy(curgive);
+	    ui.destroy(curava);
+	    curgive = null;
+	    curava = null;
+	} else if((current != null) && (rel != null)) {
+	    curgive.state = rel.give.state;
+	    curava.avagob = rel.gobid;
+	}
+	current = rel;
     }
     
     public void destroy() {
-	ui.destroy(curgive);
-	ui.destroy(curava);
-	ui.destroy(comwdg);
-	ui.destroy(comwin);
+	setcur(null);
 	super.destroy();
     }
     
     public void draw(GOut g) {
         int y = 0;
+	int x = width - bg.sz().x - 10;
         for(Relation rel : lsrel) {
             if(rel == current) {
 		rel.show(false);
                 continue;
 	    }
-            g.image(bg, new Coord(0, y));
-            rel.ava.c = new Coord(25, ((bg.sz().y - rel.ava.sz.y) / 2) + y);
-	    rel.give.c = new Coord(5, 4 + y);
+            g.image(bg, new Coord(x, y));
+            rel.ava.c = new Coord(x + 25, ((bg.sz().y - rel.ava.sz.y) / 2) + y);
+	    rel.give.c = new Coord(x + 5, 4 + y);
 	    rel.show(true);
-            g.text(String.format("%d %d", rel.bal, rel.intns), new Coord(65, y + 10));
             y += bg.sz().y + ymarg;
         }
         super.draw(g);
@@ -172,43 +176,28 @@ public class Fightview extends Widget {
     public void uimsg(String msg, Object... args) {
         if(msg == "new") {
             Relation rel = new Relation((Integer)args[0]);
-            rel.bal = (Integer)args[1];
-            rel.intns = (Integer)args[2];
-	    rel.give((Integer)args[3]);
-            rel.ip = (Integer)args[4];
-            rel.oip = (Integer)args[5];
-            rel.off = (Integer)args[6];
-            rel.def = (Integer)args[7];
+	    rel.give((Integer)args[1]);
             lsrel.addFirst(rel);
             return;
         } else if(msg == "del") {
             Relation rel = getrel((Integer)args[0]);
 	    rel.remove();
             lsrel.remove(rel);
+	    if(rel == current)
+		setcur(null);
             return;
         } else if(msg == "upd") {
             Relation rel = getrel((Integer)args[0]);
-            rel.bal = (Integer)args[1];
-            rel.intns = (Integer)args[2];
-	    rel.give((Integer)args[3]);
-	    rel.ip = (Integer)args[4];
-	    rel.oip = (Integer)args[5];
+	    rel.give((Integer)args[1]);
             return;
-	} else if(msg == "updod") {
-	    Relation rel = getrel((Integer)args[0]);
-	    rel.off = (Integer)args[1];
-	    rel.def = (Integer)args[2];
-	    return;
         } else if(msg == "cur") {
             try {
                 Relation rel = getrel((Integer)args[0]);
                 lsrel.remove(rel);
                 lsrel.addFirst(rel);
-		current = rel;
-		curgive.state = rel.give.state;
-		curava.avagob = rel.gobid;
+		setcur(rel);
             } catch(Notfound e) {
-		current = null;
+		setcur(null);
 	    }
             return;
         } else if(msg == "atkc") {
