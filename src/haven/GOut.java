@@ -171,6 +171,32 @@ public class GOut {
 	checkerr();
     }
     
+    public void poly(Coord... c) {
+	st.set(def2d);
+	state(color);
+	apply();
+	gl.glBegin(GL.GL_POLYGON);
+	for(Coord vc : c)
+	    vertex(vc);
+	gl.glEnd();
+	checkerr();
+    }
+    
+    public void poly2(Object... c) {
+	st.set(def2d);
+	st.put(States.color, null);
+	apply();
+	gl.glBegin(GL.GL_POLYGON);
+	for(int i = 0; i < c.length; i += 2) {
+	    Coord vc = (Coord)c[i];
+	    Color col = (Color)c[i + 1];
+	    gl.glColor4f((col.getRed() / 255.0f), (col.getGreen() / 255.0f), (col.getBlue() / 255.0f), (col.getAlpha() / 255.0f));
+	    vertex(vc);
+	}
+	gl.glEnd();
+	checkerr();
+    }
+
     public void frect(Coord ul, Coord sz) {
 	st.set(def2d);
 	state(color);
