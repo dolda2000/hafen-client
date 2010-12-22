@@ -51,7 +51,7 @@ public class Composite extends Drawable {
 	float ipold = 0.0f, ipol = 0.0f;
 	float limit = -1.0f;
 	boolean stat, ldone;
-	WrapMode mode = WrapMode.LOOP;
+	WrapMode mode = null;
 	
 	private Poses() {
 	    this.loading = Collections.emptyList();
@@ -75,7 +75,7 @@ public class Composite extends Drawable {
 	    stat = true;
 	    for(Indir<Resource> res : loading) {
 		for(Skeleton.ResPose p : res.get().layers(Skeleton.ResPose.class)) {
-		    TrackMod mod = p.forskel(skel, mode);
+		    TrackMod mod = p.forskel(skel, (mode == null)?p.defmode:mode);
 		    if(!mod.stat)
 			stat = false;
 		    mods.add(mod);
@@ -102,10 +102,14 @@ public class Composite extends Drawable {
 	    double v = 0;
 	    if(mv != null)
 		v = mv.getv();
-	    boolean done = true;
+	    if(limit >= 0) {
+		if((limit -= dt) < 0)
+		    ldone = true;
+	    }
+	    boolean done = ldone;
 	    for(TrackMod m : mods) {
 		m.tick((m.speedmod)?(dt * (float)(v / m.nspeed)):dt);
-		if(!m.done)
+		if(m.mode.ends && !m.done)
 		    done = false;
 	    }
 	    if(!stat)
@@ -119,14 +123,6 @@ public class Composite extends Drawable {
 	    }
 	    if(build)
 		rebuild();
-	    if(limit >= 0) {
-		if((limit -= dt) < 0)
-		    ldone = true;
-	    }
-	    if(mode.ends && !ldone)
-		done = false;
-	    if(!mode.ends && ldone)
-		done = true;
 	    if(done && (seq != null))
 		nposes = seq;
 	}
