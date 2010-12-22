@@ -317,6 +317,15 @@ public class Widget {
 	    parent.wdgmsg(sender, msg, args);
     }
 	
+    public void tick(double dt) {
+	Widget next;
+	
+	for(Widget wdg = child; wdg != null; wdg = next) {
+	    next = wdg.next;
+	    wdg.tick(dt);
+	}
+    }
+
     public void draw(GOut g) {
 	Widget next;
 		

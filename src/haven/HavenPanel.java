@@ -423,6 +423,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		    if(ui.sess != null)
 			ui.sess.glob.oc.ctick();
 		    dispatch();
+		    ui.tick();
 		    if((ui.root.sz.x != w) || (ui.root.sz.y != h))
 			ui.root.resize(new Coord(w, h));
 		}

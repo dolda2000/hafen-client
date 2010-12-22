@@ -41,11 +41,15 @@ public class UI {
     public Session sess;
     public MapView mainview;
     public boolean modshift, modctrl, modmeta, modsuper;
-    long lastevent = System.currentTimeMillis();
+    long lastevent, lasttick;
     public Widget mouseon;
     public FSMan fsm;
     public Console cons = new WidgetConsole();
     private Collection<AfterDraw> afterdraws = null;
+    
+    {
+	lastevent = lasttick = System.currentTimeMillis();
+    }
 	
     public interface Receiver {
 	public void rcvmsg(int widget, String msg, Object... args);
@@ -129,6 +133,12 @@ public class UI {
 	synchronized(afterdraws) {
 	    afterdraws.add(ad);
 	}
+    }
+
+    public void tick() {
+	long now = System.currentTimeMillis();
+	root.tick((now - lasttick) / 1000.0);
+	lasttick = now;
     }
 
     public void draw(GOut g) {
