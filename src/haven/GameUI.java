@@ -124,7 +124,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    throw(new UI.UIException("Illegal gameui child", type, pargs));
 	}
     }
-
+    
     public void draw(GOut g) {
 	super.draw(g);
 	if(cmdline != null) {
@@ -196,6 +196,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    map.resize(sz);
 	if(mmap != null)
 	    mmap.c = new Coord(0, sz.y - mmap.sz.y);
+	if(fv != null)
+	    fv.c = new Coord(sz.x - Fightview.width, 0);
     }
     
     public void presize() {
