@@ -32,7 +32,6 @@ public class LoginScreen extends Widget {
     IButton btn;
     static Text.Foundry textf, textfs;
     static Tex bg = Resource.loadtex("gfx/loginscr");
-    static Tex logo = Resource.loadtex("gfx/logo");
     Text progress = null;
 	
     static {
@@ -45,7 +44,6 @@ public class LoginScreen extends Widget {
 	setfocustab(true);
 	parent.setfocus(this);
 	new Img(Coord.z, bg, this);
-	new Img(new Coord(420, 215).add(logo.sz().div(2).inv()), logo, this);
     }
 
     private static abstract class Login extends Widget {
