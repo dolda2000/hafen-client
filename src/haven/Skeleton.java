@@ -258,11 +258,37 @@ public class Skeleton {
 	
 	public Location bonetrans(final int bone) {
 	    return(new Location() {
+		    private int cseq = -1;
+		    private float ang;
+		    
 		    public void xf(GOut g) {
 			GL gl = g.gl;
+			if(cseq != seq) {
+			    ang = (float)(Math.acos(grot[bone][0]) * 2.0 / Math.PI * 180.0);
+			    cseq = seq;
+			}
 			gl.glTranslatef(gpos[bone][0], gpos[bone][1], gpos[bone][2]);
-			float ang = (float)Math.acos(grot[bone][0]) * 2.0f;
-			gl.glRotatef((float)(ang / Math.PI * 180.0), grot[bone][1], grot[bone][2], grot[bone][3]);
+			gl.glRotatef(ang, grot[bone][1], grot[bone][2], grot[bone][3]);
+		    }
+		});
+	}
+	
+	public Location bonetrans2(final int bone) {
+	    return(new Location() {
+		    private int cseq = -1;
+		    private float[] pos = new float[3], rot = new float[4];
+		    private float ang;
+		    
+		    public void xf(GOut g) {
+			GL gl = g.gl;
+			if(cseq != seq) {
+			    rot = qqmul(rot, grot[bone], qinv(rot, bindpose.grot[bone]));
+			    pos = vvadd(pos, gpos[bone], vqrot(pos, vinv(pos, bindpose.gpos[bone]), rot));
+			    ang = (float)(Math.acos(rot[0]) * 2.0 / Math.PI * 180.0);
+			    cseq = seq;
+			}
+			gl.glTranslatef(pos[0], pos[1], pos[2]);
+			gl.glRotatef(ang, rot[1], rot[2], rot[3]);
 		    }
 		});
 	}
