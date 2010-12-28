@@ -581,35 +581,76 @@ public class Skeleton {
     }
     
     public static class BoneOffset extends Resource.Layer {
-	public final String bone;
-	public final Coord3f off, rax;
-	public final float rang;
+	public final String nm;
+	public final Command[] prog;
+	private static final HatingJava[] opcodes = new HatingJava[256];
+	static {
+	    opcodes[0] = new HatingJava() {
+		    public Command make(byte[] buf, int[] off) {
+			float x = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			float y = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			float z = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			final Location xl = Location.xlate(new Coord3f(x, y, z));
+			return(new Command() {
+				public GLState make(Pose pose) {
+				    return(xl);
+				}
+			    });
+		    }
+		};
+	    opcodes[1] = new HatingJava() {
+		    public Command make(byte[] buf, int[] off) {
+			float ang = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			float ax = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			float ay = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			float az = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			final Location rot = Location.rot(new Coord3f(ax, ay, az), ang);
+			return(new Command() {
+				public GLState make(Pose pose) {
+				    return(rot);
+				}
+			    });
+		    }
+		};
+	    opcodes[2] = new HatingJava() {
+		    public Command make(byte[] buf, int[] off) {
+			final String bonenm = Utils.strd(buf, off);
+			return(new Command() {
+				public GLState make(Pose pose) {
+				    Bone bone = pose.skel().bones.get(bonenm);
+				    return(pose.bonetrans(bone.idx));
+				}
+			    });
+		    }
+		};
+	}
+	
+	public interface Command {
+	    public GLState make(Pose pose);
+	}
+
+	public interface HatingJava {
+	    public Command make(byte[] buf, int[] off);
+	}
 	
 	public BoneOffset(Resource res, byte[] buf) {
 	    res.super();
 	    int[] off = {0};
-	    this.bone = Utils.strd(buf, off);
-	    this.off = new Coord3f((float)Utils.floatd(buf, off[0]), (float)Utils.floatd(buf, off[0] + 5), (float)Utils.floatd(buf, off[0] + 10)); off[0] += 15;
-	    this.rax = new Coord3f((float)Utils.floatd(buf, off[0]), (float)Utils.floatd(buf, off[0] + 5), (float)Utils.floatd(buf, off[0] + 10)); off[0] += 15;
-	    this.rang = (float)Utils.floatd(buf, off[0]);
+	    this.nm = Utils.strd(buf, off);
+	    List<Command> cbuf = new LinkedList<Command>();
+	    while(off[0] < buf.length)
+		cbuf.add(opcodes[buf[off[0]++]].make(buf, off));
+	    this.prog = cbuf.toArray(new Command[0]);
 	}
 	
 	public void init() {
 	}
 	
-	public class Transform extends Location {
-	    public void xf(GOut g) {
-		GL gl = g.gl;
-		gl.glTranslatef(off.x, off.y, off.z);
-		gl.glRotatef(rang * 180.0f / (float)Math.PI, rax.x, rax.y, rax.z);
-	    }
-	}
-
-	public Location xf() {
-	    return(new Transform());
-	    /*
-	    return(Transform.seq(Transform.xlate(off), Transform.rot(rax, rang)));
-	    */
+	public GLState forpose(Pose pose) {
+	    GLState[] ls = new GLState[prog.length];
+	    for(int i = 0; i < prog.length; i++)
+		ls[i] = prog[i].make(pose);
+	    return(GLState.compose(ls));
 	}
     }
 }

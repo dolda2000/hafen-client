@@ -172,23 +172,17 @@ public class Composite extends Drawable {
     
     private class SpriteEqu extends Equ {
 	private final Sprite spr;
-	private final Transform st;
 	
 	private SpriteEqu(ED ed) {
 	    super(ed);
 	    this.spr = Sprite.create(gob, ed.res.get(), new Message(0));
-	    Skeleton.BoneOffset off = ed.res.get().layer(Skeleton.BoneOffset.class);
-	    if(off == null)
-		this.st = null;
-	    else
-		this.st = off.xf();
 	}
 	
 	public void draw(GOut g) {
 	}
 
 	public Order setup(RenderList rl) {
-	    rl.add(spr, st);
+	    rl.add(spr, null);
 	    return(null);
 	}
     }
@@ -214,8 +208,20 @@ public class Composite extends Drawable {
 	private final GLState et;
 	
 	private Equ(ED ed) {
-	    Skeleton.Bone bone = skel.bones.get(ed.at);
-	    Transform bt = pose.bonetrans(bone.idx);
+	    Skeleton.BoneOffset bo = null;
+	    for(Skeleton.BoneOffset co : ed.res.get().layers(Skeleton.BoneOffset.class)) {
+		if(co.nm.equals(ed.at)) {
+		    bo = co;
+		    break;
+		}
+	    }
+	    GLState bt;
+	    if(bo != null) {
+		bt = bo.forpose(pose);
+	    } else {
+		Skeleton.Bone bone = skel.bones.get(ed.at);
+		bt = pose.bonetrans(bone.idx);
+	    }
 	    if((ed.off.x != 0.0f) || (ed.off.y != 0.0f) || (ed.off.z != 0.0f))
 		this.et = GLState.compose(bt, Location.xlate(ed.off));
 	    else
