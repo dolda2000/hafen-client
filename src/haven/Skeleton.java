@@ -587,27 +587,25 @@ public class Skeleton {
 	static {
 	    opcodes[0] = new HatingJava() {
 		    public Command make(byte[] buf, int[] off) {
-			float x = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			float y = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			float z = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			final Location xl = Location.xlate(new Coord3f(x, y, z));
+			final float x = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			final float y = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			final float z = (float)Utils.floatd(buf, off[0]); off[0] += 5;
 			return(new Command() {
 				public GLState make(Pose pose) {
-				    return(xl);
+				    return(Location.xlate(new Coord3f(x, y, z)));
 				}
 			    });
 		    }
 		};
 	    opcodes[1] = new HatingJava() {
 		    public Command make(byte[] buf, int[] off) {
-			float ang = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			float ax = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			float ay = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			float az = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			final Location rot = Location.rot(new Coord3f(ax, ay, az), ang);
+			final float ang = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			final float ax = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			final float ay = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			final float az = (float)Utils.floatd(buf, off[0]); off[0] += 5;
 			return(new Command() {
 				public GLState make(Pose pose) {
-				    return(rot);
+				    return(Location.rot(new Coord3f(ax, ay, az), ang));
 				}
 			    });
 		    }
