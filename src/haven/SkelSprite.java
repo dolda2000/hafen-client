@@ -62,8 +62,18 @@ public class SkelSprite extends Sprite {
 	pose = skel.new Pose(skel.bindpose);
 	Collection<Rendered> rl = new LinkedList<Rendered>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
-	    if(mr.mat != null)
-		rl.add(mr.mat.apply(new MorphedMesh(mr.m, pose)));
+	    if(mr.mat != null) {
+		if(mr.m.boned()) {
+		    String bnm = mr.m.boneidp();
+		    if(bnm == null) {
+			rl.add(mr.mat.apply(new MorphedMesh(mr.m, pose)));
+		    } else {
+			rl.add(pose.bonetrans2(skel.bones.get(bnm).idx).apply(mr.mat.apply(mr.m)));
+		    }
+		} else {
+		    rl.add(mr.mat.apply(mr.m));
+		}
+	    }
 	}
 	this.parts = rl.toArray(new Rendered[0]);
 	chposes(decnum(sdt));
