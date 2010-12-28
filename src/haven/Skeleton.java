@@ -602,7 +602,6 @@ public class Skeleton {
 		GL gl = g.gl;
 		gl.glTranslatef(off.x, off.y, off.z);
 		gl.glRotatef(rang * 180.0f / (float)Math.PI, rax.x, rax.y, rax.z);
-		gl.glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
 	    }
 	}
 
