@@ -83,6 +83,43 @@ public interface Rendered {
 	    return(last);
 	}
     }
+
+    public static class Axes implements Rendered {
+	public final float[] mid;
+	
+	public Axes(java.awt.Color mid) {
+	    this.mid = Utils.c2fa(mid);
+	}
+	
+	public Axes() {
+	    this(java.awt.Color.BLACK);
+	}
+	
+	public void draw(GOut g) {
+	    GL gl = g.gl;
+	    g.st.put(Light.lighting, null);
+	    g.state(States.xray);
+	    g.apply();
+	    gl.glBegin(GL.GL_LINES);
+	    gl.glColor4fv(mid, 0);
+	    gl.glVertex3f(0, 0, 0);
+	    gl.glColor3f(1, 0, 0);
+	    gl.glVertex3f(1, 0, 0);
+	    gl.glColor4fv(mid, 0);
+	    gl.glVertex3f(0, 0, 0);
+	    gl.glColor3f(0, 1, 0);
+	    gl.glVertex3f(0, 1, 0);
+	    gl.glColor4fv(mid, 0);
+	    gl.glVertex3f(0, 0, 0);
+	    gl.glColor3f(0, 0, 1);
+	    gl.glVertex3f(0, 0, 1);
+	    gl.glEnd();
+	}
+	
+	public Order setup(RenderList r) {
+	    return(last);
+	}
+    }
     
     public static class Line implements Rendered {
 	public final Coord3f end;
