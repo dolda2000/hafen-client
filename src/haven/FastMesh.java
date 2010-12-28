@@ -136,7 +136,7 @@ public class FastMesh implements FRendered {
     public boolean boned() {
 	if(vert.apv == 0)
 	    return(false);
-	for(int i = 0; i < num; i++) {
+	for(int i = 0; i < num * 3; i++) {
 	    if(vert.assbones[indb.get(i) * vert.apv] != -1)
 		return(true);
 	}
@@ -145,7 +145,9 @@ public class FastMesh implements FRendered {
 
     public String boneidp() {
 	int retb = -1;
-	for(int i = 0; i < num; i++) {
+	if(vert.apv == 0)
+	    return(null);
+	for(int i = 0; i < num * 3; i++) {
 	    int vi = indb.get(i) * vert.apv;
 	    int curb = vert.assbones[vi];
 	    if(curb == -1)
@@ -153,8 +155,6 @@ public class FastMesh implements FRendered {
 	    if(retb == -1)
 		retb = curb;
 	    else if(retb != curb)
-		return(null);
-	    if(vert.assweights[vi] != 1.0f)
 		return(null);
 	    if((vert.apv != 1) && (vert.assbones[vi + 1] != -1))
 		return(null);
