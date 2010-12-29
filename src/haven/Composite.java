@@ -318,8 +318,8 @@ public class Composite extends Drawable {
 		    md.real = new Model(mr.m);
 		    /* This is really ugly, but I can't really think of
 		     * anything less ugly right now. */
-		    if(md.mod.get().name.equals("gfx/borka/kjol"))
-			md.real.z = 1;
+		    if(md.mod.get().name.equals("gfx/borka/male") || md.mod.get().name.equals("gfx/borka/female"))
+			md.real.z = -1;
 		    this.mod.add(md.real);
 		}
 		for(Iterator<Indir<Resource>> o = md.tex.iterator(); o.hasNext();) {
