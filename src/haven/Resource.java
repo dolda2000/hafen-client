@@ -631,7 +631,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    Image[] typeinfo = new Image[0];
 	    for(int i = 0; i < ids.length; i++) {
 		LinkedList<Image> buf = new LinkedList<Image>();
-		for(Image img : layers(Image.class)) {
+		for(Image img : layers(Image.class, false)) {
 		    if(img.id == ids[i])
 			buf.add(img);
 		}
@@ -738,7 +738,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		}
 	    }
 	    Coord tsz = null;
-	    for(Tile t : layers(Tile.class)) {
+	    for(Tile t : layers(Tile.class, false)) {
 		if(t.t == 'g')
 		    ground.add(t, t.w);
 		else if(t.t == 'b' && hastrans)
@@ -862,7 +862,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
 		
 	public void init() {
-	    for(Code c : layers(Code.class))
+	    for(Code c : layers(Code.class, false))
 		clmap.put(c.name, c);
 	    loader = new ResClassLoader(Resource.class.getClassLoader()) {
 		    public Class<?> findClass(String name) throws ClassNotFoundException {
@@ -961,8 +961,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
     }
 	
-    public <L extends Layer> Collection<L> layers(Class<L> cl) {
-	if(loading)
+    public <L extends Layer> Collection<L> layers(Class<L> cl, boolean th) {
+	if(loading && th)
 	    throw(new Loading(this));
 	checkerr();
 	Collection<L> ret = new LinkedList<L>();
@@ -972,9 +972,13 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
 	return(ret);
     }
+    
+    public <L extends Layer> Collection<L> layers(Class<L> cl) {
+	return(layers(cl, true));
+    }
 	
-    public <L extends Layer> L layer(Class<L> cl) {
-	if(loading)
+    public <L extends Layer> L layer(Class<L> cl, boolean th) {
+	if(loading && th)
 	    throw(new Loading(this));
 	checkerr();
 	for(Layer l : layers) {
@@ -984,6 +988,10 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	return(null);
     }
 	
+    public <L extends Layer> L layer(Class<L> cl) {
+	return(layer(cl, true));
+    }
+    
     public int compareTo(Resource other) {
 	checkerr();
 	int nc = name.compareTo(other.name);

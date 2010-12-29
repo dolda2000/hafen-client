@@ -63,9 +63,11 @@ public class Composite extends Drawable {
 	}
 	
 	boolean load() {
-	    for(Indir<Resource> res : loading) {
-		if(res.get() == null)
-		    return(false);
+	    try {
+		for(Indir<Resource> res : loading)
+		    res.get();
+	    } catch(Resource.Loading e) {
+		return(false);
 	    }
 	    if(ipol > 0) {
 		old = skel.new Pose(pose);
@@ -299,39 +301,35 @@ public class Composite extends Drawable {
     }
     
     private void init() {
-	if(skel != null) {
+	if(skel != null)
 	    return;
-	}
-	if(base.get() == null)
-	    return;
-	skel = base.get().layer(Skeleton.Res.class).s;
-	pose = skel.new Pose(skel.bindpose);
+	try {
+	    skel = base.get().layer(Skeleton.Res.class).s;
+	    pose = skel.new Pose(skel.bindpose);
+	} catch(Resource.Loading e) {}
     }
     
     private void nmod() {
 	for(Iterator<MD> i = nmod.iterator(); i.hasNext();) {
 	    MD md = i.next();
-	    if(md.real == null) {
-		if(md.mod.get() == null)
-		    continue;
-		FastMesh.MeshRes mr = md.mod.get().layer(FastMesh.MeshRes.class);
-		md.real = new Model(mr.m);
-		/* This is really ugly, but I can't really think of
-		 * anything less ugly right now. */
-		if(md.mod.get().name.equals("gfx/borka/kjol"))
-		    md.real.z = 1;
-		this.mod.add(md.real);
-	    }
-	    for(Iterator<Indir<Resource>> o = md.tex.iterator(); o.hasNext();) {
-		Indir<Resource> res = o.next();
-		if(res.get() != null) {
+	    try {
+		if(md.real == null) {
+		    FastMesh.MeshRes mr = md.mod.get().layer(FastMesh.MeshRes.class);
+		    md.real = new Model(mr.m);
+		    /* This is really ugly, but I can't really think of
+		     * anything less ugly right now. */
+		    if(md.mod.get().name.equals("gfx/borka/kjol"))
+			md.real.z = 1;
+		    this.mod.add(md.real);
+		}
+		for(Iterator<Indir<Resource>> o = md.tex.iterator(); o.hasNext();) {
+		    Indir<Resource> res = o.next();
 		    for(Material.Res mr : res.get().layers(Material.Res.class))
 			md.real.lay.add(mr.m);
 		    o.remove();
 		}
-	    }
-	    if(md.tex.isEmpty())
 		i.remove();
+	    } catch(Resource.Loading e) {}
 	}
 	if(nmod.isEmpty())
 	    nmod = null;
@@ -340,13 +338,13 @@ public class Composite extends Drawable {
     private void nequ() {
 	for(Iterator<ED> i = nequ.iterator(); i.hasNext();) {
 	    ED ed = i.next();
-	    if((ed.res != null) && (ed.res.get() == null))
-		continue;
-	    if(ed.t == 0)
-		this.equ.add(new SpriteEqu(ed));
-	    else if(ed.t == 1)
-		this.equ.add(new LightEqu(ed));
-	    i.remove();
+	    try {
+		if(ed.t == 0)
+		    this.equ.add(new SpriteEqu(ed));
+		else if(ed.t == 1)
+		    this.equ.add(new LightEqu(ed));
+		i.remove();
+	    } catch(Resource.Loading e) {}
 	}
 	if(nequ.isEmpty())
 	    nequ = null;
@@ -382,10 +380,7 @@ public class Composite extends Drawable {
     }
 
     public Resource.Neg getneg() {
-	Resource r = base.get();
-	if(r == null)
-	    return(null);
-	return(r.layer(Resource.negc));
+	return(base.get().layer(Resource.negc));
     }
     
     public void chposes(List<Indir<Resource>> poses, boolean interp) {

@@ -181,7 +181,7 @@ public class FastMesh implements FRendered {
 	}
 	
 	public void init() {
-	    VertexBuf v = getres().layer(VertexBuf.VertexRes.class).b;
+	    VertexBuf v = getres().layer(VertexBuf.VertexRes.class, false).b;
 	    this.m = new FastMesh(v, this.tmp) {
 		    public String toString() {
 			return("FastMesh(" + getres().name + ")");
@@ -189,7 +189,7 @@ public class FastMesh implements FRendered {
 		};
 	    this.tmp = null;
 	    if(matid >= 0) {
-		for(Material.Res mr : getres().layers(Material.Res.class)) {
+		for(Material.Res mr : getres().layers(Material.Res.class, false)) {
 		    if(mr.id == matid)
 			this.mat = mr.m;
 		}

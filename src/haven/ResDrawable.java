@@ -48,9 +48,9 @@ public class ResDrawable extends Drawable {
     public void init() {
 	if(spr != null)
 	    return;
-	if(res.get() == null)
-	    return;
-	spr = Sprite.create(gob, res.get(), sdt.clone());
+	try {
+	    spr = Sprite.create(gob, res.get(), sdt.clone());
+	} catch(Resource.Loading e) {}
     }
 	
     public void setup(RenderList rl) {
@@ -69,9 +69,6 @@ public class ResDrawable extends Drawable {
     }
     
     public Resource.Neg getneg() {
-	Resource r = res.get();
-	if(r == null)
-	    return(null);
-	return(r.layer(Resource.negc));
+	return(res.get().layer(Resource.negc));
     }
 }

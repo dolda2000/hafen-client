@@ -257,11 +257,11 @@ public class Audio {
     public static void play(final Indir<Resource> clip) {
 	queue(new Runnable() {
 		public void run() {
-		    Resource r = clip.get();
-		    if(r == null)
+		    try {
+			playres(clip.get());
+		    } catch(Resource.Loading e) {
 			queue.add(this);
-		    else
-			playres(r);
+		    }
 		}
 	    });
     }

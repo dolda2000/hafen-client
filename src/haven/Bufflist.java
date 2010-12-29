@@ -68,7 +68,7 @@ public class Bufflist extends Widget {
 		} else {
 		    g.image(frame, bc);
 		}
-		if(b.res.get() != null) {
+		try {
 		    Tex img = b.res.get().layer(Resource.imgc).tex();
 		    g.image(img, bc.add(imgoff));
 		    if(b.nmeter >= 0) {
@@ -86,7 +86,7 @@ public class Bufflist extends Widget {
 			g.fellipse(bc.add(imgoff).add(img.sz().div(2)), img.sz().div(2), 90, (int)(90 + (360 * m)));
 			g.chcolor();
 		    }
-		}
+		} catch(Resource.Loading e) {}
 		if(++i >= 5)
 		    break;
 	    }
@@ -105,7 +105,7 @@ public class Bufflist extends Widget {
 		    Resource.Tooltip tt;
 		    if(b.tt != null)
 			return(b.tt);
-		    else if((b.res.get() != null) && ((tt = b.res.get().layer(Resource.tooltip)) != null))
+		    else if((tt = b.res.get().layer(Resource.tooltip)) != null)
 			return(tt.t);
 		}
 		if(++i >= 5)

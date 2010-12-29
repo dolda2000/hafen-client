@@ -70,22 +70,17 @@ public class Item extends Widget implements DTarget {
     }
 	
     private void fixsize() {
-	if(res.get() != null) {
+	try {
 	    Tex tex = res.get().layer(Resource.imgc).tex();
 	    sz = tex.sz().add(shoff);
-	} else {
+	} catch(Resource.Loading e) {
 	    sz = new Coord(30, 30);
 	}
     }
 
     public void draw(GOut g) {
-	final Resource ttres;
-	if(res.get() == null) {
-	    sh = null;
-	    sz = new Coord(30, 30);
-	    g.image(missing.layer(Resource.imgc).tex(), Coord.z, sz);
-	    ttres = missing;
-	} else {
+	Resource ttres;
+	try {
 	    Tex tex = res.get().layer(Resource.imgc).tex();
 	    fixsize();
 	    if(dm) {
@@ -106,6 +101,11 @@ public class Item extends Widget implements DTarget {
 		g.chcolor();
 	    }
 	    ttres = res.get();
+	} catch(Resource.Loading e) {
+	    sh = null;
+	    sz = new Coord(30, 30);
+	    g.image(missing.layer(Resource.imgc).tex(), Coord.z, sz);
+	    ttres = missing;
 	}
 	if(olcol != null) {
 	    Tex bg = ttres.layer(Resource.imgc).tex();
@@ -137,9 +137,8 @@ public class Item extends Widget implements DTarget {
     public String shorttip() {
 	if(this.tooltip != null)
 	    return(this.tooltip);
-	Resource res = this.res.get();
-	if((res != null) && (res.layer(Resource.tooltip) != null)) {
-	    String tt = res.layer(Resource.tooltip).t;
+	if(res.get().layer(Resource.tooltip) != null) {
+	    String tt = res.get().layer(Resource.tooltip).t;
 	    if(tt != null) {
 		if(q > 0) {
 		    tt = tt + ", quality " + q;
@@ -166,9 +165,8 @@ public class Item extends Widget implements DTarget {
 	    }
 	    return(shorttip);
 	} else {
-	    Resource res = this.res.get();
-	    if((longtip == null) && (res != null)) {
-		Resource.Pagina pg = res.layer(Resource.pagina);
+	    if(longtip == null) {
+		Resource.Pagina pg = res.get().layer(Resource.pagina);
 		String tip = shorttip();
 		if(tip == null)
 		    return(null);

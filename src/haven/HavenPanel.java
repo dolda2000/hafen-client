@@ -319,7 +319,12 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	    if(Resource.qdepth() > 0)
 		FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "RQ depth: %d (%d)", Resource.qdepth(), Resource.numloaded());
 	}
-        Object tooltip = ui.root.tooltip(mousepos, true);
+	Object tooltip;
+        try {
+	    tooltip = ui.root.tooltip(mousepos, true);
+	} catch(Resource.Loading e) {
+	    tooltip = "...";
+	}
 	Tex tt = null;
 	if(tooltip != null) {
 	    if(tooltip instanceof Text) {

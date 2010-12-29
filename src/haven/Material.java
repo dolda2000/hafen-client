@@ -194,7 +194,7 @@ public class Material extends GLState {
 	
 	public void init() {
 	    if(texid >= 0) {
-		for(Resource.Image img : getres().layers(Resource.imgc)) {
+		for(Resource.Image img : getres().layers(Resource.imgc, false)) {
 		    if(img.id == texid) {
 			m.tex = img.tex();
 			if(m.mipmap)

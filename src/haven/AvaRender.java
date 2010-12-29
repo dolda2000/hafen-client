@@ -54,10 +54,11 @@ public class AvaRender extends TexRT {
 	List<Resource.Image> images = new ArrayList<Resource.Image>();
 	loading = false;
 	for(Indir<Resource> r : layers) {
-	    if(r.get() == null)
-		loading = true;
-	    else
+	    try {
 		images.addAll(r.get().layers(imgc));
+	    } catch(Resource.Loading e) {
+		loading = true;
+	    }
 	}
 	Collections.sort(images);
 	if(images.equals(this.images))
