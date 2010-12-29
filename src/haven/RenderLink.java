@@ -26,32 +26,48 @@
 
 package haven;
 
-import java.util.*;
-
-public class StaticSprite extends Sprite {
-    private final Rendered[] parts;
+public interface RenderLink {
+    public Rendered make();
     
-    public static final Factory fact = new Factory() {
-	    public Sprite create(Owner owner, Resource res, Message sdt) {
-		return(new StaticSprite(owner, res, sdt));
+    public class Res extends Resource.Layer {
+	public final RenderLink l;
+	
+	public Res(Resource res, byte[] buf) {
+	    res.super();
+	    int t = buf[0];
+	    int[] off = {1};
+	    if(t == 0) {
+		String meshnm = Utils.strd(buf, off);
+		int meshver = Utils.uint16d(buf, off[0]); off[0] += 2;
+		final int meshid = Utils.int16d(buf, off[0]); off[0] += 2;
+		String matnm = Utils.strd(buf, off);
+		int matver = Utils.uint16d(buf, off[0]); off[0] += 2;
+		final int matid = Utils.int16d(buf, off[0]); off[0] += 2;
+		final Resource mesh = Resource.load(meshnm, meshver);
+		final Resource mat = Resource.load(matnm, matver);
+		l = new RenderLink() {
+			Rendered res = null;
+			public Rendered make() {
+			    if(res == null) {
+				FastMesh m = mesh.layer(FastMesh.MeshRes.class).m;
+				Material M = null;
+				for(Material.Res mr : mat.layers(Material.Res.class)) {
+				    if((matid < 0) || (mr.id == matid)) {
+					M = mr.m;
+					break;
+				    }
+				}
+				res = M.apply(m);
+			    }
+			    return(res);
+			}
+		    };
+	    } else {
+		throw(new Resource.LoadException("Invalid renderlink type: " + t, getres()));
 	    }
-	};
-    
-    public StaticSprite(Owner owner, Resource res, Message sdt) {
-	super(owner, res);
-	Collection<Rendered> rl = new LinkedList<Rendered>();
-	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
-	    if(mr.mat != null)
-		rl.add(mr.mat.apply(mr.m));
 	}
-	for(RenderLink.Res lr : res.layers(RenderLink.Res.class))
-	    rl.add(lr.l.make());
-	this.parts = rl.toArray(new Rendered[0]);
-    }
-    
-    public Order setup(RenderList r) {
-	for(Rendered p : parts)
-	    r.add(p, null);
-	return(null);
+	
+	public void init() {
+	}
     }
 }

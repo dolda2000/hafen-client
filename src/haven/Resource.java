@@ -61,6 +61,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	ltypes.put("skan", Skeleton.ResPose.class);
 	ltypes.put("boneoff", Skeleton.BoneOffset.class);
 	ltypes.put("light", Light.Res.class);
+	ltypes.put("rlink", RenderLink.Res.class);
     }
 
     static {
