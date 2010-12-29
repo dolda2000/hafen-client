@@ -108,10 +108,10 @@ public class Session {
 		
 		public Resource get() {
 		    if(res == null)
-			return(null);
+			throw(new Resource.Loading(null));
 		    if(res.loading) {
 			res.boostprio(0);
-			return(null);
+			throw(new Resource.Loading(res));
 		    }
 		    return(res);
 		}

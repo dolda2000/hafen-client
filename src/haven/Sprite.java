@@ -111,8 +111,6 @@ public abstract class Sprite implements Rendered {
     }
 
     public static Sprite create(Owner owner, Resource res, Message sdt) {
-	if(res.loading)
-	    throw(new RuntimeException("Attempted to create sprite on still loading resource"));
 	Resource.CodeEntry e = res.layer(Resource.CodeEntry.class);
 	if(e != null) {
 	    try {

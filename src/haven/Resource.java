@@ -454,6 +454,14 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    this.res = res;
 	}
     }
+    
+    public static class Loading extends RuntimeException {
+	public Resource res;
+	
+	public Loading(Resource res) {
+	    this.res = res;
+	}
+    }
 	
     public static Coord cdec(byte[] buf, int off) {
 	return(new Coord(Utils.int16d(buf, off), Utils.int16d(buf, off + 2)));
@@ -954,6 +962,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     }
 	
     public <L extends Layer> Collection<L> layers(Class<L> cl) {
+	if(loading)
+	    throw(new Loading(this));
 	checkerr();
 	Collection<L> ret = new LinkedList<L>();
 	for(Layer l : layers) {
@@ -964,6 +974,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     }
 	
     public <L extends Layer> L layer(Class<L> cl) {
+	if(loading)
+	    throw(new Loading(this));
 	checkerr();
 	for(Layer l : layers) {
 	    if(cl.isInstance(l))
@@ -1064,7 +1076,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 			
 	    public Resource get() {
 		if(loading)
-		    return(null);
+		    throw(new Loading(Resource.this));
 		return(Resource.this);
 	    }
 			
