@@ -136,6 +136,8 @@ public abstract class PView extends Widget {
 	    curf = prof.new Frame();
 	GLState.Buffer bk = g.st.copy();
 	GLState.Buffer def = basic(g);
+	if(g.gc.fsaa)
+	    States.fsaa.prep(def);
 	try {
 	    lm.prep(def);
 	    new Light.LightList().prep(def);

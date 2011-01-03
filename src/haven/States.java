@@ -89,6 +89,16 @@ public abstract class States extends GLState {
 	    }
 	};
     
+    public static final StandAlone fsaa = new StandAlone(PView.proj) {
+	    public void apply(GOut g) {
+		g.gl.glEnable(GL.GL_MULTISAMPLE);
+	    }
+	    
+	    public void unapply(GOut g) {
+		g.gl.glDisable(GL.GL_MULTISAMPLE);
+	    }
+	};
+    
     public static final Slot<Fog> fog = new Slot<Fog>(Fog.class, PView.proj);
     public static class Fog extends GLState {
 	public final Color c;

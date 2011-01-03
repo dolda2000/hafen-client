@@ -48,23 +48,23 @@ public class HavenPanel extends GLCanvas implements Runnable {
     public Profile prof = new Profile(300);
     private Profile.Frame curf = null;
     private SyncFSM fsm = null;
-    private static final GLCapabilities caps;
+    private static final GLCapabilities stdcaps;
     static {
-	caps = new GLCapabilities();
-	caps.setDoubleBuffered(true);
-	caps.setAlphaBits(8);
-	caps.setRedBits(8);
-	caps.setGreenBits(8);
-	caps.setBlueBits(8);
+	stdcaps = new GLCapabilities();
+	stdcaps.setDoubleBuffered(true);
+	stdcaps.setAlphaBits(8);
+	stdcaps.setRedBits(8);
+	stdcaps.setGreenBits(8);
+	stdcaps.setBlueBits(8);
     }
     public static final GLState.Slot<GLState> global = new GLState.Slot<GLState>(GLState.class);
     public static final GLState.Slot<GLState> proj2d = new GLState.Slot<GLState>(GLState.class, global);
     private GLState gstate, rtstate, ostate;
     private GLState.Applier state = null;
     private GLConfig glconf = null;
-	
-    public HavenPanel(int w, int h) {
-	super(caps);
+    
+    public HavenPanel(int w, int h, GLCapabilitiesChooser cc) {
+	super(stdcaps, cc, null, null);
 	setSize(this.w = w, this.h = h);
 	newui(null);
 	initgl();
@@ -72,7 +72,11 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	    cursmode = "awt";
 	setCursor(Toolkit.getDefaultToolkit().createCustomCursor(TexI.mkbuf(new Coord(1, 1)), new java.awt.Point(), ""));
     }
-	
+    
+    public HavenPanel(int w, int h) {
+	this(w, h, null);
+    }
+    
     private void initgl() {
 	final Thread caller = Thread.currentThread();
 	addGLEventListener(new GLEventListener() {
@@ -85,7 +89,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 			
 		public void init(GLAutoDrawable d) {
 		    GL gl = d.getGL();
-		    glconf = GLConfig.fromgl(gl, d.getContext());
+		    glconf = GLConfig.fromgl(gl, d.getContext(), getChosenGLCapabilities());
 		    ui.cons.add(glconf);
 		    if(caller.getThreadGroup() instanceof haven.error.ErrorHandler) {
 			haven.error.ErrorHandler h = (haven.error.ErrorHandler)caller.getThreadGroup();

@@ -30,18 +30,26 @@ import java.util.*;
 import javax.media.opengl.*;
 
 public class GLConfig implements java.io.Serializable, Console.Directory {
-    public boolean usedl = true;
+    public boolean usedl = true, fsaa = false;
     public int maxlights;
+    public Collection<String> exts;
+    public GLCapabilities caps;
     
     private GLConfig() {
     }
     
-    public static GLConfig fromgl(GL gl, GLContext ctx) {
+    public static GLConfig fromgl(GL gl, GLContext ctx, GLCapabilities caps) {
 	GLConfig c = new GLConfig();
 	int[] buf = {0};
 	gl.glGetIntegerv(GL.GL_MAX_LIGHTS, buf, 0);
 	c.maxlights = buf[0];
+	c.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
+	c.caps = caps;
 	return(c);
+    }
+    
+    public boolean havefsaa() {
+	return(exts.contains("GL_ARB_multisample") && caps.getSampleBuffers());
     }
     
     private transient Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
@@ -52,6 +60,11 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 			String var = args[1].intern();
 			if(var == "usedl") {
 			    usedl = Utils.parsebool(args[2], false);
+			} else if(var == "fsaa") {
+			    boolean fsaa = Utils.parsebool(args[2], false);
+			    if(fsaa && !havefsaa())
+				throw(new Exception("FSAA not supported."));
+			    GLConfig.this.fsaa = fsaa;
 			} else {
 			    throw(new Exception("No such setting: " + var));
 			}
