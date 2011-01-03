@@ -56,6 +56,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	stdcaps.setRedBits(8);
 	stdcaps.setGreenBits(8);
 	stdcaps.setBlueBits(8);
+	stdcaps.setSampleBuffers(true);
     }
     public static final GLState.Slot<GLState> global = new GLState.Slot<GLState>(GLState.class);
     public static final GLState.Slot<GLState> proj2d = new GLState.Slot<GLState>(GLState.class, global);
