@@ -286,6 +286,7 @@ public class MapView extends PView {
 	
 	protected void setup(Slot s, Rendered r) {
 	    T t = map(r);
+	    super.setup(s, r);
 	    Location loc = s.os.get(PView.loc);
 	    plain.copy(s.os);
 	    s.os.put(PView.loc, loc);
@@ -293,7 +294,6 @@ public class MapView extends PView {
 		Color col = newcol(t);
 		new States.ColState(col).prep(s.os);
 	    }
-	    super.setup(s, r);
 	}
     }
     
