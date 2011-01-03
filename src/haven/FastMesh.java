@@ -166,17 +166,25 @@ public class FastMesh implements FRendered {
 	public transient FastMesh m;
 	public transient Material mat;
 	private transient short[] tmp;
+	public final int id;
 	private int matid;
 	
 	public MeshRes(Resource res, byte[] buf) {
 	    res.super();
-	    int fl = Utils.ub(buf[0]);
-	    int num = Utils.uint16d(buf, 1);
-	    matid = Utils.int16d(buf, 3);
-	    int off = 5;
+	    int[] off = {0};
+	    int fl = Utils.ub(buf[off[0]]); off[0] += 1;
+	    int num = Utils.uint16d(buf, off[0]); off[0] += 2;
+	    matid = Utils.int16d(buf, off[0]); off[0] += 2;
+	    if((fl & 2) != 0) {
+		id = Utils.int16d(buf, off[0]); off[0] += 2;
+	    } else {
+		id = -1;
+	    }
+	    if((fl & ~3) != 0)
+		throw(new Resource.LoadException("Unsupported flags in fastmesh: " + fl, getres()));
 	    short[] ind = new short[num * 3];
 	    for(int i = 0; i < num * 3; i++)
-		ind[i] = (short)Utils.int16d(buf, off + (i * 2));
+		ind[i] = (short)Utils.int16d(buf, off[0] + (i * 2));
 	    this.tmp = ind;
 	}
 	
