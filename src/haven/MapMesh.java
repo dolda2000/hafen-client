@@ -280,7 +280,6 @@ public class MapMesh implements Rendered {
 		throw(new RuntimeException("Map layer without planes?!"));
 	    for(Plane p : l.pl)
 		p.build(buf);
-	    l.pl = null;
 	    l.mesh = buf.mkmesh();
 	}
 	Collections.sort(m.layers, new Comparator<Layer>() {
@@ -301,10 +300,69 @@ public class MapMesh implements Rendered {
 	m.clean();
 	return(m);
     }
-    
+
+    public static class GroundMod implements Rendered {
+	private static final Order gmorder = new Order.Default(1001);
+	public final Tex tex;
+	public final Coord cc;
+	public final FastMesh mesh;
+	
+	public GroundMod(MCache map, Class<? extends Surface> surf, Tex tex, Coord cc, Coord ul, Coord br) {
+	    this.tex = tex;
+	    this.cc = cc;
+	    if(tex instanceof TexGL) {
+		TexGL gt = (TexGL)tex;
+		if(gt.wrapmode != GL.GL_CLAMP_TO_BORDER) {
+		    gt.wrapmode = GL.GL_CLAMP_TO_BORDER;
+		    gt.dispose();
+		}
+	    }
+	    if(surf == null)
+		surf = Surface.class;
+	    MeshBuf buf = new MeshBuf();
+	    Coord ult = ul.div(tilesz);
+	    Coord brt = br.sub(1, 1).div(tilesz).add(1, 1);
+	    Coord t = new Coord();
+	    MeshBuf.Vertex[][] vm = new MeshBuf.Vertex[brt.x - ult.x + 1][brt.y - ult.y + 1];
+	    for(t.y = ult.y; t.y <= brt.y; t.y++) {
+		for(t.x = ult.x; t.x <= brt.x; t.x++) {
+		    MapMesh cut = map.getcut(t.div(MCache.cutsz));
+		    SPoint p = cut.surf(surf).spoint(t.mod(MCache.cutsz));
+		    Coord3f texc = new Coord3f((float)((t.x * tilesz.x) - ul.x) / (float)(br.x - ul.x),
+					       (float)((t.y * tilesz.y) - ul.y) / (float)(br.y - ul.y),
+					       0);
+		    Coord3f pos = p.pos.add((cut.ul.x * tilesz.x) - cc.x, -((cut.ul.y * tilesz.y) - cc.y), 0.01f);
+		    vm[t.x - ult.x][t.y - ult.y] = buf.new Vertex(pos, p.nrm, texc);
+		}
+	    }
+	    for(t.y = 0; t.y < brt.y - ult.y; t.y++) {
+		for(t.x = 0; t.x < brt.x - ult.x; t.x++) {
+		    buf.new Face(vm[t.x][t.y], vm[t.x][t.y + 1], vm[t.x + 1][t.y + 1]);
+		    buf.new Face(vm[t.x][t.y], vm[t.x + 1][t.y + 1], vm[t.x + 1][t.y]);
+		}
+	    }
+	    mesh = buf.mkmesh();
+	}
+
+	public void draw(GOut g) {
+	    mesh.draw(g);
+	}
+		
+	public void drawflat(GOut g) {
+	    mesh.drawflat(g);
+	}
+		
+	public Order setup(RenderList rl) {
+	    rl.prepo(tex);
+	    rl.prepo(Material.noalpha);
+	    return(gmorder);
+	}
+    }
+
     private void clean() {
-	surfmap = null;
 	texmap = null;
+	for(Layer l : layers)
+	    l.pl = null;
     }
     
     public void draw(GOut g) {
