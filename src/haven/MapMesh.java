@@ -301,7 +301,7 @@ public class MapMesh implements Rendered {
 	return(m);
     }
 
-    public static class GroundMod implements Rendered {
+    public static class GroundMod implements FRendered {
 	private static final Order gmorder = new Order.Default(1001);
 	public final Tex tex;
 	public final Coord cc;
