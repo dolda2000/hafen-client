@@ -456,7 +456,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
     }
     
-    public static class Loading extends RuntimeException {
+    public static class Loading extends haven.Loading {
 	public Resource res;
 	
 	public Loading(Resource res) {

@@ -47,7 +47,7 @@ public class MCache {
     Random gen = new Random();
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
 
-    public static class LoadingMap extends RuntimeException {
+    public static class LoadingMap extends Loading {
 	private LoadingMap() {}
     }
 
