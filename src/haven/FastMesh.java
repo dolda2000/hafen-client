@@ -166,7 +166,7 @@ public class FastMesh implements FRendered {
 	public transient FastMesh m;
 	public transient Material mat;
 	private transient short[] tmp;
-	public final int id;
+	public final int id, ref;
 	private int matid;
 	
 	public MeshRes(Resource res, byte[] buf) {
@@ -180,7 +180,12 @@ public class FastMesh implements FRendered {
 	    } else {
 		id = -1;
 	    }
-	    if((fl & ~3) != 0)
+	    if((fl & 4) != 0) {
+		ref = Utils.int16d(buf, off[0]); off[0] += 2;
+	    } else {
+		ref = -1;
+	    }
+	    if((fl & ~7) != 0)
 		throw(new Resource.LoadException("Unsupported flags in fastmesh: " + fl, getres()));
 	    short[] ind = new short[num * 3];
 	    for(int i = 0; i < num * 3; i++)
