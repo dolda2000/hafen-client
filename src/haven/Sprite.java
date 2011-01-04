@@ -112,13 +112,8 @@ public abstract class Sprite implements Rendered {
 
     public static Sprite create(Owner owner, Resource res, Message sdt) {
 	Resource.CodeEntry e = res.layer(Resource.CodeEntry.class);
-	if(e != null) {
-	    try {
-		return(e.get(Factory.class).create(owner, res, sdt));
-	    } catch(RuntimeException exc) {
-		throw(new ResourceException("Error in sprite creation routine for " + res, exc, res));
-	    }
-	}
+	if(e != null)
+	    return(e.get(Factory.class).create(owner, res, sdt));
 	for(Factory f : factories) {
 	    Sprite ret = f.create(owner, res, sdt);
 	    if(ret != null)
