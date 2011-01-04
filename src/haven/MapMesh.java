@@ -323,6 +323,7 @@ public class MapMesh implements Rendered {
 	    Coord ult = ul.div(tilesz);
 	    Coord brt = br.sub(1, 1).div(tilesz).add(1, 1);
 	    Coord t = new Coord();
+	    float cz = map.getcz(cc);
 	    MeshBuf.Vertex[][] vm = new MeshBuf.Vertex[brt.x - ult.x + 1][brt.y - ult.y + 1];
 	    for(t.y = ult.y; t.y <= brt.y; t.y++) {
 		for(t.x = ult.x; t.x <= brt.x; t.x++) {
@@ -331,7 +332,7 @@ public class MapMesh implements Rendered {
 		    Coord3f texc = new Coord3f((float)((t.x * tilesz.x) - ul.x) / (float)(br.x - ul.x),
 					       (float)((t.y * tilesz.y) - ul.y) / (float)(br.y - ul.y),
 					       0);
-		    Coord3f pos = p.pos.add((cut.ul.x * tilesz.x) - cc.x, -((cut.ul.y * tilesz.y) - cc.y), 0.01f);
+		    Coord3f pos = p.pos.add((cut.ul.x * tilesz.x) - cc.x, -((cut.ul.y * tilesz.y) - cc.y), -cz + 0.01f);
 		    vm[t.x - ult.x][t.y - ult.y] = buf.new Vertex(pos, p.nrm, texc);
 		}
 	    }
