@@ -57,6 +57,47 @@ public class MeshBuf {
 	}
     }
     
+    public Vertex[] copy(FastMesh src) {
+	int min = -1, max = -1;
+	for(int i = 0; i < src.num * 3; i++) {
+	    int idx = src.indb.get(i);
+	    if((min < 0) || (idx < min))
+		min = idx;
+	    if(idx > max)
+		max = idx;
+	}
+	int nv = 0;
+	Vertex[] vmap = new Vertex[max + 1 - min];
+	for(int i = 0; i < src.num * 3; i++) {
+	    int idx = src.indb.get(i);
+	    if(vmap[idx - min] == null) {
+		int o = idx * 3;
+		Coord3f pos = new Coord3f(src.vert.posb.get(o), src.vert.posb.get(o + 1), src.vert.posb.get(o + 2));
+		Coord3f nrm = new Coord3f(src.vert.nrmb.get(o), src.vert.nrmb.get(o + 1), src.vert.nrmb.get(o + 2));
+		Coord3f tex = null;
+		if(src.vert.texb != null) {
+		    o = idx * 2;
+		    tex = new Coord3f(src.vert.texb.get(o), src.vert.texb.get(o + 1), 0);
+		}
+		vmap[idx - min] = new Vertex(pos, nrm, tex);
+		nv++;
+	    }
+	}
+	for(int i = 0; i < src.num; i++) {
+	    int o = i * 3;
+	    new Face(vmap[src.indb.get(o) - min],
+		     vmap[src.indb.get(o + 1) - min],
+		     vmap[src.indb.get(o + 2) - min]);
+	}
+	Vertex[] vl = new Vertex[nv];
+	int n = 0;
+	for(int i = 0; i < vmap.length; i++) {
+	    if(vmap[i] != null)
+		vl[n++] = vmap[i];
+	}
+	return(vl);
+    }
+    
     public FastMesh mkmesh() {
 	if(v.isEmpty() || f.isEmpty())
 	    throw(new RuntimeException("Tried to build empty mesh"));
