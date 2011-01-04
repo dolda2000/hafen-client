@@ -68,7 +68,7 @@ public class GrowingPlant extends StaticSprite {
 		    MeshBuf.Vertex[] cv = buf.copy(r.m);
 		    for(MeshBuf.Vertex v : cv) {
 			v.pos.x += off.x;
-			v.pos.y += off.y;
+			v.pos.y -= off.y;
 			v.pos.z += off.z;
 		    }
 		}
