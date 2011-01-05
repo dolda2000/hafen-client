@@ -21,7 +21,7 @@ public class CompilerClassLoader extends ClassLoader {
 	for(Resource res : useres) {
 	    res.loadwait();
 	    try {
-		return(res.layer(Resource.CodeEntry.class).loader.loadClass(name));
+		return(res.layer(Resource.CodeEntry.class).loader(true).loadClass(name));
 	    } catch(ClassNotFoundException e) {}
 	}
 	throw(new ClassNotFoundException(name + " was not found in any of the requested resources."));

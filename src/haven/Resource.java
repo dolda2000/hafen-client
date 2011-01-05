@@ -842,30 +842,27 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public Resource getres() {
 	    return(Resource.this);
 	}
+	
+	public String toString() {
+	    return("cl:" + Resource.this.toString());
+	}
     };
 
     public static class LibClassLoader extends ClassLoader {
-	private final Resource[] classpath;
+	private final ClassLoader[] classpath;
 	
-	public LibClassLoader(ClassLoader parent, Collection<Resource> classpath) {
+	public LibClassLoader(ClassLoader parent, Collection<ClassLoader> classpath) {
 	    super(parent);
-	    this.classpath = classpath.toArray(new Resource[0]);
+	    this.classpath = classpath.toArray(new ClassLoader[0]);
 	}
 	
 	public Class<?> findClass(String name) throws ClassNotFoundException {
-	    for(Resource lib : classpath) {
-		CodeEntry ent;
+	    for(ClassLoader lib : classpath) {
 		try {
-		    ent = lib.layer(CodeEntry.class);
-		} catch(Loading e) {
-		    lib.boostprio(5);
-		    throw(e);
-		}
-		try {
-		    return(ent.loader.loadClass(name));
+		    return(lib.loadClass(name));
 		} catch(ClassNotFoundException e) {}
 	    }
-	    throw(new ClassNotFoundException("Could not find " + name + " in any of " + Arrays.asList(classpath).toString() + "."));
+	    throw(new ClassNotFoundException("Could not find " + name + " in any of " + Arrays.asList(classpath).toString()));
 	}
     }
 
@@ -874,8 +871,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	private Map<String, Code> clmap = new TreeMap<String, Code>();
 	private Map<String, String> pe = new TreeMap<String, String>();
 	private Collection<Resource> classpath = new LinkedList<Resource>();
-	transient public ClassLoader loader;
-	transient private Map<String, Class<?>> lpe = new TreeMap<String, Class<?>>();
+	transient private ClassLoader loader;
+	transient private Map<String, Class<?>> lpe = null;
 	transient private Map<Class<?>, Object> ipe = new HashMap<Class<?>, Object>();
 		
 	public CodeEntry(byte[] buf) {
@@ -889,30 +886,55 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public void init() {
 	    for(Code c : layers(Code.class, false))
 		clmap.put(c.name, c);
-	    ClassLoader parent = Resource.class.getClassLoader();
-	    if(classpath.size() > 0)
-		parent = new LibClassLoader(parent, classpath);
-	    loader = new ResClassLoader(parent) {
-		    public Class<?> findClass(String name) throws ClassNotFoundException {
-			Code c = clmap.get(name);
-			if(c == null)
-			    throw(new ClassNotFoundException("Could not find class " + name + " in resource (" + Resource.this + ")"));
-			return(defineClass(name, c.data, 0, c.data.length));
+	}
+	
+	public ClassLoader loader(boolean wait) {
+	    synchronized(CodeEntry.this) {
+		if(this.loader == null) {
+		    ClassLoader parent = Resource.class.getClassLoader();
+		    if(classpath.size() > 0) {
+			Collection<ClassLoader> loaders = new LinkedList<ClassLoader>();
+			for(Resource res : classpath) {
+			    if(wait)
+				res.loadwait();
+			    loaders.add(res.layer(CodeEntry.class).loader(wait));
+			}
+			parent = new LibClassLoader(parent, loaders);
 		    }
-		};
-	    try {
-		for(Map.Entry<String, String> e : pe.entrySet()) {
-		    String name = e.getKey();
-		    String clnm = e.getValue();
-		    Class<?> cl = loader.loadClass(clnm);
-		    lpe.put(name, cl);
+		    this.loader = new ResClassLoader(parent) {
+			    public Class<?> findClass(String name) throws ClassNotFoundException {
+				Code c = clmap.get(name);
+				if(c == null)
+				    throw(new ClassNotFoundException("Could not find class " + name + " in resource (" + Resource.this + ")"));
+				return(defineClass(name, c.data, 0, c.data.length));
+			    }
+			};
 		}
-	    } catch(ClassNotFoundException e) {
-		throw(new LoadException(e, Resource.this));
+	    }
+	    return(this.loader);
+	}
+
+	private void load() {
+	    synchronized(CodeEntry.class) {
+		if(lpe != null)
+		    return;
+		lpe = new TreeMap<String, Class<?>>();
+		ClassLoader loader = loader(false);
+		try {
+		    for(Map.Entry<String, String> e : pe.entrySet()) {
+			String name = e.getKey();
+			String clnm = e.getValue();
+			Class<?> cl = loader.loadClass(clnm);
+			lpe.put(name, cl);
+		    }
+		} catch(ClassNotFoundException e) {
+		    throw(new LoadException(e, Resource.this));
+		}
 	    }
 	}
 	
 	public <T> T get(Class<T> cl) {
+	    load();
 	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
 	    if(entry == null)
 		throw(new RuntimeException("Tried to fetch non-published res-loaded class " + cl.getName() + " from " + Resource.this.name));
