@@ -126,8 +126,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
+    static Text.Foundry progf = new Text.Foundry(new java.awt.Font("serif", java.awt.Font.BOLD, 24));
+    static {progf.aa = true;}
+    Text progt = null;
     public void draw(GOut g) {
 	super.draw(g);
+	if(prog >= 0) {
+	    String progs = String.format("%d%%", prog);
+	    if((progt == null) || !progs.equals(progt.text))
+		progt = progf.render(progs);
+	    g.aimage(progt.tex(), new Coord(sz.x / 2, (sz.y * 4) / 10), 0.5, 0.5);
+	}
 	if(cmdline != null) {
 	    drawcmd(g, new Coord(15, sz.y - 20));
 	} else if(lasterr != null) {
