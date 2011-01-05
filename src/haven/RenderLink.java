@@ -49,7 +49,13 @@ public interface RenderLink {
 			Rendered res = null;
 			public Rendered make() {
 			    if(res == null) {
-				FastMesh m = mesh.layer(FastMesh.MeshRes.class).m;
+				FastMesh m = null;
+				for(FastMesh.MeshRes mr : mesh.layers(FastMesh.MeshRes.class)) {
+				    if((meshid < 0) || (mr.id == meshid)) {
+					m = mr.m;
+					break;
+				    }
+				}
 				Material M = null;
 				for(Material.Res mr : mat.layers(Material.Res.class)) {
 				    if((matid < 0) || (mr.id == matid)) {
