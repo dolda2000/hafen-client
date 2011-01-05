@@ -40,6 +40,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private Text lasterr;
     private long errtime;
     private Window invwnd, equwnd, makewnd;
+    public int prog = -1;
     
     static {
 	addtype("gameui", new WidgetFactory() {
@@ -141,6 +142,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public void uimsg(String msg, Object... args) {
 	if(msg == "err") {
 	    error((String)args[0]);
+	} else if(msg == "prog") {
+	    if(args.length > 0)
+		prog = (Integer)args[0];
+	    else
+		prog = -1;
 	} else if(msg == "setbelt") {
 	} else {
 	    super.uimsg(msg, args);
