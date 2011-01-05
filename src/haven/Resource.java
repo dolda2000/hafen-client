@@ -879,7 +879,26 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    int[] off = new int[1];
 	    off[0] = 0;
 	    while(off[0] < buf.length) {
-		pe.put(Utils.strd(buf, off), Utils.strd(buf, off));
+		int t = buf[off[0]++];
+		if(t == 1) {
+		    while(true) {
+			String en = Utils.strd(buf, off);
+			String cn = Utils.strd(buf, off);
+			if(en.length() == 0)
+			    break;
+			pe.put(en, cn);
+		    }
+		} else if(t == 2) {
+		    while(true) {
+			String ln = Utils.strd(buf, off);
+			if(ln.length() == 0)
+			    break;
+			int ver = Utils.uint16d(buf, off[0]); off[0] += 2;
+			classpath.add(Resource.load(ln, ver));
+		    }
+		} else {
+		    throw(new LoadException("Unknown codeentry data type: " + t, Resource.this));
+		}
 	    }
 	}
 		
