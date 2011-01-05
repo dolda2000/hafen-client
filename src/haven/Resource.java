@@ -844,10 +844,36 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
     };
 
+    public static class LibClassLoader extends ClassLoader {
+	private final Resource[] classpath;
+	
+	public LibClassLoader(ClassLoader parent, Collection<Resource> classpath) {
+	    super(parent);
+	    this.classpath = classpath.toArray(new Resource[0]);
+	}
+	
+	public Class<?> findClass(String name) throws ClassNotFoundException {
+	    for(Resource lib : classpath) {
+		CodeEntry ent;
+		try {
+		    ent = lib.layer(CodeEntry.class);
+		} catch(Loading e) {
+		    lib.boostprio(5);
+		    throw(e);
+		}
+		try {
+		    return(ent.loader.loadClass(name));
+		} catch(ClassNotFoundException e) {}
+	    }
+	    throw(new ClassNotFoundException("Could not find " + name + " in any of " + Arrays.asList(classpath).toString() + "."));
+	}
+    }
+
     public class CodeEntry extends Layer {
 	private String clnm;
 	private Map<String, Code> clmap = new TreeMap<String, Code>();
 	private Map<String, String> pe = new TreeMap<String, String>();
+	private Collection<Resource> classpath = new LinkedList<Resource>();
 	transient private ClassLoader loader;
 	transient private Map<String, Class<?>> lpe = new TreeMap<String, Class<?>>();
 	transient private Map<Class<?>, Object> ipe = new HashMap<Class<?>, Object>();
@@ -863,7 +889,10 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public void init() {
 	    for(Code c : layers(Code.class, false))
 		clmap.put(c.name, c);
-	    loader = new ResClassLoader(Resource.class.getClassLoader()) {
+	    ClassLoader parent = Resource.class.getClassLoader();
+	    if(classpath.size() > 0)
+		parent = new LibClassLoader(parent, classpath);
+	    loader = new ResClassLoader(parent) {
 		    public Class<?> findClass(String name) throws ClassNotFoundException {
 			Code c = clmap.get(name);
 			if(c == null)
