@@ -874,7 +874,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	private Map<String, Code> clmap = new TreeMap<String, Code>();
 	private Map<String, String> pe = new TreeMap<String, String>();
 	private Collection<Resource> classpath = new LinkedList<Resource>();
-	transient private ClassLoader loader;
+	transient public ClassLoader loader;
 	transient private Map<String, Class<?>> lpe = new TreeMap<String, Class<?>>();
 	transient private Map<Class<?>, Object> ipe = new HashMap<Class<?>, Object>();
 		
