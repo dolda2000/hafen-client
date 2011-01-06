@@ -601,13 +601,19 @@ public class Utils {
 	return(b);
     }
     public static ShortBuffer bufcp(short[] a) {
-	ShortBuffer b = ByteBuffer.allocateDirect(a.length * 2).order(ByteOrder.nativeOrder()).asShortBuffer();
+	ShortBuffer b = mksbuf(a.length);
 	b.put(a);
 	b.rewind();
 	return(b);
     }
     public static FloatBuffer mkfbuf(int n) {
 	return(ByteBuffer.allocateDirect(n * 4).order(ByteOrder.nativeOrder()).asFloatBuffer());
+    }
+    public static ShortBuffer mksbuf(int n) {
+	return(ByteBuffer.allocateDirect(n * 2).order(ByteOrder.nativeOrder()).asShortBuffer());
+    }
+    public static IntBuffer mkibuf(int n) {
+	return(ByteBuffer.allocateDirect(n * 4).order(ByteOrder.nativeOrder()).asIntBuffer());
     }
 
     public static float[] c2fa(Color c) {
