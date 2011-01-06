@@ -33,14 +33,7 @@ public class StaticSprite extends Sprite {
     
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
-		Collection<Rendered> rl = new LinkedList<Rendered>();
-		for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
-		    if(mr.mat != null)
-			rl.add(mr.mat.apply(mr.m));
-		}
-		for(RenderLink.Res lr : res.layers(RenderLink.Res.class))
-		    rl.add(lr.l.make());
-		return(new StaticSprite(owner, res, rl.toArray(new Rendered[0])));
+		return(new StaticSprite(owner, res, sdt));
 	    }
 	};
     
@@ -53,6 +46,21 @@ public class StaticSprite extends Sprite {
 	this(owner, res, new Rendered[] {part});
     }
     
+    public StaticSprite(Owner owner, Resource res, Message sdt) {
+	this(owner, res, lsparts(res, sdt));
+    }
+    
+    public static Rendered[] lsparts(Resource res, Message sdt) {
+	Collection<Rendered> rl = new LinkedList<Rendered>();
+	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
+	    if(mr.mat != null)
+		rl.add(mr.mat.apply(mr.m));
+	}
+	for(RenderLink.Res lr : res.layers(RenderLink.Res.class))
+	    rl.add(lr.l.make());
+	return(rl.toArray(new Rendered[0]));
+    }
+
     public Order setup(RenderList r) {
 	for(Rendered p : parts)
 	    r.add(p, null);
