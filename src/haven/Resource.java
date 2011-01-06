@@ -941,8 +941,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    synchronized(CodeEntry.class) {
 		if(lpe != null)
 		    return;
-		lpe = new TreeMap<String, Class<?>>();
 		ClassLoader loader = loader(false);
+		lpe = new TreeMap<String, Class<?>>();
 		try {
 		    for(Map.Entry<String, String> e : pe.entrySet()) {
 			String name = e.getKey();
