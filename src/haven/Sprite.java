@@ -84,6 +84,8 @@ public abstract class Sprite implements Rendered {
 	    } catch(IllegalAccessException e) {
 		throw(new ResourceException("Cannot call sprite code of dynamic resource", e, res));
 	    } catch(java.lang.reflect.InvocationTargetException e) {
+		if(e.getCause() instanceof RuntimeException)
+		    throw((RuntimeException)e.getCause());
 		throw(new ResourceException("Sprite code of dynamic resource threw an exception", e.getCause(), res));
 	    } catch(InstantiationException e) {
 		throw(new ResourceException("Cannot call sprite code of dynamic resource", e, res));
