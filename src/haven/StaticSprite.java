@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 
 public class StaticSprite extends Sprite {
-    private final Rendered[] parts;
+    public final Rendered[] parts;
     
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
