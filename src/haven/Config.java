@@ -40,7 +40,7 @@ public class Config {
     public static boolean dbtext;
     public static boolean bounddb;
     public static boolean profile;
-    public static boolean nolocalres;
+    public static boolean nolocalres, fscache;
     public static String resdir;
     public static boolean nopreload;
     public static String loadwaited, allused;
@@ -72,6 +72,7 @@ public class Config {
 	    bounddb = getprop("haven.bounddb", "off").equals("on");
 	    profile = getprop("haven.profile", "off").equals("on");
 	    nolocalres = getprop("haven.nolocalres", "").equals("yesimsure");
+	    fscache = getprop("haven.fscache", "on").equals("on");
 	    resdir = getprop("haven.resdir", null);
 	    nopreload = getprop("haven.nopreload", "no").equals("yes");
 	} catch(java.net.MalformedURLException e) {
