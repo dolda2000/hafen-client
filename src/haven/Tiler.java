@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.lang.reflect.*;
 
 public abstract class Tiler {
     public final int id;
@@ -37,4 +38,39 @@ public abstract class Tiler {
     
     public abstract void lay(MapMesh m, Random rnd, Coord lc, Coord gc);
     public abstract void trans(MapMesh m, Random rnd, Coord lc, Coord gc, int z, int bmask, int cmask);
+    
+    public static class FactMaker implements Resource.PublishedCode.Instancer {
+	public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
+	    if(Factory.class.isAssignableFrom(cl)) {
+		return(cl.asSubclass(Factory.class).newInstance());
+	    } else if(Tiler.class.isAssignableFrom(cl)) {
+		final Class<? extends Tiler> tcl = cl.asSubclass(Tiler.class);
+		return(new Factory() {
+			public Tiler create(int id, Resource.Tileset set) {
+			    try {
+				try {
+				    Constructor<? extends Tiler> m = tcl.getConstructor(Integer.TYPE, Resource.Tileset.class);
+				    return(m.newInstance(id, set));
+				} catch(NoSuchMethodException e) {}
+				throw(new RuntimeException("Could not find dynamic tiler contructor for " + tcl));
+			    } catch(IllegalAccessException e) {
+				throw(new RuntimeException(e));
+			    } catch(InstantiationException e) {
+				throw(new RuntimeException(e));
+			    } catch(InvocationTargetException e) {
+				if(e.getCause() instanceof RuntimeException)
+				    throw((RuntimeException)e.getCause());
+				throw(new RuntimeException(e));
+			    }
+			}
+		    });
+	    }
+	    return(null);
+	}
+    }
+
+    @Resource.PublishedCode(name = "tile", instancer = FactMaker.class)
+    public static interface Factory {
+	public Tiler create(int id, Resource.Tileset set);
+    }
 }

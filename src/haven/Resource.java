@@ -645,7 +645,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	private String[] fln;
 	private int[] flv;
 	private int[] flw;
-	public Class<? extends Tiler> tclass = haven.resutil.GroundTile.class;
+	private transient Tiler.Factory tfac;
 	public WeightList<Resource> flavobjs;
 	public WeightList<Tile> ground;
 	public WeightList<Tile>[] ctrans, btrans;
@@ -668,13 +668,20 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		off[0] += 2;
 		flw[i] = Utils.ub(buf[off[0]++]);
 	    }
-	    
-	    if(name.equals("gfx/tiles/water"))
-		tclass = haven.resutil.WaterTile.Shallows.class;
-	    else if(name.equals("gfx/tiles/deep"))
-		tclass = haven.resutil.WaterTile.Deep.class;
 	}
 		
+	public Tiler.Factory tfac() {
+	    synchronized(this) {
+		if(tfac == null) {
+		    CodeEntry ent = layer(CodeEntry.class);
+		    if(ent != null)
+			return(ent.get(Tiler.Factory.class));
+		    return(haven.resutil.GroundTile.fac);
+		}
+		return(tfac);
+	    }
+	}
+
 	private void packtiles(Collection<Tile> tiles, Coord tsz) {
 	    int min = -1, minw = -1, minh = -1, mine = -1;
 	    int nt = tiles.size();

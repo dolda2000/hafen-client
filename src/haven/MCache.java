@@ -366,12 +366,7 @@ public class MCache {
 		Tileset set = tileset(i);
 		if(set == null)
 		    return(null);
-		try {
-		    Constructor<? extends Tiler> m = set.tclass.getConstructor(Integer.TYPE, Tileset.class);
-		    tiles[i] = m.newInstance(i, set);
-		} catch(Exception e) {
-		    throw(new RuntimeException(e));
-		}
+		tiles[i] = set.tfac().create(i, set);
 	    }
 	    return(tiles[i]);
 	}
