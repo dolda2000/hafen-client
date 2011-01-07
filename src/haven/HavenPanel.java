@@ -110,6 +110,13 @@ public class HavenPanel extends GLCanvas implements Runnable {
 				gl.glEnable(GL.GL_BLEND);
 				//gl.glEnable(GL.GL_LINE_SMOOTH);
 				gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+				if(g.gc.havefsaa()) {
+				    /* Apparently, having sample
+				     * buffers in the config enables
+				     * multisampling by default on
+				     * some systems. */
+				    g.gl.glDisable(GL.GL_MULTISAMPLE);
+				}
 				GOut.checkerr(gl);
 			    }
 			    public void unapply(GOut g) {
