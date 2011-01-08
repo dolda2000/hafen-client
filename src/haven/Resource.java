@@ -845,7 +845,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public ResClassLoader(ClassLoader parent) {
 	    super(parent);
 	}
-		
+	
 	public Resource getres() {
 	    return(Resource.this);
 	}
@@ -854,6 +854,17 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    return("cl:" + Resource.this.toString());
 	}
     };
+
+    public static Resource classres(final Class<?> cl) {
+	return(java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<Resource>() {
+		    public Resource run() {
+			ClassLoader l = cl.getClassLoader();
+			if(l instanceof ResClassLoader)
+			    return(((ResClassLoader)l).getres());
+			throw(new RuntimeException("Cannot fetch resource of non-resloaded class " + cl));
+		    }
+		}));
+    }
 
     public static class LibClassLoader extends ClassLoader {
 	private final ClassLoader[] classpath;
