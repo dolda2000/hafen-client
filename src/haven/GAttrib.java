@@ -27,7 +27,7 @@
 package haven;
 
 public abstract class GAttrib {
-    Gob gob;
+    public final Gob gob;
 	
     public GAttrib(Gob gob) {
 	this.gob = gob;
