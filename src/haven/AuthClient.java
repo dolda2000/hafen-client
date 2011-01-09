@@ -51,7 +51,7 @@ public class AuthClient {
     }
 
     public AuthClient(String host, String username) throws IOException {
-	sk = ssl.connect(host, 1871);
+	sk = ssl.connect(host, Config.authport);
 	skin = sk.getInputStream();
 	skout = sk.getOutputStream();
 	binduser(username);

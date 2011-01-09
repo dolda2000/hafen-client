@@ -46,6 +46,7 @@ public class Config {
     public static String loadwaited, allused;
     public static Coord wndsz = new Coord(800, 600);
     public static boolean wndlock = true;
+    public static int mainport = 1870, authport = 1871;
     
     static {
 	try {
@@ -55,6 +56,10 @@ public class Config {
 	    authuser = getprop("haven.authuser", null);
 	    authserv = getprop("haven.authserv", null);
 	    defserv = getprop("haven.defserv", null);
+	    if((p = getprop("haven.mainport", null)) != null)
+		mainport = Integer.parseInt(p);
+	    if((p = getprop("haven.authport", null)) != null)
+		authport = Integer.parseInt(p);
 	    if(!(p = getprop("haven.resurl", "https://www.havenandhearth.com/res/")).equals(""))
 		resurl = new URL(p);
 	    if(!(p = getprop("haven.mapurl", "http://www.havenandhearth.com/mm/")).equals(""))
@@ -81,7 +86,7 @@ public class Config {
     }
     
     private static void usage(PrintStream out) {
-	out.println("usage: haven.jar [-hdfPL] [-s WxH] [-u USER] [-C HEXCOOKIE] [-r RESDIR] [-U RESURL] [-A AUTHSERV] [SERVER]");
+	out.println("usage: haven.jar [-hdfPL] [-s WxH] [-u USER] [-C HEXCOOKIE] [-r RESDIR] [-U RESURL] [-A AUTHSERV[:PORT]] [SERVER[:PORT]]");
     }
 
     public static void cmdline(String[] args) {
@@ -109,7 +114,13 @@ public class Config {
 		resdir = opt.arg;
 		break;
 	    case 'A':
-		authserv = opt.arg;
+		int p = opt.rest[0].indexOf(':');
+		if(p >= 0) {
+		    authserv = opt.arg.substring(0, p);
+		    authport = Integer.parseInt(opt.arg.substring(p + 1));
+		} else {
+		    authserv = opt.arg;
+		}
 		break;
 	    case 'U':
 		try {
@@ -137,7 +148,14 @@ public class Config {
 		break;
 	    }
 	}
-	if(opt.rest.length > 0)
-	    defserv = opt.rest[0];
+	if(opt.rest.length > 0) {
+	    int p = opt.rest[0].indexOf(':');
+	    if(p >= 0) {
+		defserv = opt.rest[0].substring(0, p);
+		mainport = Integer.parseInt(opt.rest[0].substring(p + 1));
+	    } else {
+		defserv = opt.rest[0];
+	    }
+	}
     }
 }

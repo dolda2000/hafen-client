@@ -789,7 +789,7 @@ public class Session {
 	
     public void sendmsg(byte[] msg) {
 	try {
-	    sk.send(new DatagramPacket(msg, msg.length, server, 1870));
+	    sk.send(new DatagramPacket(msg, msg.length, server, Config.mainport));
 	} catch(IOException e) {
 	}
     }
