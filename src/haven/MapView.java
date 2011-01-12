@@ -456,6 +456,8 @@ public class MapView extends PView {
 	    placing = new Plob(res);
 	} else if(msg == "unplace") {
 	    placing = null;
+	} else if(msg == "move") {
+	    cc = (Coord)args[0];
 	} else {
 	    super.uimsg(msg, args);
 	}
