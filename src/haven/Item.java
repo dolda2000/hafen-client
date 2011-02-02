@@ -33,8 +33,6 @@ public class Item extends Widget implements DTarget {
     static Coord shoff = new Coord(1, 3);
     static Resource missing = Resource.load("gfx/invobjs/missing");
     boolean dm = false;
-    int q;
-    boolean hq;
     Coord doff;
     String tooltip;
     int num = -1;
@@ -48,12 +46,11 @@ public class Item extends Widget implements DTarget {
 	Widget.addtype("item", new WidgetFactory() {
 		public Widget create(Coord c, Widget parent, Object[] args) {
 		    int res = (Integer)args[0];
-		    int q = (Integer)args[1];
 		    int num = -1;
 		    String tooltip = null;
-		    int ca = 3;
+		    int ca = 2;
 		    Coord drag = null;
-		    if((Integer)args[2] != 0)
+		    if((Integer)args[1] != 0)
 			drag = (Coord)args[ca++];
 		    if(args.length > ca)
 			tooltip = (String)args[ca++];
@@ -61,7 +58,7 @@ public class Item extends Widget implements DTarget {
 			tooltip = null;
 		    if(args.length > ca)
 			num = (Integer)args[ca++];
-		    Item item = new Item(c, res, q, parent, drag, num);
+		    Item item = new Item(c, res, parent, drag, num);
 		    item.tooltip = tooltip;
 		    return(item);
 		}
@@ -139,14 +136,8 @@ public class Item extends Widget implements DTarget {
 	    return(this.tooltip);
 	if(res.get().layer(Resource.tooltip) != null) {
 	    String tt = res.get().layer(Resource.tooltip).t;
-	    if(tt != null) {
-		if(q > 0) {
-		    tt = tt + ", quality " + q;
-		    if(hq)
-			tt = tt + "+";
-		}
+	    if(tt != null)
 		return(tt);
-	    }
 	}
 	return(null);
     }
@@ -184,22 +175,9 @@ public class Item extends Widget implements DTarget {
 	longtip = null;
     }
 
-    private void decq(int q)
-    {
-	if(q < 0) {
-	    this.q = q;
-	    hq = false;
-	} else {
-	    int fl = (q & 0xff000000) >> 24;
-	    this.q = (q & 0xffffff);
-	    hq = ((fl & 1) != 0);
-	}
-    }
-
-    public Item(Coord c, Indir<Resource> res, int q, Widget parent, Coord drag, int num) {
+    public Item(Coord c, Indir<Resource> res, Widget parent, Coord drag, int num) {
 	super(c, Coord.z, parent);
 	this.res = res;
-	decq(q);
 	fixsize();
 	this.num = num;
 	if(drag == null) {
@@ -212,16 +190,16 @@ public class Item extends Widget implements DTarget {
 	}
     }
 
-    public Item(Coord c, int res, int q, Widget parent, Coord drag, int num) {
-	this(c, parent.ui.sess.getres(res), q, parent, drag, num);
+    public Item(Coord c, int res, Widget parent, Coord drag, int num) {
+	this(c, parent.ui.sess.getres(res), parent, drag, num);
     }
 
-    public Item(Coord c, Indir<Resource> res, int q, Widget parent, Coord drag) {
-	this(c, res, q, parent, drag, -1);
+    public Item(Coord c, Indir<Resource> res, Widget parent, Coord drag) {
+	this(c, res, parent, drag, -1);
     }
 	
-    public Item(Coord c, int res, int q, Widget parent, Coord drag) {
-	this(c, parent.ui.sess.getres(res), q, parent, drag);
+    public Item(Coord c, int res, Widget parent, Coord drag) {
+	this(c, parent.ui.sess.getres(res), parent, drag);
     }
 
     public boolean dropon(Widget w, Coord c) {
@@ -258,17 +236,16 @@ public class Item extends Widget implements DTarget {
 	return(false);
     }
 	
-    public void chres(Indir<Resource> res, int q) {
+    public void chres(Indir<Resource> res) {
 	this.res = res;
 	sh = null;
-	decq(q);
     }
 
     public void uimsg(String name, Object... args)  {
 	if(name == "num") {
 	    num = (Integer)args[0];
 	} else if(name == "chres") {
-	    chres(ui.sess.getres((Integer)args[0]), (Integer)args[1]);
+	    chres(ui.sess.getres((Integer)args[0]));
 	    resettt();
 	} else if(name == "color") {
 	    olcol = (Color)args[0];
