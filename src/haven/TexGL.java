@@ -37,7 +37,6 @@ public abstract class TexGL extends Tex {
     protected boolean mipmap = false;
     protected int magfilter = GL.GL_NEAREST, wrapmode = GL.GL_REPEAT;
     protected Coord tdim;
-    protected static Map<GL, Collection<Integer>> disposed = new HashMap<GL, Collection<Integer>>();
     public static boolean disableall = false;
     
     public static class TexOb extends GLObject {
