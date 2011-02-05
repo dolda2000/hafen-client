@@ -130,4 +130,23 @@ public abstract class States extends GLState {
 	    buf.put(fog, this);
 	}
     }
+    
+    public static final StandAlone nullprog = new StandAlone(PView.proj) {
+	    private final GLShader[] sh;
+	    {
+		sh = new GLShader[] {
+		    new GLShader.VertexShader("void null() {}", "void null();", "null", 0),
+		    new GLShader.FragmentShader("void null(vec4 res) {}", "void null(vec4 res);", "null", 0),
+		};
+	    }
+	    
+	    public void apply(GOut g) {}
+	    public void unapply(GOut g) {}
+	    
+	    public GLShader[] shaders() {
+		return(sh);
+	    }
+	    
+	    public boolean reqshaders() {return(true);}
+	};
 }
