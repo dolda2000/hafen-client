@@ -31,6 +31,9 @@
       <compilerarg value="-Xlint:unchecked" />
       <!-- <compilerarg value="-Xbarda" /> -->
     </javac>
+    <copy todir="build/classes">
+      <fileset dir="src" excludes="**/*.java" />
+    </copy>
     <copy todir="build/classes/haven" file="etc/ressrv.crt" />
     <copy todir="build/classes/haven" file="etc/authsrv.crt" />
     <copy todir="build/classes/haven" file="etc/res-preload" />

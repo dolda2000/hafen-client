@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.io.*;
 import java.util.*;
 import javax.media.opengl.*;
 
@@ -91,6 +92,41 @@ public abstract class GLShader implements java.io.Serializable {
 	    else
 		return(super.toString() + "\nLog:\n" + info);
 	}
+    }
+    
+    public abstract static class Splitter {
+	private final BufferedReader in;
+	public final StringBuilder main = new StringBuilder();
+	public StringBuilder buf = main;
+	
+	public Splitter(Reader r) {
+	    in = new BufferedReader(r);
+	}
+	
+	public Splitter(InputStream i) {
+	    this(new InputStreamReader(i, Utils.ascii));
+	}
+	
+	public void parse() throws IOException {
+	    String ln;
+	    while((ln = in.readLine()) != null) {
+		if(ln.startsWith("#pp ")) {
+		    String d = ln.substring(4).trim();
+		    String a = "";
+		    int p = d.indexOf(' ');
+		    if(p >= 0) {
+			a = d.substring(p + 1);
+			d = d.substring(0, p).trim();
+		    }
+		    d = d.intern();
+		    directive(d, a);
+		} else {
+		    buf.append(ln + "\n");
+		}
+	    }
+	}
+	
+	public abstract void directive(String directive, String args);
     }
     
     public static class VertexShader extends GLShader {
@@ -171,6 +207,51 @@ public abstract class GLShader implements java.io.Serializable {
 	    buf.append("}\n");
 	    return(new VertexShader(buf.toString()));
 	}
+	
+	public static VertexShader parse(Reader in) throws IOException {
+	    class VSplitter extends Splitter {
+		StringBuilder header = new StringBuilder();
+		String entry;
+		String[] args;
+		int order = 0;
+		
+		VSplitter(Reader in) {super(in);}
+		
+		public void directive(String d, String a) {
+		    if(d == "header") {
+			buf = header;
+		    } else if(d == "main") {
+			buf = main;
+		    } else if(d == "order") {
+			order = Integer.parseInt(a);
+		    } else if(d == "entry") {
+			String[] args = a.split(" +");
+			entry = args[0];
+			this.args = new String[args.length - 1];
+			for(int i = 1, o = 0; i < args.length; i++, o++)
+			    this.args[o] = args[i];
+		    }
+		}
+	    }
+	    VSplitter p = new VSplitter(in);
+	    p.parse();
+	    if(p.entry == null)
+		throw(new RuntimeException("No entry specified in shader source."));
+	    return(new VertexShader(p.main.toString(), p.header.toString(), p.entry, p.order, p.args));
+	}
+	
+	public static VertexShader load(Class<?> base, String name) {
+	    InputStream in = base.getResourceAsStream(name);
+	    try {
+		try {
+		    return(parse(new InputStreamReader(in, Utils.ascii)));
+		} finally {
+		    in.close();
+		}
+	    } catch(IOException e) {
+		throw(new RuntimeException(e));
+	    }
+	}
     }
 
     public static class FragmentShader extends GLShader {
@@ -213,6 +294,47 @@ public abstract class GLShader implements java.io.Serializable {
 	    buf.append("    gl_FragColor = res;\n");
 	    buf.append("}\n");
 	    return(new FragmentShader(buf.toString()));
+	}
+	
+	public static FragmentShader parse(Reader in) throws IOException {
+	    class FSplitter extends Splitter {
+		StringBuilder header = new StringBuilder();
+		String entry;
+		int order = 0;
+		
+		FSplitter(Reader in) {super(in);}
+		
+		public void directive(String d, String a) {
+		    if(d == "header") {
+			buf = header;
+		    } else if(d == "main") {
+			buf = main;
+		    } else if(d == "order") {
+			order = Integer.parseInt(a);
+		    } else if(d == "entry") {
+			String[] args = a.split(" +");
+			entry = args[0];
+		    }
+		}
+	    }
+	    FSplitter p = new FSplitter(in);
+	    p.parse();
+	    if(p.entry == null)
+		throw(new RuntimeException("No entry specified in shader source."));
+	    return(new FragmentShader(p.main.toString(), p.header.toString(), p.entry, p.order));
+	}
+	
+	public static FragmentShader load(Class<?> base, String name) {
+	    InputStream in = base.getResourceAsStream(name);
+	    try {
+		try {
+		    return(parse(new InputStreamReader(in, Utils.ascii)));
+		} finally {
+		    in.close();
+		}
+	    } catch(IOException e) {
+		throw(new RuntimeException(e));
+	    }
 	}
     }
     
