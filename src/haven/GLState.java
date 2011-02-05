@@ -40,6 +40,16 @@ public abstract class GLState {
     }
     public void applyto(GOut g, GLState to) {
     }
+    public void reapply(GOut g) {
+    }
+    
+    public GLShader[] shaders() {
+	return(null);
+    }
+    
+    public boolean reqshaders() {
+	return(false);
+    }
 
     public int capply() {
 	return(10);
@@ -276,6 +286,10 @@ public abstract class GLState {
 	private Buffer cur = new Buffer(), next = new Buffer();
 	public final GL gl;
 	private boolean[] trans = new boolean[0], repl = new boolean[0];
+	private GLShader[][] shaders = new GLShader[0][];
+	private int proghash = 0;
+	public GLProgram prog;
+	public boolean usedprog;
 	public long time = 0;
 	
 	public Applier(GL gl) {
@@ -317,14 +331,47 @@ public abstract class GLState {
 		synchronized(Slot.class) {
 		    trans = new boolean[slotnum];
 		    repl = new boolean[slotnum];
+		    shaders = new GLShader[slotnum][];
 		}
 	    }
 	    bufdiff(cur, next, trans, repl);
+	    boolean dirty = false, shreq = false;
+	    for(int i = trans.length - 1; i >= 0; i--) {
+		if(repl[i] || trans[i]) {
+		    GLState nst = next.states[i];
+		    GLShader[] ns = (nst == null)?null:nst.shaders();
+		    if(ns != shaders[i]) {
+			proghash ^= System.identityHashCode(shaders[i]) ^ System.identityHashCode(ns);
+			shaders[i] = ns;
+			dirty = true;
+		    }
+		    if(ns != null)
+			shreq |= nst.reqshaders();
+		}
+	    }
+	    usedprog = prog != null;
 	    for(int i = trans.length - 1; i >= 0; i--) {
 		if(repl[i]) {
 		    if(cur.states[i] != null)
 			cur.states[i].unapply(g);
 		    cur.states[i] = null;
+		}
+	    }
+	    if(dirty) {
+		GLProgram np;
+		if(g.gc.shuse && shreq) {
+		    np = findprog(proghash, shaders);
+		} else {
+		    np = null;
+		}
+		if(np != prog) {
+		    if(np != null)
+			np.apply(g);
+		    else
+			g.gl.glUseProgramObjectARB(0);
+		    prog = np;
+		} else {
+		    dirty = false;
 		}
 	    }
 	    for(int i = 0; i < trans.length; i++) {
@@ -336,6 +383,8 @@ public abstract class GLState {
 		    cur.states[i].applyto(g, next.states[i]);
 		    GLState cs = cur.states[i];
 		    (cur.states[i] = next.states[i]).applyfrom(g, cs);
+		} else if(dirty && (shaders[i] != null)) {
+		    cur.states[i].reapply(g);
 		}
 	    }
 	    checkerr(gl);
@@ -359,6 +408,67 @@ public abstract class GLState {
 		gl.glActiveTexture(GL.GL_TEXTURE0 + unit);
 		texunit = unit;
 	    }
+	}
+	
+	/* Program internation */
+	public static class SavedProg {
+	    public final int hash;
+	    public final GLProgram prog;
+	    public final GLShader[][] shaders;
+	    public SavedProg next;
+	    
+	    public SavedProg(int hash, GLProgram prog, GLShader[][] shaders) {
+		this.hash = hash;
+		this.prog = prog;
+		this.shaders = shaders;
+	    }
+	}
+	
+	private SavedProg[] ptab = new SavedProg[32];
+	private int nprog = 0;
+	
+	private GLProgram findprog(int hash, GLShader[][] shaders) {
+	    int idx = hash & (ptab.length - 1);
+	    outer: for(SavedProg s = ptab[idx]; s != null; s = s.next) {
+		if(s.hash != hash)
+		    continue;
+		int i;
+		for(i = 0; i < s.shaders.length; i++) {
+		    if(shaders[i] != s.shaders[i])
+			continue outer;
+		}
+		for(; i < shaders.length; i++) {
+		    if(shaders[i] != null)
+			continue outer;
+		}
+		return(s.prog);
+	    }
+	    GLProgram prog = new GLProgram(shaders);
+	    SavedProg s = new SavedProg(hash, prog, shaders);
+	    s.next = ptab[idx];
+	    ptab[idx] = s;
+	    nprog++;
+	    if(nprog > ptab.length)
+		rehash(ptab.length * 2);
+	    return(prog);
+	}
+	
+	private void rehash(int nlen) {
+	    SavedProg[] ntab = new SavedProg[nlen];
+	    for(int i = 0; i < ptab.length; i++) {
+		while(ptab[i] != null) {
+		    SavedProg s = ptab[i];
+		    ptab[i] = s.next;
+		    int ni = s.hash & (ntab.length - 1);
+		    s.next = ntab[ni];
+		    ntab[ni] = s;
+		}
+	    }
+	    ptab = ntab;
+	}
+	
+	public int numprogs() {
+	    return(nprog);
 	}
     }
     

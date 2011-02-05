@@ -34,6 +34,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
     public int maxlights;
     public Collection<String> exts;
     public GLCapabilities caps;
+    public boolean shuse;
     
     private GLConfig() {
     }
@@ -45,11 +46,16 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	c.maxlights = buf[0];
 	c.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	c.caps = caps;
+	c.shuse = c.haveglsl();
 	return(c);
     }
     
     public boolean havefsaa() {
 	return(exts.contains("GL_ARB_multisample") && caps.getSampleBuffers());
+    }
+    
+    public boolean haveglsl() {
+	return(exts.contains("GL_ARB_fragment_shader") && exts.contains("GL_ARB_vertex_shader"));
     }
     
     private transient Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
@@ -65,6 +71,11 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 			    if(fsaa && !havefsaa())
 				throw(new Exception("FSAA not supported."));
 			    GLConfig.this.fsaa = fsaa;
+			} else if(var == "shuse") {
+			    boolean shuse = Utils.parsebool(args[2], false);
+			    if(shuse && !haveglsl())
+				throw(new Exception("GLSL not supported."));
+			    GLConfig.this.shuse = shuse;
 			} else {
 			    throw(new Exception("No such setting: " + var));
 			}
