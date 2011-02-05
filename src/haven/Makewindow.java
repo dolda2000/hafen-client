@@ -68,7 +68,7 @@ public class Makewindow extends Widget {
 		Widget box = new Inventory(c, new Coord(1, 1), this);
 		inputs.add(box);
 		c = c.add(new Coord(31, 0));
-		new Item(Coord.z, (Integer)args[i], -1, box, null, (Integer)args[i + 1]);
+		new Item(Coord.z, (Integer)args[i], box, null, (Integer)args[i + 1]);
 	    }
 	} else if(msg == "opop") {
 	    if(outputs != null) {
@@ -81,7 +81,7 @@ public class Makewindow extends Widget {
 		Widget box = new Inventory(c, new Coord(1, 1), this);
 		outputs.add(box);
 		c = c.add(new Coord(31, 0));
-		new Item(Coord.z, (Integer)args[i], -1, box, null, (Integer)args[i + 1]);
+		new Item(Coord.z, (Integer)args[i], box, null, (Integer)args[i + 1]);
 	    }
 	}
     }
