@@ -38,6 +38,10 @@ public abstract class TexGL extends Tex {
     protected int magfilter = GL.GL_NEAREST, wrapmode = GL.GL_REPEAT;
     protected Coord tdim;
     public static boolean disableall = false;
+    private static final GLShader[] shaders = {
+	GLShader.VertexShader.load(TexGL.class, "glsl/tex2d.vert"),
+	GLShader.FragmentShader.load(TexGL.class, "glsl/tex2d.frag"),
+    };
     
     public static class TexOb extends GLObject {
 	public final int id;
@@ -65,14 +69,22 @@ public abstract class TexGL extends Tex {
     public void apply(GOut g) {
 	GL gl = g.gl;
 	g.st.texunit(0);
-	gl.glEnable(GL.GL_TEXTURE_2D);
 	gl.glBindTexture(GL.GL_TEXTURE_2D, glid(g));
+	if(g.st.prog != null)
+	    gl.glUniform1i(g.st.prog.uniform("tex2d"), 0);
+	else
+	    gl.glEnable(GL.GL_TEXTURE_2D);
     }
     
     public void unapply(GOut g) {
 	GL gl = g.gl;
 	g.st.texunit(0);
-	gl.glDisable(GL.GL_TEXTURE_2D);
+	if(!g.st.usedprog)
+	    gl.glDisable(GL.GL_TEXTURE_2D);
+    }
+    
+    public GLShader[] shaders() {
+	return(shaders);
     }
     
     public int capply() {
