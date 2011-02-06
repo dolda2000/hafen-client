@@ -71,11 +71,16 @@ public abstract class TexGL extends Tex {
 	g.st.texunit(0);
 	gl.glBindTexture(GL.GL_TEXTURE_2D, glid(g));
 	if(g.st.prog != null)
-	    gl.glUniform1i(g.st.prog.uniform("tex2d"), 0);
+	    reapply(g);
 	else
 	    gl.glEnable(GL.GL_TEXTURE_2D);
     }
     
+    public void reapply(GOut g) {
+	GL gl = g.gl;
+	gl.glUniform1i(g.st.prog.uniform("tex2d"), 0);
+    }
+
     public void unapply(GOut g) {
 	GL gl = g.gl;
 	g.st.texunit(0);
