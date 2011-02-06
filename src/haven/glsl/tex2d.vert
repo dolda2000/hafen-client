@@ -1,7 +1,6 @@
 #pp header
 
 #pp entry tex2d_v
-#pp order 500
 void tex2d_v();
 
 #pp main

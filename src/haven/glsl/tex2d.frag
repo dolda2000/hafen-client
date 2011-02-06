@@ -1,5 +1,6 @@
 #pp header
 
+#pp order 500
 #pp entry tex2d_f
 void tex2d_f(inout vec4 res);
 
