@@ -374,6 +374,12 @@ public abstract class GLState {
 		    dirty = false;
 		}
 	    }
+	    if((prog != null) != usedprog) {
+		for(int i = 0; i < trans.length; i++) {
+		    if(trans[i])
+			repl[i] = true;
+		}
+	    }
 	    for(int i = 0; i < trans.length; i++) {
 		if(repl[i]) {
 		    cur.states[i] = next.states[i];
