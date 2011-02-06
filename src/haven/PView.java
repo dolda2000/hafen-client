@@ -141,7 +141,7 @@ public abstract class PView extends Widget {
 	try {
 	    lm.prep(def);
 	    new Light.LightList().prep(def);
-	    Light.elights.prep(def);
+	    Light.vlights.prep(def);
 	    rls.setup(scene, def);
 	    if(curf != null)
 		curf.tick("setup");

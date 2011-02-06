@@ -75,15 +75,33 @@ public class Light implements Rendered {
     public static final GLState.Slot<Model> model = new GLState.Slot<Model>(Model.class, PView.proj);
     public static final GLState.Slot<GLState> lighting = new GLState.Slot<GLState>(GLState.class, model, lights);
     
-    public static final GLState elights = new GLState() {
+    public static final GLState vlights = new GLState() {
+	    private final GLShader[] shaders = {
+		GLShader.VertexShader.load(this.getClass(), "glsl/vlight.vert"),
+		GLShader.FragmentShader.load(this.getClass(), "glsl/vlight.frag"),
+	    };
+	    
 	    public void apply(GOut g) {
 		GL gl = g.gl;
-		gl.glEnable(GL.GL_LIGHTING);
+		if(g.st.prog == null)
+		    gl.glEnable(GL.GL_LIGHTING);
+		else
+		    reapply(g);
+	    }
+	    
+	    public void reapply(GOut g) {
+		GL gl = g.gl;
+		gl.glUniform1i(g.st.prog.uniform("nlights"), g.st.get(lights).nlights);
 	    }
 	    
 	    public void unapply(GOut g) {
 		GL gl = g.gl;
-		gl.glDisable(GL.GL_LIGHTING);
+		if(!g.st.usedprog)
+		    gl.glDisable(GL.GL_LIGHTING);
+	    }
+	    
+	    public GLShader[] shaders() {
+		return(shaders);
 	    }
 	    
 	    public void prep(Buffer buf) {
@@ -95,6 +113,7 @@ public class Light implements Rendered {
 	private final List<Light> ll = new ArrayList<Light>();
 	private final List<Location> sl = new ArrayList<Location>();
 	private final List<Light> en = new ArrayList<Light>();
+	public int nlights = 0;
 	
 	public void apply(GOut g) {
 	    GL gl = g.gl;
@@ -116,6 +135,7 @@ public class Light implements Rendered {
 		}
 		GOut.checkerr(gl);
 	    }
+	    nlights = nl;
 	}
 	
 	public void unapply(GOut g) {
@@ -123,6 +143,7 @@ public class Light implements Rendered {
 		en.get(i).disable(g, i);
 		GOut.checkerr(g.gl);
 	    }
+	    nlights = 0;
 	}
 	
 	public int capply() {
