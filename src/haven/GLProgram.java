@@ -101,14 +101,14 @@ public class GLProgram implements java.io.Serializable {
 	}
 	
 	public int uniform(String name) {
-	    int r = gl.glGetUniformLocation(id, name);
+	    int r = gl.glGetUniformLocationARB(id, name);
 	    if(r < 0)
 		throw(new RuntimeException("Unknown uniform name: " + name));
 	    return(r);
 	}
 	
 	public int attrib(String name) {
-	    int r = gl.glGetAttribLocation(id, name);
+	    int r = gl.glGetAttribLocationARB(id, name);
 	    if(r < 0)
 		throw(new RuntimeException("Unknown uniform name: " + name));
 	    return(r);
