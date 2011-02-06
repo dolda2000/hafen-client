@@ -104,7 +104,7 @@ public class RenderList {
 	t.prep(curp.os);
     }
     
-    public void propc(GLState t) {
+    public void prepc(GLState t) {
 	t.prep(curp.cs);
     }
     
