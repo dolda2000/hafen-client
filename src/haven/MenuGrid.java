@@ -30,18 +30,19 @@ import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import haven.Resource.AButton;
+import haven.Glob.Pagina;
 import java.util.*;
 
 public class MenuGrid extends Widget {
     public final static Tex bg = Resource.loadtex("gfx/hud/invsq");
     public final static Coord bgsz = bg.sz().add(-1, -1);
-    public final static Resource next = Resource.load("gfx/hud/sc-next");
-    public final static Resource bk = Resource.load("gfx/hud/sc-back");
+    public final Pagina next = paginafor(Resource.load("gfx/hud/sc-next"));
+    public final Pagina bk = paginafor(Resource.load("gfx/hud/sc-back"));
     public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 10);
     private static Coord gsz = new Coord(4, 4);
-    private Resource cur, pressed, dragging, layout[][] = new Resource[gsz.x][gsz.y];
+    private Pagina cur, pressed, dragging, layout[][] = new Pagina[gsz.x][gsz.y];
     private int curoff = 0;
-    private Map<Character, Resource> hotmap = new TreeMap<Character, Resource>();
+    private Map<Character, Pagina> hotmap = new TreeMap<Character, Pagina>();
 	
     static {
 	Widget.addtype("scm", new WidgetFactory() {
@@ -52,42 +53,43 @@ public class MenuGrid extends Widget {
     }
 	
     public class PaginaException extends RuntimeException {
-	public Resource res;
+	public Pagina pag;
 	
-	public PaginaException(Resource r) {
-	    super("Invalid pagina: " + r.name);
-	    res = r;
+	public PaginaException(Pagina p) {
+	    super("Invalid pagina: " + p.res().name);
+	    pag = p;
 	}
     }
 
-    private Resource[] cons(Resource p) {
-	Resource[] cp = new Resource[0];
-	Resource[] all;
+    private Pagina[] cons(Pagina p) {
+	Pagina[] cp = new Pagina[0];
+	Pagina[] all;
 	{
-	    Collection<Resource> ta = new HashSet<Resource>();
-	    Collection<Resource> open;
+	    Collection<Pagina> ta = new HashSet<Pagina>();
+	    Collection<Pagina> open;
 	    synchronized(ui.sess.glob.paginae) {
-		open = new HashSet<Resource>(ui.sess.glob.paginae);
+		open = new HashSet<Pagina>(ui.sess.glob.paginae);
 	    }
 	    while(!open.isEmpty()) {
-		for(Resource r : open.toArray(cp)) {
+		for(Pagina pag : open.toArray(cp)) {
+		    Resource r = pag.res();
 		    if(!r.loading) {
 			AButton ad = r.layer(Resource.action);
 			if(ad == null)
-			    throw(new PaginaException(r));
+			    throw(new PaginaException(pag));
 			if((ad.parent != null) && !ta.contains(ad.parent))
-			    open.add(ad.parent);
-			ta.add(r);
-			open.remove(r);
+			    open.add(paginafor(ad.parent));
+			ta.add(pag);
+			open.remove(pag);
 		    }
 		}
 	    }
 	    all = ta.toArray(cp);
 	}
-	Collection<Resource> tobe = new HashSet<Resource>();
-	for(Resource r : all) {
-	    if(r.layer(Resource.action).parent == p)
-		tobe.add(r);
+	Collection<Pagina> tobe = new HashSet<Pagina>();
+	for(Pagina pag : all) {
+	    if(paginafor(pag.act().parent) == p)
+		tobe.add(pag);
 	}
 	return(tobe.toArray(cp));
     }
@@ -97,9 +99,9 @@ public class MenuGrid extends Widget {
 	cons(null);
     }
 	
-    private static Comparator<Resource> sorter = new Comparator<Resource>() {
-	public int compare(Resource a, Resource b) {
-	    AButton aa = a.layer(Resource.action), ab = b.layer(Resource.action);
+    private static Comparator<Pagina> sorter = new Comparator<Pagina>() {
+	public int compare(Pagina a, Pagina b) {
+	    AButton aa = a.act(), ab = b.act();
 	    if((aa.ad.length == 0) && (ab.ad.length > 0))
 		return(-1);
 	    if((aa.ad.length > 0) && (ab.ad.length == 0))
@@ -109,19 +111,19 @@ public class MenuGrid extends Widget {
     };
 
     private void updlayout() {
-	Resource[] cur = cons(this.cur);
+	Pagina[] cur = cons(this.cur);
 	Arrays.sort(cur, sorter);
 	int i = curoff;
 	hotmap.clear();
 	for(int y = 0; y < gsz.y; y++) {
 	    for(int x = 0; x < gsz.x; x++) {
-		Resource btn = null;
+		Pagina btn = null;
 		if((this.cur != null) && (x == gsz.x - 1) && (y == gsz.y - 1)) {
 		    btn = bk;
 		} else if((cur.length > ((gsz.x * gsz.y) - 1)) && (x == gsz.x - 2) && (y == gsz.y - 1)) {
 		    btn = next;
 		} else if(i < cur.length) {
-		    Resource.AButton ad = cur[i].layer(Resource.action);
+		    Resource.AButton ad = cur[i].act();
 		    if(ad.hk != 0)
 			hotmap.put(Character.toUpperCase(ad.hk), cur[i]);
 		    btn = cur[i++];
@@ -152,9 +154,9 @@ public class MenuGrid extends Widget {
 	    for(int x = 0; x < gsz.x; x++) {
 		Coord p = bgsz.mul(new Coord(x, y));
 		g.image(bg, p);
-		Resource btn = layout[x][y];
+		Pagina btn = layout[x][y];
 		if(btn != null) {
-		    Tex btex = btn.layer(Resource.imgc).tex();
+		    Tex btex = btn.res().layer(Resource.imgc).tex();
 		    g.image(btex, p.add(1, 1));
 		    if(btn == pressed) {
 			g.chcolor(new Color(0, 0, 0, 128));
@@ -165,7 +167,7 @@ public class MenuGrid extends Widget {
 	    }
 	}
 	if(dragging != null) {
-	    final Tex dt = dragging.layer(Resource.imgc).tex();
+	    final Tex dt = dragging.res().layer(Resource.imgc).tex();
 	    ui.drawafter(new UI.AfterDraw() {
 		    public void draw(GOut g) {
 			g.image(dt, ui.mc.add(dt.sz().div(2).inv()));
@@ -174,20 +176,20 @@ public class MenuGrid extends Widget {
 	}
     }
 	
-    private Resource curttr = null;
+    private Pagina curttp = null;
     private boolean curttl = false;
     private Text curtt = null;
     private long hoverstart;
     public Object tooltip(Coord c, boolean again) {
-	Resource res = bhit(c);
+	Pagina pag = bhit(c);
 	long now = System.currentTimeMillis();
-	if((res != null) && (res.layer(Resource.action) != null)) {
+	if((pag != null) && (pag.act() != null)) {
 	    if(!again)
 		hoverstart = now;
 	    boolean ttl = (now - hoverstart) > 500;
-	    if((res != curttr) || (ttl != curttl)) {
-		curtt = rendertt(res, ttl);
-		curttr = res;
+	    if((pag != curttp) || (ttl != curttl)) {
+		curtt = rendertt(pag.res(), ttl);
+		curttp = pag;
 		curttl = ttl;
 	    }
 	    return(curtt);
@@ -197,7 +199,7 @@ public class MenuGrid extends Widget {
 	}
     }
 
-    private Resource bhit(Coord c) {
+    private Pagina bhit(Coord c) {
 	Coord bc = c.div(bgsz);
 	if((bc.x >= 0) && (bc.y >= 0) && (bc.x < gsz.x) && (bc.y < gsz.y))
 	    return(layout[bc.x][bc.y]);
@@ -206,7 +208,7 @@ public class MenuGrid extends Widget {
     }
 	
     public boolean mousedown(Coord c, int button) {
-	Resource h = bhit(c);
+	Pagina h = bhit(c);
 	if((button == 1) && (h != null)) {
 	    pressed = h;
 	    ui.grabmouse(this);
@@ -216,18 +218,22 @@ public class MenuGrid extends Widget {
 	
     public void mousemove(Coord c) {
 	if((dragging == null) && (pressed != null)) {
-	    Resource h = bhit(c);
+	    Pagina h = bhit(c);
 	    if(h != pressed)
 		dragging = pressed;
 	}
     }
 	
-    private void use(Resource r) {
+    private Pagina paginafor(Resource res) {
+	return(ui.sess.glob.paginafor(res));
+    }
+
+    private void use(Pagina r) {
 	if(cons(r).length > 0) {
 	    cur = r;
 	    curoff = 0;
 	} else if(r == bk) {
-	    cur = cur.layer(Resource.action).parent;
+	    cur = paginafor(cur.act().parent);
 	    curoff = 0;
 	} else if(r == next) {
 	    if((curoff + 14) >= cons(cur).length)
@@ -235,16 +241,16 @@ public class MenuGrid extends Widget {
 	    else
 		curoff += 14;
 	} else {
-	    wdgmsg("act", (Object[])r.layer(Resource.action).ad);
+	    wdgmsg("act", (Object[])r.act().ad);
 	    cur = null;
 	}
     }
 	
     public boolean mouseup(Coord c, int button) {
-	Resource h = bhit(c);
+	Pagina h = bhit(c);
 	if(button == 1) {
 	    if(dragging != null) {
-		ui.dropthing(ui.root, ui.mc, dragging);
+		ui.dropthing(ui.root, ui.mc, dragging.res());
 		dragging = pressed = null;
 	    } else if(pressed != null) {
 		if(pressed == h)
@@ -263,7 +269,7 @@ public class MenuGrid extends Widget {
 	    if(res.equals(""))
 		cur = null;
 	    else
-		cur = Resource.load(res);
+		cur = paginafor(Resource.load(res));
 	    curoff = 0;
 	}
     }
@@ -278,7 +284,7 @@ public class MenuGrid extends Widget {
 	    use(next);
 	    return(true);
 	}
-	Resource r = hotmap.get(Character.toUpperCase(k));
+	Pagina r = hotmap.get(Character.toUpperCase(k));
 	if(r != null) {
 	    use(r);
 	    return(true);

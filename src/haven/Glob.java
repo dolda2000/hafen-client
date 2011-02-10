@@ -39,7 +39,8 @@ public class Glob {
     public MCache map;
     public Session sess;
     public Party party;
-    public Collection<Resource> paginae = new TreeSet<Resource>();
+    public Set<Pagina> paginae = new HashSet<Pagina>();
+    private Map<Resource, Pagina> pmap = new WeakHashMap<Resource, Pagina>();
     public Map<String, CAttr> cattr = new HashMap<String, CAttr>();
     public Map<Integer, Buff> buffs = new TreeMap<Integer, Buff>();
     public java.awt.Color amblight = null;
@@ -69,6 +70,30 @@ public class Glob {
 	    notifyObservers(null);
 	}
     }
+    
+    public static class Pagina implements java.io.Serializable {
+	private final java.lang.ref.WeakReference<Resource> res;
+	public State st;
+	
+	public static enum State {
+	    ENABLED, DISABLED
+	}
+	
+	public Pagina(Resource res) {
+	    this.res = new java.lang.ref.WeakReference<Resource>(res);
+	    this.st = State.ENABLED;
+	}
+	
+	public Resource res() {
+	    return(res.get());
+	}
+	
+	public Resource.AButton act() {
+	    if(res().loading)
+		return(null);
+	    return(res().layer(Resource.action));
+	}
+    }
 	
     private static double defix(int i) {
 	return(((double)i) / 1e9);
@@ -94,6 +119,17 @@ public class Glob {
 	}
     }
 	
+    public Pagina paginafor(Resource res) {
+	if(res == null)
+	    return(null);
+	synchronized(pmap) {
+	    Pagina p = pmap.get(res);
+	    if(p == null)
+		pmap.put(res, p = new Pagina(res));
+	    return(p);
+	}
+    }
+
     public void paginae(Message msg) {
 	synchronized(paginae) {
 	    while(!msg.eom()) {
@@ -101,11 +137,11 @@ public class Glob {
 		if(act == '+') {
 		    String nm = msg.string();
 		    int ver = msg.uint16();
-		    paginae.add(Resource.load(nm, ver)); 
+		    paginae.add(paginafor(Resource.load(nm, ver))); 
 		} else if(act == '-') {
 		    String nm = msg.string();
 		    int ver = msg.uint16();
-		    paginae.remove(Resource.load(nm, ver)); 
+		    paginae.remove(paginafor(Resource.load(nm, ver))); 
 		}
 	    }
 	}
