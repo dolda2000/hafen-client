@@ -19,13 +19,15 @@ void vlight_v(vec4 pos, vec3 norm, out vec4 col)
 	    float df = max(dot(norm, vec3(gl_LightSource[i].position.xyz)), 0.0);
 	    if(df > 0.0) {
 		col += gl_FrontMaterial.diffuse * gl_LightSource[i].diffuse * df;
-		vlight_spec += gl_FrontMaterial.specular.rgb * gl_LightSource[i].specular.rgb *
-		    pow(max(dot(norm, normalize(gl_LightSource[i].halfVector.xyz)), 0.0), gl_FrontMaterial.shininess);
-		/*
-		vec3 edir = normalize(-vec3(pos));
-		vlight_spec += gl_FrontMaterial.specular.rgb * gl_LightSource[i].specular.rgb *
-		    pow(max(dot(edir, normalize(reflect(gl_LightSource[i].position.xyz, norm))), 0.0), gl_FrontMaterial.shininess);
-		*/
+		if(gl_FrontMaterial.shininess > 0.5) {
+		    vlight_spec += gl_FrontMaterial.specular.rgb * gl_LightSource[i].specular.rgb *
+			pow(max(dot(norm, normalize(gl_LightSource[i].halfVector.xyz)), 0.0), gl_FrontMaterial.shininess);
+		    /*
+		    vec3 edir = normalize(-vec3(pos));
+		    vlight_spec += gl_FrontMaterial.specular.rgb * gl_LightSource[i].specular.rgb *
+			pow(max(dot(edir, normalize(reflect(gl_LightSource[i].position.xyz, norm))), 0.0), gl_FrontMaterial.shininess);
+		    */
+		}
 	    }
 	} else {
 	    
