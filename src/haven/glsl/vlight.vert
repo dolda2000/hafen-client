@@ -36,8 +36,8 @@ void vlight_v(vec4 pos, vec3 norm, out vec4 col)
 	    vec3 dir = normalize(rel);
 	    float dist = length(rel);
 	    float att = 1.0 / (gl_LightSource[i].constantAttenuation
-			       + (gl_LightSource[0].linearAttenuation * dist)
-			       + (gl_LightSource[0].quadraticAttenuation * dist * dist));
+			       + (gl_LightSource[i].linearAttenuation * dist)
+			       + (gl_LightSource[i].quadraticAttenuation * dist * dist));
 	    col += gl_FrontMaterial.ambient * gl_LightSource[i].ambient * att;
 	    float df = max(dot(norm, dir), 0.0);
 	    if(df > 0.0) {

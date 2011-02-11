@@ -118,9 +118,7 @@ public class Light implements Rendered {
 	    
 	    public void apply(GOut g) {
 		GL gl = g.gl;
-		if(g.st.prog == null)
-		    gl.glEnable(GL.GL_LIGHTING);
-		else
+		if(g.st.prog != null)
 		    reapply(g);
 	    }
 	    
@@ -131,8 +129,6 @@ public class Light implements Rendered {
 	    
 	    public void unapply(GOut g) {
 		GL gl = g.gl;
-		if(!g.st.usedprog)
-		    gl.glDisable(GL.GL_LIGHTING);
 	    }
 	    
 	    public GLShader[] shaders() {

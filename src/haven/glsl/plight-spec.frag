@@ -27,8 +27,8 @@ void plight_f_spec(inout vec4 res)
 		vec3 dir = normalize(rel);
 		float dist = length(rel);
 		float att = 1.0 / (gl_LightSource[i].constantAttenuation
-				   + (gl_LightSource[0].linearAttenuation * dist)
-				   + (gl_LightSource[0].quadraticAttenuation * dist * dist));
+				   + (gl_LightSource[i].linearAttenuation * dist)
+				   + (gl_LightSource[i].quadraticAttenuation * dist * dist));
 		spec += gl_FrontMaterial.specular.rgb * gl_LightSource[i].specular.rgb * att *
 		    pow(max(dot(edir, reflect(-dir, norm)), 0.0), gl_FrontMaterial.shininess);
 	    }
