@@ -109,6 +109,45 @@ public class Light implements Rendered {
 	    }
 	};
     
+    public static final GLState plights = new GLState() {
+	    private final GLShader[] shaders = {
+		GLShader.VertexShader.load(this.getClass(), "glsl/plight.vert"),
+		GLShader.FragmentShader.load(this.getClass(), "glsl/plight-diff.frag"),
+		GLShader.FragmentShader.load(this.getClass(), "glsl/plight-spec.frag"),
+	    };
+	    
+	    public void apply(GOut g) {
+		GL gl = g.gl;
+		if(g.st.prog == null)
+		    gl.glEnable(GL.GL_LIGHTING);
+		else
+		    reapply(g);
+	    }
+	    
+	    public void reapply(GOut g) {
+		GL gl = g.gl;
+		gl.glUniform1i(g.st.prog.uniform("nlights"), g.st.get(lights).nlights);
+	    }
+	    
+	    public void unapply(GOut g) {
+		GL gl = g.gl;
+		if(!g.st.usedprog)
+		    gl.glDisable(GL.GL_LIGHTING);
+	    }
+	    
+	    public GLShader[] shaders() {
+		return(shaders);
+	    }
+	    
+	    public boolean reqshaders() {
+		return(true);
+	    }
+	    
+	    public void prep(Buffer buf) {
+		buf.put(lighting, this);
+	    }
+	};
+    
     public static class LightList extends GLState {
 	private final List<Light> ll = new ArrayList<Light>();
 	private final List<Location> sl = new ArrayList<Location>();
