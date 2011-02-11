@@ -34,7 +34,7 @@ public class DirLight extends Light {
     
     public DirLight(Color col, Coord3f dir) {
 	super(col);
-	this.dir = dir.to4a(0.0f);
+	this.dir = dir.norm().to4a(0.0f);
     }
     
     public DirLight(Color amb, Color dif, Color spc, Coord3f dir) {
