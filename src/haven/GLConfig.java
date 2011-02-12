@@ -34,7 +34,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
     public int maxlights;
     public Collection<String> exts;
     public GLCapabilities caps;
-    public boolean shuse;
+    public boolean shuse, plight;
     
     private GLConfig() {
     }
@@ -76,6 +76,11 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 			    if(shuse && !haveglsl())
 				throw(new Exception("GLSL not supported."));
 			    GLConfig.this.shuse = shuse;
+			} else if(var == "plight") {
+			    boolean plight = Utils.parsebool(args[2], false);
+			    if(plight && !shuse)
+				throw(new Exception("Per-pixel lighting requires shader usage."));
+			    GLConfig.this.plight = plight;
 			} else {
 			    throw(new Exception("No such setting: " + var));
 			}

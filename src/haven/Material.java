@@ -150,7 +150,10 @@ public class Material extends GLState {
 	    tex.prep(buf);
 	if(!facecull)
 	    nofacecull.prep(buf);
-	Light.vlights.prep(buf);
+	if(buf.cfg.plight)
+	    Light.plights.prep(buf);
+	else
+	    Light.vlights.prep(buf);
     }
     
     public static class Res extends Resource.Layer {
