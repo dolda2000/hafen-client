@@ -335,7 +335,7 @@ public abstract class GLState {
 		}
 	    }
 	    bufdiff(cur, next, trans, repl);
-	    boolean dirty = false, shreq = false;
+	    boolean dirty = false;
 	    for(int i = trans.length - 1; i >= 0; i--) {
 		if(repl[i] || trans[i]) {
 		    GLState nst = next.states[i];
@@ -345,20 +345,18 @@ public abstract class GLState {
 			shaders[i] = ns;
 			dirty = true;
 		    }
-		    if(ns != null)
-			shreq |= nst.reqshaders();
 		}
 	    }
 	    usedprog = prog != null;
-	    for(int i = trans.length - 1; i >= 0; i--) {
-		if(repl[i]) {
-		    if(cur.states[i] != null)
-			cur.states[i].unapply(g);
-		    cur.states[i] = null;
-		}
-	    }
 	    if(dirty) {
 		GLProgram np;
+		boolean shreq = false;
+		for(int i = 0; i < trans.length; i++) {
+		    if((shaders[i] != null) && next.states[i].reqshaders()) {
+			shreq = true;
+			break;
+		    }
+		}
 		if(g.gc.shuse && shreq) {
 		    np = findprog(proghash, shaders);
 		} else {
@@ -378,6 +376,13 @@ public abstract class GLState {
 		for(int i = 0; i < trans.length; i++) {
 		    if(trans[i])
 			repl[i] = true;
+		}
+	    }
+	    for(int i = trans.length - 1; i >= 0; i--) {
+		if(repl[i]) {
+		    if(cur.states[i] != null)
+			cur.states[i].unapply(g);
+		    cur.states[i] = null;
 		}
 	    }
 	    for(int i = 0; i < trans.length; i++) {
