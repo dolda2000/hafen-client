@@ -262,6 +262,7 @@ public class MapView extends PView {
 	abstract protected T map(Rendered r);
 	
 	private Clicklist(GLState.Buffer plain) {
+	    super(plain.cfg);
 	    this.plain = plain;
 	}
 	

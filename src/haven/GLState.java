@@ -170,9 +170,14 @@ public abstract class GLState {
     
     public static class Buffer {
 	private GLState[] states = new GLState[slotnum];
+	public final GLConfig cfg;
+	
+	public Buffer(GLConfig cfg) {
+	    this.cfg = cfg;
+	}
 	
 	public Buffer copy() {
-	    Buffer ret = new Buffer();
+	    Buffer ret = new Buffer(cfg);
 	    System.arraycopy(states, 0, ret.states, 0, states.length);
 	    return(ret);
 	}
@@ -283,8 +288,9 @@ public abstract class GLState {
     }
     
     public static class Applier {
-	private Buffer cur = new Buffer(), next = new Buffer();
+	private Buffer cur, next;
 	public final GL gl;
+	public final GLConfig cfg;
 	private boolean[] trans = new boolean[0], repl = new boolean[0];
 	private GLShader[][] shaders = new GLShader[0][];
 	private int proghash = 0;
@@ -292,8 +298,11 @@ public abstract class GLState {
 	public boolean usedprog;
 	public long time = 0;
 	
-	public Applier(GL gl) {
+	public Applier(GL gl, GLConfig cfg) {
 	    this.gl = gl;
+	    this.cfg = cfg;
+	    this.cur = new Buffer(cfg);
+	    this.next = new Buffer(cfg);
 	}
 	
 	public <T extends GLState> void put(Slot<? super T> slot, T state) {

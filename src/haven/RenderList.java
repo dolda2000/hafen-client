@@ -29,15 +29,20 @@ package haven;
 import java.util.*;
 
 public class RenderList {
+    final GLConfig cfg;
     Slot[] list = new Slot[100];
     int cur = 0;
     private Slot curp = null;
     
     class Slot {
 	Rendered r;
-	GLState.Buffer os = new GLState.Buffer(), cs = new GLState.Buffer();
+	GLState.Buffer os = new GLState.Buffer(cfg), cs = new GLState.Buffer(cfg);
 	Rendered.Order o;
 	Slot p;
+    }
+    
+    public RenderList(GLConfig cfg) {
+	this.cfg = cfg;
     }
     
     private Slot getslot() {

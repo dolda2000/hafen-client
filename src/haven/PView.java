@@ -30,7 +30,7 @@ import static haven.GOut.checkerr;
 import javax.media.opengl.*;
 
 public abstract class PView extends Widget {
-    private RenderList rls = new RenderList();
+    private RenderList rls;
     public static final GLState.Slot<RenderState> proj = new GLState.Slot<RenderState>(RenderState.class, HavenPanel.proj2d);
     public static final GLState.Slot<Camera> cam = new GLState.Slot<Camera>(Camera.class, proj);
     public static final GLState.Slot<Location> loc = new GLState.Slot<Location>(Location.class, cam);
@@ -131,6 +131,8 @@ public abstract class PView extends Widget {
 	};
 
     public void draw(GOut g) {
+	if(rls == null)
+	    rls = new RenderList(g.gc);
 	Profile.Frame curf = null;
 	if(Config.profile)
 	    curf = prof.new Frame();
