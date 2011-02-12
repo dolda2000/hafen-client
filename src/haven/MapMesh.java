@@ -303,12 +303,12 @@ public class MapMesh implements Rendered {
 
     public static class GroundMod implements FRendered {
 	private static final Order gmorder = new Order.Default(1001);
-	public final Tex tex;
+	public final Material mat;
 	public final Coord cc;
 	public final FastMesh mesh;
 	
 	public GroundMod(MCache map, Class<? extends Surface> surf, Tex tex, Coord cc, Coord ul, Coord br) {
-	    this.tex = tex;
+	    this.mat = new Material(tex);
 	    this.cc = cc;
 	    if(tex instanceof TexGL) {
 		TexGL gt = (TexGL)tex;
@@ -354,7 +354,7 @@ public class MapMesh implements Rendered {
 	}
 		
 	public Order setup(RenderList rl) {
-	    rl.prepo(tex);
+	    rl.prepo(mat);
 	    rl.prepo(Material.noalpha);
 	    return(gmorder);
 	}
