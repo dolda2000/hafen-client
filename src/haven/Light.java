@@ -112,8 +112,8 @@ public class Light implements Rendered {
     public static final GLState plights = new GLState() {
 	    private final GLShader[] shaders = {
 		GLShader.VertexShader.load(this.getClass(), "glsl/plight.vert"),
-		GLShader.FragmentShader.load(this.getClass(), "glsl/plight-diff.frag"),
-		GLShader.FragmentShader.load(this.getClass(), "glsl/plight-spec.frag"),
+		GLShader.FragmentShader.load(this.getClass(), "glsl/plight-base.frag"),
+		GLShader.FragmentShader.load(this.getClass(), "glsl/plight.frag"),
 	    };
 	    
 	    public void apply(GOut g) {
