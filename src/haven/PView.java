@@ -157,8 +157,10 @@ public abstract class PView extends Widget {
 	    gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
 	    g.st.time = 0;
 	    rls.render(g);
-	    if(curf != null)
-		curf.tick("render", "apply", g.st.time);
+	    if(curf != null) {
+		curf.add("apply", g.st.time);
+		curf.tick("render", g.st.time);
+	    }
 	} finally {
 	    g.st.set(bk);
 	}

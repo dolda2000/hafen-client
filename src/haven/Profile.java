@@ -76,10 +76,14 @@ public class Profile {
 	    last = now;
 	}
 	
-	public void tick(String nm, String subnm, long subtm) {
+	public void add(String nm, long tm)
+	{
+	    pw.add(tm);
+	    nw.add(nm);
+	}
+
+	public void tick(String nm, long subtm) {
 	    long now = System.nanoTime();
-	    pw.add(subtm);
-	    nw.add(subnm);
 	    pw.add(now - last - subtm);
 	    nw.add(nm);
 	    last = now;
