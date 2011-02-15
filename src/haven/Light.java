@@ -129,6 +129,12 @@ public class Light implements Rendered {
 	    GLShader.FragmentShader.load(Light.class, "glsl/plight.frag"),
 	});
     
+    public static final GLState vcel = new BaseLights(new GLShader[] {
+	    GLShader.VertexShader.load(Light.class, "glsl/vlight.vert"),
+	    GLShader.FragmentShader.load(Light.class, "glsl/vcel-diff.frag"),
+	    GLShader.FragmentShader.load(Light.class, "glsl/vcel-spec.frag"),
+	});
+    
     public static class LightList extends GLState {
 	private final List<Light> ll = new ArrayList<Light>();
 	private final List<Location> sl = new ArrayList<Location>();
