@@ -75,74 +75,59 @@ public class Light implements Rendered {
     public static final GLState.Slot<Model> model = new GLState.Slot<Model>(Model.class, PView.proj);
     public static final GLState.Slot<GLState> lighting = new GLState.Slot<GLState>(GLState.class, model, lights);
     
-    public static final GLState vlights = new GLState() {
-	    private final GLShader[] shaders = {
-		GLShader.VertexShader.load(this.getClass(), "glsl/vlight.vert"),
-		GLShader.FragmentShader.load(this.getClass(), "glsl/vlight.frag"),
-	    };
+    public static class BaseLights extends GLState {
+	private final GLShader[] shaders;
+	
+	public BaseLights(GLShader[] shaders) {
+	    this.shaders = shaders;
+	}
+
+	public void apply(GOut g) {
+	    GL gl = g.gl;
+	    if(g.st.prog == null)
+		gl.glEnable(GL.GL_LIGHTING);
+	    else
+		reapply(g);
+	}
 	    
-	    public void apply(GOut g) {
-		GL gl = g.gl;
-		if(g.st.prog == null)
-		    gl.glEnable(GL.GL_LIGHTING);
-		else
-		    reapply(g);
-	    }
+	public void reapply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glUniform1i(g.st.prog.uniform("nlights"), g.st.get(lights).nlights);
+	}
 	    
-	    public void reapply(GOut g) {
-		GL gl = g.gl;
-		gl.glUniform1i(g.st.prog.uniform("nlights"), g.st.get(lights).nlights);
-	    }
+	public void unapply(GOut g) {
+	    GL gl = g.gl;
+	    if(!g.st.usedprog)
+		gl.glDisable(GL.GL_LIGHTING);
+	}
 	    
-	    public void unapply(GOut g) {
-		GL gl = g.gl;
-		if(!g.st.usedprog)
-		    gl.glDisable(GL.GL_LIGHTING);
-	    }
-	    
-	    public GLShader[] shaders() {
-		return(shaders);
-	    }
-	    
-	    public void prep(Buffer buf) {
-		buf.put(lighting, this);
+	public GLShader[] shaders() {
+	    return(shaders);
+	}
+	
+	public boolean reqshaders() {
+	    return(true);
+	}
+	
+	public void prep(Buffer buf) {
+	    buf.put(lighting, this);
+	}
+    }
+
+    public static final GLState vlights = new BaseLights(new GLShader[] {
+	    GLShader.VertexShader.load(Light.class, "glsl/vlight.vert"),
+	    GLShader.FragmentShader.load(Light.class, "glsl/vlight.frag"),
+	}) {
+	    public boolean reqshaders() {
+		return(false);
 	    }
 	};
     
-    public static final GLState plights = new GLState() {
-	    private final GLShader[] shaders = {
-		GLShader.VertexShader.load(this.getClass(), "glsl/plight.vert"),
-		GLShader.FragmentShader.load(this.getClass(), "glsl/plight-base.frag"),
-		GLShader.FragmentShader.load(this.getClass(), "glsl/plight.frag"),
-	    };
-	    
-	    public void apply(GOut g) {
-		GL gl = g.gl;
-		if(g.st.prog != null)
-		    reapply(g);
-	    }
-	    
-	    public void reapply(GOut g) {
-		GL gl = g.gl;
-		gl.glUniform1i(g.st.prog.uniform("nlights"), g.st.get(lights).nlights);
-	    }
-	    
-	    public void unapply(GOut g) {
-		GL gl = g.gl;
-	    }
-	    
-	    public GLShader[] shaders() {
-		return(shaders);
-	    }
-	    
-	    public boolean reqshaders() {
-		return(true);
-	    }
-	    
-	    public void prep(Buffer buf) {
-		buf.put(lighting, this);
-	    }
-	};
+    public static final GLState plights = new BaseLights(new GLShader[] {
+	    GLShader.VertexShader.load(Light.class, "glsl/plight.vert"),
+	    GLShader.FragmentShader.load(Light.class, "glsl/plight-base.frag"),
+	    GLShader.FragmentShader.load(Light.class, "glsl/plight.frag"),
+	});
     
     public static class LightList extends GLState {
 	private final List<Light> ll = new ArrayList<Light>();
