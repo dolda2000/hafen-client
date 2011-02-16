@@ -379,6 +379,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		g.image(curs.layer(Resource.imgc), dc);
 	    }
 	}
+	state.clean();
     }
 	
     void dispatch() {

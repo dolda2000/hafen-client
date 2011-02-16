@@ -436,6 +436,7 @@ public abstract class GLState {
 	    public final GLProgram prog;
 	    public final GLShader[][] shaders;
 	    public SavedProg next;
+	    boolean used = true;
 	    
 	    public SavedProg(int hash, GLProgram prog, GLShader[][] shaders) {
 		this.hash = hash;
@@ -446,6 +447,7 @@ public abstract class GLState {
 	
 	private SavedProg[] ptab = new SavedProg[32];
 	private int nprog = 0;
+	private long lastclean = System.currentTimeMillis();
 	
 	private GLProgram findprog(int hash, GLShader[][] shaders) {
 	    int idx = hash & (ptab.length - 1);
@@ -461,6 +463,7 @@ public abstract class GLState {
 		    if(shaders[i] != null)
 			continue outer;
 		}
+		s.used = true;
 		return(s.prog);
 	    }
 	    GLProgram prog = new GLProgram(shaders);
@@ -485,6 +488,31 @@ public abstract class GLState {
 		}
 	    }
 	    ptab = ntab;
+	}
+	
+	public void clean() {
+	    long now = System.currentTimeMillis();
+	    if(now - lastclean > 60000) {
+		for(int i = 0; i < ptab.length; i++) {
+		    SavedProg c, p;
+		    for(c = ptab[i], p = null; c != null; c = c.next) {
+			if(!c.used) {
+			    if(p != null)
+				p.next = c.next;
+			    else
+				ptab[i] = c.next;
+			    c.prog.dispose();
+			    nprog--;
+			} else {
+			    c.used = false;
+			}
+		    }
+		}
+		/* XXX: Rehash into smaller table? It's probably not a
+		 * problem, but it might be nice just for
+		 * completeness. */
+		lastclean = now;
+	    }
 	}
 	
 	public int numprogs() {

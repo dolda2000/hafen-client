@@ -145,6 +145,16 @@ public class GLProgram implements java.io.Serializable {
 	g.gl.glUseProgramObjectARB(glp.id);
     }
     
+    public void dispose() {
+	synchronized(this) {
+	    if(glp != null) {
+		ProgOb cur = glp;
+		glp = null;
+		cur.dispose();
+	    }
+	}
+    }
+
     private final Map<String, Integer> umap = new IdentityHashMap<String, Integer>();
     public int uniform(String name) {
 	Integer r = umap.get(name);
