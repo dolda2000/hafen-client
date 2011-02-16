@@ -22,9 +22,9 @@ void vlight_v(vec4 pos, vec3 norm, out vec4 col)
 	    if(df > 0.0) {
 		col += gl_FrontMaterial.diffuse * gl_LightSource[i].diffuse * df;
 		if(gl_FrontMaterial.shininess > 0.5) {
-		    vec3 half = normalize(edir + dir);
+		    vec3 hv = normalize(edir + dir);
 		    vlight_spec += gl_FrontMaterial.specular.rgb * gl_LightSource[i].specular.rgb *
-			pow(max(dot(norm, half), 0.0), gl_FrontMaterial.shininess);
+			pow(max(dot(norm, hv), 0.0), gl_FrontMaterial.shininess);
 		    /*
 		    vlight_spec += gl_FrontMaterial.specular.rgb * gl_LightSource[i].specular.rgb *
 			pow(max(dot(edir, normalize(reflect(dir, norm))), 0.0), gl_FrontMaterial.shininess);
@@ -43,9 +43,9 @@ void vlight_v(vec4 pos, vec3 norm, out vec4 col)
 	    if(df > 0.0) {
 		col += gl_FrontMaterial.diffuse * gl_LightSource[i].diffuse * df * att;
 		if(gl_FrontMaterial.shininess > 0.5) {
-		    vec3 half = normalize(edir + dir);
+		    vec3 hv = normalize(edir + dir);
 		    vlight_spec += gl_FrontMaterial.specular.rgb * gl_LightSource[i].specular.rgb * att *
-			pow(max(dot(norm, half), 0.0), gl_FrontMaterial.shininess);
+			pow(max(dot(norm, hv), 0.0), gl_FrontMaterial.shininess);
 		}
 	    }
 	}
