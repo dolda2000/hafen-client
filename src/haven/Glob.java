@@ -74,9 +74,10 @@ public class Glob {
     public static class Pagina implements java.io.Serializable {
 	private final java.lang.ref.WeakReference<Resource> res;
 	public State st;
+	public int time;
 	
 	public static enum State {
-	    ENABLED, DISABLED
+	    ENABLED, DISABLED, TICKING
 	}
 	
 	public Pagina(Resource res) {
@@ -137,7 +138,17 @@ public class Glob {
 		if(act == '+') {
 		    String nm = msg.string();
 		    int ver = msg.uint16();
-		    paginae.add(paginafor(Resource.load(nm, ver))); 
+		    Pagina pag = paginafor(Resource.load(nm, ver));
+		    paginae.add(pag); 
+		    int t;
+		    while((t = msg.uint8()) != 0) {
+			if(t == '!') {
+			    pag.st = Pagina.State.DISABLED;
+			} else if(t == '*') {
+			    pag.time = msg.int32();
+			    pag.st = Pagina.State.TICKING;
+			}
+		    }
 		} else if(act == '-') {
 		    String nm = msg.string();
 		    int ver = msg.uint16();
