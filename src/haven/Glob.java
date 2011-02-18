@@ -74,7 +74,8 @@ public class Glob {
     public static class Pagina implements java.io.Serializable {
 	private final java.lang.ref.WeakReference<Resource> res;
 	public State st;
-	public int time;
+	public int meter, dtime;
+	public long gettime;
 	public Image img;
 	
 	public interface Image {
@@ -82,7 +83,8 @@ public class Glob {
 	}
 
 	public static enum State {
-	    ENABLED, DISABLED, TICKING
+	    ENABLED, DISABLED
+		public Image img(final Pagina pag) {
 	    
 	    public Image img(final Pagina pag) {
 		return(new Image() {
@@ -165,8 +167,9 @@ public class Glob {
 			if(t == '!') {
 			    pag.state(Pagina.State.DISABLED);
 			} else if(t == '*') {
-			    pag.time = msg.int32();
-			    pag.st = Pagina.State.TICKING;
+			    pag.meter = msg.int32();
+			    pag.gettime = System.currentTimeMillis();
+			    pag.dtime = msg.int32();
 			}
 		    }
 		} else if(act == '-') {
