@@ -75,14 +75,29 @@ public class Glob {
 	private final java.lang.ref.WeakReference<Resource> res;
 	public State st;
 	public int time;
+	public Image img;
 	
+	public interface Image {
+	    public Tex tex();
+	}
+
 	public static enum State {
 	    ENABLED, DISABLED, TICKING
+	    
+	    public Image img(final Pagina pag) {
+		return(new Image() {
+			public Tex tex() {
+			    if(pag.res() == null)
+				return(null);
+			    return(pag.res().layer(Resource.imgc).tex());
+			}
+		    });
+	    }
 	}
 	
 	public Pagina(Resource res) {
 	    this.res = new java.lang.ref.WeakReference<Resource>(res);
-	    this.st = State.ENABLED;
+	    state(State.ENABLED);
 	}
 	
 	public Resource res() {
@@ -93,6 +108,11 @@ public class Glob {
 	    if(res().loading)
 		return(null);
 	    return(res().layer(Resource.action));
+	}
+	
+	public void state(State st) {
+	    this.st = st;
+	    this.img = st.img(this);
 	}
     }
 	
@@ -143,7 +163,7 @@ public class Glob {
 		    int t;
 		    while((t = msg.uint8()) != 0) {
 			if(t == '!') {
-			    pag.st = Pagina.State.DISABLED;
+			    pag.state(Pagina.State.DISABLED);
 			} else if(t == '*') {
 			    pag.time = msg.int32();
 			    pag.st = Pagina.State.TICKING;

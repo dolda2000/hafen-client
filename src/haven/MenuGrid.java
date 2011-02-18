@@ -156,7 +156,7 @@ public class MenuGrid extends Widget {
 		g.image(bg, p);
 		Pagina btn = layout[x][y];
 		if(btn != null) {
-		    Tex btex = btn.res().layer(Resource.imgc).tex();
+		    Tex btex = btn.img.tex();
 		    g.image(btex, p.add(1, 1));
 		    if(btn == pressed) {
 			g.chcolor(new Color(0, 0, 0, 128));
@@ -167,7 +167,7 @@ public class MenuGrid extends Widget {
 	    }
 	}
 	if(dragging != null) {
-	    final Tex dt = dragging.res().layer(Resource.imgc).tex();
+	    final Tex dt = dragging.img.tex();
 	    ui.drawafter(new UI.AfterDraw() {
 		    public void draw(GOut g) {
 			g.image(dt, ui.mc.add(dt.sz().div(2).inv()));
