@@ -83,8 +83,21 @@ public class Glob {
 	}
 
 	public static enum State {
-	    ENABLED, DISABLED
+	    ENABLED, DISABLED {
 		public Image img(final Pagina pag) {
+		    return(new Image() {
+			    private Tex c = null;
+			    
+			    public Tex tex() {
+				if(pag.res() == null)
+				    return(null);
+				if(c == null)
+				    c = new TexI(Utils.monochromize(pag.res().layer(Resource.imgc).img, java.awt.Color.LIGHT_GRAY));
+				return(c);
+			    }
+			});
+		}
+	    };
 	    
 	    public Image img(final Pagina pag) {
 		return(new Image() {

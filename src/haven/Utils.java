@@ -38,8 +38,8 @@ import java.awt.image.BufferedImage;
 public class Utils {
     public static final java.nio.charset.Charset utf8 = java.nio.charset.Charset.forName("UTF-8");
     public static final java.nio.charset.Charset ascii = java.nio.charset.Charset.forName("US-ASCII");
+    public static final java.awt.image.ColorModel rgbm = java.awt.image.ColorModel.getRGBdefault();
     private static Preferences prefs = null;
-    public static java.awt.image.ColorModel rgbm = java.awt.image.ColorModel.getRGBdefault();
     private static Background bgworker = null;
 
     static Coord imgsz(BufferedImage img) {
@@ -497,6 +497,30 @@ public class Utils {
 	g.drawImage(img, 1, 1, null);
 	g.dispose();
 	return(ol);
+    }
+    
+    public static BufferedImage monochromize(BufferedImage img, Color col) {
+	Coord sz = imgsz(img);
+	BufferedImage ret = TexI.mkbuf(sz);
+	int[] ob = new int[4];
+	for(int y = 0; y < sz.y; y++) {
+	    for(int x = 0; x < sz.x; x++) {
+		int px = img.getRGB(x, y);
+		int r = rgbm.getRed(px),
+		    g = rgbm.getGreen(px),
+		    b = rgbm.getBlue(px),
+		    a = rgbm.getAlpha(px);
+		int max = Math.max(r, Math.max(g, b)),
+		    min = Math.min(r, Math.min(g, b));
+		int val = (max + min) / 2;
+		ob[0] = (col.getRed()   * val) / 255;
+		ob[1] = (col.getGreen() * val) / 255;
+		ob[2] = (col.getBlue()  * val) / 255;
+		ob[3] = a;
+		ret.setRGB(x, y, rgbm.getDataElement(ob, 0));
+	    }
+	}
+	return(ret);
     }
     
     public static int floordiv(int a, int b) {
