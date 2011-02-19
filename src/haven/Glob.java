@@ -174,7 +174,9 @@ public class Glob {
 		    String nm = msg.string();
 		    int ver = msg.uint16();
 		    Pagina pag = paginafor(Resource.load(nm, ver));
-		    paginae.add(pag); 
+		    paginae.add(pag);
+		    pag.state(Pagina.State.ENABLED);
+		    pag.meter = 0;
 		    int t;
 		    while((t = msg.uint8()) != 0) {
 			if(t == '!') {
