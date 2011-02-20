@@ -150,6 +150,7 @@ public class MenuGrid extends Widget {
 
     public void draw(GOut g) {
 	updlayout();
+	long now = System.currentTimeMillis();
 	for(int y = 0; y < gsz.y; y++) {
 	    for(int x = 0; x < gsz.x; x++) {
 		Coord p = bgsz.mul(new Coord(x, y));
@@ -158,6 +159,15 @@ public class MenuGrid extends Widget {
 		if(btn != null) {
 		    Tex btex = btn.img.tex();
 		    g.image(btex, p.add(1, 1));
+		    if(btn.meter > 0) {
+			double m = btn.meter / 1000.0;
+			if(btn.dtime > 0)
+			    m += (1 - m) * (double)(now - btn.gettime) / (double)btn.dtime;
+			m = Utils.clip(m, 0, 1);
+			g.chcolor(255, 255, 255, 128);
+			g.fellipse(p.add(bgsz.div(2)), bgsz.div(2), 90, (int)(90 + (360 * m)));
+			g.chcolor();
+		    }
 		    if(btn == pressed) {
 			g.chcolor(new Color(0, 0, 0, 128));
 			g.frect(p.add(1, 1), btex.sz());
