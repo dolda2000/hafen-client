@@ -34,7 +34,7 @@ import java.util.*;
 import java.lang.reflect.*;
 import javax.media.opengl.*;
 
-public class MapView extends PView {
+public class MapView extends PView implements DTarget {
     public int plgob = -1;
     public Coord cc;
     private final Glob glob;
@@ -466,15 +466,13 @@ public class MapView extends PView {
 
     private boolean camdrag = false;
     
-    private class Click implements Delayed {
-	Coord clickc;
-	int clickb;
+    public abstract class Hittest implements Delayed {
+	private final Coord clickc;
 	
-	private Click(Coord c, int b) {
+	public Hittest(Coord c) {
 	    clickc = c;
-	    clickb = b;
 	}
-
+	
 	public void run(GOut g) {
 	    GLState.Buffer bk = g.st.copy();
 	    Coord mapcl;
@@ -493,12 +491,26 @@ public class MapView extends PView {
 	    } finally {
 		g.st.set(bk);
 	    }
-	    if(mapcl != null) {
-		if(gobcl == null)
-		    wdgmsg("click", clickc, mapcl, clickb, ui.modflags());
-		else
-		    wdgmsg("click", clickc, mapcl, clickb, ui.modflags(), gobcl.id, gobcl.rc);
-	    }
+	    if(mapcl != null)
+		hit(clickc, mapcl, gobcl);
+	}
+	
+	protected abstract void hit(Coord pc, Coord mc, Gob gob);
+    }
+
+    private class Click extends Hittest {
+	int clickb;
+	
+	private Click(Coord c, int b) {
+	    super(c);
+	    clickb = b;
+	}
+	
+	protected void hit(Coord pc, Coord mc, Gob gob) {
+	    if(gob == null)
+		wdgmsg("click", pc, mc, clickb, ui.modflags());
+	    else
+		wdgmsg("click", pc, mc, clickb, ui.modflags(), gob.id, gob.rc);
 	}
     }
 
@@ -551,6 +563,31 @@ public class MapView extends PView {
 	    return(true);
 	}
 	return(((Camera)camera).wheel(c, amount));
+    }
+    
+    public boolean drop(final Coord cc, final Coord ul) {
+	synchronized(delayed) {
+	    delayed.add(new Hittest(cc) {
+		    public void hit(Coord pc, Coord mc, Gob gob) {
+			wdgmsg("drop", pc, mc, ui.modflags());
+		    }
+		});
+	}
+	return(true);
+    }
+    
+    public boolean iteminteract(Coord cc, Coord ul) {
+	synchronized(delayed) {
+	    delayed.add(new Hittest(cc) {
+		    public void hit(Coord pc, Coord mc, Gob gob) {
+			if(gob == null)
+			    wdgmsg("itemact", pc, mc, ui.modflags());
+			else
+			    wdgmsg("itemact", pc, mc, ui.modflags(), gob.id, gob.rc);
+		    }
+		});
+	}
+	return(true);
     }
 
     public boolean globtype(char c, java.awt.event.KeyEvent ev) {
