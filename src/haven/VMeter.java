@@ -43,10 +43,12 @@ public class VMeter extends Widget {
 				       (Integer)args[2],
 				       (Integer)args[3],
 				       (Integer)args[4]);
-		    } else {
+		    } else if(args.length > 3) {
 			cl = new Color((Integer)args[1],
 				       (Integer)args[2],
 				       (Integer)args[3]);
+		    } else {
+			cl = (Color)args[1];
 		    }
 		    return(new VMeter(c, parent, (Integer)args[0], cl));
 		}
