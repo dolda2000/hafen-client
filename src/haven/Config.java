@@ -60,9 +60,9 @@ public class Config {
 		mainport = Integer.parseInt(p);
 	    if((p = getprop("haven.authport", null)) != null)
 		authport = Integer.parseInt(p);
-	    if(!(p = getprop("haven.resurl", "https://www.havenandhearth.com/res/")).equals(""))
+	    if(!(p = getprop("haven.resurl", "")).equals(""))
 		resurl = new URL(p);
-	    if(!(p = getprop("haven.mapurl", "http://www.havenandhearth.com/mm/")).equals(""))
+	    if(!(p = getprop("haven.mapurl", "")).equals(""))
 		mapurl = new URL(p);
 	    fullscreen = getprop("haven.fullscreen", "off").equals("on");
 	    if((p = getprop("haven.wndsz", null)) != null) {
