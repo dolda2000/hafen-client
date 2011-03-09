@@ -45,6 +45,10 @@ public class Coord3f {
 	this(c.x, c.y, 0);
     }
     
+    public boolean equals(Coord3f o) {
+	return((o.x == x) && (o.y == y) && (o.z == z));
+    }
+
     public Coord3f add(float ax, float ay, float az) {
 	return(new Coord3f(x + ax, y + ay, z + az));
     }

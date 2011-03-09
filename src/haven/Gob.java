@@ -176,4 +176,39 @@ public class Gob implements Sprite.Owner, Rendered {
 	    return(d.getneg());
 	return(null);
     }
+    
+    public static final GLState.Slot<Save> savepos = new GLState.Slot<Save>(Save.class, PView.loc);
+    public class Save extends GLState {
+	public Matrix4f cam = new Matrix4f(), wxf = new Matrix4f(),
+	    mv = new Matrix4f();
+	
+	public void apply(GOut g) {
+	    mv.load(cam.load(g.st.cam)).mul1(wxf.load(g.st.wxf));
+	    PView.RenderState proj = g.st.cur(PView.proj);
+	    Coord3f s = proj.toscreen(mv.mul4(Coord3f.o));
+	    Gob.this.sc = new Coord(s);
+	    Gob.this.sczu = proj.toscreen(mv.mul4(Coord3f.zu)).sub(s);
+	}
+	
+	public void unapply(GOut g) {}
+	
+	public void prep(Buffer buf) {
+	    buf.put(savepos, this);
+	}
+    }
+    
+    public final Save save = new Save();
+    public final Location loc = new Location(new Matrix4f()) {
+	    private Coord3f c = Coord3f.o;
+	    private double a = 0.0;
+	    
+	    public Matrix4f fin(Matrix4f p) {
+		Coord3f c = getc();
+		c.y = -c.y;
+		if(!c.equals(this.c) || (this.a != Gob.this.a))
+		    update(makexlate(new Matrix4f(), this.c = c)
+			   .mul1(makerot(new Matrix4f(), Coord3f.zu, (float)-(this.a = Gob.this.a))));
+		return(super.fin(p));
+	    }
+	};
 }

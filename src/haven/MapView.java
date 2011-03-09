@@ -207,33 +207,10 @@ public class MapView extends PView implements DTarget {
 	    }
 	};
     
-    public static final GLState.Slot<Save> save = new GLState.Slot<Save>(Save.class, PView.loc);
-    public static class Save extends GLState {
-	public Matrix4f m = new Matrix4f();
-	
-	public void apply(GOut g) {
-	    m.load(g.st.cam).mul1(g.st.wxf);
-	}
-	
-	public void unapply(GOut g) {}
-	
-	public void prep(Buffer buf) {
-	    buf.put(save, this);
-	}
-    }
     void addgob(RenderList rl, final Gob gob) {
 	Coord3f c = gob.getc();
 	c.y = -c.y;
-	Save save = new Save() {
-		public void apply(GOut g) {
-		    super.apply(g);
-		    PView.RenderState proj = g.st.cur(PView.proj);
-		    Coord3f s = proj.toscreen(m.mul4(Coord3f.o), sz);
-		    gob.sc = new Coord(s);
-		    gob.sczu = proj.toscreen(m.mul4(Coord3f.zu), sz).sub(s);
-		}
-	    };
-	rl.add(gob, GLState.compose(Location.xlate(c), Location.rot(Coord3f.zu, (float)-gob.a), save));
+	rl.add(gob, GLState.compose(gob.loc, gob.save));
     }
 
     private final Rendered gobs = new Rendered() {
