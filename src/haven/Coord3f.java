@@ -106,7 +106,10 @@ public class Coord3f {
     }
 
     public Coord3f norm() {
-	return(div(abs()));
+	float a = abs();
+	if(a == 0.0)
+	    return(new Coord3f(0, 0, 0));
+	return(div(a));
     }
 
     public float dist(Coord3f o) {
