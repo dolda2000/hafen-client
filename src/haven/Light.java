@@ -143,7 +143,7 @@ public class Light implements Rendered {
     
     public static class LightList extends GLState {
 	private final List<Light> ll = new ArrayList<Light>();
-	private final List<Location> sl = new ArrayList<Location>();
+	private final List<Matrix4f> vl = new ArrayList<Matrix4f>();
 	private final List<Light> en = new ArrayList<Light>();
 	public int nlights = 0;
 	
@@ -154,17 +154,12 @@ public class Light implements Rendered {
 		nl = g.gc.maxlights;
 	    en.clear();
 	    for(int i = 0; i < nl; i++) {
-		Location loc = sl.get(i);
+		Matrix4f mv = vl.get(i);
 		Light l = ll.get(i);
-		if(loc != null)
-		    loc.apply(g);
-		try {
-		    en.add(l);
-		    l.enable(g, i);
-		} finally {
-		    if(loc != null)
-			loc.unapply(g);
-		}
+		g.st.matmode(GL.GL_MODELVIEW);
+		gl.glLoadMatrixf(mv.m, 0);
+		en.add(l);
+		l.enable(g, i);
 		GOut.checkerr(gl);
 	    }
 	    nlights = nl;
@@ -190,10 +185,10 @@ public class Light implements Rendered {
 	    buf.put(lights, this);
 	}
 	
-	private void add(Light l, Location loc) {
+	private void add(Light l, Matrix4f loc) {
 	    ll.add(l);
-	    sl.add(loc);
-	    if(ll.size() != sl.size())
+	    vl.add(loc);
+	    if(ll.size() != vl.size())
 		throw(new RuntimeException());
 	}
     }
@@ -231,8 +226,14 @@ public class Light implements Rendered {
     public void draw(GOut g) {}
     public Order setup(RenderList rl) {
 	LightList l = rl.state().get(lights);
-	if(l != null)
-	    l.add(this, rl.state().get(PView.loc));
+	if(l != null) {
+	    Camera cam = rl.state().get(PView.cam);
+	    Location loc = rl.state().get(PView.loc);
+	    Matrix4f mv = cam.fin(Matrix4f.identity());
+	    if(loc != null)
+		mv = mv.mul(loc.fin(Matrix4f.identity()));
+	    l.add(this, mv);
+	}
 	return(null);
     }
     
