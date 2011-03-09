@@ -58,6 +58,12 @@ public class Matrix4f {
 			    0, 0, 1, 0,
 			    0, 0, 0, 1));
     }
+    
+    public Matrix4f load(Matrix4f o) {
+	for(int i = 0; i < 16; i++)
+	    m[i] = o.m[i];
+	return(this);
+    }
 
     public float get(int x, int y) {
 	return(m[y + (x * 4)]);

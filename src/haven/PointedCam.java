@@ -32,18 +32,19 @@ public class PointedCam extends Camera {
     Coord3f base = Coord3f.o;
     float dist = 5.0f, e, a;
 
-    public void xf(GOut g) {
-	apply(g, base, dist, e, a);
-    }
-    
-    public static void apply(GOut g, Coord3f base, float dist, float e, float a) {
-	apply(g.gl, base, dist, e, a);
+    public PointedCam() {
+	super(Matrix4f.identity());
     }
 
-    public static void apply(GL gl, Coord3f base, float dist, float e, float a) {
-	gl.glTranslatef(0.0f, 0.0f, -dist);
-	gl.glRotatef(90.0f - (float)(e * 180.0 / Math.PI), -1.0f, 0.0f, 0.0f);
-	gl.glRotatef(90.0f + (float)(a * 180.0 / Math.PI), 0.0f, 0.0f, -1.0f);
-	gl.glTranslatef(-base.x, -base.y, -base.z);
+    public Matrix4f fin(Matrix4f p) {
+	update(compute(base, dist, e, a));
+	return(super.fin(p));
+    }
+    
+    public static Matrix4f compute(Coord3f base, float dist, float e, float a) {
+	return(makexlate(new Matrix4f(), new Coord3f(0.0f, 0.0f, -dist))
+	       .mul1(makerot(new Matrix4f(), new Coord3f(-1.0f, 0.0f, 0.0f), ((float)Math.PI / 2.0f) - e))
+	       .mul1(makerot(new Matrix4f(), new Coord3f(0.0f, 0.0f, -1.0f), ((float)Math.PI / 2.0f) + a))
+	       .mul1(makexlate(new Matrix4f(), base.inv())));
     }
 }

@@ -29,23 +29,22 @@ package haven;
 import javax.media.opengl.*;
 
 public abstract class Transform extends GLState {
-    public abstract void xf(GOut g);
+    private Matrix4f xf;
+    private Matrix4f lp = null, fin;
     
-    public void apply(GOut g) {
-	GL gl = g.gl;
-	g.st.matmode(GL.GL_MODELVIEW);
-	gl.glPushMatrix();
-	xf(g);
+    public Transform(Matrix4f xf) {
+	this.xf = xf;
     }
     
-    public void unapply(GOut g) {
-	GL gl = g.gl;
-	g.st.matmode(GL.GL_MODELVIEW);
-	gl.glPopMatrix();
+    public void update(Matrix4f xf) {
+	this.xf = xf;
+	this.lp = null;
     }
     
-    public int capply() {
-	return(2);
+    public Matrix4f fin(Matrix4f p) {
+	if(p != lp)
+	    fin = (lp = p).mul(xf);
+	return(fin);
     }
     
     public static Matrix4f makexlate(Matrix4f d, Coord3f c) {

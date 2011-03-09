@@ -29,12 +29,19 @@ package haven;
 import javax.media.opengl.*;
 
 public abstract class Camera extends Transform {
-    public final Matrix4f tm = new Matrix4f();
-
+    private Matrix4f bk;
+    
+    public Camera(Matrix4f xf) {
+	super(xf);
+    }
+    
     public void apply(GOut g) {
-	super.apply(g);
-	tm.getgl(g.gl, GL.GL_MODELVIEW_MATRIX);
-	GOut.checkerr(g.gl);
+	bk = g.st.cam;
+	g.st.cam = fin(g.st.cam);
+    }
+    
+    public void unapply(GOut g) {
+	g.st.cam = bk;
     }
     
     public void prep(Buffer b) {

@@ -108,7 +108,7 @@ public class WaterTile extends Tiler {
 		gl.glColor4f(1, 1, 1, 0.5f);
 		g.st.matmode(GL.GL_TEXTURE);
 		gl.glPushMatrix();
-		g.st.cur(PView.cam).tm.transpose().trim3(1).loadgl(gl);
+		g.st.cam.transpose().trim3(1).loadgl(gl);
 	    }
 	    
 	    public void unapply(GOut g) {

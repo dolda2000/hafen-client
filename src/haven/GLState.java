@@ -298,6 +298,10 @@ public abstract class GLState {
 	public boolean usedprog;
 	public long time = 0;
 	
+	/* It seems ugly to treat these so specially, but right now I
+	 * cannot see any good alternative. */
+	public Matrix4f cam = Matrix4f.identity(), wxf = Matrix4f.identity(), mv = Matrix4f.identity();
+	
 	public Applier(GL gl, GLConfig cfg) {
 	    this.gl = gl;
 	    this.cfg = cfg;
@@ -387,6 +391,7 @@ public abstract class GLState {
 			repl[i] = true;
 		}
 	    }
+	    Matrix4f oc = cam, ow = wxf;
 	    for(int i = trans.length - 1; i >= 0; i--) {
 		if(repl[i]) {
 		    if(cur.states[i] != null)
@@ -406,6 +411,12 @@ public abstract class GLState {
 		} else if((prog != null) && dirty && (shaders[i] != null)) {
 		    cur.states[i].reapply(g);
 		}
+	    }
+	    if((oc != cam) || (ow != wxf)) {
+		/* See comment above */
+		mv.load(oc = cam).mul1(ow = wxf);
+		matmode(GL.GL_MODELVIEW);
+		gl.glLoadMatrixf(mv.m, 0);
 	    }
 	    checkerr(gl);
 	    if(Config.profile)

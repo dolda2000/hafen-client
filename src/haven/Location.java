@@ -28,20 +28,28 @@ package haven;
 
 import javax.media.opengl.*;
 
-public abstract class Location extends Transform {
+public class Location extends Transform {
     private Location p = null;
-
-    private void chain(GOut g) {
-	if(p != null)
-	    p.chain(g);
-	xf(g);
+    private Matrix4f bk;
+    
+    public Location(Matrix4f xf) {
+	super(xf);
+    }
+    
+    public Matrix4f fin(Matrix4f p) {
+	if(this.p == null)
+	    return(super.fin(p));
+	else
+	    return(super.fin(this.p.fin(p)));
     }
 
-    public final void apply(GOut g) {
-	GL gl = g.gl;
-	g.st.matmode(GL.GL_MODELVIEW);
-	gl.glPushMatrix();
-	chain(g);
+    public void apply(GOut g) {
+	bk = g.st.wxf;
+	g.st.wxf = fin(g.st.wxf);
+    }
+    
+    public void unapply(GOut g) {
+	g.st.wxf = bk;
     }
 
     public void prep(Buffer b) {
@@ -49,21 +57,11 @@ public abstract class Location extends Transform {
 	b.put(PView.loc, this);
     }
     
-    public static Location xlate(final Coord3f c) {
-	return(new Location() {
-		public void xf(GOut g) {
-		    GL gl = g.gl;
-		    gl.glTranslatef(c.x, c.y, c.z);
-		}
-	    });
+    public static Location xlate(Coord3f c) {
+	return(new Location(makexlate(new Matrix4f(), c)));
     }
     
-    public static Location rot(final Coord3f axis, final float angle) {
-	return(new Location() {
-		public void xf(GOut g) {
-		    GL gl = g.gl;
-		    gl.glRotatef(angle * 180.0f / (float)Math.PI, axis.x, axis.y, axis.z);
-		}
-	    });
+    public static Location rot(Coord3f axis, float angle) {
+	return(new Location(makerot(new Matrix4f(), axis.norm(), angle)));
     }
 }

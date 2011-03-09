@@ -49,6 +49,10 @@ public class MapView extends PView implements DTarget {
     }
 
     private abstract class Camera extends haven.Camera {
+	public Camera() {
+	    super(Matrix4f.identity());
+	}
+	
 	public boolean click(Coord sc) {
 	    return(false);
 	}
@@ -59,6 +63,13 @@ public class MapView extends PView implements DTarget {
 	}
 	
 	public void resized() {
+	}
+	
+	public abstract Matrix4f compute();
+	
+	public Matrix4f fin(Matrix4f p) {
+	    update(compute());
+	    return(super.fin(p));
 	}
     }
     
@@ -93,7 +104,7 @@ public class MapView extends PView implements DTarget {
 	    return((float)(((cd - (h / Math.tan(elev))) * Math.sin(elev - da) / Math.sin(da)) - (h / Math.sin(elev))));
 	}
 
-	public void xf(GOut g) {
+	public Matrix4f compute() {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
 	    if(curc == null)
@@ -108,7 +119,7 @@ public class MapView extends PView implements DTarget {
 		curc = new Coord3f(nx, ny, cc.z);
 		angl = curc.xyangle(cambase);
 	    }
-	    PointedCam.apply(g, curc.add(0.0f, 0.0f, h), dist(elev), elev, angl);
+	    return(PointedCam.compute(curc.add(0.0f, 0.0f, h), dist(elev), elev, angl));
 	}
 	
 	public boolean wheel(Coord c, int amount) {
@@ -129,10 +140,10 @@ public class MapView extends PView implements DTarget {
 	private Coord dragorig = null;
 	private float elevorig, anglorig;
 
-	public void xf(GOut g) {
+	public Matrix4f compute() {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
-	    PointedCam.apply(g, cc.add(0.0f, 0.0f, 15f), dist, elev, angl);
+	    return(PointedCam.compute(cc.add(0.0f, 0.0f, 15f), dist, elev, angl));
 	}
 	
 	public boolean click(Coord c) {
@@ -196,16 +207,30 @@ public class MapView extends PView implements DTarget {
 	    }
 	};
     
+    public static final GLState.Slot<Save> save = new GLState.Slot<Save>(Save.class, PView.loc);
+    public static class Save extends GLState {
+	public Matrix4f m = new Matrix4f();
+	
+	public void apply(GOut g) {
+	    m.load(g.st.cam).mul1(g.st.wxf);
+	}
+	
+	public void unapply(GOut g) {}
+	
+	public void prep(Buffer buf) {
+	    buf.put(save, this);
+	}
+    }
     void addgob(RenderList rl, final Gob gob) {
 	Coord3f c = gob.getc();
 	c.y = -c.y;
-	Location save = new Location() {
-		public void xf(GOut g) {
-		    Matrix4f tm = Matrix4f.fromgl(g.gl, GL.GL_MODELVIEW_MATRIX);
+	Save save = new Save() {
+		public void apply(GOut g) {
+		    super.apply(g);
 		    PView.RenderState proj = g.st.cur(PView.proj);
-		    Coord3f s = proj.toscreen(tm.mul4(Coord3f.o), sz);
+		    Coord3f s = proj.toscreen(m.mul4(Coord3f.o), sz);
 		    gob.sc = new Coord(s);
-		    gob.sczu = proj.toscreen(tm.mul4(Coord3f.zu), sz).sub(s);
+		    gob.sczu = proj.toscreen(m.mul4(Coord3f.zu), sz).sub(s);
 		}
 	    };
 	rl.add(gob, GLState.compose(Location.xlate(c), Location.rot(Coord3f.zu, (float)-gob.a), save));

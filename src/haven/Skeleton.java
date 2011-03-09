@@ -257,38 +257,38 @@ public class Skeleton {
 	}
 	
 	public Location bonetrans(final int bone) {
-	    return(new Location() {
+	    return(new Location(Matrix4f.identity()) {
 		    private int cseq = -1;
 		    private float ang;
 		    
-		    public void xf(GOut g) {
-			GL gl = g.gl;
+		    public Matrix4f fin(Matrix4f p) {
 			if(cseq != seq) {
-			    ang = (float)(Math.acos(grot[bone][0]) * 2.0 / Math.PI * 180.0);
+			    ang = (float)(Math.acos(grot[bone][0]) * 2.0);
+			    update(Transform.makexlate(new Matrix4f(), new Coord3f(gpos[bone][0], gpos[bone][1], gpos[bone][2]))
+				   .mul1(Transform.makerot(new Matrix4f(), new Coord3f(grot[bone][1], grot[bone][2], grot[bone][3]), ang)));
 			    cseq = seq;
 			}
-			gl.glTranslatef(gpos[bone][0], gpos[bone][1], gpos[bone][2]);
-			gl.glRotatef(ang, grot[bone][1], grot[bone][2], grot[bone][3]);
+			return(super.fin(p));
 		    }
 		});
 	}
 	
 	public Location bonetrans2(final int bone) {
-	    return(new Location() {
+	    return(new Location(Matrix4f.identity()) {
 		    private int cseq = -1;
 		    private float[] pos = new float[3], rot = new float[4];
 		    private float ang;
 		    
-		    public void xf(GOut g) {
-			GL gl = g.gl;
+		    public Matrix4f fin(Matrix4f p) {
 			if(cseq != seq) {
 			    rot = qqmul(rot, grot[bone], qinv(rot, bindpose.grot[bone]));
 			    pos = vvadd(pos, gpos[bone], vqrot(pos, vinv(pos, bindpose.gpos[bone]), rot));
 			    ang = (float)(Math.acos(rot[0]) * 2.0 / Math.PI * 180.0);
+			    update(Transform.makexlate(new Matrix4f(), new Coord3f(pos[0], pos[1], pos[2]))
+				   .mul1(Transform.makerot(new Matrix4f(), new Coord3f(rot[1], rot[2], rot[3]), ang)));
 			    cseq = seq;
 			}
-			gl.glTranslatef(pos[0], pos[1], pos[2]);
-			gl.glRotatef(ang, rot[1], rot[2], rot[3]);
+			return(super.fin(p));
 		    }
 		});
 	}
