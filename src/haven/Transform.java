@@ -47,4 +47,26 @@ public abstract class Transform extends GLState {
     public int capply() {
 	return(2);
     }
+    
+    public static Matrix4f makexlate(Matrix4f d, Coord3f c) {
+	d.m[ 0] = d.m[ 5] = d.m[10] = d.m[15] = 1.0f;
+	d.m[ 1] = d.m[ 2] = d.m[ 3] =
+	d.m[ 4] = d.m[ 6] = d.m[ 7] =
+	d.m[ 8] = d.m[ 9] = d.m[11] = 0.0f;
+	d.m[12] = c.x;
+	d.m[13] = c.y;
+	d.m[14] = c.z;
+	return(d);
+    }
+
+    public static Matrix4f makerot(Matrix4f d, Coord3f axis, float angle) {
+	float c = (float)Math.cos(angle), s = (float)Math.sin(angle), C = 1.0f - c;
+	float x = axis.x, y = axis.y, z = axis.z;
+	d.m[ 3] = d.m[ 7] = d.m[11] = d.m[12] = d.m[13] = d.m[14] = 0.0f;
+	d.m[15] = 1.0f;
+	d.m[ 0] = (x * x * C) + c;       d.m[ 4] = (y * x * C) - (z * s); d.m[ 8] = (z * x * C) + (y * s);
+	d.m[ 1] = (x * y * C) + (z * s); d.m[ 5] = (y * y * C) + c;       d.m[ 9] = (z * y * C) - (x * s);
+	d.m[ 2] = (x * z * C) - (y * s); d.m[ 6] = (y * z * C) + (x * s); d.m[10] = (z * z * C) + c;
+	return(d);
+    }
 }
