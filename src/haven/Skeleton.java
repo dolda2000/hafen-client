@@ -265,7 +265,7 @@ public class Skeleton {
 			if(cseq != seq) {
 			    ang = (float)(Math.acos(grot[bone][0]) * 2.0);
 			    update(Transform.makexlate(new Matrix4f(), new Coord3f(gpos[bone][0], gpos[bone][1], gpos[bone][2]))
-				   .mul1(Transform.makerot(new Matrix4f(), new Coord3f(grot[bone][1], grot[bone][2], grot[bone][3]), ang)));
+				   .mul1(Transform.makerot(new Matrix4f(), new Coord3f(grot[bone][1], grot[bone][2], grot[bone][3]).norm(), ang)));
 			    cseq = seq;
 			}
 			return(super.fin(p));
@@ -283,9 +283,9 @@ public class Skeleton {
 			if(cseq != seq) {
 			    rot = qqmul(rot, grot[bone], qinv(rot, bindpose.grot[bone]));
 			    pos = vvadd(pos, gpos[bone], vqrot(pos, vinv(pos, bindpose.gpos[bone]), rot));
-			    ang = (float)(Math.acos(rot[0]) * 2.0 / Math.PI * 180.0);
+			    ang = (float)(Math.acos(rot[0]) * 2.0);
 			    update(Transform.makexlate(new Matrix4f(), new Coord3f(pos[0], pos[1], pos[2]))
-				   .mul1(Transform.makerot(new Matrix4f(), new Coord3f(rot[1], rot[2], rot[3]), ang)));
+				   .mul1(Transform.makerot(new Matrix4f(), new Coord3f(rot[1], rot[2], rot[3]).norm(), ang)));
 			    cseq = seq;
 			}
 			return(super.fin(p));
