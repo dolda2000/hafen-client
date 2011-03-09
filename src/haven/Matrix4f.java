@@ -89,6 +89,31 @@ public class Matrix4f {
 	return(new float[] {x, y, z, w});
     }
     
+    public Matrix4f mul(Matrix4f o) {
+	Matrix4f n = new Matrix4f();
+	int i = 0;
+	for(int x = 0; x < 16; x += 4) {
+	    for(int y = 0; y < 4; y++) {
+		n.m[i++] = (m[y] * o.m[x]) + (m[y + 4] * o.m[x + 1]) + (m[y + 8] * o.m[x + 2]) + (m[y + 12] * o.m[x + 3]);
+	    }
+	}
+	return(n);
+    }
+    
+    public Matrix4f mul1(Matrix4f o) {
+	int i = 0;
+	/* This should get allocated on the stack unless the JVM sucks. */
+	float[] n = new float[16];
+	for(int x = 0; x < 16; x += 4) {
+	    for(int y = 0; y < 4; y++) {
+		n[i++] = (m[y] * o.m[x]) + (m[y + 4] * o.m[x + 1]) + (m[y + 8] * o.m[x + 2]) + (m[y + 12] * o.m[x + 3]);
+	    }
+	}
+	for(i = 0; i < 16; i++)
+	    m[i] = n[i];
+	return(this);
+    }
+    
     public Matrix4f transpose() {
 	Matrix4f n = new Matrix4f();
 	for(int y = 0; y < 4; y++) {
