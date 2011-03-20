@@ -121,6 +121,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    mk[0] = gettype(type).create(Coord.z, makewnd, cargs);
 	    makewnd.pack();
 	    return(mk[0]);
+	} else if(place == "misc") {
+	    return(gettype(type).create((Coord)pargs[1], this, cargs));
 	} else {
 	    throw(new UI.UIException("Illegal gameui child", type, pargs));
 	}
