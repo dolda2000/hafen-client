@@ -31,6 +31,7 @@ import java.util.*;
 public class MeshBuf {
     public final Collection<Vertex> v = new LinkedList<Vertex>();
     public final Collection<Face> f = new LinkedList<Face>();
+    private VertexBuf vbuf = null;
     
     public class Vertex {
 	public Coord3f pos, nrm, tex;
@@ -98,9 +99,9 @@ public class MeshBuf {
 	return(vl);
     }
     
-    public FastMesh mkmesh() {
-	if(v.isEmpty() || f.isEmpty())
-	    throw(new RuntimeException("Tried to build empty mesh"));
+    private void mkvbuf() {
+	if(v.isEmpty())
+	    throw(new RuntimeException("Tried to build empty vertex buffer"));
 	float[] pos, nrm, tex;
 	boolean hastex = false;
 	pos = new float[v.size() * 3];
@@ -112,13 +113,16 @@ public class MeshBuf {
 	    pos[pi + 0] = v.pos.x;
 	    pos[pi + 1] = v.pos.y;
 	    pos[pi + 2] = v.pos.z;
+	    v.pos = null;
 	    nrm[ni + 0] = v.nrm.x;
 	    nrm[ni + 1] = v.nrm.y;
 	    nrm[ni + 2] = v.nrm.z;
+	    v.nrm = null;
 	    if(v.tex != null) {
 		hastex = true;
 		tex[ti + 0] = v.tex.x;
 		tex[ti + 1] = v.tex.y;
+		v.tex = null;
 	    }
 	    pi += 3;
 	    ni += 3;
@@ -127,7 +131,18 @@ public class MeshBuf {
 	}
 	if(!hastex)
 	    tex = null;
-	VertexBuf vbuf = new VertexBuf(pos, nrm, tex);
+	this.vbuf = new VertexBuf(pos, nrm, tex);
+    }
+
+    public void clearfaces() {
+	this.f.clear();
+    }
+
+    public FastMesh mkmesh() {
+	if(f.isEmpty())
+	    throw(new RuntimeException("Tried to build empty mesh"));
+	if(this.vbuf == null)
+	    mkvbuf();
 	short[] idx = new short[f.size() * 3];
 	int ii = 0;
 	for(Face f : this.f) {
@@ -136,6 +151,6 @@ public class MeshBuf {
 	    idx[ii + 2] = f.v3.idx;
 	    ii += 3;
 	}
-	return(new FastMesh(vbuf, idx));
+	return(new FastMesh(this.vbuf, idx));
     }
 }
