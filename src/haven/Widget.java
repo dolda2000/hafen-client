@@ -48,7 +48,7 @@ public class Widget {
 			       Cal.class, Avaview.class, NpcChat.class,
 			       Label.class, Progress.class, VMeter.class, Partyview.class,
 			       MenuGrid.class, SlenHud.class, HWindow.class, CheckBox.class, Logwindow.class,
-			       ISBox.class, Fightview.class, IMeter.class,
+			       ISBox.class, Fightview.class, IMeter.class, MapMod.class,
 			       GiveButton.class, Charlist.class, BuddyWnd.class,
 			       ChatHW.class, Speedget.class, Bufflist.class, GameUI.class};
 	
