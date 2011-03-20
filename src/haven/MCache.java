@@ -74,9 +74,11 @@ public class MCache {
 	}
 
 	public void update(Coord c1, Coord c2) {
-	    this.c1 = c1;
-	    this.c2 = c2;
-	    olseq++;
+	    if(!c1.equals(this.c1) || !c2.equals(this.c2)) {
+		olseq++;
+		this.c1 = c1;
+		this.c2 = c2;
+	    }
 	}
     }
 
