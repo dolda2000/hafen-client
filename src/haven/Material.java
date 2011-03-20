@@ -135,6 +135,14 @@ public class Material extends GLState {
 	col = new Colors(amb, dif, spc, emi, shine);
     }
     
+    public Material(Color col) {
+	this(new Color((int)(col.getRed() * defamb[0]), (int)(col.getGreen() * defamb[1]), (int)(col.getBlue() * defamb[2]), col.getAlpha()),
+	     new Color((int)(col.getRed() * defdif[0]), (int)(col.getGreen() * defdif[1]), (int)(col.getBlue() * defdif[2]), col.getAlpha()),
+	     new Color(0, 0, 0, 0),
+	     new Color(0, 0, 0, 0),
+	     0);
+    }
+    
     public Material(Tex tex) {
 	this();
 	this.tex = tex;
