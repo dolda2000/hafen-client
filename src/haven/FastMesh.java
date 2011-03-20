@@ -122,6 +122,10 @@ public class FastMesh implements FRendered {
 	}
     }
     
+    public void dispose() {
+	updated();
+    }
+    
     public void drawflat(GOut g) {
 	g.apply();
 	GL gl = g.gl;
