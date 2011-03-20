@@ -43,6 +43,7 @@ public class MapView extends PView implements DTarget {
     public static int lighting = 0;
     private Camera camera = new FollowCam();
     private Plob placing = null;
+    private int[] visol = new int[32];
     private Grabber grab;
     
     private interface Delayed {
@@ -197,6 +198,16 @@ public class MapView extends PView implements DTarget {
 	this.plgob = plgob;
     }
     
+    public void enol(int... overlays) {
+	for(int ol : overlays)
+	    visol[ol]++;
+    }
+	
+    public void disol(int... overlays) {
+	for(int ol : overlays)
+	    visol[ol]--;
+    }
+	
     private final Rendered map = new Rendered() {
 	    public void draw(GOut g) {}
 	    
@@ -208,6 +219,38 @@ public class MapView extends PView implements DTarget {
 			Coord pc = cc.add(o).mul(MCache.cutsz).mul(tilesz);
 			MapMesh cut = glob.map.getcut(cc.add(o));
 			rl.add(cut, Location.xlate(new Coord3f(pc.x, -pc.y, 0)));
+		    }
+		}
+		return(null);
+	    }
+	};
+    
+    private final Rendered mapol = new Rendered() {
+	    private final GLState[] mats;
+	    {
+		mats = new GLState[32];
+		mats[16] = GLState.compose(Material.noalpha, new Material(new Color(0, 255, 0, 32)));
+		mats[17] = GLState.compose(Material.noalpha, new Material(new Color(255, 255, 0, 32)));
+	    }
+	    
+	    public void draw(GOut g) {}
+	    
+	    public Order setup(RenderList rl) {
+		Coord cc = MapView.this.cc.div(tilesz).div(MCache.cutsz);
+		Coord o = new Coord();
+		for(o.y = -view; o.y <= view; o.y++) {
+		    for(o.x = -view; o.x <= view; o.x++) {
+			Coord pc = cc.add(o).mul(MCache.cutsz).mul(tilesz);
+			for(int i = 0; i < visol.length; i++) {
+			    if(mats[i] == null)
+				continue;
+			    if(visol[i] > 0) {
+				Rendered olcut;
+				olcut = glob.map.getolcut(i, cc.add(o));
+				if(olcut != null)
+				    rl.add(olcut, GLState.compose(Location.xlate(new Coord3f(pc.x, -pc.y, 0)), mats[i]));
+			    }
+			}
 		    }
 		}
 		return(null);
@@ -246,6 +289,7 @@ public class MapView extends PView implements DTarget {
 	    rl.add(new DirLight(new Color(255, 192, 64), new Coord3f(2.0f, 1.0f, 1.0f)), null);
 	}
 	rl.add(map, null);
+	rl.add(mapol, null);
 	rl.add(gobs, null);
 	if(placing != null)
 	    addgob(rl, placing);

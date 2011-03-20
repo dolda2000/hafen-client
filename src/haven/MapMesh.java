@@ -359,6 +359,54 @@ public class MapMesh implements Rendered {
 	    return(gmorder);
 	}
     }
+    
+    public static final Order olorder = new Order.Default(1002);
+    public Rendered[] makeols() {
+	Surface surf = new Surface();
+	surf.calcnrm();
+	final MeshBuf buf = new MeshBuf();
+	MeshBuf.Vertex[][] v = new MeshBuf.Vertex[sz.x + 1][sz.y + 1];
+	Coord t = new Coord();
+	for(t.y = 0; t.y <= sz.y; t.y++) {
+	    for(t.x = 0; t.x <= sz.x; t.x++) {
+		SPoint p = surf.spoint(t);
+		v[t.x][t.y] = buf.new Vertex(p.pos, p.nrm);
+	    }
+	}
+	int[][] ol = new int[sz.x][sz.y];
+	for(t.y = 0; t.y < sz.y; t.y++) {
+	    for(t.x = 0; t.x < sz.x; t.x++) {
+		ol[t.x][t.y] = map.getol(ul.add(t));
+	    }
+	}
+	Rendered[] ret = new Rendered[32];
+	for(int i = 0; i < 32; i++) {
+	    boolean h = false;
+	    buf.clearfaces();
+	    for(t.y = 0; t.y < sz.y; t.y++) {
+		for(t.x = 0; t.x < sz.x; t.x++) {
+		    if((ol[t.x][t.y] & (1 << i)) != 0) {
+			h = true;
+			buf.new Face(v[t.x][t.y], v[t.x][t.y + 1], v[t.x + 1][t.y + 1]);
+			buf.new Face(v[t.x][t.y], v[t.x + 1][t.y + 1], v[t.x + 1][t.y]);
+		    }
+		}
+	    }
+	    if(h)
+		ret[i] = new Rendered() {
+			FastMesh mesh = buf.mkmesh();
+			
+			public void draw(GOut g) {
+			    mesh.draw(g);
+			}
+			
+			public Order setup(RenderList rl) {
+			    return(olorder);
+			}
+		    };
+	}
+	return(ret);
+    }
 
     private void clean() {
 	texmap = null;

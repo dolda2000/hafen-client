@@ -44,6 +44,7 @@ public class MCache {
     Map<Coord, Grid> grids = new HashMap<Coord, Grid>();
     Session sess;
     Set<Overlay> ols = new HashSet<Overlay>();
+    int olseq = 0;
     Random gen = new Random();
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
 
@@ -57,14 +58,15 @@ public class MCache {
     }
 
     public class Overlay {
-	Coord c1, c2;
-	int mask;
+	private Coord c1, c2;
+	private int mask;
 
 	public Overlay(Coord c1, Coord c2, int mask) {
 	    this.c1 = c1;
 	    this.c2 = c2;
 	    this.mask = mask;
 	    ols.add(this);
+	    olseq++;
 	}
 
 	public void destroy() {
@@ -74,6 +76,7 @@ public class MCache {
 	public void update(Coord c1, Coord c2) {
 	    this.c1 = c1;
 	    this.c2 = c2;
+	    olseq++;
 	}
     }
 
@@ -82,6 +85,8 @@ public class MCache {
 	public final int z[] = new int[cmaps.x * cmaps.y];
 	public final int ol[] = new int[cmaps.x * cmaps.y];
 	public final MapMesh cuts[] = new MapMesh[cutn.x * cutn.y];
+	public final Rendered olcuts[][] = new Rendered[cutn.x * cutn.y][];
+	int olseq = -1;
 	private Collection<Gob> fo;
 	public final Coord gc, ul;
 	public final long id;
@@ -156,6 +161,18 @@ public class MCache {
 		cuts[i] = MapMesh.build(MCache.this, rnd, ul.add(cc.mul(cutsz)), cutsz);
 	    }
 	    return(cuts[i]);
+	}
+	
+	public Rendered getolcut(int ol, Coord cc) {
+	    if(this.olseq != MCache.this.olseq) {
+		for(int i = 0; i < cutn.x * cutn.y; i++)
+		    olcuts[i] = null;
+		this.olseq = MCache.this.olseq;
+	    }
+	    int i = cc.x + (cc.y * cutn.x);
+	    if(olcuts[i] == null)
+		olcuts[i] = getcut(cc).makeols();
+	    return(olcuts[i][ol]);
 	}
     }
 
@@ -238,6 +255,10 @@ public class MCache {
 	return(getgrid(cc.div(cutn)).getcut(cc.mod(cutn)));
     }
 
+    public Rendered getolcut(int ol, Coord cc) {
+	return(getgrid(cc.div(cutn)).getolcut(ol, cc.mod(cutn)));
+    }
+
     public void mapdata2(Message msg) {
 	Coord c = msg.coord();
 	String mmname = msg.string().intern();
@@ -314,6 +335,7 @@ public class MCache {
 		    if(grids.remove(c) == cached)
 			cached = null;
 		    grids.put(c, g);
+		    olseq++;
 		}
 	    }
 	}
