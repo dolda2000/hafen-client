@@ -39,7 +39,6 @@ public class UI {
     Receiver rcvr;
     public Coord mc, lcc = Coord.z;
     public Session sess;
-    public MapView mainview;
     public boolean modshift, modctrl, modmeta, modsuper;
     long lastevent, lasttick;
     public Widget mouseon;
@@ -159,8 +158,6 @@ public class UI {
 		throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
 	    Widget wdg = pwdg.makechild(type.intern(), pargs, cargs);
 	    bind(wdg, id);
-	    if(wdg instanceof MapView)
-		mainview = (MapView)wdg;
 	}
     }
 	
