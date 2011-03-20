@@ -43,11 +43,18 @@ public class MapView extends PView implements DTarget {
     public static int lighting = 0;
     private Camera camera = new FollowCam();
     private Plob placing = null;
+    private Grabber grab;
     
     private interface Delayed {
 	public void run(GOut g);
     }
 
+    public interface Grabber {
+	boolean mmousedown(Coord mc, int button);
+	boolean mmouseup(Coord mc, int button);
+	void mmousemove(Coord mc);
+    }
+    
     private abstract class Camera extends haven.Camera {
 	public Camera() {
 	    super(Matrix4f.identity());
@@ -509,13 +516,26 @@ public class MapView extends PView implements DTarget {
 	}
 	
 	protected void hit(Coord pc, Coord mc, Gob gob) {
+	    if(grab != null) {
+		if(grab.mmousedown(mc, clickb))
+		    return;
+	    }
 	    if(gob == null)
 		wdgmsg("click", pc, mc, clickb, ui.modflags());
 	    else
 		wdgmsg("click", pc, mc, clickb, ui.modflags(), gob.id, gob.rc);
 	}
     }
-
+    
+    public void grab(Grabber grab) {
+	this.grab = grab;
+    }
+    
+    public void release(Grabber grab) {
+	if(this.grab == grab)
+	    this.grab = null;
+    }
+    
     public boolean mousedown(Coord c, int button) {
 	if(button == 2) {
 	    if(((Camera)camera).click(c)) {
@@ -536,6 +556,14 @@ public class MapView extends PView implements DTarget {
     public void mousemove(Coord c) {
 	if(camdrag) {
 	    ((Camera)camera).drag(c);
+	} else if(grab != null) {
+	    synchronized(delayed) {
+		delayed.add(new Hittest(c) {
+			public void hit(Coord pc, Coord mc, Gob gob) {
+			    grab.mmousemove(mc);
+			}
+		    });
+	    }
 	} else if(placing != null) {
 	    if((placing.lastmc == null) || !placing.lastmc.equals(c)) {
 		synchronized(delayed) {
@@ -545,12 +573,20 @@ public class MapView extends PView implements DTarget {
 	}
     }
     
-    public boolean mouseup(Coord c, int button) {
+    public boolean mouseup(Coord c, final int button) {
 	if(button == 2) {
 	    if(camdrag) {
 		((Camera)camera).release();
 		ui.grabmouse(null);
 		camdrag = false;
+	    }
+	} else if(grab != null) {
+	    synchronized(delayed) {
+		delayed.add(new Hittest(c) {
+			public void hit(Coord pc, Coord mc, Gob gob) {
+			    grab.mmouseup(mc, button);
+			}
+		    });
 	    }
 	}
 	return(true);
