@@ -68,4 +68,8 @@ public abstract class Transform extends GLState {
 	d.m[ 2] = (x * z * C) - (y * s); d.m[ 6] = (y * z * C) + (x * s); d.m[10] = (z * z * C) + c;
 	return(d);
     }
+    
+    public String toString() {
+	return(this.getClass().getName() + "(" + xf + ")");
+    }
 }

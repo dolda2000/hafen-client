@@ -64,4 +64,11 @@ public class Location extends Transform {
     public static Location rot(Coord3f axis, float angle) {
 	return(new Location(makerot(new Matrix4f(), axis.norm(), angle)));
     }
+    
+    public String toString() {
+	String ret = super.toString();
+	if(p != null)
+	    ret += " -> " + p;
+	return(ret);
+    }
 }
