@@ -199,13 +199,13 @@ public class Gob implements Sprite.Owner, Rendered {
     
     public final Save save = new Save();
     public final Location loc = new Location(new Matrix4f()) {
-	    private Coord3f c = Coord3f.o;
+	    private Coord3f c = null;
 	    private double a = 0.0;
 	    
 	    public Matrix4f fin(Matrix4f p) {
 		Coord3f c = getc();
 		c.y = -c.y;
-		if(!c.equals(this.c) || (this.a != Gob.this.a))
+		if((this.c == null) || !c.equals(this.c) || (this.a != Gob.this.a))
 		    update(makexlate(new Matrix4f(), this.c = c)
 			   .mul1(makerot(new Matrix4f(), Coord3f.zu, (float)-(this.a = Gob.this.a))));
 		return(super.fin(p));
