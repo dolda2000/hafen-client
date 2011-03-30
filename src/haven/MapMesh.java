@@ -355,7 +355,6 @@ public class MapMesh implements Rendered {
 		
 	public Order setup(RenderList rl) {
 	    rl.prepo(mat);
-	    rl.prepo(Material.noalpha);
 	    return(gmorder);
 	}
     }

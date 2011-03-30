@@ -45,13 +45,13 @@ public class Material extends GLState {
 	    }
 	};
     
-    public static final GLState noalpha = new GLState.StandAlone(PView.proj) {
+    public static final GLState alphaclip = new GLState.StandAlone(PView.proj) {
 	    public void apply(GOut g) {
-		g.gl.glDisable(GL.GL_ALPHA_TEST);
+		g.gl.glEnable(GL.GL_ALPHA_TEST);
 	    }
 	    
 	    public void unapply(GOut g) {
-		g.gl.glEnable(GL.GL_ALPHA_TEST);
+		g.gl.glDisable(GL.GL_ALPHA_TEST);
 	    }
 	};
     
@@ -162,6 +162,7 @@ public class Material extends GLState {
 	    Light.plights.prep(buf);
 	else
 	    Light.vlights.prep(buf);
+	alphaclip.prep(buf);
     }
     
     public static class Res extends Resource.Layer {

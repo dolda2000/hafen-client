@@ -126,7 +126,6 @@ public class WaterTile extends Tiler {
 		buf.put(Tex.slot, null);
 		buf.put(States.color, null);
 		buf.put(Light.lighting, null);
-		Material.noalpha.prep(buf);
 		super.prep(buf);
 	    }
 	};
@@ -137,7 +136,6 @@ public class WaterTile extends Tiler {
 						      2) {
 	    public void prep(Buffer b) {
 		super.prep(b);
-		noalpha.prep(b);
 	    }
 	};
     static {
