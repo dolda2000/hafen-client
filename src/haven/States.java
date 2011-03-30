@@ -99,6 +99,16 @@ public abstract class States extends GLState {
 	    }
 	};
     
+    public static final StandAlone presdepth = new StandAlone(PView.proj) {
+	    public void apply(GOut g) {
+		g.gl.glDepthMask(false);
+	    }
+	    
+	    public void unapply(GOut g) {
+		g.gl.glDepthMask(true);
+	    }
+	};
+    
     public static final Slot<Fog> fog = new Slot<Fog>(Fog.class, PView.proj);
     public static class Fog extends GLState {
 	public final Color c;
