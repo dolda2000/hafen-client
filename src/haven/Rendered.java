@@ -67,6 +67,31 @@ public interface Rendered {
     public final static Order deflt = new Order.Default(0);
     public final static Order last = new Order.Default(Integer.MAX_VALUE);
 
+    public final static Order eyesort = new Order.Default(10000) {
+	    private final RComparator<Rendered> cmp = new RComparator<Rendered>() {
+		public int compare(Rendered a, Rendered b, GLState.Buffer sa, GLState.Buffer sb) {
+		    /* It would be nice to be able to cache these
+		     * results somewhere. */
+		    Camera ca = sa.get(PView.cam);
+		    Location la = sa.get(PView.loc);
+		    Matrix4f mva = ca.fin(Matrix4f.id).mul(la.fin(Matrix4f.id));
+		    float da = (float)Math.sqrt((mva.m[12] * mva.m[12]) + (mva.m[13] * mva.m[13]) + (mva.m[14] * mva.m[14]));
+		    Camera cb = sb.get(PView.cam);
+		    Location lb = sb.get(PView.loc);
+		    Matrix4f mvb = cb.fin(Matrix4f.id).mul(lb.fin(Matrix4f.id));
+		    float db = (float)Math.sqrt((mvb.m[12] * mvb.m[12]) + (mvb.m[13] * mvb.m[13]) + (mvb.m[14] * mvb.m[14]));
+		    if(da < db)
+			return(1);
+		    else
+			return(-1);
+		}
+	    };
+	    
+	    public RComparator<Rendered> cmp() {
+		return(cmp);
+	    }
+	};
+
     public static class Dot implements Rendered {
 	public void draw(GOut g) {
 	    GL gl = g.gl;
