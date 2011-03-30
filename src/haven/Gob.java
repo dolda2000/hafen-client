@@ -161,7 +161,7 @@ public class Gob implements Sprite.Owner, Rendered {
 	    d.setup(rl);
 	for(Overlay ol : ols) {
 	    if(ol.spr != null)
-		ol.spr.setup(rl);
+		rl.add(ol.spr, null);
 	}
 	return(null);
     }
