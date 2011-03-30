@@ -100,6 +100,20 @@ public class Coord3f {
     public Coord3f cmul(Coord3f b) {
 	return(cmul(b.x, b.y, b.z));
     }
+    
+    public Coord3f rot(Coord3f p, float a) {
+	float c = (float)Math.cos(a), s = (float)Math.sin(a), C = 1.0f - c;
+	float ax = p.x, ay = p.y, az = p.z;
+	return(new Coord3f((x * ((ax * ax * C) + c)) +
+			   (y * ((ay * ax * C) - (az * s))) +
+			   (z * ((az * ax * C) + (ay * s))),
+			   (x * ((ax * ay * C) + (az * s))) +
+			   (y * ((ay * ay * C) + c)) +
+			   (z * ((az * ay * C) - (ax * s))),
+			   (x * ((ax * az * C) - (ay * s))) +
+			   (y * ((ay * az * C) + (ax * s))) +
+			   (z * ((az * az * C) + c))));
+    }
 
     public float abs() {
 	return((float)Math.sqrt((x * x) + (y * y) + (z * z)));
