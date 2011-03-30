@@ -30,6 +30,7 @@ import javax.media.opengl.*;
 
 public class Matrix4f {
     public final float[] m;
+    public static final Matrix4f id = identity();
     
     public Matrix4f() {
 	m = new float[16];
