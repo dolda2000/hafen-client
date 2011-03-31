@@ -97,6 +97,14 @@ public class Session {
 	    }
 	}
 	
+    public static class LoadingIndir extends Loading {
+	public int resid;
+	
+	public LoadingIndir(int resid) {
+	    this.resid = resid;
+	}
+    }
+
     public Indir<Resource> getres(final int id) {
 	synchronized(rescache) {
 	    Indir<Resource> ret = rescache.get(id);
@@ -108,7 +116,7 @@ public class Session {
 		
 		public Resource get() {
 		    if(res == null)
-			throw(new Resource.Loading(null));
+			throw(new LoadingIndir(resid));
 		    if(res.loading) {
 			res.boostprio(0);
 			throw(new Resource.Loading(res));
