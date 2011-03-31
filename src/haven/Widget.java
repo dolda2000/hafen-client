@@ -527,7 +527,57 @@ public class Widget {
 	}
 	return(null);
     }
-	
+    
+    public <T extends Widget> Set<T> children(final Class<T> cl) {
+	return(new AbstractSet<T>() {
+		public int size() {
+		    int i = 0;
+		    for(T w : this)
+			i++;
+		    return(i);
+		}
+		
+		public Iterator<T> iterator() {
+		    return(new Iterator<T>() {
+			    T cur = n(Widget.this);
+			    
+			    private T n(Widget w) {
+				Widget n;
+				if(w == null) {
+				    return(null);
+				} else if(w.child != null) {
+				    n = w.child;
+				} else if(cur.next != null) {
+				    n = w.next;
+				} else if(cur.parent == Widget.this) {
+				    return(null);
+				} else {
+				    n = cur.parent;
+				}
+				if(cl.isInstance(n))
+				    return(cl.cast(n));
+				else
+				    return(n(n));
+			    }
+			    
+			    public T next() {
+				T ret = cur;
+				cur = n(ret);
+				return(ret);
+			    }
+			    
+			    public boolean hasNext() {
+				return(cur != null);
+			    }
+			    
+			    public void remove() {
+				throw(new UnsupportedOperationException());
+			    }
+			});
+		}
+	    });
+    }
+
     public Resource getcurs(Coord c) {
 	Resource ret;
 		
