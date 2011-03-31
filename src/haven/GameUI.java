@@ -41,6 +41,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private long errtime;
     private Window invwnd, equwnd, makewnd;
     public int prog = -1;
+    private boolean afk = false;
     
     static {
 	addtype("gameui", new WidgetFactory() {
@@ -149,6 +150,16 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	}
     }
+
+    public void tick(double dt) {
+	super.tick(dt);
+	if(!afk && (System.currentTimeMillis() - ui.lastevent > 300000)) {
+	    afk = true;
+	    wdgmsg("afk");
+	} else if(afk && (System.currentTimeMillis() - ui.lastevent < 300000)) {
+	    afk = false;
+	}
+    }
     
     public void uimsg(String msg, Object... args) {
 	if(msg == "err") {
@@ -230,6 +241,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     {
 	cmdmap.put("afk", new Console.Command() {
 		public void run(Console cons, String[] args) {
+		    afk = true;
 		    wdgmsg("afk");
 		}
 	    });
