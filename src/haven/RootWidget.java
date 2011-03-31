@@ -59,7 +59,7 @@ public class RootWidget extends ConsoleHost {
 
     public void draw(GOut g) {
 	super.draw(g);
-	drawcmd(g, new Coord(20, 580));
+	drawcmd(g, new Coord(20, sz.y - 20));
     }
     
     public void error(String msg) {
