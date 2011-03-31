@@ -47,10 +47,10 @@ public class Widget {
 			       Makewindow.class, Chatwindow.class, Textlog.class, Equipory.class, IButton.class,
 			       Cal.class, Avaview.class, NpcChat.class,
 			       Label.class, Progress.class, VMeter.class, Partyview.class,
-			       MenuGrid.class, SlenHud.class, HWindow.class, CheckBox.class, Logwindow.class,
+			       MenuGrid.class, CheckBox.class,
 			       ISBox.class, Fightview.class, IMeter.class, MapMod.class,
 			       GiveButton.class, Charlist.class, BuddyWnd.class,
-			       ChatHW.class, Speedget.class, Bufflist.class, GameUI.class};
+			       Speedget.class, Bufflist.class, GameUI.class};
 	
     static {
 	addtype("cnt", new WidgetFactory() {
