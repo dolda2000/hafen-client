@@ -68,19 +68,23 @@ public class KinInfo extends GAttrib {
 		if(vlg.getHeight() > h)
 		    h = vlg.getHeight();
 	    }
-	    BufferedImage buf = TexI.mkbuf(new Coord(w, h));
-	    Graphics g = buf.getGraphics();
-	    int x = 0;
-	    if(hv) {
-		g.drawImage(vlg, x, (h / 2) - (vlg.getHeight() / 2), null);
-		x += vlg.getWidth() + 1;
+	    if(w == 0) {
+		rnm = new TexIM(new Coord(1, 1));
+	    } else {
+		BufferedImage buf = TexI.mkbuf(new Coord(w, h));
+		Graphics g = buf.getGraphics();
+		int x = 0;
+		if(hv) {
+		    g.drawImage(vlg, x, (h / 2) - (vlg.getHeight() / 2), null);
+		    x += vlg.getWidth() + 1;
+		}
+		if(nm != null) {
+		    g.drawImage(nm, x, (h / 2) - (nm.getHeight() / 2), null);
+		    x += nm.getWidth();
+		}
+		g.dispose();
+		rnm = new TexI(buf);
 	    }
-	    if(nm != null) {
-		g.drawImage(nm, x, (h / 2) - (nm.getHeight() / 2), null);
-		x += nm.getWidth();
-	    }
-	    g.dispose();
-	    rnm = new TexI(buf);
 	}
 	return(rnm);
     }
