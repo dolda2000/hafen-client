@@ -70,7 +70,7 @@ public class Item extends Widget implements DTarget {
 	try {
 	    Tex tex = res.get().layer(Resource.imgc).tex();
 	    sz = tex.sz().add(shoff);
-	} catch(Resource.Loading e) {
+	} catch(Loading e) {
 	    sz = new Coord(30, 30);
 	}
     }
@@ -98,7 +98,7 @@ public class Item extends Widget implements DTarget {
 		g.chcolor();
 	    }
 	    ttres = res.get();
-	} catch(Resource.Loading e) {
+	} catch(Loading e) {
 	    sh = null;
 	    sz = new Coord(30, 30);
 	    g.image(missing.layer(Resource.imgc).tex(), Coord.z, sz);

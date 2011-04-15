@@ -50,7 +50,7 @@ public class ResDrawable extends Drawable {
 	    return;
 	try {
 	    spr = Sprite.create(gob, res.get(), sdt.clone());
-	} catch(Resource.Loading e) {}
+	} catch(Loading e) {}
     }
 	
     public void setup(RenderList rl) {

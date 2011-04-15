@@ -56,7 +56,7 @@ public class AvaRender extends TexRT {
 	for(Indir<Resource> r : layers) {
 	    try {
 		images.addAll(r.get().layers(imgc));
-	    } catch(Resource.Loading e) {
+	    } catch(Loading e) {
 		loading = true;
 	    }
 	}

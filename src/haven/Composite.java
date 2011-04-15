@@ -66,7 +66,7 @@ public class Composite extends Drawable {
 	    try {
 		for(Indir<Resource> res : loading)
 		    res.get();
-	    } catch(Resource.Loading e) {
+	    } catch(Loading e) {
 		return(false);
 	    }
 	    if(ipol > 0) {
@@ -306,7 +306,7 @@ public class Composite extends Drawable {
 	try {
 	    skel = base.get().layer(Skeleton.Res.class).s;
 	    pose = skel.new Pose(skel.bindpose);
-	} catch(Resource.Loading e) {}
+	} catch(Loading e) {}
     }
     
     private void nmod() {
@@ -329,7 +329,7 @@ public class Composite extends Drawable {
 		    o.remove();
 		}
 		i.remove();
-	    } catch(Resource.Loading e) {}
+	    } catch(Loading e) {}
 	}
 	if(nmod.isEmpty())
 	    nmod = null;
@@ -344,7 +344,7 @@ public class Composite extends Drawable {
 		else if(ed.t == 1)
 		    this.equ.add(new LightEqu(ed));
 		i.remove();
-	    } catch(Resource.Loading e) {}
+	    } catch(Loading e) {}
 	}
 	if(nequ.isEmpty())
 	    nequ = null;

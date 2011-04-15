@@ -86,7 +86,7 @@ public class Bufflist extends Widget {
 			g.fellipse(bc.add(imgoff).add(img.sz().div(2)), img.sz().div(2), 90, (int)(90 + (360 * m)));
 			g.chcolor();
 		    }
-		} catch(Resource.Loading e) {}
+		} catch(Loading e) {}
 		if(++i >= 5)
 		    break;
 	    }

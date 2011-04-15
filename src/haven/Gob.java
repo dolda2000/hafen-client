@@ -86,7 +86,7 @@ public class Gob implements Sprite.Owner, Rendered {
 	    if(ol.spr == null) {
 		try {
 		    ol.spr = Sprite.create(this, ol.res.get(), ol.sdt);
-		} catch(Resource.Loading e) {}
+		} catch(Loading e) {}
 	    } else {
 		boolean done = ol.spr.tick(dt);
 		if((!ol.delign || (ol.spr instanceof Overlay.CDel)) && done)

@@ -259,7 +259,7 @@ public class Audio {
 		public void run() {
 		    try {
 			playres(clip.get());
-		    } catch(Resource.Loading e) {
+		    } catch(Loading e) {
 			queue.add(this);
 		    }
 		}
