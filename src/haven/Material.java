@@ -33,7 +33,7 @@ import static haven.Utils.c2fa;
 public class Material extends GLState {
     public Colors col;
     public Tex tex;
-    public boolean facecull = true, mipmap = false, linear = false;
+    public boolean facecull = true, mipmap = false, linear = false, aclip = true;
     
     public static final GLState nofacecull = new GLState.StandAlone(PView.proj) {
 	    public void apply(GOut g) {
@@ -141,6 +141,7 @@ public class Material extends GLState {
 	     new Color(0, 0, 0, 0),
 	     new Color(0, 0, 0, 0),
 	     0);
+	aclip = false;
     }
     
     public Material(Tex tex) {
@@ -162,7 +163,9 @@ public class Material extends GLState {
 	    Light.plights.prep(buf);
 	else
 	    Light.vlights.prep(buf);
-	alphaclip.prep(buf);
+	if(aclip)
+	    alphaclip.prep(buf);
+    }
     }
     
     public static class Res extends Resource.Layer {
