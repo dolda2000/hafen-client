@@ -28,7 +28,7 @@ package haven;
 
 import java.awt.Color;
 
-public class WItem extends Widget {
+public class WItem extends Widget implements DTarget {
     static final Resource missing = Resource.load("gfx/invobjs/missing");
     public final GItem item;
     private Tex mask = null;
@@ -90,5 +90,14 @@ public class WItem extends Widget {
 	    return(true);
 	}
 	return(false);
+    }
+
+    public boolean drop(Coord cc, Coord ul) {
+	return(false);
+    }
+	
+    public boolean iteminteract(Coord cc, Coord ul) {
+	item.wdgmsg("itemact", ui.modflags());
+	return(true);
     }
 }
