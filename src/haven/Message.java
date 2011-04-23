@@ -48,7 +48,10 @@ public class Message implements java.io.Serializable {
     public static final int T_INT = 1;
     public static final int T_STR = 2;
     public static final int T_COORD = 3;
+    public static final int T_UINT8 = 4;
+    public static final int T_UINT16 = 5;
     public static final int T_COLOR = 6;
+    public static final int T_TTOL = 8;
 	
     public int type;
     public byte[] blob;
@@ -214,8 +217,14 @@ public class Message implements java.io.Serializable {
 		ret.add(string());
 	    else if(t == T_COORD)
 		ret.add(coord());
+	    else if(t == T_UINT8)
+		ret.add(uint8());
+	    else if(t == T_UINT16)
+		ret.add(uint16());
 	    else if(t == T_COLOR)
 		ret.add(color());
+	    else if(t == T_TTOL)
+		ret.add(list());
 	}
 	return(ret.toArray());
     }
