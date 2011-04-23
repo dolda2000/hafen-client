@@ -31,10 +31,10 @@ import java.awt.Font;
 
 public class Makewindow extends Widget {
     Widget obtn, cbtn;
-    List<Widget> inputs;
-    List<Widget> outputs;
+    List<Spec> inputs = Collections.emptyList();
+    List<Spec> outputs = Collections.emptyList();
     static Coord boff = new Coord(7, 9);
-    final int xoff = 40;
+    final int xoff = 40, yoff = 55;
     public static final Text.Foundry nmf = new Text.Foundry(new Font("Serif", Font.PLAIN, 20));
 
     static {
@@ -43,6 +43,16 @@ public class Makewindow extends Widget {
 		    return(new Makewindow(c, parent, (String)args[0]));
 		}
 	    });
+    }
+    
+    public static class Spec {
+	public Indir<Resource> res;
+	public int num;
+	
+	public Spec(Indir<Resource> res, int num) {
+	    this.res = res;
+	    this.num = num;
+	}
     }
 	
     public Makewindow(Coord c, Widget parent, String rcpnm) {
@@ -58,34 +68,40 @@ public class Makewindow extends Widget {
 	
     public void uimsg(String msg, Object... args) {
 	if(msg == "inpop") {
-	    if(inputs != null) {
-		for(Widget w : inputs)
-		    w.unlink();
-	    }
-	    inputs = new LinkedList<Widget>();
-	    Coord c = new Coord(xoff, 0);
-	    for(int i = 0; i < args.length; i += 2) {
-		Widget box = new Inventory(c, new Coord(1, 1), this);
-		inputs.add(box);
-		c = c.add(new Coord(31, 0));
-		new Item(Coord.z, (Integer)args[i], box, null, (Integer)args[i + 1]);
-	    }
+	    inputs = new LinkedList<Spec>();
+	    for(int i = 0; i < args.length; i += 2)
+		inputs.add(new Spec(ui.sess.getres((Integer)args[i]), (Integer)args[i + 1]));
 	} else if(msg == "opop") {
-	    if(outputs != null) {
-		for(Widget w : outputs)
-		    w.unlink();
-	    }
-	    outputs = new LinkedList<Widget>();
-	    Coord c = new Coord(xoff, 55);
-	    for(int i = 0; i < args.length; i += 2) {
-		Widget box = new Inventory(c, new Coord(1, 1), this);
-		outputs.add(box);
-		c = c.add(new Coord(31, 0));
-		new Item(Coord.z, (Integer)args[i], box, null, (Integer)args[i + 1]);
-	    }
+	    outputs = new LinkedList<Spec>();
+	    for(int i = 0; i < args.length; i += 2)
+		outputs.add(new Spec(ui.sess.getres((Integer)args[i]), (Integer)args[i + 1]));
 	}
     }
 	
+    public void draw(GOut g) {
+	Coord c = new Coord(xoff, 0);
+	for(Spec s : inputs) {
+	    g.image(Inventory.invsq, c);
+	    try {
+		Resource res = s.res.get();
+		g.image(res.layer(Resource.imgc).tex(), c);
+	    } catch(Loading e) {
+	    }
+	    c = c.add(31, 0);
+	}
+	c = new Coord(xoff, yoff);
+	for(Spec s : outputs) {
+	    g.image(Inventory.invsq, c);
+	    try {
+		Resource res = s.res.get();
+		g.image(res.layer(Resource.imgc).tex(), c);
+	    } catch(Loading e) {
+	    }
+	    c = c.add(31, 0);
+	}
+	super.draw(g);
+    }
+
     public void wdgmsg(Widget sender, String msg, Object... args) {
 	if(sender == obtn) {
 	    if(msg == "activate")
@@ -97,10 +113,6 @@ public class Makewindow extends Widget {
 		wdgmsg("make", 1);
 	    return;
 	}
-	if(sender instanceof Item)
-	    return;
-	if(sender instanceof Inventory)
-	    return;
 	super.wdgmsg(sender, msg, args);
     }
     
