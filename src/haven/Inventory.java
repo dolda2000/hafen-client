@@ -26,10 +26,13 @@
 
 package haven;
 
+import java.util.*;
+
 public class Inventory extends Widget implements DTarget {
     public static final Tex invsq = Resource.loadtex("gfx/hud/invsq");
     public static final Coord sqsz = new Coord(31, 31);
     Coord isz;
+    Map<GItem, WItem> wmap = new HashMap<GItem, WItem>();
 
     static {
 	Widget.addtype("inv", new WidgetFactory() {
@@ -65,7 +68,20 @@ public class Inventory extends Widget implements DTarget {
     
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {
 	Coord c = (Coord)pargs[0];
-	return(gettype(type).create(c.mul(sqsz).add(1, 1), this, cargs));
+	Widget ret = gettype(type).create(c, this, cargs);
+	if(ret instanceof GItem) {
+	    GItem i = (GItem)ret;
+	    wmap.put(i, new WItem(c.mul(sqsz).add(1, 1), this, i));
+	}
+	return(ret);
+    }
+    
+    public void cdestroy(Widget w) {
+	super.cdestroy(w);
+	if(w instanceof GItem) {
+	    GItem i = (GItem)w;
+	    ui.destroy(wmap.remove(i));
+	}
     }
     
     public boolean drop(Coord cc, Coord ul) {

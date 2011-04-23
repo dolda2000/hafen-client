@@ -58,6 +58,7 @@ public class Equipory extends Widget implements DTarget {
 		isz.y = ec.y + invsq.sz().y;
 	}
     }
+    Map<GItem, WItem[]> wmap = new HashMap<GItem, WItem[]>();
 	
     static {
 	Widget.addtype("epry", new WidgetFactory() {
@@ -72,8 +73,26 @@ public class Equipory extends Widget implements DTarget {
     }
 	
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	int ep = (Integer)pargs[0];
-	return(gettype(type).create(ecoords[ep], this, cargs));
+	Widget ret = gettype(type).create(Coord.z, this, cargs);
+	if(ret instanceof GItem) {
+	    GItem g = (GItem)ret;
+	    WItem[] v = new WItem[pargs.length];
+	    for(int i = 0; i < pargs.length; i++) {
+		int ep = (Integer)pargs[i];
+		v[i] = new WItem(ecoords[ep], this, g);
+	    }
+	    wmap.put(g, v);
+	}
+	return(ret);
+    }
+    
+    public void cdestroy(Widget w) {
+	super.cdestroy(w);
+	if(w instanceof GItem) {
+	    GItem i = (GItem)w;
+	    for(WItem v : wmap.remove(i))
+		ui.destroy(v);
+	}
     }
     
     public boolean drop(Coord cc, Coord ul) {

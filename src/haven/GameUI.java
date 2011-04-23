@@ -40,6 +40,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private Text lasterr;
     private long errtime;
     private Window invwnd, equwnd, makewnd;
+    public Collection<GItem> hand = new LinkedList<GItem>();
+    private WItem vhand;
     public int prog = -1;
     private boolean afk = false;
     
@@ -77,6 +79,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
+    private void updhand() {
+	if((hand.isEmpty() && (vhand != null)) || ((vhand != null) && !hand.contains(vhand.item))) {
+	    ui.destroy(vhand);
+	    vhand = null;
+	}
+	if(!hand.isEmpty() && (vhand == null)) {
+	    GItem fi = hand.iterator().next();
+	    vhand = new ItemDrag(new Coord(15, 15), this, fi);
+	}
+    }
+
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {
 	String place = ((String)pargs[0]).intern();
 	if(place == "mapview") {
@@ -102,6 +115,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    equwnd.pack();
 	    equwnd.visible = false;
 	    return(equ);
+	} else if(place == "hand") {
+	    GItem g = (GItem)gettype(type).create((Coord)pargs[1], this, cargs);
+	    hand.add(g);
+	    updhand();
+	    return(g);
 	} else if(place == "craft") {
 	    final Widget[] mk = {null};
 	    makewnd = new Window(new Coord(200, 100), Coord.z, this, "Crafting") {
@@ -126,6 +144,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return(gettype(type).create((Coord)pargs[1], this, cargs));
 	} else {
 	    throw(new UI.UIException("Illegal gameui child", type, pargs));
+	}
+    }
+    
+    public void cdestroy(Widget w) {
+	if((w instanceof GItem) && hand.contains(w)) {
+	    hand.remove(w);
+	    updhand();
 	}
     }
     

@@ -43,7 +43,7 @@ public class Widget {
     private Widget prevtt;
     static Map<String, WidgetFactory> types = new TreeMap<String, WidgetFactory>();
     static Class<?>[] barda = {Img.class, TextEntry.class, MapView.class, FlowerMenu.class,
-			       Window.class, Button.class, Inventory.class, Item.class, Listbox.class,
+			       Window.class, Button.class, Inventory.class, GItem.class, Listbox.class,
 			       Makewindow.class, Chatwindow.class, Textlog.class, Equipory.class, IButton.class,
 			       Cal.class, Avaview.class, NpcChat.class,
 			       Label.class, Progress.class, VMeter.class, Partyview.class,
