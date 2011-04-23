@@ -27,6 +27,7 @@
 package haven;
 
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
@@ -86,11 +87,22 @@ public class GItem extends AWidget {
 	}
     }
     
-    public class Contents extends Info {
+    public class Contents extends Tip {
 	public final List<Info> sub;
+	private final Text.Line ch = Text.render("Contents:");
 	
 	public Contents(List<Info> sub) {
 	    this.sub = sub;
+	}
+	
+	public BufferedImage longtip() {
+	    BufferedImage stip = WItem.longtip(sub);
+	    BufferedImage img = TexI.mkbuf(new Coord(stip.getWidth() + 10, stip.getHeight() + 15));
+	    Graphics g = img.getGraphics();
+	    g.drawImage(ch.img, 0, 0, null);
+	    g.drawImage(stip, 10, 15, null);
+	    g.dispose();
+	    return(img);
 	}
     }
     

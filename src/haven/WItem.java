@@ -27,6 +27,8 @@
 package haven;
 
 import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 import java.util.*;
 import haven.GItem.Info;
 import static haven.GItem.find;
@@ -46,17 +48,50 @@ public class WItem extends Widget implements DTarget {
 	g.image(tex, Coord.z);
     }
 
-    public Tex shorttip(List<Info> info) {
+    private static BufferedImage catimgs(Collection<BufferedImage> imgs) {
+	int w = 0, h = 0;
+	for(BufferedImage img : imgs) {
+	    if(img.getWidth() > w)
+		w = img.getWidth();
+	    h += img.getHeight();
+	}
+	BufferedImage ret = TexI.mkbuf(new Coord(w, h));
+	Graphics g = ret.getGraphics();
+	int y = 0;
+	for(BufferedImage img : imgs) {
+	    g.drawImage(img, 0, y, null);
+	    y += img.getHeight();
+	}
+	g.dispose();
+	return(ret);
+    }
+
+    public static String rendershort(List<Info> info) {
 	StringBuilder buf = new StringBuilder();
 	GItem.Name nm = find(GItem.Name.class, info);
-	
-	if(nm != null)
+	if(nm != null) {
 	    buf.append(nm.str.text);
-	return(Text.render(buf.toString()).tex());
+	}
+	return(buf.toString());
+    }
+
+    public Tex shorttip(List<Info> info) {
+	String buf = rendershort(info);
+	GItem.Contents cont = find(GItem.Contents.class, info);
+	if(cont != null)
+	    buf += "\n" + rendershort(cont.sub);
+	return(RichText.render(buf, 0).tex());
     }
     
-    public Tex longtip(List<Info> info) {
-	return(shorttip(info));
+    public static BufferedImage longtip(List<Info> info) {
+	List<BufferedImage> buf = new ArrayList<BufferedImage>();
+	for(Info ii : info) {
+	    if(ii instanceof GItem.Tip) {
+		GItem.Tip tip = (GItem.Tip)ii;
+		buf.add(tip.longtip());
+	    }
+	}
+	return(catimgs(buf));
     }
 
     private long hoverstart;
@@ -76,13 +111,13 @@ public class WItem extends Widget implements DTarget {
 	    shorttip = longtip = null;
 	    curinfo = info;
 	}
-	if(now - hoverstart < 500) {
+	if(now - hoverstart < 1000) {
 	    if(shorttip == null)
 		shorttip = shorttip(info);
 	    return(shorttip);
 	} else {
 	    if(longtip == null)
-		longtip = longtip(info);
+		longtip = new TexI(longtip(info));
 	    return(longtip);
 	}
     }
