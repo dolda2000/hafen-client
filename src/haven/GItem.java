@@ -27,12 +27,16 @@
 package haven;
 
 import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.util.*;
 
 public class GItem extends AWidget {
     public Indir<Resource> res;
     public Color olcol = null;
     public int meter = 0;
     public int num = -1;
+    private Object[] rawinfo;
+    private List<Info> info = Collections.emptyList();
     
     static {
 	Widget.addtype("item", new WidgetFactory() {
@@ -43,11 +47,108 @@ public class GItem extends AWidget {
 	    });
     }
     
+    @Resource.PublishedCode(name = "tt")
+    public static interface InfoFactory {
+	public Info build(GItem item, Object... args);
+    }
+    
+    public abstract class Info {
+	public GItem item() {
+	    return(GItem.this);
+	}
+    }
+
+    public abstract class Tip extends Info {
+	public abstract BufferedImage longtip();
+    }
+    
+    public class AdHoc extends Tip {
+	public final Text str;
+	
+	public AdHoc(String str) {
+	    this.str = Text.render(str);
+	}
+	
+	public BufferedImage longtip() {
+	    return(str.img);
+	}
+    }
+
+    public class Name extends Tip {
+	public final Text str;
+	
+	public Name(String str) {
+	    this.str = Text.render(str);
+	}
+	
+	public BufferedImage longtip() {
+	    return(str.img);
+	}
+    }
+    
+    public class Contents extends Info {
+	public final List<Info> sub;
+	
+	public Contents(List<Info> sub) {
+	    this.sub = sub;
+	}
+    }
+    
     public GItem(Widget parent, Indir<Resource> res) {
 	super(parent);
 	this.res = res;
     }
     
+    public List<Info> buildinfo(Object[] rawinfo) {
+	List<Info> ret = new ArrayList<Info>();
+	for(Object o : rawinfo) {
+	    if(o instanceof Object[]) {
+		Object[] a = (Object[])o;
+		Resource ttres = ui.sess.getres((Integer)a[0]).get();
+		InfoFactory f = ttres.layer(Resource.CodeEntry.class).get(InfoFactory.class);
+		ret.add(f.build(this, a));
+	    } else if(o instanceof String) {
+		ret.add(new AdHoc((String)o));
+	    } else {
+		throw(new ClassCastException("Unexpected object type " + o.getClass() + " in item info array."));
+	    }
+	}
+	return(ret);
+    }
+
+    public static <T extends Info> T find(Class<T> cl, List<Info> il) {
+	for(Info inf : il) {
+	    if(cl.isInstance(inf))
+		return(cl.cast(inf));
+	}
+	return(null);
+    }
+
+    public List<Info> info() {
+	if(info == null) {
+	    info = buildinfo(rawinfo);
+	}
+	return(info);
+    }
+    
+    private static String dump(Object arg) {
+	if(arg instanceof Object[]) {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append("[");
+	    boolean f = true;
+	    for(Object a : (Object[])arg) {
+		if(!f)
+		    buf.append(", ");
+		buf.append(dump(a));
+		f = false;
+	    }
+	    buf.append("]");
+	    return(buf.toString());
+	} else {
+	    return(arg.toString());
+	}
+    }
+
     public void uimsg(String name, Object... args) {
 	if(name == "num") {
 	    num = (Integer)args[0];
@@ -58,6 +159,8 @@ public class GItem extends AWidget {
 	    if(olcol.getAlpha() == 0)
 		olcol = null;
 	} else if(name == "tt") {
+	    info = null;
+	    rawinfo = args;
 	} else if(name == "meter") {
 	    meter = (Integer)args[0];
 	}

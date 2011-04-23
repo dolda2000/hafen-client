@@ -27,6 +27,9 @@
 package haven;
 
 import java.awt.Color;
+import java.util.*;
+import haven.GItem.Info;
+import static haven.GItem.find;
 
 public class WItem extends Widget implements DTarget {
     static final Resource missing = Resource.load("gfx/invobjs/missing");
@@ -41,6 +44,47 @@ public class WItem extends Widget implements DTarget {
     
     public void drawmain(GOut g, Tex tex) {
 	g.image(tex, Coord.z);
+    }
+
+    public Tex shorttip(List<Info> info) {
+	StringBuilder buf = new StringBuilder();
+	GItem.Name nm = find(GItem.Name.class, info);
+	
+	if(nm != null)
+	    buf.append(nm.str.text);
+	return(Text.render(buf.toString()).tex());
+    }
+    
+    public Tex longtip(List<Info> info) {
+	return(shorttip(info));
+    }
+
+    private long hoverstart;
+    private Tex shorttip = null, longtip = null;
+    private List<Info> curinfo = null;
+    public Object tooltip(Coord c, boolean again) {
+	long now = System.currentTimeMillis();
+	if(!again)
+	    hoverstart = now;
+	List<Info> info;
+	try {
+	    info = item.info();
+	} catch(Loading e) {
+	    return("...");
+	}
+	if(info != curinfo) {
+	    shorttip = longtip = null;
+	    curinfo = info;
+	}
+	if(now - hoverstart < 500) {
+	    if(shorttip == null)
+		shorttip = shorttip(info);
+	    return(shorttip);
+	} else {
+	    if(longtip == null)
+		longtip = longtip(info);
+	    return(longtip);
+	}
     }
 
     public void draw(GOut g) {
