@@ -993,10 +993,16 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 			return(cl.cast(ipe.get(acl)));
 		    } else {
 			T inst;
+			Object rinst;
 			if(entry.instancer() != PublishedCode.Instancer.class)
-			    inst = cl.cast(entry.instancer().newInstance().make(acl));
+			    rinst = entry.instancer().newInstance().make(acl);
 			else
-			    inst = cl.cast(acl.newInstance());
+			    rinst = acl.newInstance();
+			try {
+			    inst = cl.cast(rinst);
+			} catch(ClassCastException e) {
+			    throw(new ClassCastException("Published class in " + Resource.this.name + " is not of type " + cl));
+			}
 			ipe.put(acl, inst);
 			return(inst);
 		    }
