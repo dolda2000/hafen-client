@@ -96,7 +96,7 @@ public class GItem extends AWidget {
 	}
 	
 	public BufferedImage longtip() {
-	    BufferedImage stip = WItem.longtip(sub);
+	    BufferedImage stip = GItem.longtip(sub);
 	    BufferedImage img = TexI.mkbuf(new Coord(stip.getWidth() + 10, stip.getHeight() + 15));
 	    Graphics g = img.getGraphics();
 	    g.drawImage(ch.img, 0, 0, null);
@@ -106,6 +106,35 @@ public class GItem extends AWidget {
 	}
     }
     
+    public static BufferedImage catimgs(Collection<BufferedImage> imgs) {
+	int w = 0, h = 0;
+	for(BufferedImage img : imgs) {
+	    if(img.getWidth() > w)
+		w = img.getWidth();
+	    h += img.getHeight();
+	}
+	BufferedImage ret = TexI.mkbuf(new Coord(w, h));
+	Graphics g = ret.getGraphics();
+	int y = 0;
+	for(BufferedImage img : imgs) {
+	    g.drawImage(img, 0, y, null);
+	    y += img.getHeight();
+	}
+	g.dispose();
+	return(ret);
+    }
+
+    public static BufferedImage longtip(List<Info> info) {
+	List<BufferedImage> buf = new ArrayList<BufferedImage>();
+	for(Info ii : info) {
+	    if(ii instanceof GItem.Tip) {
+		GItem.Tip tip = (GItem.Tip)ii;
+		buf.add(tip.longtip());
+	    }
+	}
+	return(catimgs(buf));
+    }
+
     public GItem(Widget parent, Indir<Resource> res) {
 	super(parent);
 	this.res = res;

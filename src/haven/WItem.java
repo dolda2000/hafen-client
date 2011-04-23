@@ -48,24 +48,6 @@ public class WItem extends Widget implements DTarget {
 	g.image(tex, Coord.z);
     }
 
-    private static BufferedImage catimgs(Collection<BufferedImage> imgs) {
-	int w = 0, h = 0;
-	for(BufferedImage img : imgs) {
-	    if(img.getWidth() > w)
-		w = img.getWidth();
-	    h += img.getHeight();
-	}
-	BufferedImage ret = TexI.mkbuf(new Coord(w, h));
-	Graphics g = ret.getGraphics();
-	int y = 0;
-	for(BufferedImage img : imgs) {
-	    g.drawImage(img, 0, y, null);
-	    y += img.getHeight();
-	}
-	g.dispose();
-	return(ret);
-    }
-
     public static String rendershort(List<Info> info) {
 	StringBuilder buf = new StringBuilder();
 	GItem.Name nm = find(GItem.Name.class, info);
@@ -83,15 +65,12 @@ public class WItem extends Widget implements DTarget {
 	return(RichText.render(buf, 0).tex());
     }
     
-    public static BufferedImage longtip(List<Info> info) {
-	List<BufferedImage> buf = new ArrayList<BufferedImage>();
-	for(Info ii : info) {
-	    if(ii instanceof GItem.Tip) {
-		GItem.Tip tip = (GItem.Tip)ii;
-		buf.add(tip.longtip());
-	    }
-	}
-	return(catimgs(buf));
+    public Tex longtip(List<Info> info) {
+	BufferedImage img = GItem.longtip(info);
+	Resource.Pagina pg = item.res.get().layer(Resource.pagina);
+	if(pg != null)
+	    img = GItem.catimgs(Arrays.asList(new BufferedImage[]{img, RichText.render("\n" + pg.text, 200).img}));
+	return(new TexI(img));
     }
 
     private long hoverstart;
@@ -104,21 +83,21 @@ public class WItem extends Widget implements DTarget {
 	List<Info> info;
 	try {
 	    info = item.info();
+	    if(info != curinfo) {
+		shorttip = longtip = null;
+		curinfo = info;
+	    }
+	    if(now - hoverstart < 1000) {
+		if(shorttip == null)
+		    shorttip = shorttip(info);
+		return(shorttip);
+	    } else {
+		if(longtip == null)
+		    longtip = longtip(info);
+		return(longtip);
+	    }
 	} catch(Loading e) {
 	    return("...");
-	}
-	if(info != curinfo) {
-	    shorttip = longtip = null;
-	    curinfo = info;
-	}
-	if(now - hoverstart < 1000) {
-	    if(shorttip == null)
-		shorttip = shorttip(info);
-	    return(shorttip);
-	} else {
-	    if(longtip == null)
-		longtip = new TexI(longtip(info));
-	    return(longtip);
 	}
     }
 
