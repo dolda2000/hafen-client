@@ -33,7 +33,6 @@ import java.util.*;
 
 public class GItem extends AWidget {
     public Indir<Resource> res;
-    public Color olcol = null;
     public int meter = 0;
     public int num = -1;
     private Object[] rawinfo;
@@ -195,10 +194,6 @@ public class GItem extends AWidget {
 	    num = (Integer)args[0];
 	} else if(name == "chres") {
 	    res = ui.sess.getres((Integer)args[0]);
-	} else if(name == "color") {
-	    olcol = (Color)args[0];
-	    if(olcol.getAlpha() == 0)
-		olcol = null;
 	} else if(name == "tt") {
 	    info = null;
 	    rawinfo = args;

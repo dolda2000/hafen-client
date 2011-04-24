@@ -75,17 +75,16 @@ public class WItem extends Widget implements DTarget {
 
     private long hoverstart;
     private Tex shorttip = null, longtip = null;
-    private List<Info> curinfo = null;
+    private List<Info> ttinfo = null;
     public Object tooltip(Coord c, boolean again) {
 	long now = System.currentTimeMillis();
 	if(!again)
 	    hoverstart = now;
-	List<Info> info;
 	try {
-	    info = item.info();
-	    if(info != curinfo) {
+	    List<Info> info = item.info();
+	    if(info != ttinfo) {
 		shorttip = longtip = null;
-		curinfo = info;
+		ttinfo = info;
 	    }
 	    if(now - hoverstart < 1000) {
 		if(shorttip == null)
@@ -99,6 +98,23 @@ public class WItem extends Widget implements DTarget {
 	} catch(Loading e) {
 	    return("...");
 	}
+    }
+
+    private List<Info> olinfo = null;
+    private Color olcol = null;
+    private Color olcol() {
+	try {
+	    List<Info> info = item.info();
+	    if(info != olinfo) {
+		olcol = null;
+		if(find(Makewindow.MakePrep.class, info) != null)
+		    olcol = new Color(0, 255, 0, 64);
+		olinfo = info;
+	    }
+	} catch(Loading e) {
+	    return(null);
+	}
+	return(olcol);
     }
 
     public void draw(GOut g) {
@@ -116,14 +132,15 @@ public class WItem extends Widget implements DTarget {
 		g.fellipse(sz.div(2), new Coord(15, 15), 90, (int)(90 + (360 * a)));
 		g.chcolor();
 	    }
-	    if(item.olcol != null) {
+	    if(olcol() != null) {
 		if(cmask != res) {
 		    mask = null;
 		    if(tex instanceof TexI)
 			mask = ((TexI)tex).mkmask();
+		    cmask = res;
 		}
 		if(mask != null) {
-		    g.chcolor(item.olcol);
+		    g.chcolor(olcol());
 		    g.image(mask, Coord.z);
 		    g.chcolor();
 		}

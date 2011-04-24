@@ -123,4 +123,10 @@ public class Makewindow extends Widget {
 	}
 	return(super.globtype(ch, ev));
     }
+    
+    public static class MakePrep extends GItem.Info {
+	public MakePrep(GItem item) {
+	    item.super();
+	}
+    }
 }
