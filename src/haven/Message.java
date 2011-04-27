@@ -187,6 +187,11 @@ public class Message implements java.io.Serializable {
 	off += 4;
 	return(Utils.int32d(blob, off - 4));
     }
+
+    public long int64() {
+	off += 8;
+	return(Utils.int64d(blob, off - 8));
+    }
 	
     public String string() {
 	int[] ob = new int[] {off};

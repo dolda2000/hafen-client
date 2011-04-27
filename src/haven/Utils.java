@@ -217,6 +217,17 @@ public class Utils {
 	else
 	    return((int)u);
     }
+    
+    public static long int64d(byte[] buf, int off) {
+	long b = 0;
+	for(int i = 0; i < 7; i++)
+	    b |= ((long)ub(buf[i])) << (i * 8);
+	int h = ub(buf[7]);
+	if(h < 128)
+	    return(b | ((long)h << 56));
+	else
+	    return(0L + ((long)(-255 + h) * 0x0100000000000000L) + (-0x0100000000000000L + b));
+    }
 	
     static void int32e(int num, byte[] buf, int off) {
 	if(num < 0)

@@ -107,10 +107,10 @@ public class MCache {
 	    }
 	}
 
-	public Grid(Coord gc) {
+	public Grid(Coord gc, long id) {
 	    this.gc = gc;
 	    this.ul = gc.mul(cmaps);
-	    id = (((long)gc.x) << 32l) ^ ((long)gc.y);
+	    this.id = id;
 	}
 
 	public int gettile(Coord tc) {
@@ -295,7 +295,8 @@ public class MCache {
 	synchronized(grids) {
 	    synchronized(req) {
 		if(req.containsKey(c)) {
-		    Grid g = new Grid(c);
+		    long id = blob.int64();
+		    Grid g = new Grid(c, id);
 		    g.mnm = mmname;
 		    for(int i = 0; i < g.tiles.length; i++)
 			g.tiles[i] = blob.uint8();
