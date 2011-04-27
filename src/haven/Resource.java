@@ -81,7 +81,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     }
 	
     private LoadException error;
-    private Collection<? extends Layer> layers = new LinkedList<Layer>();
+    private Collection<Layer> layers = new LinkedList<Layer>();
     public final String name;
     public int ver;
     public boolean loading;
@@ -1072,7 +1072,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		
 		public Iterator<L> iterator() {
 		    return(new Iterator<L>() {
-			    Iterator<? extends Layer> i = layers.iterator();
+			    Iterator<Layer> i = layers.iterator();
 			    L c = n();
 			    
 			    private L n() {
