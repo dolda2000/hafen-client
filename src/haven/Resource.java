@@ -1058,16 +1058,50 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
     }
 	
-    public <L extends Layer> Collection<L> layers(Class<L> cl, boolean th) {
+    public <L extends Layer> Collection<L> layers(final Class<L> cl, boolean th) {
 	if(loading && th)
 	    throw(new Loading(this));
 	checkerr();
-	Collection<L> ret = new LinkedList<L>();
-	for(Layer l : layers) {
-	    if(cl.isInstance(l))
-		ret.add(cl.cast(l));
-	}
-	return(ret);
+	return(new AbstractCollection<L>() {
+		public int size() {
+		    int s = 0;
+		    for(L l : this)
+			s++;
+		    return(s);
+		}
+		
+		public Iterator<L> iterator() {
+		    return(new Iterator<L>() {
+			    Iterator<? extends Layer> i = layers.iterator();
+			    L c = n();
+			    
+			    private L n() {
+				while(i.hasNext()) {
+				    Layer l = i.next();
+				    if(cl.isInstance(l))
+					return(cl.cast(l));
+				}
+				return(null);
+			    }
+			    
+			    public boolean hasNext() {
+				return(c != null);
+			    }
+			    
+			    public L next() {
+				L ret = c;
+				if(ret == null)
+				    throw(new NoSuchElementException());
+				c = n();
+				return(ret);
+			    }
+			    
+			    public void remove() {
+				throw(new UnsupportedOperationException());
+			    }
+			});
+		}
+	    });
     }
     
     public <L extends Layer> Collection<L> layers(Class<L> cl) {
