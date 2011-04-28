@@ -411,7 +411,6 @@ public class MapMesh implements Rendered {
 
     private void clean() {
 	texmap = null;
-	surfmap = null;
 	for(Layer l : layers)
 	    l.pl = null;
     }
