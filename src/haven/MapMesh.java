@@ -268,8 +268,10 @@ public class MapMesh implements Rendered {
 	for(c.y = 0; c.y < sz.y; c.y++) {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
 		Coord gc = c.add(ul);
+		long ns = rnd.nextLong();
 		mc.tiler(mc.gettile(gc)).lay(m, rnd, c, gc);
 		dotrans(m, rnd, c, gc);
+		rnd.setSeed(ns);
 	    }
 	}
 	for(Surface s : m.surfmap.values())
