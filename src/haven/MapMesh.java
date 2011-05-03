@@ -100,6 +100,16 @@ public class MapMesh implements Rendered {
 	}
     }
     
+    private static void splitquad(MeshBuf buf, MeshBuf.Vertex v1, MeshBuf.Vertex v2, MeshBuf.Vertex v3, MeshBuf.Vertex v4) {
+	if(Math.abs(v1.pos.z - v3.pos.z) > Math.abs(v2.pos.z - v4.pos.z)) {
+	    buf.new Face(v1, v2, v3);
+	    buf.new Face(v1, v3, v4);
+	} else {
+	    buf.new Face(v1, v2, v4);
+	    buf.new Face(v2, v3, v4);
+	}
+    }
+
     public class Plane {
 	public SPoint[] vrt;
 	public int z;
@@ -140,8 +150,7 @@ public class MapMesh implements Rendered {
 		v3.tex = new Coord3f(tex.tcx(r), tex.tcy(b), 0.0f);
 		v4.tex = new Coord3f(tex.tcx(r), tex.tcy(0), 0.0f);
 	    }
-	    buf.new Face(v1, v2, v3);
-	    buf.new Face(v1, v3, v4);
+	    splitquad(buf, v1, v2, v3, v4);
 	}
 	
 	private void reg() {
@@ -340,8 +349,7 @@ public class MapMesh implements Rendered {
 	    }
 	    for(t.y = 0; t.y < brt.y - ult.y; t.y++) {
 		for(t.x = 0; t.x < brt.x - ult.x; t.x++) {
-		    buf.new Face(vm[t.x][t.y], vm[t.x][t.y + 1], vm[t.x + 1][t.y + 1]);
-		    buf.new Face(vm[t.x][t.y], vm[t.x + 1][t.y + 1], vm[t.x + 1][t.y]);
+		    splitquad(buf, vm[t.x][t.y], vm[t.x][t.y + 1], vm[t.x + 1][t.y + 1], vm[t.x + 1][t.y]);
 		}
 	    }
 	    mesh = buf.mkmesh();
@@ -388,8 +396,7 @@ public class MapMesh implements Rendered {
 		for(t.x = 0; t.x < sz.x; t.x++) {
 		    if((ol[t.x][t.y] & (1 << i)) != 0) {
 			h = true;
-			buf.new Face(v[t.x][t.y], v[t.x][t.y + 1], v[t.x + 1][t.y + 1]);
-			buf.new Face(v[t.x][t.y], v[t.x + 1][t.y + 1], v[t.x + 1][t.y]);
+			splitquad(buf, v[t.x][t.y], v[t.x][t.y + 1], v[t.x + 1][t.y + 1], v[t.x + 1][t.y]);
 		    }
 		}
 	    }
