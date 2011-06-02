@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.awt.Color;
+import java.awt.event.KeyEvent;
 
 public class GameUI extends ConsoleHost implements Console.Directory {
     public final String chrid;
@@ -63,6 +64,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	new Avaview(new Coord(10, 10), this, plid);
 	new Bufflist(new Coord(95, 50), this);
 	resize(sz);
+	setcanfocus(true);
+	setfocusctl(true);
     }
     
     static class Hidewnd extends Window {
@@ -219,7 +222,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    wdg.c.y = sz.y - wdg.sz.y;
     }
 
-    public boolean globtype(char key, java.awt.event.KeyEvent ev) {
+    public boolean globtype(char key, KeyEvent ev) {
 	if(key == ':') {
 	    entercmd();
 	    return(true);
