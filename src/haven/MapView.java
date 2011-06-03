@@ -408,16 +408,30 @@ public class MapView extends PView implements DTarget {
 	return(rl.limit.ul.add(tile).mul(tilesz).add(pixel));
     }
     
-    private Gob checkgobclick(GOut g, Coord c) {
-	Clicklist<Gob> rl = new Clicklist<Gob>(basic(g)) {
-		Gob cur;
-		public Gob map(Rendered r) {
-		    return(cur);
+    private static class ClickInfo {
+	Gob gob;
+	Rendered r;
+	
+	ClickInfo(Gob gob, Rendered r) {
+	    this.gob = gob; this.r = r;
+	}
+    }
+
+    private ClickInfo checkgobclick(GOut g, Coord c) {
+	Clicklist<ClickInfo> rl = new Clicklist<ClickInfo>(basic(g)) {
+		Gob curgob;
+		ClickInfo curinfo;
+		public ClickInfo map(Rendered r) {
+		    return(curinfo);
 		}
 		
 		public void add(Rendered r, GLState t) {
 		    if(r instanceof Gob)
-			cur = (Gob)r;
+			curgob = (Gob)r;
+		    if((curgob == null) || !(r instanceof FRendered))
+			curinfo = null;
+		    else
+			curinfo = new ClickInfo(curgob, r);
 		    super.add(r, t);
 		}
 	    };
@@ -529,7 +543,7 @@ public class MapView extends PView implements DTarget {
 	public void run(GOut g) {
 	    GLState.Buffer bk = g.st.copy();
 	    Coord mapcl;
-	    Gob gobcl;
+	    ClickInfo gobcl;
 	    try {
 		GL gl = g.gl;
 		g.st.set(basic(g));
@@ -544,11 +558,15 @@ public class MapView extends PView implements DTarget {
 	    } finally {
 		g.st.set(bk);
 	    }
-	    if(mapcl != null)
-		hit(clickc, mapcl, gobcl);
+	    if(mapcl != null) {
+		if(gobcl == null)
+		    hit(clickc, mapcl, null, null);
+		else
+		    hit(clickc, mapcl, gobcl.gob, gobcl.r);
+	    }
 	}
 	
-	protected abstract void hit(Coord pc, Coord mc, Gob gob);
+	protected abstract void hit(Coord pc, Coord mc, Gob gob, Rendered tgt);
     }
 
     private class Click extends Hittest {
@@ -559,7 +577,7 @@ public class MapView extends PView implements DTarget {
 	    clickb = b;
 	}
 	
-	protected void hit(Coord pc, Coord mc, Gob gob) {
+	protected void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
 	    if(grab != null) {
 		if(grab.mmousedown(mc, clickb))
 		    return;
@@ -603,7 +621,7 @@ public class MapView extends PView implements DTarget {
 	} else if(grab != null) {
 	    synchronized(delayed) {
 		delayed.add(new Hittest(c) {
-			public void hit(Coord pc, Coord mc, Gob gob) {
+			public void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
 			    grab.mmousemove(mc);
 			}
 		    });
@@ -627,7 +645,7 @@ public class MapView extends PView implements DTarget {
 	} else if(grab != null) {
 	    synchronized(delayed) {
 		delayed.add(new Hittest(c) {
-			public void hit(Coord pc, Coord mc, Gob gob) {
+			public void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
 			    grab.mmouseup(mc, button);
 			}
 		    });
@@ -650,7 +668,7 @@ public class MapView extends PView implements DTarget {
     public boolean drop(final Coord cc, final Coord ul) {
 	synchronized(delayed) {
 	    delayed.add(new Hittest(cc) {
-		    public void hit(Coord pc, Coord mc, Gob gob) {
+		    public void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
 			wdgmsg("drop", pc, mc, ui.modflags());
 		    }
 		});
@@ -661,7 +679,7 @@ public class MapView extends PView implements DTarget {
     public boolean iteminteract(Coord cc, Coord ul) {
 	synchronized(delayed) {
 	    delayed.add(new Hittest(cc) {
-		    public void hit(Coord pc, Coord mc, Gob gob) {
+		    public void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
 			if(gob == null)
 			    wdgmsg("itemact", pc, mc, ui.modflags());
 			else
