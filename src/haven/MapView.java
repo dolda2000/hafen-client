@@ -569,6 +569,12 @@ public class MapView extends PView implements DTarget {
 	protected abstract void hit(Coord pc, Coord mc, Gob gob, Rendered tgt);
     }
 
+    private static int getid(Rendered tgt) {
+	if(tgt instanceof FastMesh.ResourceMesh)
+	    return(((FastMesh.ResourceMesh)tgt).id);
+	return(-1);
+    }
+
     private class Click extends Hittest {
 	int clickb;
 	
@@ -585,7 +591,7 @@ public class MapView extends PView implements DTarget {
 	    if(gob == null)
 		wdgmsg("click", pc, mc, clickb, ui.modflags());
 	    else
-		wdgmsg("click", pc, mc, clickb, ui.modflags(), gob.id, gob.rc);
+		wdgmsg("click", pc, mc, clickb, ui.modflags(), gob.id, gob.rc, getid(tgt));
 	}
     }
     
@@ -683,7 +689,7 @@ public class MapView extends PView implements DTarget {
 			if(gob == null)
 			    wdgmsg("itemact", pc, mc, ui.modflags());
 			else
-			    wdgmsg("itemact", pc, mc, ui.modflags(), gob.id, gob.rc);
+			    wdgmsg("itemact", pc, mc, ui.modflags(), gob.id, gob.rc, getid(tgt));
 		    }
 		});
 	}

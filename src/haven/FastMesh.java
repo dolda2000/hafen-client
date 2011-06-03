@@ -166,6 +166,21 @@ public class FastMesh implements FRendered {
 	return(vert.bones[retb]);
     }
     
+    public static class ResourceMesh extends FastMesh {
+	public final int id;
+	public final Resource res;
+	
+	public ResourceMesh(VertexBuf vert, short[] ind, MeshRes info) {
+	    super(vert, ind);
+	    this.id = info.id;
+	    this.res = info.getres();
+	}
+	
+	public String toString() {
+	    return("FastMesh(" + res.name + ", " + id + ")");
+	}
+    }
+
     public static class MeshRes extends Resource.Layer {
 	public transient FastMesh m;
 	public transient Material mat;
@@ -199,11 +214,7 @@ public class FastMesh implements FRendered {
 	
 	public void init() {
 	    VertexBuf v = getres().layer(VertexBuf.VertexRes.class, false).b;
-	    this.m = new FastMesh(v, this.tmp) {
-		    public String toString() {
-			return("FastMesh(" + getres().name + ")");
-		    }
-		};
+	    this.m = new ResourceMesh(v, this.tmp, this);
 	    this.tmp = null;
 	    if(matid >= 0) {
 		for(Material.Res mr : getres().layers(Material.Res.class, false)) {
