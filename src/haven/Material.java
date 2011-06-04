@@ -27,13 +27,12 @@
 package haven;
 
 import java.awt.Color;
+import java.util.*;
 import javax.media.opengl.*;
 import static haven.Utils.c2fa;
 
 public class Material extends GLState {
-    public Colors col;
-    public Tex tex;
-    public boolean facecull = true, mipmap = false, linear = false, aclip = true;
+    public final GLState[] states;
     
     public static final GLState nofacecull = new GLState.StandAlone(PView.proj) {
 	    public void apply(GOut g) {
@@ -75,6 +74,14 @@ public class Material extends GLState {
 	public Colors(Color amb, Color dif, Color spc, Color emi, float shine) {
 	    build(amb, dif, spc, emi);
 	    this.shine = shine;
+	}
+	
+	public Colors(Color col) {
+	    this(new Color((int)(col.getRed() * defamb[0]), (int)(col.getGreen() * defamb[1]), (int)(col.getBlue() * defamb[2]), col.getAlpha()),
+		 new Color((int)(col.getRed() * defdif[0]), (int)(col.getGreen() * defdif[1]), (int)(col.getBlue() * defdif[2]), col.getAlpha()),
+		 new Color(0, 0, 0, 0),
+		 new Color(0, 0, 0, 0),
+		 0);
 	}
     
 	public void build(Color amb, Color dif, Color spc, Color emi) {
@@ -127,99 +134,131 @@ public class Material extends GLState {
     
     public void unapply(GOut g) {}
     
+    public Material(GLState... states) {
+	this.states = states;
+    }
+
     public Material() {
-	col = new Colors();
+	this(new Colors(), alphaclip);
     }
     
     public Material(Color amb, Color dif, Color spc, Color emi, float shine) {
-	col = new Colors(amb, dif, spc, emi, shine);
+	this(new Colors(amb, dif, spc, emi, shine), alphaclip);
     }
     
     public Material(Color col) {
-	this(new Color((int)(col.getRed() * defamb[0]), (int)(col.getGreen() * defamb[1]), (int)(col.getBlue() * defamb[2]), col.getAlpha()),
-	     new Color((int)(col.getRed() * defdif[0]), (int)(col.getGreen() * defdif[1]), (int)(col.getBlue() * defdif[2]), col.getAlpha()),
-	     new Color(0, 0, 0, 0),
-	     new Color(0, 0, 0, 0),
-	     0);
-	aclip = false;
+	this(new Colors(col));
     }
     
     public Material(Tex tex) {
-	this();
-	this.tex = tex;
+	this(new Colors(), tex, alphaclip);
     }
     
     public String toString() {
-	return("(" + col.toString() + ", " + ((tex == null)?"textured":"non-textured") + ")");
+	return(Arrays.asList(states).toString());
     }
     
+    private static GLState deflight = Light.vlights;
     public void prep(Buffer buf) {
-	col.prep(buf);
-	if(tex != null)
-	    tex.prep(buf);
-	if(!facecull)
-	    nofacecull.prep(buf);
+	for(GLState st : states)
+	    st.prep(buf);
 	if(buf.cfg.plight)
 	    Light.plights.prep(buf);
 	else
 	    Light.vlights.prep(buf);
-	if(aclip)
-	    alphaclip.prep(buf);
     }
     
     public static class Res extends Resource.Layer {
 	public final int id;
-	public final transient Material m;
-	private int texid = -1;
+	private transient List<GLState> states = new LinkedList<GLState>();
+	private transient List<Resolver> left = new LinkedList<Resolver>();
+	private transient Material m;
+	private boolean mipmap = false, linear = false;
 	
-	private static Color col(byte[] buf, int off) {
-	    double r = Utils.floatd(buf, off);
-	    double g = Utils.floatd(buf, off + 5);
-	    double b = Utils.floatd(buf, off + 10);
-	    double a = Utils.floatd(buf, off + 15);
+	private interface Resolver {
+	    public GLState resolve();
+	}
+	
+	private static Color col(byte[] buf, int[] off) {
+	    double r = Utils.floatd(buf, off[0]); off[0] += 5;
+	    double g = Utils.floatd(buf, off[0]); off[0] += 5;
+	    double b = Utils.floatd(buf, off[0]); off[0] += 5;
+	    double a = Utils.floatd(buf, off[0]); off[0] += 5;
 	    return(new Color((float)r, (float)g, (float)b, (float)a));
 	}
 
 	public Res(Resource res, byte[] buf) {
 	    res.super();
 	    id = Utils.uint16d(buf, 0);
-	    int fl = buf[2];
-	    int off = 3;
-	    if((fl & 1) != 0) {
-		Color amb = col(buf, off); off += 20;
-		Color dif = col(buf, off); off += 20;
-		Color spc = col(buf, off); off += 20;
-		double shine = Utils.floatd(buf, off); off += 5;
-		Color emi = col(buf, off); off += 20;
-		this.m = new Material(amb, dif, spc, emi, (float)shine);
-	    } else {
-		this.m = new Material();
+	    int[] off = {2};
+	    while(off[0] < buf.length) {
+		String thing = Utils.strd(buf, off).intern();
+		if(thing == "col") {
+		    Color amb = col(buf, off);
+		    Color dif = col(buf, off);
+		    Color spc = col(buf, off);
+		    double shine = Utils.floatd(buf, off[0]); off[0] += 5;
+		    Color emi = col(buf, off);
+		    states.add(new Colors(amb, dif, spc, emi, (float)shine));
+		} else if(thing == "linear") {
+		    linear = true;
+		} else if(thing == "mipmap") {
+		    mipmap = true;
+		} else if(thing == "nofacecull") {
+		    states.add(nofacecull);
+		} else if(thing == "tex") {
+		    final int id = Utils.uint16d(buf, off[0]); off[0] += 2;
+		    left.add(new Resolver() {
+			    public GLState resolve() {
+				for(Resource.Image img : getres().layers(Resource.imgc, false)) {
+				    if(img.id == id)
+					return(img.tex());
+				}
+				throw(new Resource.LoadException("Specified texture not found: " + id, getres()));
+			    }
+			});
+		} else if(thing == "texlink") {
+		    final String nm = Utils.strd(buf, off);
+		    final int ver = Utils.uint16d(buf, off[0]); off[0] += 2;
+		    final int id = Utils.uint16d(buf, off[0]); off[0] += 2;
+		    left.add(new Resolver() {
+			    public GLState resolve() {
+				Resource res = Resource.load(nm, ver);
+				for(Resource.Image img : res.layers(Resource.imgc, false)) {
+				    if(img.id == id)
+					return(img.tex());
+				}
+				throw(new Resource.LoadException("Specified texture not found: " + id, getres()));
+			    }
+			});
+		} else {
+		    throw(new Resource.LoadException("Unknown material part: " + thing, getres()));
+		}
 	    }
-	    if((fl & 2) != 0)
-		texid = Utils.uint16d(buf, off); off += 2;
-	    if((fl & 4) != 0)
-		this.m.facecull = false;
-	    if((fl & 8) != 0)
-		this.m.mipmap = true;
-	    if((fl & 16) != 0)
-		this.m.linear = true;
-	    if((fl & ~31) != 0)
-		throw(new Resource.LoadException("Unknown material flags: " + fl, getres()));
+	    states.add(alphaclip);
 	}
 	
-	public void init() {
-	    if(texid >= 0) {
-		for(Resource.Image img : getres().layers(Resource.imgc, false)) {
-		    if(img.id == texid) {
-			m.tex = img.tex();
-			if(m.mipmap)
-			    ((TexGL)m.tex).mipmap();
-			if(m.linear)
-			    ((TexGL)m.tex).magfilter(GL.GL_LINEAR);
+	public Material get() {
+	    synchronized(this) {
+		if(m == null) {
+		    for(Iterator<Resolver> i = left.iterator(); i.hasNext();) {
+			Resolver r = i.next();
+			states.add(r.resolve());
+			i.remove();
 		    }
+		    m = new Material(states.toArray(new GLState[0]));
 		}
-		if(m.tex == null)
-		    throw(new Resource.LoadException("Specified texture not found: " + texid, getres()));
+		return(m);
+	    }
+	}
+
+	public void init() {
+	    for(Resource.Image img : getres().layers(Resource.imgc, false)) {
+		TexGL tex = (TexGL)img.tex();
+		if(mipmap)
+		    tex.mipmap();
+		if(linear)
+		    tex.magfilter(GL.GL_LINEAR);
 	    }
 	}
     }

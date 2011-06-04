@@ -59,7 +59,7 @@ public interface RenderLink {
 				Material M = null;
 				for(Material.Res mr : mat.layers(Material.Res.class)) {
 				    if((matid < 0) || (mr.id == matid)) {
-					M = mr.m;
+					M = mr.get();
 					break;
 				    }
 				}

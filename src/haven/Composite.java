@@ -325,7 +325,7 @@ public class Composite extends Drawable {
 		for(Iterator<Indir<Resource>> o = md.tex.iterator(); o.hasNext();) {
 		    Indir<Resource> res = o.next();
 		    for(Material.Res mr : res.get().layers(Material.Res.class))
-			md.real.lay.add(mr.m);
+			md.real.lay.add(mr.get());
 		    o.remove();
 		}
 		i.remove();

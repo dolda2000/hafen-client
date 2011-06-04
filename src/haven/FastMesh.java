@@ -183,7 +183,7 @@ public class FastMesh implements FRendered {
 
     public static class MeshRes extends Resource.Layer {
 	public transient FastMesh m;
-	public transient Material mat;
+	public transient Material.Res mat;
 	private transient short[] tmp;
 	public final int id, ref;
 	private int matid;
@@ -219,7 +219,7 @@ public class FastMesh implements FRendered {
 	    if(matid >= 0) {
 		for(Material.Res mr : getres().layers(Material.Res.class, false)) {
 		    if(mr.id == matid)
-			this.mat = mr.m;
+			this.mat = mr;
 		}
 		if(this.mat == null)
 		    throw(new Resource.LoadException("Could not find specified material: " + matid, getres()));

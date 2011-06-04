@@ -129,19 +129,6 @@ public class WaterTile extends Tiler {
 		super.prep(buf);
 	    }
 	};
-    public static final Material surf2 = new Material(new Color(0, 0, 0, 0),
-						      new Color(255, 255, 255, 32),
-						      new Color(16, 16, 16, 64),
-						      new Color(0, 0, 0, 0),
-						      2) {
-	    public void prep(Buffer b) {
-		super.prep(b);
-	    }
-	};
-    static {
-	surf2.tex = srf;
-    }
-
     public static class Shallows extends WaterTile {
 	public Shallows(int id, Resource.Tileset set) {
 	    super(id, set, 5);
@@ -163,7 +150,6 @@ public class WaterTile extends Tiler {
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	Tile g = set.ground.pick(rnd);
 	m.new Plane(m.surf(Bottom.class), lc, 0, g);
-	//m.new Plane(m.gnd(), lc, 256, surf2);
 	m.new Plane(m.gnd(), lc, 257, surfmat);
     }
     

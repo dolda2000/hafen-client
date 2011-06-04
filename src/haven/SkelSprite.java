@@ -66,12 +66,12 @@ public class SkelSprite extends Sprite {
 		if(mr.m.boned()) {
 		    String bnm = mr.m.boneidp();
 		    if(bnm == null) {
-			rl.add(mr.mat.apply(new MorphedMesh(mr.m, pose)));
+			rl.add(mr.mat.get().apply(new MorphedMesh(mr.m, pose)));
 		    } else {
-			rl.add(pose.bonetrans2(skel.bones.get(bnm).idx).apply(mr.mat.apply(mr.m)));
+			rl.add(pose.bonetrans2(skel.bones.get(bnm).idx).apply(mr.mat.get().apply(mr.m)));
 		    }
 		} else {
-		    rl.add(mr.mat.apply(mr.m));
+		    rl.add(mr.mat.get().apply(mr.m));
 		}
 	    }
 	}
