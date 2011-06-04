@@ -162,10 +162,7 @@ public class Material extends GLState {
     public void prep(Buffer buf) {
 	for(GLState st : states)
 	    st.prep(buf);
-	if(buf.cfg.plight)
-	    Light.plights.prep(buf);
-	else
-	    Light.vlights.prep(buf);
+	buf.cfg.deflight.prep(buf);
     }
     
     public static class Res extends Resource.Layer {
