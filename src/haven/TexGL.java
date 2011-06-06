@@ -35,7 +35,7 @@ public abstract class TexGL extends Tex {
     protected TexOb t = null;
     private Object idmon = new Object();
     protected boolean mipmap = false;
-    protected int magfilter = GL.GL_NEAREST, wrapmode = GL.GL_REPEAT;
+    protected int magfilter = GL.GL_NEAREST, minfilter = GL.GL_NEAREST, wrapmode = GL.GL_REPEAT;
     protected Coord tdim;
     public static boolean disableall = false;
     private static final GLShader[] shaders = {
@@ -112,10 +112,7 @@ public abstract class TexGL extends Tex {
 	GL gl = g.gl;
 	t = new TexOb(gl);
 	gl.glBindTexture(GL.GL_TEXTURE_2D, t.id);
-	if(mipmap)
-	    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST_MIPMAP_NEAREST);
-	else
-	    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
+	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, minfilter);
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, magfilter);
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, wrapmode);
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, wrapmode);
@@ -147,11 +144,17 @@ public abstract class TexGL extends Tex {
     
     public void mipmap() {
 	mipmap = true;
+	minfilter = GL.GL_NEAREST_MIPMAP_NEAREST;
 	dispose();
     }
 
     public void magfilter(int filter) {
 	magfilter = filter;
+	dispose();
+    }
+    
+    public void minfilter(int filter) {
+	minfilter = filter;
 	dispose();
     }
 
