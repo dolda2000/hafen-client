@@ -130,12 +130,14 @@ public class MapView extends PView implements DTarget {
 	    return(PointedCam.compute(curc.add(0.0f, 0.0f, h), dist(elev), elev, angl));
 	}
 	
+	private static final float maxang = (float)(Math.PI / 2 - 0.1);
+	private static final float mindist = 10.0f;
 	public boolean wheel(Coord c, int amount) {
 	    float fe = elev;
 	    elev += amount * elev * 0.02f;
-	    if(elev > (Math.PI / 2))
-		elev = (float)Math.PI / 2;
-	    if(dist(elev) < 10.0)
+	    if(elev > maxang)
+		elev = maxang;
+	    if(dist(elev) < mindist)
 		elev = fe;
 	    return(true);
 	}
