@@ -293,6 +293,34 @@ public class Skeleton {
 		});
 	}
 
+	public class BoneAlign extends Location {
+	    private final Coord3f ref;
+	    private final int orig, tgt;
+	    private int cseq = -1;
+	    
+	    public BoneAlign(Coord3f ref, Bone orig, Bone tgt) {
+		super(Matrix4f.identity());
+		this.ref = ref;
+		this.orig = orig.idx;
+		this.tgt = tgt.idx;
+	    }
+		
+	    public Matrix4f fin(Matrix4f p) {
+		if(cseq != seq) {
+		    Coord3f cur = new Coord3f(gpos[tgt][0] - gpos[orig][0], gpos[tgt][1] - gpos[orig][1], gpos[tgt][2] - gpos[orig][2]).norm();
+		    Coord3f axis = cur.cmul(ref).norm();
+		    float ang = (float)Math.acos(cur.dmul(ref));
+		    /*
+		    System.err.println(cur + ", " + ref + ", " + axis + ", " + ang);
+		    */
+		    update(Transform.makexlate(new Matrix4f(), new Coord3f(gpos[orig][0], gpos[orig][1], gpos[orig][2]))
+			   .mul1(Transform.makerot(new Matrix4f(), axis, -ang)));
+		    cseq = seq;
+		}
+		return(super.fin(p));
+	    }
+	}
+
 	public void boneoff(int bone, float[] offtrans) {
 	    /* It would be nice if these "new float"s get
 	     * stack-allocated. */
@@ -643,6 +671,24 @@ public class Skeleton {
 				public GLState make(Pose pose) {
 				    Bone bone = pose.skel().bones.get(bonenm);
 				    return(pose.bonetrans(bone.idx));
+				}
+			    });
+		    }
+		};
+	    opcodes[3] = new HatingJava() {
+		    public Command make(byte[] buf, int[] off) {
+			float rx1 = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			float ry1 = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			float rz1 = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+			float l = (float)Math.sqrt((rx1 * rx1) + (ry1 * ry1) + (rz1 * rz1));
+			final Coord3f ref = new Coord3f(rx1 / l, ry1 / l, rz1 / l);
+			final String orignm = Utils.strd(buf, off);
+			final String tgtnm = Utils.strd(buf, off);
+			return(new Command() {
+				public GLState make(Pose pose) {
+				    Bone orig = pose.skel().bones.get(orignm);
+				    Bone tgt = pose.skel().bones.get(tgtnm);
+				    return(pose.new BoneAlign(ref, orig, tgt));
 				}
 			    });
 		    }
