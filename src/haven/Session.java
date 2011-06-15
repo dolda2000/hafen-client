@@ -478,21 +478,22 @@ public class Session {
 		
 	private void getrel(int seq, Message msg) {
 	    if(seq == rseq) {
+		int lastack;
 		synchronized(uimsgs) {
 		    handlerel(msg);
 		    while(true) {
-			rseq = (rseq + 1) % 65536;
+			rseq = ((lastack = rseq) + 1) % 65536;
 			if(!waiting.containsKey(rseq))
 			    break;
 			handlerel(waiting.get(rseq));
 			waiting.remove(rseq);
 		    }
 		}
-		sendack(rseq - 1);
+		sendack(lastack);
 		synchronized(Session.this) {
 		    Session.this.notifyAll();
 		}
-	    } else if(seq > rseq) {
+	    } else if(Utils.floormod(seq - rseq, 65536) < 32768) {
 		waiting.put(seq, msg);
 	    }
 	}
