@@ -200,7 +200,7 @@ public class Utils {
     }
 	
     static long uint32d(byte[] buf, int off) {
-	return(ub(buf[off]) + (ub(buf[off + 1]) * 256) + (ub(buf[off + 2]) * 65536) + (ub(buf[off + 3]) * 16777216));
+	return(ub(buf[off]) + (ub(buf[off + 1]) * 256) + (ub(buf[off + 2]) * 65536) + (ub(buf[off + 3]) * 16777216l));
     }
 	
     static void uint32e(long num, byte[] buf, int off) {
