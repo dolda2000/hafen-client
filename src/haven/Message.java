@@ -163,6 +163,8 @@ public class Message implements java.io.Serializable {
 	    } else if(o instanceof Coord) {
 		adduint8(T_COORD);
 		addcoord((Coord)o);
+	    } else {
+		throw(new RuntimeException("Cannot encode a " + o.getClass() + " as TTO"));
 	    }
 	}
     }
