@@ -212,8 +212,8 @@ public class Utils {
 	
     static int int32d(byte[] buf, int off) {
 	long u = uint32d(buf, off);
-	if(u > Integer.MAX_VALUE)
-	    return((int)((((long)Integer.MIN_VALUE) * 2) - u));
+	if(u > 0x7fffffffL)
+	    return((int)(u - 0x100000000L));
 	else
 	    return((int)u);
     }
