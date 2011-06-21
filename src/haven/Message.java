@@ -125,7 +125,13 @@ public class Message implements java.io.Serializable {
 	Utils.int32e(num, buf, 0);
 	addbytes(buf);
     }
-	
+    
+    public void adduint32(long num) {
+	byte[] buf = new byte[4];
+	Utils.uint32e(num, buf, 0);
+	addbytes(buf);
+    }
+    
     public void addstring2(String str) {
 	byte[] buf;
 	try {
@@ -186,6 +192,11 @@ public class Message implements java.io.Serializable {
     public int int32() {
 	off += 4;
 	return(Utils.int32d(blob, off - 4));
+    }
+    
+    public long uint32() {
+	off += 4;
+	return(Utils.uint32d(blob, off - 4));
     }
 
     public long int64() {
