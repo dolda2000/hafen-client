@@ -34,7 +34,7 @@ import java.util.Map.Entry;
 public class Partyview extends Widget {
     int ign;
     Party party = ui.sess.glob.party;
-    Map<Integer, Member> om = null;
+    Map<Long, Member> om = null;
     Member ol = null;
     Map<Member, Avaview> avs = new HashMap<Member, Avaview>();
     Button leave = null;
@@ -86,7 +86,12 @@ public class Partyview extends Widget {
 	    List<Map.Entry<Member, Avaview>> wl = new ArrayList<Map.Entry<Member, Avaview>>(avs.entrySet());
 	    Collections.sort(wl, new Comparator<Map.Entry<Member, Avaview>>() {
 		    public int compare(Entry<Member, Avaview> a, Entry<Member, Avaview> b) {
-			return(a.getKey().gobid - b.getKey().gobid);
+			long aid = a.getKey().gobid, bid = b.getKey().gobid;
+			if(aid < bid)
+			    return(-1);
+			else if(bid > aid)
+			    return(1);
+			return(0);
 		    }
 		});
 	    int i = 0;

@@ -35,7 +35,7 @@ import java.lang.reflect.*;
 import javax.media.opengl.*;
 
 public class MapView extends PView implements DTarget {
-    public int plgob = -1;
+    public long plgob = -1;
     public Coord cc;
     private final Glob glob;
     private int view = 2;
@@ -193,7 +193,7 @@ public class MapView extends PView implements DTarget {
 	    });
     }
     
-    public MapView(Coord c, Coord sz, Widget parent, Coord cc, int plgob) {
+    public MapView(Coord c, Coord sz, Widget parent, Coord cc, long plgob) {
 	super(c, sz, parent);
 	glob = ui.sess.glob;
 	this.cc = cc;
@@ -593,7 +593,7 @@ public class MapView extends PView implements DTarget {
 	    if(gob == null)
 		wdgmsg("click", pc, mc, clickb, ui.modflags());
 	    else
-		wdgmsg("click", pc, mc, clickb, ui.modflags(), gob.id, gob.rc, getid(tgt));
+		wdgmsg("click", pc, mc, clickb, ui.modflags(), (int)gob.id, gob.rc, getid(tgt));
 	}
     }
     
@@ -691,7 +691,7 @@ public class MapView extends PView implements DTarget {
 			if(gob == null)
 			    wdgmsg("itemact", pc, mc, ui.modflags());
 			else
-			    wdgmsg("itemact", pc, mc, ui.modflags(), gob.id, gob.rc, getid(tgt));
+			    wdgmsg("itemact", pc, mc, ui.modflags(), (int)gob.id, gob.rc, getid(tgt));
 		    }
 		});
 	}

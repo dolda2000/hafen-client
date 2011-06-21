@@ -32,7 +32,7 @@ import java.util.*;
 public class Avaview extends Widget {
     public static final Coord dasz = new Coord(74, 74);
     private Coord asz;
-    int avagob;
+    long avagob;
     boolean none = false;
     AvaRender myown = null;
     public Color color = Color.WHITE;
@@ -60,12 +60,12 @@ public class Avaview extends Widget {
 	this.asz = asz;
     }
         
-    public Avaview(Coord c, Widget parent, int avagob, Coord asz) {
+    public Avaview(Coord c, Widget parent, long avagob, Coord asz) {
 	this(c, parent, asz);
 	this.avagob = avagob;
     }
 	
-    public Avaview(Coord c, Widget parent, int avagob) {
+    public Avaview(Coord c, Widget parent, long avagob) {
 	this(c, parent, avagob, dasz);
     }
         
@@ -79,7 +79,7 @@ public class Avaview extends Widget {
 	
     public void uimsg(String msg, Object... args) {
 	if(msg == "upd") {
-	    this.avagob = (Integer)args[0];
+	    this.avagob = (long)(Integer)args[0];
 	    return;
 	}
 	if(msg == "ch") {

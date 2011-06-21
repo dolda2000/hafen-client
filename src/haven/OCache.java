@@ -31,8 +31,8 @@ import java.util.*;
 public class OCache implements Iterable<Gob> {
     /* XXX: Use weak refs */
     private Collection<Collection<Gob>> local = new LinkedList<Collection<Gob>>();
-    private Map<Integer, Gob> objs = new TreeMap<Integer, Gob>();
-    private Map<Integer, Integer> deleted = new TreeMap<Integer, Integer>();
+    private Map<Long, Gob> objs = new TreeMap<Long, Gob>();
+    private Map<Long, Integer> deleted = new TreeMap<Long, Integer>();
     private Glob glob;
     long lastctick = 0;
 	
@@ -40,7 +40,7 @@ public class OCache implements Iterable<Gob> {
 	this.glob = glob;
     }
 	
-    public synchronized void remove(int id, int frame) {
+    public synchronized void remove(long id, int frame) {
 	if(objs.containsKey(id)) {
 	    if(!deleted.containsKey(id) || deleted.get(id) < frame) {
 		objs.remove(id);
@@ -87,11 +87,11 @@ public class OCache implements Iterable<Gob> {
 	local.remove(gob);
     }
 	
-    public synchronized Gob getgob(int id) {
+    public synchronized Gob getgob(long id) {
 	return(objs.get(id));
     }
 	
-    public synchronized Gob getgob(int id, int frame) {
+    public synchronized Gob getgob(long id, int frame) {
 	if(!objs.containsKey(id)) {
 	    boolean r = false;
 	    if(deleted.containsKey(id)) {
@@ -214,8 +214,8 @@ public class OCache implements Iterable<Gob> {
 	g.setattr(new Lumin(g, off, sz, str));
     }
 	
-    public synchronized void follow(Gob g, int oid, float zo) {
-	if(oid == -1) {
+    public synchronized void follow(Gob g, long oid, float zo) {
+	if(oid == 0xffffffffl) {
 	    g.delattr(Following.class);
 	} else {
 	    Following flw = g.getattr(Following.class);
@@ -233,7 +233,7 @@ public class OCache implements Iterable<Gob> {
 	g.delattr(Homing.class);
     }
 
-    public synchronized void homing(Gob g, int oid, Coord tc, int v) {
+    public synchronized void homing(Gob g, long oid, Coord tc, int v) {
 	g.setattr(new Homing(g, oid, tc, v));
     }
 	

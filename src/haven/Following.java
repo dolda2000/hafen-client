@@ -27,11 +27,11 @@
 package haven;
 
 public class Following extends Moving {
-    int tgt;
+    long tgt;
     float zo;
     double lastv = 0.0;
 	
-    public Following(Gob gob, int tgt, float zo) {
+    public Following(Gob gob, long tgt, float zo) {
 	super(gob);
 	this.tgt = tgt;
 	this.zo = zo;

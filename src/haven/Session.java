@@ -81,7 +81,7 @@ public class Session {
     LinkedList<Message> uimsgs = new LinkedList<Message>();
     Map<Integer, Message> waiting = new TreeMap<Integer, Message>();
     LinkedList<Message> pending = new LinkedList<Message>();
-    Map<Integer, ObjAck> objacks = new TreeMap<Integer, ObjAck>();
+    Map<Long, ObjAck> objacks = new TreeMap<Long, ObjAck>();
     String username;
     byte[] cookie;
     final Map<Integer, Indir<Resource>> rescache = new TreeMap<Integer, Indir<Resource>>();
@@ -153,12 +153,12 @@ public class Session {
     }
 
     private class ObjAck {
-	int id;
+	long id;
 	int frame;
 	long recv;
 	long sent;
 		
-	public ObjAck(int id, int frame, long recv) {
+	public ObjAck(long id, int frame, long recv) {
 	    this.id = id;
 	    this.frame = frame;
 	    this.recv = recv;
@@ -208,7 +208,7 @@ public class Session {
 	    OCache oc = glob.oc;
 	    while(msg.off < msg.blob.length) {
 		int fl = msg.uint8();
-		int id = msg.int32();
+		long id = msg.uint32();
 		int frame = msg.int32();
 		synchronized(oc) {
 		    if((fl & 1) != 0)
@@ -347,18 +347,18 @@ public class Session {
 			    if(gob != null)
 				oc.avatar(gob, layers);
 			} else if(type == OD_FOLLOW) {
-			    int oid = msg.int32();
+			    long oid = msg.uint32();
 			    float zo = 0.0f;
-			    if(oid != -1)
+			    if(oid != 0xffffffffl)
 				zo = msg.int16() / 100.0f;
 			    if(gob != null)
 				oc.follow(gob, oid, zo);
 			} else if(type == OD_HOMING) {
-			    int oid = msg.int32();
-			    if(oid == -1) {
+			    long oid = msg.uint32();
+			    if(oid == 0xffffffffl) {
 				if(gob != null)
 				    oc.homostop(gob);
-			    } else if(oid == -2) {
+			    } else if(oid == 0xfffffffel) {
 				Coord tgtc = msg.coord();
 				int v = msg.uint16();
 				if(gob != null)
@@ -681,7 +681,7 @@ public class Session {
 				if(send) {
 				    if(msg == null)
 					msg = new Message(MSG_OBJACK);
-				    msg.addint32(a.id);
+				    msg.adduint32(a.id);
 				    msg.addint32(a.frame);
 				    a.sent = now;
 				}

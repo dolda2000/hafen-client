@@ -45,11 +45,11 @@ public class Fightview extends Widget {
     private Avaview curava;
     
     public class Relation {
-        int gobid;
+        long gobid;
         Avaview ava;
 	GiveButton give;
         
-        public Relation(int gobid) {
+        public Relation(long gobid) {
             this.gobid = gobid;
             this.ava = new Avaview(Coord.z, Fightview.this, gobid, avasz);
 	    this.give = new GiveButton(Coord.z, Fightview.this, 0, new Coord(15, 15));
@@ -89,13 +89,13 @@ public class Fightview extends Widget {
 	    curgive = new GiveButton(cgivec, this, 0) {
 		    public void wdgmsg(String name, Object... args) {
 			if(name == "click")
-			    Fightview.this.wdgmsg("give", current.gobid, args[0]);
+			    Fightview.this.wdgmsg("give", (int)current.gobid, args[0]);
 		    }
 		};
 	    curava = new Avaview(cavac, this, -1) {
 		    public void wdgmsg(String name, Object... args) {
 			if(name == "click")
-			    Fightview.this.wdgmsg("click", current.gobid, args[0]);
+			    Fightview.this.wdgmsg("click", (int)current.gobid, args[0]);
 		    }
 		};
 	} else if((current != null) && (rel == null)) {
@@ -133,15 +133,15 @@ public class Fightview extends Widget {
     }
     
     public static class Notfound extends RuntimeException {
-        public final int id;
+        public final long id;
         
-        public Notfound(int id) {
+        public Notfound(long id) {
             super("No relation for Gob ID " + id + " found");
             this.id = id;
         }
     }
     
-    private Relation getrel(int gobid) {
+    private Relation getrel(long gobid) {
         for(Relation rel : lsrel) {
             if(rel.gobid == gobid)
                 return(rel);
@@ -153,14 +153,14 @@ public class Fightview extends Widget {
         if(sender instanceof Avaview) {
             for(Relation rel : lsrel) {
                 if(rel.ava == sender)
-                    wdgmsg("click", rel.gobid, args[0]);
+                    wdgmsg("click", (int)rel.gobid, args[0]);
             }
             return;
         }
 	if(sender instanceof GiveButton) {
             for(Relation rel : lsrel) {
                 if(rel.give == sender)
-                    wdgmsg("give", rel.gobid, args[0]);
+                    wdgmsg("give", (int)rel.gobid, args[0]);
             }
             return;
 	}

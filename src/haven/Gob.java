@@ -33,7 +33,8 @@ public class Gob implements Sprite.Owner, Rendered {
     public Coord3f sczu;
     public double a;
     int clprio = 0;
-    public int id, frame, initdelay = (int)(Math.random() * 3000);
+    public long id;
+    public int frame, initdelay = (int)(Math.random() * 3000);
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     public Collection<Overlay> ols = new LinkedList<Overlay>();
@@ -57,7 +58,7 @@ public class Gob implements Sprite.Owner, Rendered {
 	}
     }
     
-    public Gob(Glob glob, Coord c, int id, int frame) {
+    public Gob(Glob glob, Coord c, long id, int frame) {
 	this.glob = glob;
 	this.rc = c;
 	this.id = id;

@@ -27,12 +27,12 @@
 package haven;
 
 public class Homing extends Moving {
-    int tgt;
+    long tgt;
     Coord tc;
     int v;
     double dist;
     
-    public Homing(Gob gob, int tgt, Coord tc, int v) {
+    public Homing(Gob gob, long tgt, Coord tc, int v) {
 	super(gob);
 	this.tgt = tgt;
 	this.tc = tc;
