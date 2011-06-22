@@ -31,7 +31,7 @@ import java.util.*;
 import java.io.*;
 
 public class Session {
-    public static final int PVER = 9;
+    public static final int PVER = 10;
     
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
@@ -214,8 +214,10 @@ public class Session {
 		    if((fl & 1) != 0)
 			oc.remove(id, frame - 1);
 		    Gob gob = oc.getgob(id, frame);
-		    if(gob != null)
+		    if(gob != null) {
 			gob.frame = frame;
+			gob.virtual = ((fl & 2) != 0);
+		    }
 		    while(true) {
 			int type = msg.uint8();
 			if(type == OD_REM) {

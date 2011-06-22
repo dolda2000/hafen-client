@@ -32,6 +32,7 @@ public class Gob implements Sprite.Owner, Rendered {
     public Coord rc, sc;
     public Coord3f sczu;
     public double a;
+    public boolean virtual = false;
     int clprio = 0;
     public long id;
     public int frame, initdelay = (int)(Math.random() * 3000);
