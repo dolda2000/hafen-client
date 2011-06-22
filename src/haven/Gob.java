@@ -87,6 +87,7 @@ public class Gob implements Sprite.Owner, Rendered {
 	    Overlay ol = i.next();
 	    if(ol.spr == null) {
 		try {
+		    ol.sdt.off = 0;
 		    ol.spr = Sprite.create(this, ol.res.get(), ol.sdt);
 		} catch(Loading e) {}
 	    } else {
