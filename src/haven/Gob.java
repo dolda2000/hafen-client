@@ -95,6 +95,8 @@ public class Gob implements Sprite.Owner, Rendered {
 		    i.remove();
 	    }
 	}
+	if(virtual && ols.isEmpty())
+	    glob.oc.remove(id);
     }
 	
     public Overlay findol(int id) {

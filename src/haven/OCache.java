@@ -48,6 +48,10 @@ public class OCache implements Iterable<Gob> {
 	    }
 	}
     }
+    
+    public synchronized void remove(long id) {
+	objs.remove(id);
+    }
 	
     public synchronized void tick() {
 	for(Gob g : objs.values()) {
