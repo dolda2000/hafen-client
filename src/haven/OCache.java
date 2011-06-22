@@ -65,7 +65,7 @@ public class OCache implements Iterable<Gob> {
 	else
 	    dt = (int)(System.currentTimeMillis() - lastctick);
 	synchronized(this) {
-	    for(Gob g : this)
+	    for(Gob g : new ArrayList(objs.values()))
 		g.ctick(dt);
 	}
 	lastctick = now; 
