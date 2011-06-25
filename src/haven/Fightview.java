@@ -116,7 +116,9 @@ public class Fightview extends Widget {
     }
     
     public void draw(GOut g) {
-        int y = 0;
+        int y = 10;
+	if(curava != null)
+	    y = curava.c.y + curava.sz.y + 10;
 	int x = width - bg.sz().x - 10;
         for(Relation rel : lsrel) {
             if(rel == current) {
