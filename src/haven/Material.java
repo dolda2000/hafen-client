@@ -207,7 +207,7 @@ public class Material extends GLState {
 		    final int id = Utils.uint16d(buf, off[0]); off[0] += 2;
 		    left.add(new Resolver() {
 			    public GLState resolve() {
-				for(Resource.Image img : getres().layers(Resource.imgc, false)) {
+				for(Resource.Image img : getres().layers(Resource.imgc)) {
 				    if(img.id == id)
 					return(img.tex());
 				}
@@ -221,7 +221,7 @@ public class Material extends GLState {
 		    left.add(new Resolver() {
 			    public GLState resolve() {
 				Resource res = Resource.load(nm, ver);
-				for(Resource.Image img : res.layers(Resource.imgc, false)) {
+				for(Resource.Image img : res.layers(Resource.imgc)) {
 				    if(img.id == id)
 					return(img.tex());
 				}
