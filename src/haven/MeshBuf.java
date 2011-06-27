@@ -117,16 +117,13 @@ public class MeshBuf {
 	    pos[pi + 0] = v.pos.x;
 	    pos[pi + 1] = v.pos.y;
 	    pos[pi + 2] = v.pos.z;
-	    v.pos = null;
 	    nrm[ni + 0] = v.nrm.x;
 	    nrm[ni + 1] = v.nrm.y;
 	    nrm[ni + 2] = v.nrm.z;
-	    v.nrm = null;
 	    if(v.tex != null) {
 		hastex = true;
 		tex[ti + 0] = v.tex.x;
 		tex[ti + 1] = v.tex.y;
-		v.tex = null;
 	    }
 	    pi += 3;
 	    ni += 3;
