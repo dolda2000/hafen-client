@@ -455,6 +455,8 @@ public class MapView extends PView implements DTarget {
 
     public void draw(GOut g) {
 	glob.map.sendreqs();
+	if((olftimer != 0) && (olftimer < System.currentTimeMillis()))
+	    unflashol();
 	try {
 	    undelay(g);
 	    super.draw(g);
@@ -522,6 +524,18 @@ public class MapView extends PView implements DTarget {
 	}
     }
 
+    private int olflash;
+    private long olftimer;
+
+    private void unflashol() {
+	for(int i = 0; i < visol.length; i++) {
+	    if((olflash & (1 << i)) != 0)
+		visol[i]--;
+	}
+	olflash = 0;
+	olftimer = 0;
+    }
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "place") {
 	    Resource res = Resource.load((String)args[0], (Integer)args[1]);
@@ -530,6 +544,14 @@ public class MapView extends PView implements DTarget {
 	    placing = null;
 	} else if(msg == "move") {
 	    cc = (Coord)args[0];
+	} else if(msg == "flashol") {
+	    unflashol();
+	    olflash = (Integer)args[0];
+	    for(int i = 0; i < visol.length; i++) {
+		if((olflash & (1 << i)) != 0)
+		    visol[i]++;
+	    }
+	    olftimer = System.currentTimeMillis() + (Integer)args[1];
 	} else {
 	    super.uimsg(msg, args);
 	}
