@@ -211,7 +211,7 @@ public class Material extends GLState {
 				    if(img.id == id)
 					return(img.tex());
 				}
-				throw(new Resource.LoadException("Specified texture not found: " + id, getres()));
+				throw(new RuntimeException(String.format("Specified texture %d not found in %s", id, getres())));
 			    }
 			});
 		} else if(thing == "texlink") {
@@ -225,7 +225,7 @@ public class Material extends GLState {
 				    if(img.id == id)
 					return(img.tex());
 				}
-				throw(new Resource.LoadException("Specified texture not found: " + id, getres()));
+				throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", id, getres(), res)));
 			    }
 			});
 		} else {
