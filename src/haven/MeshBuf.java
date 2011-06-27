@@ -47,6 +47,10 @@ public class MeshBuf {
 	public Vertex(Coord3f pos, Coord3f nrm) {
 	    this(pos, nrm, null);
 	}
+	
+	public String toString() {
+	    return(String.format("MeshBuf.Vertex(%s, %s, %s)", pos, nrm, tex));
+	}
     }
     
     public class Face {
