@@ -33,6 +33,7 @@ public class RenderList {
     Slot[] list = new Slot[100];
     int cur = 0;
     private Slot curp = null;
+    private static final ThreadLocal<RenderList> curref = new ThreadLocal<RenderList>();
     
     class Slot {
 	Rendered r;
@@ -61,12 +62,19 @@ public class RenderList {
     protected void setup(Slot s, Rendered r) {
 	s.r = r;
 	Slot pp = s.p = curp;
+	if(pp == null)
+	    curref.set(this);
 	try {
 	    curp = s;
 	    s.o = r.setup(this);
 	} finally {
-	    curp = pp;
+	    if((curp = pp) == null)
+		curref.remove();
 	}
+    }
+    
+    public static RenderList current() {
+	return(curref.get());
     }
 
     protected void render(GOut g, Rendered r) {
