@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.awt.Font;
+import java.awt.Color;
 
 public class Makewindow extends Widget {
     Widget obtn, cbtn;
@@ -124,9 +125,14 @@ public class Makewindow extends Widget {
 	return(super.globtype(ch, ev));
     }
     
-    public static class MakePrep extends GItem.Info {
+    public static class MakePrep extends GItem.Info implements GItem.ColorInfo {
+	private final static Color olcol = new Color(0, 255, 0, 64);
 	public MakePrep(GItem item) {
 	    item.super();
+	}
+	
+	public Color olcol() {
+	    return(olcol);
 	}
     }
 }

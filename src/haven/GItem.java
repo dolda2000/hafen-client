@@ -58,6 +58,10 @@ public class GItem extends AWidget {
 	}
     }
 
+    public interface ColorInfo {
+	public Color olcol();
+    }
+
     public abstract class Tip extends Info {
 	public abstract BufferedImage longtip();
     }
@@ -156,7 +160,7 @@ public class GItem extends AWidget {
 	return(ret);
     }
 
-    public static <T extends Info> T find(Class<T> cl, List<Info> il) {
+    public static <T> T find(Class<T> cl, List<Info> il) {
 	for(Info inf : il) {
 	    if(cl.isInstance(inf))
 		return(cl.cast(inf));

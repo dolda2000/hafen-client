@@ -107,8 +107,9 @@ public class WItem extends Widget implements DTarget {
 	    List<Info> info = item.info();
 	    if(info != olinfo) {
 		olcol = null;
-		if(find(Makewindow.MakePrep.class, info) != null)
-		    olcol = new Color(0, 255, 0, 64);
+		GItem.ColorInfo cinf = find(GItem.ColorInfo.class, info);
+		if(cinf != null)
+		    olcol = cinf.olcol();
 		olinfo = info;
 	    }
 	} catch(Loading e) {
