@@ -35,7 +35,7 @@ public class Gob implements Sprite.Owner, Rendered {
     public boolean virtual = false;
     int clprio = 0;
     public long id;
-    public int frame, initdelay = (int)(Math.random() * 3000);
+    public int frame, initdelay = (int)(Math.random() * 3000) + 3000;
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     public Collection<Overlay> ols = new LinkedList<Overlay>();
