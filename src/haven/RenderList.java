@@ -83,6 +83,11 @@ public class RenderList {
 	}
     }
 
+    public void dump(java.io.PrintStream out) {
+	for(int i = 0; i < cur; i++)
+	    out.println(list[i].r + ": " + list[i].os);
+    }
+
     public void setup(Rendered r, GLState.Buffer t) {
 	rewind();
 	Slot s = getslot();
