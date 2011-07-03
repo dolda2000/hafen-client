@@ -137,7 +137,11 @@ public class HavenApplet extends Applet {
 	h = new HavenPanel(800, 600);
 	add(h);
 	h.init();
-	p = new haven.error.ErrorHandler(new ErrorPanel());
+	try {
+	    p = new haven.error.ErrorHandler(new ErrorPanel(), new URL("http", getCodeBase().getHost(), 80, "/java/error"));
+	} catch(java.net.MalformedURLException e) {
+	    p = new ThreadGroup("Haven client");
+	}
 	synchronized(applets) {
 	    applets.put(p, this);
 	}

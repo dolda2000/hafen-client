@@ -242,17 +242,19 @@ public class MainFrame extends Frame implements Runnable, FSMan {
     
     public static void main(final String[] args) {
 	/* Set up the error handler as early as humanly possible. */
-	ThreadGroup g;
-	if(Utils.getprop("haven.errorhandler", "off").equals("on")) {
-	    final haven.error.ErrorHandler hg = new haven.error.ErrorHandler();
-	    hg.sethandler(new haven.error.ErrorGui(null) {
-		    public void errorsent() {
-			hg.interrupt();
-		    }
-		});
-	    g = hg;
-	} else {
-	    g = new ThreadGroup("Haven client");
+	ThreadGroup g = new ThreadGroup("Haven client");
+	String ed;
+	if(!(ed = Utils.getprop("haven.errorurl", "")).equals("")) {
+	    try {
+		final haven.error.ErrorHandler hg = new haven.error.ErrorHandler(new java.net.URL(ed));
+		hg.sethandler(new haven.error.ErrorGui(null) {
+			public void errorsent() {
+			    hg.interrupt();
+			}
+		    });
+		g = hg;
+	    } catch(java.net.MalformedURLException e) {
+	    }
 	}
 	Thread main = new HackThread(g, new Runnable() {
 		public void run() {

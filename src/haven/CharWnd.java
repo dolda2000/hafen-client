@@ -650,7 +650,7 @@ public class CharWnd extends Window {
 	new Label(new Coord(138, 210), study, "Used attention:");
 	new Label(new Coord(138, 225), study, "Attention limit:");
 	snlbl = new Label(new Coord(240, 210), study, "");
-	new Label(new Coord(240, 225), study, Integer.toString(ui.sess.glob.cattr.get("intel").base));
+	new Label(new Coord(240, 225), study, Integer.toString(ui.sess.glob.cattr.get("intel").comp));
 	study.visible = false;
 	if(studyid >= 0)
 	    ui.bind(study, studyid);

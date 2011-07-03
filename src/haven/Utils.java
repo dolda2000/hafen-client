@@ -234,7 +234,7 @@ public class Utils {
 	try {
 	    ret = new String(buf, off[0], i - off[0], "utf-8");
 	} catch(UnsupportedEncodingException e) {
-	    throw(new RuntimeException(e));
+	    throw(new IllegalArgumentException(e));
 	}
 	off[0] = i + 1;
 	return(ret);
@@ -255,7 +255,7 @@ public class Utils {
 	else if((hex >= 'A') && (hex <= 'F'))
 	    return(hex - 'A' + 10);
 	else
-	    throw(new RuntimeException());
+	    throw(new IllegalArgumentException());
     }
 
     static String byte2hex(byte[] in) {
@@ -269,7 +269,7 @@ public class Utils {
 
     static byte[] hex2byte(String hex) {
 	if(hex.length() % 2 != 0)
-	    throw(new RuntimeException("Invalid hex-encoded string"));
+	    throw(new IllegalArgumentException("Invalid hex-encoded string"));
 	byte[] ret = new byte[hex.length() / 2];
 	for(int i = 0, o = 0; i < hex.length(); i += 2, o++)
 	    ret[o] = (byte)((hex2num(hex.charAt(i)) << 4) | hex2num(hex.charAt(i + 1)));
