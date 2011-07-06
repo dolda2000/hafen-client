@@ -259,13 +259,15 @@ public class Skeleton {
 	public Location bonetrans(final int bone) {
 	    return(new Location(Matrix4f.identity()) {
 		    private int cseq = -1;
-		    private float ang;
 		    
 		    public Matrix4f fin(Matrix4f p) {
 			if(cseq != seq) {
-			    ang = (float)(Math.acos(grot[bone][0]) * 2.0);
-			    update(Transform.makexlate(new Matrix4f(), new Coord3f(gpos[bone][0], gpos[bone][1], gpos[bone][2]))
-				   .mul1(Transform.makerot(new Matrix4f(), new Coord3f(grot[bone][1], grot[bone][2], grot[bone][3]).norm(), ang)));
+			    Matrix4f xf = Transform.makexlate(new Matrix4f(), new Coord3f(gpos[bone][0], gpos[bone][1], gpos[bone][2]));
+			    if(grot[bone][0] < 0.9999) {
+				float ang = (float)(Math.acos(grot[bone][0]) * 2.0);
+				xf = xf.mul1(Transform.makerot(new Matrix4f(), new Coord3f(grot[bone][1], grot[bone][2], grot[bone][3]).norm(), ang));
+			    }
+			    update(xf);
 			    cseq = seq;
 			}
 			return(super.fin(p));
@@ -277,15 +279,17 @@ public class Skeleton {
 	    return(new Location(Matrix4f.identity()) {
 		    private int cseq = -1;
 		    private float[] pos = new float[3], rot = new float[4];
-		    private float ang;
 		    
 		    public Matrix4f fin(Matrix4f p) {
 			if(cseq != seq) {
 			    rot = qqmul(rot, grot[bone], qinv(rot, bindpose.grot[bone]));
 			    pos = vvadd(pos, gpos[bone], vqrot(pos, vinv(pos, bindpose.gpos[bone]), rot));
-			    ang = (float)(Math.acos(rot[0]) * 2.0);
-			    update(Transform.makexlate(new Matrix4f(), new Coord3f(pos[0], pos[1], pos[2]))
-				   .mul1(Transform.makerot(new Matrix4f(), new Coord3f(rot[1], rot[2], rot[3]).norm(), ang)));
+			    Matrix4f xf = Transform.makexlate(new Matrix4f(), new Coord3f(pos[0], pos[1], pos[2]));
+			    if(rot[0] < 0.9999) {
+				float ang = (float)(Math.acos(rot[0]) * 2.0);
+				xf = xf.mul1(Transform.makerot(new Matrix4f(), new Coord3f(rot[1], rot[2], rot[3]).norm(), ang));
+			    }
+			    update(xf);
 			    cseq = seq;
 			}
 			return(super.fin(p));
