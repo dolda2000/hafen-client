@@ -54,6 +54,13 @@ public class Gob implements Sprite.Owner, Rendered {
 	    spr = null;
 	}
 	
+	public Overlay(Sprite spr) {
+	    this.id = -1;
+	    this.res = null;
+	    this.sdt = null;
+	    this.spr = spr;
+	}
+	
 	public static interface CDel {
 	    public void delete();
 	}
