@@ -84,4 +84,8 @@ public class FileCache implements ResCache {
     public InputStream fetch(String name) throws IOException {
 	return(new FileInputStream(forres(name)));
     }
+    
+    public String toString() {
+	return("FileCache(" + base + ")");
+    }
 }
