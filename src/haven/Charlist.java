@@ -70,7 +70,8 @@ public class Charlist extends Widget {
 		    scroll(1);
 		}
 	    };
-	sau.visible = sad.visible = false;
+	sau.hide();
+	sad.hide();
     }
     
     public void scroll(int amount) {
@@ -87,14 +88,14 @@ public class Charlist extends Widget {
 	int y = 20;
 	synchronized(chars) {
 	    for(Char c : chars) {
-		c.ava.visible = false;
-		c.plb.visible = false;
+		c.ava.hide();
+		c.plb.hide();
 	    }
 	    for(int i = 0; (i < height) && (i + this.y < chars.size()); i++) {
 		Char c = chars.get(i + this.y);
 		g.image(bg, new Coord(0, y));
-		c.ava.visible = true;
-		c.plb.visible = true;
+		c.ava.show();
+		c.plb.show();
 		int off = (bg.sz().y - c.ava.sz.y) / 2;
 		c.ava.c = new Coord(off, off + y);
 		c.plb.c = bg.sz().add(-105, -24 + y);
@@ -131,13 +132,15 @@ public class Charlist extends Widget {
 	    for(int i = 1; i < args.length; i++)
 		resl.add(ui.sess.getres((Integer)args[i]));
 	    c.ava = new Avaview(new Coord(0, 0), this, resl);
-	    c.ava.visible = false;
+	    c.ava.hide();
 	    c.plb = new Button(new Coord(0, 0), 100, this, "Play");
-	    c.plb.visible = false;
+	    c.plb.hide();
 	    synchronized(chars) {
 		chars.add(c);
-		if(chars.size() > height)
-		    sau.visible = sad.visible = true;
+		if(chars.size() > height) {
+		    sau.show();
+		    sad.show();
+		}
 	    }
 	}
     }

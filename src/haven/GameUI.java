@@ -110,13 +110,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    invwnd = new Hidewnd(new Coord(100, 100), Coord.z, this, "Inventory");
 	    Widget inv = gettype(type).create(Coord.z, invwnd, cargs);
 	    invwnd.pack();
-	    invwnd.visible = false;
+	    invwnd.hide();
 	    return(inv);
 	} else if(place == "equ") {
 	    equwnd = new Hidewnd(new Coord(400, 10), Coord.z, this, "Equipment");
 	    Widget equ = gettype(type).create(Coord.z, equwnd, cargs);
 	    equwnd.pack();
-	    equwnd.visible = false;
+	    equwnd.hide();
 	    return(equ);
 	} else if(place == "hand") {
 	    GItem g = (GItem)gettype(type).create((Coord)pargs[1], this, cargs);
@@ -227,13 +227,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    entercmd();
 	    return(true);
 	} else if(key == 9) {
-	    if((invwnd != null) && (invwnd.visible = !invwnd.visible)) {
+	    if((invwnd != null) && invwnd.show(!invwnd.visible)) {
 		invwnd.raise();
 		fitwdg(invwnd);
 	    }
 	    return(true);
 	} else if(key == 5) {
-	    if((equwnd != null) && (equwnd.visible = !equwnd.visible)) {
+	    if((equwnd != null) && equwnd.show(!equwnd.visible)) {
 		equwnd.raise();
 		fitwdg(equwnd);
 	    }

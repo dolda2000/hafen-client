@@ -62,8 +62,8 @@ public class Fightview extends Widget {
 	}
 	
 	public void show(boolean state) {
-	    ava.visible = state;
-	    give.visible = state;
+	    ava.show(state);
+	    give.show(state);
 	}
 	
 	public void remove() {

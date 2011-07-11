@@ -34,10 +34,10 @@ public class Widget {
     public UI ui;
     public Coord c, sz;
     public Widget next, prev, child, lchild, parent;
-    boolean focustab = false, focusctl = false, hasfocus = false, visible = true;
+    public boolean focustab = false, focusctl = false, hasfocus = false, visible = true;
     private boolean canfocus = false, autofocus = false;
     public boolean canactivate = false, cancancel = false;
-    Widget focused;
+    public Widget focused;
     public Resource cursor = null;
     public Object tooltip = null;
     private Widget prevtt;
@@ -259,7 +259,7 @@ public class Widget {
 	/* XXX: Might need to check subwidgets recursively */
 	focused = null;
 	for(Widget w = lchild; w != null; w = w.prev) {
-	    if(w.autofocus) {
+	    if(w.visible && w.autofocus) {
 		focused = w;
 		focused.hasfocus = true;
 		w.gotfocus();
@@ -624,9 +624,21 @@ public class Widget {
 
     public void hide() {
 	visible = false;
+	if(canfocus)
+	    parent.delfocusable(this);
     }
 
     public void show() {
 	visible = true;
+	if(canfocus)
+	    parent.newfocusable(this);
+    }
+    
+    public boolean show(boolean show) {
+	if(show)
+	    show();
+	else
+	    hide();
+	return(show);
     }
 }
