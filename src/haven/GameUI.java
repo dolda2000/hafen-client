@@ -41,6 +41,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private Text lasterr;
     private long errtime;
     private Window invwnd, equwnd, makewnd;
+    public BuddyWnd buddies;
     public Collection<GItem> hand = new LinkedList<GItem>();
     private WItem vhand;
     public int prog = -1;
@@ -143,6 +144,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    mk[0] = gettype(type).create(Coord.z, makewnd, cargs);
 	    makewnd.pack();
 	    return(mk[0]);
+	} else if(place == "buddy") {
+	    buddies = (BuddyWnd)gettype(type).create(new Coord(187, 50), this, cargs);
+	    buddies.hide();
+	    return(buddies);
 	} else if(place == "misc") {
 	    return(gettype(type).create((Coord)pargs[1], this, cargs));
 	} else {
@@ -207,6 +212,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(sender == menu) {
 	    wdgmsg(msg, args);
 	    return;
+	} else if((sender == buddies) && (msg == "close")) {
+	    buddies.hide();
 	}
 	super.wdgmsg(sender, msg, args);
     }
@@ -236,6 +243,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if((equwnd != null) && equwnd.show(!equwnd.visible)) {
 		equwnd.raise();
 		fitwdg(equwnd);
+	    }
+	    return(true);
+	} else if(key == 2) {
+	    if((buddies != null) && buddies.show(!buddies.visible)) {
+		buddies.raise();
+		fitwdg(buddies);
 	    }
 	    return(true);
 	} else if(key == 1) {

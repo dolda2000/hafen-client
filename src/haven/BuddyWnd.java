@@ -34,11 +34,13 @@ public class BuddyWnd extends Window {
     private List<Buddy> buddies = new ArrayList<Buddy>();
     private Map<Integer, Buddy> idmap = new HashMap<Integer, Buddy>();
     private BuddyList bl;
-    private BuddyInfo bi;
     private Button sbalpha;
     private Button sbgroup;
     private Button sbstatus;
     private TextEntry charpass, opass;
+    private Buddy editing = null;
+    private TextEntry nicksel;
+    private GroupSelector grpsel;
     public static final Tex online = Resource.loadtex("gfx/hud/online");
     public static final Tex offline = Resource.loadtex("gfx/hud/offline");
     public static final Color[] gc = new Color[] {
@@ -84,6 +86,15 @@ public class BuddyWnd extends Window {
 	Text name;
 	int online;
 	int group;
+	boolean seen;
+	
+	public Buddy(int id, String name, int online, int group, boolean seen) {
+	    this.id = id;
+	    this.name = name;
+	    this.online = online;
+	    this.group = group;
+	    this.seen = seen;
+	}
     }
 
     public static class GroupSelector extends Widget {
@@ -119,157 +130,6 @@ public class BuddyWnd extends Window {
 	
 	protected void changed(int group) {
 	    this.group = group;
-	}
-    }
-
-    private class BuddyInfo extends Widget {
-	private Avaview ava = null;
-	private TextEntry name = null;
-	private GroupSelector grp = null;
-	private Text atime = null;
-	private int id = -1;
-	private Button rmb, invb, chatb, descb, exb;
-	
-	public BuddyInfo(Coord c, Coord sz, Widget parent) {
-	    super(c, sz, parent);
-	}
-	
-	public void draw(GOut g) {
-	    g.chcolor(Color.BLACK);
-	    g.frect(Coord.z, sz);
-	    g.chcolor();
-	    super.draw(g);
-	    if(atime != null)
-		g.image(atime.tex(), new Coord(10, 150));
-	}
-	
-	public void clear() {
-	    if(ava != null)
-		ui.destroy(ava);
-	    ava = null;
-	    if(rmb != null)
-		ui.destroy(rmb);
-	    if(invb != null)
-		ui.destroy(invb);
-	    if(chatb != null)
-		ui.destroy(chatb);
-	    if(name != null)
-		ui.destroy(name);
-	    if(grp != null)
-		ui.destroy(grp);
-	    name = null;
-	    grp = null;
-	    rmb = invb = chatb = null;
-	    id = -1;
-	    atime = null;
-	}
-	
-	private void setatime(int atime) {
-	    int am;
-	    String unit;
-	    if(atime > (604800 * 2)) {
-		am = atime / 604800;
-		unit = "week";
-	    } else if(atime > 86400) {
-		am = atime / 86400;
-		unit = "day";
-	    } else if(atime > 3600) {
-		am = atime / 3600;
-		unit = "hour";
-	    } else if(atime > 60) {
-		am = atime / 60;
-		unit = "minute";
-	    } else {
-		am = atime;
-		unit = "second";
-	    }
-	    this.atime = Text.render("Last seen: " + am + " " + unit + ((am > 1)?"s":"") + " ago");
-	}
-
-	public void uimsg(String msg, Object... args) {
-	    if(msg == "i-clear") {
-		clear();
-	    } if(msg == "i-ava") {
-		List<Indir<Resource>> rl = new LinkedList<Indir<Resource>>();
-		for(Object o : args)
-		    rl.add(ui.sess.getres((Integer)o));
-		if(ava != null)
-		    ui.destroy(ava);
-		ava = new Avaview(new Coord((sz.x / 2) - 40, 10), this, rl);
-	    } else if(msg == "i-set") {
-		id = (Integer)args[0];
-		String name = (String)args[1];
-		int group = (Integer)args[2];
-		this.name = new TextEntry(new Coord(10, 100), new Coord(150, 20), this, name) {
-			public boolean type(char c, java.awt.event.KeyEvent ev) {
-			    if(c == 10) {
-				BuddyWnd.this.wdgmsg("nick", id, text);
-				return(true);
-			    }
-			    return(super.type(c, ev));
-			}
-		    };
-		this.grp = new GroupSelector(new Coord(8, 128), this, group) {
-			protected void changed(int group) {
-			    BuddyWnd.this.wdgmsg("grp", id, group);
-			}
-		    };
-	    } else if(msg == "i-atime") {
-		setatime((Integer)args[0]);
-	    } else if(msg == "i-act") {
-		if(rmb != null)
-		    ui.destroy(rmb);
-		if(invb != null)
-		    ui.destroy(invb);
-		if(chatb != null)
-		    ui.destroy(chatb);
-		if(descb != null)
-		    ui.destroy(descb);
-		if(exb != null)
-		    ui.destroy(exb);
-		rmb = invb = chatb = null;
-		int fl = (Integer)args[0];
-		if((fl & 1) != 0)
-		    rmb = new Button(new Coord(10, 188), sz.x - 20, this, "Forget") {
-			    public void click() {
-				BuddyWnd.this.wdgmsg("rm", id);
-			    }
-			};
-		if((fl & 2) != 0)
-		    chatb = new Button(new Coord(10, 165), sz.x - 20, this, "Private chat") {
-			    public void click() {
-				BuddyWnd.this.wdgmsg("chat", id);
-			    }
-			};
-		if((fl & 4) != 0)
-		    rmb = new Button(new Coord(10, 188), sz.x - 20, this, "End kinship") {
-			    public void click() {
-				BuddyWnd.this.wdgmsg("rm", id);
-			    }
-			};
-		if((fl & 8) != 0)
-		    invb = new Button(new Coord(10, 211), sz.x - 20, this, "Invite to party") {
-			    public void click() {
-				BuddyWnd.this.wdgmsg("inv", id);
-			    }
-			};
-		if((fl & 16) != 0)
-		    descb = new Button(new Coord(10, 234), sz.x - 20, this, "Describe to...") {
-			    public void click() {
-				BuddyWnd.this.wdgmsg("desc", id);
-			    }
-			};
-		if((fl & 32) != 0)
-		    exb = new Button(new Coord(10, 257), sz.x - 20, this, "Exile") {
-			    public void click() {
-				BuddyWnd.this.wdgmsg("exile", id);
-			    }
-			};
-	    }
-	}
-
-	public void wdgmsg(Widget sender, String msg, Object... args) {
-	    return;
 	}
     }
 
@@ -351,21 +211,40 @@ public class BuddyWnd extends Window {
 	}
 	
 	public void changed(Buddy b) {
+	    if(b == null) {
+		if(editing != null) {
+		    editing = null;
+		    ui.destroy(nicksel);
+		    ui.destroy(grpsel);
+		}
+	    } else {
+		if(editing == null) {
+		    nicksel = new TextEntry(new Coord(10, 165), new Coord(180, 20), BuddyWnd.this, "") {
+			    public void activate(String text) {
+				BuddyWnd.this.wdgmsg("nick", editing.id, text);
+			    }
+			};
+		    grpsel = new GroupSelector(new Coord(10, 190), BuddyWnd.this, 0) {
+			    public void changed(int group) {
+				BuddyWnd.this.wdgmsg("grp", editing.id, group);
+			    }
+			};
+		    BuddyWnd.this.setfocus(nicksel);
+		}
+		editing = b;
+		nicksel.settext(b.name);
+		grpsel.group = b.group;
+	    }
 	}
     }
 
     public BuddyWnd(Coord c, Widget parent) {
-	super(c, new Coord(400, 370), parent, "Kin");
-	bl = new BuddyList(new Coord(10, 5), new Coord(180, 280), this) {
-		public void changed(Buddy b) {
-		    if(b != null)
-			BuddyWnd.this.wdgmsg("ch", b.id);
-		}
-	    };
-	bi = new BuddyInfo(new Coord(210, 5), new Coord(180, 280), this);
-	sbstatus = new Button(new Coord(5,   290), 120, this, "Sort by status")      { public void click() { setcmp(statuscmp); } };
-	sbgroup  = new Button(new Coord(140, 290), 120, this, "Sort by group")       { public void click() { setcmp(groupcmp); } };
-	sbalpha  = new Button(new Coord(275, 290), 120, this, "Sort alphabetically") { public void click() { setcmp(alphacmp); } };
+	super(c, new Coord(200, 370), parent, "Kin");
+	bl = new BuddyList(new Coord(10, 5), new Coord(180, 155), this);
+	new Label(new Coord(5, 215), this, "Sort by:");
+	sbstatus = new Button(new Coord(10,  230), 50, this, "Status")      { public void click() { setcmp(statuscmp); } };
+	sbgroup  = new Button(new Coord(75,  230), 50, this, "Group")       { public void click() { setcmp(groupcmp); } };
+	sbalpha  = new Button(new Coord(140, 230), 50, this, "Name")        { public void click() { setcmp(alphacmp); } };
 	String sort = Utils.getpref("buddysort", "");
 	if(sort.equals("")) {
 	    bcmp = statuscmp;
@@ -374,23 +253,23 @@ public class BuddyWnd extends Window {
 	    if(sort.equals("group"))  bcmp = groupcmp;
 	    if(sort.equals("status")) bcmp = statuscmp;
 	}
-	new Label(new Coord(0, 310), this, "My hearth secret:");
-	new Label(new Coord(200, 310), this, "Make kin by hearth secret:");
-	charpass = new TextEntry(new Coord(0, 325), new Coord(190, 20), this, "") {
+	new Label(new Coord(0, 250), this, "My hearth secret:");
+	charpass = new TextEntry(new Coord(0, 265), new Coord(190, 20), this, "") {
 		public void activate(String text) {
 		    BuddyWnd.this.wdgmsg("pwd", text);
 		}
 	    };
-	opass = new TextEntry(new Coord(200, 325), new Coord(190, 20), this, "") {
+	new Button(new Coord(0  , 290), 50, this, "Set")    { public void click() {sendpwd(charpass.text);} };
+	new Button(new Coord(60 , 290), 50, this, "Clear")  { public void click() {sendpwd("");} };
+	new Button(new Coord(120, 290), 50, this, "Random") { public void click() {sendpwd(randpwd());} };
+	new Label(new Coord(0, 310), this, "Make kin by hearth secret:");
+	opass = new TextEntry(new Coord(0, 325), new Coord(190, 20), this, "") {
 		public void activate(String text) {
 		    BuddyWnd.this.wdgmsg("bypwd", text);
 		    settext("");
 		}
 	    };
-	new Button(new Coord(0  , 350), 50, this, "Set")    { public void click() {sendpwd(charpass.text);} };
-	new Button(new Coord(60 , 350), 50, this, "Clear")  { public void click() {sendpwd("");} };
-	new Button(new Coord(120, 350), 50, this, "Random") { public void click() {sendpwd(randpwd());} };
-	new Button(new Coord(200, 350), 50, this, "Add kin") {
+	new Button(new Coord(0, 350), 50, this, "Add kin") {
 	    public void click() {
 		BuddyWnd.this.wdgmsg("bypwd", opass.text);
 		opass.settext("");
@@ -426,11 +305,12 @@ public class BuddyWnd extends Window {
     
     public void uimsg(String msg, Object... args) {
 	if(msg == "add") {
-	    Buddy b = new Buddy();
-	    b.id = (Integer)args[0];
-	    b.name = Text.render(((String)args[1]));
-	    b.online = (Integer)args[2];
-	    b.group = (Integer)args[3];
+	    int id = (Integer)args[0];
+	    String name = ((String)args[1]).intern();
+	    int online = (Integer)args[2];
+	    int group = (Integer)args[3];
+	    boolean seen = ((Integer)args[4]) != 0;
+	    Buddy b = new Buddy(id, name, online, group, seen);
 	    synchronized(buddies) {
 		buddies.add(b);
 		idmap.put(b.id, b);
@@ -447,37 +327,37 @@ public class BuddyWnd extends Window {
 		buddies.remove(b);
 		bl.repop();
 	    }
-	    if(bi.id == id)
-		bi.clear();
+	    if(b == editing) {
+		editing = null;
+		ui.destroy(nicksel);
+		ui.destroy(grpsel);
+	    }
 	} else if(msg == "chst") {
 	    int id = (Integer)args[0];
 	    int online = (Integer)args[1];
 	    synchronized(buddies) {
 		idmap.get(id).online = online;
 	    }
-	} else if(msg == "chnm") {
+	} else if(msg == "upd") {
 	    int id = (Integer)args[0];
 	    String name = (String)args[1];
+	    int online = (Integer)args[2];
+	    int grp = (Integer)args[3];
+	    boolean seen = ((Integer)args[4]) != 0;
+	    Buddy b;
 	    synchronized(buddies) {
-		idmap.get(id).name = Text.render(name);
+		b = idmap.get(id);
+		b.name = name;
+		b.online = online;
+		b.group = grp;
+		b.seen = seen;
 	    }
-	} else if(msg == "chgrp") {
-	    int id = (Integer)args[0];
-	    int group = (Integer)args[1];
-	    synchronized(buddies) {
-		idmap.get(id).group = group;
+	    if(b == editing) {
+		nicksel.settext(b.name);
+		grpsel.group = b.group;
 	    }
-	} else if(msg == "sel") {
-	    int id = (Integer)args[0];
-	    Buddy tgt;
-	    synchronized(buddies) {
-		tgt = idmap.get(id);
-	    }
-	    bl.select(tgt);
 	} else if(msg == "pwd") {
 	    charpass.settext((String)args[0]);
-	} else if(msg.substring(0, 2).equals("i-")) {
-	    bi.uimsg(msg, args);
 	} else {
 	    super.uimsg(msg, args);
 	}
