@@ -467,11 +467,34 @@ public class MapView extends PView implements DTarget {
 	    g.chcolor(Color.WHITE);
 	    g.atext(text, sz.div(2), 0.5, 0.5);
 	}
+	long now = System.currentTimeMillis();
 	synchronized(glob.oc) {
 	    for(Gob gob : glob.oc) {
 		Speaking sp = gob.getattr(Speaking.class);
 		if((sp != null) && (gob.sc != null))
 		    sp.draw(g, gob.sc.add(new Coord(gob.sczu.mul(sp.zo))));
+		KinInfo k = gob.getattr(KinInfo.class);
+		if((k != null) && (gob.sc != null)) {
+		    Coord sc = gob.sc.add(new Coord(gob.sczu.mul(15)));
+		    if(sc.isect(Coord.z, sz)) {
+			if(k.seen == 0)
+			    k.seen = now;
+			int tm = (int)(now - k.seen);
+			Color show = null;
+			boolean auto = (k.type & 1) == 0;
+			if(auto && (tm < 7500)) {
+			    show = Utils.clipcol(255, 255, 255, 255 - ((255 * tm) / 7500));
+			}
+			if(show != null) {
+			    Tex t = k.rendered();
+			    g.chcolor(show);
+			    g.aimage(t, sc, 0.5, 1.0);
+			    g.chcolor();
+			}
+		    } else {
+			k.seen = 0;
+		    }
+		}
 	    }
 	}
     }
