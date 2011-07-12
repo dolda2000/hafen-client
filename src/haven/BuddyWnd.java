@@ -41,6 +41,7 @@ public class BuddyWnd extends Window {
     private Buddy editing = null;
     private TextEntry nicksel;
     private GroupSelector grpsel;
+    private FlowerMenu menu;
     public static final Tex online = Resource.loadtex("gfx/hud/online");
     public static final Tex offline = Resource.loadtex("gfx/hud/offline");
     public static final Color[] gc = new Color[] {
@@ -192,18 +193,47 @@ public class BuddyWnd extends Window {
 	    changed(this.sel);
 	}
 
+	public void opts(final Buddy b, Coord c) {
+	    List<String> opts = new ArrayList<String>();
+	    if(b.online >= 0) {
+		opts.add("End kinship");
+	    } else {
+		opts.add("Forget");
+	    }
+	    if(menu == null) {
+		menu = new FlowerMenu(c, ui.root, opts.toArray(new String[0])) {
+			public void destroy() {
+			    menu = null;
+			}
+			
+			public void choose(Petal opt) {
+			    if(opt != null) {
+				if(opt.name.equals("End kinship")) {
+				    BuddyWnd.this.wdgmsg("rm", b.id);
+				} else if(opt.name.equals("Forget")) {
+				    BuddyWnd.this.wdgmsg("rm", b.id);
+				}
+				uimsg("act", opt.num);
+			    } else {
+				uimsg("cancel");
+			    }
+			}
+		    };
+	    }
+	}
+
 	public boolean mousedown(Coord c, int button) {
 	    if(super.mousedown(c, button))
 		return(true);
 	    synchronized(buddies) {
+		int sel = (c.y / 20) + sb.val;
+		Buddy b = (sel >= buddies.size())?null:buddies.get(sel);
 		if(button == 1) {
-		    int sel = (c.y / 20) + sb.val;
-		    if(sel >= buddies.size())
-			sel = -1;
-		    if(sel < 0)
-			select(null);
-		    else
-			select(buddies.get(sel));
+		    select(b);
+		    return(true);
+		} else if(button == 3) {
+		    if(b != null)
+			opts(b, c.add(rootpos()));
 		    return(true);
 		}
 	    }
@@ -356,10 +386,34 @@ public class BuddyWnd extends Window {
 		nicksel.settext(b.name);
 		grpsel.group = b.group;
 	    }
+	} else if(msg == "sel") {
+	    int id = (Integer)args[0];
+	    show();
+	    raise();
+	    Buddy b;
+	    synchronized(buddies) {
+		b = idmap.get(id);
+	    }
+	    bl.select(b);
 	} else if(msg == "pwd") {
 	    charpass.settext((String)args[0]);
 	} else {
 	    super.uimsg(msg, args);
+	}
+    }
+    
+    public void hide() {
+	if(menu != null) {
+	    ui.destroy(menu);
+	    menu = null;
+	}
+	super.hide();
+    }
+    
+    public void destroy() {
+	if(menu != null) {
+	    ui.destroy(menu);
+	    menu = null;
 	}
     }
 }
