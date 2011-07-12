@@ -30,7 +30,7 @@ import java.awt.Color;
 import java.util.*;
 import java.text.Collator;
 
-public class BuddyWnd extends Window {
+public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
     private List<Buddy> buddies = new ArrayList<Buddy>();
     private Map<Integer, Buddy> idmap = new HashMap<Integer, Buddy>();
     private BuddyList bl;
@@ -82,7 +82,7 @@ public class BuddyWnd extends Window {
 	    });
     }
     
-    private class Buddy {
+    public class Buddy {
 	int id;
 	Text name;
 	int online;
@@ -95,6 +95,34 @@ public class BuddyWnd extends Window {
 	    this.online = online;
 	    this.group = group;
 	    this.seen = seen;
+	}
+	
+	public void forget() {
+	    wdgmsg("rm", id);
+	}
+	
+	public void endkin() {
+	    wdgmsg("rm", id);
+	}
+	
+	public void chname(String name) {
+	    wdgmsg("nick", id, name);
+	}
+	
+	public void chgrp(int grp) {
+	    wdgmsg("grp", id, grp);
+	}
+    }
+    
+    public Iterator<Buddy> iterator() {
+	synchronized(buddies) {
+	    return(new ArrayList<Buddy>(buddies).iterator());
+	}
+    }
+    
+    public Buddy find(int id) {
+	synchronized(buddies) {
+	    return(idmap.get(id));
 	}
     }
 
@@ -209,9 +237,9 @@ public class BuddyWnd extends Window {
 			public void choose(Petal opt) {
 			    if(opt != null) {
 				if(opt.name.equals("End kinship")) {
-				    BuddyWnd.this.wdgmsg("rm", b.id);
+				    b.endkin();
 				} else if(opt.name.equals("Forget")) {
-				    BuddyWnd.this.wdgmsg("rm", b.id);
+				    b.forget();
 				}
 				uimsg("act", opt.num);
 			    } else {
@@ -251,12 +279,12 @@ public class BuddyWnd extends Window {
 		if(editing == null) {
 		    nicksel = new TextEntry(new Coord(10, 165), new Coord(180, 20), BuddyWnd.this, "") {
 			    public void activate(String text) {
-				BuddyWnd.this.wdgmsg("nick", editing.id, text);
+				editing.chname(text);
 			    }
 			};
 		    grpsel = new GroupSelector(new Coord(10, 190), BuddyWnd.this, 0) {
 			    public void changed(int group) {
-				BuddyWnd.this.wdgmsg("grp", editing.id, group);
+				editing.chgrp(group);
 			    }
 			};
 		    BuddyWnd.this.setfocus(nicksel);
@@ -352,10 +380,11 @@ public class BuddyWnd extends Window {
 	    Buddy b;
 	    synchronized(buddies) {
 		b = idmap.get(id);
-	    }
-	    if(b != null) {
-		buddies.remove(b);
-		bl.repop();
+		if(b != null) {
+		    buddies.remove(b);
+		    idmap.remove(id);
+		    bl.repop();
+		}
 	    }
 	    if(b == editing) {
 		editing = null;
@@ -365,18 +394,15 @@ public class BuddyWnd extends Window {
 	} else if(msg == "chst") {
 	    int id = (Integer)args[0];
 	    int online = (Integer)args[1];
-	    synchronized(buddies) {
-		idmap.get(id).online = online;
-	    }
+	    find(id).online = online;
 	} else if(msg == "upd") {
 	    int id = (Integer)args[0];
 	    String name = (String)args[1];
 	    int online = (Integer)args[2];
 	    int grp = (Integer)args[3];
 	    boolean seen = ((Integer)args[4]) != 0;
-	    Buddy b;
-	    synchronized(buddies) {
-		b = idmap.get(id);
+	    Buddy b = find(id);
+	    synchronized(b) {
 		b.name = name;
 		b.online = online;
 		b.group = grp;
@@ -390,11 +416,7 @@ public class BuddyWnd extends Window {
 	    int id = (Integer)args[0];
 	    show();
 	    raise();
-	    Buddy b;
-	    synchronized(buddies) {
-		b = idmap.get(id);
-	    }
-	    bl.select(b);
+	    bl.select(find(id));
 	} else if(msg == "pwd") {
 	    charpass.settext((String)args[0]);
 	} else {
