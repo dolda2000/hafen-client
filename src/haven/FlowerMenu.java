@@ -84,7 +84,7 @@ public class FlowerMenu extends Widget {
 	}
 		
 	public boolean mousedown(Coord c, int button) {
-	    wdgmsg(FlowerMenu.this, "cl", num, ui.modflags());
+	    choose(this);
 	    return(true);
 	}
     }
@@ -199,7 +199,7 @@ public class FlowerMenu extends Widget {
 	if(anim != null)
 	    return(true);
 	if(!super.mousedown(c, button))
-	    wdgmsg("cl", -1);
+	    choose(null);
 	return(true);
     }
 	
@@ -225,14 +225,22 @@ public class FlowerMenu extends Widget {
 	if((key >= '0') && (key <= '9')) {
 	    int opt = (key == '0')?10:(key - '1');
 	    if(opt < opts.length)
-		wdgmsg("cl", opt, ui.modflags());
+		choose(opts[opt]);
 	    ui.grabkeys(null);
 	    return(true);
 	} else if(key == 27) {
-	    wdgmsg("cl", -1);
+	    choose(null);
 	    ui.grabkeys(null);
 	    return(true);
 	}
 	return(false);
+    }
+    
+    public void choose(Petal option) {
+	if(option == null) {
+	    wdgmsg("cl", -1);
+	} else {
+	    wdgmsg("cl", option.num, ui.modflags());
+	}
     }
 }
