@@ -216,10 +216,10 @@ public class Widget {
 		if(last != null)
 		    last.lostfocus();
 		w.gotfocus();
-		if((ui != null) && ui.rwidgets.containsKey(w))
+		if((ui != null) && ui.rwidgets.containsKey(w) && ui.rwidgets.containsKey(this))
 		    wdgmsg("focus", ui.rwidgets.get(w));
 	    }
-	    if(parent != null)
+	    if((parent != null) && canfocus)
 		parent.setfocus(this);
 	} else {
 	    parent.setfocus(w);
