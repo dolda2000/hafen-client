@@ -44,6 +44,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public BuddyWnd buddies;
     public Collection<GItem> hand = new LinkedList<GItem>();
     private WItem vhand;
+    public ChatUI chat;
+    public ChatUI.Channel syslog;
     public int prog = -1;
     private boolean afk = false;
     
@@ -61,12 +63,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	super(Coord.z, parent.sz, parent);
 	this.chrid = chrid;
 	this.plid = plid;
+	setcanfocus(true);
+	setfocusctl(true);
 	menu = new MenuGrid(Coord.z, this);
 	new Avaview(new Coord(10, 10), this, plid);
 	new Bufflist(new Coord(95, 50), this);
+	chat = new ChatUI(Coord.z, 0, this);
+	syslog = new ChatUI.Log(chat, "System");
 	resize(sz);
-	setcanfocus(true);
-	setfocusctl(true);
     }
     
     static class Hidewnd extends Window {
@@ -148,6 +152,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    buddies = (BuddyWnd)gettype(type).create(new Coord(187, 50), this, cargs);
 	    buddies.hide();
 	    return(buddies);
+	} else if(place == "chat") {
+	    return(chat.makechild(type, new Object[] {}, cargs));
 	} else if(place == "misc") {
 	    return(gettype(type).create((Coord)pargs[1], this, cargs));
 	} else {
@@ -196,7 +202,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     
     public void uimsg(String msg, Object... args) {
 	if(msg == "err") {
-	    error((String)args[0]);
+	    String err = (String)args[0];
+	    error(err);
+	    syslog.append(err, Color.RED);
 	} else if(msg == "prog") {
 	    if(args.length > 0)
 		prog = (Integer)args[0];
@@ -261,6 +269,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public void resize(Coord sz) {
 	super.resize(sz);
 	menu.c = sz.sub(menu.sz);
+	chat.resize(sz.x - 125 - menu.sz.x);
+	chat.move(new Coord(125, sz.y));
 	if(map != null)
 	    map.resize(sz);
 	if(mmap != null)
