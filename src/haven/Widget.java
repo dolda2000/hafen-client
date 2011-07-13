@@ -438,8 +438,10 @@ public class Widget {
 	    }
 	} else {
 	    for(Widget wdg = child; wdg != null; wdg = wdg.next) {
-		if(wdg.type(key, ev))
-		    return(true);
+		if(wdg.visible) {
+		    if(wdg.type(key, ev))
+			return(true);
+		}
 	    }
 	    return(false);
 	}
@@ -456,8 +458,10 @@ public class Widget {
 	    }
 	} else {
 	    for(Widget wdg = child; wdg != null; wdg = wdg.next) {
-		if(wdg.keydown(ev))
-		    return(true);
+		if(wdg.visible) {
+		    if(wdg.keydown(ev))
+			return(true);
+		}
 	    }
 	}
 	return(false);
@@ -474,8 +478,10 @@ public class Widget {
 	    }
 	} else {
 	    for(Widget wdg = child; wdg != null; wdg = wdg.next) {
-		if(wdg.keyup(ev))	
-		    return(true);
+		if(wdg.visible) {
+		    if(wdg.keyup(ev))	
+			return(true);
+		}
 	    }
 	}
 	return(false);
