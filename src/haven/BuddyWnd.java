@@ -437,5 +437,6 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	    ui.destroy(menu);
 	    menu = null;
 	}
+	super.destroy();
     }
 }
