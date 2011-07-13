@@ -94,4 +94,12 @@ public class Scrollbar extends Widget {
 	    val = min;
 	this.val = val;
     }
+    
+    public void resize(int h) {
+	super.resize(new Coord(sflarp.sz().x, h));
+    }
+    
+    public void move(Coord c) {
+	this.c = c.add(-sflarp.sz().x, 0);
+    }
 }
