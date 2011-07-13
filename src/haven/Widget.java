@@ -119,6 +119,7 @@ public class Widget {
 	    this.sz = sz;
 	    this.parent = parent;
 	    link();
+	    parent.newchild(this);
 	}
     }
     
@@ -127,6 +128,9 @@ public class Widget {
 	return(gettype(type).create(c, this, cargs));
     }
 	
+    public void newchild(Widget w) {
+    }
+
     public void link() {
 	synchronized(ui) {
 	    if(parent.lchild != null)
