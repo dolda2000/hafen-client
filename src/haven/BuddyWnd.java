@@ -106,6 +106,14 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	    wdgmsg("rm", id);
 	}
 	
+	public void chat() {
+	    wdgmsg("chat", id);
+	}
+	
+	public void invite() {
+	    wdgmsg("inv", id);
+	}
+	
 	public void chname(String name) {
 	    wdgmsg("nick", id, name);
 	}
@@ -231,6 +239,7 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	public void opts(final Buddy b, Coord c) {
 	    List<String> opts = new ArrayList<String>();
 	    if(b.online >= 0) {
+		opts.add("Chat");
 		opts.add("End kinship");
 	    } else {
 		opts.add("Forget");
@@ -245,6 +254,8 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 			    if(opt != null) {
 				if(opt.name.equals("End kinship")) {
 				    b.endkin();
+				} else if(opt.name.equals("Chat")) {
+				    b.chat();
 				} else if(opt.name.equals("Forget")) {
 				    b.forget();
 				}
