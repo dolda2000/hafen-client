@@ -145,7 +145,7 @@ public class MenuGrid extends Widget {
 	if(withpg && (pg != null)) {
 	    tt += "\n\n" + pg.text;
 	}
-	return(ttfnd.render(tt, 0));
+	return(ttfnd.render(tt, 300));
     }
 
     public void draw(GOut g) {
