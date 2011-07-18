@@ -123,8 +123,63 @@ public class Widget {
 	}
     }
     
+    private Coord relpos(String spec, Object[] args, int off) {
+	Coord ret = new Coord();
+	int i = 0;
+	Stack<Object> st = new Stack<Object>();
+	while(i < spec.length()) {
+	    char op = spec.charAt(i++);
+	    if(Character.isDigit(op)) {
+		int e;
+		for(e = i; (e < spec.length()) && Character.isDigit(spec.charAt(e)); e++);
+		st.push(Integer.parseInt(spec.substring(i - 1, e)));
+		i = e;
+	    } else if(op == 'I') {
+		st.push(args[off++]);
+	    } else if(op == 'w') {
+		st.push(ui.widgets.get((Integer)st.pop()));
+	    } else if(op == 'p') {
+		st.pop();
+	    } else if(op == 'd') {
+		st.push(st.peek());
+	    } else if(op == 'l') {
+		st.push(((Widget)st.pop()).c.x);
+	    } else if(op == 't') {
+		st.push(((Widget)st.pop()).c.y);
+	    } else if(op == 'r') {
+		Widget w = (Widget)st.pop();
+		st.push(w.c.x + w.sz.x);
+	    } else if(op == 'b') {
+		Widget w = (Widget)st.pop();
+		st.push(w.c.y + w.sz.y);
+	    } else if(op == '+') {
+		int a = (Integer)st.pop();
+		int b = (Integer)st.pop();
+		st.push(a + b);
+	    } else if(op == '-') {
+		int a = (Integer)st.pop();
+		int b = (Integer)st.pop();
+		st.push(a - b);
+	    } else if(op == 'x') {
+		ret.x = (Integer)st.pop();
+	    } else if(op == 'y') {
+		ret.y = (Integer)st.pop();
+	    } else {
+		throw(new RuntimeException("Unknown position operation: " + op));
+	    }
+	}
+	return(ret);
+    }
+
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	Coord c = (Coord)pargs[0];
+	Coord c;
+	if(pargs[0] instanceof Coord) {
+	    c = (Coord)pargs[0];
+	} else if(pargs[0] instanceof String) {
+	    c = relpos((String)pargs[0], pargs, 1);
+	} else {
+	    throw(new RuntimeException("Unknown child widget creation specification."));
+	}
 	return(gettype(type).create(c, this, cargs));
     }
 	
