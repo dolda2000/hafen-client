@@ -661,6 +661,17 @@ public class Utils {
 		((float)c.getAlpha() / 255.0f)
 	    });
     }
+    
+    @SuppressWarnings("unchecked")
+    public static <T> T[] splice(T[] src, int off, int len) {
+	T[] dst = (T[])java.lang.reflect.Array.newInstance(src.getClass().getComponentType(), len);
+	System.arraycopy(src, off, dst, 0, len);
+	return(dst);
+    }
+    
+    public static <T> T[] splice(T[] src, int off) {
+	return(splice(src, off, src.length - off));
+    }
 
     static {
 	Console.setscmd("die", new Console.Command() {
