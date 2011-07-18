@@ -137,7 +137,9 @@ public class Widget {
 	    } else if(op == 'I') {
 		st.push(args[off++]);
 	    } else if(op == 'w') {
-		st.push(ui.widgets.get((Integer)st.pop()));
+		synchronized(ui) {
+		    st.push(ui.widgets.get((Integer)st.pop()));
+		}
 	    } else if(op == 'p') {
 		st.pop();
 	    } else if(op == 'd') {
