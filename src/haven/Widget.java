@@ -136,36 +136,37 @@ public class Widget {
 		i = e;
 	    } else if(op == 'I') {
 		st.push(args[off++]);
-	    } else if(op == 'w') {
-		synchronized(ui) {
-		    st.push(ui.widgets.get((Integer)st.pop()));
-		}
-	    } else if(op == 'p') {
-		st.pop();
+	    } else if(op == 'b') {
+		Widget w = (Widget)st.pop();
+		st.push(w.c.y + w.sz.y);
 	    } else if(op == 'd') {
 		st.push(st.peek());
 	    } else if(op == 'l') {
 		st.push(((Widget)st.pop()).c.x);
-	    } else if(op == 't') {
-		st.push(((Widget)st.pop()).c.y);
+	    } else if(op == 'p') {
+		st.pop();
 	    } else if(op == 'r') {
 		Widget w = (Widget)st.pop();
 		st.push(w.c.x + w.sz.x);
-	    } else if(op == 'b') {
-		Widget w = (Widget)st.pop();
-		st.push(w.c.y + w.sz.y);
-	    } else if(op == '+') {
-		int a = (Integer)st.pop();
-		int b = (Integer)st.pop();
-		st.push(a + b);
-	    } else if(op == '-') {
-		int a = (Integer)st.pop();
-		int b = (Integer)st.pop();
-		st.push(a - b);
+	    } else if(op == 't') {
+		st.push(((Widget)st.pop()).c.y);
+	    } else if(op == 'w') {
+		synchronized(ui) {
+		    st.push(ui.widgets.get((Integer)st.pop()));
+		}
 	    } else if(op == 'x') {
 		ret.x = (Integer)st.pop();
 	    } else if(op == 'y') {
 		ret.y = (Integer)st.pop();
+	    } else if(op == '+') {
+		int b = (Integer)st.pop();
+		int a = (Integer)st.pop();
+		st.push(a + b);
+	    } else if(op == '-') {
+		int b = (Integer)st.pop();
+		int a = (Integer)st.pop();
+		st.push(a - b);
+	    } else if(Character.isWhitespace(op)) {
 	    } else {
 		throw(new RuntimeException("Unknown position operation: " + op));
 	    }
