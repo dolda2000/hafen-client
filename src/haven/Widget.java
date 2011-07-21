@@ -124,7 +124,6 @@ public class Widget {
     }
     
     private Coord relpos(String spec, Object[] args, int off) {
-	Coord ret = new Coord();
 	int i = 0;
 	Stack<Object> st = new Stack<Object>();
 	while(i < spec.length()) {
@@ -134,44 +133,62 @@ public class Widget {
 		for(e = i; (e < spec.length()) && Character.isDigit(spec.charAt(e)); e++);
 		st.push(Integer.parseInt(spec.substring(i - 1, e)));
 		i = e;
-	    } else if(op == 'I') {
+	    } else if(op == '!') {
 		st.push(args[off++]);
-	    } else if(op == 'b') {
-		Widget w = (Widget)st.pop();
-		st.push(w.c.y + w.sz.y);
-	    } else if(op == 'd') {
+	    } else if(op == '_') {
 		st.push(st.peek());
-	    } else if(op == 'l') {
-		st.push(((Widget)st.pop()).c.x);
-	    } else if(op == 'p') {
+	    } else if(op == '.') {
 		st.pop();
-	    } else if(op == 'r') {
+	    } else if(op == '^') {
+		Object a = st.pop();
+		Object b = st.pop();
+		st.push(a);
+		st.push(b);
+	    } else if(op == 'c') {
+		int y = (Integer)st.pop();
+		int x = (Integer)st.pop();
+		st.push(new Coord(x, y));
+	    } else if(op == 'o') {
 		Widget w = (Widget)st.pop();
-		st.push(w.c.x + w.sz.x);
-	    } else if(op == 't') {
-		st.push(((Widget)st.pop()).c.y);
+		st.push(w.c.add(w.sz));
+	    } else if(op == 'p') {
+		st.push(((Widget)st.pop()).c);
+	    } else if(op == 's') {
+		st.push(((Widget)st.pop()).sz);
 	    } else if(op == 'w') {
 		synchronized(ui) {
 		    st.push(ui.widgets.get((Integer)st.pop()));
 		}
 	    } else if(op == 'x') {
-		ret.x = (Integer)st.pop();
+		st.push(((Coord)st.pop()).x);
 	    } else if(op == 'y') {
-		ret.y = (Integer)st.pop();
+		st.push(((Coord)st.pop()).y);
 	    } else if(op == '+') {
-		int b = (Integer)st.pop();
-		int a = (Integer)st.pop();
-		st.push(a + b);
+		Object b = st.pop();
+		Object a = st.pop();
+		if((a instanceof Integer) && (b instanceof Integer)) {
+		    st.push((Integer)a + (Integer)b);
+		} else if((a instanceof Coord) && (b instanceof Coord)) {
+		    st.push(((Coord)a).add((Coord)b));
+		} else {
+		    throw(new RuntimeException("Invalid addition operands: " + a + " + " + b));
+		}
 	    } else if(op == '-') {
-		int b = (Integer)st.pop();
-		int a = (Integer)st.pop();
-		st.push(a - b);
+		Object b = st.pop();
+		Object a = st.pop();
+		if((a instanceof Integer) && (b instanceof Integer)) {
+		    st.push((Integer)a - (Integer)b);
+		} else if((a instanceof Coord) && (b instanceof Coord)) {
+		    st.push(((Coord)a).sub((Coord)b));
+		} else {
+		    throw(new RuntimeException("Invalid subtraction operands: " + a + " - " + b));
+		}
 	    } else if(Character.isWhitespace(op)) {
 	    } else {
 		throw(new RuntimeException("Unknown position operation: " + op));
 	    }
 	}
-	return(ret);
+	return((Coord)st.pop());
     }
 
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {
