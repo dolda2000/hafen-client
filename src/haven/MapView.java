@@ -198,6 +198,7 @@ public class MapView extends PView implements DTarget {
 	glob = ui.sess.glob;
 	this.cc = cc;
 	this.plgob = plgob;
+	setcanfocus(true);
     }
     
     public void enol(int... overlays) {
@@ -654,6 +655,7 @@ public class MapView extends PView implements DTarget {
     }
     
     public boolean mousedown(Coord c, int button) {
+	parent.setfocus(this);
 	if(button == 2) {
 	    if(((Camera)camera).click(c)) {
 		ui.grabmouse(this);
