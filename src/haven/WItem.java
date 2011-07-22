@@ -34,7 +34,7 @@ import haven.GItem.Info;
 import static haven.GItem.find;
 
 public class WItem extends Widget implements DTarget {
-    static final Resource missing = Resource.load("gfx/invobjs/missing");
+    public static final Resource missing = Resource.load("gfx/invobjs/missing");
     public final GItem item;
     private Tex mask = null;
     private Resource cmask = null;
