@@ -92,8 +92,8 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		    GL gl = d.getGL();
 		    glconf = GLConfig.fromgl(gl, d.getContext(), getChosenGLCapabilities());
 		    ui.cons.add(glconf);
-		    if(caller.getThreadGroup() instanceof haven.error.ErrorHandler) {
-			haven.error.ErrorHandler h = (haven.error.ErrorHandler)caller.getThreadGroup();
+		    haven.error.ErrorHandler h = haven.error.ErrorHandler.find();
+		    if(h != null) {
 			h.lsetprop("gl.vendor", gl.glGetString(gl.GL_VENDOR));
 			h.lsetprop("gl.version", gl.glGetString(gl.GL_VERSION));
 			h.lsetprop("gl.renderer", gl.glGetString(gl.GL_RENDERER));
