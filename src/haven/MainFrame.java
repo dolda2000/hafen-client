@@ -33,7 +33,8 @@ import java.util.*;
 
 public class MainFrame extends Frame implements Runnable, FSMan, Console.Directory {
     HavenPanel p;
-    ThreadGroup g;
+    private final ThreadGroup g;
+    public final Thread mt;
     DisplayMode fsmode = null, prefs = null;
 	
     static {
@@ -146,10 +147,12 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 	setIconImage(icon);
     }
 
-    public MainFrame(int w, int h) {
+    public MainFrame(Coord sz) {
 	super("Haven and Hearth");
-	p = new HavenPanel(w, h);
-	fsmode = findmode(w, h);
+	this.g = new ThreadGroup(HackThread.tg(), "Haven client");
+	this.mt = new HackThread(this.g, this, "Haven main thread");
+	p = new HavenPanel(sz.x, sz.y);
+	fsmode = findmode(sz.x, sz.y);
 	add(p);
 	pack();
 	setResizable(!Config.wndlock);
@@ -157,14 +160,16 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 	seticon();
 	setVisible(true);
 	p.init();
-    }
-	
-    public void run() {
 	addWindowListener(new WindowAdapter() {
 		public void windowClosing(WindowEvent e) {
 		    g.interrupt();
 		}
 	    });
+    }
+	
+    public void run() {
+	if(Thread.currentThread() != this.mt)
+	    throw(new RuntimeException("MainFrame is being run from an invalid context"));
 	Thread ui = new HackThread(p, "Haven UI thread");
 	p.setfsm(this);
 	ui.start();
@@ -236,22 +241,23 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
     }
 
     private static void main2(String[] args) {
+	try {
+	    javabughack();
+	} catch(InterruptedException e) {
+	    return;
+	}
 	Config.cmdline(args);
-	ThreadGroup g = HackThread.tg();
 	setupres();
-	MainFrame f = new MainFrame(Config.wndsz.x, Config.wndsz.y);
+	MainFrame f = new MainFrame(Config.wndsz);
 	if(Config.fullscreen)
 	    f.setfs();
-	f.g = g;
-	if(g instanceof haven.error.ErrorHandler) {
-	    final haven.error.ErrorHandler hg = (haven.error.ErrorHandler)g;
-	    hg.sethandler(new haven.error.ErrorGui(null) {
-		    public void errorsent() {
-			hg.interrupt();
-		    }
-		});
+	f.mt.start();
+	try {
+	    f.mt.join();
+	} catch(InterruptedException e) {
+	    f.g.interrupt();
+	    return;
 	}
-	f.run();
 	dumplist(Resource.loadwaited, Config.loadwaited);
 	dumplist(Resource.cached(), Config.allused);
 	if(ResCache.global != null) {
@@ -269,11 +275,12 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 		}
 	    } catch(IOException e) {}
 	}
+	System.exit(0);
     }
     
     public static void main(final String[] args) {
 	/* Set up the error handler as early as humanly possible. */
-	ThreadGroup g = new ThreadGroup("Haven client");
+	ThreadGroup g = new ThreadGroup("Haven main group");
 	String ed;
 	if(!(ed = Utils.getprop("haven.errorurl", "")).equals("")) {
 	    try {
@@ -289,22 +296,10 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 	}
 	Thread main = new HackThread(g, new Runnable() {
 		public void run() {
-		    try {
-			javabughack();
-		    } catch(InterruptedException e) {
-			return;
-		    }
 		    main2(args);
 		}
 	    }, "Haven main thread");
 	main.start();
-	try {
-	    main.join();
-	} catch(InterruptedException e) {
-	    g.interrupt();
-	    return;
-	}
-	System.exit(0);
     }
 	
     private static void dumplist(Collection<Resource> list, String fn) {
