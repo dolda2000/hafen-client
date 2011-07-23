@@ -152,4 +152,17 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	long dy = o.y - y;
 	return(Math.sqrt((dx * dx) + (dy * dy)));
     }
+    
+    public Coord clip(Coord ul, Coord sz) {
+	Coord ret = this;
+	if(ret.x < ul.x)
+	    ret = new Coord(ul.x, ret.y);
+	if(ret.y < ul.y)
+	    ret = new Coord(ret.x, ul.y);
+	if(ret.x > ul.x + sz.x)
+	    ret = new Coord(ul.x + sz.x, ret.y);
+	if(ret.y > ul.y + sz.y)
+	    ret = new Coord(ret.x, ul.y + sz.y);
+	return(ret);
+    }
 }

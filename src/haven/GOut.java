@@ -34,7 +34,7 @@ import java.nio.*;
 public class GOut {
     public final GL gl;
     public final GLConfig gc;
-    public Coord ul, sz;
+    public Coord ul, sz, tx;
     private States.ColState color = new States.ColState(Color.WHITE);
     public final GLContext ctx;
     private final GOut root;
@@ -46,6 +46,7 @@ public class GOut {
 	this.gc = o.gc;
 	this.ul = o.ul;
 	this.sz = o.sz;
+	this.tx = o.tx;
 	this.color = o.color;
 	this.ctx = o.ctx;
 	this.root = o.root;
@@ -57,7 +58,7 @@ public class GOut {
     public GOut(GL gl, GLContext ctx, GLConfig cfg, GLState.Applier st, GLState.Buffer def2d, Coord sz) {
 	this.gl = gl;
 	this.gc = cfg;
-	this.ul = Coord.z;
+	this.ul = this.tx = Coord.z;
 	this.sz = sz;
 	this.ctx = ctx;
 	this.st = st;
@@ -109,7 +110,7 @@ public class GOut {
 	if(tex == null)
 	    return;
 	st.set(def2d);
-	tex.crender(this, c.add(ul), ul, sz);
+	tex.crender(this, c.add(tx), ul, sz);
 	checkerr();
     }
 	
@@ -122,7 +123,7 @@ public class GOut {
 	if(tex == null)
 	    return;
 	st.set(def2d);
-	tex.crender(this, c.add(ul), ul, this.sz, sz);
+	tex.crender(this, c.add(tx), ul, this.sz, sz);
 	checkerr();
     }
 	
@@ -130,12 +131,22 @@ public class GOut {
 	if(tex == null)
 	    return;
 	st.set(def2d);
-	tex.crender(this, c.add(this.ul), this.ul.add(ul), sz);
+	ul = ul.add(this.tx);
+	Coord br = ul.add(sz);
+	if(ul.x < this.ul.x)
+	    ul.x = this.ul.x;
+	if(ul.y < this.ul.y)
+	    ul.y = this.ul.y;
+	if(br.x > this.ul.x + this.sz.x)
+	    br.x = this.ul.x + this.sz.x;
+	if(br.y > this.ul.y + this.sz.y)
+	    br.y = this.ul.y + this.sz.y;
+	tex.crender(this, c.add(this.tx), ul, br.sub(ul));
 	checkerr();
     }
 	
     private void vertex(Coord c) {
-	gl.glVertex2i(c.x + ul.x, c.y + ul.y);
+	gl.glVertex2i(c.x + tx.x, c.y + tx.y);
     }
 	
     public void apply() {
@@ -272,15 +283,25 @@ public class GOut {
 	
     public GOut reclip(Coord ul, Coord sz) {
 	GOut g = new GOut(this);
-	g.ul = this.ul.add(ul);
-	g.sz = sz;
+	g.tx = this.tx.add(ul);
+	g.ul = new Coord(g.tx);
+	Coord gbr = g.ul.add(sz), tbr = this.ul.add(this.sz);
+	if(g.ul.x < this.ul.x)
+	    g.ul.x = this.ul.x;
+	if(g.ul.y < this.ul.y)
+	    g.ul.y = this.ul.y;
+	if(gbr.x > tbr.x)
+	    gbr.x = tbr.x;
+	if(gbr.y > tbr.y)
+	    gbr.y = tbr.y;
+	g.sz = gbr.sub(g.ul);
 	return(g);
     }
     
     public Color getpixel(Coord c) {
 	IntBuffer tgt = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
 	tgt.rewind();
-	gl.glReadPixels(c.x + ul.x, root.sz.y - c.y - ul.y, 1, 1, GL.GL_RGBA, GL.GL_UNSIGNED_INT_8_8_8_8, tgt);
+	gl.glReadPixels(c.x + tx.x, root.sz.y - c.y - tx.y, 1, 1, GL.GL_RGBA, GL.GL_UNSIGNED_INT_8_8_8_8, tgt);
 	checkerr();
 	long rgb = ((long)tgt.get(0)) & 0xffffffffl;
 	int r = (int)((rgb & 0xff000000l) >> 24);
