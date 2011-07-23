@@ -92,7 +92,10 @@ public class Scrollbar extends Widget {
 	    val = max;
 	if(val < min)
 	    val = min;
-	this.val = val;
+	if(this.val != val) {
+	    this.val = val;
+	    changed();
+	}
     }
     
     public void resize(int h) {
