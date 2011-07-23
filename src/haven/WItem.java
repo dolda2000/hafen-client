@@ -57,7 +57,7 @@ public class WItem extends Widget implements DTarget {
 	return(buf.toString());
     }
 
-    public Tex shorttip(List<Info> info) {
+    public static Tex shorttip(List<Info> info) {
 	String buf = rendershort(info);
 	GItem.Contents cont = find(GItem.Contents.class, info);
 	if(cont != null)
@@ -65,12 +65,16 @@ public class WItem extends Widget implements DTarget {
 	return(RichText.render(buf, 0).tex());
     }
     
-    public Tex longtip(List<Info> info) {
+    public static Tex longtip(GItem item, List<Info> info) {
 	BufferedImage img = GItem.longtip(info);
 	Resource.Pagina pg = item.res.get().layer(Resource.pagina);
 	if(pg != null)
 	    img = GItem.catimgs(Arrays.asList(new BufferedImage[]{img, RichText.render("\n" + pg.text, 200).img}));
 	return(new TexI(img));
+    }
+    
+    public Tex longtip(List<Info> info) {
+	return(longtip(item, info));
     }
 
     private long hoverstart;
