@@ -393,27 +393,35 @@ public class ChatUI extends Widget {
 	    g.chcolor();
 	}
 	
-	public void up() {
+	public boolean up() {
 	    Channel prev = null;
 	    for(DarkChannel ch : chls) {
 		if(ch.chan == sel) {
-		    if(prev != null)
+		    if(prev != null) {
 			select(prev);
-		    return;
+			return(true);
+		    } else {
+			return(false);
+		    }
 		}
 		prev = ch.chan;
 	    }
+	    return(false);
 	}
 	
-	public void down() {
+	public boolean down() {
 	    for(Iterator<DarkChannel> i = chls.iterator(); i.hasNext();) {
 		DarkChannel ch = i.next();
 		if(ch.chan == sel) {
-		    if(i.hasNext())
+		    if(i.hasNext()) {
 			select(i.next().chan);
-		    return;
+			return(true);
+		    } else {
+			return(false);
+		    }
 		}
 	    }
+	    return(false);
 	}
 	
 	private Channel bypos(Coord c) {
@@ -591,6 +599,32 @@ public class ChatUI extends Widget {
 
     public boolean keydown(KeyEvent ev) {
 	if(qline != null) {
+	    boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
+	    if(M && (ev.getKeyCode() == KeyEvent.VK_UP)) {
+		Channel prev = this.sel;
+		while(chansel.up()) {
+		    if(this.sel instanceof EntryChannel)
+			break;
+		}
+		if(!(this.sel instanceof EntryChannel)) {
+		    select(prev);
+		    return(true);
+		}
+		qline = new QuickLine((EntryChannel)sel);
+		return(true);
+	    } else if(M && (ev.getKeyCode() == KeyEvent.VK_DOWN)) {
+		Channel prev = this.sel;
+		while(chansel.down()) {
+		    if(this.sel instanceof EntryChannel)
+			break;
+		}
+		if(!(this.sel instanceof EntryChannel)) {
+		    select(prev);
+		    return(true);
+		}
+		qline = new QuickLine((EntryChannel)sel);
+		return(true);
+	    }
 	    qline.key(ev);
 	    return(true);
 	} else {
