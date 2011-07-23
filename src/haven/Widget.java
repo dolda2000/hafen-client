@@ -497,10 +497,13 @@ public class Widget {
 		    if(key == '\t') {
 			Widget f = focused;
 			while(true) {
-			    if((ev.getModifiers() & InputEvent.SHIFT_MASK) == 0)
-				f = (f.next == null)?child:f.next;
-			    else
-				f = (f.prev == null)?lchild:f.prev;
+			    if((ev.getModifiers() & InputEvent.SHIFT_MASK) == 0) {
+				Widget n = f.rnext();
+				f = ((n == null) || !n.hasparent(this))?child:n;
+			    } else {
+				Widget p = f.rprev();
+				f = ((p == null) || !p.hasparent(this))?lchild:p;
+			    }
 			    if(f.canfocus)
 				break;
 			}
@@ -609,6 +612,26 @@ public class Widget {
 	    T ret = wdg.findchild(cl);
 	    if(ret != null)
 		return(ret);
+	}
+	return(null);
+    }
+    
+    public Widget rprev() {
+	if(lchild != null)
+	    return(lchild);
+	if(prev != null)
+	    return(prev);
+	return(parent);
+    }
+
+    public Widget rnext() {
+	if(child != null)
+	    return(child);
+	if(next != null)
+	    return(next);
+	for(Widget p = parent; p != null; p = p.parent) {
+	    if(p.next != null)
+		return(p.next);
 	}
 	return(null);
     }
