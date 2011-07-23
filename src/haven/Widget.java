@@ -405,7 +405,7 @@ public class Widget {
 	}
     }
 
-    public void draw(GOut g) {
+    public void draw(GOut g, boolean strict) {
 	Widget next;
 		
 	for(Widget wdg = child; wdg != null; wdg = next) {
@@ -413,8 +413,17 @@ public class Widget {
 	    if(!wdg.visible)
 		continue;
 	    Coord cc = xlate(wdg.c, true);
-	    wdg.draw(g.reclip(cc, wdg.sz));
+	    GOut g2;
+	    if(strict)
+		g2 = g.reclip(cc, wdg.sz);
+	    else
+		g2 = g.reclipl(cc, wdg.sz);
+	    wdg.draw(g2);
 	}
+    }
+    
+    public void draw(GOut g) {
+	draw(g, true);
     }
 	
     public boolean mousedown(Coord c, int button) {

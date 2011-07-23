@@ -298,6 +298,14 @@ public class GOut {
 	return(g);
     }
     
+    public GOut reclipl(Coord ul, Coord sz) {
+	GOut g = new GOut(this);
+	g.tx = this.tx.add(ul);
+	g.ul = new Coord(g.tx);
+	g.sz = sz;
+	return(g);
+    }
+    
     public Color getpixel(Coord c) {
 	IntBuffer tgt = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
 	tgt.rewind();

@@ -218,7 +218,7 @@ public class FlowerMenu extends Widget {
     public void draw(GOut g) {
 	if(anim != null)
 	    anim.tick();
-	super.draw(g);
+	super.draw(g, false);
     }
     
     public boolean type(char key, java.awt.event.KeyEvent ev) {
