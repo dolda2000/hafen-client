@@ -70,6 +70,21 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	new Bufflist(new Coord(95, 50), this);
 	chat = new ChatUI(Coord.z, 0, this);
 	syslog = new ChatUI.Log(chat, "System");
+	ui.cons.out = new java.io.PrintWriter(new java.io.Writer() {
+		StringBuilder buf = new StringBuilder();
+		
+		public void write(char[] src, int off, int len) {
+		    buf.append(src, off, len);
+		    int p;
+		    while((p = buf.indexOf("\n")) >= 0) {
+			syslog.append(buf.substring(0, p), Color.WHITE);
+			buf.delete(0, p + 1);
+		    }
+		}
+		
+		public void close() {}
+		public void flush() {}
+	    });
 	resize(sz);
     }
     
