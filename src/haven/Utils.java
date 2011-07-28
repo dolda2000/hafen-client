@@ -413,7 +413,7 @@ public class Utils {
     
     private static void dumptg(ThreadGroup tg, PrintWriter out, int indent) {
 	for(int o = 0; o < indent; o++)
-	    out.print("\t");
+	    out.print("    ");
 	out.println("G: \"" + tg.getName() + "\"");
 	Thread[] ths = new Thread[tg.activeCount() * 2];
 	ThreadGroup[] tgs = new ThreadGroup[tg.activeGroupCount() * 2];
@@ -422,7 +422,7 @@ public class Utils {
 	for(int i = 0; i < nt; i++) {
 	    Thread ct = ths[i];
 	    for(int o = 0; o < indent + 1; o++)
-		out.print("\t");
+		out.print("    ");
 	    out.println("T: \"" + ct.getName() + "\"");
 	}
 	for(int i = 0; i < ng; i++) {
