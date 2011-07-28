@@ -133,6 +133,11 @@ public class ChatUI extends Widget {
 	    super.draw(g);
 	}
 	
+	public boolean mousewheel(Coord c, int amount) {
+	    sb.ch(amount * 15);
+	    return(true);
+	}
+	
 	public void resize(Coord sz) {
 	    super.resize(sz);
 	    if(sb != null) {
