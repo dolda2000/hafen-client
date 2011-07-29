@@ -303,10 +303,8 @@ public class Composite extends Drawable {
     private void init() {
 	if(skel != null)
 	    return;
-	try {
-	    skel = base.get().layer(Skeleton.Res.class).s;
-	    pose = skel.new Pose(skel.bindpose);
-	} catch(Loading e) {}
+	skel = base.get().layer(Skeleton.Res.class).s;
+	pose = skel.new Pose(skel.bindpose);
     }
     
     private void nmod() {
@@ -358,9 +356,11 @@ public class Composite extends Drawable {
     }
 
     public void setup(RenderList rl) {
-	init();
-	if(skel == null)
+	try {
+	    init();
+	} catch(Loading e) {
 	    return;
+	}
 	changes();
 	for(Model mod : this.mod)
 	    rl.add(mod, null);
@@ -384,6 +384,7 @@ public class Composite extends Drawable {
     }
     
     public Pose getpose() {
+	init();
 	return(pose);
     }
     
