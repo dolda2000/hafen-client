@@ -221,17 +221,22 @@ public class OCache implements Iterable<Gob> {
 	g.setattr(new Lumin(g, off, sz, str));
     }
 	
-    public synchronized void follow(Gob g, long oid, float zo) {
+    public synchronized void follow(Gob g, long oid, Indir<Resource> xfres, String xfname) {
 	if(oid == 0xffffffffl) {
 	    g.delattr(Following.class);
 	} else {
 	    Following flw = g.getattr(Following.class);
 	    if(flw == null) {
-		flw = new Following(g, oid, zo);
+		flw = new Following(g, oid, xfres, xfname);
 		g.setattr(flw);
 	    } else {
-		flw.tgt = oid;
-		flw.zo = zo;
+		synchronized(flw) {
+		    flw.tgt = oid;
+		    flw.xfres = xfres;
+		    flw.xfname = xfname;
+		    flw.lxfb = null;
+		    flw.xf = null;
+		}
 	    }
 	}
     }

@@ -31,7 +31,7 @@ import java.util.*;
 import java.io.*;
 
 public class Session {
-    public static final int PVER = 10;
+    public static final int PVER = 11;
     
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
@@ -350,11 +350,14 @@ public class Session {
 				oc.avatar(gob, layers);
 			} else if(type == OD_FOLLOW) {
 			    long oid = msg.uint32();
-			    float zo = 0.0f;
-			    if(oid != 0xffffffffl)
-				zo = msg.int16() / 100.0f;
+			    Indir<Resource> xfres = null;
+			    String xfname = null;
+			    if(oid != 0xffffffffl) {
+				xfres = getres(msg.uint16());
+				xfname = msg.string();
+			    }
 			    if(gob != null)
-				oc.follow(gob, oid, zo);
+				oc.follow(gob, oid, xfres, xfname);
 			} else if(type == OD_HOMING) {
 			    long oid = msg.uint32();
 			    if(oid == 0xffffffffl) {

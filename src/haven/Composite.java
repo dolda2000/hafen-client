@@ -383,6 +383,10 @@ public class Composite extends Drawable {
 	return(base.get().layer(Resource.negc));
     }
     
+    public Pose getpose() {
+	return(pose);
+    }
+    
     public void chposes(List<Indir<Resource>> poses, boolean interp) {
 	nposes = new Poses(poses, interp?ipollen:0.0f);
     }

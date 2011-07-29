@@ -265,7 +265,14 @@ public class MapView extends PView implements DTarget {
     void addgob(RenderList rl, final Gob gob) {
 	Coord3f c = gob.getc();
 	c.y = -c.y;
-	rl.add(gob, GLState.compose(gob.loc, gob.save));
+	Following flw = gob.getattr(Following.class);
+	if(flw != null) {
+	    try {
+		rl.add(gob, GLState.compose(flw.xf(), gob.save));
+	    } catch(Loading e) {}
+	} else {
+	    rl.add(gob, GLState.compose(gob.loc, gob.save));
+	}
     }
 
     private final Rendered gobs = new Rendered() {
