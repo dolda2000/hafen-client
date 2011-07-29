@@ -686,13 +686,13 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    int min = -1, minw = -1, minh = -1, mine = -1;
 	    int nt = tiles.size();
 	    for(int i = 1; i <= nt; i++) {
-		int w = Tex.nextp2(tsz.x * i);
+		int w = Tex.nextp2((tsz.x + 2) * i);
 		int h;
 		if((nt % i) == 0)
 		    h = nt / i;
 		else
 		    h = (nt / i) + 1;
-		h = Tex.nextp2(tsz.y * h);
+		h = Tex.nextp2((tsz.y + 2) * h);
 		int a = w * h;
 		int e = (w < h)?h:w;
 		if((min == -1) || (a < min) || ((a == min) && (e < mine))) {
@@ -708,15 +708,39 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		    }
 		};
 	    Graphics g = packbuf.graphics();
-	    int x = 0, y = 0;
+	    int x = 1, y = 1;
 	    for(Tile t :  tiles) {
 		if(y >= minh)
 		    throw(new LoadException("Could not pack tiles into calculated minimum texture", Resource.this));
 		g.drawImage(t.img, x, y, null);
+		/*
+		 * Apparently, texture filtering and FSAA risks taking
+		 * tile-texels slightly outside the specified TexSI
+		 * range. I still don't know why this happens
+		 * (rounding shouldn't happen with p-o-2 divisors,
+		 * AFAICT), but it is correctable by filling another
+		 * line of texels outside the tile proper.
+		 *
+		 * Unfortunately, allocating those extra wastes a lot
+		 * of texture space expanding the texture to the next
+		 * p-o-2 size, so another solution would be nice.
+		 */
+		for(int i = 0; i < tsz.x; i++) {
+		    packbuf.back.setRGB(x + i, y - 1,     t.img.getRGB(i, 0));
+		    packbuf.back.setRGB(x + i, y + tsz.y, t.img.getRGB(i, tsz.y - 1));
+		}
+		for(int i = 0; i < tsz.y; i++) {
+		    packbuf.back.setRGB(x - 1,     y + i, t.img.getRGB(0, i));
+		    packbuf.back.setRGB(x + tsz.x, y + i, t.img.getRGB(tsz.x - 1, i));
+		}
+		packbuf.back.setRGB(x - 1,     y - 1,     t.img.getRGB(0        , 0));
+		packbuf.back.setRGB(x + tsz.x, y - 1,     t.img.getRGB(tsz.x - 1, 0));
+		packbuf.back.setRGB(x + tsz.x, y + tsz.y, t.img.getRGB(tsz.x - 1, tsz.y - 1));
+		packbuf.back.setRGB(x - 1, y + tsz.y,     t.img.getRGB(0        , tsz.y - 1));
 		t.tex = new TexSI(packbuf, new Coord(x, y), tsz);
-		if((x += tsz.x) > (minw - tsz.x)) {
-		    x = 0;
-		    y += tsz.y;
+		if((x += tsz.x + 2) > (minw - tsz.x)) {
+		    x = 1;
+		    y += tsz.y + 2;
 		}
 	    }
 	    packbuf.update();
