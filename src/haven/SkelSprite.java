@@ -32,7 +32,7 @@ import haven.Skeleton.PoseMod;
 
 public class SkelSprite extends Sprite {
     private final Skeleton skel;
-    private Pose pose;
+    public final Pose pose;
     private PoseMod[] mods = new PoseMod[0];
     private boolean stat = true;
     private final Rendered[] parts;

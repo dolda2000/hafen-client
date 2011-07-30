@@ -38,7 +38,9 @@ public class ResDrawable extends Drawable {
 	super(gob);
 	this.res = res;
 	this.sdt = sdt;
-	init();
+	try {
+	    init();
+	} catch(Loading e) {}
     }
 	
     public ResDrawable(Gob gob, Resource res) {
@@ -48,15 +50,16 @@ public class ResDrawable extends Drawable {
     public void init() {
 	if(spr != null)
 	    return;
-	try {
-	    spr = Sprite.create(gob, res.get(), sdt.clone());
-	} catch(Loading e) {}
+	spr = Sprite.create(gob, res.get(), sdt.clone());
     }
 	
     public void setup(RenderList rl) {
-	init();
-	if(spr != null)
-	    spr.setup(rl);
+	try {
+	    init();
+	} catch(Loading e) {
+	    return;
+	}
+	spr.setup(rl);
     }
 	
     public void ctick(int dt) {
@@ -70,5 +73,13 @@ public class ResDrawable extends Drawable {
     
     public Resource.Neg getneg() {
 	return(res.get().layer(Resource.negc));
+    }
+    
+    public Skeleton.Pose getpose() {
+	init();
+	if(spr instanceof SkelSprite) {
+	    return(((SkelSprite)spr).pose);
+	}
+	return(null);
     }
 }
