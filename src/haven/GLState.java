@@ -556,6 +556,8 @@ public abstract class GLState {
 		public void unapply(GOut g) {}
 		public void prep(Buffer buf) {
 		    for(GLState st : states) {
+			if(st == null)
+			    throw(new RuntimeException("null state in list of " + Arrays.asList(states)));
 			st.prep(buf);
 		    }
 		}
