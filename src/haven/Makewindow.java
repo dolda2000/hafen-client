@@ -48,11 +48,11 @@ public class Makewindow extends Widget {
     
     public static class Spec {
 	public Indir<Resource> res;
-	public int num;
+	public Tex num;
 	
 	public Spec(Indir<Resource> res, int num) {
 	    this.res = res;
-	    this.num = num;
+	    this.num = new TexI(Utils.outline2(Text.render(Integer.toString(num), Color.WHITE).img, Utils.contrast(Color.WHITE)));
 	}
     }
 	
@@ -88,6 +88,7 @@ public class Makewindow extends Widget {
 		g.image(res.layer(Resource.imgc).tex(), c);
 	    } catch(Loading e) {
 	    }
+	    g.aimage(s.num, c.add(31, 32), 1.0, 1.0);
 	    c = c.add(31, 0);
 	}
 	c = new Coord(xoff, yoff);
@@ -98,9 +99,26 @@ public class Makewindow extends Widget {
 		g.image(res.layer(Resource.imgc).tex(), c);
 	    } catch(Loading e) {
 	    }
+	    g.aimage(s.num, c.add(31, 32), 1.0, 1.0);
 	    c = c.add(31, 0);
 	}
 	super.draw(g);
+    }
+    
+    public Object tooltip(Coord mc, boolean again) {
+	Coord c = new Coord(xoff, 0);
+	for(Spec s : inputs) {
+	    if(mc.isect(c, Inventory.invsq.sz()))
+		return(s.res.get().layer(Resource.tooltip).t);
+	    c = c.add(31, 0);
+	}
+	c = new Coord(xoff, yoff);
+	for(Spec s : outputs) {
+	    if(mc.isect(c, Inventory.invsq.sz()))
+		return(s.res.get().layer(Resource.tooltip).t);
+	    c = c.add(31, 0);
+	}
+	return(null);
     }
 
     public void wdgmsg(Widget sender, String msg, Object... args) {
