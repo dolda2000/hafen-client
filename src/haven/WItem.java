@@ -121,6 +121,24 @@ public class WItem extends Widget implements DTarget {
 	}
 	return(olcol);
     }
+    
+    private List<Info> numinfo = null;
+    private Tex itemnum = null;
+    private Tex itemnum() {
+	try {
+	    List<Info> info = item.info();
+	    if(info != numinfo) {
+		itemnum = null;
+		GItem.NumberInfo ninf = find(GItem.NumberInfo.class, info);
+		if(ninf != null)
+		    itemnum = new TexI(Utils.outline2(Text.render(Integer.toString(ninf.itemnum()), Color.WHITE).img, Utils.contrast(Color.WHITE)));
+		numinfo = info;
+	    }
+	} catch(Loading e) {
+	    return(null);
+	}
+	return(itemnum);
+    }
 
     public void draw(GOut g) {
 	try {
@@ -128,8 +146,9 @@ public class WItem extends Widget implements DTarget {
 	    Tex tex = res.layer(Resource.imgc).tex();
 	    drawmain(g, tex);
 	    if(item.num >= 0) {
-		g.chcolor(Color.WHITE);
 		g.atext(Integer.toString(item.num), tex.sz(), 1, 1);
+	    } else if(itemnum() != null) {
+		g.aimage(itemnum(), tex.sz(), 1, 1);
 	    }
 	    if(item.meter > 0) {
 		double a = ((double)item.meter) / 100.0;

@@ -61,6 +61,10 @@ public class GItem extends AWidget {
     public interface ColorInfo {
 	public Color olcol();
     }
+    
+    public interface NumberInfo {
+	public int itemnum();
+    }
 
     public abstract class Tip extends Info {
 	public abstract BufferedImage longtip();
@@ -106,6 +110,18 @@ public class GItem extends AWidget {
 	    g.drawImage(stip, 10, 15, null);
 	    g.dispose();
 	    return(img);
+	}
+    }
+    
+    public class Amount extends Info implements NumberInfo {
+	private final int num;
+	
+	public Amount(int num) {
+	    this.num = num;
+	}
+	
+	public int itemnum() {
+	    return(num);
 	}
     }
     
