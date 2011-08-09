@@ -195,8 +195,14 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 	
     private void savewndstate() {
 	if(prefs == null) {
-	    if(getExtendedState() == NORMAL) {
-		Dimension dim = getSize();
+	    if(getExtendedState() == NORMAL)
+		/* Apparent, getSize attempts to return the "outer
+		 * size" of the window, including WM decorations, even
+		 * though setSize sets the "inner size" of the
+		 * window. Therefore, use the Panel's size instead; it
+		 * ought to correspond to the inner size at all
+		 * times. */{
+		Dimension dim = p.getSize();
 		Utils.setprefc("wndsz", new Coord(dim.width, dim.height));
 	    }
 	    Utils.setprefb("wndmax", (getExtendedState() & MAXIMIZED_BOTH) != 0);
