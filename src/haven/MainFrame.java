@@ -153,8 +153,16 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 	setIconImage(icon);
     }
 
-    public MainFrame(Coord sz) {
+    public MainFrame(Coord isz) {
 	super("Haven and Hearth");
+	Coord sz;
+	if(isz == null) {
+	    sz = Utils.getprefc("wndsz", new Coord(800, 600));
+	    if(sz.x < 640) sz.x = 640;
+	    if(sz.y < 480) sz.y = 480;
+	} else {
+	    sz = isz;
+	}
 	this.g = new ThreadGroup(HackThread.tg(), "Haven client");
 	this.mt = new HackThread(this.g, this, "Haven main thread");
 	p = new HavenPanel(sz.x, sz.y);
@@ -181,6 +189,8 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 		    g.interrupt();
 		}
 	    });
+	if((isz == null) && Utils.getprefb("wndmax", false))
+	    setExtendedState(getExtendedState() | MAXIMIZED_BOTH);
     }
 	
     private void savewndstate() {
@@ -189,6 +199,7 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 		Dimension dim = getSize();
 		Utils.setprefc("wndsz", new Coord(dim.width, dim.height));
 	    }
+	    Utils.setprefb("wndmax", (getExtendedState() & MAXIMIZED_BOTH) != 0);
 	}
     }
 
@@ -275,10 +286,7 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 	    return;
 	}
 	setupres();
-	Coord wndsz = Utils.getprefc("wndsz", new Coord(800, 600));
-	if(wndsz.x < 640) wndsz.x = 640;
-	if(wndsz.y < 480) wndsz.y = 480;
-	MainFrame f = new MainFrame(wndsz);
+	MainFrame f = new MainFrame(null);
 	if(Utils.getprefb("fullscreen", false))
 	    f.setfs();
 	f.mt.start();
