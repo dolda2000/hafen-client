@@ -148,6 +148,42 @@ public class Utils {
 	}
     }
     
+    static boolean getprefb(String prefname, boolean def) {
+	try {
+	    return(prefs().getBoolean(prefname, def));
+	} catch(SecurityException e) {
+	    return(def);
+	}
+    }
+    
+    static void setprefb(String prefname, boolean val) {
+	try {
+	    prefs().putBoolean(prefname, val);
+	} catch(SecurityException e) {
+	}
+    }
+
+    static Coord getprefc(String prefname, Coord def) {
+	try {
+	    String val = prefs().get(prefname, null);
+	    if(val == null)
+		return(def);
+	    int x = val.indexOf('x');
+	    if(x < 0)
+		return(def);
+	    return(new Coord(Integer.parseInt(val.substring(0, x)), Integer.parseInt(val.substring(x + 1))));
+	} catch(SecurityException e) {
+	    return(def);
+	}
+    }
+    
+    static void setprefc(String prefname, Coord val) {
+	try {
+	    prefs().put(prefname, val.x + "x" + val.y);
+	} catch(SecurityException e) {
+	}
+    }
+
     static byte[] getprefb(String prefname, byte[] def) {
 	try {
 	    return(prefs().getByteArray(prefname, def));
