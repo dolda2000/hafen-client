@@ -60,6 +60,14 @@ public class Bootstrap implements UI.Receiver {
 	initcookie = cookie;
     }
 	
+    private String getpref(String name, String def) {
+	return(Utils.getpref(name + "@" + hostname, def));
+    }
+    
+    private void setpref(String name, String val) {
+	Utils.setpref(name + "@" + hostname, val);
+    }
+
     public Session run(HavenPanel hp) throws InterruptedException {
 	ui = hp.newui(null);
 	ui.setreceiver(this);
@@ -68,9 +76,9 @@ public class Bootstrap implements UI.Receiver {
 	boolean savepw = false;
 	Utils.setpref("password", "");
 	byte[] token = null;
-	if(Utils.getpref("savedtoken", "").length() == 64)
-	    token = Utils.hex2byte(Utils.getpref("savedtoken", null));
-	username = Utils.getpref("username", "");
+	if(getpref("savedtoken", "").length() == 64)
+	    token = Utils.hex2byte(getpref("savedtoken", null));
+	username = getpref("username", "");
 	String authserver = (Config.authserv == null)?hostname:Config.authserv;
 	int authport = Config.authport;
 	retry: do {
@@ -93,7 +101,7 @@ public class Bootstrap implements UI.Receiver {
 			    break;
 			} else if(msg.name == "forget") {
 			    token = null;
-			    Utils.setpref("savedtoken", "");
+			    setpref("savedtoken", "");
 			    continue retry;
 			}
 		    }
@@ -105,7 +113,7 @@ public class Bootstrap implements UI.Receiver {
 		    if(!auth.trytoken(token)) {
 			auth.close();
 			token = null;
-			Utils.setpref("savedtoken", "");
+			setpref("savedtoken", "");
 			ui.uimsg(1, "error", "Invalid save");
 			continue retry;
 		    }
@@ -155,7 +163,7 @@ public class Bootstrap implements UI.Receiver {
 		    cookie = auth.cookie;
 		    if(savepw) {
 			if(auth.gettoken())
-			    Utils.setpref("savedtoken", Utils.byte2hex(auth.token));
+			    setpref("savedtoken", Utils.byte2hex(auth.token));
 		    }
 		} catch(java.io.IOException e) {
 		    ui.uimsg(1, "error", e.getMessage());
@@ -177,7 +185,7 @@ public class Bootstrap implements UI.Receiver {
 	    Thread.sleep(100);
 	    while(true) {
 		if(sess.state == "") {
-		    Utils.setpref("username", username);
+		    setpref("username", username);
 		    ui.destroy(1);
 		    break retry;
 		} else if(sess.connfailed != 0) {
