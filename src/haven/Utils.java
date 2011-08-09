@@ -127,40 +127,38 @@ public class Utils {
 	g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);		
     }
 	
-    static synchronized String getpref(String prefname, String def) {
+    static synchronized Preferences prefs() {
+	if(prefs == null)
+	    prefs = Preferences.userNodeForPackage(Utils.class);
+	return(prefs);
+    }
+
+    static String getpref(String prefname, String def) {
 	try {
-	    if(prefs == null)
-		prefs = Preferences.userNodeForPackage(Utils.class);
-	    return(prefs.get(prefname, def));
+	    return(prefs().get(prefname, def));
 	} catch(SecurityException e) {
 	    return(def);
 	}
     }
 	
-    static synchronized void setpref(String prefname, String val) {
+    static void setpref(String prefname, String val) {
 	try {
-	    if(prefs == null)
-		prefs = Preferences.userNodeForPackage(Utils.class);
-	    prefs.put(prefname, val);
+	    prefs().put(prefname, val);
 	} catch(SecurityException e) {
 	}
     }
     
-    static synchronized byte[] getprefb(String prefname, byte[] def) {
+    static byte[] getprefb(String prefname, byte[] def) {
 	try {
-	    if(prefs == null)
-		prefs = Preferences.userNodeForPackage(Utils.class);
-	    return(prefs.getByteArray(prefname, def));
+	    return(prefs().getByteArray(prefname, def));
 	} catch(SecurityException e) {
 	    return(def);
 	}
     }
 	
-    static synchronized void setprefb(String prefname, byte[] val) {
+    static void setprefb(String prefname, byte[] val) {
 	try {
-	    if(prefs == null)
-		prefs = Preferences.userNodeForPackage(Utils.class);
-	    prefs.putByteArray(prefname, val);
+	    prefs().putByteArray(prefname, val);
 	} catch(SecurityException e) {
 	}
     }
