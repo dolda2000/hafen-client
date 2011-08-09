@@ -128,8 +128,12 @@ public class Utils {
     }
 	
     static synchronized Preferences prefs() {
-	if(prefs == null)
-	    prefs = Preferences.userNodeForPackage(Utils.class);
+	if(prefs == null) {
+	    Preferences node = Preferences.userNodeForPackage(Utils.class);
+	    if(Config.prefspec != null)
+		node = node.node(Config.prefspec);
+	    prefs = node;
+	}
 	return(prefs);
     }
 
