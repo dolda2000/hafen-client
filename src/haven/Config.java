@@ -31,60 +31,56 @@ import java.io.PrintStream;
 import static haven.Utils.getprop;
 
 public class Config {
-    public static byte[] authck;
-    public static String authuser;
-    public static String authserv;
-    public static String defserv;
-    public static URL resurl, mapurl;
-    public static boolean fullscreen;
-    public static boolean dbtext;
-    public static boolean bounddb;
-    public static boolean profile;
-    public static boolean nolocalres, fscache;
-    public static String resdir;
-    public static boolean nopreload;
-    public static String loadwaited, allused;
+    public static String authuser = getprop("haven.authuser", null);
+    public static String authserv = getprop("haven.authserv", null);
+    public static String defserv = getprop("haven.defserv", null);
+    public static URL resurl = geturl("haven.resurl", "");
+    public static URL mapurl = geturl("haven.mapurl", "");
+    public static boolean fullscreen = getprop("haven.fullscreen", "off").equals("on");
+    public static boolean dbtext = getprop("haven.dbtext", "off").equals("on");
+    public static boolean bounddb = getprop("haven.bounddb", "off").equals("on");
+    public static boolean profile = getprop("haven.profile", "off").equals("on");
+    public static boolean nolocalres = getprop("haven.nolocalres", "").equals("yesimsure");
+    public static boolean fscache = getprop("haven.fscache", "on").equals("on");
+    public static String resdir = getprop("haven.resdir", null);
+    public static boolean nopreload = getprop("haven.nopreload", "no").equals("yes");
+    public static String loadwaited = getprop("haven.loadwaited", null);
+    public static String allused = getprop("haven.allused", null);
+    public static boolean wndlock = getprop("haven.wndlock", "on").equals("on");
+    public static int mainport = getint("haven.mainport", 1870);
+    public static int authport = getint("haven.authport", 1871);
+    public static byte[] authck = null;
     public static Coord wndsz = new Coord(800, 600);
-    public static boolean wndlock = true;
-    public static int mainport = 1870, authport = 1871;
     
     static {
+	String p;
+	if((p = getprop("haven.authck", null)) != null)
+	    authck = Utils.hex2byte(p);
+	if((p = getprop("haven.wndsz", null)) != null) {
+	    int x = p.indexOf("x");
+	    if(x >= 0)
+		wndsz = new Coord(Integer.parseInt(p.substring(0, x)), Integer.parseInt(p.substring(x + 1)));
+	}
+    }
+    
+    private static int getint(String name, int def) {
+	String val = getprop(name, null);
+	if(val == null)
+	    return(def);
+	return(Integer.parseInt(val));
+    }
+
+    private static URL geturl(String name, String def) {
+	String val = getprop(name, def);
+	if(val.equals(""))
+	    return(null);
 	try {
-	    String p;
-	    if((p = getprop("haven.authck", null)) != null)
-		authck = Utils.hex2byte(p);
-	    authuser = getprop("haven.authuser", null);
-	    authserv = getprop("haven.authserv", null);
-	    defserv = getprop("haven.defserv", null);
-	    if((p = getprop("haven.mainport", null)) != null)
-		mainport = Integer.parseInt(p);
-	    if((p = getprop("haven.authport", null)) != null)
-		authport = Integer.parseInt(p);
-	    if(!(p = getprop("haven.resurl", "")).equals(""))
-		resurl = new URL(p);
-	    if(!(p = getprop("haven.mapurl", "")).equals(""))
-		mapurl = new URL(p);
-	    fullscreen = getprop("haven.fullscreen", "off").equals("on");
-	    if((p = getprop("haven.wndsz", null)) != null) {
-		int x = p.indexOf("x");
-		if(x >= 0)
-		    wndsz = new Coord(Integer.parseInt(p.substring(0, x)), Integer.parseInt(p.substring(x + 1)));
-	    }
-	    wndlock = getprop("haven.wndlock", "on").equals("on");
-	    loadwaited = getprop("haven.loadwaited", null);
-	    allused = getprop("haven.allused", null);
-	    dbtext = getprop("haven.dbtext", "off").equals("on");
-	    bounddb = getprop("haven.bounddb", "off").equals("on");
-	    profile = getprop("haven.profile", "off").equals("on");
-	    nolocalres = getprop("haven.nolocalres", "").equals("yesimsure");
-	    fscache = getprop("haven.fscache", "on").equals("on");
-	    resdir = getprop("haven.resdir", null);
-	    nopreload = getprop("haven.nopreload", "no").equals("yes");
+	    return(new URL(val));
 	} catch(java.net.MalformedURLException e) {
 	    throw(new RuntimeException(e));
 	}
     }
-    
+
     private static void usage(PrintStream out) {
 	out.println("usage: haven.jar [-hdfPL] [-s WxH] [-u USER] [-C HEXCOOKIE] [-r RESDIR] [-U RESURL] [-A AUTHSERV[:PORT]] [SERVER[:PORT]]");
     }
