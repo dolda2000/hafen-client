@@ -241,12 +241,12 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
     }
 
     private static void main2(String[] args) {
+	Config.cmdline(args);
 	try {
 	    javabughack();
 	} catch(InterruptedException e) {
 	    return;
 	}
-	Config.cmdline(args);
 	setupres();
 	MainFrame f = new MainFrame(Config.wndsz);
 	if(Config.fullscreen)
