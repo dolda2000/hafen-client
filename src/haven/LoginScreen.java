@@ -26,6 +26,8 @@
 
 package haven;
 
+import java.awt.event.KeyEvent;
+
 public class LoginScreen extends Widget {
     Login cur;
     Text error;
@@ -93,6 +95,14 @@ public class LoginScreen extends Widget {
 		return(true);
 	    }
 	}
+
+	public boolean globtype(char k, KeyEvent ev) {
+	    if((k == 'r') && ((ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0)) {
+		savepass.set(!savepass.a);
+		return(true);
+	    }
+	    return(false);
+	}
     }
 	
     private class Tokenbox extends Login {
@@ -124,6 +134,14 @@ public class LoginScreen extends Widget {
 	public void draw(GOut g) {
 	    g.image(label.tex(), new Coord((sz.x / 2) - (label.sz().x / 2), 0));
 	    super.draw(g);
+	}
+	
+	public boolean globtype(char k, KeyEvent ev) {
+	    if((k == 'f') && ((ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0)) {
+		LoginScreen.this.wdgmsg("forget");
+		return(true);
+	    }
+	    return(false);
 	}
     }
 
@@ -203,7 +221,7 @@ public class LoginScreen extends Widget {
 	    g.image(progress.tex(), new Coord(420 - (progress.sz().x / 2), 350));
     }
 	
-    public boolean type(char k, java.awt.event.KeyEvent ev) {
+    public boolean type(char k, KeyEvent ev) {
 	if(k == 10) {
 	    if((cur != null) && cur.enter())
 		wdgmsg("login", cur.data());
