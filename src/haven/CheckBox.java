@@ -54,6 +54,11 @@ public class CheckBox extends Widget {
 	changed(a);
 	return(true);
     }
+    
+    public void set(boolean a) {
+	this.a = a;
+	changed(a);
+    }
 
     public void draw(GOut g) {
 	g.image(lbl.tex(), new Coord(box.sz().x, box.sz().y - lbl.sz().y));
