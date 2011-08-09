@@ -218,9 +218,7 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 	try {
 	    try {
 		while(true) {
-		    Bootstrap bill = new Bootstrap();
-		    if(Config.defserv != null)
-			bill.setaddr(Config.defserv);
+		    Bootstrap bill = new Bootstrap(Config.defserv, Config.mainport);
 		    if((Config.authuser != null) && (Config.authck != null)) {
 			bill.setinitcookie(Config.authuser, Config.authck);
 			Config.authck = null;

@@ -32,7 +32,8 @@ import java.util.*;
 public class Bootstrap implements UI.Receiver {
     UI ui;
     Session sess;
-    String address;
+    String hostname;
+    int port;
     Queue<Message> msgs = new LinkedList<Message>();
     String inituser = null;
     byte[] initcookie = null;
@@ -49,17 +50,14 @@ public class Bootstrap implements UI.Receiver {
 	}
     }
 	
-    public Bootstrap() {
-	address = "127.0.0.1";
+    public Bootstrap(String hostname, int port) {
+	this.hostname = hostname;
+	this.port = port;
     }
     
     public void setinitcookie(String username, byte[] cookie) {
 	inituser = username;
 	initcookie = cookie;
-    }
-	
-    public void setaddr(String addr) {
-	address = addr;
     }
 	
     public Session run(HavenPanel hp) throws InterruptedException {
@@ -73,7 +71,8 @@ public class Bootstrap implements UI.Receiver {
 	if(Utils.getpref("savedtoken", "").length() == 64)
 	    token = Utils.hex2byte(Utils.getpref("savedtoken", null));
 	username = Utils.getpref("username", "");
-	String authserver = (Config.authserv == null)?address:Config.authserv;
+	String authserver = (Config.authserv == null)?hostname:Config.authserv;
+	int authport = Config.authport;
 	retry: do {
 	    byte[] cookie;
 	    if(initcookie != null) {
@@ -102,7 +101,7 @@ public class Bootstrap implements UI.Receiver {
 		ui.uimsg(1, "prg", "Authenticating...");
 		AuthClient auth = null;
 		try {
-		    auth = new AuthClient(authserver, username);
+		    auth = new AuthClient(authserver, authport, username);
 		    if(!auth.trytoken(token)) {
 			auth.close();
 			token = null;
@@ -142,7 +141,7 @@ public class Bootstrap implements UI.Receiver {
 		AuthClient auth = null;
 		try {
 		    try {
-			auth = new AuthClient(authserver, username);
+			auth = new AuthClient(authserver, authport, username);
 		    } catch(UnknownHostException e) {
 			ui.uimsg(1, "error", "Could not locate server");
 			continue retry;
@@ -170,7 +169,7 @@ public class Bootstrap implements UI.Receiver {
 	    }
 	    ui.uimsg(1, "prg", "Connecting...");
 	    try {
-		sess = new Session(InetAddress.getByName(address), username, cookie);
+		sess = new Session(new InetSocketAddress(InetAddress.getByName(hostname), port), username, cookie);
 	    } catch(UnknownHostException e) {
 		ui.uimsg(1, "error", "Could not locate server");
 		continue retry;

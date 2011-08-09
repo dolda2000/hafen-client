@@ -71,7 +71,7 @@ public class Session {
     static final int ackthresh = 30;
 	
     DatagramSocket sk;
-    InetAddress server;
+    SocketAddress server;
     Thread rworker, sworker, ticker;
     public int connfailed = 0;
     public String state = "conn";
@@ -523,7 +523,7 @@ public class Session {
 		    } catch(IOException e) {
 			throw(new RuntimeException(e));
 		    }
-		    if(!p.getAddress().equals(server))
+		    if(!p.getSocketAddress().equals(server))
 			continue;
 		    Message msg = new Message(p.getData()[0], p.getData(), 1, p.getLength() - 1);
 		    if(msg.type == MSG_SESS) {
@@ -740,7 +740,7 @@ public class Session {
 	}
     }
 	
-    public Session(InetAddress server, String username, byte[] cookie) {
+    public Session(SocketAddress server, String username, byte[] cookie) {
 	this.server = server;
 	this.username = username;
 	this.cookie = cookie;
@@ -803,7 +803,7 @@ public class Session {
 	
     public void sendmsg(byte[] msg) {
 	try {
-	    sk.send(new DatagramPacket(msg, msg.length, server, Config.mainport));
+	    sk.send(new DatagramPacket(msg, msg.length, server));
 	} catch(IOException e) {
 	}
     }

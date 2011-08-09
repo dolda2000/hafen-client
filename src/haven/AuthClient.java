@@ -50,8 +50,8 @@ public class AuthClient {
 	}
     }
 
-    public AuthClient(String host, String username) throws IOException {
-	sk = ssl.connect(host, Config.authport);
+    public AuthClient(String host, int port, String username) throws IOException {
+	sk = ssl.connect(host, port);
 	skin = sk.getInputStream();
 	skout = sk.getOutputStream();
 	binduser(username);
@@ -149,7 +149,7 @@ public class AuthClient {
     }
     
     public static void main(String[] args) throws Exception {
-	AuthClient test = new AuthClient("127.0.0.1", args[0]);
+	AuthClient test = new AuthClient("127.0.0.1", 1871, args[0]);
 	System.out.println(test.trypasswd(args[1]));
 	if(test.cookie != null) {
 	    for(byte b : test.cookie)

@@ -151,10 +151,9 @@ public class HavenApplet extends Applet {
 		    ui.start();
 		    try {
 			while(true) {
-			    Bootstrap bill = new Bootstrap();
+			    Bootstrap bill = new Bootstrap(getCodeBase().getHost(), Config.mainport);
 			    if((getParameter("username") != null) && (getParameter("authcookie") != null))
 				bill.setinitcookie(getParameter("username"), Utils.hex2byte(getParameter("authcookie")));
-			    bill.setaddr(getCodeBase().getHost());
 			    Session sess = bill.run(h);
 			    RemoteUI rui = new RemoteUI(sess);
 			    rui.run(h.newui(sess));

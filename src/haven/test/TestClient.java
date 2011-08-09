@@ -29,10 +29,11 @@ package haven.test;
 import haven.*;
 import java.util.*;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public class TestClient implements Runnable {
     public Session sess;
-    public InetAddress addr;
+    public InetSocketAddress addr;
     public String user;
     public byte[] cookie;
     public ThreadGroup tg;
@@ -44,7 +45,7 @@ public class TestClient implements Runnable {
     
     public TestClient(String user) {
 	try {
-	    addr = InetAddress.getByName("localhost");
+	    addr = new InetSocketAddress(InetAddress.getByName("localhost"), 1870);
 	} catch(java.net.UnknownHostException e) {
 	    throw(new RuntimeException("localhost not known"));
 	}
