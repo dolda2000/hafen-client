@@ -36,7 +36,6 @@ public class Config {
     public static String defserv = getprop("haven.defserv", null);
     public static URL resurl = geturl("haven.resurl", "");
     public static URL mapurl = geturl("haven.mapurl", "");
-    public static boolean fullscreen = getprop("haven.fullscreen", "off").equals("on");
     public static boolean dbtext = getprop("haven.dbtext", "off").equals("on");
     public static boolean bounddb = getprop("haven.bounddb", "off").equals("on");
     public static boolean profile = getprop("haven.profile", "off").equals("on");
@@ -46,21 +45,14 @@ public class Config {
     public static boolean nopreload = getprop("haven.nopreload", "no").equals("yes");
     public static String loadwaited = getprop("haven.loadwaited", null);
     public static String allused = getprop("haven.allused", null);
-    public static boolean wndlock = getprop("haven.wndlock", "on").equals("on");
     public static int mainport = getint("haven.mainport", 1870);
     public static int authport = getint("haven.authport", 1871);
     public static byte[] authck = null;
-    public static Coord wndsz = new Coord(800, 600);
     
     static {
 	String p;
 	if((p = getprop("haven.authck", null)) != null)
 	    authck = Utils.hex2byte(p);
-	if((p = getprop("haven.wndsz", null)) != null) {
-	    int x = p.indexOf("x");
-	    if(x >= 0)
-		wndsz = new Coord(Integer.parseInt(p.substring(0, x)), Integer.parseInt(p.substring(x + 1)));
-	}
     }
     
     private static int getint(String name, int def) {
@@ -86,7 +78,7 @@ public class Config {
     }
 
     public static void cmdline(String[] args) {
-	PosixArgs opt = PosixArgs.getopt(args, "hdPU:fr:A:u:C:Ls:");
+	PosixArgs opt = PosixArgs.getopt(args, "hdPU:r:A:u:C:");
 	if(opt == null) {
 	    usage(System.err);
 	    System.exit(1);
@@ -102,9 +94,6 @@ public class Config {
 		break;
 	    case 'P':
 		profile = true;
-		break;
-	    case 'f':
-		fullscreen = true;
 		break;
 	    case 'r':
 		resdir = opt.arg;
@@ -131,16 +120,6 @@ public class Config {
 		break;
 	    case 'C':
 		authck = Utils.hex2byte(opt.arg);
-		break;
-	    case 's':
-		{
-		    int x = opt.arg.indexOf("x");
-		    if(x >= 0)
-			wndsz = new Coord(Integer.parseInt(opt.arg.substring(0, x)), Integer.parseInt(opt.arg.substring(x + 1)));
-		}
-		break;
-	    case 'L':
-		wndlock = false;
 		break;
 	    }
 	}
