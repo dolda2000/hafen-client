@@ -305,7 +305,9 @@ public class ChatUI extends Widget {
 		}
 	    } else if(msg == "err") {
 		String err = (String)args[0];
-		append(new SimpleMessage(err, Color.RED, iw()));
+		Message cmsg = new SimpleMessage(err, Color.RED, iw());
+		append(cmsg);
+		notify(cmsg);
 	    }
 	}
 	
