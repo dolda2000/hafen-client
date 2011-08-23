@@ -203,6 +203,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		g.image(lasterr.tex(), new Coord(15, sz.y - 20));
 	    }
 	}
+	if(!chat.expanded)
+	    chat.drawsmall(g, new Coord(135, sz.y), 50);
     }
 
     public void tick(double dt) {

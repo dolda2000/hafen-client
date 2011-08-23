@@ -37,7 +37,7 @@ public class ChatUI extends Widget {
     public static final int selw = 100;
     public Channel sel = null;
     private final Selector chansel;
-    private int state = 0;
+    public boolean expanded = false;
     private Coord base;
     private QuickLine qline = null;
     private final LinkedList<Notification> notifs = new LinkedList<Notification>();
@@ -458,7 +458,7 @@ public class ChatUI extends Widget {
     public void select(Channel chan) {
 	Channel prev = sel;
 	sel = chan;
-	if(state != 0) {
+	if(expanded) {
 	    if(prev != null)
 		prev.hide();
 	    sel.show();
@@ -481,40 +481,37 @@ public class ChatUI extends Widget {
 
     private Text.Line rqline = null;
     private int rqpre;
-    public void draw(GOut g) {
-	super.draw(g);
-	if(state == 0) {
-	    int y;
-	    if(qline != null) {
-		if((rqline == null) || !rqline.text.equals(qline.line)) {
-		    String pre = String.format("%s> ", qline.chan.name());
-		    rqline = qfnd.render(pre + qline.line);
-		    rqpre = pre.length();
-		}
-		y = sz.y - 20;
-		g.image(rqline.tex(), new Coord(10, sz.y - 20));
-		int lx = rqline.advance(qline.point + rqpre);
-		g.line(new Coord(lx + 11, sz.y - 18), new Coord(lx + 11, sz.y - 6), 1);
-	    } else {
-		y = sz.y - 5;
+    public void drawsmall(GOut g, Coord br, int h) {
+	Coord c;
+	if(qline != null) {
+	    if((rqline == null) || !rqline.text.equals(qline.line)) {
+		String pre = String.format("%s> ", qline.chan.name());
+		rqline = qfnd.render(pre + qline.line);
+		rqpre = pre.length();
 	    }
-	    long now = System.currentTimeMillis();
-	    synchronized(notifs) {
-		for(Iterator<Notification> i = notifs.iterator(); i.hasNext();) {
-		    Notification n = i.next();
-		    if(now - n.time > 5000) {
-			i.remove();
-			continue;
-		    }
-		    if((y -= n.msg.sz().y) < 0)
-			break;
-		    g.image(n.chnm.tex(), new Coord(10, y), Coord.z, new Coord(selw - 10, sz.y));
-		    g.image(n.msg.tex(), new Coord(selw, y));
+	    c = br.sub(0, 20);
+	    g.image(rqline.tex(), c);
+	    int lx = rqline.advance(qline.point + rqpre);
+	    g.line(new Coord(br.x + lx + 1, br.y - 18), new Coord(br.x + lx + 1, br.y - 6), 1);
+	} else {
+	    c = br.sub(0, 5);
+	}
+	long now = System.currentTimeMillis();
+	synchronized(notifs) {
+	    for(Iterator<Notification> i = notifs.iterator(); i.hasNext();) {
+		Notification n = i.next();
+		if(now - n.time > 5000) {
+		    i.remove();
+		    continue;
 		}
+		if((c.y -= n.msg.sz().y) < br.y - h)
+		    break;
+		g.image(n.chnm.tex(), c, br.sub(0, h), br.add(selw - 10, 0));
+		g.image(n.msg.tex(), c.add(selw, 0));
 	    }
 	}
     }
-    
+
     public void notify(Channel chan, Channel.Message msg) {
 	synchronized(notifs) {
 	    notifs.addFirst(new Notification(chan, msg));
@@ -526,7 +523,7 @@ public class ChatUI extends Widget {
 	    Channel chan = (Channel)w;
 	    select(chan);
 	    chansel.add(chan);
-	    if(state == 0)
+	    if(!expanded)
 		chan.hide();
 	}
     }
@@ -562,7 +559,7 @@ public class ChatUI extends Widget {
 	if(sel != null)
 	    sel.show();
 	chansel.show();
-	state = 1;
+	expanded = true;
     }
     
     private void contract() {
@@ -571,7 +568,7 @@ public class ChatUI extends Widget {
 	if(sel != null)
 	    sel.hide();
 	chansel.hide();
-	state = 0;
+	expanded = false;
     }
 
     private class QuickLine extends LineEdit {
@@ -603,8 +600,8 @@ public class ChatUI extends Widget {
     }
 
     public boolean keydown(KeyEvent ev) {
+	boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
 	if(qline != null) {
-	    boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
 	    if(M && (ev.getKeyCode() == KeyEvent.VK_UP)) {
 		Channel prev = this.sel;
 		while(chansel.up()) {
@@ -633,7 +630,6 @@ public class ChatUI extends Widget {
 	    qline.key(ev);
 	    return(true);
 	} else {
-	    boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
 	    if(M && (ev.getKeyCode() == KeyEvent.VK_UP)) {
 		chansel.up();
 		return(true);
@@ -666,13 +662,13 @@ public class ChatUI extends Widget {
 
     public boolean globtype(char key, KeyEvent ev) {
 	if(key == 3) {
-	    if(state == 0) {
+	    if(!expanded) {
 		expand();
 	    }
 	    parent.setfocus(this);
 	    return(true);
 	} else if(key == 10) {
-	    if((state == 0) && (sel instanceof EntryChannel)) {
+	    if(!expanded && (sel instanceof EntryChannel)) {
 		ui.grabkeys(this);
 		qline = new QuickLine((EntryChannel)sel);
 		return(true);
