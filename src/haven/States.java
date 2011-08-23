@@ -99,6 +99,33 @@ public abstract class States extends GLState {
 	    }
 	};
     
+    public static final Slot<Coverage> coverage = new Slot<Coverage>(Coverage.class, PView.proj);
+    public static class Coverage extends GLState {
+	public final float cov;
+	public final boolean inv;
+	
+	public Coverage(float cov, boolean inv) {
+	    this.cov = cov;
+	    this.inv = inv;
+	}
+	
+	public void apply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glEnable(GL.GL_SAMPLE_COVERAGE);
+	    gl.glSampleCoverage(cov, inv);
+	}
+	
+	public void unapply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glSampleCoverage(1.0f, false);
+	    gl.glDisable(GL.GL_SAMPLE_COVERAGE);
+	}
+	
+	public void prep(Buffer buf) {
+	    buf.put(coverage, this);
+	}
+    };
+    
     public static final StandAlone presdepth = new StandAlone(PView.proj) {
 	    public void apply(GOut g) {
 		g.gl.glDepthMask(false);
