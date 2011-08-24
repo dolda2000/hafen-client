@@ -29,8 +29,9 @@ package haven;
 import java.util.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
+import static haven.Inventory.invsq;
 
-public class GameUI extends ConsoleHost implements Console.Directory {
+public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.Directory {
     public final String chrid;
     public final long plid;
     public MenuGrid menu;
@@ -48,6 +49,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public ChatUI.Channel syslog;
     public int prog = -1;
     private boolean afk = false;
+    @SuppressWarnings("unchecked")
+    public Indir<Resource>[] belt = new Indir[144];
+    public int curbelt = 0;
+    public int beltkeys[] = {KeyEvent.VK_F1, KeyEvent.VK_F2, KeyEvent.VK_F3, KeyEvent.VK_F4,
+			     KeyEvent.VK_F5, KeyEvent.VK_F6, KeyEvent.VK_F7, KeyEvent.VK_F8,
+			     KeyEvent.VK_F9, KeyEvent.VK_F10, KeyEvent.VK_F11, KeyEvent.VK_F12};
     
     static {
 	addtype("gameui", new WidgetFactory() {
@@ -183,6 +190,26 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
+    private Coord beltc(int i) {
+	return(new Coord(/* ((sz.x - (invsq.sz().x * 12) - (2 * 11)) / 2) */
+			 135
+			 + ((invsq.sz().x + 2) * i)
+			 + (4 * (i / 4)),
+			 sz.y - invsq.sz().y - 2));
+    }
+    
+    private int beltslot(Coord c) {
+	for(int i = 0; i < 12; i++) {
+	    if(c.isect(beltc(i), invsq.sz()))
+		return(i + (curbelt * 12));
+	}
+	return(-1);
+    }
+    
+    private boolean showbeltp() {
+	return(!chat.expanded);
+    }
+
     static Text.Foundry progf = new Text.Foundry(new java.awt.Font("serif", java.awt.Font.BOLD, 24));
     static {progf.aa = true;}
     Text progt = null;
@@ -194,19 +221,38 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		progt = progf.render(progs);
 	    g.aimage(progt.tex(), new Coord(sz.x / 2, (sz.y * 4) / 10), 0.5, 0.5);
 	}
+	int by = sz.y;
+	if(chat.expanded)
+	    by -= chat.sz.y;
+	if(showbeltp()) {
+	    for(int i = 0; i < 12; i++) {
+		int slot = i + (curbelt * 12);
+		Coord c = beltc(i);
+		g.image(invsq, beltc(i));
+		try {
+		    if(belt[slot] != null)
+			g.image(belt[slot].get().layer(Resource.imgc).tex(), c.add(1, 1));
+		} catch(Loading e) {}
+		g.chcolor(156, 180, 158, 255);
+		FastText.aprintf(g, c.add(invsq.sz()), 1, 1, "F%d", i + 1);
+		g.chcolor();
+	    }
+	    by -= invsq.sz().y;
+	}
 	if(cmdline != null) {
-	    drawcmd(g, new Coord(15, sz.y - 20));
+	    drawcmd(g, new Coord(135, by -= 20));
 	} else if(lasterr != null) {
 	    if((System.currentTimeMillis() - errtime) > 3000) {
 		lasterr = null;
 	    } else {
-		g.image(lasterr.tex(), new Coord(15, sz.y - 20));
+		g.image(lasterr.tex(), new Coord(135, by -= 20));
 	    }
 	}
-	if(!chat.expanded)
-	    chat.drawsmall(g, new Coord(135, sz.y), 50);
+	if(!chat.expanded) {
+	    chat.drawsmall(g, new Coord(135, by), 50);
+	}
     }
-
+    
     public void tick(double dt) {
 	super.tick(dt);
 	if(!afk && (System.currentTimeMillis() - ui.lastevent > 300000)) {
@@ -228,6 +274,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    else
 		prog = -1;
 	} else if(msg == "setbelt") {
+	    int slot = (Integer)args[0];
+	    if(args.length < 2) {
+		belt[slot] = null;
+	    } else {
+		belt[slot] = ui.sess.getres((Integer)args[1]);
+	    }
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -255,6 +307,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public boolean globtype(char key, KeyEvent ev) {
+	boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
 	if(key == ':') {
 	    entercmd();
 	    return(true);
@@ -280,7 +333,57 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    wdgmsg("atkm");
 	    return(true);
 	}
+	for(int i = 0; i < beltkeys.length; i++) {
+	    if(ev.getKeyCode() == beltkeys[i]) {
+		if(M) {
+		    curbelt = i;
+		    return(true);
+		} else {
+		    wdgmsg("belt", i + (curbelt * 12), 1, ui.modflags());
+		    return(true);
+		}
+	    }
+	}
 	return(super.globtype(key, ev));
+    }
+    
+    public boolean mousedown(Coord c, int button) {
+	int slot = beltslot(c);
+	if(slot != -1) {
+	    if(button == 1)
+		wdgmsg("belt", slot, 1, ui.modflags());
+	    if(button == 3)
+		wdgmsg("setbelt", slot, 1);
+	    return(true);
+	}
+	return(super.mousedown(c, button));
+    }
+
+    public boolean drop(Coord cc, Coord ul) {
+	int slot = beltslot(cc);
+	if(slot != -1) {
+	    wdgmsg("setbelt", slot, 0);
+	    return(true);
+	}
+	return(false);
+    }
+    
+    public boolean iteminteract(Coord cc, Coord ul) {
+	return(false);
+    }
+
+    public boolean dropthing(Coord c, Object thing) {
+	int slot = beltslot(c);
+	if(slot != -1) {
+	    if(thing instanceof Resource) {
+		Resource res = (Resource)thing;
+		if(res.layer(Resource.action) != null) {
+		    wdgmsg("setbelt", slot, res.name);
+		    return(true);
+		}
+	    }
+	}
+	return(false);
     }
     
     public void resize(Coord sz) {
