@@ -42,6 +42,10 @@ public class ItemDrag extends WItem {
     }
 
     public boolean dropon(Widget w, Coord c) {
+	if(w instanceof DTarget) {
+	    if(((DTarget)w).drop(c, c.add(doff.inv())))
+		return(true);
+	}
 	for(Widget wdg = w.lchild; wdg != null; wdg = wdg.prev) {
 	    if(wdg == this)
 		continue;
@@ -51,14 +55,14 @@ public class ItemDrag extends WItem {
 		    return(true);
 	    }
 	}
-	if(w instanceof DTarget) {
-	    if(((DTarget)w).drop(c, c.add(doff.inv())))
-		return(true);
-	}
 	return(false);
     }
 	
     public boolean interact(Widget w, Coord c) {
+	if(w instanceof DTarget) {
+	    if(((DTarget)w).iteminteract(c, c.add(doff.inv())))
+		return(true);
+	}
 	for(Widget wdg = w.lchild; wdg != null; wdg = wdg.prev) {
 	    if(wdg == this)
 		continue;
@@ -67,10 +71,6 @@ public class ItemDrag extends WItem {
 		if(interact(wdg, c.add(cc.inv())))
 		    return(true);
 	    }
-	}
-	if(w instanceof DTarget) {
-	    if(((DTarget)w).iteminteract(c, c.add(doff.inv())))
-		return(true);
 	}
 	return(false);
     }
