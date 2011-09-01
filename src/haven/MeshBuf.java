@@ -154,4 +154,8 @@ public class MeshBuf {
 	}
 	return(new FastMesh(this.vbuf, idx));
     }
+    
+    public boolean emptyp() {
+	return(f.isEmpty());
+    }
 }

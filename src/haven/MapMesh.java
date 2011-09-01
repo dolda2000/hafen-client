@@ -35,6 +35,8 @@ public class MapMesh implements Rendered {
     public final MCache map;
     private Map<Class<? extends Surface>, Surface> surfmap = new HashMap<Class<? extends Surface>, Surface>();
     private Map<Tex, GLState> texmap = new HashMap<Tex, GLState>();
+    private Map<GLState, MeshBuf> modbuf = new HashMap<GLState, MeshBuf>();
+    private List<Rendered> extras = new ArrayList<Rendered>();
     private List<Layer> layers;
     private float[] zmap;
 
@@ -270,6 +272,28 @@ public class MapMesh implements Rendered {
     public Surface gnd() {
 	return(surf(Surface.class));
     }
+    
+    public <T extends MeshBuf> T model(GLState st, Class<T> init) {
+	MeshBuf ret = modbuf.get(st);
+	if(ret == null) {
+	    try {
+		java.lang.reflect.Constructor<T> c = init.getConstructor();
+		ret = c.newInstance();
+		modbuf.put(st, ret);
+	    } catch(NoSuchMethodException e) {
+		throw(new RuntimeException(e));
+	    } catch(InstantiationException e) {
+		throw(new RuntimeException(e));
+	    } catch(IllegalAccessException e) {
+		throw(new RuntimeException(e));
+	    } catch(java.lang.reflect.InvocationTargetException e) {
+		if(e.getCause() instanceof RuntimeException)
+		    throw((RuntimeException)e.getCause());
+		throw(new RuntimeException(e));
+	    }
+	}
+	return(init.cast(ret));
+    }
 
     public static MapMesh build(MCache mc, Random rnd, Coord ul, Coord sz) {
 	MapMesh m = new MapMesh(mc, ul, sz);
@@ -300,6 +324,10 @@ public class MapMesh implements Rendered {
 		    return(a.z - b.z);
 		}
 	    });
+	for(Map.Entry<GLState, MeshBuf> mod : m.modbuf.entrySet()) {
+	    if(!mod.getValue().emptyp())
+		m.extras.add(mod.getKey().apply(mod.getValue().mkmesh()));
+	}
 	
 	Surface g = m.gnd();
 	m.zmap = new float[(sz.x + 1) * (sz.y + 1)];
@@ -422,6 +450,7 @@ public class MapMesh implements Rendered {
 	texmap = null;
 	for(Layer l : layers)
 	    l.pl = null;
+	modbuf = null;
     }
     
     public void draw(GOut g) {
@@ -467,6 +496,8 @@ public class MapMesh implements Rendered {
     public Order setup(RenderList rl) {
 	for(Layer l : layers)
 	    rl.add(l, null);
+	for(Rendered e : extras)
+	    rl.add(e, null);
 	return(deflt);
     }
 }
