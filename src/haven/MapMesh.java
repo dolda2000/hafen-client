@@ -110,57 +110,14 @@ public class MapMesh implements Rendered {
 	}
     }
 
-    public class Plane {
-	public SPoint[] vrt;
-	public int z;
-	public GLState st;
-	public Tex tex = null;
-	
-	public Plane(Surface surf, Coord sc, int z, GLState st) {
-	    vrt = new SPoint[] {surf.spoint(sc),
-				surf.spoint(sc.add(0, 1)),
-				surf.spoint(sc.add(1, 1)),
-				surf.spoint(sc.add(1, 0))};
-	    this.z = z;
-	    this.st = st;
-	    reg();
-	}
-
-	public Plane(Surface surf, Coord sc, int z, Tex tex) {
-	    this(surf, sc, z, stfor(tex));
-	    this.tex = tex;
+    public abstract class Shape {
+	public Shape(int z, GLState st) {
+	    reg(z, st);
 	}
 	
-	public Plane(Surface surf, Coord sc, int z, Resource.Tile tile) {
-	    this(surf, sc, z, tile.tex());
-	}
+	public abstract void build(MeshBuf buf);
 	
-	private void build(MeshBuf buf) {
-	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm);
-	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
-	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
-	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm);
-	    Tex tex = this.tex;
-	    if((tex == null) && (st instanceof Material)) {
-		/* XXX!!! */
-		for(GLState p : ((Material)st).states) {
-		    if(p instanceof Tex) {
-			tex = (Tex)p;
-			break;
-		    }
-		}
-	    }
-	    if(tex != null) {
-		int r = tex.sz().x, b = tex.sz().y;
-		v1.tex = new Coord3f(tex.tcx(0), tex.tcy(0), 0.0f);
-		v2.tex = new Coord3f(tex.tcx(0), tex.tcy(b), 0.0f);
-		v3.tex = new Coord3f(tex.tcx(r), tex.tcy(b), 0.0f);
-		v4.tex = new Coord3f(tex.tcx(r), tex.tcy(0), 0.0f);
-	    }
-	    splitquad(buf, v1, v2, v3, v4);
-	}
-	
-	private void reg() {
+	private void reg(int z, GLState st) {
 	    for(Layer l : layers) {
 		if((l.st == st) && (l.z == z)) {
 		    l.pl.add(this);
@@ -172,6 +129,44 @@ public class MapMesh implements Rendered {
 	    l.z = z;
 	    l.pl.add(this);
 	    layers.add(l);
+	}
+    }
+
+    public class Plane extends Shape {
+	public SPoint[] vrt;
+	public Tex tex = null;
+	
+	public Plane(Surface surf, Coord sc, int z, GLState st) {
+	    super(z, st);
+	    vrt = new SPoint[] {surf.spoint(sc),
+				surf.spoint(sc.add(0, 1)),
+				surf.spoint(sc.add(1, 1)),
+				surf.spoint(sc.add(1, 0))};
+	}
+
+	public Plane(Surface surf, Coord sc, int z, Tex tex) {
+	    this(surf, sc, z, stfor(tex));
+	    this.tex = tex;
+	}
+	
+	public Plane(Surface surf, Coord sc, int z, Resource.Tile tile) {
+	    this(surf, sc, z, tile.tex());
+	}
+	
+	public void build(MeshBuf buf) {
+	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm);
+	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
+	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
+	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm);
+	    Tex tex = this.tex;
+	    if(tex != null) {
+		int r = tex.sz().x, b = tex.sz().y;
+		v1.tex = new Coord3f(tex.tcx(0), tex.tcy(0), 0.0f);
+		v2.tex = new Coord3f(tex.tcx(0), tex.tcy(b), 0.0f);
+		v3.tex = new Coord3f(tex.tcx(r), tex.tcy(b), 0.0f);
+		v4.tex = new Coord3f(tex.tcx(r), tex.tcy(0), 0.0f);
+	    }
+	    splitquad(buf, v1, v2, v3, v4);
 	}
     }
     
@@ -195,7 +190,7 @@ public class MapMesh implements Rendered {
 	GLState st;
 	int z;
 	FastMesh mesh;
-	Collection<Plane> pl = new LinkedList<Plane>();
+	Collection<Shape> pl = new LinkedList<Shape>();
 	
 	public void draw(GOut g) {
 	    mesh.draw(g);
@@ -296,7 +291,7 @@ public class MapMesh implements Rendered {
 	    MeshBuf buf = new MeshBuf();
 	    if(l.pl.isEmpty())
 		throw(new RuntimeException("Map layer without planes?!"));
-	    for(Plane p : l.pl)
+	    for(Shape p : l.pl)
 		p.build(buf);
 	    l.mesh = buf.mkmesh();
 	}
