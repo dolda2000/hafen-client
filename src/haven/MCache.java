@@ -176,6 +176,19 @@ public class MCache {
 		olcuts[i] = getcut(cc).makeols();
 	    return(olcuts[i][ol]);
 	}
+	
+	public void ivneigh(Coord nc) {
+	    Coord cc = new Coord();
+	    for(cc.y = 0; cc.y < cutn.y; cc.y++) {
+		for(cc.x = 0; cc.x < cutn.x; cc.x++) {
+		    if((((nc.x < 0) && (cc.x == 0)) || ((nc.x > 0) && (cc.x == cutn.x - 1)) || (nc.x == 0)) &&
+		       (((nc.y < 0) && (cc.y == 0)) || ((nc.y > 0) && (cc.y == cutn.y - 1)) || (nc.y == 0))) {
+			cuts[cc.x + (cc.y * cutn.x)] = null;
+			olcuts[cc.x + (cc.y * cutn.x)] = null;
+		    }
+		}
+	    }
+	}
     }
 
     public MCache(Session sess) {
@@ -338,6 +351,14 @@ public class MCache {
 		    if(grids.remove(c) == cached)
 			cached = null;
 		    grids.put(c, g);
+		    for(Coord ic : new Coord[] {
+			    new Coord(-1, -1), new Coord( 0, -1), new Coord( 1, -1),
+			    new Coord(-1,  0),                    new Coord( 1,  0),
+			    new Coord(-1,  1), new Coord( 0,  1), new Coord( 1,  1)}) {
+			Grid ng = grids.get(c.add(ic));
+			if(ng != null)
+			    ng.ivneigh(ic.inv());
+		    }
 		    olseq++;
 		}
 	    }
