@@ -34,7 +34,6 @@ public class Glob {
     public static final int GMSG_LIGHT = 2;
 	
     public long time;
-    public Astronomy ast;
     public OCache oc = new OCache(this);
     public MCache map;
     public Session sess;
@@ -140,13 +139,6 @@ public class Glob {
 	    switch(msg.uint8()) {
 	    case GMSG_TIME:
 		time = msg.int32();
-		break;
-	    case GMSG_ASTRO:
-		double dt = defix(msg.int32());
-		double mp = defix(msg.int32());
-		double yt = defix(msg.int32());
-		boolean night = (dt < 0.25) || (dt > 0.75);
-		ast = new Astronomy(dt, mp, yt, night);
 		break;
 	    case GMSG_LIGHT:
 		amblight = msg.color();
