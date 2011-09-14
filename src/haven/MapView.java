@@ -40,7 +40,6 @@ public class MapView extends PView implements DTarget {
     private final Glob glob;
     private int view = 2;
     private Collection<Delayed> delayed = new LinkedList<Delayed>();
-    public static int lighting = 0;
     private Camera camera = new FollowCam();
     private Plob placing = null;
     private int[] visol = new int[32];
@@ -295,10 +294,9 @@ public class MapView extends PView implements DTarget {
 	Gob pl = player();
 	if(pl != null)
 	    this.cc = new Coord(pl.getc());
-	if(lighting == 0) {
-	    rl.add(new DirLight(new Color(128, 128, 128), Color.WHITE, Color.WHITE, new Coord3f(2.0f, 1.0f, 5.0f)), null);
-	} else if(lighting == 1) {
-	    rl.add(new DirLight(new Color(255, 192, 64), new Coord3f(2.0f, 1.0f, 1.0f)), null);
+	synchronized(glob) {
+	    if(glob.lightamb != null)
+		rl.add(new DirLight(glob.lightamb, glob.lightdif, glob.lightspc, Coord3f.o.sadd((float)glob.lightelev, (float)glob.lightang, 1f)), null);
 	}
 	rl.add(map, null);
 	rl.add(mapol, null);
@@ -755,16 +753,6 @@ public class MapView extends PView implements DTarget {
     }
 
     public boolean globtype(char c, java.awt.event.KeyEvent ev) {
-	/*
-	if(c >= '1' && c <= '9') {
-	    view = c - '1';
-	    return(true);
-	}
-	*/
-	if((c >= '0') && (c <= '2')) {
-	    lighting = c - '0';
-	    return(true);
-	}
 	return(false);
     }
 }
