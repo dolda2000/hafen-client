@@ -32,6 +32,7 @@ public class Glob {
     public static final int GMSG_TIME = 0;
     public static final int GMSG_ASTRO = 1;
     public static final int GMSG_LIGHT = 2;
+    public static final int GMSG_SKY = 3;
 	
     public long time;
     public OCache oc = new OCache(this);
@@ -42,7 +43,10 @@ public class Glob {
     private Map<Resource, Pagina> pmap = new WeakHashMap<Resource, Pagina>();
     public Map<String, CAttr> cattr = new HashMap<String, CAttr>();
     public Map<Integer, Buff> buffs = new TreeMap<Integer, Buff>();
-    public java.awt.Color amblight = null;
+    public java.awt.Color lightamb = null, lightdif = null, lightspc = null;
+    public double lightang = 0.0, lightelev = 0.0;
+    public Indir<Resource> sky1 = null, sky2 = null;
+    public double skyblend = 0.0;
     
     public Glob(Session sess) {
 	this.sess = sess;
@@ -136,13 +140,46 @@ public class Glob {
 	
     public void blob(Message msg) {
 	while(!msg.eom()) {
-	    switch(msg.uint8()) {
+	    int t = msg.uint8();
+	    switch(t) {
 	    case GMSG_TIME:
 		time = msg.int32();
 		break;
 	    case GMSG_LIGHT:
-		amblight = msg.color();
+		synchronized(this) {
+		    lightamb = msg.color();
+		    lightdif = msg.color();
+		    lightspc = msg.color();
+		    lightang = (msg.int32() / 1000000.0) * Math.PI * 2.0;
+		    lightelev = (msg.int32() / 1000000.0) * Math.PI * 2.0;
+		}
 		break;
+	    case GMSG_SKY:
+		int id1 = msg.uint16();
+		if(id1 == 65535) {
+		    synchronized(this) {
+			sky1 = sky2 = null;
+			skyblend = 0.0;
+		    }
+		} else {
+		    int id2 = msg.uint16();
+		    if(id2 == 65535) {
+			synchronized(this) {
+			    sky1 = sess.getres(id1);
+			    sky2 = null;
+			    skyblend = 0.0;
+			}
+		    } else {
+			synchronized(this) {
+			    sky1 = sess.getres(id1);
+			    sky2 = sess.getres(id2);
+			    skyblend = msg.int32() / 1000000.0;
+			}
+		    }
+		}
+		break;
+	    default:
+		throw(new RuntimeException("Unknown globlob type: " + t));
 	    }
 	}
     }
