@@ -163,21 +163,23 @@ public abstract class PView extends Widget {
 	    g.st.set(bk);
 	}
 	for(int i = 0; i < rls.cur; i++) {
-	    if(rls.list[i].r instanceof Draw2D)
-		((Draw2D)rls.list[i].r).draw2d(g);
+	    if(rls.list[i].r instanceof Render2D)
+		((Render2D)rls.list[i].r).draw2d(g);
 	}
 	curf.tick("2d");
 	if(curf != null)
 	    curf.fin();
     }
-
-    public static abstract class Draw2D implements Rendered {
+    
+    public interface Render2D extends Rendered {
+	public void draw2d(GOut g);
+    }
+    
+    public static abstract class Draw2D implements Render2D {
 	public void draw(GOut g) {}
 	
 	public Order setup(RenderList r) {
 	    return(null);
 	}
-	
-	public abstract void draw2d(GOut g);
     }
 }
