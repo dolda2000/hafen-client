@@ -166,7 +166,8 @@ public abstract class PView extends Widget {
 	    if(rls.list[i].r instanceof Render2D)
 		((Render2D)rls.list[i].r).draw2d(g);
 	}
-	curf.tick("2d");
+	if(curf != null)
+	    curf.tick("2d");
 	if(curf != null)
 	    curf.fin();
     }
