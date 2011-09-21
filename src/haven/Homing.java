@@ -46,8 +46,11 @@ public class Homing extends Moving {
 	    tc = tgt.rc;
 	Coord d = tc.add(gob.rc.inv());
 	double e = gob.rc.dist(tc);
-	float rx = (float)((d.x / e) * dist) + gob.rc.x;
-	float ry = (float)((d.y / e) * dist) + gob.rc.y;
+	float rx = gob.rc.x, ry = gob.rc.y;
+	if(e > 0.00001) {
+	    rx += (float)((d.x / e) * dist);
+	    ry += (float)((d.y / e) * dist);
+	}
 	return(new Coord3f(rx, ry, gob.glob.map.getcz(rx, ry)));
     }
     
