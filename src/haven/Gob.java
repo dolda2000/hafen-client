@@ -175,6 +175,12 @@ public class Gob implements Sprite.Owner, Rendered {
 	    if(ol.spr != null)
 		rl.add(ol.spr, null);
 	}
+	Speaking sp = getattr(Speaking.class);
+	if(sp != null)
+	    rl.add(sp.fx, null);
+	KinInfo ki = getattr(KinInfo.class);
+	if(ki != null)
+	    rl.add(ki.fx, null);
 	return(null);
     }
 

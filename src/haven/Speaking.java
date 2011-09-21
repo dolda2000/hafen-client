@@ -62,4 +62,11 @@ public class Speaking extends GAttrib {
 	g.chcolor(Color.WHITE);
 	g.image(svans, c.add(0, -svans.sz().y));
     }
+
+    final PView.Draw2D fx = new PView.Draw2D() {
+	    public void draw2d(GOut g) {
+		if(gob.sc != null)
+		    Speaking.this.draw(g, gob.sc.add(new Coord(gob.sczu.mul(zo))));
+	    }
+	};
 }
