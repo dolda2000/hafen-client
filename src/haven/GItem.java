@@ -125,19 +125,37 @@ public class GItem extends AWidget {
 	}
     }
     
-    public static BufferedImage catimgs(Collection<BufferedImage> imgs) {
-	int w = 0, h = 0;
+    public static BufferedImage catimgs(int margin, BufferedImage... imgs) {
+	int w = 0, h = -margin;
 	for(BufferedImage img : imgs) {
 	    if(img.getWidth() > w)
 		w = img.getWidth();
-	    h += img.getHeight();
+	    h += img.getHeight() + margin;
 	}
 	BufferedImage ret = TexI.mkbuf(new Coord(w, h));
 	Graphics g = ret.getGraphics();
 	int y = 0;
 	for(BufferedImage img : imgs) {
 	    g.drawImage(img, 0, y, null);
-	    y += img.getHeight();
+	    y += img.getHeight() + margin;
+	}
+	g.dispose();
+	return(ret);
+    }
+
+    public static BufferedImage catimgsh(int margin, BufferedImage... imgs) {
+	int w = -margin, h = 0;
+	for(BufferedImage img : imgs) {
+	    if(img.getHeight() > h)
+		h = img.getHeight();
+	    w += img.getWidth() + margin;
+	}
+	BufferedImage ret = TexI.mkbuf(new Coord(w, h));
+	Graphics g = ret.getGraphics();
+	int x = 0;
+	for(BufferedImage img : imgs) {
+	    g.drawImage(img, x, (h - img.getHeight()) / 2, null);
+	    x += img.getWidth() + margin;
 	}
 	g.dispose();
 	return(ret);
@@ -151,7 +169,7 @@ public class GItem extends AWidget {
 		buf.add(tip.longtip());
 	    }
 	}
-	return(catimgs(buf));
+	return(catimgs(0, buf.toArray(new BufferedImage[0])));
     }
 
     public GItem(Widget parent, Indir<Resource> res) {

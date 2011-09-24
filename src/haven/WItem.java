@@ -48,28 +48,32 @@ public class WItem extends Widget implements DTarget {
 	g.image(tex, Coord.z);
     }
 
-    public static String rendershort(List<Info> info) {
-	StringBuilder buf = new StringBuilder();
+    public static BufferedImage rendershort(List<Info> info) {
 	GItem.Name nm = find(GItem.Name.class, info);
-	if(nm != null) {
-	    buf.append(nm.str.text);
-	}
-	return(buf.toString());
+	if(nm == null)
+	    return(null);
+	BufferedImage img = Text.render(nm.str.text).img;
+	return(img);
     }
 
     public static Tex shorttip(List<Info> info) {
-	String buf = rendershort(info);
+	BufferedImage img = rendershort(info);
 	GItem.Contents cont = find(GItem.Contents.class, info);
-	if(cont != null)
-	    buf += "\n" + rendershort(cont.sub);
-	return(RichText.render(buf, 0).tex());
+	if(cont != null) {
+	    BufferedImage rc = rendershort(cont.sub);
+	    if((img != null) && (rc != null))
+		img = GItem.catimgs(0, img, rc);
+	    else if((img == null) && (rc != null))
+		img = rc;
+	}
+	return(new TexI(img));
     }
     
     public static Tex longtip(GItem item, List<Info> info) {
 	BufferedImage img = GItem.longtip(info);
 	Resource.Pagina pg = item.res.get().layer(Resource.pagina);
 	if(pg != null)
-	    img = GItem.catimgs(Arrays.asList(new BufferedImage[]{img, RichText.render("\n" + pg.text, 200).img}));
+	    img = GItem.catimgs(0, img, RichText.render("\n" + pg.text, 200).img);
 	return(new TexI(img));
     }
     
