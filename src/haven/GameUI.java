@@ -533,13 +533,13 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
     }
     
     {
-	String val = Utils.getpref("belttype", "f");
+	String val = Utils.getpref("belttype", "n");
 	if(val.equals("n")) {
 	    beltwdg = new NKeyBelt();
 	} else if(val.equals("f")) {
 	    beltwdg = new FKeyBelt();
 	} else {
-	    beltwdg = new FKeyBelt();
+	    beltwdg = new NKeyBelt();
 	}
     }
     
