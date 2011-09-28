@@ -167,6 +167,37 @@ public abstract class States extends GLState {
 	    buf.put(fog, this);
 	}
     }
+
+    public static final Slot<DepthOffset> depthoffset = new Slot<DepthOffset>(DepthOffset.class, PView.proj);
+    public static class DepthOffset extends GLState {
+	public final int mode;
+	public final float factor, units;
+	
+	public DepthOffset(int mode, float factor, float units) {
+	    this.mode = mode;
+	    this.factor = factor;
+	    this.units = units;
+	}
+	
+	public DepthOffset(float factor, float units) {
+	    this(GL.GL_POLYGON_OFFSET_FILL, factor, units);
+	}
+	
+	public void apply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glPolygonOffset(factor, units);
+	    gl.glEnable(mode);
+	}
+	
+	public void unapply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glDisable(mode);
+	}
+	
+	public void prep(Buffer buf) {
+	    buf.put(depthoffset, this);
+	}
+    }
     
     public static final StandAlone nullprog = new StandAlone(PView.proj) {
 	    private final GLShader[] sh;
