@@ -342,6 +342,7 @@ public class MapMesh implements Rendered {
 	return(m);
     }
 
+    private static States.DepthOffset gmoff = new States.DepthOffset(-1, -1);
     public static class GroundMod implements FRendered {
 	private static final Order gmorder = new Order.Default(1001);
 	public final Material mat;
@@ -373,7 +374,7 @@ public class MapMesh implements Rendered {
 		    Coord3f texc = new Coord3f((float)((t.x * tilesz.x) - ul.x) / (float)(br.x - ul.x),
 					       (float)((t.y * tilesz.y) - ul.y) / (float)(br.y - ul.y),
 					       0);
-		    Coord3f pos = p.pos.add((cut.ul.x * tilesz.x) - cc.x, -((cut.ul.y * tilesz.y) - cc.y), -cz + 0.01f);
+		    Coord3f pos = p.pos.add((cut.ul.x * tilesz.x) - cc.x, -((cut.ul.y * tilesz.y) - cc.y), -cz);
 		    vm[t.x - ult.x][t.y - ult.y] = buf.new Vertex(pos, p.nrm, texc);
 		}
 	    }
@@ -395,6 +396,7 @@ public class MapMesh implements Rendered {
 		
 	public Order setup(RenderList rl) {
 	    rl.prepo(mat);
+	    rl.prepo(gmoff);
 	    return(gmorder);
 	}
     }
