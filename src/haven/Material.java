@@ -139,30 +139,28 @@ public class Material extends GLState {
     }
 
     public Material() {
-	this(new Colors(), alphaclip);
+	this(Light.deflight, new Colors(), alphaclip);
     }
     
     public Material(Color amb, Color dif, Color spc, Color emi, float shine) {
-	this(new Colors(amb, dif, spc, emi, shine), alphaclip);
+	this(Light.deflight, new Colors(amb, dif, spc, emi, shine), alphaclip);
     }
     
     public Material(Color col) {
-	this(new Colors(col));
+	this(Light.deflight, new Colors(col));
     }
     
     public Material(Tex tex) {
-	this(new Colors(), tex, alphaclip);
+	this(Light.deflight, new Colors(), tex, alphaclip);
     }
     
     public String toString() {
 	return(Arrays.asList(states).toString());
     }
     
-    private static GLState deflight = Light.vlights;
     public void prep(Buffer buf) {
 	for(GLState st : states)
 	    st.prep(buf);
-	buf.cfg.deflight.prep(buf);
     }
     
     public static class Res extends Resource.Layer {
@@ -188,6 +186,7 @@ public class Material extends GLState {
 	    res.super();
 	    id = Utils.uint16d(buf, 0);
 	    int[] off = {2};
+	    GLState light = Light.deflight;
 	    while(off[0] < buf.length) {
 		String thing = Utils.strd(buf, off).intern();
 		if(thing == "col") {
@@ -228,10 +227,27 @@ public class Material extends GLState {
 				throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", id, getres(), res)));
 			    }
 			});
+		} else if(thing == "light") {
+		    String l = Utils.strd(buf, off);
+		    if(l.equals("pv")) {
+			light = Light.vlights;
+		    } else if(l.equals("pp")) {
+			light = Light.plights;
+		    } else if(l.equals("vc")) {
+			light = Light.vcel;
+		    } else if(l.equals("pc")) {
+			light = Light.pcel;
+		    } else if(l.equals("n")) {
+			light = null;
+		    } else {
+			throw(new Resource.LoadException("Unknown lighting type: " + thing, getres()));
+		    }
 		} else {
 		    throw(new Resource.LoadException("Unknown material part: " + thing, getres()));
 		}
 	    }
+	    if(light != null)
+		states.add(light);
 	    states.add(alphaclip);
 	}
 	

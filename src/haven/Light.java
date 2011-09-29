@@ -141,6 +141,15 @@ public class Light implements Rendered {
 	    GLShader.FragmentShader.load(Light.class, "glsl/pcel.frag"),
 	});
     
+    public static final GLState deflight = new GLState() {
+	    public void apply(GOut g) {}
+	    public void unapply(GOut g) {}
+	    
+	    public void prep(Buffer buf) {
+		buf.cfg.deflight.prep(buf);
+	    }
+	};
+    
     public static class LightList extends GLState {
 	private final List<Light> ll = new ArrayList<Light>();
 	private final List<Matrix4f> vl = new ArrayList<Matrix4f>();
