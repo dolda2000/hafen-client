@@ -36,6 +36,8 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 
 public class Utils {
+    public static final java.nio.charset.Charset utf8 = java.nio.charset.Charset.forName("UTF-8");
+    public static final java.nio.charset.Charset ascii = java.nio.charset.Charset.forName("US-ASCII");
     private static Preferences prefs = null;
     public static java.awt.image.ColorModel rgbm = java.awt.image.ColorModel.getRGBdefault();
     private static Background bgworker = null;

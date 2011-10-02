@@ -99,6 +99,20 @@ public class GLProgram implements java.io.Serializable {
 		throw(new ProgramException("Failed to link GL program", prog, info));
 	    }
 	}
+	
+	public int uniform(String name) {
+	    int r = gl.glGetUniformLocationARB(id, name);
+	    if(r < 0)
+		throw(new RuntimeException("Unknown uniform name: " + name));
+	    return(r);
+	}
+	
+	public int attrib(String name) {
+	    int r = gl.glGetAttribLocationARB(id, name);
+	    if(r < 0)
+		throw(new RuntimeException("Unknown uniform name: " + name));
+	    return(r);
+	}
     }
     
     public static class ProgramException extends RuntimeException {
@@ -129,5 +143,21 @@ public class GLProgram implements java.io.Serializable {
 	    glp.link(this);
 	}
 	g.gl.glUseProgramObjectARB(glp.id);
+    }
+    
+    private final Map<String, Integer> umap = new IdentityHashMap<String, Integer>();
+    public int uniform(String name) {
+	Integer r = umap.get(name);
+	if(r == null)
+	    umap.put(name, r = new Integer(glp.uniform(name)));
+	return(r.intValue());
+    }
+
+    private final Map<String, Integer> amap = new IdentityHashMap<String, Integer>();
+    public int attrib(String name) {
+	Integer r = amap.get(name);
+	if(r == null)
+	    amap.put(name, r = new Integer(glp.attrib(name)));
+	return(r.intValue());
     }
 }

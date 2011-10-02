@@ -374,6 +374,12 @@ public abstract class GLState {
 		    dirty = false;
 		}
 	    }
+	    if((prog != null) != usedprog) {
+		for(int i = 0; i < trans.length; i++) {
+		    if(trans[i])
+			repl[i] = true;
+		}
+	    }
 	    for(int i = 0; i < trans.length; i++) {
 		if(repl[i]) {
 		    cur.states[i] = next.states[i];
@@ -383,7 +389,7 @@ public abstract class GLState {
 		    cur.states[i].applyto(g, next.states[i]);
 		    GLState cs = cur.states[i];
 		    (cur.states[i] = next.states[i]).applyfrom(g, cs);
-		} else if(dirty && (shaders[i] != null)) {
+		} else if((prog != null) && dirty && (shaders[i] != null)) {
 		    cur.states[i].reapply(g);
 		}
 	    }
