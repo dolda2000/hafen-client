@@ -58,7 +58,7 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
     private Comparator<Buddy> alphacmp = new Comparator<Buddy>() {
 	private Collator c = Collator.getInstance();
 	public int compare(Buddy a, Buddy b) {
-	    return(c.compare(a.name.text, b.name.text));
+	    return(c.compare(a.name, b.name));
 	}
     };
     private Comparator<Buddy> groupcmp = new Comparator<Buddy>() {
@@ -84,7 +84,8 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
     
     public class Buddy {
 	int id;
-	Text name;
+	String name;
+	Text rname = null;
 	int online;
 	int group;
 	boolean seen;
@@ -111,6 +112,12 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	
 	public void chgrp(int grp) {
 	    wdgmsg("grp", id, grp);
+	}
+	
+	public Text rname() {
+	    if(rname == null)
+		rname = Text.render(name);
+	    return(rname);
 	}
     }
     
@@ -196,7 +203,7 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 			else if(b.online == 0)
 			    g.image(offline, new Coord(0, i * 20));
 			g.chcolor(gc[b.group]);
-			g.aimage(b.name.tex(), new Coord(25, i * 20 + 10), 0, 0.5);
+			g.aimage(b.rname().tex(), new Coord(25, i * 20 + 10), 0, 0.5);
 			g.chcolor();
 		    }
 		}
