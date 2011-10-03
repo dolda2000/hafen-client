@@ -305,9 +305,6 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 		fitwdg(buddies);
 	    }
 	    return(true);
-	} else if(key == 1) {
-	    wdgmsg("atkm");
-	    return(true);
 	}
 	if((key == 0) && beltwdg.key(ev))
 	    return(true);
