@@ -280,7 +280,7 @@ public class OCache implements Iterable<Gob> {
     }
 	
     public synchronized void buddy(Gob g, String name, int group, int type) {
-	if((name.length() == 0) && (group == 0) && (type == 0)) {
+	if(name == null) {
 	    g.delattr(KinInfo.class);
 	} else {
 	    KinInfo b = g.getattr(KinInfo.class);

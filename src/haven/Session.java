@@ -401,10 +401,15 @@ public class Session {
 				oc.health(gob, hp);
 			} else if(type == OD_BUDDY) {
 			    String name = msg.string();
-			    int group = msg.uint8();
-			    int btype = msg.uint8();
-			    if(gob != null)
-				oc.buddy(gob, null, 0, 0);
+			    if(name.length() > 0) {
+				int group = msg.uint8();
+				int btype = msg.uint8();
+				if(gob != null)
+				    oc.buddy(gob, name, group, btype);
+			    } else {
+				if(gob != null)
+				    oc.buddy(gob, null, 0, 0);
+			    }
 			} else if(type == OD_END) {
 			    break;
 			} else {
