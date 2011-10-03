@@ -236,6 +236,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	errtime = System.currentTimeMillis();
 	lasterr = errfoundry.render(msg);
     }
+    
+    public void act(String... args) {
+	wdgmsg("act", (Object[])args);
+    }
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
