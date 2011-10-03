@@ -166,7 +166,6 @@ public class Material extends GLState {
 	if(aclip)
 	    alphaclip.prep(buf);
     }
-    }
     
     public static class Res extends Resource.Layer {
 	public final int id;
