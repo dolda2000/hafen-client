@@ -613,6 +613,14 @@ public class Widget {
 	prevtt = null;
 	return(null);
     }
+    
+    public <T extends Widget> T getparent(Class<T> cl) {
+	for(Widget w = this; w != null; w = w.parent) {
+	    if(cl.isInstance(w))
+		return(cl.cast(w));
+	}
+	return(null);
+    }
 
     public void hide() {
 	visible = false;
