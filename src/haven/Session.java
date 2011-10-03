@@ -31,7 +31,7 @@ import java.util.*;
 import java.io.*;
 
 public class Session {
-    public static final int PVER = 12;
+    public static final int PVER = 1;
     
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
