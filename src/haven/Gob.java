@@ -64,6 +64,10 @@ public class Gob implements Sprite.Owner, Rendered {
 	public static interface CDel {
 	    public void delete();
 	}
+	
+	public static interface CUpd {
+	    public void update(Message sdt);
+	}
     }
     
     public Gob(Glob glob, Coord c, long id, int frame) {
