@@ -77,6 +77,7 @@ public class FastMesh implements FRendered {
 	gl.glEnableClientState(GL.GL_NORMAL_ARRAY);
 	gl.glNormalPointer(GL.GL_FLOAT, 0, vert.nrmb);
 	if(vert.texb != null) {
+	    vert.texb.rewind();
 	    gl.glEnableClientState(GL.GL_TEXTURE_COORD_ARRAY);
 	    gl.glTexCoordPointer(2, GL.GL_FLOAT, 0, vert.texb);
 	}
