@@ -263,8 +263,12 @@ public class OCache implements Iterable<Gob> {
 	    if(ol == null) {
 		g.ols.add(ol = new Gob.Overlay(olid, resid, sdt));
 	    } else if(!ol.sdt.equals(sdt)) {
-		g.ols.remove(ol);
-		g.ols.add(ol = new Gob.Overlay(olid, resid, sdt));
+		if(ol instanceof Gob.Overlay.CUpd) {
+		    ((Gob.Overlay.CUpd)ol).update(sdt);
+		} else {
+		    g.ols.remove(ol);
+		    g.ols.add(ol = new Gob.Overlay(olid, resid, sdt));
+		}
 	    }
 	    ol.delign = prs;
 	} else {
