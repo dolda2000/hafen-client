@@ -173,12 +173,15 @@ public class Gob implements Sprite.Owner, Rendered {
 
     public Order setup(RenderList rl) {
 	Drawable d = getattr(Drawable.class);
-	if(d != null)
-	    d.setup(rl);
 	for(Overlay ol : ols) {
 	    if(ol.spr != null)
 		rl.add(ol.spr, null);
 	}
+	GobHealth hlt = getattr(GobHealth.class);
+	if(hlt != null)
+	    rl.prepc(hlt.getfx());
+	if(d != null)
+	    d.setup(rl);
 	Speaking sp = getattr(Speaking.class);
 	if(sp != null)
 	    rl.add(sp.fx, null);
