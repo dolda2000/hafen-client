@@ -71,9 +71,32 @@ public class Material extends GLState {
 	    emi = defemi;
 	}
 
-	public Colors(Color amb, Color dif, Color spc, Color emi, float shine) {
-	    build(amb, dif, spc, emi);
+	private Colors(float[] amb, float[] dif, float[] spc, float[] emi, float shine) {
+	    this.amb = amb;
+	    this.dif = dif;
+	    this.spc = spc;
+	    this.emi = emi;
 	    this.shine = shine;
+	}
+	
+	private static float[] colmul(float[] c1, float[] c2) {
+	    return(new float[] {c1[0] * c2[0], c1[1] * c2[1], c1[2] * c2[2], c1[3] * c2[3]});
+	}
+	
+	private static float[] colblend(float[] in, float[] bl) {
+	    float f1 = bl[3], f2 = 1.0f - f1;
+	    return(new float[] {(in[0] * f2) + (bl[0] * f1),
+				(in[1] * f2) + (bl[1] * f1),
+				(in[2] * f2) + (bl[2] * f1),
+				in[3]});
+	}
+
+	public Colors(Color amb, Color dif, Color spc, Color emi, float shine) {
+	    this(c2fa(amb), c2fa(dif), c2fa(spc), c2fa(emi), shine);
+	}
+	
+	public Colors(Color amb, Color dif, Color spc, Color emi) {
+	    this(amb, dif, spc, emi, 0);
 	}
 	
 	public Colors(Color col) {
@@ -82,13 +105,6 @@ public class Material extends GLState {
 		 new Color(0, 0, 0, 0),
 		 new Color(0, 0, 0, 0),
 		 0);
-	}
-    
-	public void build(Color amb, Color dif, Color spc, Color emi) {
-	    this.amb = c2fa(amb);
-	    this.dif = c2fa(dif);
-	    this.spc = c2fa(spc);
-	    this.emi = c2fa(emi);
 	}
     
 	public void apply(GOut g) {
@@ -121,7 +137,19 @@ public class Material extends GLState {
 	}
 	
 	public void prep(Buffer buf) {
-	    buf.put(colors, this);
+	    Colors p = buf.get(colors);
+	    if(p != null)
+		buf.put(colors, p.combine(this));
+	    else
+		buf.put(colors, this);
+	}
+	
+	public Colors combine(Colors other) {
+	    return(new Colors(colblend(other.amb, this.amb),
+			      colblend(other.dif, this.dif),
+			      colblend(other.spc, this.spc),
+			      colblend(other.emi, this.emi),
+			      other.shine));
 	}
     
 	public String toString() {
