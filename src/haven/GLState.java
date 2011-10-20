@@ -575,4 +575,10 @@ public abstract class GLState {
 	    buf.put(slot, this);
 	}
     }
+    
+    public static final GLState nullstate = new GLState() {
+	    public void apply(GOut g) {}
+	    public void unapply(GOut g) {}
+	    public void prep(Buffer buf) {}
+	};
 }
