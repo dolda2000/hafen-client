@@ -31,6 +31,11 @@ import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
 public class SkelSprite extends Sprite {
+    private static final GLState
+	rigid = new Material.Colors(java.awt.Color.GREEN),
+	morphed = new Material.Colors(java.awt.Color.RED),
+	unboned = new Material.Colors(java.awt.Color.YELLOW);
+    public static boolean bonedb = false;
     private final Skeleton skel;
     public final Pose pose;
     private PoseMod[] mods = new PoseMod[0];
@@ -64,16 +69,24 @@ public class SkelSprite extends Sprite {
 	Collection<Rendered> rl = new LinkedList<Rendered>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & fl) != 0))) {
+		Rendered r;
 		if(mr.m.boned()) {
 		    String bnm = mr.m.boneidp();
 		    if(bnm == null) {
-			rl.add(mr.mat.get().apply(new MorphedMesh(mr.m, pose)));
+			r = mr.mat.get().apply(new MorphedMesh(mr.m, pose));
+			if(bonedb)
+			    r = morphed.apply(r);
 		    } else {
-			rl.add(pose.bonetrans2(skel.bones.get(bnm).idx).apply(mr.mat.get().apply(mr.m)));
+			r = pose.bonetrans2(skel.bones.get(bnm).idx).apply(mr.mat.get().apply(mr.m));
+			if(bonedb)
+			    r = rigid.apply(r);
 		    }
 		} else {
-		    rl.add(mr.mat.get().apply(mr.m));
+		    r = mr.mat.get().apply(mr.m);
+		    if(bonedb)
+			r = unboned.apply(r);
 		}
+		rl.add(r);
 	    }
 	}
 	this.parts = rl.toArray(new Rendered[0]);
@@ -114,5 +127,13 @@ public class SkelSprite extends Sprite {
 	    pose.gbuild();
 	}
 	return(false);
+    }
+
+    static {
+	Console.setscmd("bonedb", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    bonedb = Utils.parsebool(args[1], false);
+		}
+	    });
     }
 }
