@@ -77,6 +77,7 @@ public class OptWnd extends Window {
 		public void click() {
 		    ui.sess.close();
 		}};
+	    /*
 	    new Button(new Coord(10, 100), 125, tab, "Toggle fullscreen") {
 		public void click() {
 		    if(ui.fsm != null) {
@@ -84,6 +85,7 @@ public class OptWnd extends Window {
 			else               ui.fsm.setfs();
 		    }
 		}};
+	    */
 
 	    Widget editbox = new Frame(new Coord(310, 30), new Coord(90, 100), tab);
 	    new Label(new Coord(20, 10), editbox, "Edit mode:");

@@ -47,7 +47,6 @@ public class HavenPanel extends GLCanvas implements Runnable {
     public Coord mousepos = new Coord(0, 0);
     public Profile prof = new Profile(300);
     private Profile.Frame curf = null;
-    private SyncFSM fsm = null;
     private static final GLCapabilities stdcaps;
     static {
 	stdcaps = new GLCapabilities();
@@ -167,7 +166,6 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	newui(null);
 	addKeyListener(new KeyAdapter() {
 		public void keyTyped(KeyEvent e) {
-		    checkfs();
 		    synchronized(events) {
 			events.add(e);
 			events.notifyAll();
@@ -175,14 +173,12 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		}
 
 		public void keyPressed(KeyEvent e) {
-		    checkfs();
 		    synchronized(events) {
 			events.add(e);
 			events.notifyAll();
 		    }
 		}
 		public void keyReleased(KeyEvent e) {
-		    checkfs();
 		    synchronized(events) {
 			events.add(e);
 			events.notifyAll();
@@ -191,7 +187,6 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	    });
 	addMouseListener(new MouseAdapter() {
 		public void mousePressed(MouseEvent e) {
-		    checkfs();
 		    synchronized(events) {
 			events.add(e);
 			events.notifyAll();
@@ -199,7 +194,6 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		}
 
 		public void mouseReleased(MouseEvent e) {
-		    checkfs();
 		    synchronized(events) {
 			events.add(e);
 			events.notifyAll();
@@ -208,14 +202,12 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	    });
 	addMouseMotionListener(new MouseMotionListener() {
 		public void mouseDragged(MouseEvent e) {
-		    checkfs();
 		    synchronized(events) {
 			events.add(e);
 		    }
 		}
 
 		public void mouseMoved(MouseEvent e) {
-		    checkfs();
 		    synchronized(events) {
 			events.add(e);
 		    }
@@ -223,7 +215,6 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	    });
 	addMouseWheelListener(new MouseWheelListener() {
 		public void mouseWheelMoved(MouseWheelEvent e) {
-		    checkfs();
 		    synchronized(events) {
 			events.add(e);
 			events.notifyAll();
@@ -233,52 +224,9 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	inited = true;
     }
 	
-    private class SyncFSM implements FSMan {
-	private FSMan wrapped;
-	private boolean tgt;
-		
-	private SyncFSM(FSMan wrapped) {
-	    this.wrapped = wrapped;
-	    tgt = wrapped.hasfs();
-	}
-		
-	public void setfs() {
-	    tgt = true;
-	}
-		
-	public void setwnd() {
-	    tgt = false;
-	}
-		
-	public boolean hasfs() {
-	    return(tgt);
-	}
-		
-	private void check() {
-	    synchronized(ui) {
-		if(tgt && !wrapped.hasfs())
-		    wrapped.setfs();
-		if(!tgt && wrapped.hasfs())
-		    wrapped.setwnd();
-	    }
-	}
-    }
-
-    private void checkfs() {
-	if(fsm != null) {
-	    fsm.check();
-	}
-    }
-
-    public void setfsm(FSMan fsm) {
-	this.fsm = new SyncFSM(fsm);
-	ui.fsm = this.fsm;
-    }
-    
     UI newui(Session sess) {
 	ui = new UI(new Coord(w, h), sess);
 	ui.root.gprof = prof;
-	ui.fsm = this.fsm;
 	if(getParent() instanceof Console.Directory)
 	    ui.cons.add((Console.Directory)getParent());
 	if(glconf != null)

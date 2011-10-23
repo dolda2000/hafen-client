@@ -31,7 +31,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.*;
 
-public class MainFrame extends Frame implements Runnable, FSMan, Console.Directory {
+public class MainFrame extends Frame implements Runnable, Console.Directory {
     HavenPanel p;
     private final ThreadGroup g;
     public final Thread mt;
@@ -97,13 +97,6 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 	return(prefs != null);
     }
 
-    public void togglefs() {
-	if(prefs == null)
-	    setfs();
-	else
-	    setwnd();
-    }
-
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("sz", new Console.Command() {
@@ -133,6 +126,27 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 			    throw(new Exception("No such mode is available"));
 			fsmode = mode;
 			Utils.setprefc("fsmode", new Coord(mode.getWidth(), mode.getHeight()));
+		    }
+		}
+	    });
+	cmdmap.put("fs", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    if(args.length >= 2) {
+			Runnable r;
+			if(Utils.atoi(args[1]) != 0) {
+			    r = new Runnable() {
+				    public void run() {
+					setfs();
+				    }
+				};
+			} else {
+			    r = new Runnable() {
+				    public void run() {
+					setwnd();
+				    }
+				};
+			}
+			getToolkit().getSystemEventQueue().invokeLater(r);
 		    }
 		}
 	    });
@@ -213,7 +227,6 @@ public class MainFrame extends Frame implements Runnable, FSMan, Console.Directo
 	if(Thread.currentThread() != this.mt)
 	    throw(new RuntimeException("MainFrame is being run from an invalid context"));
 	Thread ui = new HackThread(p, "Haven UI thread");
-	p.setfsm(this);
 	ui.start();
 	try {
 	    try {

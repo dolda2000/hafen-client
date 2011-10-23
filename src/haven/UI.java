@@ -42,7 +42,6 @@ public class UI {
     public boolean modshift, modctrl, modmeta, modsuper;
     long lastevent, lasttick;
     public Widget mouseon;
-    public FSMan fsm;
     public Console cons = new WidgetConsole();
     private Collection<AfterDraw> afterdraws = null;
     
@@ -68,16 +67,6 @@ public class UI {
 	    setcmd("lo", new Command() {
 		    public void run(Console cons, String[] args) {
 			sess.close();
-		    }
-		});
-	    setcmd("fs", new Command() {
-		    public void run(Console cons, String[] args) {
-			if((args.length >= 2) && (fsm != null)) {
-			    if(Utils.atoi(args[1]) != 0)
-				fsm.setfs();
-			    else
-				fsm.setwnd();
-			}
 		    }
 		});
 	}
