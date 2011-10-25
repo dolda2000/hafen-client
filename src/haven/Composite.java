@@ -187,6 +187,10 @@ public class Composite extends Drawable {
 	    rl.add(spr, null);
 	    return(null);
 	}
+	
+	public void tick(int dt) {
+	    spr.tick(dt);
+	}
     }
     
     private class LightEqu extends Equ {
@@ -229,6 +233,8 @@ public class Composite extends Drawable {
 	    else
 		this.et = bt;
 	}
+	
+	public void tick(int dt) {}
     }
 
     public static class MD implements Cloneable {
@@ -377,6 +383,8 @@ public class Composite extends Drawable {
 	}
 	if(poses != null)
 	    poses.tick(dt / 1000.0f);
+	for(Equ equ : this.equ)
+	    equ.tick(dt);
     }
 
     public Resource.Neg getneg() {
