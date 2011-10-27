@@ -267,7 +267,9 @@ public class MapView extends PView implements DTarget {
 	Following flw = gob.getattr(Following.class);
 	if(flw != null) {
 	    try {
-		rl.add(gob, GLState.compose(flw.xf(), gob.save));
+		GLState xf = flw.xf();
+		if(xf != null)
+		    rl.add(gob, GLState.compose(xf, gob.save));
 	    } catch(Loading e) {}
 	} else {
 	    rl.add(gob, GLState.compose(gob.loc, gob.save));
