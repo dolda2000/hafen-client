@@ -33,9 +33,9 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
     public boolean usedl = true, fsaa = false;
     public int maxlights;
     public Collection<String> exts;
-    public GLCapabilities caps;
+    public transient GLCapabilities caps;
     public boolean shuse;
-    public GLState deflight = Light.vlights;
+    public transient GLState deflight = Light.vlights;
     
     private GLConfig() {
     }
