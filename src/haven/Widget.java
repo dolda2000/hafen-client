@@ -87,8 +87,13 @@ public class Widget {
 		name = name.substring(0, p);
 	    }
 	    Resource res = Resource.load(name, ver);
-	    res.loadwaitint();
-	    return(res.layer(Resource.CodeEntry.class).get(WidgetFactory.class));
+	    while(true) {
+		try {
+		    return(res.layer(Resource.CodeEntry.class).get(WidgetFactory.class));
+		} catch(Resource.Loading l) {
+		    l.res.loadwaitint();
+		}
+	    }
 	}
     }
     
