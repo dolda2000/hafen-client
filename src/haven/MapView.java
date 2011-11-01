@@ -40,7 +40,7 @@ public class MapView extends PView implements DTarget {
     private final Glob glob;
     private int view = 2;
     private Collection<Delayed> delayed = new LinkedList<Delayed>();
-    private Camera camera = new FollowCam();
+    public Camera camera = new FollowCam();
     private Plob placing = null;
     private int[] visol = new int[32];
     private Grabber grab;
@@ -55,7 +55,7 @@ public class MapView extends PView implements DTarget {
 	void mmousemove(Coord mc);
     }
     
-    private abstract class Camera extends haven.Camera {
+    public abstract class Camera extends haven.Camera {
 	public Camera() {
 	    super(Matrix4f.identity());
 	}
@@ -73,6 +73,7 @@ public class MapView extends PView implements DTarget {
 	}
 	
 	public abstract Matrix4f compute();
+	public abstract float angle();
 	
 	public Matrix4f fin(Matrix4f p) {
 	    update(compute());
@@ -129,6 +130,10 @@ public class MapView extends PView implements DTarget {
 	    return(PointedCam.compute(curc.add(0.0f, 0.0f, h), dist(elev), elev, angl));
 	}
 	
+	public float angle() {
+	    return(angl);
+	}
+	
 	private static final float maxang = (float)(Math.PI / 2 - 0.1);
 	private static final float mindist = 10.0f;
 	public boolean wheel(Coord c, int amount) {
@@ -153,6 +158,10 @@ public class MapView extends PView implements DTarget {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
 	    return(PointedCam.compute(cc.add(0.0f, 0.0f, 15f), dist, elev, angl));
+	}
+	
+	public float angle() {
+	    return(angl);
 	}
 	
 	public boolean click(Coord c) {
