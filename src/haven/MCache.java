@@ -37,7 +37,7 @@ public class MCache {
     public static final Coord cmaps = new Coord(100, 100);
     public static final Coord cutsz = new Coord(25, 25);
     public static final Coord cutn = cmaps.div(cutsz);
-    private final Resource[] sets = new Resource[256];
+    public final Resource[] sets = new Resource[256];
     private final Tileset[] csets = new Tileset[256];
     private final Tiler[] tiles = new Tiler[256];
     Map<Coord, Request> req = new HashMap<Coord, Request>();
