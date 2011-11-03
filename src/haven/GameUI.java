@@ -52,6 +52,7 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
     @SuppressWarnings("unchecked")
     public Indir<Resource>[] belt = new Indir[144];
     public Belt beltwdg;
+    public String polowner;
     
     public abstract class Belt {
 	public abstract int draw(GOut g, int by);
@@ -256,6 +257,23 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 		belt[slot] = null;
 	    } else {
 		belt[slot] = ui.sess.getres((Integer)args[1]);
+	    }
+	} else if(msg == "polowner") {
+	    String o = (String)args[0];
+	    if(o.length() == 0)
+		o = null;
+	    else
+		o = o.intern();
+	    if(o != polowner) {
+		if(map != null) {
+		    if(o == null) {
+			if(polowner != null)
+			    map.setpoltext("Leaving " + polowner);
+		    } else {
+			map.setpoltext("Entering " + o);
+		    }
+		}
+		polowner = o;
 	    }
 	} else {
 	    super.uimsg(msg, args);
