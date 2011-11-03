@@ -242,6 +242,8 @@ public class MapView extends PView implements DTarget {
 		mats = new GLState[32];
 		mats[0] = new Material(new Color(255, 0, 128, 32));
 		mats[1] = new Material(new Color(0, 0, 255, 32));
+		mats[2] = new Material(new Color(255, 0, 0, 32));
+		mats[3] = new Material(new Color(128, 0, 255, 32));
 		mats[16] = new Material(new Color(0, 255, 0, 32));
 		mats[17] = new Material(new Color(255, 255, 0, 32));
 	    }
