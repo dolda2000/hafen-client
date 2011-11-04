@@ -123,7 +123,7 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	}
 	
 	public Text rname() {
-	    if(rname == null)
+	    if((rname == null) || !rname.text.equals(name))
 		rname = Text.render(name);
 	    return(rname);
 	}
