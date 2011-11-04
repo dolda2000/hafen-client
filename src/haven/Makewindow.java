@@ -69,13 +69,15 @@ public class Makewindow extends Widget {
 	
     public void uimsg(String msg, Object... args) {
 	if(msg == "inpop") {
-	    inputs = new LinkedList<Spec>();
+	    List<Spec> inputs = new LinkedList<Spec>();
 	    for(int i = 0; i < args.length; i += 2)
 		inputs.add(new Spec(ui.sess.getres((Integer)args[i]), (Integer)args[i + 1]));
+	    this.inputs = inputs;
 	} else if(msg == "opop") {
-	    outputs = new LinkedList<Spec>();
+	    List<Spec> outputs = new LinkedList<Spec>();
 	    for(int i = 0; i < args.length; i += 2)
 		outputs.add(new Spec(ui.sess.getres((Integer)args[i]), (Integer)args[i + 1]));
+	    this.outputs = outputs;
 	}
     }
 	
