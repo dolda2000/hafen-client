@@ -309,6 +309,7 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 		}
 		editing = b;
 		nicksel.settext(b.name);
+		nicksel.buf.point = nicksel.buf.line.length();
 		grpsel.group = b.group;
 	    }
 	}
