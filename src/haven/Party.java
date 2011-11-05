@@ -50,11 +50,13 @@ public class Party {
 	    return(glob.oc.getgob(gobid));
 	}
 	
-	public Coord3f getc() {
+	public Coord getc() {
 	    Gob gob;
-	    if((gob = getgob()) != null)
-		return(gob.getc());
-	    return(new Coord3f(c.x, c.y, glob.map.getcz(c)));
+	    try {
+		if((gob = getgob()) != null)
+		    return(new Coord(gob.getc()));
+	    } catch(Loading e) {}
+	    return(c);
 	}
     }
 	
