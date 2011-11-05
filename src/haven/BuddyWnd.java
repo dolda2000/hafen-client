@@ -240,6 +240,8 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	    List<String> opts = new ArrayList<String>();
 	    if(b.online >= 0) {
 		opts.add("Chat");
+		if(b.online == 1)
+		    opts.add("Invite");
 		opts.add("End kinship");
 	    } else {
 		opts.add("Forget");
@@ -256,6 +258,8 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 				    b.endkin();
 				} else if(opt.name.equals("Chat")) {
 				    b.chat();
+				} else if(opt.name.equals("Invite")) {
+				    b.invite();
 				} else if(opt.name.equals("Forget")) {
 				    b.forget();
 				}
