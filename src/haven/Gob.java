@@ -206,6 +206,7 @@ public class Gob implements Sprite.Owner, Rendered {
     public class Save extends GLState {
 	public Matrix4f cam = new Matrix4f(), wxf = new Matrix4f(),
 	    mv = new Matrix4f();
+	public PView.RenderState proj = null;
 	
 	public void apply(GOut g) {
 	    mv.load(cam.load(g.st.cam)).mul1(wxf.load(g.st.wxf));
@@ -213,6 +214,7 @@ public class Gob implements Sprite.Owner, Rendered {
 	    Coord3f s = proj.toscreen(mv.mul4(Coord3f.o));
 	    Gob.this.sc = new Coord(s);
 	    Gob.this.sczu = proj.toscreen(mv.mul4(Coord3f.zu)).sub(s);
+	    this.proj = proj;
 	}
 	
 	public void unapply(GOut g) {}
