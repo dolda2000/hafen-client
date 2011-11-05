@@ -485,21 +485,8 @@ public class MapView extends PView implements DTarget {
 	polchtm = System.currentTimeMillis();
     }
 
-    public void draw(GOut g) {
+    private void poldraw(GOut g) {
 	long now = System.currentTimeMillis();
-	glob.map.sendreqs();
-	if((olftimer != 0) && (olftimer < System.currentTimeMillis()))
-	    unflashol();
-	try {
-	    undelay(g);
-	    super.draw(g);
-	} catch(MCache.LoadingMap e) {
-	    String text = "Loading...";
-	    g.chcolor(Color.BLACK);
-	    g.frect(Coord.z, sz);
-	    g.chcolor(Color.WHITE);
-	    g.atext(text, sz.div(2), 0.5, 0.5);
-	}
 	long poldt = now - polchtm;
 	if((polownert != null) && (poldt < 6000)) {
 	    int a;
@@ -513,6 +500,75 @@ public class MapView extends PView implements DTarget {
 	    g.aimage(polownert.tex(), sz.div(2), 0.5, 0.5);
 	    g.chcolor();
 	}
+    }
+    
+    private void drawarrow(GOut g, double a) {
+	Coord hsz = sz.div(2);
+	double ca = -Coord.z.angle(hsz);
+	Coord ac;
+	if((a > ca) && (a < -ca)) {
+	    ac = new Coord(sz.x, hsz.y - (int)(Math.tan(a) * hsz.x));
+	} else if((a > -ca) && (a < Math.PI + ca)) {
+	    ac = new Coord(hsz.x - (int)(Math.tan(a - Math.PI / 2) * hsz.y), 0);
+	} else if((a > -Math.PI - ca) && (a < ca)) {
+	    ac = new Coord(hsz.x + (int)(Math.tan(a + Math.PI / 2) * hsz.y), sz.y);
+	} else {
+	    ac = new Coord(0, hsz.y + (int)(Math.tan(a) * hsz.x));
+	}
+	Coord bc = ac.add(Coord.sc(a, -10));
+	g.line(bc, bc.add(Coord.sc(a, -40)), 2);
+	g.line(bc, bc.add(Coord.sc(a + Math.PI / 4, -10)), 2);
+	g.line(bc, bc.add(Coord.sc(a - Math.PI / 4, -10)), 2);
+    }
+
+    private void partydraw(GOut g) {
+	Gob plgob;
+	Coord3f cc;
+	try {
+	    plgob = player();
+	    if(plgob == null)
+		return;
+	    cc = plgob.getc();
+	} catch(Loading e) {
+	    return;
+	}
+	for(Party.Member m : ui.sess.glob.party.memb.values()) {
+	    if(m.gobid == this.plgob)
+		continue;
+	    try {
+		Coord mc = m.getc();
+		if(mc == null)
+		    continue;
+		Coord3f ploc = new Coord3f(mc.x, -mc.y, cc.z);
+		Coord3f sloc = plgob.save.proj.tonorm(plgob.save.cam.mul4(ploc));
+		if(sloc.z < 0)
+		    sloc = sloc.inv();
+		if((sloc.x < -1) || (sloc.x > 1) || (sloc.y < -1) || (sloc.y > 1)) {
+		    g.chcolor(m.col);
+		    drawarrow(g, Coord3f.o.xyangle(sloc));
+		}
+	    } catch(Loading e) {
+	    }
+	}
+	g.chcolor();
+    }
+
+    public void draw(GOut g) {
+	glob.map.sendreqs();
+	if((olftimer != 0) && (olftimer < System.currentTimeMillis()))
+	    unflashol();
+	try {
+	    undelay(g);
+	    super.draw(g);
+	} catch(MCache.LoadingMap e) {
+	    String text = "Loading...";
+	    g.chcolor(Color.BLACK);
+	    g.frect(Coord.z, sz);
+	    g.chcolor(Color.WHITE);
+	    g.atext(text, sz.div(2), 0.5, 0.5);
+	}
+	poldraw(g);
+	partydraw(g);
     }
     
     public void resize(Coord sz) {
