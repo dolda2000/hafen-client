@@ -722,5 +722,10 @@ public class Utils {
 		    Utils.dumptg(null, cons.out);
 		}
 	    });
+	Console.setscmd("gc", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    System.gc();
+		}
+	    });
     }
 }
