@@ -111,7 +111,7 @@ public class LocalMiniMap extends Widget {
 		    for(Party.Member m : ui.sess.glob.party.memb.values()) {
 			Coord ptc;
 			try {
-			    ptc = new Coord(m.getc());
+			    ptc = m.getc();
 			} catch(MCache.LoadingMap e) {
 			    ptc = null;
 			}
