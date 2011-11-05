@@ -32,7 +32,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 public class Partyview extends Widget {
-    int ign;
+    long ign;
     Party party = ui.sess.glob.party;
     Map<Long, Member> om = null;
     Member ol = null;
@@ -47,7 +47,7 @@ public class Partyview extends Widget {
 	    });
     }
 	
-    Partyview(Coord c, Widget parent, int ign) {
+    Partyview(Coord c, Widget parent, long ign) {
 	super(c, new Coord(84, 140), parent);
 	this.ign = ign;
 	update();
@@ -119,7 +119,7 @@ public class Partyview extends Widget {
 	}
 	for(Member m : avs.keySet()) {
 	    if(sender == avs.get(m)) {
-		wdgmsg("click", m.gobid, args[0]);
+		wdgmsg("click", (int)m.gobid, args[0]);
 		return;
 	    }
 	}

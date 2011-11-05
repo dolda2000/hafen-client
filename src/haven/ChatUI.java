@@ -272,6 +272,33 @@ public class ChatUI extends Widget {
 	}
     }
     
+    public static class PartyChat extends MultiChat {
+	public PartyChat(Widget parent) {
+	    super(parent, "Party", true);
+	}
+
+	public void uimsg(String msg, Object... args) {
+	    if(msg == "msg") {
+		int from = (Integer)args[0];
+		int gobid = (Integer)args[1];
+		String line = (String)args[2];
+		Color col = Color.WHITE;
+		synchronized(ui.sess.glob.party.memb) {
+		    Party.Member pm = ui.sess.glob.party.memb.get((long)gobid);
+		    if(pm != null)
+			col = pm.col;
+		}
+		if(from >= 0) {
+		    Message cmsg = new NamedMessage(from, line, col, iw());
+		    append(cmsg);
+		    notify(cmsg);
+		} else if(from == -1) {
+		    append(new MyMessage(line, iw()));
+		}
+	    }
+	}
+    }
+    
     public static class PrivChat extends EntryChannel {
 	private final int other;
 	
@@ -326,6 +353,11 @@ public class ChatUI extends Widget {
 		    String name = (String)args[0];
 		    boolean notify = ((Integer)args[1]) != 0;
 		    return(new MultiChat(parent, name, notify));
+		}
+	    });
+	addtype("pchat", new WidgetFactory() {
+		public Widget create(Coord c, Widget parent, Object[] args) {
+		    return(new PartyChat(parent));
 		}
 	    });
 	addtype("pmchat", new WidgetFactory() {

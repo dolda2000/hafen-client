@@ -182,6 +182,8 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	    return(buddies);
 	} else if(place == "chat") {
 	    return(chat.makechild(type, new Object[] {}, cargs));
+	} else if(place == "party") {
+	    return(gettype(type).create(new Coord(10, 95), this, cargs));
 	} else if(place == "misc") {
 	    return(gettype(type).create((Coord)pargs[1], this, cargs));
 	} else {
