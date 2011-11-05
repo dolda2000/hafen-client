@@ -87,12 +87,17 @@ public abstract class PView extends Widget {
 	    b.put(proj, this);
 	}
 	
-	public Coord3f toscreen(Coord3f ec) {
+	public Coord3f tonorm(Coord3f ec) {
 	    float[] o = projmat.mul4(ec.to4a(1));
-	    o[0] /= o[3]; o[1] /= o[3];
-	    o[0] = ((o[0] + 1) / 2) * sz.x;
-	    o[1] = ((-o[1] + 1) / 2) * sz.y;
-	    return(new Coord3f(o[0], o[1], o[2]));
+	    float d = 1 / o[3];
+	    return(new Coord3f(o[0] * d, o[1] * d, o[2]));
+	}
+
+	public Coord3f toscreen(Coord3f ec) {
+	    Coord3f n = tonorm(ec);
+	    return(new Coord3f(((n.x + 1) / 2) * sz.x,
+			       ((-n.y + 1) / 2) * sz.y,
+			       n.z));
 	}
     }
     
