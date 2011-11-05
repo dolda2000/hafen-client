@@ -522,11 +522,16 @@ public class MapView extends PView implements DTarget {
     }
 
     private void partydraw(GOut g) {
-	Gob plgob;
 	Coord3f cc;
+	PView.RenderState proj;
+	Matrix4f cam;
 	try {
-	    plgob = player();
+	    Gob plgob = player();
 	    if(plgob == null)
+		return;
+	    proj = plgob.save.proj;
+	    cam = plgob.save.cam;
+	    if((proj == null) || (cam == null))
 		return;
 	    cc = plgob.getc();
 	} catch(Loading e) {
@@ -540,7 +545,7 @@ public class MapView extends PView implements DTarget {
 		if(mc == null)
 		    continue;
 		Coord3f ploc = new Coord3f(mc.x, -mc.y, cc.z);
-		Coord3f sloc = plgob.save.proj.tonorm(plgob.save.cam.mul4(ploc));
+		Coord3f sloc = proj.tonorm(cam.mul4(ploc));
 		if(sloc.z < 0)
 		    sloc = sloc.inv();
 		if((sloc.x < -1) || (sloc.x > 1) || (sloc.y < -1) || (sloc.y > 1)) {
