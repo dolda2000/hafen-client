@@ -321,7 +321,7 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 
     public BuddyWnd(Coord c, Widget parent) {
 	super(c, new Coord(200, 370), parent, "Kin");
-	bl = new BuddyList(new Coord(10, 5), new Coord(180, 155), this);
+	bl = new BuddyList(new Coord(10, 5), new Coord(180, 140), this);
 	new Label(new Coord(5, 215), this, "Sort by:");
 	sbstatus = new Button(new Coord(10,  230), 50, this, "Status")      { public void click() { setcmp(statuscmp); } };
 	sbgroup  = new Button(new Coord(75,  230), 50, this, "Group")       { public void click() { setcmp(groupcmp); } };
