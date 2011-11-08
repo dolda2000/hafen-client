@@ -43,6 +43,7 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
     private long errtime;
     private Window invwnd, equwnd, makewnd;
     public BuddyWnd buddies;
+    public Polity polity;
     public Collection<GItem> hand = new LinkedList<GItem>();
     private WItem vhand;
     public ChatUI chat;
@@ -180,6 +181,10 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	    buddies = (BuddyWnd)gettype(type).create(new Coord(187, 50), this, cargs);
 	    buddies.hide();
 	    return(buddies);
+	} else if(place == "pol") {
+	    polity = (Polity)gettype(type).create(new Coord(500, 50), this, cargs);
+	    polity.hide();
+	    return(polity);
 	} else if(place == "chat") {
 	    return(chat.makechild(type, new Object[] {}, cargs));
 	} else if(place == "party") {
@@ -195,6 +200,8 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	if((w instanceof GItem) && hand.contains(w)) {
 	    hand.remove(w);
 	    updhand();
+	} else if(w == polity) {
+	    polity = null;
 	}
     }
     
@@ -288,6 +295,8 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	    return;
 	} else if((sender == buddies) && (msg == "close")) {
 	    buddies.hide();
+	} else if((sender == polity) && (msg == "close")) {
+	    polity.hide();
 	}
 	super.wdgmsg(sender, msg, args);
     }
@@ -324,6 +333,13 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 		buddies.raise();
 		fitwdg(buddies);
 		setfocus(buddies);
+	    }
+	    return(true);
+	} else if(key == 20) {
+	    if((polity != null) && polity.show(!polity.visible)) {
+		polity.raise();
+		fitwdg(polity);
+		setfocus(polity);
 	    }
 	    return(true);
 	}
