@@ -115,7 +115,7 @@ public class Polity extends Window {
 	}
     }
     
-    public static class MemberWidget extends Widget {
+    public static abstract class MemberWidget extends Widget {
 	public final int id;
 	
 	public MemberWidget(Coord c, Coord sz, Widget parent, int id) {
