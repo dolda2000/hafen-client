@@ -31,7 +31,8 @@ import java.util.*;
 
 public class Polity extends Window {
     public final String name;
-    public int auth, acap;
+    public int auth, acap, adrain;
+    public boolean offline;
     private final List<Member> memb = new ArrayList<Member>();
     private final Map<Integer, Member> idmap = new HashMap<Integer, Member>();
     private MemberList ml;
@@ -131,11 +132,29 @@ public class Polity extends Window {
     }
 
     public Polity(Coord c, Widget parent, String name) {
-	super(c, new Coord(200, 370), parent, "Town");
+	super(c, new Coord(200, 390), parent, "Town");
 	this.name = name;
 	new Label(new Coord(10, 5), this, name, nmf);
-	new Label(new Coord(10, 25), this, "Members:");
-	ml = new MemberList(new Coord(10, 40), new Coord(180, 140), this);
+	new Label(new Coord(10, 45), this, "Members:");
+	ml = new MemberList(new Coord(10, 60), new Coord(180, 140), this);
+    }
+    
+    private Tex rauth = null;
+    public void cdraw(GOut g) {
+	if(acap > 0) {
+	    synchronized(this) {
+		g.chcolor(0, 0, 0, 255);
+		g.frect(new Coord(10, 23), new Coord(180, 20));
+		g.chcolor(128, 0, 0, 255);
+		g.frect(new Coord(10, 24), new Coord((180 * auth) / acap, 18));
+		g.chcolor();
+		if(rauth == null) {
+		    Color col = offline?Color.RED:Color.WHITE;
+		    rauth = new TexI(Utils.outline2(Text.render(String.format("%s/%s", auth, acap), col).img, Utils.contrast(col)));
+		}
+		g.aimage(rauth, new Coord(100, 33), 0.5, 0.5);
+	    }
+	}
     }
     
     public void uimsg(String msg, Object... args) {
@@ -143,6 +162,9 @@ public class Polity extends Window {
 	    synchronized(this) {
 		auth = (Integer)args[0];
 		acap = (Integer)args[1];
+		adrain = (Integer)args[2];
+		offline = ((Integer)args[3]) != 0;
+		rauth = null;
 	    }
 	} else if(msg == "add") {
 	    int id = (Integer)args[0];
@@ -167,7 +189,7 @@ public class Polity extends Window {
 	if(pargs[0] instanceof String) {
 	    String p = (String)pargs[0];
 	    if(p.equals("m"))
-		return(mw = gettype(type).create(new Coord(10, 190), this, cargs));
+		return(mw = gettype(type).create(new Coord(10, 210), this, cargs));
 	}
 	return(super.makechild(type, pargs, cargs));
     }
