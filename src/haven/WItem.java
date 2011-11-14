@@ -52,7 +52,7 @@ public class WItem extends Widget implements DTarget {
 	GItem.Name nm = find(GItem.Name.class, info);
 	if(nm == null)
 	    return(null);
-	BufferedImage img = Text.render(nm.str.text).img;
+	BufferedImage img = nm.str.img;
 	return(img);
     }
 

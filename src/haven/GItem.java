@@ -85,8 +85,12 @@ public class GItem extends AWidget {
     public class Name extends Tip {
 	public final Text str;
 	
+	public Name(Text str) {
+	    this.str = str;
+	}
+	
 	public Name(String str) {
-	    this.str = Text.render(str);
+	    this(Text.render(str));
 	}
 	
 	public BufferedImage longtip() {
