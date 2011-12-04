@@ -92,7 +92,7 @@ public class Fightview extends Widget {
 			    Fightview.this.wdgmsg("give", (int)current.gobid, args[0]);
 		    }
 		};
-	    curava = new Avaview(cavac, this, -1) {
+	    curava = new Avaview(cavac, this, rel.gobid) {
 		    public void wdgmsg(String name, Object... args) {
 			if(name == "click")
 			    Fightview.this.wdgmsg("click", (int)current.gobid, args[0]);

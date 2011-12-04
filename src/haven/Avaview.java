@@ -29,28 +29,21 @@ package haven;
 import java.awt.Color;
 import java.util.*;
 
-public class Avaview extends Widget {
+public class Avaview extends PView {
     public static final Coord dasz = new Coord(74, 74);
-    private Coord asz;
-    long avagob;
-    boolean none = false;
-    AvaRender myown = null;
-    public Color color = Color.WHITE;
     public static final Coord unborder = new Coord(2, 2);
     public static final Tex missing = Resource.loadtex("gfx/hud/equip/missing");
+    public Color color = Color.WHITE;
+    private long avagob;
+    private Coord asz;
+    private Composited comp;
+    private List<Composited.MD> cmod = null;
+    private List<Composited.ED> cequ = null;
 	
     static {
 	Widget.addtype("av", new WidgetFactory() {
 		public Widget create(Coord c, Widget parent, Object[] args) {
 		    return(new Avaview(c, parent, (Integer)args[0]));
-		}
-	    });
-	Widget.addtype("av2", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    List<Indir<Resource>> rl = new LinkedList<Indir<Resource>>();
-		    for(Object arg : args)
-			rl.add(parent.ui.sess.getres((Integer)arg));
-		    return(new Avaview(c, parent, rl));
 		}
 	    });
     }
@@ -69,62 +62,67 @@ public class Avaview extends Widget {
 	this(c, parent, avagob, dasz);
     }
         
-    public Avaview(Coord c, Widget parent, List<Indir<Resource>> rl) {
-	this(c, parent, dasz);
-	if(rl.size() == 0)
-	    none = true;
-	else
-	    this.myown = new AvaRender(rl);
-    }
-	
     public void uimsg(String msg, Object... args) {
 	if(msg == "upd") {
 	    this.avagob = (long)(Integer)args[0];
 	    return;
 	}
-	if(msg == "ch") {
-	    List<Indir<Resource>> rl = new LinkedList<Indir<Resource>>();
-	    for(Object arg : args)
-		rl.add(ui.sess.getres((Integer)arg));
-	    if(rl.size() == 0) {
-		this.myown = null;
-		none = true;
-	    } else {
-		if(myown != null)
-		    myown.setlay(rl);
-		else
-		    myown = new AvaRender(rl);
-		none = false;
-	    }
-	    return;
-	}
 	super.uimsg(msg, args);
     }
         
+    private boolean missed = false;
+    private final Camera cam;
+    {
+	PointedCam cam = new PointedCam();
+	cam.base = new Coord3f(0, 0, 10);
+	cam.dist = 20;
+	cam.e = 0.4f;
+	cam.a = -0.2f;
+	this.cam = cam;
+    }
+
+    protected Camera camera() {
+	return(cam);
+    }
+
+    protected void setup(RenderList rl) {
+	Gob gob = ui.sess.glob.oc.getgob(avagob);
+	missed = false;
+	if(gob == null) {
+	    missed = true;
+	    return;
+	}
+	Drawable d = gob.getattr(Drawable.class);
+	if(!(d instanceof Composite)) {
+	    missed = true;
+	    return;
+	}
+	Composite gc = (Composite)d;
+	if(gc.comp == null) {
+	    missed = true;
+	    return;
+	}
+	if((comp == null) || (comp.skel != gc.comp.skel))
+	    comp = new Composited(gc.comp.skel);
+	if(gc.comp.cmod != this.cmod)
+	    comp.chmod(this.cmod = gc.comp.cmod);
+	if(gc.comp.cequ != this.cequ)
+	    comp.chequ(this.cequ = gc.comp.cequ);
+	rl.add(comp, null);
+	rl.add(new DirLight(Color.WHITE, Color.WHITE, Color.WHITE, new Coord3f(1, 1, 1).norm()), null);
+    }
+
     public void draw(GOut g) {
-	Tex at = null;
-	if(none) {
-	} else if(myown != null) {
-	    at = myown;
-	} else {
-	    Gob gob = ui.sess.glob.oc.getgob(avagob);
-	    Avatar ava = null;
-	    if(gob != null)
-		ava = gob.getattr(Avatar.class);
-	    if(ava != null)
-		at = ava.rend;
+	/*
+	g.chcolor(Color.BLACK);
+	g.frect(Coord.z, sz);
+	g.chcolor();
+	*/
+	super.draw(g);
+	if(missed) {
+	    GOut g2 = g.reclip(Window.wbox.tloff().add(unborder.inv()), asz);
+	    g2.image(missing, Coord.z);
 	}
-	GOut g2 = g.reclip(Window.wbox.tloff().add(unborder.inv()), asz);
-	int yo;
-	if(at == null) {
-	    at = missing;
-	    yo = 0;
-	} else {
-	    // g2.image(Equipory.bg, new Coord(Equipory.bg.sz().x / 2 - asz.x / 2, 20).inv());
-	    yo = (20 * asz.y) / dasz.y;
-	}
-	Coord tsz = new Coord((at.sz().x * asz.x) / dasz.x, (at.sz().y * asz.y) / dasz.y);
-	g2.image(at, new Coord(tsz.x / 2 - asz.x / 2, yo).inv(), tsz);
 	g.chcolor(color);
 	Window.wbox.draw(g, Coord.z, asz.add(Window.wbox.bisz()).add(unborder.mul(2).inv()));
     }

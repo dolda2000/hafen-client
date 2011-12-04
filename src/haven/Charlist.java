@@ -39,7 +39,7 @@ public class Charlist extends Widget {
 	static Text.Foundry tf = new Text.Foundry("Serif", 20);
 	String name;
 	Text nt;
-	Avaview ava;
+	// Avaview ava;
 	Button plb;
 	
 	public Char(String name) {
@@ -88,18 +88,19 @@ public class Charlist extends Widget {
 	int y = 20;
 	synchronized(chars) {
 	    for(Char c : chars) {
-		c.ava.hide();
+		// c.ava.hide();
 		c.plb.hide();
 	    }
 	    for(int i = 0; (i < height) && (i + this.y < chars.size()); i++) {
 		Char c = chars.get(i + this.y);
 		g.image(bg, new Coord(0, y));
-		c.ava.show();
+		// c.ava.show();
 		c.plb.show();
-		int off = (bg.sz().y - c.ava.sz.y) / 2;
-		c.ava.c = new Coord(off, off + y);
+		// int off = (bg.sz().y - c.ava.sz.y) / 2;
+		// c.ava.c = new Coord(off, off + y);
 		c.plb.c = bg.sz().add(-105, -24 + y);
-		g.image(c.nt.tex(), new Coord(off + c.ava.sz.x + 5, off + y));
+		// g.image(c.nt.tex(), new Coord(off + c.ava.sz.x + 5, off + y));
+		g.image(c.nt.tex(), new Coord(5, 5 + y));
 		y += bg.sz().y + margin;
 	    }
 	}
@@ -131,8 +132,8 @@ public class Charlist extends Widget {
 	    List<Indir<Resource>> resl = new LinkedList<Indir<Resource>>();
 	    for(int i = 1; i < args.length; i++)
 		resl.add(ui.sess.getres((Integer)args[i]));
-	    c.ava = new Avaview(new Coord(0, 0), this, resl);
-	    c.ava.hide();
+	    // c.ava = new Avaview(new Coord(0, 0), this, resl);
+	    // c.ava.hide();
 	    c.plb = new Button(new Coord(0, 0), 100, this, "Play");
 	    c.plb.hide();
 	    synchronized(chars) {
