@@ -184,12 +184,12 @@ public class OCache implements Iterable<Gob> {
 	}
     }
     
-    public synchronized void cmpmod(Gob g, List<Composite.MD> mod) {
+    public synchronized void cmpmod(Gob g, List<Composited.MD> mod) {
 	Composite cmp = (Composite)g.getattr(Drawable.class);
 	cmp.chmod(mod);
     }
     
-    public synchronized void cmpequ(Gob g, List<Composite.ED> equ) {
+    public synchronized void cmpequ(Gob g, List<Composited.ED> equ) {
 	Composite cmp = (Composite)g.getattr(Drawable.class);
 	cmp.chequ(equ);
     }
@@ -263,8 +263,8 @@ public class OCache implements Iterable<Gob> {
 	    if(ol == null) {
 		g.ols.add(ol = new Gob.Overlay(olid, resid, sdt));
 	    } else if(!ol.sdt.equals(sdt)) {
-		if(ol instanceof Gob.Overlay.CUpd) {
-		    ((Gob.Overlay.CUpd)ol).update(sdt);
+		if(ol.spr instanceof Gob.Overlay.CUpd) {
+		    ((Gob.Overlay.CUpd)ol.spr).update(sdt);
 		} else {
 		    g.ols.remove(ol);
 		    g.ols.add(ol = new Gob.Overlay(olid, resid, sdt));
