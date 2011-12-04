@@ -34,7 +34,7 @@ public class Avaview extends PView {
     public static final Coord unborder = new Coord(2, 2);
     public static final Tex missing = Resource.loadtex("gfx/hud/equip/missing");
     public Color color = Color.WHITE;
-    private long avagob;
+    public long avagob;
     private Coord asz;
     private Composited comp;
     private List<Composited.MD> cmod = null;
