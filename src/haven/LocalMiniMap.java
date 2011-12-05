@@ -103,9 +103,9 @@ public class LocalMiniMap extends Widget {
 	    } catch(Loading l) {}
 	}
 	if(mapimg != null) {
-	    GOut g2 = g.reclip(Window.swbox.tloff(), sz.sub(Window.swbox.bisz()));
+	    GOut g2 = g.reclip(Window.wbox.tloff(), sz.sub(Window.wbox.bisz()));
 	    g2.image(mapimg, ultile.sub(plt).add(sz.div(2)));
-	    Window.swbox.draw(g, Coord.z, sz);
+	    Window.wbox.draw(g, Coord.z, sz);
 	    try {
 		synchronized(ui.sess.glob.party.memb) {
 		    for(Party.Member m : ui.sess.glob.party.memb.values()) {
