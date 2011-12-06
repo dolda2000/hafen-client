@@ -71,34 +71,45 @@ public class Avaview extends PView {
     }
         
     private boolean missed = false;
-    private final Camera cam;
-    {
-	PointedCam cam = new PointedCam();
-	cam.base = new Coord3f(0, 0, 10);
-	cam.dist = 20;
-	cam.e = 0.4f;
-	cam.a = -0.2f;
-	this.cam = cam;
+    private Camera cam = null;
+
+    private Composite getgcomp() {
+	Gob gob = ui.sess.glob.oc.getgob(avagob);
+	if(gob == null)
+	    return(null);
+	Drawable d = gob.getattr(Drawable.class);
+	if(!(d instanceof Composite))
+	    return(null);
+	Composite gc = (Composite)d;
+	if(gc.comp == null)
+	    return(null);
+	return(gc);
     }
 
+    private static Camera makecam(Composite gc) {
+	for(Skeleton.BoneOffset bo : gc.base.get().layers(Skeleton.BoneOffset.class)) {
+	    if(bo.nm.equals("avacam")) {
+		GLState.Buffer buf = new GLState.Buffer(null);
+		bo.forpose(gc.comp.pose).prep(buf);
+		return(new LocationCam(buf.get(PView.loc)));
+	    }
+	}
+	throw(new Loading());
+    }
+    
+    private Composite lgc = null;
     protected Camera camera() {
+	Composite gc = getgcomp();
+	if(gc == null)
+	    throw(new Loading());
+	if((cam == null) || (gc != lgc))
+	    cam = makecam(lgc = gc);
 	return(cam);
     }
 
     protected void setup(RenderList rl) {
-	Gob gob = ui.sess.glob.oc.getgob(avagob);
-	missed = false;
-	if(gob == null) {
-	    missed = true;
-	    return;
-	}
-	Drawable d = gob.getattr(Drawable.class);
-	if(!(d instanceof Composite)) {
-	    missed = true;
-	    return;
-	}
-	Composite gc = (Composite)d;
-	if(gc.comp == null) {
+	Composite gc = getgcomp();
+	if(gc == null) {
 	    missed = true;
 	    return;
 	}
@@ -118,7 +129,12 @@ public class Avaview extends PView {
 	g.frect(Coord.z, sz);
 	g.chcolor();
 	*/
-	super.draw(g);
+	missed = false;
+	try {
+	    super.draw(g);
+	} catch(Loading e) {
+	    missed = true;
+	}
 	if(missed) {
 	    GOut g2 = g.reclip(Window.wbox.tloff().add(unborder.inv()), asz);
 	    g2.image(missing, Coord.z);
