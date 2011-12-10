@@ -122,6 +122,11 @@ public class Avaview extends PView {
 	rl.add(comp, null);
 	rl.add(new DirLight(Color.WHITE, Color.WHITE, Color.WHITE, new Coord3f(1, 1, 1).norm()), null);
     }
+    
+    public void tick(double dt) {
+	if(comp != null)
+	    comp.tick((int)(dt * 1000), 0);
+    }
 
     public void draw(GOut g) {
 	/*
