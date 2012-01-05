@@ -333,13 +333,14 @@ public class MapView extends PView implements DTarget {
     private abstract static class Clicklist<T> extends RenderList {
 	private Map<Color, T> rmap = new HashMap<Color, T>();
 	private int i = 1;
-	private GLState.Buffer plain;
+	private GLState.Buffer plain, bk;
 	
 	abstract protected T map(Rendered r);
 	
 	private Clicklist(GLState.Buffer plain) {
 	    super(plain.cfg);
 	    this.plain = plain;
+	    this.bk = new GLState.Buffer(plain.cfg);
 	}
 	
 	protected Color newcol(T t) {
@@ -364,9 +365,9 @@ public class MapView extends PView implements DTarget {
 	protected void setup(Slot s, Rendered r) {
 	    T t = map(r);
 	    super.setup(s, r);
-	    Location loc = s.os.get(PView.loc);
+	    s.os.copy(bk);
 	    plain.copy(s.os);
-	    s.os.put(PView.loc, loc);
+	    bk.copy(s.os, GLState.Slot.Type.GEOM);
 	    if(t != null) {
 		Color col = newcol(t);
 		new States.ColState(col).prep(s.os);

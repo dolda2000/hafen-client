@@ -194,6 +194,15 @@ public abstract class GLState {
 	    for(int i = states.length; i < dest.states.length; i++)
 		dest.states[i] = null;
 	}
+
+	public void copy(Buffer dest, Slot.Type type) {
+	    dest.adjust();
+	    adjust();
+	    for(int i = 0; i < states.length; i++) {
+		if(idlist[i].type == type)
+		    dest.states[i] = states[i];
+	    }
+	}
 	
 	private void adjust() {
 	    if(states.length < slotnum) {
