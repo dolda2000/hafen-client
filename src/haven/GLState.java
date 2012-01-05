@@ -71,13 +71,19 @@ public abstract class GLState {
     public static class Slot<T extends GLState> {
 	private static boolean dirty = false;
 	private static Collection<Slot<?>> all = new LinkedList<Slot<?>>();
+	public final Type type;
 	public final int id;
 	public final Class<T> scl;
 	private int depid = -1;
 	private final Slot<?>[] dep, rdep;
 	private Slot[] grdep;
 	
-	public Slot(Class<T> scl, Slot<?>[] dep, Slot<?>[] rdep) {
+	public static enum Type {
+	    SYS, GEOM, DRAW
+	}
+	
+	public Slot(Type type, Class<T> scl, Slot<?>[] dep, Slot<?>[] rdep) {
+	    this.type = type;
 	    this.scl = scl;
 	    synchronized(Slot.class) {
 		this.id = slotnum++;
@@ -106,8 +112,8 @@ public abstract class GLState {
 	    }
 	}
 	
-	public Slot(Class<T> scl, Slot... dep) {
-	    this(scl, dep, null);
+	public Slot(Type type, Class<T> scl, Slot... dep) {
+	    this(type, scl, dep, null);
 	}
 	
 	private static void makedeps(Collection<Slot<?>> slots) {
@@ -567,8 +573,8 @@ public abstract class GLState {
     public static abstract class StandAlone extends GLState {
 	public final Slot<StandAlone> slot;
 	
-	public StandAlone(Slot<?>... dep) {
-	    slot = new Slot<StandAlone>(StandAlone.class, dep);
+	public StandAlone(Slot.Type type, Slot<?>... dep) {
+	    slot = new Slot<StandAlone>(type, StandAlone.class, dep);
 	}
 	
 	public void prep(Buffer buf) {

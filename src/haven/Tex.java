@@ -27,7 +27,7 @@
 package haven;
 
 public abstract class Tex extends GLState {
-    public static final Slot<Tex> slot = new Slot<Tex>(Tex.class, HavenPanel.global);
+    public static final Slot<Tex> slot = new Slot<Tex>(Slot.Type.DRAW, Tex.class, HavenPanel.global);
     protected Coord dim;
     
     public Tex(Coord sz) {

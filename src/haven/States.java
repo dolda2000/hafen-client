@@ -32,7 +32,7 @@ import java.awt.Color;
 public abstract class States extends GLState {
     private States() {}
     
-    public static final Slot<ColState> color = new Slot<ColState>(ColState.class, HavenPanel.global);
+    public static final Slot<ColState> color = new Slot<ColState>(Slot.Type.DRAW, ColState.class, HavenPanel.global);
     public static class ColState extends GLState {
 	public final Color c;
 	public final float[] ca;
@@ -79,7 +79,7 @@ public abstract class States extends GLState {
 	}
     }
 
-    public static final StandAlone xray = new StandAlone(PView.proj) {
+    public static final StandAlone xray = new StandAlone(Slot.Type.GEOM, PView.proj) {
 	    public void apply(GOut g) {
 		g.gl.glDisable(GL.GL_DEPTH_TEST);
 	    }
@@ -89,7 +89,7 @@ public abstract class States extends GLState {
 	    }
 	};
     
-    public static final StandAlone fsaa = new StandAlone(PView.proj) {
+    public static final StandAlone fsaa = new StandAlone(Slot.Type.SYS, PView.proj) {
 	    public void apply(GOut g) {
 		g.gl.glEnable(GL.GL_MULTISAMPLE);
 	    }
@@ -99,7 +99,7 @@ public abstract class States extends GLState {
 	    }
 	};
     
-    public static final Slot<Coverage> coverage = new Slot<Coverage>(Coverage.class, PView.proj);
+    public static final Slot<Coverage> coverage = new Slot<Coverage>(Slot.Type.DRAW, Coverage.class, PView.proj);
     public static class Coverage extends GLState {
 	public final float cov;
 	public final boolean inv;
@@ -126,7 +126,7 @@ public abstract class States extends GLState {
 	}
     };
     
-    public static final StandAlone presdepth = new StandAlone(PView.proj) {
+    public static final StandAlone presdepth = new StandAlone(Slot.Type.GEOM, PView.proj) {
 	    public void apply(GOut g) {
 		g.gl.glDepthMask(false);
 	    }
@@ -136,7 +136,7 @@ public abstract class States extends GLState {
 	    }
 	};
     
-    public static final Slot<Fog> fog = new Slot<Fog>(Fog.class, PView.proj);
+    public static final Slot<Fog> fog = new Slot<Fog>(Slot.Type.DRAW, Fog.class, PView.proj);
     public static class Fog extends GLState {
 	public final Color c;
 	public final float[] ca;
@@ -168,7 +168,7 @@ public abstract class States extends GLState {
 	}
     }
 
-    public static final Slot<DepthOffset> depthoffset = new Slot<DepthOffset>(DepthOffset.class, PView.proj);
+    public static final Slot<DepthOffset> depthoffset = new Slot<DepthOffset>(Slot.Type.GEOM, DepthOffset.class, PView.proj);
     public static class DepthOffset extends GLState {
 	public final int mode;
 	public final float factor, units;
@@ -199,7 +199,7 @@ public abstract class States extends GLState {
 	}
     }
     
-    public static final StandAlone nullprog = new StandAlone(PView.proj) {
+    public static final StandAlone nullprog = new StandAlone(Slot.Type.DRAW, PView.proj) {
 	    private final GLShader[] sh;
 	    {
 		sh = new GLShader[] {

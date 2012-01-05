@@ -71,9 +71,9 @@ public class Light implements Rendered {
 	gl.glDisable(GL.GL_LIGHT0 + idx);
     }
     
-    public static final GLState.Slot<LightList> lights = new GLState.Slot<LightList>(LightList.class, PView.cam);
-    public static final GLState.Slot<Model> model = new GLState.Slot<Model>(Model.class, PView.proj);
-    public static final GLState.Slot<GLState> lighting = new GLState.Slot<GLState>(GLState.class, model, lights);
+    public static final GLState.Slot<LightList> lights = new GLState.Slot<LightList>(GLState.Slot.Type.DRAW, LightList.class, PView.cam);
+    public static final GLState.Slot<Model> model = new GLState.Slot<Model>(GLState.Slot.Type.DRAW, Model.class, PView.proj);
+    public static final GLState.Slot<GLState> lighting = new GLState.Slot<GLState>(GLState.Slot.Type.DRAW, GLState.class, model, lights);
     
     public static class BaseLights extends GLState {
 	private final GLShader[] shaders;

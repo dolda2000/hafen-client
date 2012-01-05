@@ -34,7 +34,7 @@ import static haven.Utils.c2fa;
 public class Material extends GLState {
     public final GLState[] states;
     
-    public static final GLState nofacecull = new GLState.StandAlone(PView.proj) {
+    public static final GLState nofacecull = new GLState.StandAlone(Slot.Type.GEOM, PView.proj) {
 	    public void apply(GOut g) {
 		g.gl.glDisable(GL.GL_CULL_FACE);
 	    }
@@ -44,7 +44,7 @@ public class Material extends GLState {
 	    }
 	};
     
-    public static final GLState alphaclip = new GLState.StandAlone(PView.proj) {
+    public static final GLState alphaclip = new GLState.StandAlone(Slot.Type.DRAW, PView.proj) {
 	    public void apply(GOut g) {
 		g.gl.glEnable(GL.GL_ALPHA_TEST);
 	    }
@@ -59,7 +59,7 @@ public class Material extends GLState {
     public static final float[] defspc = {0.0f, 0.0f, 0.0f, 1.0f};
     public static final float[] defemi = {0.0f, 0.0f, 0.0f, 1.0f};
     
-    public static final GLState.Slot<Colors> colors = new GLState.Slot<Colors>(Colors.class);
+    public static final GLState.Slot<Colors> colors = new GLState.Slot<Colors>(Slot.Type.DRAW, Colors.class);
     public static class Colors extends GLState {
 	public float[] amb, dif, spc, emi;
 	public float shine;

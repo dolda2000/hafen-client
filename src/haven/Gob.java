@@ -202,7 +202,7 @@ public class Gob implements Sprite.Owner, Rendered {
 	return(null);
     }
     
-    public static final GLState.Slot<Save> savepos = new GLState.Slot<Save>(Save.class, PView.loc);
+    public static final GLState.Slot<Save> savepos = new GLState.Slot<Save>(GLState.Slot.Type.SYS, Save.class, PView.loc);
     public class Save extends GLState {
 	public Matrix4f cam = new Matrix4f(), wxf = new Matrix4f(),
 	    mv = new Matrix4f();
