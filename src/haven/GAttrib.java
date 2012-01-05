@@ -38,4 +38,7 @@ public abstract class GAttrib {
 	
     public void ctick(int dt) {
     }
+    
+    public void dispose() {
+    }
 }

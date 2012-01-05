@@ -123,6 +123,11 @@ public class Gob implements Sprite.Owner, Rendered {
 	for(GAttrib a : attr.values())
 	    a.tick();
     }
+    
+    public void dispose() {
+	for(GAttrib a : attr.values())
+	    a.dispose();
+    }
 	
     public void move(Coord c, double a) {
 	Moving m = getattr(Moving.class);

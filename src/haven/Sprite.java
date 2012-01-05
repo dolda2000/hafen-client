@@ -131,4 +131,7 @@ public abstract class Sprite implements Rendered {
     public boolean tick(int dt) {
 	return(false);
     }
+    
+    public void dispose() {
+    }
 }
