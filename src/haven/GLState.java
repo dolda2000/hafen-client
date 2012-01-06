@@ -252,6 +252,11 @@ public abstract class GLState {
 	    buf.append(']');
 	    return(buf.toString());
 	}
+	
+	/* Should be used very, very sparingly. */
+	GLState[] states() {
+	    return(states);
+	}
     }
     
     public static int bufdiff(Buffer f, Buffer t, boolean[] trans, boolean[] repl) {
@@ -577,6 +582,12 @@ public abstract class GLState {
 		    }
 		}
 	    });
+    }
+    
+    public interface Global {
+	public void postsetup(RenderList rl);
+	public void prerender(RenderList rl, GOut g);
+	public void postrender(RenderList rl, GOut g);
     }
     
     public static abstract class StandAlone extends GLState {

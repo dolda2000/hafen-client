@@ -33,6 +33,7 @@ public class RenderList {
     private Slot[] list = new Slot[100];
     private int cur = 0;
     private Slot curp = null;
+    private GLState.Global[] gstates = new GLState.Global[0];
     private static final ThreadLocal<RenderList> curref = new ThreadLocal<RenderList>();
     
     public class Slot {
@@ -148,7 +149,27 @@ public class RenderList {
 	}
     };
     
-    public void sort() {
+    private GLState.Global[] getgstates() {
+	/* This is probably a fast way to intern the states. */
+	IdentityHashMap<GLState.Global, GLState.Global> gstates = new IdentityHashMap<GLState.Global, GLState.Global>(this.gstates.length);
+	for(int i = 0; i < cur; i++) {
+	    if(list[i].o == null)
+		continue;
+	    GLState[] sl = list[i].os.states();
+	    for(GLState st : sl) {
+		if(st instanceof GLState.Global) {
+		    GLState.Global gst = (GLState.Global)st;
+		    gstates.put(gst, gst);
+		}
+	    }
+	}
+	return(gstates.keySet().toArray(new GLState.Global[0]));
+    }
+
+    public void fin() {
+	gstates = getgstates();
+	for(GLState.Global gs : gstates)
+	    gs.postsetup(this);
 	Arrays.sort(list, 0, cur, cmp);
     }
     
@@ -157,6 +178,8 @@ public class RenderList {
     }
 
     public void render(GOut g) {
+	for(GLState.Global gs : gstates)
+	    gs.prerender(this, g);
 	for(int i = 0; i < cur; i++) {
 	    Slot s = list[i];
 	    if(s.o == null)
@@ -164,6 +187,8 @@ public class RenderList {
 	    g.st.set(s.os);
 	    render(g, s.r);
 	}
+	for(GLState.Global gs : gstates)
+	    gs.postrender(this, g);
     }
 
     public void rewind() {

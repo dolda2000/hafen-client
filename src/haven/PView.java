@@ -149,7 +149,7 @@ public abstract class PView extends Widget {
 	    rls.setup(scene, def);
 	    if(curf != null)
 		curf.tick("setup");
-	    rls.sort();
+	    rls.fin();
 	    if(curf != null)
 		curf.tick("sort");
 	    g.st.set(def);
