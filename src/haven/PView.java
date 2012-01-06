@@ -167,9 +167,9 @@ public abstract class PView extends Widget {
 	} finally {
 	    g.st.set(bk);
 	}
-	for(int i = 0; i < rls.cur; i++) {
-	    if(rls.list[i].r instanceof Render2D)
-		((Render2D)rls.list[i].r).draw2d(g);
+	for(RenderList.Slot s : rls.slots()) {
+	    if(s.r instanceof Render2D)
+		((Render2D)s.r).draw2d(g);
 	}
 	if(curf != null)
 	    curf.tick("2d");
