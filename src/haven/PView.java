@@ -31,22 +31,19 @@ import javax.media.opengl.*;
 
 public abstract class PView extends Widget {
     private RenderList rls;
-    public static final GLState.Slot<RenderState> proj = new GLState.Slot<RenderState>(GLState.Slot.Type.SYS, RenderState.class, HavenPanel.proj2d);
+    public static final GLState.Slot<RenderState> wnd = new GLState.Slot<RenderState>(GLState.Slot.Type.SYS, RenderState.class, HavenPanel.proj2d);
+    public static final GLState.Slot<Projection> proj = new GLState.Slot<Projection>(GLState.Slot.Type.SYS, Projection.class, wnd);
     public static final GLState.Slot<Camera> cam = new GLState.Slot<Camera>(GLState.Slot.Type.SYS, Camera.class, proj);
     public static final GLState.Slot<Location> loc = new GLState.Slot<Location>(GLState.Slot.Type.GEOM, Location.class, cam);
     public Profile prof = new Profile(300);
     protected Light.Model lm;
-    private GLState pstate;
+    private GLState rstate, pstate;
     
-    public class RenderState extends GLState {
-	public final float field = 0.5f;
-	public final float aspect = ((float)sz.y) / ((float)sz.x);
-	public final Matrix4f projmat = new Matrix4f();
-	
+    public static class RenderState extends GLState {
 	public void apply(GOut g) {
 	    GL gl = g.gl;
-	    gl.glScissor(g.ul.x, ui.root.sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
-	    gl.glViewport(g.ul.x, ui.root.sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
+	    gl.glScissor(g.ul.x, g.root().sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
+	    gl.glViewport(g.ul.x, g.root().sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
 
 	    gl.glAlphaFunc(gl.GL_GREATER, 0.5f);
 	    gl.glEnable(gl.GL_DEPTH_TEST);
@@ -54,26 +51,10 @@ public abstract class PView extends Widget {
 	    gl.glEnable(gl.GL_SCISSOR_TEST);
 	    gl.glDepthFunc(gl.GL_LEQUAL);
 	    gl.glClearDepth(1.0);
-
-	    g.st.matmode(GL.GL_PROJECTION);
-	    gl.glPushMatrix();
-	    gl.glLoadIdentity();
-	    gl.glFrustum(-field, field, -aspect * field, aspect * field, 1, 5000);
-	    projmat.getgl(gl, GL.GL_PROJECTION_MATRIX);
-
-	    g.st.matmode(gl.GL_MODELVIEW);
-	    gl.glPushMatrix();
-	    gl.glLoadIdentity();
 	}
 	
 	public void unapply(GOut g) {
 	    GL gl = g.gl;
-
-	    g.st.matmode(gl.GL_MODELVIEW);
-	    gl.glPopMatrix();
-
-	    g.st.matmode(gl.GL_PROJECTION);
-	    gl.glPopMatrix();
 
 	    gl.glDisable(gl.GL_DEPTH_TEST);
 	    gl.glDisable(gl.GL_CULL_FACE);
@@ -84,32 +65,23 @@ public abstract class PView extends Widget {
 	}
 	
 	public void prep(Buffer b) {
-	    b.put(proj, this);
-	}
-	
-	public Coord3f tonorm(Coord3f ec) {
-	    float[] o = projmat.mul4(ec.to4a(1));
-	    float d = 1 / o[3];
-	    return(new Coord3f(o[0] * d, o[1] * d, o[2]));
-	}
-
-	public Coord3f toscreen(Coord3f ec) {
-	    Coord3f n = tonorm(ec);
-	    return(new Coord3f(((n.x + 1) / 2) * sz.x,
-			       ((-n.y + 1) / 2) * sz.y,
-			       n.z));
+	    b.put(wnd, this);
 	}
     }
     
     public PView(Coord c, Coord sz, Widget parent) {
 	super(c, sz, parent);
-	pstate = new RenderState();
+	rstate = new RenderState();
+	float field = 0.5f;
+	float aspect = ((float)sz.y) / ((float)sz.x);
+	pstate = Projection.frustum(-field, field, -aspect * field, aspect * field, 1, 5000);
 	lm = new Light.Model();
 	lm.cc = GL.GL_SEPARATE_SPECULAR_COLOR;
     }
     
     protected GLState.Buffer basic(GOut g) {
 	GLState.Buffer buf = g.st.copy();
+	rstate.prep(buf);
 	pstate.prep(buf);
 	camera().prep(buf);
 	return(buf);

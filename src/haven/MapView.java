@@ -524,7 +524,7 @@ public class MapView extends PView implements DTarget {
 
     private void partydraw(GOut g) {
 	Coord3f cc;
-	PView.RenderState proj;
+	Projection proj;
 	Matrix4f cam;
 	try {
 	    Gob plgob = player();
