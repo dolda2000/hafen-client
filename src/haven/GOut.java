@@ -91,6 +91,10 @@ public class GOut {
     public GOut root() {
 	return(root);
     }
+    
+    public GLState.Buffer basicstate() {
+	return(def2d.copy());
+    }
 
     public void image(BufferedImage img, Coord c) {
 	if(img == null)
