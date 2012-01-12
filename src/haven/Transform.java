@@ -69,6 +69,12 @@ public abstract class Transform extends GLState {
 	return(d);
     }
     
+    public static Matrix4f rxinvert(Matrix4f m) {
+	/* This assumes that m is merely a composition of rotations
+	 * and translations. */
+	return(m.trim3(1).transpose().mul1(makexlate(new Matrix4f(), new Coord3f(-m.m[12], -m.m[13], -m.m[14]))));
+    }
+
     public String toString() {
 	return(this.getClass().getName() + "(" + xf + ")");
     }

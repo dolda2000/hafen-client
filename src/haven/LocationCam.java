@@ -34,7 +34,7 @@ public class LocationCam extends Camera {
     
     /* Oh, Java. <3 */
     private LocationCam(Location loc, Matrix4f lm) {
-	super(base.mul(invert(lm)));
+	super(base.mul(rxinvert(lm)));
 	this.ll = lm;
 	this.loc = loc;
     }
@@ -43,16 +43,10 @@ public class LocationCam extends Camera {
 	this(loc, loc.fin(Matrix4f.id));
     }
     
-    private static Matrix4f invert(Matrix4f m) {
-	/* This assumes that m is merely a composition of rotations
-	 * and translations. */
-	return(m.trim3(1).transpose().mul1(makexlate(new Matrix4f(), new Coord3f(-m.m[12], -m.m[13], -m.m[14]))));
-    }
-
     public Matrix4f fin(Matrix4f p) {
 	Matrix4f lm = loc.fin(Matrix4f.id);
 	if(lm != ll)
-	    update(base.mul(invert(ll = lm)));
+	    update(base.mul(rxinvert(ll = lm)));
 	return(super.fin(p));
     }
 }
