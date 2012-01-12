@@ -59,9 +59,13 @@ public abstract class TexGL extends Tex {
 	}
     }
     
-    public TexGL(Coord sz) {
+    public TexGL(Coord sz, Coord tdim) {
 	super(sz);
-	tdim = new Coord(nextp2(sz.x), nextp2(sz.y));
+	this.tdim = tdim;
+    }
+
+    public TexGL(Coord sz) {
+	this(sz, new Coord(nextp2(sz.x), nextp2(sz.y)));
     }
 	
     protected abstract void fill(GOut gl);
@@ -158,7 +162,7 @@ public abstract class TexGL extends Tex {
 	dispose();
     }
 
-    private int glid(GOut g) {
+    public int glid(GOut g) {
 	GL gl = g.gl;
 	synchronized(idmon) {
 	    if((t != null) && (t.gl != gl))
