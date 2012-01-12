@@ -119,6 +119,18 @@ public class RenderList {
 	setup(s, r);
     }
     
+    public void add(Rendered r, GLState.Buffer t, Rendered.Order o) {
+	Slot s = getslot();
+	t.copy(s.os);
+	s.r = r;
+	s.p = curp;
+	s.o = o;
+    }
+    
+    public GLState.Buffer cstate() {
+	return(curp.cs);
+    }
+
     public GLState.Buffer state() {
 	return(curp.os);
     }
