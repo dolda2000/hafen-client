@@ -161,6 +161,7 @@ public class Light implements Rendered {
 		    GLShader.FragmentShader.load(Light.class, "glsl/pslight.frag"),
 		});
 	    lbuf = new TexE(res, GL.GL_DEPTH_COMPONENT, GL.GL_DEPTH_COMPONENT, GL.GL_UNSIGNED_INT);
+	    lbuf.magfilter = GL.GL_LINEAR;
 	    lbuf.wrapmode = GL.GL_CLAMP;
 	    lproj = Projection.ortho(-300, 300, -300, 300, 1, 2500);
 	    lcam = new DirCam();
