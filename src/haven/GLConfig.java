@@ -84,6 +84,10 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 				if(!shuse)
 				    throw(new Exception("Per-pixel lighting requires shader usage."));
 				deflight = Light.plights;
+			    } else if(args[2].equals("pslight")) {
+				if(!shuse)
+				    throw(new Exception("Per-pixel lighting requires shader usage."));
+				deflight = Light.pslights;
 			    } else if(args[2].equals("vcel")) {
 				if(!shuse)
 				    throw(new Exception("Cel-shading requires shader usage."));

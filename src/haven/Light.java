@@ -141,6 +141,132 @@ public class Light implements Rendered {
 	    GLShader.FragmentShader.load(Light.class, "glsl/pcel.frag"),
 	});
     
+    public static class PSLights extends BaseLights implements GLState.Global {
+	public final TexE lbuf;
+	private final FBView tgt;
+	private final Projection lproj;
+	private final DirCam lcam;
+	private final static Matrix4f texbias = new Matrix4f(0.5f, 0.0f, 0.0f, 0.5f,
+							     0.0f, 0.5f, 0.0f, 0.5f,
+							     0.0f, 0.0f, 0.5f, 0.5f,
+							     0.0f, 0.0f, 0.0f, 1.0f);
+	public final List<RenderList.Slot> parts = new ArrayList<RenderList.Slot>();
+	private int slidx;
+	private Matrix4f txf;
+	
+	public PSLights(Coord res) {
+	    super(new GLShader[] {
+		    GLShader.VertexShader.load(Light.class, "glsl/pslight.vert"),
+		    GLShader.FragmentShader.load(Light.class, "glsl/plight-base.frag"),
+		    GLShader.FragmentShader.load(Light.class, "glsl/pslight.frag"),
+		});
+	    lbuf = new TexE(res, GL.GL_DEPTH_COMPONENT, GL.GL_DEPTH_COMPONENT, GL.GL_UNSIGNED_INT);
+	    lbuf.wrapmode = GL.GL_CLAMP;
+	    lproj = Projection.ortho(-300, 300, -300, 300, 1, 2500);
+	    lcam = new DirCam();
+	    tgt = new FBView(new GLFrameBuffer(null, lbuf), GLState.compose(lproj, lcam));
+	}
+	
+	private final Rendered scene = new Rendered() {
+		public void draw(GOut g) {}
+		    
+		public Order setup(RenderList rl) {
+		    GLState.Buffer buf = new GLState.Buffer(rl.cfg);
+		    for(RenderList.Slot s : parts) {
+			rl.state().copy(buf);
+			s.os.copy(buf, GLState.Slot.Type.GEOM);
+			rl.add(s.r, buf, s.o);
+		    }
+		    return(null);
+		}
+	    };
+	    
+	public void apply(GOut g) {
+	    GL gl = g.gl;
+	    g.st.texunit(1);
+	    gl.glBindTexture(GL.GL_TEXTURE_2D, lbuf.glid(g));
+	    super.apply(g);
+	}
+	
+	public void unapply(GOut g) {
+	    super.unapply(g);
+	    GL gl = g.gl;
+	    g.st.texunit(1);
+	    gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+	}
+
+	public void reapply(GOut g) {
+	    super.reapply(g);
+	    GL gl = g.gl;
+	    gl.glUniformMatrix4fv(g.st.prog.uniform("pslight_txf"), 1, false, txf.m, 0);
+	    gl.glUniform1i(g.st.prog.uniform("pslight_sl"), slidx);
+	    gl.glUniform1i(g.st.prog.uniform("pslight_map"), 1);
+	}
+
+	public void prerender(RenderList rl, GOut g) {
+	    parts.clear();
+	    LightList ll = null;
+	    Camera cam = null;
+	    for(RenderList.Slot s : rl.slots()) {
+		if(s.o == null)
+		    continue;
+		if(s.os.get(lighting) != this)
+		    continue;
+		if(ll == null) {
+		    PView.RenderState rs = s.os.get(PView.wnd);
+		    cam = s.os.get(PView.cam);
+		    ll = s.os.get(lights);
+		}
+		parts.add(s);
+	    }
+	    
+	    slidx = -1;
+	    for(int i = 0; i < ll.ll.size(); i++) {
+		Light cl = ll.ll.get(i);
+		if(cl instanceof DirLight) {
+		    DirLight dl = (DirLight)cl;
+		    lcam.dir = new Coord3f(-dl.dir[0], -dl.dir[1], -dl.dir[2]);
+		    slidx = i;
+		    break;
+		}
+	    }
+	    Matrix4f cm = Transform.rxinvert(cam.fin(Matrix4f.id));
+	    Coord3f orig = cm.mul4(Coord3f.o);
+	    lcam.base = orig;
+	    /*
+	    txf = cm;
+	    txf = lcam.fin(Matrix4f.id).mul(txf);
+	    txf = lproj.fin(Matrix4f.id).mul(txf);
+	    txf = texbias.mul(txf);
+	    */
+	    txf = texbias
+		.mul(lproj.fin(Matrix4f.id))
+		.mul(lcam.fin(Matrix4f.id))
+		.mul(cm);
+	    tgt.render(scene, g);
+	}
+	
+	public void postsetup(RenderList rl) {}
+	public void postrender(RenderList rl, GOut g) {
+	    /* g.image(lbuf, Coord.z, g.sz); */
+	}
+    }
+    public static final GLState pslights = new GLState() {
+	    private final Map<PView.RenderState, PSLights> states = new WeakHashMap<PView.RenderState, PSLights>();
+	    
+	    public void apply(GOut g) {}
+	    public void unapply(GOut g) {}
+	    public void prep(Buffer buf) {
+		PView.RenderState rs = buf.get(PView.wnd);
+		PSLights l;
+		synchronized(states) {
+		    if((l = states.get(rs)) == null)
+			states.put(rs, l = new PSLights(new Coord(1024, 1024)));
+		}
+		l.prep(buf);
+	    }
+	};
+    
     public static final GLState deflight = new GLState() {
 	    public void apply(GOut g) {}
 	    public void unapply(GOut g) {}
