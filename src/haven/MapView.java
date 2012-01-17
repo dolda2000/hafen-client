@@ -56,6 +56,8 @@ public class MapView extends PView implements DTarget {
     }
     
     public abstract class Camera extends haven.Camera {
+	private boolean loading;
+	
 	public Camera() {
 	    super(Matrix4f.identity());
 	}
@@ -76,8 +78,18 @@ public class MapView extends PView implements DTarget {
 	public abstract float angle();
 	
 	public Matrix4f fin(Matrix4f p) {
-	    update(compute());
+	    if(loading)
+		throw(new Loading());
 	    return(super.fin(p));
+	}
+	
+	public void tick(double dt) {
+	    loading = false;
+	    try {
+		update(compute());
+	    } catch(Loading e) {
+		loading = true;
+	    }
 	}
     }
     
@@ -590,6 +602,10 @@ public class MapView extends PView implements DTarget {
 	}
 	poldraw(g);
 	partydraw(g);
+    }
+    
+    public void tick(double dt) {
+	camera.tick(dt);
     }
     
     public void resize(Coord sz) {
