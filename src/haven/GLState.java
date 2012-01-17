@@ -172,6 +172,10 @@ public abstract class GLState {
 		dirty = false;
 	    }
 	}
+	
+	public String toString() {
+	    return("Slot<" + scl.getName() + ">");
+	}
     }
     
     public static class Buffer {
@@ -360,6 +364,7 @@ public abstract class GLState {
 	public void apply(GOut g) {
 	    long st = 0;
 	    if(Config.profile) st = System.nanoTime();
+	    Slot<?>[] deplist = GLState.deplist;
 	    if(trans.length < slotnum) {
 		synchronized(Slot.class) {
 		    trans = new boolean[slotnum];
@@ -412,24 +417,26 @@ public abstract class GLState {
 		}
 	    }
 	    Matrix4f oc = cam, ow = wxf;
-	    for(int i = trans.length - 1; i >= 0; i--) {
-		if(repl[i]) {
-		    if(cur.states[i] != null)
-			cur.states[i].unapply(g);
-		    cur.states[i] = null;
+	    for(int i = deplist.length - 1; i >= 0; i--) {
+		int id = deplist[i].id;
+		if(repl[id]) {
+		    if(cur.states[id] != null)
+			cur.states[id].unapply(g);
+		    cur.states[id] = null;
 		}
 	    }
-	    for(int i = 0; i < trans.length; i++) {
-		if(repl[i]) {
-		    cur.states[i] = next.states[i];
-		    if(cur.states[i] != null)
-			cur.states[i].apply(g);
-		} else if(trans[i]) {
-		    cur.states[i].applyto(g, next.states[i]);
-		    GLState cs = cur.states[i];
-		    (cur.states[i] = next.states[i]).applyfrom(g, cs);
-		} else if((prog != null) && dirty && (shaders[i] != null)) {
-		    cur.states[i].reapply(g);
+	    for(int i = 0; i < deplist.length; i++) {
+		int id = deplist[i].id;
+		if(repl[id]) {
+		    cur.states[id] = next.states[id];
+		    if(cur.states[id] != null)
+			cur.states[id].apply(g);
+		} else if(trans[id]) {
+		    cur.states[id].applyto(g, next.states[id]);
+		    GLState cs = cur.states[id];
+		    (cur.states[id] = next.states[id]).applyfrom(g, cs);
+		} else if((prog != null) && dirty && (shaders[id] != null)) {
+		    cur.states[id].reapply(g);
 		}
 	    }
 	    if((oc != cam) || (ow != wxf)) {
