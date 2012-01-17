@@ -303,13 +303,28 @@ public class MapView extends PView implements DTarget {
 	return(camera);
     }
 
+    private Light.PSLights.ShadowMap smap = null;
     public void setup(RenderList rl) {
 	Gob pl = player();
 	if(pl != null)
 	    this.cc = new Coord(pl.getc());
 	synchronized(glob) {
-	    if(glob.lightamb != null)
-		rl.add(new DirLight(glob.lightamb, glob.lightdif, glob.lightspc, Coord3f.o.sadd((float)glob.lightelev, (float)glob.lightang, 1f)), null);
+	    if(glob.lightamb != null) {
+		DirLight light = new DirLight(glob.lightamb, glob.lightdif, glob.lightspc, Coord3f.o.sadd((float)glob.lightelev, (float)glob.lightang, 1f));
+		rl.add(light, null);
+		if(rl.cfg.deflight == Light.pslights) {
+		    if(smap == null)
+			smap = new Light.PSLights.ShadowMap(new Coord(1024, 1024));
+		    smap.light = light;
+		    smap.lcam.dir = new Coord3f(-light.dir[0], -light.dir[1], -light.dir[2]);
+		    Coord3f base = getcc();
+		    base.y = -base.y;
+		    smap.lcam.base = base.add(smap.lcam.dir.neg().mul(1000f));
+		    rl.prepc(smap);
+		} else {
+		    smap = null;
+		}
+	    }
 	}
 	rl.add(map, null);
 	rl.add(mapol, null);

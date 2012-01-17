@@ -141,117 +141,140 @@ public class Light implements Rendered {
 	    GLShader.FragmentShader.load(Light.class, "glsl/pcel.frag"),
 	});
     
-    public static class PSLights extends BaseLights implements GLState.Global {
-	public final TexE lbuf;
-	private final FBView tgt;
-	private final Projection lproj;
-	private final DirCam lcam;
-	private final static Matrix4f texbias = new Matrix4f(0.5f, 0.0f, 0.0f, 0.5f,
-							     0.0f, 0.5f, 0.0f, 0.5f,
-							     0.0f, 0.0f, 0.5f, 0.5f,
-							     0.0f, 0.0f, 0.0f, 1.0f);
-	public final List<RenderList.Slot> parts = new ArrayList<RenderList.Slot>();
-	private int slidx;
-	private Matrix4f txf;
+    public static class PSLights extends BaseLights {
+	public static class ShadowMap extends GLState implements GLState.Global {
+	    public final static Slot<ShadowMap> smap = new Slot<ShadowMap>(Slot.Type.DRAW, ShadowMap.class, new Slot[] {lights}, new Slot[] {lighting});
+	    public DirLight light;
+	    public final TexE lbuf;
+	    public final Projection lproj;
+	    public final DirCam lcam;
+	    private final FBView tgt;
+	    private final static Matrix4f texbias = new Matrix4f(0.5f, 0.0f, 0.0f, 0.5f,
+								 0.0f, 0.5f, 0.0f, 0.5f,
+								 0.0f, 0.0f, 0.5f, 0.5f,
+								 0.0f, 0.0f, 0.0f, 1.0f);
+	    private final List<RenderList.Slot> parts = new ArrayList<RenderList.Slot>();
+	    private int slidx;
+	    public Matrix4f txf;
+	    
+	    public ShadowMap(Coord res) {
+		lbuf = new TexE(res, GL.GL_DEPTH_COMPONENT, GL.GL_DEPTH_COMPONENT, GL.GL_UNSIGNED_INT);
+		lbuf.magfilter = GL.GL_LINEAR;
+		lbuf.wrapmode = GL.GL_CLAMP;
+		lproj = Projection.ortho(-300, 300, -300, 300, 1, 2500);
+		lcam = new DirCam();
+		tgt = new FBView(new GLFrameBuffer(null, lbuf), GLState.compose(lproj, lcam));
+	    }
 	
-	public PSLights(Coord res) {
+	    private final Rendered scene = new Rendered() {
+		    public void draw(GOut g) {}
+		    
+		    public Order setup(RenderList rl) {
+			GLState.Buffer buf = new GLState.Buffer(rl.cfg);
+			for(RenderList.Slot s : parts) {
+			    rl.state().copy(buf);
+			    s.os.copy(buf, GLState.Slot.Type.GEOM);
+			    rl.add(s.r, buf, s.o);
+			}
+			return(null);
+		    }
+		};
+
+	    public void prerender(RenderList rl, GOut g) {
+		parts.clear();
+		LightList ll = null;
+		Camera cam = null;
+		for(RenderList.Slot s : rl.slots()) {
+		    if(s.o == null)
+			continue;
+		    if((s.os.get(smap) != this) || (s.os.get(lighting) != pslights))
+			continue;
+		    if(ll == null) {
+			PView.RenderState rs = s.os.get(PView.wnd);
+			cam = s.os.get(PView.cam);
+			ll = s.os.get(lights);
+		    }
+		    parts.add(s);
+		}
+	    
+		slidx = -1;
+		for(int i = 0; i < ll.ll.size(); i++) {
+		    if(ll.ll.get(i) == light) {
+			slidx = i;
+			break;
+		    }
+		}
+		Matrix4f cm = Transform.rxinvert(cam.fin(Matrix4f.id));
+		/*
+		txf = cm;
+		barda(txf);
+		txf = lcam.fin(Matrix4f.id).mul(txf);
+		barda(txf);
+		txf = lproj.fin(Matrix4f.id).mul(txf);
+		barda(txf);
+		txf = texbias.mul(txf);
+		barda(txf);
+		*/
+		txf = texbias
+		    .mul(lproj.fin(Matrix4f.id))
+		    .mul(lcam.fin(Matrix4f.id))
+		    .mul(cm);
+		tgt.render(scene, g);
+	    }
+	    
+	    /*
+	    static void barda(Matrix4f m) {
+		float[] a = m.mul4(new float[] {0, 0, 0, 1});
+		System.err.println(String.format("(%f, %f, %f, %f)", a[0], a[1], a[2], a[3]));
+	    }
+	    */
+	
+	    public void postsetup(RenderList rl) {}
+	    public void postrender(RenderList rl, GOut g) {
+		/* g.image(lbuf, Coord.z, g.sz); */
+	    }
+	    
+	    public void prep(Buffer buf) {
+		buf.put(smap, this);
+	    }
+
+	    public void apply(GOut g) {
+		GL gl = g.gl;
+		g.st.texunit(1);
+		gl.glBindTexture(GL.GL_TEXTURE_2D, lbuf.glid(g));
+	    }
+	
+	    public void unapply(GOut g) {
+		GL gl = g.gl;
+		g.st.texunit(1);
+		gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+	    }
+
+	}
+	
+	public PSLights() {
 	    super(new GLShader[] {
 		    GLShader.VertexShader.load(Light.class, "glsl/pslight.vert"),
 		    GLShader.FragmentShader.load(Light.class, "glsl/plight-base.frag"),
 		    GLShader.FragmentShader.load(Light.class, "glsl/pslight.frag"),
 		});
-	    lbuf = new TexE(res, GL.GL_DEPTH_COMPONENT, GL.GL_DEPTH_COMPONENT, GL.GL_UNSIGNED_INT);
-	    lbuf.magfilter = GL.GL_LINEAR;
-	    lbuf.wrapmode = GL.GL_CLAMP;
-	    lproj = Projection.ortho(-300, 300, -300, 300, 1, 2500);
-	    lcam = new DirCam();
-	    tgt = new FBView(new GLFrameBuffer(null, lbuf), GLState.compose(lproj, lcam));
 	}
-	
-	private final Rendered scene = new Rendered() {
-		public void draw(GOut g) {}
-		    
-		public Order setup(RenderList rl) {
-		    GLState.Buffer buf = new GLState.Buffer(rl.cfg);
-		    for(RenderList.Slot s : parts) {
-			rl.state().copy(buf);
-			s.os.copy(buf, GLState.Slot.Type.GEOM);
-			rl.add(s.r, buf, s.o);
-		    }
-		    return(null);
-		}
-	    };
 	    
-	public void apply(GOut g) {
-	    GL gl = g.gl;
-	    g.st.texunit(1);
-	    gl.glBindTexture(GL.GL_TEXTURE_2D, lbuf.glid(g));
-	    super.apply(g);
-	}
-	
-	public void unapply(GOut g) {
-	    super.unapply(g);
-	    GL gl = g.gl;
-	    g.st.texunit(1);
-	    gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
-	}
-
 	public void reapply(GOut g) {
 	    super.reapply(g);
 	    GL gl = g.gl;
-	    gl.glUniformMatrix4fv(g.st.prog.uniform("pslight_txf"), 1, false, txf.m, 0);
-	    gl.glUniform1i(g.st.prog.uniform("pslight_sl"), slidx);
+	    ShadowMap map = g.st.cur(ShadowMap.smap);
+	    if(map != null) {
+		gl.glUniformMatrix4fv(g.st.prog.uniform("pslight_txf"), 1, false, map.txf.m, 0);
+		gl.glUniform1i(g.st.prog.uniform("pslight_sl"), map.slidx);
+	    } else {
+		gl.glUniform1i(g.st.prog.uniform("pslight_sl"), -1);
+	    }
 	    gl.glUniform1i(g.st.prog.uniform("pslight_map"), 1);
 	}
-
-	public void prerender(RenderList rl, GOut g) {
-	    parts.clear();
-	    LightList ll = null;
-	    Camera cam = null;
-	    for(RenderList.Slot s : rl.slots()) {
-		if(s.o == null)
-		    continue;
-		if(s.os.get(lighting) != this)
-		    continue;
-		if(ll == null) {
-		    PView.RenderState rs = s.os.get(PView.wnd);
-		    cam = s.os.get(PView.cam);
-		    ll = s.os.get(lights);
-		}
-		parts.add(s);
-	    }
-	    
-	    slidx = -1;
-	    for(int i = 0; i < ll.ll.size(); i++) {
-		Light cl = ll.ll.get(i);
-		if(cl instanceof DirLight) {
-		    DirLight dl = (DirLight)cl;
-		    lcam.dir = new Coord3f(-dl.dir[0], -dl.dir[1], -dl.dir[2]);
-		    slidx = i;
-		    break;
-		}
-	    }
-	    Matrix4f cm = Transform.rxinvert(cam.fin(Matrix4f.id));
-	    Coord3f orig = cm.mul4(Coord3f.o);
-	    lcam.base = orig;
-	    /*
-	    txf = cm;
-	    txf = lcam.fin(Matrix4f.id).mul(txf);
-	    txf = lproj.fin(Matrix4f.id).mul(txf);
-	    txf = texbias.mul(txf);
-	    */
-	    txf = texbias
-		.mul(lproj.fin(Matrix4f.id))
-		.mul(lcam.fin(Matrix4f.id))
-		.mul(cm);
-	    tgt.render(scene, g);
-	}
-	
-	public void postsetup(RenderList rl) {}
-	public void postrender(RenderList rl, GOut g) {
-	    /* g.image(lbuf, Coord.z, g.sz); */
-	}
     }
+    public static final GLState pslights = new PSLights();
+    /*
     public static final GLState pslights = new GLState() {
 	    private final Map<PView.RenderState, PSLights> states = new WeakHashMap<PView.RenderState, PSLights>();
 	    
@@ -267,6 +290,7 @@ public class Light implements Rendered {
 		l.prep(buf);
 	    }
 	};
+    */
     
     public static final GLState deflight = new GLState() {
 	    public void apply(GOut g) {}

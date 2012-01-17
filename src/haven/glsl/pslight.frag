@@ -51,11 +51,13 @@ void dolight(int i, vec3 norm, vec3 edir, float shadow, inout vec3 diff, inout v
 
 void plight_f(inout vec4 res)
 {
-    vec3 barda = pslight_stc.xyz / pslight_stc.w;
-    float sd = texture2D(pslight_map, barda.xy).z;
     float sdw = 0.0;
-    if((sd + 0.0005) > barda.z)
-	sdw = 1.0;
+    if(pslight_sl != -1) {
+	vec3 barda = pslight_stc.xyz / pslight_stc.w;
+	float sd = texture2D(pslight_map, barda.xy).z;
+	if((sd + 0.0005) > barda.z)
+	    sdw = 1.0;
+    }
     
     vec3 norm = normalize(plight_nrm);
     vec3 edir;
