@@ -315,6 +315,7 @@ public class MapView extends PView implements DTarget {
 	return(camera);
     }
 
+    private Coord3f smapcc = null;
     private Light.PSLights.ShadowMap smap = null;
     public void setup(RenderList rl) {
 	Gob pl = player();
@@ -326,15 +327,19 @@ public class MapView extends PView implements DTarget {
 		rl.add(light, null);
 		if(rl.cfg.deflight == Light.pslights) {
 		    if(smap == null)
-			smap = new Light.PSLights.ShadowMap(new Coord(1024, 1024));
+			smap = new Light.PSLights.ShadowMap(new Coord(2048, 2048), 750, 5000);
 		    smap.light = light;
-		    smap.lcam.dir = new Coord3f(-light.dir[0], -light.dir[1], -light.dir[2]);
-		    Coord3f base = getcc();
-		    base.y = -base.y;
-		    smap.lcam.base = base.add(smap.lcam.dir.neg().mul(1000f));
+		    Coord3f dir = new Coord3f(-light.dir[0], -light.dir[1], -light.dir[2]);
+		    Coord3f cc = getcc();
+		    cc.y = -cc.y;
+		    if((smapcc == null) || (smapcc.dist(cc) > 50)) {
+			smapcc = cc;
+			smap.setpos(smapcc.add(dir.neg().mul(1000f)), dir);
+		    }
 		    rl.prepc(smap);
 		} else {
 		    smap = null;
+		    smapcc = null;
 		}
 	    }
 	}

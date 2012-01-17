@@ -146,8 +146,8 @@ public class Light implements Rendered {
 	    public final static Slot<ShadowMap> smap = new Slot<ShadowMap>(Slot.Type.DRAW, ShadowMap.class, new Slot[] {lights}, new Slot[] {lighting});
 	    public DirLight light;
 	    public final TexE lbuf;
-	    public final Projection lproj;
-	    public final DirCam lcam;
+	    private final Projection lproj;
+	    private final DirCam lcam;
 	    private final FBView tgt;
 	    private final static Matrix4f texbias = new Matrix4f(0.5f, 0.0f, 0.0f, 0.5f,
 								 0.0f, 0.5f, 0.0f, 0.5f,
@@ -155,13 +155,13 @@ public class Light implements Rendered {
 								 0.0f, 0.0f, 0.0f, 1.0f);
 	    private final List<RenderList.Slot> parts = new ArrayList<RenderList.Slot>();
 	    private int slidx;
-	    public Matrix4f txf;
+	    private Matrix4f txf;
 	    
-	    public ShadowMap(Coord res) {
+	    public ShadowMap(Coord res, float size, float depth) {
 		lbuf = new TexE(res, GL.GL_DEPTH_COMPONENT, GL.GL_DEPTH_COMPONENT, GL.GL_UNSIGNED_INT);
 		lbuf.magfilter = GL.GL_LINEAR;
 		lbuf.wrapmode = GL.GL_CLAMP;
-		lproj = Projection.ortho(-300, 300, -300, 300, 1, 2500);
+		lproj = Projection.ortho(-size, size, -size, size, 1, depth);
 		lcam = new DirCam();
 		tgt = new FBView(new GLFrameBuffer(null, lbuf), GLState.compose(lproj, lcam));
 	    }
@@ -180,6 +180,11 @@ public class Light implements Rendered {
 		    }
 		};
 
+	    public void setpos(Coord3f base, Coord3f dir) {
+		lcam.base = base;
+		lcam.dir = dir;
+	    }
+	    
 	    public void prerender(RenderList rl, GOut g) {
 		parts.clear();
 		LightList ll = null;
