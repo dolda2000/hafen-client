@@ -109,6 +109,7 @@ public class Gob implements Sprite.Owner, Rendered {
 	}
 	if(virtual && ols.isEmpty())
 	    glob.oc.remove(id);
+	loc.tick();
     }
 	
     public Overlay findol(int id) {
@@ -230,17 +231,29 @@ public class Gob implements Sprite.Owner, Rendered {
     }
     
     public final Save save = new Save();
-    public final Location loc = new Location(new Matrix4f()) {
-	    private Coord3f c = null;
-	    private double a = 0.0;
+    public class GobLocation extends Location {
+	private Coord3f c = null;
+	private double a = 0.0;
+	private boolean update = true;
+
+	public GobLocation() {
+	    super(new Matrix4f());
+	}
 	    
-	    public Matrix4f fin(Matrix4f p) {
-		Coord3f c = getc();
-		c.y = -c.y;
-		if((this.c == null) || !c.equals(this.c) || (this.a != Gob.this.a))
-		    update(makexlate(new Matrix4f(), this.c = c)
-			   .mul1(makerot(new Matrix4f(), Coord3f.zu, (float)-(this.a = Gob.this.a))));
-		return(super.fin(p));
+	public Matrix4f fin(Matrix4f p) {
+	    Coord3f c = getc();
+	    c.y = -c.y;
+	    if(update && ((this.c == null) || !c.equals(this.c) || (this.a != Gob.this.a))) {
+		update(makexlate(new Matrix4f(), this.c = c)
+		       .mul1(makerot(new Matrix4f(), Coord3f.zu, (float)-(this.a = Gob.this.a))));
+		update = false;
 	    }
-	};
+	    return(super.fin(p));
+	}
+	
+	public void tick() {
+	    update = true;
+	}
+    }
+    public final GobLocation loc = new GobLocation();
 }
