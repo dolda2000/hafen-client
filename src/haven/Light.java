@@ -185,6 +185,11 @@ public class Light implements Rendered {
 		lcam.dir = dir;
 	    }
 	    
+	    public void dispose() {
+		lbuf.dispose();
+		tgt.dispose();
+	    }
+	    
 	    public void prerender(RenderList rl, GOut g) {
 		parts.clear();
 		LightList ll = null;

@@ -338,6 +338,8 @@ public class MapView extends PView implements DTarget {
 		    }
 		    rl.prepc(smap);
 		} else {
+		    if(smap != null)
+			smap.dispose();
 		    smap = null;
 		    smapcc = null;
 		}

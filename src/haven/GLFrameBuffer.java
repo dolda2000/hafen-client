@@ -173,5 +173,7 @@ public class GLFrameBuffer extends GLState {
 		fbo = null;
 	    }
 	}
+	if(altdepth != null)
+	    altdepth.dispose();
     }
 }

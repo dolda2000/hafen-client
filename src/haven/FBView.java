@@ -70,4 +70,8 @@ public class FBView {
 	fbo.prep(def);
 	return(new GOut(orig.gl, orig.ctx, orig.gc, orig.st, def, fbo.sz()));
     }
+    
+    public void dispose() {
+	fbo.dispose();
+    }
 }
