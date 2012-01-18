@@ -49,7 +49,6 @@ public class MCache {
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
 
     public static class LoadingMap extends Loading {
-	private LoadingMap() {}
     }
 
     private static class Request {
