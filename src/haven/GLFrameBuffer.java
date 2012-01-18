@@ -139,16 +139,20 @@ public class GLFrameBuffer extends GLState {
 		    gl.glFramebufferTexture2DEXT(GL.GL_FRAMEBUFFER_EXT, GL.GL_DEPTH_ATTACHMENT_EXT, GL.GL_TEXTURE_2D, depth.glid(g), 0);
 		else
 		    gl.glFramebufferRenderbufferEXT(GL.GL_FRAMEBUFFER_EXT, GL.GL_DEPTH_ATTACHMENT_EXT, GL.GL_RENDERBUFFER_EXT, altdepth.glid(gl));
+		if(color.length == 0) {
+		    gl.glDrawBuffer(GL.GL_NONE);
+		    gl.glReadBuffer(GL.GL_NONE);
+		}
 		GOut.checkerr(gl);
 		int st = gl.glCheckFramebufferStatusEXT(GL.GL_FRAMEBUFFER_EXT);
 		if(st != GL.GL_FRAMEBUFFER_COMPLETE_EXT)
 		    throw(new RuntimeException("FBO failed completeness test: " + st));
 	    } else {
 		gl.glBindFramebufferEXT(GL.GL_FRAMEBUFFER_EXT, fbo.id);
-	    }
-	    if(color.length == 0) {
-		gl.glDrawBuffer(GL.GL_NONE);
-		gl.glReadBuffer(GL.GL_NONE);
+		if(color.length == 0) {
+		    gl.glDrawBuffer(GL.GL_NONE);
+		    gl.glReadBuffer(GL.GL_NONE);
+		}
 	    }
 	}
     }
