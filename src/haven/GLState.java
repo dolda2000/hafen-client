@@ -312,6 +312,7 @@ public abstract class GLState {
     }
     
     public static class Applier {
+	public static boolean debug = false;
 	private Buffer cur, next;
 	public final GL gl;
 	public final GLConfig cfg;
@@ -406,6 +407,8 @@ public abstract class GLState {
 		    else
 			g.gl.glUseProgramObjectARB(0);
 		    prog = np;
+		    if(debug)
+			checkerr(g.gl);
 		} else {
 		    dirty = false;
 		}
@@ -420,8 +423,11 @@ public abstract class GLState {
 	    for(int i = deplist.length - 1; i >= 0; i--) {
 		int id = deplist[i].id;
 		if(repl[id]) {
-		    if(cur.states[id] != null)
+		    if(cur.states[id] != null) {
 			cur.states[id].unapply(g);
+			if(debug)
+			    stcheckerr(g, "unapply", cur.states[id]);
+		    }
 		    cur.states[id] = null;
 		}
 	    }
@@ -429,14 +435,23 @@ public abstract class GLState {
 		int id = deplist[i].id;
 		if(repl[id]) {
 		    cur.states[id] = next.states[id];
-		    if(cur.states[id] != null)
+		    if(cur.states[id] != null) {
 			cur.states[id].apply(g);
+			if(debug)
+			    stcheckerr(g, "apply", cur.states[id]);
+		    }
 		} else if(trans[id]) {
 		    cur.states[id].applyto(g, next.states[id]);
+		    if(debug)
+			stcheckerr(g, "applyto", cur.states[id]);
 		    GLState cs = cur.states[id];
 		    (cur.states[id] = next.states[id]).applyfrom(g, cs);
+		    if(debug)
+			stcheckerr(g, "applyfrom", cur.states[id]);
 		} else if((prog != null) && dirty && (shaders[id] != null)) {
 		    cur.states[id].reapply(g);
+		    if(debug)
+			stcheckerr(g, "reapply", cur.states[id]);
 		}
 	    }
 	    if((oc != cam) || (ow != wxf)) {
@@ -448,6 +463,25 @@ public abstract class GLState {
 	    checkerr(gl);
 	    if(Config.profile)
 		time += System.nanoTime() - st;
+	}
+	
+	public static class ApplyException extends RuntimeException {
+	    public final transient GLState st;
+	    public final String func;
+	    
+	    public ApplyException(String func, GLState st, Throwable cause) {
+		super("Error in " + func + " of " + st, cause);
+		this.st = st;
+		this.func = func;
+	    }
+	}
+	
+	private void stcheckerr(GOut g, String func, GLState st) {
+	    try {
+		checkerr(g.gl);
+	    } catch(RuntimeException e) {
+		throw(new ApplyException(func, st, e));
+	    }
 	}
 
 	/* "Meta-states" */
@@ -614,4 +648,12 @@ public abstract class GLState {
 	    public void unapply(GOut g) {}
 	    public void prep(Buffer buf) {}
 	};
+
+    static {
+	Console.setscmd("applydb", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    Applier.debug = Utils.parsebool(args[1], false);
+		}
+	    });
+    }
 }
