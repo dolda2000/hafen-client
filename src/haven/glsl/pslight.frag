@@ -54,9 +54,19 @@ void plight_f(inout vec4 res)
     float sdw = 0.0;
     if(pslight_sl != -1) {
 	vec3 barda = pslight_stc.xyz / pslight_stc.w;
-	float sd = texture2D(pslight_map, barda.xy).z;
-	if((sd + 0.0005) > barda.z)
-	    sdw = 1.0;
+	float xo, yo;
+	for(yo = -0.00075; yo < 0.00076; yo += 0.0005) {
+	    for(xo = -0.00075; xo < 0.00076; xo += 0.0005) {
+		if((texture2D(pslight_map, barda.xy + vec2(xo, yo)).z + 0.0005) > barda.z) sdw += 0.0625;
+	    }
+	}
+	/*
+	for(yo = -0.0015; yo < 0.0016; yo += 0.001) {
+	    for(xo = -0.0015; xo < 0.0016; xo += 0.001) {
+		if((texture2D(pslight_map, barda.xy + vec2(xo, yo)).z + 0.0005) > barda.z) sdw += 0.0625;
+	    }
+	}
+	*/
     }
     
     vec3 norm = normalize(plight_nrm);
