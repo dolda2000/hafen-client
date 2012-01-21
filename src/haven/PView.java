@@ -110,7 +110,7 @@ public abstract class PView extends Widget {
 	};
 
     public void draw(GOut g) {
-	if(rls == null)
+	if((rls == null) || (rls.cfg != g.gc))
 	    rls = new RenderList(g.gc);
 	Profile.Frame curf = null;
 	if(Config.profile)
