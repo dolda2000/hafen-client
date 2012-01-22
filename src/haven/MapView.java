@@ -615,6 +615,8 @@ public class MapView extends PView implements DTarget {
     
     public void tick(double dt) {
 	camera.tick(dt);
+	if(placing != null)
+	    placing.ctick((int)(dt * 1000));
     }
     
     public void resize(Coord sz) {
