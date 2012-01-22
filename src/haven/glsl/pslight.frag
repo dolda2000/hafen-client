@@ -83,6 +83,6 @@ void plight_f(inout vec4 res)
 	dolight(2, norm, edir, sdw, diff, spec);
     if(nlights > 3)
 	dolight(3, norm, edir, sdw, diff, spec);
-    res *= vec4(diff, gl_FrontMaterial.diffuse.a);
-    res += vec4(spec, 0.0);
+    res *= vec4(min(diff, 1.0), gl_FrontMaterial.diffuse.a);
+    res += vec4(min(spec, 1.0), 0.0);
 }
