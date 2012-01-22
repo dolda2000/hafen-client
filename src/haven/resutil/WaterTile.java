@@ -123,7 +123,6 @@ public class WaterTile extends Tiler {
 	    }
 	    
 	    public void prep(Buffer buf) {
-		buf.put(Tex.slot, null);
 		buf.put(States.color, null);
 		buf.put(Light.lighting, null);
 		super.prep(buf);

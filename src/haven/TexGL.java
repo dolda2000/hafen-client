@@ -38,10 +38,6 @@ public abstract class TexGL extends Tex {
     protected int magfilter = GL.GL_NEAREST, minfilter = GL.GL_NEAREST, wrapmode = GL.GL_REPEAT;
     protected Coord tdim;
     public static boolean disableall = false;
-    private static final GLShader[] shaders = {
-	GLShader.VertexShader.load(TexGL.class, "glsl/tex2d.vert"),
-	GLShader.FragmentShader.load(TexGL.class, "glsl/tex2d.frag"),
-    };
     
     public static class TexOb extends GLObject {
 	public final int id;
@@ -59,6 +55,67 @@ public abstract class TexGL extends Tex {
 	}
     }
     
+    public static class TexDraw extends GLState {
+	public static final Slot<TexDraw> slot = new Slot<TexDraw>(Slot.Type.DRAW, TexDraw.class, HavenPanel.global);
+	private static final GLShader[] shaders = {
+	    GLShader.VertexShader.load(TexGL.class, "glsl/tex2d.vert"),
+	    GLShader.FragmentShader.load(TexGL.class, "glsl/tex2d.frag"),
+	};
+	private final TexGL tex;
+	
+	public TexDraw(TexGL tex) {
+	    this.tex = tex;
+	}
+	
+	public void prep(Buffer buf) {
+	    buf.put(slot, this);
+	}
+
+	public void apply(GOut g) {
+	    GL gl = g.gl;
+	    g.st.texunit(0);
+	    gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
+	    if(g.st.prog != null)
+		reapply(g);
+	    else
+		gl.glEnable(GL.GL_TEXTURE_2D);
+	}
+    
+	public void reapply(GOut g) {
+	    GL gl = g.gl;
+	    gl.glUniform1i(g.st.prog.uniform("tex2d"), 0);
+	}
+
+	public void unapply(GOut g) {
+	    GL gl = g.gl;
+	    g.st.texunit(0);
+	    if(!g.st.usedprog)
+		gl.glDisable(GL.GL_TEXTURE_2D);
+	}
+    
+	public GLShader[] shaders() {
+	    return(shaders);
+	}
+    
+	public int capply() {
+	    return(100);
+	}
+    
+	public int capplyfrom(GLState from) {
+	    if(from instanceof TexDraw)
+		return(99);
+	    return(-1);
+	}
+    
+	public void applyfrom(GOut g, GLState from) {
+	    GL gl = g.gl;
+	    g.st.texunit(0);
+	    gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
+	}
+    }
+    private final TexDraw draw = new TexDraw(this);
+    public GLState draw() {return(draw);}
+    
     public TexGL(Coord sz, Coord tdim) {
 	super(sz);
 	this.tdim = tdim;
@@ -69,48 +126,6 @@ public abstract class TexGL extends Tex {
     }
 	
     protected abstract void fill(GOut gl);
-
-    public void apply(GOut g) {
-	GL gl = g.gl;
-	g.st.texunit(0);
-	gl.glBindTexture(GL.GL_TEXTURE_2D, glid(g));
-	if(g.st.prog != null)
-	    reapply(g);
-	else
-	    gl.glEnable(GL.GL_TEXTURE_2D);
-    }
-    
-    public void reapply(GOut g) {
-	GL gl = g.gl;
-	gl.glUniform1i(g.st.prog.uniform("tex2d"), 0);
-    }
-
-    public void unapply(GOut g) {
-	GL gl = g.gl;
-	g.st.texunit(0);
-	if(!g.st.usedprog)
-	    gl.glDisable(GL.GL_TEXTURE_2D);
-    }
-    
-    public GLShader[] shaders() {
-	return(shaders);
-    }
-    
-    public int capply() {
-	return(100);
-    }
-    
-    public int capplyfrom(GLState from) {
-	if(from instanceof TexGL)
-	    return(99);
-	return(-1);
-    }
-    
-    public void applyfrom(GOut g, GLState from) {
-	GL gl = g.gl;
-	g.st.texunit(0);
-	gl.glBindTexture(GL.GL_TEXTURE_2D, glid(g));
-    }
 
     private void create(GOut g) {
 	GL gl = g.gl;
@@ -175,7 +190,7 @@ public abstract class TexGL extends Tex {
 
     public void render(GOut g, Coord c, Coord ul, Coord br, Coord sz) {
 	GL gl = g.gl;
-	g.st.prep(this);
+	g.st.prep(draw);
 	g.apply();
 	Color amb = blend(g, setenv(gl));
 	checkerr(gl);

@@ -179,7 +179,7 @@ public class Material extends GLState {
     }
     
     public Material(Tex tex) {
-	this(Light.deflight, new Colors(), tex, alphaclip);
+	this(Light.deflight, new Colors(), tex.draw(), alphaclip);
     }
     
     public String toString() {
@@ -236,7 +236,7 @@ public class Material extends GLState {
 			    public GLState resolve() {
 				for(Resource.Image img : getres().layers(Resource.imgc)) {
 				    if(img.id == id)
-					return(img.tex());
+					return(img.tex().draw());
 				}
 				throw(new RuntimeException(String.format("Specified texture %d not found in %s", id, getres())));
 			    }
@@ -250,7 +250,7 @@ public class Material extends GLState {
 				Resource res = Resource.load(nm, ver);
 				for(Resource.Image img : res.layers(Resource.imgc)) {
 				    if(img.id == id)
-					return(img.tex());
+					return(img.tex().draw());
 				}
 				throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", id, getres(), res)));
 			    }
