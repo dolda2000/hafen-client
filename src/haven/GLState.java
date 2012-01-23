@@ -313,7 +313,7 @@ public abstract class GLState {
     
     public static class Applier {
 	public static boolean debug = false;
-	private Buffer cur, next;
+	private Buffer old, cur, next;
 	public final GL gl;
 	public final GLConfig cfg;
 	private boolean[] trans = new boolean[0], repl = new boolean[0];
@@ -330,6 +330,7 @@ public abstract class GLState {
 	public Applier(GL gl, GLConfig cfg) {
 	    this.gl = gl;
 	    this.cfg = cfg;
+	    this.old = new Buffer(cfg);
 	    this.cur = new Buffer(cfg);
 	    this.next = new Buffer(cfg);
 	}
@@ -344,6 +345,10 @@ public abstract class GLState {
 	
 	public <T extends GLState> T cur(Slot<T> slot) {
 	    return(cur.get(slot));
+	}
+	
+	public <T extends GLState> T old(Slot<T> slot) {
+	    return(old.get(slot));
 	}
 	
 	public void prep(GLState st) {
@@ -420,6 +425,7 @@ public abstract class GLState {
 		}
 	    }
 	    Matrix4f oc = cam, ow = wxf;
+	    cur.copy(old);
 	    for(int i = deplist.length - 1; i >= 0; i--) {
 		int id = deplist[i].id;
 		if(repl[id]) {
