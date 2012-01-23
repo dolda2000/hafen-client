@@ -36,7 +36,7 @@ public abstract class GLState {
     public abstract void prep(Buffer buf);
     
     public void applyfrom(GOut g, GLState from) {
-	throw(new RuntimeException("Called applyfrom on non-conformant GLState"));
+	throw(new RuntimeException("Called applyfrom on non-conformant GLState (" + from + " -> " + this + ")"));
     }
     public void applyto(GOut g, GLState to) {
     }
