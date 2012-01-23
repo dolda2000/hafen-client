@@ -44,16 +44,6 @@ public class Material extends GLState {
 	    }
 	};
     
-    public static final GLState alphaclip = new GLState.StandAlone(Slot.Type.DRAW, PView.proj) {
-	    public void apply(GOut g) {
-		g.gl.glEnable(GL.GL_ALPHA_TEST);
-	    }
-	    
-	    public void unapply(GOut g) {
-		g.gl.glDisable(GL.GL_ALPHA_TEST);
-	    }
-	};
-    
     public static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
     public static final float[] defdif = {0.8f, 0.8f, 0.8f, 1.0f};
     public static final float[] defspc = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -167,11 +157,11 @@ public class Material extends GLState {
     }
 
     public Material() {
-	this(Light.deflight, new Colors(), alphaclip);
+	this(Light.deflight, new Colors());
     }
     
     public Material(Color amb, Color dif, Color spc, Color emi, float shine) {
-	this(Light.deflight, new Colors(amb, dif, spc, emi, shine), alphaclip);
+	this(Light.deflight, new Colors(amb, dif, spc, emi, shine));
     }
     
     public Material(Color col) {
@@ -179,7 +169,7 @@ public class Material extends GLState {
     }
     
     public Material(Tex tex) {
-	this(Light.deflight, new Colors(), tex.draw(), alphaclip);
+	this(Light.deflight, new Colors(), tex.draw(), tex.clip());
     }
     
     public String toString() {
@@ -199,7 +189,7 @@ public class Material extends GLState {
 	private boolean mipmap = false, linear = false;
 	
 	private interface Resolver {
-	    public GLState resolve();
+	    public void resolve(Collection<GLState> buf);
 	}
 	
 	private static Color col(byte[] buf, int[] off) {
@@ -233,10 +223,13 @@ public class Material extends GLState {
 		} else if(thing == "tex") {
 		    final int id = Utils.uint16d(buf, off[0]); off[0] += 2;
 		    left.add(new Resolver() {
-			    public GLState resolve() {
+			    public void resolve(Collection<GLState> buf) {
 				for(Resource.Image img : getres().layers(Resource.imgc)) {
-				    if(img.id == id)
-					return(img.tex().draw());
+				    if(img.id == id) {
+					buf.add(img.tex().draw());
+					buf.add(img.tex().clip());
+					return;
+				    }
 				}
 				throw(new RuntimeException(String.format("Specified texture %d not found in %s", id, getres())));
 			    }
@@ -246,11 +239,14 @@ public class Material extends GLState {
 		    final int ver = Utils.uint16d(buf, off[0]); off[0] += 2;
 		    final int id = Utils.uint16d(buf, off[0]); off[0] += 2;
 		    left.add(new Resolver() {
-			    public GLState resolve() {
+			    public void resolve(Collection<GLState> buf) {
 				Resource res = Resource.load(nm, ver);
 				for(Resource.Image img : res.layers(Resource.imgc)) {
-				    if(img.id == id)
-					return(img.tex().draw());
+				    if(img.id == id) {
+					buf.add(img.tex().draw());
+					buf.add(img.tex().clip());
+					return;
+				    }
 				}
 				throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", id, getres(), res)));
 			    }
@@ -276,7 +272,6 @@ public class Material extends GLState {
 	    }
 	    if(light != null)
 		states.add(light);
-	    states.add(alphaclip);
 	}
 	
 	public Material get() {
@@ -284,7 +279,7 @@ public class Material extends GLState {
 		if(m == null) {
 		    for(Iterator<Resolver> i = left.iterator(); i.hasNext();) {
 			Resolver r = i.next();
-			states.add(r.resolve());
+			r.resolve(states);
 			i.remove();
 		    }
 		    m = new Material(states.toArray(new GLState[0]));

@@ -51,4 +51,8 @@ public class TexSI extends Tex {
     public GLState draw() {
 	return(parent.draw());
     }
+
+    public GLState clip() {
+	return(parent.clip());
+    }
 }

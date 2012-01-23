@@ -48,6 +48,7 @@ public abstract class Tex {
     public abstract float tcx(int x);
     public abstract float tcy(int y);
     public abstract GLState draw();
+    public abstract GLState clip();
 
     public void render(GOut g, Coord c) {
 	render(g, c, Coord.z, dim, dim);
