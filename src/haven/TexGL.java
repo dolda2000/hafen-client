@@ -75,10 +75,12 @@ public abstract class TexGL extends Tex {
 	    GL gl = g.gl;
 	    g.st.texunit(0);
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
-	    if(g.st.prog != null)
+	    if(g.st.prog != null) {
 		reapply(g);
-	    else
+	    } else {
+		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_MODULATE);
 		gl.glEnable(GL.GL_TEXTURE_2D);
+	    }
 	}
     
 	public void reapply(GOut g) {
@@ -139,8 +141,7 @@ public abstract class TexGL extends Tex {
 	checkerr(gl);
     }
 	
-    protected Color setenv(GL gl) {
-	gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_MODULATE);
+    protected Color ambcol() {
 	return(Color.WHITE);
     }
 	
@@ -192,7 +193,7 @@ public abstract class TexGL extends Tex {
 	GL gl = g.gl;
 	g.st.prep(draw);
 	g.apply();
-	Color amb = blend(g, setenv(gl));
+	Color amb = blend(g, ambcol());
 	checkerr(gl);
 	if(!disableall) {
 	    gl.glBegin(GL.GL_QUADS);

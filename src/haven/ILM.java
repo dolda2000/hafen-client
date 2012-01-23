@@ -68,8 +68,7 @@ public class ILM extends TexRT {
 	lbtex = new TexI(ljusboll);
     }
 	
-    protected Color setenv(GL gl) {
-	gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_MODULATE);
+    protected Color ambcol() {
 	return(amb);
     }
 	
