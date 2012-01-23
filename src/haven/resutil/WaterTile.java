@@ -104,6 +104,7 @@ public class WaterTile extends Tiler {
 		gl.glEnable(GL.GL_TEXTURE_GEN_S);
 		gl.glEnable(GL.GL_TEXTURE_GEN_T);
 		gl.glEnable(GL.GL_TEXTURE_GEN_R);
+		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_MODULATE);
 		gl.glEnable(GL.GL_TEXTURE_CUBE_MAP);
 		gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
 		gl.glColor4f(1, 1, 1, 0.5f);
