@@ -29,6 +29,7 @@ package haven;
 import static haven.MCache.tilesz;
 import java.util.*;
 import javax.media.opengl.*;
+import java.awt.Color;
 
 public class MapMesh implements Rendered {
     public final Coord ul, sz;
@@ -47,6 +48,7 @@ public class MapMesh implements Rendered {
 	}
     }
     
+    private static final Material.Colors gcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
     public GLState stfor(Tex tex) {
 	TexGL gt;
 	if(tex instanceof TexGL)
@@ -56,8 +58,10 @@ public class MapMesh implements Rendered {
 	else
 	    throw(new RuntimeException("Cannot use texture for map rendering: " + tex));
 	GLState ret = texmap.get(gt);
-	if(ret == null)
-	    texmap.put(gt, ret = new Material(gt));
+	if(ret == null) {
+	    /* texmap.put(gt, ret = new Material(gt)); */
+	    texmap.put(gt, ret = new Material(Light.deflight, gcol, gt.draw(), gt.clip()));
+	}
 	return(ret);
     }
 
