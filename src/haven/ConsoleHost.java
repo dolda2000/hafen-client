@@ -33,6 +33,7 @@ public abstract class ConsoleHost extends Widget {
     public static Text.Foundry cmdfoundry = new Text.Foundry(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12), new java.awt.Color(245, 222, 179));
     LineEdit cmdline = null;
     private Text.Line cmdtext = null;
+    private String cmdtextf = null;
     private List<String> history = new ArrayList<String>();
     private int hpos = history.size();
     private String hcurrent;
@@ -97,8 +98,8 @@ public abstract class ConsoleHost extends Widget {
     
     public void drawcmd(GOut g, Coord c) {
 	if(cmdline != null) {
-	    if((cmdtext == null) || (cmdtext.text != cmdline.line))
-		cmdtext = cmdfoundry.render(":" + cmdline.line);
+	    if((cmdtext == null) || (cmdtextf != cmdline.line))
+		cmdtext = cmdfoundry.render(":" + (cmdtextf = cmdline.line));
 	    g.image(cmdtext.tex(), c);
 	    int lx = cmdtext.advance(cmdline.point + 1);
 	    g.line(c.add(lx + 1, 2), c.add(lx + 1, 14), 1);
