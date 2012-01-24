@@ -53,7 +53,7 @@ public class TexIM extends TexI {
     public void update() {
 	cg.dispose();
 	cg = null;
-	super.update(((DataBufferByte)buf.getDataBuffer()).getData());
+	dispose();
     }
 	
     public void clear() {
