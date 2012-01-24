@@ -35,7 +35,7 @@ public class MapMesh implements Rendered {
     public final Coord ul, sz;
     public final MCache map;
     private Map<Class<? extends Surface>, Surface> surfmap = new HashMap<Class<? extends Surface>, Surface>();
-    private Map<Tex, GLState> texmap = new HashMap<Tex, GLState>();
+    private Map<Tex, GLState[]> texmap = new HashMap<Tex, GLState[]>();
     private Map<GLState, MeshBuf> modbuf = new HashMap<GLState, MeshBuf>();
     private List<Rendered> extras = new ArrayList<Rendered>();
     private List<Layer> layers;
@@ -49,7 +49,7 @@ public class MapMesh implements Rendered {
     }
     
     private static final Material.Colors gcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
-    public GLState stfor(Tex tex) {
+    public GLState stfor(Tex tex, boolean clip) {
 	TexGL gt;
 	if(tex instanceof TexGL)
 	    gt = (TexGL)tex;
@@ -57,12 +57,15 @@ public class MapMesh implements Rendered {
 	    gt = (TexGL)((TexSI)tex).parent;
 	else
 	    throw(new RuntimeException("Cannot use texture for map rendering: " + tex));
-	GLState ret = texmap.get(gt);
+	GLState[] ret = texmap.get(gt);
 	if(ret == null) {
 	    /* texmap.put(gt, ret = new Material(gt)); */
-	    texmap.put(gt, ret = new Material(Light.deflight, gcol, gt.draw(), gt.clip()));
+	    texmap.put(gt, ret = new GLState[] {
+		    new Material(Light.deflight, gcol, gt.draw(), gt.clip()),
+		    new Material(Light.deflight, gcol, gt.draw()),
+		});
 	}
-	return(ret);
+	return(ret[clip?0:1]);
     }
 
     public class Surface {
@@ -150,13 +153,17 @@ public class MapMesh implements Rendered {
 				surf.spoint(sc.add(1, 0))};
 	}
 
-	public Plane(Surface surf, Coord sc, int z, Tex tex) {
-	    this(surf, sc, z, stfor(tex));
+	public Plane(Surface surf, Coord sc, int z, Tex tex, boolean clip) {
+	    this(surf, sc, z, stfor(tex, clip));
 	    this.tex = tex;
 	}
 	
+	public Plane(Surface surf, Coord sc, int z, Tex tex) {
+	    this(surf, sc, z, tex, true);
+	}
+	
 	public Plane(Surface surf, Coord sc, int z, Resource.Tile tile) {
-	    this(surf, sc, z, tile.tex());
+	    this(surf, sc, z, tile.tex(), tile.t != 'g');
 	}
 	
 	public void build(MeshBuf buf) {
