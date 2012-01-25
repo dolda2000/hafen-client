@@ -66,7 +66,7 @@ public class TexI extends TexGL {
 	System.err.print(")");
 	System.err.println();
 	*/
-	if(cm.getNumComponents() == 4) {
+	if((cm.getNumComponents() == 4) && (off.length == 4)) {
 	    if(((cs[0] == 8) && (cs[1] == 8) && (cs[2] == 8) && (cs[3] == 8)) &&
 	       (cm.getTransferType() == DataBuffer.TYPE_BYTE) &&
 	       (cm.getTransparency() == java.awt.Transparency.TRANSLUCENT)) {
@@ -75,7 +75,7 @@ public class TexI extends TexGL {
 		if((off[0] == 2) && (off[1] == 1) && (off[2] == 0) && (off[3] == 3))
 		    return(GL.GL_BGRA);
 	    }
-	} else if(cm.getNumComponents() == 3) {
+	} else if((cm.getNumComponents() == 3) && (off.length == 3)) {
 	    if(((cs[0] == 8) && (cs[1] == 8) && (cs[2] == 8)) &&
 	       (cm.getTransferType() == DataBuffer.TYPE_BYTE) &&
 	       (cm.getTransparency() == java.awt.Transparency.OPAQUE)) {
