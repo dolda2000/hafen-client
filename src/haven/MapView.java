@@ -84,12 +84,7 @@ public class MapView extends PView implements DTarget {
 	}
 	
 	public void tick(double dt) {
-	    loading = false;
-	    try {
-		update(compute());
-	    } catch(Loading e) {
-		loading = true;
-	    }
+	    update(compute());
 	}
     }
     
@@ -614,7 +609,12 @@ public class MapView extends PView implements DTarget {
     }
     
     public void tick(double dt) {
-	camera.tick(dt);
+	camera.loading = false;
+	try {
+	    camera.tick(dt);
+	} catch(Loading e) {
+	    camera.loading = true;
+	}
 	if(placing != null)
 	    placing.ctick((int)(dt * 1000));
     }
