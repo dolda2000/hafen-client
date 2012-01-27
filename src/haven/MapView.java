@@ -92,10 +92,15 @@ public class MapView extends PView implements DTarget {
 	private final float fr = 0.0f, h = 10.0f;
 	private float ca, cd, da;
 	private Coord3f curc = null;
-	private float elev = (float)Math.PI / 4.0f;
-	private float angl = 0.0f;
+	private float elev, telev;
+	private float angl, tangl;
 	private Coord dragorig = null;
 	private float anglorig;
+	
+	private FollowCam() {
+	    elev = telev = (float)Math.PI / 4.0f;
+	    angl = tangl = 0.0f;
+	}
 	
 	public void resized() {
 	    ca = (float)sz.y / (float)sz.x;
@@ -105,35 +110,57 @@ public class MapView extends PView implements DTarget {
 	{resized();}
 	
 	public boolean click(Coord c) {
-	    anglorig = angl;
+	    anglorig = tangl;
 	    dragorig = c;
 	    return(true);
 	}
 	
 	public void drag(Coord c) {
-	    angl = anglorig + ((float)(c.x - dragorig.x) / 100.0f);
-	    angl = angl % ((float)Math.PI * 2.0f);
+	    tangl = anglorig + ((float)(c.x - dragorig.x) / 100.0f);
+	    tangl = tangl % ((float)Math.PI * 2.0f);
 	}
 
 	private float dist(float elev) {
 	    return((float)(((cd - (h / Math.tan(elev))) * Math.sin(elev - da) / Math.sin(da)) - (h / Math.sin(elev))));
 	}
 
-	public Matrix4f compute() {
+	public void tick(double dt) {
+	    elev += (telev - elev) * (float)(1.0 - Math.pow(500, -dt));
+	    if(Math.abs(telev - elev) < 0.0001)
+		elev = telev;
+	    
+	    float dangl = tangl - angl;
+	    while(dangl >  Math.PI) dangl -= (float)(2 * Math.PI);
+	    while(dangl < -Math.PI) dangl += (float)(2 * Math.PI);
+	    angl += dangl * (float)(1.0 - Math.pow(500, -dt));
+	    if(Math.abs(tangl - angl) < 0.0001)
+		angl = tangl;
+	    
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
 	    if(curc == null)
 		curc = cc;
 	    float dx = cc.x - curc.x, dy = cc.y - curc.y;
-	    if(Math.sqrt((dx * dx) + (dy * dy)) > fr) {
+	    float dist = (float)Math.sqrt((dx * dx) + (dy * dy));
+	    if(dist > 250) {
+		curc = cc;
+	    } else if(dist > fr) {
 		Coord3f oc = curc;
 		float pd = (float)Math.cos(elev) * dist(elev);
-		Coord3f cambase = new Coord3f(curc.x + ((float)Math.cos(angl) * pd), curc.y + ((float)Math.sin(angl) * pd), 0.0f);
+		Coord3f cambase = new Coord3f(curc.x + ((float)Math.cos(tangl) * pd), curc.y + ((float)Math.sin(tangl) * pd), 0.0f);
 		float a = cc.xyangle(curc);
 		float nx = cc.x + ((float)Math.cos(a) * fr), ny = cc.y + ((float)Math.sin(a) * fr);
-		curc = new Coord3f(nx, ny, cc.z);
-		angl = curc.xyangle(cambase);
+		Coord3f tgtc = new Coord3f(nx, ny, cc.z);
+		curc = curc.add(tgtc.sub(curc).mul((float)(1.0 - Math.pow(500, -dt))));
+		if(curc.dist(tgtc) < 0.01)
+		    curc = tgtc;
+		tangl = curc.xyangle(cambase);
 	    }
+	    
+	    super.tick(dt);
+	}
+
+	public Matrix4f compute() {
 	    return(PointedCam.compute(curc.add(0.0f, 0.0f, h), dist(elev), elev, angl));
 	}
 	
@@ -144,12 +171,12 @@ public class MapView extends PView implements DTarget {
 	private static final float maxang = (float)(Math.PI / 2 - 0.1);
 	private static final float mindist = 10.0f;
 	public boolean wheel(Coord c, int amount) {
-	    float fe = elev;
-	    elev += amount * elev * 0.02f;
-	    if(elev > maxang)
-		elev = maxang;
-	    if(dist(elev) < mindist)
-		elev = fe;
+	    float fe = telev;
+	    telev += amount * telev * 0.02f;
+	    if(telev > maxang)
+		telev = maxang;
+	    if(dist(telev) < mindist)
+		telev = fe;
 	    return(true);
 	}
     }
