@@ -225,19 +225,6 @@ public abstract class TexGL extends Tex {
 	checkerr(gl);
     }
 	
-    protected Color ambcol() {
-	return(Color.WHITE);
-    }
-	
-    Color blend(GOut g, Color amb) {
-	Color c = g.getcolor();
-	Color n = new Color((c.getRed() * amb.getRed()) / 255,
-			    (c.getGreen() * amb.getGreen()) / 255,
-			    (c.getBlue() * amb.getBlue()) / 255,
-			    (c.getAlpha() * amb.getAlpha()) / 255);
-	return(n);
-    }
-	
     public float tcx(int x) {
 	return(((float)x) / ((float)tdim.x));
     }
@@ -277,7 +264,6 @@ public abstract class TexGL extends Tex {
 	GL gl = g.gl;
 	g.st.prep(draw);
 	g.apply();
-	Color amb = blend(g, ambcol());
 	checkerr(gl);
 	if(!disableall) {
 	    gl.glBegin(GL.GL_QUADS);
@@ -285,10 +271,6 @@ public abstract class TexGL extends Tex {
 	    float t = ((float)ul.y) / ((float)tdim.y);
 	    float r = ((float)br.x) / ((float)tdim.x);
 	    float b = ((float)br.y) / ((float)tdim.y);
-	    gl.glColor4f((float)amb.getRed() / 255.0f,
-			 (float)amb.getGreen() / 255.0f,
-			 (float)amb.getBlue() / 255.0f,
-			 (float)amb.getAlpha() / 255.0f);
 	    gl.glTexCoord2f(l, t); gl.glVertex3i(c.x, c.y, 0);
 	    gl.glTexCoord2f(r, t); gl.glVertex3i(c.x + sz.x, c.y, 0);
 	    gl.glTexCoord2f(r, b); gl.glVertex3i(c.x + sz.x, c.y + sz.y, 0);

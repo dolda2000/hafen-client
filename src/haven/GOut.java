@@ -114,6 +114,7 @@ public class GOut {
 	if(tex == null)
 	    return;
 	st.set(def2d);
+	state(color);
 	tex.crender(this, c.add(tx), ul, sz);
 	checkerr();
     }
@@ -127,6 +128,7 @@ public class GOut {
 	if(tex == null)
 	    return;
 	st.set(def2d);
+	state(color);
 	tex.crender(this, c.add(tx), ul, this.sz, sz);
 	checkerr();
     }
@@ -135,6 +137,7 @@ public class GOut {
 	if(tex == null)
 	    return;
 	st.set(def2d);
+	state(color);
 	ul = ul.add(this.tx);
 	Coord br = ul.add(sz);
 	if(ul.x < this.ul.x)
