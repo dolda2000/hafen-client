@@ -176,7 +176,7 @@ public class Bootstrap implements UI.Receiver {
 	    Thread.sleep(100);
 	    while(true) {
 		if(sess.state == "") {
-		    setpref("username", loginname);
+		    setpref("loginname", loginname);
 		    ui.destroy(1);
 		    break retry;
 		} else if(sess.connfailed != 0) {
