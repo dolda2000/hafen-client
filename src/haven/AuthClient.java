@@ -32,14 +32,9 @@ import java.security.MessageDigest;
 
 public class AuthClient {
     private static final SslHelper ssl;
-    private static final int CMD_USR = 1;
-    private static final int CMD_PASSWD = 2;
-    private static final int CMD_GETTOKEN = 3;
-    private static final int CMD_USETOKEN = 4;
     private Socket sk;
     private InputStream skin;
     private OutputStream skout;
-    public byte[] cookie, token;
     
     static {
 	ssl = new SslHelper();
@@ -50,20 +45,10 @@ public class AuthClient {
 	}
     }
 
-    public AuthClient(String host, int port, String username) throws IOException {
+    public AuthClient(String host, int port) throws IOException {
 	sk = ssl.connect(host, port);
 	skin = sk.getInputStream();
 	skout = sk.getOutputStream();
-	binduser(username);
-    }
-    
-    public void binduser(String username) throws IOException {
-	Message msg = new Message(CMD_USR);
-	msg.addstring2(username);
-	sendmsg(msg);
-	Message rpl = recvmsg();
-	if(rpl.type != 0)
-	    throw(new IOException("Unhandled reply " + rpl.type + " when binding username"));
     }
     
     private static byte[] digest(String pw) {
@@ -83,37 +68,62 @@ public class AuthClient {
 	return(dig.digest());
     }
 
-    public boolean trypasswd(String pw) throws IOException {
-	byte[] phash = digest(pw);
-	sendmsg(new Message(CMD_PASSWD, phash));
-	Message rpl = recvmsg();
-	if(rpl.type == 0) {
-	    cookie = rpl.blob;
-	    return(true);
+    public String trypasswd(String user, String pw) throws IOException {
+	Message rpl = cmd("pw", user, digest(pw));
+	String stat = rpl.string();
+	if(stat.equals("ok")) {
+	    String acct = rpl.string();
+	    return(acct);
+	} else if(stat.equals("no")) {
+	    return(null);
 	} else {
-	    return(false);
+	    throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
+	}
+    }
+
+    public String tryparadox(String user, String pw) throws IOException {
+	Message rpl = cmd("pdx", user, pw);
+	String stat = rpl.string();
+	if(stat.equals("ok")) {
+	    String acct = rpl.string();
+	    return(acct);
+	} else if(stat.equals("no")) {
+	    return(null);
+	} else {
+	    throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
+	}
+    }
+
+    public String trytoken(String user, byte[] token) throws IOException {
+	Message rpl = cmd("token", user, token);
+	String stat = rpl.string();
+	if(stat.equals("ok")) {
+	    String acct = rpl.string();
+	    return(acct);
+	} else if(stat.equals("no")) {
+	    return(null);
+	} else {
+	    throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
 	}
     }
     
-    public boolean trytoken(byte[] token) throws IOException {
-	sendmsg(new Message(CMD_USETOKEN, token));
-	Message rpl = recvmsg();
-	if(rpl.type == 0) {
-	    cookie = rpl.blob;
-	    return(true);
+    public byte[] getcookie() throws IOException {
+	Message rpl = cmd("cookie");
+	String stat = rpl.string();
+	if(stat.equals("ok")) {
+	    return(rpl.bytes(32));
 	} else {
-	    return(false);
+	    throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
 	}
     }
-    
-    public boolean gettoken() throws IOException {
-	sendmsg(new Message(CMD_GETTOKEN));
-	Message rpl = recvmsg();
-	if(rpl.type == 0) {
-	    token = rpl.blob;
-	    return(true);
+
+    public byte[] gettoken() throws IOException {
+	Message rpl = cmd("mktoken");
+	String stat = rpl.string();
+	if(stat.equals("ok")) {
+	    return(rpl.bytes(32));
 	} else {
-	    return(false);
+	    throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
 	}
     }
     
@@ -122,15 +132,29 @@ public class AuthClient {
     }
 
     private void sendmsg(Message msg) throws IOException {
-	if(msg.blob.length > 255)
+	if(msg.blob.length > 65535)
 	    throw(new RuntimeException("Too long message in AuthClient (" + msg.blob.length + " bytes)"));
 	byte[] buf = new byte[msg.blob.length + 2];
-	buf[0] = (byte)msg.type;
-	buf[1] = (byte)msg.blob.length;
+	buf[0] = (byte)((msg.blob.length & 0xff00) >> 8);
+	buf[1] = (byte)(msg.blob.length & 0x00ff);
 	System.arraycopy(msg.blob, 0, buf, 2, msg.blob.length);
 	skout.write(buf);
     }
     
+    private void esendmsg(Object... args) throws IOException {
+	Message buf = new Message(0);
+	for(Object arg : args) {
+	    if(arg instanceof String) {
+		buf.addstring((String)arg);
+	    } else if(arg instanceof byte[]) {
+		buf.addbytes((byte[])arg);
+	    } else {
+		throw(new RuntimeException("Illegal argument to esendmsg: " + arg.getClass()));
+	    }
+	}
+	sendmsg(buf);
+    }
+
     private static void readall(InputStream in, byte[] buf) throws IOException {
 	int rv;
 	for(int i = 0; i < buf.length; i += rv) {
@@ -143,19 +167,39 @@ public class AuthClient {
     private Message recvmsg() throws IOException {
 	byte[] header = new byte[2];
 	readall(skin, header);
-	byte[] buf = new byte[header[1]];
+	int len = (Utils.ub(header[0]) << 8) | Utils.ub(header[1]);
+	byte[] buf = new byte[len];
 	readall(skin, buf);
-	return(new Message(header[0], buf));
+	return(new Message(0, buf));
     }
     
-    public static void main(String[] args) throws Exception {
-	AuthClient test = new AuthClient("127.0.0.1", 1871, args[0]);
-	System.out.println(test.trypasswd(args[1]));
-	if(test.cookie != null) {
-	    for(byte b : test.cookie)
-		System.out.print(String.format("%02X ", b));
-	    System.out.println();
-	}
-	test.close();
+    private Message cmd(Object... args) throws IOException {
+	esendmsg(args);
+	return(recvmsg());
+    }
+    
+    public static void main(final String[] args) throws Exception {
+	Thread t = new HackThread(new Runnable() {
+		public void run() {
+		    try {
+			AuthClient test = new AuthClient("127.0.0.1", 1871);
+			try {
+			    String acct = test.trypasswd(args[0], args[1]);
+			    if(acct == null) {
+				System.err.println("failed");
+				return;
+			    }
+			    System.out.println(acct);
+			    System.out.println(Utils.byte2hex(test.getcookie()));
+			} finally {
+			    test.close();
+			}
+		    } catch(Exception e) {
+			throw(new RuntimeException(e));
+		    }
+		}
+	    }, "Test");
+	t.start();
+	t.join();
     }
 }
