@@ -212,6 +212,13 @@ public class Message implements java.io.Serializable {
 	off = ob[0];
 	return(ret);
     }
+    
+    public byte[] bytes(int n) {
+	byte[] ret = new byte[n];
+	System.arraycopy(blob, off, ret, 0, n);
+	off += n;
+	return(ret);
+    }
 	
     public Coord coord() {
 	return(new Coord(int32(), int32()));
