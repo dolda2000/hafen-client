@@ -81,7 +81,7 @@ public class LoginScreen extends Widget {
 	}
 		
 	Object[] data() {
-	    return(new Object[] {user.text, pass.text, savepass.a});
+	    return(new Object[] {new AuthClient.NativeCred(user.text, pass.text), savepass.a});
 	}
 		
 	boolean enter() {

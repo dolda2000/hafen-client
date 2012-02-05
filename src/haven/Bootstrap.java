@@ -72,24 +72,23 @@ public class Bootstrap implements UI.Receiver {
 	ui = hp.newui(null);
 	ui.setreceiver(this);
 	ui.bind(new LoginScreen(ui.root), 1);
-	String username;
+	String loginname = getpref("loginname", "");
 	boolean savepw = false;
-	Utils.setpref("password", "");
 	byte[] token = null;
 	if(getpref("savedtoken", "").length() == 64)
 	    token = Utils.hex2byte(getpref("savedtoken", null));
-	username = getpref("username", "");
 	String authserver = (Config.authserv == null)?hostname:Config.authserv;
 	int authport = Config.authport;
 	retry: do {
 	    byte[] cookie;
+	    String acctname, tokenname;
 	    if(initcookie != null) {
-		username = inituser;
+		acctname = inituser;
 		cookie = initcookie;
 		initcookie = null;
-	    } else if(token != null) {
+	    } else if((token != null) && ((tokenname = getpref("tokenname", null)) != null)) {
 		savepw = true;
-		ui.uimsg(1, "token", username);
+		ui.uimsg(1, "token", loginname);
 		while(true) {
 		    Message msg;
 		    synchronized(msgs) {
@@ -107,29 +106,26 @@ public class Bootstrap implements UI.Receiver {
 		    }
 		}
 		ui.uimsg(1, "prg", "Authenticating...");
-		AuthClient auth = null;
 		try {
-		    auth = new AuthClient(authserver, authport, username);
-		    if(!auth.trytoken(token)) {
+		    AuthClient auth = new AuthClient(authserver, authport);
+		    try {
+			if((acctname = auth.trytoken(tokenname, token)) == null) {
+			    token = null;
+			    setpref("savedtoken", "");
+			    ui.uimsg(1, "error", "Invalid save");
+			    continue retry;
+			}
+			cookie = auth.getcookie();
+		    } finally {
 			auth.close();
-			token = null;
-			setpref("savedtoken", "");
-			ui.uimsg(1, "error", "Invalid save");
-			continue retry;
 		    }
-		    cookie = auth.cookie;
 		} catch(java.io.IOException e) {
 		    ui.uimsg(1, "error", e.getMessage());
 		    continue retry;
-		} finally {
-		    try {
-			if(auth != null)
-			    auth.close();
-		    } catch(java.io.IOException e) {}
 		}
 	    } else {
-		String password;
-		ui.uimsg(1, "passwd", username, savepw);
+		AuthClient.Credentials creds;
+		ui.uimsg(1, "passwd", loginname, savepw);
 		while(true) {
 		    Message msg;
 		    synchronized(msgs) {
@@ -138,46 +134,42 @@ public class Bootstrap implements UI.Receiver {
 		    }
 		    if(msg.id == 1) {
 			if(msg.name == "login") {
-			    username = (String)msg.args[0];
-			    password = (String)msg.args[1];
-			    savepw = (Boolean)msg.args[2];
+			    creds = (AuthClient.Credentials)msg.args[0];
+			    savepw = (Boolean)msg.args[1];
+			    loginname = creds.name();
 			    break;
 			}
 		    }
 		}
 		ui.uimsg(1, "prg", "Authenticating...");
-		AuthClient auth = null;
 		try {
+		    AuthClient auth = new AuthClient(authserver, authport);
 		    try {
-			auth = new AuthClient(authserver, authport, username);
-		    } catch(UnknownHostException e) {
-			ui.uimsg(1, "error", "Could not locate server");
-			continue retry;
-		    }
-		    if(!auth.trypasswd(password)) {
+			try {
+			    acctname = creds.tryauth(auth);
+			} catch(AuthClient.Credentials.AuthException e) {
+			    ui.uimsg(1, "error", e.getMessage());
+			    continue retry;
+			}
+			cookie = auth.getcookie();
+			if(savepw) {
+			    setpref("savedtoken", Utils.byte2hex(auth.gettoken()));
+			    setpref("tokenname", acctname);
+			}
+		    } finally {
 			auth.close();
-			password = "";
-			ui.uimsg(1, "error", "Username or password incorrect");
-			continue retry;
 		    }
-		    cookie = auth.cookie;
-		    if(savepw) {
-			if(auth.gettoken())
-			    setpref("savedtoken", Utils.byte2hex(auth.token));
-		    }
+		} catch(UnknownHostException e) {
+		    ui.uimsg(1, "error", "Could not locate server");
+		    continue retry;
 		} catch(java.io.IOException e) {
 		    ui.uimsg(1, "error", e.getMessage());
 		    continue retry;
-		} finally {
-		    try {
-			if(auth != null)
-			    auth.close();
-		    } catch(java.io.IOException e) {}
 		}
 	    }
 	    ui.uimsg(1, "prg", "Connecting...");
 	    try {
-		sess = new Session(new InetSocketAddress(InetAddress.getByName(hostname), port), username, cookie);
+		sess = new Session(new InetSocketAddress(InetAddress.getByName(hostname), port), acctname, cookie);
 	    } catch(UnknownHostException e) {
 		ui.uimsg(1, "error", "Could not locate server");
 		continue retry;
@@ -185,7 +177,7 @@ public class Bootstrap implements UI.Receiver {
 	    Thread.sleep(100);
 	    while(true) {
 		if(sess.state == "") {
-		    setpref("username", username);
+		    setpref("loginname", loginname);
 		    ui.destroy(1);
 		    break retry;
 		} else if(sess.connfailed != 0) {
