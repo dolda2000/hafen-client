@@ -51,38 +51,19 @@ public class AuthClient {
 	skout = sk.getOutputStream();
     }
     
-    private static byte[] digest(String pw) {
+    private static byte[] digest(byte[] pw) {
 	MessageDigest dig;
-	byte[] buf;
 	try {
 	    dig = MessageDigest.getInstance("SHA-256");
-	    buf = pw.getBytes("utf-8");
 	} catch(java.security.NoSuchAlgorithmException e) {
 	    throw(new RuntimeException(e));
-	} catch(java.io.UnsupportedEncodingException e) {
-	    throw(new RuntimeException(e));
 	}
-	dig.update(buf);
-	for(int i = 0; i < buf.length; i++)
-	    buf[i] = 0;
+	dig.update(pw);
 	return(dig.digest());
     }
 
-    public String trypasswd(String user, String pw) throws IOException {
-	Message rpl = cmd("pw", user, digest(pw));
-	String stat = rpl.string();
-	if(stat.equals("ok")) {
-	    String acct = rpl.string();
-	    return(acct);
-	} else if(stat.equals("no")) {
-	    return(null);
-	} else {
-	    throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
-	}
-    }
-
-    public String tryparadox(String user, String pw) throws IOException {
-	Message rpl = cmd("pdx", user, pw);
+    public String trypasswd(String user, byte[] phash) throws IOException {
+	Message rpl = cmd("pw", user, phash);
 	String stat = rpl.string();
 	if(stat.equals("ok")) {
 	    String acct = rpl.string();
@@ -173,18 +154,98 @@ public class AuthClient {
 	return(new Message(0, buf));
     }
     
-    private Message cmd(Object... args) throws IOException {
+    public Message cmd(Object... args) throws IOException {
 	esendmsg(args);
 	return(recvmsg());
     }
     
+    public static abstract class Credentials {
+	public abstract String tryauth(AuthClient cl) throws IOException;
+	public abstract String name();
+	public void discard() {}
+	
+	protected void finalize() {
+	    discard();
+	}
+	
+	public static class AuthException extends RuntimeException {
+	    public AuthException(String msg) {
+		super(msg);
+	    }
+	}
+    }
+
+    public static class NativeCred extends Credentials {
+	public final String username;
+	private byte[] phash;
+	
+	public NativeCred(String username, byte[] phash) {
+	    this.username = username;
+	    if((this.phash = phash).length != 32)
+		throw(new IllegalArgumentException("Password hash must be 32 bytes"));
+	}
+	
+	private static byte[] ohdearjava(String a) {
+	    try {
+		return(digest(a.getBytes("utf-8")));
+	    } catch(UnsupportedEncodingException e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
+	public NativeCred(String username, String pw) {
+	    this(username, ohdearjava(pw));
+	}
+	
+	public String name() {
+	    return(username);
+	}
+	
+	public String tryauth(AuthClient cl) throws IOException {
+	    String acct = cl.trypasswd(username, phash);
+	    if(acct == null)
+		throw(new AuthException("Username or password incorrect"));
+	    return(acct);
+	}
+	
+	public void discard() {
+	    if(phash != null) {
+		for(int i = 0; i < phash.length; i++)
+		    phash[i] = 0;
+		phash = null;
+	    }
+	}
+    }
+
+    public static class TokenCred extends Credentials implements Serializable {
+	public final String acctname;
+	public final byte[] token;
+	
+	public TokenCred(String acctname, byte[] token) {
+	    this.acctname = acctname;
+	    if((this.token = token).length != 32)
+		throw(new IllegalArgumentException("Token must be 32 bytes"));
+	}
+	
+	public String name() {
+	    throw(new UnsupportedOperationException());
+	}
+	
+	public String tryauth(AuthClient cl) throws IOException {
+	    String acct = cl.trytoken(acctname, token);
+	    if(acct == null)
+		throw(new AuthException("Invalid save"));
+	    return(acct);
+	}
+    }
+
     public static void main(final String[] args) throws Exception {
 	Thread t = new HackThread(new Runnable() {
 		public void run() {
 		    try {
 			AuthClient test = new AuthClient("127.0.0.1", 1871);
 			try {
-			    String acct = test.trypasswd(args[0], args[1]);
+			    String acct = new NativeCred(args[0], args[1]).tryauth(test);
 			    if(acct == null) {
 				System.err.println("failed");
 				return;

@@ -124,7 +124,7 @@ public class Bootstrap implements UI.Receiver {
 		    continue retry;
 		}
 	    } else {
-		String password;
+		AuthClient.Credentials creds;
 		ui.uimsg(1, "passwd", loginname, savepw);
 		while(true) {
 		    Message msg;
@@ -134,9 +134,9 @@ public class Bootstrap implements UI.Receiver {
 		    }
 		    if(msg.id == 1) {
 			if(msg.name == "login") {
-			    loginname = (String)msg.args[0];
-			    password = (String)msg.args[1];
-			    savepw = (Boolean)msg.args[2];
+			    creds = (AuthClient.Credentials)msg.args[0];
+			    savepw = (Boolean)msg.args[1];
+			    loginname = creds.name();
 			    break;
 			}
 		    }
@@ -145,9 +145,10 @@ public class Bootstrap implements UI.Receiver {
 		try {
 		    AuthClient auth = new AuthClient(authserver, authport);
 		    try {
-			if((acctname = auth.trypasswd(loginname, password)) == null) {
-			    password = "";
-			    ui.uimsg(1, "error", "Username or password incorrect");
+			try {
+			    acctname = creds.tryauth(auth);
+			} catch(AuthClient.Credentials.AuthException e) {
+			    ui.uimsg(1, "error", e.getMessage());
 			    continue retry;
 			}
 			cookie = auth.getcookie();
