@@ -56,7 +56,7 @@ public class WItem extends Widget implements DTarget {
 	return(img);
     }
 
-    public static Tex shorttip(List<Info> info) {
+    public static BufferedImage shorttip(List<Info> info) {
 	BufferedImage img = rendershort(info);
 	GItem.Contents cont = find(GItem.Contents.class, info);
 	if(cont != null) {
@@ -68,23 +68,51 @@ public class WItem extends Widget implements DTarget {
 	}
 	if(img == null)
 	    return(null);
-	return(new TexI(img));
+	return(img);
     }
     
-    public static Tex longtip(GItem item, List<Info> info) {
+    public static BufferedImage longtip(GItem item, List<Info> info) {
 	BufferedImage img = GItem.longtip(info);
 	Resource.Pagina pg = item.res.get().layer(Resource.pagina);
 	if(pg != null)
 	    img = GItem.catimgs(0, img, RichText.render("\n" + pg.text, 200).img);
-	return(new TexI(img));
+	return(img);
     }
     
-    public Tex longtip(List<Info> info) {
+    public BufferedImage longtip(List<Info> info) {
 	return(longtip(item, info));
+    }
+    
+    public class ItemTip implements Indir<Tex> {
+	private final TexI tex;
+	
+	public ItemTip(BufferedImage img) {
+	    tex = new TexI(img);
+	}
+	
+	public GItem item() {
+	    return(item);
+	}
+	
+	public Tex get() {
+	    return(tex);
+	}
+	
+	public void set(Tex val) {
+	    throw(new UnsupportedOperationException());
+	}
+    }
+    
+    public class ShortTip extends ItemTip {
+	public ShortTip(List<Info> info) {super(shorttip(info));}
+    }
+    
+    public class LongTip extends ItemTip {
+	public LongTip(List<Info> info) {super(longtip(info));}
     }
 
     private long hoverstart;
-    private Tex shorttip = null, longtip = null;
+    private ItemTip shorttip = null, longtip = null;
     private List<Info> ttinfo = null;
     public Object tooltip(Coord c, boolean again) {
 	long now = System.currentTimeMillis();
@@ -98,11 +126,11 @@ public class WItem extends Widget implements DTarget {
 	    }
 	    if(now - hoverstart < 1000) {
 		if(shorttip == null)
-		    shorttip = shorttip(info);
+		    shorttip = new ShortTip(info);
 		return(shorttip);
 	    } else {
 		if(longtip == null)
-		    longtip = longtip(info);
+		    longtip = new LongTip(info);
 		return(longtip);
 	    }
 	} catch(Loading e) {

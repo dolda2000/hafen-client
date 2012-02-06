@@ -40,6 +40,7 @@ public class UI {
     public Coord mc, lcc = Coord.z;
     public Session sess;
     public boolean modshift, modctrl, modmeta, modsuper;
+    public Object lasttip;
     long lastevent, lasttick;
     public Widget mouseon;
     public Console cons = new WidgetConsole();

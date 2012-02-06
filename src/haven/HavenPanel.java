@@ -293,6 +293,11 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		tt = ((Text)tooltip).tex();
 	    } else if(tooltip instanceof Tex) {
 		tt = (Tex)tooltip;
+	    } else if(tooltip instanceof Indir<?>) {
+		Indir<?> t = (Indir<?>)tooltip;
+		Object o = t.get();
+		if(o instanceof Tex)
+		    tt = (Tex)o;
 	    } else if(tooltip instanceof String) {
 		if(((String)tooltip).length() > 0)
 		    tt = (Text.render((String)tooltip)).tex();
@@ -312,6 +317,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	    g.chcolor();
 	    g.image(tt, pos);
 	}
+	ui.lasttip = tooltip;
 	Resource curs = ui.root.getcurs(mousepos);
 	if(!curs.loading) {
 	    if(cursmode == "awt") {
