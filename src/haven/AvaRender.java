@@ -42,7 +42,6 @@ public class AvaRender extends TexRT {
     }
     
     public void setlay(List<Indir<Resource>> layers) {
-        Collections.sort(layers);
         this.layers = layers;
         loading = true;
     }
