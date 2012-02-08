@@ -117,7 +117,33 @@ public class Utils {
 	java.awt.geom.Rectangle2D ts = m.getStringBounds(text, g);
 	g.drawString(text, (int)(c.x - ts.getWidth() * ax), (int)(c.y + m.getAscent() - ts.getHeight() * ay));
     }
-	
+    
+    public static String fpformat(int num, int div, int dec) {
+	StringBuilder buf = new StringBuilder();
+	boolean s = false;
+	if(num < 0) {
+	    num = -num; s = true;
+	}
+	for(int i = 0; i < div - dec; i++)
+	    num /= 10;
+	for(int i = 0; i < dec; i++) {
+	    buf.append((char)('0' + (num % 10)));
+	    num /= 10;
+	}
+	buf.append('.');
+	if(num == 0) {
+	    buf.append('0');
+	} else {
+	    while(num > 0) {
+		buf.append((char)('0' + (num % 10)));
+		num /= 10;
+	    }
+	}
+	if(s)
+	    buf.append('-');
+	return(buf.reverse().toString());
+    }
+    
     static void line(Graphics g, Coord c1, Coord c2) {
 	g.drawLine(c1.x, c1.y, c2.x, c2.y);
     }
