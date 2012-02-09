@@ -177,7 +177,7 @@ public class Gob implements Sprite.Owner, Rendered {
 	
     public void draw(GOut g) {}
 
-    public Order setup(RenderList rl) {
+    public boolean setup(RenderList rl) {
 	Drawable d = getattr(Drawable.class);
 	for(Overlay ol : ols) {
 	    if(ol.spr != null)
@@ -194,7 +194,7 @@ public class Gob implements Sprite.Owner, Rendered {
 	KinInfo ki = getattr(KinInfo.class);
 	if(ki != null)
 	    rl.add(ki.fx, null);
-	return(null);
+	return(false);
     }
 
     public Random mkrandoom() {

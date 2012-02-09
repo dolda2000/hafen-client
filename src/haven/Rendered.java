@@ -31,17 +31,24 @@ import javax.media.opengl.*;
 
 public interface Rendered {
     public void draw(GOut g);
-    public Order setup(RenderList r);
+    public boolean setup(RenderList r);
     
     public static interface RComparator<T extends Rendered> {
 	public int compare(T a, T b, GLState.Buffer sa, GLState.Buffer sb);
     }
 
-    public static interface Order<T extends Rendered> {
-	public int mainz();
-	public RComparator<? super T> cmp();
+    public static final GLState.Slot<Order> order = new GLState.Slot<Order>(GLState.Slot.Type.GEOM, Order.class, HavenPanel.global);
+    public static abstract class Order<T extends Rendered> extends GLState {
+	public abstract int mainz();
+	public abstract RComparator<? super T> cmp();
 	
-	public static class Default implements Order<Rendered> {
+	public void apply(GOut g) {}
+	public void unapply(GOut g) {}
+	public void prep(GLState.Buffer buf) {
+	    buf.put(order, this);
+	}
+
+	public static class Default extends Order<Rendered> {
 	    private final int z;
 	    
 	    public Default(int z) {
@@ -104,8 +111,8 @@ public interface Rendered {
 	    gl.glEnd();
 	}
 	
-	public Order setup(RenderList r) {
-	    return(last);
+	public boolean setup(RenderList r) {
+	    return(true);
 	}
     }
 
@@ -141,8 +148,9 @@ public interface Rendered {
 	    gl.glEnd();
 	}
 	
-	public Order setup(RenderList r) {
-	    return(last);
+	public boolean setup(RenderList r) {
+	    r.state().put(States.color, null);
+	    return(true);
 	}
     }
     
@@ -164,11 +172,10 @@ public interface Rendered {
 	    gl.glEnd();
 	}
 	
-	public Order setup(RenderList r) {
+	public boolean setup(RenderList r) {
 	    r.state().put(States.color, null);
 	    r.state().put(Light.lighting, null);
-	    r.prepo(States.xray);
-	    return(last);
+	    return(true);
 	}
     }
     
@@ -225,8 +232,9 @@ public interface Rendered {
 	    gl.glDisable(GL.GL_COLOR_MATERIAL);
 	}
 	
-	public Order setup(RenderList rls) {
-	    return(last);
+	public boolean setup(RenderList rls) {
+	    rls.state().put(States.color, null);
+	    return(true);
 	}
     }
 }

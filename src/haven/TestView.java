@@ -104,8 +104,9 @@ public class TestView extends PView {
 	    gl.glEnd();
 	}
 	
-	public Order setup(RenderList rls) {
-	    return(deflt);
+	public boolean setup(RenderList rls) {
+	    rls.state().put(States.color, null);
+	    return(true);
 	}
     }
 

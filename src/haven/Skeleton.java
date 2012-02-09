@@ -369,8 +369,9 @@ public class Skeleton {
 		    gl.glEnd();
 		}
 	    
-		public Order setup(RenderList rl) {
-		    return(last);
+		public boolean setup(RenderList rl) {
+		    rl.prepo(States.xray);
+		    return(true);
 		}
 	    };
     }

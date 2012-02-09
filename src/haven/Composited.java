@@ -114,45 +114,70 @@ public class Composited implements Rendered {
 	this.pose = skel.new Pose(skel.bindpose);
     }
     
-    private static final Rendered.Order modorder = new Rendered.Order<Model>() {
+    private static final Rendered.Order modorder = new Rendered.Order<Model.Layer>() {
 	public int mainz() {
 	    return(1);
 	}
 	
-	private final Rendered.RComparator<Model> cmp = new Rendered.RComparator<Model>() {
-	    public int compare(Model a, Model b, GLState.Buffer sa, GLState.Buffer sb) {
-		return(a.z - b.z);
+	private final Rendered.RComparator<Model.Layer> cmp = new Rendered.RComparator<Model.Layer>() {
+	    public int compare(Model.Layer a, Model.Layer b, GLState.Buffer sa, GLState.Buffer sb) {
+		if(a.z1 != b.z1)
+		    return(a.z1 - b.z1);
+		return(a.z2 - b.z2);
 	    }
 	};
 	
-	public Rendered.RComparator<Model> cmp() {
+	public Rendered.RComparator<Model.Layer> cmp() {
 	    return(cmp);
 	}
     };
 
-    private class Model implements FRendered {
+    private class Model implements Rendered {
 	private final MorphedMesh m;
-	int z = 0;
-	private final List<Material> lay = new ArrayList<Material>();
+	int z = 0, lz = 0;
+	private class Layer implements FRendered {
+	    private final Material mat;
+	    private final int z1, z2;
+	    
+	    private Layer(Material mat, int z1, int z2) {
+		this.mat = mat;
+		this.z1 = z1;
+		this.z2 = z2;
+	    }
+	    
+	    public void draw(GOut g) {
+		m.draw(g);
+	    }
+	    
+	    public void drawflat(GOut g) {
+		if(z2 == 0)
+		    m.drawflat(g);
+	    }
+	    
+	    public boolean setup(RenderList r) {
+		r.prepo(modorder);
+		r.prepo(mat);
+		return(true);
+	    }
+	}
+	private final List<Layer> lay = new ArrayList<Layer>();
 	
 	private Model(FastMesh m) {
 	    this.m = new MorphedMesh(m, pose);
 	}
 	
+	private void addlay(Material mat) {
+	    lay.add(new Layer(mat, z, lz++));
+	}
+
 	public void draw(GOut g) {
-	    for(Material lay : this.lay) {
-		g.state(lay);
-		m.draw(g);
-	    }
 	}
 	
-	public void drawflat(GOut g) {
-	    m.drawflat(g);
-	}
-	
-	public Order setup(RenderList r) {
+	public boolean setup(RenderList r) {
 	    m.setup(r);
-	    return(modorder);
+	    for(Layer lay : this.lay)
+		r.add(lay, null);
+	    return(false);
 	}
     }
     
@@ -167,9 +192,9 @@ public class Composited implements Rendered {
 	public void draw(GOut g) {
 	}
 
-	public Order setup(RenderList rl) {
+	public boolean setup(RenderList rl) {
 	    rl.add(spr, null);
-	    return(null);
+	    return(false);
 	}
 	
 	public void tick(int dt) {
@@ -188,9 +213,9 @@ public class Composited implements Rendered {
 	public void draw(GOut g) {
 	}
 	
-	public Order setup(RenderList rl) {
+	public boolean setup(RenderList rl) {
 	    rl.add(l, null);
-	    return(null);
+	    return(false);
 	}
     }
 
@@ -301,7 +326,7 @@ public class Composited implements Rendered {
 		for(Iterator<Indir<Resource>> o = md.tex.iterator(); o.hasNext();) {
 		    Indir<Resource> res = o.next();
 		    for(Material.Res mr : res.get().layers(Material.Res.class))
-			md.real.lay.add(mr.get());
+			md.real.addlay(mr.get());
 		    o.remove();
 		}
 		i.remove();
@@ -333,13 +358,13 @@ public class Composited implements Rendered {
 	    nequ();
     }
 
-    public Order setup(RenderList rl) {
+    public boolean setup(RenderList rl) {
 	changes();
 	for(Model mod : this.mod)
 	    rl.add(mod, null);
 	for(Equ equ : this.equ)
 	    rl.add(equ, equ.et);
-	return(null);
+	return(false);
     }
     
     public void draw(GOut g) {
