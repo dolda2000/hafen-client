@@ -75,7 +75,16 @@ public class Config {
     }
 
     private static void usage(PrintStream out) {
-	out.println("usage: haven.jar [-hdfPL] [-s WxH] [-u USER] [-C HEXCOOKIE] [-r RESDIR] [-U RESURL] [-A AUTHSERV[:PORT]] [SERVER[:PORT]]");
+	out.println("usage: haven.jar [OPTIONS] [SERVER[:PORT]]");
+	out.println("Options include:");
+	out.println("  -h                 Display this help");
+	out.println("  -d                 Display debug text");
+	out.println("  -P                 Enable profiling");
+	out.println("  -U URL             Use specified external resource URL");
+	out.println("  -r DIR             Use specified resource directory (or HAVEN_RESDIR)");
+	out.println("  -A AUTHSERV[:PORT] Use specified authentication server");
+	out.println("  -u USER            Authenticate as USER (together with -C)");
+	out.println("  -C HEXCOOKIE       Authenticate with specified hex-encoded cookie");
     }
 
     public static void cmdline(String[] args) {
