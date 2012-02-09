@@ -169,14 +169,14 @@ public class Light implements Rendered {
 	    private final Rendered scene = new Rendered() {
 		    public void draw(GOut g) {}
 		    
-		    public Order setup(RenderList rl) {
+		    public boolean setup(RenderList rl) {
 			GLState.Buffer buf = new GLState.Buffer(rl.cfg);
 			for(RenderList.Slot s : parts) {
 			    rl.state().copy(buf);
 			    s.os.copy(buf, GLState.Slot.Type.GEOM);
-			    rl.add(s.r, buf, s.o);
+			    rl.add2(s.r, buf);
 			}
-			return(null);
+			return(false);
 		    }
 		};
 
@@ -195,7 +195,7 @@ public class Light implements Rendered {
 		LightList ll = null;
 		Camera cam = null;
 		for(RenderList.Slot s : rl.slots()) {
-		    if(s.o == null)
+		    if(!s.d)
 			continue;
 		    if((s.os.get(smap) != this) || (s.os.get(lighting) != pslights))
 			continue;
@@ -394,7 +394,7 @@ public class Light implements Rendered {
     }
 
     public void draw(GOut g) {}
-    public Order setup(RenderList rl) {
+    public boolean setup(RenderList rl) {
 	LightList l = rl.state().get(lights);
 	if(l != null) {
 	    Camera cam = rl.state().get(PView.cam);
@@ -404,7 +404,7 @@ public class Light implements Rendered {
 		mv = mv.mul(loc.fin(Matrix4f.identity()));
 	    l.add(this, mv);
 	}
-	return(null);
+	return(false);
     }
     
     public static class Res extends Resource.Layer {

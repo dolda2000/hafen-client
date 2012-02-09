@@ -256,7 +256,7 @@ public class MapView extends PView implements DTarget {
     private final Rendered map = new Rendered() {
 	    public void draw(GOut g) {}
 	    
-	    public Order setup(RenderList rl) {
+	    public boolean setup(RenderList rl) {
 		Coord cc = MapView.this.cc.div(tilesz).div(MCache.cutsz);
 		Coord o = new Coord();
 		for(o.y = -view; o.y <= view; o.y++) {
@@ -266,7 +266,7 @@ public class MapView extends PView implements DTarget {
 			rl.add(cut, Location.xlate(new Coord3f(pc.x, -pc.y, 0)));
 		    }
 		}
-		return(null);
+		return(false);
 	    }
 	};
     
@@ -284,7 +284,7 @@ public class MapView extends PView implements DTarget {
 	    
 	    public void draw(GOut g) {}
 	    
-	    public Order setup(RenderList rl) {
+	    public boolean setup(RenderList rl) {
 		Coord cc = MapView.this.cc.div(tilesz).div(MCache.cutsz);
 		Coord o = new Coord();
 		for(o.y = -view; o.y <= view; o.y++) {
@@ -302,7 +302,7 @@ public class MapView extends PView implements DTarget {
 			}
 		    }
 		}
-		return(null);
+		return(false);
 	    }
 	};
     
@@ -324,12 +324,12 @@ public class MapView extends PView implements DTarget {
     private final Rendered gobs = new Rendered() {
 	    public void draw(GOut g) {}
 	    
-	    public Order setup(RenderList rl) {
+	    public boolean setup(RenderList rl) {
 		synchronized(glob.oc) {
 		    for(Gob gob : glob.oc)
 			addgob(rl, gob);
 		}
-		return(null);
+		return(false);
 	    }
 	};
 

@@ -87,6 +87,11 @@ public abstract class States extends GLState {
 	    public void unapply(GOut g) {
 		g.gl.glEnable(GL.GL_DEPTH_TEST);
 	    }
+	    
+	    public void prep(Buffer buf) {
+		super.prep(buf);
+		buf.put(Rendered.order, Rendered.last);
+	    }
 	};
     
     public static final StandAlone fsaa = new StandAlone(Slot.Type.SYS, PView.proj) {

@@ -607,9 +607,9 @@ public abstract class GLState {
 	
 	public void draw(GOut g) {}
 	
-	public Order setup(RenderList rl) {
+	public boolean setup(RenderList rl) {
 	    rl.add(r, GLState.this);
-	    return(null);
+	    return(false);
 	}
     }
     

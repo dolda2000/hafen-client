@@ -62,9 +62,9 @@ public class StaticSprite extends Sprite {
 	return(rl.toArray(new Rendered[0]));
     }
 
-    public Order setup(RenderList r) {
+    public boolean setup(RenderList r) {
 	for(Rendered p : parts)
 	    r.add(p, null);
-	return(null);
+	return(false);
     }
 }

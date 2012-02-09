@@ -40,6 +40,7 @@ public class RenderList {
 	public Rendered r;
 	public GLState.Buffer os = new GLState.Buffer(cfg), cs = new GLState.Buffer(cfg);
 	public Rendered.Order o;
+	public boolean d;
 	public Slot p;
     }
     
@@ -94,7 +95,7 @@ public class RenderList {
 	    curref.set(this);
 	try {
 	    curp = s;
-	    s.o = r.setup(this);
+	    s.d = r.setup(this);
 	} finally {
 	    if((curp = pp) == null)
 		curref.remove();
@@ -119,12 +120,12 @@ public class RenderList {
 	setup(s, r);
     }
     
-    public void add(Rendered r, GLState.Buffer t, Rendered.Order o) {
+    public void add2(Rendered r, GLState.Buffer t) {
 	Slot s = getslot();
 	t.copy(s.os);
 	s.r = r;
 	s.p = curp;
-	s.o = o;
+	s.d = true;
     }
     
     public GLState.Buffer cstate() {
@@ -146,11 +147,11 @@ public class RenderList {
     @SuppressWarnings("unchecked")
     private static final Comparator<Slot> cmp = new Comparator<Slot>() {
 	public int compare(Slot a, Slot b) {
-	    if((a.o == null) && (b.o == null))
+	    if(!a.d && !b.d)
 		return(0);
-	    if((a.o != null) && (b.o == null))
+	    if(a.d && !b.d)
 		return(-1);
-	    if((a.o == null) && (b.o != null))
+	    if(!a.d && b.d)
 		return(1);
 	    int az = a.o.mainz(), bz = b.o.mainz();
 	    if(az != bz)
@@ -165,7 +166,7 @@ public class RenderList {
 	/* This is probably a fast way to intern the states. */
 	IdentityHashMap<GLState.Global, GLState.Global> gstates = new IdentityHashMap<GLState.Global, GLState.Global>(this.gstates.length);
 	for(int i = 0; i < cur; i++) {
-	    if(list[i].o == null)
+	    if(!list[i].d)
 		continue;
 	    GLState[] sl = list[i].os.states();
 	    for(GLState st : sl) {
@@ -182,6 +183,10 @@ public class RenderList {
 	gstates = getgstates();
 	for(GLState.Global gs : gstates)
 	    gs.postsetup(this);
+	for(int i = 0; i < cur; i++) {
+	    if((list[i].o = list[i].os.get(Rendered.order)) == null)
+		list[i].o = Rendered.deflt;
+	}
 	Arrays.sort(list, 0, cur, cmp);
     }
     
@@ -194,7 +199,7 @@ public class RenderList {
 	    gs.prerender(this, g);
 	for(int i = 0; i < cur; i++) {
 	    Slot s = list[i];
-	    if(s.o == null)
+	    if(!s.d)
 		break;
 	    g.st.set(s.os);
 	    render(g, s.r);
@@ -211,6 +216,6 @@ public class RenderList {
 
     public void dump(java.io.PrintStream out) {
 	for(Slot s : slots())
-	    out.println(s.r + ": " + s.os);
+	    out.println((s.d?" ":"!") + s.r + ": " + s.os);
     }
 }

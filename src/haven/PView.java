@@ -103,9 +103,9 @@ public abstract class PView extends Widget {
 	    public void draw(GOut g) {
 	    }
 	    
-	    public Order setup(RenderList rl) {
+	    public boolean setup(RenderList rl) {
 		PView.this.setup(rl);
-		return(null);
+		return(false);
 	    }
 	};
 
@@ -160,8 +160,8 @@ public abstract class PView extends Widget {
     public static abstract class Draw2D implements Render2D {
 	public void draw(GOut g) {}
 	
-	public Order setup(RenderList r) {
-	    return(null);
+	public boolean setup(RenderList r) {
+	    return(false);
 	}
     }
 }

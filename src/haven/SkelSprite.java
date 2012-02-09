@@ -110,11 +110,11 @@ public class SkelSprite extends Sprite {
 	this.mods = poses.toArray(new PoseMod[0]);
     }
     
-    public Order setup(RenderList rl) {
+    public boolean setup(RenderList rl) {
 	for(Rendered p : parts)
 	    rl.add(p, null);
 	/* rl.add(pose.debug, null); */
-	return(null);
+	return(false);
     }
     
     public boolean tick(int dt) {
