@@ -40,49 +40,18 @@ public class Utils {
     public static final java.nio.charset.Charset ascii = java.nio.charset.Charset.forName("US-ASCII");
     public static final java.awt.image.ColorModel rgbm = java.awt.image.ColorModel.getRGBdefault();
     private static Preferences prefs = null;
-    private static Background bgworker = null;
 
     static Coord imgsz(BufferedImage img) {
 	return(new Coord(img.getWidth(), img.getHeight()));
     }
 	
-    public static class Background extends HackThread {
-	Queue<Runnable> q = new LinkedList<Runnable>();
-		
-	public Background() {
-	    super("Haven deferred procedure thread");
-	    setDaemon(true);
-	    start();
-	}
-		
-	public void run() {
-	    try {
-		while(true) {
-		    Runnable cur;
-		    synchronized(q) {
-			while((cur = q.poll()) == null)
-			    q.wait();
-		    }
-		    cur.run();
-		    cur = null;
+    public static void defer(final Runnable r) {
+	Defer.later(new Defer.Callable<Object>() {
+		public Object call() {
+		    r.run();
+		    return(null);
 		}
-	    } catch(InterruptedException e) {}
-	}
-		
-	public void defer(Runnable r) {
-	    synchronized(q) {
-		q.add(r);
-		q.notify();
-	    }
-	}
-    }
-	
-    public static void defer(Runnable r) {
-	synchronized(Utils.class) {
-	    if(bgworker == null)
-		bgworker = new Background();
-	}
-	bgworker.defer(r);
+	    });
     }
 	
     static void drawgay(BufferedImage t, BufferedImage img, Coord c) {
