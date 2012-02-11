@@ -147,7 +147,6 @@ public class Defer extends ThreadGroup {
 	}
 	
 	public void run() {
-	    System.err.println("> " + this);
 	    try {
 		while(true) {
 		    Future<?> f;
@@ -155,15 +154,12 @@ public class Defer extends ThreadGroup {
 			long start = System.currentTimeMillis();
 			synchronized(queue) {
 			    while((f = queue.poll()) == null) {
-				if(System.currentTimeMillis() - start > 5000) {
-				    System.err.println("< " + this);
+				if(System.currentTimeMillis() - start > 5000)
 				    return;
-				}
 				queue.wait(1000);
 			    }
 			}
 		    } catch(InterruptedException e) {
-			System.err.println("! " + this);
 			return;
 		    }
 		    f.run();
