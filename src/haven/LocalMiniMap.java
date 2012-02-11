@@ -35,10 +35,33 @@ import java.util.*;
 
 public class LocalMiniMap extends Widget {
     public final MapView mv;
-    Tex mapimg = null;
-    Coord ultile = null, cgrid = null;
+    private MapTile cur = null;
     private final BufferedImage[] texes = new BufferedImage[256];
+    private final Map<Coord, Defer.Future<MapTile>> cache = new LinkedHashMap<Coord, Defer.Future<MapTile>>(5, 0.75f, true) {
+	protected boolean removeEldestEntry(Map.Entry<Coord, Defer.Future<MapTile>> eldest) {
+	    if(size() > 5) {
+		try {
+		    MapTile t = eldest.getValue().get();
+		    t.img.dispose();
+		} catch(RuntimeException e) {
+		}
+		return(true);
+	    }
+	    return(false);
+	}
+    };
     
+    public static class MapTile {
+	public final Tex img;
+	public final Coord ul, c;
+	
+	public MapTile(Tex img, Coord ul, Coord c) {
+	    this.img = img;
+	    this.ul = ul;
+	    this.c = c;
+	}
+    }
+
     private BufferedImage tileimg(int t) {
 	BufferedImage img = texes[t];
 	if(img == null) {
@@ -89,22 +112,28 @@ public class LocalMiniMap extends Widget {
 	Gob pl = ui.sess.glob.oc.getgob(mv.plgob);
 	if(pl == null)
 	    return;
-	Coord plt = pl.rc.div(tilesz);
-	Coord plg = plt.div(cmaps);
-	if((cgrid == null) || !plg.equals(cgrid)) {
-	    try {
-		Coord ul = plg.mul(cmaps).sub(cmaps).add(1, 1);
-		Tex prev = this.mapimg;
-		this.mapimg = new TexI(drawmap(ul, cmaps.mul(3).sub(2, 2)));
-		this.ultile = ul;
-		this.cgrid = plg;
-		if(prev != null)
-		    prev.dispose();
-	    } catch(Loading l) {}
+	final Coord plt = pl.rc.div(tilesz);
+	final Coord plg = plt.div(cmaps);
+	if((cur == null) || !plg.equals(cur.c)) {
+	    Defer.Future<MapTile> f;
+	    synchronized(cache) {
+		f = cache.get(plg);
+		if(f == null) {
+		    final Coord ul = plg.mul(cmaps).sub(cmaps).add(1, 1);
+		    f = Defer.later(new Defer.Callable<MapTile> () {
+			    public MapTile call() {
+				return(new MapTile(new TexI(drawmap(ul, cmaps.mul(3).sub(2, 2))), ul, plg));
+			    }
+			});
+		    cache.put(plg, f);
+		}
+	    }
+	    if(f.done())
+		cur = f.get();
 	}
-	if(mapimg != null) {
+	if(cur != null) {
 	    GOut g2 = g.reclip(Window.wbox.tloff(), sz.sub(Window.wbox.bisz()));
-	    g2.image(mapimg, ultile.sub(plt).add(sz.div(2)));
+	    g2.image(cur.img, cur.ul.sub(plt).add(sz.div(2)));
 	    Window.wbox.draw(g, Coord.z, sz);
 	    try {
 		synchronized(ui.sess.glob.party.memb) {
