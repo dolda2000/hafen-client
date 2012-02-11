@@ -87,22 +87,22 @@ public class Makewindow extends Widget {
 	    g.image(Inventory.invsq, c);
 	    try {
 		Resource res = s.res.get();
-		g.image(res.layer(Resource.imgc).tex(), c);
+		g.image(res.layer(Resource.imgc).tex(), c.add(1, 1));
 	    } catch(Loading e) {
 	    }
-	    g.aimage(s.num, c.add(31, 32), 1.0, 1.0);
-	    c = c.add(31, 0);
+	    g.aimage(s.num, c.add(33, 34), 1.0, 1.0);
+	    c = c.add(Inventory.sqsz.x, 0);
 	}
 	c = new Coord(xoff, yoff);
 	for(Spec s : outputs) {
 	    g.image(Inventory.invsq, c);
 	    try {
 		Resource res = s.res.get();
-		g.image(res.layer(Resource.imgc).tex(), c);
+		g.image(res.layer(Resource.imgc).tex(), c.add(1, 1));
 	    } catch(Loading e) {
 	    }
-	    g.aimage(s.num, c.add(31, 32), 1.0, 1.0);
-	    c = c.add(31, 0);
+	    g.aimage(s.num, c.add(33, 34), 1.0, 1.0);
+	    c = c.add(Inventory.sqsz.x, 0);
 	}
 	super.draw(g);
     }
