@@ -59,7 +59,7 @@ public class Defer extends ThreadGroup {
 
     public class Future<T> implements Runnable, Prioritized {
 	public final Callable<T> task;
-	private int prio;
+	private int prio = 0;
 	private T val;
 	private volatile String state = "";
 	private RuntimeException exc = null;
@@ -105,6 +105,7 @@ public class Defer extends ThreadGroup {
 	
 	public T get() {
 	    synchronized(this) {
+		boostprio(5);
 		if(state == "done") {
 		    if(exc != null)
 			throw(new DeferredException(exc));
@@ -120,6 +121,7 @@ public class Defer extends ThreadGroup {
 	
 	public boolean done() {
 	    synchronized(this) {
+		boostprio(5);
 		if(state == "resched") {
 		    defer(this);
 		    state = "";
