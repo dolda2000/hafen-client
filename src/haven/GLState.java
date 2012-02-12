@@ -631,6 +631,20 @@ public abstract class GLState {
 	    });
     }
     
+    public static class Delegate extends GLState {
+	public GLState del;
+	
+	public Delegate(GLState del) {
+	    this.del = del;
+	}
+	
+	public void apply(GOut g) {}
+	public void unapply(GOut g) {}
+	public void prep(Buffer buf) {
+	    del.prep(buf);
+	}
+    }
+    
     public interface GlobalState {
 	public Global global(RenderList r, Buffer ctx);
     }
