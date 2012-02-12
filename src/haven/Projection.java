@@ -100,4 +100,17 @@ public class Projection extends Transform {
     public static Projection ortho(float left, float right, float bottom, float top, float near, float far) {
 	return(new Projection(makeortho(new Matrix4f(), left, right, bottom, top, near, far)));
     }
+    
+    public static class Modification extends Projection {
+	public Projection bk;
+	
+	public Modification(Projection bk, Matrix4f mod) {
+	    super(mod);
+	    this.bk = bk;
+	}
+
+	public Matrix4f fin(Matrix4f p) {
+	    return(bk.fin(super.fin(p)));
+	}
+    }
 }
