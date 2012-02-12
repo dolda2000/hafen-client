@@ -142,7 +142,7 @@ public class Light implements Rendered {
 	});
     
     public static class PSLights extends BaseLights {
-	public static class ShadowMap extends GLState implements GLState.Global {
+	public static class ShadowMap extends GLState implements GlobalState, Global {
 	    public final static Slot<ShadowMap> smap = new Slot<ShadowMap>(Slot.Type.DRAW, ShadowMap.class, new Slot[] {lights}, new Slot[] {lighting});
 	    public DirLight light;
 	    public final TexE lbuf;
@@ -238,7 +238,9 @@ public class Light implements Rendered {
 		System.err.println(String.format("(%f, %f, %f, %f)", a[0], a[1], a[2], a[3]));
 	    }
 	    */
-	
+	    
+	    public Global global(RenderList rl, Buffer ctx) {return(this);}
+	    
 	    public void postsetup(RenderList rl) {}
 	    public void postrender(RenderList rl, GOut g) {
 		/* g.image(lbuf, Coord.z, g.sz); */

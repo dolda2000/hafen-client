@@ -631,6 +631,10 @@ public abstract class GLState {
 	    });
     }
     
+    public interface GlobalState {
+	public Global global(RenderList r, Buffer ctx);
+    }
+    
     public interface Global {
 	public void postsetup(RenderList rl);
 	public void prerender(RenderList rl, GOut g);
