@@ -39,7 +39,7 @@ public abstract class PView extends Widget {
     protected Light.Model lm;
     private GLState rstate, pstate;
     
-    public static class RenderState extends GLState {
+    public static abstract class RenderState extends GLState {
 	public void apply(GOut g) {
 	    GL gl = g.gl;
 	    gl.glScissor(g.ul.x, g.root().sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
@@ -67,11 +67,19 @@ public abstract class PView extends Widget {
 	public void prep(Buffer b) {
 	    b.put(wnd, this);
 	}
+	
+	public abstract Coord sz();
+    }
+    
+    private class WidgetRenderState extends RenderState {
+	public Coord sz() {
+	    return(PView.this.sz);
+	}
     }
     
     public PView(Coord c, Coord sz, Widget parent) {
 	super(c, sz, parent);
-	rstate = new RenderState();
+	rstate = new WidgetRenderState();
 	pstate = makeproj();
 	lm = new Light.Model();
 	lm.cc = GL.GL_SEPARATE_SPECULAR_COLOR;

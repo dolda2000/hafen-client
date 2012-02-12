@@ -32,7 +32,13 @@ public class FBView {
     public final GLFrameBuffer fbo;
     public RenderList rls;
     public GLState basicstate;
-    private final PView.RenderState rstate = new PView.RenderState();
+    private final PView.RenderState rstate = new RenderState();
+    
+    private class RenderState extends PView.RenderState {
+	public Coord sz() {
+	    return(fbo.sz());
+	}
+    }
     
     public FBView(GLFrameBuffer fbo, GLState basic) {
 	this.fbo = fbo;
