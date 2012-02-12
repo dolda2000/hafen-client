@@ -102,11 +102,24 @@ public class RenderList {
 	}
     }
     
+    protected void postsetup(Slot ps) {
+	gstates = getgstates();
+	Slot pp = curp;
+	try {
+	    curp = ps;
+	    for(GLState.Global gs : gstates)
+		gs.postsetup(this);
+	} finally {
+	    curp = pp;
+	}
+    }
+
     public void setup(Rendered r, GLState.Buffer t) {
 	rewind();
 	Slot s = getslot();
 	t.copy(s.os); t.copy(s.cs);
 	setup(s, r);
+	postsetup(s);
     }
 
     public void add(Rendered r, GLState t) {
@@ -181,9 +194,6 @@ public class RenderList {
     }
 
     public void fin() {
-	gstates = getgstates();
-	for(GLState.Global gs : gstates)
-	    gs.postsetup(this);
 	for(int i = 0; i < cur; i++) {
 	    if((list[i].o = list[i].os.get(Rendered.order)) == null)
 		list[i].o = Rendered.deflt;
