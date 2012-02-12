@@ -102,13 +102,15 @@ public class RenderList {
 	}
     }
     
-    protected void postsetup(Slot ps) {
+    protected void postsetup(Slot ps, GLState.Buffer t) {
 	gstates = getgstates();
 	Slot pp = curp;
 	try {
 	    curp = ps;
-	    for(GLState.Global gs : gstates)
+	    for(GLState.Global gs : gstates) {
+		t.copy(ps.cs);
 		gs.postsetup(this);
+	    }
 	} finally {
 	    curp = pp;
 	}
@@ -119,7 +121,7 @@ public class RenderList {
 	Slot s = getslot();
 	t.copy(s.os); t.copy(s.cs);
 	setup(s, r);
-	postsetup(s);
+	postsetup(s, t);
     }
 
     public void add(Rendered r, GLState t) {
