@@ -237,4 +237,40 @@ public interface Rendered {
 	    return(true);
 	}
     }
+    
+    public static class ScreenQuad implements Rendered {
+	private static final Projection proj = new Projection(Matrix4f.id);
+	public final boolean tex;
+	
+	public ScreenQuad(boolean tex) {
+	    this.tex = tex;
+	}
+	    
+	public void draw(GOut g) {
+	    GL gl = g.gl;
+	    g.apply();
+		
+	    g.gl.glDisable(GL.GL_DEPTH_TEST);
+	    g.gl.glDepthMask(false);
+	    gl.glBegin(GL.GL_QUADS);
+	    if(tex) gl.glTexCoord2f(0.0f, 0.0f);
+	    gl.glVertex3f(-1.0f, -1.0f, 0.0f);
+	    if(tex) gl.glTexCoord2f(1.0f, 0.0f);
+	    gl.glVertex3f( 1.0f, -1.0f, 0.0f);
+	    if(tex) gl.glTexCoord2f(1.0f, 1.0f);
+	    gl.glVertex3f( 1.0f,  1.0f, 0.0f);
+	    if(tex) gl.glTexCoord2f(0.0f, 1.0f);
+	    gl.glVertex3f(-1.0f,  1.0f, 0.0f);
+	    gl.glEnd();
+	    g.gl.glEnable(GL.GL_DEPTH_TEST);
+	    g.gl.glDepthMask(true);
+	}
+	    
+	public boolean setup(RenderList rls) {
+	    rls.prepo(proj);
+	    rls.state().put(PView.cam, null);
+	    rls.state().put(PView.loc, null);
+	    return(true);
+	}
+    }
 }
