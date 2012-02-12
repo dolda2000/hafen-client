@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 
 public class RenderList {
-    final GLConfig cfg;
+    public final GLConfig cfg;
     private Slot[] list = new Slot[100];
     private int cur = 0;
     private Slot curp = null;
