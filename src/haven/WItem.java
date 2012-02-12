@@ -87,6 +87,8 @@ public class WItem extends Widget implements DTarget {
 	private final TexI tex;
 	
 	public ItemTip(BufferedImage img) {
+	    if(img == null)
+		throw(new Loading());
 	    tex = new TexI(img);
 	}
 	
