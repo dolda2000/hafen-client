@@ -72,6 +72,7 @@ public interface Rendered {
     }
 
     public final static Order deflt = new Order.Default(0);
+    public final static Order first = new Order.Default(Integer.MIN_VALUE);
     public final static Order last = new Order.Default(Integer.MAX_VALUE);
 
     public final static Order eyesort = new Order.Default(10000) {
