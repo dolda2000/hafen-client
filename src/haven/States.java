@@ -222,4 +222,23 @@ public abstract class States extends GLState {
 	    
 	    public boolean reqshaders() {return(true);}
 	};
+    
+    public static final Slot<GLState> adhoc = new Slot<GLState>(Slot.Type.DRAW, GLState.class, PView.wnd);
+    public static class AdHoc extends GLState {
+	private final GLShader[] sh;
+	
+	public AdHoc(GLShader[] sh) {
+	    this.sh = sh;
+	}
+	
+	public void apply(GOut g) {}
+	public void unapply(GOut g) {}
+	
+	public GLShader[] shaders() {return(sh);}
+	public boolean reqshaders() {return(sh != null);}
+	
+	public void prep(Buffer buf) {
+	    buf.put(adhoc, this);
+	}
+    }
 }
