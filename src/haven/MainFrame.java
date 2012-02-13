@@ -319,8 +319,14 @@ public class MainFrame extends Frame implements Runnable, Console.Directory {
 	    try {
 		Collection<Resource> used = new LinkedList<Resource>();
 		for(Resource res : Resource.cached()) {
-		    if(res.prio >= 0)
+		    if(res.prio >= 0) {
+			try {
+			    res.checkerr();
+			} catch(Exception e) {
+			    continue;
+			}
 			used.add(res);
+		    }
 		}
 		Writer w = new OutputStreamWriter(ResCache.global.store("tmp/allused"), "UTF-8");
 		try {
