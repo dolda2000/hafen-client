@@ -53,6 +53,11 @@ public class FBView {
 	return(buf);
     }
 
+    protected void clear(GOut g) {
+	g.gl.glClearColor(0, 0, 0, 0);
+	g.gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
+    }
+
     public void render(Rendered root, GOut ctx) {
 	if((rls == null) || (rls.cfg != ctx.gc))
 	    rls = new RenderList(ctx.gc);
@@ -64,8 +69,7 @@ public class FBView {
 	    rls.fin();
 	    g.st.set(def);
 	    g.apply();
-	    g.gl.glClearColor(0, 0, 0, 0);
-	    g.gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
+	    clear(g);
 	    rls.render(g);
 	} finally {
 	    g.st.set(bk);
