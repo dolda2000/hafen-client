@@ -441,7 +441,11 @@ public class Skeleton {
 			throw(new Resource.LoadException("Parent bone " + bp + " not found for " + b.name, getres()));
 		}
 	    }
-	    s = new Skeleton(bones.values());
+	    s = new Skeleton(bones.values()) {
+		    public String toString() {
+			return("Skeleton(" + getres().name + ")");
+		    }
+		};
 	}
 	
 	public void init() {}
