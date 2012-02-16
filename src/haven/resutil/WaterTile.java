@@ -157,12 +157,20 @@ public class WaterTile extends Tiler {
 	m.new Plane(m.gnd(), lc, 257, surfmat);
     }
     
-    public void trans(MapMesh m, Random rnd, Coord lc, Coord gc, int z, int bmask, int cmask) {
+    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
 	if(m.map.gettile(gc) <= id)
 	    return;
-	if((set.btrans != null) && (bmask > 0))
-	    m.new Plane(m.surf(Bottom.class), lc, z, set.btrans[bmask - 1].pick(rnd));
-	if((set.ctrans != null) && (cmask > 0))
-	    m.new Plane(m.surf(Bottom.class), lc, z, set.ctrans[cmask - 1].pick(rnd));
+	if((set.btrans != null) && (bmask > 0)) {
+	    if(gt instanceof WaterTile)
+		m.new Plane(m.surf(Bottom.class), lc, z, set.btrans[bmask - 1].pick(rnd));
+	    else
+		gt.layover(m, lc, gc, z, set.btrans[bmask - 1].pick(rnd));
+	}
+	if((set.ctrans != null) && (cmask > 0)) {
+	    if(gt instanceof WaterTile)
+		m.new Plane(m.surf(Bottom.class), lc, z, set.ctrans[cmask - 1].pick(rnd));
+	    else
+		gt.layover(m, lc, gc, z, set.ctrans[cmask - 1].pick(rnd));
+	}
     }
 }

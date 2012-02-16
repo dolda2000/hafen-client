@@ -56,7 +56,7 @@ public class CaveTile extends Tiler {
 	buf.new Face(v1, v2, v3);
     }
 
-    public void trans(MapMesh m, Random rnd, Coord lc, Coord gc, int z, int bmask, int cmask) {
+    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
 	int cid = m.map.gettile(gc);
 	if((cid <= id) || (m.map.tiler(cid) instanceof CaveTile))
 	    return;

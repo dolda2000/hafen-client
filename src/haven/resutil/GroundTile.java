@@ -48,12 +48,12 @@ public class GroundTile extends Tiler {
 	m.new Plane(m.gnd(), lc, 0, g);
     }
     
-    public void trans(MapMesh m, Random rnd, Coord lc, Coord gc, int z, int bmask, int cmask) {
+    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
 	if(m.map.gettile(gc) <= id)
 	    return;
 	if((set.btrans != null) && (bmask > 0))
-	    m.new Plane(m.gnd(), lc, z, set.btrans[bmask - 1].pick(rnd));
+	    gt.layover(m, lc, gc, z, set.btrans[bmask - 1].pick(rnd));
 	if((set.ctrans != null) && (cmask > 0))
-	    m.new Plane(m.gnd(), lc, z, set.ctrans[cmask - 1].pick(rnd));
+	    gt.layover(m, lc, gc, z, set.ctrans[cmask - 1].pick(rnd));
     }
 }

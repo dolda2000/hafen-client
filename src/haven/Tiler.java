@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.lang.reflect.*;
+import haven.Resource.Tile;
 
 public abstract class Tiler {
     public final int id;
@@ -37,7 +38,11 @@ public abstract class Tiler {
     }
     
     public abstract void lay(MapMesh m, Random rnd, Coord lc, Coord gc);
-    public abstract void trans(MapMesh m, Random rnd, Coord lc, Coord gc, int z, int bmask, int cmask);
+    public abstract void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask);
+    
+    public void layover(MapMesh m, Coord lc, Coord gc, int z, Tile t) {
+	m.new Plane(m.gnd(), lc, z, t);
+    }
     
     public static class FactMaker implements Resource.PublishedCode.Instancer {
 	public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
