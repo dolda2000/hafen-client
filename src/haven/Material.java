@@ -282,7 +282,11 @@ public class Material extends GLState {
 			r.resolve(states);
 			i.remove();
 		    }
-		    m = new Material(states.toArray(new GLState[0]));
+		    m = new Material(states.toArray(new GLState[0])) {
+			    public String toString() {
+				return(super.toString() + "@" + getres().name);
+			    }
+			};
 		}
 		return(m);
 	    }

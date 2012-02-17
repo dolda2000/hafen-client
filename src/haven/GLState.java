@@ -602,6 +602,8 @@ public abstract class GLState {
 	private final Rendered r;
 	
 	private Wrapping(Rendered r) {
+	    if(r == null)
+		throw(new NullPointerException("Wrapping null in " + GLState.this));
 	    this.r = r;
 	}
 	

@@ -132,6 +132,10 @@ public abstract class TexGL extends Tex {
 	    }
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
 	}
+	
+	public String toString() {
+	    return("TexDraw(" + tex + ")");
+	}
     }
     private final TexDraw draw = new TexDraw(this);
     public GLState draw() {return(draw);}
@@ -197,6 +201,10 @@ public abstract class TexGL extends Tex {
 	
 	public void prep(Buffer buf) {
 	    buf.put(slot, this);
+	}
+	
+	public String toString() {
+	    return("TexClip(" + tex + ")");
 	}
     }
     private final TexClip clip = new TexClip(this);
