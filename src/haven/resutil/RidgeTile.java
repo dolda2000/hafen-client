@@ -33,10 +33,16 @@ import haven.MapMesh.*;
 
 public class RidgeTile extends GroundTile {
     public final int[] breaks;
+    public final Resource[] walls;
+    public final Resource[] lcorn;
+    public final Resource[] rcorn;
 
-    public RidgeTile(int id, Resource.Tileset set, int[] breaks) {
+    public RidgeTile(int id, Resource.Tileset set, int[] breaks, Resource[] walls, Resource[] lcorn, Resource[] rcorn) {
 	super(id, set);
 	this.breaks = breaks;
+	this.walls = walls;
+	this.lcorn = lcorn;
+	this.rcorn = rcorn;
     }
     
     public boolean[] breaks(MapMesh m, Coord gc, int diff) {
@@ -69,7 +75,43 @@ public class RidgeTile extends GroundTile {
 	return(r);
     }
 
-    private static final GLState rmat = new Material(new java.awt.Color(128, 128, 128, 255));
+    public void makewall(MapMesh m, Coord3f ul, Coord3f bl, Coord3f br, Coord3f ur, Resource wall, float w) {
+	float hw = w / 2.0f;
+	float xbx, xby;
+	float lzof, lzsf, lzs;
+	float rzof, rzsf, rzs;
+	{
+	    double tx = br.x - bl.x, ty = br.y - bl.y;
+	    double lf = 1.0 / Math.sqrt((tx * tx) + (ty * ty));
+	    xbx = (float)(tx * lf); xby = (float)(ty * lf);
+	    lzof = (float)((br.z - bl.z) * lf);
+	    lzsf = (float)((ur.z - br.z - ul.z + bl.z) * lf * (1.0 / 11.0));
+	    lzs  = (float)((ul.z - bl.z) / 11.0);
+	    rzof = (float)((bl.z - br.z) * lf);
+	    rzsf = (float)((ul.z - bl.z - ur.z + br.z) * lf * (1.0 / 11.0));
+	    rzs  = (float)((ur.z - br.z) / 11.0);
+	}
+	float ybx = -xby, yby = xbx;
+	for(FastMesh.MeshRes r : wall.layers(FastMesh.MeshRes.class)) {
+	    MeshBuf buf = m.model(r.mat.get(), MeshBuf.class);
+	    MeshBuf.Vertex[] vs = buf.copy(r.m);
+	    for(MeshBuf.Vertex v : vs) {
+		float x = v.pos.x, y = v.pos.y, z = v.pos.z;
+		v.pos.x = (x * xbx) + (y * ybx) + bl.x;
+		v.pos.y = (x * xby) + (y * yby) + bl.y;
+		if(x < hw) {
+		    v.pos.z = (lzof * x) + ((lzs + (lzsf * x)) * z) + bl.z;
+		} else {
+		    float X = w - x;
+		    v.pos.z = (rzof * X) + ((rzs + (rzsf * X)) * z) + br.z;
+		}
+		float nx = v.nrm.x, ny = v.nrm.y;
+		v.nrm.x = (nx * xbx) + (ny * ybx);
+		v.nrm.y = (nx * xby) + (ny * yby);
+	    }
+	}
+    }
+
     private static final int[]
 	ulx = {0, 0, 1, 1},
 	uly = {1, 0, 0, 1},
@@ -128,14 +170,10 @@ public class RidgeTile extends GroundTile {
 	    right = m.new Plane(new SPoint[] {fm, fr, br, bu}, 0, tile.tex(), false);
 	}
 	remaptex(left, right, dir, tile.tex());
-	MeshBuf mod = m.model(rmat, MeshBuf.class);
-	MeshBuf.Vertex vbu = mod.new Vertex(bu.pos, bu.nrm);
-	MeshBuf.Vertex vbb = mod.new Vertex(bb.pos, bb.nrm);
-	MeshBuf.Vertex vfm = mod.new Vertex(fm.pos, fm.nrm);
 	if(cw)
-	    mod.new Face(vfm, vbb, vbu);
+	    makewall(m, fm.pos, fm.pos, bb.pos, bu.pos, walls[rnd.nextInt(walls.length)], 11);
 	else
-	    mod.new Face(vbu, vbb, vfm);
+	    makewall(m, bu.pos, bb.pos, fm.pos, fm.pos, walls[rnd.nextInt(walls.length)], 11);
     }
     
     public void layridge(MapMesh m, Random rnd, Coord lc, Coord gc, boolean[] b) {
@@ -163,28 +201,14 @@ public class RidgeTile extends GroundTile {
 	Plane upper = m.new Plane(shift(new SPoint[] {ul, mlu, mru, ur}, 5 - dir), 0, tile.tex(), false);
 	Plane lower = m.new Plane(shift(new SPoint[] {mlb, bl, br, mrb}, 5 - dir), 0, tile.tex(), false);
 	remaptex(upper, lower, dir, tile.tex());
-	MeshBuf mod = m.model(rmat, MeshBuf.class);
-	MeshBuf.Vertex vul = mod.new Vertex(mlu.pos, mlu.nrm);
-	MeshBuf.Vertex vbl = mod.new Vertex(mlb.pos, mlb.nrm);
-	MeshBuf.Vertex vbr = mod.new Vertex(mrb.pos, mrb.nrm);
-	MeshBuf.Vertex vur = mod.new Vertex(mru.pos, mru.nrm);
-	mod.new Face(vul, vbl, vur);
-	mod.new Face(vbl, vbr, vur);
+	makewall(m, mlu.pos, mlb.pos, mrb.pos, mru.pos, walls[rnd.nextInt(walls.length)], 11);
     }
     
     public void mkcornwall(MapMesh m, Random rnd, Coord3f ul, Coord3f bl, Coord3f br, Coord3f ur, boolean cw) {
-	MeshBuf mod = m.model(rmat, MeshBuf.class);
-	MeshBuf.Vertex vul = mod.new Vertex(ul, Coord3f.zu);
-	MeshBuf.Vertex vbl = mod.new Vertex(bl, Coord3f.zu);
-	MeshBuf.Vertex vbr = mod.new Vertex(br, Coord3f.zu);
-	MeshBuf.Vertex vur = mod.new Vertex(ur, Coord3f.zu);
-	if(cw) {
-	    mod.new Face(vul, vbl, vur);
-	    mod.new Face(vbl, vbr, vur);
-	} else {
-	    mod.new Face(vul, vbl, vur);
-	    mod.new Face(vbl, vbr, vur);
-	}
+	if(cw)
+	    makewall(m, ul, bl, br, ur, lcorn[rnd.nextInt(lcorn.length)], 5.5f);
+	else
+	    makewall(m, ul, bl, br, ur, rcorn[rnd.nextInt(rcorn.length)], 5.5f);
     }
 
     public void laycomplex(MapMesh m, Random rnd, Coord lc, Coord gc, boolean[] b) {
