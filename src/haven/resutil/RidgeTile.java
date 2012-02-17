@@ -172,19 +172,87 @@ public class RidgeTile extends GroundTile {
 	mod.new Face(vbl, vbr, vur);
     }
     
+    public void mkcornwall(MapMesh m, Random rnd, Coord3f ul, Coord3f bl, Coord3f br, Coord3f ur, boolean cw) {
+	MeshBuf mod = m.model(rmat, MeshBuf.class);
+	MeshBuf.Vertex vul = mod.new Vertex(ul, Coord3f.zu);
+	MeshBuf.Vertex vbl = mod.new Vertex(bl, Coord3f.zu);
+	MeshBuf.Vertex vbr = mod.new Vertex(br, Coord3f.zu);
+	MeshBuf.Vertex vur = mod.new Vertex(ur, Coord3f.zu);
+	if(cw) {
+	    mod.new Face(vul, vbl, vur);
+	    mod.new Face(vbl, vbr, vur);
+	} else {
+	    mod.new Face(vul, vbl, vur);
+	    mod.new Face(vbl, vbr, vur);
+	}
+    }
+
     public void laycomplex(MapMesh m, Random rnd, Coord lc, Coord gc, boolean[] b) {
-	int[] p = new int[4];
+	Surface g = m.gnd();
+	SPoint[] crn = {
+	    g.spoint(lc),
+	    g.spoint(lc.add(1, 0)),
+	    g.spoint(lc.add(1, 1)),
+	    g.spoint(lc.add(0, 1)),
+	};
 	int s;
-	{
-	    int cp = 0;
-	    for(s = 0; true; s++) {
-		if(b[s])
-		    break;
+	for(s = 0; true; s++) {
+	    if(b[s]) {
+		s = (s + 1) % 4;
+		break;
 	    }
-	    for(int i = (s + 1) % 4; i != s; i = (i + 1) % 4) {
-		if(b[Utils.floormod(i - 1, 4)])
-		    cp++;
-		p[i] = cp;
+	}
+	SPoint[] ct = new SPoint[4];
+	SPoint[] h1 = new SPoint[4];
+	SPoint[] h2 = new SPoint[4];
+	{
+	    for(int i = s, n = 0; n < 4; i = (i + 1) % 4, n++) {
+		if(!b[(i + 3) % 4]) {
+		    h1[i] = h2[(i + 3) % 4];
+		    h1[i].pos.z = (h1[i].pos.z + crn[i].pos.z) * 0.5f;
+		} else {
+		    h1[i] = new SPoint(crn[(i + 3) % 4].pos.add(crn[i].pos).mul(0.5f));
+		    h1[i].pos.z = crn[i].pos.z;
+		}
+		h2[i] = new SPoint(crn[(i + 1) % 4].pos.add(crn[i].pos).mul(0.5f));
+		h2[i].pos.z = crn[i].pos.z;
+	    }
+	    SPoint cc = null;
+	    for(int i = s, n = 0; n < 4; i = (i + 1) % 4, n++) {
+		if(cc == null) {
+		    cc = new SPoint(crn[0].pos.add(crn[1].pos).add(crn[2].pos).add(crn[3].pos).mul(0.25f));
+		    if(b[i])
+			cc.pos.z = crn[i].pos.z;
+		    else
+			cc.pos.z = (h1[i].pos.z + h2[(i + 1) % 4].pos.z) * 0.5f;
+		}
+		ct[i] = cc;
+		if(b[i])
+		    cc = null;
+	    }
+	}
+	Tile tile = set.ground.pick(rnd);
+	boolean cont = false;
+	for(int i = s, n = 0; n < 4; i = (i + 1) % 4, n++) {
+	    if(cont) {
+		cont = false;
+	    } else if(!b[i]) {
+		Plane pl = m.new Plane(new SPoint[] {crn[i], h1[i], h2[(i + 1) % 4], crn[(i + 1) % 4]}, 0, tile.tex(), false);
+		cont = true;
+		SPoint pc = ct[(i + 3) % 4], cc = ct[i];
+		if(pc.pos.z > cc.pos.z)
+		    mkcornwall(m, rnd, pc.pos, cc.pos, h1[i].pos, h2[(i + 3) % 4].pos, true);
+		else
+		    mkcornwall(m, rnd, h1[i].pos, h2[(i + 3) % 4].pos, pc.pos, cc.pos, false);
+	    } else if(!b[(i + 3) % 4]) {
+		Plane pl = m.new Plane(new SPoint[] {crn[i], h1[i], ct[i], h2[i]}, 0, tile.tex(), false);
+	    } else {
+		Plane pl = m.new Plane(new SPoint[] {crn[i], h1[i], ct[i], h2[i]}, 0, tile.tex(), false);
+		SPoint pc = ct[(i + 3) % 4], cc = ct[i];
+		if(pc.pos.z > cc.pos.z)
+		    mkcornwall(m, rnd, pc.pos, cc.pos, h1[i].pos, h2[(i + 3) % 4].pos, true);
+		else
+		    mkcornwall(m, rnd, h1[i].pos, h2[(i + 3) % 4].pos, pc.pos, cc.pos, false);
 	    }
 	}
     }
