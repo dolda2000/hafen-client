@@ -80,15 +80,16 @@ public class RidgeTile extends GroundTile {
 	float xbx, xby;
 	float lzof, lzsf, lzs;
 	float rzof, rzsf, rzs;
+	float tysf, tys;
 	{
 	    double tx = br.x - bl.x, ty = br.y - bl.y;
 	    double lf = 1.0 / Math.sqrt((tx * tx) + (ty * ty));
 	    xbx = (float)(tx * lf); xby = (float)(ty * lf);
 	    lzof = (float)((br.z - bl.z) * lf);
-	    lzsf = (float)((ur.z - br.z - ul.z + bl.z) * lf * (1.0 / 11.0));
+	    lzsf = (float)((ur.z - br.z - ul.z + bl.z) * lf / 11.0);
 	    lzs  = (float)((ul.z - bl.z) / 11.0);
 	    rzof = (float)((bl.z - br.z) * lf);
-	    rzsf = (float)((ul.z - bl.z - ur.z + br.z) * lf * (1.0 / 11.0));
+	    rzsf = (float)((ul.z - bl.z - ur.z + br.z) * lf / 11.0);
 	    rzs  = (float)((ur.z - br.z) / 11.0);
 	}
 	float ybx = -xby, yby = xbx;
@@ -108,6 +109,7 @@ public class RidgeTile extends GroundTile {
 		float nx = v.nrm.x, ny = v.nrm.y;
 		v.nrm.x = (nx * xbx) + (ny * ybx);
 		v.nrm.y = (nx * xby) + (ny * yby);
+		v.tex.y = (lzs + (lzsf * x)) * v.tex.y;
 	    }
 	}
     }
