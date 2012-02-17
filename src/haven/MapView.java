@@ -632,7 +632,7 @@ public class MapView extends PView implements DTarget {
 		throw(new MCache.LoadingMap());
 	    undelay(g);
 	    super.draw(g);
-	} catch(MCache.LoadingMap e) {
+	} catch(Loading e) {
 	    String text = "Loading...";
 	    g.chcolor(Color.BLACK);
 	    g.frect(Coord.z, sz);
