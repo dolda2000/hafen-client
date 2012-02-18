@@ -120,22 +120,20 @@ public class RidgeTile extends GroundTile {
 	cwx = {0, 1, 1, 0},
 	cwy = {0, 0, 1, 1};
 
-    public void remaptex(Plane left, Plane right, int dir, Tex tex) {
+    public void remapquad(Plane p, int q, Tex tex) {
 	int tx = tex.sz().x, ty = tex.sz().y;
 	int hx = tx / 2, hy = ty / 2;
-	if(dir == 0) {
-	    left .texul = new Coord( 0,  0); left .texbr = new Coord(hx, ty);
-	    right.texul = new Coord(hx,  0); right.texbr = new Coord(tx, ty);
-	} else if(dir == 1) {
-	    left .texul = new Coord( 0,  0); left .texbr = new Coord(tx, hy);
-	    right.texul = new Coord( 0, hy); right.texbr = new Coord(tx, ty);
-	} else if(dir == 2) {
-	    left .texul = new Coord(hx,  0); left .texbr = new Coord(tx, ty);
-	    right.texul = new Coord( 0,  0); right.texbr = new Coord(hx, ty);
-	} else if(dir == 3) {
-	    left .texul = new Coord( 0, hy); left .texbr = new Coord(tx, ty);
-	    right.texul = new Coord( 0,  0); right.texbr = new Coord(tx, hy);
-	}
+	p.texul = new Coord(cwx[q] * hx, cwy[q] * hy);
+	p.texbr = p.texul.add(hx, hy);
+    }
+
+    public void remaphalf(Plane p, int fq, Tex tex) {
+	int tx = tex.sz().x, ty = tex.sz().y;
+	int hx = tx / 2, hy = ty / 2;
+	int l = Math.min(cwx[fq], cwx[(fq + 1) % 4]), r = Math.max(cwx[fq], cwx[(fq + 1) % 4]) + 1;
+	int t = Math.min(cwy[fq], cwy[(fq + 1) % 4]), b = Math.max(cwy[fq], cwy[(fq + 1) % 4]) + 1;
+	p.texul = new Coord(l * hx, t * hy);
+	p.texbr = new Coord(r * hx, b * hy);
     }
 
     public void layend(MapMesh m, Random rnd, Coord lc, Coord gc, boolean[] b) {
@@ -164,10 +162,11 @@ public class RidgeTile extends GroundTile {
 	} else {
 	    bu.pos.z = br.pos.z;
 	    bb.pos.z = bl.pos.z;
-	    left  = m.new Plane(new SPoint[] {fl, fm, bb, bl}, 0, tile.tex(), false);
-	    right = m.new Plane(new SPoint[] {fm, fr, br, bu}, 0, tile.tex(), false);
+	    left  = m.new Plane(shift(new SPoint[] {fl, fm, bb, bl}, 5 - dir), 0, tile.tex(), false);
+	    right = m.new Plane(shift(new SPoint[] {fm, fr, br, bu}, 5 - dir), 0, tile.tex(), false);
 	}
-	remaptex(left, right, dir, tile.tex());
+	remaphalf(left , (dir + 3) % 4, tile.tex());
+	remaphalf(right, (dir + 1) % 4, tile.tex());
 	if(cw)
 	    makewall(m, fm.pos, fm.pos, bb.pos, bu.pos, walls[rnd.nextInt(walls.length)], 11);
 	else
@@ -198,7 +197,8 @@ public class RidgeTile extends GroundTile {
 	Tile tile = set.ground.pick(rnd);
 	Plane upper = m.new Plane(shift(new SPoint[] {ul, mlu, mru, ur}, 5 - dir), 0, tile.tex(), false);
 	Plane lower = m.new Plane(shift(new SPoint[] {mlb, bl, br, mrb}, 5 - dir), 0, tile.tex(), false);
-	remaptex(upper, lower, dir, tile.tex());
+	remaphalf(upper, (dir + 3) % 4, tile.tex());
+	remaphalf(lower, (dir + 1) % 4, tile.tex());
 	makewall(m, mlu.pos, mlb.pos, mrb.pos, mru.pos, walls[rnd.nextInt(walls.length)], 11);
     }
     
@@ -259,7 +259,8 @@ public class RidgeTile extends GroundTile {
 	    if(cont) {
 		cont = false;
 	    } else if(!b[i]) {
-		Plane pl = m.new Plane(new SPoint[] {crn[i], h1[i], h2[(i + 1) % 4], crn[(i + 1) % 4]}, 0, tile.tex(), false);
+		Plane pl = m.new Plane(shift(new SPoint[] {crn[i], h1[i], h2[(i + 1) % 4], crn[(i + 1) % 4]}, 4 - i), 0, tile.tex(), false);
+		remaphalf(pl, i, tile.tex());
 		cont = true;
 		SPoint pc = ct[(i + 3) % 4], cc = ct[i];
 		if(pc.pos.z > cc.pos.z)
@@ -267,9 +268,11 @@ public class RidgeTile extends GroundTile {
 		else
 		    mkcornwall(m, rnd, h1[i].pos, h2[(i + 3) % 4].pos, pc.pos, cc.pos, false);
 	    } else if(!b[(i + 3) % 4]) {
-		Plane pl = m.new Plane(new SPoint[] {crn[i], h1[i], ct[i], h2[i]}, 0, tile.tex(), false);
+		Plane pl = m.new Plane(shift(new SPoint[] {crn[i], h1[i], ct[i], h2[i]}, 4 - i), 0, tile.tex(), false);
+		remapquad(pl, i, tile.tex());
 	    } else {
-		Plane pl = m.new Plane(new SPoint[] {crn[i], h1[i], ct[i], h2[i]}, 0, tile.tex(), false);
+		Plane pl = m.new Plane(shift(new SPoint[] {crn[i], h1[i], ct[i], h2[i]}, 4 - i), 0, tile.tex(), false);
+		remapquad(pl, i, tile.tex());
 		SPoint pc = ct[(i + 3) % 4], cc = ct[i];
 		if(pc.pos.z > cc.pos.z)
 		    mkcornwall(m, rnd, pc.pos, cc.pos, h1[i].pos, h2[(i + 3) % 4].pos, true);
