@@ -117,14 +117,8 @@ public class RidgeTile extends GroundTile {
     }
 
     private static final int[]
-	ulx = {0, 0, 1, 1},
-	uly = {1, 0, 0, 1},
-	urx = {0, 1, 1, 0},
-	ury = {0, 0, 1, 1},
-	blx = {1, 0, 0, 1},
-	bly = {1, 1, 0, 0},
-	brx = {1, 1, 0, 0},
-	bry = {0, 1, 1, 0};
+	cwx = {0, 1, 1, 0},
+	cwy = {0, 0, 1, 1};
 
     public void remaptex(Plane left, Plane right, int dir, Tex tex) {
 	int tx = tex.sz().x, ty = tex.sz().y;
@@ -150,13 +144,13 @@ public class RidgeTile extends GroundTile {
 	    if(b[dir])
 		break;
 	}
-	boolean cw = (m.map.getz(gc.add(urx[dir], ury[dir])) > m.map.getz(gc.add(brx[dir], bry[dir])));
 	Surface g = m.gnd();
 	SPoint
-	    fl = g.spoint(lc.add(ulx[dir], uly[dir])),
-	    bl = g.spoint(lc.add(urx[dir], ury[dir])),
-	    br = g.spoint(lc.add(brx[dir], bry[dir])),
-	    fr = g.spoint(lc.add(blx[dir], bly[dir]));
+	    bl = g.spoint(lc.add(cwx[dir], cwy[dir])),
+	    br = g.spoint(lc.add(cwx[(dir + 1) % 4], cwy[(dir + 1) % 4])),
+	    fr = g.spoint(lc.add(cwx[(dir + 2) % 4], cwy[(dir + 2) % 4])),
+	    fl = g.spoint(lc.add(cwx[(dir + 3) % 4], cwy[(dir + 3) % 4]));
+	boolean cw = bl.pos.z > br.pos.z;
 	SPoint bu = new SPoint(bl.pos.add(br.pos).mul(0.5f));
 	SPoint bb = new SPoint(bl.pos.add(br.pos).mul(0.5f));
 	SPoint fm = new SPoint(fl.pos.add(fr.pos).mul(0.5f));
@@ -188,10 +182,10 @@ public class RidgeTile extends GroundTile {
 	int dir = b[0]?((z00 > z10)?0:2):((z00 > z01)?1:3);
 	Surface g = m.gnd();
 	SPoint
-	    ul = g.spoint(lc.add(ulx[dir], uly[dir])),
-	    ur = g.spoint(lc.add(urx[dir], ury[dir])),
-	    bl = g.spoint(lc.add(blx[dir], bly[dir])),
-	    br = g.spoint(lc.add(brx[dir], bry[dir]));
+	    ur = g.spoint(lc.add(cwx[dir], cwy[dir])),
+	    br = g.spoint(lc.add(cwx[(dir + 1) % 4], cwy[(dir + 1) % 4])),
+	    bl = g.spoint(lc.add(cwx[(dir + 2) % 4], cwy[(dir + 2) % 4])),
+	    ul = g.spoint(lc.add(cwx[(dir + 3) % 4], cwy[(dir + 3) % 4]));
 	SPoint
 	    mlu = new SPoint(ul.pos.add(bl.pos).mul(0.5f)),
 	    mlb = new SPoint(ul.pos.add(bl.pos).mul(0.5f)),
