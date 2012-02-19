@@ -556,9 +556,9 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public class Tile extends Layer {
 	transient BufferedImage img;
 	transient private Tex tex;
-	int id;
-	int w;
-	char t;
+	public final int id;
+	public final int w;
+	public final char t;
 		
 	public Tile(byte[] buf) {
 	    t = (char)Utils.ub(buf[0]);
