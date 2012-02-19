@@ -361,6 +361,10 @@ public class RidgeTile extends GroundTile {
     public void layover(MapMesh m, Coord lc, Coord gc, int z, Tile t) {
 	boolean[] b = breaks(m, gc, breaks[0]);
 	if(b[0] || b[1] || b[2] || b[3]) {
+	    Ridges.Tile tile = rget(m).get(lc);
+	    if(tile == null)
+		throw(new NullPointerException("Ridged tile has not been properly initialized"));
+	    tile.layover(z, t);
 	} else {
 	    super.layover(m, lc, gc, z, t);
 	}
