@@ -37,6 +37,7 @@ public class MapMesh implements Rendered {
     private Map<Class<? extends Surface>, Surface> surfmap = new HashMap<Class<? extends Surface>, Surface>();
     private Map<Tex, GLState[]> texmap = new HashMap<Tex, GLState[]>();
     private Map<GLState, MeshBuf> modbuf = new HashMap<GLState, MeshBuf>();
+    public Map<Object, Object> data = new HashMap<Object, Object>();
     private List<Rendered> extras = new ArrayList<Rendered>();
     private List<Layer> layers;
     private float[] zmap;
@@ -304,6 +305,10 @@ public class MapMesh implements Rendered {
 	return(surf(Surface.class));
     }
     
+    public static class Hooks {
+	public void postcalcnrm(Random rnd) {}
+    }
+
     public <T extends MeshBuf> T model(GLState st, Class<T> init) {
 	MeshBuf ret = modbuf.get(st);
 	if(ret == null) {
@@ -342,6 +347,10 @@ public class MapMesh implements Rendered {
 	}
 	for(Surface s : m.surfmap.values())
 	    s.calcnrm();
+	for(Object obj : m.data.values()) {
+	    if(obj instanceof Hooks)
+		((Hooks)obj).postcalcnrm(rnd);
+	}
 	for(Layer l : m.layers) {
 	    MeshBuf buf = new MeshBuf();
 	    if(l.pl.isEmpty())
@@ -482,6 +491,7 @@ public class MapMesh implements Rendered {
 	for(Layer l : layers)
 	    l.pl = null;
 	modbuf = null;
+	data = null;
     }
     
     public void draw(GOut g) {
