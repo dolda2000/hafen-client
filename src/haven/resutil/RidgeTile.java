@@ -116,24 +116,76 @@ public class RidgeTile extends GroundTile {
 	}
     }
 
+    public class Ridges extends MapMesh.Hooks {
+	public final MapMesh m;
+	private final Tile[] tiles;
+	
+	private Ridges(MapMesh m) {
+	    this.m = m;
+	    this.tiles = new Tile[m.sz.x * m.sz.y];
+	}
+	
+	public class Tile {
+	    public TilePlane[] planes = new TilePlane[4];
+	    int n;
+	    
+	    public class TilePlane {
+		public SPoint[] vrt;
+		public float u, l, b, r;
+		
+		public TilePlane(SPoint[] vrt) {
+		    this.vrt = vrt;
+		    u = l = 0;
+		    b = r = 1;
+		    planes[n++] = this;
+		}
+	    }
+	    
+	    public void layover(int z, Resource.Tile tile) {
+		int w = tile.tex().sz().x, h = tile.tex().sz().y;
+		for(int i = 0; i < n; i++) {
+		    Plane p = m.new Plane(planes[i].vrt, z, tile.tex(), tile.t == 'g');
+		    p.texul = new Coord((int)(w * planes[i].l), (int)(h * planes[i].u));
+		    p.texbr = new Coord((int)(w * planes[i].r), (int)(h * planes[i].b));
+		}
+	    }
+	}
+	
+	public Tile get(Coord c) {
+	    return(tiles[c.x + (m.sz.x * c.y)]);
+	}
+	
+	public void set(Coord c, Tile t) {
+	    tiles[c.x + (m.sz.x * c.y)] = t;
+	}
+	
+	public void postcalcnrm(Random rnd) {
+	}
+    }
+
     private static final int[]
 	cwx = {0, 1, 1, 0},
 	cwy = {0, 0, 1, 1};
 
-    public void remapquad(Plane p, int q, Tex tex) {
-	int tx = tex.sz().x, ty = tex.sz().y;
-	int hx = tx / 2, hy = ty / 2;
-	p.texul = new Coord(cwx[q] * hx, cwy[q] * hy);
-	p.texbr = p.texul.add(hx, hy);
+    public void remapquad(Ridges.Tile.TilePlane p, int q) {
+	p.u = cwx[q] * 0.5f; p.l = cwy[q] * 0.5f;
+	p.b = p.u + 0.5f;    p.r = p.l + 0.5f;
     }
 
-    public void remaphalf(Plane p, int fq, Tex tex) {
-	int tx = tex.sz().x, ty = tex.sz().y;
-	int hx = tx / 2, hy = ty / 2;
+    public void remaphalf(Ridges.Tile.TilePlane p, int fq) {
 	int l = Math.min(cwx[fq], cwx[(fq + 1) % 4]), r = Math.max(cwx[fq], cwx[(fq + 1) % 4]) + 1;
 	int t = Math.min(cwy[fq], cwy[(fq + 1) % 4]), b = Math.max(cwy[fq], cwy[(fq + 1) % 4]) + 1;
-	p.texul = new Coord(l * hx, t * hy);
-	p.texbr = new Coord(r * hx, b * hy);
+	p.u = t * 0.5f;
+	p.l = l * 0.5f;
+	p.b = b * 0.5f;
+	p.r = r * 0.5f;
+    }
+
+    private Ridges rget(MapMesh m) {
+	Ridges r = (Ridges)m.data.get(Ridges.class);
+	if(r == null)
+	    m.data.put(Ridges.class, r = new Ridges(m));
+	return(r);
     }
 
     public void layend(MapMesh m, Random rnd, Coord lc, Coord gc, boolean[] b) {
@@ -152,21 +204,24 @@ public class RidgeTile extends GroundTile {
 	SPoint bu = new SPoint(bl.pos.add(br.pos).mul(0.5f));
 	SPoint bb = new SPoint(bl.pos.add(br.pos).mul(0.5f));
 	SPoint fm = new SPoint(fl.pos.add(fr.pos).mul(0.5f));
-	Tile tile = set.ground.pick(rnd);
-	Plane left, right;
+	Ridges r = rget(m);
+	Ridges.Tile tile = r.new Tile();
+	Ridges.Tile.TilePlane left, right;
 	if(cw) {
 	    bu.pos.z = bl.pos.z;
 	    bb.pos.z = br.pos.z;
-	    left  = m.new Plane(shift(new SPoint[] {fl, fm, bu, bl}, 5 - dir), 0, tile.tex(), false);
-	    right = m.new Plane(shift(new SPoint[] {fm, fr, br, bb}, 5 - dir), 0, tile.tex(), false);
+	    left  = tile.new TilePlane(shift(new SPoint[] {fl, fm, bu, bl}, 5 - dir));
+	    right = tile.new TilePlane(shift(new SPoint[] {fm, fr, br, bb}, 5 - dir));
 	} else {
 	    bu.pos.z = br.pos.z;
 	    bb.pos.z = bl.pos.z;
-	    left  = m.new Plane(shift(new SPoint[] {fl, fm, bb, bl}, 5 - dir), 0, tile.tex(), false);
-	    right = m.new Plane(shift(new SPoint[] {fm, fr, br, bu}, 5 - dir), 0, tile.tex(), false);
+	    left  = tile.new TilePlane(shift(new SPoint[] {fl, fm, bb, bl}, 5 - dir));
+	    right = tile.new TilePlane(shift(new SPoint[] {fm, fr, br, bu}, 5 - dir));
 	}
-	remaphalf(left , (dir + 3) % 4, tile.tex());
-	remaphalf(right, (dir + 1) % 4, tile.tex());
+	remaphalf(left , (dir + 3) % 4);
+	remaphalf(right, (dir + 1) % 4);
+	r.set(lc, tile);
+	tile.layover(0, set.ground.pick(rnd));
 	if(cw)
 	    makewall(m, fm.pos, fm.pos, bb.pos, bu.pos, walls[rnd.nextInt(walls.length)], 11);
 	else
@@ -194,11 +249,14 @@ public class RidgeTile extends GroundTile {
 	mru.pos.z = ur.pos.z;
 	mlb.pos.z = bl.pos.z;
 	mrb.pos.z = br.pos.z;
-	Tile tile = set.ground.pick(rnd);
-	Plane upper = m.new Plane(shift(new SPoint[] {ul, mlu, mru, ur}, 5 - dir), 0, tile.tex(), false);
-	Plane lower = m.new Plane(shift(new SPoint[] {mlb, bl, br, mrb}, 5 - dir), 0, tile.tex(), false);
-	remaphalf(upper, (dir + 3) % 4, tile.tex());
-	remaphalf(lower, (dir + 1) % 4, tile.tex());
+	Ridges r = rget(m);
+	Ridges.Tile tile = r.new Tile();
+	Ridges.Tile.TilePlane upper = tile.new TilePlane(shift(new SPoint[] {ul, mlu, mru, ur}, 5 - dir));
+	Ridges.Tile.TilePlane lower = tile.new TilePlane(shift(new SPoint[] {mlb, bl, br, mrb}, 5 - dir));
+	remaphalf(upper, (dir + 3) % 4);
+	remaphalf(lower, (dir + 1) % 4);
+	r.set(lc, tile);
+	tile.layover(0, set.ground.pick(rnd));
 	makewall(m, mlu.pos, mlb.pos, mrb.pos, mru.pos, walls[rnd.nextInt(walls.length)], 11);
     }
     
@@ -253,14 +311,15 @@ public class RidgeTile extends GroundTile {
 		    cc = null;
 	    }
 	}
-	Tile tile = set.ground.pick(rnd);
+	Ridges r = rget(m);
+	Ridges.Tile tile = r.new Tile();
 	boolean cont = false;
 	for(int i = s, n = 0; n < 4; i = (i + 1) % 4, n++) {
 	    if(cont) {
 		cont = false;
 	    } else if(!b[i]) {
-		Plane pl = m.new Plane(shift(new SPoint[] {crn[i], h1[i], h2[(i + 1) % 4], crn[(i + 1) % 4]}, 4 - i), 0, tile.tex(), false);
-		remaphalf(pl, i, tile.tex());
+		Ridges.Tile.TilePlane pl = tile.new TilePlane(shift(new SPoint[] {crn[i], h1[i], h2[(i + 1) % 4], crn[(i + 1) % 4]}, 4 - i));
+		remaphalf(pl, i);
 		cont = true;
 		SPoint pc = ct[(i + 3) % 4], cc = ct[i];
 		if(pc.pos.z > cc.pos.z)
@@ -268,11 +327,11 @@ public class RidgeTile extends GroundTile {
 		else
 		    mkcornwall(m, rnd, h1[i].pos, h2[(i + 3) % 4].pos, pc.pos, cc.pos, false);
 	    } else if(!b[(i + 3) % 4]) {
-		Plane pl = m.new Plane(shift(new SPoint[] {crn[i], h1[i], ct[i], h2[i]}, 4 - i), 0, tile.tex(), false);
-		remapquad(pl, i, tile.tex());
+		Ridges.Tile.TilePlane pl = tile.new TilePlane(shift(new SPoint[] {crn[i], h1[i], ct[i], h2[i]}, 4 - i));
+		remapquad(pl, i);
 	    } else {
-		Plane pl = m.new Plane(shift(new SPoint[] {crn[i], h1[i], ct[i], h2[i]}, 4 - i), 0, tile.tex(), false);
-		remapquad(pl, i, tile.tex());
+		Ridges.Tile.TilePlane pl = tile.new TilePlane(shift(new SPoint[] {crn[i], h1[i], ct[i], h2[i]}, 4 - i));
+		remapquad(pl, i);
 		SPoint pc = ct[(i + 3) % 4], cc = ct[i];
 		if(pc.pos.z > cc.pos.z)
 		    mkcornwall(m, rnd, pc.pos, cc.pos, h1[i].pos, h2[(i + 3) % 4].pos, true);
@@ -280,11 +339,8 @@ public class RidgeTile extends GroundTile {
 		    mkcornwall(m, rnd, h1[i].pos, h2[(i + 3) % 4].pos, pc.pos, cc.pos, false);
 	    }
 	}
-    }
-
-    public boolean isplain(MapMesh m, Coord gc) {
-	boolean[] b = breaks(m, gc, breaks[0]);
-	return(b[0] || b[1] || b[2] || b[3]);
+	r.set(lc, tile);
+	tile.layover(0, set.ground.pick(rnd));
     }
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
