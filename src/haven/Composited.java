@@ -43,8 +43,8 @@ public class Composited implements Rendered {
 	private final TrackMod[] mods;
 	Pose old;
 	float ipold = 0.0f, ipol = 0.0f;
-	float limit = -1.0f;
-	boolean stat, ldone;
+	public float limit = -1.0f;
+	public boolean stat, ldone;
 	
 	public Poses() {
 	    this.mods = new TrackMod[0];
