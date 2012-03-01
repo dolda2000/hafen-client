@@ -266,7 +266,6 @@ public class Gob implements Sprite.Owner, Rendered {
 		Coord3f c = getc();
 		c.y = -c.y;
 		if((this.c == null) || !c.equals(this.c) || (this.a != Gob.this.a)) {
-		    System.err.println(MapView.cycle + " " + MapView.rendering + ": " + c + ", " + Gob.this.a);
 		    update(makexlate(new Matrix4f(), this.c = c)
 			   .mul1(makerot(new Matrix4f(), Coord3f.zu, (float)-(this.a = Gob.this.a))));
 		}
