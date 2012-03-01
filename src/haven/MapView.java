@@ -322,10 +322,10 @@ public class MapView extends PView implements DTarget {
 	    try {
 		GLState xf = flw.xf();
 		if(xf != null)
-		    rl.add(gob, GLState.compose(xf, gob.save));
+		    rl.add(gob, GLState.compose(xf, gob.olmod, gob.save));
 	    } catch(Loading e) {}
 	} else {
-	    rl.add(gob, GLState.compose(gob.loc, gob.save));
+	    rl.add(gob, GLState.compose(gob.loc, gob.olmod, gob.save));
 	}
     }
 

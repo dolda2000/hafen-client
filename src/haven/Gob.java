@@ -68,6 +68,11 @@ public class Gob implements Sprite.Owner, Rendered {
 	public static interface CUpd {
 	    public void update(Message sdt);
 	}
+	
+	public static interface SetupMod {
+	    public void setupgob(GLState.Buffer buf);
+	    public void setupmain(RenderList rl);
+	}
     }
     
     public Gob(Glob glob, Coord c, long id, int frame) {
@@ -178,14 +183,18 @@ public class Gob implements Sprite.Owner, Rendered {
     public void draw(GOut g) {}
 
     public boolean setup(RenderList rl) {
-	Drawable d = getattr(Drawable.class);
 	for(Overlay ol : ols) {
 	    if(ol.spr != null)
 		rl.add(ol.spr, null);
 	}
+	for(Overlay ol : ols) {
+	    if(ol.spr instanceof Overlay.SetupMod)
+		((Overlay.SetupMod)ol.spr).setupmain(rl);
+	}
 	GobHealth hlt = getattr(GobHealth.class);
 	if(hlt != null)
 	    rl.prepc(hlt.getfx());
+	Drawable d = getattr(Drawable.class);
 	if(d != null)
 	    d.setup(rl);
 	Speaking sp = getattr(Speaking.class);
@@ -208,6 +217,18 @@ public class Gob implements Sprite.Owner, Rendered {
 	return(null);
     }
     
+    public final GLState olmod = new GLState() {
+	    public void apply(GOut g) {}
+	    public void unapply(GOut g) {}
+	    public void prep(Buffer buf) {
+		for(Overlay ol : ols) {
+		    if(ol.spr instanceof Overlay.SetupMod) {
+			((Overlay.SetupMod)ol.spr).setupgob(buf);
+		    }
+		}
+	    }
+	};
+
     public static final GLState.Slot<Save> savepos = new GLState.Slot<Save>(GLState.Slot.Type.SYS, Save.class, PView.loc);
     public class Save extends GLState {
 	public Matrix4f cam = new Matrix4f(), wxf = new Matrix4f(),
