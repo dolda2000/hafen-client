@@ -234,25 +234,22 @@ public class Gob implements Sprite.Owner, Rendered {
     public class GobLocation extends Location {
 	private Coord3f c = null;
 	private double a = 0.0;
-	private boolean update = true;
+	private Matrix4f update = null;
 
 	public GobLocation() {
-	    super(new Matrix4f());
-	}
-	    
-	public Matrix4f fin(Matrix4f p) {
-	    Coord3f c = getc();
-	    c.y = -c.y;
-	    if(update && ((this.c == null) || !c.equals(this.c) || (this.a != Gob.this.a))) {
-		update(makexlate(new Matrix4f(), this.c = c)
-		       .mul1(makerot(new Matrix4f(), Coord3f.zu, (float)-(this.a = Gob.this.a))));
-		update = false;
-	    }
-	    return(super.fin(p));
+	    super(Matrix4f.id);
 	}
 	
 	public void tick() {
-	    update = true;
+	    try {
+		Coord3f c = getc();
+		c.y = -c.y;
+		if((this.c == null) || !c.equals(this.c) || (this.a != Gob.this.a)) {
+		    System.err.println(MapView.cycle + " " + MapView.rendering + ": " + c + ", " + Gob.this.a);
+		    update(makexlate(new Matrix4f(), this.c = c)
+			   .mul1(makerot(new Matrix4f(), Coord3f.zu, (float)-(this.a = Gob.this.a))));
+		}
+	    } catch(Loading l) {}
 	}
     }
     public final GobLocation loc = new GobLocation();
