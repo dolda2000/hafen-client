@@ -129,6 +129,8 @@ public class MeshBuf {
 	    ni += 3;
 	    ti += 2;
 	    v.idx = i++;
+	    if(i == 0)
+		throw(new RuntimeException("Too many vertices in meshbuf"));
 	}
 	if(!hastex)
 	    tex = null;
