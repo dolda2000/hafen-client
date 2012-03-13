@@ -47,6 +47,7 @@ public class MCache {
     int olseq = 0;
     Random gen = new Random();
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
+    long lastctick = System.currentTimeMillis();
 
     public static class LoadingMap extends Loading {
     }
@@ -88,14 +89,15 @@ public class MCache {
 	public final MapMesh cuts[] = new MapMesh[cutn.x * cutn.y];
 	public final Rendered olcuts[][] = new Rendered[cutn.x * cutn.y][];
 	int olseq = -1;
-	private Collection<Gob> fo;
+	private Collection<Gob>[] fo = null;
 	public final Coord gc, ul;
 	public final long id;
 	String mnm;
 
 	private class Flavobj extends Gob {
-	    private Flavobj(Coord c) {
+	    private Flavobj(Coord c, double a) {
 		super(sess.glob, c);
+		this.a = a;
 	    }
 
 	    public Random mkrandoom() {
@@ -125,8 +127,10 @@ public class MCache {
 	}
 
 	private void makeflavor() {
-	    Collection<Gob> fo = new LinkedList<Gob>();
-	    fo.clear();
+	    @SuppressWarnings("unchecked")
+	    Collection<Gob>[] fo = (Collection<Gob>[])new Collection[cutn.x * cutn.y];
+	    for(int i = 0; i < fo.length; i++)
+		fo[i] = new LinkedList<Gob>();
 	    Coord c = new Coord(0, 0);
 	    Coord tc = gc.mul(cmaps);
 	    int i = 0;
@@ -137,9 +141,11 @@ public class MCache {
 		    if(set.flavobjs.size() > 0) {
 			if(rnd.nextInt(set.flavprob) == 0) {
 			    Resource r = set.flavobjs.pick(rnd);
-			    Gob g = new Flavobj(c.add(tc).mul(tilesz)); 
+			    double a = rnd.nextDouble() * 2 * Math.PI;
+			    Gob g = new Flavobj(c.add(tc).mul(tilesz).add(tilesz.div(2)), a);
 			    g.setattr(new ResDrawable(g, r));
-			    fo.add(g);
+			    Coord cc = c.div(cutsz);
+			    fo[cc.x + (cc.y * cutn.x)].add(g);
 			}
 		    }
 		}
@@ -147,10 +153,10 @@ public class MCache {
 	    this.fo = fo;
 	}
 
-	public Collection<Gob> getfo() {
+	public Collection<Gob> getfo(Coord cc) {
 	    if(fo == null)
 		makeflavor();
-	    return(fo);
+	    return(fo[cc.x + (cc.y * cutn.x)]);
 	}
 	
 	public MapMesh getcut(Coord cc) {
@@ -188,10 +194,30 @@ public class MCache {
 		}
 	    }
 	}
+	
+	public void tick(int dt) {
+	    if(fo != null) {
+		for(Collection<Gob> fol : fo) {
+		    for(Gob fo : fol)
+			fo.ctick(dt);
+		}
+	    }
+	}
     }
 
     public MCache(Session sess) {
 	this.sess = sess;
+    }
+
+    public void ctick() {
+	long now = System.currentTimeMillis();
+	int dt = (int)(now - lastctick);
+	synchronized(grids) {
+	    for(Grid g : grids.values()) {
+		g.tick(dt);
+	    }
+	}
+	lastctick = now;
     }
 
     public void invalidate(Coord cc) {
@@ -267,6 +293,10 @@ public class MCache {
     
     public MapMesh getcut(Coord cc) {
 	return(getgrid(cc.div(cutn)).getcut(cc.mod(cutn)));
+    }
+    
+    public Collection<Gob> getfo(Coord cc) {
+	return(getgrid(cc.div(cutn)).getfo(cc.mod(cutn)));
     }
 
     public Rendered getolcut(int ol, Coord cc) {
