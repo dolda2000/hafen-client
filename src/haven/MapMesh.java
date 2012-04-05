@@ -154,7 +154,7 @@ public class MapMesh implements Rendered {
 
     public class Plane extends Shape {
 	public SPoint[] vrt;
-	public Coord texul, texbr;
+	public int[] texx, texy;
 	public Tex tex = null;
 	
 	public Plane(SPoint[] vrt, int z, GLState st) {
@@ -169,8 +169,7 @@ public class MapMesh implements Rendered {
 	public Plane(SPoint[] vrt, int z, Tex tex, boolean clip) {
 	    this(vrt, z, stfor(tex, clip));
 	    this.tex = tex;
-	    this.texul = Coord.z;
-	    this.texbr = tex.sz();
+	    texrot(null, null, 0, false);
 	}
 	
 	public Plane(Surface surf, Coord sc, int z, Tex tex, boolean clip) {
@@ -185,6 +184,27 @@ public class MapMesh implements Rendered {
 	    this(surf, sc, z, tile.tex(), tile.t != 'g');
 	}
 	
+	public void texrot(Coord ul, Coord br, int rot, boolean flipx) {
+	    if(ul == null) ul = Coord.z;
+	    if(br == null) br = tex.sz();
+	    int[] x, y;
+	    if(!flipx) {
+		x = new int[] {ul.x, ul.x, br.x, br.x};
+		y = new int[] {ul.y, br.y, br.y, ul.y};
+	    } else {
+		x = new int[] {br.x, br.x, ul.x, ul.x};
+		y = new int[] {ul.y, br.y, br.y, ul.y};
+	    }
+	    if(texx == null) {
+		texx = new int[4];
+		texy = new int[4];
+	    }
+	    for(int i = 0; i < 4; i++) {
+		texx[i] = x[(i + rot) % 4];
+		texy[i] = y[(i + rot) % 4];
+	    }
+	}
+	
 	public void build(MeshBuf buf) {
 	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm);
 	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
@@ -193,10 +213,10 @@ public class MapMesh implements Rendered {
 	    Tex tex = this.tex;
 	    if(tex != null) {
 		int r = tex.sz().x, b = tex.sz().y;
-		v1.tex = new Coord3f(tex.tcx(texul.x), tex.tcy(texul.y), 0.0f);
-		v2.tex = new Coord3f(tex.tcx(texul.x), tex.tcy(texbr.y), 0.0f);
-		v3.tex = new Coord3f(tex.tcx(texbr.x), tex.tcy(texbr.y), 0.0f);
-		v4.tex = new Coord3f(tex.tcx(texbr.x), tex.tcy(texul.y), 0.0f);
+		v1.tex = new Coord3f(tex.tcx(texx[0]), tex.tcy(texy[0]), 0.0f);
+		v2.tex = new Coord3f(tex.tcx(texx[1]), tex.tcy(texy[1]), 0.0f);
+		v3.tex = new Coord3f(tex.tcx(texx[2]), tex.tcy(texy[2]), 0.0f);
+		v4.tex = new Coord3f(tex.tcx(texx[3]), tex.tcy(texy[3]), 0.0f);
 	    }
 	    splitquad(buf, v1, v2, v3, v4);
 	}

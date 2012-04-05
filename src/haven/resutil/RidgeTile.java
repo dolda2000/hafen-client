@@ -145,8 +145,9 @@ public class RidgeTile extends GroundTile {
 		int w = tile.tex().sz().x, h = tile.tex().sz().y;
 		for(int i = 0; i < n; i++) {
 		    Plane p = m.new Plane(planes[i].vrt, z, tile.tex(), tile.t == 'g');
-		    p.texul = new Coord((int)(w * planes[i].l), (int)(h * planes[i].u));
-		    p.texbr = new Coord((int)(w * planes[i].r), (int)(h * planes[i].b));
+		    p.texrot(new Coord((int)(w * planes[i].l), (int)(h * planes[i].u)),
+			     new Coord((int)(w * planes[i].r), (int)(h * planes[i].b)),
+			     0, false);
 		}
 	    }
 	}
