@@ -152,8 +152,8 @@ public abstract class GLState {
 		if(err)
 		    throw(new RuntimeException("Cycle encountered while compiling state slot dependencies"));
 	    }
-	    Comparator<Slot<?>> cmp = new Comparator<Slot<?>>() {
-		public int compare(Slot<?> a, Slot<?> b) {
+	    Comparator<Slot> cmp = new Comparator<Slot>() {
+		public int compare(Slot a, Slot b) {
 		    return(order.get(a) - order.get(b));
 		}
 	    };
