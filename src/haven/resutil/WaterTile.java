@@ -94,7 +94,7 @@ public class WaterTile extends Tiler {
     
     static final TexCube sky = new TexCube(Resource.loadimg("gfx/tiles/skycube"));
     static final Tex srf = Resource.loadtex("gfx/tiles/watertex");
-    private static States.DepthOffset soff = new States.DepthOffset(-2, -2);
+    private static States.DepthOffset soff = new States.DepthOffset(2, 2);
     public static final GLState surfmat = new GLState.StandAlone(GLState.Slot.Type.DRAW, PView.cam) {
 	    public void apply(GOut g) {
 		GL gl = g.gl;
