@@ -27,4 +27,15 @@
 package haven;
 
 public class Loading extends RuntimeException {
+    public Loading(String msg) {
+	super(msg);
+    }
+    
+    public Loading(Throwable cause) {
+	super(cause);
+    }
+    
+    public Loading(String msg, Throwable cause) {
+	super(msg, cause);
+    }
 }
