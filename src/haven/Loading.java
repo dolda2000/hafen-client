@@ -27,6 +27,10 @@
 package haven;
 
 public class Loading extends RuntimeException {
+    public Loading() {
+	super();
+    }
+
     public Loading(String msg) {
 	super(msg);
     }
