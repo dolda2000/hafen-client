@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import haven.Skeleton.Pose;
+import haven.Skeleton.PoseMod;
 import haven.Skeleton.TrackMod;
 
 public class Composited implements Rendered {
@@ -40,21 +41,21 @@ public class Composited implements Rendered {
     public List<ED> nequ = null, cequ = new LinkedList<ED>();
     
     public class Poses {
-	private final TrackMod[] mods;
+	private final PoseMod[] mods;
 	Pose old;
 	float ipold = 0.0f, ipol = 0.0f;
 	public float limit = -1.0f;
 	public boolean stat, ldone;
 	
 	public Poses() {
-	    this.mods = new TrackMod[0];
+	    this.mods = new PoseMod[0];
 	}
 
-	public Poses(List<TrackMod> mods) {
-	    this.mods = mods.toArray(new TrackMod[0]);
+	public Poses(List<? extends PoseMod> mods) {
+	    this.mods = mods.toArray(new PoseMod[0]);
 	    stat = true;
-	    for(TrackMod mod : this.mods) {
-		if(!mod.stat) {
+	    for(PoseMod mod : this.mods) {
+		if(!mod.stat()) {
 		    stat = false;
 		    break;
 		}
@@ -63,7 +64,7 @@ public class Composited implements Rendered {
 	
 	private void rebuild() {
 	    pose.reset();
-	    for(TrackMod m : mods)
+	    for(PoseMod m : mods)
 		m.apply(pose);
 	    if(ipold > 0.0f)
 		pose.blend(old, ipold);
@@ -86,9 +87,15 @@ public class Composited implements Rendered {
 		    ldone = true;
 	    }
 	    boolean done = ldone;
-	    for(TrackMod m : mods) {
-		m.tick((m.speedmod)?(dt * (float)(v / m.nspeed)):dt);
-		if(m.mode.ends && !m.done)
+	    for(PoseMod m : mods) {
+		float mdt = dt;
+		if(m instanceof TrackMod) {
+		    TrackMod t = (TrackMod)m;
+		    if(t.speedmod)
+			mdt *= (float)(v / t.nspeed);
+		}
+		m.tick(mdt);
+		if(!m.done())
 		    done = false;
 	    }
 	    if(!stat)

@@ -376,7 +376,7 @@ public class Skeleton {
 	    };
     }
     
-    public class PoseMod {
+    public abstract class PoseMod {
 	public float[][] lpos, lrot;
 	
 	public PoseMod() {
@@ -406,8 +406,12 @@ public class Skeleton {
 	    }
 	}
 	
-	public void tick(float dt) {
+	public boolean tick(float dt) {
+	    return(false);
 	}
+	
+	public abstract boolean stat();
+	public abstract boolean done();
     }
     
     public static class Res extends Resource.Layer {
@@ -454,9 +458,9 @@ public class Skeleton {
     public class TrackMod extends PoseMod {
 	public final Track[] tracks;
 	public final float len;
-	public final boolean stat;
+	private final boolean stat;
 	public final WrapMode mode;
-	public boolean done;
+	private boolean done;
 	public float time = 0.0f;
 	public boolean speedmod = false;
 	public double nspeed = 0.0;
@@ -519,7 +523,7 @@ public class Skeleton {
 	    }
 	}
 	
-	public void tick(float dt) {
+	public boolean tick(float dt) {
 	    float nt = time + (back?-dt:dt);
 	    switch(mode) {
 	    case LOOP:
@@ -551,8 +555,20 @@ public class Skeleton {
 		break;
 	    }
 	    this.time = nt;
-	    if(!stat)
+	    if(!stat) {
 		aupdate(this.time);
+		return(true);
+	    } else {
+		return(false);
+	    }
+	}
+	
+	public boolean stat() {
+	    return(stat);
+	}
+	
+	public boolean done() {
+	    return(done);
 	}
     }
 
