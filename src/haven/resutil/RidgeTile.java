@@ -171,7 +171,9 @@ public class RidgeTile extends GroundTile {
 
     private static final int[]
 	cwx = {0, 1, 1, 0},
-	cwy = {0, 0, 1, 1};
+	cwy = {0, 0, 1, 1},
+	ecwx = { 0,  1,  0, -1},
+	ecwy = {-1,  0,  1,  0};
 
     public void remapquad(Ridges.Tile.TilePlane p, int q) {
 	p.u = cwy[q] * 0.5f; p.l = cwx[q] * 0.5f;
@@ -194,12 +196,7 @@ public class RidgeTile extends GroundTile {
 	return(r);
     }
 
-    public void layend(MapMesh m, Random rnd, Coord lc, Coord gc, boolean[] b) {
-	int dir;
-	for(dir = 0; dir < 4; dir++) {
-	    if(b[dir])
-		break;
-	}
+    private void layend(MapMesh m, Random rnd, Coord lc, Coord gc, int dir) {
 	Surface g = m.gnd();
 	SPoint
 	    bl = g.spoint(lc.add(cwx[dir], cwy[dir])),
@@ -236,6 +233,15 @@ public class RidgeTile extends GroundTile {
 	else
 	    makewall(m, bu.pos, bb.pos, fm.pos, fm.pos, walls[rnd.nextInt(walls.length)], 11);
     }
+
+    public void layend(MapMesh m, Random rnd, Coord lc, Coord gc, boolean[] b) {
+	for(int dir = 0; dir < 4; dir++) {
+	    if(b[dir]) {
+		layend(m, rnd, lc, gc, dir);
+		return;
+	    }
+	}
+    }
     
     public void layridge(MapMesh m, Random rnd, Coord lc, Coord gc, boolean[] b) {
 	int z00 = m.map.getz(gc),
@@ -243,6 +249,16 @@ public class RidgeTile extends GroundTile {
 	    z01 = m.map.getz(gc.add(0, 1)),
 	    z11 = m.map.getz(gc.add(1, 1));
 	int dir = b[0]?((z00 > z10)?0:2):((z00 > z01)?1:3);
+	boolean tb1 = m.map.tiler(m.map.gettile(gc.add(ecwx[dir], ecwy[dir]))) instanceof RidgeTile;
+	boolean tb2 = m.map.tiler(m.map.gettile(gc.add(ecwx[(dir + 2) % 4], ecwy[(dir + 2) % 4]))) instanceof RidgeTile;
+	if(!tb1 && !tb2) {
+	    /* XXX */
+	} else if(!tb1) {
+	    layend(m, rnd, lc, gc, (dir + 2) % 4);
+	    return;
+	} else if(!tb2) {
+	    layend(m, rnd, lc, gc, dir);
+	}
 	Surface g = m.gnd();
 	SPoint
 	    ur = g.spoint(lc.add(cwx[dir], cwy[dir])),
@@ -320,6 +336,12 @@ public class RidgeTile extends GroundTile {
 		ct[i] = cc;
 		if(b[i])
 		    cc = null;
+	    }
+	    for(int i = s, n = 0; n < 4; i = (i + 1) % 4, n++) {
+		if(b[i] && !(m.map.tiler(m.map.gettile(gc.add(ecwx[i], ecwy[i]))) instanceof RidgeTile)) {
+		    h2[i].pos.z = (h2[i].pos.z + h1[(i + 1) % 4].pos.z) * 0.5f;
+		    h1[(i + 1) % 4] = h2[i];
+		}
 	    }
 	}
 	Ridges r = rget(m);
