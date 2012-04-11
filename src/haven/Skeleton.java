@@ -473,6 +473,7 @@ public class Skeleton {
 	    for(Track t : tracks) {
 		if((t != null) && (t.frames.length > 1)) {
 		    stat = false;
+		    aupdate(0.0f);
 		    return;
 		}
 	    }
