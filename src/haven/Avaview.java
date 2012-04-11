@@ -87,14 +87,12 @@ public class Avaview extends PView {
     }
 
     private static Camera makecam(Composite gc) {
-	for(Skeleton.BoneOffset bo : gc.base.get().layers(Skeleton.BoneOffset.class)) {
-	    if(bo.nm.equals("avacam")) {
-		GLState.Buffer buf = new GLState.Buffer(null);
-		bo.forpose(gc.comp.pose).prep(buf);
-		return(new LocationCam(buf.get(PView.loc)));
-	    }
-	}
-	throw(new Loading());
+	Skeleton.BoneOffset bo = gc.base.get().layer(Skeleton.BoneOffset.class, "avacam");
+	if(bo == null)
+	    throw(new Loading());
+	GLState.Buffer buf = new GLState.Buffer(null);
+	bo.forpose(gc.comp.pose).prep(buf);
+	return(new LocationCam(buf.get(PView.loc)));
     }
     
     private Composite lgc = null;

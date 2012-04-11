@@ -230,13 +230,7 @@ public class Composited implements Rendered {
 	private final GLState et;
 	
 	private Equ(ED ed) {
-	    Skeleton.BoneOffset bo = null;
-	    for(Skeleton.BoneOffset co : ed.res.get().layers(Skeleton.BoneOffset.class)) {
-		if(co.nm.equals(ed.at)) {
-		    bo = co;
-		    break;
-		}
-	    }
+	    Skeleton.BoneOffset bo = ed.res.get().layer(Skeleton.BoneOffset.class, ed.at);
 	    GLState bt;
 	    if(bo != null) {
 		bt = bo.forpose(pose);

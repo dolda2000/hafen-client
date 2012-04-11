@@ -73,13 +73,7 @@ public class Following extends Moving {
 		    lxfb = null;
 		    return(null);
 		}
-		Skeleton.BoneOffset bo = null;
-		for(Skeleton.BoneOffset r : xfres.get().layers(Skeleton.BoneOffset.class)) {
-		    if(r.nm.equals(xfname)) {
-			bo = r;
-			break;
-		    }
-		}
+		Skeleton.BoneOffset bo = xfres.get().layer(Skeleton.BoneOffset.class, xfname);
 		if(bo == null)
 		    throw(new RuntimeException("No such boneoffset in " + xfres.get() + ": " + xfname));
 		xf = GLState.compose(tgt.loc, bo.forpose(tgt.getattr(Drawable.class).getpose()));
