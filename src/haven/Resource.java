@@ -475,8 +475,12 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    return(Resource.this);
 	}
     }
+    
+    public interface IDLayer<T> {
+	public T layerid();
+    }
 	
-    public class Image extends Layer implements Comparable<Image> {
+    public class Image extends Layer implements Comparable<Image>, IDLayer<Integer> {
 	public transient BufferedImage img;
 	transient private Tex tex;
 	public final int z, subz;
@@ -532,6 +536,10 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 
 	public int compareTo(Image other) {
 	    return(z - other.z);
+	}
+	
+	public Integer layerid() {
+	    return(id);
 	}
 		
 	public void init() {}
@@ -1145,6 +1153,20 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	
     public <L extends Layer> L layer(Class<L> cl) {
 	return(layer(cl, true));
+    }
+    
+    public <I, L extends IDLayer<I>> L layer(Class<L> cl, I id) {
+	if(loading)
+	    throw(new Loading(this));
+	checkerr();
+	for(Layer l : layers) {
+	    if(cl.isInstance(l)) {
+		L ll = cl.cast(l);
+		if(ll.layerid().equals(id))
+		    return(ll);
+	    }
+	}
+	return(null);
     }
     
     public int compareTo(Resource other) {

@@ -593,7 +593,7 @@ public class Skeleton {
 	}
     }
 
-    public static class ResPose extends Resource.Layer {
+    public static class ResPose extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
 	public final float len;
 	public final Track[] tracks;
@@ -656,10 +656,14 @@ public class Skeleton {
 	    return(ret);
 	}
 	
+	public Integer layerid() {
+	    return(id);
+	}
+	
 	public void init() {}
     }
     
-    public static class BoneOffset extends Resource.Layer {
+    public static class BoneOffset extends Resource.Layer implements Resource.IDLayer<String> {
 	public final String nm;
 	public final Command[] prog;
 	private static final HatingJava[] opcodes = new HatingJava[256];
@@ -736,6 +740,10 @@ public class Skeleton {
 	    while(off[0] < buf.length)
 		cbuf.add(opcodes[buf[off[0]++]].make(buf, off));
 	    this.prog = cbuf.toArray(new Command[0]);
+	}
+	
+	public String layerid() {
+	    return(nm);
 	}
 	
 	public void init() {
