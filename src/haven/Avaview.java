@@ -39,27 +39,29 @@ public class Avaview extends PView {
     private Composited comp;
     private List<Composited.MD> cmod = null;
     private List<Composited.ED> cequ = null;
+    private final String camnm;
 	
     static {
 	Widget.addtype("av", new WidgetFactory() {
 		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Avaview(c, parent, (Integer)args[0]));
+		    return(new Avaview(c, parent, (Integer)args[0], "avacam"));
 		}
 	    });
     }
 	
-    private Avaview(Coord c, Widget parent, Coord asz) {
+    private Avaview(Coord c, Widget parent, Coord asz, String camnm) {
 	super(c, asz.add(Window.wbox.bisz()).add(unborder.mul(2).inv()), parent);
 	this.asz = asz;
+	this.camnm = camnm;
     }
         
-    public Avaview(Coord c, Widget parent, long avagob, Coord asz) {
-	this(c, parent, asz);
+    public Avaview(Coord c, Widget parent, long avagob, Coord asz, String camnm) {
+	this(c, parent, asz, camnm);
 	this.avagob = avagob;
     }
 	
-    public Avaview(Coord c, Widget parent, long avagob) {
-	this(c, parent, avagob, dasz);
+    public Avaview(Coord c, Widget parent, long avagob, String camnm) {
+	this(c, parent, avagob, dasz, camnm);
     }
         
     public void uimsg(String msg, Object... args) {
@@ -86,22 +88,22 @@ public class Avaview extends PView {
 	return(gc);
     }
 
-    private static Camera makecam(Composite gc) {
-	Skeleton.BoneOffset bo = gc.base.get().layer(Skeleton.BoneOffset.class, "avacam");
+    private static Camera makecam(Composite gc, String camnm) {
+	Skeleton.BoneOffset bo = gc.base.get().layer(Skeleton.BoneOffset.class, camnm);
 	if(bo == null)
 	    throw(new Loading());
 	GLState.Buffer buf = new GLState.Buffer(null);
 	bo.forpose(gc.comp.pose).prep(buf);
 	return(new LocationCam(buf.get(PView.loc)));
     }
-    
+
     private Composite lgc = null;
     protected Camera camera() {
 	Composite gc = getgcomp();
 	if(gc == null)
 	    throw(new Loading());
 	if((cam == null) || (gc != lgc))
-	    cam = makecam(lgc = gc);
+	    cam = makecam(lgc = gc, camnm);
 	return(cam);
     }
 

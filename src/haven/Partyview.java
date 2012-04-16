@@ -61,7 +61,7 @@ public class Partyview extends Widget {
 		    continue;
 		Avaview w = avs.get(m);
 		if(w == null) {
-		    w = new Avaview(Coord.z, this, m.gobid, new Coord(27, 27)) {
+		    w = new Avaview(Coord.z, this, m.gobid, new Coord(27, 27), "avacam") {
 			    private Tex tooltip = null;
 			    
 			    public Object tooltip(Coord c, boolean again) {
