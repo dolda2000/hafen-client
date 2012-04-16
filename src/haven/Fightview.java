@@ -51,7 +51,7 @@ public class Fightview extends Widget {
         
         public Relation(long gobid) {
             this.gobid = gobid;
-            this.ava = new Avaview(Coord.z, Fightview.this, gobid, avasz, "avacam");
+            this.ava = new Avaview(Coord.z, avasz, Fightview.this, gobid, "avacam");
 	    this.give = new GiveButton(Coord.z, Fightview.this, 0, new Coord(15, 15));
         }
 	
@@ -92,7 +92,7 @@ public class Fightview extends Widget {
 			    Fightview.this.wdgmsg("give", (int)current.gobid, args[0]);
 		    }
 		};
-	    curava = new Avaview(cavac, this, rel.gobid, "avacam") {
+	    curava = new Avaview(cavac, Avaview.dasz, this, rel.gobid, "avacam") {
 		    public void wdgmsg(String name, Object... args) {
 			if(name == "click")
 			    Fightview.this.wdgmsg("click", (int)current.gobid, args[0]);

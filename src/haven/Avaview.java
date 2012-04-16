@@ -30,12 +30,10 @@ import java.awt.Color;
 import java.util.*;
 
 public class Avaview extends PView {
-    public static final Coord dasz = new Coord(74, 74);
-    public static final Coord unborder = new Coord(2, 2);
     public static final Tex missing = Resource.loadtex("gfx/hud/equip/missing");
+    public static final Coord dasz = missing.sz();
     public Color color = Color.WHITE;
     public long avagob;
-    private Coord asz;
     private Composited comp;
     private List<Composited.MD> cmod = null;
     private List<Composited.ED> cequ = null;
@@ -44,26 +42,17 @@ public class Avaview extends PView {
     static {
 	Widget.addtype("av", new WidgetFactory() {
 		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Avaview(c, parent, (Integer)args[0], "avacam"));
+		    return(new Avaview(c, dasz, parent, (Integer)args[0], "avacam"));
 		}
 	    });
     }
 	
-    private Avaview(Coord c, Widget parent, Coord asz, String camnm) {
-	super(c, asz.add(Window.wbox.bisz()).add(unborder.mul(2).inv()), parent);
-	this.asz = asz;
+    public Avaview(Coord c, Coord sz, Widget parent, long avagob, String camnm) {
+	super(c, sz, parent);
 	this.camnm = camnm;
-    }
-        
-    public Avaview(Coord c, Widget parent, long avagob, Coord asz, String camnm) {
-	this(c, parent, asz, camnm);
 	this.avagob = avagob;
     }
-	
-    public Avaview(Coord c, Widget parent, long avagob, String camnm) {
-	this(c, parent, avagob, dasz, camnm);
-    }
-        
+    
     public void uimsg(String msg, Object... args) {
 	if(msg == "upd") {
 	    this.avagob = (long)(Integer)args[0];
@@ -140,12 +129,12 @@ public class Avaview extends PView {
 	} catch(Loading e) {
 	    missed = true;
 	}
-	if(missed) {
-	    GOut g2 = g.reclip(Window.wbox.tloff().add(unborder.inv()), asz);
-	    g2.image(missing, Coord.z);
+	if(missed)
+	    g.image(missing, Coord.z, sz);
+	if(color != null) {
+	    g.chcolor(color);
+	    Window.wbox.draw(g, Coord.z, sz);
 	}
-	g.chcolor(color);
-	Window.wbox.draw(g, Coord.z, asz.add(Window.wbox.bisz()).add(unborder.mul(2).inv()));
     }
 	
     public boolean mousedown(Coord c, int button) {
