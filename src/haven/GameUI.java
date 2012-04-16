@@ -232,6 +232,9 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	    if((System.currentTimeMillis() - errtime) > 3000) {
 		lasterr = null;
 	    } else {
+		g.chcolor(0, 0, 0, 192);
+		g.frect(new Coord(133, by - 22), lasterr.sz().add(4, 4));
+		g.chcolor();
 		g.image(lasterr.tex(), new Coord(135, by -= 20));
 	    }
 	}
@@ -382,10 +385,12 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	resize(parent.sz);
     }
     
+    private static final Resource errsfx = Resource.load("sfx/error");
     public void error(String msg) {
 	errtime = System.currentTimeMillis();
 	lasterr = errfoundry.render(msg);
 	syslog.append(msg, Color.RED);
+	Audio.play(errsfx);
     }
     
     public void act(String... args) {
