@@ -35,6 +35,10 @@ public class FBView {
     private final PView.RenderState rstate = new RenderState();
     
     private class RenderState extends PView.RenderState {
+	public Coord ul() {
+	    return(Coord.z);
+	}
+	
 	public Coord sz() {
 	    return(fbo.sz());
 	}

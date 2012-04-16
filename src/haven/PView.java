@@ -43,7 +43,9 @@ public abstract class PView extends Widget {
 	public void apply(GOut g) {
 	    GL gl = g.gl;
 	    gl.glScissor(g.ul.x, g.root().sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
-	    gl.glViewport(g.ul.x, g.root().sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
+	    Coord ul = ul();
+	    Coord sz = sz();
+	    gl.glViewport(ul.x, g.root().sz.y - ul.y - sz.y, sz.x, sz.y);
 
 	    gl.glAlphaFunc(gl.GL_GREATER, 0.5f);
 	    gl.glEnable(gl.GL_DEPTH_TEST);
@@ -68,10 +70,15 @@ public abstract class PView extends Widget {
 	    b.put(wnd, this);
 	}
 	
+	public abstract Coord ul();
 	public abstract Coord sz();
     }
     
     private class WidgetRenderState extends RenderState {
+	public Coord ul() {
+	    return(rootpos());
+	}
+	
 	public Coord sz() {
 	    return(PView.this.sz);
 	}
@@ -118,6 +125,8 @@ public abstract class PView extends Widget {
 	};
 
     public void draw(GOut g) {
+	if((g.sz.x < 1) || (g.sz.y < 1))
+	    return;
 	if((rls == null) || (rls.cfg != g.gc))
 	    rls = new RenderList(g.gc);
 	Profile.Frame curf = null;
