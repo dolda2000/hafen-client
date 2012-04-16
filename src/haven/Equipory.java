@@ -32,21 +32,21 @@ import static haven.Inventory.invsq;
 public class Equipory extends Widget implements DTarget {
     static Coord ecoords[] = {
 	new Coord(0, 0),
-	new Coord(33, 0),
+	new Coord(299, 0),
 	new Coord(0, 33),
-	new Coord(33, 33),
+	new Coord(299, 33),
 	new Coord(0, 66),
-	new Coord(33, 66),
+	new Coord(299, 66),
 	new Coord(0, 99),
-	new Coord(33, 99),
+	new Coord(299, 99),
 	new Coord(0, 132),
-	new Coord(33, 132),
+	new Coord(299, 132),
 	new Coord(0, 165),
-	new Coord(33, 165),
+	new Coord(299, 165),
 	new Coord(0, 198),
-	new Coord(33, 198),
+	new Coord(299, 198),
 	new Coord(0, 231),
-	new Coord(33, 231),
+	new Coord(299, 231),
     };
     static Coord isz;
     static {
@@ -70,6 +70,12 @@ public class Equipory extends Widget implements DTarget {
 	
     public Equipory(Coord c, Widget parent) {
 	super(c, isz, parent);
+	Avaview ava = new Avaview(new Coord(34, 0), new Coord(265, 265), this, getparent(GameUI.class).plid, "avacam") {
+		public boolean mousedown(Coord c, int button) {
+		    return(false);
+		}
+	    };
+	ava.color = null;
     }
 	
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {
