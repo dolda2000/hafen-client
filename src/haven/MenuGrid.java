@@ -176,6 +176,7 @@ public class MenuGrid extends Widget {
 		}
 	    }
 	}
+	super.draw(g);
 	if(dragging != null) {
 	    final Tex dt = dragging.img.tex();
 	    ui.drawafter(new UI.AfterDraw() {
