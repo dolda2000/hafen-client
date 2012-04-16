@@ -254,7 +254,6 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	if(msg == "err") {
 	    String err = (String)args[0];
 	    error(err);
-	    syslog.append(err, Color.RED);
 	} else if(msg == "prog") {
 	    if(args.length > 0)
 		prog = (Integer)args[0];
@@ -386,6 +385,7 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
     public void error(String msg) {
 	errtime = System.currentTimeMillis();
 	lasterr = errfoundry.render(msg);
+	syslog.append(msg, Color.RED);
     }
     
     public void act(String... args) {
