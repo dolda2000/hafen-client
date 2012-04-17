@@ -278,6 +278,12 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "RT-current: %d", TexRT.current.get(gl).size());
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "GL progs: %d", g.st.numprogs());
+	    GameUI gi = ui.root.findchild(GameUI.class);
+	    if((gi != null) && (gi.map != null)) {
+		try {
+		    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "MV pos: %s", gi.map.getcc());
+		} catch(Loading e) {}
+	    }
 	    if(Resource.qdepth() > 0)
 		FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "RQ depth: %d (%d)", Resource.qdepth(), Resource.numloaded());
 	}
