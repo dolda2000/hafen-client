@@ -351,13 +351,13 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
     }
     
     public boolean mousedown(Coord c, int button) {
-	if(beltwdg.click(c, button))
+	if(showbeltp() && beltwdg.click(c, button))
 	    return(true);
 	return(super.mousedown(c, button));
     }
 
     public boolean drop(Coord cc, Coord ul) {
-	return(beltwdg.item(cc));
+	return(showbeltp() && beltwdg.item(cc));
     }
     
     public boolean iteminteract(Coord cc, Coord ul) {
@@ -365,7 +365,7 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
     }
 
     public boolean dropthing(Coord c, Object thing) {
-	return(beltwdg.thing(c, thing));
+	return(showbeltp() && beltwdg.thing(c, thing));
     }
     
     public void resize(Coord sz) {
