@@ -200,14 +200,13 @@ public class UI {
     }
 	
     public void uimsg(int id, String msg, Object... args) {
-	Widget wdg;
 	synchronized(this) {
-	    wdg = widgets.get(id);
+	    Widget wdg = widgets.get(id);
+	    if(wdg != null)
+		wdg.uimsg(msg.intern(), args);
+	    else
+		throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
 	}
-	if(wdg != null)
-	    wdg.uimsg(msg.intern(), args);
-	else
-	    throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
     }
 	
     private void setmods(InputEvent ev) {
