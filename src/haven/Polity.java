@@ -94,6 +94,7 @@ public class Polity extends Window {
 		Text rn = (b == null)?unk:(b.rname());
 		g.aimage(rn.tex(), new Coord(0, i * 20 + 10), 0, 0.5);
 	    }
+	    super.draw(g);
 	}
 	
 	public void tick(double dt) {
@@ -103,6 +104,8 @@ public class Polity extends Window {
 	}
 	
 	public boolean mousedown(Coord c, int button) {
+	    if(super.mousedown(c, button))
+		return(true);
 	    int sel = (c.y / 20) + sb.val;
 	    Member pm;
 	    synchronized(this) {
@@ -112,6 +115,11 @@ public class Polity extends Window {
 		Polity.this.wdgmsg("sel", -1);
 	    else
 		Polity.this.wdgmsg("sel", pm.id);
+	    return(true);
+	}
+
+	public boolean mousewheel(Coord c, int amount) {
+	    sb.ch(amount);
 	    return(true);
 	}
     }
