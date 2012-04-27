@@ -44,6 +44,7 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
     private Window invwnd, equwnd, makewnd;
     public BuddyWnd buddies;
     public Polity polity;
+    public HelpWnd help;
     public Collection<GItem> hand = new LinkedList<GItem>();
     private WItem vhand;
     public ChatUI chat;
@@ -286,6 +287,12 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 		}
 		polowner = o;
 	    }
+	} else if(msg == "showhelp") {
+	    Indir<Resource> res = ui.sess.getres((Integer)args[0]);
+	    if(help == null)
+		help = new HelpWnd(sz.div(2).sub(150, 200), this, res);
+	    else
+		help.res = res;
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -299,6 +306,10 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	    buddies.hide();
 	} else if((sender == polity) && (msg == "close")) {
 	    polity.hide();
+	} else if((sender == help) && (msg == "close")) {
+	    ui.destroy(help);
+	    help = null;
+	    return;
 	}
 	super.wdgmsg(sender, msg, args);
     }
