@@ -77,12 +77,19 @@ public class Avaview extends PView {
 	return(gc);
     }
 
-    private static Camera makecam(Composite gc, String camnm) {
+    private void initcomp(Composite gc) {
+	if((comp == null) || (comp.skel != gc.comp.skel))
+	    comp = new Composited(gc.comp.skel);
+    }
+
+    private Camera makecam(Composite gc, String camnm) {
+	if(comp == null)
+	    throw(new Loading());
 	Skeleton.BoneOffset bo = gc.base.get().layer(Skeleton.BoneOffset.class, camnm);
 	if(bo == null)
 	    throw(new Loading());
 	GLState.Buffer buf = new GLState.Buffer(null);
-	bo.forpose(gc.comp.pose).prep(buf);
+	bo.forpose(comp.pose).prep(buf);
 	return(new LocationCam(buf.get(PView.loc)));
     }
 
@@ -91,6 +98,7 @@ public class Avaview extends PView {
 	Composite gc = getgcomp();
 	if(gc == null)
 	    throw(new Loading());
+	initcomp(gc);
 	if((cam == null) || (gc != lgc))
 	    cam = makecam(lgc = gc, camnm);
 	return(cam);
@@ -102,8 +110,7 @@ public class Avaview extends PView {
 	    missed = true;
 	    return;
 	}
-	if((comp == null) || (comp.skel != gc.comp.skel))
-	    comp = new Composited(gc.comp.skel);
+	initcomp(gc);
 	if(gc.comp.cmod != this.cmod)
 	    comp.chmod(this.cmod = gc.comp.cmod);
 	if(gc.comp.cequ != this.cequ)
