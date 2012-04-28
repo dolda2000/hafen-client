@@ -42,6 +42,7 @@ public class MenuGrid extends Widget {
     private static Coord gsz = new Coord(4, 4);
     private Pagina cur, pressed, dragging, layout[][] = new Pagina[gsz.x][gsz.y];
     private int curoff = 0;
+    private boolean loading = true;
     private Map<Character, Pagina> hotmap = new TreeMap<Character, Pagina>();
 	
     static {
@@ -61,42 +62,37 @@ public class MenuGrid extends Widget {
 	}
     }
 
-    private Pagina[] cons(Pagina p) {
+    private boolean cons(Pagina p, Collection<Pagina> buf) {
 	Pagina[] cp = new Pagina[0];
-	Pagina[] all;
-	{
-	    Collection<Pagina> ta = new HashSet<Pagina>();
-	    Collection<Pagina> open;
-	    synchronized(ui.sess.glob.paginae) {
-		open = new HashSet<Pagina>(ui.sess.glob.paginae);
-	    }
-	    while(!open.isEmpty()) {
-		for(Pagina pag : open.toArray(cp)) {
-		    Resource r = pag.res();
-		    if(!r.loading) {
-			AButton ad = r.layer(Resource.action);
-			if(ad == null)
-			    throw(new PaginaException(pag));
-			if((ad.parent != null) && !ta.contains(ad.parent))
-			    open.add(paginafor(ad.parent));
-			ta.add(pag);
-			open.remove(pag);
-		    }
-		}
-	    }
-	    all = ta.toArray(cp);
+	Collection<Pagina> open, close = new HashSet<Pagina>();
+	synchronized(ui.sess.glob.paginae) {
+	    open = new HashSet<Pagina>(ui.sess.glob.paginae);
 	}
-	Collection<Pagina> tobe = new HashSet<Pagina>();
-	for(Pagina pag : all) {
-	    if(paginafor(pag.act().parent) == p)
-		tobe.add(pag);
+	boolean ret = true;
+	while(!open.isEmpty()) {
+	    Iterator<Pagina> iter = open.iterator();
+	    Pagina pag = iter.next();
+	    iter.remove();
+	    try {
+		Resource r = pag.res();
+		AButton ad = r.layer(Resource.action);
+		if(ad == null)
+		    throw(new PaginaException(pag));
+		Pagina parent = paginafor(ad.parent);
+		if(parent == p)
+		    buf.add(pag);
+		else if((parent != null) && !close.contains(parent))
+		    open.add(parent);
+		close.add(pag);
+	    } catch(Loading e) {
+		ret = false;
+	    }
 	}
-	return(tobe.toArray(cp));
+	return(ret);
     }
 	
     public MenuGrid(Coord c, Widget parent) {
 	super(c, bgsz.mul(gsz).add(1, 1), parent);
-	cons(null);
     }
 	
     private static Comparator<Pagina> sorter = new Comparator<Pagina>() {
@@ -111,8 +107,9 @@ public class MenuGrid extends Widget {
     };
 
     private void updlayout() {
-	Pagina[] cur = cons(this.cur);
-	Arrays.sort(cur, sorter);
+	List<Pagina> cur = new ArrayList<Pagina>();
+	loading = !cons(this.cur, cur);
+	Collections.sort(cur, sorter);
 	int i = curoff;
 	hotmap.clear();
 	for(int y = 0; y < gsz.y; y++) {
@@ -120,13 +117,13 @@ public class MenuGrid extends Widget {
 		Pagina btn = null;
 		if((this.cur != null) && (x == gsz.x - 1) && (y == gsz.y - 1)) {
 		    btn = bk;
-		} else if((cur.length > ((gsz.x * gsz.y) - 1)) && (x == gsz.x - 2) && (y == gsz.y - 1)) {
+		} else if((cur.size() > ((gsz.x * gsz.y) - 1)) && (x == gsz.x - 2) && (y == gsz.y - 1)) {
 		    btn = next;
-		} else if(i < cur.length) {
-		    Resource.AButton ad = cur[i].act();
+		} else if(i < cur.size()) {
+		    Resource.AButton ad = cur.get(i).act();
 		    if(ad.hk != 0)
-			hotmap.put(Character.toUpperCase(ad.hk), cur[i]);
-		    btn = cur[i++];
+			hotmap.put(Character.toUpperCase(ad.hk), cur.get(i));
+		    btn = cur.get(i++);
 		}
 		layout[x][y] = btn;
 	    }
@@ -149,7 +146,6 @@ public class MenuGrid extends Widget {
     }
 
     public void draw(GOut g) {
-	updlayout();
 	long now = System.currentTimeMillis();
 	for(int y = 0; y < gsz.y; y++) {
 	    for(int x = 0; x < gsz.x; x++) {
@@ -240,24 +236,35 @@ public class MenuGrid extends Widget {
     }
 
     private void use(Pagina r) {
-	if(cons(r).length > 0) {
-	    cur = r;
+	Collection<Pagina> sub = new LinkedList<Pagina>(),
+	    cur = new LinkedList<Pagina>();
+	cons(r, sub);
+	cons(this.cur, cur);
+	if(sub.size() > 0) {
+	    this.cur = r;
 	    curoff = 0;
 	} else if(r == bk) {
-	    cur = paginafor(cur.act().parent);
+	    this.cur = paginafor(this.cur.act().parent);
 	    curoff = 0;
 	} else if(r == next) {
-	    if((curoff + 14) >= cons(cur).length)
+	    if((curoff + 14) >= cur.size())
 		curoff = 0;
 	    else
 		curoff += 14;
 	} else {
 	    wdgmsg("act", (Object[])r.act().ad);
-	    cur = null;
+	    this.cur = null;
 	    curoff = 0;
 	}
+	updlayout();
     }
-	
+
+    @Override
+    public void tick(double dt) {
+	if(loading)
+	    updlayout();
+    }
+
     public boolean mouseup(Coord c, int button) {
 	Pagina h = bhit(c);
 	if(button == 1) {
@@ -271,7 +278,6 @@ public class MenuGrid extends Widget {
 	    }
 	    ui.grabmouse(null);
 	}
-	updlayout();
 	return(true);
     }
 	
@@ -283,6 +289,7 @@ public class MenuGrid extends Widget {
 	    else
 		cur = paginafor(Resource.load(res));
 	    curoff = 0;
+	    updlayout();
 	}
     }
 	

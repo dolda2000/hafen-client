@@ -705,6 +705,10 @@ public class Utils {
     public static <T> T[] splice(T[] src, int off) {
 	return(splice(src, off, src.length - off));
     }
+    
+    public static <T> T el(Iterable<T> c) {
+	return(c.iterator().next());
+    }
 
     static {
 	Console.setscmd("die", new Console.Command() {
