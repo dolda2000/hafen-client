@@ -70,7 +70,7 @@ public class Equipory extends Widget implements DTarget {
 	
     public Equipory(Coord c, Widget parent) {
 	super(c, isz, parent);
-	Avaview ava = new Avaview(new Coord(34, 0), new Coord(265, 265), this, getparent(GameUI.class).plid, "avacam") {
+	Avaview ava = new Avaview(new Coord(34, 0), new Coord(265, 265), this, getparent(GameUI.class).plid, "equcam") {
 		public boolean mousedown(Coord c, int button) {
 		    return(false);
 		}
