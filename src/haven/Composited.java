@@ -382,19 +382,19 @@ public class Composited implements Rendered {
 	if(mod.equals(cmod))
 	    return;
 	this.mod = new LinkedList<Model>();
-	nmod = new LinkedList<MD>(mod);
-	cmod = new ArrayList<MD>(mod.size());
+	nmod = new LinkedList<MD>();
 	for(MD md : mod)
-	    cmod.add(md.clone());
+	    nmod.add(md.clone());
+	cmod = new ArrayList<MD>(mod);
     }
     
     public void chequ(List<ED> equ) {
 	if(equ.equals(cequ))
 	    return;
 	this.equ = new LinkedList<Equ>();
-	nequ = new LinkedList<ED>(equ);
-	cequ = new ArrayList<ED>(equ.size());
+	nequ = new LinkedList<ED>();
 	for(ED ed : equ)
-	    cequ.add(ed.clone());
+	    nequ.add(ed.clone());
+	cequ = new ArrayList<ED>(equ);
     }
 }
