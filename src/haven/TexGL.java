@@ -149,31 +149,38 @@ public abstract class TexGL extends Tex {
 	}
 	
 	public void apply(GOut g) {
-	    if(g.st.get(TexDraw.slot) != null)
-		return;
 	    GL gl = g.gl;
-	    g.st.texunit(0);
-	    gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
-	    gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_COMBINE);
-	    gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_COMBINE_RGB, GL.GL_REPLACE);
-	    gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_SRC0_RGB, GL.GL_PREVIOUS);
-	    gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_OPERAND0_RGB, GL.GL_SRC_COLOR);
-	    gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_COMBINE_ALPHA, GL.GL_MODULATE);
-	    gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_SRC0_ALPHA, GL.GL_PREVIOUS);
-	    gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_OPERAND0_ALPHA, GL.GL_SRC_ALPHA);
-	    gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_SRC1_ALPHA, GL.GL_TEXTURE);
-	    gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_OPERAND1_ALPHA, GL.GL_SRC_ALPHA);
-	    gl.glEnable(GL.GL_TEXTURE_2D);
-	    gl.glEnable(GL.GL_ALPHA_TEST);
+	    TexDraw draw = g.st.get(TexDraw.slot);
+	    if(draw == null) {
+		g.st.texunit(0);
+		gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
+		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_COMBINE);
+		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_COMBINE_RGB, GL.GL_REPLACE);
+		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_SRC0_RGB, GL.GL_PREVIOUS);
+		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_OPERAND0_RGB, GL.GL_SRC_COLOR);
+		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_COMBINE_ALPHA, GL.GL_MODULATE);
+		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_SRC0_ALPHA, GL.GL_PREVIOUS);
+		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_OPERAND0_ALPHA, GL.GL_SRC_ALPHA);
+		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_SRC1_ALPHA, GL.GL_TEXTURE);
+		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_OPERAND1_ALPHA, GL.GL_SRC_ALPHA);
+		gl.glEnable(GL.GL_TEXTURE_2D);
+		gl.glEnable(GL.GL_ALPHA_TEST);
+	    } else {
+		if(draw.tex != this.tex)
+		    throw(new RuntimeException("TexGL does not support different clip and draw textures."));
+		gl.glEnable(GL.GL_ALPHA_TEST);
+	    }
 	}
 	
 	public void unapply(GOut g) {
-	    if(g.st.old(TexDraw.slot) != null)
-		return;
 	    GL gl = g.gl;
-	    g.st.texunit(0);
-	    gl.glDisable(GL.GL_ALPHA_TEST);
-	    gl.glDisable(GL.GL_TEXTURE_2D);
+	    if(g.st.old(TexDraw.slot) == null) {
+		g.st.texunit(0);
+		gl.glDisable(GL.GL_ALPHA_TEST);
+		gl.glDisable(GL.GL_TEXTURE_2D);
+	    } else {
+		gl.glDisable(GL.GL_ALPHA_TEST);
+	    }
 	}
 	
 	public int capply() {
