@@ -231,7 +231,7 @@ public class Audio {
 	ckpl();
     }
 
-    private static void playres(Resource res) {
+    public static void playres(Resource res) {
 	Collection<Resource.Audio> clips = res.layers(Resource.audio);
 	int s = (int)(Math.random() * clips.size());
 	Resource.Audio clip = null;
