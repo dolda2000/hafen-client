@@ -140,11 +140,12 @@ public class Polity extends Window {
     }
 
     public Polity(Coord c, Widget parent, String name) {
-	super(c, new Coord(200, 390), parent, "Town");
+	super(c, new Coord(200, 200), parent, "Town");
 	this.name = name;
-	new Label(new Coord(10, 5), this, name, nmf);
-	new Label(new Coord(10, 45), this, "Members:");
-	ml = new MemberList(new Coord(10, 60), new Coord(180, 140), this);
+	new Label(new Coord(0, 5), this, name, nmf);
+	new Label(new Coord(0, 45), this, "Members:");
+	ml = new MemberList(new Coord(0, 60), new Coord(200, 140), this);
+	pack();
     }
     
     private Tex rauth = null;
@@ -152,9 +153,9 @@ public class Polity extends Window {
 	if(acap > 0) {
 	    synchronized(this) {
 		g.chcolor(0, 0, 0, 255);
-		g.frect(new Coord(10, 23), new Coord(180, 20));
+		g.frect(new Coord(0, 23), new Coord(200, 20));
 		g.chcolor(128, 0, 0, 255);
-		g.frect(new Coord(10, 24), new Coord((180 * auth) / acap, 18));
+		g.frect(new Coord(0, 24), new Coord((200 * auth) / acap, 18));
 		g.chcolor();
 		if(rauth == null) {
 		    Color col = offline?Color.RED:Color.WHITE;
@@ -196,14 +197,19 @@ public class Polity extends Window {
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {
 	if(pargs[0] instanceof String) {
 	    String p = (String)pargs[0];
-	    if(p.equals("m"))
-		return(mw = gettype(type).create(new Coord(10, 210), this, cargs));
+	    if(p.equals("m")) {
+		mw = gettype(type).create(new Coord(0, 210), this, cargs);
+		pack();
+		return(mw);
+	    }
 	}
 	return(super.makechild(type, pargs, cargs));
     }
 
     public void cdestroy(Widget w) {
-	if(w == mw)
+	if(w == mw) {
 	    mw = null;
+	    pack();
+	}
     }
 }
