@@ -42,6 +42,7 @@ public class MenuGrid extends Widget {
     private static Coord gsz = new Coord(4, 4);
     private Pagina cur, pressed, dragging, layout[][] = new Pagina[gsz.x][gsz.y];
     private int curoff = 0;
+    private int pagseq = 0;
     private boolean loading = true;
     private Map<Character, Pagina> hotmap = new TreeMap<Character, Pagina>();
 	
@@ -107,26 +108,29 @@ public class MenuGrid extends Widget {
     };
 
     private void updlayout() {
-	List<Pagina> cur = new ArrayList<Pagina>();
-	loading = !cons(this.cur, cur);
-	Collections.sort(cur, sorter);
-	int i = curoff;
-	hotmap.clear();
-	for(int y = 0; y < gsz.y; y++) {
-	    for(int x = 0; x < gsz.x; x++) {
-		Pagina btn = null;
-		if((this.cur != null) && (x == gsz.x - 1) && (y == gsz.y - 1)) {
-		    btn = bk;
-		} else if((cur.size() > ((gsz.x * gsz.y) - 1)) && (x == gsz.x - 2) && (y == gsz.y - 1)) {
-		    btn = next;
-		} else if(i < cur.size()) {
-		    Resource.AButton ad = cur.get(i).act();
-		    if(ad.hk != 0)
-			hotmap.put(Character.toUpperCase(ad.hk), cur.get(i));
-		    btn = cur.get(i++);
+	synchronized(ui.sess.glob.paginae) {
+	    List<Pagina> cur = new ArrayList<Pagina>();
+	    loading = !cons(this.cur, cur);
+	    Collections.sort(cur, sorter);
+	    int i = curoff;
+	    hotmap.clear();
+	    for(int y = 0; y < gsz.y; y++) {
+		for(int x = 0; x < gsz.x; x++) {
+		    Pagina btn = null;
+		    if((this.cur != null) && (x == gsz.x - 1) && (y == gsz.y - 1)) {
+			btn = bk;
+		    } else if((cur.size() > ((gsz.x * gsz.y) - 1)) && (x == gsz.x - 2) && (y == gsz.y - 1)) {
+			btn = next;
+		    } else if(i < cur.size()) {
+			Resource.AButton ad = cur.get(i).act();
+			if(ad.hk != 0)
+			    hotmap.put(Character.toUpperCase(ad.hk), cur.get(i));
+			btn = cur.get(i++);
+		    }
+		    layout[x][y] = btn;
 		}
-		layout[x][y] = btn;
 	    }
+	    pagseq = ui.sess.glob.pagseq;
 	}
     }
 	
@@ -261,7 +265,7 @@ public class MenuGrid extends Widget {
 
     @Override
     public void tick(double dt) {
-	if(loading)
+	if(loading || (pagseq != ui.sess.glob.pagseq))
 	    updlayout();
     }
 

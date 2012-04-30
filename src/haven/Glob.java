@@ -40,6 +40,7 @@ public class Glob {
     public Session sess;
     public Party party;
     public Set<Pagina> paginae = new HashSet<Pagina>();
+    public int pagseq = 0;
     private Map<Resource, Pagina> pmap = new WeakHashMap<Resource, Pagina>();
     public Map<String, CAttr> cattr = new HashMap<String, CAttr>();
     public Map<Integer, Buff> buffs = new TreeMap<Integer, Buff>();
@@ -225,6 +226,7 @@ public class Glob {
 		    paginae.remove(paginafor(Resource.load(nm, ver))); 
 		}
 	    }
+	    pagseq++;
 	}
     }
     
