@@ -175,8 +175,8 @@ public class UI {
 	if((keygrab != null) && keygrab.hasparent(wdg))
 	    keygrab = null;
 	removeid(wdg);
-	wdg.destroy();
 	wdg.unlink();
+	wdg.destroy();
     }
     
     public void destroy(int id) {
