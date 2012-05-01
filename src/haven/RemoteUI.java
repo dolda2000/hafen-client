@@ -46,7 +46,7 @@ public class RemoteUI implements UI.Receiver {
     public void run(UI ui) throws InterruptedException {
 	this.ui = ui;
 	ui.setreceiver(this);
-	while(sess.alive()) {
+	while(true) {
 	    Message msg;
 	    while((msg = sess.getuimsg()) != null) {
 		if(msg.type == Message.RMSG_NEWWDG) {
@@ -66,6 +66,8 @@ public class RemoteUI implements UI.Receiver {
 		}
 	    }
 	    synchronized(sess) {
+		if(!sess.alive())
+		    break;
 		sess.wait();
 	    }
 	}
