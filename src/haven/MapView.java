@@ -668,16 +668,18 @@ public class MapView extends PView implements DTarget {
 	    setattr(new ResDrawable(this, res));
 	    if(ui.mc.isect(rootpos(), sz)) {
 		synchronized(delayed) {
-		    delayed.add(new Adjust(ui.mc.sub(rootpos())));
+		    delayed.add(new Adjust(ui.mc.sub(rootpos()), false));
 		}
 	    }
 	}
 
 	private class Adjust implements Delayed {
 	    Coord mouse;
+	    boolean adjust;
 	    
-	    Adjust(Coord c) {
+	    Adjust(Coord c, boolean ta) {
 		mouse = c;
+		adjust = ta;
 	    }
 	    
 	    public void run(GOut g) {
@@ -694,6 +696,8 @@ public class MapView extends PView implements DTarget {
 		}
 		if(mc != null)
 		    rc = mc;
+		if(adjust)
+		    rc = rc.div(tilesz).mul(tilesz).add(tilesz.div(2));
 		Gob pl = player();
 		if((pl != null) && !freerot)
 		    a = rc.angle(pl.rc);
@@ -840,7 +844,7 @@ public class MapView extends PView implements DTarget {
 	} else if(placing != null) {
 	    if((placing.lastmc == null) || !placing.lastmc.equals(c)) {
 		synchronized(delayed) {
-		    delayed.add(placing.new Adjust(c));
+		    delayed.add(placing.new Adjust(c, ui.modctrl));
 		}
 	    }
 	}
@@ -869,7 +873,10 @@ public class MapView extends PView implements DTarget {
 	if(ui.modshift) {
 	    if(placing != null) {
 		placing.freerot = true;
-		placing.a += amount * 0.2;
+		if(ui.modctrl)
+		    placing.a = (Math.PI / 4) * Math.round((placing.a + (amount * Math.PI / 4)) / (Math.PI / 4));
+		else
+		    placing.a += amount * Math.PI / 16;
 	    }
 	    return(true);
 	}
