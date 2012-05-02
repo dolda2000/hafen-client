@@ -224,9 +224,9 @@ public class Session {
 			    oc.remove(id, frame);
 			} else if(type == OD_MOVE) {
 			    Coord c = msg.coord();
-			    int ia = msg.uint8();
+			    int ia = msg.uint16();
 			    if(gob != null)
-				oc.move(gob, c, (ia / 255.0) * Math.PI * 2);
+				oc.move(gob, c, (ia / 65536.0) * Math.PI * 2);
 			} else if(type == OD_RES) {
 			    int resid = msg.uint16();
 			    Message sdt;
