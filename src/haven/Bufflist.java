@@ -93,7 +93,13 @@ public class Bufflist extends Widget {
 	}
     }
     
+    private long hoverstart;
+    private Tex shorttip, longtip;
+    private Buff tipped;
     public Object tooltip(Coord c, boolean again) {
+	long now = System.currentTimeMillis();
+	if(!again)
+	    hoverstart = now;
 	int i = 0;
 	int w = frame.sz().x + margin;
 	synchronized(ui.sess.glob.buffs) {
@@ -102,11 +108,27 @@ public class Bufflist extends Widget {
 		    continue;
 		Coord bc = new Coord(i * w, 0);
 		if(c.isect(bc, frame.sz())) {
-		    Resource.Tooltip tt;
-		    if(b.tt != null)
-			return(b.tt);
-		    else if((tt = b.res.get().layer(Resource.tooltip)) != null)
-			return(tt.t);
+		    if(tipped != b)
+			shorttip = longtip = null;
+		    tipped = b;
+		    try {
+			if(now - hoverstart < 1000) {
+			    if(shorttip == null)
+				shorttip = Text.render(b.tooltip()).tex();
+			    return(shorttip);
+			} else {
+			    if(longtip == null) {
+				String text = RichText.Parser.quote(b.tooltip());
+				Resource.Pagina pag = b.res.get().layer(Resource.pagina);
+				if(pag != null)
+				    text += "\n\n" + pag.text;
+				longtip = RichText.render(text, 200).tex();
+			    }
+			    return(longtip);
+			}
+		    } catch(Loading e) {
+			return("...");
+		    }
 		}
 		if(++i >= 5)
 		    break;

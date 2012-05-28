@@ -51,4 +51,10 @@ public class Buff {
 	    ntext = new TexI(Utils.outline2(nfnd.render(Integer.toString(nmeter), Color.WHITE).img, Color.BLACK));
 	return(ntext);
     }
+    
+    public String tooltip() {
+	if(tt != null)
+	    return(tt);
+	return(res.get().layer(Resource.tooltip).t);
+    }
 }
