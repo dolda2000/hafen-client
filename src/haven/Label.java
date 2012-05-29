@@ -83,7 +83,10 @@ public class Label extends Widget {
     }
 	
     public void uimsg(String msg, Object... args) {
-	if(msg == "set")
+	if(msg == "set") {
 	    settext((String)args[0]);
+	} else if(msg == "col") {
+	    setcolor((Color)args[0]);
+	}
     }
 }
