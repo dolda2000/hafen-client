@@ -62,6 +62,26 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	public abstract boolean key(KeyEvent ev);
 	public abstract boolean item(Coord c);
 	public abstract boolean thing(Coord c, Object thing);
+	
+	public void keyact(final int slot) {
+	    if(map != null) {
+		Coord mvc = map.rootxlate(ui.mc);
+		if(mvc.isect(Coord.z, map.sz)) {
+		    map.delay(map.new Hittest(mvc) {
+			    protected void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
+				if(gob == null)
+				    wdgmsg("belt", slot, 1, ui.modflags(), mc);
+				else
+				    wdgmsg("belt", slot, 1, ui.modflags(), mc, (int)gob.id, gob.rc);
+			    }
+			    
+			    protected void nohit(Coord pc) {
+				wdgmsg("belt", slot, 1, ui.modflags());
+			    }
+			});
+		}
+	    }
+	}
     }
     
     static {
@@ -466,7 +486,7 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 			curbelt = i;
 			return(true);
 		    } else {
-			wdgmsg("belt", i + (curbelt * 12), 1, ui.modflags());
+			keyact(i + (curbelt * 12));
 			return(true);
 		    }
 		}
@@ -551,10 +571,11 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 		return(false);
 	    int i = Utils.floormod(c - KeyEvent.VK_0 - 1, 10);
 	    boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
-	    if(M)
+	    if(M) {
 		curbelt = i;
-	    else
-		wdgmsg("belt", i + (curbelt * 12), 1, ui.modflags());
+	    } else {
+		keyact(i + (curbelt * 12));
+	    }
 	    return(true);
 	}
 	
