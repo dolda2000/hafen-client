@@ -257,6 +257,10 @@ public class Widget {
 	    return(new Coord(0, 0));
 	return(xlate(parent.rootpos().add(c), true));
     }
+    
+    public Coord rootxlate(Coord c) {
+	return(c.sub(rootpos()));
+    }
 	
     public boolean hasparent(Widget w2) {
 	for(Widget w = this; w != null; w = w.parent) {
