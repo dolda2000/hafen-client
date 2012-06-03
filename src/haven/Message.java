@@ -52,6 +52,7 @@ public class Message implements java.io.Serializable {
     public static final int T_UINT16 = 5;
     public static final int T_COLOR = 6;
     public static final int T_TTOL = 8;
+    public static final int T_NIL = 12;
 	
     public int type;
     public byte[] blob;
@@ -154,7 +155,9 @@ public class Message implements java.io.Serializable {
 	
     public void addlist(Object... args) {
 	for(Object o : args) {
-	    if(o instanceof Integer) {
+	    if(o == null) {
+		adduint8(T_NIL);
+	    } else if(o instanceof Integer) {
 		adduint8(T_INT);
 		addint32(((Integer)o).intValue());
 	    } else if(o instanceof String) {
@@ -250,6 +253,8 @@ public class Message implements java.io.Serializable {
 		ret.add(color());
 	    else if(t == T_TTOL)
 		ret.add(list());
+	    else if(t == T_NIL)
+		ret.add(null);
 	}
 	return(ret.toArray());
     }
