@@ -255,6 +255,8 @@ public class Message implements java.io.Serializable {
 		ret.add(list());
 	    else if(t == T_NIL)
 		ret.add(null);
+	    else
+		throw(new RuntimeException("Encountered unknown type " + t + " in TTO list."));
 	}
 	return(ret.toArray());
     }
