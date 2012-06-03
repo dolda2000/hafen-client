@@ -112,7 +112,7 @@ public class Polity extends Window {
 		pm = (sel >= memb.size())?null:memb.get(sel);
 	    }
 	    if(pm == null)
-		Polity.this.wdgmsg("sel", -1);
+		Polity.this.wdgmsg("sel", (Object)null);
 	    else
 		Polity.this.wdgmsg("sel", pm.id);
 	    return(true);
