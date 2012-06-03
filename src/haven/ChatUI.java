@@ -256,13 +256,13 @@ public class ChatUI extends Widget {
 	    if(msg == "msg") {
 		int from = (Integer)args[0];
 		String line = (String)args[1];
-		if(from >= 0) {
+		if(from == -1) {
+		    append(new MyMessage(line, iw()));
+		} else {
 		    Message cmsg = new NamedMessage(from, line, Color.WHITE, iw());
 		    append(cmsg);
 		    if(notify)
 			notify(cmsg);
-		} else if(from == -1) {
-		    append(new MyMessage(line, iw()));
 		}
 	    }
 	}
@@ -288,12 +288,12 @@ public class ChatUI extends Widget {
 		    if(pm != null)
 			col = pm.col;
 		}
-		if(from >= 0) {
+		if(from == -1) {
+		    append(new MyMessage(line, iw()));
+		} else {
 		    Message cmsg = new NamedMessage(from, line, col, iw());
 		    append(cmsg);
 		    notify(cmsg);
-		} else if(from == -1) {
-		    append(new MyMessage(line, iw()));
 		}
 	    }
 	}
