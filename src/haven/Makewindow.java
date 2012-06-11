@@ -52,7 +52,10 @@ public class Makewindow extends Widget {
 	
 	public Spec(Indir<Resource> res, int num) {
 	    this.res = res;
-	    this.num = new TexI(Utils.outline2(Text.render(Integer.toString(num), Color.WHITE).img, Utils.contrast(Color.WHITE)));
+	    if(num >= 0)
+		this.num = new TexI(Utils.outline2(Text.render(Integer.toString(num), Color.WHITE).img, Utils.contrast(Color.WHITE)));
+	    else
+		this.num = null;
 	}
     }
 	
@@ -90,7 +93,8 @@ public class Makewindow extends Widget {
 		g.image(res.layer(Resource.imgc).tex(), c.add(1, 1));
 	    } catch(Loading e) {
 	    }
-	    g.aimage(s.num, c.add(33, 34), 1.0, 1.0);
+	    if(s.num != null)
+		g.aimage(s.num, c.add(33, 34), 1.0, 1.0);
 	    c = c.add(Inventory.sqsz.x, 0);
 	}
 	c = new Coord(xoff, yoff);
@@ -101,7 +105,8 @@ public class Makewindow extends Widget {
 		g.image(res.layer(Resource.imgc).tex(), c.add(1, 1));
 	    } catch(Loading e) {
 	    }
-	    g.aimage(s.num, c.add(33, 34), 1.0, 1.0);
+	    if(s.num != null)
+		g.aimage(s.num, c.add(33, 34), 1.0, 1.0);
 	    c = c.add(Inventory.sqsz.x, 0);
 	}
 	super.draw(g);
