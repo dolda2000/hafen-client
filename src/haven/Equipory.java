@@ -63,14 +63,19 @@ public class Equipory extends Widget implements DTarget {
     static {
 	Widget.addtype("epry", new WidgetFactory() {
 		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Equipory(c, parent));
+		    long gobid;
+		    if(args.length < 1)
+			gobid = parent.getparent(GameUI.class).plid;
+		    else
+			gobid = (Integer)args[0];
+		    return(new Equipory(c, parent, gobid));
 		}
 	    });
     }
 	
-    public Equipory(Coord c, Widget parent) {
+    public Equipory(Coord c, Widget parent, long gobid) {
 	super(c, isz, parent);
-	Avaview ava = new Avaview(new Coord(34, 0), new Coord(265, 265), this, getparent(GameUI.class).plid, "equcam") {
+	Avaview ava = new Avaview(new Coord(34, 0), new Coord(265, 265), this, gobid, "equcam") {
 		public boolean mousedown(Coord c, int button) {
 		    return(false);
 		}
