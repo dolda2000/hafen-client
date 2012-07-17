@@ -29,6 +29,7 @@ package haven;
 import java.awt.RenderingHints;
 import java.io.*;
 import java.nio.*;
+import java.lang.reflect.*;
 import java.util.prefs.*;
 import java.util.*;
 import java.awt.Graphics;
@@ -676,6 +677,18 @@ public class Utils {
 	b.rewind();
 	return(b);
     }
+    public static FloatBuffer bufcp(FloatBuffer a) {
+	a.rewind();
+	FloatBuffer ret = mkfbuf(a.remaining());
+	ret.put(a).rewind();
+	return(ret);
+    }
+    public static IntBuffer bufcp(IntBuffer a) {
+	a.rewind();
+	IntBuffer ret = mkibuf(a.remaining());
+	ret.put(a).rewind();
+	return(ret);
+    }
     public static FloatBuffer mkfbuf(int n) {
 	return(ByteBuffer.allocateDirect(n * 4).order(ByteOrder.nativeOrder()).asFloatBuffer());
     }
@@ -696,8 +709,13 @@ public class Utils {
     }
     
     @SuppressWarnings("unchecked")
+    public static <T> T[] mkarray(Class<T> cl, int len) {
+	return((T[])Array.newInstance(cl, len));
+    }
+
+    @SuppressWarnings("unchecked")
     public static <T> T[] splice(T[] src, int off, int len) {
-	T[] dst = (T[])java.lang.reflect.Array.newInstance(src.getClass().getComponentType(), len);
+	T[] dst = (T[])Array.newInstance(src.getClass().getComponentType(), len);
 	System.arraycopy(src, off, dst, 0, len);
 	return(dst);
     }
@@ -708,6 +726,20 @@ public class Utils {
     
     public static <T> T el(Iterable<T> c) {
 	return(c.iterator().next());
+    }
+    
+    public static <T> T construct(Constructor<T> cons, Object... args) {
+	try {
+	    return(cons.newInstance(args));
+	} catch(InstantiationException e) {
+	    throw(new RuntimeException(e));
+	} catch(IllegalAccessException e) {
+	    throw(new RuntimeException(e));
+	} catch(InvocationTargetException e) {
+	    if(e.getCause() instanceof RuntimeException)
+		throw((RuntimeException)e.getCause());
+	    throw(new RuntimeException(e.getCause()));
+	}
     }
 
     static {
