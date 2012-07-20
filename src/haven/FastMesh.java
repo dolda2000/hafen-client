@@ -53,38 +53,38 @@ public class FastMesh implements FRendered {
 	this.num = from.num;
     }
 
-    public void sdraw(GL gl) {
+    public void sdraw(GOut g) {
+	GL gl = g.gl;
+	VertexBuf.GLArray[] data = new VertexBuf.GLArray[vert.bufs.length];
+	VertexBuf.VertexArray vbuf = null;
+	int n = 0;
+	for(int i = 0; i < vert.bufs.length; i++) {
+	    if(vert.bufs[i] instanceof VertexBuf.VertexArray)
+		vbuf = (VertexBuf.VertexArray)vert.bufs[i];
+	    else if(vert.bufs[i] instanceof VertexBuf.GLArray)
+		data[n++] = (VertexBuf.GLArray)vert.bufs[i];
+	}
 	gl.glBegin(GL.GL_TRIANGLES);
 	for(int i = 0; i < num * 3; i++) {
 	    int idx = indb.get(i);
-	    int o = idx * 3;
-	    gl.glNormal3f(vert.nrmb.get(o), vert.nrmb.get(o + 1), vert.nrmb.get(o + 2));
-	    if(vert.texb != null) {
-		int u = idx * 2;
-		gl.glTexCoord2f(vert.texb.get(u), vert.texb.get(u + 1));
-	    }
-	    gl.glVertex3f(vert.posb.get(o), vert.posb.get(o + 1), vert.posb.get(o + 2));
+	    for(int o = 0; o < n; o++)
+		data[o].set(g, idx);
+	    vbuf.set(g, idx);
 	}
 	gl.glEnd();
     }
 
-    public void cdraw(GL gl) {
-	vert.posb.rewind();
-	vert.nrmb.rewind();
+    public void cdraw(GOut g) {
 	indb.rewind();
-	gl.glEnableClientState(GL.GL_VERTEX_ARRAY);
-	gl.glVertexPointer(3, GL.GL_FLOAT, 0, vert.posb);
-	gl.glEnableClientState(GL.GL_NORMAL_ARRAY);
-	gl.glNormalPointer(GL.GL_FLOAT, 0, vert.nrmb);
-	if(vert.texb != null) {
-	    vert.texb.rewind();
-	    gl.glEnableClientState(GL.GL_TEXTURE_COORD_ARRAY);
-	    gl.glTexCoordPointer(2, GL.GL_FLOAT, 0, vert.texb);
+	for(int i = 0; i < vert.bufs.length; i++) {
+	    if(vert.bufs[i] instanceof VertexBuf.GLArray)
+		((VertexBuf.GLArray)vert.bufs[i]).bind(g);
 	}
-	gl.glDrawElements(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, indb);
-	gl.glDisableClientState(GL.GL_VERTEX_ARRAY);
-	gl.glDisableClientState(GL.GL_NORMAL_ARRAY);
-	gl.glDisableClientState(GL.GL_TEXTURE_COORD_ARRAY);
+	g.gl.glDrawElements(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, indb);
+	for(int i = 0; i < vert.bufs.length; i++) {
+	    if(vert.bufs[i] instanceof VertexBuf.GLArray)
+		((VertexBuf.GLArray)vert.bufs[i]).unbind(g);
+	}
     }
     
     public void draw(GOut g) {
@@ -100,11 +100,11 @@ public class FastMesh implements FRendered {
 	    if(compile() && g.gc.usedl) {
 		list = new DisplayList(gl);
 		gl.glNewList(list.id, GL.GL_COMPILE);
-		sdraw(gl);
+		sdraw(g);
 		gl.glEndList();
 		gl.glCallList(list.id);
 	    } else {
-		cdraw(gl);
+		cdraw(g);
 	    }
 	}
 	GOut.checkerr(gl);
@@ -129,9 +129,8 @@ public class FastMesh implements FRendered {
     
     public void drawflat(GOut g) {
 	g.apply();
-	GL gl = g.gl;
-	cdraw(gl);
-	GOut.checkerr(gl);
+	cdraw(g);
+	GOut.checkerr(g.gl);
     }
     
     public boolean setup(RenderList r) {
@@ -139,32 +138,34 @@ public class FastMesh implements FRendered {
     }
     
     public boolean boned() {
-	if(vert.apv == 0)
+	VertexBuf.BoneArray ba = vert.buf(VertexBuf.BoneArray.class);
+	if(ba == null)
 	    return(false);
 	for(int i = 0; i < num * 3; i++) {
-	    if(vert.assbones[indb.get(i) * vert.apv] != -1)
+	    if(ba.data.get(indb.get(i) * ba.n) != -1)
 		return(true);
 	}
 	return(false);
     }
 
     public String boneidp() {
-	int retb = -1;
-	if(vert.apv == 0)
+	VertexBuf.BoneArray ba = vert.buf(VertexBuf.BoneArray.class);
+	if(ba == null)
 	    return(null);
+	int retb = -1;
 	for(int i = 0; i < num * 3; i++) {
-	    int vi = indb.get(i) * vert.apv;
-	    int curb = vert.assbones[vi];
+	    int vi = indb.get(i) * ba.n;
+	    int curb = ba.data.get(vi);
 	    if(curb == -1)
 		return(null);
 	    if(retb == -1)
 		retb = curb;
 	    else if(retb != curb)
 		return(null);
-	    if((vert.apv != 1) && (vert.assbones[vi + 1] != -1))
+	    if((ba.n != 1) && (ba.data.get(vi + 1) != -1))
 		return(null);
 	}
-	return(vert.bones[retb]);
+	return(ba.names[retb]);
     }
     
     public static class ResourceMesh extends FastMesh {

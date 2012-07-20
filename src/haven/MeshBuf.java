@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.nio.*;
 
 public class MeshBuf {
     public final Collection<Vertex> v = new LinkedList<Vertex>();
@@ -72,17 +73,21 @@ public class MeshBuf {
 		max = idx;
 	}
 	int nv = 0;
+	VertexBuf.VertexArray posb = src.vert.buf(VertexBuf.VertexArray.class);
+	VertexBuf.NormalArray nrmb = src.vert.buf(VertexBuf.NormalArray.class);
+	VertexBuf.TexelArray texb = src.vert.buf(VertexBuf.TexelArray.class);
 	Vertex[] vmap = new Vertex[max + 1 - min];
 	for(int i = 0; i < src.num * 3; i++) {
 	    int idx = src.indb.get(i);
 	    if(vmap[idx - min] == null) {
-		int o = idx * 3;
-		Coord3f pos = new Coord3f(src.vert.posb.get(o), src.vert.posb.get(o + 1), src.vert.posb.get(o + 2));
-		Coord3f nrm = new Coord3f(src.vert.nrmb.get(o), src.vert.nrmb.get(o + 1), src.vert.nrmb.get(o + 2));
+		int o = idx * posb.n;
+		Coord3f pos = new Coord3f(posb.data.get(o), posb.data.get(o + 1), posb.data.get(o + 2));
+		o = idx * nrmb.n;
+		Coord3f nrm = new Coord3f(nrmb.data.get(o), nrmb.data.get(o + 1), nrmb.data.get(o + 2));
 		Coord3f tex = null;
-		if(src.vert.texb != null) {
-		    o = idx * 2;
-		    tex = new Coord3f(src.vert.texb.get(o), src.vert.texb.get(o + 1), 0);
+		if(texb != null) {
+		    o = idx * texb.n;
+		    tex = new Coord3f(texb.data.get(o), texb.data.get(o + 1), 0);
 		}
 		vmap[idx - min] = new Vertex(pos, nrm, tex);
 		nv++;
@@ -106,24 +111,24 @@ public class MeshBuf {
     private void mkvbuf() {
 	if(v.isEmpty())
 	    throw(new RuntimeException("Tried to build empty vertex buffer"));
-	float[] pos, nrm, tex;
+	FloatBuffer pos, nrm, tex;
 	boolean hastex = false;
-	pos = new float[v.size() * 3];
-	nrm = new float[v.size() * 3];
-	tex = new float[v.size() * 2];
+	pos = Utils.mkfbuf(v.size() * 3);
+	nrm = Utils.mkfbuf(v.size() * 3);
+	tex = Utils.mkfbuf(v.size() * 2);
 	int pi = 0, ni = 0, ti = 0;
 	short i = 0;
 	for(Vertex v : this.v) {
-	    pos[pi + 0] = v.pos.x;
-	    pos[pi + 1] = v.pos.y;
-	    pos[pi + 2] = v.pos.z;
-	    nrm[ni + 0] = v.nrm.x;
-	    nrm[ni + 1] = v.nrm.y;
-	    nrm[ni + 2] = v.nrm.z;
+	    pos.put(pi + 0, v.pos.x);
+	    pos.put(pi + 1, v.pos.y);
+	    pos.put(pi + 2, v.pos.z);
+	    nrm.put(pi + 0, v.nrm.x);
+	    nrm.put(pi + 1, v.nrm.y);
+	    nrm.put(pi + 2, v.nrm.z);
 	    if(v.tex != null) {
 		hastex = true;
-		tex[ti + 0] = v.tex.x;
-		tex[ti + 1] = v.tex.y;
+		tex.put(ti + 0, v.tex.x);
+		tex.put(ti + 1, v.tex.y);
 	    }
 	    pi += 3;
 	    ni += 3;
@@ -133,8 +138,9 @@ public class MeshBuf {
 		throw(new RuntimeException("Too many vertices in meshbuf"));
 	}
 	if(!hastex)
-	    tex = null;
-	this.vbuf = new VertexBuf(pos, nrm, tex);
+	    this.vbuf = new VertexBuf(new VertexBuf.VertexArray(pos), new VertexBuf.NormalArray(nrm));
+	else
+	    this.vbuf = new VertexBuf(new VertexBuf.VertexArray(pos), new VertexBuf.NormalArray(nrm), new VertexBuf.TexelArray(tex));
     }
 
     public void clearfaces() {

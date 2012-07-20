@@ -70,24 +70,40 @@ public class MorphedMesh extends FastMesh {
     }
 
     private static class MorphedBuf extends VertexBuf {
+	private final VertexBuf from;
 	private final WeakReference<Pose> poseref;
 	private int seq = 0;
 	
-	private MorphedBuf(VertexBuf buf, Pose pose) {
-	    super(buf, false, false, true);
-	    this.poseref = new WeakReference<Pose>(pose);
-	    int[] xl = new int[bones.length];
-	    for(int i = 0; i < xl.length; i++)
-		xl[i] = pose.skel().bones.get(bones[i]).idx;
-	    int[] ob = buf.assbones;
-	    int[] bl = new int[ob.length];
-	    for(int i = 0; i < bl.length; i++) {
-		if(ob[i] == -1)
-		    bl[i] = -1;
+	private static AttribArray[] ohBitterSweetJavaDays(VertexBuf from) {
+	    AttribArray[] ret = new AttribArray[from.bufs.length];
+	    for(int i = 0; i < from.bufs.length; i++) {
+		if(from.bufs[i] instanceof VertexArray)
+		    ret[i] = ((VertexArray)from.bufs[i]).dup();
+		else if(from.bufs[i] instanceof NormalArray)
+		    ret[i] = ((NormalArray)from.bufs[i]).dup();
+		else if(from.bufs[i] instanceof BoneArray)
+		    ret[i] = ((BoneArray)from.bufs[i]).dup();
 		else
-		    bl[i] = xl[ob[i]];
+		    ret[i] = from.bufs[i];
 	    }
-	    this.assbones = bl;
+	    return(ret);
+	}
+
+	private MorphedBuf(VertexBuf buf, Pose pose) {
+	    super(ohBitterSweetJavaDays(buf));
+	    this.from = buf;
+	    this.poseref = new WeakReference<Pose>(pose);
+	    BoneArray ob = buf.buf(BoneArray.class);
+	    BoneArray nb = buf(BoneArray.class);
+	    int[] xl = new int[nb.names.length];
+	    for(int i = 0; i < xl.length; i++)
+		xl[i] = pose.skel().bones.get(nb.names[i]).idx;
+	    for(int i = 0; i < ob.data.capacity(); i++) {
+		if(ob.data.get(i) == -1)
+		    nb.data.put(i, -1);
+		else
+		    nb.data.put(i, xl[ob.data.get(i)]);
+	    }
 	}
 	
 	public void update() {
@@ -98,10 +114,12 @@ public class MorphedMesh extends FastMesh {
 	    float[][] offs = new float[pose.skel().blist.length][16];
 	    for(int i = 0; i < offs.length; i++)
 		pose.boneoff(i, offs[i]);
-	    FloatBuffer opos = from.posb, onrm = from.nrmb;
-	    FloatBuffer npos = posb, nnrm = nrmb;
-	    int[] bl = assbones;
-	    float[] wl = assweights;
+	    FloatBuffer opos = from.buf(VertexArray.class).data, onrm = from.buf(NormalArray.class).data;
+	    FloatBuffer npos =      buf(VertexArray.class).data, nnrm =      buf(NormalArray.class).data;
+	    BoneArray ba = buf(BoneArray.class);
+	    int apv = ba.n;
+	    IntBuffer bl = ba.data;
+	    FloatBuffer wl = buf(WeightArray.class).data;
 	    int vo = 0, ao = 0;
 	    for(int i = 0; i < num; i++) {
 		float opx = opos.get(vo), opy = opos.get(vo + 1), opz = opos.get(vo + 2);
@@ -110,10 +128,10 @@ public class MorphedMesh extends FastMesh {
 		float nnx = 0, nny = 0, nnz = 0;
 		float rw = 1;
 		for(int o = 0; o < apv; o++) {
-		    int bi = bl[ao + o];
+		    int bi = bl.get(ao + o);
 		    if(bi < 0)
 			break;
-		    float bw = wl[ao + o];
+		    float bw = wl.get(ao + o);
 		    float[] xf = offs[bi];
 		    npx += ((xf[ 0] * opx) + (xf[ 4] * opy) + (xf[ 8] * opz) + xf[12]) * bw;
 		    npy += ((xf[ 1] * opx) + (xf[ 5] * opy) + (xf[ 9] * opz) + xf[13]) * bw;
