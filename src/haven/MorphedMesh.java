@@ -56,6 +56,37 @@ public class MorphedMesh extends FastMesh {
         super(mesh, buf(mesh.vert, pose));
     }
     
+    public static boolean boned(FastMesh mesh) {
+	MorphedBuf.BoneArray ba = mesh.vert.buf(MorphedBuf.BoneArray.class);
+	if(ba == null)
+	    return(false);
+	for(int i = 0; i < mesh.num * 3; i++) {
+	    if(ba.data.get(mesh.indb.get(i) * ba.n) != -1)
+		return(true);
+	}
+	return(false);
+    }
+
+    public static String boneidp(FastMesh mesh) {
+	MorphedBuf.BoneArray ba = mesh.vert.buf(MorphedBuf.BoneArray.class);
+	if(ba == null)
+	    return(null);
+	int retb = -1;
+	for(int i = 0; i < mesh.num * 3; i++) {
+	    int vi = mesh.indb.get(i) * ba.n;
+	    int curb = ba.data.get(vi);
+	    if(curb == -1)
+		return(null);
+	    if(retb == -1)
+		retb = curb;
+	    else if(retb != curb)
+		return(null);
+	    if((ba.n != 1) && (ba.data.get(vi + 1) != -1))
+		return(null);
+	}
+	return(ba.names[retb]);
+    }
+    
     public boolean setup(RenderList rl) {
 	((MorphedBuf)vert).update();
 	return(super.setup(rl));
@@ -69,11 +100,28 @@ public class MorphedMesh extends FastMesh {
 	return("morphed(" + from + ")");
     }
 
-    private static class MorphedBuf extends VertexBuf {
+    public static class MorphedBuf extends VertexBuf {
 	private final VertexBuf from;
 	private final WeakReference<Pose> poseref;
 	private int seq = 0;
 	
+	public static class BoneArray extends IntArray {
+	    public final String[] names;
+	
+	    public BoneArray(int apv, IntBuffer data, String[] names) {
+		super(apv, data);
+		this.names = names;
+	    }
+	
+	    public BoneArray dup() {return(new BoneArray(n, Utils.bufcp(data), Utils.splice(names, 0)));}
+	}
+    
+	public static class WeightArray extends FloatArray {
+	    public WeightArray(int apv, FloatBuffer data) {
+		super(apv, data);
+	    }
+	}
+    
 	private static AttribArray[] ohBitterSweetJavaDays(VertexBuf from) {
 	    AttribArray[] ret = new AttribArray[from.bufs.length];
 	    for(int i = 0; i < from.bufs.length; i++) {

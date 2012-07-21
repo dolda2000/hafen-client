@@ -70,8 +70,8 @@ public class SkelSprite extends Sprite {
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & fl) != 0))) {
 		Rendered r;
-		if(mr.m.boned()) {
-		    String bnm = mr.m.boneidp();
+		if(MorphedMesh.boned(mr.m)) {
+		    String bnm = MorphedMesh.boneidp(mr.m);
 		    if(bnm == null) {
 			r = mr.mat.get().apply(new MorphedMesh(mr.m, pose));
 			if(bonedb)

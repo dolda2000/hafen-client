@@ -137,37 +137,6 @@ public class FastMesh implements FRendered {
 	return(true);
     }
     
-    public boolean boned() {
-	VertexBuf.BoneArray ba = vert.buf(VertexBuf.BoneArray.class);
-	if(ba == null)
-	    return(false);
-	for(int i = 0; i < num * 3; i++) {
-	    if(ba.data.get(indb.get(i) * ba.n) != -1)
-		return(true);
-	}
-	return(false);
-    }
-
-    public String boneidp() {
-	VertexBuf.BoneArray ba = vert.buf(VertexBuf.BoneArray.class);
-	if(ba == null)
-	    return(null);
-	int retb = -1;
-	for(int i = 0; i < num * 3; i++) {
-	    int vi = indb.get(i) * ba.n;
-	    int curb = ba.data.get(vi);
-	    if(curb == -1)
-		return(null);
-	    if(retb == -1)
-		retb = curb;
-	    else if(retb != curb)
-		return(null);
-	    if((ba.n != 1) && (ba.data.get(vi + 1) != -1))
-		return(null);
-	}
-	return(ba.names[retb]);
-    }
-    
     public static class ResourceMesh extends FastMesh {
 	public final int id;
 	public final Resource res;

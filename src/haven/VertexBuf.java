@@ -184,23 +184,6 @@ public class VertexBuf {
 	}
     }
     
-    public static class BoneArray extends IntArray {
-	public final String[] names;
-	
-	public BoneArray(int apv, IntBuffer data, String[] names) {
-	    super(apv, data);
-	    this.names = names;
-	}
-	
-	public BoneArray dup() {return(new BoneArray(n, Utils.bufcp(data), Utils.splice(names, 0)));}
-    }
-    
-    public static class WeightArray extends FloatArray {
-	public WeightArray(int apv, FloatBuffer data) {
-	    super(apv, data);
-	}
-    }
-    
     public static class VertexRes extends Resource.Layer {
 	public transient final VertexBuf b;
 	
@@ -265,8 +248,8 @@ public class VertexBuf {
 			}
 		    }
 		    normweights(bw, ba, mba);
-		    bufs.add(new BoneArray(mba, ba, bones.toArray(new String[0])));
-		    bufs.add(new WeightArray(mba, bw));
+		    bufs.add(new MorphedMesh.MorphedBuf.BoneArray(mba, ba, bones.toArray(new String[0])));
+		    bufs.add(new MorphedMesh.MorphedBuf.WeightArray(mba, bw));
 		}
 	    }
 	    this.b = new VertexBuf(bufs.toArray(new AttribArray[0]));
