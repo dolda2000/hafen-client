@@ -31,7 +31,7 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
-public class GItem extends AWidget implements ItemInfo.Owner {
+public class GItem extends AWidget implements ItemInfo.ResOwner {
     public Indir<Resource> res;
     public int meter = 0;
     public int num = -1;
@@ -81,6 +81,10 @@ public class GItem extends AWidget implements ItemInfo.Owner {
 	if(info == null)
 	    info = ItemInfo.buildinfo(this, rawinfo);
 	return(info);
+    }
+    
+    public Resource resource() {
+	return(res.get());
     }
 
     public void uimsg(String name, Object... args) {

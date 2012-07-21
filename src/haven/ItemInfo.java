@@ -38,6 +38,10 @@ public abstract class ItemInfo {
 	public List<ItemInfo> info();
     }
     
+    public interface ResOwner extends Owner {
+	public Resource resource();
+    }
+    
     @Resource.PublishedCode(name = "tt")
     public static interface InfoFactory {
 	public ItemInfo build(Owner owner, Object... args);
