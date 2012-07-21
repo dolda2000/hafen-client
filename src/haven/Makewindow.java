@@ -150,10 +150,10 @@ public class Makewindow extends Widget {
 	return(super.globtype(ch, ev));
     }
     
-    public static class MakePrep extends GItem.Info implements GItem.ColorInfo {
+    public static class MakePrep extends ItemInfo implements GItem.ColorInfo {
 	private final static Color olcol = new Color(0, 255, 0, 64);
-	public MakePrep(GItem item) {
-	    item.super();
+	public MakePrep(Owner owner) {
+	    super(owner);
 	}
 	
 	public Color olcol() {
