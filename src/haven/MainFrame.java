@@ -275,7 +275,8 @@ public class MainFrame extends Frame implements Runnable, Console.Directory {
     }
     
     static {
-	WebBrowser.self = JnlpBrowser.create();
+	if((WebBrowser.self = JnlpBrowser.create()) == null)
+	    WebBrowser.self = DesktopBrowser.create();
     }
 
     private static int netxres = -1;

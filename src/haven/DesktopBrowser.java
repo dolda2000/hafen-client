@@ -26,29 +26,31 @@
 
 package haven;
 
-import java.lang.reflect.*;
-import java.net.URL;
-import javax.jnlp.*;
+import java.awt.Desktop;
+import java.net.*;
 
-public class JnlpBrowser extends WebBrowser {
-    private final BasicService basic;
+public class DesktopBrowser extends WebBrowser {
+    private final Desktop desktop;
     
-    private JnlpBrowser(BasicService basic) {
-	this.basic = basic;
+    private DesktopBrowser(Desktop desktop) {
+	this.desktop = desktop;
     }
     
-    public static JnlpBrowser create() {
+    public static DesktopBrowser create() {
 	try {
-	    Class<? extends ServiceManager> cl = Class.forName("javax.jnlp.ServiceManager").asSubclass(ServiceManager.class);
-	    Method m = cl.getMethod("lookup", String.class);
-	    BasicService basic = (BasicService)m.invoke(null, "javax.jnlp.BasicService");
-	    return(new JnlpBrowser(basic));
+	    Class.forName("java.awt.Desktop");
+	    if(!Desktop.isDesktopSupported())
+		return(null);
+	    return(new DesktopBrowser(Desktop.getDesktop()));
 	} catch(Exception e) {
 	    return(null);
 	}
     }
     
     public void show(URL url) {
-	basic.showDocument(url);
+	try {
+	    desktop.browse(url.toURI());
+	} catch(Exception e) {
+	}
     }
 }
