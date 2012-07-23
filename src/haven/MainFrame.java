@@ -30,6 +30,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.util.*;
+import java.lang.reflect.*;
 
 public class MainFrame extends Frame implements Runnable, Console.Directory {
     HavenPanel p;
@@ -277,6 +278,66 @@ public class MainFrame extends Frame implements Runnable, Console.Directory {
 	WebBrowser.self = JnlpBrowser.create();
     }
 
+    private static int netxres = -1;
+    private static void netxsurgery() {
+	/* Force off NetX codebase classloading. */
+	Class<?> nxc;
+	try {
+	    nxc = Class.forName("net.sourceforge.jnlp.runtime.JNLPClassLoader");
+	} catch(ClassNotFoundException e1) {
+	    try {
+		nxc = Class.forName("netx.jnlp.runtime.JNLPClassLoader");
+	    } catch(ClassNotFoundException e2) {
+		netxres = 0;
+		return;
+	    }
+	}
+	ClassLoader cl = MainFrame.class.getClassLoader();
+	if(!nxc.isInstance(cl)) {
+	    netxres = 1;
+	    return;
+	}
+	Field cblf, lf;
+	try {
+	    cblf = nxc.getDeclaredField("codeBaseLoader");
+	    lf = nxc.getDeclaredField("loaders");
+	} catch(NoSuchFieldException e) {
+	    netxres = 2;
+	    return;
+	}
+	cblf.setAccessible(true);
+	lf.setAccessible(true);
+	Set<Object> loaders = new HashSet<Object>();
+	Stack<Object> open = new Stack<Object>();
+	open.push(cl);
+	while(!open.empty()) {
+	    Object cur = open.pop();
+	    if(loaders.contains(cur))
+		continue;
+	    loaders.add(cur);
+	    Object curl;
+	    try {
+		curl = lf.get(cur);
+	    } catch(IllegalAccessException e) {
+		netxres = 3;
+		return;
+	    }
+	    for(int i = 0; i < Array.getLength(curl); i++) {
+		Object other = Array.get(curl, i);
+		if(nxc.isInstance(other))
+		    open.push(other);
+	    }
+	}
+	for(Object cur : loaders) {
+	    try {
+		cblf.set(cur, null);
+	    } catch(IllegalAccessException e) {
+		netxres = 4;
+		return;
+	    }
+	}
+    }
+
     private static void javabughack() throws InterruptedException {
 	/* Work around a stupid deadlock bug in AWT. */
 	try {
@@ -293,6 +354,10 @@ public class MainFrame extends Frame implements Runnable, Console.Directory {
 	}
 	/* Work around another deadl bug in Sun's JNLP client. */
 	javax.imageio.spi.IIORegistry.getDefaultInstance();
+	try {
+	    netxsurgery();
+	} catch(Exception e) {
+	}
     }
 
     private static void main2(String[] args) {
