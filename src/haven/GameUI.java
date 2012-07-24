@@ -400,7 +400,7 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
     }
     
     public void resize(Coord sz) {
-	super.resize(sz);
+	this.sz = sz;
 	menu.c = sz.sub(menu.sz);
 	chat.resize(sz.x - 125 - menu.sz.x);
 	chat.move(new Coord(125, sz.y));
@@ -410,6 +410,7 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	    mmap.c = new Coord(0, sz.y - mmap.sz.y);
 	if(fv != null)
 	    fv.c = new Coord(sz.x - Fightview.width, 0);
+	super.resize(sz);
     }
     
     public void presize() {
