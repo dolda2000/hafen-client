@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.awt.event.*;
+import java.awt.datatransfer.*;
 
 public class LineEdit {
     public String line = "";
@@ -42,6 +43,27 @@ public class LineEdit {
     }
 
     public class PCMode extends KeyHandler {
+	public String cliptext() {
+	    Clipboard c;
+	    if((c = java.awt.Toolkit.getDefaultToolkit().getSystemSelection()) != null) {
+		try {
+		    return((String)c.getData(DataFlavor.stringFlavor));
+		} catch(IllegalStateException e) {
+		} catch(java.io.IOException e) {
+		} catch(UnsupportedFlavorException e) {
+		}
+	    }
+	    if((c = java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()) != null) {
+		try {
+		    return((String)c.getData(DataFlavor.stringFlavor));
+		} catch(IllegalStateException e) {
+		} catch(java.io.IOException e) {
+		} catch(UnsupportedFlavorException e) {
+		}
+	    }
+	    return("");
+	}
+	
 	public boolean key(char c, int code, int mod) {
 	    if((c == 8) && (mod == 0)) {
 		if(point > 0) {
@@ -77,6 +99,16 @@ public class LineEdit {
 		point = 0;
 	    } else if((code == KeyEvent.VK_END) && (mod == 0)) {
 		point = line.length();
+	    } else if((c == 'v') && (mod == C)) {
+		String cl = cliptext();
+		for(int i = 0; i < cl.length(); i++) {
+		    if(cl.charAt(i) < 32) {
+			cl = cl.substring(0, i);
+			break;
+		    }
+		}
+		line = line.substring(0, point) + cl + line.substring(point);
+		point += cl.length();
 	    } else {
 		return(false);
 	    }
@@ -116,6 +148,34 @@ public class LineEdit {
 	    yanklist.add(text);
 	}
 	
+	private String cliptext(Clipboard c) {
+	    if(c == null)
+		return("");
+	    try {
+		return((String)c.getData(DataFlavor.stringFlavor));
+	    } catch(IllegalStateException e) {
+	    } catch(java.io.IOException e) {
+	    } catch(UnsupportedFlavorException e) {
+	    }
+	    return("");
+	}
+
+	private String lastsel = "", lastclip = "";
+	private void killclipboard() {
+	    String cl;
+	    if(!(cl = cliptext(java.awt.Toolkit.getDefaultToolkit().getSystemSelection())).equals(lastsel)) {
+		lastsel = cl;
+		kill(cl);
+		return;
+	    }
+	    if(!(cl = cliptext(java.awt.Toolkit.getDefaultToolkit().getSystemClipboard())).equals(lastclip)) {
+		lastclip = cl;
+		kill(cl);
+		return;
+	    }
+	}
+	{killclipboard();}
+
 	public boolean key(char c, int code, int mod) {
 	    if(mark > line.length())
 		mark = line.length();
@@ -204,6 +264,7 @@ public class LineEdit {
 	    } else if((c == 'y') && (mod == C)) {
 		mode("yank");
 		save();
+		killclipboard();
 		yankpos = yanklist.size();
 		if(yankpos > 0) {
 		    String yank = yanklist.get(--yankpos);
