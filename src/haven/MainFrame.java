@@ -279,8 +279,7 @@ public class MainFrame extends Frame implements Runnable, Console.Directory {
 	    WebBrowser.self = DesktopBrowser.create();
     }
 
-    private static int netxres = -1;
-    private static void netxsurgery() {
+    private static void netxsurgery() throws Exception {
 	/* Force off NetX codebase classloading. */
 	Class<?> nxc;
 	try {
@@ -289,22 +288,19 @@ public class MainFrame extends Frame implements Runnable, Console.Directory {
 	    try {
 		nxc = Class.forName("netx.jnlp.runtime.JNLPClassLoader");
 	    } catch(ClassNotFoundException e2) {
-		netxres = 0;
-		return;
+		throw(new Exception("No known NetX on classpath"));
 	    }
 	}
 	ClassLoader cl = MainFrame.class.getClassLoader();
 	if(!nxc.isInstance(cl)) {
-	    netxres = 1;
-	    return;
+	    throw(new Exception("Not running from a NetX classloader"));
 	}
 	Field cblf, lf;
 	try {
 	    cblf = nxc.getDeclaredField("codeBaseLoader");
 	    lf = nxc.getDeclaredField("loaders");
 	} catch(NoSuchFieldException e) {
-	    netxres = 2;
-	    return;
+	    throw(new Exception("JNLPClassLoader does not conform to its known structure"));
 	}
 	cblf.setAccessible(true);
 	lf.setAccessible(true);
@@ -320,8 +316,7 @@ public class MainFrame extends Frame implements Runnable, Console.Directory {
 	    try {
 		curl = lf.get(cur);
 	    } catch(IllegalAccessException e) {
-		netxres = 3;
-		return;
+		throw(new Exception("Reflection accessibility not available even though set"));
 	    }
 	    for(int i = 0; i < Array.getLength(curl); i++) {
 		Object other = Array.get(curl, i);
@@ -333,8 +328,7 @@ public class MainFrame extends Frame implements Runnable, Console.Directory {
 	    try {
 		cblf.set(cur, null);
 	    } catch(IllegalAccessException e) {
-		netxres = 4;
-		return;
+		throw(new Exception("Reflection accessibility not available even though set"));
 	    }
 	}
     }
