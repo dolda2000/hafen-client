@@ -144,22 +144,6 @@ public class LineEdit {
 	    last = mode;
 	}
 
-	private void kill(String text) {
-	    yanklist.add(text);
-	}
-	
-	private String cliptext(Clipboard c) {
-	    if(c == null)
-		return("");
-	    try {
-		return((String)c.getData(DataFlavor.stringFlavor));
-	    } catch(IllegalStateException e) {
-	    } catch(java.io.IOException e) {
-	    } catch(UnsupportedFlavorException e) {
-	    }
-	    return("");
-	}
-
 	private String lastsel = "", lastclip = "";
 	private void killclipboard() {
 	    String cl;
@@ -174,7 +158,23 @@ public class LineEdit {
 		return;
 	    }
 	}
-	{killclipboard();}
+
+	private void kill(String text) {
+	    killclipboard();
+	    yanklist.add(text);
+	}
+	
+	private String cliptext(Clipboard c) {
+	    if(c == null)
+		return("");
+	    try {
+		return((String)c.getData(DataFlavor.stringFlavor));
+	    } catch(IllegalStateException e) {
+	    } catch(java.io.IOException e) {
+	    } catch(UnsupportedFlavorException e) {
+	    }
+	    return("");
+	}
 
 	public boolean key(char c, int code, int mod) {
 	    if(mark > line.length())
