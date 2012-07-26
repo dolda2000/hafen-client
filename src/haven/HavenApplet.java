@@ -195,7 +195,7 @@ public class HavenApplet extends Applet {
 			a = applets.get(HackThread.tg());
 		    }
 		    if(a != null)
-			a.getAppletContext().showDocument(url);
+			a.getAppletContext().showDocument(url, "_blank");
 		}
 	    };
     }
