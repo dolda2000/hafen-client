@@ -180,7 +180,7 @@ public class RichText extends Text {
 	    this(new AttributedString(str), 0, str.length());
 	}
 	
-	private AttributedCharacterIterator ti() {
+	public AttributedCharacterIterator ti() {
 	    return(str.getIterator(null, start, end));
 	}
 
