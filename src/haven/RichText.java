@@ -214,7 +214,7 @@ public class RichText extends Text {
 
 	public float advance(int from, int to) {
 	    if(from == to) return(0);
-	    return(tm().getAdvanceBetween(from, to));
+	    return(tm().getAdvanceBetween(start + from, start + to));
 	}
 
 	public int width() {

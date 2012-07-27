@@ -347,7 +347,7 @@ public class ChatUI extends Widget {
 		} else {
 		    b = TextHitInfo.trailing(tp.end - tp.start - 1);
 		}
-		Coord ul = new Coord((int)tp.advance(0, a.getInsertionIndex()), y);
+		Coord ul = new Coord(tp.x + (int)tp.advance(0, a.getInsertionIndex()), tp.y + y);
 		Coord sz = new Coord((int)tp.advance(a.getInsertionIndex(), b.getInsertionIndex()), tp.height());
 		g.chcolor(0, 0, 255, 255);
 		g.frect(ul, sz);
