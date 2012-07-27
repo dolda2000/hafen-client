@@ -216,14 +216,22 @@ public class GOut {
     }
 
     public void frect(Coord ul, Coord sz) {
+	ul = tx.add(ul);
+	Coord br = ul.add(sz);
+	if(ul.x < this.ul.x) ul.x = this.ul.x;
+	if(ul.y < this.ul.y) ul.y = this.ul.y;
+	if(br.x > this.ul.x + this.sz.x) br.x = this.ul.x + this.sz.x;
+	if(br.y > this.ul.y + this.sz.y) br.y = this.ul.y + this.sz.y;
+	if((ul.x >= br.x) || (ul.y >= br.y))
+	    return;
 	st.set(def2d);
 	state(color);
 	apply();
 	gl.glBegin(GL.GL_QUADS);
-	vertex(ul);
-	vertex(ul.add(new Coord(sz.x, 0)));
-	vertex(ul.add(sz));
-	vertex(ul.add(new Coord(0, sz.y)));
+	gl.glVertex2i(ul.x, ul.y);
+	gl.glVertex2i(br.x, ul.y);
+	gl.glVertex2i(br.x, br.y);
+	gl.glVertex2i(ul.x, br.y);
 	gl.glEnd();
 	checkerr();
     }
