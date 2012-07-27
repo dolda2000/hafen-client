@@ -31,6 +31,7 @@ import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import java.awt.font.TextHitInfo;
+import java.awt.datatransfer.*;
 
 public class ChatUI extends Widget {
     public static final RichText.Foundry fnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 9, TextAttribute.FOREGROUND, Color.BLACK);
@@ -312,9 +313,75 @@ public class ChatUI extends Widget {
 	    }
 	}
 	
+	protected void selected(CharPos start, CharPos end) {
+	    StringBuilder buf = new StringBuilder();
+	    synchronized(msgs) {
+		boolean sel = false;
+		for(Message msg : msgs) {
+		    if(!(msg.text() instanceof RichText))
+			continue;
+		    RichText rt = (RichText)msg.text();
+		    RichText.Part part = null;
+		    if(sel) {
+			part = rt.parts;
+		    } else if(msg == start.msg) {
+			sel = true;
+			for(part = rt.parts; part != null; part = part.next) {
+			    if(part == start.part)
+				break;
+			}
+		    }
+		    if(sel) {
+			for(; part != null; part = part.next) {
+			    if(!(part instanceof RichText.TextPart))
+				continue;
+			    RichText.TextPart tp = (RichText.TextPart)part;
+			    java.text.CharacterIterator iter = tp.ti();
+			    int sch;
+			    if(tp == start.part)
+				sch = tp.start + start.ch.getInsertionIndex();
+			    else
+				sch = tp.start;
+			    int ech;
+			    if(tp == end.part)
+				ech = tp.start + end.ch.getInsertionIndex();
+			    else
+				ech = tp.end;
+			    for(int i = sch; i < ech; i++)
+				buf.append(iter.setIndex(i));
+			    if(part == end.part) {
+				sel = false;
+				break;
+			    }
+			    buf.append(' ');
+			}
+			if(sel)
+			    buf.append('\n');
+		    }
+		    if(msg == end.msg)
+			break;
+		}
+	    }
+	    Clipboard cl;
+	    if((cl = java.awt.Toolkit.getDefaultToolkit().getSystemSelection()) == null)
+		cl = java.awt.Toolkit.getDefaultToolkit().getSystemClipboard();
+	    try {
+		final CharPos ownsel = selstart;
+		cl.setContents(new StringSelection(buf.toString()),
+			       new ClipboardOwner() {
+			public void lostOwnership(Clipboard cl, Transferable tr) {
+			    if(selstart == ownsel)
+				selstart = selend = null;
+			}
+		    });
+	    } catch(IllegalStateException e) {}
+	}
+
 	public boolean mouseup(Coord c, int btn) {
 	    if(btn == 1) {
 		if(selorig != null) {
+		    if(selstart != null)
+			selected(selstart, selend);
 		    ui.grabmouse(null);
 		    selorig = null;
 		    dragging = false;
