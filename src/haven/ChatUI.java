@@ -67,9 +67,9 @@ public class ChatUI extends Widget {
     }
 
     public static class ChatParser extends RichText.Parser {
-	public static final Pattern urlpat = Pattern.compile("https?://[a-z0-9/_.~#%+?&:*=-]+", Pattern.CASE_INSENSITIVE);
+	public static final Pattern urlpat = Pattern.compile("\\b((https?://)|(www\\.[a-z0-9_.-]+\\.[a-z0-9_.-]+))[a-z0-9/_.~#%+?&:*=-]*", Pattern.CASE_INSENSITIVE);
 	public static final Map<? extends Attribute, ?> urlstyle = RichText.fillattrs(TextAttribute.FOREGROUND, new Color(64, 64, 255),
-										      TextAttribute.UNDERLINE, 1);
+										      TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
 	
 	public ChatParser(Object... args) {
 	    super(args);
@@ -84,7 +84,10 @@ public class ChatUI extends Widget {
 		    break;
 		URL url;
 		try {
-		    url = new URL(text.substring(m.start(), m.end()));
+		    String su = text.substring(m.start(), m.end());
+		    if(su.indexOf(':') < 0)
+			su = "http://" + su;
+		    url = new URL(su);
 		} catch(java.net.MalformedURLException e) {
 		    p = m.end();
 		    continue;
