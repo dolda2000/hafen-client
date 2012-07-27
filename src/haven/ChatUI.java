@@ -65,6 +65,19 @@ public class ChatUI extends Widget {
 
 	public static final Attribute HYPERLINK = new ChatAttribute("hyperlink");
     }
+    
+    public static class FuckMeGentlyWithAChainsaw {
+	/* This wrapper class exists to work around the possibly most
+	 * stupid Java bug ever (and that's saying a lot): That
+	 * URL.equals and URL.hashCode do DNS lookups and
+	 * block. Which, of course, not only sucks performance-wise
+	 * but also breaks actual correct URL equality. */
+	public final URL url;
+	
+	public FuckMeGentlyWithAChainsaw(URL url) {
+	    this.url = url;
+	}
+    }
 
     public static class ChatParser extends RichText.Parser {
 	public static final Pattern urlpat = Pattern.compile("\\b((https?://)|(www\\.[a-z0-9_.-]+\\.[a-z0-9_.-]+))[a-z0-9/_.~#%+?&:*=-]*", Pattern.CASE_INSENSITIVE);
@@ -96,7 +109,7 @@ public class ChatUI extends Widget {
 		if(ret == null) ret = lead; else ret.append(lead);
 		Map<Attribute, Object> na = new HashMap<Attribute, Object>(attrs);
 		na.putAll(urlstyle);
-		na.put(ChatAttribute.HYPERLINK, url);
+		na.put(ChatAttribute.HYPERLINK, new FuckMeGentlyWithAChainsaw(url));
 		ret.append(new RichText.TextPart(text.substring(m.start(), m.end()), na));
 		p = m.end();
 	    }
@@ -435,9 +448,9 @@ public class ChatUI extends Widget {
 	protected void clicked(CharPos pos) {
 	    AttributedCharacterIterator inf = pos.part.ti();
 	    inf.setIndex(pos.ch.getCharIndex());
-	    URL url = (URL)inf.getAttribute(ChatAttribute.HYPERLINK);
+	    FuckMeGentlyWithAChainsaw url = (FuckMeGentlyWithAChainsaw)inf.getAttribute(ChatAttribute.HYPERLINK);
 	    if((url != null) && (WebBrowser.self != null))
-		WebBrowser.self.show(url);
+		WebBrowser.self.show(url.url);
 	}
 
 	public boolean mouseup(Coord c, int btn) {
