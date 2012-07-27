@@ -30,6 +30,7 @@ import java.util.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
+import java.awt.font.TextHitInfo;
 
 public class ChatUI extends Widget {
     public static final RichText.Foundry fnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 9, TextAttribute.FOREGROUND, Color.BLACK);
@@ -58,6 +59,7 @@ public class ChatUI extends Widget {
 	public static abstract class Message {
 	    public final long time = System.currentTimeMillis();
 	    
+	    public abstract Text text();
 	    public abstract Tex tex();
 	    public abstract Coord sz();
 	}
@@ -70,6 +72,10 @@ public class ChatUI extends Widget {
 		    this.t = fnd.render(RichText.Parser.quote(text), w);
 		else
 		    this.t = fnd.render(RichText.Parser.quote(text), w, TextAttribute.FOREGROUND, col);
+	    }
+	    
+	    public Text text() {
+		return(t);
 	    }
 
 	    public Tex tex() {
@@ -120,12 +126,20 @@ public class ChatUI extends Widget {
 	    g.frect(Coord.z, sz);
 	    g.chcolor();
 	    int y = 0;
+	    boolean sel = false;
 	    synchronized(msgs) {
 		for(Message msg : msgs) {
+		    if((selstart != null) && (msg == selstart.msg))
+			sel = true;
 		    int y1 = y - sb.val;
 		    int y2 = y1 + msg.sz().y;
-		    if((y2 > 0) && (y1 < ih()))
+		    if((y2 > 0) && (y1 < ih())) {
+			if(sel)
+			    drawsel(g, msg, y1);
 			g.image(msg.tex(), new Coord(0, y1));
+		    }
+		    if((selend != null) && (msg == selend.msg))
+			sel = false;
 		    y += msg.sz().y;
 		}
 	    }
@@ -155,6 +169,192 @@ public class ChatUI extends Widget {
 	
 	public void notify(Message msg) {
 	    getparent(ChatUI.class).notify(this, msg);
+	}
+	
+	public static class CharPos {
+	    public final Message msg;
+	    public final RichText.TextPart part;
+	    public final TextHitInfo ch;
+	    
+	    public CharPos(Message msg, RichText.TextPart part, TextHitInfo ch) {
+		this.msg = msg;
+		this.part = part;
+		this.ch = ch;
+	    }
+	    
+	    public boolean equals(Object oo) {
+		if(!(oo instanceof CharPos)) return(false);
+		CharPos o = (CharPos)oo;
+		return((o.msg == this.msg) && (o.part == this.part) && o.ch.equals(this.ch));
+	    }
+	}
+
+	public final Comparator<CharPos> poscmp = new Comparator<CharPos>() {
+	    public int compare(CharPos a, CharPos b) {
+		if(a.msg != b.msg) {
+		    synchronized(msgs) {
+			for(Message msg : msgs) {
+			    if(msg == a.msg)
+				return(-1);
+			    else if(msg == b.msg)
+				return(1);
+			}
+		    }
+		    throw(new IllegalStateException("CharPos message is no longer contained in the log"));
+		} else if(a.part != b.part) {
+		    for(RichText.Part part = ((RichText)a.msg.text()).parts; part != null; part = part.next) {
+			if(part == a.part)
+			    return(-1);
+			else
+			    return(1);
+		    }
+		    throw(new IllegalStateException("CharPos is no longer contained in the log"));
+		} else {
+		    return(a.ch.getInsertionIndex() - b.ch.getInsertionIndex());
+		}
+	    }
+	};
+
+	public Message messageat(Coord c, Coord hc) {
+	    int y = -sb.val;
+	    synchronized(msgs) {
+		for(Message msg : msgs) {
+		    Coord sz = msg.sz();
+		    if((c.y >= y) && (c.y < y + sz.y)) {
+			if(hc != null) {
+			    hc.x = c.x;
+			    hc.y = c.y - y;
+			}
+			return(msg);
+		    }
+		    y += sz.y;
+		}
+	    }
+	    return(null);
+	}
+	
+	public CharPos charat(Coord c) {
+	    if(c.y < -sb.val) {
+		if(msgs.size() < 1)
+		    return(null);
+		Message msg = msgs.get(0);
+		if(!(msg.text() instanceof RichText))
+		    return(null);
+		RichText.TextPart fp = null;
+		for(RichText.Part part = ((RichText)msg.text()).parts; part != null; part = part.next) {
+		    if(part instanceof RichText.TextPart) {
+			fp = (RichText.TextPart)part;
+			break;
+		    }
+		}
+		if(fp == null)
+		    return(null);
+		return(new CharPos(msg, fp, TextHitInfo.leading(0)));
+	    }
+
+	    Coord hc = new Coord();
+	    Message msg = messageat(c, hc);
+	    if((msg == null) || !(msg.text() instanceof RichText))
+		return(null);
+	    RichText rt = (RichText)msg.text();
+	    RichText.Part p = rt.partat(hc);
+	    if(p == null) {
+		RichText.TextPart lp = null;
+		for(RichText.Part part = ((RichText)msg.text()).parts; part != null; part = part.next) {
+		    if(part instanceof RichText.TextPart)
+			lp = (RichText.TextPart)part;
+		}
+		if(lp == null) return(null);
+		return(new CharPos(msg, lp, TextHitInfo.trailing(lp.end - lp.start - 1)));
+	    }
+	    if(!(p instanceof RichText.TextPart))
+		return(null);
+	    RichText.TextPart tp = (RichText.TextPart)p;
+	    return(new CharPos(msg, tp, tp.charat(hc)));
+	}
+
+	private CharPos selorig, lasthit, selstart, selend;
+	private boolean dragging;
+	public boolean mousedown(Coord c, int btn) {
+	    if(super.mousedown(c, btn))
+		return(true);
+	    if(btn == 1) {
+		selstart = selend = null;
+		CharPos ch = charat(c);
+		if(ch != null) {
+		    selorig = lasthit = ch;
+		    dragging = false;
+		    ui.grabmouse(this);
+		}
+		return(true);
+	    }
+	    return(false);
+	}
+	
+	public void mousemove(Coord c) {
+	    if(selorig != null) {
+		CharPos ch = charat(c);
+		if((ch != null) && !ch.equals(lasthit)) {
+		    lasthit = ch;
+		    if(!dragging && !ch.equals(selorig))
+			dragging = true;
+		    int o = poscmp.compare(selorig, ch);
+		    if(o < 0) {
+			selstart = selorig; selend = ch;
+		    } else if(o > 0) {
+			selstart = ch; selend = selorig;
+		    } else {
+			selstart = selend = null;
+		    }
+		}
+	    } else {
+		super.mousemove(c);
+	    }
+	}
+	
+	public boolean mouseup(Coord c, int btn) {
+	    if(btn == 1) {
+		if(selorig != null) {
+		    ui.grabmouse(null);
+		    selorig = null;
+		    dragging = false;
+		}
+	    }
+	    return(super.mouseup(c, btn));
+	}
+	
+	private void drawsel(GOut g, Message msg, int y) {
+	    RichText rt = (RichText)msg.text();
+	    boolean sel = msg != selstart.msg;
+	    for(RichText.Part part = rt.parts; part != null; part = part.next) {
+		if(!(part instanceof RichText.TextPart))
+		    continue;
+		RichText.TextPart tp = (RichText.TextPart)part;
+		if(tp.start == tp.end)
+		    continue;
+		TextHitInfo a, b;
+		if(sel) {
+		    a = TextHitInfo.leading(0);
+		} else if(tp == selstart.part) {
+		    a = selstart.ch;
+		    sel = true;
+		} else {
+		    continue;
+		}
+		if(tp == selend.part) {
+		    sel = false;
+		    b = selend.ch;
+		} else {
+		    b = TextHitInfo.trailing(tp.end - tp.start - 1);
+		}
+		Coord ul = new Coord((int)tp.advance(0, a.getInsertionIndex()), y);
+		Coord sz = new Coord((int)tp.advance(a.getInsertionIndex(), b.getInsertionIndex()), tp.height());
+		g.chcolor(0, 0, 255, 255);
+		g.frect(ul, sz);
+		g.chcolor();
+		if(!sel)
+		    break;
+	    }
 	}
 	
 	public abstract String name();
@@ -222,19 +422,23 @@ public class ChatUI extends Widget {
 		this.col = col;
 	    }
 	    
-	    public Tex tex() {
+	    public Text text() {
 		BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(from);
 		String nm = (b == null)?"???":(b.name);
 		if((r == null) || !nm.equals(cn)) {
 		    r = fnd.render(RichText.Parser.quote(String.format("%s: %s", nm, text)), w, TextAttribute.FOREGROUND, col);
 		    cn = nm;
 		}
-		return(r.tex());
+		return(r);
+	    }
+	    
+	    public Tex tex() {
+		return(text().tex());
 	    }
 	    
 	    public Coord sz() {
 		if(r == null)
-		    return(tex().sz());
+		    return(text().sz());
 		else
 		    return(r.sz());
 	    }
