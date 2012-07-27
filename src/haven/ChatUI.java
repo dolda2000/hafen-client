@@ -31,10 +31,15 @@ import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import java.awt.font.TextHitInfo;
+import java.text.*;
+import java.text.AttributedCharacterIterator.Attribute;
+import java.net.URL;
+import java.util.regex.*;
+import java.io.IOException;
 import java.awt.datatransfer.*;
 
 public class ChatUI extends Widget {
-    public static final RichText.Foundry fnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 9, TextAttribute.FOREGROUND, Color.BLACK);
+    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 9, TextAttribute.FOREGROUND, Color.BLACK));
     public static final Text.Foundry qfnd = new Text.Foundry(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 12), new java.awt.Color(192, 255, 192));
     public static final int selw = 100;
     public Channel sel = null;
@@ -43,7 +48,7 @@ public class ChatUI extends Widget {
     private Coord base;
     private QuickLine qline = null;
     private final LinkedList<Notification> notifs = new LinkedList<Notification>();
-    
+
     public ChatUI(Coord c, int w, Widget parent) {
 	super(c.add(0, -50), new Coord(w, 50), parent);
 	chansel = new Selector(Coord.z, new Coord(selw, sz.y));
@@ -53,6 +58,53 @@ public class ChatUI extends Widget {
 	setcanfocus(false);
     }
     
+    public static class ChatAttribute extends Attribute {
+	private ChatAttribute(String name) {
+	    super(name);
+	}
+
+	public static final Attribute HYPERLINK = new ChatAttribute("hyperlink");
+    }
+
+    public static class ChatParser extends RichText.Parser {
+	public static final Pattern urlpat = Pattern.compile("https?://[a-z0-9/_.~#%+?&:*=-]+", Pattern.CASE_INSENSITIVE);
+	public static final Map<? extends Attribute, ?> urlstyle = RichText.fillattrs(TextAttribute.FOREGROUND, new Color(64, 64, 255),
+										      TextAttribute.UNDERLINE, 1);
+	
+	public ChatParser(Object... args) {
+	    super(args);
+	}
+	
+	protected RichText.Part text(PState s, String text, Map<? extends Attribute, ?> attrs) throws IOException {
+	    RichText.Part ret = null;
+	    int p = 0;
+	    while(true) {
+		Matcher m = urlpat.matcher(text);
+		if(!m.find(p))
+		    break;
+		URL url;
+		try {
+		    url = new URL(text.substring(m.start(), m.end()));
+		} catch(java.net.MalformedURLException e) {
+		    p = m.end();
+		    continue;
+		}
+		RichText.Part lead = new RichText.TextPart(text.substring(0, m.start()), attrs);
+		if(ret == null) ret = lead; else ret.append(lead);
+		Map<Attribute, Object> na = new HashMap<Attribute, Object>(attrs);
+		na.putAll(urlstyle);
+		na.put(ChatAttribute.HYPERLINK, url);
+		ret.append(new RichText.TextPart(text.substring(m.start(), m.end()), na));
+		p = m.end();
+	    }
+	    if(ret == null)
+		ret = new RichText.TextPart(text, attrs);
+	    else
+		ret.append(new RichText.TextPart(text.substring(p), attrs));
+	    return(ret);
+	}
+    }
+
     public static abstract class Channel extends Widget {
 	public final List<Message> msgs = new LinkedList<Message>();
 	private final Scrollbar sb;
@@ -336,7 +388,7 @@ public class ChatUI extends Widget {
 			    if(!(part instanceof RichText.TextPart))
 				continue;
 			    RichText.TextPart tp = (RichText.TextPart)part;
-			    java.text.CharacterIterator iter = tp.ti();
+			    CharacterIterator iter = tp.ti();
 			    int sch;
 			    if(tp == start.part)
 				sch = tp.start + start.ch.getInsertionIndex();
@@ -377,11 +429,21 @@ public class ChatUI extends Widget {
 	    } catch(IllegalStateException e) {}
 	}
 
+	protected void clicked(CharPos pos) {
+	    AttributedCharacterIterator inf = pos.part.ti();
+	    inf.setIndex(pos.ch.getCharIndex());
+	    URL url = (URL)inf.getAttribute(ChatAttribute.HYPERLINK);
+	    if((url != null) && (WebBrowser.self != null))
+		WebBrowser.self.show(url);
+	}
+
 	public boolean mouseup(Coord c, int btn) {
 	    if(btn == 1) {
 		if(selorig != null) {
 		    if(selstart != null)
 			selected(selstart, selend);
+		    else
+			clicked(selorig);
 		    ui.grabmouse(null);
 		    selorig = null;
 		    dragging = false;
