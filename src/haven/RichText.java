@@ -39,6 +39,7 @@ import static java.text.AttributedCharacterIterator.Attribute;
 public class RichText extends Text {
     public static final Parser std;
     public static final Foundry stdf;
+    public final Part parts;
 
     static {
 	Map<Attribute, Object> a = new HashMap<Attribute, Object>();
@@ -48,8 +49,9 @@ public class RichText extends Text {
 	stdf = new Foundry(std);
     }
     
-    private RichText(String text) {
+    private RichText(String text, Part parts) {
 	super(text);
+	this.parts = parts;
     }
 
     private static class RState {
@@ -198,16 +200,21 @@ public class RichText extends Text {
 	    }
 	}
 	
-	private TextMeasurer tm() {
+	public TextMeasurer tm() {
 	    if(tm == null)
 		tm = new TextMeasurer(str.getIterator(), rs.frc);
 	    return(tm);
 	}
 
-	private TextLayout tl() {
+	public TextLayout tl() {
 	    if(tl == null)
 		tl = tm().getLayout(start, end);
 	    return(tl);
+	}
+
+	public float advance(int from, int to) {
+	    if(from == to) return(0);
+	    return(tm().getAdvanceBetween(from, to));
 	}
 
 	public int width() {
@@ -264,6 +271,24 @@ public class RichText extends Text {
 	    if(start == end) return;
 	    tl().draw(g, x, y + tl().getAscent());
 	}
+	
+	public TextHitInfo charat(float x, float y) {
+	    return(tl().hitTestChar(x, y));
+	}
+
+	public TextHitInfo charat(Coord c) {
+	    return(charat(c.x - x, c.y - y));
+	}
+    }
+
+    public Part partat(Coord c) {
+	for(Part p = parts; p != null; p = p.next) {
+	    if((c.x >= p.x) && (c.y >= p.y) &&
+	       (c.x < p.x + p.width()) && (c.y < p.y + p.height())) {
+		return(p);
+	    }
+	}
+	return(null);
     }
     
     private static Map<? extends Attribute, ?> fillattrs(Object... attrs) {
@@ -579,7 +604,7 @@ public class RichText extends Text {
 	    Graphics2D g = img.createGraphics();
 	    if(aa)
 		Utils.AA(g);
-	    RichText rt = new RichText(text);
+	    RichText rt = new RichText(text, fp);
 	    rt.img = img;
 	    for(Part p : parts)
 		p.render(g);
