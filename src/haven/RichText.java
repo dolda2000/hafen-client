@@ -540,11 +540,11 @@ public class RichText extends Text {
 	    }
 	}
 
-	private static List<Part> layout(Part fp, int w) {
-	    List<Part> ret = new LinkedList<Part>();
+	private static Part layout(Part fp, int w) {
 	    List<Part> line = new LinkedList<Part>();
 	    int x = 0, y = 0;
 	    int mw = 0, lh = 0;
+	    Part lp = null;
 	    for(Part p = fp; p != null; p = p.next) {
 		boolean lb = p instanceof Newline;
 		int pw, ph;
@@ -555,13 +555,17 @@ public class RichText extends Text {
 		    if(w > 0) {
 			if(p.x + pw > w) {
 			    p = p.split(w - x);
+			    if(lp == null)
+				fp = p;
+			    else
+				lp.next = p;
 			    lb = true;
 			    continue;
 			}
 		    }
 		    break;
 		}
-		ret.add(p);
+		lp = p;
 		line.add(p);
 		if(ph > lh) lh = ph;
 		x += pw;
@@ -575,12 +579,12 @@ public class RichText extends Text {
 		}
 	    }
 	    aline(line, y);
-	    return(ret);
+	    return(fp);
 	}
 
-	private static Coord bounds(Collection<Part> parts) {
+	private static Coord bounds(Part fp) {
 	    Coord sz = new Coord(0, 0);
-	    for(Part p : parts) {
+	    for(Part p = fp; p != null; p = p.next) {
 		int x = p.x + p.width();
 		int y = p.y + p.height();
 		if(x > sz.x) sz.x = x;
@@ -596,8 +600,8 @@ public class RichText extends Text {
 	    }
 	    Part fp = parser.parse(text, extram);
 	    fp.prepare(rs);
-	    List<Part> parts = layout(fp, width);
-	    Coord sz = bounds(parts);
+	    fp = layout(fp, width);
+	    Coord sz = bounds(fp);
 	    if(sz.x < 1) sz = sz.add(1, 0);
 	    if(sz.y < 1) sz = sz.add(0, 1);
 	    BufferedImage img = TexI.mkbuf(sz);
@@ -606,7 +610,7 @@ public class RichText extends Text {
 		Utils.AA(g);
 	    RichText rt = new RichText(text, fp);
 	    rt.img = img;
-	    for(Part p : parts)
+	    for(Part p = fp; p != null; p = p.next)
 		p.render(g);
 	    return(rt);
 	}
