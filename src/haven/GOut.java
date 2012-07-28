@@ -27,7 +27,7 @@
 package haven;
 
 import java.awt.Color;
-import java.awt.image.BufferedImage;
+import java.awt.image.*;
 import javax.media.opengl.*;
 import java.nio.*;
 
@@ -331,5 +331,22 @@ public class GOut {
 	int g = (int)((rgb & 0x00ff0000l) >> 16);
 	int b = (int)((rgb & 0x0000ff00l) >> 8);
 	return(new Color(r, g, b));
+    }
+    
+    public BufferedImage getimage(Coord ul, Coord sz) {
+	ByteBuffer buf = Utils.mkbbuf(sz.x * sz.y * 4);
+	gl.glReadPixels(ul.x + tx.x, root.sz.y - ul.y - sz.y - tx.y, sz.x, sz.y, GL.GL_RGBA, GL.GL_UNSIGNED_INT_8_8_8_8, buf);
+	byte[] copy = new byte[buf.capacity()];
+	int fo = 0, to = (sz.y - 1) * sz.x * 4;
+	for(int y = 0; y < sz.y; y++, to -= sz.x * 4 * 2) {
+	    for(int x = 0; x < sz.x; x++, fo += 4, to += 4) {
+		copy[to + 3] = buf.get(fo + 0);
+		copy[to + 2] = buf.get(fo + 1);
+		copy[to + 1] = buf.get(fo + 2);
+		copy[to + 0] = buf.get(fo + 3);
+	    }
+	}
+	WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(copy, copy.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
+	return(new BufferedImage(TexI.glcm, raster, false, null));
     }
 }
