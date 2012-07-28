@@ -689,6 +689,9 @@ public class Utils {
 	ret.put(a).rewind();
 	return(ret);
     }
+    public static ByteBuffer mkbbuf(int n) {
+	return(ByteBuffer.allocateDirect(n));
+    }
     public static FloatBuffer mkfbuf(int n) {
 	return(ByteBuffer.allocateDirect(n * 4).order(ByteOrder.nativeOrder()).asFloatBuffer());
     }
