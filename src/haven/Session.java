@@ -86,6 +86,7 @@ public class Session {
     byte[] cookie;
     final Map<Integer, Indir<Resource>> rescache = new TreeMap<Integer, Indir<Resource>>();
     public final Glob glob;
+    public byte[] sesskey;
 	
     @SuppressWarnings("serial")
 	public class MessageException extends RuntimeException {
@@ -481,6 +482,8 @@ public class Session {
 		glob.map.tilemap(msg);
 	    } else if(msg.type == Message.RMSG_BUFF) {
 		glob.buffmsg(msg);
+	    } else if(msg.type == Message.RMSG_SESSKEY) {
+		sesskey = msg.bytes();
 	    } else {
 		throw(new MessageException("Unknown rmsg type: " + msg.type, msg));
 	    }
