@@ -619,10 +619,11 @@ public class Session {
 				}
 			    }
 			    Message msg = new Message(MSG_SESS);
-			    msg.adduint16(1);
+			    msg.adduint16(2);
 			    msg.addstring("Haven");
 			    msg.adduint16(PVER);
 			    msg.addstring(username);
+			    msg.adduint16(cookie.length);
 			    msg.addbytes(cookie);
 			    sendmsg(msg);
 			    last = now;
