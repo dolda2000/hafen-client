@@ -49,26 +49,16 @@ public abstract class Tiler {
 	    if(Factory.class.isAssignableFrom(cl)) {
 		return(cl.asSubclass(Factory.class).newInstance());
 	    } else if(Tiler.class.isAssignableFrom(cl)) {
-		final Class<? extends Tiler> tcl = cl.asSubclass(Tiler.class);
-		return(new Factory() {
-			public Tiler create(int id, Resource.Tileset set) {
-			    try {
-				try {
-				    Constructor<? extends Tiler> m = tcl.getConstructor(Integer.TYPE, Resource.Tileset.class);
-				    return(m.newInstance(id, set));
-				} catch(NoSuchMethodException e) {}
-				throw(new RuntimeException("Could not find dynamic tiler contructor for " + tcl));
-			    } catch(IllegalAccessException e) {
-				throw(new RuntimeException(e));
-			    } catch(InstantiationException e) {
-				throw(new RuntimeException(e));
-			    } catch(InvocationTargetException e) {
-				if(e.getCause() instanceof RuntimeException)
-				    throw((RuntimeException)e.getCause());
-				throw(new RuntimeException(e));
+		Class<? extends Tiler> tcl = cl.asSubclass(Tiler.class);
+		try {
+		    final Constructor<? extends Tiler> cons = tcl.getConstructor(Integer.TYPE, Resource.Tileset.class);
+		    return(new Factory() {
+			    public Tiler create(int id, Resource.Tileset set) {
+				return(Utils.construct(cons, id, set));
 			    }
-			}
-		    });
+			});
+		} catch(NoSuchMethodException e) {}
+		throw(new RuntimeException("Could not find dynamic tiler contructor for " + tcl));
 	    }
 	    return(null);
 	}

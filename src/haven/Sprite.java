@@ -46,14 +46,11 @@ public abstract class Sprite implements Rendered {
     }
     
     public static class FactMaker implements Resource.PublishedCode.Instancer {
-	public FactMaker() {
-	}
-	
 	public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
 	    if(Factory.class.isAssignableFrom(cl))
 		return(cl.asSubclass(Factory.class).newInstance());
 	    if(Sprite.class.isAssignableFrom(cl))
-		return(new DynFactory(cl.asSubclass(Sprite.class)));
+		return(mkdynfact(cl.asSubclass(Sprite.class)));
 	    return(null);
 	}
     }
@@ -63,34 +60,24 @@ public abstract class Sprite implements Rendered {
 	public Sprite create(Owner owner, Resource res, Message sdt);
     }
     
-    public static class DynFactory implements Factory {
-	private final Class<? extends Sprite> cl;
-	
-	public DynFactory(Class<? extends Sprite> cl) {
-	    this.cl = cl;
-	}
-	
-	public Sprite create(Owner owner, Resource res, Message sdt) {
-	    try {
-		try {
-		    Constructor<? extends Sprite> m = cl.getConstructor(Owner.class, Resource.class);
-		    return(m.newInstance(owner, res));
-		} catch(NoSuchMethodException e) {}
-		try {
-		    Constructor<? extends Sprite> m = cl.getConstructor(Owner.class, Resource.class, Message.class);
-		    return(m.newInstance(owner, res, sdt));
-		} catch(NoSuchMethodException e) {}
-		throw(new ResourceException("Cannot call sprite code of dynamic resource", res));
-	    } catch(IllegalAccessException e) {
-		throw(new ResourceException("Cannot call sprite code of dynamic resource", e, res));
-	    } catch(java.lang.reflect.InvocationTargetException e) {
-		if(e.getCause() instanceof RuntimeException)
-		    throw((RuntimeException)e.getCause());
-		throw(new ResourceException("Sprite code of dynamic resource threw an exception", e.getCause(), res));
-	    } catch(InstantiationException e) {
-		throw(new ResourceException("Cannot call sprite code of dynamic resource", e, res));
-	    }
-	}
+    public static Factory mkdynfact(Class<? extends Sprite> cl) {
+	try {
+	    final Constructor<? extends Sprite> cons = cl.getConstructor(Owner.class, Resource.class);
+	    return(new Factory() {
+		    public Sprite create(Owner owner, Resource res, Message sdt) {
+			return(Utils.construct(cons, owner, res));
+		    }
+		});
+	} catch(NoSuchMethodException e) {}
+	try {
+	    final Constructor<? extends Sprite> cons = cl.getConstructor(Owner.class, Resource.class, Message.class);
+	    return(new Factory() {
+		    public Sprite create(Owner owner, Resource res, Message sdt) {
+			return(Utils.construct(cons, owner, res, sdt));
+		    }
+		});
+	} catch(NoSuchMethodException e) {}
+	throw(new RuntimeException("Could not find any suitable constructor for dynamic sprite"));
     }
 	
     public static class ResourceException extends RuntimeException {
