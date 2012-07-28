@@ -222,6 +222,10 @@ public class Message implements java.io.Serializable {
 	off += n;
 	return(ret);
     }
+    
+    public byte[] bytes() {
+	return(bytes(blob.length - off));
+    }
 	
     public Coord coord() {
 	return(new Coord(int32(), int32()));
