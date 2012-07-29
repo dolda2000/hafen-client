@@ -619,10 +619,13 @@ public abstract class GLState {
 	return(new Wrapping(r));
     }
     
+    public static abstract class Abstract extends GLState {
+	public void apply(GOut g) {}
+	public void unapply(GOut g) {}
+    }
+
     public static GLState compose(final GLState... states) {
-	return(new GLState() {
-		public void apply(GOut g) {}
-		public void unapply(GOut g) {}
+	return(new Abstract() {
 		public void prep(Buffer buf) {
 		    for(GLState st : states) {
 			if(st == null)
@@ -633,15 +636,13 @@ public abstract class GLState {
 	    });
     }
     
-    public static class Delegate extends GLState {
+    public static class Delegate extends Abstract {
 	public GLState del;
 	
 	public Delegate(GLState del) {
 	    this.del = del;
 	}
 	
-	public void apply(GOut g) {}
-	public void unapply(GOut g) {}
 	public void prep(Buffer buf) {
 	    del.prep(buf);
 	}
