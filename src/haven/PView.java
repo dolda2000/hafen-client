@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.awt.Color;
 import static haven.GOut.checkerr;
 import javax.media.opengl.*;
 
@@ -124,6 +125,10 @@ public abstract class PView extends Widget {
 	    }
 	};
 
+    protected Color clearcolor() {
+	return(Color.BLACK);
+    }
+
     public void draw(GOut g) {
 	if((g.sz.x < 1) || (g.sz.y < 1))
 	    return;
@@ -150,6 +155,8 @@ public abstract class PView extends Widget {
 	    if(curf != null)
 		curf.tick("cls");
 	    GL gl = g.gl;
+	    Color cc = clearcolor();
+	    gl.glClearColor((float)cc.getRed() / 255f, (float)cc.getGreen() / 255f, (float)cc.getBlue() / 255f, (float)cc.getAlpha() / 255f);
 	    gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
 	    g.st.time = 0;
 	    rls.render(g);
