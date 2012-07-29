@@ -656,6 +656,14 @@ public class Utils {
 	return(d);
     }
     
+    public static float clip(float d, float min, float max) {
+	if(d < min)
+	    return(min);
+	if(d > max)
+	    return(max);
+	return(d);
+    }
+    
     public static int clip(int i, int min, int max) {
 	if(i < min)
 	    return(min);
