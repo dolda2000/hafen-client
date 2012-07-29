@@ -44,7 +44,7 @@ public class UI {
     long lastevent, lasttick;
     public Widget mouseon;
     public Console cons = new WidgetConsole();
-    private Collection<AfterDraw> afterdraws = null;
+    private Collection<AfterDraw> afterdraws = new LinkedList<AfterDraw>();
     
     {
 	lastevent = lasttick = System.currentTimeMillis();
@@ -131,14 +131,12 @@ public class UI {
     }
 
     public void draw(GOut g) {
-	afterdraws = new LinkedList<AfterDraw>();
 	root.draw(g);
 	synchronized(afterdraws) {
-	    for(AfterDraw ad : afterdraws) {
+	    for(AfterDraw ad : afterdraws)
 		ad.draw(g);
-	    }
+	    afterdraws.clear();
 	}
-	afterdraws = null;
     }
 	
     public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
