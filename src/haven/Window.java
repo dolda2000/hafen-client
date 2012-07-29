@@ -111,7 +111,7 @@ public class Window extends Widget implements DTarget {
 	super.draw(og);
     }
 	
-    public void pack() {
+    public Coord contentsz() {
 	Coord max = new Coord(0, 0);
 	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
 	    if(wdg == cbtn)
@@ -122,7 +122,11 @@ public class Window extends Widget implements DTarget {
 	    if(br.y > max.y)
 		max.y = br.y;
 	}
-	resize(max);
+	return(max);
+    }
+
+    public void pack() {
+	resize(contentsz());
     }
     
     public void resize(Coord sz) {
