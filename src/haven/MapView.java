@@ -40,12 +40,13 @@ public class MapView extends PView implements DTarget {
     private final Glob glob;
     private int view = 2;
     private Collection<Delayed> delayed = new LinkedList<Delayed>();
+    private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
     public Camera camera = new FollowCam();
     private Plob placing = null;
     private int[] visol = new int[32];
     private Grabber grab;
     
-    private interface Delayed {
+    public interface Delayed {
 	public void run(GOut g);
     }
 
@@ -535,11 +536,17 @@ public class MapView extends PView implements DTarget {
 	}
     }
 
-    protected void undelay(GOut g) {
-	synchronized(delayed) {
-	    for(Delayed d : delayed)
+    public void delay2(Delayed d) {
+	synchronized(delayed2) {
+	    delayed2.add(d);
+	}
+    }
+
+    protected void undelay(Collection<Delayed> list, GOut g) {
+	synchronized(list) {
+	    for(Delayed d : list)
 		d.run(g);
-	    delayed.clear();
+	    list.clear();
 	}
     }
 
@@ -636,8 +643,11 @@ public class MapView extends PView implements DTarget {
 	try {
 	    if(camera.loading)
 		throw(new MCache.LoadingMap());
-	    undelay(g);
+	    undelay(delayed, g);
 	    super.draw(g);
+	    undelay(delayed2, g);
+	    poldraw(g);
+	    partydraw(g);
 	} catch(Loading e) {
 	    String text = "Loading...";
 	    g.chcolor(Color.BLACK);
@@ -645,8 +655,6 @@ public class MapView extends PView implements DTarget {
 	    g.chcolor(Color.WHITE);
 	    g.atext(text, sz.div(2), 0.5, 0.5);
 	}
-	poldraw(g);
-	partydraw(g);
     }
     
     public void tick(double dt) {
