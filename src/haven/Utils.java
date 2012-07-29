@@ -339,6 +339,61 @@ public class Utils {
 	    ret[o] = (byte)((hex2num(hex.charAt(i)) << 4) | hex2num(hex.charAt(i + 1)));
 	return(ret);
     }
+    
+    private final static String base64set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    private final static int[] base64rev;
+    static {
+	int[] rev = new int[128];
+	for(int i = 0; i < 128; rev[i++] = -1);
+	for(int i = 0; i < base64set.length(); i++)
+	    rev[base64set.charAt(i)] = i;
+	base64rev = rev;
+    }
+    public static String base64enc(byte[] in) {
+	StringBuilder buf = new StringBuilder();
+	int p = 0;
+	while(in.length - p >= 3) {
+	    buf.append(base64set.charAt( (in[p + 0] & 0xfc) >> 2));
+	    buf.append(base64set.charAt(((in[p + 0] & 0x03) << 4) | ((in[p + 1] & 0xf0) >> 4)));
+	    buf.append(base64set.charAt(((in[p + 1] & 0x0f) << 2) | ((in[p + 2] & 0xc0) >> 6)));
+	    buf.append(base64set.charAt(  in[p + 2] & 0x3f));
+	    p += 3;
+	}
+	if(in.length == p + 1) {
+	    buf.append(base64set.charAt( (in[p + 0] & 0xfc) >> 2));
+	    buf.append(base64set.charAt( (in[p + 0] & 0x03) << 4));
+	    buf.append("==");
+	} else if(in.length == p + 2) {
+	    buf.append(base64set.charAt( (in[p + 0] & 0xfc) >> 2));
+	    buf.append(base64set.charAt(((in[p + 0] & 0x03) << 4) | ((in[p + 1] & 0xf0) >> 4)));
+	    buf.append(base64set.charAt( (in[p + 1] & 0x0f) << 2));
+	    buf.append("=");
+	}
+	return(buf.toString());
+    }
+    public static byte[] base64dec(String in) {
+	ByteArrayOutputStream buf = new ByteArrayOutputStream();
+	int cur = 0, b = 8;
+	for(int i = 0; i < in.length(); i++) {
+	    char c = in.charAt(i);
+	    if(c >= 128)
+		throw(new IllegalArgumentException());
+	    if(c == '=')
+		break;
+	    int d = base64rev[c];
+	    if(d == -1)
+		throw(new IllegalArgumentException());
+	    b -= 6;
+	    if(b <= 0) {
+		cur |= d >> -b;
+		buf.write(cur);
+		b += 8;
+		cur = 0;
+	    }
+	    cur |= d << b;
+	}
+	return(buf.toByteArray());
+    }
 	
     public static String[] splitwords(String text) {
 	ArrayList<String> words = new ArrayList<String>();
