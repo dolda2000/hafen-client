@@ -491,6 +491,21 @@ public class MCache {
 	}
     }
 
+    public void reqarea(Coord ul, Coord br) {
+	ul = ul.div(cmaps); br = br.div(cmaps);
+	Coord rc = new Coord();
+	synchronized(grids) {
+	    synchronized(req) {
+		for(rc.y = ul.y; rc.y <= br.y; rc.y++) {
+		    for(rc.x = ul.x; rc.x <= br.x; rc.x++) {
+			if(!grids.containsKey(rc))
+			    request(rc);
+		    }
+		}
+	    }
+	}
+    }
+
     public void sendreqs() {
 	long now = System.currentTimeMillis();
 	synchronized(req) {

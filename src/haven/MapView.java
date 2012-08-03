@@ -648,6 +648,8 @@ public class MapView extends PView implements DTarget {
 	    undelay(delayed2, g);
 	    poldraw(g);
 	    partydraw(g);
+	    glob.map.reqarea(cc.div(tilesz).sub(MCache.cutsz.mul(view + 1)),
+			     cc.div(tilesz).add(MCache.cutsz.mul(view + 1)));
 	} catch(Loading e) {
 	    String text = "Loading...";
 	    g.chcolor(Color.BLACK);
