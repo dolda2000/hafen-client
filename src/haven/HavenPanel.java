@@ -289,7 +289,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	}
 	Object tooltip;
         try {
-	    tooltip = ui.root.tooltip(mousepos, true);
+	    tooltip = ui.root.tooltip(mousepos, ui.root);
 	} catch(Loading e) {
 	    tooltip = "...";
 	}

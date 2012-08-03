@@ -64,7 +64,7 @@ public class ISBox extends Widget implements DTarget {
         g.image(label.tex(), new Coord(40, (bg.sz().y / 2) - (label.tex().sz().y / 2)));
     }
     
-    public Object tooltip(Coord c, boolean again) {
+    public Object tooltip(Coord c, Widget prev) {
 	if(!res.loading && (res.layer(Resource.tooltip) != null))
 	    return(res.layer(Resource.tooltip).t);
 	return(null);

@@ -96,9 +96,9 @@ public class Bufflist extends Widget {
     private long hoverstart;
     private Tex shorttip, longtip;
     private Buff tipped;
-    public Object tooltip(Coord c, boolean again) {
+    public Object tooltip(Coord c, Widget prev) {
 	long now = System.currentTimeMillis();
-	if(!again)
+	if(prev != this)
 	    hoverstart = now;
 	int i = 0;
 	int w = frame.sz().x + margin;

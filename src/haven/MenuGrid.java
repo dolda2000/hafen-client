@@ -191,11 +191,11 @@ public class MenuGrid extends Widget {
     private boolean curttl = false;
     private Text curtt = null;
     private long hoverstart;
-    public Object tooltip(Coord c, boolean again) {
+    public Object tooltip(Coord c, Widget prev) {
 	Pagina pag = bhit(c);
 	long now = System.currentTimeMillis();
 	if((pag != null) && (pag.act() != null)) {
-	    if(!again)
+	    if(prev != this)
 		hoverstart = now;
 	    boolean ttl = (now - hoverstart) > 500;
 	    if((pag != curttp) || (ttl != curttl)) {

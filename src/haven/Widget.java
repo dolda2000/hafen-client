@@ -719,7 +719,14 @@ public class Widget {
 	return(cursor);
     }
 
+    @Deprecated
     public Object tooltip(Coord c, boolean again) {
+	return(null);
+    }
+    
+    public Object tooltip(Coord c, Widget prev) {
+	if(prev != this)
+	    prevtt = null;
 	if(tooltip != null) {
 	    prevtt = null;
 	    return(tooltip);
@@ -729,7 +736,7 @@ public class Widget {
 		continue;
 	    Coord cc = xlate(wdg.c, true);
 	    if(c.isect(cc, wdg.sz)) {
-		Object ret = wdg.tooltip(c.add(cc.inv()), again && (wdg == prevtt));
+		Object ret = wdg.tooltip(c.add(cc.inv()), prevtt);
 		if(ret != null) {
 		    prevtt = wdg;
 		    return(ret);
@@ -737,7 +744,7 @@ public class Widget {
 	    }
 	}
 	prevtt = null;
-	return(null);
+	return(tooltip(c, prev == this));
     }
     
     public <T extends Widget> T getparent(Class<T> cl) {

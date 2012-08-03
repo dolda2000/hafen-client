@@ -112,7 +112,7 @@ public class Makewindow extends Widget {
 	super.draw(g);
     }
     
-    public Object tooltip(Coord mc, boolean again) {
+    public Object tooltip(Coord mc, Widget prev) {
 	Coord c = new Coord(xoff, 0);
 	for(Spec s : inputs) {
 	    if(mc.isect(c, Inventory.invsq.sz()))

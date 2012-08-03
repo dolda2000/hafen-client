@@ -217,8 +217,8 @@ public class Window extends Widget implements DTarget {
 	return(false);
     }
     
-    public Object tooltip(Coord c, boolean again) {
-	Object ret = super.tooltip(c, again);
+    public Object tooltip(Coord c, Widget prev) {
+	Object ret = super.tooltip(c, prev);
 	if(ret != null)
 	    return(ret);
 	else
