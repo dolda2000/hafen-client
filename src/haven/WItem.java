@@ -139,42 +139,41 @@ public class WItem extends Widget implements DTarget {
 	}
     }
 
-    private List<ItemInfo> olinfo = null;
-    private Color olcol = null;
-    private Color olcol() {
-	try {
-	    List<ItemInfo> info = item.info();
-	    if(info != olinfo) {
-		olcol = null;
-		GItem.ColorInfo cinf = find(GItem.ColorInfo.class, info);
-		if(cinf != null)
-		    olcol = cinf.olcol();
-		olinfo = info;
+    public abstract class AttrCache<T> {
+	private List<ItemInfo> forinfo = null;
+	private T save = null;
+	
+	public T get() {
+	    try {
+		List<ItemInfo> info = item.info();
+		if(info != forinfo) {
+		    save = find(info);
+		    forinfo = info;
+		}
+	    } catch(Loading e) {
+		return(null);
 	    }
-	} catch(Loading e) {
-	    return(null);
+	    return(save);
 	}
-	return(olcol);
+	
+	protected abstract T find(List<ItemInfo> info);
     }
     
-    private List<ItemInfo> numinfo = null;
-    private Tex itemnum = null;
-    private Tex itemnum() {
-	try {
-	    List<ItemInfo> info = item.info();
-	    if(info != numinfo) {
-		itemnum = null;
-		GItem.NumberInfo ninf = find(GItem.NumberInfo.class, info);
-		if(ninf != null)
-		    itemnum = new TexI(Utils.outline2(Text.render(Integer.toString(ninf.itemnum()), Color.WHITE).img, Utils.contrast(Color.WHITE)));
-		numinfo = info;
-	    }
-	} catch(Loading e) {
-	    return(null);
+    public final AttrCache<Color> olcol = new AttrCache<Color>() {
+	protected Color find(List<ItemInfo> info) {
+	    GItem.ColorInfo cinf = ItemInfo.find(GItem.ColorInfo.class, info);
+	    return((cinf == null)?null:cinf.olcol());
 	}
-	return(itemnum);
-    }
-
+    };
+    
+    public final AttrCache<Tex> itemnum = new AttrCache<Tex>() {
+	protected Tex find(List<ItemInfo> info) {
+	    GItem.NumberInfo ninf = ItemInfo.find(GItem.NumberInfo.class, info);
+	    if(ninf == null) return(null);
+	    return(new TexI(Utils.outline2(Text.render(Integer.toString(ninf.itemnum()), Color.WHITE).img, Utils.contrast(Color.WHITE))));
+	}
+    };
+    
     public void draw(GOut g) {
 	try {
 	    Resource res = item.res.get();
@@ -182,8 +181,8 @@ public class WItem extends Widget implements DTarget {
 	    drawmain(g, tex);
 	    if(item.num >= 0) {
 		g.atext(Integer.toString(item.num), tex.sz(), 1, 1);
-	    } else if(itemnum() != null) {
-		g.aimage(itemnum(), tex.sz(), 1, 1);
+	    } else if(itemnum.get() != null) {
+		g.aimage(itemnum.get(), tex.sz(), 1, 1);
 	    }
 	    if(item.meter > 0) {
 		double a = ((double)item.meter) / 100.0;
@@ -191,7 +190,7 @@ public class WItem extends Widget implements DTarget {
 		g.fellipse(sz.div(2), new Coord(15, 15), 90, (int)(90 + (360 * a)));
 		g.chcolor();
 	    }
-	    if(olcol() != null) {
+	    if(olcol.get() != null) {
 		if(cmask != res) {
 		    mask = null;
 		    if(tex instanceof TexI)
@@ -199,7 +198,7 @@ public class WItem extends Widget implements DTarget {
 		    cmask = res;
 		}
 		if(mask != null) {
-		    g.chcolor(olcol());
+		    g.chcolor(olcol.get());
 		    g.image(mask, Coord.z);
 		    g.chcolor();
 		}
