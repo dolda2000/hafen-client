@@ -35,16 +35,21 @@ import static haven.ItemInfo.find;
 public class WItem extends Widget implements DTarget {
     public static final Resource missing = Resource.load("gfx/invobjs/missing");
     public final GItem item;
+    private Tex ltex = null;
     private Tex mask = null;
     private Resource cmask = null;
     
     public WItem(Coord c, Widget parent, GItem item) {
-	super(c, new Coord(30, 30), parent);
+	super(c, Inventory.sqsz, parent);
 	this.item = item;
     }
     
     public void drawmain(GOut g, Tex tex) {
 	g.image(tex, Coord.z);
+	if(tex != ltex) {
+	    resize(tex.sz());
+	    ltex = tex;
+	}
     }
 
     public static BufferedImage rendershort(List<ItemInfo> info) {
