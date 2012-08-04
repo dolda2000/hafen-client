@@ -30,7 +30,6 @@ import java.util.*;
 import java.lang.reflect.*;
 import haven.Resource.Tileset;
 import haven.Resource.Tile;
-import java.util.zip.Inflater;
 
 public class MCache {
     public static final Coord tilesz = new Coord(11, 11);
@@ -86,13 +85,19 @@ public class MCache {
 	public final int tiles[] = new int[cmaps.x * cmaps.y];
 	public final int z[] = new int[cmaps.x * cmaps.y];
 	public final int ol[] = new int[cmaps.x * cmaps.y];
-	public final MapMesh cuts[] = new MapMesh[cutn.x * cutn.y];
-	public final Rendered olcuts[][] = new Rendered[cutn.x * cutn.y][];
+	private final Cut cuts[];
 	int olseq = -1;
 	private Collection<Gob>[] fo = null;
 	public final Coord gc, ul;
-	public final long id;
+	public long id;
 	String mnm;
+
+	private class Cut {
+	    MapMesh mesh;
+	    Defer.Future<MapMesh> dmesh;
+	    Rendered[] ols;
+	    int deftag;
+	}
 
 	private class Flavobj extends Gob {
 	    private Flavobj(Coord c, double a) {
@@ -108,10 +113,12 @@ public class MCache {
 	    }
 	}
 
-	public Grid(Coord gc, long id) {
+	public Grid(Coord gc) {
 	    this.gc = gc;
 	    this.ul = gc.mul(cmaps);
-	    this.id = id;
+	    cuts = new Cut[cutn.x * cutn.y];
+	    for(int i = 0; i < cuts.length; i++)
+		cuts[i] = new Cut();
 	}
 
 	public int gettile(Coord tc) {
@@ -159,37 +166,54 @@ public class MCache {
 	    return(fo[cc.x + (cc.y * cutn.x)]);
 	}
 	
+	private Cut geticut(Coord cc) {
+	    return(cuts[cc.x + (cc.y * cutn.x)]);
+	}
+
 	public MapMesh getcut(Coord cc) {
-	    int i = cc.x + (cc.y * cutn.x);
-	    if(cuts[i] == null) {
-		Random rnd = new Random(id);
-		rnd.setSeed(rnd.nextInt() ^ cc.x);
-		rnd.setSeed(rnd.nextInt() ^ cc.y);
-		cuts[i] = MapMesh.build(MCache.this, rnd, ul.add(cc.mul(cutsz)), cutsz);
+	    Cut cut = geticut(cc);
+	    if(cut.dmesh != null) {
+		if(cut.dmesh.done() || (cut.mesh == null)) {
+		    cut.mesh = cut.dmesh.get();
+		    cut.dmesh = null;
+		}
 	    }
-	    return(cuts[i]);
+	    return(cut.mesh);
 	}
 	
 	public Rendered getolcut(int ol, Coord cc) {
-	    if(this.olseq != MCache.this.olseq) {
+	    int nseq = MCache.this.olseq;
+	    if(this.olseq != nseq) {
 		for(int i = 0; i < cutn.x * cutn.y; i++)
-		    olcuts[i] = null;
-		this.olseq = MCache.this.olseq;
+		    cuts[i].ols = null;
+		this.olseq = nseq;
 	    }
-	    int i = cc.x + (cc.y * cutn.x);
-	    if(olcuts[i] == null)
-		olcuts[i] = getcut(cc).makeols();
-	    return(olcuts[i][ol]);
+	    Cut cut = geticut(cc);
+	    if(cut.ols == null)
+		cut.ols = getcut(cc).makeols();
+	    return(cut.ols[ol]);
 	}
 	
+	private void buildcut(final Coord cc) {
+	    final Cut cut = geticut(cc);
+	    final int deftag = ++cut.deftag;
+	    cut.dmesh = Defer.later(new Defer.Callable<MapMesh>() {
+		    public MapMesh call() {
+			Random rnd = new Random(id);
+			rnd.setSeed(rnd.nextInt() ^ cc.x);
+			rnd.setSeed(rnd.nextInt() ^ cc.y);
+			return(MapMesh.build(MCache.this, rnd, ul.add(cc.mul(cutsz)), cutsz));
+		    }
+		});
+	}
+
 	public void ivneigh(Coord nc) {
 	    Coord cc = new Coord();
 	    for(cc.y = 0; cc.y < cutn.y; cc.y++) {
 		for(cc.x = 0; cc.x < cutn.x; cc.x++) {
 		    if((((nc.x < 0) && (cc.x == 0)) || ((nc.x > 0) && (cc.x == cutn.x - 1)) || (nc.x == 0)) &&
 		       (((nc.y < 0) && (cc.y == 0)) || ((nc.y > 0) && (cc.y == cutn.y - 1)) || (nc.y == 0))) {
-			cuts[cc.x + (cc.y * cutn.x)] = null;
-			olcuts[cc.x + (cc.y * cutn.x)] = null;
+			buildcut(new Coord(cc));
 		    }
 		}
 	    }
@@ -202,6 +226,74 @@ public class MCache {
 			fo.ctick(dt);
 		}
 	    }
+	}
+	
+	private void invalidate() {
+	    for(int y = 0; y < cutn.y; y++) {
+		for(int x = 0; x < cutn.x; x++)
+		    buildcut(new Coord(x, y));
+	    }
+	    fo = null;
+	    for(Coord ic : new Coord[] {
+		    new Coord(-1, -1), new Coord( 0, -1), new Coord( 1, -1),
+		    new Coord(-1,  0),                    new Coord( 1,  0),
+		    new Coord(-1,  1), new Coord( 0,  1), new Coord( 1,  1)}) {
+		Grid ng = grids.get(gc.add(ic));
+		if(ng != null)
+		    ng.ivneigh(ic.inv());
+	    }
+	}
+
+	public void fill(Message msg) {
+	    String mmname = msg.string().intern();
+	    if(mmname.equals(""))
+		mnm = null;
+	    else
+		mnm = mmname;
+	    int[] pfl = new int[256];
+	    while(true) {
+		int pidx = msg.uint8();
+		if(pidx == 255)
+		    break;
+		pfl[pidx] = msg.uint8();
+	    }
+	    Message blob = msg.inflate();
+	    id = blob.int64();
+	    for(int i = 0; i < tiles.length; i++)
+		tiles[i] = blob.uint8();
+	    for(int i = 0; i < z.length; i++)
+		z[i] = blob.int16();
+	    for(int i = 0; i < ol.length; i++)
+		ol[i] = 0;
+	    while(true) {
+		int pidx = blob.uint8();
+		if(pidx == 255)
+		    break;
+		int fl = pfl[pidx];
+		int type = blob.uint8();
+		Coord c1 = new Coord(blob.uint8(), blob.uint8());
+		Coord c2 = new Coord(blob.uint8(), blob.uint8());
+		int ol;
+		if(type == 0) {
+		    if((fl & 1) == 1)
+			ol = 2;
+		    else
+			ol = 1;
+		} else if(type == 1) {
+		    if((fl & 1) == 1)
+			ol = 8;
+		    else
+			ol = 4;
+		} else {
+		    throw(new RuntimeException("Unknown plot type " + type));
+		}
+		for(int y = c1.y; y <= c2.y; y++) {
+		    for(int x = c1.x; x <= c2.x; x++) {
+			this.ol[x + (y * cmaps.x)] |= ol;
+		    }
+		}
+	    }
+	    invalidate();
 	}
     }
 
@@ -305,89 +397,14 @@ public class MCache {
 
     public void mapdata2(Message msg) {
 	Coord c = msg.coord();
-	String mmname = msg.string().intern();
-	if(mmname.equals(""))
-	    mmname = null;
-	int[] pfl = new int[256];
-	while(true) {
-	    int pidx = msg.uint8();
-	    if(pidx == 255)
-		break;
-	    pfl[pidx] = msg.uint8();
-	}
-	Message blob = new Message(0);
-	{
-	    Inflater z = new Inflater();
-	    z.setInput(msg.blob, msg.off, msg.blob.length - msg.off);
-	    byte[] buf = new byte[10000];
-	    while(true) {
-		try {
-		    int len;
-		    if((len = z.inflate(buf)) == 0) {
-			if(!z.finished())
-			    throw(new RuntimeException("Got unterminated map blob"));
-			break;
-		    }
-		    blob.addbytes(buf, 0, len);
-		} catch(java.util.zip.DataFormatException e) {
-		    throw(new RuntimeException("Got malformed map blob", e));
-		}
-	    }
-	}
 	synchronized(grids) {
 	    synchronized(req) {
 		if(req.containsKey(c)) {
-		    long id = blob.int64();
-		    Grid g = new Grid(c, id);
-		    g.mnm = mmname;
-		    for(int i = 0; i < g.tiles.length; i++)
-			g.tiles[i] = blob.uint8();
-		    for(int i = 0, y = 0; y < cmaps.y; y++) {
-			for(int x = 0; x < cmaps.x; x++, i++)
-			    g.z[i] = blob.int16();
-		    }
-		    for(int i = 0; i < g.ol.length; i++)
-			g.ol[i] = 0;
-		    while(true) {
-			int pidx = blob.uint8();
-			if(pidx == 255)
-			    break;
-			int fl = pfl[pidx];
-			int type = blob.uint8();
-			Coord c1 = new Coord(blob.uint8(), blob.uint8());
-			Coord c2 = new Coord(blob.uint8(), blob.uint8());
-			int ol;
-			if(type == 0) {
-			    if((fl & 1) == 1)
-				ol = 2;
-			    else
-				ol = 1;
-			} else if(type == 1) {
-			    if((fl & 1) == 1)
-				ol = 8;
-			    else
-				ol = 4;
-			} else {
-			    throw(new RuntimeException("Unknown plot type " + type));
-			}
-			for(int y = c1.y; y <= c2.y; y++) {
-			    for(int x = c1.x; x <= c2.x; x++) {
-				g.ol[x + (y * cmaps.x)] |= ol;
-			    }
-			}
-		    }
+		    Grid g = grids.get(c);
+		    if(g == null)
+			grids.put(c, g = new Grid(c));
+		    g.fill(msg);
 		    req.remove(c);
-		    if(grids.remove(c) == cached)
-			cached = null;
-		    grids.put(c, g);
-		    for(Coord ic : new Coord[] {
-			    new Coord(-1, -1), new Coord( 0, -1), new Coord( 1, -1),
-			    new Coord(-1,  0),                    new Coord( 1,  0),
-			    new Coord(-1,  1), new Coord( 0,  1), new Coord( 1,  1)}) {
-			Grid ng = grids.get(c.add(ic));
-			if(ng != null)
-			    ng.ivneigh(ic.inv());
-		    }
 		    olseq++;
 		}
 	    }
@@ -492,16 +509,13 @@ public class MCache {
     }
 
     public void reqarea(Coord ul, Coord br) {
-	ul = ul.div(cmaps); br = br.div(cmaps);
+	ul = ul.div(cutsz); br = br.div(cutsz);
 	Coord rc = new Coord();
-	synchronized(grids) {
-	    synchronized(req) {
-		for(rc.y = ul.y; rc.y <= br.y; rc.y++) {
-		    for(rc.x = ul.x; rc.x <= br.x; rc.x++) {
-			if(!grids.containsKey(rc))
-			    request(rc);
-		    }
-		}
+	for(rc.y = ul.y; rc.y <= br.y; rc.y++) {
+	    for(rc.x = ul.x; rc.x <= br.x; rc.x++) {
+		try {
+		    getcut(new Coord(rc));
+		} catch(Loading e) {}
 	    }
 	}
     }
