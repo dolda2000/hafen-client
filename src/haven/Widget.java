@@ -188,6 +188,30 @@ public class Widget {
 		} else {
 		    throw(new RuntimeException("Invalid subtraction operands: " + a + " - " + b));
 		}
+	    } else if(op == '*') {
+		Object b = st.pop();
+		Object a = st.pop();
+		if((a instanceof Integer) && (b instanceof Integer)) {
+		    st.push((Integer)a * (Integer)b);
+		} else if((a instanceof Coord) && (b instanceof Integer)) {
+		    st.push(((Coord)a).mul((Integer)b));
+		} else if((a instanceof Coord) && (b instanceof Coord)) {
+		    st.push(((Coord)a).mul((Coord)b));
+		} else {
+		    throw(new RuntimeException("Invalid multiplication operands: " + a + " - " + b));
+		}
+	    } else if(op == '/') {
+		Object b = st.pop();
+		Object a = st.pop();
+		if((a instanceof Integer) && (b instanceof Integer)) {
+		    st.push((Integer)a / (Integer)b);
+		} else if((a instanceof Coord) && (b instanceof Integer)) {
+		    st.push(((Coord)a).div((Integer)b));
+		} else if((a instanceof Coord) && (b instanceof Coord)) {
+		    st.push(((Coord)a).div((Coord)b));
+		} else {
+		    throw(new RuntimeException("Invalid division operands: " + a + " - " + b));
+		}
 	    } else if(Character.isWhitespace(op)) {
 	    } else {
 		throw(new RuntimeException("Unknown position operation: " + op));
