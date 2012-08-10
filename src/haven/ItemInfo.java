@@ -171,7 +171,9 @@ public abstract class ItemInfo {
 		Object[] a = (Object[])o;
 		Resource ttres = owner.glob().sess.getres((Integer)a[0]).get();
 		InfoFactory f = ttres.layer(Resource.CodeEntry.class).get(InfoFactory.class);
-		ret.add(f.build(owner, a));
+		ItemInfo inf = f.build(owner, a);
+		if(inf != null)
+		    ret.add(inf);
 	    } else if(o instanceof String) {
 		ret.add(new AdHoc(owner, (String)o));
 	    } else {
