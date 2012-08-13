@@ -50,14 +50,13 @@ public class Audio {
     }
 
     public interface CS {
-	public boolean get(double[] sample);
+	public int get(double[][] sample);
     }
     
     public static class DataClip implements CS {
 	private InputStream clip;
 	private double vol, sp;
 	private int ack = 0;
-	private double[] ov = new double[2];
 	public boolean eof;
 
 	public DataClip(InputStream clip, double vol, double sp) {
@@ -78,37 +77,39 @@ public class Audio {
 	    }
 	}
 	
-	public boolean get(double[] sm) {
+	public int get(double[][] buf) {
+	    if(eof)
+		return(-1);
 	    try {
-		ack += 44100.0 * sp;
-		while(ack >= 44100) {
-		    for(int i = 0; i < 2; i++) {
-			int b1 = clip.read();
-			int b2 = clip.read();
-			if((b1 < 0) || (b2 < 0)) {
-			    synchronized(this) {
-				eof = true;
-				notifyAll();
+		for(int off = 0; off < buf[0].length; off++) {
+		    ack += 44100.0 * sp;
+		    while(ack >= 44100) {
+			for(int i = 0; i < 2; i++) {
+			    int b1 = clip.read();
+			    int b2 = clip.read();
+			    if((b1 < 0) || (b2 < 0)) {
+				synchronized(this) {
+				    eof = true;
+				    notifyAll();
+				}
+				return(off);
 			    }
-			    return(false);
+			    int v = b1 + (b2 << 8);
+			    if(v >= 32768)
+				v -= 65536;
+			    buf[i][off] = ((double)v / 32768.0) * vol;
 			}
-			int v = b1 + (b2 << 8);
-			if(v >= 32768)
-			    v -= 65536;
-			ov[i] = ((double)v / 32768.0) * vol;
+			ack -= 44100;
 		    }
-		    ack -= 44100;
 		}
+		return(buf[0].length);
 	    } catch(java.io.IOException e) {
 		synchronized(this) {
 		    eof = true;
 		    notifyAll();
 		}
-		return(false);
+		return(-1);
 	    }
-	    for(int i = 0; i < 2; i++)
-		sm[i] = ov[i];
-	    return(true);
 	}
     }
 	
@@ -122,23 +123,30 @@ public class Audio {
 	    srate = (int)fmt.getSampleRate();
 	}
 	
-	private void fillbuf(byte[] buf, int off, int len) {
-	    double[] val = new double[nch];
-	    double[] sm = new double[nch];
-	    while(len > 0) {
-		for(int i = 0; i < nch; i++)
-		    val[i] = 0;
-		for(Iterator<CS> i = clips.iterator(); i.hasNext();) {
-		    CS cs = i.next();
-		    if(!cs.get(sm)) {
+	private void fillbuf(byte[] dst, int off, int len) {
+	    int ns = len / (2 * nch);
+	    double[][] val = new double[nch][ns];
+	    double[][] buf = new double[nch][ns];
+	    clip: for(Iterator<CS> i = clips.iterator(); i.hasNext();) {
+		int left = ns;
+		CS cs = i.next();
+		int boff = 0;
+		while(left > 0) {
+		    int ret = cs.get(buf);
+		    if(ret < 0) {
 			i.remove();
-			continue;
+			continue clip;
 		    }
-		    for(int ch = 0; ch < nch; ch++)
-			val[ch] += sm[ch];
+		    for(int ch = 0; ch < nch; ch++) {
+			for(int sm = 0; sm < ret; sm++)
+			    val[ch][sm + boff] += buf[ch][sm];
+		    }
+		    left -= ret;
 		}
-		for(int i = 0; i < nch; i++) {
-		    int iv = (int)(val[i] * volume * 32767.0);
+	    }
+	    for(int i = 0; i < ns; i++) {
+		for(int o = 0; o < nch; o++) {
+		    int iv = (int)(val[o][i] * volume * 32767.0);
 		    if(iv < 0) {
 			if(iv < -32768)
 			    iv = -32768;
@@ -147,9 +155,8 @@ public class Audio {
 			if(iv > 32767)
 			    iv = 32767;
 		    }
-		    buf[off++] = (byte)(iv & 0xff);
-		    buf[off++] = (byte)((iv & 0xff00) >> 8);
-		    len -= 2;
+		    dst[off++] = (byte)(iv & 0xff);
+		    dst[off++] = (byte)((iv & 0xff00) >> 8);
 		}
 	    }
 	}
