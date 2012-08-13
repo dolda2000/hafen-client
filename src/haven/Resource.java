@@ -1055,14 +1055,14 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     static {ltypes.put("codeentry", CodeEntry.class);}
 	
     public class Audio extends Layer {
-	transient public byte[] clip;
+	transient public byte[] coded;
 	    
 	public Audio(byte[] buf) {
-	    try {
-		clip = Utils.readall(new VorbisDecoder(new ByteArrayInputStream(buf)));
-	    } catch(IOException e) {
-		throw(new LoadException(e, Resource.this));
-	    }
+	    coded = buf;
+	    /*
+	      clip = Utils.readall(new VorbisDecoder(new ByteArrayInputStream(buf)));
+	      System.err.println(Resource.this.name + ": " + clip.length);
+	    */
 	}
 	    
 	public void init() {}

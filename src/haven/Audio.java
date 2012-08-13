@@ -27,8 +27,9 @@
 package haven;
 
 import java.util.*;
-import java.io.InputStream;
+import java.io.*;
 import javax.sound.sampled.*;
+import dolda.xiphutil.*;
 
 public class Audio {
     public static boolean enabled = true;
@@ -57,6 +58,8 @@ public class Audio {
 	private InputStream clip;
 	private double vol, sp;
 	private int ack = 0;
+	private final byte[] buf = new byte[256];
+	private int dp = 0, dl = 0;
 	public boolean eof;
 
 	public DataClip(InputStream clip, double vol, double sp) {
@@ -85,15 +88,28 @@ public class Audio {
 		    ack += 44100.0 * sp;
 		    while(ack >= 44100) {
 			for(int i = 0; i < 2; i++) {
-			    int b1 = clip.read();
-			    int b2 = clip.read();
-			    if((b1 < 0) || (b2 < 0)) {
-				synchronized(this) {
-				    eof = true;
-				    notifyAll();
+			    if(dl - dp < 2) {
+				if(dl > dp) {
+				    this.buf[0] = this.buf[dp];
+				    dl = 1;
+				} else {
+				    dl = 0;
 				}
-				return(off);
+				while(dl < 2) {
+				    int ret = clip.read(this.buf, dl, this.buf.length - dl);
+				    if(ret < 0) {
+					synchronized(this) {
+					    eof = true;
+					    notifyAll();
+					}
+					return(off);
+				    }
+				    dl += ret;
+				}
+				dp = 0;
 			    }
+			    int b1 = this.buf[dp++] & 0xff;
+			    int b2 = this.buf[dp++] & 0xff;
 			    int v = b1 + (b2 << 8);
 			    if(v >= 32768)
 				v -= 65536;
@@ -103,7 +119,7 @@ public class Audio {
 		    }
 		}
 		return(buf[0].length);
-	    } catch(java.io.IOException e) {
+	    } catch(IOException e) {
 		synchronized(this) {
 		    eof = true;
 		    notifyAll();
@@ -224,7 +240,7 @@ public class Audio {
     }
 
     public static void play(byte[] clip, double vol, double sp) {
-	play(new DataClip(new java.io.ByteArrayInputStream(clip), vol, sp));
+	play(new DataClip(new ByteArrayInputStream(clip), vol, sp));
     }
     
     public static void play(byte[] clip) {
@@ -247,7 +263,11 @@ public class Audio {
 	    if(--s < 0)
 		break;
 	}
-	play(clip.clip);
+	try {
+	    play(new VorbisStream(new ByteArrayInputStream(clip.coded)).pcmstream(), 1.0, 1.0);
+	} catch(IOException e) {
+	    throw(new RuntimeException(e));
+	}
     }
 
     public static void play(final Resource clip) {
@@ -273,14 +293,14 @@ public class Audio {
 	    });
     }
     
-    public static byte[] readclip(InputStream in) throws java.io.IOException {
+    public static byte[] readclip(InputStream in) throws IOException {
 	AudioInputStream cs;
 	try {
 	    cs = AudioSystem.getAudioInputStream(fmt, AudioSystem.getAudioInputStream(in));
 	} catch(UnsupportedAudioFileException e) {
-	    throw(new java.io.IOException("Unsupported audio encoding"));
+	    throw(new IOException("Unsupported audio encoding"));
 	}
-	java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+	ByteArrayOutputStream buf = new ByteArrayOutputStream();
 	byte[] bbuf = new byte[65536];
 	while(true) {
 	    int rv = cs.read(bbuf);
@@ -297,7 +317,7 @@ public class Audio {
 	    if(args[i].equals("-b")) {
 		bufsize = Integer.parseInt(args[++i]);
 	    } else {
-		DataClip c = new DataClip(new java.io.FileInputStream(args[i]));
+		DataClip c = new DataClip(new FileInputStream(args[i]));
 		clips.add(c);
 	    }
 	}
