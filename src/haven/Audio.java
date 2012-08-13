@@ -55,17 +55,25 @@ public class Audio {
     }
     
     public static class DataClip implements CS {
+	public final int rate;
+	public boolean eof;
+	public double vol, sp;
 	private InputStream clip;
-	private double vol, sp;
+	private final int trate;
 	private int ack = 0;
 	private final byte[] buf = new byte[256];
 	private int dp = 0, dl = 0;
-	public boolean eof;
 
-	public DataClip(InputStream clip, double vol, double sp) {
+	public DataClip(InputStream clip, int rate, double vol, double sp) {
 	    this.clip = clip;
+	    this.rate = rate;
 	    this.vol = vol;
 	    this.sp = sp;
+	    this.trate = (int)fmt.getSampleRate();
+	}
+
+	public DataClip(InputStream clip, double vol, double sp) {
+	    this(clip, 44100, vol, sp);
 	}
 	
 	public DataClip(InputStream clip) {
@@ -85,8 +93,8 @@ public class Audio {
 		return(-1);
 	    try {
 		for(int off = 0; off < buf[0].length; off++) {
-		    ack += 44100.0 * sp;
-		    while(ack >= 44100) {
+		    ack += rate * sp;
+		    while(ack >= trate) {
 			for(int i = 0; i < 2; i++) {
 			    if(dl - dp < 2) {
 				if(dl > dp) {
@@ -115,7 +123,7 @@ public class Audio {
 				v -= 65536;
 			    buf[i][off] = ((double)v / 32768.0) * vol;
 			}
-			ack -= 44100;
+			ack -= trate;
 		    }
 		}
 		return(buf[0].length);
