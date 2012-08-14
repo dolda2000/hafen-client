@@ -84,7 +84,7 @@ public class Session {
     Map<Long, ObjAck> objacks = new TreeMap<Long, ObjAck>();
     String username;
     byte[] cookie;
-    final Map<Integer, Indir<Resource>> rescache = new TreeMap<Integer, Indir<Resource>>();
+    final Map<Integer, CachedRes> rescache = new TreeMap<Integer, CachedRes>();
     public final Glob glob;
     public byte[] sesskey;
 	
@@ -106,51 +106,57 @@ public class Session {
 	}
     }
 
-    public Indir<Resource> getres(final int id) {
+    private static class CachedRes implements Indir<Resource>, Comparable<CachedRes> {
+	private final int resid;
+	private Resource res;
+	
+	private CachedRes(int id) {
+	    resid = id;
+	}
+	
+	public Resource get() {
+	    if(res == null)
+		throw(new LoadingIndir(resid));
+	    return(res);
+	}
+	
+	public void set(Resource res) {
+	    this.res = res;
+	}
+	
+	public boolean equals(Object o) {
+	    return((o instanceof CachedRes) && (((CachedRes)o).resid == resid));
+	}
+	
+	public int compareTo(CachedRes x) {
+	    return(((CachedRes)x).resid - resid);
+	}
+	
+	public String toString() {
+	    if(res == null) {
+		return("<res:" + resid + ">");
+	    } else {
+		if(res.loading)
+		    return("<!" + res + ">");
+		else
+		    return("<" + res + ">");
+	    }
+	}
+    }
+
+    private CachedRes cachedres(int id) {
 	synchronized(rescache) {
-	    Indir<Resource> ret = rescache.get(id);
+	    CachedRes ret = rescache.get(id);
 	    if(ret != null)
 		return(ret);
-	    ret = new Indir<Resource>() {
-		public int resid = id;
-		Resource res;
-		
-		public Resource get() {
-		    if(res == null)
-			throw(new LoadingIndir(resid));
-		    if(res.loading) {
-			res.boostprio(0);
-			throw(new Resource.Loading(res));
-		    }
-		    return(res);
-		}
-		
-		public void set(Resource r) {
-		    res = r;
-		}
-		
-		public boolean equals(Object o) {
-		    return((this.getClass().isInstance(o)) && ((this.getClass().cast(o)).resid == resid));
-		}
-		
-		public int compareTo(Indir<Resource> x) {
-		    return((this.getClass().cast(x)).resid - resid);
-		}
-		
-		public String toString() {
-		    if(res == null) {
-			return("<res:" + resid + ">");
-		    } else {
-			if(res.loading)
-			    return("<!" + res + ">");
-			else
-			    return("<" + res + ">");
-		    }
-		}
-	    };
+	    ret = new CachedRes(id);
 	    rescache.put(id, ret);
 	    return(ret);
 	}
+    }
+
+    public Indir<Resource> getres(int id) {
+	return(cachedres(id));
     }
 
     private class ObjAck {
@@ -457,7 +463,7 @@ public class Session {
 		String resname = msg.string();
 		int resver = msg.uint16();
 		synchronized(rescache) {
-		    getres(resid).set(Resource.load(resname, resver, -5));
+		    cachedres(resid).set(Resource.load(resname, resver, -5));
 		}
 	    } else if(msg.type == Message.RMSG_PARTY) {
 		glob.party.msg(msg);
