@@ -76,7 +76,7 @@ public class Glob {
     }
     
     public static class Pagina implements java.io.Serializable {
-	private final java.lang.ref.WeakReference<Resource> res;
+	private final Resource res;
 	public State st;
 	public int meter, dtime;
 	public long gettime;
@@ -116,12 +116,12 @@ public class Glob {
 	}
 	
 	public Pagina(Resource res) {
-	    this.res = new java.lang.ref.WeakReference<Resource>(res);
+	    this.res = res;
 	    state(State.ENABLED);
 	}
 	
 	public Resource res() {
-	    return(res.get());
+	    return(res);
 	}
 	
 	public Resource.AButton act() {
