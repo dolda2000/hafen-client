@@ -108,6 +108,8 @@ public class Session {
 
     private static class CachedRes implements Indir<Resource>, Comparable<CachedRes> {
 	private final int resid;
+	private String resnm;
+	private int resver;
 	private Resource res;
 	
 	private CachedRes(int id) {
@@ -117,11 +119,17 @@ public class Session {
 	public Resource get() {
 	    if(res == null)
 		throw(new LoadingIndir(resid));
+	    if(res.loading) {
+		res.boostprio(0);
+		throw(new Resource.Loading(res));
+	    }
 	    return(res);
 	}
 	
-	public void set(Resource res) {
-	    this.res = res;
+	public void set(String nm, int ver) {
+	    this.resnm = nm;
+	    this.resver = ver;
+	    this.res = Resource.load(nm, ver, -5);
 	}
 	
 	public boolean equals(Object o) {
@@ -462,9 +470,7 @@ public class Session {
 		int resid = msg.uint16();
 		String resname = msg.string();
 		int resver = msg.uint16();
-		synchronized(rescache) {
-		    cachedres(resid).set(Resource.load(resname, resver, -5));
-		}
+		cachedres(resid).set(resname, resver);
 	    } else if(msg.type == Message.RMSG_PARTY) {
 		glob.party.msg(msg);
 	    } else if(msg.type == Message.RMSG_SFX) {
