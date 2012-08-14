@@ -165,11 +165,15 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     }
     
     public static int numloaded() {
-	return(cache.size());
+	synchronized(cache) {
+	    return(cache.size());
+	}
     }
     
     public static Collection<Resource> cached() {
-	return(cache.values());
+	synchronized(cache) {
+	    return(cache.values());
+	}
     }
 	
     public static Resource load(String name, int ver) {
