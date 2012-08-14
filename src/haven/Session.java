@@ -29,6 +29,7 @@ package haven;
 import java.net.*;
 import java.util.*;
 import java.io.*;
+import java.lang.ref.*;
 
 public class Session {
     public static final int PVER = 1;
@@ -106,49 +107,52 @@ public class Session {
 	}
     }
 
-    private static class CachedRes implements Indir<Resource>, Comparable<CachedRes> {
+    private static class CachedRes {
 	private final int resid;
-	private String resnm;
+	private String resnm = null;
 	private int resver;
-	private Resource res;
+	private Reference<Indir<Resource>> ind;
 	
 	private CachedRes(int id) {
 	    resid = id;
 	}
 	
-	public Resource get() {
-	    if(res == null)
-		throw(new LoadingIndir(resid));
-	    if(res.loading) {
-		res.boostprio(0);
-		throw(new Resource.Loading(res));
+	private Indir<Resource> get() {
+	    Indir<Resource> ind = (this.ind == null)?null:(this.ind.get());
+	    if(ind == null) {
+		ind = new Indir<Resource>() {
+		    private Resource res;
+		    
+		    public Resource get() {
+			if(resnm == null)
+			    throw(new LoadingIndir(resid));
+			if(res == null)
+			    res = Resource.load(resnm, resver, 0);
+			if(res.loading)
+			    throw(new Resource.Loading(res));
+			return(res);
+		    }
+	
+		    public String toString() {
+			if(res == null) {
+			    return("<res:" + resid + ">");
+			} else {
+			    if(res.loading)
+				return("<!" + res + ">");
+			    else
+				return("<" + res + ">");
+			}
+		    }
+		};
+		this.ind = new WeakReference<Indir<Resource>>(ind);
 	    }
-	    return(res);
+	    return(ind);
 	}
 	
 	public void set(String nm, int ver) {
 	    this.resnm = nm;
 	    this.resver = ver;
-	    this.res = Resource.load(nm, ver, -5);
-	}
-	
-	public boolean equals(Object o) {
-	    return((o instanceof CachedRes) && (((CachedRes)o).resid == resid));
-	}
-	
-	public int compareTo(CachedRes x) {
-	    return(((CachedRes)x).resid - resid);
-	}
-	
-	public String toString() {
-	    if(res == null) {
-		return("<res:" + resid + ">");
-	    } else {
-		if(res.loading)
-		    return("<!" + res + ">");
-		else
-		    return("<" + res + ">");
-	    }
+	    Resource.load(nm, ver, -5);
 	}
     }
 
@@ -164,7 +168,7 @@ public class Session {
     }
 
     public Indir<Resource> getres(int id) {
-	return(cachedres(id));
+	return(cachedres(id).get());
     }
 
     private class ObjAck {
