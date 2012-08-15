@@ -280,9 +280,6 @@ public class MapMesh implements Rendered {
 	int cx[] = {0, 2, 2, 0};
 	int cy[] = {0, 0, 2, 2};
 	for(int i = max; i >= 0; i--) {
-	    Tiler t = m.map.tiler(i);
-	    if(t == null)
-		continue;
 	    int bm = 0, cm = 0;
 	    for(int o = 0; o < 4; o++) {
 		if(tr[bx[o]][by[o]] == i)
@@ -294,8 +291,12 @@ public class MapMesh implements Rendered {
 		if(tr[cx[o]][cy[o]] == i)
 		    cm |= 1 << o;
 	    }
-	    if((bm != 0) || (cm != 0))
+	    if((bm != 0) || (cm != 0)) {
+		Tiler t = m.map.tiler(i);
+		if(t == null)
+		    continue;
 		t.trans(m, rnd, ground, lc, gc, 255 - i, bm, cm);
+	    }
 	}
     }
 
