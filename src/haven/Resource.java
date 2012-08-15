@@ -37,7 +37,7 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class Resource implements Comparable<Resource>, Prioritized, Serializable {
-    private static Map<String, Resource> cache = new TreeMap<String, Resource>();
+    private final static Map<String, Resource> cache;
     private static Loader loader;
     private static CacheSource prscache;
     public static ThreadGroup loadergroup = null;
@@ -62,6 +62,13 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	ltypes.put("boneoff", Skeleton.BoneOffset.class);
 	ltypes.put("light", Light.Res.class);
 	ltypes.put("rlink", RenderLink.Res.class);
+    }
+
+    static {
+	if(Config.softres)
+	    cache = new CacheMap<String, Resource>();
+	else
+	    cache = new TreeMap<String, Resource>();
     }
 
     static {
