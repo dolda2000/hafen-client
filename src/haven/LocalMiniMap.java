@@ -36,7 +36,6 @@ import java.util.*;
 public class LocalMiniMap extends Widget {
     public final MapView mv;
     private MapTile cur = null;
-    private final BufferedImage[] texes = new BufferedImage[256];
     private final Map<Coord, Defer.Future<MapTile>> cache = new LinkedHashMap<Coord, Defer.Future<MapTile>>(5, 0.75f, true) {
 	protected boolean removeEldestEntry(Map.Entry<Coord, Defer.Future<MapTile>> eldest) {
 	    if(size() > 5) {
@@ -62,10 +61,10 @@ public class LocalMiniMap extends Widget {
 	}
     }
 
-    private BufferedImage tileimg(int t) {
+    private BufferedImage tileimg(int t, BufferedImage[] texes) {
 	BufferedImage img = texes[t];
 	if(img == null) {
-	    Resource r = ui.sess.glob.map.sets[t];
+	    Resource r = ui.sess.glob.map.tilesetr(t);
 	    if(r == null)
 		return(null);
 	    Resource.Image ir = r.layer(Resource.imgc);
@@ -78,13 +77,14 @@ public class LocalMiniMap extends Widget {
     }
     
     public BufferedImage drawmap(Coord ul, Coord sz) {
+	BufferedImage[] texes = new BufferedImage[256];
 	MCache m = ui.sess.glob.map;
 	BufferedImage buf = TexI.mkbuf(sz);
 	Coord c = new Coord();
 	for(c.y = 0; c.y < sz.y; c.y++) {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
 		int t = m.gettile(ul.add(c));
-		BufferedImage tex = tileimg(t);
+		BufferedImage tex = tileimg(t, texes);
 		if(tex != null)
 		    buf.setRGB(c.x, c.y, tex.getRGB(Utils.floormod(c.x + ul.x, tex.getWidth()),
 						    Utils.floormod(c.y + ul.y, tex.getHeight())));

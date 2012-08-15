@@ -27,7 +27,7 @@
 package haven;
 
 import java.util.*;
-import java.lang.reflect.*;
+import java.lang.ref.*;
 import haven.Resource.Tileset;
 import haven.Resource.Tile;
 
@@ -36,9 +36,13 @@ public class MCache {
     public static final Coord cmaps = new Coord(100, 100);
     public static final Coord cutsz = new Coord(25, 25);
     public static final Coord cutn = cmaps.div(cutsz);
-    public final Resource[] sets = new Resource[256];
-    private final Tileset[] csets = new Tileset[256];
-    private final Tiler[] tiles = new Tiler[256];
+    private final Resource.Spec[] nsets = new Resource.Spec[256];
+    @SuppressWarnings("unchecked")
+    private final Reference<Resource>[] sets = new Reference[256];
+    @SuppressWarnings("unchecked")
+    private final Reference<Tileset>[] csets = new Reference[256];
+    @SuppressWarnings("unchecked")
+    private final Reference<Tiler>[] tiles = new Reference[256];
     Map<Coord, Request> req = new HashMap<Coord, Request>();
     Map<Coord, Grid> grids = new HashMap<Coord, Grid>();
     Session sess;
@@ -49,6 +53,10 @@ public class MCache {
     long lastctick = System.currentTimeMillis();
 
     public static class LoadingMap extends Loading {
+	public LoadingMap() {}
+	public LoadingMap(Throwable cause) {
+	    super(cause);
+	}
     }
 
     private static class Request {
@@ -439,28 +447,48 @@ public class MCache {
 	}
     }
 
+    public Resource tilesetr(int i) {
+	synchronized(sets) {
+	    Resource res = (sets[i] == null)?null:(sets[i].get());
+	    if(res == null) {
+		if(nsets[i] == null)
+		    return(null);
+		res = nsets[i].get();
+		sets[i] = new SoftReference<Resource>(res);
+	    }
+	    return(res);
+	}
+    }
+
     public Tileset tileset(int i) {
 	synchronized(csets) {
-	    if(csets[i] == null) {
-		if(sets[i] == null)
+	    Tileset cset = (csets[i] == null)?null:(csets[i].get());
+	    if(cset == null) {
+		Resource res = tilesetr(i);
+		if(res == null)
 		    return(null);
-		if(sets[i].loading)
-		    throw(new LoadingMap());
-		csets[i] = sets[i].layer(Resource.tileset);
+		try {
+		    cset = res.layer(Resource.tileset);
+		} catch(Loading e) {
+		    throw(new LoadingMap(e));
+		}
+		csets[i] = new SoftReference<Tileset>(cset);
 	    }
-	    return(csets[i]);
+	    return(cset);
 	}
     }
 
     public Tiler tiler(int i) {
 	synchronized(tiles) {
-	    if(tiles[i] == null) {
+	    Tiler tile = (tiles[i] == null)?null:(tiles[i].get());
+	    if(tile == null) {
 		Tileset set = tileset(i);
 		if(set == null)
 		    return(null);
-		tiles[i] = set.tfac().create(i, set);
+		tile = set.tfac().create(i, set);
+		tiles[i] = new SoftReference<Tiler>(tile);
 	    }
-	    return(tiles[i]);
+	    return(tile);
 	}
     }
 
@@ -469,7 +497,7 @@ public class MCache {
 	    int id = msg.uint8();
 	    String resnm = msg.string();
 	    int resver = msg.uint16();
-	    sets[id] = Resource.load(resnm, resver);
+	    nsets[id] = new Resource.Spec(resnm, resver);
 	}
     }
 
