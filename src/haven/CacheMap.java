@@ -73,6 +73,8 @@ public class CacheMap<K, V> extends AbstractMap<K, V> {
 			    
 			    public boolean hasNext() {
 				while(true) {
+				    if(nv != null)
+					return(true);
 				    if(!iter.hasNext())
 					return(false);
 				    Entry<K, Reference<V>> e = iter.next();
