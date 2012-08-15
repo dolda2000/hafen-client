@@ -89,6 +89,24 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     private transient Indir<Resource> indir = null;
     int prio = 0;
 
+    public static class Spec implements Indir<Resource> {
+	public final String name;
+	public final int ver;
+
+	public Spec(String name, int ver) {
+	    this.name = name;
+	    this.ver = ver;
+	}
+
+	public Resource get(int prio) {
+	    return(load(name, ver));
+	}
+	
+	public Resource get() {
+	    return(get(0));
+	}
+    }
+
     private Resource(String name, int ver) {
 	this.name = name;
 	this.ver = ver;
