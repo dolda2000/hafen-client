@@ -33,7 +33,7 @@ import dolda.xiphutil.*;
 
 public class Audio {
     public static boolean enabled = true;
-    private static Thread player;
+    private static Player player;
     public static final AudioFormat fmt = new AudioFormat(44100, 16, 2, true, false);
     private static Collection<CS> ncl = new LinkedList<CS>();
     private static Object queuemon = new Object();
@@ -136,6 +136,25 @@ public class Audio {
 	    }
 	}
     }
+    
+    public static double[][] pcmi2f(byte[] pcm, int ch) {
+	if(pcm.length % (ch * 2) != 0)
+	    throw(new IllegalArgumentException("Uneven samples in PCM data"));
+	int sm = pcm.length / (ch * 2);
+	double[][] ret = new double[ch][sm];
+	int off = 0;
+	for(int i = 0; i < sm; i++) {
+	    for(int o = 0; o < ch; o++) {
+		int b1 = pcm[off++] & 0xff;
+		int b2 = pcm[off++] & 0xff;
+		int v = b1 + (b2 << 8);
+		if(v >= 32768)
+		    v -= 65536;
+		ret[o][i] = (double)v / 32768.0;
+	    }
+	}
+	return(ret);
+    }
 	
     private static class Player extends HackThread {
 	private Collection<CS> clips = new LinkedList<CS>();
@@ -151,21 +170,23 @@ public class Audio {
 	    int ns = len / (2 * nch);
 	    double[][] val = new double[nch][ns];
 	    double[][] buf = new double[nch][ns];
-	    clip: for(Iterator<CS> i = clips.iterator(); i.hasNext();) {
-		int left = ns;
-		CS cs = i.next();
-		int boff = 0;
-		while(left > 0) {
-		    int ret = cs.get(buf);
-		    if(ret < 0) {
-			i.remove();
-			continue clip;
+	    synchronized(clips) {
+		clip: for(Iterator<CS> i = clips.iterator(); i.hasNext();) {
+		    int left = ns;
+		    CS cs = i.next();
+		    int boff = 0;
+		    while(left > 0) {
+			int ret = cs.get(buf);
+			if(ret < 0) {
+			    i.remove();
+			    continue clip;
+			}
+			for(int ch = 0; ch < nch; ch++) {
+			    for(int sm = 0; sm < ret; sm++)
+				val[ch][sm + boff] += buf[ch][sm];
+			}
+			left -= ret;
 		    }
-		    for(int ch = 0; ch < nch; ch++) {
-			for(int sm = 0; sm < ret; sm++)
-			    val[ch][sm + boff] += buf[ch][sm];
-		    }
-		    left -= ret;
 		}
 	    }
 	    for(int i = 0; i < ns; i++) {
@@ -181,6 +202,17 @@ public class Audio {
 		    }
 		    dst[off++] = (byte)(iv & 0xff);
 		    dst[off++] = (byte)((iv & 0xff00) >> 8);
+		}
+	    }
+	}
+
+	public void stop(CS clip) {
+	    synchronized(clips) {
+		for(Iterator<CS> i = clips.iterator(); i.hasNext();) {
+		    if(i.next() == clip) {
+			i.remove();
+			return;
+		    }
 		}
 	    }
 	}
@@ -207,9 +239,11 @@ public class Audio {
 			    r.run();
 		    }
 		    synchronized(ncl) {
-			for(CS cs : ncl)
-			    clips.add(cs);
-			ncl.clear();
+			synchronized(clips) {
+			    for(CS cs : ncl)
+				clips.add(cs);
+			    ncl.clear();
+			}
 		    }
 		    fillbuf(buf, 0, 1024);
 		    for(int off = 0; off < buf.length; off += line.write(buf, off, buf.length - off));
@@ -241,6 +275,12 @@ public class Audio {
 	    ncl.add(clip);
 	}
 	ckpl();
+    }
+
+    public static void stop(CS clip) {
+	Player pl = player;
+	if(pl != null)
+	    pl.stop(clip);
     }
     
     public static void play(final InputStream clip, final double vol, final double sp) {
