@@ -45,6 +45,7 @@ public class UI {
     public Widget mouseon;
     public Console cons = new WidgetConsole();
     private Collection<AfterDraw> afterdraws = new LinkedList<AfterDraw>();
+    public final ActAudio audio = new ActAudio();
     
     {
 	lastevent = lasttick = System.currentTimeMillis();
@@ -305,5 +306,9 @@ public class UI {
 	       (modctrl?2:0) |
 	       (modmeta?4:0) |
 	       (modsuper?8:0));
+    }
+
+    public void destroy() {
+	audio.clear();
     }
 }
