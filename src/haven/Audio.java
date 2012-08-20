@@ -271,6 +271,8 @@ public class Audio {
     }
     
     public static void play(CS clip) {
+	if(clip == null)
+	    throw(new NullPointerException());
 	synchronized(ncl) {
 	    ncl.add(clip);
 	}
