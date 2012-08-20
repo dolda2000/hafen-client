@@ -235,6 +235,8 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
     Text progt = null;
     public void draw(GOut g) {
 	super.draw(g);
+	if(map != null)
+	    ui.audio.add(map.rls);
 	if(prog >= 0) {
 	    String progs = String.format("%d%%", prog);
 	    if((progt == null) || !progs.equals(progt.text))
