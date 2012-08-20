@@ -315,11 +315,7 @@ public class Audio {
 	    if(--s < 0)
 		break;
 	}
-	try {
-	    return(play(new VorbisStream(new ByteArrayInputStream(clip.coded)).pcmstream(), 1.0, 1.0));
-	} catch(IOException e) {
-	    throw(new RuntimeException(e));
-	}
+	return(play(clip.pcmstream(), 1.0, 1.0));
     }
 
     public static void play(final Resource clip) {

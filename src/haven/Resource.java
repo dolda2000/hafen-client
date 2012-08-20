@@ -1140,6 +1140,14 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 
 	public void init() {}
 
+	public InputStream pcmstream() {
+	    try {
+		return(new dolda.xiphutil.VorbisStream(new ByteArrayInputStream(coded)).pcmstream());
+	    } catch(IOException e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
 	public String layerid() {
 	    return(id);
 	}
