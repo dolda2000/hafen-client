@@ -41,7 +41,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     private static Loader loader;
     private static CacheSource prscache;
     public static ThreadGroup loadergroup = null;
-    private static Map<String, Class<? extends Layer>> ltypes = new TreeMap<String, Class<? extends Layer>>();
+    private static Map<String, LayerFactory<?>> ltypes = new TreeMap<String, LayerFactory<?>>();
     static Set<Resource> loadwaited = new HashSet<Resource>();
     public static Class<Image> imgc = Image.class;
     public static Class<Tile> tile = Tile.class;
@@ -54,14 +54,14 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public static Class<Tooltip> tooltip = Tooltip.class;
     
     static {
-	ltypes.put("vbuf", VertexBuf.VertexRes.class);
-	ltypes.put("mesh", FastMesh.MeshRes.class);
-	ltypes.put("mat", Material.Res.class);
-	ltypes.put("skel", Skeleton.Res.class);
-	ltypes.put("skan", Skeleton.ResPose.class);
-	ltypes.put("boneoff", Skeleton.BoneOffset.class);
-	ltypes.put("light", Light.Res.class);
-	ltypes.put("rlink", RenderLink.Res.class);
+	addltype("vbuf", VertexBuf.VertexRes.class);
+	addltype("mesh", FastMesh.MeshRes.class);
+	addltype("mat", Material.Res.class);
+	addltype("skel", Skeleton.Res.class);
+	addltype("skan", Skeleton.ResPose.class);
+	addltype("boneoff", Skeleton.BoneOffset.class);
+	addltype("light", Light.Res.class);
+	addltype("rlink", RenderLink.Res.class);
     }
 
     static {
@@ -510,6 +510,48 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    return(Resource.this);
 	}
     }
+
+    public interface LayerFactory<T extends Layer> {
+	public T cons(Resource res, byte[] buf);
+    }
+
+    public static class LayerConstructor<T extends Layer> implements LayerFactory<T> {
+	public final Class<T> cl;
+	private final Constructor<T> cons;
+	
+	public LayerConstructor(Class<T> cl) {
+	    this.cl = cl;
+	    try {
+		this.cons = cl.getConstructor(Resource.class, byte[].class);
+	    } catch(NoSuchMethodException e) {
+		throw(new RuntimeException("No proper constructor found for layer type " + cl.getName(), e));
+	    }
+	}
+	
+	public T cons(Resource res, byte[] buf) {
+	    try {
+		return(cons.newInstance(res, buf));
+	    } catch(InstantiationException e) {
+		throw(new LoadException(e, res));
+	    } catch(IllegalAccessException e) {
+		throw(new LoadException(e, res));
+	    } catch(InvocationTargetException e) {
+		Throwable c = e.getCause();
+		if(c instanceof RuntimeException)
+		    throw((RuntimeException)c);
+		else
+		    throw(new LoadException(e, res));
+	    }
+	}
+    }
+
+    public static void addltype(String name, LayerFactory<?> cons) {
+	ltypes.put(name, cons);
+    }
+    
+    public static <T extends Layer> void addltype(String name, Class<T> cl) {
+	addltype(name, new LayerConstructor<T>(cl));
+    }
     
     public interface IDLayer<T> {
 	public T layerid();
@@ -579,7 +621,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		
 	public void init() {}
     }
-    static {ltypes.put("image", Image.class);}
+    static {addltype("image", Image.class);}
         
     public class Tooltip extends Layer {
 	public final String t;
@@ -594,7 +636,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
                 
 	public void init() {}
     }
-    static {ltypes.put("tooltip", Tooltip.class);}
+    static {addltype("tooltip", Tooltip.class);}
 	
     public class Tile extends Layer {
 	transient BufferedImage img;
@@ -624,7 +666,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		
 	public void init() {}
     }
-    static {ltypes.put("tile", Tile.class);}
+    static {addltype("tile", Tile.class);}
 	
     public class Neg extends Layer {
 	public Coord cc;
@@ -651,7 +693,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		
 	public void init() {}
     }
-    static {ltypes.put("neg", Neg.class);}
+    static {addltype("neg", Neg.class);}
 	
     public class Anim extends Layer {
 	private int[] ids;
@@ -681,7 +723,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    }
 	}
     }
-    static {ltypes.put("anim", Anim.class);}
+    static {addltype("anim", Anim.class);}
 	
     public class Tileset extends Layer {
 	private int fl;
@@ -830,7 +872,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    packtiles(tiles, tsz);
 	}
     }
-    static {ltypes.put("tileset", Tileset.class);}
+    static {addltype("tileset", Tileset.class);}
 	
     public class Pagina extends Layer {
 	public final String text;
@@ -845,7 +887,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		
 	public void init() {}
     }
-    static {ltypes.put("pagina", Pagina.class);}
+    static {addltype("pagina", Pagina.class);}
 	
     public class AButton extends Layer {
 	public final String name;
@@ -880,7 +922,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		
 	public void init() {}
     }
-    static {ltypes.put("action", AButton.class);}
+    static {addltype("action", AButton.class);}
     
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)
@@ -906,7 +948,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		
 	public void init() {}
     }
-    static {ltypes.put("code", Code.class);}
+    static {addltype("code", Code.class);}
 	
     public class ResClassLoader extends ClassLoader {
 	public ResClassLoader(ClassLoader parent) {
@@ -1081,7 +1123,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    }
 	}
     }
-    static {ltypes.put("codeentry", CodeEntry.class);}
+    static {addltype("codeentry", CodeEntry.class);}
 	
     public class Audio extends Layer {
 	transient public byte[] coded;
@@ -1096,7 +1138,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    
 	public void init() {}
     }
-    static {ltypes.put("audio", Audio.class);}
+    static {addltype("audio", Audio.class);}
 	
     public class Music extends Resource.Layer {
 	transient javax.sound.midi.Sequence seq;
@@ -1113,7 +1155,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	
 	public void init() {}
     }
-    static {ltypes.put("midi", Music.class);}
+    static {addltype("midi", Music.class);}
 
     private void readall(InputStream in, byte[] buf) throws IOException {
 	int ret, off = 0;
@@ -1258,30 +1300,10 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    int len = Utils.int32d(buf, 0);
 	    buf = new byte[len];
 	    readall(in, buf);
-	    Class<? extends Layer> lc = ltypes.get(tbuf.toString());
+	    LayerFactory<?> lc = ltypes.get(tbuf.toString());
 	    if(lc == null)
 		continue;
-	    Constructor<? extends Layer> cons;
-	    try {
-		cons = lc.getConstructor(Resource.class, byte[].class);
-	    } catch(NoSuchMethodException e) {
-		throw(new LoadException(e, Resource.this));
-	    }
-	    Layer l;
-	    try {
-		l = cons.newInstance(this, buf);
-	    } catch(InstantiationException e) {
-		throw(new LoadException(e, Resource.this));
-	    } catch(InvocationTargetException e) {
-		Throwable c = e.getCause();
-		if(c instanceof RuntimeException) 
-		    throw((RuntimeException)c);
-		else
-		    throw(new LoadException(c, Resource.this));
-	    } catch(IllegalAccessException e) {
-		throw(new LoadException(e, Resource.this));
-	    }
-	    layers.add(l);
+	    layers.add(lc.cons(this, buf));
 	}
 	this.layers = layers;
 	for(Layer l : layers)
