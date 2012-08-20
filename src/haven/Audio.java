@@ -81,13 +81,20 @@ public class Audio {
 	}
 	
 	public void finwait() throws InterruptedException {
-	    synchronized(this) {
-		if(eof)
-		    return;
-		wait();
+	    while(!eof) {
+		synchronized(this) {
+		    wait();
+		}
 	    }
 	}
 	
+	protected void eof() {
+	    synchronized(this) {
+		eof = true;
+		notifyAll();
+	    }
+	}
+
 	public int get(double[][] buf) {
 	    if(eof)
 		return(-1);
@@ -106,10 +113,7 @@ public class Audio {
 				while(dl < 2) {
 				    int ret = clip.read(this.buf, dl, this.buf.length - dl);
 				    if(ret < 0) {
-					synchronized(this) {
-					    eof = true;
-					    notifyAll();
-					}
+					eof();
 					return(off);
 				    }
 				    dl += ret;
@@ -128,10 +132,7 @@ public class Audio {
 		}
 		return(buf[0].length);
 	    } catch(IOException e) {
-		synchronized(this) {
-		    eof = true;
-		    notifyAll();
-		}
+		eof();
 		return(-1);
 	    }
 	}
