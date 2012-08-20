@@ -325,7 +325,7 @@ public abstract class GLState {
 	
 	/* It seems ugly to treat these so specially, but right now I
 	 * cannot see any good alternative. */
-	public Matrix4f cam = Matrix4f.identity(), wxf = Matrix4f.identity(), mv = Matrix4f.identity();
+	public Matrix4f cam = Matrix4f.id, wxf = Matrix4f.id, mv = Matrix4f.identity();
 	
 	public Applier(GL gl, GLConfig cfg) {
 	    this.gl = gl;
