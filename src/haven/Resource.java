@@ -1131,7 +1131,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 
 	public Audio(byte[] coded, String id) {
 	    this.coded = coded;
-	    this.id = id;
+	    this.id = id.intern();
 	}
 
 	public Audio(byte[] buf) {
