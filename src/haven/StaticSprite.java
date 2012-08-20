@@ -33,7 +33,10 @@ public class StaticSprite extends Sprite {
     
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
-		return(new StaticSprite(owner, res, sdt));
+		if((res.layer(FastMesh.MeshRes.class) != null) ||
+		   (res.layer(RenderLink.Res.class) != null))
+		    return(new StaticSprite(owner, res, sdt));
+		return(null);
 	    }
 	};
     
