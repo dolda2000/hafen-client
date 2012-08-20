@@ -1125,20 +1125,42 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     }
     static {addltype("codeentry", CodeEntry.class);}
 	
-    public class Audio extends Layer {
+    public class Audio extends Layer implements IDLayer<String> {
 	transient public byte[] coded;
-	    
-	public Audio(byte[] buf) {
-	    coded = buf;
-	    /*
-	      clip = Utils.readall(new VorbisDecoder(new ByteArrayInputStream(buf)));
-	      System.err.println(Resource.this.name + ": " + clip.length);
-	    */
+	public final String id;
+
+	public Audio(byte[] coded, String id) {
+	    this.coded = coded;
+	    this.id = id;
 	}
-	    
+
+	public Audio(byte[] buf) {
+	    this(buf, "cl");
+	}
+
 	public void init() {}
+
+	public String layerid() {
+	    return(id);
+	}
     }
-    static {addltype("audio", Audio.class);}
+    static {
+	addltype("audio", Audio.class);
+	addltype("audio2", new LayerFactory<Audio>() {
+		public Audio cons(Resource res, byte[] buf) {
+		    int[] off = {0};
+		    int ver = buf[off[0]++];
+		    if(ver == 1) {
+			String id = Utils.strd(buf, off);
+			byte[] data = new byte[buf.length - off[0]];
+			System.arraycopy(buf, off[0], data, 0, buf.length - off[0]);
+			return(res.new Audio(data, id));
+		    } else {
+			throw(new LoadException("Unknown audio layer version: " + ver, res));
+		    }
+		}
+	    });
+    }
 	
     public class Music extends Resource.Layer {
 	transient javax.sound.midi.Sequence seq;
