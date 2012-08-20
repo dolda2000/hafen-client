@@ -283,16 +283,18 @@ public class Audio {
 	    pl.stop(clip);
     }
     
-    public static void play(final InputStream clip, final double vol, final double sp) {
-	play(new DataClip(clip, vol, sp));
+    public static DataClip play(InputStream clip, final double vol, final double sp) {
+	DataClip cs = new DataClip(clip, vol, sp);
+	play(cs);
+	return(cs);
     }
 
-    public static void play(byte[] clip, double vol, double sp) {
-	play(new DataClip(new ByteArrayInputStream(clip), vol, sp));
+    public static DataClip play(byte[] clip, double vol, double sp) {
+	return(play(new ByteArrayInputStream(clip), vol, sp));
     }
     
-    public static void play(byte[] clip) {
-	play(clip, 1.0, 1.0);
+    public static DataClip play(byte[] clip) {
+	return(play(clip, 1.0, 1.0));
     }
     
     public static void queue(Runnable d) {
@@ -302,7 +304,7 @@ public class Audio {
 	ckpl();
     }
 
-    private static void playres(Resource res) {
+    public static DataClip playres(Resource res) {
 	Collection<Resource.Audio> clips = res.layers(Resource.audio);
 	int s = (int)(Math.random() * clips.size());
 	Resource.Audio clip = null;
@@ -312,7 +314,7 @@ public class Audio {
 		break;
 	}
 	try {
-	    play(new VorbisStream(new ByteArrayInputStream(clip.coded)).pcmstream(), 1.0, 1.0);
+	    return(play(new VorbisStream(new ByteArrayInputStream(clip.coded)).pcmstream(), 1.0, 1.0));
 	} catch(IOException e) {
 	    throw(new RuntimeException(e));
 	}
