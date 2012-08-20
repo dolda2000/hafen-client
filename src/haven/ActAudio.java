@@ -44,11 +44,11 @@ public class ActAudio {
 	public CS clip();
     }
 
-    public class PosAudio implements RenderedAudio {
+    public static class PosClip implements RenderedAudio {
 	private final Audio.DataClip clip;
 	private final Matrix4f mv = new Matrix4f();
 	
-	public PosAudio(Audio.DataClip clip) {
+	public PosClip(Audio.DataClip clip) {
 	    this.clip = clip;
 	}
 	
