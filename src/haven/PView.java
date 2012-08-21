@@ -31,7 +31,7 @@ import static haven.GOut.checkerr;
 import javax.media.opengl.*;
 
 public abstract class PView extends Widget {
-    private RenderList rls;
+    public RenderList rls;
     public static final GLState.Slot<RenderState> wnd = new GLState.Slot<RenderState>(GLState.Slot.Type.SYS, RenderState.class, HavenPanel.proj2d);
     public static final GLState.Slot<Projection> proj = new GLState.Slot<Projection>(GLState.Slot.Type.SYS, Projection.class, wnd);
     public static final GLState.Slot<Camera> cam = new GLState.Slot<Camera>(GLState.Slot.Type.SYS, Camera.class, proj);
