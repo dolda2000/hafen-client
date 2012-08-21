@@ -216,6 +216,10 @@ public class Gob implements Sprite.Owner, Rendered {
 	    return(d.getneg());
 	return(null);
     }
+
+    public Glob glob() {
+	return(glob);
+    }
     
     public final GLState olmod = new GLState() {
 	    public void apply(GOut g) {}
