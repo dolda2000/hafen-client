@@ -27,43 +27,43 @@
 package haven;
 
 import java.util.*;
+import java.lang.ref.WeakReference;
 import haven.Audio.CS;
 
-public class ActAudio {
+public class ActAudio extends GLState.Abstract {
+    public static final GLState.Slot<ActAudio> slot = new GLState.Slot<ActAudio>(GLState.Slot.Type.SYS, ActAudio.class);
     private final Collection<CS> clips = new ArrayList<CS>();
     private final Collection<CS> current = new ArrayList<CS>();
     private final Map<Global, Global> global = new HashMap<Global, Global>();
 
+    public void prep(Buffer st) {
+	st.put(slot, this);
+    }
+
     public interface Global {
-	public void cycle();
-	public void add(GLState.Buffer state);
-	public CS clip();
+	public boolean cycle(ActAudio list);
     }
 
-    public interface RenderedAudio extends Rendered {
-	public CS clip();
-    }
-
-    public static class PosClip implements RenderedAudio {
+    public static class PosClip implements Rendered {
 	private final Audio.DataClip clip;
-	private final Matrix4f mv = new Matrix4f();
 	
 	public PosClip(Audio.DataClip clip) {
 	    this.clip = clip;
 	}
 	
-	public void draw(GOut g) {}
-	public boolean setup(RenderList rl) {
-	    GLState.Buffer st = rl.state();
-	    mv.load(st.get(PView.cam).fin(Matrix4f.id)).mul1(st.get(PView.loc).fin(Matrix4f.id));
-	    Coord3f pos = mv.mul4(Coord3f.o);
-	    double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
-	    this.clip.vol = Math.min(1.0, 50.0 / pd);
-	    return(false);
+	public void draw(GOut g) {
+	    g.apply();
+	    ActAudio list = g.st.cur(slot);
+	    if(list != null) {
+		Coord3f pos = g.st.mv.mul4(Coord3f.o);
+		double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
+		this.clip.vol = Math.min(1.0, 50.0 / pd);
+		list.add(clip);
+	    }
 	}
-	
-	public CS clip() {
-	    return(this.clip);
+
+	public boolean setup(RenderList rl) {
+	    return(true);
 	}
     }
 
@@ -74,22 +74,16 @@ public class ActAudio {
     public Global intern(Global glob) {
 	Global ret = global.get(glob);
 	if(ret == null)
-	    global.put(ret = glob, glob);
+	    global.put(glob, ret = glob);
 	return(ret);
     }
     
-    public void add(RenderList list) {
-	for(RenderList.Slot slot : list.slots()) {
-	    if(slot.r instanceof RenderedAudio)
-		add(((RenderedAudio)slot.r).clip());
-	    else if(slot.r instanceof Global)
-		((Global)slot.r).add(slot.os);
-	}
-    }
-    
     public void cycle() {
-	for(Global glob : global.keySet())
-	    glob.cycle();
+	for(Iterator<Global> i = global.keySet().iterator(); i.hasNext();) {
+	    Global glob = i.next();
+	    if(glob.cycle(this))
+		i.remove();
+	}
 	for(CS clip : current) {
 	    if(!clips.contains(clip))
 		Audio.stop(clip);
