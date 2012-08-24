@@ -42,20 +42,32 @@ public class RepeatStream extends InputStream {
     }
 
     public int read(byte[] b, int off, int len) throws IOException {
+	if(cur == null)
+	    return(-1);
 	int ret;
-	while((ret = cur.read(b, off, len)) < 0)
-	    cur = rep.cons();
+	while((ret = cur.read(b, off, len)) < 0) {
+	    cur.close();
+	    if((cur = rep.cons()) == null)
+		return(-1);
+	}
 	return(ret);
     }
 
     public int read() throws IOException {
+	if(cur == null)
+	    return(-1);
 	int ret;
-	while((ret = cur.read()) < 0)
-	    cur = rep.cons();
+	while((ret = cur.read()) < 0) {
+	    cur.close();
+	    if((cur = rep.cons()) == null)
+		return(-1);
+	}
 	return(ret);
     }
 
     public void close() throws IOException {
-	cur.close();
+	if(cur != null)
+	    cur.close();
+	cur = null;
     }
 }
