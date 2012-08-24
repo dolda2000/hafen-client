@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.io.*;
 import java.lang.ref.WeakReference;
 import haven.Audio.CS;
 
@@ -83,13 +84,21 @@ public class ActAudio extends GLState.Abstract {
 
 	public static class Glob implements Global {
 	    public final Resource res;
-	    private Audio.DataClip clip = null;
+	    private final Audio.DataClip clip;
 	    private int n;
 	    private double vacc;
 	    private double lastupd = System.currentTimeMillis() / 1000.0;
 	    
 	    public Glob(Resource res) {
 		this.res = res;
+		final Resource.Audio clip = res.layer(Resource.audio, "amb");
+		if(clip == null)
+		    throw(new RuntimeException("No ambient clip found in " + res));
+		this.clip = new Audio.DataClip(new RepeatStream(new RepeatStream.Repeater() {
+			public InputStream cons() {
+			    return(clip.pcmstream());
+			}
+		    }), 0.0, 1.0);
 	    }
 
 	    public int hashCode() {
@@ -101,13 +110,6 @@ public class ActAudio extends GLState.Abstract {
 	    }
 
 	    public boolean cycle(ActAudio list) {
-		if((clip == null) || clip.eof) {
-		    double svol = (this.clip == null)?0.0:(this.clip.vol);
-		    Resource.Audio clip = res.layer(Resource.audio, "amb");
-		    if(clip == null)
-			throw(new RuntimeException("No ambient clip found in " + res));
-		    this.clip = new Audio.DataClip(clip.pcmstream(), svol, 1.0);
-		}
 		double now = System.currentTimeMillis() / 1000.0;
 		double td = Math.max(now - lastupd, 0.0);
 		if(vacc < clip.vol)
