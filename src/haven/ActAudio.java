@@ -77,19 +77,23 @@ public class ActAudio extends GLState.Abstract {
 	    this.bvol = bvol;
 	}
 
+	public Ambience(Resource res) {
+	    this(res, res.layer(Resource.audio).bvol);
+	}
+
 	public static class Glob implements Global {
 	    public final Resource res;
 	    private final Audio.DataClip clip;
 	    private int n;
 	    private double vacc;
-	    private double lastupd;
+	    private double lastupd = System.currentTimeMillis() / 1000.0;
 	    
 	    public Glob(Resource res) {
 		this.res = res;
 		Resource.Audio clip = res.layer(Resource.audio, "amb");
 		if(clip == null)
 		    throw(new RuntimeException("No ambient clip found in " + res));
-		this.clip = new Audio.DataClip(clip.pcmstream());
+		this.clip = new Audio.DataClip(clip.pcmstream(), 0.0, 1.0);
 	    }
 
 	    public int hashCode() {
@@ -102,7 +106,7 @@ public class ActAudio extends GLState.Abstract {
 
 	    public boolean cycle(ActAudio list) {
 		double now = System.currentTimeMillis() / 1000.0;
-		double td = now - lastupd;
+		double td = Math.max(now - lastupd, 0.0);
 		if(vacc < clip.vol)
 		    clip.vol = Math.max(clip.vol - (td * 0.5), 0.0);
 		else if(vacc > clip.vol)

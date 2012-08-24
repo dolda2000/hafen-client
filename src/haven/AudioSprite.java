@@ -77,7 +77,7 @@ public class AudioSprite {
 
 	public Ambience(Owner owner, Resource res) {
 	    super(owner, res);
-	    this.amb = new ActAudio.Ambience(res, 0.5);
+	    this.amb = new ActAudio.Ambience(res);
 	}
 
 	public boolean setup(RenderList r) {
