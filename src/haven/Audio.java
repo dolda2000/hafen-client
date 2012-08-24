@@ -102,24 +102,21 @@ public class Audio {
 		for(int off = 0; off < buf[0].length; off++) {
 		    ack += rate * sp;
 		    while(ack >= trate) {
-			for(int i = 0; i < 2; i++) {
-			    if(dl - dp < 2) {
-				if(dl > dp) {
-				    this.buf[0] = this.buf[dp];
-				    dl = 1;
-				} else {
-				    dl = 0;
+			if(dl - dp < 4) {
+			    for(int i = 0; i < dl - dp; i++)
+				this.buf[i] = this.buf[dp + i];
+			    dl -= dp;
+			    while(dl < 4) {
+				int ret = clip.read(this.buf, dl, this.buf.length - dl);
+				if(ret < 0) {
+				    eof();
+				    return(off);
 				}
-				while(dl < 2) {
-				    int ret = clip.read(this.buf, dl, this.buf.length - dl);
-				    if(ret < 0) {
-					eof();
-					return(off);
-				    }
-				    dl += ret;
-				}
-				dp = 0;
+				dl += ret;
 			    }
+			    dp = 0;
+			}
+			for(int i = 0; i < 2; i++) {
 			    int b1 = this.buf[dp++] & 0xff;
 			    int b2 = this.buf[dp++] & 0xff;
 			    int v = b1 + (b2 << 8);
