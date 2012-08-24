@@ -31,19 +31,33 @@ import java.io.*;
 
 public class AudioSprite {
     public static final Sprite.Factory fact = new Sprite.Factory() {
-	    public Sprite create(Sprite.Owner owner, Resource res, Message sdt) {
+	    private Resource.Audio randoom(Resource res, String id) {
 		List<Resource.Audio> cl = new ArrayList<Resource.Audio>();
 		for(Resource.Audio clip : res.layers(Resource.audio)) {
-		    if(clip.id == "cl")
+		    if(clip.id == id)
 			cl.add(clip);
 		}
-		if(!cl.isEmpty()) {
-		    Resource.Audio clip = cl.get((int)(Math.random() * cl.size()));
-		    return(new ClipSprite(owner, res, clip));
+		if(!cl.isEmpty())
+		    return(cl.get((int)(Math.random() * cl.size())));
+		return(null);
+	    }
+
+	    public Sprite create(Sprite.Owner owner, Resource res, Message sdt) {
+		{
+		    Resource.Audio clip = randoom(res, "cl");
+		    if(clip != null)
+			return(new ClipSprite(owner, res, clip));
 		}
-		Resource.Audio clip = res.layer(Resource.audio, "amb");
-		if(clip != null)
-		    return(new Ambience(owner, res));
+		{
+		    Resource.Audio clip = randoom(res, "rep");
+		    if(clip != null)
+			return(new RepeatSprite(owner, res, randoom(res, "beg"), clip, randoom(res, "end")));
+		}
+		{
+		    Resource.Audio clip = res.layer(Resource.audio, "amb");
+		    if(clip != null)
+			return(new Ambience(owner, res));
+		}
 		return(null);
 	    }
 	};
@@ -69,6 +83,50 @@ public class AudioSprite {
 
 	public boolean tick(int dt) {
 	    return(done);
+	}
+    }
+
+    public static class RepeatSprite extends Sprite implements Gob.Overlay.CDel {
+	private ActAudio.PosClip clip;
+	private final Resource.Audio end;
+
+	public RepeatSprite(Owner owner, Resource res, final Resource.Audio beg, final Resource.Audio clip, Resource.Audio end) {
+	    super(owner, res);
+	    this.end = end;
+	    RepeatStream.Repeater rep = new RepeatStream.Repeater() {
+		    private boolean f = true;
+
+		    public InputStream cons() {
+			if(f && (beg != null)) {
+			    f = false;
+			    return(beg.pcmstream());
+			}
+			return(clip.pcmstream());
+		    }
+		};
+	    this.clip = new ActAudio.PosClip(new Audio.DataClip(new RepeatStream(rep)));
+	}
+
+	public boolean setup(RenderList r) {
+	    if(clip != null)
+		r.add(clip, null);
+	    return(false);
+	}
+
+	public boolean tick(int dt) {
+	    return(clip == null);
+	}
+
+	public void delete() {
+	    if(end != null)
+		clip = new ActAudio.PosClip(new Audio.DataClip(end.pcmstream()) {
+			protected void eof() {
+			    super.eof();
+			    RepeatSprite.this.clip = null;
+			}
+		    });
+	    else
+		clip = null;
 	}
     }
 
