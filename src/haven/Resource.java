@@ -1128,6 +1128,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public class Audio extends Layer implements IDLayer<String> {
 	transient public byte[] coded;
 	public final String id;
+	public double bvol = 1.0;
 
 	public Audio(byte[] coded, String id) {
 	    this.coded = coded;
@@ -1158,11 +1159,17 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		public Audio cons(Resource res, byte[] buf) {
 		    int[] off = {0};
 		    int ver = buf[off[0]++];
-		    if(ver == 1) {
+		    if((ver == 1) || (ver == 2)) {
 			String id = Utils.strd(buf, off);
+			double bvol = 1.0;
+			if(ver == 2) {
+			    bvol = Utils.uint16d(buf, off[0]) / 1000.0; off[0] += 2;
+			}
 			byte[] data = new byte[buf.length - off[0]];
 			System.arraycopy(buf, off[0], data, 0, buf.length - off[0]);
-			return(res.new Audio(data, id));
+			Audio ret = res.new Audio(data, id);
+			ret.bvol = bvol;
+			return(ret);
 		    } else {
 			throw(new LoadException("Unknown audio layer version: " + ver, res));
 		    }
