@@ -62,6 +62,8 @@ public class StaticSprite extends Sprite {
 	}
 	for(RenderLink.Res lr : res.layers(RenderLink.Res.class))
 	    rl.add(lr.l.make());
+	if(res.layer(Resource.audio, "amb") != null)
+	    rl.add(new ActAudio.Ambience(res));
 	return(rl.toArray(new Rendered[0]));
     }
 
