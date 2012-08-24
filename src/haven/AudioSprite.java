@@ -41,6 +41,9 @@ public class AudioSprite {
 		    Resource.Audio clip = cl.get((int)(Math.random() * cl.size()));
 		    return(new ClipSprite(owner, res, clip));
 		}
+		Resource.Audio clip = res.layer(Resource.audio, "amb");
+		if(clip != null)
+		    return(new Ambience(owner, res));
 		return(null);
 	    }
 	};
@@ -66,6 +69,20 @@ public class AudioSprite {
 
 	public boolean tick(int dt) {
 	    return(done);
+	}
+    }
+
+    public static class Ambience extends Sprite {
+	public final ActAudio.Ambience amb;
+
+	public Ambience(Owner owner, Resource res) {
+	    super(owner, res);
+	    this.amb = new ActAudio.Ambience(res, 0.5);
+	}
+
+	public boolean setup(RenderList r) {
+	    r.add(amb, null);
+	    return(false);
 	}
     }
 }
