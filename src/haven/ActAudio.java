@@ -74,12 +74,18 @@ public class ActAudio extends GLState.Abstract {
 	private Glob glob = null;
 
 	public Ambience(Resource res, double bvol) {
+	    if(res.layer(Resource.audio, "amb") == null) {
+		/* This check is mostly just to make sure the resource
+		 * is loaded and doesn't throw Loading exception in
+		 * the setup routine. */
+		throw(new RuntimeException("No ambient clip found in " + res));
+	    }
 	    this.res = res;
 	    this.bvol = bvol;
 	}
 
 	public Ambience(Resource res) {
-	    this(res, res.layer(Resource.audio).bvol);
+	    this(res, res.layer(Resource.audio, "amb").bvol);
 	}
 
 	public static class Glob implements Global {
