@@ -68,6 +68,15 @@ public interface RenderLink {
 			    return(res);
 			}
 		    };
+	    } else if(t == 1) {
+		String nm = Utils.strd(buf, off);
+		int ver = Utils.uint16d(buf, off[0]); off[0] += 2;
+		final Resource amb = Resource.load(nm, ver);
+		l = new RenderLink() {
+			public Rendered make() {
+			    return(new ActAudio.Ambience(amb));
+			}
+		    };
 	    } else {
 		throw(new Resource.LoadException("Invalid renderlink type: " + t, getres()));
 	    }
