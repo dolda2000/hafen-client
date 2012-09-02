@@ -96,14 +96,15 @@ public abstract class PView extends Widget {
     protected GLState.Buffer basic(GOut g) {
 	GLState.Buffer buf = g.st.copy();
 	rstate.prep(buf);
-	pstate.prep(buf);
+	if(pstate != null)
+	    pstate.prep(buf);
 	camera().prep(buf);
 	if(ui.audio != null)
 	    ui.audio.prep(buf);
 	return(buf);
     }
 
-    protected abstract Camera camera();
+    protected abstract GLState camera();
     protected abstract void setup(RenderList rls);
     
     protected Projection makeproj() {
