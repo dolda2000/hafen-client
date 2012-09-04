@@ -90,7 +90,7 @@ public class MapView extends PView implements DTarget {
     
     private class FollowCam extends Camera {
 	private final float fr = 0.0f, h = 10.0f;
-	private float ca, cd, da;
+	private float ca, cd;
 	private Coord3f curc = null;
 	private float elev, telev;
 	private float angl, tangl;
@@ -98,15 +98,13 @@ public class MapView extends PView implements DTarget {
 	private float anglorig;
 	
 	private FollowCam() {
-	    elev = telev = (float)Math.PI / 4.0f;
+	    elev = telev = (float)Math.PI / 6.0f;
 	    angl = tangl = 0.0f;
 	}
 	
 	public void resized() {
 	    ca = (float)sz.y / (float)sz.x;
 	    cd = 400.0f * ca;
-	    da = (float)Math.atan(ca * 0.5f);
-	    super.resized();
 	}
 	
 	public boolean click(Coord c) {
@@ -120,7 +118,17 @@ public class MapView extends PView implements DTarget {
 	    tangl = tangl % ((float)Math.PI * 2.0f);
 	}
 
+	private double f0 = 0.2, f1 = 0.5, f2 = 0.9;
+	private double fl = Math.sqrt(2);
+	private double fa = ((fl * (f1 - f0)) - (f2 - f0)) / (fl - 2);
+	private double fb = ((f2 - f0) - (2 * (f1 - f0))) / (fl - 2);
+	private float field(float elev) {
+	    double a = elev / (Math.PI / 4);
+	    return((float)(f0 + (fa * a) + (fb * Math.sqrt(a))));
+	}
+
 	private float dist(float elev) {
+	    float da = (float)Math.atan(ca * field(elev));
 	    return((float)(((cd - (h / Math.tan(elev))) * Math.sin(elev - da) / Math.sin(da)) - (h / Math.sin(elev))));
 	}
 
@@ -157,7 +165,9 @@ public class MapView extends PView implements DTarget {
 		tangl = curc.xyangle(cambase);
 	    }
 	    
+	    float field = field(elev);
 	    view.update(PointedCam.compute(curc.add(0.0f, 0.0f, h), dist(elev), elev, angl));
+	    proj.update(Projection.makefrustum(new Matrix4f(), -field, field, -ca * field, ca * field, 1, 5000));
 	}
 
 	public float angle() {
@@ -165,7 +175,7 @@ public class MapView extends PView implements DTarget {
 	}
 	
 	private static final float maxang = (float)(Math.PI / 2 - 0.1);
-	private static final float mindist = 10.0f;
+	private static final float mindist = 50.0f;
 	public boolean wheel(Coord c, int amount) {
 	    float fe = telev;
 	    telev += amount * telev * 0.02f;
@@ -174,6 +184,10 @@ public class MapView extends PView implements DTarget {
 	    if(dist(telev) < mindist)
 		telev = fe;
 	    return(true);
+	}
+
+	public String toString() {
+	    return(String.format("%f %f %f", elev, dist(elev), field(elev)));
 	}
     }
 
