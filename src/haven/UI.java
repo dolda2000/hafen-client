@@ -174,7 +174,6 @@ public class UI {
 	if((keygrab != null) && keygrab.hasparent(wdg))
 	    keygrab = null;
 	removeid(wdg);
-	wdg.unlink();
 	wdg.destroy();
     }
     
