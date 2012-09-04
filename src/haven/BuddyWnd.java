@@ -251,6 +251,7 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 		menu = new FlowerMenu(c, ui.root, opts.toArray(new String[0])) {
 			public void destroy() {
 			    menu = null;
+			    super.destroy();
 			}
 			
 			public void choose(Petal opt) {
