@@ -98,13 +98,14 @@ public class Widget {
     }
     
     public static WidgetFactory gettype(String name) {
+	long start = System.currentTimeMillis();
 	WidgetFactory f;
 	try {
 	    f = gettype2(name);
 	} catch(InterruptedException e) {
 	    /* XXX: This is not proper behavior. On the other hand,
 	     * InterruptedException should not be checked. :-/ */
-	    throw(new RuntimeException("Interrupted while loading resource widget", e));
+	    throw(new RuntimeException("Interrupted while loading resource widget (took " + (System.currentTimeMillis() - start) + " ms)", e));
 	}
 	if(f == null)
 	    throw(new RuntimeException("No such widget type: " + name));
