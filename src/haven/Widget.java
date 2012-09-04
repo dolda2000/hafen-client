@@ -302,6 +302,10 @@ public class Widget {
 	}
     }
 	
+    public void reqdestroy() {
+	destroy();
+    }
+
     public void destroy() {
 	if(canfocus)
 	    setcanfocus(false);
