@@ -283,7 +283,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	    GameUI gi = ui.root.findchild(GameUI.class);
 	    if((gi != null) && (gi.map != null)) {
 		try {
-		    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "MV pos: %s", gi.map.getcc());
+		    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "MV pos: %s (%s)", gi.map.getcc(), gi.map.camera);
 		} catch(Loading e) {}
 	    }
 	    if(Resource.qdepth() > 0)
