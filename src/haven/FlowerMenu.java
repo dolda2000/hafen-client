@@ -38,7 +38,6 @@ public class FlowerMenu extends Widget {
     static Text.Foundry ptf = new Text.Foundry(new Font("SansSerif", Font.PLAIN, 12));
     static int ph = 30, ppl = 8;
     Petal[] opts;
-    Anim anim;
 	
     static {
 	Widget.addtype("sm", new WidgetFactory() {
@@ -89,31 +88,10 @@ public class FlowerMenu extends Widget {
 	}
     }
 	
-    public abstract class Anim {
-	long st = System.currentTimeMillis();
-	int ms = 250;
-	double s = 0.0;
-		
-	public void tick() {
-	    int dt = (int)(System.currentTimeMillis() - st);
-	    if(dt < ms)
-		s = (double)dt / ms;
-	    else
-		s = 1;
-	    if(dt >= ms)
-		end();
-	    tick2();
-	}
-		
-	public void end() {
-	    anim = null;
-	}
-		
-	public abstract void tick2();
-    }
+    public class Opening extends NormAnim {
+	Opening() {super(0.25);}
 	
-    public class Opening extends Anim {
-	public void tick2() {
+	public void ntick(double s) {
 	    for(Petal p : opts) {
 		p.move(p.ta + ((1 - s) * PI), p.tr * s);
 		p.a = s;
@@ -121,15 +99,15 @@ public class FlowerMenu extends Widget {
 	}
     }
 	
-    public class Chosen extends Anim {
+    public class Chosen extends NormAnim {
 	Petal chosen;
 		
 	Chosen(Petal c) {
-	    ms = 750;
+	    super(0.75);
 	    chosen = c;
 	}
 		
-	public void tick2() {
+	public void ntick(double s) {
 	    for(Petal p : opts) {
 		if(p == chosen) {
 		    if(s > 0.6) {
@@ -144,23 +122,21 @@ public class FlowerMenu extends Widget {
 			p.a = 1 - (s / 0.3);
 		}
 	    }
-	}
-		
-	public void end() {
-	    ui.destroy(FlowerMenu.this);
+	    if(s == 1.0)
+		ui.destroy(FlowerMenu.this);
 	}
     }
 	
-    public class Cancel extends Anim {
-	public void tick2() {
+    public class Cancel extends NormAnim {
+	Cancel() {super(0.25);}
+
+	public void ntick(double s) {
 	    for(Petal p : opts) {
 		p.move(p.ta + ((s) * PI), p.tr * (1 - s));
 		p.a = 1 - s;
 	    }
-	}
-		
-	public void end() {
-	    ui.destroy(FlowerMenu.this);
+	    if(s == 1.0)
+		ui.destroy(FlowerMenu.this);
 	}
     }
 	
@@ -192,11 +168,11 @@ public class FlowerMenu extends Widget {
 	organize(opts);
 	ui.grabmouse(this);
 	ui.grabkeys(this);
-	anim = new Opening();
+	new Opening();
     }
 	
     public boolean mousedown(Coord c, int button) {
-	if(anim != null)
+	if(!anims.isEmpty())
 	    return(true);
 	if(!super.mousedown(c, button))
 	    choose(null);
@@ -205,19 +181,17 @@ public class FlowerMenu extends Widget {
 	
     public void uimsg(String msg, Object... args) {
 	if(msg == "cancel") {
-	    anim = new Cancel();
+	    new Cancel();
 	    ui.grabmouse(null);
 	    ui.grabkeys(null);
 	} else if(msg == "act") {
-	    anim = new Chosen(opts[(Integer)args[0]]);
+	    new Chosen(opts[(Integer)args[0]]);
 	    ui.grabmouse(null);
 	    ui.grabkeys(null);
 	}
     }
 	
     public void draw(GOut g) {
-	if(anim != null)
-	    anim.tick();
 	super.draw(g, false);
     }
     
