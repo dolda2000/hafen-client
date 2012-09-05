@@ -155,6 +155,7 @@ public class GLFrameBuffer extends GLState {
 		}
 	    }
 	}
+	gl.glViewport(0, 0, sz().x, sz().y);
     }
     
     public void unapply(GOut g) {
@@ -164,6 +165,7 @@ public class GLFrameBuffer extends GLState {
 	    gl.glDrawBuffer(GL.GL_BACK);
 	    gl.glReadBuffer(GL.GL_BACK);
 	}
+	gl.glViewport(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
     }
 
     public void prep(Buffer buf) {
