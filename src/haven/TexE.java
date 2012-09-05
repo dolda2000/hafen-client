@@ -43,6 +43,10 @@ public class TexE extends TexGL {
     public TexE(Coord sz, int ifmt, int dfmt, int dtype) {
 	this(sz, ifmt, dfmt, dtype, true);
     }
+
+    public TexE(Coord sz) {
+	this(sz, GL.GL_RGBA, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE);
+    }
     
     protected void fill(GOut g) {
 	GL gl = g.gl;
