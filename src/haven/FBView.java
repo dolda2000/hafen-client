@@ -32,6 +32,7 @@ public class FBView {
     public final GLFrameBuffer fbo;
     public RenderList rls;
     public GLState basicstate;
+    private final GLState ostate;
     private final PView.RenderState rstate = new RenderState();
     
     private class RenderState extends PView.RenderState {
@@ -47,6 +48,21 @@ public class FBView {
     public FBView(GLFrameBuffer fbo, GLState basic) {
 	this.fbo = fbo;
 	this.basicstate = basic;
+	ostate = new GLState() {
+		public void apply(GOut g) {
+		    GL gl = g.gl;
+		    Coord sz = FBView.this.fbo.sz();
+		    g.st.matmode(GL.GL_PROJECTION);
+		    gl.glLoadIdentity();
+		    gl.glOrtho(0, sz.x, sz.y, 0, -1, 1);
+		}
+
+		public void unapply(GOut g) {}
+
+		public void prep(Buffer buf) {
+		    buf.put(HavenPanel.proj2d, this);
+		}
+	    };
     }
     
     protected GLState.Buffer basic(GOut g) {
@@ -55,6 +71,13 @@ public class FBView {
 	if(basicstate != null)
 	    basicstate.prep(buf);
 	return(buf);
+    }
+
+    public void clear2d(GOut g, java.awt.Color cc) {
+	g.state2d();
+	g.apply();
+	g.gl.glClearColor((float)cc.getRed() / 255f, (float)cc.getGreen() / 255f, (float)cc.getBlue() / 255f, (float)cc.getAlpha() / 255f);
+	g.gl.glClear(GL.GL_COLOR_BUFFER_BIT);
     }
 
     protected void clear(GOut g) {
@@ -83,6 +106,7 @@ public class FBView {
     public GOut gderive(GOut orig) {
 	GLState.Buffer def = orig.basicstate();
 	fbo.prep(def);
+	ostate.prep(def);
 	return(new GOut(orig.gl, orig.ctx, orig.gc, orig.st, def, fbo.sz()));
     }
     
