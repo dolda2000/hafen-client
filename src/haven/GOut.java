@@ -163,6 +163,10 @@ public class GOut {
     public void state(GLState st) {
 	this.st.prep(st);
     }
+
+    public void state2d() {
+	st.set(def2d);
+    }
     
     public void line(Coord c1, Coord c2, double w) {
 	st.set(def2d);
