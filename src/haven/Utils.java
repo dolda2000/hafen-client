@@ -34,7 +34,7 @@ import java.util.prefs.*;
 import java.util.*;
 import java.awt.Graphics;
 import java.awt.Color;
-import java.awt.image.BufferedImage;
+import java.awt.image.*;
 
 public class Utils {
     public static final java.nio.charset.Charset utf8 = java.nio.charset.Charset.forName("UTF-8");
@@ -570,22 +570,24 @@ public class Utils {
     public static BufferedImage outline(BufferedImage img, Color col) {
 	Coord sz = imgsz(img).add(2, 2);
 	BufferedImage ol = TexI.mkbuf(sz);
+	Object fcol = ol.getColorModel().getDataElements(col.getRGB(), null);
+	Raster src = img.getRaster();
+	WritableRaster dst = ol.getRaster();
 	for(int y = 0; y < sz.y; y++) {
 	    for(int x = 0; x < sz.x; x++) {
 		boolean t;
 		if((y == 0) || (x == 0) || (y == sz.y - 1) || (x == sz.x - 1)) {
 		    t = true;
 		} else {
-		    int cl = img.getRGB(x - 1, y - 1);
-		    t = Utils.rgbm.getAlpha(cl) < 250;
+		    t = src.getSample(x - 1, y - 1, 3) < 250;
 		}
 		if(!t)
 		    continue;
-		if(((x > 1) && (y > 0) && (y < sz.y - 1) && (Utils.rgbm.getAlpha(img.getRGB(x - 2, y - 1)) >= 250)) ||
-		   ((x > 0) && (y > 1) && (x < sz.x - 1) && (Utils.rgbm.getAlpha(img.getRGB(x - 1, y - 2)) >= 250)) ||
-		   ((x < sz.x - 2) && (y > 0) && (y < sz.y - 1) && (Utils.rgbm.getAlpha(img.getRGB(x, y - 1)) >= 250)) ||
-		   ((x > 0) && (y < sz.y - 2) && (x < sz.x - 1) && (Utils.rgbm.getAlpha(img.getRGB(x - 1, y)) >= 250)))
-		    ol.setRGB(x, y, col.getRGB());
+		if(((x > 1) && (y > 0) && (y < sz.y - 1) && (src.getSample(x - 2, y - 1, 3) >= 250)) ||
+		   ((x > 0) && (y > 1) && (x < sz.x - 1) && (src.getSample(x - 1, y - 2, 3) >= 250)) ||
+		   ((x < sz.x - 2) && (y > 0) && (y < sz.y - 1) && (src.getSample(x, y - 1, 3) >= 250)) ||
+		   ((x > 0) && (y < sz.y - 2) && (x < sz.x - 1) && (src.getSample(x - 1, y, 3) >= 250)))
+		    dst.setDataElements(x, y, fcol);
 	    }
 	}
 	return(ol);
