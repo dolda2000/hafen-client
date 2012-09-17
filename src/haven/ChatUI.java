@@ -39,7 +39,7 @@ import java.io.IOException;
 import java.awt.datatransfer.*;
 
 public class ChatUI extends Widget {
-    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 9, TextAttribute.FOREGROUND, Color.BLACK));
+    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 10, TextAttribute.FOREGROUND, Color.BLACK));
     public static final Text.Foundry qfnd = new Text.Foundry(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 12), new java.awt.Color(192, 255, 192));
     public static final int selw = 100;
     public Channel sel = null;
