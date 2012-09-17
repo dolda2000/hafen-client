@@ -49,8 +49,8 @@ public class RichText extends Text {
 	stdf = new Foundry(std);
     }
     
-    private RichText(String text, Part parts) {
-	super(text);
+    private RichText(String text, BufferedImage img, Part parts) {
+	super(text, img);
 	this.parts = parts;
     }
 
@@ -616,11 +616,9 @@ public class RichText extends Text {
 	    Graphics2D g = img.createGraphics();
 	    if(aa)
 		Utils.AA(g);
-	    RichText rt = new RichText(text, fp);
-	    rt.img = img;
 	    for(Part p = fp; p != null; p = p.next)
 		p.render(g);
-	    return(rt);
+	    return(new RichText(text, img, fp));
 	}
 	
 	public RichText render(String text) {

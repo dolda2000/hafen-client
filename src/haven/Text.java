@@ -33,7 +33,7 @@ import java.util.*;
 
 public class Text {
     public static final Foundry std;
-    public BufferedImage img;
+    public final BufferedImage img;
     public final String text;
     private Tex tex;
     public static final Color black = Color.BLACK;
@@ -44,10 +44,11 @@ public class Text {
     }
 	
     public static class Line extends Text {
-	private FontMetrics m;
+	private final FontMetrics m;
 	
-	private Line(String text) {
-	    super(text);
+	private Line(String text, BufferedImage img, FontMetrics m) {
+	    super(text, img);
+	    this.m = m;
 	}
 	
 	public Coord base() {
@@ -136,20 +137,19 @@ public class Text {
 	}
                 
 	public Line render(String text, Color c) {
-	    Line t = new Line(text);
 	    Coord sz = strsize(text);
 	    if(sz.x < 1)
 		sz = sz.add(1, 0);
-	    t.img = TexI.mkbuf(sz);
-	    Graphics g = t.img.createGraphics();
+	    BufferedImage img = TexI.mkbuf(sz);
+	    Graphics g = img.createGraphics();
 	    if(aa)
 		Utils.AA(g);
 	    g.setFont(font);
 	    g.setColor(c);
-	    t.m = g.getFontMetrics();
-	    g.drawString(text, 0, t.m.getAscent());
+	    FontMetrics m = g.getFontMetrics();
+	    g.drawString(text, 0, m.getAscent());
 	    g.dispose();
-	    return(t);
+	    return(new Line(text, img, m));
 	}
 		
 	public Line render(String text) {
@@ -161,8 +161,9 @@ public class Text {
 	}
     }
 	
-    protected Text(String text) {
+    protected Text(String text, BufferedImage img) {
 	this.text = text;
+	this.img = img;
     }
 	
     public Coord sz() {
