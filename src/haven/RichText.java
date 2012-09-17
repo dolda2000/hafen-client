@@ -283,13 +283,21 @@ public class RichText extends Text {
 	return(null);
     }
     
-    public static Map<? extends Attribute, ?> fillattrs(Object... attrs) {
-	Map<Attribute, Object> a = new HashMap<Attribute, Object>(std.defattrs);
+    public static Map<? extends Attribute, ?> fillattrs2(Map<? extends Attribute, ?> def, Object... attrs) {
+	Map<Attribute, Object> a;
+	if(def == null)
+	    a = new HashMap<Attribute, Object>();
+	else
+	    a = new HashMap<Attribute, Object>(def);
 	for(int i = 0; i < attrs.length; i += 2)
 	    a.put((Attribute)attrs[i], attrs[i + 1]);
 	return(a);
     }
     
+    public static Map<? extends Attribute, ?> fillattrs(Object... attrs) {
+	return(fillattrs2(null, attrs));
+    }
+
     /*
      * This fix exists for Java 1.5. Apparently, before Java 1.6,
      * TextAttribute.SIZE had to be specified with a Float, and not a
@@ -320,7 +328,7 @@ public class RichText extends Text {
 	}
 	
 	public Parser(Object... attrs) {
-	    this(fillattrs(attrs));
+	    this(fillattrs2(std.defattrs, attrs));
 	}
 	
 	public static class PState {
