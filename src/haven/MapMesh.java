@@ -40,7 +40,7 @@ public class MapMesh implements Rendered {
     public Map<Object, Object> data = new HashMap<Object, Object>();
     private List<Rendered> extras = new ArrayList<Rendered>();
     private List<Layer> layers;
-    private float[] zmap;
+    private FastMesh[] flats;
 
     public static class SPoint {
 	public Coord3f pos, nrm = Coord3f.zu;
@@ -390,14 +390,7 @@ public class MapMesh implements Rendered {
 		m.extras.add(mod.getKey().apply(mod.getValue().mkmesh()));
 	}
 	
-	Surface g = m.gnd();
-	m.zmap = new float[(sz.x + 1) * (sz.y + 1)];
-	int i = 0;
-	for(c.y = 0; c.y <= sz.y; c.y++) {
-	    for(c.x = 0; c.x <= sz.x; c.x++) {
-		m.zmap[i++] = g.spoint(c).pos.z;
-	    }
-	}
+	m.consflat();
 	
 	m.clean();
 	return(m);
@@ -518,41 +511,55 @@ public class MapMesh implements Rendered {
     public void draw(GOut g) {
     }
     
-    private float fz(int x, int y) {
-	return(zmap[x + (y * (sz.x + 1))]);
+    private void consflat() {
+	Surface g = gnd();
+	java.nio.FloatBuffer pos = Utils.mkfbuf(sz.x * sz.y * 12);
+	java.nio.FloatBuffer col1 = Utils.mkfbuf(sz.x * sz.y * 16);
+	java.nio.FloatBuffer col2 = Utils.mkfbuf(sz.x * sz.y * 16);
+	java.nio.ShortBuffer ind = Utils.mksbuf(sz.x * sz.y * 6);
+	short i = 0;
+	Coord c = new Coord();
+	for(c.y = 0; c.y < sz.y; c.y++) {
+	    for(c.x = 0; c.x < sz.x; c.x++) {
+		SPoint p;
+		p = g.spoint(c);
+		pos.put(p.pos.x).put(p.pos.y).put(p.pos.z);
+		col1.put((c.x + 1) / 256.0f).put((c.y + 1) / 256.0f).put(0).put(1);
+		col2.put(0).put(0).put(0).put(1);
+
+		p = g.spoint(c.add(0, 1));
+		pos.put(p.pos.x).put(p.pos.y).put(p.pos.z);
+		col1.put((c.x + 1) / 256.0f).put((c.y + 1) / 256.0f).put(0).put(1);
+		col2.put(0).put(1).put(0).put(1);
+
+		p = g.spoint(c.add(1, 1));
+		pos.put(p.pos.x).put(p.pos.y).put(p.pos.z);
+		col1.put((c.x + 1) / 256.0f).put((c.y + 1) / 256.0f).put(0).put(1);
+		col2.put(1).put(1).put(0).put(1);
+
+		p = g.spoint(c.add(1, 0));
+		pos.put(p.pos.x).put(p.pos.y).put(p.pos.z);
+		col1.put((c.x + 1) / 256.0f).put((c.y + 1) / 256.0f).put(0).put(1);
+		col2.put(1).put(0).put(0).put(1);
+
+		ind.put(i).put((short)(i + 1)).put((short)(i + 2));
+		ind.put(i).put((short)(i + 2)).put((short)(i + 3));
+		i += 4;
+	    }
+	}
+	VertexBuf.VertexArray posa = new VertexBuf.VertexArray(pos);
+	VertexBuf.ColorArray cola1 = new VertexBuf.ColorArray(col1);
+	VertexBuf.ColorArray cola2 = new VertexBuf.ColorArray(col2);
+	flats = new FastMesh[] {
+	    new FastMesh(new VertexBuf(posa), ind),
+	    new FastMesh(new VertexBuf(posa, cola1), ind),
+	    new FastMesh(new VertexBuf(posa, cola2), ind),
+	};
     }
 
     public void drawflat(GOut g, int mode) {
 	g.apply();
-	GL gl = g.gl;
-	gl.glBegin(GL.GL_TRIANGLES);
-	Coord c = new Coord();
-	for(c.y = 0; c.y < sz.y; c.y++) {
-	    for(c.x = 0; c.x < sz.x; c.x++) {
-		if(mode == 1)
-		    gl.glColor3f((c.x + 1) / 256.0f, (c.y + 1) / 256.0f, 0.0f);
-		if(mode == 2)
-		    gl.glColor3f(0.0f, 0.0f, 0.0f);
-		gl.glVertex3f(c.x * tilesz.x, c.y * -tilesz.y, fz(c.x, c.y));
-		if(mode == 2)
-		    gl.glColor3f(0.0f, 1.0f, 0.0f);
-		gl.glVertex3f(c.x * tilesz.x, (c.y + 1) * -tilesz.y, fz(c.x, c.y + 1));
-		if(mode == 2)
-		    gl.glColor3f(1.0f, 1.0f, 0.0f);
-		gl.glVertex3f((c.x + 1) * tilesz.x, (c.y + 1) * -tilesz.y, fz(c.x + 1, c.y + 1));
-		if(mode == 2)
-		    gl.glColor3f(0.0f, 0.0f, 0.0f);
-		gl.glVertex3f(c.x * tilesz.x, c.y * -tilesz.y, fz(c.x, c.y));
-		if(mode == 2)
-		    gl.glColor3f(1.0f, 1.0f, 0.0f);
-		gl.glVertex3f((c.x + 1) * tilesz.x, (c.y + 1) * -tilesz.y, fz(c.x + 1, c.y + 1));
-		if(mode == 2)
-		    gl.glColor3f(1.0f, 0.0f, 0.0f);
-		gl.glVertex3f((c.x + 1) * tilesz.x, c.y * -tilesz.y, fz(c.x + 1, c.y));
-	    }
-	}	
-	gl.glEnd();
-	GOut.checkerr(gl);
+	flats[mode].draw(g);
     }
     
     public boolean setup(RenderList rl) {
