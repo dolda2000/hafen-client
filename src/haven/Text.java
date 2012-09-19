@@ -112,6 +112,11 @@ public class Text {
 	    this(new Font(font, Font.PLAIN, psz));
 	}
 		
+	public Foundry aa(boolean aa) {
+	    this.aa = aa;
+	    return(this);
+	}
+
 	public int height() {
 	    /* XXX: Should leading go into this, when it's mostly
 	     * supposed to be used for one-liners? */

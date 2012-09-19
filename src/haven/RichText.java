@@ -545,6 +545,11 @@ public class RichText extends Text {
 	    this(xlate(f, defcol));
 	}
 
+	public Foundry aa(boolean aa) {
+	    this.aa = aa;
+	    return(this);
+	}
+
 	private static void aline/* Hurrhurr, pun intended*/(List<Part> line, int y) {
 	    int mb = 0;
 	    for(Part p : line) {
