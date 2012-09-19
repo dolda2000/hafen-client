@@ -158,7 +158,32 @@ public class VertexBuf {
 	    g.gl.glDisableClientState(GL.GL_NORMAL_ARRAY);
 	}
     }
-    
+
+    public static class ColorArray extends FloatArray implements GLArray {
+	public ColorArray(FloatBuffer data) {
+	    super(4, data);
+	}
+	
+	public ColorArray dup() {return(new ColorArray(Utils.bufcp(data)));}
+
+	public void set(GOut g, int idx) {
+	    GL gl = g.gl;
+	    int i = idx * 4;
+	    gl.glColor4f(data.get(i), data.get(i + 1), data.get(i + 2), data.get(i + 3));
+	}
+	
+	public void bind(GOut g) {
+	    GL gl = g.gl;
+	    data.rewind();
+	    gl.glEnableClientState(GL.GL_COLOR_ARRAY);
+	    gl.glColorPointer(4, GL.GL_FLOAT, 0, data);
+	}
+	
+	public void unbind(GOut g) {
+	    g.gl.glDisableClientState(GL.GL_COLOR_ARRAY);
+	}
+    }
+
     public static class TexelArray extends FloatArray implements GLArray {
 	public TexelArray(FloatBuffer data) {
 	    super(2, data);
