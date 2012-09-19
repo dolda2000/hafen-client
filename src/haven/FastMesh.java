@@ -36,12 +36,16 @@ public class FastMesh implements FRendered {
     public FastMesh from;
     private DisplayList list = null;
     
-    public FastMesh(VertexBuf vert, short[] ind) {
+    public FastMesh(VertexBuf vert, ShortBuffer ind) {
 	this.vert = vert;
-	num = ind.length / 3;
-	if(ind.length != num * 3)
+	num = ind.capacity() / 3;
+	if(ind.capacity() != num * 3)
 	    throw(new RuntimeException("Invalid index array length"));
-	indb = Utils.bufcp(ind);
+	this.indb = ind;
+    }
+
+    public FastMesh(VertexBuf vert, short[] ind) {
+	this(vert, Utils.bufcp(ind));
     }
 
     public FastMesh(FastMesh from, VertexBuf vert) {
