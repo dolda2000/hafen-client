@@ -31,7 +31,8 @@ public class Following extends Moving {
     double lastv = 0.0;
     Indir<Resource> xfres;
     String xfname;
-    GLState xf = null;
+    GLState xf = null, lpxf = null;
+    Gob lxfb = null;
     Skeleton.Pose lpose = null;
     
     public Following(Gob gob, long tgt, Indir<Resource> xfres, String xfname) {
@@ -74,19 +75,34 @@ public class Following extends Moving {
 	synchronized(this) {
 	    Gob tgt = tgt();
 	    Skeleton.Pose cpose = getpose(tgt);
-	    if((xf == null) || (cpose != lpose)) {
+	    GLState pxf = xf(tgt);
+	    if((xf == null) || (cpose != lpose) || (lpxf != pxf)) {
 		if(tgt == null) {
 		    xf = null;
 		    lpose = null;
+		    lxfb = null;
+		    lpxf = null;
 		    return(null);
 		}
 		Skeleton.BoneOffset bo = xfres.get().layer(Skeleton.BoneOffset.class, xfname);
 		if(bo == null)
 		    throw(new RuntimeException("No such boneoffset in " + xfres.get() + ": " + xfname));
-		xf = GLState.compose(tgt.loc, bo.forpose(cpose));
+		if(pxf != null)
+		    xf = GLState.compose(pxf, bo.forpose(cpose));
+		else
+		    xf = GLState.compose(tgt.loc, bo.forpose(cpose));
+		lpxf = pxf;
+		lxfb = tgt;
 		lpose = cpose;
 	    }
 	}
 	return(xf);
+    }
+
+    public static GLState xf(Gob gob) {
+	Following flw = gob.getattr(Following.class);
+	if(flw == null)
+	    return(null);
+	return(flw.xf());
     }
 }
