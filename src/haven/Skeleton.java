@@ -285,7 +285,7 @@ public class Skeleton {
 			    rot = qqmul(rot, grot[bone], qinv(rot, bindpose.grot[bone]));
 			    pos = vvadd(pos, gpos[bone], vqrot(pos, vinv(pos, bindpose.gpos[bone]), rot));
 			    Matrix4f xf = Transform.makexlate(new Matrix4f(), new Coord3f(pos[0], pos[1], pos[2]));
-			    if(rot[0] < 0.9999) {
+			    if(rot[0] < 0.999999) {
 				float ang = (float)(Math.acos(rot[0]) * 2.0);
 				xf = xf.mul1(Transform.makerot(new Matrix4f(), new Coord3f(rot[1], rot[2], rot[3]).norm(), ang));
 			    }
