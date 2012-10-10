@@ -74,6 +74,7 @@ public class Session {
     DatagramSocket sk;
     SocketAddress server;
     Thread rworker, sworker, ticker;
+    Object[] args;
     public int connfailed = 0;
     public String state = "conn";
     int tseq = 0, rseq = 0;
@@ -641,6 +642,7 @@ public class Session {
 			    msg.addstring(username);
 			    msg.adduint16(cookie.length);
 			    msg.addbytes(cookie);
+			    msg.addlist(args);
 			    sendmsg(msg);
 			    last = now;
 			}
@@ -765,10 +767,11 @@ public class Session {
 	}
     }
 	
-    public Session(SocketAddress server, String username, byte[] cookie) {
+    public Session(SocketAddress server, String username, byte[] cookie, Object... args) {
 	this.server = server;
 	this.username = username;
 	this.cookie = cookie;
+	this.args = args;
 	glob = new Glob(this);
 	try {
 	    sk = new DatagramSocket();
