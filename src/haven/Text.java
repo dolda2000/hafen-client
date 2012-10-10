@@ -88,7 +88,15 @@ public class Text {
 	return(ret);
     }
         
-    public static class Foundry {
+    public static abstract class Furnace {
+	public abstract Text render(String text);
+
+	public Text renderf(String fmt, Object... args) {
+	    return(render(String.format(fmt, args)));
+	}
+    }
+
+    public static class Foundry extends Furnace {
 	private FontMetrics m;
 	Font font;
 	Color defcol;
@@ -160,12 +168,22 @@ public class Text {
 	public Line render(String text) {
 	    return(render(text, defcol));
 	}
-                
-	public Line renderf(String fmt, Object... args) {
-	    return(render(String.format(fmt, args)));
+    }
+
+    public static abstract class Imager extends Furnace {
+	private final Furnace back;
+
+	public Imager(Furnace back) {
+	    this.back = back;
+	}
+
+	protected abstract BufferedImage proc(Text text);
+
+	public Text render(String text) {
+	    return(new Text(text, proc(back.render(text))));
 	}
     }
-	
+
     protected Text(String text, BufferedImage img) {
 	this.text = text;
 	this.img = img;
