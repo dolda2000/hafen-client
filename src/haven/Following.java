@@ -100,6 +100,8 @@ public class Following extends Moving {
     }
 
     public static GLState xf(Gob gob) {
+	if(gob == null)
+	    return(null);
 	Following flw = gob.getattr(Following.class);
 	if(flw == null)
 	    return(null);

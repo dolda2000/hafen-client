@@ -97,7 +97,7 @@ public class Glob {
 				if(pag.res() == null)
 				    return(null);
 				if(c == null)
-				    c = new TexI(Utils.monochromize(pag.res().layer(Resource.imgc).img, java.awt.Color.LIGHT_GRAY));
+				    c = new TexI(PUtils.monochromize(pag.res().layer(Resource.imgc).img, java.awt.Color.LIGHT_GRAY));
 				return(c);
 			    }
 			});
