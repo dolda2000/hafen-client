@@ -231,15 +231,20 @@ public class MainFrame extends Frame implements Runnable, Console.Directory {
 	ui.start();
 	try {
 	    try {
+		Session sess = null;
 		while(true) {
-		    Bootstrap bill = new Bootstrap(Config.defserv, Config.mainport);
-		    if((Config.authuser != null) && (Config.authck != null)) {
-			bill.setinitcookie(Config.authuser, Config.authck);
-			Config.authck = null;
+		    UI.Runner fun;
+		    if(sess == null) {
+			Bootstrap bill = new Bootstrap(Config.defserv, Config.mainport);
+			if((Config.authuser != null) && (Config.authck != null)) {
+			    bill.setinitcookie(Config.authuser, Config.authck);
+			    Config.authck = null;
+			}
+			fun = bill;
+		    } else {
+			fun = new RemoteUI(sess);
 		    }
-		    Session sess = bill.run(p);
-		    RemoteUI rui = new RemoteUI(sess);
-		    rui.run(p.newui(sess));
+		    sess = fun.run(p.newui(sess));
 		}
 	    } catch(InterruptedException e) {}
 	    savewndstate();

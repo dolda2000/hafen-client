@@ -29,8 +29,7 @@ package haven;
 import java.net.*;
 import java.util.*;
 
-public class Bootstrap implements UI.Receiver {
-    UI ui;
+public class Bootstrap implements UI.Receiver, UI.Runner {
     Session sess;
     String hostname;
     int port;
@@ -68,8 +67,7 @@ public class Bootstrap implements UI.Receiver {
 	Utils.setpref(name + "@" + hostname, val);
     }
 
-    public Session run(HavenPanel hp) throws InterruptedException {
-	ui = hp.newui(null);
+    public Session run(UI ui) throws InterruptedException {
 	ui.setreceiver(this);
 	ui.bind(new LoginScreen(ui.root), 1);
 	String loginname = getpref("loginname", "");

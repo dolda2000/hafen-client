@@ -54,6 +54,10 @@ public class UI {
     public interface Receiver {
 	public void rcvmsg(int widget, String msg, Object... args);
     }
+
+    public interface Runner {
+	public Session run(UI ui) throws InterruptedException;
+    }
     
     public interface AfterDraw {
 	public void draw(GOut g);
