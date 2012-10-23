@@ -51,7 +51,7 @@ public class Widget {
 			       MenuGrid.class, CheckBox.class,
 			       ISBox.class, Fightview.class, IMeter.class, MapMod.class,
 			       GiveButton.class, Charlist.class, BuddyWnd.class, Polity.class,
-			       Speedget.class, Bufflist.class, GameUI.class, Scrollport.class};
+			       Speedget.class, Bufflist.class, GameUI.class, Scrollport.class, SessWidget.class};
 	
     static {
 	addtype("cnt", new WidgetFactory() {
