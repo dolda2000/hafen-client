@@ -47,6 +47,15 @@ public class PUtils {
 	return(Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, sz.x, sz.y, 4, null));
     }
 
+    public static WritableRaster copy(Raster src) {
+	int w = src.getWidth(), h = src.getHeight(), b = src.getNumBands();
+	WritableRaster ret = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h, b, null);
+	int[] buf = new int[w * h];
+	for(int i = 0; i < b; i++)
+	    ret.setSamples(0, 0, w, h, i, src.getSamples(0, 0, w, h, i, buf));
+	return(ret);
+    }
+
     public static BufferedImage rasterimg(WritableRaster img) {
 	return(new BufferedImage(TexI.glcm, img, false, null));
     }
