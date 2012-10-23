@@ -127,6 +127,39 @@ public class PUtils {
 	return(dst);
     }
 
+    public static WritableRaster blit(WritableRaster dst, Raster src, Coord off) {
+	int w = src.getWidth(), h = src.getHeight(), b = src.getNumBands();
+	for(int y = 0; y < h; y++) {
+	    int dy = y + off.y;
+	    for(int x = 0; x < w; x++) {
+		int dx = x + off.x;
+		for(int i = 0; i < b; i++)
+		    dst.setSample(dx, dy, i, src.getSample(x, y, i));
+	    }
+	}
+	return(dst);
+    }
+
+    public static WritableRaster gayblit(WritableRaster dst, int dband, Coord doff, Raster src, int sband, Coord soff) {
+	if(doff.x < 0) {
+	    soff = soff.add(-doff.x, 0);
+	    doff = doff.add(-doff.x, 0);
+	}
+	if(doff.y < 0) {
+	    soff = soff.add(0, -doff.x);
+	    doff = doff.add(0, -doff.x);
+	}
+	int w = src.getWidth() - soff.x, h = src.getHeight() - soff.y;
+	for(int y = 0; y < h; y++) {
+	    int sy = y + soff.y, dy = y + doff.y;
+	    for(int x = 0; x < w; x++) {
+		int sx = x + soff.x, dx = x + doff.x;
+		dst.setSample(dx, dy, dband, (dst.getSample(dx, dy, dband) * src.getSample(sx, sy, sband)) / 255);
+	    }
+	}
+	return(dst);
+    }
+
     public static WritableRaster alphablit(WritableRaster dst, Raster src, Coord off) {
 	int w = src.getWidth(), h = src.getHeight();
 	for(int y = 0; y < h; y++) {
