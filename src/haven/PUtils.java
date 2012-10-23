@@ -184,6 +184,18 @@ public class PUtils {
 	return(dst);
     }
 
+    public static WritableRaster colmul(WritableRaster img, Color col) {
+	int w = img.getWidth(), h = img.getHeight();
+	int[] bm = {col.getRed(), col.getGreen(), col.getBlue(), col.getAlpha()};
+	for(int y = 0; y < h; y++) {
+	    for(int x = 0; x < w; x++) {
+		for(int b = 0; b < 4; b++)
+		    img.setSample(x, y, b, (img.getSample(x, y, b) * bm[b]) / 255);
+	    }
+	}
+	return(img);
+    }
+
     public static WritableRaster copyband(WritableRaster dst, int dband, Coord doff, Raster src, int sband, Coord soff, Coord sz) {
 	dst.setSamples(doff.x, doff.y, sz.x, sz.y, dband, src.getSamples(soff.x, soff.y, sz.x, sz.y, sband, (int[])null));
 	return(dst);
