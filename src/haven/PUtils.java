@@ -233,7 +233,7 @@ public class PUtils {
 		dst.setSample(x, y, 0, (col.getRed()   * val) / 255);
 		dst.setSample(x, y, 1, (col.getGreen() * val) / 255);
 		dst.setSample(x, y, 2, (col.getBlue()  * val) / 255);
-		dst.setSample(x, y, 3, a);
+		dst.setSample(x, y, 3, (col.getAlpha() * a) / 255);
 	    }
 	}
 	return(ret);
