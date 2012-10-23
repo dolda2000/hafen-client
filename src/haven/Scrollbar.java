@@ -27,9 +27,8 @@
 package haven;
 
 public class Scrollbar extends Widget {
-    static Tex texpap = Resource.loadtex("gfx/hud/texpap");
-    static Tex schain = Resource.loadtex("gfx/hud/schain");
-    static Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
+    static final Tex schain = Resource.loadtex("gfx/hud/schain");
+    static final Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
     public int val, min, max;
     private boolean drag = false;
     
