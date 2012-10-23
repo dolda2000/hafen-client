@@ -158,7 +158,7 @@ public class PUtils {
 	    soff = soff.add(0, -doff.x);
 	    doff = doff.add(0, -doff.x);
 	}
-	int w = src.getWidth() - soff.x, h = src.getHeight() - soff.y;
+	int w = Math.min(src.getWidth() - soff.x, dst.getWidth() - doff.x), h = Math.min(src.getHeight() - soff.y, dst.getHeight() - doff.y);
 	for(int y = 0; y < h; y++) {
 	    int sy = y + soff.y, dy = y + doff.y;
 	    for(int x = 0; x < w; x++) {
