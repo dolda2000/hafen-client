@@ -221,13 +221,14 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    prio = newprio;
     }
     
-    public void loadwaitint() throws InterruptedException {
+    public Resource loadwaitint() throws InterruptedException {
 	synchronized(this) {
 	    boostprio(10);
 	    while(loading) {
 		wait();
 	    }
 	}
+	return(this);
     }
 	
     public String basename() {
@@ -237,7 +238,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	return(name.substring(p + 1));
     }
 
-    public void loadwait() {
+    public Resource loadwait() {
 	boolean i = false;
 	synchronized(loadwaited) {
 	    loadwaited.add(this);
@@ -254,6 +255,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
 	if(i)
 	    Thread.currentThread().interrupt();
+	return(this);
     }
 	
     public static interface ResSource {
