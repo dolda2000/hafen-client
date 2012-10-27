@@ -65,12 +65,12 @@ public class Polity extends Window {
 	public Member listitem(int idx) {return(memb.get(idx));}
 	public int listitems() {return(memb.size());}
 
-	public void drawitem(GOut g, Member m, Coord c) {
+	public void drawitem(GOut g, Member m) {
 	    if((mw instanceof MemberWidget) && (((MemberWidget)mw).id == m.id))
-		drawsel(g, c);
+		drawsel(g);
 	    BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(m.id);
 	    Text rn = (b == null)?unk:(b.rname());
-	    g.aimage(rn.tex(), c.add(0, 10), 0, 0.5);
+	    g.aimage(rn.tex(), new Coord(0, 10), 0, 0.5);
 	}
 
 	public void change(Member pm) {

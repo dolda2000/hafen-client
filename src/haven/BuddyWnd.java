@@ -186,13 +186,13 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	public Buddy listitem(int idx) {return(buddies.get(idx));}
 	public int listitems() {return(buddies.size());}
 
-	public void drawitem(GOut g, Buddy b, Coord c) {
+	public void drawitem(GOut g, Buddy b) {
 	    if(b.online == 1)
-		g.image(online, c);
+		g.image(online, Coord.z);
 	    else if(b.online == 0)
-		g.image(offline, c);
+		g.image(offline, Coord.z);
 	    g.chcolor(gc[b.group]);
-	    g.aimage(b.rname().tex(), c.add(25, 10), 0, 0.5);
+	    g.aimage(b.rname().tex(), new Coord(25, 10), 0, 0.5);
 	    g.chcolor();
 	}
 

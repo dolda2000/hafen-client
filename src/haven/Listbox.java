@@ -42,11 +42,11 @@ public abstract class Listbox<T> extends Widget {
 
     protected abstract T listitem(int i);
     protected abstract int listitems();
-    protected abstract void drawitem(GOut g, T item, Coord c);
+    protected abstract void drawitem(GOut g, T item);
 
-    protected void drawsel(GOut g, Coord c) {
+    protected void drawsel(GOut g) {
 	g.chcolor(255, 255, 0, 128);
-	g.frect(c, new Coord(sz.x, itemh));
+	g.frect(Coord.z, g.sz);
 	g.chcolor();
     }
 
@@ -61,10 +61,10 @@ public abstract class Listbox<T> extends Widget {
 	    if(idx >= n)
 		break;
 	    T item = listitem(idx);
-	    Coord c = new Coord(0, i * itemh);
+	    GOut ig = g.reclip(new Coord(0, i * itemh), new Coord(sz.x, itemh));
 	    if(item == sel)
-		drawsel(g, c);
-	    drawitem(g, item, c);
+		drawsel(ig);
+	    drawitem(ig, item);
 	}
 	super.draw(g);
     }
