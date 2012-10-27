@@ -31,7 +31,7 @@ import java.awt.Color;
 import java.awt.event.KeyEvent;
 import static haven.Inventory.invsq;
 
-public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.Directory {
+public class GameUI extends ConsoleHost implements Console.Directory {
     public final String chrid;
     public final long plid;
     public MenuGrid menu;
@@ -55,14 +55,12 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
     public Indir<Resource>[] belt = new Indir[144];
     public Belt beltwdg;
     public String polowner;
-    
-    public abstract class Belt {
-	public abstract int draw(GOut g, int by);
-	public abstract boolean click(Coord c, int button);
-	public abstract boolean key(KeyEvent ev);
-	public abstract boolean item(Coord c);
-	public abstract boolean thing(Coord c, Object thing);
-	
+
+    public abstract class Belt extends Widget {
+	public Belt(Coord c, Coord sz, Widget parent) {
+	    super(c, sz, parent);
+	}
+
 	public void keyact(final int slot) {
 	    if(map != null) {
 		Coord mvc = map.rootxlate(ui.mc);
@@ -70,13 +68,13 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 		    map.delay(map.new Hittest(mvc) {
 			    protected void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
 				if(gob == null)
-				    wdgmsg("belt", slot, 1, ui.modflags(), mc);
+				    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags(), mc);
 				else
-				    wdgmsg("belt", slot, 1, ui.modflags(), mc, (int)gob.id, gob.rc);
+				    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags(), mc, (int)gob.id, gob.rc);
 			    }
 			    
 			    protected void nohit(Coord pc) {
-				wdgmsg("belt", slot, 1, ui.modflags());
+				GameUI.this.wdgmsg("belt", slot, 1, ui.modflags());
 			    }
 			});
 		}
@@ -226,14 +224,12 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	}
     }
     
-    private boolean showbeltp() {
-	return(!chat.expanded);
-    }
-
     static Text.Foundry progf = new Text.Foundry(new java.awt.Font("serif", java.awt.Font.BOLD, 24));
     static {progf.aa = true;}
     Text progt = null;
     public void draw(GOut g) {
+	boolean beltp = !chat.expanded;
+	beltwdg.show(beltp);
 	super.draw(g);
 	if(prog >= 0) {
 	    String progs = String.format("%d%%", prog);
@@ -243,10 +239,9 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	}
 	int by = sz.y;
 	if(chat.expanded)
-	    by -= chat.sz.y;
-	if(showbeltp()) {
-	    by -= beltwdg.draw(g, by);
-	}
+	    by = Math.min(by, chat.c.y);
+	if(beltwdg.visible)
+	    by = Math.min(by, beltwdg.c.y);
 	if(cmdline != null) {
 	    drawcmd(g, new Coord(135, by -= 20));
 	} else if(lasterr != null) {
@@ -376,29 +371,13 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	    }
 	    return(true);
 	}
-	if((key == 0) && beltwdg.key(ev))
-	    return(true);
 	return(super.globtype(key, ev));
     }
     
     public boolean mousedown(Coord c, int button) {
-	if(showbeltp() && beltwdg.click(c, button))
-	    return(true);
 	return(super.mousedown(c, button));
     }
 
-    public boolean drop(Coord cc, Coord ul) {
-	return(showbeltp() && beltwdg.item(cc));
-    }
-    
-    public boolean iteminteract(Coord cc, Coord ul) {
-	return(false);
-    }
-
-    public boolean dropthing(Coord c, Object thing) {
-	return(showbeltp() && beltwdg.thing(c, thing));
-    }
-    
     public void resize(Coord sz) {
 	this.sz = sz;
 	menu.c = sz.sub(menu.sz);
@@ -410,6 +389,7 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	    mmap.c = new Coord(0, sz.y - mmap.sz.y);
 	if(fv != null)
 	    fv.c = new Coord(sz.x - Fightview.width, 0);
+	beltwdg.c = new Coord(135, sz.y - beltwdg.sz.y - 5);
 	super.resize(sz);
     }
     
@@ -429,18 +409,18 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	wdgmsg("act", (Object[])args);
     }
 
-    public class FKeyBelt extends Belt {
+    public class FKeyBelt extends Belt implements DTarget, DropTarget {
 	public final int beltkeys[] = {KeyEvent.VK_F1, KeyEvent.VK_F2, KeyEvent.VK_F3, KeyEvent.VK_F4,
 				       KeyEvent.VK_F5, KeyEvent.VK_F6, KeyEvent.VK_F7, KeyEvent.VK_F8,
 				       KeyEvent.VK_F9, KeyEvent.VK_F10, KeyEvent.VK_F11, KeyEvent.VK_F12};
 	public int curbelt = 0;
-	
+
+	public FKeyBelt(Coord c, Widget parent) {
+	    super(c, new Coord(450, 34), parent);
+	}
+
 	private Coord beltc(int i) {
-	    return(new Coord(/* ((sz.x - (invsq.sz().x * 12) - (2 * 11)) / 2) */
-			     135
-			     + ((invsq.sz().x + 2) * i)
-			     + (10 * (i / 4)),
-			     sz.y - invsq.sz().y - 2));
+	    return(new Coord(((invsq.sz().x + 2) * i) + (10 * (i / 4)), 0));
 	}
     
 	private int beltslot(Coord c) {
@@ -451,7 +431,7 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	    return(-1);
 	}
     
-	public int draw(GOut g, int by) {
+	public void draw(GOut g) {
 	    for(int i = 0; i < 12; i++) {
 		int slot = i + (curbelt * 12);
 		Coord c = beltc(i);
@@ -464,22 +444,23 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 		FastText.aprintf(g, c.add(invsq.sz()), 1, 1, "F%d", i + 1);
 		g.chcolor();
 	    }
-	    return(invsq.sz().y);
 	}
 	
-	public boolean click(Coord c, int button) {
+	public boolean mousedown(Coord c, int button) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
 		if(button == 1)
-		    wdgmsg("belt", slot, 1, ui.modflags());
+		    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags());
 		if(button == 3)
-		    wdgmsg("setbelt", slot, 1);
+		    GameUI.this.wdgmsg("setbelt", slot, 1);
 		return(true);
 	    }
 	    return(false);
 	}
 
-	public boolean key(KeyEvent ev) {
+	public boolean globtype(char key, KeyEvent ev) {
+	    if(key != 0)
+		return(false);
 	    boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
 	    for(int i = 0; i < beltkeys.length; i++) {
 		if(ev.getKeyCode() == beltkeys[i]) {
@@ -495,22 +476,24 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	    return(false);
 	}
 	
-	public boolean item(Coord c) {
+	public boolean drop(Coord c, Coord ul) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
-		wdgmsg("setbelt", slot, 0);
+		GameUI.this.wdgmsg("setbelt", slot, 0);
 		return(true);
 	    }
 	    return(false);
 	}
+
+	public boolean iteminteract(Coord c, Coord ul) {return(false);}
 	
-	public boolean thing(Coord c, Object thing) {
+	public boolean dropthing(Coord c, Object thing) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
 		if(thing instanceof Resource) {
 		    Resource res = (Resource)thing;
 		    if(res.layer(Resource.action) != null) {
-			wdgmsg("setbelt", slot, res.name);
+			GameUI.this.wdgmsg("setbelt", slot, res.name);
 			return(true);
 		    }
 		}
@@ -519,15 +502,15 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	}
     }
     
-    public class NKeyBelt extends Belt {
+    public class NKeyBelt extends Belt implements DTarget, DropTarget {
 	public int curbelt = 0;
+
+	public NKeyBelt(Coord c, Widget parent) {
+	    super(c, new Coord(368, 34), parent);
+	}
 	
 	private Coord beltc(int i) {
-	    return(new Coord(/* ((sz.x - (invsq.sz().x * 12) - (2 * 11)) / 2) */
-			     135
-			     + ((invsq.sz().x + 2) * i)
-			     + (10 * (i / 5)),
-			     sz.y - invsq.sz().y - 2));
+	    return(new Coord(((invsq.sz().x + 2) * i) + (10 * (i / 5)), 0));
 	}
     
 	private int beltslot(Coord c) {
@@ -538,7 +521,7 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	    return(-1);
 	}
     
-	public int draw(GOut g, int by) {
+	public void draw(GOut g) {
 	    for(int i = 0; i < 10; i++) {
 		int slot = i + (curbelt * 12);
 		Coord c = beltc(i);
@@ -551,22 +534,21 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 		FastText.aprintf(g, c.add(invsq.sz()), 1, 1, "%d", (i + 1) % 10);
 		g.chcolor();
 	    }
-	    return(invsq.sz().y);
 	}
 	
-	public boolean click(Coord c, int button) {
+	public boolean mousedown(Coord c, int button) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
 		if(button == 1)
-		    wdgmsg("belt", slot, 1, ui.modflags());
+		    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags());
 		if(button == 3)
-		    wdgmsg("setbelt", slot, 1);
+		    GameUI.this.wdgmsg("setbelt", slot, 1);
 		return(true);
 	    }
 	    return(false);
 	}
 
-	public boolean key(KeyEvent ev) {
+	public boolean globtype(KeyEvent ev) {
 	    int c = ev.getKeyChar();
 	    if((c < KeyEvent.VK_0) || (c > KeyEvent.VK_9))
 		return(false);
@@ -580,22 +562,24 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	    return(true);
 	}
 	
-	public boolean item(Coord c) {
+	public boolean drop(Coord c, Coord ul) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
-		wdgmsg("setbelt", slot, 0);
+		GameUI.this.wdgmsg("setbelt", slot, 0);
 		return(true);
 	    }
 	    return(false);
 	}
+
+	public boolean iteminteract(Coord c, Coord ul) {return(false);}
 	
-	public boolean thing(Coord c, Object thing) {
+	public boolean dropthing(Coord c, Object thing) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
 		if(thing instanceof Resource) {
 		    Resource res = (Resource)thing;
 		    if(res.layer(Resource.action) != null) {
-			wdgmsg("setbelt", slot, res.name);
+			GameUI.this.wdgmsg("setbelt", slot, res.name);
 			return(true);
 		    }
 		}
@@ -607,11 +591,11 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
     {
 	String val = Utils.getpref("belttype", "n");
 	if(val.equals("n")) {
-	    beltwdg = new NKeyBelt();
+	    beltwdg = new NKeyBelt(Coord.z, this);
 	} else if(val.equals("f")) {
-	    beltwdg = new FKeyBelt();
+	    beltwdg = new FKeyBelt(Coord.z, this);
 	} else {
-	    beltwdg = new NKeyBelt();
+	    beltwdg = new NKeyBelt(Coord.z, this);
 	}
     }
     
@@ -633,11 +617,13 @@ public class GameUI extends ConsoleHost implements DTarget, DropTarget, Console.
 	cmdmap.put("belt", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    if(args[1].equals("f")) {
-			beltwdg = new FKeyBelt();
+			beltwdg = new FKeyBelt(Coord.z, GameUI.this);
 			Utils.setpref("belttype", "f");
+			resize(sz);
 		    } else if(args[1].equals("n")) {
-			beltwdg = new NKeyBelt();
+			beltwdg = new NKeyBelt(Coord.z, GameUI.this);
 			Utils.setpref("belttype", "n");
+			resize(sz);
 		    }
 		}
 	    });
