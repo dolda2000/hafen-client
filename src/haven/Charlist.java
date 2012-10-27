@@ -37,7 +37,7 @@ public class Charlist extends Widget {
     
     public static class Char {
 	static Text.Foundry tf = new Text.Foundry("Serif", 20);
-	String name;
+	public String name;
 	Text nt;
 	// Avaview ava;
 	Button plb;
