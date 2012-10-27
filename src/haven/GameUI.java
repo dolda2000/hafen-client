@@ -617,10 +617,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	cmdmap.put("belt", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    if(args[1].equals("f")) {
+			beltwdg.destroy();
 			beltwdg = new FKeyBelt(Coord.z, GameUI.this);
 			Utils.setpref("belttype", "f");
 			resize(sz);
 		    } else if(args[1].equals("n")) {
+			beltwdg.destroy();
 			beltwdg = new NKeyBelt(Coord.z, GameUI.this);
 			Utils.setpref("belttype", "n");
 			resize(sz);
