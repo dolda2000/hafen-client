@@ -55,72 +55,29 @@ public class Polity extends Window {
 	}
     }
     
-    private class MemberList extends Widget {
+    private class MemberList extends Listbox<Member> {
 	final Text unk = Text.render("???");
-	Scrollbar sb;
-	int h;
 	
-	private MemberList(Coord c, Coord sz, Widget parent) {
-	    super(c, sz, parent);
-	    h = sz.y / 20;
-	    sb = new Scrollbar(new Coord(sz.x, 0), sz.y, this, 0, 4);
+	private MemberList(Coord c, int w, int h, Widget parent) {
+	    super(c, parent, w, h, 20);
 	}
 	
-	public void draw(GOut g) {
-	    g.chcolor(Color.BLACK);
-	    g.frect(Coord.z, sz);
-	    g.chcolor();
-	    Member[] vis = new Member[h];
-	    synchronized(this) {
-		for(int i = 0; i < h; i++) {
-		    if(i + sb.val >= memb.size())
-			break;
-		    vis[i] = memb.get(i + sb.val);
-		}
-	    }
-	    int selid = -1;
-	    if(mw instanceof MemberWidget)
-		selid = ((MemberWidget)mw).id;
-	    for(int i = 0; i < h; i++) {
-		Member pm = vis[i];
-		if(pm == null)
-		    break;
-		if(pm.id == selid) {
-		    g.chcolor(255, 255, 0, 128);
-		    g.frect(new Coord(0, i * 20), new Coord(sz.x, 20));
-		    g.chcolor();
-		}
-		BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(pm.id);
-		Text rn = (b == null)?unk:(b.rname());
-		g.aimage(rn.tex(), new Coord(0, i * 20 + 10), 0, 0.5);
-	    }
-	    super.draw(g);
+	public Member listitem(int idx) {return(memb.get(idx));}
+	public int listitems() {return(memb.size());}
+
+	public void drawitem(GOut g, Member m, Coord c) {
+	    if((mw instanceof MemberWidget) && (((MemberWidget)mw).id == m.id))
+		drawsel(g, c);
+	    BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(m.id);
+	    Text rn = (b == null)?unk:(b.rname());
+	    g.aimage(rn.tex(), c.add(0, 10), 0, 0.5);
 	}
-	
-	public void tick(double dt) {
-	    synchronized(this) {
-		sb.max = memb.size() - h;
-	    }
-	}
-	
-	public boolean mousedown(Coord c, int button) {
-	    if(super.mousedown(c, button))
-		return(true);
-	    int sel = (c.y / 20) + sb.val;
-	    Member pm;
-	    synchronized(this) {
-		pm = (sel >= memb.size())?null:memb.get(sel);
-	    }
+
+	public void change(Member pm) {
 	    if(pm == null)
 		Polity.this.wdgmsg("sel", (Object)null);
 	    else
 		Polity.this.wdgmsg("sel", pm.id);
-	    return(true);
-	}
-
-	public boolean mousewheel(Coord c, int amount) {
-	    sb.ch(amount);
-	    return(true);
 	}
     }
     
@@ -144,7 +101,7 @@ public class Polity extends Window {
 	this.name = name;
 	new Label(new Coord(0, 5), this, name, nmf);
 	new Label(new Coord(0, 45), this, "Members:");
-	ml = new MemberList(new Coord(0, 60), new Coord(200, 140), this);
+	ml = new MemberList(new Coord(0, 60), 200, 7, this);
 	pack();
     }
     
