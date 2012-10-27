@@ -310,8 +310,8 @@ public class Widget {
     public void destroy() {
 	if(canfocus)
 	    setcanfocus(false);
-	parent.cdestroy(this);
 	unlink();
+	parent.cdestroy(this);
     }
     
     public void cdestroy(Widget w) {
