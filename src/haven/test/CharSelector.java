@@ -31,8 +31,7 @@ import haven.*;
 public class CharSelector extends Robot {
     Runnable cb;
     String chr;
-    Listbox chrlist;
-    Button selbtn;
+    Charlist chrlist;
     
     public CharSelector(TestClient c, String chr, Runnable cb) {
 	super(c);
@@ -43,33 +42,26 @@ public class CharSelector extends Robot {
     public void check() {
 	if(chrlist == null)
 	    return;
-	if(selbtn == null)
-	    return;
 	
 	if(chr == null) {
-	    chr = chrlist.opts.get(0).name;
+	    chr = chrlist.chars.get(0).name;
 	} else {
-	    String nm = null;
-	    for(Listbox.Option opt : chrlist.opts) {
-		if(opt.disp.equals(chr)) {
-		    nm = opt.name;
+	    Charlist.Char found = null;
+	    for(Charlist.Char ch : chrlist.chars) {
+		if(ch.name.equals(chr)) {
+		    found = ch;
 		    break;
 		}
 	    }
-	    if(nm == null)
+	    if(found == null)
 		throw(new RobotException(this, "requested character not found: " + chr));
-	    chr = nm;
 	}
-	chrlist.wdgmsg("chose", chr);
-	selbtn.wdgmsg("activate");
+	chrlist.wdgmsg("play", chr);
     }
     
     public void newwdg(int id, Widget w, Object... args) {
 	if(w instanceof Listbox) {
-	    chrlist = (Listbox)w;
-	} else if(w instanceof Button) {
-	    if(((Button)w).text.text.equals("I choose you!"))
-		selbtn = (Button)w;
+	    chrlist = (Charlist)w;
 	}
 	check();
     }
