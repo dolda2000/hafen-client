@@ -44,7 +44,7 @@ public class Widget {
     public final Collection<Anim> anims = new LinkedList<Anim>();
     static Map<String, WidgetFactory> types = new TreeMap<String, WidgetFactory>();
     static Class<?>[] barda = {Img.class, TextEntry.class, MapView.class, FlowerMenu.class,
-			       Window.class, Button.class, Inventory.class, GItem.class, Listbox.class,
+			       Window.class, Button.class, Inventory.class, GItem.class,
 			       Makewindow.class, Chatwindow.class, Textlog.class, Equipory.class, IButton.class,
 			       Avaview.class, NpcChat.class,
 			       Label.class, Progress.class, VMeter.class, Partyview.class,

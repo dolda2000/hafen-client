@@ -27,95 +27,77 @@
 package haven;
 
 import java.awt.Color;
-import java.awt.event.KeyEvent;
-import java.util.*;
 
-public class Listbox extends Widget {
-    public List<Option> opts;
-    public int chosen;
-	
-    static {
-	Widget.addtype("lb", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    List<Option> opts = new LinkedList<Option>();
-		    for(int i = 1; i < args.length; i += 2)
-			opts.add(new Option((String)args[i], (String)args[i + 1]));
-		    return(new Listbox(c, (Coord)args[0], parent, opts));
-		}
-	    });
+public abstract class Listbox<T> extends Widget {
+    public final int h, itemh;
+    public final Scrollbar sb;
+    public T sel;
+
+    public Listbox(Coord c, Widget parent, int w, int h, int itemh) {
+	super(c, new Coord(w, h * itemh), parent);
+	this.h = h;
+	this.itemh = itemh;
+	this.sb = new Scrollbar(new Coord(sz.x, 0), sz.y, this, 0, 0);
     }
 
-    public static class Option {
-	public String name, disp;
-	int y1, y2;
-		
-	public Option(String name, String disp) {
-	    this.name = name;
-	    this.disp = disp;
-	}
+    protected abstract T listitem(int i);
+    protected abstract int listitems();
+    protected abstract void drawitem(GOut g, T item, Coord c);
+
+    protected void drawsel(GOut g, Coord c) {
+	g.chcolor(255, 255, 0, 128);
+	g.frect(c, new Coord(sz.x, itemh));
+	g.chcolor();
     }
-	
+
     public void draw(GOut g) {
-	int y = 0, i = 0;
-	for(Option o : opts) {
-	    Color c;
-	    if(i++ == chosen)
-		c = FlowerMenu.pink;
-	    else
-		c = Color.BLACK;
-	    Text t = Text.render(o.disp, c);
-	    o.y1 = y;
-	    g.image(t.tex(), new Coord(0, y));
-	    y += t.sz().y;
-	    o.y2 = y;
-	}
-    }
-	
-    public Listbox(Coord c, Coord sz, Widget parent, List<Option> opts) {
-	super(c, sz, parent);
-	this.opts = opts;
-	chosen = 0;
-	setcanfocus(true);
-    }
-	
-    static List<Option> makelist(Option[] opts) {
-	List<Option> ol = new LinkedList<Option>();
-	for(Option o : opts)
-	    ol.add(o);
-	return(ol);
-    }
-	
-    public Listbox(Coord c, Coord sz, Widget parent, Option[] opts) {
-	this(c, sz, parent, makelist(opts));
-    }
-	
-    public void sendchosen() {
-	wdgmsg("chose", opts.get(chosen).name);
-    }
-	
-    public boolean mousedown(Coord c, int button) {
-	parent.setfocus(this);
-	int i = 0;
-	for(Option o : opts) {
-	    if((c.y >= o.y1) && (c.y <= o.y2))
+	sb.max = listitems() - h;
+	g.chcolor(Color.BLACK);
+	g.frect(Coord.z, sz);
+	g.chcolor();
+	int n = listitems();
+	for(int i = 0; i < h; i++) {
+	    int idx = i + sb.val;
+	    if(idx >= n)
 		break;
-	    i++;
+	    T item = listitem(idx);
+	    Coord c = new Coord(0, i * itemh);
+	    if(item == sel)
+		drawsel(g, c);
+	    drawitem(g, item, c);
 	}
-	if(i < opts.size()) {
-	    chosen = i;
-	    sendchosen();
-	}
+	super.draw(g);
+    }
+
+    public boolean mousewheel(Coord c, int amount) {
+	sb.ch(amount);
 	return(true);
     }
-	
-    public boolean keydown(KeyEvent e) { 
-	if((e.getKeyCode() == KeyEvent.VK_DOWN) && (chosen < opts.size() - 1)) {
-	    chosen++;
-	    sendchosen();
-	} else if((e.getKeyCode() == KeyEvent.VK_UP) && (chosen > 0)) {
-	    chosen--;
-	    sendchosen();
-	}
+
+    public void change(T item) {
+	this.sel = item;
+    }
+
+    protected void itemclick(T item, int button) {
+	if(button == 1)
+	    change(item);
+    }
+
+    public T itemat(Coord c) {
+	int idx = (c.y / itemh) + sb.val;
+	if(idx >= listitems())
+	    return(null);
+	return(listitem(idx));
+    }
+
+    public boolean mousedown(Coord c, int button) {
+	if(super.mousedown(c, button))
+	    return(true);
+	T item = itemat(c);
+	if((item == null) && (button == 1))
+	    change(null);
+	else if(item != null)
+	    itemclick(item, button);
 	return(true);
     }
 }
