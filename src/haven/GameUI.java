@@ -548,7 +548,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return(false);
 	}
 
-	public boolean globtype(KeyEvent ev) {
+	public boolean globtype(char key, KeyEvent ev) {
+	    if(key != 0)
+		return(false);
 	    int c = ev.getKeyChar();
 	    if((c < KeyEvent.VK_0) || (c > KeyEvent.VK_9))
 		return(false);
