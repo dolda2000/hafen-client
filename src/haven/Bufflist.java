@@ -87,7 +87,7 @@ public class Bufflist extends Widget {
 			g.chcolor();
 		    }
 		} catch(Loading e) {}
-		if(++i >= 5)
+		if(++i >= num)
 		    break;
 	    }
 	}
@@ -130,7 +130,7 @@ public class Bufflist extends Widget {
 			return("...");
 		    }
 		}
-		if(++i >= 5)
+		if(++i >= num)
 		    break;
 	    }
 	}
