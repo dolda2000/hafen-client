@@ -273,7 +273,7 @@ public class GOut {
     public void fellipse(Coord c, Coord r) {
 	fellipse(c, r, 0, 360);
     }
-	
+
     public void rect(Coord ul, Coord sz) {
 	Coord ur, bl, br;
 	ur = new Coord(ul.x + sz.x - 1, ul.y);
@@ -284,7 +284,59 @@ public class GOut {
 	line(br, bl, 1);
 	line(bl, ul, 1);
     }
-	
+
+    public void prect(Coord c, Coord ul, Coord br, double a) {
+	st.set(def2d);
+	state(color);
+	apply();
+	gl.glEnable(GL.GL_POLYGON_SMOOTH);
+	gl.glBegin(GL.GL_TRIANGLE_FAN);
+	vertex(c);
+	vertex(c.add(0, ul.y));
+	double p2 = Math.PI / 2;
+	all: {
+	    int tc;
+
+	    tc = (int)(Math.tan(a) * -ul.y);
+	    if((a > p2) || (tc > br.x)) {
+		vertex(c.add(br.x, ul.y));
+	    } else {
+		vertex(c.add(tc, ul.y));
+		break all;
+	    }
+
+	    tc = (int)(Math.tan(a - (Math.PI / 2)) * br.x);
+	    if((a > p2 * 2) || (tc > br.y)) {
+		vertex(c.add(br));
+	    } else {
+		vertex(c.add(br.x, tc));
+		break all;
+	    }
+
+	    tc = (int)(-Math.tan(a - Math.PI) * br.y);
+	    if((a > p2 * 3) || (tc < ul.x)) {
+		vertex(c.add(ul.x, br.y));
+	    } else {
+		vertex(c.add(tc, br.y));
+		break all;
+	    }
+
+	    tc = (int)(-Math.tan(a - (3 * Math.PI / 2)) * -ul.x);
+	    if((a > p2 * 4) || (tc < ul.y)) {
+		vertex(c.add(ul));
+	    } else {
+		vertex(c.add(ul.x, tc));
+		break all;
+	    }
+
+	    tc = (int)(Math.tan(a) * -ul.y);
+	    vertex(c.add(tc, ul.y));
+	}
+	gl.glEnd();
+	gl.glDisable(GL.GL_POLYGON_SMOOTH);
+	checkerr();
+    }
+
     public void chcolor(Color c) {
 	if(c.equals(this.color.c))
 	    return;
