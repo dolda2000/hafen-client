@@ -110,6 +110,7 @@ public class GOut {
 	image(img.tex(), c.add(img.o));
     }
 
+    /* Draw texture at c, quite simply. */
     public void image(Tex tex, Coord c) {
 	if(tex == null)
 	    return;
@@ -118,12 +119,13 @@ public class GOut {
 	tex.crender(this, c.add(tx), ul, sz);
 	checkerr();
     }
-	
+
     public void aimage(Tex tex, Coord c, double ax, double ay) {
 	Coord sz = tex.sz();
 	image(tex, c.add((int)((double)sz.x * -ax), (int)((double)sz.y * -ay)));
     }
-	
+
+    /* Draw texture at c, scaling it to sz. */
     public void image(Tex tex, Coord c, Coord sz) {
 	if(tex == null)
 	    return;
@@ -132,7 +134,8 @@ public class GOut {
 	tex.crender(this, c.add(tx), ul, this.sz, sz);
 	checkerr();
     }
-	
+
+    /* Draw texture at c, clipping everything outside ul to ul + sz. */
     public void image(Tex tex, Coord c, Coord ul, Coord sz) {
 	if(tex == null)
 	    return;
@@ -151,7 +154,7 @@ public class GOut {
 	tex.crender(this, c.add(this.tx), ul, br.sub(ul));
 	checkerr();
     }
-	
+
     private void vertex(Coord c) {
 	gl.glVertex2i(c.x + tx.x, c.y + tx.y);
     }
