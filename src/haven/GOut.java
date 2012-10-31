@@ -158,6 +158,10 @@ public class GOut {
     private void vertex(Coord c) {
 	gl.glVertex2i(c.x + tx.x, c.y + tx.y);
     }
+
+    private void vertex(float x, float y) {
+	gl.glVertex2f(x + tx.x, y + tx.y);
+    }
 	
     public void apply() {
 	st.apply(this);
@@ -295,42 +299,42 @@ public class GOut {
 	vertex(c.add(0, ul.y));
 	double p2 = Math.PI / 2;
 	all: {
-	    int tc;
+	    float tc;
 
-	    tc = (int)(Math.tan(a) * -ul.y);
+	    tc = (float)(Math.tan(a) * -ul.y);
 	    if((a > p2) || (tc > br.x)) {
-		vertex(c.add(br.x, ul.y));
+		vertex(c.x + br.x, c.y + ul.y);
 	    } else {
-		vertex(c.add(tc, ul.y));
+		vertex(c.x + tc, c.y + ul.y);
 		break all;
 	    }
 
-	    tc = (int)(Math.tan(a - (Math.PI / 2)) * br.x);
+	    tc = (float)(Math.tan(a - (Math.PI / 2)) * br.x);
 	    if((a > p2 * 2) || (tc > br.y)) {
-		vertex(c.add(br));
+		vertex(c.x + br.x, c.y + br.y);
 	    } else {
-		vertex(c.add(br.x, tc));
+		vertex(c.x + br.x, c.y + tc);
 		break all;
 	    }
 
-	    tc = (int)(-Math.tan(a - Math.PI) * br.y);
+	    tc = (float)(-Math.tan(a - Math.PI) * br.y);
 	    if((a > p2 * 3) || (tc < ul.x)) {
-		vertex(c.add(ul.x, br.y));
+		vertex(c.x + ul.x, c.y + br.y);
 	    } else {
-		vertex(c.add(tc, br.y));
+		vertex(c.x + tc, c.y + br.y);
 		break all;
 	    }
 
-	    tc = (int)(-Math.tan(a - (3 * Math.PI / 2)) * -ul.x);
+	    tc = (float)(-Math.tan(a - (3 * Math.PI / 2)) * -ul.x);
 	    if((a > p2 * 4) || (tc < ul.y)) {
-		vertex(c.add(ul));
+		vertex(c.x + ul.x, c.y + ul.y);
 	    } else {
-		vertex(c.add(ul.x, tc));
+		vertex(c.x + ul.x, c.y + tc);
 		break all;
 	    }
 
-	    tc = (int)(Math.tan(a) * -ul.y);
-	    vertex(c.add(tc, ul.y));
+	    tc = (float)(Math.tan(a) * -ul.y);
+	    vertex(c.x + tc, c.y + ul.y);
 	}
 	gl.glEnd();
 	gl.glDisable(GL.GL_POLYGON_SMOOTH);
