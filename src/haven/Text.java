@@ -184,6 +184,54 @@ public class Text {
 	}
     }
 
+    public static abstract class UText implements Indir<Text> {
+	public final Furnace fnd;
+	private Text cur = null;
+
+	public UText(Furnace fnd) {this.fnd = fnd;}
+
+	abstract String text();
+
+	public Text get() {
+	    String text = text();
+	    if((cur == null) || !cur.text.equals(text))
+		cur = fnd.render(text);
+	    return(cur);
+	}
+
+	public Indir<Tex> tex() {
+	    return(new Indir<Tex>() {
+		    public Tex get() {
+			return(UText.this.get().tex());
+		    }
+		});
+	}
+
+	public static UText forfield(Furnace fnd, final Object obj, String fn) {
+	    final java.lang.reflect.Field f;
+	    try {
+		f = obj.getClass().getField(fn);
+	    } catch(NoSuchFieldException e) {
+		throw(new RuntimeException(e));
+	    }
+	    if(f.getType() != String.class)
+		throw(new RuntimeException("Not a string field: " + f));
+	    return(new UText(fnd) {
+		    public String text() {
+			try {
+			    return((String)f.get(obj));
+			} catch(IllegalAccessException e) {
+			    throw(new RuntimeException(e));
+			}
+		    }
+		});
+	}
+
+	public static UText forfield(Object obj, String fn) {
+	    return(forfield(std, obj, fn));
+	}
+    }
+
     protected Text(String text, BufferedImage img) {
 	this.text = text;
 	this.img = img;
