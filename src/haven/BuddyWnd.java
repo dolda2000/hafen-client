@@ -84,12 +84,12 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
     }
     
     public class Buddy {
-	int id;
-	String name;
+	public int id;
+	public String name;
 	Text rname = null;
-	int online;
-	int group;
-	boolean seen;
+	public int online;
+	public int group;
+	public boolean seen;
 	
 	public Buddy(int id, String name, int online, int group, boolean seen) {
 	    this.id = id;
