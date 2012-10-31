@@ -125,10 +125,6 @@ public class Window extends Widget implements DTarget {
 	return(max);
     }
 
-    public void pack() {
-	resize(contentsz());
-    }
-    
     public void resize(Coord sz) {
 	this.sz = sz.add(wbox.bsz().add(mrgn.mul(2)).add(tlo).add(rbo)).add(-1, -1);
 	wsz = this.sz.add(tlo.inv()).add(rbo.inv());

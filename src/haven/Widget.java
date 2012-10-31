@@ -625,7 +625,7 @@ public class Widget {
 	return(false);
     }
     
-    public void pack() {
+    public Coord contentsz() {
 	Coord max = new Coord(0, 0);
 	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
 	    Coord br = wdg.c.add(wdg.sz);
@@ -634,7 +634,11 @@ public class Widget {
 	    if(br.y > max.y)
 		max.y = br.y;
 	}
-	resize(max);
+	return(max);
+    }
+
+    public void pack() {
+	resize(contentsz());
     }
     
     public void resize(Coord sz) {
