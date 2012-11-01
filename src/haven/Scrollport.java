@@ -108,4 +108,18 @@ public class Scrollport extends Widget {
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {
 	return(cont.makechild(type, pargs, cargs));
     }
+
+    public void resize(Coord nsz) {
+	super.resize(nsz);
+	bar.c = new Coord(sz.x - bar.sz.x, 0);
+	cont.resize(sz.sub(bar.sz.x, 0));
+    }
+
+    public void uimsg(String msg, Object... args) {
+	if(msg == "wpack") {
+	    resize(new Coord(cont.contentsz().x + bar.sz.x, sz.y));
+	} else {
+	    super.uimsg(msg, args);
+	}
+    }
 }
