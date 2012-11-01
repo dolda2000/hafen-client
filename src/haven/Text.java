@@ -190,7 +190,7 @@ public class Text {
 
 	public UText(Furnace fnd) {this.fnd = fnd;}
 
-	abstract String text();
+	protected abstract String text();
 
 	public Text get() {
 	    String text = text();
