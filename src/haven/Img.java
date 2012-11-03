@@ -27,39 +27,51 @@
 package haven;
 
 public class Img extends Widget {
+    private final Indir<Resource> res;
     private Tex img;
     public boolean hit = false;
 	
     static {
 	Widget.addtype("img", new WidgetFactory() {
 		public Widget create(Coord c, Widget parent, Object[] args) {
-		    Tex tex;
-		    if(args.length > 1) {
-			Resource res = Resource.load((String)args[0], (Integer)args[1]);
-			res.loadwait();
-			tex = res.layer(Resource.imgc).tex();
+		    Indir<Resource> res;
+		    int a = 0;
+		    if(args[a] instanceof String) {
+			String nm = (String)args[a++];
+			int ver = (args.length > a)?((Integer)args[a++]):-1;
+			res = new Resource.Spec(nm, ver);
 		    } else {
-			tex = Resource.loadtex((String)args[0]);
+			res = parent.ui.sess.getres((Integer)args[a++]);
 		    }
-		    Img ret = new Img(c, tex, parent);
-		    if(args.length > 2)
-			ret.hit = (Integer)args[2] != 0;
+		    Img ret = new Img(c, res, parent);
+		    if(args.length > a)
+			ret.hit = (Integer)args[a++] != 0;
 		    return(ret);
 		}
 	    });
     }
-	
+
     public void draw(GOut g) {
-	synchronized(img) {
+	try {
+	    if(img == null) {
+		img = res.get().layer(Resource.imgc).tex();
+		resize(img.sz());
+	    }
 	    g.image(img, Coord.z);
-	}
+	} catch(Loading e) {}
     }
 	
     public Img(Coord c, Tex img, Widget parent) {
 	super(c, img.sz(), parent);
+	this.res = null;
 	this.img = img;
     }
-	
+
+    public Img(Coord c, Indir<Resource> res, Widget parent) {
+	super(c, Coord.z, parent);
+	this.res = res;
+    }
+
     public void uimsg(String name, Object... args) {
 	if(name == "ch") {
 	    img = Resource.loadtex((String)args[0]);
