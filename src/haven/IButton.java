@@ -66,8 +66,11 @@ public class IButton extends SSWidget {
     }
 
     public boolean checkhit(Coord c) {
-	int cl = up.getRGB(c.x, c.y);
-	return(Utils.rgbm.getAlpha(cl) >= 128);
+	if(!c.isect(Coord.z, sz))
+	    return(false);
+	if(up.getRaster().getNumBands() < 4)
+	    return(true);
+	return(up.getRaster().getSample(c.x, c.y, 3) >= 128);
     }
 	
     public void click() {
@@ -89,7 +92,7 @@ public class IButton extends SSWidget {
 	if(a && button == 1) {
 	    a = false;
 	    ui.grabmouse(null);
-	    if(c.isect(new Coord(0, 0), sz) && checkhit(c))
+	    if(checkhit(c))
 		click();
 	    render();
 	    return(true);
@@ -98,7 +101,7 @@ public class IButton extends SSWidget {
     }
 	
     public void mousemove(Coord c) {
-	boolean h = c.isect(Coord.z, sz);
+	boolean h = checkhit(c);
 	if(h != this.h) {
 	    this.h = h;
 	    render();
