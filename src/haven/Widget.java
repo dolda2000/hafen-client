@@ -59,6 +59,17 @@ public class Widget {
 		    return(new Widget(c, (Coord)args[0], parent));
 		}
 	    });
+	addtype("ccnt", new WidgetFactory() {
+		public Widget create(Coord c, Widget parent, Object[] args) {
+		    Widget ret = new Widget(c, (Coord)args[0], parent) {
+			    public void presize() {
+				c = parent.sz.div(2).sub(sz.div(2));
+			    }
+			};
+		    ret.presize();
+		    return(ret);
+		}
+	    });
     }
 	
     public static void initbardas() {
