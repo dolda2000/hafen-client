@@ -233,12 +233,13 @@ public class PUtils {
 	BufferedImage ret = TexI.mkbuf(sz);
 	Raster src = img.getRaster();
 	WritableRaster dst = ret.getRaster();
+	boolean hasalpha = (src.getNumBands() == 4);
 	for(int y = 0; y < sz.y; y++) {
 	    for(int x = 0; x < sz.x; x++) {
 		int r = src.getSample(x, y, 0),
 		    g = src.getSample(x, y, 1),
-		    b = src.getSample(x, y, 2),
-		    a = src.getSample(x, y, 3);
+		    b = src.getSample(x, y, 2);
+		int a = hasalpha?src.getSample(x, y, 3):255;
 		int max = Math.max(r, Math.max(g, b)),
 		    min = Math.min(r, Math.min(g, b));
 		int val = (max + min) / 2;
