@@ -767,6 +767,17 @@ public class Utils {
     public static <T> T[] splice(T[] src, int off) {
 	return(splice(src, off, src.length - off));
     }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T[] extend(T[] src, int off, int nl) {
+	T[] dst = (T[])Array.newInstance(src.getClass().getComponentType(), nl);
+	System.arraycopy(src, off, dst, 0, Math.min(src.length - off, dst.length));
+	return(dst);
+    }
+
+    public static <T> T[] extend(T[] src, int nl) {
+	return(extend(src, 0, nl));
+    }
     
     public static <T> T el(Iterable<T> c) {
 	return(c.iterator().next());
