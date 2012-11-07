@@ -116,6 +116,8 @@ public class Window extends Widget implements DTarget {
 	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
 	    if(wdg == cbtn)
 		continue;
+	    if(!wdg.visible)
+		continue;
 	    Coord br = wdg.c.add(wdg.sz);
 	    if(br.x > max.x)
 		max.x = br.x;

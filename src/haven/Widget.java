@@ -639,6 +639,8 @@ public class Widget {
     public Coord contentsz() {
 	Coord max = new Coord(0, 0);
 	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
+	    if(!wdg.visible)
+		continue;
 	    Coord br = wdg.c.add(wdg.sz);
 	    if(br.x > max.x)
 		max.x = br.x;
