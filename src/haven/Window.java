@@ -196,11 +196,13 @@ public class Window extends Widget implements DTarget {
     }
 	
     public boolean type(char key, java.awt.event.KeyEvent ev) {
+	if(super.type(key, ev))
+	    return(true);
 	if(key == 27) {
 	    wdgmsg("close");
 	    return(true);
 	}
-	return(super.type(key, ev));
+	return(false);
     }
 	
     public boolean drop(Coord cc, Coord ul) {
