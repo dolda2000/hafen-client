@@ -409,6 +409,23 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	wdgmsg("act", (Object[])args);
     }
 
+    public void act(int mods, Coord mc, Gob gob, String... args) {
+	int n = args.length;
+	Object[] al = new Object[n];
+	System.arraycopy(args, 0, al, 0, n);
+	if(mc != null) {
+	    al = Utils.extend(al, al.length + 2);
+	    al[n++] = mods;
+	    al[n++] = mc;
+	    if(gob != null) {
+		al = Utils.extend(al, al.length + 2);
+		al[n++] = (int)gob.id;
+		al[n++] = gob.rc;
+	    }
+	}
+	wdgmsg("act", al);
+    }
+
     public class FKeyBelt extends Belt implements DTarget, DropTarget {
 	public final int beltkeys[] = {KeyEvent.VK_F1, KeyEvent.VK_F2, KeyEvent.VK_F3, KeyEvent.VK_F4,
 				       KeyEvent.VK_F5, KeyEvent.VK_F6, KeyEvent.VK_F7, KeyEvent.VK_F8,
