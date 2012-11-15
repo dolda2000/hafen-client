@@ -695,14 +695,22 @@ public class Utils {
 	}
     }
     
-    public static boolean parsebool(String s, boolean def) {
+    public static boolean parsebool(String s) {
 	if(s == null)
-	    return(def);
+	    throw(new IllegalArgumentException(s));
 	else if(s.equalsIgnoreCase("1") || s.equalsIgnoreCase("on") || s.equalsIgnoreCase("true") || s.equalsIgnoreCase("yes"))
 	    return(true);
 	else if(s.equalsIgnoreCase("0") || s.equalsIgnoreCase("off") || s.equalsIgnoreCase("false") || s.equalsIgnoreCase("no"))
 	    return(false);
-	return(def);
+	throw(new IllegalArgumentException(s));
+    }
+
+    public static boolean parsebool(String s, boolean def) {
+	try {
+	    return(parsebool(s));
+	} catch(IllegalArgumentException e) {
+	    return(def);
+	}
     }
     
     /* Just in case anyone doubted that Java is stupid. :-/ */
