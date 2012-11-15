@@ -43,7 +43,7 @@ public abstract class States extends GLState {
 	}
 	
 	public void apply(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    gl.glColor4fv(ca, 0);
 	}
 	
@@ -52,7 +52,7 @@ public abstract class States extends GLState {
 	}
 	
 	public void unapply(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    gl.glColor3f(1, 1, 1);
 	}
 	
@@ -155,17 +155,17 @@ public abstract class States extends GLState {
 	}
 	
 	public void apply(GOut g) {
-	    GL gl = g.gl;
-	    gl.glFogi(GL.GL_FOG_MODE, GL.GL_LINEAR);
-	    gl.glFogf(GL.GL_FOG_START, s);
-	    gl.glFogf(GL.GL_FOG_END, e);
-	    gl.glFogfv(GL.GL_FOG_COLOR, ca, 0);
-	    gl.glEnable(GL.GL_FOG);
+	    GL2 gl = g.gl;
+	    gl.glFogi(GL2.GL_FOG_MODE, GL2.GL_LINEAR);
+	    gl.glFogf(GL2.GL_FOG_START, s);
+	    gl.glFogf(GL2.GL_FOG_END, e);
+	    gl.glFogfv(GL2.GL_FOG_COLOR, ca, 0);
+	    gl.glEnable(GL2.GL_FOG);
 	}
 	
 	public void unapply(GOut g) {
-	    GL gl = g.gl;
-	    gl.glDisable(GL.GL_FOG);
+	    GL2 gl = g.gl;
+	    gl.glDisable(GL2.GL_FOG);
 	}
 	
 	public void prep(Buffer buf) {

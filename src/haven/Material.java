@@ -98,21 +98,21 @@ public class Material extends GLState {
 	}
     
 	public void apply(GOut g) {
-	    GL gl = g.gl;
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_AMBIENT, amb, 0);
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE, dif, 0);
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_SPECULAR, spc, 0);
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_EMISSION, emi, 0);
-	    gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL.GL_SHININESS, shine);
+	    GL2 gl = g.gl;
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_AMBIENT, amb, 0);
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, dif, 0);
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, spc, 0);
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_EMISSION, emi, 0);
+	    gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL2.GL_SHININESS, shine);
 	}
 
 	public void unapply(GOut g) {
-	    GL gl = g.gl;
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_AMBIENT, defamb, 0);
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE, defdif, 0);
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_SPECULAR, defspc, 0);
-	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL.GL_EMISSION, defemi, 0);
-	    gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL.GL_SHININESS, 0.0f);
+	    GL2 gl = g.gl;
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_AMBIENT, defamb, 0);
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, defdif, 0);
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, defspc, 0);
+	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_EMISSION, defemi, 0);
+	    gl.glMaterialf(GL.GL_FRONT_AND_BACK, GL2.GL_SHININESS, 0.0f);
 	}
     
 	public int capplyfrom(GLState from) {

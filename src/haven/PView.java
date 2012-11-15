@@ -42,7 +42,7 @@ public abstract class PView extends Widget {
     
     public static abstract class RenderState extends GLState {
 	public void apply(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    gl.glScissor(g.ul.x, g.root().sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
 	    Coord ul = ul();
 	    Coord sz = sz();
@@ -90,7 +90,7 @@ public abstract class PView extends Widget {
 	rstate = new WidgetRenderState();
 	pstate = makeproj();
 	lm = new Light.Model();
-	lm.cc = GL.GL_SEPARATE_SPECULAR_COLOR;
+	lm.cc = GL2.GL_SEPARATE_SPECULAR_COLOR;
     }
     
     protected GLState.Buffer basic(GOut g) {

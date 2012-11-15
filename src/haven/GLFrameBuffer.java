@@ -38,17 +38,17 @@ public class GLFrameBuffer extends GLState {
     public static class FBO extends GLObject {
 	public final int id;
 	
-	public FBO(GL gl) {
+	public FBO(GL2 gl) {
 	    super(gl);
 	    int[] buf = new int[1];
-	    gl.glGenFramebuffersEXT(1, buf, 0);
+	    gl.glGenFramebuffers(1, buf, 0);
 	    this.id = buf[0];
 	    GOut.checkerr(gl);
 	}
 	
 	protected void delete() {
 	    int[] buf = {id};
-	    gl.glDeleteFramebuffersEXT(1, buf, 0);
+	    gl.glDeleteFramebuffers(1, buf, 0);
 	    GOut.checkerr(gl);
 	}
     }
@@ -63,13 +63,13 @@ public class GLFrameBuffer extends GLState {
 	    this.fmt = fmt;
 	}
 	
-	public int glid(GL gl) {
+	public int glid(GL2 gl) {
 	    if((rbo != null) && (rbo.gl != gl))
 		dispose();
 	    if(rbo == null) {
 		rbo = new RBO(gl);
-		gl.glBindRenderbufferEXT(GL.GL_RENDERBUFFER_EXT, rbo.id);
-		gl.glRenderbufferStorageEXT(GL.GL_RENDERBUFFER_EXT, fmt, sz.x, sz.y);
+		gl.glBindRenderbuffer(GL.GL_RENDERBUFFER, rbo.id);
+		gl.glRenderbufferStorage(GL.GL_RENDERBUFFER, fmt, sz.x, sz.y);
 	    }
 	    return(rbo.id);
 	}
@@ -86,17 +86,17 @@ public class GLFrameBuffer extends GLState {
 	public static class RBO extends GLObject {
 	    public final int id;
 	    
-	    public RBO(GL gl) {
+	    public RBO(GL2 gl) {
 		super(gl);
 		int[] buf = new int[1];
-		gl.glGenRenderbuffersEXT(1, buf, 0);
+		gl.glGenRenderbuffers(1, buf, 0);
 		this.id = buf[0];
 		GOut.checkerr(gl);
 	    }
 	    
 	    protected void delete() {
 		int[] buf = {id};
-		gl.glDeleteRenderbuffersEXT(1, buf, 0);
+		gl.glDeleteRenderbuffers(1, buf, 0);
 		GOut.checkerr(gl);
 	    }
 	}
@@ -110,7 +110,7 @@ public class GLFrameBuffer extends GLState {
 	if((this.depth = depth) == null) {
 	    if(this.color.length == 0)
 		throw(new RuntimeException("Cannot create a framebuffer with neither color nor depth"));
-	    this.altdepth = new RenderBuffer(this.color[0].tdim, GL.GL_DEPTH_COMPONENT);
+	    this.altdepth = new RenderBuffer(this.color[0].tdim, GL2.GL_DEPTH_COMPONENT);
 	} else {
 	    this.altdepth = null;
 	}
@@ -126,29 +126,29 @@ public class GLFrameBuffer extends GLState {
     }
     
     public void apply(GOut g) {
-	GL gl = g.gl;
+	GL2 gl = g.gl;
 	synchronized(this) {
 	    if((fbo != null) && (fbo.gl != gl))
 		dispose();
 	    if(fbo == null) {
 		fbo = new FBO(gl);
-		gl.glBindFramebufferEXT(GL.GL_FRAMEBUFFER_EXT, fbo.id);
+		gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo.id);
 		for(int i = 0; i < color.length; i++)
-		    gl.glFramebufferTexture2DEXT(GL.GL_FRAMEBUFFER_EXT, GL.GL_COLOR_ATTACHMENT0_EXT + i, GL.GL_TEXTURE_2D, color[i].glid(g), 0);
+		    gl.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_COLOR_ATTACHMENT0 + i, GL.GL_TEXTURE_2D, color[i].glid(g), 0);
 		if(depth != null)
-		    gl.glFramebufferTexture2DEXT(GL.GL_FRAMEBUFFER_EXT, GL.GL_DEPTH_ATTACHMENT_EXT, GL.GL_TEXTURE_2D, depth.glid(g), 0);
+		    gl.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_TEXTURE_2D, depth.glid(g), 0);
 		else
-		    gl.glFramebufferRenderbufferEXT(GL.GL_FRAMEBUFFER_EXT, GL.GL_DEPTH_ATTACHMENT_EXT, GL.GL_RENDERBUFFER_EXT, altdepth.glid(gl));
+		    gl.glFramebufferRenderbuffer(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_RENDERBUFFER, altdepth.glid(gl));
 		if(color.length == 0) {
 		    gl.glDrawBuffer(GL.GL_NONE);
 		    gl.glReadBuffer(GL.GL_NONE);
 		}
 		GOut.checkerr(gl);
-		int st = gl.glCheckFramebufferStatusEXT(GL.GL_FRAMEBUFFER_EXT);
-		if(st != GL.GL_FRAMEBUFFER_COMPLETE_EXT)
+		int st = gl.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER);
+		if(st != GL.GL_FRAMEBUFFER_COMPLETE)
 		    throw(new RuntimeException("FBO failed completeness test: " + st));
 	    } else {
-		gl.glBindFramebufferEXT(GL.GL_FRAMEBUFFER_EXT, fbo.id);
+		gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo.id);
 		if(color.length == 0) {
 		    gl.glDrawBuffer(GL.GL_NONE);
 		    gl.glReadBuffer(GL.GL_NONE);
@@ -159,8 +159,8 @@ public class GLFrameBuffer extends GLState {
     }
     
     public void unapply(GOut g) {
-	GL gl = g.gl;
-	gl.glBindFramebufferEXT(GL.GL_FRAMEBUFFER_EXT, 0);
+	GL2 gl = g.gl;
+	gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0);
 	if(color.length == 0) {
 	    gl.glDrawBuffer(GL.GL_BACK);
 	    gl.glReadBuffer(GL.GL_BACK);

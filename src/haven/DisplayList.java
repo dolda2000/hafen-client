@@ -31,7 +31,7 @@ import javax.media.opengl.*;
 public class DisplayList extends GLObject {
     public final int id;
     
-    public DisplayList(GL gl) {
+    public DisplayList(GL2 gl) {
 	super(gl);
 	id = gl.glGenLists(1);
     }

@@ -33,17 +33,17 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
     public boolean usedl = true, fsaa = false;
     public int maxlights;
     public Collection<String> exts;
-    public GLCapabilities caps;
+    public GLCapabilitiesImmutable caps;
     public boolean shuse;
     public GLState deflight = Light.vlights;
     
     private GLConfig() {
     }
     
-    public static GLConfig fromgl(GL gl, GLContext ctx, GLCapabilities caps) {
+    public static GLConfig fromgl(GL gl, GLContext ctx, GLCapabilitiesImmutable caps) {
 	GLConfig c = new GLConfig();
 	int[] buf = {0};
-	gl.glGetIntegerv(GL.GL_MAX_LIGHTS, buf, 0);
+	gl.glGetIntegerv(GL2.GL_MAX_LIGHTS, buf, 0);
 	c.maxlights = buf[0];
 	c.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	c.caps = caps;

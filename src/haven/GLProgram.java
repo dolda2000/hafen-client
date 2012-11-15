@@ -72,7 +72,7 @@ public class GLProgram implements java.io.Serializable {
     public static class ProgOb extends GLObject {
 	public final int id;
 	
-	public ProgOb(GL gl) {
+	public ProgOb(GL2 gl) {
 	    super(gl);
 	    id = gl.glCreateProgramObjectARB();
 	}
@@ -86,10 +86,10 @@ public class GLProgram implements java.io.Serializable {
 		gl.glAttachShader(id, sh.glid(gl));
 	    gl.glLinkProgram(id);
 	    int[] buf = {0};
-	    gl.glGetObjectParameterivARB(id, GL.GL_OBJECT_LINK_STATUS_ARB, buf, 0);
+	    gl.glGetObjectParameterivARB(id, GL2.GL_OBJECT_LINK_STATUS_ARB, buf, 0);
 	    if(buf[0] != 1) {
 		String info = null;
-		gl.glGetObjectParameterivARB(id, GL.GL_OBJECT_INFO_LOG_LENGTH_ARB, buf, 0);
+		gl.glGetObjectParameterivARB(id, GL2.GL_OBJECT_INFO_LOG_LENGTH_ARB, buf, 0);
 		if(buf[0] > 0) {
 		    byte[] logbuf = new byte[buf[0]];
 		    gl.glGetInfoLogARB(id, logbuf.length, buf, 0, logbuf, 0);
@@ -108,7 +108,7 @@ public class GLProgram implements java.io.Serializable {
 	}
 	
 	public int attrib(String name) {
-	    int r = gl.glGetAttribLocationARB(id, name);
+	    int r = gl.glGetAttribLocation(id, name);
 	    if(r < 0)
 		throw(new RuntimeException("Unknown uniform name: " + name));
 	    return(r);

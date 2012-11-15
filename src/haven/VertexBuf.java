@@ -28,7 +28,7 @@ package haven;
 
 import java.nio.*;
 import java.util.*;
-import javax.media.opengl.GL;
+import javax.media.opengl.*;
 
 public class VertexBuf {
     public final AttribArray[] bufs;
@@ -117,20 +117,20 @@ public class VertexBuf {
 	public VertexArray dup() {return(new VertexArray(Utils.bufcp(data)));}
 	
 	public void set(GOut g, int idx) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    int i = idx * 3;
 	    gl.glVertex3f(data.get(i), data.get(i + 1), data.get(i + 2));
 	}
 	
 	public void bind(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    data.rewind();
-	    gl.glEnableClientState(GL.GL_VERTEX_ARRAY);
+	    gl.glEnableClientState(GL2.GL_VERTEX_ARRAY);
 	    gl.glVertexPointer(3, GL.GL_FLOAT, 0, data);
 	}
 	
 	public void unbind(GOut g) {
-	    g.gl.glDisableClientState(GL.GL_VERTEX_ARRAY);
+	    g.gl.glDisableClientState(GL2.GL_VERTEX_ARRAY);
 	}
     }
     
@@ -142,20 +142,20 @@ public class VertexBuf {
 	public NormalArray dup() {return(new NormalArray(Utils.bufcp(data)));}
 
 	public void set(GOut g, int idx) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    int i = idx * 3;
 	    gl.glNormal3f(data.get(i), data.get(i + 1), data.get(i + 2));
 	}
 	
 	public void bind(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    data.rewind();
-	    gl.glEnableClientState(GL.GL_NORMAL_ARRAY);
+	    gl.glEnableClientState(GL2.GL_NORMAL_ARRAY);
 	    gl.glNormalPointer(GL.GL_FLOAT, 0, data);
 	}
 	
 	public void unbind(GOut g) {
-	    g.gl.glDisableClientState(GL.GL_NORMAL_ARRAY);
+	    g.gl.glDisableClientState(GL2.GL_NORMAL_ARRAY);
 	}
     }
 
@@ -167,20 +167,20 @@ public class VertexBuf {
 	public ColorArray dup() {return(new ColorArray(Utils.bufcp(data)));}
 
 	public void set(GOut g, int idx) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    int i = idx * 4;
 	    gl.glColor4f(data.get(i), data.get(i + 1), data.get(i + 2), data.get(i + 3));
 	}
 	
 	public void bind(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    data.rewind();
-	    gl.glEnableClientState(GL.GL_COLOR_ARRAY);
+	    gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
 	    gl.glColorPointer(4, GL.GL_FLOAT, 0, data);
 	}
 	
 	public void unbind(GOut g) {
-	    g.gl.glDisableClientState(GL.GL_COLOR_ARRAY);
+	    g.gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
 	}
     }
 
@@ -192,20 +192,20 @@ public class VertexBuf {
 	public TexelArray dup() {return(new TexelArray(Utils.bufcp(data)));}
 
 	public void set(GOut g, int idx) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    int i = idx * 2;
 	    gl.glTexCoord2f(data.get(i), data.get(i + 1));
 	}
 	
 	public void bind(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    data.rewind();
-	    gl.glEnableClientState(GL.GL_TEXTURE_COORD_ARRAY);
+	    gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 	    gl.glTexCoordPointer(2, GL.GL_FLOAT, 0, data);
 	}
 	
 	public void unbind(GOut g) {
-	    g.gl.glDisableClientState(GL.GL_TEXTURE_COORD_ARRAY);
+	    g.gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 	}
     }
     

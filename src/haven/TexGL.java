@@ -42,7 +42,7 @@ public abstract class TexGL extends Tex {
     public static class TexOb extends GLObject {
 	public final int id;
 	
-	public TexOb(GL gl) {
+	public TexOb(GL2 gl) {
 	    super(gl);
 	    int[] buf = new int[1];
 	    gl.glGenTextures(1, buf, 0);
@@ -72,33 +72,33 @@ public abstract class TexGL extends Tex {
 	}
 
 	public void apply(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    g.st.texunit(0);
 	    TexClip clip = g.st.get(TexClip.slot);
 	    if(clip != null) {
 		if(clip.tex != this.tex)
 		    throw(new RuntimeException("TexGL does not support different clip and draw textures."));
-		gl.glEnable(GL.GL_ALPHA_TEST);
+		gl.glEnable(GL2.GL_ALPHA_TEST);
 	    }
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
 	    if(g.st.prog != null) {
 		reapply(g);
 	    } else {
-		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_MODULATE);
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
 		gl.glEnable(GL.GL_TEXTURE_2D);
 	    }
 	}
     
 	public void reapply(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    gl.glUniform1i(g.st.prog.uniform("tex2d"), 0);
 	}
 
 	public void unapply(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    g.st.texunit(0);
 	    if(g.st.old(TexClip.slot) != null)
-		gl.glDisable(GL.GL_ALPHA_TEST);
+		gl.glDisable(GL2.GL_ALPHA_TEST);
 	    if(!g.st.usedprog)
 		gl.glDisable(GL.GL_TEXTURE_2D);
 	}
@@ -118,17 +118,17 @@ public abstract class TexGL extends Tex {
 	}
     
 	public void applyfrom(GOut g, GLState from) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    g.st.texunit(0);
 	    TexClip clip = g.st.get(TexClip.slot), old = g.st.old(TexClip.slot);
 	    if(clip != null) {
 		if(clip.tex != this.tex)
 		    throw(new RuntimeException("TexGL does not support different clip and draw textures."));
 		if(old == null)
-		    gl.glEnable(GL.GL_ALPHA_TEST);
+		    gl.glEnable(GL2.GL_ALPHA_TEST);
 	    } else {
 		if(old != null)
-		    gl.glDisable(GL.GL_ALPHA_TEST);
+		    gl.glDisable(GL2.GL_ALPHA_TEST);
 	    }
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
 	}
@@ -149,37 +149,37 @@ public abstract class TexGL extends Tex {
 	}
 	
 	public void apply(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    TexDraw draw = g.st.get(TexDraw.slot);
 	    if(draw == null) {
 		g.st.texunit(0);
 		gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
-		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_COMBINE);
-		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_COMBINE_RGB, GL.GL_REPLACE);
-		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_SRC0_RGB, GL.GL_PREVIOUS);
-		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_OPERAND0_RGB, GL.GL_SRC_COLOR);
-		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_COMBINE_ALPHA, GL.GL_MODULATE);
-		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_SRC0_ALPHA, GL.GL_PREVIOUS);
-		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_OPERAND0_ALPHA, GL.GL_SRC_ALPHA);
-		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_SRC1_ALPHA, GL.GL_TEXTURE);
-		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_OPERAND1_ALPHA, GL.GL_SRC_ALPHA);
-		gl.glEnable(GL.GL_TEXTURE_2D);
-		gl.glEnable(GL.GL_ALPHA_TEST);
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_COMBINE);
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_RGB, GL2.GL_REPLACE);
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SRC0_RGB, GL2.GL_PREVIOUS);
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_RGB, GL2.GL_SRC_COLOR);
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_ALPHA, GL2.GL_MODULATE);
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SRC0_ALPHA, GL2.GL_PREVIOUS);
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND0_ALPHA, GL2.GL_SRC_ALPHA);
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_SRC1_ALPHA, GL2.GL_TEXTURE);
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND1_ALPHA, GL2.GL_SRC_ALPHA);
+		gl.glEnable(GL2.GL_TEXTURE_2D);
+		gl.glEnable(GL2.GL_ALPHA_TEST);
 	    } else {
 		if(draw.tex != this.tex)
 		    throw(new RuntimeException("TexGL does not support different clip and draw textures."));
-		gl.glEnable(GL.GL_ALPHA_TEST);
+		gl.glEnable(GL2.GL_ALPHA_TEST);
 	    }
 	}
 	
 	public void unapply(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    if(g.st.old(TexDraw.slot) == null) {
 		g.st.texunit(0);
-		gl.glDisable(GL.GL_ALPHA_TEST);
-		gl.glDisable(GL.GL_TEXTURE_2D);
+		gl.glDisable(GL2.GL_ALPHA_TEST);
+		gl.glDisable(GL2.GL_TEXTURE_2D);
 	    } else {
-		gl.glDisable(GL.GL_ALPHA_TEST);
+		gl.glDisable(GL2.GL_ALPHA_TEST);
 	    }
 	}
 	
@@ -197,10 +197,10 @@ public abstract class TexGL extends Tex {
 	    TexDraw draw = g.st.get(TexDraw.slot), old = g.st.old(TexDraw.slot);
 	    if((old != null) && (draw != null))
 		return;
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    if((old == null) && (draw == null)) {
 		g.st.texunit(0);
-		gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
+		gl.glBindTexture(GL2.GL_TEXTURE_2D, tex.glid(g));
 	    } else {
 		throw(new RuntimeException("TexClip is somehow being transition even though TexDraw is being replaced"));
 	    }
@@ -229,7 +229,7 @@ public abstract class TexGL extends Tex {
     protected abstract void fill(GOut gl);
 
     private void create(GOut g) {
-	GL gl = g.gl;
+	GL2 gl = g.gl;
 	t = new TexOb(gl);
 	gl.glBindTexture(GL.GL_TEXTURE_2D, t.id);
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, minfilter);
@@ -276,12 +276,12 @@ public abstract class TexGL extends Tex {
     }
 
     public void render(GOut g, Coord c, Coord ul, Coord br, Coord sz) {
-	GL gl = g.gl;
+	GL2 gl = g.gl;
 	g.st.prep(draw);
 	g.apply();
 	checkerr(gl);
 	if(!disableall) {
-	    gl.glBegin(GL.GL_QUADS);
+	    gl.glBegin(GL2.GL_QUADS);
 	    float l = ((float)ul.x) / ((float)tdim.x);
 	    float t = ((float)ul.y) / ((float)tdim.y);
 	    float r = ((float)br.x) / ((float)tdim.x);

@@ -50,9 +50,9 @@ public class FBView {
 	this.basicstate = basic;
 	ostate = new GLState() {
 		public void apply(GOut g) {
-		    GL gl = g.gl;
+		    GL2 gl = g.gl;
 		    Coord sz = FBView.this.fbo.sz();
-		    g.st.matmode(GL.GL_PROJECTION);
+		    g.st.matmode(GL2.GL_PROJECTION);
 		    gl.glLoadIdentity();
 		    gl.glOrtho(0, sz.x, sz.y, 0, -1, 1);
 		}

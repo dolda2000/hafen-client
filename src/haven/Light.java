@@ -56,19 +56,19 @@ public class Light implements Rendered {
     }
 
     public void enable(GOut g, int idx) {
-	GL gl = g.gl;
-	gl.glEnable(GL.GL_LIGHT0 + idx);
-	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_AMBIENT, amb, 0);
-	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_DIFFUSE, dif, 0);
-	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_SPECULAR, spc, 0);
+	GL2 gl = g.gl;
+	gl.glEnable(GL2.GL_LIGHT0 + idx);
+	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_AMBIENT, amb, 0);
+	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_DIFFUSE, dif, 0);
+	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_SPECULAR, spc, 0);
     }
     
     public void disable(GOut g, int idx) {
-	GL gl = g.gl;
-	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_AMBIENT, defamb, 0);
-	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_DIFFUSE, defdif, 0);
-	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_SPECULAR, defspc, 0);
-	gl.glDisable(GL.GL_LIGHT0 + idx);
+	GL2 gl = g.gl;
+	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_AMBIENT, defamb, 0);
+	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_DIFFUSE, defdif, 0);
+	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_SPECULAR, defspc, 0);
+	gl.glDisable(GL2.GL_LIGHT0 + idx);
     }
     
     public static final GLState.Slot<LightList> lights = new GLState.Slot<LightList>(GLState.Slot.Type.DRAW, LightList.class, PView.cam);
@@ -83,22 +83,22 @@ public class Light implements Rendered {
 	}
 
 	public void apply(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    if(g.st.prog == null)
-		gl.glEnable(GL.GL_LIGHTING);
+		gl.glEnable(GL2.GL_LIGHTING);
 	    else
 		reapply(g);
 	}
 	    
 	public void reapply(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    gl.glUniform1i(g.st.prog.uniform("nlights"), g.st.get(lights).nlights);
 	}
 	    
 	public void unapply(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    if(!g.st.usedprog)
-		gl.glDisable(GL.GL_LIGHTING);
+		gl.glDisable(GL2.GL_LIGHTING);
 	}
 	    
 	public GLShader[] shaders() {
@@ -158,9 +158,9 @@ public class Light implements Rendered {
 	    private Matrix4f txf;
 	    
 	    public ShadowMap(Coord res, float size, float depth) {
-		lbuf = new TexE(res, GL.GL_DEPTH_COMPONENT, GL.GL_DEPTH_COMPONENT, GL.GL_UNSIGNED_INT);
+		lbuf = new TexE(res, GL2.GL_DEPTH_COMPONENT, GL2.GL_DEPTH_COMPONENT, GL.GL_UNSIGNED_INT);
 		lbuf.magfilter = GL.GL_LINEAR;
-		lbuf.wrapmode = GL.GL_CLAMP;
+		lbuf.wrapmode = GL2.GL_CLAMP;
 		lproj = Projection.ortho(-size, size, -size, size, 1, depth);
 		lcam = new DirCam();
 		tgt = new FBView(new GLFrameBuffer(null, lbuf), GLState.compose(lproj, lcam));
@@ -274,7 +274,7 @@ public class Light implements Rendered {
 	    
 	public void reapply(GOut g) {
 	    super.reapply(g);
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    ShadowMap map = g.st.cur(ShadowMap.smap);
 	    if(map != null) {
 		gl.glUniformMatrix4fv(g.st.prog.uniform("pslight_txf"), 1, false, map.txf.m, 0);
@@ -320,7 +320,7 @@ public class Light implements Rendered {
 	public int nlights = 0;
 	
 	public void apply(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    int nl = ll.size();
 	    if(g.gc.maxlights < nl)
 		nl = g.gc.maxlights;
@@ -328,7 +328,7 @@ public class Light implements Rendered {
 	    for(int i = 0; i < nl; i++) {
 		Matrix4f mv = vl.get(i);
 		Light l = ll.get(i);
-		g.st.matmode(GL.GL_MODELVIEW);
+		g.st.matmode(GL2.GL_MODELVIEW);
 		gl.glLoadMatrixf(mv.m, 0);
 		en.add(l);
 		l.enable(g, i);
@@ -367,7 +367,7 @@ public class Light implements Rendered {
     
     public static class Model extends GLState {
 	public float[] amb;
-	public int cc = GL.GL_SINGLE_COLOR;
+	public int cc = GL2.GL_SINGLE_COLOR;
 	private static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
 	
 	public Model(Color amb) {
@@ -379,15 +379,15 @@ public class Light implements Rendered {
 	}
 	
 	public void apply(GOut g) {
-	    GL gl = g.gl;
-	    gl.glLightModelfv(GL.GL_LIGHT_MODEL_AMBIENT, amb, 0);
-	    gl.glLightModeli(GL.GL_LIGHT_MODEL_COLOR_CONTROL, cc);
+	    GL2 gl = g.gl;
+	    gl.glLightModelfv(GL2.GL_LIGHT_MODEL_AMBIENT, amb, 0);
+	    gl.glLightModeli(GL2.GL_LIGHT_MODEL_COLOR_CONTROL, cc);
 	}
 	
 	public void unapply(GOut g) {
-	    GL gl = g.gl;
-	    gl.glLightModelfv(GL.GL_LIGHT_MODEL_AMBIENT, defamb, 0);
-	    gl.glLightModeli(GL.GL_LIGHT_MODEL_COLOR_CONTROL, GL.GL_SINGLE_COLOR);
+	    GL2 gl = g.gl;
+	    gl.glLightModelfv(GL2.GL_LIGHT_MODEL_AMBIENT, defamb, 0);
+	    gl.glLightModeli(GL2.GL_LIGHT_MODEL_COLOR_CONTROL, GL2.GL_SINGLE_COLOR);
 	}
 	
 	public void prep(Buffer buf) {

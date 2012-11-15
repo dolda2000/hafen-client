@@ -352,11 +352,11 @@ public class Skeleton {
 	
 	public final Rendered debug = new Rendered() {
 		public void draw(GOut g) {
-		    GL gl = g.gl;
+		    GL2 gl = g.gl;
 		    g.st.put(Light.lighting, null);
 		    g.state(States.xray);
 		    g.apply();
-		    gl.glBegin(GL.GL_LINES);
+		    gl.glBegin(GL2.GL_LINES);
 		    for(int i = 0; i < blist.length; i++) {
 			if(blist[i].parent != null) {
 			    int pi = blist[i].parent.idx;

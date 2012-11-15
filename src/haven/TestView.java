@@ -57,7 +57,7 @@ public class TestView extends PView {
 
     public static class Cube implements Rendered {
 	public void draw(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 	    
 	    gl.glBegin(gl.GL_QUADS);
 	    gl.glNormal3f(0.0f, 0.0f, 1.0f);

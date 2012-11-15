@@ -314,7 +314,7 @@ public abstract class GLState {
     public static class Applier {
 	public static boolean debug = false;
 	private Buffer old, cur, next;
-	public final GL gl;
+	public final GL2 gl;
 	public final GLConfig cfg;
 	private boolean[] trans = new boolean[0], repl = new boolean[0];
 	private GLShader[][] shaders = new GLShader[0][];
@@ -327,7 +327,7 @@ public abstract class GLState {
 	 * cannot see any good alternative. */
 	public Matrix4f cam = Matrix4f.id, wxf = Matrix4f.id, mv = Matrix4f.identity();
 	
-	public Applier(GL gl, GLConfig cfg) {
+	public Applier(GL2 gl, GLConfig cfg) {
 	    this.gl = gl;
 	    this.cfg = cfg;
 	    this.old = new Buffer(cfg);
@@ -463,7 +463,7 @@ public abstract class GLState {
 	    if((oc != cam) || (ow != wxf)) {
 		/* See comment above */
 		mv.load(oc = cam).mul1(ow = wxf);
-		matmode(GL.GL_MODELVIEW);
+		matmode(GL2.GL_MODELVIEW);
 		gl.glLoadMatrixf(mv.m, 0);
 	    }
 	    checkerr(gl);
@@ -491,7 +491,7 @@ public abstract class GLState {
 	}
 
 	/* "Meta-states" */
-	private int matmode = GL.GL_MODELVIEW;
+	private int matmode = GL2.GL_MODELVIEW;
 	private int texunit = 0;
 	
 	public void matmode(int mode) {

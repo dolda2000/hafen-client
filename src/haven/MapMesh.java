@@ -408,8 +408,8 @@ public class MapMesh implements Rendered {
 	    this.cc = cc;
 	    if(tex instanceof TexGL) {
 		TexGL gt = (TexGL)tex;
-		if(gt.wrapmode != GL.GL_CLAMP_TO_BORDER) {
-		    gt.wrapmode = GL.GL_CLAMP_TO_BORDER;
+		if(gt.wrapmode != GL2.GL_CLAMP_TO_BORDER) {
+		    gt.wrapmode = GL2.GL_CLAMP_TO_BORDER;
 		    gt.dispose();
 		}
 	    }

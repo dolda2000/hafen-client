@@ -42,7 +42,7 @@ public abstract class GLShader implements java.io.Serializable {
     public static class ShaderOb extends GLObject {
 	public final int id;
 	
-	public ShaderOb(GL gl, int type) {
+	public ShaderOb(GL2 gl, int type) {
 	    super(gl);
 	    id = gl.glCreateShaderObjectARB(type);
 	    GOut.checkerr(gl);
@@ -61,10 +61,10 @@ public abstract class GLShader implements java.io.Serializable {
 	    gl.glShaderSourceARB(id, 1, new String[] {sh.source}, new int[] {sh.source.length()}, 0);
 	    gl.glCompileShaderARB(id);
 	    int[] buf = {0};
-	    gl.glGetObjectParameterivARB(id, GL.GL_OBJECT_COMPILE_STATUS_ARB, buf, 0);
+	    gl.glGetObjectParameterivARB(id, GL2.GL_OBJECT_COMPILE_STATUS_ARB, buf, 0);
 	    if(buf[0] != 1) {
 		String info = null;
-		gl.glGetObjectParameterivARB(id, GL.GL_OBJECT_INFO_LOG_LENGTH_ARB, buf, 0);
+		gl.glGetObjectParameterivARB(id, GL2.GL_OBJECT_INFO_LOG_LENGTH_ARB, buf, 0);
 		if(buf[0] > 0) {
 		    byte[] logbuf = new byte[buf[0]];
 		    gl.glGetInfoLogARB(id, logbuf.length, buf, 0, logbuf, 0);
@@ -145,8 +145,8 @@ public abstract class GLShader implements java.io.Serializable {
 	    this(source, "", null, 0);
 	}
 
-	protected ShaderOb create(GL gl) {
-	    ShaderOb r = new ShaderOb(gl, GL.GL_VERTEX_SHADER_ARB);
+	protected ShaderOb create(GL2 gl) {
+	    ShaderOb r = new ShaderOb(gl, GL2.GL_VERTEX_SHADER);
 	    r.compile(this);
 	    return(r);
 	}
@@ -268,8 +268,8 @@ public abstract class GLShader implements java.io.Serializable {
 	    this(source, "", null, 0);
 	}
 	
-	protected ShaderOb create(GL gl) {
-	    ShaderOb r = new ShaderOb(gl, GL.GL_FRAGMENT_SHADER_ARB);
+	protected ShaderOb create(GL2 gl) {
+	    ShaderOb r = new ShaderOb(gl, GL2.GL_FRAGMENT_SHADER);
 	    r.compile(this);
 	    return(r);
 	}
@@ -338,7 +338,7 @@ public abstract class GLShader implements java.io.Serializable {
 	}
     }
     
-    public int glid(GL gl) {
+    public int glid(GL2 gl) {
 	if((gls != null) && (gls.gl != gl)) {
 	    gls.dispose();
 	    gls = null;
@@ -348,5 +348,5 @@ public abstract class GLShader implements java.io.Serializable {
 	return(gls.id);
     }
     
-    protected abstract ShaderOb create(GL gl);
+    protected abstract ShaderOb create(GL2 gl);
 }

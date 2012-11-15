@@ -82,7 +82,7 @@ public class TexI extends TexGL {
 		if((off[0] == 0) && (off[1] == 1) && (off[2] == 2))
 		    return(GL.GL_RGB);
 		if((off[0] == 2) && (off[1] == 1) && (off[2] == 0))
-		    return(GL.GL_BGR);
+		    return(GL2.GL_BGR);
 	    }
 	}
 	return(-1);
@@ -102,7 +102,7 @@ public class TexI extends TexGL {
 		gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, fmt, tdim.x, tdim.y, 0, ifmt, GL.GL_UNSIGNED_BYTE, null);
 		gl.glTexSubImage2D(GL.GL_TEXTURE_2D, 0, 0, 0, sz.x, sz.y, ifmt, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(pixels));
 	    }
-	} else if((ifmt == GL.GL_RGB) || (ifmt == GL.GL_BGR)) {
+	} else if((ifmt == GL.GL_RGB) || (ifmt == GL2.GL_BGR)) {
 	    gl.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1);
 	    byte[] pixels = ((DataBufferByte)back.getRaster().getDataBuffer()).getData();
 	    if(sz.equals(tdim)) {

@@ -33,9 +33,9 @@ import static haven.GOut.checkerr;
 public abstract class GLObject {
     private static final Map<GL, Collection<GLObject>> disposed = new HashMap<GL, Collection<GLObject>>();
     private boolean del;
-    public final GL gl;
+    public final GL2 gl;
     
-    public GLObject(GL gl) {
+    public GLObject(GL2 gl) {
 	this.gl = gl;
     }
     
@@ -62,7 +62,7 @@ public abstract class GLObject {
     
     protected abstract void delete();
     
-    public static void disposeall(GL gl) {
+    public static void disposeall(GL2 gl) {
 	Collection<GLObject> can;
 	synchronized(disposed) {
 	    can = disposed.get(gl);

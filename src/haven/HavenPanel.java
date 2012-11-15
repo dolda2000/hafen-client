@@ -33,6 +33,7 @@ import java.awt.image.BufferedImage;
 import java.awt.event.*;
 import java.util.*;
 import javax.media.opengl.*;
+import javax.media.opengl.awt.*;
 import javax.media.opengl.glu.GLU;
 
 public class HavenPanel extends GLCanvas implements Runnable {
@@ -49,7 +50,8 @@ public class HavenPanel extends GLCanvas implements Runnable {
     private Profile.Frame curf = null;
     private static final GLCapabilities stdcaps;
     static {
-	stdcaps = new GLCapabilities();
+	GLProfile prof = GLProfile.getDefault();
+	stdcaps = new GLCapabilities(prof);
 	stdcaps.setDoubleBuffered(true);
 	stdcaps.setAlphaBits(8);
 	stdcaps.setRedBits(8);
@@ -82,7 +84,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	final Thread caller = Thread.currentThread();
 	addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
-		    GL gl = d.getGL();
+		    GL2 gl = d.getGL().getGL2();
 		    if(inited && rdr)
 			redraw(gl);
 		    GLObject.disposeall(gl);
@@ -103,7 +105,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		    }
 		    gstate = new GLState() {
 			    public void apply(GOut g) {
-				GL gl = g.gl;
+				GL2 gl = g.gl;
 				gl.glColor3f(1, 1, 1);
 				gl.glPointSize(4);
 				gl.setSwapInterval(1);
@@ -130,8 +132,8 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		public void reshape(GLAutoDrawable d, final int x, final int y, final int w, final int h) {
 		    ostate = new GLState() {
 			    public void apply(GOut g) {
-				GL gl = g.gl;
-				g.st.matmode(GL.GL_PROJECTION);
+				GL2 gl = g.gl;
+				g.st.matmode(GL2.GL_PROJECTION);
 				gl.glLoadIdentity();
 				gl.glOrtho(0, w, h, 0, -1, 1);
 			    }
@@ -143,8 +145,8 @@ public class HavenPanel extends GLCanvas implements Runnable {
 			};
 		    rtstate = new GLState() {
 			    public void apply(GOut g) {
-				GL gl = g.gl;
-				g.st.matmode(GL.GL_PROJECTION);
+				GL2 gl = g.gl;
+				g.st.matmode(GL2.GL_PROJECTION);
 				gl.glLoadIdentity();
 				gl.glOrtho(0, w, 0, h, -1, 1);
 			    }
@@ -159,6 +161,8 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		}
 		
 		public void displayChanged(GLAutoDrawable d, boolean cp1, boolean cp2) {}
+
+		public void dispose(GLAutoDrawable d) {}
 	    });
     }
 	
@@ -246,7 +250,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	return(Toolkit.getDefaultToolkit().createCustomCursor(buf, new java.awt.Point(hs.x, hs.y), ""));
     }
     
-    void redraw(GL gl) {
+    void redraw(GL2 gl) {
 	if((state == null) || (state.gl != gl))
 	    state = new GLState.Applier(gl, glconf);
 	GLState.Buffer ibuf = new GLState.Buffer(glconf);

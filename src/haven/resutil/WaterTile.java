@@ -97,15 +97,15 @@ public class WaterTile extends Tiler {
     private static States.DepthOffset soff = new States.DepthOffset(2, 2);
     public static final GLState surfmat = new GLState.StandAlone(GLState.Slot.Type.DRAW, PView.cam) {
 	    public void apply(GOut g) {
-		GL gl = g.gl;
+		GL2 gl = g.gl;
 		g.st.texunit(0);
-		gl.glTexGeni(GL.GL_S, GL.GL_TEXTURE_GEN_MODE, GL.GL_REFLECTION_MAP);
-		gl.glTexGeni(GL.GL_T, GL.GL_TEXTURE_GEN_MODE, GL.GL_REFLECTION_MAP);
-		gl.glTexGeni(GL.GL_R, GL.GL_TEXTURE_GEN_MODE, GL.GL_REFLECTION_MAP);
-		gl.glEnable(GL.GL_TEXTURE_GEN_S);
-		gl.glEnable(GL.GL_TEXTURE_GEN_T);
-		gl.glEnable(GL.GL_TEXTURE_GEN_R);
-		gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_MODULATE);
+		gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
+		gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
+		gl.glTexGeni(GL2.GL_R, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
+		gl.glEnable(GL2.GL_TEXTURE_GEN_S);
+		gl.glEnable(GL2.GL_TEXTURE_GEN_T);
+		gl.glEnable(GL2.GL_TEXTURE_GEN_R);
+		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
 		gl.glEnable(GL.GL_TEXTURE_CUBE_MAP);
 		gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
 		gl.glColor4f(1, 1, 1, 0.5f);
@@ -115,14 +115,14 @@ public class WaterTile extends Tiler {
 	    }
 	    
 	    public void unapply(GOut g) {
-		GL gl = g.gl;
+		GL2 gl = g.gl;
 		g.st.texunit(0);
 		g.st.matmode(GL.GL_TEXTURE);
 		gl.glPopMatrix();
 		gl.glDisable(GL.GL_TEXTURE_CUBE_MAP);
-		gl.glDisable(GL.GL_TEXTURE_GEN_S);
-		gl.glDisable(GL.GL_TEXTURE_GEN_T);
-		gl.glDisable(GL.GL_TEXTURE_GEN_R);
+		gl.glDisable(GL2.GL_TEXTURE_GEN_S);
+		gl.glDisable(GL2.GL_TEXTURE_GEN_T);
+		gl.glDisable(GL2.GL_TEXTURE_GEN_R);
 		gl.glColor3f(1, 1, 1);
 	    }
 	    

@@ -44,7 +44,7 @@ public class DirLight extends Light {
 
     public void enable(GOut g, int idx) {
 	super.enable(g, idx);
-	GL gl = g.gl;
-	gl.glLightfv(GL.GL_LIGHT0 + idx, GL.GL_POSITION, dir, 0);
+	GL2 gl = g.gl;
+	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_POSITION, dir, 0);
     }
 }

@@ -142,7 +142,7 @@ public class Matrix4f {
 	gl.glGetFloatv(matrix, m, 0);
     }
     
-    public void loadgl(GL gl) {
+    public void loadgl(GL2 gl) {
 	gl.glLoadMatrixf(m, 0);
     }
     
