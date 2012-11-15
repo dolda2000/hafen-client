@@ -30,12 +30,10 @@ import java.util.*;
 import javax.media.opengl.*;
 
 public class GLConfig implements java.io.Serializable, Console.Directory {
-    public boolean usedl = true, fsaa = false;
     public int maxlights;
     public Collection<String> exts;
     public transient GLCapabilities caps;
-    public boolean shuse;
-    public transient GLState deflight = Light.vlights;
+    public GLSettings pref;
     
     private GLConfig() {
     }
@@ -47,7 +45,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	c.maxlights = buf[0];
 	c.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	c.caps = caps;
-	c.shuse = c.haveglsl();
+	c.pref = GLSettings.defconf(c);
 	return(c);
     }
     
@@ -67,45 +65,15 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
     {
 	cmdmap.put("gl", new Console.Command() {
 		public void run(Console cons, String[] args) throws Exception {
-		    if(args.length >= 2) {
+		    if(args.length >= 3) {
 			String var = args[1].intern();
-			if(var == "usedl") {
-			    usedl = Utils.parsebool(args[2], false);
-			} else if(var == "fsaa") {
-			    boolean fsaa = Utils.parsebool(args[2], false);
-			    if(fsaa && !havefsaa())
-				throw(new Exception("FSAA not supported."));
-			    GLConfig.this.fsaa = fsaa;
-			} else if(var == "shuse") {
-			    boolean shuse = Utils.parsebool(args[2], false);
-			    if(shuse && !haveglsl())
-				throw(new Exception("GLSL not supported."));
-			    GLConfig.this.shuse = shuse;
-			} else if(var == "light") {
-			    if(args[2].equals("vlight")) {
-				deflight = Light.vlights;
-			    } else if(args[2].equals("plight")) {
-				if(!shuse)
-				    throw(new Exception("Per-pixel lighting requires shader usage."));
-				deflight = Light.plights;
-			    } else if(args[2].equals("pslight")) {
-				if(!shuse)
-				    throw(new Exception("Per-pixel lighting requires shader usage."));
-				deflight = Light.pslights;
-			    } else if(args[2].equals("vcel")) {
-				if(!shuse)
-				    throw(new Exception("Cel-shading requires shader usage."));
-				deflight = Light.vcel;
-			    } else if(args[2].equals("pcel")) {
-				if(!shuse)
-				    throw(new Exception("Cel-shading requires shader usage."));
-				deflight = Light.pcel;
-			    } else {
-				throw(new Exception("No such light setting: " + args[2]));
+			for(GLSettings.Setting<?> s : pref.settings()) {
+			    if(s.nm == var) {
+				s.set(args[2]);
+				return;
 			    }
-			} else {
-			    throw(new Exception("No such setting: " + var));
 			}
+			throw(new Exception("No such setting: " + var));
 		    }
 		}
 	    });

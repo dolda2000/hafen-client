@@ -401,7 +401,7 @@ public abstract class GLState {
 			break;
 		    }
 		}
-		if(g.gc.shuse && shreq) {
+		if(shreq && g.gc.pref.shuse.val) {
 		    np = findprog(proghash, shaders);
 		} else {
 		    np = null;
