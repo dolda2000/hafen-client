@@ -50,8 +50,7 @@ public class CheckBox extends Widget {
     public boolean mousedown(Coord c, int button) {
 	if(button != 1)
 	    return(false);
-	a = !a;
-	changed(a);
+	set(!a);
 	return(true);
     }
     
