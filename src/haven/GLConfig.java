@@ -70,6 +70,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 			for(GLSettings.Setting<?> s : pref.settings()) {
 			    if(s.nm == var) {
 				s.set(args[2]);
+				pref.save();
 				return;
 			    }
 			}

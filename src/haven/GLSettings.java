@@ -166,6 +166,10 @@ public class GLSettings implements java.io.Serializable {
 	return(ret);
     }
 
+    public void save() {
+	Utils.setprefb("glconf", Utils.serialize(savedata()));
+    }
+
     private static <T> void iAmRunningOutOfNamesToInsultJavaWith(Setting<T> s) {
 	s.val = s.defval();
     }
@@ -196,5 +200,22 @@ public class GLSettings implements java.io.Serializable {
 	    }
 	}
 	return(gs);
+    }
+
+    public static GLSettings load(GLConfig cfg, boolean failsafe) {
+	byte[] data = Utils.getprefb("glconf", null);
+	if(data == null) {
+	    return(defconf(cfg));
+	} else {
+	    Object dat;
+	    try {
+		dat = Utils.deserialize(data);
+	    } catch(Exception e) {
+		dat = null;
+	    }
+	    if(dat == null)
+		return(defconf(cfg));
+	    return(load(dat, cfg, failsafe));
+	}
     }
 }

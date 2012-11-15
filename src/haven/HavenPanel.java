@@ -92,6 +92,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		public void init(GLAutoDrawable d) {
 		    GL gl = d.getGL();
 		    glconf = GLConfig.fromgl(gl, d.getContext(), getChosenGLCapabilities());
+		    glconf.pref = GLSettings.load(glconf, true);
 		    ui.cons.add(glconf);
 		    if(h != null) {
 			h.lsetprop("gl.vendor", gl.glGetString(gl.GL_VENDOR));
