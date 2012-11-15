@@ -58,6 +58,10 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
     public boolean haveglsl() {
 	return(exts.contains("GL_ARB_fragment_shader") && exts.contains("GL_ARB_vertex_shader"));
     }
+
+    public boolean havefbo() {
+	return(exts.contains("GL_EXT_framebuffer_object"));
+    }
     
     private transient Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
