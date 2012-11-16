@@ -82,6 +82,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
     
     private void initgl() {
 	final Thread caller = Thread.currentThread();
+	final haven.error.ErrorHandler h = haven.error.ErrorHandler.find();
 	addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
 		    GL2 gl = d.getGL().getGL2();
@@ -93,8 +94,8 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		public void init(GLAutoDrawable d) {
 		    GL gl = d.getGL();
 		    glconf = GLConfig.fromgl(gl, d.getContext(), getChosenGLCapabilities());
+		    glconf.pref = GLSettings.load(glconf, true);
 		    ui.cons.add(glconf);
-		    haven.error.ErrorHandler h = haven.error.ErrorHandler.find();
 		    if(h != null) {
 			h.lsetprop("gl.vendor", gl.glGetString(gl.GL_VENDOR));
 			h.lsetprop("gl.version", gl.glGetString(gl.GL_VERSION));

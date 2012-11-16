@@ -142,7 +142,7 @@ public abstract class PView extends Widget {
 	    curf = prof.new Frame();
 	GLState.Buffer bk = g.st.copy();
 	GLState.Buffer def = basic(g);
-	if(g.gc.fsaa)
+	if(g.gc.pref.fsaa.val)
 	    States.fsaa.prep(def);
 	try {
 	    lm.prep(def);

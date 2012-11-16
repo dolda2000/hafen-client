@@ -309,7 +309,7 @@ public class Light implements Rendered {
 	    public void unapply(GOut g) {}
 	    
 	    public void prep(Buffer buf) {
-		buf.cfg.deflight.prep(buf);
+		buf.cfg.pref.light.val.l.prep(buf);
 	    }
 	};
     

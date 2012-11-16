@@ -94,14 +94,14 @@ public class FastMesh implements FRendered {
     public void draw(GOut g) {
 	g.apply();
 	GL2 gl = g.gl;
-	if((list != null) && (!g.gc.usedl || (list.gl != gl))) {
+	if((list != null) && (!g.gc.pref.usedl.val || (list.gl != gl))) {
 	    list.dispose();
 	    list = null;
 	}
 	if(list != null) {
 	    gl.glCallList(list.id);
 	} else {
-	    if(compile() && g.gc.usedl) {
+	    if(compile() && g.gc.pref.usedl.val) {
 		list = new DisplayList(gl);
 		gl.glNewList(list.id, GL2.GL_COMPILE);
 		sdraw(g);

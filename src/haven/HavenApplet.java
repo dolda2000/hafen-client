@@ -74,7 +74,7 @@ public class HavenApplet extends Applet {
 	    repaint();
 	}
 	
-	public void done() {
+	public void done(String ctype, String info) {
 	    status = "Done";
 	    ar = true;
 	    repaint();

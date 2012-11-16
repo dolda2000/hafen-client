@@ -30,7 +30,7 @@ public interface ErrorStatus {
     public boolean goterror(Throwable t);
     public void connecting();
     public void sending();
-    public void done();
+    public void done(String ctype, String info);
     public void senderror(Exception e);
     
     public static class Simple implements ErrorStatus {
@@ -47,8 +47,11 @@ public interface ErrorStatus {
 	    System.err.println("Sending error");
 	}
 	
-	public void done() {
-	    System.err.println("Done");
+	public void done(String ctype, String info) {
+	    if(ctype != null)
+		System.err.println(ctype + ": " + info);
+	    else
+		System.err.println("Done");
 	}
 	
 	public void senderror(Exception e) {
