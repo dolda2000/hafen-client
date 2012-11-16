@@ -103,11 +103,24 @@ public class ErrorHandler extends ThreadGroup {
 	    status.sending();
 	    o.writeObject(r);
 	    o.close();
-	    InputStream i = c.getInputStream();
-	    byte[] buf = new byte[1024];
-	    while(i.read(buf) >= 0);
+	    String ctype = c.getContentType();
+	    StringWriter buf = new StringWriter();
+	    Reader i = new InputStreamReader(c.getInputStream(), "utf-8");
+	    char[] dbuf = new char[1024];
+	    while(true) {
+		int len = i.read(dbuf);
+		if(len < 0)
+		    break;
+		buf.write(dbuf, 0, len);
+	    }
 	    i.close();
-	    status.done();
+	    if(ctype.equals("text/x-report-info")) {
+		status.done("text/x-report-info", buf.toString());
+	    } else if(ctype.equals("text/x-report-error")) {
+		throw(new ReportException(buf.toString()));
+	    } else {
+		status.done(null, null);
+	    }
 	}
     
 	public void report(Thread th, Throwable t) {

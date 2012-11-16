@@ -29,9 +29,12 @@ package haven.error;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.event.*;
 
 public abstract class ErrorGui extends JDialog implements ErrorStatus {
     private JLabel status;
+    private JEditorPane info;
+    private JScrollPane infoc;
     private JPanel details;
     private JButton closebtn, detbtn;
     private JTextArea exbox;
@@ -46,6 +49,27 @@ public abstract class ErrorGui extends JDialog implements ErrorStatus {
 	    setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 	    add(new JLabel("An error has occurred!"));
 	    add(status = new JLabel("Please wait..."));
+	    add(infoc = new JScrollPane(info = new JEditorPane() {{
+		setEditable(false);
+		addHyperlinkListener(new HyperlinkListener() {
+			public void hyperlinkUpdate(HyperlinkEvent ev) {
+			    if(ev.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+				try {
+				    Desktop.getDesktop().browse(ev.getURL().toURI());
+				} catch(Exception e) {
+				    throw(new RuntimeException(e));
+				}
+			    } else if(ev.getEventType() == HyperlinkEvent.EventType.ENTERED) {
+				setCursor(new Cursor(Cursor.HAND_CURSOR));
+			    } else if(ev.getEventType() == HyperlinkEvent.EventType.EXITED) {
+				setCursor(null);
+			    }
+			}
+		    });
+	    }}) {{
+		setPreferredSize(new Dimension(300, 100));
+		setVisible(false);
+	    }});
 	    add(new JPanel() {{
 		setLayout(new FlowLayout());
 		setAlignmentX(0);
@@ -132,12 +156,24 @@ public abstract class ErrorGui extends JDialog implements ErrorStatus {
 	    });
     }
 	
-    public void done() {
+    public void done(final String ctype, final String info) {
 	done = false;
 	SwingUtilities.invokeLater(new Runnable() {
 		public void run() {
 		    closebtn.setEnabled(true);
-		    status.setText("The error has been reported.");
+		    if((ctype != null) && ctype.equals("text/x-report-info")) {
+			status.setText("There is information available about this error:");
+			ErrorGui.this.info.setContentType("text/html");
+			ErrorGui.this.info.setText(info);
+			infoc.setVisible(true);
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+				    infoc.getVerticalScrollBar().setValue(0);
+				}
+			    });
+		    } else {
+			status.setText("The error has been reported.");
+		    }
 		    pack();
 		}
 	    });
@@ -153,12 +189,36 @@ public abstract class ErrorGui extends JDialog implements ErrorStatus {
     }
 	
     public void senderror(Exception e) {
-	e.printStackTrace();
+	final String errstr;
+	if(e instanceof ReportException) {
+	    /* C¦ */
+	    StringBuilder buf = new StringBuilder();
+	    buf.append("<html>");
+	    String msg = e.getMessage();
+	    for(int i = 0; i < msg.length(); i++) {
+		char c = msg.charAt(i);
+		if(c == '\n')
+		    buf.append("<br>");
+		else if(c == '<')
+		    buf.append("&lt;");
+		else if(c == '>')
+		    buf.append("&gt;");
+		else if(c == '&')
+		    buf.append("&amp;");
+		else
+		    buf.append(c);
+	    }
+	    buf.append("</html>");
+	    errstr = buf.toString();
+	} else {
+	    e.printStackTrace();
+	    errstr = "An error occurred while sending!";
+	}
 	done = false;
 	SwingUtilities.invokeLater(new Runnable() {
 		public void run() {
 		    closebtn.setEnabled(true);
-		    status.setText("An error occurred while sending!");
+		    status.setText(errstr);
 		    pack();
 		}
 	    });
