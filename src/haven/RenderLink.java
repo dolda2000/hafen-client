@@ -30,7 +30,7 @@ public interface RenderLink {
     public Rendered make();
     
     public class Res extends Resource.Layer {
-	public final RenderLink l;
+	public transient final RenderLink l;
 	
 	public Res(Resource res, byte[] buf) {
 	    res.super();
