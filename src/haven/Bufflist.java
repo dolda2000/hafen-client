@@ -95,7 +95,7 @@ public class Bufflist extends Widget {
     
     private long hoverstart;
     private Tex shorttip, longtip;
-    private Buff tipped;
+    private String tipped;
     public Object tooltip(Coord c, Widget prev) {
 	long now = System.currentTimeMillis();
 	if(prev != this)
@@ -108,17 +108,18 @@ public class Bufflist extends Widget {
 		    continue;
 		Coord bc = new Coord(i * w, 0);
 		if(c.isect(bc, frame.sz())) {
-		    if(tipped != b)
+		    String tt = b.tooltip();
+		    if(tipped != tt)
 			shorttip = longtip = null;
-		    tipped = b;
+		    tipped = tt;
 		    try {
 			if(now - hoverstart < 1000) {
 			    if(shorttip == null)
-				shorttip = Text.render(b.tooltip()).tex();
+				shorttip = Text.render(tt).tex();
 			    return(shorttip);
 			} else {
 			    if(longtip == null) {
-				String text = RichText.Parser.quote(b.tooltip());
+				String text = RichText.Parser.quote(tt);
 				Resource.Pagina pag = b.res.get().layer(Resource.pagina);
 				if(pag != null)
 				    text += "\n\n" + pag.text;
