@@ -46,4 +46,14 @@ public abstract class WebBrowser {
 		}
 	    });
     }
+
+    public static class BrowserException extends RuntimeException {
+	public BrowserException(String msg) {
+	    super(msg);
+	}
+
+	public BrowserException(Throwable cause) {
+	    super(cause);
+	}
+    }
 }

@@ -41,7 +41,10 @@ public class DesktopBrowser extends WebBrowser {
 	    Class.forName("java.awt.Desktop");
 	    if(!Desktop.isDesktopSupported())
 		return(null);
-	    return(new DesktopBrowser(Desktop.getDesktop()));
+	    Desktop desktop = Desktop.getDesktop();
+	    if(!desktop.isSupported(Desktop.Action.BROWSE))
+		return(null);
+	    return(new DesktopBrowser(desktop));
 	} catch(Exception e) {
 	    return(null);
 	}
@@ -51,6 +54,7 @@ public class DesktopBrowser extends WebBrowser {
 	try {
 	    desktop.browse(url.toURI());
 	} catch(Exception e) {
+	    throw(new BrowserException(e));
 	}
     }
 }

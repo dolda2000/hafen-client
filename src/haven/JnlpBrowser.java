@@ -49,6 +49,7 @@ public class JnlpBrowser extends WebBrowser {
     }
     
     public void show(URL url) {
-	basic.showDocument(url);
+	if(!basic.showDocument(url))
+	    throw(new BrowserException("Could not launch browser"));
     }
 }
