@@ -739,16 +739,24 @@ public class Utils {
 	return(ret);
     }
     public static ByteBuffer mkbbuf(int n) {
-	return(ByteBuffer.allocateDirect(n));
+	try {
+	    return(ByteBuffer.allocateDirect(n).order(ByteOrder.nativeOrder()));
+	} catch(OutOfMemoryError e) {
+	    /* At least Sun's class library doesn't try to collect
+	     * garbage if it's out of direct memory, which is pretty
+	     * stupid. So do it for it, then. */
+	    System.gc();
+	    return(ByteBuffer.allocateDirect(n).order(ByteOrder.nativeOrder()));
+	}
     }
     public static FloatBuffer mkfbuf(int n) {
-	return(ByteBuffer.allocateDirect(n * 4).order(ByteOrder.nativeOrder()).asFloatBuffer());
+	return(mkbbuf(n * 4).asFloatBuffer());
     }
     public static ShortBuffer mksbuf(int n) {
-	return(ByteBuffer.allocateDirect(n * 2).order(ByteOrder.nativeOrder()).asShortBuffer());
+	return(mkbbuf(n * 2).asShortBuffer());
     }
     public static IntBuffer mkibuf(int n) {
-	return(ByteBuffer.allocateDirect(n * 4).order(ByteOrder.nativeOrder()).asIntBuffer());
+	return(mkbbuf(n * 4).asIntBuffer());
     }
 
     public static float[] c2fa(Color c) {

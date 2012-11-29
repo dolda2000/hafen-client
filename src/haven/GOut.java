@@ -389,7 +389,7 @@ public class GOut {
     }
     
     public Color getpixel(Coord c) {
-	IntBuffer tgt = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+	IntBuffer tgt = Utils.mkibuf(4);
 	tgt.rewind();
 	gl.glReadPixels(c.x + tx.x, root.sz.y - c.y - tx.y, 1, 1, GL.GL_RGBA, GL.GL_UNSIGNED_INT_8_8_8_8, tgt);
 	checkerr();
