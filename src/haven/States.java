@@ -241,4 +241,14 @@ public abstract class States extends GLState {
 	    buf.put(adhoc, this);
 	}
     }
+
+    public static final StandAlone normalize = new StandAlone(Slot.Type.GEOM, PView.proj) {
+	    public void apply(GOut g) {
+		g.gl.glEnable(GL.GL_NORMALIZE);
+	    }
+
+	    public void unapply(GOut g) {
+		g.gl.glDisable(GL.GL_NORMALIZE);
+	    }
+	};
 }
