@@ -449,8 +449,13 @@ public class ChatUI extends Widget {
 	    AttributedCharacterIterator inf = pos.part.ti();
 	    inf.setIndex(pos.ch.getCharIndex());
 	    FuckMeGentlyWithAChainsaw url = (FuckMeGentlyWithAChainsaw)inf.getAttribute(ChatAttribute.HYPERLINK);
-	    if((url != null) && (WebBrowser.self != null))
-		WebBrowser.self.show(url.url);
+	    if((url != null) && (WebBrowser.self != null)) {
+		try {
+		    WebBrowser.self.show(url.url);
+		} catch(WebBrowser.BrowserException e) {
+		    getparent(GameUI.class).error("Could not launch web browser.")
+		}
+	    }
 	}
 
 	public boolean mouseup(Coord c, int btn) {
