@@ -453,7 +453,7 @@ public class ChatUI extends Widget {
 		try {
 		    WebBrowser.self.show(url.url);
 		} catch(WebBrowser.BrowserException e) {
-		    getparent(GameUI.class).error("Could not launch web browser.")
+		    getparent(GameUI.class).error("Could not launch web browser.");
 		}
 	    }
 	}
