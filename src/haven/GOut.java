@@ -78,10 +78,33 @@ public class GOut {
 	}
     }
 
+    public static class GLInvalidEnumException extends GLException {
+	public GLInvalidEnumException() {super(GL.GL_INVALID_ENUM);}
+    }
+    public static class GLInvalidValueException extends GLException {
+	public GLInvalidValueException() {super(GL.GL_INVALID_VALUE);}
+    }
+    public static class GLInvalidOperationException extends GLException {
+	public GLInvalidOperationException() {super(GL.GL_INVALID_OPERATION);}
+    }
+    public static class GLOutOfMemoryException extends GLException {
+	public GLOutOfMemoryException() {super(GL.GL_OUT_OF_MEMORY);}
+    }
+
+    public static GLException glexcfor(int code) {
+	switch(code) {
+	case GL.GL_INVALID_ENUM:      return(new GLInvalidEnumException());
+	case GL.GL_INVALID_VALUE:     return(new GLInvalidValueException());
+	case GL.GL_INVALID_OPERATION: return(new GLInvalidOperationException());
+	case GL.GL_OUT_OF_MEMORY:     return(new GLOutOfMemoryException());
+	default: return(new GLException(code));
+	}
+    }
+
     public static void checkerr(GL gl) {
 	int err = gl.glGetError();
 	if(err != 0)
-	    throw(new GLException(err));
+	    throw(glexcfor(err));
     }
 
     private void checkerr() {
