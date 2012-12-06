@@ -39,12 +39,16 @@ public class PUtils {
 	return(new Coord(img.getWidth(), img.getHeight()));
     }
 	
+    public static WritableRaster byteraster(Coord sz, int bands) {
+	return(Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, sz.x, sz.y, bands, null));
+    }
+
     public static WritableRaster alpharaster(Coord sz) {
-	return(Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, sz.x, sz.y, 1, null));
+	return(byteraster(sz, 1));
     }
 
     public static WritableRaster imgraster(Coord sz) {
-	return(Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, sz.x, sz.y, 4, null));
+	return(byteraster(sz, 4));
     }
 
     public static WritableRaster copy(Raster src) {
