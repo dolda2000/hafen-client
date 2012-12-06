@@ -39,12 +39,16 @@ public class PUtils {
 	return(new Coord(img.getWidth(), img.getHeight()));
     }
 	
+    public static WritableRaster byteraster(Coord sz, int bands) {
+	return(Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, sz.x, sz.y, bands, null));
+    }
+
     public static WritableRaster alpharaster(Coord sz) {
-	return(Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, sz.x, sz.y, 1, null));
+	return(byteraster(sz, 1));
     }
 
     public static WritableRaster imgraster(Coord sz) {
-	return(Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, sz.x, sz.y, 4, null));
+	return(byteraster(sz, 4));
     }
 
     public static WritableRaster copy(Raster src) {
@@ -250,5 +254,140 @@ public class PUtils {
 	    }
 	}
 	return(ret);
+    }
+
+    public static interface Convolution {
+	public double cval(double td);
+	public double support();
+    }
+
+    public static final Convolution box = new Convolution() {
+	    public double cval(double td) {
+		return(((td >= -0.5) && (td < 0.5))?1.0:0.0);
+	    }
+	    public double support() {return(0.5);}
+	};
+    public static class Hanning implements Convolution {
+	private final double sz;
+
+	public Hanning(double sz) {this.sz = sz;}
+
+	public double cval(double td) {
+	    if(td == 0)
+		return(1.0);
+	    else if((td < -sz) || (td > sz))
+		return(0.0);
+	    double tdp = td * Math.PI;
+	    return((Math.sin(tdp) / tdp) * (0.5 + (0.5 * Math.cos(tdp / sz))));
+	}
+
+	public double support() {return(sz);}
+    }
+    public static class Hamming implements Convolution {
+	private final double sz;
+
+	public Hamming(double sz) {this.sz = sz;}
+
+	public double cval(double td) {
+	    if(td == 0)
+		return(1.0);
+	    else if((td < -sz) || (td > sz))
+		return(0.0);
+	    double tdp = td * Math.PI;
+	    return((Math.sin(tdp) / tdp) * (0.54 + (0.46 * Math.cos(tdp / sz))));
+	}
+
+	public double support() {return(sz);}
+    }
+    public static class Lanczos implements Convolution {
+	private final double sz;
+
+	public Lanczos(double sz) {this.sz = sz;}
+
+	public double cval(double td) {
+	    if(td == 0)
+		return(1.0);
+	    else if((td < -sz) || (td > sz))
+		return(0.0);
+	    double tdp = td * Math.PI;
+	    double wtdp = tdp / sz;
+	    return((Math.sin(tdp) / tdp) * (Math.sin(wtdp) / wtdp));
+	}
+
+	public double support() {return(sz);}
+    }
+
+    /* This can certainly be optimized, but I'm not currently using it
+     * in any context where that matters. */
+    public static BufferedImage convolvedown(BufferedImage img, Coord tsz, Convolution filter) {
+	Raster in = img.getRaster();
+	int w = in.getWidth(), h = in.getHeight(), nb = in.getNumBands();
+	double xf = (double)w / (double)tsz.x, ixf = 1.0 / xf;
+	double yf = (double)h / (double)tsz.y, iyf = 1.0 / yf;
+	double[] ca = new double[nb];
+	WritableRaster buf = byteraster(new Coord(tsz.x, h), nb);
+	double support = filter.support();
+
+	for(int y = 0; y < h; y++) {
+	    for(int x = 0; x < tsz.x; x++) {
+		double wa = 0.0;
+		for(int b = 0; b < nb; b++)
+		    ca[b] = 0.0;
+		int l = Math.max((int)Math.floor((x + 0.5 - support) * xf), 0),
+		    r = Math.min((int)Math.ceil((x + 0.5 + support) * xf), w - 1);
+		for(int sx = l; sx <= r; sx++) {
+		    double tx = ((sx + 0.5) * ixf) - x - 0.5;
+		    double fw = filter.cval(tx);
+		    wa += fw;
+		    for(int b = 0; b < nb; b++)
+			ca[b] += in.getSample(sx, y, b) * fw;
+		}
+		wa = 1.0 / wa;
+		for(int b = 0; b < nb; b++)
+		    buf.setSample(x, y, b, Utils.clip((int)(ca[b] * wa), 0, 255));
+	    }
+	}
+
+	WritableRaster res = byteraster(tsz, nb);
+	for(int y = 0; y < tsz.y; y++) {
+	    for(int x = 0; x < tsz.x; x++) {
+		double wa = 0.0;
+		for(int b = 0; b < nb; b++)
+		    ca[b] = 0.0;
+		int u = Math.max((int)Math.floor((y + 0.5 - support) * yf), 0),
+		    d = Math.min((int)Math.ceil((y + 0.5 + support) * yf), h - 1);
+		for(int sy = u; sy <= d; sy++) {
+		    double ty = ((sy + 0.5) * iyf) - y - 0.5;
+		    double fw = filter.cval(ty);
+		    wa += fw;
+		    for(int b = 0; b < nb; b++)
+			ca[b] += buf.getSample(x, sy, b) * fw;
+		}
+		wa = 1.0 / wa;
+		for(int b = 0; b < nb; b++)
+		    res.setSample(x, y, b, Utils.clip((int)(ca[b] * wa), 0, 255));
+	    }
+	}
+	return(new BufferedImage(img.getColorModel(), res, false, null));
+    }
+
+    public static void main(String[] args) throws Exception {
+	Convolution[] filters = {
+	    box,
+	    new Hanning(1),
+	    new Hanning(2),
+	    new Hamming(1),
+	    new Lanczos(2),
+	    new Lanczos(3),
+	};
+	BufferedImage in = Resource.loadimg("gfx/invobjs/herbs/crowberry");
+	//BufferedImage in = javax.imageio.ImageIO.read(new java.io.File("/tmp/a.png"));
+	Coord tsz = new Coord(20, 20);
+	for(int i = 0; i < filters.length; i++) {
+	    long start = System.nanoTime();
+	    BufferedImage out = convolvedown(in, tsz, filters[i]);
+	    System.err.println(System.nanoTime() - start);
+	    javax.imageio.ImageIO.write(out, "PNG", new java.io.File("/tmp/barda" + i + ".png"));
+	}
     }
 }

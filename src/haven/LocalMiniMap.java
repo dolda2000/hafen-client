@@ -35,6 +35,7 @@ import java.util.*;
 
 public class LocalMiniMap extends Widget {
     public final MapView mv;
+    private Coord cc = null;
     private MapTile cur = null;
     private final Map<Coord, Defer.Future<MapTile>> cache = new LinkedHashMap<Coord, Defer.Future<MapTile>>(5, 0.75f, true) {
 	protected boolean removeEldestEntry(Map.Entry<Coord, Defer.Future<MapTile>> eldest) {
@@ -108,12 +109,61 @@ public class LocalMiniMap extends Widget {
 	this.mv = mv;
     }
     
-    public void draw(GOut g) {
+    public Coord p2c(Coord pc) {
+	return(pc.div(tilesz).sub(cc).add(sz.div(2)));
+    }
+
+    public Coord c2p(Coord c) {
+	return(c.sub(sz.div(2)).add(cc).mul(tilesz).add(tilesz.div(2)));
+    }
+
+    public void drawicons(GOut g) {
+	OCache oc = ui.sess.glob.oc;
+	synchronized(oc) {
+	    for(Gob gob : oc) {
+		try {
+		    GobIcon icon = gob.getattr(GobIcon.class);
+		    if(icon != null) {
+			Coord gc = p2c(gob.rc);
+			Tex tex = icon.tex();
+			g.image(tex, gc.sub(tex.sz().div(2)));
+		    }
+		} catch(Loading l) {}
+	    }
+	}
+    }
+
+    public Gob findicongob(Coord c) {
+	OCache oc = ui.sess.glob.oc;
+	synchronized(oc) {
+	    for(Gob gob : oc) {
+		try {
+		    GobIcon icon = gob.getattr(GobIcon.class);
+		    if(icon != null) {
+			Coord gc = p2c(gob.rc);
+			Coord sz = icon.tex().sz();
+			if(c.isect(gc.sub(sz.div(2)), sz))
+			    return(gob);
+		    }
+		} catch(Loading l) {}
+	    }
+	}
+	return(null);
+    }
+
+    public void tick(double dt) {
 	Gob pl = ui.sess.glob.oc.getgob(mv.plgob);
-	if(pl == null)
+	if(pl == null) {
+	    this.cc = null;
 	    return;
-	final Coord plt = pl.rc.div(tilesz);
-	final Coord plg = plt.div(cmaps);
+	}
+	this.cc = pl.rc.div(tilesz);
+    }
+
+    public void draw(GOut g) {
+	if(cc == null)
+	    return;
+	final Coord plg = cc.div(cmaps);
 	if((cur == null) || !plg.equals(cur.c)) {
 	    Defer.Future<MapTile> f;
 	    synchronized(cache) {
@@ -133,7 +183,7 @@ public class LocalMiniMap extends Widget {
 	}
 	if(cur != null) {
 	    GOut g2 = g.reclip(Window.wbox.tloff(), sz.sub(Window.wbox.bisz()));
-	    g2.image(cur.img, cur.ul.sub(plt).add(sz.div(2)));
+	    g2.image(cur.img, cur.ul.sub(cc).add(sz.div(2)));
 	    Window.wbox.draw(g, Coord.z, sz);
 	    try {
 		synchronized(ui.sess.glob.party.memb) {
@@ -146,7 +196,7 @@ public class LocalMiniMap extends Widget {
 			}
 			if(ptc == null)
 			    continue;
-			ptc = ptc.div(tilesz).sub(plt).add(sz.div(2));
+			ptc = p2c(ptc);
 			g2.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 128);
 			g2.image(MiniMap.plx.layer(Resource.imgc).tex(), ptc.add(MiniMap.plx.layer(Resource.negc).cc.inv()));
 			g2.chcolor();
@@ -154,5 +204,20 @@ public class LocalMiniMap extends Widget {
 		}
 	    } catch(Loading l) {}
 	}
+	drawicons(g);
+    }
+
+    public boolean mousedown(Coord c, int button) {
+	if(cc == null)
+	    return(false);
+	MapView mv = getparent(GameUI.class).map;
+	if(mv == null)
+	    return(false);
+	Gob gob = findicongob(c);
+	if(gob == null)
+	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags());
+	else
+	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags(), (int)gob.id, gob.rc, -1);
+	return(true);
     }
 }
