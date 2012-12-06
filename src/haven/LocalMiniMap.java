@@ -136,6 +136,27 @@ public class LocalMiniMap extends Widget {
 	}
     }
 
+    public Gob findicongob(Coord c) {
+	OCache oc = ui.sess.glob.oc;
+	synchronized(oc) {
+	    for(Gob gob : oc) {
+		try {
+		    GobIcon icon = gob.getattr(GobIcon.class);
+		    if(icon != null) {
+			Coord gc = p2c(gob.rc);
+			Tex tex = icon.tex();
+			Coord sz = new Coord(tex.sz());
+			if(sz.x > 20) sz.x = 20;
+			if(sz.y > 20) sz.y = 20;
+			if(c.isect(gc.sub(sz.div(2)), sz))
+			    return(gob);
+		    }
+		} catch(Loading l) {}
+	    }
+	}
+	return(null);
+    }
+
     public void tick(double dt) {
 	Gob pl = ui.sess.glob.oc.getgob(mv.plgob);
 	if(pl == null) {
@@ -190,5 +211,19 @@ public class LocalMiniMap extends Widget {
 	    } catch(Loading l) {}
 	}
 	drawicons(g);
+    }
+
+    public boolean mousedown(Coord c, int button) {
+	if(cc == null)
+	    return(false);
+	MapView mv = getparent(GameUI.class).map;
+	if(mv == null)
+	    return(false);
+	Gob gob = findicongob(c);
+	if(gob == null)
+	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags());
+	else
+	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags(), (int)gob.id, gob.rc, -1);
+	return(true);
     }
 }
