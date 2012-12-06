@@ -296,4 +296,11 @@ public class OCache implements Iterable<Gob> {
 	    }
 	}
     }
+
+    public synchronized void icon(Gob g, Indir<Resource> res) {
+	if(res == null)
+	    g.delattr(GobIcon.class);
+	else
+	    g.setattr(new GobIcon(g, res));
+    }
 }
