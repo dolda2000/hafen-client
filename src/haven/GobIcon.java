@@ -28,9 +28,16 @@ package haven;
 
 public class GobIcon extends GAttrib {
     public final Indir<Resource> res;
+    private Tex tex;
 
     public GobIcon(Gob g, Indir<Resource> res) {
 	super(g);
 	this.res = res;
+    }
+
+    public Tex tex() {
+	if(tex == null)
+	    tex = res.get().layer(Resource.imgc).tex();
+	return(tex);
     }
 }
