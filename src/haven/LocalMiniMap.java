@@ -108,6 +108,20 @@ public class LocalMiniMap extends Widget {
 	this.mv = mv;
     }
     
+    public void drawicons(GOut g, Coord plt) {
+	OCache oc = ui.sess.glob.oc;
+	synchronized(oc) {
+	    for(Gob gob : oc) {
+		try {
+		    GobIcon icon = gob.getattr(GobIcon.class);
+		    if(icon != null) {
+			g.image(icon.res.get().layer(Resource.imgc).tex(), gob.rc.div(tilesz).sub(plt).add(sz.div(2)).sub(10, 10), new Coord(20, 20));
+		    }
+		} catch(Loading l) {}
+	    }
+	}
+    }
+
     public void draw(GOut g) {
 	Gob pl = ui.sess.glob.oc.getgob(mv.plgob);
 	if(pl == null)
@@ -154,5 +168,6 @@ public class LocalMiniMap extends Widget {
 		}
 	    } catch(Loading l) {}
 	}
+	drawicons(g, plt);
     }
 }
