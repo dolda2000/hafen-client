@@ -287,6 +287,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	} else if(msg == "polowner") {
 	    String o = (String)args[0];
+	    boolean n = ((Integer)args[1]) != 0;
 	    if(o.length() == 0)
 		o = null;
 	    else

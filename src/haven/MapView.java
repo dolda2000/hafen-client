@@ -558,11 +558,7 @@ public class MapView extends PView implements DTarget {
 	}
     }
 
-    private static final Text.Foundry polownertf;
-    static {
-	polownertf = new Text.Foundry("serif", 20);
-	polownertf.aa = true;
-    }
+    private static final Text.Furnace polownertf = new PUtils.BlurFurn(new Text.Foundry("serif", 30).aa(true), 3, 1, Color.BLACK);
     private Text polownert = null;
     private long polchtm = 0;
 
