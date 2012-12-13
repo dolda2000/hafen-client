@@ -222,6 +222,22 @@ public class PUtils {
 	return(alphablit(blurmask(img, grad, brad, col), img, new Coord(grad + brad, grad + brad)));
     }
 
+    public static class BlurFurn extends Text.Imager {
+	public final int grad, brad;
+	public final Color col;
+
+	public BlurFurn(Text.Furnace bk, int grad, int brad, Color col) {
+	    super(bk);
+	    this.grad = grad;
+	    this.brad = brad;
+	    this.col = col;
+	}
+
+	public BufferedImage proc(Text text) {
+	    return(rasterimg(blurmask2(text.img.getRaster(), grad, brad, col)));
+	}
+    }
+
     public static void dumpband(Raster img, int band) {
 	int w = img.getWidth(), h = img.getHeight();
 	for(int y = 0; y < h; y++) {
