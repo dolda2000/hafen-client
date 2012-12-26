@@ -505,31 +505,39 @@ public class MapView extends PView implements DTarget {
 	return(rl.limit.ul.add(tile).mul(tilesz).add(pixel));
     }
     
-    private static class ClickInfo {
+    public static class ClickInfo {
 	Gob gob;
+	Gob.Overlay ol;
 	Rendered r;
 	
-	ClickInfo(Gob gob, Rendered r) {
-	    this.gob = gob; this.r = r;
+	ClickInfo(Gob gob, Gob.Overlay ol, Rendered r) {
+	    this.gob = gob; this.ol = ol; this.r = r;
 	}
     }
 
     private ClickInfo checkgobclick(GOut g, Coord c) {
 	Clicklist<ClickInfo> rl = new Clicklist<ClickInfo>(basic(g)) {
 		Gob curgob;
+		Gob.Overlay curol;
 		ClickInfo curinfo;
 		public ClickInfo map(Rendered r) {
 		    return(curinfo);
 		}
 		
 		public void add(Rendered r, GLState t) {
+		    Gob prevg = curgob;
+		    Gob.Overlay prevo = curol;
 		    if(r instanceof Gob)
 			curgob = (Gob)r;
+		    else if(r instanceof Gob.Overlay)
+			curol = (Gob.Overlay)r;
 		    if((curgob == null) || !(r instanceof FRendered))
 			curinfo = null;
 		    else
-			curinfo = new ClickInfo(curgob, r);
+			curinfo = new ClickInfo(curgob, curol, r);
 		    super.add(r, t);
+		    curgob = prevg;
+		    curol = prevo;
 		}
 	    };
 	rl.setup(gobs, basic(g));
@@ -787,15 +795,15 @@ public class MapView extends PView implements DTarget {
 	    }
 	    if(mapcl != null) {
 		if(gobcl == null)
-		    hit(clickc, mapcl, null, null);
+		    hit(clickc, mapcl, null);
 		else
-		    hit(clickc, mapcl, gobcl.gob, gobcl.r);
+		    hit(clickc, mapcl, gobcl);
 	    } else {
 		nohit(clickc);
 	    }
 	}
 	
-	protected abstract void hit(Coord pc, Coord mc, Gob gob, Rendered tgt);
+	protected abstract void hit(Coord pc, Coord mc, ClickInfo inf);
 	protected void nohit(Coord pc) {}
     }
 
@@ -813,15 +821,20 @@ public class MapView extends PView implements DTarget {
 	    clickb = b;
 	}
 	
-	protected void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
+	protected void hit(Coord pc, Coord mc, ClickInfo inf) {
 	    if(grab != null) {
 		if(grab.mmousedown(mc, clickb))
 		    return;
 	    }
-	    if(gob == null)
+	    if(inf == null) {
 		wdgmsg("click", pc, mc, clickb, ui.modflags());
-	    else
-		wdgmsg("click", pc, mc, clickb, ui.modflags(), (int)gob.id, gob.rc, getid(tgt));
+	    } else {
+		if(inf.ol == null) {
+		    wdgmsg("click", pc, mc, clickb, ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc, 0, getid(inf.r));
+		} else {
+		    wdgmsg("click", pc, mc, clickb, ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc, inf.ol.id, getid(inf.r));
+		}
+	    }
 	}
     }
     
@@ -855,7 +868,7 @@ public class MapView extends PView implements DTarget {
 	    ((Camera)camera).drag(c);
 	} else if(grab != null) {
 	    delay(new Hittest(c) {
-		    public void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
+		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
 			grab.mmousemove(mc);
 		    }
 		});
@@ -875,7 +888,7 @@ public class MapView extends PView implements DTarget {
 	    }
 	} else if(grab != null) {
 	    delay(new Hittest(c) {
-		    public void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
+		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
 			grab.mmouseup(mc, button);
 		    }
 		});
@@ -899,7 +912,7 @@ public class MapView extends PView implements DTarget {
     
     public boolean drop(final Coord cc, final Coord ul) {
 	delay(new Hittest(cc) {
-		public void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
+		public void hit(Coord pc, Coord mc, ClickInfo inf) {
 		    wdgmsg("drop", pc, mc, ui.modflags());
 		}
 	    });
@@ -908,11 +921,11 @@ public class MapView extends PView implements DTarget {
     
     public boolean iteminteract(Coord cc, Coord ul) {
 	delay(new Hittest(cc) {
-		public void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
-		    if(gob == null)
+		public void hit(Coord pc, Coord mc, ClickInfo inf) {
+		    if(inf == null)
 			wdgmsg("itemact", pc, mc, ui.modflags());
 		    else
-			wdgmsg("itemact", pc, mc, ui.modflags(), (int)gob.id, gob.rc, getid(tgt));
+			wdgmsg("itemact", pc, mc, ui.modflags(), (int)inf.gob.id, inf.gob.rc, getid(inf.r));
 		}
 	    });
 	return(true);
