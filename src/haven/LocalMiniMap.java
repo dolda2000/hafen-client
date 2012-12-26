@@ -217,7 +217,7 @@ public class LocalMiniMap extends Widget {
 	if(gob == null)
 	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags());
 	else
-	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags(), (int)gob.id, gob.rc, -1);
+	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags(), 0, (int)gob.id, gob.rc, 0, -1);
 	return(true);
     }
 }
