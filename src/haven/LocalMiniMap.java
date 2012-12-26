@@ -169,9 +169,9 @@ public class LocalMiniMap extends Widget {
 	    synchronized(cache) {
 		f = cache.get(plg);
 		if(f == null) {
-		    final Coord ul = plg.mul(cmaps).sub(cmaps).add(1, 1);
 		    f = Defer.later(new Defer.Callable<MapTile> () {
 			    public MapTile call() {
+				Coord ul = plg.mul(cmaps).sub(cmaps).add(1, 1);
 				return(new MapTile(new TexI(drawmap(ul, cmaps.mul(3).sub(2, 2))), ul, plg));
 			    }
 			});
