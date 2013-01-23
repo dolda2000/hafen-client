@@ -41,7 +41,7 @@ public class Glob {
     public Party party;
     public Set<Pagina> paginae = new HashSet<Pagina>();
     public int pagseq = 0;
-    private Map<Resource, Pagina> pmap = new WeakHashMap<Resource, Pagina>();
+    public Map<Resource, Pagina> pmap = new WeakHashMap<Resource, Pagina>();
     public Map<String, CAttr> cattr = new HashMap<String, CAttr>();
     public Map<Integer, Buff> buffs = new TreeMap<Integer, Buff>();
     public java.awt.Color lightamb = null, lightdif = null, lightspc = null;
@@ -81,7 +81,8 @@ public class Glob {
 	public int meter, dtime;
 	public long gettime;
 	public Image img;
-	public boolean newp;
+	public int newp;
+	public long fstart; /* XXX: ABUSAN!!! */
 	
 	public interface Image {
 	    public Tex tex();
@@ -217,7 +218,7 @@ public class Glob {
 			    pag.gettime = System.currentTimeMillis();
 			    pag.dtime = msg.int32();
 			} else if(t == '^') {
-			    pag.newp = true;
+			    pag.newp = 1;
 			}
 		    }
 		} else if(act == '-') {
