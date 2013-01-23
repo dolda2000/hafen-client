@@ -222,6 +222,42 @@ public class PUtils {
 	return(alphablit(blurmask(img, grad, brad, col), img, new Coord(grad + brad, grad + brad)));
     }
 
+    public static WritableRaster glowmask(Raster img) {
+	Coord sz = imgsz(img);
+	int nb = img.getNumBands();
+	WritableRaster ret = alpharaster(sz);
+	float[] hsv = new float[3];
+	float max = 0;
+	for(int y = 0; y < sz.y; y++) {
+	    for(int x = 0; x < sz.x; x++) {
+		Color.RGBtoHSB(img.getSample(x, y, 0), img.getSample(x, y, 1), img.getSample(x, y, 2), hsv);
+		float a = (nb > 3)?(img.getSample(x, y, 3) / 255f):1f;
+		float val = ((1f - hsv[1]) * hsv[2]) * a;
+		max = Math.max(max, val);
+	    }
+	}
+	float imax = 1f / max;
+	for(int y = 0; y < sz.y; y++) {
+	    for(int x = 0; x < sz.x; x++) {
+		Color.RGBtoHSB(img.getSample(x, y, 0), img.getSample(x, y, 1), img.getSample(x, y, 2), hsv);
+		float a = (nb > 3)?(img.getSample(x, y, 3) / 255f):1f;
+		float val = ((1f - hsv[1]) * hsv[2]) * a;
+		ret.setSample(x, y, 0, Math.min(Math.max((int)(Math.sqrt(val * imax) * 255), 0), 255));
+	    }
+	}
+	return(ret);
+    }
+
+    public static BufferedImage glowmask(Raster img, int grad, Color col) {
+	Coord sz = imgsz(img), off = new Coord(grad, grad);
+	WritableRaster buf = imgraster(sz.add(off.mul(2)));
+	for(int i = 0; i < grad; i++) {
+	    alphadraw(buf, img, off, col);
+	    imgblur(buf, 2, 2);
+	}
+	return(rasterimg(buf));
+    }
+
     public static class BlurFurn extends Text.Imager {
 	public final int grad, brad;
 	public final Color col;
