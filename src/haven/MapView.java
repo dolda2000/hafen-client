@@ -41,7 +41,7 @@ public class MapView extends PView implements DTarget {
     private int view = 2;
     private Collection<Delayed> delayed = new LinkedList<Delayed>();
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
-    public Camera camera = new FollowCam();
+    public Camera camera = new SOrthoCam();
     private Plob placing = null;
     private int[] visol = new int[32];
     private Grabber grab;
@@ -232,6 +232,91 @@ public class MapView extends PView implements DTarget {
 	}
     }
     
+    private class OrthoCam extends Camera {
+	protected float dist = 500.0f;
+	protected float elev = (float)Math.PI / 6.0f;
+	protected float angl = -(float)Math.PI / 4.0f;
+	protected float field = (float)(100 * Math.sqrt(2));
+	private Coord dragorig = null;
+	private float anglorig;
+	protected Coord3f cc;
+
+	public void tick2(double dt) {
+	    Coord3f cc = getcc();
+	    cc.y = -cc.y;
+	    this.cc = cc;
+	}
+
+	public void tick(double dt) {
+	    tick2(dt);
+	    float aspect = ((float)sz.y) / ((float)sz.x);
+	    view.update(PointedCam.compute(cc.add(0.0f, 0.0f, 15f), dist, elev, angl));
+	    proj.update(Projection.makeortho(new Matrix4f(), -field, field, -field * aspect, field * aspect, 1, 5000));
+	}
+
+	public float angle() {
+	    return(angl);
+	}
+
+	public boolean click(Coord c) {
+	    anglorig = angl;
+	    dragorig = c;
+	    return(true);
+	}
+
+	public void drag(Coord c) {
+	    angl = anglorig + ((float)(c.x - dragorig.x) / 100.0f);
+	    angl = angl % ((float)Math.PI * 2.0f);
+	}
+
+	public String toString() {
+	    return(String.format("%f %f %f %f", dist, elev / Math.PI, angl / Math.PI, field));
+	}
+    }
+
+    private class SOrthoCam extends OrthoCam {
+	private Coord dragorig = null;
+	private float anglorig;
+	private float tangl = angl;
+	private float tfield = field;
+	private final float pi2 = (float)(Math.PI * 2);
+
+	public void tick2(double dt) {
+	    Coord3f mc = getcc();
+	    mc.y = -mc.y;
+	    if((cc == null) || (Math.hypot(mc.x - cc.x, mc.y - cc.y) > 250))
+		cc = mc;
+	    else
+		cc = cc.add(mc.sub(cc).mul(1f - (float)Math.pow(500, -dt)));
+
+	    angl = angl + ((tangl - angl) * (1f - (float)Math.pow(500, -dt)));
+	    while(angl > pi2) {angl -= pi2; tangl -= pi2; anglorig -= pi2;}
+	    while(angl < 0)   {angl += pi2; tangl += pi2; anglorig += pi2;}
+	    if(Math.abs(tangl - angl) < 0.0001)
+		angl = tangl;
+
+	    field = field + ((tfield - field) * (1f - (float)Math.pow(500, -dt)));
+	    if(Math.abs(tfield - field) < 0.0001)
+		field = tfield;
+	}
+
+	public boolean click(Coord c) {
+	    anglorig = angl;
+	    dragorig = c;
+	    return(true);
+	}
+
+	public void drag(Coord c) {
+	    tangl = anglorig + ((float)(c.x - dragorig.x) / 100.0f);
+	}
+
+	public boolean wheel(Coord c, int amount) {
+	    tfield += amount * 10;
+	    tfield = Math.max(Math.min(tfield, 200), 50);
+	    return(true);
+	}
+    }
+
     static {
 	Widget.addtype("mapview", new WidgetFactory() {
 		public Widget create(Coord c, Widget parent, Object[] args) {
