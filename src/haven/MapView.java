@@ -636,7 +636,7 @@ public class MapView extends PView implements DTarget {
 		    continue;
 		Coord3f ploc = new Coord3f(mc.x, -mc.y, cc.z);
 		Coord3f sloc = proj.tonorm(cam.mul4(ploc));
-		if(sloc.z < 0)
+		if(sloc.z < -1)
 		    sloc = sloc.inv();
 		if((sloc.x < -1) || (sloc.x > 1) || (sloc.y < -1) || (sloc.y > 1)) {
 		    g.chcolor(m.col);
