@@ -55,7 +55,7 @@ public class Projection extends Transform {
     public Coord3f tonorm(Coord3f ec) {
 	float[] o = fin(Matrix4f.id).mul4(ec.to4a(1));
 	float d = 1 / o[3];
-	return(new Coord3f(o[0] * d, o[1] * d, o[2]));
+	return(new Coord3f(o[0] * d, o[1] * d, o[2] * d));
     }
 
     public Coord3f toscreen(Coord3f ec, Coord sz) {
