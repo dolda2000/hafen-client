@@ -41,7 +41,7 @@ public class MapView extends PView implements DTarget {
     private int view = 2;
     private Collection<Delayed> delayed = new LinkedList<Delayed>();
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
-    public Camera camera = new FollowCam();
+    public Camera camera = new SOrthoCam();
     private Plob placing = null;
     private int[] visol = new int[32];
     private Grabber grab;
@@ -232,6 +232,91 @@ public class MapView extends PView implements DTarget {
 	}
     }
     
+    private class OrthoCam extends Camera {
+	protected float dist = 500.0f;
+	protected float elev = (float)Math.PI / 6.0f;
+	protected float angl = -(float)Math.PI / 4.0f;
+	protected float field = (float)(100 * Math.sqrt(2));
+	private Coord dragorig = null;
+	private float anglorig;
+	protected Coord3f cc;
+
+	public void tick2(double dt) {
+	    Coord3f cc = getcc();
+	    cc.y = -cc.y;
+	    this.cc = cc;
+	}
+
+	public void tick(double dt) {
+	    tick2(dt);
+	    float aspect = ((float)sz.y) / ((float)sz.x);
+	    view.update(PointedCam.compute(cc.add(0.0f, 0.0f, 15f), dist, elev, angl));
+	    proj.update(Projection.makeortho(new Matrix4f(), -field, field, -field * aspect, field * aspect, 1, 5000));
+	}
+
+	public float angle() {
+	    return(angl);
+	}
+
+	public boolean click(Coord c) {
+	    anglorig = angl;
+	    dragorig = c;
+	    return(true);
+	}
+
+	public void drag(Coord c) {
+	    angl = anglorig + ((float)(c.x - dragorig.x) / 100.0f);
+	    angl = angl % ((float)Math.PI * 2.0f);
+	}
+
+	public String toString() {
+	    return(String.format("%f %f %f %f", dist, elev / Math.PI, angl / Math.PI, field));
+	}
+    }
+
+    private class SOrthoCam extends OrthoCam {
+	private Coord dragorig = null;
+	private float anglorig;
+	private float tangl = angl;
+	private float tfield = field;
+	private final float pi2 = (float)(Math.PI * 2);
+
+	public void tick2(double dt) {
+	    Coord3f mc = getcc();
+	    mc.y = -mc.y;
+	    if((cc == null) || (Math.hypot(mc.x - cc.x, mc.y - cc.y) > 250))
+		cc = mc;
+	    else
+		cc = cc.add(mc.sub(cc).mul(1f - (float)Math.pow(500, -dt)));
+
+	    angl = angl + ((tangl - angl) * (1f - (float)Math.pow(500, -dt)));
+	    while(angl > pi2) {angl -= pi2; tangl -= pi2; anglorig -= pi2;}
+	    while(angl < 0)   {angl += pi2; tangl += pi2; anglorig += pi2;}
+	    if(Math.abs(tangl - angl) < 0.0001)
+		angl = tangl;
+
+	    field = field + ((tfield - field) * (1f - (float)Math.pow(500, -dt)));
+	    if(Math.abs(tfield - field) < 0.0001)
+		field = tfield;
+	}
+
+	public boolean click(Coord c) {
+	    anglorig = angl;
+	    dragorig = c;
+	    return(true);
+	}
+
+	public void drag(Coord c) {
+	    tangl = anglorig + ((float)(c.x - dragorig.x) / 100.0f);
+	}
+
+	public boolean wheel(Coord c, int amount) {
+	    tfield += amount * 10;
+	    tfield = Math.max(Math.min(tfield, 200), 50);
+	    return(true);
+	}
+    }
+
     static {
 	Widget.addtype("mapview", new WidgetFactory() {
 		public Widget create(Coord c, Widget parent, Object[] args) {
@@ -505,31 +590,39 @@ public class MapView extends PView implements DTarget {
 	return(rl.limit.ul.add(tile).mul(tilesz).add(pixel));
     }
     
-    private static class ClickInfo {
+    public static class ClickInfo {
 	Gob gob;
+	Gob.Overlay ol;
 	Rendered r;
 	
-	ClickInfo(Gob gob, Rendered r) {
-	    this.gob = gob; this.r = r;
+	ClickInfo(Gob gob, Gob.Overlay ol, Rendered r) {
+	    this.gob = gob; this.ol = ol; this.r = r;
 	}
     }
 
     private ClickInfo checkgobclick(GOut g, Coord c) {
 	Clicklist<ClickInfo> rl = new Clicklist<ClickInfo>(basic(g)) {
 		Gob curgob;
+		Gob.Overlay curol;
 		ClickInfo curinfo;
 		public ClickInfo map(Rendered r) {
 		    return(curinfo);
 		}
 		
 		public void add(Rendered r, GLState t) {
+		    Gob prevg = curgob;
+		    Gob.Overlay prevo = curol;
 		    if(r instanceof Gob)
 			curgob = (Gob)r;
+		    else if(r instanceof Gob.Overlay)
+			curol = (Gob.Overlay)r;
 		    if((curgob == null) || !(r instanceof FRendered))
 			curinfo = null;
 		    else
-			curinfo = new ClickInfo(curgob, r);
+			curinfo = new ClickInfo(curgob, curol, r);
 		    super.add(r, t);
+		    curgob = prevg;
+		    curol = prevo;
 		}
 	    };
 	rl.setup(gobs, basic(g));
@@ -558,11 +651,7 @@ public class MapView extends PView implements DTarget {
 	}
     }
 
-    private static final Text.Foundry polownertf;
-    static {
-	polownertf = new Text.Foundry("serif", 20);
-	polownertf.aa = true;
-    }
+    private static final Text.Furnace polownertf = new PUtils.BlurFurn(new Text.Foundry("serif", 30).aa(true), 3, 1, Color.BLACK);
     private Text polownert = null;
     private long polchtm = 0;
 
@@ -632,7 +721,7 @@ public class MapView extends PView implements DTarget {
 		    continue;
 		Coord3f ploc = new Coord3f(mc.x, -mc.y, cc.z);
 		Coord3f sloc = proj.tonorm(cam.mul4(ploc));
-		if(sloc.z < 0)
+		if(sloc.z < -1)
 		    sloc = sloc.inv();
 		if((sloc.x < -1) || (sloc.x > 1) || (sloc.y < -1) || (sloc.y > 1)) {
 		    g.chcolor(m.col);
@@ -791,15 +880,15 @@ public class MapView extends PView implements DTarget {
 	    }
 	    if(mapcl != null) {
 		if(gobcl == null)
-		    hit(clickc, mapcl, null, null);
+		    hit(clickc, mapcl, null);
 		else
-		    hit(clickc, mapcl, gobcl.gob, gobcl.r);
+		    hit(clickc, mapcl, gobcl);
 	    } else {
 		nohit(clickc);
 	    }
 	}
 	
-	protected abstract void hit(Coord pc, Coord mc, Gob gob, Rendered tgt);
+	protected abstract void hit(Coord pc, Coord mc, ClickInfo inf);
 	protected void nohit(Coord pc) {}
     }
 
@@ -817,15 +906,20 @@ public class MapView extends PView implements DTarget {
 	    clickb = b;
 	}
 	
-	protected void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
+	protected void hit(Coord pc, Coord mc, ClickInfo inf) {
 	    if(grab != null) {
 		if(grab.mmousedown(mc, clickb))
 		    return;
 	    }
-	    if(gob == null)
+	    if(inf == null) {
 		wdgmsg("click", pc, mc, clickb, ui.modflags());
-	    else
-		wdgmsg("click", pc, mc, clickb, ui.modflags(), (int)gob.id, gob.rc, getid(tgt));
+	    } else {
+		if(inf.ol == null) {
+		    wdgmsg("click", pc, mc, clickb, ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc, 0, getid(inf.r));
+		} else {
+		    wdgmsg("click", pc, mc, clickb, ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc, inf.ol.id, getid(inf.r));
+		}
+	    }
 	}
     }
     
@@ -859,7 +953,7 @@ public class MapView extends PView implements DTarget {
 	    ((Camera)camera).drag(c);
 	} else if(grab != null) {
 	    delay(new Hittest(c) {
-		    public void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
+		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
 			grab.mmousemove(mc);
 		    }
 		});
@@ -879,7 +973,7 @@ public class MapView extends PView implements DTarget {
 	    }
 	} else if(grab != null) {
 	    delay(new Hittest(c) {
-		    public void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
+		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
 			grab.mmouseup(mc, button);
 		    }
 		});
@@ -903,7 +997,7 @@ public class MapView extends PView implements DTarget {
     
     public boolean drop(final Coord cc, final Coord ul) {
 	delay(new Hittest(cc) {
-		public void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
+		public void hit(Coord pc, Coord mc, ClickInfo inf) {
 		    wdgmsg("drop", pc, mc, ui.modflags());
 		}
 	    });
@@ -912,11 +1006,11 @@ public class MapView extends PView implements DTarget {
     
     public boolean iteminteract(Coord cc, Coord ul) {
 	delay(new Hittest(cc) {
-		public void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
-		    if(gob == null)
+		public void hit(Coord pc, Coord mc, ClickInfo inf) {
+		    if(inf == null)
 			wdgmsg("itemact", pc, mc, ui.modflags());
 		    else
-			wdgmsg("itemact", pc, mc, ui.modflags(), (int)gob.id, gob.rc, getid(tgt));
+			wdgmsg("itemact", pc, mc, ui.modflags(), (int)inf.gob.id, inf.gob.rc, getid(inf.r));
 		}
 	    });
 	return(true);

@@ -66,11 +66,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		Coord mvc = map.rootxlate(ui.mc);
 		if(mvc.isect(Coord.z, map.sz)) {
 		    map.delay(map.new Hittest(mvc) {
-			    protected void hit(Coord pc, Coord mc, Gob gob, Rendered tgt) {
-				if(gob == null)
+			    protected void hit(Coord pc, Coord mc, MapView.ClickInfo inf) {
+				if(inf == null)
 				    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags(), mc);
 				else
-				    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags(), mc, (int)gob.id, gob.rc);
+				    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags(), mc, (int)inf.gob.id, inf.gob.rc);
 			    }
 			    
 			    protected void nohit(Coord pc) {
@@ -224,8 +224,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
-    static Text.Foundry progf = new Text.Foundry(new java.awt.Font("serif", java.awt.Font.BOLD, 24));
-    static {progf.aa = true;}
+    static Text.Furnace progf = new PUtils.BlurFurn(new Text.Foundry(new java.awt.Font("serif", java.awt.Font.BOLD, 24)).aa(true), 2, 1, new Color(0, 16, 16));
     Text progt = null;
     public void draw(GOut g) {
 	boolean beltp = !chat.expanded;
@@ -287,6 +286,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	} else if(msg == "polowner") {
 	    String o = (String)args[0];
+	    boolean n = ((Integer)args[1]) != 0;
 	    if(o.length() == 0)
 		o = null;
 	    else

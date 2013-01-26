@@ -238,6 +238,102 @@ public interface Rendered {
 	    return(true);
 	}
     }
+
+    public static class TCube implements Rendered {
+	public final Coord3f bn, bp;
+	public States.ColState sc = new States.ColState(new java.awt.Color(255, 64, 64, 128)), ec = new States.ColState(new java.awt.Color(255, 255, 255, 255));
+
+	public TCube(Coord3f bn, Coord3f bp) {
+	    this.bn = bn;
+	    this.bp = bp;
+	}
+
+	public void draw(GOut g) {
+	    GL gl = g.gl;
+
+	    g.state(Light.deflight);
+	    g.state(sc);
+	    g.apply();
+	    gl.glEnable(GL.GL_COLOR_MATERIAL);
+	    gl.glBegin(gl.GL_QUADS);
+	    gl.glNormal3f(0.0f, 0.0f, 1.0f);
+	    gl.glVertex3f(bn.x, bp.y, bp.z);
+	    gl.glVertex3f(bn.x, bn.y, bp.z);
+	    gl.glVertex3f(bp.x, bn.y, bp.z);
+	    gl.glVertex3f(bp.x, bp.y, bp.z);
+
+	    gl.glNormal3f(1.0f, 0.0f, 0.0f);
+	    gl.glVertex3f(bp.x, bp.y, bp.z);
+	    gl.glVertex3f(bp.x, bn.y, bp.z);
+	    gl.glVertex3f(bp.x, bn.y, bn.z);
+	    gl.glVertex3f(bp.x, bp.y, bn.z);
+
+	    gl.glNormal3f(-1.0f, 0.0f, 0.0f);
+	    gl.glVertex3f(bn.x, bp.y, bp.z);
+	    gl.glVertex3f(bn.x, bp.y, bn.z);
+	    gl.glVertex3f(bn.x, bn.y, bn.z);
+	    gl.glVertex3f(bn.x, bn.y, bp.z);
+
+	    gl.glNormal3f(0.0f, 1.0f, 0.0f);
+	    gl.glVertex3f(bn.x, bp.y, bp.z);
+	    gl.glVertex3f(bp.x, bp.y, bp.z);
+	    gl.glVertex3f(bp.x, bp.y, bn.z);
+	    gl.glVertex3f(bn.x, bp.y, bn.z);
+
+	    gl.glNormal3f(0.0f, -1.0f, 0.0f);
+	    gl.glVertex3f(bn.x, bn.y, bp.z);
+	    gl.glVertex3f(bn.x, bn.y, bn.z);
+	    gl.glVertex3f(bp.x, bn.y, bn.z);
+	    gl.glVertex3f(bp.x, bn.y, bp.z);
+
+	    gl.glNormal3f(0.0f, 0.0f, -1.0f);
+	    gl.glVertex3f(bn.x, bp.y, bn.z);
+	    gl.glVertex3f(bp.x, bp.y, bn.z);
+	    gl.glVertex3f(bp.x, bn.y, bn.z);
+	    gl.glVertex3f(bn.x, bn.y, bn.z);
+	    gl.glEnd();
+	    gl.glDisable(GL.GL_COLOR_MATERIAL);
+
+	    g.st.put(Light.lighting, null);
+	    g.state(ec);
+	    g.apply();
+	    gl.glLineWidth(1.2f);
+	    gl.glBegin(gl.GL_LINE_STRIP);
+	    gl.glVertex3f(bn.x, bn.y, bp.z);
+	    gl.glVertex3f(bn.x, bp.y, bp.z);
+	    gl.glVertex3f(bp.x, bp.y, bp.z);
+	    gl.glVertex3f(bp.x, bn.y, bp.z);
+	    gl.glVertex3f(bn.x, bn.y, bp.z);
+	    gl.glEnd();
+	    gl.glBegin(gl.GL_LINE_STRIP);
+	    gl.glVertex3f(bn.x, bn.y, bn.z);
+	    gl.glVertex3f(bn.x, bp.y, bn.z);
+	    gl.glVertex3f(bp.x, bp.y, bn.z);
+	    gl.glVertex3f(bp.x, bn.y, bn.z);
+	    gl.glVertex3f(bn.x, bn.y, bn.z);
+	    gl.glEnd();
+	    gl.glBegin(gl.GL_LINES);
+	    gl.glVertex3f(bn.x, bn.y, bn.z); gl.glVertex3f(bn.x, bn.y, bp.z);
+	    gl.glVertex3f(bp.x, bn.y, bn.z); gl.glVertex3f(bp.x, bn.y, bp.z);
+	    gl.glVertex3f(bp.x, bp.y, bn.z); gl.glVertex3f(bp.x, bp.y, bp.z);
+	    gl.glVertex3f(bn.x, bp.y, bn.z); gl.glVertex3f(bn.x, bp.y, bp.z);
+	    gl.glEnd();
+	    gl.glPointSize(5);
+	    gl.glBegin(gl.GL_POINTS);
+	    gl.glVertex3f(bn.x, bn.y, bn.z); gl.glVertex3f(bn.x, bn.y, bp.z);
+	    gl.glVertex3f(bp.x, bn.y, bn.z); gl.glVertex3f(bp.x, bn.y, bp.z);
+	    gl.glVertex3f(bp.x, bp.y, bn.z); gl.glVertex3f(bp.x, bp.y, bp.z);
+	    gl.glVertex3f(bn.x, bp.y, bn.z); gl.glVertex3f(bn.x, bp.y, bp.z);
+	    gl.glEnd();
+	}
+
+	public boolean setup(RenderList rls) {
+	    rls.state().put(States.color, null);
+	    rls.prepo(eyesort);
+	    rls.prepo(States.presdepth);
+	    return(true);
+	}
+    }
     
     public static class ScreenQuad implements Rendered {
 	private static final Projection proj = new Projection(Matrix4f.id);

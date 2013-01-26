@@ -40,7 +40,7 @@ public class Gob implements Sprite.Owner, Rendered {
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     public Collection<Overlay> ols = new LinkedList<Overlay>();
 	
-    public static class Overlay {
+    public static class Overlay implements Rendered {
 	public Indir<Resource> res;
 	public Message sdt;
 	public Sprite spr;
@@ -72,6 +72,13 @@ public class Gob implements Sprite.Owner, Rendered {
 	public static interface SetupMod {
 	    public void setupgob(GLState.Buffer buf);
 	    public void setupmain(RenderList rl);
+	}
+
+	public void draw(GOut g) {}
+	public boolean setup(RenderList rl) {
+	    if(spr != null)
+		rl.add(spr, null);
+	    return(false);
 	}
     }
     
@@ -183,10 +190,8 @@ public class Gob implements Sprite.Owner, Rendered {
     public void draw(GOut g) {}
 
     public boolean setup(RenderList rl) {
-	for(Overlay ol : ols) {
-	    if(ol.spr != null)
-		rl.add(ol.spr, null);
-	}
+	for(Overlay ol : ols)
+	    rl.add(ol, null);
 	for(Overlay ol : ols) {
 	    if(ol.spr instanceof Overlay.SetupMod)
 		((Overlay.SetupMod)ol.spr).setupmain(rl);

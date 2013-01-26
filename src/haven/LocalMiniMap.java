@@ -169,9 +169,9 @@ public class LocalMiniMap extends Widget {
 	    synchronized(cache) {
 		f = cache.get(plg);
 		if(f == null) {
-		    final Coord ul = plg.mul(cmaps).sub(cmaps).add(1, 1);
 		    f = Defer.later(new Defer.Callable<MapTile> () {
 			    public MapTile call() {
+				Coord ul = plg.mul(cmaps).sub(cmaps).add(1, 1);
 				return(new MapTile(new TexI(drawmap(ul, cmaps.mul(3).sub(2, 2))), ul, plg));
 			    }
 			});
@@ -217,7 +217,7 @@ public class LocalMiniMap extends Widget {
 	if(gob == null)
 	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags());
 	else
-	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags(), (int)gob.id, gob.rc, -1);
+	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags(), 0, (int)gob.id, gob.rc, 0, -1);
 	return(true);
     }
 }

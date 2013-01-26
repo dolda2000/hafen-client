@@ -35,6 +35,7 @@ public class FastMesh implements FRendered {
     public final int num;
     public FastMesh from;
     private DisplayList list = null;
+    private Coord3f nb, pb;
     
     public FastMesh(VertexBuf vert, ShortBuffer ind) {
 	this.vert = vert;
@@ -76,6 +77,40 @@ public class FastMesh implements FRendered {
 	    vbuf.set(g, idx);
 	}
 	gl.glEnd();
+    }
+
+    private void cbounds() {
+	Coord3f nb = null, pb = null;
+	VertexBuf.VertexArray vbuf = null;
+	for(VertexBuf.AttribArray buf : vert.bufs) {
+	    if(buf instanceof VertexBuf.VertexArray) {
+		vbuf = (VertexBuf.VertexArray)buf;
+		break;
+	    }
+	}
+	for(int i = 0; i < indb.capacity(); i++) {
+	    int vi = indb.get(i) * 3;
+	    float x = vbuf.data.get(vi), y = vbuf.data.get(vi + 1), z = vbuf.data.get(vi + 2);
+	    if(nb == null) {
+		nb = new Coord3f(x, y, z);
+		pb = new Coord3f(x, y, z);
+	    } else {
+		nb.x = Math.min(nb.x, x); pb.x = Math.max(pb.x, x);
+		nb.y = Math.min(nb.y, y); pb.y = Math.max(pb.y, y);
+		nb.z = Math.min(nb.z, z); pb.z = Math.max(pb.z, z);
+	    }
+	}
+	this.nb = nb;
+	this.pb = pb;
+    }
+
+    public Coord3f nbounds() {
+	if(nb == null) cbounds();
+	return(nb);
+    }
+    public Coord3f pbounds() {
+	if(pb == null) cbounds();
+	return(pb);
     }
 
     public void cdraw(GOut g) {

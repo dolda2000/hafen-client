@@ -112,20 +112,55 @@ public class Makewindow extends Widget {
 	super.draw(g);
     }
     
+    private long hoverstart;
+    private Resource lasttip;
+    private Object stip, ltip;
     public Object tooltip(Coord mc, Widget prev) {
+	Resource tres = null;
 	Coord c = new Coord(xoff, 0);
-	for(Spec s : inputs) {
-	    if(mc.isect(c, Inventory.invsq.sz()))
-		return(s.res.get().layer(Resource.tooltip).t);
-	    c = c.add(31, 0);
+	find: {
+	    for(Spec s : inputs) {
+		if(mc.isect(c, Inventory.invsq.sz())) {
+		    tres = s.res.get();
+		    break find;
+		}
+		c = c.add(31, 0);
+	    }
+	    c = new Coord(xoff, yoff);
+	    for(Spec s : outputs) {
+		if(mc.isect(c, Inventory.invsq.sz())) {
+		    tres = s.res.get();
+		    break find;
+		}
+		c = c.add(31, 0);
+	    }
 	}
-	c = new Coord(xoff, yoff);
-	for(Spec s : outputs) {
-	    if(mc.isect(c, Inventory.invsq.sz()))
-		return(s.res.get().layer(Resource.tooltip).t);
-	    c = c.add(31, 0);
+	if(tres == null)
+	    return(null);
+	if(lasttip != tres) {
+	    lasttip = tres;
+	    stip = ltip = null;
 	}
-	return(null);
+	long now = System.currentTimeMillis();
+	boolean sh = true;
+	if(prev != this)
+	    hoverstart = now;
+	else if(now - hoverstart > 1000)
+	    sh = false;
+	if(sh) {
+	    if(stip == null)
+		stip = Text.render(tres.layer(Resource.tooltip).t);
+	    return(stip);
+	} else {
+	    if(ltip == null) {
+		String t = tres.layer(Resource.tooltip).t;
+		Resource.Pagina p = tres.layer(Resource.pagina);
+		if(p != null)
+		    t += "\n\n" + tres.layer(Resource.pagina).text;
+		ltip = RichText.render(t, 300);
+	    }
+	    return(ltip);
+	}
     }
 
     public void wdgmsg(Widget sender, String msg, Object... args) {
