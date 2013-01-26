@@ -249,12 +249,12 @@ public interface Rendered {
 	}
 
 	public void draw(GOut g) {
-	    GL gl = g.gl;
+	    GL2 gl = g.gl;
 
 	    g.state(Light.deflight);
 	    g.state(sc);
 	    g.apply();
-	    gl.glEnable(GL.GL_COLOR_MATERIAL);
+	    gl.glEnable(GL2.GL_COLOR_MATERIAL);
 	    gl.glBegin(gl.GL_QUADS);
 	    gl.glNormal3f(0.0f, 0.0f, 1.0f);
 	    gl.glVertex3f(bn.x, bp.y, bp.z);
@@ -292,7 +292,7 @@ public interface Rendered {
 	    gl.glVertex3f(bp.x, bn.y, bn.z);
 	    gl.glVertex3f(bn.x, bn.y, bn.z);
 	    gl.glEnd();
-	    gl.glDisable(GL.GL_COLOR_MATERIAL);
+	    gl.glDisable(GL2.GL_COLOR_MATERIAL);
 
 	    g.st.put(Light.lighting, null);
 	    g.state(ec);
