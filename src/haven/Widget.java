@@ -727,7 +727,7 @@ public class Widget {
 		
 		public Iterator<T> iterator() {
 		    return(new Iterator<T>() {
-			    T cur = n(Widget.this);
+			    T cur = n(Widget.this.child);
 			    
 			    private T n(Widget w) {
 				Widget n;
@@ -735,20 +735,22 @@ public class Widget {
 				    return(null);
 				} else if(w.child != null) {
 				    n = w.child;
-				} else if(cur.next != null) {
+				} else if(w.next != null) {
 				    n = w.next;
-				} else if(cur.parent == Widget.this) {
+				} else if(w.parent == Widget.this) {
 				    return(null);
 				} else {
-				    n = cur.parent;
+				    n = w.parent;
 				}
-				if(cl.isInstance(n))
+				if((n == null) || cl.isInstance(n))
 				    return(cl.cast(n));
 				else
 				    return(n(n));
 			    }
 			    
 			    public T next() {
+				if(cur == null)
+				    throw(new NoSuchElementException());
 				T ret = cur;
 				cur = n(ret);
 				return(ret);
