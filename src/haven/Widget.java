@@ -328,6 +328,13 @@ public class Widget {
     public void cdestroy(Widget w) {
     }
 	
+    public int wdgid() {
+	Integer id = ui.rwidgets.get(this);
+	if(id == null)
+	    return(-1);
+	return(id);
+    }
+
     public void lostfocus() {
 	if(focusctl && (focused != null)) {
 	    focused.hasfocus = false;
@@ -821,13 +828,21 @@ public class Widget {
 	if(canfocus)
 	    parent.newfocusable(this);
     }
-    
+
     public boolean show(boolean show) {
 	if(show)
 	    show();
 	else
 	    hide();
 	return(show);
+    }
+
+    public boolean tvisible() {
+	for(Widget w = this; w != null; w = w.parent) {
+	    if(!w.visible)
+		return(false);
+	}
+	return(true);
     }
 
     public abstract class Anim {
