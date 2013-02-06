@@ -854,6 +854,12 @@ public class Widget {
 	    }
 	}
 
+	public void clear() {
+	    synchronized(ui) {
+		anims.remove(this);
+	    }
+	}
+
 	public abstract boolean tick(double dt);
     }
 
