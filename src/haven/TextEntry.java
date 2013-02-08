@@ -41,7 +41,10 @@ public class TextEntry extends Widget {
     static {
 	Widget.addtype("text", new WidgetFactory() {
 		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new TextEntry(c, (Coord)args[0], parent, (String)args[1]));
+		    if(args[0] instanceof Coord)
+			return(new TextEntry(c, (Coord)args[0], parent, (String)args[1]));
+		    else
+			return(new TextEntry(c, (Integer)args[0], parent, (String)args[1]));
 		}
 	    });
     }
