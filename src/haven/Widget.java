@@ -438,6 +438,29 @@ public class Widget {
 		cursor = null;
 	    else
 		cursor = Resource.load((String)args[0], (Integer)args[1]);
+	} else if(msg == "tip") {
+	    int a = 0;
+	    Object tt = args[a++];
+	    if(tt instanceof String) {
+		tooltip = Text.render((String)tt);
+	    } else if(tt instanceof Integer) {
+		final Indir<Resource> tres = ui.sess.getres((Integer)tt);
+		tooltip = new Indir<Tex>() {
+		    Text t = null;
+		    public Tex get() {
+			if(t == null) {
+			    Resource.Pagina pag;
+			    try {
+				pag = tres.get().layer(Resource.pagina);
+			    } catch(Loading e) {
+				return(null);
+			    }
+			    t = RichText.render(pag.text, 300);
+			}
+			return(t.tex());
+		    }
+		};
+	    }
 	} else {
 	    System.err.println("Unhandled widget message: " + msg);
 	}
