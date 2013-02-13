@@ -250,7 +250,7 @@ public abstract class TexGL extends Tex {
     
     public void mipmap() {
 	mipmap = true;
-	minfilter = GL.GL_NEAREST_MIPMAP_NEAREST;
+	minfilter = GL.GL_LINEAR_MIPMAP_LINEAR;
 	dispose();
     }
 
