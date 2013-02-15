@@ -101,7 +101,7 @@ public class Widget {
 	    Resource res = Resource.load(name, ver);
 	    while(true) {
 		try {
-		    return(res.layer(Resource.CodeEntry.class).get(WidgetFactory.class));
+		    return(res.getcode(WidgetFactory.class, true));
 		} catch(Resource.Loading l) {
 		    l.res.loadwaitint();
 		}
