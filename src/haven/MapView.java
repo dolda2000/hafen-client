@@ -782,35 +782,22 @@ public class MapView extends PView implements DTarget {
 	    }
 	}
 
-	private class Adjust implements Delayed {
-	    Coord mouse;
+	private class Adjust extends Maptest {
 	    boolean adjust;
 	    
 	    Adjust(Coord c, boolean ta) {
-		mouse = c;
+		super(c);
 		adjust = ta;
 	    }
 	    
-	    public void run(GOut g) {
-		GLState.Buffer bk = g.st.copy();
-		Coord mc;
-		try {
-		    GL gl = g.gl;
-		    g.st.set(basic(g));
-		    g.apply();
-		    gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
-		    mc = checkmapclick(g, mouse);
-		} finally {
-		    g.st.set(bk);
-		}
-		if(mc != null)
-		    rc = mc;
+	    public void hit(Coord pc, Coord mc) {
+		rc = mc;
 		if(adjust)
 		    rc = rc.div(tilesz).mul(tilesz).add(tilesz.div(2));
 		Gob pl = player();
 		if((pl != null) && !freerot)
 		    a = rc.angle(pl.rc);
-		lastmc = mouse;
+		lastmc = pc;
 	    }
 	}
     }
@@ -850,6 +837,35 @@ public class MapView extends PView implements DTarget {
 
     private boolean camdrag = false;
     
+    public abstract class Maptest implements Delayed {
+	private final Coord pc;
+
+	public Maptest(Coord c) {
+	    this.pc = c;
+	}
+
+	public void run(GOut g) {
+	    GLState.Buffer bk = g.st.copy();
+	    Coord mc;
+	    try {
+		GL gl = g.gl;
+		g.st.set(basic(g));
+		g.apply();
+		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
+		mc = checkmapclick(g, pc);
+	    } finally {
+		g.st.set(bk);
+	    }
+	    if(mc != null)
+		hit(pc, mc);
+	    else
+		nohit(pc);
+	}
+
+	protected abstract void hit(Coord pc, Coord mc);
+	protected void nohit(Coord pc) {}
+    }
+
     public abstract class Hittest implements Delayed {
 	private final Coord clickc;
 	
