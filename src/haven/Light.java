@@ -400,7 +400,7 @@ public class Light implements Rendered {
 	LightList l = rl.state().get(lights);
 	if(l != null) {
 	    Camera cam = rl.state().get(PView.cam);
-	    Location loc = rl.state().get(PView.loc);
+	    Location.Chain loc = rl.state().get(PView.loc);
 	    Matrix4f mv = cam.fin(Matrix4f.identity());
 	    if(loc != null)
 		mv = mv.mul(loc.fin(Matrix4f.identity()));
