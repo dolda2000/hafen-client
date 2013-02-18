@@ -182,11 +182,11 @@ public class GOut {
 	checkerr();
     }
 
-    private void vertex(Coord c) {
+    public void vertex(Coord c) {
 	gl.glVertex2i(c.x + tx.x, c.y + tx.y);
     }
 
-    private void vertex(float x, float y) {
+    public void vertex(float x, float y) {
 	gl.glVertex2f(x + tx.x, y + tx.y);
     }
 	

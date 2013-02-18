@@ -37,11 +37,15 @@ public abstract class SIWidget extends Widget {
 
     protected abstract void draw(BufferedImage buf);
 
+    public BufferedImage draw() {
+	BufferedImage buf = TexI.mkbuf(sz);
+	draw(buf);
+	return(buf);
+    }
+
     public void draw(GOut g) {
 	if(this.surf == null) {
-	    BufferedImage buf = TexI.mkbuf(sz);
-	    draw(buf);
-	    this.surf = new TexI(buf);
+	    this.surf = new TexI(draw());
 	}
 	g.image(surf, Coord.z);
     }

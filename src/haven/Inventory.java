@@ -58,10 +58,15 @@ public class Inventory extends Widget implements DTarget {
     }
     
     public boolean mousewheel(Coord c, int amount) {
-	if(amount < 0)
-	    wdgmsg("xfer", -1, ui.modflags());
-	if(amount > 0)
-	    wdgmsg("xfer", 1, ui.modflags());
+	if(ui.modshift) {
+	    Inventory minv = getparent(GameUI.class).maininv;
+	    if(minv != this) {
+		if(amount < 0)
+		    wdgmsg("invxf", minv.wdgid(), 1);
+		else if(amount > 0)
+		    minv.wdgmsg("invxf", this.wdgid(), 1);
+	    }
+	}
 	return(true);
     }
     

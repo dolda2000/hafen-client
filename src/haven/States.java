@@ -42,6 +42,10 @@ public abstract class States extends GLState {
 	    this.ca = Utils.c2fa(c);
 	}
 	
+	public ColState(int r, int g, int b, int a) {
+	    this(Utils.clipcol(r, g, b, a));
+	}
+	
 	public void apply(GOut g) {
 	    GL2 gl = g.gl;
 	    gl.glColor4fv(ca, 0);

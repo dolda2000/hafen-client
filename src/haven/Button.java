@@ -117,6 +117,8 @@ public class Button extends SSWidget {
 		change((String)args[0], (Color)args[1]);
 	    else
 		change((String)args[0]);
+	} else {
+	    super.uimsg(msg, args);
 	}
     }
     

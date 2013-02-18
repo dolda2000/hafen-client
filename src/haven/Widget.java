@@ -328,6 +328,13 @@ public class Widget {
     public void cdestroy(Widget w) {
     }
 	
+    public int wdgid() {
+	Integer id = ui.rwidgets.get(this);
+	if(id == null)
+	    return(-1);
+	return(id);
+    }
+
     public void lostfocus() {
 	if(focusctl && (focused != null)) {
 	    focused.hasfocus = false;
@@ -431,6 +438,29 @@ public class Widget {
 		cursor = null;
 	    else
 		cursor = Resource.load((String)args[0], (Integer)args[1]);
+	} else if(msg == "tip") {
+	    int a = 0;
+	    Object tt = args[a++];
+	    if(tt instanceof String) {
+		tooltip = Text.render((String)tt);
+	    } else if(tt instanceof Integer) {
+		final Indir<Resource> tres = ui.sess.getres((Integer)tt);
+		tooltip = new Indir<Tex>() {
+		    Text t = null;
+		    public Tex get() {
+			if(t == null) {
+			    Resource.Pagina pag;
+			    try {
+				pag = tres.get().layer(Resource.pagina);
+			    } catch(Loading e) {
+				return(null);
+			    }
+			    t = RichText.render(pag.text, 300);
+			}
+			return(t.tex());
+		    }
+		};
+	    }
 	} else {
 	    System.err.println("Unhandled widget message: " + msg);
 	}
@@ -720,7 +750,7 @@ public class Widget {
 		
 		public Iterator<T> iterator() {
 		    return(new Iterator<T>() {
-			    T cur = n(Widget.this);
+			    T cur = n(Widget.this.child);
 			    
 			    private T n(Widget w) {
 				Widget n;
@@ -728,20 +758,22 @@ public class Widget {
 				    return(null);
 				} else if(w.child != null) {
 				    n = w.child;
-				} else if(cur.next != null) {
+				} else if(w.next != null) {
 				    n = w.next;
-				} else if(cur.parent == Widget.this) {
+				} else if(w.parent == Widget.this) {
 				    return(null);
 				} else {
-				    n = cur.parent;
+				    n = w.parent;
 				}
-				if(cl.isInstance(n))
+				if((n == null) || cl.isInstance(n))
 				    return(cl.cast(n));
 				else
 				    return(n(n));
 			    }
 			    
 			    public T next() {
+				if(cur == null)
+				    throw(new NoSuchElementException());
 				T ret = cur;
 				cur = n(ret);
 				return(ret);
@@ -821,7 +853,7 @@ public class Widget {
 	if(canfocus)
 	    parent.newfocusable(this);
     }
-    
+
     public boolean show(boolean show) {
 	if(show)
 	    show();
@@ -830,10 +862,24 @@ public class Widget {
 	return(show);
     }
 
+    public boolean tvisible() {
+	for(Widget w = this; w != null; w = w.parent) {
+	    if(!w.visible)
+		return(false);
+	}
+	return(true);
+    }
+
     public abstract class Anim {
 	public Anim() {
 	    synchronized(ui) {
 		anims.add(this);
+	    }
+	}
+
+	public void clear() {
+	    synchronized(ui) {
+		anims.remove(this);
 	    }
 	}
 
