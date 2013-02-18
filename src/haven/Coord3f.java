@@ -77,6 +77,14 @@ public class Coord3f {
 	return(new Coord3f(x * f, y * f, z * f));
     }
 
+    public Coord3f mul(float X, float Y, float Z) {
+	return(new Coord3f(x * X, y * Y, z * Z));
+    }
+
+    public Coord3f mul(Coord3f b) {
+	return(mul(b.x, b.y, b.z));
+    }
+
     public Coord3f div(float f) {
 	return(new Coord3f(x / f, y / f, z / f));
     }
