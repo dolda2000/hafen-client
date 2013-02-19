@@ -977,6 +977,16 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		}));
     }
 
+    public <T> T getcode(Class<T> cl, boolean fail) {
+	CodeEntry e = layer(CodeEntry.class);
+	if(e == null) {
+	    if(fail)
+		throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
+	    return(null);
+	}
+	return(e.get(cl, fail));
+    }
+
     public static class LibClassLoader extends ClassLoader {
 	private final ClassLoader[] classpath;
 	
@@ -1085,7 +1095,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    }
 	}
 	
-	public <T> T get(Class<T> cl) {
+	public <T> T get(Class<T> cl, boolean fail) {
 	    load();
 	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
 	    if(entry == null)
@@ -1093,15 +1103,18 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    Class<?> acl;
 	    synchronized(lpe) {
 		if(lpe.get(entry.name()) == null) {
-		    throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
+		    if(fail)
+			throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
+		    return(null);
 		} else {
 		    acl = lpe.get(entry.name());
 		}
 	    }
 	    try {
 		synchronized(ipe) {
-		    if(ipe.get(acl) != null) {
-			return(cl.cast(ipe.get(acl)));
+		    Object pinst;
+		    if((pinst = ipe.get(acl)) != null) {
+			return(cl.cast(pinst));
 		    } else {
 			T inst;
 			Object rinst;
@@ -1124,9 +1137,13 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		throw(new RuntimeException(e));
 	    }
 	}
+
+	public <T> T get(Class<T> cl) {
+	    return(get(cl, true));
+	}
     }
     static {addltype("codeentry", CodeEntry.class);}
-	
+
     public class Audio extends Layer implements IDLayer<String> {
 	transient public byte[] coded;
 	public final String id;

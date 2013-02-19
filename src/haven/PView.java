@@ -35,7 +35,7 @@ public abstract class PView extends Widget {
     public static final GLState.Slot<RenderState> wnd = new GLState.Slot<RenderState>(GLState.Slot.Type.SYS, RenderState.class, HavenPanel.proj2d);
     public static final GLState.Slot<Projection> proj = new GLState.Slot<Projection>(GLState.Slot.Type.SYS, Projection.class, wnd);
     public static final GLState.Slot<Camera> cam = new GLState.Slot<Camera>(GLState.Slot.Type.SYS, Camera.class, proj);
-    public static final GLState.Slot<Location> loc = new GLState.Slot<Location>(GLState.Slot.Type.GEOM, Location.class, cam);
+    public static final GLState.Slot<Location.Chain> loc = new GLState.Slot<Location.Chain>(GLState.Slot.Type.GEOM, Location.Chain.class, cam);
     public Profile prof = new Profile(300);
     protected Light.Model lm;
     private GLState rstate, pstate;
