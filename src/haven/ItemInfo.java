@@ -153,6 +153,8 @@ public abstract class ItemInfo {
 		buf.add(tip.longtip());
 	    }
 	}
+	if(buf.size() < 1)
+	    return(null);
 	return(catimgs(0, buf.toArray(new BufferedImage[0])));
     }
 
