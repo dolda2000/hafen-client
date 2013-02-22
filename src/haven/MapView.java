@@ -774,9 +774,9 @@ public class MapView extends PView implements DTarget {
 	Coord lastmc = null;
 	boolean freerot = false;
 	
-	private Plob(Resource res) {
+	private Plob(Indir<Resource> res, Message sdt) {
 	    super(MapView.this.glob, Coord.z);
-	    setattr(new ResDrawable(this, res));
+	    setattr(new ResDrawable(this, res, sdt));
 	    if(ui.mc.isect(rootpos(), sz)) {
 		delay(new Adjust(ui.mc.sub(rootpos()), false));
 	    }
@@ -816,8 +816,13 @@ public class MapView extends PView implements DTarget {
 
     public void uimsg(String msg, Object... args) {
 	if(msg == "place") {
-	    Resource res = Resource.load((String)args[0], (Integer)args[1]);
-	    placing = new Plob(res);
+	    Indir<Resource> res = ui.sess.getres((Integer)args[0]);
+	    Message sdt;
+	    if(args.length > 1)
+		sdt = new Message(0, (byte[])args[1]);
+	    else
+		sdt = Message.nil;
+	    placing = new Plob(res, sdt);
 	} else if(msg == "unplace") {
 	    placing = null;
 	} else if(msg == "move") {
