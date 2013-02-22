@@ -386,11 +386,10 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	try {
 	    rdr = true;
 	    display();
-	} catch(GLException e) {
+	} catch(RuntimeException e) {
 	    if(e.getCause() instanceof InterruptedException) {
 		throw((InterruptedException)e.getCause());
 	    } else {
-		e.printStackTrace();
 		throw(e);
 	    }
 	} finally {
