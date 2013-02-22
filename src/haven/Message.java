@@ -59,6 +59,8 @@ public class Message implements java.io.Serializable {
     public static final int T_NIL = 12;
     public static final int T_BYTES = 14;
 	
+    public static final Message nil = new Message(0);
+
     public int type;
     public byte[] blob;
     public long last = 0;
