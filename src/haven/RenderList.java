@@ -199,6 +199,8 @@ public class RenderList {
 	for(int i = 0; i < cur; i++) {
 	    if((list[i].o = list[i].os.get(Rendered.order)) == null)
 		list[i].o = Rendered.deflt;
+	    if(list[i].os.get(Rendered.skip.slot) != null)
+		list[i].d = false;
 	}
 	Arrays.sort(list, 0, cur, cmp);
     }
