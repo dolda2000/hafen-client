@@ -441,6 +441,7 @@ public class MapView extends PView implements DTarget {
 
     private Coord3f smapcc = null;
     private Light.PSLights.ShadowMap smap = null;
+    private long lsmch = 0;
     public void setup(RenderList rl) {
 	Gob pl = player();
 	if(pl != null)
@@ -456,9 +457,18 @@ public class MapView extends PView implements DTarget {
 		    Coord3f dir = new Coord3f(-light.dir[0], -light.dir[1], -light.dir[2]);
 		    Coord3f cc = getcc();
 		    cc.y = -cc.y;
+		    boolean ch = false;
+		    long now = System.currentTimeMillis();
 		    if((smapcc == null) || (smapcc.dist(cc) > 50)) {
 			smapcc = cc;
+			ch = true;
+		    } else {
+			if(now - lsmch > 100)
+			    ch = true;
+		    }
+		    if(ch) {
 			smap.setpos(smapcc.add(dir.neg().mul(1000f)), dir);
+			lsmch = now;
 		    }
 		    rl.prepc(smap);
 		} else {
