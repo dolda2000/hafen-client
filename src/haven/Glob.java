@@ -225,6 +225,7 @@ public class Glob {
 			lightspc = tlightspc;
 			lightang = tlightang;
 			lightelev = tlightelev;
+			lchange = -1;
 		    }
 		}
 		break;
