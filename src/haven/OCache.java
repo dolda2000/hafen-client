@@ -34,7 +34,6 @@ public class OCache implements Iterable<Gob> {
     private Map<Long, Gob> objs = new TreeMap<Long, Gob>();
     private Map<Long, Integer> deleted = new TreeMap<Long, Integer>();
     private Glob glob;
-    long lastctick = 0;
 	
     public OCache(Glob glob) {
 	this.glob = glob;
@@ -60,15 +59,7 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 	
-    public void ctick() {
-	long now;
-	int dt;
-		
-	now = System.currentTimeMillis();
-	if(lastctick == 0)
-	    dt = 0;
-	else
-	    dt = (int)(System.currentTimeMillis() - lastctick);
+    public void ctick(int dt) {
 	synchronized(this) {
 	    ArrayList<Gob> copy = new ArrayList<Gob>();
 	    for(Gob g : this)
@@ -76,7 +67,6 @@ public class OCache implements Iterable<Gob> {
 	    for(Gob g : copy)
 		g.ctick(dt);
 	}
-	lastctick = now; 
     }
 	
     @SuppressWarnings("unchecked")

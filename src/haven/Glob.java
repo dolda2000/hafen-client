@@ -137,6 +137,22 @@ public class Glob {
 	}
     }
 	
+    private long lastctick = 0;
+    public void ctick() {
+	long now = System.currentTimeMillis();
+	int dt;
+	if(lastctick == 0)
+	    dt = 0;
+	else
+	    dt = (int)(now - lastctick);
+	dt = Math.max(dt, 0);
+
+	oc.ctick(dt);
+	map.ctick(dt);
+
+	lastctick = now;
+    }
+
     private static double defix(int i) {
 	return(((double)i) / 1e9);
     }

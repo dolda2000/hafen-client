@@ -50,7 +50,6 @@ public class MCache {
     int olseq = 0;
     Random gen = new Random();
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
-    long lastctick = System.currentTimeMillis();
 
     public static class LoadingMap extends Loading {
 	public LoadingMap() {}
@@ -309,15 +308,12 @@ public class MCache {
 	this.sess = sess;
     }
 
-    public void ctick() {
-	long now = System.currentTimeMillis();
-	int dt = (int)(now - lastctick);
+    public void ctick(int dt) {
 	synchronized(grids) {
 	    for(Grid g : grids.values()) {
 		g.tick(dt);
 	    }
 	}
-	lastctick = now;
     }
 
     public void invalidate(Coord cc) {
