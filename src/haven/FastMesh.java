@@ -29,7 +29,7 @@ package haven;
 import java.nio.*;
 import javax.media.opengl.*;
 
-public class FastMesh implements FRendered {
+public class FastMesh implements FRendered, Disposable {
     public final VertexBuf vert;
     public final ShortBuffer indb;
     public final int num;
