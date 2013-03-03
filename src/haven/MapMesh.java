@@ -465,7 +465,7 @@ public class MapMesh implements Rendered, Disposable {
     public Rendered[] makeols() {
 	Surface surf = new Surface();
 	surf.calcnrm();
-	final MeshBuf buf = new MeshBuf();
+	MeshBuf buf = new MeshBuf();
 	MeshBuf.Vertex[][] v = new MeshBuf.Vertex[sz.x + 1][sz.y + 1];
 	Coord t = new Coord();
 	for(t.y = 0; t.y <= sz.y; t.y++) {
@@ -493,9 +493,8 @@ public class MapMesh implements Rendered, Disposable {
 		}
 	    }
 	    if(h) {
+		final FastMesh mesh = buf.mkmesh();
 		class OL implements Rendered, Disposable {
-		    FastMesh mesh = buf.mkmesh();
-
 		    public void draw(GOut g) {
 			mesh.draw(g);
 		    }
