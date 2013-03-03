@@ -181,8 +181,11 @@ public class MCache {
 	    Cut cut = geticut(cc);
 	    if(cut.dmesh != null) {
 		if(cut.dmesh.done() || (cut.mesh == null)) {
+		    MapMesh old = cut.mesh;
 		    cut.mesh = cut.dmesh.get();
 		    cut.dmesh = null;
+		    if(old != null)
+			old.dispose();
 		}
 	    }
 	    return(cut.mesh);
@@ -191,8 +194,15 @@ public class MCache {
 	public Rendered getolcut(int ol, Coord cc) {
 	    int nseq = MCache.this.olseq;
 	    if(this.olseq != nseq) {
-		for(int i = 0; i < cutn.x * cutn.y; i++)
+		for(int i = 0; i < cutn.x * cutn.y; i++) {
+		    if(cuts[i].ols != null) {
+			for(Rendered r : cuts[i].ols) {
+			    if(r instanceof Disposable)
+				((Disposable)r).dispose();
+			}
+		    }
 		    cuts[i].ols = null;
+		}
 		this.olseq = nseq;
 	    }
 	    Cut cut = geticut(cc);
@@ -248,6 +258,19 @@ public class MCache {
 		Grid ng = grids.get(gc.add(ic));
 		if(ng != null)
 		    ng.ivneigh(ic.inv());
+	    }
+	}
+
+	public void dispose() {
+	    for(Cut cut : cuts) {
+		if(cut.mesh != null)
+		    cut.mesh.dispose();
+		if(cut.ols != null) {
+		    for(Rendered r : cut.ols) {
+			if(r instanceof Disposable)
+			    ((Disposable)r).dispose();
+		    }
+		}
 	    }
 	}
 
@@ -500,6 +523,8 @@ public class MCache {
     public void trimall() {
 	synchronized(grids) {
 	    synchronized(req) {
+		for(Grid g : grids.values())
+		    g.dispose();
 		grids.clear();
 		req.clear();
 	    }
@@ -513,8 +538,10 @@ public class MCache {
 		    Map.Entry<Coord, Grid> e = i.next();
 		    Coord gc = e.getKey();
 		    Grid g = e.getValue();
-		    if((gc.x < ul.x) || (gc.y < ul.y) || (gc.x > lr.x) || (gc.y > lr.y))
+		    if((gc.x < ul.x) || (gc.y < ul.y) || (gc.x > lr.x) || (gc.y > lr.y)) {
+			g.dispose();
 			i.remove();
+		    }
 		}
 		for(Iterator<Coord> i = req.keySet().iterator(); i.hasNext();) {
 		    Coord gc = i.next();
