@@ -648,6 +648,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}
 	    });
+	cmdmap.put("tool", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    gettype(args[1]).create(new Coord(200, 200), GameUI.this, new Object[0]);
+		}
+	    });
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);
