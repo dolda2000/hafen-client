@@ -39,17 +39,19 @@ public class FlowerMenu extends Widget {
     static int ph = 30, ppl = 8;
     Petal[] opts;
 	
+    @RName("sm")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    if((c.x == -1) && (c.y == -1))
+		c = parent.ui.lcc;
+	    String[] opts = new String[args.length];
+	    for(int i = 0; i < args.length; i++)
+		opts[i] = (String)args[i];
+	    return(new FlowerMenu(c, parent, opts));
+	}
+    }
+    
     static {
-	Widget.addtype("sm", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    if((c.x == -1) && (c.y == -1))
-			c = parent.ui.lcc;
-		    String[] opts = new String[args.length];
-		    for(int i = 0; i < args.length; i++)
-			opts[i] = (String)args[i];
-		    return(new FlowerMenu(c, parent, opts));
-		}
-	    });
 	pbox = new IBox("gfx/hud", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb");
     }
 	

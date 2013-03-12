@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.lang.annotation.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
@@ -42,52 +43,52 @@ public class Widget {
     public Object tooltip = null;
     private Widget prevtt;
     public final Collection<Anim> anims = new LinkedList<Anim>();
-    static Map<String, WidgetFactory> types = new TreeMap<String, WidgetFactory>();
-    static Class<?>[] barda = {Img.class, TextEntry.class, MapView.class, FlowerMenu.class,
-			       Window.class, Button.class, Inventory.class, GItem.class,
-			       Makewindow.class, Chatwindow.class, Textlog.class, Equipory.class, IButton.class,
-			       Avaview.class, NpcChat.class,
-			       Label.class, Progress.class, VMeter.class, Partyview.class,
-			       MenuGrid.class, CheckBox.class,
-			       ISBox.class, Fightview.class, IMeter.class, MapMod.class,
-			       GiveButton.class, Charlist.class, BuddyWnd.class, Polity.class,
-			       Speedget.class, Bufflist.class, GameUI.class, Scrollport.class, SessWidget.class};
-	
-    static {
-	addtype("cnt", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Widget(c, (Coord)args[0], parent));
-		}
-	    });
-	addtype("ccnt", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    Widget ret = new Widget(c, (Coord)args[0], parent) {
-			    public void presize() {
-				c = parent.sz.div(2).sub(sz.div(2));
-			    }
-			};
-		    ret.presize();
-		    return(ret);
-		}
-	    });
+    static Map<String, Factory> types = new TreeMap<String, Factory>();
+
+    @dolda.jglob.Discoverable
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface RName {
+	public String value();
     }
-	
-    public static void initbardas() {
-	try {
-	    for(Class<?> c : barda)
-		Class.forName(c.getName(), true, c.getClassLoader());
-	} catch(ClassNotFoundException e) {
-	    throw(new Error(e));
+
+    @RName("cnt")
+    public static class $Cont implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new Widget(c, (Coord)args[0], parent));
+	}
+    }
+    @RName("ccnt")
+    public static class $CCont implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    Widget ret = new Widget(c, (Coord)args[0], parent) {
+		    public void presize() {
+			c = parent.sz.div(2).sub(sz.div(2));
+		    }
+		};
+	    ret.presize();
+	    return(ret);
+	}
+    }
+
+    @Resource.PublishedCode(name = "wdg")
+    public interface Factory {
+	public Widget create(Coord c, Widget parent, Object[] par);
+    }
+
+    private static boolean inited = false;
+    public static void initnames() {
+	if(!inited) {
+	    for(Factory f : dolda.jglob.Loader.get(RName.class).instances(Factory.class)) {
+		synchronized(types) {
+		    types.put(f.getClass().getAnnotation(RName.class).value(), f);
+		}
+	    }
+	    inited = true;
 	}
     }
 	
-    public static void addtype(String name, WidgetFactory fct) {
-	synchronized(types) {
-	    types.put(name, fct);
-	}
-    }
-	
-    public static WidgetFactory gettype2(String name) throws InterruptedException {
+    public static Factory gettype2(String name) throws InterruptedException {
 	if(name.indexOf('/') < 0) {
 	    synchronized(types) {
 		return(types.get(name));
@@ -101,7 +102,7 @@ public class Widget {
 	    Resource res = Resource.load(name, ver);
 	    while(true) {
 		try {
-		    return(res.getcode(WidgetFactory.class, true));
+		    return(res.getcode(Factory.class, true));
 		} catch(Resource.Loading l) {
 		    l.res.loadwaitint();
 		}
@@ -109,9 +110,9 @@ public class Widget {
 	}
     }
     
-    public static WidgetFactory gettype(String name) {
+    public static Factory gettype(String name) {
 	long start = System.currentTimeMillis();
-	WidgetFactory f;
+	Factory f;
 	try {
 	    f = gettype2(name);
 	} catch(InterruptedException e) {

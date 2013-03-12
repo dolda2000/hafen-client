@@ -38,12 +38,11 @@ public class Polity extends Window {
     private MemberList ml;
     private Widget mw;
     
-    static {
-	Widget.addtype("pol", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Polity(c, parent, (String)args[0]));
-		}
-	    });
+    @RName("pol")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new Polity(c, parent, (String)args[0]));
+	}
     }
     
     public class Member {

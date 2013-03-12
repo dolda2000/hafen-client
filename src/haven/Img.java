@@ -31,24 +31,23 @@ public class Img extends Widget {
     private Tex img;
     public boolean hit = false;
 	
-    static {
-	Widget.addtype("img", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    Indir<Resource> res;
-		    int a = 0;
-		    if(args[a] instanceof String) {
-			String nm = (String)args[a++];
-			int ver = (args.length > a)?((Integer)args[a++]):-1;
-			res = new Resource.Spec(nm, ver);
-		    } else {
-			res = parent.ui.sess.getres((Integer)args[a++]);
-		    }
-		    Img ret = new Img(c, res, parent);
-		    if(args.length > a)
-			ret.hit = (Integer)args[a++] != 0;
-		    return(ret);
-		}
-	    });
+    @RName("img")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    Indir<Resource> res;
+	    int a = 0;
+	    if(args[a] instanceof String) {
+		String nm = (String)args[a++];
+		int ver = (args.length > a)?((Integer)args[a++]):-1;
+		res = new Resource.Spec(nm, ver);
+	    } else {
+		res = parent.ui.sess.getres((Integer)args[a++]);
+	    }
+	    Img ret = new Img(c, res, parent);
+	    if(args.length > a)
+		ret.hit = (Integer)args[a++] != 0;
+	    return(ret);
+	}
     }
 
     public void draw(GOut g) {

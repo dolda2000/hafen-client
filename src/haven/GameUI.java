@@ -83,14 +83,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
-    static {
-	addtype("gameui", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    String chrid = (String)args[0];
-		    int plid = (Integer)args[1];
-		    return(new GameUI(parent, chrid, plid));
-		}
-	    });
+    @RName("gameui")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    String chrid = (String)args[0];
+	    int plid = (Integer)args[1];
+	    return(new GameUI(parent, chrid, plid));
+	}
     }
     
     public GameUI(Widget parent, String chrid, long plid) {

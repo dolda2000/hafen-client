@@ -34,12 +34,11 @@ public class Inventory extends Widget implements DTarget {
     Coord isz;
     Map<GItem, WItem> wmap = new HashMap<GItem, WItem>();
 
-    static {
-	Widget.addtype("inv", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Inventory(c, (Coord)args[0], parent));
-		}
-	    });
+    @RName("inv")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new Inventory(c, (Coord)args[0], parent));
+	}
     }
 
     public void draw(GOut g) {

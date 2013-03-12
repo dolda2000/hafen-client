@@ -701,25 +701,26 @@ public class ChatUI extends Widget {
 	}
     }
     
-    static {
-	addtype("mchat", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    String name = (String)args[0];
-		    boolean notify = ((Integer)args[1]) != 0;
-		    return(new MultiChat(parent, name, notify));
-		}
-	    });
-	addtype("pchat", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new PartyChat(parent));
-		}
-	    });
-	addtype("pmchat", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    int other = (Integer)args[0];
-		    return(new PrivChat(parent, other));
-		}
-	    });
+    @RName("mchat")
+    public static class $MChat implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    String name = (String)args[0];
+	    boolean notify = ((Integer)args[1]) != 0;
+	    return(new MultiChat(parent, name, notify));
+	}
+    }
+    @RName("pchat")
+    public static class $PChat implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new PartyChat(parent));
+	}
+    }
+    @RName("pmchat")
+    public static class $PMChat implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    int other = (Integer)args[0];
+	    return(new PrivChat(parent, other));
+	}
     }
 
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {

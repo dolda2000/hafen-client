@@ -34,15 +34,14 @@ public class Label extends Widget {
     String texts;
     Color col = Color.WHITE;
 	
-    static {
-	Widget.addtype("lbl", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    if(args.length > 1)
-			return(new Label(c, parent, (String)args[0], (Integer)args[1]));
-		    else
-			return(new Label(c, parent, (String)args[0]));
-		}
-	    });
+    @RName("lbl")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    if(args.length > 1)
+		return(new Label(c, parent, (String)args[0], (Integer)args[1]));
+	    else
+		return(new Label(c, parent, (String)args[0]));
+	}
     }
 	
     public void draw(GOut g) {

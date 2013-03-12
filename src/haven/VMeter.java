@@ -34,25 +34,24 @@ public class VMeter extends Widget {
     Color cl;
     int amount;
 	
-    static {
-	Widget.addtype("vm", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    Color cl;
-		    if(args.length > 4) {
-			cl = new Color((Integer)args[1],
-				       (Integer)args[2],
-				       (Integer)args[3],
-				       (Integer)args[4]);
-		    } else if(args.length > 3) {
-			cl = new Color((Integer)args[1],
-				       (Integer)args[2],
-				       (Integer)args[3]);
-		    } else {
-			cl = (Color)args[1];
-		    }
-		    return(new VMeter(c, parent, (Integer)args[0], cl));
-		}
-	    });
+    @RName("vm")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    Color cl;
+	    if(args.length > 4) {
+		cl = new Color((Integer)args[1],
+			       (Integer)args[2],
+			       (Integer)args[3],
+			       (Integer)args[4]);
+	    } else if(args.length > 3) {
+		cl = new Color((Integer)args[1],
+			       (Integer)args[2],
+			       (Integer)args[3]);
+	    } else {
+		cl = (Color)args[1];
+	    }
+	    return(new VMeter(c, parent, (Integer)args[0], cl));
+	}
     }
 	
     public VMeter(Coord c, Widget parent, int amount, Color cl) {

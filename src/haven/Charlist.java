@@ -48,12 +48,11 @@ public class Charlist extends Widget {
 	}
     }
     
-    static {
-	Widget.addtype("charlist", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Charlist(c, parent, (Integer)args[0]));
-		}
-	    });
+    @RName("charlist")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new Charlist(c, parent, (Integer)args[0]));
+	}
     }
 
     public Charlist(Coord c, Widget parent, int height) {

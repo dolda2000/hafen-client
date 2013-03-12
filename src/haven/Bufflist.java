@@ -37,12 +37,11 @@ public class Bufflist extends Widget {
     static final int margin = 2;
     static final int num = 5;
     
-    static {
-        Widget.addtype("buffs", new WidgetFactory() {
-            public Widget create(Coord c, Widget parent, Object[] args) {
-                return(new Bufflist(c, parent));
-            }
-        });
+    @RName("buffs")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new Bufflist(c, parent));
+	}
     }
     
     public Bufflist(Coord c, Widget parent) {

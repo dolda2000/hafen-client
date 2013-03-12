@@ -42,14 +42,15 @@ public class Speedget extends Widget {
 	    w += imgs[i][0].sz().x;
 	}
 	tsz = new Coord(w, imgs[0][0].sz().y);
-	
-	Widget.addtype("speedget", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    int cur = (Integer)args[0];
-		    int max = (Integer)args[1];
-		    return(new Speedget(c, parent, cur, max));
-		}
-	    });
+    }
+
+    @RName("speedget")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    int cur = (Integer)args[0];
+	    int max = (Integer)args[1];
+	    return(new Speedget(c, parent, cur, max));
+	}
     }
 
     public Speedget(Coord c, Widget parent, int cur, int max) {

@@ -39,12 +39,11 @@ public class Avaview extends PView {
     private List<Composited.ED> cequ = null;
     private final String camnm;
 	
-    static {
-	Widget.addtype("av", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Avaview(c, dasz, parent, (Integer)args[0], "avacam"));
-		}
-	    });
+    @RName("av")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new Avaview(c, dasz, parent, (Integer)args[0], "avacam"));
+	}
     }
 	
     public Avaview(Coord c, Coord sz, Widget parent, long avagob, String camnm) {

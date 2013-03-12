@@ -34,12 +34,11 @@ public class GiveButton extends Widget {
     public static Tex sr = Resource.loadtex("gfx/hud/combat/knapp/sr");
     int state;
     
-    static {
-	Widget.addtype("give", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new GiveButton(c, parent, (Integer)args[0]));
-		}
-	    });
+    @RName("give")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new GiveButton(c, parent, (Integer)args[0]));
+	}
     }
 	
     public GiveButton(Coord c, Widget parent, int state, Coord sz) {

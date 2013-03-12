@@ -30,12 +30,11 @@ public class Scrollport extends Widget {
     public final Scrollbar bar;
     public final Scrollcont cont;
     
-    static {
-	Widget.addtype("scr", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Scrollport(c, (Coord)args[0], parent));
-		}
-	    });
+    @RName("scr")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new Scrollport(c, (Coord)args[0], parent));
+	}
     }
 
     public Scrollport(Coord c, Coord sz, Widget parent) {

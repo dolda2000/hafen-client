@@ -26,7 +26,6 @@
 
 package haven;
 
-@Resource.PublishedCode(name = "wdg")
-public interface WidgetFactory {
-    public Widget create(Coord c, Widget parent, Object[] par);
+@Deprecated
+public interface WidgetFactory extends Widget.Factory {
 }

@@ -38,15 +38,14 @@ public class TextEntry extends Widget {
     public String text;
     private Text.Line tcache = null;
 
-    static {
-	Widget.addtype("text", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    if(args[0] instanceof Coord)
-			return(new TextEntry(c, (Coord)args[0], parent, (String)args[1]));
-		    else
-			return(new TextEntry(c, (Integer)args[0], parent, (String)args[1]));
-		}
-	    });
+    @RName("text")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    if(args[0] instanceof Coord)
+		return(new TextEntry(c, (Coord)args[0], parent, (String)args[1]));
+	    else
+		return(new TextEntry(c, (Integer)args[0], parent, (String)args[1]));
+	}
     }
 
     public void settext(String text) {

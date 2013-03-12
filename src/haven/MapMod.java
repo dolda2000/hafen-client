@@ -37,12 +37,11 @@ public class MapMod extends Window implements MapView.Grabber {
     TextEntry tilenm;
     public final static String fmt = "Selected: %d" + (char)(0xD7) + "%d";
     
-    static {
-        Widget.addtype("mapmod", new WidgetFactory() {
-            public Widget create(Coord c, Widget parent, Object[] args) {
-                return(new MapMod(c, parent));
-            }
-        });
+    @RName("mapmod")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new MapMod(c, parent));
+	}
     }
 
     public MapMod(Coord c, Widget parent) {

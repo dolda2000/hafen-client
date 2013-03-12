@@ -36,16 +36,15 @@ public class IMeter extends Widget {
     Resource bg;
     List<Meter> meters;
     
-    static {
-	Widget.addtype("im", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    Resource bg = Resource.load((String)args[0]);
-		    List<Meter> meters = new LinkedList<Meter>();
-		    for(int i = 1; i < args.length; i += 2)
-			meters.add(new Meter((Color)args[i], (Integer)args[i + 1]));
-		    return(new IMeter(c, parent, bg, meters));
-		}
-	    });
+    @RName("im")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    Resource bg = Resource.load((String)args[0]);
+	    List<Meter> meters = new LinkedList<Meter>();
+	    for(int i = 1; i < args.length; i += 2)
+		meters.add(new Meter((Color)args[i], (Integer)args[i + 1]));
+	    return(new IMeter(c, parent, bg, meters));
+	}
     }
     
     public IMeter(Coord c, Widget parent, Resource bg, List<Meter> meters) {

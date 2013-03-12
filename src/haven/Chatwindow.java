@@ -30,12 +30,11 @@ public class Chatwindow extends Window {
     TextEntry in;
     Textlog out;
 	
-    static {
-	Widget.addtype("chat", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Chatwindow(c, (Coord)args[0], parent));
-		}
-	    });
+    @RName("chat")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new Chatwindow(c, (Coord)args[0], parent));
+	}
     }
 	
     public Chatwindow(Coord c, Coord sz, Widget parent) {

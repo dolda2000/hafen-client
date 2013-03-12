@@ -38,12 +38,11 @@ public class Makewindow extends Widget {
     final int xoff = 40, yoff = 55;
     public static final Text.Foundry nmf = new Text.Foundry(new Font("Serif", Font.PLAIN, 20));
 
-    static {
-	Widget.addtype("make", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Makewindow(c, parent, (String)args[0]));
-		}
-	    });
+    @RName("make")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new Makewindow(c, parent, (String)args[0]));
+	}
     }
     
     public static class Spec {

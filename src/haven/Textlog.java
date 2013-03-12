@@ -40,12 +40,11 @@ public class Textlog extends Widget {
     int margin = 3;
     boolean sdrag = false;
 	
-    static {
-	Widget.addtype("log", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Textlog(c, (Coord)args[0], parent));
-		}
-	    });
+    @RName("log")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new Textlog(c, (Coord)args[0], parent));
+	}
     }
 	
     public void draw(GOut g) {

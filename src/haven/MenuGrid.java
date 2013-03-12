@@ -46,12 +46,11 @@ public class MenuGrid extends Widget {
     private boolean loading = true;
     private Map<Character, Pagina> hotmap = new TreeMap<Character, Pagina>();
 	
-    static {
-	Widget.addtype("scm", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new MenuGrid(c, parent));
-		}
-	    });
+    @RName("scm")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new MenuGrid(c, parent));
+	}
     }
 	
     public class PaginaException extends RuntimeException {

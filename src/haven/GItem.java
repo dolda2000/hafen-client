@@ -38,13 +38,12 @@ public class GItem extends AWidget implements ItemInfo.ResOwner {
     private Object[] rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
     
-    static {
-	Widget.addtype("item", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    int res = (Integer)args[0];
-		    return(new GItem(parent, parent.ui.sess.getres(res)));
-		}
-	    });
+    @RName("item")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    int res = (Integer)args[0];
+	    return(new GItem(parent, parent.ui.sess.getres(res)));
+	}
     }
     
     public interface ColorInfo {

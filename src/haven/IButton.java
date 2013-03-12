@@ -33,12 +33,11 @@ public class IButton extends SSWidget {
     BufferedImage up, down, hover;
     boolean a = false, h = false;
 	
-    static {
-	Widget.addtype("ibtn", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new IButton(c, parent, Resource.loadimg((String)args[0]), Resource.loadimg((String)args[1])));
-		}
-	    });
+    @RName("ibtn")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new IButton(c, parent, Resource.loadimg((String)args[0]), Resource.loadimg((String)args[1])));
+	}
     }
 	
     public IButton(Coord c, Widget parent, BufferedImage up, BufferedImage down, BufferedImage hover) {

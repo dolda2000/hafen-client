@@ -32,7 +32,7 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 	
     public RemoteUI(Session sess) {
 	this.sess = sess;
-	Widget.initbardas();
+	Widget.initnames();
     }
 	
     public void rcvmsg(int id, String name, Object... args) {

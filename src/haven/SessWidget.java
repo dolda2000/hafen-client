@@ -32,16 +32,15 @@ public class SessWidget extends AWidget {
     private final Defer.Future<Connection> conn;
     private boolean rep = false;
 
-    static {
-	addtype("sess", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    String host = (String)args[0];
-		    int port = (Integer)args[1];
-		    byte[] cookie = Utils.hex2byte((String)args[2]);
-		    Object[] sargs = Utils.splice(args, 3);
-		    return(new SessWidget(parent, host, port, cookie, sargs));
-		}
-	    });
+    @RName("sess")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    String host = (String)args[0];
+	    int port = (Integer)args[1];
+	    byte[] cookie = Utils.hex2byte((String)args[2]);
+	    Object[] sargs = Utils.splice(args, 3);
+	    return(new SessWidget(parent, host, port, cookie, sargs));
+	}
     }
 
     static class Connection {

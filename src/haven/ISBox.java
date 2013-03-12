@@ -36,12 +36,11 @@ public class ISBox extends Widget implements DTarget {
         lf.aa = true;
     }
     
-    static {
-        Widget.addtype("isbox", new WidgetFactory() {
-            public Widget create(Coord c, Widget parent, Object[] args) {
-                return(new ISBox(c, parent, Resource.load((String)args[0]), (Integer)args[1], (Integer)args[2], (Integer)args[3]));
-            }
-        });
+    @RName("isbox")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new ISBox(c, parent, Resource.load((String)args[0]), (Integer)args[1], (Integer)args[2], (Integer)args[3]));
+	}
     }
     
     private void setlabel(int rem, int av, int bi) {

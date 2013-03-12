@@ -43,17 +43,17 @@ public class Button extends SSWidget {
     static Text.Foundry tf = new Text.Foundry(new Font("Serif", Font.PLAIN, 12), Color.YELLOW);
     boolean a = false;
 	
-    static {
-	Widget.addtype("btn", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new Button(c, (Integer)args[0], parent, (String)args[1]));
-		}
-	    });
-	Widget.addtype("ltbtn", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(wrapped(c, (Integer)args[0], parent, (String)args[1]));
-		}
-	    });
+    @RName("btn")
+    public static class $Btn implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new Button(c, (Integer)args[0], parent, (String)args[1]));
+	}
+    }
+    @RName("ltbtn")
+    public static class $LTBtn implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(wrapped(c, (Integer)args[0], parent, (String)args[1]));
+	}
     }
 	
     public static Button wrapped(Coord c, int w, Widget parent, String text) {

@@ -30,13 +30,15 @@ public class CheckBox extends Widget {
     static Tex box, mark;
     public boolean a = false;
     Text lbl;
-	
+
+    @RName("chk")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new CheckBox(c, parent, (String)args[0]));
+	}
+    }
+
     static {
-	Widget.addtype("chk", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new CheckBox(c, parent, (String)args[0]));
-		}
-	    });
 	box = Resource.loadtex("gfx/hud/chkbox");
 	mark = Resource.loadtex("gfx/hud/chkmark");
     }

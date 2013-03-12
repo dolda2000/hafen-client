@@ -75,12 +75,11 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	}
     };
     
-    static {
-	Widget.addtype("buddy", new WidgetFactory() {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-		    return(new BuddyWnd(c, parent));
-		}
-	    });
+    @RName("buddy")
+    public static class $_ implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    return(new BuddyWnd(c, parent));
+	}
     }
     
     public class Buddy {

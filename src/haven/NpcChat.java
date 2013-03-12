@@ -33,12 +33,11 @@ public class NpcChat extends Window {
 	Textlog out;
         List<Button> btns = null;
 	
-	static {
-		Widget.addtype("npc", new WidgetFactory() {
-			public Widget create(Coord c, Widget parent, Object[] args) {
-				return(new NpcChat(c, (Coord)args[0], parent, (String)args[1]));
-			}
-		});
+	@RName("npc")
+	public static class $_ implements Factory {
+		public Widget create(Coord c, Widget parent, Object[] args) {
+			return(new NpcChat(c, (Coord)args[0], parent, (String)args[1]));
+		}
 	}
 	
 	public NpcChat(Coord c, Coord sz, Widget parent, String title) {
