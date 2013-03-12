@@ -29,6 +29,7 @@ package haven;
 public interface RenderLink {
     public Rendered make();
     
+    @Resource.LayerName("rlink")
     public class Res extends Resource.Layer {
 	public transient final RenderLink l;
 	

@@ -209,6 +209,7 @@ public class VertexBuf {
 	}
     }
     
+    @Resource.LayerName("vbuf")
     public static class VertexRes extends Resource.Layer {
 	public transient final VertexBuf b;
 	

@@ -414,6 +414,7 @@ public class Skeleton {
 	public abstract boolean done();
     }
     
+    @Resource.LayerName("skel")
     public static class Res extends Resource.Layer {
 	public final Skeleton s;
 	
@@ -594,6 +595,7 @@ public class Skeleton {
 	}
     }
 
+    @Resource.LayerName("skan")
     public static class ResPose extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
 	public final float len;
@@ -664,6 +666,7 @@ public class Skeleton {
 	public void init() {}
     }
     
+    @Resource.LayerName("boneoff")
     public static class BoneOffset extends Resource.Layer implements Resource.IDLayer<String> {
 	public final String nm;
 	public final Command[] prog;

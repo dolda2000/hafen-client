@@ -409,6 +409,7 @@ public class Light implements Rendered {
 	return(false);
     }
     
+    @Resource.LayerName("light")
     public static class Res extends Resource.Layer {
 	public final int id;
 	public final Color amb, dif, spc;

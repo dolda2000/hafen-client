@@ -181,6 +181,7 @@ public class Material extends GLState {
 	    st.prep(buf);
     }
     
+    @Resource.LayerName("mat")
     public static class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
 	private transient List<GLState> states = new LinkedList<GLState>();
