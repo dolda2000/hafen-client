@@ -1190,7 +1190,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     }
 
     @LayerName("audio2")
-    public class Audio2 implements LayerFactory<Audio> {
+    public static class Audio2 implements LayerFactory<Audio> {
 	public Audio cons(Resource res, byte[] buf) {
 	    int[] off = {0};
 	    int ver = buf[off[0]++];
