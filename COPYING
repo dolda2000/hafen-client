@@ -49,7 +49,9 @@ respective licensing details are as follows:
     - lib/jglob.jar
       This is a simple annotation processor for collecting various
       type lists in the source code. It was written by me, Fredrik
-      Tolf, and can be considered to be in the public domain.
+      Tolf, and can be considered to be in the public domain. Source
+      code can be had at
+      <http://www.dolda2000.com/gitweb/?p=jglob.git>.
 
     - lib/haven-res.jar
       This file is not actually distributed with this source tree, but
