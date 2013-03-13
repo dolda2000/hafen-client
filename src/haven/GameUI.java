@@ -42,6 +42,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private Text lasterr;
     private long errtime;
     private Window invwnd, equwnd, makewnd;
+    public Inventory maininv;
     public BuddyWnd buddies;
     public Polity polity;
     public HelpWnd help;
@@ -161,9 +162,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return(fv);
 	} else if(place == "inv") {
 	    invwnd = new Hidewnd(new Coord(100, 100), Coord.z, this, "Inventory");
-	    Widget inv = gettype(type).create(Coord.z, invwnd, cargs);
+	    Inventory inv = (Inventory)gettype(type).create(Coord.z, invwnd, cargs);
 	    invwnd.pack();
 	    invwnd.hide();
+	    maininv = inv;
 	    return(inv);
 	} else if(place == "equ") {
 	    equwnd = new Hidewnd(new Coord(400, 10), Coord.z, this, "Equipment");
