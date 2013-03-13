@@ -54,8 +54,13 @@ public class Message implements java.io.Serializable {
     public static final int T_UINT16 = 5;
     public static final int T_COLOR = 6;
     public static final int T_TTOL = 8;
+    public static final int T_INT8 = 9;
+    public static final int T_INT16 = 10;
     public static final int T_NIL = 12;
+    public static final int T_BYTES = 14;
 	
+    public static final Message nil = new Message(0);
+
     public int type;
     public byte[] blob;
     public long last = 0;
@@ -243,26 +248,36 @@ public class Message implements java.io.Serializable {
 	    if(off >= blob.length)
 		break;
 	    int t = uint8();
-	    if(t == T_END)
+	    if(t == T_END) {
 		break;
-	    else if(t == T_INT)
+	    } else if(t == T_INT) {
 		ret.add(int32());
-	    else if(t == T_STR)
+	    } else if(t == T_STR) {
 		ret.add(string());
-	    else if(t == T_COORD)
+	    } else if(t == T_COORD) {
 		ret.add(coord());
-	    else if(t == T_UINT8)
+	    } else if(t == T_UINT8) {
 		ret.add(uint8());
-	    else if(t == T_UINT16)
+	    } else if(t == T_UINT16) {
 		ret.add(uint16());
-	    else if(t == T_COLOR)
+	    } else if(t == T_INT8) {
+		ret.add(int8());
+	    } else if(t == T_INT16) {
+		ret.add(int16());
+	    } else if(t == T_COLOR) {
 		ret.add(color());
-	    else if(t == T_TTOL)
+	    } else if(t == T_TTOL) {
 		ret.add(list());
-	    else if(t == T_NIL)
+	    } else if(t == T_NIL) {
 		ret.add(null);
-	    else
+	    } else if(t == T_BYTES) {
+		int len = uint8();
+		if((len & 128) != 0)
+		    len = int32();
+		ret.add(bytes(len));
+	    } else {
 		throw(new RuntimeException("Encountered unknown type " + t + " in TTO list."));
+	    }
 	}
 	return(ret.toArray());
     }

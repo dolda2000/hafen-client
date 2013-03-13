@@ -100,6 +100,11 @@ public interface Rendered {
 	    }
 	};
 
+    public final static GLState.StandAlone skip = new GLState.StandAlone(GLState.Slot.Type.GEOM, HavenPanel.global) {
+	    public void apply(GOut g) {}
+	    public void unapply(GOut g) {}
+	};
+
     public static class Dot implements Rendered {
 	public void draw(GOut g) {
 	    GL2 gl = g.gl;

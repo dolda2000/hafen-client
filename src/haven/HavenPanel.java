@@ -48,26 +48,27 @@ public class HavenPanel extends GLCanvas implements Runnable {
     public Coord mousepos = new Coord(0, 0);
     public Profile prof = new Profile(300);
     private Profile.Frame curf = null;
-    private static final GLCapabilities stdcaps;
-    static {
-	GLProfile prof = GLProfile.getDefault();
-	stdcaps = new GLCapabilities(prof);
-	stdcaps.setDoubleBuffered(true);
-	stdcaps.setAlphaBits(8);
-	stdcaps.setRedBits(8);
-	stdcaps.setGreenBits(8);
-	stdcaps.setBlueBits(8);
-	stdcaps.setSampleBuffers(true);
-	stdcaps.setNumSamples(4);
-    }
     public static final GLState.Slot<GLState> global = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class);
     public static final GLState.Slot<GLState> proj2d = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class, global);
     private GLState gstate, rtstate, ostate;
     private GLState.Applier state = null;
     private GLConfig glconf = null;
     
+    private static GLCapabilities stdcaps() {
+	GLProfile prof = GLProfile.getDefault();
+	GLCapabilities cap = new GLCapabilities(prof);
+	cap.setDoubleBuffered(true);
+	cap.setAlphaBits(8);
+	cap.setRedBits(8);
+	cap.setGreenBits(8);
+	cap.setBlueBits(8);
+	cap.setSampleBuffers(true);
+	cap.setNumSamples(4);
+	return(cap);
+    }
+
     public HavenPanel(int w, int h, GLCapabilitiesChooser cc) {
-	super(stdcaps, cc, null, null);
+	super(stdcaps(), cc, null, null);
 	setSize(this.w = w, this.h = h);
 	newui(null);
 	initgl();
@@ -385,11 +386,10 @@ public class HavenPanel extends GLCanvas implements Runnable {
 	try {
 	    rdr = true;
 	    display();
-	} catch(GLException e) {
+	} catch(RuntimeException e) {
 	    if(e.getCause() instanceof InterruptedException) {
 		throw((InterruptedException)e.getCause());
 	    } else {
-		e.printStackTrace();
 		throw(e);
 	    }
 	} finally {
@@ -408,10 +408,8 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		if(Config.profile)
 		    curf = prof.new Frame();
 		synchronized(ui) {
-		    if(ui.sess != null) {
-			ui.sess.glob.oc.ctick();
-			ui.sess.glob.map.ctick();
-		    }
+		    if(ui.sess != null)
+			ui.sess.glob.ctick();
 		    dispatch();
 		    ui.tick();
 		    if((ui.root.sz.x != w) || (ui.root.sz.y != h))

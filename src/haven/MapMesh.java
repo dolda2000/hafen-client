@@ -31,7 +31,7 @@ import java.util.*;
 import javax.media.opengl.*;
 import java.awt.Color;
 
-public class MapMesh implements Rendered {
+public class MapMesh implements Rendered, Disposable {
     public final Coord ul, sz;
     public final MCache map;
     private Map<Class<? extends Surface>, Surface> surfmap = new HashMap<Class<? extends Surface>, Surface>();
@@ -41,6 +41,7 @@ public class MapMesh implements Rendered {
     private List<Rendered> extras = new ArrayList<Rendered>();
     private List<Layer> layers;
     private FastMesh[] flats;
+    private List<Disposable> dparts = new ArrayList<Disposable>();
 
     public static class SPoint {
 	public Coord3f pos, nrm = Coord3f.zu;
@@ -379,6 +380,7 @@ public class MapMesh implements Rendered {
 	    for(Shape p : l.pl)
 		p.build(buf);
 	    l.mesh = buf.mkmesh();
+	    m.dparts.add(l.mesh);
 	}
 	Collections.sort(m.layers, new Comparator<Layer>() {
 		public int compare(Layer a, Layer b) {
@@ -386,8 +388,11 @@ public class MapMesh implements Rendered {
 		}
 	    });
 	for(Map.Entry<GLState, MeshBuf> mod : m.modbuf.entrySet()) {
-	    if(!mod.getValue().emptyp())
-		m.extras.add(mod.getKey().apply(mod.getValue().mkmesh()));
+	    if(!mod.getValue().emptyp()) {
+		FastMesh mesh = mod.getValue().mkmesh();
+		m.extras.add(mod.getKey().apply(mesh));
+		m.dparts.add(mesh);
+	    }
 	}
 	
 	m.consflat();
@@ -397,7 +402,7 @@ public class MapMesh implements Rendered {
     }
 
     private static States.DepthOffset gmoff = new States.DepthOffset(-1, -1);
-    public static class GroundMod implements Rendered {
+    public static class GroundMod implements Rendered, Disposable {
 	private static final Order gmorder = new Order.Default(1001);
 	public final Material mat;
 	public final Coord cc;
@@ -440,6 +445,10 @@ public class MapMesh implements Rendered {
 	    mesh = buf.mkmesh();
 	}
 
+	public void dispose() {
+	    mesh.dispose();
+	}
+
 	public void draw(GOut g) {
 	}
 		
@@ -456,7 +465,7 @@ public class MapMesh implements Rendered {
     public Rendered[] makeols() {
 	Surface surf = new Surface();
 	surf.calcnrm();
-	final MeshBuf buf = new MeshBuf();
+	MeshBuf buf = new MeshBuf();
 	MeshBuf.Vertex[][] v = new MeshBuf.Vertex[sz.x + 1][sz.y + 1];
 	Coord t = new Coord();
 	for(t.y = 0; t.y <= sz.y; t.y++) {
@@ -483,19 +492,24 @@ public class MapMesh implements Rendered {
 		    }
 		}
 	    }
-	    if(h)
-		ret[i] = new Rendered() {
-			FastMesh mesh = buf.mkmesh();
-			
-			public void draw(GOut g) {
-			    mesh.draw(g);
-			}
-			
-			public boolean setup(RenderList rl) {
-			    rl.prepo(olorder);
-			    return(true);
-			}
-		    };
+	    if(h) {
+		final FastMesh mesh = buf.mkmesh();
+		class OL implements Rendered, Disposable {
+		    public void draw(GOut g) {
+			mesh.draw(g);
+		    }
+
+		    public void dispose() {
+			mesh.dispose();
+		    }
+
+		    public boolean setup(RenderList rl) {
+			rl.prepo(olorder);
+			return(true);
+		    }
+		}
+		ret[i] = new OL();
+	    }
 	}
 	return(ret);
     }
@@ -560,6 +574,11 @@ public class MapMesh implements Rendered {
     public void drawflat(GOut g, int mode) {
 	g.apply();
 	flats[mode].draw(g);
+    }
+    
+    public void dispose() {
+	for(Disposable p : dparts)
+	    p.dispose();
     }
     
     public boolean setup(RenderList rl) {
