@@ -38,6 +38,7 @@ public class Composite extends Drawable {
     public final Indir<Resource> base;
     public Composited comp;
     private List<Indir<Resource>> nposes = null, tposes = null;
+    private boolean retainequ = false;
     private float tptime;
     private WrapMode tpmode;
     public int pseq;
@@ -73,6 +74,18 @@ public class Composite extends Drawable {
 	return(mods);
     }
 
+    private void updequ() {
+	retainequ = false;
+	if(nmod != null) {
+	    comp.chmod(nmod);
+	    nmod = null;
+	}
+	if(nequ != null) {
+	    comp.chequ(nequ);
+	    nequ = null;
+	}
+    }
+
     public void ctick(int dt) {
 	if(comp == null)
 	    return;
@@ -88,20 +101,16 @@ public class Composite extends Drawable {
 		Composited.Poses np = comp.new Poses(loadposes(tposes, comp.skel, tpmode)) {
 			protected void done() {
 			    cp.set(ipollen);
+			    updequ();
 			}
 		    };
 		np.limit = tptime;
 		np.set(ipollen);
 		tposes = null;
+		retainequ = true;
 	    } catch(Loading e) {}
-	}
-	if(nmod != null) {
-	    comp.chmod(nmod);
-	    nmod = null;
-	}
-	if(nequ != null) {
-	    comp.chequ(nequ);
-	    nequ = null;
+	} else if(!retainequ) {
+	    updequ();
 	}
 	Moving mv = gob.getattr(Moving.class);
 	double v = 0;
