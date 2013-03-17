@@ -28,21 +28,15 @@ package haven;
 
 import java.awt.Color;
 
-public abstract class Listbox<T> extends Widget {
-    public final int h, itemh;
+public abstract class Listbox<T> extends ListWidget<T> {
+    public final int h;
     public final Scrollbar sb;
-    public T sel;
 
     public Listbox(Coord c, Widget parent, int w, int h, int itemh) {
-	super(c, new Coord(w, h * itemh), parent);
+	super(c, new Coord(w, h * itemh), parent, itemh);
 	this.h = h;
-	this.itemh = itemh;
 	this.sb = new Scrollbar(new Coord(sz.x, 0), sz.y, this, 0, 0);
     }
-
-    protected abstract T listitem(int i);
-    protected abstract int listitems();
-    protected abstract void drawitem(GOut g, T item);
 
     protected void drawsel(GOut g) {
 	g.chcolor(255, 255, 0, 128);
@@ -61,6 +55,7 @@ public abstract class Listbox<T> extends Widget {
 	    if(idx >= n)
 		break;
 	    T item = listitem(idx);
+	    int w = sz.x - (sb.vis()?sb.sz.x:0);
 	    GOut ig = g.reclip(new Coord(0, i * itemh), new Coord(sz.x, itemh));
 	    if(item == sel)
 		drawsel(ig);
@@ -72,10 +67,6 @@ public abstract class Listbox<T> extends Widget {
     public boolean mousewheel(Coord c, int amount) {
 	sb.ch(amount);
 	return(true);
-    }
-
-    public void change(T item) {
-	this.sel = item;
     }
 
     protected void itemclick(T item, int button) {
