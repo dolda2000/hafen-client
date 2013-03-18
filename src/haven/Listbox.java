@@ -56,7 +56,7 @@ public abstract class Listbox<T> extends ListWidget<T> {
 		break;
 	    T item = listitem(idx);
 	    int w = sz.x - (sb.vis()?sb.sz.x:0);
-	    GOut ig = g.reclip(new Coord(0, i * itemh), new Coord(sz.x, itemh));
+	    GOut ig = g.reclip(new Coord(0, i * itemh), new Coord(w, itemh));
 	    if(item == sel)
 		drawsel(ig);
 	    drawitem(ig, item);
