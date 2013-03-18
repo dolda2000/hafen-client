@@ -30,7 +30,7 @@ import java.net.URL;
 
 public abstract class WebBrowser {
     public static WebBrowser self;
-    
+
     public WebBrowser() {}
     
     public abstract void show(URL url);
@@ -38,11 +38,7 @@ public abstract class WebBrowser {
     static {
 	Console.setscmd("browse", new Console.Command() {
 		public void run(Console cons, String[] args) throws Exception {
-		    if(WebBrowser.self != null) {
-			WebBrowser.self.show(new java.net.URL(args[1]));
-		    } else {
-			throw(new Exception("No web browser available"));
-		    }
+		    WebBrowser.sshow(new java.net.URL(args[1]));
 		}
 	    });
     }
@@ -55,5 +51,11 @@ public abstract class WebBrowser {
 	public BrowserException(Throwable cause) {
 	    super(cause);
 	}
+    }
+
+    public static void sshow(URL url) {
+	if(self == null)
+	    throw(new BrowserException("No web browser available"));
+	self.show(url);
     }
 }
