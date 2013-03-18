@@ -39,8 +39,12 @@ public class Scrollbar extends Widget {
 	val = min;
     }
     
+    public boolean vis() {
+	return(max > min);
+    }
+    
     public void draw(GOut g) {
-	if(max > min) {
+	if(vis()) {
 	    int cx = (sflarp.sz().x / 2) - (schain.sz().x / 2);
 	    for(int y = 0; y < sz.y; y += schain.sz().y - 1)
 		g.image(schain, new Coord(cx, y));
@@ -53,7 +57,7 @@ public class Scrollbar extends Widget {
     public boolean mousedown(Coord c, int button) {
 	if(button != 1)
 	    return(false);
-	if(max <= min)
+	if(!vis())
 	    return(false);
 	drag = true;
 	ui.grabmouse(this);
