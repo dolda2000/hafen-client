@@ -283,6 +283,23 @@ public class RichText extends Text {
 	return(null);
     }
     
+    public AttributedCharacterIterator attrat(Coord c) {
+	Part p = partat(c);
+	if((p == null) || !(p instanceof TextPart))
+	    return(null);
+	TextPart tp = (TextPart)p;
+	AttributedCharacterIterator attr = tp.ti();
+	attr.setIndex(tp.charat(c).getCharIndex());
+	return(attr);
+    }
+
+    public Object attrat(Coord c, Attribute attr) {
+	AttributedCharacterIterator ai = attrat(c);
+	if(ai == null)
+	    return(null);
+	return(ai.getAttribute(attr));
+    }
+    
     public static Map<? extends Attribute, ?> fillattrs2(Map<? extends Attribute, ?> def, Object... attrs) {
 	Map<Attribute, Object> a;
 	if(def == null)
