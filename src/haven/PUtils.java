@@ -369,8 +369,6 @@ public class PUtils {
 	public double support() {return(sz);}
     }
 
-    /* This can certainly be optimized, but I'm not currently using it
-     * in any context where that matters. */
     public static BufferedImage convolvedown(BufferedImage img, Coord tsz, Convolution filter) {
 	Raster in = img.getRaster();
 	int w = in.getWidth(), h = in.getHeight(), nb = in.getNumBands();
@@ -380,44 +378,72 @@ public class PUtils {
 	WritableRaster buf = byteraster(new Coord(tsz.x, h), nb);
 	double support = filter.support();
 
-	for(int y = 0; y < h; y++) {
-	    for(int x = 0; x < tsz.x; x++) {
+	{
+	    double[] cf = new double[tsz.x * (int)Math.ceil(2 * support * xf + 2)];
+	    int[] cl = new int[tsz.x];
+	    int[] cr = new int[tsz.x];
+	    for(int x = 0, ci = 0; x < tsz.x; x++) {
+		int si = ci;
 		double wa = 0.0;
-		for(int b = 0; b < nb; b++)
-		    ca[b] = 0.0;
-		int l = Math.max((int)Math.floor((x + 0.5 - support) * xf), 0),
-		    r = Math.min((int)Math.ceil((x + 0.5 + support) * xf), w - 1);
-		for(int sx = l; sx <= r; sx++) {
+		cl[x] = Math.max((int)Math.floor((x + 0.5 - support) * xf), 0);
+		cr[x] = Math.min((int)Math.ceil((x + 0.5 + support) * xf), w - 1);
+		for(int sx = cl[x]; sx <= cr[x]; sx++) {
 		    double tx = ((sx + 0.5) * ixf) - x - 0.5;
 		    double fw = filter.cval(tx);
 		    wa += fw;
-		    for(int b = 0; b < nb; b++)
-			ca[b] += in.getSample(sx, y, b) * fw;
+		    cf[ci++] = fw;
 		}
 		wa = 1.0 / wa;
-		for(int b = 0; b < nb; b++)
-		    buf.setSample(x, y, b, Utils.clip((int)(ca[b] * wa), 0, 255));
+		for(; si < ci; si++)
+		    cf[si] *= wa;
+	    }
+	    for(int y = 0; y < h; y++) {
+		for(int x = 0, ci = 0; x < tsz.x; x++) {
+		    for(int b = 0; b < nb; b++)
+			ca[b] = 0.0;
+		    for(int sx = cl[x]; sx <= cr[x]; sx++) {
+			double fw = cf[ci++];
+			for(int b = 0; b < nb; b++)
+			    ca[b] += in.getSample(sx, y, b) * fw;
+		    }
+		    for(int b = 0; b < nb; b++)
+			buf.setSample(x, y, b, Utils.clip((int)ca[b], 0, 255));
+		}
 	    }
 	}
 
 	WritableRaster res = byteraster(tsz, nb);
-	for(int y = 0; y < tsz.y; y++) {
-	    for(int x = 0; x < tsz.x; x++) {
+	{
+	    double[] cf = new double[tsz.y * (int)Math.ceil(2 * support * yf + 2)];
+	    int[] cu = new int[tsz.y];
+	    int[] cd = new int[tsz.y];
+	    for(int y = 0, ci = 0; y < tsz.y; y++) {
+		int si = ci;
 		double wa = 0.0;
-		for(int b = 0; b < nb; b++)
-		    ca[b] = 0.0;
-		int u = Math.max((int)Math.floor((y + 0.5 - support) * yf), 0),
-		    d = Math.min((int)Math.ceil((y + 0.5 + support) * yf), h - 1);
-		for(int sy = u; sy <= d; sy++) {
+		cu[y] = Math.max((int)Math.floor((y + 0.5 - support) * yf), 0);
+		cd[y] = Math.min((int)Math.ceil((y + 0.5 + support) * yf), h - 1);
+		for(int sy = cu[y]; sy <= cd[y]; sy++) {
 		    double ty = ((sy + 0.5) * iyf) - y - 0.5;
 		    double fw = filter.cval(ty);
 		    wa += fw;
-		    for(int b = 0; b < nb; b++)
-			ca[b] += buf.getSample(x, sy, b) * fw;
+		    cf[ci++] = fw;
 		}
 		wa = 1.0 / wa;
-		for(int b = 0; b < nb; b++)
-		    res.setSample(x, y, b, Utils.clip((int)(ca[b] * wa), 0, 255));
+		for(; si < ci; si++)
+		    cf[si] *= wa;
+	    }
+	    for(int x = 0; x < tsz.x; x++) {
+		for(int y = 0, ci = 0; y < tsz.y; y++) {
+		    for(int b = 0; b < nb; b++)
+			ca[b] = 0.0;
+		    for(int sy = cu[y]; sy <= cd[y]; sy++) {
+			double fw = cf[ci++];
+			for(int b = 0; b < nb; b++)
+			    ca[b] += buf.getSample(x, sy, b) * fw;
+		    }
+		    for(int b = 0; b < nb; b++)
+			res.setSample(x, y, b, Utils.clip((int)ca[b], 0, 255));
+		}
 	    }
 	}
 	return(new BufferedImage(img.getColorModel(), res, false, null));
@@ -432,9 +458,9 @@ public class PUtils {
 	    new Lanczos(2),
 	    new Lanczos(3),
 	};
-	BufferedImage in = Resource.loadimg("gfx/invobjs/herbs/crowberry");
-	//BufferedImage in = javax.imageio.ImageIO.read(new java.io.File("/tmp/a.png"));
-	Coord tsz = new Coord(20, 20);
+	//BufferedImage in = Resource.loadimg("gfx/invobjs/herbs/crowberry");
+	BufferedImage in = javax.imageio.ImageIO.read(new java.io.File("/tmp/e.jpg"));
+	Coord tsz = new Coord(300, 300);
 	for(int i = 0; i < filters.length; i++) {
 	    long start = System.nanoTime();
 	    BufferedImage out = convolvedown(in, tsz, filters[i]);
