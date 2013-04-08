@@ -29,6 +29,7 @@ package haven;
 import java.awt.RenderingHints;
 import java.io.*;
 import java.nio.*;
+import java.net.URL;
 import java.lang.reflect.*;
 import java.util.prefs.*;
 import java.util.*;
@@ -810,6 +811,51 @@ public class Utils {
 	    if(e.getCause() instanceof RuntimeException)
 		throw((RuntimeException)e.getCause());
 	    throw(new RuntimeException(e.getCause()));
+	}
+    }
+
+    public static String urlencode(String in) {
+	StringBuilder buf = new StringBuilder();
+	byte[] enc;
+	try {
+	    enc = in.getBytes("utf-8");
+	} catch(java.io.UnsupportedEncodingException e) {
+	    /* ¦] */
+	    throw(new Error(e));
+	}
+	for(byte c : enc) {
+	    if(((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) ||
+	       ((c >= '0') && (c <= '9')) || (c == '.')) {
+		buf.append((char)c);
+	    } else {
+		buf.append("%" + Utils.num2hex((c & 0xf0) >> 4) + Utils.num2hex(c & 0x0f));
+	    }
+	}
+	return(buf.toString());
+    }
+
+    public static URL urlparam(URL base, String... pars) {
+	/* Why is Java so horribly bad? */
+	String file = base.getFile();
+	int p = file.indexOf('?');
+	StringBuilder buf = new StringBuilder();
+	if(p >= 0) {
+	    /* For now, only add; don't augment. Since Java sucks. */
+	    buf.append('&');
+	} else {
+	    buf.append('?');
+	}
+	for(int i = 0; i < pars.length; i += 2) {
+	    if(i > 0)
+		buf.append('&');
+	    buf.append(urlencode(pars[i]));
+	    buf.append('=');
+	    buf.append(urlencode(pars[i + 1]));
+	}
+	try {
+	    return(new URL(base.getProtocol(), base.getHost(), base.getPort(), file + buf.toString()));
+	} catch(java.net.MalformedURLException e) {
+	    throw(new RuntimeException(e));
 	}
     }
 
