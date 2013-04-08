@@ -34,7 +34,9 @@ public class CheckBox extends Widget {
     @RName("chk")
     public static class $_ implements Factory {
 	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new CheckBox(c, parent, (String)args[0]));
+	    CheckBox ret = new CheckBox(c, parent, (String)args[0]);
+	    ret.canactivate = true;
+	    return(ret);
 	}
     }
 
@@ -70,6 +72,7 @@ public class CheckBox extends Widget {
     }
     
     public void changed(boolean val) {
-	wdgmsg("ch", a);
+	if(canactivate)
+	    wdgmsg("ch", a);
     }
 }
