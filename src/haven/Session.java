@@ -721,8 +721,13 @@ public class Session {
 				if(now - a.recv > 120)
 				    send = del = true;
 				if(send) {
-				    if(msg == null)
+				    if(msg == null) {
 					msg = new Message(MSG_OBJACK);
+				    } else if(msg.blob.length > 1000 - 8) {
+					sendmsg(msg);
+					beat = false;
+					msg = new Message(MSG_OBJACK);
+				    }
 				    msg.adduint32(a.id);
 				    msg.addint32(a.frame);
 				    a.sent = now;
