@@ -26,36 +26,51 @@
 
 package haven.glsl;
 
-public abstract class Variable {
-    public final Type type;
-    public final Symbol name;
+import java.util.*;
 
-    public Variable(Type type, Symbol name) {
-	this.type = type;
-	this.name = name;
-    }
+public class OrderList<E> extends AbstractCollection<E> {
+    private final List<Element> bk = new ArrayList<Element>();
+    private boolean sorted;
 
-    private LValue ref = null;
+    class Element implements Comparable<Element> {
+	final E e;
+	final int o;
+	Element(E e, int o) {this.e = e; this.o = o;}
 
-    public class Ref extends LValue {
-	public LValue process(Context ctx) {
-	    return(this);
-	}
-
-	public void output(Output out) {
-	    out.write(name);
+	public int compareTo(Element b) {
+	    return(this.o - b.o);
 	}
     }
 
-    public LValue ref() {
-	if(ref == null)
-	    ref = new Ref();
-	return(ref);
+    public boolean add(E e, int o) {
+	bk.add(new Element(e, o));
+	sorted = false;
+	return(true);
     }
 
-    public static class Implicit extends Variable {
-	public Implicit(Type type, Symbol name) {
-	    super(type, name);
+    public int size() {
+	return(bk.size());
+    }
+
+    public Iterator<E> iterator() {
+	if(!sorted) {
+	    Collections.sort(bk);
+	    sorted = true;
 	}
+	return(new Iterator<E>() {
+		private final Iterator<Element> bi = bk.iterator();
+
+		public boolean hasNext() {
+		    return(bi.hasNext());
+		}
+
+		public E next() {
+		    return(bi.next().e);
+		}
+
+		public void remove() {
+		    bi.remove();
+		}
+	    });
     }
 }

@@ -26,36 +26,25 @@
 
 package haven.glsl;
 
-public abstract class Variable {
-    public final Type type;
-    public final Symbol name;
+public class FragmentContext extends Context {
+    public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
+    public final ValBlock mainvals = new ValBlock();
 
-    public Variable(Type type, Symbol name) {
-	this.type = type;
-	this.name = name;
-    }
+    public final Variable gl_FragColor = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragColor"));
 
-    private LValue ref = null;
+    public final ValBlock.Value fragcol = mainvals.new Value(Type.VEC4) {
+	    public Expression root() {
+		return(new FloatLiteral(5));
+	    }
 
-    public class Ref extends LValue {
-	public LValue process(Context ctx) {
-	    return(this);
-	}
+	    protected void cons2(Block blk) {
+		blk.add(new Assign(gl_FragColor.ref(), init));
+	    }
+	};
 
-	public void output(Output out) {
-	    out.write(name);
-	}
-    }
-
-    public LValue ref() {
-	if(ref == null)
-	    ref = new Ref();
-	return(ref);
-    }
-
-    public static class Implicit extends Variable {
-	public Implicit(Type type, Symbol name) {
-	    super(type, name);
-	}
+    public void construct(java.io.Writer out) {
+	mainvals.cons(main.code);
+	main.define(this);
+	output(new Output(out, this));
     }
 }

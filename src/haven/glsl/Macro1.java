@@ -26,36 +26,6 @@
 
 package haven.glsl;
 
-public abstract class Variable {
-    public final Type type;
-    public final Symbol name;
-
-    public Variable(Type type, Symbol name) {
-	this.type = type;
-	this.name = name;
-    }
-
-    private LValue ref = null;
-
-    public class Ref extends LValue {
-	public LValue process(Context ctx) {
-	    return(this);
-	}
-
-	public void output(Output out) {
-	    out.write(name);
-	}
-    }
-
-    public LValue ref() {
-	if(ref == null)
-	    ref = new Ref();
-	return(ref);
-    }
-
-    public static class Implicit extends Variable {
-	public Implicit(Type type, Symbol name) {
-	    super(type, name);
-	}
-    }
+public interface Macro1<T> {
+    public T expand(T par1);
 }
