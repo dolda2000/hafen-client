@@ -67,7 +67,8 @@ public class VertexContext extends Context {
 	    }
 
 	    protected void cons2(Block blk) {
-		blk.add(new Assign(gl_Position.ref(), init));
+		var = gl_Position;
+		blk.add(new Assign(var.ref(), init));
 	    }
 	};
 

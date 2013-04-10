@@ -26,32 +26,41 @@
 
 package haven.glsl;
 
-public class FragmentContext extends Context {
-    public final VertexContext vctx;
-    public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
-    public final ValBlock mainvals = new ValBlock();
-
-    public FragmentContext(VertexContext vctx) {
-	this.vctx = vctx;
+public abstract class AutoVarying extends Varying {
+    public AutoVarying(Type type, Symbol name) {
+	super(type, name);
     }
 
-    public final Variable gl_FragColor = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragColor"));
+    public AutoVarying(Type type) {
+	this(type, new Symbol.Shared("svar_g"));
+    }
 
-    public final ValBlock.Value fragcol = mainvals.new Value(Type.VEC4) {
-	    {force();}
+    public abstract class Value extends ValBlock.Value {
+	public Value(ValBlock blk) {
+	    blk.super(AutoVarying.this.type, AutoVarying.this.name);
+	}
 
-	    public Expression root() {
-		return(new FloatLiteral(5));
-	    }
+	protected void cons2(Block blk) {
+	    var = AutoVarying.this;
+	    blk.add(new Assign(var.ref(), init));
+	}
+    }
 
-	    protected void cons2(Block blk) {
-		blk.add(new Assign(gl_FragColor.ref(), init));
-	    }
-	};
+    protected abstract Value make(ValBlock vals, VertexContext vctx);
 
-    public void construct(java.io.Writer out) {
-	mainvals.cons(main.code);
-	main.define(this);
-	output(new Output(out, this));
+    public ValBlock.Value value(final VertexContext ctx) {
+	return(ctx.mainvals.ext(this, new ValBlock.Factory() {
+		public ValBlock.Value make(ValBlock vals) {
+		    return(AutoVarying.this.make(vals, ctx));
+		}
+	    }));
+    }
+
+    public void define(Context ctx) {
+	if(ctx instanceof FragmentContext) {
+	    FragmentContext fctx = (FragmentContext)ctx;
+	    value(fctx.vctx).force();
+	}
+	super.define(ctx);
     }
 }

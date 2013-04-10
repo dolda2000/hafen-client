@@ -46,6 +46,8 @@ public abstract class Symbol {
 	    String nm = ctx.symtab.get(this);
 	    if(nm == null) {
 		nm = prefix + ctx.symgen++;
+		if(ctx.rsymtab.get(nm) != null)
+		    throw(new RuntimeException("Name conflict for gensym"));
 		ctx.symtab.put(this, nm);
 		ctx.rsymtab.put(nm, this);
 	    }
@@ -73,6 +75,38 @@ public abstract class Symbol {
 
 	public String toString() {
 	    return(name);
+	}
+    }
+
+    public static class Shared extends Symbol {
+	public final String prefix;
+
+	public Shared(String prefix) {
+	    this.prefix = prefix;
+	}
+
+	public Shared() {
+	    this("s_g");
+	}
+
+	public String name(Context ctx) {
+	    String nm = ctx.symtab.get(this);
+	    if(nm == null) {
+		if(ctx instanceof FragmentContext) {
+		    FragmentContext fctx = (FragmentContext)ctx;
+		    VertexContext vctx = fctx.vctx;
+		    nm = prefix + fctx.symgen++;
+		    fctx.symtab.put(this, nm);
+		    fctx.rsymtab.put(nm, this);
+		    if(vctx.rsymtab.get(nm) != null)
+			throw(new RuntimeException("Name conflict for shared symbol"));
+		    vctx.symtab.put(this, nm);
+		    vctx.rsymtab.put(nm, this);
+		} else {
+		    throw(new RuntimeException("Shared symbol processed before named"));
+		}
+	    }
+	    return(nm);
 	}
     }
 }

@@ -26,32 +26,49 @@
 
 package haven.glsl;
 
-public class FragmentContext extends Context {
-    public final VertexContext vctx;
-    public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
-    public final ValBlock mainvals = new ValBlock();
-
-    public FragmentContext(VertexContext vctx) {
-	this.vctx = vctx;
+public class Varying extends Variable {
+    public Varying(Type type, Symbol name) {
+	super(type, name);
     }
 
-    public final Variable gl_FragColor = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragColor"));
+    private LValue ref = null;
 
-    public final ValBlock.Value fragcol = mainvals.new Value(Type.VEC4) {
-	    {force();}
+    private class Ref extends Variable.Ref {
+	public LValue process(Context ctx) {
+	    define(ctx);
+	    return(super.process(ctx));
+	}
+    }
 
-	    public Expression root() {
-		return(new FloatLiteral(5));
-	    }
+    public LValue ref() {
+	if(ref == null)
+	    ref = new Ref();
+	return(ref);
+    }
 
-	    protected void cons2(Block blk) {
-		blk.add(new Assign(gl_FragColor.ref(), init));
-	    }
-	};
+    private class Definition extends Toplevel {
+	public Definition process(Context ctx) {
+	    return(this);
+	}
 
-    public void construct(java.io.Writer out) {
-	mainvals.cons(main.code);
-	main.define(this);
-	output(new Output(out, this));
+	public void output(Output out) {
+	    out.write("varying ");
+	    out.write(type.name(out.ctx));
+	    out.write(" ");
+	    out.write(name);
+	    out.write(";\n");
+	}
+
+	private Varying var() {
+	    return(Varying.this);
+	}
+    }
+
+    public void define(Context ctx) {
+	for(Toplevel tl : ctx.vardefs) {
+	    if((tl instanceof Definition) && (((Definition)tl).var() == this))
+		return;
+	}
+	ctx.vardefs.add(new Definition());
     }
 }

@@ -31,6 +31,11 @@ import java.util.*;
 public class ValBlock {
     private static final ThreadLocal<Value> processing = new ThreadLocal<Value>();
     private Collection<Value> values = new LinkedList<Value>();
+    private Map<Object, Value> ext = new IdentityHashMap<Object, Value>();
+
+    public interface Factory {
+	public Value make(ValBlock vals);
+    }
 
     public abstract class Value {
 	public final Type type;
@@ -124,5 +129,12 @@ public class ValBlock {
 	    val.used = true;
 	    val.cons2(blk);
 	}
+    }
+
+    public Value ext(Object id, Factory f) {
+	Value val = ext.get(id);
+	if(val == null)
+	    ext.put(id, val = f.make(this));
+	return(val);
     }
 }

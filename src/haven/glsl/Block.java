@@ -65,27 +65,37 @@ public class Block extends Statement {
 	}
     }
 
-    public Local local(Type type, Symbol name, Expression init) {
+    public void add(Statement stmt, Statement before) {
+	if(stmt == null)
+	    throw(new NullPointerException());
+	if(before == null) {
+	    stmts.add(stmt);
+	} else {
+	    for(ListIterator<Statement> i = stmts.listIterator(); i.hasNext();) {
+		Statement cur = i.next();
+		if(cur == before) {
+		    i.previous();
+		    i.add(stmt);
+		    return;
+		}
+	    }
+	    throw(new RuntimeException(before + " is not already in block"));
+	}
+    }
+
+    public void add(Statement stmt)                    {add(stmt, null);}
+    public void add(Expression expr, Statement before) {add(Statement.expr(expr), before);}
+    public void add(Expression expr)                   {add(Statement.expr(expr), null);}
+
+    public Local local(Type type, Symbol name, Expression init, Statement before) {
 	Local ret = new Local(type, name);
-	add(ret.new Def(init));
+	add(ret.new Def(init), before);
 	return(ret);
     }
 
-    public Local local(Type type, String prefix, Expression init) {
-	return(local(type, new Symbol.Gen(prefix), init));
-    }
-
-    public Local local(Type type, Expression init) {
-	return(local(type, new Symbol.Gen(), init));
-    }
-
-    public void add(Statement stmt) {
-	stmts.add(stmt);
-    }
-
-    public void add(Expression expr) {
-	add(Statement.expr(expr));
-    }
+    public Local local(Type type, Symbol name, Expression init)   {return(local(type, name, init, null));}
+    public Local local(Type type, String prefix, Expression init) {return(local(type, new Symbol.Gen(prefix), init));}
+    public Local local(Type type, Expression init)                {return(local(type, new Symbol.Gen(), init));}
 
     public Block process(Context ctx) {
 	Block ret = new Block();
@@ -95,6 +105,8 @@ public class Block extends Statement {
     }
 
     public void trail(Output out) {
+	if(stmts.isEmpty())
+	    return;
 	out.write("{\n");
 	out.indent++;
 	for(Statement s : stmts) {

@@ -32,9 +32,15 @@ public class Context {
     public final Map<Symbol, String> symtab = new HashMap<Symbol, String>();
     public final Map<String, Symbol> rsymtab = new HashMap<String, Symbol>();
     public int symgen = 1;
+    public List<Toplevel> vardefs = new LinkedList<Toplevel>();
     public List<Toplevel> fundefs = new LinkedList<Toplevel>();
 
     public void output(Output out) {
+	out.write("#version 120\n\n");
+	for(Toplevel tl : vardefs)
+	    tl.output(out);
+	if(!vardefs.isEmpty())
+	    out.write("\n");
 	for(Toplevel tl : fundefs)
 	    tl.output(out);
     }
