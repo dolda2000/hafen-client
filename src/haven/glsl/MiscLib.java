@@ -26,51 +26,32 @@
 
 package haven.glsl;
 
-public abstract class AutoVarying extends Varying {
-    public AutoVarying(Type type, Symbol name) {
-	super(type, name);
-    }
+import static haven.glsl.Cons.*;
+import static haven.glsl.Function.PDir.*;
+import static haven.glsl.Type.*;
+import haven.glsl.ValBlock.Value;
 
-    public AutoVarying(Type type) {
-	this(type, new Symbol.Shared("svar_g"));
-    }
-
-    public abstract class Value extends ValBlock.Value {
-	public Value(ValBlock blk) {
-	    blk.super(AutoVarying.this.type, AutoVarying.this.name);
-	}
-
-	protected void cons2(Block blk) {
-	    var = AutoVarying.this;
-	    blk.add(new Assign(var.ref(), init));
-	}
-    }
-
-    protected Expression root(VertexContext vctx) {
-	throw(new Error("Neither make() nor root() overridden"));
-    }
-
-    protected Value make(ValBlock vals, final VertexContext vctx) {
-	return(new Value(vals) {
-		public Expression root() {
-		    return(AutoVarying.this.root(vctx));
-		}
-	    });
-    }
-
-    public ValBlock.Value value(final VertexContext ctx) {
-	return(ctx.mainvals.ext(this, new ValBlock.Factory() {
-		public ValBlock.Value make(ValBlock vals) {
-		    return(AutoVarying.this.make(vals, ctx));
+public abstract class MiscLib {
+    private static final AutoVarying fragnorm = new AutoVarying(Type.VEC3) {
+	    protected Expression root(VertexContext vctx) {
+		return(vctx.eyen.depref());
+	    }
+	};
+    public static Value fragnorm(final FragmentContext ctx) {
+	return(ctx.mainvals.ext(fragnorm, new ValBlock.Factory() {
+		public Value make(ValBlock vals) {
+		    Value ret = vals.new Value(Type.VEC3) {
+			    public Expression root() {
+				return(fragnorm.ref());
+			    }
+			};
+		    ret.mod(new Macro1<Expression>() {
+			    public Expression expand(Expression in) {
+				return(normalize(in));
+			    }
+			}, 0);
+		    return(ret);
 		}
 	    }));
-    }
-
-    public void define(Context ctx) {
-	if(ctx instanceof FragmentContext) {
-	    FragmentContext fctx = (FragmentContext)ctx;
-	    value(fctx.vctx).force();
-	}
-	super.define(ctx);
     }
 }

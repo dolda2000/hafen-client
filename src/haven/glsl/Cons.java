@@ -52,6 +52,7 @@ public class Cons {
     }
 
     public static Expression length(Expression x) {return(Function.Builtin.length.call(x));}
+    public static Expression normalize(Expression x) {return(Function.Builtin.normalize.call(x));}
     public static Expression distance(Expression x, Expression y) {return(Function.Builtin.distance.call(x, y));}
     public static Expression dot(Expression x, Expression y) {return(Function.Builtin.dot.call(x, y));}
     public static Expression cross(Expression x, Expression y) {return(Function.Builtin.cross.call(x, y));}
