@@ -120,7 +120,11 @@ public class WItem extends Widget implements DTarget {
 	long now = System.currentTimeMillis();
 	if(prev == this) {
 	} else if(prev instanceof WItem) {
-	    hoverstart = ((WItem)prev).hoverstart;
+	    long ps = ((WItem)prev).hoverstart;
+	    if(now - ps < 1000)
+		hoverstart = now;
+	    else
+		hoverstart = ps;
 	} else {
 	    hoverstart = now;
 	}
