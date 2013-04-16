@@ -30,8 +30,8 @@ import java.util.*;
 
 public class ValBlock {
     private static final ThreadLocal<Value> processing = new ThreadLocal<Value>();
-    private Collection<Value> values = new LinkedList<Value>();
-    private Map<Object, Value> ext = new IdentityHashMap<Object, Value>();
+    private final Collection<Value> values = new LinkedList<Value>();
+    private final Map<Object, Value> ext = new IdentityHashMap<Object, Value>();
 
     public interface Factory {
 	public Value make(ValBlock vals);
@@ -93,26 +93,46 @@ public class ValBlock {
 	public Expression depref() {
 	    if(processing.get() == null)
 		throw(new IllegalStateException("Dependent value reference outside construction"));
-	    if(!processing.get().deps.contains(this))
-		processing.get().deps.add(this);
+	    processing.get().depend(this);
 	    return(ref());
 	}
 
 	public void force() {forced = true;}
+	public void depend(Value dep) {
+	    if(!deps.contains(dep))
+		deps.add(dep);
+	}
 	public void softdep(Value dep) {
 	    if(!sdeps.contains(dep))
 		sdeps.add(dep);
 	}
     }
 
-    private void add(List<Value> buf, Value val) {
-	if(buf.contains(val))
+    private void use(Value val) {
+	if(val.used)
 	    return;
+	val.used = true;
 	for(Value dep : val.deps)
-	    add(buf, dep);
+	    use(dep);
 	for(Value dep : val.sdeps) {
 	    if(!dep.mods.isEmpty())
-		add(buf, dep);
+		use(dep);
+	}
+    }
+
+    private void add(List<Value> buf, List<Value> closed, Value val) {
+	if(buf.contains(val))
+	    return;
+	if(closed.contains(val)) {
+	    /* XXX: Detect early in Value.depend/Value.softdep instead. */
+	    throw(new RuntimeException("Cyclical value dependencies"));
+	}
+	closed.add(val);
+	for(Value dep : val.deps)
+	    add(buf, closed, dep);
+	for(Value dep : val.sdeps) {
+	    if(dep.used)
+		add(buf, closed, dep);
 	}
 	buf.add(val);
     }
@@ -120,10 +140,15 @@ public class ValBlock {
     public void cons(Block blk) {
 	for(Value val : values)
 	    val.cons1();
-	List<Value> used = new LinkedList<Value>();
 	for(Value val : values) {
 	    if(val.forced)
-		add(used, val);
+		use(val);
+	}
+	List<Value> used = new LinkedList<Value>();
+	List<Value> closed = new LinkedList<Value>();
+	for(Value val : values) {
+	    if(val.used)
+		add(used, closed, val);
 	}
 	for(Value val : used) {
 	    val.used = true;

@@ -41,10 +41,10 @@ public class Block extends Statement {
 	    super(type, name);
 	}
 
-	private class Def extends Statement {
+	public class Def extends Statement {
 	    private final Expression init;
 
-	    private Def(Expression init) {
+	    public Def(Expression init) {
 		this.init = init;
 	    }
 
