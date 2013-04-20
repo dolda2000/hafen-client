@@ -26,33 +26,36 @@
 
 package haven.glsl;
 
-public class FragmentContext extends Context {
-    public final ProgramContext prog;
+import java.util.*;
 
-    public FragmentContext(ProgramContext prog) {
-	this.prog = prog;
+public class ProgramContext {
+    public final VertexContext vctx;
+    public final FragmentContext fctx;
+    private final Collection<Object> mods = new LinkedList<Object>();
+
+    public static interface Module {
+	public void modify(ProgramContext prog);
     }
 
-    public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
-    public final ValBlock mainvals = new ValBlock();
+    public ProgramContext() {
+	vctx = new VertexContext(this);
+	fctx = new FragmentContext(this);
+    }
 
-    public final Variable gl_FragColor = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragColor"));
+    public void module(Object mod) {
+	mods.add(mod);
+    }
 
-    public final ValBlock.Value fragcol = mainvals.new Value(Type.VEC4) {
-	    {force();}
-
-	    public Expression root() {
-		return(new FloatLiteral(5));
+    public <T> T getmod(Class<T> cl) {
+	T ret = null;
+	for(Object mod : mods) {
+	    if(cl.isInstance(mod)) {
+		if(ret == null)
+		    ret = cl.cast(mod);
+		else
+		    throw(new RuntimeException("multiple modules of " + cl + " installed: " + ret + " and " + mod));
 	    }
-
-	    protected void cons2(Block blk) {
-		blk.add(new Assign(gl_FragColor.ref(), init));
-	    }
-	};
-
-    public void construct(java.io.Writer out) {
-	mainvals.cons(main.code);
-	main.define(this);
-	output(new Output(out, this));
+	}
+	return(ret);
     }
 }

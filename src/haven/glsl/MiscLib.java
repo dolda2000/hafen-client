@@ -32,17 +32,17 @@ import static haven.glsl.Type.*;
 import haven.glsl.ValBlock.Value;
 
 public abstract class MiscLib {
-    private static final AutoVarying fragnorm = new AutoVarying(Type.VEC3) {
+    private static final AutoVarying frageyen = new AutoVarying(Type.VEC3) {
 	    protected Expression root(VertexContext vctx) {
 		return(vctx.eyen.depref());
 	    }
 	};
-    public static Value fragnorm(final FragmentContext ctx) {
-	return(ctx.mainvals.ext(fragnorm, new ValBlock.Factory() {
+    public static Value frageyen(final FragmentContext ctx) {
+	return(ctx.mainvals.ext(frageyen, new ValBlock.Factory() {
 		public Value make(ValBlock vals) {
 		    Value ret = vals.new Value(Type.VEC3) {
 			    public Expression root() {
-				return(fragnorm.ref());
+				return(frageyen.ref());
 			    }
 			};
 		    ret.mod(new Macro1<Expression>() {
@@ -54,4 +54,9 @@ public abstract class MiscLib {
 		}
 	    }));
     }
+    public static final AutoVarying frageyev = new AutoVarying(Type.VEC3) {
+	    protected Expression root(VertexContext vctx) {
+		return(pick(vctx.eyev.depref(), "xyz"));
+	    }
+	};
 }

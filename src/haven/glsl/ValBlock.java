@@ -64,7 +64,7 @@ public class ValBlock {
 
 	public abstract Expression root();
 
-	private void cons1() {
+	protected void cons1() {
 	    processing.set(this);
 	    try {
 		Expression expr = root();
@@ -105,6 +105,50 @@ public class ValBlock {
 	public void softdep(Value dep) {
 	    if(!sdeps.contains(dep))
 		sdeps.add(dep);
+	}
+    }
+
+    public abstract class Group {
+	private final Collection<Value> values = new LinkedList<Value>();
+	private int state = 0;
+
+	protected abstract void cons1();
+	protected abstract void cons2(Block blk);
+
+	public class Value extends ValBlock.Value {
+	    public Value(Type type, Symbol name) {
+		super(type, name);
+		Group.this.values.add(this);
+	    }
+
+	    protected void cons1() {
+		if(state < 1) {
+		    Group.this.cons1();
+		    state = 1;
+		}
+	    }
+
+	    protected void cons2(Block blk) {
+		if(state < 2) {
+		    Group.this.cons2(blk);
+		    state = 2;
+		}
+	    }
+
+	    public final Expression root() {
+		throw(new RuntimeException("root() is not applicable for group values"));
+	    }
+
+	    private void depend1(Value dep) {super.depend(dep);}
+	    public void depend(Value dep) {
+		for(Value val : Group.this.values)
+		    val.depend1(dep);
+	    }
+	    private void softdep1(Value dep) {super.softdep(dep);}
+	    public void softdep(Value dep) {
+		for(Value val : Group.this.values)
+		    val.softdep1(dep);
+	    }
 	}
     }
 

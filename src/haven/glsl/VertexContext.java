@@ -27,6 +27,12 @@
 package haven.glsl;
 
 public class VertexContext extends Context {
+    public final ProgramContext prog;
+
+    public VertexContext(ProgramContext prog) {
+	this.prog = prog;
+    }
+
     public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
     public final ValBlock mainvals = new ValBlock();
 

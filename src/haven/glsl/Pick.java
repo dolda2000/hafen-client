@@ -26,33 +26,35 @@
 
 package haven.glsl;
 
-public class FragmentContext extends Context {
-    public final ProgramContext prog;
+import java.util.*;
 
-    public FragmentContext(ProgramContext prog) {
-	this.prog = prog;
+public class Pick extends Expression {
+    public final String valid = "xyzwrgbastpq";
+    public final Expression val;
+    public final char[] el;
+
+    public Pick(Expression val, char[] el) {
+	for(char c : el) {
+	    if(valid.indexOf(c) < 0)
+		throw(new IllegalArgumentException("`" + c + "' is not a valid swizzling component"));
+	}
+	this.val = val;
+	this.el = el;
     }
 
-    public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
-    public final ValBlock mainvals = new ValBlock();
+    public Pick(Expression val, String el) {
+	this(val, el.toCharArray());
+    }
 
-    public final Variable gl_FragColor = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragColor"));
+    public Pick process(Context ctx) {
+	return(new Pick(val.process(ctx), el));
+    }
 
-    public final ValBlock.Value fragcol = mainvals.new Value(Type.VEC4) {
-	    {force();}
-
-	    public Expression root() {
-		return(new FloatLiteral(5));
-	    }
-
-	    protected void cons2(Block blk) {
-		blk.add(new Assign(gl_FragColor.ref(), init));
-	    }
-	};
-
-    public void construct(java.io.Writer out) {
-	mainvals.cons(main.code);
-	main.define(this);
-	output(new Output(out, this));
+    public void output(Output out) {
+	out.write("(");
+	val.output(out);
+	out.write(").");
+	for(char c : el)
+	    out.write(c);
     }
 }

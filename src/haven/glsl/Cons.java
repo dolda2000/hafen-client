@@ -39,6 +39,10 @@ public class Cons {
 	return(new Add(terms));
     }
 
+    public static Pick pick(Expression val, String el) {
+	return(new Pick(val, el));
+    }
+
     public static Mul mul(Expression... terms) {
 	return(new Mul(terms));
     }
@@ -56,4 +60,16 @@ public class Cons {
     public static Expression distance(Expression x, Expression y) {return(Function.Builtin.distance.call(x, y));}
     public static Expression dot(Expression x, Expression y) {return(Function.Builtin.dot.call(x, y));}
     public static Expression cross(Expression x, Expression y) {return(Function.Builtin.cross.call(x, y));}
+
+    public static Expression reduce(Function fun, Expression... es) {
+	if(es.length < 1)
+	    throw(new IllegalArgumentException("args < 1"));
+	else if(es.length == 1)
+	    return(es[0]);
+	else
+	    return(fun.call(es[0], reduce(fun, haven.Utils.splice(es, 1))));
+    }
+
+    public static Expression min(Expression... es) {return(reduce(Function.Builtin.min, es));}
+    public static Expression max(Expression... es) {return(reduce(Function.Builtin.max, es));}
 }

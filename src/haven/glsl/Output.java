@@ -38,6 +38,14 @@ public class Output {
 	this.ctx = ctx;
     }
 
+    public void write(char c) {
+	try {
+	    out.write(c);
+	} catch(IOException e) {
+	    throw(new RuntimeException(e));
+	}
+    }
+
     public void write(String str) {
 	try {
 	    out.write(str);

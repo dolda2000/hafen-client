@@ -94,7 +94,7 @@ public abstract class Symbol {
 	    if(nm == null) {
 		if(ctx instanceof FragmentContext) {
 		    FragmentContext fctx = (FragmentContext)ctx;
-		    VertexContext vctx = fctx.vctx;
+		    VertexContext vctx = fctx.prog.vctx;
 		    nm = prefix + fctx.symgen++;
 		    fctx.symtab.put(this, nm);
 		    fctx.rsymtab.put(nm, this);

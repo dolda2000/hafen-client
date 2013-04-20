@@ -69,7 +69,7 @@ public abstract class AutoVarying extends Varying {
     public void define(Context ctx) {
 	if(ctx instanceof FragmentContext) {
 	    FragmentContext fctx = (FragmentContext)ctx;
-	    value(fctx.vctx).force();
+	    value(fctx.prog.vctx).force();
 	}
 	super.define(ctx);
     }
