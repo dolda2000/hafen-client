@@ -825,13 +825,23 @@ public class MapView extends PView implements DTarget {
 
     public void uimsg(String msg, Object... args) {
 	if(msg == "place") {
-	    Indir<Resource> res = ui.sess.getres((Integer)args[0]);
+	    int a = 0;
+	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
 	    Message sdt;
-	    if(args.length > 1)
-		sdt = new Message(0, (byte[])args[1]);
+	    if((args.length > a) && (args[a] instanceof byte[]))
+		sdt = new Message(0, (byte[])args[a++]);
 	    else
 		sdt = Message.nil;
 	    placing = new Plob(res, sdt);
+	    while(a < args.length) {
+		Indir<Resource> ores = ui.sess.getres((Integer)args[a++]);
+		Message odt;
+		if((args.length > a) && (args[a] instanceof byte[]))
+		    odt = new Message(0, (byte[])args[a++]);
+		else
+		    odt = Message.nil;
+		placing.ols.add(new Gob.Overlay(-1, ores, odt));
+	    }
 	} else if(msg == "unplace") {
 	    placing = null;
 	} else if(msg == "move") {
