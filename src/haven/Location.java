@@ -90,4 +90,18 @@ public class Location extends Transform {
     public static Location rot(Coord3f axis, float angle) {
 	return(new Location(makerot(new Matrix4f(), axis.norm(), angle)));
     }
+
+    public static final Location onlyxl = new Location(Matrix4f.id) {
+	    private Matrix4f lp = null, fin;
+
+	    public Matrix4f fin(Matrix4f p) {
+		if(p != lp) {
+		    fin = Matrix4f.identity();
+		    fin.m[12] = p.m[12];
+		    fin.m[13] = p.m[13];
+		    fin.m[14] = p.m[14];
+		}
+		return(fin);
+	    }
+	};
 }
