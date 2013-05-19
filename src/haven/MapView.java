@@ -41,6 +41,7 @@ public class MapView extends PView implements DTarget {
     private int view = 2;
     private Collection<Delayed> delayed = new LinkedList<Delayed>();
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
+    private Collection<Rendered> extradraw = new LinkedList<Rendered>();
     public Camera camera = new SOrthoCam();
     private Plob placing = null;
     private int[] visol = new int[32];
@@ -484,8 +485,19 @@ public class MapView extends PView implements DTarget {
 	rl.add(gobs, null);
 	if(placing != null)
 	    addgob(rl, placing);
+	synchronized(extradraw) {
+	    for(Rendered extra : extradraw)
+		rl.add(extra, null);
+	    extradraw.clear();
+	}
     }
-    
+
+    public void drawadd(Rendered extra) {
+	synchronized(extradraw) {
+	    extradraw.add(extra);
+	}
+    }
+
     public Gob player() {
 	return(glob.oc.getgob(plgob));
     }
