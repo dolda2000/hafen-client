@@ -77,6 +77,7 @@ public class MCache {
 
 	public void destroy() {
 	    ols.remove(this);
+	    olseq++;
 	}
 
 	public void update(Coord c1, Coord c2) {
