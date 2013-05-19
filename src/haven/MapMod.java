@@ -27,6 +27,8 @@
 package haven;
 
 public class MapMod extends Window implements MapView.Grabber {
+    MapView mv;
+    MapView.GrabXL grab;
     MCache.Overlay ol;
     MCache map;
     boolean walkmod;
@@ -47,10 +49,13 @@ public class MapMod extends Window implements MapView.Grabber {
     public MapMod(Coord c, Widget parent) {
         super(c, new Coord(200, 100), parent, "Kartlasskostning");
         map = ui.sess.glob.map;
-        walkmod = true;
-        getparent(GameUI.class).map.enol(17);
-        getparent(GameUI.class).map.grab(this);
+	mv = getparent(GameUI.class).map;
+	grab = mv.new GrabXL(this);
+        walkmod = false;
+        mv.enol(17);
+        mv.grab(grab);
         cbox = new CheckBox(Coord.z, this, "Walk drawing");
+	cbox.canactivate = true;
         btn = new Button(asz.add(-50, -30), 40, this, "Change");
         text = new Label(Coord.z, this, String.format(fmt, 0, 0));
         tilenm = new TextEntry(new Coord(0, 40), new Coord(50, 17), this, "");
@@ -58,9 +63,9 @@ public class MapMod extends Window implements MapView.Grabber {
     }
 
     public void destroy() {
-        getparent(GameUI.class).map.disol(17);
-        if(walkmod)
-            getparent(GameUI.class).map.release(this);
+        mv.disol(17);
+        if(!walkmod)
+            mv.release(grab);
         if(ol != null)
             ol.destroy();
         super.destroy();
@@ -75,20 +80,22 @@ public class MapMod extends Window implements MapView.Grabber {
             ol.destroy();
         ol = map.new Overlay(tc, tc, 1 << 17);
         sc = tc;
-        dm = true;
-        ui.grabmouse(getparent(GameUI.class).map);
+        grab.mv = true;
+        ui.grabmouse(mv);
 	return(true);
+    }
+
+    public boolean mmousewheel(Coord mc, int amount) {
+	return(false);
     }
 	
     public boolean mmouseup(Coord mc, int button) {
-        dm = false;
+        grab.mv = false;
         ui.grabmouse(null);
 	return(true);
     }
 	
     public void mmousemove(Coord mc) {
-        if(!dm)
-            return;
         Coord tc = mc.div(MCache.tilesz);
         Coord c1 = new Coord(0, 0), c2 = new Coord(0, 0);
         if(tc.x < sc.x) {
@@ -120,12 +127,12 @@ public class MapMod extends Window implements MapView.Grabber {
         if(sender == cbox) {
             walkmod = (Boolean)args[0];
             if(!walkmod) {
-                getparent(GameUI.class).map.grab(this);
+                mv.grab(grab);
             } else {
                 if(ol != null)
                     ol.destroy();
                 ol = null;
-                getparent(GameUI.class).map.release(this);
+                mv.release(grab);
             }
             wdgmsg("wm", walkmod?1:0);
             return;
