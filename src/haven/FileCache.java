@@ -43,7 +43,7 @@ public class FileCache implements ResCache {
 	    File home = new File(path);
 	    if(!home.exists() || !home.isDirectory() || !home.canRead() || !home.canWrite())
 		return(null);
-	    File base = new File(new File(home, ".haven"), "cache");
+	    File base = new File(new File(new File(home, ".haven"), "hafen"), "cache");
 	    if(!base.exists() && !base.mkdirs())
 		return(null);
 	    return(new FileCache(base));

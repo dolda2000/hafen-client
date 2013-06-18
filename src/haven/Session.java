@@ -647,7 +647,7 @@ public class Session {
 			    }
 			    Message msg = new Message(MSG_SESS);
 			    msg.adduint16(2);
-			    msg.addstring("Haven");
+			    msg.addstring("Hafen");
 			    msg.adduint16(PVER);
 			    msg.addstring(username);
 			    msg.adduint16(cookie.length);

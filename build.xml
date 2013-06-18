@@ -1,10 +1,10 @@
 <?xml version="1.0" ?>
 
-<project name="haven" default="deftgt">
+<project name="hafen" default="deftgt">
   <target name="build-env">
     <mkdir dir="build" />
     <mkdir dir="build/classes" />
-    <available property="has-res-jar" file="build/haven-res.jar" />
+    <available property="has-res-jar" file="build/hafen-res.jar" />
     <available property="has-buildinfo" file="build/classes/buildinfo" />
     <available property="unpacked-lib" file="build/classes-lib" />
   </target>
@@ -18,7 +18,7 @@
     </echo>
   </target>
 
-  <target name="haven-client" depends="build-env">
+  <target name="hafen-client" depends="build-env">
     <javac srcdir="src" destdir="build/classes" debug="on"
 	   source="1.5" target="1.5" includeantruntime="no">
       <classpath>
@@ -59,16 +59,16 @@
     </unjar>
   </target>
 
-  <target name="jar" depends="haven-client,buildinfo,lib-classes">
-    <jar destfile="build/haven.jar" update="true">
+  <target name="jar" depends="hafen-client,buildinfo,lib-classes">
+    <jar destfile="build/hafen.jar" update="true">
       <fileset dir="build/classes" />
       <fileset dir="build/classes-lib" />
       <manifest>
 	<attribute name="Main-Class" value="haven.MainFrame" />
-	<attribute name="Class-Path" value="jogl.jar gluegen-rt.jar builtin-res.jar haven-res.jar" />
+	<attribute name="Class-Path" value="jogl.jar gluegen-rt.jar builtin-res.jar hafen-res.jar" />
       </manifest>
     </jar>
-    <chmod file="build/haven.jar" perm="a+x" />
+    <chmod file="build/hafen.jar" perm="a+x" />
   </target>
   
   <target name="res-jar" depends="build-env" unless="has-res-jar">
@@ -76,8 +76,8 @@
     <get src="http://www.havenandhearth.com/java/haven-res.jar" dest="lib/haven-res.jar"
 	 usetimestamp="true" />
     -->
-    <available property="lib-res-jar" file="lib/haven-res.jar" />
-    <fail unless="lib-res-jar" message="haven-res.jar not available" />
+    <available property="lib-res-jar" file="lib/hafen-res.jar" />
+    <fail unless="lib-res-jar" message="hafen-res.jar not available" />
     <available property="lib-builtin-jar" file="lib/builtin-res.jar" />
     <fail unless="lib-builtin-jar" message="builtin-res.jar not available" />
   </target>
@@ -87,7 +87,7 @@
       <fileset dir="lib">
 	<include name="jogl.jar" />
 	<include name="gluegen-rt.jar" />
-	<include name="haven-res.jar" />
+	<include name="hafen-res.jar" />
 	<include name="builtin-res.jar" />
       </fileset>
     </copy>
@@ -96,7 +96,7 @@
   <target name="deftgt" depends="jars, appletview" />
 
   <target name="run" depends="jars">
-    <java jar="build/haven.jar" fork="true" />
+    <java jar="build/hafen.jar" fork="true" />
   </target>
   
   <target name="clean">
@@ -106,11 +106,11 @@
   <target name="profile" depends="jars">
     <nbprofiledirect>
     </nbprofiledirect>
-      <java fork="true" jar="build/haven.jar">
+      <java fork="true" jar="build/hafen.jar">
         <jvmarg value="${profiler.info.jvmargs.agent}" />
         <sysproperty key="haven.dbtext" value="on" />
         <sysproperty key="haven.defserv" value="sh.seatribe.se" />
-        <sysproperty key="haven.resdir" value="/home/fredrik/src/haven/res" />
+        <sysproperty key="haven.resdir" value="/home/fredrik/src/hafen/res" />
       </java>
   </target>
 </project>
