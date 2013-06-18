@@ -72,8 +72,12 @@
   </target>
   
   <target name="res-jar" depends="build-env" unless="has-res-jar">
+    <!--
     <get src="http://www.havenandhearth.com/java/haven-res.jar" dest="lib/haven-res.jar"
 	 usetimestamp="true" />
+    -->
+    <available property="lib-res-jar" file="lib/haven-res.jar" />
+    <fail unless="lib-res-jar" message="haven-res.jar not available" />
   </target>
   
   <target name="jars" depends="build-env, jar, res-jar">
