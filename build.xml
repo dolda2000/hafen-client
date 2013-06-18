@@ -65,7 +65,7 @@
       <fileset dir="build/classes-lib" />
       <manifest>
 	<attribute name="Main-Class" value="haven.MainFrame" />
-	<attribute name="Class-Path" value="jogl.jar gluegen-rt.jar haven-res.jar" />
+	<attribute name="Class-Path" value="jogl.jar gluegen-rt.jar builtin-res.jar haven-res.jar" />
       </manifest>
     </jar>
     <chmod file="build/haven.jar" perm="a+x" />
@@ -78,6 +78,8 @@
     -->
     <available property="lib-res-jar" file="lib/haven-res.jar" />
     <fail unless="lib-res-jar" message="haven-res.jar not available" />
+    <available property="lib-builtin-jar" file="lib/builtin-res.jar" />
+    <fail unless="lib-builtin-jar" message="builtin-res.jar not available" />
   </target>
   
   <target name="jars" depends="build-env, jar, res-jar">
@@ -86,6 +88,7 @@
 	<include name="jogl.jar" />
 	<include name="gluegen-rt.jar" />
 	<include name="haven-res.jar" />
+	<include name="builtin-res.jar" />
       </fileset>
     </copy>
   </target>
