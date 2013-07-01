@@ -32,15 +32,15 @@ import static haven.glsl.Type.*;
 import haven.glsl.ValBlock.Value;
 
 public abstract class MiscLib {
-    private static final AutoVarying frageyen = new AutoVarying(Type.VEC3) {
+    private static final AutoVarying frageyen = new AutoVarying(VEC3, new Symbol.Gen("svar_eyen")) {
 	    protected Expression root(VertexContext vctx) {
 		return(vctx.eyen.depref());
 	    }
 	};
-    public static Value frageyen(final FragmentContext ctx) {
-	return(ctx.mainvals.ext(frageyen, new ValBlock.Factory() {
+    public static Value frageyen(final FragmentContext fctx) {
+	return(fctx.mainvals.ext(frageyen, new ValBlock.Factory() {
 		public Value make(ValBlock vals) {
-		    Value ret = vals.new Value(Type.VEC3) {
+		    Value ret = vals.new Value(VEC3, new Symbol.Gen("eyen")) {
 			    public Expression root() {
 				return(frageyen.ref());
 			    }
@@ -54,9 +54,33 @@ public abstract class MiscLib {
 		}
 	    }));
     }
-    public static final AutoVarying frageyev = new AutoVarying(Type.VEC3) {
+    public static final AutoVarying frageyev = new AutoVarying(VEC3, new Symbol.Gen("svar_eyev")) {
 	    protected Expression root(VertexContext vctx) {
 		return(pick(vctx.eyev.depref(), "xyz"));
 	    }
 	};
+    private static final Object vertedir_id = new Object();
+    public static Value vertedir(final VertexContext vctx) {
+	return(vctx.mainvals.ext(vertedir_id, new ValBlock.Factory() {
+		public Value make(ValBlock vals) {
+		    return(vals.new Value(VEC3, new Symbol.Gen("edir")) {
+			    public Expression root() {
+				return(normalize(pick(vctx.eyev.depref(), "xyz")));
+			    }
+			});
+		}
+	    }));
+    }
+    private static final Object fragedir_id = new Object();
+    public static Value fragedir(final FragmentContext fctx) {
+	return(fctx.mainvals.ext(fragedir_id, new ValBlock.Factory() {
+		public Value make(ValBlock vals) {
+		    return(vals.new Value(VEC3, new Symbol.Gen("edir")) {
+			    public Expression root() {
+				return(normalize(frageyev.ref()));
+			    }
+			});
+		}
+	    }));
+    }
 }

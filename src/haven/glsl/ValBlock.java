@@ -109,16 +109,26 @@ public class ValBlock {
     }
 
     public abstract class Group {
-	private final Collection<Value> values = new LinkedList<Value>();
+	private final Collection<GValue> values = new LinkedList<GValue>();
+	private final Collection<Value> deps = new LinkedList<Value>();
+	private final Collection<Value> sdeps = new LinkedList<Value>();
 	private int state = 0;
 
 	protected abstract void cons1();
 	protected abstract void cons2(Block blk);
 
-	public class Value extends ValBlock.Value {
-	    public Value(Type type, Symbol name) {
+	public class GValue extends Value {
+	    public GValue(Type type, Symbol name) {
 		super(type, name);
+		for(Value dep : Group.this.deps)
+		    depend1(dep);
+		for(Value dep : Group.this.sdeps)
+		    softdep1(dep);
 		Group.this.values.add(this);
+	    }
+
+	    public GValue(Type type) {
+		this(type, new Symbol.Gen());
 	    }
 
 	    protected void cons1() {
@@ -141,14 +151,22 @@ public class ValBlock {
 
 	    private void depend1(Value dep) {super.depend(dep);}
 	    public void depend(Value dep) {
-		for(Value val : Group.this.values)
-		    val.depend1(dep);
+		Group.this.depend(dep);
 	    }
 	    private void softdep1(Value dep) {super.softdep(dep);}
 	    public void softdep(Value dep) {
-		for(Value val : Group.this.values)
-		    val.softdep1(dep);
+		Group.this.softdep(dep);
 	    }
+	}
+
+	public void depend(Value dep) {
+	    for(GValue val : values)
+		val.depend1(dep);
+	}
+
+	public void softdep(Value dep) {
+	    for(GValue val : values)
+		val.softdep1(dep);
 	}
     }
 

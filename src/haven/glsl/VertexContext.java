@@ -44,17 +44,17 @@ public class VertexContext extends Context {
     public final Variable gl_ModelViewProjectionMatrix = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_ModelViewProjectionMatrix"));
     public final Variable gl_Position = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Position"));
 
-    public final ValBlock.Value eyev = mainvals.new Value(Type.VEC4) {
+    public final ValBlock.Value eyev = mainvals.new Value(Type.VEC4, new Symbol.Gen("eyev")) {
 	    public Expression root() {
 		return(new Mul(gl_ModelViewMatrix.ref(), gl_Vertex.ref()));
 	    }
 	};
-    public final ValBlock.Value eyen = mainvals.new Value(Type.VEC3) {
+    public final ValBlock.Value eyen = mainvals.new Value(Type.VEC3, new Symbol.Gen("eyen")) {
 	    public Expression root() {
 		return(new Mul(gl_NormalMatrix.ref(), gl_Normal.ref()));
 	    }
 	};
-    public final ValBlock.Value posv = mainvals.new Value(Type.VEC4) {
+    public final ValBlock.Value posv = mainvals.new Value(Type.VEC4, new Symbol.Gen("posv")) {
 	    {
 		softdep(eyev);
 		force();

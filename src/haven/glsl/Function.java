@@ -137,8 +137,7 @@ public abstract class Function {
 	}
 
 	public Expression call(Expression... params) {
-	    if(params.length != pars.size())
-		throw(new RuntimeException(String.format("Wrong number of arguments to %s; expected %d, got %d", name, pars.size(), params.length)));
+	    ckparams(params);
 	    return(new Call(params));
 	}
 
@@ -200,8 +199,7 @@ public abstract class Function {
 	}
 
 	public Expression call(Expression... params) {
-	    if(params.length != pars.size())
-		throw(new RuntimeException(String.format("Wrong number of arguments to %s; expected %d, got %d", name, pars.size(), params.length)));
+	    ckparams(params);
 	    return(new Call(params));
 	}
 
@@ -273,6 +271,17 @@ public abstract class Function {
     public Function param1(PDir dir, Type type) {
 	param(dir, type);
 	return(this);
+    }
+
+    void ckparams(Expression... params) {
+	if(params.length != pars.size())
+	    throw(new RuntimeException(String.format("Wrong number of arguments to %s; expected %d, got %d", name, pars.size(), params.length)));
+	int i = 0;
+	for(Parameter par : pars) {
+	    if(((par.dir == PDir.OUT) || (par.dir == PDir.INOUT)) && !(params[i] instanceof LValue))
+		throw(new RuntimeException(String.format("Must have l-value for %s parameter %d to %s", par.dir, i, name)));
+	    i++;
+	}
     }
 
     public abstract Type type(Expression... params);

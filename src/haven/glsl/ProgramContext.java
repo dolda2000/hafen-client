@@ -33,10 +33,6 @@ public class ProgramContext {
     public final FragmentContext fctx;
     private final Collection<Object> mods = new LinkedList<Object>();
 
-    public static interface Module {
-	public void modify(ProgramContext prog);
-    }
-
     public ProgramContext() {
 	vctx = new VertexContext(this);
 	fctx = new FragmentContext(this);
