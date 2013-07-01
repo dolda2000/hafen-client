@@ -26,35 +26,31 @@
 
 package haven.glsl;
 
-import java.util.*;
+public class Vec3Cons extends Expression {
+    public static final Vec3Cons z = new Vec3Cons(FloatLiteral.z, FloatLiteral.z, FloatLiteral.z);
+    public static final Vec3Cons u = new Vec3Cons(FloatLiteral.u, FloatLiteral.u, FloatLiteral.u);
+    public final Expression[] els;
 
-public class ProgramContext {
-    public final VertexContext vctx;
-    public final FragmentContext fctx;
-    private final Collection<Object> mods = new LinkedList<Object>();
-
-    public final Variable gl_LightSource = new Variable.Implicit(new Array(Struct.gl_LightSourceParameters), new Symbol.Fix("gl_LightSource"));
-    public final Variable gl_FrontMaterial = new Variable.Implicit(Struct.gl_MaterialParameters, new Symbol.Fix("gl_FrontMaterial"));
-
-    public ProgramContext() {
-	vctx = new VertexContext(this);
-	fctx = new FragmentContext(this);
+    public Vec3Cons(Expression... els) {
+	if((els.length < 1) || (els.length > 3))
+	    throw(new RuntimeException("Invalid number of arguments for vec3: " + els.length));
+	this.els = els;
     }
 
-    public void module(Object mod) {
-	mods.add(mod);
+    public Vec3Cons process(Context ctx) {
+	Expression[] nels = new Expression[els.length];
+	for(int i = 0; i < els.length; i++)
+	    nels[i] = els[i].process(ctx);
+	return(new Vec3Cons(nels));
     }
 
-    public <T> T getmod(Class<T> cl) {
-	T ret = null;
-	for(Object mod : mods) {
-	    if(cl.isInstance(mod)) {
-		if(ret == null)
-		    ret = cl.cast(mod);
-		else
-		    throw(new RuntimeException("multiple modules of " + cl + " installed: " + ret + " and " + mod));
-	    }
+    public void output(Output out) {
+	out.write("vec3(");
+	els[0].output(out);
+	for(int i = 1; i < els.length; i++) {
+	    out.write(", ");
+	    els[i].output(out);
 	}
-	return(ret);
+	out.write(")");
     }
 }

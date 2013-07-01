@@ -32,6 +32,7 @@ import static haven.glsl.Type.*;
 import haven.glsl.ValBlock.Value;
 
 public class Phong extends ValBlock.Group {
+    private final ProgramContext prog;
     private final Value edir, norm;
     public final Value bcol = new GValue(VEC4), scol = new GValue(VEC3);
 
@@ -49,15 +50,15 @@ public class Phong extends ValBlock.Group {
     }
 
     public void cons2(Block blk) {
-	bcol.var = blk.local(VEC3, l(6.0));
-	scol.var = blk.local(VEC3, l(7.0));
+	bcol.var = blk.local(VEC4, fref(prog.gl_FrontMaterial.ref(), "emission"));
+	scol.var = blk.local(VEC3, Vec3Cons.z);
 	blk.add(dolight.call(l(0), edir.ref(), norm.ref(), bcol.var.ref(), scol.var.ref()));
     }
 
-    private static void fmod(FragmentContext fctx, final Expression bcol, final Expression scol) {
+    private static void fmod(final FragmentContext fctx, final Expression bcol, final Expression scol) {
 	fctx.fragcol.mod(new Macro1<Expression>() {
 		public Expression expand(Expression in) {
-		    return(add(mul(in, bcol), scol));
+		    return(add(mul(in, bcol), vec4(scol, l(0.0))));
 		}
 	    }, 500);
     }
@@ -74,7 +75,8 @@ public class Phong extends ValBlock.Group {
 		public Expression root(VertexContext vctx) {return(Phong.this.scol.depref());}
 	    }.ref();
 	fmod(vctx.prog.fctx, bcol, scol);
-	vctx.prog.module(this);
+	prog = vctx.prog;
+	prog.module(this);
     }
 
     public Phong(FragmentContext fctx) {
@@ -83,6 +85,7 @@ public class Phong extends ValBlock.Group {
 	this.norm = MiscLib.frageyen(fctx);
 	fmod(fctx, bcol.ref(), scol.ref());
 	fctx.fragcol.depend(bcol);
-	fctx.prog.module(this);
+	prog = fctx.prog;
+	prog.module(this);
     }
 }

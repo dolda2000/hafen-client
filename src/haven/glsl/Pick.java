@@ -29,7 +29,7 @@ package haven.glsl;
 import java.util.*;
 
 public class Pick extends Expression {
-    public final String valid = "xyzwrgbastpq";
+    public static final String valid = "xyzwrgbastpq";
     public final Expression val;
     public final char[] el;
 

@@ -26,35 +26,31 @@
 
 package haven.glsl;
 
-import java.util.*;
+public class Vec2Cons extends Expression {
+    public static final Vec2Cons z = new Vec2Cons(FloatLiteral.z, FloatLiteral.z);
+    public static final Vec2Cons u = new Vec2Cons(FloatLiteral.u, FloatLiteral.u);
+    public final Expression[] els;
 
-public class ProgramContext {
-    public final VertexContext vctx;
-    public final FragmentContext fctx;
-    private final Collection<Object> mods = new LinkedList<Object>();
-
-    public final Variable gl_LightSource = new Variable.Implicit(new Array(Struct.gl_LightSourceParameters), new Symbol.Fix("gl_LightSource"));
-    public final Variable gl_FrontMaterial = new Variable.Implicit(Struct.gl_MaterialParameters, new Symbol.Fix("gl_FrontMaterial"));
-
-    public ProgramContext() {
-	vctx = new VertexContext(this);
-	fctx = new FragmentContext(this);
+    public Vec2Cons(Expression... els) {
+	if((els.length < 1) || (els.length > 2))
+	    throw(new RuntimeException("Invalid number of arguments for vec2: " + els.length));
+	this.els = els;
     }
 
-    public void module(Object mod) {
-	mods.add(mod);
+    public Vec2Cons process(Context ctx) {
+	Expression[] nels = new Expression[els.length];
+	for(int i = 0; i < els.length; i++)
+	    nels[i] = els[i].process(ctx);
+	return(new Vec2Cons(nels));
     }
 
-    public <T> T getmod(Class<T> cl) {
-	T ret = null;
-	for(Object mod : mods) {
-	    if(cl.isInstance(mod)) {
-		if(ret == null)
-		    ret = cl.cast(mod);
-		else
-		    throw(new RuntimeException("multiple modules of " + cl + " installed: " + ret + " and " + mod));
-	    }
+    public void output(Output out) {
+	out.write("vec2(");
+	els[0].output(out);
+	for(int i = 1; i < els.length; i++) {
+	    out.write(", ");
+	    els[i].output(out);
 	}
-	return(ret);
+	out.write(")");
     }
 }

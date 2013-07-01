@@ -28,33 +28,33 @@ package haven.glsl;
 
 import java.util.*;
 
-public class ProgramContext {
-    public final VertexContext vctx;
-    public final FragmentContext fctx;
-    private final Collection<Object> mods = new LinkedList<Object>();
+public class LPick extends Expression {
+    public static final String valid = "xyzwrgbastpq";
+    public final LValue val;
+    public final char[] el;
 
-    public final Variable gl_LightSource = new Variable.Implicit(new Array(Struct.gl_LightSourceParameters), new Symbol.Fix("gl_LightSource"));
-    public final Variable gl_FrontMaterial = new Variable.Implicit(Struct.gl_MaterialParameters, new Symbol.Fix("gl_FrontMaterial"));
-
-    public ProgramContext() {
-	vctx = new VertexContext(this);
-	fctx = new FragmentContext(this);
-    }
-
-    public void module(Object mod) {
-	mods.add(mod);
-    }
-
-    public <T> T getmod(Class<T> cl) {
-	T ret = null;
-	for(Object mod : mods) {
-	    if(cl.isInstance(mod)) {
-		if(ret == null)
-		    ret = cl.cast(mod);
-		else
-		    throw(new RuntimeException("multiple modules of " + cl + " installed: " + ret + " and " + mod));
-	    }
+    public LPick(LValue val, char[] el) {
+	for(char c : el) {
+	    if(valid.indexOf(c) < 0)
+		throw(new IllegalArgumentException("`" + c + "' is not a valid swizzling component"));
 	}
-	return(ret);
+	this.val = val;
+	this.el = el;
+    }
+
+    public LPick(LValue val, String el) {
+	this(val, el.toCharArray());
+    }
+
+    public LPick process(Context ctx) {
+	return(new LPick(val.process(ctx), el));
+    }
+
+    public void output(Output out) {
+	out.write("(");
+	val.output(out);
+	out.write(").");
+	for(char c : el)
+	    out.write(c);
     }
 }

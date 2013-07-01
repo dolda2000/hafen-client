@@ -28,33 +28,24 @@ package haven.glsl;
 
 import java.util.*;
 
-public class ProgramContext {
-    public final VertexContext vctx;
-    public final FragmentContext fctx;
-    private final Collection<Object> mods = new LinkedList<Object>();
+public class Index extends LValue {
+    public final Expression val;
+    public final Expression idx;
 
-    public final Variable gl_LightSource = new Variable.Implicit(new Array(Struct.gl_LightSourceParameters), new Symbol.Fix("gl_LightSource"));
-    public final Variable gl_FrontMaterial = new Variable.Implicit(Struct.gl_MaterialParameters, new Symbol.Fix("gl_FrontMaterial"));
-
-    public ProgramContext() {
-	vctx = new VertexContext(this);
-	fctx = new FragmentContext(this);
+    public Index(Expression val, Expression idx) {
+	this.val = val;
+	this.idx = idx;
     }
 
-    public void module(Object mod) {
-	mods.add(mod);
+    public Index process(Context ctx) {
+	return(new Index(val.process(ctx), idx.process(ctx)));
     }
 
-    public <T> T getmod(Class<T> cl) {
-	T ret = null;
-	for(Object mod : mods) {
-	    if(cl.isInstance(mod)) {
-		if(ret == null)
-		    ret = cl.cast(mod);
-		else
-		    throw(new RuntimeException("multiple modules of " + cl + " installed: " + ret + " and " + mod));
-	    }
-	}
-	return(ret);
+    public void output(Output out) {
+	out.write("(");
+	val.output(out);
+	out.write(")[");
+	idx.output(out);
+	out.write("]");
     }
 }

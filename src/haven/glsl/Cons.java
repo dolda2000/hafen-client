@@ -39,8 +39,24 @@ public class Cons {
 	return(new Add(terms));
     }
 
+    public static LPick pick(LValue val, String el) {
+	return(new LPick(val, el));
+    }
+
     public static Pick pick(Expression val, String el) {
 	return(new Pick(val, el));
+    }
+
+    public static LFieldRef fref(LValue val, String el) {
+	return(new LFieldRef(val, el));
+    }
+
+    public static FieldRef fref(Expression val, String el) {
+	return(new FieldRef(val, el));
+    }
+
+    public static Index idx(Expression val, Expression idx) {
+	return(new Index(val, idx));
     }
 
     public static Mul mul(Expression... terms) {
@@ -54,6 +70,10 @@ public class Cons {
     public static FloatLiteral l(double val) {
 	return(new FloatLiteral(val));
     }
+
+    public static Vec4Cons vec4(Expression... els) {return(new Vec4Cons(els));}
+    public static Vec3Cons vec3(Expression... els) {return(new Vec3Cons(els));}
+    public static Vec2Cons vec2(Expression... els) {return(new Vec2Cons(els));}
 
     public static Expression length(Expression x) {return(Function.Builtin.length.call(x));}
     public static Expression normalize(Expression x) {return(Function.Builtin.normalize.call(x));}
