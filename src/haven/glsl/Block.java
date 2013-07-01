@@ -104,7 +104,7 @@ public class Block extends Statement {
 	return(ret);
     }
 
-    public void trail(Output out) {
+    public void trail(Output out, boolean nl) {
 	if(stmts.isEmpty())
 	    return;
 	out.write("{\n");
@@ -115,11 +115,14 @@ public class Block extends Statement {
 	    out.write("\n");
 	}
 	out.indent--;
-	out.write("}\n");
+	out.indent();
+	out.write("}");
+	if(nl)
+	    out.write("\n");
     }
 
     public void output(Output out) {
 	out.indent();
-	trail(out);
+	trail(out, true);
     }
 }
