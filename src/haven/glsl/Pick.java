@@ -53,8 +53,9 @@ public class Pick extends Expression {
     public void output(Output out) {
 	out.write("(");
 	val.output(out);
-	out.write(").");
+	out.write(".");
 	for(char c : el)
 	    out.write(c);
+	out.write(")");
     }
 }

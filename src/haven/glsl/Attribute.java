@@ -26,26 +26,20 @@
 
 package haven.glsl;
 
-import java.util.*;
-
-public class FieldRef extends Expression {
-    public final Expression val;
-    public final String el;
-
-    public FieldRef(Expression val, String el) {
-	this.val = val;
-	this.el = el;
+public class Attribute extends Variable.Global {
+    public Attribute(Type type, Symbol name) {
+	super(type, name);
     }
 
-    public FieldRef process(Context ctx) {
-	return(new FieldRef(val.process(ctx), el));
+    private class Def extends Definition {
+	public void output(Output out) {
+	    out.write("attribute ");
+	    super.output(out);
+	}
     }
 
-    public void output(Output out) {
-	out.write("(");
-	val.output(out);
-	out.write(".");
-	out.write(el);
-	out.write(")");
+    public void use(Context ctx) {
+	if(!defined(ctx))
+	    ctx.vardefs.add(new Def());
     }
 }

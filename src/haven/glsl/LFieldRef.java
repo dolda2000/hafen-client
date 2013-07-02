@@ -44,7 +44,8 @@ public class LFieldRef extends LValue {
     public void output(Output out) {
 	out.write("(");
 	val.output(out);
-	out.write(").");
+	out.write(".");
 	out.write(el);
+	out.write(")");
     }
 }

@@ -26,49 +26,20 @@
 
 package haven.glsl;
 
-public class Varying extends Variable {
+public class Varying extends Variable.Global {
     public Varying(Type type, Symbol name) {
 	super(type, name);
     }
 
-    private LValue ref = null;
-
-    private class Ref extends Variable.Ref {
-	public LValue process(Context ctx) {
-	    define(ctx);
-	    return(super.process(ctx));
-	}
-    }
-
-    public LValue ref() {
-	if(ref == null)
-	    ref = new Ref();
-	return(ref);
-    }
-
-    private class Definition extends Toplevel {
-	public Definition process(Context ctx) {
-	    return(this);
-	}
-
+    private class Def extends Definition {
 	public void output(Output out) {
 	    out.write("varying ");
-	    out.write(type.name(out.ctx));
-	    out.write(" ");
-	    out.write(name);
-	    out.write(";\n");
-	}
-
-	private Varying var() {
-	    return(Varying.this);
+	    super.output(out);
 	}
     }
 
-    public void define(Context ctx) {
-	for(Toplevel tl : ctx.vardefs) {
-	    if((tl instanceof Definition) && (((Definition)tl).var() == this))
-		return;
-	}
-	ctx.vardefs.add(new Definition());
+    public void use(Context ctx) {
+	if(!defined(ctx))
+	    ctx.vardefs.add(new Def());
     }
 }

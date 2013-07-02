@@ -35,10 +35,8 @@ public abstract class Variable {
 	this.name = name;
     }
 
-    private LValue ref = null;
-
     public class Ref extends LValue {
-	public LValue process(Context ctx) {
+	public Ref process(Context ctx) {
 	    return(this);
 	}
 
@@ -47,15 +45,60 @@ public abstract class Variable {
 	}
     }
 
-    public LValue ref() {
-	if(ref == null)
-	    ref = new Ref();
-	return(ref);
+    public Ref ref() {
+	return(new Ref());
     }
 
     public static class Implicit extends Variable {
 	public Implicit(Type type, Symbol name) {
 	    super(type, name);
+	}
+    }
+
+    public static class Global extends Variable {
+	public Global(Type type, Symbol name) {
+	    super(type, name);
+	}
+
+	public class Ref extends Variable.Ref {
+	    public Ref process(Context ctx) {
+		use(ctx);
+		return(this);
+	    }
+	}
+
+	public Ref ref() {
+	    return(new Ref());
+	}
+
+	public boolean defined(Context ctx) {
+	    for(Toplevel tl : ctx.vardefs) {
+		if((tl instanceof Definition) && (((Definition)tl).var() == this))
+		    return(true);
+	    }
+	    return(false);
+	}
+
+	public void use(Context ctx) {
+	    if(!defined(ctx))
+		ctx.vardefs.add(new Definition());
+	}
+
+	public class Definition extends Toplevel {
+	    public Definition process(Context ctx) {
+		return(this);
+	    }
+
+	    public void output(Output out) {
+		out.write(type.name(out.ctx));
+		out.write(" ");
+		out.write(name);
+		out.write(";\n");
+	    }
+
+	    private Global var() {
+		return(Global.this);
+	    }
 	}
     }
 }

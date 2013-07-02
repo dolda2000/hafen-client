@@ -28,24 +28,35 @@ package haven.glsl;
 
 import java.util.*;
 
-public class FieldRef extends Expression {
-    public final Expression val;
-    public final String el;
+public abstract class PreOp extends Expression {
+    public final Expression op;
 
-    public FieldRef(Expression val, String el) {
-	this.val = val;
-	this.el = el;
+    public PreOp(Expression op) {
+	this.op = op;
     }
 
-    public FieldRef process(Context ctx) {
-	return(new FieldRef(val.process(ctx), el));
+    public PreOp process(Context ctx) {
+	try {
+	    return(this.getClass().getConstructor(Expression.class).newInstance(op.process(ctx)));
+	} catch(NoSuchMethodException e) {
+	    throw(new Error(e));
+	} catch(InstantiationException e) {
+	    throw(new Error(e));
+	} catch(IllegalAccessException e) {
+	    throw(new Error(e));
+	} catch(java.lang.reflect.InvocationTargetException e) {
+	    throw(new Error(e));
+	}
     }
+
+    public abstract String form();
 
     public void output(Output out) {
 	out.write("(");
-	val.output(out);
-	out.write(".");
-	out.write(el);
+	out.write(form());
+	op.output(out);
 	out.write(")");
     }
+
+    public static class Neg extends PreOp {public String form() {return("-");} public Neg(Expression op) {super(op);}}
 }

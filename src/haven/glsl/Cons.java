@@ -27,49 +27,39 @@
 package haven.glsl;
 
 public class Cons {
-    public static Assign ass(LValue l, Expression r) {
-	return(new Assign(l, r));
-    }
+    public static Statement stmt(Expression e) {return(Statement.expr(e));}
 
-    public static Assign ass(Variable l, Expression r) {
-	return(ass(l.ref(), r));
-    }
+    public static Assign ass(LValue l, Expression r)   {return(new Assign(l, r));}
+    public static Assign ass(Variable l, Expression r) {return(ass(l.ref(), r));}
 
-    public static Add add(Expression... terms) {
-	return(new Add(terms));
-    }
+    public static Add add(Expression... terms) {return(new Add(terms));}
+    public static Mul mul(Expression... terms) {return(new Mul(terms));}
 
-    public static LPick pick(LValue val, String el) {
-	return(new LPick(val, el));
-    }
+    public static PreOp.Neg   neg(Expression op) {return(new PreOp.Neg(op));}
+    public static LPreOp.Inc  incl(LValue op)    {return(new LPreOp.Inc(op));}
+    public static LPreOp.Dec  decl(LValue op)    {return(new LPreOp.Dec(op));}
+    public static LPostOp.Inc linc(LValue op)    {return(new LPostOp.Inc(op));}
+    public static LPostOp.Dec ldec(LValue op)    {return(new LPostOp.Dec(op));}
 
-    public static Pick pick(Expression val, String el) {
-	return(new Pick(val, el));
-    }
+    public static BinOp.Eq eq(Expression l, Expression r) {return(new BinOp.Eq(l, r));}
+    public static BinOp.Ne ne(Expression l, Expression r) {return(new BinOp.Ne(l, r));}
+    public static BinOp.Lt lt(Expression l, Expression r) {return(new BinOp.Lt(l, r));}
+    public static BinOp.Gt gt(Expression l, Expression r) {return(new BinOp.Gt(l, r));}
+    public static BinOp.Le le(Expression l, Expression r) {return(new BinOp.Le(l, r));}
+    public static BinOp.Ge ge(Expression l, Expression r) {return(new BinOp.Ge(l, r));}
+    public static BinOp.Or or(Expression l, Expression r) {return(new BinOp.Or(l, r));}
+    public static BinOp.And and(Expression l, Expression r) {return(new BinOp.And(l, r));}
 
-    public static LFieldRef fref(LValue val, String el) {
-	return(new LFieldRef(val, el));
-    }
+    public static LPick pick(LValue val, String el)     {return(new LPick(val, el));}
+    public static Pick  pick(Expression val, String el) {return(new Pick(val, el));}
 
-    public static FieldRef fref(Expression val, String el) {
-	return(new FieldRef(val, el));
-    }
+    public static LFieldRef fref(LValue val, String el)     {return(new LFieldRef(val, el));}
+    public static FieldRef  fref(Expression val, String el) {return(new FieldRef(val, el));}
 
-    public static Index idx(Expression val, Expression idx) {
-	return(new Index(val, idx));
-    }
+    public static Index idx(Expression val, Expression idx) {return(new Index(val, idx));}
 
-    public static Mul mul(Expression... terms) {
-	return(new Mul(terms));
-    }
-
-    public static IntLiteral l(int val) {
-	return(new IntLiteral(val));
-    }
-
-    public static FloatLiteral l(double val) {
-	return(new FloatLiteral(val));
-    }
+    public static IntLiteral l(int val)      {return(new IntLiteral(val));}
+    public static FloatLiteral l(double val) {return(new FloatLiteral(val));}
 
     public static Vec4Cons vec4(Expression... els) {return(new Vec4Cons(els));}
     public static Vec3Cons vec3(Expression... els) {return(new Vec3Cons(els));}

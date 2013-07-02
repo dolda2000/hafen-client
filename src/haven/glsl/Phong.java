@@ -35,6 +35,7 @@ public class Phong extends ValBlock.Group {
     private final ProgramContext prog;
     private final Value edir, norm;
     public final Value bcol = new GValue(VEC4), scol = new GValue(VEC3);
+    public static final Uniform nlights = new Uniform(INT, new Symbol.Gen());
 
     public static final Function dolight = new Function.Def(VOID) {{
 	Parameter i = param(IN, INT);
@@ -52,7 +53,9 @@ public class Phong extends ValBlock.Group {
     public void cons2(Block blk) {
 	bcol.var = blk.local(VEC4, fref(prog.gl_FrontMaterial.ref(), "emission"));
 	scol.var = blk.local(VEC3, Vec3Cons.z);
-	blk.add(dolight.call(l(0), edir.ref(), norm.ref(), bcol.var.ref(), scol.var.ref()));
+	Variable i = blk.local(INT, "i", null);
+	blk.add(new For(ass(i, l(0)), lt(i.ref(), nlights.ref()), linc(i.ref()),
+			stmt(dolight.call(i.ref(), edir.ref(), norm.ref(), bcol.var.ref(), scol.var.ref()))));
     }
 
     private static void fmod(final FragmentContext fctx, final Expression bcol, final Expression scol) {

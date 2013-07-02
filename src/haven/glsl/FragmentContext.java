@@ -42,7 +42,7 @@ public class FragmentContext extends Context {
 	    {force();}
 
 	    public Expression root() {
-		return(new FloatLiteral(5));
+		return(Vec4Cons.u);
 	    }
 
 	    protected void cons2(Block blk) {

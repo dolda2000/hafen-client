@@ -49,7 +49,7 @@ public class Block extends Statement {
 	    }
 
 	    public Def process(Context ctx) {
-		return(new Def(init.process(ctx)));
+		return(new Def((init == null)?null:(init.process(ctx))));
 	    }
 
 	    public void output(Output out) {
