@@ -26,11 +26,9 @@
 
 package haven.glsl;
 
-public class VertexContext extends Context {
-    public final ProgramContext prog;
-
+public class VertexContext extends ShaderContext {
     public VertexContext(ProgramContext prog) {
-	this.prog = prog;
+	super(prog);
     }
 
     public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));

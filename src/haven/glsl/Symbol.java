@@ -90,21 +90,24 @@ public abstract class Symbol {
 	}
 
 	public String name(Context ctx) {
+	    if(!(ctx instanceof ShaderContext))
+		throw(new ClassCastException("Program-shared symbols cannot be used outside a program context"));
+	    ProgramContext prog = ((ShaderContext)ctx).prog;
 	    String nm = ctx.symtab.get(this);
 	    if(nm == null) {
-		if(ctx instanceof FragmentContext) {
-		    FragmentContext fctx = (FragmentContext)ctx;
-		    VertexContext vctx = fctx.prog.vctx;
-		    nm = prefix + fctx.symgen++;
-		    fctx.symtab.put(this, nm);
-		    fctx.rsymtab.put(nm, this);
-		    if(vctx.rsymtab.get(nm) != null)
+		nm = prog.symtab.get(this);
+		if(nm == null) {
+		    nm = prefix + prog.symgen++;
+		    if(prog.rsymtab.get(nm) != null)
 			throw(new RuntimeException("Name conflict for shared symbol"));
-		    vctx.symtab.put(this, nm);
-		    vctx.rsymtab.put(nm, this);
-		} else {
-		    throw(new RuntimeException("Shared symbol processed before named"));
+		    prog.symtab.put(this, nm);
+		    prog.rsymtab.put(nm, this);
 		}
+
+		if(ctx.rsymtab.get(nm) != null)
+		    throw(new RuntimeException("Name conflict for shared symbol"));
+		ctx.symtab.put(this, nm);
+		ctx.rsymtab.put(nm, this);
 	    }
 	    return(nm);
 	}

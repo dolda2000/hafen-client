@@ -31,6 +31,9 @@ import java.util.*;
 public class ProgramContext {
     public final VertexContext vctx;
     public final FragmentContext fctx;
+    public final Map<Symbol, String> symtab = new HashMap<Symbol, String>();
+    public final Map<String, Symbol> rsymtab = new HashMap<String, Symbol>();
+    public int symgen = 1;
     private final Collection<Object> mods = new LinkedList<Object>();
 
     public final Variable gl_LightSource = new Variable.Implicit(new Array(Struct.gl_LightSourceParameters), new Symbol.Fix("gl_LightSource"));

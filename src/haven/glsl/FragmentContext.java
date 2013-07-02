@@ -26,11 +26,9 @@
 
 package haven.glsl;
 
-public class FragmentContext extends Context {
-    public final ProgramContext prog;
-
+public class FragmentContext extends ShaderContext {
     public FragmentContext(ProgramContext prog) {
-	this.prog = prog;
+	super(prog);
     }
 
     public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
