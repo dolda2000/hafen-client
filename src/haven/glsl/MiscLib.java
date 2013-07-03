@@ -32,7 +32,7 @@ import static haven.glsl.Type.*;
 import haven.glsl.ValBlock.Value;
 
 public abstract class MiscLib {
-    private static final AutoVarying frageyen = new AutoVarying(VEC3, new Symbol.Gen("svar_eyen")) {
+    private static final AutoVarying frageyen = new AutoVarying(VEC3, "s_eyen") {
 	    protected Expression root(VertexContext vctx) {
 		return(vctx.eyen.depref());
 	    }
@@ -54,7 +54,7 @@ public abstract class MiscLib {
 		}
 	    }));
     }
-    public static final AutoVarying frageyev = new AutoVarying(VEC3, new Symbol.Gen("svar_eyev")) {
+    public static final AutoVarying frageyev = new AutoVarying(VEC3, "s_eyev") {
 	    protected Expression root(VertexContext vctx) {
 		return(pick(vctx.eyev.depref(), "xyz"));
 	    }

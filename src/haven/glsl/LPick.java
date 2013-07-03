@@ -28,7 +28,7 @@ package haven.glsl;
 
 import java.util.*;
 
-public class LPick extends Expression {
+public class LPick extends LValue {
     public static final String valid = "xyzwrgbastpq";
     public final LValue val;
     public final char[] el;

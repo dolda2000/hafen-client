@@ -35,7 +35,7 @@ public class Phong extends ValBlock.Group {
     private final ProgramContext prog;
     private final Value edir, norm;
     public final Value bcol = new GValue(VEC4), scol = new GValue(VEC3);
-    public static final Uniform nlights = new Uniform(INT, new Symbol.Gen());
+    public static final Uniform nlights = new Uniform(INT, new Symbol.Shared());
 
     public static final Function dolight = new Function.Def(VOID) {{
 	Parameter i = param(IN, INT);
@@ -56,6 +56,7 @@ public class Phong extends ValBlock.Group {
 	Variable i = blk.local(INT, "i", null);
 	blk.add(new For(ass(i, l(0)), lt(i.ref(), nlights.ref()), linc(i.ref()),
 			stmt(dolight.call(i.ref(), edir.ref(), norm.ref(), bcol.var.ref(), scol.var.ref()))));
+	blk.add(ass(pick(bcol.var.ref(), "a"), pick(fref(prog.gl_FrontMaterial.ref(), "diffuse"), "a")));
     }
 
     private static void fmod(final FragmentContext fctx, final Expression bcol, final Expression scol) {

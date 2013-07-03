@@ -31,6 +31,10 @@ public abstract class AutoVarying extends Varying {
 	super(type, name);
     }
 
+    public AutoVarying(Type type, String prefix) {
+	this(type, new Symbol.Shared(prefix));
+    }
+
     public AutoVarying(Type type) {
 	this(type, new Symbol.Shared());
     }
