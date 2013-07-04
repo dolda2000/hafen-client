@@ -44,8 +44,8 @@ public class Index extends LValue {
     public void output(Output out) {
 	out.write("(");
 	val.output(out);
-	out.write(")[");
+	out.write("[");
 	idx.output(out);
-	out.write("]");
+	out.write("])");
     }
 }

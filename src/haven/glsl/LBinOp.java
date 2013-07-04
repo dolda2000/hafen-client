@@ -28,17 +28,18 @@ package haven.glsl;
 
 import java.util.*;
 
-public abstract class BinOp extends Expression {
-    public final Expression lhs, rhs;
+public abstract class LBinOp extends Expression {
+    public final LValue lhs;
+    public final Expression rhs;
 
-    public BinOp(Expression lhs, Expression rhs) {
+    public LBinOp(LValue lhs, Expression rhs) {
 	this.lhs = lhs;
 	this.rhs = rhs;
     }
 
-    public BinOp process(Context ctx) {
+    public LBinOp process(Context ctx) {
 	try {
-	    return(this.getClass().getConstructor(Expression.class, Expression.class).newInstance(lhs.process(ctx), rhs.process(ctx)));
+	    return(this.getClass().getConstructor(LValue.class, Expression.class).newInstance(lhs.process(ctx), rhs.process(ctx)));
 	} catch(NoSuchMethodException e) {
 	    throw(new Error(e));
 	} catch(InstantiationException e) {
@@ -60,14 +61,9 @@ public abstract class BinOp extends Expression {
 	out.write(")");
     }
 
-    public static class Eq extends BinOp {public String form() {return("==");} public Eq(Expression l, Expression r) {super(l, r);}}
-    public static class Ne extends BinOp {public String form() {return("!=");} public Ne(Expression l, Expression r) {super(l, r);}}
-    public static class Lt extends BinOp {public String form() {return("<");}  public Lt(Expression l, Expression r) {super(l, r);}}
-    public static class Gt extends BinOp {public String form() {return(">");}  public Gt(Expression l, Expression r) {super(l, r);}}
-    public static class Le extends BinOp {public String form() {return("<=");} public Le(Expression l, Expression r) {super(l, r);}}
-    public static class Ge extends BinOp {public String form() {return(">=");} public Ge(Expression l, Expression r) {super(l, r);}}
-    public static class Or extends BinOp {public String form() {return("||");} public Or(Expression l, Expression r) {super(l, r);}}
-    public static class And extends BinOp {public String form() {return("&&");} public And(Expression l, Expression r) {super(l, r);}}
-    public static class Sub extends BinOp {public String form() {return("-");} public Sub(Expression l, Expression r) {super(l, r);}}
-    public static class Div extends BinOp {public String form() {return("/");} public Div(Expression l, Expression r) {super(l, r);}}
+    public static class Assign extends LBinOp {public String form() {return("=");} public Assign(LValue l, Expression r) {super(l, r);}}
+    public static class AAdd extends LBinOp {public String form() {return("+=");} public AAdd(LValue l, Expression r) {super(l, r);}}
+    public static class ASub extends LBinOp {public String form() {return("-=");} public ASub(LValue l, Expression r) {super(l, r);}}
+    public static class AMul extends LBinOp {public String form() {return("*=");} public AMul(LValue l, Expression r) {super(l, r);}}
+    public static class ADiv extends LBinOp {public String form() {return("/=");} public ADiv(LValue l, Expression r) {super(l, r);}}
 }

@@ -44,7 +44,7 @@ public class FragmentContext extends ShaderContext {
 	    }
 
 	    protected void cons2(Block blk) {
-		blk.add(new Assign(gl_FragColor.ref(), init));
+		blk.add(new LBinOp.Assign(gl_FragColor.ref(), init));
 	    }
 	};
 

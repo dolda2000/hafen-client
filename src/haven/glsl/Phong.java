@@ -33,21 +33,57 @@ import haven.glsl.ValBlock.Value;
 
 public class Phong extends ValBlock.Group {
     private final ProgramContext prog;
-    private final Value edir, norm;
+    private final Expression vert, edir, norm;
     public final Value bcol = new GValue(VEC4), scol = new GValue(VEC3);
     public static final Uniform nlights = new Uniform(INT, new Symbol.Shared());
 
-    public static final Function dolight = new Function.Def(VOID) {{
-	Parameter i = param(IN, INT);
-	Parameter norm = param(IN, VEC3);
-	Parameter edir = param(IN, VEC3);
-	Parameter diff = param(INOUT, VEC3);
-	Parameter spec = param(INOUT, VEC3);
-	code.add(ass(diff, l(8.0)));
-    }};
+    public class DoLight extends Function.Def {
+	public final Variable lvl, df;
+
+	private DoLight() {
+	    super(VOID);
+	    Expression i = param(IN, INT).ref();
+	    Expression vert = param(IN, VEC3).ref();
+	    Expression edir = param(IN, VEC3).ref();
+	    Expression norm = param(IN, VEC3).ref();
+	    LValue diff = param(INOUT, VEC3).ref();
+	    LValue spec = param(INOUT, VEC3).ref();
+	    Expression ls = idx(prog.gl_LightSource.ref(), i);
+	    Expression mat = prog.gl_FrontMaterial.ref();
+
+	    lvl = code.local(FLOAT, null);
+	    Variable dir = code.local(VEC3, null);
+	    Block.Local rel = new Block.Local(VEC3);
+	    Block.Local dist = new Block.Local(FLOAT);
+	    code.add(new If(eq(pick(fref(ls, "position"), "w"), l(0.0)),
+			    new Block(stmt(ass(lvl, l(1.0))),
+				      stmt(ass(dir, pick(fref(ls, "location"), "xyz")))),
+			    new Block(rel.new Def(sub(pick(fref(ls, "position"), "xyz"), vert)),
+				      stmt(ass(dir, normalize(rel.ref()))),
+				      dist.new Def(length(rel.ref())),
+				      stmt(ass(lvl, inv(add(fref(ls, "constantAttenuation"),
+							    mul(fref(ls, "constantAttenuation"), dist.ref()),
+							    mul(fref(ls, "constantAttenuation"), dist.ref(), dist.ref()))))))));
+	    code.add(stmt(aadd(diff, mul(pick(fref(mat, "ambient"), "rgb"),
+					 pick(fref(ls, "ambient"), "rgb"),
+					 lvl.ref()))));
+	    df = code.local(FLOAT, dot(norm, dir.ref()));
+	    Expression shine = fref(mat, "shininess");
+	    Expression refspec = pow(max(dot(edir, reflect(neg(dir.ref()), norm)), l(0.0)), shine);
+	    Expression hvspec = pow(max(dot(norm, normalize(add(edir, dir.ref())))), shine);
+	    code.add(new If(gt(df.ref(), l(0.0)),
+			    new Block(stmt(aadd(diff, mul(pick(fref(mat, "diffuse"), "rgb"),
+						pick(fref(ls,  "diffuse"), "rgb"),
+							  df.ref(), lvl.ref()))),
+				      new If(gt(shine, l(0.5)),
+					     stmt(aadd(spec, mul(pick(fref(mat, "specular"), "rgb"),
+								 pick(fref(ls,  "specular"), "rgb"),
+								 refspec)))))));
+	}
+    }
+    public final DoLight dolight;
 
     public void cons1() {
-	depend(edir); depend(norm);
     }
 
     public void cons2(Block blk) {
@@ -55,7 +91,7 @@ public class Phong extends ValBlock.Group {
 	scol.var = blk.local(VEC3, Vec3Cons.z);
 	Variable i = blk.local(INT, "i", null);
 	blk.add(new For(ass(i, l(0)), lt(i.ref(), nlights.ref()), linc(i.ref()),
-			stmt(dolight.call(i.ref(), edir.ref(), norm.ref(), bcol.var.ref(), scol.var.ref()))));
+			stmt(dolight.call(i.ref(), vert, edir, norm, bcol.var.ref(), scol.var.ref()))));
 	blk.add(ass(pick(bcol.var.ref(), "a"), pick(fref(prog.gl_FrontMaterial.ref(), "diffuse"), "a")));
     }
 
@@ -69,8 +105,12 @@ public class Phong extends ValBlock.Group {
 
     public Phong(VertexContext vctx) {
 	vctx.mainvals.super();
-	this.edir = MiscLib.vertedir(vctx);
-	this.norm = vctx.eyen;
+	prog = vctx.prog;
+	Value edir = MiscLib.vertedir(vctx);
+	depend(vctx.eyev); depend(edir); depend(vctx.eyen);
+	this.vert = pick(vctx.eyev.ref(), "xyz");
+	this.edir = edir.ref();
+	this.norm = vctx.eyen.ref();
 
 	Expression bcol = new AutoVarying(VEC4) {
 		public Expression root(VertexContext vctx) {return(Phong.this.bcol.depref());}
@@ -79,17 +119,22 @@ public class Phong extends ValBlock.Group {
 		public Expression root(VertexContext vctx) {return(Phong.this.scol.depref());}
 	    }.ref();
 	fmod(vctx.prog.fctx, bcol, scol);
-	prog = vctx.prog;
+	dolight = new DoLight();
 	prog.module(this);
     }
 
     public Phong(FragmentContext fctx) {
 	fctx.mainvals.super();
-	this.edir = MiscLib.fragedir(fctx);
-	this.norm = MiscLib.frageyen(fctx);
+	prog = fctx.prog;
+	Value edir = MiscLib.fragedir(fctx);
+	Value norm = MiscLib.frageyen(fctx);
+	depend(edir); depend(norm);
+	this.vert = MiscLib.frageyev.ref();
+	this.edir = edir.ref();
+	this.norm = norm.ref();
 	fmod(fctx, bcol.ref(), scol.ref());
 	fctx.fragcol.depend(bcol);
-	prog = fctx.prog;
+	dolight = new DoLight();
 	prog.module(this);
     }
 }

@@ -39,6 +39,7 @@ public abstract class Function {
     public static class Def extends Function {
 	public final Type type;
 	public final Block code;
+	private boolean fin = false;
 
 	public Def(Type type, Symbol name) {
 	    super(name);
@@ -101,7 +102,13 @@ public abstract class Function {
 	    }
 	}
 
+	protected void cons() {}
+
 	public void define(Context ctx) {
+	    if(!fin) {
+		cons();
+		fin = true;
+	    }
 	    for(Toplevel tl : ctx.fundefs) {
 		if((tl instanceof Definition) && (((Definition)tl).fun() == Def.this))
 		    return;
@@ -223,9 +230,9 @@ public abstract class Function {
 	public static final Builtin floor = new Builtin(null, new Symbol.Fix("floor"), 1);
 	public static final Builtin ceil = new Builtin(null, new Symbol.Fix("ceil"), 1);
 	public static final Builtin fract = new Builtin(null, new Symbol.Fix("fract"), 1);
-	public static final Builtin mod = new Builtin(null, new Symbol.Fix("mod"), 1);
-	public static final Builtin min = new Builtin(null, new Symbol.Fix("min"), 1);
-	public static final Builtin max = new Builtin(null, new Symbol.Fix("max"), 1);
+	public static final Builtin mod = new Builtin(null, new Symbol.Fix("mod"), 2);
+	public static final Builtin min = new Builtin(null, new Symbol.Fix("min"), 2);
+	public static final Builtin max = new Builtin(null, new Symbol.Fix("max"), 2);
 	public static final Builtin clamp = new Builtin(null, new Symbol.Fix("clamp"), 3);
 	public static final Builtin mix = new Builtin(null, new Symbol.Fix("mix"), 3);
 	public static final Builtin step = new Builtin(null, new Symbol.Fix("step"), 2);

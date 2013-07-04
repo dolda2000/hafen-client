@@ -46,7 +46,7 @@ public abstract class AutoVarying extends Varying {
 
 	protected void cons2(Block blk) {
 	    var = AutoVarying.this;
-	    blk.add(new Assign(var.ref(), init));
+	    blk.add(new LBinOp.Assign(var.ref(), init));
 	}
     }
 

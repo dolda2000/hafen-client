@@ -72,7 +72,7 @@ public class VertexContext extends ShaderContext {
 
 	    protected void cons2(Block blk) {
 		var = gl_Position;
-		blk.add(new Assign(var.ref(), init));
+		blk.add(new LBinOp.Assign(var.ref(), init));
 	    }
 	};
 

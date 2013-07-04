@@ -29,11 +29,18 @@ package haven.glsl;
 public class Cons {
     public static Statement stmt(Expression e) {return(Statement.expr(e));}
 
-    public static Assign ass(LValue l, Expression r)   {return(new Assign(l, r));}
-    public static Assign ass(Variable l, Expression r) {return(ass(l.ref(), r));}
+    public static LBinOp.Assign ass(LValue l, Expression r)   {return(new LBinOp.Assign(l, r));}
+    public static LBinOp.Assign ass(Variable l, Expression r) {return(ass(l.ref(), r));}
 
     public static Add add(Expression... terms) {return(new Add(terms));}
     public static Mul mul(Expression... terms) {return(new Mul(terms));}
+    public static BinOp.Sub sub(Expression l, Expression r) {return(new BinOp.Sub(l, r));}
+    public static BinOp.Div div(Expression l, Expression r) {return(new BinOp.Div(l, r));}
+    public static LBinOp.AAdd aadd(LValue l, Expression r) {return(new LBinOp.AAdd(l, r));}
+    public static LBinOp.ASub asub(LValue l, Expression r) {return(new LBinOp.ASub(l, r));}
+    public static LBinOp.AMul amul(LValue l, Expression r) {return(new LBinOp.AMul(l, r));}
+    public static LBinOp.ADiv adiv(LValue l, Expression r) {return(new LBinOp.ADiv(l, r));}
+    public static BinOp.Div inv(Expression op) {return(div(l(1.0), op));}
 
     public static PreOp.Neg   neg(Expression op) {return(new PreOp.Neg(op));}
     public static LPreOp.Inc  incl(LValue op)    {return(new LPreOp.Inc(op));}
@@ -58,7 +65,7 @@ public class Cons {
 
     public static Index idx(Expression val, Expression idx) {return(new Index(val, idx));}
 
-    public static IntLiteral l(int val)      {return(new IntLiteral(val));}
+    public static IntLiteral   l(int val)    {return(new IntLiteral(val));}
     public static FloatLiteral l(double val) {return(new FloatLiteral(val));}
 
     public static Vec4Cons vec4(Expression... els) {return(new Vec4Cons(els));}
@@ -69,7 +76,9 @@ public class Cons {
     public static Expression normalize(Expression x) {return(Function.Builtin.normalize.call(x));}
     public static Expression distance(Expression x, Expression y) {return(Function.Builtin.distance.call(x, y));}
     public static Expression dot(Expression x, Expression y) {return(Function.Builtin.dot.call(x, y));}
+    public static Expression pow(Expression x, Expression y) {return(Function.Builtin.pow.call(x, y));}
     public static Expression cross(Expression x, Expression y) {return(Function.Builtin.cross.call(x, y));}
+    public static Expression reflect(Expression x, Expression y) {return(Function.Builtin.reflect.call(x, y));}
 
     public static Expression reduce(Function fun, Expression... es) {
 	if(es.length < 1)

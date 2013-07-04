@@ -64,16 +64,19 @@ public class ValBlock {
 
 	public abstract Expression root();
 
-	protected void cons1() {
-	    processing.set(this);
+	public Expression modexpr(Expression expr) {
 	    try {
-		Expression expr = root();
 		for(Macro1<Expression> mod : mods)
 		    expr = mod.expand(expr);
-		init = expr;
+		return(expr);
 	    } finally {
 		processing.remove();
 	    }
+	}
+
+	protected void cons1() {
+	    processing.set(this);
+	    init = modexpr(root());
 	}
 
 	protected void cons2(Block blk) {

@@ -37,8 +37,12 @@ public class Block extends Statement {
     }
 
     public final static class Local extends Variable {
-	private Local(Type type, Symbol name) {
+	public Local(Type type, Symbol name) {
 	    super(type, name);
+	}
+
+	public Local(Type type) {
+	    this(type, new Symbol.Gen());
 	}
 
 	public class Def extends Statement {
