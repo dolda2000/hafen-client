@@ -41,6 +41,7 @@ public class MapView extends PView implements DTarget {
     private int view = 2;
     private Collection<Delayed> delayed = new LinkedList<Delayed>();
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
+    private Collection<Rendered> extradraw = new LinkedList<Rendered>();
     public Camera camera = new SOrthoCam();
     private Plob placing = null;
     private int[] visol = new int[32];
@@ -53,9 +54,10 @@ public class MapView extends PView implements DTarget {
     public interface Grabber {
 	boolean mmousedown(Coord mc, int button);
 	boolean mmouseup(Coord mc, int button);
+	boolean mmousewheel(Coord mc, int amount);
 	void mmousemove(Coord mc);
     }
-    
+
     public abstract class Camera extends GLState.Abstract {
 	protected haven.Camera view = new haven.Camera(Matrix4f.identity());
 	protected Projection proj = new Projection(Matrix4f.identity());
@@ -483,8 +485,19 @@ public class MapView extends PView implements DTarget {
 	rl.add(gobs, null);
 	if(placing != null)
 	    addgob(rl, placing);
+	synchronized(extradraw) {
+	    for(Rendered extra : extradraw)
+		rl.add(extra, null);
+	    extradraw.clear();
+	}
     }
-    
+
+    public void drawadd(Rendered extra) {
+	synchronized(extradraw) {
+	    extradraw.add(extra);
+	}
+    }
+
     public Gob player() {
 	return(glob.oc.getgob(plgob));
     }
@@ -944,10 +957,6 @@ public class MapView extends PView implements DTarget {
 	}
 	
 	protected void hit(Coord pc, Coord mc, ClickInfo inf) {
-	    if(grab != null) {
-		if(grab.mmousedown(mc, clickb))
-		    return;
-	    }
 	    if(inf == null) {
 		wdgmsg("click", pc, mc, clickb, ui.modflags());
 	    } else {
@@ -979,6 +988,7 @@ public class MapView extends PView implements DTarget {
 	} else if(placing != null) {
 	    if(placing.lastmc != null)
 		wdgmsg("place", placing.rc, (int)(placing.a * 180 / Math.PI), button, ui.modflags());
+	} else if((grab != null) && grab.mmousedown(c, button)) {
 	} else {
 	    delay(new Click(c, button));
 	}
@@ -986,14 +996,10 @@ public class MapView extends PView implements DTarget {
     }
     
     public void mousemove(Coord c) {
+	if(grab != null)
+	    grab.mmousemove(c);
 	if(camdrag) {
 	    ((Camera)camera).drag(c);
-	} else if(grab != null) {
-	    delay(new Hittest(c) {
-		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
-			grab.mmousemove(mc);
-		    }
-		});
 	} else if(placing != null) {
 	    if((placing.lastmc == null) || !placing.lastmc.equals(c)) {
 		delay(placing.new Adjust(c, !ui.modctrl));
@@ -1001,7 +1007,7 @@ public class MapView extends PView implements DTarget {
 	}
     }
     
-    public boolean mouseup(Coord c, final int button) {
+    public boolean mouseup(Coord c, int button) {
 	if(button == 2) {
 	    if(camdrag) {
 		((Camera)camera).release();
@@ -1009,16 +1015,14 @@ public class MapView extends PView implements DTarget {
 		camdrag = false;
 	    }
 	} else if(grab != null) {
-	    delay(new Hittest(c) {
-		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
-			grab.mmouseup(mc, button);
-		    }
-		});
+	    grab.mmouseup(c, button);
 	}
 	return(true);
     }
 
     public boolean mousewheel(Coord c, int amount) {
+	if((grab != null) && grab.mmousewheel(c, amount))
+	    return(true);
 	if(ui.modshift) {
 	    if(placing != null) {
 		placing.freerot = true;
@@ -1055,5 +1059,51 @@ public class MapView extends PView implements DTarget {
 
     public boolean globtype(char c, java.awt.event.KeyEvent ev) {
 	return(false);
+    }
+
+    public class GrabXL implements Grabber {
+	private final Grabber bk;
+	public boolean mv = false;
+
+	public GrabXL(Grabber bk) {
+	    this.bk = bk;
+	}
+
+	public boolean mmousedown(Coord cc, final int button) {
+	    delay(new Hittest(cc) {
+		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
+			bk.mmousedown(mc, button);
+		    }
+		});
+	    return(true);
+	}
+
+	public boolean mmouseup(Coord cc, final int button) {
+	    delay(new Hittest(cc) {
+		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
+			bk.mmouseup(mc, button);
+		    }
+		});
+	    return(true);
+	}
+
+	public boolean mmousewheel(Coord cc, final int amount) {
+	    delay(new Hittest(cc) {
+		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
+			bk.mmousewheel(mc, amount);
+		    }
+		});
+	    return(true);
+	}
+
+	public void mmousemove(Coord cc) {
+	    if(mv) {
+		delay(new Hittest(cc) {
+			public void hit(Coord pc, Coord mc, ClickInfo inf) {
+			    bk.mmousemove(mc);
+			}
+		    });
+	    }
+	}
     }
 }
