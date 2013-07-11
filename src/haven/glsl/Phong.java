@@ -57,7 +57,7 @@ public class Phong extends ValBlock.Group {
 	    Block.Local dist = new Block.Local(FLOAT);
 	    code.add(new If(eq(pick(fref(ls, "position"), "w"), l(0.0)),
 			    new Block(stmt(ass(lvl, l(1.0))),
-				      stmt(ass(dir, pick(fref(ls, "location"), "xyz")))),
+				      stmt(ass(dir, pick(fref(ls, "position"), "xyz")))),
 			    new Block(rel.new Def(sub(pick(fref(ls, "position"), "xyz"), vert)),
 				      stmt(ass(dir, normalize(rel.ref()))),
 				      dist.new Def(length(rel.ref())),
@@ -89,9 +89,18 @@ public class Phong extends ValBlock.Group {
     public void cons2(Block blk) {
 	bcol.var = blk.local(VEC4, fref(prog.gl_FrontMaterial.ref(), "emission"));
 	scol.var = blk.local(VEC3, Vec3Cons.z);
+	/*
 	Variable i = blk.local(INT, "i", null);
 	blk.add(new For(ass(i, l(0)), lt(i.ref(), nlights.ref()), linc(i.ref()),
-			stmt(dolight.call(i.ref(), vert, edir, norm, bcol.var.ref(), scol.var.ref()))));
+			stmt(dolight.call(i.ref(), vert, edir, norm, pick(bcol.var.ref(), "rgb"), scol.var.ref()))));
+	*/
+	for(int i = 0; i < 4; i++) {
+	    /* No few drivers seem to be having trouble with the for
+	     * loop. It would be nice to be able to select this code
+	     * path only on those drivers. */
+	    blk.add(new If(gt(nlights.ref(), l(i)),
+			   stmt(dolight.call(l(i), vert, edir, norm, pick(bcol.var.ref(), "rgb"), scol.var.ref()))));
+	}
 	blk.add(ass(pick(bcol.var.ref(), "a"), pick(fref(prog.gl_FrontMaterial.ref(), "diffuse"), "a")));
     }
 

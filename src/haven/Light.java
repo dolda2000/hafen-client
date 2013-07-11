@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.glsl.*;
 import java.util.*;
 import java.awt.Color;
 import javax.media.opengl.*;
@@ -76,9 +77,9 @@ public class Light implements Rendered {
     public static final GLState.Slot<GLState> lighting = new GLState.Slot<GLState>(GLState.Slot.Type.DRAW, GLState.class, model, lights);
     
     public static class BaseLights extends GLState {
-	private final GLShader[] shaders;
+	private final ShaderMacro[] shaders;
 	
-	public BaseLights(GLShader[] shaders) {
+	public BaseLights(ShaderMacro[] shaders) {
 	    this.shaders = shaders;
 	}
 
@@ -91,10 +92,8 @@ public class Light implements Rendered {
 	}
 	    
 	public void reapply(GOut g) {
-	    /*
 	    GL2 gl = g.gl;
-	    gl.glUniform1i(g.st.prog.uniform("nlights"), g.st.get(lights).nlights);
-	    */
+	    gl.glUniform1i(g.st.prog.uniform(Phong.nlights), g.st.get(lights).nlights);
 	}
 	    
 	public void unapply(GOut g) {
@@ -103,11 +102,9 @@ public class Light implements Rendered {
 		gl.glDisable(GL2.GL_LIGHTING);
 	}
 	    
-	/*
-	public GLShader[] shaders() {
+	public ShaderMacro[] shaders() {
 	    return(shaders);
 	}
-	*/
 	
 	public boolean reqshaders() {
 	    return(true);
@@ -118,32 +115,28 @@ public class Light implements Rendered {
 	}
     }
 
-    public static final GLState vlights = new BaseLights(new GLShader[] {
-	    GLShader.VertexShader.load(Light.class, "glsl/vlight.vert"),
-	    GLShader.FragmentShader.load(Light.class, "glsl/vlight.frag"),
-	}) {
+    private static final ShaderMacro vlight = new ShaderMacro() {
+	    public void modify(ProgramContext prog) {
+		new Phong(prog.vctx);
+	    }
+	};
+    private static final ShaderMacro plight = new ShaderMacro() {
+	    public void modify(ProgramContext prog) {
+		new Phong(prog.fctx);
+	    }
+	};
+
+    public static final GLState vlights = new BaseLights(new ShaderMacro[] {vlight}) {
 	    public boolean reqshaders() {
 		return(false);
 	    }
 	};
     
-    public static final GLState plights = new BaseLights(new GLShader[] {
-	    GLShader.VertexShader.load(Light.class, "glsl/plight.vert"),
-	    GLShader.FragmentShader.load(Light.class, "glsl/plight-base.frag"),
-	    GLShader.FragmentShader.load(Light.class, "glsl/plight.frag"),
-	});
+    public static final GLState plights = new BaseLights(new ShaderMacro[] {plight});
     
-    public static final GLState vcel = new BaseLights(new GLShader[] {
-	    GLShader.VertexShader.load(Light.class, "glsl/vlight.vert"),
-	    GLShader.FragmentShader.load(Light.class, "glsl/vcel-diff.frag"),
-	    GLShader.FragmentShader.load(Light.class, "glsl/vcel-spec.frag"),
-	});
+    public static final GLState vcel = new BaseLights(new ShaderMacro[] {vlight});
     
-    public static final GLState pcel = new BaseLights(new GLShader[] {
-	    GLShader.VertexShader.load(Light.class, "glsl/plight.vert"),
-	    GLShader.FragmentShader.load(Light.class, "glsl/plight-base.frag"),
-	    GLShader.FragmentShader.load(Light.class, "glsl/pcel.frag"),
-	});
+    public static final GLState pcel = new BaseLights(new ShaderMacro[] {plight});
     
     public static class PSLights extends BaseLights {
 	public static class ShadowMap extends GLState implements GlobalState, Global {
@@ -269,11 +262,7 @@ public class Light implements Rendered {
 	}
 	
 	public PSLights() {
-	    super(new GLShader[] {
-		    GLShader.VertexShader.load(Light.class, "glsl/pslight.vert"),
-		    GLShader.FragmentShader.load(Light.class, "glsl/plight-base.frag"),
-		    GLShader.FragmentShader.load(Light.class, "glsl/pslight.frag"),
-		});
+	    super(new ShaderMacro[] {plight});
 	}
 	    
 	public void reapply(GOut g) {

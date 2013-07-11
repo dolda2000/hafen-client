@@ -36,6 +36,7 @@ public class VertexContext extends ShaderContext {
 
     public static final Variable gl_Vertex = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Vertex"));
     public static final Variable gl_Normal = new Variable.Implicit(Type.VEC3, new Symbol.Fix("gl_Normal"));
+    public static final Variable gl_Color = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Color"));
     public static final Variable gl_ModelViewMatrix = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_ModelViewMatrix"));
     public static final Variable gl_NormalMatrix = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_NormalMatrix"));
     public static final Variable gl_ProjectionMatrix = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_ProjectionMatrix"));
