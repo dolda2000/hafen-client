@@ -26,28 +26,24 @@
 
 package haven.glsl;
 
-public class Uniform extends Variable.Global {
-    public Uniform(Type type, Symbol name) {
-	super(type, name);
+public class Placeholder extends Statement {
+    public final String comment;
+
+    public Placeholder(String comment) {
+	this.comment = comment;
     }
 
-    public Uniform(Type type, String infix) {
-	this(type, new Symbol.Shared("s_" + infix));
+    public Placeholder() {
+	this(null);
     }
 
-    public Uniform(Type type) {
-	this(type, new Symbol.Shared());
+    public Placeholder process(Context ctx) {
+	return(this);
     }
 
-    private class Def extends Definition {
-	public void output(Output out) {
-	    out.write("uniform ");
-	    super.output(out);
+    public void output(Output out) {
+	if(comment != null) {
+	    out.write("/* " + comment + " */");
 	}
-    }
-
-    public void use(Context ctx) {
-	if(!defined(ctx))
-	    ctx.vardefs.add(new Def());
     }
 }

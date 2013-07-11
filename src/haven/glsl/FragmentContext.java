@@ -33,8 +33,9 @@ public class FragmentContext extends ShaderContext {
 
     public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
     public final ValBlock mainvals = new ValBlock();
+    public final ValBlock uniform = new ValBlock();
 
-    public final Variable gl_FragColor = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragColor"));
+    public static final Variable gl_FragColor = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragColor"));
 
     public final ValBlock.Value fragcol = mainvals.new Value(Type.VEC4) {
 	    {force();}
@@ -49,6 +50,8 @@ public class FragmentContext extends ShaderContext {
 	};
 
     public void construct(java.io.Writer out) {
+	uniform.cons(main.code);
+	main.code.add(new Placeholder("Uniform control up until here."));
 	mainvals.cons(main.code);
 	main.define(this);
 	output(new Output(out, this));

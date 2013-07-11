@@ -31,6 +31,14 @@ public class Attribute extends Variable.Global {
 	super(type, name);
     }
 
+    public Attribute(Type type, String infix) {
+	this(type, new Symbol.Shared("s_" + infix));
+    }
+
+    public Attribute(Type type) {
+	this(type, new Symbol.Shared());
+    }
+
     private class Def extends Definition {
 	public void output(Output out) {
 	    out.write("attribute ");

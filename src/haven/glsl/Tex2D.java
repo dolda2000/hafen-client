@@ -26,28 +26,38 @@
 
 package haven.glsl;
 
-public class Uniform extends Variable.Global {
-    public Uniform(Type type, Symbol name) {
-	super(type, name);
+import static haven.glsl.Cons.*;
+import static haven.glsl.Function.PDir.*;
+import static haven.glsl.Type.*;
+import haven.glsl.ValBlock.Value;
+
+public class Tex2D {
+    public static final Uniform tex2d = new Uniform(Type.SAMPLER2D);
+    public static final AutoVarying texcoord = new AutoVarying(VEC2, "s_tex2d") {
+	    protected Expression root(VertexContext vctx) {
+		return(pick(vctx.gl_MultiTexCoord[0].ref(), "st"));
+	    }
+	};
+
+    public static Value tex2d(FragmentContext fctx) {
+	return(fctx.uniform.ext(tex2d, new ValBlock.Factory() {
+		public Value make(ValBlock vals) {
+		    return(vals.new Value(VEC4) {
+			    public Expression root() {
+				return(texture2D(tex2d.ref(), texcoord.ref()));
+			    }
+			});
+		}
+	    }));
     }
 
-    public Uniform(Type type, String infix) {
-	this(type, new Symbol.Shared("s_" + infix));
-    }
-
-    public Uniform(Type type) {
-	this(type, new Symbol.Shared());
-    }
-
-    private class Def extends Definition {
-	public void output(Output out) {
-	    out.write("uniform ");
-	    super.output(out);
-	}
-    }
-
-    public void use(Context ctx) {
-	if(!defined(ctx))
-	    ctx.vardefs.add(new Def());
+    public static void mod(FragmentContext fctx) {
+	final Value tex2d = tex2d(fctx);
+	tex2d.force();
+	fctx.fragcol.mod(new Macro1<Expression>() {
+		public Expression expand(Expression in) {
+		    return(mul(in, tex2d.ref()));
+		}
+	    }, 0);
     }
 }

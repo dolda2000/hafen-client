@@ -35,7 +35,7 @@ public class Phong extends ValBlock.Group {
     private final ProgramContext prog;
     private final Expression vert, edir, norm;
     public final Value bcol = new GValue(VEC4), scol = new GValue(VEC3);
-    public static final Uniform nlights = new Uniform(INT, new Symbol.Shared());
+    public static final Uniform nlights = new Uniform(INT);
 
     public class DoLight extends Function.Def {
 	public final Variable lvl, df;

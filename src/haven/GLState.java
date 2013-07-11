@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import javax.media.opengl.*;
+import haven.glsl.ShaderMacro;
 import static haven.GOut.checkerr;
 
 public abstract class GLState {
@@ -43,7 +44,7 @@ public abstract class GLState {
     public void reapply(GOut g) {
     }
     
-    public GLShader[] shaders() {
+    public ShaderMacro[] shaders() {
 	return(null);
     }
     
@@ -317,9 +318,9 @@ public abstract class GLState {
 	public final GL2 gl;
 	public final GLConfig cfg;
 	private boolean[] trans = new boolean[0], repl = new boolean[0];
-	private GLShader[][] shaders = new GLShader[0][];
+	private ShaderMacro[][] shaders = new ShaderMacro[0][];
 	private int proghash = 0;
-	public GLProgram prog;
+	public ShaderMacro.Program prog;
 	public boolean usedprog;
 	public long time = 0;
 	
@@ -375,7 +376,7 @@ public abstract class GLState {
 		synchronized(Slot.class) {
 		    trans = new boolean[slotnum];
 		    repl = new boolean[slotnum];
-		    shaders = new GLShader[slotnum][];
+		    shaders = new ShaderMacro[slotnum][];
 		}
 	    }
 	    bufdiff(cur, next, trans, repl);
@@ -383,7 +384,7 @@ public abstract class GLState {
 	    for(int i = trans.length - 1; i >= 0; i--) {
 		if(repl[i] || trans[i]) {
 		    GLState nst = next.states[i];
-		    GLShader[] ns = (nst == null)?null:nst.shaders();
+		    ShaderMacro[] ns = (nst == null)?null:nst.shaders();
 		    if(ns != shaders[i]) {
 			proghash ^= System.identityHashCode(shaders[i]) ^ System.identityHashCode(ns);
 			shaders[i] = ns;
@@ -393,7 +394,7 @@ public abstract class GLState {
 	    }
 	    usedprog = prog != null;
 	    if(dirty) {
-		GLProgram np;
+		ShaderMacro.Program np;
 		boolean shreq = false;
 		for(int i = 0; i < trans.length; i++) {
 		    if((shaders[i] != null) && next.states[i].reqshaders()) {
@@ -511,12 +512,12 @@ public abstract class GLState {
 	/* Program internation */
 	public static class SavedProg {
 	    public final int hash;
-	    public final GLProgram prog;
-	    public final GLShader[][] shaders;
+	    public final ShaderMacro.Program prog;
+	    public final ShaderMacro[][] shaders;
 	    public SavedProg next;
 	    boolean used = true;
 	    
-	    public SavedProg(int hash, GLProgram prog, GLShader[][] shaders) {
+	    public SavedProg(int hash, ShaderMacro.Program prog, ShaderMacro[][] shaders) {
 		this.hash = hash;
 		this.prog = prog;
 		this.shaders = shaders;
@@ -527,7 +528,7 @@ public abstract class GLState {
 	private int nprog = 0;
 	private long lastclean = System.currentTimeMillis();
 	
-	private GLProgram findprog(int hash, GLShader[][] shaders) {
+	private ShaderMacro.Program findprog(int hash, ShaderMacro[][] shaders) {
 	    int idx = hash & (ptab.length - 1);
 	    outer: for(SavedProg s = ptab[idx]; s != null; s = s.next) {
 		if(s.hash != hash)
@@ -544,7 +545,14 @@ public abstract class GLState {
 		s.used = true;
 		return(s.prog);
 	    }
-	    GLProgram prog = new GLProgram(shaders);
+	    Collection<ShaderMacro> mods = new LinkedList<ShaderMacro>();
+	    for(int i = 0; i < shaders.length; i++) {
+		if(shaders[i] == null)
+		    continue;
+		for(int o = 0; o < shaders[i].length; o++)
+		    mods.add(shaders[i][o]);
+	    }
+	    ShaderMacro.Program prog = ShaderMacro.Program.build(mods);
 	    SavedProg s = new SavedProg(hash, prog, shaders);
 	    s.next = ptab[idx];
 	    ptab[idx] = s;

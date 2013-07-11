@@ -34,13 +34,23 @@ public class VertexContext extends ShaderContext {
     public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
     public final ValBlock mainvals = new ValBlock();
 
-    public final Variable gl_Vertex = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Vertex"));
-    public final Variable gl_Normal = new Variable.Implicit(Type.VEC3, new Symbol.Fix("gl_Normal"));
-    public final Variable gl_ModelViewMatrix = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_ModelViewMatrix"));
-    public final Variable gl_NormalMatrix = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_NormalMatrix"));
-    public final Variable gl_ProjectionMatrix = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_ProjectionMatrix"));
-    public final Variable gl_ModelViewProjectionMatrix = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_ModelViewProjectionMatrix"));
-    public final Variable gl_Position = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Position"));
+    public static final Variable gl_Vertex = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Vertex"));
+    public static final Variable gl_Normal = new Variable.Implicit(Type.VEC3, new Symbol.Fix("gl_Normal"));
+    public static final Variable gl_ModelViewMatrix = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_ModelViewMatrix"));
+    public static final Variable gl_NormalMatrix = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_NormalMatrix"));
+    public static final Variable gl_ProjectionMatrix = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_ProjectionMatrix"));
+    public static final Variable gl_ModelViewProjectionMatrix = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_ModelViewProjectionMatrix"));
+    public static final Variable gl_Position = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Position"));
+    public static final Variable[] gl_MultiTexCoord = {
+	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord0")),
+	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord1")),
+	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord2")),
+	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord3")),
+	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord4")),
+	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord5")),
+	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord6")),
+	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord7")),
+    };
 
     public final ValBlock.Value eyev = mainvals.new Value(Type.VEC4, new Symbol.Gen("eyev")) {
 	    public Expression root() {

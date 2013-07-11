@@ -91,8 +91,10 @@ public class Light implements Rendered {
 	}
 	    
 	public void reapply(GOut g) {
+	    /*
 	    GL2 gl = g.gl;
 	    gl.glUniform1i(g.st.prog.uniform("nlights"), g.st.get(lights).nlights);
+	    */
 	}
 	    
 	public void unapply(GOut g) {
@@ -101,9 +103,11 @@ public class Light implements Rendered {
 		gl.glDisable(GL2.GL_LIGHTING);
 	}
 	    
+	/*
 	public GLShader[] shaders() {
 	    return(shaders);
 	}
+	*/
 	
 	public boolean reqshaders() {
 	    return(true);
