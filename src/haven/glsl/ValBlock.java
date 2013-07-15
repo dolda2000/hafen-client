@@ -65,18 +65,18 @@ public class ValBlock {
 	public abstract Expression root();
 
 	public Expression modexpr(Expression expr) {
-	    try {
-		for(Macro1<Expression> mod : mods)
-		    expr = mod.expand(expr);
-		return(expr);
-	    } finally {
-		processing.remove();
-	    }
+	    for(Macro1<Expression> mod : mods)
+		expr = mod.expand(expr);
+	    return(expr);
 	}
 
 	protected void cons1() {
 	    processing.set(this);
-	    init = modexpr(root());
+	    try {
+		init = modexpr(root());
+	    } finally {
+		processing.remove();
+	    }
 	}
 
 	protected void cons2(Block blk) {
@@ -121,6 +121,8 @@ public class ValBlock {
 	protected abstract void cons2(Block blk);
 
 	public class GValue extends Value {
+	    public Expression modexpr;
+
 	    public GValue(Type type, Symbol name) {
 		super(type, name);
 		for(Value dep : Group.this.deps)
@@ -139,6 +141,10 @@ public class ValBlock {
 		    Group.this.cons1();
 		    state = 1;
 		}
+		Expression in = ref();
+		modexpr = modexpr(in);
+		if(modexpr == in)
+		    modexpr = null;
 	    }
 
 	    protected void cons2(Block blk) {
@@ -146,6 +152,11 @@ public class ValBlock {
 		    Group.this.cons2(blk);
 		    state = 2;
 		}
+	    }
+
+	    public void addmods(Block blk) {
+		if(modexpr != null)
+		    blk.add(Cons.ass(var, modexpr));
 	    }
 
 	    public final Expression root() {

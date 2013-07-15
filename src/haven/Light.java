@@ -134,9 +134,9 @@ public class Light implements Rendered {
     
     public static final GLState plights = new BaseLights(new ShaderMacro[] {plight});
     
-    public static final GLState vcel = new BaseLights(new ShaderMacro[] {vlight});
+    public static final GLState vcel = new BaseLights(new ShaderMacro[] {vlight, new Phong.CelShade()});
     
-    public static final GLState pcel = new BaseLights(new ShaderMacro[] {plight});
+    public static final GLState pcel = new BaseLights(new ShaderMacro[] {plight, new Phong.CelShade()});
     
     public static class PSLights extends BaseLights {
 	public static class ShadowMap extends GLState implements GlobalState, Global {

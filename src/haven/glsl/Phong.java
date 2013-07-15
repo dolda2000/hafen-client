@@ -34,51 +34,108 @@ import haven.glsl.ValBlock.Value;
 public class Phong extends ValBlock.Group {
     private final ProgramContext prog;
     private final Expression vert, edir, norm;
-    public final Value bcol = new GValue(VEC4), scol = new GValue(VEC3);
+    public final GValue bcol = new GValue(VEC3), scol = new GValue(VEC3);
     public static final Uniform nlights = new Uniform(INT);
 
+    public static class CelShade implements ShaderMacro {
+	public static final Function celramp = new Function.Def(VEC3) {{
+	    Expression c = param(IN, VEC3).ref();
+	    Block.Local m = code.local(FLOAT, max(pick(c, "r"), pick(c, "g"), pick(c, "b")));
+	    code.add(new If(lt(m.ref(), l(0.01)),
+			    new Return(Vec3Cons.z)));
+	    Block.Local v = code.local(FLOAT, null);
+	    code.add(new If(gt(m.ref(), l(0.5)),
+			    stmt(ass(v, l(1.0))),
+			    new If(gt(m.ref(), l(0.1)),
+				   stmt(ass(v, l(0.5))),
+				   stmt(ass(v, l(0.0))))));
+	    code.add(new Return(mul(c, div(v.ref(), m.ref()))));
+	}};
+
+	public void modify(ProgramContext prog) {
+	    Phong ph = prog.getmod(Phong.class);
+	    Macro1<Expression> cel = new Macro1<Expression>() {
+		public Expression expand(Expression in) {
+		    return(celramp.call(in));
+		}
+	    };
+	    ph.bcol.mod(cel, 0);
+	    ph.scol.mod(cel, 0);
+	}
+    }
+
     public class DoLight extends Function.Def {
-	public final Variable lvl, df;
+	final Expression i = param(IN, INT).ref();
+	final Expression vert = param(IN, VEC3).ref();
+	final Expression edir = param(IN, VEC3).ref();
+	final Expression norm = param(IN, VEC3).ref();
+	final LValue diff = param(INOUT, VEC3).ref();
+	final LValue spec = param(INOUT, VEC3).ref();
+	final Expression ls = idx(prog.gl_LightSource.ref(), i);
+	final Expression mat = prog.gl_FrontMaterial.ref();
+	final Expression shine = fref(mat, "shininess");
+	public final Value lvl, dir, dl, sl;
+	public final ValBlock dvals = new ValBlock();
+	public final ValBlock svals = new ValBlock();
 
 	private DoLight() {
 	    super(VOID);
-	    Expression i = param(IN, INT).ref();
-	    Expression vert = param(IN, VEC3).ref();
-	    Expression edir = param(IN, VEC3).ref();
-	    Expression norm = param(IN, VEC3).ref();
-	    LValue diff = param(INOUT, VEC3).ref();
-	    LValue spec = param(INOUT, VEC3).ref();
-	    Expression ls = idx(prog.gl_LightSource.ref(), i);
-	    Expression mat = prog.gl_FrontMaterial.ref();
 
-	    lvl = code.local(FLOAT, null);
-	    Variable dir = code.local(VEC3, null);
-	    Block.Local rel = new Block.Local(VEC3);
-	    Block.Local dist = new Block.Local(FLOAT);
-	    code.add(new If(eq(pick(fref(ls, "position"), "w"), l(0.0)),
-			    new Block(stmt(ass(lvl, l(1.0))),
-				      stmt(ass(dir, pick(fref(ls, "position"), "xyz")))),
-			    new Block(rel.new Def(sub(pick(fref(ls, "position"), "xyz"), vert)),
-				      stmt(ass(dir, normalize(rel.ref()))),
-				      dist.new Def(length(rel.ref())),
-				      stmt(ass(lvl, inv(add(fref(ls, "constantAttenuation"),
-							    mul(fref(ls, "constantAttenuation"), dist.ref()),
-							    mul(fref(ls, "constantAttenuation"), dist.ref(), dist.ref()))))))));
+	    ValBlock.Group tdep = dvals.new Group() {
+		    public void cons1() {
+		    }
+
+		    public void cons2(Block blk) {
+			lvl.var = blk.local(FLOAT, null);
+			dir.var = blk.local(VEC3, null);
+			Block.Local rel = new Block.Local(VEC3);
+			Block.Local dst = new Block.Local(FLOAT);
+			code.add(new If(eq(pick(fref(ls, "position"), "w"), l(0.0)),
+					new Block(stmt(ass(lvl.var, l(1.0))),
+						  stmt(ass(dir.var, pick(fref(ls, "position"), "xyz")))),
+					new Block(rel.new Def(sub(pick(fref(ls, "position"), "xyz"), vert)),
+						  stmt(ass(dir.var, normalize(rel.ref()))),
+						  dst.new Def(length(rel.ref())),
+						  stmt(ass(lvl.var, inv(add(fref(ls, "constantAttenuation"),
+									    mul(fref(ls, "linearAttenuation"), dst.ref()),
+									    mul(fref(ls, "quadraticAttenuation"), dst.ref(), dst.ref()))))))));
+		    }
+		};
+	    lvl = tdep.new GValue(FLOAT);
+	    dir = tdep.new GValue(VEC3);
+	    dl = dvals.new Value(FLOAT) {
+		    public Expression root() {
+			return(dot(norm, dir.depref()));
+		    }
+		};
+	    sl = svals.new Value(FLOAT) {
+		    public Expression root() {
+			Expression reflvl = pow(max(dot(edir, reflect(neg(dir.ref()), norm)), l(0.0)), shine);
+			Expression hvlvl = pow(max(dot(norm, normalize(add(edir, dir.ref())))), shine);
+			return(reflvl);
+		    }
+		};
+	    lvl.force();
+	    dl.force();
+	    sl.force();
+	}
+
+	protected void cons() {
+	    dvals.cons(code);
 	    code.add(stmt(aadd(diff, mul(pick(fref(mat, "ambient"), "rgb"),
-					 pick(fref(ls, "ambient"), "rgb"),
+					 pick(fref(ls,  "ambient"), "rgb"),
 					 lvl.ref()))));
-	    df = code.local(FLOAT, dot(norm, dir.ref()));
-	    Expression shine = fref(mat, "shininess");
-	    Expression refspec = pow(max(dot(edir, reflect(neg(dir.ref()), norm)), l(0.0)), shine);
-	    Expression hvspec = pow(max(dot(norm, normalize(add(edir, dir.ref())))), shine);
-	    code.add(new If(gt(df.ref(), l(0.0)),
+	    Block scalc = new Block();
+	    svals.cons(scalc);
+	    scalc.add(stmt(aadd(spec, mul(pick(fref(mat, "specular"), "rgb"),
+					  pick(fref(ls,  "specular"), "rgb"),
+					  sl.ref()))));
+	    code.add(new If(gt(dl.ref(), l(0.0)),
 			    new Block(stmt(aadd(diff, mul(pick(fref(mat, "diffuse"), "rgb"),
-						pick(fref(ls,  "diffuse"), "rgb"),
-							  df.ref(), lvl.ref()))),
+							  pick(fref(ls,  "diffuse"), "rgb"),
+							  dl.ref(), lvl.ref()))),
 				      new If(gt(shine, l(0.5)),
-					     stmt(aadd(spec, mul(pick(fref(mat, "specular"), "rgb"),
-								 pick(fref(ls,  "specular"), "rgb"),
-								 refspec)))))));
+					     scalc))));
 	}
     }
     public final DoLight dolight;
@@ -87,27 +144,29 @@ public class Phong extends ValBlock.Group {
     }
 
     public void cons2(Block blk) {
-	bcol.var = blk.local(VEC4, fref(prog.gl_FrontMaterial.ref(), "emission"));
+	bcol.var = blk.local(VEC3, pick(fref(prog.gl_FrontMaterial.ref(), "emission"), "rgb"));
 	scol.var = blk.local(VEC3, Vec3Cons.z);
-	/*
-	Variable i = blk.local(INT, "i", null);
-	blk.add(new For(ass(i, l(0)), lt(i.ref(), nlights.ref()), linc(i.ref()),
-			stmt(dolight.call(i.ref(), vert, edir, norm, pick(bcol.var.ref(), "rgb"), scol.var.ref()))));
-	*/
-	for(int i = 0; i < 4; i++) {
-	    /* No few drivers seem to be having trouble with the for
-	     * loop. It would be nice to be able to select this code
-	     * path only on those drivers. */
-	    blk.add(new If(gt(nlights.ref(), l(i)),
-			   stmt(dolight.call(l(i), vert, edir, norm, pick(bcol.var.ref(), "rgb"), scol.var.ref()))));
+	boolean unroll = true;
+	if(!unroll) {
+	    Variable i = blk.local(INT, "i", null);
+	    blk.add(new For(ass(i, l(0)), lt(i.ref(), nlights.ref()), linc(i.ref()),
+			    stmt(dolight.call(i.ref(), vert, edir, norm, bcol.var.ref(), scol.var.ref()))));
+	} else {
+	    for(int i = 0; i < 4; i++) {
+		/* No few drivers seem to be having trouble with the for
+		 * loop. It would be nice to be able to select this code
+		 * path only on those drivers. */
+		blk.add(new If(gt(nlights.ref(), l(i)),
+			       stmt(dolight.call(l(i), vert, edir, norm, bcol.var.ref(), scol.var.ref()))));
+	    }
 	}
-	blk.add(ass(pick(bcol.var.ref(), "a"), pick(fref(prog.gl_FrontMaterial.ref(), "diffuse"), "a")));
+	bcol.addmods(blk); scol.addmods(blk);
     }
 
     private static void fmod(final FragmentContext fctx, final Expression bcol, final Expression scol) {
 	fctx.fragcol.mod(new Macro1<Expression>() {
 		public Expression expand(Expression in) {
-		    return(add(mul(in, bcol), vec4(scol, l(0.0))));
+		    return(add(mul(in, vec4(bcol, pick(fref(fctx.prog.gl_FrontMaterial.ref(), "diffuse"), "a"))), vec4(scol, l(0.0))));
 		}
 	    }, 500);
     }
@@ -121,7 +180,7 @@ public class Phong extends ValBlock.Group {
 	this.edir = edir.ref();
 	this.norm = vctx.eyen.ref();
 
-	Expression bcol = new AutoVarying(VEC4) {
+	Expression bcol = new AutoVarying(VEC3) {
 		public Expression root(VertexContext vctx) {return(Phong.this.bcol.depref());}
 	    }.ref();
 	Expression scol = new AutoVarying(VEC3) {

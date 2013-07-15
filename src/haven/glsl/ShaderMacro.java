@@ -56,7 +56,6 @@ public interface ShaderMacro {
 
 	public static Program build(Collection<ShaderMacro> mods) {
 	    ProgramContext prog = new ProgramContext();
-	    GLColorVary.mod(prog.fctx);
 	    for(ShaderMacro mod : mods)
 		mod.modify(prog);
 	    return(new Program(prog));
