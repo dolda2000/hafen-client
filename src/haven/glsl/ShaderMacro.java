@@ -71,26 +71,42 @@ public interface ShaderMacro {
 
 	/* XXX: It would be terribly nice to replace these with some faster operation. */
 	private final Map<Uniform, Integer> umap = new IdentityHashMap<Uniform, Integer>();
-	public int uniform(Uniform var) {
+	public int cuniform(Uniform var) {
 	    Integer r = umap.get(var);
 	    if(r == null) {
 		String nm = built.symtab.get(var.name);
 		if(nm == null)
-		    throw(new ProgramException("Uniform not found in symtab: " + var, this, null));
-		umap.put(var, r = new Integer(uniform(nm)));
+		    r = new Integer(-1);
+		else
+		    r = new Integer(uniform(nm));
+		umap.put(var, r);
 	    }
 	    return(r.intValue());
 	}
-	private final Map<Uniform, Integer> amap = new IdentityHashMap<Uniform, Integer>();
-	public int attrib(Uniform var) {
+	public int uniform(Uniform var) {
+	    int r = cuniform(var);
+	    if(r < 0)
+		throw(new ProgramException("Uniform not found in symtab: " + var, this, null));
+	    return(r);
+	}
+	private final Map<Attribute, Integer> amap = new IdentityHashMap<Attribute, Integer>();
+	public int cattrib(Attribute var) {
 	    Integer r = amap.get(var);
 	    if(r == null) {
 		String nm = built.symtab.get(var.name);
 		if(nm == null)
-		    throw(new ProgramException("Attribute not found in symtab: " + var, this, null));
-		amap.put(var, r = new Integer(attrib(nm)));
+		    r = new Integer(-1);
+		else
+		    r = new Integer(attrib(nm));
+		amap.put(var, r);
 	    }
 	    return(r.intValue());
+	}
+	public int attrib(Attribute var) {
+	    int r = cattrib(var);
+	    if(r < 0)
+		throw(new ProgramException("Attribute not found in symtab: " + var, this, null));
+	    return(r);
 	}
     }
 }

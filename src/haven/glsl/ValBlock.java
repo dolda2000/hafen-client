@@ -41,7 +41,7 @@ public class ValBlock {
 	public final Type type;
 	public final Symbol name;
 	public boolean used;
-	protected Variable var;
+	public Variable var;
 	protected Expression init;
 	private final Collection<Value> deps = new LinkedList<Value>();
 	private final Collection<Value> sdeps = new LinkedList<Value>();

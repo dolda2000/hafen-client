@@ -35,6 +35,7 @@ public class Phong extends ValBlock.Group {
     private final ProgramContext prog;
     private final Expression vert, edir, norm;
     public final GValue bcol = new GValue(VEC3), scol = new GValue(VEC3);
+    public final boolean pfrag;
     public static final Uniform nlights = new Uniform(INT);
 
     public static class CelShade implements ShaderMacro {
@@ -65,18 +66,21 @@ public class Phong extends ValBlock.Group {
     }
 
     public class DoLight extends Function.Def {
-	final Expression i = param(IN, INT).ref();
-	final Expression vert = param(IN, VEC3).ref();
-	final Expression edir = param(IN, VEC3).ref();
-	final Expression norm = param(IN, VEC3).ref();
-	final LValue diff = param(INOUT, VEC3).ref();
-	final LValue spec = param(INOUT, VEC3).ref();
-	final Expression ls = idx(prog.gl_LightSource.ref(), i);
-	final Expression mat = prog.gl_FrontMaterial.ref();
-	final Expression shine = fref(mat, "shininess");
+	public final Expression i = param(IN, INT).ref();
+	public final Expression vert = param(IN, VEC3).ref();
+	public final Expression edir = param(IN, VEC3).ref();
+	public final Expression norm = param(IN, VEC3).ref();
+	public final LValue diff = param(INOUT, VEC3).ref();
+	public final LValue spec = param(INOUT, VEC3).ref();
+	public final Expression ls = idx(prog.gl_LightSource.ref(), i);
+	public final Expression mat = prog.gl_FrontMaterial.ref();
+	public final Expression shine = fref(mat, "shininess");
 	public final Value lvl, dir, dl, sl;
 	public final ValBlock dvals = new ValBlock();
 	public final ValBlock svals = new ValBlock();
+	private final OrderList<Runnable> mods = new OrderList<Runnable>();
+	public Block dcalc, scalc;
+	public Statement dcurs, scurs;
 
 	private DoLight() {
 	    super(VOID);
@@ -125,17 +129,26 @@ public class Phong extends ValBlock.Group {
 	    code.add(stmt(aadd(diff, mul(pick(fref(mat, "ambient"), "rgb"),
 					 pick(fref(ls,  "ambient"), "rgb"),
 					 lvl.ref()))));
-	    Block scalc = new Block();
+
+	    code.add(new If(gt(dl.ref(), l(0.0)), dcalc = new Block()));
+	    dcalc.add(dcurs = new Placeholder());
+	    dcalc.add(aadd(diff, mul(pick(fref(mat, "diffuse"), "rgb"),
+				     pick(fref(ls,  "diffuse"), "rgb"),
+				     dl.ref(), lvl.ref())));
+
+	    dcalc.add(new If(gt(shine, l(0.5)), scalc = new Block()));
 	    svals.cons(scalc);
-	    scalc.add(stmt(aadd(spec, mul(pick(fref(mat, "specular"), "rgb"),
-					  pick(fref(ls,  "specular"), "rgb"),
-					  sl.ref()))));
-	    code.add(new If(gt(dl.ref(), l(0.0)),
-			    new Block(stmt(aadd(diff, mul(pick(fref(mat, "diffuse"), "rgb"),
-							  pick(fref(ls,  "diffuse"), "rgb"),
-							  dl.ref(), lvl.ref()))),
-				      new If(gt(shine, l(0.5)),
-					     scalc))));
+	    scalc.add(scurs = new Placeholder());
+	    scalc.add(aadd(spec, mul(pick(fref(mat, "specular"), "rgb"),
+				     pick(fref(ls,  "specular"), "rgb"),
+				     sl.ref())));
+
+	    for(Runnable mod : mods)
+		mod.run();
+	}
+
+	public void mod(Runnable mod, int order) {
+	    mods.add(mod, order);
 	}
     }
     public final DoLight dolight;
@@ -173,6 +186,7 @@ public class Phong extends ValBlock.Group {
 
     public Phong(VertexContext vctx) {
 	vctx.mainvals.super();
+	pfrag = false;
 	prog = vctx.prog;
 	Value edir = MiscLib.vertedir(vctx);
 	depend(vctx.eyev); depend(edir); depend(vctx.eyen);
@@ -193,6 +207,7 @@ public class Phong extends ValBlock.Group {
 
     public Phong(FragmentContext fctx) {
 	fctx.mainvals.super();
+	pfrag = true;
 	prog = fctx.prog;
 	Value edir = MiscLib.fragedir(fctx);
 	Value norm = MiscLib.frageyen(fctx);

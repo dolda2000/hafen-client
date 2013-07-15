@@ -122,7 +122,6 @@ public class GLSettings implements java.io.Serializable {
     public static enum Lights {
 	VLIGHT(Light.vlights),
 	PLIGHT(Light.plights),
-	PSLIGHT(Light.pslights),
 	VCEL(Light.vcel),
 	PCEL(Light.pcel);
 
@@ -146,11 +145,13 @@ public class GLSettings implements java.io.Serializable {
 		    if(!cfg.haveglsl()) throw(new SettingException("Cel-shading requires a shader-compatible video card."));
 		    if(!shuse.val) throw(new SettingException("Cel-shading requires shader usage."));
 		    break;
+		/*
 		case PSLIGHT:
 		    if(!cfg.haveglsl()) throw(new SettingException("Shadowed lighting requires a shader-compatible video card."));
 		    if(!shuse.val) throw(new SettingException("Shadowed lighting requires shader usage."));
 		    if(!cfg.havefbo()) throw(new SettingException("Shadowed lighting requires a video card supporting framebuffers."));
 		    break;
+		*/
 		}
 	    }
 	};
