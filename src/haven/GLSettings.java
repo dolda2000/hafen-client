@@ -119,39 +119,31 @@ public class GLSettings implements java.io.Serializable {
 	    }
 	};
 
-    public static enum Lights {
-	VLIGHT(Light.vlights),
-	PLIGHT(Light.plights),
-	VCEL(Light.vcel),
-	PCEL(Light.pcel);
-
-	public final GLState l;
-	Lights(GLState l) {
-	    this.l = l;
-	}
-    };
-    public final EnumSetting<Lights> light = new EnumSetting<Lights>("light", Lights.class) {
-	    public Lights defval() {return(Lights.VLIGHT);}
-	    public void validate(Lights val) {
-		switch(val) {
-		case VLIGHT:
-		    break;
-		case PLIGHT:
+    public final BoolSetting flight = new BoolSetting("flight") {
+	    public Boolean defval() {return(false);}
+	    public void validate(Boolean val) {
+		if(val) {
 		    if(!cfg.haveglsl()) throw(new SettingException("Per-pixel lighting requires a shader-compatible video card."));
 		    if(!shuse.val) throw(new SettingException("Per-pixel lighting requires shader usage."));
-		    break;
-		case VCEL:
-		case PCEL:
-		    if(!cfg.haveglsl()) throw(new SettingException("Cel-shading requires a shader-compatible video card."));
-		    if(!shuse.val) throw(new SettingException("Cel-shading requires shader usage."));
-		    break;
-		/*
-		case PSLIGHT:
-		    if(!cfg.haveglsl()) throw(new SettingException("Shadowed lighting requires a shader-compatible video card."));
-		    if(!shuse.val) throw(new SettingException("Shadowed lighting requires shader usage."));
+		}
+	    }
+	};
+
+    public final BoolSetting cel = new BoolSetting("cel") {
+	    public Boolean defval() {return(false);}
+	    public void validate(Boolean val) {
+		if(val) {
+		    if(!flight.val) throw(new SettingException("Cel-shading requires per-fragment lighting."));
+		}
+	    }
+	};
+
+    public final BoolSetting lshadow = new BoolSetting("sdw") {
+	    public Boolean defval() {return(false);}
+	    public void validate(Boolean val) {
+		if(val) {
+		    if(!flight.val) throw(new SettingException("Shadowed lighting requires per-fragment lighting."));
 		    if(!cfg.havefbo()) throw(new SettingException("Shadowed lighting requires a video card supporting framebuffers."));
-		    break;
-		*/
 		}
 	    }
 	};

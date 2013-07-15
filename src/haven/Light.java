@@ -131,19 +131,32 @@ public class Light implements Rendered {
 		return(false);
 	    }
 	};
-    
     public static final GLState plights = new BaseLights(new ShaderMacro[] {plight});
     
-    public static final GLState vcel = new BaseLights(new ShaderMacro[] {vlight, new Phong.CelShade()});
-    
-    public static final GLState pcel = new BaseLights(new ShaderMacro[] {plight, new Phong.CelShade()});
+    public static final GLState.StandAlone celshade = new GLState.StandAlone(GLState.Slot.Type.DRAW, lighting) {
+	    public void apply(GOut g) {}
+	    public void unapply(GOut g) {}
+
+	    private final ShaderMacro[] shaders = {new Phong.CelShade()};
+	    public ShaderMacro[] shaders() {
+		return(shaders);
+	    }
+	    public boolean reqshaders() {
+		return(true);
+	    }
+	};
     
     public static final GLState deflight = new GLState() {
 	    public void apply(GOut g) {}
 	    public void unapply(GOut g) {}
 	    
 	    public void prep(Buffer buf) {
-		buf.cfg.pref.light.val.l.prep(buf);
+		if(buf.cfg.pref.flight.val)
+		    plights.prep(buf);
+		else
+		    vlights.prep(buf);
+		if(buf.cfg.pref.cel.val)
+		    celshade.prep(buf);
 	    }
 	};
     

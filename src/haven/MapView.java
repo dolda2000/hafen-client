@@ -443,7 +443,6 @@ public class MapView extends PView implements DTarget {
     private Coord3f smapcc = null;
     private ShadowMap smap = null;
     private long lsmch = 0;
-    private boolean usesh = true;
     public void setup(RenderList rl) {
 	Gob pl = player();
 	if(pl != null)
@@ -452,7 +451,7 @@ public class MapView extends PView implements DTarget {
 	    if(glob.lightamb != null) {
 		DirLight light = new DirLight(glob.lightamb, glob.lightdif, glob.lightspc, Coord3f.o.sadd((float)glob.lightelev, (float)glob.lightang, 1f));
 		rl.add(light, null);
-		if(usesh) {
+		if(rl.cfg.pref.lshadow.val) {
 		    if(smap == null)
 			smap = new ShadowMap(new Coord(2048, 2048), 750, 5000);
 		    smap.light = light;
