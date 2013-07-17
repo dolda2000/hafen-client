@@ -77,7 +77,7 @@ public abstract class MiscLib {
 		public Value make(ValBlock vals) {
 		    return(vals.new Value(VEC3, new Symbol.Gen("edir")) {
 			    public Expression root() {
-				return(normalize(frageyev.ref()));
+				return(neg(normalize(frageyev.ref())));
 			    }
 			});
 		}
