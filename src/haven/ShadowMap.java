@@ -186,7 +186,7 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
     public static final Shader shader = new Shader(0.0015, 4);
     private static final ShaderMacro[] shaders = {shader};
 
-    public boolean reqshaders() {return(true);}
+    // public boolean reqshaders() {return(true);}
     public ShaderMacro[] shaders() {return(shaders);}
 
     public void apply(GOut g) {
