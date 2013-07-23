@@ -156,14 +156,24 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 	    shcalc = new Function.Def(FLOAT) {
 		    {
 			LValue sdw = code.local(FLOAT, l(0.0)).ref();
-			LValue xo = code.local(FLOAT, null).ref();
-			LValue yo = code.local(FLOAT, null).ref();
 			Expression mapc = code.local(VEC3, div(pick(stc.ref(), "xyz"), pick(stc.ref(), "w"))).ref();
 			double xr = xd * (res - 1), yr = yd * (res - 1);
-			code.add(new For(ass(yo, l(-yr / 2)), lt(yo, l((yr / 2) + (yd / 2))), aadd(yo, l(yd)),
-					 new For(ass(xo, l(-xr / 2)), lt(xo, l((xr / 2) + (xd / 2))), aadd(xo, l(xd)),
-						 new If(gt(add(pick(texture2D(map.ref(), add(pick(mapc, "xy"), vec2(xo, yo))), "z"), l(thr)), pick(mapc, "z")),
-							stmt(aadd(sdw, l(1.0 / (res * res))))))));
+			boolean unroll = false;
+			if(!unroll) {
+			    LValue xo = code.local(FLOAT, null).ref();
+			    LValue yo = code.local(FLOAT, null).ref();
+			    code.add(new For(ass(yo, l(-yr / 2)), lt(yo, l((yr / 2) + (yd / 2))), aadd(yo, l(yd)),
+					     new For(ass(xo, l(-xr / 2)), lt(xo, l((xr / 2) + (xd / 2))), aadd(xo, l(xd)),
+						     new If(gt(add(pick(texture2D(map.ref(), add(pick(mapc, "xy"), vec2(xo, yo))), "z"), l(thr)), pick(mapc, "z")),
+							    stmt(aadd(sdw, l(1.0 / (res * res))))))));
+			} else {
+			    for(double yo = -yr / 2; yo < (yr / 2) + (yd / 2); yo += yd) {
+				for(double xo = -xr / 2; xo < (xr / 2) + (xd / 2); xo += xd) {
+				    code.add(new If(gt(add(pick(texture2D(map.ref(), add(pick(mapc, "xy"), vec2(l(xo), l(yo)))), "z"), l(thr)), pick(mapc, "z")),
+						    stmt(aadd(sdw, l(1.0 / (res * res))))));
+				}
+			    }
+			}
 			code.add(new Return(sdw));
 		    }
 		};
