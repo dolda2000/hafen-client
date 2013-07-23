@@ -48,10 +48,12 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
     private int slidx;
     private Matrix4f txf;
 
-    public ShadowMap(Coord res, float size, float depth) {
+    public ShadowMap(Coord res, float size, float depth, float dthr) {
 	lbuf = new TexE(res, GL2.GL_DEPTH_COMPONENT, GL2.GL_DEPTH_COMPONENT, GL.GL_UNSIGNED_INT);
 	lbuf.magfilter = GL.GL_LINEAR;
 	lbuf.wrapmode = GL2.GL_CLAMP;
+	shader = new Shader(1.0 / res.x, 1.0 / res.y, 4, dthr / depth);
+	shaders = new ShaderMacro[] {shader};
 	lproj = Projection.ortho(-size, size, -size, size, 1, depth);
 	lcam = new DirCam();
 	tgt = new FBView(new GLFrameBuffer(null, lbuf), GLState.compose(lproj, lcam));
@@ -149,18 +151,17 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 		}
 	    };
 
-	public static final double thr = 0.0005;
 	public final Function.Def shcalc;
-	public Shader(final double r, final int res) {
+	public Shader(final double xd, final double yd, final int res, final double thr) {
 	    shcalc = new Function.Def(FLOAT) {
 		    {
 			LValue sdw = code.local(FLOAT, l(0.0)).ref();
 			LValue xo = code.local(FLOAT, null).ref();
 			LValue yo = code.local(FLOAT, null).ref();
 			Expression mapc = code.local(VEC3, div(pick(stc.ref(), "xyz"), pick(stc.ref(), "w"))).ref();
-			double d = r / (res - 1);
-			code.add(new For(ass(yo, l(-r / 2)), lt(yo, l((r / 2) + (d / 4))), aadd(yo, l(d)),
-					 new For(ass(xo, l(-r / 2)), lt(xo, l((r / 2) + (d / 4))), aadd(xo, l(d)),
+			double xr = xd * (res - 1), yr = yd * (res - 1);
+			code.add(new For(ass(yo, l(-yr / 2)), lt(yo, l((yr / 2) + (yd / 2))), aadd(yo, l(yd)),
+					 new For(ass(xo, l(-xr / 2)), lt(xo, l((xr / 2) + (xd / 2))), aadd(xo, l(xd)),
 						 new If(gt(add(pick(texture2D(map.ref(), add(pick(mapc, "xy"), vec2(xo, yo))), "z"), l(thr)), pick(mapc, "z")),
 							stmt(aadd(sdw, l(1.0 / (res * res))))))));
 			code.add(new Return(sdw));
@@ -183,8 +184,8 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 	}
     }
 
-    public static final Shader shader = new Shader(0.0015, 4);
-    private static final ShaderMacro[] shaders = {shader};
+    public final Shader shader;
+    private final ShaderMacro[] shaders;
 
     // public boolean reqshaders() {return(true);}
     public ShaderMacro[] shaders() {return(shaders);}

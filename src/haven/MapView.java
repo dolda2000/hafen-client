@@ -453,7 +453,7 @@ public class MapView extends PView implements DTarget {
 		rl.add(light, null);
 		if(rl.cfg.pref.lshadow.val) {
 		    if(smap == null)
-			smap = new ShadowMap(new Coord(2048, 2048), 750, 5000);
+			smap = new ShadowMap(new Coord(2048, 2048), 750, 5000, 1);
 		    smap.light = light;
 		    Coord3f dir = new Coord3f(-light.dir[0], -light.dir[1], -light.dir[2]);
 		    Coord3f cc = getcc();
