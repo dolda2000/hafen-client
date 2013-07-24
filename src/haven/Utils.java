@@ -209,66 +209,45 @@ public class Utils {
     }
 	
     static int ub(byte b) {
-	if(b < 0)
-	    return(256 + b);
-	else
-	    return(b);
+	return(((int)b) & 0xff);
     }
 	
     static byte sb(int b) {
-	if(b > 127)
-	    return((byte)(-256 + b));
-	else
-	    return((byte)b);
+	return((byte)b);
     }
 	
     static int uint16d(byte[] buf, int off) {
-	return(ub(buf[off]) + (ub(buf[off + 1]) * 256));
+	return(ub(buf[off]) | (ub(buf[off + 1]) << 8));
     }
 	
     static int int16d(byte[] buf, int off) {
-	int u = uint16d(buf, off);
-	if(u > 32767)
-	    return(-65536 + u);
-	else
-	    return(u);
+	return((int)(short)uint16d(buf, off));
     }
 	
     static long uint32d(byte[] buf, int off) {
-	return(ub(buf[off]) + (ub(buf[off + 1]) * 256) + (ub(buf[off + 2]) * 65536) + (ub(buf[off + 3]) * 16777216l));
+	return((long)ub(buf[off]) | ((long)ub(buf[off + 1]) << 8) | ((long)ub(buf[off + 2]) << 16) | ((long)ub(buf[off + 3]) << 24));
     }
 	
     static void uint32e(long num, byte[] buf, int off) {
-	buf[off] = sb((int)(num & 0xff));
-	buf[off + 1] = sb((int)((num & 0xff00) >> 8));
-	buf[off + 2] = sb((int)((num & 0xff0000) >> 16));
-	buf[off + 3] = sb((int)((num & 0xff000000) >> 24));
+	buf[off] = (byte)(num & 0xff);
+	buf[off + 1] = (byte)((num & 0x0000ff00) >> 8);
+	buf[off + 2] = (byte)((num & 0x00ff0000) >> 16);
+	buf[off + 3] = (byte)((num & 0xff000000) >> 24);
     }
 	
     static int int32d(byte[] buf, int off) {
-	long u = uint32d(buf, off);
-	if(u > 0x7fffffffL)
-	    return((int)(u - 0x100000000L));
-	else
-	    return((int)u);
+	return((int)uint32d(buf, off));
     }
     
     public static long int64d(byte[] buf, int off) {
 	long b = 0;
-	for(int i = 0; i < 7; i++)
+	for(int i = 0; i < 8; i++)
 	    b |= ((long)ub(buf[i])) << (i * 8);
-	int h = ub(buf[7]);
-	if(h < 128)
-	    return(b | ((long)h << 56));
-	else
-	    return(0L + ((long)(-255 + h) * 0x0100000000000000L) + (-0x0100000000000000L + b));
+	return(b);
     }
 	
     static void int32e(int num, byte[] buf, int off) {
-	if(num < 0)
-	    uint32e(0x100000000L + ((long)num), buf, off);
-	else
-	    uint32e(num, buf, off);
+	uint32e(((long)num) & 0xffffffff, buf, off);
     }
 	
     static void uint16e(int num, byte[] buf, int off) {
