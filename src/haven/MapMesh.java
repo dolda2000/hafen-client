@@ -574,6 +574,7 @@ public class MapMesh implements Rendered, Disposable {
     public void drawflat(GOut g, int mode) {
 	g.apply();
 	flats[mode].draw(g);
+	g.gl.glColor3f(1, 1, 1);
     }
     
     public void dispose() {
