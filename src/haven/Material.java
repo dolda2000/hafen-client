@@ -258,10 +258,6 @@ public class Material extends GLState {
 			light = Light.vlights;
 		    } else if(l.equals("pp")) {
 			light = Light.plights;
-		    } else if(l.equals("vc")) {
-			light = Light.vcel;
-		    } else if(l.equals("pc")) {
-			light = Light.pcel;
 		    } else if(l.equals("n")) {
 			light = null;
 		    } else {

@@ -141,7 +141,7 @@ public abstract class GLShader implements java.io.Serializable {
 	    this.args = args;
 	}
 	
-	private VertexShader(String source) {
+	public VertexShader(String source) {
 	    this(source, "", null, 0);
 	}
 
@@ -264,7 +264,7 @@ public abstract class GLShader implements java.io.Serializable {
 	    this.order = order;
 	}
 	
-	private FragmentShader(String source) {
+	public FragmentShader(String source) {
 	    this(source, "", null, 0);
 	}
 	

@@ -37,7 +37,6 @@ public class GLProgram implements java.io.Serializable {
     
     public GLProgram(Collection<GLShader> shaders) {
 	this.shaders = new ArrayList<GLShader>(shaders);
-	makemains(this.shaders);
     }
     
     /* Meaningful function is meaningful. :-P */
@@ -54,6 +53,7 @@ public class GLProgram implements java.io.Serializable {
     
     public GLProgram(GLShader[][] shaders) {
 	this(collapse(shaders));
+	makemains(this.shaders);
     }
 
     private static void makemains(Collection<GLShader> shaders) {
@@ -134,15 +134,15 @@ public class GLProgram implements java.io.Serializable {
     }
     
     public void apply(GOut g) {
-	if((glp != null) && (glp.gl != g.gl)) {
-	    glp.dispose();
-	    glp = null;
+	synchronized(this) {
+	    if((glp != null) && (glp.gl != g.gl))
+		dispose();
+	    if(glp == null) {
+		glp = new ProgOb(g.gl);
+		glp.link(this);
+	    }
+	    g.gl.glUseProgramObjectARB(glp.id);
 	}
-	if(glp == null) {
-	    glp = new ProgOb(g.gl);
-	    glp.link(this);
-	}
-	g.gl.glUseProgramObjectARB(glp.id);
     }
     
     public void dispose() {
@@ -152,6 +152,8 @@ public class GLProgram implements java.io.Serializable {
 		glp = null;
 		cur.dispose();
 	    }
+	    umap.clear();
+	    amap.clear();
 	}
     }
 

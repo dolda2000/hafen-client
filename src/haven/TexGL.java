@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.glsl.*;
 import java.awt.Color;
 import java.util.*;
 import javax.media.opengl.*;
@@ -57,10 +58,7 @@ public abstract class TexGL extends Tex {
     
     public static class TexDraw extends GLState {
 	public static final Slot<TexDraw> slot = new Slot<TexDraw>(Slot.Type.DRAW, TexDraw.class, HavenPanel.global);
-	private static final GLShader[] shaders = {
-	    GLShader.VertexShader.load(TexGL.class, "glsl/tex2d.vert"),
-	    GLShader.FragmentShader.load(TexGL.class, "glsl/tex2d.frag"),
-	};
+	private static final ShaderMacro[] shaders = {new Tex2D()};
 	public final TexGL tex;
 	
 	public TexDraw(TexGL tex) {
@@ -91,7 +89,7 @@ public abstract class TexGL extends Tex {
     
 	public void reapply(GOut g) {
 	    GL2 gl = g.gl;
-	    gl.glUniform1i(g.st.prog.uniform("tex2d"), 0);
+	    gl.glUniform1i(g.st.prog.uniform(Tex2D.tex2d), 0);
 	}
 
 	public void unapply(GOut g) {
@@ -103,7 +101,7 @@ public abstract class TexGL extends Tex {
 		gl.glDisable(GL.GL_TEXTURE_2D);
 	}
     
-	public GLShader[] shaders() {
+	public ShaderMacro[] shaders() {
 	    return(shaders);
 	}
     

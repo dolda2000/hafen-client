@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.glsl.ShaderMacro;
 import javax.media.opengl.*;
 import java.awt.Color;
 
@@ -209,18 +210,12 @@ public abstract class States extends GLState {
     }
     
     public static final StandAlone nullprog = new StandAlone(Slot.Type.DRAW, PView.proj) {
-	    private final GLShader[] sh;
-	    {
-		sh = new GLShader[] {
-		    new GLShader.VertexShader("void null() {}", "void null();", "null", 0),
-		    new GLShader.FragmentShader("void null(vec4 res) {}", "void null(vec4 res);", "null", 0),
-		};
-	    }
+	    private final ShaderMacro[] sh = {};
 	    
 	    public void apply(GOut g) {}
 	    public void unapply(GOut g) {}
 	    
-	    public GLShader[] shaders() {
+	    public ShaderMacro[] shaders() {
 		return(sh);
 	    }
 	    
@@ -229,16 +224,16 @@ public abstract class States extends GLState {
     
     public static final Slot<GLState> adhoc = new Slot<GLState>(Slot.Type.DRAW, GLState.class, PView.wnd);
     public static class AdHoc extends GLState {
-	private final GLShader[] sh;
+	private final ShaderMacro[] sh;
 	
-	public AdHoc(GLShader[] sh) {
+	public AdHoc(ShaderMacro[] sh) {
 	    this.sh = sh;
 	}
 	
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}
 	
-	public GLShader[] shaders() {return(sh);}
+	public ShaderMacro[] shaders() {return(sh);}
 	public boolean reqshaders() {return(sh != null);}
 	
 	public void prep(Buffer buf) {
