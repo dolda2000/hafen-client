@@ -810,6 +810,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 			return("TileTex(" + Resource.this.name + ")");
 		    }
 		};
+	    packbuf.centroid = true;
 	    Graphics g = packbuf.graphics();
 	    int x = 1, y = 1;
 	    for(Tile t :  tiles) {
