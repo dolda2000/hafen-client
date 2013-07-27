@@ -27,12 +27,23 @@
 package haven.glsl;
 
 public class Varying extends Variable.Global {
+    public static enum Interpol {
+	NORMAL, FLAT, NOPERSPECTIVE, CENTROID
+    };
+    public Interpol ipol = Interpol.NORMAL;
+    protected Interpol ipol(Context ctx) {return(ipol);}
+
     public Varying(Type type, Symbol name) {
 	super(type, name);
     }
 
     private class Def extends Definition {
 	public void output(Output out) {
+	    switch(ipol(out.ctx)) {
+	    case FLAT:          {out.write("flat "); break;}
+	    case NOPERSPECTIVE: {out.write("noperspective "); break;}
+	    case CENTROID:      {out.write("centroid "); break;}
+	    }
 	    out.write("varying ");
 	    super.output(out);
 	}
