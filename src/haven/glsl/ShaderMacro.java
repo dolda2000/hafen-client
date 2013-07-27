@@ -36,6 +36,7 @@ public interface ShaderMacro {
     public void modify(ProgramContext prog);
 
     public static class Program extends GLProgram {
+	public static boolean dumpall = false;
 	public transient final ProgramContext built;
 
 	private static Collection<GLShader> build(ProgramContext prog) {
@@ -58,7 +59,18 @@ public interface ShaderMacro {
 	    ProgramContext prog = new ProgramContext();
 	    for(ShaderMacro mod : mods)
 		mod.modify(prog);
-	    return(new Program(prog));
+	    Program ret = new Program(prog);
+	    if(dumpall) {
+		System.err.println(mods + ": ");
+		for(GLShader sh : ret.shaders) {
+		    System.err.println("    " + sh + ": ");
+		    System.err.print(sh.source);
+		}
+		System.err.println();
+		System.err.println("--------");
+		System.err.println();
+	    }
+	    return(ret);
 	}
 
 	public void dispose() {
