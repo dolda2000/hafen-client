@@ -45,6 +45,13 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	return(buf[0]);
     }
 
+    private static float glgetf(GL gl, int param) {
+	float[] buf = {0};
+	gl.glGetFloatv(param, buf, 0);
+	GOut.checkerr(gl);
+	return(buf[0]);
+    }
+
     public static GLConfig fromgl(GL gl, GLContext ctx, GLCapabilitiesImmutable caps) {
 	GLConfig c = new GLConfig();
 	c.maxlights = glgeti(gl, GL2.GL_MAX_LIGHTS);
