@@ -129,6 +129,8 @@ public abstract class TexGL extends Tex {
 		    gl.glDisable(GL2.GL_ALPHA_TEST);
 	    }
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
+	    if(g.st.pdirty)
+		reapply(g);
 	}
 	
 	public String toString() {

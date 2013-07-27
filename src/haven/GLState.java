@@ -314,7 +314,7 @@ public abstract class GLState {
     
     public static class Applier {
 	public static boolean debug = false;
-	private Buffer old, cur, next;
+	public Buffer old, cur, next;
 	public final GL2 gl;
 	public final GLConfig cfg;
 	private boolean[] trans = new boolean[0], repl = new boolean[0];
@@ -322,11 +322,13 @@ public abstract class GLState {
 	private int proghash = 0;
 	public ShaderMacro.Program prog;
 	public boolean usedprog;
+	public boolean pdirty = false;
 	public long time = 0;
 	
 	/* It seems ugly to treat these so specially, but right now I
 	 * cannot see any good alternative. */
 	public Matrix4f cam = Matrix4f.id, wxf = Matrix4f.id, mv = Matrix4f.identity();
+	private Matrix4f ccam = null, cwxf = null;
 	
 	public Applier(GL2 gl, GLConfig cfg) {
 	    this.gl = gl;
@@ -415,8 +417,7 @@ public abstract class GLState {
 		    prog = np;
 		    if(debug)
 			checkerr(g.gl);
-		} else {
-		    dirty = false;
+		    pdirty = true;
 		}
 	    }
 	    if((prog != null) != usedprog) {
@@ -425,7 +426,6 @@ public abstract class GLState {
 			repl[i] = true;
 		}
 	    }
-	    Matrix4f oc = cam, ow = wxf;
 	    cur.copy(old);
 	    for(int i = deplist.length - 1; i >= 0; i--) {
 		int id = deplist[i].id;
@@ -438,12 +438,18 @@ public abstract class GLState {
 		    cur.states[id] = null;
 		}
 	    }
+	    /* Note on invariants: States may exit non-locally
+	     * from apply, applyto/applyfrom or reapply (e.g. by
+	     * throwing Loading exceptions) in a defined way
+	     * provided they do so before they have changed any GL
+	     * state. If they exit non-locally after GL state has
+	     * been altered, future results are undefined. */
 	    for(int i = 0; i < deplist.length; i++) {
 		int id = deplist[i].id;
 		if(repl[id]) {
-		    cur.states[id] = next.states[id];
-		    if(cur.states[id] != null) {
-			cur.states[id].apply(g);
+		    if(next.states[id] != null) {
+			next.states[id].apply(g);
+			cur.states[id] = next.states[id];
 			if(debug)
 			    stcheckerr(g, "apply", cur.states[id]);
 		    }
@@ -451,19 +457,20 @@ public abstract class GLState {
 		    cur.states[id].applyto(g, next.states[id]);
 		    if(debug)
 			stcheckerr(g, "applyto", cur.states[id]);
-		    GLState cs = cur.states[id];
-		    (cur.states[id] = next.states[id]).applyfrom(g, cs);
+		    next.states[id].applyfrom(g, cur.states[id]);
+		    cur.states[id] = next.states[id];
 		    if(debug)
 			stcheckerr(g, "applyfrom", cur.states[id]);
-		} else if((prog != null) && dirty && (shaders[id] != null)) {
+		} else if((prog != null) && pdirty && (shaders[id] != null)) {
 		    cur.states[id].reapply(g);
 		    if(debug)
 			stcheckerr(g, "reapply", cur.states[id]);
 		}
 	    }
-	    if((oc != cam) || (ow != wxf)) {
+	    pdirty = false;
+	    if((ccam != cam) || (cwxf != wxf)) {
 		/* See comment above */
-		mv.load(oc = cam).mul1(ow = wxf);
+		mv.load(ccam = cam).mul1(cwxf = wxf);
 		matmode(GL2.GL_MODELVIEW);
 		gl.glLoadMatrixf(mv.m, 0);
 	    }

@@ -204,9 +204,13 @@ public class RenderList {
 	}
 	Arrays.sort(list, 0, cur, cmp);
     }
-    
+
+    public static class RLoad extends Loading {}
+
     protected void render(GOut g, Rendered r) {
-	r.draw(g);
+	try {
+	    r.draw(g);
+	} catch(RLoad l) {}
     }
 
     public void render(GOut g) {

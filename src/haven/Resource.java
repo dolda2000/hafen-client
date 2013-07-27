@@ -607,7 +607,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		    return(tex);
 		tex = new TexI(img) {
 			public String toString() {
-			    return("TexI(" + Resource.this.name + ")");
+			    return("TexI(" + Resource.this.name + ", " + id + ")");
 			}
 		    };
 		return(tex);
