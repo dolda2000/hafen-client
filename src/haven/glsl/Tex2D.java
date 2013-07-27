@@ -33,9 +33,18 @@ import haven.glsl.ValBlock.Value;
 
 public class Tex2D implements ShaderMacro {
     public static final Uniform tex2d = new Uniform(Type.SAMPLER2D);
+    public Varying.Interpol ipol = Varying.Interpol.NORMAL;
+
     public static final AutoVarying texcoord = new AutoVarying(VEC2, "s_tex2d") {
 	    protected Expression root(VertexContext vctx) {
 		return(pick(vctx.gl_MultiTexCoord[0].ref(), "st"));
+	    }
+
+	    protected Interpol ipol(Context ctx) {
+		Tex2D mod;
+		if((ctx instanceof ShaderContext) && ((mod = ((ShaderContext)ctx).prog.getmod(Tex2D.class)) != null))
+		    return(mod.ipol);
+		return(super.ipol(ctx));
 	    }
 	};
 
@@ -59,5 +68,6 @@ public class Tex2D implements ShaderMacro {
 		    return(mul(in, tex2d.ref()));
 		}
 	    }, 0);
+	prog.module(this);
     }
 }
