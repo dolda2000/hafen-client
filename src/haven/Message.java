@@ -58,6 +58,8 @@ public class Message implements java.io.Serializable {
     public static final int T_INT16 = 10;
     public static final int T_NIL = 12;
     public static final int T_BYTES = 14;
+    public static final int T_FLOAT32 = 15;
+    public static final int T_FLOAT64 = 16;
 	
     public static final Message nil = new Message(0);
 
@@ -241,6 +243,16 @@ public class Message implements java.io.Serializable {
     public Color color() {
 	return(new Color(uint8(), uint8(), uint8(), uint8()));
     }
+
+    public float float32() {
+	off += 4;
+	return(Utils.float32d(blob, off - 4));
+    }
+
+    public double float64() {
+	off += 8;
+	return(Utils.float64d(blob, off - 8));
+    }
 	
     public Object[] list() {
 	ArrayList<Object> ret = new ArrayList<Object>();
@@ -286,6 +298,12 @@ public class Message implements java.io.Serializable {
 		if((len & 128) != 0)
 		    len = int32();
 		ret.add(bytes(len));
+		break;
+	    case T_FLOAT32:
+		ret.add(float32());
+		break;
+	    case T_FLOAT64:
+		ret.add(float64());
 		break;
 	    default:
 		throw(new RuntimeException("Encountered unknown type " + t + " in TTO list."));
