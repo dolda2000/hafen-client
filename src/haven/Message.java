@@ -244,38 +244,50 @@ public class Message implements java.io.Serializable {
 	
     public Object[] list() {
 	ArrayList<Object> ret = new ArrayList<Object>();
-	while(true) {
+	list: while(true) {
 	    if(off >= blob.length)
 		break;
 	    int t = uint8();
-	    if(t == T_END) {
-		break;
-	    } else if(t == T_INT) {
+	    switch(t) {
+	    case T_END:
+		break list;
+	    case T_INT:
 		ret.add(int32());
-	    } else if(t == T_STR) {
+		break;
+	    case T_STR:
 		ret.add(string());
-	    } else if(t == T_COORD) {
+		break;
+	    case T_COORD:
 		ret.add(coord());
-	    } else if(t == T_UINT8) {
+		break;
+	    case T_UINT8:
 		ret.add(uint8());
-	    } else if(t == T_UINT16) {
+		break;
+	    case T_UINT16:
 		ret.add(uint16());
-	    } else if(t == T_INT8) {
+		break;
+	    case T_INT8:
 		ret.add(int8());
-	    } else if(t == T_INT16) {
+		break;
+	    case T_INT16:
 		ret.add(int16());
-	    } else if(t == T_COLOR) {
+		break;
+	    case T_COLOR:
 		ret.add(color());
-	    } else if(t == T_TTOL) {
+		break;
+	    case T_TTOL:
 		ret.add(list());
-	    } else if(t == T_NIL) {
+		break;
+	    case T_NIL:
 		ret.add(null);
-	    } else if(t == T_BYTES) {
+		break;
+	    case T_BYTES:
 		int len = uint8();
 		if((len & 128) != 0)
 		    len = int32();
 		ret.add(bytes(len));
-	    } else {
+		break;
+	    default:
 		throw(new RuntimeException("Encountered unknown type " + t + " in TTO list."));
 	    }
 	}
