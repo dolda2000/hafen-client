@@ -109,9 +109,18 @@ public class MapMesh implements Rendered, Disposable {
 		i += 2;
 	    }
 	}
+
+	public SPoint[] fortile(Coord sc) {
+	    return(new SPoint[] {
+		    spoint(sc),
+		    spoint(sc.add(0, 1)),
+		    spoint(sc.add(1, 1)),
+		    spoint(sc.add(1, 0)),
+		});
+	}
     }
     
-    private static void splitquad(MeshBuf buf, MeshBuf.Vertex v1, MeshBuf.Vertex v2, MeshBuf.Vertex v3, MeshBuf.Vertex v4) {
+    public static void splitquad(MeshBuf buf, MeshBuf.Vertex v1, MeshBuf.Vertex v2, MeshBuf.Vertex v3, MeshBuf.Vertex v4) {
 	if(Math.abs(v1.pos.z - v3.pos.z) > Math.abs(v2.pos.z - v4.pos.z)) {
 	    buf.new Face(v1, v2, v3);
 	    buf.new Face(v1, v3, v4);
@@ -145,12 +154,7 @@ public class MapMesh implements Rendered, Disposable {
 
     /* Inner classes cannot have static declarations D:< */
     private static SPoint[] fortile(Surface surf, Coord sc) {
-	return(new SPoint[] {
-		surf.spoint(sc),
-		surf.spoint(sc.add(0, 1)),
-		surf.spoint(sc.add(1, 1)),
-		surf.spoint(sc.add(1, 0)),
-	    });
+	return(surf.fortile(sc));
     }
 
     public class Plane extends Shape {
@@ -167,10 +171,14 @@ public class MapMesh implements Rendered, Disposable {
 	    this(fortile(surf, sc), z, st);
 	}
 
-	public Plane(SPoint[] vrt, int z, Tex tex, boolean clip) {
-	    this(vrt, z, stfor(tex, clip));
+	public Plane(SPoint[] vrt, int z, GLState st, Tex tex) {
+	    this(vrt, z, st);
 	    this.tex = tex;
 	    texrot(null, null, 0, false);
+	}
+
+	public Plane(SPoint[] vrt, int z, Tex tex, boolean clip) {
+	    this(vrt, z, stfor(tex, clip), tex);
 	}
 	
 	public Plane(Surface surf, Coord sc, int z, Tex tex, boolean clip) {
