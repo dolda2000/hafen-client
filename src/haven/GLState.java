@@ -378,7 +378,7 @@ public abstract class GLState {
 		synchronized(Slot.class) {
 		    trans = new boolean[slotnum];
 		    repl = new boolean[slotnum];
-		    shaders = new ShaderMacro[slotnum][];
+		    shaders = Utils.extend(shaders, slotnum);
 		}
 	    }
 	    bufdiff(cur, next, trans, repl);
@@ -588,7 +588,7 @@ public abstract class GLState {
 	    if(now - lastclean > 60000) {
 		for(int i = 0; i < ptab.length; i++) {
 		    SavedProg c, p;
-		    for(c = ptab[i], p = null; c != null; c = c.next) {
+		    for(c = ptab[i], p = null; c != null; p = c, c = c.next) {
 			if(!c.used) {
 			    if(p != null)
 				p.next = c.next;
