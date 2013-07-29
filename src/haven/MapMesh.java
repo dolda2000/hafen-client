@@ -207,6 +207,7 @@ public class MapMesh implements Rendered, Disposable {
 	}
 	
 	public void build(MeshBuf buf) {
+	    MeshBuf.Tex btex = buf.layer(MeshBuf.tex);
 	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm);
 	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
 	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
@@ -214,10 +215,10 @@ public class MapMesh implements Rendered, Disposable {
 	    Tex tex = this.tex;
 	    if(tex != null) {
 		int r = tex.sz().x, b = tex.sz().y;
-		v1.tex = new Coord3f(tex.tcx(texx[0]), tex.tcy(texy[0]), 0.0f);
-		v2.tex = new Coord3f(tex.tcx(texx[1]), tex.tcy(texy[1]), 0.0f);
-		v3.tex = new Coord3f(tex.tcx(texx[2]), tex.tcy(texy[2]), 0.0f);
-		v4.tex = new Coord3f(tex.tcx(texx[3]), tex.tcy(texy[3]), 0.0f);
+		btex.set(v1, new Coord3f(tex.tcx(texx[0]), tex.tcy(texy[0]), 0.0f));
+		btex.set(v2, new Coord3f(tex.tcx(texx[1]), tex.tcy(texy[1]), 0.0f));
+		btex.set(v3, new Coord3f(tex.tcx(texx[2]), tex.tcy(texy[2]), 0.0f));
+		btex.set(v4, new Coord3f(tex.tcx(texx[3]), tex.tcy(texy[3]), 0.0f));
 	    }
 	    splitquad(buf, v1, v2, v3, v4);
 	}
@@ -421,6 +422,7 @@ public class MapMesh implements Rendered, Disposable {
 	    if(surf == null)
 		surf = Surface.class;
 	    MeshBuf buf = new MeshBuf();
+	    MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
 	    Coord ult = ul.div(tilesz);
 	    Coord brt = br.sub(1, 1).div(tilesz).add(1, 1);
 	    Coord t = new Coord();
@@ -434,7 +436,8 @@ public class MapMesh implements Rendered, Disposable {
 					       (float)((t.y * tilesz.y) - ul.y) / (float)(br.y - ul.y),
 					       0);
 		    Coord3f pos = p.pos.add((cut.ul.x * tilesz.x) - cc.x, -((cut.ul.y * tilesz.y) - cc.y), -cz);
-		    vm[t.x - ult.x][t.y - ult.y] = buf.new Vertex(pos, p.nrm, texc);
+		    MeshBuf.Vertex v = vm[t.x - ult.x][t.y - ult.y] = buf.new Vertex(pos, p.nrm);
+		    ta.set(v, texc);
 		}
 	    }
 	    for(t.y = 0; t.y < brt.y - ult.y; t.y++) {

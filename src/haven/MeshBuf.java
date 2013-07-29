@@ -30,30 +30,107 @@ import java.util.*;
 import java.nio.*;
 
 public class MeshBuf {
-    public final Collection<Vertex> v = new LinkedList<Vertex>();
-    public final Collection<Face> f = new LinkedList<Face>();
+    public final Collection<Vertex> v = new ArrayList<Vertex>();
+    public final Collection<Face> f = new ArrayList<Face>();
     private VertexBuf vbuf = null;
-    
-    public class Vertex {
-	public Coord3f pos, nrm, tex;
-	private short idx;
-	
-	public Vertex(Coord3f pos, Coord3f nrm, Coord3f tex) {
-	    this.pos = pos;
-	    this.nrm = nrm;
-	    this.tex = tex;
-	    v.add(this);
+    private int nextid = 0;
+    private Layer<?>[] layers = new Layer<?>[0];
+    private LayerID<?>[] lids = new LayerID<?>[0];
+
+    public abstract class Layer<T> {
+	public final int idx;
+
+	public Layer() {
+	    idx = nextid++;
+	    layers = Utils.extend(layers, nextid);
+	    lids = Utils.extend(lids, nextid);
+	    layers[idx] = this;
+	    for(Vertex o : v)
+		o.attrs = Utils.extend(o.attrs, nextid);
 	}
-	
-	public Vertex(Coord3f pos, Coord3f nrm) {
-	    this(pos, nrm, null);
+
+	public void set(Vertex v, T data) {
+	    v.attrs[idx] = data;
 	}
-	
-	public String toString() {
-	    return(String.format("MeshBuf.Vertex(%s, %s, %s)", pos, nrm, tex));
+
+	@SuppressWarnings("unchecked")
+	public T get(Vertex v) {
+	    return((T)v.attrs[idx]);
+	}
+
+	public abstract VertexBuf.AttribArray build(Collection<T> in);
+
+	public void copy(VertexBuf src, Vertex[] vmap, int off) {}
+    }
+
+    public static class LayerID<L> {
+	public final Class<L> cl;
+	private final java.lang.reflect.Constructor<L> cons;
+
+	public LayerID(Class<L> cl) {
+	    this.cl = cl;
+	    try {
+		this.cons = cl.getConstructor(MeshBuf.class);
+	    } catch(NoSuchMethodException e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
+	public L cons(MeshBuf buf) {
+	    return(Utils.construct(cons, buf));
 	}
     }
-    
+
+    public class Tex extends Layer<Coord3f> {
+	public VertexBuf.TexelArray build(Collection<Coord3f> in) {
+	    FloatBuffer data = Utils.mkfbuf(in.size() * 2);
+	    for(Coord3f c : in) {
+		data.put(c.x); data.put(c.y);
+	    }
+	    return(new VertexBuf.TexelArray(data));
+	}
+
+	public void copy(VertexBuf buf, Vertex[] vmap, int off) {
+	    VertexBuf.TexelArray src = buf.buf(VertexBuf.TexelArray.class);
+	    if(src == null)
+		return;
+	    for(int i = 0, o = off * 2; i < vmap.length; i++, o += 2) {
+		if(vmap[i] != null)
+		    set(vmap[i], new Coord3f(src.data.get(o), src.data.get(o + 1), 0));
+	    }
+	}
+    }
+    public static final LayerID<Tex> tex = new LayerID<Tex>(Tex.class);
+
+    @SuppressWarnings("unchecked")
+    public <L extends Layer> L layer(LayerID<L> id) {
+	if(id == null)
+	    throw(new NullPointerException());
+	for(int i = 0; i < lids.length; i++) {
+	    if(lids[i] == id)
+		return((L)layers[i]);
+	}
+	L ret = id.cons(this);
+	lids[ret.idx] = id;
+	return(ret);
+    }
+
+    public class Vertex {
+	public Coord3f pos, nrm;
+	private Object[] attrs = new Object[layers.length];
+	private short idx;
+
+	public Vertex(Coord3f pos, Coord3f nrm) {
+	    this.pos = pos;
+	    this.nrm = nrm;
+	    v.add(this);
+	}
+
+	public String toString() {
+	    return(String.format("MeshBuf.Vertex(%s, %s)", pos, nrm));
+	}
+    }
+
     public class Face {
 	public final Vertex v1, v2, v3;
 	
@@ -62,8 +139,12 @@ public class MeshBuf {
 	    f.add(this);
 	}
     }
-    
-    public Vertex[] copy(FastMesh src) {
+
+    public interface LayerMapper {
+	public Layer mapbuf(MeshBuf buf, VertexBuf.AttribArray src);
+    }
+
+    public Vertex[] copy(FastMesh src, LayerMapper mapper) {
 	int min = -1, max = -1;
 	for(int i = 0; i < src.num * 3; i++) {
 	    int idx = src.indb.get(i);
@@ -75,7 +156,6 @@ public class MeshBuf {
 	int nv = 0;
 	VertexBuf.VertexArray posb = src.vert.buf(VertexBuf.VertexArray.class);
 	VertexBuf.NormalArray nrmb = src.vert.buf(VertexBuf.NormalArray.class);
-	VertexBuf.TexelArray texb = src.vert.buf(VertexBuf.TexelArray.class);
 	Vertex[] vmap = new Vertex[max + 1 - min];
 	for(int i = 0; i < src.num * 3; i++) {
 	    int idx = src.indb.get(i);
@@ -84,14 +164,14 @@ public class MeshBuf {
 		Coord3f pos = new Coord3f(posb.data.get(o), posb.data.get(o + 1), posb.data.get(o + 2));
 		o = idx * nrmb.n;
 		Coord3f nrm = new Coord3f(nrmb.data.get(o), nrmb.data.get(o + 1), nrmb.data.get(o + 2));
-		Coord3f tex = null;
-		if(texb != null) {
-		    o = idx * texb.n;
-		    tex = new Coord3f(texb.data.get(o), texb.data.get(o + 1), 0);
-		}
-		vmap[idx - min] = new Vertex(pos, nrm, tex);
+		vmap[idx - min] = new Vertex(pos, nrm);
 		nv++;
 	    }
+	}
+	for(VertexBuf.AttribArray data : src.vert.bufs) {
+	    Layer l = mapper.mapbuf(this, data);
+	    if(l != null)
+		l.copy(src.vert, vmap, min);
 	}
 	for(int i = 0; i < src.num; i++) {
 	    int o = i * 3;
@@ -107,40 +187,70 @@ public class MeshBuf {
 	}
 	return(vl);
     }
-    
+
+    private static final LayerMapper defmapper = new LayerMapper() {
+	    public Layer mapbuf(MeshBuf buf, VertexBuf.AttribArray src) {
+		if(src instanceof VertexBuf.TexelArray)
+		    return(buf.layer(tex));
+		return(null);
+	    }
+	};
+
+    public Vertex[] copy(FastMesh src) {
+	return(copy(src, defmapper));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> VertexBuf.AttribArray mklayer(Layer<T> l, Object[] abuf) {
+	int i = 0;
+	boolean f = false;
+	for(Vertex v : this.v) {
+	    if((abuf[i++] = v.attrs[l.idx]) != null)
+		f = true;
+	}
+	if(!f)
+	    return(null);
+	return(l.build(Arrays.asList((T[])abuf)));
+    }
+
     private void mkvbuf() {
 	if(v.isEmpty())
 	    throw(new RuntimeException("Tried to build empty vertex buffer"));
-	FloatBuffer pos, nrm, tex;
-	boolean hastex = false;
-	pos = Utils.mkfbuf(v.size() * 3);
-	nrm = Utils.mkfbuf(v.size() * 3);
-	tex = Utils.mkfbuf(v.size() * 2);
-	int pi = 0, ni = 0, ti = 0;
-	short i = 0;
-	for(Vertex v : this.v) {
-	    pos.put(pi + 0, v.pos.x);
-	    pos.put(pi + 1, v.pos.y);
-	    pos.put(pi + 2, v.pos.z);
-	    nrm.put(pi + 0, v.nrm.x);
-	    nrm.put(pi + 1, v.nrm.y);
-	    nrm.put(pi + 2, v.nrm.z);
-	    if(v.tex != null) {
-		hastex = true;
-		tex.put(ti + 0, v.tex.x);
-		tex.put(ti + 1, v.tex.y);
+
+	FloatBuffer pos, nrm;
+	{
+	    pos = Utils.mkfbuf(v.size() * 3);
+	    nrm = Utils.mkfbuf(v.size() * 3);
+	    int pi = 0, ni = 0;
+	    short i = 0;
+	    for(Vertex v : this.v) {
+		pos.put(pi + 0, v.pos.x);
+		pos.put(pi + 1, v.pos.y);
+		pos.put(pi + 2, v.pos.z);
+		nrm.put(pi + 0, v.nrm.x);
+		nrm.put(pi + 1, v.nrm.y);
+		nrm.put(pi + 2, v.nrm.z);
+		pi += 3;
+		ni += 3;
+		v.idx = i++;
+		if(i == 0)
+		    throw(new RuntimeException("Too many vertices in meshbuf"));
 	    }
-	    pi += 3;
-	    ni += 3;
-	    ti += 2;
-	    v.idx = i++;
-	    if(i == 0)
-		throw(new RuntimeException("Too many vertices in meshbuf"));
 	}
-	if(!hastex)
-	    this.vbuf = new VertexBuf(new VertexBuf.VertexArray(pos), new VertexBuf.NormalArray(nrm));
-	else
-	    this.vbuf = new VertexBuf(new VertexBuf.VertexArray(pos), new VertexBuf.NormalArray(nrm), new VertexBuf.TexelArray(tex));
+
+	VertexBuf.AttribArray[] arrays = new VertexBuf.AttribArray[layers.length + 2];
+	int li = 0;
+	arrays[li++] = new VertexBuf.VertexArray(pos);
+	arrays[li++] = new VertexBuf.NormalArray(nrm);
+
+	Object[] abuf = new Object[v.size()];
+	for(int i = 0; i < layers.length; i++) {
+	    VertexBuf.AttribArray l = mklayer(layers[i], abuf);
+	    if(l != null)
+		arrays[li++] = l;
+	}
+
+	this.vbuf = new VertexBuf(Utils.splice(arrays, 0, li));
     }
 
     public void clearfaces() {
@@ -162,7 +272,7 @@ public class MeshBuf {
 	}
 	return(new FastMesh(this.vbuf, idx));
     }
-    
+
     public boolean emptyp() {
 	return(f.isEmpty());
     }
