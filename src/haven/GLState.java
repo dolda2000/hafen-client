@@ -314,7 +314,7 @@ public abstract class GLState {
     
     public static class Applier {
 	public static boolean debug = false;
-	public Buffer old, cur, next;
+	private Buffer old, cur, next;
 	public final GL2 gl;
 	public final GLConfig cfg;
 	private boolean[] trans = new boolean[0], repl = new boolean[0];
@@ -527,7 +527,7 @@ public abstract class GLState {
 	    public SavedProg(int hash, ShaderMacro.Program prog, ShaderMacro[][] shaders) {
 		this.hash = hash;
 		this.prog = prog;
-		this.shaders = shaders;
+		this.shaders = Utils.splice(shaders, 0);
 	    }
 	}
 	
