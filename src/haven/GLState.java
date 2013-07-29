@@ -553,7 +553,6 @@ public abstract class GLState {
 		return(s.prog);
 	    }
 	    Collection<ShaderMacro> mods = new LinkedList<ShaderMacro>();
-	    mods.add(new haven.glsl.GLColorVary());
 	    for(int i = 0; i < shaders.length; i++) {
 		if(shaders[i] == null)
 		    continue;

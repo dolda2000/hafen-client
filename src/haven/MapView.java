@@ -573,7 +573,7 @@ public class MapView extends PView implements DTarget {
 	    if(r instanceof MapMesh) {
 		MapMesh m = (MapMesh)r;
 		if(mode != 0)
-		    g.st.put(States.color, null);
+		    g.state(States.vertexcolor);
 		if((limit == null) || (limit == m))
 		    m.drawflat(g, mode);
 	    }

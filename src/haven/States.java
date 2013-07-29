@@ -35,6 +35,7 @@ public abstract class States extends GLState {
     
     public static final Slot<ColState> color = new Slot<ColState>(Slot.Type.DRAW, ColState.class, HavenPanel.global);
     public static class ColState extends GLState {
+	private static final ShaderMacro[] shaders = {new haven.glsl.GLColorVary()};
 	public final Color c;
 	public final float[] ca;
 	
@@ -83,6 +84,17 @@ public abstract class States extends GLState {
 	    return("ColState(" + c + ")");
 	}
     }
+    public static final ColState vertexcolor = new ColState(0, 0, 0, 0) {
+	    public void apply(GOut g) {}
+
+	    public boolean equals(Object o) {
+		return(o == this);
+	    }
+
+	    public String toString() {
+		return("ColState(vertex)");
+	    }
+	};
 
     public static final StandAlone xray = new StandAlone(Slot.Type.GEOM, PView.proj) {
 	    public void apply(GOut g) {
