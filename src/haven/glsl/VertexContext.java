@@ -70,7 +70,7 @@ public class VertexContext extends ShaderContext {
 	};
     public final ValBlock.Value posv = mainvals.new Value(Type.VEC4, new Symbol.Gen("posv")) {
 	    {
-		depend(objv); softdep(eyev);
+		softdep(objv); softdep(eyev);
 		force();
 	    }
 
@@ -79,8 +79,10 @@ public class VertexContext extends ShaderContext {
 			public Expression process(Context ctx) {
 			    if(eyev.used) {
 				return(new Mul(gl_ProjectionMatrix.ref(), eyev.ref()).process(ctx));
-			    } else {
+			    } else if(objv.used) {
 				return(new Mul(gl_ModelViewProjectionMatrix.ref(), objv.ref()).process(ctx));
+			    } else {
+				return(new Mul(gl_ModelViewProjectionMatrix.ref(), gl_Vertex.ref()).process(ctx));
 			    }
 			}
 		    });
