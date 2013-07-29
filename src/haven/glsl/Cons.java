@@ -80,6 +80,7 @@ public class Cons {
     public static Expression cross(Expression x, Expression y) {return(Function.Builtin.cross.call(x, y));}
     public static Expression reflect(Expression x, Expression y) {return(Function.Builtin.reflect.call(x, y));}
     public static Expression texture2D(Expression s, Expression c) {return(Function.Builtin.texture2D.call(s, c));}
+    public static Expression mix(Expression x, Expression y, Expression a) {return(Function.Builtin.mix.call(x, y, a));}
 
     public static Expression reduce(Function fun, Expression... es) {
 	if(es.length < 1)
