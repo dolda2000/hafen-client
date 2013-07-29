@@ -63,11 +63,11 @@ public interface ShaderMacro {
 	    if(dumpall) {
 		System.err.println(mods + ": ");
 		for(GLShader sh : ret.shaders) {
-		    System.err.println("    " + sh + ": ");
+		    System.err.println("---> " + sh + ": ");
 		    System.err.print(sh.source);
 		}
 		System.err.println();
-		System.err.println("--------");
+		System.err.println("-------- " + ret);
 		System.err.println();
 	    }
 	    return(ret);
