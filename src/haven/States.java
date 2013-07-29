@@ -71,6 +71,8 @@ public abstract class States extends GLState {
 	public void applyfrom(GOut g, GLState o) {
 	    apply(g);
 	}
+
+	public ShaderMacro[] shaders() {return(shaders);}
 	
 	public void prep(Buffer buf) {
 	    buf.put(color, this);
