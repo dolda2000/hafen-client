@@ -65,8 +65,8 @@ public abstract class TexGL extends Tex {
 
     public static class TexDraw extends GLState {
 	public static final Slot<TexDraw> slot = new Slot<TexDraw>(Slot.Type.DRAW, TexDraw.class, HavenPanel.global);
-	private static final ShaderMacro[] nshaders = {new Tex2D()};
-	private static final ShaderMacro[] cshaders = {new Tex2D(), mkcentroid};
+	private static final ShaderMacro[] nshaders = {Tex2D.mod};
+	private static final ShaderMacro[] cshaders = {Tex2D.mod, mkcentroid};
 	public final TexGL tex;
 	
 	public TexDraw(TexGL tex) {
