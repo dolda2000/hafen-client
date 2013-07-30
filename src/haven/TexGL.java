@@ -68,6 +68,7 @@ public abstract class TexGL extends Tex {
 	private static final ShaderMacro[] nshaders = {Tex2D.mod};
 	private static final ShaderMacro[] cshaders = {Tex2D.mod, mkcentroid};
 	public final TexGL tex;
+	private TexUnit sampler;
 	
 	public TexDraw(TexGL tex) {
 	    this.tex = tex;
@@ -79,7 +80,7 @@ public abstract class TexGL extends Tex {
 
 	public void apply(GOut g) {
 	    GL2 gl = g.gl;
-	    g.st.texunit(0);
+	    (sampler = g.st.texalloc()).act();
 	    TexClip clip = g.st.get(TexClip.slot);
 	    if(clip != null) {
 		if(clip.tex != this.tex)
@@ -97,16 +98,17 @@ public abstract class TexGL extends Tex {
     
 	public void reapply(GOut g) {
 	    GL2 gl = g.gl;
-	    gl.glUniform1i(g.st.prog.uniform(Tex2D.tex2d), 0);
+	    gl.glUniform1i(g.st.prog.uniform(Tex2D.tex2d), sampler.id);
 	}
 
 	public void unapply(GOut g) {
 	    GL2 gl = g.gl;
-	    g.st.texunit(0);
+	    sampler.act();
 	    if(g.st.old(TexClip.slot) != null)
 		gl.glDisable(GL2.GL_ALPHA_TEST);
 	    if(!g.st.usedprog)
 		gl.glDisable(GL.GL_TEXTURE_2D);
+	    sampler.free(); sampler = null;
 	}
     
 	public ShaderMacro[] shaders() {
@@ -127,9 +129,11 @@ public abstract class TexGL extends Tex {
 	    return(-1);
 	}
     
-	public void applyfrom(GOut g, GLState from) {
+	public void applyfrom(GOut g, GLState sfrom) {
 	    GL2 gl = g.gl;
-	    g.st.texunit(0);
+	    TexDraw from = (TexDraw)sfrom;
+	    sampler = from.sampler; from.sampler = null;
+	    sampler.act();
 	    TexClip clip = g.st.get(TexClip.slot), old = g.st.old(TexClip.slot);
 	    if(clip != null) {
 		if(clip.tex != this.tex)
@@ -155,6 +159,7 @@ public abstract class TexGL extends Tex {
     public static class TexClip extends GLState {
 	public static final Slot<TexClip> slot = new Slot<TexClip>(Slot.Type.GEOM, TexClip.class, HavenPanel.global, TexDraw.slot);
 	public final TexGL tex;
+	private TexUnit sampler;
 	
 	public TexClip(TexGL tex) {
 	    this.tex = tex;
@@ -164,7 +169,7 @@ public abstract class TexGL extends Tex {
 	    GL2 gl = g.gl;
 	    TexDraw draw = g.st.get(TexDraw.slot);
 	    if(draw == null) {
-		g.st.texunit(0);
+		(sampler = g.st.texalloc()).act();
 		gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_COMBINE);
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_COMBINE_RGB, GL2.GL_REPLACE);
@@ -187,9 +192,10 @@ public abstract class TexGL extends Tex {
 	public void unapply(GOut g) {
 	    GL2 gl = g.gl;
 	    if(g.st.old(TexDraw.slot) == null) {
-		g.st.texunit(0);
+		sampler.act();
 		gl.glDisable(GL2.GL_ALPHA_TEST);
 		gl.glDisable(GL2.GL_TEXTURE_2D);
+		sampler.free(); sampler = null;
 	    } else {
 		gl.glDisable(GL2.GL_ALPHA_TEST);
 	    }
@@ -205,17 +211,15 @@ public abstract class TexGL extends Tex {
 	    return(-1);
 	}
 	
-	public void applyfrom(GOut g, GLState from) {
+	public void applyfrom(GOut g, GLState sfrom) {
 	    TexDraw draw = g.st.get(TexDraw.slot), old = g.st.old(TexDraw.slot);
-	    if((old != null) && (draw != null))
-		return;
+	    if((old != null) || (draw != null))
+		throw(new RuntimeException("TexClip is somehow being transition even though there is a TexDraw"));
 	    GL2 gl = g.gl;
-	    if((old == null) && (draw == null)) {
-		g.st.texunit(0);
-		gl.glBindTexture(GL2.GL_TEXTURE_2D, tex.glid(g));
-	    } else {
-		throw(new RuntimeException("TexClip is somehow being transition even though TexDraw is being replaced"));
-	    }
+	    TexClip from = (TexClip)sfrom;
+	    sampler = from.sampler; from.sampler = null;
+	    sampler.act();
+	    gl.glBindTexture(GL2.GL_TEXTURE_2D, tex.glid(g));
 	}
 	
 	public void prep(Buffer buf) {

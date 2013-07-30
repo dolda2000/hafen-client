@@ -311,7 +311,27 @@ public abstract class GLState {
 	}
 	return(cost);
     }
-    
+
+    public static class TexUnit {
+	private final Applier st;
+	public final int id;
+
+	private TexUnit(Applier st, int id) {
+	    this.st = st;
+	    this.id = id;
+	}
+
+	public void act() {
+	    st.texunit(id);
+	}
+
+	public void free() {
+	    if(st.textab[id] != null)
+		throw(new RuntimeException("Texunit " + id + " freed twice"));
+	    st.textab[id] = this;
+	}
+    }
+
     public static class Applier {
 	public static boolean debug = false;
 	private Buffer old, cur, next;
@@ -514,6 +534,21 @@ public abstract class GLState {
 		gl.glActiveTexture(GL.GL_TEXTURE0 + unit);
 		texunit = unit;
 	    }
+	}
+
+	private TexUnit[] textab = new TexUnit[0];
+
+	public TexUnit texalloc() {
+	    int i;
+	    for(i = 0; i < textab.length; i++) {
+		if(textab[i] != null) {
+		    TexUnit ret = textab[i];
+		    textab[i] = null;
+		    return(ret);
+		}
+	    }
+	    textab = new TexUnit[i + 1];
+	    return(new TexUnit(this, i));
 	}
 	
 	/* Program internation */
