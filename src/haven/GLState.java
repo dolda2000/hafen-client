@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import javax.media.opengl.*;
+import haven.glsl.ShaderMacro;
 import static haven.GOut.checkerr;
 
 public abstract class GLState {
@@ -43,7 +44,7 @@ public abstract class GLState {
     public void reapply(GOut g) {
     }
     
-    public GLShader[] shaders() {
+    public ShaderMacro[] shaders() {
 	return(null);
     }
     
@@ -317,15 +318,17 @@ public abstract class GLState {
 	public final GL2 gl;
 	public final GLConfig cfg;
 	private boolean[] trans = new boolean[0], repl = new boolean[0];
-	private GLShader[][] shaders = new GLShader[0][];
+	private ShaderMacro[][] shaders = new ShaderMacro[0][];
 	private int proghash = 0;
-	public GLProgram prog;
+	public ShaderMacro.Program prog;
 	public boolean usedprog;
+	public boolean pdirty = false;
 	public long time = 0;
 	
 	/* It seems ugly to treat these so specially, but right now I
 	 * cannot see any good alternative. */
 	public Matrix4f cam = Matrix4f.id, wxf = Matrix4f.id, mv = Matrix4f.identity();
+	private Matrix4f ccam = null, cwxf = null;
 	
 	public Applier(GL2 gl, GLConfig cfg) {
 	    this.gl = gl;
@@ -375,7 +378,7 @@ public abstract class GLState {
 		synchronized(Slot.class) {
 		    trans = new boolean[slotnum];
 		    repl = new boolean[slotnum];
-		    shaders = new GLShader[slotnum][];
+		    shaders = Utils.extend(shaders, slotnum);
 		}
 	    }
 	    bufdiff(cur, next, trans, repl);
@@ -383,7 +386,7 @@ public abstract class GLState {
 	    for(int i = trans.length - 1; i >= 0; i--) {
 		if(repl[i] || trans[i]) {
 		    GLState nst = next.states[i];
-		    GLShader[] ns = (nst == null)?null:nst.shaders();
+		    ShaderMacro[] ns = (nst == null)?null:nst.shaders();
 		    if(ns != shaders[i]) {
 			proghash ^= System.identityHashCode(shaders[i]) ^ System.identityHashCode(ns);
 			shaders[i] = ns;
@@ -393,7 +396,7 @@ public abstract class GLState {
 	    }
 	    usedprog = prog != null;
 	    if(dirty) {
-		GLProgram np;
+		ShaderMacro.Program np;
 		boolean shreq = false;
 		for(int i = 0; i < trans.length; i++) {
 		    if((shaders[i] != null) && next.states[i].reqshaders()) {
@@ -414,8 +417,7 @@ public abstract class GLState {
 		    prog = np;
 		    if(debug)
 			checkerr(g.gl);
-		} else {
-		    dirty = false;
+		    pdirty = true;
 		}
 	    }
 	    if((prog != null) != usedprog) {
@@ -424,7 +426,6 @@ public abstract class GLState {
 			repl[i] = true;
 		}
 	    }
-	    Matrix4f oc = cam, ow = wxf;
 	    cur.copy(old);
 	    for(int i = deplist.length - 1; i >= 0; i--) {
 		int id = deplist[i].id;
@@ -437,12 +438,18 @@ public abstract class GLState {
 		    cur.states[id] = null;
 		}
 	    }
+	    /* Note on invariants: States may exit non-locally
+	     * from apply, applyto/applyfrom or reapply (e.g. by
+	     * throwing Loading exceptions) in a defined way
+	     * provided they do so before they have changed any GL
+	     * state. If they exit non-locally after GL state has
+	     * been altered, future results are undefined. */
 	    for(int i = 0; i < deplist.length; i++) {
 		int id = deplist[i].id;
 		if(repl[id]) {
-		    cur.states[id] = next.states[id];
-		    if(cur.states[id] != null) {
-			cur.states[id].apply(g);
+		    if(next.states[id] != null) {
+			next.states[id].apply(g);
+			cur.states[id] = next.states[id];
 			if(debug)
 			    stcheckerr(g, "apply", cur.states[id]);
 		    }
@@ -450,19 +457,20 @@ public abstract class GLState {
 		    cur.states[id].applyto(g, next.states[id]);
 		    if(debug)
 			stcheckerr(g, "applyto", cur.states[id]);
-		    GLState cs = cur.states[id];
-		    (cur.states[id] = next.states[id]).applyfrom(g, cs);
+		    next.states[id].applyfrom(g, cur.states[id]);
+		    cur.states[id] = next.states[id];
 		    if(debug)
 			stcheckerr(g, "applyfrom", cur.states[id]);
-		} else if((prog != null) && dirty && (shaders[id] != null)) {
+		} else if((prog != null) && pdirty && (shaders[id] != null)) {
 		    cur.states[id].reapply(g);
 		    if(debug)
 			stcheckerr(g, "reapply", cur.states[id]);
 		}
 	    }
-	    if((oc != cam) || (ow != wxf)) {
+	    pdirty = false;
+	    if((ccam != cam) || (cwxf != wxf)) {
 		/* See comment above */
-		mv.load(oc = cam).mul1(ow = wxf);
+		mv.load(ccam = cam).mul1(cwxf = wxf);
 		matmode(GL2.GL_MODELVIEW);
 		gl.glLoadMatrixf(mv.m, 0);
 	    }
@@ -511,15 +519,15 @@ public abstract class GLState {
 	/* Program internation */
 	public static class SavedProg {
 	    public final int hash;
-	    public final GLProgram prog;
-	    public final GLShader[][] shaders;
+	    public final ShaderMacro.Program prog;
+	    public final ShaderMacro[][] shaders;
 	    public SavedProg next;
 	    boolean used = true;
 	    
-	    public SavedProg(int hash, GLProgram prog, GLShader[][] shaders) {
+	    public SavedProg(int hash, ShaderMacro.Program prog, ShaderMacro[][] shaders) {
 		this.hash = hash;
 		this.prog = prog;
-		this.shaders = shaders;
+		this.shaders = Utils.splice(shaders, 0);
 	    }
 	}
 	
@@ -527,7 +535,7 @@ public abstract class GLState {
 	private int nprog = 0;
 	private long lastclean = System.currentTimeMillis();
 	
-	private GLProgram findprog(int hash, GLShader[][] shaders) {
+	private ShaderMacro.Program findprog(int hash, ShaderMacro[][] shaders) {
 	    int idx = hash & (ptab.length - 1);
 	    outer: for(SavedProg s = ptab[idx]; s != null; s = s.next) {
 		if(s.hash != hash)
@@ -544,7 +552,14 @@ public abstract class GLState {
 		s.used = true;
 		return(s.prog);
 	    }
-	    GLProgram prog = new GLProgram(shaders);
+	    Collection<ShaderMacro> mods = new LinkedList<ShaderMacro>();
+	    for(int i = 0; i < shaders.length; i++) {
+		if(shaders[i] == null)
+		    continue;
+		for(int o = 0; o < shaders[i].length; o++)
+		    mods.add(shaders[i][o]);
+	    }
+	    ShaderMacro.Program prog = ShaderMacro.Program.build(mods);
 	    SavedProg s = new SavedProg(hash, prog, shaders);
 	    s.next = ptab[idx];
 	    ptab[idx] = s;
@@ -573,7 +588,7 @@ public abstract class GLState {
 	    if(now - lastclean > 60000) {
 		for(int i = 0; i < ptab.length; i++) {
 		    SavedProg c, p;
-		    for(c = ptab[i], p = null; c != null; c = c.next) {
+		    for(c = ptab[i], p = null; c != null; p = c, c = c.next) {
 			if(!c.used) {
 			    if(p != null)
 				p.next = c.next;

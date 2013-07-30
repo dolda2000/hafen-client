@@ -139,7 +139,7 @@ public class FastMesh implements FRendered, Disposable {
 	    if(compile() && g.gc.pref.usedl.val) {
 		list = new DisplayList(gl);
 		gl.glNewList(list.id, GL2.GL_COMPILE);
-		sdraw(g);
+		cdraw(g);
 		gl.glEndList();
 		gl.glCallList(list.id);
 	    } else {

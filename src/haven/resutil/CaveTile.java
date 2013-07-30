@@ -48,10 +48,15 @@ public class CaveTile extends Tiler {
     }
     
     private void wall(MeshBuf buf, MapMesh.SPoint s1, MapMesh.SPoint s2, Coord3f nrm) {
-	MeshBuf.Vertex v1 = buf.new Vertex(s1.pos, nrm, new Coord3f(0, 1, 0)),
-	    v2 = buf.new Vertex(s2.pos, nrm, new Coord3f(1, 1, 0)),
-	    v3 = buf.new Vertex(s2.pos.add(0, 0, h), nrm, new Coord3f(1, 0, 0)),
-	    v4 = buf.new Vertex(s1.pos.add(0, 0, h), nrm, new Coord3f(0, 0, 0));
+	MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
+	MeshBuf.Vertex v1 = buf.new Vertex(s1.pos, nrm),
+	    v2 = buf.new Vertex(s2.pos, nrm),
+	    v3 = buf.new Vertex(s2.pos.add(0, 0, h), nrm),
+	    v4 = buf.new Vertex(s1.pos.add(0, 0, h), nrm);
+	ta.set(v1, new Coord3f(0, 1, 0));
+	ta.set(v2, new Coord3f(1, 1, 0));
+	ta.set(v3, new Coord3f(1, 0, 0));
+	ta.set(v4, new Coord3f(0, 0, 0));
 	buf.new Face(v1, v3, v4);
 	buf.new Face(v1, v2, v3);
     }

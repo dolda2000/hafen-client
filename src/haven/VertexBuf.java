@@ -208,6 +208,37 @@ public class VertexBuf {
 	    g.gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 	}
     }
+
+    public static class Vec1Array extends FloatArray implements GLArray {
+	public final haven.glsl.Attribute attr;
+	private int bound = -1;
+
+	public Vec1Array(FloatBuffer data, haven.glsl.Attribute attr) {
+	    super(1, data);
+	    this.attr = attr;
+	}
+
+	public void set(GOut g, int idx) {
+	    throw(new RuntimeException("D:<"));
+	}
+
+	public void bind(GOut g) {
+	    if(g.st.prog != null) {
+		GL2 gl = g.gl;
+		data.rewind();
+		bound = g.st.prog.attrib(attr);
+		gl.glEnableVertexAttribArray(bound);
+		gl.glVertexAttribPointer(bound, 1, GL2.GL_FLOAT, false, 0, data);
+	    }
+	}
+
+	public void unbind(GOut g) {
+	    if(bound != -1) {
+		g.gl.glDisableVertexAttribArray(bound);
+		bound = -1;
+	    }
+	}
+    }
     
     @Resource.LayerName("vbuf")
     public static class VertexRes extends Resource.Layer {

@@ -202,10 +202,17 @@ public class AuthClient {
 	}
 	
 	public String tryauth(AuthClient cl) throws IOException {
-	    String acct = cl.trypasswd(username, phash);
-	    if(acct == null)
-		throw(new AuthException("Username or password incorrect"));
-	    return(acct);
+	    Message rpl = cl.cmd("pw", username, phash);
+	    String stat = rpl.string();
+	    if(stat.equals("ok")) {
+		String acct = rpl.string();
+		return(acct);
+	    } else if(stat.equals("no")) {
+		String err = rpl.string();
+		throw(new AuthException(err));
+	    } else {
+		throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
+	    }
 	}
 	
 	public void discard() {
@@ -232,10 +239,17 @@ public class AuthClient {
 	}
 	
 	public String tryauth(AuthClient cl) throws IOException {
-	    String acct = cl.trytoken(acctname, token);
-	    if(acct == null)
-		throw(new AuthException("Invalid save"));
-	    return(acct);
+	    Message rpl = cl.cmd("token", acctname, token);
+	    String stat = rpl.string();
+	    if(stat.equals("ok")) {
+		String acct = rpl.string();
+		return(acct);
+	    } else if(stat.equals("no")) {
+		String err = rpl.string();
+		throw(new AuthException(err));
+	    } else {
+		throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
+	    }
 	}
     }
 

@@ -306,14 +306,17 @@ public class GOut {
     }
 
     public void rect(Coord ul, Coord sz) {
-	Coord ur, bl, br;
-	ur = new Coord(ul.x + sz.x - 1, ul.y);
-	bl = new Coord(ul.x, ul.y + sz.y - 1);
-	br = new Coord(ur.x, bl.y);
-	line(ul, ur, 1);
-	line(ur, br, 1);
-	line(br, bl, 1);
-	line(bl, ul, 1);
+	st.set(def2d);
+	state(color);
+	apply();
+	gl.glLineWidth(1);
+	gl.glBegin(GL.GL_LINE_LOOP);
+	vertex(ul.x + 0.5f, ul.y + 0.5f);
+	vertex(ul.x + sz.x - 0.5f, ul.y + 0.5f);
+	vertex(ul.x + sz.x - 0.5f, ul.y + sz.y - 0.5f);
+	vertex(ul.x + 0.5f, ul.y + sz.y - 0.5f);
+	gl.glEnd();
+	checkerr();
     }
 
     public void prect(Coord c, Coord ul, Coord br, double a) {

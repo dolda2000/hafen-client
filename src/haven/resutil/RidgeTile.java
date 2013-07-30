@@ -102,6 +102,7 @@ public class RidgeTile extends GroundTile {
 	float ybx = -xby, yby = xbx;
 	for(FastMesh.MeshRes r : wall.layers(FastMesh.MeshRes.class)) {
 	    MeshBuf buf = m.model(r.mat.get(), MeshBuf.class);
+	    MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
 	    MeshBuf.Vertex[] vs = buf.copy(r.m);
 	    for(MeshBuf.Vertex v : vs) {
 		float x = v.pos.x, y = v.pos.y, z = v.pos.z;
@@ -116,7 +117,7 @@ public class RidgeTile extends GroundTile {
 		float nx = v.nrm.x, ny = v.nrm.y;
 		v.nrm.x = (nx * xbx) + (ny * ybx);
 		v.nrm.y = (nx * xby) + (ny * yby);
-		v.tex.y = (tys + (tysf * x)) * v.tex.y;
+		ta.get(v).y = (tys + (tysf * x)) * ta.get(v).y;
 	    }
 	}
     }

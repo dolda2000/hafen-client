@@ -27,8 +27,8 @@
 package haven;
 
 public class TexSI extends Tex {
-    Tex parent;
-    Coord ul;
+    public final Tex parent;
+    private final Coord ul;
 	
     public TexSI(Tex parent, Coord ul, Coord sz) {
 	super(sz);

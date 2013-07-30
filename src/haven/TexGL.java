@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.glsl.*;
 import java.awt.Color;
 import java.util.*;
 import javax.media.opengl.*;
@@ -34,7 +35,7 @@ import static haven.GOut.checkerr;
 public abstract class TexGL extends Tex {
     protected TexOb t = null;
     private Object idmon = new Object();
-    protected boolean mipmap = false;
+    protected boolean mipmap = false, centroid = false;
     protected int magfilter = GL.GL_NEAREST, minfilter = GL.GL_NEAREST, wrapmode = GL.GL_REPEAT;
     protected Coord tdim;
     public static boolean disableall = false;
@@ -55,12 +56,17 @@ public abstract class TexGL extends Tex {
 	}
     }
     
+    public static final ShaderMacro mkcentroid = new ShaderMacro() {
+	    public void modify(ProgramContext prog) {
+		Tex2D sh = prog.getmod(Tex2D.class);
+		sh.ipol = Varying.Interpol.CENTROID;
+	    }
+	};
+
     public static class TexDraw extends GLState {
 	public static final Slot<TexDraw> slot = new Slot<TexDraw>(Slot.Type.DRAW, TexDraw.class, HavenPanel.global);
-	private static final GLShader[] shaders = {
-	    GLShader.VertexShader.load(TexGL.class, "glsl/tex2d.vert"),
-	    GLShader.FragmentShader.load(TexGL.class, "glsl/tex2d.frag"),
-	};
+	private static final ShaderMacro[] nshaders = {new Tex2D()};
+	private static final ShaderMacro[] cshaders = {new Tex2D(), mkcentroid};
 	public final TexGL tex;
 	
 	public TexDraw(TexGL tex) {
@@ -91,7 +97,7 @@ public abstract class TexGL extends Tex {
     
 	public void reapply(GOut g) {
 	    GL2 gl = g.gl;
-	    gl.glUniform1i(g.st.prog.uniform("tex2d"), 0);
+	    gl.glUniform1i(g.st.prog.uniform(Tex2D.tex2d), 0);
 	}
 
 	public void unapply(GOut g) {
@@ -103,8 +109,12 @@ public abstract class TexGL extends Tex {
 		gl.glDisable(GL.GL_TEXTURE_2D);
 	}
     
-	public GLShader[] shaders() {
-	    return(shaders);
+	public ShaderMacro[] shaders() {
+	    /* XXX: This combinatorial stuff does not seem quite right. */
+	    if(tex.centroid)
+		return(cshaders);
+	    else
+		return(nshaders);
 	}
     
 	public int capply() {
@@ -131,6 +141,8 @@ public abstract class TexGL extends Tex {
 		    gl.glDisable(GL2.GL_ALPHA_TEST);
 	    }
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
+	    if(g.st.pdirty)
+		reapply(g);
 	}
 	
 	public String toString() {
