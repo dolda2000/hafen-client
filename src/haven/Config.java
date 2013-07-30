@@ -49,7 +49,7 @@ public class Config {
     public static int authport = getint("haven.authport", 1871);
     public static boolean softres = getprop("haven.softres", "on").equals("on");
     public static byte[] authck = null;
-    public static String prefspec = null;
+    public static String prefspec = "hafen";
     
     static {
 	String p;
