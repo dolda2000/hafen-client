@@ -58,27 +58,6 @@ public class FastMesh implements FRendered, Disposable {
 	this.num = from.num;
     }
 
-    public void sdraw(GOut g) {
-	GL2 gl = g.gl;
-	VertexBuf.GLArray[] data = new VertexBuf.GLArray[vert.bufs.length];
-	VertexBuf.VertexArray vbuf = null;
-	int n = 0;
-	for(int i = 0; i < vert.bufs.length; i++) {
-	    if(vert.bufs[i] instanceof VertexBuf.VertexArray)
-		vbuf = (VertexBuf.VertexArray)vert.bufs[i];
-	    else if(vert.bufs[i] instanceof VertexBuf.GLArray)
-		data[n++] = (VertexBuf.GLArray)vert.bufs[i];
-	}
-	gl.glBegin(GL.GL_TRIANGLES);
-	for(int i = 0; i < num * 3; i++) {
-	    int idx = indb.get(i);
-	    for(int o = 0; o < n; o++)
-		data[o].set(g, idx);
-	    vbuf.set(g, idx);
-	}
-	gl.glEnd();
-    }
-
     private void cbounds() {
 	Coord3f nb = null, pb = null;
 	VertexBuf.VertexArray vbuf = null;

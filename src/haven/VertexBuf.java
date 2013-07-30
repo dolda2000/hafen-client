@@ -72,7 +72,6 @@ public class VertexBuf {
     }
     
     public static interface GLArray {
-	public void set(GOut g, int idx);
 	public void bind(GOut g);
 	public void unbind(GOut g);
     }
@@ -116,12 +115,6 @@ public class VertexBuf {
 	
 	public VertexArray dup() {return(new VertexArray(Utils.bufcp(data)));}
 	
-	public void set(GOut g, int idx) {
-	    GL2 gl = g.gl;
-	    int i = idx * 3;
-	    gl.glVertex3f(data.get(i), data.get(i + 1), data.get(i + 2));
-	}
-	
 	public void bind(GOut g) {
 	    GL2 gl = g.gl;
 	    data.rewind();
@@ -141,12 +134,6 @@ public class VertexBuf {
 	
 	public NormalArray dup() {return(new NormalArray(Utils.bufcp(data)));}
 
-	public void set(GOut g, int idx) {
-	    GL2 gl = g.gl;
-	    int i = idx * 3;
-	    gl.glNormal3f(data.get(i), data.get(i + 1), data.get(i + 2));
-	}
-	
 	public void bind(GOut g) {
 	    GL2 gl = g.gl;
 	    data.rewind();
@@ -166,12 +153,6 @@ public class VertexBuf {
 	
 	public ColorArray dup() {return(new ColorArray(Utils.bufcp(data)));}
 
-	public void set(GOut g, int idx) {
-	    GL2 gl = g.gl;
-	    int i = idx * 4;
-	    gl.glColor4f(data.get(i), data.get(i + 1), data.get(i + 2), data.get(i + 3));
-	}
-	
 	public void bind(GOut g) {
 	    GL2 gl = g.gl;
 	    data.rewind();
@@ -191,12 +172,6 @@ public class VertexBuf {
 
 	public TexelArray dup() {return(new TexelArray(Utils.bufcp(data)));}
 
-	public void set(GOut g, int idx) {
-	    GL2 gl = g.gl;
-	    int i = idx * 2;
-	    gl.glTexCoord2f(data.get(i), data.get(i + 1));
-	}
-	
 	public void bind(GOut g) {
 	    GL2 gl = g.gl;
 	    data.rewind();
@@ -216,10 +191,6 @@ public class VertexBuf {
 	public Vec1Array(FloatBuffer data, haven.glsl.Attribute attr) {
 	    super(1, data);
 	    this.attr = attr;
-	}
-
-	public void set(GOut g, int idx) {
-	    throw(new RuntimeException("D:<"));
 	}
 
 	public void bind(GOut g) {
