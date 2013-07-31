@@ -36,6 +36,7 @@ public class FragmentContext extends ShaderContext {
     public final ValBlock uniform = new ValBlock();
 
     public static final Variable gl_FragColor = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragColor"));
+    public static final Variable gl_FragCoord = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragCoord"));
 
     public final ValBlock.Value fragcol = mainvals.new Value(Type.VEC4) {
 	    {force();}
