@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.util.*;
 import java.nio.*;
 import javax.media.opengl.*;
 
@@ -34,9 +35,7 @@ public class FastMesh implements FRendered, Disposable {
     public final ShortBuffer indb;
     public final int num;
     public FastMesh from;
-    private DisplayList list = null;
-    private GLBuffer indbo = null;
-    private GLVertexArray vao = null;
+    private Compiler compiler;
     private Coord3f nb, pb;
     
     public FastMesh(VertexBuf vert, ShortBuffer ind) {
@@ -58,6 +57,126 @@ public class FastMesh implements FRendered, Disposable {
 	this.vert = vert;
 	this.indb = from.indb;
 	this.num = from.num;
+    }
+
+    public static abstract class Compiled {
+	public abstract void draw(GOut g);
+	public abstract void dispose();
+    }
+
+    public static abstract class Compiler {
+	private GLProgram[] kcache = new GLProgram[0];
+	private Compiled[] vcache = new Compiled[0];
+
+	public Compiled get(GOut g) {
+	    GLProgram prog = g.st.prog;
+	    int i;
+	    for(i = 0; i < kcache.length; i++) {
+		if(kcache[i] == prog)
+		    return(vcache[i]);
+	    }
+	    Compiled ret = create(g);
+	    kcache = Utils.extend(kcache, i + 1);
+	    vcache = Utils.extend(vcache, i + 1);
+	    kcache[i] = prog;
+	    vcache[i] = ret;
+	    return(ret);
+	}
+
+	public abstract Compiled create(GOut g);
+
+	public void dispose() {
+	    for(Compiled c : vcache)
+		c.dispose();
+	    kcache = new GLProgram[0];
+	    vcache = new Compiled[0];
+	}
+    }
+
+    public class DLCompiler extends Compiler {
+	public class DLCompiled extends Compiled {
+	    private DisplayList list;
+
+	    public void draw(GOut g) {
+		GL2 gl = g.gl;
+		if((list != null) && (list.gl != gl)) {
+		    list.dispose();
+		    list = null;
+		}
+		if(list == null) {
+		    list = new DisplayList(gl);
+		    gl.glNewList(list.id, GL2.GL_COMPILE);
+		    cdraw(g);
+		    gl.glEndList();
+		}
+		gl.glCallList(list.id);
+	    }
+
+	    public void dispose() {
+		list.dispose();
+		list = null;
+	    }
+	}
+
+	public DLCompiled create(GOut g) {return(new DLCompiled());}
+    }
+
+    public class VAOCompiler extends Compiler {
+	public class VAOCompiled extends Compiled {
+	    private GLBuffer ind;
+	    private GLVertexArray vao;
+
+	    private void bindindbo(GL2 gl) {
+		if((ind != null) && (ind.gl != gl)) {
+		    ind.dispose();
+		    ind = null;
+		}
+		if(ind == null) {
+		    ind = new GLBuffer(gl);
+		    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ind.id);
+		    indb.rewind();
+		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, indb.remaining() * 2, indb, GL.GL_STATIC_DRAW);
+		    GOut.checkerr(gl);
+		} else {
+		    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ind.id);
+		}
+	    }
+
+	    public void draw(GOut g) {
+		GL2 gl = g.gl;
+		if((vao != null) && (vao.gl != gl)) {
+		    vao.dispose();
+		    vao = null;
+		}
+		if(vao == null) {
+		    vao = new GLVertexArray(gl);
+		    gl.glBindVertexArray(vao.id);
+		    for(VertexBuf.AttribArray buf : vert.bufs) {
+			if(buf instanceof VertexBuf.GLArray)
+			    ((VertexBuf.GLArray)buf).bind(g, true);
+		    }
+		    bindindbo(gl);
+		} else {
+		    gl.glBindVertexArray(vao.id);
+		}
+		gl.glDrawElements(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, 0);
+		gl.glBindVertexArray(0);
+		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0);
+	    }
+
+	    public void dispose() {
+		if(vao != null) {
+		    vao.dispose();
+		    vao = null;
+		}
+		if(ind != null) {
+		    ind.dispose();
+		    ind = null;
+		}
+	    }
+	}
+
+	public VAOCompiled create(GOut g) {return(new VAOCompiled());}
     }
 
     private void cbounds() {
@@ -94,46 +213,6 @@ public class FastMesh implements FRendered, Disposable {
 	return(pb);
     }
 
-    private void bindindbo(GL2 gl) {
-	synchronized(this) {
-	    if((indbo != null) && (indbo.gl != gl)) {
-		indbo.dispose();
-		indbo = null;
-	    }
-	    if(indbo == null) {
-		indbo = new GLBuffer(gl);
-		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, indbo.id);
-		indb.rewind();
-		gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, indb.remaining() * 2, indb, GL.GL_STATIC_DRAW);
-		GOut.checkerr(gl);
-	    } else {
-		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, indbo.id);
-	    }
-	}
-    }
-
-    public void adraw(GOut g) {
-	GL2 gl = g.gl;
-	if((vao != null) && (vao.gl != gl)) {
-	    vao.dispose();
-	    vao = null;
-	}
-	if(vao == null) {
-	    vao = new GLVertexArray(gl);
-	    gl.glBindVertexArray(vao.id);
-	    for(VertexBuf.AttribArray buf : vert.bufs) {
-		if(buf instanceof VertexBuf.GLArray)
-		    ((VertexBuf.GLArray)buf).bind(g, true);
-	    }
-	    bindindbo(gl);
-	} else {
-	    gl.glBindVertexArray(vao.id);
-	}
-	gl.glDrawElements(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, 0);
-	gl.glBindVertexArray(0);
-	gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0);
-    }
-
     public void cdraw(GOut g) {
 	indb.rewind();
 	for(int i = 0; i < vert.bufs.length; i++) {
@@ -146,26 +225,36 @@ public class FastMesh implements FRendered, Disposable {
 		((VertexBuf.GLArray)vert.bufs[i]).unbind(g);
 	}
     }
-    
+
+    private GLSettings.MeshMode curmode = null;
     public void draw(GOut g) {
 	g.apply();
 	GL2 gl = g.gl;
-	if((list != null) && (!g.gc.pref.usedl.val || (list.gl != gl))) {
-	    list.dispose();
-	    list = null;
-	}
-	if(list != null) {
-	    gl.glCallList(list.id);
-	} else {
-	    if(compile() && g.gc.pref.usedl.val) {
-		list = new DisplayList(gl);
-		gl.glNewList(list.id, GL2.GL_COMPILE);
-		cdraw(g);
-		gl.glEndList();
-		gl.glCallList(list.id);
-	    } else {
-		cdraw(g);
+	if(compile()) {
+	    if(curmode != g.gc.pref.meshmode.val) {
+		if(compiler != null) {
+		    compiler.dispose();
+		    compiler = null;
+		}
+		switch(g.gc.pref.meshmode.val) {
+		case VAO:
+		    compiler = new VAOCompiler();
+		    break;
+		case DLIST:
+		    compiler = new DLCompiler();
+		    break;
+		}
+		curmode = g.gc.pref.meshmode.val;
 	    }
+	} else if(compiler != null) {
+	    compiler.dispose();
+	    compiler = null;
+	    curmode = null;
+	}
+	if(compiler != null) {
+	    compiler.get(g).draw(g);
+	} else {
+	    cdraw(g);
 	}
 	GOut.checkerr(gl);
     }
@@ -174,26 +263,10 @@ public class FastMesh implements FRendered, Disposable {
 	return(true);
     }
     
-    public void updated() {
-	synchronized(this) {
-	    if(list != null) {
-		list.dispose();
-		list = null;
-	    }
-	}
-    }
-    
     public void dispose() {
-	synchronized(this) {
-	    updated();
-	    if(vao != null) {
-		vao.dispose();
-		vao = null;
-	    }
-	    if(indbo != null) {
-		indbo.dispose();
-		indbo = null;
-	    }
+	if(compiler != null) {
+	    compiler.dispose();
+	    compiler = null;
 	}
 	vert.dispose();
     }
