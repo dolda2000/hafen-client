@@ -96,7 +96,7 @@ public class FastMesh implements FRendered, Disposable {
 	indb.rewind();
 	for(int i = 0; i < vert.bufs.length; i++) {
 	    if(vert.bufs[i] instanceof VertexBuf.GLArray)
-		((VertexBuf.GLArray)vert.bufs[i]).bind(g);
+		((VertexBuf.GLArray)vert.bufs[i]).bind(g, false);
 	}
 	g.gl.glDrawElements(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, indb);
 	for(int i = 0; i < vert.bufs.length; i++) {
