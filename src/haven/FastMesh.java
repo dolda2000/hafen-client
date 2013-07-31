@@ -35,6 +35,8 @@ public class FastMesh implements FRendered, Disposable {
     public final int num;
     public FastMesh from;
     private DisplayList list = null;
+    private GLBuffer indbo = null;
+    private GLVertexArray vao = null;
     private Coord3f nb, pb;
     
     public FastMesh(VertexBuf vert, ShortBuffer ind) {
@@ -92,6 +94,46 @@ public class FastMesh implements FRendered, Disposable {
 	return(pb);
     }
 
+    private void bindindbo(GL2 gl) {
+	synchronized(this) {
+	    if((indbo != null) && (indbo.gl != gl)) {
+		indbo.dispose();
+		indbo = null;
+	    }
+	    if(indbo == null) {
+		indbo = new GLBuffer(gl);
+		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, indbo.id);
+		indb.rewind();
+		gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, indb.remaining() * 2, indb, GL.GL_STATIC_DRAW);
+		GOut.checkerr(gl);
+	    } else {
+		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, indbo.id);
+	    }
+	}
+    }
+
+    public void adraw(GOut g) {
+	GL2 gl = g.gl;
+	if((vao != null) && (vao.gl != gl)) {
+	    vao.dispose();
+	    vao = null;
+	}
+	if(vao == null) {
+	    vao = new GLVertexArray(gl);
+	    gl.glBindVertexArray(vao.id);
+	    for(VertexBuf.AttribArray buf : vert.bufs) {
+		if(buf instanceof VertexBuf.GLArray)
+		    ((VertexBuf.GLArray)buf).bind(g, true);
+	    }
+	    bindindbo(gl);
+	} else {
+	    gl.glBindVertexArray(vao.id);
+	}
+	gl.glDrawElements(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, 0);
+	gl.glBindVertexArray(0);
+	gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
     public void cdraw(GOut g) {
 	indb.rewind();
 	for(int i = 0; i < vert.bufs.length; i++) {
@@ -142,7 +184,18 @@ public class FastMesh implements FRendered, Disposable {
     }
     
     public void dispose() {
-	updated();
+	synchronized(this) {
+	    updated();
+	    if(vao != null) {
+		vao.dispose();
+		vao = null;
+	    }
+	    if(indbo != null) {
+		indbo.dispose();
+		indbo = null;
+	    }
+	}
+	vert.dispose();
     }
     
     public void drawflat(GOut g) {
