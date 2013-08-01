@@ -337,7 +337,7 @@ public abstract class GLState {
 	private Buffer old, cur, next;
 	public final GL2 gl;
 	public final GLConfig cfg;
-	private boolean[] trans = new boolean[0], repl = new boolean[0];
+	private boolean[] trans = new boolean[0], repl = new boolean[0], adirty = new boolean[0];
 	private ShaderMacro[][] shaders = new ShaderMacro[0][];
 	private int proghash = 0;
 	public ShaderMacro.Program prog;
@@ -473,6 +473,8 @@ public abstract class GLState {
 			if(debug)
 			    stcheckerr(g, "apply", cur.states[id]);
 		    }
+		    if(!pdirty && (prog != null))
+			prog.adirty(deplist[i]);
 		} else if(trans[id]) {
 		    cur.states[id].applyto(g, next.states[id]);
 		    if(debug)
@@ -481,19 +483,23 @@ public abstract class GLState {
 		    cur.states[id] = next.states[id];
 		    if(debug)
 			stcheckerr(g, "applyfrom", cur.states[id]);
+		    if(!pdirty && (prog != null))
+			prog.adirty(deplist[i]);
 		} else if((prog != null) && pdirty && (shaders[id] != null)) {
 		    cur.states[id].reapply(g);
 		    if(debug)
 			stcheckerr(g, "reapply", cur.states[id]);
 		}
 	    }
-	    pdirty = false;
 	    if((ccam != cam) || (cwxf != wxf)) {
 		/* See comment above */
 		mv.load(ccam = cam).mul1(cwxf = wxf);
 		matmode(GL2.GL_MODELVIEW);
 		gl.glLoadMatrixf(mv.m, 0);
 	    }
+	    if(prog != null)
+		prog.autoapply(g, pdirty);
+	    pdirty = false;
 	    checkerr(gl);
 	    if(Config.profile)
 		time += System.nanoTime() - st;
