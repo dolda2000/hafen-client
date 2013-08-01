@@ -125,6 +125,7 @@ public class VertexBuf {
     public static interface GLArray {
 	public void bind(GOut g, boolean asvbo);
 	public void unbind(GOut g);
+	public Object progid(GOut g);
     }
 
     public abstract static class FloatArray extends AttribArray {
@@ -180,6 +181,8 @@ public class VertexBuf {
 	public void unbind(GOut g) {
 	    g.gl.glDisableClientState(GL2.GL_VERTEX_ARRAY);
 	}
+
+	public Object progid(GOut g) {return(null);}
     }
     
     public static class NormalArray extends FloatArray implements GLArray {
@@ -205,6 +208,8 @@ public class VertexBuf {
 	public void unbind(GOut g) {
 	    g.gl.glDisableClientState(GL2.GL_NORMAL_ARRAY);
 	}
+
+	public Object progid(GOut g) {return(null);}
     }
 
     public static class ColorArray extends FloatArray implements GLArray {
@@ -230,6 +235,8 @@ public class VertexBuf {
 	public void unbind(GOut g) {
 	    g.gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
 	}
+
+	public Object progid(GOut g) {return(null);}
     }
 
     public static class TexelArray extends FloatArray implements GLArray {
@@ -255,6 +262,8 @@ public class VertexBuf {
 	public void unbind(GOut g) {
 	    g.gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 	}
+
+	public Object progid(GOut g) {return(null);}
     }
 
     public static class Vec1Array extends FloatArray implements GLArray {
@@ -287,6 +296,12 @@ public class VertexBuf {
 		g.gl.glDisableVertexAttribArray(bound);
 		bound = -1;
 	    }
+	}
+
+	public Object progid(GOut g) {
+	    if(g.st.prog == null)
+		return(null);
+	    return(Integer.valueOf(g.st.prog.attrib(attr)));
 	}
     }
 

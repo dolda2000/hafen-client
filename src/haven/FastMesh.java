@@ -65,9 +65,21 @@ public class FastMesh implements FRendered, Disposable {
 	public abstract void dispose();
     }
 
-    public static abstract class Compiler {
+    public abstract class Compiler {
 	private GLProgram[] kcache = new GLProgram[0];
 	private Compiled[] vcache = new Compiled[0];
+	private Object[] ids = new Object[0];
+
+	private Object[] getid(GOut g) {
+	    Object[] id = new Object[vert.bufs.length];
+	    for(int i = 0; i < id.length; i++) {
+		if(vert.bufs[i] instanceof VertexBuf.GLArray)
+		    id[i] = ((VertexBuf.GLArray)vert.bufs[i]).progid(g);
+		else
+		    id[i] = null;
+	    }
+	    return(ArrayIdentity.intern(id));
+	}
 
 	public Compiled get(GOut g) {
 	    GLProgram prog = g.st.prog;
@@ -76,11 +88,25 @@ public class FastMesh implements FRendered, Disposable {
 		if(kcache[i] == prog)
 		    return(vcache[i]);
 	    }
-	    Compiled ret = create(g);
+	    g.apply();
+	    Object[] id = getid(g);
+	    Compiled ret;
+	    create: {
+		int o;
+		for(o = 0; o < kcache.length; o++) {
+		    if(ids[o] == id) {
+			ret = vcache[o];
+			break create;
+		    }
+		}
+		ret = create(g);
+	    }
 	    kcache = Utils.extend(kcache, i + 1);
 	    vcache = Utils.extend(vcache, i + 1);
+	    ids = Utils.extend(ids, i + 1);
 	    kcache[i] = prog;
 	    vcache[i] = ret;
+	    ids[i] = id;
 	    return(ret);
 	}
 
