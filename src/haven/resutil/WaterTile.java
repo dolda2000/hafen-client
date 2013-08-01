@@ -28,6 +28,8 @@ package haven.resutil;
 
 import java.util.*;
 import haven.*;
+import haven.glsl.*;
+import static haven.glsl.Cons.*;
 import haven.Resource.Tile;
 import haven.MapMesh.Surface;
 import javax.media.opengl.*;
@@ -36,10 +38,13 @@ import java.awt.Color;
 public class WaterTile extends Tiler {
     public final int depth;
     public final Resource.Tileset set;
+    public final GLState mat;
+    private static final Material.Colors bcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
     
     public static class Bottom extends Surface {
 	final MapMesh m;
-	boolean[] s;
+	final boolean[] s;
+	final int[] ed;
 	
 	public Bottom(MapMesh m) {
 	    m.super();
@@ -48,6 +53,7 @@ public class WaterTile extends Tiler {
 	    MCache map = m.map;
 	    int[] d = new int[(sz.x + 5) * (sz.y + 5)];
 	    s = new boolean[(sz.x + 3) * (sz.y + 3)];
+	    ed = new int[(sz.x + 3) * (sz.y + 3)];
 	    Coord c = new Coord();
 	    int i = 0;
 	    for(c.y = -2; c.y <= sz.y + 2; c.y++) {
@@ -72,12 +78,17 @@ public class WaterTile extends Tiler {
 		    if(d[i - 1] < td)
 			td = d[i - 1];
 		    spoint(c).pos.z -= td;
+		    ed[idx(c)] = td;
 		    if(td == 0)
 			s[idx(c)] = true;
 		    i++;
 		}
 		i += 2;
 	    }
+	}
+
+	public int d(int x, int y) {
+	    return(ed[(x + 1) + ((y + 1) * (m.sz.x + 3))]);
 	}
 	
 	public void calcnrm() {
@@ -147,16 +158,91 @@ public class WaterTile extends Tiler {
 	    super(id, set, 30);
 	}
     }
+
+    public static class DepthLayer extends MeshBuf.Layer<Float> {
+	public DepthLayer(MeshBuf buf) {buf.super();}
+
+	public VertexBuf.Vec1Array build(Collection<Float> in) {
+	    java.nio.FloatBuffer data = Utils.mkfbuf(in.size());
+	    for(Float d : in)
+		data.put((d == null)?0:d);
+	    return(new VertexBuf.Vec1Array(data, BottomFog.depth));
+	}
+    }
+    public static final MeshBuf.LayerID<DepthLayer> depthlayer = new MeshBuf.LayerID<DepthLayer>(DepthLayer.class);
+
+    public static class BottomFog extends GLState.StandAlone {
+	public static final double maxdepth = 25;
+	public static final Attribute depth = new Attribute(Type.FLOAT);
+	public static final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
+		protected Expression root(VertexContext vctx) {
+		    return(depth.ref());
+		}
+	    };
+
+	private final ShaderMacro shaders[] = {
+	    new ShaderMacro() {
+		public void modify(ProgramContext prog) {
+		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
+			    public Expression expand(Expression in) {
+				return(mix(in, vec4(l(0.05), l(0.15), l(0.10), l(1.0)), min(div(fragd.ref(), l(maxdepth)), l(1.0))));
+			    }
+			}, 1000);
+		}
+	    }
+	};
+
+	private BottomFog() {
+	    super(Slot.Type.DRAW);
+	}
+
+	public void apply(GOut g) {}
+	public void unapply(GOut g) {}
+	public ShaderMacro[] shaders() {return(shaders);}
+	public boolean reqshaders() {return(true);}
+    }
+    public static final BottomFog waterfog = new BottomFog();
     
+    public static class BottomPlane extends MapMesh.Plane {
+	Bottom srf;
+	Coord lc;
+
+	public BottomPlane(MapMesh m, Bottom srf, Coord lc, int z, GLState mat, Tex tex) {
+	    m.super(srf.fortile(lc), z, mat, tex);
+	    this.srf = srf;
+	    this.lc = new Coord(lc);
+	}
+
+	public void build(MeshBuf buf) {
+	    MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
+	    DepthLayer da = buf.layer(depthlayer);
+	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm);
+	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
+	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
+	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm);
+	    ta.set(v1, new Coord3f(tex.tcx(texx[0]), tex.tcy(texy[0]), 0.0f));
+	    ta.set(v2, new Coord3f(tex.tcx(texx[1]), tex.tcy(texy[1]), 0.0f));
+	    ta.set(v3, new Coord3f(tex.tcx(texx[2]), tex.tcy(texy[2]), 0.0f));
+	    ta.set(v4, new Coord3f(tex.tcx(texx[3]), tex.tcy(texy[3]), 0.0f));
+	    da.set(v1, (float)srf.d(lc.x, lc.y));
+	    da.set(v2, (float)srf.d(lc.x, lc.y + 1));
+	    da.set(v3, (float)srf.d(lc.x + 1, lc.y + 1));
+	    da.set(v4, (float)srf.d(lc.x + 1, lc.y));
+	    MapMesh.splitquad(buf, v1, v2, v3, v4);
+	}
+    }
+
     public WaterTile(int id, Resource.Tileset set, int depth) {
 	super(id);
 	this.set = set;
 	this.depth = depth;
+	TexGL tex = (TexGL)((TexSI)set.ground.pick(0).tex()).parent;
+	mat = new Material(Light.deflight, bcol, tex.draw(), waterfog);
     }
     
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	Tile g = set.ground.pick(rnd);
-	m.new Plane(m.surf(Bottom.class), lc, 0, g);
+	new BottomPlane(m, m.surf(Bottom.class), lc, 0, mat, g.tex());
 	m.new Plane(m.gnd(), lc, 257, surfmat);
     }
     
@@ -164,16 +250,18 @@ public class WaterTile extends Tiler {
 	if(m.map.gettile(gc) <= id)
 	    return;
 	if((set.btrans != null) && (bmask > 0)) {
+	    Tile t = set.btrans[bmask - 1].pick(rnd);
 	    if(gt instanceof WaterTile)
-		m.new Plane(m.surf(Bottom.class), lc, z, set.btrans[bmask - 1].pick(rnd));
+		new BottomPlane(m, m.surf(Bottom.class), lc, z, mat, t.tex());
 	    else
-		gt.layover(m, lc, gc, z, set.btrans[bmask - 1].pick(rnd));
+		gt.layover(m, lc, gc, z, t);
 	}
 	if((set.ctrans != null) && (cmask > 0)) {
+	    Tile t = set.ctrans[cmask - 1].pick(rnd);
 	    if(gt instanceof WaterTile)
-		m.new Plane(m.surf(Bottom.class), lc, z, set.ctrans[cmask - 1].pick(rnd));
+		new BottomPlane(m, m.surf(Bottom.class), lc, z, mat, t.tex());
 	    else
-		gt.layover(m, lc, gc, z, set.ctrans[cmask - 1].pick(rnd));
+		gt.layover(m, lc, gc, z, t);
 	}
     }
 }
