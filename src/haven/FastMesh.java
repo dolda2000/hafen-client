@@ -141,8 +141,10 @@ public class FastMesh implements FRendered, Disposable {
 	    }
 
 	    public void dispose() {
-		list.dispose();
-		list = null;
+		if(list != null) {
+		    list.dispose();
+		    list = null;
+		}
 	    }
 	}
 
