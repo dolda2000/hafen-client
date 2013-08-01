@@ -24,29 +24,22 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.glsl;
+package haven;
 
-public abstract class Type {
-    private static class Simple extends Type {
-	private final String name;
+import javax.media.opengl.*;
 
-	private Simple(String name) {
-	    this.name = name;
-	}
-
-	public String name(Context ctx) {return(name);}
-	public String toString() {return(name);}
+public class GLVertexArray extends GLObject {
+    public final int id;
+    
+    public GLVertexArray(GL2 gl) {
+	super(gl);
+	int[] buf = new int[1];
+	gl.glGenVertexArrays(1, buf, 0);
+	this.id = buf[0];
     }
-
-    public static final Type VOID = new Simple("void");
-    public static final Type INT = new Simple("int");
-    public static final Type FLOAT = new Simple("float");
-    public static final Type VEC2 = new Simple("vec2");
-    public static final Type VEC3 = new Simple("vec3");
-    public static final Type VEC4 = new Simple("vec4");
-    public static final Type MAT3 = new Simple("mat3");
-    public static final Type MAT4 = new Simple("mat4");
-    public static final Type SAMPLER2D = new Simple("sampler2D");
-
-    public abstract String name(Context ctx);
+    
+    protected void delete() {
+	int[] buf = {id};
+	gl.glDeleteVertexArrays(1, buf, 0);
+    }
 }

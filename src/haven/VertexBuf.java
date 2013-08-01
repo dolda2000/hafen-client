@@ -63,17 +63,69 @@ public class VertexBuf {
 	}
 	
 	public abstract Buffer data();
+	public abstract int elsize();
 	
 	public int size() {
 	    Buffer b = data();
 	    b.rewind();
 	    return(b.capacity() / this.n);
 	}
+
+	/* XXX: It would be terribly nice if GLArray could be a
+	 * multiply inhereted class and these could be put in it
+	 * instead; but alas, this is Java. QQ */
+	private GLBuffer bufobj;
+	private int bufmode = GL.GL_STATIC_DRAW;
+	private boolean update = false;
+
+	public void bindvbo(GOut g) {
+	    GL2 gl = g.gl;
+	    synchronized(this) {
+		if((bufobj != null) && (bufobj.gl != gl))
+		    dispose();
+		if(bufobj == null) {
+		    bufobj = new GLBuffer(gl);
+		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, bufobj.id);
+		    Buffer data = data();
+		    data.rewind();
+		    gl.glBufferData(GL.GL_ARRAY_BUFFER, data.remaining() * elsize(), data, bufmode);
+		    GOut.checkerr(gl);
+		    update = false;
+		} else if(update) {
+		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, bufobj.id);
+		    Buffer data = data();
+		    data.rewind();
+		    gl.glBufferData(GL.GL_ARRAY_BUFFER, data.remaining() * elsize(), data, bufmode);
+		    update = false;
+		} else {
+		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, bufobj.id);
+		}
+	    }
+	}
+
+	public void vbomode(int mode) {
+	    bufmode = mode;
+	    dispose();
+	}
+
+	public void dispose() {
+	    synchronized(this) {
+		if(bufobj != null) {
+		    bufobj.dispose();
+		    bufobj = null;
+		}
+	    }
+	}
+
+	public void update() {
+	    update = true;
+	}
     }
-    
+
     public static interface GLArray {
-	public void bind(GOut g);
+	public void bind(GOut g, boolean asvbo);
 	public void unbind(GOut g);
+	public Object progid(GOut g);
     }
 
     public abstract static class FloatArray extends AttribArray {
@@ -87,9 +139,8 @@ public class VertexBuf {
 	    this.data = data;
 	}
 	
-	public FloatBuffer data() {
-	    return(data);
-	}
+	public FloatBuffer data() {return(data);}
+	public int elsize() {return(4);}
     }
     
     public abstract static class IntArray extends AttribArray {
@@ -103,9 +154,8 @@ public class VertexBuf {
 	    this.data = data;
 	}
 	
-	public IntBuffer data() {
-	    return(data);
-	}
+	public IntBuffer data() {return(data);}
+	public int elsize() {return(4);}
     }
     
     public static class VertexArray extends FloatArray implements GLArray {
@@ -115,16 +165,24 @@ public class VertexBuf {
 	
 	public VertexArray dup() {return(new VertexArray(Utils.bufcp(data)));}
 	
-	public void bind(GOut g) {
+	public void bind(GOut g, boolean asvbo) {
 	    GL2 gl = g.gl;
-	    data.rewind();
+	    if(asvbo) {
+		bindvbo(g);
+		gl.glVertexPointer(3, GL.GL_FLOAT, 0, 0);
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+	    } else {
+		data.rewind();
+		gl.glVertexPointer(3, GL.GL_FLOAT, 0, data);
+	    }
 	    gl.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-	    gl.glVertexPointer(3, GL.GL_FLOAT, 0, data);
 	}
 	
 	public void unbind(GOut g) {
 	    g.gl.glDisableClientState(GL2.GL_VERTEX_ARRAY);
 	}
+
+	public Object progid(GOut g) {return(null);}
     }
     
     public static class NormalArray extends FloatArray implements GLArray {
@@ -134,16 +192,24 @@ public class VertexBuf {
 	
 	public NormalArray dup() {return(new NormalArray(Utils.bufcp(data)));}
 
-	public void bind(GOut g) {
+	public void bind(GOut g, boolean asvbo) {
 	    GL2 gl = g.gl;
-	    data.rewind();
+	    if(asvbo) {
+		bindvbo(g);
+		gl.glNormalPointer(GL.GL_FLOAT, 0, 0);
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+	    } else {
+		data.rewind();
+		gl.glNormalPointer(GL.GL_FLOAT, 0, data);
+	    }
 	    gl.glEnableClientState(GL2.GL_NORMAL_ARRAY);
-	    gl.glNormalPointer(GL.GL_FLOAT, 0, data);
 	}
 	
 	public void unbind(GOut g) {
 	    g.gl.glDisableClientState(GL2.GL_NORMAL_ARRAY);
 	}
+
+	public Object progid(GOut g) {return(null);}
     }
 
     public static class ColorArray extends FloatArray implements GLArray {
@@ -153,16 +219,24 @@ public class VertexBuf {
 	
 	public ColorArray dup() {return(new ColorArray(Utils.bufcp(data)));}
 
-	public void bind(GOut g) {
+	public void bind(GOut g, boolean asvbo) {
 	    GL2 gl = g.gl;
-	    data.rewind();
+	    if(asvbo) {
+		bindvbo(g);
+		gl.glColorPointer(4, GL.GL_FLOAT, 0, 0);
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+	    } else {
+		data.rewind();
+		gl.glColorPointer(4, GL.GL_FLOAT, 0, data);
+	    }
 	    gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
-	    gl.glColorPointer(4, GL.GL_FLOAT, 0, data);
 	}
 	
 	public void unbind(GOut g) {
 	    g.gl.glDisableClientState(GL2.GL_COLOR_ARRAY);
 	}
+
+	public Object progid(GOut g) {return(null);}
     }
 
     public static class TexelArray extends FloatArray implements GLArray {
@@ -172,16 +246,24 @@ public class VertexBuf {
 
 	public TexelArray dup() {return(new TexelArray(Utils.bufcp(data)));}
 
-	public void bind(GOut g) {
+	public void bind(GOut g, boolean asvbo) {
 	    GL2 gl = g.gl;
-	    data.rewind();
+	    if(asvbo) {
+		bindvbo(g);
+		gl.glTexCoordPointer(2, GL.GL_FLOAT, 0, 0);
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+	    } else {
+		data.rewind();
+		gl.glTexCoordPointer(2, GL.GL_FLOAT, 0, data);
+	    }
 	    gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
-	    gl.glTexCoordPointer(2, GL.GL_FLOAT, 0, data);
 	}
 	
 	public void unbind(GOut g) {
 	    g.gl.glDisableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 	}
+
+	public Object progid(GOut g) {return(null);}
     }
 
     public static class Vec1Array extends FloatArray implements GLArray {
@@ -193,13 +275,19 @@ public class VertexBuf {
 	    this.attr = attr;
 	}
 
-	public void bind(GOut g) {
+	public void bind(GOut g, boolean asvbo) {
 	    if(g.st.prog != null) {
 		GL2 gl = g.gl;
-		data.rewind();
 		bound = g.st.prog.attrib(attr);
+		if(asvbo) {
+		    bindvbo(g);
+		    gl.glVertexAttribPointer(bound, 1, GL2.GL_FLOAT, false, 0, 0);
+		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+		} else {
+		    data.rewind();
+		    gl.glVertexAttribPointer(bound, 1, GL2.GL_FLOAT, false, 0, data);
+		}
 		gl.glEnableVertexAttribArray(bound);
-		gl.glVertexAttribPointer(bound, 1, GL2.GL_FLOAT, false, 0, data);
 	    }
 	}
 
@@ -209,8 +297,19 @@ public class VertexBuf {
 		bound = -1;
 	    }
 	}
+
+	public Object progid(GOut g) {
+	    if(g.st.prog == null)
+		return(null);
+	    return(Integer.valueOf(g.st.prog.attrib(attr)));
+	}
     }
-    
+
+    public void dispose() {
+	for(AttribArray buf : bufs)
+	    buf.dispose();
+    }
+
     @Resource.LayerName("vbuf")
     public static class VertexRes extends Resource.Layer {
 	public transient final VertexBuf b;

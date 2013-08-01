@@ -53,6 +53,8 @@ public abstract class Symbol {
 	    }
 	    return(nm);
 	}
+
+	public String toString() {return("#:" + prefix);}
     }
 
     public static class Fix extends Symbol {
@@ -111,5 +113,7 @@ public abstract class Symbol {
 	    }
 	    return(nm);
 	}
+
+	public String toString() {return("#s:" + prefix);}
     }
 }
