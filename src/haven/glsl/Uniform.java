@@ -41,6 +41,9 @@ public class Uniform extends Variable.Global {
 
     private class Def extends Definition {
 	public void output(Output out) {
+	    if(out.ctx instanceof ShaderContext) {
+		((ShaderContext)out.ctx).prog.uniforms.add(Uniform.this);
+	    }
 	    out.write("uniform ");
 	    super.output(out);
 	}
