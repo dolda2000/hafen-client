@@ -411,18 +411,27 @@ public class MapView extends PView implements DTarget {
 	};
     
     void addgob(RenderList rl, final Gob gob) {
-	Coord3f c = gob.getc();
-	c.y = -c.y;
 	GLState xf;
 	try {
 	    xf = Following.xf(gob);
 	} catch(Loading e) {
 	    xf = null;
 	}
-	if(xf != null)
-	    rl.add(gob, GLState.compose(xf, gob.olmod, gob.save));
+	GLState extra = null;
+	if(xf == null) {
+	    xf = gob.loc;
+	    try {
+		Coord3f c = gob.getc();
+		Tiler tile = glob.map.tiler(glob.map.gettile(new Coord(c).div(tilesz)));
+		extra = tile.drawstate(c);
+	    } catch(Loading e) {
+		extra = null;
+	    }
+	}
+	if(extra != null)
+	    rl.add(gob, GLState.compose(extra, xf, gob.olmod, gob.save));
 	else
-	    rl.add(gob, GLState.compose(gob.loc, gob.olmod, gob.save));
+	    rl.add(gob, GLState.compose(xf, gob.olmod, gob.save));
     }
 
     private final Rendered gobs = new Rendered() {
