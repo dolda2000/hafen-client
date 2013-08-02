@@ -264,4 +264,32 @@ public class WaterTile extends Tiler {
 		gt.layover(m, lc, gc, z, t);
 	}
     }
+
+    public static final GLState obfog = new GLState.StandAlone(GLState.Slot.Type.DRAW) {
+	final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
+		protected Expression root(VertexContext vctx) {
+		    return(sub(pick(MiscLib.maploc.ref(), "z"), pick(vctx.mapv.depref(), "z")));
+		}
+	    };
+
+	final ShaderMacro[] shaders = {
+	    new ShaderMacro() {
+		public void modify(ProgramContext prog) {
+		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
+			    public Expression expand(Expression in) {
+				return(mix(in, vec4(l(0.05), l(0.15), l(0.10), l(1.0)), clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
+			    }
+			}, 1000);
+		}
+	    }
+	};
+	public void apply(GOut g) {}
+	public void unapply(GOut g) {}
+	public ShaderMacro[] shaders() {return(shaders);}
+	public boolean reqshaders() {return(true);}
+    };
+
+    public GLState drawstate(Coord3f c) {
+	return(obfog);
+    }
 }
