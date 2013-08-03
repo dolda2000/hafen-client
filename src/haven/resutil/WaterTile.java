@@ -104,14 +104,69 @@ public class WaterTile extends Tiler {
     }
     
     static final TexCube sky = new TexCube(Resource.loadimg("gfx/tiles/skycube"));
-    static final Tex srf = Resource.loadtex("gfx/tiles/watertex");
+    static final TexI srf = (TexI)Resource.loadtex("gfx/tiles/watertex");
+    static final TexI nrm = (TexI)Resource.loadtex("gfx/tiles/wn");
+    static {
+	nrm.mipmap();
+	nrm.magfilter(GL.GL_LINEAR);
+    }
     private static States.DepthOffset soff = new States.DepthOffset(2, 2);
     public static final GLState surfmat = new GLState.StandAlone(GLState.Slot.Type.DRAW, PView.cam) {
-	    private TexUnit sampler;
+	    private final Uniform ssky = new Uniform(Type.SAMPLERCUBE);
+	    private final Uniform snrm = new Uniform(Type.SAMPLER2D);
+	    private final Uniform icam = new Uniform(Type.MAT3);
+	    private TexUnit tsky, tnrm;
 
-	    public void apply(GOut g) {
+	    private ShaderMacro[] shaders = {
+		new ShaderMacro() {
+		    final AutoVarying skyc = new AutoVarying(Type.VEC3) {
+			    protected Expression root(VertexContext vctx) {
+				return(mul(icam.ref(), reflect(MiscLib.vertedir(vctx).depref(), vctx.eyen.depref())));
+			    }
+			};
+		    public void modify(final ProgramContext prog) {
+			MiscLib.fragedir(prog.fctx);
+			final ValBlock.Value nmod = prog.fctx.uniform.new Value(Type.VEC3) {
+				public Expression root() {
+				    return(mul(sub(add(pick(texture2D(snrm.ref(),
+								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
+									  mul(MiscLib.time.ref(), vec2(l(0.025), l(0.035))))),
+							    "rgb"),
+						       pick(texture2D(snrm.ref(),
+								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
+									  mul(MiscLib.time.ref(), vec2(l(-0.035), l(-0.025))))),
+							    "rgb")),
+						   l(0.5 * 2)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
+				    /*
+				    return(mul(sub(pick(texture2D(snrm.ref(),
+								  mul(pick(MiscLib.fragmapv.ref(), "st"), l(0.005))),
+							"rgb"),
+						   l(0.5)), vec3(l(1.0 / 32), l(1.0 / 32), l(1.0))));
+				    */
+				}
+			    };
+			nmod.force();
+			MiscLib.frageyen(prog.fctx).mod(new Macro1<Expression>() {
+				public Expression expand(Expression in) {
+				    Expression m = nmod.ref();
+				    return(add(mul(pick(m, "x"), vec3(l(1.0), l(0.0), l(0.0))),
+					       mul(pick(m, "y"), vec3(l(0.0), l(1.0), l(0.0))),
+					       mul(pick(m, "z"), in)));
+				}
+			    }, -10);
+			prog.fctx.fragcol.mod(new Macro1<Expression>() {
+				public Expression expand(Expression in) {
+				    return(mul(in, textureCube(ssky.ref(), neg(mul(icam.ref(), reflect(MiscLib.fragedir(prog.fctx).depref(), MiscLib.frageyen(prog.fctx).depref())))),
+					       vec4(l(1.0), l(1.0), l(1.0), l(0.4))));
+				}
+			    }, 0);
+		    }
+		}
+	    };
+
+	    private void lapply(GOut g) {
 		GL2 gl = g.gl;
-		(sampler = g.st.texalloc()).act();
+		(tsky = g.st.texalloc()).act();
 		gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
 		gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
 		gl.glTexGeni(GL2.GL_R, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
@@ -126,10 +181,10 @@ public class WaterTile extends Tiler {
 		gl.glPushMatrix();
 		g.st.cam.transpose().trim3(1).loadgl(gl);
 	    }
-	    
-	    public void unapply(GOut g) {
+
+	    private void lunapply(GOut g) {
 		GL2 gl = g.gl;
-		sampler.act();
+		tsky.act();
 		g.st.matmode(GL.GL_TEXTURE);
 		gl.glPopMatrix();
 		gl.glDisable(GL.GL_TEXTURE_CUBE_MAP);
@@ -137,7 +192,50 @@ public class WaterTile extends Tiler {
 		gl.glDisable(GL2.GL_TEXTURE_GEN_T);
 		gl.glDisable(GL2.GL_TEXTURE_GEN_R);
 		gl.glColor3f(1, 1, 1);
-		sampler.free(); sampler = null;
+		tsky.free(); tsky = null;
+	    }
+
+	    public void reapply(GOut g) {
+		GL2 gl = g.gl;
+		gl.glUniform1i(g.st.prog.uniform(ssky), tsky.id);
+		gl.glUniform1i(g.st.prog.uniform(snrm), tnrm.id);
+		gl.glUniformMatrix3fv(g.st.prog.uniform(icam), 1, false, g.st.cam.transpose().trim3(), 0);
+	    }
+
+	    private void papply(GOut g) {
+		GL2 gl = g.gl;
+		(tsky = g.st.texalloc()).act();
+		gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
+		(tnrm = g.st.texalloc()).act();
+		gl.glBindTexture(GL.GL_TEXTURE_2D, nrm.glid(g));
+		reapply(g);
+	    }
+
+	    private void punapply(GOut g) {
+		GL2 gl = g.gl;
+		tsky.act();
+		gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, 0);
+		tnrm.act();
+		gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+		tsky.free(); tsky = null;
+		tnrm.free(); tnrm = null;
+	    }
+
+	    public ShaderMacro[] shaders() {return(shaders);}
+	    public boolean reqshaders() {return(true);}
+
+	    public void apply(GOut g) {
+		if(g.st.prog == null)
+		    lapply(g);
+		else
+		    papply(g);
+	    }
+	    
+	    public void unapply(GOut g) {
+		if(!g.st.usedprog)
+		    lunapply(g);
+		else
+		    punapply(g);
 	    }
 	    
 	    public void prep(Buffer buf) {
