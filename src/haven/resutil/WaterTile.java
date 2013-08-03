@@ -111,7 +111,7 @@ public class WaterTile extends Tiler {
 	nrm.magfilter(GL.GL_LINEAR);
     }
     private static States.DepthOffset soff = new States.DepthOffset(2, 2);
-    public static final GLState surfmat = new GLState.StandAlone(GLState.Slot.Type.DRAW, PView.cam) {
+    public static final GLState surfmat = new GLState.StandAlone(GLState.Slot.Type.DRAW, PView.cam, HavenPanel.global) {
 	    private final Uniform ssky = new Uniform(Type.SAMPLERCUBE);
 	    private final Uniform snrm = new Uniform(Type.SAMPLER2D);
 	    private final Uniform icam = new Uniform(Type.MAT3);
@@ -157,7 +157,7 @@ public class WaterTile extends Tiler {
 			prog.fctx.fragcol.mod(new Macro1<Expression>() {
 				public Expression expand(Expression in) {
 				    return(mul(in, textureCube(ssky.ref(), neg(mul(icam.ref(), reflect(MiscLib.fragedir(prog.fctx).depref(), MiscLib.frageyen(prog.fctx).depref())))),
-					       vec4(l(1.0), l(1.0), l(1.0), l(0.4))));
+					       l(0.4)));
 				}
 			    }, 0);
 		    }
@@ -204,6 +204,7 @@ public class WaterTile extends Tiler {
 
 	    private void papply(GOut g) {
 		GL2 gl = g.gl;
+		gl.glBlendFunc(GL.GL_ONE, GL.GL_ONE);
 		(tsky = g.st.texalloc()).act();
 		gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
 		(tnrm = g.st.texalloc()).act();
@@ -219,6 +220,7 @@ public class WaterTile extends Tiler {
 		gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
 		tsky.free(); tsky = null;
 		tnrm.free(); tnrm = null;
+		gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
 	    }
 
 	    public ShaderMacro[] shaders() {return(shaders);}
@@ -271,6 +273,7 @@ public class WaterTile extends Tiler {
 
     public static class BottomFog extends GLState.StandAlone {
 	public static final double maxdepth = 25;
+	public static final Color fogcolor = new Color(13, 38, 25);
 	public static final Attribute depth = new Attribute(Type.FLOAT);
 	public static final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
 		protected Expression root(VertexContext vctx) {
@@ -283,7 +286,7 @@ public class WaterTile extends Tiler {
 		public void modify(ProgramContext prog) {
 		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			    public Expression expand(Expression in) {
-				return(mix(in, vec4(l(0.05), l(0.15), l(0.10), l(1.0)), min(div(fragd.ref(), l(maxdepth)), l(1.0))));
+				return(mix(in, col4(fogcolor), min(div(fragd.ref(), l(maxdepth)), l(1.0))));
 			    }
 			}, 1000);
 		}
@@ -375,7 +378,7 @@ public class WaterTile extends Tiler {
 		public void modify(ProgramContext prog) {
 		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			    public Expression expand(Expression in) {
-				return(mix(in, vec4(l(0.05), l(0.15), l(0.10), l(1.0)), clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
+				return(mix(in, col4(BottomFog.fogcolor), clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
 			    }
 			}, 1000);
 		}
