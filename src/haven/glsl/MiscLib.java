@@ -66,7 +66,7 @@ public abstract class MiscLib {
 		public Value make(ValBlock vals) {
 		    return(vals.new Value(VEC3, new Symbol.Gen("edir")) {
 			    public Expression root() {
-				return(normalize(pick(vctx.eyev.depref(), "xyz")));
+				return(neg(normalize(pick(vctx.eyev.depref(), "xyz"))));
 			    }
 			});
 		}
