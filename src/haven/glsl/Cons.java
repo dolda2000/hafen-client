@@ -71,6 +71,7 @@ public class Cons {
     public static Vec4Cons vec4(Expression... els) {return(new Vec4Cons(els));}
     public static Vec3Cons vec3(Expression... els) {return(new Vec3Cons(els));}
     public static Vec2Cons vec2(Expression... els) {return(new Vec2Cons(els));}
+    public static Mat3Cons mat3(Expression... els) {return(new Mat3Cons(els));}
 
     public static Expression length(Expression x) {return(Function.Builtin.length.call(x));}
     public static Expression normalize(Expression x) {return(Function.Builtin.normalize.call(x));}
@@ -80,6 +81,7 @@ public class Cons {
     public static Expression cross(Expression x, Expression y) {return(Function.Builtin.cross.call(x, y));}
     public static Expression reflect(Expression x, Expression y) {return(Function.Builtin.reflect.call(x, y));}
     public static Expression texture2D(Expression s, Expression c) {return(Function.Builtin.texture2D.call(s, c));}
+    public static Expression textureCube(Expression s, Expression c) {return(Function.Builtin.textureCube.call(s, c));}
     public static Expression mix(Expression x, Expression y, Expression a) {return(Function.Builtin.mix.call(x, y, a));}
     public static Expression clamp(Expression x, Expression a, Expression b) {return(Function.Builtin.clamp.call(x, a, b));}
 
