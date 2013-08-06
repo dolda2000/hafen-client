@@ -319,6 +319,30 @@ public abstract class TexGL extends Tex {
 	    }
 	}
     }
+
+    @Material.ResName("tex")
+    public static class $tex implements Material.ResCons2 {
+	public void cons(final Resource res, List<GLState> states, List<Material.Res.Resolver> left, Object... args) {
+	    final Resource tres;
+	    final int tid;
+	    if(args[0] instanceof String) {
+		tres = Resource.load((String)args[0], (Integer)args[1]);
+		tid = (Integer)args[2];
+	    } else {
+		tres = res;
+		tid = (Integer)args[0];
+	    }
+	    left.add(new Material.Res.Resolver() {
+		    public void resolve(Collection<GLState> buf) {
+			Resource.Image img = tres.layer(Resource.imgc, tid);
+			if(img == null)
+			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
+			buf.add(img.tex().draw());
+			buf.add(img.tex().clip());
+		    }
+		});
+	}
+    }
 	
     static {
 	Console.setscmd("texdis", new Console.Command() {

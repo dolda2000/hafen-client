@@ -45,6 +45,10 @@ public class Material extends GLState {
 		g.gl.glEnable(GL.GL_CULL_FACE);
 	    }
 	};
+    @ResName("nofacecull")
+    public static class $nofacecull implements ResCons {
+	public GLState cons(Resource res, Object... args) {return(nofacecull);}
+    }
     
     public static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
     public static final float[] defdif = {0.8f, 0.8f, 0.8f, 1.0f};
@@ -52,6 +56,7 @@ public class Material extends GLState {
     public static final float[] defemi = {0.0f, 0.0f, 0.0f, 1.0f};
     
     public static final GLState.Slot<Colors> colors = new GLState.Slot<Colors>(Slot.Type.DRAW, Colors.class);
+    @ResName("col")
     public static class Colors extends GLState {
 	public float[] amb, dif, spc, emi;
 	public float shine;
@@ -70,7 +75,7 @@ public class Material extends GLState {
 	    this.emi = emi;
 	    this.shine = shine;
 	}
-	
+
 	private static float[] colmul(float[] c1, float[] c2) {
 	    return(new float[] {c1[0] * c2[0], c1[1] * c2[1], c1[2] * c2[2], c1[3] * c2[3]});
 	}
@@ -99,6 +104,10 @@ public class Material extends GLState {
 		 0);
 	}
     
+	public Colors(Resource res, Object... args) {
+	    this((Color)args[0], (Color)args[1], (Color)args[2], (Color)args[3], (Float)args[4]);
+	}
+
 	public void apply(GOut g) {
 	    GL2 gl = g.gl;
 	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_AMBIENT, amb, 0);
@@ -190,7 +199,7 @@ public class Material extends GLState {
 	private transient Material m;
 	private boolean mipmap = false, linear = false;
 	
-	private interface Resolver {
+	public interface Resolver {
 	    public void resolve(Collection<GLState> buf);
 	}
 	
@@ -345,7 +354,9 @@ public class Material extends GLState {
 		}
 		rnames.put(nm, new ResCons2() {
 			public void cons(Resource res, List<GLState> states, List<Res.Resolver> left, Object... args) {
-			    states.add(scons.cons(res, args));
+			    GLState ret = scons.cons(res, args);
+			    if(ret != null)
+				states.add(ret);
 			}
 		    });
 	    } else if(ResCons2.class.isAssignableFrom(cl)) {
@@ -383,10 +394,19 @@ public class Material extends GLState {
 	    while(!buf.eom()) {
 		String nm = buf.string();
 		Object[] args = buf.list();
-		ResCons2 cons = rnames.get(nm);
-		if(cons == null)
-		    throw(new Resource.LoadException("Unknown material part name: " + nm, res));
-		cons.cons(res, ret.states, ret.left, args);
+		if(nm.equals("linear")) {
+		    /* XXX: These should very much be removed and
+		     * specified directly in the texture layer
+		     * instead. */
+		    ret.linear = true;
+		} else if(nm.equals("mipmap")) {
+		    ret.mipmap = true;
+		} else {
+		    ResCons2 cons = rnames.get(nm);
+		    if(cons == null)
+			throw(new Resource.LoadException("Unknown material part name: " + nm, res));
+		    cons.cons(res, ret.states, ret.left, args);
+		}
 	    }
 	    return(ret);
 	}
