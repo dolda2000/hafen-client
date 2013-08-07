@@ -27,27 +27,25 @@
 package haven;
 
 import java.util.*;
-import java.lang.ref.WeakReference;
+import java.lang.ref.*;
 
 public class ArrayIdentity {
     private static HashMap<Entry<?>, Entry<?>> set = new HashMap<Entry<?>, Entry<?>>();
-    private static int cleanint = 0;
-    
-    private static class Entry<T> {
-	WeakReference<T[]> arr;
-	
+    private static ReferenceQueue<Object> cleanq = new ReferenceQueue<Object>();
+
+    private static class Entry<T> extends WeakReference<T[]> {
 	private Entry(T[] arr) {
-	    this.arr = new WeakReference<T[]>(arr);
+	    super(arr, cleanq);
 	}
 	
 	public boolean equals(Object x) {
 	    if(!(x instanceof Entry))
 	       return(false);
-	    T[] a = arr.get();
+	    T[] a = get();
 	    if(a == null)
 		return(false);
 	    Entry<?> e = (Entry<?>)x;
-	    Object[] ea = e.arr.get();
+	    Object[] ea = e.get();
 	    if(ea == null)
 		return(false);
 	    if(ea.length != a.length)
@@ -60,7 +58,7 @@ public class ArrayIdentity {
 	}
 	
 	public int hashCode() {
-	    T[] a = arr.get();
+	    T[] a = get();
 	    if(a == null)
 		return(0);
 	    int ret = 1;
@@ -70,12 +68,10 @@ public class ArrayIdentity {
 	}
     }
     
-    private static synchronized void clean() {
-	for(Iterator<Entry<?>> i = set.keySet().iterator(); i.hasNext();) {
-	    Entry<?> e = i.next();
-	    if(e.arr.get() == null)
-		i.remove();
-	}
+    private static void clean() {
+	Reference<?> ref;
+	while((ref = cleanq.poll()) != null)
+	    set.remove(ref);
     }
     
     @SuppressWarnings("unchecked")
@@ -84,21 +80,16 @@ public class ArrayIdentity {
     }
 
     public static <T> T[] intern(T[] arr) {
-	synchronized(ArrayIdentity.class) {
-	    if(cleanint++ > 100) {
-		clean();
-		cleanint = 0;
-	    }
-	}
 	Entry<T> e = new Entry<T>(arr);
 	synchronized(ArrayIdentity.class) {
+	    clean();
 	    Entry<T> e2 = getcanon(e);
 	    T[] ret;
 	    if(e2 == null) {
 		set.put(e, e);
 		ret = arr;
 	    } else {
-		ret = e2.arr.get();
+		ret = e2.get();
 		if(ret == null) {
 		    set.remove(e2);
 		    set.put(e, e);

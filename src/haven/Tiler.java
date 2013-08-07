@@ -43,6 +43,10 @@ public abstract class Tiler {
     public void layover(MapMesh m, Coord lc, Coord gc, int z, Tile t) {
 	m.new Plane(m.gnd(), lc, z, t);
     }
+
+    public GLState drawstate(Coord3f c) {
+	return(null);
+    }
     
     public static class FactMaker implements Resource.PublishedCode.Instancer {
 	public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {

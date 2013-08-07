@@ -200,10 +200,13 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
     // public boolean reqshaders() {return(true);}
     public ShaderMacro[] shaders() {return(shaders);}
 
+    private TexUnit sampler;
+
     public void apply(GOut g) {
+	sampler = g.st.texalloc();
 	if(g.st.prog != null) {
 	    GL gl = g.gl;
-	    g.st.texunit(1);
+	    sampler.act();
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, lbuf.glid(g));
 	    reapply(g);
 	}
@@ -213,7 +216,7 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 	GL2 gl = g.gl;
 	int mapu = g.st.prog.cuniform(Shader.map);
 	if(mapu >= 0) {
-	    gl.glUniform1i(mapu, 1);
+	    gl.glUniform1i(mapu, sampler.id);
 	    gl.glUniformMatrix4fv(g.st.prog.uniform(Shader.txf), 1, false, txf.m, 0);
 	    gl.glUniform1i(g.st.prog.uniform(Shader.sl), slidx);
 	}
@@ -221,7 +224,8 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 
     public void unapply(GOut g) {
 	GL gl = g.gl;
-	g.st.texunit(1);
+	sampler.act();
 	gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+	sampler.free(); sampler = null;
     }
 }

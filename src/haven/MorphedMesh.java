@@ -125,10 +125,14 @@ public class MorphedMesh extends FastMesh {
 	private static AttribArray[] ohBitterSweetJavaDays(VertexBuf from) {
 	    AttribArray[] ret = new AttribArray[from.bufs.length];
 	    for(int i = 0; i < from.bufs.length; i++) {
-		if(from.bufs[i] instanceof VertexArray)
+		if(from.bufs[i] instanceof VertexArray) {
 		    ret[i] = ((VertexArray)from.bufs[i]).dup();
-		else if(from.bufs[i] instanceof NormalArray)
+		    ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
+		}
+		else if(from.bufs[i] instanceof NormalArray) {
 		    ret[i] = ((NormalArray)from.bufs[i]).dup();
+		    ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
+		}
 		else if(from.bufs[i] instanceof BoneArray)
 		    ret[i] = ((BoneArray)from.bufs[i]).dup();
 		else
@@ -162,8 +166,10 @@ public class MorphedMesh extends FastMesh {
 	    float[][] offs = new float[pose.skel().blist.length][16];
 	    for(int i = 0; i < offs.length; i++)
 		pose.boneoff(i, offs[i]);
+	    VertexBuf.VertexArray apos = buf(VertexArray.class);
+	    VertexBuf.NormalArray anrm = buf(NormalArray.class);
 	    FloatBuffer opos = from.buf(VertexArray.class).data, onrm = from.buf(NormalArray.class).data;
-	    FloatBuffer npos =      buf(VertexArray.class).data, nnrm =      buf(NormalArray.class).data;
+	    FloatBuffer npos =                        apos.data, nnrm =                        anrm.data;
 	    BoneArray ba = buf(BoneArray.class);
 	    int apv = ba.n;
 	    IntBuffer bl = ba.data;
@@ -196,6 +202,7 @@ public class MorphedMesh extends FastMesh {
 		vo += 3;
 		ao += apv;
 	    }
+	    apos.update(); anrm.update();
 	}
     }
 }

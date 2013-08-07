@@ -283,6 +283,14 @@ public class Utils {
 	    v = -v;
 	return(Math.pow(2.0, e) * v);
     }
+
+    static float float32d(byte[] buf, int off) {
+	return(Float.intBitsToFloat(int32d(buf, off)));
+    }
+
+    static double float64d(byte[] buf, int off) {
+	return(Double.longBitsToDouble(int64d(buf, off)));
+    }
 	
     static char num2hex(int num) {
 	if(num < 10)

@@ -159,6 +159,24 @@ public class Light implements Rendered {
 		    celshade.prep(buf);
 	    }
 	};
+
+    @Material.ResName("light")
+    public static class $light implements Material.ResCons {
+	public GLState cons(Resource res, Object... args) {
+	    String nm = (String)args[0];
+	    if(nm.equals("def")) {
+		return(deflight);
+	    } else if(nm.equals("pv")) {
+		return(vlights);
+	    } else if(nm.equals("pp")) {
+		return(plights);
+	    } else if(nm.equals("n")) {
+		return(null);
+	    } else {
+		throw(new Resource.LoadException("Unknown lighting type: " + nm, res));
+	    }
+	}
+    }
     
     public static class LightList extends GLState {
 	public final List<Light> ll = new ArrayList<Light>();

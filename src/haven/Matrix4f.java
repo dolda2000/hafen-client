@@ -131,6 +131,14 @@ public class Matrix4f {
 	return(n);
     }
     
+    public float[] trim3() {
+	return(new float[] {
+		m[0], m[1], m[2],
+		m[4], m[5], m[6],
+		m[8], m[9], m[10],
+	    });
+    }
+
     public Matrix4f trim3(float e33) {
 	Matrix4f n = new Matrix4f(this);
 	n.m[3] = n.m[7] = n.m[11] = n.m[12] = n.m[13] = n.m[14] = 0;

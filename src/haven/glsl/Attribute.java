@@ -41,6 +41,9 @@ public class Attribute extends Variable.Global {
 
     private class Def extends Definition {
 	public void output(Output out) {
+	    if(out.ctx instanceof ShaderContext) {
+		((ShaderContext)out.ctx).prog.attribs.add(Attribute.this);
+	    }
 	    out.write("attribute ");
 	    super.output(out);
 	}
