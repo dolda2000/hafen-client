@@ -32,7 +32,6 @@ public class Charlist extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/avakort");
     public static final int margin = 6;
     public int height, y;
-    public Button sau, sad;
     public List<Char> chars = new ArrayList<Char>();
     
     public static class Char {
@@ -59,18 +58,6 @@ public class Charlist extends Widget {
 	super(c, new Coord(bg.sz().x, 40 + (bg.sz().y * height) + (margin * (height - 1))), parent);
 	this.height = height;
 	y = 0;
-	sau = new Button(new Coord(0, 0), 100, this, Resource.loadimg("gfx/hud/slen/sau")) {
-		public void click() {
-		    scroll(-1);
-		}
-	    };
-	sad = new Button(new Coord(0, sz.y - 19), 100, this, Resource.loadimg("gfx/hud/slen/sad")) {
-		public void click() {
-		    scroll(1);
-		}
-	    };
-	sau.hide();
-	sad.hide();
     }
     
     public void scroll(int amount) {
@@ -137,10 +124,6 @@ public class Charlist extends Widget {
 	    c.plb.hide();
 	    synchronized(chars) {
 		chars.add(c);
-		if(chars.size() > height) {
-		    sau.show();
-		    sad.show();
-		}
 	    }
 	}
     }
