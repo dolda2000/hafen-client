@@ -73,6 +73,9 @@ public abstract class PView extends Widget {
 	
 	public abstract Coord ul();
 	public abstract Coord sz();
+	public Glob glob() {
+	    return(null);
+	}
     }
     
     private class WidgetRenderState extends RenderState {
@@ -82,6 +85,10 @@ public abstract class PView extends Widget {
 	
 	public Coord sz() {
 	    return(PView.this.sz);
+	}
+
+	public Glob glob() {
+	    return(ui.sess.glob);
 	}
     }
     

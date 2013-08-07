@@ -60,6 +60,10 @@ public abstract class Variable {
 	    super(type, name);
 	}
 
+	public Global(Type type) {
+	    super(type, new Symbol.Gen());
+	}
+
 	public class Ref extends Variable.Ref {
 	    public Ref process(Context ctx) {
 		use(ctx);

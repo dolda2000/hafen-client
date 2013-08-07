@@ -27,33 +27,27 @@
 package haven.glsl;
 
 public abstract class Type {
-    public static final Type VOID = new Type() {
-	    public String name(Context ctx) {return("void");}
-	};
-    public static final Type INT = new Type() {
-	    public String name(Context ctx) {return("int");}
-	};
-    public static final Type FLOAT = new Type() {
-	    public String name(Context ctx) {return("float");}
-	};
-    public static final Type VEC2 = new Type() {
-	    public String name(Context ctx) {return("vec2");}
-	};
-    public static final Type VEC3 = new Type() {
-	    public String name(Context ctx) {return("vec3");}
-	};
-    public static final Type VEC4 = new Type() {
-	    public String name(Context ctx) {return("vec4");}
-	};
-    public static final Type MAT3 = new Type() {
-	    public String name(Context ctx) {return("mat3");}
-	};
-    public static final Type MAT4 = new Type() {
-	    public String name(Context ctx) {return("mat4");}
-	};
-    public static final Type SAMPLER2D = new Type() {
-	    public String name(Context ctx) {return("sampler2D");}
-	};
+    private static class Simple extends Type {
+	private final String name;
+
+	private Simple(String name) {
+	    this.name = name;
+	}
+
+	public String name(Context ctx) {return(name);}
+	public String toString() {return(name);}
+    }
+
+    public static final Type VOID = new Simple("void");
+    public static final Type INT = new Simple("int");
+    public static final Type FLOAT = new Simple("float");
+    public static final Type VEC2 = new Simple("vec2");
+    public static final Type VEC3 = new Simple("vec3");
+    public static final Type VEC4 = new Simple("vec4");
+    public static final Type MAT3 = new Simple("mat3");
+    public static final Type MAT4 = new Simple("mat4");
+    public static final Type SAMPLER2D = new Simple("sampler2D");
+    public static final Type SAMPLERCUBE = new Simple("samplerCube");
 
     public abstract String name(Context ctx);
 }

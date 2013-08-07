@@ -31,6 +31,8 @@ import java.util.*;
 public class ProgramContext {
     public final VertexContext vctx;
     public final FragmentContext fctx;
+    public final Set<Uniform> uniforms = new HashSet<Uniform>();
+    public final Set<Attribute> attribs = new HashSet<Attribute>();
     public final Map<Symbol, String> symtab = new HashMap<Symbol, String>();
     public final Map<String, Symbol> rsymtab = new HashMap<String, Symbol>();
     public int symgen = 1;

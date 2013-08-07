@@ -100,10 +100,26 @@ public class GLSettings implements java.io.Serializable {
 	}
     }
 
-    public final BoolSetting usedl = new BoolSetting("usedl") {
-	    public Boolean defval() {return(true);}
-	    public void validate(Boolean val) {}
-	};
+    public static enum MeshMode {
+	MEM, DLIST, VAO;
+    }
+    public final EnumSetting<MeshMode> meshmode = new EnumSetting<MeshMode>("meshmode", MeshMode.class) {
+	public MeshMode defval() {
+	    if(cfg.exts.contains("GL_ARB_vertex_array_object"))
+		return(MeshMode.VAO);
+	    return(MeshMode.DLIST);
+	}
+
+	public void validate(MeshMode mode) {
+	    switch(mode) {
+	    case VAO:
+		if(!cfg.exts.contains("GL_ARB_vertex_array_object"))
+		    throw(new SettingException("VAOs are not supported."));
+		break;
+	    }
+	}
+    };
+
     public final BoolSetting fsaa = new BoolSetting("fsaa") {
 	    public Boolean defval() {return(false);}
 	    public void validate(Boolean val) {

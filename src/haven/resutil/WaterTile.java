@@ -96,9 +96,11 @@ public class WaterTile extends Tiler {
     static final Tex srf = Resource.loadtex("gfx/tiles/watertex");
     private static States.DepthOffset soff = new States.DepthOffset(2, 2);
     public static final GLState surfmat = new GLState.StandAlone(GLState.Slot.Type.DRAW, PView.cam) {
+	    private TexUnit sampler;
+
 	    public void apply(GOut g) {
 		GL2 gl = g.gl;
-		g.st.texunit(0);
+		(sampler = g.st.texalloc()).act();
 		gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
 		gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
 		gl.glTexGeni(GL2.GL_R, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
@@ -116,7 +118,7 @@ public class WaterTile extends Tiler {
 	    
 	    public void unapply(GOut g) {
 		GL2 gl = g.gl;
-		g.st.texunit(0);
+		sampler.act();
 		g.st.matmode(GL.GL_TEXTURE);
 		gl.glPopMatrix();
 		gl.glDisable(GL.GL_TEXTURE_CUBE_MAP);
@@ -124,6 +126,7 @@ public class WaterTile extends Tiler {
 		gl.glDisable(GL2.GL_TEXTURE_GEN_T);
 		gl.glDisable(GL2.GL_TEXTURE_GEN_R);
 		gl.glColor3f(1, 1, 1);
+		sampler.free(); sampler = null;
 	    }
 	    
 	    public void prep(Buffer buf) {

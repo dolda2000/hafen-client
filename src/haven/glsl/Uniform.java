@@ -26,6 +26,9 @@
 
 package haven.glsl;
 
+import haven.GLState.Slot;
+import haven.GOut;
+
 public class Uniform extends Variable.Global {
     public Uniform(Type type, Symbol name) {
 	super(type, name);
@@ -41,6 +44,9 @@ public class Uniform extends Variable.Global {
 
     private class Def extends Definition {
 	public void output(Output out) {
+	    if(out.ctx instanceof ShaderContext) {
+		((ShaderContext)out.ctx).prog.uniforms.add(Uniform.this);
+	    }
 	    out.write("uniform ");
 	    super.output(out);
 	}
@@ -49,5 +55,15 @@ public class Uniform extends Variable.Global {
     public void use(Context ctx) {
 	if(!defined(ctx))
 	    ctx.vardefs.add(new Def());
+    }
+
+    public static abstract class AutoApply extends Uniform {
+	public final Slot[] deps;
+
+	public AutoApply(Type type, Symbol name, Slot... deps)  {super(type, name);  this.deps = deps;}
+	public AutoApply(Type type, String infix, Slot... deps) {super(type, infix); this.deps = deps;}
+	public AutoApply(Type type, Slot... deps)               {super(type);        this.deps = deps;}
+
+	public abstract void apply(GOut g, int location);
     }
 }

@@ -31,7 +31,7 @@ import static haven.glsl.Function.PDir.*;
 import static haven.glsl.Type.*;
 import haven.glsl.ValBlock.Value;
 
-public class Tex2D implements ShaderMacro {
+public class Tex2D {
     public static final Uniform tex2d = new Uniform(Type.SAMPLER2D);
     public Varying.Interpol ipol = Varying.Interpol.NORMAL;
 
@@ -60,7 +60,7 @@ public class Tex2D implements ShaderMacro {
 	    }));
     }
 
-    public void modify(ProgramContext prog) {
+    public Tex2D(ProgramContext prog) {
 	final Value tex2d = tex2d(prog.fctx);
 	tex2d.force();
 	prog.fctx.fragcol.mod(new Macro1<Expression>() {
@@ -70,4 +70,10 @@ public class Tex2D implements ShaderMacro {
 	    }, 0);
 	prog.module(this);
     }
+
+    public static final ShaderMacro mod = new ShaderMacro() {
+	    public void modify(ProgramContext prog) {
+		new Tex2D(prog);
+	    }
+	};
 }

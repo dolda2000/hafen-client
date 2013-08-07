@@ -58,6 +58,8 @@ public class Message implements java.io.Serializable {
     public static final int T_INT16 = 10;
     public static final int T_NIL = 12;
     public static final int T_BYTES = 14;
+    public static final int T_FLOAT32 = 15;
+    public static final int T_FLOAT64 = 16;
 	
     public static final Message nil = new Message(0);
 
@@ -241,41 +243,69 @@ public class Message implements java.io.Serializable {
     public Color color() {
 	return(new Color(uint8(), uint8(), uint8(), uint8()));
     }
+
+    public float float32() {
+	off += 4;
+	return(Utils.float32d(blob, off - 4));
+    }
+
+    public double float64() {
+	off += 8;
+	return(Utils.float64d(blob, off - 8));
+    }
 	
     public Object[] list() {
 	ArrayList<Object> ret = new ArrayList<Object>();
-	while(true) {
+	list: while(true) {
 	    if(off >= blob.length)
 		break;
 	    int t = uint8();
-	    if(t == T_END) {
-		break;
-	    } else if(t == T_INT) {
+	    switch(t) {
+	    case T_END:
+		break list;
+	    case T_INT:
 		ret.add(int32());
-	    } else if(t == T_STR) {
+		break;
+	    case T_STR:
 		ret.add(string());
-	    } else if(t == T_COORD) {
+		break;
+	    case T_COORD:
 		ret.add(coord());
-	    } else if(t == T_UINT8) {
+		break;
+	    case T_UINT8:
 		ret.add(uint8());
-	    } else if(t == T_UINT16) {
+		break;
+	    case T_UINT16:
 		ret.add(uint16());
-	    } else if(t == T_INT8) {
+		break;
+	    case T_INT8:
 		ret.add(int8());
-	    } else if(t == T_INT16) {
+		break;
+	    case T_INT16:
 		ret.add(int16());
-	    } else if(t == T_COLOR) {
+		break;
+	    case T_COLOR:
 		ret.add(color());
-	    } else if(t == T_TTOL) {
+		break;
+	    case T_TTOL:
 		ret.add(list());
-	    } else if(t == T_NIL) {
+		break;
+	    case T_NIL:
 		ret.add(null);
-	    } else if(t == T_BYTES) {
+		break;
+	    case T_BYTES:
 		int len = uint8();
 		if((len & 128) != 0)
 		    len = int32();
 		ret.add(bytes(len));
-	    } else {
+		break;
+	    case T_FLOAT32:
+		ret.add(float32());
+		break;
+	    case T_FLOAT64:
+		ret.add(float64());
+		break;
+	    default:
 		throw(new RuntimeException("Encountered unknown type " + t + " in TTO list."));
 	    }
 	}
