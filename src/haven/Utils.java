@@ -208,34 +208,34 @@ public class Utils {
 	}
     }
 	
-    static int ub(byte b) {
+    public static int ub(byte b) {
 	return(((int)b) & 0xff);
     }
 	
-    static byte sb(int b) {
+    public static byte sb(int b) {
 	return((byte)b);
     }
 	
-    static int uint16d(byte[] buf, int off) {
+    public static int uint16d(byte[] buf, int off) {
 	return(ub(buf[off]) | (ub(buf[off + 1]) << 8));
     }
 	
-    static int int16d(byte[] buf, int off) {
+    public static int int16d(byte[] buf, int off) {
 	return((int)(short)uint16d(buf, off));
     }
 	
-    static long uint32d(byte[] buf, int off) {
+    public static long uint32d(byte[] buf, int off) {
 	return((long)ub(buf[off]) | ((long)ub(buf[off + 1]) << 8) | ((long)ub(buf[off + 2]) << 16) | ((long)ub(buf[off + 3]) << 24));
     }
 	
-    static void uint32e(long num, byte[] buf, int off) {
+    public static void uint32e(long num, byte[] buf, int off) {
 	buf[off] = (byte)(num & 0xff);
 	buf[off + 1] = (byte)((num & 0x0000ff00) >> 8);
 	buf[off + 2] = (byte)((num & 0x00ff0000) >> 16);
 	buf[off + 3] = (byte)((num & 0xff000000) >> 24);
     }
 	
-    static int int32d(byte[] buf, int off) {
+    public static int int32d(byte[] buf, int off) {
 	return((int)uint32d(buf, off));
     }
     
@@ -246,16 +246,16 @@ public class Utils {
 	return(b);
     }
 	
-    static void int32e(int num, byte[] buf, int off) {
+    public static void int32e(int num, byte[] buf, int off) {
 	uint32e(((long)num) & 0xffffffff, buf, off);
     }
 	
-    static void uint16e(int num, byte[] buf, int off) {
+    public static void uint16e(int num, byte[] buf, int off) {
 	buf[off] = sb(num & 0xff);
 	buf[off + 1] = sb((num & 0xff00) >> 8);
     }
 	
-    static String strd(byte[] buf, int[] off) {
+    public static String strd(byte[] buf, int[] off) {
 	int i;
 	for(i = off[0]; buf[i] != 0; i++);
 	String ret;
@@ -268,7 +268,7 @@ public class Utils {
 	return(ret);
     }
     
-    static double floatd(byte[] buf, int off) {
+    public static double floatd(byte[] buf, int off) {
 	int e = buf[off];
 	long t = uint32d(buf, off + 1);
 	int m = (int)(t & 0x7fffffffL);
@@ -284,11 +284,11 @@ public class Utils {
 	return(Math.pow(2.0, e) * v);
     }
 
-    static float float32d(byte[] buf, int off) {
+    public static float float32d(byte[] buf, int off) {
 	return(Float.intBitsToFloat(int32d(buf, off)));
     }
 
-    static double float64d(byte[] buf, int off) {
+    public static double float64d(byte[] buf, int off) {
 	return(Double.longBitsToDouble(int64d(buf, off)));
     }
 	
