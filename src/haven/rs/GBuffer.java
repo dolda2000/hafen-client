@@ -42,7 +42,12 @@ public class GBuffer {
 	this.sz = sz;
 	GLProfile prof = GLProfile.getDefault();
 	GLDrawableFactory df = GLDrawableFactory.getFactory(prof);
-	buf = df.createGLPbuffer(null, caps(prof), null, sz.x, sz.y, null);
+	/* XXX: This seems a bit unreliable. On Xorg with nvidia
+	 * drivers, an OffscreenAutoDrawable produces no results,
+	 * while a Pbuffer works; while on Xvfb with mesa-swx, an
+	 * OffscreenAutoDrawable works, while Pbuffer creation
+	 * fails. :-/ */
+	buf = df.createOffscreenAutoDrawable(null, caps(prof), null, sz.x, sz.y, null);
 	caps = buf.getChosenGLCapabilities();
 	buf.addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
