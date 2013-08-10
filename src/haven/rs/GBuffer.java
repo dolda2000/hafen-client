@@ -31,9 +31,9 @@ import javax.media.opengl.*;
 
 public class GBuffer {
     private static final Object dmon = new Object();
-    private final GLCapabilitiesImmutable caps;
+    public final GLCapabilitiesImmutable caps;
+    public final Coord sz;
     private final GLAutoDrawable buf;
-    private final Coord sz;
     private GLConfig glconf;
     private GLState gstate, ostate;
     private GLState.Applier state;
