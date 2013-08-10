@@ -86,6 +86,7 @@ public class AvaRender {
 	return(ret[0]);
     }
 
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
 	Resource base = Resource.load("gfx/borka/body");
 	List<MD> mod = Arrays.asList(new MD(Resource.load("gfx/borka/male").indir(), Arrays.asList(Resource.load("gfx/borka/male").indir())));
