@@ -29,8 +29,7 @@ package haven;
 import java.util.Comparator;
 import javax.media.opengl.*;
 
-public interface Rendered {
-    public void draw(GOut g);
+public interface Rendered extends Drawn {
     public boolean setup(RenderList r);
     
     public static interface RComparator<T extends Rendered> {
@@ -376,3 +375,4 @@ public interface Rendered {
 	}
     }
 }
+ 
