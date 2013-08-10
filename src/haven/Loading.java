@@ -42,4 +42,12 @@ public class Loading extends RuntimeException {
     public Loading(String msg, Throwable cause) {
 	super(msg, cause);
     }
+
+    public boolean canwait() {
+	return(false);
+    }
+
+    public void waitfor() throws InterruptedException {
+	throw(new RuntimeException("Tried to wait for unwaitable event", this));
+    }
 }
