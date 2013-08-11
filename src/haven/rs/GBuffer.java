@@ -52,6 +52,7 @@ public class GBuffer {
 	buf.addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
 		    GL2 gl = d.getGL().getGL2();
+		    /* gl = new TraceGL2(gl, System.err) */
 		    redraw(gl);
 		    GLObject.disposeall(gl);
 		}
@@ -140,6 +141,10 @@ public class GBuffer {
 		curdraw = null;
 	    }
 	}
+    }
+
+    public void dispose() {
+	buf.destroy();
     }
 
     public static void main(String[] args) {
