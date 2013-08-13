@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.glsl.Attribute;
 import java.util.*;
 import java.nio.*;
 
@@ -63,11 +64,15 @@ public class MeshBuf {
 	public void copy(VertexBuf src, Vertex[] vmap, int off) {}
     }
 
-    public static class LayerID<L> {
+    public static abstract class LayerID<L> {
+	public abstract L cons(MeshBuf buf);
+    }
+
+    public static class CLayerID<L> extends LayerID<L> {
 	public final Class<L> cl;
 	private final java.lang.reflect.Constructor<L> cons;
 
-	public LayerID(Class<L> cl) {
+	public CLayerID(Class<L> cl) {
 	    this.cl = cl;
 	    try {
 		this.cons = cl.getConstructor(MeshBuf.class);
@@ -100,7 +105,83 @@ public class MeshBuf {
 	    }
 	}
     }
-    public static final LayerID<Tex> tex = new LayerID<Tex>(Tex.class);
+    public static final LayerID<Tex> tex = new CLayerID<Tex>(Tex.class);
+
+    public abstract class AttribLayer<T> extends Layer<T> {
+	public final Attribute attrib;
+
+	public AttribLayer(Attribute attrib) {
+	    this.attrib = attrib;
+	}
+    }
+
+    public class Vec1Layer extends AttribLayer<Float> {
+	public Vec1Layer(Attribute attrib) {super(attrib);}
+
+	public VertexBuf.Vec1Array build(Collection<Float> in) {
+	    FloatBuffer data = Utils.mkfbuf(in.size());
+	    for(Float d : in)
+		data.put(d);
+	    return(new VertexBuf.Vec1Array(data, attrib));
+	}
+    }
+    public class Vec2Layer extends AttribLayer<Coord3f> {
+	public Vec2Layer(Attribute attrib) {super(attrib);}
+
+	public VertexBuf.Vec2Array build(Collection<Coord3f> in) {
+	    FloatBuffer data = Utils.mkfbuf(in.size() * 2);
+	    for(Coord3f d : in) {
+		data.put(d.x); data.put(d.y);
+	    }
+	    return(new VertexBuf.Vec2Array(data, attrib));
+	}
+    }
+    public class Vec3Layer extends AttribLayer<Coord3f> {
+	public Vec3Layer(Attribute attrib) {super(attrib);}
+
+	public VertexBuf.Vec3Array build(Collection<Coord3f> in) {
+	    FloatBuffer data = Utils.mkfbuf(in.size() * 3);
+	    for(Coord3f d : in) {
+		data.put(d.x); data.put(d.y); data.put(d.z);
+	    }
+	    return(new VertexBuf.Vec3Array(data, attrib));
+	}
+    }
+    public class Vec4Layer extends AttribLayer<float[]> {
+	public Vec4Layer(Attribute attrib) {super(attrib);}
+
+	public VertexBuf.Vec4Array build(Collection<float[]> in) {
+	    FloatBuffer data = Utils.mkfbuf(in.size() * 4);
+	    for(float[] d : in) {
+		data.put(d[0]); data.put(d[1]); data.put(d[2]); data.put(d[3]);
+	    }
+	    return(new VertexBuf.Vec4Array(data, attrib));
+	}
+    }
+
+    public static abstract class ALayerID<L> extends LayerID<L> {
+	public final Attribute attrib;
+
+	public ALayerID(Attribute attrib) {
+	    this.attrib = attrib;
+	}
+    }
+    public static class V1LayerID extends ALayerID<Vec1Layer> {
+	public V1LayerID(Attribute attrib) {super(attrib);}
+	public Vec1Layer cons(MeshBuf buf) {return(buf.new Vec1Layer(attrib));}
+    }
+    public static class V2LayerID extends ALayerID<Vec2Layer> {
+	public V2LayerID(Attribute attrib) {super(attrib);}
+	public Vec2Layer cons(MeshBuf buf) {return(buf.new Vec2Layer(attrib));}
+    }
+    public static class V3LayerID extends ALayerID<Vec3Layer> {
+	public V3LayerID(Attribute attrib) {super(attrib);}
+	public Vec3Layer cons(MeshBuf buf) {return(buf.new Vec3Layer(attrib));}
+    }
+    public static class V4LayerID extends ALayerID<Vec4Layer> {
+	public V4LayerID(Attribute attrib) {super(attrib);}
+	public Vec4Layer cons(MeshBuf buf) {return(buf.new Vec4Layer(attrib));}
+    }
 
     @SuppressWarnings("unchecked")
     public <L extends Layer> L layer(LayerID<L> id) {
