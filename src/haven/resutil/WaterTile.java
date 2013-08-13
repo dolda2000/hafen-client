@@ -259,17 +259,7 @@ public class WaterTile extends Tiler {
 	}
     }
 
-    public static class DepthLayer extends MeshBuf.Layer<Float> {
-	public DepthLayer(MeshBuf buf) {buf.super();}
-
-	public VertexBuf.Vec1Array build(Collection<Float> in) {
-	    java.nio.FloatBuffer data = Utils.mkfbuf(in.size());
-	    for(Float d : in)
-		data.put((d == null)?0:d);
-	    return(new VertexBuf.Vec1Array(data, BottomFog.depth));
-	}
-    }
-    public static final MeshBuf.LayerID<DepthLayer> depthlayer = new MeshBuf.LayerID<DepthLayer>(DepthLayer.class);
+    public static final MeshBuf.LayerID<MeshBuf.Vec1Layer> depthlayer = new MeshBuf.V1LayerID(BottomFog.depth);
 
     public static class BottomFog extends GLState.StandAlone {
 	public static final double maxdepth = 25;
@@ -316,7 +306,7 @@ public class WaterTile extends Tiler {
 
 	public void build(MeshBuf buf) {
 	    MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
-	    DepthLayer da = buf.layer(depthlayer);
+	    MeshBuf.Vec1Layer da = buf.layer(depthlayer);
 	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm);
 	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
 	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
