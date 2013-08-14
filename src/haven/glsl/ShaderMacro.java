@@ -120,7 +120,7 @@ public interface ShaderMacro {
 	    for(ShaderMacro mod : mods)
 		mod.modify(prog);
 	    Program ret = new Program(prog);
-	    if(dumpall) {
+	    if(dumpall || prog.dump) {
 		System.err.println(mods + ": ");
 		for(GLShader sh : ret.shaders) {
 		    System.err.println("---> " + sh + ": ");
