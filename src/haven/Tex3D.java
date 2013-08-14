@@ -24,31 +24,50 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.glsl;
+package haven;
 
-public abstract class Type {
-    private static class Simple extends Type {
-	private final String name;
+import java.awt.image.*;
+import java.nio.*;
+import javax.media.opengl.*;
+import haven.TexGL.TexOb;
+import static haven.GOut.checkerr;
 
-	private Simple(String name) {
-	    this.name = name;
-	}
+public abstract class Tex3D {
+    protected TexOb t = null;
+    public final int w, h, d;
 
-	public String name(Context ctx) {return(name);}
-	public String toString() {return(name);}
+    public Tex3D(int w, int h, int d) {
+	this.w = w;
+	this.h = h;
+	this.d = d;
     }
 
-    public static final Type VOID = new Simple("void");
-    public static final Type INT = new Simple("int");
-    public static final Type FLOAT = new Simple("float");
-    public static final Type VEC2 = new Simple("vec2");
-    public static final Type VEC3 = new Simple("vec3");
-    public static final Type VEC4 = new Simple("vec4");
-    public static final Type MAT3 = new Simple("mat3");
-    public static final Type MAT4 = new Simple("mat4");
-    public static final Type SAMPLER2D = new Simple("sampler2D");
-    public static final Type SAMPLER3D = new Simple("sampler3D");
-    public static final Type SAMPLERCUBE = new Simple("samplerCube");
+    protected abstract void fill(GOut g);
 
-    public abstract String name(Context ctx);
+    private void create(GOut g) {
+	GL2 gl = g.gl;
+	t = new TexOb(gl);
+	gl.glBindTexture(GL2.GL_TEXTURE_3D, t.id);
+	fill(g);
+	checkerr(gl);
+    }
+
+    public int glid(GOut g) {
+	synchronized(this) {
+	    if((t != null) && (t.gl != g.gl))
+		dispose();
+	    if(t == null)
+		create(g);
+	    return(t.id);
+	}
+    }
+
+    public void dispose() {
+	synchronized(this) {
+	    if(t != null) {
+		t.dispose();
+		t = null;
+	    }
+	}
+    }
 }
