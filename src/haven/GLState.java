@@ -393,7 +393,6 @@ public abstract class GLState {
 	public void apply(GOut g) {
 	    long st = 0;
 	    if(Config.profile) st = System.nanoTime();
-	    Slot<?>[] deplist = GLState.deplist;
 	    if(trans.length < slotnum) {
 		synchronized(Slot.class) {
 		    trans = new boolean[slotnum];
@@ -402,6 +401,7 @@ public abstract class GLState {
 		}
 	    }
 	    bufdiff(cur, next, trans, repl);
+	    Slot<?>[] deplist = GLState.deplist;
 	    boolean dirty = false;
 	    for(int i = trans.length - 1; i >= 0; i--) {
 		if(repl[i] || trans[i]) {

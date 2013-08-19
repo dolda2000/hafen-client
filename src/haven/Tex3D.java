@@ -26,28 +26,48 @@
 
 package haven;
 
-public class Loading extends RuntimeException {
-    public Loading() {
-	super();
+import java.awt.image.*;
+import java.nio.*;
+import javax.media.opengl.*;
+import haven.TexGL.TexOb;
+import static haven.GOut.checkerr;
+
+public abstract class Tex3D {
+    protected TexOb t = null;
+    public final int w, h, d;
+
+    public Tex3D(int w, int h, int d) {
+	this.w = w;
+	this.h = h;
+	this.d = d;
     }
 
-    public Loading(String msg) {
-	super(msg);
-    }
-    
-    public Loading(Throwable cause) {
-	super(cause);
-    }
-    
-    public Loading(String msg, Throwable cause) {
-	super(msg, cause);
+    protected abstract void fill(GOut g);
+
+    private void create(GOut g) {
+	GL2 gl = g.gl;
+	t = new TexOb(gl);
+	gl.glBindTexture(GL2.GL_TEXTURE_3D, t.id);
+	fill(g);
+	checkerr(gl);
     }
 
-    public boolean canwait() {
-	return(false);
+    public int glid(GOut g) {
+	synchronized(this) {
+	    if((t != null) && (t.gl != g.gl))
+		dispose();
+	    if(t == null)
+		create(g);
+	    return(t.id);
+	}
     }
 
-    public void waitfor() throws InterruptedException {
-	throw(new RuntimeException("Tried to wait for unwaitable event", this));
+    public void dispose() {
+	synchronized(this) {
+	    if(t != null) {
+		t.dispose();
+		t = null;
+	    }
+	}
     }
 }

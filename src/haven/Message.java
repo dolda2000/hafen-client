@@ -175,6 +175,16 @@ public class Message implements java.io.Serializable {
 	    } else if(o instanceof Coord) {
 		adduint8(T_COORD);
 		addcoord((Coord)o);
+	    } else if(o instanceof byte[]) {
+		byte[] b = (byte[])o;
+		adduint8(T_BYTES);
+		if(b.length < 128) {
+		    adduint8(b.length);
+		} else {
+		    adduint8(0x80);
+		    addint32(b.length);
+		}
+		addbytes(b);
 	    } else {
 		throw(new RuntimeException("Cannot encode a " + o.getClass() + " as TTO"));
 	    }

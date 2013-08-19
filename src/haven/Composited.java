@@ -352,7 +352,7 @@ public class Composited implements Rendered {
 	    nequ = null;
     }
 
-    private void changes() {
+    public void changes() {
 	if(nmod != null)
 	    nmod();
 	if(nequ != null)

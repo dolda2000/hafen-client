@@ -47,6 +47,7 @@ public abstract class Type {
     public static final Type MAT3 = new Simple("mat3");
     public static final Type MAT4 = new Simple("mat4");
     public static final Type SAMPLER2D = new Simple("sampler2D");
+    public static final Type SAMPLER3D = new Simple("sampler3D");
     public static final Type SAMPLERCUBE = new Simple("samplerCube");
 
     public abstract String name(Context ctx);
