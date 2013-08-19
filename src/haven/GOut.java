@@ -442,4 +442,8 @@ public class GOut {
 	WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(copy, copy.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
 	return(new BufferedImage(TexI.glcm, raster, false, null));
     }
+
+    public BufferedImage getimage() {
+	return(getimage(Coord.z, sz));
+    }
 }

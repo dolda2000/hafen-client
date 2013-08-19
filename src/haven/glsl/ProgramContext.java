@@ -36,6 +36,7 @@ public class ProgramContext {
     public final Map<Symbol, String> symtab = new HashMap<Symbol, String>();
     public final Map<String, Symbol> rsymtab = new HashMap<String, Symbol>();
     public int symgen = 1;
+    public boolean dump = false;
     private final Collection<Object> mods = new LinkedList<Object>();
 
     public static final Variable gl_LightSource = new Variable.Implicit(new Array(Struct.gl_LightSourceParameters), new Symbol.Fix("gl_LightSource"));
