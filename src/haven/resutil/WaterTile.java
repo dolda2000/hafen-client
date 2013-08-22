@@ -110,56 +110,86 @@ public class WaterTile extends Tiler {
 	nrm.mipmap();
 	nrm.magfilter(GL.GL_LINEAR);
     }
-    private static States.DepthOffset soff = new States.DepthOffset(2, 2);
-    public static final GLState surfmat = new GLState.StandAlone(GLState.Slot.Type.DRAW, PView.cam, HavenPanel.global) {
-	    private final Uniform ssky = new Uniform(Type.SAMPLERCUBE);
-	    private final Uniform snrm = new Uniform(Type.SAMPLER2D);
-	    private final Uniform icam = new Uniform(Type.MAT3);
-	    private TexUnit tsky, tnrm;
 
-	    private ShaderMacro[] shaders = {
-		new ShaderMacro() {
-		    final AutoVarying skyc = new AutoVarying(Type.VEC3) {
-			    protected Expression root(VertexContext vctx) {
-				return(mul(icam.ref(), reflect(MiscLib.vertedir(vctx).depref(), vctx.eyen.depref())));
-			    }
-			};
-		    public void modify(final ProgramContext prog) {
-			MiscLib.fragedir(prog.fctx);
-			final ValBlock.Value nmod = prog.fctx.uniform.new Value(Type.VEC3) {
-				public Expression root() {
-				    /*
-				    return(mul(sub(mix(pick(texture2D(snrm.ref(),
-								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
-									  mul(Cons.mod(MiscLib.time.ref(), l(2.0)), vec2(l(0.025), l(0.035))))),
-							    "rgb"),
-						       pick(texture2D(snrm.ref(),
-								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
-									  mul(Cons.mod(add(MiscLib.time.ref(), l(1.0)), l(2.0)), vec2(l(-0.035), l(-0.025))))),
-							    "rgb"),
-						       abs(sub(Cons.mod(MiscLib.time.ref(), l(2.0)), l(1.0)))),
-						   l(0.5)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
-				    */
-				    return(mul(sub(mix(add(pick(texture2D(snrm.ref(),
-									  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
-									      mul(Cons.mod(MiscLib.time.ref(), l(2.0)), vec2(l(0.025), l(0.035))))),
-								"rgb"),
-							   pick(texture2D(snrm.ref(),
-									  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
-									      mul(Cons.mod(MiscLib.time.ref(), l(2.0)), vec2(l(-0.035), l(-0.025))))),
-								"rgb")),
-						       add(pick(texture2D(snrm.ref(),
-									  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
-									      add(mul(Cons.mod(add(MiscLib.time.ref(), l(1.0)), l(2.0)), vec2(l(0.025), l(0.035))), vec2(l(0.5), l(0.5))))),
-								"rgb"),
-							   pick(texture2D(snrm.ref(),
-									  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
-									      add(mul(Cons.mod(add(MiscLib.time.ref(), l(1.0)), l(2.0)), vec2(l(-0.035), l(-0.025))), vec2(l(0.5), l(0.5))))),
-								"rgb")),
-						       abs(sub(Cons.mod(MiscLib.time.ref(), l(2.0)), l(1.0)))),
-						   l(0.5 * 2)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
-				    /*
-				    return(mul(sub(add(pick(texture2D(snrm.ref(),
+    public static class SimpleSurface extends GLState.StandAlone {
+	private static States.DepthOffset soff = new States.DepthOffset(2, 2);
+	TexUnit tsky, tnrm;
+
+	private SimpleSurface() {
+	    super(GLState.Slot.Type.DRAW, PView.cam, HavenPanel.global);
+	}
+
+	public void apply(GOut g) {
+	    GL2 gl = g.gl;
+	    (tsky = g.st.texalloc()).act();
+	    gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
+	    gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
+	    gl.glTexGeni(GL2.GL_R, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
+	    gl.glEnable(GL2.GL_TEXTURE_GEN_S);
+	    gl.glEnable(GL2.GL_TEXTURE_GEN_T);
+	    gl.glEnable(GL2.GL_TEXTURE_GEN_R);
+	    gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
+	    gl.glEnable(GL.GL_TEXTURE_CUBE_MAP);
+	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
+	    gl.glColor4f(1, 1, 1, 0.5f);
+	    g.st.matmode(GL.GL_TEXTURE);
+	    gl.glPushMatrix();
+	    g.st.cam.transpose().trim3(1).loadgl(gl);
+	}
+
+	public void unapply(GOut g) {
+	    GL2 gl = g.gl;
+	    tsky.act();
+	    g.st.matmode(GL.GL_TEXTURE);
+	    gl.glPopMatrix();
+	    gl.glDisable(GL.GL_TEXTURE_CUBE_MAP);
+	    gl.glDisable(GL2.GL_TEXTURE_GEN_S);
+	    gl.glDisable(GL2.GL_TEXTURE_GEN_T);
+	    gl.glDisable(GL2.GL_TEXTURE_GEN_R);
+	    gl.glColor3f(1, 1, 1);
+	    tsky.free(); tsky = null;
+	}
+
+	public void prep(Buffer buf) {
+	    buf.put(States.color, null);
+	    buf.put(Light.lighting, null);
+	    soff.prep(buf);
+	    super.prep(buf);
+	}
+    }
+
+    public static class BetterSurface extends SimpleSurface {
+	private final Uniform ssky = new Uniform(Type.SAMPLERCUBE);
+	private final Uniform snrm = new Uniform(Type.SAMPLER2D);
+	private final Uniform icam = new Uniform(Type.MAT3);
+
+	private BetterSurface() {
+	}
+
+	private ShaderMacro[] shaders = {
+	    new ShaderMacro() {
+		final AutoVarying skyc = new AutoVarying(Type.VEC3) {
+			protected Expression root(VertexContext vctx) {
+			    return(mul(icam.ref(), reflect(MiscLib.vertedir(vctx).depref(), vctx.eyen.depref())));
+			}
+		    };
+		public void modify(final ProgramContext prog) {
+		    MiscLib.fragedir(prog.fctx);
+		    final ValBlock.Value nmod = prog.fctx.uniform.new Value(Type.VEC3) {
+			    public Expression root() {
+				/*
+				return(mul(sub(mix(pick(texture2D(snrm.ref(),
+								  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
+								      mul(Cons.mod(MiscLib.time.ref(), l(2.0)), vec2(l(0.025), l(0.035))))),
+							"rgb"),
+						   pick(texture2D(snrm.ref(),
+								  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
+								      mul(Cons.mod(add(MiscLib.time.ref(), l(1.0)), l(2.0)), vec2(l(-0.035), l(-0.025))))),
+							"rgb"),
+						   abs(sub(Cons.mod(MiscLib.time.ref(), l(2.0)), l(1.0)))),
+					       l(0.5)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
+				*/
+				return(mul(sub(mix(add(pick(texture2D(snrm.ref(),
 								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
 									  mul(MiscLib.time.ref(), vec2(l(0.025), l(0.035))))),
 							    "rgb"),
@@ -167,118 +197,110 @@ public class WaterTile extends Tiler {
 								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
 									  mul(MiscLib.time.ref(), vec2(l(-0.035), l(-0.025))))),
 							    "rgb")),
-						   l(0.5 * 2)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
-				    */
-				    /*
-				    return(mul(sub(pick(texture2D(snrm.ref(),
-								  mul(pick(MiscLib.fragmapv.ref(), "st"), l(0.005))),
+						   add(pick(texture2D(snrm.ref(),
+								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
+									  add(mul(MiscLib.time.ref(), vec2(l(0.025), l(0.035))), vec2(l(0.5), l(0.5))))),
+							    "rgb"),
+						       pick(texture2D(snrm.ref(),
+								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
+									  add(mul(MiscLib.time.ref(), vec2(l(-0.035), l(-0.025))), vec2(l(0.5), l(0.5))))),
+							    "rgb")),
+						   abs(sub(Cons.mod(MiscLib.time.ref(), l(2.0)), l(1.0)))),
+					       l(0.5 * 2)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
+				/*
+				return(mul(sub(add(pick(texture2D(snrm.ref(),
+								  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
+								      mul(MiscLib.time.ref(), vec2(l(0.025), l(0.035))))),
 							"rgb"),
-						   l(0.5)), vec3(l(1.0 / 32), l(1.0 / 32), l(1.0))));
-				    */
-				}
-			    };
-			nmod.force();
-			MiscLib.frageyen(prog.fctx).mod(new Macro1<Expression>() {
-				public Expression expand(Expression in) {
-				    Expression m = nmod.ref();
-				    return(add(mul(pick(m, "x"), vec3(l(1.0), l(0.0), l(0.0))),
-					       mul(pick(m, "y"), vec3(l(0.0), l(1.0), l(0.0))),
-					       mul(pick(m, "z"), in)));
-				}
-			    }, -10);
-			prog.fctx.fragcol.mod(new Macro1<Expression>() {
-				public Expression expand(Expression in) {
-				    return(mul(in, textureCube(ssky.ref(), neg(mul(icam.ref(), reflect(MiscLib.fragedir(prog.fctx).depref(), MiscLib.frageyen(prog.fctx).depref())))),
-					       l(0.4)));
-				}
-			    }, 0);
-		    }
+						   pick(texture2D(snrm.ref(),
+								  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
+								      mul(MiscLib.time.ref(), vec2(l(-0.035), l(-0.025))))),
+							"rgb")),
+					       l(0.5 * 2)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
+				*/
+				/*
+				return(mul(sub(pick(texture2D(snrm.ref(),
+							      mul(pick(MiscLib.fragmapv.ref(), "st"), l(0.005))),
+						    "rgb"),
+					       l(0.5)), vec3(l(1.0 / 32), l(1.0 / 32), l(1.0))));
+				*/
+			    }
+			};
+		    nmod.force();
+		    MiscLib.frageyen(prog.fctx).mod(new Macro1<Expression>() {
+			    public Expression expand(Expression in) {
+				Expression m = nmod.ref();
+				return(add(mul(pick(m, "x"), vec3(l(1.0), l(0.0), l(0.0))),
+					   mul(pick(m, "y"), vec3(l(0.0), l(1.0), l(0.0))),
+					   mul(pick(m, "z"), in)));
+			    }
+			}, -10);
+		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
+			    public Expression expand(Expression in) {
+				return(mul(in, textureCube(ssky.ref(), neg(mul(icam.ref(), reflect(MiscLib.fragedir(prog.fctx).depref(), MiscLib.frageyen(prog.fctx).depref())))),
+					   l(0.4)));
+			    }
+			}, 0);
 		}
-	    };
-
-	    private void lapply(GOut g) {
-		GL2 gl = g.gl;
-		(tsky = g.st.texalloc()).act();
-		gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
-		gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
-		gl.glTexGeni(GL2.GL_R, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
-		gl.glEnable(GL2.GL_TEXTURE_GEN_S);
-		gl.glEnable(GL2.GL_TEXTURE_GEN_T);
-		gl.glEnable(GL2.GL_TEXTURE_GEN_R);
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
-		gl.glEnable(GL.GL_TEXTURE_CUBE_MAP);
-		gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
-		gl.glColor4f(1, 1, 1, 0.5f);
-		g.st.matmode(GL.GL_TEXTURE);
-		gl.glPushMatrix();
-		g.st.cam.transpose().trim3(1).loadgl(gl);
-	    }
-
-	    private void lunapply(GOut g) {
-		GL2 gl = g.gl;
-		tsky.act();
-		g.st.matmode(GL.GL_TEXTURE);
-		gl.glPopMatrix();
-		gl.glDisable(GL.GL_TEXTURE_CUBE_MAP);
-		gl.glDisable(GL2.GL_TEXTURE_GEN_S);
-		gl.glDisable(GL2.GL_TEXTURE_GEN_T);
-		gl.glDisable(GL2.GL_TEXTURE_GEN_R);
-		gl.glColor3f(1, 1, 1);
-		tsky.free(); tsky = null;
-	    }
-
-	    public void reapply(GOut g) {
-		GL2 gl = g.gl;
-		gl.glUniform1i(g.st.prog.uniform(ssky), tsky.id);
-		gl.glUniform1i(g.st.prog.uniform(snrm), tnrm.id);
-		gl.glUniformMatrix3fv(g.st.prog.uniform(icam), 1, false, g.st.cam.transpose().trim3(), 0);
-	    }
-
-	    private void papply(GOut g) {
-		GL2 gl = g.gl;
-		gl.glBlendFunc(GL.GL_ONE, GL.GL_ONE);
-		(tsky = g.st.texalloc()).act();
-		gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
-		(tnrm = g.st.texalloc()).act();
-		gl.glBindTexture(GL.GL_TEXTURE_2D, nrm.glid(g));
-		reapply(g);
-	    }
-
-	    private void punapply(GOut g) {
-		GL2 gl = g.gl;
-		tsky.act();
-		gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, 0);
-		tnrm.act();
-		gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
-		tsky.free(); tsky = null;
-		tnrm.free(); tnrm = null;
-		gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-	    }
-
-	    public ShaderMacro[] shaders() {return(shaders);}
-	    public boolean reqshaders() {return(true);}
-
-	    public void apply(GOut g) {
-		if(g.st.prog == null)
-		    lapply(g);
-		else
-		    papply(g);
-	    }
-	    
-	    public void unapply(GOut g) {
-		if(!g.st.usedprog)
-		    lunapply(g);
-		else
-		    punapply(g);
-	    }
-	    
-	    public void prep(Buffer buf) {
-		buf.put(States.color, null);
-		buf.put(Light.lighting, null);
-		soff.prep(buf);
-		super.prep(buf);
 	    }
 	};
+
+	public void reapply(GOut g) {
+	    GL2 gl = g.gl;
+	    gl.glUniform1i(g.st.prog.uniform(ssky), tsky.id);
+	    gl.glUniform1i(g.st.prog.uniform(snrm), tnrm.id);
+	    gl.glUniformMatrix3fv(g.st.prog.uniform(icam), 1, false, g.st.cam.transpose().trim3(), 0);
+	}
+
+	private void papply(GOut g) {
+	    GL2 gl = g.gl;
+	    gl.glBlendFunc(GL.GL_ONE, GL.GL_ONE);
+	    (tsky = g.st.texalloc()).act();
+	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
+	    (tnrm = g.st.texalloc()).act();
+	    gl.glBindTexture(GL.GL_TEXTURE_2D, nrm.glid(g));
+	    reapply(g);
+	}
+
+	private void punapply(GOut g) {
+	    GL2 gl = g.gl;
+	    tsky.act();
+	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, 0);
+	    tnrm.act();
+	    gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+	    tsky.free(); tsky = null;
+	    tnrm.free(); tnrm = null;
+	    gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+	}
+
+	public ShaderMacro[] shaders() {return(shaders);}
+	public boolean reqshaders() {return(true);}
+
+	public void apply(GOut g) {
+	    if(g.st.prog == null)
+		super.apply(g);
+	    else
+		papply(g);
+	}
+	    
+	public void unapply(GOut g) {
+	    if(!g.st.usedprog)
+		super.unapply(g);
+	    else
+		punapply(g);
+	}
+    }
+
+    public static final GLState surfmat = new GLState.Abstract() {
+	    final GLState s1 = new SimpleSurface(), s2 = new BetterSurface();
+	    public void prep(Buffer buf) {
+		if(buf.cfg.pref.wsurf.val)
+		    s2.prep(buf);
+		else
+		    s1.prep(buf);
+	    }
+	};
+
     public static class Shallows extends WaterTile {
 	public Shallows(int id, Resource.Tileset set) {
 	    super(id, set, 5);
@@ -323,6 +345,10 @@ public class WaterTile extends Tiler {
 	public void unapply(GOut g) {}
 	public ShaderMacro[] shaders() {return(shaders);}
 	public boolean reqshaders() {return(true);}
+	public void prep(Buffer buf) {
+	    if(buf.cfg.pref.wsurf.val)
+		super.prep(buf);
+	}
     }
     public static final BottomFog waterfog = new BottomFog();
     
@@ -412,7 +438,9 @@ public class WaterTile extends Tiler {
 	public boolean reqshaders() {return(true);}
     };
 
-    public GLState drawstate(Coord3f c) {
-	return(obfog);
+    public GLState drawstate(Glob glob, GLConfig cfg, Coord3f c) {
+	if(cfg.pref.wsurf.val)
+	    return(obfog);
+	return(null);
     }
 }

@@ -172,6 +172,15 @@ public class GLSettings implements java.io.Serializable {
 	    }
 	};
 
+    public final BoolSetting wsurf = new BoolSetting("wsurf") {
+	    public Boolean defval() {return(shuse.val);}
+	    public void validate(Boolean val) {
+		if(val) {
+		    if(!shuse.val) throw(new SettingException("Shaded water surface requires a shader-compatible video card."));
+		}
+	    }
+	};
+
     public Iterable<Setting<?>> settings() {
 	return(settings);
     }
