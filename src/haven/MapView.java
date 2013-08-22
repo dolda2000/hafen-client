@@ -427,7 +427,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    try {
 		Coord3f c = gob.getc();
 		Tiler tile = glob.map.tiler(glob.map.gettile(new Coord(c).div(tilesz)));
-		extra = tile.drawstate(c);
+		extra = tile.drawstate(glob, rl.cfg, c);
 	    } catch(Loading e) {
 		extra = null;
 	    }
