@@ -36,6 +36,7 @@ public class TexI extends TexGL {
     public static ComponentColorModel glcm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), new int[] {8, 8, 8, 8}, true, false, ComponentColorModel.TRANSLUCENT, DataBuffer.TYPE_BYTE);
     public BufferedImage back;
     private int fmt = GL.GL_RGBA;
+    public Mipmapper mmalg = Mipmapper.avg;
 
     public TexI(BufferedImage img) {
 	super(Utils.imgsz(img));
@@ -123,127 +124,25 @@ public class TexI extends TexGL {
     }
     
     private void genmipmap(GL gl, int lev, Coord dim, byte[] data, int ifmt) {
-	int dst = dim.x * 4;
-	dim = dim.div(2);
-	boolean lx = false, ly = false;
-	if(dim.x < 1) {dim.x = 1; lx = true;}
-	if(dim.y < 1) {dim.y = 1; ly = true;}
-	byte[] ndata = new byte[dim.x * dim.y * 4];
-	int[] r = new int[4], g = new int[4], b = new int[4], a = new int[4];
-	int na = 0, da = 0;
-	for(int y = 0; y < dim.y; y++) {
-	    for(int x = 0; x < dim.x; x++) {
-		r[0] = ((int)data[da + 0]) & 0xff;
-		g[0] = ((int)data[da + 1]) & 0xff;
-		b[0] = ((int)data[da + 2]) & 0xff;
-		a[0] = ((int)data[da + 3]) & 0xff;
-		if(!lx) {
-		    r[1] = ((int)data[da + 0 + 4]) & 0xff;
-		    g[1] = ((int)data[da + 1 + 4]) & 0xff;
-		    b[1] = ((int)data[da + 2 + 4]) & 0xff;
-		    a[1] = ((int)data[da + 3 + 4]) & 0xff;
-		} else {
-		    r[1] = r[0]; g[1] = g[0]; b[1] = b[0]; a[1] = a[0];
-		}
-		if(!ly) {
-		    r[2] = ((int)data[da + 0 + dst]) & 0xff;
-		    g[2] = ((int)data[da + 1 + dst]) & 0xff;
-		    b[2] = ((int)data[da + 2 + dst]) & 0xff;
-		    a[2] = ((int)data[da + 3 + dst]) & 0xff;
-		} else {
-		    r[2] = r[0]; g[2] = g[0]; b[2] = b[0]; a[2] = a[0];
-		}
-		if(!lx && !ly) {
-		    r[3] = ((int)data[da + 0 + dst + 4]) & 0xff;
-		    g[3] = ((int)data[da + 1 + dst + 4]) & 0xff;
-		    b[3] = ((int)data[da + 2 + dst + 4]) & 0xff;
-		    a[3] = ((int)data[da + 3 + dst + 4]) & 0xff;
-		} else if(!ly) {
-		    r[3] = r[2]; g[3] = g[2]; b[3] = b[2]; a[3] = a[2];
-		} else {
-		    r[3] = r[1]; g[3] = g[1]; b[3] = b[1]; a[3] = a[1];
-		}
-		int n = 0, cr = 0, cg = 0, cb = 0;
-		for(int i = 0; i < 4; i++) {
-		    if(a[i] < 128)
-			continue;
-		    cr += r[i];
-		    cg += g[i];
-		    cb += b[i];
-		    n++;
-		}
-		if(n <= 1) {
-		    ndata[na + 3] = 0;
-		} else {
-		    ndata[na + 0] = (byte)(cr / n);
-		    ndata[na + 1] = (byte)(cg / n);
-		    ndata[na + 2] = (byte)(cb / n);
-		    ndata[na + 3] = (byte)255;
-		}
-		na += 4;
-		da += lx?4:8;
-	    }
-	    da += ly?0:dst;
-	}
-	gl.glTexImage2D(GL.GL_TEXTURE_2D, lev, fmt, dim.x, dim.y, 0, ifmt, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(ndata));
-	if((dim.x > 1) || (dim.y > 1))
-	    genmipmap(gl, lev + 1, dim, ndata, ifmt);
+	Coord ndim = dim.div(2);
+	ndim.x = Math.max(ndim.x, 1); ndim.y = Math.max(ndim.y, 1);
+	byte[] ndata = mmalg.gen4(dim, data, ifmt);
+	gl.glTexImage2D(GL.GL_TEXTURE_2D, lev, fmt, ndim.x, ndim.y, 0, ifmt, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(ndata));
+	if((ndim.x > 1) || (ndim.y > 1))
+	    genmipmap(gl, lev + 1, ndim, ndata, ifmt);
     }
 	
     private void genmipmap3(GL gl, int lev, Coord dim, byte[] data, int ifmt) {
-	int dst = dim.x * 3;
-	dim = dim.div(2);
-	boolean lx = false, ly = false;
-	if(dim.x < 1) {dim.x = 1; lx = true;}
-	if(dim.y < 1) {dim.y = 1; ly = true;}
-	byte[] ndata = new byte[dim.x * dim.y * 3];
-	int[] r = new int[4], g = new int[4], b = new int[4];
-	int na = 0, da = 0;
-	for(int y = 0; y < dim.y; y++) {
-	    for(int x = 0; x < dim.x; x++) {
-		r[0] = ((int)data[da + 0]) & 0xff;
-		g[0] = ((int)data[da + 1]) & 0xff;
-		b[0] = ((int)data[da + 2]) & 0xff;
-		if(!lx) {
-		    r[1] = ((int)data[da + 0 + 3]) & 0xff;
-		    g[1] = ((int)data[da + 1 + 3]) & 0xff;
-		    b[1] = ((int)data[da + 2 + 3]) & 0xff;
-		} else {
-		    r[1] = r[0]; g[1] = g[0]; b[1] = b[0];
-		}
-		if(!ly) {
-		    r[2] = ((int)data[da + 0 + dst]) & 0xff;
-		    g[2] = ((int)data[da + 1 + dst]) & 0xff;
-		    b[2] = ((int)data[da + 2 + dst]) & 0xff;
-		} else {
-		    r[2] = r[0]; g[2] = g[0]; b[2] = b[0];
-		}
-		if(!lx && !ly) {
-		    r[3] = ((int)data[da + 0 + dst + 3]) & 0xff;
-		    g[3] = ((int)data[da + 1 + dst + 3]) & 0xff;
-		    b[3] = ((int)data[da + 2 + dst + 3]) & 0xff;
-		} else if(!ly) {
-		    r[3] = r[2]; g[3] = g[2]; b[3] = b[2];
-		} else {
-		    r[3] = r[1]; g[3] = g[1]; b[3] = b[1];
-		}
-		int cr = 0, cg = 0, cb = 0;
-		for(int i = 0; i < 4; i++) {
-		    cr += r[i];
-		    cg += g[i];
-		    cb += b[i];
-		}
-		ndata[na + 0] = (byte)(cr / 4);
-		ndata[na + 1] = (byte)(cg / 4);
-		ndata[na + 2] = (byte)(cb / 4);
-		na += 3;
-		da += lx?3:6;
-	    }
-	    da += ly?0:dst;
+	if(mmalg instanceof Mipmapper.Mipmapper3) {
+	    Coord ndim = dim.div(2);
+	    ndim.x = Math.max(ndim.x, 1); ndim.y = Math.max(ndim.y, 1);
+	    byte[] ndata = ((Mipmapper.Mipmapper3)mmalg).gen3(dim, data, ifmt);
+	    gl.glTexImage2D(GL.GL_TEXTURE_2D, lev, fmt, ndim.x, ndim.y, 0, ifmt, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(ndata));
+	    if((ndim.x > 1) || (ndim.y > 1))
+		genmipmap3(gl, lev + 1, ndim, ndata, ifmt);
+	} else {
+	    genmipmap(gl, lev, dim, convert(back, dim), GL.GL_RGBA);
 	}
-	gl.glTexImage2D(GL.GL_TEXTURE_2D, lev, fmt, dim.x, dim.y, 0, ifmt, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(ndata));
-	if((dim.x > 1) || (dim.y > 1))
-	    genmipmap3(gl, lev + 1, dim, ndata, ifmt);
     }
 	
     public int getRGB(Coord c) {
