@@ -27,12 +27,19 @@
 package haven;
 
 import java.util.*;
+import java.awt.image.*;
 
-public interface Mipmapper {
-    public byte[] gen4(Coord dim, byte[] data, int fmt);
+public abstract class Mipmapper {
+    public abstract byte[] gen4(Coord dim, byte[] data, int fmt);
 
-    public static interface Mipmapper3 extends Mipmapper {
-	public byte[] gen3(Coord dim, byte[] data, int fmt);
+    public static abstract class Mipmapper3 extends Mipmapper {
+	public abstract byte[] gen3(Coord dim, byte[] data, int fmt);
+    }
+
+    public static Coord nextsz(Coord dim) {
+	Coord ndim = dim.div(2);
+	ndim.x = Math.max(ndim.x, 1); ndim.y = Math.max(ndim.y, 1);
+	return(ndim);
     }
 
     public static final Mipmapper3 avg = new Mipmapper3() {
@@ -185,6 +192,18 @@ public interface Mipmapper {
 		    da += ly?0:dst;
 		}
 		return(ndata);
+	    }
+	};
+
+    public static final Mipmapper lanczos = new Mipmapper() {
+	    final PUtils.Convolution filter = new PUtils.Lanczos(2);
+
+	    public byte[] gen4(Coord dim, byte[] data, int fmt) {
+		BufferedImage img = PUtils.rasterimg(Raster.createInterleavedRaster(new DataBufferByte(data, data.length),
+										    dim.x, dim.y, dim.x * 4, 4, new int[] {0, 1, 2, 3}, null));
+		dim = nextsz(dim);
+		BufferedImage sm = PUtils.convolvedown(img, dim, filter);
+		return(((DataBufferByte)sm.getRaster().getDataBuffer()).getData());
 	    }
 	};
 }
