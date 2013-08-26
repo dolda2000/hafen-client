@@ -44,7 +44,7 @@ public abstract class Tiler {
 	m.new Plane(m.gnd(), lc, z, t);
     }
 
-    public GLState drawstate(Coord3f c) {
+    public GLState drawstate(Glob glob, GLConfig cfg, Coord3f c) {
 	return(null);
     }
     

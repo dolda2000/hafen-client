@@ -427,7 +427,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    try {
 		Coord3f c = gob.getc();
 		Tiler tile = glob.map.tiler(glob.map.gettile(new Coord(c).div(tilesz)));
-		extra = tile.drawstate(c);
+		extra = tile.drawstate(glob, rl.cfg, c);
 	    } catch(Loading e) {
 		extra = null;
 	    }
@@ -453,6 +453,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public GLState camera()         {return(camera);}
     protected Projection makeproj() {return(null);}
 
+    public Light amb = null;
     private Coord3f smapcc = null;
     private ShadowMap smap = null;
     private long lsmch = 0;
@@ -491,6 +492,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    smap = null;
 		    smapcc = null;
 		}
+		amb = light;
+	    } else {
+		amb = null;
 	    }
 	}
 	rl.add(map, null);
@@ -504,6 +508,19 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    extradraw.clear();
 	}
     }
+
+    public static final haven.glsl.Uniform amblight = new haven.glsl.Uniform.AutoApply(haven.glsl.Type.INT) {
+	    public void apply(GOut g, int loc) {
+		int idx = -1;
+		PView.RenderState wnd = g.st.get(PView.wnd);
+		if(wnd instanceof PView.WidgetRenderState) {
+		    Widget wdg = ((PView.WidgetRenderState)wnd).widget();
+		    if(wdg instanceof MapView)
+			idx = g.st.get(Light.lights).index(((MapView)wdg).amb);
+		}
+		g.gl.glUniform1i(loc, idx);
+	    }
+	};
 
     public void drawadd(Rendered extra) {
 	synchronized(extradraw) {

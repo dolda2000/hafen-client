@@ -277,17 +277,18 @@ public class VertexBuf {
 
 	public void bind(GOut g, boolean asvbo) {
 	    if(g.st.prog != null) {
-		GL2 gl = g.gl;
-		bound = g.st.prog.attrib(attr);
-		if(asvbo) {
-		    bindvbo(g);
-		    gl.glVertexAttribPointer(bound, n, GL2.GL_FLOAT, false, 0, 0);
-		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
-		} else {
-		    data.rewind();
-		    gl.glVertexAttribPointer(bound, n, GL2.GL_FLOAT, false, 0, data);
+		if((bound = g.st.prog.cattrib(attr)) != -1) {
+		    GL2 gl = g.gl;
+		    if(asvbo) {
+			bindvbo(g);
+			gl.glVertexAttribPointer(bound, n, GL2.GL_FLOAT, false, 0, 0);
+			gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+		    } else {
+			data.rewind();
+			gl.glVertexAttribPointer(bound, n, GL2.GL_FLOAT, false, 0, data);
+		    }
+		    gl.glEnableVertexAttribArray(bound);
 		}
-		gl.glEnableVertexAttribArray(bound);
 	    }
 	}
 
@@ -301,7 +302,7 @@ public class VertexBuf {
 	public Object progid(GOut g) {
 	    if(g.st.prog == null)
 		return(null);
-	    return(Integer.valueOf(g.st.prog.attrib(attr)));
+	    return(Integer.valueOf(g.st.prog.cattrib(attr)));
 	}
     }
 

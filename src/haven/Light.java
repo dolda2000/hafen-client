@@ -228,6 +228,10 @@ public class Light implements Rendered {
 	    if(ll.size() != vl.size())
 		throw(new RuntimeException());
 	}
+
+	public int index(Light l) {
+	    return(ll.indexOf(l));
+	}
     }
     
     public static class Model extends GLState {
