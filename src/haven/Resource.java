@@ -612,15 +612,15 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
 		
 	public synchronized Tex tex() {
-		if(tex != null)
-		    return(tex);
-		tex = new TexI(img) {
-			public String toString() {
-			    return("TexI(" + Resource.this.name + ", " + id + ")");
-			}
-		    };
+	    if(tex != null)
 		return(tex);
-	    }
+	    tex = new TexI(img) {
+		    public String toString() {
+			return("TexI(" + Resource.this.name + ", " + id + ")");
+		    }
+		};
+	    return(tex);
+	}
 		
 	private boolean detectgay() {
 	    for(int y = 0; y < sz.y; y++) {
