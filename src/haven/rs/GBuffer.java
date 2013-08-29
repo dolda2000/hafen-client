@@ -30,121 +30,152 @@ import haven.*;
 import javax.media.opengl.*;
 
 public class GBuffer {
-    private static final Object dmon = new Object();
-    public final GLCapabilitiesImmutable caps;
+    public final Context ctx;
     public final Coord sz;
-    private final GLAutoDrawable buf;
-    private GLConfig glconf;
-    private GLState gstate, ostate;
-    private GLState.Applier state;
+    private final GLFrameBuffer buf;
+    private final GLState ostate;
 
-    public GBuffer(Coord sz) {
-	this.sz = sz;
-	GLProfile prof = GLProfile.getDefault();
-	GLDrawableFactory df = GLDrawableFactory.getFactory(prof);
-	/* XXX: This seems a bit unreliable. On Xorg with nvidia
-	 * drivers, an OffscreenAutoDrawable produces no results,
-	 * while a Pbuffer works; while on Xvfb with mesa-swx, an
-	 * OffscreenAutoDrawable works, while Pbuffer creation
-	 * fails. :-/ */
-	buf = df.createOffscreenAutoDrawable(null, caps(prof), null, sz.x, sz.y, null);
-	caps = buf.getChosenGLCapabilities();
-	buf.addGLEventListener(new GLEventListener() {
-		public void display(GLAutoDrawable d) {
-		    GL2 gl = d.getGL().getGL2();
-		    /* gl = new TraceGL2(gl, System.err) */
-		    redraw(gl);
-		    GLObject.disposeall(gl);
-		}
+    public static class Context {
+	private final Object dmon = new Object();
+	public final GLProfile prof;
+	public final GLAutoDrawable buf;
+	private final GLState gstate;
+	private GLConfig glconf;
+	private GBuffer curdraw;
+	private GLState.Applier state;
 
-		public void init(GLAutoDrawable d) {
-		    GL2 gl = d.getGL().getGL2();
-		    glconf = GLConfig.fromgl(gl, d.getContext(), caps);
-		    glconf.pref = GLSettings.defconf(glconf);
-		    gstate = new GLState() {
-			    public void apply(GOut g) {
-				GL2 gl = g.gl;
-				gl.glColor3f(1, 1, 1);
-				gl.glPointSize(4);
-				gl.setSwapInterval(1);
-				gl.glEnable(GL.GL_BLEND);
-				gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-				if(g.gc.havefsaa())
-				    g.gl.glDisable(GL.GL_MULTISAMPLE);
-				GOut.checkerr(gl);
-			    }
-			    public void unapply(GOut g) {
-			    }
-			    public void prep(Buffer buf) {
-				buf.put(HavenPanel.global, this);
-			    }
-			};
-		}
+	public Context() {
+	    this.prof = GLProfile.getDefault();
+	    GLDrawableFactory df = GLDrawableFactory.getFactory(prof);
+	    gstate = new GLState() {
+		    public void apply(GOut g) {
+			GL2 gl = g.gl;
+			gl.glColor3f(1, 1, 1);
+			gl.glPointSize(4);
+			gl.setSwapInterval(1);
+			gl.glEnable(GL.GL_BLEND);
+			gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+			if(g.gc.havefsaa())
+			    g.gl.glDisable(GL.GL_MULTISAMPLE);
+			GOut.checkerr(gl);
+		    }
+		    public void unapply(GOut g) {
+		    }
+		    public void prep(Buffer buf) {
+			buf.put(HavenPanel.global, this);
+		    }
+		};
+	    /* XXX: This seems a bit unreliable. On Xorg with nvidia
+	     * drivers, an OffscreenAutoDrawable produces no results,
+	     * while a Pbuffer works; while on Xvfb with mesa-swx, an
+	     * OffscreenAutoDrawable works, while Pbuffer creation
+	     * fails. :-/ */
+	    this.buf = df.createOffscreenAutoDrawable(null, caps(prof), null, 1, 1, null);
+	    buf.addGLEventListener(new GLEventListener() {
+		    public void display(GLAutoDrawable d) {
+			GL2 gl = d.getGL().getGL2();
+			/* gl = new TraceGL2(gl, System.err) */
+			redraw(gl);
+			GLObject.disposeall(gl);
+		    }
 
-		public void reshape(GLAutoDrawable d, final int x, final int y, final int w, final int h) {
-		    ostate = new GLState() {
-			    public void apply(GOut g) {
-				GL2 gl = g.gl;
-				g.st.matmode(GL2.GL_PROJECTION);
-				gl.glLoadIdentity();
-				gl.glOrtho(0, w, h, 0, -1, 1);
-			    }
-			    public void unapply(GOut g) {
-			    }
-			    public void prep(Buffer buf) {
-				buf.put(HavenPanel.proj2d, this);
-			    }
-			};
-		}
+		    public void init(GLAutoDrawable d) {
+			GL2 gl = d.getGL().getGL2();
+			glconf = GLConfig.fromgl(gl, d.getContext(), d.getChosenGLCapabilities());
+			glconf.pref = GLSettings.defconf(glconf);
+			glconf.pref.meshmode.val = GLSettings.MeshMode.MEM;
+		    }
 
-		public void dispose(GLAutoDrawable d) {
-		    GL2 gl = d.getGL().getGL2();
-		    GLObject.disposeall(gl);
-		}
-	    });
+		    public void reshape(GLAutoDrawable d, final int x, final int y, final int w, final int h) {
+		    }
+
+		    public void dispose(GLAutoDrawable d) {
+			GL2 gl = d.getGL().getGL2();
+			GLObject.disposeall(gl);
+		    }
+		});
+	}
+
+	protected GLCapabilities caps(GLProfile prof) {
+	    GLCapabilities ret = new GLCapabilities(prof);
+	    ret.setDoubleBuffered(true);
+	    ret.setAlphaBits(8);
+	    ret.setRedBits(8);
+	    ret.setGreenBits(8);
+	    ret.setBlueBits(8);
+	    ret.setSampleBuffers(true);
+	    ret.setNumSamples(4);
+	    return(ret);
+	}
+
+	private void redraw(GL2 gl) {
+	    curdraw.redraw(gl);
+	}
     }
 
-    protected GLCapabilities caps(GLProfile prof) {
-	GLCapabilities ret = new GLCapabilities(prof);
-	ret.setDoubleBuffered(true);
-	ret.setAlphaBits(8);
-	ret.setRedBits(8);
-	ret.setGreenBits(8);
-	ret.setBlueBits(8);
-	ret.setSampleBuffers(true);
-	ret.setNumSamples(4);
-	return(ret);
+    public GBuffer(Context ctx, Coord sz) {
+	this.ctx = ctx;
+	this.sz = sz;
+	buf = new GLFrameBuffer(new TexE(sz, GL.GL_RGBA, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE), null);
+	ostate = new GLState() {
+		public void apply(GOut g) {
+		    GL2 gl = g.gl;
+		    g.st.matmode(GL2.GL_PROJECTION);
+		    gl.glLoadIdentity();
+		    gl.glOrtho(0, GBuffer.this.sz.x, GBuffer.this.sz.y, 0, -1, 1);
+		}
+		public void unapply(GOut g) {
+		}
+		public void prep(Buffer buf) {
+		    buf.put(HavenPanel.proj2d, this);
+		}
+	    };
+    }
+
+    private static Context defctx = null;
+    private static Context defctx() {
+	synchronized(GBuffer.class) {
+	    if(defctx == null)
+		defctx = new Context();
+	}
+	return(defctx);
+    }
+    public GBuffer(Coord sz) {
+	this(defctx(), sz);
     }
 
     private Drawn curdraw;
 
     protected void redraw(GL2 gl) {
-	if((state == null) || (state.gl != gl))
-	    state = new GLState.Applier(gl, glconf);
-	GLState.Buffer ibuf = new GLState.Buffer(glconf);
-	gstate.prep(ibuf);
+	if((ctx.state == null) || (ctx.state.gl != gl))
+	    ctx.state = new GLState.Applier(gl, ctx.glconf);
+	GLState.Buffer ibuf = new GLState.Buffer(ctx.glconf);
+	ctx.gstate.prep(ibuf);
 	ostate.prep(ibuf);
-	GOut g = new GOut(gl, buf.getContext(), glconf, state, ibuf, sz);
+	buf.prep(ibuf);
+	GOut g = new GOut(gl, ctx.buf.getContext(), ctx.glconf, ctx.state, ibuf, sz);
 	g.apply();
 	gl.glClearColor(0, 0, 0, 0);
 	gl.glClear(GL.GL_COLOR_BUFFER_BIT);
 	curdraw.draw(g);
-	state.clean();
+	ctx.state.clean();
     }
 
     public void render(Drawn thing) {
-	synchronized(dmon) {
+	synchronized(ctx.dmon) {
 	    curdraw = thing;
+	    ctx.curdraw = this;
 	    try {
-		buf.display();
+		ctx.buf.display();
 	    } finally {
 		curdraw = null;
+		ctx.curdraw = null;
 	    }
 	}
     }
 
     public void dispose() {
-	buf.destroy();
+	buf.dispose();
     }
 
     public static void main(String[] args) {
