@@ -819,6 +819,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 			return("TileTex(" + Resource.this.name + ")");
 		    }
 		};
+	    packbuf.mipmap();
+	    packbuf.minfilter(javax.media.opengl.GL2.GL_NEAREST_MIPMAP_LINEAR);
 	    packbuf.centroid = true;
 	    Graphics g = packbuf.graphics();
 	    int x = 0, y = 0;
