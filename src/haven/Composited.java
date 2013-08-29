@@ -311,7 +311,7 @@ public class Composited implements Rendered {
 	}
     }
     
-    private void nmod() {
+    private void nmod(boolean nocatch) {
 	for(Iterator<MD> i = nmod.iterator(); i.hasNext();) {
 	    MD md = i.next();
 	    try {
@@ -331,13 +331,16 @@ public class Composited implements Rendered {
 		    o.remove();
 		}
 		i.remove();
-	    } catch(Loading e) {}
+	    } catch(Loading e) {
+		if(nocatch)
+		    throw(e);
+	    }
 	}
 	if(nmod.isEmpty())
 	    nmod = null;
     }
 
-    private void nequ() {
+    private void nequ(boolean nocatch) {
 	for(Iterator<ED> i = nequ.iterator(); i.hasNext();) {
 	    ED ed = i.next();
 	    try {
@@ -346,17 +349,24 @@ public class Composited implements Rendered {
 		else if(ed.t == 1)
 		    this.equ.add(new LightEqu(ed));
 		i.remove();
-	    } catch(Loading e) {}
+	    } catch(Loading e) {
+		if(nocatch)
+		    throw(e);
+	    }
 	}
 	if(nequ.isEmpty())
 	    nequ = null;
     }
 
-    public void changes() {
+    public void changes(boolean nocatch) {
 	if(nmod != null)
-	    nmod();
+	    nmod(nocatch);
 	if(nequ != null)
-	    nequ();
+	    nequ(nocatch);
+    }
+
+    public void changes() {
+	changes(false);
     }
 
     public boolean setup(RenderList rl) {
