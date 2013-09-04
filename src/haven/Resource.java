@@ -796,7 +796,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 
 	private void packtiles(Collection<Tile> tiles, Coord tsz) {
 	    int min = -1, minw = -1, minh = -1, mine = -1;
-	    int nt = tiles.size();
+	    final int nt = tiles.size();
 	    for(int i = 1; i <= nt; i++) {
 		int w = Tex.nextp2(tsz.x * i);
 		int h;
@@ -814,27 +814,40 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		    mine = e;
 		}
 	    }
-	    TexIM packbuf = new TexIM(new Coord(minw, minh)) {
+	    final Tile[] order = new Tile[nt];
+	    final Coord[] place = new Coord[nt];
+	    Tex packbuf = new TexL(new Coord(minw, minh)) {
+		    {
+			mipmap(Mipmapper.avg);
+			minfilter(javax.media.opengl.GL2.GL_NEAREST_MIPMAP_LINEAR);
+			centroid = true;
+		    }
+
+		    protected BufferedImage fill() {
+			BufferedImage buf = TexI.mkbuf(dim);
+			Graphics g = buf.createGraphics();
+			for(int i = 0; i < nt; i++)
+			    g.drawImage(order[i].img, place[i].x, place[i].y, null);
+			return(buf);
+		    }
+
 		    public String toString() {
 			return("TileTex(" + Resource.this.name + ")");
 		    }
 		};
-	    packbuf.mipmap();
-	    packbuf.minfilter(javax.media.opengl.GL2.GL_NEAREST_MIPMAP_LINEAR);
-	    packbuf.centroid = true;
-	    Graphics g = packbuf.graphics();
-	    int x = 0, y = 0;
+	    int x = 0, y = 0, n = 0;
 	    for(Tile t :  tiles) {
 		if(y >= minh)
 		    throw(new LoadException("Could not pack tiles into calculated minimum texture", Resource.this));
-		g.drawImage(t.img, x, y, null);
-		t.tex = new TexSI(packbuf, new Coord(x, y), tsz);
+		order[n] = t;
+		place[n] = new Coord(x, y);
+		t.tex = new TexSI(packbuf, place[n], tsz);
+		n++;
 		if((x += tsz.x) > (minw - tsz.x)) {
 		    x = 0;
 		    y += tsz.y;
 		}
 	    }
-	    packbuf.update();
 	}
 		
 	@SuppressWarnings("unchecked")
