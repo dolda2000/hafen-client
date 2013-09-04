@@ -100,6 +100,14 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	    }
 	}
 
+	protected void fill(GOut g) {
+	    try {
+		super.fill(g);
+	    } catch(Loading l) {
+		throw(RenderList.RLoad.wrap(l));
+	    }
+	}
+
 	public String toString() {
 	    return("TexR(" + getres().name + ")");
 	}

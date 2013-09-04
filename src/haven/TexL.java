@@ -107,15 +107,10 @@ public abstract class TexL extends TexGL {
 		}));
     }
 
-    public void fill(GOut g) {
+    protected void fill(GOut g) {
 	if(decode == null)
 	    decode = prepare();
-	Prepared prep;
-	try {
-	    prep = decode.get();
-	} catch(Loading l) {
-	    throw(RenderList.RLoad.wrap(l));
-	}
+	Prepared prep = decode.get();
 	decode = null;
 	GL2 gl = g.gl;
 	gl.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1);
