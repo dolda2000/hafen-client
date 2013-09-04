@@ -102,8 +102,21 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	    ifmt = TexI.detectfmt(img);
 	    LinkedList<byte[]> data = new LinkedList<byte[]>();
 	    if((ifmt == GL.GL_RGB) || (ifmt == GL2.GL_BGR)) {
+		if((mipmap != null) && !(mipmap instanceof Mipmapper.Mipmapper3))
+		    ifmt = -1;
+	    }
+	    if((ifmt == GL.GL_RGB) || (ifmt == GL2.GL_BGR)) {
 		byte[] pixels = ((DataBufferByte)img.getRaster().getDataBuffer()).getData();
 		data.add(pixels);
+		if(mipmap != null) {
+		    Coord msz = sz;
+		    Mipmapper.Mipmapper3 alg = (Mipmapper.Mipmapper3)mipmap;
+		    while((msz.x > 1) || (msz.y > 1)) {
+			pixels = alg.gen3(msz, pixels, ifmt);
+			data.add(pixels);
+			msz = Mipmapper.nextsz(msz);
+		    }
+		}
 	    } else {
 		byte[] pixels;
 		if((ifmt == GL.GL_RGBA) || (ifmt == GL.GL_BGRA)) {
@@ -113,6 +126,14 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 		    ifmt = GL.GL_RGBA;
 		}
 		data.add(pixels);
+		if(mipmap != null) {
+		    Coord msz = sz;
+		    while((msz.x > 1) || (msz.y > 1)) {
+			pixels = mipmap.gen4(msz, pixels, ifmt);
+			data.add(pixels);
+			msz = Mipmapper.nextsz(msz);
+		    }
+		}
 	    }
 	    this.data = data.toArray(new byte[0][]);
 	}
@@ -134,6 +155,8 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	    super(sz);
 	    if((off.x != 0) || (off.y != 0))
 		throw(new RuntimeException("Non-zero texture offsets are not supported yet."));
+	    magfilter(TexR.this.magfilter);
+	    minfilter(TexR.this.magfilter);
 	}
 
 	public void fill(GOut g) {
