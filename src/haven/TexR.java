@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.awt.Graphics;
 import java.awt.image.*;
 import java.io.*;
 import javax.imageio.ImageIO;
@@ -37,7 +38,7 @@ import haven.Defer.Future;
 
 @Resource.LayerName("tex")
 public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
-    transient private byte[] img;
+    transient private byte[] img, mask;
     transient private final TexL tex;
     private final Coord off, sz;
     public final int id;
@@ -75,6 +76,9 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 				       GL.GL_LINEAR_MIPMAP_NEAREST, GL.GL_LINEAR_MIPMAP_LINEAR,
 		}[minf];
 		break;
+	    case 4:
+		this.mask = buf.bytes(buf.int32());
+		break;
 	    default:
 		throw(new Resource.LoadException("Unknown texture data part " + t + " in " + res.name, getres()));
 	    }
@@ -92,11 +96,35 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	    super(sz);
 	}
 
-	protected BufferedImage fill() {
+	private BufferedImage rd(byte[] data) {
 	    try {
-		return(ImageIO.read(new ByteArrayInputStream(TexR.this.img)));
+		return(ImageIO.read(new ByteArrayInputStream(data)));
 	    } catch(IOException e) {
 		throw(new RuntimeException("Invalid image data in " + getres().name, e));
+	    }
+	}
+
+	protected BufferedImage fill() {
+	    if(mask == null) {
+		return(rd(TexR.this.img));
+	    } else {
+		BufferedImage col = rd(TexR.this.img);
+		BufferedImage mask = rd(TexR.this.mask);
+		Coord sz = Utils.imgsz(mask);
+		BufferedImage ret = TexI.mkbuf(sz);
+		Graphics g = ret.createGraphics();
+		g.drawImage(col, 0, 0, sz.x, sz.y, null);
+		Raster mr = mask.getRaster();
+		if(mr.getNumBands() != 1)
+		    throw(new RuntimeException("Invalid separated alpha data in " + getres().name));
+		WritableRaster rr = ret.getRaster();
+		for(int y = 0; y < sz.y; y++) {
+		    for(int x = 0; x < sz.x; x++) {
+			rr.setSample(x, y, 3, mr.getSample(x, y, 0));
+		    }
+		}
+		g.dispose();
+		return(ret);
 	    }
 	}
 
