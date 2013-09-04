@@ -828,6 +828,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 			Graphics g = buf.createGraphics();
 			for(int i = 0; i < nt; i++)
 			    g.drawImage(order[i].img, place[i].x, place[i].y, null);
+			g.dispose();
 			return(buf);
 		    }
 
