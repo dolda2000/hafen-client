@@ -50,7 +50,7 @@ public class TexI extends TexGL {
     /* Java's image model is a little bit complex, so these may not be
      * entirely correct. They should be corrected if oddities are
      * detected. */
-    private int detectfmt(BufferedImage img) {
+    public static int detectfmt(BufferedImage img) {
 	ColorModel cm = img.getColorModel();
 	if(!(img.getSampleModel() instanceof PixelInterleavedSampleModel))
 	    return(-1);

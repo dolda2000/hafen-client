@@ -205,7 +205,14 @@ public class RenderList {
 	Arrays.sort(list, 0, cur, cmp);
     }
 
-    public static class RLoad extends Loading {}
+    public static class RLoad extends Loading {
+	public static RLoad wrap(final Loading l) {
+	    return(new RLoad() {
+		    public boolean canwait() {return(l.canwait());}
+		    public void waitfor() throws InterruptedException {l.waitfor();}
+		});
+	}
+    }
 
     protected void render(GOut g, Rendered r) {
 	try {

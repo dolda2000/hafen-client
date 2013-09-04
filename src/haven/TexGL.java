@@ -371,11 +371,20 @@ public abstract class TexGL extends Tex {
 	    }
 	    left.add(new Material.Res.Resolver() {
 		    public void resolve(Collection<GLState> buf) {
-			Resource.Image img = tres.layer(Resource.imgc, tid);
-			if(img == null)
-			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
-			buf.add(img.tex().draw());
-			buf.add(img.tex().clip());
+			Tex tex;
+			TexR rt = tres.layer(TexR.class, tid);
+			if(rt != null) {
+			    tex = rt.tex();
+			} else {
+			    Resource.Image img = tres.layer(Resource.imgc, tid);
+			    if(img != null) {
+				tex = img.tex();
+			    } else {
+				throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
+			    }
+			}
+			buf.add(tex.draw());
+			buf.add(tex.clip());
 		    }
 		});
 	}
