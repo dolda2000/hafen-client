@@ -38,10 +38,8 @@ import haven.Defer.Future;
 @Resource.LayerName("tex")
 public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
     transient private byte[] img;
-    transient private Mipmapper mipmap = null;
-    transient private final Tex tex;
+    transient private final TexL tex;
     private final Coord off, sz;
-    private int minfilter = -1, magfilter = -1;
     public final int id;
 
     public TexR(Resource res, byte[] rbuf) {
@@ -50,6 +48,8 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	this.id = buf.int16();
 	this.off = new Coord(buf.uint16(), buf.uint16());
 	this.sz = new Coord(buf.uint16(), buf.uint16());
+	this.tex = new Real();
+	int minfilter = -1, magfilter = -1;
 	while(!buf.eom()) {
 	    int t = buf.uint8();
 	    switch(t) {
@@ -58,128 +58,50 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 		break;
 	    case 1:
 		int ma = buf.uint8();
-		this.mipmap = new Mipmapper[] {
-		    Mipmapper.avg, // Default
-		    Mipmapper.avg, // Specific
-		    Mipmapper.rnd,
-		}[ma];
+		tex.mipmap(new Mipmapper[] {
+			Mipmapper.avg, // Default
+			Mipmapper.avg, // Specific
+			Mipmapper.rnd,
+		    }[ma]);
 		break;
 	    case 2:
 		int magf = buf.uint8();
-		this.magfilter = new int[] {GL.GL_NEAREST, GL.GL_LINEAR}[magf];
+		magfilter = new int[] {GL.GL_NEAREST, GL.GL_LINEAR}[magf];
 		break;
 	    case 3:
 		int minf = buf.uint8();
-		this.minfilter = new int[] {GL.GL_NEAREST, GL.GL_LINEAR,
-					    GL.GL_NEAREST_MIPMAP_NEAREST, GL.GL_NEAREST_MIPMAP_LINEAR,
-					    GL.GL_LINEAR_MIPMAP_NEAREST, GL.GL_LINEAR_MIPMAP_LINEAR}[minf];
+		minfilter = new int[] {GL.GL_NEAREST, GL.GL_LINEAR,
+				       GL.GL_NEAREST_MIPMAP_NEAREST, GL.GL_NEAREST_MIPMAP_LINEAR,
+				       GL.GL_LINEAR_MIPMAP_NEAREST, GL.GL_LINEAR_MIPMAP_LINEAR,
+		}[minf];
 		break;
 	    default:
 		throw(new Resource.LoadException("Unknown texture data part " + t + " in " + res.name, getres()));
 	    }
 	}
-	if(minfilter == -1)
-	    minfilter = (mipmap == null)?GL.GL_LINEAR:GL.GL_LINEAR_MIPMAP_LINEAR;
 	if(magfilter == -1)
 	    magfilter = GL.GL_LINEAR;
-	this.tex = new Texture();
+	if(minfilter == -1)
+	    minfilter = (tex.mipmap == null)?GL.GL_LINEAR:GL.GL_LINEAR_MIPMAP_LINEAR;
+	tex.magfilter(magfilter);
+	tex.minfilter(minfilter);
     }
 
-    private class Prepared {
-	BufferedImage img;
-	byte[][] data;
-	int ifmt;
+    private class Real extends TexL {
+	private Real() {
+	    super(sz);
+	}
 
-	private Prepared() {
+	protected BufferedImage fill() {
 	    try {
-		img = ImageIO.read(new ByteArrayInputStream(TexR.this.img));
+		return(ImageIO.read(new ByteArrayInputStream(TexR.this.img)));
 	    } catch(IOException e) {
 		throw(new RuntimeException("Invalid image data in " + getres().name, e));
-	    }
-	    Coord sz = Utils.imgsz(img);
-	    if((sz.x != Tex.nextp2(sz.x)) || (sz.y != Tex.nextp2(sz.y)))
-		throw(new RuntimeException("Non-power-of-two texture in " + getres().name));
-	    ifmt = TexI.detectfmt(img);
-	    LinkedList<byte[]> data = new LinkedList<byte[]>();
-	    if((ifmt == GL.GL_RGB) || (ifmt == GL2.GL_BGR)) {
-		if((mipmap != null) && !(mipmap instanceof Mipmapper.Mipmapper3))
-		    ifmt = -1;
-	    }
-	    if((ifmt == GL.GL_RGB) || (ifmt == GL2.GL_BGR)) {
-		byte[] pixels = ((DataBufferByte)img.getRaster().getDataBuffer()).getData();
-		data.add(pixels);
-		if(mipmap != null) {
-		    Coord msz = sz;
-		    Mipmapper.Mipmapper3 alg = (Mipmapper.Mipmapper3)mipmap;
-		    while((msz.x > 1) || (msz.y > 1)) {
-			pixels = alg.gen3(msz, pixels, ifmt);
-			data.add(pixels);
-			msz = Mipmapper.nextsz(msz);
-		    }
-		}
-	    } else {
-		byte[] pixels;
-		if((ifmt == GL.GL_RGBA) || (ifmt == GL.GL_BGRA)) {
-		    pixels = ((DataBufferByte)img.getRaster().getDataBuffer()).getData();
-		} else {
-		    pixels = TexI.convert(img, sz);
-		    ifmt = GL.GL_RGBA;
-		}
-		data.add(pixels);
-		if(mipmap != null) {
-		    Coord msz = sz;
-		    while((msz.x > 1) || (msz.y > 1)) {
-			pixels = mipmap.gen4(msz, pixels, ifmt);
-			data.add(pixels);
-			msz = Mipmapper.nextsz(msz);
-		    }
-		}
-	    }
-	    this.data = data.toArray(new byte[0][]);
-	}
-    }
-
-    private Future<Prepared> prepare() {
-	return(Defer.later(new Defer.Callable<Prepared>() {
-		    public Prepared call() {
-			Prepared ret = new Prepared();
-			return(ret);
-		    }
-		}));
-    }
-
-    public class Texture extends TexGL {
-	Future<Prepared> decode = null;
-
-	private Texture() {
-	    super(sz);
-	    if((off.x != 0) || (off.y != 0))
-		throw(new RuntimeException("Non-zero texture offsets are not supported yet."));
-	    magfilter(TexR.this.magfilter);
-	    minfilter(TexR.this.magfilter);
-	}
-
-	public void fill(GOut g) {
-	    if(decode == null)
-		decode = prepare();
-	    Prepared prep;
-	    try {
-		prep = decode.get();
-	    } catch(Loading l) {
-		throw(RenderList.RLoad.wrap(l));
-	    }
-	    decode = null;
-	    GL2 gl = g.gl;
-	    gl.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1);
-	    Coord cdim = tdim;
-	    for(int i = 0; i < prep.data.length; i++) {
-		gl.glTexImage2D(GL.GL_TEXTURE_2D, i, GL.GL_RGBA, cdim.x, cdim.y, 0, prep.ifmt, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(prep.data[i]));
-		cdim = Mipmapper.nextsz(cdim);
 	    }
 	}
 
 	public String toString() {
-	    return("TexR(" + getres().name + ", " + id + ")");
+	    return("TexR(" + getres().name + ")");
 	}
     }
 
