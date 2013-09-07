@@ -195,6 +195,85 @@ public abstract class Mipmapper {
 	    }
 	};
 
+    public static final Mipmapper cnt = new Mipmapper() {
+	    public byte[] gen4(Coord dim, byte[] data, int fmt) {
+		int dst = dim.x * 4;
+		dim = dim.div(2);
+		boolean lx = false, ly = false;
+		if(dim.x < 1) {dim.x = 1; lx = true;}
+		if(dim.y < 1) {dim.y = 1; ly = true;}
+		byte[] ndata = new byte[dim.x * dim.y * 4];
+		int[] r = new int[4], g = new int[4], b = new int[4], a = new int[4];
+		int na = 0, da = 0;
+		for(int y = 0; y < dim.y; y++) {
+		    for(int x = 0; x < dim.x; x++) {
+			r[0] = ((int)data[da + 0]) & 0xff;
+			g[0] = ((int)data[da + 1]) & 0xff;
+			b[0] = ((int)data[da + 2]) & 0xff;
+			a[0] = ((int)data[da + 3]) & 0xff;
+			if(!lx) {
+			    r[1] = ((int)data[da + 0 + 4]) & 0xff;
+			    g[1] = ((int)data[da + 1 + 4]) & 0xff;
+			    b[1] = ((int)data[da + 2 + 4]) & 0xff;
+			    a[1] = ((int)data[da + 3 + 4]) & 0xff;
+			} else {
+			    r[1] = r[0]; g[1] = g[0]; b[1] = b[0]; a[1] = a[0];
+			}
+			if(!ly) {
+			    r[2] = ((int)data[da + 0 + dst]) & 0xff;
+			    g[2] = ((int)data[da + 1 + dst]) & 0xff;
+			    b[2] = ((int)data[da + 2 + dst]) & 0xff;
+			    a[2] = ((int)data[da + 3 + dst]) & 0xff;
+			} else {
+			    r[2] = r[0]; g[2] = g[0]; b[2] = b[0]; a[2] = a[0];
+			}
+			if(!lx && !ly) {
+			    r[3] = ((int)data[da + 0 + dst + 4]) & 0xff;
+			    g[3] = ((int)data[da + 1 + dst + 4]) & 0xff;
+			    b[3] = ((int)data[da + 2 + dst + 4]) & 0xff;
+			    a[3] = ((int)data[da + 3 + dst + 4]) & 0xff;
+			} else if(!ly) {
+			    r[3] = r[2]; g[3] = g[2]; b[3] = b[2]; a[3] = a[2];
+			} else {
+			    r[3] = r[1]; g[3] = g[1]; b[3] = b[1]; a[3] = a[1];
+			}
+			int n = 0, cr = 0, cg = 0, cb = 0;
+			for(int i = 0; i < 4; i++) {
+			    if(a[i] < 128)
+				continue;
+			    cr += r[i];
+			    cg += g[i];
+			    cb += b[i];
+			    n++;
+			}
+			if(n <= 1) {
+			    ndata[na + 3] = 0;
+			} else {
+			    cr /= n; cg /= n; cb /= n;
+			    int md = -1, mi = -1;
+			    for(int i = 0; i < 4; i++) {
+				if(a[i] < 128)
+				    continue;
+				int d = Math.abs(r[i] - cr) + Math.abs(g[i] - cg) + Math.abs(b[i] - cb);
+				if((md == -1) || (d > md)) {
+				    md = d;
+				    mi = i;
+				}
+			    }
+			    ndata[na + 0] = (byte)r[mi];
+			    ndata[na + 1] = (byte)g[mi];
+			    ndata[na + 2] = (byte)b[mi];
+			    ndata[na + 3] = (byte)255;
+			}
+			na += 4;
+			da += lx?4:8;
+		    }
+		    da += ly?0:dst;
+		}
+		return(ndata);
+	    }
+	};
+
     public static final Mipmapper lanczos = new Mipmapper() {
 	    final PUtils.Convolution filter = new PUtils.Lanczos(2);
 
