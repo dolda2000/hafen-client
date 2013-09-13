@@ -419,12 +419,14 @@ public class WaterTile extends Tiler {
 	}
     }
 
+    private static final GLState boff = new States.DepthOffset(4, 4);
+
     public WaterTile(int id, Resource.Tileset set, int depth) {
 	super(id);
 	this.set = set;
 	this.depth = depth;
 	TexGL tex = (TexGL)((TexSI)set.ground.pick(0).tex()).parent;
-	mat = new Material(Light.deflight, bcol, tex.draw(), waterfog);
+	mat = new Material(Light.deflight, bcol, tex.draw(), waterfog, boff);
     }
     
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
