@@ -795,6 +795,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
 
 	private void packtiles(Collection<Tile> tiles, Coord tsz) {
+	    if(tiles.size() < 1)
+		return;
 	    int min = -1, minw = -1, minh = -1, mine = -1;
 	    final int nt = tiles.size();
 	    for(int i = 1; i <= nt; i++) {
