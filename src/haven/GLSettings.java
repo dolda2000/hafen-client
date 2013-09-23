@@ -127,6 +127,14 @@ public class GLSettings implements java.io.Serializable {
 		    throw(new SettingException("FSAA is not supported."));
 	    }
 	};
+    public final BoolSetting alphacov = new BoolSetting("alphacov") {
+	    public Boolean defval() {return(false);}
+	    public void validate(Boolean val) {
+		if(val) {
+		    if(!fsaa.val) throw(new SettingException("Alpha-to-coverage must be used with multisampling."));
+		}
+	    }
+	};
     public final BoolSetting shuse = new BoolSetting("shuse") {
 	    public Boolean defval() {return(cfg.haveglsl());}
 	    public void validate(Boolean val) {
@@ -160,6 +168,15 @@ public class GLSettings implements java.io.Serializable {
 		if(val) {
 		    if(!flight.val) throw(new SettingException("Shadowed lighting requires per-fragment lighting."));
 		    if(!cfg.havefbo()) throw(new SettingException("Shadowed lighting requires a video card supporting framebuffers."));
+		}
+	    }
+	};
+
+    public final BoolSetting wsurf = new BoolSetting("wsurf") {
+	    public Boolean defval() {return(shuse.val);}
+	    public void validate(Boolean val) {
+		if(val) {
+		    if(!shuse.val) throw(new SettingException("Shaded water surface requires a shader-compatible video card."));
 		}
 	    }
 	};

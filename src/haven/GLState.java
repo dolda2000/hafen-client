@@ -342,7 +342,7 @@ public abstract class GLState {
 	private int proghash = 0;
 	public ShaderMacro.Program prog;
 	public boolean usedprog;
-	public boolean pdirty = false;
+	public boolean pdirty = false, sdirty = false;
 	public long time = 0;
 	
 	/* It seems ugly to treat these so specially, but right now I
@@ -404,7 +404,7 @@ public abstract class GLState {
 	    Slot<?>[] deplist = GLState.deplist;
 	    boolean dirty = false;
 	    for(int i = trans.length - 1; i >= 0; i--) {
-		if(repl[i] || trans[i]) {
+		if(sdirty || repl[i] || trans[i]) {
 		    GLState nst = next.states[i];
 		    ShaderMacro[] ns = (nst == null)?null:nst.shaders();
 		    if(ns != shaders[i]) {
@@ -416,6 +416,7 @@ public abstract class GLState {
 	    }
 	    usedprog = prog != null;
 	    if(dirty) {
+		sdirty = true;
 		ShaderMacro.Program np;
 		boolean shreq = false;
 		for(int i = 0; i < trans.length; i++) {
@@ -499,7 +500,7 @@ public abstract class GLState {
 	    }
 	    if(prog != null)
 		prog.autoapply(g, pdirty);
-	    pdirty = false;
+	    pdirty = sdirty = false;
 	    checkerr(gl);
 	    if(Config.profile)
 		time += System.nanoTime() - st;

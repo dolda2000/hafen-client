@@ -55,6 +55,19 @@ public class Defer extends ThreadGroup {
     }
 
     public static class NotDoneException extends Loading {
+	public final Future future;
+
+	public NotDoneException(Future future) {
+	    this.future = future;
+	}
+
+	public boolean canwait() {return(true);}
+	public void waitfor() throws InterruptedException {
+	    synchronized(future) {
+		while(!future.done())
+		    future.wait();
+	    }
+	}
     }
 
     public class Future<T> implements Runnable, Prioritized {
@@ -75,11 +88,18 @@ public class Defer extends ThreadGroup {
 		    running.interrupt();
 		} else {
 		    exc = new CancelledException();
-		    state = "done";
+		    chstate("done");
 		}
 	    }
 	}
-	
+
+	private void chstate(String nst) {
+	    synchronized(this) {
+		this.state = nst;
+		notifyAll();
+	    }
+	}
+
 	public void run() {
 	    synchronized(this) {
 		if(state == "done")
@@ -88,17 +108,17 @@ public class Defer extends ThreadGroup {
 	    }
 	    try {
 		val = task.call();
-		state = "done";
+		chstate("done");
 	    } catch(InterruptedException exc) {
 		this.exc = new CancelledException(exc);
-		state = "done";
+		chstate("done");
 	    } catch(Loading exc) {
 	    } catch(RuntimeException exc) {
 		this.exc = exc;
-		state = "done";
+		chstate("done");
 	    } finally {
 		if(state != "done")
-		    state = "resched";
+		    chstate("resched");
 		running = null;
 	    }
 	}
@@ -115,7 +135,7 @@ public class Defer extends ThreadGroup {
 		    defer(this);
 		    state = "";
 		}
-		throw(new NotDoneException());
+		throw(new NotDoneException(this));
 	    }
 	}
 	

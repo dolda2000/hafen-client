@@ -50,7 +50,7 @@ public class TexI extends TexGL {
     /* Java's image model is a little bit complex, so these may not be
      * entirely correct. They should be corrected if oddities are
      * detected. */
-    private int detectfmt(BufferedImage img) {
+    public static int detectfmt(BufferedImage img) {
 	ColorModel cm = img.getColorModel();
 	if(!(img.getSampleModel() instanceof PixelInterleavedSampleModel))
 	    return(-1);
@@ -124,8 +124,7 @@ public class TexI extends TexGL {
     }
     
     private void genmipmap(GL gl, int lev, Coord dim, byte[] data, int ifmt) {
-	Coord ndim = dim.div(2);
-	ndim.x = Math.max(ndim.x, 1); ndim.y = Math.max(ndim.y, 1);
+	Coord ndim = Mipmapper.nextsz(dim);
 	byte[] ndata = mmalg.gen4(dim, data, ifmt);
 	gl.glTexImage2D(GL.GL_TEXTURE_2D, lev, fmt, ndim.x, ndim.y, 0, ifmt, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(ndata));
 	if((ndim.x > 1) || (ndim.y > 1))
@@ -134,8 +133,7 @@ public class TexI extends TexGL {
 	
     private void genmipmap3(GL gl, int lev, Coord dim, byte[] data, int ifmt) {
 	if(mmalg instanceof Mipmapper.Mipmapper3) {
-	    Coord ndim = dim.div(2);
-	    ndim.x = Math.max(ndim.x, 1); ndim.y = Math.max(ndim.y, 1);
+	    Coord ndim = Mipmapper.nextsz(dim);
 	    byte[] ndata = ((Mipmapper.Mipmapper3)mmalg).gen3(dim, data, ifmt);
 	    gl.glTexImage2D(GL.GL_TEXTURE_2D, lev, fmt, ndim.x, ndim.y, 0, ifmt, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(ndata));
 	    if((ndim.x > 1) || (ndim.y > 1))
