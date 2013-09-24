@@ -36,12 +36,36 @@ public class MapMesh implements Rendered, Disposable {
     public final MCache map;
     private Map<Class<? extends Surface>, Surface> surfmap = new HashMap<Class<? extends Surface>, Surface>();
     private Map<Tex, GLState[]> texmap = new HashMap<Tex, GLState[]>();
+    private Map<DataID, Object> data = new HashMap<DataID, Object>();
     private Map<GLState, MeshBuf> modbuf = new HashMap<GLState, MeshBuf>();
-    public Map<Object, Object> data = new HashMap<Object, Object>();
     private List<Rendered> extras = new ArrayList<Rendered>();
     private List<Layer> layers;
     private FastMesh[] flats;
     private List<Disposable> dparts = new ArrayList<Disposable>();
+
+    public interface DataID<T> {
+	public T make(MapMesh m);
+    }
+
+    public static <T> DataID<T> makeid(Class<T> cl) {
+	try {
+	    final java.lang.reflect.Constructor<T> cons = cl.getConstructor(MapMesh.class);
+	    return(new DataID<T>() {
+		    public T make(MapMesh m) {
+			return(Utils.construct(cons, m));
+		    }
+		});
+	} catch(NoSuchMethodException e) {}
+	try {
+	    final java.lang.reflect.Constructor<T> cons = cl.getConstructor();
+	    return(new DataID<T>() {
+		    public T make(MapMesh m) {
+			return(Utils.construct(cons));
+		    }
+		});
+	} catch(NoSuchMethodException e) {}
+	throw(new Error("No proper data-ID constructor found"));
+    }
 
     public static class SPoint {
 	public Coord3f pos, nrm = Coord3f.zu;
@@ -338,6 +362,14 @@ public class MapMesh implements Rendered, Disposable {
     
     public static class Hooks {
 	public void postcalcnrm(Random rnd) {}
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T data(DataID<T> id) {
+	T ret = (T)data.get(id);
+	if(ret == null)
+	    data.put(id, ret = id.make(this));
+	return(ret);
     }
 
     public <T extends MeshBuf> T model(GLState st, Class<T> init) {
