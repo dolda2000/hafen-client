@@ -37,7 +37,6 @@ public class MapMesh implements Rendered, Disposable {
     private Map<Class<? extends Surface>, Surface> surfmap = new HashMap<Class<? extends Surface>, Surface>();
     private Map<Tex, GLState[]> texmap = new HashMap<Tex, GLState[]>();
     private Map<DataID, Object> data = new HashMap<DataID, Object>();
-    private Map<GLState, MeshBuf> modbuf = new HashMap<GLState, MeshBuf>();
     private List<Rendered> extras = new ArrayList<Rendered>();
     private List<Layer> layers;
     private FastMesh[] flats;
@@ -372,26 +371,30 @@ public class MapMesh implements Rendered, Disposable {
 	return(ret);
     }
 
-    public <T extends MeshBuf> T model(GLState st, Class<T> init) {
-	MeshBuf ret = modbuf.get(st);
-	if(ret == null) {
-	    try {
-		java.lang.reflect.Constructor<T> c = init.getConstructor();
-		ret = c.newInstance();
-		modbuf.put(st, ret);
-	    } catch(NoSuchMethodException e) {
-		throw(new RuntimeException(e));
-	    } catch(InstantiationException e) {
-		throw(new RuntimeException(e));
-	    } catch(IllegalAccessException e) {
-		throw(new RuntimeException(e));
-	    } catch(java.lang.reflect.InvocationTargetException e) {
-		if(e.getCause() instanceof RuntimeException)
-		    throw((RuntimeException)e.getCause());
-		throw(new RuntimeException(e));
+    public static class Models extends Hooks {
+	private final MapMesh m;
+	private final Map<GLState, MeshBuf> models = new HashMap<GLState, MeshBuf>();
+
+	public Models(MapMesh m) {
+	    this.m = m;
+	}
+
+	private static DataID<Models> msid = makeid(Models.class);
+	public static MeshBuf get(MapMesh m, GLState st) {
+	    Models ms = m.data(msid);
+	    MeshBuf ret = ms.models.get(st);
+	    if(ret == null)
+		ms.models.put(st, ret = new MeshBuf());
+	    return(ret);
+	}
+
+	public void postcalcnrm(Random rnd) {
+	    for(Map.Entry<GLState, MeshBuf> mod : models.entrySet()) {
+		FastMesh mesh = mod.getValue().mkmesh();
+		m.extras.add(mod.getKey().apply(mesh));
+		m.dparts.add(mesh);
 	    }
 	}
-	return(init.cast(ret));
     }
 
     public static MapMesh build(MCache mc, Random rnd, Coord ul, Coord sz) {
@@ -428,13 +431,6 @@ public class MapMesh implements Rendered, Disposable {
 		    return(a.z - b.z);
 		}
 	    });
-	for(Map.Entry<GLState, MeshBuf> mod : m.modbuf.entrySet()) {
-	    if(!mod.getValue().emptyp()) {
-		FastMesh mesh = mod.getValue().mkmesh();
-		m.extras.add(mod.getKey().apply(mesh));
-		m.dparts.add(mesh);
-	    }
-	}
 	
 	m.consflat();
 	
@@ -561,7 +557,6 @@ public class MapMesh implements Rendered, Disposable {
 	texmap = null;
 	for(Layer l : layers)
 	    l.pl = null;
-	modbuf = null;
 	data = null;
     }
     
