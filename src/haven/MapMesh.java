@@ -361,6 +361,7 @@ public class MapMesh implements Rendered, Disposable {
     
     public static class Hooks {
 	public void postcalcnrm(Random rnd) {}
+	public boolean clean() {return(false);}
     }
 
     @SuppressWarnings("unchecked")
@@ -557,7 +558,12 @@ public class MapMesh implements Rendered, Disposable {
 	texmap = null;
 	for(Layer l : layers)
 	    l.pl = null;
-	data = null;
+	int on = data.size();
+	for(Iterator<Map.Entry<DataID, Object>> i = data.entrySet().iterator(); i.hasNext();) {
+	    Object d = i.next().getValue();
+	    if(!(d instanceof Hooks) || !((Hooks)d).clean())
+		i.remove();
+	}
     }
     
     public void draw(GOut g) {
