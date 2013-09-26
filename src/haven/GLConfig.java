@@ -27,9 +27,12 @@
 package haven;
 
 import java.util.*;
+import java.util.regex.*;
 import javax.media.opengl.*;
 
 public class GLConfig implements java.io.Serializable, Console.Directory {
+    private static final Pattern slvp = Pattern.compile("^(\\d+)\\.(\\d+)");
+    public int glslver;
     public int maxlights;
     public Collection<String> exts;
     public transient GLCapabilitiesImmutable caps;
@@ -52,12 +55,34 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	return(buf[0]);
     }
 
+    public static String glconds(GL gl, int param) {
+	GOut.checkerr(gl);
+	String ret = gl.glGetString(param);
+	if(gl.glGetError() != 0)
+	    return(null);
+	return(ret);
+    }
+
     public static GLConfig fromgl(GL gl, GLContext ctx, GLCapabilitiesImmutable caps) {
 	GLConfig c = new GLConfig();
 	c.maxlights = glgeti(gl, GL2.GL_MAX_LIGHTS);
 	c.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	c.caps = caps;
 	c.pref = GLSettings.defconf(c);
+	String slv = glconds(gl, GL2.GL_SHADING_LANGUAGE_VERSION);
+	if(slv != null) {
+	    Matcher m = slvp.matcher(slv);
+	    if(m.find()) {
+		try {
+		    int major = Integer.parseInt(m.group(1));
+		    int minor = Integer.parseInt(m.group(2));
+		    if((major > 0) || (major < 256) || (minor >= 0) || (minor < 256))
+			c.glslver = (major << 8) | minor;
+		} catch(NumberFormatException e) {
+		}
+	    }
+	}
+	System.err.println(c.glslver);
 	return(c);
     }
     
@@ -66,7 +91,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
     }
     
     public boolean haveglsl() {
-	return(exts.contains("GL_ARB_fragment_shader") && exts.contains("GL_ARB_vertex_shader"));
+	return(exts.contains("GL_ARB_fragment_shader") && exts.contains("GL_ARB_vertex_shader") && (glslver >= 0x0114));
     }
 
     public boolean havefbo() {
