@@ -34,22 +34,51 @@ import java.awt.Color;
 public class MapMesh implements Rendered, Disposable {
     public final Coord ul, sz;
     public final MCache map;
-    private Map<Class<? extends Surface>, Surface> surfmap = new HashMap<Class<? extends Surface>, Surface>();
     private Map<Tex, GLState[]> texmap = new HashMap<Tex, GLState[]>();
-    private Map<GLState, MeshBuf> modbuf = new HashMap<GLState, MeshBuf>();
-    public Map<Object, Object> data = new HashMap<Object, Object>();
+    private Map<DataID, Object> data = new HashMap<DataID, Object>();
     private List<Rendered> extras = new ArrayList<Rendered>();
     private List<Layer> layers;
     private FastMesh[] flats;
     private List<Disposable> dparts = new ArrayList<Disposable>();
 
-    public static class SPoint {
-	public Coord3f pos, nrm = Coord3f.zu;
-	public SPoint(Coord3f pos) {
-	    this.pos = pos;
-	}
+    public interface DataID<T> {
+	public T make(MapMesh m);
     }
-    
+
+    public static <T> DataID<T> makeid(Class<T> cl) {
+	try {
+	    final java.lang.reflect.Constructor<T> cons = cl.getConstructor(MapMesh.class);
+	    return(new DataID<T>() {
+		    public T make(MapMesh m) {
+			return(Utils.construct(cons, m));
+		    }
+		});
+	} catch(NoSuchMethodException e) {}
+	try {
+	    final java.lang.reflect.Constructor<T> cons = cl.getConstructor();
+	    return(new DataID<T>() {
+		    public T make(MapMesh m) {
+			return(Utils.construct(cons));
+		    }
+		});
+	} catch(NoSuchMethodException e) {}
+	throw(new Error("No proper data-ID constructor found"));
+    }
+
+    public static class Hooks {
+	public void calcnrm() {}
+	public void postcalcnrm(Random rnd) {}
+	public boolean clean() {return(false);}
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T data(DataID<T> id) {
+	T ret = (T)data.get(id);
+	if(ret == null)
+	    data.put(id, ret = id.make(this));
+	return(ret);
+    }
+
     private static final Material.Colors gcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
     public GLState stfor(Tex tex, boolean clip) {
 	TexGL gt;
@@ -70,7 +99,14 @@ public class MapMesh implements Rendered, Disposable {
 	return(ret[clip?0:1]);
     }
 
-    public class Surface {
+    public static class SPoint {
+	public Coord3f pos, nrm = Coord3f.zu;
+	public SPoint(Coord3f pos) {
+	    this.pos = pos;
+	}
+    }
+    
+    public class Surface extends Hooks {
 	public final SPoint[] surf;
 	
 	public Surface() {
@@ -310,56 +346,38 @@ public class MapMesh implements Rendered, Disposable {
 	}
     }
 
-    public <T extends Surface> T surf(Class<T> cl) {
-	Surface ret = surfmap.get(cl);
-	if(ret == null) {
-	    try {
-		java.lang.reflect.Constructor<T> c = cl.getConstructor(MapMesh.class);
-		ret = c.newInstance(this);
-		surfmap.put(cl, ret);
-	    } catch(NoSuchMethodException e) {
-		throw(new RuntimeException(e));
-	    } catch(InstantiationException e) {
-		throw(new RuntimeException(e));
-	    } catch(IllegalAccessException e) {
-		throw(new RuntimeException(e));
-	    } catch(java.lang.reflect.InvocationTargetException e) {
-		if(e.getCause() instanceof RuntimeException)
-		    throw((RuntimeException)e.getCause());
-		throw(new RuntimeException(e));
-	    }
-	}
-	return(cl.cast(ret));
+    public class Ground extends Surface {
+	public boolean clean() {return(true);}
     }
-    
+    private static DataID<Ground> gndid = makeid(Ground.class);
     public Surface gnd() {
-	return(surf(Surface.class));
+	return(data(gndid));
     }
     
-    public static class Hooks {
-	public void postcalcnrm(Random rnd) {}
-    }
+    public static class Models extends Hooks {
+	private final MapMesh m;
+	private final Map<GLState, MeshBuf> models = new HashMap<GLState, MeshBuf>();
 
-    public <T extends MeshBuf> T model(GLState st, Class<T> init) {
-	MeshBuf ret = modbuf.get(st);
-	if(ret == null) {
-	    try {
-		java.lang.reflect.Constructor<T> c = init.getConstructor();
-		ret = c.newInstance();
-		modbuf.put(st, ret);
-	    } catch(NoSuchMethodException e) {
-		throw(new RuntimeException(e));
-	    } catch(InstantiationException e) {
-		throw(new RuntimeException(e));
-	    } catch(IllegalAccessException e) {
-		throw(new RuntimeException(e));
-	    } catch(java.lang.reflect.InvocationTargetException e) {
-		if(e.getCause() instanceof RuntimeException)
-		    throw((RuntimeException)e.getCause());
-		throw(new RuntimeException(e));
+	public Models(MapMesh m) {
+	    this.m = m;
+	}
+
+	private static DataID<Models> msid = makeid(Models.class);
+	public static MeshBuf get(MapMesh m, GLState st) {
+	    Models ms = m.data(msid);
+	    MeshBuf ret = ms.models.get(st);
+	    if(ret == null)
+		ms.models.put(st, ret = new MeshBuf());
+	    return(ret);
+	}
+
+	public void postcalcnrm(Random rnd) {
+	    for(Map.Entry<GLState, MeshBuf> mod : models.entrySet()) {
+		FastMesh mesh = mod.getValue().mkmesh();
+		m.extras.add(mod.getKey().apply(mesh));
+		m.dparts.add(mesh);
 	    }
 	}
-	return(init.cast(ret));
     }
 
     public static MapMesh build(MCache mc, Random rnd, Coord ul, Coord sz) {
@@ -376,8 +394,10 @@ public class MapMesh implements Rendered, Disposable {
 		rnd.setSeed(ns);
 	    }
 	}
-	for(Surface s : m.surfmap.values())
-	    s.calcnrm();
+	for(Object obj : m.data.values()) {
+	    if(obj instanceof Hooks)
+		((Hooks)obj).calcnrm();
+	}
 	for(Object obj : m.data.values()) {
 	    if(obj instanceof Hooks)
 		((Hooks)obj).postcalcnrm(rnd);
@@ -396,13 +416,6 @@ public class MapMesh implements Rendered, Disposable {
 		    return(a.z - b.z);
 		}
 	    });
-	for(Map.Entry<GLState, MeshBuf> mod : m.modbuf.entrySet()) {
-	    if(!mod.getValue().emptyp()) {
-		FastMesh mesh = mod.getValue().mkmesh();
-		m.extras.add(mod.getKey().apply(mesh));
-		m.dparts.add(mesh);
-	    }
-	}
 	
 	m.consflat();
 	
@@ -417,7 +430,7 @@ public class MapMesh implements Rendered, Disposable {
 	public final Coord cc;
 	public final FastMesh mesh;
 	
-	public GroundMod(MCache map, Class<? extends Surface> surf, Tex tex, Coord cc, Coord ul, Coord br) {
+	public GroundMod(MCache map, DataID<? extends Surface> surf, Tex tex, Coord cc, Coord ul, Coord br) {
 	    this.mat = new Material(tex);
 	    this.cc = cc;
 	    if(tex instanceof TexGL) {
@@ -428,7 +441,7 @@ public class MapMesh implements Rendered, Disposable {
 		}
 	    }
 	    if(surf == null)
-		surf = Surface.class;
+		surf = gndid;
 	    MeshBuf buf = new MeshBuf();
 	    MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
 	    Coord ult = ul.div(tilesz);
@@ -439,7 +452,7 @@ public class MapMesh implements Rendered, Disposable {
 	    for(t.y = ult.y; t.y <= brt.y; t.y++) {
 		for(t.x = ult.x; t.x <= brt.x; t.x++) {
 		    MapMesh cut = map.getcut(t.div(MCache.cutsz));
-		    SPoint p = cut.surf(surf).spoint(t.mod(MCache.cutsz));
+		    SPoint p = cut.data(surf).spoint(t.mod(MCache.cutsz));
 		    Coord3f texc = new Coord3f((float)((t.x * tilesz.x) - ul.x) / (float)(br.x - ul.x),
 					       (float)((t.y * tilesz.y) - ul.y) / (float)(br.y - ul.y),
 					       0);
@@ -454,6 +467,13 @@ public class MapMesh implements Rendered, Disposable {
 		}
 	    }
 	    mesh = buf.mkmesh();
+	}
+
+	@Deprecated
+	public GroundMod(MCache map, Class<? extends Surface> surf, Tex tex, Coord cc, Coord ul, Coord br) {
+	    this(map, (DataID<Surface>)null, tex, cc, ul, br);
+	    if(surf != null)
+		throw(new RuntimeException());
 	}
 
 	public void dispose() {
@@ -529,8 +549,12 @@ public class MapMesh implements Rendered, Disposable {
 	texmap = null;
 	for(Layer l : layers)
 	    l.pl = null;
-	modbuf = null;
-	data = null;
+	int on = data.size();
+	for(Iterator<Map.Entry<DataID, Object>> i = data.entrySet().iterator(); i.hasNext();) {
+	    Object d = i.next().getValue();
+	    if(!(d instanceof Hooks) || !((Hooks)d).clean())
+		i.remove();
+	}
     }
     
     public void draw(GOut g) {

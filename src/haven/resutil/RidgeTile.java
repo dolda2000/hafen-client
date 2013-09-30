@@ -101,7 +101,7 @@ public class RidgeTile extends GroundTile {
 	}
 	float ybx = -xby, yby = xbx;
 	for(FastMesh.MeshRes r : wall.layers(FastMesh.MeshRes.class)) {
-	    MeshBuf buf = m.model(r.mat.get(), MeshBuf.class);
+	    MeshBuf buf = MapMesh.Models.get(m, r.mat.get());
 	    MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
 	    MeshBuf.Vertex[] vs = buf.copy(r.m);
 	    for(MeshBuf.Vertex v : vs) {
@@ -122,11 +122,11 @@ public class RidgeTile extends GroundTile {
 	}
     }
 
-    public class Ridges extends MapMesh.Hooks {
+    public static class Ridges extends MapMesh.Hooks {
 	public final MapMesh m;
 	private final Tile[] tiles;
 	
-	private Ridges(MapMesh m) {
+	public Ridges(MapMesh m) {
 	    this.m = m;
 	    this.tiles = new Tile[m.sz.x * m.sz.y];
 	}
@@ -169,6 +169,7 @@ public class RidgeTile extends GroundTile {
 	public void postcalcnrm(Random rnd) {
 	}
     }
+    private static final MapMesh.DataID<Ridges> rid = MapMesh.makeid(Ridges.class);
 
     private static final int[]
 	cwx = {0, 1, 1, 0},
@@ -190,13 +191,6 @@ public class RidgeTile extends GroundTile {
 	p.r = r * 0.5f;
     }
 
-    private Ridges rget(MapMesh m) {
-	Ridges r = (Ridges)m.data.get(Ridges.class);
-	if(r == null)
-	    m.data.put(Ridges.class, r = new Ridges(m));
-	return(r);
-    }
-
     private void layend(MapMesh m, Random rnd, Coord lc, Coord gc, int dir) {
 	Surface g = m.gnd();
 	SPoint
@@ -208,7 +202,7 @@ public class RidgeTile extends GroundTile {
 	SPoint bu = new SPoint(bl.pos.add(br.pos).mul(0.5f));
 	SPoint bb = new SPoint(bl.pos.add(br.pos).mul(0.5f));
 	SPoint fm = new SPoint(fl.pos.add(fr.pos).mul(0.5f));
-	Ridges r = rget(m);
+	Ridges r = m.data(rid);
 	Ridges.Tile tile = r.new Tile();
 	Ridges.Tile.TilePlane left, right;
 	SPoint[] uh;
@@ -275,7 +269,7 @@ public class RidgeTile extends GroundTile {
 	mru.pos.z = ur.pos.z;
 	mlb.pos.z = bl.pos.z;
 	mrb.pos.z = br.pos.z;
-	Ridges r = rget(m);
+	Ridges r = m.data(rid);
 	Ridges.Tile tile = r.new Tile();
 	Ridges.Tile.TilePlane upper = tile.new TilePlane(shift(new SPoint[] {ul, mlu, mru, ur}, 5 - dir));
 	Ridges.Tile.TilePlane lower = tile.new TilePlane(shift(new SPoint[] {mlb, bl, br, mrb}, 5 - dir));
@@ -345,7 +339,7 @@ public class RidgeTile extends GroundTile {
 		}
 	    }
 	}
-	Ridges r = rget(m);
+	Ridges r = m.data(rid);
 	Ridges.Tile tile = r.new Tile();
 	boolean cont = false;
 	for(int i = s, n = 0; n < 4; i = (i + 1) % 4, n++) {
@@ -419,7 +413,7 @@ public class RidgeTile extends GroundTile {
     public void layover(MapMesh m, Coord lc, Coord gc, int z, Tile t) {
 	boolean[] b = breaks(m, gc, breaks[0]);
 	if(b[0] || b[1] || b[2] || b[3]) {
-	    Ridges.Tile tile = rget(m).get(lc);
+	    Ridges.Tile tile = m.data(rid).get(lc);
 	    if(tile == null)
 		throw(new NullPointerException("Ridged tile has not been properly initialized"));
 	    tile.layover(z, t);

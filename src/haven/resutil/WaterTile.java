@@ -101,6 +101,8 @@ public class WaterTile extends Tiler {
 		}
 	    }
 	}
+
+	public static final MapMesh.DataID<Bottom> id = MapMesh.makeid(Bottom.class);
     }
     
     static final TexCube sky = new TexCube(Resource.loadimg("gfx/tiles/skycube"));
@@ -392,7 +394,7 @@ public class WaterTile extends Tiler {
     
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	Tile g = set.ground.pick(rnd);
-	new BottomPlane(m, m.surf(Bottom.class), lc, 0, mat, g.tex());
+	new BottomPlane(m, m.data(Bottom.id), lc, 0, mat, g.tex());
 	m.new Plane(m.gnd(), lc, 257, surfmat);
     }
     
@@ -402,14 +404,14 @@ public class WaterTile extends Tiler {
 	if((set.btrans != null) && (bmask > 0)) {
 	    Tile t = set.btrans[bmask - 1].pick(rnd);
 	    if(gt instanceof WaterTile)
-		new BottomPlane(m, m.surf(Bottom.class), lc, z, mat, t.tex());
+		new BottomPlane(m, m.data(Bottom.id), lc, z, mat, t.tex());
 	    else
 		gt.layover(m, lc, gc, z, t);
 	}
 	if((set.ctrans != null) && (cmask > 0)) {
 	    Tile t = set.ctrans[cmask - 1].pick(rnd);
 	    if(gt instanceof WaterTile)
-		new BottomPlane(m, m.surf(Bottom.class), lc, z, mat, t.tex());
+		new BottomPlane(m, m.data(Bottom.id), lc, z, mat, t.tex());
 	    else
 		gt.layover(m, lc, gc, z, t);
 	}

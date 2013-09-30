@@ -58,8 +58,7 @@ public abstract class TexGL extends Tex {
     
     public static final ShaderMacro mkcentroid = new ShaderMacro() {
 	    public void modify(ProgramContext prog) {
-		Tex2D sh = prog.getmod(Tex2D.class);
-		sh.ipol = Varying.Interpol.CENTROID;
+		Tex2D.get(prog).ipol = Varying.Interpol.CENTROID;
 	    }
 	};
 
@@ -93,16 +92,6 @@ public abstract class TexGL extends Tex {
 	public void apply(GOut g) {
 	    GL2 gl = g.gl;
 	    sampler = lbind(g, tex);
-	    TexClip clip = g.st.get(TexClip.slot);
-	    if(clip != null) {
-		if(clip.tex != this.tex)
-		    throw(new RuntimeException("TexGL does not support different clip and draw textures."));
-		gl.glEnable(GL2.GL_ALPHA_TEST);
-		if(g.gc.pref.alphacov.val) {
-		    gl.glEnable(GL2.GL_SAMPLE_ALPHA_TO_COVERAGE);
-		    gl.glEnable(GL2.GL_SAMPLE_ALPHA_TO_ONE);
-		}
-	    }
 	    if(g.st.prog != null) {
 		reapply(g);
 	    } else {
@@ -119,13 +108,6 @@ public abstract class TexGL extends Tex {
 	public void unapply(GOut g) {
 	    GL2 gl = g.gl;
 	    sampler.act();
-	    if(g.st.old(TexClip.slot) != null) {
-		if(g.gc.pref.alphacov.val) {
-		    gl.glDisable(GL2.GL_SAMPLE_ALPHA_TO_COVERAGE);
-		    gl.glDisable(GL2.GL_SAMPLE_ALPHA_TO_ONE);
-		}
-		gl.glDisable(GL2.GL_ALPHA_TEST);
-	    }
 	    if(!g.st.usedprog)
 		gl.glDisable(GL.GL_TEXTURE_2D);
 	    sampler.free(); sampler = null;
@@ -155,26 +137,6 @@ public abstract class TexGL extends Tex {
 	    from.sampler.act();
 	    int glid = tex.glid(g);
 	    sampler = from.sampler; from.sampler = null;
-	    TexClip clip = g.st.get(TexClip.slot), old = g.st.old(TexClip.slot);
-	    if(clip != null) {
-		if(clip.tex != this.tex)
-		    throw(new RuntimeException("TexGL does not support different clip and draw textures."));
-		if(old == null) {
-		    gl.glEnable(GL2.GL_ALPHA_TEST);
-		    if(g.gc.pref.alphacov.val) {
-			gl.glEnable(GL2.GL_SAMPLE_ALPHA_TO_COVERAGE);
-			gl.glEnable(GL2.GL_SAMPLE_ALPHA_TO_ONE);
-		    }
-		}
-	    } else {
-		if(old != null) {
-		    if(g.gc.pref.alphacov.val) {
-			gl.glDisable(GL2.GL_SAMPLE_ALPHA_TO_COVERAGE);
-			gl.glDisable(GL2.GL_SAMPLE_ALPHA_TO_ONE);
-		    }
-		    gl.glDisable(GL2.GL_ALPHA_TEST);
-		}
-	    }
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, glid);
 	    if(g.st.pdirty)
 		reapply(g);
@@ -189,6 +151,7 @@ public abstract class TexGL extends Tex {
     
     public static class TexClip extends GLState {
 	public static final Slot<TexClip> slot = new Slot<TexClip>(Slot.Type.GEOM, TexClip.class, HavenPanel.global, TexDraw.slot);
+	private static final ShaderMacro[] shaders = {Tex2D.clip};
 	public final TexGL tex;
 	private TexUnit sampler;
 	
@@ -196,7 +159,7 @@ public abstract class TexGL extends Tex {
 	    this.tex = tex;
 	}
 	
-	public void apply(GOut g) {
+	private void fapply(GOut g) {
 	    GL2 gl = g.gl;
 	    TexDraw draw = g.st.get(TexDraw.slot);
 	    if(draw == null) {
@@ -211,26 +174,67 @@ public abstract class TexGL extends Tex {
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2GL3.GL_SRC1_ALPHA, GL2.GL_TEXTURE);
 		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_OPERAND1_ALPHA, GL2.GL_SRC_ALPHA);
 		gl.glEnable(GL2.GL_TEXTURE_2D);
-		gl.glEnable(GL2.GL_ALPHA_TEST);
 	    } else {
 		if(draw.tex != this.tex)
 		    throw(new RuntimeException("TexGL does not support different clip and draw textures."));
-		gl.glEnable(GL2.GL_ALPHA_TEST);
+	    }
+	    gl.glEnable(GL2.GL_ALPHA_TEST);
+	}
+
+	private void papply(GOut g) {
+	    TexDraw draw = g.st.get(TexDraw.slot);
+	    if(draw == null) {
+		sampler = lbind(g, tex);
+	    } else {
+		if(draw.tex != this.tex)
+		    throw(new RuntimeException("TexGL does not support different clip and draw textures."));
+	    }
+	}
+
+	public void apply(GOut g) {
+	    if(g.st.prog == null)
+		fapply(g);
+	    else
+		papply(g);
+	    if(g.gc.pref.alphacov.val) {
+		g.gl.glEnable(GL2.GL_SAMPLE_ALPHA_TO_COVERAGE);
+		g.gl.glEnable(GL2.GL_SAMPLE_ALPHA_TO_ONE);
 	    }
 	}
 	
-	public void unapply(GOut g) {
+	private void funapply(GOut g) {
 	    GL2 gl = g.gl;
 	    if(g.st.old(TexDraw.slot) == null) {
 		sampler.act();
-		gl.glDisable(GL2.GL_ALPHA_TEST);
 		gl.glDisable(GL2.GL_TEXTURE_2D);
 		sampler.free(); sampler = null;
-	    } else {
-		gl.glDisable(GL2.GL_ALPHA_TEST);
+	    }
+	    gl.glDisable(GL2.GL_ALPHA_TEST);
+	}
+
+	private void punapply(GOut g) {
+	    GL2 gl = g.gl;
+	    if(g.st.old(TexDraw.slot) == null) {
+		sampler.act();
+		sampler.free(); sampler = null;
+	    }
+	}
+
+	public void unapply(GOut g) {
+	    if(!g.st.usedprog)
+		funapply(g);
+	    else
+		punapply(g);
+	    if(g.gc.pref.alphacov.val) {
+		g.gl.glDisable(GL2.GL_SAMPLE_ALPHA_TO_COVERAGE);
+		g.gl.glDisable(GL2.GL_SAMPLE_ALPHA_TO_ONE);
 	    }
 	}
 	
+	public ShaderMacro[] shaders() {
+	    return(shaders);
+	}
+
 	public int capply() {
 	    return(100);
 	}

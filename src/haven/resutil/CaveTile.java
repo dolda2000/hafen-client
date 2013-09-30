@@ -67,7 +67,7 @@ public class CaveTile extends Tiler {
 	    return;
 	if(bmask == 0)
 	    return;
-	MeshBuf buf = m.model(wtex, MeshBuf.class);
+	MeshBuf buf = MapMesh.Models.get(m, wtex);
 	MapMesh.Surface gnd = m.gnd();
 	if((bmask & 1) != 0)
 	    wall(buf, gnd.spoint(lc.add(0, 1)), gnd.spoint(lc), new Coord3f(1, 0, 0));
