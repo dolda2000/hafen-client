@@ -61,19 +61,38 @@ public class Tex2D {
     }
 
     public Tex2D(ProgramContext prog) {
-	final Value tex2d = tex2d(prog.fctx);
-	tex2d.force();
-	prog.fctx.fragcol.mod(new Macro1<Expression>() {
-		public Expression expand(Expression in) {
-		    return(mul(in, tex2d.ref()));
-		}
-	    }, 0);
 	prog.module(this);
+    }
+
+    public static Tex2D get(ProgramContext prog) {
+	Tex2D t = prog.getmod(Tex2D.class);
+	if(t == null)
+	    t = new Tex2D(prog);
+	return(t);
     }
 
     public static final ShaderMacro mod = new ShaderMacro() {
 	    public void modify(ProgramContext prog) {
-		new Tex2D(prog);
+		final Value tex2d = tex2d(prog.fctx);
+		tex2d.force();
+		prog.fctx.fragcol.mod(new Macro1<Expression>() {
+			public Expression expand(Expression in) {
+			    return(mul(in, tex2d.ref()));
+			}
+		    }, 0);
+	    }
+	};
+
+    public static final ShaderMacro clip = new ShaderMacro() {
+	    public void modify(ProgramContext prog) {
+		final Value tex2d = tex2d(prog.fctx);
+		tex2d.force();
+		prog.fctx.mainmod(new CodeMacro() {
+			public void expand(Block blk) {
+			    blk.add(new If(lt(pick(tex2d.ref(), "a"), l(0.5)),
+					   new Discard()));
+			}
+		    }, -100);
 	    }
 	};
 }
