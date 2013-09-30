@@ -33,6 +33,14 @@ public class VertexContext extends ShaderContext {
 
     public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
     public final ValBlock mainvals = new ValBlock();
+    private final OrderList<CodeMacro> code = new OrderList<CodeMacro>();
+    {
+	code.add(new CodeMacro() {
+		public void expand(Block blk) {
+		    mainvals.cons(blk);
+		}
+	    }, 0);
+    }
 
     public static final Variable gl_Vertex = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Vertex"));
     public static final Variable gl_Normal = new Variable.Implicit(Type.VEC3, new Symbol.Fix("gl_Normal"));
@@ -134,8 +142,13 @@ public class VertexContext extends ShaderContext {
 	    }
 	};
 
+    public void mainmod(CodeMacro macro, int order) {
+	code.add(macro, order);
+    }
+
     public void construct(java.io.Writer out) {
-	mainvals.cons(main.code);
+	for(CodeMacro macro : code)
+	    macro.expand(main.code);
 	main.define(this);
 	output(new Output(out, this));
     }
