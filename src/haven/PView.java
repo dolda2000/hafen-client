@@ -166,8 +166,6 @@ public abstract class PView extends Widget {
 		curf.tick("sort");
 	    g.st.set(def);
 	    g.apply();
-	    if(curf != null)
-		curf.tick("cls");
 	    GL gl = g.gl;
 	    Color cc = clearcolor();
 	    if(cc == null) {
@@ -176,6 +174,8 @@ public abstract class PView extends Widget {
 		gl.glClearColor((float)cc.getRed() / 255f, (float)cc.getGreen() / 255f, (float)cc.getBlue() / 255f, (float)cc.getAlpha() / 255f);
 		gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
 	    }
+	    if(curf != null)
+		curf.tick("cls");
 	    g.st.time = 0;
 	    rls.render(g);
 	    if(curf != null) {
