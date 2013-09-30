@@ -82,7 +82,6 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 		}
 	    }
 	}
-	System.err.println(c.glslver);
 	return(c);
     }
     
