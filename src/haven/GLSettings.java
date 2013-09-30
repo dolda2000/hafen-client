@@ -90,13 +90,18 @@ public class GLSettings implements java.io.Serializable {
 	}
 
 	public void set(String val) {
-	    E eval;
-	    try {
-		eval = Enum.valueOf(real, val.toUpperCase());
-	    } catch(IllegalArgumentException e) {
-		throw(new SettingException("No such setting: " + e));
+	    E f = null;
+	    val = val.toUpperCase();
+	    for(E e : EnumSet.allOf(real)) {
+		if(e.name().toUpperCase().substring(0, val.length()).equals(val)) {
+		    if(f != null)
+			throw(new SettingException("Multiple settings with this abbreviation: " + f.name() + ", " + e.name()));
+		    f = e;
+		}
 	    }
-	    set(eval);
+	    if(f == null)
+		throw(new SettingException("No such setting: " + val));
+	    set(f);
 	}
     }
 
