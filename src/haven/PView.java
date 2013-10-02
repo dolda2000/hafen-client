@@ -53,7 +53,40 @@ public abstract class PView extends Widget {
 	}
     }
 
-    public class WidgetContext extends RenderContext {
+    public abstract static class ConfContext extends RenderContext implements GLState.GlobalState {
+	public FBConfig cfg = new FBConfig(sz());
+	public FBConfig cur = new FBConfig(sz());
+
+	protected abstract Coord sz();
+
+	public Global global(RenderList rl, Buffer ctx) {
+	    return(glob);
+	}
+
+	private final Global glob = new Global() {
+		public void postsetup(RenderList rl) {
+		    cfg.fin(cur);
+		    cur = cfg;
+		    cfg = new FBConfig(sz());
+		    if(cur.fb != null) {
+			for(RenderList.Slot s : rl.slots()) {
+			    if(s.os.get(ctx) == ConfContext.this) {
+				cur.wnd.prep(s.os);
+				cur.fb.prep(s.os);
+			    }
+			}
+		    }
+		}
+		public void prerender(RenderList rl, GOut g) {}
+		public void postrender(RenderList rl, GOut g) {}
+	    };
+    }
+
+    public class WidgetContext extends ConfContext {
+	protected Coord sz() {
+	    return(PView.this.sz);
+	}
+
 	public Glob glob() {
 	    return(ui.sess.glob);
 	}
@@ -179,10 +212,19 @@ public abstract class PView extends Widget {
 	    rls.fin();
 	    if(curf != null)
 		curf.tick("sort");
-	    g.st.set(def);
-	    g.apply();
-	    GL gl = g.gl;
+	    GOut rg;
+	    if(cstate.cur.fb != null) {
+		GLState.Buffer gb = g.basicstate();
+		cstate.cur.fb.prep(gb);
+		cstate.cur.fb.prep(def);
+		rg = new GOut(g.gl, g.ctx, g.gc, g.st, gb, cstate.cur.fb.sz());
+	    } else {
+		rg = g;
+	    }
+	    rg.st.set(def);
 	    Color cc = clearcolor();
+	    rg.apply();
+	    GL gl = rg.gl;
 	    if(cc == null) {
 		gl.glClear(gl.GL_DEPTH_BUFFER_BIT);
 	    } else {
@@ -192,7 +234,9 @@ public abstract class PView extends Widget {
 	    if(curf != null)
 		curf.tick("cls");
 	    g.st.time = 0;
-	    rls.render(g);
+	    rls.render(rg);
+	    if(cstate.cur.fb != null)
+		cstate.cur.resolve(g);
 	    if(curf != null) {
 		curf.add("apply", g.st.time);
 		curf.tick("render", g.st.time);
