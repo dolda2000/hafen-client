@@ -44,6 +44,9 @@ public abstract class PView extends Widget {
 	public void apply(GOut g) {
 	    GL2 gl = g.gl;
 	    gl.glScissor(g.ul.x, g.root().sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
+	    /* For the viewport, use the renderstate's indicated size
+	     * and offset explicitly, so as to not fail on partially
+	     * clipped GOuts. */
 	    Coord ul = ul();
 	    Coord sz = sz();
 	    gl.glViewport(ul.x, g.root().sz.y - ul.y - sz.y, sz.x, sz.y);
