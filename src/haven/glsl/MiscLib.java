@@ -99,7 +99,7 @@ public abstract class MiscLib {
     public static final Uniform maploc = new Uniform.AutoApply(VEC3, PView.loc) {
 	    public void apply(GOut g, int loc) {
 		Coord3f orig = g.st.wxf.mul4(Coord3f.o);
-		orig.z = g.st.get(PView.wnd).glob().map.getcz(orig.x, -orig.y);
+		orig.z = g.st.get(PView.ctx).glob().map.getcz(orig.x, -orig.y);
 		g.gl.glUniform3f(loc, orig.x, orig.y, orig.z);
 	    }
 	};

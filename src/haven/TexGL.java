@@ -29,6 +29,8 @@ package haven;
 import haven.glsl.*;
 import java.awt.Color;
 import java.util.*;
+import java.awt.image.*;
+import java.nio.*;
 import javax.media.opengl.*;
 import static haven.GOut.checkerr;
 
@@ -359,6 +361,21 @@ public abstract class TexGL extends Tex {
 		t = null;
 	    }
 	}
+    }
+
+    public BufferedImage get(GOut g) {
+	GL2 gl = g.gl;
+	g.state2d();
+	g.apply();
+	GLState.TexUnit s = g.st.texalloc();
+	s.act();
+	gl.glBindTexture(GL.GL_TEXTURE_2D, glid(g));
+	byte[] buf = new byte[tdim.x * tdim.y * 4];
+	gl.glGetTexImage(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
+	s.free();
+	GOut.checkerr(gl);
+	WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(buf, buf.length), tdim.x, tdim.y, 4 * tdim.x, 4, new int[] {0, 1, 2, 3}, null);
+	return(new BufferedImage(TexI.glcm, raster, false, null));
     }
 
     @Material.ResName("tex")

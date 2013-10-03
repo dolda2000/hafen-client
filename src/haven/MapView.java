@@ -512,9 +512,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public static final haven.glsl.Uniform amblight = new haven.glsl.Uniform.AutoApply(haven.glsl.Type.INT) {
 	    public void apply(GOut g, int loc) {
 		int idx = -1;
-		PView.RenderState wnd = g.st.get(PView.wnd);
-		if(wnd instanceof PView.WidgetRenderState) {
-		    Widget wdg = ((PView.WidgetRenderState)wnd).widget();
+		RenderContext ctx = g.st.get(PView.ctx);
+		if(ctx instanceof WidgetContext) {
+		    Widget wdg = ((WidgetContext)ctx).widget();
 		    if(wdg instanceof MapView)
 			idx = g.st.get(Light.lights).index(((MapView)wdg).amb);
 		}
