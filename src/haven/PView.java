@@ -215,6 +215,7 @@ public abstract class PView extends Widget {
 	    GOut rg;
 	    if(cstate.cur.fb != null) {
 		GLState.Buffer gb = g.basicstate();
+		HavenPanel.OrthoState.fixed(cstate.cur.fb.sz()).prep(gb);
 		cstate.cur.fb.prep(gb);
 		cstate.cur.fb.prep(def);
 		rg = new GOut(g.gl, g.ctx, g.gc, g.st, gb, cstate.cur.fb.sz());

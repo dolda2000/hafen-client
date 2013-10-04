@@ -132,19 +132,7 @@ public class HavenPanel extends GLCanvas implements Runnable {
 		}
 
 		public void reshape(GLAutoDrawable d, final int x, final int y, final int w, final int h) {
-		    ostate = new GLState() {
-			    public void apply(GOut g) {
-				GL2 gl = g.gl;
-				g.st.matmode(GL2.GL_PROJECTION);
-				gl.glLoadIdentity();
-				gl.glOrtho(0, w, h, 0, -1, 1);
-			    }
-			    public void unapply(GOut g) {
-			    }
-			    public void prep(Buffer buf) {
-				buf.put(proj2d, this);
-			    }
-			};
+		    ostate = OrthoState.fixed(new Coord(w, h));
 		    rtstate = new GLState() {
 			    public void apply(GOut g) {
 				GL2 gl = g.gl;
@@ -166,6 +154,31 @@ public class HavenPanel extends GLCanvas implements Runnable {
 
 		public void dispose(GLAutoDrawable d) {}
 	    });
+    }
+
+    public static abstract class OrthoState extends GLState {
+	protected abstract Coord sz();
+
+	public void apply(GOut g) {
+	    GL2 gl = g.gl;
+	    Coord sz = sz();
+	    g.st.matmode(GL2.GL_PROJECTION);
+	    gl.glLoadIdentity();
+	    gl.glOrtho(0, sz.x, sz.y, 0, -1, 1);
+	}
+
+	public void unapply(GOut g) {
+	}
+
+	public void prep(Buffer buf) {
+	    buf.put(proj2d, this);
+	}
+
+	public static OrthoState fixed(final Coord sz) {
+	    return(new OrthoState() {
+		    protected Coord sz() {return(sz);}
+		});
+	}
     }
 	
     public void init() {

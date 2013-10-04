@@ -117,19 +117,7 @@ public class GBuffer {
 	this.ctx = ctx;
 	this.sz = sz;
 	buf = new GLFrameBuffer(new TexE(sz, GL.GL_RGBA, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE), null);
-	ostate = new GLState() {
-		public void apply(GOut g) {
-		    GL2 gl = g.gl;
-		    g.st.matmode(GL2.GL_PROJECTION);
-		    gl.glLoadIdentity();
-		    gl.glOrtho(0, GBuffer.this.sz.x, GBuffer.this.sz.y, 0, -1, 1);
-		}
-		public void unapply(GOut g) {
-		}
-		public void prep(Buffer buf) {
-		    buf.put(HavenPanel.proj2d, this);
-		}
-	    };
+	ostate = HavenPanel.OrthoState.fixed(new Coord(sz));
     }
 
     private static Context defctx = null;
