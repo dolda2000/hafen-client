@@ -224,6 +224,8 @@ public abstract class PView extends Widget {
 	    }
 	    rg.st.set(def);
 	    Color cc = clearcolor();
+	    if((cc == null) && (cstate.cur.fb != null))
+		cc = new Color(0, 0, 0, 0);
 	    rg.apply();
 	    GL gl = rg.gl;
 	    if(cc == null) {
