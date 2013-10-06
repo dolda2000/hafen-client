@@ -70,10 +70,8 @@ public abstract class PView extends Widget {
 		    cfg = new FBConfig(sz());
 		    if(cur.fb != null) {
 			for(RenderList.Slot s : rl.slots()) {
-			    if(s.os.get(ctx) == ConfContext.this) {
-				cur.wnd.prep(s.os);
-				cur.fb.prep(s.os);
-			    }
+			    if(s.os.get(ctx) == ConfContext.this)
+				cur.state.prep(s.os);
 			}
 		    }
 		}

@@ -36,6 +36,7 @@ public class FBConfig {
     public GLFrameBuffer fb;
     public PView.RenderState wnd;
     public TexGL color[], depth;
+    public GLState state;
     private RenderTarget[] tgts = new RenderTarget[0];
 
     public FBConfig(Coord sz) {
@@ -52,10 +53,12 @@ public class FBConfig {
 	return(true);
     }
 
+    private static final ShaderMacro[] nosh = new ShaderMacro[0];
     private void create() {
 	Collection<TexGL> color = new LinkedList<TexGL>();
 	TexGL depth;
-	Collection<ShaderMacro> sh = new LinkedList<ShaderMacro>();
+	Collection<ShaderMacro> shb = new LinkedList<ShaderMacro>();
+	Collection<GLState> stb = new LinkedList<GLState>();
 	if(hdr) {
 	    color.add(new TexE(sz, GL.GL_RGBA16F, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE));
 	} else {
@@ -69,7 +72,12 @@ public class FBConfig {
 	for(int i = 0; i < tgts.length; i++) {
 	    if(tgts[i] != null) {
 		color.add(tgts[i].maketex(this));
-		sh.add(tgts[i].code(this, i + 1));
+		GLState st = tgts[i].state(this, i + 1);
+		if(st != null)
+		    stb.add(st);
+		ShaderMacro code = tgts[i].code(this, i + 1);
+		if(code != null)
+		    shb.add(code);
 	    }
 	}
 	this.color = color.toArray(new TexGL[0]);
@@ -77,7 +85,11 @@ public class FBConfig {
 	/* XXX: Shaders should be canonized and cached to avoid
 	 * creation of unnecessary identical programs when
 	 * configurations change. */
-	final ShaderMacro[] shaders = sh.toArray(new ShaderMacro[0]);
+	final ShaderMacro[] shaders;
+	if(shb.size() < 1)
+	    shaders = nosh;
+	else
+	    shaders = shb.toArray(new ShaderMacro[0]);
 	this.fb = new GLFrameBuffer(this.color, this.depth) {
 		public ShaderMacro[] shaders() {return(shaders);}
 		public boolean reqshaders() {return(shaders.length > 0);}
@@ -86,6 +98,9 @@ public class FBConfig {
 		public Coord ul() {return(Coord.z);}
 		public Coord sz() {return(sz);}
 	    };
+	stb.add(fb);
+	stb.add(wnd);
+	this.state = GLState.compose(stb.toArray(new GLState[0]));
     }
 
     private static <T> boolean hasuo(T[] a, T[] b) {
@@ -109,13 +124,18 @@ public class FBConfig {
 	return(true);
     }
 
+    private void subsume(FBConfig last) {
+	fb = last.fb;
+	wnd = last.wnd;
+	color = last.color;
+	depth = last.depth;
+	tgts = last.tgts;
+	state = last.state;
+    }
+
     public void fin(FBConfig last) {
 	if(equals(this, last)) {
-	    fb = last.fb;
-	    wnd = last.wnd;
-	    color = last.color;
-	    depth = last.depth;
-	    tgts = last.tgts;
+	    subsume(last);
 	    return;
 	}
 	if(last.fb != null)
@@ -149,6 +169,12 @@ public class FBConfig {
 	    return(tex = new TexE(cfg.sz, GL.GL_RGBA, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE));
 	}
 
-	public abstract ShaderMacro code(FBConfig cfg, int id);
+	public GLState state(FBConfig cfg, int id) {
+	    return(null);
+	}
+
+	public ShaderMacro code(FBConfig cfg, int id) {
+	    return(null);
+	}
     }
 }
