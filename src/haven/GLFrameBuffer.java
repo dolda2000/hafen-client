@@ -34,6 +34,7 @@ public class GLFrameBuffer extends GLState {
     private final TexGL depth;
     private final RenderBuffer altdepth;
     private FBO fbo;
+    private final int[] bufmask;
 
     public static class FBO extends GLObject {
 	public final int id;
@@ -104,6 +105,7 @@ public class GLFrameBuffer extends GLState {
 
     public GLFrameBuffer(TexGL[] color, TexGL depth) {
 	this.color = color;
+	this.bufmask = new int[this.color.length];
 	if((this.depth = depth) == null) {
 	    if(this.color.length == 0)
 		throw(new RuntimeException("Cannot create a framebuffer with neither color nor depth"));
@@ -151,13 +153,20 @@ public class GLFrameBuffer extends GLState {
 		gl.glDrawBuffer(GL.GL_NONE);
 		gl.glReadBuffer(GL.GL_NONE);
 	    } else if(color.length > 1) {
-		int[] buf = new int[color.length];
 		for(int i = 0; i < color.length; i++)
-		    buf[i] = GL.GL_COLOR_ATTACHMENT0 + i;
-		gl.glDrawBuffers(color.length, buf, 0);
+		    bufmask[i] = GL.GL_COLOR_ATTACHMENT0 + i;
+		gl.glDrawBuffers(color.length, bufmask, 0);
 	    }
 	}
 	gl.glViewport(0, 0, sz().x, sz().y);
+    }
+
+    public void mask(GOut g, int id, boolean flag) {
+	int nb = flag?(GL.GL_COLOR_ATTACHMENT0 + id):(GL.GL_NONE);
+	if(bufmask[id] != nb) {
+	    bufmask[id] = nb;
+	    g.gl.glDrawBuffers(color.length, bufmask, 0);
+	}
     }
     
     public void unapply(GOut g) {
