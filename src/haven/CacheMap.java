@@ -32,18 +32,56 @@ import java.util.*;
 public class CacheMap<K, V> extends AbstractMap<K, V> {
     private final Map<K, Reference<V>> back;
     private final ReferenceQueue<V> cleanq = new ReferenceQueue<V>();
+    private final RefType reftype;
 
-    static class Ref<K, V> extends SoftReference<V> {
+    /* Because multiple inheritence would be too good. */
+    interface Ref<K> {
+	K key();
+    }
+
+    static class SRef<K, V> extends SoftReference<V> implements Ref<K> {
 	final K key;
 
-	Ref(K key, V val, ReferenceQueue<V> queue) {
+	SRef(K key, V val, ReferenceQueue<V> queue) {
 	    super(val, queue);
 	    this.key = key;
 	}
-    };
+
+	public K key() {return(this.key);}
+    }
+
+    static class WRef<K, V> extends WeakReference<V> implements Ref<K> {
+	final K key;
+
+	WRef(K key, V val, ReferenceQueue<V> queue) {
+	    super(val, queue);
+	    this.key = key;
+	}
+
+	public K key() {return(this.key);}
+    }
+
+    public static enum RefType {
+	SOFT {
+	    public <K, V> Reference<V> mkref(K k, V v, ReferenceQueue<V> cleanq) {
+		return(new SRef<K, V>(k, v, cleanq));
+	    }
+	}, WEAK {
+	    public <K, V> Reference<V> mkref(K k, V v, ReferenceQueue<V> cleanq) {
+		return(new WRef<K, V>(k, v, cleanq));
+	    }
+	};
+
+	public abstract <K, V> Reference<V> mkref(K k, V v, ReferenceQueue<V> cleanq);
+    }
+
+    public CacheMap(RefType type) {
+	this.reftype = type;
+	this.back = new HashMap<K, Reference<V>>();
+    }
 
     public CacheMap() {
-	this.back = new HashMap<K, Reference<V>>();
+	this(RefType.SOFT);
     }
 
     public CacheMap(Map<K, V> m) {
@@ -54,7 +92,6 @@ public class CacheMap<K, V> extends AbstractMap<K, V> {
     public boolean containsKey(Object k) {
 	return(get(k) != null);
     }
-
 
     private class IteredEntry implements Entry<K, V> {
 	private final K k;
@@ -136,7 +173,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V> {
 	Reference<? extends V> ref;
 	while((ref = cleanq.poll()) != null) {
 	    Ref rr = (Ref)ref;
-	    remove(rr.key);
+	    remove(rr.key());
 	}
     }
 
@@ -148,7 +185,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V> {
 
     public V put(K k, V v) {
 	clean();
-	Reference<V> old = back.put(k, new Ref<K, V>(k, v, cleanq));
+	Reference<V> old = back.put(k, reftype.mkref(k, v, cleanq));
 	return((old == null)?null:(old.get()));
     }
 
