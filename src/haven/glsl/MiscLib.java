@@ -109,4 +109,11 @@ public abstract class MiscLib {
 		g.gl.glUniform1f(loc, (System.currentTimeMillis() % 1000000L) / 1000f);
 	    }
 	};
+
+    public static final Uniform pixelpitch = new Uniform.AutoApply(VEC2) {
+	    public void apply(GOut g, int loc) {
+		Coord sz = g.st.cur(PView.wnd).sz();
+		g.gl.glUniform2f(loc, 1.0f / sz.x, 1.0f / sz.y);
+	    }
+	};
 }
