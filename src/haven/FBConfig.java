@@ -106,7 +106,7 @@ public class FBConfig {
     private static <T> boolean hasuo(T[] a, T[] b) {
 	outer: for(T ae : a) {
 	    for(T be : b) {
-		if(ae == be)
+		if(Utils.eq(ae, be))
 		    continue outer;
 	    }
 	    return(false);
@@ -151,15 +151,22 @@ public class FBConfig {
 	}
     }
 
-    public void add(RenderTarget tgt) {
+    public RenderTarget add(RenderTarget tgt) {
+	if(tgt == null)
+	    throw(new NullPointerException());
+	for(RenderTarget p : tgts) {
+	    if(Utils.eq(tgt, p))
+		return(p);
+	}
 	int i;
 	for(i = 0; i < tgts.length; i++) {
 	    if(tgts[i] == null)
 		tgts[i] = tgt;
-	    return;
+	    return(tgt);
 	}
 	tgts = Utils.extend(tgts, i + 1);
 	tgts[i] = tgt;
+	return(tgt);
     }
 
     public static abstract class RenderTarget {

@@ -693,6 +693,11 @@ public class Utils {
 	throw(new IllegalArgumentException(s));
     }
 
+    public static boolean eq(Object a, Object b) {
+	return(((a == null) && (b == null)) ||
+	       ((a != null) && (b != null) && a.equals(b)));
+    }
+
     public static boolean parsebool(String s, boolean def) {
 	try {
 	    return(parsebool(s));
