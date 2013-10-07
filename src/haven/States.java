@@ -98,7 +98,7 @@ public abstract class States extends GLState {
 	    }
 	};
 
-    public static final StandAlone xray = new StandAlone(Slot.Type.GEOM, PView.proj) {
+    public static final StandAlone ndepthtest = new StandAlone(Slot.Type.GEOM, PView.proj) {
 	    public void apply(GOut g) {
 		g.gl.glDisable(GL.GL_DEPTH_TEST);
 	    }
@@ -106,12 +106,9 @@ public abstract class States extends GLState {
 	    public void unapply(GOut g) {
 		g.gl.glEnable(GL.GL_DEPTH_TEST);
 	    }
-	    
-	    public void prep(Buffer buf) {
-		super.prep(buf);
-		buf.put(Rendered.order, Rendered.last);
-	    }
 	};
+
+    public static final GLState xray = compose(ndepthtest, Rendered.last);
     
     public static final StandAlone fsaa = new StandAlone(Slot.Type.SYS, PView.proj) {
 	    public void apply(GOut g) {
