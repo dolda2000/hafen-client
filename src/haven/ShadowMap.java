@@ -56,7 +56,7 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 	shaders = new ShaderMacro[] {shader};
 	lproj = Projection.ortho(-size, size, -size, size, 1, depth);
 	lcam = new DirCam();
-	tgt = new FBView(new GLFrameBuffer(null, lbuf), GLState.compose(lproj, lcam));
+	tgt = new FBView(new GLFrameBuffer((TexGL)null, lbuf), GLState.compose(lproj, lcam));
     }
 
     private final Rendered scene = new Rendered() {

@@ -48,21 +48,7 @@ public class FBView {
     public FBView(GLFrameBuffer fbo, GLState basic) {
 	this.fbo = fbo;
 	this.basicstate = basic;
-	ostate = new GLState() {
-		public void apply(GOut g) {
-		    GL2 gl = g.gl;
-		    Coord sz = FBView.this.fbo.sz();
-		    g.st.matmode(GL2.GL_PROJECTION);
-		    gl.glLoadIdentity();
-		    gl.glOrtho(0, sz.x, sz.y, 0, -1, 1);
-		}
-
-		public void unapply(GOut g) {}
-
-		public void prep(Buffer buf) {
-		    buf.put(HavenPanel.proj2d, this);
-		}
-	    };
+	ostate = HavenPanel.OrthoState.fixed(fbo.sz());
     }
     
     protected GLState.Buffer basic(GOut g) {

@@ -27,6 +27,7 @@
 package haven;
 
 import java.awt.Color;
+import java.util.*;
 import static haven.GOut.checkerr;
 import javax.media.opengl.*;
 
@@ -44,6 +45,20 @@ public abstract class PView extends Widget {
     private GLState pstate;
     
     public static abstract class RenderContext extends GLState.Abstract {
+	private Map<DataID, Object> data = new CacheMap<DataID, Object>(CacheMap.RefType.WEAK);
+
+	public interface DataID<T> {
+	    public T make(RenderContext c);
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> T data(DataID<T> id) {
+	    T ret = (T)data.get(id);
+	    if(ret == null)
+		data.put(id, ret = id.make(this));
+	    return(ret);
+	}
+
 	public void prep(Buffer b) {
 	    b.put(ctx, this);
 	}
@@ -53,7 +68,38 @@ public abstract class PView extends Widget {
 	}
     }
 
-    public class WidgetContext extends RenderContext {
+    public abstract static class ConfContext extends RenderContext implements GLState.GlobalState {
+	public FBConfig cfg = new FBConfig(sz());
+	public FBConfig cur = new FBConfig(sz());
+
+	protected abstract Coord sz();
+
+	public Global global(RenderList rl, Buffer ctx) {
+	    return(glob);
+	}
+
+	private final Global glob = new Global() {
+		public void postsetup(RenderList rl) {
+		    cfg.fin(cur);
+		    cur = cfg;
+		    cfg = new FBConfig(sz());
+		    if(cur.fb != null) {
+			for(RenderList.Slot s : rl.slots()) {
+			    if(s.os.get(ctx) == ConfContext.this)
+				cur.state.prep(s.os);
+			}
+		    }
+		}
+		public void prerender(RenderList rl, GOut g) {}
+		public void postrender(RenderList rl, GOut g) {}
+	    };
+    }
+
+    public class WidgetContext extends ConfContext {
+	protected Coord sz() {
+	    return(PView.this.sz);
+	}
+
 	public Glob glob() {
 	    return(ui.sess.glob);
 	}
@@ -179,10 +225,22 @@ public abstract class PView extends Widget {
 	    rls.fin();
 	    if(curf != null)
 		curf.tick("sort");
-	    g.st.set(def);
-	    g.apply();
-	    GL gl = g.gl;
+	    GOut rg;
+	    if(cstate.cur.fb != null) {
+		GLState.Buffer gb = g.basicstate();
+		HavenPanel.OrthoState.fixed(cstate.cur.fb.sz()).prep(gb);
+		cstate.cur.fb.prep(gb);
+		cstate.cur.fb.prep(def);
+		rg = new GOut(g.gl, g.ctx, g.gc, g.st, gb, cstate.cur.fb.sz());
+	    } else {
+		rg = g;
+	    }
+	    rg.st.set(def);
 	    Color cc = clearcolor();
+	    if((cc == null) && (cstate.cur.fb != null))
+		cc = new Color(0, 0, 0, 0);
+	    rg.apply();
+	    GL gl = rg.gl;
 	    if(cc == null) {
 		gl.glClear(gl.GL_DEPTH_BUFFER_BIT);
 	    } else {
@@ -192,7 +250,9 @@ public abstract class PView extends Widget {
 	    if(curf != null)
 		curf.tick("cls");
 	    g.st.time = 0;
-	    rls.render(g);
+	    rls.render(rg);
+	    if(cstate.cur.fb != null)
+		cstate.cur.resolve(g);
 	    if(curf != null) {
 		curf.add("apply", g.st.time);
 		curf.tick("render", g.st.time);

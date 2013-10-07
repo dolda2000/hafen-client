@@ -497,6 +497,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		amb = null;
 	    }
 	}
+	if(rl.cfg.pref.outline.val)
+	    rl.add(new Outlines(), null);
 	rl.add(map, null);
 	rl.add(mapol, null);
 	rl.add(gobs, null);

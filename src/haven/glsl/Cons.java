@@ -88,6 +88,7 @@ public class Cons {
     public static Expression textureCube(Expression s, Expression c) {return(Function.Builtin.textureCube.call(s, c));}
     public static Expression mix(Expression x, Expression y, Expression a) {return(Function.Builtin.mix.call(x, y, a));}
     public static Expression clamp(Expression x, Expression a, Expression b) {return(Function.Builtin.clamp.call(x, a, b));}
+    public static Expression smoothstep(Expression a, Expression b, Expression x) {return(Function.Builtin.smoothstep.call(a, b, x));}
 
     public static Expression reduce(Function fun, Expression... es) {
 	if(es.length < 1)
@@ -103,4 +104,9 @@ public class Cons {
 
     public static Expression col4(java.awt.Color c) {return(vec4(l(c.getRed() / 255.0), l(c.getGreen() / 255.0), l(c.getBlue() / 255.0), l(c.getAlpha() / 255.0)));}
     public static Expression col3(java.awt.Color c) {return(vec3(l(c.getRed() / 255.0), l(c.getGreen() / 255.0), l(c.getBlue() / 255.0)));}
+    public static Expression vec2(haven.Coord c)    {return(vec2(l((double)c.x), l((double)c.y)));}
+    public static Expression vec3(haven.Coord3f c)  {return(vec3(l(c.x), l(c.y), l(c.z)));}
+    public static Expression vec2(double a, double b)                     {return(vec2(l(a), l(b)));}
+    public static Expression vec3(double a, double b, double c)           {return(vec3(l(a), l(b), l(c)));}
+    public static Expression vec4(double a, double b, double c, double d) {return(vec4(l(a), l(b), l(c), l(d)));}
 }

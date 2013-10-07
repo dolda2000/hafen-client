@@ -190,6 +190,15 @@ public class GLSettings implements java.io.Serializable {
 		}
 	    }
 	};
+    public final BoolSetting outline = new BoolSetting("outl") {
+	    public Boolean defval() {return(false);}
+	    public void validate(Boolean val) {
+		if(val) {
+		    if(!progmode.val.on) throw(new SettingException("Outline rendering requires shader usage."));
+		    if(!cfg.havefbo()) throw(new SettingException("Outline rendering requires a video card supporting framebuffers."));
+		}
+	    }
+	};
 
     public final BoolSetting wsurf = new BoolSetting("wsurf") {
 	    public Boolean defval() {return(progmode.val.on);}

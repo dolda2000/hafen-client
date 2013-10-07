@@ -34,6 +34,7 @@ public class GLFrameBuffer extends GLState {
     private final TexGL depth;
     private final RenderBuffer altdepth;
     private FBO fbo;
+    private final int[] bufmask;
 
     public static class FBO extends GLObject {
 	public final int id;
@@ -102,11 +103,9 @@ public class GLFrameBuffer extends GLState {
 	}
     }
 
-    public GLFrameBuffer(TexGL color, TexGL depth) {
-	if(color == null)
-	    this.color = new TexGL[0];
-	else
-	    this.color = new TexGL[] {color};
+    public GLFrameBuffer(TexGL[] color, TexGL depth) {
+	this.color = color;
+	this.bufmask = new int[this.color.length];
 	if((this.depth = depth) == null) {
 	    if(this.color.length == 0)
 		throw(new RuntimeException("Cannot create a framebuffer with neither color nor depth"));
@@ -116,6 +115,10 @@ public class GLFrameBuffer extends GLState {
 	}
     }
     
+    public GLFrameBuffer(TexGL color, TexGL depth) {
+	this((color == null)?(new TexGL[0]):(new TexGL[] {color}), depth);
+    }
+
     public Coord sz() {
 	/* This is not perfect, but there's no current (or probably
 	 * sane) situation where it would fail. */
@@ -139,29 +142,37 @@ public class GLFrameBuffer extends GLState {
 		    gl.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_TEXTURE_2D, depth.glid(g), 0);
 		else
 		    gl.glFramebufferRenderbuffer(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_RENDERBUFFER, altdepth.glid(gl));
-		if(color.length == 0) {
-		    gl.glDrawBuffer(GL.GL_NONE);
-		    gl.glReadBuffer(GL.GL_NONE);
-		}
 		GOut.checkerr(gl);
 		int st = gl.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER);
 		if(st != GL.GL_FRAMEBUFFER_COMPLETE)
 		    throw(new RuntimeException("FBO failed completeness test: " + st));
 	    } else {
 		gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo.id);
-		if(color.length == 0) {
-		    gl.glDrawBuffer(GL.GL_NONE);
-		    gl.glReadBuffer(GL.GL_NONE);
-		}
+	    }
+	    if(color.length == 0) {
+		gl.glDrawBuffer(GL.GL_NONE);
+		gl.glReadBuffer(GL.GL_NONE);
+	    } else if(color.length > 1) {
+		for(int i = 0; i < color.length; i++)
+		    bufmask[i] = GL.GL_COLOR_ATTACHMENT0 + i;
+		gl.glDrawBuffers(color.length, bufmask, 0);
 	    }
 	}
 	gl.glViewport(0, 0, sz().x, sz().y);
+    }
+
+    public void mask(GOut g, int id, boolean flag) {
+	int nb = flag?(GL.GL_COLOR_ATTACHMENT0 + id):(GL.GL_NONE);
+	if(bufmask[id] != nb) {
+	    bufmask[id] = nb;
+	    g.gl.glDrawBuffers(color.length, bufmask, 0);
+	}
     }
     
     public void unapply(GOut g) {
 	GL2 gl = g.gl;
 	gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0);
-	if(color.length == 0) {
+	if(color.length != 1) {
 	    gl.glDrawBuffer(GL.GL_BACK);
 	    gl.glReadBuffer(GL.GL_BACK);
 	}

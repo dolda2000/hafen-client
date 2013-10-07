@@ -73,6 +73,7 @@ public interface Rendered extends Drawn {
     public final static Order deflt = new Order.Default(0);
     public final static Order first = new Order.Default(Integer.MIN_VALUE);
     public final static Order last = new Order.Default(Integer.MAX_VALUE);
+    public final static Order postfx = new Order.Default(5000);
 
     public final static Order eyesort = new Order.Default(10000) {
 	    private final RComparator<Rendered> cmp = new RComparator<Rendered>() {
@@ -341,36 +342,40 @@ public interface Rendered extends Drawn {
     
     public static class ScreenQuad implements Rendered {
 	private static final Projection proj = new Projection(Matrix4f.id);
-	public final boolean tex;
-	
-	public ScreenQuad(boolean tex) {
-	    this.tex = tex;
-	}
-	    
+	private static final VertexBuf.VertexArray pos = new VertexBuf.VertexArray(Utils.bufcp(new float[] {
+		    -1, -1, 0,
+		     1, -1, 0,
+		     1,  1, 0,
+		    -1,  1, 0,
+		}));
+	private static final VertexBuf.TexelArray tex = new VertexBuf.TexelArray(Utils.bufcp(new float[] {
+		    0, 0,
+		    1, 0,
+		    1, 1,
+		    0, 1,
+		}));
+	public static final GLState state = new GLState.Abstract() {
+		public void prep(Buffer buf) {
+		    proj.prep(buf);
+		    States.ndepthtest.prep(buf);
+		    States.presdepth.prep(buf);
+		    buf.put(PView.cam, null);
+		    buf.put(PView.loc, null);
+		}
+	    };
+
 	public void draw(GOut g) {
 	    GL2 gl = g.gl;
 	    g.apply();
-		
-	    g.gl.glDisable(GL.GL_DEPTH_TEST);
-	    g.gl.glDepthMask(false);
-	    gl.glBegin(GL2.GL_QUADS);
-	    if(tex) gl.glTexCoord2f(0.0f, 0.0f);
-	    gl.glVertex3f(-1.0f, -1.0f, 0.0f);
-	    if(tex) gl.glTexCoord2f(1.0f, 0.0f);
-	    gl.glVertex3f( 1.0f, -1.0f, 0.0f);
-	    if(tex) gl.glTexCoord2f(1.0f, 1.0f);
-	    gl.glVertex3f( 1.0f,  1.0f, 0.0f);
-	    if(tex) gl.glTexCoord2f(0.0f, 1.0f);
-	    gl.glVertex3f(-1.0f,  1.0f, 0.0f);
-	    gl.glEnd();
-	    g.gl.glEnable(GL.GL_DEPTH_TEST);
-	    g.gl.glDepthMask(true);
+	    pos.bind(g, false);
+	    tex.bind(g, false);
+	    gl.glDrawArrays(GL2.GL_QUADS, 0, 4);
+	    pos.unbind(g);
+	    tex.unbind(g);
 	}
-	    
+
 	public boolean setup(RenderList rls) {
-	    rls.prepo(proj);
-	    rls.state().put(PView.cam, null);
-	    rls.state().put(PView.loc, null);
+	    rls.prepo(state);
 	    return(true);
 	}
     }
