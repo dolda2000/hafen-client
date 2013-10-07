@@ -32,10 +32,10 @@ import java.util.*;
 public class CacheMap<K, V> extends AbstractMap<K, V> {
     private final Map<K, Reference<V>> back;
     private final ReferenceQueue<V> cleanq = new ReferenceQueue<V>();
-    
+
     static class Ref<K, V> extends SoftReference<V> {
 	final K key;
-	
+
 	Ref(K key, V val, ReferenceQueue<V> queue) {
 	    super(val, queue);
 	    this.key = key;
@@ -45,16 +45,41 @@ public class CacheMap<K, V> extends AbstractMap<K, V> {
     public CacheMap() {
 	this.back = new HashMap<K, Reference<V>>();
     }
-    
+
     public CacheMap(Map<K, V> m) {
 	this();
 	putAll(m);
     }
-    
+
     public boolean containsKey(Object k) {
 	return(get(k) != null);
     }
-    
+
+
+    private class IteredEntry implements Entry<K, V> {
+	private final K k;
+	private V v;
+
+	private IteredEntry(K k, V v) {
+	    this.k = k; this.v = v;
+	}
+
+	public K getKey()   {return(k);}
+	public V getValue() {return(v);}
+
+	public boolean equals(Object o) {
+	    return((o instanceof CacheMap.IteredEntry) && (((IteredEntry)o).k == k));
+	}
+
+	public int hashCode() {
+	    return(k.hashCode());
+	}
+
+	public V setValue(V nv) {
+	    return(put(k, this.v = nv));
+	}
+    }
+
     private Set<Entry<K, V>> entries = null;
     public Set<Entry<K, V>> entrySet() {
 	if(entries == null)
@@ -63,14 +88,14 @@ public class CacheMap<K, V> extends AbstractMap<K, V> {
 		    clean();
 		    return(back.size());
 		}
-		
+
 		public Iterator<Entry<K, V>> iterator() {
 		    clean();
 		    final Iterator<Entry<K, Reference<V>>> iter = back.entrySet().iterator();
 		    return(new Iterator<Entry<K, V>>() {
 			    private K nk;
 			    private V nv;
-			    
+
 			    public boolean hasNext() {
 				while(true) {
 				    if(nv != null)
@@ -86,43 +111,20 @@ public class CacheMap<K, V> extends AbstractMap<K, V> {
 				    }
 				}
 			    }
-			    
-			    class IteredEntry<K, V> implements Entry<K, V> {
-				private final K k;
-				private final V v;
-				
-				private IteredEntry(K k, V v) {
-				    this.k = k; this.v = v;
-				}
-				
-				public K getKey()   {return(k);}
-				public V getValue() {return(v);}
-				
-				public boolean equals(Object o) {
-				    return((o instanceof IteredEntry) && (((IteredEntry)o).k == k) && (((IteredEntry)o).v == v));
-				}
-				
-				public int hashCode() {
-				    return(k.hashCode() ^ v.hashCode());
-				}
-				
-				public V setValue(V nv) {throw(new UnsupportedOperationException());}
-			    }
-			    
 			    public Entry<K, V> next() {
 				if(!hasNext())
 				    throw(new NoSuchElementException());
-				Entry<K, V> ret = new IteredEntry<K, V>(nk, nv);
+				Entry<K, V> ret = new IteredEntry(nk, nv);
 				nk = null; nv = null;
 				return(ret);
 			    }
-			    
+
 			    public void remove() {
 				iter.remove();
 			    }
 			});
 		}
-		
+
 		public void clear() {
 		    back.clear();
 		}

@@ -83,7 +83,7 @@ public class IntMap<V> extends AbstractMap<Integer, V> {
 
 	public V setValue(V nv) {return(put(k, nv));}
     }
-			    
+
     private Set<Entry<Integer, V>> entries = null;
     public Set<Entry<Integer, V>> entrySet() {
 	if(entries == null)
