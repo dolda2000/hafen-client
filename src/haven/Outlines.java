@@ -37,37 +37,50 @@ public class Outlines implements Rendered {
 
     private final static Uniform snrm = new Uniform(SAMPLER2D);
     private final static Uniform sdep = new Uniform(SAMPLER2D);
-    private final static ShaderMacro[] shaders = {
-	new ShaderMacro() {
-	    Color color = Color.BLACK;
-	    Coord[] points = {
-		new Coord(-1,  0),
-		new Coord( 1,  0),
-		new Coord( 0, -1),
-		new Coord( 0,  1),
-	    };
-	    Function ofac = new Function.Def(FLOAT) {{
-		Expression tc = Tex2D.texcoord.ref();
-		LValue ret = code.local(FLOAT, l(0.0)).ref();
-		Expression lnrm = code.local(VEC3, mul(sub(pick(texture2D(snrm.ref(), tc), "rgb"), l(0.5)), l(2.0))).ref();
-		Expression ldep = code.local(FLOAT, pick(texture2D(sdep.ref(), tc), "z")).ref();
-		for(int i = 0; i < points.length; i++) {
-		    Expression ctc = add(tc, mul(vec2(points[i]), MiscLib.pixelpitch.ref()));
-		    code.add(aadd(ret, sub(l(1.0), abs(dot(lnrm, mul(sub(pick(texture2D(snrm.ref(), ctc), "rgb"), l(0.5)), l(2.0)))))));
-		    code.add(aadd(ret, smoothstep(l(1 / 3000.0), l(1 / 2000.0), abs(sub(ldep, pick(texture2D(sdep.ref(), ctc), "z"))))));
-		}
-		code.add(new Return(smoothstep(l(0.4), l(0.6), min(ret, l(1.0)))));
-	    }};
+    private final ShaderMacro[] shaders;
 
-	    public void modify(ProgramContext prog) {
-		prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			public Expression expand(Expression in) {
-			    return(vec4(col3(color), mix(l(0.0), l(1.0), ofac.call())));
+    public Outlines(final boolean symmetric) {
+	shaders = new ShaderMacro[] {
+	    new ShaderMacro() {
+		Color color = Color.BLACK;
+		Coord[] points = {
+		    new Coord(-1,  0),
+		    new Coord( 1,  0),
+		    new Coord( 0, -1),
+		    new Coord( 0,  1),
+		};
+		Function ofac = new Function.Def(FLOAT) {{
+		    Expression tc = Tex2D.texcoord.ref();
+		    LValue ret = code.local(FLOAT, l(0.0)).ref();
+		    Expression lnrm = code.local(VEC3, mul(sub(pick(texture2D(snrm.ref(), tc), "rgb"), l(0.5)), l(2.0))).ref();
+		    Expression ldep = code.local(FLOAT, pick(texture2D(sdep.ref(), tc), "z")).ref();
+		    for(int i = 0; i < points.length; i++) {
+			Expression ctc = add(tc, mul(vec2(points[i]), MiscLib.pixelpitch.ref()));
+			Expression cnrm = mul(sub(pick(texture2D(snrm.ref(), ctc), "rgb"), l(0.5)), l(2.0));
+			Expression cdep = pick(texture2D(sdep.ref(), ctc), "z");
+			if(symmetric) {
+			    code.add(aadd(ret, sub(l(1.0), abs(dot(lnrm, cnrm)))));
+			    code.add(aadd(ret, smoothstep(l(1 / 3000.0), l(1 / 2000.0), abs(sub(cdep, ldep)))));
+			} else {
+			    cnrm = code.local(VEC3, cnrm).ref();
+			    code.add(new If(lt(pick(cross(lnrm, cnrm), "z"), l(0.0)),
+					    stmt(aadd(ret, sub(l(1.0), abs(dot(lnrm, cnrm)))))));
+			    code.add(aadd(ret, smoothstep(l(1 / 3000.0), l(1 / 2000.0), max(sub(cdep, ldep), l(0.0)))));
 			}
-		    }, 0);
+		    }
+		    code.add(new Return(smoothstep(l(0.4), l(0.6), min(ret, l(1.0)))));
+		}};
+
+		public void modify(ProgramContext prog) {
+		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
+			    public Expression expand(Expression in) {
+				return(vec4(col3(color), mix(l(0.0), l(1.0), ofac.call())));
+			    }
+			}, 0);
+		}
 	    }
-	}
-    };
+	};
+    }
 
     public boolean setup(RenderList rl) {
 	final PView.ConfContext ctx = (PView.ConfContext)rl.state().get(PView.ctx);

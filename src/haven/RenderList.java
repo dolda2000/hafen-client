@@ -173,7 +173,10 @@ public class RenderList {
 		return(az - bz);
 	    if(a.o != b.o)
 		throw(new RuntimeException("Found two different orderings with the same main-Z: " + a.o + " and " + b.o));
-	    return(a.o.cmp().compare(a.r, b.r, a.os, b.os));
+	    int ret = a.o.cmp().compare(a.r, b.r, a.os, b.os);
+	    if(ret != 0)
+		return(ret);
+	    return(System.identityHashCode(a.r) - System.identityHashCode(b.r));
 	}
     };
     
