@@ -27,6 +27,7 @@
 package haven;
 
 import java.awt.Color;
+import java.util.*;
 import static haven.GOut.checkerr;
 import javax.media.opengl.*;
 
@@ -44,6 +45,20 @@ public abstract class PView extends Widget {
     private GLState pstate;
     
     public static abstract class RenderContext extends GLState.Abstract {
+	private Map<DataID, Object> data = new CacheMap<DataID, Object>(CacheMap.RefType.WEAK);
+
+	public interface DataID<T> {
+	    public T make(RenderContext c);
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> T data(DataID<T> id) {
+	    T ret = (T)data.get(id);
+	    if(ret == null)
+		data.put(id, ret = id.make(this));
+	    return(ret);
+	}
+
 	public void prep(Buffer b) {
 	    b.put(ctx, this);
 	}
