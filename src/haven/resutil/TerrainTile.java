@@ -36,9 +36,9 @@ public class TerrainTile extends Tiler {
     public final Var[] var;
 
     public static class Var {
-	public final GLState mat;
-	public final double thr;
-	public final double nz;
+	public GLState mat;
+	public double thr;
+	public double nz;
 
 	public Var(GLState mat, double thr, double nz) {
 	    this.mat = mat; this.thr = thr; this.nz = nz;
@@ -65,21 +65,86 @@ public class TerrainTile extends Tiler {
         }
     }
 
+    private static final int sr = 7;
     public class Blend {
 	final MapMesh m;
-	final Scan bscan;
-	final GLState[] bmat;
+	final Scan vs, es;
+	final float[][] bv;
+	final boolean[][] en;
 
 	private Blend(MapMesh m) {
 	    this.m = m;
-	    bscan = new Scan(Coord.z, m.sz);
-	    bmat = new GLState[bscan.l];
-	    for(int y = bscan.ul.y; y < bscan.br.y; y++) {
-		for(int x = bscan.ul.x; x < bscan.br.x; x++) {
-		    bmat[bscan.o(x, y)] = base;
-		    for(Var v : var) {
-			if(noise.get(10, x + m.ul.x, y + m.ul.y, v.nz) >= v.thr)
-			    bmat[bscan.o(x, y)] = v.mat;
+	    vs = new Scan(Coord.z.sub(sr, sr), m.sz.add(sr * 2 + 1, sr * 2 + 1));
+	    float[][] buf1 = new float[var.length + 1][vs.l];
+	    setbase(buf1);
+	    for(int i = 0; i < sr; i++) {
+		float[][] buf2 = new float[var.length + 1][vs.l];
+		for(int y = vs.ul.y; y < vs.br.y; y++) {
+		    for(int x = vs.ul.x; x < vs.br.x; x++) {
+			for(int o = 0; o < var.length + 1; o++) {
+			    float s = buf1[o][vs.o(x, y)] * 4;
+			    int w = 4;
+			    if(x > vs.ul.x) {
+				s += buf1[o][vs.o(x - 1, y)];
+				w++;
+			    }
+			    if(y > vs.ul.y) {
+				s += buf1[o][vs.o(x, y - 1)];
+				w++;
+			    }
+			    if(x < vs.br.x - 1) {
+				s += buf1[o][vs.o(x + 1, y)];
+				w++;
+			    }
+			    if(y < vs.br.y - 1) {
+				s += buf1[o][vs.o(x, y + 1)];
+				w++;
+			    }
+			    buf2[o][vs.o(x, y)] = s / w;
+			}
+		    }
+		}
+		buf1 = buf2;
+	    }
+	    bv = buf1;
+	    en = new boolean[var.length + 1][vs.l];
+	    es = new Scan(Coord.z, m.sz);
+	    for(int y = es.ul.y; y < es.br.y; y++) {
+		for(int x = es.ul.x; x < es.br.x; x++) {
+		    boolean fall = false;
+		    for(int i = var.length; i >= 0; i--) {
+			if(fall) {
+			    en[i][es.o(x, y)] = false;
+			} else if((bv[i][vs.o(x    , y    )] < 0.001f) && (bv[i][vs.o(x + 1, y    )] < 0.001f) &&
+				  (bv[i][vs.o(x    , y + 1)] < 0.001f) && (bv[i][vs.o(x + 1, y + 1)] < 0.001f)) {
+			    en[i][es.o(x, y)] = false;
+			} else {
+			    en[i][es.o(x, y)] = true;
+			    if((bv[i][vs.o(x    , y    )] > 0.99f) && (bv[i][vs.o(x + 1, y    )] > 0.99f) &&
+			       (bv[i][vs.o(x    , y + 1)] > 0.99f) && (bv[i][vs.o(x + 1, y + 1)] > 0.99f)) {
+				fall = true;
+			    }
+			}
+		    }
+		}
+	    }
+	}
+
+	private void setbase(float[][] bv) {
+	    for(int y = vs.ul.y; y < vs.br.y - 1; y++) {
+		for(int x = vs.ul.x; x < vs.br.x - 1; x++) {
+		    bv[0][vs.o(x, y)] = 1;
+		    bv[0][vs.o(x + 1, y)] = 1;
+		    bv[0][vs.o(x, y + 1)] = 1;
+		    bv[0][vs.o(x + 1, y + 1)] = 1;
+		    for(int i = 0; i < var.length; i++) {
+			Var v = var[i];
+			if(noise.get(10, x + m.ul.x, y + m.ul.y, v.nz) >= v.thr) {
+			    bv[i + 1][vs.o(x, y)] = 1;
+			    bv[i + 1][vs.o(x + 1, y)] = 1;
+			    bv[i + 1][vs.o(x, y + 1)] = 1;
+			    bv[i + 1][vs.o(x + 1, y + 1)] = 1;
+			}
 		    }
 		}
 	    }
@@ -118,15 +183,16 @@ public class TerrainTile extends Tiler {
 	super(id);
 	this.noise = new SNoise3(nseed);
 	this.base = GLState.compose(base, States.vertexcolor);
-	this.var = var;
+	for(Var v : this.var = var)
+	    v.mat = GLState.compose(v.mat, States.vertexcolor);
     }
 
     public class Plane extends MapMesh.Shape {
 	public MapMesh.SPoint[] vrt;
 	public Coord3f[] tc;
-	float u, l;
+	public int[] alpha;
 
-	public Plane(MapMesh m, MapMesh.Surface surf, Coord sc, int z, GLState mat) {
+	public Plane(MapMesh m, MapMesh.Surface surf, Coord sc, int z, GLState mat, int[] alpha) {
 	    m.super(z, mat);
 	    vrt = surf.fortile(sc);
 	    float fac = 25f / 4f;
@@ -136,8 +202,7 @@ public class TerrainTile extends Tiler {
 		new Coord3f((sc.x + 1) / fac, (sc.y + 1) / fac, 0),
 		new Coord3f((sc.x + 1) / fac, (sc.y + 0) / fac, 0),
 	    };
-	    l = m.ul.x * 11;
-	    u = m.ul.y * 11;
+	    this.alpha = alpha;
 	}
 
 	public void build(MeshBuf buf) {
@@ -147,17 +212,26 @@ public class TerrainTile extends Tiler {
 	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
 	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
 	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm);
-	    btex.set(v1, tc[0]); bcol.set(v1, new Color(255, noise.geti(0, 256, 100, vrt[0].pos.x + l, -vrt[0].pos.y + u, 0), 255));
-	    btex.set(v2, tc[1]); bcol.set(v2, new Color(255, noise.geti(0, 256, 100, vrt[1].pos.x + l, -vrt[1].pos.y + u, 0), 255));
-	    btex.set(v3, tc[2]); bcol.set(v3, new Color(255, noise.geti(0, 256, 100, vrt[2].pos.x + l, -vrt[2].pos.y + u, 0), 255));
-	    btex.set(v4, tc[3]); bcol.set(v4, new Color(255, noise.geti(0, 256, 100, vrt[3].pos.x + l, -vrt[3].pos.y + u, 0), 255));
+	    btex.set(v1, tc[0]); bcol.set(v1, new Color(255, 255, 255, alpha[0]));
+	    btex.set(v2, tc[1]); bcol.set(v2, new Color(255, 255, 255, alpha[1]));
+	    btex.set(v3, tc[2]); bcol.set(v3, new Color(255, 255, 255, alpha[2]));
+	    btex.set(v4, tc[3]); bcol.set(v4, new Color(255, 255, 255, alpha[3]));
 	    MapMesh.splitquad(buf, v1, v2, v3, v4);
 	}
     }
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	Blend b = m.data(blend);
-	new Plane(m, m.gnd(), lc, 0, b.bmat[b.bscan.o(lc)]);
+	for(int i = 0; i < var.length + 1; i++) {
+	    GLState mat = (i == 0)?base:(var[i - 1].mat);
+	    if(b.en[i][b.es.o(lc)])
+		new Plane(m, m.gnd(), lc, i, mat, new int[] {
+			(int)(b.bv[i][b.vs.o(lc)] * 255),
+			(int)(b.bv[i][b.vs.o(lc.add(0, 1))] * 255),
+			(int)(b.bv[i][b.vs.o(lc.add(1, 1))] * 255),
+			(int)(b.bv[i][b.vs.o(lc.add(1, 0))] * 255),
+		    });
+	}
     }
 
     public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
