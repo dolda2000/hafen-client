@@ -107,8 +107,19 @@ public class TerrainTile extends Tiler {
 		buf1 = buf2;
 	    }
 	    bv = buf1;
-	    en = new boolean[var.length + 1][vs.l];
+	    for(int y = vs.ul.y; y < vs.br.y; y++) {
+		for(int x = vs.ul.x; x < vs.br.x; x++) {
+		    for(int i = 0; i < var.length + 1; i++) {
+			float v = bv[i][vs.o(x, y)];
+			v = v * 1.2f - 0.1f;
+			if(v < 0) v = 0;
+			if(v > 1) v = 1;
+			bv[i][vs.o(x, y)] = v;
+		    }
+		}
+	    }
 	    es = new Scan(Coord.z, m.sz);
+	    en = new boolean[var.length + 1][es.l];
 	    for(int y = es.ul.y; y < es.br.y; y++) {
 		for(int x = es.ul.x; x < es.br.x; x++) {
 		    boolean fall = false;
@@ -133,18 +144,24 @@ public class TerrainTile extends Tiler {
 	private void setbase(float[][] bv) {
 	    for(int y = vs.ul.y; y < vs.br.y - 1; y++) {
 		for(int x = vs.ul.x; x < vs.br.x - 1; x++) {
-		    bv[0][vs.o(x, y)] = 1;
-		    bv[0][vs.o(x + 1, y)] = 1;
-		    bv[0][vs.o(x, y + 1)] = 1;
-		    bv[0][vs.o(x + 1, y + 1)] = 1;
-		    for(int i = 0; i < var.length; i++) {
-			Var v = var[i];
-			if(noise.get(10, x + m.ul.x, y + m.ul.y, v.nz) >= v.thr) {
-			    bv[i + 1][vs.o(x, y)] = 1;
-			    bv[i + 1][vs.o(x + 1, y)] = 1;
-			    bv[i + 1][vs.o(x, y + 1)] = 1;
-			    bv[i + 1][vs.o(x + 1, y + 1)] = 1;
+		    fall: {
+			for(int i = var.length - 1; i >= 0; i--) {
+			    Var v = var[i];
+			    double n = 0;
+			    for(double s = 64, f = 1; s >= 8; s /= 2, f /= 2)
+				n += noise.get(s, x + m.ul.x, y + m.ul.y, v.nz);
+			    if((n / 2) >= v.thr) {
+				bv[i + 1][vs.o(x, y)] = 1;
+				bv[i + 1][vs.o(x + 1, y)] = 1;
+				bv[i + 1][vs.o(x, y + 1)] = 1;
+				bv[i + 1][vs.o(x + 1, y + 1)] = 1;
+				break fall;
+			    }
 			}
+			bv[0][vs.o(x, y)] = 1;
+			bv[0][vs.o(x + 1, y)] = 1;
+			bv[0][vs.o(x, y + 1)] = 1;
+			bv[0][vs.o(x + 1, y + 1)] = 1;
 		    }
 		}
 	    }
@@ -171,7 +188,7 @@ public class TerrainTile extends Tiler {
 		} else if(p.equals("var")) {
 		    int mid = (Integer)desc[1];
 		    float thr = (Float)desc[2];
-		    double nz = (res.name.hashCode() * mid) % 10000;
+		    double nz = (res.name.hashCode() * mid * 8129) % 10000;
 		    var.add(new Var(res.layer(Material.Res.class, mid).get(), thr, nz));
 		}
 	    }
