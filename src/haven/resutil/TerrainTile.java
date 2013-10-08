@@ -26,36 +26,60 @@
 
 package haven.resutil;
 
-import java.util.*;
 import haven.*;
-import haven.Resource.Tile;
+import java.util.*;
+import java.awt.Color;
 
-public class GroundTile extends Tiler {
-    public final Resource.Tileset set;
+public class TerrainTile extends Tiler {
+    public final GLState mat;
 
-    @ResName("gnd")
-    public static class Fac implements Factory {
+    @ResName("trn")
+    public static class Factory implements Tiler.Factory {
 	public Tiler create(int id, Resource.Tileset set) {
-	    return(new GroundTile(id, set));
+	    Material.Res mat = set.getres().layer(Material.Res.class);
+	    return(new TerrainTile(id, mat.get()));
 	}
     }
 
-    public GroundTile(int id, Resource.Tileset set) {
+    public TerrainTile(int id, GLState mat) {
 	super(id);
-	this.set = set;
+	this.mat = mat;
     }
-    
+
+    public static class Plane extends MapMesh.Shape {
+	public MapMesh.SPoint[] vrt;
+	public Coord3f[] tc;
+
+	public Plane(MapMesh m, MapMesh.Surface surf, Coord sc, int z, GLState mat) {
+	    m.super(z, mat);
+	    vrt = surf.fortile(sc);
+	    float fac = 25f / 4f;
+	    tc = new Coord3f[] {
+		new Coord3f((sc.x + 0) / fac, (sc.y + 0) / fac, 0),
+		new Coord3f((sc.x + 0) / fac, (sc.y + 1) / fac, 0),
+		new Coord3f((sc.x + 1) / fac, (sc.y + 1) / fac, 0),
+		new Coord3f((sc.x + 1) / fac, (sc.y + 0) / fac, 0),
+	    };
+	}
+
+	public void build(MeshBuf buf) {
+	    MeshBuf.Tex btex = buf.layer(MeshBuf.tex);
+	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm);
+	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
+	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
+	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm);
+	    btex.set(v1, tc[0]);
+	    btex.set(v2, tc[1]);
+	    btex.set(v3, tc[2]);
+	    btex.set(v4, tc[3]);
+	    MapMesh.splitquad(buf, v1, v2, v3, v4);
+	}
+    }
+
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
-	Tile g = set.ground.pick(rnd);
-	m.new Plane(m.gnd(), lc, 0, g);
+	new Plane(m, m.gnd(), lc, 0, mat);
     }
-    
+
     public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
-	if(m.map.gettile(gc) <= id)
-	    return;
-	if((set.btrans != null) && (bmask > 0))
-	    gt.layover(m, lc, gc, z, set.btrans[bmask - 1].pick(rnd));
-	if((set.ctrans != null) && (cmask > 0))
-	    gt.layover(m, lc, gc, z, set.ctrans[cmask - 1].pick(rnd));
     }
 }
