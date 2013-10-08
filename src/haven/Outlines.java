@@ -63,9 +63,9 @@ public class Outlines implements Rendered {
 			    code.add(aadd(ret, smoothstep(l(1 / 3000.0), l(1 / 2000.0), abs(sub(cdep, ldep)))));
 			} else {
 			    cnrm = code.local(VEC3, cnrm).ref();
-			    code.add(new If(lt(pick(cross(lnrm, cnrm), "z"), l(0.0)),
+			    code.add(new If(gt(pick(cross(lnrm, cnrm), "z"), l(0.0)),
 					    stmt(aadd(ret, sub(l(1.0), abs(dot(lnrm, cnrm)))))));
-			    code.add(aadd(ret, smoothstep(l(1 / 3000.0), l(1 / 2000.0), max(sub(cdep, ldep), l(0.0)))));
+			    code.add(aadd(ret, smoothstep(l(1 / 3000.0), l(1 / 2000.0), max(sub(ldep, cdep), l(0.0)))));
 			}
 		    }
 		    code.add(new Return(smoothstep(l(0.4), l(0.6), min(ret, l(1.0)))));
