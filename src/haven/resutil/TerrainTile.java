@@ -65,7 +65,7 @@ public class TerrainTile extends Tiler {
         }
     }
 
-    private static final int sr = 7;
+    private static final int sr = 12;
     public class Blend {
 	final MapMesh m;
 	final Scan vs, es;
