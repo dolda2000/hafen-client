@@ -195,12 +195,14 @@ public class TerrainTile extends Tiler {
     }
 
     public class Plane extends MapMesh.Shape {
+	public Coord lc;
 	public MapMesh.SPoint[] vrt;
 	public Coord3f[] tc;
 	public int[] alpha;
 
 	public Plane(MapMesh m, MapMesh.Surface surf, Coord sc, int z, GLState mat, int[] alpha) {
 	    m.super(z, mat);
+	    this.lc = new Coord(sc);
 	    vrt = surf.fortile(sc);
 	    float fac = 25f / 4f;
 	    tc = new Coord3f[] {
@@ -209,6 +211,7 @@ public class TerrainTile extends Tiler {
 		new Coord3f((sc.x + 1) / fac, (sc.y + 1) / fac, 0),
 		new Coord3f((sc.x + 1) / fac, (sc.y + 0) / fac, 0),
 	    };
+	    m.data(BumpMap.MapTangents.id);
 	    this.alpha = alpha;
 	}
 
@@ -223,6 +226,7 @@ public class TerrainTile extends Tiler {
 	    btex.set(v2, tc[1]); bcol.set(v2, new Color(255, 255, 255, alpha[1]));
 	    btex.set(v3, tc[2]); bcol.set(v3, new Color(255, 255, 255, alpha[2]));
 	    btex.set(v4, tc[3]); bcol.set(v4, new Color(255, 255, 255, alpha[3]));
+	    m().data(BumpMap.MapTangents.id).set(buf, lc, v1, v2, v3, v4);
 	    MapMesh.splitquad(buf, v1, v2, v3, v4);
 	}
     }

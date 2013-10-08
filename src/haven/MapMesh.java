@@ -206,6 +206,8 @@ public class MapMesh implements Rendered, Disposable {
 	    l.pl.add(this);
 	    layers.add(l);
 	}
+
+	public MapMesh m() {return(MapMesh.this);}
     }
 
     /* Inner classes cannot have static declarations D:< */
