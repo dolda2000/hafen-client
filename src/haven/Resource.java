@@ -751,44 +751,55 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
     }
 
-    @LayerName("tileset")
+    @LayerName("tileset2")
     public class Tileset extends Layer {
-	private int fl;
-	private String[] fln;
-	private int[] flv;
-	private int[] flw;
+	private String tn = "gnd";
+	private Object[] ta = new Object[0];
 	private transient Tiler.Factory tfac;
-	public WeightList<Resource> flavobjs;
+	public WeightList<Resource> flavobjs = new WeightList<Resource>();
 	public WeightList<Tile> ground;
 	public WeightList<Tile>[] ctrans, btrans;
 	public int flavprob;
-		
-	public Tileset(byte[] buf) {
-	    int[] off = new int[1];
-	    off[0] = 0;
-	    fl = Utils.ub(buf[off[0]++]);
-	    int flnum = Utils.uint16d(buf, off[0]);
-	    off[0] += 2;
-	    flavprob = Utils.uint16d(buf, off[0]);
-	    off[0] += 2;
-	    fln = new String[flnum];
-	    flv = new int[flnum];
-	    flw = new int[flnum];
-	    for(int i = 0; i < flnum; i++) {
-		fln[i] = Utils.strd(buf, off);
-		flv[i] = Utils.uint16d(buf, off[0]);
-		off[0] += 2;
-		flw[i] = Utils.ub(buf[off[0]++]);
+
+	private Tileset() {
+	}
+
+	public Tileset(byte[] bbuf) {
+	    Message buf = new Message(0, bbuf);
+	    while(!buf.eom()) {
+		int p = buf.uint8();
+		switch(p) {
+		case 0:
+		    tn = buf.string();
+		    ta = buf.list();
+		    break;
+		case 1:
+		    int flnum = buf.uint16();
+		    flavprob = buf.uint16();
+		    for(int i = 0; i < flnum; i++) {
+			String fln = buf.string();
+			int flv = buf.uint16();
+			int flw = buf.uint8();
+			try {
+			    flavobjs.add(load(fln, flv), flw);
+			} catch(RuntimeException e) {
+			    throw(new LoadException("Illegal resource dependency", e, Resource.this));
+			}
+		    }
+		    break;
+		default:
+		    throw(new LoadException("Invalid tileset part " + p + "  in " + name, Resource.this));
+		}
 	    }
 	}
-		
+
 	public Tiler.Factory tfac() {
 	    synchronized(this) {
 		if(tfac == null) {
 		    CodeEntry ent = layer(CodeEntry.class);
 		    if(ent != null)
 			return(ent.get(Tiler.Factory.class));
-		    return(haven.resutil.GroundTile.fac);
+		    return(Tiler.byname(tn));
 		}
 		return(tfac);
 	    }
@@ -852,36 +863,29 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		}
 	    }
 	}
-		
+
 	@SuppressWarnings("unchecked")
 	public void init() {
-	    flavobjs = new WeightList<Resource>();
-	    for(int i = 0; i < flw.length; i++) {
-		try {
-		    flavobjs.add(load(fln[i], flv[i]), flw[i]);
-		} catch(RuntimeException e) {
-		    throw(new LoadException("Illegal resource dependency", e, Resource.this));
-		}
+	    WeightList<Tile> ground = new WeightList<Tile>();
+	    WeightList<Tile>[] ctrans = new WeightList[15];
+	    WeightList<Tile>[] btrans = new WeightList[15];
+	    for(int i = 0; i < 15; i++) {
+		ctrans[i] = new WeightList<Tile>();
+		btrans[i] = new WeightList<Tile>();
 	    }
+	    int cn = 0, bn = 0;
 	    Collection<Tile> tiles = new LinkedList<Tile>();
-	    ground = new WeightList<Tile>();
-	    boolean hastrans = (fl & 1) != 0;
-	    if(hastrans) {
-		ctrans = new WeightList[15];
-		btrans = new WeightList[15];
-		for(int i = 0; i < 15; i++) {
-		    ctrans[i] = new WeightList<Tile>();
-		    btrans[i] = new WeightList<Tile>();
-		}
-	    }
 	    Coord tsz = null;
 	    for(Tile t : layers(Tile.class, false)) {
-		if(t.t == 'g')
+		if(t.t == 'g') {
 		    ground.add(t, t.w);
-		else if(t.t == 'b' && hastrans)
+		} else if(t.t == 'b') {
 		    btrans[t.id - 1].add(t, t.w);
-		else if(t.t == 'c' && hastrans)
+		    bn++;
+		} else if(t.t == 'c') {
 		    ctrans[t.id - 1].add(t, t.w);
+		    cn++;
+		}
 		tiles.add(t);
 		if(tsz == null) {
 		    tsz = Utils.imgsz(t.img);
@@ -891,7 +895,40 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		    }
 		}
 	    }
+	    if(ground.size() > 0)
+		this.ground = ground;
+	    if(cn > 0)
+		this.ctrans = ctrans;
+	    if(bn > 0)
+		this.btrans = btrans;
 	    packtiles(tiles, tsz);
+	}
+    }
+
+    /* Only for backwards compatibility */
+    @LayerName("tileset")
+    public static class OrigTileset implements LayerFactory<Tileset> {
+	public Tileset cons(Resource res, byte[] buf) {
+	    Tileset ret = res.new Tileset();
+	    int[] off = new int[1];
+	    off[0] = 0;
+	    int fl = Utils.ub(buf[off[0]++]);
+	    int flnum = Utils.uint16d(buf, off[0]);
+	    off[0] += 2;
+	    ret.flavprob = Utils.uint16d(buf, off[0]);
+	    off[0] += 2;
+	    for(int i = 0; i < flnum; i++) {
+		String fln = Utils.strd(buf, off);
+		int flv = Utils.uint16d(buf, off[0]);
+		off[0] += 2;
+		int flw = Utils.ub(buf[off[0]++]);
+		try {
+		    ret.flavobjs.add(load(fln, flv), flw);
+		} catch(RuntimeException e) {
+		    throw(new LoadException("Illegal resource dependency", e, res));
+		}
+	    }
+	    return(ret);
 	}
     }
 
