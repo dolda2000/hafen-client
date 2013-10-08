@@ -76,29 +76,32 @@ public class TerrainTile extends Tiler {
 	    this.m = m;
 	    vs = new Scan(Coord.z.sub(sr, sr), m.sz.add(sr * 2 + 1, sr * 2 + 1));
 	    float[][] buf1 = new float[var.length + 1][vs.l];
-	    setbase(buf1);
 	    for(int i = 0; i < sr; i++) {
+		setbase(buf1);
 		float[][] buf2 = new float[var.length + 1][vs.l];
 		for(int y = vs.ul.y; y < vs.br.y; y++) {
 		    for(int x = vs.ul.x; x < vs.br.x; x++) {
 			for(int o = 0; o < var.length + 1; o++) {
 			    float s = buf1[o][vs.o(x, y)] * 4;
-			    int w = 4;
+			    float w = 4;
+			    float lw = (float)noise.getr(0.5, 1.5, 32, x + m.ul.x, y + m.ul.y, o * 23);
+			    if(lw < 0)
+				lw = lw * lw * lw;
 			    if(x > vs.ul.x) {
-				s += buf1[o][vs.o(x - 1, y)];
-				w++;
+				s += buf1[o][vs.o(x - 1, y)] * lw;
+				w += lw;
 			    }
 			    if(y > vs.ul.y) {
-				s += buf1[o][vs.o(x, y - 1)];
-				w++;
+				s += buf1[o][vs.o(x, y - 1)] * lw;
+				w += lw;
 			    }
 			    if(x < vs.br.x - 1) {
-				s += buf1[o][vs.o(x + 1, y)];
-				w++;
+				s += buf1[o][vs.o(x + 1, y)] * lw;
+				w += lw;
 			    }
 			    if(y < vs.br.y - 1) {
-				s += buf1[o][vs.o(x, y + 1)];
-				w++;
+				s += buf1[o][vs.o(x, y + 1)] * lw;
+				w += lw;
 			    }
 			    buf2[o][vs.o(x, y)] = s / w;
 			}
@@ -148,7 +151,7 @@ public class TerrainTile extends Tiler {
 			for(int i = var.length - 1; i >= 0; i--) {
 			    Var v = var[i];
 			    double n = 0;
-			    for(double s = 64, f = 1; s >= 8; s /= 2, f /= 2)
+			    for(double s = 64; s >= 8; s /= 2)
 				n += noise.get(s, x + m.ul.x, y + m.ul.y, v.nz);
 			    if((n / 2) >= v.thr) {
 				bv[i + 1][vs.o(x, y)] = 1;
