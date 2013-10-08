@@ -29,6 +29,7 @@ package haven.resutil;
 import haven.*;
 import java.util.*;
 import java.awt.Color;
+import haven.MapMesh.Scan;
 
 public class TerrainTile extends Tiler {
     public final GLState base;
@@ -43,26 +44,6 @@ public class TerrainTile extends Tiler {
 	public Var(GLState mat, double thr, double nz) {
 	    this.mat = mat; this.thr = thr; this.nz = nz;
 	}
-    }
-
-    public static class Scan {
-        public final Coord ul, sz, br;
-        public final int l;
-
-        public Scan(Coord ul, Coord sz) {
-            this.ul = ul;
-            this.sz = sz;
-            this.br = sz.add(ul);
-            this.l = sz.x * sz.y;
-        }
-
-        public int o(int x, int y) {
-            return((x - ul.x) + ((y - ul.y) * sz.x));
-        }
-
-        public int o(Coord in) {
-            return(o(in.x, in.y));
-        }
     }
 
     private static final int sr = 12;
