@@ -383,13 +383,23 @@ public abstract class TexGL extends Tex {
 	public void cons(final Resource res, List<GLState> states, List<Material.Res.Resolver> left, Object... args) {
 	    final Resource tres;
 	    final int tid;
-	    if(args[0] instanceof String) {
-		tres = Resource.load((String)args[0], (Integer)args[1]);
-		tid = (Integer)args[2];
+	    int a = 0;
+	    if(args[a] instanceof String) {
+		tres = Resource.load((String)args[a], (Integer)args[a + 1]);
+		tid = (Integer)args[a + 2];
+		a += 3;
 	    } else {
 		tres = res;
-		tid = (Integer)args[0];
+		tid = (Integer)args[a];
+		a += 1;
 	    }
+	    boolean tclip = true;
+	    while(a < args.length) {
+		String f = (String)args[a++];
+		if(f.equals("a"))
+		    tclip = false;
+	    }
+	    final boolean clip = tclip; /* ¦] */
 	    left.add(new Material.Res.Resolver() {
 		    public void resolve(Collection<GLState> buf) {
 			Tex tex;
@@ -405,7 +415,8 @@ public abstract class TexGL extends Tex {
 			    }
 			}
 			buf.add(tex.draw());
-			buf.add(tex.clip());
+			if(clip)
+			    buf.add(tex.clip());
 		    }
 		});
 	}
