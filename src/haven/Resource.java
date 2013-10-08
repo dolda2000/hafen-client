@@ -754,7 +754,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     @LayerName("tileset2")
     public class Tileset extends Layer {
 	private String tn = "gnd";
-	private Object[] ta = new Object[0];
+	public Object[] ta = new Object[0];
 	private transient Tiler.Factory tfac;
 	public WeightList<Resource> flavobjs = new WeightList<Resource>();
 	public WeightList<Tile> ground;

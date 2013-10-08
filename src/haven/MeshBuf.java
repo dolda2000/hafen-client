@@ -27,6 +27,7 @@
 package haven;
 
 import haven.glsl.Attribute;
+import java.awt.Color;
 import java.util.*;
 import java.nio.*;
 
@@ -106,6 +107,18 @@ public class MeshBuf {
 	}
     }
     public static final LayerID<Tex> tex = new CLayerID<Tex>(Tex.class);
+
+    public class Col extends Layer<Color> {
+	public VertexBuf.ColorArray build(Collection<Color> in) {
+	    FloatBuffer data = Utils.mkfbuf(in.size() * 4);
+	    for(Color c : in) {
+		data.put(c.getRed() / 255.0f);  data.put(c.getGreen() / 255.0f);
+		data.put(c.getBlue() / 255.0f); data.put(c.getAlpha() / 255.0f);
+	    }
+	    return(new VertexBuf.ColorArray(data));
+	}
+    }
+    public static final LayerID<Col> col = new CLayerID<Col>(Col.class);
 
     public abstract class AttribLayer<T> extends Layer<T> {
 	public final Attribute attrib;
