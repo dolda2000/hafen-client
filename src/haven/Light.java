@@ -145,6 +145,12 @@ public class Light implements Rendered {
 		return(true);
 	    }
 	};
+    @Material.ResName("cel")
+    public static class $cel implements Material.ResCons {
+	public GLState cons(Resource res, Object... args) {
+	    return(celshade);
+	}
+    }
     
     public static final GLState deflight = new GLState() {
 	    public void apply(GOut g) {}
