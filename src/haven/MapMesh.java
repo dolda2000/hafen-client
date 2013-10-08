@@ -99,6 +99,26 @@ public class MapMesh implements Rendered, Disposable {
 	return(ret[clip?0:1]);
     }
 
+    public static class Scan {
+        public final Coord ul, sz, br;
+        public final int l;
+
+        public Scan(Coord ul, Coord sz) {
+            this.ul = ul;
+            this.sz = sz;
+            this.br = sz.add(ul);
+            this.l = sz.x * sz.y;
+        }
+
+        public int o(int x, int y) {
+            return((x - ul.x) + ((y - ul.y) * sz.x));
+        }
+
+        public int o(Coord in) {
+            return(o(in.x, in.y));
+        }
+    }
+
     public static class SPoint {
 	public Coord3f pos, nrm = Coord3f.zu;
 	public SPoint(Coord3f pos) {
@@ -186,6 +206,8 @@ public class MapMesh implements Rendered, Disposable {
 	    l.pl.add(this);
 	    layers.add(l);
 	}
+
+	public MapMesh m() {return(MapMesh.this);}
     }
 
     /* Inner classes cannot have static declarations D:< */

@@ -29,6 +29,7 @@ package haven.resutil;
 import haven.*;
 import java.util.*;
 import java.awt.Color;
+import haven.MapMesh.Scan;
 
 public class TerrainTile extends Tiler {
     public final GLState base;
@@ -43,26 +44,6 @@ public class TerrainTile extends Tiler {
 	public Var(GLState mat, double thr, double nz) {
 	    this.mat = mat; this.thr = thr; this.nz = nz;
 	}
-    }
-
-    public static class Scan {
-        public final Coord ul, sz, br;
-        public final int l;
-
-        public Scan(Coord ul, Coord sz) {
-            this.ul = ul;
-            this.sz = sz;
-            this.br = sz.add(ul);
-            this.l = sz.x * sz.y;
-        }
-
-        public int o(int x, int y) {
-            return((x - ul.x) + ((y - ul.y) * sz.x));
-        }
-
-        public int o(Coord in) {
-            return(o(in.x, in.y));
-        }
     }
 
     private static final int sr = 12;
@@ -214,12 +195,14 @@ public class TerrainTile extends Tiler {
     }
 
     public class Plane extends MapMesh.Shape {
+	public Coord lc;
 	public MapMesh.SPoint[] vrt;
 	public Coord3f[] tc;
 	public int[] alpha;
 
 	public Plane(MapMesh m, MapMesh.Surface surf, Coord sc, int z, GLState mat, int[] alpha) {
 	    m.super(z, mat);
+	    this.lc = new Coord(sc);
 	    vrt = surf.fortile(sc);
 	    float fac = 25f / 4f;
 	    tc = new Coord3f[] {
@@ -228,6 +211,7 @@ public class TerrainTile extends Tiler {
 		new Coord3f((sc.x + 1) / fac, (sc.y + 1) / fac, 0),
 		new Coord3f((sc.x + 1) / fac, (sc.y + 0) / fac, 0),
 	    };
+	    m.data(BumpMap.MapTangents.id);
 	    this.alpha = alpha;
 	}
 
@@ -242,6 +226,7 @@ public class TerrainTile extends Tiler {
 	    btex.set(v2, tc[1]); bcol.set(v2, new Color(255, 255, 255, alpha[1]));
 	    btex.set(v3, tc[2]); bcol.set(v3, new Color(255, 255, 255, alpha[2]));
 	    btex.set(v4, tc[3]); bcol.set(v4, new Color(255, 255, 255, alpha[3]));
+	    m().data(BumpMap.MapTangents.id).set(buf, lc, v1, v2, v3, v4);
 	    MapMesh.splitquad(buf, v1, v2, v3, v4);
 	}
     }
