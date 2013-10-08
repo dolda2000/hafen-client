@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.lang.reflect.*;
+import java.lang.annotation.*;
 import haven.Resource.Tile;
 
 public abstract class Tiler {
@@ -71,5 +72,30 @@ public abstract class Tiler {
     @Resource.PublishedCode(name = "tile", instancer = FactMaker.class)
     public static interface Factory {
 	public Tiler create(int id, Resource.Tileset set);
+    }
+
+    @dolda.jglob.Discoverable
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface ResName {
+	public String value();
+    }
+
+    private static final Map<String, Factory> rnames = new TreeMap<String, Factory>();
+    static {
+	for(Class<?> cl : dolda.jglob.Loader.get(ResName.class).classes()) {
+	    String nm = cl.getAnnotation(ResName.class).value();
+	    try {
+		rnames.put(nm, (Factory)cl.newInstance());
+	    } catch(InstantiationException e) {
+		throw(new Error(e));
+	    } catch(IllegalAccessException e) {
+		throw(new Error(e));
+	    }
+	}
+    }
+
+    public static Factory byname(String name) {
+	return(rnames.get(name));
     }
 }

@@ -32,11 +32,13 @@ import haven.Resource.Tile;
 
 public class GroundTile extends Tiler {
     public final Resource.Tileset set;
-    public static final Factory fac = new Factory() {
-	    public Tiler create(int id, Resource.Tileset set) {
-		return(new GroundTile(id, set));
-	    }
-	};
+
+    @ResName("gnd")
+    public static class Fac implements Factory {
+	public Tiler create(int id, Resource.Tileset set) {
+	    return(new GroundTile(id, set));
+	}
+    }
 
     public GroundTile(int id, Resource.Tileset set) {
 	super(id);
