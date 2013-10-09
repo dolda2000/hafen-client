@@ -240,6 +240,10 @@ public abstract class States extends GLState {
 	public AdHoc(ShaderMacro[] sh) {
 	    this.sh = sh;
 	}
+
+	public AdHoc(ShaderMacro sh) {
+	    this(new ShaderMacro[] {sh});
+	}
 	
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}
