@@ -107,7 +107,7 @@ public class BumpMap extends GLState {
 	buf.put(slot, this);
     }
 
-    public static class MapTangents extends MapMesh.Hooks{
+    public static class MapTangents extends MapMesh.Hooks {
 	public final MapMesh m;
 	public final Scan s;
 	public final Coord3f[] tan, bit;
