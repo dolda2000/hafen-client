@@ -121,7 +121,10 @@ public class OCache implements Iterable<Gob> {
 	
     public synchronized void cres(Gob g, Indir<Resource> res, Message sdt) {
 	ResDrawable d = (ResDrawable)g.getattr(Drawable.class);
-	if((d == null) || (d.res != res) || (d.sdt.blob.length > 0) || (sdt.blob.length > 0)) {
+	if((d != null) && (d.res == res) && !d.sdt.equals(sdt) && (d.spr != null) && (d.spr instanceof Gob.Overlay.CUpd)) {
+	    ((Gob.Overlay.CUpd)d.spr).update(sdt);
+	    d.sdt = sdt;
+	} else if((d == null) || (d.res != res) || !d.sdt.equals(sdt)) {
 	    g.setattr(new ResDrawable(g, res, sdt));
 	}
     }
