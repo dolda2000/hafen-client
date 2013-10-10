@@ -38,11 +38,11 @@ public class TerrainTile extends Tiler {
 
     public static class Var {
 	public GLState mat;
-	public double thr;
+	public double thrl, thrh;
 	public double nz;
 
-	public Var(GLState mat, double thr, double nz) {
-	    this.mat = mat; this.thr = thr; this.nz = nz;
+	public Var(GLState mat, double thrl, double thrh, double nz) {
+	    this.mat = mat; this.thrl = thrl; this.thrh = thrh; this.nz = nz;
 	}
     }
 
@@ -140,7 +140,7 @@ public class TerrainTile extends Tiler {
 			    double n = 0;
 			    for(double s = 64; s >= 8; s /= 2)
 				n += noise.get(s, x + m.ul.x, y + m.ul.y, v.nz);
-			    if((n / 2) >= v.thr) {
+			    if(((n / 2) >= v.thrl) && ((n / 2) <= v.thrh)) {
 				bv[i + 1][vs.o(x, y)] = 1;
 				bv[i + 1][vs.o(x + 1, y)] = 1;
 				bv[i + 1][vs.o(x, y + 1)] = 1;
@@ -177,9 +177,16 @@ public class TerrainTile extends Tiler {
 		    base = res.layer(Material.Res.class, mid).get();
 		} else if(p.equals("var")) {
 		    int mid = (Integer)desc[1];
-		    float thr = (Float)desc[2];
+		    double thrl, thrh;
+		    if(desc[2] instanceof Object[]) {
+			thrl = (Float)((Object[])desc[2])[0];
+			thrh = (Float)((Object[])desc[2])[1];
+		    } else {
+			thrl = (Float)desc[2];
+			thrh = Double.MAX_VALUE;
+		    }
 		    double nz = (res.name.hashCode() * mid * 8129) % 10000;
-		    var.add(new Var(res.layer(Material.Res.class, mid).get(), thr, nz));
+		    var.add(new Var(res.layer(Material.Res.class, mid).get(), thrl, thrh, nz));
 		}
 	    }
 	    return(new TerrainTile(id, res.name.hashCode(), base, var.toArray(new Var[0])));
