@@ -77,6 +77,7 @@ public class Profiler {
 	public int dticks, iticks;
 	public Map<Function, Integer> tticks = new HashMap<Function, Integer>();
 	public Map<Function, Integer> fticks = new HashMap<Function, Integer>();
+	public Map<Integer, Integer> lticks = new HashMap<Integer, Integer>();
 
 	public Function(String cl, String nm) {
 	    this.cl = cl;
@@ -119,6 +120,10 @@ public class Profiler {
 	nticks++;
 	Function pf = getfun(bt[0]);
 	pf.dticks++;
+	if(pf.lticks.containsKey(bt[0].getLineNumber()))
+	    pf.lticks.put(bt[0].getLineNumber(), pf.lticks.get(bt[0].getLineNumber()) + 1);
+	else
+	    pf.lticks.put(bt[0].getLineNumber(), 1);
 	for(int i = 1; i < bt.length; i++) {
 	    StackTraceElement f = bt[i];
 	    Function fn = getfun(f);
@@ -134,6 +139,20 @@ public class Profiler {
 	    pf = fn;
 	}
 	System.err.print(".");
+    }
+
+    public void outputlp(OutputStream out, String cl, String fnm) {
+	Function fn = funs.get(new Function(cl, fnm));
+	if(fn == null)
+	    return;
+	Map<Integer, Integer> lt = fn.lticks;
+	PrintStream p = new PrintStream(out);
+	List<Integer> lines = new ArrayList<Integer>(lt.keySet());
+	Collections.sort(lines);
+	for(int ln : lines) {
+	    p.printf("%d: %d\n", ln, lt.get(ln));
+	}
+	p.println();
     }
 
     public void output(OutputStream out) {
