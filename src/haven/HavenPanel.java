@@ -421,6 +421,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	    int frames = 0, waited = 0;
 	    fthen = System.currentTimeMillis();
 	    while(true) {
+		Debug.cycle();
 		UI ui = this.ui;
 		then = System.currentTimeMillis();
 		if(Config.profile)
