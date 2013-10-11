@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.io.*;
 
 public class Profiler {
     private static Loop loop;
@@ -71,7 +72,167 @@ public class Profiler {
 	enabled = false;
     }
 
+    public static class Function {
+	public final String cl, nm;
+	public int dticks, iticks;
+	public Map<Function, Integer> tticks = new HashMap<Function, Integer>();
+	public Map<Function, Integer> fticks = new HashMap<Function, Integer>();
+
+	public Function(String cl, String nm) {
+	    this.cl = cl;
+	    this.nm = nm;
+	}
+
+	public Function(StackTraceElement f) {
+	    this(f.getClassName(), f.getMethodName());
+	}
+
+	public boolean equals(Object bp) {
+	    if(!(bp instanceof Function))
+		return(false);
+	    Function b = (Function)bp;
+	    return(b.cl.equals(cl) && b.nm.equals(nm));
+	}
+
+	private int hc = 0;
+	public int hashCode() {
+	    if(hc == 0)
+		hc = cl.hashCode() * 31 + nm.hashCode();
+	    return(hc);
+	}
+    }
+
+    private Map<Function, Function> funs = new HashMap<Function, Function>();
+    private int nticks = 0;
+
+    private Function getfun(StackTraceElement f) {
+	Function key = new Function(f);
+	Function ret = funs.get(key);
+	if(ret == null) {
+	    ret = key;
+	    funs.put(ret, ret);
+	}
+	return(ret);
+    }
+
     protected void tick(StackTraceElement[] bt) {
+	nticks++;
+	Function pf = getfun(bt[0]);
+	pf.dticks++;
+	for(int i = 1; i < bt.length; i++) {
+	    StackTraceElement f = bt[i];
+	    Function fn = getfun(f);
+	    fn.iticks++;
+	    if(fn.tticks.containsKey(pf))
+		fn.tticks.put(pf, fn.tticks.get(pf) + 1);
+	    else
+		fn.tticks.put(pf, 1);
+	    if(pf.fticks.containsKey(fn))
+		pf.fticks.put(fn, pf.fticks.get(fn) + 1);
+	    else
+		pf.fticks.put(fn, 1);
+	    pf = fn;
+	}
+	System.err.print(".");
+    }
+
+    public void output(OutputStream out) {
+	PrintStream p = new PrintStream(out);
+	List<Function> funs = new ArrayList<Function>(this.funs.keySet());
+	Collections.sort(funs, new Comparator<Function>() {
+		public int compare(Function a, Function b) {
+		    return(b.dticks - a.dticks);
+		}
+	    });
+	p.println("Functions sorted by direct ticks:");
+	for(Function fn : funs) {
+	    if(fn.dticks < 1)
+		continue;
+	    p.print("    ");
+	    String nm = fn.cl + "." + fn.nm;
+	    p.print(nm);
+	    for(int i = nm.length(); i < 60; i++)
+		p.print(" ");
+	    p.printf("%6d (%5.2f%%)", fn.dticks, 100.0 * (double)fn.dticks / (double)nticks);
+	    p.println();
+	}
+	p.println();
+	Collections.sort(funs, new Comparator<Function>() {
+		public int compare(Function a, Function b) {
+		    return((b.iticks + b.dticks) - (a.iticks + a.dticks));
+		}
+	    });
+	p.println("Functions sorted by direct and indirect ticks:");
+	for(Function fn : funs) {
+	    p.print("    ");
+	    String nm = fn.cl + "." + fn.nm;
+	    p.print(nm);
+	    for(int i = nm.length(); i < 60; i++)
+		p.print(" ");
+	    p.printf("%6d (%5.2f%%)", fn.iticks + fn.dticks, 100.0 * (double)(fn.iticks + fn.dticks) / (double)nticks);
+	    p.println();
+	}
+	p.println();
+	p.println("Per-function time spent in callees:");
+	for(Function fn : funs) {
+	    p.printf("  %s.%s\n", fn.cl, fn.nm);
+	    List<Map.Entry<Function, Integer>> cfs = new ArrayList<Map.Entry<Function, Integer>>(fn.tticks.entrySet());
+	    if(fn.dticks > 0)
+		cfs.add(new AbstractMap.SimpleEntry<Function, Integer>(null, fn.dticks));
+	    Collections.sort(cfs, new Comparator<Map.Entry<Function, Integer>>() {
+		    public int compare(Map.Entry<Function, Integer> a, Map.Entry<Function, Integer> b) {
+			return(b.getValue() - a.getValue());
+		    }
+		});
+	    for(Map.Entry<Function, Integer> cf : cfs) {
+		p.print("    ");
+		String nm;
+		if(cf.getKey() == null)
+		    nm = "<direct ticks>";
+		else
+		    nm = cf.getKey().cl + "." + cf.getKey().nm;
+		p.print(nm);
+		for(int i = nm.length(); i < 60; i++)
+		    p.print(" ");
+		p.printf("%6d (%5.2f%%)", cf.getValue(), 100.0 * (double)cf.getValue() / (double)(fn.dticks + fn.iticks));
+		p.println();
+	    }
+	    p.println();
+	}
+	p.println();
+	p.println("Per-function time spent by caller:");
+	for(Function fn : funs) {
+	    p.printf("  %s.%s\n", fn.cl, fn.nm);
+	    List<Map.Entry<Function, Integer>> cfs = new ArrayList<Map.Entry<Function, Integer>>(fn.fticks.entrySet());
+	    Collections.sort(cfs, new Comparator<Map.Entry<Function, Integer>>() {
+		    public int compare(Map.Entry<Function, Integer> a, Map.Entry<Function, Integer> b) {
+			return(b.getValue() - a.getValue());
+		    }
+		});
+	    for(Map.Entry<Function, Integer> cf : cfs) {
+		p.print("    ");
+		String nm = cf.getKey().cl + "." + cf.getKey().nm;
+		p.print(nm);
+		for(int i = nm.length(); i < 60; i++)
+		    p.print(" ");
+		p.printf("%6d (%5.2f%%)", cf.getValue(), 100.0 * (double)cf.getValue() / (double)(fn.dticks + fn.iticks));
+		p.println();
+	    }
+	    p.println();
+	}
+    }
+
+    public void output(String path) {
+	try {
+	    OutputStream out = new FileOutputStream(path);
+	    try {
+		output(out);
+	    } finally {
+		out.close();
+	    }
+	} catch(IOException e) {
+	    e.printStackTrace();
+	}
     }
 
     private static class Loop extends HackThread {
