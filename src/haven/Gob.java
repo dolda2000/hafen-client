@@ -280,6 +280,10 @@ public class Gob implements Sprite.Owner, Rendered {
 		}
 	    } catch(Loading l) {}
 	}
+
+	public Location freeze() {
+	    return(new Location(fin(Matrix4f.id)));
+	}
     }
     public final GobLocation loc = new GobLocation();
 }
