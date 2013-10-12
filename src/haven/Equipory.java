@@ -30,23 +30,25 @@ import java.util.*;
 import static haven.Inventory.invsq;
 
 public class Equipory extends Widget implements DTarget {
+    private static final Tex bg = Resource.loadtex("gfx/hud/equip/bg");
+    private static final int rx = 34 + bg.sz().x;
     static Coord ecoords[] = {
 	new Coord(0, 0),
-	new Coord(299, 0),
+	new Coord(rx, 0),
 	new Coord(0, 33),
-	new Coord(299, 33),
+	new Coord(rx, 33),
 	new Coord(0, 66),
-	new Coord(299, 66),
+	new Coord(rx, 66),
 	new Coord(0, 99),
-	new Coord(299, 99),
+	new Coord(rx, 99),
 	new Coord(0, 132),
-	new Coord(299, 132),
+	new Coord(rx, 132),
 	new Coord(0, 165),
-	new Coord(299, 165),
+	new Coord(rx, 165),
 	new Coord(0, 198),
-	new Coord(299, 198),
+	new Coord(rx, 198),
 	new Coord(0, 231),
-	new Coord(299, 231),
+	new Coord(rx, 231),
     };
     static Coord isz;
     static {
@@ -74,10 +76,23 @@ public class Equipory extends Widget implements DTarget {
 	
     public Equipory(Coord c, Widget parent, long gobid) {
 	super(c, isz, parent);
-	Avaview ava = new Avaview(new Coord(34, 0), new Coord(265, 265), this, gobid, "equcam") {
+	Avaview ava = new Avaview(new Coord(34, 0), bg.sz(), this, gobid, "equcam") {
 		public boolean mousedown(Coord c, int button) {
 		    return(false);
 		}
+
+		public void draw(GOut g) {
+		    g.image(bg, Coord.z);
+		    super.draw(g);
+		}
+
+		Outlines outlines = new Outlines(true);
+		protected void setup(RenderList rl) {
+		    super.setup(rl);
+		    rl.add(outlines, null);
+		}
+
+		protected java.awt.Color clearcolor() {return(null);}
 	    };
 	ava.color = null;
     }
