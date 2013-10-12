@@ -65,11 +65,11 @@ public class Composite extends Drawable {
 	rl.add(comp, null);
     }
 	
-    private static List<TrackMod> loadposes(List<Indir<Resource>> rl, Skeleton skel, WrapMode mode) {
+    private List<TrackMod> loadposes(List<Indir<Resource>> rl, Skeleton skel, WrapMode mode) {
 	List<TrackMod> mods = new ArrayList<TrackMod>(rl.size());
 	for(Indir<Resource> res : rl) {
 	    for(Skeleton.ResPose p : res.get().layers(Skeleton.ResPose.class))
-		mods.add(p.forskel(skel, (mode == null)?p.defmode:mode));
+		mods.add(p.forgob(skel, (mode == null)?p.defmode:mode, gob));
 	}
 	return(mods);
     }
