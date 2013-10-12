@@ -699,6 +699,27 @@ public class Skeleton {
 	    return(frames);
 	}
 
+	private FxTrack parsefx(byte[] buf, int[] off) {
+	    FxTrack.Event[] events = new FxTrack.Event[Utils.uint16d(buf, off[0])]; off[0] += 2;
+	    for(int i = 0; i < events.length; i++) {
+		float tm = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		int t = Utils.ub(buf[off[0]++]);
+		switch(t) {
+		case 0:
+		    String resnm = Utils.strd(buf, off);
+		    int resver = Utils.uint16d(buf, off[0]); off[0] += 2;
+		    byte[] sdt = new byte[Utils.ub(buf[off[0]++])];
+		    System.arraycopy(buf, off[0], sdt, 0, sdt.length); off[0] += sdt.length;
+		    Indir<Resource> res = Resource.load(resnm, resver).indir();
+		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, null);
+		    break;
+		default:
+		    throw(new Resource.LoadException("Illegal control event: " + t, getres()));
+		}
+	    }
+	    return(new FxTrack(events));
+	}
+
 	public ResPose(Resource res, byte[] buf) {
 	    res.super();
 	    this.id = Utils.int16d(buf, 0);
@@ -722,12 +743,17 @@ public class Skeleton {
 		nspeed = -1;
 	    }
 	    Collection<Track> tracks = new LinkedList<Track>();
+	    Collection<FxTrack> fx = new LinkedList<FxTrack>();
 	    while(off[0] < buf.length) {
 		String bnm = Utils.strd(buf, off);
-		tracks.add(new Track(bnm, parseframes(buf, off)));
+		if(bnm.equals("{ctl}")) {
+		    fx.add(parsefx(buf, off));
+		} else {
+		    tracks.add(new Track(bnm, parseframes(buf, off)));
+		}
 	    }
 	    this.tracks = tracks.toArray(new Track[0]);
-	    this.effects = new FxTrack[0];
+	    this.effects = fx.toArray(new FxTrack[0]);
 	}
 	
 	public TrackMod forskel(Skeleton skel, WrapMode mode) {
