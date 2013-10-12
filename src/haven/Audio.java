@@ -38,7 +38,7 @@ public class Audio {
     private static Collection<CS> ncl = new LinkedList<CS>();
     private static Object queuemon = new Object();
     private static Collection<Runnable> queue = new LinkedList<Runnable>();
-    private static int bufsize = 32768;
+    private static int bufsize = 4096;
     public static double volume = 1.0;
     
     static {
