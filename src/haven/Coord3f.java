@@ -40,6 +40,10 @@ public class Coord3f {
 	this.y = y;
 	this.z = z;
     }
+
+    public Coord3f(Coord3f c) {
+	this(c.x, c.y, c.z);
+    }
     
     public Coord3f(Coord c) {
 	this(c.x, c.y, 0);
