@@ -114,6 +114,18 @@ public class OCache implements Iterable<Gob> {
 	}
 	/* XXX: Clean up in deleted */
     }
+
+    private long nextvirt = -1;
+    public class Virtual extends Gob {
+	public Virtual(Coord c, double a) {
+	    super(OCache.this.glob, c, nextvirt--, 0);
+	    this.a = a;
+	    virtual = true;
+	    synchronized(OCache.this) {
+		objs.put(id, this);
+	    }
+	}
+    }
     
     public synchronized void move(Gob g, Coord c, double a) {
 	g.move(c, a);
