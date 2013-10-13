@@ -457,7 +457,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Coord3f smapcc = null;
     private ShadowMap smap = null;
     private long lsmch = 0;
-    private Outlines outlines = null;
+    private Outlines outlines = new Outlines(false);
     public void setup(RenderList rl) {
 	Gob pl = player();
 	if(pl != null)
@@ -498,11 +498,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		amb = null;
 	    }
 	}
-	if(rl.cfg.pref.outline.val) {
-	    if(outlines == null)
-		outlines = new Outlines(false);
+	if(rl.cfg.pref.outline.val)
 	    rl.add(outlines, null);
-	}
 	rl.add(map, null);
 	rl.add(mapol, null);
 	rl.add(gobs, null);
