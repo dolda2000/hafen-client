@@ -355,7 +355,13 @@ public class WaterTile extends Tiler {
     public static class BottomFog extends GLState.StandAlone {
 	public static final double maxdepth = 25;
 	public static final Color fogcolor = new Color(13, 38, 25);
-	public static final Expression mfogcolor = vec4(mul(col3(fogcolor), pick(fref(idx(ProgramContext.gl_LightSource.ref(), MapView.amblight.ref()), "diffuse"), "rgb")), l(1.0));
+	public static final Expression mfogcolor = mul(col3(fogcolor), pick(fref(idx(ProgramContext.gl_LightSource.ref(), MapView.amblight.ref()), "diffuse"), "rgb"));
+	public static Function rgbmix = new Function.Def(Type.VEC4) {{
+	    Expression a = param(PDir.IN, Type.VEC4).ref();
+	    Expression b = param(PDir.IN, Type.VEC3).ref();
+	    Expression m = param(PDir.IN, Type.FLOAT).ref();
+	    code.add(new Return(vec4(mix(pick(a, "rgb"), b, m), pick(a, "a"))));
+	}};
 	public static final Attribute depth = new Attribute(Type.FLOAT);
 	public static final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
 		protected Expression root(VertexContext vctx) {
@@ -368,7 +374,7 @@ public class WaterTile extends Tiler {
 		public void modify(ProgramContext prog) {
 		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			    public Expression expand(Expression in) {
-				return(mix(in, mfogcolor, min(div(fragd.ref(), l(maxdepth)), l(1.0))));
+				return(rgbmix.call(in, mfogcolor, min(div(fragd.ref(), l(maxdepth)), l(1.0))));
 			    }
 			}, 1000);
 		}
@@ -466,7 +472,7 @@ public class WaterTile extends Tiler {
 		public void modify(ProgramContext prog) {
 		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			    public Expression expand(Expression in) {
-				return(mix(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
+				return(BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
 			    }
 			}, 1000);
 		}
