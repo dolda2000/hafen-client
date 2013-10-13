@@ -458,17 +458,20 @@ public class Skeleton {
     
     public class TrackMod extends PoseMod {
 	public final Track[] tracks;
+	public final FxTrack[] effects;
 	public final float len;
-	private final boolean stat;
 	public final WrapMode mode;
+	private final boolean stat;
 	private boolean done;
 	public float time = 0.0f;
 	public boolean speedmod = false;
 	public double nspeed = 0.0;
+	public Gob fxgob;
 	private boolean back = false;
 	
-	public TrackMod(Track[] tracks, float len, WrapMode mode) {
+	public TrackMod(Track[] tracks, FxTrack[] effects, float len, WrapMode mode) {
 	    this.tracks = tracks;
+	    this.effects = effects;
 	    this.len = len;
 	    this.mode = mode;
 	    for(Track t : tracks) {
@@ -525,6 +528,21 @@ public class Skeleton {
 	    }
 	}
 	
+	private void playfx(float ot, float nt) {
+	    if(ot > nt) {
+		playfx(Math.min(ot, len), len);
+		playfx(0, Math.max(0, nt));
+	    } else {
+		for(FxTrack t : effects) {
+		    for(FxTrack.Event ev : t.events) {
+			if((ev.time >= ot) && (ev.time < nt)) {
+			    ev.trigger(fxgob);
+			}
+		    }
+		}
+	    }
+	}
+
 	public boolean tick(float dt) {
 	    float nt = time + (back?-dt:dt);
 	    switch(mode) {
@@ -556,9 +574,16 @@ public class Skeleton {
 		}
 		break;
 	    }
+	    float ot = this.time;
 	    this.time = nt;
 	    if(!stat) {
 		aupdate(this.time);
+		if(fxgob != null) {
+		    if(!back)
+			playfx(ot, nt);
+		    else
+			playfx(nt, ot);
+		}
 		return(true);
 	    } else {
 		return(false);
@@ -595,14 +620,106 @@ public class Skeleton {
 	}
     }
 
+    public static class FxTrack {
+	public final Event[] events;
+
+	public static abstract class Event {
+	    public final float time;
+
+	    public Event(float time) {
+		this.time = time;
+	    }
+
+	    public abstract void trigger(Gob gob);
+	}
+
+	public FxTrack(Event[] events) {
+	    this.events = events;
+	}
+
+	public static class SpawnSprite extends Event {
+	    public final Indir<Resource> res;
+	    public final byte[] sdt;
+	    public final Location loc;
+
+	    public SpawnSprite(float time, Indir<Resource> res, byte[] sdt, Location loc) {
+		super(time);
+		this.res = res;
+		this.sdt = (sdt == null)?new byte[0]:sdt;
+		this.loc = loc;
+	    }
+
+	    public void trigger(Gob gob) {
+		final Coord3f fc;
+		try {
+		    fc = gob.getc();
+		} catch(Loading e) {
+		    return;
+		}
+		Gob n = gob.glob.oc.new Virtual(gob.rc, gob.a) {
+			public Coord3f getc() {
+			    return(new Coord3f(fc));
+			}
+
+			public boolean setup(RenderList rl) {
+			    if(SpawnSprite.this.loc != null)
+				rl.prepc(SpawnSprite.this.loc);
+			    return(super.setup(rl));
+			}
+		    };
+		n.ols.add(new Gob.Overlay(-1, res, new Message(0, sdt)));
+	    }
+	}
+    }
+
     @Resource.LayerName("skan")
     public static class ResPose extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
 	public final float len;
 	public final Track[] tracks;
+	public final FxTrack[] effects;
 	public final double nspeed;
 	public final WrapMode defmode;
 	
+	private static Track.Frame[] parseframes(byte[] buf, int[] off) {
+	    Track.Frame[] frames = new Track.Frame[Utils.uint16d(buf, off[0])]; off[0] += 2;
+	    for(int i = 0; i < frames.length; i++) {
+		float tm = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		float[] trans = new float[3];
+		for(int o = 0; o < 3; o++) {
+		    trans[o] = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		}
+		float rang = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		float[] rax = new float[3];
+		for(int o = 0; o < 3; o++) {
+		    rax[o] = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		}
+		frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang));
+	    }
+	    return(frames);
+	}
+
+	private FxTrack parsefx(byte[] buf, int[] off) {
+	    FxTrack.Event[] events = new FxTrack.Event[Utils.uint16d(buf, off[0])]; off[0] += 2;
+	    for(int i = 0; i < events.length; i++) {
+		float tm = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		int t = Utils.ub(buf[off[0]++]);
+		switch(t) {
+		case 0:
+		    String resnm = Utils.strd(buf, off);
+		    int resver = Utils.uint16d(buf, off[0]); off[0] += 2;
+		    byte[] sdt = new byte[Utils.ub(buf[off[0]++])];
+		    System.arraycopy(buf, off[0], sdt, 0, sdt.length); off[0] += sdt.length;
+		    Indir<Resource> res = Resource.load(resnm, resver).indir();
+		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, null);
+		    break;
+		default:
+		    throw(new Resource.LoadException("Illegal control event: " + t, getres()));
+		}
+	    }
+	    return(new FxTrack(events));
+	}
+
 	public ResPose(Resource res, byte[] buf) {
 	    res.super();
 	    this.id = Utils.int16d(buf, 0);
@@ -626,36 +743,34 @@ public class Skeleton {
 		nspeed = -1;
 	    }
 	    Collection<Track> tracks = new LinkedList<Track>();
+	    Collection<FxTrack> fx = new LinkedList<FxTrack>();
 	    while(off[0] < buf.length) {
 		String bnm = Utils.strd(buf, off);
-		Track.Frame[] frames = new Track.Frame[Utils.uint16d(buf, off[0])]; off[0] += 2;
-		for(int i = 0; i < frames.length; i++) {
-		    float tm = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-		    float[] trans = new float[3];
-		    for(int o = 0; o < 3; o++) {
-			trans[o] = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-		    }
-		    float rang = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-		    float[] rax = new float[3];
-		    for(int o = 0; o < 3; o++) {
-			rax[o] = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-		    }
-		    frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang));
+		if(bnm.equals("{ctl}")) {
+		    fx.add(parsefx(buf, off));
+		} else {
+		    tracks.add(new Track(bnm, parseframes(buf, off)));
 		}
-		tracks.add(new Track(bnm, frames));
 	    }
 	    this.tracks = tracks.toArray(new Track[0]);
+	    this.effects = fx.toArray(new FxTrack[0]);
 	}
 	
 	public TrackMod forskel(Skeleton skel, WrapMode mode) {
 	    Track[] remap = new Track[skel.blist.length];
 	    for(Track t : tracks)
 		remap[skel.bones.get(t.bone).idx] = t;
-	    TrackMod ret = skel.new TrackMod(remap, len, mode);
+	    TrackMod ret = skel.new TrackMod(remap, effects, len, mode);
 	    if(nspeed > 0) {
 		ret.speedmod = true;
 		ret.nspeed = nspeed;
 	    }
+	    return(ret);
+	}
+
+	public TrackMod forgob(Skeleton skel, WrapMode mode, Gob gob) {
+	    TrackMod ret = forskel(skel, mode);
+	    ret.fxgob = gob;
 	    return(ret);
 	}
 	

@@ -30,14 +30,17 @@ import java.util.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
-public class SkelSprite extends Sprite {
+public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
     private static final GLState
 	rigid = new Material.Colors(java.awt.Color.GREEN),
 	morphed = new Material.Colors(java.awt.Color.RED),
 	unboned = new Material.Colors(java.awt.Color.YELLOW);
     public static boolean bonedb = false;
+    public static final float defipol = 0;
     private final Skeleton skel;
     public final Pose pose;
+    private Pose oldpose;
+    private float ipold, ipol;
     private PoseMod[] mods = new PoseMod[0];
     private boolean stat = true;
     private final Rendered[] parts;
@@ -90,24 +93,44 @@ public class SkelSprite extends Sprite {
 	    }
 	}
 	this.parts = rl.toArray(new Rendered[0]);
-	chposes(fl);
+	chposes(fl, 0);
     }
     
-    private void chposes(int mask) {
+    private void rebuild() {
+	pose.reset();
+	for(PoseMod m : mods)
+	    m.apply(pose);
+	if(ipold > 0) {
+	    float f = ipold * ipold * (3 - (2 * ipold));
+	    pose.blend(oldpose, f);
+	}
+	pose.gbuild();
+    }
+
+    private void chposes(int mask, float ipol) {
+	if((this.ipol = ipol) > 0) {
+	    this.oldpose = skel.new Pose(pose);
+	    this.ipold = 1.0f;
+	}
 	Collection<PoseMod> poses = new LinkedList<PoseMod>();
 	stat = true;
-	pose.reset();
 	for(Skeleton.ResPose p : res.layers(Skeleton.ResPose.class)) {
 	    if((p.id < 0) || ((mask & (1 << p.id)) != 0)) {
 		Skeleton.TrackMod mod = p.forskel(skel, p.defmode);
+		if(owner instanceof Gob)
+		    mod.fxgob = (Gob)owner;
 		if(!mod.stat())
 		    stat = false;
 		poses.add(mod);
-		mod.apply(pose);
 	    }
 	}
-	pose.gbuild();
 	this.mods = poses.toArray(new PoseMod[0]);
+	rebuild();
+    }
+
+    public void update(Message sdt) {
+	int fl = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
+	chposes(fl, defipol);
     }
     
     public boolean setup(RenderList rl) {
@@ -117,14 +140,18 @@ public class SkelSprite extends Sprite {
 	return(false);
     }
     
-    public boolean tick(int dt) {
-	if(!stat) {
-	    pose.reset();
-	    for(PoseMod m : mods) {
-		m.tick(dt / 1000.0f);
-		m.apply(pose);
+    public boolean tick(int idt) {
+	if(!stat || (ipold > 0)) {
+	    float dt = idt / 1000.0f;
+	    for(PoseMod m : mods)
+		m.tick(dt);
+	    if(ipold > 0) {
+		if((ipold -= (dt / ipol)) < 0) {
+		    ipold = 0;
+		    oldpose = null;
+		}
 	    }
-	    pose.gbuild();
+	    rebuild();
 	}
 	return(false);
     }

@@ -114,6 +114,18 @@ public class OCache implements Iterable<Gob> {
 	}
 	/* XXX: Clean up in deleted */
     }
+
+    private long nextvirt = -1;
+    public class Virtual extends Gob {
+	public Virtual(Coord c, double a) {
+	    super(OCache.this.glob, c, nextvirt--, 0);
+	    this.a = a;
+	    virtual = true;
+	    synchronized(OCache.this) {
+		objs.put(id, this);
+	    }
+	}
+    }
     
     public synchronized void move(Gob g, Coord c, double a) {
 	g.move(c, a);
@@ -121,7 +133,10 @@ public class OCache implements Iterable<Gob> {
 	
     public synchronized void cres(Gob g, Indir<Resource> res, Message sdt) {
 	ResDrawable d = (ResDrawable)g.getattr(Drawable.class);
-	if((d == null) || (d.res != res) || (d.sdt.blob.length > 0) || (sdt.blob.length > 0)) {
+	if((d != null) && (d.res == res) && !d.sdt.equals(sdt) && (d.spr != null) && (d.spr instanceof Gob.Overlay.CUpd)) {
+	    ((Gob.Overlay.CUpd)d.spr).update(sdt);
+	    d.sdt = sdt;
+	} else if((d == null) || (d.res != res) || !d.sdt.equals(sdt)) {
 	    g.setattr(new ResDrawable(g, res, sdt));
 	}
     }
