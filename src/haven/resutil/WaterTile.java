@@ -41,54 +41,89 @@ public class WaterTile extends Tiler {
     public final GLState mat;
     private static final Material.Colors bcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
     
+    public static class Scan {
+	public final Coord ul, sz, br;
+	public final int l;
+
+	public Scan(Coord ul, Coord sz) {
+	    this.ul = ul;
+	    this.sz = sz;
+	    this.br = sz.add(ul);
+	    this.l = sz.x * sz.y;
+	}
+
+	public int o(int x, int y) {
+	    return((x - ul.x) + ((y - ul.y) * sz.x));
+	}
+
+	public int o(Coord in) {
+	    return(o(in.x, in.y));
+	}
+    }
+
     public static class Bottom extends Surface {
 	final MapMesh m;
 	final boolean[] s;
-	final int[] ed;
+	int[] ed;
+	final Scan ss;
 	
 	public Bottom(MapMesh m) {
 	    m.super();
 	    this.m = m;
 	    Coord sz = m.sz;
 	    MCache map = m.map;
-	    int[] d = new int[(sz.x + 5) * (sz.y + 5)];
-	    s = new boolean[(sz.x + 3) * (sz.y + 3)];
-	    ed = new int[(sz.x + 3) * (sz.y + 3)];
-	    Coord c = new Coord();
-	    int i = 0;
-	    for(c.y = -2; c.y <= sz.y + 2; c.y++) {
-		for(c.x = -2; c.x <= sz.x + 2; c.x++) {
-		    Tiler t = map.tiler(map.gettile(c.add(m.ul)));
+	    Scan ds = new Scan(new Coord(-10, -10), sz.add(21, 21));
+	    ss = new Scan(new Coord(-9, -9), sz.add(19,  19));
+	    int[] d = new int[ds.l];
+	    s = new boolean[ss.l];
+	    ed = new int[ss.l];
+	    for(int y = ds.ul.y; y < ds.br.y; y++) {
+		for(int x = ds.ul.y; x < ds.br.x; x++) {
+		    Tiler t = map.tiler(map.gettile(m.ul.add(x, y)));
 		    if(t instanceof WaterTile)
-			d[i] = ((WaterTile)t).depth;
+			d[ds.o(x, y)] = ((WaterTile)t).depth;
 		    else
-			d[i] = 0;
-		    i++;
+			d[ds.o(x, y)] = 0;
 		}
 	    }
-	    i = 1 + (sz.x + 5);
-	    int r = sz.x + 5;
-	    for(c.y = -1; c.y <= sz.y + 1; c.y++) {
-		for(c.x = -1; c.x <= sz.x + 1; c.x++) {
-		    int td = d[i];
-		    if(d[i - r - 1] < td)
-			td = d[i - r - 1];
-		    if(d[i - r] < td)
-			td = d[i - r];
-		    if(d[i - 1] < td)
-			td = d[i - 1];
-		    spoint(c).pos.z -= td;
-		    ed[idx(c)] = td;
+	    for(int y = ss.ul.y; y < ss.br.y; y++) {
+		for(int x = ss.ul.x; x < ss.br.x; x++) {
+		    int td = d[ds.o(x, y)];
+		    if(d[ds.o(x - 1, y - 1)] < td)
+			td = d[ds.o(x - 1, y - 1)];
+		    if(d[ds.o(x, y - 1)] < td)
+			td = d[ds.o(x, y - 1)];
+		    if(d[ds.o(x - 1, y)] < td)
+			td = d[ds.o(x - 1, y)];
+		    ed[ss.o(x, y)] = td;
 		    if(td == 0)
-			s[idx(c)] = true;
-		    i++;
+			s[ss.o(x, y)] = true;
 		}
-		i += 2;
+	    }
+	    for(int i = 0; i < 8; i++) {
+		int[] sd = new int[ss.l];
+		for(int y = ss.ul.y + 1; y < ss.br.y - 1; y++) {
+		    for(int x = ss.ul.x + 1; x < ss.br.x - 1; x++) {
+			if(s[ss.o(x, y)]) {
+			    sd[ss.o(x, y)] = ed[ss.o(x, y)];
+			} else {
+			    sd[ss.o(x, y)] = ((ed[ss.o(x, y)] * 4) +
+					      ed[ss.o(x - 1, y)] + ed[ss.o(x + 1, y)] +
+					      ed[ss.o(x, y - 1)] + ed[ss.o(x, y + 1)]) / 8;
+			}
+		    }
+		}
+		ed = sd;
+	    }
+	    for(int y = -1; y < sz.y + 2; y++) {
+		for(int x = -1; x < sz.x + 2; x++) {
+		    spoint(new Coord(x, y)).pos.z -= ed[ss.o(x, y)];
+		}
 	    }
 	}
 
 	public int d(int x, int y) {
-	    return(ed[(x + 1) + ((y + 1) * (m.sz.x + 3))]);
+	    return(ed[ss.o(x, y)]);
 	}
 	
 	public void calcnrm() {
@@ -96,7 +131,7 @@ public class WaterTile extends Tiler {
 	    Coord c = new Coord();
 	    for(c.y = 0; c.y <= m.sz.y; c.y++) {
 		for(c.x = 0; c.x <= m.sz.x; c.x++) {
-		    if(s[idx(c)])
+		    if(s[ss.o(c)])
 			spoint(c).nrm = m.gnd().spoint(c).nrm;
 		}
 	    }
@@ -320,7 +355,13 @@ public class WaterTile extends Tiler {
     public static class BottomFog extends GLState.StandAlone {
 	public static final double maxdepth = 25;
 	public static final Color fogcolor = new Color(13, 38, 25);
-	public static final Expression mfogcolor = vec4(mul(col3(fogcolor), pick(fref(idx(ProgramContext.gl_LightSource.ref(), MapView.amblight.ref()), "diffuse"), "rgb")), l(1.0));
+	public static final Expression mfogcolor = mul(col3(fogcolor), pick(fref(idx(ProgramContext.gl_LightSource.ref(), MapView.amblight.ref()), "diffuse"), "rgb"));
+	public static Function rgbmix = new Function.Def(Type.VEC4) {{
+	    Expression a = param(PDir.IN, Type.VEC4).ref();
+	    Expression b = param(PDir.IN, Type.VEC3).ref();
+	    Expression m = param(PDir.IN, Type.FLOAT).ref();
+	    code.add(new Return(vec4(mix(pick(a, "rgb"), b, m), pick(a, "a"))));
+	}};
 	public static final Attribute depth = new Attribute(Type.FLOAT);
 	public static final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
 		protected Expression root(VertexContext vctx) {
@@ -333,7 +374,7 @@ public class WaterTile extends Tiler {
 		public void modify(ProgramContext prog) {
 		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			    public Expression expand(Expression in) {
-				return(mix(in, mfogcolor, min(div(fragd.ref(), l(maxdepth)), l(1.0))));
+				return(rgbmix.call(in, mfogcolor, min(div(fragd.ref(), l(maxdepth)), l(1.0))));
 			    }
 			}, 1000);
 		}
@@ -384,12 +425,14 @@ public class WaterTile extends Tiler {
 	}
     }
 
+    private static final GLState boff = new States.DepthOffset(4, 4);
+
     public WaterTile(int id, Resource.Tileset set, int depth) {
 	super(id);
 	this.set = set;
 	this.depth = depth;
 	TexGL tex = (TexGL)((TexSI)set.ground.pick(0).tex()).parent;
-	mat = new Material(Light.deflight, bcol, tex.draw(), waterfog);
+	mat = new Material(Light.deflight, bcol, tex.draw(), waterfog, boff);
     }
     
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
@@ -429,7 +472,7 @@ public class WaterTile extends Tiler {
 		public void modify(ProgramContext prog) {
 		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			    public Expression expand(Expression in) {
-				return(mix(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
+				return(BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
 			    }
 			}, 1000);
 		}
