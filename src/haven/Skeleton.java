@@ -484,6 +484,10 @@ public class Skeleton {
 	    stat = done = true;
 	    aupdate(0.0f);
 	}
+
+	public TrackMod(Track[] tracks, float len, WrapMode mode) {
+	    this(tracks, new FxTrack[0], len, mode);
+	}
 	
 	public void aupdate(float time) {
 	    if(time > len)
