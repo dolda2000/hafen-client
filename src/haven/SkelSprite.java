@@ -43,7 +43,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
     private float ipold, ipol;
     private PoseMod[] mods = new PoseMod[0];
     private boolean stat = true;
-    private final Rendered[] parts;
+    private Rendered[] parts;
     
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
@@ -69,9 +69,14 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	skel = res.layer(Skeleton.Res.class).s;
 	pose = skel.new Pose(skel.bindpose);
 	int fl = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
+	chparts(fl);
+	chposes(fl, 0);
+    }
+
+    private void chparts(int mask) {
 	Collection<Rendered> rl = new LinkedList<Rendered>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
-	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & fl) != 0))) {
+	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0))) {
 		Rendered r;
 		if(MorphedMesh.boned(mr.m)) {
 		    String bnm = MorphedMesh.boneidp(mr.m);
@@ -93,7 +98,6 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	    }
 	}
 	this.parts = rl.toArray(new Rendered[0]);
-	chposes(fl, 0);
     }
     
     private void rebuild() {
@@ -130,6 +134,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 
     public void update(Message sdt) {
 	int fl = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
+	chparts(fl);
 	chposes(fl, defipol);
     }
     
