@@ -121,6 +121,8 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	for(Skeleton.ResPose p : res.layers(Skeleton.ResPose.class)) {
 	    if((p.id < 0) || ((mask & (1 << p.id)) != 0)) {
 		Skeleton.TrackMod mod = p.forskel(skel, p.defmode);
+		if(owner instanceof Gob)
+		    mod.fxgob = (Gob)owner;
 		if(!mod.stat())
 		    stat = false;
 		poses.add(mod);

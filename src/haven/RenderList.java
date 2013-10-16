@@ -180,19 +180,28 @@ public class RenderList {
 	}
     };
     
+    private GLState[] dbc = new GLState[0];
     private GLState.Global[] getgstates() {
 	/* This is probably a fast way to intern the states. */
 	IdentityHashMap<GLState.Global, GLState.Global> gstates = new IdentityHashMap<GLState.Global, GLState.Global>(this.gstates.length);
+	for(int i = 0; i < dbc.length; i++)
+	    dbc[i] = null;
 	for(int i = 0; i < cur; i++) {
 	    if(!list[i].d)
 		continue;
 	    GLState.Buffer ctx = list[i].os;
 	    GLState[] sl = ctx.states();
-	    for(GLState st : sl) {
+	    if(sl.length > dbc.length)
+		dbc = new GLState[sl.length];
+	    for(int o = 0; o < sl.length; o++) {
+		GLState st = sl[o];
+		if(st == dbc[o])
+		    continue;
 		if(st instanceof GLState.GlobalState) {
 		    GLState.Global gst = ((GLState.GlobalState)st).global(this, ctx);
 		    gstates.put(gst, gst);
 		}
+		dbc[o] = st;
 	    }
 	}
 	return(gstates.keySet().toArray(new GLState.Global[0]));

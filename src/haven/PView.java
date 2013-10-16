@@ -165,7 +165,7 @@ public abstract class PView extends Widget {
     }
     
     protected GLState.Buffer basic(GOut g) {
-	GLState.Buffer buf = g.st.copy();
+	GLState.Buffer buf = g.basicstate();
 	cstate.prep(buf);
 	rstate.prep(buf);
 	if(pstate != null)

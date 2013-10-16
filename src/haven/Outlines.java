@@ -54,18 +54,33 @@ public class Outlines implements Rendered {
 		    LValue ret = code.local(FLOAT, l(0.0)).ref();
 		    Expression lnrm = code.local(VEC3, mul(sub(pick(texture2D(snrm.ref(), tc), "rgb"), l(0.5)), l(2.0))).ref();
 		    Expression ldep = code.local(FLOAT, pick(texture2D(sdep.ref(), tc), "z")).ref();
+		    /* XXX: Current depth detection doesn't work well
+		     * with frustum projections, perhaps because of
+		     * the lack of precision in the depth buffer
+		     * (though I'm not sure I buy that explanation
+		     * yet). */
+		    LValue dh = code.local(FLOAT, l(0.0002)).ref(), dl = code.local(FLOAT, l(-0.0002)).ref();
+		    for(int i = 0; i < points.length; i++) {
+			Expression ctc = add(tc, mul(vec2(points[i]), MiscLib.pixelpitch.ref()));
+			Expression cdep = pick(texture2D(sdep.ref(), ctc), "z");
+			cdep = sub(ldep, cdep);
+			cdep = code.local(FLOAT, cdep).ref();
+			code.add(stmt(ass(dh, max(dh, cdep))));
+			code.add(stmt(ass(dl, min(dl, cdep))));
+		    }
+		    if(symmetric)
+			code.add(aadd(ret, smoothstep(l(5.0), l(6.0), max(div(dh, neg(dl)), div(dl, neg(dh))))));
+		    else
+			code.add(aadd(ret, smoothstep(l(5.0), l(6.0), div(dh, neg(dl)))));
 		    for(int i = 0; i < points.length; i++) {
 			Expression ctc = add(tc, mul(vec2(points[i]), MiscLib.pixelpitch.ref()));
 			Expression cnrm = mul(sub(pick(texture2D(snrm.ref(), ctc), "rgb"), l(0.5)), l(2.0));
-			Expression cdep = pick(texture2D(sdep.ref(), ctc), "z");
 			if(symmetric) {
 			    code.add(aadd(ret, sub(l(1.0), abs(dot(lnrm, cnrm)))));
-			    code.add(aadd(ret, smoothstep(l(1 / 3000.0), l(1 / 2000.0), abs(sub(cdep, ldep)))));
 			} else {
 			    cnrm = code.local(VEC3, cnrm).ref();
 			    code.add(new If(gt(pick(cross(lnrm, cnrm), "z"), l(0.0)),
 					    stmt(aadd(ret, sub(l(1.0), abs(dot(lnrm, cnrm)))))));
-			    code.add(aadd(ret, smoothstep(l(1 / 3000.0), l(1 / 2000.0), max(sub(ldep, cdep), l(0.0)))));
 			}
 		    }
 		    code.add(new Return(smoothstep(l(0.4), l(0.6), min(ret, l(1.0)))));
