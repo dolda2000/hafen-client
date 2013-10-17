@@ -35,7 +35,7 @@ public class Glob {
     public static final int GMSG_LIGHT = 2;
     public static final int GMSG_SKY = 3;
 	
-    public long time;
+    public long time, epoch = System.currentTimeMillis();
     public OCache oc = new OCache(this);
     public MCache map;
     public Session sess;
@@ -197,6 +197,27 @@ public class Glob {
 	return(((double)i) / 1e9);
     }
 	
+    private long lastrep = 0;
+    private long rgtime = 0;
+    public long globtime() {
+	long now = System.currentTimeMillis();
+	long raw = ((now - epoch) * 3) + (time * 1000);
+	if(lastrep == 0) {
+	    rgtime = raw;
+	} else {
+	    long gd = (now - lastrep) * 3;
+	    if((rgtime + gd) > (raw + 1000)) {
+		rgtime += (gd * 3) / 4;
+	    } else if((rgtime + gd) < (raw - 1000)) {
+		rgtime += (gd * 5) / 4;
+	    } else {
+		rgtime += gd;
+	    }
+	}
+	lastrep = now;
+	return(rgtime);
+    }
+
     public void blob(Message msg) {
 	boolean inc = msg.uint8() != 0;
 	while(!msg.eom()) {
@@ -204,6 +225,9 @@ public class Glob {
 	    switch(t) {
 	    case GMSG_TIME:
 		time = msg.int32();
+		epoch = System.currentTimeMillis();
+		if(!inc)
+		    lastrep = 0;
 		break;
 	    case GMSG_LIGHT:
 		synchronized(this) {
