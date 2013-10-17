@@ -64,6 +64,7 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 			Mipmapper.avg, // Specific
 			Mipmapper.rnd,
 			Mipmapper.cnt,
+			Mipmapper.dav,
 		    }[ma]);
 		break;
 	    case 2:
