@@ -36,27 +36,37 @@ import static haven.glsl.Type.*;
 public class CloudShadow extends GLState {
     public static final Slot<CloudShadow> slot = new Slot<CloudShadow>(Slot.Type.DRAW, CloudShadow.class, Light.lighting);
     public final TexGL tex;
+    public DirLight light;
+    public Coord3f vel;
+    public float scale;
+    public float a = 0.5f, w = 1.0f, t = 0.4f, s = 1.0f;
 
-    public static final CloudShadow def = new CloudShadow((TexGL)Resource.load("gfx/fx/clouds").loadwait().layer(TexR.class).tex());
-    public CloudShadow(TexGL tex) {
+    public CloudShadow(TexGL tex, DirLight light, Coord3f vel, float scale) {
 	this.tex = tex;
+	this.light = light;
+	this.vel = vel;
+	this.scale = scale;
     }
 
     public static final Uniform tsky = new Uniform(SAMPLER2D);
+    public static final Uniform cdir = new Uniform(VEC2);
+    public static final Uniform cvel = new Uniform(VEC2);
+    public static final Uniform cscl = new Uniform(FLOAT);
+    public static final Uniform cthr = new Uniform(VEC4);
     private static final ShaderMacro[] shaders = {
 	new ShaderMacro() {
-	    final Expression v = vec2(8, 4);
-	    final Expression scale = l(1.0 / 1000.0);
-
 	    public void modify(ProgramContext prog) {
 		final Phong ph = prog.getmod(Phong.class);
 		if((ph == null) || !ph.pfrag)
 		    return;
 		final ValBlock.Value shval = prog.fctx.uniform.new Value(FLOAT) {
 			public Expression root() {
-			    return(pick(texture2D(tsky.ref(), mul(add(add(pick(MiscLib.fragmapv.ref(), "xy"),
-									  mul(pick(MiscLib.fragmapv.ref(), "z"), l(0.25))),
-								      mul(v, MiscLib.time.ref())), scale)), "r"));
+			    Expression tc = add(mul(add(pick(MiscLib.fragmapv.ref(), "xy"),
+							mul(pick(MiscLib.fragmapv.ref(), "z"), cdir.ref())),
+						    cscl.ref()), mul(cvel.ref(), MiscLib.globtime.ref()));
+			    Expression cl = pick(texture2D(tsky.ref(), tc), "r");
+			    Expression th = cthr.ref();
+			    return(add(mul(smoothstep(pick(th, "x"), pick(th, "y"), cl), pick(th, "w")), pick(th, "z")));
 			}
 
 			protected void cons2(Block blk) {
@@ -83,8 +93,16 @@ public class CloudShadow extends GLState {
 
     public void reapply(GOut g) {
 	int u = g.st.prog.cuniform(tsky);
-	if(u >= 0)
+	if(u >= 0) {
 	    g.gl.glUniform1i(u, sampler.id);
+	    float zf = 1.0f / (light.dir[2] + 1.1f);
+	    float xd = -light.dir[0] * zf, yd = -light.dir[1] * zf;
+	    g.gl.glUniform2f(g.st.prog.uniform(cdir), xd, yd);
+	    g.gl.glUniform2f(g.st.prog.uniform(cvel), vel.x, vel.y);
+	    g.gl.glUniform1f(g.st.prog.uniform(cscl), scale);
+	    float lthr = a * (1 - w);
+	    g.gl.glUniform4f(g.st.prog.uniform(cthr), lthr, lthr + w, t, s - t);
+	}
     }
 
     public void apply(GOut g) {
