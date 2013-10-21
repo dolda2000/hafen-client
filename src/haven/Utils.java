@@ -615,7 +615,7 @@ public class Utils {
     
     public static float floormod(float a, float b) {
 	float r = a % b;
-	return((r < 0)?(r + b):r);
+	return((a < 0)?(r + b):r);
     }
 
     public static double clip(double d, double min, double max) {
