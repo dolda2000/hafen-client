@@ -158,6 +158,24 @@ public class Material extends GLState {
 				 amb[0], amb[1], amb[2], dif[0], dif[1], dif[2], spc[0], spc[1], spc[2], shine));
 	}
     }
+
+    @ResName("order")
+    public static class $order implements ResCons {
+	public GLState cons(Resource res, Object... args) {
+	    String nm = (String)args[0];
+	    if(nm.equals("first")) {
+		return(Rendered.first);
+	    } else if(nm.equals("last")) {
+		return(Rendered.last);
+	    } else if(nm.equals("pfx")) {
+		return(Rendered.postpfx);
+	    } else if(nm.equals("eye")) {
+		return(Rendered.eyesort);
+	    } else {
+		throw(new Resource.LoadException("Unknown draw order: " + nm, res));
+	    }
+	}
+    }
     
     public void apply(GOut g) {}
     

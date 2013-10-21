@@ -74,6 +74,7 @@ public interface Rendered extends Drawn {
     public final static Order first = new Order.Default(Integer.MIN_VALUE);
     public final static Order last = new Order.Default(Integer.MAX_VALUE);
     public final static Order postfx = new Order.Default(5000);
+    public final static Order postpfx = new Order.Default(5500);
 
     public final static Order eyesort = new Order.Default(10000) {
 	    private final RComparator<Rendered> cmp = new RComparator<Rendered>() {
