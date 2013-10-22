@@ -167,8 +167,8 @@ public class Glob {
 		lightamb = colstep(olightamb, tlightamb, a);
 		lightdif = colstep(olightdif, tlightdif, a);
 		lightspc = colstep(olightspc, tlightspc, a);
-		lightang = olightang + a * (tlightang - olightang);
-		lightelev = olightelev + a * (tlightelev - olightelev);
+		lightang = olightang + a * Utils.cangle(tlightang - olightang);
+		lightelev = olightelev + a * Utils.cangle(tlightelev - olightelev);
 	    }
 	}
     }
