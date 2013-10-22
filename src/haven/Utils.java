@@ -618,6 +618,22 @@ public class Utils {
 	return((a < 0)?(r + b):r);
     }
 
+    public static double cangle(double a) {
+	while(a > Math.PI)
+	    a -= Math.PI * 2;
+	while(a < -Math.PI)
+	    a += Math.PI * 2;
+	return(a);
+    }
+
+    public static double cangle2(double a) {
+	while(a > Math.PI * 2)
+	    a -= Math.PI * 2;
+	while(a < 0)
+	    a += Math.PI * 2;
+	return(a);
+    }
+
     public static double clip(double d, double min, double max) {
 	if(d < min)
 	    return(min);
