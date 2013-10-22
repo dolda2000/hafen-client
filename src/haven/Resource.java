@@ -1152,6 +1152,26 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    }
 	}
 	
+	public <T> Class<? extends T> getcl(Class<T> cl, boolean fail) {
+	    load();
+	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
+	    if(entry == null)
+		throw(new RuntimeException("Tried to fetch non-published res-loaded class " + cl.getName() + " from " + Resource.this.name));
+	    Class<?> acl;
+	    synchronized(lpe) {
+		if((acl = lpe.get(entry.name())) == null) {
+		    if(fail)
+			throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
+		    return(null);
+		}
+	    }
+	    return(acl.asSubclass(cl));
+	}
+
+	public <T> Class<? extends T> getcl(Class<T> cl) {
+	    return(getcl(cl, true));
+	}
+
 	public <T> T get(Class<T> cl, boolean fail) {
 	    load();
 	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
@@ -1159,12 +1179,10 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		throw(new RuntimeException("Tried to fetch non-published res-loaded class " + cl.getName() + " from " + Resource.this.name));
 	    Class<?> acl;
 	    synchronized(lpe) {
-		if(lpe.get(entry.name()) == null) {
+		if((acl = lpe.get(entry.name())) == null) {
 		    if(fail)
 			throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
 		    return(null);
-		} else {
-		    acl = lpe.get(entry.name());
 		}
 	    }
 	    try {
