@@ -34,6 +34,7 @@ public class Glob {
     public static final int GMSG_ASTRO = 1;
     public static final int GMSG_LIGHT = 2;
     public static final int GMSG_SKY = 3;
+    public static final int GMSG_WEATHER = 4;
 	
     public long time, epoch = System.currentTimeMillis();
     public OCache oc = new OCache(this);
@@ -54,13 +55,21 @@ public class Glob {
     public long lchange = -1;
     public Indir<Resource> sky1 = null, sky2 = null;
     public double skyblend = 0.0;
+    private Map<Indir<Resource>, Object> wmap = new HashMap<Indir<Resource>, Object>();
     
     public Glob(Session sess) {
 	this.sess = sess;
 	map = new MCache(sess);
 	party = new Party(this);
     }
-    
+
+    @Resource.PublishedCode(name = "wtr")
+    public static interface Weather {
+	public void gsetup(RenderList rl);
+	public void update(Object... args);
+	public boolean tick(int dt);
+    }
+
     public static class CAttr extends Observable {
 	String nm;
 	int base, comp;
@@ -273,12 +282,89 @@ public class Glob {
 		    }
 		}
 		break;
+	    case GMSG_WEATHER:
+		synchronized(this) {
+		    if(!inc)
+			wmap.clear();
+		    Collection<Object> old = new LinkedList<Object>(wmap.keySet());
+		    while(true) {
+			int resid = msg.uint16();
+			if(resid == 65535)
+			    break;
+			Indir<Resource> res = sess.getres(resid);
+			Object[] args = msg.list();
+			Object curv = wmap.get(res);
+			if(curv instanceof Weather) {
+			    Weather cur = (Weather)curv;
+			    cur.update(args);
+			} else {
+			    wmap.put(res, args);
+			}
+			old.remove(res);
+		    }
+		    for(Object p : old)
+			wmap.remove(p);
+		}
+		break;
 	    default:
 		throw(new RuntimeException("Unknown globlob type: " + t));
 	    }
 	}
     }
-	
+
+    public final Iterable<Weather> weather = new Iterable<Weather>() {
+	public Iterator<Weather> iterator() {
+	    return(new Iterator<Weather>() {
+		    Iterator<Map.Entry<Indir<Resource>, Object>> bk = wmap.entrySet().iterator();
+		    Weather n = null;
+
+		    public boolean hasNext() {
+			if(n == null) {
+			    while(true) {
+				if(!bk.hasNext())
+				    return(false);
+				Map.Entry<Indir<Resource>, Object> cur = bk.next();
+				Object v = cur.getValue();
+				if(v instanceof Weather) {
+				    n = (Weather)v;
+				    break;
+				}
+				Class<? extends Weather> cl = cur.getKey().get().layer(Resource.CodeEntry.class).getcl(Weather.class);
+				Weather w;
+				try {
+				    w = Utils.construct(cl.getConstructor(Object[].class), new Object[] {v});
+				} catch(NoSuchMethodException e) {
+				    throw(new RuntimeException(e));
+				}
+				cur.setValue(n = w);
+			    }
+			}
+			return(true);
+		    }
+
+		    public Weather next() {
+			if(!hasNext())
+			    throw(new NoSuchElementException());
+			Weather ret = n;
+			n = null;
+			return(ret);
+		    }
+
+		    public void remove() {
+			throw(new UnsupportedOperationException());
+		    }
+		});
+	}
+    };
+
+    /* XXX: This is actually quite ugly and there should be a better
+     * way, but until I can think of such a way, have this as a known
+     * entry-point to be forwards-compatible with compiled
+     * resources. */
+    public static DirLight amblight(RenderList rl) {
+	return(((MapView)((PView.WidgetContext)rl.state().get(PView.ctx)).widget()).amb);
+    }
+
     public Pagina paginafor(Resource res) {
 	if(res == null)
 	    return(null);
