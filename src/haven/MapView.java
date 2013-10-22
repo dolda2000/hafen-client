@@ -490,7 +490,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
-    public Light amb = null;
+    public DirLight amb = null;
     private Outlines outlines = new Outlines(false);
     public void setup(RenderList rl) {
 	Gob pl = player();
@@ -504,6 +504,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		amb = light;
 	    } else {
 		amb = null;
+	    }
+	    for(Glob.Weather w : glob.weather)
+		w.gsetup(rl);
+	    for(Glob.Weather w : glob.weather) {
+		if(w instanceof Rendered)
+		    rl.add((Rendered)w, null);
 	    }
 	}
 	if(rl.cfg.pref.outline.val)
