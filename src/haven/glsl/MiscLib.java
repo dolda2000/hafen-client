@@ -122,4 +122,11 @@ public abstract class MiscLib {
 		g.gl.glUniform2f(loc, 1.0f / sz.x, 1.0f / sz.y);
 	    }
 	};
+
+    public static final Uniform screensize = new Uniform.AutoApply(VEC2) {
+	    public void apply(GOut g, int loc) {
+		Coord sz = g.st.cur(PView.wnd).sz();
+		g.gl.glUniform2f(loc, sz.x, sz.y);
+	    }
+	};
 }

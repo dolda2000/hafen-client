@@ -38,6 +38,8 @@ public class FBConfig {
     public TexGL color[], depth;
     public GLState state;
     private RenderTarget[] tgts = new RenderTarget[0];
+    private ResolveFilter[] res = new ResolveFilter[0];
+    private GLState resp;
 
     public FBConfig(Coord sz) {
 	this.sz = sz;
@@ -50,6 +52,8 @@ public class FBConfig {
 	    if(tgts[i] != null)
 		return(false);
 	}
+	if(res.length > 0)
+	    return(false);
 	return(true);
     }
 
@@ -101,6 +105,12 @@ public class FBConfig {
 	stb.add(fb);
 	stb.add(wnd);
 	this.state = GLState.compose(stb.toArray(new GLState[0]));
+	if(res.length > 0) {
+	    ShaderMacro[] resp = new ShaderMacro[res.length];
+	    for(int i = 0; i < res.length; i++)
+		resp[i] = res[i].code(this);
+	    this.resp = new States.AdHoc(resp);
+	}
     }
 
     private static <T> boolean hasuo(T[] a, T[] b) {
@@ -121,6 +131,8 @@ public class FBConfig {
 	    return(false);
 	if(!hasuo(a.tgts, b.tgts) || !hasuo(b.tgts, a.tgts))
 	    return(false);
+	if(!hasuo(a.res, b.res))
+	    return(false);
 	return(true);
     }
 
@@ -130,6 +142,8 @@ public class FBConfig {
 	color = last.color;
 	depth = last.depth;
 	tgts = last.tgts;
+	res = last.res;
+	resp = last.resp;
 	state = last.state;
     }
 
@@ -147,7 +161,13 @@ public class FBConfig {
 
     public void resolve(GOut g) {
 	if(fb != null) {
-	    g.image(color[0], Coord.z);
+	    for(ResolveFilter rf : res)
+		rf.prepare(this, g);
+	    g.state2d();
+	    if(resp != null)
+		g.state(resp);
+	    color[0].crender(g, g.tx, g.ul, g.sz);
+	    GOut.checkerr(g.gl);
 	}
     }
 
@@ -169,6 +189,19 @@ public class FBConfig {
 	return(tgt);
     }
 
+    public ResolveFilter add(ResolveFilter rf) {
+	if(rf == null)
+	    throw(new NullPointerException());
+	for(ResolveFilter p : res) {
+	    if(Utils.eq(rf, p))
+		return(p);
+	}
+	int l = res.length;
+	res = Utils.extend(res, l + 1);
+	res[l] = rf;
+	return(rf);
+    }
+
     public static abstract class RenderTarget {
 	public TexGL tex;
 
@@ -183,5 +216,10 @@ public class FBConfig {
 	public ShaderMacro code(FBConfig cfg, int id) {
 	    return(null);
 	}
+    }
+
+    public interface ResolveFilter {
+	public void prepare(FBConfig cfg, GOut g);
+	public ShaderMacro code(FBConfig cfg);
     }
 }
