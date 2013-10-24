@@ -31,6 +31,7 @@ import javax.media.opengl.*;
 import haven.glsl.*;
 
 public class FBConfig {
+    public final PView.ConfContext ctx;
     public Coord sz;
     public boolean hdr, tdepth;
     public GLFrameBuffer fb;
@@ -41,7 +42,8 @@ public class FBConfig {
     private ResolveFilter[] res = new ResolveFilter[0];
     private GLState resp;
 
-    public FBConfig(Coord sz) {
+    public FBConfig(PView.ConfContext ctx, Coord sz) {
+	this.ctx = ctx;
 	this.sz = sz;
     }
 
