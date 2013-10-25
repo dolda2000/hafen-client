@@ -182,6 +182,15 @@ public class GOut {
 	checkerr();
     }
 
+    /* Draw texture at c, with the extra state s applied. */
+    public void image(Tex tex, Coord c, GLState s) {
+	st.set(def2d);
+	if(s != null)
+	    state(s);
+	tex.crender(this, c.add(tx), ul, sz);
+	checkerr();
+    }
+
     public void vertex(Coord c) {
 	gl.glVertex2i(c.x + tx.x, c.y + tx.y);
     }

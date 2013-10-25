@@ -116,16 +116,22 @@ public abstract class MiscLib {
 	    }
 	};
 
+    private static Coord ssz(GOut g) {
+	PView.RenderState wnd = g.st.cur(PView.wnd);
+	if(wnd == null)
+	    return(g.sz);
+	else
+	    return(wnd.sz());
+    }
     public static final Uniform pixelpitch = new Uniform.AutoApply(VEC2) {
 	    public void apply(GOut g, int loc) {
-		Coord sz = g.st.cur(PView.wnd).sz();
+		Coord sz = ssz(g);
 		g.gl.glUniform2f(loc, 1.0f / sz.x, 1.0f / sz.y);
 	    }
 	};
-
     public static final Uniform screensize = new Uniform.AutoApply(VEC2) {
 	    public void apply(GOut g, int loc) {
-		Coord sz = g.st.cur(PView.wnd).sz();
+		Coord sz = ssz(g);
 		g.gl.glUniform2f(loc, sz.x, sz.y);
 	    }
 	};

@@ -557,6 +557,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(new Coord3f(cc.x, cc.y, glob.map.getcz(cc)));
     }
 
+    private final RenderContext clickctx = new RenderContext();
+    private GLState.Buffer clickbasic(GOut g) {
+	GLState.Buffer ret = basic(g);
+	clickctx.prep(ret);
+	return(ret);
+    }
+
     private abstract static class Clicklist<T> extends RenderList {
 	private Map<Color, T> rmap = new HashMap<Color, T>();
 	private int i = 1;
@@ -628,8 +635,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     private Coord checkmapclick(GOut g, Coord c) {
-	Maplist rl = new Maplist(basic(g));
-	rl.setup(map, basic(g));
+	Maplist rl = new Maplist(clickbasic(g));
+	rl.setup(map, clickbasic(g));
 	rl.fin();
 	{
 	    rl.render(g);
@@ -670,7 +677,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     private ClickInfo checkgobclick(GOut g, Coord c) {
-	Clicklist<ClickInfo> rl = new Clicklist<ClickInfo>(basic(g)) {
+	Clicklist<ClickInfo> rl = new Clicklist<ClickInfo>(clickbasic(g)) {
 		Gob curgob;
 		Gob.Overlay curol;
 		ClickInfo curinfo;
@@ -694,7 +701,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    curol = prevo;
 		}
 	    };
-	rl.setup(gobs, basic(g));
+	rl.setup(gobs, clickbasic(g));
 	rl.fin();
 	rl.render(g);
 	return(rl.get(g, c));
@@ -933,7 +940,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Coord mc;
 	    try {
 		GL gl = g.gl;
-		g.st.set(basic(g));
+		g.st.set(clickbasic(g));
 		g.apply();
 		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
 		mc = checkmapclick(g, pc);
@@ -963,12 +970,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    ClickInfo gobcl;
 	    try {
 		GL gl = g.gl;
-		g.st.set(basic(g));
+		g.st.set(clickbasic(g));
 		g.apply();
 		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
 		mapcl = checkmapclick(g, clickc);
 		g.st.set(bk);
-		g.st.set(basic(g));
+		g.st.set(clickbasic(g));
 		g.apply();
 		gl.glClear(GL.GL_COLOR_BUFFER_BIT);
 		gobcl = checkgobclick(g, clickc);

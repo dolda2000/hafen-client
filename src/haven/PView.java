@@ -44,7 +44,7 @@ public abstract class PView extends Widget {
     private final WidgetRenderState rstate = new WidgetRenderState();
     private GLState pstate;
     
-    public static abstract class RenderContext extends GLState.Abstract {
+    public static class RenderContext extends GLState.Abstract {
 	private Map<DataID, Object> data = new CacheMap<DataID, Object>(CacheMap.RefType.WEAK);
 
 	public interface DataID<T> {

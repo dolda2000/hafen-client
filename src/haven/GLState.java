@@ -330,6 +330,12 @@ public abstract class GLState {
 		throw(new RuntimeException("Texunit " + id + " freed twice"));
 	    st.textab[id] = this;
 	}
+
+	public void ufree() {
+	    act();
+	    st.gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+	    free();
+	}
     }
 
     public static class Applier {
