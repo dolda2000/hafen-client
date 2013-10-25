@@ -111,7 +111,16 @@ public class FBConfig {
 	    ShaderMacro[] resp = new ShaderMacro[res.length];
 	    for(int i = 0; i < res.length; i++)
 		resp[i] = res[i].code(this);
-	    this.resp = new States.AdHoc(resp);
+	    this.resp = new States.AdHoc(resp) {
+		    public void apply(GOut g) {
+			for(ResolveFilter f : res)
+			    f.apply(FBConfig.this, g);
+		    }
+		    public void unapply(GOut g) {
+			for(ResolveFilter f : res)
+			    f.unapply(FBConfig.this, g);
+		    }
+		};
 	}
     }
 
@@ -165,11 +174,7 @@ public class FBConfig {
 	if(fb != null) {
 	    for(ResolveFilter rf : res)
 		rf.prepare(this, g);
-	    g.state2d();
-	    if(resp != null)
-		g.state(resp);
-	    color[0].crender(g, g.tx, g.ul, g.sz);
-	    GOut.checkerr(g.gl);
+	    g.image(color[0], Coord.z, resp);
 	}
     }
 
@@ -223,5 +228,7 @@ public class FBConfig {
     public interface ResolveFilter {
 	public void prepare(FBConfig cfg, GOut g);
 	public ShaderMacro code(FBConfig cfg);
+	public void apply(FBConfig cfg, GOut g);
+	public void unapply(FBConfig cfg, GOut g);
     }
 }
