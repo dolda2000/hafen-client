@@ -142,7 +142,7 @@ public class FBConfig {
 	    return(false);
 	if(!hasuo(a.tgts, b.tgts) || !hasuo(b.tgts, a.tgts))
 	    return(false);
-	if(!hasuo(a.res, b.res))
+	if(!hasuo(a.res, b.res) || !hasuo(b.res, a.res))
 	    return(false);
 	return(true);
     }
