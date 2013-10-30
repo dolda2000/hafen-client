@@ -437,16 +437,14 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		    } catch(IOException e) {
 			throw(new LoadException(e, res));
 		    }
-		} catch(LoadException e) {
+		} catch(RuntimeException e) {
 		    if(next == null) {
-			res.error = e;
+			res.error = (e instanceof LoadException)?((LoadException)e):new LoadException(e, res);
 			res.loading = false;
 			res.notifyAll();
 		    } else {
 			next.load(res);
 		    }
-		} catch(RuntimeException e) {
-		    throw(new LoadException(e, res));
 		}
 	    } finally {
 		try {
