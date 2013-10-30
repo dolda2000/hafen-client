@@ -106,13 +106,13 @@ public abstract class MiscLib {
 
     public static final Uniform time = new Uniform.AutoApply(FLOAT) {
 	    public void apply(GOut g, int loc) {
-		g.gl.glUniform1f(loc, (System.currentTimeMillis() % 1000000L) / 1000f);
+		g.gl.glUniform1f(loc, (System.currentTimeMillis() % 3000000L) / 1000f);
 	    }
 	};
     public static final Uniform globtime = new Uniform.AutoApply(FLOAT) {
 	    public void apply(GOut g, int loc) {
 		Glob glob = g.st.cur(PView.ctx).glob();
-		g.gl.glUniform1f(loc, (glob.globtime() % 1000000L) / 1000f);
+		g.gl.glUniform1f(loc, (glob.globtime() % 10000000L) / 1000f);
 	    }
 	};
 
