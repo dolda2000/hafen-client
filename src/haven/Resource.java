@@ -795,9 +795,12 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    synchronized(this) {
 		if(tfac == null) {
 		    CodeEntry ent = layer(CodeEntry.class);
-		    if(ent != null)
-			return(ent.get(Tiler.Factory.class));
-		    return(Tiler.byname(tn));
+		    if(ent != null) {
+			tfac = ent.get(Tiler.Factory.class);
+		    } else {
+			if((tfac = Tiler.byname(tn)) == null)
+			    throw(new RuntimeException("Invalid tiler name in " + Resource.this.name + ": " + tn));
+		    }
 		}
 		return(tfac);
 	    }
