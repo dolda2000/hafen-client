@@ -206,13 +206,9 @@ public class Glob {
 	    rgtime = raw;
 	} else {
 	    long gd = (now - lastrep) * 3;
-	    if((rgtime + gd) > (raw + 1000)) {
-		rgtime += (gd * 3) / 4;
-	    } else if((rgtime + gd) < (raw - 1000)) {
-		rgtime += (gd * 5) / 4;
-	    } else {
-		rgtime += gd;
-	    }
+	    rgtime += gd;
+	    if(Math.abs(rgtime + gd - raw) > 1000)
+		rgtime = rgtime + (long)((raw - rgtime) * (1.0 - Math.pow(10.0, -(now - lastrep) / 1000.0)));
 	}
 	lastrep = now;
 	return(rgtime);
