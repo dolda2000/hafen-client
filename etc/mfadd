@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ $# -lt 1 ]; then
+    echo "usage: mfadd JARFILE [MANIFEST-LINE...]" >&2
+    exit 1
+fi
+
+jarfile="$1"; shift
+
+mfile="$(mktemp /tmp/manifest.XXXXXX)"
+while [ $# -gt 0 ]; do
+    echo "$1" >>"$mfile"
+    shift
+done
+
+jar umf "$mfile" "$jarfile"
+status=$?
+
+rm -f "$mfile"
+exit $status
