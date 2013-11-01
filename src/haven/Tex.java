@@ -38,10 +38,8 @@ public abstract class Tex {
     }
 
     public static int nextp2(int in) {
-	int ret;
-	
-	for(ret = 1; ret < in; ret <<= 1);
-	return(ret);
+	int h = Integer.highestOneBit(in);
+	return((h == in)?h:(h * 2));
     }
 
     /* Render texture coordinates from ul to br at c to c + sz, scaling if necessary. */
