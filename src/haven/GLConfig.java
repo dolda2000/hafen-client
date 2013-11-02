@@ -68,7 +68,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	try {
 	    c.glmajver = glgeti(gl, GL2.GL_MAJOR_VERSION);
 	    c.glminver = glgeti(gl, GL2.GL_MINOR_VERSION);
-	} catch(GLException e) {
+	} catch(GOut.GLException e) {
 	    c.glmajver = 1;
 	    c.glminver = 0;
 	}
