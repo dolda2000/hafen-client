@@ -65,8 +65,13 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 
     public static GLConfig fromgl(GL gl, GLContext ctx, GLCapabilitiesImmutable caps) {
 	GLConfig c = new GLConfig();
-	c.glmajver = glgeti(gl, GL2.GL_MAJOR_VERSION);
-	c.glminver = glgeti(gl, GL2.GL_MINOR_VERSION);
+	try {
+	    c.glmajver = glgeti(gl, GL2.GL_MAJOR_VERSION);
+	    c.glminver = glgeti(gl, GL2.GL_MINOR_VERSION);
+	} catch(GLException e) {
+	    c.glmajver = 1;
+	    c.glminver = 0;
+	}
 	c.maxlights = glgeti(gl, GL2.GL_MAX_LIGHTS);
 	c.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	c.caps = caps;
