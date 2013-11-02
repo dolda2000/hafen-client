@@ -32,7 +32,7 @@ import javax.media.opengl.*;
 
 public class GLConfig implements java.io.Serializable, Console.Directory {
     private static final Pattern slvp = Pattern.compile("^(\\d+)\\.(\\d+)");
-    public int glslver;
+    public int glslver, glmajver, glminver;
     public int maxlights;
     public Collection<String> exts;
     public transient GLCapabilitiesImmutable caps;
@@ -65,6 +65,8 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 
     public static GLConfig fromgl(GL gl, GLContext ctx, GLCapabilitiesImmutable caps) {
 	GLConfig c = new GLConfig();
+	c.glmajver = glgeti(gl, GL2.GL_MAJOR_VERSION);
+	c.glminver = glgeti(gl, GL2.GL_MINOR_VERSION);
 	c.maxlights = glgeti(gl, GL2.GL_MAX_LIGHTS);
 	c.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	c.caps = caps;
