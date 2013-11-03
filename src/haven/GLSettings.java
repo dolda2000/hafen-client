@@ -201,7 +201,7 @@ public class GLSettings implements java.io.Serializable {
 	};
 
     public final BoolSetting wsurf = new BoolSetting("wsurf") {
-	    public Boolean defval() {return(progmode.val.on);}
+	    public Boolean defval() {return(progmode.val.on && cfg.glmajver >= 3);}
 	    public void validate(Boolean val) {
 		if(val) {
 		    if(!progmode.val.on) throw(new SettingException("Shaded water surface requires a shader-compatible video card."));
