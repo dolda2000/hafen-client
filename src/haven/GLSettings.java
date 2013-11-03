@@ -37,6 +37,7 @@ import javax.media.opengl.*;
  */
 public class GLSettings implements java.io.Serializable {
     public final GLConfig cfg;
+    public boolean dirty = false;
     private final List<Setting<?>> settings = new ArrayList<Setting<?>>();
 
     private GLSettings(GLConfig cfg) {

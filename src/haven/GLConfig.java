@@ -113,7 +113,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 			for(GLSettings.Setting<?> s : pref.settings()) {
 			    if(s.nm == var) {
 				s.set(args[2]);
-				pref.save();
+				pref.dirty = true;
 				return;
 			    }
 			}
@@ -124,6 +124,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	cmdmap.put("glreset", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    pref = GLSettings.defconf(GLConfig.this);
+		    pref.dirty = true;
 		}
 	    });
     }
