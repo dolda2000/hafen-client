@@ -31,7 +31,7 @@ import java.awt.Color;
 import java.awt.image.*;
 
 public class GobIcon extends GAttrib {
-    private static final PUtils.Convolution filter = new PUtils.Hanning(1);
+    public static final PUtils.Convolution filter = new PUtils.Hanning(1);
     private static final Map<Indir<Resource>, Tex> cache = new WeakHashMap<Indir<Resource>, Tex>();
     public final Indir<Resource> res;
     private Tex tex;
