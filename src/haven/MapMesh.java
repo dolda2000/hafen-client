@@ -30,6 +30,8 @@ import static haven.MCache.tilesz;
 import java.util.*;
 import javax.media.opengl.*;
 import java.awt.Color;
+import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 
 public class MapMesh implements Rendered, Disposable {
     public final Coord ul, sz;
@@ -584,10 +586,10 @@ public class MapMesh implements Rendered, Disposable {
     
     private void consflat() {
 	Surface g = gnd();
-	java.nio.FloatBuffer pos = Utils.mkfbuf(sz.x * sz.y * 12);
-	java.nio.FloatBuffer col1 = Utils.mkfbuf(sz.x * sz.y * 16);
-	java.nio.FloatBuffer col2 = Utils.mkfbuf(sz.x * sz.y * 16);
-	java.nio.ShortBuffer ind = Utils.mksbuf(sz.x * sz.y * 6);
+	FloatBuffer pos = FloatBuffer.wrap(new float[sz.x * sz.y * 12]);
+	FloatBuffer col1 = FloatBuffer.wrap(new float[sz.x * sz.y * 16]);
+	FloatBuffer col2 = FloatBuffer.wrap(new float[sz.x * sz.y * 16]);
+	ShortBuffer ind = ShortBuffer.wrap(new short[sz.x * sz.y * 6]);
 	short i = 0;
 	Coord c = new Coord();
 	for(c.y = 0; c.y < sz.y; c.y++) {
