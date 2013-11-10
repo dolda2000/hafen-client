@@ -106,6 +106,23 @@ public class GLSettings implements java.io.Serializable {
 	}
     }
 
+    public abstract class FloatSetting extends Setting<Float> {
+	public FloatSetting(String nm) {super(nm);}
+
+	public void set(String val) {
+	    float fval;
+	    try {
+		fval = Float.parseFloat(val);
+	    } catch(NumberFormatException e) {
+		throw(new SettingException("Not a floating-point value: " + val));
+	    }
+	    set(fval);
+	}
+
+	public abstract float min();
+	public abstract float max();
+    }
+
     public static enum MeshMode {
 	MEM, DLIST, VAO;
     }
@@ -207,6 +224,23 @@ public class GLSettings implements java.io.Serializable {
 		if(val) {
 		    if(!progmode.val.on) throw(new SettingException("Shaded water surface requires a shader-compatible video card."));
 		}
+	    }
+	};
+
+    public final FloatSetting anisotex = new FloatSetting("aniso") {
+	    public Float defval() {return(0f);}
+	    public float min() {return(0);}
+	    public float max() {return(cfg.anisotropy);}
+	    public void validate(Float val) {
+		if(val != 0) {
+		    if(cfg.anisotropy <= 1) throw(new SettingException("Video card does not support anisotropic filtering."));
+		    if(val > cfg.anisotropy) throw(new SettingException("Video card only supports up to " + cfg.anisotropy + "x anistropic filtering."));
+		    if(val < 0) throw(new SettingException("Anisostropy factor cannot be negative."));
+		}
+	    }
+	    public void set(Float val) {
+		super.set(val);
+		TexGL.setallparams();
 	    }
 	};
 

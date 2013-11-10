@@ -290,10 +290,19 @@ public abstract class TexGL extends Tex {
 	}
     }
 
+    public static void setallparams() {
+	synchronized(active) {
+	    for(TexGL tex : active)
+		tex.setparams = true;
+	}
+    }
+
     protected void setparams(GOut g) {
 	GL gl = g.gl;
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, minfilter);
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, magfilter);
+	if((minfilter == GL.GL_LINEAR_MIPMAP_LINEAR) && (g.gc.pref.anisotex.val >= 1))
+	    gl.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAX_ANISOTROPY_EXT, g.gc.pref.anisotex.val);
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, wrapmode);
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, wrapmode);
     }
