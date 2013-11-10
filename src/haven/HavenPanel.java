@@ -368,6 +368,10 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	    }
 	}
 	state.clean();
+	if(glconf.pref.dirty) {
+	    glconf.pref.save();
+	    glconf.pref.dirty = false;
+	}
     }
 	
     void dispatch() {

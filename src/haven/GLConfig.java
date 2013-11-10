@@ -68,7 +68,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	try {
 	    c.glmajver = glgeti(gl, GL2.GL_MAJOR_VERSION);
 	    c.glminver = glgeti(gl, GL2.GL_MINOR_VERSION);
-	} catch(GLException e) {
+	} catch(GOut.GLException e) {
 	    c.glmajver = 1;
 	    c.glminver = 0;
 	}
@@ -113,12 +113,18 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 			for(GLSettings.Setting<?> s : pref.settings()) {
 			    if(s.nm == var) {
 				s.set(args[2]);
-				pref.save();
+				pref.dirty = true;
 				return;
 			    }
 			}
 			throw(new Exception("No such setting: " + var));
 		    }
+		}
+	    });
+	cmdmap.put("glreset", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    pref = GLSettings.defconf(GLConfig.this);
+		    pref.dirty = true;
 		}
 	    });
     }
