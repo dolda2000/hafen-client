@@ -301,6 +301,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	    Runtime rt = Runtime.getRuntime();
 	    long free = rt.freeMemory(), total = rt.totalMemory();
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Tex-current: %d", TexGL.num());
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "RT-current: %d", TexRT.current.get(gl).size());
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "GL progs: %d", g.st.numprogs());
 	    GameUI gi = ui.root.findchild(GameUI.class);

@@ -35,13 +35,15 @@ import javax.media.opengl.*;
 import static haven.GOut.checkerr;
 
 public abstract class TexGL extends Tex {
+    public static boolean disableall = false;
+    private static final WeakList<TexGL> active = new WeakList<TexGL>();
     protected TexOb t = null;
-    private Object idmon = new Object();
     protected boolean mipmap = false, centroid = false;
     protected int magfilter = GL.GL_NEAREST, minfilter = GL.GL_NEAREST, wrapmode = GL.GL_REPEAT;
     protected Coord tdim;
+    private final Object idmon = new Object();
+    private WeakList.Entry<TexGL> actref;
     private boolean setparams = true;
-    public static boolean disableall = false;
     
     public static class TexOb extends GLObject {
 	public final int id;
@@ -282,6 +284,12 @@ public abstract class TexGL extends Tex {
 	
     protected abstract void fill(GOut gl);
 
+    public static int num() {
+	synchronized(active) {
+	    return(active.size());
+	}
+    }
+
     protected void setparams(GOut g) {
 	GL gl = g.gl;
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, minfilter);
@@ -345,6 +353,9 @@ public abstract class TexGL extends Tex {
 		dispose();
 	    if(t == null) {
 		create(g);
+		synchronized(active) {
+		    actref = active.add2(this);
+		}
 	    } else if(setparams) {
 		gl.glBindTexture(GL.GL_TEXTURE_2D, t.id);
 		setparams(g);
@@ -379,6 +390,10 @@ public abstract class TexGL extends Tex {
 	    if(t != null) {
 		t.dispose();
 		t = null;
+		synchronized(active) {
+		    actref.remove();
+		    actref = null;
+		}
 	    }
 	}
     }
