@@ -34,6 +34,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
     private static final Pattern slvp = Pattern.compile("^(\\d+)\\.(\\d+)");
     public int glslver, glmajver, glminver;
     public int maxlights;
+    public float anisotropy;
     public Collection<String> exts;
     public transient GLCapabilitiesImmutable caps;
     public GLSettings pref;
@@ -89,6 +90,10 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 		}
 	    }
 	}
+	if(c.exts.contains("GL_EXT_texture_filter_anisotropic"))
+	    c.anisotropy = glgetf(gl, GL.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+	else
+	    c.anisotropy = 0;
 	return(c);
     }
     
@@ -103,7 +108,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
     public boolean havefbo() {
 	return(exts.contains("GL_EXT_framebuffer_object"));
     }
-    
+
     private transient Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("gl", new Console.Command() {
