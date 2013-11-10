@@ -777,6 +777,33 @@ public class Utils {
 	return(mkbbuf(n * 4).asIntBuffer());
     }
 
+    /*
+    public static ByteBuffer wbbuf(int n) {
+	return(mkbbuf(n));
+    }
+    public static IntBuffer wibuf(int n) {
+	return(mkibuf(n));
+    }
+    public static FloatBuffer wfbuf(int n) {
+	return(mkfbuf(n));
+    }
+    public static ShortBuffer wsbuf(int n) {
+	return(mksbuf(n));
+    }
+    */
+    public static ByteBuffer wbbuf(int n) {
+	return(ByteBuffer.wrap(new byte[n]));
+    }
+    public static IntBuffer wibuf(int n) {
+	return(IntBuffer.wrap(new int[n]));
+    }
+    public static FloatBuffer wfbuf(int n) {
+	return(FloatBuffer.wrap(new float[n]));
+    }
+    public static ShortBuffer wsbuf(int n) {
+	return(ShortBuffer.wrap(new short[n]));
+    }
+
     public static float[] c2fa(Color c) {
 	return(new float[] {
 		((float)c.getRed() / 255.0f),
