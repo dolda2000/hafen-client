@@ -465,31 +465,25 @@ public class GOut {
     }
     
     public Color getpixel(Coord c) {
-	IntBuffer tgt = Utils.mkibuf(4);
-	tgt.rewind();
-	gl.glReadPixels(c.x + tx.x, root.sz.y - c.y - tx.y, 1, 1, GL.GL_RGBA, GL2.GL_UNSIGNED_INT_8_8_8_8, tgt);
+	byte[] buf = new byte[4];
+	gl.glReadPixels(c.x + tx.x, root.sz.y - c.y - tx.y, 1, 1, GL.GL_RGBA, GL2.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
 	checkerr();
-	long rgb = ((long)tgt.get(0)) & 0xffffffffl;
-	int r = (int)((rgb & 0xff000000l) >> 24);
-	int g = (int)((rgb & 0x00ff0000l) >> 16);
-	int b = (int)((rgb & 0x0000ff00l) >> 8);
-	return(new Color(r, g, b));
+	return(new Color(((int)buf[0]) & 0xff, ((int)buf[1]) & 0xff, ((int)buf[2]) & 0xff));
     }
     
     public BufferedImage getimage(Coord ul, Coord sz) {
-	ByteBuffer buf = Utils.mkbbuf(sz.x * sz.y * 4);
-	gl.glReadPixels(ul.x + tx.x, root.sz.y - ul.y - sz.y - tx.y, sz.x, sz.y, GL.GL_RGBA, GL2.GL_UNSIGNED_INT_8_8_8_8, buf);
-	byte[] copy = new byte[buf.capacity()];
-	int fo = 0, to = (sz.y - 1) * sz.x * 4;
-	for(int y = 0; y < sz.y; y++, to -= sz.x * 4 * 2) {
-	    for(int x = 0; x < sz.x; x++, fo += 4, to += 4) {
-		copy[to + 3] = buf.get(fo + 0);
-		copy[to + 2] = buf.get(fo + 1);
-		copy[to + 1] = buf.get(fo + 2);
-		copy[to + 0] = buf.get(fo + 3);
+	byte[] buf = new byte[sz.x * sz.y * 4];
+	gl.glReadPixels(ul.x + tx.x, root.sz.y - ul.y - sz.y - tx.y, sz.x, sz.y, GL.GL_RGBA, GL2.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
+	checkerr();
+	for(int y = 0; y < sz.y / 2; y++) {
+	    int to = y * sz.x * 4, bo = (sz.y - y - 1) * sz.x * 4;
+	    for(int o = 0; o < sz.x * 4; o++, to++, bo++) {
+		byte t = buf[to];
+		buf[to] = buf[bo];
+		buf[bo] = t;
 	    }
 	}
-	WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(copy, copy.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
+	WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(buf, buf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
 	return(new BufferedImage(TexI.glcm, raster, false, null));
     }
 

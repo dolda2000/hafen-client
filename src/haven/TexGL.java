@@ -40,6 +40,7 @@ public abstract class TexGL extends Tex {
     protected boolean mipmap = false, centroid = false;
     protected int magfilter = GL.GL_NEAREST, minfilter = GL.GL_NEAREST, wrapmode = GL.GL_REPEAT;
     protected Coord tdim;
+    private boolean setparams = true;
     public static boolean disableall = false;
     
     public static class TexOb extends GLObject {
@@ -281,14 +282,19 @@ public abstract class TexGL extends Tex {
 	
     protected abstract void fill(GOut gl);
 
-    private void create(GOut g) {
-	GL2 gl = g.gl;
-	t = new TexOb(gl);
-	gl.glBindTexture(GL.GL_TEXTURE_2D, t.id);
+    protected void setparams(GOut g) {
+	GL gl = g.gl;
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, minfilter);
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, magfilter);
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, wrapmode);
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, wrapmode);
+    }
+
+    private void create(GOut g) {
+	GL2 gl = g.gl;
+	t = new TexOb(gl);
+	gl.glBindTexture(GL.GL_TEXTURE_2D, t.id);
+	setparams(g);
 	try {
 	    fill(g);
 	} catch(Loading l) {
@@ -319,12 +325,17 @@ public abstract class TexGL extends Tex {
 
     public void magfilter(int filter) {
 	magfilter = filter;
-	dispose();
+	setparams = true;
     }
     
     public void minfilter(int filter) {
 	minfilter = filter;
-	dispose();
+	setparams = true;
+    }
+
+    public void wrapmode(int mode) {
+	wrapmode = mode;
+	setparams = true;
     }
 
     public int glid(GOut g) {
@@ -332,8 +343,13 @@ public abstract class TexGL extends Tex {
 	synchronized(idmon) {
 	    if((t != null) && (t.gl != gl))
 		dispose();
-	    if(t == null)
+	    if(t == null) {
 		create(g);
+	    } else if(setparams) {
+		gl.glBindTexture(GL.GL_TEXTURE_2D, t.id);
+		setparams(g);
+		setparams = false;
+	    }
 	    return(t.id);
 	}
     }

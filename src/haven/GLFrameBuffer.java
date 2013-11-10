@@ -142,20 +142,20 @@ public class GLFrameBuffer extends GLState {
 		    gl.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_TEXTURE_2D, depth.glid(g), 0);
 		else
 		    gl.glFramebufferRenderbuffer(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_RENDERBUFFER, altdepth.glid(gl));
+		if(color.length == 0) {
+		    gl.glDrawBuffer(GL.GL_NONE);
+		    gl.glReadBuffer(GL.GL_NONE);
+		} else if(color.length > 1) {
+		    for(int i = 0; i < color.length; i++)
+			bufmask[i] = GL.GL_COLOR_ATTACHMENT0 + i;
+		    gl.glDrawBuffers(color.length, bufmask, 0);
+		}
 		GOut.checkerr(gl);
 		int st = gl.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER);
 		if(st != GL.GL_FRAMEBUFFER_COMPLETE)
 		    throw(new RuntimeException("FBO failed completeness test: " + st));
 	    } else {
 		gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo.id);
-	    }
-	    if(color.length == 0) {
-		gl.glDrawBuffer(GL.GL_NONE);
-		gl.glReadBuffer(GL.GL_NONE);
-	    } else if(color.length > 1) {
-		for(int i = 0; i < color.length; i++)
-		    bufmask[i] = GL.GL_COLOR_ATTACHMENT0 + i;
-		gl.glDrawBuffers(color.length, bufmask, 0);
 	    }
 	}
 	gl.glViewport(0, 0, sz().x, sz().y);
@@ -172,10 +172,6 @@ public class GLFrameBuffer extends GLState {
     public void unapply(GOut g) {
 	GL2 gl = g.gl;
 	gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0);
-	if(color.length != 1) {
-	    gl.glDrawBuffer(GL.GL_BACK);
-	    gl.glReadBuffer(GL.GL_BACK);
-	}
 	gl.glViewport(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
     }
 
