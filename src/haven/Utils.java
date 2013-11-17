@@ -300,34 +300,48 @@ public class Utils {
     public static float hfdec(short bits) {
 	int b = ((int)bits) & 0xffff;
 	int e = (b & 0x7c00) >> 10;
+	int m = b & 0x03ff;
 	int ee;
-	if(e == 0)
-	    ee = 0;
-	else if(e == 0x1f)
+	if(e == 0) {
+	    if(m == 0) {
+		ee = 0;
+	    } else {
+		int n = Integer.numberOfLeadingZeros(m) - 22;
+		ee = (-15 - n) + 127;
+		m = (m << (n + 1)) & 0x03ff;
+	    }
+	} else if(e == 0x1f) {
 	    ee = 0xff;
-	else
+	} else {
 	    ee = e - 15 + 127;
+	}
 	int f32 = ((b & 0x8000) << 16) |
 	    (ee << 23) |
-	    ((b & 0x03ff) << 13);
+	    (m << 13);
 	return(Float.intBitsToFloat(f32));
     }
 
     public static short hfenc(float f) {
 	int b = Float.floatToIntBits(f);
 	int e = (b & 0x7f800000) >> 23;
+	int m = b & 0x007fffff;
 	int ee;
-	if(e == 0)
+	if(e == 0) {
 	    ee = 0;
-	else if(e == 0xff)
+	    m = 0;
+	} else if(e == 0xff) {
 	    ee = 0x1f;
-	else if((e < 113) || (e > 142))
+	} else if(e < 113) {
+	    ee = 0;
+	    m = (m | 0x00800000) >> (113 - e);
+	} else if(e > 142) {
 	    return(((b & 0x80000000) == 0)?((short)0x7c00):((short)0xfc00));
-	else
+	} else {
 	    ee = e - 127 + 15;
+	}
 	int f16 = ((b >> 16) & 0x8000) |
 	    (ee << 10) |
-	    ((b & 0x007fffff) >> 13);
+	    (m >> 13);
 	return((short)f16);
     }
 
