@@ -407,7 +407,7 @@ public abstract class TexGL extends Tex {
 	}
     }
 
-    public BufferedImage get(GOut g) {
+    public BufferedImage get(GOut g, boolean invert) {
 	GL2 gl = g.gl;
 	g.state2d();
 	g.apply();
@@ -418,8 +418,22 @@ public abstract class TexGL extends Tex {
 	gl.glGetTexImage(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
 	s.free();
 	GOut.checkerr(gl);
+	if(invert) {
+	    for(int y = 0; y < tdim.y / 2; y++) {
+		int to = y * tdim.x * 4, bo = (tdim.y - y - 1) * tdim.x * 4;
+		for(int o = 0; o < tdim.x * 4; o++, to++, bo++) {
+		    byte t = buf[to];
+		    buf[to] = buf[bo];
+		    buf[bo] = t;
+		}
+	    }
+	}
 	WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(buf, buf.length), tdim.x, tdim.y, 4 * tdim.x, 4, new int[] {0, 1, 2, 3}, null);
 	return(new BufferedImage(TexI.glcm, raster, false, null));
+    }
+
+    public BufferedImage get(GOut g) {
+	return(get(g, true));
     }
 
     @Material.ResName("tex")

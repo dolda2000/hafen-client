@@ -296,7 +296,7 @@ public class GOut {
 	checkerr();
     }
 	
-    public void ftexrect(Coord ul, Coord sz, GLState s) {
+    public void ftexrect(Coord ul, Coord sz, GLState s, float tl, float tt, float tr, float tb) {
 	ul = tx.add(ul);
 	Coord br = ul.add(sz);
 	Coord ult = new Coord(0, 0);
@@ -324,10 +324,10 @@ public class GOut {
 	state(s);
 	apply();
 
-	float l = ((float)ult.x) / ((float)sz.x);
-	float t = ((float)ult.y) / ((float)sz.y);
-	float r = ((float)brt.x) / ((float)sz.x);
-	float b = ((float)brt.y) / ((float)sz.y);
+	float l = tl + ((tr - tl) * ((float)ult.x) / ((float)sz.x));
+	float t = tt + ((tb - tt) * ((float)ult.y) / ((float)sz.y));
+	float r = tl + ((tr - tl) * ((float)brt.x) / ((float)sz.x));
+	float b = tt + ((tb - tt) * ((float)brt.y) / ((float)sz.y));
 	gl.glBegin(GL2.GL_QUADS);
 	gl.glTexCoord2f(l, b); gl.glVertex2i(ul.x, ul.y);
 	gl.glTexCoord2f(r, b); gl.glVertex2i(br.x, ul.y);
@@ -335,6 +335,10 @@ public class GOut {
 	gl.glTexCoord2f(l, t); gl.glVertex2i(ul.x, br.y);
 	gl.glEnd();
 	checkerr();
+    }
+
+    public void ftexrect(Coord ul, Coord sz, GLState s) {
+	ftexrect(ul, sz, s, 0, 0, 1, 1);
     }
 
     public void fellipse(Coord c, Coord r, int a1, int a2) {
