@@ -143,7 +143,7 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	}
     }
 
-    public Tex tex() {
+    public TexGL tex() {
 	return(tex);
     }
 
