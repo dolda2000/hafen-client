@@ -1,0 +1,102 @@
+/*
+ *  This file is part of the Haven & Hearth game client.
+ *  Copyright (C) 2009 Fredrik Tolf <fredrik@dolda2000.com>, and
+ *                     Björn Johannessen <johannessen.bjorn@gmail.com>
+ *
+ *  Redistribution and/or modification of this file is subject to the
+ *  terms of the GNU Lesser General Public License, version 3, as
+ *  published by the Free Software Foundation.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  Other parts of this source tree adhere to other copying
+ *  rights. Please see the file `COPYING' in the root directory of the
+ *  source tree for details.
+ *
+ *  A copy the GNU Lesser General Public License is distributed along
+ *  with the source tree of which this file is a part in the file
+ *  `doc/LPGL-3'. If it is missing for any reason, please see the Free
+ *  Software Foundation's website at <http://www.fsf.org/>, or write
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ *  Boston, MA 02111-1307 USA
+ */
+
+package haven.resutil;
+
+import java.util.*;
+import haven.*;
+import haven.glsl.*;
+import static haven.glsl.Cons.*;
+import static haven.glsl.Function.PDir.*;
+import static haven.glsl.Type.*;
+import haven.glsl.ValBlock.Value;
+
+public class TexPal extends GLState {
+    public static final Slot<TexPal> slot = new Slot<TexPal>(Slot.Type.DRAW, TexPal.class);
+    public final TexGL tex;
+
+    public TexPal(TexGL tex) {
+	this.tex = tex;
+    }
+
+    private static final Uniform ctex = new Uniform(SAMPLER2D);
+    private static final ShaderMacro[] shaders = {new ShaderMacro() {
+	    public void modify(ProgramContext prog) {
+		Tex2D.tex2d(prog.fctx).mod(new Macro1<Expression>() {
+			public Expression expand(Expression in) {
+			    return(texture2D(ctex.ref(), pick(in, "rg")));
+			}
+		    }, -100);
+	    }
+	}};
+
+    public ShaderMacro[] shaders() {return(shaders);}
+    public boolean reqshaders() {return(true);}
+
+    private TexUnit sampler;
+
+    public void reapply(GOut g) {
+    }
+
+    public void apply(GOut g) {
+	sampler = TexGL.lbind(g, tex);
+	reapply(g);
+    }
+
+    public void unapply(GOut g) {
+	sampler.ufree(); sampler = null;
+    }
+
+    public void prep(Buffer buf) {
+	buf.put(slot, this);
+    }
+
+    @Material.ResName("pal")
+    public static class $res implements Material.ResCons2 {
+	public void cons(final Resource res, List<GLState> states, List<Material.Res.Resolver> left, Object... args) {
+	    final Resource tres;
+	    final int tid;
+	    int a = 0;
+	    if(args[a] instanceof String) {
+		tres = Resource.load((String)args[a], (Integer)args[a + 1]);
+		tid = (Integer)args[a + 2];
+		a += 3;
+	    } else {
+		tres = res;
+		tid = (Integer)args[a];
+		a += 1;
+	    }
+	    left.add(new Material.Res.Resolver() {
+		    public void resolve(Collection<GLState> buf) {
+			TexR rt = tres.layer(TexR.class, tid);
+			if(rt == null)
+			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
+			buf.add(new TexPal((TexGL)rt.tex()));
+		    }
+		});
+	}
+    }
+}
