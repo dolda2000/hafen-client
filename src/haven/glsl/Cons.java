@@ -115,4 +115,9 @@ public class Cons {
     public static Expression vec2(double a, double b)                     {return(vec2(l(a), l(b)));}
     public static Expression vec3(double a, double b, double c)           {return(vec3(l(a), l(b), l(c)));}
     public static Expression vec4(double a, double b, double c, double d) {return(vec4(l(a), l(b), l(c), l(d)));}
+
+    public static <T> T id(T a) {return(a);}
+    public static final Macro1<Expression> idm = new Macro1<Expression>() {
+	public Expression expand(Expression in) {return(in);}
+    };
 }

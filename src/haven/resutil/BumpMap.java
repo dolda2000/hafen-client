@@ -24,8 +24,9 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.resutil;
 
+import haven.*;
 import haven.glsl.*;
 import static haven.glsl.Cons.*;
 import static haven.glsl.Type.*;

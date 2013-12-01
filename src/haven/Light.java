@@ -45,9 +45,20 @@ public class Light implements Rendered {
 	this.spc = defspc;
     }
     
+    public Light(FColor col) {
+	this.amb = defamb;
+	this.dif = this.spc = col.to4a();
+    }
+
     public Light(Color col) {
 	this.amb = defamb;
 	this.dif = this.spc = c2fa(col);
+    }
+
+    public Light(FColor amb, FColor dif, FColor spc) {
+	this.amb = amb.to4a();
+	this.dif = dif.to4a();
+	this.spc = spc.to4a();
     }
 
     public Light(Color amb, Color dif, Color spc) {
