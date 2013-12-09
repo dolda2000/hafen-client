@@ -290,10 +290,14 @@ public class Widget {
 	return(c);
     }
 	
-    public Coord rootpos() {
-	if(parent == null)
+    public Coord parentpos(Widget in) {
+	if(in == this)
 	    return(new Coord(0, 0));
-	return(xlate(parent.rootpos().add(c), true));
+	return(xlate(parent.parentpos(in).add(c), true));
+    }
+
+    public Coord rootpos() {
+	return(parentpos(ui.root));
     }
     
     public Coord rootxlate(Coord c) {
