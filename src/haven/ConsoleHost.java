@@ -57,8 +57,11 @@ public abstract class ConsoleHost extends Widget {
 	    try {
 		ui.cons.run(line);
 	    } catch(Exception e) {
-		ui.cons.out.println(e.getMessage());
-		error(e.getMessage());
+		String msg = e.getMessage();
+		if(msg == null)
+		    msg = e.toString();
+		ui.cons.out.println(msg);
+		error(msg);
 	    }
 	    cancel();
 	}

@@ -182,6 +182,15 @@ public class GOut {
 	checkerr();
     }
 
+    /* Draw texture at c, with the extra state s applied. */
+    public void image(Tex tex, Coord c, GLState s) {
+	st.set(def2d);
+	if(s != null)
+	    state(s);
+	tex.crender(this, c.add(tx), ul, sz);
+	checkerr();
+    }
+
     public void vertex(Coord c) {
 	gl.glVertex2i(c.x + tx.x, c.y + tx.y);
     }
@@ -287,6 +296,51 @@ public class GOut {
 	checkerr();
     }
 	
+    public void ftexrect(Coord ul, Coord sz, GLState s, float tl, float tt, float tr, float tb) {
+	ul = tx.add(ul);
+	Coord br = ul.add(sz);
+	Coord ult = new Coord(0, 0);
+	Coord brt = new Coord(sz);
+	if(ul.x < this.ul.x) {
+	    ult.x += this.ul.x - ul.x;
+	    ul.x = this.ul.x;
+	}
+	if(ul.y < this.ul.y) {
+	    ult.y += this.ul.y - ul.y;
+	    ul.y = this.ul.y;
+	}
+	if(br.x > this.ul.x + this.sz.x) {
+	    brt.x -= br.x - (this.ul.x + this.sz.x);
+	    br.x = this.ul.x + this.sz.x;
+	}
+	if(br.y > this.ul.y + this.sz.y) {
+	    brt.y -= br.y - (this.ul.y + this.sz.y);
+	    br.y = this.ul.y + this.sz.y;
+	}
+	if((ul.x >= br.x) || (ul.y >= br.y))
+	    return;
+
+	st.set(def2d);
+	state(s);
+	apply();
+
+	float l = tl + ((tr - tl) * ((float)ult.x) / ((float)sz.x));
+	float t = tt + ((tb - tt) * ((float)ult.y) / ((float)sz.y));
+	float r = tl + ((tr - tl) * ((float)brt.x) / ((float)sz.x));
+	float b = tt + ((tb - tt) * ((float)brt.y) / ((float)sz.y));
+	gl.glBegin(GL2.GL_QUADS);
+	gl.glTexCoord2f(l, b); gl.glVertex2i(ul.x, ul.y);
+	gl.glTexCoord2f(r, b); gl.glVertex2i(br.x, ul.y);
+	gl.glTexCoord2f(r, t); gl.glVertex2i(br.x, br.y);
+	gl.glTexCoord2f(l, t); gl.glVertex2i(ul.x, br.y);
+	gl.glEnd();
+	checkerr();
+    }
+
+    public void ftexrect(Coord ul, Coord sz, GLState s) {
+	ftexrect(ul, sz, s, 0, 0, 1, 1);
+    }
+
     public void fellipse(Coord c, Coord r, int a1, int a2) {
 	st.set(def2d);
 	state(color);
@@ -415,31 +469,25 @@ public class GOut {
     }
     
     public Color getpixel(Coord c) {
-	IntBuffer tgt = Utils.mkibuf(4);
-	tgt.rewind();
-	gl.glReadPixels(c.x + tx.x, root.sz.y - c.y - tx.y, 1, 1, GL.GL_RGBA, GL2.GL_UNSIGNED_INT_8_8_8_8, tgt);
+	byte[] buf = new byte[4];
+	gl.glReadPixels(c.x + tx.x, root.sz.y - c.y - tx.y, 1, 1, GL.GL_RGBA, GL2.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
 	checkerr();
-	long rgb = ((long)tgt.get(0)) & 0xffffffffl;
-	int r = (int)((rgb & 0xff000000l) >> 24);
-	int g = (int)((rgb & 0x00ff0000l) >> 16);
-	int b = (int)((rgb & 0x0000ff00l) >> 8);
-	return(new Color(r, g, b));
+	return(new Color(((int)buf[0]) & 0xff, ((int)buf[1]) & 0xff, ((int)buf[2]) & 0xff));
     }
     
     public BufferedImage getimage(Coord ul, Coord sz) {
-	ByteBuffer buf = Utils.mkbbuf(sz.x * sz.y * 4);
-	gl.glReadPixels(ul.x + tx.x, root.sz.y - ul.y - sz.y - tx.y, sz.x, sz.y, GL.GL_RGBA, GL2.GL_UNSIGNED_INT_8_8_8_8, buf);
-	byte[] copy = new byte[buf.capacity()];
-	int fo = 0, to = (sz.y - 1) * sz.x * 4;
-	for(int y = 0; y < sz.y; y++, to -= sz.x * 4 * 2) {
-	    for(int x = 0; x < sz.x; x++, fo += 4, to += 4) {
-		copy[to + 3] = buf.get(fo + 0);
-		copy[to + 2] = buf.get(fo + 1);
-		copy[to + 1] = buf.get(fo + 2);
-		copy[to + 0] = buf.get(fo + 3);
+	byte[] buf = new byte[sz.x * sz.y * 4];
+	gl.glReadPixels(ul.x + tx.x, root.sz.y - ul.y - sz.y - tx.y, sz.x, sz.y, GL.GL_RGBA, GL2.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
+	checkerr();
+	for(int y = 0; y < sz.y / 2; y++) {
+	    int to = y * sz.x * 4, bo = (sz.y - y - 1) * sz.x * 4;
+	    for(int o = 0; o < sz.x * 4; o++, to++, bo++) {
+		byte t = buf[to];
+		buf[to] = buf[bo];
+		buf[bo] = t;
 	    }
 	}
-	WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(copy, copy.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
+	WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(buf, buf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
 	return(new BufferedImage(TexI.glcm, raster, false, null));
     }
 

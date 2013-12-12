@@ -114,7 +114,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 				gl.glEnable(GL.GL_BLEND);
 				//gl.glEnable(GL.GL_LINE_SMOOTH);
 				gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-				gl.glBlendEquationSeparate(GL.GL_FUNC_ADD, GL2.GL_MAX);
+				if(g.gc.glmajver >= 2)
+				    gl.glBlendEquationSeparate(GL.GL_FUNC_ADD, GL2.GL_MAX);
 				if(g.gc.havefsaa()) {
 				    /* Apparently, having sample
 				     * buffers in the config enables
@@ -300,6 +301,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	    Runtime rt = Runtime.getRuntime();
 	    long free = rt.freeMemory(), total = rt.totalMemory();
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Tex-current: %d", TexGL.num());
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "RT-current: %d", TexRT.current.get(gl).size());
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "GL progs: %d", g.st.numprogs());
 	    GameUI gi = ui.root.findchild(GameUI.class);
@@ -367,6 +369,10 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	    }
 	}
 	state.clean();
+	if(glconf.pref.dirty) {
+	    glconf.pref.save();
+	    glconf.pref.dirty = false;
+	}
     }
 	
     void dispatch() {

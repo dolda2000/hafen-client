@@ -81,7 +81,12 @@ public class Cons {
     public static Expression distance(Expression x, Expression y) {return(Function.Builtin.distance.call(x, y));}
     public static Expression dot(Expression x, Expression y) {return(Function.Builtin.dot.call(x, y));}
     public static Expression pow(Expression x, Expression y) {return(Function.Builtin.pow.call(x, y));}
+    public static Expression exp(Expression x) {return(Function.Builtin.exp.call(x));}
+    public static Expression log(Expression x) {return(Function.Builtin.log.call(x));}
+    public static Expression exp2(Expression x) {return(Function.Builtin.exp2.call(x));}
+    public static Expression log2(Expression x) {return(Function.Builtin.log2.call(x));}
     public static Expression sqrt(Expression x) {return(Function.Builtin.sqrt.call(x));}
+    public static Expression inversesqrt(Expression x) {return(Function.Builtin.inversesqrt.call(x));}
     public static Expression cross(Expression x, Expression y) {return(Function.Builtin.cross.call(x, y));}
     public static Expression reflect(Expression x, Expression y) {return(Function.Builtin.reflect.call(x, y));}
     public static Expression texture2D(Expression s, Expression c) {return(Function.Builtin.texture2D.call(s, c));}

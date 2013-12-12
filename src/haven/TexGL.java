@@ -35,12 +35,15 @@ import javax.media.opengl.*;
 import static haven.GOut.checkerr;
 
 public abstract class TexGL extends Tex {
+    public static boolean disableall = false;
+    private static final WeakList<TexGL> active = new WeakList<TexGL>();
     protected TexOb t = null;
-    private Object idmon = new Object();
     protected boolean mipmap = false, centroid = false;
     protected int magfilter = GL.GL_NEAREST, minfilter = GL.GL_NEAREST, wrapmode = GL.GL_REPEAT;
     protected Coord tdim;
-    public static boolean disableall = false;
+    private final Object idmon = new Object();
+    private WeakList.Entry<TexGL> actref;
+    private boolean setparams = true;
     
     public static class TexOb extends GLObject {
 	public final int id;
@@ -281,14 +284,34 @@ public abstract class TexGL extends Tex {
 	
     protected abstract void fill(GOut gl);
 
+    public static int num() {
+	synchronized(active) {
+	    return(active.size());
+	}
+    }
+
+    public static void setallparams() {
+	synchronized(active) {
+	    for(TexGL tex : active)
+		tex.setparams = true;
+	}
+    }
+
+    protected void setparams(GOut g) {
+	GL gl = g.gl;
+	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, minfilter);
+	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, magfilter);
+	if((minfilter == GL.GL_LINEAR_MIPMAP_LINEAR) && (g.gc.pref.anisotex.val >= 1))
+	    gl.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAX_ANISOTROPY_EXT, Math.max(g.gc.pref.anisotex.val, 1.0f));
+	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, wrapmode);
+	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, wrapmode);
+    }
+
     private void create(GOut g) {
 	GL2 gl = g.gl;
 	t = new TexOb(gl);
 	gl.glBindTexture(GL.GL_TEXTURE_2D, t.id);
-	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, minfilter);
-	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, magfilter);
-	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, wrapmode);
-	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, wrapmode);
+	setparams(g);
 	try {
 	    fill(g);
 	} catch(Loading l) {
@@ -319,12 +342,17 @@ public abstract class TexGL extends Tex {
 
     public void magfilter(int filter) {
 	magfilter = filter;
-	dispose();
+	setparams = true;
     }
     
     public void minfilter(int filter) {
 	minfilter = filter;
-	dispose();
+	setparams = true;
+    }
+
+    public void wrapmode(int mode) {
+	wrapmode = mode;
+	setparams = true;
     }
 
     public int glid(GOut g) {
@@ -332,8 +360,16 @@ public abstract class TexGL extends Tex {
 	synchronized(idmon) {
 	    if((t != null) && (t.gl != gl))
 		dispose();
-	    if(t == null)
+	    if(t == null) {
 		create(g);
+		synchronized(active) {
+		    actref = active.add2(this);
+		}
+	    } else if(setparams) {
+		gl.glBindTexture(GL.GL_TEXTURE_2D, t.id);
+		setparams(g);
+		setparams = false;
+	    }
 	    return(t.id);
 	}
     }
@@ -363,11 +399,15 @@ public abstract class TexGL extends Tex {
 	    if(t != null) {
 		t.dispose();
 		t = null;
+		synchronized(active) {
+		    actref.remove();
+		    actref = null;
+		}
 	    }
 	}
     }
 
-    public BufferedImage get(GOut g) {
+    public BufferedImage get(GOut g, boolean invert) {
 	GL2 gl = g.gl;
 	g.state2d();
 	g.apply();
@@ -378,8 +418,22 @@ public abstract class TexGL extends Tex {
 	gl.glGetTexImage(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
 	s.free();
 	GOut.checkerr(gl);
+	if(invert) {
+	    for(int y = 0; y < tdim.y / 2; y++) {
+		int to = y * tdim.x * 4, bo = (tdim.y - y - 1) * tdim.x * 4;
+		for(int o = 0; o < tdim.x * 4; o++, to++, bo++) {
+		    byte t = buf[to];
+		    buf[to] = buf[bo];
+		    buf[bo] = t;
+		}
+	    }
+	}
 	WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(buf, buf.length), tdim.x, tdim.y, 4 * tdim.x, 4, new int[] {0, 1, 2, 3}, null);
 	return(new BufferedImage(TexI.glcm, raster, false, null));
+    }
+
+    public BufferedImage get(GOut g) {
+	return(get(g, true));
     }
 
     @Material.ResName("tex")

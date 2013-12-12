@@ -139,7 +139,7 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	}
 
 	public String toString() {
-	    return("TexR(" + getres().name + ")");
+	    return("TexR(" + getres().name + ", " + id + ")");
 	}
     }
 

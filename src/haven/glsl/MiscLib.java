@@ -106,26 +106,32 @@ public abstract class MiscLib {
 
     public static final Uniform time = new Uniform.AutoApply(FLOAT) {
 	    public void apply(GOut g, int loc) {
-		g.gl.glUniform1f(loc, (System.currentTimeMillis() % 1000000L) / 1000f);
+		g.gl.glUniform1f(loc, (System.currentTimeMillis() % 3000000L) / 1000f);
 	    }
 	};
     public static final Uniform globtime = new Uniform.AutoApply(FLOAT) {
 	    public void apply(GOut g, int loc) {
 		Glob glob = g.st.cur(PView.ctx).glob();
-		g.gl.glUniform1f(loc, (glob.globtime() % 1000000L) / 1000f);
+		g.gl.glUniform1f(loc, (glob.globtime() % 10000000L) / 1000f);
 	    }
 	};
 
+    private static Coord ssz(GOut g) {
+	PView.RenderState wnd = g.st.cur(PView.wnd);
+	if(wnd == null)
+	    return(g.sz);
+	else
+	    return(wnd.sz());
+    }
     public static final Uniform pixelpitch = new Uniform.AutoApply(VEC2) {
 	    public void apply(GOut g, int loc) {
-		Coord sz = g.st.cur(PView.wnd).sz();
+		Coord sz = ssz(g);
 		g.gl.glUniform2f(loc, 1.0f / sz.x, 1.0f / sz.y);
 	    }
 	};
-
     public static final Uniform screensize = new Uniform.AutoApply(VEC2) {
 	    public void apply(GOut g, int loc) {
-		Coord sz = g.st.cur(PView.wnd).sz();
+		Coord sz = ssz(g);
 		g.gl.glUniform2f(loc, sz.x, sz.y);
 	    }
 	};

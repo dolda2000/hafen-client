@@ -330,6 +330,12 @@ public abstract class GLState {
 		throw(new RuntimeException("Texunit " + id + " freed twice"));
 	    st.textab[id] = this;
 	}
+
+	public void ufree() {
+	    act();
+	    st.gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+	    free();
+	}
     }
 
     public static class Applier {
@@ -576,7 +582,14 @@ public abstract class GLState {
 	    textab = new TexUnit[i + 1];
 	    return(new TexUnit(this, i));
 	}
-	
+
+	public TexUnit texalloc(GOut g, TexGL tex) {
+	    TexUnit ret = texalloc();
+	    ret.act();
+	    gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
+	    return(ret);
+	}
+
 	/* Program internation */
 	public static class SavedProg {
 	    public final int hash;

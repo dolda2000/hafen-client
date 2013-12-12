@@ -44,7 +44,7 @@ public abstract class PView extends Widget {
     private final WidgetRenderState rstate = new WidgetRenderState();
     private GLState pstate;
     
-    public static abstract class RenderContext extends GLState.Abstract {
+    public static class RenderContext extends GLState.Abstract {
 	private Map<DataID, Object> data = new CacheMap<DataID, Object>(CacheMap.RefType.WEAK);
 
 	public interface DataID<T> {
@@ -69,8 +69,8 @@ public abstract class PView extends Widget {
     }
 
     public abstract static class ConfContext extends RenderContext implements GLState.GlobalState {
-	public FBConfig cfg = new FBConfig(sz());
-	public FBConfig cur = new FBConfig(sz());
+	public FBConfig cfg = new FBConfig(this, sz());
+	public FBConfig cur = new FBConfig(this, sz());
 
 	protected abstract Coord sz();
 
@@ -82,7 +82,7 @@ public abstract class PView extends Widget {
 		public void postsetup(RenderList rl) {
 		    cfg.fin(cur);
 		    cur = cfg;
-		    cfg = new FBConfig(sz());
+		    cfg = new FBConfig(ConfContext.this, sz());
 		    if(cur.fb != null) {
 			for(RenderList.Slot s : rl.slots()) {
 			    if(s.os.get(ctx) == ConfContext.this)
