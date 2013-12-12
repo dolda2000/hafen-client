@@ -30,11 +30,14 @@ import haven.*;
 import java.util.*;
 import java.awt.Color;
 import haven.MapMesh.Scan;
+import haven.Resource.Tile;
+import haven.Resource.Tileset;
 
 public class TerrainTile extends Tiler {
     public final GLState base;
     public final SNoise3 noise;
     public final Var[] var;
+    public final Tileset transset;
 
     public static class Var {
 	public GLState mat;
@@ -175,6 +178,7 @@ public class TerrainTile extends Tiler {
     public static class Factory implements Tiler.Factory {
 	public Tiler create(int id, Resource.Tileset set) {
 	    Resource res = set.getres();
+	    Tileset trans = null;
 	    Material base = null;
 	    Collection<Var> var = new LinkedList<Var>();
 	    for(Object rdesc : set.ta) {
@@ -195,18 +199,22 @@ public class TerrainTile extends Tiler {
 		    }
 		    double nz = (res.name.hashCode() * mid * 8129) % 10000;
 		    var.add(new Var(res.layer(Material.Res.class, mid).get(), thrl, thrh, nz));
+		} else if(p.equals("trans")) {
+		    Resource tres = Resource.load((String)desc[1], (Integer)desc[2]);
+		    trans = tres.layer(Resource.tileset);
 		}
 	    }
-	    return(new TerrainTile(id, res.name.hashCode(), base, var.toArray(new Var[0])));
+	    return(new TerrainTile(id, res.name.hashCode(), base, var.toArray(new Var[0]), trans));
 	}
     }
 
-    public TerrainTile(int id, long nseed, GLState base, Var[] var) {
+    public TerrainTile(int id, long nseed, GLState base, Var[] var, Tileset transset) {
 	super(id);
 	this.noise = new SNoise3(nseed);
 	this.base = GLState.compose(base, States.vertexcolor);
 	for(Var v : this.var = var)
 	    v.mat = GLState.compose(v.mat, States.vertexcolor);
+	this.transset = transset;
     }
 
     public class Plane extends MapMesh.Shape {
@@ -230,17 +238,18 @@ public class TerrainTile extends Tiler {
 	    this.alpha = alpha;
 	}
 
+	public MeshBuf.Vertex mkvert(MeshBuf buf, int n) {
+	    MeshBuf.Vertex v = buf.new Vertex(vrt[n].pos, vrt[n].nrm);
+	    buf.layer(MeshBuf.tex).set(v, tc[n]);
+	    buf.layer(MeshBuf.col).set(v, new Color(255, 255, 255, alpha[n]));
+	    return(v);
+	}
+
 	public void build(MeshBuf buf) {
-	    MeshBuf.Tex btex = buf.layer(MeshBuf.tex);
-	    MeshBuf.Col bcol = buf.layer(MeshBuf.col);
-	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm);
-	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
-	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
-	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm);
-	    btex.set(v1, tc[0]); bcol.set(v1, new Color(255, 255, 255, alpha[0]));
-	    btex.set(v2, tc[1]); bcol.set(v2, new Color(255, 255, 255, alpha[1]));
-	    btex.set(v3, tc[2]); bcol.set(v3, new Color(255, 255, 255, alpha[2]));
-	    btex.set(v4, tc[3]); bcol.set(v4, new Color(255, 255, 255, alpha[3]));
+	    MeshBuf.Vertex v1 = mkvert(buf, 0);
+	    MeshBuf.Vertex v2 = mkvert(buf, 1);
+	    MeshBuf.Vertex v3 = mkvert(buf, 2);
+	    MeshBuf.Vertex v4 = mkvert(buf, 3);
 	    m().data(BumpMap.MapTangents.id).set(buf, lc, v1, v2, v3, v4);
 	    MapMesh.splitquad(buf, v1, v2, v3, v4);
 	}
@@ -260,6 +269,66 @@ public class TerrainTile extends Tiler {
 	}
     }
 
+    public class TransPlane extends Plane {
+	public Coord3f[] cc;
+
+	public TransPlane(MapMesh m, MapMesh.Surface surf, Coord sc, int z, GLState mat, int[] alpha, Tex tex) {
+	    super(m, surf, sc, z, mat, alpha);
+	    Coord s = tex.sz();
+	    cc = new Coord3f[] {
+		new Coord3f(tex.tcx(0), tex.tcy(0), 0),
+		new Coord3f(tex.tcx(0), tex.tcy(s.y), 0),
+		new Coord3f(tex.tcx(s.x), tex.tcy(s.y), 0),
+		new Coord3f(tex.tcx(s.x), tex.tcy(0), 0),
+	    };
+	}
+
+	public MeshBuf.Vertex mkvert(MeshBuf buf, int n) {
+	    MeshBuf.Vertex v = super.mkvert(buf, n);
+	    buf.layer(AlphaTex.lclip).set(v, cc[n]);
+	    return(v);
+	}
+    }
+
+    private final static Map<TexGL, AlphaTex> transtex = new WeakHashMap<TexGL, AlphaTex>();
+    private final static IDSet<GLState> transmats = new IDSet<GLState>();
+
+    private void laytrans(MapMesh m, Coord lc, int z, Tile t) {
+	Blend b = m.data(blend);
+	for(int i = 0; i < var.length + 1; i++) {
+	    GLState mat = (i == 0)?base:(var[i - 1].mat);
+	    Tex tt = t.tex();
+	    TexGL gt;
+	    if(tt instanceof TexGL)
+		gt = (TexGL)tt;
+	    else if((tt instanceof TexSI) && (((TexSI)tt).parent instanceof TexGL))
+		gt = (TexGL)((TexSI)tt).parent;
+	    else
+		throw(new RuntimeException("Cannot use texture for transitions: " + tt));
+	    AlphaTex alpha;
+	    synchronized(transtex) {
+		if((alpha = transtex.get(gt)) == null)
+		    transtex.put(gt, alpha = new AlphaTex(gt));
+	    }
+	    mat = transmats.intern(GLState.compose(mat, alpha));
+	    if(b.en[i][b.es.o(lc)])
+		new TransPlane(m, m.gnd(), lc, z + i, mat, new int[] {
+			(int)(b.bv[i][b.vs.o(lc)] * 255),
+			(int)(b.bv[i][b.vs.o(lc.add(0, 1))] * 255),
+			(int)(b.bv[i][b.vs.o(lc.add(1, 1))] * 255),
+			(int)(b.bv[i][b.vs.o(lc.add(1, 0))] * 255),
+		    }, tt);
+	}
+    }
+
     public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
+	if(transset == null)
+	    return;
+	if(m.map.gettile(gc) <= id)
+	    return;
+	if((transset.btrans != null) && (bmask > 0))
+	    laytrans(m, lc, z, transset.btrans[bmask - 1].pick(rnd));
+	if((transset.ctrans != null) && (cmask > 0))
+	    laytrans(m, lc, z, transset.ctrans[cmask - 1].pick(rnd));
     }
 }
