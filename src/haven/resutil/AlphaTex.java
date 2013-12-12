@@ -55,7 +55,6 @@ public class AlphaTex extends GLState {
 		    }
 		};
 	    public void modify(ProgramContext prog) {
-		prog.dump = true;
 		final ValBlock.Value val = prog.fctx.uniform.new Value(FLOAT) {
 			public Expression root() {
 			    return(pick(texture2D(ctex.ref(), fc.ref()), "r"));
