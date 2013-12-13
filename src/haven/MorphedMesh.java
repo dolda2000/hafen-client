@@ -148,8 +148,12 @@ public class MorphedMesh extends FastMesh {
 	    BoneArray ob = buf.buf(BoneArray.class);
 	    BoneArray nb = buf(BoneArray.class);
 	    int[] xl = new int[nb.names.length];
-	    for(int i = 0; i < xl.length; i++)
-		xl[i] = pose.skel().bones.get(nb.names[i]).idx;
+	    for(int i = 0; i < xl.length; i++) {
+		Skeleton.Bone b = pose.skel().bones.get(nb.names[i]);
+		if(b == null)
+		    throw(new RuntimeException("Bone \"" + nb.names[i] + "\" in vertex-buf reference does not exist in skeleton " + pose.skel()));
+		xl[i] = b.idx;
+	    }
 	    for(int i = 0; i < ob.data.capacity(); i++) {
 		if(ob.data.get(i) == -1)
 		    nb.data.put(i, -1);
