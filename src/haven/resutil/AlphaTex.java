@@ -55,15 +55,15 @@ public class AlphaTex extends GLState {
 		    }
 		};
 	    public void modify(ProgramContext prog) {
-		final ValBlock.Value val = prog.fctx.uniform.new Value(FLOAT) {
+		final ValBlock.Value val = prog.fctx.uniform.new Value(VEC4) {
 			public Expression root() {
-			    return(pick(texture2D(ctex.ref(), fc.ref()), "r"));
+			    return(texture2D(ctex.ref(), fc.ref()));
 			}
 		    };
 		val.force();
 		prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			public Expression expand(Expression in) {
-			    return(mul(in, vec4(l(1.0), l(1.0), l(1.0), val.ref())));
+			    return(mul(in, val.ref()));
 			}
 		    }, 100);
 	    }
