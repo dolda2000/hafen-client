@@ -34,9 +34,12 @@ public class Context {
     public int symgen = 1;
     public List<Toplevel> vardefs = new LinkedList<Toplevel>();
     public List<Toplevel> fundefs = new LinkedList<Toplevel>();
+    public Set<String> exts = new HashSet<String>();
 
     public void output(Output out) {
 	out.write("#version 120\n\n");
+	for(String ext : exts)
+	    out.write("#extension " + ext + ": require\n");
 	for(Toplevel tl : vardefs)
 	    tl.output(out);
 	if(!vardefs.isEmpty())
