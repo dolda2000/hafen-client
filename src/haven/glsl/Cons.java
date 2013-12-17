@@ -78,6 +78,9 @@ public class Cons {
 
     public static Expression sin(Expression x) {return(Function.Builtin.sin.call(x));}
     public static Expression abs(Expression x) {return(Function.Builtin.abs.call(x));}
+    public static Expression floor(Expression x) {return(Function.Builtin.floor.call(x));}
+    public static Expression ceil(Expression x) {return(Function.Builtin.ceil.call(x));}
+    public static Expression fract(Expression x) {return(Function.Builtin.fract.call(x));}
     public static Expression mod(Expression x, Expression y) {return(Function.Builtin.mod.call(x, y));}
     public static Expression length(Expression x) {return(Function.Builtin.length.call(x));}
     public static Expression normalize(Expression x) {return(Function.Builtin.normalize.call(x));}
