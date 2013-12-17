@@ -34,6 +34,7 @@ public class FBConfig {
     public final PView.ConfContext ctx;
     public Coord sz;
     public boolean hdr, tdepth;
+    public int ms = 1;
     public GLFrameBuffer fb;
     public PView.RenderState wnd;
     public TexGL color[], depth;
@@ -48,7 +49,7 @@ public class FBConfig {
     }
 
     public boolean cleanp() {
-	if(hdr || tdepth)
+	if(hdr || tdepth || (ms > 1))
 	    return(false);
 	for(int i = 0; i < tgts.length; i++) {
 	    if(tgts[i] != null)
@@ -139,6 +140,8 @@ public class FBConfig {
 	if(!a.sz.equals(b.sz))
 	    return(false);
 	if((a.hdr != b.hdr) || (a.tdepth != b.tdepth))
+	    return(false);
+	if(a.ms != b.ms)
 	    return(false);
 	if(!hasuo(a.tgts, b.tgts) || !hasuo(b.tgts, a.tgts))
 	    return(false);
