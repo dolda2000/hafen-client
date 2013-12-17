@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import javax.media.opengl.*;
 import haven.glsl.*;
+import haven.GLFrameBuffer.Attachment;
 
 public class FBConfig {
     public final PView.ConfContext ctx;
@@ -37,7 +38,7 @@ public class FBConfig {
     public int ms = 1;
     public GLFrameBuffer fb;
     public PView.RenderState wnd;
-    public TexGL color[], depth;
+    public Attachment color[], depth;
     public GLState state;
     private RenderTarget[] tgts = new RenderTarget[0];
     private ResolveFilter[] res = new ResolveFilter[0];
@@ -62,19 +63,19 @@ public class FBConfig {
 
     private static final ShaderMacro[] nosh = new ShaderMacro[0];
     private void create() {
-	Collection<TexGL> color = new LinkedList<TexGL>();
-	TexGL depth;
+	Collection<Attachment> color = new LinkedList<Attachment>();
+	Attachment depth;
 	Collection<ShaderMacro> shb = new LinkedList<ShaderMacro>();
 	Collection<GLState> stb = new LinkedList<GLState>();
 	if(hdr) {
-	    color.add(new TexE(sz, GL.GL_RGBA16F, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE));
+	    color.add(Attachment.mk(new TexE(sz, GL.GL_RGBA16F, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)));
 	} else {
-	    color.add(new TexE(sz, GL.GL_RGBA, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE));
+	    color.add(Attachment.mk(new TexE(sz, GL.GL_RGBA, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)));
 	}
 	if(tdepth) {
-	    depth = new TexE(sz, GL2.GL_DEPTH_COMPONENT, GL2.GL_DEPTH_COMPONENT, GL.GL_UNSIGNED_INT);
+	    depth = Attachment.mk(new TexE(sz, GL2.GL_DEPTH_COMPONENT, GL2.GL_DEPTH_COMPONENT, GL.GL_UNSIGNED_INT));
 	} else {
-	    depth = null;
+	    depth = Attachment.mk(new GLFrameBuffer.RenderBuffer(sz, GL2.GL_DEPTH_COMPONENT, ms));
 	}
 	for(int i = 0; i < tgts.length; i++) {
 	    if(tgts[i] != null) {
@@ -87,7 +88,7 @@ public class FBConfig {
 		    shb.add(code);
 	    }
 	}
-	this.color = color.toArray(new TexGL[0]);
+	this.color = color.toArray(new Attachment[0]);
 	this.depth = depth;
 	/* XXX: Shaders should be canonized and cached to avoid
 	 * creation of unnecessary identical programs when
@@ -162,6 +163,7 @@ public class FBConfig {
     }
 
     public void fin(FBConfig last) {
+	add(new Resolve1());
 	if(equals(this, last)) {
 	    subsume(last);
 	    return;
@@ -177,7 +179,7 @@ public class FBConfig {
 	if(fb != null) {
 	    for(ResolveFilter rf : res)
 		rf.prepare(this, g);
-	    g.image(color[0], Coord.z, resp);
+	    g.ftexrect(Coord.z, sz, resp);
 	}
     }
 
@@ -213,10 +215,10 @@ public class FBConfig {
     }
 
     public static abstract class RenderTarget {
-	public TexGL tex;
+	public Attachment tex;
 
-	public TexGL maketex(FBConfig cfg) {
-	    return(tex = new TexE(cfg.sz, GL.GL_RGBA, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE));
+	public Attachment maketex(FBConfig cfg) {
+	    return(tex = Attachment.mk(new TexE(cfg.sz, GL.GL_RGBA, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)));
 	}
 
 	public GLState state(FBConfig cfg, int id) {
@@ -233,5 +235,32 @@ public class FBConfig {
 	public ShaderMacro code(FBConfig cfg);
 	public void apply(FBConfig cfg, GOut g);
 	public void unapply(FBConfig cfg, GOut g);
+    }
+
+    private static class Resolve1 implements ResolveFilter {
+	public void prepare(FBConfig cfg, GOut g) {}
+
+	private static final Uniform ctex = new Uniform(Type.SAMPLER2D);
+	private static final ShaderMacro code = new ShaderMacro() {
+		public void modify(ProgramContext prog) {
+		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
+			    public Expression expand(Expression in) {
+				return(Cons.texture2D(ctex.ref(), Tex2D.texcoord.ref()));
+			    }
+			}, 0);
+		}
+	    };
+	public ShaderMacro code(FBConfig cfg) {return(code);}
+
+	private GLState.TexUnit csmp;
+	public void apply(FBConfig cfg, GOut g) {
+	    csmp = g.st.texalloc(g, ((GLFrameBuffer.Attach2D)cfg.color[0]).tex);
+	    g.gl.glUniform1i(g.st.prog.uniform(ctex), csmp.id);
+	}
+	public void unapply(FBConfig cfg, GOut g) {
+	    csmp.ufree(); csmp = null;
+	}
+
+	public boolean equals(Object o) {return(o instanceof Resolve1);}
     }
 }

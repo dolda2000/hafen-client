@@ -116,9 +116,9 @@ public class Outlines implements Rendered {
 		public void apply(GOut g) {
 		    GL gl = g.gl;
 		    (tnrm = g.st.texalloc()).act();
-		    gl.glBindTexture(GL.GL_TEXTURE_2D, nrm.tex.glid(g));
+		    gl.glBindTexture(GL.GL_TEXTURE_2D, ((GLFrameBuffer.Attach2D)nrm.tex).tex.glid(g));
 		    (tdep = g.st.texalloc()).act();
-		    gl.glBindTexture(GL.GL_TEXTURE_2D, ctx.cur.depth.glid(g));
+		    gl.glBindTexture(GL.GL_TEXTURE_2D, ((GLFrameBuffer.Attach2D)ctx.cur.depth).tex.glid(g));
 		    reapply(g);
 		}
 
