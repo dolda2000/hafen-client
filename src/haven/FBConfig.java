@@ -118,6 +118,7 @@ public class FBConfig {
 	    ShaderMacro[] resp = new ShaderMacro[res.length];
 	    for(int i = 0; i < res.length; i++)
 		resp[i] = res[i].code(this);
+	    resp = ArrayIdentity.intern(resp);
 	    this.resp = new States.AdHoc(resp) {
 		    public void apply(GOut g) {
 			for(ResolveFilter f : res)
