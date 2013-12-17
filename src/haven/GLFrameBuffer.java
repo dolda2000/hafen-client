@@ -30,8 +30,8 @@ import javax.media.opengl.*;
 
 public class GLFrameBuffer extends GLState {
     public static final Slot<GLFrameBuffer> slot = new Slot<GLFrameBuffer>(Slot.Type.SYS, GLFrameBuffer.class, HavenPanel.global);
-    private final TexGL[] color;
-    private final TexGL depth;
+    private final Attachment[] color;
+    private final Attachment depth;
     private final RenderBuffer altdepth;
     private FBO fbo;
     private final int[] bufmask;
@@ -56,21 +56,30 @@ public class GLFrameBuffer extends GLState {
     
     public static class RenderBuffer {
 	public final Coord sz;
+	public final int samples;
 	public final int fmt;
 	private RBO rbo;
 	
-	public RenderBuffer(Coord sz, int fmt) {
+	public RenderBuffer(Coord sz, int fmt, int samples) {
 	    this.sz = sz;
 	    this.fmt = fmt;
+	    this.samples = samples;
 	}
 	
+	public RenderBuffer(Coord sz, int fmt) {
+	    this(sz, fmt, 1);
+	}
+
 	public int glid(GL2 gl) {
 	    if((rbo != null) && (rbo.gl != gl))
 		dispose();
 	    if(rbo == null) {
 		rbo = new RBO(gl);
 		gl.glBindRenderbuffer(GL.GL_RENDERBUFFER, rbo.id);
-		gl.glRenderbufferStorage(GL.GL_RENDERBUFFER, fmt, sz.x, sz.y);
+		if(samples <= 1)
+		    gl.glRenderbufferStorage(GL.GL_RENDERBUFFER, fmt, sz.x, sz.y);
+		else
+		    gl.glRenderbufferStorageMultisample(GL.GL_RENDERBUFFER, samples, fmt, sz.x, sz.y);
 	    }
 	    return(rbo.id);
 	}
@@ -103,16 +112,76 @@ public class GLFrameBuffer extends GLState {
 	}
     }
 
-    public GLFrameBuffer(TexGL[] color, TexGL depth) {
+    public static abstract class Attachment {
+	public abstract void attach(GOut g, GLFrameBuffer fbo, int point);
+	public abstract Coord sz();
+
+	public static Attach2D  mk(TexGL tex) {return(new Attach2D(tex));}
+	public static AttachMS  mk(TexMS tex) {return(new AttachMS(tex));}
+	public static AttachRBO mk(RenderBuffer rbo) {return(new AttachRBO(rbo));}
+    }
+
+    public static class Attach2D extends Attachment {
+	public final TexGL tex;
+	public final int level;
+
+	public Attach2D(TexGL tex, int level) {this.tex = tex; this.level = level;}
+	public Attach2D(TexGL tex) {this(tex, 0);}
+
+	public void attach(GOut g, GLFrameBuffer fbo, int point) {
+	    g.gl.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, point, GL.GL_TEXTURE_2D, tex.glid(g), level);
+	}
+
+	public Coord sz() {return(tex.sz());}
+    }
+
+    public static class AttachMS extends Attachment {
+	public final TexMS tex;
+
+	public AttachMS(TexMS tex) {this.tex = tex;}
+
+	public void attach(GOut g, GLFrameBuffer fbo, int point) {
+	    g.gl.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, point, GL3.GL_TEXTURE_2D_MULTISAMPLE, tex.glid(g), 0);
+	}
+
+	public Coord sz() {return(new Coord(tex.w, tex.h));}
+    }
+
+    public static class AttachRBO extends Attachment {
+	public final RenderBuffer rbo;
+
+	public AttachRBO(RenderBuffer rbo) {this.rbo = rbo;}
+
+	public void attach(GOut g, GLFrameBuffer fbo, int point) {
+	    g.gl.glFramebufferRenderbuffer(GL.GL_FRAMEBUFFER, point, GL.GL_RENDERBUFFER, rbo.glid(g.gl));
+	}
+
+	public Coord sz() {return(rbo.sz);}
+    }
+
+    public GLFrameBuffer(Attachment[] color, Attachment depth) {
 	this.color = color;
 	this.bufmask = new int[this.color.length];
-	if((this.depth = depth) == null) {
+	if(depth == null) {
 	    if(this.color.length == 0)
 		throw(new RuntimeException("Cannot create a framebuffer with neither color nor depth"));
-	    this.altdepth = new RenderBuffer(this.color[0].tdim, GL2.GL_DEPTH_COMPONENT);
+	    this.altdepth = new RenderBuffer(color[0].sz(), GL2.GL_DEPTH_COMPONENT);
+	    this.depth = new AttachRBO(this.altdepth);
 	} else {
 	    this.altdepth = null;
+	    this.depth = depth;
 	}
+    }
+
+    private static Attachment[] javaIsRetarded(TexGL[] color) {
+	Attachment[] ret = new Attachment[color.length];
+	for(int i = 0; i < color.length; i++)
+	    ret[i] = new Attach2D(color[i]);
+	return(ret);
+    }
+
+    public GLFrameBuffer(TexGL[] color, TexGL depth) {
+	this(javaIsRetarded(color), (depth == null)?null:new Attach2D(depth));
     }
     
     public GLFrameBuffer(TexGL color, TexGL depth) {
@@ -120,12 +189,7 @@ public class GLFrameBuffer extends GLState {
     }
 
     public Coord sz() {
-	/* This is not perfect, but there's no current (or probably
-	 * sane) situation where it would fail. */
-	if(depth != null)
-	    return(depth.sz());
-	else
-	    return(altdepth.sz);
+	return(depth.sz());
     }
     
     public void apply(GOut g) {
@@ -137,11 +201,8 @@ public class GLFrameBuffer extends GLState {
 		fbo = new FBO(gl);
 		gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo.id);
 		for(int i = 0; i < color.length; i++)
-		    gl.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_COLOR_ATTACHMENT0 + i, GL.GL_TEXTURE_2D, color[i].glid(g), 0);
-		if(depth != null)
-		    gl.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_TEXTURE_2D, depth.glid(g), 0);
-		else
-		    gl.glFramebufferRenderbuffer(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_RENDERBUFFER, altdepth.glid(gl));
+		    color[i].attach(g, this, GL.GL_COLOR_ATTACHMENT0 + i);
+		depth.attach(g, this, GL.GL_DEPTH_ATTACHMENT);
 		if(color.length == 0) {
 		    gl.glDrawBuffer(GL.GL_NONE);
 		    gl.glReadBuffer(GL.GL_NONE);

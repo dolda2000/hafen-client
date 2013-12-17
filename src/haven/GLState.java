@@ -590,6 +590,13 @@ public abstract class GLState {
 	    return(ret);
 	}
 
+	public TexUnit texalloc(GOut g, TexMS tex) {
+	    TexUnit ret = texalloc();
+	    ret.act();
+	    gl.glBindTexture(GL3.GL_TEXTURE_2D_MULTISAMPLE, tex.glid(g));
+	    return(ret);
+	}
+
 	/* Program internation */
 	public static class SavedProg {
 	    public final int hash;

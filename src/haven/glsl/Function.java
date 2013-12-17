@@ -250,6 +250,7 @@ public abstract class Function {
 	public static final Builtin texture2D = new Builtin(Type.VEC4, new Symbol.Fix("texture2D"), 2);
 	public static final Builtin texture3D = new Builtin(Type.VEC4, new Symbol.Fix("texture3D"), 2);
 	public static final Builtin textureCube = new Builtin(Type.VEC4, new Symbol.Fix("textureCube"), 2);
+	public static final Builtin texelFetch = new Builtin(Type.VEC4, new Symbol.Fix("texelFetch"), 3);
     }
 
     public enum PDir {IN, OUT, INOUT;}

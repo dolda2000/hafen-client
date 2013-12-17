@@ -27,21 +27,25 @@
 package haven;
 
 import java.awt.Color;
+import java.util.*;
 import haven.glsl.*;
 import static haven.glsl.Cons.*;
 import static haven.glsl.Type.*;
 import javax.media.opengl.*;
 
 public class Outlines implements Rendered {
+    private boolean symmetric;
+
     public void draw(GOut g) {}
 
     private final static Uniform snrm = new Uniform(SAMPLER2D);
     private final static Uniform sdep = new Uniform(SAMPLER2D);
-    private final ShaderMacro[] shaders;
+    private final static Uniform msnrm = new Uniform(SAMPLER2DMS);
+    private final static Uniform msdep = new Uniform(SAMPLER2DMS);
+    private final static ShaderMacro[][] shaders = new ShaderMacro[4][];
 
-    public Outlines(final boolean symmetric) {
-	shaders = new ShaderMacro[] {
-	    new ShaderMacro() {
+    private static ShaderMacro shader(final boolean symmetric, final boolean ms) {
+	return(new ShaderMacro() {
 		Color color = Color.BLACK;
 		Coord[] points = {
 		    new Coord(-1,  0),
@@ -49,11 +53,27 @@ public class Outlines implements Rendered {
 		    new Coord( 0, -1),
 		    new Coord( 0,  1),
 		};
+
+		Expression sample(boolean nrm, Expression c, Expression s, Coord o) {
+		    if(ms) {
+			Expression ctc = ivec2(floor(mul(c, MiscLib.screensize.ref())));
+			if(!o.equals(Coord.z))
+			    ctc = add(ctc, ivec2(o));
+			return(texelFetch((nrm?msnrm:msdep).ref(), ctc, s));
+		    } else {
+			Expression ctc = c;
+			if(!o.equals(Coord.z))
+			    ctc = add(c, mul(vec2(o), MiscLib.pixelpitch.ref()));
+			return(texture2D((nrm?snrm:sdep).ref(), ctc));
+		    }
+		}
+
 		Function ofac = new Function.Def(FLOAT) {{
+		    Expression sample = param(PDir.IN, INT).ref();
 		    Expression tc = Tex2D.texcoord.ref();
 		    LValue ret = code.local(FLOAT, l(0.0)).ref();
-		    Expression lnrm = code.local(VEC3, mul(sub(pick(texture2D(snrm.ref(), tc), "rgb"), l(0.5)), l(2.0))).ref();
-		    Expression ldep = code.local(FLOAT, pick(texture2D(sdep.ref(), tc), "z")).ref();
+		    Expression lnrm = code.local(VEC3, mul(sub(pick(sample(true, tc, sample, Coord.z), "rgb"), l(0.5)), l(2.0))).ref();
+		    Expression ldep = code.local(FLOAT, pick(sample(false, tc, sample, Coord.z), "z")).ref();
 		    /* XXX: Current depth detection doesn't work well
 		     * with frustum projections, perhaps because of
 		     * the lack of precision in the depth buffer
@@ -61,8 +81,7 @@ public class Outlines implements Rendered {
 		     * yet). */
 		    LValue dh = code.local(FLOAT, l(0.0002)).ref(), dl = code.local(FLOAT, l(-0.0002)).ref();
 		    for(int i = 0; i < points.length; i++) {
-			Expression ctc = add(tc, mul(vec2(points[i]), MiscLib.pixelpitch.ref()));
-			Expression cdep = pick(texture2D(sdep.ref(), ctc), "z");
+			Expression cdep = pick(sample(false, tc, sample, points[i]), "z");
 			cdep = sub(ldep, cdep);
 			cdep = code.local(FLOAT, cdep).ref();
 			code.add(stmt(ass(dh, max(dh, cdep))));
@@ -73,8 +92,7 @@ public class Outlines implements Rendered {
 		    else
 			code.add(aadd(ret, smoothstep(l(5.0), l(6.0), div(dh, neg(dl)))));
 		    for(int i = 0; i < points.length; i++) {
-			Expression ctc = add(tc, mul(vec2(points[i]), MiscLib.pixelpitch.ref()));
-			Expression cnrm = mul(sub(pick(texture2D(snrm.ref(), ctc), "rgb"), l(0.5)), l(2.0));
+			Expression cnrm = mul(sub(pick(sample(true, tc, sample, points[i]), "rgb"), l(0.5)), l(2.0));
 			if(symmetric) {
 			    code.add(aadd(ret, sub(l(1.0), abs(dot(lnrm, cnrm)))));
 			} else {
@@ -86,50 +104,71 @@ public class Outlines implements Rendered {
 		    code.add(new Return(smoothstep(l(0.4), l(0.6), min(ret, l(1.0)))));
 		}};
 
+		Function msfac = new Function.Def(FLOAT) {{
+		    LValue ret = code.local(FLOAT, l(0.0)).ref();
+		    LValue i = code.local(INT, null).ref();
+		    code.add(new For(ass(i, l(0)), lt(i, FBConfig.numsamples.ref()), linc(i),
+				     stmt(aadd(ret, ofac.call(i)))));
+		    code.add(new Return(div(ret, FBConfig.numsamples.ref())));
+		}};
+
 		public void modify(ProgramContext prog) {
 		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			    public Expression expand(Expression in) {
-				return(vec4(col3(color), mix(l(0.0), l(1.0), ofac.call())));
+				Expression of = (!ms)?ofac.call(l(-1)):msfac.call();
+				return(vec4(col3(color), mix(l(0.0), l(1.0), of)));
 			    }
 			}, 0);
 		}
-	    }
-	};
+	    });
+    }
+
+    static {
+	/* XXX: It would be good to have some kind of more convenient
+	 * shader internation. */
+	shaders[0] = new ShaderMacro[] {shader(false, false)};
+	shaders[1] = new ShaderMacro[] {shader(false, true)};
+	shaders[2] = new ShaderMacro[] {shader(true,  false)};
+	shaders[3] = new ShaderMacro[] {shader(true,  true)};
+    }
+
+    public Outlines(final boolean symmetric) {
+	this.symmetric = symmetric;
     }
 
     public boolean setup(RenderList rl) {
 	final PView.ConfContext ctx = (PView.ConfContext)rl.state().get(PView.ctx);
 	final RenderedNormals nrm = ctx.data(RenderedNormals.id);
+	final boolean ms = ctx.cfg.ms > 1;
 	ctx.cfg.tdepth = true;
 	ctx.cfg.add(nrm);
 	rl.prepc(Rendered.postfx);
-	rl.add(new Rendered.ScreenQuad(), new States.AdHoc(shaders) {
+	rl.add(new Rendered.ScreenQuad(), new States.AdHoc(shaders[(symmetric?2:0) | (ms?1:0)]) {
 		private TexUnit tnrm;
 		private TexUnit tdep;
 
 		public void reapply(GOut g) {
 		    GL2 gl = g.gl;
-		    gl.glUniform1i(g.st.prog.uniform(snrm), tnrm.id);
-		    gl.glUniform1i(g.st.prog.uniform(sdep), tdep.id);
+		    gl.glUniform1i(g.st.prog.uniform(!ms?snrm:msnrm), tnrm.id);
+		    gl.glUniform1i(g.st.prog.uniform(!ms?sdep:msdep), tdep.id);
 		}
 
 		public void apply(GOut g) {
 		    GL gl = g.gl;
-		    (tnrm = g.st.texalloc()).act();
-		    gl.glBindTexture(GL.GL_TEXTURE_2D, nrm.tex.glid(g));
-		    (tdep = g.st.texalloc()).act();
-		    gl.glBindTexture(GL.GL_TEXTURE_2D, ctx.cur.depth.glid(g));
+		    if(!ms) {
+			tnrm = g.st.texalloc(g, ((GLFrameBuffer.Attach2D)nrm.tex).tex);
+			tdep = g.st.texalloc(g, ((GLFrameBuffer.Attach2D)ctx.cur.depth).tex);
+		    } else {
+			tnrm = g.st.texalloc(g, ((GLFrameBuffer.AttachMS)nrm.tex).tex);
+			tdep = g.st.texalloc(g, ((GLFrameBuffer.AttachMS)ctx.cur.depth).tex);
+		    }
 		    reapply(g);
 		}
 
 		public void unapply(GOut g) {
 		    GL gl = g.gl;
-		    tnrm.act();
-		    gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
-		    tnrm.free(); tnrm = null;
-		    tdep.act();
-		    gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
-		    tdep.free(); tdep = null;
+		    tnrm.ufree(); tnrm = null;
+		    tdep.ufree(); tdep = null;
 		}
 	    });
 	return(false);

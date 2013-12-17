@@ -24,27 +24,28 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.glsl;
+package haven;
 
-import java.util.*;
+import javax.media.opengl.*;
 
-public class Context {
-    public final Map<Symbol, String> symtab = new HashMap<Symbol, String>();
-    public final Map<String, Symbol> rsymtab = new HashMap<String, Symbol>();
-    public int symgen = 1;
-    public List<Toplevel> vardefs = new LinkedList<Toplevel>();
-    public List<Toplevel> fundefs = new LinkedList<Toplevel>();
-    public Set<String> exts = new HashSet<String>();
+public class TexMSE extends TexMS {
+    public final int ifmt, dfmt, dtype;
+    public final boolean fixed;
 
-    public void output(Output out) {
-	out.write("#version 120\n\n");
-	for(String ext : exts)
-	    out.write("#extension " + ext + ": require\n");
-	for(Toplevel tl : vardefs)
-	    tl.output(out);
-	if(!vardefs.isEmpty())
-	    out.write("\n");
-	for(Toplevel tl : fundefs)
-	    tl.output(out);
+    public TexMSE(Coord sz, int samples, int ifmt, int dfmt, int dtype, boolean fixed) {
+	super(sz.x, sz.y, samples);
+	this.ifmt = ifmt;
+	this.dfmt = dfmt;
+	this.dtype = dtype;
+	this.fixed = fixed;
+    }
+
+    public TexMSE(Coord sz, int samples, int ifmt, int dfmt, int dtype) {
+	this(sz, samples, ifmt, dfmt, dtype, false);
+    }
+
+    protected void fill(GOut g) {
+	GL3bc gl = g.gl.getGL3bc();
+	gl.glTexImage2DMultisample(GL3.GL_TEXTURE_2D_MULTISAMPLE, s, ifmt, w, h, fixed);
     }
 }

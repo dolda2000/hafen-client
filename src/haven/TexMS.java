@@ -24,27 +24,50 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.glsl;
+package haven;
 
-import java.util.*;
+import java.awt.image.*;
+import java.nio.*;
+import javax.media.opengl.*;
+import haven.TexGL.TexOb;
+import static haven.GOut.checkerr;
 
-public class Context {
-    public final Map<Symbol, String> symtab = new HashMap<Symbol, String>();
-    public final Map<String, Symbol> rsymtab = new HashMap<String, Symbol>();
-    public int symgen = 1;
-    public List<Toplevel> vardefs = new LinkedList<Toplevel>();
-    public List<Toplevel> fundefs = new LinkedList<Toplevel>();
-    public Set<String> exts = new HashSet<String>();
+public abstract class TexMS {
+    protected TexOb t = null;
+    public final int w, h, s;
 
-    public void output(Output out) {
-	out.write("#version 120\n\n");
-	for(String ext : exts)
-	    out.write("#extension " + ext + ": require\n");
-	for(Toplevel tl : vardefs)
-	    tl.output(out);
-	if(!vardefs.isEmpty())
-	    out.write("\n");
-	for(Toplevel tl : fundefs)
-	    tl.output(out);
+    public TexMS(int w, int h, int s) {
+	this.w = w;
+	this.h = h;
+	this.s = s;
+    }
+
+    protected abstract void fill(GOut g);
+
+    private void create(GOut g) {
+	GL2 gl = g.gl;
+	t = new TexOb(gl);
+	gl.glBindTexture(GL3.GL_TEXTURE_2D_MULTISAMPLE, t.id);
+	fill(g);
+	checkerr(gl);
+    }
+
+    public int glid(GOut g) {
+	synchronized(this) {
+	    if((t != null) && (t.gl != g.gl))
+		dispose();
+	    if(t == null)
+		create(g);
+	    return(t.id);
+	}
+    }
+
+    public void dispose() {
+	synchronized(this) {
+	    if(t != null) {
+		t.dispose();
+		t = null;
+	    }
+	}
     }
 }

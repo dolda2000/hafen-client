@@ -26,25 +26,31 @@
 
 package haven.glsl;
 
-import java.util.*;
+public class IVec2Cons extends Expression {
+    public static final IVec2Cons z = new IVec2Cons(IntLiteral.z, IntLiteral.z);
+    public static final IVec2Cons u = new IVec2Cons(IntLiteral.u, IntLiteral.u);
+    public final Expression[] els;
 
-public class Context {
-    public final Map<Symbol, String> symtab = new HashMap<Symbol, String>();
-    public final Map<String, Symbol> rsymtab = new HashMap<String, Symbol>();
-    public int symgen = 1;
-    public List<Toplevel> vardefs = new LinkedList<Toplevel>();
-    public List<Toplevel> fundefs = new LinkedList<Toplevel>();
-    public Set<String> exts = new HashSet<String>();
+    public IVec2Cons(Expression... els) {
+	if((els.length < 1) || (els.length > 2))
+	    throw(new RuntimeException("Invalid number of arguments for ivec2: " + els.length));
+	this.els = els;
+    }
+
+    public IVec2Cons process(Context ctx) {
+	Expression[] nels = new Expression[els.length];
+	for(int i = 0; i < els.length; i++)
+	    nels[i] = els[i].process(ctx);
+	return(new IVec2Cons(nels));
+    }
 
     public void output(Output out) {
-	out.write("#version 120\n\n");
-	for(String ext : exts)
-	    out.write("#extension " + ext + ": require\n");
-	for(Toplevel tl : vardefs)
-	    tl.output(out);
-	if(!vardefs.isEmpty())
-	    out.write("\n");
-	for(Toplevel tl : fundefs)
-	    tl.output(out);
+	out.write("ivec2(");
+	els[0].output(out);
+	for(int i = 1; i < els.length; i++) {
+	    out.write(", ");
+	    els[i].output(out);
+	}
+	out.write(")");
     }
 }

@@ -44,9 +44,13 @@ public abstract class Type {
     public static final Type VEC2 = new Simple("vec2");
     public static final Type VEC3 = new Simple("vec3");
     public static final Type VEC4 = new Simple("vec4");
+    public static final Type IVEC2 = new Simple("ivec2");
+    public static final Type IVEC3 = new Simple("ivec3");
+    public static final Type IVEC4 = new Simple("ivec4");
     public static final Type MAT3 = new Simple("mat3");
     public static final Type MAT4 = new Simple("mat4");
     public static final Type SAMPLER2D = new Simple("sampler2D");
+    public static final Type SAMPLER2DMS = new Simple("sampler2DMS");
     public static final Type SAMPLER3D = new Simple("sampler3D");
     public static final Type SAMPLERCUBE = new Simple("samplerCube");
 

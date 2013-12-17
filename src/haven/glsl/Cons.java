@@ -71,10 +71,16 @@ public class Cons {
     public static Vec4Cons vec4(Expression... els) {return(new Vec4Cons(els));}
     public static Vec3Cons vec3(Expression... els) {return(new Vec3Cons(els));}
     public static Vec2Cons vec2(Expression... els) {return(new Vec2Cons(els));}
+    public static IVec4Cons ivec4(Expression... els) {return(new IVec4Cons(els));}
+    public static IVec3Cons ivec3(Expression... els) {return(new IVec3Cons(els));}
+    public static IVec2Cons ivec2(Expression... els) {return(new IVec2Cons(els));}
     public static Mat3Cons mat3(Expression... els) {return(new Mat3Cons(els));}
 
     public static Expression sin(Expression x) {return(Function.Builtin.sin.call(x));}
     public static Expression abs(Expression x) {return(Function.Builtin.abs.call(x));}
+    public static Expression floor(Expression x) {return(Function.Builtin.floor.call(x));}
+    public static Expression ceil(Expression x) {return(Function.Builtin.ceil.call(x));}
+    public static Expression fract(Expression x) {return(Function.Builtin.fract.call(x));}
     public static Expression mod(Expression x, Expression y) {return(Function.Builtin.mod.call(x, y));}
     public static Expression length(Expression x) {return(Function.Builtin.length.call(x));}
     public static Expression normalize(Expression x) {return(Function.Builtin.normalize.call(x));}
@@ -92,6 +98,7 @@ public class Cons {
     public static Expression texture2D(Expression s, Expression c) {return(Function.Builtin.texture2D.call(s, c));}
     public static Expression texture3D(Expression s, Expression c) {return(Function.Builtin.texture3D.call(s, c));}
     public static Expression textureCube(Expression s, Expression c) {return(Function.Builtin.textureCube.call(s, c));}
+    public static Expression texelFetch(Expression s, Expression c, Expression l) {return(Function.Builtin.texelFetch.call(s, c, l));}
     public static Expression mix(Expression x, Expression y, Expression a) {return(Function.Builtin.mix.call(x, y, a));}
     public static Expression clamp(Expression x, Expression a, Expression b) {return(Function.Builtin.clamp.call(x, a, b));}
     public static Expression smoothstep(Expression a, Expression b, Expression x) {return(Function.Builtin.smoothstep.call(a, b, x));}
@@ -115,6 +122,10 @@ public class Cons {
     public static Expression vec2(double a, double b)                     {return(vec2(l(a), l(b)));}
     public static Expression vec3(double a, double b, double c)           {return(vec3(l(a), l(b), l(c)));}
     public static Expression vec4(double a, double b, double c, double d) {return(vec4(l(a), l(b), l(c), l(d)));}
+    public static Expression ivec2(haven.Coord c)    {return(ivec2(l(c.x), l(c.y)));}
+    public static Expression ivec2(int a, int b)               {return(ivec2(l(a), l(b)));}
+    public static Expression ivec3(int a, int b, int c)        {return(ivec3(l(a), l(b), l(c)));}
+    public static Expression ivec4(int a, int b, int c, int d) {return(ivec4(l(a), l(b), l(c), l(d)));}
 
     public static <T> T id(T a) {return(a);}
     public static final Macro1<Expression> idm = new Macro1<Expression>() {
