@@ -56,21 +56,30 @@ public class GLFrameBuffer extends GLState {
     
     public static class RenderBuffer {
 	public final Coord sz;
+	public final int samples;
 	public final int fmt;
 	private RBO rbo;
 	
-	public RenderBuffer(Coord sz, int fmt) {
+	public RenderBuffer(Coord sz, int fmt, int samples) {
 	    this.sz = sz;
 	    this.fmt = fmt;
+	    this.samples = samples;
 	}
 	
+	public RenderBuffer(Coord sz, int fmt) {
+	    this(sz, fmt, 1);
+	}
+
 	public int glid(GL2 gl) {
 	    if((rbo != null) && (rbo.gl != gl))
 		dispose();
 	    if(rbo == null) {
 		rbo = new RBO(gl);
 		gl.glBindRenderbuffer(GL.GL_RENDERBUFFER, rbo.id);
-		gl.glRenderbufferStorage(GL.GL_RENDERBUFFER, fmt, sz.x, sz.y);
+		if(samples <= 1)
+		    gl.glRenderbufferStorage(GL.GL_RENDERBUFFER, fmt, sz.x, sz.y);
+		else
+		    gl.glRenderbufferStorageMultisample(GL.GL_RENDERBUFFER, samples, fmt, sz.x, sz.y);
 	    }
 	    return(rbo.id);
 	}
