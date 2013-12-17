@@ -26,32 +26,31 @@
 
 package haven.glsl;
 
-public abstract class Type {
-    private static class Simple extends Type {
-	private final String name;
+public class IVec3Cons extends Expression {
+    public static final IVec3Cons z = new IVec3Cons(IntLiteral.z, IntLiteral.z, IntLiteral.z);
+    public static final IVec3Cons u = new IVec3Cons(IntLiteral.u, IntLiteral.u, IntLiteral.u);
+    public final Expression[] els;
 
-	private Simple(String name) {
-	    this.name = name;
-	}
-
-	public String name(Context ctx) {return(name);}
-	public String toString() {return(name);}
+    public IVec3Cons(Expression... els) {
+	if((els.length < 1) || (els.length > 3))
+	    throw(new RuntimeException("Invalid number of arguments for ivec3: " + els.length));
+	this.els = els;
     }
 
-    public static final Type VOID = new Simple("void");
-    public static final Type INT = new Simple("int");
-    public static final Type FLOAT = new Simple("float");
-    public static final Type VEC2 = new Simple("vec2");
-    public static final Type VEC3 = new Simple("vec3");
-    public static final Type VEC4 = new Simple("vec4");
-    public static final Type IVEC2 = new Simple("ivec2");
-    public static final Type IVEC3 = new Simple("ivec3");
-    public static final Type IVEC4 = new Simple("ivec4");
-    public static final Type MAT3 = new Simple("mat3");
-    public static final Type MAT4 = new Simple("mat4");
-    public static final Type SAMPLER2D = new Simple("sampler2D");
-    public static final Type SAMPLER3D = new Simple("sampler3D");
-    public static final Type SAMPLERCUBE = new Simple("samplerCube");
+    public IVec3Cons process(Context ctx) {
+	Expression[] nels = new Expression[els.length];
+	for(int i = 0; i < els.length; i++)
+	    nels[i] = els[i].process(ctx);
+	return(new IVec3Cons(nels));
+    }
 
-    public abstract String name(Context ctx);
+    public void output(Output out) {
+	out.write("ivec3(");
+	els[0].output(out);
+	for(int i = 1; i < els.length; i++) {
+	    out.write(", ");
+	    els[i].output(out);
+	}
+	out.write(")");
+    }
 }
