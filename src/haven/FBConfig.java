@@ -244,7 +244,7 @@ public class FBConfig {
 
     public static final Uniform numsamples = new Uniform.AutoApply(Type.INT) {
 	    public void apply(GOut g, int loc) {
-		g.gl.glUniform1i(loc, ((PView.ConfContext)g.st.get(PView.ctx)).cfg.ms);
+		g.gl.glUniform1i(loc, ((PView.ConfContext)g.st.get(PView.ctx)).cur.ms);
 	    }
 	};
 
