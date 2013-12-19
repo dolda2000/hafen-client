@@ -63,6 +63,7 @@ public class VertexBuf {
 	}
 	
 	public abstract Buffer data();
+	public abstract Buffer direct();
 	public abstract int elsize();
 	
 	public int size() {
@@ -129,7 +130,7 @@ public class VertexBuf {
     }
 
     public abstract static class FloatArray extends AttribArray {
-	public final FloatBuffer data;
+	public FloatBuffer data;
 	
 	public FloatArray(int n, FloatBuffer data) {
 	    super(n);
@@ -140,11 +141,16 @@ public class VertexBuf {
 	}
 	
 	public FloatBuffer data() {return(data);}
+	public FloatBuffer direct() {
+	    if(!data.isDirect())
+		data = Utils.bufcp(data);
+	    return(data);
+	}
 	public int elsize() {return(4);}
     }
     
     public abstract static class IntArray extends AttribArray {
-	public final IntBuffer data;
+	public IntBuffer data;
 	
 	public IntArray(int n, IntBuffer data) {
 	    super(n);
@@ -155,6 +161,11 @@ public class VertexBuf {
 	}
 	
 	public IntBuffer data() {return(data);}
+	public IntBuffer direct() {
+	    if(!data.isDirect())
+		data = Utils.bufcp(data);
+	    return(data);
+	}
 	public int elsize() {return(4);}
     }
     
@@ -173,7 +184,7 @@ public class VertexBuf {
 		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 	    } else {
 		data.rewind();
-		gl.glVertexPointer(3, GL.GL_FLOAT, 0, data);
+		gl.glVertexPointer(3, GL.GL_FLOAT, 0, direct());
 	    }
 	    gl.glEnableClientState(GL2.GL_VERTEX_ARRAY);
 	}
@@ -200,7 +211,7 @@ public class VertexBuf {
 		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 	    } else {
 		data.rewind();
-		gl.glNormalPointer(GL.GL_FLOAT, 0, data);
+		gl.glNormalPointer(GL.GL_FLOAT, 0, direct());
 	    }
 	    gl.glEnableClientState(GL2.GL_NORMAL_ARRAY);
 	}
@@ -227,7 +238,7 @@ public class VertexBuf {
 		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 	    } else {
 		data.rewind();
-		gl.glColorPointer(4, GL.GL_FLOAT, 0, data);
+		gl.glColorPointer(4, GL.GL_FLOAT, 0, direct());
 	    }
 	    gl.glEnableClientState(GL2.GL_COLOR_ARRAY);
 	}
@@ -254,7 +265,7 @@ public class VertexBuf {
 		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 	    } else {
 		data.rewind();
-		gl.glTexCoordPointer(2, GL.GL_FLOAT, 0, data);
+		gl.glTexCoordPointer(2, GL.GL_FLOAT, 0, direct());
 	    }
 	    gl.glEnableClientState(GL2.GL_TEXTURE_COORD_ARRAY);
 	}
@@ -285,7 +296,7 @@ public class VertexBuf {
 			gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
 		    } else {
 			data.rewind();
-			gl.glVertexAttribPointer(bound, n, GL2.GL_FLOAT, false, 0, data);
+			gl.glVertexAttribPointer(bound, n, GL2.GL_FLOAT, false, 0, direct());
 		    }
 		    gl.glEnableVertexAttribArray(bound);
 		}
@@ -345,30 +356,30 @@ public class VertexBuf {
 	    while(off < buf.length) {
 		int id = Utils.ub(buf[off++]);
 		if(id == 0) {
-		    FloatBuffer data = Utils.mkfbuf(num * 3);
+		    FloatBuffer data = Utils.wfbuf(num * 3);
 		    for(int i = 0; i < num * 3; i++)
 			data.put((float)Utils.floatd(buf, off + (i * 5)));
 		    off += num * 5 * 3;
 		    bufs.add(new VertexArray(data));
 		} else if(id == 1) {
-		    FloatBuffer data = Utils.mkfbuf(num * 3);
+		    FloatBuffer data = Utils.wfbuf(num * 3);
 		    for(int i = 0; i < num * 3; i++)
 			data.put((float)Utils.floatd(buf, off + (i * 5)));
 		    off += num * 5 * 3;
 		    bufs.add(new NormalArray(data));
 		} else if(id == 2) {
-		    FloatBuffer data = Utils.mkfbuf(num * 2);
+		    FloatBuffer data = Utils.wfbuf(num * 2);
 		    for(int i = 0; i < num * 2; i++)
 			data.put((float)Utils.floatd(buf, off + (i * 5)));
 		    off += num * 5 * 2;
 		    bufs.add(new TexelArray(data));
 		} else if(id == 3) {
 		    int mba = Utils.ub(buf[off++]);
-		    IntBuffer ba = Utils.mkibuf(num * mba);
+		    IntBuffer ba = Utils.wibuf(num * mba);
 		    for(int i = 0; i < num * mba; i++)
 			ba.put(-1);
 		    ba.rewind();
-		    FloatBuffer bw = Utils.mkfbuf(num * mba);
+		    FloatBuffer bw = Utils.wfbuf(num * mba);
 		    int[] na = new int[num];
 		    List<String> bones = new ArrayList<String>();
 		    while(true) {

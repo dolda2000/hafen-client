@@ -89,7 +89,7 @@ public class MeshBuf {
 
     public class Tex extends Layer<Coord3f> {
 	public VertexBuf.TexelArray build(Collection<Coord3f> in) {
-	    FloatBuffer data = Utils.mkfbuf(in.size() * 2);
+	    FloatBuffer data = Utils.wfbuf(in.size() * 2);
 	    for(Coord3f c : in) {
 		data.put(c.x); data.put(c.y);
 	    }
@@ -110,7 +110,7 @@ public class MeshBuf {
 
     public class Col extends Layer<Color> {
 	public VertexBuf.ColorArray build(Collection<Color> in) {
-	    FloatBuffer data = Utils.mkfbuf(in.size() * 4);
+	    FloatBuffer data = Utils.wfbuf(in.size() * 4);
 	    for(Color c : in) {
 		data.put(c.getRed() / 255.0f);  data.put(c.getGreen() / 255.0f);
 		data.put(c.getBlue() / 255.0f); data.put(c.getAlpha() / 255.0f);
@@ -132,7 +132,7 @@ public class MeshBuf {
 	public Vec1Layer(Attribute attrib) {super(attrib);}
 
 	public VertexBuf.Vec1Array build(Collection<Float> in) {
-	    FloatBuffer data = Utils.mkfbuf(in.size());
+	    FloatBuffer data = Utils.wfbuf(in.size());
 	    for(Float d : in)
 		data.put(d);
 	    return(new VertexBuf.Vec1Array(data, attrib));
@@ -142,7 +142,7 @@ public class MeshBuf {
 	public Vec2Layer(Attribute attrib) {super(attrib);}
 
 	public VertexBuf.Vec2Array build(Collection<Coord3f> in) {
-	    FloatBuffer data = Utils.mkfbuf(in.size() * 2);
+	    FloatBuffer data = Utils.wfbuf(in.size() * 2);
 	    for(Coord3f d : in) {
 		data.put(d.x); data.put(d.y);
 	    }
@@ -153,7 +153,7 @@ public class MeshBuf {
 	public Vec3Layer(Attribute attrib) {super(attrib);}
 
 	public VertexBuf.Vec3Array build(Collection<Coord3f> in) {
-	    FloatBuffer data = Utils.mkfbuf(in.size() * 3);
+	    FloatBuffer data = Utils.wfbuf(in.size() * 3);
 	    for(Coord3f d : in) {
 		data.put(d.x); data.put(d.y); data.put(d.z);
 	    }
@@ -164,7 +164,7 @@ public class MeshBuf {
 	public Vec4Layer(Attribute attrib) {super(attrib);}
 
 	public VertexBuf.Vec4Array build(Collection<float[]> in) {
-	    FloatBuffer data = Utils.mkfbuf(in.size() * 4);
+	    FloatBuffer data = Utils.wfbuf(in.size() * 4);
 	    for(float[] d : in) {
 		data.put(d[0]); data.put(d[1]); data.put(d[2]); data.put(d[3]);
 	    }
@@ -313,8 +313,8 @@ public class MeshBuf {
 
 	FloatBuffer pos, nrm;
 	{
-	    pos = Utils.mkfbuf(v.size() * 3);
-	    nrm = Utils.mkfbuf(v.size() * 3);
+	    pos = Utils.wfbuf(v.size() * 3);
+	    nrm = Utils.wfbuf(v.size() * 3);
 	    int pi = 0, ni = 0;
 	    short i = 0;
 	    for(Vertex v : this.v) {
