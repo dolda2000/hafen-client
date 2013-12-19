@@ -308,7 +308,7 @@ public class TerrainTile extends Tiler {
 	    AlphaTex alpha;
 	    synchronized(transtex) {
 		if((alpha = transtex.get(gt)) == null)
-		    transtex.put(gt, alpha = new AlphaTex(gt));
+		    transtex.put(gt, alpha = new AlphaTex(gt, 0.01f));
 	    }
 	    mat = transmats.intern(GLState.compose(mat, alpha));
 	    if(b.en[i][b.es.o(lc)])
