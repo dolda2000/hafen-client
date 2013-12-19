@@ -39,27 +39,40 @@ public class AlphaTex extends GLState {
     public static final Attribute clipc = new Attribute(VEC2);
     public static final MeshBuf.LayerID<MeshBuf.Vec2Layer> lclip = new MeshBuf.V2LayerID(clipc);
     private static final Uniform ctex = new Uniform(SAMPLER2D);
+    private static final Uniform cclip = new Uniform(FLOAT);
     public final TexGL tex;
+    public final float cthr;
     private TexUnit sampler;
 
-    public AlphaTex(TexGL tex) {
+    public AlphaTex(TexGL tex, float clip) {
 	this.tex = tex;
+	this.cthr = clip;
     }
 
-    private static final ShaderMacro[] shaders = {
-	new ShaderMacro() {
-	    final AutoVarying fc = new AutoVarying(VEC2) {
-		    {ipol = Interpol.CENTROID;}
-		    protected Expression root(VertexContext vctx) {
-			return(clipc.ref());
-		    }
-		};
+    public AlphaTex(TexGL tex) {
+	this(tex, 0);
+    }
+
+    private static final AutoVarying fc = new AutoVarying(VEC2) {
+	    {ipol = Interpol.CENTROID;}
+	    protected Expression root(VertexContext vctx) {
+		return(clipc.ref());
+	    }
+	};
+    private static Value value(FragmentContext fctx) {
+	return(fctx.uniform.ext(ctex, new ValBlock.Factory() {
+		public Value make(ValBlock vals) {
+		    return(vals.new Value(VEC4) {
+			    public Expression root() {
+				return(texture2D(ctex.ref(), fc.ref()));
+			    }
+			});
+		}
+	    }));
+    }
+    private static final ShaderMacro main = new ShaderMacro() {
 	    public void modify(ProgramContext prog) {
-		final ValBlock.Value val = prog.fctx.uniform.new Value(VEC4) {
-			public Expression root() {
-			    return(texture2D(ctex.ref(), fc.ref()));
-			}
-		    };
+		final Value val = value(prog.fctx);
 		val.force();
 		prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			public Expression expand(Expression in) {
@@ -67,14 +80,30 @@ public class AlphaTex extends GLState {
 			}
 		    }, 100);
 	    }
-	}
-    };
+	};
+    private static final ShaderMacro clip = new ShaderMacro() {
+	    public void modify(ProgramContext prog) {
+		final Value val = value(prog.fctx);
+		val.force();
+		prog.fctx.mainmod(new CodeMacro() {
+			public void expand(Block blk) {
+			    blk.add(new If(lt(pick(val.ref(), "a"), cclip.ref()),
+					   new Discard()));
+			}
+		    }, -100);
+	    }
+	};
 
-    public ShaderMacro[] shaders() {return(shaders);}
+    private static final ShaderMacro[] shnc = {main};
+    private static final ShaderMacro[] shwc = {main, clip};
+
+    public ShaderMacro[] shaders() {return((cthr > 0)?shwc:shnc);}
     public boolean reqshader() {return(true);}
 
     public void reapply(GOut g) {
 	g.gl.glUniform1i(g.st.prog.uniform(ctex), sampler.id);
+	if(cthr > 0)
+	    g.gl.glUniform1f(g.st.prog.uniform(cclip), cthr);
     }
 
     public void apply(GOut g) {
