@@ -32,35 +32,14 @@ import haven.glsl.*;
 import static haven.glsl.Cons.*;
 import haven.Resource.Tile;
 import haven.MapMesh.Surface;
+import haven.MapMesh.Scan;
 import javax.media.opengl.*;
 import java.awt.Color;
 
-public class WaterTile extends Tiler {
+public abstract class WaterTile extends Tiler {
     public final int depth;
-    public final Resource.Tileset set;
-    public final GLState mat;
     private static final Material.Colors bcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
     
-    public static class Scan {
-	public final Coord ul, sz, br;
-	public final int l;
-
-	public Scan(Coord ul, Coord sz) {
-	    this.ul = ul;
-	    this.sz = sz;
-	    this.br = sz.add(ul);
-	    this.l = sz.x * sz.y;
-	}
-
-	public int o(int x, int y) {
-	    return((x - ul.x) + ((y - ul.y) * sz.x));
-	}
-
-	public int o(Coord in) {
-	    return(o(in.x, in.y));
-	}
-    }
-
     public static class Bottom extends Surface {
 	final MapMesh m;
 	final boolean[] s;
@@ -141,7 +120,6 @@ public class WaterTile extends Tiler {
     }
     
     static final TexCube sky = new TexCube(Resource.loadimg("gfx/tiles/skycube"));
-    static final TexI srf = (TexI)Resource.loadtex("gfx/tiles/watertex");
     static final TexI nrm = (TexI)Resource.loadtex("gfx/tiles/wn");
     static {
 	nrm.mipmap();
@@ -338,18 +316,6 @@ public class WaterTile extends Tiler {
 	    }
 	};
 
-    public static class Shallows extends WaterTile {
-	public Shallows(int id, Resource.Tileset set) {
-	    super(id, set, 5);
-	}
-    }
-    
-    public static class Deep extends WaterTile {
-	public Deep(int id, Resource.Tileset set) {
-	    super(id, set, 30);
-	}
-    }
-
     public static final MeshBuf.LayerID<MeshBuf.Vec1Layer> depthlayer = new MeshBuf.V1LayerID(BottomFog.depth);
 
     public static class BottomFog extends GLState.StandAlone {
@@ -395,70 +361,7 @@ public class WaterTile extends Tiler {
 	}
     }
     public static final BottomFog waterfog = new BottomFog();
-    
-    public static class BottomPlane extends MapMesh.Plane {
-	Bottom srf;
-	Coord lc;
-
-	public BottomPlane(MapMesh m, Bottom srf, Coord lc, int z, GLState mat, Tex tex) {
-	    m.super(srf.fortile(lc), z, mat, tex);
-	    this.srf = srf;
-	    this.lc = new Coord(lc);
-	}
-
-	public void build(MeshBuf buf) {
-	    MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
-	    MeshBuf.Vec1Layer da = buf.layer(depthlayer);
-	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm);
-	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
-	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
-	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm);
-	    ta.set(v1, new Coord3f(tex.tcx(texx[0]), tex.tcy(texy[0]), 0.0f));
-	    ta.set(v2, new Coord3f(tex.tcx(texx[1]), tex.tcy(texy[1]), 0.0f));
-	    ta.set(v3, new Coord3f(tex.tcx(texx[2]), tex.tcy(texy[2]), 0.0f));
-	    ta.set(v4, new Coord3f(tex.tcx(texx[3]), tex.tcy(texy[3]), 0.0f));
-	    da.set(v1, (float)srf.d(lc.x, lc.y));
-	    da.set(v2, (float)srf.d(lc.x, lc.y + 1));
-	    da.set(v3, (float)srf.d(lc.x + 1, lc.y + 1));
-	    da.set(v4, (float)srf.d(lc.x + 1, lc.y));
-	    MapMesh.splitquad(buf, v1, v2, v3, v4);
-	}
-    }
-
     private static final GLState boff = new States.DepthOffset(4, 4);
-
-    public WaterTile(int id, Resource.Tileset set, int depth) {
-	super(id);
-	this.set = set;
-	this.depth = depth;
-	TexGL tex = (TexGL)((TexSI)set.ground.pick(0).tex()).parent;
-	mat = new Material(Light.deflight, bcol, tex.draw(), waterfog, boff);
-    }
-    
-    public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
-	Tile g = set.ground.pick(rnd);
-	new BottomPlane(m, m.data(Bottom.id), lc, 0, mat, g.tex());
-	m.new Plane(m.gnd(), lc, 257, surfmat);
-    }
-    
-    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
-	if(m.map.gettile(gc) <= id)
-	    return;
-	if((set.btrans != null) && (bmask > 0)) {
-	    Tile t = set.btrans[bmask - 1].pick(rnd);
-	    if(gt instanceof WaterTile)
-		new BottomPlane(m, m.data(Bottom.id), lc, z, mat, t.tex());
-	    else
-		gt.layover(m, lc, gc, z, t);
-	}
-	if((set.ctrans != null) && (cmask > 0)) {
-	    Tile t = set.ctrans[cmask - 1].pick(rnd);
-	    if(gt instanceof WaterTile)
-		new BottomPlane(m, m.data(Bottom.id), lc, z, mat, t.tex());
-	    else
-		gt.layover(m, lc, gc, z, t);
-	}
-    }
 
     public static final GLState obfog = new GLState.StandAlone(GLState.Slot.Type.DRAW) {
 	final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
@@ -483,6 +386,154 @@ public class WaterTile extends Tiler {
 	public ShaderMacro[] shaders() {return(shaders);}
 	public boolean reqshaders() {return(true);}
     };
+
+    @ResName("water")
+    public static class Fac implements Factory {
+	public Tiler create(int id, Resource.Tileset set) {
+	    int a = 0;
+	    int depth = (Integer)set.ta[a++];
+	    Resource.Tileset ground = set;
+	    TerrainTile terrain = null;
+	    while(a < set.ta.length) {
+		Object[] desc = (Object[])set.ta[a++];
+		String p = (String)desc[0];
+		if(p.equals("gnd")) {
+		    Resource gres = Resource.load((String)desc[1], (Integer)desc[2]);
+		    ground = gres.layer(Resource.tileset);
+		} else if(p.equals("trn")) {
+		    Resource tres = Resource.load((String)desc[1], (Integer)desc[2]);
+		    Resource.Tileset tset = tres.layer(Resource.tileset);
+		    terrain = (TerrainTile)tset.tfac().create(-1, tset);
+		}
+	    }
+	    if(terrain == null)
+		return(new GWaterTile(id, set, depth, ground));
+	    else
+		return(new TWaterTile(id, set, depth, terrain));
+	}
+    }
+
+    public WaterTile(int id, Resource.Tileset set, int depth) {
+	super(id);
+	this.depth = depth;
+    }
+
+    public static class GWaterTile extends WaterTile {
+	public final Resource.Tileset bottom;
+	public final GLState mat;
+
+	public GWaterTile(int id, Resource.Tileset set, int depth, Resource.Tileset bottom) {
+	    super(id, set, depth);
+	    this.bottom = bottom;
+	    TexGL tex = (TexGL)((TexSI)bottom.ground.pick(0).tex()).parent;
+	    mat = new Material(Light.deflight, bcol, tex.draw(), waterfog, boff);
+	}
+
+	public static class BottomPlane extends MapMesh.Plane {
+	    Bottom srf;
+	    Coord lc;
+
+	    public BottomPlane(MapMesh m, Bottom srf, Coord lc, int z, GLState mat, Tex tex) {
+		m.super(srf.fortile(lc), z, mat, tex);
+		this.srf = srf;
+		this.lc = new Coord(lc);
+	    }
+
+	    public void build(MeshBuf buf) {
+		MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
+		MeshBuf.Vec1Layer da = buf.layer(depthlayer);
+		MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm);
+		MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
+		MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
+		MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm);
+		ta.set(v1, new Coord3f(tex.tcx(texx[0]), tex.tcy(texy[0]), 0.0f));
+		ta.set(v2, new Coord3f(tex.tcx(texx[1]), tex.tcy(texy[1]), 0.0f));
+		ta.set(v3, new Coord3f(tex.tcx(texx[2]), tex.tcy(texy[2]), 0.0f));
+		ta.set(v4, new Coord3f(tex.tcx(texx[3]), tex.tcy(texy[3]), 0.0f));
+		da.set(v1, (float)srf.d(lc.x, lc.y));
+		da.set(v2, (float)srf.d(lc.x, lc.y + 1));
+		da.set(v3, (float)srf.d(lc.x + 1, lc.y + 1));
+		da.set(v4, (float)srf.d(lc.x + 1, lc.y));
+		MapMesh.splitquad(buf, v1, v2, v3, v4);
+	    }
+	}
+
+	public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
+	    Tile g = bottom.ground.pick(rnd);
+	    new BottomPlane(m, m.data(Bottom.id), lc, 0, mat, g.tex());
+	    m.new Plane(m.gnd(), lc, 257, surfmat);
+	}
+    
+	public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
+	    if(m.map.gettile(gc) <= id)
+		return;
+	    if((bottom.btrans != null) && (bmask > 0)) {
+		Tile t = bottom.btrans[bmask - 1].pick(rnd);
+		if(gt instanceof WaterTile)
+		    new BottomPlane(m, m.data(Bottom.id), lc, z, mat, t.tex());
+		else
+		    gt.layover(m, lc, gc, z, t);
+	    }
+	    if((bottom.ctrans != null) && (cmask > 0)) {
+		Tile t = bottom.ctrans[cmask - 1].pick(rnd);
+		if(gt instanceof WaterTile)
+		    new BottomPlane(m, m.data(Bottom.id), lc, z, mat, t.tex());
+		else
+		    gt.layover(m, lc, gc, z, t);
+	    }
+	}
+    }
+
+    /* XXX: This is quite ugly, and tiling should generally be
+     * reworked to allow it to be less so. */
+    public static class TWaterTile extends WaterTile {
+	private final static IDSet<GLState> bmats = new IDSet<GLState>();
+	public final TerrainTile bottom;
+
+	public TWaterTile(int id, Resource.Tileset set, int depth, TerrainTile bottom) {
+	    super(id, set, depth);
+	    this.bottom = bottom;
+	}
+
+	public class BottomPlane extends TerrainTile.Plane {
+	    float[] depth;
+
+	    public BottomPlane(MapMesh m, Bottom srf, Coord lc, int z, GLState mat, int[] alpha) {
+		bottom.super(m, srf, lc, z, mat, alpha);
+		this.depth = new float[] {
+		    srf.d(lc.x, lc.y),
+		    srf.d(lc.x, lc.y + 1),
+		    srf.d(lc.x + 1, lc.y + 1),
+		    srf.d(lc.x + 1, lc.y),
+		};
+	    }
+
+	    public MeshBuf.Vertex mkvert(MeshBuf buf, int n) {
+		MeshBuf.Vertex v = super.mkvert(buf, n);
+		buf.layer(depthlayer).set(v, depth[n]);
+		return(v);
+	    }
+	}
+
+	public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
+	    TerrainTile.Blend b = m.data(bottom.blend);
+	    for(int i = 0; i < bottom.var.length + 1; i++) {
+		GLState mat = (i == 0)?bottom.base:(bottom.var[i - 1].mat);
+		mat = bmats.intern(GLState.compose(mat, waterfog, boff));
+		if(b.en[i][b.es.o(lc)])
+		    new BottomPlane(m, m.data(Bottom.id), lc, i, mat, new int[] {
+			    (int)(b.bv[i][b.vs.o(lc)] * 255),
+			    (int)(b.bv[i][b.vs.o(lc.add(0, 1))] * 255),
+			    (int)(b.bv[i][b.vs.o(lc.add(1, 1))] * 255),
+			    (int)(b.bv[i][b.vs.o(lc.add(1, 0))] * 255),
+			});
+	    }
+	    m.new Plane(m.gnd(), lc, 257, surfmat);
+	}
+
+	public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
+	}
+    }
 
     public GLState drawstate(Glob glob, GLConfig cfg, Coord3f c) {
 	if(cfg.pref.wsurf.val)
