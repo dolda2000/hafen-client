@@ -120,7 +120,6 @@ public abstract class WaterTile extends Tiler {
     }
     
     static final TexCube sky = new TexCube(Resource.loadimg("gfx/tiles/skycube"));
-    static final TexI srf = (TexI)Resource.loadtex("gfx/tiles/watertex");
     static final TexI nrm = (TexI)Resource.loadtex("gfx/tiles/wn");
     static {
 	nrm.mipmap();
