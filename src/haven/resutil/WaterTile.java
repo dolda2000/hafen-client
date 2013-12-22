@@ -32,6 +32,7 @@ import haven.glsl.*;
 import static haven.glsl.Cons.*;
 import haven.Resource.Tile;
 import haven.MapMesh.Surface;
+import haven.MapMesh.Scan;
 import javax.media.opengl.*;
 import java.awt.Color;
 
@@ -41,26 +42,6 @@ public class WaterTile extends Tiler {
     public final GLState mat;
     private static final Material.Colors bcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
     
-    public static class Scan {
-	public final Coord ul, sz, br;
-	public final int l;
-
-	public Scan(Coord ul, Coord sz) {
-	    this.ul = ul;
-	    this.sz = sz;
-	    this.br = sz.add(ul);
-	    this.l = sz.x * sz.y;
-	}
-
-	public int o(int x, int y) {
-	    return((x - ul.x) + ((y - ul.y) * sz.x));
-	}
-
-	public int o(Coord in) {
-	    return(o(in.x, in.y));
-	}
-    }
-
     public static class Bottom extends Surface {
 	final MapMesh m;
 	final boolean[] s;
@@ -338,18 +319,6 @@ public class WaterTile extends Tiler {
 	    }
 	};
 
-    public static class Shallows extends WaterTile {
-	public Shallows(int id, Resource.Tileset set) {
-	    super(id, set, 5);
-	}
-    }
-    
-    public static class Deep extends WaterTile {
-	public Deep(int id, Resource.Tileset set) {
-	    super(id, set, 30);
-	}
-    }
-
     public static final MeshBuf.LayerID<MeshBuf.Vec1Layer> depthlayer = new MeshBuf.V1LayerID(BottomFog.depth);
 
     public static class BottomFog extends GLState.StandAlone {
@@ -395,6 +364,39 @@ public class WaterTile extends Tiler {
 	}
     }
     public static final BottomFog waterfog = new BottomFog();
+    private static final GLState boff = new States.DepthOffset(4, 4);
+
+    public static final GLState obfog = new GLState.StandAlone(GLState.Slot.Type.DRAW) {
+	final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
+		protected Expression root(VertexContext vctx) {
+		    return(sub(pick(MiscLib.maploc.ref(), "z"), pick(vctx.mapv.depref(), "z")));
+		}
+	    };
+
+	final ShaderMacro[] shaders = {
+	    new ShaderMacro() {
+		public void modify(ProgramContext prog) {
+		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
+			    public Expression expand(Expression in) {
+				return(BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
+			    }
+			}, 1000);
+		}
+	    }
+	};
+	public void apply(GOut g) {}
+	public void unapply(GOut g) {}
+	public ShaderMacro[] shaders() {return(shaders);}
+	public boolean reqshaders() {return(true);}
+    };
+
+    public WaterTile(int id, Resource.Tileset set, int depth) {
+	super(id);
+	this.set = set;
+	this.depth = depth;
+	TexGL tex = (TexGL)((TexSI)set.ground.pick(0).tex()).parent;
+	mat = new Material(Light.deflight, bcol, tex.draw(), waterfog, boff);
+    }
     
     public static class BottomPlane extends MapMesh.Plane {
 	Bottom srf;
@@ -425,16 +427,6 @@ public class WaterTile extends Tiler {
 	}
     }
 
-    private static final GLState boff = new States.DepthOffset(4, 4);
-
-    public WaterTile(int id, Resource.Tileset set, int depth) {
-	super(id);
-	this.set = set;
-	this.depth = depth;
-	TexGL tex = (TexGL)((TexSI)set.ground.pick(0).tex()).parent;
-	mat = new Material(Light.deflight, bcol, tex.draw(), waterfog, boff);
-    }
-    
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	Tile g = set.ground.pick(rnd);
 	new BottomPlane(m, m.data(Bottom.id), lc, 0, mat, g.tex());
@@ -459,30 +451,6 @@ public class WaterTile extends Tiler {
 		gt.layover(m, lc, gc, z, t);
 	}
     }
-
-    public static final GLState obfog = new GLState.StandAlone(GLState.Slot.Type.DRAW) {
-	final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
-		protected Expression root(VertexContext vctx) {
-		    return(sub(pick(MiscLib.maploc.ref(), "z"), pick(vctx.mapv.depref(), "z")));
-		}
-	    };
-
-	final ShaderMacro[] shaders = {
-	    new ShaderMacro() {
-		public void modify(ProgramContext prog) {
-		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				return(BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
-			    }
-			}, 1000);
-		}
-	    }
-	};
-	public void apply(GOut g) {}
-	public void unapply(GOut g) {}
-	public ShaderMacro[] shaders() {return(shaders);}
-	public boolean reqshaders() {return(true);}
-    };
 
     public GLState drawstate(Glob glob, GLConfig cfg, Coord3f c) {
 	if(cfg.pref.wsurf.val)
