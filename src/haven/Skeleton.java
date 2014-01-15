@@ -762,8 +762,12 @@ public class Skeleton {
 	
 	public TrackMod forskel(Skeleton skel, WrapMode mode) {
 	    Track[] remap = new Track[skel.blist.length];
-	    for(Track t : tracks)
-		remap[skel.bones.get(t.bone).idx] = t;
+	    for(Track t : tracks) {
+		Skeleton.Bone b = skel.bones.get(t.bone);
+		if(b == null)
+		    throw(new RuntimeException("Bone \"" + t.bone + "\" in animation reference does not exist in skeleton " + skel));
+		remap[b.idx] = t;
+	    }
 	    TrackMod ret = skel.new TrackMod(remap, effects, len, mode);
 	    if(nspeed > 0) {
 		ret.speedmod = true;
