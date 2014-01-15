@@ -322,7 +322,7 @@ public abstract class TexGL extends Tex {
 	try {
 	    checkerr(gl);
 	} catch(GOut.GLOutOfMemoryException e) {
-	    throw(new RuntimeException("Out of memory when create texture " + this, e));
+	    throw(new RuntimeException("Out of memory when creating texture " + this, e));
 	}
     }
 	
