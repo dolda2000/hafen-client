@@ -56,8 +56,10 @@ public class FBConfig {
 	    if(tgts[i] != null)
 		return(false);
 	}
-	if(res.length > 0)
-	    return(false);
+	for(ResolveFilter rf : res) {
+	    if(!rf.cleanp())
+		return(false);
+	}
 	return(true);
     }
 
@@ -249,6 +251,7 @@ public class FBConfig {
 	};
 
     public interface ResolveFilter {
+	public boolean cleanp();
 	public void prepare(FBConfig cfg, GOut g);
 	public ShaderMacro code(FBConfig cfg);
 	public void apply(FBConfig cfg, GOut g);
@@ -257,6 +260,7 @@ public class FBConfig {
 
     private static class Resolve1 implements ResolveFilter {
 	public void prepare(FBConfig cfg, GOut g) {}
+	public boolean cleanp() {return(true);}
 
 	private static final Uniform ctex = new Uniform(Type.SAMPLER2D);
 	private static final ShaderMacro code = new ShaderMacro() {
@@ -289,6 +293,7 @@ public class FBConfig {
 	}
 
 	public void prepare(FBConfig cfg, GOut g) {}
+	public boolean cleanp() {return(true);}
 
 	private static final Uniform ctex = new Uniform(Type.SAMPLER2DMS);
 	private final ShaderMacro code = new ShaderMacro() {
