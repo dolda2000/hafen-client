@@ -574,6 +574,35 @@ public class ChatUI extends Widget {
 	}
     }
     
+    public static class SimpleChat extends EntryChannel {
+	public final String name;
+
+	public SimpleChat(Widget parent, String name) {
+	    super(parent);
+	    this.name = name;
+	}
+
+	public void uimsg(String msg, Object... args) {
+	    if((msg == "msg") || (msg == "log")) {
+		String line = (String)args[0];
+		Color col = null;
+		if(args.length > 1) col = (Color)args[1];
+		if(col == null) col = Color.WHITE;
+		boolean notify = (args.length > 2)?(((Integer)args[2]) != 0):false;
+		Message cmsg = new SimpleMessage(line, col, iw());
+		append(cmsg);
+		if(notify)
+		    notify(cmsg);
+	    } else {
+		super.uimsg(msg, args);
+	    }
+	}
+
+	public String name() {
+	    return(name);
+	}
+    }
+
     public static class MultiChat extends EntryChannel {
 	private final String name;
 	private final boolean notify;
@@ -728,6 +757,13 @@ public class ChatUI extends Widget {
 	}
     }
     
+    @RName("schan")
+    public static class $SChan implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    String name = (String)args[0];
+	    return(new SimpleChat(parent, name));
+	}
+    }
     @RName("mchat")
     public static class $MChat implements Factory {
 	public Widget create(Coord c, Widget parent, Object[] args) {
