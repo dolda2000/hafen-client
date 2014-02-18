@@ -544,6 +544,9 @@ public class ChatUI extends Widget {
     
     public static abstract class EntryChannel extends Channel {
 	private final TextEntry in;
+	private List<String> history = new ArrayList<String>();
+	private int hpos = 0;
+	private String hcurrent;
 	
 	public EntryChannel(Widget parent) {
 	    super(parent);
@@ -553,6 +556,28 @@ public class ChatUI extends Widget {
 			if(text.length() > 0)
 			    send(text);
 			settext("");
+			hpos = history.size();
+		    }
+
+		    public boolean keydown(KeyEvent ev) {
+			if(ev.getKeyCode() == KeyEvent.VK_UP) {
+			    if(hpos > 0) {
+				if(hpos == history.size())
+				    hcurrent = text;
+				rsettext(history.get(--hpos));
+			    }
+			    return(true);
+			} else if(ev.getKeyCode() == KeyEvent.VK_DOWN) {
+			    if(hpos < history.size()) {
+				if(++hpos == history.size())
+				    rsettext(hcurrent);
+				else
+				    rsettext(history.get(hpos));
+			    }
+			    return(true);
+			} else {
+			    return(super.keydown(ev));
+			}
 		    }
 		};
 	}
@@ -570,6 +595,7 @@ public class ChatUI extends Widget {
 	}
 	
 	public void send(String text) {
+	    history.add(text);
 	    wdgmsg("msg", text);
 	}
     }
