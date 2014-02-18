@@ -472,7 +472,18 @@ public class ChatUI extends Widget {
 	    }
 	    return(super.mouseup(c, btn));
 	}
-	
+
+	public void select() {
+	    getparent(ChatUI.class).select(this);
+	}
+
+	public void display() {
+	    select();
+	    ChatUI chat = getparent(ChatUI.class);
+	    chat.expand();
+	    chat.parent.setfocus(chat);
+	}
+
 	private void drawsel(GOut g, Message msg, int y) {
 	    RichText rt = (RichText)msg.text();
 	    boolean sel = msg != selstart.msg;
@@ -506,7 +517,17 @@ public class ChatUI extends Widget {
 		    break;
 	    }
 	}
-	
+
+	public void uimsg(String name, Object... args) {
+	    if(name == "sel") {
+		select();
+	    } else if(name == "dsp") {
+		display();
+	    } else {
+		super.uimsg(name, args);
+	    }
+	}
+
 	public abstract String name();
     }
     
@@ -618,6 +639,8 @@ public class ChatUI extends Widget {
 		    if(notify)
 			notify(cmsg);
 		}
+	    } else {
+		super.uimsg(msg, args);
 	    }
 	}
 	
@@ -649,6 +672,8 @@ public class ChatUI extends Widget {
 		    append(cmsg);
 		    notify(cmsg);
 		}
+	    } else {
+		super.uimsg(msg, args);
 	    }
 	}
     }
@@ -689,6 +714,8 @@ public class ChatUI extends Widget {
 		Message cmsg = new SimpleMessage(err, Color.RED, iw());
 		append(cmsg);
 		notify(cmsg);
+	    } else {
+		super.uimsg(msg, args);
 	    }
 	}
 	
@@ -942,7 +969,9 @@ public class ChatUI extends Widget {
 	this.c = (this.base = base).add(0, -sz.y);
     }
 
-    private void expand() {
+    public void expand() {
+	if(expanded)
+	    return;
 	resize(new Coord(sz.x, 100));
 	setcanfocus(true);
 	if(sel != null)
@@ -951,7 +980,9 @@ public class ChatUI extends Widget {
 	expanded = true;
     }
     
-    private void contract() {
+    public void contract() {
+	if(!expanded)
+	    return;
 	resize(new Coord(sz.x, 50));
 	setcanfocus(false);
 	if(sel != null)
