@@ -32,6 +32,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.*;
+import haven.resutil.RidgeTile;
 
 public class LocalMiniMap extends Widget {
     public final MapView mv;
@@ -86,9 +87,31 @@ public class LocalMiniMap extends Widget {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
 		int t = m.gettile(ul.add(c));
 		BufferedImage tex = tileimg(t, texes);
+		int rgb = 0;
 		if(tex != null)
-		    buf.setRGB(c.x, c.y, tex.getRGB(Utils.floormod(c.x + ul.x, tex.getWidth()),
-						    Utils.floormod(c.y + ul.y, tex.getHeight())));
+		    rgb = tex.getRGB(Utils.floormod(c.x + ul.x, tex.getWidth()),
+				     Utils.floormod(c.y + ul.y, tex.getHeight()));
+		buf.setRGB(c.x, c.y, rgb);
+	    }
+	}
+	for(c.y = 1; c.y < sz.y - 1; c.y++) {
+	    for(c.x = 1; c.x < sz.x - 1; c.x++) {
+		int t = m.gettile(ul.add(c));
+		Tiler tl = m.tiler(t);
+		if(tl instanceof RidgeTile) {
+		    if(((RidgeTile)tl).ridgep(m, ul.add(c))) {
+			for(int y = c.y; y <= c.y + 1; y++) {
+			    for(int x = c.x; x <= c.x + 1; x++) {
+				int rgb = buf.getRGB(x, y);
+				rgb = (rgb & 0xff000000) |
+				    (((rgb & 0x00ff0000) >> 17) << 16) |
+				    (((rgb & 0x0000ff00) >>  9) << 8) |
+				    (((rgb & 0x000000ff) >>  1) << 0);
+				buf.setRGB(x, y, rgb);
+			    }
+			}
+		    }
+		}
 	    }
 	}
 	for(c.y = 0; c.y < sz.y; c.y++) {
