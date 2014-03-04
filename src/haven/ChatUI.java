@@ -472,7 +472,18 @@ public class ChatUI extends Widget {
 	    }
 	    return(super.mouseup(c, btn));
 	}
-	
+
+	public void select() {
+	    getparent(ChatUI.class).select(this);
+	}
+
+	public void display() {
+	    select();
+	    ChatUI chat = getparent(ChatUI.class);
+	    chat.expand();
+	    chat.parent.setfocus(chat);
+	}
+
 	private void drawsel(GOut g, Message msg, int y) {
 	    RichText rt = (RichText)msg.text();
 	    boolean sel = msg != selstart.msg;
@@ -506,7 +517,17 @@ public class ChatUI extends Widget {
 		    break;
 	    }
 	}
-	
+
+	public void uimsg(String name, Object... args) {
+	    if(name == "sel") {
+		select();
+	    } else if(name == "dsp") {
+		display();
+	    } else {
+		super.uimsg(name, args);
+	    }
+	}
+
 	public abstract String name();
     }
     
@@ -523,6 +544,9 @@ public class ChatUI extends Widget {
     
     public static abstract class EntryChannel extends Channel {
 	private final TextEntry in;
+	private List<String> history = new ArrayList<String>();
+	private int hpos = 0;
+	private String hcurrent;
 	
 	public EntryChannel(Widget parent) {
 	    super(parent);
@@ -532,6 +556,28 @@ public class ChatUI extends Widget {
 			if(text.length() > 0)
 			    send(text);
 			settext("");
+			hpos = history.size();
+		    }
+
+		    public boolean keydown(KeyEvent ev) {
+			if(ev.getKeyCode() == KeyEvent.VK_UP) {
+			    if(hpos > 0) {
+				if(hpos == history.size())
+				    hcurrent = text;
+				rsettext(history.get(--hpos));
+			    }
+			    return(true);
+			} else if(ev.getKeyCode() == KeyEvent.VK_DOWN) {
+			    if(hpos < history.size()) {
+				if(++hpos == history.size())
+				    rsettext(hcurrent);
+				else
+				    rsettext(history.get(hpos));
+			    }
+			    return(true);
+			} else {
+			    return(super.keydown(ev));
+			}
 		    }
 		};
 	}
@@ -549,10 +595,40 @@ public class ChatUI extends Widget {
 	}
 	
 	public void send(String text) {
+	    history.add(text);
 	    wdgmsg("msg", text);
 	}
     }
     
+    public static class SimpleChat extends EntryChannel {
+	public final String name;
+
+	public SimpleChat(Widget parent, String name) {
+	    super(parent);
+	    this.name = name;
+	}
+
+	public void uimsg(String msg, Object... args) {
+	    if((msg == "msg") || (msg == "log")) {
+		String line = (String)args[0];
+		Color col = null;
+		if(args.length > 1) col = (Color)args[1];
+		if(col == null) col = Color.WHITE;
+		boolean notify = (args.length > 2)?(((Integer)args[2]) != 0):false;
+		Message cmsg = new SimpleMessage(line, col, iw());
+		append(cmsg);
+		if(notify)
+		    notify(cmsg);
+	    } else {
+		super.uimsg(msg, args);
+	    }
+	}
+
+	public String name() {
+	    return(name);
+	}
+    }
+
     public static class MultiChat extends EntryChannel {
 	private final String name;
 	private final boolean notify;
@@ -618,6 +694,8 @@ public class ChatUI extends Widget {
 		    if(notify)
 			notify(cmsg);
 		}
+	    } else {
+		super.uimsg(msg, args);
 	    }
 	}
 	
@@ -649,6 +727,8 @@ public class ChatUI extends Widget {
 		    append(cmsg);
 		    notify(cmsg);
 		}
+	    } else {
+		super.uimsg(msg, args);
 	    }
 	}
     }
@@ -689,6 +769,8 @@ public class ChatUI extends Widget {
 		Message cmsg = new SimpleMessage(err, Color.RED, iw());
 		append(cmsg);
 		notify(cmsg);
+	    } else {
+		super.uimsg(msg, args);
 	    }
 	}
 	
@@ -701,6 +783,13 @@ public class ChatUI extends Widget {
 	}
     }
     
+    @RName("schan")
+    public static class $SChan implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    String name = (String)args[0];
+	    return(new SimpleChat(parent, name));
+	}
+    }
     @RName("mchat")
     public static class $MChat implements Factory {
 	public Widget create(Coord c, Widget parent, Object[] args) {
@@ -942,7 +1031,9 @@ public class ChatUI extends Widget {
 	this.c = (this.base = base).add(0, -sz.y);
     }
 
-    private void expand() {
+    public void expand() {
+	if(expanded)
+	    return;
 	resize(new Coord(sz.x, 100));
 	setcanfocus(true);
 	if(sel != null)
@@ -951,7 +1042,9 @@ public class ChatUI extends Widget {
 	expanded = true;
     }
     
-    private void contract() {
+    public void contract() {
+	if(!expanded)
+	    return;
 	resize(new Coord(sz.x, 50));
 	setcanfocus(false);
 	if(sel != null)

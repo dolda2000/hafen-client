@@ -86,6 +86,8 @@ public class Label extends Widget {
 	    settext((String)args[0]);
 	} else if(msg == "col") {
 	    setcolor((Color)args[0]);
+	} else {
+	    super.uimsg(msg, args);
 	}
     }
 }

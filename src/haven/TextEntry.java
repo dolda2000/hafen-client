@@ -32,7 +32,7 @@ import java.awt.event.KeyEvent;
 public class TextEntry extends Widget {
     public static final Text.Foundry fnd = new Text.Foundry(new Font("SansSerif", Font.PLAIN, 12), Color.BLACK);
     public static final int defh = fnd.height() + 2;
-    public final LineEdit buf;
+    public LineEdit buf;
     public int sx;
     public boolean pw = false;
     public String text;
@@ -50,6 +50,19 @@ public class TextEntry extends Widget {
 
     public void settext(String text) {
 	buf.setline(text);
+    }
+
+    public void rsettext(String text) {
+	buf = new LineEdit(this.text = text) {
+		protected void done(String line) {
+		    activate(line);
+		}
+		
+		protected void changed() {
+		    TextEntry.this.text = line;
+		    TextEntry.this.changed();
+		}
+	    };
     }
 
     public void uimsg(String name, Object... args) {
@@ -95,16 +108,7 @@ public class TextEntry extends Widget {
 
     public TextEntry(Coord c, Coord sz, Widget parent, String deftext) {
 	super(c, sz, parent);
-	buf = new LineEdit(text = deftext) {
-		protected void done(String line) {
-		    activate(line);
-		}
-		
-		protected void changed() {
-		    TextEntry.this.text = line;
-		    TextEntry.this.changed();
-		}
-	    };
+	rsettext(deftext);
 	setcanfocus(true);
     }
 

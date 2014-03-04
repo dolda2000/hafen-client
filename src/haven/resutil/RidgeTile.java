@@ -421,4 +421,16 @@ public class RidgeTile extends GroundTile {
 	    super.layover(m, lc, gc, z, t);
 	}
     }
+
+    public boolean ridgep(MCache map, Coord tc) {
+	int z00 = map.getz(tc),
+	    z10 = map.getz(tc.add(1, 0)),
+	    z01 = map.getz(tc.add(0, 1)),
+	    z11 = map.getz(tc.add(1, 1));
+	int diff = breaks[0];
+	return(Math.abs(z00 - z10) >= diff ||
+	       Math.abs(z10 - z11) >= diff ||
+	       Math.abs(z11 - z01) >= diff ||
+	       Math.abs(z01 - z00) >= diff);
+    }
 }

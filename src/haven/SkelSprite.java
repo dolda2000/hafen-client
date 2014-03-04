@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
+import haven.Skeleton.TrackMod;
 
 public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
     private static final GLState
@@ -145,11 +146,18 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	return(false);
     }
     
-    public boolean tick(int idt) {
+    private boolean tick(int idt, double v) {
 	if(!stat || (ipold > 0)) {
 	    float dt = idt / 1000.0f;
-	    for(PoseMod m : mods)
-		m.tick(dt);
+	    for(PoseMod m : mods) {
+		float mdt = dt;
+		if(m instanceof TrackMod) {
+		    TrackMod t = (TrackMod)m;
+		    if(t.speedmod)
+			mdt *= (float)(v / t.nspeed);
+		}
+		m.tick(mdt);
+	    }
 	    if(ipold > 0) {
 		if((ipold -= (dt / ipol)) < 0) {
 		    ipold = 0;
@@ -159,6 +167,16 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	    rebuild();
 	}
 	return(false);
+    }
+
+    public boolean tick(int dt) {
+	double v = 0;
+	if(owner instanceof Gob) {
+	    Moving mv = ((Gob)owner).getattr(Moving.class);
+	    if(mv != null)
+		v = mv.getv();
+	}
+	return(tick(dt, v));
     }
 
     static {

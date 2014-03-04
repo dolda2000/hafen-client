@@ -355,12 +355,20 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public InputStream get(String name) throws IOException {
 	    URL resurl = encodeurl(new URL(baseurl, name + ".res"));
 	    URLConnection c;
-	    if(resurl.getProtocol().equals("https"))
-		c = ssl.connect(resurl);
-	    else
-		c = resurl.openConnection();
-	    c.addRequestProperty("User-Agent", "Haven/1.0");
-	    return(c.getInputStream());
+	    int tries = 0;
+	    while(true) {
+		try {
+		    if(resurl.getProtocol().equals("https"))
+			c = ssl.connect(resurl);
+		    else
+			c = resurl.openConnection();
+		    c.addRequestProperty("User-Agent", "Haven/1.0");
+		    return(c.getInputStream());
+		} catch(ConnectException e) {
+		    if(++tries >= 5)
+			throw(new IOException("Connection failed five times", e));
+		}
+	    }
 	}
 
 	public String toString() {
