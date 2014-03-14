@@ -226,10 +226,16 @@ public class RenderList {
 	}
     }
 
+    public boolean ignload = true;
     protected void render(GOut g, Rendered r) {
 	try {
 	    r.draw(g);
-	} catch(RLoad l) {}
+	} catch(RLoad l) {
+	    if(ignload)
+		return;
+	    else
+		throw(l);
+	}
     }
 
     public void render(GOut g) {

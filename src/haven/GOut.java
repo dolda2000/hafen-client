@@ -249,7 +249,7 @@ public class GOut {
     
     public void poly2(Object... c) {
 	st.set(def2d);
-	st.put(States.color, null);
+	st.put(States.color, States.vertexcolor);
 	apply();
 	gl.glBegin(GL2.GL_POLYGON);
 	for(int i = 0; i < c.length; i += 2) {

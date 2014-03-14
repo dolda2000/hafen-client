@@ -71,8 +71,10 @@ public class BufView {
     }
 
     public void render(Rendered root, GOut g) {
-	if((rls == null) || (rls.cfg != g.gc))
+	if((rls == null) || (rls.cfg != g.gc)) {
 	    rls = new RenderList(g.gc);
+	    rls.ignload = false;
+	}
 	GLState.Buffer bk = g.st.copy();
 	try {
 	    GLState.Buffer def = basic(g);
