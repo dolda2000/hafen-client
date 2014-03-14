@@ -102,11 +102,21 @@ public class Session {
 	}
 	
     public static class LoadingIndir extends Loading {
-	public int resid;
+	public final int resid;
+	private final CachedRes res;
 	
-	public LoadingIndir(int resid) {
-	    this.resid = resid;
+	private LoadingIndir(CachedRes res) {
+	    this.res = res;
+	    this.resid = res.resid;
 	}
+
+	public void waitfor() throws InterruptedException {
+	    synchronized(res) {
+		while(res.resnm == null)
+		    res.wait();
+	    }
+	}
+	public boolean canwait() {return(true);}
     }
 
     private static class CachedRes {
@@ -127,7 +137,7 @@ public class Session {
 		    
 		    public Resource get() {
 			if(resnm == null)
-			    throw(new LoadingIndir(resid));
+			    throw(new LoadingIndir(CachedRes.this));
 			if(res == null)
 			    res = Resource.load(resnm, resver, 0);
 			if(res.loading)
@@ -152,8 +162,11 @@ public class Session {
 	}
 	
 	public void set(String nm, int ver) {
-	    this.resnm = nm;
-	    this.resver = ver;
+	    synchronized(this) {
+		this.resnm = nm;
+		this.resver = ver;
+		notifyAll();
+	    }
 	    Resource.load(nm, ver, -5);
 	}
     }
