@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.lang.reflect.*;
 import haven.Skeleton.Pose;
-import haven.Skeleton.TrackMod;
+import haven.Skeleton.PoseMod;
 import static haven.Composited.ED;
 import static haven.Composited.MD;
 
@@ -65,8 +65,8 @@ public class Composite extends Drawable {
 	rl.add(comp, null);
     }
 	
-    private List<TrackMod> loadposes(List<Indir<Resource>> rl, Skeleton skel, WrapMode mode) {
-	List<TrackMod> mods = new ArrayList<TrackMod>(rl.size());
+    private List<PoseMod> loadposes(List<Indir<Resource>> rl, Skeleton skel, WrapMode mode) {
+	List<PoseMod> mods = new ArrayList<PoseMod>(rl.size());
 	for(Indir<Resource> res : rl) {
 	    for(Skeleton.ResPose p : res.get().layers(Skeleton.ResPose.class))
 		mods.add(p.forskel(gob, skel, (mode == null)?p.defmode:mode));
