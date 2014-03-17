@@ -146,7 +146,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	return(false);
     }
     
-    private boolean tick(int idt, double v) {
+    public boolean tick(int idt) {
 	if(!stat || (ipold > 0)) {
 	    float dt = idt / 1000.0f;
 	    for(PoseMod m : mods)
@@ -160,16 +160,6 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	    rebuild();
 	}
 	return(false);
-    }
-
-    public boolean tick(int dt) {
-	double v = 0;
-	if(owner instanceof Gob) {
-	    Moving mv = ((Gob)owner).getattr(Moving.class);
-	    if(mv != null)
-		v = mv.getv();
-	}
-	return(tick(dt, v));
     }
 
     static {

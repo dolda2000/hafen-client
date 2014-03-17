@@ -112,11 +112,7 @@ public class Composite extends Drawable {
 	} else if(!retainequ) {
 	    updequ();
 	}
-	Moving mv = gob.getattr(Moving.class);
-	double v = 0;
-	if(mv != null)
-	    v = mv.getv();
-	comp.tick(dt, v);
+	comp.tick(dt);
     }
 
     public Resource.Neg getneg() {
