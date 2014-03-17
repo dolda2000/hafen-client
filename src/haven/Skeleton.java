@@ -376,15 +376,34 @@ public class Skeleton {
 	    };
     }
     
+    public interface ModOwner {
+	public double getv();
+	public Coord3f getc();
+	public Glob glob();
+
+	public static final ModOwner nil = new ModOwner() {
+		public double getv() {return(0);}
+		public Coord3f getc() {return(Coord3f.o);}
+		public Glob glob() {throw(new NullPointerException());}
+	    };
+    }
+
     public abstract class PoseMod {
+	public final ModOwner owner;
 	public float[][] lpos, lrot;
-	
-	public PoseMod() {
+
+	public PoseMod(ModOwner owner) {
+	    this.owner = owner;
 	    int nb = blist.length;
 	    lpos = new float[nb][3];
 	    lrot = new float[nb][4];
 	    for(int i = 0; i < nb; i++)
 		lrot[i][0] = 1;
+	}
+
+	@Deprecated
+	public PoseMod() {
+	    this(ModOwner.nil);
 	}
 	
 	public void reset() {
@@ -464,12 +483,12 @@ public class Skeleton {
 	private final boolean stat;
 	private boolean done;
 	public float time = 0.0f;
-	public boolean speedmod = false;
-	public double nspeed = 0.0;
-	public Gob fxgob;
+	private boolean speedmod = false;
+	private double nspeed = 0.0;
 	private boolean back = false;
 	
-	public TrackMod(Track[] tracks, FxTrack[] effects, float len, WrapMode mode) {
+	public TrackMod(ModOwner owner, Track[] tracks, FxTrack[] effects, float len, WrapMode mode) {
+	    super(owner);
 	    this.tracks = tracks;
 	    this.effects = effects;
 	    this.len = len;
@@ -485,8 +504,9 @@ public class Skeleton {
 	    aupdate(0.0f);
 	}
 
+	@Deprecated
 	public TrackMod(Track[] tracks, float len, WrapMode mode) {
-	    this(tracks, new FxTrack[0], len, mode);
+	    this(ModOwner.nil, tracks, new FxTrack[0], len, mode);
 	}
 	
 	public void aupdate(float time) {
@@ -533,6 +553,9 @@ public class Skeleton {
 	}
 	
 	private void playfx(float ot, float nt) {
+	    if(!(owner instanceof Gob))
+		return;
+	    Gob gob = (Gob)owner;
 	    if(ot > nt) {
 		playfx(Math.min(ot, len), len);
 		playfx(0, Math.max(0, nt));
@@ -540,7 +563,7 @@ public class Skeleton {
 		for(FxTrack t : effects) {
 		    for(FxTrack.Event ev : t.events) {
 			if((ev.time >= ot) && (ev.time < nt)) {
-			    ev.trigger(fxgob);
+			    ev.trigger(gob);
 			}
 		    }
 		}
@@ -548,6 +571,8 @@ public class Skeleton {
 	}
 
 	public boolean tick(float dt) {
+	    if(speedmod)
+		dt *= owner.getv() / nspeed;
 	    float nt = time + (back?-dt:dt);
 	    switch(mode) {
 	    case LOOP:
@@ -582,12 +607,10 @@ public class Skeleton {
 	    this.time = nt;
 	    if(!stat) {
 		aupdate(this.time);
-		if(fxgob != null) {
-		    if(!back)
-			playfx(ot, nt);
-		    else
-			playfx(nt, ot);
-		}
+		if(!back)
+		    playfx(ot, nt);
+		else
+		    playfx(nt, ot);
 		return(true);
 	    } else {
 		return(false);
@@ -760,7 +783,7 @@ public class Skeleton {
 	    this.effects = fx.toArray(new FxTrack[0]);
 	}
 	
-	public TrackMod forskel(Skeleton skel, WrapMode mode) {
+	public TrackMod forskel(ModOwner owner, Skeleton skel, WrapMode mode) {
 	    Track[] remap = new Track[skel.blist.length];
 	    for(Track t : tracks) {
 		Skeleton.Bone b = skel.bones.get(t.bone);
@@ -768,7 +791,7 @@ public class Skeleton {
 		    throw(new RuntimeException("Bone \"" + t.bone + "\" in animation reference does not exist in skeleton " + skel));
 		remap[b.idx] = t;
 	    }
-	    TrackMod ret = skel.new TrackMod(remap, effects, len, mode);
+	    TrackMod ret = skel.new TrackMod(owner, remap, effects, len, mode);
 	    if(nspeed > 0) {
 		ret.speedmod = true;
 		ret.nspeed = nspeed;
@@ -776,10 +799,14 @@ public class Skeleton {
 	    return(ret);
 	}
 
+	@Deprecated
+	public TrackMod forskel(Skeleton skel, WrapMode mode) {
+	    return(forskel(ModOwner.nil, skel, mode));
+	}
+
+	@Deprecated
 	public TrackMod forgob(Skeleton skel, WrapMode mode, Gob gob) {
-	    TrackMod ret = forskel(skel, mode);
-	    ret.fxgob = gob;
-	    return(ret);
+	    return(forskel(gob, skel, mode));
 	}
 	
 	public Integer layerid() {

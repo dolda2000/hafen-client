@@ -29,7 +29,6 @@ package haven;
 import java.util.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
-import haven.Skeleton.TrackMod;
 
 public class Composited implements Rendered {
     public final Skeleton skel;
@@ -89,13 +88,7 @@ public class Composited implements Rendered {
 	    }
 	    boolean done = ldone;
 	    for(PoseMod m : mods) {
-		float mdt = dt;
-		if(m instanceof TrackMod) {
-		    TrackMod t = (TrackMod)m;
-		    if(t.speedmod)
-			mdt *= (float)(v / t.nspeed);
-		}
-		m.tick(mdt);
+		m.tick(dt);
 		if(!m.done())
 		    done = false;
 	    }

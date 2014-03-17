@@ -69,7 +69,7 @@ public class Composite extends Drawable {
 	List<TrackMod> mods = new ArrayList<TrackMod>(rl.size());
 	for(Indir<Resource> res : rl) {
 	    for(Skeleton.ResPose p : res.get().layers(Skeleton.ResPose.class))
-		mods.add(p.forgob(skel, (mode == null)?p.defmode:mode, gob));
+		mods.add(p.forskel(gob, skel, (mode == null)?p.defmode:mode));
 	}
 	return(mods);
     }
