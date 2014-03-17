@@ -405,6 +405,8 @@ public class Skeleton {
 	public PoseMod() {
 	    this(ModOwner.nil);
 	}
+
+	public Skeleton skel() {return(Skeleton.this);}
 	
 	public void reset() {
 	    for(int i = 0; i < blist.length; i++) {
@@ -428,9 +430,73 @@ public class Skeleton {
 	public boolean tick(float dt) {
 	    return(false);
 	}
-	
+
 	public abstract boolean stat();
 	public abstract boolean done();
+    }
+
+    public static PoseMod combine(final PoseMod... mods) {
+	PoseMod first = mods[0];
+	return(first.skel().new PoseMod(first.owner) {
+		final boolean stat; {
+		    boolean s = false;
+		    for(PoseMod m : mods)
+			s = s || m.stat();
+		    stat = s;
+		}
+
+		public void apply(Pose p) {
+		    for(PoseMod m : mods)
+			m.apply(p);
+		}
+
+		public boolean tick(float dt) {
+		    boolean ret = false;
+		    for(PoseMod m : mods) {
+			if(m.tick(dt))
+			    ret = true;
+		    }
+		    return(ret);
+		}
+
+		public boolean stat() {
+		    return(stat);
+		}
+
+		public boolean done() {
+		    for(PoseMod m : mods) {
+			if(m.done())
+			    return(true);
+		    }
+		    return(false);
+		}
+	    });
+    }
+
+    @Resource.PublishedCode(name = "pose")
+    public interface ModFactory {
+	public PoseMod create(Skeleton skel, ModOwner owner, Resource res, Message sdt);
+
+	public static final ModFactory def = new ModFactory() {
+		public PoseMod create(Skeleton skel, ModOwner owner, Resource res, Message sdt) {
+		    int mask = SkelSprite.decnum(sdt);
+		    Collection<PoseMod> poses = new LinkedList<PoseMod>();
+		    for(ResPose p : res.layers(ResPose.class)) {
+			if((p.id < 0) || ((mask & (1 << p.id)) != 0))
+			    poses.add(p.forskel(owner, skel, p.defmode));
+		    }
+		    if(poses.size() == 1)
+			return(Utils.el(poses));
+		    return(combine(poses.toArray(new PoseMod[0])));
+		}
+	    };
+    }
+
+    public PoseMod mkposemod(ModOwner owner, Resource res, Message sdt) {
+	ModFactory f = res.getcode(ModFactory.class, false);
+	if(f == null)
+	    f = ModFactory.def;
+	return(f.create(this, owner, res, sdt));
     }
     
     @Resource.LayerName("skel")
