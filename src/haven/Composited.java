@@ -170,7 +170,7 @@ public class Composited implements Rendered {
 	private final List<Layer> lay = new ArrayList<Layer>();
 	
 	private Model(FastMesh m) {
-	    this.m = new MorphedMesh(m, pose);
+	    this.m = new MorphedMesh(m, new PoseMorph(pose));
 	}
 	
 	private void addlay(Material mat) {

@@ -79,10 +79,10 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0))) {
 		Rendered r;
-		if(MorphedMesh.boned(mr.m)) {
-		    String bnm = MorphedMesh.boneidp(mr.m);
+		if(PoseMorph.boned(mr.m)) {
+		    String bnm = PoseMorph.boneidp(mr.m);
 		    if(bnm == null) {
-			r = mr.mat.get().apply(new MorphedMesh(mr.m, pose));
+			r = mr.mat.get().apply(new MorphedMesh(mr.m, new PoseMorph(pose)));
 			if(bonedb)
 			    r = morphed.apply(r);
 		    } else {
