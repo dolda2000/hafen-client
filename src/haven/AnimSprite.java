@@ -69,6 +69,7 @@ public class AnimSprite extends Sprite {
 		    rl.add(mr.mat.get().apply(new MorphedMesh(mr.m, morph)));
 	    }
 	}
+	parts = rl.toArray(new Rendered[0]);
     }
 
     public boolean setup(RenderList rl) {

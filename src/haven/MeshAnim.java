@@ -69,11 +69,14 @@ public class MeshAnim {
 	boolean[] used = new boolean[max + 1 - min];
 	for(int i = 0; i < mesh.num * 3; i++) {
 	    int vi = mesh.indb.get(i);
-	    used[vi] = true;
+	    used[vi - min] = true;
 	}
 	for(Frame f : frames) {
 	    for(int i = 0; i < f.idx.length; i++) {
-		if(used[f.idx[i]])
+		int vi = f.idx[i];
+		if((vi < min) || (vi > max))
+		    continue;
+		if(used[f.idx[i] - min])
 		    return(true);
 	    }
 	}
@@ -113,12 +116,14 @@ public class MeshAnim {
 		    break;
 		}
 	    }
+	    seq++;
 	}
 
 	public void tick(float dt) {
 	    this.time += dt;
+	    while(this.time > len)
+		this.time -= len;
 	    aupdate(this.time);
-	    seq++;
 	}
 
 	public Morpher create(final MorphedBuf vb) {
@@ -144,15 +149,17 @@ public class MeshAnim {
 			a = 1.0f - Anim.this.a;
 			for(int i = 0, po = 0; i < f.idx.length; i++, po += 3) {
 			    int vo = f.idx[i] * 3;
-			    float x = src.get(vo), y = src.get(vo + 1), z = src.get(vo + 2);
+			    float x = dst.get(vo), y = dst.get(vo + 1), z = dst.get(vo + 2);
 			    x += f.pos[po] * a; y += f.pos[po + 1] * a; z += f.pos[po + 2] * a;
+			    dst.put(vo, x).put(vo + 1, y).put(vo + 2, z);
 			}
 			f = nf;
 			a = Anim.this.a;
 			for(int i = 0, po = 0; i < f.idx.length; i++, po += 3) {
 			    int vo = f.idx[i] * 3;
-			    float x = src.get(vo), y = src.get(vo + 1), z = src.get(vo + 2);
+			    float x = dst.get(vo), y = dst.get(vo + 1), z = dst.get(vo + 2);
 			    x += f.pos[po] * a; y += f.pos[po + 1] * a; z += f.pos[po + 2] * a;
+			    dst.put(vo, x).put(vo + 1, y).put(vo + 2, z);
 			}
 		    }
 
@@ -169,21 +176,24 @@ public class MeshAnim {
 			a = 1.0f - Anim.this.a;
 			for(int i = 0, po = 0; i < f.idx.length; i++, po += 3) {
 			    int vo = f.idx[i] * 3;
-			    float x = src.get(vo), y = src.get(vo + 1), z = src.get(vo + 2);
+			    float x = dst.get(vo), y = dst.get(vo + 1), z = dst.get(vo + 2);
 			    x += f.nrm[po] * a; y += f.nrm[po + 1] * a; z += f.nrm[po + 2] * a;
+			    dst.put(vo, x).put(vo + 1, y).put(vo + 2, z);
 			}
 			f = nf;
 			a = Anim.this.a;
 			for(int i = 0, po = 0; i < f.idx.length; i++, po += 3) {
 			    int vo = f.idx[i] * 3;
-			    float x = src.get(vo), y = src.get(vo + 1), z = src.get(vo + 2);
+			    float x = dst.get(vo), y = dst.get(vo + 1), z = dst.get(vo + 2);
 			    x += f.nrm[po] * a; y += f.nrm[po + 1] * a; z += f.nrm[po + 2] * a;
+			    dst.put(vo, x).put(vo + 1, y).put(vo + 2, z);
 			}
 		    }
 		});
 	}
     }
 
+    @Resource.LayerName("manim")
     public static class Res extends Resource.Layer {
 	public final int id;
 	public final MeshAnim a;
@@ -205,8 +215,8 @@ public class MeshAnim {
 		float[] nrm = new float[n * 3];
 		int i = 0;
 		while(i < n) {
-		    int run = buf.uint16();
 		    int st = buf.uint16();
+		    int run = buf.uint16();
 		    for(int o = 0; o < run; o++) {
 			idx[i] = st + o;
 			pos[(i * 3) + 0] = buf.float32();
