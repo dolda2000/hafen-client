@@ -34,6 +34,7 @@ import haven.Skeleton.TrackMod;
 public class Composited implements Rendered {
     public final Skeleton skel;
     public final Pose pose;
+    private final PoseMorph morph;
     private Collection<Model> mod = new LinkedList<Model>();
     private Collection<Equ> equ = new LinkedList<Equ>();
     public Poses poses = new Poses();
@@ -119,6 +120,7 @@ public class Composited implements Rendered {
     public Composited(Skeleton skel) {
 	this.skel = skel;
 	this.pose = skel.new Pose(skel.bindpose);
+	this.morph = new PoseMorph(pose);
     }
     
     private static final Rendered.Order modorder = new Rendered.Order<Model.Layer>() {
@@ -170,7 +172,7 @@ public class Composited implements Rendered {
 	private final List<Layer> lay = new ArrayList<Layer>();
 	
 	private Model(FastMesh m) {
-	    this.m = new MorphedMesh(m, pose);
+	    this.m = new MorphedMesh(m, morph);
 	}
 	
 	private void addlay(Material mat) {
