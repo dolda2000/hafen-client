@@ -37,6 +37,7 @@ public abstract class Sprite implements Rendered {
     public static List<Factory> factories = new LinkedList<Factory>();
     static {
 	factories.add(SkelSprite.fact);
+	factories.add(AnimSprite.fact);
 	factories.add(StaticSprite.fact);
 	factories.add(AudioSprite.fact);
     }

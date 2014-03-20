@@ -40,6 +40,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
     public static final float defipol = 0;
     private final Skeleton skel;
     public final Pose pose;
+    private final PoseMorph morph;
     private Pose oldpose;
     private float ipold, ipol;
     private PoseMod[] mods = new PoseMod[0];
@@ -69,6 +70,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	super(owner, res);
 	skel = res.layer(Skeleton.Res.class).s;
 	pose = skel.new Pose(skel.bindpose);
+	morph = new PoseMorph(pose);
 	int fl = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
 	chparts(fl);
 	chposes(fl, 0);
@@ -79,10 +81,10 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0))) {
 		Rendered r;
-		if(MorphedMesh.boned(mr.m)) {
-		    String bnm = MorphedMesh.boneidp(mr.m);
+		if(PoseMorph.boned(mr.m)) {
+		    String bnm = PoseMorph.boneidp(mr.m);
 		    if(bnm == null) {
-			r = mr.mat.get().apply(new MorphedMesh(mr.m, pose));
+			r = mr.mat.get().apply(new MorphedMesh(mr.m, morph));
 			if(bonedb)
 			    r = morphed.apply(r);
 		    } else {
