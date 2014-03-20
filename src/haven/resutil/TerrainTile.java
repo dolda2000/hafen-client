@@ -168,7 +168,7 @@ public class TerrainTile extends Tiler {
 	    }
 	}
     }
-    private final MapMesh.DataID<Blend> blend = new MapMesh.DataID<Blend>() {
+    public final MapMesh.DataID<Blend> blend = new MapMesh.DataID<Blend>() {
 	public Blend make(MapMesh m) {
 	    return(new Blend(m));
 	}

@@ -27,7 +27,7 @@
 package haven;
 
 public class Img extends Widget {
-    private final Indir<Resource> res;
+    private Indir<Resource> res;
     private Tex img;
     public boolean hit = false;
 	
@@ -51,13 +51,15 @@ public class Img extends Widget {
     }
 
     public void draw(GOut g) {
-	try {
-	    if(img == null) {
+	if(res != null) {
+	    try {
 		img = res.get().layer(Resource.imgc).tex();
 		resize(img.sz());
-	    }
+		res = null;
+	    } catch(Loading e) {}
+	}
+	if(img != null)
 	    g.image(img, Coord.z);
-	} catch(Loading e) {}
     }
 	
     public Img(Coord c, Tex img, Widget parent) {
@@ -69,11 +71,18 @@ public class Img extends Widget {
     public Img(Coord c, Indir<Resource> res, Widget parent) {
 	super(c, Coord.z, parent);
 	this.res = res;
+	this.img = null;
     }
 
     public void uimsg(String name, Object... args) {
 	if(name == "ch") {
-	    img = Resource.loadtex((String)args[0]);
+	    if(args[0] instanceof String) {
+		String nm = (String)args[0];
+		int ver = (args.length > 1)?((Integer)args[1]):-1;
+		this.res = new Resource.Spec(nm, ver);
+	    } else {
+		this.res = ui.sess.getres((Integer)args[0]);
+	    }
 	}
     }
     
