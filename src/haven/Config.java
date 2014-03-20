@@ -110,7 +110,7 @@ public class Config {
 		resdir = opt.arg;
 		break;
 	    case 'A':
-		int p = opt.rest[0].indexOf(':');
+		int p = opt.arg.indexOf(':');
 		if(p >= 0) {
 		    authserv = opt.arg.substring(0, p);
 		    authport = Integer.parseInt(opt.arg.substring(p + 1));
