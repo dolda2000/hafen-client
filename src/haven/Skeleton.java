@@ -435,6 +435,13 @@ public class Skeleton {
 	public abstract boolean done();
     }
 
+    public PoseMod nilmod() {
+	return(new PoseMod(ModOwner.nil) {
+		public boolean stat() {return(true);}
+		public boolean done() {return(false);}
+	    });
+    }
+
     public static PoseMod combine(final PoseMod... mods) {
 	PoseMod first = mods[0];
 	return(first.skel().new PoseMod(first.owner) {
@@ -485,9 +492,12 @@ public class Skeleton {
 			if((p.id < 0) || ((mask & (1 << p.id)) != 0))
 			    poses.add(p.forskel(owner, skel, p.defmode));
 		    }
-		    if(poses.size() == 1)
+		    if(poses.size() == 0)
+			return(skel.nilmod());
+		    else if(poses.size() == 1)
 			return(Utils.el(poses));
-		    return(combine(poses.toArray(new PoseMod[0])));
+		    else
+			return(combine(poses.toArray(new PoseMod[0])));
 		}
 	    };
     }
