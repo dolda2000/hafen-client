@@ -29,7 +29,6 @@ package haven;
 import java.util.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
-import haven.Skeleton.TrackMod;
 
 public class Composited implements Rendered {
     public final Skeleton skel;
@@ -81,7 +80,7 @@ public class Composited implements Rendered {
 	    rebuild();
 	}
 
-	public void tick(float dt, double v) {
+	public void tick(float dt) {
 	    boolean build = false;
 	    if(limit >= 0) {
 		if((limit -= dt) < 0)
@@ -89,13 +88,7 @@ public class Composited implements Rendered {
 	    }
 	    boolean done = ldone;
 	    for(PoseMod m : mods) {
-		float mdt = dt;
-		if(m instanceof TrackMod) {
-		    TrackMod t = (TrackMod)m;
-		    if(t.speedmod)
-			mdt *= (float)(v / t.nspeed);
-		}
-		m.tick(mdt);
+		m.tick(dt);
 		if(!m.done())
 		    done = false;
 	    }
@@ -113,6 +106,8 @@ public class Composited implements Rendered {
 	    if(done)
 		done();
 	}
+	@Deprecated
+	public void tick(float dt, double v) {tick(dt);}
 	
 	protected void done() {}
     }
@@ -383,12 +378,14 @@ public class Composited implements Rendered {
     public void draw(GOut g) {
     }
     
-    public void tick(int dt, double v) {
+    public void tick(int dt) {
 	if(poses != null)
-	    poses.tick(dt / 1000.0f, v);
+	    poses.tick(dt / 1000.0f);
 	for(Equ equ : this.equ)
 	    equ.tick(dt);
     }
+    @Deprecated
+    public void tick(int dt, double v) {tick(dt);}
 
     public void chmod(List<MD> mod) {
 	if(mod.equals(cmod))
