@@ -28,7 +28,7 @@ package haven;
 
 import java.util.*;
 
-public class Gob implements Sprite.Owner, Rendered {
+public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public Coord rc, sc;
     public Coord3f sczu;
     public double a;
@@ -224,6 +224,14 @@ public class Gob implements Sprite.Owner, Rendered {
 
     public Glob glob() {
 	return(glob);
+    }
+
+    /* Because generic functions are too nice a thing for Java. */
+    public double getv() {
+	Moving m = getattr(Moving.class);
+	if(m == null)
+	    return(0);
+	return(m.getv());
     }
     
     public final GLState olmod = new GLState() {

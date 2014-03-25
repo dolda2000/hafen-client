@@ -431,8 +431,8 @@ public class VertexBuf {
 			}
 		    }
 		    normweights(bw, ba, mba);
-		    bufs.add(new MorphedMesh.MorphedBuf.BoneArray(mba, ba, bones.toArray(new String[0])));
-		    bufs.add(new MorphedMesh.MorphedBuf.WeightArray(mba, bw));
+		    bufs.add(new PoseMorph.BoneArray(mba, ba, bones.toArray(new String[0])));
+		    bufs.add(new PoseMorph.WeightArray(mba, bw));
 		}
 	    }
 	    this.b = new VertexBuf(bufs.toArray(new AttribArray[0]));

@@ -29,11 +29,11 @@ package haven;
 import java.util.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
-import haven.Skeleton.TrackMod;
 
 public class Composited implements Rendered {
     public final Skeleton skel;
     public final Pose pose;
+    private final PoseMorph morph;
     private Collection<Model> mod = new LinkedList<Model>();
     private Collection<Equ> equ = new LinkedList<Equ>();
     public Poses poses = new Poses();
@@ -80,7 +80,7 @@ public class Composited implements Rendered {
 	    rebuild();
 	}
 
-	public void tick(float dt, double v) {
+	public void tick(float dt) {
 	    boolean build = false;
 	    if(limit >= 0) {
 		if((limit -= dt) < 0)
@@ -88,13 +88,7 @@ public class Composited implements Rendered {
 	    }
 	    boolean done = ldone;
 	    for(PoseMod m : mods) {
-		float mdt = dt;
-		if(m instanceof TrackMod) {
-		    TrackMod t = (TrackMod)m;
-		    if(t.speedmod)
-			mdt *= (float)(v / t.nspeed);
-		}
-		m.tick(mdt);
+		m.tick(dt);
 		if(!m.done())
 		    done = false;
 	    }
@@ -112,6 +106,8 @@ public class Composited implements Rendered {
 	    if(done)
 		done();
 	}
+	@Deprecated
+	public void tick(float dt, double v) {tick(dt);}
 	
 	protected void done() {}
     }
@@ -119,6 +115,7 @@ public class Composited implements Rendered {
     public Composited(Skeleton skel) {
 	this.skel = skel;
 	this.pose = skel.new Pose(skel.bindpose);
+	this.morph = new PoseMorph(pose);
     }
     
     private static final Rendered.Order modorder = new Rendered.Order<Model.Layer>() {
@@ -170,7 +167,7 @@ public class Composited implements Rendered {
 	private final List<Layer> lay = new ArrayList<Layer>();
 	
 	private Model(FastMesh m) {
-	    this.m = new MorphedMesh(m, pose);
+	    this.m = new MorphedMesh(m, morph);
 	}
 	
 	private void addlay(Material mat) {
@@ -381,12 +378,14 @@ public class Composited implements Rendered {
     public void draw(GOut g) {
     }
     
-    public void tick(int dt, double v) {
+    public void tick(int dt) {
 	if(poses != null)
-	    poses.tick(dt / 1000.0f, v);
+	    poses.tick(dt / 1000.0f);
 	for(Equ equ : this.equ)
 	    equ.tick(dt);
     }
+    @Deprecated
+    public void tick(int dt, double v) {tick(dt);}
 
     public void chmod(List<MD> mod) {
 	if(mod.equals(cmod))

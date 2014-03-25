@@ -102,11 +102,21 @@ public class Session {
 	}
 	
     public static class LoadingIndir extends Loading {
-	public int resid;
+	public final int resid;
+	private final CachedRes res;
 	
-	public LoadingIndir(int resid) {
-	    this.resid = resid;
+	private LoadingIndir(CachedRes res) {
+	    this.res = res;
+	    this.resid = res.resid;
 	}
+
+	public void waitfor() throws InterruptedException {
+	    synchronized(res) {
+		while(res.resnm == null)
+		    res.wait();
+	    }
+	}
+	public boolean canwait() {return(true);}
     }
 
     private static class CachedRes {
@@ -127,7 +137,7 @@ public class Session {
 		    
 		    public Resource get() {
 			if(resnm == null)
-			    throw(new LoadingIndir(resid));
+			    throw(new LoadingIndir(CachedRes.this));
 			if(res == null)
 			    res = Resource.load(resnm, resver, 0);
 			if(res.loading)
@@ -152,8 +162,11 @@ public class Session {
 	}
 	
 	public void set(String nm, int ver) {
-	    this.resnm = nm;
-	    this.resver = ver;
+	    synchronized(this) {
+		this.resnm = nm;
+		this.resver = ver;
+		notifyAll();
+	    }
 	    Resource.load(nm, ver, -5);
 	}
     }
@@ -279,27 +292,37 @@ public class Session {
 			    if(gob != null)
 				oc.composite(gob, base);
 			} else if(type == OD_CMPPOSE) {
-			    List<Indir<Resource>> poses = null, tposes = null;
+			    List<ResData> poses = null, tposes = null;
 			    int pfl = msg.uint8();
 			    int seq = msg.uint8();
 			    boolean interp = (pfl & 1) != 0;
 			    if((pfl & 2) != 0) {
-				poses = new LinkedList<Indir<Resource>>();
+				poses = new LinkedList<ResData>();
 				while(true) {
 				    int resid = msg.uint16();
 				    if(resid == 65535)
 					break;
-				    poses.add(getres(resid));
+				    Message sdt = Message.nil;
+				    if((resid & 0x8000) != 0) {
+					resid &= ~0x8000;
+					sdt = msg.derive(0, msg.uint8());
+				    }
+				    poses.add(new ResData(getres(resid), sdt));
 				}
 			    }
 			    float ttime = 0;
 			    if((pfl & 4) != 0) {
-				tposes = new LinkedList<Indir<Resource>>();
+				tposes = new LinkedList<ResData>();
 				while(true) {
 				    int resid = msg.uint16();
 				    if(resid == 65535)
 					break;
-				    tposes.add(getres(resid));
+				    Message sdt = Message.nil;
+				    if((resid & 0x8000) != 0) {
+					resid &= ~0x8000;
+					sdt = msg.derive(0, msg.uint8());
+				    }
+				    tposes.add(new ResData(getres(resid), sdt));
 				}
 				ttime = (msg.uint8() / 10.0f);
 			    }

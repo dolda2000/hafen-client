@@ -29,62 +29,30 @@ package haven;
 import java.util.*;
 import java.nio.*;
 import java.lang.ref.*;
-import haven.Skeleton.Pose;
 
 public class MorphedMesh extends FastMesh {
-    private static WeakHashMap<Pose, Collection<MorphedBuf>> bufs = new WeakHashMap<Pose, Collection<MorphedBuf>>();
+    private static Map<Morpher.Factory, Collection<MorphedBuf>> bufs = new CacheMap<Morpher.Factory, Collection<MorphedBuf>>(CacheMap.RefType.WEAK);
     
-    private static MorphedBuf buf(VertexBuf buf, Pose pose) {
+    private static MorphedBuf buf(VertexBuf buf, Morpher.Factory morph) {
 	Collection<MorphedBuf> bl;
 	synchronized(bufs) {
-	    bl = bufs.get(pose);
+	    bl = bufs.get(morph);
 	    if(bl == null)
-		bufs.put(pose, bl = new LinkedList<MorphedBuf>());
+		bufs.put(morph, bl = new LinkedList<MorphedBuf>());
 	}
 	synchronized(bl) {
 	    for(MorphedBuf b : bl) {
 		if(b.from == buf)
 		    return(b);
 	    }
-	    MorphedBuf b = new MorphedBuf(buf, pose);
+	    MorphedBuf b = new MorphedBuf(buf, morph);
 	    bl.add(b);
 	    return(b);
 	}
     }
     
-    public MorphedMesh(FastMesh mesh, Pose pose) {
+    public MorphedMesh(FastMesh mesh, Morpher.Factory pose) {
         super(mesh, buf(mesh.vert, pose));
-    }
-    
-    public static boolean boned(FastMesh mesh) {
-	MorphedBuf.BoneArray ba = mesh.vert.buf(MorphedBuf.BoneArray.class);
-	if(ba == null)
-	    return(false);
-	for(int i = 0; i < mesh.num * 3; i++) {
-	    if(ba.data.get(mesh.indb.get(i) * ba.n) != -1)
-		return(true);
-	}
-	return(false);
-    }
-
-    public static String boneidp(FastMesh mesh) {
-	MorphedBuf.BoneArray ba = mesh.vert.buf(MorphedBuf.BoneArray.class);
-	if(ba == null)
-	    return(null);
-	int retb = -1;
-	for(int i = 0; i < mesh.num * 3; i++) {
-	    int vi = mesh.indb.get(i) * ba.n;
-	    int curb = ba.data.get(vi);
-	    if(curb == -1)
-		return(null);
-	    if(retb == -1)
-		retb = curb;
-	    else if(retb != curb)
-		return(null);
-	    if((ba.n != 1) && (ba.data.get(vi + 1) != -1))
-		return(null);
-	}
-	return(ba.names[retb]);
     }
     
     public boolean setup(RenderList rl) {
@@ -100,113 +68,88 @@ public class MorphedMesh extends FastMesh {
 	return("morphed(" + from + ")");
     }
 
+    public static interface Morpher {
+	public static interface Factory {
+	    public Morpher create(MorphedBuf buf);
+	}
+
+	public boolean update();
+	public void morphp(FloatBuffer dst, FloatBuffer src);
+	public void morphd(FloatBuffer dst, FloatBuffer src);
+    }
+
     public static class MorphedBuf extends VertexBuf {
-	private final VertexBuf from;
-	private final WeakReference<Pose> poseref;
-	private int seq = 0;
+	public final VertexBuf from;
+	private final Morpher morph;
 	
-	public static class BoneArray extends IntArray {
-	    public final String[] names;
-	
-	    public BoneArray(int apv, IntBuffer data, String[] names) {
-		super(apv, data);
-		this.names = names;
-	    }
-	
-	    public BoneArray dup() {return(new BoneArray(n, Utils.bufcp(data), Utils.splice(names, 0)));}
-	}
-    
-	public static class WeightArray extends FloatArray {
-	    public WeightArray(int apv, FloatBuffer data) {
-		super(apv, data);
-	    }
-	}
-    
 	private static AttribArray[] ohBitterSweetJavaDays(VertexBuf from) {
 	    AttribArray[] ret = new AttribArray[from.bufs.length];
 	    for(int i = 0; i < from.bufs.length; i++) {
 		if(from.bufs[i] instanceof VertexArray) {
 		    ret[i] = ((VertexArray)from.bufs[i]).dup();
 		    ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
-		}
-		else if(from.bufs[i] instanceof NormalArray) {
+		} else if(from.bufs[i] instanceof NormalArray) {
 		    ret[i] = ((NormalArray)from.bufs[i]).dup();
 		    ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
-		}
-		else if(from.bufs[i] instanceof BoneArray)
-		    ret[i] = ((BoneArray)from.bufs[i]).dup();
-		else
+		} else if(from.bufs[i] instanceof PoseMorph.BoneArray) {
+		    ret[i] = ((PoseMorph.BoneArray)from.bufs[i]).dup();
+		} else {
 		    ret[i] = from.bufs[i];
+		}
 	    }
 	    return(ret);
 	}
 
-	private MorphedBuf(VertexBuf buf, Pose pose) {
+	private MorphedBuf(VertexBuf buf, Morpher.Factory morph) {
 	    super(ohBitterSweetJavaDays(buf));
 	    this.from = buf;
-	    this.poseref = new WeakReference<Pose>(pose);
-	    BoneArray ob = buf.buf(BoneArray.class);
-	    BoneArray nb = buf(BoneArray.class);
-	    int[] xl = new int[nb.names.length];
-	    for(int i = 0; i < xl.length; i++) {
-		Skeleton.Bone b = pose.skel().bones.get(nb.names[i]);
-		if(b == null)
-		    throw(new RuntimeException("Bone \"" + nb.names[i] + "\" in vertex-buf reference does not exist in skeleton " + pose.skel()));
-		xl[i] = b.idx;
-	    }
-	    for(int i = 0; i < ob.data.capacity(); i++) {
-		if(ob.data.get(i) == -1)
-		    nb.data.put(i, -1);
-		else
-		    nb.data.put(i, xl[ob.data.get(i)]);
-	    }
+	    this.morph = morph.create(this);
 	}
 	
 	public void update() {
-	    Pose pose = poseref.get();
-	    if(seq == pose.seq)
+	    if(!morph.update())
 		return;
-	    seq = pose.seq;
-	    float[][] offs = new float[pose.skel().blist.length][16];
-	    for(int i = 0; i < offs.length; i++)
-		pose.boneoff(i, offs[i]);
 	    VertexBuf.VertexArray apos = buf(VertexArray.class);
 	    VertexBuf.NormalArray anrm = buf(NormalArray.class);
 	    FloatBuffer opos = from.buf(VertexArray.class).data, onrm = from.buf(NormalArray.class).data;
 	    FloatBuffer npos =                        apos.data, nnrm =                        anrm.data;
-	    BoneArray ba = buf(BoneArray.class);
-	    int apv = ba.n;
-	    IntBuffer bl = ba.data;
-	    FloatBuffer wl = buf(WeightArray.class).data;
-	    int vo = 0, ao = 0;
-	    for(int i = 0; i < num; i++) {
-		float opx = opos.get(vo), opy = opos.get(vo + 1), opz = opos.get(vo + 2);
-		float onx = onrm.get(vo), ony = onrm.get(vo + 1), onz = onrm.get(vo + 2);
-		float npx = 0, npy = 0, npz = 0;
-		float nnx = 0, nny = 0, nnz = 0;
-		float rw = 1;
-		for(int o = 0; o < apv; o++) {
-		    int bi = bl.get(ao + o);
-		    if(bi < 0)
-			break;
-		    float bw = wl.get(ao + o);
-		    float[] xf = offs[bi];
-		    npx += ((xf[ 0] * opx) + (xf[ 4] * opy) + (xf[ 8] * opz) + xf[12]) * bw;
-		    npy += ((xf[ 1] * opx) + (xf[ 5] * opy) + (xf[ 9] * opz) + xf[13]) * bw;
-		    npz += ((xf[ 2] * opx) + (xf[ 6] * opy) + (xf[10] * opz) + xf[14]) * bw;
-		    nnx += ((xf[ 0] * onx) + (xf[ 4] * ony) + (xf[ 8] * onz)) * bw;
-		    nny += ((xf[ 1] * onx) + (xf[ 5] * ony) + (xf[ 9] * onz)) * bw;
-		    nnz += ((xf[ 2] * onx) + (xf[ 6] * ony) + (xf[10] * onz)) * bw;
-		    rw -= bw;
-		}
-		npx += opx * rw; npy += opy * rw; npz += opz * rw;
-		nnx += onx * rw; nny += ony * rw; nnz += onz * rw;
-		npos.put(vo, npx); npos.put(vo + 1, npy); npos.put(vo + 2, npz);
-		nnrm.put(vo, nnx); nnrm.put(vo + 1, nny); nnrm.put(vo + 2, nnz);
-		vo += 3;
-		ao += apv;
-	    }
+	    morph.morphp(npos, opos);
+	    morph.morphd(nnrm, onrm);
 	    apos.update(); anrm.update();
 	}
+    }
+
+    public static Morpher.Factory combine(final Morpher.Factory... parts) {
+	return(new Morpher.Factory() {
+		public Morpher create(MorphedBuf vb) {
+		    final Morpher[] mparts = new Morpher[parts.length];
+		    for(int i = 0; i < parts.length; i++)
+			mparts[i] = parts[i].create(vb);
+		    return(new Morpher() {
+			    public boolean update() {
+				boolean ret = false;
+				for(Morpher p : mparts) {
+				    if(p.update())
+					ret = true;
+				}
+				return(ret);
+			    }
+
+			    public void morphp(FloatBuffer dst, FloatBuffer src) {
+				for(Morpher p : mparts) {
+				    p.morphp(dst, src);
+				    src = dst;
+				}
+			    }
+
+			    public void morphd(FloatBuffer dst, FloatBuffer src) {
+				for(Morpher p : mparts) {
+				    p.morphd(dst, src);
+				    src = dst;
+				}
+			    }
+			});
+		}
+	    });
     }
 }

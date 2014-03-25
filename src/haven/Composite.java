@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.lang.reflect.*;
 import haven.Skeleton.Pose;
-import haven.Skeleton.TrackMod;
+import haven.Skeleton.PoseMod;
 import static haven.Composited.ED;
 import static haven.Composited.MD;
 
@@ -37,7 +37,7 @@ public class Composite extends Drawable {
     public final static float ipollen = 0.2f;
     public final Indir<Resource> base;
     public Composited comp;
-    private List<Indir<Resource>> nposes = null, tposes = null;
+    private Collection<ResData> nposes = null, tposes = null;
     private boolean retainequ = false;
     private float tptime;
     private WrapMode tpmode;
@@ -65,11 +65,18 @@ public class Composite extends Drawable {
 	rl.add(comp, null);
     }
 	
-    private List<TrackMod> loadposes(List<Indir<Resource>> rl, Skeleton skel, WrapMode mode) {
-	List<TrackMod> mods = new ArrayList<TrackMod>(rl.size());
-	for(Indir<Resource> res : rl) {
-	    for(Skeleton.ResPose p : res.get().layers(Skeleton.ResPose.class))
-		mods.add(p.forgob(skel, (mode == null)?p.defmode:mode, gob));
+    private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel) {
+	List<PoseMod> mods = new ArrayList<PoseMod>(rl.size());
+	for(ResData dat : rl)
+	    mods.add(skel.mkposemod(gob, dat.res.get(), dat.sdt));
+	return(mods);
+    }
+
+    private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, WrapMode mode) {
+	List<PoseMod> mods = new ArrayList<PoseMod>(rl.size());
+	for(ResData dat : rl) {
+	    for(Skeleton.ResPose p : dat.res.get().layers(Skeleton.ResPose.class))
+		mods.add(p.forskel(gob, skel, (mode == null)?p.defmode:mode));
 	}
 	return(mods);
     }
@@ -91,7 +98,7 @@ public class Composite extends Drawable {
 	    return;
 	if(nposes != null) {
 	    try {
-		Composited.Poses np = comp.new Poses(loadposes(nposes, comp.skel, null));
+		Composited.Poses np = comp.new Poses(loadposes(nposes, comp.skel));
 		np.set(ipollen);
 		nposes = null;
 	    } catch(Loading e) {}
@@ -112,11 +119,7 @@ public class Composite extends Drawable {
 	} else if(!retainequ) {
 	    updequ();
 	}
-	Moving mv = gob.getattr(Moving.class);
-	double v = 0;
-	if(mv != null)
-	    v = mv.getv();
-	comp.tick(dt, v);
+	comp.tick(dt);
     }
 
     public Resource.Neg getneg() {
@@ -128,18 +131,28 @@ public class Composite extends Drawable {
 	return(comp.pose);
     }
     
-    public void chposes(List<Indir<Resource>> poses, boolean interp) {
+    public void chposes(Collection<ResData> poses, boolean interp) {
 	if(tposes != null)
 	    tposes = null;
 	nposes = poses;
     }
     
-    public void tposes(List<Indir<Resource>> poses, WrapMode mode, float time) {
+    @Deprecated
+    public void chposes(List<Indir<Resource>> poses, boolean interp) {
+	chposes(ResData.wrap(poses), interp);
+    }
+
+    public void tposes(Collection<ResData> poses, WrapMode mode, float time) {
 	this.tposes = poses;
 	this.tpmode = mode;
 	this.tptime = time;
     }
     
+    @Deprecated
+    public void tposes(List<Indir<Resource>> poses, WrapMode mode, float time) {
+	tposes(ResData.wrap(poses), mode, time);
+    }
+
     public void chmod(List<MD> mod) {
 	nmod = mod;
     }

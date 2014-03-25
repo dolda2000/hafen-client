@@ -159,6 +159,13 @@ public class Material extends GLState {
 	}
     }
 
+    @ResName("vcol")
+    public static class $vcol implements ResCons {
+	public GLState cons(Resource res, Object... args) {
+	    return(new States.ColState((Color)args[0]));
+	}
+    }
+    
     @ResName("order")
     public static class $order implements ResCons {
 	public GLState cons(Resource res, Object... args) {
