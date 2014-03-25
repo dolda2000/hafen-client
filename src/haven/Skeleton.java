@@ -446,9 +446,9 @@ public class Skeleton {
 	PoseMod first = mods[0];
 	return(first.skel().new PoseMod(first.owner) {
 		final boolean stat; {
-		    boolean s = false;
+		    boolean s = true;
 		    for(PoseMod m : mods)
-			s = s || m.stat();
+			s = s && m.stat();
 		    stat = s;
 		}
 
