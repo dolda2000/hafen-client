@@ -632,6 +632,7 @@ public class ChatUI extends Widget {
     public static class MultiChat extends EntryChannel {
 	private final String name;
 	private final boolean notify;
+	private final Map<Integer, Color> pc = new HashMap<Integer, Color>();
 	
 	public class NamedMessage extends Message {
 	    public final int from;
@@ -647,7 +648,7 @@ public class ChatUI extends Widget {
 		this.w = w;
 		this.col = col;
 	    }
-	    
+
 	    public Text text() {
 		BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(from);
 		String nm = (b == null)?"???":(b.name);
@@ -657,11 +658,11 @@ public class ChatUI extends Widget {
 		}
 		return(r);
 	    }
-	    
+
 	    public Tex tex() {
 		return(text().tex());
 	    }
-	    
+
 	    public Coord sz() {
 		if(r == null)
 		    return(text().sz());
@@ -682,6 +683,24 @@ public class ChatUI extends Widget {
 	    this.notify = notify;
 	}
 	
+	private static final Random cr = new Random();
+	private static Color randcol() {
+	    int[] c = {cr.nextInt(256), cr.nextInt(256), cr.nextInt(256)};
+	    int mc = Math.max(c[0], Math.max(c[1], c[2]));
+	    for(int i = 0; i < c.length; i++)
+		c[i] = (c[i] * 255) / mc;
+	    return(new Color(c[0], c[1], c[2]));
+	}
+
+	public Color fromcolor(int from) {
+	    synchronized(pc) {
+		Color c = pc.get(from);
+		if(c == null)
+		    pc.put(from, c = randcol());
+		return(c);
+	    }
+	}
+
 	public void uimsg(String msg, Object... args) {
 	    if(msg == "msg") {
 		Integer from = (Integer)args[0];
@@ -689,7 +708,7 @@ public class ChatUI extends Widget {
 		if(from == null) {
 		    append(new MyMessage(line, iw()));
 		} else {
-		    Message cmsg = new NamedMessage(from, line, Color.WHITE, iw());
+		    Message cmsg = new NamedMessage(from, line, fromcolor(from), iw());
 		    append(cmsg);
 		    if(notify)
 			notify(cmsg);
