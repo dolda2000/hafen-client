@@ -38,6 +38,10 @@ public abstract class Tiler {
 	this.id = id;
     }
     
+    public void model(MapMesh m, Random rnd, Coord lc, Coord gc) {
+	
+    }
+
     public abstract void lay(MapMesh m, Random rnd, Coord lc, Coord gc);
     public abstract void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask);
     

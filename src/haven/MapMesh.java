@@ -121,6 +121,19 @@ public class MapMesh implements Rendered, Disposable {
         }
     }
 
+    public class MapSurface extends haven.Surface {
+	public final Scan ss = new Scan(new Coord(-1, -1), sz.add(3, 3));
+	public final Vertex[] surf = new Vertex[ss.l];
+
+	public MapSurface() {
+	    for(int y = ss.ul.y; y < ss.br.y; y++) {
+		for(int x = ss.ul.x; x < ss.br.x; x++) {
+		    surf[ss.o(x, y)] = new Vertex(x * tilesz.x, y * -tilesz.y, map.getz(ul.add(x, y)));
+		}
+	    }
+	}
+    }
+
     public static class SPoint {
 	public Coord3f pos, nrm = Coord3f.zu;
 	public SPoint(Coord3f pos) {
