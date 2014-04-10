@@ -31,7 +31,23 @@ import java.util.*;
 public class Surface {
     private List<Vertex> v = new ArrayList<Vertex>();
     private Collection<Face> f = new ArrayList<Face>();
+    private Map<DataID, Object> data = new HashMap<DataID, Object>();
     public Vertex[] vl, fv, tv;
+
+    /* XXX: I'm starting to lose track of how many times I've
+     * implemented this structure, but it seems to be hard to
+     * generalize in Java. */
+    public interface DataID<T> {
+	public T make(Surface s);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T data(DataID<T> id) {
+	T ret = (T)data.get(id);
+	if(ret == null)
+	    data.put(id, ret = id.make(this));
+	return(ret);
+    }
 
     public class Vertex extends Coord3f {
 	public final int vi;
@@ -101,4 +117,29 @@ public class Surface {
 	}
 	this.v = null; this.f = null;
     }
+
+    public void clear() {
+	data.clear();
+    }
+
+    public class Normals {
+	public final Coord3f[] buf = new Coord3f[vl.length];
+	private Normals() {}
+
+	public Coord3f get(Vertex v) {
+	    Coord3f ret = buf[v.vi];
+	    if(ret == null) {
+		Coord3f nn = Coord3f.o;
+		for(int i = 0, o = v.ei; i < v.ne; i++, o++)
+		    nn = nn.add(fv[o].sub(v).cmul(tv[o].sub(v)).norm());
+		ret = buf[v.vi] = nn.div(v.ne);
+	    }
+	    return(ret);
+	}
+    }
+    public static final DataID<Normals> nrm = new DataID<Normals>() {
+	    public Normals make(Surface s) {
+		return(s.new Normals());
+	    }
+	};
 }

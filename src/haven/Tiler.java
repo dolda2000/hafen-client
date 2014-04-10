@@ -38,8 +38,35 @@ public abstract class Tiler {
 	this.id = id;
     }
     
+    public static interface Cons {
+	public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f);
+    }
+
     public void model(MapMesh m, Random rnd, Coord lc, Coord gc) {
-	
+	MapMesh.MapSurface s = m.data(m.gnd);
+	if(s.split[s.ts.o(lc)]) {
+	    s.new Face(s.surf[s.vs.o(lc.x, lc.y)],
+		       s.surf[s.vs.o(lc.x, lc.y + 1)],
+		       s.surf[s.vs.o(lc.x + 1, lc.y + 1)]);
+	    s.new Face(s.surf[s.vs.o(lc.x, lc.y)],
+		       s.surf[s.vs.o(lc.x + 1, lc.y + 1)],
+		       s.surf[s.vs.o(lc.x + 1, lc.y)]);
+	} else {
+	    s.new Face(s.surf[s.vs.o(lc.x, lc.y)],
+		       s.surf[s.vs.o(lc.x, lc.y + 1)],
+		       s.surf[s.vs.o(lc.x + 1, lc.y)]);
+	    s.new Face(s.surf[s.vs.o(lc.x, lc.y + 1)],
+		       s.surf[s.vs.o(lc.x + 1, lc.y + 1)],
+		       s.surf[s.vs.o(lc.x + 1, lc.y)]);
+	}
+    }
+
+    public static final float[] ctcx = {0, 0, 1, 1}, ctcy = {0, 1, 1, 0};
+    private static final int[] rdiag = {0, 1, 2, 0, 2, 3}, ldiag = {0, 1, 3, 1, 2, 3};
+    public void lay(MapMesh m, Coord lc, Coord gc, Cons cons) {
+	MapMesh.MapSurface s = m.data(m.gnd);
+	cons.faces(m, lc, gc, s.fortilea(lc), ctcx, ctcy,
+		   s.split[s.ts.o(lc)]?rdiag:ldiag);
     }
 
     public abstract void lay(MapMesh m, Random rnd, Coord lc, Coord gc);

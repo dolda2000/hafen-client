@@ -37,7 +37,7 @@ public class MapMesh implements Rendered, Disposable {
     public final Coord ul, sz;
     public final MCache map;
     private Map<Tex, GLState[]> texmap = new HashMap<Tex, GLState[]>();
-    private Map<DataID, Object> data = new HashMap<DataID, Object>();
+    private Map<DataID, Object> data = new LinkedHashMap<DataID, Object>();
     private List<Rendered> extras = new ArrayList<Rendered>();
     private List<Layer> layers;
     private FastMesh[] flats;
@@ -67,7 +67,13 @@ public class MapMesh implements Rendered, Disposable {
 	throw(new Error("No proper data-ID constructor found"));
     }
 
-    public static class Hooks {
+    public static interface ConsHooks {
+	public void calcnrm();
+	public void postcalcnrm(Random rnd);
+	public boolean clean();
+    }
+
+    public static class Hooks implements ConsHooks {
 	public void calcnrm() {}
 	public void postcalcnrm(Random rnd) {}
 	public boolean clean() {return(false);}
@@ -121,18 +127,43 @@ public class MapMesh implements Rendered, Disposable {
         }
     }
 
-    public class MapSurface extends haven.Surface {
-	public final Scan ss = new Scan(new Coord(-1, -1), sz.add(3, 3));
-	public final Vertex[] surf = new Vertex[ss.l];
+    public class MapSurface extends haven.Surface implements ConsHooks {
+	public final Scan vs = new Scan(new Coord(-1, -1), sz.add(3, 3));
+	public final Scan ts = new Scan(Coord.z, sz);
+	public final Vertex[] surf = new Vertex[vs.l];
+	public final boolean[] split = new boolean[ts.l];
 
 	public MapSurface() {
-	    for(int y = ss.ul.y; y < ss.br.y; y++) {
-		for(int x = ss.ul.x; x < ss.br.x; x++) {
-		    surf[ss.o(x, y)] = new Vertex(x * tilesz.x, y * -tilesz.y, map.getz(ul.add(x, y)));
+	    for(int y = vs.ul.y; y < vs.br.y; y++) {
+		for(int x = vs.ul.x; x < vs.br.x; x++) {
+		    surf[vs.o(x, y)] = new Vertex(x * tilesz.x, y * -tilesz.y, map.getz(ul.add(x, y)));
+		}
+	    }
+	    for(int y = ts.ul.y; y < ts.br.y; y++) {
+		for(int x = ts.ul.x; x < ts.br.x; x++) {
+		    split[ts.o(x, y)] = Math.abs(surf[vs.o(x, y)].z - surf[vs.o(x + 1, y + 1)].z) > Math.abs(surf[vs.o(x + 1, y)].z - surf[vs.o(x, y + 1)].z);
 		}
 	    }
 	}
+
+	public Vertex fortile(Coord c) {
+	    return(surf[vs.o(c)]);
+	}
+
+	public Vertex[] fortilea(Coord c) {
+	    return(new Vertex[] {
+		    surf[vs.o(c.x, c.y)],
+		    surf[vs.o(c.x, c.y + 1)],
+		    surf[vs.o(c.x + 1, c.y + 1)],
+		    surf[vs.o(c.x + 1, c.y)],
+		});
+	}
+
+	public void calcnrm() {fin();}
+	public void postcalcnrm(Random rnd) {}
+	public boolean clean() {return(true);}
     }
+    public static final DataID<MapSurface> gnd = makeid(MapSurface.class);
 
     public static class SPoint {
 	public Coord3f pos, nrm = Coord3f.zu;
@@ -305,6 +336,8 @@ public class MapMesh implements Rendered, Disposable {
 	}
     }
     
+    
+
     private static final Order mmorder = new Order<Layer>() {
 	public int mainz() {
 	    return(1000);
@@ -426,18 +459,26 @@ public class MapMesh implements Rendered, Disposable {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
 		Coord gc = c.add(ul);
 		long ns = rnd.nextLong();
+		mc.tiler(mc.gettile(gc)).model(m, rnd, c, gc);
+		rnd.setSeed(ns);
+	    }
+	}
+	for(c.y = 0; c.y < sz.y; c.y++) {
+	    for(c.x = 0; c.x < sz.x; c.x++) {
+		Coord gc = c.add(ul);
+		long ns = rnd.nextLong();
 		mc.tiler(mc.gettile(gc)).lay(m, rnd, c, gc);
 		dotrans(m, rnd, c, gc);
 		rnd.setSeed(ns);
 	    }
 	}
 	for(Object obj : m.data.values()) {
-	    if(obj instanceof Hooks)
-		((Hooks)obj).calcnrm();
+	    if(obj instanceof ConsHooks)
+		((ConsHooks)obj).calcnrm();
 	}
 	for(Object obj : m.data.values()) {
-	    if(obj instanceof Hooks)
-		((Hooks)obj).postcalcnrm(rnd);
+	    if(obj instanceof ConsHooks)
+		((ConsHooks)obj).postcalcnrm(rnd);
 	}
 	for(Layer l : m.layers) {
 	    MeshBuf buf = new MeshBuf();
@@ -589,7 +630,7 @@ public class MapMesh implements Rendered, Disposable {
 	int on = data.size();
 	for(Iterator<Map.Entry<DataID, Object>> i = data.entrySet().iterator(); i.hasNext();) {
 	    Object d = i.next().getValue();
-	    if(!(d instanceof Hooks) || !((Hooks)d).clean())
+	    if(!(d instanceof ConsHooks) || !((ConsHooks)d).clean())
 		i.remove();
 	}
     }
