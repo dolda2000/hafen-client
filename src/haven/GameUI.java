@@ -225,17 +225,20 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
-    static Text.Furnace progf = new PUtils.BlurFurn(new Text.Foundry(new java.awt.Font("serif", java.awt.Font.BOLD, 24)).aa(true), 2, 1, new Color(0, 16, 16));
-    Text progt = null;
+    static final Tex[] progt;
+    static {
+	Tex[] p = new Tex[22];
+	for(int i = 0; i < p.length; i++)
+	    p[i] = Resource.loadtex(String.format("gfx/hud/prog/%02d", i));
+	progt = p;
+    }
     public void draw(GOut g) {
 	boolean beltp = !chat.expanded;
 	beltwdg.show(beltp);
 	super.draw(g);
 	if(prog >= 0) {
-	    String progs = String.format("%d%%", prog);
-	    if((progt == null) || !progs.equals(progt.text))
-		progt = progf.render(progs);
-	    g.aimage(progt.tex(), new Coord(sz.x / 2, (sz.y * 4) / 10), 0.5, 0.5);
+	    Tex pi = progt[Utils.clip((prog * progt.length + 50) / 100, 0, progt.length - 1)];
+	    g.aimage(pi, new Coord(sz.x / 2, (sz.y * 4) / 10), 0.5, 0.5);
 	}
 	int by = sz.y;
 	if(chat.expanded)
