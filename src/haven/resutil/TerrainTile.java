@@ -33,7 +33,7 @@ import haven.MapMesh.Scan;
 import haven.Resource.Tile;
 import haven.Resource.Tileset;
 
-public class TerrainTile extends Tiler {
+public class TerrainTile extends Tiler implements Tiler.Cons {
     public final GLState base;
     public final SNoise3 noise;
     public final Var[] var;
@@ -55,9 +55,11 @@ public class TerrainTile extends Tiler {
 	final Scan vs, es;
 	final float[][] bv;
 	final boolean[][] en;
+	final Surface.MeshVertex[][] vm;
 
 	private Blend(MapMesh m) {
 	    this.m = m;
+	    this.vm = new Surface.MeshVertex[var.length + 1][m.data(MapMesh.gnd).vl.length];
 	    vs = new Scan(Coord.z.sub(sr, sr), m.sz.add(sr * 2 + 1, sr * 2 + 1));
 	    float[][] buf1 = new float[var.length + 1][vs.l];
 	    float[][] lwc = new float[var.length + 1][vs.l];
@@ -167,6 +169,35 @@ public class TerrainTile extends Tiler {
 		}
 	    }
 	}
+
+	private float bv(int l, Coord lc, float tcx, float tcy) {
+	    float icx = 1 - tcx, icy = 1 - tcy;
+	    return((((bv[l][vs.o(lc.x + 0, lc.y + 0)] * icx) + (bv[l][vs.o(lc.x + 1, lc.y + 0)] * tcx)) * icy) +
+		   (((bv[l][vs.o(lc.x + 0, lc.y + 1)] * icx) + (bv[l][vs.o(lc.x + 1, lc.y + 1)] * tcx)) * tcy));
+	}
+
+	public Surface.MeshVertex mkvert(MeshBuf buf, int l, Surface.Vertex in, Coord lc, float tcx, float tcy) {
+	    Surface.MeshVertex ret = new Surface.MeshVertex(buf, in);
+	    Coord3f tan = Coord3f.yu.cmul(ret.nrm).norm();
+	    Coord3f bit = ret.nrm.cmul(Coord3f.xu).norm();
+	    final float fac = 25f / 4f;
+	    Coord3f tc = new Coord3f((lc.x + tcx) / fac, (lc.y + tcy) / fac, 0);
+	    int alpha = (int)(bv(l, lc, tcx, tcy) * 255);
+	    buf.layer(BumpMap.ltan).set(ret, tan);
+	    buf.layer(BumpMap.lbit).set(ret, bit);
+	    buf.layer(MeshBuf.tex).set(ret, tc);
+	    buf.layer(MeshBuf.col).set(ret, new Color(255, 255, 255, alpha));
+	    return(ret);
+	}
+
+	public Surface.MeshVertex v(int l, Surface.Vertex in, Coord lc, float tcx, float tcy) {
+	    Surface.MeshVertex ret = vm[l][in.vi];
+	    if(ret == null) {
+		MeshBuf buf = MapMesh.Models.get(m, (l == 0)?base:(var[l - 1].mat));
+		ret = vm[l][in.vi] = mkvert(buf, l, in, lc, tcx, tcy);
+	    }
+	    return(ret);
+	}
     }
     public final MapMesh.DataID<Blend> blend = new MapMesh.DataID<Blend>() {
 	public Blend make(MapMesh m) {
@@ -211,9 +242,10 @@ public class TerrainTile extends Tiler {
     public TerrainTile(int id, long nseed, GLState base, Var[] var, Tileset transset) {
 	super(id);
 	this.noise = new SNoise3(nseed);
-	this.base = GLState.compose(base, States.vertexcolor);
+	int z = 0;
+	this.base = GLState.compose(base, new MapMesh.MLOrder(z++), States.vertexcolor);
 	for(Var v : this.var = var)
-	    v.mat = GLState.compose(v.mat, States.vertexcolor);
+	    v.mat = GLState.compose(v.mat, new MapMesh.MLOrder(z++), States.vertexcolor);
 	this.transset = transset;
     }
 
@@ -256,6 +288,7 @@ public class TerrainTile extends Tiler {
     }
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
+	/*
 	Blend b = m.data(blend);
 	for(int i = 0; i < var.length + 1; i++) {
 	    GLState mat = (i == 0)?base:(var[i - 1].mat);
@@ -266,6 +299,23 @@ public class TerrainTile extends Tiler {
 			(int)(b.bv[i][b.vs.o(lc.add(1, 1))] * 255),
 			(int)(b.bv[i][b.vs.o(lc.add(1, 0))] * 255),
 		    });
+	}
+	*/
+	lay(m, lc, gc, this);
+    }
+
+    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
+	Blend b = m.data(blend);
+	Surface.MeshVertex[] mv = new Surface.MeshVertex[v.length];
+	for(int i = 0; i < var.length + 1; i++) {
+	    if(b.en[i][b.es.o(lc)]) {
+		for(int o = 0; o < v.length; o++)
+		    mv[o] = b.v(i, v[o], lc, tcx[o], tcy[o]);
+		GLState mat = (i == 0)?base:(var[i - 1].mat);
+		MeshBuf buf = MapMesh.Models.get(m, mat);
+		for(int fi = 0; fi < f.length; fi += 3)
+		    buf.new Face(mv[f[fi]], mv[f[fi + 1]], mv[f[fi + 2]]);
+	    }
 	}
     }
 

@@ -68,12 +68,14 @@ public class MapMesh implements Rendered, Disposable {
     }
 
     public static interface ConsHooks {
+	public void sfin();
 	public void calcnrm();
 	public void postcalcnrm(Random rnd);
 	public boolean clean();
     }
 
     public static class Hooks implements ConsHooks {
+	public void sfin() {};
 	public void calcnrm() {}
 	public void postcalcnrm(Random rnd) {}
 	public boolean clean() {return(false);}
@@ -159,7 +161,8 @@ public class MapMesh implements Rendered, Disposable {
 		});
 	}
 
-	public void calcnrm() {fin();}
+	public void sfin() {fin();}
+	public void calcnrm() {}
 	public void postcalcnrm(Random rnd) {}
 	public boolean clean() {return(true);}
     }
@@ -336,7 +339,25 @@ public class MapMesh implements Rendered, Disposable {
 	}
     }
     
-    
+    public static class MLOrder extends Order<Rendered> {
+	public final int z;
+
+	public MLOrder(int z) {
+	    this.z = z;
+	}
+
+	public int mainz() {
+	    return(999);
+	}
+
+	private final static RComparator<Rendered> cmp = new RComparator<Rendered>() {
+	    public int compare(Rendered a, Rendered b, GLState.Buffer sa, GLState.Buffer sb) {
+		return(((MLOrder)sa.get(order)).z - ((MLOrder)sb.get(order)).z);
+	    }
+	};
+
+	public RComparator<Rendered> cmp() {return(cmp);}
+    }
 
     private static final Order mmorder = new Order<Layer>() {
 	public int mainz() {
@@ -462,6 +483,10 @@ public class MapMesh implements Rendered, Disposable {
 		mc.tiler(mc.gettile(gc)).model(m, rnd, c, gc);
 		rnd.setSeed(ns);
 	    }
+	}
+	for(Object obj : m.data.values()) {
+	    if(obj instanceof ConsHooks)
+		((ConsHooks)obj).sfin();
 	}
 	for(c.y = 0; c.y < sz.y; c.y++) {
 	    for(c.x = 0; c.x < sz.x; c.x++) {

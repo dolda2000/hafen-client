@@ -62,13 +62,15 @@ public class Surface {
 	public Vertex(Coord3f c) {
 	    this(c.x, c.y, c.z);
 	}
+
+	public Surface s() {return(Surface.this);}
     }
 
-    public class MeshVertex extends MeshBuf.Vertex {
+    public static class MeshVertex extends MeshBuf.Vertex {
 	public final Vertex v;
 
 	public MeshVertex(MeshBuf buf, Vertex v) {
-	    buf.super(v, Coord3f.o);
+	    buf.super(v, v.s().data(Surface.nrm).get(v));
 	    this.v = v;
 	}
     }
@@ -131,7 +133,7 @@ public class Surface {
 	    if(ret == null) {
 		Coord3f nn = Coord3f.o;
 		for(int i = 0, o = v.ei; i < v.ne; i++, o++)
-		    nn = nn.add(fv[o].sub(v).cmul(tv[o].sub(v)).norm());
+		    nn = nn.add(tv[o].sub(v).cmul(fv[o].sub(v)).norm());
 		ret = buf[v.vi] = nn.div(v.ne);
 	    }
 	    return(ret);
