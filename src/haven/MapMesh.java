@@ -596,27 +596,36 @@ public class MapMesh implements Rendered, Disposable {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
 		SPoint p;
 		p = g.spoint(c);
-		pos.put(p.pos.x).put(p.pos.y).put(p.pos.z);
+		float z0 = p.pos.z;
+		pos.put(p.pos.x).put(p.pos.y).put(z0);
 		col1.put((c.x + 1) / 256.0f).put((c.y + 1) / 256.0f).put(0).put(1);
 		col2.put(0).put(0).put(0).put(1);
 
 		p = g.spoint(c.add(0, 1));
-		pos.put(p.pos.x).put(p.pos.y).put(p.pos.z);
+		float z1 = p.pos.z;
+		pos.put(p.pos.x).put(p.pos.y).put(z1);
 		col1.put((c.x + 1) / 256.0f).put((c.y + 1) / 256.0f).put(0).put(1);
 		col2.put(0).put(1).put(0).put(1);
 
 		p = g.spoint(c.add(1, 1));
-		pos.put(p.pos.x).put(p.pos.y).put(p.pos.z);
+		float z2 = p.pos.z;
+		pos.put(p.pos.x).put(p.pos.y).put(z2);
 		col1.put((c.x + 1) / 256.0f).put((c.y + 1) / 256.0f).put(0).put(1);
 		col2.put(1).put(1).put(0).put(1);
 
 		p = g.spoint(c.add(1, 0));
-		pos.put(p.pos.x).put(p.pos.y).put(p.pos.z);
+		float z3 = p.pos.z;
+		pos.put(p.pos.x).put(p.pos.y).put(z3);
 		col1.put((c.x + 1) / 256.0f).put((c.y + 1) / 256.0f).put(0).put(1);
 		col2.put(1).put(0).put(0).put(1);
 
-		ind.put(i).put((short)(i + 1)).put((short)(i + 2));
-		ind.put(i).put((short)(i + 2)).put((short)(i + 3));
+		if(Math.abs(z0 - z2) > Math.abs(z1 - z3)) {
+		    ind.put(i).put((short)(i + 1)).put((short)(i + 2));
+		    ind.put(i).put((short)(i + 2)).put((short)(i + 3));
+		} else {
+		    ind.put(i).put((short)(i + 1)).put((short)(i + 3));
+		    ind.put((short)(i + 1)).put((short)(i + 2)).put((short)(i + 3));
+		}
 		i += 4;
 	    }
 	}
