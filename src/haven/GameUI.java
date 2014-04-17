@@ -34,11 +34,13 @@ import static haven.Inventory.invsq;
 public class GameUI extends ConsoleHost implements Console.Directory {
     public final String chrid;
     public final long plid;
+    public Avaview portrait;
     public MenuGrid menu;
     public MapView map;
     public MiniMap mmap;
     public Fightview fv;
     public static final Text.Foundry errfoundry = new Text.Foundry(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 14), new Color(192, 0, 0));
+    private Widget[] meters = {};
     private Text lasterr;
     private long errtime;
     private Window invwnd, equwnd, makewnd;
@@ -99,7 +101,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	setcanfocus(true);
 	setfocusctl(true);
 	menu = new MenuGrid(Coord.z, this);
-	new Avaview(new Coord(10, 10), Avaview.dasz, this, plid, "avacam");
+	portrait = new Avaview(new Coord(10, 10), Avaview.dasz, this, plid, "avacam");
 	new Bufflist(new Coord(95, 50), this);
 	chat = new ChatUI(Coord.z, 0, this);
 	syslog = new ChatUI.Log(chat, "System");
@@ -209,6 +211,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return(chat.makechild(type, new Object[] {}, cargs));
 	} else if(place == "party") {
 	    return(gettype(type).create(new Coord(10, 95), this, cargs));
+	} else if(place == "meter") {
+	    int x = (meters.length % 3) * 65;
+	    int y = (meters.length / 3) * 20;
+	    Widget ret = gettype(type).create(new Coord(portrait.c.x + portrait.sz.x + 10 + x, portrait.c.y + y), this, cargs);
+	    meters = Utils.extend(meters, ret);
+	    return(ret);
 	} else if(place == "misc") {
 	    return(gettype(type).create((Coord)pargs[1], this, cargs));
 	} else {
