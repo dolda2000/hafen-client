@@ -112,12 +112,12 @@ public class Speedget extends Widget {
 		if(cur > max)
 		    n = 0;
 		else
-		    n = Math.min(cur + 1, max);
+		    n = (cur + 1) % (max + 1);
 	    } else {
 		if(cur > max)
 		    n = max;
 		else
-		    n = Math.max(cur - 1, 0);
+		    n = (cur + max) % (max + 1);
 	    }
 	    set(n);
 	    return(true);
