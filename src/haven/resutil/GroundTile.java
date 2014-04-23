@@ -65,18 +65,17 @@ public class GroundTile extends Tiler implements Tiler.Cons {
 	return(tilemats.intern(ret));
     }
 
-    private static GLState stfor(Tile tile, int z) {
-	return(stfor(tile.tex(), z, tile.t != 'g'));
-    }
-
-    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
-	MeshVertex[] mv = new MeshVertex[v.length];
-	Tile g = set.ground.pick(m.rnd(lc));
-	Tex tex = g.tex();
+    /* XXX: Some strange javac bug seems to make it resolve the
+     * trans() references to the wrong signature, thus the name
+     * distinction. */
+    public void _faces(MapMesh m, Tile t, int z, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
+	Tex tex = t.tex();
 	float tl = tex.tcx(0), tt = tex.tcy(0), tw = tex.tcx(tex.sz().x) - tl, th = tex.tcy(tex.sz().y) - tt;
-	GLState st = stfor(g, 0);
+	GLState st = stfor(tex, z, t.t != 'g');
 	MeshBuf buf = MapMesh.Models.get(m, st);
+
 	MeshBuf.Tex btex = buf.layer(MeshBuf.tex);
+	MeshVertex[] mv = new MeshVertex[v.length];
 	for(int i = 0; i < v.length; i++) {
 	    mv[i] = new MeshVertex(buf, v[i]);
 	    btex.set(mv[i], new Coord3f(tl + (tw * tcx[i]), tt + (th * tcy[i]), 0));
@@ -85,16 +84,32 @@ public class GroundTile extends Tiler implements Tiler.Cons {
 	    buf.new Face(mv[f[i]], mv[f[i + 1]], mv[f[i + 2]]);
     }
 
+    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
+	_faces(m, set.ground.pick(m.rnd(lc)), 0, v, tcx, tcy, f);
+    }
+
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	lay(m, lc, gc, this);
     }
 
-    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
+    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, final int z, int bmask, int cmask) {
 	if(m.map.gettile(gc) <= id)
 	    return;
-	if((set.btrans != null) && (bmask > 0))
-	    gt.layover(m, lc, gc, z, set.btrans[bmask - 1].pick(rnd));
-	if((set.ctrans != null) && (cmask > 0))
-	    gt.layover(m, lc, gc, z, set.ctrans[cmask - 1].pick(rnd));
+	if((set.btrans != null) && (bmask > 0)) {
+	    final Tile t = set.btrans[bmask - 1].pick(rnd);
+	    gt.lay(m, lc, gc, new Cons() {
+		    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
+			_faces(m, t, z, v, tcx, tcy, f);
+		    }
+		});
+	}
+	if((set.ctrans != null) && (cmask > 0)) {
+	    final Tile t = set.ctrans[cmask - 1].pick(rnd);
+	    gt.lay(m, lc, gc, new Cons() {
+		    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
+			_faces(m, t, z, v, tcx, tcy, f);
+		    }
+		});
+	}
     }
 }

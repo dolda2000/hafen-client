@@ -343,8 +343,12 @@ public class MapMesh implements Rendered, Disposable {
     public static class MLOrder extends Order<Rendered> {
 	public final int z;
 
+	public MLOrder(int z, int subz) {
+	    this.z = (z << 8) + subz;
+	}
+
 	public MLOrder(int z) {
-	    this.z = z;
+	    this(z, 0);
 	}
 
 	public int mainz() {

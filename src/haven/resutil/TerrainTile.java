@@ -330,42 +330,62 @@ public class TerrainTile extends Tiler implements Tiler.Cons {
     private final static Map<TexGL, AlphaTex> transtex = new WeakHashMap<TexGL, AlphaTex>();
     private final static IDSet<GLState> transmats = new IDSet<GLState>();
 
-    private void laytrans(MapMesh m, Coord lc, int z, Tile t) {
+    /* XXX: Some strange javac bug seems to make it resolve the
+     * trans() references to the wrong signature, thus the name
+     * distinction. */
+    public void _faces(MapMesh m, Coord lc, int z, Tile trans, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
+	Tex ttex = trans.tex();
+	float tl = ttex.tcx(0), tt = ttex.tcy(0), tw = ttex.tcx(ttex.sz().x) - tl, th = ttex.tcy(ttex.sz().y) - tt;
+	TexGL gt;
+	if(ttex instanceof TexGL)
+	    gt = (TexGL)ttex;
+	else if((ttex instanceof TexSI) && (((TexSI)ttex).parent instanceof TexGL))
+	    gt = (TexGL)((TexSI)ttex).parent;
+	else
+	    throw(new RuntimeException("Cannot use texture for transitions: " + ttex));
+	AlphaTex alpha;
+	synchronized(transtex) {
+	    if((alpha = transtex.get(gt)) == null)
+		transtex.put(gt, alpha = new AlphaTex(gt, 0.01f));
+	}
 	Blend b = m.data(blend);
+	Surface.MeshVertex[] mv = new Surface.MeshVertex[v.length];
 	for(int i = 0; i < var.length + 1; i++) {
-	    GLState mat = (i == 0)?base:(var[i - 1].mat);
-	    Tex tt = t.tex();
-	    TexGL gt;
-	    if(tt instanceof TexGL)
-		gt = (TexGL)tt;
-	    else if((tt instanceof TexSI) && (((TexSI)tt).parent instanceof TexGL))
-		gt = (TexGL)((TexSI)tt).parent;
-	    else
-		throw(new RuntimeException("Cannot use texture for transitions: " + tt));
-	    AlphaTex alpha;
-	    synchronized(transtex) {
-		if((alpha = transtex.get(gt)) == null)
-		    transtex.put(gt, alpha = new AlphaTex(gt, 0.01f));
+	    if(b.en[i][b.es.o(lc)]) {
+		GLState mat = (i == 0)?base:(var[i - 1].mat);
+		mat = transmats.intern(GLState.compose(mat, new MapMesh.MLOrder(z, i), alpha));
+		MeshBuf buf = MapMesh.Models.get(m, mat);
+		MeshBuf.Vec2Layer cc = buf.layer(AlphaTex.lclip);
+		for(int o = 0; o < v.length; o++) {
+		    mv[o] = b.mkvert(buf, i, v[o], lc, tcx[o], tcy[o]);
+		    cc.set(mv[o], new Coord3f(tl + (tw * tcx[o]), tt + (th * tcy[o]), 0));
+		}
+		for(int fi = 0; fi < f.length; fi += 3)
+		    buf.new Face(mv[f[fi]], mv[f[fi + 1]], mv[f[fi + 2]]);
 	    }
-	    mat = transmats.intern(GLState.compose(mat, alpha));
-	    if(b.en[i][b.es.o(lc)])
-		new TransPlane(m, m.gnd(), lc, z + i, mat, new int[] {
-			(int)(b.bv[i][b.vs.o(lc)] * 255),
-			(int)(b.bv[i][b.vs.o(lc.add(0, 1))] * 255),
-			(int)(b.bv[i][b.vs.o(lc.add(1, 1))] * 255),
-			(int)(b.bv[i][b.vs.o(lc.add(1, 0))] * 255),
-		    }, tt);
 	}
     }
 
-    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
+    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, final int z, int bmask, int cmask) {
 	if(transset == null)
 	    return;
 	if(m.map.gettile(gc) <= id)
 	    return;
-	if((transset.btrans != null) && (bmask > 0))
-	    laytrans(m, lc, z, transset.btrans[bmask - 1].pick(rnd));
-	if((transset.ctrans != null) && (cmask > 0))
-	    laytrans(m, lc, z, transset.ctrans[cmask - 1].pick(rnd));
+	if((transset.btrans != null) && (bmask > 0)) {
+	    final Tile t = transset.btrans[bmask - 1].pick(rnd);
+	    gt.lay(m, lc, gc, new Cons() {
+		    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
+			_faces(m, lc, z, t, v, tcx, tcy, f);
+		    }
+		});
+	}
+	if((transset.ctrans != null) && (cmask > 0)) {
+	    final Tile t = transset.ctrans[cmask - 1].pick(rnd);
+	    gt.lay(m, lc, gc, new Cons() {
+		    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
+			_faces(m, lc, z, t, v, tcx, tcy, f);
+		    }
+		});
+	}
     }
 }
