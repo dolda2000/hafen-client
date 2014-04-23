@@ -288,19 +288,6 @@ public class TerrainTile extends Tiler implements Tiler.Cons {
     }
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
-	/*
-	Blend b = m.data(blend);
-	for(int i = 0; i < var.length + 1; i++) {
-	    GLState mat = (i == 0)?base:(var[i - 1].mat);
-	    if(b.en[i][b.es.o(lc)])
-		new Plane(m, m.gnd(), lc, i, mat, new int[] {
-			(int)(b.bv[i][b.vs.o(lc)] * 255),
-			(int)(b.bv[i][b.vs.o(lc.add(0, 1))] * 255),
-			(int)(b.bv[i][b.vs.o(lc.add(1, 1))] * 255),
-			(int)(b.bv[i][b.vs.o(lc.add(1, 0))] * 255),
-		    });
-	}
-	*/
 	lay(m, lc, gc, this);
     }
 
