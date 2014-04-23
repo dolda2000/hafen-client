@@ -36,6 +36,7 @@ import java.nio.ShortBuffer;
 public class MapMesh implements Rendered, Disposable {
     public final Coord ul, sz;
     public final MCache map;
+    private final long rnd;
     private Map<Tex, GLState[]> texmap = new HashMap<Tex, GLState[]>();
     private Map<DataID, Object> data = new LinkedHashMap<DataID, Object>();
     private List<Rendered> extras = new ArrayList<Rendered>();
@@ -392,10 +393,22 @@ public class MapMesh implements Rendered, Disposable {
 	}
     }
     
-    private MapMesh(MCache map, Coord ul, Coord sz) {
+    private MapMesh(MCache map, Coord ul, Coord sz, Random rnd) {
 	this.map = map;
 	this.ul = ul;
 	this.sz = sz;
+	this.rnd = rnd.nextLong();
+    }
+
+    public Random rnd() {
+	return(new Random(this.rnd));
+    }
+
+    public Random rnd(Coord c) {
+	Random ret = rnd();
+	ret.setSeed(ret.nextInt() + c.x);
+	ret.setSeed(ret.nextInt() + c.y);
+	return(ret);
     }
 	
     private static void dotrans(MapMesh m, Random rnd, Coord lc, Coord gc) {
@@ -472,9 +485,10 @@ public class MapMesh implements Rendered, Disposable {
     }
 
     public static MapMesh build(MCache mc, Random rnd, Coord ul, Coord sz) {
-	MapMesh m = new MapMesh(mc, ul, sz);
+	MapMesh m = new MapMesh(mc, ul, sz, rnd);
 	Coord c = new Coord();
 	m.layers = new ArrayList<Layer>();
+	rnd = m.rnd();
 	
 	for(c.y = 0; c.y < sz.y; c.y++) {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
