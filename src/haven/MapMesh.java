@@ -351,6 +351,14 @@ public class MapMesh implements Rendered, Disposable {
 	    return(999);
 	}
 
+	public boolean equals(Object x) {
+	    return((x instanceof MLOrder) && (((MLOrder)x).z == this.z));
+	}
+
+	public int hashCode() {
+	    return(z);
+	}
+
 	private final static RComparator<Rendered> cmp = new RComparator<Rendered>() {
 	    public int compare(Rendered a, Rendered b, GLState.Buffer sa, GLState.Buffer sb) {
 		return(((MLOrder)sa.get(order)).z - ((MLOrder)sb.get(order)).z);
