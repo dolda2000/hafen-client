@@ -74,4 +74,10 @@ public class IDSet<T> {
 	    }
 	}
     }
+
+    public int size() {
+	synchronized(bk) {
+	    return(bk.size());
+	}
+    }
 }
