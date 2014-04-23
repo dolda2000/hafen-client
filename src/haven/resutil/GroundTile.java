@@ -33,7 +33,7 @@ import haven.Resource.Tile;
 import haven.Surface.MeshVertex;
 
 public class GroundTile extends Tiler implements Tiler.Cons {
-    private static Map<Tex, GLState[]> texmap = new WeakHashMap<Tex, GLState[]>();
+    private static IDSet<GLState> tilemats = new IDSet<GLState>();
     private static final Material.Colors gcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
     public final Resource.Tileset set;
 
@@ -49,27 +49,24 @@ public class GroundTile extends Tiler implements Tiler.Cons {
 	this.set = set;
     }
 
-    private static GLState stfor(Tex tex, boolean clip) {
+    private static GLState stfor(Tex tex, int z, boolean clip) {
 	TexGL gt;
 	if(tex instanceof TexGL)
 	    gt = (TexGL)tex;
 	else if((tex instanceof TexSI) && (((TexSI)tex).parent instanceof TexGL))
 	    gt = (TexGL)((TexSI)tex).parent;
 	else
-	    throw(new RuntimeException("Cannot use texture for map rendering: " + tex));
-	GLState[] ret = texmap.get(gt);
-	if(ret == null) {
-	    /* texmap.put(gt, ret = new Material(gt)); */
-	    texmap.put(gt, ret = new GLState[] {
-		    new Material(Light.deflight, gcol, gt.draw(), gt.clip(), new MapMesh.MLOrder(0)),
-		    new Material(Light.deflight, gcol, gt.draw(), new MapMesh.MLOrder(0)),
-		});
-	}
-	return(ret[clip?0:1]);
+	    throw(new RuntimeException("Cannot use texture for ground-tile rendering: " + tex));
+	GLState ret;
+	if(clip)
+	    ret = GLState.compose(Light.deflight, gcol, gt.draw(), gt.clip(), new MapMesh.MLOrder(z));
+	else
+	    ret = GLState.compose(Light.deflight, gcol, gt.draw(), new MapMesh.MLOrder(z));
+	return(tilemats.intern(ret));
     }
 
-    private static GLState stfor(Tile tile) {
-	return(stfor(tile.tex(), tile.t != 'g'));
+    private static GLState stfor(Tile tile, int z) {
+	return(stfor(tile.tex(), z, tile.t != 'g'));
     }
 
     public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
@@ -77,7 +74,7 @@ public class GroundTile extends Tiler implements Tiler.Cons {
 	Tile g = set.ground.pick(m.rnd(lc));
 	Tex tex = g.tex();
 	float tl = tex.tcx(0), tt = tex.tcy(0), tw = tex.tcx(tex.sz().x) - tl, th = tex.tcy(tex.sz().y) - tt;
-	GLState st = stfor(g);
+	GLState st = stfor(g, 0);
 	MeshBuf buf = MapMesh.Models.get(m, st);
 	MeshBuf.Tex btex = buf.layer(MeshBuf.tex);
 	for(int i = 0; i < v.length; i++) {
