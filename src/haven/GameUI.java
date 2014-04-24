@@ -39,7 +39,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public MapView map;
     public MiniMap mmap;
     public Fightview fv;
-    public static final Text.Foundry errfoundry = new Text.Foundry(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 14), new Color(192, 0, 0));
+    public static final Text.Foundry errfoundry = new Text.Foundry(Text.dfont, 14, new Color(192, 0, 0));
     private Widget[] meters = {};
     private Text lasterr;
     private long errtime;

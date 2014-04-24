@@ -30,7 +30,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 
 public class TextEntry extends Widget {
-    public static final Text.Foundry fnd = new Text.Foundry(new Font("SansSerif", Font.PLAIN, 12), Color.BLACK);
+    public static final Text.Foundry fnd = new Text.Foundry(Text.dfont, 12, Color.BLACK);
     public static final int defh = fnd.height() + 2;
     public LineEdit buf;
     public int sx;

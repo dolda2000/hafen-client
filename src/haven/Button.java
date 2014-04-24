@@ -40,7 +40,7 @@ public class Button extends SSWidget {
     static BufferedImage ut = Resource.loadimg("gfx/hud/buttons/tbtn/utex");
     public Text text;
     public BufferedImage cont;
-    static Text.Foundry tf = new Text.Foundry(new Font("Serif", Font.PLAIN, 12), Color.YELLOW);
+    static Text.Foundry tf = new Text.Foundry(Text.serif, 12, Color.YELLOW);
     boolean a = false;
 	
     @RName("btn")

@@ -36,7 +36,7 @@ public class Makewindow extends Widget {
     List<Spec> outputs = Collections.emptyList();
     static Coord boff = new Coord(7, 9);
     final int xoff = 40, yoff = 55;
-    public static final Text.Foundry nmf = new Text.Foundry(new Font("Serif", Font.PLAIN, 20));
+    public static final Text.Foundry nmf = new Text.Foundry(Text.serif, 20);
 
     @RName("make")
     public static class $_ implements Factory {

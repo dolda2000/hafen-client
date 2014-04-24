@@ -29,7 +29,7 @@ package haven;
 import java.awt.Color;
 
 public class Buff {
-    public static final Text.Foundry nfnd = new Text.Foundry("SansSerif", 10);
+    public static final Text.Foundry nfnd = new Text.Foundry(Text.dfont, 10);
     int id;
     Indir<Resource> res;
     String tt = null;
