@@ -44,7 +44,7 @@ public class Text {
     public static final Color white = Color.WHITE;
 	
     static {
-	std = new Foundry(sans, 12).aa(true);
+	std = new Foundry(sans, 10);
     }
 	
     public static class Line extends Text {
