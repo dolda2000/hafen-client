@@ -717,7 +717,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
-    private static final Text.Furnace polownertf = new PUtils.BlurFurn(new Text.Foundry("serif", 30).aa(true), 3, 1, Color.BLACK);
+    private static final Text.Furnace polownertf = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 30).aa(true), 3, 1, Color.BLACK);
     private Text polownert = null;
     private long polchtm = 0;
 

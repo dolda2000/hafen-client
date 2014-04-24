@@ -37,8 +37,8 @@ public class LoginScreen extends Widget {
     Text progress = null;
 	
     static {
-	textf = new Text.Foundry(new java.awt.Font("Sans", java.awt.Font.PLAIN, 16));
-	textfs = new Text.Foundry(new java.awt.Font("Sans", java.awt.Font.PLAIN, 14));
+	textf = new Text.Foundry(Text.sans, 16).aa(true);
+	textfs = new Text.Foundry(Text.sans, 14).aa(true);
     }
 	
     public LoginScreen(Widget parent) {

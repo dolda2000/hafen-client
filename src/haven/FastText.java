@@ -29,7 +29,7 @@ package haven;
 import java.awt.image.BufferedImage;
 
 public class FastText {
-    public static final Text.Foundry fnd = new Text.Foundry("SansSerif", 10);
+    public static final Text.Foundry fnd = new Text.Foundry(Text.sans, 10);
     private static final Tex[] ct = new Tex[225];
     
     private FastText() {}

@@ -32,7 +32,7 @@ import java.awt.Color;
 
 public class KinInfo extends GAttrib {
     public static final BufferedImage vlg = Resource.loadimg("gfx/hud/vilind");
-    public static final Text.Foundry nfnd = new Text.Foundry("SansSerif", 10);
+    public static final Text.Foundry nfnd = new Text.Foundry(Text.dfont, 10);
     public String name;
     public int group, type;
     public long seen = 0;

@@ -39,8 +39,8 @@ import java.io.IOException;
 import java.awt.datatransfer.*;
 
 public class ChatUI extends Widget {
-    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 10, TextAttribute.FOREGROUND, Color.BLACK));
-    public static final Text.Foundry qfnd = new Text.Foundry(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 12), new java.awt.Color(192, 255, 192));
+    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(10f), TextAttribute.FOREGROUND, Color.BLACK));
+    public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = 100;
     public Channel sel = null;
     private final Selector chansel;
@@ -836,7 +836,7 @@ public class ChatUI extends Widget {
     }
 
     private class Selector extends Widget {
-	public final Text.Foundry nf = new Text.Foundry("SansSerif", 10);
+	public final Text.Foundry nf = new Text.Foundry(Text.dfont, 10);
 	private final List<DarkChannel> chls = new ArrayList<DarkChannel>();
 	private int s = 0;
 	

@@ -32,6 +32,10 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 
 public class Text {
+    public static final Font serif = new Font("Serif", Font.PLAIN, 10);
+    public static final Font sans  = new Font("Sans", Font.PLAIN, 10);
+    public static final Font mono  = new Font("Monospaced", Font.PLAIN, 10);
+    public static final Font dfont = sans;
     public static final Foundry std;
     public final BufferedImage img;
     public final String text;
@@ -40,7 +44,7 @@ public class Text {
     public static final Color white = Color.WHITE;
 	
     static {
-	std = new Foundry(new Font("SansSerif", Font.PLAIN, 10));
+	std = new Foundry(sans, 12).aa(true);
     }
 	
     public static class Line extends Text {
@@ -116,6 +120,15 @@ public class Text {
 	    this(f, Color.WHITE);
 	}
 	
+	public Foundry(Font font, int psz, Color defcol) {
+	    this(font.deriveFont((float)psz), defcol);
+	}
+
+	public Foundry(Font font, int psz) {
+	    this(font.deriveFont((float)psz));
+	}
+
+	@Deprecated
 	public Foundry(String font, int psz) {
 	    this(new Font(font, Font.PLAIN, psz));
 	}
