@@ -31,24 +31,32 @@ import haven.*;
 import haven.glsl.*;
 import static haven.glsl.Cons.*;
 import haven.Resource.Tile;
-import haven.MapMesh.Surface;
 import haven.MapMesh.Scan;
+import haven.Surface.Vertex;
+import haven.Surface.MeshVertex;
 import javax.media.opengl.*;
 import java.awt.Color;
 
-public abstract class WaterTile extends Tiler {
+public class WaterTile extends Tiler {
     public final int depth;
     private static final Material.Colors bcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
+    public final Tiler.Cons bottom;
     
-    public static class Bottom extends Surface {
+    public static class Bottom extends MapMesh.Hooks {
 	final MapMesh m;
 	final boolean[] s;
+	final Vertex[] surf;
+	final boolean[] split;
 	int[] ed;
-	final Scan ss;
+	final Scan vs, ss;
 	
 	public Bottom(MapMesh m) {
-	    m.super();
 	    this.m = m;
+	    MapMesh.MapSurface ms = m.data(m.gnd);
+	    this.vs = ms.vs;
+	    Scan ts = ms.ts;
+	    this.surf = new Vertex[vs.l];
+	    this.split = new boolean[ts.l];
 	    Coord sz = m.sz;
 	    MCache map = m.map;
 	    Scan ds = new Scan(new Coord(-10, -10), sz.add(21, 21));
@@ -68,12 +76,9 @@ public abstract class WaterTile extends Tiler {
 	    for(int y = ss.ul.y; y < ss.br.y; y++) {
 		for(int x = ss.ul.x; x < ss.br.x; x++) {
 		    int td = d[ds.o(x, y)];
-		    if(d[ds.o(x - 1, y - 1)] < td)
-			td = d[ds.o(x - 1, y - 1)];
-		    if(d[ds.o(x, y - 1)] < td)
-			td = d[ds.o(x, y - 1)];
-		    if(d[ds.o(x - 1, y)] < td)
-			td = d[ds.o(x - 1, y)];
+		    td = Math.min(td, d[ds.o(x - 1, y - 1)]);
+		    td = Math.min(td, d[ds.o(x, y - 1)]);
+		    td = Math.min(td, d[ds.o(x - 1, y)]);
 		    ed[ss.o(x, y)] = td;
 		    if(td == 0)
 			s[ss.o(x, y)] = true;
@@ -94,9 +99,14 @@ public abstract class WaterTile extends Tiler {
 		}
 		ed = sd;
 	    }
-	    for(int y = -1; y < sz.y + 2; y++) {
-		for(int x = -1; x < sz.x + 2; x++) {
-		    spoint(new Coord(x, y)).pos.z -= ed[ss.o(x, y)];
+	    for(int y = vs.ul.y; y < vs.br.y; y++) {
+		for(int x = vs.ul.x; x < vs.br.x; x++) {
+		    surf[vs.o(x, y)] = ms.new Vertex(ms.surf[vs.o(x, y)].add(0, 0, -ed[ss.o(x, y)]));
+		}
+	    }
+	    for(int y = ts.ul.y; y < ts.br.y; y++) {
+		for(int x = ts.ul.x; x < ts.br.x; x++) {
+		    split[ts.o(x, y)] = Math.abs(surf[vs.o(x, y)].z - surf[vs.o(x + 1, y + 1)].z) > Math.abs(surf[vs.o(x + 1, y)].z - surf[vs.o(x, y + 1)].z);
 		}
 	    }
 	}
@@ -104,21 +114,53 @@ public abstract class WaterTile extends Tiler {
 	public int d(int x, int y) {
 	    return(ed[ss.o(x, y)]);
 	}
-	
+
+	public Vertex[] fortilea(Coord c) {
+	    return(new Vertex[] {
+		    surf[vs.o(c.x, c.y)],
+		    surf[vs.o(c.x, c.y + 1)],
+		    surf[vs.o(c.x + 1, c.y + 1)],
+		    surf[vs.o(c.x + 1, c.y)],
+		});
+	}
+
 	public void calcnrm() {
 	    super.calcnrm();
+	    MapMesh.MapSurface ms = m.data(MapMesh.gnd);
+	    Surface.Normals n = ms.data(Surface.nrm);
 	    Coord c = new Coord();
 	    for(c.y = 0; c.y <= m.sz.y; c.y++) {
 		for(c.x = 0; c.x <= m.sz.x; c.x++) {
 		    if(s[ss.o(c)])
-			spoint(c).nrm = m.gnd().spoint(c).nrm;
+			n.set(surf[vs.o(c)], n.get(ms.fortile(c)));
 		}
 	    }
 	}
 
 	public static final MapMesh.DataID<Bottom> id = MapMesh.makeid(Bottom.class);
     }
-    
+
+    public void model(MapMesh m, Random rnd, Coord lc, Coord gc) {
+	super.model(m, rnd, lc, gc);
+	Bottom b = m.data(Bottom.id);
+	MapMesh.MapSurface s = m.data(MapMesh.gnd);
+	if(b.split[s.ts.o(lc)]) {
+	    s.new Face(b.surf[b.vs.o(lc.x, lc.y)],
+		       b.surf[b.vs.o(lc.x, lc.y + 1)],
+		       b.surf[b.vs.o(lc.x + 1, lc.y + 1)]);
+	    s.new Face(b.surf[b.vs.o(lc.x, lc.y)],
+		       b.surf[b.vs.o(lc.x + 1, lc.y + 1)],
+		       b.surf[b.vs.o(lc.x + 1, lc.y)]);
+	} else {
+	    s.new Face(b.surf[b.vs.o(lc.x, lc.y)],
+		       b.surf[b.vs.o(lc.x, lc.y + 1)],
+		       b.surf[b.vs.o(lc.x + 1, lc.y)]);
+	    s.new Face(b.surf[b.vs.o(lc.x, lc.y + 1)],
+		       b.surf[b.vs.o(lc.x + 1, lc.y + 1)],
+		       b.surf[b.vs.o(lc.x + 1, lc.y)]);
+	}
+    }
+
     static final TexCube sky = new TexCube(Resource.loadimg("gfx/tiles/skycube"));
     static final TexI nrm = (TexI)Resource.loadtex("gfx/tiles/wn");
     static {
@@ -220,7 +262,7 @@ public abstract class WaterTile extends Tiler {
 								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
 									  add(mul(MiscLib.time.ref(), vec2(l(-0.035), l(-0.025))), vec2(l(0.5), l(0.5))))),
 							    "rgb")),
-						   abs(sub(Cons.mod(MiscLib.time.ref(), l(2.0)), l(1.0)))),
+						   abs(sub(haven.glsl.Cons.mod(MiscLib.time.ref(), l(2.0)), l(1.0)))),
 					       l(0.5 * 2)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
 				/*
 				return(mul(sub(add(pick(texture2D(snrm.ref(),
@@ -315,6 +357,7 @@ public abstract class WaterTile extends Tiler {
 		    s1.prep(buf);
 	    }
 	};
+    public static final GLState surfmatc = GLState.compose(surfmat, new MapMesh.MLOrder(1000));
 
     public static final MeshBuf.LayerID<MeshBuf.Vec1Layer> depthlayer = new MeshBuf.V1LayerID(BottomFog.depth);
 
@@ -392,32 +435,68 @@ public abstract class WaterTile extends Tiler {
 	public Tiler create(int id, Resource.Tileset set) {
 	    int a = 0;
 	    int depth = (Integer)set.ta[a++];
-	    Resource.Tileset ground = set;
-	    TerrainTile terrain = null;
+	    Tiler.Cons bottom = new GroundTile(id, set);
 	    while(a < set.ta.length) {
 		Object[] desc = (Object[])set.ta[a++];
 		String p = (String)desc[0];
-		if(p.equals("gnd")) {
-		    Resource gres = Resource.load((String)desc[1], (Integer)desc[2]);
-		    ground = gres.layer(Resource.tileset);
-		} else if(p.equals("trn")) {
-		    Resource tres = Resource.load((String)desc[1], (Integer)desc[2]);
-		    Resource.Tileset tset = tres.layer(Resource.tileset);
-		    terrain = (TerrainTile)tset.tfac().create(-1, tset);
+		if(p.equals("bottom") /* Backwards compatibility */ || p.equals("gnd") || p.equals("trn")) {
+		    Resource bres = Resource.load((String)desc[1], (Integer)desc[2]);
+		    Resource.Tileset ts = bres.layer(Resource.tileset);
+		    Tiler b = ts.tfac().create(id, ts);
+		    bottom = (Tiler.Cons)b;
 		}
 	    }
-	    if(terrain == null)
-		return(new GWaterTile(id, set, depth, ground));
-	    else
-		return(new TWaterTile(id, set, depth, terrain));
+	    return(new WaterTile(id, bottom, depth));
 	}
     }
 
-    public WaterTile(int id, Resource.Tileset set, int depth) {
+    public WaterTile(int id, Tiler.Cons bottom, int depth) {
 	super(id);
+	this.bottom = bottom;
 	this.depth = depth;
     }
 
+    @Deprecated
+    public WaterTile(int id, Resource.Tileset set, int depth) {
+	this(id, new GroundTile(0, set), depth);
+    }
+
+    public static class SurfVert extends Surface.BufMap {
+	final MapMesh.MapSurface ms;
+
+	public SurfVert(MapMesh m) {
+	    m.data(MapMesh.gnd).super(MapMesh.Models.get(m, surfmatc));
+	    this.ms = m.data(MapMesh.gnd);
+	}
+
+	public MeshVertex[] fortile(Coord c) {
+	    return(get(ms.fortilea(c)));
+	}
+
+	public static final MapMesh.DataID<SurfVert> id = MapMesh.makeid(SurfVert.class);
+    }
+
+    public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
+	MapMesh.MapSurface ms = m.data(MapMesh.gnd);
+	SurfVert surf = m.data(SurfVert.id);
+	Bottom b = m.data(Bottom.id);
+	MeshVertex[] v = surf.fortile(lc);
+	if(ms.split[ms.ts.o(lc)]) {
+	    surf.buf.new Face(v[0], v[1], v[2]);
+	    surf.buf.new Face(v[0], v[2], v[3]);
+	} else {
+	    surf.buf.new Face(v[0], v[1], v[3]);
+	    surf.buf.new Face(v[1], v[2], v[3]);
+	}
+	bottom.faces(m, lc, gc, ms.fortilea(lc), ctcx, ctcy, ms.split[ms.ts.o(lc)]?rdiag:ldiag);
+    }
+
+    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
+	if(bottom instanceof Tiler)
+	    ((Tiler)bottom).trans(m, rnd, gt, lc, gc, z, bmask, cmask);
+    }
+
+    /*
     public static class GWaterTile extends WaterTile {
 	public final Resource.Tileset bottom;
 	public final GLState mat;
@@ -484,8 +563,6 @@ public abstract class WaterTile extends Tiler {
 	}
     }
 
-    /* XXX: This is quite ugly, and tiling should generally be
-     * reworked to allow it to be less so. */
     public static class TWaterTile extends WaterTile {
 	private final static IDSet<GLState> bmats = new IDSet<GLState>();
 	public final TerrainTile bottom;
@@ -534,6 +611,7 @@ public abstract class WaterTile extends Tiler {
 	public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
 	}
     }
+    */
 
     public GLState drawstate(Glob glob, GLConfig cfg, Coord3f c) {
 	if(cfg.pref.wsurf.val)

@@ -62,7 +62,7 @@ public abstract class Tiler {
     }
 
     public static final float[] ctcx = {0, 0, 1, 1}, ctcy = {0, 1, 1, 0};
-    private static final int[] rdiag = {0, 1, 2, 0, 2, 3}, ldiag = {0, 1, 3, 1, 2, 3};
+    public static final int[] rdiag = {0, 1, 2, 0, 2, 3}, ldiag = {0, 1, 3, 1, 2, 3};
     public void lay(MapMesh m, Coord lc, Coord gc, Cons cons) {
 	MapMesh.MapSurface s = m.data(m.gnd);
 	cons.faces(m, lc, gc, s.fortilea(lc), ctcx, ctcy,
