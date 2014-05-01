@@ -107,19 +107,21 @@ public class Speedget extends Widget {
 
     public boolean globtype(char key, KeyEvent ev) {
 	if(key == 18) {
-	    int n;
-	    if((ev.getModifiersEx() & KeyEvent.SHIFT_DOWN_MASK) == 0) {
-		if(cur > max)
-		    n = 0;
-		else
-		    n = (cur + 1) % (max + 1);
-	    } else {
-		if(cur > max)
-		    n = max;
-		else
-		    n = (cur + max) % (max + 1);
+	    if(max >= 0) {
+		int n;
+		if((ev.getModifiersEx() & KeyEvent.SHIFT_DOWN_MASK) == 0) {
+		    if(cur > max)
+			n = 0;
+		    else
+			n = (cur + 1) % (max + 1);
+		} else {
+		    if(cur > max)
+			n = max;
+		    else
+			n = (cur + max) % (max + 1);
+		}
+		set(n);
 	    }
-	    set(n);
 	    return(true);
 	}
 	return(super.globtype(key, ev));
