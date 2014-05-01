@@ -153,11 +153,13 @@ public class MCache {
 	    for(c.y = 0; c.y < cmaps.x; c.y++) {
 		for(c.x = 0; c.x < cmaps.y; c.x++, i++) {
 		    Tileset set = tileset(tiles[i]);
+		    int fp = rnd.nextInt();
+		    int rp = rnd.nextInt();
+		    double a = rnd.nextDouble();
 		    if(set.flavobjs.size() > 0) {
-			if(rnd.nextInt(set.flavprob) == 0) {
-			    Resource r = set.flavobjs.pick(rnd);
-			    double a = rnd.nextDouble() * 2 * Math.PI;
-			    Gob g = new Flavobj(c.add(tc).mul(tilesz).add(tilesz.div(2)), a);
+			if((fp % set.flavprob) == 0) {
+			    Resource r = set.flavobjs.pick(rp % set.flavobjs.tw);
+			    Gob g = new Flavobj(c.add(tc).mul(tilesz).add(tilesz.div(2)), a * 2 * Math.PI);
 			    g.setattr(new ResDrawable(g, r));
 			    Coord cc = c.div(cutsz);
 			    fo[cc.x + (cc.y * cutn.x)].add(g);
