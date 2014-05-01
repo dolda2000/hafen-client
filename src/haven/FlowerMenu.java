@@ -35,7 +35,7 @@ public class FlowerMenu extends Widget {
     public static IBox pbox; 
     public static Tex pbg = Resource.loadtex("gfx/hud/bgtex");
     static Color ptc = Color.YELLOW;
-    static Text.Foundry ptf = new Text.Foundry(new Font("SansSerif", Font.PLAIN, 12));
+    static Text.Foundry ptf = new Text.Foundry(Text.dfont, 12);
     static int ph = 30, ppl = 8;
     Petal[] opts;
 	

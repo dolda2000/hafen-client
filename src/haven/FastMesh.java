@@ -334,7 +334,7 @@ public class FastMesh implements FRendered, Disposable {
     }
     
     public void drawflat(GOut g) {
-	cdraw(g);
+	draw(g);
 	GOut.checkerr(g.gl);
     }
     

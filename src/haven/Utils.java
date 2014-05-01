@@ -888,6 +888,12 @@ public class Utils {
 	return(extend(src, 0, nl));
     }
     
+    public static <T, E extends T> T[] extend(T[] src, E ne) {
+	T[] ret = extend(src, 0, src.length + 1);
+	ret[src.length] = ne;
+	return(ret);
+    }
+    
     public static <T> T el(Iterable<T> c) {
 	return(c.iterator().next());
     }

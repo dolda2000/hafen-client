@@ -333,7 +333,8 @@ public abstract class TexGL extends Tex {
     public float tcy(int y) {
 	return(((float)y) / ((float)tdim.y));
     }
-    
+
+    @Deprecated
     public void mipmap() {
 	mipmap = true;
 	minfilter = GL.GL_LINEAR_MIPMAP_LINEAR;

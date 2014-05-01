@@ -26,11 +26,13 @@
 
 package haven;
 
+import java.awt.event.KeyEvent;
+
 public class Speedget extends Widget {
     public static final Tex imgs[][];
     public static final Coord tsz;
-    private int cur, max;
-    
+    public int cur, max;
+
     static {
 	imgs = new Tex[4][3];
 	String[] names = {"crawl", "walk", "run", "sprint"};
@@ -58,7 +60,7 @@ public class Speedget extends Widget {
 	this.cur = cur;
 	this.max = max;
     }
-    
+
     public void draw(GOut g) {
 	int x = 0;
 	for(int i = 0; i < 4; i++) {
@@ -73,29 +75,55 @@ public class Speedget extends Widget {
 	    x += t.sz().x;
 	}
     }
-    
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "cur")
 	    cur = (Integer)args[0];
 	else if(msg == "max")
 	    max = (Integer)args[0];
     }
-    
+
+    public void set(int s) {
+	wdgmsg("set", s);
+    }
+
     public boolean mousedown(Coord c, int button) {
 	int x = 0;
 	for(int i = 0; i < 4; i++) {
 	    x += imgs[i][0].sz().x;
 	    if(c.x < x) {
-		wdgmsg("set", i);
+		set(i);
 		break;
 	    }
 	}
 	return(true);
     }
-    
+
     public boolean mousewheel(Coord c, int amount) {
 	if(max >= 0)
-	    wdgmsg("set", (cur + max + 1 + amount) % (max + 1));
+	    set((cur + max + 1 + amount) % (max + 1));
 	return(true);
+    }
+
+    public boolean globtype(char key, KeyEvent ev) {
+	if(key == 18) {
+	    if(max >= 0) {
+		int n;
+		if((ev.getModifiersEx() & KeyEvent.SHIFT_DOWN_MASK) == 0) {
+		    if(cur > max)
+			n = 0;
+		    else
+			n = (cur + 1) % (max + 1);
+		} else {
+		    if(cur > max)
+			n = max;
+		    else
+			n = (cur + max) % (max + 1);
+		}
+		set(n);
+	    }
+	    return(true);
+	}
+	return(super.globtype(key, ev));
     }
 }

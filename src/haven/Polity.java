@@ -89,8 +89,8 @@ public class Polity extends Window {
 	}
     }
 
-    public static final Text.Foundry nmf = new Text.Foundry("Serif", 14).aa(true);
-    public static final Text.Foundry membf = new Text.Foundry("Sans", 12);
+    public static final Text.Foundry nmf = new Text.Foundry(Text.serif, 14).aa(true);
+    public static final Text.Foundry membf = new Text.Foundry(Text.serif, 12);
 
     public Polity(Coord c, Widget parent, String name) {
 	super(c, new Coord(200, 200), parent, "Town");

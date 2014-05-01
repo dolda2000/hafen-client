@@ -38,7 +38,7 @@ public class Window extends Widget implements DTarget {
     public static final int capo = 7, capio = 2;
     public static final Coord mrgn = new Coord(13, 13);
     public static final Color cc = Color.YELLOW;
-    public static final Text.Foundry cf = new Text.Foundry(new Font("Serif", Font.PLAIN, 12));
+    public static final Text.Foundry cf = new Text.Foundry(Text.serif, 12);
     public static final IBox wbox = new IBox("gfx/hud/wnd", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb") {
 	    final Coord co = new Coord(3, 3), bo = new Coord(2, 2);
 

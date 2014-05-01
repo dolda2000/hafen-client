@@ -31,6 +31,7 @@ import java.util.*;
 import javax.media.opengl.*;
 
 public class VertexBuf {
+    public static final GLState.Slot<Binding> bound = new GLState.Slot<Binding>(GLState.Slot.Type.GEOM, Binding.class);
     public final AttribArray[] bufs;
     public final int num;
     
@@ -54,7 +55,29 @@ public class VertexBuf {
 	}
 	return(null);
     }
-    
+
+    public abstract class Binding extends GLState {
+	public void prep(GLState.Buffer buf) {
+	    buf.put(bound, this);
+	}
+    }
+
+    public class MemBinding extends Binding {
+	public void apply(GOut g) {
+	    for(int i = 0; i < bufs.length; i++) {
+		if(bufs[i] instanceof GLArray)
+		    ((GLArray)bufs[i]).bind(g, false);
+	    }
+	}
+
+	public void unapply(GOut g) {
+	    for(int i = 0; i < bufs.length; i++) {
+		if(bufs[i] instanceof GLArray)
+		    ((GLArray)bufs[i]).unbind(g);
+	    }
+	}
+    }
+
     public abstract static class AttribArray {
 	public final int n;
 	
