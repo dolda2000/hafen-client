@@ -328,7 +328,6 @@ public class TerrainTile extends Tiler implements Tiler.Cons {
     }
 
     private final static Map<TexGL, AlphaTex> transtex = new WeakHashMap<TexGL, AlphaTex>();
-    private final static IDSet<GLState> transmats = new IDSet<GLState>();
 
     /* XXX: Some strange javac bug seems to make it resolve the
      * trans() references to the wrong signature, thus the name
@@ -353,7 +352,7 @@ public class TerrainTile extends Tiler implements Tiler.Cons {
 	for(int i = 0; i < var.length + 1; i++) {
 	    if(b.en[i][b.es.o(lc)]) {
 		GLState mat = (i == 0)?base:(var[i - 1].mat);
-		mat = transmats.intern(GLState.compose(mat, new MapMesh.MLOrder(z, i), alpha));
+		mat = GLState.compose(mat, new MapMesh.MLOrder(z, i), alpha);
 		MeshBuf buf = MapMesh.Models.get(m, mat);
 		MeshBuf.Vec2Layer cc = buf.layer(AlphaTex.lclip);
 		for(int o = 0; o < v.length; o++) {

@@ -33,7 +33,6 @@ import haven.Resource.Tile;
 import haven.Surface.MeshVertex;
 
 public class GroundTile extends Tiler implements Tiler.Cons {
-    private static IDSet<GLState> tilemats = new IDSet<GLState>();
     private static final Material.Colors gcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
     public final Resource.Tileset set;
 
@@ -62,7 +61,7 @@ public class GroundTile extends Tiler implements Tiler.Cons {
 	    ret = GLState.compose(Light.deflight, gcol, gt.draw(), gt.clip(), new MapMesh.MLOrder(z));
 	else
 	    ret = GLState.compose(Light.deflight, gcol, gt.draw(), new MapMesh.MLOrder(z));
-	return(tilemats.intern(ret));
+	return(ret);
     }
 
     /* XXX: Some strange javac bug seems to make it resolve the
