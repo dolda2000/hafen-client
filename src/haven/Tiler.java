@@ -59,7 +59,7 @@ public abstract class Tiler {
 	}
     }
 
-    public static interface Cons {
+    public static interface MCons {
 	public void faces(MapMesh m, Coord lc, Coord gc, MPart desc);
     }
 
@@ -82,7 +82,7 @@ public abstract class Tiler {
 	}
     }
 
-    public void lay(MapMesh m, Coord lc, Coord gc, Cons cons) {
+    public void lay(MapMesh m, Coord lc, Coord gc, MCons cons) {
 	MapMesh.MapSurface s = m.data(m.gnd);
 	cons.faces(m, lc, gc, MPart.splitquad(s.fortilea(lc), s.split[s.ts.o(lc)]));
     }

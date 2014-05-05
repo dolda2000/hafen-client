@@ -33,7 +33,7 @@ import haven.MapMesh.Scan;
 import haven.Resource.Tile;
 import haven.Resource.Tileset;
 
-public class TerrainTile extends Tiler implements Tiler.Cons {
+public class TerrainTile extends Tiler implements Tiler.MCons {
     public final GLState base;
     public final SNoise3 noise;
     public final Var[] var;
@@ -365,8 +365,8 @@ public class TerrainTile extends Tiler implements Tiler.Cons {
 	}
     }
 
-    private Cons tcons(final int z, final Tile t) {
-	return(new Cons() {
+    private MCons tcons(final int z, final Tile t) {
+	return(new MCons() {
 		public void faces(MapMesh m, Coord lc, Coord gc, MPart d) {
 		    _faces(m, lc, z, t, d.v, d.tcx, d.tcy, d.f);
 		}

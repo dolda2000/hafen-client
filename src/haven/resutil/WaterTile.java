@@ -40,7 +40,7 @@ import java.awt.Color;
 public class WaterTile extends Tiler {
     public final int depth;
     private static final Material.Colors bcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
-    public final Tiler.Cons bottom;
+    public final Tiler.MCons bottom;
     
     public static class Bottom extends MapMesh.Hooks {
 	final MapMesh m;
@@ -262,7 +262,7 @@ public class WaterTile extends Tiler {
 								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
 									  add(mul(MiscLib.time.ref(), vec2(l(-0.035), l(-0.025))), vec2(l(0.5), l(0.5))))),
 							    "rgb")),
-						   abs(sub(haven.glsl.Cons.mod(MiscLib.time.ref(), l(2.0)), l(1.0)))),
+						   abs(sub(Cons.mod(MiscLib.time.ref(), l(2.0)), l(1.0)))),
 					       l(0.5 * 2)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
 				/*
 				return(mul(sub(add(pick(texture2D(snrm.ref(),
@@ -435,7 +435,7 @@ public class WaterTile extends Tiler {
 	public Tiler create(int id, Resource.Tileset set) {
 	    int a = 0;
 	    int depth = (Integer)set.ta[a++];
-	    Tiler.Cons bottom = new GroundTile(id, set);
+	    Tiler.MCons bottom = new GroundTile(id, set);
 	    while(a < set.ta.length) {
 		Object[] desc = (Object[])set.ta[a++];
 		String p = (String)desc[0];
@@ -443,14 +443,14 @@ public class WaterTile extends Tiler {
 		    Resource bres = Resource.load((String)desc[1], (Integer)desc[2]);
 		    Resource.Tileset ts = bres.layer(Resource.tileset);
 		    Tiler b = ts.tfac().create(id, ts);
-		    bottom = (Tiler.Cons)b;
+		    bottom = (Tiler.MCons)b;
 		}
 	    }
 	    return(new WaterTile(id, bottom, depth));
 	}
     }
 
-    public WaterTile(int id, Tiler.Cons bottom, int depth) {
+    public WaterTile(int id, Tiler.MCons bottom, int depth) {
 	super(id);
 	this.bottom = bottom;
 	this.depth = depth;

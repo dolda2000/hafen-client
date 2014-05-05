@@ -32,7 +32,7 @@ import haven.*;
 import haven.Resource.Tile;
 import haven.Surface.MeshVertex;
 
-public class GroundTile extends Tiler implements Tiler.Cons {
+public class GroundTile extends Tiler implements Tiler.MCons {
     private static final Material.Colors gcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
     public final Resource.Tileset set;
 
@@ -91,8 +91,8 @@ public class GroundTile extends Tiler implements Tiler.Cons {
 	lay(m, lc, gc, this);
     }
 
-    private Cons tcons(final int z, final Tile t) {
-	return(new Cons() {
+    private MCons tcons(final int z, final Tile t) {
+	return(new MCons() {
 		public void faces(MapMesh m, Coord lc, Coord gc, MPart d) {
 		    _faces(m, t, z, d.v, d.tcx, d.tcy, d.f);
 		}
