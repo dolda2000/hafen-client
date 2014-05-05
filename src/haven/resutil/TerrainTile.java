@@ -291,17 +291,17 @@ public class TerrainTile extends Tiler implements Tiler.Cons {
 	lay(m, lc, gc, this);
     }
 
-    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
+    public void faces(MapMesh m, Coord lc, Coord gc, MPart d) {
 	Blend b = m.data(blend);
-	Surface.MeshVertex[] mv = new Surface.MeshVertex[v.length];
+	Surface.MeshVertex[] mv = new Surface.MeshVertex[d.v.length];
 	for(int i = 0; i < var.length + 1; i++) {
 	    if(b.en[i][b.es.o(lc)]) {
-		for(int o = 0; o < v.length; o++)
-		    mv[o] = b.v(i, v[o], lc, tcx[o], tcy[o]);
+		for(int o = 0; o < d.v.length; o++)
+		    mv[o] = b.v(i, d.v[o], lc, d.tcx[o], d.tcy[o]);
 		GLState mat = (i == 0)?base:(var[i - 1].mat);
 		MeshBuf buf = MapMesh.Models.get(m, mat);
-		for(int fi = 0; fi < f.length; fi += 3)
-		    buf.new Face(mv[f[fi]], mv[f[fi + 1]], mv[f[fi + 2]]);
+		for(int fi = 0; fi < d.f.length; fi += 3)
+		    buf.new Face(mv[d.f[fi]], mv[d.f[fi + 1]], mv[d.f[fi + 2]]);
 	    }
 	}
     }
@@ -365,26 +365,22 @@ public class TerrainTile extends Tiler implements Tiler.Cons {
 	}
     }
 
-    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, final int z, int bmask, int cmask) {
+    private Cons tcons(final int z, final Tile t) {
+	return(new Cons() {
+		public void faces(MapMesh m, Coord lc, Coord gc, MPart d) {
+		    _faces(m, lc, z, t, d.v, d.tcx, d.tcy, d.f);
+		}
+	    });
+    }
+
+    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
 	if(transset == null)
 	    return;
 	if(m.map.gettile(gc) <= id)
 	    return;
-	if((transset.btrans != null) && (bmask > 0)) {
-	    final Tile t = transset.btrans[bmask - 1].pick(rnd);
-	    gt.lay(m, lc, gc, new Cons() {
-		    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
-			_faces(m, lc, z, t, v, tcx, tcy, f);
-		    }
-		});
-	}
-	if((transset.ctrans != null) && (cmask > 0)) {
-	    final Tile t = transset.ctrans[cmask - 1].pick(rnd);
-	    gt.lay(m, lc, gc, new Cons() {
-		    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
-			_faces(m, lc, z, t, v, tcx, tcy, f);
-		    }
-		});
-	}
+	if((transset.btrans != null) && (bmask > 0))
+	    gt.lay(m, lc, gc, tcons(z, transset.btrans[bmask - 1].pick(rnd)));
+	if((transset.ctrans != null) && (cmask > 0))
+	    gt.lay(m, lc, gc, tcons(z, transset.ctrans[cmask - 1].pick(rnd)));
     }
 }

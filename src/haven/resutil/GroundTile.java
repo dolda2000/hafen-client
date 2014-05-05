@@ -83,32 +83,28 @@ public class GroundTile extends Tiler implements Tiler.Cons {
 	    buf.new Face(mv[f[i]], mv[f[i + 1]], mv[f[i + 2]]);
     }
 
-    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
-	_faces(m, set.ground.pick(m.rnd(lc)), 0, v, tcx, tcy, f);
+    public void faces(MapMesh m, Coord lc, Coord gc, MPart d) {
+	_faces(m, set.ground.pick(m.rnd(lc)), 0, d.v, d.tcx, d.tcy, d.f);
     }
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	lay(m, lc, gc, this);
     }
 
-    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, final int z, int bmask, int cmask) {
+    private Cons tcons(final int z, final Tile t) {
+	return(new Cons() {
+		public void faces(MapMesh m, Coord lc, Coord gc, MPart d) {
+		    _faces(m, t, z, d.v, d.tcx, d.tcy, d.f);
+		}
+	    });
+    }
+
+    public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
 	if(m.map.gettile(gc) <= id)
 	    return;
-	if((set.btrans != null) && (bmask > 0)) {
-	    final Tile t = set.btrans[bmask - 1].pick(rnd);
-	    gt.lay(m, lc, gc, new Cons() {
-		    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
-			_faces(m, t, z, v, tcx, tcy, f);
-		    }
-		});
-	}
-	if((set.ctrans != null) && (cmask > 0)) {
-	    final Tile t = set.ctrans[cmask - 1].pick(rnd);
-	    gt.lay(m, lc, gc, new Cons() {
-		    public void faces(MapMesh m, Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
-			_faces(m, t, z, v, tcx, tcy, f);
-		    }
-		});
-	}
+	if((set.btrans != null) && (bmask > 0))
+	    gt.lay(m, lc, gc, tcons(z, set.btrans[bmask - 1].pick(rnd)));
+	if((set.ctrans != null) && (cmask > 0))
+	    gt.lay(m, lc, gc, tcons(z, set.ctrans[cmask - 1].pick(rnd)));
     }
 }

@@ -488,7 +488,7 @@ public class WaterTile extends Tiler {
 	    surf.buf.new Face(v[0], v[1], v[3]);
 	    surf.buf.new Face(v[1], v[2], v[3]);
 	}
-	bottom.faces(m, lc, gc, ms.fortilea(lc), ctcx, ctcy, ms.split[ms.ts.o(lc)]?rdiag:ldiag);
+	bottom.faces(m, lc, gc, MPart.splitquad(b.fortilea(lc), ms.split[ms.ts.o(lc)]));
     }
 
     public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
