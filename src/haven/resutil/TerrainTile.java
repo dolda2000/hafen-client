@@ -55,11 +55,9 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
 	final Scan vs, es;
 	final float[][] bv;
 	final boolean[][] en;
-	final Surface.MeshVertex[][] vm;
 
 	private Blend(MapMesh m) {
 	    this.m = m;
-	    this.vm = new Surface.MeshVertex[var.length + 1][m.data(MapMesh.gnd).vl.length];
 	    vs = new Scan(Coord.z.sub(sr, sr), m.sz.add(sr * 2 + 1, sr * 2 + 1));
 	    float[][] buf1 = new float[var.length + 1][vs.l];
 	    float[][] lwc = new float[var.length + 1][vs.l];
@@ -170,33 +168,32 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
 	    }
 	}
 
-	private float bv(int l, Coord lc, float tcx, float tcy) {
-	    float icx = 1 - tcx, icy = 1 - tcy;
-	    return((((bv[l][vs.o(lc.x + 0, lc.y + 0)] * icx) + (bv[l][vs.o(lc.x + 1, lc.y + 0)] * tcx)) * icy) +
-		   (((bv[l][vs.o(lc.x + 0, lc.y + 1)] * icx) + (bv[l][vs.o(lc.x + 1, lc.y + 1)] * tcx)) * tcy));
-	}
+	final VertFactory[] lvfac = new VertFactory[var.length + 1]; {
+	    for(int i = 0; i < var.length + 1; i++) {
+		final int l = i;
+		lvfac[i] = new VertFactory() {
+			final float fac = 25f / 4f;
 
-	public Surface.MeshVertex mkvert(MeshBuf buf, int l, Surface.Vertex in, Coord lc, float tcx, float tcy) {
-	    Surface.MeshVertex ret = new Surface.MeshVertex(buf, in);
-	    Coord3f tan = Coord3f.yu.cmul(ret.nrm).norm();
-	    Coord3f bit = ret.nrm.cmul(Coord3f.xu).norm();
-	    final float fac = 25f / 4f;
-	    Coord3f tc = new Coord3f((lc.x + tcx) / fac, (lc.y + tcy) / fac, 0);
-	    int alpha = (int)(bv(l, lc, tcx, tcy) * 255);
-	    buf.layer(BumpMap.ltan).set(ret, tan);
-	    buf.layer(BumpMap.lbit).set(ret, bit);
-	    buf.layer(MeshBuf.tex).set(ret, tc);
-	    buf.layer(MeshBuf.col).set(ret, new Color(255, 255, 255, alpha));
-	    return(ret);
-	}
+			float bv(Coord lc, float tcx, float tcy) {
+			    float icx = 1 - tcx, icy = 1 - tcy;
+			    return((((bv[l][vs.o(lc.x + 0, lc.y + 0)] * icx) + (bv[l][vs.o(lc.x + 1, lc.y + 0)] * tcx)) * icy) +
+				   (((bv[l][vs.o(lc.x + 0, lc.y + 1)] * icx) + (bv[l][vs.o(lc.x + 1, lc.y + 1)] * tcx)) * tcy));
+			}
 
-	public Surface.MeshVertex v(int l, Surface.Vertex in, Coord lc, float tcx, float tcy) {
-	    Surface.MeshVertex ret = vm[l][in.vi];
-	    if(ret == null) {
-		MeshBuf buf = MapMesh.Model.get(m, (l == 0)?base:(var[l - 1].mat));
-		ret = vm[l][in.vi] = mkvert(buf, l, in, lc, tcx, tcy);
+			public Surface.MeshVertex make(MeshBuf buf, MPart d, int i) {
+			    Surface.MeshVertex ret = new Surface.MeshVertex(buf, d.v[i]);
+			    Coord3f tan = Coord3f.yu.cmul(ret.nrm).norm();
+			    Coord3f bit = ret.nrm.cmul(Coord3f.xu).norm();
+			    Coord3f tc = new Coord3f((d.lc.x + d.tcx[i]) / fac, (d.lc.y + d.tcy[i]) / fac, 0);
+			    int alpha = (int)(bv(d.lc, d.tcx[i], d.tcy[i]) * 255);
+			    buf.layer(BumpMap.ltan).set(ret, tan);
+			    buf.layer(BumpMap.lbit).set(ret, bit);
+			    buf.layer(MeshBuf.tex).set(ret, tc);
+			    buf.layer(MeshBuf.col).set(ret, new Color(255, 255, 255, alpha));
+			    return(ret);
+			}
+		    };
 	    }
-	    return(ret);
 	}
     }
     public final MapMesh.DataID<Blend> blend = new MapMesh.DataID<Blend>() {
@@ -296,10 +293,10 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
 	Surface.MeshVertex[] mv = new Surface.MeshVertex[d.v.length];
 	for(int i = 0; i < var.length + 1; i++) {
 	    if(b.en[i][b.es.o(d.lc)]) {
+		GLState mat = d.mcomb((i == 0)?base:(var[i - 1].mat));
+		SModel buf = SModel.get(m, mat, b.lvfac[i]);
 		for(int o = 0; o < d.v.length; o++)
-		    mv[o] = b.v(i, d.v[o], d.lc, d.tcx[o], d.tcy[o]);
-		GLState mat = (i == 0)?base:(var[i - 1].mat);
-		MeshBuf buf = MapMesh.Model.get(m, mat);
+		    mv[o] = buf.get(d, o);
 		for(int fi = 0; fi < d.f.length; fi += 3)
 		    buf.new Face(mv[d.f[fi]], mv[d.f[fi + 1]], mv[d.f[fi + 2]]);
 	    }
@@ -332,7 +329,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
     /* XXX: Some strange javac bug seems to make it resolve the
      * trans() references to the wrong signature, thus the name
      * distinction. */
-    public void _faces(MapMesh m, Coord lc, int z, Tile trans, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
+    public void _faces(MapMesh m, Coord lc, int z, Tile trans, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f, MPart d) {
 	Tex ttex = trans.tex();
 	float tl = ttex.tcx(0), tt = ttex.tcy(0), tw = ttex.tcx(ttex.sz().x) - tl, th = ttex.tcy(ttex.sz().y) - tt;
 	TexGL gt;
@@ -356,7 +353,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
 		MeshBuf buf = MapMesh.Model.get(m, mat);
 		MeshBuf.Vec2Layer cc = buf.layer(AlphaTex.lclip);
 		for(int o = 0; o < v.length; o++) {
-		    mv[o] = b.mkvert(buf, i, v[o], lc, tcx[o], tcy[o]);
+		    mv[o] = b.lvfac[i].make(buf, d, o);
 		    cc.set(mv[o], new Coord3f(tl + (tw * tcx[o]), tt + (th * tcy[o]), 0));
 		}
 		for(int fi = 0; fi < f.length; fi += 3)
@@ -368,7 +365,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
     private MCons tcons(final int z, final Tile t) {
 	return(new MCons() {
 		public void faces(MapMesh m, MPart d) {
-		    _faces(m, d.lc, z, t, d.v, d.tcx, d.tcy, d.f);
+		    _faces(m, d.lc, z, t, d.v, d.tcx, d.tcy, d.f, d);
 		}
 	    });
     }

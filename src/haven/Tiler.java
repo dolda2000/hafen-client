@@ -66,6 +66,68 @@ public abstract class Tiler {
 	public void faces(MapMesh m, MPart desc);
     }
 
+    public static interface VertFactory {
+	public MeshVertex make(MeshBuf buf, MPart d, int i);
+	public static final VertFactory id = new VertFactory() {
+		public MeshVertex make(MeshBuf buf, MPart d, int i) {
+		    return(new MeshVertex(buf, d.v[i]));
+		}
+	    };
+    }
+
+    public static class SModel extends MapMesh.Model {
+	private final VertFactory f;
+	private final MeshVertex[] map;
+
+	public SModel(MapMesh m, GLState mat, VertFactory f) {
+	    super(m, mat);
+	    this.f = f;
+	    this.map = new MeshVertex[m.data(MapMesh.gnd).vl.length];
+	}
+
+	public MeshVertex get(MPart d, int i) {
+	    MeshVertex ret;
+	    if((ret = map[d.v[i].vi]) == null)
+		ret = map[d.v[i].vi] = f.make(this, d, i);
+	    return(ret);
+	}
+
+	public MeshVertex[] get(MPart d) {
+	    MeshVertex[] ret = new MeshVertex[d.v.length];
+	    for(int i = 0; i < d.v.length; i++)
+		ret[i] = get(d, i);
+	    return(ret);
+	}
+
+	public static class Key implements MapMesh.DataID<SModel> {
+	    public final GLState mat;
+	    public final VertFactory f;
+	    private final int hash;
+
+	    public Key(GLState mat, VertFactory f) {
+		this.mat = mat;
+		this.f = f;
+		this.hash = (mat.hashCode() * 31) + f.hashCode();
+	    }
+
+	    public int hashCode() {
+		return(hash);
+	    }
+
+	    public boolean equals(Object x) {
+		return((x instanceof Key) && mat.equals(((Key)x).mat) && f.equals(((Key)x).f));
+	    }
+
+	    public SModel make(MapMesh m) {
+		return(new SModel(m, mat, f));
+	    }
+	}
+
+	public static SModel get(MapMesh m, GLState mat, VertFactory f) {
+	    return(m.data(new Key(mat, f)));
+	}
+    }
+
     public void model(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	MapMesh.MapSurface s = m.data(m.gnd);
 	if(s.split[s.ts.o(lc)]) {

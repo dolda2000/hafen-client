@@ -405,6 +405,7 @@ public class WaterTile extends Tiler {
     }
     public static final BottomFog waterfog = new BottomFog();
     private static final GLState boff = new States.DepthOffset(4, 4);
+    private static final GLState botmat = GLState.compose(waterfog, boff);
 
     public static final GLState obfog = new GLState.StandAlone(GLState.Slot.Type.DRAW) {
 	final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
@@ -478,17 +479,15 @@ public class WaterTile extends Tiler {
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	MapMesh.MapSurface ms = m.data(MapMesh.gnd);
-	SurfVert surf = m.data(SurfVert.id);
+	SModel smod = SModel.get(m, surfmatc, VertFactory.id);
+	MPart d = MPart.splitquad(lc, gc, ms.fortilea(lc), ms.split[ms.ts.o(lc)]);
+	MeshVertex[] v = smod.get(d);
+	smod.new Face(v[d.f[0]], v[d.f[1]], v[d.f[2]]);
+	smod.new Face(v[d.f[3]], v[d.f[4]], v[d.f[5]]);
 	Bottom b = m.data(Bottom.id);
-	MeshVertex[] v = surf.fortile(lc);
-	if(ms.split[ms.ts.o(lc)]) {
-	    surf.buf.new Face(v[0], v[1], v[2]);
-	    surf.buf.new Face(v[0], v[2], v[3]);
-	} else {
-	    surf.buf.new Face(v[0], v[1], v[3]);
-	    surf.buf.new Face(v[1], v[2], v[3]);
-	}
-	bottom.faces(m, MPart.splitquad(lc, gc, b.fortilea(lc), ms.split[ms.ts.o(lc)]));
+	MPart bd = MPart.splitquad(lc, gc, b.fortilea(lc), ms.split[ms.ts.o(lc)]);
+	bd.mat = botmat;
+	bottom.faces(m, bd);
     }
 
     public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
