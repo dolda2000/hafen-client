@@ -193,7 +193,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
 	public Surface.MeshVertex v(int l, Surface.Vertex in, Coord lc, float tcx, float tcy) {
 	    Surface.MeshVertex ret = vm[l][in.vi];
 	    if(ret == null) {
-		MeshBuf buf = MapMesh.Models.get(m, (l == 0)?base:(var[l - 1].mat));
+		MeshBuf buf = MapMesh.Model.get(m, (l == 0)?base:(var[l - 1].mat));
 		ret = vm[l][in.vi] = mkvert(buf, l, in, lc, tcx, tcy);
 	    }
 	    return(ret);
@@ -243,9 +243,9 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
 	super(id);
 	this.noise = new SNoise3(nseed);
 	int z = 0;
-	this.base = GLState.compose(base, new MapMesh.MLOrder(z++), States.vertexcolor);
+	this.base = GLState.compose(base, new MapMesh.MLOrder(0, z++), States.vertexcolor);
 	for(Var v : this.var = var)
-	    v.mat = GLState.compose(v.mat, new MapMesh.MLOrder(z++), States.vertexcolor);
+	    v.mat = GLState.compose(v.mat, new MapMesh.MLOrder(0, z++), States.vertexcolor);
 	this.transset = transset;
     }
 
@@ -291,15 +291,15 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
 	lay(m, lc, gc, this);
     }
 
-    public void faces(MapMesh m, Coord lc, Coord gc, MPart d) {
+    public void faces(MapMesh m, MPart d) {
 	Blend b = m.data(blend);
 	Surface.MeshVertex[] mv = new Surface.MeshVertex[d.v.length];
 	for(int i = 0; i < var.length + 1; i++) {
-	    if(b.en[i][b.es.o(lc)]) {
+	    if(b.en[i][b.es.o(d.lc)]) {
 		for(int o = 0; o < d.v.length; o++)
-		    mv[o] = b.v(i, d.v[o], lc, d.tcx[o], d.tcy[o]);
+		    mv[o] = b.v(i, d.v[o], d.lc, d.tcx[o], d.tcy[o]);
 		GLState mat = (i == 0)?base:(var[i - 1].mat);
-		MeshBuf buf = MapMesh.Models.get(m, mat);
+		MeshBuf buf = MapMesh.Model.get(m, mat);
 		for(int fi = 0; fi < d.f.length; fi += 3)
 		    buf.new Face(mv[d.f[fi]], mv[d.f[fi + 1]], mv[d.f[fi + 2]]);
 	    }
@@ -353,7 +353,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
 	    if(b.en[i][b.es.o(lc)]) {
 		GLState mat = (i == 0)?base:(var[i - 1].mat);
 		mat = GLState.compose(mat, new MapMesh.MLOrder(z, i), alpha);
-		MeshBuf buf = MapMesh.Models.get(m, mat);
+		MeshBuf buf = MapMesh.Model.get(m, mat);
 		MeshBuf.Vec2Layer cc = buf.layer(AlphaTex.lclip);
 		for(int o = 0; o < v.length; o++) {
 		    mv[o] = b.mkvert(buf, i, v[o], lc, tcx[o], tcy[o]);
@@ -367,8 +367,8 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
 
     private MCons tcons(final int z, final Tile t) {
 	return(new MCons() {
-		public void faces(MapMesh m, Coord lc, Coord gc, MPart d) {
-		    _faces(m, lc, z, t, d.v, d.tcx, d.tcy, d.f);
+		public void faces(MapMesh m, MPart d) {
+		    _faces(m, d.lc, z, t, d.v, d.tcx, d.tcy, d.f);
 		}
 	    });
     }

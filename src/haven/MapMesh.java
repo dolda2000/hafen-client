@@ -32,6 +32,8 @@ import javax.media.opengl.*;
 import java.awt.Color;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import haven.Surface.Vertex;
+import haven.Surface.MeshVertex;
 
 public class MapMesh implements Rendered, Disposable {
     public final Coord ul, sz;
@@ -470,6 +472,7 @@ public class MapMesh implements Rendered, Disposable {
 	return(data(gndid));
     }
     
+    /*
     public static class Models extends Hooks {
 	private final MapMesh m;
 	private final Map<GLState, MeshBuf> models = new HashMap<GLState, MeshBuf>();
@@ -493,6 +496,53 @@ public class MapMesh implements Rendered, Disposable {
 		m.extras.add(mod.getKey().apply(mesh));
 		m.dparts.add(mesh);
 	    }
+	}
+    }
+    */
+
+    public static class Model extends MeshBuf implements ConsHooks {
+	public final MapMesh m;
+	public final GLState mat;
+
+	public Model(MapMesh m, GLState mat) {
+	    this.m = m;
+	    this.mat = mat;
+	}
+
+	public void sfin() {}
+	public void calcnrm() {}
+	public boolean clean() {return(false);}
+
+	public void postcalcnrm(Random rnd) {
+	    FastMesh mesh = mkmesh();
+	    m.extras.add(mat.apply(mesh));
+	    m.dparts.add(mesh);
+	}
+
+	public static class MatKey implements DataID<Model> {
+	    public final GLState mat;
+	    private final int hash;
+
+	    public MatKey(GLState mat) {
+		this.mat = mat;
+		this.hash = mat.hashCode() * 37;
+	    }
+
+	    public int hashCode() {
+		return(hash);
+	    }
+
+	    public boolean equals(Object x) {
+		return((x instanceof MatKey) && mat.equals(((MatKey)x).mat));
+	    }
+
+	    public Model make(MapMesh m) {
+		return(new Model(m, mat));
+	    }
+	}
+
+	public static Model get(MapMesh m, GLState mat) {
+	    return(m.data(new MatKey(mat)));
 	}
     }
 

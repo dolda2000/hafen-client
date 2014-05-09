@@ -465,7 +465,7 @@ public class WaterTile extends Tiler {
 	final MapMesh.MapSurface ms;
 
 	public SurfVert(MapMesh m) {
-	    m.data(MapMesh.gnd).super(MapMesh.Models.get(m, surfmatc));
+	    m.data(MapMesh.gnd).super(MapMesh.Model.get(m, surfmatc));
 	    this.ms = m.data(MapMesh.gnd);
 	}
 
@@ -488,7 +488,7 @@ public class WaterTile extends Tiler {
 	    surf.buf.new Face(v[0], v[1], v[3]);
 	    surf.buf.new Face(v[1], v[2], v[3]);
 	}
-	bottom.faces(m, lc, gc, MPart.splitquad(b.fortilea(lc), ms.split[ms.ts.o(lc)]));
+	bottom.faces(m, MPart.splitquad(lc, gc, b.fortilea(lc), ms.split[ms.ts.o(lc)]));
     }
 
     public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {

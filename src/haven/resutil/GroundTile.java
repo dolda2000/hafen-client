@@ -71,7 +71,7 @@ public class GroundTile extends Tiler implements Tiler.MCons {
 	Tex tex = t.tex();
 	float tl = tex.tcx(0), tt = tex.tcy(0), tw = tex.tcx(tex.sz().x) - tl, th = tex.tcy(tex.sz().y) - tt;
 	GLState st = stfor(tex, z, t.t != 'g');
-	MeshBuf buf = MapMesh.Models.get(m, st);
+	MeshBuf buf = MapMesh.Model.get(m, st);
 
 	MeshBuf.Tex btex = buf.layer(MeshBuf.tex);
 	MeshVertex[] mv = new MeshVertex[v.length];
@@ -83,8 +83,8 @@ public class GroundTile extends Tiler implements Tiler.MCons {
 	    buf.new Face(mv[f[i]], mv[f[i + 1]], mv[f[i + 2]]);
     }
 
-    public void faces(MapMesh m, Coord lc, Coord gc, MPart d) {
-	_faces(m, set.ground.pick(m.rnd(lc)), 0, d.v, d.tcx, d.tcy, d.f);
+    public void faces(MapMesh m, MPart d) {
+	_faces(m, set.ground.pick(m.rnd(d.lc)), 0, d.v, d.tcx, d.tcy, d.f);
     }
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
@@ -93,7 +93,7 @@ public class GroundTile extends Tiler implements Tiler.MCons {
 
     private MCons tcons(final int z, final Tile t) {
 	return(new MCons() {
-		public void faces(MapMesh m, Coord lc, Coord gc, MPart d) {
+		public void faces(MapMesh m, MPart d) {
 		    _faces(m, t, z, d.v, d.tcx, d.tcy, d.f);
 		}
 	    });

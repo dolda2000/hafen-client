@@ -30,6 +30,8 @@ import java.util.*;
 import java.lang.reflect.*;
 import java.lang.annotation.*;
 import haven.Resource.Tile;
+import haven.Surface.Vertex;
+import haven.Surface.MeshVertex;
 
 public abstract class Tiler {
     public final int id;
@@ -39,13 +41,14 @@ public abstract class Tiler {
     }
     
     public static class MPart {
+	public Coord lc, gc;
 	public Surface.Vertex[] v;
 	public float[] tcx, tcy;
 	public int[] f;
 	public GLState mat = null;
 
-	public MPart(Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
-	    this.v = v; this.tcx = tcx; this.tcy = tcy; this.f = f;
+	public MPart(Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
+	    this.lc = lc; this.gc = gc; this.v = v; this.tcx = tcx; this.tcy = tcy; this.f = f;
 	}
 
 	public GLState mcomb(GLState mat) {
@@ -54,13 +57,13 @@ public abstract class Tiler {
 
 	public static final float[] ctcx = {0, 0, 1, 1}, ctcy = {0, 1, 1, 0};
 	public static final int[] rdiag = {0, 1, 2, 0, 2, 3}, ldiag = {0, 1, 3, 1, 2, 3};
-	public static MPart splitquad(Surface.Vertex[] corners, boolean diag) {
-	    return(new MPart(corners, ctcx, ctcy, diag?rdiag:ldiag));
+	public static MPart splitquad(Coord lc, Coord gc, Surface.Vertex[] corners, boolean diag) {
+	    return(new MPart(lc, gc, corners, ctcx, ctcy, diag?rdiag:ldiag));
 	}
     }
 
     public static interface MCons {
-	public void faces(MapMesh m, Coord lc, Coord gc, MPart desc);
+	public void faces(MapMesh m, MPart desc);
     }
 
     public void model(MapMesh m, Random rnd, Coord lc, Coord gc) {
@@ -84,7 +87,7 @@ public abstract class Tiler {
 
     public void lay(MapMesh m, Coord lc, Coord gc, MCons cons) {
 	MapMesh.MapSurface s = m.data(m.gnd);
-	cons.faces(m, lc, gc, MPart.splitquad(s.fortilea(lc), s.split[s.ts.o(lc)]));
+	cons.faces(m, MPart.splitquad(lc, gc, s.fortilea(lc), s.split[s.ts.o(lc)]));
     }
 
     public abstract void lay(MapMesh m, Random rnd, Coord lc, Coord gc);
