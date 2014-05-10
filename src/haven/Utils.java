@@ -920,6 +920,18 @@ public class Utils {
 	return(dst);
     }
     
+    public static float[] extend(float[] src, int nl) {
+	float[] dst = new float[nl];
+	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
+	return(dst);
+    }
+    
+    public static short[] extend(short[] src, int nl) {
+	short[] dst = new short[nl];
+	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
+	return(dst);
+    }
+    
     public static <T> T el(Iterable<T> c) {
 	Iterator<T> i = c.iterator();
 	if(!i.hasNext()) return(null);
