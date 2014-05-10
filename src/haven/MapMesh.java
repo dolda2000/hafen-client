@@ -769,57 +769,56 @@ public class MapMesh implements Rendered, Disposable {
     }
     
     private void consflat() {
-	Surface g = gnd();
-	FloatBuffer pos = FloatBuffer.wrap(new float[sz.x * sz.y * 12]);
-	FloatBuffer col1 = FloatBuffer.wrap(new float[sz.x * sz.y * 16]);
-	FloatBuffer col2 = FloatBuffer.wrap(new float[sz.x * sz.y * 16]);
-	ShortBuffer ind = ShortBuffer.wrap(new short[sz.x * sz.y * 6]);
-	short i = 0;
+	class Buf implements Tiler.MCons {
+	    int vn = 0, in = 0, vl = sz.x * sz.y * 4;
+	    float[] pos = new float[vl * 3];
+	    float[] col1 = new float[vl * 4];
+	    float[] col2 = new float[vl * 4];
+	    short[] ind = new short[sz.x * sz.y * 6];
+
+	    public void faces(MapMesh m, Tiler.MPart d) {
+		if(vn + d.v.length > vl) {
+		    vl *= 2;
+		    pos = Utils.extend(pos, vl * 12);
+		    col1 = Utils.extend(col1, vl * 16);
+		    col2 = Utils.extend(col2, vl * 16);
+		}
+		float cx = (d.lc.x + 1) / 256.0f, cy = (d.lc.y + 1) / 256.0f;
+		for(int i = 0; i < d.v.length; i++) {
+		    int pb = (vn + i) * 3, cb = (vn + i) * 4;
+		    pos[pb + 0] = d.v[i].x; pos[pb + 1] = d.v[i].y; pos[pb + 2] = d.v[i].z;
+		    col1[cb + 0] = cx; col1[cb + 1] = cy; col1[cb + 2] = 0; col1[cb + 3] = 1;
+		    col2[cb + 0] = d.tcx[i]; col2[cb + 1] = d.tcy[i]; col2[cb + 2] = 0; col2[cb + 3] = 1;
+		}
+		if(in + d.f.length > ind.length)
+		    ind = Utils.extend(ind, ind.length * 2);
+		for(int fi : d.f)
+		    ind[in++] = (short)(vn + fi);
+		vn += d.v.length;
+	    }
+	}
+	Buf buf = new Buf();
 	Coord c = new Coord();
 	for(c.y = 0; c.y < sz.y; c.y++) {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
-		SPoint p;
-		p = g.spoint(c);
-		float z0 = p.pos.z;
-		pos.put(p.pos.x).put(p.pos.y).put(z0);
-		col1.put((c.x + 1) / 256.0f).put((c.y + 1) / 256.0f).put(0).put(1);
-		col2.put(0).put(0).put(0).put(1);
-
-		p = g.spoint(c.add(0, 1));
-		float z1 = p.pos.z;
-		pos.put(p.pos.x).put(p.pos.y).put(z1);
-		col1.put((c.x + 1) / 256.0f).put((c.y + 1) / 256.0f).put(0).put(1);
-		col2.put(0).put(1).put(0).put(1);
-
-		p = g.spoint(c.add(1, 1));
-		float z2 = p.pos.z;
-		pos.put(p.pos.x).put(p.pos.y).put(z2);
-		col1.put((c.x + 1) / 256.0f).put((c.y + 1) / 256.0f).put(0).put(1);
-		col2.put(1).put(1).put(0).put(1);
-
-		p = g.spoint(c.add(1, 0));
-		float z3 = p.pos.z;
-		pos.put(p.pos.x).put(p.pos.y).put(z3);
-		col1.put((c.x + 1) / 256.0f).put((c.y + 1) / 256.0f).put(0).put(1);
-		col2.put(1).put(0).put(0).put(1);
-
-		if(Math.abs(z0 - z2) > Math.abs(z1 - z3)) {
-		    ind.put(i).put((short)(i + 1)).put((short)(i + 2));
-		    ind.put(i).put((short)(i + 2)).put((short)(i + 3));
-		} else {
-		    ind.put(i).put((short)(i + 1)).put((short)(i + 3));
-		    ind.put((short)(i + 1)).put((short)(i + 2)).put((short)(i + 3));
-		}
-		i += 4;
+		Coord gc = c.add(ul);
+		map.tiler(map.gettile(gc)).lay(this, c, gc, buf);
 	    }
 	}
-	VertexBuf.VertexArray posa = new VertexBuf.VertexArray(pos);
-	VertexBuf.ColorArray cola1 = new VertexBuf.ColorArray(col1);
-	VertexBuf.ColorArray cola2 = new VertexBuf.ColorArray(col2);
+	float[] pos = buf.pos, col1 = buf.col1, col2 = buf.col2;
+	short[] ind = buf.ind;
+	if(pos.length != buf.vn * 3) pos = Utils.extend(pos, buf.vn * 3);
+	if(col1.length != buf.vn * 4) col1 = Utils.extend(col1, buf.vn * 4);
+	if(col2.length != buf.vn * 4) col2 = Utils.extend(col2, buf.vn * 4);
+	if(ind.length != buf.in) ind = Utils.extend(ind, buf.in);
+	VertexBuf.VertexArray posa = new VertexBuf.VertexArray(FloatBuffer.wrap(pos));
+	VertexBuf.ColorArray cola1 = new VertexBuf.ColorArray(FloatBuffer.wrap(col1));
+	VertexBuf.ColorArray cola2 = new VertexBuf.ColorArray(FloatBuffer.wrap(col2));
+	ShortBuffer indb = ShortBuffer.wrap(ind);
 	flats = new FastMesh[] {
-	    new FastMesh(new VertexBuf(posa), ind),
-	    new FastMesh(new VertexBuf(posa, cola1), ind),
-	    new FastMesh(new VertexBuf(posa, cola2), ind),
+	    new FastMesh(new VertexBuf(posa), indb),
+	    new FastMesh(new VertexBuf(posa, cola1), indb),
+	    new FastMesh(new VertexBuf(posa, cola2), indb),
 	};
     }
 
