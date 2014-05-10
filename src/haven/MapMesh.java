@@ -686,36 +686,52 @@ public class MapMesh implements Rendered, Disposable {
     
     public static final Order olorder = new Order.Default(1002);
     public Rendered[] makeols() {
-	Surface surf = new Surface();
-	surf.calcnrm();
-	MeshBuf buf = new MeshBuf();
-	MeshBuf.Vertex[][] v = new MeshBuf.Vertex[sz.x + 1][sz.y + 1];
-	Coord t = new Coord();
-	for(t.y = 0; t.y <= sz.y; t.y++) {
-	    for(t.x = 0; t.x <= sz.x; t.x++) {
-		SPoint p = surf.spoint(t);
-		v[t.x][t.y] = buf.new Vertex(p.pos, p.nrm);
+	final MeshBuf buf = new MeshBuf();
+	final MapSurface ms = data(gnd);
+	final MeshBuf.Vertex[] vl = new MeshBuf.Vertex[ms.vl.length];
+	final haven.Surface.Normals sn = ms.data(haven.Surface.nrm);
+	class Buf implements Tiler.MCons {
+	    int[] fl = new int[16];
+	    int fn = 0;
+
+	    public void faces(MapMesh m, Tiler.MPart d) {
+		for(Vertex v : d.v) {
+		    if(vl[v.vi] == null)
+			vl[v.vi] = buf.new Vertex(v, sn.get(v));
+		}
+		while(fn + d.f.length > fl.length)
+		    fl = Utils.extend(fl, fl.length * 2);
+		for(int fi : d.f)
+		    fl[fn++] = d.v[fi].vi;
 	    }
 	}
+	Coord t = new Coord();
 	int[][] ol = new int[sz.x][sz.y];
 	for(t.y = 0; t.y < sz.y; t.y++) {
 	    for(t.x = 0; t.x < sz.x; t.x++) {
 		ol[t.x][t.y] = map.getol(ul.add(t));
 	    }
 	}
-	Rendered[] ret = new Rendered[32];
-	for(int i = 0; i < 32; i++) {
-	    boolean h = false;
-	    buf.clearfaces();
+	Buf[] bufs = new Buf[32];
+	for(int i = 0; i < bufs.length; i++) {
+	    bufs[i] = new Buf();
 	    for(t.y = 0; t.y < sz.y; t.y++) {
 		for(t.x = 0; t.x < sz.x; t.x++) {
 		    if((ol[t.x][t.y] & (1 << i)) != 0) {
-			h = true;
-			splitquad(buf, v[t.x][t.y], v[t.x][t.y + 1], v[t.x + 1][t.y + 1], v[t.x + 1][t.y]);
+			Coord gc = t.add(ul);
+			map.tiler(map.gettile(gc)).lay(this, t, gc, bufs[i]);
 		    }
 		}
 	    }
-	    if(h) {
+	}
+	Rendered[] ret = new Rendered[32];
+	for(int i = 0; i < bufs.length; i++) {
+	    if(bufs[i].fn > 0) {
+		int[] fl = bufs[i].fl;
+		int fn = bufs[i].fn;
+		buf.clearfaces();
+		for(int o = 0; o < fn; o += 3)
+		    buf.new Face(vl[fl[o]], vl[fl[o + 1]], vl[fl[o + 2]]);
 		final FastMesh mesh = buf.mkmesh();
 		class OL implements Rendered, Disposable {
 		    public void draw(GOut g) {
