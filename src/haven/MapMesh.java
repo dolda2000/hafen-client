@@ -609,7 +609,7 @@ public class MapMesh implements Rendered, Disposable {
 	public final Coord cc;
 	public final FastMesh mesh;
 	
-	public GroundMod(MCache map, DataID<? extends Surface> surf, Tex tex, Coord cc, Coord ul, Coord br) {
+	public GroundMod(MCache map, Tex tex, final Coord cc, final Coord ul, final Coord br) {
 	    this.mat = new Material(tex);
 	    this.cc = cc;
 	    if(tex instanceof TexGL) {
@@ -619,38 +619,51 @@ public class MapMesh implements Rendered, Disposable {
 		    gt.dispose();
 		}
 	    }
-	    if(surf == null)
-		surf = gndid;
-	    MeshBuf buf = new MeshBuf();
-	    MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
+	    final MeshBuf buf = new MeshBuf();
+	    final float cz = map.getcz(cc);
+	    Tiler.MCons cons = new Tiler.MCons() {
+		    final MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
+		    final Map<Vertex, MeshVertex> cv = new HashMap<Vertex, MeshVertex>();
+
+		    public void faces(MapMesh m, Tiler.MPart d) {
+			MeshVertex[] mv = new MeshVertex[d.v.length];
+			for(int i = 0; i < d.v.length; i++) {
+			    if((mv[i] = cv.get(d.v[i])) == null) {
+				cv.put(d.v[i], mv[i] = new MeshVertex(buf, d.v[i]));
+				mv[i].pos = mv[i].pos.add((m.ul.x * tilesz.x) - cc.x, cc.y - (m.ul.y * tilesz.y), -cz);
+				Coord3f texc = new Coord3f((((m.ul.x + d.lc.x + d.tcx[i]) * tilesz.x) - ul.x) / (float)(br.x - ul.x),
+							   (((m.ul.y + d.lc.y + d.tcy[i]) * tilesz.y) - ul.y) / (float)(br.y - ul.y),
+							   0);
+				ta.set(mv[i], texc);
+			    }
+			}
+			for(int i = 0; i < d.f.length; i += 3)
+			    buf.new Face(mv[d.f[i]], mv[d.f[i + 1]], mv[d.f[i + 2]]);
+		    }
+		};
 	    Coord ult = ul.div(tilesz);
-	    Coord brt = br.sub(1, 1).div(tilesz).add(1, 1);
+	    Coord brt = br.div(tilesz);
 	    Coord t = new Coord();
-	    float cz = map.getcz(cc);
-	    MeshBuf.Vertex[][] vm = new MeshBuf.Vertex[brt.x - ult.x + 1][brt.y - ult.y + 1];
 	    for(t.y = ult.y; t.y <= brt.y; t.y++) {
 		for(t.x = ult.x; t.x <= brt.x; t.x++) {
 		    MapMesh cut = map.getcut(t.div(MCache.cutsz));
-		    SPoint p = cut.data(surf).spoint(t.mod(MCache.cutsz));
-		    Coord3f texc = new Coord3f((float)((t.x * tilesz.x) - ul.x) / (float)(br.x - ul.x),
-					       (float)((t.y * tilesz.y) - ul.y) / (float)(br.y - ul.y),
-					       0);
-		    Coord3f pos = p.pos.add((cut.ul.x * tilesz.x) - cc.x, -((cut.ul.y * tilesz.y) - cc.y), -cz);
-		    MeshBuf.Vertex v = vm[t.x - ult.x][t.y - ult.y] = buf.new Vertex(pos, p.nrm);
-		    ta.set(v, texc);
-		}
-	    }
-	    for(t.y = 0; t.y < brt.y - ult.y; t.y++) {
-		for(t.x = 0; t.x < brt.x - ult.x; t.x++) {
-		    splitquad(buf, vm[t.x][t.y], vm[t.x][t.y + 1], vm[t.x + 1][t.y + 1], vm[t.x + 1][t.y]);
+		    Tiler tile = map.tiler(map.gettile(t));
+		    tile.lay(cut, t.sub(cut.ul), t, cons);
 		}
 	    }
 	    mesh = buf.mkmesh();
 	}
 
 	@Deprecated
-	public GroundMod(MCache map, Class<? extends Surface> surf, Tex tex, Coord cc, Coord ul, Coord br) {
-	    this(map, (DataID<Surface>)null, tex, cc, ul, br);
+	public GroundMod(MCache map, DataID<?> surf, Tex tex, Coord cc, Coord ul, Coord br) {
+	    this(map, tex, cc, ul, br);
+	    if(surf != null)
+		throw(new RuntimeException());
+	}
+
+	@Deprecated
+	public GroundMod(MCache map, Class<?> surf, Tex tex, Coord cc, Coord ul, Coord br) {
+	    this(map, (DataID<?>)null, tex, cc, ul, br);
 	    if(surf != null)
 		throw(new RuntimeException());
 	}
