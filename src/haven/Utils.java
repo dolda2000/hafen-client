@@ -913,6 +913,12 @@ public class Utils {
 	ret[src.length] = ne;
 	return(ret);
     }
+
+    public static int[] extend(int[] src, int nl) {
+	int[] dst = new int[nl];
+	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
+	return(dst);
+    }
     
     public static <T> T el(Iterable<T> c) {
 	Iterator<T> i = c.iterator();
