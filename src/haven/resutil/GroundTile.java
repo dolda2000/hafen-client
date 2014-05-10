@@ -32,7 +32,7 @@ import haven.*;
 import haven.Resource.Tile;
 import haven.Surface.MeshVertex;
 
-public class GroundTile extends Tiler implements Tiler.MCons {
+public class GroundTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
     private static final Material.Colors gcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
     public final Resource.Tileset set;
 
@@ -95,6 +95,20 @@ public class GroundTile extends Tiler implements Tiler.MCons {
 	return(new MCons() {
 		public void faces(MapMesh m, MPart d) {
 		    _faces(m, t, z, d.v, d.tcx, d.tcy, d.f);
+		}
+	    });
+    }
+
+    public MCons tcons(final int z, final int bmask, final int cmask) {
+	if((bmask == 0) && (cmask == 0))
+	    return(MCons.nil);
+	return(new MCons() {
+		public void faces(MapMesh m, MPart d) {
+		    Random rnd = m.rnd(d.lc);
+		    if((set.btrans != null) && (bmask != 0))
+			tcons(z, set.btrans[bmask - 1].pick(rnd)).faces(m, d);
+		    if((set.ctrans != null) && (cmask != 0))
+			tcons(z, set.ctrans[cmask - 1].pick(rnd)).faces(m, d);
 		}
 	    });
     }

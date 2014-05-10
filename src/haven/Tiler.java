@@ -64,6 +64,13 @@ public abstract class Tiler {
 
     public static interface MCons {
 	public void faces(MapMesh m, MPart desc);
+	public static final MCons nil = new MCons() {
+		public void faces(MapMesh m, MPart desc) {}
+	    };
+    }
+
+    public static interface CTrans {
+	public MCons tcons(int z, int bmask, int cmask);
     }
 
     public static interface VertFactory {

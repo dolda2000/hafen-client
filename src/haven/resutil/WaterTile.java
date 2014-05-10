@@ -101,13 +101,27 @@ public class WaterTile extends Tiler {
 	    }
 	    for(int y = vs.ul.y; y < vs.br.y; y++) {
 		for(int x = vs.ul.x; x < vs.br.x; x++) {
-		    surf[vs.o(x, y)] = ms.new Vertex(ms.surf[vs.o(x, y)].add(0, 0, -ed[ss.o(x, y)]));
+		    int vd = ed[ss.o(x, y)];
+		    surf[vs.o(x, y)] = new BottomVertex(ms, ms.surf[vs.o(x, y)].add(0, 0, -vd), vd);
 		}
 	    }
 	    for(int y = ts.ul.y; y < ts.br.y; y++) {
 		for(int x = ts.ul.x; x < ts.br.x; x++) {
 		    split[ts.o(x, y)] = Math.abs(surf[vs.o(x, y)].z - surf[vs.o(x + 1, y + 1)].z) > Math.abs(surf[vs.o(x + 1, y)].z - surf[vs.o(x, y + 1)].z);
 		}
+	    }
+	}
+
+	public static class BottomVertex extends Vertex {
+	    public final float d;
+
+	    public BottomVertex(Surface surf, Coord3f c, float d) {
+		surf.super(c);
+		this.d = d;
+	    }
+
+	    public void modify(MeshBuf buf, MeshBuf.Vertex v) {
+		buf.layer(depthlayer).set(v, d);
 	    }
 	}
 
@@ -491,8 +505,20 @@ public class WaterTile extends Tiler {
     }
 
     public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
-	if(bottom instanceof Tiler)
-	    ((Tiler)bottom).trans(m, rnd, gt, lc, gc, z, bmask, cmask);
+	if(m.map.gettile(gc) <= id)
+	    return;
+	if(gt instanceof WaterTile) {
+	    if(bottom instanceof CTrans) {
+		MapMesh.MapSurface ms = m.data(MapMesh.gnd);
+		Bottom b = m.data(Bottom.id);
+		MPart d = MPart.splitquad(lc, gc, b.fortilea(lc), ms.split[ms.ts.o(lc)]);
+		d.mat = botmat;
+		((CTrans)bottom).tcons(z, bmask, cmask).faces(m, d);
+	    }
+	} else {
+	    if(bottom instanceof Tiler)
+		((Tiler)bottom).trans(m, rnd, gt, lc, gc, z, bmask, cmask);
+	}
     }
 
     /*

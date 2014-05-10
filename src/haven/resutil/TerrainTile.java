@@ -33,7 +33,7 @@ import haven.MapMesh.Scan;
 import haven.Resource.Tile;
 import haven.Resource.Tileset;
 
-public class TerrainTile extends Tiler implements Tiler.MCons {
+public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
     public final GLState base;
     public final SNoise3 noise;
     public final Var[] var;
@@ -329,7 +329,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
     /* XXX: Some strange javac bug seems to make it resolve the
      * trans() references to the wrong signature, thus the name
      * distinction. */
-    public void _faces(MapMesh m, Coord lc, int z, Tile trans, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f, MPart d) {
+    public void _faces(MapMesh m, int z, Tile trans, MPart d) {
 	Tex ttex = trans.tex();
 	float tl = ttex.tcx(0), tt = ttex.tcy(0), tw = ttex.tcx(ttex.sz().x) - tl, th = ttex.tcy(ttex.sz().y) - tt;
 	TexGL gt;
@@ -345,19 +345,19 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
 		transtex.put(gt, alpha = new AlphaTex(gt, 0.01f));
 	}
 	Blend b = m.data(blend);
-	Surface.MeshVertex[] mv = new Surface.MeshVertex[v.length];
+	Surface.MeshVertex[] mv = new Surface.MeshVertex[d.v.length];
 	for(int i = 0; i < var.length + 1; i++) {
-	    if(b.en[i][b.es.o(lc)]) {
+	    if(b.en[i][b.es.o(d.lc)]) {
 		GLState mat = (i == 0)?base:(var[i - 1].mat);
-		mat = GLState.compose(mat, new MapMesh.MLOrder(z, i), alpha);
+		mat = d.mcomb(GLState.compose(mat, new MapMesh.MLOrder(z, i), alpha));
 		MeshBuf buf = MapMesh.Model.get(m, mat);
 		MeshBuf.Vec2Layer cc = buf.layer(AlphaTex.lclip);
-		for(int o = 0; o < v.length; o++) {
+		for(int o = 0; o < d.v.length; o++) {
 		    mv[o] = b.lvfac[i].make(buf, d, o);
-		    cc.set(mv[o], new Coord3f(tl + (tw * tcx[o]), tt + (th * tcy[o]), 0));
+		    cc.set(mv[o], new Coord3f(tl + (tw * d.tcx[o]), tt + (th * d.tcy[o]), 0));
 		}
-		for(int fi = 0; fi < f.length; fi += 3)
-		    buf.new Face(mv[f[fi]], mv[f[fi + 1]], mv[f[fi + 2]]);
+		for(int fi = 0; fi < d.f.length; fi += 3)
+		    buf.new Face(mv[d.f[fi]], mv[d.f[fi + 1]], mv[d.f[fi + 2]]);
 	    }
 	}
     }
@@ -365,7 +365,21 @@ public class TerrainTile extends Tiler implements Tiler.MCons {
     private MCons tcons(final int z, final Tile t) {
 	return(new MCons() {
 		public void faces(MapMesh m, MPart d) {
-		    _faces(m, d.lc, z, t, d.v, d.tcx, d.tcy, d.f, d);
+		    _faces(m, z, t, d);
+		}
+	    });
+    }
+
+    public MCons tcons(final int z, final int bmask, final int cmask) {
+	if((transset == null) || ((bmask == 0) && (cmask == 0)))
+	    return(MCons.nil);
+	return(new MCons() {
+		public void faces(MapMesh m, MPart d) {
+		    Random rnd = m.rnd(d.lc);
+		    if((transset.btrans != null) && (bmask != 0))
+			tcons(z, transset.btrans[bmask - 1].pick(rnd)).faces(m, d);
+		    if((transset.ctrans != null) && (cmask != 0))
+			tcons(z, transset.ctrans[cmask - 1].pick(rnd)).faces(m, d);
 		}
 	    });
     }

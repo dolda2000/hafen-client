@@ -64,6 +64,8 @@ public class Surface {
 	}
 
 	public Surface s() {return(Surface.this);}
+
+	public void modify(MeshBuf buf, MeshBuf.Vertex v) {}
     }
 
     public static class MeshVertex extends MeshBuf.Vertex {
@@ -72,6 +74,7 @@ public class Surface {
 	public MeshVertex(MeshBuf buf, Vertex v) {
 	    buf.super(v, v.s().data(Surface.nrm).get(v));
 	    this.v = v;
+	    v.modify(buf, this);
 	}
     }
 
