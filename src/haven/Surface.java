@@ -78,34 +78,6 @@ public class Surface {
 	}
     }
 
-    public class BufMap {
-	public final MeshBuf buf;
-	private final MeshVertex[] map = new MeshVertex[vl.length];
-
-	public BufMap(MeshBuf buf) {
-	    this.buf = buf;
-	}
-
-	protected MeshVertex make(Vertex v) {
-	    return(new MeshVertex(buf, v));
-	}
-
-	public MeshVertex get(Vertex v) {
-	    MeshVertex ret;
-	    if((ret = map[v.vi]) == null) {
-		ret = map[v.vi] = make(v);
-	    }
-	    return(ret);
-	}
-
-	public MeshVertex[] get(Vertex... v) {
-	    MeshVertex[] ret = new MeshVertex[v.length];
-	    for(int i = 0; i < v.length; i++)
-		ret[i] = get(v[i]);
-	    return(ret);
-	}
-    }
-
     public class Face {
 	public final Vertex v1, v2, v3;
 

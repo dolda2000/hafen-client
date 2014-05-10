@@ -476,21 +476,6 @@ public class WaterTile extends Tiler {
 	this(id, new GroundTile(0, set), depth);
     }
 
-    public static class SurfVert extends Surface.BufMap {
-	final MapMesh.MapSurface ms;
-
-	public SurfVert(MapMesh m) {
-	    m.data(MapMesh.gnd).super(MapMesh.Model.get(m, surfmatc));
-	    this.ms = m.data(MapMesh.gnd);
-	}
-
-	public MeshVertex[] fortile(Coord c) {
-	    return(get(ms.fortilea(c)));
-	}
-
-	public static final MapMesh.DataID<SurfVert> id = MapMesh.makeid(SurfVert.class);
-    }
-
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	MapMesh.MapSurface ms = m.data(MapMesh.gnd);
 	SModel smod = SModel.get(m, surfmatc, VertFactory.id);
