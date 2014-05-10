@@ -42,7 +42,6 @@ public class MapMesh implements Rendered, Disposable {
     private Map<Tex, GLState[]> texmap = new HashMap<Tex, GLState[]>();
     private Map<DataID, Object> data = new LinkedHashMap<DataID, Object>();
     private List<Rendered> extras = new ArrayList<Rendered>();
-    private List<Layer> layers;
     private FastMesh[] flats;
     private List<Disposable> dparts = new ArrayList<Disposable>();
 
@@ -90,26 +89,6 @@ public class MapMesh implements Rendered, Disposable {
 	if(ret == null)
 	    data.put(id, ret = id.make(this));
 	return(ret);
-    }
-
-    private static final Material.Colors gcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
-    public GLState stfor(Tex tex, boolean clip) {
-	TexGL gt;
-	if(tex instanceof TexGL)
-	    gt = (TexGL)tex;
-	else if((tex instanceof TexSI) && (((TexSI)tex).parent instanceof TexGL))
-	    gt = (TexGL)((TexSI)tex).parent;
-	else
-	    throw(new RuntimeException("Cannot use texture for map rendering: " + tex));
-	GLState[] ret = texmap.get(gt);
-	if(ret == null) {
-	    /* texmap.put(gt, ret = new Material(gt)); */
-	    texmap.put(gt, ret = new GLState[] {
-		    new Material(Light.deflight, gcol, gt.draw(), gt.clip()),
-		    new Material(Light.deflight, gcol, gt.draw()),
-		});
-	}
-	return(ret[clip?0:1]);
     }
 
     public static class Scan {
@@ -171,177 +150,6 @@ public class MapMesh implements Rendered, Disposable {
     }
     public static final DataID<MapSurface> gnd = makeid(MapSurface.class);
 
-    public static class SPoint {
-	public Coord3f pos, nrm = Coord3f.zu;
-	public SPoint(Coord3f pos) {
-	    this.pos = pos;
-	}
-    }
-    
-    public class Surface extends Hooks {
-	public final SPoint[] surf;
-	
-	public Surface() {
-	    surf = new SPoint[(sz.x + 3) * (sz.y + 3)];
-	    Coord c = new Coord();
-	    int i = 0;
-	    for(c.y = -1; c.y <= sz.y + 1; c.y++) {
-		for(c.x = -1; c.x <= sz.x + 1; c.x++) {
-		    surf[i++] = new SPoint(new Coord3f(c.x * tilesz.x, c.y * -tilesz.y, map.getz(ul.add(c))));
-		}
-	    }
-	}
-	
-	public int idx(Coord lc) {
-	    return((lc.x + 1) + ((lc.y + 1) * (sz.x + 3)));
-	}
-	
-	public SPoint spoint(Coord lc) {
-	    return(surf[idx(lc)]);
-	}
-
-	public void calcnrm() {
-	    Coord c = new Coord();
-	    int i = idx(Coord.z), r = (sz.x + 3);
-	    for(c.y = 0; c.y <= sz.y; c.y++) {
-		for(c.x = 0; c.x <= sz.x; c.x++) {
-		    SPoint p = surf[i];
-		    Coord3f s = surf[i + r].pos.sub(p.pos);
-		    Coord3f w = surf[i - 1].pos.sub(p.pos);
-		    Coord3f n = surf[i - r].pos.sub(p.pos);
-		    Coord3f e = surf[i + 1].pos.sub(p.pos);
-		    Coord3f nrm = (n.cmul(w)).add(e.cmul(n)).add(s.cmul(e)).add(w.cmul(s)).norm();
-		    p.nrm = nrm;
-		    i++;
-		}
-		i += 2;
-	    }
-	}
-
-	public SPoint[] fortile(Coord sc) {
-	    return(new SPoint[] {
-		    spoint(sc),
-		    spoint(sc.add(0, 1)),
-		    spoint(sc.add(1, 1)),
-		    spoint(sc.add(1, 0)),
-		});
-	}
-    }
-    
-    public static void splitquad(MeshBuf buf, MeshBuf.Vertex v1, MeshBuf.Vertex v2, MeshBuf.Vertex v3, MeshBuf.Vertex v4) {
-	if(Math.abs(v1.pos.z - v3.pos.z) > Math.abs(v2.pos.z - v4.pos.z)) {
-	    buf.new Face(v1, v2, v3);
-	    buf.new Face(v1, v3, v4);
-	} else {
-	    buf.new Face(v1, v2, v4);
-	    buf.new Face(v2, v3, v4);
-	}
-    }
-
-    public abstract class Shape {
-	public Shape(int z, GLState st) {
-	    reg(z, st);
-	}
-	
-	public abstract void build(MeshBuf buf);
-	
-	private void reg(int z, GLState st) {
-	    for(Layer l : layers) {
-		if((l.st == st) && (l.z == z)) {
-		    l.pl.add(this);
-		    return;
-		}
-	    }
-	    Layer l = new Layer();
-	    l.st = st;
-	    l.z = z;
-	    l.pl.add(this);
-	    layers.add(l);
-	}
-
-	public MapMesh m() {return(MapMesh.this);}
-    }
-
-    /* Inner classes cannot have static declarations D:< */
-    private static SPoint[] fortile(Surface surf, Coord sc) {
-	return(surf.fortile(sc));
-    }
-
-    public class Plane extends Shape {
-	public SPoint[] vrt;
-	public int[] texx, texy;
-	public Tex tex = null;
-	
-	public Plane(SPoint[] vrt, int z, GLState st) {
-	    super(z, st);
-	    this.vrt = vrt;
-	}
-	
-	public Plane(Surface surf, Coord sc, int z, GLState st) {
-	    this(fortile(surf, sc), z, st);
-	}
-
-	public Plane(SPoint[] vrt, int z, GLState st, Tex tex) {
-	    this(vrt, z, st);
-	    this.tex = tex;
-	    texrot(null, null, 0, false);
-	}
-
-	public Plane(SPoint[] vrt, int z, Tex tex, boolean clip) {
-	    this(vrt, z, stfor(tex, clip), tex);
-	}
-	
-	public Plane(Surface surf, Coord sc, int z, Tex tex, boolean clip) {
-	    this(fortile(surf, sc), z, tex, clip);
-	}
-
-	public Plane(Surface surf, Coord sc, int z, Tex tex) {
-	    this(surf, sc, z, tex, true);
-	}
-	
-	public Plane(Surface surf, Coord sc, int z, Resource.Tile tile) {
-	    this(surf, sc, z, tile.tex(), tile.t != 'g');
-	}
-	
-	public void texrot(Coord ul, Coord br, int rot, boolean flipx) {
-	    if(ul == null) ul = Coord.z;
-	    if(br == null) br = tex.sz();
-	    int[] x, y;
-	    if(!flipx) {
-		x = new int[] {ul.x, ul.x, br.x, br.x};
-		y = new int[] {ul.y, br.y, br.y, ul.y};
-	    } else {
-		x = new int[] {br.x, br.x, ul.x, ul.x};
-		y = new int[] {ul.y, br.y, br.y, ul.y};
-	    }
-	    if(texx == null) {
-		texx = new int[4];
-		texy = new int[4];
-	    }
-	    for(int i = 0; i < 4; i++) {
-		texx[i] = x[(i + rot) % 4];
-		texy[i] = y[(i + rot) % 4];
-	    }
-	}
-	
-	public void build(MeshBuf buf) {
-	    MeshBuf.Tex btex = buf.layer(MeshBuf.tex);
-	    MeshBuf.Vertex v1 = buf.new Vertex(vrt[0].pos, vrt[0].nrm);
-	    MeshBuf.Vertex v2 = buf.new Vertex(vrt[1].pos, vrt[1].nrm);
-	    MeshBuf.Vertex v3 = buf.new Vertex(vrt[2].pos, vrt[2].nrm);
-	    MeshBuf.Vertex v4 = buf.new Vertex(vrt[3].pos, vrt[3].nrm);
-	    Tex tex = this.tex;
-	    if(tex != null) {
-		int r = tex.sz().x, b = tex.sz().y;
-		btex.set(v1, new Coord3f(tex.tcx(texx[0]), tex.tcy(texy[0]), 0.0f));
-		btex.set(v2, new Coord3f(tex.tcx(texx[1]), tex.tcy(texy[1]), 0.0f));
-		btex.set(v3, new Coord3f(tex.tcx(texx[2]), tex.tcy(texy[2]), 0.0f));
-		btex.set(v4, new Coord3f(tex.tcx(texx[3]), tex.tcy(texy[3]), 0.0f));
-	    }
-	    splitquad(buf, v1, v2, v3, v4);
-	}
-    }
-    
     public static class MLOrder extends Order<Rendered> {
 	public final int z;
 
@@ -354,7 +162,7 @@ public class MapMesh implements Rendered, Disposable {
 	}
 
 	public int mainz() {
-	    return(999);
+	    return(1000);
 	}
 
 	public boolean equals(Object x) {
@@ -374,39 +182,6 @@ public class MapMesh implements Rendered, Disposable {
 	public RComparator<Rendered> cmp() {return(cmp);}
     }
 
-    private static final Order mmorder = new Order<Layer>() {
-	public int mainz() {
-	    return(1000);
-	}
-	
-	private final RComparator<Layer> cmp = new RComparator<Layer>() {
-	    public int compare(Layer a, Layer b, GLState.Buffer sa, GLState.Buffer sb) {
-		return(a.z - b.z);
-	    }
-	};
-	
-	public RComparator<Layer> cmp() {
-	    return(cmp);
-	}
-    };
-
-    private static class Layer implements Rendered {
-	GLState st;
-	int z;
-	FastMesh mesh;
-	Collection<Shape> pl = new LinkedList<Shape>();
-	
-	public void draw(GOut g) {
-	    mesh.draw(g);
-	}
-	
-	public boolean setup(RenderList rl) {
-	    rl.prepo(st);
-	    rl.prepo(mmorder);
-	    return(true);
-	}
-    }
-    
     private MapMesh(MCache map, Coord ul, Coord sz, Random rnd) {
 	this.map = map;
 	this.ul = ul;
@@ -464,42 +239,6 @@ public class MapMesh implements Rendered, Disposable {
 	}
     }
 
-    public class Ground extends Surface {
-	public boolean clean() {return(true);}
-    }
-    private static DataID<Ground> gndid = makeid(Ground.class);
-    public Surface gnd() {
-	return(data(gndid));
-    }
-    
-    /*
-    public static class Models extends Hooks {
-	private final MapMesh m;
-	private final Map<GLState, MeshBuf> models = new HashMap<GLState, MeshBuf>();
-
-	public Models(MapMesh m) {
-	    this.m = m;
-	}
-
-	private static DataID<Models> msid = makeid(Models.class);
-	public static MeshBuf get(MapMesh m, GLState st) {
-	    Models ms = m.data(msid);
-	    MeshBuf ret = ms.models.get(st);
-	    if(ret == null)
-		ms.models.put(st, ret = new MeshBuf());
-	    return(ret);
-	}
-
-	public void postcalcnrm(Random rnd) {
-	    for(Map.Entry<GLState, MeshBuf> mod : models.entrySet()) {
-		FastMesh mesh = mod.getValue().mkmesh();
-		m.extras.add(mod.getKey().apply(mesh));
-		m.dparts.add(mesh);
-	    }
-	}
-    }
-    */
-
     public static class Model extends MeshBuf implements ConsHooks {
 	public final MapMesh m;
 	public final GLState mat;
@@ -549,7 +288,6 @@ public class MapMesh implements Rendered, Disposable {
     public static MapMesh build(MCache mc, Random rnd, Coord ul, Coord sz) {
 	MapMesh m = new MapMesh(mc, ul, sz, rnd);
 	Coord c = new Coord();
-	m.layers = new ArrayList<Layer>();
 	rnd = m.rnd();
 	
 	for(c.y = 0; c.y < sz.y; c.y++) {
@@ -581,20 +319,6 @@ public class MapMesh implements Rendered, Disposable {
 	    if(obj instanceof ConsHooks)
 		((ConsHooks)obj).postcalcnrm(rnd);
 	}
-	for(Layer l : m.layers) {
-	    MeshBuf buf = new MeshBuf();
-	    if(l.pl.isEmpty())
-		throw(new RuntimeException("Map layer without planes?!"));
-	    for(Shape p : l.pl)
-		p.build(buf);
-	    l.mesh = buf.mkmesh();
-	    m.dparts.add(l.mesh);
-	}
-	Collections.sort(m.layers, new Comparator<Layer>() {
-		public int compare(Layer a, Layer b) {
-		    return(a.z - b.z);
-		}
-	    });
 	
 	m.consflat();
 	
@@ -833,8 +557,6 @@ public class MapMesh implements Rendered, Disposable {
     }
     
     public boolean setup(RenderList rl) {
-	for(Layer l : layers)
-	    rl.add(l, null);
 	for(Rendered e : extras)
 	    rl.add(e, null);
 	return(true);

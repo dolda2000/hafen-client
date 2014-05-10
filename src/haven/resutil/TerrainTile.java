@@ -246,44 +246,6 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	this.transset = transset;
     }
 
-    public class Plane extends MapMesh.Shape {
-	public Coord lc;
-	public MapMesh.SPoint[] vrt;
-	public Coord3f[] tc;
-	public int[] alpha;
-
-	public Plane(MapMesh m, MapMesh.Surface surf, Coord sc, int z, GLState mat, int[] alpha) {
-	    m.super(z, mat);
-	    this.lc = new Coord(sc);
-	    vrt = surf.fortile(sc);
-	    float fac = 25f / 4f;
-	    tc = new Coord3f[] {
-		new Coord3f((sc.x + 0) / fac, (sc.y + 0) / fac, 0),
-		new Coord3f((sc.x + 0) / fac, (sc.y + 1) / fac, 0),
-		new Coord3f((sc.x + 1) / fac, (sc.y + 1) / fac, 0),
-		new Coord3f((sc.x + 1) / fac, (sc.y + 0) / fac, 0),
-	    };
-	    m.data(BumpMap.MapTangents.id);
-	    this.alpha = alpha;
-	}
-
-	public MeshBuf.Vertex mkvert(MeshBuf buf, int n) {
-	    MeshBuf.Vertex v = buf.new Vertex(vrt[n].pos, vrt[n].nrm);
-	    buf.layer(MeshBuf.tex).set(v, tc[n]);
-	    buf.layer(MeshBuf.col).set(v, new Color(255, 255, 255, alpha[n]));
-	    return(v);
-	}
-
-	public void build(MeshBuf buf) {
-	    MeshBuf.Vertex v1 = mkvert(buf, 0);
-	    MeshBuf.Vertex v2 = mkvert(buf, 1);
-	    MeshBuf.Vertex v3 = mkvert(buf, 2);
-	    MeshBuf.Vertex v4 = mkvert(buf, 3);
-	    m().data(BumpMap.MapTangents.id).set(buf, lc, v1, v2, v3, v4);
-	    MapMesh.splitquad(buf, v1, v2, v3, v4);
-	}
-    }
-
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	lay(m, lc, gc, this);
     }
@@ -300,27 +262,6 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		for(int fi = 0; fi < d.f.length; fi += 3)
 		    buf.new Face(mv[d.f[fi]], mv[d.f[fi + 1]], mv[d.f[fi + 2]]);
 	    }
-	}
-    }
-
-    public class TransPlane extends Plane {
-	public Coord3f[] cc;
-
-	public TransPlane(MapMesh m, MapMesh.Surface surf, Coord sc, int z, GLState mat, int[] alpha, Tex tex) {
-	    super(m, surf, sc, z, mat, alpha);
-	    Coord s = tex.sz();
-	    cc = new Coord3f[] {
-		new Coord3f(tex.tcx(0), tex.tcy(0), 0),
-		new Coord3f(tex.tcx(0), tex.tcy(s.y), 0),
-		new Coord3f(tex.tcx(s.x), tex.tcy(s.y), 0),
-		new Coord3f(tex.tcx(s.x), tex.tcy(0), 0),
-	    };
-	}
-
-	public MeshBuf.Vertex mkvert(MeshBuf buf, int n) {
-	    MeshBuf.Vertex v = super.mkvert(buf, n);
-	    buf.layer(AlphaTex.lclip).set(v, cc[n]);
-	    return(v);
 	}
     }
 
