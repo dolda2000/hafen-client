@@ -759,6 +759,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     @LayerName("tileset2")
     public class Tileset extends Layer {
 	private String tn = "gnd";
+	public String[] tags = {};
 	public Object[] ta = new Object[0];
 	private transient Tiler.Factory tfac;
 	public WeightList<Resource> flavobjs = new WeightList<Resource>();
@@ -791,6 +792,12 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 			    throw(new LoadException("Illegal resource dependency", e, Resource.this));
 			}
 		    }
+		    break;
+		case 2:
+		    tags = new String[buf.int8()];
+		    for(int i = 0; i < tags.length; i++)
+			tags[i] = buf.string();
+		    Arrays.sort(tags);
 		    break;
 		default:
 		    throw(new LoadException("Invalid tileset part " + p + "  in " + name, Resource.this));
