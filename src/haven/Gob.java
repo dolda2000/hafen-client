@@ -87,6 +87,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	this.rc = c;
 	this.id = id;
 	this.frame = frame;
+	loc.tick();
     }
 	
     public Gob(Glob glob, Coord c) {
@@ -121,7 +122,6 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	}
 	if(virtual && ols.isEmpty())
 	    glob.oc.remove(id);
-	loc.tick();
     }
 	
     public Overlay findol(int id) {
@@ -190,6 +190,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public void draw(GOut g) {}
 
     public boolean setup(RenderList rl) {
+	loc.tick();
 	for(Overlay ol : ols)
 	    rl.add(ol, null);
 	for(Overlay ol : ols) {
