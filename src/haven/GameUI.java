@@ -120,6 +120,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		public void close() {}
 		public void flush() {}
 	    });
+	Debug.log = ui.cons.out;
 	resize(sz);
     }
     
