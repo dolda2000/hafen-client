@@ -30,18 +30,18 @@ import java.util.*;
 import java.io.*;
 
 public class AudioSprite {
-    public static final Sprite.Factory fact = new Sprite.Factory() {
-	    private Resource.Audio randoom(Resource res, String id) {
-		List<Resource.Audio> cl = new ArrayList<Resource.Audio>();
-		for(Resource.Audio clip : res.layers(Resource.audio)) {
-		    if(clip.id == id)
-			cl.add(clip);
-		}
-		if(!cl.isEmpty())
-		    return(cl.get((int)(Math.random() * cl.size())));
-		return(null);
-	    }
+    public static Resource.Audio randoom(Resource res, String id) {
+	List<Resource.Audio> cl = new ArrayList<Resource.Audio>();
+	for(Resource.Audio clip : res.layers(Resource.audio)) {
+	    if(clip.id == id)
+		cl.add(clip);
+	}
+	if(!cl.isEmpty())
+	    return(cl.get((int)(Math.random() * cl.size())));
+	return(null);
+    }
 
+    public static final Sprite.Factory fact = new Sprite.Factory() {
 	    public Sprite create(Sprite.Owner owner, Resource res, Message sdt) {
 		{
 		    Resource.Audio clip = randoom(res, "cl");
@@ -54,8 +54,7 @@ public class AudioSprite {
 			return(new RepeatSprite(owner, res, randoom(res, "beg"), clip, randoom(res, "end")));
 		}
 		{
-		    Resource.Audio clip = res.layer(Resource.audio, "amb");
-		    if(clip != null)
+		    if((res.layer(Resource.audio, "amb") != null) || (res.layer(ClipAmbiance.Desc.class) != null))
 			return(new Ambience(owner, res));
 		}
 		return(null);
@@ -131,11 +130,15 @@ public class AudioSprite {
     }
 
     public static class Ambience extends Sprite {
-	public final ActAudio.Ambience amb;
+	public final Rendered amb;
 
 	public Ambience(Owner owner, Resource res) {
 	    super(owner, res);
-	    this.amb = new ActAudio.Ambience(res);
+	    ClipAmbiance.Desc clamb = res.layer(ClipAmbiance.Desc.class);
+	    if(clamb != null)
+		this.amb = new ClipAmbiance(clamb);
+	    else
+		this.amb = new ActAudio.Ambience(res);
 	}
 
 	public boolean setup(RenderList r) {
