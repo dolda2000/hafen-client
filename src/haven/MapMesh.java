@@ -479,8 +479,6 @@ public class MapMesh implements Rendered, Disposable {
 
     private void clean() {
 	texmap = null;
-	for(Layer l : layers)
-	    l.pl = null;
 	int on = data.size();
 	for(Iterator<Map.Entry<DataID, Object>> i = data.entrySet().iterator(); i.hasNext();) {
 	    Object d = i.next().getValue();
