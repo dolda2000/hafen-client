@@ -710,7 +710,19 @@ public class Utils {
 	    return(max);
 	return(i);
     }
-    
+
+    public static double clipnorm(double d, double min, double max) {
+	if(d < min)
+	    return(0.0);
+	if(d > max)
+	    return(1.0);
+	return((d - min) / (max - min));
+    }
+
+    public static double smoothstep(double d) {
+	return(d * d * (3 - (2 * d)));
+    }
+
     public static Color blendcol(Color in, Color bl) {
 	int f1 = bl.getAlpha();
 	int f2 = 255 - bl.getAlpha();

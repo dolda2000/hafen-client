@@ -83,6 +83,10 @@ public class SpriteLink extends Resource.Layer {
 	public Sprite create(Owner owner, Resource res, Message sdt) {
 	    return(Sprite.create(owner, this.res, sdt));
 	}
+
+	public String toString() {
+	    return(res.name);
+	}
     }
 
     public SpriteLink(Resource res, byte[] bbuf) {
