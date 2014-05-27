@@ -132,7 +132,8 @@ public class OCache implements Iterable<Gob> {
     }
 	
     public synchronized void cres(Gob g, Indir<Resource> res, Message sdt) {
-	ResDrawable d = (ResDrawable)g.getattr(Drawable.class);
+	Drawable dr = g.getattr(Drawable.class);
+	ResDrawable d = (dr instanceof ResDrawable)?(ResDrawable)dr:null;
 	if((d != null) && (d.res == res) && !d.sdt.equals(sdt) && (d.spr != null) && (d.spr instanceof Gob.Overlay.CUpd)) {
 	    ((Gob.Overlay.CUpd)d.spr).update(sdt);
 	    d.sdt = sdt;
@@ -172,7 +173,8 @@ public class OCache implements Iterable<Gob> {
     }
     
     public synchronized void composite(Gob g, Indir<Resource> base) {
-	Composite cmp = (Composite)g.getattr(Drawable.class);
+	Drawable dr = g.getattr(Drawable.class);
+	Composite cmp = (dr instanceof Composite)?(Composite)dr:null;
 	if((cmp == null) || !cmp.base.equals(base)) {
 	    cmp = new Composite(g, base);
 	    g.setattr(cmp);
