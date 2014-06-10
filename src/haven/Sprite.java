@@ -36,6 +36,7 @@ public abstract class Sprite implements Rendered {
     public final Owner owner;
     public static List<Factory> factories = new LinkedList<Factory>();
     static {
+	factories.add(SpriteLink.sfact);
 	factories.add(SkelSprite.fact);
 	factories.add(AnimSprite.fact);
 	factories.add(StaticSprite.fact);

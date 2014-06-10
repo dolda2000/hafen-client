@@ -32,6 +32,7 @@ import java.awt.image.*;
 public class Debug {
     public static boolean kf1, kf2, kf3, kf4;
     public static boolean pk1, pk2, pk3, pk4;
+    public static PrintWriter log = new PrintWriter(System.err);
 
     public static void cycle() {
 	pk1 = kf1; pk2 = kf2; pk3 = kf3; pk4 = kf4;

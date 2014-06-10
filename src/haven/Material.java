@@ -68,7 +68,7 @@ public class Material extends GLState {
 	    emi = defemi;
 	}
 
-	private Colors(float[] amb, float[] dif, float[] spc, float[] emi, float shine) {
+	public Colors(float[] amb, float[] dif, float[] spc, float[] emi, float shine) {
 	    this.amb = amb;
 	    this.dif = dif;
 	    this.spc = spc;

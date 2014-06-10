@@ -26,6 +26,8 @@
 
 package haven;
 
+import java.util.*;
+
 public interface RenderLink {
     public Rendered make();
     
@@ -76,6 +78,33 @@ public interface RenderLink {
 		l = new RenderLink() {
 			public Rendered make() {
 			    return(new ActAudio.Ambience(amb));
+			}
+		    };
+	    } else if(t == 2) {
+		String nm = Utils.strd(buf, off);
+		int ver = Utils.uint16d(buf, off[0]); off[0] += 2;
+		final Resource lres = Resource.load(nm, ver);
+		final int meshid = Utils.int16d(buf, off[0]); off[0] += 2;
+		l = new RenderLink() {
+			Rendered res = null;
+			public Rendered make() {
+			    if(res == null) {
+				ArrayList<Rendered> cl = new ArrayList<Rendered>();
+				for(FastMesh.MeshRes mr : lres.layers(FastMesh.MeshRes.class)) {
+				    if((mr.id < 0) || (mr.id == meshid))
+					cl.add(mr.mat.get().apply(mr.m));
+				}
+				final Rendered[] ca = cl.toArray(new Rendered[0]);
+				res = new Rendered() {
+					public void draw(GOut g) {}
+					public boolean setup(RenderList ls) {
+					    for(Rendered r : ca)
+						ls.add(r, null);
+					    return(false);
+					}
+				    };
+			    }
+			    return(res);
 			}
 		    };
 	    } else {
