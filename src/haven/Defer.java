@@ -75,7 +75,7 @@ public class Defer extends ThreadGroup {
 	private int prio = 0;
 	private T val;
 	private volatile String state = "";
-	private RuntimeException exc = null;
+	private Throwable exc = null;
 	private Thread running = null;
 	
 	private Future(Callable<T> task) {
@@ -113,7 +113,7 @@ public class Defer extends ThreadGroup {
 		this.exc = new CancelledException(exc);
 		chstate("done");
 	    } catch(Loading exc) {
-	    } catch(RuntimeException exc) {
+	    } catch(Throwable exc) {
 		this.exc = exc;
 		chstate("done");
 	    } finally {

@@ -59,6 +59,7 @@ public class TexPal extends GLState {
     private TexUnit sampler;
 
     public void reapply(GOut g) {
+	g.gl.glUniform1i(g.st.prog.uniform(ctex), sampler.id);
     }
 
     public void apply(GOut g) {
