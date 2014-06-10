@@ -73,8 +73,7 @@ public class Window extends Widget implements DTarget {
 	this.tlo = tlo;
 	this.rbo = rbo;
 	cbtn = new IButton(Coord.z, this, cbtni[0], cbtni[1], cbtni[2]);
-	if(cap != null)
-	    this.cap = cf.render(cap, cc);
+	chcap(cap);
 	resize(sz);
 	setfocustab(true);
 	parent.setfocus(this);
@@ -82,6 +81,13 @@ public class Window extends Widget implements DTarget {
 
     public Window(Coord c, Coord sz, Widget parent, String cap) {
 	this(c, sz, parent, cap, new Coord(0, 0), new Coord(0, 0));
+    }
+
+    public void chcap(String cap) {
+	if(cap == null)
+	    this.cap = null;
+	else
+	    this.cap = cf.render(cap, cc);
     }
 
     public void cdraw(GOut g) {
@@ -144,6 +150,9 @@ public class Window extends Widget implements DTarget {
 	    pack();
 	} else if(msg == "dt") {
 	    dt = (Integer)args[0] != 0;
+	} else if(msg == "cap") {
+	    String cap = (String)args[0];
+	    chcap(cap.equals("")?null:cap);
 	} else {
 	    super.uimsg(msg, args);
 	}
