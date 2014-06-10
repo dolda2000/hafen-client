@@ -63,6 +63,10 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	Coord c = (Coord)o;
 	return((c.x == x) && (c.y == y));
     }
+
+    public boolean equals(int X, int Y) {
+	return((x == X) && (y == Y));
+    }
 	
     public int compareTo(Coord c) {
 	if(c.y != y)
@@ -96,6 +100,10 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	return(new Coord(x * f, y * f));
     }
     
+    public Coord mul(int fx, int fy) {
+	return(new Coord(x * fx, y * fy));
+    }
+
     public Coord mul(double f) {
 	return(new Coord((int)(x * f), (int)(y * f)));
     }
