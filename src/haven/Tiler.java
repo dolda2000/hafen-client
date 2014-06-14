@@ -135,7 +135,7 @@ public abstract class Tiler {
 	}
     }
 
-    public void model(MapMesh m, Random rnd, Coord lc, Coord gc) {
+    public static void flatmodel(MapMesh m, Coord lc) {
 	MapMesh.MapSurface s = m.data(m.gnd);
 	if(s.split[s.ts.o(lc)]) {
 	    s.new Face(s.surf[s.vs.o(lc.x, lc.y)],
@@ -152,6 +152,10 @@ public abstract class Tiler {
 		       s.surf[s.vs.o(lc.x + 1, lc.y + 1)],
 		       s.surf[s.vs.o(lc.x + 1, lc.y)]);
 	}
+    }
+
+    public void model(MapMesh m, Random rnd, Coord lc, Coord gc) {
+	flatmodel(m, lc);
     }
 
     public void lay(MapMesh m, Coord lc, Coord gc, MCons cons) {

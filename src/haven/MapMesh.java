@@ -199,6 +199,13 @@ public class MapMesh implements Rendered, Disposable {
 	ret.setSeed(ret.nextInt() + c.y);
 	return(ret);
     }
+
+    public static Random grnd(Coord c) {
+	Random ret = new Random(1192414289);
+	ret.setSeed(ret.nextInt() + c.x);
+	ret.setSeed(ret.nextInt() + c.y);
+	return(ret);
+    }
 	
     private static void dotrans(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	Tiler ground = m.map.tiler(m.map.gettile(gc));
