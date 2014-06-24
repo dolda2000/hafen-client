@@ -961,6 +961,7 @@ public class ChatUI extends Widget {
 	    sel.show();
 	    resize(sz);
 	}
+	setfocus(chan);
     }
 
     private class Notification {
