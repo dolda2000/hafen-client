@@ -29,7 +29,7 @@ package haven;
 public class ISBox extends Widget implements DTarget {
     static Tex bg = Resource.loadtex("gfx/hud/bosq");
     static Text.Foundry lf;
-    private Resource res;
+    private Indir<Resource> res;
     private Text label;
     static {
         lf = new Text.Foundry(Text.sans, 18, java.awt.Color.WHITE);
@@ -39,15 +39,23 @@ public class ISBox extends Widget implements DTarget {
     @RName("isbox")
     public static class $_ implements Factory {
 	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new ISBox(c, parent, Resource.load((String)args[0]), (Integer)args[1], (Integer)args[2], (Integer)args[3]));
+	    Indir<Resource> res;
+	    if(args[0] instanceof String)
+		res = Resource.load((String)args[0]).indir();
+	    else
+		res = parent.ui.sess.getres((Integer)args[0]);
+	    return(new ISBox(c, parent, res, (Integer)args[1], (Integer)args[2], (Integer)args[3]));
 	}
     }
     
     private void setlabel(int rem, int av, int bi) {
-        label = lf.renderf("%d/%d/%d", rem, av, bi);
+	if(bi < 0)
+	    label = lf.renderf("%d/%d", rem, av);
+	else
+	    label = lf.renderf("%d/%d/%d", rem, av, bi);
     }
     
-    public ISBox(Coord c, Widget parent, Resource res, int rem, int av, int bi) {
+    public ISBox(Coord c, Widget parent, Indir<Resource> res, int rem, int av, int bi) {
         super(c, bg.sz(), parent);
         this.res = res;
         setlabel(rem, av, bi);
@@ -55,17 +63,19 @@ public class ISBox extends Widget implements DTarget {
     
     public void draw(GOut g) {
         g.image(bg, Coord.z);
-        if(!res.loading) {
-            Tex t = res.layer(Resource.imgc).tex();
+	try {
+            Tex t = res.get().layer(Resource.imgc).tex();
             Coord dc = new Coord(6, (bg.sz().y / 2) - (t.sz().y / 2));
             g.image(t, dc);
-        }
+        } catch(Loading e) {}
         g.image(label.tex(), new Coord(40, (bg.sz().y / 2) - (label.tex().sz().y / 2)));
     }
     
     public Object tooltip(Coord c, Widget prev) {
-	if(!res.loading && (res.layer(Resource.tooltip) != null))
-	    return(res.layer(Resource.tooltip).t);
+	try {
+	    if(res.get().layer(Resource.tooltip) != null)
+		return(res.get().layer(Resource.tooltip).t);
+	} catch(Loading e) {}
 	return(null);
     }
     
