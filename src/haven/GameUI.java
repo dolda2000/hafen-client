@@ -46,7 +46,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public BuddyWnd buddies;
     public Polity polity;
     public HelpWnd help;
-    public Collection<GItem> hand = new LinkedList<GItem>();
+    public Collection<DraggedItem> hand = new LinkedList<DraggedItem>();
     private WItem vhand;
     public ChatUI chat;
     public ChatUI.Channel syslog;
@@ -136,14 +136,23 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
+    static class DraggedItem {
+	final GItem item;
+	final Coord dc;
+
+	DraggedItem(GItem item, Coord dc) {
+	    this.item = item; this.dc = dc;
+	}
+    }
+
     private void updhand() {
 	if((hand.isEmpty() && (vhand != null)) || ((vhand != null) && !hand.contains(vhand.item))) {
 	    ui.destroy(vhand);
 	    vhand = null;
 	}
 	if(!hand.isEmpty() && (vhand == null)) {
-	    GItem fi = hand.iterator().next();
-	    vhand = new ItemDrag(new Coord(15, 15), this, fi);
+	    DraggedItem fi = hand.iterator().next();
+	    vhand = new ItemDrag(fi.dc, this, fi.item);
 	}
     }
 
@@ -174,8 +183,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    equwnd.hide();
 	    return(equ);
 	} else if(place == "hand") {
-	    GItem g = (GItem)gettype(type).create((Coord)pargs[1], this, cargs);
-	    hand.add(g);
+	    GItem g = (GItem)gettype(type).create(Coord.z, this, cargs);
+	    Coord lc = (Coord)pargs[1];
+	    hand.add(new DraggedItem(g, lc));
 	    updhand();
 	    return(g);
 	} else if(place == "craft") {
@@ -218,9 +228,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
     
     public void cdestroy(Widget w) {
-	if((w instanceof GItem) && hand.contains(w)) {
-	    hand.remove(w);
-	    updhand();
+	if(w instanceof GItem) {
+	    for(Iterator<DraggedItem> i = hand.iterator(); i.hasNext();) {
+		DraggedItem di = i.next();
+		if(di.item == w) {
+		    i.remove();
+		    updhand();
+		}
+	    }
 	} else if(w == polity) {
 	    polity = null;
 	}
