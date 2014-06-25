@@ -37,7 +37,7 @@ public class WItem extends Widget implements DTarget {
     public final GItem item;
     private Tex ltex = null;
     private Tex mask = null;
-    private Resource cmask = null;
+    private Tex cmask = null;
     
     public WItem(Coord c, Widget parent, GItem item) {
 	super(c, Inventory.sqsz, parent);
@@ -46,10 +46,6 @@ public class WItem extends Widget implements DTarget {
     
     public void drawmain(GOut g, Tex tex) {
 	g.image(tex, Coord.z);
-	if(tex != ltex) {
-	    resize(tex.sz());
-	    ltex = tex;
-	}
     }
 
     public static BufferedImage rendershort(List<ItemInfo> info) {
@@ -185,15 +181,26 @@ public class WItem extends Widget implements DTarget {
 	}
     };
     
-    public void draw(GOut g) {
+    public void tick(double dt) {
 	try {
 	    Resource res = item.res.get();
 	    Tex tex = res.layer(Resource.imgc).tex();
-	    drawmain(g, tex);
+	    if(tex != ltex) {
+		resize(tex.sz());
+		ltex = tex;
+	    }
+	} catch(Loading e) {
+	    ltex = null;
+	}
+    }
+
+    public void draw(GOut g) {
+	if(ltex != null) {
+	    drawmain(g, ltex);
 	    if(item.num >= 0) {
-		g.atext(Integer.toString(item.num), tex.sz(), 1, 1);
+		g.atext(Integer.toString(item.num), ltex.sz(), 1, 1);
 	    } else if(itemnum.get() != null) {
-		g.aimage(itemnum.get(), tex.sz(), 1, 1);
+		g.aimage(itemnum.get(), ltex.sz(), 1, 1);
 	    }
 	    if(item.meter > 0) {
 		double a = ((double)item.meter) / 100.0;
@@ -202,11 +209,11 @@ public class WItem extends Widget implements DTarget {
 		g.chcolor();
 	    }
 	    if(olcol.get() != null) {
-		if(cmask != res) {
+		if(cmask != ltex) {
 		    mask = null;
-		    if(tex instanceof TexI)
-			mask = ((TexI)tex).mkmask();
-		    cmask = res;
+		    if(ltex instanceof TexI)
+			mask = ((TexI)ltex).mkmask();
+		    cmask = ltex;
 		}
 		if(mask != null) {
 		    g.chcolor(olcol.get());
@@ -214,7 +221,7 @@ public class WItem extends Widget implements DTarget {
 		    g.chcolor();
 		}
 	    }
-	} catch(Loading e) {
+	} else {
 	    missing.loadwait();
 	    g.image(missing.layer(Resource.imgc).tex(), Coord.z, sz);
 	}
