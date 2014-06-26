@@ -41,7 +41,8 @@ public class Button extends SSWidget {
     public Text text;
     public BufferedImage cont;
     static Text.Foundry tf = new Text.Foundry(Text.serif, 12, Color.YELLOW);
-    UI.Grab a = null;
+    boolean a = false;
+    UI.Grab d = null;
 	
     @RName("btn")
     public static class $Btn implements Factory {
@@ -84,13 +85,13 @@ public class Button extends SSWidget {
     public void render() {
 	synchronized(this) {
 	    Graphics g = graphics();
-	    g.drawImage((a != null)?dt:ut, 3, 3, sz.x - 6, 13, null);
+	    g.drawImage(a?dt:ut, 3, 3, sz.x - 6, 13, null);
 	    g.drawImage(bl, 0, 0, null);
 	    g.drawImage(br, sz.x - br.getWidth(), 0, null);
 	    g.drawImage(bt, 3, 0, sz.x - 6, bt.getHeight(), null);
 	    g.drawImage(bb, 3, sz.y - bb.getHeight(), sz.x - 6, bb.getHeight(), null);
 	    Coord tc = sz.div(2).add(Utils.imgsz(cont).div(2).inv());
-	    if(a != null)
+	    if(a)
 		tc = tc.add(1, 1);
 	    g.drawImage(cont, tc.x, tc.y, null);
 	    update();
@@ -122,18 +123,30 @@ public class Button extends SSWidget {
 	}
     }
     
+    public void mousemove(Coord c) {
+	if(d != null) {
+	    boolean a = c.isect(Coord.z, sz);
+	    if(a != this.a) {
+		this.a = a;
+		render();
+	    }
+	}
+    }
+
     public boolean mousedown(Coord c, int button) {
 	if(button != 1)
 	    return(false);
-	a = ui.grabmouse(this);
+	a = true;
+	d = ui.grabmouse(this);
 	render();
 	return(true);
     }
 	
     public boolean mouseup(Coord c, int button) {
-	if((a != null) && button == 1) {
-	    a.remove();
-	    a = null;
+	if((d != null) && button == 1) {
+	    d.remove();
+	    d = null;
+	    a = false;
 	    render();
 	    if(c.isect(new Coord(0, 0), sz))
 		click();
