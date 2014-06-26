@@ -38,7 +38,7 @@ public class Textlog extends Widget {
     List<Text> lines;
     int maxy, cury;
     int margin = 3;
-    boolean sdrag = false;
+    UI.Grab sdrag = null;
 	
     @RName("log")
     public static class $_ implements Factory {
@@ -121,8 +121,7 @@ public class Textlog extends Widget {
 	int fx = sz.x - sflarp.sz().x;
 	int cx = fx + (sflarp.sz().x / 2) - (schain.sz().x / 2);
 	if((maxy > sz.y) && (c.x >= fx)) {
-	    sdrag = true;
-	    ui.grabmouse(this);
+	    sdrag = ui.grabmouse(this);
 	    mousemove(c);
 	    return(true);
 	}
@@ -130,7 +129,7 @@ public class Textlog extends Widget {
     }
         
     public void mousemove(Coord c) {
-	if(sdrag) {
+	if(sdrag != null) {
 	    double a = (double)(c.y - (sflarp.sz().y / 2)) / (double)(sz.y - sflarp.sz().y);
 	    if(a < 0)
 		a = 0;
@@ -141,9 +140,9 @@ public class Textlog extends Widget {
     }
         
     public boolean mouseup(Coord c, int button) {
-	if((button == 1) && sdrag) {
-	    sdrag = false;
-	    ui.grabmouse(null);
+	if((button == 1) && (sdrag != null)) {
+	    sdrag.remove();
+	    sdrag = null;
 	    return(true);
 	}
 	return(false);

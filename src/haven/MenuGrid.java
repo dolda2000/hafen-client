@@ -41,6 +41,7 @@ public class MenuGrid extends Widget {
     public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 10);
     private static Coord gsz = new Coord(4, 4);
     private Pagina cur, pressed, dragging, layout[][] = new Pagina[gsz.x][gsz.y];
+    private UI.Grab grab;
     private int curoff = 0;
     private int pagseq = 0;
     private boolean loading = true;
@@ -263,7 +264,7 @@ public class MenuGrid extends Widget {
 	Pagina h = bhit(c);
 	if((button == 1) && (h != null)) {
 	    pressed = h;
-	    ui.grabmouse(this);
+	    grab = ui.grabmouse(this);
 	}
 	return(true);
     }
@@ -321,7 +322,7 @@ public class MenuGrid extends Widget {
 		    use(h);
 		pressed = null;
 	    }
-	    ui.grabmouse(null);
+	    grab.remove();
 	}
 	return(true);
     }

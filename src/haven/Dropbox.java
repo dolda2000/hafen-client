@@ -41,9 +41,11 @@ public abstract class Dropbox<T> extends ListWidget<T> {
     }
 
     private class Droplist extends Listbox<T> {
+	private UI.Grab grab = null;
+
 	private Droplist() {
 	    super(Dropbox.this.rootpos().add(0, Dropbox.this.sz.y), Dropbox.this.ui.root, Dropbox.this.sz.x, Math.min(listh, Dropbox.this.listitems()), Dropbox.this.itemh);
-	    ui.grabmouse(this);
+	    grab = ui.grabmouse(this);
 	    sel = Dropbox.this.sel;
 	}
 
@@ -60,7 +62,7 @@ public abstract class Dropbox<T> extends ListWidget<T> {
 	}
 
 	public void destroy() {
-	    ui.grabmouse(null);
+	    grab.remove();
 	    super.destroy();
 	    dl = null;
 	}

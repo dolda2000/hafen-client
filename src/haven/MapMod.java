@@ -29,6 +29,7 @@ package haven;
 public class MapMod extends Window implements MapView.Grabber {
     MapView mv;
     MapView.GrabXL grab;
+    UI.Grab mgrab;
     MCache.Overlay ol;
     MCache map;
     boolean walkmod;
@@ -81,7 +82,7 @@ public class MapMod extends Window implements MapView.Grabber {
         ol = map.new Overlay(tc, tc, 1 << 17);
         sc = tc;
         grab.mv = true;
-        ui.grabmouse(mv);
+        mgrab = ui.grabmouse(mv);
 	return(true);
     }
 
@@ -91,7 +92,7 @@ public class MapMod extends Window implements MapView.Grabber {
 	
     public boolean mmouseup(Coord mc, int button) {
         grab.mv = false;
-        ui.grabmouse(null);
+	mgrab.remove();
 	return(true);
     }
 	

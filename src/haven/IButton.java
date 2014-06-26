@@ -31,7 +31,8 @@ import java.awt.image.BufferedImage;
 
 public class IButton extends SSWidget {
     BufferedImage up, down, hover;
-    boolean a = false, h = false;
+    boolean h = false;
+    UI.Grab a = null;
 	
     @RName("ibtn")
     public static class $_ implements Factory {
@@ -55,7 +56,7 @@ public class IButton extends SSWidget {
     public void render() {
 	clear();
 	Graphics g = graphics();
-	if(a)
+	if(a != null)
 	    g.drawImage(down, 0, 0, null);
 	else if(h)
 	    g.drawImage(hover, 0, 0, null);
@@ -81,16 +82,15 @@ public class IButton extends SSWidget {
 	    return(false);
 	if(!checkhit(c))
 	    return(false);
-	a = true;
-	ui.grabmouse(this);
+	a = ui.grabmouse(this);
 	render();
 	return(true);
     }
 	
     public boolean mouseup(Coord c, int button) {
-	if(a && button == 1) {
-	    a = false;
-	    ui.grabmouse(null);
+	if((a != null) && button == 1) {
+	    a.remove();
+	    a = null;
 	    if(checkhit(c))
 		click();
 	    render();

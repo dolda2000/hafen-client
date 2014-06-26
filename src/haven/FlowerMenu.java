@@ -37,6 +37,7 @@ public class FlowerMenu extends Widget {
     static Color ptc = Color.YELLOW;
     static Text.Foundry ptf = new Text.Foundry(Text.dfont, 12);
     static int ph = 30, ppl = 8;
+    UI.Grab mg, kg;
     Petal[] opts;
 	
     @RName("sm")
@@ -168,8 +169,8 @@ public class FlowerMenu extends Widget {
 	    opts[i].num = i;
 	}
 	organize(opts);
-	ui.grabmouse(this);
-	ui.grabkeys(this);
+	mg = ui.grabmouse(this);
+	kg = ui.grabkeys(this);
 	new Opening();
     }
 	
@@ -184,12 +185,12 @@ public class FlowerMenu extends Widget {
     public void uimsg(String msg, Object... args) {
 	if(msg == "cancel") {
 	    new Cancel();
-	    ui.grabmouse(null);
-	    ui.grabkeys(null);
+	    mg.remove();
+	    kg.remove();
 	} else if(msg == "act") {
 	    new Chosen(opts[(Integer)args[0]]);
-	    ui.grabmouse(null);
-	    ui.grabkeys(null);
+	    mg.remove();
+	    kg.remove();
 	}
     }
 	
@@ -197,16 +198,20 @@ public class FlowerMenu extends Widget {
 	super.draw(g, false);
     }
     
+    public boolean keydown(java.awt.event.KeyEvent ev) {
+	return(true);
+    }
+
     public boolean type(char key, java.awt.event.KeyEvent ev) {
 	if((key >= '0') && (key <= '9')) {
 	    int opt = (key == '0')?10:(key - '1');
 	    if(opt < opts.length)
 		choose(opts[opt]);
-	    ui.grabkeys(null);
+	    kg.remove();
 	    return(true);
 	} else if(key == 27) {
 	    choose(null);
-	    ui.grabkeys(null);
+	    kg.remove();
 	    return(true);
 	}
 	return(false);

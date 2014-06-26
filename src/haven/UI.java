@@ -30,10 +30,11 @@ import java.util.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.InputEvent;
+import static haven.Utils.el;
 
 public class UI {
     public RootWidget root;
-    private Widget keygrab, mousegrab;
+    final private LinkedList<Grab> keygrab = new LinkedList<Grab>(), mousegrab = new LinkedList<Grab>();
     public Map<Integer, Widget> widgets = new TreeMap<Integer, Widget>();
     public Map<Widget, Integer> rwidgets = new HashMap<Widget, Integer>();
     Receiver rcvr;
@@ -153,15 +154,35 @@ public class UI {
 	    bind(wdg, id);
 	}
     }
-	
-    public void grabmouse(Widget wdg) {
-	mousegrab = wdg;
+
+    public abstract class Grab {
+	public final Widget wdg;
+	public Grab(Widget wdg) {this.wdg = wdg;}
+	public abstract void remove();
     }
-	
-    public void grabkeys(Widget wdg) {
-	keygrab = wdg;
+
+    public Grab grabmouse(Widget wdg) {
+	if(wdg == null) throw(new NullPointerException());
+	Grab g = new Grab(wdg) {
+		public void remove() {
+		    mousegrab.remove(this);
+		}
+	    };
+	mousegrab.addFirst(g);
+	return(g);
     }
-	
+
+    public Grab grabkeys(Widget wdg) {
+	if(wdg == null) throw(new NullPointerException());
+	Grab g = new Grab(wdg) {
+		public void remove() {
+		    keygrab.remove(this);
+		}
+	    };
+	keygrab.addFirst(g);
+	return(g);
+    }
+
     private void removeid(Widget wdg) {
 	if(rwidgets.containsKey(wdg)) {
 	    int id = rwidgets.get(wdg);
@@ -173,10 +194,11 @@ public class UI {
     }
 	
     public void destroy(Widget wdg) {
-	if((mousegrab != null) && mousegrab.hasparent(wdg))
-	    mousegrab = null;
-	if((keygrab != null) && keygrab.hasparent(wdg))
-	    keygrab = null;
+	Grab g;
+	if(((g = el(mousegrab)) != null) && g.wdg.hasparent(wdg))
+	    g.remove();
+	if(((g = el(keygrab)) != null) && g.wdg.hasparent(wdg))
+	    g.remove();
 	removeid(wdg);
 	wdg.reqdestroy();
     }
@@ -221,32 +243,35 @@ public class UI {
 	*/
     }
 
+    private Grab[] c(Collection<Grab> g) {return(g.toArray(new Grab[0]));}
+
     public void type(KeyEvent ev) {
 	setmods(ev);
-	if(keygrab == null) {
-	    if(!root.type(ev.getKeyChar(), ev))
-		root.globtype(ev.getKeyChar(), ev);
-	} else {
-	    keygrab.type(ev.getKeyChar(), ev);
+	for(Grab g : c(keygrab)) {
+	    if(g.wdg.type(ev.getKeyChar(), ev))
+		return;
 	}
+	if(!root.type(ev.getKeyChar(), ev))
+	    root.globtype(ev.getKeyChar(), ev);
     }
 	
     public void keydown(KeyEvent ev) {
 	setmods(ev);
-	if(keygrab == null) {
-	    if(!root.keydown(ev))
-		root.globtype((char)0, ev);
-	} else {
-	    keygrab.keydown(ev);
+	for(Grab g : c(keygrab)) {
+	    if(g.wdg.keydown(ev))
+		return;
 	}
+	if(!root.keydown(ev))
+	    root.globtype((char)0, ev);
     }
 	
     public void keyup(KeyEvent ev) {
 	setmods(ev);
-	if(keygrab == null)
-	    root.keyup(ev);
-	else
-	    keygrab.keyup(ev);		
+	for(Grab g : c(keygrab)) {
+	    if(g.wdg.keyup(ev))
+		return;
+	}
+	root.keyup(ev);
     }
 	
     private Coord wdgxlate(Coord c, Widget wdg) {
@@ -271,37 +296,37 @@ public class UI {
     public void mousedown(MouseEvent ev, Coord c, int button) {
 	setmods(ev);
 	lcc = mc = c;
-	if(mousegrab == null)
-	    root.mousedown(c, button);
-	else
-	    mousegrab.mousedown(wdgxlate(c, mousegrab), button);
+	for(Grab g : c(mousegrab)) {
+	    if(g.wdg.mousedown(wdgxlate(c, g.wdg), button))
+		return;
+	}
+	root.mousedown(c, button);
     }
 	
     public void mouseup(MouseEvent ev, Coord c, int button) {
 	setmods(ev);
 	mc = c;
-	if(mousegrab == null)
-	    root.mouseup(c, button);
-	else
-	    mousegrab.mouseup(wdgxlate(c, mousegrab), button);
+	for(Grab g : c(mousegrab)) {
+	    if(g.wdg.mouseup(wdgxlate(c, g.wdg), button))
+		return;
+	}
+	root.mouseup(c, button);
     }
 	
     public void mousemove(MouseEvent ev, Coord c) {
 	setmods(ev);
 	mc = c;
-	if(mousegrab == null)
-	    root.mousemove(c);
-	else
-	    mousegrab.mousemove(wdgxlate(c, mousegrab));
+	root.mousemove(c);
     }
 	
     public void mousewheel(MouseEvent ev, Coord c, int amount) {
 	setmods(ev);
 	lcc = mc = c;
-	if(mousegrab == null)
-	    root.mousewheel(c, amount);
-	else
-	    mousegrab.mousewheel(wdgxlate(c, mousegrab), amount);
+	for(Grab g : c(mousegrab)) {
+	    if(g.wdg.mousewheel(wdgxlate(c, g.wdg), amount))
+		return;
+	}
+	root.mousewheel(c, amount);
     }
     
     public int modflags() {

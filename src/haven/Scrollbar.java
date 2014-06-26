@@ -30,7 +30,7 @@ public class Scrollbar extends Widget {
     static final Tex schain = Resource.loadtex("gfx/hud/schain");
     static final Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
     public int val, min, max;
-    private boolean drag = false;
+    private UI.Grab drag = null;
     
     public Scrollbar(Coord c, int h, Widget parent, int min, int max) {
 	super(c.add(-sflarp.sz().x, 0), new Coord(sflarp.sz().x, h), parent);
@@ -59,14 +59,13 @@ public class Scrollbar extends Widget {
 	    return(false);
 	if(!vis())
 	    return(false);
-	drag = true;
-	ui.grabmouse(this);
+	drag = ui.grabmouse(this);
 	mousemove(c);
 	return(true);
     }
     
     public void mousemove(Coord c) {
-	if(drag) {
+	if(drag != null) {
 	    double a = (double)(c.y - (sflarp.sz().y / 2)) / (double)(sz.y - sflarp.sz().y);
 	    if(a < 0)
 		a = 0;
@@ -80,10 +79,10 @@ public class Scrollbar extends Widget {
     public boolean mouseup(Coord c, int button) {
 	if(button != 1)
 	    return(false);
-	if(!drag)
+	if(drag == null)
 	    return(false);
-	drag = false;
-	ui.grabmouse(null);
+	drag.remove();
+	drag = null;
 	return(true);
     }
     
