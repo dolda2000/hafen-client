@@ -56,6 +56,7 @@ public class Window extends Widget implements DTarget {
     public boolean dt = false;
     public Text cap;
     public Coord wtl, wsz, ctl, csz, atl, asz;
+    private UI.Grab dm = null;
     private Coord doff;
 
     @RName("wnd")
@@ -172,7 +173,7 @@ public class Window extends Widget implements DTarget {
 	    return(true);
 	if(c.isect(wtl, wsz) || ((cap != null) && c.isect(wtl.add((wsz.x / 2) - (cap.sz().x / 2), -capo), new Coord(cap.sz().x, capo)))) {
 	    if(button == 1) {
-		ui.grabmouse(this);
+		dm = ui.grabmouse(this);
 		doff = c;
 	    }
 	    return(true);
@@ -181,9 +182,9 @@ public class Window extends Widget implements DTarget {
     }
 
     public boolean mouseup(Coord c, int button) {
-	if(doff != null) {
-	    ui.grabmouse(null);
-	    doff = null;
+	if(dm != null) {
+	    dm.remove();
+	    dm = null;
 	} else {
 	    super.mouseup(c, button);
 	}
@@ -191,7 +192,7 @@ public class Window extends Widget implements DTarget {
     }
 
     public void mousemove(Coord c) {
-	if(doff != null) {
+	if(dm != null) {
 	    this.c = this.c.add(c.add(doff.inv()));
 	} else {
 	    super.mousemove(c);

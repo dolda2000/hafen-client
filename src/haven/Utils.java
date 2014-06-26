@@ -907,7 +907,9 @@ public class Utils {
     }
     
     public static <T> T el(Iterable<T> c) {
-	return(c.iterator().next());
+	Iterator<T> i = c.iterator();
+	if(!i.hasNext()) return(null);
+	return(i.next());
     }
     
     public static <T> T construct(Constructor<T> cons, Object... args) {

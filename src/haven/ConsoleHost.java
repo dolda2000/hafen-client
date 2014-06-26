@@ -37,6 +37,7 @@ public abstract class ConsoleHost extends Widget {
     private List<String> history = new ArrayList<String>();
     private int hpos = history.size();
     private String hcurrent;
+    private UI.Grab kg;
     
     private class CommandLine extends LineEdit {
 	private CommandLine() {
@@ -49,7 +50,7 @@ public abstract class ConsoleHost extends Widget {
 
 	private void cancel() {
 	    cmdline = null;
-	    ui.grabkeys(null);
+	    kg.remove();
 	}
 	
 	protected void done(String line) {
@@ -110,7 +111,7 @@ public abstract class ConsoleHost extends Widget {
     }
     
     public void entercmd() {
-	ui.grabkeys(this);
+	kg = ui.grabkeys(this);
 	hpos = history.size();
 	cmdline = new CommandLine();
     }

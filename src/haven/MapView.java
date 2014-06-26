@@ -916,7 +916,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
-    private boolean camdrag = false;
+    private UI.Grab camdrag = null;
     
     public abstract class Maptest implements Delayed {
 	private final Coord pc;
@@ -1026,8 +1026,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	parent.setfocus(this);
 	if(button == 2) {
 	    if(((Camera)camera).click(c)) {
-		ui.grabmouse(this);
-		camdrag = true;
+		camdrag = ui.grabmouse(this);
 	    }
 	} else if(placing != null) {
 	    if(placing.lastmc != null)
@@ -1042,7 +1041,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public void mousemove(Coord c) {
 	if(grab != null)
 	    grab.mmousemove(c);
-	if(camdrag) {
+	if(camdrag != null) {
 	    ((Camera)camera).drag(c);
 	} else if(placing != null) {
 	    if((placing.lastmc == null) || !placing.lastmc.equals(c)) {
@@ -1053,10 +1052,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
     
     public boolean mouseup(Coord c, int button) {
 	if(button == 2) {
-	    if(camdrag) {
+	    if(camdrag != null) {
 		((Camera)camera).release();
-		ui.grabmouse(null);
-		camdrag = false;
+		camdrag.remove();
+		camdrag = null;
 	    }
 	} else if(grab != null) {
 	    grab.mmouseup(c, button);

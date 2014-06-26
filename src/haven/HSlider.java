@@ -32,7 +32,7 @@ public class HSlider extends Widget {
     static final Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
     static final Tex schain;
     public int val, min, max;
-    private boolean drag = false;
+    private UI.Grab drag = null;
 
     static {
 	BufferedImage vc = Resource.loadimg("gfx/hud/schain");
@@ -62,14 +62,13 @@ public class HSlider extends Widget {
     public boolean mousedown(Coord c, int button) {
 	if(button != 1)
 	    return(false);
-	drag = true;
-	ui.grabmouse(this);
+	drag = ui.grabmouse(this);
 	mousemove(c);
 	return(true);
     }
     
     public void mousemove(Coord c) {
-	if(drag) {
+	if(drag != null) {
 	    double a = (double)(c.x - (sflarp.sz().x / 2)) / (double)(sz.x - sflarp.sz().x);
 	    if(a < 0)
 		a = 0;
@@ -83,10 +82,10 @@ public class HSlider extends Widget {
     public boolean mouseup(Coord c, int button) {
 	if(button != 1)
 	    return(false);
-	if(!drag)
+	if(drag == null)
 	    return(false);
-	drag = false;
-	ui.grabmouse(null);
+	drag.remove();
+	drag = null;
 	return(true);
     }
 

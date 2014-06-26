@@ -78,8 +78,10 @@ public class ItemDrag extends WItem {
     public boolean mousedown(Coord c, int button) {
 	if(button == 1) {
 	    dropon(parent, c.add(this.c));
+	    return(true);
 	} else if(button == 3) {
 	    interact(parent, c.add(this.c));
+	    return(true);
 	}
 	return(false);
     }

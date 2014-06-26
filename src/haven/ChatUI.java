@@ -48,6 +48,7 @@ public class ChatUI extends Widget {
     private Coord base;
     private QuickLine qline = null;
     private final LinkedList<Notification> notifs = new LinkedList<Notification>();
+    private UI.Grab qgrab;
 
     public ChatUI(Coord c, int w, Widget parent) {
 	super(c.add(0, -50), new Coord(w, 50), parent);
@@ -343,6 +344,7 @@ public class ChatUI extends Widget {
 	}
 
 	private CharPos selorig, lasthit, selstart, selend;
+	private UI.Grab grab;
 	private boolean dragging;
 	public boolean mousedown(Coord c, int btn) {
 	    if(super.mousedown(c, btn))
@@ -353,7 +355,7 @@ public class ChatUI extends Widget {
 		if(ch != null) {
 		    selorig = lasthit = ch;
 		    dragging = false;
-		    ui.grabmouse(this);
+		    grab = ui.grabmouse(this);
 		}
 		return(true);
 	    }
@@ -465,7 +467,7 @@ public class ChatUI extends Widget {
 			selected(selstart, selend);
 		    else
 			clicked(selorig);
-		    ui.grabmouse(null);
+		    grab.remove();
 		    selorig = null;
 		    dragging = false;
 		}
@@ -1082,7 +1084,7 @@ public class ChatUI extends Widget {
 	
 	private void cancel() {
 	    qline = null;
-	    ui.grabkeys(null);
+	    qgrab.remove();
 	}
 	
 	protected void done(String line) {
@@ -1171,7 +1173,7 @@ public class ChatUI extends Widget {
 	    return(true);
 	} else if(key == 10) {
 	    if(!expanded && (sel instanceof EntryChannel)) {
-		ui.grabkeys(this);
+		qgrab = ui.grabkeys(this);
 		qline = new QuickLine((EntryChannel)sel);
 		return(true);
 	    }
