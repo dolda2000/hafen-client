@@ -29,16 +29,32 @@ package haven;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.image.BufferedImage;
+import static haven.PUtils.*;
 
 public class Window extends Widget implements DTarget {
-    public static final Tex bg = Resource.loadtex("gfx/hud/wnd/bgtex");
-    public static final Tex cl = Resource.loadtex("gfx/hud/wnd/cleft");
-    public static final Tex cm = Resource.loadtex("gfx/hud/wnd/cmain");
-    public static final Tex cr = Resource.loadtex("gfx/hud/wnd/cright");
+    public static final Tex bg = Resource.loadtex("gfx/hud/wnd/lg/bg");
+    public static final Tex bgl = Resource.loadtex("gfx/hud/wnd/lg/bgl");
+    public static final Tex bgr = Resource.loadtex("gfx/hud/wnd/lg/bgr");
+    public static final Tex cl = Resource.loadtex("gfx/hud/wnd/lg/cl");
+    public static final TexI cm = new TexI(Resource.loadimg("gfx/hud/wnd/lg/cm"));
+    public static final Tex cr = Resource.loadtex("gfx/hud/wnd/lg/cr");
+    public static final Tex tm = Resource.loadtex("gfx/hud/wnd/lg/tm");
+    public static final Tex tr = Resource.loadtex("gfx/hud/wnd/lg/tr");
+    public static final Tex lm = Resource.loadtex("gfx/hud/wnd/lg/lm");
+    public static final Tex lb = Resource.loadtex("gfx/hud/wnd/lg/lb");
+    public static final Tex rm = Resource.loadtex("gfx/hud/wnd/lg/rm");
+    public static final Tex bl = Resource.loadtex("gfx/hud/wnd/lg/bl");
+    public static final Tex bm = Resource.loadtex("gfx/hud/wnd/lg/bm");
+    public static final Tex br = Resource.loadtex("gfx/hud/wnd/lg/br");
+    public static final Coord tlm = new Coord(18, 30), brm = new Coord(13, 22), cpo = new Coord(36, 17);
     public static final int capo = 7, capio = 2;
-    public static final Coord mrgn = new Coord(13, 13);
-    public static final Color cc = Color.YELLOW;
-    public static final Text.Foundry cf = new Text.Foundry(Text.serif, 12);
+    public static final Coord mrgn = new Coord(9, 9);
+    public static final Color cc = new Color(255, 224, 0);
+    public static final Text.Furnace cf = new Text.Imager(new Text.Foundry(Text.fraktur, 15, cc).aa(true)) {
+	    protected BufferedImage proc(Text text) {
+		return(rasterimg(blurmask2(text.img.getRaster(), 1, 1, Color.BLACK)));
+	    }
+	};
     public static final IBox wbox = new IBox("gfx/hud/wnd", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb") {
 	    final Coord co = new Coord(3, 3), bo = new Coord(2, 2);
 
@@ -48,14 +64,15 @@ public class Window extends Widget implements DTarget {
 	    public Coord cisz() {return(super.cisz().sub(co.mul(2)));}
 	};
     private static final BufferedImage[] cbtni = new BufferedImage[] {
-	Resource.loadimg("gfx/hud/wnd/cbtn"),
-	Resource.loadimg("gfx/hud/wnd/cbtnd"),
-	Resource.loadimg("gfx/hud/wnd/cbtnh")};
+	Resource.loadimg("gfx/hud/wnd/lg/cbtnu"),
+	Resource.loadimg("gfx/hud/wnd/lg/cbtnd"),
+	Resource.loadimg("gfx/hud/wnd/lg/cbtnh")};
     public final Coord tlo, rbo;
     public final IButton cbtn;
     public boolean dt = false;
     public Text cap;
-    public Coord wtl, wsz, ctl, csz, atl, asz;
+    public Coord wsz, ctl, csz, atl, asz, cptl, cpsz;
+    public int cmw;
     private UI.Grab dm = null;
     private Coord doff;
 
@@ -88,10 +105,47 @@ public class Window extends Widget implements DTarget {
 	if(cap == null)
 	    this.cap = null;
 	else
-	    this.cap = cf.render(cap, cc);
+	    this.cap = cf.render(cap);
     }
 
     public void cdraw(GOut g) {
+    }
+
+    private void drawframe(GOut g) {
+	Coord mdo, cbr;
+	g.image(cl, tlo);
+	mdo = tlo.add(cl.sz().x, 0);
+	cbr = mdo.add(cmw, cm.sz().y);
+	for(int x = 0; x < cmw; x++)
+	    g.image(cm, mdo.add(x, 0), Coord.z, cbr);
+	g.image(cr, tlo.add(cl.sz().x + cmw, 0));
+	g.image(cap.tex(), tlo.add(cpo));
+	mdo = tlo.add(cl.sz().x + cmw + cr.sz().x, 0);
+	cbr = tlo.add(wsz.add(-tr.sz().x, tm.sz().y));
+	for(; mdo.x < cbr.x; mdo.x += tm.sz().x)
+	    g.image(tm, mdo, Coord.z, cbr);
+	g.image(tr, tlo.add(wsz.x - tr.sz().x, 0));
+
+	mdo = tlo.add(0, cl.sz().y);
+	cbr = tlo.add(lm.sz().x, wsz.y - bl.sz().y);
+	if(cbr.y - mdo.y >= lb.sz().y) {
+	    cbr.y -= lb.sz().y;
+	    g.image(lb, new Coord(tlo.x, cbr.y));
+	}
+	for(; mdo.y < cbr.y; mdo.y += lm.sz().y)
+	    g.image(lm, mdo, Coord.z, cbr);
+
+	mdo = tlo.add(wsz.x - rm.sz().x, tr.sz().y);
+	cbr = tlo.add(wsz.x, wsz.y - br.sz().y);
+	for(; mdo.y < cbr.y; mdo.y += rm.sz().y)
+	    g.image(rm, mdo, Coord.z, cbr);
+
+	g.image(bl, tlo.add(0, wsz.y - bl.sz().y));
+	mdo = tlo.add(bl.sz().x, wsz.y - bm.sz().y);
+	cbr = tlo.add(wsz.x - br.sz().x, wsz.y);
+	for(; mdo.x < cbr.x; mdo.x += bm.sz().x)
+	    g.image(bm, mdo, Coord.z, cbr);
+	g.image(br, tlo.add(wsz.sub(br.sz())));
     }
 
     public void draw(GOut g) {
@@ -100,7 +154,15 @@ public class Window extends Widget implements DTarget {
 	    for(bgc.x = ctl.x; bgc.x < ctl.x + csz.x; bgc.x += bg.sz().x)
 		g.image(bg, bgc, ctl, csz);
 	}
+	bgc.x = ctl.x;
+	for(bgc.y = ctl.y; bgc.y < ctl.y + csz.y; bgc.y += bgl.sz().y)
+	    g.image(bgl, bgc, ctl, csz);
+	bgc.x = ctl.x + csz.x - bgr.sz().x;
+	for(bgc.y = ctl.y; bgc.y < ctl.y + csz.y; bgc.y += bgr.sz().y)
+	    g.image(bgr, bgc, ctl, csz);
 	cdraw(g.reclip(atl, asz));
+	drawframe(g);
+	/*
 	wbox.draw(g, wtl, wsz);
 	if(cap != null) {
 	    int w = cap.sz().x;
@@ -110,6 +172,7 @@ public class Window extends Widget implements DTarget {
 	    g.image(cr, new Coord(wtl.x + (wsz.x / 2) + (w / 2), y));
 	    g.image(cap.tex(), new Coord(wtl.x + (wsz.x / 2) - (w / 2), y + capio));
 	}
+	*/
 	super.draw(g);
     }
 
@@ -136,12 +199,16 @@ public class Window extends Widget implements DTarget {
     public void resize(Coord sz) {
 	asz = sz;
 	csz = asz.add(mrgn.mul(2));
-	wsz = csz.add(wbox.bisz());
-	wtl = new Coord(tlo.x, Math.max(tlo.y, capo));
-	this.sz = wsz.add(wtl).add(rbo);
-	ctl = wtl.add(wbox.btloff());
+	wsz = csz.add(tlm).add(brm);
+	this.sz = wsz.add(tlo).add(rbo);
+	ctl = tlo.add(tlm);
 	atl = ctl.add(mrgn);
-	placecbtn();
+	cmw = (cap == null)?0:(cap.sz().x);
+	cmw = Math.max(cmw, wsz.x / 4);
+	cptl = new Coord(ctl.x, tlo.y);
+	cpsz = tlo.add(cpo.x + cmw, cm.sz().y).sub(cptl);
+	cmw = cmw - (cl.sz().x - cpo.x) - 5;
+	cbtn.c = xlate(tlo.add(wsz.x - cbtn.sz.x, 0), false);
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.presize();
     }
@@ -171,7 +238,8 @@ public class Window extends Widget implements DTarget {
 	raise();
 	if(super.mousedown(c, button))
 	    return(true);
-	if(c.isect(wtl, wsz) || ((cap != null) && c.isect(wtl.add((wsz.x / 2) - (cap.sz().x / 2), -capo), new Coord(cap.sz().x, capo)))) {
+	Coord cpc = c.sub(cptl);
+	if(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128))) {
 	    if(button == 1) {
 		dm = ui.grabmouse(this);
 		doff = c;
