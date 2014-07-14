@@ -188,6 +188,19 @@ public class PUtils {
 	return(dst);
     }
 
+    public static WritableRaster tilemod(WritableRaster dst, Raster tile, Coord off) {
+       int w = dst.getWidth(), h = dst.getHeight(), b = dst.getNumBands();
+       int tw = tile.getWidth(), th = tile.getHeight(), tb = tile.getNumBands();
+       for(int y = 0; y < h; y++) {
+           for(int x = 0; x < w; x++) {
+               int tx = Utils.floormod(x - off.x, tw), ty = Utils.floormod(y - off.y, th);
+               for(int i = 0; i < b; i++)
+                   dst.setSample(x, y, i, (dst.getSample(x, y, i) * ((i < tb)?tile.getSample(tx, ty, i):255)) / 255);
+           }
+       }
+       return(dst);
+    }
+
     public static WritableRaster colmul(WritableRaster img, Color col) {
 	int w = img.getWidth(), h = img.getHeight();
 	int[] bm = {col.getRed(), col.getGreen(), col.getBlue(), col.getAlpha()};
