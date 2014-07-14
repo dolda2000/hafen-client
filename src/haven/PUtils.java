@@ -287,6 +287,20 @@ public class PUtils {
 	}
     }
 
+    public static class TexFurn extends Text.Imager {
+	public final BufferedImage tex;
+
+	public TexFurn(Text.Furnace bk, BufferedImage tex) {
+	    super(bk);
+	    this.tex = tex;
+	}
+
+	public BufferedImage proc(Text text) {
+	    tilemod(text.img.getRaster(), tex.getRaster(), Coord.z);
+	    return(text.img);
+	}
+    }
+
     public static void dumpband(Raster img, int band) {
 	int w = img.getWidth(), h = img.getHeight();
 	for(int y = 0; y < h; y++) {
