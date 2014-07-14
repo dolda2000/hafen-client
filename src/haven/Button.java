@@ -31,16 +31,20 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.image.BufferedImage;
 
-public class Button extends SSWidget {
-    static BufferedImage bl = Resource.loadimg("gfx/hud/buttons/tbtn/left");
-    static BufferedImage br = Resource.loadimg("gfx/hud/buttons/tbtn/right");
-    static BufferedImage bt = Resource.loadimg("gfx/hud/buttons/tbtn/top");
-    static BufferedImage bb = Resource.loadimg("gfx/hud/buttons/tbtn/bottom");
-    static BufferedImage dt = Resource.loadimg("gfx/hud/buttons/tbtn/dtex");
-    static BufferedImage ut = Resource.loadimg("gfx/hud/buttons/tbtn/utex");
+public class Button extends SIWidget {
+    public static final BufferedImage bl = Resource.loadimg("gfx/hud/buttons/tbtn/left");
+    public static final BufferedImage br = Resource.loadimg("gfx/hud/buttons/tbtn/right");
+    public static final BufferedImage bt = Resource.loadimg("gfx/hud/buttons/tbtn/top");
+    public static final BufferedImage bb = Resource.loadimg("gfx/hud/buttons/tbtn/bottom");
+    public static final BufferedImage dt = Resource.loadimg("gfx/hud/buttons/tbtn/dtex");
+    public static final BufferedImage ut = Resource.loadimg("gfx/hud/buttons/tbtn/utex");
+    public static final BufferedImage bm = Resource.loadimg("gfx/hud/buttons/tbtn/mid");
+    public static final int hs = bl.getHeight(), hl = bm.getHeight();
+    public boolean lg;
     public Text text;
     public BufferedImage cont;
-    static Text.Foundry tf = new Text.Foundry(Text.serif, 12, Color.YELLOW);
+    static Text.Foundry tf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
+    static Text.Furnace nf = new PUtils.BlurFurn(new PUtils.TexFurn(tf, Window.ctex), 1, 1, new Color(80, 40, 0));
     boolean a = false;
     UI.Grab d = null;
 	
@@ -62,46 +66,54 @@ public class Button extends SSWidget {
 	return(ret);
     }
         
+    private Button(Coord c, int w, Widget parent, boolean lg) {
+	super(c, new Coord(w, lg?hl:hs), parent);
+	this.lg = lg;
+    }
+
+    private Button(Coord c, int w, Widget parent) {
+	this(c, w, parent, w >= (bl.getWidth() + bm.getWidth() + br.getWidth()));
+    }
+
     public Button(Coord c, Integer w, Widget parent, String text) {
-	super(c, new Coord(w, 19), parent);
-	this.text = tf.render(text);
+	this(c, w, parent);
+	this.text = nf.render(text);
 	this.cont = this.text.img;
-	render();
     }
         
     public Button(Coord c, Integer w, Widget parent, Text text) {
-	super(c, new Coord(w, 19), parent);
+	this(c, w, parent);
 	this.text = text;
 	this.cont = text.img;
-	render();
     }
 	
     public Button(Coord c, Integer w, Widget parent, BufferedImage cont) {
-	super(c, new Coord(w, 19), parent);
+	this(c, w, parent);
 	this.cont = cont;
-	render();
     }
 	
-    public void render() {
-	synchronized(this) {
-	    Graphics g = graphics();
-	    g.drawImage(a?dt:ut, 3, 3, sz.x - 6, 13, null);
-	    g.drawImage(bl, 0, 0, null);
-	    g.drawImage(br, sz.x - br.getWidth(), 0, null);
-	    g.drawImage(bt, 3, 0, sz.x - 6, bt.getHeight(), null);
-	    g.drawImage(bb, 3, sz.y - bb.getHeight(), sz.x - 6, bb.getHeight(), null);
-	    Coord tc = sz.div(2).add(Utils.imgsz(cont).div(2).inv());
-	    if(a)
-		tc = tc.add(1, 1);
-	    g.drawImage(cont, tc.x, tc.y, null);
-	    update();
-	}
+    public void draw(BufferedImage img) {
+	Graphics g = img.getGraphics();
+	int yo = lg?((hl - hs) / 2):0;
+	g.drawImage(a?dt:ut, 4, yo + 4, sz.x - 8, hs - 8, null);
+
+	Coord tc = sz.sub(Utils.imgsz(cont)).div(2);
+	if(a)
+	    tc = tc.add(1, 1);
+	g.drawImage(cont, tc.x, tc.y, null);
+
+	g.drawImage(bl, 0, yo, null);
+	g.drawImage(br, sz.x - br.getWidth(), yo, null);
+	g.drawImage(bt, bl.getWidth(), yo, sz.x - bl.getWidth() - br.getWidth(), bt.getHeight(), null);
+	g.drawImage(bb, bl.getWidth(), yo + hs - bb.getHeight(), sz.x - bl.getWidth() - br.getWidth(), bb.getHeight(), null);
+	if(lg)
+	    g.drawImage(bm, (sz.x - bm.getWidth()) / 2, 0, null);
     }
 	
     public void change(String text, Color col) {
 	this.text = tf.render(text, col);
 	this.cont = this.text.img;
-	render();
+	redraw();
     }
     
     public void change(String text) {
@@ -128,7 +140,7 @@ public class Button extends SSWidget {
 	    boolean a = c.isect(Coord.z, sz);
 	    if(a != this.a) {
 		this.a = a;
-		render();
+		redraw();
 	    }
 	}
     }
@@ -138,7 +150,7 @@ public class Button extends SSWidget {
 	    return(false);
 	a = true;
 	d = ui.grabmouse(this);
-	render();
+	redraw();
 	return(true);
     }
 	
@@ -147,7 +159,7 @@ public class Button extends SSWidget {
 	    d.remove();
 	    d = null;
 	    a = false;
-	    render();
+	    redraw();
 	    if(c.isect(new Coord(0, 0), sz))
 		click();
 	    return(true);
