@@ -45,6 +45,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private long errtime;
     private Window invwnd, equwnd, makewnd;
     public Inventory maininv;
+    public CharWnd chrwdg;
     public BuddyWnd buddies;
     public Polity polity;
     public HelpWnd help;
@@ -190,6 +191,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    hand.add(new DraggedItem(g, lc));
 	    updhand();
 	    return(g);
+	} else if(place == "chr") {
+	    chrwdg = (CharWnd)gettype(type).create(new Coord(100, 50), this, cargs);
+	    chrwdg.hide();
+	    return(chrwdg);
 	} else if(place == "craft") {
 	    final Widget[] mk = {null};
 	    makewnd = new Window(new Coord(200, 100), Coord.z, this, "Crafting") {
@@ -246,6 +251,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	} else if(w == polity) {
 	    polity = null;
+	} else if(w == chrwdg) {
+	    chrwdg = null;
 	}
     }
     
@@ -345,6 +352,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(sender == menu) {
 	    wdgmsg(msg, args);
 	    return;
+	} else if((sender == chrwdg) && (msg == "close")) {
+	    chrwdg.hide();
 	} else if((sender == buddies) && (msg == "close")) {
 	    buddies.hide();
 	} else if((sender == polity) && (msg == "close")) {
@@ -384,6 +393,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		fitwdg(equwnd);
 	    }
 	    return(true);
+	} else if(key == 20) {
+	    if((chrwdg != null) && chrwdg.show(!chrwdg.visible)) {
+		chrwdg.raise();
+		fitwdg(chrwdg);
+	    }
 	} else if(key == 2) {
 	    if((buddies != null) && buddies.show(!buddies.visible)) {
 		buddies.raise();
