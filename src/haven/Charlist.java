@@ -84,7 +84,7 @@ public class Charlist extends Widget {
 		c.plb.show();
 		// int off = (bg.sz().y - c.ava.sz.y) / 2;
 		// c.ava.c = new Coord(off, off + y);
-		c.plb.c = bg.sz().add(-105, -24 + y);
+		c.plb.c = bg.sz().add(-10, y - 2).sub(c.plb.sz);
 		// g.image(c.nt.tex(), new Coord(off + c.ava.sz.x + 5, off + y));
 		g.image(c.nt.tex(), new Coord(5, 5 + y));
 		y += bg.sz().y + margin;
