@@ -313,7 +313,7 @@ public class MenuGrid extends Widget {
 
     public boolean mouseup(Coord c, int button) {
 	Pagina h = bhit(c);
-	if(button == 1) {
+	if((button == 1) && (grab != null)) {
 	    if(dragging != null) {
 		ui.dropthing(ui.root, ui.mc, dragging.res());
 		dragging = pressed = null;
@@ -322,7 +322,6 @@ public class MenuGrid extends Widget {
 		    use(h);
 		pressed = null;
 	    }
-	    grab.remove();
 	}
 	return(true);
     }
