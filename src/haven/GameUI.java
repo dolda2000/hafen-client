@@ -192,7 +192,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    updhand();
 	    return(g);
 	} else if(place == "chr") {
-	    chrwdg = (CharWnd)gettype(type).create(new Coord(100, 50), this, cargs);
+	    chrwdg = (CharWnd)gettype(type).create(new Coord(300, 50), this, cargs);
 	    chrwdg.hide();
 	    return(chrwdg);
 	} else if(place == "craft") {
