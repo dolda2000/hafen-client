@@ -731,6 +731,14 @@ public class Utils {
 			 ((in.getBlue() * f2) + (bl.getBlue() * f1)) / 255,
 			 in.getAlpha()));
     }
+
+    public static Color blendcol(Color x, Color y, double a) {
+	int f1 = (int)(a * 255), f2 = 255 - f1;
+	return(new Color(((x.getRed()   * f2) + (y.getRed()   * f1)) / 255,
+			 ((x.getGreen() * f2) + (y.getGreen() * f1)) / 255,
+			 ((x.getBlue()  * f2) + (y.getBlue()  * f1)) / 255,
+			 ((x.getAlpha() * f2) + (y.getAlpha() * f1)) / 255));
+    }
     
     public static void serialize(Object obj, OutputStream out) throws IOException {
 	ObjectOutputStream oout = new ObjectOutputStream(out);
