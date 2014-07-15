@@ -64,8 +64,8 @@ public class Makewindow extends Widget {
 	nm.c = new Coord(sz.x - nm.sz.x, 0);
 	new Label(new Coord(0, 8), this, "Input:");
 	new Label(new Coord(0, 63), this, "Result:");
-	obtn = new Button(new Coord(290, 71), 60, this, "Craft");
-	cbtn = new Button(new Coord(360, 71), 60, this, "Craft All");
+	obtn = new Button(new Coord(265, 71), 85, this, "Craft");
+	cbtn = new Button(new Coord(360, 71), 85, this, "Craft All");
 	pack();
     }
 	
