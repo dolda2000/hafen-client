@@ -111,8 +111,11 @@ public class CharWnd extends Window {
 	    for(El el : els) {
 		int l = (int)Math.floor((x / cap) * w);
 		int r = (int)Math.floor(((x += el.a) / cap) * w);
-		g.chcolor(el.ev().col);
-		g.frect(new Coord(marg.x + l, marg.y), new Coord(marg.x + r - l, sz.y - (marg.y * 2)));
+		try {
+		    g.chcolor(el.ev().col);
+		    g.frect(new Coord(marg.x + l, marg.y), new Coord(marg.x + r - l, sz.y - (marg.y * 2)));
+		} catch(Loading e) {
+		}
 	    }
 	    g.chcolor();
 	    g.image(frame, Coord.z);
