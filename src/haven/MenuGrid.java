@@ -322,6 +322,8 @@ public class MenuGrid extends Widget {
 		    use(h);
 		pressed = null;
 	    }
+	    grab.remove();
+	    grab = null;
 	}
 	return(true);
     }
