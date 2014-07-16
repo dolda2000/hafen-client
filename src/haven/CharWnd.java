@@ -132,6 +132,9 @@ public class CharWnd extends Window {
 	    }
 	    this.enew = enew;
 	}
+
+	public void trig(Indir<Resource> ev) {
+	}
     }
 
     public static final int attrw = FoodMeter.frame.sz().x - wbox.bisz().x;
@@ -224,6 +227,8 @@ public class CharWnd extends Window {
     public void uimsg(String nm, Object... args) {
 	if(nm == "food") {
 	    feps.update(args);
+	} else if(nm == "ftrig") {
+	    feps.trig(ui.sess.getres((Integer)args[0]));
 	} else if(nm == "lvl") {
 	    for(Attr aw : base) {
 		if(aw.nm.equals(args[0]))
