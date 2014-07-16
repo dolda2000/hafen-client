@@ -27,13 +27,15 @@
 package haven;
 
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.font.TextAttribute;
 import java.util.*;
 import static haven.Window.wbox;
+import static haven.PUtils.*;
 
 public class CharWnd extends Window {
-    public static final Text.Furnace catf = new PUtils.BlurFurn(new PUtils.TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Window.ctex), 3, 1, new Color(128, 64, 0));
+    public static final Text.Furnace catf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Window.ctex), 3, 1, new Color(128, 64, 0));
     public static final Text.Foundry attrf = new Text.Foundry(Text.fraktur, 18).aa(true);
     public static final Color debuff = new Color(255, 128, 128);
     public static final Color buff = new Color(128, 255, 128);
@@ -42,9 +44,13 @@ public class CharWnd extends Window {
 
     public static class FoodMeter extends Widget {
 	public static final Tex frame = Resource.loadtex("gfx/hud/chr/foodm");
-	public static final Coord marg = new Coord(5, 5);
+	public static final Coord marg = new Coord(5, 5), trmg = new Coord(10, 10);
 	public double cap;
-	public List<El> els = new LinkedList<El>(), enew = null;
+	public List<El> els = new LinkedList<El>();
+	private List<El> enew = null, etr = null;
+	private Indir<Resource> trev = null;
+	private Tex trol;
+	private long trtm = 0;
 
 	@Resource.LayerName("foodev")
 	public static class Event extends Resource.Layer {
@@ -81,44 +87,85 @@ public class CharWnd extends Window {
 		return(ev);
 	    }
 	}
+	public static final Comparator<El> dcmp = new Comparator<El>() {
+	    public int compare(El a, El b) {
+		int c;
+		if((c = (a.ev().sort - b.ev().sort)) != 0)
+		    return(c);
+		return(a.ev().nm.compareTo(b.ev().nm));
+	    }
+	};
 
 	public FoodMeter(Coord c, Widget parent) {
 	    super(c, frame.sz(), parent);
 	}
 
-	public void tick(double dt) {
-	    if(enew != null) {
-		try {
-		    Collections.sort(enew, new Comparator<El>() {
-			    public int compare(El a, El b) {
-				int c;
-				if((c = (a.ev().sort - b.ev().sort)) != 0)
-				    return(c);
-				return(a.ev().nm.compareTo(b.ev().nm));
-			    }
-			});
-		    els = enew;
-		} catch(Loading l) {
+	private BufferedImage mktrol(List<El> els, Indir<Resource> trev) {
+	    BufferedImage buf = TexI.mkbuf(sz.add(trmg.mul(2)));
+	    Coord marg2 = marg.add(trmg);
+	    Graphics g = buf.getGraphics();
+	    double x = 0;
+	    int w = sz.x - (marg.x * 2);
+	    for(El el : els) {
+		int l = (int)Math.floor((x / cap) * w);
+		int r = (int)Math.floor(((x += el.a) / cap) * w);
+		if(el.res == trev) {
+		    g.setColor(Utils.blendcol(el.ev().col, Color.WHITE, 0.5));
+		    g.fillRect(marg2.x - (trmg.x / 2) + l, marg2.y - (trmg.y / 2), r - l + trmg.x, sz.y - (marg.y * 2) + trmg.y);
 		}
 	    }
+	    imgblur(buf.getRaster(), trmg.x, trmg.y);
+	    return(buf);
 	}
 
-	public void draw(GOut g) {
-	    g.chcolor(0, 0, 0, 255);
-	    g.frect(marg, sz.sub(marg.mul(2)));
+	private void drawels(GOut g, List<El> els, int alpha) {
 	    double x = 0;
 	    int w = sz.x - (marg.x * 2);
 	    for(El el : els) {
 		int l = (int)Math.floor((x / cap) * w);
 		int r = (int)Math.floor(((x += el.a) / cap) * w);
 		try {
-		    g.chcolor(el.ev().col);
-		    g.frect(new Coord(marg.x + l, marg.y), new Coord(marg.x + r - l, sz.y - (marg.y * 2)));
+		    Color col = el.ev().col;
+		    g.chcolor(new Color(col.getRed(), col.getGreen(), col.getBlue(), alpha));
+		    g.frect(new Coord(marg.x + l, marg.y), new Coord(r - l, sz.y - (marg.y * 2)));
 		} catch(Loading e) {
 		}
 	    }
+	}
+
+	public void tick(double dt) {
+	    if(enew != null) {
+		try {
+		    Collections.sort(enew, dcmp);
+		    els = enew;
+		} catch(Loading l) {}
+	    }
+	    if(trev != null) {
+		try {
+		    Collections.sort(etr, dcmp);
+		    trol = new TexI(mktrol(etr, trev));
+		    trtm = System.currentTimeMillis();
+		    trev = null;
+		} catch(Loading l) {}
+	    }
+	}
+
+	public void draw(GOut g) {
+	    int d = (trtm > 0)?((int)(System.currentTimeMillis() - trtm)):Integer.MAX_VALUE;
+	    g.chcolor(0, 0, 0, 255);
+	    g.frect(marg, sz.sub(marg.mul(2)));
+	    drawels(g, els, 255);
+	    if(d < 1000)
+		drawels(g, etr, 255 - ((d * 255) / 1000));
 	    g.chcolor();
 	    g.image(frame, Coord.z);
+	    if(d < 2500) {
+		GOut g2 = g.reclipl(trmg.inv(), sz.add(trmg.mul(2)));
+		g2.chcolor(255, 255, 255, 255 - ((d * 255) / 2500));
+		g2.image(trol, Coord.z);
+	    } else {
+		trtm = 0;
+	    }
 	}
 
 	public void update(Object... args) {
@@ -134,6 +181,8 @@ public class CharWnd extends Window {
 	}
 
 	public void trig(Indir<Resource> ev) {
+	    etr = (enew != null)?enew:els;
+	    trev = ev;
 	}
     }
 
