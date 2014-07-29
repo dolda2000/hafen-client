@@ -208,6 +208,18 @@ public class Ridges {
 	return(-1);
     }
 
+    private int isdiag2(Coord tc, boolean[] b) {
+	if(b[0] && b[1] && b[2] && b[3]) {
+	    Coord gc = tc.add(m.ul);
+	    int bz = ((RidgeTile)m.map.tiler(m.map.gettile(gc))).breakz();
+	    if(Math.abs(m.map.getz(gc) - m.map.getz(gc.add(1, 1))) <= bz)
+		return(0);
+	    if(Math.abs(m.map.getz(gc.add(0, 1)) - m.map.getz(gc.add(1, 0))) <= bz)
+		return(1);
+	}
+	return(-1);
+    }
+
     private void mkfaces(Vertex[] va, int[] fa) {
 	for(int i = 0; i < fa.length; i += 3)
 	    ms.new Face(va[fa[i]], va[fa[i + 1]], va[fa[i + 2]]);
@@ -338,6 +350,46 @@ public class Ridges {
 	    ridge[ms.ts.o(tc)] = connect(tc, edges[eo(tc, (dir + 1) % 4)], edges[eo(tc, dir)]);
     }
 
+    private static final int[] d2rfi = {0, 1, 2, 3, 4, 5, 6, 7, 11, 7, 8, 11, 11, 8, 10, 8, 9, 10};
+    private void modeldiag2(Coord tc, int dir) {
+	for(int i = 0; i < 4; i++) ensureedge(tc, i);
+	Vertex[] gv = {
+	    ms.fortile(tc.add(tccs[dir + 1])),
+	    edgec[eo(tc, dir)][edgelc(tc, dir)?1:0],
+	    edgec[eo(tc, dir + 1)][edgelc(tc, dir)?1:0],
+
+	    ms.fortile(tc.add(tccs[(dir + 3) % 4])),
+	    edgec[eo(tc, dir + 2)][edgelc(tc, dir + 2)?1:0],
+	    edgec[eo(tc, (dir + 3) % 4)][edgelc(tc, dir + 2)?1:0],
+
+	    ms.fortile(tc.add(tccs[dir])),
+	    edgec[eo(tc, (dir + 3) % 4)][edgelc(tc, dir + 2)?0:1],
+	    edgec[eo(tc, dir + 2)][edgelc(tc, dir + 2)?0:1],
+	    ms.fortile(tc.add(tccs[dir + 2])),
+	    edgec[eo(tc, dir + 1)][edgelc(tc, dir)?0:1],
+	    edgec[eo(tc, dir)][edgelc(tc, dir)?0:1],
+	};
+	float[] tcx = new float[12], tcy = new float[12];
+	Coord pc = tc.mul(tilesz).mul(1, -1);
+	for(int i = 0; i < 12; i++) {
+	    tcx[i] = clip((gv[i].x - pc.x) / tilesz.x, 0, 1);
+	    tcy[i] = clip(-(gv[i].y - pc.y) / tilesz.y, 0, 1);
+	}
+	mkfaces(gv, d2rfi);
+	gnd[ms.ts.o(tc)] = new MPart(tc, tc.add(m.ul), gv, tcx, tcy, d2rfi);
+
+	RPart r1, r2;
+	if(edgelc(tc, dir))
+	    r1 = connect(tc, edges[eo(tc, dir)], edges[eo(tc, dir + 1)]);
+	else
+	    r1 = connect(tc, edges[eo(tc, dir + 1)], edges[eo(tc, dir)]);
+	if(edgelc(tc, dir + 2))
+	    r2 = connect(tc, edges[eo(tc, dir + 2)], edges[eo(tc, (dir + 3) % 4)]);
+	else
+	    r2 = connect(tc, edges[eo(tc, (dir + 3) % 4)], edges[eo(tc, dir + 2)]);
+	ridge[ms.ts.o(tc)] = new RPart(r1, r2);
+    }
+
     public boolean model(Coord tc) {
 	tc = new Coord(tc);
 	boolean[] b = breaks(tc);
@@ -355,6 +407,9 @@ public class Ridges {
 	    return(true);
 	} else if((d = isdiag(b)) >= 0) {
 	    modeldiag1(tc, d);
+	    return(true);
+	} else if((d = isdiag2(tc, b)) >= 0) {
+	    modeldiag2(tc, d);
 	    return(true);
 	} else {
 	}
