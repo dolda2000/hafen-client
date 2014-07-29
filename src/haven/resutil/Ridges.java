@@ -294,6 +294,35 @@ public class Ridges {
 	    ridge[ms.ts.o(tc)] = connect(tc, edges[eo(tc, dir + 2)], edges[eo(tc, dir)]);
     }
 
+    private static final int[] d1rfi = {0, 1, 2, 3, 4, 7, 7, 4, 6, 6, 4, 5};
+    private void modeldiag1(Coord tc, int dir) {
+	ensureedge(tc, dir); ensureedge(tc, (dir + 1) % 4);
+	Vertex[] gv = {
+	    ms.fortile(tc.add(tccs[(dir + 1) % 4])),
+	    edgec[eo(tc, dir)][edgelc(tc, dir)?1:0],
+	    edgec[eo(tc, (dir + 1) % 4)][edgelc(tc, dir)?1:0],
+
+	    ms.fortile(tc.add(tccs[dir])),
+	    ms.fortile(tc.add(tccs[(dir + 3) % 4])),
+	    ms.fortile(tc.add(tccs[(dir + 2) % 4])),
+	    edgec[eo(tc, (dir + 1) % 4)][edgelc(tc, dir)?0:1],
+	    edgec[eo(tc, dir)][edgelc(tc, dir)?0:1],
+	};
+	float[] tcx = new float[8], tcy = new float[8];
+	Coord pc = tc.mul(tilesz).mul(1, -1);
+	for(int i = 0; i < 8; i++) {
+	    tcx[i] = clip((gv[i].x - pc.x) / tilesz.x, 0, 1);
+	    tcy[i] = clip(-(gv[i].y - pc.y) / tilesz.y, 0, 1);
+	}
+	mkfaces(gv, d1rfi);
+	gnd[ms.ts.o(tc)] = new MPart(tc, tc.add(m.ul), gv, tcx, tcy, d1rfi);
+
+	if(edgelc(tc, dir))
+	    ridge[ms.ts.o(tc)] = connect(tc, edges[eo(tc, dir)], edges[eo(tc, (dir + 1) % 4)]);
+	else
+	    ridge[ms.ts.o(tc)] = connect(tc, edges[eo(tc, (dir + 1) % 4)], edges[eo(tc, dir)]);
+    }
+
     public boolean model(Coord tc) {
 	tc = new Coord(tc);
 	boolean[] b = breaks(tc);
@@ -310,6 +339,8 @@ public class Ridges {
 	    modelstraight(tc, 1);
 	    return(true);
 	} else if((d = isdiag(b)) >= 0) {
+	    modeldiag1(tc, d);
+	    return(true);
 	} else {
 	}
 	return(false);
