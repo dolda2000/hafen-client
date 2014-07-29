@@ -131,9 +131,9 @@ public class Ridges {
 	float segi = (float)(hi - lo) / (float)nseg;
 	Random rnd = m.grnd(m.ul.add(tc));
 	rnd.setSeed(rnd.nextInt() + e);
-	float bb = (rnd.nextFloat() - 0.5f) * 5.0f;
+	float bb = (rnd.nextFloat() - 0.5f) * 7.0f;
 	for(int v = 0; v <= nseg; v++) {
-	    ret[v] = ms.new Vertex(base.add(dc(bb + ((rnd.nextFloat() - 0.5f) * 2.0f), e)).add(0, 0, v * segi));
+	    ret[v] = ms.new Vertex(base.add(dc(bb + ((rnd.nextFloat() - 0.5f) * 4.0f), e)).add(0, 0, v * segi));
 	    if((v > 0) && (v < nseg))
 		ret[v].z += (rnd.nextFloat() - 0.5f) * segi * 0.5f;
 	}
@@ -233,9 +233,40 @@ public class Ridges {
 	return(new RPart(tc, tc.add(this.m.ul), va, tcx, tcy, fa, rcx, rcy));
     }
 
+    private void modelcap(Coord tc, int dir) {
+	ensureedge(tc, dir);
+	Coord3f close = ms.fortile(tc.add(tccs[(dir + 2) % 4]))
+	    .add(ms.fortile(tc.add(tccs[(dir + 3) % 4])))
+	    .div(2);
+	Vertex[] gv = {
+	    ms.fortile(tc.add(tccs[dir])),
+	    ms.fortile(tc.add(tccs[(dir + 3) % 4])),
+	    ms.new Vertex(close),
+	    edgec[eo(tc, dir)][edgelc(tc, dir)?0:1],
+
+	    edgec[eo(tc, dir)][edgelc(tc, dir)?1:0],
+	    ms.new Vertex(close),
+	    ms.fortile(tc.add(tccs[(dir + 2) % 4])),
+	    ms.fortile(tc.add(tccs[(dir + 1) % 4])),
+	};
+	float[] tcx = new float[8], tcy = new float[8];
+	Coord pc = tc.mul(tilesz).mul(1, -1);
+	for(int i = 0; i < 8; i++) {
+	    tcx[i] = clip((gv[i].x - pc.x) / tilesz.x, 0, 1);
+	    tcy[i] = clip(-(gv[i].y - pc.y) / tilesz.y, 0, 1);
+	}
+	mkfaces(gv, srfi);
+	gnd[ms.ts.o(tc)] = new MPart(tc, tc.add(m.ul), gv, tcx, tcy, srfi);
+
+	Vertex[] cls = new Vertex[] {ms.new Vertex(close)};
+	if(edgelc(tc, dir))
+	    ridge[ms.ts.o(tc)] = connect(tc, edges[eo(tc, dir)], cls);
+	else
+	    ridge[ms.ts.o(tc)] = connect(tc, cls, edges[eo(tc, dir)]);
+    }
+
     private static final int[] srfi = {0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7};
     private void modelstraight(Coord tc, int dir) {
-	tc = new Coord(tc);
 	ensureedge(tc, dir); ensureedge(tc, dir + 2);
 	Vertex[] gv = {
 	    ms.fortile(tc.add(tccs[dir])),
@@ -264,12 +295,14 @@ public class Ridges {
     }
 
     public boolean model(Coord tc) {
+	tc = new Coord(tc);
 	boolean[] b = breaks(tc);
 	int d;
 	if(!b[0] && !b[1] && !b[2] && !b[3]) {
 	    return(false);
 	} else if((d = isend(b)) >= 0) {
-	    
+	    modelcap(tc, d);
+	    return(true);
 	} else if(b[0] && !b[1] && b[2] && !b[3]) {
 	    modelstraight(tc, 0);
 	    return(true);
