@@ -58,6 +58,21 @@ public class Ridges {
 	    super(lc, gc, v, tcx, tcx, f);
 	    this.rcx = rcx; this.rcy = rcy;
 	}
+	public RPart(RPart... parts) {
+	    super(parts);
+	}
+
+	protected void mapvertices(MPart[] mparts, int[][] vmap) {
+	    super.mapvertices(mparts, vmap);
+	    RPart[] parts = (RPart[])mparts;
+	    rcx = new float[v.length]; rcy = new float[v.length];
+	    for(int i = 0; i < parts.length; i++) {
+		for(int o = 0; o < parts[i].v.length; o++) {
+		    rcx[vmap[i][o]] = parts[i].rcx[o];
+		    rcy[vmap[i][o]] = parts[i].rcy[o];
+		}
+	    }
+	}
     }
 
     private int eo(int x, int y, int e) {

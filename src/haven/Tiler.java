@@ -51,6 +51,54 @@ public abstract class Tiler {
 	    this.lc = lc; this.gc = gc; this.v = v; this.tcx = tcx; this.tcy = tcy; this.f = f;
 	}
 
+	public MPart(MPart... parts) {
+	    this.lc = parts[0].lc; this.gc = parts[0].gc;
+	    int[][] vmap = new int[parts.length][];
+	    int vbn = 0;
+	    for(int i = 0; i < parts.length; i++) {
+		vbn += parts[i].v.length;
+		vmap[i] = new int[parts[i].v.length];
+	    }
+	    Vertex[] vbuf = new Vertex[vbn];
+	    int vn  = 0;
+	    for(int i = 0; i < parts.length; i++) {
+		int cvn = vn;
+		Vertex[] cv = parts[i].v;
+		for(int o = 0; o < cv.length; o++) {
+		    found: {
+			for(int u = 0; u < cvn; u++) {
+			    if(cv[o] == vbuf[u]) {
+				vmap[i][o] = u;
+				break found;
+			    }
+			}
+			vbuf[vmap[i][o] = vn++] = cv[o];
+		    }
+		}
+	    }
+	    this.v = Utils.splice(vbuf, 0, vn);
+	    int fn = 0;
+	    for(MPart p : parts)
+		fn += p.f.length;
+	    this.f = new int[fn];
+	    fn = 0;
+	    for(int i = 0; i < parts.length; i++) {
+		for(int o = 0; o < parts[i].f.length; o++)
+		    this.f[fn++] = vmap[i][parts[i].f[o]];
+	    }
+	    mapvertices(parts, vmap);
+	}
+
+	protected void mapvertices(MPart[] parts, int[][] vmap) {
+	    tcx = new float[v.length]; tcy = new float[v.length];
+	    for(int i = 0; i < parts.length; i++) {
+		for(int o = 0; o < parts[i].v.length; o++) {
+		    tcx[vmap[i][o]] = parts[i].tcx[o];
+		    tcy[vmap[i][o]] = parts[i].tcy[o];
+		}
+	    }
+	}
+
 	public GLState mcomb(GLState mat) {
 	    return((this.mat == null)?mat:(GLState.compose(mat, this.mat)));
 	}
