@@ -892,8 +892,16 @@ public class Utils {
 	System.arraycopy(src, off, dst, 0, len);
 	return(dst);
     }
-    
     public static <T> T[] splice(T[] src, int off) {
+	return(splice(src, off, src.length - off));
+    }
+
+    public static float[] splice(float[] src, int off, int len) {
+	float[] dst = new float[len];
+	System.arraycopy(src, off, dst, 0, len);
+	return(dst);
+    }
+    public static float[] splice(float[] src, int off) {
 	return(splice(src, off, src.length - off));
     }
 
