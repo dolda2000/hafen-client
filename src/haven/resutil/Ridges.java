@@ -192,6 +192,13 @@ public class Ridges {
 	    });
     }
 
+    private int[] tczs(Coord tc) {
+	int[] ret = new int[4];
+	for(int i = 0; i < 4; i++)
+	    ret[i] = m.map.getz(tc.add(m.ul).add(tccs[i]));
+	return(ret);
+    }
+
     private static int isend(boolean[] b) {
 	for(int i = 0; i < 4; i++) {
 	    if(b[i] && !b[(i + 1) % 4] && !b[(i + 2) % 4] && !b[(i + 3) % 4])
@@ -390,6 +397,139 @@ public class Ridges {
 	ridge[ms.ts.o(tc)] = new RPart(r1, r2);
     }
 
+    private static Coord3f zmatch(Coord3f[] cl, float z) {
+	Coord3f ret = cl[0];
+	float md = Math.abs(cl[0].z - z);
+	for(int i = 1; i < cl.length; i++) {
+	    float zd = Math.abs(cl[i].z - z);
+	    if(zd < md) {
+		ret = cl[i];
+		md = zd;
+	    }
+	}
+	return(ret);
+    }
+
+    private Vertex[] colzmatch(Coord3f[] cl, float lo, float hi) {
+	int i, l, h;
+	float md;
+	for(i = 1, l = 0, md = Math.abs(cl[0].z - lo); i < cl.length; i++) {
+	    float zd = Math.abs(cl[i].z - lo);
+	    if(zd < md) {
+		l = i;
+		md = zd;
+	    }
+	}
+	for(i = 1, h = 0, md = Math.abs(cl[0].z - hi); i < cl.length; i++) {
+	    float zd = Math.abs(cl[i].z - hi);
+	    if(zd < md) {
+		h = i;
+		md = zd;
+	    }
+	}
+	Vertex[] ret = new Vertex[1 + h - l];
+	for(i = 0; i < ret.length; i++)
+	    ret[i] = ms.new Vertex(cl[i + l]);
+	return(ret);
+    }
+
+    private static float[] mktcx(Vertex[] v, Coord pc) {
+	float[] ret = new float[v.length];
+	for(int i = 0; i < v.length; i++)
+	    ret[i] = clip((v[i].x - pc.x) / tilesz.x, 0, 1);
+	return(ret);
+    }
+
+    private static float[] mktcy(Vertex[] v, Coord pc) {
+	float[] ret = new float[v.length];
+	for(int i = 0; i < v.length; i++)
+	    ret[i] = clip(-(v[i].y - pc.y) / tilesz.y, 0, 1);
+	return(ret);
+    }
+
+    private static final int[] cg1rfi = {0, 1, 2, 0, 2, 3};
+    private static final int[] cg2rfi = {0, 1, 4, 4, 1, 2, 4, 2, 3};
+    private void modelcomplex(Coord tc, boolean[] breaks) {
+	Coord gc = tc.add(m.ul), pc = tc.mul(tilesz).mul(1, -1);
+	int[] tczs = tczs(tc);
+	int s;
+	for(s = 0; !breaks[s] || !breaks[(s + 3) % 4]; s++);
+	Coord3f[] col;
+	{
+	    int n = 0;
+	    float[] zs = new float[4];
+	    for(int i = 0, d = s; i < 4; i++) {
+		if(breaks[d]) {
+		    zs[n++] = tczs[d];
+		    d = (d + 1) % 4;
+		} else {
+		    zs[n++] = (tczs[d] + tczs[(d + 1) % 4]) / 2;
+		    i++;
+		    d = (d + 2) % 4;
+		}
+	    }
+	    zs = Utils.splice(zs, 0, n);
+	    Arrays.sort(zs);
+	    col = new Coord3f[n];
+	    float tcx = tc.x * tilesz.x + (tilesz.x / 2.0f), tcy = -(tc.y * tilesz.y + (tilesz.y / 2.0f));
+	    Random rnd = m.rnd(tc);
+	    for(int i = 0; i < n; i++) {
+		col[i] = new Coord3f(tcx + ((rnd.nextFloat() - 0.5f) * 5.0f),
+				     tcy + ((rnd.nextFloat() - 0.5f) * 5.0f),
+				     zs[i]);
+	    }
+	}
+
+	MPart[] gnd = new MPart[4];
+	RPart[] rdg = new RPart[4];
+	int n = 0;
+	for(int i = 0, d = s; i < 4; i++) {
+	    if(breaks[d]) {
+		ensureedge(tc, (d + 3) % 4);
+		ensureedge(tc, d);
+		Vertex[] gv = {
+		    ms.fortile(tc.add(tccs[d])),
+		    edgec[eo(tc, (d + 3) % 4)][edgelc(tc, (d + 3) % 4)?1:0],
+		    ms.new Vertex(zmatch(col, tczs[d])),
+		    edgec[eo(tc, d)][edgelc(tc, d)?0:1],
+		};
+		mkfaces(gv, cg1rfi);
+		gnd[n] = new MPart(tc, gc, gv, mktcx(gv, pc), mktcy(gv, pc), cg1rfi);
+		if(edgelc(tc, d))
+		    rdg[n] = connect(tc, edges[eo(tc, d)], colzmatch(col, tczs[d], tczs[(d + 1) % 4]));
+		else
+		    rdg[n] = connect(tc, colzmatch(col, tczs[(d + 1) % 4], tczs[d]), edges[eo(tc, d)]);
+		n++;
+		d = (d + 1) % 4;
+	    } else {
+		assert(breaks[(d + 1) % 4]);
+		ensureedge(tc, (d + 3) % 4);
+		ensureedge(tc, (d + 1) % 4);
+		float mz = (tczs[d] + tczs[(d + 1) % 4]) / 2.0f;
+		Vertex[] gv = {
+		    ms.fortile(tc.add(tccs[(d + 1) % 4])),
+		    ms.fortile(tc.add(tccs[d])),
+		    edgec[eo(tc, (d + 3) % 4)][edgelc(tc, (d + 3) % 4)?1:0],
+		    ms.new Vertex(zmatch(col, mz)),
+		    edgec[eo(tc, (d + 1) % 4)][edgelc(tc, (d + 1) % 4)?0:1],
+		};
+		mkfaces(gv, cg2rfi);
+		gnd[n] = new MPart(tc, gc, gv, mktcx(gv, pc), mktcy(gv, pc), cg2rfi);
+		if(edgelc(tc, (d + 1) % 4))
+		    rdg[n] = connect(tc, edges[eo(tc, (d + 1) % 4)], colzmatch(col, mz, tczs[(d + 2) % 4]));
+		else
+		    rdg[n] = connect(tc, colzmatch(col, tczs[(d + 2) % 4], mz), edges[eo(tc, (d + 1) % 4)]);
+		n++;
+		i++;
+		d = (d + 2) % 4;
+	    }
+	}
+	gnd = Utils.splice(gnd, 0, n);
+	rdg = Utils.splice(rdg, 0, n);
+	this.gnd[ms.ts.o(tc)] = new MPart(gnd);
+	this.ridge[ms.ts.o(tc)] = new RPart(rdg);
+    }
+
     public boolean model(Coord tc) {
 	tc = new Coord(tc);
 	boolean[] b = breaks(tc);
@@ -412,8 +552,9 @@ public class Ridges {
 	    modeldiag2(tc, d);
 	    return(true);
 	} else {
+	    modelcomplex(tc, b);
+	    return(true);
 	}
-	return(false);
     }
 
     static final Tiler.MCons testcons = new Tiler.MCons() {
