@@ -574,6 +574,30 @@ public class Ridges {
 	    }
 	};
 
+    public static class TexCons implements Tiler.MCons {
+	public final GLState mat;
+	public final float zf;
+
+	public TexCons(GLState mat, float zf) {
+	    this.mat = mat;
+	    this.zf = zf;
+	}
+
+	public void faces(MapMesh m, MPart mdesc) {
+	    RPart desc = (RPart)mdesc;
+	    Model mod = Model.get(m, mat);
+	    MeshBuf.Tex tex = mod.layer(MeshBuf.tex);
+	    MeshVertex[] v = new MeshVertex[desc.v.length];
+	    for(int i = 0; i < desc.v.length; i++) {
+		v[i] = new MeshVertex(mod, desc.v[i]);
+		tex.set(v[i], new Coord3f(desc.rcx[i], desc.v[i].z * zf, 0));
+	    }
+	    int[] f = desc.f;
+	    for(int i = 0; i < f.length; i += 3)
+		mod.new Face(v[f[i]], v[f[i + 1]], v[f[i + 2]]);
+	}
+    }
+
     public boolean lay(Coord tc, Tiler.MCons cons, Tiler.MCons rcons) {
 	MPart gnd = this.gnd[ms.ts.o(tc)];
 	if(gnd == null)
