@@ -33,7 +33,7 @@ import haven.MapMesh.Scan;
 import haven.Resource.Tile;
 import haven.Resource.Tileset;
 
-public class TerrainTile extends Tiler {
+public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
     public final GLState base;
     public final SNoise3 noise;
     public final Var[] var;
@@ -167,6 +167,34 @@ public class TerrainTile extends Tiler {
 		}
 	    }
 	}
+
+	final VertFactory[] lvfac = new VertFactory[var.length + 1]; {
+	    for(int i = 0; i < var.length + 1; i++) {
+		final int l = i;
+		lvfac[i] = new VertFactory() {
+			final float fac = 25f / 4f;
+
+			float bv(Coord lc, float tcx, float tcy) {
+			    float icx = 1 - tcx, icy = 1 - tcy;
+			    return((((bv[l][vs.o(lc.x + 0, lc.y + 0)] * icx) + (bv[l][vs.o(lc.x + 1, lc.y + 0)] * tcx)) * icy) +
+				   (((bv[l][vs.o(lc.x + 0, lc.y + 1)] * icx) + (bv[l][vs.o(lc.x + 1, lc.y + 1)] * tcx)) * tcy));
+			}
+
+			public Surface.MeshVertex make(MeshBuf buf, MPart d, int i) {
+			    Surface.MeshVertex ret = new Surface.MeshVertex(buf, d.v[i]);
+			    Coord3f tan = Coord3f.yu.cmul(ret.nrm).norm();
+			    Coord3f bit = ret.nrm.cmul(Coord3f.xu).norm();
+			    Coord3f tc = new Coord3f((d.lc.x + d.tcx[i]) / fac, (d.lc.y + d.tcy[i]) / fac, 0);
+			    int alpha = (int)(bv(d.lc, d.tcx[i], d.tcy[i]) * 255);
+			    buf.layer(BumpMap.ltan).set(ret, tan);
+			    buf.layer(BumpMap.lbit).set(ret, bit);
+			    buf.layer(MeshBuf.tex).set(ret, tc);
+			    buf.layer(MeshBuf.col).set(ret, new Color(255, 255, 255, alpha));
+			    return(ret);
+			}
+		    };
+	    }
+	}
     }
     public final MapMesh.DataID<Blend> blend = new MapMesh.DataID<Blend>() {
 	public Blend make(MapMesh m) {
@@ -176,7 +204,7 @@ public class TerrainTile extends Tiler {
 
     @ResName("trn")
     public static class Factory implements Tiler.Factory {
-	public Tiler create(int id, Resource.Tileset set) {
+	public TerrainTile create(int id, Resource.Tileset set) {
 	    Resource res = set.getres();
 	    Tileset trans = null;
 	    Material base = null;
@@ -204,121 +232,97 @@ public class TerrainTile extends Tiler {
 		    trans = tres.layer(Resource.tileset);
 		}
 	    }
-	    return(new TerrainTile(id, res.name.hashCode(), base, var.toArray(new Var[0]), trans));
+	    return(new TerrainTile(id, new SNoise3(res.name.hashCode()), base, var.toArray(new Var[0]), trans));
 	}
     }
 
-    public TerrainTile(int id, long nseed, GLState base, Var[] var, Tileset transset) {
+    public TerrainTile(int id, SNoise3 noise, GLState base, Var[] var, Tileset transset) {
 	super(id);
-	this.noise = new SNoise3(nseed);
-	this.base = GLState.compose(base, States.vertexcolor);
+	this.noise = noise;
+	int z = 0;
+	this.base = GLState.compose(base, new MapMesh.MLOrder(0, z++), States.vertexcolor);
 	for(Var v : this.var = var)
-	    v.mat = GLState.compose(v.mat, States.vertexcolor);
+	    v.mat = GLState.compose(v.mat, new MapMesh.MLOrder(0, z++), States.vertexcolor);
 	this.transset = transset;
     }
 
-    public class Plane extends MapMesh.Shape {
-	public Coord lc;
-	public MapMesh.SPoint[] vrt;
-	public Coord3f[] tc;
-	public int[] alpha;
-
-	public Plane(MapMesh m, MapMesh.Surface surf, Coord sc, int z, GLState mat, int[] alpha) {
-	    m.super(z, mat);
-	    this.lc = new Coord(sc);
-	    vrt = surf.fortile(sc);
-	    float fac = 25f / 4f;
-	    tc = new Coord3f[] {
-		new Coord3f((sc.x + 0) / fac, (sc.y + 0) / fac, 0),
-		new Coord3f((sc.x + 0) / fac, (sc.y + 1) / fac, 0),
-		new Coord3f((sc.x + 1) / fac, (sc.y + 1) / fac, 0),
-		new Coord3f((sc.x + 1) / fac, (sc.y + 0) / fac, 0),
-	    };
-	    m.data(BumpMap.MapTangents.id);
-	    this.alpha = alpha;
-	}
-
-	public MeshBuf.Vertex mkvert(MeshBuf buf, int n) {
-	    MeshBuf.Vertex v = buf.new Vertex(vrt[n].pos, vrt[n].nrm);
-	    buf.layer(MeshBuf.tex).set(v, tc[n]);
-	    buf.layer(MeshBuf.col).set(v, new Color(255, 255, 255, alpha[n]));
-	    return(v);
-	}
-
-	public void build(MeshBuf buf) {
-	    MeshBuf.Vertex v1 = mkvert(buf, 0);
-	    MeshBuf.Vertex v2 = mkvert(buf, 1);
-	    MeshBuf.Vertex v3 = mkvert(buf, 2);
-	    MeshBuf.Vertex v4 = mkvert(buf, 3);
-	    m().data(BumpMap.MapTangents.id).set(buf, lc, v1, v2, v3, v4);
-	    MapMesh.splitquad(buf, v1, v2, v3, v4);
-	}
-    }
-
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
-	Blend b = m.data(blend);
-	for(int i = 0; i < var.length + 1; i++) {
-	    GLState mat = (i == 0)?base:(var[i - 1].mat);
-	    if(b.en[i][b.es.o(lc)])
-		new Plane(m, m.gnd(), lc, i, mat, new int[] {
-			(int)(b.bv[i][b.vs.o(lc)] * 255),
-			(int)(b.bv[i][b.vs.o(lc.add(0, 1))] * 255),
-			(int)(b.bv[i][b.vs.o(lc.add(1, 1))] * 255),
-			(int)(b.bv[i][b.vs.o(lc.add(1, 0))] * 255),
-		    });
-	}
+	lay(m, lc, gc, this, false);
     }
 
-    public class TransPlane extends Plane {
-	public Coord3f[] cc;
-
-	public TransPlane(MapMesh m, MapMesh.Surface surf, Coord sc, int z, GLState mat, int[] alpha, Tex tex) {
-	    super(m, surf, sc, z, mat, alpha);
-	    Coord s = tex.sz();
-	    cc = new Coord3f[] {
-		new Coord3f(tex.tcx(0), tex.tcy(0), 0),
-		new Coord3f(tex.tcx(0), tex.tcy(s.y), 0),
-		new Coord3f(tex.tcx(s.x), tex.tcy(s.y), 0),
-		new Coord3f(tex.tcx(s.x), tex.tcy(0), 0),
-	    };
-	}
-
-	public MeshBuf.Vertex mkvert(MeshBuf buf, int n) {
-	    MeshBuf.Vertex v = super.mkvert(buf, n);
-	    buf.layer(AlphaTex.lclip).set(v, cc[n]);
-	    return(v);
+    public void faces(MapMesh m, MPart d) {
+	Blend b = m.data(blend);
+	Surface.MeshVertex[] mv = new Surface.MeshVertex[d.v.length];
+	for(int i = 0; i < var.length + 1; i++) {
+	    if(b.en[i][b.es.o(d.lc)]) {
+		GLState mat = d.mcomb((i == 0)?base:(var[i - 1].mat));
+		SModel buf = SModel.get(m, mat, b.lvfac[i]);
+		for(int o = 0; o < d.v.length; o++)
+		    mv[o] = buf.get(d, o);
+		for(int fi = 0; fi < d.f.length; fi += 3)
+		    buf.new Face(mv[d.f[fi]], mv[d.f[fi + 1]], mv[d.f[fi + 2]]);
+	    }
 	}
     }
 
     private final static Map<TexGL, AlphaTex> transtex = new WeakHashMap<TexGL, AlphaTex>();
-    private final static IDSet<GLState> transmats = new IDSet<GLState>();
 
-    private void laytrans(MapMesh m, Coord lc, int z, Tile t) {
-	Blend b = m.data(blend);
-	for(int i = 0; i < var.length + 1; i++) {
-	    GLState mat = (i == 0)?base:(var[i - 1].mat);
-	    Tex tt = t.tex();
-	    TexGL gt;
-	    if(tt instanceof TexGL)
-		gt = (TexGL)tt;
-	    else if((tt instanceof TexSI) && (((TexSI)tt).parent instanceof TexGL))
-		gt = (TexGL)((TexSI)tt).parent;
-	    else
-		throw(new RuntimeException("Cannot use texture for transitions: " + tt));
-	    AlphaTex alpha;
-	    synchronized(transtex) {
-		if((alpha = transtex.get(gt)) == null)
-		    transtex.put(gt, alpha = new AlphaTex(gt, 0.01f));
-	    }
-	    mat = transmats.intern(GLState.compose(mat, alpha));
-	    if(b.en[i][b.es.o(lc)])
-		new TransPlane(m, m.gnd(), lc, z + i, mat, new int[] {
-			(int)(b.bv[i][b.vs.o(lc)] * 255),
-			(int)(b.bv[i][b.vs.o(lc.add(0, 1))] * 255),
-			(int)(b.bv[i][b.vs.o(lc.add(1, 1))] * 255),
-			(int)(b.bv[i][b.vs.o(lc.add(1, 0))] * 255),
-		    }, tt);
+    /* XXX: Some strange javac bug seems to make it resolve the
+     * trans() references to the wrong signature, thus the name
+     * distinction. */
+    public void _faces(MapMesh m, int z, Tile trans, MPart d) {
+	Tex ttex = trans.tex();
+	float tl = ttex.tcx(0), tt = ttex.tcy(0), tw = ttex.tcx(ttex.sz().x) - tl, th = ttex.tcy(ttex.sz().y) - tt;
+	TexGL gt;
+	if(ttex instanceof TexGL)
+	    gt = (TexGL)ttex;
+	else if((ttex instanceof TexSI) && (((TexSI)ttex).parent instanceof TexGL))
+	    gt = (TexGL)((TexSI)ttex).parent;
+	else
+	    throw(new RuntimeException("Cannot use texture for transitions: " + ttex));
+	AlphaTex alpha;
+	synchronized(transtex) {
+	    if((alpha = transtex.get(gt)) == null)
+		transtex.put(gt, alpha = new AlphaTex(gt, 0.01f));
 	}
+	Blend b = m.data(blend);
+	Surface.MeshVertex[] mv = new Surface.MeshVertex[d.v.length];
+	for(int i = 0; i < var.length + 1; i++) {
+	    if(b.en[i][b.es.o(d.lc)]) {
+		GLState mat = (i == 0)?base:(var[i - 1].mat);
+		mat = d.mcomb(GLState.compose(mat, new MapMesh.MLOrder(z, i), alpha));
+		MeshBuf buf = MapMesh.Model.get(m, mat);
+		MeshBuf.Vec2Layer cc = buf.layer(AlphaTex.lclip);
+		for(int o = 0; o < d.v.length; o++) {
+		    mv[o] = b.lvfac[i].make(buf, d, o);
+		    cc.set(mv[o], new Coord3f(tl + (tw * d.tcx[o]), tt + (th * d.tcy[o]), 0));
+		}
+		for(int fi = 0; fi < d.f.length; fi += 3)
+		    buf.new Face(mv[d.f[fi]], mv[d.f[fi + 1]], mv[d.f[fi + 2]]);
+	    }
+	}
+    }
+
+    private MCons tcons(final int z, final Tile t) {
+	return(new MCons() {
+		public void faces(MapMesh m, MPart d) {
+		    _faces(m, z, t, d);
+		}
+	    });
+    }
+
+    public MCons tcons(final int z, final int bmask, final int cmask) {
+	if((transset == null) || ((bmask == 0) && (cmask == 0)))
+	    return(MCons.nil);
+	return(new MCons() {
+		public void faces(MapMesh m, MPart d) {
+		    Random rnd = m.rnd(d.lc);
+		    if((transset.btrans != null) && (bmask != 0))
+			tcons(z, transset.btrans[bmask - 1].pick(rnd)).faces(m, d);
+		    if((transset.ctrans != null) && (cmask != 0))
+			tcons(z, transset.ctrans[cmask - 1].pick(rnd)).faces(m, d);
+		}
+	    });
     }
 
     public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {
@@ -327,8 +331,64 @@ public class TerrainTile extends Tiler {
 	if(m.map.gettile(gc) <= id)
 	    return;
 	if((transset.btrans != null) && (bmask > 0))
-	    laytrans(m, lc, z, transset.btrans[bmask - 1].pick(rnd));
+	    gt.lay(m, lc, gc, tcons(z, transset.btrans[bmask - 1].pick(rnd)), false);
 	if((transset.ctrans != null) && (cmask > 0))
-	    laytrans(m, lc, z, transset.ctrans[cmask - 1].pick(rnd));
+	    gt.lay(m, lc, gc, tcons(z, transset.ctrans[cmask - 1].pick(rnd)), false);
+    }
+
+    public static class RidgeTile extends TerrainTile implements Ridges.RidgeTile {
+	public final Tiler.MCons rcons;
+	public final int rth;
+
+	@ResName("trn-r")
+	public static class RFactory implements Tiler.Factory {
+	    public Tiler create(int id, Resource.Tileset set) {
+		TerrainTile base = new Factory().create(id, set);
+		int rth = 11;
+		GLState mat = null;
+		float zf = 1f / 11f;
+		for(Object rdesc : set.ta) {
+		    Object[] desc = (Object[])rdesc;
+		    String p = (String)desc[0];
+		    if(p.equals("rmat")) {
+			Resource mres = Resource.load((String)desc[1], (Integer)desc[2]);
+			mat = mres.layer(Material.Res.class).get();
+			if(desc.length > 3)
+			    zf = 1f / (Float)desc[3];
+		    } else if(p.equals("rthres")) {
+			rth = (Integer)desc[1];
+		    }
+		}
+		if(mat == null)
+		    throw(new RuntimeException("Ridge-tiles must be given a ridge material, in " + set.getres().name));
+		return(new RidgeTile(base.id, base.noise, base.base, base.var, base.transset, rth, mat, zf));
+	    }
+	}
+
+	public RidgeTile(int id, SNoise3 noise, GLState base, Var[] var, Tileset transset, int rth, GLState rmat, float zf) {
+	    super(id, noise, base, var, transset);
+	    this.rth = rth;
+	    this.rcons = new Ridges.TexCons(rmat, zf);
+	}
+
+	public int breakz() {return(11);}
+
+	public void model(MapMesh m, Random rnd, Coord lc, Coord gc) {
+	    if(!m.data(Ridges.id).model(lc))
+		super.model(m, rnd, lc, gc);
+	}
+
+	public void lay(MapMesh m, Coord lc, Coord gc, MCons cons, boolean cover) {
+	    Ridges r = m.data(Ridges.id);
+	    if(!r.laygnd(lc, cons))
+		super.lay(m, lc, gc, cons, cover);
+	    else if(cover)
+		r.layridge(lc, cons);
+	}
+
+	public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
+	    super.lay(m, rnd, lc, gc);
+	    m.data(Ridges.id).layridge(lc, rcons);
+	}
     }
 }

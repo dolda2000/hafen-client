@@ -32,7 +32,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.*;
-import haven.resutil.RidgeTile;
+import haven.resutil.Ridges;
 
 public class LocalMiniMap extends Widget {
     public final MapView mv;
@@ -98,8 +98,8 @@ public class LocalMiniMap extends Widget {
 	    for(c.x = 1; c.x < sz.x - 1; c.x++) {
 		int t = m.gettile(ul.add(c));
 		Tiler tl = m.tiler(t);
-		if(tl instanceof RidgeTile) {
-		    if(((RidgeTile)tl).ridgep(m, ul.add(c))) {
+		if(tl instanceof Ridges.RidgeTile) {
+		    if(Ridges.brokenp(m, ul.add(c))) {
 			for(int y = c.y; y <= c.y + 1; y++) {
 			    for(int x = c.x; x <= c.x + 1; x++) {
 				int rgb = buf.getRGB(x, y);
