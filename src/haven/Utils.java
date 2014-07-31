@@ -892,8 +892,16 @@ public class Utils {
 	System.arraycopy(src, off, dst, 0, len);
 	return(dst);
     }
-    
     public static <T> T[] splice(T[] src, int off) {
+	return(splice(src, off, src.length - off));
+    }
+
+    public static float[] splice(float[] src, int off, int len) {
+	float[] dst = new float[len];
+	System.arraycopy(src, off, dst, 0, len);
+	return(dst);
+    }
+    public static float[] splice(float[] src, int off) {
 	return(splice(src, off, src.length - off));
     }
 
@@ -912,6 +920,24 @@ public class Utils {
 	T[] ret = extend(src, 0, src.length + 1);
 	ret[src.length] = ne;
 	return(ret);
+    }
+
+    public static int[] extend(int[] src, int nl) {
+	int[] dst = new int[nl];
+	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
+	return(dst);
+    }
+    
+    public static float[] extend(float[] src, int nl) {
+	float[] dst = new float[nl];
+	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
+	return(dst);
+    }
+    
+    public static short[] extend(short[] src, int nl) {
+	short[] dst = new short[nl];
+	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
+	return(dst);
     }
     
     public static <T> T el(Iterable<T> c) {

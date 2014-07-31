@@ -108,49 +108,6 @@ public class BumpMap extends GLState {
 	buf.put(slot, this);
     }
 
-    public static class MapTangents extends MapMesh.Hooks {
-	public final MapMesh m;
-	public final Scan s;
-	public final Coord3f[] tan, bit;
-
-	public MapTangents(MapMesh m) {
-	    this.m = m;
-	    s = new Scan(Coord.z, m.sz.add(1, 1));
-	    tan = new Coord3f[s.l];
-	    bit = new Coord3f[s.l];
-	    for(int i = 0; i < s.l; i++) {
-		tan[i] = new Coord3f(0, 0, 0);
-		bit[i] = new Coord3f(0, 0, 0);
-	    }
-	}
-
-	public void postcalcnrm(Random rnd) {
-	    MapMesh.Surface gnd = m.gnd();
-	    for(int y = s.ul.y; y < s.br.y; y++) {
-		for(int x = s.ul.x; x < s.br.x; x++) {
-		    MapMesh.SPoint sp = gnd.spoint(new Coord(x, y));
-		    Coord3f ct = Coord3f.yu.cmul(sp.nrm).norm();
-		    Coord3f cb = sp.nrm.cmul(Coord3f.xu).norm();
-		    Coord3f mt = tan[s.o(x, y)];
-		    mt.x = ct.x; mt.y = ct.y; mt.z = ct.z;
-		    Coord3f mb = bit[s.o(x, y)];
-		    mb.x = cb.x; mb.y = cb.y; mb.z = cb.z;
-		}
-	    }
-	}
-
-	public void set(MeshBuf buf, Coord lc, MeshBuf.Vertex v1, MeshBuf.Vertex v2, MeshBuf.Vertex v3, MeshBuf.Vertex v4) {
-	    MeshBuf.Vec3Layer btan = buf.layer(ltan);
-	    MeshBuf.Vec3Layer bbit = buf.layer(lbit);
-	    btan.set(v1, tan[s.o(lc)]); bbit.set(v1, bit[s.o(lc)]);
-	    btan.set(v2, tan[s.o(lc.add(0, 1))]); bbit.set(v2, bit[s.o(lc.add(0, 1))]);
-	    btan.set(v3, tan[s.o(lc.add(1, 1))]); bbit.set(v3, bit[s.o(lc.add(1, 1))]);
-	    btan.set(v4, tan[s.o(lc.add(1, 0))]); bbit.set(v4, bit[s.o(lc.add(1, 0))]);
-	}
-
-	public static final MapMesh.DataID<MapTangents> id = MapMesh.makeid(MapTangents.class);
-    }
-
     public static final MeshBuf.LayerID<MeshBuf.Vec3Layer> ltan = new MeshBuf.V3LayerID(tan);
     public static final MeshBuf.LayerID<MeshBuf.Vec3Layer> lbit = new MeshBuf.V3LayerID(bit);
 

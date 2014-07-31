@@ -171,8 +171,6 @@ public class RenderList {
 	    int az = a.o.mainz(), bz = b.o.mainz();
 	    if(az != bz)
 		return(az - bz);
-	    if(a.o != b.o)
-		throw(new RuntimeException("Found two different orderings with the same main-Z: " + a.o + " and " + b.o));
 	    int ret = a.o.cmp().compare(a.r, b.r, a.os, b.os);
 	    if(ret != 0)
 		return(ret);
