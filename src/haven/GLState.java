@@ -745,6 +745,10 @@ public abstract class GLState {
 	    for(GLState st : states)
 		st.prep(buf);
 	}
+
+	public String toString() {
+	    return("composed(" + Arrays.asList(states) + ")");
+	}
     }
 
     public static GLState compose(GLState... states) {
