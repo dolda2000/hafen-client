@@ -55,7 +55,7 @@ public class Ridges extends MapMesh.Hooks {
     public static class RPart extends MPart {
 	public float[] rcx, rcy;
 	public RPart(Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f, float[] rcx, float[] rcy) {
-	    super(lc, gc, v, tcx, tcx, f);
+	    super(lc, gc, v, tcx, tcy, f);
 	    this.rcx = rcx; this.rcy = rcy;
 	}
 	public RPart(RPart... parts) {
@@ -233,17 +233,18 @@ public class Ridges extends MapMesh.Hooks {
     }
 
     private RPart connect(Coord tc, Vertex[] l, Vertex[] r) {
+	Coord pc = tc.mul(tilesz).mul(1, -1);
 	int n = l.length, m = r.length;
 	Vertex[] va = new Vertex[n + m];
 	float[] tcx = new float[n + m], tcy = new float[n + m];
 	float[] rcx = new float[n + m], rcy = new float[n + m];
 	float lh = l[n - 1].z - l[0].z, rh = r[m - 1].z - r[0].z;
 	for(int i = 0; i < n; i++) {
-	    va[i] = l[i]; tcx[i] = clip(l[i].x - tc.x, 0, 1); tcy[i] = clip(l[i].y - tc.y, 0, 1);
+	    va[i] = l[i]; tcx[i] = clip((l[i].x - pc.x) / tilesz.x, 0, 1); tcy[i] = clip(-(l[i].y - pc.y) / tilesz.y, 0, 1);
 	    rcx[i] = 0; rcy[i] = (l[i].z - l[0].z) / lh;
 	}
 	for(int i = 0; i < m; i++) {
-	    va[i + n] = r[i]; tcx[i + n] = clip(r[i].x - tc.x, 0, 1); tcy[i + n] = clip(r[i].y - tc.y, 0, 1);
+	    va[i + n] = r[i]; tcx[i + n] = clip((r[i].x - pc.x) / tilesz.x, 0, 1); tcy[i + n] = clip(-(r[i].y - pc.y) / tilesz.y, 0, 1);
 	    rcx[i + n] = 1; rcy[i + n] = (r[i].z - r[0].z) / rh;
 	}
 	int[] fa = new int[(n + m - 2) * 3];
