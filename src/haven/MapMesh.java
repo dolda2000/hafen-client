@@ -379,7 +379,7 @@ public class MapMesh implements Rendered, Disposable {
 		for(t.x = ult.x; t.x <= brt.x; t.x++) {
 		    MapMesh cut = map.getcut(t.div(MCache.cutsz));
 		    Tiler tile = map.tiler(map.gettile(t));
-		    tile.lay(cut, t.sub(cut.ul), t, cons);
+		    tile.lay(cut, t.sub(cut.ul), t, cons, false);
 		}
 	    }
 	    mesh = buf.mkmesh();
@@ -450,7 +450,7 @@ public class MapMesh implements Rendered, Disposable {
 		for(t.x = 0; t.x < sz.x; t.x++) {
 		    if((ol[t.x][t.y] & (1 << i)) != 0) {
 			Coord gc = t.add(ul);
-			map.tiler(map.gettile(gc)).lay(this, t, gc, bufs[i]);
+			map.tiler(map.gettile(gc)).lay(this, t, gc, bufs[i], false);
 		    }
 		}
 	    }
@@ -531,7 +531,7 @@ public class MapMesh implements Rendered, Disposable {
 	for(c.y = 0; c.y < sz.y; c.y++) {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
 		Coord gc = c.add(ul);
-		map.tiler(map.gettile(gc)).lay(this, c, gc, buf);
+		map.tiler(map.gettile(gc)).lay(this, c, gc, buf, true);
 	    }
 	}
 	float[] pos = buf.pos, col1 = buf.col1, col2 = buf.col2;

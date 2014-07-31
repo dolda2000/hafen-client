@@ -247,7 +247,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
     }
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
-	lay(m, lc, gc, this);
+	lay(m, lc, gc, this, false);
     }
 
     public void faces(MapMesh m, MPart d) {
@@ -331,8 +331,8 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	if(m.map.gettile(gc) <= id)
 	    return;
 	if((transset.btrans != null) && (bmask > 0))
-	    gt.lay(m, lc, gc, tcons(z, transset.btrans[bmask - 1].pick(rnd)));
+	    gt.lay(m, lc, gc, tcons(z, transset.btrans[bmask - 1].pick(rnd)), false);
 	if((transset.ctrans != null) && (cmask > 0))
-	    gt.lay(m, lc, gc, tcons(z, transset.ctrans[cmask - 1].pick(rnd)));
+	    gt.lay(m, lc, gc, tcons(z, transset.ctrans[cmask - 1].pick(rnd)), false);
     }
 }

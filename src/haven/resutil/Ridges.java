@@ -598,12 +598,19 @@ public class Ridges extends MapMesh.Hooks {
 	}
     }
 
-    public boolean lay(Coord tc, Tiler.MCons cons, Tiler.MCons rcons) {
+    public boolean laygnd(Coord tc, Tiler.MCons cons) {
 	MPart gnd = this.gnd[ms.ts.o(tc)];
 	if(gnd == null)
 	    return(false);
 	cons.faces(m, gnd);
-	rcons.faces(m, this.ridge[ms.ts.o(tc)]);
+	return(true);
+    }
+
+    public boolean layridge(Coord tc, Tiler.MCons cons) {
+	MPart ridge = this.ridge[ms.ts.o(tc)];
+	if(ridge == null)
+	    return(false);
+	cons.faces(m, ridge);
 	return(true);
     }
 

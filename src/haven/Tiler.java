@@ -206,7 +206,7 @@ public abstract class Tiler {
 	flatmodel(m, lc);
     }
 
-    public void lay(MapMesh m, Coord lc, Coord gc, MCons cons) {
+    public void lay(MapMesh m, Coord lc, Coord gc, MCons cons, boolean cover) {
 	MapMesh.MapSurface s = m.data(m.gnd);
 	cons.faces(m, MPart.splitquad(lc, gc, s.fortilea(lc), s.split[s.ts.o(lc)]));
     }

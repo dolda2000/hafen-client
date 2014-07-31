@@ -88,7 +88,7 @@ public class GroundTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
     }
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
-	lay(m, lc, gc, this);
+	lay(m, lc, gc, this, false);
     }
 
     private MCons tcons(final int z, final Tile t) {
@@ -117,8 +117,8 @@ public class GroundTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	if(m.map.gettile(gc) <= id)
 	    return;
 	if((set.btrans != null) && (bmask > 0))
-	    gt.lay(m, lc, gc, tcons(z, set.btrans[bmask - 1].pick(rnd)));
+	    gt.lay(m, lc, gc, tcons(z, set.btrans[bmask - 1].pick(rnd)), false);
 	if((set.ctrans != null) && (cmask > 0))
-	    gt.lay(m, lc, gc, tcons(z, set.ctrans[cmask - 1].pick(rnd)));
+	    gt.lay(m, lc, gc, tcons(z, set.ctrans[cmask - 1].pick(rnd)), false);
     }
 }
