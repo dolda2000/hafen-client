@@ -38,13 +38,13 @@ import haven.Surface.MeshVertex;
 import static haven.MCache.tilesz;
 import static haven.Utils.clip;
 
-public class Ridges {
+public class Ridges extends MapMesh.Hooks {
     public static final MapMesh.DataID<Ridges> id = MapMesh.makeid(Ridges.class);
     public static final int segh = 11;
     public final MapMesh m;
     private final MapMesh.MapSurface ms;
     private final boolean[] breaks;
-    private final Vertex[][] edges, edgec;
+    private Vertex[][] edges, edgec;
     private final MPart[] gnd, ridge;
     boolean debug = false;
 
@@ -603,7 +603,13 @@ public class Ridges {
 	if(gnd == null)
 	    return(false);
 	cons.faces(m, gnd);
-	testcons.faces(m, this.ridge[ms.ts.o(tc)]);
+	rcons.faces(m, this.ridge[ms.ts.o(tc)]);
+	return(true);
+    }
+
+    public boolean clean() {
+	edges = null;
+	edgec = null;
 	return(true);
     }
 }
