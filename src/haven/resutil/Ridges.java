@@ -620,4 +620,10 @@ public class Ridges extends MapMesh.Hooks {
 	edgec = null;
 	return(true);
     }
+
+    public static boolean brokenp(MCache map, Coord tc) {
+	MapMesh cut = map.getcut(tc.div(MCache.cutsz));
+	boolean[] b = cut.data(id).breaks(tc.mod(MCache.cutsz));
+	return(b[0] || b[1] || b[2] || b[3]);
+    }
 }
