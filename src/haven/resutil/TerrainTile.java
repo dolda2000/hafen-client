@@ -204,7 +204,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 
     @ResName("trn")
     public static class Factory implements Tiler.Factory {
-	public Tiler create(int id, Resource.Tileset set) {
+	public TerrainTile create(int id, Resource.Tileset set) {
 	    Resource res = set.getres();
 	    Tileset trans = null;
 	    Material base = null;
@@ -232,13 +232,13 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		    trans = tres.layer(Resource.tileset);
 		}
 	    }
-	    return(new TerrainTile(id, res.name.hashCode(), base, var.toArray(new Var[0]), trans));
+	    return(new TerrainTile(id, new SNoise3(res.name.hashCode()), base, var.toArray(new Var[0]), trans));
 	}
     }
 
-    public TerrainTile(int id, long nseed, GLState base, Var[] var, Tileset transset) {
+    public TerrainTile(int id, SNoise3 noise, GLState base, Var[] var, Tileset transset) {
 	super(id);
-	this.noise = new SNoise3(nseed);
+	this.noise = noise;
 	int z = 0;
 	this.base = GLState.compose(base, new MapMesh.MLOrder(0, z++), States.vertexcolor);
 	for(Var v : this.var = var)
@@ -334,5 +334,61 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	    gt.lay(m, lc, gc, tcons(z, transset.btrans[bmask - 1].pick(rnd)), false);
 	if((transset.ctrans != null) && (cmask > 0))
 	    gt.lay(m, lc, gc, tcons(z, transset.ctrans[cmask - 1].pick(rnd)), false);
+    }
+
+    public static class RidgeTile extends TerrainTile implements Ridges.RidgeTile {
+	public final Tiler.MCons rcons;
+	public final int rth;
+
+	@ResName("trn-r")
+	public static class RFactory implements Tiler.Factory {
+	    public Tiler create(int id, Resource.Tileset set) {
+		TerrainTile base = new Factory().create(id, set);
+		int rth = 11;
+		GLState mat = null;
+		float zf = 1f / 11f;
+		for(Object rdesc : set.ta) {
+		    Object[] desc = (Object[])rdesc;
+		    String p = (String)desc[0];
+		    if(p.equals("rmat")) {
+			Resource mres = Resource.load((String)desc[1], (Integer)desc[2]);
+			mat = mres.layer(Material.Res.class).get();
+			if(desc.length > 3)
+			    zf = 1f / (Float)desc[3];
+		    } else if(p.equals("rthres")) {
+			rth = (Integer)desc[1];
+		    }
+		}
+		if(mat == null)
+		    throw(new RuntimeException("Ridge-tiles must be given a ridge material, in " + set.getres().name));
+		return(new RidgeTile(base.id, base.noise, base.base, base.var, base.transset, rth, mat, zf));
+	    }
+	}
+
+	public RidgeTile(int id, SNoise3 noise, GLState base, Var[] var, Tileset transset, int rth, GLState rmat, float zf) {
+	    super(id, noise, base, var, transset);
+	    this.rth = rth;
+	    this.rcons = new Ridges.TexCons(rmat, zf);
+	}
+
+	public int breakz() {return(11);}
+
+	public void model(MapMesh m, Random rnd, Coord lc, Coord gc) {
+	    if(!m.data(Ridges.id).model(lc))
+		super.model(m, rnd, lc, gc);
+	}
+
+	public void lay(MapMesh m, Coord lc, Coord gc, MCons cons, boolean cover) {
+	    Ridges r = m.data(Ridges.id);
+	    if(!r.laygnd(lc, cons))
+		super.lay(m, lc, gc, cons, cover);
+	    else if(cover)
+		r.layridge(lc, cons);
+	}
+
+	public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
+	    super.lay(m, rnd, lc, gc);
+	    m.data(Ridges.id).layridge(lc, rcons);
+	}
     }
 }
