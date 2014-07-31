@@ -32,7 +32,7 @@ import java.util.*;
 
 public class Profile {
     public Frame[] hist;
-    private int i = 0;
+    public int i = 0;
     private static Color[] cols;
     
     static {
