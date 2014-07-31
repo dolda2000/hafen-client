@@ -32,7 +32,7 @@ import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
 
-public class MainFrame extends Frame implements Runnable, Console.Directory {
+public class MainFrame extends java.awt.Frame implements Runnable, Console.Directory {
     HavenPanel p;
     private final ThreadGroup g;
     public final Thread mt;
