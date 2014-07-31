@@ -48,7 +48,6 @@ public class ClipAmbiance implements Rendered {
 	public Glob(Desc desc) {
 	    this.desc = desc;
 	    cur = new Audio.DataClip[desc.cnms.length];
-	    addmin();
 	}
 
 	public int hashCode() {
