@@ -83,48 +83,12 @@ public class MeshAnim {
 	return(false);
     }
 
-    public class Anim implements Morpher.Factory {
-	public float time = 0.0f;
-	private Frame cf, nf;
-	private float a;
-	private int seq = 0;
+    public abstract class Anim implements Morpher.Factory {
+	protected Frame cf, nf;
+	protected float a;
+	protected int seq = 0;
 
-	public Anim() {
-	    aupdate(0.0f);
-	}
-
-	public void aupdate(float time) {
-	    if(time > len)
-		time = len;
-	    float ct, nt;
-	    int l = 0, r = frames.length;
-	    while(true) {
-		int c = l + ((r - l) >> 1);
-		ct = frames[c].time;
-		nt = (c < frames.length - 1)?(frames[c + 1].time):len;
-		if(ct > time) {
-		    r = c;
-		} else if(nt < time) {
-		    l = c + 1;
-		} else {
-		    cf = frames[c];
-		    nf = frames[(c + 1) % frames.length];
-		    if(nt == ct)
-			a = 0;
-		    else
-			a = (time - ct) / (nt - ct);
-		    break;
-		}
-	    }
-	    seq++;
-	}
-
-	public void tick(float dt) {
-	    this.time += dt;
-	    while(this.time > len)
-		this.time -= len;
-	    aupdate(this.time);
-	}
+	public abstract void tick(float dt);
 
 	public Morpher create(final MorphedBuf vb) {
 	    return(new Morpher() {
@@ -190,6 +154,80 @@ public class MeshAnim {
 			}
 		    }
 		});
+	}
+    }
+
+    public class SAnim extends Anim {
+	public float time = 0.0f;
+
+	public SAnim() {
+	    aupdate(0.0f);
+	}
+
+	public void aupdate(float time) {
+	    if(time > len)
+		time = len;
+	    float ct, nt;
+	    int l = 0, r = frames.length;
+	    while(true) {
+		int c = l + ((r - l) >> 1);
+		ct = frames[c].time;
+		nt = (c < frames.length - 1)?(frames[c + 1].time):len;
+		if(ct > time) {
+		    r = c;
+		} else if(nt < time) {
+		    l = c + 1;
+		} else {
+		    this.cf = frames[c];
+		    this.nf = frames[(c + 1) % frames.length];
+		    if(nt == ct)
+			this.a = 0;
+		    else
+			this.a = (time - ct) / (nt - ct);
+		    break;
+		}
+	    }
+	    this.seq++;
+	}
+
+	public void tick(float dt) {
+	    this.time += dt;
+	    while(this.time > len)
+		this.time -= len;
+	    aupdate(this.time);
+	}
+    }
+
+    public class RAnim extends Anim {
+	private float fl, fp;
+	private int nfi;
+	private final Random rnd = new Random();
+
+	public RAnim() {
+	    a = fp = 0;
+	    setfr(rnd.nextInt(frames.length));
+	}
+
+	private void setfr(int fi) {
+	    cf = frames[fi];
+	    nfi = rnd.nextInt(frames.length - 1);
+	    if(nfi >= fi) nfi++;
+	    nf = frames[nfi];
+	    fl = ((fi < frames.length - 1)?(frames[fi + 1].time):len) - frames[fi].time;
+	}
+
+	public void tick(float dt) {
+	    fp += dt;
+	    if(fp >= fl) {
+		fp -= fl;
+		setfr(nfi);
+		if(fp >= fl) {
+		    fp = 0;
+		    setfr(rnd.nextInt(frames.length));
+		}
+	    }
+	    a = fp / fl;
+	    seq++;
 	}
     }
 
