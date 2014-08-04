@@ -219,6 +219,27 @@ public abstract class States extends GLState {
 	    buf.put(depthoffset, this);
 	}
     }
+
+    public static class PolygonMode extends GLState {
+	public static final Slot<PolygonMode> slot = new Slot<PolygonMode>(Slot.Type.GEOM, PolygonMode.class, PView.proj);
+	public final int mode;
+
+	public PolygonMode(int mode) {
+	    this.mode = mode;
+	}
+
+	public void apply(GOut g) {
+	    g.gl.glPolygonMode(GL.GL_FRONT_AND_BACK, mode);
+	}
+
+	public void unapply(GOut g) {
+	    g.gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2.GL_FILL);
+	}
+
+	public void prep(Buffer buf) {
+	    buf.put(slot, this);
+	}
+    }
     
     public static final StandAlone nullprog = new StandAlone(Slot.Type.DRAW, PView.proj) {
 	    private final ShaderMacro[] sh = {};

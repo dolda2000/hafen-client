@@ -51,7 +51,7 @@ public class AnimSprite extends Sprite {
 	this.anims = new MeshAnim.Anim[anims.size()];
 	Iterator<MeshAnim> it = anims.iterator();
 	for(int i = 0; it.hasNext(); i++)
-	    this.anims[i] = it.next().new Anim();
+	    this.anims[i] = it.next().new SAnim();
 	MorphedMesh.Morpher.Factory morph = MorphedMesh.combine(this.anims);
 	Collection<Rendered> rl = new LinkedList<Rendered>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
