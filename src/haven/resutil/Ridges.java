@@ -40,7 +40,7 @@ import static haven.Utils.clip;
 
 public class Ridges extends MapMesh.Hooks {
     public static final MapMesh.DataID<Ridges> id = MapMesh.makeid(Ridges.class);
-    public static final int segh = 11;
+    public static final int segh = 5;
     public final MapMesh m;
     private final MapMesh.MapSurface ms;
     private final boolean[] breaks;
