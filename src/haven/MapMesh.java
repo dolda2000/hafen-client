@@ -181,6 +181,8 @@ public class MapMesh implements Rendered, Disposable {
 
 	public RComparator<Rendered> cmp() {return(cmp);}
     }
+    public static Order premap = new Order.Default(990);
+    public static Order postmap = new Order.Default(1010);
 
     private MapMesh(MCache map, Coord ul, Coord sz, Random rnd) {
 	this.map = map;

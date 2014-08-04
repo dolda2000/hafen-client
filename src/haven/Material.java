@@ -158,13 +158,6 @@ public class Material extends GLState {
 				 amb[0], amb[1], amb[2], dif[0], dif[1], dif[2], spc[0], spc[1], spc[2], shine));
 	}
     }
-
-    @ResName("vcol")
-    public static class $vcol implements ResCons {
-	public GLState cons(Resource res, Object... args) {
-	    return(new States.ColState((Color)args[0]));
-	}
-    }
     
     @ResName("order")
     public static class $order implements ResCons {
@@ -178,6 +171,10 @@ public class Material extends GLState {
 		return(Rendered.postpfx);
 	    } else if(nm.equals("eye")) {
 		return(Rendered.eyesort);
+	    } else if(nm.equals("premap")) {
+		return(MapMesh.premap);
+	    } else if(nm.equals("postmap")) {
+		return(MapMesh.postmap);
 	    } else {
 		throw(new Resource.LoadException("Unknown draw order: " + nm, res));
 	    }
