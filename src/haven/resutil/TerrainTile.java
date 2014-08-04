@@ -344,9 +344,9 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	public static class RFactory implements Tiler.Factory {
 	    public Tiler create(int id, Resource.Tileset set) {
 		TerrainTile base = new Factory().create(id, set);
-		int rth = 11;
+		int rth = 20;
 		GLState mat = null;
-		float zf = 1f / 11f;
+		float texh = 11f;
 		for(Object rdesc : set.ta) {
 		    Object[] desc = (Object[])rdesc;
 		    String p = (String)desc[0];
@@ -354,24 +354,24 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 			Resource mres = Resource.load((String)desc[1], (Integer)desc[2]);
 			mat = mres.layer(Material.Res.class).get();
 			if(desc.length > 3)
-			    zf = 1f / (Float)desc[3];
+			    texh = (Float)desc[3];
 		    } else if(p.equals("rthres")) {
 			rth = (Integer)desc[1];
 		    }
 		}
 		if(mat == null)
 		    throw(new RuntimeException("Ridge-tiles must be given a ridge material, in " + set.getres().name));
-		return(new RidgeTile(base.id, base.noise, base.base, base.var, base.transset, rth, mat, zf));
+		return(new RidgeTile(base.id, base.noise, base.base, base.var, base.transset, rth, mat, texh));
 	    }
 	}
 
-	public RidgeTile(int id, SNoise3 noise, GLState base, Var[] var, Tileset transset, int rth, GLState rmat, float zf) {
+	public RidgeTile(int id, SNoise3 noise, GLState base, Var[] var, Tileset transset, int rth, GLState rmat, float texh) {
 	    super(id, noise, base, var, transset);
 	    this.rth = rth;
-	    this.rcons = new Ridges.TexCons(rmat, zf);
+	    this.rcons = new Ridges.TexCons(rmat, texh);
 	}
 
-	public int breakz() {return(11);}
+	public int breakz() {return(rth);}
 
 	public void model(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	    if(!m.data(Ridges.id).model(lc))

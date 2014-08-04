@@ -629,21 +629,26 @@ public class Ridges extends MapMesh.Hooks {
 
     public static class TexCons implements Tiler.MCons {
 	public final GLState mat;
-	public final float zf;
+	public final float texh;
 
-	public TexCons(GLState mat, float zf) {
+	public TexCons(GLState mat, float texh) {
 	    this.mat = mat;
-	    this.zf = zf;
+	    this.texh = texh;
 	}
 
 	public void faces(MapMesh m, MPart mdesc) {
 	    RPart desc = (RPart)mdesc;
 	    Model mod = Model.get(m, mat);
 	    MeshBuf.Tex tex = mod.layer(MeshBuf.tex);
+	    int[] trn = new int[desc.rh.length];
+	    float zf = 1.0f / texh;
+	    for(int i = 0; i < trn.length; i++)
+		trn[i] = Math.max((int)((desc.rh[i] + (texh * 0.5f)) * zf), 1);
 	    MeshVertex[] v = new MeshVertex[desc.v.length];
 	    for(int i = 0; i < desc.v.length; i++) {
 		v[i] = new MeshVertex(mod, desc.v[i]);
-		tex.set(v[i], new Coord3f(desc.rcx[i], desc.v[i].z * zf, 0));
+		/* tex.set(v[i], new Coord3f(desc.rcx[i], desc.v[i].z * zf, 0)); */
+		tex.set(v[i], new Coord3f(desc.rcx[i], desc.rcy[i] * trn[desc.rn[i]], 0));
 	    }
 	    int[] f = desc.f;
 	    for(int i = 0; i < f.length; i += 3)
