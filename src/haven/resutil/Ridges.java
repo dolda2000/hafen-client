@@ -40,7 +40,7 @@ import static haven.Utils.clip;
 
 public class Ridges extends MapMesh.Hooks {
     public static final MapMesh.DataID<Ridges> id = MapMesh.makeid(Ridges.class);
-    public static final int segh = 11;
+    public static final int segh = 8;
     public final MapMesh m;
     private final MapMesh.MapSurface ms;
     private final boolean[] breaks;
@@ -172,11 +172,17 @@ public class Ridges extends MapMesh.Hooks {
     }
 
     private static final Coord[] tccs = {new Coord(0, 0), new Coord(1, 0), new Coord(1, 1), new Coord(0, 1)};
+    private boolean edgelc(Coord tc, int e) {
+	Coord gc = tc.add(m.ul);
+	return(m.map.getz(gc.add(tccs[e])) < m.map.getz(gc.add(tccs[(e + 1) % 4])));
+    }
+
     private Vertex[] makeedge(Coord tc, int e) {
 	if(e == 1)
 	    return(makeedge(tc.add(1, 0), 3));
 	if(e == 2)
 	    return(makeedge(tc.add(0, 1), 0));
+	float eds = edgelc(tc, e)?1:-1;
 	int lo, hi; {
 	    Coord gc = tc.add(m.ul);
 	    int z1 = m.map.getz(gc.add(tccs[e])), z2 = m.map.getz(gc.add(tccs[(e + 1) % 4]));
@@ -188,9 +194,14 @@ public class Ridges extends MapMesh.Hooks {
 	float segi = (float)(hi - lo) / (float)nseg;
 	Random rnd = m.grnd(m.ul.add(tc));
 	rnd.setSeed(rnd.nextInt() + e);
-	float bb = (rnd.nextFloat() - 0.5f) * 7.0f;
+	float bb = (rnd.nextFloat() - 0.5f) * 3.5f;
+	float cfac = -eds * Math.min((hi - lo) * (5.0f / 37.0f), 5.5f);
 	for(int v = 0; v <= nseg; v++) {
-	    ret[v] = ms.new Vertex(base.add(dc(bb + ((rnd.nextFloat() - 0.5f) * 4.0f), e)).add(0, 0, v * segi));
+	    float z = v * segi;
+	    float zp = (z / (hi - lo));
+	    float cd = (4 * zp * zp) - (4 * zp) + 0.5f;
+	    cd *= cfac;
+	    ret[v] = ms.new Vertex(base.add(dc(bb + ((rnd.nextFloat() - 0.5f) * 2.0f) + cd, e)).add(0, 0, z));
 	    if((v > 0) && (v < nseg))
 		ret[v].z += (rnd.nextFloat() - 0.5f) * segi * 0.5f;
 	}
@@ -208,11 +219,6 @@ public class Ridges extends MapMesh.Hooks {
 	    };
 	}
 	return(ret);
-    }
-
-    private boolean edgelc(Coord tc, int e) {
-	Coord gc = tc.add(m.ul);
-	return(m.map.getz(gc.add(tccs[e])) < m.map.getz(gc.add(tccs[(e + 1) % 4])));
     }
 
     public Ridges(MapMesh m) {
