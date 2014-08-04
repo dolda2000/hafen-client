@@ -40,13 +40,12 @@ import static haven.Utils.clip;
 
 public class Ridges extends MapMesh.Hooks {
     public static final MapMesh.DataID<Ridges> id = MapMesh.makeid(Ridges.class);
-    public static final int segh = 5;
+    public static final int segh = 8;
     public final MapMesh m;
     private final MapMesh.MapSurface ms;
     private final boolean[] breaks;
     private Vertex[][] edges, edgec;
     private final MPart[] gnd, ridge;
-    boolean debug = false;
 
     public interface RidgeTile {
 	public int breakz();
@@ -54,12 +53,54 @@ public class Ridges extends MapMesh.Hooks {
 
     public static class RPart extends MPart {
 	public float[] rcx, rcy;
-	public RPart(Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f, float[] rcx, float[] rcy) {
+	public int[] rn;
+	public float[] rh;
+
+	public RPart(Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f, float[] rcx, float[] rcy, int[] rn, float[] rh) {
 	    super(lc, gc, v, tcx, tcy, f);
 	    this.rcx = rcx; this.rcy = rcy;
+	    this.rn = rn; this.rh = rh;
 	}
-	public RPart(RPart... parts) {
-	    super(parts);
+
+	public RPart(RPart... parts) {super(parts);}
+
+	private void mapridges(RPart[] parts, int[][] vmap) {
+	    int nir = 0;
+	    int[][] pmap = new int[parts.length][];
+	    int[][] pvmap = new int[parts.length][];
+	    for(int i = 0; i < parts.length; i++) {
+		pmap[i] = new int[parts[i].rh.length];
+		for(int o = 0; o < parts[i].rh.length; o++)
+		    pmap[i][o] = nir++;
+		pvmap[i] = new int[parts[i].v.length];
+		for(int o = 0; o < parts[i].v.length; o++)
+		    pvmap[i][o] = pmap[i][parts[i].rn[o]];
+	    }
+	    int nor = 0;
+	    int[] nids = new int[nir];
+	    for(int i = 0; i < nir; i++)
+		nids[i] = -1;
+	    for(int i = 0; i < parts.length; i++) {
+		for(int o = 0; o < pvmap[i].length; o++) {
+		    if(nids[pvmap[i][o]] < 0)
+			nids[pvmap[i][o]] = nor++;
+		}
+	    }
+	    this.rn = new int[v.length];
+	    this.rh = new float[nor];
+	    for(int i = 0; i < parts.length; i++) {
+		for(int o = 0; o < parts[i].v.length; o++) {
+		    this.rn[vmap[i][o]] = nids[pmap[i][parts[i].rn[o]]];
+		}
+	    }
+	    for(int i = 0; i < parts.length; i++) {
+		for(int o = 0; o < parts[i].rh.length; o++) {
+		    int nid = nids[pmap[i][o]];
+		    if(nid < 0)
+			continue;
+		    this.rh[nid] = parts[i].rh[o];
+		}
+	    }
 	}
 
 	protected void mapvertices(MPart[] mparts, int[][] vmap) {
@@ -72,6 +113,7 @@ public class Ridges extends MapMesh.Hooks {
 		    rcy[vmap[i][o]] = parts[i].rcy[o];
 		}
 	    }
+	    mapridges(parts, vmap);
 	}
     }
 
@@ -130,11 +172,17 @@ public class Ridges extends MapMesh.Hooks {
     }
 
     private static final Coord[] tccs = {new Coord(0, 0), new Coord(1, 0), new Coord(1, 1), new Coord(0, 1)};
+    private boolean edgelc(Coord tc, int e) {
+	Coord gc = tc.add(m.ul);
+	return(m.map.getz(gc.add(tccs[e])) < m.map.getz(gc.add(tccs[(e + 1) % 4])));
+    }
+
     private Vertex[] makeedge(Coord tc, int e) {
 	if(e == 1)
 	    return(makeedge(tc.add(1, 0), 3));
 	if(e == 2)
 	    return(makeedge(tc.add(0, 1), 0));
+	float eds = edgelc(tc, e)?1:-1;
 	int lo, hi; {
 	    Coord gc = tc.add(m.ul);
 	    int z1 = m.map.getz(gc.add(tccs[e])), z2 = m.map.getz(gc.add(tccs[(e + 1) % 4]));
@@ -146,9 +194,14 @@ public class Ridges extends MapMesh.Hooks {
 	float segi = (float)(hi - lo) / (float)nseg;
 	Random rnd = m.grnd(m.ul.add(tc));
 	rnd.setSeed(rnd.nextInt() + e);
-	float bb = (rnd.nextFloat() - 0.5f) * 7.0f;
+	float bb = (rnd.nextFloat() - 0.5f) * 3.5f;
+	float cfac = -eds * Math.min((hi - lo) * (5.0f / 37.0f), 5.5f);
 	for(int v = 0; v <= nseg; v++) {
-	    ret[v] = ms.new Vertex(base.add(dc(bb + ((rnd.nextFloat() - 0.5f) * 4.0f), e)).add(0, 0, v * segi));
+	    float z = v * segi;
+	    float zp = (z / (hi - lo));
+	    float cd = (4 * zp * zp) - (4 * zp) + 0.5f;
+	    cd *= cfac;
+	    ret[v] = ms.new Vertex(base.add(dc(bb + ((rnd.nextFloat() - 0.5f) * 2.0f) + cd, e)).add(0, 0, z));
 	    if((v > 0) && (v < nseg))
 		ret[v].z += (rnd.nextFloat() - 0.5f) * segi * 0.5f;
 	}
@@ -166,11 +219,6 @@ public class Ridges extends MapMesh.Hooks {
 	    };
 	}
 	return(ret);
-    }
-
-    private boolean edgelc(Coord tc, int e) {
-	Coord gc = tc.add(m.ul);
-	return(m.map.getz(gc.add(tccs[e])) < m.map.getz(gc.add(tccs[(e + 1) % 4])));
     }
 
     public Ridges(MapMesh m) {
@@ -238,14 +286,18 @@ public class Ridges extends MapMesh.Hooks {
 	Vertex[] va = new Vertex[n + m];
 	float[] tcx = new float[n + m], tcy = new float[n + m];
 	float[] rcx = new float[n + m], rcy = new float[n + m];
+	int[] rn = new int[n + m];
 	float lh = l[n - 1].z - l[0].z, rh = r[m - 1].z - r[0].z;
+	float[] rhs = {lh, rh};
 	for(int i = 0; i < n; i++) {
 	    va[i] = l[i]; tcx[i] = clip((l[i].x - pc.x) / tilesz.x, 0, 1); tcy[i] = clip(-(l[i].y - pc.y) / tilesz.y, 0, 1);
-	    rcx[i] = 0; rcy[i] = (l[i].z - l[0].z) / lh;
+	    rcx[i] = 0; rcy[i] = (lh == 0)?0:((l[i].z - l[0].z) / lh);
+	    rn[i] = 0;
 	}
 	for(int i = 0; i < m; i++) {
 	    va[i + n] = r[i]; tcx[i + n] = clip((r[i].x - pc.x) / tilesz.x, 0, 1); tcy[i + n] = clip(-(r[i].y - pc.y) / tilesz.y, 0, 1);
-	    rcx[i + n] = 1; rcy[i + n] = (r[i].z - r[0].z) / rh;
+	    rcx[i + n] = 1; rcy[i + n] = (rh == 0)?0:((r[i].z - r[0].z) / rh);
+	    rn[i + n] = 1;
 	}
 	int[] fa = new int[(n + m - 2) * 3];
 	int fi = 0;
@@ -265,7 +317,7 @@ public class Ridges extends MapMesh.Hooks {
 	    }
 	}
 	mkfaces(va, fa);
-	return(new RPart(tc, tc.add(this.m.ul), va, tcx, tcy, fa, rcx, rcy));
+	return(new RPart(tc, tc.add(this.m.ul), va, tcx, tcy, fa, rcx, rcy, rn, rhs));
     }
 
     private void modelcap(Coord tc, int dir) {
@@ -577,21 +629,26 @@ public class Ridges extends MapMesh.Hooks {
 
     public static class TexCons implements Tiler.MCons {
 	public final GLState mat;
-	public final float zf;
+	public final float texh;
 
-	public TexCons(GLState mat, float zf) {
+	public TexCons(GLState mat, float texh) {
 	    this.mat = mat;
-	    this.zf = zf;
+	    this.texh = texh;
 	}
 
 	public void faces(MapMesh m, MPart mdesc) {
 	    RPart desc = (RPart)mdesc;
 	    Model mod = Model.get(m, mat);
 	    MeshBuf.Tex tex = mod.layer(MeshBuf.tex);
+	    int[] trn = new int[desc.rh.length];
+	    float zf = 1.0f / texh;
+	    for(int i = 0; i < trn.length; i++)
+		trn[i] = Math.max((int)((desc.rh[i] + (texh * 0.5f)) * zf), 1);
 	    MeshVertex[] v = new MeshVertex[desc.v.length];
 	    for(int i = 0; i < desc.v.length; i++) {
 		v[i] = new MeshVertex(mod, desc.v[i]);
-		tex.set(v[i], new Coord3f(desc.rcx[i], desc.v[i].z * zf, 0));
+		/* tex.set(v[i], new Coord3f(desc.rcx[i], desc.v[i].z * zf, 0)); */
+		tex.set(v[i], new Coord3f(desc.rcx[i], desc.rcy[i] * trn[desc.rn[i]], 0));
 	    }
 	    int[] f = desc.f;
 	    for(int i = 0; i < f.length; i += 3)
