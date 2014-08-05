@@ -371,7 +371,7 @@ public class WaterTile extends Tiler {
 		    s1.prep(buf);
 	    }
 	};
-    public static final GLState surfmatc = GLState.compose(surfmat, new MapMesh.MLOrder(1000));
+    public static final GLState surfmatc = GLState.compose(surfmat, new Rendered.Order.Default(6000));
 
     public static final MeshBuf.LayerID<MeshBuf.Vec1Layer> depthlayer = new MeshBuf.V1LayerID(BottomFog.depth);
 
