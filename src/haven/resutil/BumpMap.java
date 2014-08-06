@@ -105,7 +105,8 @@ public class BumpMap extends GLState {
     }
 
     public void prep(Buffer buf) {
-	buf.put(slot, this);
+	if(buf.cfg.pref.flight.val)
+	    buf.put(slot, this);
     }
 
     public static final MeshBuf.LayerID<MeshBuf.Vec3Layer> ltan = new MeshBuf.V3LayerID(tan);
