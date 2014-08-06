@@ -158,7 +158,7 @@ public interface ShaderMacro {
 	public int uniform(Uniform var) {
 	    int r = cuniform(var);
 	    if(r < 0)
-		throw(new ProgramException("Uniform not found in symtab: " + var, this, null));
+		throw(new UnknownExternException("Uniform not found in symtab: " + var, this, "uniform", var.toString()));
 	    return(r);
 	}
 	private final Map<Attribute, Integer> amap = new IdentityHashMap<Attribute, Integer>();
@@ -177,7 +177,7 @@ public interface ShaderMacro {
 	public int attrib(Attribute var) {
 	    int r = cattrib(var);
 	    if(r < 0)
-		throw(new ProgramException("Attribute not found in symtab: " + var, this, null));
+		throw(new UnknownExternException("Attribute not found in symtab: " + var, this, "attrib", var.toString()));
 	    return(r);
 	}
     }
