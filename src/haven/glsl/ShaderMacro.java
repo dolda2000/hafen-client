@@ -142,7 +142,7 @@ public interface ShaderMacro {
 	}
 
 	/* XXX: It would be terribly nice to replace these with some faster operation. */
-	private final Map<Uniform, Integer> umap = new IdentityHashMap<Uniform, Integer>();
+	private final transient Map<Uniform, Integer> umap = new IdentityHashMap<Uniform, Integer>();
 	public int cuniform(Uniform var) {
 	    Integer r = umap.get(var);
 	    if(r == null) {
@@ -161,7 +161,7 @@ public interface ShaderMacro {
 		throw(new UnknownExternException("Uniform not found in symtab: " + var, this, "uniform", var.toString()));
 	    return(r);
 	}
-	private final Map<Attribute, Integer> amap = new IdentityHashMap<Attribute, Integer>();
+	private final transient Map<Attribute, Integer> amap = new IdentityHashMap<Attribute, Integer>();
 	public int cattrib(Attribute var) {
 	    Integer r = amap.get(var);
 	    if(r == null) {
