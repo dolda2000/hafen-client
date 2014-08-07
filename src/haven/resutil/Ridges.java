@@ -45,6 +45,7 @@ public class Ridges extends MapMesh.Hooks {
     private final MapMesh.MapSurface ms;
     private final boolean[] breaks;
     private Vertex[][] edges, edgec;
+    private float[] edgeo;
     private final MPart[] gnd, ridge;
 
     public interface RidgeTile {
@@ -164,7 +165,7 @@ public class Ridges extends MapMesh.Hooks {
 	return(breaks);
     }
 
-    private Coord3f dc(float m, int d) {
+    private static Coord3f dc(float m, int d) {
 	if((d % 2) == 0)
 	    return(new Coord3f(m, 0, 0));
 	else
@@ -673,6 +674,17 @@ public class Ridges extends MapMesh.Hooks {
     }
 
     public boolean clean() {
+	edgeo = new float[edgec.length * 2];
+	for(int i = 0; i < edgec.length; i++) {
+	    if(edgec[i] != null) {
+		for(int o = 0; o < 2; o++) {
+		    if((i % 2) == 0)
+			edgeo[i * 2 + o] = (edgec[i][o].y % 11) + 5.5f;
+		    else
+			edgeo[i * 2 + o] = (edgec[i][o].x % 11) - 5.5f;
+		}
+	    }
+	}
 	edges = null;
 	edgec = null;
 	return(true);
@@ -682,5 +694,11 @@ public class Ridges extends MapMesh.Hooks {
 	MapMesh cut = map.getcut(tc.div(MCache.cutsz));
 	boolean[] b = cut.data(id).breaks(tc.mod(MCache.cutsz));
 	return(b[0] || b[1] || b[2] || b[3]);
+    }
+
+    public static float edgeoff(MCache map, Coord tc, int edge, boolean hi) {
+	Ridges r = map.getcut(tc.div(MCache.cutsz)).data(id);
+	tc = tc.mod(MCache.cutsz);
+	return(r.edgeo[(2 * r.eo(tc, edge)) + (hi?1:0)]);
     }
 }
