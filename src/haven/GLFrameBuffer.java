@@ -214,7 +214,7 @@ public class GLFrameBuffer extends GLState {
 		GOut.checkerr(gl);
 		int st = gl.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER);
 		if(st != GL.GL_FRAMEBUFFER_COMPLETE)
-		    throw(new RuntimeException("FBO failed completeness test: " + st));
+		    throw(new RuntimeException("FBO failed completeness test: " + GOut.GLException.constname(st)));
 	    } else {
 		gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo.id);
 	    }

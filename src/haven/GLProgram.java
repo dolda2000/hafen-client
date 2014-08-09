@@ -69,6 +69,41 @@ public class GLProgram implements java.io.Serializable {
 	shaders.add(FragmentShader.makemain(fs));
     }
     
+    public static class ProgramException extends RuntimeException {
+	public final GLProgram program;
+	
+	public ProgramException(String msg, GLProgram program) {
+	    super(msg);
+	    this.program = program;
+	}
+    }
+    
+    public static class UnknownExternException extends ProgramException {
+	public final String type, symbol;
+
+	public UnknownExternException(String msg, GLProgram program, String type, String symbol) {
+	    super(msg, program);
+	    this.type = type;
+	    this.symbol = symbol;
+	}
+    }
+
+    public static class LinkException extends ProgramException {
+	public final String info;
+	
+	public LinkException(String msg, GLProgram program, String info) {
+	    super(msg, program);
+	    this.info = info;
+	}
+	
+	public String toString() {
+	    if(info == null)
+		return(super.toString());
+	    else
+		return(super.toString() + "\nLog:\n" + info);
+	}
+    }
+    
     public static class ProgOb extends GLObject {
 	public final int id;
 	
@@ -96,40 +131,22 @@ public class GLProgram implements java.io.Serializable {
 		    /* The "platform's default charset" is probably a reasonable choice. */
 		    info = new String(logbuf, 0, buf[0]);
 		}
-		throw(new ProgramException("Failed to link GL program", prog, info));
+		throw(new LinkException("Failed to link GL program", prog, info));
 	    }
 	}
 	
 	public int uniform(String name) {
 	    int r = gl.glGetUniformLocationARB(id, name);
 	    if(r < 0)
-		throw(new RuntimeException("Unknown uniform name: " + name));
+		throw(new NoSuchElementException(name));
 	    return(r);
 	}
 	
 	public int attrib(String name) {
 	    int r = gl.glGetAttribLocation(id, name);
 	    if(r < 0)
-		throw(new RuntimeException("Unknown uniform name: " + name));
+		throw(new NoSuchElementException(name));
 	    return(r);
-	}
-    }
-    
-    public static class ProgramException extends RuntimeException {
-	public final GLProgram program;
-	public final String info;
-	
-	public ProgramException(String msg, GLProgram program, String info) {
-	    super(msg);
-	    this.program = program;
-	    this.info = info;
-	}
-	
-	public String toString() {
-	    if(info == null)
-		return(super.toString());
-	    else
-		return(super.toString() + "\nLog:\n" + info);
 	}
     }
     
@@ -160,16 +177,26 @@ public class GLProgram implements java.io.Serializable {
     private final Map<String, Integer> umap = new IdentityHashMap<String, Integer>();
     public int uniform(String name) {
 	Integer r = umap.get(name);
-	if(r == null)
-	    umap.put(name, r = new Integer(glp.uniform(name)));
+	if(r == null) {
+	    try {
+		umap.put(name, r = new Integer(glp.uniform(name)));
+	    } catch(NoSuchElementException e) {
+		throw(new UnknownExternException("Unknown uniform name: " + name, this, "uniform", name));
+	    }
+	}
 	return(r.intValue());
     }
 
     private final Map<String, Integer> amap = new IdentityHashMap<String, Integer>();
     public int attrib(String name) {
 	Integer r = amap.get(name);
-	if(r == null)
-	    amap.put(name, r = new Integer(glp.attrib(name)));
+	if(r == null) {
+	    try {
+		amap.put(name, r = new Integer(glp.attrib(name)));
+	    } catch(NoSuchElementException e) {
+		throw(new UnknownExternException("Unknown attribute name: " + name, this, "attrib", name));
+	    }
+	}
 	return(r.intValue());
     }
 }

@@ -97,6 +97,12 @@ public abstract class States extends GLState {
 		return("ColState(vertex)");
 	    }
 	};
+    @Material.ResName("vcol")
+    public static class $vcol implements Material.ResCons {
+	public GLState cons(Resource res, Object... args) {
+	    return(new States.ColState((Color)args[0]));
+	}
+    }
 
     public static final StandAlone ndepthtest = new StandAlone(Slot.Type.GEOM, PView.proj) {
 	    public void apply(GOut g) {
@@ -156,6 +162,22 @@ public abstract class States extends GLState {
 		g.gl.glDepthMask(true);
 	    }
 	};
+
+    public static final StandAlone prescolor = new StandAlone(Slot.Type.DRAW, PView.proj) {
+	    public void apply(GOut g) {
+		g.gl.glColorMask(false, false, false, false);
+	    }
+
+	    public void unapply(GOut g) {
+		g.gl.glColorMask(true, true, true, true);
+	    }
+	};
+    @Material.ResName("maskcol")
+    public static class $colmask implements Material.ResCons {
+	public GLState cons(Resource res, Object... args) {
+	    return(prescolor);
+	}
+    }
     
     public static final Slot<Fog> fog = new Slot<Fog>(Slot.Type.DRAW, Fog.class, PView.proj);
     public static class Fog extends GLState {
