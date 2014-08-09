@@ -162,12 +162,13 @@ public class Session {
 	}
 	
 	public void set(String nm, int ver) {
+	    Resource.load(nm, ver, -5);
 	    synchronized(this) {
 		this.resnm = nm;
 		this.resver = ver;
+		this.ind = null;
 		notifyAll();
 	    }
-	    Resource.load(nm, ver, -5);
 	}
     }
 
