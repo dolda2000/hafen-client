@@ -254,7 +254,7 @@ public class CharWnd extends Window {
 	super(pc, new Coord(300, 290), parent, "Character Sheet");
 
 	int x = 15, y = 10;
-	new Img(new Coord(x, y), catf.render("Base Attributes").tex(), this); y += 35;
+	new Img(new Coord(x - 5, y), catf.render("Base Attributes").tex(), this); y += 35;
 	base = new ArrayList<Attr>();
 	Attr aw;
 	Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32);
@@ -268,7 +268,7 @@ public class CharWnd extends Window {
 	base.add(aw = new Attr("psy", "Psyche",       wbox.btloff().add(x, y), other)); y += aw.sz.y;
 	Frame.around(this, base);
 	y += 20;
-	new Img(new Coord(x, y), catf.render("Food Event Points").tex(), this); y += 35;
+	new Img(new Coord(x - 5, y), catf.render("Food Event Points").tex(), this); y += 35;
 	feps = new FoodMeter(new Coord(x, y), this);
 
 	resize(contentsz().add(15, 10));
