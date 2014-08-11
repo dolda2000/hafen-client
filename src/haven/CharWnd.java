@@ -35,7 +35,7 @@ import static haven.Window.wbox;
 import static haven.PUtils.*;
 
 public class CharWnd extends Window {
-    public static final Text.Furnace catf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Window.ctex), 3, 1, new Color(128, 64, 0));
+    public static final Text.Furnace catf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Window.ctex), 3, 1, new Color(96, 48, 0));
     public static final Text.Foundry attrf = new Text.Foundry(Text.fraktur, 18).aa(true);
     public static final Color debuff = new Color(255, 128, 128);
     public static final Color buff = new Color(128, 255, 128);
@@ -268,6 +268,7 @@ public class CharWnd extends Window {
 	base.add(aw = new Attr("psy", "Psyche",       wbox.btloff().add(x, y), other)); y += aw.sz.y;
 	Frame.around(this, base);
 	y += 20;
+	new Img(new Coord(x, y), catf.render("Food Event Points").tex(), this); y += 35;
 	feps = new FoodMeter(new Coord(x, y), this);
 
 	resize(contentsz().add(15, 10));
