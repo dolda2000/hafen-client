@@ -216,10 +216,10 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	return(new Random(id));
     }
     
-    public Resource.Neg getneg() {
+    public Resource getres() {
 	Drawable d = getattr(Drawable.class);
 	if(d != null)
-	    return(d.getneg());
+	    return(d.getres());
 	return(null);
     }
 

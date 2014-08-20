@@ -76,8 +76,8 @@ public class ResDrawable extends Drawable {
 	    spr.dispose();
     }
     
-    public Resource.Neg getneg() {
-	return(res.get().layer(Resource.negc));
+    public Resource getres() {
+	return(res.get());
     }
     
     public Skeleton.Pose getpose() {
