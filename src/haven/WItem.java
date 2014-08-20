@@ -36,8 +36,6 @@ public class WItem extends Widget implements DTarget {
     public static final Resource missing = Resource.load("gfx/invobjs/missing");
     public final GItem item;
     private Tex ltex = null;
-    private Tex mask = null;
-    private Tex cmask = null;
     
     public WItem(Coord c, Widget parent, GItem item) {
 	super(c, Inventory.sqsz, parent);
@@ -196,7 +194,11 @@ public class WItem extends Widget implements DTarget {
 
     public void draw(GOut g) {
 	if(ltex != null) {
+	    g.defstate();
+	    if(olcol.get() != null)
+		g.usestate(new ColorMask(olcol.get()));
 	    drawmain(g, ltex);
+	    g.defstate();
 	    if(item.num >= 0) {
 		g.atext(Integer.toString(item.num), ltex.sz(), 1, 1);
 	    } else if(itemnum.get() != null) {
@@ -207,19 +209,6 @@ public class WItem extends Widget implements DTarget {
 		g.chcolor(255, 255, 255, 64);
 		g.fellipse(sz.div(2), new Coord(15, 15), 90, (int)(90 + (360 * a)));
 		g.chcolor();
-	    }
-	    if(olcol.get() != null) {
-		if(cmask != ltex) {
-		    mask = null;
-		    if(ltex instanceof TexI)
-			mask = ((TexI)ltex).mkmask();
-		    cmask = ltex;
-		}
-		if(mask != null) {
-		    g.chcolor(olcol.get());
-		    g.image(mask, Coord.z);
-		    g.chcolor();
-		}
 	    }
 	} else {
 	    missing.loadwait();

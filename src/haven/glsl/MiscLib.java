@@ -135,4 +135,12 @@ public abstract class MiscLib {
 		g.gl.glUniform2f(loc, sz.x, sz.y);
 	    }
 	};
+
+    public static final Function colblend = new Function.Def(VEC4) {{
+	Expression base = param(IN, VEC4).ref();
+	Expression blend = param(IN, VEC4).ref();
+	code.add(new Return(vec4(add(mul(pick(base, "rgb"), sub(l(1.0), pick(blend, "a"))),
+				     mul(pick(blend, "rgb"), pick(blend, "a"))),
+				 pick(base, "a"))));
+    }};
 }
