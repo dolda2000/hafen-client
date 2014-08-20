@@ -35,11 +35,10 @@ public class GOut {
     public final GL2 gl;
     public final GLConfig gc;
     public Coord ul, sz, tx;
-    private States.ColState color = new States.ColState(Color.WHITE);
     public final GLContext ctx;
     private final GOut root;
     public final GLState.Applier st;
-    private final GLState.Buffer def2d;
+    private final GLState.Buffer def2d, cur2d;
 	
     protected GOut(GOut o) {
 	this.gl = o.gl;
@@ -47,12 +46,12 @@ public class GOut {
 	this.ul = o.ul;
 	this.sz = o.sz;
 	this.tx = o.tx;
-	this.color = o.color;
 	this.ctx = o.ctx;
 	this.root = o.root;
 	this.st = o.st;
 	this.def2d = o.def2d;
-	st.set(def2d);
+	this.cur2d = new GLState.Buffer(gc);
+	defstate();
     }
 
     public GOut(GL2 gl, GLContext ctx, GLConfig cfg, GLState.Applier st, GLState.Buffer def2d, Coord sz) {
@@ -64,6 +63,8 @@ public class GOut {
 	this.st = st;
 	this.root = this;
 	this.def2d = def2d;
+	this.cur2d = new GLState.Buffer(gc);
+	defstate();
     }
     
     public static class GLException extends RuntimeException {
@@ -166,8 +167,7 @@ public class GOut {
     public void image(Tex tex, Coord c) {
 	if(tex == null)
 	    return;
-	st.set(def2d);
-	state(color);
+	st.set(cur2d);
 	tex.crender(this, c.add(tx), ul, sz);
 	checkerr();
     }
@@ -185,8 +185,7 @@ public class GOut {
     public void image(Tex tex, Coord c, Coord sz) {
 	if(tex == null)
 	    return;
-	st.set(def2d);
-	state(color);
+	st.set(cur2d);
 	tex.crender(this, c.add(tx), ul, this.sz, sz);
 	checkerr();
     }
@@ -195,8 +194,7 @@ public class GOut {
     public void image(Tex tex, Coord c, Coord ul, Coord sz) {
 	if(tex == null)
 	    return;
-	st.set(def2d);
-	state(color);
+	st.set(cur2d);
 	ul = ul.add(this.tx);
 	Coord br = ul.add(sz);
 	if(ul.x < this.ul.x)
@@ -213,7 +211,7 @@ public class GOut {
 
     /* Draw texture at c, with the extra state s applied. */
     public void image(Tex tex, Coord c, GLState s) {
-	st.set(def2d);
+	st.set(cur2d);
 	if(s != null)
 	    state(s);
 	tex.crender(this, c.add(tx), ul, sz);
@@ -237,12 +235,11 @@ public class GOut {
     }
 
     public void state2d() {
-	st.set(def2d);
+	st.set(cur2d);
     }
     
     public void line(Coord c1, Coord c2, double w) {
-	st.set(def2d);
-	state(color);
+	st.set(cur2d);
 	apply();
 	gl.glLineWidth((float)w);
 	gl.glBegin(GL.GL_LINES);
@@ -266,8 +263,7 @@ public class GOut {
     }
     
     public void poly(Coord... c) {
-	st.set(def2d);
-	state(color);
+	st.set(cur2d);
 	apply();
 	gl.glBegin(GL2.GL_POLYGON);
 	for(Coord vc : c)
@@ -277,7 +273,7 @@ public class GOut {
     }
     
     public void poly2(Object... c) {
-	st.set(def2d);
+	st.set(cur2d);
 	st.put(States.color, States.vertexcolor);
 	apply();
 	gl.glBegin(GL2.GL_POLYGON);
@@ -300,8 +296,7 @@ public class GOut {
 	if(br.y > this.ul.y + this.sz.y) br.y = this.ul.y + this.sz.y;
 	if((ul.x >= br.x) || (ul.y >= br.y))
 	    return;
-	st.set(def2d);
-	state(color);
+	st.set(cur2d);
 	apply();
 	gl.glBegin(GL2.GL_QUADS);
 	gl.glVertex2i(ul.x, ul.y);
@@ -313,8 +308,7 @@ public class GOut {
     }
 	
     public void frect(Coord c1, Coord c2, Coord c3, Coord c4) {
-	st.set(def2d);
-	state(color);
+	st.set(cur2d);
 	apply();
 	gl.glBegin(GL2.GL_QUADS);
 	vertex(c1);
@@ -349,7 +343,7 @@ public class GOut {
 	if((ul.x >= br.x) || (ul.y >= br.y))
 	    return;
 
-	st.set(def2d);
+	st.set(cur2d);
 	state(s);
 	apply();
 
@@ -371,8 +365,7 @@ public class GOut {
     }
 
     public void fellipse(Coord c, Coord r, int a1, int a2) {
-	st.set(def2d);
-	state(color);
+	st.set(cur2d);
 	apply();
 	gl.glBegin(GL.GL_TRIANGLE_FAN);
 	vertex(c);
@@ -389,8 +382,7 @@ public class GOut {
     }
 
     public void rect(Coord ul, Coord sz) {
-	st.set(def2d);
-	state(color);
+	st.set(cur2d);
 	apply();
 	gl.glLineWidth(1);
 	gl.glBegin(GL.GL_LINE_LOOP);
@@ -403,8 +395,7 @@ public class GOut {
     }
 
     public void prect(Coord c, Coord ul, Coord br, double a) {
-	st.set(def2d);
-	state(color);
+	st.set(cur2d);
 	apply();
 	gl.glEnable(GL2.GL_POLYGON_SMOOTH);
 	gl.glBegin(GL.GL_TRIANGLE_FAN);
@@ -454,24 +445,39 @@ public class GOut {
 	checkerr();
     }
 
-    public void chcolor(Color c) {
-	if(c.equals(this.color.c))
-	    return;
-	this.color = new States.ColState(c);
+    public <T extends GLState> T curstate(GLState.Slot<T> slot) {
+	return(cur2d.get(slot));
     }
-    
+
+    public void usestate(GLState st) {
+	st.prep(cur2d);
+    }
+
+    public <T extends GLState> void usestate(GLState.Slot<? super T> slot) {
+	cur2d.put(slot, null);
+    }
+
+    public void defstate() {
+	def2d.copy(cur2d);
+    }
+
+    public void chcolor(Color c) {
+	usestate(new States.ColState(c));
+    }
+
     public void chcolor(int r, int g, int b, int a) {
 	chcolor(Utils.clipcol(r, g, b, a));
     }
-	
+
     public void chcolor() {
-	chcolor(Color.WHITE);
+	usestate(States.color);
     }
-    
+
     Color getcolor() {
-	return(color.c);
+	States.ColState color = curstate(States.color);
+	return((color == null)?Color.WHITE:color.c);
     }
-	
+
     public GOut reclip(Coord ul, Coord sz) {
 	GOut g = new GOut(this);
 	g.tx = this.tx.add(ul);
