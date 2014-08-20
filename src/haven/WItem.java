@@ -32,18 +32,19 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 import static haven.ItemInfo.find;
 
-public class WItem extends Widget implements DTarget {
+public class WItem extends Widget implements DTarget, GSprite.Owner {
     public static final Resource missing = Resource.load("gfx/invobjs/missing");
     public final GItem item;
-    private Tex ltex = null;
+    private GSprite spr = null;
+    private Resource cspr = null;
     
     public WItem(Coord c, Widget parent, GItem item) {
 	super(c, Inventory.sqsz, parent);
 	this.item = item;
     }
     
-    public void drawmain(GOut g, Tex tex) {
-	g.image(tex, Coord.z);
+    public void drawmain(GOut g, GSprite spr) {
+	spr.draw(g);
     }
 
     public static BufferedImage rendershort(List<ItemInfo> info) {
@@ -182,27 +183,35 @@ public class WItem extends Widget implements DTarget {
     public void tick(double dt) {
 	try {
 	    Resource res = item.res.get();
-	    Tex tex = res.layer(Resource.imgc).tex();
-	    if(tex != ltex) {
-		resize(tex.sz());
-		ltex = tex;
+	    if(res != cspr) {
+		spr = GSprite.create(this, res, Message.nil);
+		resize(spr.sz());
 	    }
 	} catch(Loading e) {
-	    ltex = null;
+	    spr = null;
 	}
     }
 
+    private Random rnd = null;
+    public Random mkrandoom() {
+	if(rnd == null)
+	    rnd = new Random();
+	return(rnd);
+    }
+    public Resource getres() {return(cspr);}
+    public Glob glob() {return(ui.sess.glob);}
+
     public void draw(GOut g) {
-	if(ltex != null) {
+	if(spr != null) {
 	    g.defstate();
 	    if(olcol.get() != null)
 		g.usestate(new ColorMask(olcol.get()));
-	    drawmain(g, ltex);
+	    drawmain(g, spr);
 	    g.defstate();
 	    if(item.num >= 0) {
-		g.atext(Integer.toString(item.num), ltex.sz(), 1, 1);
+		g.atext(Integer.toString(item.num), spr.sz(), 1, 1);
 	    } else if(itemnum.get() != null) {
-		g.aimage(itemnum.get(), ltex.sz(), 1, 1);
+		g.aimage(itemnum.get(), spr.sz(), 1, 1);
 	    }
 	    if(item.meter > 0) {
 		double a = ((double)item.meter) / 100.0;
