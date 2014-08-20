@@ -38,7 +38,6 @@ public class ColorMask extends GLState {
     private static final ShaderMacro[] sh = {
 	new ShaderMacro() {
 	    public void modify(ProgramContext prog) {
-		prog.dump = true;
 		prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			public Expression expand(Expression in) {
 			    return(MiscLib.colblend.call(in, ccol.ref()));
