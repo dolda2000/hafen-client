@@ -37,6 +37,7 @@ public class WItem extends Widget implements DTarget, GSprite.Owner {
     public final GItem item;
     private GSprite spr = null;
     private Resource cspr = null;
+    private Message csdt = Message.nil;
     
     public WItem(Coord c, Widget parent, GItem item) {
 	super(c, Inventory.sqsz, parent);
@@ -182,10 +183,15 @@ public class WItem extends Widget implements DTarget, GSprite.Owner {
     
     public void tick(double dt) {
 	try {
-	    Resource res = item.res.get();
-	    if(res != cspr) {
-		spr = GSprite.create(this, res, Message.nil);
-		resize(spr.sz());
+	    synchronized(item) {
+		Resource res = item.res.get();
+		Message sdt = item.sdt;
+		if((res != cspr) || !csdt.equals(sdt)) {
+		    spr = GSprite.create(this, res, sdt);
+		    resize(spr.sz());
+		    cspr = res;
+		    csdt = sdt;
+		}
 	    }
 	} catch(Loading e) {
 	    spr = null;

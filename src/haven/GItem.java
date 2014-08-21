@@ -33,6 +33,7 @@ import java.util.*;
 
 public class GItem extends AWidget implements ItemInfo.ResOwner {
     public Indir<Resource> res;
+    public Message sdt;
     public int meter = 0;
     public int num = -1;
     private Object[] rawinfo;
@@ -42,7 +43,8 @@ public class GItem extends AWidget implements ItemInfo.ResOwner {
     public static class $_ implements Factory {
 	public Widget create(Coord c, Widget parent, Object[] args) {
 	    int res = (Integer)args[0];
-	    return(new GItem(parent, parent.ui.sess.getres(res)));
+	    Message sdt = (args.length > 1)?new Message(0, (byte[])args[1]):Message.nil;
+	    return(new GItem(parent, parent.ui.sess.getres(res), sdt));
 	}
     }
     
@@ -67,9 +69,14 @@ public class GItem extends AWidget implements ItemInfo.ResOwner {
 	}
     }
     
-    public GItem(Widget parent, Indir<Resource> res) {
+    public GItem(Widget parent, Indir<Resource> res, Message sdt) {
 	super(parent);
 	this.res = res;
+	this.sdt = sdt;
+    }
+
+    public GItem(Widget parent, Indir<Resource> res) {
+	this(parent, res, Message.nil);
     }
 
     public Glob glob() {
@@ -90,7 +97,10 @@ public class GItem extends AWidget implements ItemInfo.ResOwner {
 	if(name == "num") {
 	    num = (Integer)args[0];
 	} else if(name == "chres") {
-	    res = ui.sess.getres((Integer)args[0]);
+	    synchronized(this) {
+		res = ui.sess.getres((Integer)args[0]);
+		sdt = (args.length > 1)?new Message(0, (byte[])args[1]):Message.nil;
+	    }
 	} else if(name == "tt") {
 	    info = null;
 	    rawinfo = args;
