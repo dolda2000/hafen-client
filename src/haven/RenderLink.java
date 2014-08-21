@@ -66,6 +66,10 @@ public interface RenderLink {
 					break;
 				    }
 				}
+				if(m == null)
+				    throw(new Sprite.ResourceException("Could not find specified mesh by ID " + meshid, getres()));
+				if(M == null)
+				    throw(new Sprite.ResourceException("Could not find specified material by ID " + matid, getres()));
 				res = M.apply(m);
 			    }
 			    return(res);

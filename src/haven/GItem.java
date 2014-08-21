@@ -31,10 +31,12 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
-public class GItem extends AWidget implements ItemInfo.ResOwner {
+public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owner {
     public Indir<Resource> res;
+    public Message sdt;
     public int meter = 0;
     public int num = -1;
+    public GSprite spr;
     private Object[] rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
     
@@ -42,7 +44,8 @@ public class GItem extends AWidget implements ItemInfo.ResOwner {
     public static class $_ implements Factory {
 	public Widget create(Coord c, Widget parent, Object[] args) {
 	    int res = (Integer)args[0];
-	    return(new GItem(parent, parent.ui.sess.getres(res)));
+	    Message sdt = (args.length > 1)?new Message(0, (byte[])args[1]):Message.nil;
+	    return(new GItem(parent, parent.ui.sess.getres(res), sdt));
 	}
     }
     
@@ -67,13 +70,37 @@ public class GItem extends AWidget implements ItemInfo.ResOwner {
 	}
     }
     
-    public GItem(Widget parent, Indir<Resource> res) {
+    public GItem(Widget parent, Indir<Resource> res, Message sdt) {
 	super(parent);
 	this.res = res;
+	this.sdt = sdt;
     }
 
-    public Glob glob() {
-	return(ui.sess.glob);
+    public GItem(Widget parent, Indir<Resource> res) {
+	this(parent, res, Message.nil);
+    }
+
+    private Random rnd = null;
+    public Random mkrandoom() {
+	if(rnd == null)
+	    rnd = new Random();
+	return(rnd);
+    }
+    public Resource getres() {return(res.get());}
+    public Glob glob() {return(ui.sess.glob);}
+
+    public void tick(double dt) {
+	if(spr == null) {
+	    try {
+		synchronized(this) {
+		    spr = GSprite.create(this, res.get(), sdt);
+		}
+	    } catch(Loading l) {
+		spr = null;
+	    }
+	} else {
+	    spr.tick(dt);
+	}
     }
 
     public List<ItemInfo> info() {
@@ -86,11 +113,20 @@ public class GItem extends AWidget implements ItemInfo.ResOwner {
 	return(res.get());
     }
 
+    public GSprite sprite() {
+	if(spr == null)
+	    throw(new Loading("Still waiting for sprite to be constructed"));
+	return(spr);
+    }
+
     public void uimsg(String name, Object... args) {
 	if(name == "num") {
 	    num = (Integer)args[0];
 	} else if(name == "chres") {
-	    res = ui.sess.getres((Integer)args[0]);
+	    synchronized(this) {
+		res = ui.sess.getres((Integer)args[0]);
+		sdt = (args.length > 1)?new Message(0, (byte[])args[1]):Message.nil;
+	    }
 	} else if(name == "tt") {
 	    info = null;
 	    rawinfo = args;

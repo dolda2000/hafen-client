@@ -122,8 +122,8 @@ public class Composite extends Drawable {
 	comp.tick(dt);
     }
 
-    public Resource.Neg getneg() {
-	return(base.get().layer(Resource.negc));
+    public Resource getres() {
+	return(base.get());
     }
     
     public Pose getpose() {

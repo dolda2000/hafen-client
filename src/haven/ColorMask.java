@@ -27,64 +27,46 @@
 package haven;
 
 import java.awt.Color;
+import haven.glsl.*;
+import static haven.glsl.Type.*;
 
-public class ResDrawable extends Drawable {
-    final Indir<Resource> res;
-    Message sdt;
-    Sprite spr = null;
-    int delay = 0;
-	
-    public ResDrawable(Gob gob, Indir<Resource> res, Message sdt) {
-	super(gob);
-	this.res = res;
-	this.sdt = sdt;
-	try {
-	    init();
-	} catch(Loading e) {}
-    }
-	
-    public ResDrawable(Gob gob, Resource res) {
-	this(gob, res.indir(), new Message(0));
-    }
-	
-    public void init() {
-	if(spr != null)
-	    return;
-	spr = Sprite.create(gob, res.get(), sdt.clone());
-    }
-	
-    public void setup(RenderList rl) {
-	try {
-	    init();
-	} catch(Loading e) {
-	    return;
+public class ColorMask extends GLState {
+    public static final Slot<ColorMask> slot = new Slot<ColorMask>(Slot.Type.DRAW, ColorMask.class);
+    public static final Uniform ccol = new Uniform(VEC4);
+    private final float[] col;
+
+    private static final ShaderMacro[] sh = {
+	new ShaderMacro() {
+	    public void modify(ProgramContext prog) {
+		prog.fctx.fragcol.mod(new Macro1<Expression>() {
+			public Expression expand(Expression in) {
+			    return(MiscLib.colblend.call(in, ccol.ref()));
+			}
+		    }, 100);
+	    }
 	}
-	spr.setup(rl);
+    };
+
+    public ColorMask(Color col) {
+	this.col = Utils.c2fa(col);
     }
-	
-    public void ctick(int dt) {
-	if(spr == null) {
-	    delay += dt;
-	} else {
-	    spr.tick(delay + dt);
-	    delay = 0;
-	}
+
+    public ShaderMacro[] shaders() {return(sh);}
+    public boolean reqshaders() {return(true);}
+
+    public void reapply(GOut g) {
+	g.gl.glUniform4fv(g.st.prog.uniform(ccol), 1, col, 0);
     }
-    
-    public void dispose() {
-	if(spr != null)
-	    spr.dispose();
+
+    public void apply(GOut g) {
+	if(g.st.prog != null)
+	    reapply(g);
     }
-    
-    public Resource getres() {
-	return(res.get());
+
+    public void unapply(GOut g) {
     }
-    
-    public Skeleton.Pose getpose() {
-	init();
-	if(spr instanceof SkelSprite) {
-	    return(((SkelSprite)spr).pose);
-	}
-	return(null);
+
+    public void prep(Buffer buf) {
+	buf.put(slot, this);
     }
 }

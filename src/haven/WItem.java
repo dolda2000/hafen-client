@@ -35,17 +35,16 @@ import static haven.ItemInfo.find;
 public class WItem extends Widget implements DTarget {
     public static final Resource missing = Resource.load("gfx/invobjs/missing");
     public final GItem item;
-    private Tex ltex = null;
-    private Tex mask = null;
-    private Tex cmask = null;
+    private Resource cspr = null;
+    private Message csdt = Message.nil;
     
     public WItem(Coord c, Widget parent, GItem item) {
 	super(c, Inventory.sqsz, parent);
 	this.item = item;
     }
     
-    public void drawmain(GOut g, Tex tex) {
-	g.image(tex, Coord.z);
+    public void drawmain(GOut g, GSprite spr) {
+	spr.draw(g);
     }
 
     public static BufferedImage rendershort(List<ItemInfo> info) {
@@ -182,44 +181,36 @@ public class WItem extends Widget implements DTarget {
     };
     
     public void tick(double dt) {
-	try {
-	    Resource res = item.res.get();
-	    Tex tex = res.layer(Resource.imgc).tex();
-	    if(tex != ltex) {
-		resize(tex.sz());
-		ltex = tex;
-	    }
-	} catch(Loading e) {
-	    ltex = null;
+	/* XXX: This is ugly and there should be a better way to
+	 * ensure the resizing happens as it should, but I can't think
+	 * of one yet. */
+	if(item.spr == null)
+	    item.tick(0);
+	if(item.spr != null) {
+	    Coord sz = item.spr.sz();
+	    if(!sz.equals(this.sz))
+		resize(sz);
 	}
     }
 
     public void draw(GOut g) {
-	if(ltex != null) {
-	    drawmain(g, ltex);
+	if(item.spr != null) {
+	    Coord sz = item.spr.sz();
+	    g.defstate();
+	    if(olcol.get() != null)
+		g.usestate(new ColorMask(olcol.get()));
+	    drawmain(g, item.spr);
+	    g.defstate();
 	    if(item.num >= 0) {
-		g.atext(Integer.toString(item.num), ltex.sz(), 1, 1);
+		g.atext(Integer.toString(item.num), sz, 1, 1);
 	    } else if(itemnum.get() != null) {
-		g.aimage(itemnum.get(), ltex.sz(), 1, 1);
+		g.aimage(itemnum.get(), sz, 1, 1);
 	    }
 	    if(item.meter > 0) {
 		double a = ((double)item.meter) / 100.0;
 		g.chcolor(255, 255, 255, 64);
-		g.fellipse(sz.div(2), new Coord(15, 15), 90, (int)(90 + (360 * a)));
+		g.fellipse(this.sz.div(2), new Coord(15, 15), 90, (int)(90 + (360 * a)));
 		g.chcolor();
-	    }
-	    if(olcol.get() != null) {
-		if(cmask != ltex) {
-		    mask = null;
-		    if(ltex instanceof TexI)
-			mask = ((TexI)ltex).mkmask();
-		    cmask = ltex;
-		}
-		if(mask != null) {
-		    g.chcolor(olcol.get());
-		    g.image(mask, Coord.z);
-		    g.chcolor();
-		}
 	    }
 	} else {
 	    missing.loadwait();

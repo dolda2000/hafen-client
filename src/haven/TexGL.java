@@ -97,12 +97,10 @@ public abstract class TexGL extends Tex {
 	public void apply(GOut g) {
 	    GL2 gl = g.gl;
 	    sampler = lbind(g, tex);
-	    if(g.st.prog != null) {
+	    if(g.st.prog != null)
 		reapply(g);
-	    } else {
-		gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
-		gl.glEnable(GL.GL_TEXTURE_2D);
-	    }
+	    gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
+	    gl.glEnable(GL.GL_TEXTURE_2D);
 	}
     
 	public void reapply(GOut g) {
@@ -113,8 +111,7 @@ public abstract class TexGL extends Tex {
 	public void unapply(GOut g) {
 	    GL2 gl = g.gl;
 	    sampler.act();
-	    if(!g.st.usedprog)
-		gl.glDisable(GL.GL_TEXTURE_2D);
+	    gl.glDisable(GL.GL_TEXTURE_2D);
 	    sampler.free(); sampler = null;
 	}
     

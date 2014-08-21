@@ -194,11 +194,16 @@ public class UI {
     }
 	
     public void destroy(Widget wdg) {
-	Grab g;
-	if(((g = el(mousegrab)) != null) && g.wdg.hasparent(wdg))
-	    g.remove();
-	if(((g = el(keygrab)) != null) && g.wdg.hasparent(wdg))
-	    g.remove();
+	for(Iterator<Grab> i = mousegrab.iterator(); i.hasNext();) {
+	    Grab g = i.next();
+	    if(g.wdg.hasparent(wdg))
+		i.remove();
+	}
+	for(Iterator<Grab> i = keygrab.iterator(); i.hasNext();) {
+	    Grab g = i.next();
+	    if(g.wdg.hasparent(wdg))
+		i.remove();
+	}
 	removeid(wdg);
 	wdg.reqdestroy();
     }

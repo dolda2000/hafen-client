@@ -45,7 +45,7 @@ public abstract class Sprite implements Rendered {
     
     public interface Owner {
 	public Random mkrandoom();
-	public Resource.Neg getneg();
+	public Resource getres();
 	public Glob glob();
     }
     

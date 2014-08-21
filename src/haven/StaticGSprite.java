@@ -26,65 +26,28 @@
 
 package haven;
 
-import java.awt.Color;
+public class StaticGSprite extends GSprite {
+    public final Resource.Image img;
 
-public class ResDrawable extends Drawable {
-    final Indir<Resource> res;
-    Message sdt;
-    Sprite spr = null;
-    int delay = 0;
-	
-    public ResDrawable(Gob gob, Indir<Resource> res, Message sdt) {
-	super(gob);
-	this.res = res;
-	this.sdt = sdt;
-	try {
-	    init();
-	} catch(Loading e) {}
+    public static final Factory fact = new Factory() {
+	    public GSprite create(Owner owner, Resource res, Message sdt) {
+		Resource.Image img = res.layer(Resource.imgc);
+		if(img != null)
+		    return(new StaticGSprite(owner, img));
+		return(null);
+	    }
+	};
+
+    public StaticGSprite(Owner owner, Resource.Image img) {
+	super(owner);
+	this.img = img;
     }
-	
-    public ResDrawable(Gob gob, Resource res) {
-	this(gob, res.indir(), new Message(0));
+
+    public void draw(GOut g) {
+	g.image(img, Coord.z);
     }
-	
-    public void init() {
-	if(spr != null)
-	    return;
-	spr = Sprite.create(gob, res.get(), sdt.clone());
-    }
-	
-    public void setup(RenderList rl) {
-	try {
-	    init();
-	} catch(Loading e) {
-	    return;
-	}
-	spr.setup(rl);
-    }
-	
-    public void ctick(int dt) {
-	if(spr == null) {
-	    delay += dt;
-	} else {
-	    spr.tick(delay + dt);
-	    delay = 0;
-	}
-    }
-    
-    public void dispose() {
-	if(spr != null)
-	    spr.dispose();
-    }
-    
-    public Resource getres() {
-	return(res.get());
-    }
-    
-    public Skeleton.Pose getpose() {
-	init();
-	if(spr instanceof SkelSprite) {
-	    return(((SkelSprite)spr).pose);
-	}
-	return(null);
+
+    public Coord sz() {
+	return(img.sz);
     }
 }

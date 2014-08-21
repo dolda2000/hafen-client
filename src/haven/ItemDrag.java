@@ -35,9 +35,9 @@ public class ItemDrag extends WItem {
 	ui.grabmouse(this);
     }
     
-    public void drawmain(GOut g, Tex tex) {
+    public void drawmain(GOut g, GSprite spr) {
 	g.chcolor(255, 255, 255, 128);
-	g.image(tex, Coord.z);
+	super.drawmain(g, spr);
 	g.chcolor();
     }
 

@@ -41,6 +41,10 @@ public abstract class ItemInfo {
     public interface ResOwner extends Owner {
 	public Resource resource();
     }
+
+    public interface SpriteOwner extends ResOwner {
+	public GSprite sprite();
+    }
     
     @Resource.PublishedCode(name = "tt")
     public static interface InfoFactory {

@@ -45,17 +45,39 @@ public class Makewindow extends Widget {
 	}
     }
     
-    public static class Spec {
+    public class Spec implements GSprite.Owner {
 	public Indir<Resource> res;
+	public Message sdt;
 	public Tex num;
-	
-	public Spec(Indir<Resource> res, int num) {
+	private GSprite spr;
+
+	public Spec(Indir<Resource> res, Message sdt, int num) {
 	    this.res = res;
+	    this.sdt = sdt;
 	    if(num >= 0)
 		this.num = new TexI(Utils.outline2(Text.render(Integer.toString(num), Color.WHITE).img, Utils.contrast(Color.WHITE)));
 	    else
 		this.num = null;
 	}
+
+	public void draw(GOut g) {
+	    try {
+		if(spr == null)
+		    spr = GSprite.create(this, res.get(), sdt);
+		spr.draw(g);
+	    } catch(Loading e) {}
+	    if(num != null)
+		g.aimage(num, Inventory.sqsz, 1.0, 1.0);
+	}
+
+	private Random rnd = null;
+	public Random mkrandoom() {
+	    if(rnd == null)
+		rnd = new Random();
+	    return(rnd);
+	}
+	public Resource getres() {return(res.get());}
+	public Glob glob() {return(ui.sess.glob);}
     }
 	
     public Makewindow(Coord c, Widget parent, String rcpnm) {
@@ -72,13 +94,21 @@ public class Makewindow extends Widget {
     public void uimsg(String msg, Object... args) {
 	if(msg == "inpop") {
 	    List<Spec> inputs = new LinkedList<Spec>();
-	    for(int i = 0; i < args.length; i += 2)
-		inputs.add(new Spec(ui.sess.getres((Integer)args[i]), (Integer)args[i + 1]));
+	    for(int i = 0; i < args.length;) {
+		int resid = (Integer)args[i++];
+		Message sdt = (args[i] instanceof byte[])?new Message(0, (byte[])args[i++]):Message.nil;
+		int num = (Integer)args[i++];
+		inputs.add(new Spec(ui.sess.getres(resid), sdt, num));
+	    }
 	    this.inputs = inputs;
 	} else if(msg == "opop") {
 	    List<Spec> outputs = new LinkedList<Spec>();
-	    for(int i = 0; i < args.length; i += 2)
-		outputs.add(new Spec(ui.sess.getres((Integer)args[i]), (Integer)args[i + 1]));
+	    for(int i = 0; i < args.length;) {
+		int resid = (Integer)args[i++];
+		Message sdt = (args[i] instanceof byte[])?new Message(0, (byte[])args[i++]):Message.nil;
+		int num = (Integer)args[i++];
+		outputs.add(new Spec(ui.sess.getres(resid), sdt, num));
+	    }
 	    this.outputs = outputs;
 	}
     }
@@ -86,26 +116,16 @@ public class Makewindow extends Widget {
     public void draw(GOut g) {
 	Coord c = new Coord(xoff, 0);
 	for(Spec s : inputs) {
-	    g.image(Inventory.invsq, c);
-	    try {
-		Resource res = s.res.get();
-		g.image(res.layer(Resource.imgc).tex(), c.add(1, 1));
-	    } catch(Loading e) {
-	    }
-	    if(s.num != null)
-		g.aimage(s.num, c.add(33, 34), 1.0, 1.0);
+	    GOut sg = g.reclip(c, Inventory.invsq.sz());
+	    sg.image(Inventory.invsq, Coord.z);
+	    s.draw(sg);
 	    c = c.add(Inventory.sqsz.x, 0);
 	}
 	c = new Coord(xoff, yoff);
 	for(Spec s : outputs) {
-	    g.image(Inventory.invsq, c);
-	    try {
-		Resource res = s.res.get();
-		g.image(res.layer(Resource.imgc).tex(), c.add(1, 1));
-	    } catch(Loading e) {
-	    }
-	    if(s.num != null)
-		g.aimage(s.num, c.add(33, 34), 1.0, 1.0);
+	    GOut sg = g.reclip(c, Inventory.invsq.sz());
+	    sg.image(Inventory.invsq, Coord.z);
+	    s.draw(sg);
 	    c = c.add(Inventory.sqsz.x, 0);
 	}
 	super.draw(g);
