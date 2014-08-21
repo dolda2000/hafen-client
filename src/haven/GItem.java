@@ -31,7 +31,7 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
-public class GItem extends AWidget implements ItemInfo.ResOwner {
+public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owner {
     public Indir<Resource> res;
     public Message sdt;
     public int meter = 0;
@@ -109,6 +109,12 @@ public class GItem extends AWidget implements ItemInfo.ResOwner {
     
     public Resource resource() {
 	return(res.get());
+    }
+
+    public GSprite sprite() {
+	if(spr == null)
+	    throw(new Loading("Still waiting for sprite to be constructed"));
+	return(spr);
     }
 
     public void uimsg(String name, Object... args) {
