@@ -206,10 +206,11 @@ public class WItem extends Widget implements DTarget {
 	    } else if(itemnum.get() != null) {
 		g.aimage(itemnum.get(), sz, 1, 1);
 	    }
-	    if(item.meter > 0) {
-		double a = ((double)item.meter) / 100.0;
+	    if (item.meter > 0) {
+		double a = ((double) item.meter) / 100.0;
 		g.chcolor(255, 255, 255, 64);
-		g.fellipse(this.sz.div(2), new Coord(15, 15), 90, (int)(90 + (360 * a)));
+		Coord half = Inventory.sqsz.div(2);
+		g.prect(half, half.inv(), half, a * Math.PI * 2);
 		g.chcolor();
 	    }
 	} else {
