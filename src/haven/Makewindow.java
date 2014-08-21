@@ -47,11 +47,13 @@ public class Makewindow extends Widget {
     
     public class Spec implements GSprite.Owner {
 	public Indir<Resource> res;
+	public Message sdt;
 	public Tex num;
 	private GSprite spr;
 
-	public Spec(Indir<Resource> res, int num) {
+	public Spec(Indir<Resource> res, Message sdt, int num) {
 	    this.res = res;
+	    this.sdt = sdt;
 	    if(num >= 0)
 		this.num = new TexI(Utils.outline2(Text.render(Integer.toString(num), Color.WHITE).img, Utils.contrast(Color.WHITE)));
 	    else
@@ -61,7 +63,7 @@ public class Makewindow extends Widget {
 	public void draw(GOut g) {
 	    try {
 		if(spr == null)
-		    spr = GSprite.create(this, res.get(), Message.nil);
+		    spr = GSprite.create(this, res.get(), sdt);
 		spr.draw(g);
 	    } catch(Loading e) {}
 	    if(num != null)
@@ -92,13 +94,21 @@ public class Makewindow extends Widget {
     public void uimsg(String msg, Object... args) {
 	if(msg == "inpop") {
 	    List<Spec> inputs = new LinkedList<Spec>();
-	    for(int i = 0; i < args.length; i += 2)
-		inputs.add(new Spec(ui.sess.getres((Integer)args[i]), (Integer)args[i + 1]));
+	    for(int i = 0; i < args.length;) {
+		int resid = (Integer)args[i++];
+		Message sdt = (args[i] instanceof byte[])?new Message(0, (byte[])args[i++]):Message.nil;
+		int num = (Integer)args[i++];
+		inputs.add(new Spec(ui.sess.getres(resid), sdt, num));
+	    }
 	    this.inputs = inputs;
 	} else if(msg == "opop") {
 	    List<Spec> outputs = new LinkedList<Spec>();
-	    for(int i = 0; i < args.length; i += 2)
-		outputs.add(new Spec(ui.sess.getres((Integer)args[i]), (Integer)args[i + 1]));
+	    for(int i = 0; i < args.length;) {
+		int resid = (Integer)args[i++];
+		Message sdt = (args[i] instanceof byte[])?new Message(0, (byte[])args[i++]):Message.nil;
+		int num = (Integer)args[i++];
+		outputs.add(new Spec(ui.sess.getres(resid), sdt, num));
+	    }
 	    this.outputs = outputs;
 	}
     }
