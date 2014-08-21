@@ -93,7 +93,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	if(spr == null) {
 	    try {
 		synchronized(this) {
-		    spr = GSprite.create(this, res.get(), sdt);
+		    spr = GSprite.create(this, res.get(), sdt.clone());
 		}
 	    } catch(Loading l) {
 		spr = null;
