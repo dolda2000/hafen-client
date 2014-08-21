@@ -36,6 +36,7 @@ public class GItem extends AWidget implements ItemInfo.ResOwner {
     public Message sdt;
     public int meter = 0;
     public int num = -1;
+    public GSprite spr;
     private Object[] rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
     
@@ -79,8 +80,25 @@ public class GItem extends AWidget implements ItemInfo.ResOwner {
 	this(parent, res, Message.nil);
     }
 
-    public Glob glob() {
-	return(ui.sess.glob);
+    private Random rnd = null;
+    public Random mkrandoom() {
+	if(rnd == null)
+	    rnd = new Random();
+	return(rnd);
+    }
+    public Resource getres() {return(res.get());}
+    public Glob glob() {return(ui.sess.glob);}
+
+    public void tick(double dt) {
+	if(spr == null) {
+	    try {
+		synchronized(this) {
+		    spr = GSprite.create(this, res.get(), sdt);
+		}
+	    } catch(Loading l) {
+		spr = null;
+	    }
+	}
     }
 
     public List<ItemInfo> info() {

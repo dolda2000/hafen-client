@@ -32,10 +32,9 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 import static haven.ItemInfo.find;
 
-public class WItem extends Widget implements DTarget, GSprite.Owner {
+public class WItem extends Widget implements DTarget {
     public static final Resource missing = Resource.load("gfx/invobjs/missing");
     public final GItem item;
-    private GSprite spr = null;
     private Resource cspr = null;
     private Message csdt = Message.nil;
     
@@ -182,47 +181,35 @@ public class WItem extends Widget implements DTarget, GSprite.Owner {
     };
     
     public void tick(double dt) {
-	try {
-	    synchronized(item) {
-		Resource res = item.res.get();
-		Message sdt = item.sdt;
-		if((res != cspr) || !csdt.equals(sdt)) {
-		    spr = GSprite.create(this, res, sdt);
-		    resize(spr.sz());
-		    cspr = res;
-		    csdt = sdt;
-		}
-	    }
-	} catch(Loading e) {
-	    spr = null;
+	/* XXX: This is ugly and there should be a better way to
+	 * ensure the resizing happens as it should, but I can't think
+	 * of one yet. */
+	if(item.spr == null)
+	    item.tick(0);
+	if(item.spr != null) {
+	    Coord sz = item.spr.sz();
+	    if(!sz.equals(this.sz))
+		resize(sz);
 	}
     }
 
-    private Random rnd = null;
-    public Random mkrandoom() {
-	if(rnd == null)
-	    rnd = new Random();
-	return(rnd);
-    }
-    public Resource getres() {return(cspr);}
-    public Glob glob() {return(ui.sess.glob);}
-
     public void draw(GOut g) {
-	if(spr != null) {
+	if(item.spr != null) {
+	    Coord sz = item.spr.sz();
 	    g.defstate();
 	    if(olcol.get() != null)
 		g.usestate(new ColorMask(olcol.get()));
-	    drawmain(g, spr);
+	    drawmain(g, item.spr);
 	    g.defstate();
 	    if(item.num >= 0) {
-		g.atext(Integer.toString(item.num), spr.sz(), 1, 1);
+		g.atext(Integer.toString(item.num), sz, 1, 1);
 	    } else if(itemnum.get() != null) {
-		g.aimage(itemnum.get(), spr.sz(), 1, 1);
+		g.aimage(itemnum.get(), sz, 1, 1);
 	    }
 	    if(item.meter > 0) {
 		double a = ((double)item.meter) / 100.0;
 		g.chcolor(255, 255, 255, 64);
-		g.fellipse(sz.div(2), new Coord(15, 15), 90, (int)(90 + (360 * a)));
+		g.fellipse(this.sz.div(2), new Coord(15, 15), 90, (int)(90 + (360 * a)));
 		g.chcolor();
 	    }
 	} else {
