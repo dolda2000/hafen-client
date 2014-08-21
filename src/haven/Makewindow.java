@@ -45,10 +45,11 @@ public class Makewindow extends Widget {
 	}
     }
     
-    public static class Spec {
+    public class Spec implements GSprite.Owner {
 	public Indir<Resource> res;
 	public Tex num;
-	
+	private GSprite spr;
+
 	public Spec(Indir<Resource> res, int num) {
 	    this.res = res;
 	    if(num >= 0)
@@ -56,6 +57,25 @@ public class Makewindow extends Widget {
 	    else
 		this.num = null;
 	}
+
+	public void draw(GOut g) {
+	    try {
+		if(spr == null)
+		    spr = GSprite.create(this, res.get(), Message.nil);
+		spr.draw(g);
+	    } catch(Loading e) {}
+	    if(num != null)
+		g.aimage(num, Inventory.sqsz, 1.0, 1.0);
+	}
+
+	private Random rnd = null;
+	public Random mkrandoom() {
+	    if(rnd == null)
+		rnd = new Random();
+	    return(rnd);
+	}
+	public Resource getres() {return(res.get());}
+	public Glob glob() {return(ui.sess.glob);}
     }
 	
     public Makewindow(Coord c, Widget parent, String rcpnm) {
@@ -86,26 +106,16 @@ public class Makewindow extends Widget {
     public void draw(GOut g) {
 	Coord c = new Coord(xoff, 0);
 	for(Spec s : inputs) {
-	    g.image(Inventory.invsq, c);
-	    try {
-		Resource res = s.res.get();
-		g.image(res.layer(Resource.imgc).tex(), c.add(1, 1));
-	    } catch(Loading e) {
-	    }
-	    if(s.num != null)
-		g.aimage(s.num, c.add(33, 34), 1.0, 1.0);
+	    GOut sg = g.reclip(c, Inventory.invsq.sz());
+	    sg.image(Inventory.invsq, Coord.z);
+	    s.draw(sg);
 	    c = c.add(Inventory.sqsz.x, 0);
 	}
 	c = new Coord(xoff, yoff);
 	for(Spec s : outputs) {
-	    g.image(Inventory.invsq, c);
-	    try {
-		Resource res = s.res.get();
-		g.image(res.layer(Resource.imgc).tex(), c.add(1, 1));
-	    } catch(Loading e) {
-	    }
-	    if(s.num != null)
-		g.aimage(s.num, c.add(33, 34), 1.0, 1.0);
+	    GOut sg = g.reclip(c, Inventory.invsq.sz());
+	    sg.image(Inventory.invsq, Coord.z);
+	    s.draw(sg);
 	    c = c.add(Inventory.sqsz.x, 0);
 	}
 	super.draw(g);
