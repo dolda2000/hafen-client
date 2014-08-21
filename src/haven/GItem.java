@@ -98,6 +98,8 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    } catch(Loading l) {
 		spr = null;
 	    }
+	} else {
+	    spr.tick(dt);
 	}
     }
 
