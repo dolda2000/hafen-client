@@ -299,6 +299,29 @@ public abstract class States extends GLState {
 	}
     }
 
+    public static final Slot<GLState> adhocg = new Slot<GLState>(Slot.Type.GEOM, GLState.class, PView.wnd);
+    public static class GeomAdHoc extends GLState {
+	private final ShaderMacro[] sh;
+	
+	public GeomAdHoc(ShaderMacro[] sh) {
+	    this.sh = sh;
+	}
+
+	public GeomAdHoc(ShaderMacro sh) {
+	    this(new ShaderMacro[] {sh});
+	}
+	
+	public void apply(GOut g) {}
+	public void unapply(GOut g) {}
+	
+	public ShaderMacro[] shaders() {return(sh);}
+	public boolean reqshaders() {return(sh != null);}
+	
+	public void prep(Buffer buf) {
+	    buf.put(adhocg, this);
+	}
+    }
+
     public static final StandAlone normalize = new StandAlone(Slot.Type.GEOM, PView.proj) {
 	    public void apply(GOut g) {
 		g.gl.glEnable(GL2.GL_NORMALIZE);
