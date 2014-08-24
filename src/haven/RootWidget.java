@@ -31,7 +31,7 @@ import java.awt.event.KeyEvent;
 public class RootWidget extends ConsoleHost {
     public static Resource defcurs = Resource.load("gfx/hud/curs/arw");
     Logout logout = null;
-    Profile gprof;
+    Profile gcprof, ggprof;
     boolean afk = false;
 	
     public RootWidget(UI ui, Coord sz) {
@@ -43,7 +43,9 @@ public class RootWidget extends ConsoleHost {
     public boolean globtype(char key, KeyEvent ev) {
 	if(!super.globtype(key, ev)) {
 	    if(Config.profile && (key == '`')) {
-		new Profwnd(new Coord(100, 100), this, gprof, "Glob prof");
+		new Profwnd(new Coord(100, 100), this, gcprof, "Glob prof");
+	    } else if(Config.profilegpu && (key == '!')) {
+		new Profwnd(new Coord(100, 100), this, ggprof, "GPU prof");
 	    } else if(Config.profile && (key == '~')) {
 		GameUI gi = findchild(GameUI.class);
 		if((gi != null) && (gi.map != null))
