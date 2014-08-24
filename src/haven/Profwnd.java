@@ -30,16 +30,18 @@ import java.util.*;
 
 public class Profwnd extends Window {
     public final Profile prof;
-    public long mt = 50000000;
+    public double mt = 0.05;
     private static final int h = 80;
+    private final TexIM tex;
     
     public Profwnd(Coord c, Widget parent, Profile prof, String title) {
 	super(c, new Coord(prof.hist.length, h), parent, title);
 	this.prof = prof;
+	this.tex = new TexIM(new Coord(prof.hist.length, h));
     }
     
     public void cdraw(GOut g) {
-	long[] ttl = new long[prof.hist.length];
+	double[] ttl = new double[prof.hist.length];
 	for(int i = 0; i < prof.hist.length; i++) {
 	    if(prof.hist[i] != null)
 		ttl[i] = prof.hist[i].total;
@@ -55,21 +57,22 @@ public class Profwnd extends Window {
 	if(ti < ttl.length)
 	    mt = ttl[ti];
 	else
-	    mt = 50000000;
-	g.image(prof.draw(h, mt / h), Coord.z);
+	    mt = 0.05;
+	prof.draw(tex, mt / h);
+	g.image(tex, Coord.z);
     }
     
-    public String tooltip(Coord c, boolean again) {
+    public String tooltip(Coord c, Widget prev) {
 	c = xlate(c, false);
 	if((c.x >= 0) && (c.x < prof.hist.length) && (c.y >= 0) && (c.y < h)) {
 	    int x = c.x;
 	    int y = c.y;
-	    long t = (h - y) * (mt / h);
+	    double t = (h - y) * (mt / h);
 	    Profile.Frame f = prof.hist[x];
 	    if(f != null) {
 		for(int i = 0; i < f.prt.length; i++) {
 		    if((t -= f.prt[i]) < 0)
-			return(String.format("%.2f ms, %s: %.2f ms", (((double)f.total) / 1000000), f.nm[i], (((double)f.prt[i]) / 1000000)));
+			return(String.format("%.2f ms, %s: %.2f ms", f.total * 1000, f.nm[i], f.prt[i] * 1000));
 		}
 	    }
 	}

@@ -46,8 +46,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     private String cursmode = "tex";
     private Resource lastcursor = null;
     public Coord mousepos = new Coord(0, 0);
-    public Profile prof = new Profile(300);
-    private Profile.Frame curf = null;
+    public CPUProfile prof = new CPUProfile(300);
+    private CPUProfile.Frame curf = null;
     public static final GLState.Slot<GLState> global = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class);
     public static final GLState.Slot<GLState> proj2d = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class, global);
     private GLState gstate, rtstate, ostate;

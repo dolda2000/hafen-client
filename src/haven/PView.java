@@ -38,7 +38,7 @@ public abstract class PView extends Widget {
     public static final GLState.Slot<Projection> proj = new GLState.Slot<Projection>(GLState.Slot.Type.SYS, Projection.class, wnd);
     public static final GLState.Slot<Camera> cam = new GLState.Slot<Camera>(GLState.Slot.Type.SYS, Camera.class, proj);
     public static final GLState.Slot<Location.Chain> loc = new GLState.Slot<Location.Chain>(GLState.Slot.Type.GEOM, Location.Chain.class, cam);
-    public Profile prof = new Profile(300);
+    public CPUProfile prof = new CPUProfile(300);
     protected Light.Model lm;
     private final WidgetContext cstate = new WidgetContext();
     private final WidgetRenderState rstate = new WidgetRenderState();
@@ -209,7 +209,7 @@ public abstract class PView extends Widget {
 	    return;
 	if((rls == null) || (rls.cfg != g.gc))
 	    rls = new RenderList(g.gc);
-	Profile.Frame curf = null;
+	CPUProfile.Frame curf = null;
 	if(Config.profile)
 	    curf = prof.new Frame();
 	GLState.Buffer bk = g.st.copy();
