@@ -32,8 +32,8 @@ import javax.media.opengl.*;
 public abstract class TexRT extends TexGL {
     static Map<GL, Collection<TexRT>> current = new WeakHashMap<GL, Collection<TexRT>>();
     private GL incurrent = null;
-    public Profile prof = new Profile(300);
-    private Profile.Frame curf;
+    public CPUProfile prof = new CPUProfile(300);
+    private CPUProfile.Frame curf;
 	
     public TexRT(Coord sz) {
 	super(sz);

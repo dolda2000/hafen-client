@@ -39,6 +39,7 @@ public class Config {
     public static boolean dbtext = getprop("haven.dbtext", "off").equals("on");
     public static boolean bounddb = getprop("haven.bounddb", "off").equals("on");
     public static boolean profile = getprop("haven.profile", "off").equals("on");
+    public static boolean profilegpu = getprop("haven.profilegpu", "off").equals("on");
     public static boolean nolocalres = getprop("haven.nolocalres", "").equals("yesimsure");
     public static boolean fscache = getprop("haven.fscache", "on").equals("on");
     public static String resdir = getprop("haven.resdir", null);
@@ -81,6 +82,7 @@ public class Config {
 	out.println("  -h                 Display this help");
 	out.println("  -d                 Display debug text");
 	out.println("  -P                 Enable profiling");
+	out.println("  -G                 Enable GPU profiling");
 	out.println("  -U URL             Use specified external resource URL");
 	out.println("  -r DIR             Use specified resource directory (or HAVEN_RESDIR)");
 	out.println("  -A AUTHSERV[:PORT] Use specified authentication server");
@@ -89,7 +91,7 @@ public class Config {
     }
 
     public static void cmdline(String[] args) {
-	PosixArgs opt = PosixArgs.getopt(args, "hdPU:r:A:u:C:");
+	PosixArgs opt = PosixArgs.getopt(args, "hdPGU:r:A:u:C:");
 	if(opt == null) {
 	    usage(System.err);
 	    System.exit(1);
@@ -105,6 +107,9 @@ public class Config {
 		break;
 	    case 'P':
 		profile = true;
+		break;
+	    case 'G':
+		profilegpu = true;
 		break;
 	    case 'r':
 		resdir = opt.arg;

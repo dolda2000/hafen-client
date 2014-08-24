@@ -26,84 +26,40 @@
 
 package haven;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Color;
 import java.util.*;
 
-public class Profile {
-    public Frame[] hist;
-    public int i = 0;
-    private static Color[] cols;
+public abstract class Profile {
+    public static final Color[] cols;
+    public final Frame[] hist;
+    protected int i = 0;
     
     static {
 	cols = new Color[16];
 	for(int i = 0; i < 16; i++) {
-	    int r = ((i & 4) != 0)?1:0;
-	    int g = ((i & 2) != 0)?1:0;
-	    int b = ((i & 1) != 0)?1:0;
-	    if((i & 8) != 0) {
-		r *= 255;
-		g *= 255;
-		b *= 255;
-	    } else {
-		r *= 128;
-		g *= 128;
-		b *= 128;
-	    }
+	    int lo = ((i & 8) == 0)?0x00:0x55;
+	    int hi = ((i & 8) == 0)?0xaa:0xff;
+	    int r = ((i & 4) != 0)?hi:lo;
+	    int g = ((i & 2) != 0)?hi:lo;
+	    int b = ((i & 1) != 0)?hi:lo;
 	    cols[i] = new Color(r, g, b);
 	}
     }
     
-    public class Frame {
+    public abstract class Frame {
 	public String nm[];
-	public long total, prt[];
-	private List<Long> pw = new LinkedList<Long>();
-	private List<String> nw = new LinkedList<String>();
-	private long then, last;
-	
-	public Frame() {
-	    start();
-	}
-	
-	public void start() {
-	    last = then = System.nanoTime();
-	}
-	
-	public void tick(String nm) {
-	    long now = System.nanoTime();
-	    pw.add(now - last);
-	    nw.add(nm);
-	    last = now;
-	}
-	
-	public void add(String nm, long tm)
-	{
-	    pw.add(tm);
-	    nw.add(nm);
-	}
+	public double total, prt[];
 
-	public void tick(String nm, long subtm) {
-	    long now = System.nanoTime();
-	    pw.add(now - last - subtm);
-	    nw.add(nm);
-	    last = now;
-	}
-	
-	public void fin() {
-	    total = System.nanoTime() - then;
-	    nm = new String[nw.size()];
-	    prt = new long[pw.size()];
-	    for(int i = 0; i < pw.size(); i++) {
-		nm[i] = nw.get(i);
-		prt[i] = pw.get(i);
-	    }
+	protected void fin(double total, String[] nm, double[] prt) {
+	    this.nm = nm;
+	    this.total = total;
+	    this.prt = prt;
 	    hist[i] = this;
 	    if(++i >= hist.length)
 		i = 0;
-	    pw = null;
-	    nw = null;
 	}
-	
+
 	public String toString() {
 	    StringBuilder buf = new StringBuilder();
 	    for(int i = 0; i < prt.length; i++) {
@@ -126,22 +82,23 @@ public class Profile {
 	return(hist[i - 1]);
     }
     
-    public Tex draw(int h, long scale) {
-	TexIM ret = new TexIM(new Coord(hist.length, h));
-	Graphics g = ret.graphics();
+    public void draw(TexIM tex, double scale) {
+	int h = tex.sz().y;
+	Graphics2D g = tex.graphics();
+	g.setBackground(new Color(0, 0, 0, 0));
+	g.clearRect(0, 0, tex.sz().x, h);
 	for(int i = 0; i < hist.length; i++) {
 	    Frame f = hist[i];
 	    if(f == null)
 		continue;
-	    long a = 0;
+	    double a = 0;
 	    for(int o = 0; o < f.prt.length; o++) {
-		long c = a + f.prt[o];
+		double c = a + f.prt[o];
 		g.setColor(cols[o]);
 		g.drawLine(i, (int)(h - (a / scale)), i, (int)(h - (c / scale)));
 		a = c;
 	    }
 	}
-	ret.update();
-	return(ret);
+	tex.update();
     }
 }

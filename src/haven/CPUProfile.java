@@ -26,44 +26,52 @@
 
 package haven;
 
-import java.awt.event.KeyEvent;
+import java.util.*;
 
-public class RootWidget extends ConsoleHost {
-    public static Resource defcurs = Resource.load("gfx/hud/curs/arw");
-    Logout logout = null;
-    Profile gcprof, ggprof;
-    boolean afk = false;
-	
-    public RootWidget(UI ui, Coord sz) {
-	super(ui, new Coord(0, 0), sz);
-	setfocusctl(true);
-	cursor = defcurs;
+public class CPUProfile extends Profile {
+    public CPUProfile(int hl) {
+	super(hl);
     }
-	
-    public boolean globtype(char key, KeyEvent ev) {
-	if(!super.globtype(key, ev)) {
-	    if(Config.profile && (key == '`')) {
-		new Profwnd(new Coord(100, 100), this, gcprof, "Glob prof");
-	    } else if(Config.profilegpu && (key == '!')) {
-		new Profwnd(new Coord(100, 100), this, ggprof, "GPU prof");
-	    } else if(Config.profile && (key == '~')) {
-		GameUI gi = findchild(GameUI.class);
-		if((gi != null) && (gi.map != null))
-		    new Profwnd(new Coord(100, 100), this, gi.map.prof, "MV prof");
-	    } else if(key == ':') {
-		entercmd();
-	    } else if(key != 0) {
-		wdgmsg("gk", (int)key);
-	    }
+
+    public class Frame extends Profile.Frame {
+	private List<Long> pw = new LinkedList<Long>();
+	private List<String> nw = new LinkedList<String>();
+	private long then, last;
+
+	public Frame() {
+	    last = then = System.nanoTime();
 	}
-	return(true);
-    }
 
-    public void draw(GOut g) {
-	super.draw(g);
-	drawcmd(g, new Coord(20, sz.y - 20));
-    }
-    
-    public void error(String msg) {
+	public void tick(String nm) {
+	    long now = System.nanoTime();
+	    pw.add(now - last);
+	    nw.add(nm);
+	    last = now;
+	}
+
+	public void add(String nm, long tm) {
+	    pw.add(tm);
+	    nw.add(nm);
+	}
+
+	public void tick(String nm, long subtm) {
+	    long now = System.nanoTime();
+	    pw.add(now - last - subtm);
+	    nw.add(nm);
+	    last = now;
+	}
+
+	public void fin() {
+	    double total = (System.nanoTime() - then) / 1000000000.0;
+	    String[] nm = new String[nw.size()];
+	    double[] prt = new double[pw.size()];
+	    for(int i = 0; i < pw.size(); i++) {
+		nm[i] = nw.get(i);
+		prt[i] = pw.get(i) / 1000000000.0;
+	    }
+	    fin(total, nm, prt);
+	    pw = null;
+	    nw = null;
+	}
     }
 }
