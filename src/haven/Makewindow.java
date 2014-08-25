@@ -80,6 +80,17 @@ public class Makewindow extends Widget {
 	public Glob glob() {return(ui.sess.glob);}
     }
 	
+    public void tick(double dt) {
+	for(Spec s : inputs) {
+	    if(s.spr != null)
+		s.spr.tick(dt);
+	}
+	for(Spec s : outputs) {
+	    if(s.spr != null)
+		s.spr.tick(dt);
+	}
+    }
+
     public Makewindow(Coord c, Widget parent, String rcpnm) {
 	super(c, Coord.z, parent);
 	Label nm = new Label(new Coord(0, 0), this, rcpnm, nmf);
