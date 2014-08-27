@@ -34,7 +34,7 @@ public class FastMesh implements FRendered, Disposable {
     public static final GLState.Slot<GLState> vstate = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class);
     public final VertexBuf vert;
     public final ShortBuffer indb;
-    public final int num;
+    public final int num, lo, hi;
     public FastMesh from;
     private Compiler compiler;
     private Coord3f nb, pb;
@@ -45,6 +45,13 @@ public class FastMesh implements FRendered, Disposable {
 	if(ind.capacity() != num * 3)
 	    throw(new RuntimeException("Invalid index array length"));
 	this.indb = ind;
+	int lo = 65536, hi = 0;
+	for(int i = 0; i < ind.capacity(); i++) {
+	    int idx = ((int)ind.get(i)) & 0xffff;
+	    lo = Math.min(lo, idx);
+	    hi = Math.max(hi, idx);
+	}
+	this.lo = (lo == 65536)?0:lo; this.hi = hi;
     }
 
     public FastMesh(VertexBuf vert, short[] ind) {
@@ -58,6 +65,8 @@ public class FastMesh implements FRendered, Disposable {
 	this.vert = vert;
 	this.indb = from.indb;
 	this.num = from.num;
+	this.lo = from.lo;
+	this.hi = from.hi;
     }
 
     public static abstract class Compiled {
@@ -230,7 +239,7 @@ public class FastMesh implements FRendered, Disposable {
 		GL2 gl = g.gl;
 		g.state(st);
 		g.apply();
-		gl.glDrawElements(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, 0);
+		gl.glDrawRangeElements(GL.GL_TRIANGLES, lo, hi, num * 3, GL.GL_UNSIGNED_SHORT, 0);
 	    }
 
 	    public void dispose() {
@@ -282,7 +291,7 @@ public class FastMesh implements FRendered, Disposable {
 	    if(vert.bufs[i] instanceof VertexBuf.GLArray)
 		((VertexBuf.GLArray)vert.bufs[i]).bind(g, false);
 	}
-	g.gl.glDrawElements(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, indb);
+	g.gl.glDrawRangeElements(GL.GL_TRIANGLES, lo, hi, num * 3, GL.GL_UNSIGNED_SHORT, indb);
 	for(int i = 0; i < vert.bufs.length; i++) {
 	    if(vert.bufs[i] instanceof VertexBuf.GLArray)
 		((VertexBuf.GLArray)vert.bufs[i]).unbind(g);
