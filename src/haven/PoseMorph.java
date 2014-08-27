@@ -80,7 +80,7 @@ public class PoseMorph implements Morpher.Factory {
 	    pose.boneoff(i, offs[i]);
     }
 
-    public static class BoneArray extends VertexBuf.IntArray {
+    public static class BoneArray extends VertexBuf.IntArray implements MorphedMesh.MorphArray {
 	public final String[] names;
 	
 	public BoneArray(int apv, IntBuffer data, String[] names) {
@@ -89,6 +89,8 @@ public class PoseMorph implements Morpher.Factory {
 	}
 	
 	public BoneArray dup() {return(new BoneArray(n, Utils.bufcp(data), Utils.splice(names, 0)));}
+
+	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DUP);}
     }
 
     public static class WeightArray extends VertexBuf.FloatArray {
