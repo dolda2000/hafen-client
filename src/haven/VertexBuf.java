@@ -192,7 +192,7 @@ public class VertexBuf {
 	public int elsize() {return(4);}
     }
     
-    public static class VertexArray extends FloatArray implements GLArray {
+    public static class VertexArray extends FloatArray implements GLArray, MorphedMesh.MorphArray {
 	public VertexArray(FloatBuffer data) {
 	    super(3, data);
 	}
@@ -217,9 +217,14 @@ public class VertexBuf {
 	}
 
 	public Object progid(GOut g) {return(null);}
+
+	/* XXX: It feels very much like morphing should be layered
+	 * strictly above VertexBuf, but I can't quite see an
+	 * alternative to this at this point. */
+	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.POS);}
     }
     
-    public static class NormalArray extends FloatArray implements GLArray {
+    public static class NormalArray extends FloatArray implements GLArray, MorphedMesh.MorphArray {
 	public NormalArray(FloatBuffer data) {
 	    super(3, data);
 	}
@@ -244,6 +249,8 @@ public class VertexBuf {
 	}
 
 	public Object progid(GOut g) {return(null);}
+
+	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
     }
 
     public static class ColorArray extends FloatArray implements GLArray {
