@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.util.*;
 import java.nio.*;
 import haven.MorphedMesh.Morpher;
 import haven.MorphedMesh.MorphedBuf;
@@ -96,6 +97,62 @@ public class PoseMorph implements Morpher.Factory {
     public static class WeightArray extends VertexBuf.FloatArray {
 	public WeightArray(int apv, FloatBuffer data) {
 	    super(apv, data);
+	}
+    }
+
+    @VertexBuf.ResName("bones")
+    public static class $Res implements VertexBuf.ArrayCons {
+	public void cons(Collection<VertexBuf.AttribArray> dst, Resource res, Message buf, int nv) {
+	    int mba = buf.uint8();
+	    IntBuffer ba = Utils.wibuf(nv * mba);
+	    for(int i = 0; i < nv * mba; i++)
+		ba.put(i, -1);
+	    FloatBuffer bw = Utils.wfbuf(nv * mba);
+	    byte[] na = new byte[nv];
+	    List<String> bones = new LinkedList<String>();
+	    while(true) {
+		String bone = buf.string();
+		if(bone.length() == 0)
+		    break;
+		int bidx = bones.size();
+		bones.add(bone);
+		while(true) {
+		    int run = buf.uint16();
+		    int vn = buf.uint16();
+		    if(run == 0)
+			break;
+		    for(int i = 0; i < run; i++, vn++) {
+			float w = buf.float32();
+			int cna = na[vn]++;
+			if(cna >= mba)
+			    continue;
+			bw.put(vn * mba + cna, w);
+			ba.put(vn * mba + cna, bidx);
+		    }
+		}
+	    }
+	    normweights(bw, ba, mba);
+	    dst.add(new BoneArray(mba, ba, bones.toArray(new String[0])));
+	    dst.add(new WeightArray(mba, bw));
+	}
+    }
+
+    public static void normweights(FloatBuffer bw, IntBuffer ba, int mba) {
+	int i = 0;
+	while(i < bw.capacity()) {
+	    float tw = 0.0f;
+	    int n = 0;
+	    for(int o = 0; o < mba; o++) {
+		if(ba.get(i + o) < 0)
+		    break;
+		tw += bw.get(i + o);
+		n++;
+	    }
+	    if(tw != 1.0f) {
+		for(int o = 0; o < n; o++)
+		    bw.put(i + o, bw.get(i + o) / tw);
+	    }
+	    i += mba;
 	}
     }
 
