@@ -116,7 +116,7 @@ public class Window extends Widget implements DTarget {
 	g.image(cl, tlo);
 	mdo = tlo.add(cl.sz().x, 0);
 	cbr = mdo.add(cmw, cm.sz().y);
-	for(int x = 0; x < cmw; x++)
+	for(int x = 0; x < cmw; x += cm.sz().x)
 	    g.image(cm, mdo.add(x, 0), Coord.z, cbr);
 	g.image(cr, tlo.add(cl.sz().x + cmw, 0));
 	g.image(cap.tex(), tlo.add(cpo));
