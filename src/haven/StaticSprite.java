@@ -60,8 +60,10 @@ public class StaticSprite extends Sprite {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & fl) != 0)))
 		rl.add(mr.mat.get().apply(mr.m));
 	}
-	for(RenderLink.Res lr : res.layers(RenderLink.Res.class))
-	    rl.add(lr.l.make());
+	for(RenderLink.Res lr : res.layers(RenderLink.Res.class)) {
+	    if((lr.id < 0) || (((1 << lr.id) & fl) != 0))
+		rl.add(lr.l.make());
+	}
 	if(res.layer(Resource.audio, "amb") != null)
 	    rl.add(new ActAudio.Ambience(res));
 	return(rl.toArray(new Rendered[0]));
