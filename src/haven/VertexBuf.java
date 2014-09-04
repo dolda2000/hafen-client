@@ -28,6 +28,7 @@ package haven;
 
 import java.nio.*;
 import java.util.*;
+import java.lang.annotation.*;
 import javax.media.opengl.*;
 
 public class VertexBuf {
@@ -192,9 +193,14 @@ public class VertexBuf {
 	public int elsize() {return(4);}
     }
     
-    public static class VertexArray extends FloatArray implements GLArray {
+    @ResName("pos")
+    public static class VertexArray extends FloatArray implements GLArray, MorphedMesh.MorphArray {
 	public VertexArray(FloatBuffer data) {
 	    super(3, data);
+	}
+	
+	public VertexArray(Resource res, Message buf, int nv) {
+	    this(loadbuf(Utils.wfbuf(nv * 3), buf));
 	}
 	
 	public VertexArray dup() {return(new VertexArray(Utils.bufcp(data)));}
@@ -217,11 +223,21 @@ public class VertexBuf {
 	}
 
 	public Object progid(GOut g) {return(null);}
+
+	/* XXX: It feels very much like morphing should be layered
+	 * strictly above VertexBuf, but I can't quite see an
+	 * alternative to this at this point. */
+	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.POS);}
     }
     
-    public static class NormalArray extends FloatArray implements GLArray {
+    @ResName("nrm")
+    public static class NormalArray extends FloatArray implements GLArray, MorphedMesh.MorphArray {
 	public NormalArray(FloatBuffer data) {
 	    super(3, data);
+	}
+	
+	public NormalArray(Resource res, Message buf, int nv) {
+	    this(loadbuf(Utils.wfbuf(nv * 3), buf));
 	}
 	
 	public NormalArray dup() {return(new NormalArray(Utils.bufcp(data)));}
@@ -244,13 +260,20 @@ public class VertexBuf {
 	}
 
 	public Object progid(GOut g) {return(null);}
+
+	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
     }
 
+    @ResName("col")
     public static class ColorArray extends FloatArray implements GLArray {
 	public ColorArray(FloatBuffer data) {
 	    super(4, data);
 	}
-	
+
+	public ColorArray(Resource res, Message buf, int nv) {
+	    this(loadbuf(Utils.wfbuf(nv * 4), buf));
+	}
+
 	public ColorArray dup() {return(new ColorArray(Utils.bufcp(data)));}
 
 	public void bind(GOut g, boolean asvbo) {
@@ -273,9 +296,14 @@ public class VertexBuf {
 	public Object progid(GOut g) {return(null);}
     }
 
+    @ResName("tex")
     public static class TexelArray extends FloatArray implements GLArray {
 	public TexelArray(FloatBuffer data) {
 	    super(2, data);
+	}
+
+	public TexelArray(Resource res, Message buf, int nv) {
+	    this(loadbuf(Utils.wfbuf(nv * 2), buf));
 	}
 
 	public TexelArray dup() {return(new TexelArray(Utils.bufcp(data)));}
@@ -366,12 +394,85 @@ public class VertexBuf {
 	    buf.dispose();
     }
 
-    @Resource.LayerName("vbuf")
+    @dolda.jglob.Discoverable
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface ResName {
+	public String value();
+    }
+
+    public interface ArrayCons {
+	public void cons(Collection<AttribArray> dst, Resource res, Message buf, int nvert);
+    }
+
+    public static FloatBuffer loadbuf(FloatBuffer dst, Message buf) {
+	for(int i = 0; i < dst.capacity(); i++)
+	    dst.put(i, buf.float32());
+	return(dst);
+    }
+
+    private static final Map<String, ArrayCons> rnames = new TreeMap<String, ArrayCons>();
+
+    static {
+	for(Class<?> cl : dolda.jglob.Loader.get(ResName.class).classes()) {
+	    String nm = cl.getAnnotation(ResName.class).value();
+	    if(ArrayCons.class.isAssignableFrom(cl)) {
+		try {
+		    rnames.put(nm, cl.asSubclass(ArrayCons.class).newInstance());
+		} catch(InstantiationException e) {
+		    throw(new Error(e));
+		} catch(IllegalAccessException e) {
+		    throw(new Error(e));
+		}
+	    } else if(AttribArray.class.isAssignableFrom(cl)) {
+		final java.lang.reflect.Constructor<? extends AttribArray> cons;
+		try {
+		    cons = cl.asSubclass(AttribArray.class).getConstructor(Resource.class, Message.class, Integer.TYPE);
+		} catch(NoSuchMethodException e) {
+		    throw(new Error("No proper constructor for res-consable vertex-array class " + cl, e));
+		}
+		rnames.put(nm, new ArrayCons() {
+			public void cons(Collection<AttribArray> dst, Resource res, Message buf, int num) {
+			    dst.add(Utils.construct(cons, res, buf, num));
+			}
+		    });
+	    } else {
+		throw(new Error("Illegal vertex-array constructor class: " + cl));
+	    }
+	}
+    }
+
+    @Resource.LayerName("vbuf2")
     public static class VertexRes extends Resource.Layer {
 	public transient final VertexBuf b;
 	
-	public VertexRes(Resource res, byte[] buf) {
+	private VertexRes(Resource res, VertexBuf b) {
 	    res.super();
+	    this.b = b;
+	}
+
+	public VertexRes(Resource res, byte[] rbuf) {
+	    res.super();
+	    List<AttribArray> bufs = new LinkedList<AttribArray>();
+	    Message buf = new Message(0, rbuf);
+	    int fl = buf.uint8();
+	    int num = buf.uint16();
+	    while(!buf.eom()) {
+		String nm = buf.string();
+		ArrayCons cons = rnames.get(nm);
+		if(cons == null)
+		    throw(new Resource.LoadException("Unknown vertex-array name: " + nm, res));
+		cons.cons(bufs, res, buf, num);
+	    }
+	    this.b = new VertexBuf(bufs.toArray(new AttribArray[0]));
+	}
+	
+	public void init() {}
+    }
+
+    @Resource.LayerName("vbuf")
+    public static class Legacy implements Resource.LayerFactory<VertexRes> {
+	public VertexRes cons(Resource res, byte[] buf) {
 	    ArrayList<AttribArray> bufs = new ArrayList<AttribArray>();
 	    int fl = Utils.ub(buf[0]);
 	    int num = Utils.uint16d(buf, 1);
@@ -430,33 +531,12 @@ public class VertexBuf {
 			    }
 			}
 		    }
-		    normweights(bw, ba, mba);
+		    PoseMorph.normweights(bw, ba, mba);
 		    bufs.add(new PoseMorph.BoneArray(mba, ba, bones.toArray(new String[0])));
 		    bufs.add(new PoseMorph.WeightArray(mba, bw));
 		}
 	    }
-	    this.b = new VertexBuf(bufs.toArray(new AttribArray[0]));
+	    return(new VertexRes(res, new VertexBuf(bufs.toArray(new AttribArray[0]))));
 	}
-	
-	private static void normweights(FloatBuffer bw, IntBuffer ba, int mba) {
-	    int i = 0;
-	    while(i < bw.capacity()) {
-		float tw = 0.0f;
-		int n = 0;
-		for(int o = 0; o < mba; o++) {
-		    if(ba.get(i + o) < 0)
-			break;
-		    tw += bw.get(i + o);
-		    n++;
-		}
-		if(tw != 1.0f) {
-		    for(int o = 0; o < n; o++)
-			bw.put(i + o, bw.get(i + o) / tw);
-		}
-		i += mba;
-	    }
-	}
-	
-	public void init() {}
     }
 }

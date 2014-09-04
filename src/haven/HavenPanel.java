@@ -46,8 +46,9 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     private String cursmode = "tex";
     private Resource lastcursor = null;
     public Coord mousepos = new Coord(0, 0);
-    public Profile prof = new Profile(300);
-    private Profile.Frame curf = null;
+    public CPUProfile prof = new CPUProfile(300);
+    public GPUProfile gprof = new GPUProfile(300);
+    private CPUProfile.Frame curf = null;
     public static final GLState.Slot<GLState> global = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class);
     public static final GLState.Slot<GLState> proj2d = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class, global);
     private GLState gstate, rtstate, ostate;
@@ -250,7 +251,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	if(ui != null)
 	    ui.destroy();
 	ui = new UI(new Coord(w, h), sess);
-	ui.root.gprof = prof;
+	ui.root.gcprof = prof;
+	ui.root.ggprof = gprof;
 	if(getParent() instanceof Console.Directory)
 	    ui.cons.add((Console.Directory)getParent());
 	ui.cons.add(this);
@@ -269,6 +271,10 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     }
     
     void redraw(GL2 gl) {
+	GPUProfile.Frame curgf = null;
+	if(Config.profilegpu)
+	    curgf = gprof.new Frame((GL3)gl);
+
 	if((state == null) || (state.gl != gl))
 	    state = new GLState.Applier(gl, glconf);
 	GLState.Buffer ibuf = new GLState.Buffer(glconf);
@@ -289,11 +295,15 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	gl.glClear(GL.GL_COLOR_BUFFER_BIT);
 	if(curf != null)
 	    curf.tick("cls");
+	if(curgf != null)
+	    curgf.tick("cls");
 	synchronized(ui) {
 	    ui.draw(g);
 	}
 	if(curf != null)
 	    curf.tick("draw");
+	if(curgf != null)
+	    curgf.tick("draw");
 
 	if(Config.dbtext) {
 	    int y = h - 20;
@@ -373,6 +383,9 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	    glconf.pref.save();
 	    glconf.pref.dirty = false;
 	}
+
+	if(curgf != null)
+	    curgf.fin();
     }
 	
     void dispatch() {

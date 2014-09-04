@@ -78,21 +78,38 @@ public class MorphedMesh extends FastMesh {
 	public void morphd(FloatBuffer dst, FloatBuffer src);
     }
 
+    public static enum MorphType {
+	NONE, DUP, POS, DIR
+    }
+
+    public static interface MorphArray {
+	public MorphType morphtype();
+	public VertexBuf.AttribArray dup();
+    }
+
     public static class MorphedBuf extends VertexBuf {
 	public final VertexBuf from;
 	private final Morpher morph;
-	
-	private static AttribArray[] ohBitterSweetJavaDays(VertexBuf from) {
+	private final Pair[] parrays, darrays;
+
+	private static class Pair {
+	    final FloatArray o, n;
+	    Pair(FloatArray o, FloatArray n) {this.o = o; this.n = n;}
+	}
+
+	private static AttribArray[] ohBitterSweetJavaDays(VertexBuf from, Collection<Pair> pos, Collection<Pair> dir) {
 	    AttribArray[] ret = new AttribArray[from.bufs.length];
 	    for(int i = 0; i < from.bufs.length; i++) {
-		if(from.bufs[i] instanceof VertexArray) {
-		    ret[i] = ((VertexArray)from.bufs[i]).dup();
-		    ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
-		} else if(from.bufs[i] instanceof NormalArray) {
-		    ret[i] = ((NormalArray)from.bufs[i]).dup();
-		    ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
-		} else if(from.bufs[i] instanceof PoseMorph.BoneArray) {
-		    ret[i] = ((PoseMorph.BoneArray)from.bufs[i]).dup();
+		MorphType type = (from.bufs[i] instanceof MorphArray)?((MorphArray)from.bufs[i]).morphtype():MorphType.NONE;
+		if(type != MorphType.NONE) {
+		    ret[i] = ((MorphArray)from.bufs[i]).dup();
+		    if(type == MorphType.POS) {
+			pos.add(new Pair((FloatArray)from.bufs[i], (FloatArray)ret[i]));
+			ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
+		    } else if(type == MorphType.DIR) {
+			dir.add(new Pair((FloatArray)from.bufs[i], (FloatArray)ret[i]));
+			ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
+		    }
 		} else {
 		    ret[i] = from.bufs[i];
 		}
@@ -100,22 +117,29 @@ public class MorphedMesh extends FastMesh {
 	    return(ret);
 	}
 
-	private MorphedBuf(VertexBuf buf, Morpher.Factory morph) {
-	    super(ohBitterSweetJavaDays(buf));
+	private MorphedBuf(VertexBuf buf, Morpher.Factory morph, Collection<Pair> pos, Collection<Pair> dir) {
+	    super(ohBitterSweetJavaDays(buf, pos, dir));
 	    this.from = buf;
 	    this.morph = morph.create(this);
+	    this.parrays = pos.toArray(new Pair[0]);
+	    this.darrays = dir.toArray(new Pair[0]);
 	}
-	
+
+	private MorphedBuf(VertexBuf buf, Morpher.Factory morph) {
+	    this(buf, morph, new LinkedList<Pair>(), new LinkedList<Pair>());
+	}
+
 	public void update() {
 	    if(!morph.update())
 		return;
-	    VertexBuf.VertexArray apos = buf(VertexArray.class);
-	    VertexBuf.NormalArray anrm = buf(NormalArray.class);
-	    FloatBuffer opos = from.buf(VertexArray.class).data, onrm = from.buf(NormalArray.class).data;
-	    FloatBuffer npos =                        apos.data, nnrm =                        anrm.data;
-	    morph.morphp(npos, opos);
-	    morph.morphd(nnrm, onrm);
-	    apos.update(); anrm.update();
+	    for(Pair p : parrays) {
+		morph.morphp(p.n.data, p.o.data);
+		p.n.update();
+	    }
+	    for(Pair p : darrays) {
+		morph.morphd(p.n.data, p.o.data);
+		p.n.update();
+	    }
 	}
     }
 

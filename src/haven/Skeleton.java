@@ -487,7 +487,7 @@ public class Skeleton {
 	public static final ModFactory def = new ModFactory() {
 		public PoseMod create(Skeleton skel, ModOwner owner, Resource res, Message sdt) {
 		    int mask = SkelSprite.decnum(sdt);
-		    Collection<PoseMod> poses = new LinkedList<PoseMod>();
+		    Collection<PoseMod> poses = new ArrayList<PoseMod>(16);
 		    for(ResPose p : res.layers(ResPose.class)) {
 			if((p.id < 0) || ((mask & (1 << p.id)) != 0))
 			    poses.add(p.forskel(owner, skel, p.defmode));
@@ -554,6 +554,7 @@ public class Skeleton {
     public class TrackMod extends PoseMod {
 	public final Track[] tracks;
 	public final FxTrack[] effects;
+	private final Collection<FxTrack.EventListener> cbl = new ArrayList<FxTrack.EventListener>(0);
 	public final float len;
 	public final WrapMode mode;
 	private final boolean stat;
@@ -628,6 +629,10 @@ public class Skeleton {
 	    }
 	}
 	
+	public void listen(FxTrack.EventListener l) {
+	    cbl.add(l);
+	}
+
 	private void playfx(float ot, float nt) {
 	    if(!(owner instanceof Gob))
 		return;
@@ -639,6 +644,8 @@ public class Skeleton {
 		for(FxTrack t : effects) {
 		    for(FxTrack.Event ev : t.events) {
 			if((ev.time >= ot) && (ev.time < nt)) {
+			    for(FxTrack.EventListener l : cbl)
+				l.event(ev);
 			    ev.trigger(gob);
 			}
 		    }
@@ -726,6 +733,10 @@ public class Skeleton {
     public static class FxTrack {
 	public final Event[] events;
 
+	public static interface EventListener {
+	    public void event(Event ev);
+	}
+
 	public static abstract class Event {
 	    public final float time;
 
@@ -773,6 +784,17 @@ public class Skeleton {
 		n.ols.add(new Gob.Overlay(-1, res, new Message(0, sdt)));
 	    }
 	}
+
+	public static class Trigger extends Event {
+	    public final String id;
+
+	    public Trigger(float time, String id) {
+		super(time);
+		this.id = id.intern();
+	    }
+
+	    public void trigger(Gob gob) {}
+	}
     }
 
     @Resource.LayerName("skan")
@@ -815,6 +837,10 @@ public class Skeleton {
 		    System.arraycopy(buf, off[0], sdt, 0, sdt.length); off[0] += sdt.length;
 		    Indir<Resource> res = Resource.load(resnm, resver).indir();
 		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, null);
+		    break;
+		case 1:
+		    String id = Utils.strd(buf, off);
+		    events[i] = new FxTrack.Trigger(tm, id);
 		    break;
 		default:
 		    throw(new Resource.LoadException("Illegal control event: " + t, getres()));

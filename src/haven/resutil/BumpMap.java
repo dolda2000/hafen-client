@@ -32,6 +32,7 @@ import static haven.glsl.Cons.*;
 import static haven.glsl.Type.*;
 import haven.MapMesh.Scan;
 import java.util.*;
+import java.nio.FloatBuffer;
 import javax.media.opengl.*;
 
 public class BumpMap extends GLState {
@@ -137,5 +138,20 @@ public class BumpMap extends GLState {
 		    }
 		});
 	}
+    }
+
+    @VertexBuf.ResName("tan")
+    public static class Tangents extends VertexBuf.Vec3Array implements MorphedMesh.MorphArray {
+	public Tangents(FloatBuffer data) {super(data, tan);}
+	public Tangents(Resource res, Message buf, int nv) {this(VertexBuf.loadbuf(Utils.wfbuf(nv * 3), buf));}
+	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
+	public Tangents dup() {return(new Tangents(Utils.bufcp(data)));}
+    }
+    @VertexBuf.ResName("bit")
+    public static class BiTangents extends VertexBuf.Vec3Array implements MorphedMesh.MorphArray {
+	public BiTangents(FloatBuffer data) {super(data, bit);}
+	public BiTangents(Resource res, Message buf, int nv) {this(VertexBuf.loadbuf(Utils.wfbuf(nv * 3), buf));}
+	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
+	public BiTangents dup() {return(new BiTangents(Utils.bufcp(data)));}
     }
 }
