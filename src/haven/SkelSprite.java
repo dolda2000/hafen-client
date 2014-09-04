@@ -75,27 +75,43 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	chposes(fl, 0);
     }
 
+    /* XXX: It's ugly to snoop inside a wrapping, but I can't think of
+     * a better way to apply morphing to renderlinks right now. */
+    private Rendered animwrap(GLState.Wrapping wrap) {
+	if(!(wrap.r instanceof FastMesh))
+	    return(wrap);
+	FastMesh m = (FastMesh)wrap.r;
+	Rendered ret;
+	if(PoseMorph.boned(m)) {
+	    String bnm = PoseMorph.boneidp(m);
+	    if(bnm == null) {
+		ret = wrap.st().apply(new MorphedMesh(m, morph));
+		if(bonedb)
+		    ret = morphed.apply(ret);
+	    } else {
+		ret = pose.bonetrans2(skel.bones.get(bnm).idx).apply(wrap);
+		if(bonedb)
+		    ret = rigid.apply(ret);
+	    }
+	} else {
+	    ret = wrap;
+	    if(bonedb)
+		ret = unboned.apply(ret);
+	}
+	return(ret);
+    }
+
     private void chparts(int mask) {
 	Collection<Rendered> rl = new LinkedList<Rendered>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
-	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0))) {
-		Rendered r;
-		if(PoseMorph.boned(mr.m)) {
-		    String bnm = PoseMorph.boneidp(mr.m);
-		    if(bnm == null) {
-			r = mr.mat.get().apply(new MorphedMesh(mr.m, morph));
-			if(bonedb)
-			    r = morphed.apply(r);
-		    } else {
-			r = pose.bonetrans2(skel.bones.get(bnm).idx).apply(mr.mat.get().apply(mr.m));
-			if(bonedb)
-			    r = rigid.apply(r);
-		    }
-		} else {
-		    r = mr.mat.get().apply(mr.m);
-		    if(bonedb)
-			r = unboned.apply(r);
-		}
+	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0)))
+		rl.add(animwrap(mr.mat.get().apply(mr.m)));
+	}
+	for(RenderLink.Res lr : res.layers(RenderLink.Res.class)) {
+	    if((lr.id < 0) || (((1 << lr.id) & mask) != 0)) {
+		Rendered r = lr.l.make();
+		if(r instanceof GLState.Wrapping)
+		    r = animwrap((GLState.Wrapping)r);
 		rl.add(r);
 	    }
 	}

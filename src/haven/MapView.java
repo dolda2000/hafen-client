@@ -1101,10 +1101,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public boolean iteminteract(Coord cc, Coord ul) {
 	delay(new Hittest(cc) {
 		public void hit(Coord pc, Coord mc, ClickInfo inf) {
-		    if(inf == null)
+		    if(inf == null) {
 			wdgmsg("itemact", pc, mc, ui.modflags());
-		    else
-			wdgmsg("itemact", pc, mc, ui.modflags(), (int)inf.gob.id, inf.gob.rc, getid(inf.r));
+		    } else {
+			if(inf.ol == null)
+			    wdgmsg("itemact", pc, mc, ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc, 0, getid(inf.r));
+			else
+			    wdgmsg("itemact", pc, mc, ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc, inf.ol.id, getid(inf.r));
+		    }
 		}
 	    });
 	return(true);
