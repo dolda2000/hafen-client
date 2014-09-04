@@ -694,8 +694,8 @@ public abstract class GLState {
 	}
     }
     
-    private class Wrapping implements Rendered {
-	private final Rendered r;
+    public class Wrapping implements Rendered {
+	public final Rendered r;
 	
 	private Wrapping(Rendered r) {
 	    if(r == null)
@@ -709,9 +709,11 @@ public abstract class GLState {
 	    rl.add(r, GLState.this);
 	    return(false);
 	}
+
+	public GLState st() {return(GLState.this);}
     }
     
-    public Rendered apply(Rendered r) {
+    public Wrapping apply(Rendered r) {
 	return(new Wrapping(r));
     }
     

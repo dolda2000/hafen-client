@@ -57,8 +57,8 @@ public interface RenderLink {
 		String matnm = buf.string();
 		int matver = buf.uint16();
 		final int matid = buf.int16();
-		final Resource mesh = Resource.load(meshnm, meshver);
-		final Resource mat = Resource.load(matnm, matver);
+		final Resource mesh = meshnm.equals("")?res:Resource.load(meshnm, meshver);
+		final Resource mat = matnm.equals("")?res:Resource.load(matnm, matver);
 		l = new RenderLink() {
 			Rendered res = null;
 			public Rendered make() {
