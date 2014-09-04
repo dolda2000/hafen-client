@@ -32,20 +32,31 @@ public interface RenderLink {
     public Rendered make();
     
     @Resource.LayerName("rlink")
-    public class Res extends Resource.Layer {
+    public class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public transient final RenderLink l;
+	public final int id;
 	
-	public Res(Resource res, byte[] buf) {
+	public Res(Resource res, byte[] bbuf) {
 	    res.super();
-	    int t = buf[0];
-	    int[] off = {1};
+	    Message buf = new Message(0, bbuf);
+	    int lver = buf.uint8();
+	    int t;
+	    if(lver < 3) {
+		t = lver;
+		id = -1;
+	    } else if(lver == 3) {
+		id = buf.int16();
+		t = buf.uint8();
+	    } else {
+		throw(new Resource.LoadException("Invalid renderlink version: " + lver, getres()));
+	    }
 	    if(t == 0) {
-		String meshnm = Utils.strd(buf, off);
-		int meshver = Utils.uint16d(buf, off[0]); off[0] += 2;
-		final int meshid = Utils.int16d(buf, off[0]); off[0] += 2;
-		String matnm = Utils.strd(buf, off);
-		int matver = Utils.uint16d(buf, off[0]); off[0] += 2;
-		final int matid = Utils.int16d(buf, off[0]); off[0] += 2;
+		String meshnm = buf.string();
+		int meshver = buf.uint16();
+		final int meshid = buf.int16();
+		String matnm = buf.string();
+		int matver = buf.uint16();
+		final int matid = buf.int16();
 		final Resource mesh = Resource.load(meshnm, meshver);
 		final Resource mat = Resource.load(matnm, matver);
 		l = new RenderLink() {
@@ -76,8 +87,8 @@ public interface RenderLink {
 			}
 		    };
 	    } else if(t == 1) {
-		String nm = Utils.strd(buf, off);
-		int ver = Utils.uint16d(buf, off[0]); off[0] += 2;
+		String nm = buf.string();
+		int ver = buf.uint16();
 		final Resource amb = Resource.load(nm, ver);
 		l = new RenderLink() {
 			public Rendered make() {
@@ -85,10 +96,10 @@ public interface RenderLink {
 			}
 		    };
 	    } else if(t == 2) {
-		String nm = Utils.strd(buf, off);
-		int ver = Utils.uint16d(buf, off[0]); off[0] += 2;
+		String nm = buf.string();
+		int ver = buf.uint16();
 		final Resource lres = Resource.load(nm, ver);
-		final int meshid = Utils.int16d(buf, off[0]); off[0] += 2;
+		final int meshid = buf.int16();
 		l = new RenderLink() {
 			Rendered res = null;
 			public Rendered make() {
@@ -117,6 +128,10 @@ public interface RenderLink {
 	}
 	
 	public void init() {
+	}
+
+	public Integer layerid() {
+	    return(id);
 	}
     }
 }
