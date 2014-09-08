@@ -64,7 +64,7 @@ public class Polity extends Window {
 	public Member listitem(int idx) {return(memb.get(idx));}
 	public int listitems() {return(memb.size());}
 
-	public void drawitem(GOut g, Member m) {
+	public void drawitem(GOut g, Member m, int idx) {
 	    if((mw instanceof MemberWidget) && (((MemberWidget)mw).id == m.id))
 		drawsel(g);
 	    BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(m.id);
