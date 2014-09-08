@@ -51,7 +51,7 @@ public abstract class Dropbox<T> extends ListWidget<T> {
 
 	protected T listitem(int i) {return(Dropbox.this.listitem(i));}
 	protected int listitems() {return(Dropbox.this.listitems());}
-	protected void drawitem(GOut g, T item) {Dropbox.this.drawitem(g, item);}
+	protected void drawitem(GOut g, T item, int idx) {Dropbox.this.drawitem(g, item, idx);}
 
 	public boolean mousedown(Coord c, int btn) {
 	    if(!c.isect(Coord.z, sz)) {
@@ -78,7 +78,7 @@ public abstract class Dropbox<T> extends ListWidget<T> {
 	g.frect(Coord.z, sz);
 	g.chcolor();
 	if(sel != null)
-	    drawitem(g.reclip(Coord.z, new Coord(sz.x - drop.sz().x, itemh)), sel);
+	    drawitem(g.reclip(Coord.z, new Coord(sz.x - drop.sz().x, itemh)), sel, 0);
 	g.image(drop, dropc);
 	super.draw(g);
     }
