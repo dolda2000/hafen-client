@@ -44,11 +44,15 @@ public abstract class Listbox<T> extends ListWidget<T> {
 	g.chcolor();
     }
 
-    public void draw(GOut g) {
-	sb.max = listitems() - h;
+    protected void drawbg(GOut g) {
 	g.chcolor(Color.BLACK);
 	g.frect(Coord.z, sz);
 	g.chcolor();
+    }
+
+    public void draw(GOut g) {
+	sb.max = listitems() - h;
+	drawbg(g);
 	int n = listitems();
 	for(int i = 0; i < h; i++) {
 	    int idx = i + sb.val;
