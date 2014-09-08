@@ -37,7 +37,7 @@ public abstract class ListWidget<T> extends Widget {
 
     protected abstract T listitem(int i);
     protected abstract int listitems();
-    protected abstract void drawitem(GOut g, T item);
+    protected abstract void drawitem(GOut g, T item, int i);
 
     public void change(T item) {
 	this.sel = item;
