@@ -185,7 +185,7 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	public Buddy listitem(int idx) {return(buddies.get(idx));}
 	public int listitems() {return(buddies.size());}
 
-	public void drawitem(GOut g, Buddy b) {
+	public void drawitem(GOut g, Buddy b, int idx) {
 	    if(b.online == 1)
 		g.image(online, Coord.z);
 	    else if(b.online == 0)
