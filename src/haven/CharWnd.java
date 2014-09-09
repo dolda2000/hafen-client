@@ -39,8 +39,10 @@ public class CharWnd extends Window {
     public static final Text.Foundry attrf = new Text.Foundry(Text.fraktur, 18).aa(true);
     public static final Color debuff = new Color(255, 128, 128);
     public static final Color buff = new Color(128, 255, 128);
+    public static final Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32);
     public final Collection<Attr> base;
     public final FoodMeter feps;
+    public final Constipations cons;
 
     public static class FoodMeter extends Widget {
 	public static final Tex frame = Resource.loadtex("gfx/hud/chr/foodm");
@@ -186,6 +188,94 @@ public class CharWnd extends Window {
 	}
     }
 
+    public static class Constipations extends Listbox<Constipations.El> {
+	public static final Text.Foundry elf = attrf;
+	public static final Convolution tflt = new Hanning(1);
+	public static final Color full = new Color(250, 230, 64), none = new Color(250, 19, 43);
+	public final List<El> els = new ArrayList<El>();
+
+	public static class El {
+	    public static final int h = elf.height() + 2;
+	    public final Indir<Resource> t;
+	    public double a;
+	    private Tex tt, at;
+
+	    public El(Indir<Resource> t, double a) {this.t = t; this.a = a;}
+	    public void update(double a) {this.a = a; at = null;}
+
+	    public Tex tt() {
+		if(tt == null) {
+		    BufferedImage img = t.get().layer(Resource.imgc).img;
+		    String nm = t.get().layer(Resource.tooltip).t;
+		    Text rnm = elf.render(nm);
+		    BufferedImage buf = TexI.mkbuf(new Coord(El.h + 5 + rnm.sz().x, h));
+		    Graphics g = buf.getGraphics();
+		    g.drawImage(convolvedown(img, new Coord(h, h), tflt), 0, 0, null);
+		    g.drawImage(rnm.img, h + 5, ((h - rnm.sz().y) / 2) + 1, null);
+		    g.dispose();
+		    tt = new TexI(buf);
+		}
+		return(tt);
+	    }
+
+	    public Tex at() {
+		if(at == null)
+		    at = elf.render(String.format("%d%%", (int)Math.floor(a * 100)), Utils.blendcol(none, full, a)).tex();
+		return(at);
+	    }
+	}
+
+	public static final Comparator<El> ecmp = new Comparator<El>() {
+	    public int compare(El a, El b) {
+		if(a.a < b.a)
+		    return(-1);
+		else if(a.a > b.a)
+		    return(1);
+		return(0);
+	    }
+	};
+
+	public Constipations(Coord c, Widget parent, int w, int h) {
+	    super(c, parent, w, h, El.h);
+	}
+
+	protected void drawbg(GOut g) {}
+	protected El listitem(int i) {return(els.get(i));}
+	protected int listitems() {return(els.size());}
+
+	protected void drawitem(GOut g, El el, int idx) {
+	    g.chcolor(((idx % 2) == 0)?every:other);
+	    g.frect(Coord.z, g.sz);
+	    g.chcolor();
+	    try {
+		g.image(el.tt(), Coord.z);
+	    } catch(Loading e) {}
+	    Tex at = el.at();
+	    g.image(at, new Coord(sz.x - at.sz().x, (El.h - at.sz().y) / 2));
+	}
+
+	public void update(Indir<Resource> t, double a) {
+	    prev: {
+		for(Iterator<El> i = els.iterator(); i.hasNext();) {
+		    El el = i.next();
+		    if(el.t != t)
+			continue;
+		    if(a == 1.0)
+			i.remove();
+		    else
+			el.update(a);
+		    break prev;
+		}
+		els.add(new El(t, a));
+	    }
+	    Collections.sort(els, ecmp);
+	}
+
+	public boolean mousedown(Coord c, int button) {
+	    return(false);
+	}
+    }
+
     public static final int attrw = FoodMeter.frame.sz().x - wbox.bisz().x;
     public class Attr extends Widget {
 	public final String nm;
@@ -257,7 +347,6 @@ public class CharWnd extends Window {
 	new Img(new Coord(x - 5, y), catf.render("Base Attributes").tex(), this); y += 35;
 	base = new ArrayList<Attr>();
 	Attr aw;
-	Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32);
 	base.add(aw = new Attr("str", "Strength",     wbox.btloff().add(x, y), every)); y += aw.sz.y;
 	base.add(aw = new Attr("agi", "Agility",      wbox.btloff().add(x, y), other)); y += aw.sz.y;
 	base.add(aw = new Attr("int", "Intelligence", wbox.btloff().add(x, y), every)); y += aw.sz.y;
@@ -271,6 +360,11 @@ public class CharWnd extends Window {
 	new Img(new Coord(x - 5, y), catf.render("Food Event Points").tex(), this); y += 35;
 	feps = new FoodMeter(new Coord(x, y), this);
 
+	x = 275; y = 10;
+	new Img(new Coord(x - 5, y), catf.render("Food Satiations").tex(), this); y += 35;
+	cons = new Constipations(wbox.btloff().add(x, y), this, attrw, base.size());
+	Frame.around(this, Collections.singletonList(cons));
+
 	resize(contentsz().add(15, 10));
     }
 
@@ -283,6 +377,13 @@ public class CharWnd extends Window {
 	    for(Attr aw : base) {
 		if(aw.nm.equals(args[0]))
 		    aw.lvlup();
+	    }
+	} else if(nm == "const") {
+	    int a = 0;
+	    while(a < args.length) {
+		Indir<Resource> t = ui.sess.getres((Integer)args[a++]);
+		double m = ((Number)args[a++]).doubleValue();
+		cons.update(t, m);
 	    }
 	} else {
 	    super.uimsg(nm, args);
