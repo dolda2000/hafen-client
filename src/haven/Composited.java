@@ -41,7 +41,7 @@ public class Composited implements Rendered {
     public List<ED> nequ = null, cequ = new LinkedList<ED>();
     
     public class Poses {
-	private final PoseMod[] mods;
+	public final PoseMod[] mods;
 	Pose old;
 	float ipold = 0.0f, ipol = 0.0f;
 	public float limit = -1.0f;
