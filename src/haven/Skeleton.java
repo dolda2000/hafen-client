@@ -560,8 +560,8 @@ public class Skeleton {
 	private final boolean stat;
 	private boolean done;
 	public float time = 0.0f;
-	private boolean speedmod = false;
-	private double nspeed = 0.0;
+	protected boolean speedmod = false;
+	protected double nspeed = 0.0;
 	private boolean back = false;
 	
 	public TrackMod(ModOwner owner, Track[] tracks, FxTrack[] effects, float len, WrapMode mode) {
@@ -884,8 +884,8 @@ public class Skeleton {
 	    this.tracks = tracks.toArray(new Track[0]);
 	    this.effects = fx.toArray(new FxTrack[0]);
 	}
-	
-	public TrackMod forskel(ModOwner owner, Skeleton skel, WrapMode mode) {
+
+	private Track[] iaIaCthulhuFhtagn(Skeleton skel) {
 	    Track[] remap = new Track[skel.blist.length];
 	    for(Track t : tracks) {
 		Skeleton.Bone b = skel.bones.get(t.bone);
@@ -893,12 +893,25 @@ public class Skeleton {
 		    throw(new RuntimeException("Bone \"" + t.bone + "\" in animation reference does not exist in skeleton " + skel));
 		remap[b.idx] = t;
 	    }
-	    TrackMod ret = skel.new TrackMod(owner, remap, effects, len, mode);
-	    if(nspeed > 0) {
-		ret.speedmod = true;
-		ret.nspeed = nspeed;
+	    return(remap);
+	}
+
+	public class ResMod extends TrackMod {
+	    public ResMod(ModOwner owner, Skeleton skel, WrapMode mode) {
+		skel.super(owner, iaIaCthulhuFhtagn(skel), ResPose.this.effects, ResPose.this.len, mode);
+		if(ResPose.this.nspeed > 0) {
+		    this.speedmod = true;
+		    this.nspeed = ResPose.this.nspeed;
+		}
 	    }
-	    return(ret);
+
+	    public ResMod(ModOwner owner, Skeleton skel) {
+		this(owner, skel, defmode);
+	    }
+	}
+
+	public TrackMod forskel(ModOwner owner, Skeleton skel, WrapMode mode) {
+	    return(new ResMod(owner, skel, mode));
 	}
 
 	@Deprecated
