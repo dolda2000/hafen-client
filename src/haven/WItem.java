@@ -31,6 +31,7 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.*;
 import static haven.ItemInfo.find;
+import static haven.Inventory.sqsz;
 
 public class WItem extends Widget implements DTarget {
     public static final Resource missing = Resource.load("gfx/invobjs/missing");
@@ -39,7 +40,7 @@ public class WItem extends Widget implements DTarget {
     private Message csdt = Message.nil;
     
     public WItem(Coord c, Widget parent, GItem item) {
-	super(c, Inventory.sqsz, parent);
+	super(c, sqsz, parent);
 	this.item = item;
     }
     
@@ -179,17 +180,22 @@ public class WItem extends Widget implements DTarget {
 	    return(new TexI(Utils.outline2(Text.render(Integer.toString(ninf.itemnum()), Color.WHITE).img, Utils.contrast(Color.WHITE))));
 	}
     };
-    
+
+    private GSprite lspr = null;
     public void tick(double dt) {
 	/* XXX: This is ugly and there should be a better way to
 	 * ensure the resizing happens as it should, but I can't think
 	 * of one yet. */
 	if(item.spr == null)
 	    item.tick(0);
-	if(item.spr != null) {
-	    Coord sz = item.spr.sz();
-	    if(!sz.equals(this.sz))
-		resize(sz);
+	if((item.spr != null) && (item.spr != lspr)) {
+	    Coord sz = new Coord(item.spr.sz());
+	    if((sz.x % sqsz.x) != 0)
+		sz.x = sqsz.x * ((sz.x / sqsz.x) + 1);
+	    if((sz.y % sqsz.y) != 0)
+		sz.y = sqsz.y * ((sz.y / sqsz.y) + 1);
+	    resize(sz);
+	    lspr = item.spr;
 	}
     }
 
