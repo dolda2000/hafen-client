@@ -29,10 +29,10 @@ package haven;
 import java.awt.Color;
 
 public class ResDrawable extends Drawable {
-    final Indir<Resource> res;
+    public final Indir<Resource> res;
+    public Sprite spr = null;
     Message sdt;
-    Sprite spr = null;
-    int delay = 0;
+    private int delay = 0;
 	
     public ResDrawable(Gob gob, Indir<Resource> res, Message sdt) {
 	super(gob);

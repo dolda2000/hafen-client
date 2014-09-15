@@ -37,12 +37,12 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	unboned = new Material.Colors(java.awt.Color.YELLOW);
     public static boolean bonedb = false;
     public static final float defipol = 0;
-    private final Skeleton skel;
+    public final Skeleton skel;
     public final Pose pose;
+    public PoseMod[] mods = new PoseMod[0];
     private final PoseMorph morph;
     private Pose oldpose;
     private float ipold, ipol;
-    private PoseMod[] mods = new PoseMod[0];
     private boolean stat = true;
     private Rendered[] parts;
     
