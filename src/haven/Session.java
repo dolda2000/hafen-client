@@ -50,7 +50,7 @@ public class Session {
     public static final int OD_LINSTEP = 4;
     public static final int OD_SPEECH = 5;
     public static final int OD_COMPOSE = 6;
-    public static final int OD_DRAWOFF = 7;
+    public static final int OD_ZOFF = 7;
     public static final int OD_LUMIN = 8;
     public static final int OD_AVATAR = 9;
     public static final int OD_FOLLOW = 10;
@@ -373,10 +373,10 @@ public class Session {
 			    }
 			    if(gob != null)
 				oc.cmpequ(gob, equ);
-			} else if(type == OD_DRAWOFF) {
-			    Coord off = msg.coord();
+			} else if(type == OD_ZOFF) {
+			    float off = msg.int16() / 100.0f;
 			    if(gob != null)
-				oc.drawoff(gob, off);
+				oc.zoff(gob, off);
 			} else if(type == OD_LUMIN) {
 			    Coord off = msg.coord();
 			    int sz = msg.uint16();

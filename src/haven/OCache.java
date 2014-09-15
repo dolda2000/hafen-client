@@ -211,16 +211,16 @@ public class OCache implements Iterable<Gob> {
 	ava.setlayers(layers);
     }
 	
-    public synchronized void drawoff(Gob g, Coord off) {
-	if((off.x == 0) && (off.y == 0)) {
+    public synchronized void zoff(Gob g, float off) {
+	if(off == 0) {
 	    g.delattr(DrawOffset.class);
 	} else {
 	    DrawOffset dro = g.getattr(DrawOffset.class);
 	    if(dro == null) {
-		dro = new DrawOffset(g, off);
+		dro = new DrawOffset(g, Location.xlate(new Coord3f(0, 0, off)));
 		g.setattr(dro);
 	    } else {
-		dro.off = off;
+		dro.off = Location.xlate(new Coord3f(0, 0, off));
 	    }
 	}
     }
