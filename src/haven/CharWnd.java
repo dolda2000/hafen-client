@@ -220,7 +220,7 @@ public class CharWnd extends Window {
 
 	    public Tex at() {
 		if(at == null)
-		    at = elf.render(String.format("%d%%", (int)Math.floor(a * 100)), Utils.blendcol(none, full, a)).tex();
+		    at = elf.render(String.format("%d%%", (int)Math.round(a * 100)), Utils.blendcol(none, full, a)).tex();
 		return(at);
 	    }
 	}

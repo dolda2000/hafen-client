@@ -1127,7 +1127,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		if(this.loader == null) {
 		    this.loader = java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<ClassLoader>() {
 			    public ClassLoader run() {
-				ClassLoader parent = Resource.class.getClassLoader();
+				ClassLoader ret = Resource.class.getClassLoader();
 				if(classpath.size() > 0) {
 				    Collection<ClassLoader> loaders = new LinkedList<ClassLoader>();
 				    for(Resource res : classpath) {
@@ -1135,16 +1135,19 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 					    res.loadwait();
 					loaders.add(res.layer(CodeEntry.class).loader(wait));
 				    }
-				    parent = new LibClassLoader(parent, loaders);
+				    ret = new LibClassLoader(ret, loaders);
 				}
-				return(new ResClassLoader(parent) {
-					public Class<?> findClass(String name) throws ClassNotFoundException {
-					    Code c = clmap.get(name);
-					    if(c == null)
-						throw(new ClassNotFoundException("Could not find class " + name + " in resource (" + Resource.this + ")"));
-					    return(defineClass(name, c.data, 0, c.data.length));
-					}
-				    });
+				if(clmap.size() > 0) {
+				    ret = new ResClassLoader(ret) {
+					    public Class<?> findClass(String name) throws ClassNotFoundException {
+						Code c = clmap.get(name);
+						if(c == null)
+						    throw(new ClassNotFoundException("Could not find class " + name + " in resource (" + Resource.this + ")"));
+						return(defineClass(name, c.data, 0, c.data.length));
+					    }
+					};
+				}
+				return(ret);
 			    }
 			});
 		}
