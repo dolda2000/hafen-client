@@ -114,6 +114,18 @@ public class Utils {
 	    buf.append('-');
 	return(buf.reverse().toString());
     }
+
+    public static String odformat(double num, int md) {
+	long dm = 1;
+	for(int i = 0; i < md; i++) dm *= 10;
+	long raw = (long)Math.round(num * dm);
+	long ip = raw / dm;
+	long dp = raw % dm;
+	if(dp == 0)
+	    return(Long.toString(ip));
+	while((dp % 10) == 0) dp /= 10;
+	return(Long.toString(ip) + "." + Long.toString(dp));
+    }
     
     static void line(Graphics g, Coord c1, Coord c2) {
 	g.drawLine(c1.x, c1.y, c2.x, c2.y);
