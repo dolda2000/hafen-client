@@ -126,6 +126,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    synchronized(this) {
 		res = ui.sess.getres((Integer)args[0]);
 		sdt = (args.length > 1)?new Message(0, (byte[])args[1]):Message.nil;
+		spr = null;
 	    }
 	} else if(name == "tt") {
 	    info = null;
