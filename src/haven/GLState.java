@@ -725,10 +725,26 @@ public abstract class GLState {
     public static class Composed extends Abstract {
 	public final GLState[] states;
 
+	private static GLState[] trim(GLState[] a) {
+	    int i, n;
+	    for(i = n = 0; i < a.length; i++) {
+		if(a[i] != null)
+		    n++;
+	    }
+	    GLState[] b = new GLState[n];
+	    for(i = n = 0; i < a.length; i++) {
+		if(a[i] != null)
+		    b[n++] = a[i];
+	    }
+	    return(b);
+	}
+
 	public Composed(GLState... states) {
 	    for(GLState st : states) {
-		if(st == null)
-		    throw(new RuntimeException("null state in list of " + Arrays.asList(states)));
+		if(st == null) {
+		    this.states = trim(states);
+		    return;
+		}
 	    }
 	    this.states = states;
 	}
