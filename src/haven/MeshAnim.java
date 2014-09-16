@@ -155,6 +155,8 @@ public class MeshAnim {
 		    }
 		});
 	}
+
+	public MeshAnim desc() {return(MeshAnim.this);}
     }
 
     public class SAnim extends Anim {
