@@ -155,6 +155,8 @@ public class MeshAnim {
 		    }
 		});
 	}
+
+	public MeshAnim desc() {return(MeshAnim.this);}
     }
 
     public class SAnim extends Anim {
@@ -235,40 +237,47 @@ public class MeshAnim {
     public static class Res extends Resource.Layer {
 	public final int id;
 	public final MeshAnim a;
+	public final boolean rnd;
 
 	public Res(Resource res, byte[] data) {
 	    res.super();
 	    Message buf = new Message(0, data);
-	    id = buf.int16();
-	    float len = buf.float32();
-	    List<Frame> frames = new LinkedList<Frame>();
-	    while(true) {
-		int t = buf.uint8();
-		if(t == 0)
-		    break;
-		float tm = buf.float32();
-		int n = buf.uint16();
-		int[] idx = new int[n];
-		float[] pos = new float[n * 3];
-		float[] nrm = new float[n * 3];
-		int i = 0;
-		while(i < n) {
-		    int st = buf.uint16();
-		    int run = buf.uint16();
-		    for(int o = 0; o < run; o++) {
-			idx[i] = st + o;
-			pos[(i * 3) + 0] = buf.float32();
-			pos[(i * 3) + 1] = buf.float32();
-			pos[(i * 3) + 2] = buf.float32();
-			nrm[(i * 3) + 0] = buf.float32();
-			nrm[(i * 3) + 1] = buf.float32();
-			nrm[(i * 3) + 2] = buf.float32();
-			i++;
+	    int ver = buf.uint8();
+	    if(ver == 1) {
+		id = buf.int16();
+		rnd = buf.uint8() != 0;
+		float len = buf.float32();
+		List<Frame> frames = new LinkedList<Frame>();
+		while(true) {
+		    int t = buf.uint8();
+		    if(t == 0)
+			break;
+		    float tm = buf.float32();
+		    int n = buf.uint16();
+		    int[] idx = new int[n];
+		    float[] pos = new float[n * 3];
+		    float[] nrm = new float[n * 3];
+		    int i = 0;
+		    while(i < n) {
+			int st = buf.uint16();
+			int run = buf.uint16();
+			for(int o = 0; o < run; o++) {
+			    idx[i] = st + o;
+			    pos[(i * 3) + 0] = buf.float32();
+			    pos[(i * 3) + 1] = buf.float32();
+			    pos[(i * 3) + 2] = buf.float32();
+			    nrm[(i * 3) + 0] = buf.float32();
+			    nrm[(i * 3) + 1] = buf.float32();
+			    nrm[(i * 3) + 2] = buf.float32();
+			    i++;
+			}
 		    }
+		    frames.add(new Frame(tm, idx, pos, nrm));
 		}
-		frames.add(new Frame(tm, idx, pos, nrm));
+		a = new MeshAnim(frames.toArray(new Frame[0]), len);
+	    } else {
+		throw(new Resource.LoadException("Invalid meshanim format version: " + ver, res));
 	    }
-	    a = new MeshAnim(frames.toArray(new Frame[0]), len);
 	}
 
 	public void init() {

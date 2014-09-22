@@ -43,22 +43,19 @@ public class AnimSprite extends Sprite {
     private AnimSprite(Owner owner, Resource res, Message sdt) {
 	super(owner, res);
 	int mask = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
-	Collection<MeshAnim> anims = new LinkedList<MeshAnim>();
+	Collection<MeshAnim.Anim> anims = new LinkedList<MeshAnim.Anim>();
 	for(MeshAnim.Res ar : res.layers(MeshAnim.Res.class)) {
 	    if((ar.id < 0) || (((1 << ar.id) & mask) != 0))
-		anims.add(ar.a);
+		anims.add((ar.rnd)?(ar.a.new RAnim()):(ar.a.new SAnim()));
 	}
-	this.anims = new MeshAnim.Anim[anims.size()];
-	Iterator<MeshAnim> it = anims.iterator();
-	for(int i = 0; it.hasNext(); i++)
-	    this.anims[i] = it.next().new SAnim();
+	this.anims = anims.toArray(new MeshAnim.Anim[0]);
 	MorphedMesh.Morpher.Factory morph = MorphedMesh.combine(this.anims);
 	Collection<Rendered> rl = new LinkedList<Rendered>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0))) {
 		boolean stat = true;
-		for(MeshAnim anim : anims) {
-		    if(anim.animp(mr.m)) {
+		for(MeshAnim.Anim anim : anims) {
+		    if(anim.desc().animp(mr.m)) {
 			stat = false;
 			break;
 		    }
