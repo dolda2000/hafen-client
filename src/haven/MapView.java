@@ -588,8 +588,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	protected void render(GOut g, Rendered r) {
-	    if(r instanceof FRendered)
-		((FRendered)r).drawflat(g);
+	    try {
+		if(r instanceof FRendered)
+		    ((FRendered)r).drawflat(g);
+	    } catch(RenderList.RLoad l) {
+		if(ignload) return; else throw(l);
+	    }
 	}
 	
 	public T get(GOut g, Coord c) {

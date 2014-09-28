@@ -281,7 +281,7 @@ public class MenuGrid extends Widget {
 	return(ui.sess.glob.paginafor(res));
     }
 
-    private void use(Pagina r) {
+    private void use(Pagina r, boolean reset) {
 	Collection<Pagina> sub = new LinkedList<Pagina>(),
 	    cur = new LinkedList<Pagina>();
 	cons(r, sub);
@@ -300,7 +300,8 @@ public class MenuGrid extends Widget {
 	} else {
 	    r.newp = 0;
 	    wdgmsg("act", (Object[])r.act().ad);
-	    this.cur = null;
+	    if(reset)
+		this.cur = null;
 	    curoff = 0;
 	}
 	updlayout();
@@ -319,7 +320,7 @@ public class MenuGrid extends Widget {
 		dragging = pressed = null;
 	    } else if(pressed != null) {
 		if(pressed == h)
-		    use(h);
+		    use(h, false);
 		pressed = null;
 	    }
 	    grab.remove();
@@ -347,12 +348,12 @@ public class MenuGrid extends Widget {
 	    updlayout();
 	    return(true);
 	} else if((k == 'N') && (layout[gsz.x - 2][gsz.y - 1] == next)) {
-	    use(next);
+	    use(next, false);
 	    return(true);
 	}
 	Pagina r = hotmap.get(Character.toUpperCase(k));
 	if(r != null) {
-	    use(r);
+	    use(r, true);
 	    return(true);
 	}
 	return(false);
