@@ -36,13 +36,13 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	morphed = new Material.Colors(java.awt.Color.RED),
 	unboned = new Material.Colors(java.awt.Color.YELLOW);
     public static boolean bonedb = false;
-    public static final float defipol = 0.3f;
+    public static final float ipollen = 0.3f;
     public final Skeleton skel;
     public final Pose pose;
     public PoseMod[] mods = new PoseMod[0];
     private final PoseMorph morph;
     private Pose oldpose;
-    private float ipold, ipol;
+    private float ipold;
     private boolean stat = true;
     private Rendered[] parts;
     
@@ -72,7 +72,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	morph = new PoseMorph(pose);
 	int fl = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
 	chparts(fl);
-	chposes(fl, 0);
+	chposes(fl, true);
     }
 
     /* XXX: It's ugly to snoop inside a wrapping, but I can't think of
@@ -130,8 +130,8 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
     }
 
     private Map<Integer, PoseMod> modids = new IntMap<PoseMod>();
-    private void chposes(int mask, float ipol) {
-	if((this.ipol = ipol) > 0) {
+    private void chposes(int mask, boolean old) {
+	if(!old) {
 	    this.oldpose = skel.new Pose(pose);
 	    this.ipold = 1.0f;
 	}
@@ -142,8 +142,11 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	for(Skeleton.ResPose p : res.layers(Skeleton.ResPose.class)) {
 	    if((p.id < 0) || ((mask & (1 << p.id)) != 0)) {
 		Skeleton.PoseMod mod;
-		if((mod = modids.get(p.id)) == null)
+		if((mod = modids.get(p.id)) == null) {
 		    mod = p.forskel(mo, skel, p.defmode);
+		    if(old)
+			mod.age();
+		}
 		newids.put(p.id, mod);
 		if(!mod.stat())
 		    stat = false;
@@ -158,7 +161,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
     public void update(Message sdt) {
 	int fl = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
 	chparts(fl);
-	chposes(fl, defipol);
+	chposes(fl, false);
     }
     
     public boolean setup(RenderList rl) {
@@ -174,7 +177,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	    for(PoseMod m : mods)
 		m.tick(dt);
 	    if(ipold > 0) {
-		if((ipold -= (dt / ipol)) < 0) {
+		if((ipold -= (dt / ipollen)) < 0) {
 		    ipold = 0;
 		    oldpose = null;
 		}
