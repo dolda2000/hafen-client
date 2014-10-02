@@ -35,7 +35,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public boolean virtual = false;
     int clprio = 0;
     public long id;
-    public int frame, initdelay = (int)(Math.random() * 3000) + 3000;
+    public int frame;
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     public Collection<Overlay> ols = new LinkedList<Overlay>();
@@ -99,14 +99,8 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     }
 	
     public void ctick(int dt) {
-	int dt2 = dt + initdelay;
-	initdelay = 0;
-	for(GAttrib a : attr.values()) {
-	    if(a instanceof Drawable)
-		a.ctick(dt2);
-	    else
-		a.ctick(dt);
-	}
+	for(GAttrib a : attr.values())
+	    a.ctick(dt);
 	for(Iterator<Overlay> i = ols.iterator(); i.hasNext();) {
 	    Overlay ol = i.next();
 	    if(ol.spr == null) {
