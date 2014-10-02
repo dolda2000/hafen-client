@@ -147,7 +147,8 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 		    if(old)
 			mod.age();
 		}
-		newids.put(p.id, mod);
+		if(p.id >= 0)
+		    newids.put(p.id, mod);
 		if(!mod.stat())
 		    stat = false;
 		poses.add(mod);

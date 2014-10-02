@@ -130,13 +130,15 @@ public class IntMap<V> extends AbstractMap<Integer, V> {
     }
 
     public V get(int k) {
-	if(vals.length <= k)
+	if((k < 0) || (vals.length <= k))
 	    return(null);
 	return(ocast(vals[k]));
     }
 
-    public V get(Integer k) {
-	return(get(k.intValue()));
+    public V get(Object k) {
+	if(!(k instanceof Integer))
+	    return(null);
+	return(get(((Integer)k).intValue()));
     }
 
     public V put(int k, V v) {
