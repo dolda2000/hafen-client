@@ -123,41 +123,45 @@ public class Session {
 	private final int resid;
 	private String resnm = null;
 	private int resver;
-	private Reference<Indir<Resource>> ind;
+	private Reference<Ref> ind;
 	
 	private CachedRes(int id) {
 	    resid = id;
 	}
 	
-	private Indir<Resource> get() {
-	    Indir<Resource> ind = (this.ind == null)?null:(this.ind.get());
-	    if(ind == null) {
-		ind = new Indir<Resource>() {
-		    private Resource res;
+	private class Ref implements Indir<Resource> {
+	    private Resource res;
 		    
-		    public Resource get() {
-			if(resnm == null)
-			    throw(new LoadingIndir(CachedRes.this));
-			if(res == null)
-			    res = Resource.load(resnm, resver, 0);
-			if(res.loading)
-			    throw(new Resource.Loading(res));
-			return(res);
-		    }
-	
-		    public String toString() {
-			if(res == null) {
-			    return("<res:" + resid + ">");
-			} else {
-			    if(res.loading)
-				return("<!" + res + ">");
-			    else
-				return("<" + res + ">");
-			}
-		    }
-		};
-		this.ind = new WeakReference<Indir<Resource>>(ind);
+	    public Resource get() {
+		if(resnm == null)
+		    throw(new LoadingIndir(CachedRes.this));
+		if(res == null)
+		    res = Resource.load(resnm, resver, 0);
+		if(res.loading)
+		    throw(new Resource.Loading(res));
+		return(res);
 	    }
+	
+	    public String toString() {
+		if(res == null) {
+		    return("<res:" + resid + ">");
+		} else {
+		    if(res.loading)
+			return("<!" + res + ">");
+		    else
+			return("<" + res + ">");
+		}
+	    }
+
+	    private void reset() {
+		res = null;
+	    }
+	}
+
+	private Ref get() {
+	    Ref ind = (this.ind == null)?null:(this.ind.get());
+	    if(ind == null)
+		this.ind = new WeakReference<Ref>(ind = new Ref());
 	    return(ind);
 	}
 	
@@ -166,7 +170,7 @@ public class Session {
 	    synchronized(this) {
 		this.resnm = nm;
 		this.resver = ver;
-		this.ind = null;
+		get().reset();
 		notifyAll();
 	    }
 	}
