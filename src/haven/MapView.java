@@ -831,6 +831,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    g.frect(Coord.z, sz);
 	    g.chcolor(Color.WHITE);
 	    g.atext(text, sz.div(2), 0.5, 0.5);
+	    if(e instanceof Resource.Loading) {
+		((Resource.Loading)e).res.boostprio(5);
+	    }
 	}
     }
     
