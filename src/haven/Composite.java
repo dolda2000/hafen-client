@@ -38,7 +38,7 @@ public class Composite extends Drawable {
     public final Indir<Resource> base;
     public Composited comp;
     private Collection<ResData> nposes = null, tposes = null;
-    private boolean retainequ = false;
+    private boolean nposesold, retainequ = false;
     private float tptime;
     private WrapMode tpmode;
     public int pseq;
@@ -65,10 +65,14 @@ public class Composite extends Drawable {
 	rl.add(comp, null);
     }
 	
-    private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel) {
+    private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, boolean old) {
 	List<PoseMod> mods = new ArrayList<PoseMod>(rl.size());
-	for(ResData dat : rl)
-	    mods.add(skel.mkposemod(gob, dat.res.get(), dat.sdt));
+	for(ResData dat : rl) {
+	    PoseMod mod = skel.mkposemod(gob, dat.res.get(), dat.sdt);
+	    if(old)
+		mod.age();
+	    mods.add(mod);
+	}
 	return(mods);
     }
 
@@ -98,8 +102,8 @@ public class Composite extends Drawable {
 	    return;
 	if(nposes != null) {
 	    try {
-		Composited.Poses np = comp.new Poses(loadposes(nposes, comp.skel));
-		np.set(ipollen);
+		Composited.Poses np = comp.new Poses(loadposes(nposes, comp.skel, nposesold));
+		np.set(nposesold?0:ipollen);
 		nposes = null;
 	    } catch(Loading e) {}
 	} else if(tposes != null) {
@@ -135,6 +139,7 @@ public class Composite extends Drawable {
 	if(tposes != null)
 	    tposes = null;
 	nposes = poses;
+	nposesold = !interp;
     }
     
     @Deprecated

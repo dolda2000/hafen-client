@@ -431,6 +431,9 @@ public class Skeleton {
 	    return(false);
 	}
 
+	public void age() {
+	}
+
 	public abstract boolean stat();
 	public abstract boolean done();
     }
@@ -464,6 +467,11 @@ public class Skeleton {
 			    ret = true;
 		    }
 		    return(ret);
+		}
+
+		public void age() {
+		    for(PoseMod m : mods)
+			m.age();
 		}
 
 		public boolean stat() {
@@ -698,6 +706,24 @@ public class Skeleton {
 	    } else {
 		return(false);
 	    }
+	}
+
+	public void age() {
+	    switch(mode) {
+	    case PONGLOOP:
+		back = Math.random() >= 0.5;
+	    case LOOP:
+		time = (float)Math.random() * len;
+		break;
+	    case PONG:
+		back = true;
+		time = 0;
+		break;
+	    case ONCE:
+		time = len;
+		break;
+	    }
+	    aupdate(time);
 	}
 	
 	public boolean stat() {
