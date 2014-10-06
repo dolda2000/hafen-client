@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
+import haven.MorphedMesh.Morpher;
 
 public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
     private static final GLState
@@ -40,7 +41,9 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
     public final Skeleton skel;
     public final Pose pose;
     public PoseMod[] mods = new PoseMod[0];
-    private final PoseMorph morph;
+    public MeshAnim.Anim[] manims = new MeshAnim.Anim[0];
+    private Morpher.Factory mmorph;
+    private final PoseMorph pmorph;
     private Pose oldpose;
     private float ipold;
     private boolean stat = true;
@@ -69,10 +72,10 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	super(owner, res);
 	skel = res.layer(Skeleton.Res.class).s;
 	pose = skel.new Pose(skel.bindpose);
-	morph = new PoseMorph(pose);
+	pmorph = new PoseMorph(pose);
 	int fl = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
-	chparts(fl);
 	chposes(fl, true);
+	chparts(fl);
     }
 
     /* XXX: It's ugly to snoop inside a wrapping, but I can't think of
@@ -81,11 +84,19 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	if(!(wrap.r instanceof FastMesh))
 	    return(wrap);
 	FastMesh m = (FastMesh)wrap.r;
+	for(MeshAnim.Anim anim : manims) {
+	    if(anim.desc().animp(m)) {
+		Rendered ret = wrap.st().apply(new MorphedMesh(m, mmorph));
+		if(bonedb)
+		    ret = morphed.apply(ret);
+		return(ret);
+	    }
+	}
 	Rendered ret;
 	if(PoseMorph.boned(m)) {
 	    String bnm = PoseMorph.boneidp(m);
 	    if(bnm == null) {
-		ret = wrap.st().apply(new MorphedMesh(m, morph));
+		ret = wrap.st().apply(new MorphedMesh(m, pmorph));
 		if(bonedb)
 		    ret = morphed.apply(ret);
 	    } else {
@@ -129,8 +140,19 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	pose.gbuild();
     }
 
+    private void chmanims(int mask) {
+	Collection<MeshAnim.Anim> anims = new LinkedList<MeshAnim.Anim>();
+	for(MeshAnim.Res ar : res.layers(MeshAnim.Res.class)) {
+	    if((ar.id < 0) || (((1 << ar.id) & mask) != 0))
+		anims.add(ar.make());
+	}
+	this.manims = anims.toArray(new MeshAnim.Anim[0]);
+	this.mmorph = MorphedMesh.combine(this.manims);
+    }
+
     private Map<Skeleton.ResPose, PoseMod> modids = new HashMap<Skeleton.ResPose, PoseMod>();
     private void chposes(int mask, boolean old) {
+	chmanims(mask);
 	if(!old) {
 	    this.oldpose = skel.new Pose(pose);
 	    this.ipold = 1.0f;
@@ -161,8 +183,8 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 
     public void update(Message sdt) {
 	int fl = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
-	chparts(fl);
 	chposes(fl, false);
+	chparts(fl);
     }
     
     public boolean setup(RenderList rl) {
@@ -173,8 +195,8 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
     }
     
     public boolean tick(int idt) {
+	float dt = idt / 1000.0f;
 	if(!stat || (ipold > 0)) {
-	    float dt = idt / 1000.0f;
 	    for(PoseMod m : mods)
 		m.tick(dt);
 	    if(ipold > 0) {
@@ -185,6 +207,8 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	    }
 	    rebuild();
 	}
+	for(MeshAnim.Anim anim : manims)
+	    anim.tick(dt);
 	return(false);
     }
 
