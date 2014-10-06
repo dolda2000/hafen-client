@@ -1345,9 +1345,16 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
     }
 	
-    public <L extends Layer> Collection<L> layers(final Class<L> cl, boolean th) {
-	if(loading && th)
+    private void checkload() {
+	if(loading) {
+	    boostprio(1);
 	    throw(new Loading(this));
+	}
+    }
+
+    public <L extends Layer> Collection<L> layers(final Class<L> cl, boolean th) {
+	if(th)
+	    checkload();
 	checkerr();
 	return(new AbstractCollection<L>() {
 		public int size() {
@@ -1396,8 +1403,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     }
 	
     public <L extends Layer> L layer(Class<L> cl, boolean th) {
-	if(loading && th)
-	    throw(new Loading(this));
+	if(th)
+	    checkload();
 	checkerr();
 	for(Layer l : layers) {
 	    if(cl.isInstance(l))
@@ -1411,8 +1418,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     }
     
     public <I, L extends IDLayer<I>> L layer(Class<L> cl, I id) {
-	if(loading)
-	    throw(new Loading(this));
+	checkload();
 	checkerr();
 	for(Layer l : layers) {
 	    if(cl.isInstance(l)) {
@@ -1496,8 +1502,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    public Resource res = Resource.this;
 			
 	    public Resource get() {
-		if(loading)
-		    throw(new Loading(Resource.this));
+		checkload();
 		return(Resource.this);
 	    }
 			
