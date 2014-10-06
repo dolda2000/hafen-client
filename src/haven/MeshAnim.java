@@ -280,6 +280,10 @@ public class MeshAnim {
 	    }
 	}
 
+	public Anim make() {
+	    return(rnd?a.new RAnim():a.new SAnim());
+	}
+
 	public void init() {
 	}
     }

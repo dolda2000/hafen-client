@@ -46,7 +46,7 @@ public class AnimSprite extends Sprite {
 	Collection<MeshAnim.Anim> anims = new LinkedList<MeshAnim.Anim>();
 	for(MeshAnim.Res ar : res.layers(MeshAnim.Res.class)) {
 	    if((ar.id < 0) || (((1 << ar.id) & mask) != 0))
-		anims.add((ar.rnd)?(ar.a.new RAnim()):(ar.a.new SAnim()));
+		anims.add(ar.make());
 	}
 	this.anims = anims.toArray(new MeshAnim.Anim[0]);
 	MorphedMesh.Morpher.Factory morph = MorphedMesh.combine(this.anims);
