@@ -129,7 +129,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	pose.gbuild();
     }
 
-    private Map<Integer, PoseMod> modids = new IntMap<PoseMod>();
+    private Map<Skeleton.ResPose, PoseMod> modids = new HashMap<Skeleton.ResPose, PoseMod>();
     private void chposes(int mask, boolean old) {
 	if(!old) {
 	    this.oldpose = skel.new Pose(pose);
@@ -138,17 +138,17 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	Collection<PoseMod> poses = new LinkedList<PoseMod>();
 	stat = true;
 	Skeleton.ModOwner mo = (owner instanceof Skeleton.ModOwner)?(Skeleton.ModOwner)owner:Skeleton.ModOwner.nil;
-	Map<Integer, PoseMod> newids = new IntMap<PoseMod>();
+	Map<Skeleton.ResPose, PoseMod> newids = new HashMap<Skeleton.ResPose, PoseMod>();
 	for(Skeleton.ResPose p : res.layers(Skeleton.ResPose.class)) {
 	    if((p.id < 0) || ((mask & (1 << p.id)) != 0)) {
 		Skeleton.PoseMod mod;
-		if((mod = modids.get(p.id)) == null) {
+		if((mod = modids.get(p)) == null) {
 		    mod = p.forskel(mo, skel, p.defmode);
 		    if(old)
 			mod.age();
 		}
 		if(p.id >= 0)
-		    newids.put(p.id, mod);
+		    newids.put(p, mod);
 		if(!mod.stat())
 		    stat = false;
 		poses.add(mod);
