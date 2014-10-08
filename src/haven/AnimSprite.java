@@ -76,9 +76,10 @@ public class AnimSprite extends Sprite {
     }
 
     public boolean tick(int idt) {
+	boolean ret = false;
 	float dt = idt / 1000.0f;
 	for(MeshAnim.Anim anim : anims)
-	    anim.tick(dt);
-	return(false);
+	    ret = ret | anim.tick(dt);
+	return(ret);
     }
 }
