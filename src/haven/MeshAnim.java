@@ -88,7 +88,7 @@ public class MeshAnim {
 	protected float a;
 	protected int seq = 0;
 
-	public abstract void tick(float dt);
+	public abstract boolean tick(float dt);
 
 	public Morpher create(final MorphedBuf vb) {
 	    return(new Morpher() {
@@ -192,11 +192,15 @@ public class MeshAnim {
 	    this.seq++;
 	}
 
-	public void tick(float dt) {
+	public boolean tick(float dt) {
+	    boolean ret = false;
 	    this.time += dt;
-	    while(this.time > len)
+	    while(this.time > len) {
 		this.time -= len;
+		ret = true;
+	    }
 	    aupdate(this.time);
+	    return(ret);
 	}
     }
 
@@ -218,7 +222,7 @@ public class MeshAnim {
 	    fl = ((fi < frames.length - 1)?(frames[fi + 1].time):len) - frames[fi].time;
 	}
 
-	public void tick(float dt) {
+	public boolean tick(float dt) {
 	    fp += dt;
 	    if(fp >= fl) {
 		fp -= fl;
@@ -230,6 +234,7 @@ public class MeshAnim {
 	    }
 	    a = fp / fl;
 	    seq++;
+	    return(false);
 	}
     }
 
