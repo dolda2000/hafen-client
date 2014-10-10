@@ -869,7 +869,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    rc = rc.div(tilesz).mul(tilesz).add(tilesz.div(2));
 		Gob pl = player();
 		if((pl != null) && !freerot)
-		    a = rc.angle(pl.rc);
+		    a = Math.round(rc.angle(pl.rc) / (Math.PI / 2)) * (Math.PI / 2);
 		lastmc = pc;
 	    }
 	}
@@ -1080,6 +1080,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    placing.a = (Math.PI / 4) * Math.round((placing.a + (amount * Math.PI / 4)) / (Math.PI / 4));
 		else
 		    placing.a += amount * Math.PI / 16;
+		placing.a = Utils.cangle(placing.a);
 	    }
 	    return(true);
 	}
