@@ -693,7 +693,8 @@ public class Widget {
 	this.sz = sz;
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.presize();
-	parent.cresize(this);
+	if(parent != null)
+	    parent.cresize(this);
     }
 
     public void cresize(Widget ch) {
