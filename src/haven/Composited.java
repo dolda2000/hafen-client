@@ -46,6 +46,8 @@ public class Composited implements Rendered {
 	float ipold = 0.0f, ipol = 0.0f;
 	public float limit = -1.0f;
 	public boolean stat, ldone;
+	private Random srnd = new Random();
+	private float rsmod = (srnd.nextFloat() * 0.1f) + 0.95f;
 	
 	public Poses() {
 	    this.mods = new PoseMod[0];
@@ -81,6 +83,8 @@ public class Composited implements Rendered {
 	}
 
 	public void tick(float dt) {
+	    rsmod = Utils.clip(rsmod + (srnd.nextFloat() * 0.005f) - 0.0025f, 0.90f, 1.10f);
+	    dt *= rsmod;
 	    boolean build = false;
 	    if(limit >= 0) {
 		if((limit -= dt) < 0)
