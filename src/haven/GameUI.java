@@ -170,7 +170,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    fv = (Fightview)gettype(type).create(new Coord(sz.x - Fightview.width, 0), this, cargs);
 	    return(fv);
 	} else if(place == "inv") {
-	    invwnd = new Hidewnd(new Coord(100, 100), Coord.z, this, "Inventory");
+	    invwnd = new Hidewnd(new Coord(100, 100), Coord.z, this, "Inventory") {
+		    public void cresize(Widget ch) {
+			pack();
+		    }
+		};
 	    Inventory inv = (Inventory)gettype(type).create(Coord.z, invwnd, cargs);
 	    invwnd.pack();
 	    invwnd.hide();

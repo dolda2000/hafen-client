@@ -137,20 +137,24 @@ public class MeshAnim {
 				dst.put(i, src.get(i));
 			}
 			f = cf;
-			a = 1.0f - Anim.this.a;
-			for(int i = 0, po = 0; i < f.idx.length; i++, po += 3) {
-			    int vo = f.idx[i] * 3;
-			    float x = dst.get(vo), y = dst.get(vo + 1), z = dst.get(vo + 2);
-			    x += f.nrm[po] * a; y += f.nrm[po + 1] * a; z += f.nrm[po + 2] * a;
-			    dst.put(vo, x).put(vo + 1, y).put(vo + 2, z);
+			if(f.nrm != null) {
+			    a = 1.0f - Anim.this.a;
+			    for(int i = 0, po = 0; i < f.idx.length; i++, po += 3) {
+				int vo = f.idx[i] * 3;
+				float x = dst.get(vo), y = dst.get(vo + 1), z = dst.get(vo + 2);
+				x += f.nrm[po] * a; y += f.nrm[po + 1] * a; z += f.nrm[po + 2] * a;
+				dst.put(vo, x).put(vo + 1, y).put(vo + 2, z);
+			    }
 			}
 			f = nf;
-			a = Anim.this.a;
-			for(int i = 0, po = 0; i < f.idx.length; i++, po += 3) {
-			    int vo = f.idx[i] * 3;
-			    float x = dst.get(vo), y = dst.get(vo + 1), z = dst.get(vo + 2);
-			    x += f.nrm[po] * a; y += f.nrm[po + 1] * a; z += f.nrm[po + 2] * a;
-			    dst.put(vo, x).put(vo + 1, y).put(vo + 2, z);
+			if(f.nrm != null) {
+			    a = Anim.this.a;
+			    for(int i = 0, po = 0; i < f.idx.length; i++, po += 3) {
+				int vo = f.idx[i] * 3;
+				float x = dst.get(vo), y = dst.get(vo + 1), z = dst.get(vo + 2);
+				x += f.nrm[po] * a; y += f.nrm[po + 1] * a; z += f.nrm[po + 2] * a;
+				dst.put(vo, x).put(vo + 1, y).put(vo + 2, z);
+			    }
 			}
 		    }
 		});
@@ -246,6 +250,7 @@ public class MeshAnim {
 
 	public Res(Resource res, byte[] data) {
 	    res.super();
+	    final float[] xfb = new float[3];
 	    Message buf = new Message(0, data);
 	    int ver = buf.uint8();
 	    if(ver == 1) {
@@ -257,6 +262,8 @@ public class MeshAnim {
 		    int t = buf.uint8();
 		    if(t == 0)
 			break;
+		    else if((t < 0) || (t > 3))
+			throw(new Resource.LoadException("Unknown meshanim frame format: " + t, res));
 		    float tm = buf.float32();
 		    int n = buf.uint16();
 		    int[] idx = new int[n];
@@ -268,15 +275,38 @@ public class MeshAnim {
 			int run = buf.uint16();
 			for(int o = 0; o < run; o++) {
 			    idx[i] = st + o;
-			    pos[(i * 3) + 0] = buf.float32();
-			    pos[(i * 3) + 1] = buf.float32();
-			    pos[(i * 3) + 2] = buf.float32();
-			    nrm[(i * 3) + 0] = buf.float32();
-			    nrm[(i * 3) + 1] = buf.float32();
-			    nrm[(i * 3) + 2] = buf.float32();
+			    if(t == 1) {
+				pos[(i * 3) + 0] = buf.float32();
+				pos[(i * 3) + 1] = buf.float32();
+				pos[(i * 3) + 2] = buf.float32();
+				nrm[(i * 3) + 0] = buf.float32();
+				nrm[(i * 3) + 1] = buf.float32();
+				nrm[(i * 3) + 2] = buf.float32();
+			    } else if(t == 2) {
+				Utils.float9995d(buf.int32(), xfb);
+				pos[(i * 3) + 0] = xfb[0];
+				pos[(i * 3) + 1] = xfb[1];
+				pos[(i * 3) + 2] = xfb[2];
+				nrm[(i * 3) + 0] = 0;
+				nrm[(i * 3) + 1] = 0;
+				nrm[(i * 3) + 2] = 0;
+			    } else if(t == 3) {
+				pos[(i * 3) + 0] = Utils.hfdec((short)buf.int16());
+				pos[(i * 3) + 1] = Utils.hfdec((short)buf.int16());
+				pos[(i * 3) + 2] = Utils.hfdec((short)buf.int16());
+				nrm[(i * 3) + 0] = 0;
+				nrm[(i * 3) + 1] = 0;
+				nrm[(i * 3) + 2] = 0;
+			    }
 			    i++;
 			}
 		    }
+		    for(i = 0; i < nrm.length; i++) {
+			if(nrm[i] != 0)
+			    break;
+		    }
+		    if(i == nrm.length)
+			nrm = null;
 		    frames.add(new Frame(tm, idx, pos, nrm));
 		}
 		a = new MeshAnim(frames.toArray(new Frame[0]), len);
