@@ -39,6 +39,12 @@ public class Phong extends ValBlock.Group {
     public static final Uniform nlights = new Uniform(INT);
 
     public static class CelShade implements ShaderMacro {
+	public final boolean dif, spc;
+
+	public CelShade(boolean dif, boolean spc) {
+	    this.dif = dif; this.spc = spc;
+	}
+
 	public static final Function celramp = new Function.Def(VEC3) {{
 	    Expression c = param(IN, VEC3).ref();
 	    Block.Local m = code.local(FLOAT, max(pick(c, "r"), pick(c, "g"), pick(c, "b")));
@@ -60,8 +66,10 @@ public class Phong extends ValBlock.Group {
 		    return(celramp.call(in));
 		}
 	    };
-	    ph.bcol.mod(cel, 0);
-	    ph.scol.mod(cel, 0);
+	    if(dif)
+		ph.bcol.mod(cel, 0);
+	    if(spc)
+		ph.scol.mod(cel, 0);
 	}
     }
 
