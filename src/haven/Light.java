@@ -144,22 +144,36 @@ public class Light implements Rendered {
 	};
     public static final GLState plights = new BaseLights(new ShaderMacro[] {plight});
     
-    public static final GLState.StandAlone celshade = new GLState.StandAlone(GLState.Slot.Type.DRAW, lighting) {
-	    public void apply(GOut g) {}
-	    public void unapply(GOut g) {}
+    public static class CelShade extends GLState {
+	public static final Slot<CelShade> slot = new Slot<CelShade>(Slot.Type.DRAW, CelShade.class, lighting);
 
-	    private final ShaderMacro[] shaders = {new Phong.CelShade()};
-	    public ShaderMacro[] shaders() {
-		return(shaders);
-	    }
-	    public boolean reqshaders() {
-		return(true);
-	    }
-	};
+	public CelShade(boolean dif, boolean spc) {
+	    shaders = new ShaderMacro[] {new Phong.CelShade(dif, spc)};
+	}
+
+	public void apply(GOut g) {}
+	public void unapply(GOut g) {}
+
+	private final ShaderMacro[] shaders;
+	public ShaderMacro[] shaders() {
+	    return(shaders);
+	}
+	public boolean reqshaders() {
+	    return(true);
+	}
+	public void prep(Buffer buf) {buf.put(slot, this);}
+    }
+
+    public static final CelShade celshade = new CelShade(true, false);
     @Material.ResName("cel")
     public static class $cel implements Material.ResCons {
 	public GLState cons(Resource res, Object... args) {
-	    return(celshade);
+	    if(args.length < 1)
+		return(celshade);
+	    String s = (String)args[0];
+	    boolean dif = (s.indexOf('d') >= 0);
+	    boolean spc = (s.indexOf('s') >= 0);
+	    return(new CelShade(dif, spc));
 	}
     }
     
