@@ -158,36 +158,10 @@ public class GLSettings implements java.io.Serializable {
 		}
 	    }
 	};
-    public static enum ProgMode {
-	NEVER(false), REQ(true), ALWAYS(true);
-
-	public final boolean on;
-
-	ProgMode(boolean on) {
-	    this.on = on;
-	}
-    };
-    public final EnumSetting<ProgMode> progmode = new EnumSetting<ProgMode>("progmode", ProgMode.class) {
-	    public ProgMode defval() {
-		if(cfg.haveglsl())
-		    return(ProgMode.REQ);
-		else
-		    return(ProgMode.NEVER);
-	    }
-	    public void validate(ProgMode val) {
-		if(val.on && !cfg.haveglsl())
-		    throw(new SettingException("GLSL is not supported."));
-	    }
-	};
 
     public final BoolSetting flight = new BoolSetting("flight") {
 	    public Boolean defval() {return(false);}
-	    public void validate(Boolean val) {
-		if(val) {
-		    if(!cfg.haveglsl()) throw(new SettingException("Per-pixel lighting requires a shader-compatible video card."));
-		    if(!progmode.val.on) throw(new SettingException("Per-pixel lighting requires shader usage."));
-		}
-	    }
+	    public void validate(Boolean val) {}
 	};
 
     public final BoolSetting cel = new BoolSetting("cel") {
@@ -212,19 +186,14 @@ public class GLSettings implements java.io.Serializable {
 	    public Boolean defval() {return(false);}
 	    public void validate(Boolean val) {
 		if(val) {
-		    if(!progmode.val.on) throw(new SettingException("Outline rendering requires shader usage."));
 		    if(!cfg.havefbo()) throw(new SettingException("Outline rendering requires a video card supporting framebuffers."));
 		}
 	    }
 	};
 
     public final BoolSetting wsurf = new BoolSetting("wsurf") {
-	    public Boolean defval() {return(progmode.val.on && cfg.glmajver >= 3);}
-	    public void validate(Boolean val) {
-		if(val) {
-		    if(!progmode.val.on) throw(new SettingException("Shaded water surface requires a shader-compatible video card."));
-		}
-	    }
+	    public Boolean defval() {return(cfg.glmajver >= 3);}
+	    public void validate(Boolean val) {}
 	};
 
     public final FloatSetting anisotex = new FloatSetting("aniso") {

@@ -425,35 +425,9 @@ public abstract class GLState {
 	    usedprog = prog != null;
 	    if(sdirty) {
 		ShaderMacro.Program np;
-		boolean usesl;
-		switch(g.gc.pref.progmode.val) {
-		case ALWAYS:
-		    usesl = true;
-		    break;
-		case REQ:
-		    usesl = false;
-		    for(int i = 0; i < trans.length; i++) {
-			if((nshaders[i] != null) && next.states[i].reqshaders()) {
-			    usesl = true;
-			    break;
-			}
-		    }
-		    break;
-		case NEVER:
-		default: /* ¦] */
-		    usesl = false;
-		    break;
-		}
-		if(usesl) {
-		    np = findprog(nproghash, nshaders);
-		} else {
-		    np = null;
-		}
+		np = findprog(nproghash, nshaders);
 		if(np != prog) {
-		    if(np != null)
-			np.apply(g);
-		    else
-			g.gl.glUseProgramObjectARB(0);
+		    np.apply(g);
 		    prog = np;
 		    if(debug)
 			checkerr(g.gl);
