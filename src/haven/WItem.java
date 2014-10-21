@@ -215,7 +215,7 @@ public class WItem extends Widget implements DTarget {
 	    if (item.meter > 0) {
 		double a = ((double) item.meter) / 100.0;
 		g.chcolor(255, 255, 255, 64);
-		Coord half = sqsz.div(2);
+		Coord half = sz.div(2);
 		g.prect(half, half.inv(), half, a * Math.PI * 2);
 		g.chcolor();
 	    }
