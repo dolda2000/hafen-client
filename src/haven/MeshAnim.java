@@ -110,7 +110,7 @@ public class MeshAnim {
 				dst.put(i, src.get(i));
 			}
 			f = cf;
-			a = 1.0f - Anim.this.a;
+			a = (float)Utils.smoothstep(1.0f - Anim.this.a);
 			for(int i = 0, po = 0; i < f.idx.length; i++, po += 3) {
 			    int vo = f.idx[i] * 3;
 			    float x = dst.get(vo), y = dst.get(vo + 1), z = dst.get(vo + 2);
@@ -118,7 +118,7 @@ public class MeshAnim {
 			    dst.put(vo, x).put(vo + 1, y).put(vo + 2, z);
 			}
 			f = nf;
-			a = Anim.this.a;
+			a = (float)Utils.smoothstep(Anim.this.a);
 			for(int i = 0, po = 0; i < f.idx.length; i++, po += 3) {
 			    int vo = f.idx[i] * 3;
 			    float x = dst.get(vo), y = dst.get(vo + 1), z = dst.get(vo + 2);
@@ -138,7 +138,7 @@ public class MeshAnim {
 			}
 			f = cf;
 			if(f.nrm != null) {
-			    a = 1.0f - Anim.this.a;
+			    a = (float)Utils.smoothstep(1.0f - Anim.this.a);
 			    for(int i = 0, po = 0; i < f.idx.length; i++, po += 3) {
 				int vo = f.idx[i] * 3;
 				float x = dst.get(vo), y = dst.get(vo + 1), z = dst.get(vo + 2);
@@ -148,7 +148,7 @@ public class MeshAnim {
 			}
 			f = nf;
 			if(f.nrm != null) {
-			    a = Anim.this.a;
+			    a = (float)Utils.smoothstep(Anim.this.a);
 			    for(int i = 0, po = 0; i < f.idx.length; i++, po += 3) {
 				int vo = f.idx[i] * 3;
 				float x = dst.get(vo), y = dst.get(vo + 1), z = dst.get(vo + 2);
