@@ -194,6 +194,10 @@ public class Glob {
 
 	synchronized(this) {
 	    ticklight(dt);
+	    for(Object o : wmap.values()) {
+		if(o instanceof Weather)
+		    ((Weather)o).tick(dt);
+	    }
 	}
 
 	oc.ctick(dt);
