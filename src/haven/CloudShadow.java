@@ -39,7 +39,7 @@ public class CloudShadow extends GLState {
     public DirLight light;
     public Coord3f vel;
     public float scale;
-    public float a = 0.5f, w = 1.0f, t = 0.4f, s = 1.0f;
+    public float cmin = 0.5f, cmax = 1.0f, rmin = 0.4f, rmax = 1.0f;
 
     public CloudShadow(TexGL tex, DirLight light, Coord3f vel, float scale) {
 	this.tex = tex;
@@ -100,8 +100,7 @@ public class CloudShadow extends GLState {
 	    g.gl.glUniform2f(g.st.prog.uniform(cdir), xd, yd);
 	    g.gl.glUniform2f(g.st.prog.uniform(cvel), vel.x, vel.y);
 	    g.gl.glUniform1f(g.st.prog.uniform(cscl), scale);
-	    float lthr = a * (1 - w);
-	    g.gl.glUniform4f(g.st.prog.uniform(cthr), lthr, lthr + w, t, s - t);
+	    g.gl.glUniform4f(g.st.prog.uniform(cthr), cmin, cmax, rmin, rmax - rmin);
 	}
     }
 
