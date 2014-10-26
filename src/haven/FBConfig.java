@@ -107,7 +107,6 @@ public class FBConfig {
 	    shaders = shb.toArray(new ShaderMacro[0]);
 	this.fb = new GLFrameBuffer(this.color, this.depth) {
 		public ShaderMacro[] shaders() {return(shaders);}
-		public boolean reqshaders() {return(shaders.length > 0);}
 	    };
 	this.wnd = new PView.RenderState() {
 		public Coord ul() {return(Coord.z);}

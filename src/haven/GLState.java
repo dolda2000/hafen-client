@@ -48,10 +48,6 @@ public abstract class GLState {
 	return(null);
     }
     
-    public boolean reqshaders() {
-	return(false);
-    }
-
     public int capply() {
 	return(10);
     }

@@ -58,7 +58,6 @@ public class RenderedNormals extends FBConfig.RenderTarget {
 		private final ShaderMacro[] shaders = code(id);
 
 		public ShaderMacro[] shaders() {return(shaders);}
-		public boolean reqshaders() {return(true);}
 
 		public void apply(GOut g) {
 		    GLFrameBuffer fb = g.st.get(GLFrameBuffer.slot);

@@ -324,7 +324,6 @@ public class WaterTile extends Tiler {
 	}
 
 	public ShaderMacro[] shaders() {return(shaders);}
-	public boolean reqshaders() {return(true);}
 
 	public void apply(GOut g) {
 	    GL2 gl = g.gl;
@@ -404,7 +403,6 @@ public class WaterTile extends Tiler {
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}
 	public ShaderMacro[] shaders() {return(shaders);}
-	public boolean reqshaders() {return(true);}
 	public void prep(Buffer buf) {
 	    if(buf.cfg.pref.wsurf.val)
 		super.prep(buf);
@@ -435,7 +433,6 @@ public class WaterTile extends Tiler {
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}
 	public ShaderMacro[] shaders() {return(shaders);}
-	public boolean reqshaders() {return(true);}
     };
 
     @ResName("water")

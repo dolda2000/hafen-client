@@ -87,7 +87,6 @@ public class BumpMap extends GLState {
     };
 
     public ShaderMacro[] shaders() {return(shaders);}
-    public boolean reqshaders() {return(true);}
 
     public void reapply(GOut g) {
 	g.gl.glUniform1i(g.st.prog.uniform(ctex), sampler.id);

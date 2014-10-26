@@ -110,10 +110,6 @@ public class Light implements Rendered {
 	    return(shaders);
 	}
 	
-	public boolean reqshaders() {
-	    return(true);
-	}
-	
 	public void prep(Buffer buf) {
 	    buf.put(lighting, this);
 	}
@@ -130,11 +126,7 @@ public class Light implements Rendered {
 	    }
 	};
 
-    public static final GLState vlights = new BaseLights(new ShaderMacro[] {vlight}) {
-	    public boolean reqshaders() {
-		return(false);
-	    }
-	};
+    public static final GLState vlights = new BaseLights(new ShaderMacro[] {vlight});
     public static final GLState plights = new BaseLights(new ShaderMacro[] {plight});
     
     public static class CelShade extends GLState {
@@ -150,9 +142,6 @@ public class Light implements Rendered {
 	private final ShaderMacro[] shaders;
 	public ShaderMacro[] shaders() {
 	    return(shaders);
-	}
-	public boolean reqshaders() {
-	    return(true);
 	}
 	public void prep(Buffer buf) {buf.put(slot, this);}
     }
