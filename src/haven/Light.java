@@ -93,24 +93,17 @@ public class Light implements Rendered {
 	public BaseLights(ShaderMacro[] shaders) {
 	    this.shaders = shaders;
 	}
-
-	public void apply(GOut g) {
-	    GL2 gl = g.gl;
-	    if(g.st.prog == null)
-		gl.glEnable(GL2.GL_LIGHTING);
-	    else
-		reapply(g);
-	}
 	    
 	public void reapply(GOut g) {
 	    GL2 gl = g.gl;
 	    gl.glUniform1i(g.st.prog.uniform(Phong.nlights), g.st.get(lights).nlights);
 	}
+
+	public void apply(GOut g) {
+	    reapply(g);
+	}
 	    
 	public void unapply(GOut g) {
-	    GL2 gl = g.gl;
-	    if(!g.st.usedprog)
-		gl.glDisable(GL2.GL_LIGHTING);
 	}
 	    
 	public ShaderMacro[] shaders() {

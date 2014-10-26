@@ -59,8 +59,7 @@ public class ColorMask extends GLState {
     }
 
     public void apply(GOut g) {
-	if(g.st.prog != null)
-	    reapply(g);
+	reapply(g);
     }
 
     public void unapply(GOut g) {

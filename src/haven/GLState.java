@@ -347,7 +347,6 @@ public abstract class GLState {
 	private ShaderMacro[][] shaders = new ShaderMacro[0][], nshaders = new ShaderMacro[0][];
 	private int proghash = 0, nproghash = 0;
 	public ShaderMacro.Program prog;
-	public boolean usedprog;
 	public boolean pdirty = false, sdirty = false;
 	public long time = 0;
 	
@@ -422,8 +421,7 @@ public abstract class GLState {
 		    }
 		}
 	    }
-	    usedprog = prog != null;
-	    if(sdirty) {
+	    if(sdirty || (prog == null)) {
 		ShaderMacro.Program np;
 		np = findprog(nproghash, nshaders);
 		if(np != prog) {
@@ -432,12 +430,6 @@ public abstract class GLState {
 		    if(debug)
 			checkerr(g.gl);
 		    pdirty = true;
-		}
-	    }
-	    if((prog != null) != usedprog) {
-		for(int i = 0; i < trans.length; i++) {
-		    if(trans[i])
-			repl[i] = true;
 		}
 	    }
 	    cur.copy(old);
@@ -471,7 +463,7 @@ public abstract class GLState {
 			if(debug)
 			    stcheckerr(g, "apply", cur.states[id]);
 		    }
-		    if(!pdirty && (prog != null))
+		    if(!pdirty)
 			prog.adirty(deplist[i]);
 		} else if(trans[id]) {
 		    cur.states[id].applyto(g, next.states[id]);
@@ -483,9 +475,9 @@ public abstract class GLState {
 		    shaders[id] = nshaders[id];
 		    if(debug)
 			stcheckerr(g, "applyfrom", cur.states[id]);
-		    if(!pdirty && (prog != null))
+		    if(!pdirty)
 			prog.adirty(deplist[i]);
-		} else if((prog != null) && pdirty && (shaders[id] != null)) {
+		} else if(pdirty && (shaders[id] != null)) {
 		    cur.states[id].reapply(g);
 		    if(debug)
 			stcheckerr(g, "reapply", cur.states[id]);
@@ -497,8 +489,7 @@ public abstract class GLState {
 		matmode(GL2.GL_MODELVIEW);
 		gl.glLoadMatrixf(mv.m, 0);
 	    }
-	    if(prog != null)
-		prog.autoapply(g, pdirty);
+	    prog.autoapply(g, pdirty);
 	    pdirty = sdirty = false;
 	    checkerr(gl);
 	    if(Config.profile)
