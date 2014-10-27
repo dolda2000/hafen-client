@@ -147,10 +147,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		    ostate = OrthoState.fixed(new Coord(w, h));
 		    rtstate = new GLState() {
 			    public void apply(GOut g) {
-				GL2 gl = g.gl;
-				g.st.matmode(GL2.GL_PROJECTION);
-				gl.glLoadIdentity();
-				gl.glOrtho(0, w, 0, h, -1, 1);
+				g.st.proj = Projection.makeortho(new Matrix4f(), 0, w, 0, h, -1, 1);
 			    }
 			    public void unapply(GOut g) {
 			    }
@@ -172,11 +169,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	protected abstract Coord sz();
 
 	public void apply(GOut g) {
-	    GL2 gl = g.gl;
 	    Coord sz = sz();
-	    g.st.matmode(GL2.GL_PROJECTION);
-	    gl.glLoadIdentity();
-	    gl.glOrtho(0, sz.x, sz.y, 0, -1, 1);
+	    g.st.proj = Projection.makeortho(new Matrix4f(), 0, sz.x, sz.y, 0, -1, 1);
 	}
 
 	public void unapply(GOut g) {

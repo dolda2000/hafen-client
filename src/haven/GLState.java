@@ -348,8 +348,8 @@ public abstract class GLState {
 	
 	/* It seems ugly to treat these so specially, but right now I
 	 * cannot see any good alternative. */
-	public Matrix4f cam = Matrix4f.id, wxf = Matrix4f.id, mv = Matrix4f.identity();
-	private Matrix4f ccam = null, cwxf = null;
+	public Matrix4f proj = Matrix4f.id, cam = Matrix4f.id, wxf = Matrix4f.id, mv = Matrix4f.identity();
+	private Matrix4f cproj = null, ccam = null, cwxf = null;
 	
 	public Applier(GL2 gl, GLConfig cfg) {
 	    this.gl = gl;
@@ -478,6 +478,10 @@ public abstract class GLState {
 		    if(debug)
 			stcheckerr(g, "reapply", cur.states[id]);
 		}
+	    }
+	    if(cproj != proj) {
+		matmode(GL2.GL_PROJECTION);
+		gl.glLoadMatrixf((cproj = proj).m, 0);
 	    }
 	    if((ccam != cam) || (cwxf != wxf)) {
 		/* See comment above */
