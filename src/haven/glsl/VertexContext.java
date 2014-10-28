@@ -26,6 +26,8 @@
 
 package haven.glsl;
 
+import haven.*;
+
 public class VertexContext extends ShaderContext {
     public VertexContext(ProgramContext prog) {
 	super(prog);
@@ -45,10 +47,6 @@ public class VertexContext extends ShaderContext {
     public static final Variable gl_Vertex = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Vertex"));
     public static final Variable gl_Normal = new Variable.Implicit(Type.VEC3, new Symbol.Fix("gl_Normal"));
     public static final Variable gl_Color = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Color"));
-    public static final Variable gl_ModelViewMatrix = new Variable.Implicit(Type.MAT4, new Symbol.Fix("gl_ModelViewMatrix"));
-    public static final Variable gl_NormalMatrix = new Variable.Implicit(Type.MAT4, new Symbol.Fix("gl_NormalMatrix"));
-    public static final Variable gl_ProjectionMatrix = new Variable.Implicit(Type.MAT4, new Symbol.Fix("gl_ProjectionMatrix"));
-    public static final Variable gl_ModelViewProjectionMatrix = new Variable.Implicit(Type.MAT4, new Symbol.Fix("gl_ModelViewProjectionMatrix"));
     public static final Variable gl_Position = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Position"));
     public static final Variable[] gl_MultiTexCoord = {
 	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord0")),
@@ -61,16 +59,49 @@ public class VertexContext extends ShaderContext {
 	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord7")),
     };
 
-    public static final Uniform wxf = new Uniform.AutoApply(Type.MAT4, "wxf", haven.PView.loc) {
-	    public void apply(haven.GOut g, int loc) {
-		g.gl.glUniformMatrix4fv(loc, 1, false, g.st.wxf.m, 0);
+    public static final Uniform wxf = new Uniform.AutoApply(Type.MAT4, "wxf", PView.loc) {
+	    public void apply(GOut g, int loc) {
+		Location.Chain wxf_s = g.st.get(PView.loc);
+		Matrix4f wxf = (wxf_s == null)?Matrix4f.id:wxf_s.fin(Matrix4f.id);
+		g.gl.glUniformMatrix4fv(loc, 1, false, wxf.m, 0);
 	    }
 	};
-    public static final Uniform cam = new Uniform.AutoApply(Type.MAT4, "cam", haven.PView.cam) {
-	    public void apply(haven.GOut g, int loc) {
-		g.gl.glUniformMatrix4fv(loc, 1, false, g.st.cam.m, 0);
+    public static final Uniform cam = new Uniform.AutoApply(Type.MAT4, "cam", PView.cam) {
+	    public void apply(GOut g, int loc) {
+		Camera cam_s = g.st.get(PView.cam);
+		Matrix4f cam = (cam_s == null)?Matrix4f.id:cam_s.fin(Matrix4f.id);
+		g.gl.glUniformMatrix4fv(loc, 1, false, cam.m, 0);
 	    }
 	};
+    public static final Uniform proj = new Uniform.AutoApply(Type.MAT4, "proj", PView.proj) {
+	    public void apply(GOut g, int loc) {
+		g.gl.glUniformMatrix4fv(loc, 1, false, g.st.proj.m, 0);
+	    }
+	};
+    public static final Uniform mv = new Uniform.AutoApply(Type.MAT4, "mv", PView.loc, PView.cam) {
+	    public void apply(GOut g, int loc) {
+		Matrix4f mv = Matrix4f.id;
+		Camera cam_s = g.st.get(PView.cam);
+		if(cam_s != null) mv = cam_s.fin(mv);
+		Location.Chain wxf_s = g.st.get(PView.loc);
+		if(wxf_s != null) mv = wxf_s.fin(mv);
+		g.gl.glUniformMatrix4fv(loc, 1, false, mv.m, 0);
+	    }
+	};
+    public static final Uniform pmv = new Uniform.AutoApply(Type.MAT4, "pmv", PView.loc, PView.cam, PView.proj) {
+	    public void apply(GOut g, int loc) {
+		Matrix4f pmv = g.st.proj;
+		Camera cam_s = g.st.get(PView.cam);
+		if(cam_s != null) pmv = cam_s.fin(pmv);
+		Location.Chain wxf_s = g.st.get(PView.loc);
+		if(wxf_s != null) pmv = wxf_s.fin(pmv);
+		g.gl.glUniformMatrix4fv(loc, 1, false, pmv.m, 0);
+	    }
+	};
+     /* If, at some unexpected point in an unexpected future, I were
+      * to use anisotropic transforms, this will have to get a matrix
+      * inverter implemented for it. */
+    public static final Expression nxf = Cons.mat3(mv.ref());
 
     public final ValBlock.Value objv = mainvals.new Value(Type.VEC4, new Symbol.Gen("objv")) {
 	    public Expression root() {
@@ -101,9 +132,9 @@ public class VertexContext extends ShaderContext {
 			    if(mapv.used) {
 				return(new Mul(cam.ref(), mapv.ref()).process(ctx));
 			    } else if(objv.used) {
-				return(new Mul(gl_ModelViewMatrix.ref(), objv.ref()).process(ctx));
+				return(new Mul(mv.ref(), objv.ref()).process(ctx));
 			    } else {
-				return(new Mul(gl_ModelViewMatrix.ref(), gl_Vertex.ref()).process(ctx));
+				return(new Mul(mv.ref(), gl_Vertex.ref()).process(ctx));
 			    }
 			}
 		    });
@@ -111,7 +142,7 @@ public class VertexContext extends ShaderContext {
 	};
     public final ValBlock.Value eyen = mainvals.new Value(Type.VEC3, new Symbol.Gen("eyen")) {
 	    public Expression root() {
-		return(new Mul(gl_NormalMatrix.ref(), gl_Normal.ref()));
+		return(new Mul(nxf, gl_Normal.ref()));
 	    }
 	};
     public final ValBlock.Value posv = mainvals.new Value(Type.VEC4, new Symbol.Gen("posv")) {
@@ -124,13 +155,13 @@ public class VertexContext extends ShaderContext {
 		return(new Expression() {
 			public Expression process(Context ctx) {
 			    if(eyev.used) {
-				return(new Mul(gl_ProjectionMatrix.ref(), eyev.ref()).process(ctx));
+				return(new Mul(proj.ref(), eyev.ref()).process(ctx));
 			    } else if(mapv.used) {
-				return(new Mul(gl_ProjectionMatrix.ref(), cam.ref(), mapv.ref()).process(ctx));
+				return(new Mul(proj.ref(), cam.ref(), mapv.ref()).process(ctx));
 			    } else if(objv.used) {
-				return(new Mul(gl_ModelViewProjectionMatrix.ref(), objv.ref()).process(ctx));
+				return(new Mul(pmv.ref(), objv.ref()).process(ctx));
 			    } else {
-				return(new Mul(gl_ModelViewProjectionMatrix.ref(), gl_Vertex.ref()).process(ctx));
+				return(new Mul(pmv.ref(), gl_Vertex.ref()).process(ctx));
 			    }
 			}
 		    });

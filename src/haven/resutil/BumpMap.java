@@ -51,12 +51,12 @@ public class BumpMap extends GLState {
 	new ShaderMacro() {
 	    final AutoVarying tanc = new AutoVarying(VEC3) {
 		    protected Expression root(VertexContext vctx) {
-			return(mul(vctx.gl_NormalMatrix.ref(), tan.ref()));
+			return(mul(vctx.nxf, tan.ref()));
 		    }
 		};
 	    final AutoVarying bitc = new AutoVarying(VEC3) {
 		    protected Expression root(VertexContext vctx) {
-			return(mul(vctx.gl_NormalMatrix.ref(), bit.ref()));
+			return(mul(vctx.nxf, bit.ref()));
 		    }
 		};
 	    public void modify(ProgramContext prog) {
