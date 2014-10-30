@@ -281,4 +281,23 @@ public abstract class PView extends Widget {
 	    return(false);
 	}
     }
+
+    public static Matrix4f camxf(GOut g) {
+	Camera cam_s = g.st.cur(cam);
+	return((cam_s == null)?Matrix4f.id:cam_s.fin(Matrix4f.id));
+    }
+
+    public static Matrix4f locxf(GOut g) {
+	Location.Chain loc_s = g.st.cur(loc);
+	return((loc_s == null)?Matrix4f.id:loc_s.fin(Matrix4f.id));
+    }
+
+    public static Matrix4f mvxf(GOut g) {
+	Camera cam_s = g.st.cur(cam);
+	Location.Chain loc_s = g.st.cur(loc);
+	Matrix4f ret = Matrix4f.id;
+	if(cam_s != null) ret = cam_s.fin(ret);
+	if(loc_s != null) ret = loc_s.fin(ret);
+	return(ret);
+    }
 }
