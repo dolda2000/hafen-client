@@ -56,7 +56,7 @@ public class ActAudio extends GLState.Abstract {
 	    g.apply();
 	    ActAudio list = g.st.cur(slot);
 	    if(list != null) {
-		Coord3f pos = g.st.mv.mul4(Coord3f.o);
+		Coord3f pos = PView.mvxf(g).mul4(Coord3f.o);
 		double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
 		this.clip.vol = Math.min(1.0, 50.0 / pd);
 		list.add(clip);
@@ -145,7 +145,7 @@ public class ActAudio extends GLState.Abstract {
 		    return;
 		glob = list.intern(new Glob(res));
 	    }
-	    Coord3f pos = g.st.mv.mul4(Coord3f.o);
+	    Coord3f pos = PView.mvxf(g).mul4(Coord3f.o);
 	    double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
 	    double svol = Math.min(1.0, 50.0 / pd);
 	    glob.add(svol * bvol);

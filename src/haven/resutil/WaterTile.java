@@ -204,7 +204,7 @@ public class WaterTile extends Tiler {
 	    gl.glColor4f(1, 1, 1, 0.5f);
 	    g.st.matmode(GL.GL_TEXTURE);
 	    gl.glPushMatrix();
-	    g.st.cam.transpose().trim3(1).loadgl(gl);
+	    PView.camxf(g).transpose().trim3(1).loadgl(gl);
 	}
 
 	public void unapply(GOut g) {
@@ -320,7 +320,7 @@ public class WaterTile extends Tiler {
 	    GL2 gl = g.gl;
 	    gl.glUniform1i(g.st.prog.uniform(ssky), tsky.id);
 	    gl.glUniform1i(g.st.prog.uniform(snrm), tnrm.id);
-	    gl.glUniformMatrix3fv(g.st.prog.uniform(icam), 1, false, g.st.cam.transpose().trim3(), 0);
+	    gl.glUniformMatrix3fv(g.st.prog.uniform(icam), 1, false, PView.camxf(g).transpose().trim3(), 0);
 	}
 
 	public ShaderMacro[] shaders() {return(shaders);}
