@@ -807,7 +807,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     private boolean camload = false;
-    private Loading lastload = null;
+    public Loading lastload = null;
     public void draw(GOut g) {
 	glob.map.sendreqs();
 	if((olftimer != 0) && (olftimer < System.currentTimeMillis()))
