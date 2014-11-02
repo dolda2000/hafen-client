@@ -346,10 +346,10 @@ public abstract class GLState {
 	public boolean pdirty = false, sdirty = false;
 	public long time = 0;
 	
-	/* It seems ugly to treat these so specially, but right now I
-	 * cannot see any good alternative. */
-	public Matrix4f proj = Matrix4f.id, cam = Matrix4f.id, wxf = Matrix4f.id, mv = Matrix4f.identity();
-	private Matrix4f cproj = null, ccam = null, cwxf = null;
+	/* XXX: Arguably, there should be a way to more fundamentally
+	 * affect the gl_Position generation code instead of this. */
+	public Matrix4f proj = Matrix4f.id;
+	private Matrix4f cproj = null;
 	
 	public Applier(GL2 gl, GLConfig cfg) {
 	    this.gl = gl;
@@ -482,12 +482,6 @@ public abstract class GLState {
 	    if(cproj != proj) {
 		matmode(GL2.GL_PROJECTION);
 		gl.glLoadMatrixf((cproj = proj).m, 0);
-	    }
-	    if((ccam != cam) || (cwxf != wxf)) {
-		/* See comment above */
-		mv.load(ccam = cam).mul1(cwxf = wxf);
-		matmode(GL2.GL_MODELVIEW);
-		gl.glLoadMatrixf(mv.m, 0);
 	    }
 	    prog.autoapply(g, pdirty);
 	    pdirty = sdirty = false;

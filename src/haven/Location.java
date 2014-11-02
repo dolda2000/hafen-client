@@ -50,12 +50,9 @@ public class Location extends Transform {
 	}
 
 	public void apply(GOut g) {
-	    bk = g.st.wxf;
-	    g.st.wxf = fin(g.st.wxf);
 	}
 
 	public void unapply(GOut g) {
-	    g.st.wxf = bk;
 	}
 
 	public void prep(Buffer b) {
