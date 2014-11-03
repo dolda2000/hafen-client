@@ -370,6 +370,7 @@ public class Skeleton {
 		}
 	    
 		public boolean setup(RenderList rl) {
+		    rl.prepo(States.vertexcolor);
 		    rl.prepo(States.xray);
 		    return(true);
 		}
