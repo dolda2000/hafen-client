@@ -495,7 +495,7 @@ public class Skeleton {
 
 	public static final ModFactory def = new ModFactory() {
 		public PoseMod create(Skeleton skel, ModOwner owner, Resource res, Message sdt) {
-		    int mask = SkelSprite.decnum(sdt);
+		    int mask = Sprite.decnum(sdt);
 		    Collection<PoseMod> poses = new ArrayList<PoseMod>(16);
 		    for(ResPose p : res.layers(ResPose.class)) {
 			if((p.id < 0) || ((mask & (1 << p.id)) != 0))
