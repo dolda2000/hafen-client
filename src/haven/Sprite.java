@@ -103,6 +103,17 @@ public abstract class Sprite implements Rendered {
 	this.owner = owner;
     }
 
+    public static int decnum(Message sdt) {
+	if(sdt == null)
+	    return(0);
+	int ret = 0, off = 0;
+	while(!sdt.eom()) {
+	    ret |= sdt.uint8() << off;
+	    off += 8;
+	}
+	return(ret);
+    }
+
     public static Sprite create(Owner owner, Resource res, Message sdt) {
 	{
 	    Factory f = res.getcode(Factory.class, false);

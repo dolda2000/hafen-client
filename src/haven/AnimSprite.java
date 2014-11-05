@@ -42,7 +42,7 @@ public class AnimSprite extends Sprite {
 
     private AnimSprite(Owner owner, Resource res, Message sdt) {
 	super(owner, res);
-	int mask = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
+	int mask = sdt.eom()?0xffff0000:decnum(sdt);
 	Collection<MeshAnim.Anim> anims = new LinkedList<MeshAnim.Anim>();
 	for(MeshAnim.Res ar : res.layers(MeshAnim.Res.class)) {
 	    if((ar.id < 0) || (((1 << ar.id) & mask) != 0))

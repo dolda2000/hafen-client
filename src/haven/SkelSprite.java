@@ -57,23 +57,12 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	    }
 	};
     
-    public static int decnum(Message sdt) {
-	if(sdt == null)
-	    return(0);
-	int ret = 0, off = 0;
-	while(!sdt.eom()) {
-	    ret |= sdt.uint8() << off;
-	    off += 8;
-	}
-	return(ret);
-    }
-
     private SkelSprite(Owner owner, Resource res, Message sdt) {
 	super(owner, res);
 	skel = res.layer(Skeleton.Res.class).s;
 	pose = skel.new Pose(skel.bindpose);
 	pmorph = new PoseMorph(pose);
-	int fl = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
+	int fl = sdt.eom()?0xffff0000:decnum(sdt);
 	chposes(fl, true);
 	chparts(fl);
     }
@@ -182,7 +171,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
     }
 
     public void update(Message sdt) {
-	int fl = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
+	int fl = sdt.eom()?0xffff0000:decnum(sdt);
 	chposes(fl, false);
 	chparts(fl);
     }
