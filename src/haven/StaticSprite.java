@@ -54,7 +54,7 @@ public class StaticSprite extends Sprite {
     }
     
     public static Rendered[] lsparts(Resource res, Message sdt) {
-	int fl = sdt.eom()?0xffff0000:SkelSprite.decnum(sdt);
+	int fl = sdt.eom()?0xffff0000:decnum(sdt);
 	Collection<Rendered> rl = new LinkedList<Rendered>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & fl) != 0)))
