@@ -59,26 +59,26 @@ public class VertexContext extends ShaderContext {
 	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord7")),
     };
 
-    public static final Uniform wxf = new Uniform.AutoApply(Type.MAT4, "wxf", PView.loc) {
+    private static final Uniform u_wxf = new Uniform.AutoApply(Type.MAT4, "wxf", PView.loc) {
 	    public void apply(GOut g, int loc) {
 		Location.Chain wxf_s = g.st.get(PView.loc);
 		Matrix4f wxf = (wxf_s == null)?Matrix4f.id:wxf_s.fin(Matrix4f.id);
 		g.gl.glUniformMatrix4fv(loc, 1, false, wxf.m, 0);
 	    }
 	};
-    public static final Uniform cam = new Uniform.AutoApply(Type.MAT4, "cam", PView.cam) {
+    private static final Uniform u_cam = new Uniform.AutoApply(Type.MAT4, "cam", PView.cam) {
 	    public void apply(GOut g, int loc) {
 		Camera cam_s = g.st.get(PView.cam);
 		Matrix4f cam = (cam_s == null)?Matrix4f.id:cam_s.fin(Matrix4f.id);
 		g.gl.glUniformMatrix4fv(loc, 1, false, cam.m, 0);
 	    }
 	};
-    public static final Uniform proj = new Uniform.AutoApply(Type.MAT4, "proj", PView.proj) {
+    private static final Uniform u_proj = new Uniform.AutoApply(Type.MAT4, "proj", PView.proj) {
 	    public void apply(GOut g, int loc) {
 		g.gl.glUniformMatrix4fv(loc, 1, false, g.st.proj.m, 0);
 	    }
 	};
-    public static final Uniform mv = new Uniform.AutoApply(Type.MAT4, "mv", PView.loc, PView.cam) {
+    private static final Uniform u_mv = new Uniform.AutoApply(Type.MAT4, "mv", PView.loc, PView.cam) {
 	    public void apply(GOut g, int loc) {
 		Matrix4f mv = Matrix4f.id;
 		Camera cam_s = g.st.get(PView.cam);
@@ -88,7 +88,7 @@ public class VertexContext extends ShaderContext {
 		g.gl.glUniformMatrix4fv(loc, 1, false, mv.m, 0);
 	    }
 	};
-    public static final Uniform pmv = new Uniform.AutoApply(Type.MAT4, "pmv", PView.loc, PView.cam, PView.proj) {
+    private static final Uniform u_pmv = new Uniform.AutoApply(Type.MAT4, "pmv", PView.loc, PView.cam, PView.proj) {
 	    public void apply(GOut g, int loc) {
 		Matrix4f pmv = g.st.proj;
 		Camera cam_s = g.st.get(PView.cam);
@@ -98,10 +98,48 @@ public class VertexContext extends ShaderContext {
 		g.gl.glUniformMatrix4fv(loc, 1, false, pmv.m, 0);
 	    }
 	};
+
+    public Expression camxf(Expression v) {
+	return(new Mul(u_cam, v));
+    }
+    public Expression projxf(Expression v) {
+	return(new Mul(u_proj, v));
+    }
+    private boolean h_wxf = false, h_mv = false;
+    public Expression wxf(Expression v) {
+	h_wxf = true;
+	return(new Mul(u_wxf, v));
+    }
+    public Expression mvxf(Expression v) {
+	h_mv = true;
+	return(new Expression() {
+		public Expression process(Context ctx) {
+		    if(h_wxf)
+			return(new Mul(u_cam, new Mul(u_wxf, v)));
+		    else
+			return(new Mul(u_mv, v));
+		}
+	    });
+    }
+    public Expression pmvxf(Expression v) {
+	return(new Expression() {
+		public Expression process(Context ctx) {
+		    if(h_wxf)
+			return(new Mul(u_proj, new Mul(u_cam, new Mul(u_wxf, v))));
+		    else if(h_mv)
+			return(new Mul(u_proj, new Mul(u_mv, v)));
+		    else
+			return(new Mul(u_pmv, v));
+		}
+	    });
+    }
+
      /* If, at some unexpected point in an unexpected future, I were
       * to use anisotropic transforms, this will have to get a matrix
       * inverter implemented for it. */
-    public static final Expression nxf = Cons.mat3(mv.ref());
+    public Expression nxf(Expression v) {
+	return(mvxf(v));
+    }
 
     public final ValBlock.Value objv = mainvals.new Value(Type.VEC4, new Symbol.Gen("objv")) {
 	    public Expression root() {
@@ -142,7 +180,7 @@ public class VertexContext extends ShaderContext {
 	};
     public final ValBlock.Value eyen = mainvals.new Value(Type.VEC3, new Symbol.Gen("eyen")) {
 	    public Expression root() {
-		return(new Mul(nxf, gl_Normal.ref()));
+		return(nxf(gl_Normal.ref()));
 	    }
 	};
     public final ValBlock.Value posv = mainvals.new Value(Type.VEC4, new Symbol.Gen("posv")) {
