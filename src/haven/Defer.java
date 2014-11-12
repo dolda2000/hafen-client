@@ -61,6 +61,11 @@ public class Defer extends ThreadGroup {
 	    this.future = future;
 	}
 
+	public NotDoneException(Future future, Throwable cause) {
+	    super(cause);
+	    this.future = future;
+	}
+
 	public boolean canwait() {return(true);}
 	public void waitfor() throws InterruptedException {
 	    synchronized(future) {
@@ -76,6 +81,7 @@ public class Defer extends ThreadGroup {
 	private T val;
 	private volatile String state = "";
 	private Throwable exc = null;
+	private Loading lastload = null;
 	private Thread running = null;
 	
 	private Future(Callable<T> task) {
@@ -108,11 +114,13 @@ public class Defer extends ThreadGroup {
 	    }
 	    try {
 		val = task.call();
+		lastload = null;
 		chstate("done");
 	    } catch(InterruptedException exc) {
 		this.exc = new CancelledException(exc);
 		chstate("done");
 	    } catch(Loading exc) {
+		lastload = exc;
 	    } catch(Throwable exc) {
 		this.exc = exc;
 		chstate("done");
@@ -135,7 +143,7 @@ public class Defer extends ThreadGroup {
 		    defer(this);
 		    state = "";
 		}
-		throw(new NotDoneException(this));
+		throw(new NotDoneException(this, lastload));
 	    }
 	}
 	
