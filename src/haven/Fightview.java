@@ -36,6 +36,7 @@ public class Fightview extends Widget {
     static Coord avasz = new Coord(27, 27);
     static Coord cavac = new Coord(width - Avaview.dasz.x - 10, 10);
     static Coord cgivec = new Coord(cavac.x - 35, cavac.y);
+    static Coord cpursc = new Coord(cavac.x - 75, cgivec.y + 35);
     LinkedList<Relation> lsrel = new LinkedList<Relation>();
     public Relation current = null;
     public Indir<Resource> blk, batk, iatk;
@@ -43,16 +44,19 @@ public class Fightview extends Widget {
     public int off, def;
     private GiveButton curgive;
     private Avaview curava;
+    private Button curpurs;
     
     public class Relation {
         long gobid;
         Avaview ava;
 	GiveButton give;
+	Button purs;
         
         public Relation(long gobid) {
             this.gobid = gobid;
             this.ava = new Avaview(Coord.z, avasz, Fightview.this, gobid, "avacam");
 	    this.give = new GiveButton(Coord.z, Fightview.this, 0, new Coord(15, 15));
+	    this.purs = new Button(Coord.z, 70, Fightview.this, "Pursue");
         }
 	
 	public void give(int state) {
@@ -64,11 +68,13 @@ public class Fightview extends Widget {
 	public void show(boolean state) {
 	    ava.show(state);
 	    give.show(state);
+	    purs.show(state);
 	}
 	
 	public void remove() {
 	    ui.destroy(ava);
 	    ui.destroy(give);
+	    ui.destroy(purs);
 	}
     }
     
@@ -85,23 +91,16 @@ public class Fightview extends Widget {
 
     private void setcur(Relation rel) {
 	if((current == null) && (rel != null)) {
-	    curgive = new GiveButton(cgivec, this, 0) {
-		    public void wdgmsg(String name, Object... args) {
-			if(name == "click")
-			    Fightview.this.wdgmsg("give", (int)current.gobid, args[0]);
-		    }
-		};
-	    curava = new Avaview(cavac, Avaview.dasz, this, rel.gobid, "avacam") {
-		    public void wdgmsg(String name, Object... args) {
-			if(name == "click")
-			    Fightview.this.wdgmsg("click", (int)current.gobid, args[0]);
-		    }
-		};
+	    curgive = new GiveButton(cgivec, this, 0);
+	    curava = new Avaview(cavac, Avaview.dasz, this, rel.gobid, "avacam");
+	    curpurs = new Button(cpursc, 70, this, "Pursue");
 	} else if((current != null) && (rel == null)) {
 	    ui.destroy(curgive);
 	    ui.destroy(curava);
+	    ui.destroy(curpurs);
 	    curgive = null;
 	    curava = null;
+	    curpurs = null;
 	} else if((current != null) && (rel != null)) {
 	    curgive.state = rel.give.state;
 	    curava.avagob = rel.gobid;
@@ -127,6 +126,7 @@ public class Fightview extends Widget {
             g.image(bg, new Coord(x, y));
             rel.ava.c = new Coord(x + 25, ((bg.sz().y - rel.ava.sz.y) / 2) + y);
 	    rel.give.c = new Coord(x + 5, 4 + y);
+	    rel.purs.c = new Coord(rel.ava.c.x + rel.ava.sz.x + 5, 4 + y);
 	    rel.show(true);
             y += bg.sz().y + ymarg;
         }
@@ -151,19 +151,27 @@ public class Fightview extends Widget {
     }
     
     public void wdgmsg(Widget sender, String msg, Object... args) {
-        if(sender instanceof Avaview) {
-            for(Relation rel : lsrel) {
-                if(rel.ava == sender)
-                    wdgmsg("click", (int)rel.gobid, args[0]);
-            }
-            return;
-        }
-	if(sender instanceof GiveButton) {
-            for(Relation rel : lsrel) {
-                if(rel.give == sender)
-                    wdgmsg("give", (int)rel.gobid, args[0]);
-            }
-            return;
+	if(sender == curava) {
+	    wdgmsg("click", (int)current.gobid, args[0]);
+	    return;
+	} else if(sender == curgive) {
+	    wdgmsg("give", (int)current.gobid, args[0]);
+	    return;
+	} else if(sender == curpurs) {
+	    wdgmsg("prs", (int)current.gobid);
+	    return;
+	}
+	for(Relation rel : lsrel) {
+	    if(sender == rel.ava) {
+		wdgmsg("click", (int)rel.gobid, args[0]);
+		return;
+	    } else if(sender == rel.give) {
+		wdgmsg("give", (int)rel.gobid, args[0]);
+		return;
+	    } else if(sender == rel.purs) {
+		wdgmsg("prs", (int)rel.gobid);
+		return;
+	    }
 	}
         super.wdgmsg(sender, msg, args);
     }
