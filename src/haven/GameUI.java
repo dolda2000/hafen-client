@@ -172,6 +172,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(place == "fight") {
 	    fv = (Fightview)gettype(type).create(new Coord(sz.x - Fightview.width, 0), this, cargs);
 	    return(fv);
+	} else if(place == "fsess") {
+	    return(gettype(type).create(Coord.z, this, cargs));
 	} else if(place == "inv") {
 	    invwnd = new Hidewnd(new Coord(100, 100), Coord.z, this, "Inventory") {
 		    public void cresize(Widget ch) {
