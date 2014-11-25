@@ -571,7 +571,7 @@ public class Widget {
     }
 	
     public boolean globtype(char key, KeyEvent ev) {
-	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
+	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
 	    if(wdg.globtype(key, ev))
 		return(true);
 	}
