@@ -241,8 +241,10 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 			    Config.authck = null;
 			}
 			fun = bill;
+			setTitle("Haven and Hearth");
 		    } else {
 			fun = new RemoteUI(sess);
+			setTitle("Haven and Hearth \u2013 " + sess.username);
 		    }
 		    sess = fun.run(p.newui(sess));
 		}
