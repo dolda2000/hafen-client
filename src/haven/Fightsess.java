@@ -32,6 +32,8 @@ import java.awt.event.KeyEvent;
 public class Fightsess extends Widget {
     public static final int actpitch = 50;
     public final Indir<Resource>[] actions;
+    public double atkcs, atkct;
+    public int use = -1;
     public Coord pcc;
 
     @RName("fsess")
@@ -59,12 +61,26 @@ public class Fightsess extends Widget {
 
     public void draw(GOut g) {
 	updatepos();
-	Coord ca = pcc.add(-(actions.length * actpitch) / 2, 25);
-	for(Indir<Resource> act : actions) {
+	double now = System.currentTimeMillis() / 1000.0;
+	if(now < atkct) {
+	    int w = (int)((atkct - now) * 20);
+	    g.chcolor(255, 0, 128, 255);
+	    g.frect(pcc.add(-w, 20), new Coord(w * 2, 15));
+	    g.chcolor();
+	}
+	Coord ca = pcc.add(-(actions.length * actpitch) / 2, 45);
+	for(int i = 0; i < actions.length; i++) {
+	    Indir<Resource> act = actions[i];
 	    try {
 		if(act != null) {
 		    Tex img = act.get().layer(Resource.imgc).tex();
 		    g.image(img, ca);
+		    if(i == use) {
+			g.chcolor(255, 0, 128, 255);
+			Coord cc = ca.add(img.sz().x / 2, img.sz().y + 5);
+			g.frect(cc.sub(2, 2), new Coord(5, 5));
+			g.chcolor();
+		    }
 		}
 	    } catch(Loading l) {}
 	    ca.x += actpitch;
@@ -76,6 +92,12 @@ public class Fightsess extends Widget {
 	    int n = (Integer)args[0];
 	    Indir<Resource> res = (args.length > 1)?ui.sess.getres((Integer)args[1]):null;
 	    actions[n] = res;
+	} else if(msg == "atkc") {
+	    atkcs = System.currentTimeMillis() / 1000.0;
+	    atkct = atkcs + (((Integer)args[0]) * 0.06);
+	} else if(msg == "use") {
+	    this.use = (Integer)args[0];
+	} else if(msg == "used") {
 	} else {
 	    super.uimsg(msg, args);
 	}
