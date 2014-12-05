@@ -45,12 +45,14 @@ public class Fightview extends Widget {
     private GiveButton curgive;
     private Avaview curava;
     private Button curpurs;
+    public final Bufflist buffs = new Bufflist(Coord.z, this); {buffs.hide();}
     
     public class Relation {
-        long gobid;
-        Avaview ava;
-	GiveButton give;
-	Button purs;
+        public final long gobid;
+        public final Avaview ava;
+	public final GiveButton give;
+	public final Button purs;
+	public final Bufflist buffs = new Bufflist(Coord.z, Fightview.this); {buffs.hide();}
         
         public Relation(long gobid) {
             this.gobid = gobid;
@@ -87,6 +89,19 @@ public class Fightview extends Widget {
     
     public Fightview(Coord c, Widget parent) {
         super(c, new Coord(width, (bg.sz().y + ymarg) * height), parent);
+    }
+
+    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
+	if(pargs[0].equals("buff")) {
+	    Widget p;
+	    if(pargs[1] == null)
+		p = buffs;
+	    else
+		p = getrel((Integer)pargs[1]).buffs;
+	    return(p.makechild(type, new Object[] {}, cargs));
+	} else {
+	    return(super.makechild(type, pargs, cargs));
+	}
     }
 
     private void setcur(Relation rel) {

@@ -34,6 +34,7 @@ public class Fightsess extends Widget {
     public final Indir<Resource>[] actions;
     public int use = -1;
     public Coord pcc;
+    public int pho;
     private final Fightview fv;
 
     @RName("fsess")
@@ -49,6 +50,7 @@ public class Fightsess extends Widget {
 	super(Coord.z, parent.sz, parent);
 	this.fv = getparent(GameUI.class).fv;
 	pcc = sz.div(2);
+	pho = -40;
 	this.actions = (Indir<Resource>[])new Indir[nact];
     }
 
@@ -58,11 +60,20 @@ public class Fightsess extends Widget {
 	if(((map = getparent(GameUI.class).map) == null) || ((pl = map.player()) == null) || (pl.sc == null))
 	    return;
 	pcc = pl.sc;
+	pho = (int)(pl.sczu.mul(20f).y) - 20;
     }
 
     public void draw(GOut g) {
 	updatepos();
 	double now = System.currentTimeMillis() / 1000.0;
+
+	for(Buff buff : fv.buffs.children(Buff.class))
+	    buff.draw(g.reclip(pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
+	if(fv.current != null) {
+	    for(Buff buff : fv.current.buffs.children(Buff.class))
+		buff.draw(g.reclip(pcc.add(buff.c.x + 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
+	}
+
 	if(now < fv.atkct) {
 	    int w = (int)((fv.atkct - now) * 20);
 	    g.chcolor(255, 0, 128, 255);
