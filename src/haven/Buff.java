@@ -127,7 +127,8 @@ public class Buff extends Widget {
 	if(msg == "ch") {
 	    this.res = ui.sess.getres((Integer)args[0]);
 	} else if(msg == "tip") {
-	    this.tt = (String)args[0];
+	    String tt = (String)args[0];
+	    this.tt = tt.equals("")?null:tt;
 	} else if(msg == "am") {
 	    this.ameter = (Integer)args[0];
 	} else if(msg == "nm") {
