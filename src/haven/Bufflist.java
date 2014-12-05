@@ -36,25 +36,29 @@ public class Bufflist extends Widget {
 	super(c, Coord.z, parent);
     }
 
-    private void arrange() {
+    private void arrange(Widget imm) {
 	int i = 0;
 	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
 	    if(!(wdg instanceof Buff))
 		continue;
 	    Buff ch = (Buff)wdg;
-	    ch.c = new Coord((Buff.cframe.sz().x + margin) * (i % num), (Buff.cframe.sz().y + margin) * (i / num));
+	    Coord c = new Coord((Buff.cframe.sz().x + margin) * (i % num), (Buff.cframe.sz().y + margin) * (i / num));
+	    if(ch == imm)
+		ch.c = c;
+	    else
+		ch.move(c);
 	    i++;
 	}
     }
 
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {
 	Widget ret = gettype(type).create(Coord.z, this, cargs);
-	arrange();
+	arrange(ret);
 	return(ret);
     }
 
     public void cdestroy(Widget ch) {
-	arrange();
+	arrange(null);
     }
 
     public void draw(GOut g) {
