@@ -29,111 +29,35 @@ package haven;
 import java.awt.Color;
 
 public class Bufflist extends Widget {
-    static Tex frame = Resource.loadtex("gfx/hud/buffs/frame");
-    static Tex cframe = Resource.loadtex("gfx/hud/buffs/cframe");
-    static final Coord imgoff = new Coord(3, 3);
-    static final Coord ameteroff = new Coord(3, 36);
-    static final Coord ametersz = new Coord(30, 2);
     static final int margin = 2;
     static final int num = 5;
-    
-    @RName("buffs")
-    public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Bufflist(c, parent));
-	}
-    }
-    
+
     public Bufflist(Coord c, Widget parent) {
-	super(c, new Coord((num * frame.sz().x) + ((num - 1) * margin), cframe.sz().y), parent);
+	super(c, Coord.z, parent);
     }
-    
+
+    private void arrange() {
+	int i = 0;
+	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
+	    if(!(wdg instanceof Buff))
+		continue;
+	    Buff ch = (Buff)wdg;
+	    ch.c = new Coord((Buff.cframe.sz().x + margin) * (i % num), (Buff.cframe.sz().y + margin) * (i / num));
+	    i++;
+	}
+    }
+
+    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
+	Widget ret = gettype(type).create(Coord.z, this, cargs);
+	arrange();
+	return(ret);
+    }
+
+    public void cdestroy(Widget ch) {
+	arrange();
+    }
+
     public void draw(GOut g) {
-	int i = 0;
-	int w = frame.sz().x + margin;
-	long now = System.currentTimeMillis();
-	synchronized(ui.sess.glob.buffs) {
-	    for(Buff b : ui.sess.glob.buffs.values()) {
-		if(!b.major)
-		    continue;
-		Coord bc = new Coord(i * w, 0);
-		if(b.ameter >= 0) {
-		    g.image(cframe, bc);
-		    g.chcolor(Color.BLACK);
-		    g.frect(bc.add(ameteroff), ametersz);
-		    g.chcolor(Color.WHITE);
-		    g.frect(bc.add(ameteroff), new Coord((b.ameter * ametersz.x) / 100, ametersz.y));
-		    g.chcolor();
-		} else {
-		    g.image(frame, bc);
-		}
-		try {
-		    Tex img = b.res.get().layer(Resource.imgc).tex();
-		    g.image(img, bc.add(imgoff));
-		    if(b.nmeter >= 0) {
-			Tex ntext = b.nmeter();
-			g.image(ntext, bc.add(imgoff).add(img.sz()).add(ntext.sz().inv()).add(-1, -1));
-		    }
-		    if(b.cmeter >= 0) {
-			double m = b.cmeter / 100.0;
-			if(b.cticks >= 0) {
-			    double ot = b.cticks * 0.06;
-			    double pt = ((double)(now - b.gettime)) / 1000.0;
-			    m *= (ot - pt) / ot;
-			}
-			g.chcolor(0, 0, 0, 128);
-			g.fellipse(bc.add(imgoff).add(img.sz().div(2)), img.sz().div(2), 90, (int)(90 + (360 * m)));
-			g.chcolor();
-		    }
-		} catch(Loading e) {}
-		if(++i >= num)
-		    break;
-	    }
-	}
-    }
-    
-    private long hoverstart;
-    private Tex shorttip, longtip;
-    private String tipped;
-    public Object tooltip(Coord c, Widget prev) {
-	long now = System.currentTimeMillis();
-	if(prev != this)
-	    hoverstart = now;
-	int i = 0;
-	int w = frame.sz().x + margin;
-	synchronized(ui.sess.glob.buffs) {
-	    for(Buff b : ui.sess.glob.buffs.values()) {
-		if(!b.major)
-		    continue;
-		Coord bc = new Coord(i * w, 0);
-		if(c.isect(bc, frame.sz())) {
-		    String tt = b.tooltip();
-		    if(tipped != tt)
-			shorttip = longtip = null;
-		    tipped = tt;
-		    try {
-			if(now - hoverstart < 1000) {
-			    if(shorttip == null)
-				shorttip = Text.render(tt).tex();
-			    return(shorttip);
-			} else {
-			    if(longtip == null) {
-				String text = RichText.Parser.quote(tt);
-				Resource.Pagina pag = b.res.get().layer(Resource.pagina);
-				if(pag != null)
-				    text += "\n\n" + pag.text;
-				longtip = RichText.render(text, 200).tex();
-			    }
-			    return(longtip);
-			}
-		    } catch(Loading e) {
-			return("...");
-		    }
-		}
-		if(++i >= num)
-		    break;
-	    }
-	}
-	return(null);
+	draw(g, false);
     }
 }
