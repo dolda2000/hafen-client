@@ -59,6 +59,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Indir<Resource>[] belt = new Indir[144];
     public Belt beltwdg;
     public String polowner;
+    public Bufflist buffs;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord c, Coord sz, Widget parent) {
@@ -103,7 +104,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	setfocusctl(true);
 	menu = new MenuGrid(Coord.z, this);
 	portrait = new Avaview(new Coord(10, 10), Avaview.dasz, this, plid, "avacam");
-	new Bufflist(new Coord(95, 50), this);
+	buffs = new Bufflist(new Coord(95, 50), this);
 	chat = new ChatUI(Coord.z, 0, this);
 	syslog = new ChatUI.Log(chat, "System");
 	ui.cons.out = new java.io.PrintWriter(new java.io.Writer() {
@@ -237,6 +238,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    Widget ret = gettype(type).create(new Coord(portrait.c.x + portrait.sz.x + 10 + x, portrait.c.y + y), this, cargs);
 	    meters = Utils.extend(meters, ret);
 	    return(ret);
+	} else if(place == "buff") {
+	    return(buffs.makechild(type, new Object[] {}, cargs));
 	} else if(place == "misc") {
 	    return(gettype(type).create((Coord)pargs[1], this, cargs));
 	} else {
