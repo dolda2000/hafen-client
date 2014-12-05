@@ -42,6 +42,8 @@ public class Buff extends Widget {
     int cticks = -1;
     long gettime;
     Tex ntext = null;
+    int a = 255;
+    boolean dest = false;
 
     @RName("buff")
     public static class $_ implements Factory {
@@ -63,13 +65,13 @@ public class Buff extends Widget {
     }
 
     public void draw(GOut g) {
+	g.chcolor(255, 255, 255, a);
 	if(ameter >= 0) {
 	    g.image(cframe, Coord.z);
-	    g.chcolor(Color.BLACK);
+	    g.chcolor(0, 0, 0, a);
 	    g.frect(ameteroff, ametersz);
-	    g.chcolor(Color.WHITE);
+	    g.chcolor(255, 255, 255, a);
 	    g.frect(ameteroff, new Coord((ameter * ametersz.x) / 100, ametersz.y));
-	    g.chcolor();
 	} else {
 	    g.image(frame, Coord.z);
 	}
@@ -86,10 +88,10 @@ public class Buff extends Widget {
 		    m *= (ot - pt) / ot;
 		}
 		m = Utils.clip(m, 0.0, 1.0);
-		g.chcolor(255, 255, 255, 128);
+		g.chcolor(255, 255, 255, a / 2);
 		Coord ccc = img.sz().div(2);
 		g.prect(imgoff.add(ccc), ccc.inv(), img.sz().sub(ccc), Math.PI * 2 * m);
-		g.chcolor();
+		g.chcolor(255, 255, 255, a);
 	    }
 	} catch(Loading e) {}
     }
@@ -121,6 +123,32 @@ public class Buff extends Widget {
 	} catch(Loading e) {
 	    return("...");
 	}
+    }
+
+    public void reqdestroy() {
+	anims.clear();
+	final Coord o = this.c;
+	dest = true;
+	new NormAnim(0.5) {
+	    public void ntick(double a) {
+		Buff.this.a = 255 - (int)(255 * a);
+		Buff.this.c = o.add(0, (int)(a * cframe.sz().y));
+		if(a == 1.0)
+		    destroy();
+	    }
+	};
+    }
+
+    public void move(Coord c) {
+	if(dest)
+	    return;
+	final Coord o = this.c;
+	final Coord d = c.sub(o);
+	new NormAnim(0.5) {
+	    public void ntick(double a) {
+		Buff.this.c = o.add(d.mul(Utils.smoothstep(a)));
+	    }
+	};
     }
 
     public void uimsg(String msg, Object... args) {
