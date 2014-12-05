@@ -760,7 +760,7 @@ public class Widget {
 		
 		public Iterator<T> iterator() {
 		    return(new Iterator<T>() {
-			    T cur = n(Widget.this.child);
+			    T cur = n(Widget.this);
 			    
 			    private T n(Widget w) {
 				Widget n;
@@ -768,6 +768,8 @@ public class Widget {
 				    return(null);
 				} else if(w.child != null) {
 				    n = w.child;
+				} else if(w == Widget.this) {
+				    return(null);
 				} else if(w.next != null) {
 				    n = w.next;
 				} else if(w.parent == Widget.this) {
