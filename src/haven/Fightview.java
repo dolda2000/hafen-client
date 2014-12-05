@@ -40,7 +40,7 @@ public class Fightview extends Widget {
     LinkedList<Relation> lsrel = new LinkedList<Relation>();
     public Relation current = null;
     public Indir<Resource> blk, batk, iatk;
-    public long atkc = -1;
+    public double atkcs, atkct;
     public int off, def;
     private GiveButton curgive;
     private Avaview curava;
@@ -209,8 +209,9 @@ public class Fightview extends Widget {
 		setcur(null);
 	    }
             return;
-        } else if(msg == "atkc") {
-	    atkc = System.currentTimeMillis() + (((Integer)args[0]) * 60);
+	} else if(msg == "atkc") {
+	    atkcs = System.currentTimeMillis() / 1000.0;
+	    atkct = atkcs + (((Integer)args[0]) * 0.06);
 	    return;
 	} else if(msg == "blk") {
 	    blk = n2r((Integer)args[0]);

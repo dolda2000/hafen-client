@@ -32,9 +32,9 @@ import java.awt.event.KeyEvent;
 public class Fightsess extends Widget {
     public static final int actpitch = 50;
     public final Indir<Resource>[] actions;
-    public double atkcs, atkct;
     public int use = -1;
     public Coord pcc;
+    private final Fightview fv;
 
     @RName("fsess")
     public static class $_ implements Factory {
@@ -47,6 +47,7 @@ public class Fightsess extends Widget {
     @SuppressWarnings("unchecked")
     public Fightsess(Widget parent, int nact) {
 	super(Coord.z, parent.sz, parent);
+	this.fv = getparent(GameUI.class).fv;
 	pcc = sz.div(2);
 	this.actions = (Indir<Resource>[])new Indir[nact];
     }
@@ -62,8 +63,8 @@ public class Fightsess extends Widget {
     public void draw(GOut g) {
 	updatepos();
 	double now = System.currentTimeMillis() / 1000.0;
-	if(now < atkct) {
-	    int w = (int)((atkct - now) * 20);
+	if(now < fv.atkct) {
+	    int w = (int)((fv.atkct - now) * 20);
 	    g.chcolor(255, 0, 128, 255);
 	    g.frect(pcc.add(-w, 20), new Coord(w * 2, 15));
 	    g.chcolor();
@@ -92,9 +93,6 @@ public class Fightsess extends Widget {
 	    int n = (Integer)args[0];
 	    Indir<Resource> res = (args.length > 1)?ui.sess.getres((Integer)args[1]):null;
 	    actions[n] = res;
-	} else if(msg == "atkc") {
-	    atkcs = System.currentTimeMillis() / 1000.0;
-	    atkct = atkcs + (((Integer)args[0]) * 0.06);
 	} else if(msg == "use") {
 	    this.use = (Integer)args[0];
 	} else if(msg == "used") {
