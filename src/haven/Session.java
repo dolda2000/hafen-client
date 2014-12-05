@@ -535,8 +535,6 @@ public class Session {
 		}
 	    } else if(msg.type == Message.RMSG_TILES) {
 		glob.map.tilemap(msg);
-	    } else if(msg.type == Message.RMSG_BUFF) {
-		glob.buffmsg(msg);
 	    } else if(msg.type == Message.RMSG_SESSKEY) {
 		sesskey = msg.bytes();
 	    } else {
