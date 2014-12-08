@@ -119,6 +119,7 @@ public class Fightsess extends Widget {
 	} else if(msg == "use") {
 	    this.use = (Integer)args[0];
 	} else if(msg == "used") {
+	} else if(msg == "dropped") {
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -127,7 +128,11 @@ public class Fightsess extends Widget {
     public boolean globtype(char key, KeyEvent ev) {
 	int c = ev.getKeyChar();
 	if((key == 0) && (c >= KeyEvent.VK_1) && (key < KeyEvent.VK_1 + actions.length)) {
-	    wdgmsg("use", c - KeyEvent.VK_1);
+	    int n = c - KeyEvent.VK_1;
+	    if((ev.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0)
+		wdgmsg("drop", n);
+	    else
+		wdgmsg("use", n);
 	    return(true);
 	}
 	return(super.globtype(key, ev));
