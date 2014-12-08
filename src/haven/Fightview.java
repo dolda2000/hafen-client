@@ -53,6 +53,7 @@ public class Fightview extends Widget {
 	public final GiveButton give;
 	public final Button purs;
 	public final Bufflist buffs = new Bufflist(Coord.z, Fightview.this); {buffs.hide();}
+	public int ip, oip;
         
         public Relation(long gobid) {
             this.gobid = gobid;
@@ -201,6 +202,8 @@ public class Fightview extends Widget {
         if(msg == "new") {
             Relation rel = new Relation((Integer)args[0]);
 	    rel.give((Integer)args[1]);
+	    rel.ip = (Integer)args[2];
+	    rel.oip = (Integer)args[3];
             lsrel.addFirst(rel);
             return;
         } else if(msg == "del") {
@@ -213,6 +216,8 @@ public class Fightview extends Widget {
         } else if(msg == "upd") {
             Relation rel = getrel((Integer)args[0]);
 	    rel.give((Integer)args[1]);
+	    rel.ip = (Integer)args[2];
+	    rel.oip = (Integer)args[3];
             return;
         } else if(msg == "cur") {
             try {

@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.awt.Color;
 import java.awt.event.KeyEvent;
 
 public class Fightsess extends Widget {
@@ -63,6 +64,14 @@ public class Fightsess extends Widget {
 	pho = (int)(pl.sczu.mul(20f).y) - 20;
     }
 
+    private static final Text.Furnace ipf = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 18, new Color(128, 128, 255)).aa(true), 1, 1, new Color(48, 48, 96));
+    private final Text.UText ip = new Text.UText(ipf) {
+	    public String text() {return("IP: " + fv.current.ip);}
+	};
+    private final Text.UText oip = new Text.UText(ipf) {
+	    public String text() {return("IP: " + fv.current.oip);}
+	};
+
     public void draw(GOut g) {
 	updatepos();
 	double now = System.currentTimeMillis() / 1000.0;
@@ -72,6 +81,9 @@ public class Fightsess extends Widget {
 	if(fv.current != null) {
 	    for(Buff buff : fv.current.buffs.children(Buff.class))
 		buff.draw(g.reclip(pcc.add(buff.c.x + 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
+
+	    g.aimage(ip.get().tex(), pcc.add(-75, 0), 1, 0.5);
+	    g.aimage(oip.get().tex(), pcc.add(75, 0), 0, 0.5);
 	}
 
 	if(now < fv.atkct) {
