@@ -39,6 +39,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public MapView map;
     public MiniMap mmap;
     public Fightview fv;
+    public FightWnd fw;
     public static final Text.Foundry errfoundry = new Text.Foundry(Text.dfont, 14, new Color(192, 0, 0));
     private Widget[] meters = {};
     private Text lasterr;
@@ -173,6 +174,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(place == "fight") {
 	    fv = (Fightview)gettype(type).create(new Coord(sz.x - Fightview.width, 0), this, cargs);
 	    return(fv);
+	} else if(place == "fmg") {
+	    fw = (FightWnd)gettype(type).create(new Coord(50, 50), this, cargs);
+	    fw.hide();
+	    return(fw);
+	} else if(place == "fsess") {
+	    return(gettype(type).create(Coord.z, this, cargs));
 	} else if(place == "inv") {
 	    invwnd = new Hidewnd(new Coord(100, 100), Coord.z, this, "Inventory") {
 		    public void cresize(Widget ch) {
@@ -260,6 +267,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    polity = null;
 	} else if(w == chrwdg) {
 	    chrwdg = null;
+	} else if(w == fw) {
+	    fw = null;
 	}
     }
     
@@ -369,6 +378,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    ui.destroy(help);
 	    help = null;
 	    return;
+	} else if((sender == fw) && (msg == "close")) {
+	    fw.hide();
 	}
 	super.wdgmsg(sender, msg, args);
     }
@@ -404,6 +415,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if((chrwdg != null) && chrwdg.show(!chrwdg.visible)) {
 		chrwdg.raise();
 		fitwdg(chrwdg);
+	    }
+	} else if(key == 6) {
+	    if((fw != null) && fw.show(!fw.visible)) {
+		fw.raise();
+		fitwdg(fw);
 	    }
 	} else if(key == 2) {
 	    if((buddies != null) && buddies.show(!buddies.visible)) {
