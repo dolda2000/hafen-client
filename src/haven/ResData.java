@@ -37,6 +37,17 @@ public class ResData {
 	this.sdt = sdt;
     }
 
+    public ResData clone() {
+	return(new ResData(res, sdt));
+    }
+
+    public boolean equals(Object other) {
+	if(!(other instanceof ResData))
+	    return(false);
+	ResData o = (ResData)other;
+	return(res.equals(o.res) && sdt.equals(o.sdt));
+    }
+
     public static List<ResData> wrap(List<? extends Indir<Resource>> in) {
 	List<ResData> ret = new ArrayList<ResData>(in.size());
 	for(Indir<Resource> res : in)

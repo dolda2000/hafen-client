@@ -362,10 +362,14 @@ public class Session {
 				String at = msg.string();
 				Indir<Resource> res;
 				int resid = msg.uint16();
-				if(resid == 65535)
-				    res = null;
-				else
-				    res = getres(resid);
+				Message sdt;
+				if((resid & 0x8000) != 0) {
+				    resid &= ~0x8000;
+				    sdt = msg.derive(0, msg.uint8());
+				} else {
+				    sdt = new Message(0);
+				}
+				res = getres(resid);
 				Coord3f off;
 				if((ef & 128) != 0) {
 				    int x = msg.int16(), y = msg.int16(), z = msg.int16();
@@ -373,7 +377,7 @@ public class Session {
 				} else {
 				    off = Coord3f.o;
 				}
-				equ.add(new Composited.ED(et, at, res, off));
+				equ.add(new Composited.ED(et, at, new ResData(res, sdt), off));
 			    }
 			    if(gob != null)
 				oc.cmpequ(gob, equ);
