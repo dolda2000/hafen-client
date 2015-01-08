@@ -105,12 +105,22 @@ public class AvaRender {
 		    mod.add(new MD(mr.indir(), tex));
 		}
 		List<ED> equ = new LinkedList<ED>();
-		for(int i = 0; i < aequ.length; i += 6) {
-		    int t = (Integer)aequ[i];
-		    String at = (String)aequ[i + 1];
-		    Resource er = Resource.load((String)aequ[i + 2]);
-		    Coord3f off = new Coord3f((Float)aequ[i + 3], (Float)aequ[i + 4], (Float)aequ[i + 5]);
-		    equ.add(new ED(t, at, er.indir(), off));
+		for(int i = 0; i < aequ.length;) {
+		    if(aequ[i] instanceof Object[]) {
+			Object[] cequ = (Object[])aequ[i];
+			int t = (Integer)cequ[0];
+			String at = (String)cequ[1];
+			Resource er = Resource.load((String)cequ[2]);
+			byte[] sdt = (byte[])cequ[3];
+			Coord3f off = new Coord3f((Float)cequ[4], (Float)cequ[5], (Float)cequ[6]);
+			equ.add(new ED(t, at, new ResData(er.indir(), new Message(0, sdt)), off));
+		    } else {
+			int t = (Integer)aequ[i++];
+			String at = (String)aequ[i++];
+			Resource er = Resource.load((String)aequ[i++]);
+			Coord3f off = new Coord3f((Float)aequ[i++], (Float)aequ[i++], (Float)aequ[i++]);
+			equ.add(new ED(t, at, new ResData(er.indir(), Message.nil), off));
+		    }
 		}
 		BufferedImage ava = render(sz.mul(4), base, camnm, mod, equ);
 		ava = PUtils.convolvedown(ava, sz, new PUtils.Lanczos(2));

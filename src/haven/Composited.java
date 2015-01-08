@@ -190,7 +190,7 @@ public class Composited implements Rendered {
 	
 	private SpriteEqu(ED ed) {
 	    super(ed);
-	    this.spr = Sprite.create(null, ed.res.get(), new Message(0));
+	    this.spr = Sprite.create(null, ed.res.res.get(), ed.res.sdt.clone());
 	}
 	
 	public void draw(GOut g) {
@@ -211,7 +211,7 @@ public class Composited implements Rendered {
 	
 	private LightEqu(ED ed) {
 	    super(ed);
-	    this.l = ed.res.get().layer(Light.Res.class).make();
+	    this.l = ed.res.res.get().layer(Light.Res.class).make();
 	}
 	
 	public void draw(GOut g) {
@@ -227,7 +227,7 @@ public class Composited implements Rendered {
 	private final GLState et;
 	
 	private Equ(ED ed) {
-	    Skeleton.BoneOffset bo = ed.res.get().layer(Skeleton.BoneOffset.class, ed.at);
+	    Skeleton.BoneOffset bo = ed.res.res.get().layer(Skeleton.BoneOffset.class, ed.at);
 	    GLState bt = null;
 	    if(bo != null) {
 		bt = bo.forpose(pose);
@@ -283,10 +283,10 @@ public class Composited implements Rendered {
     public static class ED implements Cloneable {
 	public int t;
 	public String at;
-	public Indir<Resource> res;
+	public ResData res;
 	public Coord3f off;
 	
-	public ED(int t, String at, Indir<Resource> res, Coord3f off) {
+	public ED(int t, String at, ResData res, Coord3f off) {
 	    this.t = t;
 	    this.at = at;
 	    this.res = res;
