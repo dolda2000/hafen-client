@@ -228,13 +228,16 @@ public class Composited implements Rendered {
 	
 	private Equ(ED ed) {
 	    Skeleton.BoneOffset bo = ed.res.get().layer(Skeleton.BoneOffset.class, ed.at);
-	    GLState bt;
+	    GLState bt = null;
 	    if(bo != null) {
 		bt = bo.forpose(pose);
 	    } else {
 		Skeleton.Bone bone = skel.bones.get(ed.at);
-		bt = pose.bonetrans(bone.idx);
+		if(bone != null)
+		    bt = pose.bonetrans(bone.idx);
 	    }
+	    if(bt == null)
+		throw(new RuntimeException("Transformation " + ed.at + " for equipment " + ed.res + " on skeleton " + skel + " could not be resolved"));
 	    if((ed.off.x != 0.0f) || (ed.off.y != 0.0f) || (ed.off.z != 0.0f))
 		this.et = GLState.compose(bt, Location.xlate(ed.off));
 	    else
