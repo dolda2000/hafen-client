@@ -225,8 +225,11 @@ public class Composited implements Rendered {
 
     private abstract class Equ implements Rendered {
 	private final GLState et;
+	public final ED desc;
+	private boolean matched;
 	
 	private Equ(ED ed) {
+	    this.desc = ed.clone();
 	    Skeleton.BoneOffset bo = ed.res.res.get().layer(Skeleton.BoneOffset.class, ed.at);
 	    GLState bt = null;
 	    if(bo != null) {
@@ -297,17 +300,29 @@ public class Composited implements Rendered {
 	    if(!(o instanceof ED))
 		return(false);
 	    ED e = (ED)o;
-	    return((t == e.t) && at.equals(e.at) && res.equals(e.res));
+	    return((t == e.t) && at.equals(e.at) && res.equals(e.res) && off.equals(e.off));
+	}
+
+	public boolean equals2(Object o) {
+	    if(!(o instanceof ED))
+		return(false);
+	    ED e = (ED)o;
+	    return((t == e.t) && at.equals(e.at) && res.res.equals(e.res.res) && off.equals(e.off));
 	}
 
 	public ED clone() {
 	    try {
 		ED ret = (ED)super.clone();
+		ret.res = res.clone();
 		return(ret);
 	    } catch(CloneNotSupportedException e) {
 		/* This is ridiculous. */
 		throw(new RuntimeException(e));
 	    }
+	}
+
+	public String toString() {
+	    return(String.format("<ED: %d \"%s\" %s(%s) %s>", t, at, res.res, res.sdt, off));
 	}
     }
     
@@ -341,21 +356,46 @@ public class Composited implements Rendered {
     }
 
     private void nequ(boolean nocatch) {
-	for(Iterator<ED> i = nequ.iterator(); i.hasNext();) {
+	outer: for(Iterator<ED> i = nequ.iterator(); i.hasNext();) {
 	    ED ed = i.next();
 	    try {
+		Equ prev = null;
+		for(Equ equ : this.equ) {
+		    if(equ.desc.equals(ed)) {
+			equ.matched = true;
+			i.remove();
+			continue outer;
+		    } else if((equ instanceof SpriteEqu) && (((SpriteEqu)equ).spr instanceof Gob.Overlay.CUpd) && equ.desc.equals2(ed)) {
+			((Gob.Overlay.CUpd)((SpriteEqu)equ).spr).update(ed.res.sdt.clone());
+			equ.desc.res.sdt = ed.res.sdt;
+			equ.matched = true;
+			i.remove();
+			continue outer;
+		    }
+		}
+		Equ ne;
 		if(ed.t == 0)
-		    this.equ.add(new SpriteEqu(ed));
+		    ne = new SpriteEqu(ed);
 		else if(ed.t == 1)
-		    this.equ.add(new LightEqu(ed));
+		    ne = new LightEqu(ed);
+		else
+		    throw(new RuntimeException("Invalid composite equ-type: " + ed.t));
+		ne.matched = true;
+		this.equ.add(ne);
 		i.remove();
 	    } catch(Loading e) {
 		if(nocatch)
 		    throw(e);
 	    }
 	}
-	if(nequ.isEmpty())
+	if(nequ.isEmpty()) {
 	    nequ = null;
+	    for(Iterator<Equ> i = this.equ.iterator(); i.hasNext();) {
+		Equ equ = i.next();
+		if(!equ.matched)
+		    i.remove();
+	    }
+	}
     }
 
     public void changes(boolean nocatch) {
@@ -403,7 +443,8 @@ public class Composited implements Rendered {
     public void chequ(List<ED> equ) {
 	if(equ.equals(cequ))
 	    return;
-	this.equ = new LinkedList<Equ>();
+	for(Equ oequ : this.equ)
+	    oequ.matched = false;
 	nequ = new LinkedList<ED>();
 	for(ED ed : equ)
 	    nequ.add(ed.clone());

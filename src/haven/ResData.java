@@ -37,6 +37,10 @@ public class ResData {
 	this.sdt = sdt;
     }
 
+    public ResData clone() {
+	return(new ResData(res, sdt));
+    }
+
     public boolean equals(Object other) {
 	if(!(other instanceof ResData))
 	    return(false);
