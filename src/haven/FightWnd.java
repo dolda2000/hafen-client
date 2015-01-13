@@ -45,7 +45,7 @@ public class FightWnd extends Window {
     }
 
     public class Actions extends Listbox<Action> {
-	static final int eh = 33;
+	static final int eh = 34;
 	private boolean loading = false;
 
 	public Actions(Coord c, Widget parent, int w, int h) {
@@ -93,7 +93,8 @@ public class FightWnd extends Window {
 		}
 		Collections.sort(acts, new Comparator<Action>() {
 			public int compare(Action a, Action b) {
-			    return(a.rnm.text.compareTo(a.rnm.text));
+			    int ret = a.rnm.text.compareTo(b.rnm.text);
+			    return(ret);
 			}
 		    });
 	    }
