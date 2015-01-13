@@ -99,6 +99,13 @@ public class Message implements java.io.Serializable {
 	return(true);
     }
 
+    public int hashCode() {
+	int ret = 192581;
+	for(byte b : blob)
+	    ret = (ret * 31) + b;
+	return(ret);
+    }
+
     public Message clone() {
 	return(new Message(type, blob));
     }
