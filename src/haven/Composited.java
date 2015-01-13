@@ -39,6 +39,7 @@ public class Composited implements Rendered {
     public Poses poses = new Poses();
     public List<MD> nmod = null, cmod = new LinkedList<MD>();
     public List<ED> nequ = null, cequ = new LinkedList<ED>();
+    public Sprite.Owner eqowner = null;
     
     public class Poses {
 	public final PoseMod[] mods;
@@ -194,7 +195,7 @@ public class Composited implements Rendered {
 	
 	private SpriteEqu(ED ed) {
 	    super(ed);
-	    this.spr = Sprite.create(null, ed.res.res.get(), ed.res.sdt.clone());
+	    this.spr = Sprite.create(eqowner, ed.res.res.get(), ed.res.sdt.clone());
 	}
 	
 	public void draw(GOut g) {
