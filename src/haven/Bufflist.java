@@ -38,6 +38,7 @@ public class Bufflist extends Widget {
 
     private void arrange(Widget imm) {
 	int i = 0;
+	Coord br = new Coord();
 	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
 	    if(!(wdg instanceof Buff))
 		continue;
@@ -48,7 +49,10 @@ public class Bufflist extends Widget {
 	    else
 		ch.move(c);
 	    i++;
+	    if(c.x > br.x) br.x = c.x;
+	    if(c.y > br.y) br.y = c.y;
 	}
+	resize(br.add(Buff.cframe.sz()));
     }
 
     public Widget makechild(String type, Object[] pargs, Object[] cargs) {

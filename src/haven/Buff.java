@@ -33,7 +33,7 @@ public class Buff extends Widget {
     public static final Tex frame = Resource.loadtex("gfx/hud/buffs/frame");
     public static final Tex cframe = Resource.loadtex("gfx/hud/buffs/cframe");
     static final Coord imgoff = new Coord(3, 3);
-    static final Coord ameteroff = new Coord(3, 36), ametersz = new Coord(30, 2);
+    static final Coord ameteroff = new Coord(3, 37), ametersz = new Coord(32, 3);
     Indir<Resource> res;
     String tt = null;
     int ameter = -1;
