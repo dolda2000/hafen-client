@@ -97,28 +97,31 @@ public class Buff extends Widget {
     }
 
     private long hoverstart;
-    private Tex shorttip, longtip;
+    private Text shorttip, longtip;
     public Object tooltip(Coord c, Widget prev) {
 	long now = System.currentTimeMillis();
 	if(prev != this)
 	    hoverstart = now;
 	try {
 	    String tt = this.tt;
-	    if(tt == null)
+	    if(tt == null) {
 		tt = res.get().layer(Resource.tooltip).t;
+		if(ameter >= 0)
+		    tt = tt + " (" + ameter + "%)";
+	    }
 	    if(now - hoverstart < 1000) {
-		if(shorttip == null)
-		    shorttip = Text.render(tt).tex();
-		return(shorttip);
+		if((shorttip == null) || !shorttip.text.equals(tt))
+		    shorttip = Text.render(tt);
+		return(shorttip.tex());
 	    } else {
 		if(longtip == null) {
 		    String text = RichText.Parser.quote(tt);
 		    Resource.Pagina pag = res.get().layer(Resource.pagina);
 		    if(pag != null)
 			text += "\n\n" + pag.text;
-		    longtip = RichText.render(text, 200).tex();
+		    longtip = RichText.render(text, 200);
 		}
-		return(longtip);
+		return(longtip.tex());
 	    }
 	} catch(Loading e) {
 	    return("...");
