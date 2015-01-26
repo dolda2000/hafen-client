@@ -172,4 +172,9 @@ public class Buff extends Widget {
 	    super.uimsg(msg, args);
 	}
     }
+
+    public boolean mousedown(Coord c, int btn) {
+	wdgmsg("cl", c.sub(imgoff), btn, ui.modflags());
+	return(true);
+    }
 }
