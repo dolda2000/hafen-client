@@ -96,6 +96,15 @@ public class Buff extends Widget {
 	} catch(Loading e) {}
     }
 
+    private String shorttip() {
+	if(tt != null)
+	    return(tt);
+	String ret = res.get().layer(Resource.tooltip).t;
+	if(ameter >= 0)
+	    ret = ret + " (" + ameter + "%)";
+	return(ret);
+    }
+
     private long hoverstart;
     private Text shorttip, longtip;
     public Object tooltip(Coord c, Widget prev) {
@@ -103,19 +112,13 @@ public class Buff extends Widget {
 	if(prev != this)
 	    hoverstart = now;
 	try {
-	    String tt = this.tt;
-	    if(tt == null) {
-		tt = res.get().layer(Resource.tooltip).t;
-		if(ameter >= 0)
-		    tt = tt + " (" + ameter + "%)";
-	    }
 	    if(now - hoverstart < 1000) {
-		if((shorttip == null) || !shorttip.text.equals(tt))
-		    shorttip = Text.render(tt);
+		if(shorttip == null)
+		    shorttip = Text.render(shorttip());
 		return(shorttip.tex());
 	    } else {
 		if(longtip == null) {
-		    String text = RichText.Parser.quote(tt);
+		    String text = RichText.Parser.quote(shorttip());
 		    Resource.Pagina pag = res.get().layer(Resource.pagina);
 		    if(pag != null)
 			text += "\n\n" + pag.text;
@@ -160,8 +163,10 @@ public class Buff extends Widget {
 	} else if(msg == "tip") {
 	    String tt = (String)args[0];
 	    this.tt = tt.equals("")?null:tt;
+	    shorttip = longtip = null;
 	} else if(msg == "am") {
 	    this.ameter = (Integer)args[0];
+	    shorttip = longtip = null;
 	} else if(msg == "nm") {
 	    this.nmeter = (Integer)args[0];
 	} else if(msg == "cm") {
@@ -171,5 +176,10 @@ public class Buff extends Widget {
 	} else {
 	    super.uimsg(msg, args);
 	}
+    }
+
+    public boolean mousedown(Coord c, int btn) {
+	wdgmsg("cl", c.sub(imgoff), btn, ui.modflags());
+	return(true);
     }
 }
