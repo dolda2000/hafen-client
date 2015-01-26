@@ -671,6 +671,18 @@ public class Widget {
 	return(false);
     }
     
+    public Area area() {
+	return(Area.sized(c, sz));
+    }
+
+    public Area parentarea(Widget in) {
+	return(Area.sized(parentpos(in), sz));
+    }
+
+    public Area rootarea() {
+	return(parentarea(ui.root));
+    }
+
     public Coord contentsz() {
 	Coord max = new Coord(0, 0);
 	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
