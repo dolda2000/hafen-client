@@ -186,8 +186,8 @@ public class VertexContext extends ShaderContext {
 	    }
 
 	    protected void cons2(Block blk) {
-		var = gl_Position;
-		blk.add(new LBinOp.Assign(var.ref(), init));
+		tgt = gl_Position.ref();
+		blk.add(new LBinOp.Assign(tgt, init));
 	    }
 	};
 
