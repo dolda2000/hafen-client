@@ -40,10 +40,6 @@ public class If extends Statement {
 	this(cond, t, null);
     }
 
-    public If process(Context ctx) {
-	return(new If(cond.process(ctx), t.process(ctx), (f == null)?null:(f.process(ctx))));
-    }
-
     public void walk(Walker w) {
 	w.el(cond);
 	w.el(t);

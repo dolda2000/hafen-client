@@ -37,13 +37,6 @@ public class Add extends Expression {
 	this.terms = terms;
     }
 
-    public Add process(Context ctx) {
-	Expression[] terms = new Expression[this.terms.length];
-	for(int i = 0; i < terms.length; i++)
-	    terms[i] = this.terms[i].process(ctx);
-	return(new Add(terms));
-    }
-
     public void walk(Walker w) {
 	for(Expression term : terms)
 	    w.el(term);

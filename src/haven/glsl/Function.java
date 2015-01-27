@@ -52,16 +52,6 @@ public abstract class Function {
 	}
 
 	private class Definition extends Toplevel {
-	    private final Block code;
-
-	    private Definition(Context ctx) {
-		this.code = Def.this.code.process(ctx);
-	    }
-
-	    public Definition process(Context ctx) {
-		throw(new RuntimeException());
-	    }
-
 	    public void walk(Walker w) {
 		w.el(code);
 	    }
@@ -82,14 +72,6 @@ public abstract class Function {
 
 	    private Call(Expression... params) {
 		this.params = params;
-	    }
-
-	    public Call process(Context ctx) {
-		define(ctx);
-		Expression[] proc = new Expression[params.length];
-		for(int i = 0; i < params.length; i++)
-		    proc[i] = params[i].process(ctx);
-		return(new Call(proc));
 	    }
 
 	    public void walk(Walker w) {
@@ -123,7 +105,7 @@ public abstract class Function {
 		    return;
 	    }
 	    /* XXXP */
-	    ctx.fundefs.add(new Definition(ctx));
+	    ctx.fundefs.add(new Definition());
 	}
 
 	public void prototype(Output out) {
@@ -186,13 +168,6 @@ public abstract class Function {
 
 	    private Call(Expression... params) {
 		this.params = params;
-	    }
-
-	    public Call process(Context ctx) {
-		Expression[] proc = new Expression[params.length];
-		for(int i = 0; i < params.length; i++)
-		    proc[i] = params[i].process(ctx);
-		return(new Call(proc));
 	    }
 
 	    public void walk(Walker w) {

@@ -36,10 +36,6 @@ public abstract class Variable {
     }
 
     public class Ref extends LValue {
-	public Ref process(Context ctx) {
-	    return(this);
-	}
-
 	public void walk(Walker w) {}
 
 	public void output(Output out) {
@@ -67,14 +63,14 @@ public abstract class Variable {
 	}
 
 	public class Ref extends Variable.Ref {
+	    /* XXXP
 	    public Ref process(Context ctx) {
 		use(ctx);
 		return(this);
 	    }
+	    */
 
-	    public void walk(Walker w) {
-		/* XXXP */
-	    }
+	    public void walk(Walker w) {}
 	}
 
 	public Ref ref() {
@@ -95,10 +91,6 @@ public abstract class Variable {
 	}
 
 	public class Definition extends Toplevel {
-	    public Definition process(Context ctx) {
-		return(this);
-	    }
-
 	    public void walk(Walker w) {}
 
 	    public void output(Output out) {

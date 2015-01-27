@@ -46,10 +46,6 @@ public class LPick extends LValue {
 	this(val, el.toCharArray());
     }
 
-    public LPick process(Context ctx) {
-	return(new LPick(val.process(ctx), el));
-    }
-
     public void walk(Walker w) {
 	w.el(val);
     }

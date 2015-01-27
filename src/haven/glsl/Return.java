@@ -33,10 +33,6 @@ public class Return extends Statement {
 	this.rv = rv;
     }
 
-    public Return process(Context ctx) {
-	return(new Return(rv.process(ctx)));
-    }
-
     public void walk(Walker w) {
 	w.el(rv);
     }

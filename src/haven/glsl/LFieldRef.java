@@ -37,10 +37,6 @@ public class LFieldRef extends LValue {
 	this.el = el;
     }
 
-    public LFieldRef process(Context ctx) {
-	return(new LFieldRef(val.process(ctx), el));
-    }
-
     public void walk(Walker w) {
 	w.el(val);
     }

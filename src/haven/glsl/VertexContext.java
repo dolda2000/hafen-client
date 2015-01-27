@@ -113,6 +113,7 @@ public class VertexContext extends ShaderContext {
 
 	    public Expression root() {
 		return(new Expression() {
+			/* XXXP
 			public Expression process(Context ctx) {
 			    if(objv.used) {
 				return(new Mul(wxf.ref(), objv.ref()).process(ctx));
@@ -120,6 +121,7 @@ public class VertexContext extends ShaderContext {
 				return(new Mul(wxf.ref(), gl_Vertex.ref()).process(ctx));
 			    }
 			}
+			*/
 
 			public void walk(Walker w) {
 			    /* XXXP */
@@ -132,6 +134,7 @@ public class VertexContext extends ShaderContext {
 
 	    public Expression root() {
 		return(new Expression() {
+			/* XXXP
 			public Expression process(Context ctx) {
 			    if(mapv.used) {
 				return(new Mul(cam.ref(), mapv.ref()).process(ctx));
@@ -141,6 +144,7 @@ public class VertexContext extends ShaderContext {
 				return(new Mul(mv.ref(), gl_Vertex.ref()).process(ctx));
 			    }
 			}
+			*/
 
 			public void walk(Walker w) {
 			    /* XXXP */
@@ -161,6 +165,7 @@ public class VertexContext extends ShaderContext {
 
 	    public Expression root() {
 		return(new Expression() {
+			/* XXXP
 			public Expression process(Context ctx) {
 			    if(eyev.used) {
 				return(new Mul(proj.ref(), eyev.ref()).process(ctx));
@@ -172,6 +177,7 @@ public class VertexContext extends ShaderContext {
 				return(new Mul(pmv.ref(), gl_Vertex.ref()).process(ctx));
 			    }
 			}
+			*/
 
 			public void walk(Walker w) {
 			    /* XXXP */

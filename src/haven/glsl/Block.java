@@ -52,10 +52,6 @@ public class Block extends Statement {
 		this.init = init;
 	    }
 
-	    public Def process(Context ctx) {
-		return(new Def((init == null)?null:(init.process(ctx))));
-	    }
-
 	    public void walk(Walker w) {
 		if(init != null)
 		    w.el(init);
@@ -105,13 +101,6 @@ public class Block extends Statement {
     public Local local(Type type, Symbol name, Expression init)   {return(local(type, name, init, null));}
     public Local local(Type type, String prefix, Expression init) {return(local(type, new Symbol.Gen(prefix), init));}
     public Local local(Type type, Expression init)                {return(local(type, new Symbol.Gen(), init));}
-
-    public Block process(Context ctx) {
-	Block ret = new Block();
-	for(Statement s : stmts)
-	    ret.add(s.process(ctx));
-	return(ret);
-    }
 
     public void walk(Walker w) {
 	for(Statement s : stmts)

@@ -37,10 +37,6 @@ public class Index extends LValue {
 	this.idx = idx;
     }
 
-    public Index process(Context ctx) {
-	return(new Index(val.process(ctx), idx.process(ctx)));
-    }
-
     public void walk(Walker w) {
 	w.el(val);
 	w.el(idx);

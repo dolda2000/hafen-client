@@ -46,10 +46,6 @@ public class Pick extends Expression {
 	this(val, el.toCharArray());
     }
 
-    public Pick process(Context ctx) {
-	return(new Pick(val.process(ctx), el));
-    }
-
     public void walk(Walker w) {
 	w.el(val);
     }

@@ -37,10 +37,6 @@ public class Placeholder extends Statement {
 	this(null);
     }
 
-    public Placeholder process(Context ctx) {
-	return(this);
-    }
-
     public void walk(Walker w) {}
 
     public void output(Output out) {

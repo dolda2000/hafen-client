@@ -37,13 +37,6 @@ public class For extends Statement {
 	this.body = body;
     }
 
-    public For process(Context ctx) {
-	return(new For((init == null)?null:(init.process(ctx)),
-		       (cond == null)?null:(cond.process(ctx)),
-		       (step == null)?null:(step.process(ctx)),
-		       body.process(ctx)));
-    }
-
     public void walk(Walker w) {
 	if(init != null) w.el(init);
 	if(cond != null) w.el(cond);

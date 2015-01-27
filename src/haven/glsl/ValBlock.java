@@ -85,11 +85,13 @@ public class ValBlock {
 
 	public Expression ref() {
 	    return(new Expression() {
+		    /* XXXP
 		    public Expression process(Context ctx) {
 			if(var == null)
 			    throw(new IllegalStateException("Value reference processed before being constructed"));
 			return(var.ref().process(ctx));
 		    }
+		    */
 
 		    public void walk(Walker w) {
 			/* XXXP */
