@@ -40,6 +40,8 @@ public abstract class Variable {
 	    return(this);
 	}
 
+	public void walk(Walker w) {}
+
 	public void output(Output out) {
 	    out.write(name);
 	}
@@ -69,6 +71,10 @@ public abstract class Variable {
 		use(ctx);
 		return(this);
 	    }
+
+	    public void walk(Walker w) {
+		/* XXXP */
+	    }
 	}
 
 	public Ref ref() {
@@ -92,6 +98,8 @@ public abstract class Variable {
 	    public Definition process(Context ctx) {
 		return(this);
 	    }
+
+	    public void walk(Walker w) {}
 
 	    public void output(Output out) {
 		out.write(type.name(out.ctx));

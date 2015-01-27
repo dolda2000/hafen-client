@@ -49,6 +49,10 @@ public abstract class LPreOp extends Expression {
 	}
     }
 
+    public void walk(Walker w) {
+	w.el(op);
+    }
+
     public abstract String form();
 
     public void output(Output out) {

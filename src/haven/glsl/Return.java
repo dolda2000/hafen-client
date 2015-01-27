@@ -37,6 +37,10 @@ public class Return extends Statement {
 	return(new Return(rv.process(ctx)));
     }
 
+    public void walk(Walker w) {
+	w.el(rv);
+    }
+
     public void output(Output out) {
 	out.write("return ");
 	rv.output(out);

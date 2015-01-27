@@ -62,6 +62,10 @@ public abstract class Function {
 		throw(new RuntimeException());
 	    }
 
+	    public void walk(Walker w) {
+		w.el(code);
+	    }
+
 	    public void output(Output out) {
 		prototype(out);
 		out.write("\n");
@@ -86,6 +90,11 @@ public abstract class Function {
 		for(int i = 0; i < params.length; i++)
 		    proc[i] = params[i].process(ctx);
 		return(new Call(proc));
+	    }
+
+	    public void walk(Walker w) {
+		for(Expression param : params)
+		    w.el(param);
 	    }
 
 	    public void output(Output out) {
@@ -113,6 +122,7 @@ public abstract class Function {
 		if((tl instanceof Definition) && (((Definition)tl).fun() == Def.this))
 		    return;
 	    }
+	    /* XXXP */
 	    ctx.fundefs.add(new Definition(ctx));
 	}
 
@@ -183,6 +193,11 @@ public abstract class Function {
 		for(int i = 0; i < params.length; i++)
 		    proc[i] = params[i].process(ctx);
 		return(new Call(proc));
+	    }
+
+	    public void walk(Walker w) {
+		for(Expression param : params)
+		    w.el(param);
 	    }
 
 	    public void output(Output out) {

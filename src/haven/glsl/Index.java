@@ -41,6 +41,11 @@ public class Index extends LValue {
 	return(new Index(val.process(ctx), idx.process(ctx)));
     }
 
+    public void walk(Walker w) {
+	w.el(val);
+	w.el(idx);
+    }
+
     public void output(Output out) {
 	out.write("(");
 	val.output(out);

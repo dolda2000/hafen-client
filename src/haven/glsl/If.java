@@ -44,6 +44,12 @@ public class If extends Statement {
 	return(new If(cond.process(ctx), t.process(ctx), (f == null)?null:(f.process(ctx))));
     }
 
+    public void walk(Walker w) {
+	w.el(cond);
+	w.el(t);
+	if(f != null) w.el(f);
+    }
+
     public void output(Output out) {
 	out.write("if(");
 	cond.output(out);

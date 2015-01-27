@@ -50,6 +50,11 @@ public abstract class BinOp extends Expression {
 	}
     }
 
+    public void walk(Walker w) {
+	w.el(lhs);
+	w.el(rhs);
+    }
+
     public abstract String form();
 
     public void output(Output out) {

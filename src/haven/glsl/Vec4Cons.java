@@ -44,6 +44,11 @@ public class Vec4Cons extends Expression {
 	return(new Vec4Cons(nels));
     }
 
+    public void walk(Walker w) {
+	for(Expression el : els)
+	    w.el(el);
+    }
+
     public void output(Output out) {
 	out.write("vec4(");
 	els[0].output(out);

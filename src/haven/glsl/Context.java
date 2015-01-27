@@ -36,6 +36,13 @@ public class Context {
     public List<Toplevel> fundefs = new LinkedList<Toplevel>();
     public Set<String> exts = new HashSet<String>();
 
+    public void walk(Walker w) {
+	for(Toplevel el : vardefs)
+	    w.el(el);
+	for(Toplevel el : fundefs)
+	    w.el(el);
+    }
+
     public void output(Output out) {
 	out.write("#version 120\n\n");
 	for(String ext : exts)

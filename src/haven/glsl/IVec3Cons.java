@@ -44,6 +44,11 @@ public class IVec3Cons extends Expression {
 	return(new IVec3Cons(nels));
     }
 
+    public void walk(Walker w) {
+	for(Expression el : els)
+	    w.el(el);
+    }
+
     public void output(Output out) {
 	out.write("ivec3(");
 	els[0].output(out);

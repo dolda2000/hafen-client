@@ -44,6 +44,11 @@ public class Mul extends Expression {
 	return(new Mul(terms));
     }
 
+    public void walk(Walker w) {
+	for(Expression term : terms)
+	    w.el(term);
+    }
+
     public void output(Output out) {
 	out.write("(");
 	terms[0].output(out);

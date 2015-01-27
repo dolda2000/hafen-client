@@ -90,6 +90,10 @@ public class ValBlock {
 			    throw(new IllegalStateException("Value reference processed before being constructed"));
 			return(var.ref().process(ctx));
 		    }
+
+		    public void walk(Walker w) {
+			/* XXXP */
+		    }
 		});
 	}
 

@@ -44,6 +44,13 @@ public class For extends Statement {
 		       body.process(ctx)));
     }
 
+    public void walk(Walker w) {
+	if(init != null) w.el(init);
+	if(cond != null) w.el(cond);
+	if(step != null) w.el(step);
+	w.el(body);
+    }
+
     public void output(Output out) {
 	out.write("for(");
 	if(init != null)

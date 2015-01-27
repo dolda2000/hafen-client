@@ -41,6 +41,10 @@ public class FieldRef extends Expression {
 	return(new FieldRef(val.process(ctx), el));
     }
 
+    public void walk(Walker w) {
+	w.el(val);
+    }
+
     public void output(Output out) {
 	out.write("(");
 	val.output(out);

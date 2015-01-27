@@ -34,6 +34,8 @@ public class Discard extends Statement {
 	return(this);
     }
 
+    public void walk(Walker w) {}
+
     public void output(Output out) {
 	out.write("discard;");
     }

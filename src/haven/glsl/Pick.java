@@ -50,6 +50,10 @@ public class Pick extends Expression {
 	return(new Pick(val.process(ctx), el));
     }
 
+    public void walk(Walker w) {
+	w.el(val);
+    }
+
     public void output(Output out) {
 	out.write("(");
 	val.output(out);

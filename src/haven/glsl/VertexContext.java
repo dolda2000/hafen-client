@@ -120,6 +120,10 @@ public class VertexContext extends ShaderContext {
 				return(new Mul(wxf.ref(), gl_Vertex.ref()).process(ctx));
 			    }
 			}
+
+			public void walk(Walker w) {
+			    /* XXXP */
+			}
 		    });
 	    }
 	};
@@ -136,6 +140,10 @@ public class VertexContext extends ShaderContext {
 			    } else {
 				return(new Mul(mv.ref(), gl_Vertex.ref()).process(ctx));
 			    }
+			}
+
+			public void walk(Walker w) {
+			    /* XXXP */
 			}
 		    });
 	    }
@@ -163,6 +171,10 @@ public class VertexContext extends ShaderContext {
 			    } else {
 				return(new Mul(pmv.ref(), gl_Vertex.ref()).process(ctx));
 			    }
+			}
+
+			public void walk(Walker w) {
+			    /* XXXP */
 			}
 		    });
 	    }

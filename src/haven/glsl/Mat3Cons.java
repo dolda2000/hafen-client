@@ -42,6 +42,11 @@ public class Mat3Cons extends Expression {
 	return(new Mat3Cons(nels));
     }
 
+    public void walk(Walker w) {
+	for(Expression el : els)
+	    w.el(el);
+    }
+
     public void output(Output out) {
 	out.write("mat3(");
 	els[0].output(out);

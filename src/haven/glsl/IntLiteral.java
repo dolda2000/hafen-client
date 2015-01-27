@@ -40,6 +40,8 @@ public class IntLiteral extends Expression {
 	return(this);
     }
 
+    public void walk(Walker w) {}
+
     public void output(Output out) {
 	out.write(Integer.toString(val));
     }

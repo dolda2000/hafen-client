@@ -35,6 +35,10 @@ public abstract class Statement extends Element {
 		    return(expr(e.process(ctx)));
 		}
 
+		public void walk(Walker w) {
+		    w.el(e);
+		}
+
 		public void output(Output out) {
 		    e.output(out);
 		    out.write(";");

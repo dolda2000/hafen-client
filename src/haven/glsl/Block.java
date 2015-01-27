@@ -56,6 +56,11 @@ public class Block extends Statement {
 		return(new Def((init == null)?null:(init.process(ctx))));
 	    }
 
+	    public void walk(Walker w) {
+		if(init != null)
+		    w.el(init);
+	    }
+
 	    public void output(Output out) {
 		out.write(type.name(out.ctx));
 		out.write(" ");
@@ -106,6 +111,11 @@ public class Block extends Statement {
 	for(Statement s : stmts)
 	    ret.add(s.process(ctx));
 	return(ret);
+    }
+
+    public void walk(Walker w) {
+	for(Statement s : stmts)
+	    w.el(s);
     }
 
     public void trail(Output out, boolean nl) {
