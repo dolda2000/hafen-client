@@ -287,8 +287,8 @@ public class CharWnd extends Window {
 	private Text ct;
 	private int cv;
 
-	private Attr(String attr, String rnm, Coord c, Color bg) {
-	    super(c, new Coord(attrw, attrf.height() + 2), CharWnd.this);
+	private Attr(String attr, String rnm, Coord c, Widget parent, Color bg) {
+	    super(c, new Coord(attrw, attrf.height() + 2), parent);
 	    this.nm = attr;
 	    this.img = Resource.load("gfx/hud/chr/" + attr).loadwait().layer(Resource.imgc).tex();
 	    this.rnm = attrf.render(rnm);
@@ -343,27 +343,33 @@ public class CharWnd extends Window {
     public CharWnd(Coord pc, Widget parent) {
 	super(pc, new Coord(300, 290), parent, "Character Sheet");
 
-	int x = 15, y = 10;
-	new Img(new Coord(x - 5, y), catf.render("Base Attributes").tex(), this); y += 35;
-	base = new ArrayList<Attr>();
-	Attr aw;
-	base.add(aw = new Attr("str", "Strength",     wbox.btloff().add(x, y), every)); y += aw.sz.y;
-	base.add(aw = new Attr("agi", "Agility",      wbox.btloff().add(x, y), other)); y += aw.sz.y;
-	base.add(aw = new Attr("int", "Intelligence", wbox.btloff().add(x, y), every)); y += aw.sz.y;
-	base.add(aw = new Attr("con", "Constitution", wbox.btloff().add(x, y), other)); y += aw.sz.y;
-	base.add(aw = new Attr("prc", "Perception",   wbox.btloff().add(x, y), every)); y += aw.sz.y;
-	base.add(aw = new Attr("csm", "Charisma",     wbox.btloff().add(x, y), other)); y += aw.sz.y;
-	base.add(aw = new Attr("dex", "Dexterity",    wbox.btloff().add(x, y), every)); y += aw.sz.y;
-	base.add(aw = new Attr("psy", "Psyche",       wbox.btloff().add(x, y), other)); y += aw.sz.y;
-	Frame.around(this, base);
-	y += 20;
-	new Img(new Coord(x - 5, y), catf.render("Food Event Points").tex(), this); y += 35;
-	feps = new FoodMeter(new Coord(x, y), this);
+	final Tabs tabs = new Tabs(new Coord(15, 10), Coord.z, this);
+	Tabs.Tab battr;
+	{ 
+	    int x = 5, y = 0;
 
-	x = 275; y = 10;
-	new Img(new Coord(x - 5, y), catf.render("Food Satiations").tex(), this); y += 35;
-	cons = new Constipations(wbox.btloff().add(x, y), this, attrw, base.size());
-	Frame.around(this, Collections.singletonList(cons));
+	    battr = tabs.new Tab();
+	    new Img(new Coord(x - 5, y), catf.render("Base Attributes").tex(), battr); y += 35;
+	    base = new ArrayList<Attr>();
+	    Attr aw;
+	    base.add(aw = new Attr("str", "Strength",     wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
+	    base.add(aw = new Attr("agi", "Agility",      wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
+	    base.add(aw = new Attr("int", "Intelligence", wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
+	    base.add(aw = new Attr("con", "Constitution", wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
+	    base.add(aw = new Attr("prc", "Perception",   wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
+	    base.add(aw = new Attr("csm", "Charisma",     wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
+	    base.add(aw = new Attr("dex", "Dexterity",    wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
+	    base.add(aw = new Attr("psy", "Psyche",       wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
+	    Frame.around(battr, base);
+	    y += 20;
+	    new Img(new Coord(x - 5, y), catf.render("Food Event Points").tex(), battr); y += 35;
+	    feps = new FoodMeter(new Coord(x, y), battr);
+
+	    x = 260; y = 0;
+	    new Img(new Coord(x - 5, y), catf.render("Food Satiations").tex(), battr); y += 35;
+	    cons = new Constipations(wbox.btloff().add(x, y), battr, attrw, base.size());
+	    Frame.around(battr, Collections.singletonList(cons));
+	}
 
 	resize(contentsz().add(15, 10));
     }
