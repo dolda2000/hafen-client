@@ -43,6 +43,7 @@ public class CharWnd extends Window {
     public final Collection<Attr> base;
     public final FoodMeter feps;
     public final Constipations cons;
+    private final Tabs.Tab sattr;
 
     public static class FoodMeter extends Widget {
 	public static final Tex frame = Resource.loadtex("gfx/hud/chr/foodm");
@@ -371,7 +372,40 @@ public class CharWnd extends Window {
 	    Frame.around(battr, Collections.singletonList(cons));
 	}
 
+	{
+	    sattr = tabs.new Tab();
+	}
+
+	{
+	    Widget prev;
+
+	    class TB extends IButton {
+		final Tabs.Tab tab;
+		TB(Coord c, String nm, Tabs.Tab tab) {
+		    super(c, CharWnd.this, Resource.loadimg("gfx/hud/chr/" + nm + "u"), Resource.loadimg("gfx/hud/chr/" + nm + "d"));
+		    this.tab = tab;
+		}
+
+		public void click() {
+		    tabs.showtab(tab);
+		}
+	    }
+
+	    tabs.pack();
+	    prev = new TB(new Coord(tabs.c.x + 5, tabs.c.y + tabs.sz.y + 10), "battr", battr);
+	    prev = new TB(new Coord(prev.c.x + prev.sz.x + 10, prev.c.y), "sattr", sattr);
+	}
+
 	resize(contentsz().add(15, 10));
+    }
+
+    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
+	String place = (pargs[0] instanceof String)?(((String)pargs[0]).intern()):null;
+	if(place == "study") {
+	    return(gettype(type).create(Coord.z, sattr, cargs));
+	} else {
+	    return(super.makechild(type, pargs, cargs));
+	}
     }
 
     public void uimsg(String nm, Object... args) {
