@@ -29,8 +29,8 @@ package haven;
 import java.util.*;
 
 public class Tabs {
-    private Coord c, sz;
-    private Widget parent;
+    public Coord c, sz;
+    public Widget parent;
     public Tab curtab = null;
     public Collection<Tab> tabs = new LinkedList<Tab>();
 
@@ -83,6 +83,7 @@ public class Tabs {
     public void resize(Coord sz) {
 	for(Tab tab : tabs)
 	    tab.resize(sz);
+	this.sz = sz;
     }
 
     public Coord contentsz() {
