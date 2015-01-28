@@ -51,6 +51,13 @@ public class Frame extends Widget {
 	return(new Frame(tl, br.sub(tl), parent));
     }
 
+    public Coord xlate(Coord c, boolean in) {
+	if(in)
+	    return(c.add(box.btloff()));
+	else
+	    return(c.sub(box.btloff()));
+    }
+
     public void draw(GOut g) {
 	super.draw(g);
 	box.draw(g, Coord.z, sz);

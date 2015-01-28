@@ -37,7 +37,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Avaview portrait;
     public MenuGrid menu;
     public MapView map;
-    public LocalMiniMap mmap;
+    public Widget mmap;
     public Fightview fv;
     public FightWnd fw;
     public static final Text.Foundry errfoundry = new Text.Foundry(Text.dfont, 14, new Color(192, 0, 0));
@@ -169,7 +169,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    map.lower();
 	    if(mmap != null)
 		ui.destroy(mmap);
-	    mmap = new LocalMiniMap(new Coord(0, sz.y - 125), new Coord(125, 125), this, map);
+	    mmap = new Frame(Coord.z, new Coord(125, 125), this);
+	    new LocalMiniMap(Coord.z, new Coord(125, 125), mmap, map);
+	    mmap.c = new Coord(0, sz.y - mmap.sz.y);
 	    return(map);
 	} else if(place == "fight") {
 	    fv = (Fightview)gettype(type).create(new Coord(sz.x - Fightview.width, 0), this, cargs);
@@ -454,7 +456,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    mmap.c = new Coord(0, sz.y - mmap.sz.y);
 	if(fv != null)
 	    fv.c = new Coord(sz.x - Fightview.width, 0);
-	beltwdg.c = new Coord(135, sz.y - beltwdg.sz.y - 5);
+	beltwdg.c = new Coord(145, sz.y - beltwdg.sz.y - 5);
 	super.resize(sz);
     }
     

@@ -189,7 +189,6 @@ public class LocalMiniMap extends Widget {
 	if(cc == null)
 	    return;
 	final Coord plg = cc.div(cmaps);
-	Window.wbox.draw(g, Coord.z, sz);
 	if((cur == null) || !plg.equals(cur.c)) {
 	    Defer.Future<MapTile> f;
 	    synchronized(cache) {
@@ -207,10 +206,9 @@ public class LocalMiniMap extends Widget {
 	    if(f.done())
 		cur = f.get();
 	}
-	GOut g2 = g.reclip(Window.wbox.tloff(), sz.sub(Window.wbox.bisz()));
 	if(cur != null) {
-	    g2.image(MiniMap.bg, Coord.z);
-	    g2.image(cur.img, cur.ul.sub(cc).add(sz.div(2)));
+	    g.image(MiniMap.bg, Coord.z);
+	    g.image(cur.img, cur.ul.sub(cc).add(sz.div(2)));
 	    try {
 		synchronized(ui.sess.glob.party.memb) {
 		    for(Party.Member m : ui.sess.glob.party.memb.values()) {
@@ -223,23 +221,20 @@ public class LocalMiniMap extends Widget {
 			if(ptc == null)
 			    continue;
 			ptc = p2c(ptc);
-			g2.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 128);
-			g2.image(MiniMap.plx.layer(Resource.imgc).tex(), ptc.add(MiniMap.plx.layer(Resource.negc).cc.inv()));
-			g2.chcolor();
+			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 128);
+			g.image(MiniMap.plx.layer(Resource.imgc).tex(), ptc.add(MiniMap.plx.layer(Resource.negc).cc.inv()));
+			g.chcolor();
 		    }
 		}
 	    } catch(Loading l) {}
 	} else {
-	    g2.image(MiniMap.nomap, Coord.z);
+	    g.image(MiniMap.nomap, Coord.z);
 	}
 	drawicons(g);
     }
 
     public boolean mousedown(Coord c, int button) {
 	if(cc == null)
-	    return(false);
-	MapView mv = getparent(GameUI.class).map;
-	if(mv == null)
 	    return(false);
 	Gob gob = findicongob(c);
 	if(gob == null)
