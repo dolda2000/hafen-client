@@ -32,13 +32,14 @@ import java.awt.event.KeyEvent;
 import static haven.Inventory.invsq;
 
 public class GameUI extends ConsoleHost implements Console.Directory {
+    public static final Text.Foundry errfoundry = new Text.Foundry(Text.dfont, 14, new Color(192, 0, 0));
+    private static final int cnto = 135;
     public final String chrid;
     public final long plid;
     public MenuGrid menu;
     public MapView map;
     public Widget mmap;
     public Fightview fv;
-    public static final Text.Foundry errfoundry = new Text.Foundry(Text.dfont, 14, new Color(192, 0, 0));
     private Text lasterr;
     private long errtime;
     private Window invwnd, equwnd, makewnd;
@@ -268,19 +269,19 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(beltwdg.visible)
 	    by = Math.min(by, beltwdg.c.y);
 	if(cmdline != null) {
-	    drawcmd(g, new Coord(135, by -= 20));
+	    drawcmd(g, new Coord(cnto + 10, by -= 20));
 	} else if(lasterr != null) {
 	    if((System.currentTimeMillis() - errtime) > 3000) {
 		lasterr = null;
 	    } else {
 		g.chcolor(0, 0, 0, 192);
-		g.frect(new Coord(133, by - 22), lasterr.sz().add(4, 4));
+		g.frect(new Coord(cnto + 8, by - 22), lasterr.sz().add(4, 4));
 		g.chcolor();
-		g.image(lasterr.tex(), new Coord(135, by -= 20));
+		g.image(lasterr.tex(), new Coord(cnto + 10, by -= 20));
 	    }
 	}
 	if(!chat.expanded) {
-	    chat.drawsmall(g, new Coord(135, by), 50);
+	    chat.drawsmall(g, new Coord(cnto + 10, by), 50);
 	}
     }
     
@@ -407,15 +408,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public void resize(Coord sz) {
 	this.sz = sz;
 	menu.c = sz.sub(menu.sz);
-	chat.resize(sz.x - 125 - menu.sz.x);
-	chat.move(new Coord(125, sz.y));
+	chat.resize(sz.x - cnto - menu.sz.x);
+	chat.move(new Coord(cnto, sz.y));
 	if(map != null)
 	    map.resize(sz);
 	if(mmap != null)
 	    mmap.c = new Coord(0, sz.y - mmap.sz.y);
 	if(fv != null)
 	    fv.c = new Coord(sz.x - Fightview.width, 0);
-	beltwdg.c = new Coord(145, sz.y - beltwdg.sz.y - 5);
+	beltwdg.c = new Coord(cnto + 10, sz.y - beltwdg.sz.y - 5);
 	super.resize(sz);
     }
     
