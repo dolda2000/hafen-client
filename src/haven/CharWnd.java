@@ -43,7 +43,9 @@ public class CharWnd extends Window {
     public final Collection<Attr> base;
     public final FoodMeter feps;
     public final Constipations cons;
+    public int exp;
     private final Tabs.Tab sattr;
+    private final Label explbl;
 
     public static class FoodMeter extends Widget {
 	public static final Tex frame = Resource.loadtex("gfx/hud/chr/foodm");
@@ -334,6 +336,10 @@ public class CharWnd extends Window {
 	}
     }
 
+    private void updexp() {
+	explbl.settext(Utils.thformat(exp));
+    }
+
     @RName("chr")
     public static class $_ implements Factory {
 	public Widget create(Coord c, Widget parent, Object[] args) {
@@ -374,6 +380,8 @@ public class CharWnd extends Window {
 
 	{
 	    sattr = tabs.new Tab();
+	    new Label(new Coord(0, 150), sattr, "Learning Points:");
+	    explbl = new Label(new Coord(90, 150), sattr, "0");
 	}
 
 	{
@@ -409,7 +417,10 @@ public class CharWnd extends Window {
     }
 
     public void uimsg(String nm, Object... args) {
-	if(nm == "food") {
+	if(nm == "exp") {
+	    exp = ((Number)args[0]).intValue();
+	    updexp();
+	} else if(nm == "food") {
 	    feps.update(args);
 	} else if(nm == "ftrig") {
 	    feps.trig(ui.sess.getres((Integer)args[0]));
