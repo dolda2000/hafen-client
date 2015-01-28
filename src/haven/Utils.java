@@ -115,6 +115,21 @@ public class Utils {
 	return(buf.reverse().toString());
     }
 
+    public static String thformat(long num) {
+	if(num == 0)
+	    return("0");
+	else if(num < 0)
+	    return("-" + thformat(-num));
+	StringBuilder buf = new StringBuilder();
+	while(num > 0) {
+	    if((buf.length() % 3 == 0) && (buf.length() != 0))
+		buf.insert(0, ",");
+	    buf.insert(0, num % 10);
+	    num /= 10;
+	}
+	return(buf.toString());
+    }
+
     public static String odformat(double num, int md) {
 	long dm = 1;
 	for(int i = 0; i < md; i++) dm *= 10;
