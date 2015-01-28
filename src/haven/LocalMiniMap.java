@@ -187,6 +187,7 @@ public class LocalMiniMap extends Widget {
 	if(cc == null)
 	    return;
 	final Coord plg = cc.div(cmaps);
+	Window.wbox.draw(g, Coord.z, sz);
 	if((cur == null) || !plg.equals(cur.c)) {
 	    Defer.Future<MapTile> f;
 	    synchronized(cache) {
@@ -204,10 +205,10 @@ public class LocalMiniMap extends Widget {
 	    if(f.done())
 		cur = f.get();
 	}
+	GOut g2 = g.reclip(Window.wbox.tloff(), sz.sub(Window.wbox.bisz()));
 	if(cur != null) {
-	    GOut g2 = g.reclip(Window.wbox.tloff(), sz.sub(Window.wbox.bisz()));
+	    g2.image(MiniMap.bg, Coord.z);
 	    g2.image(cur.img, cur.ul.sub(cc).add(sz.div(2)));
-	    Window.wbox.draw(g, Coord.z, sz);
 	    try {
 		synchronized(ui.sess.glob.party.memb) {
 		    for(Party.Member m : ui.sess.glob.party.memb.values()) {
@@ -226,6 +227,8 @@ public class LocalMiniMap extends Widget {
 		    }
 		}
 	    } catch(Loading l) {}
+	} else {
+	    g2.image(MiniMap.nomap, Coord.z);
 	}
 	drawicons(g);
     }
