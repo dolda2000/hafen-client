@@ -146,10 +146,11 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	
     public Coord3f getc() {
 	Moving m = getattr(Moving.class);
-	if(m != null)
-	    return(m.getc());
-	else
-	    return(getrc());
+	Coord3f ret = (m != null)?m.getc():getrc();
+	DrawOffset df = getattr(DrawOffset.class);
+	if(df != null)
+	    ret = ret.add(df.off);
+	return(ret);
     }
     
     public Coord3f getrc() {

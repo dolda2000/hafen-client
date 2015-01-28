@@ -421,12 +421,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	} catch(Loading e) {
 	    xf = null;
 	}
-	GLState extra = null, off = null;
+	GLState extra = null;
 	if(xf == null) {
 	    xf = gob.loc;
-	    DrawOffset df = gob.getattr(DrawOffset.class);
-	    if(df != null)
-		off = df.off;
 	    try {
 		Coord3f c = gob.getc();
 		Tiler tile = glob.map.tiler(glob.map.gettile(new Coord(c).div(tilesz)));
@@ -435,7 +432,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		extra = null;
 	    }
 	}
-	rl.add(gob, GLState.compose(extra, off, xf, gob.olmod, gob.save));
+	rl.add(gob, GLState.compose(extra, xf, gob.olmod, gob.save));
     }
 
     private final Rendered gobs = new Rendered() {
