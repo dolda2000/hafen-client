@@ -79,6 +79,25 @@ public class Tabs {
 	    curtab.show();
 	changed(old, tab);
     }
-    
+
+    public void resize(Coord sz) {
+	for(Tab tab : tabs)
+	    tab.resize(sz);
+    }
+
+    public Coord contentsz() {
+	Coord max = new Coord(0, 0);
+	for(Tab tab : tabs) {
+	    Coord br = tab.contentsz();
+	    if(br.x > max.x) max.x = br.x;
+	    if(br.y > max.y) max.y = br.y;
+	}
+	return(max);
+    }
+
+    public void pack() {
+	resize(contentsz());
+    }
+
     public void changed(Tab from, Tab to) {}
 }
