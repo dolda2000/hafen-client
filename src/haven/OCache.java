@@ -217,10 +217,10 @@ public class OCache implements Iterable<Gob> {
 	} else {
 	    DrawOffset dro = g.getattr(DrawOffset.class);
 	    if(dro == null) {
-		dro = new DrawOffset(g, Location.xlate(new Coord3f(0, 0, off)));
+		dro = new DrawOffset(g, new Coord3f(0, 0, off));
 		g.setattr(dro);
 	    } else {
-		dro.off = Location.xlate(new Coord3f(0, 0, off));
+		dro.off = new Coord3f(0, 0, off);
 	    }
 	}
     }
