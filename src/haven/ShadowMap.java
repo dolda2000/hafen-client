@@ -187,7 +187,7 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 	    ph.dolight.mod(new Runnable() {
 		    public void run() {
 			ph.dolight.dcalc.add(new If(eq(sl.ref(), ph.dolight.i),
-						    stmt(amul(ph.dolight.dl.var.ref(), shcalc.call()))),
+						    stmt(amul(ph.dolight.dl.tgt, shcalc.call()))),
 					     ph.dolight.dcurs);
 		    }
 		}, 0);

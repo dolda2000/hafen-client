@@ -70,15 +70,15 @@ public class CloudShadow extends GLState {
 			}
 
 			protected void cons2(Block blk) {
-			    var = new Variable.Global(FLOAT);
-			    blk.add(ass(var, init));
+			    tgt = new Variable.Global(FLOAT).ref();
+			    blk.add(ass(tgt, init));
 			}
 		    };
 		shval.force();
 		ph.dolight.mod(new Runnable() {
 			public void run() {
 			    ph.dolight.dcalc.add(new If(eq(MapView.amblight.ref(), ph.dolight.i),
-							stmt(amul(ph.dolight.dl.var.ref(), shval.ref()))),
+							stmt(amul(ph.dolight.dl.tgt, shval.ref()))),
 						 ph.dolight.dcurs);
 			}
 		    }, 0);
