@@ -99,39 +99,68 @@ public class VertexContext extends ShaderContext {
 	    }
 	};
 
-    public Expression camxf(Expression v) {
-	return(new Mul(u_cam, v));
+    private static final PostProc.AutoID xfpp = new PostProc.AutoID(1000);
+    private boolean xfpinited = false, h_wxf = false, h_mv = false;
+    private static class WorldTransform extends PostProc.AutoMacro {
+	final Expression v;
+	WorldTransform(Expression v) {super(xfpp); this.v = v;}
+	public Expression expand(Context ctx) {
+	    return(new Mul(u_wxf.ref(), v));
+	}
     }
-    public Expression projxf(Expression v) {
-	return(new Mul(u_proj, v));
+    private static class MVTransform extends PostProc.AutoMacro {
+	final Expression v;
+	MVTransform(Expression v) {super(xfpp); this.v = v;}
+	public Expression expand(Context ctx) {
+	    VertexContext vctx = (VertexContext)ctx;
+	    vctx.xfpinit();
+	    if(vctx.h_wxf)
+		return(new Mul(u_cam.ref(), u_wxf.ref(), v));
+	    else
+		return(new Mul(u_mv.ref(), v));
+	}
     }
-    private boolean h_wxf = false, h_mv = false;
-    public Expression wxf(Expression v) {
-	h_wxf = true;
-	return(new Mul(u_wxf, v));
+    private static class PMVTransform extends PostProc.AutoMacro {
+	final Expression v;
+	PMVTransform(Expression v) {super(xfpp); this.v = v;}
+	public Expression expand(Context ctx) {
+	    VertexContext vctx = (VertexContext)ctx;
+	    vctx.xfpinit();
+	    if(vctx.h_wxf)
+		return(new Mul(u_proj.ref(), u_cam.ref(), u_wxf.ref(), v));
+	    else if(vctx.h_mv)
+		return(new Mul(u_proj.ref(), u_mv.ref(), v));
+	    else
+		return(new Mul(u_pmv.ref(), v));
+	}
     }
-    public Expression mvxf(Expression v) {
-	h_mv = true;
-	return(new Expression() {
-		public Expression process(Context ctx) {
-		    if(h_wxf)
-			return(new Mul(u_cam, new Mul(u_wxf, v)));
-		    else
-			return(new Mul(u_mv, v));
+    private void xfpinit() {
+	if(xfpinited)
+	    return;
+	walk(new Walker() {
+		public void el(Element e) {
+		    if(e instanceof WorldTransform) h_wxf = true;
+		    else if(e instanceof MVTransform) h_mv = true;
+		    e.walk(this);
 		}
 	    });
+	xfpinited = true;
     }
-    public Expression pmvxf(Expression v) {
-	return(new Expression() {
-		public Expression process(Context ctx) {
-		    if(h_wxf)
-			return(new Mul(u_proj, new Mul(u_cam, new Mul(u_wxf, v))));
-		    else if(h_mv)
-			return(new Mul(u_proj, new Mul(u_mv, v)));
-		    else
-			return(new Mul(u_pmv, v));
-		}
-	    });
+
+    public static Expression camxf(Expression v) {
+	return(new Mul(u_cam.ref(), v));
+    }
+    public static Expression projxf(Expression v) {
+	return(new Mul(u_proj.ref(), v));
+    }
+    public static Expression wxf(Expression v) {
+	return(new WorldTransform(v));
+    }
+    public static Expression mvxf(Expression v) {
+	return(new MVTransform(v));
+    }
+    public static Expression pmvxf(Expression v) {
+	return(new PMVTransform(v));
     }
 
      /* If, at some unexpected point in an unexpected future, I were
@@ -153,9 +182,9 @@ public class VertexContext extends ShaderContext {
 		return(new PostProc.AutoMacro(PostProc.misc) {
 			public Expression expand(Context ctx) {
 			    if(objv.used) {
-				return(new Mul(wxf.ref(), objv.ref()));
+				return(wxf(objv.ref()));
 			    } else {
-				return(new Mul(wxf.ref(), gl_Vertex.ref()));
+				return(wxf(gl_Vertex.ref()));
 			    }
 			}
 		    });
@@ -168,11 +197,11 @@ public class VertexContext extends ShaderContext {
 		return(new PostProc.AutoMacro(PostProc.misc) {
 			public Expression expand(Context ctx) {
 			    if(mapv.used) {
-				return(new Mul(cam.ref(), mapv.ref()));
+				return(camxf(mapv.ref()));
 			    } else if(objv.used) {
-				return(new Mul(mv.ref(), objv.ref()));
+				return(mvxf(objv.ref()));
 			    } else {
-				return(new Mul(mv.ref(), gl_Vertex.ref()));
+				return(mvxf(gl_Vertex.ref()));
 			    }
 			}
 		    });
@@ -193,13 +222,13 @@ public class VertexContext extends ShaderContext {
 		return(new PostProc.AutoMacro(PostProc.misc) {
 			public Expression expand(Context ctx) {
 			    if(eyev.used) {
-				return(new Mul(proj.ref(), eyev.ref()));
+				return(projxf(eyev.ref()));
 			    } else if(mapv.used) {
-				return(new Mul(proj.ref(), cam.ref(), mapv.ref()));
+				return(projxf(camxf(mapv.ref())));
 			    } else if(objv.used) {
-				return(new Mul(pmv.ref(), objv.ref()));
+				return(pmvxf(objv.ref()));
 			    } else {
-				return(new Mul(pmv.ref(), gl_Vertex.ref()));
+				return(pmvxf(gl_Vertex.ref()));
 			    }
 			}
 		    });
