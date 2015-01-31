@@ -37,11 +37,9 @@ public class IVec4Cons extends Expression {
 	this.els = els;
     }
 
-    public IVec4Cons process(Context ctx) {
-	Expression[] nels = new Expression[els.length];
-	for(int i = 0; i < els.length; i++)
-	    nels[i] = els[i].process(ctx);
-	return(new IVec4Cons(nels));
+    public void walk(Walker w) {
+	for(Expression el : els)
+	    w.el(el);
     }
 
     public void output(Output out) {

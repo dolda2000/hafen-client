@@ -27,7 +27,7 @@
 package haven.glsl;
 
 public abstract class Element {
-    public abstract Element process(Context ctx);
+    public abstract void walk(Walker w);
 
     public void output(Output out) {
 	throw(new RuntimeException("output called on abstract element " + this));

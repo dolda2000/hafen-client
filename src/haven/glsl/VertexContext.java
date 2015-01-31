@@ -150,12 +150,12 @@ public class VertexContext extends ShaderContext {
 	    {softdep(objv);}
 
 	    public Expression root() {
-		return(new Expression() {
-			public Expression process(Context ctx) {
+		return(new PostProc.AutoMacro(PostProc.misc) {
+			public Expression expand(Context ctx) {
 			    if(objv.used) {
-				return(new Mul(wxf.ref(), objv.ref()).process(ctx));
+				return(new Mul(wxf.ref(), objv.ref()));
 			    } else {
-				return(new Mul(wxf.ref(), gl_Vertex.ref()).process(ctx));
+				return(new Mul(wxf.ref(), gl_Vertex.ref()));
 			    }
 			}
 		    });
@@ -165,14 +165,14 @@ public class VertexContext extends ShaderContext {
 	    {softdep(objv); softdep(mapv);}
 
 	    public Expression root() {
-		return(new Expression() {
-			public Expression process(Context ctx) {
+		return(new PostProc.AutoMacro(PostProc.misc) {
+			public Expression expand(Context ctx) {
 			    if(mapv.used) {
-				return(new Mul(cam.ref(), mapv.ref()).process(ctx));
+				return(new Mul(cam.ref(), mapv.ref()));
 			    } else if(objv.used) {
-				return(new Mul(mv.ref(), objv.ref()).process(ctx));
+				return(new Mul(mv.ref(), objv.ref()));
 			    } else {
-				return(new Mul(mv.ref(), gl_Vertex.ref()).process(ctx));
+				return(new Mul(mv.ref(), gl_Vertex.ref()));
 			    }
 			}
 		    });
@@ -190,24 +190,24 @@ public class VertexContext extends ShaderContext {
 	    }
 
 	    public Expression root() {
-		return(new Expression() {
-			public Expression process(Context ctx) {
+		return(new PostProc.AutoMacro(PostProc.misc) {
+			public Expression expand(Context ctx) {
 			    if(eyev.used) {
-				return(new Mul(proj.ref(), eyev.ref()).process(ctx));
+				return(new Mul(proj.ref(), eyev.ref()));
 			    } else if(mapv.used) {
-				return(new Mul(proj.ref(), cam.ref(), mapv.ref()).process(ctx));
+				return(new Mul(proj.ref(), cam.ref(), mapv.ref()));
 			    } else if(objv.used) {
-				return(new Mul(pmv.ref(), objv.ref()).process(ctx));
+				return(new Mul(pmv.ref(), objv.ref()));
 			    } else {
-				return(new Mul(pmv.ref(), gl_Vertex.ref()).process(ctx));
+				return(new Mul(pmv.ref(), gl_Vertex.ref()));
 			    }
 			}
 		    });
 	    }
 
 	    protected void cons2(Block blk) {
-		var = gl_Position;
-		blk.add(new LBinOp.Assign(var.ref(), init));
+		tgt = gl_Position.ref();
+		blk.add(new LBinOp.Assign(tgt, init));
 	    }
 	};
 
@@ -219,6 +219,7 @@ public class VertexContext extends ShaderContext {
 	for(CodeMacro macro : code)
 	    macro.expand(main.code);
 	main.define(this);
+	PostProc.autoproc(this);
 	output(new Output(out, this));
     }
 }
