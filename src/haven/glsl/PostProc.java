@@ -52,6 +52,10 @@ public class PostProc implements Walker {
 	public PostProc proc(Context ctx) {
 	    return(new PostProc(this, ctx));
 	}
+
+	public String toString() {
+	    return("AutoID(\"" + name + "\", " + order + ")");
+	}
     }
     public static final AutoID misc = new AutoID("misc", 0);
 
@@ -79,36 +83,31 @@ public class PostProc implements Walker {
 	final Collection<AutoID> closed = new ArrayList<AutoID>();
 	final int[] curo = {Integer.MIN_VALUE};
 	while(true) {
-	    final List<AutoID> open = new ArrayList<AutoID>();
+	    final int[] mino = {0};
+	    final AutoID[] min = {null};
 	    ctx.walk(new Walker() {
 		    public void el(Element el) {
 			if(el instanceof Processed) {
 			    Object key = ((Processed)el).ppid();
 			    if(key instanceof AutoID) {
 				AutoID id = (AutoID)key;
-				if(!closed.contains(id) && !open.contains(id)) {
+				if(!closed.contains(id) && ((min[0] == null) || (id.order < mino[0]))) {
 				    if(id.order < curo[0])
 					throw(new RuntimeException("New postprocessor " + id.name + " with order " + id.order + " added when at order " + curo[0]));
-				    open.add(id);
+				    min[0] = id;
+				    mino[0] = id.order;
 				}
 			    }
 			}
 			el.walk(this);
 		    }
 		});
-	    if(open.isEmpty())
+	    AutoID id = min[0];
+	    if(id == null)
 		return;
-	    Collections.sort(open, new Comparator<AutoID>() {
-		    public int compare(AutoID a, AutoID b) {
-			return(a.order - b.order);
-		    }
-		});
-	    for(AutoID id : open) {
-		ctx.walk(id.proc(ctx));
-		curo[0] = id.order;
-		closed.add(id);
-	    }
-	    open.clear();
+	    ctx.walk(id.proc(ctx));
+	    curo[0] = id.order;
+	    closed.add(id);
 	}
     }
 
