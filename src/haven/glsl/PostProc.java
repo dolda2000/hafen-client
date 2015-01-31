@@ -53,6 +53,7 @@ public class PostProc implements Walker {
 	    return(new PostProc(this, ctx));
 	}
     }
+    public static final AutoID misc = new AutoID("misc", 0);
 
     public PostProc(Object id, Context ctx) {
 	this.id = id;
@@ -108,6 +109,34 @@ public class PostProc implements Walker {
 		closed.add(id);
 	    }
 	    open.clear();
+	}
+    }
+
+    public static abstract class ProcExpression extends Expression implements Processed {
+	public final Object id;
+	public ProcExpression(Object id) {this.id = id;}
+	public Object ppid() {return(id);}
+    }
+
+    public static abstract class AutoMacro extends ProcExpression {
+	protected Expression exp = null;
+
+	public AutoMacro(Object id) {super(id);}
+
+	protected abstract Expression expand(Context ctx);
+	protected Expression expand0(PostProc proc) {return(expand(proc.ctx));}
+
+	public void process(PostProc proc) {
+	    exp = expand0(proc);
+	}
+
+	public void walk(Walker w) {
+	    if(exp != null)
+		w.el(exp);
+	}
+
+	public void output(Output out) {
+	    exp.output(out);
 	}
     }
 }
