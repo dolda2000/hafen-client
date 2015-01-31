@@ -109,15 +109,16 @@ public class VertexContext extends ShaderContext {
 	}
     }
     private static class MVTransform extends PostProc.AutoMacro {
-	final Expression v;
-	MVTransform(Expression v) {super(xfpp); this.v = v;}
+	final Expression v; final boolean norm;
+	MVTransform(Expression v, boolean norm) {super(xfpp); this.v = v; this.norm = norm;}
+	private Expression norm(Expression xf) {return(norm?new Mat3Cons(xf):xf);}
 	public Expression expand(Context ctx) {
 	    VertexContext vctx = (VertexContext)ctx;
 	    vctx.xfpinit();
 	    if(vctx.h_wxf)
-		return(new Mul(u_cam.ref(), u_wxf.ref(), v));
+		return(new Mul(norm(u_cam.ref()), norm(u_wxf.ref()), v));
 	    else
-		return(new Mul(u_mv.ref(), v));
+		return(new Mul(norm(u_mv.ref()), v));
 	}
     }
     private static class PMVTransform extends PostProc.AutoMacro {
@@ -157,7 +158,7 @@ public class VertexContext extends ShaderContext {
 	return(new WorldTransform(v));
     }
     public static Expression mvxf(Expression v) {
-	return(new MVTransform(v));
+	return(new MVTransform(v, false));
     }
     public static Expression pmvxf(Expression v) {
 	return(new PMVTransform(v));
@@ -167,7 +168,7 @@ public class VertexContext extends ShaderContext {
       * to use anisotropic transforms, this will have to get a matrix
       * inverter implemented for it. */
     public Expression nxf(Expression v) {
-	return(mvxf(v));
+	return(new MVTransform(v, true));
     }
 
     public final ValBlock.Value objv = mainvals.new Value(Type.VEC4, new Symbol.Gen("objv")) {
