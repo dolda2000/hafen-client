@@ -199,6 +199,7 @@ public class VertexContext extends ShaderContext {
 	for(CodeMacro macro : code)
 	    macro.expand(main.code);
 	main.define(this);
+	PostProc.autoproc(this);
 	output(new Output(out, this));
     }
 }
