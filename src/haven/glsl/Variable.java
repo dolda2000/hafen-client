@@ -62,13 +62,15 @@ public abstract class Variable {
 	    super(type, new Symbol.Gen());
 	}
 
-	public class Ref extends Variable.Ref {
-	    /* XXXP
-	    public Ref process(Context ctx) {
-		use(ctx);
-		return(this);
+	private static final Object ppid = new PostProc.AutoID("vardef", 10000);
+	public class Ref extends Variable.Ref implements PostProc.Processed {
+	    public void process(PostProc proc) {
+		use(proc.ctx);
 	    }
-	    */
+
+	    public Object ppid() {
+		return(ppid);
+	    }
 
 	    public void walk(Walker w) {}
 	}
