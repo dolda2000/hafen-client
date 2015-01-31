@@ -112,8 +112,9 @@ public class VertexContext extends ShaderContext {
 	    {softdep(objv);}
 
 	    public Expression root() {
+		return(new Mul(wxf.ref(), objv.depref()));
+		/* XXXP
 		return(new Expression() {
-			/* XXXP
 			public Expression process(Context ctx) {
 			    if(objv.used) {
 				return(new Mul(wxf.ref(), objv.ref()).process(ctx));
@@ -121,20 +122,20 @@ public class VertexContext extends ShaderContext {
 				return(new Mul(wxf.ref(), gl_Vertex.ref()).process(ctx));
 			    }
 			}
-			*/
 
 			public void walk(Walker w) {
-			    /* XXXP */
 			}
 		    });
+		*/
 	    }
 	};
     public final ValBlock.Value eyev = mainvals.new Value(Type.VEC4, new Symbol.Gen("eyev")) {
 	    {softdep(objv); softdep(mapv);}
 
 	    public Expression root() {
+		return(new Mul(cam.ref(), mapv.depref()));
+		/* XXXP
 		return(new Expression() {
-			/* XXXP
 			public Expression process(Context ctx) {
 			    if(mapv.used) {
 				return(new Mul(cam.ref(), mapv.ref()).process(ctx));
@@ -144,12 +145,11 @@ public class VertexContext extends ShaderContext {
 				return(new Mul(mv.ref(), gl_Vertex.ref()).process(ctx));
 			    }
 			}
-			*/
 
 			public void walk(Walker w) {
-			    /* XXXP */
 			}
 		    });
+		*/
 	    }
 	};
     public final ValBlock.Value eyen = mainvals.new Value(Type.VEC3, new Symbol.Gen("eyen")) {
@@ -164,8 +164,9 @@ public class VertexContext extends ShaderContext {
 	    }
 
 	    public Expression root() {
+		return(new Mul(proj.ref(), eyev.depref()));
+		/* XXXP
 		return(new Expression() {
-			/* XXXP
 			public Expression process(Context ctx) {
 			    if(eyev.used) {
 				return(new Mul(proj.ref(), eyev.ref()).process(ctx));
@@ -177,12 +178,11 @@ public class VertexContext extends ShaderContext {
 				return(new Mul(pmv.ref(), gl_Vertex.ref()).process(ctx));
 			    }
 			}
-			*/
 
 			public void walk(Walker w) {
-			    /* XXXP */
 			}
 		    });
+		*/
 	    }
 
 	    protected void cons2(Block blk) {
