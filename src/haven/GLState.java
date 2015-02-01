@@ -61,6 +61,15 @@ public abstract class GLState {
 	return(0);
     }
     
+    public interface Instancer<T extends GLState> {
+	public T inststate(T[] states);
+	public static final ShaderMacro mkinstanced = new ShaderMacro() {
+		public void modify(haven.glsl.ProgramContext ctx) {
+		    ctx.instanced = true;
+		}
+	    };
+    }
+
     private static int slotnum = 0;
     private static Slot<?>[] deplist = new Slot<?>[0];
     private static Slot<?>[] idlist = new Slot<?>[0];
@@ -71,6 +80,7 @@ public abstract class GLState {
 	public final Type type;
 	public final int id;
 	public final Class<T> scl;
+	public Instancer<T> instanced;
 	private int depid = -1;
 	private final Slot<?>[] dep, rdep;
 	private Slot[] grdep;
@@ -111,6 +121,11 @@ public abstract class GLState {
 	
 	public Slot(Type type, Class<T> scl, Slot... dep) {
 	    this(type, scl, dep, null);
+	}
+
+	public Slot<T> instanced(Instancer<T> inst) {
+	    this.instanced = inst;
+	    return(this);
 	}
 	
 	private static void makedeps(Collection<Slot<?>> slots) {
@@ -205,6 +220,35 @@ public abstract class GLState {
 	    }
 	}
 	
+	public int ihash() {
+	    int ret = 0;
+	    for(int i = 0; i < states.length; i++) {
+		if((idlist[i].instanced == null) && (states[i] != null))
+		    ret = (ret * 31) + System.identityHashCode(states[i]);
+	    }
+	    return(ret);
+	}
+
+	public boolean iequals(Buffer o) {
+	    GLState[] a, b;
+	    int i = 0;
+
+	    if(states.length > o.states.length) {
+		a = states; b = o.states;
+	    } else {
+		b = states; a = o.states;
+	    }
+	    for(; i < b.length; i++) {
+		if((idlist[i].instanced == null) && (a[i] != b[i]))
+		    return(false);
+	    }
+	    for(; i < a.length; i++) {
+		if((idlist[i].instanced == null) && (a[i] != null))
+		    return(false);
+	    }
+	    return(true);
+	}
+
 	private void adjust() {
 	    if(states.length < slotnum) {
 		GLState[] n = new GLState[slotnum];

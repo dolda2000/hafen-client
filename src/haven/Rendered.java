@@ -27,11 +27,16 @@
 package haven;
 
 import java.util.Comparator;
+import java.util.List;
 import javax.media.opengl.*;
 
 public interface Rendered extends Drawn {
     public boolean setup(RenderList r);
     
+    public static interface Instanced extends Rendered {
+	public boolean drawinst(GOut g, List<GLState.Buffer> instances);
+    }
+
     public static interface RComparator<T extends Rendered> {
 	public int compare(T a, T b, GLState.Buffer sa, GLState.Buffer sb);
     }

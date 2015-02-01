@@ -65,6 +65,23 @@ public class Location extends Transform {
 		ret += " -> " + p;
 	    return(ret);
 	}
+
+	public static final Instancer<Chain> instancer = new Instancer<Chain>() {
+	    final Chain instanced = new Chain(null, null) {
+		    public Matrix4f fin(Matrix4f o) {
+			throw(new RuntimeException("Current in instanced drawing; cannot finalize a single location"));
+		    }
+
+		    public String toString() {return("instanced location");}
+
+		    final haven.glsl.ShaderMacro[] shaders = {mkinstanced};
+		    public haven.glsl.ShaderMacro[] shaders() {return(shaders);}
+		};
+
+	    public Chain inststate(Chain[] in) {
+		return(instanced);
+	    }
+	};
     }
 
     public void apply(GOut g) {

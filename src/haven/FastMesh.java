@@ -30,7 +30,7 @@ import java.util.*;
 import java.nio.*;
 import javax.media.opengl.*;
 
-public class FastMesh implements FRendered, Disposable {
+public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     public static final GLState.Slot<GLState> vstate = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class);
     public final VertexBuf vert;
     public final ShortBuffer indb;
@@ -332,6 +332,10 @@ public class FastMesh implements FRendered, Disposable {
     
     protected boolean compile() {
 	return(true);
+    }
+
+    public boolean drawinst(GOut g, List<GLState.Buffer> st) {
+	return(false);
     }
     
     public void dispose() {
