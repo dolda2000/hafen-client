@@ -147,7 +147,7 @@ public class LoginScreen extends Widget {
 
     private void mklogin() {
 	synchronized(ui) {
-	    btn = new IButton(new Coord(420, 510), this, "gfx/hud/buttons/login", "u", "d", null);
+	    btn = new IButton(new Coord(419, 510), this, "gfx/hud/buttons/login", "u", "d", "o");
 	    btn.c = btn.c.sub(Utils.imgsz(btn.up).div(2));
 	    progress(null);
 	}
