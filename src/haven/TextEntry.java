@@ -56,6 +56,7 @@ public class TextEntry extends SIWidget {
 
     public void settext(String text) {
 	buf.setline(text);
+	redraw();
     }
 
     public void rsettext(String text) {
@@ -70,6 +71,7 @@ public class TextEntry extends SIWidget {
 		    TextEntry.this.changed();
 		}
 	    };
+	redraw();
     }
 
     public void uimsg(String name, Object... args) {
