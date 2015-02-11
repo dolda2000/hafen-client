@@ -65,12 +65,14 @@ public class Fightsess extends Widget {
     }
 
     private static final Text.Furnace ipf = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 18, new Color(128, 128, 255)).aa(true), 1, 1, new Color(48, 48, 96));
-    private final Text.UText ip = new Text.UText(ipf) {
-	    public String text() {return("IP: " + fv.current.ip);}
-	};
-    private final Text.UText oip = new Text.UText(ipf) {
-	    public String text() {return("IP: " + fv.current.oip);}
-	};
+    private final Text.UText<?> ip = new Text.UText<Integer>(ipf) {
+	public String text(Integer v) {return("IP: " + v);}
+	public Integer value() {return(fv.current.ip);}
+    };
+    private final Text.UText<?> oip = new Text.UText<Integer>(ipf) {
+	public String text(Integer v) {return("IP: " + v);}
+	public Integer value() {return(fv.current.oip);}
+    };
 
     public void draw(GOut g) {
 	updatepos();
