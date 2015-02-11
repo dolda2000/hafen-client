@@ -48,7 +48,7 @@ public class Window extends Widget implements DTarget {
     public static final Tex br = Resource.loadtex("gfx/hud/wnd/lg/br");
     public static final Coord tlm = new Coord(18, 30), brm = new Coord(13, 22), cpo = new Coord(36, 17);
     public static final int capo = 7, capio = 2;
-    public static final Coord mrgn = new Coord(9, 9);
+    public static final Coord dlmrgn = new Coord(23, 9), dsmrgn = new Coord(9, 9);
     public static final BufferedImage ctex = Resource.loadimg("gfx/hud/fonttex");
     public static final Text.Furnace cf = new Text.Imager(new PUtils.TexFurn(new Text.Foundry(Text.fraktur, 15).aa(true), ctex)) {
 	    protected BufferedImage proc(Text text) {
@@ -67,7 +67,7 @@ public class Window extends Widget implements DTarget {
 	Resource.loadimg("gfx/hud/wnd/lg/cbtnu"),
 	Resource.loadimg("gfx/hud/wnd/lg/cbtnd"),
 	Resource.loadimg("gfx/hud/wnd/lg/cbtnh")};
-    public final Coord tlo, rbo;
+    public final Coord tlo, rbo, mrgn;
     public final IButton cbtn;
     public boolean dt = false;
     public Text cap;
@@ -79,17 +79,18 @@ public class Window extends Widget implements DTarget {
     @RName("wnd")
     public static class $_ implements Factory {
 	public Widget create(Coord c, Widget parent, Object[] args) {
-	    if(args.length < 2)
-		return(new Window(c, (Coord)args[0], parent, null));
-	    else
-		return(new Window(c, (Coord)args[0], parent, (String)args[1]));
+	    Coord sz = (Coord)args[0];
+	    String cap = (args.length > 1)?(String)args[1]:null;
+	    boolean lg = (args.length > 2)?((Integer)args[2] != 0):false;
+	    return(new Window(c, sz, parent, cap, lg, Coord.z, Coord.z));
 	}
     }
 
-    public Window(Coord c, Coord sz, Widget parent, String cap, Coord tlo, Coord rbo) {
+    public Window(Coord c, Coord sz, Widget parent, String cap, boolean lg, Coord tlo, Coord rbo) {
 	super(c, new Coord(0, 0), parent);
 	this.tlo = tlo;
 	this.rbo = rbo;
+	this.mrgn = lg?dlmrgn:dsmrgn;
 	cbtn = new IButton(Coord.z, this, cbtni[0], cbtni[1], cbtni[2]);
 	chcap(cap);
 	resize(sz);
@@ -98,7 +99,7 @@ public class Window extends Widget implements DTarget {
     }
 
     public Window(Coord c, Coord sz, Widget parent, String cap) {
-	this(c, sz, parent, cap, new Coord(0, 0), new Coord(0, 0));
+	this(c, sz, parent, cap, false, Coord.z, Coord.z);
     }
 
     public void chcap(String cap) {
