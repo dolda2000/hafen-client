@@ -28,10 +28,16 @@ package haven;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 
-public class TextEntry extends Widget {
-    public static final Text.Foundry fnd = new Text.Foundry(Text.dfont, 12, Color.BLACK);
-    public static final int defh = fnd.height() + 2;
+public class TextEntry extends SIWidget {
+    public static final Text.Foundry fnd = new Text.Foundry(Text.serif, 12, new Color(255, 205, 109)).aa(true);
+    public static final BufferedImage lcap = Resource.loadimg("gfx/hud/text/l");
+    public static final BufferedImage rcap = Resource.loadimg("gfx/hud/text/r");
+    public static final BufferedImage mext = Resource.loadimg("gfx/hud/text/m");
+    public static final BufferedImage caret = Resource.loadimg("gfx/hud/text/caret");
+    public static final Coord toff = new Coord(lcap.getWidth() - 1, 3);
+    public static final Coord coff = new Coord(-3, -1);
     public LineEdit buf;
     public int sx;
     public boolean pw = false;
@@ -59,6 +65,7 @@ public class TextEntry extends Widget {
 		}
 		
 		protected void changed() {
+		    redraw();
 		    TextEntry.this.text = line;
 		    TextEntry.this.changed();
 		}
@@ -77,10 +84,45 @@ public class TextEntry extends Widget {
 	}
     }
 
-    protected void drawbg(GOut g) {
-	g.frect(Coord.z, sz);
+    protected String dtext() {
+	if(pw) {
+	    String ret = "";
+	    for(int i = 0; i < buf.line.length(); i++)
+		ret += "\u2022";
+	    return(ret);
+	} else {
+	    return(buf.line);
+	}
     }
 
+    public void draw(BufferedImage img) {
+	Graphics g = img.getGraphics();
+	String dtext = dtext();
+	if((tcache == null) || !tcache.text.equals(dtext))
+	    tcache = fnd.render(dtext);
+	g.drawImage(mext, 0, 0, sz.x, sz.y, null);
+
+	int cx = tcache.advance(buf.point);
+	if(cx < sx) sx = cx;
+	if(cx > sx + (sz.x - 1)) sx = cx - (sz.x - 1);
+	g.drawImage(tcache.img, toff.x - sx, toff.y, null);
+
+	g.drawImage(lcap, 0, 0, null);
+	g.drawImage(rcap, sz.x - rcap.getWidth(), 0, null);
+
+	g.dispose();
+    }
+
+    public void draw(GOut g) {
+	super.draw(g);
+	if(hasfocus && ((System.currentTimeMillis() % 1000) > 500)) {
+	    int cx = tcache.advance(buf.point);
+	    int lx = cx - sx + 1;
+	    g.image(caret, toff.add(coff).add(lx, 0));
+	}
+    }
+
+    /*
     public void draw(GOut g) {
 	super.draw(g);
 	String dtext;
@@ -105,15 +147,17 @@ public class TextEntry extends Widget {
 	    g.chcolor();
 	}
     }
+    */
 
-    public TextEntry(Coord c, Coord sz, Widget parent, String deftext) {
-	super(c, sz, parent);
+    public TextEntry(Coord c, int w, Widget parent, String deftext) {
+	super(c, new Coord(w, mext.getHeight()), parent);
 	rsettext(deftext);
 	setcanfocus(true);
     }
 
-    public TextEntry(Coord c, int w, Widget parent, String deftext) {
-	this(c, new Coord(w, defh), parent, deftext);
+    @Deprecated
+    public TextEntry(Coord c, Coord sz, Widget parent, String deftext) {
+	this(c, sz.x, parent, deftext);
     }
 
     protected void changed() {
