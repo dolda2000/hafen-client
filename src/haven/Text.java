@@ -197,18 +197,20 @@ public class Text {
 	}
     }
 
-    public static abstract class UText implements Indir<Text> {
+    public static abstract class UText<T> implements Indir<Text> {
 	public final Furnace fnd;
 	private Text cur = null;
+	private T cv = null;
 
 	public UText(Furnace fnd) {this.fnd = fnd;}
 
-	protected abstract String text();
+	protected String text(T value) {return(String.valueOf(value));}
+	protected abstract T value();
 
 	public Text get() {
-	    String text = text();
-	    if((cur == null) || !cur.text.equals(text))
-		cur = fnd.render(text);
+	    T value = value();
+	    if(!Utils.eq(value, cv))
+		cur = fnd.render(text(cv = value));
 	    return(cur);
 	}
 
@@ -227,12 +229,10 @@ public class Text {
 	    } catch(NoSuchFieldException e) {
 		throw(new RuntimeException(e));
 	    }
-	    if(f.getType() != String.class)
-		throw(new RuntimeException("Not a string field: " + f));
-	    return(new UText(fnd) {
-		    public String text() {
+	    return(new UText<Object>(fnd) {
+		    public Object value() {
 			try {
-			    return((String)f.get(obj));
+			    return(f.get(obj));
 			} catch(IllegalAccessException e) {
 			    throw(new RuntimeException(e));
 			}
