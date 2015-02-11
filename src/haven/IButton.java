@@ -34,14 +34,14 @@ public class IButton extends SSWidget {
     boolean h = false;
     boolean a = false;
     UI.Grab d = null;
-	
+
     @RName("ibtn")
     public static class $_ implements Factory {
 	public Widget create(Coord c, Widget parent, Object[] args) {
 	    return(new IButton(c, parent, Resource.loadimg((String)args[0]), Resource.loadimg((String)args[1])));
 	}
     }
-	
+
     public IButton(Coord c, Widget parent, BufferedImage up, BufferedImage down, BufferedImage hover) {
 	super(c, Utils.imgsz(up), parent);
 	this.up = up;
@@ -49,11 +49,15 @@ public class IButton extends SSWidget {
 	this.hover = hover;
 	render();
     }
-	
+
     public IButton(Coord c, Widget parent, BufferedImage up, BufferedImage down) {
 	this(c, parent, up, down, up);
     }
-	
+
+    public IButton(Coord c, Widget parent, String base, String up, String down, String hover) {
+	this(c, parent, Resource.loadimg(base + up), Resource.loadimg(base + down), Resource.loadimg(base + (hover == null?up:hover)));
+    }
+
     public void render() {
 	clear();
 	Graphics g = graphics();
@@ -73,11 +77,11 @@ public class IButton extends SSWidget {
 	    return(true);
 	return(up.getRaster().getSample(c.x, c.y, 3) >= 128);
     }
-	
+
     public void click() {
 	wdgmsg("activate");
     }
-	
+
     public boolean mousedown(Coord c, int button) {
 	if(button != 1)
 	    return(false);
@@ -88,7 +92,7 @@ public class IButton extends SSWidget {
 	render();
 	return(true);
     }
-	
+
     public boolean mouseup(Coord c, int button) {
 	if((d != null) && button == 1) {
 	    d.remove();
@@ -100,7 +104,7 @@ public class IButton extends SSWidget {
 	}
 	return(false);
     }
-	
+
     public void mousemove(Coord c) {
 	boolean h = checkhit(c);
 	boolean a = false;
