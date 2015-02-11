@@ -138,7 +138,7 @@ public class FightWnd extends Window {
 		    save(n);
 		}
 	    };
-	    savesel[n] = new CheckBox(new Coord(390, y - CheckBox.box.sz().y), this, "Use") {
+	    savesel[n] = new CheckBox(new Coord(390, y - CheckBox.lbox.sz().y), this, "Use", true) {
 		    public boolean mousedown(Coord c, int button) {
 			if(button == 1) {
 			    if(a)
