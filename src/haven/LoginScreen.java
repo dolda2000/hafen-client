@@ -66,10 +66,10 @@ public class LoginScreen extends Widget {
 	    setfocustab(true);
 	    new Label(new Coord(0, 0), this, "User name", textf);
 	    user = new TextEntry(new Coord(0, 20), new Coord(150, 20), this, username);
-	    new Label(new Coord(0, 60), this, "Password", textf);
-	    pass = new TextEntry(new Coord(0, 80), new Coord(150, 20), this, "");
+	    new Label(new Coord(0, 50), this, "Password", textf);
+	    pass = new TextEntry(new Coord(0, 70), new Coord(150, 20), this, "");
 	    pass.pw = true;
-	    savepass = new CheckBox(new Coord(0, 110), this, "Remember me");
+	    savepass = new CheckBox(new Coord(0, 100), this, "Remember me", true);
 	    savepass.a = save;
 	    if(user.text.equals(""))
 		setfocus(user);
@@ -110,7 +110,7 @@ public class LoginScreen extends Widget {
 	Button btn;
 		
 	private Tokenbox(String username) {
-	    super(new Coord(295, 310), new Coord(250, 100), LoginScreen.this);
+	    super(new Coord(295, 330), new Coord(250, 100), LoginScreen.this);
 	    label = textfs.render("Identity is saved for " + username, java.awt.Color.WHITE);
 	    btn = new Button(new Coord(75, 30), 100, this, "Forget me");
 	}
@@ -147,7 +147,8 @@ public class LoginScreen extends Widget {
 
     private void mklogin() {
 	synchronized(ui) {
-	    btn = new IButton(new Coord(373, 460), this, Resource.loadimg("gfx/hud/buttons/loginu"), Resource.loadimg("gfx/hud/buttons/logind"));
+	    btn = new IButton(new Coord(420, 510), this, "gfx/hud/buttons/login", "u", "d", null);
+	    btn.c = btn.c.sub(Utils.imgsz(btn.up).div(2));
 	    progress(null);
 	}
     }

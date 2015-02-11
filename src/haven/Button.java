@@ -108,6 +108,8 @@ public class Button extends SIWidget {
 	g.drawImage(bb, bl.getWidth(), yo + hs - bb.getHeight(), sz.x - bl.getWidth() - br.getWidth(), bb.getHeight(), null);
 	if(lg)
 	    g.drawImage(bm, (sz.x - bm.getWidth()) / 2, 0, null);
+
+	g.dispose();
     }
 	
     public void change(String text, Color col) {
