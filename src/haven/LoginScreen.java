@@ -217,7 +217,7 @@ public class LoginScreen extends Widget {
     public void draw(GOut g) {
 	super.draw(g);
 	if(error != null)
-	    g.image(error.tex(), new Coord(420 - (error.sz().x / 2), 500));
+	    g.image(error.tex(), new Coord(420 - (error.sz().x / 2), 450));
 	if(progress != null)
 	    g.image(progress.tex(), new Coord(420 - (progress.sz().x / 2), 350));
     }
