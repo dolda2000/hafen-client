@@ -70,6 +70,31 @@ public class Widget {
 	    return(ret);
 	}
     }
+    @RName("fcnt")
+    public static class $FCont implements Factory {
+	public Widget create(Coord c, Widget parent, Object[] args) {
+	    Widget ret = new Widget(c, parent.sz, parent) {
+		    Collection<Widget> fill = new ArrayList<Widget>();
+		    public void presize() {
+			resize(parent.sz);
+			for(Widget ch : fill)
+			    ch.resize(sz);
+		    }
+		    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
+			if((pargs[0] instanceof String) && pargs[0].equals("fill")) {
+			    Widget ret = gettype(type).create(Coord.z, this, cargs);
+			    ret.resize(sz);
+			    fill.add(ret);
+			    return(ret);
+			} else {
+			    return(super.makechild(type, pargs, cargs));
+			}
+		    }
+		};
+	    ret.presize();
+	    return(ret);
+	}
+    }
 
     @Resource.PublishedCode(name = "wdg")
     public interface Factory {
