@@ -63,7 +63,7 @@ public class Makewindow extends Widget {
 	public void draw(GOut g) {
 	    try {
 		if(spr == null)
-		    spr = GSprite.create(this, res.get(), sdt);
+		    spr = GSprite.create(this, res.get(), sdt.clone());
 		spr.draw(g);
 	    } catch(Loading e) {}
 	    if(num != null)
