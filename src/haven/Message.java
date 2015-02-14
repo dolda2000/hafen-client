@@ -147,6 +147,9 @@ public abstract class Message {
 	    n -= s;
 	}
     }
+    public void skip() {
+	do rh = rt; while(underflow(1024));
+    }
     public byte[] bytes(int n) {
 	byte[] ret = new byte[n];
 	rensure(n);
@@ -158,6 +161,21 @@ public abstract class Message {
 	while(underflow(65536));
 	return(bytes(rt - rh));
     }
+    public void bytes(byte[] b, int off, int len) {
+	int olen = len;
+	while(len > 0) {
+	    if(rh >= rt) {
+		if(!underflow(Math.min(len, 1024)))
+		    throw(new EOF("Required " + olen + " bytes, got only " + (olen - len)));
+	    }
+	    int r = Math.min(len, rt - rh);
+	    System.arraycopy(rbuf, rh, b, off, r);
+	    rh += r;
+	    off += r;
+	    len -= r;
+	}
+    }
+    public void bytes(byte[] b) {bytes(b, 0, b.length);}
     public Coord coord() {
 	return(new Coord(int32(), int32()));
     }
