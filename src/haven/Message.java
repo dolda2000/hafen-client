@@ -136,6 +136,17 @@ public abstract class Message {
 	    l++;
 	}
     }
+    public void skip(int n) {
+	while(n > 0) {
+	    if(rh >= rt) {
+		if(!underflow(Math.min(n, 1024)))
+		    throw(new EOF("Out of bytes to skip"));
+	    }
+	    int s = Math.min(n, rt - rh);
+	    rh += s;
+	    n -= s;
+	}
+    }
     public byte[] bytes(int n) {
 	byte[] ret = new byte[n];
 	rensure(n);

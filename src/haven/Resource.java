@@ -707,7 +707,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		
 	public Neg(Message buf) {
 	    cc = cdec(buf);
-	    buf.bytes(12);
+	    buf.skip(12);
 	    ep = new Coord[8][0];
 	    int en = buf.uint8();
 	    for(int i = 0; i < en; i++) {
@@ -1431,7 +1431,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    LayerFactory<?> lc = ltypes.get(in.string());
 	    int len = in.int32();
 	    if(lc == null) {
-		in.bytes(len);
+		in.skip(len);
 		continue;
 	    }
 	    layers.add(lc.cons(this, new LimitMessage(in, len)));
