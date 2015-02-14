@@ -374,9 +374,8 @@ public class FastMesh implements FRendered, Disposable {
 	public final int id, ref;
 	private int matid;
 	
-	public MeshRes(Resource res, byte[] rbuf) {
+	public MeshRes(Resource res, Message buf) {
 	    res.super();
-	    Message buf = new MessageBuf(rbuf);
 	    int fl = buf.uint8();
 	    int num = buf.uint16();
 	    matid = buf.int16();

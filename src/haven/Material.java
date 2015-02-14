@@ -272,8 +272,7 @@ public class Material extends GLState {
 			     (int)(buf.cpfloat() * 255.0)));
 	}
 
-	public Res cons(final Resource res, byte[] rbuf) {
-	    Message buf = new MessageBuf(rbuf);
+	public Res cons(final Resource res, Message buf) {
 	    int id = buf.uint16();
 	    Res ret = new Res(res, id);
 	    GLState light = Light.deflight;
@@ -408,8 +407,7 @@ public class Material extends GLState {
 
     @Resource.LayerName("mat2")
     public static class NewMat implements Resource.LayerFactory<Res> {
-	public Res cons(Resource res, byte[] bbuf) {
-	    Message buf = new MessageBuf(bbuf);
+	public Res cons(Resource res, Message buf) {
 	    int id = buf.uint16();
 	    Res ret = new Res(res, id);
 	    while(!buf.eom()) {

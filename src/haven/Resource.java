@@ -521,7 +521,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     }
 
     public interface LayerFactory<T extends Layer> {
-	public T cons(Resource res, byte[] buf);
+	public T cons(Resource res, Message buf);
     }
 
     public static class LayerConstructor<T extends Layer> implements LayerFactory<T> {
@@ -531,13 +531,13 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public LayerConstructor(Class<T> cl) {
 	    this.cl = cl;
 	    try {
-		this.cons = cl.getConstructor(Resource.class, byte[].class);
+		this.cons = cl.getConstructor(Resource.class, Message.class);
 	    } catch(NoSuchMethodException e) {
 		throw(new RuntimeException("No proper constructor found for layer type " + cl.getName(), e));
 	    }
 	}
 	
-	public T cons(Resource res, byte[] buf) {
+	public T cons(Resource res, Message buf) {
 	    try {
 		return(cons.newInstance(res, buf));
 	    } catch(InstantiationException e) {
@@ -603,8 +603,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public Coord sz;
 	public Coord o;
 		
-	public Image(byte[] rbuf) {
-	    Message buf = new MessageBuf(rbuf);
+	public Image(Message buf) {
 	    z = buf.int16();
 	    subz = buf.int16();
 	    int fl = buf.uint8();
@@ -664,8 +663,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public class Tooltip extends Layer {
 	public final String t;
                 
-	public Tooltip(byte[] rbuf) {
-	    t = new String(rbuf, Utils.utf8);
+	public Tooltip(Message buf) {
+	    t = new String(buf.bytes(), Utils.utf8);
 	}
                 
 	public void init() {}
@@ -679,8 +678,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public final int w;
 	public final char t;
 		
-	public Tile(byte[] rbuf) {
-	    Message buf = new MessageBuf(rbuf);
+	public Tile(Message buf) {
 	    t = (char)buf.uint8();
 	    id = buf.uint8();
 	    w = buf.uint16();
@@ -707,8 +705,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public Coord cc;
 	public Coord[][] ep;
 		
-	public Neg(byte[] rbuf) {
-	    Message buf = new MessageBuf(rbuf);
+	public Neg(Message buf) {
 	    cc = cdec(buf);
 	    buf.bytes(12);
 	    ep = new Coord[8][0];
@@ -731,8 +728,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public int id, d;
 	public Image[][] f;
 		
-	public Anim(byte[] rbuf) {
-	    Message buf = new MessageBuf(rbuf);
+	public Anim(Message buf) {
 	    id = buf.int16();
 	    d = buf.uint16();
 	    ids = new int[buf.uint16()];
@@ -768,8 +764,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	private Tileset() {
 	}
 
-	public Tileset(byte[] bbuf) {
-	    Message buf = new MessageBuf(bbuf);
+	public Tileset(Message buf) {
 	    while(!buf.eom()) {
 		int p = buf.uint8();
 		switch(p) {
@@ -921,8 +916,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     /* Only for backwards compatibility */
     @LayerName("tileset")
     public static class OrigTileset implements LayerFactory<Tileset> {
-	public Tileset cons(Resource res, byte[] rbuf) {
-	    Message buf = new MessageBuf(rbuf);
+	public Tileset cons(Resource res, Message buf) {
 	    Tileset ret = res.new Tileset();
 	    int fl = buf.uint8();
 	    int flnum = buf.uint16();
@@ -945,8 +939,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public class Pagina extends Layer {
 	public final String text;
 		
-	public Pagina(byte[] rbuf) {
-	    text = new String(rbuf, Utils.utf8);
+	public Pagina(Message buf) {
+	    text = new String(buf.bytes(), Utils.utf8);
 	}
 		
 	public void init() {}
@@ -959,8 +953,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public final char hk;
 	public final String[] ad;
 		
-	public AButton(byte[] rbuf) {
-	    Message buf = new MessageBuf(rbuf);
+	public AButton(Message buf) {
 	    String pr = buf.string();
 	    int pver = buf.uint16();
 	    if(pr.length() == 0) {
@@ -998,8 +991,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public final String name;
 	transient public final byte[] data;
 		
-	public Code(byte[] rbuf) {
-	    Message buf = new MessageBuf(rbuf);
+	public Code(Message buf) {
 	    name = buf.string();
 	    data = buf.bytes();
 	}
@@ -1070,8 +1062,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	transient private Map<String, Class<?>> lpe = null;
 	transient private Map<Class<?>, Object> ipe = new HashMap<Class<?>, Object>();
 		
-	public CodeEntry(byte[] rbuf) {
-	    Message buf = new MessageBuf(rbuf);
+	public CodeEntry(Message buf) {
 	    while(!buf.eom()) {
 		int t = buf.uint8();
 		if(t == 1) {
@@ -1230,8 +1221,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    this.id = id.intern();
 	}
 
-	public Audio(byte[] buf) {
-	    this(buf, "cl");
+	public Audio(Message buf) {
+	    this(buf.bytes(), "cl");
 	}
 
 	public void init() {}
@@ -1251,8 +1242,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 
     @LayerName("audio2")
     public static class Audio2 implements LayerFactory<Audio> {
-	public Audio cons(Resource res, byte[] rbuf) {
-	    Message buf = new MessageBuf(rbuf);
+	public Audio cons(Resource res, Message buf) {
 	    int ver = buf.uint8();
 	    if((ver == 1) || (ver == 2)) {
 		String id = buf.string();
@@ -1272,9 +1262,9 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public class Music extends Resource.Layer {
 	transient javax.sound.midi.Sequence seq;
 	
-	public Music(byte[] buf) {
+	public Music(Message buf) {
 	    try {
-		seq = javax.sound.midi.MidiSystem.getSequence(new ByteArrayInputStream(buf));
+		seq = javax.sound.midi.MidiSystem.getSequence(new ByteArrayInputStream(buf.bytes()));
 	    } catch(javax.sound.midi.InvalidMidiDataException e) {
 		throw(new LoadException("Invalid MIDI data", Resource.this));
 	    } catch(IOException e) {
@@ -1289,8 +1279,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public class Font extends Layer {
 	public transient final java.awt.Font font;
 
-	public Font(byte[] rbuf) {
-	    Message buf = new MessageBuf(rbuf);
+	public Font(Message buf) {
 	    int ver = buf.uint8();
 	    if(ver == 1) {
 		int type = buf.uint8();
@@ -1464,7 +1453,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    LayerFactory<?> lc = ltypes.get(tbuf.toString());
 	    if(lc == null)
 		continue;
-	    layers.add(lc.cons(this, buf));
+	    layers.add(lc.cons(this, new MessageBuf(buf)));
 	}
 	this.layers = layers;
 	for(Layer l : layers)

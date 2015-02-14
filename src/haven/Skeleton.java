@@ -522,9 +522,8 @@ public class Skeleton {
     public static class Res extends Resource.Layer {
 	public final Skeleton s;
 	
-	public Res(Resource res, byte[] rbuf) {
+	public Res(Resource res, Message buf) {
 	    res.super();
-	    Message buf = new MessageBuf(rbuf);
 	    Map<String, Bone> bones = new HashMap<String, Bone>();
 	    Map<Bone, String> pm = new HashMap<Bone, String>();
 	    while(!buf.eom()) {
@@ -870,9 +869,8 @@ public class Skeleton {
 	    return(new FxTrack(events));
 	}
 
-	public ResPose(Resource res, byte[] rbuf) {
+	public ResPose(Resource res, Message buf) {
 	    res.super();
-	    Message buf = new MessageBuf(rbuf);
 	    this.id = buf.int16();
 	    int fl = buf.uint8();
 	    int mode = buf.uint8();
@@ -1021,9 +1019,8 @@ public class Skeleton {
 	    public Command make(Message buf);
 	}
 	
-	public BoneOffset(Resource res, byte[] rbuf) {
+	public BoneOffset(Resource res, Message buf) {
 	    res.super();
-	    Message buf = new MessageBuf(rbuf);
 	    this.nm = buf.string();
 	    List<Command> cbuf = new LinkedList<Command>();
 	    while(!buf.eom())

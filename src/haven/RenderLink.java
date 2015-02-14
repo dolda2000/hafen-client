@@ -36,9 +36,8 @@ public interface RenderLink {
 	public transient final RenderLink l;
 	public final int id;
 	
-	public Res(Resource res, byte[] bbuf) {
+	public Res(Resource res, Message buf) {
 	    res.super();
-	    Message buf = new MessageBuf(bbuf);
 	    int lver = buf.uint8();
 	    int t;
 	    if(lver < 3) {

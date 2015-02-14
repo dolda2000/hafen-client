@@ -324,9 +324,8 @@ public class Light implements Rendered {
 			     (int)(buf.cpfloat() * 255.0)));
 	}
 	
-	public Res(Resource res, byte[] rbuf) {
+	public Res(Resource res, Message buf) {
 	    res.super();
-	    Message buf = new MessageBuf(rbuf);
 	    this.id = buf.int16();
 	    this.amb = cold(buf);
 	    this.dif = cold(buf);

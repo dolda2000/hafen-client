@@ -451,10 +451,9 @@ public class VertexBuf {
 	    this.b = b;
 	}
 
-	public VertexRes(Resource res, byte[] rbuf) {
+	public VertexRes(Resource res, Message buf) {
 	    res.super();
 	    List<AttribArray> bufs = new LinkedList<AttribArray>();
-	    Message buf = new MessageBuf(rbuf);
 	    int fl = buf.uint8();
 	    int num = buf.uint16();
 	    while(!buf.eom()) {
@@ -472,8 +471,7 @@ public class VertexBuf {
 
     @Resource.LayerName("vbuf")
     public static class Legacy implements Resource.LayerFactory<VertexRes> {
-	public VertexRes cons(Resource res, byte[] rbuf) {
-	    Message buf = new MessageBuf(rbuf);
+	public VertexRes cons(Resource res, Message buf) {
 	    ArrayList<AttribArray> bufs = new ArrayList<AttribArray>();
 	    int fl = buf.uint8();
 	    int num = buf.uint16();
