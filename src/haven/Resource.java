@@ -508,8 +508,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
     }
 	
-    public static Coord cdec(byte[] buf, int off) {
-	return(new Coord(Utils.int16d(buf, off), Utils.int16d(buf, off + 2)));
+    public static Coord cdec(Message buf) {
+	return(new Coord(buf.int16(), buf.int16()));
     }
 	
     public abstract class Layer implements Serializable {
@@ -521,7 +521,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     }
 
     public interface LayerFactory<T extends Layer> {
-	public T cons(Resource res, byte[] buf);
+	public T cons(Resource res, Message buf);
     }
 
     public static class LayerConstructor<T extends Layer> implements LayerFactory<T> {
@@ -531,13 +531,13 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public LayerConstructor(Class<T> cl) {
 	    this.cl = cl;
 	    try {
-		this.cons = cl.getConstructor(Resource.class, byte[].class);
+		this.cons = cl.getConstructor(Resource.class, Message.class);
 	    } catch(NoSuchMethodException e) {
 		throw(new RuntimeException("No proper constructor found for layer type " + cl.getName(), e));
 	    }
 	}
 	
-	public T cons(Resource res, byte[] buf) {
+	public T cons(Resource res, Message buf) {
 	    try {
 		return(cons.newInstance(res, buf));
 	    } catch(InstantiationException e) {
@@ -603,15 +603,16 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public Coord sz;
 	public Coord o;
 		
-	public Image(byte[] buf) {
-	    z = Utils.int16d(buf, 0);
-	    subz = Utils.int16d(buf, 2);
+	public Image(Message buf) {
+	    z = buf.int16();
+	    subz = buf.int16();
+	    int fl = buf.uint8();
 	    /* Obsolete flag 1: Layered */
-	    nooff = (buf[4] & 2) != 0;
-	    id = Utils.int16d(buf, 5);
-	    o = cdec(buf, 7);
+	    nooff = (fl & 2) != 0;
+	    id = buf.int16();
+	    o = cdec(buf);
 	    try {
-		img = ImageIO.read(new ByteArrayInputStream(buf, 11, buf.length - 11));
+		img = ImageIO.read(new MessageInputStream(buf));
 	    } catch(IOException e) {
 		throw(new LoadException(e, Resource.this));
 	    }
@@ -662,12 +663,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public class Tooltip extends Layer {
 	public final String t;
                 
-	public Tooltip(byte[] buf) {
-	    try {
-		t = new String(buf, "UTF-8");
-	    } catch(UnsupportedEncodingException e) {
-		throw(new LoadException(e, Resource.this));
-	    }
+	public Tooltip(Message buf) {
+	    t = new String(buf.bytes(), Utils.utf8);
 	}
                 
 	public void init() {}
@@ -681,12 +678,12 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public final int w;
 	public final char t;
 		
-	public Tile(byte[] buf) {
-	    t = (char)Utils.ub(buf[0]);
-	    id = Utils.ub(buf[1]);
-	    w = Utils.uint16d(buf, 2);
+	public Tile(Message buf) {
+	    t = (char)buf.uint8();
+	    id = buf.uint8();
+	    w = buf.uint16();
 	    try {
-		img = ImageIO.read(new ByteArrayInputStream(buf, 4, buf.length - 4));
+		img = ImageIO.read(new MessageInputStream(buf));
 	    } catch(IOException e) {
 		throw(new LoadException(e, Resource.this));
 	    }
@@ -708,22 +705,17 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public Coord cc;
 	public Coord[][] ep;
 		
-	public Neg(byte[] buf) {
-	    int off;
-			
-	    cc = cdec(buf, 0);
+	public Neg(Message buf) {
+	    cc = cdec(buf);
+	    buf.skip(12);
 	    ep = new Coord[8][0];
-	    int en = buf[16];
-	    off = 17;
+	    int en = buf.uint8();
 	    for(int i = 0; i < en; i++) {
-		int epid = buf[off];
-		int cn = Utils.uint16d(buf, off + 1);
-		off += 3;
+		int epid = buf.uint8();
+		int cn = buf.uint16();
 		ep[epid] = new Coord[cn];
-		for(int o = 0; o < cn; o++) {
-		    ep[epid][o] = cdec(buf, off);
-		    off += 4;
-		}
+		for(int o = 0; o < cn; o++)
+		    ep[epid][o] = cdec(buf);
 	    }
 	}
 		
@@ -736,14 +728,12 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public int id, d;
 	public Image[][] f;
 		
-	public Anim(byte[] buf) {
-	    id = Utils.int16d(buf, 0);
-	    d = Utils.uint16d(buf, 2);
-	    ids = new int[Utils.uint16d(buf, 4)];
-	    if(buf.length - 6 != ids.length * 2)
-		throw(new LoadException("Invalid anim descriptor in " + name, Resource.this));
+	public Anim(Message buf) {
+	    id = buf.int16();
+	    d = buf.uint16();
+	    ids = new int[buf.uint16()];
 	    for(int i = 0; i < ids.length; i++)
-		ids[i] = Utils.int16d(buf, 6 + (i * 2));
+		ids[i] = buf.int16();
 	}
 		
 	public void init() {
@@ -774,8 +764,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	private Tileset() {
 	}
 
-	public Tileset(byte[] bbuf) {
-	    Message buf = new MessageBuf(bbuf);
+	public Tileset(Message buf) {
 	    while(!buf.eom()) {
 		int p = buf.uint8();
 		switch(p) {
@@ -927,20 +916,15 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     /* Only for backwards compatibility */
     @LayerName("tileset")
     public static class OrigTileset implements LayerFactory<Tileset> {
-	public Tileset cons(Resource res, byte[] buf) {
+	public Tileset cons(Resource res, Message buf) {
 	    Tileset ret = res.new Tileset();
-	    int[] off = new int[1];
-	    off[0] = 0;
-	    int fl = Utils.ub(buf[off[0]++]);
-	    int flnum = Utils.uint16d(buf, off[0]);
-	    off[0] += 2;
-	    ret.flavprob = Utils.uint16d(buf, off[0]);
-	    off[0] += 2;
+	    int fl = buf.uint8();
+	    int flnum = buf.uint16();
+	    ret.flavprob = buf.uint16();
 	    for(int i = 0; i < flnum; i++) {
-		String fln = Utils.strd(buf, off);
-		int flv = Utils.uint16d(buf, off[0]);
-		off[0] += 2;
-		int flw = Utils.ub(buf[off[0]++]);
+		String fln = buf.string();
+		int flv = buf.uint16();
+		int flw = buf.uint8();
 		try {
 		    ret.flavobjs.add(load(fln, flv), flw);
 		} catch(RuntimeException e) {
@@ -955,12 +939,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public class Pagina extends Layer {
 	public final String text;
 		
-	public Pagina(byte[] buf) {
-	    try {
-		text = new String(buf, "UTF-8");
-	    } catch(UnsupportedEncodingException e) {
-		throw(new LoadException(e, Resource.this));
-	    }
+	public Pagina(Message buf) {
+	    text = new String(buf.bytes(), Utils.utf8);
 	}
 		
 	public void init() {}
@@ -973,12 +953,9 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public final char hk;
 	public final String[] ad;
 		
-	public AButton(byte[] buf) {
-	    int[] off = new int[1];
-	    off[0] = 0;
-	    String pr = Utils.strd(buf, off);
-	    int pver = Utils.uint16d(buf, off[0]);
-	    off[0] += 2;
+	public AButton(Message buf) {
+	    String pr = buf.string();
+	    int pver = buf.uint16();
 	    if(pr.length() == 0) {
 		parent = null;
 	    } else {
@@ -988,14 +965,12 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		    throw(new LoadException("Illegal resource dependency", e, Resource.this));
 		}
 	    }
-	    name = Utils.strd(buf, off);
-	    Utils.strd(buf, off); /* Prerequisite skill */
-	    hk = (char)Utils.uint16d(buf, off[0]);
-	    off[0] += 2;
-	    ad = new String[Utils.uint16d(buf, off[0])];
-	    off[0] += 2;
+	    name = buf.string();
+	    buf.string(); /* Prerequisite skill */
+	    hk = (char)buf.uint16();
+	    ad = new String[buf.uint16()];
 	    for(int i = 0; i < ad.length; i++)
-		ad[i] = Utils.strd(buf, off);
+		ad[i] = buf.string();
 	}
 		
 	public void init() {}
@@ -1016,12 +991,9 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public final String name;
 	transient public final byte[] data;
 		
-	public Code(byte[] buf) {
-	    int[] off = new int[1];
-	    off[0] = 0;
-	    name = Utils.strd(buf, off);
-	    data = new byte[buf.length - off[0]];
-	    System.arraycopy(buf, off[0], data, 0, data.length);
+	public Code(Message buf) {
+	    name = buf.string();
+	    data = buf.bytes();
 	}
 		
 	public void init() {}
@@ -1090,25 +1062,23 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	transient private Map<String, Class<?>> lpe = null;
 	transient private Map<Class<?>, Object> ipe = new HashMap<Class<?>, Object>();
 		
-	public CodeEntry(byte[] buf) {
-	    int[] off = new int[1];
-	    off[0] = 0;
-	    while(off[0] < buf.length) {
-		int t = buf[off[0]++];
+	public CodeEntry(Message buf) {
+	    while(!buf.eom()) {
+		int t = buf.uint8();
 		if(t == 1) {
 		    while(true) {
-			String en = Utils.strd(buf, off);
-			String cn = Utils.strd(buf, off);
+			String en = buf.string();
+			String cn = buf.string();
 			if(en.length() == 0)
 			    break;
 			pe.put(en, cn);
 		    }
 		} else if(t == 2) {
 		    while(true) {
-			String ln = Utils.strd(buf, off);
+			String ln = buf.string();
 			if(ln.length() == 0)
 			    break;
-			int ver = Utils.uint16d(buf, off[0]); off[0] += 2;
+			int ver = buf.uint16();
 			classpath.add(Resource.load(ln, ver));
 		    }
 		} else {
@@ -1251,8 +1221,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    this.id = id.intern();
 	}
 
-	public Audio(byte[] buf) {
-	    this(buf, "cl");
+	public Audio(Message buf) {
+	    this(buf.bytes(), "cl");
 	}
 
 	public void init() {}
@@ -1272,18 +1242,14 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 
     @LayerName("audio2")
     public static class Audio2 implements LayerFactory<Audio> {
-	public Audio cons(Resource res, byte[] buf) {
-	    int[] off = {0};
-	    int ver = buf[off[0]++];
+	public Audio cons(Resource res, Message buf) {
+	    int ver = buf.uint8();
 	    if((ver == 1) || (ver == 2)) {
-		String id = Utils.strd(buf, off);
+		String id = buf.string();
 		double bvol = 1.0;
-		if(ver == 2) {
-		    bvol = Utils.uint16d(buf, off[0]) / 1000.0; off[0] += 2;
-		}
-		byte[] data = new byte[buf.length - off[0]];
-		System.arraycopy(buf, off[0], data, 0, buf.length - off[0]);
-		Audio ret = res.new Audio(data, id);
+		if(ver == 2)
+		    bvol = buf.uint16() / 1000.0;
+		Audio ret = res.new Audio(buf.bytes(), id);
 		ret.bvol = bvol;
 		return(ret);
 	    } else {
@@ -1296,9 +1262,9 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public class Music extends Resource.Layer {
 	transient javax.sound.midi.Sequence seq;
 	
-	public Music(byte[] buf) {
+	public Music(Message buf) {
 	    try {
-		seq = javax.sound.midi.MidiSystem.getSequence(new ByteArrayInputStream(buf));
+		seq = javax.sound.midi.MidiSystem.getSequence(new MessageInputStream(buf));
 	    } catch(javax.sound.midi.InvalidMidiDataException e) {
 		throw(new LoadException("Invalid MIDI data", Resource.this));
 	    } catch(IOException e) {
@@ -1313,14 +1279,13 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public class Font extends Layer {
 	public transient final java.awt.Font font;
 
-	public Font(byte[] buf) {
-	    int[] off = {0};
-	    int ver = buf[off[0]++];
+	public Font(Message buf) {
+	    int ver = buf.uint8();
 	    if(ver == 1) {
-		int type = buf[off[0]++];
+		int type = buf.uint8();
 		if(type == 0) {
 		    try {
-			this.font = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new ByteArrayInputStream(buf, off[0], buf.length - off[0]));
+			this.font = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new MessageInputStream(buf));
 		    } catch(Exception e) {
 			throw(new RuntimeException(e));
 		    }
@@ -1344,7 +1309,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    off += ret;
 	}
     }
-	
+
     private void checkload() {
 	if(loading) {
 	    boostprio(1);
@@ -1449,15 +1414,12 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	return(o.name.equals(this.name) && (o.ver == this.ver));
     }
 	
-    private void load(InputStream in) throws IOException {
-	String sig = "Haven Resource 1";
-	byte buf[] = new byte[sig.length()];
-	readall(in, buf);
-	if(!sig.equals(new String(buf)))
+    private void load(InputStream st) throws IOException {
+	Message in = new StreamMessage(st);
+	byte[] sig = "Haven Resource 1".getBytes(Utils.ascii);
+	if(!Arrays.equals(sig, in.bytes(sig.length)))
 	    throw(new LoadException("Invalid res signature", this));
-	buf = new byte[2];
-	readall(in, buf);
-	int ver = Utils.uint16d(buf, 0);
+	int ver = in.uint16();
 	List<Layer> layers = new LinkedList<Layer>();
 	if(this.ver == -1) {
 	    this.ver = ver;
@@ -1465,30 +1427,16 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    if(ver != this.ver)
 		throw(new LoadException("Wrong res version (" + ver + " != " + this.ver + ")", this));
 	}
-	outer: while(true) {
-	    StringBuilder tbuf = new StringBuilder();
-	    while(true) {
-		byte bb;
-		int ib;
-		if((ib = in.read()) == -1) {
-		    if(tbuf.length() == 0)
-			break outer;
-		    throw(new LoadException("Incomplete resource at " + name, this));
-		}
-		bb = (byte)ib;
-		if(bb == 0)
-		    break;
-		tbuf.append((char)bb);
-	    }
-	    buf = new byte[4];
-	    readall(in, buf);
-	    int len = Utils.int32d(buf, 0);
-	    buf = new byte[len];
-	    readall(in, buf);
-	    LayerFactory<?> lc = ltypes.get(tbuf.toString());
-	    if(lc == null)
+	while(!in.eom()) {
+	    LayerFactory<?> lc = ltypes.get(in.string());
+	    int len = in.int32();
+	    if(lc == null) {
+		in.skip(len);
 		continue;
+	    }
+	    Message buf = new LimitMessage(in, len);
 	    layers.add(lc.cons(this, buf));
+	    buf.skip();
 	}
 	this.layers = layers;
 	for(Layer l : layers)

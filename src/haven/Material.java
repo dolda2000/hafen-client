@@ -265,27 +265,25 @@ public class Material extends GLState {
 
     @Resource.LayerName("mat")
     public static class OldMat implements Resource.LayerFactory<Res> {
-	private static Color col(byte[] buf, int[] off) {
-	    double r = Utils.floatd(buf, off[0]); off[0] += 5;
-	    double g = Utils.floatd(buf, off[0]); off[0] += 5;
-	    double b = Utils.floatd(buf, off[0]); off[0] += 5;
-	    double a = Utils.floatd(buf, off[0]); off[0] += 5;
-	    return(new Color((float)r, (float)g, (float)b, (float)a));
+	private static Color col(Message buf) {
+	    return(new Color((int)(buf.cpfloat() * 255.0),
+			     (int)(buf.cpfloat() * 255.0),
+			     (int)(buf.cpfloat() * 255.0),
+			     (int)(buf.cpfloat() * 255.0)));
 	}
 
-	public Res cons(final Resource res, byte[] buf) {
-	    int id = Utils.uint16d(buf, 0);
+	public Res cons(final Resource res, Message buf) {
+	    int id = buf.uint16();
 	    Res ret = new Res(res, id);
-	    int[] off = {2};
 	    GLState light = Light.deflight;
-	    while(off[0] < buf.length) {
-		String thing = Utils.strd(buf, off).intern();
+	    while(!buf.eom()) {
+		String thing = buf.string().intern();
 		if(thing == "col") {
-		    Color amb = col(buf, off);
-		    Color dif = col(buf, off);
-		    Color spc = col(buf, off);
-		    double shine = Utils.floatd(buf, off[0]); off[0] += 5;
-		    Color emi = col(buf, off);
+		    Color amb = col(buf);
+		    Color dif = col(buf);
+		    Color spc = col(buf);
+		    double shine = buf.cpfloat();
+		    Color emi = col(buf);
 		    ret.states.add(new Colors(amb, dif, spc, emi, (float)shine));
 		} else if(thing == "linear") {
 		    ret.linear = true;
@@ -294,7 +292,7 @@ public class Material extends GLState {
 		} else if(thing == "nofacecull") {
 		    ret.states.add(nofacecull);
 		} else if(thing == "tex") {
-		    final int tid = Utils.uint16d(buf, off[0]); off[0] += 2;
+		    final int tid = buf.uint16();
 		    ret.left.add(new Res.Resolver() {
 			    public void resolve(Collection<GLState> buf) {
 				for(Resource.Image img : res.layers(Resource.imgc)) {
@@ -308,9 +306,9 @@ public class Material extends GLState {
 			    }
 			});
 		} else if(thing == "texlink") {
-		    final String nm = Utils.strd(buf, off);
-		    final int ver = Utils.uint16d(buf, off[0]); off[0] += 2;
-		    final int tid = Utils.uint16d(buf, off[0]); off[0] += 2;
+		    final String nm = buf.string();
+		    final int ver = buf.uint16();
+		    final int tid = buf.uint16();
 		    ret.left.add(new Res.Resolver() {
 			    public void resolve(Collection<GLState> buf) {
 				Resource tres = Resource.load(nm, ver);
@@ -325,7 +323,7 @@ public class Material extends GLState {
 			    }
 			});
 		} else if(thing == "light") {
-		    String l = Utils.strd(buf, off);
+		    String l = buf.string();
 		    if(l.equals("pv")) {
 			light = Light.vlights;
 		    } else if(l.equals("pp")) {
@@ -409,8 +407,7 @@ public class Material extends GLState {
 
     @Resource.LayerName("mat2")
     public static class NewMat implements Resource.LayerFactory<Res> {
-	public Res cons(Resource res, byte[] bbuf) {
-	    Message buf = new MessageBuf(bbuf);
+	public Res cons(Resource res, Message buf) {
 	    int id = buf.uint16();
 	    Res ret = new Res(res, id);
 	    while(!buf.eom()) {
