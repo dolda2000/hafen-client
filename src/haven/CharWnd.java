@@ -67,7 +67,7 @@ public class CharWnd extends Window {
 
 	    public Event(Resource res, byte[] bbuf) {
 		res.super();
-		Message buf = new Message(0, bbuf);
+		Message buf = new MessageBuf(bbuf);
 		int ver = buf.uint8();
 		if(ver == 1) {
 		    col = new Color(buf.uint8(), buf.uint8(), buf.uint8(), buf.uint8());
