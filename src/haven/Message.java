@@ -57,6 +57,12 @@ public abstract class Message {
 	public BinError(String message) {
 	    super(message);
 	}
+	public BinError(String message, Throwable cause) {
+	    super(message, cause);
+	}
+	public BinError(Throwable cause) {
+	    super(cause);
+	}
     }
     public static class EOF extends BinError {
 	public EOF(String message) {
