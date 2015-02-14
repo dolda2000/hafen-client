@@ -1414,15 +1414,12 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	return(o.name.equals(this.name) && (o.ver == this.ver));
     }
 	
-    private void load(InputStream in) throws IOException {
-	String sig = "Haven Resource 1";
-	byte buf[] = new byte[sig.length()];
-	readall(in, buf);
-	if(!sig.equals(new String(buf)))
+    private void load(InputStream st) throws IOException {
+	Message in = new StreamMessage(st);
+	byte[] sig = "Haven Resource 1".getBytes(Utils.ascii);
+	if(!Arrays.equals(sig, in.bytes(sig.length)))
 	    throw(new LoadException("Invalid res signature", this));
-	buf = new byte[2];
-	readall(in, buf);
-	int ver = Utils.uint16d(buf, 0);
+	int ver = in.uint16();
 	List<Layer> layers = new LinkedList<Layer>();
 	if(this.ver == -1) {
 	    this.ver = ver;
@@ -1430,30 +1427,14 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    if(ver != this.ver)
 		throw(new LoadException("Wrong res version (" + ver + " != " + this.ver + ")", this));
 	}
-	outer: while(true) {
-	    StringBuilder tbuf = new StringBuilder();
-	    while(true) {
-		byte bb;
-		int ib;
-		if((ib = in.read()) == -1) {
-		    if(tbuf.length() == 0)
-			break outer;
-		    throw(new LoadException("Incomplete resource at " + name, this));
-		}
-		bb = (byte)ib;
-		if(bb == 0)
-		    break;
-		tbuf.append((char)bb);
-	    }
-	    buf = new byte[4];
-	    readall(in, buf);
-	    int len = Utils.int32d(buf, 0);
-	    buf = new byte[len];
-	    readall(in, buf);
-	    LayerFactory<?> lc = ltypes.get(tbuf.toString());
-	    if(lc == null)
+	while(!in.eom()) {
+	    LayerFactory<?> lc = ltypes.get(in.string());
+	    int len = in.int32();
+	    if(lc == null) {
+		in.bytes(len);
 		continue;
-	    layers.add(lc.cons(this, new MessageBuf(buf)));
+	    }
+	    layers.add(lc.cons(this, new LimitMessage(in, len)));
 	}
 	this.layers = layers;
 	for(Layer l : layers)
