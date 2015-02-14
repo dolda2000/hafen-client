@@ -45,12 +45,12 @@ public abstract class Message {
     public static final int T_FLOAT64 = 16;
 
     private final static byte[] empty = new byte[0];
-    protected int rh = 0, rt = 0, wh = 0, wt = 0;
-    protected byte[] rbuf = empty, wbuf = empty;
+    public int rh = 0, rt = 0, wh = 0, wt = 0;
+    public byte[] rbuf = empty, wbuf = empty;
 
     public static final Message nil = new Message() {
-	    protected boolean underflow(int hint) {return(false);}
-	    protected void overflow(int min) {throw(new RuntimeException("nil message is not writable"));}
+	    public boolean underflow(int hint) {return(false);}
+	    public void overflow(int min) {throw(new RuntimeException("nil message is not writable"));}
 	};
 
     public static class BinError extends RuntimeException {
@@ -69,7 +69,7 @@ public abstract class Message {
 	}
     }
 
-    protected abstract boolean underflow(int hint);
+    public abstract boolean underflow(int hint);
 
     private void rensure(int len) {
 	while(len > rt - rh) {
@@ -214,7 +214,7 @@ public abstract class Message {
 	return(ret.toArray());
     }
 
-    protected abstract void overflow(int min);
+    public abstract void overflow(int min);
 
     private void wensure(int len) {
 	if(len > wt - wh)

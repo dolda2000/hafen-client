@@ -58,10 +58,10 @@ public class MessageBuf extends Message {
 	}
     }
 
-    protected boolean underflow(int hint) {
+    public boolean underflow(int hint) {
 	return(false);
     }
-    protected void overflow(int min) {
+    public void overflow(int min) {
 	int cl = (wt == 0)?32:wt;
 	while(cl - wh < min)
 	    cl *= 2;
