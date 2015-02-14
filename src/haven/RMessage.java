@@ -26,42 +26,36 @@
 
 package haven;
 
-public class BinBuf extends BinCodec {
-    private final int oh;
-    
-    public BinBuf(byte[] blob, int off, int len) {
-	this.rbuf = blob;
-	this.rh = this.oh = off;
-	this.rt = off + len;
-    }
-    public BinBuf(byte[] blob) {
-	this(blob, 0, blob.length);
-    }
-    public BinBuf() {
-	this.oh = 0;
-    }
+public class RMessage extends PMessage {
+    public static final int RMSG_NEWWDG = 0;
+    public static final int RMSG_WDGMSG = 1;
+    public static final int RMSG_DSTWDG = 2;
+    public static final int RMSG_MAPIV = 3;
+    public static final int RMSG_GLOBLOB = 4;
+    public static final int RMSG_PAGINAE = 5;
+    public static final int RMSG_RESID = 6;
+    public static final int RMSG_PARTY = 7;
+    public static final int RMSG_SFX = 8;
+    public static final int RMSG_CATTR = 9;
+    public static final int RMSG_MUSIC = 10;
+    public static final int RMSG_TILES = 11;
+    public static final int RMSG_BUFF = 12; /* Deprecated */
+    public static final int RMSG_SESSKEY = 13;
 
-    protected boolean underflow(int hint) {
-	return(false);
-    }
-    protected void overflow(int min) {
-	if(wbuf.length == 0) {
-	    wbuf = new byte[32];
-	    wh = 0;
-	    wt = 32;
-	} else {
-	    byte[] n = new byte[wbuf.length * 2];
-	    int cl = wt - wh;
-	    System.arraycopy(wbuf, wh, n, 0, cl);
-	    wbuf = n;
-	    wh = 0;
-	    wt = cl;
-	}
-    }
+    public long last = 0;
+    public int retx = 0;
+    public int seq;
 
-    public byte[] fin() {
-	byte[] ret = new byte[wt - wh];
-	System.arraycopy(wbuf, wh, ret, 0, wt - wh);
-	return(ret);
+    public RMessage(int type, byte[] blob, int off, int len) {
+	super(type, blob, off, len);
+    }
+    public RMessage(int type, byte[] blob) {
+	super(type, blob);
+    }
+    public RMessage(int type) {
+	super(type);
+    }
+    public RMessage(PMessage msg) {
+	super(msg);
     }
 }
