@@ -47,13 +47,13 @@ public class Makewindow extends Widget {
     
     public class Spec implements GSprite.Owner {
 	public Indir<Resource> res;
-	public Message sdt;
+	public MessageBuf sdt;
 	public Tex num;
 	private GSprite spr;
 
 	public Spec(Indir<Resource> res, Message sdt, int num) {
 	    this.res = res;
-	    this.sdt = sdt;
+	    this.sdt = new MessageBuf(sdt);
 	    if(num >= 0)
 		this.num = new TexI(Utils.outline2(Text.render(Integer.toString(num), Color.WHITE).img, Utils.contrast(Color.WHITE)));
 	    else
@@ -63,7 +63,7 @@ public class Makewindow extends Widget {
 	public void draw(GOut g) {
 	    try {
 		if(spr == null)
-		    spr = GSprite.create(this, res.get(), sdt);
+		    spr = GSprite.create(this, res.get(), sdt.clone());
 		spr.draw(g);
 	    } catch(Loading e) {}
 	    if(num != null)
