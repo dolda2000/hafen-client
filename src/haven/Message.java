@@ -85,7 +85,7 @@ public abstract class Message {
     }
 
     public boolean eom() {
-	return((rh < rt) || underflow(1));
+	return(!((rh < rt) || underflow(1)));
     }
 
     public int int8() {
@@ -96,19 +96,24 @@ public abstract class Message {
 	return(int8() & 0xff);
     }
     public int int16() {
-	return(Utils.int16d(rbuf, rget(2)));
+	int off = rget(2);
+	return(Utils.int16d(rbuf, off));
     }
     public int uint16() {
-	return(Utils.uint16d(rbuf, rget(2)));
+	int off = rget(2);
+	return(Utils.uint16d(rbuf, off));
     }
     public int int32() {
-	return(Utils.int32d(rbuf, rget(4)));
+	int off = rget(4);
+	return(Utils.int32d(rbuf, off));
     }
     public long uint32() {
-	return(Utils.uint32d(rbuf, rget(4)));
+	int off = rget(4);
+	return(Utils.uint32d(rbuf, off));
     }
     public long int64() {
-	return(Utils.int64d(rbuf, rget(8)));
+	int off = rget(8);
+	return(Utils.int64d(rbuf, off));
     }
     public String string() {
 	int l = 0;
@@ -122,6 +127,7 @@ public abstract class Message {
 		rh += l + 1;
 		return(ret);
 	    }
+	    l++;
 	}
     }
     public byte[] bytes(int n) {
@@ -142,10 +148,12 @@ public abstract class Message {
 	return(new java.awt.Color(uint8(), uint8(), uint8(), uint8()));
     }
     public float float32() {
-	return(Utils.float32d(rbuf, rget(4)));
+	int off = rget(4);
+	return(Utils.float32d(rbuf, off));
     }
     public double float64() {
-	return(Utils.float64d(rbuf, rget(8)));
+	int off = rget(8);
+	return(Utils.float64d(rbuf, off));
     }
 
     public Object[] list() {
@@ -209,7 +217,7 @@ public abstract class Message {
     protected abstract void overflow(int min);
 
     private void wensure(int len) {
-	if(len < wt - wh)
+	if(len > wt - wh)
 	    overflow(len);
     }
     private int wget(int len) {
@@ -222,6 +230,7 @@ public abstract class Message {
     public Message addbytes(byte[] src, int off, int len) {
 	wensure(len);
 	System.arraycopy(src, off, wbuf, wh, len);
+	wh += len;
 	return(this);
     }
     public Message addbytes(byte[] src) {
@@ -229,19 +238,23 @@ public abstract class Message {
 	return(this);
     }
     public Message adduint8(int num) {
-	wbuf[wget(1)] = (byte)num;
+	wensure(1);
+	wbuf[wh++] = (byte)num;
 	return(this);
     }
     public Message adduint16(int num) {
-	Utils.uint16e(num, wbuf, wget(2));
+	int off = wget(2);
+	Utils.uint16e(num, wbuf, off);
 	return(this);
     }
     public Message addint32(int num) {
-	Utils.int32e(num, wbuf, wget(4));
+	int off = wget(4);
+	Utils.int32e(num, wbuf, off);
 	return(this);
     }
     public Message adduint32(long num) {
-	Utils.uint32e(num, wbuf, wget(4));
+	int off = wget(4);
+	Utils.uint32e(num, wbuf, off);
 	return(this);
     }
     public Message addstring2(String str) {

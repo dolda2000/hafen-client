@@ -31,6 +31,8 @@ public class MessageBuf extends Message {
     private final int oh;
 
     public MessageBuf(byte[] blob, int off, int len) {
+	if(blob == null)
+	    throw(new NullPointerException("blob"));
 	this.rbuf = blob;
 	this.rh = this.oh = off;
 	this.rt = off + len;
@@ -60,18 +62,13 @@ public class MessageBuf extends Message {
 	return(false);
     }
     protected void overflow(int min) {
-	if(wbuf.length == 0) {
-	    wbuf = new byte[32];
-	    wh = 0;
-	    wt = 32;
-	} else {
-	    byte[] n = new byte[wbuf.length * 2];
-	    int cl = wt - wh;
-	    System.arraycopy(wbuf, wh, n, 0, cl);
-	    wbuf = n;
-	    wh = 0;
-	    wt = cl;
-	}
+	int cl = (wt == 0)?32:wt;
+	while(cl - wh < min)
+	    cl *= 2;
+	byte[] n = new byte[cl];
+	System.arraycopy(wbuf, 0, n, 0, wh);
+	wbuf = n;
+	wt = cl;
     }
 
     public boolean equals(Object o2) {
