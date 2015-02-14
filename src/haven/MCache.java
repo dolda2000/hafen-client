@@ -290,7 +290,7 @@ public class MCache {
 		    break;
 		pfl[pidx] = msg.uint8();
 	    }
-	    Message blob = msg.inflate();
+	    Message blob = new ZMessage(msg);
 	    id = blob.int64();
 	    for(int i = 0; i < tiles.length; i++)
 		tiles[i] = blob.uint8();
