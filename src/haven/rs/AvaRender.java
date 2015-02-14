@@ -113,7 +113,7 @@ public class AvaRender {
 			Resource er = Resource.load((String)cequ[2]);
 			byte[] sdt = (byte[])cequ[3];
 			Coord3f off = new Coord3f((Float)cequ[4], (Float)cequ[5], (Float)cequ[6]);
-			equ.add(new ED(t, at, new ResData(er.indir(), new Message(0, sdt)), off));
+			equ.add(new ED(t, at, new ResData(er.indir(), new MessageBuf(sdt)), off));
 		    } else {
 			int t = (Integer)aequ[i++];
 			String at = (String)aequ[i++];

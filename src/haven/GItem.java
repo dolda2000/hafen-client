@@ -33,7 +33,7 @@ import java.util.*;
 
 public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owner {
     public Indir<Resource> res;
-    public Message sdt;
+    public MessageBuf sdt;
     public int meter = 0;
     public int num = -1;
     public GSprite spr;
@@ -44,7 +44,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     public static class $_ implements Factory {
 	public Widget create(Coord c, Widget parent, Object[] args) {
 	    int res = (Integer)args[0];
-	    Message sdt = (args.length > 1)?new Message(0, (byte[])args[1]):Message.nil;
+	    Message sdt = (args.length > 1)?new MessageBuf((byte[])args[1]):Message.nil;
 	    return(new GItem(parent, parent.ui.sess.getres(res), sdt));
 	}
     }
@@ -73,7 +73,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     public GItem(Widget parent, Indir<Resource> res, Message sdt) {
 	super(parent);
 	this.res = res;
-	this.sdt = sdt;
+	this.sdt = new MessageBuf(sdt);
     }
 
     public GItem(Widget parent, Indir<Resource> res) {
@@ -125,7 +125,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	} else if(name == "chres") {
 	    synchronized(this) {
 		res = ui.sess.getres((Integer)args[0]);
-		sdt = (args.length > 1)?new Message(0, (byte[])args[1]):Message.nil;
+		sdt = (args.length > 1)?new MessageBuf((byte[])args[1]):MessageBuf.nil;
 		spr = null;
 	    }
 	} else if(name == "tt") {

@@ -251,7 +251,7 @@ public class MeshAnim {
 	public Res(Resource res, byte[] data) {
 	    res.super();
 	    final float[] xfb = new float[3];
-	    Message buf = new Message(0, data);
+	    Message buf = new MessageBuf(data);
 	    int ver = buf.uint8();
 	    if(ver == 1) {
 		id = buf.int16();

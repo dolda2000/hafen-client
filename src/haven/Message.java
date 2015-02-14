@@ -27,25 +27,8 @@
 package haven;
 
 import java.util.*;
-import java.awt.Color;
-import java.util.zip.Inflater;
 
-public class Message implements java.io.Serializable {
-    public static final int RMSG_NEWWDG = 0;
-    public static final int RMSG_WDGMSG = 1;
-    public static final int RMSG_DSTWDG = 2;
-    public static final int RMSG_MAPIV = 3;
-    public static final int RMSG_GLOBLOB = 4;
-    public static final int RMSG_PAGINAE = 5;
-    public static final int RMSG_RESID = 6;
-    public static final int RMSG_PARTY = 7;
-    public static final int RMSG_SFX = 8;
-    public static final int RMSG_CATTR = 9;
-    public static final int RMSG_MUSIC = 10;
-    public static final int RMSG_TILES = 11;
-    public static final int RMSG_BUFF = 12; /* Deprecated */
-    public static final int RMSG_SESSKEY = 13;
-	
+public abstract class Message {
     public static final int T_END = 0;
     public static final int T_INT = 1;
     public static final int T_STR = 2;
@@ -60,221 +43,129 @@ public class Message implements java.io.Serializable {
     public static final int T_BYTES = 14;
     public static final int T_FLOAT32 = 15;
     public static final int T_FLOAT64 = 16;
-	
-    public static final Message nil = new Message(0);
 
-    public int type;
-    public byte[] blob;
-    public long last = 0;
-    public int retx = 0;
-    public int seq;
-    public int off = 0;
-	
-    public Message(int type, byte[] blob) {
-	this.type = type;
-	this.blob = blob;
-    }
-	
-    public Message(int type, byte[] blob, int offset, int len) {
-	this.type = type;
-	this.blob = new byte[len];
-	System.arraycopy(blob, offset, this.blob, 0, len);
-    }
-	
-    public Message(int type) {
-	this.type = type;
-	blob = new byte[0];
-    }
-	
-    public boolean equals(Object o2) {
-	if(!(o2 instanceof Message))
-	    return(false);
-	Message m2 = (Message)o2;
-	if(m2.blob.length != blob.length)
-	    return(false);
-	for(int i = 0; i < blob.length; i++) {
-	    if(m2.blob[i] != blob[i])
-		return(false);
+    private final static byte[] empty = new byte[0];
+    public int rh = 0, rt = 0, wh = 0, wt = 0;
+    public byte[] rbuf = empty, wbuf = empty;
+
+    public static final Message nil = new Message() {
+	    public boolean underflow(int hint) {return(false);}
+	    public void overflow(int min) {throw(new RuntimeException("nil message is not writable"));}
+	};
+
+    public static class BinError extends RuntimeException {
+	public BinError(String message) {
+	    super(message);
 	}
-	return(true);
-    }
-
-    public int hashCode() {
-	int ret = 192581;
-	for(byte b : blob)
-	    ret = (ret * 31) + b;
-	return(ret);
-    }
-
-    public Message clone() {
-	return(new Message(type, blob));
-    }
-	
-    public Message derive(int type, int len) {
-	int ooff = off;
-	off += len;
-	return(new Message(type, blob, ooff, len));
-    }
-	
-    public void addbytes(byte[] src, int off, int len) {
-	byte[] n = new byte[blob.length + len];
-	System.arraycopy(blob, 0, n, 0, blob.length);
-	System.arraycopy(src, off, n, blob.length, len);
-	blob = n;
-    }
-
-    public void addbytes(byte[] src) {
-	addbytes(src, 0, src.length);
-    }
-	
-    public void adduint8(int num) {
-	addbytes(new byte[] {Utils.sb(num)});
-    }
-	
-    public void adduint16(int num) {
-	byte[] buf = new byte[2];
-	Utils.uint16e(num, buf, 0);
-	addbytes(buf);
-    }
-	
-    public void addint32(int num) {
-	byte[] buf = new byte[4];
-	Utils.int32e(num, buf, 0);
-	addbytes(buf);
-    }
-    
-    public void adduint32(long num) {
-	byte[] buf = new byte[4];
-	Utils.uint32e(num, buf, 0);
-	addbytes(buf);
-    }
-    
-    public void addstring2(String str) {
-	byte[] buf;
-	try {
-	    buf = str.getBytes("utf-8");
-	} catch(java.io.UnsupportedEncodingException e) {
-	    throw(new RuntimeException(e));
+	public BinError(String message, Throwable cause) {
+	    super(message, cause);
 	}
-	addbytes(buf);
-    }
-	
-    public void addstring(String str) {
-	addstring2(str);
-	addbytes(new byte[] {0});
-    }
-	
-    public void addcoord(Coord c) {
-	addint32(c.x);
-	addint32(c.y);
-    }
-	
-    public void addlist(Object... args) {
-	for(Object o : args) {
-	    if(o == null) {
-		adduint8(T_NIL);
-	    } else if(o instanceof Integer) {
-		adduint8(T_INT);
-		addint32(((Integer)o).intValue());
-	    } else if(o instanceof String) {
-		adduint8(T_STR);
-		addstring((String)o);
-	    } else if(o instanceof Coord) {
-		adduint8(T_COORD);
-		addcoord((Coord)o);
-	    } else if(o instanceof byte[]) {
-		byte[] b = (byte[])o;
-		adduint8(T_BYTES);
-		if(b.length < 128) {
-		    adduint8(b.length);
-		} else {
-		    adduint8(0x80);
-		    addint32(b.length);
-		}
-		addbytes(b);
-	    } else {
-		throw(new RuntimeException("Cannot encode a " + o.getClass() + " as TTO"));
-	    }
+	public BinError(Throwable cause) {
+	    super(cause);
 	}
     }
-	
+    public static class EOF extends BinError {
+	public EOF(String message) {
+	    super(message);
+	}
+    }
+    public static class FormatError extends BinError {
+	public FormatError(String message) {
+	    super(message);
+	}
+    }
+
+    public abstract boolean underflow(int hint);
+
+    private void rensure(int len) {
+	while(len > rt - rh) {
+	    if(!underflow(rh + len - rt))
+		throw(new EOF("Required " + len + " bytes, got only " + (rt - rh)));
+	}
+    }
+    private int rget(int len) {
+	rensure(len);
+	int co = rh;
+	rh += len;
+	return(co);
+    }
+
     public boolean eom() {
-	return(off >= blob.length);
+	return(!((rh < rt) || underflow(1)));
     }
-	
+
     public int int8() {
-	return(blob[off++]);
+	rensure(1);
+	return(rbuf[rh++]);
     }
-
     public int uint8() {
-	return(Utils.ub(blob[off++]));
+	return(int8() & 0xff);
     }
-	
     public int int16() {
-	off += 2;
-	return(Utils.int16d(blob, off - 2));
+	int off = rget(2);
+	return(Utils.int16d(rbuf, off));
     }
-	
     public int uint16() {
-	off += 2;
-	return(Utils.uint16d(blob, off - 2));
+	int off = rget(2);
+	return(Utils.uint16d(rbuf, off));
     }
-	
     public int int32() {
-	off += 4;
-	return(Utils.int32d(blob, off - 4));
+	int off = rget(4);
+	return(Utils.int32d(rbuf, off));
     }
-    
     public long uint32() {
-	off += 4;
-	return(Utils.uint32d(blob, off - 4));
+	int off = rget(4);
+	return(Utils.uint32d(rbuf, off));
     }
-
     public long int64() {
-	off += 8;
-	return(Utils.int64d(blob, off - 8));
+	int off = rget(8);
+	return(Utils.int64d(rbuf, off));
     }
-	
     public String string() {
-	int[] ob = new int[] {off};
-	String ret = Utils.strd(blob, ob);
-	off = ob[0];
-	return(ret);
+	int l = 0;
+	while(true) {
+	    if(l >= rt - rh) {
+		if(!underflow(256))
+		    throw(new EOF("Found no NUL (at length " + l + ")"));
+	    }
+	    if(rbuf[l + rh] == 0) {
+		String ret = new String(rbuf, rh, l, Utils.utf8);
+		rh += l + 1;
+		return(ret);
+	    }
+	    l++;
+	}
     }
-    
     public byte[] bytes(int n) {
 	byte[] ret = new byte[n];
-	System.arraycopy(blob, off, ret, 0, n);
-	off += n;
+	rensure(n);
+	System.arraycopy(rbuf, rh, ret, 0, n);
+	rh += n;
 	return(ret);
     }
-    
     public byte[] bytes() {
-	return(bytes(blob.length - off));
+	while(underflow(65536));
+	return(bytes(rt - rh));
     }
-	
     public Coord coord() {
 	return(new Coord(int32(), int32()));
     }
-        
-    public Color color() {
-	return(new Color(uint8(), uint8(), uint8(), uint8()));
+    public java.awt.Color color() {
+	return(new java.awt.Color(uint8(), uint8(), uint8(), uint8()));
     }
-
     public float float32() {
-	off += 4;
-	return(Utils.float32d(blob, off - 4));
+	int off = rget(4);
+	return(Utils.float32d(rbuf, off));
+    }
+    public double float64() {
+	int off = rget(8);
+	return(Utils.float64d(rbuf, off));
     }
 
-    public double float64() {
-	off += 8;
-	return(Utils.float64d(blob, off - 8));
-    }
-	
     public Object[] list() {
 	ArrayList<Object> ret = new ArrayList<Object>();
 	list: while(true) {
-	    if(off >= blob.length)
+	    if(eom())
 		break;
 	    int t = uint8();
 	    switch(t) {
@@ -323,42 +214,95 @@ public class Message implements java.io.Serializable {
 		ret.add(float64());
 		break;
 	    default:
-		throw(new RuntimeException("Encountered unknown type " + t + " in TTO list."));
+		throw(new FormatError("Encountered unknown type " + t + " in TTO list."));
 	    }
 	}
 	return(ret.toArray());
     }
 
-    public Message inflate(int length) {
-	Message ret = new Message(0);
-	Inflater z = new Inflater();
-	z.setInput(blob, off, length);
-	byte[] buf = new byte[10000];
-	while(true) {
-	    try {
-		int len;
-		if((len = z.inflate(buf)) == 0) {
-		    if(!z.finished())
-			throw(new RuntimeException("Got unterminated gzip blob"));
-		    break;
+    public abstract void overflow(int min);
+
+    private void wensure(int len) {
+	if(len > wt - wh)
+	    overflow(len);
+    }
+    private int wget(int len) {
+	wensure(len);
+	int co = wh;
+	wh += len;
+	return(co);
+    }
+
+    public Message addbytes(byte[] src, int off, int len) {
+	wensure(len);
+	System.arraycopy(src, off, wbuf, wh, len);
+	wh += len;
+	return(this);
+    }
+    public Message addbytes(byte[] src) {
+	addbytes(src, 0, src.length);
+	return(this);
+    }
+    public Message adduint8(int num) {
+	wensure(1);
+	wbuf[wh++] = (byte)num;
+	return(this);
+    }
+    public Message adduint16(int num) {
+	int off = wget(2);
+	Utils.uint16e(num, wbuf, off);
+	return(this);
+    }
+    public Message addint32(int num) {
+	int off = wget(4);
+	Utils.int32e(num, wbuf, off);
+	return(this);
+    }
+    public Message adduint32(long num) {
+	int off = wget(4);
+	Utils.uint32e(num, wbuf, off);
+	return(this);
+    }
+    public Message addstring2(String str) {
+	addbytes(str.getBytes(Utils.utf8));
+	return(this);
+    }
+    public Message addstring(String str) {
+	addstring2(str); adduint8(0);
+	return(this);
+    }
+    public Message addcoord(Coord c) {
+	addint32(c.x); addint32(c.y);
+	return(this);
+    }
+
+    public Message addlist(Object... args) {
+	for(Object o : args) {
+	    if(o == null) {
+		adduint8(T_NIL);
+	    } else if(o instanceof Integer) {
+		adduint8(T_INT);
+		addint32(((Integer)o).intValue());
+	    } else if(o instanceof String) {
+		adduint8(T_STR);
+		addstring((String)o);
+	    } else if(o instanceof Coord) {
+		adduint8(T_COORD);
+		addcoord((Coord)o);
+	    } else if(o instanceof byte[]) {
+		byte[] b = (byte[])o;
+		adduint8(T_BYTES);
+		if(b.length < 128) {
+		    adduint8(b.length);
+		} else {
+		    adduint8(0x80);
+		    addint32(b.length);
 		}
-		ret.addbytes(buf, 0, len);
-	    } catch(java.util.zip.DataFormatException e) {
-		throw(new RuntimeException("Got malformed gzip blob", e));
+		addbytes(b);
+	    } else {
+		throw(new RuntimeException("Cannot encode a " + o.getClass() + " as TTO"));
 	    }
 	}
-	return(ret);
-    }
-
-    public Message inflate() {
-	return(inflate(blob.length - off));
-    }
-
-    public String toString() {
-	String ret = "";
-	for(byte b : blob) {
-	    ret += String.format("%02x ", b);
-	}
-	return("Message(" + type + "): " + ret);
+	return(this);
     }
 }

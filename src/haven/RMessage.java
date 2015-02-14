@@ -26,39 +26,36 @@
 
 package haven;
 
-import java.util.*;
+public class RMessage extends PMessage {
+    public static final int RMSG_NEWWDG = 0;
+    public static final int RMSG_WDGMSG = 1;
+    public static final int RMSG_DSTWDG = 2;
+    public static final int RMSG_MAPIV = 3;
+    public static final int RMSG_GLOBLOB = 4;
+    public static final int RMSG_PAGINAE = 5;
+    public static final int RMSG_RESID = 6;
+    public static final int RMSG_PARTY = 7;
+    public static final int RMSG_SFX = 8;
+    public static final int RMSG_CATTR = 9;
+    public static final int RMSG_MUSIC = 10;
+    public static final int RMSG_TILES = 11;
+    public static final int RMSG_BUFF = 12; /* Deprecated */
+    public static final int RMSG_SESSKEY = 13;
 
-public class ResData {
-    public Indir<Resource> res;
-    public MessageBuf sdt;
-    
-    public ResData(Indir<Resource> res, Message sdt) {
-	this.res = res;
-	this.sdt = new MessageBuf(sdt);
+    public long last = 0;
+    public int retx = 0;
+    public int seq;
+
+    public RMessage(int type, byte[] blob, int off, int len) {
+	super(type, blob, off, len);
     }
-
-    public ResData clone() {
-	return(new ResData(res, sdt));
+    public RMessage(int type, byte[] blob) {
+	super(type, blob);
     }
-
-    public boolean equals(Object other) {
-	if(!(other instanceof ResData))
-	    return(false);
-	ResData o = (ResData)other;
-	return(res.equals(o.res) && sdt.equals(o.sdt));
+    public RMessage(int type) {
+	super(type);
     }
-
-    public static List<ResData> wrap(List<? extends Indir<Resource>> in) {
-	List<ResData> ret = new ArrayList<ResData>(in.size());
-	for(Indir<Resource> res : in)
-	    ret.add(new ResData(res, Message.nil));
-	return(ret);
-    }
-
-    public static ResData[] wrap(Indir<Resource>[] in) {
-	ResData[] ret = new ResData[in.length];
-	for(int i = 0; i < in.length; i++)
-	    ret[i] = new ResData(in[i], Message.nil);
-	return(ret);
+    public RMessage(PMessage msg) {
+	super(msg);
     }
 }

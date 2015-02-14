@@ -26,39 +26,24 @@
 
 package haven;
 
-import java.util.*;
+public class PMessage extends MessageBuf {
+    public int type;
 
-public class ResData {
-    public Indir<Resource> res;
-    public MessageBuf sdt;
-    
-    public ResData(Indir<Resource> res, Message sdt) {
-	this.res = res;
-	this.sdt = new MessageBuf(sdt);
+    public PMessage(int type, byte[] blob, int off, int len) {
+	super(blob, off, len);
+	this.type = type;
     }
-
-    public ResData clone() {
-	return(new ResData(res, sdt));
+    public PMessage(int type, byte[] blob) {
+	this(type, blob, 0, blob.length);
     }
-
-    public boolean equals(Object other) {
-	if(!(other instanceof ResData))
-	    return(false);
-	ResData o = (ResData)other;
-	return(res.equals(o.res) && sdt.equals(o.sdt));
+    public PMessage(int type) {
+	this.type = type;
     }
-
-    public static List<ResData> wrap(List<? extends Indir<Resource>> in) {
-	List<ResData> ret = new ArrayList<ResData>(in.size());
-	for(Indir<Resource> res : in)
-	    ret.add(new ResData(res, Message.nil));
-	return(ret);
+    public PMessage(int type, Message msg) {
+	super(msg);
+	this.type = type;
     }
-
-    public static ResData[] wrap(Indir<Resource>[] in) {
-	ResData[] ret = new ResData[in.length];
-	for(int i = 0; i < in.length; i++)
-	    ret[i] = new ResData(in[i], Message.nil);
-	return(ret);
+    public PMessage(PMessage msg) {
+	this(msg.type, msg);
     }
 }

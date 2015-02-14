@@ -109,7 +109,7 @@ public class Server extends Thread {
 			int len = Utils.int32d(read(in, 4), 0);
 			if(!auth && (len > 256))
 			    return;
-			Message msg = new Message(0, read(in, len));
+			Message msg = new MessageBuf(read(in, len));
 			String cmd = msg.string();
 			Object[] args = msg.list();
 			Object[] reply;
@@ -133,11 +133,11 @@ public class Server extends Thread {
 				return;
 			    }
 			}
-			Message rb = new Message(0);
+			MessageBuf rb = new MessageBuf();
 			rb.addlist(reply);
-			byte[] rbuf = new byte[4 + rb.blob.length];
-			Utils.uint32e(rb.blob.length, rbuf, 0);
-			System.arraycopy(rb.blob, 0, rbuf, 4, rb.blob.length);
+			byte[] rbuf = new byte[4 + rb.size()];
+			Utils.uint32e(rb.size(), rbuf, 0);
+			rb.fin(rbuf, 4);
 			out.write(rbuf);
 		    } catch(IOException e) {
 			return;

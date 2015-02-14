@@ -290,7 +290,7 @@ public class MCache {
 		    break;
 		pfl[pidx] = msg.uint8();
 	    }
-	    Message blob = msg.inflate();
+	    Message blob = new ZMessage(msg);
 	    id = blob.int64();
 	    for(int i = 0; i < tiles.length; i++)
 		tiles[i] = blob.uint8();
@@ -452,7 +452,7 @@ public class MCache {
 		fragbuf = new Defrag(len);
 		fragbufs.put(pktid, fragbuf);
 	    }
-	    fragbuf.add(msg.blob, 8, msg.blob.length - 8, off);
+	    fragbuf.add(msg.bytes(), off);
 	    fragbuf.last = now;
 	    if(fragbuf.done()) {
 		mapdata2(fragbuf.msg());
@@ -586,7 +586,7 @@ public class MCache {
 		    if(++r.reqs >= 5) {
 			i.remove();
 		    } else {
-			Message msg = new Message(Session.MSG_MAPREQ);
+			PMessage msg = new PMessage(Session.MSG_MAPREQ);
 			msg.addcoord(c);
 			sess.sendmsg(msg);
 		    }

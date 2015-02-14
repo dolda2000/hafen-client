@@ -26,39 +26,54 @@
 
 package haven;
 
-import java.util.*;
+import java.util.zip.*;
 
-public class ResData {
-    public Indir<Resource> res;
-    public MessageBuf sdt;
-    
-    public ResData(Indir<Resource> res, Message sdt) {
-	this.res = res;
-	this.sdt = new MessageBuf(sdt);
+public class ZMessage extends Message {
+    private Inflater z = new Inflater();
+    private final Message bk;
+
+    public ZMessage(Message from) {
+	this.bk = from;
     }
 
-    public ResData clone() {
-	return(new ResData(res, sdt));
-    }
-
-    public boolean equals(Object other) {
-	if(!(other instanceof ResData))
+    public boolean underflow(int hint) {
+	if(z == null)
 	    return(false);
-	ResData o = (ResData)other;
-	return(res.equals(o.res) && sdt.equals(o.sdt));
+	boolean ret = false;
+	if(rbuf.length - rt < 1) {
+	    byte[] n = new byte[Math.max(1024, rt - rh) + rt - rh];
+	    System.arraycopy(rbuf, rh, n, 0, rt - rh);
+	    rt -= rh;
+	    rh = 0;
+	    rbuf = n;
+	}
+	try {
+	    while(true) {
+		int rv = z.inflate(rbuf, rt, rbuf.length - rt);
+		if(rv == 0) {
+		    if(z.finished()) {
+			z.end();
+			z = null;
+			return(ret);
+		    }
+		    if(z.needsInput()) {
+			if(bk.rt - bk.rh < 1) {
+			    if(!bk.underflow(128))
+				throw(new EOF("Unterminated z-blob"));
+			}
+			z.setInput(bk.rbuf, bk.rh, bk.rt - bk.rh);
+		    }
+		} else {
+		    rt += rv;
+		    return(true);
+		}
+	    }
+	} catch(DataFormatException e) {
+	    throw(new RuntimeException("Malformed z-blob", e));
+	}
     }
 
-    public static List<ResData> wrap(List<? extends Indir<Resource>> in) {
-	List<ResData> ret = new ArrayList<ResData>(in.size());
-	for(Indir<Resource> res : in)
-	    ret.add(new ResData(res, Message.nil));
-	return(ret);
-    }
-
-    public static ResData[] wrap(Indir<Resource>[] in) {
-	ResData[] ret = new ResData[in.length];
-	for(int i = 0; i < in.length; i++)
-	    ret[i] = new ResData(in[i], Message.nil);
-	return(ret);
+    public void overflow(int min) {
+	throw(new RuntimeException("ZMessages are not writable yet"));
     }
 }

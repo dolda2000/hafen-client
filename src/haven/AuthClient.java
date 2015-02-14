@@ -112,18 +112,18 @@ public class AuthClient {
 	sk.close();
     }
 
-    private void sendmsg(Message msg) throws IOException {
-	if(msg.blob.length > 65535)
-	    throw(new RuntimeException("Too long message in AuthClient (" + msg.blob.length + " bytes)"));
-	byte[] buf = new byte[msg.blob.length + 2];
-	buf[0] = (byte)((msg.blob.length & 0xff00) >> 8);
-	buf[1] = (byte)(msg.blob.length & 0x00ff);
-	System.arraycopy(msg.blob, 0, buf, 2, msg.blob.length);
+    private void sendmsg(MessageBuf msg) throws IOException {
+	if(msg.size() > 65535)
+	    throw(new RuntimeException("Too long message in AuthClient (" + msg.size() + " bytes)"));
+	byte[] buf = new byte[msg.size() + 2];
+	buf[0] = (byte)((msg.size() & 0xff00) >> 8);
+	buf[1] = (byte)(msg.size() & 0x00ff);
+	msg.fin(buf, 2);
 	skout.write(buf);
     }
     
     private void esendmsg(Object... args) throws IOException {
-	Message buf = new Message(0);
+	MessageBuf buf = new MessageBuf();
 	for(Object arg : args) {
 	    if(arg instanceof String) {
 		buf.addstring((String)arg);
@@ -151,7 +151,7 @@ public class AuthClient {
 	int len = (Utils.ub(header[0]) << 8) | Utils.ub(header[1]);
 	byte[] buf = new byte[len];
 	readall(skin, buf);
-	return(new Message(0, buf));
+	return(new MessageBuf(buf));
     }
     
     public Message cmd(Object... args) throws IOException {

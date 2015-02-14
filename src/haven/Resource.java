@@ -775,7 +775,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
 
 	public Tileset(byte[] bbuf) {
-	    Message buf = new Message(0, bbuf);
+	    Message buf = new MessageBuf(bbuf);
 	    while(!buf.eom()) {
 		int p = buf.uint8();
 		switch(p) {

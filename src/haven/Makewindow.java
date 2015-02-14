@@ -47,13 +47,13 @@ public class Makewindow extends Widget {
     
     public class Spec implements GSprite.Owner {
 	public Indir<Resource> res;
-	public Message sdt;
+	public MessageBuf sdt;
 	public Tex num;
 	private GSprite spr;
 
 	public Spec(Indir<Resource> res, Message sdt, int num) {
 	    this.res = res;
-	    this.sdt = sdt;
+	    this.sdt = new MessageBuf(sdt);
 	    if(num >= 0)
 		this.num = new TexI(Utils.outline2(Text.render(Integer.toString(num), Color.WHITE).img, Utils.contrast(Color.WHITE)));
 	    else
@@ -107,7 +107,7 @@ public class Makewindow extends Widget {
 	    List<Spec> inputs = new LinkedList<Spec>();
 	    for(int i = 0; i < args.length;) {
 		int resid = (Integer)args[i++];
-		Message sdt = (args[i] instanceof byte[])?new Message(0, (byte[])args[i++]):Message.nil;
+		Message sdt = (args[i] instanceof byte[])?new MessageBuf((byte[])args[i++]):MessageBuf.nil;
 		int num = (Integer)args[i++];
 		inputs.add(new Spec(ui.sess.getres(resid), sdt, num));
 	    }
@@ -116,7 +116,7 @@ public class Makewindow extends Widget {
 	    List<Spec> outputs = new LinkedList<Spec>();
 	    for(int i = 0; i < args.length;) {
 		int resid = (Integer)args[i++];
-		Message sdt = (args[i] instanceof byte[])?new Message(0, (byte[])args[i++]):Message.nil;
+		Message sdt = (args[i] instanceof byte[])?new MessageBuf((byte[])args[i++]):MessageBuf.nil;
 		int num = (Integer)args[i++];
 		outputs.add(new Spec(ui.sess.getres(resid), sdt, num));
 	    }

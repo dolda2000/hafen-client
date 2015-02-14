@@ -26,39 +26,40 @@
 
 package haven;
 
-import java.util.*;
+public class LimitMessage extends Message {
+    private final Message bk;
+    private int left;
 
-public class ResData {
-    public Indir<Resource> res;
-    public MessageBuf sdt;
-    
-    public ResData(Indir<Resource> res, Message sdt) {
-	this.res = res;
-	this.sdt = new MessageBuf(sdt);
+    public LimitMessage(Message bk, int left) {
+	this.bk = bk;
+	this.left = left;
     }
 
-    public ResData clone() {
-	return(new ResData(res, sdt));
-    }
-
-    public boolean equals(Object other) {
-	if(!(other instanceof ResData))
+    public boolean underflow(int hint) {
+	if(left < 1)
 	    return(false);
-	ResData o = (ResData)other;
-	return(res.equals(o.res) && sdt.equals(o.sdt));
+	if(hint + rt - rh <= rbuf.length) {
+	    System.arraycopy(rbuf, rh, rbuf, 0, rt - rh);
+	} else {
+	    byte[] n = new byte[Math.min(left, Math.max(hint, 32)) + rt - rh];
+	    System.arraycopy(rbuf, rh, n, 0, rt - rh);
+	    rbuf = n;
+	}
+	rt -= rh;
+	rh = 0;
+	if(bk.rt - bk.rh < 1) {
+	    if(!bk.underflow(hint))
+		return(false);
+	}
+	int len = Math.min(left, Math.min(bk.rt - bk.rh, rbuf.length - rt));
+	System.arraycopy(bk.rbuf, bk.rh, rbuf, rt, len);
+	bk.rh += len;
+	rt += len;
+	left -= len;
+	return(true);
     }
 
-    public static List<ResData> wrap(List<? extends Indir<Resource>> in) {
-	List<ResData> ret = new ArrayList<ResData>(in.size());
-	for(Indir<Resource> res : in)
-	    ret.add(new ResData(res, Message.nil));
-	return(ret);
-    }
-
-    public static ResData[] wrap(Indir<Resource>[] in) {
-	ResData[] ret = new ResData[in.length];
-	for(int i = 0; i < in.length; i++)
-	    ret[i] = new ResData(in[i], Message.nil);
-	return(ret);
+    public void overflow(int min) {
+	throw(new RuntimeException("LimitMessage is not writeable"));
     }
 }

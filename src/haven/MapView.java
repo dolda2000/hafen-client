@@ -903,7 +903,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
 	    Message sdt;
 	    if((args.length > a) && (args[a] instanceof byte[]))
-		sdt = new Message(0, (byte[])args[a++]);
+		sdt = new MessageBuf((byte[])args[a++]);
 	    else
 		sdt = Message.nil;
 	    placing = new Plob(res, sdt);
@@ -911,7 +911,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		Indir<Resource> ores = ui.sess.getres((Integer)args[a++]);
 		Message odt;
 		if((args.length > a) && (args[a] instanceof byte[]))
-		    odt = new Message(0, (byte[])args[a++]);
+		    odt = new MessageBuf((byte[])args[a++]);
 		else
 		    odt = Message.nil;
 		placing.ols.add(new Gob.Overlay(-1, ores, odt));

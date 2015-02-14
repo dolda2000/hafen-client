@@ -45,7 +45,7 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 
     public TexR(Resource res, byte[] rbuf) {
 	res.super();
-	Message buf = new Message(0, rbuf);
+	Message buf = new MessageBuf(rbuf);
 	this.id = buf.int16();
 	this.off = new Coord(buf.uint16(), buf.uint16());
 	this.sz = new Coord(buf.uint16(), buf.uint16());

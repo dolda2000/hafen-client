@@ -808,7 +808,7 @@ public class Skeleton {
 			    return(super.setup(rl));
 			}
 		    };
-		n.ols.add(new Gob.Overlay(-1, res, new Message(0, sdt)));
+		n.ols.add(new Gob.Overlay(-1, res, new MessageBuf(sdt)));
 	    }
 	}
 

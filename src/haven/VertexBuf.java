@@ -454,7 +454,7 @@ public class VertexBuf {
 	public VertexRes(Resource res, byte[] rbuf) {
 	    res.super();
 	    List<AttribArray> bufs = new LinkedList<AttribArray>();
-	    Message buf = new Message(0, rbuf);
+	    Message buf = new MessageBuf(rbuf);
 	    int fl = buf.uint8();
 	    int num = buf.uint16();
 	    while(!buf.eom()) {
