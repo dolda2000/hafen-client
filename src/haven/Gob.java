@@ -42,7 +42,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	
     public static class Overlay implements Rendered {
 	public Indir<Resource> res;
-	public Message sdt;
+	public MessageBuf sdt;
 	public Sprite spr;
 	public int id;
 	public boolean delign = false;
@@ -50,7 +50,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	public Overlay(int id, Indir<Resource> res, Message sdt) {
 	    this.id = id;
 	    this.res = res;
-	    this.sdt = sdt;
+	    this.sdt = new MessageBuf(sdt);
 	    spr = null;
 	}
 	
@@ -105,8 +105,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    Overlay ol = i.next();
 	    if(ol.spr == null) {
 		try {
-		    ol.sdt.off = 0;
-		    ol.spr = Sprite.create(this, ol.res.get(), ol.sdt);
+		    ol.spr = Sprite.create(this, ol.res.get(), ol.sdt.clone());
 		} catch(Loading e) {}
 	    } else {
 		boolean done = ol.spr.tick(dt);

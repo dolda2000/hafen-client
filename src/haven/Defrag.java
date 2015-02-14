@@ -72,6 +72,10 @@ public class Defrag {
 	}
     }
     
+    public void add(byte[] blob, int off) {
+	add(blob, 0, blob.length, off);
+    }
+
     public boolean done() {
 	for(int i = 0; i < ms1.length; i++) {
 	    if(ms1[i] != -1)
@@ -81,6 +85,6 @@ public class Defrag {
     }
     
     public Message msg() {
-	return(new Message(0, blob));
+	return(new MessageBuf(blob));
     }
 }

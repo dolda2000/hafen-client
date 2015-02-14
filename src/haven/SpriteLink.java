@@ -91,7 +91,7 @@ public class SpriteLink extends Resource.Layer {
 
     public SpriteLink(Resource res, byte[] bbuf) {
 	res.super();
-	Message buf = new Message(0, bbuf);
+	Message buf = new MessageBuf(bbuf);
 	int ver = buf.uint8();
 	if(ver != 1)
 	    throw(new Resource.LoadException("Unknown spritelink version: " + ver, getres()));

@@ -131,7 +131,8 @@ public class OCache implements Iterable<Gob> {
 	g.move(c, a);
     }
 	
-    public synchronized void cres(Gob g, Indir<Resource> res, Message sdt) {
+    public synchronized void cres(Gob g, Indir<Resource> res, Message dat) {
+	MessageBuf sdt = new MessageBuf(dat);
 	Drawable dr = g.getattr(Drawable.class);
 	ResDrawable d = (dr instanceof ResDrawable)?(ResDrawable)dr:null;
 	if((d != null) && (d.res == res) && !d.sdt.equals(sdt) && (d.spr != null) && (d.spr instanceof Gob.Overlay.CUpd)) {
@@ -272,8 +273,8 @@ public class OCache implements Iterable<Gob> {
 		g.ols.add(ol = new Gob.Overlay(olid, resid, sdt));
 	    } else if(!ol.sdt.equals(sdt)) {
 		if(ol.spr instanceof Gob.Overlay.CUpd) {
-		    ((Gob.Overlay.CUpd)ol.spr).update(sdt);
-		    ol.sdt = sdt;
+		    ol.sdt = new MessageBuf(sdt);
+		    ((Gob.Overlay.CUpd)ol.spr).update(ol.sdt);
 		} else {
 		    g.ols.remove(ol);
 		    g.ols.add(ol = new Gob.Overlay(olid, resid, sdt));

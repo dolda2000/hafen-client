@@ -107,7 +107,7 @@ public class Makewindow extends Widget {
 	    List<Spec> inputs = new LinkedList<Spec>();
 	    for(int i = 0; i < args.length;) {
 		int resid = (Integer)args[i++];
-		Message sdt = (args[i] instanceof byte[])?new Message(0, (byte[])args[i++]):Message.nil;
+		Message sdt = (args[i] instanceof byte[])?new MessageBuf((byte[])args[i++]):MessageBuf.nil;
 		int num = (Integer)args[i++];
 		inputs.add(new Spec(ui.sess.getres(resid), sdt, num));
 	    }
@@ -116,7 +116,7 @@ public class Makewindow extends Widget {
 	    List<Spec> outputs = new LinkedList<Spec>();
 	    for(int i = 0; i < args.length;) {
 		int resid = (Integer)args[i++];
-		Message sdt = (args[i] instanceof byte[])?new Message(0, (byte[])args[i++]):Message.nil;
+		Message sdt = (args[i] instanceof byte[])?new MessageBuf((byte[])args[i++]):MessageBuf.nil;
 		int num = (Integer)args[i++];
 		outputs.add(new Spec(ui.sess.getres(resid), sdt, num));
 	    }

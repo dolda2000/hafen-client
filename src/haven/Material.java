@@ -410,7 +410,7 @@ public class Material extends GLState {
     @Resource.LayerName("mat2")
     public static class NewMat implements Resource.LayerFactory<Res> {
 	public Res cons(Resource res, byte[] bbuf) {
-	    Message buf = new Message(0, bbuf);
+	    Message buf = new MessageBuf(bbuf);
 	    int id = buf.uint16();
 	    Res ret = new Res(res, id);
 	    while(!buf.eom()) {

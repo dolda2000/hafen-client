@@ -30,11 +30,11 @@ import java.util.*;
 
 public class ResData {
     public Indir<Resource> res;
-    public Message sdt;
+    public MessageBuf sdt;
     
     public ResData(Indir<Resource> res, Message sdt) {
 	this.res = res;
-	this.sdt = sdt;
+	this.sdt = new MessageBuf(sdt);
     }
 
     public ResData clone() {
@@ -51,7 +51,7 @@ public class ResData {
     public static List<ResData> wrap(List<? extends Indir<Resource>> in) {
 	List<ResData> ret = new ArrayList<ResData>(in.size());
 	for(Indir<Resource> res : in)
-	    ret.add(new ResData(res, new Message(0, new byte[0])));
+	    ret.add(new ResData(res, Message.nil));
 	return(ret);
     }
 
