@@ -612,7 +612,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    id = buf.int16();
 	    o = cdec(buf);
 	    try {
-		img = ImageIO.read(new ByteArrayInputStream(buf.bytes()));
+		img = ImageIO.read(new MessageInputStream(buf));
 	    } catch(IOException e) {
 		throw(new LoadException(e, Resource.this));
 	    }
@@ -683,7 +683,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    id = buf.uint8();
 	    w = buf.uint16();
 	    try {
-		img = ImageIO.read(new ByteArrayInputStream(buf.bytes()));
+		img = ImageIO.read(new MessageInputStream(buf));
 	    } catch(IOException e) {
 		throw(new LoadException(e, Resource.this));
 	    }
@@ -1264,7 +1264,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	
 	public Music(Message buf) {
 	    try {
-		seq = javax.sound.midi.MidiSystem.getSequence(new ByteArrayInputStream(buf.bytes()));
+		seq = javax.sound.midi.MidiSystem.getSequence(new MessageInputStream(buf));
 	    } catch(javax.sound.midi.InvalidMidiDataException e) {
 		throw(new LoadException("Invalid MIDI data", Resource.this));
 	    } catch(IOException e) {
@@ -1285,7 +1285,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		int type = buf.uint8();
 		if(type == 0) {
 		    try {
-			this.font = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new ByteArrayInputStream(buf.bytes()));
+			this.font = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new MessageInputStream(buf));
 		    } catch(Exception e) {
 			throw(new RuntimeException(e));
 		    }
@@ -1434,7 +1434,9 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		in.skip(len);
 		continue;
 	    }
-	    layers.add(lc.cons(this, new LimitMessage(in, len)));
+	    Message buf = new LimitMessage(in, len);
+	    layers.add(lc.cons(this, buf));
+	    buf.skip();
 	}
 	this.layers = layers;
 	for(Layer l : layers)
