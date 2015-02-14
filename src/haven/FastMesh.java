@@ -374,19 +374,19 @@ public class FastMesh implements FRendered, Disposable {
 	public final int id, ref;
 	private int matid;
 	
-	public MeshRes(Resource res, byte[] buf) {
+	public MeshRes(Resource res, byte[] rbuf) {
 	    res.super();
-	    int[] off = {0};
-	    int fl = Utils.ub(buf[off[0]]); off[0] += 1;
-	    int num = Utils.uint16d(buf, off[0]); off[0] += 2;
-	    matid = Utils.int16d(buf, off[0]); off[0] += 2;
+	    Message buf = new MessageBuf(rbuf);
+	    int fl = buf.uint8();
+	    int num = buf.uint16();
+	    matid = buf.int16();
 	    if((fl & 2) != 0) {
-		id = Utils.int16d(buf, off[0]); off[0] += 2;
+		id = buf.int16();
 	    } else {
 		id = -1;
 	    }
 	    if((fl & 4) != 0) {
-		ref = Utils.int16d(buf, off[0]); off[0] += 2;
+		ref = buf.int16();
 	    } else {
 		ref = -1;
 	    }
@@ -394,7 +394,7 @@ public class FastMesh implements FRendered, Disposable {
 		throw(new Resource.LoadException("Unsupported flags in fastmesh: " + fl, getres()));
 	    short[] ind = new short[num * 3];
 	    for(int i = 0; i < num * 3; i++)
-		ind[i] = (short)Utils.int16d(buf, off[0] + (i * 2));
+		ind[i] = (short)buf.uint16();
 	    this.tmp = ind;
 	}
 	

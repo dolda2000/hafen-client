@@ -161,6 +161,10 @@ public abstract class Message {
 	int off = rget(8);
 	return(Utils.float64d(rbuf, off));
     }
+    public double cpfloat() {
+	int off = rget(5);
+	return(Utils.floatd(rbuf, off));
+    }
 
     public Object[] list() {
 	ArrayList<Object> ret = new ArrayList<Object>();

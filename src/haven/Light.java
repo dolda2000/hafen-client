@@ -317,37 +317,35 @@ public class Light implements Rendered {
 	public float ac, al, aq, exp;
 	public Coord3f dir;
 	
-	private static Color cold(byte[] buf, int[] off) {
-	    double r, g, b, a;
-	    r = Utils.floatd(buf, off[0]); off[0] += 5;
-	    g = Utils.floatd(buf, off[0]); off[0] += 5;
-	    b = Utils.floatd(buf, off[0]); off[0] += 5;
-	    a = Utils.floatd(buf, off[0]); off[0] += 5;
-	    return(new Color((int)(r * 255.0), (int)(g * 255.0), (int)(b * 255.0), (int)(a * 255.0)));
+	private static Color cold(Message buf) {
+	    return(new Color((int)(buf.cpfloat() * 255.0),
+			     (int)(buf.cpfloat() * 255.0),
+			     (int)(buf.cpfloat() * 255.0),
+			     (int)(buf.cpfloat() * 255.0)));
 	}
 	
-	public Res(Resource res, byte[] buf) {
+	public Res(Resource res, byte[] rbuf) {
 	    res.super();
-	    int[] off = {0};
-	    this.id = Utils.int16d(buf, off[0]); off[0] += 2;
-	    this.amb = cold(buf, off);
-	    this.dif = cold(buf, off);
-	    this.spc = cold(buf, off);
-	    while(off[0] < buf.length) {
-		int t = buf[off[0]]; off[0]++;
+	    Message buf = new MessageBuf(rbuf);
+	    this.id = buf.int16();
+	    this.amb = cold(buf);
+	    this.dif = cold(buf);
+	    this.spc = cold(buf);
+	    while(!buf.eom()) {
+		int t = buf.uint8();
 		if(t == 1) {
 		    hatt = true;
-		    ac = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-		    al = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-		    aq = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    ac = (float)buf.cpfloat();
+		    al = (float)buf.cpfloat();
+		    aq = (float)buf.cpfloat();
 		} else if(t == 2) {
-		    float x = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-		    float y = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-		    float z = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    float x = (float)buf.cpfloat();
+		    float y = (float)buf.cpfloat();
+		    float z = (float)buf.cpfloat();
 		    dir = new Coord3f(x, y, z);
 		} else if(t == 3) {
 		    hexp = true;
-		    exp = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    exp = (float)buf.cpfloat();
 		} else {
 		    throw(new Resource.LoadException("Unknown light data: " + t, getres()));
 		}

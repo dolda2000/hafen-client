@@ -522,20 +522,17 @@ public class Skeleton {
     public static class Res extends Resource.Layer {
 	public final Skeleton s;
 	
-	public Res(Resource res, byte[] buf) {
+	public Res(Resource res, byte[] rbuf) {
 	    res.super();
+	    Message buf = new MessageBuf(rbuf);
 	    Map<String, Bone> bones = new HashMap<String, Bone>();
 	    Map<Bone, String> pm = new HashMap<Bone, String>();
-	    int[] off = {0};
-	    while(off[0] < buf.length) {
-		String bnm = Utils.strd(buf, off);
-		Coord3f pos = new Coord3f((float)Utils.floatd(buf, off[0]), (float)Utils.floatd(buf, off[0] + 5), (float)Utils.floatd(buf, off[0] + 10));
-		off[0] += 15;
-		Coord3f rax = new Coord3f((float)Utils.floatd(buf, off[0]), (float)Utils.floatd(buf, off[0] + 5), (float)Utils.floatd(buf, off[0] + 10)).norm();
-		off[0] += 15;
-		float rang = (float)Utils.floatd(buf, off[0]);
-		off[0] += 5;
-		String bp = Utils.strd(buf, off);
+	    while(!buf.eom()) {
+		String bnm = buf.string();
+		Coord3f pos = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat());
+		Coord3f rax = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
+		float rang = (float)buf.cpfloat();
+		String bp = buf.string();
 		Bone b = new Bone(bnm, pos, rax, rang);
 		if(bones.put(bnm, b) != null)
 		    throw(new RuntimeException("Duplicate bone name: " + b.name));
@@ -833,40 +830,37 @@ public class Skeleton {
 	public final double nspeed;
 	public final WrapMode defmode;
 	
-	private static Track.Frame[] parseframes(byte[] buf, int[] off) {
-	    Track.Frame[] frames = new Track.Frame[Utils.uint16d(buf, off[0])]; off[0] += 2;
+	private static Track.Frame[] parseframes(Message buf) {
+	    Track.Frame[] frames = new Track.Frame[buf.uint16()];
 	    for(int i = 0; i < frames.length; i++) {
-		float tm = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		float tm = (float)buf.cpfloat();
 		float[] trans = new float[3];
-		for(int o = 0; o < 3; o++) {
-		    trans[o] = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-		}
-		float rang = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		for(int o = 0; o < 3; o++)
+		    trans[o] = (float)buf.cpfloat();
+		float rang = (float)buf.cpfloat();
 		float[] rax = new float[3];
-		for(int o = 0; o < 3; o++) {
-		    rax[o] = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-		}
+		for(int o = 0; o < 3; o++)
+		    rax[o] = (float)buf.cpfloat();
 		frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang));
 	    }
 	    return(frames);
 	}
 
-	private FxTrack parsefx(byte[] buf, int[] off) {
-	    FxTrack.Event[] events = new FxTrack.Event[Utils.uint16d(buf, off[0])]; off[0] += 2;
+	private FxTrack parsefx(Message buf) {
+	    FxTrack.Event[] events = new FxTrack.Event[buf.uint16()];
 	    for(int i = 0; i < events.length; i++) {
-		float tm = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-		int t = Utils.ub(buf[off[0]++]);
+		float tm = (float)buf.cpfloat();
+		int t = buf.uint8();
 		switch(t) {
 		case 0:
-		    String resnm = Utils.strd(buf, off);
-		    int resver = Utils.uint16d(buf, off[0]); off[0] += 2;
-		    byte[] sdt = new byte[Utils.ub(buf[off[0]++])];
-		    System.arraycopy(buf, off[0], sdt, 0, sdt.length); off[0] += sdt.length;
+		    String resnm = buf.string();
+		    int resver = buf.uint16();
+		    byte[] sdt = buf.bytes(buf.uint8());
 		    Indir<Resource> res = Resource.load(resnm, resver).indir();
 		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, null);
 		    break;
 		case 1:
-		    String id = Utils.strd(buf, off);
+		    String id = buf.string();
 		    events[i] = new FxTrack.Trigger(tm, id);
 		    break;
 		default:
@@ -876,11 +870,12 @@ public class Skeleton {
 	    return(new FxTrack(events));
 	}
 
-	public ResPose(Resource res, byte[] buf) {
+	public ResPose(Resource res, byte[] rbuf) {
 	    res.super();
-	    this.id = Utils.int16d(buf, 0);
-	    int fl = buf[2];
-	    int mode = buf[3];
+	    Message buf = new MessageBuf(rbuf);
+	    this.id = buf.int16();
+	    int fl = buf.uint8();
+	    int mode = buf.uint8();
 	    if(mode == 0)
 		defmode = WrapMode.ONCE;
 	    else if(mode == 1)
@@ -891,21 +886,19 @@ public class Skeleton {
 		defmode = WrapMode.PONGLOOP;
 	    else
 		throw(new Resource.LoadException("Illegal animation mode: " + mode, getres()));
-	    this.len = (float)Utils.floatd(buf, 4);
-	    int[] off = {9};
-	    if((fl & 1) != 0) {
-		nspeed = Utils.floatd(buf, off[0]); off[0] += 5;
-	    } else {
+	    this.len = (float)buf.cpfloat();
+	    if((fl & 1) != 0)
+		nspeed = buf.cpfloat();
+	    else
 		nspeed = -1;
-	    }
 	    Collection<Track> tracks = new LinkedList<Track>();
 	    Collection<FxTrack> fx = new LinkedList<FxTrack>();
-	    while(off[0] < buf.length) {
-		String bnm = Utils.strd(buf, off);
+	    while(!buf.eom()) {
+		String bnm = buf.string();
 		if(bnm.equals("{ctl}")) {
-		    fx.add(parsefx(buf, off));
+		    fx.add(parsefx(buf));
 		} else {
-		    tracks.add(new Track(bnm, parseframes(buf, off)));
+		    tracks.add(new Track(bnm, parseframes(buf)));
 		}
 	    }
 	    this.tracks = tracks.toArray(new Track[0]);
@@ -965,10 +958,10 @@ public class Skeleton {
 	private static final HatingJava[] opcodes = new HatingJava[256];
 	static {
 	    opcodes[0] = new HatingJava() {
-		    public Command make(byte[] buf, int[] off) {
-			final float x = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			final float y = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			final float z = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    public Command make(Message buf) {
+			final float x = (float)buf.cpfloat();
+			final float y = (float)buf.cpfloat();
+			final float z = (float)buf.cpfloat();
 			return(new Command() {
 				public GLState make(Pose pose) {
 				    return(Location.xlate(new Coord3f(x, y, z)));
@@ -977,11 +970,11 @@ public class Skeleton {
 		    }
 		};
 	    opcodes[1] = new HatingJava() {
-		    public Command make(byte[] buf, int[] off) {
-			final float ang = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			final float ax = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			final float ay = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			final float az = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    public Command make(Message buf) {
+			final float ang = (float)buf.cpfloat();
+			final float ax = (float)buf.cpfloat();
+			final float ay = (float)buf.cpfloat();
+			final float az = (float)buf.cpfloat();
 			return(new Command() {
 				public GLState make(Pose pose) {
 				    return(Location.rot(new Coord3f(ax, ay, az), ang));
@@ -990,8 +983,8 @@ public class Skeleton {
 		    }
 		};
 	    opcodes[2] = new HatingJava() {
-		    public Command make(byte[] buf, int[] off) {
-			final String bonenm = Utils.strd(buf, off);
+		    public Command make(Message buf) {
+			final String bonenm = buf.string();
 			return(new Command() {
 				public GLState make(Pose pose) {
 				    Bone bone = pose.skel().bones.get(bonenm);
@@ -1001,14 +994,14 @@ public class Skeleton {
 		    }
 		};
 	    opcodes[3] = new HatingJava() {
-		    public Command make(byte[] buf, int[] off) {
-			float rx1 = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			float ry1 = (float)Utils.floatd(buf, off[0]); off[0] += 5;
-			float rz1 = (float)Utils.floatd(buf, off[0]); off[0] += 5;
+		    public Command make(Message buf) {
+			float rx1 = (float)buf.cpfloat();
+			float ry1 = (float)buf.cpfloat();
+			float rz1 = (float)buf.cpfloat();
 			float l = (float)Math.sqrt((rx1 * rx1) + (ry1 * ry1) + (rz1 * rz1));
 			final Coord3f ref = new Coord3f(rx1 / l, ry1 / l, rz1 / l);
-			final String orignm = Utils.strd(buf, off);
-			final String tgtnm = Utils.strd(buf, off);
+			final String orignm = buf.string();
+			final String tgtnm = buf.string();
 			return(new Command() {
 				public GLState make(Pose pose) {
 				    Bone orig = pose.skel().bones.get(orignm);
@@ -1025,16 +1018,16 @@ public class Skeleton {
 	}
 
 	public interface HatingJava {
-	    public Command make(byte[] buf, int[] off);
+	    public Command make(Message buf);
 	}
 	
-	public BoneOffset(Resource res, byte[] buf) {
+	public BoneOffset(Resource res, byte[] rbuf) {
 	    res.super();
-	    int[] off = {0};
-	    this.nm = Utils.strd(buf, off);
+	    Message buf = new MessageBuf(rbuf);
+	    this.nm = buf.string();
 	    List<Command> cbuf = new LinkedList<Command>();
-	    while(off[0] < buf.length)
-		cbuf.add(opcodes[buf[off[0]++]].make(buf, off));
+	    while(!buf.eom())
+		cbuf.add(opcodes[buf.uint8()].make(buf));
 	    this.prog = cbuf.toArray(new Command[0]);
 	}
 	

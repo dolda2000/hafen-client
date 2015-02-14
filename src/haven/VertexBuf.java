@@ -472,33 +472,30 @@ public class VertexBuf {
 
     @Resource.LayerName("vbuf")
     public static class Legacy implements Resource.LayerFactory<VertexRes> {
-	public VertexRes cons(Resource res, byte[] buf) {
+	public VertexRes cons(Resource res, byte[] rbuf) {
+	    Message buf = new MessageBuf(rbuf);
 	    ArrayList<AttribArray> bufs = new ArrayList<AttribArray>();
-	    int fl = Utils.ub(buf[0]);
-	    int num = Utils.uint16d(buf, 1);
-	    int off = 3;
-	    while(off < buf.length) {
-		int id = Utils.ub(buf[off++]);
+	    int fl = buf.uint8();
+	    int num = buf.uint16();
+	    while(!buf.eom()) {
+		int id = buf.uint8();
 		if(id == 0) {
 		    FloatBuffer data = Utils.wfbuf(num * 3);
 		    for(int i = 0; i < num * 3; i++)
-			data.put((float)Utils.floatd(buf, off + (i * 5)));
-		    off += num * 5 * 3;
+			data.put((float)buf.cpfloat());
 		    bufs.add(new VertexArray(data));
 		} else if(id == 1) {
 		    FloatBuffer data = Utils.wfbuf(num * 3);
 		    for(int i = 0; i < num * 3; i++)
-			data.put((float)Utils.floatd(buf, off + (i * 5)));
-		    off += num * 5 * 3;
+			data.put((float)buf.cpfloat());
 		    bufs.add(new NormalArray(data));
 		} else if(id == 2) {
 		    FloatBuffer data = Utils.wfbuf(num * 2);
 		    for(int i = 0; i < num * 2; i++)
-			data.put((float)Utils.floatd(buf, off + (i * 5)));
-		    off += num * 5 * 2;
+			data.put((float)buf.cpfloat());
 		    bufs.add(new TexelArray(data));
 		} else if(id == 3) {
-		    int mba = Utils.ub(buf[off++]);
+		    int mba = buf.uint8();
 		    IntBuffer ba = Utils.wibuf(num * mba);
 		    for(int i = 0; i < num * mba; i++)
 			ba.put(-1);
@@ -507,21 +504,18 @@ public class VertexBuf {
 		    int[] na = new int[num];
 		    List<String> bones = new ArrayList<String>();
 		    while(true) {
-			int[] ob = {off};
-			String bone = Utils.strd(buf, ob);
-			off = ob[0];
+			String bone = buf.string();
 			if(bone.length() == 0)
 			    break;
 			int bidx = bones.size();
 			bones.add(bone);
 			while(true) {
-			    int run = Utils.uint16d(buf, off); off += 2;
-			    int st = Utils.uint16d(buf, off); off += 2;
+			    int run = buf.uint16();
+			    int st = buf.uint16();
 			    if(run == 0)
 				break;
 			    for(int i = 0; i < run; i++) {
-				float w = (float)Utils.floatd(buf, off);
-				off += 5;
+				float w = (float)buf.cpfloat();
 				int v = i + st;
 				int cna = na[v]++;
 				if(cna >= mba)
