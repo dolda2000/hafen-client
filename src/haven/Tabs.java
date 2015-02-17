@@ -61,7 +61,7 @@ public class Tabs {
     public class TabButton extends Button {
 	public final Tab tab;
 
-	private TabButton(Coord c, Integer w, String text, Tab tab) {
+	public TabButton(Coord c, int w, String text, Tab tab) {
 	    super(c, w, Tabs.this.parent, text);
 	    this.tab = tab;
 	}
