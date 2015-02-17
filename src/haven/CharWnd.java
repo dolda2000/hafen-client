@@ -45,6 +45,8 @@ public class CharWnd extends Window {
     public final Collection<SAttr> skill;
     public final FoodMeter feps;
     public final Constipations cons;
+    public final SkillList csk, nsk;
+    public final ExperienceList exps;
     public int exp;
     private int scost;
     private final Tabs.Tab sattr;
@@ -487,6 +489,211 @@ public class CharWnd extends Window {
 	}
     }
 
+    public static class LoadingTextBox extends RichTextBox {
+	private Indir<String> text = null;
+
+	public LoadingTextBox(Coord c, Coord sz, Widget parent, String text, RichText.Foundry fnd) {super(c, sz, parent, text, fnd);}
+	public LoadingTextBox(Coord c, Coord sz, Widget parent, String text, Object... attrs) {super(c, sz, parent, text, attrs);}
+
+	public void settext(Indir<String> text) {
+	    this.text = text;
+	}
+
+	public void draw(GOut g) {
+	    if(text != null) {
+		try {
+		    settext(text.get());
+		    text = null;
+		} catch(Loading l) {
+		}
+	    }
+	    super.draw(g);
+	}
+    }
+
+    public class Skill {
+	public final String nm;
+	public final Indir<Resource> res;
+	public final int cost;
+	private String sortkey;
+	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
+	    public String value() {
+		try {
+		    return(res.get().layer(Resource.tooltip).t);
+		} catch(Loading l) {
+		    return("...");
+		}
+	    }
+	};
+
+	private Skill(String nm, Indir<Resource> res, int cost) {
+	    this.nm = nm;
+	    this.res = res;
+	    this.cost = cost;
+	    this.sortkey = nm;
+	}
+
+	public String rendertext() {
+	    StringBuilder buf = new StringBuilder();
+	    Resource res = this.res.get();
+	    buf.append("$img[" + res.name + "]\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append("Cost: " + cost + "\n\n");
+	    buf.append(res.layer(Resource.pagina).text);
+	    return(buf.toString());
+	}
+    }
+
+    public class Experience {
+	public final Indir<Resource> res;
+	public final int mtime;
+	private String sortkey = "\uffff";
+	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
+	    public String value() {
+		try {
+		    return(res.get().layer(Resource.tooltip).t);
+		} catch(Loading l) {
+		    return("...");
+		}
+	    }
+	};
+
+	private Experience(Indir<Resource> res, int mtime) {
+	    this.res = res;
+	    this.mtime = mtime;
+	}
+
+	public String rendertext() {
+	    StringBuilder buf = new StringBuilder();
+	    Resource res = this.res.get();
+	    buf.append("$img[" + res.name + "]\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append(res.layer(Resource.pagina).text);
+	    return(buf.toString());
+	}
+    }
+
+    public static class SkillList extends Listbox<Skill> {
+	public Skill[] skills = new Skill[0];
+	private boolean loading = false;
+	private final Comparator<Skill> skcomp = new Comparator<Skill>() {
+	    public int compare(Skill a, Skill b) {
+		return(a.sortkey.compareTo(b.sortkey));
+	    }
+	};
+
+	public SkillList(Coord c, int w, int h, Widget parent) {
+	    super(c, parent, w, h, attrf.height() + 2);
+	}
+
+	public void tick(double dt) {
+	    if(loading) {
+		loading = false;
+		for(Skill sk : skills) {
+		    try {
+			sk.sortkey = sk.res.get().layer(Resource.tooltip).t;
+		    } catch(Loading l) {
+			sk.sortkey = sk.nm;
+			loading = true;
+		    }
+		}
+		Arrays.sort(skills, skcomp);
+	    }
+	}
+
+	protected Skill listitem(int idx) {return(skills[idx]);}
+	protected int listitems() {return(skills.length);}
+
+	protected void drawbg(GOut g) {}
+
+	protected void drawitem(GOut g, Skill sk, int idx) {
+	    g.chcolor((idx % 2 == 0)?every:other);
+	    g.frect(Coord.z, g.sz);
+	    g.chcolor();
+	    try {
+		g.image(sk.res.get().layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
+	    } catch(Loading e) {
+		WItem.missing.loadwait();
+		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
+	    }
+	    g.aimage(sk.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
+	}
+
+	public void pop(Collection<Skill> nsk) {
+	    Skill[] skills = nsk.toArray(new Skill[0]);
+	    sb.val = 0;
+	    sb.max = skills.length - h;
+	    Skill psel = sel;
+	    sel = null;
+	    this.skills = skills;
+	    if(psel != null) {
+		for(Skill sk : skills) {
+		    if(sk.nm.equals(psel.nm)) {
+			sel = sk;
+			break;
+		    }
+		}
+	    }
+	    loading = true;
+	}
+    }
+
+    public static class ExperienceList extends Listbox<Experience> {
+	public Experience[] exps = new Experience[0];
+	private boolean loading = false;
+	private final Comparator<Experience> comp = new Comparator<Experience>() {
+	    public int compare(Experience a, Experience b) {
+		return(a.sortkey.compareTo(b.sortkey));
+	    }
+	};
+
+	public ExperienceList(Coord c, int w, int h, Widget parent) {
+	    super(c, parent, w, h, attrf.height() + 2);
+	}
+
+	public void tick(double dt) {
+	    if(loading) {
+		loading = false;
+		for(Experience exp : exps) {
+		    try {
+			exp.sortkey = exp.res.get().layer(Resource.tooltip).t;
+		    } catch(Loading l) {
+			exp.sortkey = "\uffff";
+			loading = true;
+		    }
+		}
+		Arrays.sort(exps, comp);
+	    }
+	}
+
+	protected Experience listitem(int idx) {return(exps[idx]);}
+	protected int listitems() {return(exps.length);}
+
+	protected void drawbg(GOut g) {}
+
+	protected void drawitem(GOut g, Experience exp, int idx) {
+	    g.chcolor((idx % 2 == 0)?every:other);
+	    g.frect(Coord.z, g.sz);
+	    g.chcolor();
+	    try {
+		g.image(exp.res.get().layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
+	    } catch(Loading e) {
+		WItem.missing.loadwait();
+		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
+	    }
+	    g.aimage(exp.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
+	}
+
+	public void pop(Collection<Experience> nl) {
+	    Experience[] exps = nl.toArray(new Experience[0]);
+	    sb.val = 0;
+	    sb.max = exps.length - h;
+	    sel = null;
+	    this.exps = exps;
+	    loading = true;
+	}
+    }
+
     @RName("chr")
     public static class $_ implements Factory {
 	public Widget create(Coord c, Widget parent, Object[] args) {
@@ -515,7 +722,7 @@ public class CharWnd extends Window {
 	    base.add(aw = new Attr("dex", "Dexterity",    wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
 	    base.add(aw = new Attr("psy", "Psyche",       wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
 	    Frame.around(battr, base);
-	    y += 20;
+	    y += 24;
 	    new Img(new Coord(x - 5, y), catf.render("Food Event Points").tex(), battr); y += 35;
 	    feps = new FoodMeter(new Coord(x, y), battr);
 
@@ -537,7 +744,7 @@ public class CharWnd extends Window {
 
 	    x = 260; y = 0;
 	    new Img(new Coord(x - 5, y), catf.render("Study Report").tex(), sattr); y += 35;
-	    y += 150;
+	    y += 156;
 	    int rx = x + attrw - 10;
 	    new Frame(new Coord(x, y).add(wbox.btloff()), new Coord(attrw, 75), sattr);
 	    new Label(new Coord(x + 15, y + 10), sattr, "Learning points:");
@@ -568,6 +775,103 @@ public class CharWnd extends Window {
 	    };
 	}
 
+	Tabs.Tab skills;
+	{
+	    int x = 5, y = 0;
+
+	    skills = tabs.new Tab();
+	    new Img(new Coord(x - 5, y), catf.render("Lore & Skills").tex(), skills); y += 35;
+	    RichText.Foundry ifnd = new RichText.Foundry(java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, 9).aa(true);
+	    final LoadingTextBox info = new LoadingTextBox(new Coord(x, y).add(wbox.btloff()), new Coord(attrw, 260), skills, "", ifnd);
+	    info.bg = new Color(0, 0, 0, 128);
+	    Frame.around(skills, Collections.singletonList(info));
+
+	    x = 260; y = 0;
+	    new Img(new Coord(x - 5, y), catf.render("Entries").tex(), skills); y += 35;
+	    Tabs lists = new Tabs(new Coord(x, y), new Coord(attrw + wbox.bisz().x, 0), skills);
+	    Tabs.Tab nsk = lists.new Tab();
+	    {
+		this.nsk = new SkillList(wbox.btloff(), lists.sz.x - wbox.bisz().x, 7, nsk) {
+			public void change(final Skill sk) {
+			    Skill p = sel;
+			    super.change(sk);
+			    CharWnd.this.csk.sel = null;
+			    CharWnd.this.exps.sel = null;
+			    if(sk != null)
+				info.settext(new Indir<String>() {public String get() {return(sk.rendertext());}});
+			    else if(p != null)
+				info.settext("");
+			}
+		    };
+		y = Frame.around(nsk, Collections.singletonList(this.nsk)).sz.y + 5;
+		int rx = attrw - 10;
+		new Frame(new Coord(0, y).add(wbox.btloff()), new Coord(attrw, 69), nsk);
+		new Label(new Coord(15, y + 10), nsk, "Learning points:");
+		new ExpLabel(new Coord(rx, y + 10), nsk);
+		new Label(new Coord(15, y + 25), nsk, "Cost:");
+		new RLabel(new Coord(rx, y + 25), nsk, "N/A") {
+		    Integer cc = null;
+
+		    public void draw(GOut g) {
+			if((cc != null) && (cc > exp))
+			    g.chcolor(debuff);
+			super.draw(g);
+			if((CharWnd.this.nsk.sel == null) && (cc != null)) {
+			    settext("N/A");
+			    cc = null;
+			} else if((CharWnd.this.nsk.sel != null) && (cc == null)) {
+			    settext(Utils.thformat(cc = CharWnd.this.nsk.sel.cost));
+			}
+		    }
+		};
+		new Button(new Coord(rx - 75, y + 44), 75, nsk, "Buy") {
+		    public void click() {
+			if(CharWnd.this.nsk.sel != null)
+			    CharWnd.this.wdgmsg("buy", CharWnd.this.nsk.sel.nm);
+		    }
+		};
+	    }
+	    Tabs.Tab csk = lists.new Tab();
+	    {
+		this.csk = new SkillList(wbox.btloff(), lists.sz.x - wbox.bisz().x, 11, csk) {
+			public void change(final Skill sk) {
+			    Skill p = sel;
+			    super.change(sk);
+			    CharWnd.this.nsk.sel = null;
+			    CharWnd.this.exps.sel = null;
+			    if(sk != null)
+				info.settext(new Indir<String>() {public String get() {return(sk.rendertext());}});
+			    else if(p != null)
+				info.settext("");
+			}
+		    };
+		Frame.around(csk, Collections.singletonList(this.csk));
+	    }
+	    Tabs.Tab exps = lists.new Tab();
+	    {
+		this.exps = new ExperienceList(wbox.btloff(), lists.sz.x - wbox.bisz().x, 11, exps) {
+			public void change(final Experience exp) {
+			    Experience p = sel;
+			    super.change(exp);
+			    CharWnd.this.nsk.sel = null;
+			    CharWnd.this.csk.sel = null;
+			    if(exp != null)
+				info.settext(new Indir<String>() {public String get() {return(exp.rendertext());}});
+			    else if(p != null)
+				info.settext("");
+			}
+		    };
+		Frame.around(exps, Collections.singletonList(this.exps));
+	    }
+	    lists.pack();
+	    int bw = (lists.sz.x + 5) / 3;
+	    x = lists.c.x;
+	    y = lists.c.y + lists.sz.y + 5;
+	    lists.new TabButton(new Coord(x, y), bw - 5, "Available", nsk);
+	    lists.new TabButton(new Coord(x + bw, y), bw - 5, "Current", csk);
+	    lists.new TabButton(new Coord(x + bw * 2, y), bw - 5, "Lore", exps);
+	}
+
 	{
 	    Widget prev;
 
@@ -586,6 +890,7 @@ public class CharWnd extends Window {
 	    tabs.pack();
 	    prev = new TB(new Coord(tabs.c.x + 5, tabs.c.y + tabs.sz.y + 10), "battr", battr);
 	    prev = new TB(new Coord(prev.c.x + prev.sz.x + 10, prev.c.y), "sattr", sattr);
+	    prev = new TB(new Coord(prev.c.x + prev.sz.x + 10, prev.c.y), "skill", skills);
 	}
 
 	resize(contentsz().add(15, 10));
@@ -601,6 +906,23 @@ public class CharWnd extends Window {
 	    return(ret);
 	} else {
 	    return(super.makechild(type, pargs, cargs));
+	}
+    }
+
+    private void decsklist(Collection<Skill> buf, Object[] args, int a) {
+	while(a < args.length) {
+	    String nm = (String)args[a++];
+	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
+	    int cost = ((Number)args[a++]).intValue();
+	    buf.add(new Skill(nm, res, cost));
+	}
+    }
+
+    private void decexplist(Collection<Experience> buf, Object[] args, int a) {
+	while(a < args.length) {
+	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
+	    int mtime = ((Number)args[a++]).intValue();
+	    buf.add(new Experience(res, mtime));
 	}
     }
 
@@ -623,6 +945,23 @@ public class CharWnd extends Window {
 		double m = ((Number)args[a++]).doubleValue();
 		cons.update(t, m);
 	    }
+	} else if(nm == "csk") {
+	    /* One *could* argue that rmessages should have some
+	     * built-in fragmentation scheme. ^^ */
+	    boolean rst = ((Integer)args[0]) != 0;
+	    Collection<Skill> buf = rst?new ArrayList<Skill>():new ArrayList<Skill>(Arrays.asList(csk.skills));
+	    decsklist(buf, args, 1);
+	    csk.pop(buf);
+	} else if(nm == "nsk") {
+	    boolean rst = ((Integer)args[0]) != 0;
+	    Collection<Skill> buf = rst?new ArrayList<Skill>():new ArrayList<Skill>(Arrays.asList(nsk.skills));
+	    decsklist(buf, args, 1);
+	    nsk.pop(buf);
+	} else if(nm == "exps") {
+	    boolean rst = ((Integer)args[0]) != 0;
+	    Collection<Experience> buf = rst?new ArrayList<Experience>():new ArrayList<Experience>(Arrays.asList(exps.exps));
+	    decexplist(buf, args, 1);
+	    exps.pop(buf);
 	} else {
 	    super.uimsg(nm, args);
 	}
