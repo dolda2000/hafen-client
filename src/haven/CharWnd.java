@@ -511,11 +511,13 @@ public class CharWnd extends Window {
 	}
     }
 
+    private static final PUtils.Convolution iconfilter = new PUtils.Lanczos(3);
     public class Skill {
 	public final String nm;
 	public final Indir<Resource> res;
 	public final int cost;
 	private String sortkey;
+	private Tex small;
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
 	    public String value() {
 		try {
@@ -548,6 +550,7 @@ public class CharWnd extends Window {
 	public final Indir<Resource> res;
 	public final int mtime;
 	private String sortkey = "\uffff";
+	private Tex small;
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
 	    public String value() {
 		try {
@@ -611,7 +614,9 @@ public class CharWnd extends Window {
 	    g.frect(Coord.z, g.sz);
 	    g.chcolor();
 	    try {
-		g.image(sk.res.get().layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
+		if(sk.small == null)
+		    sk.small = new TexI(PUtils.convolvedown(sk.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
+		g.image(sk.small, Coord.z);
 	    } catch(Loading e) {
 		WItem.missing.loadwait();
 		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
@@ -676,7 +681,9 @@ public class CharWnd extends Window {
 	    g.frect(Coord.z, g.sz);
 	    g.chcolor();
 	    try {
-		g.image(exp.res.get().layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
+		if(exp.small == null)
+		    exp.small = new TexI(PUtils.convolvedown(exp.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
+		g.image(exp.small, Coord.z);
 	    } catch(Loading e) {
 		WItem.missing.loadwait();
 		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
