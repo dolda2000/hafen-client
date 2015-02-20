@@ -470,10 +470,13 @@ public class CharWnd extends Window {
 	private void upd() {
 	    int texp = 0, tw = 0;
 	    for(GItem item : study.children(GItem.class)) {
-		Curiosity ci = ItemInfo.find(Curiosity.class, item.info());
-		if(ci != null) {
-		    texp += ci.exp;
-		    tw += ci.mw;
+		try {
+		    Curiosity ci = ItemInfo.find(Curiosity.class, item.info());
+		    if(ci != null) {
+			texp += ci.exp;
+			tw += ci.mw;
+		    }
+		} catch(Loading l) {
 		}
 	    }
 	    this.texp = texp; this.tw = tw;
