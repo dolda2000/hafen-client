@@ -26,6 +26,11 @@
 
 package haven.glsl;
 
+import java.util.List;
+import haven.GOut;
+import haven.GLBuffer;
+import haven.GLState.Buffer;
+
 public class Attribute extends Variable.Global {
     public Attribute(Type type, Symbol name) {
 	super(type, name);
@@ -52,5 +57,14 @@ public class Attribute extends Variable.Global {
     public void use(Context ctx) {
 	if(!defined(ctx))
 	    ctx.vardefs.add(new Def());
+    }
+
+    public static abstract class AutoInstanced extends Attribute {
+	public AutoInstanced(Type type, Symbol name) {super(type, name);}
+	public AutoInstanced(Type type, String infix) {super(type, infix);}
+	public AutoInstanced(Type type) {super(type);}
+
+	public abstract GLBuffer bindiarr(GOut g, List<Buffer> inst);
+	public abstract void unbindiarr(GOut g, GLBuffer buf);
     }
 }
