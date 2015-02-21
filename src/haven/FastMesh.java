@@ -233,13 +233,28 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 
     public class VAOCompiler extends Compiler {
 	public class VAOCompiled extends Compiled {
-	    private VAOState st = new VAOState();
+	    private VAOState st = new VAOState(), ist = null;
 
 	    public void draw(GOut g) {
 		GL2 gl = g.gl;
 		g.state(st);
 		g.apply();
 		gl.glDrawRangeElements(GL.GL_TRIANGLES, lo, hi, num * 3, GL.GL_UNSIGNED_SHORT, 0);
+	    }
+
+	    public boolean drawinst(GOut g, List<GLState.Buffer> inst) {
+		if(!Debug.kf3)
+		    return(false);
+		GL2 gl = g.gl;
+		if(ist == null)
+		    ist = new VAOState();
+		g.state(ist);
+		if(!g.st.instapply(g, inst))
+		    return(false);
+		g.st.bindiarr(g, inst);
+		gl.glDrawElementsInstanced(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, 0, inst.size());
+		g.st.unbindiarr(g);
+		return(true);
 	    }
 
 	    public void dispose() {
@@ -299,8 +314,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     }
 
     private GLSettings.MeshMode curmode = null;
-    public void draw(GOut g) {
-	GL2 gl = g.gl;
+    private Compiler compiler(GOut g) {
 	if(compile()) {
 	    if(curmode != g.gc.pref.meshmode.val) {
 		if(compiler != null) {
@@ -322,6 +336,12 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	    compiler = null;
 	    curmode = null;
 	}
+	return(compiler);
+    }
+
+    public void draw(GOut g) {
+	GL2 gl = g.gl;
+	Compiler compiler = compiler(g);
 	if(compiler != null) {
 	    compiler.get(g).draw(g);
 	} else {
@@ -335,7 +355,15 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     }
 
     public boolean drawinst(GOut g, List<GLState.Buffer> st) {
+	Compiler compiler = compiler(g);
+	if(!(compiler instanceof VAOCompiler))
+	    return(false);
+	return(((VAOCompiler.VAOCompiled)compiler.get(g)).drawinst(g, st));
+	/*
+	if(!Debug.pk1 && Debug.kf1)
+	    System.err.println(this + ": " + st.size());
 	return(false);
+	*/
     }
     
     public void dispose() {
