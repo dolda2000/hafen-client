@@ -80,24 +80,28 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	private Object[] ids = new Object[0];
 
 	private Object[] getid(GOut g) {
-	    Object[] id = new Object[vert.bufs.length];
-	    for(int i = 0; i < id.length; i++) {
+	    ArrayList<Object> id = new ArrayList<Object>();
+	    for(int i = 0; i < vert.bufs.length; i++) {
 		if(vert.bufs[i] instanceof VertexBuf.GLArray)
-		    id[i] = ((VertexBuf.GLArray)vert.bufs[i]).progid(g);
+		    id.add(((VertexBuf.GLArray)vert.bufs[i]).progid(g));
 		else
-		    id[i] = null;
+		    id.add(null);
 	    }
-	    return(ArrayIdentity.intern(id));
+	    /* XXX: Probably, each auto-inst should have to be ID'd in
+	     * some meaningful way, but I'm not currently sure what
+	     * would consitute a proper ID. */
+	    id.add(g.st.prog.autoinst.length > 0);
+	    return(ArrayIdentity.intern(id.toArray(new Object[0])));
 	}
 
 	public Compiled get(GOut g) {
+	    g.apply();
 	    GLProgram prog = g.st.prog;
 	    int i;
 	    for(i = 0; i < kcache.length; i++) {
 		if(kcache[i] == prog)
 		    return(vcache[i]);
 	    }
-	    g.apply();
 	    Object[] id = getid(g);
 	    Compiled ret;
 	    create: {
@@ -233,7 +237,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 
     public class VAOCompiler extends Compiler {
 	public class VAOCompiled extends Compiled {
-	    private VAOState st = new VAOState(), ist = null;
+	    private VAOState st = new VAOState();
 
 	    public void draw(GOut g) {
 		GL2 gl = g.gl;
@@ -243,14 +247,9 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	    }
 
 	    public boolean drawinst(GOut g, List<GLState.Buffer> inst) {
-		if(!Debug.kf3)
-		    return(false);
 		GL2 gl = g.gl;
-		if(ist == null)
-		    ist = new VAOState();
-		g.state(ist);
-		if(!g.st.instapply(g, inst))
-		    return(false);
+		g.state(st);
+		g.apply();
 		g.st.bindiarr(g, inst);
 		gl.glDrawElementsInstanced(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, 0, inst.size());
 		g.st.unbindiarr(g);
@@ -355,9 +354,12 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     }
 
     public boolean drawinst(GOut g, List<GLState.Buffer> st) {
+	if(!Debug.kf3)
+	    return(false);
 	Compiler compiler = compiler(g);
 	if(!(compiler instanceof VAOCompiler))
 	    return(false);
+	g.st.inststate(st);
 	return(((VAOCompiler.VAOCompiled)compiler.get(g)).drawinst(g, st));
 	/*
 	if(!Debug.pk1 && Debug.kf1)

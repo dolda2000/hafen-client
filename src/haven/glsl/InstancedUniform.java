@@ -87,8 +87,8 @@ public abstract class InstancedUniform {
 	    gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.length * 4, FloatBuffer.wrap(buf), GL.GL_STATIC_DRAW);
 	    int loc = g.st.prog.attrib(attrib);
 	    gl.glVertexAttribPointer(loc + 0, 4, GL.GL_FLOAT, false, 64,  0);
-	    gl.glVertexAttribPointer(loc + 1, 4, GL.GL_FLOAT, false, 64, 12);
-	    gl.glVertexAttribPointer(loc + 2, 4, GL.GL_FLOAT, false, 64, 24);
+	    gl.glVertexAttribPointer(loc + 1, 4, GL.GL_FLOAT, false, 64, 16);
+	    gl.glVertexAttribPointer(loc + 2, 4, GL.GL_FLOAT, false, 64, 32);
 	    gl.glVertexAttribPointer(loc + 3, 4, GL.GL_FLOAT, false, 64, 48);
 	    gl.glEnableVertexAttribArray(loc + 0);
 	    gl.glEnableVertexAttribArray(loc + 1);
@@ -109,6 +109,10 @@ public abstract class InstancedUniform {
 	    gl.glDisableVertexAttribArray(loc + 1);
 	    gl.glDisableVertexAttribArray(loc + 2);
 	    gl.glDisableVertexAttribArray(loc + 3);
+	    ((GL3)gl).glVertexAttribDivisor(loc + 0, 0);
+	    ((GL3)gl).glVertexAttribDivisor(loc + 1, 0);
+	    ((GL3)gl).glVertexAttribDivisor(loc + 2, 0);
+	    ((GL3)gl).glVertexAttribDivisor(loc + 3, 0);
 	    buf.dispose();
 	}
     }
