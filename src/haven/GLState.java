@@ -431,6 +431,10 @@ public abstract class GLState {
 	    next.copy(dest);
 	}
 	
+	public Buffer state() {
+	    return(next);
+	}
+
 	public Buffer copy() {
 	    return(next.copy());
 	}
@@ -532,6 +536,38 @@ public abstract class GLState {
 	    checkerr(gl);
 	    if(Config.profile)
 		time += System.nanoTime() - st;
+	}
+
+	private static <S extends GLState> void inststate(Buffer tgt, Slot<S> slot, List<Buffer> instances) {
+	    S[] buf = Utils.mkarray(slot.scl, instances.size());
+	    int n = 0;
+	    for(Buffer st : instances)
+		buf[n++] = st.get(slot);
+	    tgt.put(slot, slot.instanced.inststate(buf));
+	}
+
+	public boolean instapply(GOut g, List<Buffer> instances) {
+	    Buffer first = Utils.el(instances);
+	    // set(first);
+	    next.adjust();
+	    for(int i = 0; i < next.states.length; i++) {
+		if(idlist[i].instanced != null)
+		    inststate(next, idlist[i], instances);
+	    }
+	    apply(g);
+	    return(true);
+	}
+
+	public void bindiarr(GOut g, List<Buffer> instances) {
+	    for(int i = 0; i < prog.autoinst.length; i++)
+		prog.curinst[i] = prog.autoinst[i].bindiarr(g, instances);
+	}
+
+	public void unbindiarr(GOut g) {
+	    for(int i = 0; i < prog.autoinst.length; i++) {
+		prog.autoinst[i].unbindiarr(g, prog.curinst[i]);
+		prog.curinst[i] = null;
+	    }
 	}
 	
 	public static class ApplyException extends RuntimeException {
