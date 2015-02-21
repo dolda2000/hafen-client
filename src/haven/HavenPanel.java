@@ -86,8 +86,17 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	final Thread caller = Thread.currentThread();
 	final haven.error.ErrorHandler h = haven.error.ErrorHandler.find();
 	addGLEventListener(new GLEventListener() {
+		Debug.DumpGL dump = null;
 		public void display(GLAutoDrawable d) {
 		    GL2 gl = d.getGL().getGL2();
+		    /*
+		    if((dump == null) || (dump.getDownstreamGL() != gl))
+			dump = new Debug.DumpGL((GL4bc)gl);
+		    if(Debug.kf2 && !Debug.pk2)
+			dump.dump("/tmp/gldump");
+		    dump.reset();
+		    gl = dump;
+		    */
 		    if(inited && rdr)
 			redraw(gl);
 		    GLObject.disposeall(gl);
