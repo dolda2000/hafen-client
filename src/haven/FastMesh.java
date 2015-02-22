@@ -72,6 +72,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     public static abstract class Compiled {
 	public abstract void draw(GOut g);
 	public abstract void dispose();
+	public void prepare(GOut g) {}
     }
 
     public abstract class Compiler {
@@ -94,13 +95,16 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	    return(ArrayIdentity.intern(id.toArray(new Object[0])));
 	}
 
+	private Compiled last = null;
 	public Compiled get(GOut g) {
+	    if(last != null)
+		last.prepare(g);
 	    g.apply();
 	    GLProgram prog = g.st.prog;
 	    int i;
 	    for(i = 0; i < kcache.length; i++) {
 		if(kcache[i] == prog)
-		    return(vcache[i]);
+		    return(last = vcache[i]);
 	    }
 	    Object[] id = getid(g);
 	    Compiled ret;
@@ -120,7 +124,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	    kcache[i] = prog;
 	    vcache[i] = ret;
 	    ids[i] = id;
-	    return(ret);
+	    return(last = ret);
 	}
 
 	public abstract Compiled create(GOut g);
@@ -138,7 +142,6 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	    private DisplayList list;
 
 	    public void draw(GOut g) {
-		g.apply();
 		GL2 gl = g.gl;
 		if((list != null) && (list.gl != gl)) {
 		    list.dispose();
@@ -239,10 +242,18 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	public class VAOCompiled extends Compiled {
 	    private VAOState st = new VAOState();
 
+	    public void prepare(GOut g) {
+		GLState cur = g.st.cur(vstate);
+		if(cur != null)
+		    g.state(cur);
+	    }
+
 	    public void draw(GOut g) {
 		GL2 gl = g.gl;
-		g.state(st);
-		g.apply();
+		if(g.st.cur(vstate) != st) {
+		    g.state(st);
+		    g.apply();
+		}
 		gl.glDrawRangeElements(GL.GL_TRIANGLES, lo, hi, num * 3, GL.GL_UNSIGNED_SHORT, 0);
 	    }
 
