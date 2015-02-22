@@ -343,6 +343,22 @@ public class Material extends GLState {
 	}
     }
 
+    @ResName("mlink")
+    public static class $mlink implements ResCons2 {
+	public void cons(Resource res, List<GLState> states, List<Res.Resolver> left, Object... args) {
+	    final Resource.Spec lres = new Resource.Spec((String)args[0], (Integer)args[1]);
+	    final int id = (args.length > 2)?(Integer)args[2]:-1;
+	    left.add(new Res.Resolver() {
+		    public void resolve(Collection<GLState> buf) {
+			if(id >= 0)
+			    buf.add(lres.get().layer(Res.class, id).get());
+			else
+			    buf.add(lres.get().layer(Res.class).get());
+		    }
+		});
+	}
+    }
+
     @dolda.jglob.Discoverable
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.RUNTIME)
