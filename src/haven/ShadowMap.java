@@ -74,8 +74,7 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 	};
 
     public void setpos(Coord3f base, Coord3f dir) {
-	lcam.base = base;
-	lcam.dir = dir;
+	lcam.update(base, dir);
     }
 
     public void dispose() {
