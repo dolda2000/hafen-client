@@ -989,6 +989,12 @@ public class Utils {
 	return(dst);
     }
     
+    public static double[] extend(double[] src, int nl) {
+	double[] dst = new double[nl];
+	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
+	return(dst);
+    }
+    
     public static float[] extend(float[] src, int nl) {
 	float[] dst = new float[nl];
 	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
