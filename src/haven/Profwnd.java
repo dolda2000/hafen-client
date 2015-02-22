@@ -61,7 +61,15 @@ public class Profwnd extends Window {
 	prof.draw(tex, mt / h);
 	g.image(tex, Coord.z);
     }
-    
+
+    public boolean type(char k, java.awt.event.KeyEvent ev) {
+	if(k == 'd') {
+	    prof.dump(System.err);
+	    return(true);
+	}
+	return(false);
+    }
+
     public String tooltip(Coord c, Widget prev) {
 	c = xlate(c, false);
 	if((c.x >= 0) && (c.x < prof.hist.length) && (c.y >= 0) && (c.y < h)) {
