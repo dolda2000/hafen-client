@@ -819,7 +819,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    partydraw(g);
 	    glob.map.reqarea(cc.div(tilesz).sub(MCache.cutsz.mul(view + 1)),
 			     cc.div(tilesz).add(MCache.cutsz.mul(view + 1)));
-	    lastload = null;
 	} catch(Loading e) {
 	    lastload = e;
 	    String text = "Loading...";
