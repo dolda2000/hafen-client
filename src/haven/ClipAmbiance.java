@@ -159,9 +159,8 @@ public class ClipAmbiance implements Rendered {
 	public final String[] cnms;
 	public final double[] ieps;
 
-	public Desc(Resource res, byte[] bbuf) {
+	public Desc(Resource res, Message buf) {
 	    res.super();
-	    Message buf = new MessageBuf(bbuf);
 	    int ver = buf.uint8();
 	    if(ver != 1)
 		throw(new Resource.LoadException("Unknown clip-ambiance version: " + ver, getres()));
