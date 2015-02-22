@@ -101,4 +101,72 @@ public abstract class Profile {
 	}
 	tex.update();
     }
+
+    public void dump(java.io.PrintStream out) {
+	String[] parts = new String[0];
+	double[] avg = new double[0];
+	double[] min = new double[0];
+	double[] max = new double[0];
+	int n = 0;
+	for(Frame f : hist) {
+	    if(f == null)
+		continue;
+	    for(int i = 0; i <= f.prt.length; i++) {
+		String nm; double tm;
+		if(i < f.prt.length) {
+		    nm = f.nm[i];
+		    tm = f.prt[i];
+		} else {
+		    nm = "total";
+		    tm = f.total;
+		}
+		int o;
+		for(o = 0; o < parts.length; o++) {
+		    if(parts[o].equals(nm))
+			break;
+		}
+		if(o < parts.length) {
+		    avg[o] += tm;
+		    min[o] = Math.min(min[o], tm);
+		    max[o] = Math.max(max[o], tm);
+		} else {
+		    parts = Utils.extend(parts, parts.length + 1);
+		    avg = Utils.extend(avg, avg.length + 1);
+		    min = Utils.extend(min, min.length + 1);
+		    max = Utils.extend(max, max.length + 1);
+		    parts[o] = nm;
+		    avg[o] = min[o] = max[o] = tm;
+		}
+	    }
+	    n++;
+	}
+	for(int i = 0; i < avg.length; i++)
+	    avg[i] /= n;
+	double[] vsum = new double[avg.length];
+	for(Frame f : hist) {
+	    if(f == null)
+		continue;
+	    for(int i = 0; i <= f.prt.length; i++) {
+		String nm; double tm;
+		if(i < f.prt.length) {
+		    nm = f.nm[i];
+		    tm = f.prt[i];
+		} else {
+		    nm = "total";
+		    tm = f.total;
+		}
+		int o;
+		for(o = 0; o < parts.length; o++) {
+		    if(parts[o].equals(nm))
+			break;
+		}
+		vsum[o] += Math.pow(avg[o] - tm, 2);
+	    }
+	}
+	for(int i = 0; i < vsum.length; i++)
+	    vsum[i] = Math.sqrt(vsum[i] / n);
+	for(int i = 0; i < parts.length; i++)
+	    out.println(String.format("%s: %.2f\u00b1%.2f (%.2f-%.2f)", parts[i], avg[i] * 1000, vsum[i] * 1000, min[i] * 1000, max[i] * 1000));
+	out.println();
+    }
 }
