@@ -36,16 +36,12 @@ public class Projection extends Transform {
     }
 
     public void apply(GOut g) {
-	GL2 gl = g.gl;
-	g.st.matmode(GL2.GL_PROJECTION);
-	gl.glPushMatrix();
-	gl.glLoadMatrixf(fin(Matrix4f.id).m, 0);
+	bk = g.st.proj;
+	g.st.proj = fin(Matrix4f.id);
     }
 
     public void unapply(GOut g) {
-	GL2 gl = g.gl;
-	g.st.matmode(GL2.GL_PROJECTION);
-	gl.glPopMatrix();
+	g.st.proj = bk;
     }
 
     public void prep(Buffer b) {

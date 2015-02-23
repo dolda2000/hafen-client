@@ -36,9 +36,7 @@ public abstract class Variable {
     }
 
     public class Ref extends LValue {
-	public Ref process(Context ctx) {
-	    return(this);
-	}
+	public void walk(Walker w) {}
 
 	public void output(Output out) {
 	    out.write(name);
@@ -64,11 +62,17 @@ public abstract class Variable {
 	    super(type, new Symbol.Gen());
 	}
 
-	public class Ref extends Variable.Ref {
-	    public Ref process(Context ctx) {
-		use(ctx);
-		return(this);
+	private static final Object ppid = new PostProc.AutoID("vardef", 10000);
+	public class Ref extends Variable.Ref implements PostProc.Processed {
+	    public void process(PostProc proc) {
+		use(proc.ctx);
 	    }
+
+	    public Object ppid() {
+		return(ppid);
+	    }
+
+	    public void walk(Walker w) {}
 	}
 
 	public Ref ref() {
@@ -89,9 +93,7 @@ public abstract class Variable {
 	}
 
 	public class Definition extends Toplevel {
-	    public Definition process(Context ctx) {
-		return(this);
-	    }
+	    public void walk(Walker w) {}
 
 	    public void output(Output out) {
 		out.write(type.name(out.ctx));

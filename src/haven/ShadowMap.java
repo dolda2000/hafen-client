@@ -74,8 +74,7 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 	};
 
     public void setpos(Coord3f base, Coord3f dir) {
-	lcam.base = base;
-	lcam.dir = dir;
+	lcam.update(base, dir);
     }
 
     public void dispose() {
@@ -187,7 +186,7 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 	    ph.dolight.mod(new Runnable() {
 		    public void run() {
 			ph.dolight.dcalc.add(new If(eq(sl.ref(), ph.dolight.i),
-						    stmt(amul(ph.dolight.dl.var.ref(), shcalc.call()))),
+						    stmt(amul(ph.dolight.dl.tgt, shcalc.call()))),
 					     ph.dolight.dcurs);
 		    }
 		}, 0);
@@ -197,19 +196,16 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
     public final Shader shader;
     private final ShaderMacro[] shaders;
 
-    // public boolean reqshaders() {return(true);}
     public ShaderMacro[] shaders() {return(shaders);}
 
     private TexUnit sampler;
 
     public void apply(GOut g) {
 	sampler = g.st.texalloc();
-	if(g.st.prog != null) {
-	    GL gl = g.gl;
-	    sampler.act();
-	    gl.glBindTexture(GL.GL_TEXTURE_2D, lbuf.glid(g));
-	    reapply(g);
-	}
+	GL gl = g.gl;
+	sampler.act();
+	gl.glBindTexture(GL.GL_TEXTURE_2D, lbuf.glid(g));
+	reapply(g);
     }
 
     public void reapply(GOut g) {

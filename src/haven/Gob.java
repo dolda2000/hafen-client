@@ -241,25 +241,20 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    }
 	};
 
-    public static final GLState.Slot<Save> savepos = new GLState.Slot<Save>(GLState.Slot.Type.SYS, Save.class, PView.loc);
-    public class Save extends GLState {
+    public class Save extends GLState.Abstract {
 	public Matrix4f cam = new Matrix4f(), wxf = new Matrix4f(),
 	    mv = new Matrix4f();
 	public Projection proj = null;
-	
-	public void apply(GOut g) {
-	    mv.load(cam.load(g.st.cam)).mul1(wxf.load(g.st.wxf));
-	    Projection proj = g.st.cur(PView.proj);
-	    Coord3f s = proj.toscreen(mv.mul4(Coord3f.o), g.sz);
-	    Gob.this.sc = new Coord(s);
-	    Gob.this.sczu = proj.toscreen(mv.mul4(Coord3f.zu), g.sz).sub(s);
-	    this.proj = proj;
-	}
-	
-	public void unapply(GOut g) {}
+	boolean debug = false;
 	
 	public void prep(Buffer buf) {
-	    buf.put(savepos, this);
+	    mv.load(cam.load(buf.get(PView.cam).fin(Matrix4f.id))).mul1(wxf.load(buf.get(PView.loc).fin(Matrix4f.id)));
+	    Projection proj = buf.get(PView.proj);
+	    PView.RenderState wnd = buf.get(PView.wnd);
+	    Coord3f s = proj.toscreen(mv.mul4(Coord3f.o), wnd.sz());
+	    Gob.this.sc = new Coord(s);
+	    Gob.this.sczu = proj.toscreen(mv.mul4(Coord3f.zu), wnd.sz()).sub(s);
+	    this.proj = proj;
 	}
     }
     

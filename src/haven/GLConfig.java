@@ -64,6 +64,17 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	return(ret);
     }
 
+    public static class HardwareException extends RuntimeException {
+	public HardwareException(String msg) {
+	    super(msg);
+	}
+    }
+
+    private void assertcaps() {
+	if(!haveglsl())
+	    throw(new HardwareException("Graphics context does not support programmable shading."));
+    }
+
     public static GLConfig fromgl(GL gl, GLContext ctx, GLCapabilitiesImmutable caps) {
 	GLConfig c = new GLConfig();
 	try {
@@ -94,6 +105,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	    c.anisotropy = glgetf(gl, GL.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
 	else
 	    c.anisotropy = 0;
+	c.assertcaps();
 	return(c);
     }
     

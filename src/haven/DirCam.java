@@ -30,14 +30,18 @@ import javax.media.opengl.*;
 
 public class DirCam extends Camera {
     static final Coord3f defdir = new Coord3f(0, 0, -1);
-    Coord3f base = Coord3f.o, dir = defdir;
+    Matrix4f mat = compute(Coord3f.o, defdir);
 
     public DirCam() {
 	super(Matrix4f.identity());
     }
 
+    public void update(Coord3f base, Coord3f dir) {
+	mat = compute(base, dir);
+    }
+
     public Matrix4f fin(Matrix4f p) {
-	update(compute(base, dir));
+	update(mat);
 	return(super.fin(p));
     }
     

@@ -37,18 +37,9 @@ public abstract class LBinOp extends Expression {
 	this.rhs = rhs;
     }
 
-    public LBinOp process(Context ctx) {
-	try {
-	    return(this.getClass().getConstructor(LValue.class, Expression.class).newInstance(lhs.process(ctx), rhs.process(ctx)));
-	} catch(NoSuchMethodException e) {
-	    throw(new Error(e));
-	} catch(InstantiationException e) {
-	    throw(new Error(e));
-	} catch(IllegalAccessException e) {
-	    throw(new Error(e));
-	} catch(java.lang.reflect.InvocationTargetException e) {
-	    throw(new Error(e));
-	}
+    public void walk(Walker w) {
+	w.el(lhs);
+	w.el(rhs);
     }
 
     public abstract String form();

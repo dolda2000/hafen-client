@@ -52,15 +52,13 @@ public class ColorMask extends GLState {
     }
 
     public ShaderMacro[] shaders() {return(sh);}
-    public boolean reqshaders() {return(true);}
 
     public void reapply(GOut g) {
 	g.gl.glUniform4fv(g.st.prog.uniform(ccol), 1, col, 0);
     }
 
     public void apply(GOut g) {
-	if(g.st.prog != null)
-	    reapply(g);
+	reapply(g);
     }
 
     public void unapply(GOut g) {

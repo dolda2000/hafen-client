@@ -182,13 +182,12 @@ public class WaterTile extends Tiler {
 	nrm.magfilter(GL.GL_LINEAR);
     }
 
-    public static class SimpleSurface extends GLState.StandAlone {
-	private static States.DepthOffset soff = new States.DepthOffset(2, 2);
-	TexUnit tsky, tnrm;
+    private static final GLState.Slot<GLState> surfslot = new GLState.Slot<GLState>(GLState.Slot.Type.DRAW, GLState.class, PView.cam, HavenPanel.global);
+    private static final States.DepthOffset surfoff = new States.DepthOffset(2, 2);
+    public static class SimpleSurface extends GLState {
+	private TexUnit tsky;
 
-	private SimpleSurface() {
-	    super(GLState.Slot.Type.DRAW, PView.cam, HavenPanel.global);
-	}
+	private SimpleSurface() {}
 
 	public void apply(GOut g) {
 	    GL2 gl = g.gl;
@@ -205,7 +204,7 @@ public class WaterTile extends Tiler {
 	    gl.glColor4f(1, 1, 1, 0.5f);
 	    g.st.matmode(GL.GL_TEXTURE);
 	    gl.glPushMatrix();
-	    g.st.cam.transpose().trim3(1).loadgl(gl);
+	    PView.camxf(g).transpose().trim3(1).loadgl(gl);
 	}
 
 	public void unapply(GOut g) {
@@ -222,14 +221,15 @@ public class WaterTile extends Tiler {
 	}
 
 	public void prep(Buffer buf) {
+	    buf.put(surfslot, this);
 	    buf.put(States.color, null);
 	    buf.put(Light.lighting, null);
-	    soff.prep(buf);
-	    super.prep(buf);
+	    surfoff.prep(buf);
 	}
     }
 
-    public static class BetterSurface extends SimpleSurface {
+    public static class BetterSurface extends GLState {
+	private TexUnit tsky, tnrm;
 	private final Uniform ssky = new Uniform(Type.SAMPLERCUBE);
 	private final Uniform snrm = new Uniform(Type.SAMPLER2D);
 	private final Uniform icam = new Uniform(Type.MAT3);
@@ -320,10 +320,12 @@ public class WaterTile extends Tiler {
 	    GL2 gl = g.gl;
 	    gl.glUniform1i(g.st.prog.uniform(ssky), tsky.id);
 	    gl.glUniform1i(g.st.prog.uniform(snrm), tnrm.id);
-	    gl.glUniformMatrix3fv(g.st.prog.uniform(icam), 1, false, g.st.cam.transpose().trim3(), 0);
+	    gl.glUniformMatrix3fv(g.st.prog.uniform(icam), 1, false, PView.camxf(g).transpose().trim3(), 0);
 	}
 
-	private void papply(GOut g) {
+	public ShaderMacro[] shaders() {return(shaders);}
+
+	public void apply(GOut g) {
 	    GL2 gl = g.gl;
 	    gl.glBlendFunc(GL.GL_ONE, GL.GL_ONE);
 	    (tsky = g.st.texalloc()).act();
@@ -333,7 +335,7 @@ public class WaterTile extends Tiler {
 	    reapply(g);
 	}
 
-	private void punapply(GOut g) {
+	public void unapply(GOut g) {
 	    GL2 gl = g.gl;
 	    tsky.act();
 	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, 0);
@@ -344,21 +346,11 @@ public class WaterTile extends Tiler {
 	    gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
 	}
 
-	public ShaderMacro[] shaders() {return(shaders);}
-	public boolean reqshaders() {return(true);}
-
-	public void apply(GOut g) {
-	    if(g.st.prog == null)
-		super.apply(g);
-	    else
-		papply(g);
-	}
-	    
-	public void unapply(GOut g) {
-	    if(!g.st.usedprog)
-		super.unapply(g);
-	    else
-		punapply(g);
+	public void prep(Buffer buf) {
+	    buf.put(surfslot, this);
+	    buf.put(States.color, null);
+	    buf.put(Light.lighting, null);
+	    surfoff.prep(buf);
 	}
     }
 
@@ -411,7 +403,6 @@ public class WaterTile extends Tiler {
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}
 	public ShaderMacro[] shaders() {return(shaders);}
-	public boolean reqshaders() {return(true);}
 	public void prep(Buffer buf) {
 	    if(buf.cfg.pref.wsurf.val)
 		super.prep(buf);
@@ -442,7 +433,6 @@ public class WaterTile extends Tiler {
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}
 	public ShaderMacro[] shaders() {return(shaders);}
-	public boolean reqshaders() {return(true);}
     };
 
     @ResName("water")

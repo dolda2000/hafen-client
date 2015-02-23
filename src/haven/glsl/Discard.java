@@ -30,9 +30,7 @@ public class Discard extends Statement {
     public Discard() {
     }
 
-    public Discard process(Context ctx) {
-	return(this);
-    }
+    public void walk(Walker w) {}
 
     public void output(Output out) {
 	out.write("discard;");

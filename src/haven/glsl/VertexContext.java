@@ -26,6 +26,8 @@
 
 package haven.glsl;
 
+import haven.*;
+
 public class VertexContext extends ShaderContext {
     public VertexContext(ProgramContext prog) {
 	super(prog);
@@ -45,10 +47,6 @@ public class VertexContext extends ShaderContext {
     public static final Variable gl_Vertex = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Vertex"));
     public static final Variable gl_Normal = new Variable.Implicit(Type.VEC3, new Symbol.Fix("gl_Normal"));
     public static final Variable gl_Color = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Color"));
-    public static final Variable gl_ModelViewMatrix = new Variable.Implicit(Type.MAT4, new Symbol.Fix("gl_ModelViewMatrix"));
-    public static final Variable gl_NormalMatrix = new Variable.Implicit(Type.MAT4, new Symbol.Fix("gl_NormalMatrix"));
-    public static final Variable gl_ProjectionMatrix = new Variable.Implicit(Type.MAT4, new Symbol.Fix("gl_ProjectionMatrix"));
-    public static final Variable gl_ModelViewProjectionMatrix = new Variable.Implicit(Type.MAT4, new Symbol.Fix("gl_ModelViewProjectionMatrix"));
     public static final Variable gl_Position = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Position"));
     public static final Variable[] gl_MultiTexCoord = {
 	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord0")),
@@ -61,16 +59,116 @@ public class VertexContext extends ShaderContext {
 	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord7")),
     };
 
-    public static final Uniform wxf = new Uniform.AutoApply(Type.MAT4, "wxf", haven.PView.loc) {
-	    public void apply(haven.GOut g, int loc) {
-		g.gl.glUniformMatrix4fv(loc, 1, false, g.st.wxf.m, 0);
+    private static final Uniform u_proj = new Uniform.AutoApply(Type.MAT4, "proj", PView.proj) {
+	    public void apply(GOut g, int loc) {
+		g.gl.glUniformMatrix4fv(loc, 1, false, g.st.proj.m, 0);
 	    }
 	};
-    public static final Uniform cam = new Uniform.AutoApply(Type.MAT4, "cam", haven.PView.cam) {
-	    public void apply(haven.GOut g, int loc) {
-		g.gl.glUniformMatrix4fv(loc, 1, false, g.st.cam.m, 0);
+    private static final Uniform u_cam = new Uniform.AutoApply(Type.MAT4, "cam", PView.cam) {
+	    public void apply(GOut g, int loc) {
+		Camera cam_s = g.st.get(PView.cam);
+		Matrix4f cam = (cam_s == null)?Matrix4f.id:cam_s.fin(Matrix4f.id);
+		g.gl.glUniformMatrix4fv(loc, 1, false, cam.m, 0);
 	    }
 	};
+    private static final InstancedUniform u_wxf = new InstancedUniform.Mat4("wxf", PView.loc) {
+	    public Matrix4f forstate(GOut g, GLState.Buffer buf) {
+		Location.Chain wxf_s = buf.get(PView.loc);
+		return((wxf_s == null)?Matrix4f.id:wxf_s.fin(Matrix4f.id));
+	    }
+	};
+    private static final InstancedUniform u_mv = new InstancedUniform.Mat4("mv", PView.loc, PView.cam) {
+	    public Matrix4f forstate(GOut g, GLState.Buffer buf) {
+		Matrix4f mv = Matrix4f.id;
+		Camera cam_s = buf.get(PView.cam);
+		if(cam_s != null) mv = cam_s.fin(mv);
+		Location.Chain wxf_s = buf.get(PView.loc);
+		if(wxf_s != null) mv = wxf_s.fin(mv);
+		return(mv);
+	    }
+	};
+    private static final InstancedUniform u_pmv = new InstancedUniform.Mat4("pmv", PView.loc, PView.cam, PView.proj) {
+	    public Matrix4f forstate(GOut g, GLState.Buffer buf) {
+		Matrix4f pmv = g.st.proj;
+		Camera cam_s = buf.get(PView.cam);
+		if(cam_s != null) pmv = cam_s.fin(pmv);
+		Location.Chain wxf_s = buf.get(PView.loc);
+		if(wxf_s != null) pmv = wxf_s.fin(pmv);
+		return(pmv);
+	    }
+	};
+
+    private static final PostProc.AutoID xfpp = new PostProc.AutoID(1000);
+    private boolean xfpinited = false, h_wxf = false, h_mv = false;
+    private static class WorldTransform extends PostProc.AutoMacro {
+	final Expression v;
+	WorldTransform(Expression v) {super(xfpp); this.v = v;}
+	public Expression expand(Context ctx) {
+	    return(new Mul(u_wxf.ref(), v));
+	}
+    }
+    private static class MVTransform extends PostProc.AutoMacro {
+	final Expression v; final boolean norm;
+	MVTransform(Expression v, boolean norm) {super(xfpp); this.v = v; this.norm = norm;}
+	private Expression norm(Expression xf) {return(norm?new Mat3Cons(xf):xf);}
+	public Expression expand(Context ctx) {
+	    VertexContext vctx = (VertexContext)ctx;
+	    vctx.xfpinit();
+	    if(vctx.h_wxf)
+		return(new Mul(norm(u_cam.ref()), norm(u_wxf.ref()), v));
+	    else
+		return(new Mul(norm(u_mv.ref()), v));
+	}
+    }
+    private static class PMVTransform extends PostProc.AutoMacro {
+	final Expression v;
+	PMVTransform(Expression v) {super(xfpp); this.v = v;}
+	public Expression expand(Context ctx) {
+	    VertexContext vctx = (VertexContext)ctx;
+	    vctx.xfpinit();
+	    if(vctx.h_wxf)
+		return(new Mul(u_proj.ref(), u_cam.ref(), u_wxf.ref(), v));
+	    else if(vctx.h_mv)
+		return(new Mul(u_proj.ref(), u_mv.ref(), v));
+	    else
+		return(new Mul(u_pmv.ref(), v));
+	}
+    }
+    private void xfpinit() {
+	if(xfpinited)
+	    return;
+	walk(new Walker() {
+		public void el(Element e) {
+		    if(e instanceof WorldTransform) h_wxf = true;
+		    else if(e instanceof MVTransform) h_mv = true;
+		    e.walk(this);
+		}
+	    });
+	xfpinited = true;
+    }
+
+    public static Expression camxf(Expression v) {
+	return(new Mul(u_cam.ref(), v));
+    }
+    public static Expression projxf(Expression v) {
+	return(new Mul(u_proj.ref(), v));
+    }
+    public static Expression wxf(Expression v) {
+	return(new WorldTransform(v));
+    }
+    public static Expression mvxf(Expression v) {
+	return(new MVTransform(v, false));
+    }
+    public static Expression pmvxf(Expression v) {
+	return(new PMVTransform(v));
+    }
+
+     /* If, at some unexpected point in an unexpected future, I were
+      * to use anisotropic transforms, this will have to get a matrix
+      * inverter implemented for it. */
+    public Expression nxf(Expression v) {
+	return(new MVTransform(v, true));
+    }
 
     public final ValBlock.Value objv = mainvals.new Value(Type.VEC4, new Symbol.Gen("objv")) {
 	    public Expression root() {
@@ -81,12 +179,12 @@ public class VertexContext extends ShaderContext {
 	    {softdep(objv);}
 
 	    public Expression root() {
-		return(new Expression() {
-			public Expression process(Context ctx) {
+		return(new PostProc.AutoMacro(PostProc.misc) {
+			public Expression expand(Context ctx) {
 			    if(objv.used) {
-				return(new Mul(wxf.ref(), objv.ref()).process(ctx));
+				return(wxf(objv.ref()));
 			    } else {
-				return(new Mul(wxf.ref(), gl_Vertex.ref()).process(ctx));
+				return(wxf(gl_Vertex.ref()));
 			    }
 			}
 		    });
@@ -96,14 +194,14 @@ public class VertexContext extends ShaderContext {
 	    {softdep(objv); softdep(mapv);}
 
 	    public Expression root() {
-		return(new Expression() {
-			public Expression process(Context ctx) {
+		return(new PostProc.AutoMacro(PostProc.misc) {
+			public Expression expand(Context ctx) {
 			    if(mapv.used) {
-				return(new Mul(cam.ref(), mapv.ref()).process(ctx));
+				return(camxf(mapv.ref()));
 			    } else if(objv.used) {
-				return(new Mul(gl_ModelViewMatrix.ref(), objv.ref()).process(ctx));
+				return(mvxf(objv.ref()));
 			    } else {
-				return(new Mul(gl_ModelViewMatrix.ref(), gl_Vertex.ref()).process(ctx));
+				return(mvxf(gl_Vertex.ref()));
 			    }
 			}
 		    });
@@ -111,7 +209,7 @@ public class VertexContext extends ShaderContext {
 	};
     public final ValBlock.Value eyen = mainvals.new Value(Type.VEC3, new Symbol.Gen("eyen")) {
 	    public Expression root() {
-		return(new Mul(gl_NormalMatrix.ref(), gl_Normal.ref()));
+		return(nxf(gl_Normal.ref()));
 	    }
 	};
     public final ValBlock.Value posv = mainvals.new Value(Type.VEC4, new Symbol.Gen("posv")) {
@@ -121,24 +219,24 @@ public class VertexContext extends ShaderContext {
 	    }
 
 	    public Expression root() {
-		return(new Expression() {
-			public Expression process(Context ctx) {
+		return(new PostProc.AutoMacro(PostProc.misc) {
+			public Expression expand(Context ctx) {
 			    if(eyev.used) {
-				return(new Mul(gl_ProjectionMatrix.ref(), eyev.ref()).process(ctx));
+				return(projxf(eyev.ref()));
 			    } else if(mapv.used) {
-				return(new Mul(gl_ProjectionMatrix.ref(), cam.ref(), mapv.ref()).process(ctx));
+				return(projxf(camxf(mapv.ref())));
 			    } else if(objv.used) {
-				return(new Mul(gl_ModelViewProjectionMatrix.ref(), objv.ref()).process(ctx));
+				return(pmvxf(objv.ref()));
 			    } else {
-				return(new Mul(gl_ModelViewProjectionMatrix.ref(), gl_Vertex.ref()).process(ctx));
+				return(pmvxf(gl_Vertex.ref()));
 			    }
 			}
 		    });
 	    }
 
 	    protected void cons2(Block blk) {
-		var = gl_Position;
-		blk.add(new LBinOp.Assign(var.ref(), init));
+		tgt = gl_Position.ref();
+		blk.add(new LBinOp.Assign(tgt, init));
 	    }
 	};
 
@@ -150,6 +248,7 @@ public class VertexContext extends ShaderContext {
 	for(CodeMacro macro : code)
 	    macro.expand(main.code);
 	main.define(this);
+	PostProc.autoproc(this);
 	output(new Output(out, this));
     }
 }

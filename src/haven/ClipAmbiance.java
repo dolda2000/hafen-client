@@ -142,7 +142,7 @@ public class ClipAmbiance implements Rendered {
 		return;
 	    glob = list.intern(new Glob(desc));
 	}
-	Coord3f pos = g.st.mv.mul4(Coord3f.o);
+	Coord3f pos = PView.mvxf(g).mul4(Coord3f.o);
 	double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
 	double svol = Math.min(1.0, 50.0 / pd);
 	glob.add(svol * bvol);

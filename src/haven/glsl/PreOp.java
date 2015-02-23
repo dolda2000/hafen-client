@@ -35,18 +35,8 @@ public abstract class PreOp extends Expression {
 	this.op = op;
     }
 
-    public PreOp process(Context ctx) {
-	try {
-	    return(this.getClass().getConstructor(Expression.class).newInstance(op.process(ctx)));
-	} catch(NoSuchMethodException e) {
-	    throw(new Error(e));
-	} catch(InstantiationException e) {
-	    throw(new Error(e));
-	} catch(IllegalAccessException e) {
-	    throw(new Error(e));
-	} catch(java.lang.reflect.InvocationTargetException e) {
-	    throw(new Error(e));
-	}
+    public void walk(Walker w) {
+	w.el(op);
     }
 
     public abstract String form();

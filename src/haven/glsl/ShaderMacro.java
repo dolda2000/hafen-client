@@ -42,6 +42,8 @@ public interface ShaderMacro {
 	private final transient Uniform.AutoApply[] auto;
 	private final transient boolean[] adirty;
 	private transient int[] autolocs;
+	public final transient Attribute.AutoInstanced[] autoinst;
+	public final transient GLBuffer[] curinst;
 
 	private static Collection<GLShader> build(ProgramContext prog) {
 	    Collection<GLShader> ret = new LinkedList<GLShader>();
@@ -93,6 +95,15 @@ public interface ShaderMacro {
 		    }
 		}
 	    }
+	    {
+		List<Attribute.AutoInstanced> autoinst = new LinkedList<Attribute.AutoInstanced>();
+		for(Attribute var : ctx.attribs) {
+		    if(var instanceof Attribute.AutoInstanced)
+			autoinst.add((Attribute.AutoInstanced)var);
+		}
+		this.autoinst = autoinst.toArray(new Attribute.AutoInstanced[0]);
+	    }
+	    this.curinst = new GLBuffer[this.autoinst.length];
 	}
 
 	public void adirty(GLState.Slot slot) {

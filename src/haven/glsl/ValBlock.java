@@ -41,7 +41,7 @@ public class ValBlock {
 	public final Type type;
 	public final Symbol name;
 	public boolean used;
-	public Variable var;
+	public LValue tgt;
 	protected Expression init;
 	private final Collection<Value> deps = new LinkedList<Value>();
 	private final Collection<Value> sdeps = new LinkedList<Value>();
@@ -80,15 +80,20 @@ public class ValBlock {
 	}
 
 	protected void cons2(Block blk) {
-	    var = blk.local(type, name, init);
+	    tgt = blk.local(type, name, init).ref();
 	}
 
 	public Expression ref() {
 	    return(new Expression() {
-		    public Expression process(Context ctx) {
-			if(var == null)
-			    throw(new IllegalStateException("Value reference processed before being constructed"));
-			return(var.ref().process(ctx));
+		    public void walk(Walker w) {
+			if(tgt != null)
+			    w.el(tgt);
+		    }
+
+		    public void output(Output out) {
+			if(tgt == null)
+			    throw(new IllegalStateException("Value reference output before being constructed"));
+			tgt.output(out);
 		    }
 		});
 	}
@@ -156,7 +161,7 @@ public class ValBlock {
 
 	    public void addmods(Block blk) {
 		if(modexpr != null)
-		    blk.add(Cons.ass(var, modexpr));
+		    blk.add(Cons.ass(tgt, modexpr));
 	    }
 
 	    public final Expression root() {

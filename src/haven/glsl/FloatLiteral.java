@@ -36,9 +36,7 @@ public class FloatLiteral extends Expression {
 	this.val = val;
     }
 
-    public FloatLiteral process(Context ctx) {
-	return(this);
-    }
+    public void walk(Walker w) {}
 
     public void output(Output out) {
 	out.write(Double.toString(val));
