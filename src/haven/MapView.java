@@ -1185,7 +1185,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     private class Selector implements Grabber {
-	Coord sc, c1, c2;
+	Coord sc;
 	MCache.Overlay ol;
 	UI.Grab mgrab;
 	int modflags;
@@ -1211,7 +1211,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		ol.destroy();
 		mgrab.remove();
 	    }
-	    c1 = c2 = sc = mc.div(tilesz);
+	    sc = mc.div(tilesz);
 	    modflags = ui.modflags();
 	    xl.mv = true;
 	    mgrab = ui.grabmouse(MapView.this);
@@ -1221,12 +1221,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	public boolean mmouseup(Coord mc, int button) {
 	    if(sc != null) {
+		Coord ec = mc.div(tilesz);
 		xl.mv = false;
 		tt = null;
 		ol.destroy();
 		mgrab.remove();
 		sc = null;
-		wdgmsg("sel", c1, c2, modflags);
+		wdgmsg("sel", sc, ec, modflags);
 	    }
 	    return(true);
 	}
@@ -1241,8 +1242,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		Coord c1 = new Coord(Math.min(tc.x, sc.x), Math.min(tc.y, sc.y));
 		Coord c2 = new Coord(Math.max(tc.x, sc.x), Math.max(tc.y, sc.y));
 		ol.update(c1, c2);
-		this.c1 = c1;
-		this.c2 = c2;
 		tt = Text.render(String.format("%d\u00d7%d", c2.x - c1.x + 1, c2.y - c1.y + 1));
 	    }
 	}
