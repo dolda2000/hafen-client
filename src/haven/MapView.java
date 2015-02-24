@@ -1230,8 +1230,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		tt = null;
 		ol.destroy();
 		mgrab.remove();
-		sc = null;
 		wdgmsg("sel", sc, ec, modflags);
+		sc = null;
 	    }
 	    return(true);
 	}
