@@ -46,6 +46,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Plob placing = null;
     private int[] visol = new int[32];
     private Grabber grab;
+    private Selector selection;
     private static final Map<String, Class<? extends Camera>> camtypes = new HashMap<String, Class<? extends Camera>>();
     
     public interface Delayed {
@@ -927,6 +928,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    visol[i]++;
 	    }
 	    olftimer = System.currentTimeMillis() + (Integer)args[1];
+	} else if(msg == "sel") {
+	    boolean sel = ((Integer)args[0]) != 0;
+	    if(sel && (selection == null)) {
+		selection = new Selector();
+	    } else if(!sel && (selection != null)) {
+		selection.destroy();
+		selection = null;
+	    }
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -1125,6 +1134,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return(false);
     }
 
+    public Object tooltip(Coord c, Widget prev) {
+	if(selection != null) {
+	    if(selection.tt != null)
+		return(selection.tt);
+	}
+	return(super.tooltip(c, prev));
+    }
+
     public class GrabXL implements Grabber {
 	private final Grabber bk;
 	public boolean mv = false;
@@ -1168,6 +1185,79 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			}
 		    });
 	    }
+	}
+    }
+
+    private class Selector implements Grabber {
+	Coord sc, c1, c2;
+	MCache.Overlay ol;
+	UI.Grab mgrab;
+	int modflags;
+	Text tt;
+	final GrabXL xl = new GrabXL(this) {
+		public boolean mmousedown(Coord cc, int button) {
+		    if(button != 1)
+			return(false);
+		    return(super.mmousedown(cc, button));
+		}
+		public boolean mmousewheel(Coord cc, int amount) {
+		    return(false);
+		}
+	    };
+
+	{
+	    grab(xl);
+	    enol(17);
+	}
+
+	public boolean mmousedown(Coord mc, int button) {
+	    if(sc != null) {
+		ol.destroy();
+		mgrab.remove();
+	    }
+	    c1 = c2 = sc = mc.div(tilesz);
+	    modflags = ui.modflags();
+	    xl.mv = true;
+	    mgrab = ui.grabmouse(MapView.this);
+	    ol = glob.map.new Overlay(sc, sc, 1 << 17);
+	    return(true);
+	}
+
+	public boolean mmouseup(Coord mc, int button) {
+	    if(sc != null) {
+		xl.mv = false;
+		tt = null;
+		ol.destroy();
+		mgrab.remove();
+		sc = null;
+		wdgmsg("sel", c1, c2, modflags);
+	    }
+	    return(true);
+	}
+
+	public boolean mmousewheel(Coord mc, int amount) {
+	    return(false);
+	}
+
+	public void mmousemove(Coord mc) {
+	    if(sc != null) {
+		Coord tc = mc.div(MCache.tilesz);
+		Coord c1 = new Coord(Math.min(tc.x, sc.x), Math.min(tc.y, sc.y));
+		Coord c2 = new Coord(Math.max(tc.x, sc.x), Math.max(tc.y, sc.y));
+		ol.update(c1, c2);
+		this.c1 = c1;
+		this.c2 = c2;
+		tt = Text.render(String.format("%d\u00d7%d", c2.x - c1.x + 1, c2.y - c1.y + 1));
+	    }
+	}
+
+	public void destroy() {
+	    if(sc != null) {
+		ol.destroy();
+		mgrab.remove();
+	    }
+	    release(xl);
+	    disol(17);
 	}
     }
 
