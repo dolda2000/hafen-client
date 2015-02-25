@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 
 public class RenderList {
+    public static final int INSTANCE_THRESHOLD = 2;
     public final GLConfig cfg;
     private Slot[] list = new Slot[100];
     private int cur = 0;
@@ -42,6 +43,7 @@ public class RenderList {
 	public Rendered.Order o;
 	public boolean d;
 	public Slot p;
+	public int ihash;
     }
     
     public RenderList(GLConfig cfg) {
@@ -168,13 +170,15 @@ public class RenderList {
 		return(-1);
 	    if(!a.d && b.d)
 		return(1);
+	    int ret;
 	    int az = a.o.mainz(), bz = b.o.mainz();
-	    if(az != bz)
-		return(az - bz);
-	    int ret = a.o.cmp().compare(a.r, b.r, a.os, b.os);
-	    if(ret != 0)
+	    if((ret = (az - bz)) != 0)
 		return(ret);
-	    return(System.identityHashCode(a.r) - System.identityHashCode(b.r));
+	    if((ret = a.o.cmp().compare(a.r, b.r, a.os, b.os)) != 0)
+		return(ret);
+	    if((ret = ((System.identityHashCode(a.r) & 0x7fffffff) - (System.identityHashCode(b.r) & 0x7fffffff))) != 0)
+		return(ret);
+	    return((a.ihash & 0x7fffffff) - (b.ihash & 0x7fffffff));
 	}
     };
     
@@ -207,10 +211,13 @@ public class RenderList {
 
     public void fin() {
 	for(int i = 0; i < cur; i++) {
-	    if((list[i].o = list[i].os.get(Rendered.order)) == null)
-		list[i].o = Rendered.deflt;
-	    if(list[i].os.get(Rendered.skip.slot) != null)
-		list[i].d = false;
+	    Slot s = list[i];
+	    if((s.o = s.os.get(Rendered.order)) == null)
+		s.o = Rendered.deflt;
+	    if(s.os.get(Rendered.skip.slot) != null)
+		s.d = false;
+	    if(s.d)
+		s.ihash = s.os.ihash();
 	}
 	Arrays.sort(list, 0, cur, cmp);
     }
@@ -240,15 +247,39 @@ public class RenderList {
 	}
     }
 
+    private final List<GLState.Buffer> instbuf = new ArrayList<GLState.Buffer>();
     public void render(GOut g) {
 	for(GLState.Global gs : gstates)
 	    gs.prerender(this, g);
-	for(int i = 0; i < cur; i++) {
+	int skipinst = 0, i = 0;
+	rloop: while((i < cur) && list[i].d) {
 	    Slot s = list[i];
-	    if(!s.d)
-		break;
+	    tryinst: {
+		if((i < skipinst) || !(s.r instanceof Rendered.Instanced))
+		    break tryinst;
+		int o;
+		instbuf.clear();
+		instbuf.add(s.os);
+		for(o = i + 1; (o < cur) && list[o].d; o++) {
+		    if((list[o].r != s.r) || (list[o].ihash != s.ihash))
+			break;
+		    if(!s.os.iequals(list[o].os))
+			break;
+		    instbuf.add(list[o].os);
+		}
+		if(o - i < INSTANCE_THRESHOLD)
+		    break tryinst;
+		Rendered.Instanced ir = (Rendered.Instanced)s.r;
+		if(ir.drawinst(g, instbuf)) {
+		    i = o;
+		    continue rloop;
+		} else {
+		    skipinst = o;
+		}
+	    }
 	    g.st.set(s.os);
 	    render(g, s.r);
+	    i++;
 	}
 	for(GLState.Global gs : gstates)
 	    gs.postrender(this, g);

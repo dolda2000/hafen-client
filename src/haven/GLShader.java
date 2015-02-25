@@ -130,19 +130,12 @@ public abstract class GLShader implements java.io.Serializable {
     }
     
     public static class VertexShader extends GLShader {
-	public final String entry;
-	public final String[] args;
-	public final int order;
-
-	public VertexShader(String source, String header, String entry, int order, String... args) {
+	public VertexShader(String source, String header) {
 	    super(source, header);
-	    this.entry = entry;
-	    this.order = order;
-	    this.args = args;
 	}
 	
 	public VertexShader(String source) {
-	    this(source, "", null, 0);
+	    this(source, "");
 	}
 
 	protected ShaderOb create(GL2 gl) {
@@ -151,69 +144,9 @@ public abstract class GLShader implements java.io.Serializable {
 	    return(r);
 	}
 	
-	private boolean uses(String arg) {
-	    for(String a : args) {
-		if(a.equals(arg))
-		    return(true);
-	    }
-	    return(false);
-	}
-
-	private String call() {
-	    String ret = entry + "(";
-	    boolean f = true;
-	    for(String arg : args) {
-		if(!f)
-		    ret += ", ";
-		ret += arg;
-		f = false;
-	    }
-	    ret += ")";
-	    return(ret);
-	}
-
-	private final static Comparator<VertexShader> cmp = new Comparator<VertexShader>() {
-	    public int compare(VertexShader a, VertexShader b) {
-		return(a.order - b.order);
-	    }
-	};
-
-	public static VertexShader makemain(List<VertexShader> shaders) {
-	    StringBuilder buf = new StringBuilder();
-	    Collections.sort(shaders, cmp);
-	    for(VertexShader sh : shaders)
-		buf.append(sh.header + "\n");
-	    buf.append("\n");
-	    buf.append("void main()\n{\n");
-	    buf.append("    vec4 fcol = gl_Color;\n");
-	    buf.append("    vec4 bcol = gl_Color;\n");
-	    buf.append("    vec4 objv = gl_Vertex;\n");
-	    buf.append("    vec3 objn = gl_Normal;\n");
-	    int i = 0;
-	    for(; i < shaders.size(); i++) {
-		VertexShader sh = shaders.get(i);
-		if(sh.uses("eyev") || sh.uses("eyen"))
-		    break;
-		buf.append("    " + sh.call() + ";\n");
-	    }
-	    buf.append("    vec4 eyev = gl_ModelViewMatrix * objv;\n");
-	    buf.append("    vec3 eyen = gl_NormalMatrix * objn;\n");
-	    for(; i < shaders.size(); i++) {
-		VertexShader sh = shaders.get(i);
-		buf.append("    " + sh.call() + ";\n");
-	    }
-	    buf.append("    gl_FrontColor = fcol;\n");
-	    buf.append("    gl_Position = gl_ProjectionMatrix * eyev;\n");
-	    buf.append("}\n");
-	    return(new VertexShader(buf.toString()));
-	}
-	
 	public static VertexShader parse(Reader in) throws IOException {
 	    class VSplitter extends Splitter {
 		StringBuilder header = new StringBuilder();
-		String entry;
-		String[] args;
-		int order = 0;
 		
 		VSplitter(Reader in) {super(in);}
 		
@@ -222,22 +155,12 @@ public abstract class GLShader implements java.io.Serializable {
 			buf = header;
 		    } else if(d == "main") {
 			buf = main;
-		    } else if(d == "order") {
-			order = Integer.parseInt(a);
-		    } else if(d == "entry") {
-			String[] args = a.split(" +");
-			entry = args[0];
-			this.args = new String[args.length - 1];
-			for(int i = 1, o = 0; i < args.length; i++, o++)
-			    this.args[o] = args[i];
 		    }
 		}
 	    }
 	    VSplitter p = new VSplitter(in);
 	    p.parse();
-	    if(p.entry == null)
-		throw(new RuntimeException("No entry specified in shader source."));
-	    return(new VertexShader(p.main.toString(), p.header.toString(), p.entry, p.order, p.args));
+	    return(new VertexShader(p.main.toString(), p.header.toString()));
 	}
 	
 	public static VertexShader load(Class<?> base, String name) {
@@ -255,17 +178,12 @@ public abstract class GLShader implements java.io.Serializable {
     }
 
     public static class FragmentShader extends GLShader {
-	public final String entry;
-	public final int order;
-
-	public FragmentShader(String source, String header, String entry, int order) {
+	public FragmentShader(String source, String header) {
 	    super(source, header);
-	    this.entry = entry;
-	    this.order = order;
 	}
 	
 	public FragmentShader(String source) {
-	    this(source, "", null, 0);
+	    this(source, "");
 	}
 	
 	protected ShaderOb create(GL2 gl) {
@@ -274,33 +192,9 @@ public abstract class GLShader implements java.io.Serializable {
 	    return(r);
 	}
 
-	private final static Comparator<FragmentShader> cmp = new Comparator<FragmentShader>() {
-	    public int compare(FragmentShader a, FragmentShader b) {
-		return(a.order - b.order);
-	    }
-	};
-
-	public static FragmentShader makemain(List<FragmentShader> shaders) {
-	    StringBuilder buf = new StringBuilder();
-	    Collections.sort(shaders, cmp);
-	    for(FragmentShader sh : shaders)
-		buf.append(sh.header + "\n");
-	    buf.append("\n");
-	    buf.append("void main()\n{\n");
-	    buf.append("    vec4 res = gl_Color;\n");
-	    for(FragmentShader sh : shaders) {
-		buf.append("    " + sh.entry + "(res);\n");
-	    }
-	    buf.append("    gl_FragColor = res;\n");
-	    buf.append("}\n");
-	    return(new FragmentShader(buf.toString()));
-	}
-	
 	public static FragmentShader parse(Reader in) throws IOException {
 	    class FSplitter extends Splitter {
 		StringBuilder header = new StringBuilder();
-		String entry;
-		int order = 0;
 		
 		FSplitter(Reader in) {super(in);}
 		
@@ -309,19 +203,12 @@ public abstract class GLShader implements java.io.Serializable {
 			buf = header;
 		    } else if(d == "main") {
 			buf = main;
-		    } else if(d == "order") {
-			order = Integer.parseInt(a);
-		    } else if(d == "entry") {
-			String[] args = a.split(" +");
-			entry = args[0];
 		    }
 		}
 	    }
 	    FSplitter p = new FSplitter(in);
 	    p.parse();
-	    if(p.entry == null)
-		throw(new RuntimeException("No entry specified in shader source."));
-	    return(new FragmentShader(p.main.toString(), p.header.toString(), p.entry, p.order));
+	    return(new FragmentShader(p.main.toString(), p.header.toString()));
 	}
 	
 	public static FragmentShader load(Class<?> base, String name) {

@@ -35,11 +35,9 @@ public class Mat3Cons extends Expression {
 	this.els = els;
     }
 
-    public Mat3Cons process(Context ctx) {
-	Expression[] nels = new Expression[els.length];
-	for(int i = 0; i < els.length; i++)
-	    nels[i] = els[i].process(ctx);
-	return(new Mat3Cons(nels));
+    public void walk(Walker w) {
+	for(Expression el : els)
+	    w.el(el);
     }
 
     public void output(Output out) {

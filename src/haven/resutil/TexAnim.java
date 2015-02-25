@@ -58,7 +58,6 @@ public class TexAnim extends GLState {
 	    }
 	}};
     public ShaderMacro[] shaders() {return(shaders);}
-    public boolean reqshaders() {return(true);}
 
     public void reapply(GOut g) {
 	g.gl.glUniform2f(g.st.prog.uniform(cax), ax.x, ax.y);

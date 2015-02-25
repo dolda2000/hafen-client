@@ -36,12 +36,9 @@ public class Camera extends Transform {
     }
     
     public void apply(GOut g) {
-	bk = g.st.cam;
-	g.st.cam = fin(g.st.cam);
     }
     
     public void unapply(GOut g) {
-	g.st.cam = bk;
     }
     
     public void prep(Buffer b) {

@@ -51,24 +51,6 @@ public class GLProgram implements java.io.Serializable {
 	return(sc);
     }
     
-    public GLProgram(GLShader[][] shaders) {
-	this(collapse(shaders));
-	makemains(this.shaders);
-    }
-
-    private static void makemains(Collection<GLShader> shaders) {
-	List<VertexShader> vs = new ArrayList<VertexShader>();
-	List<FragmentShader> fs = new ArrayList<FragmentShader>();
-	for(GLShader s : shaders) {
-	    if(s instanceof VertexShader)
-		vs.add((VertexShader)s);
-	    else if(s instanceof FragmentShader)
-		fs.add((FragmentShader)s);
-	}
-	shaders.add(VertexShader.makemain(vs));
-	shaders.add(FragmentShader.makemain(fs));
-    }
-    
     public static class ProgramException extends RuntimeException {
 	public final GLProgram program;
 	

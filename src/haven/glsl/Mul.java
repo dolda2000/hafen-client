@@ -37,11 +37,9 @@ public class Mul extends Expression {
 	this.terms = terms;
     }
 
-    public Mul process(Context ctx) {
-	Expression[] terms = new Expression[this.terms.length];
-	for(int i = 0; i < terms.length; i++)
-	    terms[i] = this.terms[i].process(ctx);
-	return(new Mul(terms));
+    public void walk(Walker w) {
+	for(Expression term : terms)
+	    w.el(term);
     }
 
     public void output(Output out) {

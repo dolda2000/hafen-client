@@ -36,9 +36,7 @@ public class IntLiteral extends Expression {
 	this.val = val;
     }
 
-    public IntLiteral process(Context ctx) {
-	return(this);
-    }
+    public void walk(Walker w) {}
 
     public void output(Output out) {
 	out.write(Integer.toString(val));

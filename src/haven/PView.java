@@ -37,7 +37,7 @@ public abstract class PView extends Widget {
     public static final GLState.Slot<RenderState> wnd = new GLState.Slot<RenderState>(GLState.Slot.Type.SYS, RenderState.class, HavenPanel.proj2d, GLFrameBuffer.slot);
     public static final GLState.Slot<Projection> proj = new GLState.Slot<Projection>(GLState.Slot.Type.SYS, Projection.class, wnd);
     public static final GLState.Slot<Camera> cam = new GLState.Slot<Camera>(GLState.Slot.Type.SYS, Camera.class, proj);
-    public static final GLState.Slot<Location.Chain> loc = new GLState.Slot<Location.Chain>(GLState.Slot.Type.GEOM, Location.Chain.class, cam);
+    public static final GLState.Slot<Location.Chain> loc = new GLState.Slot<Location.Chain>(GLState.Slot.Type.GEOM, Location.Chain.class, cam).instanced(Location.Chain.instancer);
     public CPUProfile prof = new CPUProfile(300);
     protected Light.Model lm;
     private final WidgetContext cstate = new WidgetContext();
@@ -280,5 +280,24 @@ public abstract class PView extends Widget {
 	public boolean setup(RenderList r) {
 	    return(false);
 	}
+    }
+
+    public static Matrix4f camxf(GOut g) {
+	Camera cam_s = g.st.cur(cam);
+	return((cam_s == null)?Matrix4f.id:cam_s.fin(Matrix4f.id));
+    }
+
+    public static Matrix4f locxf(GOut g) {
+	Location.Chain loc_s = g.st.cur(loc);
+	return((loc_s == null)?Matrix4f.id:loc_s.fin(Matrix4f.id));
+    }
+
+    public static Matrix4f mvxf(GOut g) {
+	Camera cam_s = g.st.cur(cam);
+	Location.Chain loc_s = g.st.cur(loc);
+	Matrix4f ret = Matrix4f.id;
+	if(cam_s != null) ret = cam_s.fin(ret);
+	if(loc_s != null) ret = loc_s.fin(ret);
+	return(ret);
     }
 }

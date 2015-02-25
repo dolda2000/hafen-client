@@ -98,17 +98,17 @@ public class Phong extends ValBlock.Group {
 		    }
 
 		    public void cons2(Block blk) {
-			lvl.var = blk.local(FLOAT, null);
-			dir.var = blk.local(VEC3, null);
+			lvl.tgt = blk.local(FLOAT, null).ref();
+			dir.tgt = blk.local(VEC3, null).ref();
 			Block.Local rel = new Block.Local(VEC3);
 			Block.Local dst = new Block.Local(FLOAT);
 			code.add(new If(eq(pick(fref(ls, "position"), "w"), l(0.0)),
-					new Block(stmt(ass(lvl.var, l(1.0))),
-						  stmt(ass(dir.var, pick(fref(ls, "position"), "xyz")))),
+					new Block(stmt(ass(lvl.tgt, l(1.0))),
+						  stmt(ass(dir.tgt, pick(fref(ls, "position"), "xyz")))),
 					new Block(rel.new Def(sub(pick(fref(ls, "position"), "xyz"), vert)),
-						  stmt(ass(dir.var, normalize(rel.ref()))),
+						  stmt(ass(dir.tgt, normalize(rel.ref()))),
 						  dst.new Def(length(rel.ref())),
-						  stmt(ass(lvl.var, inv(add(fref(ls, "constantAttenuation"),
+						  stmt(ass(lvl.tgt, inv(add(fref(ls, "constantAttenuation"),
 									    mul(fref(ls, "linearAttenuation"), dst.ref()),
 									    mul(fref(ls, "quadraticAttenuation"), dst.ref(), dst.ref()))))))));
 		    }
@@ -165,20 +165,20 @@ public class Phong extends ValBlock.Group {
     }
 
     public void cons2(Block blk) {
-	bcol.var = blk.local(VEC3, pick(fref(prog.gl_FrontMaterial.ref(), "emission"), "rgb"));
-	scol.var = blk.local(VEC3, Vec3Cons.z);
+	bcol.tgt = blk.local(VEC3, pick(fref(prog.gl_FrontMaterial.ref(), "emission"), "rgb")).ref();
+	scol.tgt = blk.local(VEC3, Vec3Cons.z).ref();
 	boolean unroll = true;
 	if(!unroll) {
 	    Variable i = blk.local(INT, "i", null);
 	    blk.add(new For(ass(i, l(0)), lt(i.ref(), nlights.ref()), linc(i.ref()),
-			    stmt(dolight.call(i.ref(), vert, edir, norm, bcol.var.ref(), scol.var.ref()))));
+			    stmt(dolight.call(i.ref(), vert, edir, norm, bcol.tgt, scol.tgt))));
 	} else {
 	    for(int i = 0; i < 4; i++) {
 		/* No few drivers seem to be having trouble with the for
 		 * loop. It would be nice to be able to select this code
 		 * path only on those drivers. */
 		blk.add(new If(gt(nlights.ref(), l(i)),
-			       stmt(dolight.call(l(i), vert, edir, norm, bcol.var.ref(), scol.var.ref()))));
+			       stmt(dolight.call(l(i), vert, edir, norm, bcol.tgt, scol.tgt))));
 	    }
 	}
 	bcol.addmods(blk); scol.addmods(blk);

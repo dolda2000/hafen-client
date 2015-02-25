@@ -36,6 +36,41 @@ public abstract class Function {
 	this.name = name;
     }
 
+    private class Call extends Expression {
+	private final Expression[] params;
+
+	private Call(Expression... params) {
+	    this.params = params;
+	}
+
+	public void walk(Walker w) {
+	    for(Expression param : params)
+		w.el(param);
+	}
+
+	public void output(Output out) {
+	    out.write(name);
+	    out.write("(");
+	    if(params.length > 0) {
+		params[0].output(out);
+		for(int i = 1; i < params.length; i++) {
+		    out.write(", ");
+		    params[i].output(out);
+		}
+	    }
+	    out.write(")");
+	}
+
+	public Function fun() {
+	    return(Function.this);
+	}
+    }
+
+    public Expression call(Expression... params) {
+	ckparams(params);
+	return(new Call(params));
+    }
+
     public static class Def extends Function {
 	public final Type type;
 	public final Block code;
@@ -52,14 +87,8 @@ public abstract class Function {
 	}
 
 	private class Definition extends Toplevel {
-	    private final Block code;
-
-	    private Definition(Context ctx) {
-		this.code = Def.this.code.process(ctx);
-	    }
-
-	    public Definition process(Context ctx) {
-		throw(new RuntimeException());
+	    public void walk(Walker w) {
+		w.el(code);
 	    }
 
 	    public void output(Output out) {
@@ -73,38 +102,9 @@ public abstract class Function {
 	    }
 	}
 
-	private class Call extends Expression {
-	    private final Expression[] params;
-
-	    private Call(Expression... params) {
-		this.params = params;
-	    }
-
-	    public Call process(Context ctx) {
-		define(ctx);
-		Expression[] proc = new Expression[params.length];
-		for(int i = 0; i < params.length; i++)
-		    proc[i] = params[i].process(ctx);
-		return(new Call(proc));
-	    }
-
-	    public void output(Output out) {
-		out.write(name);
-		out.write("(");
-		if(params.length > 0) {
-		    params[0].output(out);
-		    for(int i = 1; i < params.length; i++) {
-			out.write(", ");
-			params[i].output(out);
-		    }
-		}
-		out.write(")");
-	    }
-	}
-
 	protected void cons() {}
 
-	public void define(Context ctx) {
+	public void define(final Context ctx) {
 	    if(!fin) {
 		cons();
 		fin = true;
@@ -113,7 +113,17 @@ public abstract class Function {
 		if((tl instanceof Definition) && (((Definition)tl).fun() == Def.this))
 		    return;
 	    }
-	    ctx.fundefs.add(new Definition(ctx));
+	    new Walker() {
+		public void el(Element el) {
+		    if(el instanceof Call) {
+			Function fun = ((Call)el).fun();
+			if(fun instanceof Def)
+			    ((Def)fun).define(ctx);
+		    }
+		    el.walk(this);
+		}
+	    }.el(code);
+	    ctx.fundefs.add(new Definition());
 	}
 
 	public void prototype(Output out) {
@@ -143,11 +153,6 @@ public abstract class Function {
 	    out.write(")");
 	}
 
-	public Expression call(Expression... params) {
-	    ckparams(params);
-	    return(new Call(params));
-	}
-
 	public Type type(Expression... params) {
 	    return(type);
 	}
@@ -171,43 +176,10 @@ public abstract class Function {
 		param(PDir.IN, null);
 	}
 
-	private class Call extends Expression {
-	    private final Expression[] params;
-
-	    private Call(Expression... params) {
-		this.params = params;
-	    }
-
-	    public Call process(Context ctx) {
-		Expression[] proc = new Expression[params.length];
-		for(int i = 0; i < params.length; i++)
-		    proc[i] = params[i].process(ctx);
-		return(new Call(proc));
-	    }
-
-	    public void output(Output out) {
-		out.write(name);
-		out.write("(");
-		if(params.length > 0) {
-		    params[0].output(out);
-		    for(int i = 1; i < params.length; i++) {
-			out.write(", ");
-			params[i].output(out);
-		    }
-		}
-		out.write(")");
-	    }
-	}
-
 	public Type type(Expression... params) {
 	    if(type == null)
 		throw(new NullPointerException("type"));
 	    return(type);
-	}
-
-	public Expression call(Expression... params) {
-	    ckparams(params);
-	    return(new Call(params));
 	}
 
 	public static final Builtin sin = new Builtin(null, new Symbol.Fix("sin"), 1);
@@ -295,5 +267,4 @@ public abstract class Function {
     }
 
     public abstract Type type(Expression... params);
-    public abstract Expression call(Expression... params);
 }

@@ -272,8 +272,6 @@ public abstract class States extends GLState {
 	    public ShaderMacro[] shaders() {
 		return(sh);
 	    }
-	    
-	    public boolean reqshaders() {return(true);}
 	};
     
     public static final Slot<GLState> adhoc = new Slot<GLState>(Slot.Type.DRAW, GLState.class, PView.wnd);
@@ -292,7 +290,6 @@ public abstract class States extends GLState {
 	public void unapply(GOut g) {}
 	
 	public ShaderMacro[] shaders() {return(sh);}
-	public boolean reqshaders() {return(sh != null);}
 	
 	public void prep(Buffer buf) {
 	    buf.put(adhoc, this);
@@ -315,7 +312,6 @@ public abstract class States extends GLState {
 	public void unapply(GOut g) {}
 	
 	public ShaderMacro[] shaders() {return(sh);}
-	public boolean reqshaders() {return(sh != null);}
 	
 	public void prep(Buffer buf) {
 	    buf.put(adhocg, this);

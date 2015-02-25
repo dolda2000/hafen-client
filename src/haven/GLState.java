@@ -48,10 +48,6 @@ public abstract class GLState {
 	return(null);
     }
     
-    public boolean reqshaders() {
-	return(false);
-    }
-
     public int capply() {
 	return(10);
     }
@@ -65,6 +61,15 @@ public abstract class GLState {
 	return(0);
     }
     
+    public interface Instancer<T extends GLState> {
+	public T inststate(T[] states);
+	public static final ShaderMacro mkinstanced = new ShaderMacro() {
+		public void modify(haven.glsl.ProgramContext ctx) {
+		    ctx.instanced = true;
+		}
+	    };
+    }
+
     private static int slotnum = 0;
     private static Slot<?>[] deplist = new Slot<?>[0];
     private static Slot<?>[] idlist = new Slot<?>[0];
@@ -75,6 +80,7 @@ public abstract class GLState {
 	public final Type type;
 	public final int id;
 	public final Class<T> scl;
+	public Instancer<T> instanced;
 	private int depid = -1;
 	private final Slot<?>[] dep, rdep;
 	private Slot[] grdep;
@@ -115,6 +121,11 @@ public abstract class GLState {
 	
 	public Slot(Type type, Class<T> scl, Slot... dep) {
 	    this(type, scl, dep, null);
+	}
+
+	public Slot<T> instanced(Instancer<T> inst) {
+	    this.instanced = inst;
+	    return(this);
 	}
 	
 	private static void makedeps(Collection<Slot<?>> slots) {
@@ -209,6 +220,35 @@ public abstract class GLState {
 	    }
 	}
 	
+	public int ihash() {
+	    int ret = 0;
+	    for(int i = 0; i < states.length; i++) {
+		if((idlist[i].instanced == null) && (states[i] != null))
+		    ret = (ret * 31) + System.identityHashCode(states[i]);
+	    }
+	    return(ret);
+	}
+
+	public boolean iequals(Buffer o) {
+	    GLState[] a, b;
+	    int i = 0;
+
+	    if(states.length > o.states.length) {
+		a = states; b = o.states;
+	    } else {
+		b = states; a = o.states;
+	    }
+	    for(; i < b.length; i++) {
+		if((idlist[i].instanced == null) && (a[i] != b[i]))
+		    return(false);
+	    }
+	    for(; i < a.length; i++) {
+		if((idlist[i].instanced == null) && (a[i] != null))
+		    return(false);
+	    }
+	    return(true);
+	}
+
 	private void adjust() {
 	    if(states.length < slotnum) {
 		GLState[] n = new GLState[slotnum];
@@ -347,14 +387,13 @@ public abstract class GLState {
 	private ShaderMacro[][] shaders = new ShaderMacro[0][], nshaders = new ShaderMacro[0][];
 	private int proghash = 0, nproghash = 0;
 	public ShaderMacro.Program prog;
-	public boolean usedprog;
 	public boolean pdirty = false, sdirty = false;
 	public long time = 0;
 	
-	/* It seems ugly to treat these so specially, but right now I
-	 * cannot see any good alternative. */
-	public Matrix4f cam = Matrix4f.id, wxf = Matrix4f.id, mv = Matrix4f.identity();
-	private Matrix4f ccam = null, cwxf = null;
+	/* XXX: Arguably, there should be a way to more fundamentally
+	 * affect the gl_Position generation code instead of this. */
+	public Matrix4f proj = Matrix4f.id;
+	private Matrix4f cproj = null;
 	
 	public Applier(GL2 gl, GLConfig cfg) {
 	    this.gl = gl;
@@ -392,6 +431,10 @@ public abstract class GLState {
 	    next.copy(dest);
 	}
 	
+	public Buffer state() {
+	    return(next);
+	}
+
 	public Buffer copy() {
 	    return(next.copy());
 	}
@@ -422,48 +465,15 @@ public abstract class GLState {
 		    }
 		}
 	    }
-	    usedprog = prog != null;
-	    if(sdirty) {
+	    if(sdirty || (prog == null)) {
 		ShaderMacro.Program np;
-		boolean usesl;
-		switch(g.gc.pref.progmode.val) {
-		case ALWAYS:
-		    usesl = true;
-		    break;
-		case REQ:
-		    usesl = false;
-		    for(int i = 0; i < trans.length; i++) {
-			if((nshaders[i] != null) && next.states[i].reqshaders()) {
-			    usesl = true;
-			    break;
-			}
-		    }
-		    break;
-		case NEVER:
-		default: /* ¦] */
-		    usesl = false;
-		    break;
-		}
-		if(usesl) {
-		    np = findprog(nproghash, nshaders);
-		} else {
-		    np = null;
-		}
+		np = findprog(nproghash, nshaders);
 		if(np != prog) {
-		    if(np != null)
-			np.apply(g);
-		    else
-			g.gl.glUseProgramObjectARB(0);
+		    np.apply(g);
 		    prog = np;
 		    if(debug)
 			checkerr(g.gl);
 		    pdirty = true;
-		}
-	    }
-	    if((prog != null) != usedprog) {
-		for(int i = 0; i < trans.length; i++) {
-		    if(trans[i])
-			repl[i] = true;
 		}
 	    }
 	    cur.copy(old);
@@ -497,7 +507,7 @@ public abstract class GLState {
 			if(debug)
 			    stcheckerr(g, "apply", cur.states[id]);
 		    }
-		    if(!pdirty && (prog != null))
+		    if(!pdirty)
 			prog.adirty(deplist[i]);
 		} else if(trans[id]) {
 		    cur.states[id].applyto(g, next.states[id]);
@@ -509,26 +519,53 @@ public abstract class GLState {
 		    shaders[id] = nshaders[id];
 		    if(debug)
 			stcheckerr(g, "applyfrom", cur.states[id]);
-		    if(!pdirty && (prog != null))
+		    if(!pdirty)
 			prog.adirty(deplist[i]);
-		} else if((prog != null) && pdirty && (shaders[id] != null)) {
+		} else if(pdirty && (shaders[id] != null)) {
 		    cur.states[id].reapply(g);
 		    if(debug)
 			stcheckerr(g, "reapply", cur.states[id]);
 		}
 	    }
-	    if((ccam != cam) || (cwxf != wxf)) {
-		/* See comment above */
-		mv.load(ccam = cam).mul1(cwxf = wxf);
-		matmode(GL2.GL_MODELVIEW);
-		gl.glLoadMatrixf(mv.m, 0);
+	    if(cproj != proj) {
+		matmode(GL2.GL_PROJECTION);
+		gl.glLoadMatrixf((cproj = proj).m, 0);
 	    }
-	    if(prog != null)
-		prog.autoapply(g, pdirty);
+	    prog.autoapply(g, pdirty);
 	    pdirty = sdirty = false;
 	    checkerr(gl);
 	    if(Config.profile)
 		time += System.nanoTime() - st;
+	}
+
+	private static <S extends GLState> void inststate0(Buffer tgt, Slot<S> slot, List<Buffer> instances) {
+	    S[] buf = Utils.mkarray(slot.scl, instances.size());
+	    int n = 0;
+	    for(Buffer st : instances)
+		buf[n++] = st.get(slot);
+	    tgt.put(slot, slot.instanced.inststate(buf));
+	}
+
+	public void inststate(List<Buffer> instances) {
+	    Buffer first = Utils.el(instances);
+	    set(first);
+	    next.adjust();
+	    for(int i = 0; i < next.states.length; i++) {
+		if(idlist[i].instanced != null)
+		    inststate0(next, idlist[i], instances);
+	    }
+	}
+
+	public void bindiarr(GOut g, List<Buffer> instances) {
+	    for(int i = 0; i < prog.autoinst.length; i++)
+		prog.curinst[i] = prog.autoinst[i].bindiarr(g, instances);
+	}
+
+	public void unbindiarr(GOut g) {
+	    for(int i = 0; i < prog.autoinst.length; i++) {
+		prog.autoinst[i].unbindiarr(g, prog.curinst[i]);
+		prog.curinst[i] = null;
+	    }
 	}
 	
 	public static class ApplyException extends RuntimeException {

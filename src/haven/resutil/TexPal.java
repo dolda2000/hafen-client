@@ -54,7 +54,6 @@ public class TexPal extends GLState {
 	}};
 
     public ShaderMacro[] shaders() {return(shaders);}
-    public boolean reqshaders() {return(true);}
 
     private TexUnit sampler;
 

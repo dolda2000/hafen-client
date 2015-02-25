@@ -37,8 +37,8 @@ public class FieldRef extends Expression {
 	this.el = el;
     }
 
-    public FieldRef process(Context ctx) {
-	return(new FieldRef(val.process(ctx), el));
+    public void walk(Walker w) {
+	w.el(val);
     }
 
     public void output(Output out) {
