@@ -662,6 +662,13 @@ public class Utils {
 	return(new Color(r, g, b, a));
     }
 
+    public static Color col16(int col) {
+        return(new Color(((col & 0xf000) >> 12) * 17,
+                         ((col & 0x0f00) >>  8) * 17,
+                         ((col & 0x00f0) >>  4) * 17,
+                         ((col & 0x000f) >>  0) * 17));
+    }
+    
     public static BufferedImage outline(BufferedImage img, Color col) {
 	Coord sz = imgsz(img).add(2, 2);
 	BufferedImage ol = TexI.mkbuf(sz);
