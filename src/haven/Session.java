@@ -106,7 +106,7 @@ public class Session {
 	private transient final CachedRes res;
 	
 	private LoadingIndir(CachedRes res) {
-	    super("Waiting to resolve resource reference " + res.resid);
+	    super("Waiting to resolve resource reference " + res.resid + "...");
 	    this.res = res;
 	    this.resid = res.resid;
 	}
