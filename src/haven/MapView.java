@@ -804,15 +804,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	g.chcolor();
     }
 
-    private boolean camload = false;
-    public Loading lastload = null;
+    private Loading camload = null, lastload = null;
     public void draw(GOut g) {
 	glob.map.sendreqs();
 	if((olftimer != 0) && (olftimer < System.currentTimeMillis()))
 	    unflashol();
 	try {
-	    if(camload)
-		throw(new MCache.LoadingMap());
+	    if(camload != null)
+		throw(new Loading(camload));
 	    undelay(delayed, g);
 	    super.draw(g);
 	    undelay(delayed2, g);
@@ -834,11 +833,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
     
     public void tick(double dt) {
-	camload = false;
+	camload = null;
 	try {
 	    camera.tick(dt);
 	} catch(Loading e) {
-	    camload = true;
+	    camload = e;
 	}
 	if(placing != null)
 	    placing.ctick((int)(dt * 1000));

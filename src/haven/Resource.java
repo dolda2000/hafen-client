@@ -495,6 +495,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public final Resource res;
 	
 	public Loading(Resource res) {
+	    super("Waiting for resource " + res.name);
 	    this.res = res;
 	}
 

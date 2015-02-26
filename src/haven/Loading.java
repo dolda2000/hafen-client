@@ -27,27 +27,57 @@
 package haven;
 
 public class Loading extends RuntimeException {
+    public final Loading rec;
+
     public Loading() {
 	super();
+	rec = null;
     }
 
     public Loading(String msg) {
 	super(msg);
+	rec = null;
     }
     
     public Loading(Throwable cause) {
 	super(cause);
+	rec = null;
     }
     
     public Loading(String msg, Throwable cause) {
 	super(msg, cause);
+	rec = null;
+    }
+
+    public Loading(Loading rec) {
+	super(rec);
+	this.rec = rec;
+    }
+
+    public Loading(String msg, Loading rec) {
+	super(msg, rec);
+	this.rec = rec;
+    }
+
+    public String getMessage() {
+	if(rec != null)
+	    return(rec.getMessage());
+	return(super.getMessage());
     }
 
     public boolean canwait() {
-	return(false);
+	if(rec != null)
+	    return(rec.canwait());
+	else
+	    return(false);
     }
 
     public void waitfor() throws InterruptedException {
-	throw(new RuntimeException("Tried to wait for unwaitable event", this));
+	if(rec != null) {
+	    rec.waitfor();
+	    return;
+	} else {
+	    throw(new RuntimeException("Tried to wait for unwaitable event", this));
+	}
     }
 }
