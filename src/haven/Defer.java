@@ -67,6 +67,11 @@ public class Defer extends ThreadGroup {
 	}
 
 	public String getMessage() {
+	    if(rec != null) {
+		String msg = rec.getMessage();
+		if(msg != null)
+		    return(msg);
+	    }
 	    if(future == null)
 		return(null);
 	    return(future.task.toString());
