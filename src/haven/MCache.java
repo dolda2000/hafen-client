@@ -52,7 +52,7 @@ public class MCache {
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
 
     public static class LoadingMap extends Loading {
-	public LoadingMap() {super("Waiting for map data");}
+	public LoadingMap() {super("Waiting for map data...");}
 	public LoadingMap(Loading cause) {
 	    super(cause);
 	}
