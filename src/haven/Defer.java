@@ -74,7 +74,14 @@ public class Defer extends ThreadGroup {
 	    }
 	    if(future == null)
 		return(null);
-	    return(future.task.toString());
+	    String msg = future.task.toString();
+	    if((msg == null) && (future.running == null))
+		return("Waiting on job queue...");
+	    if(msg == null)
+		return(null);
+	    if(future.running == null)
+		msg = msg + " (queued)";
+	    return(msg);
 	}
 
 	public boolean canwait() {return(true);}
