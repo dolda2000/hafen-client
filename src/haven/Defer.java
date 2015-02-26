@@ -55,15 +55,21 @@ public class Defer extends ThreadGroup {
     }
 
     public static class NotDoneException extends Loading {
-	public final Future future;
+	public final transient Future future;
 
 	public NotDoneException(Future future) {
 	    this.future = future;
 	}
 
-	public NotDoneException(Future future, Throwable cause) {
+	public NotDoneException(Future future, Loading cause) {
 	    super(cause);
 	    this.future = future;
+	}
+
+	public String getMessage() {
+	    if(future == null)
+		return(null);
+	    return(future.task.toString());
 	}
 
 	public boolean canwait() {return(true);}

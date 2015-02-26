@@ -133,7 +133,7 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	    try {
 		super.fill(g);
 	    } catch(Loading l) {
-		throw(RenderList.RLoad.wrap(l));
+		throw(new RenderList.RLoad(l));
 	    }
 	}
 

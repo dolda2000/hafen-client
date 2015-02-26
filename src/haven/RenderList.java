@@ -223,15 +223,8 @@ public class RenderList {
     }
 
     public static class RLoad extends Loading {
-	public RLoad(Throwable cause) {
+	public RLoad(Loading cause) {
 	    super(cause);
-	}
-
-	public static RLoad wrap(final Loading l) {
-	    return(new RLoad(l) {
-		    public boolean canwait() {return(l.canwait());}
-		    public void waitfor() throws InterruptedException {l.waitfor();}
-		});
 	}
     }
 

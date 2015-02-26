@@ -104,6 +104,10 @@ public abstract class TexL extends TexGL {
 			Prepared ret = new Prepared();
 			return(ret);
 		    }
+
+		    public String toString() {
+			return("Finalizing texture...");
+		    }
 		}));
     }
 

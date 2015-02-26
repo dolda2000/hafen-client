@@ -103,9 +103,10 @@ public class Session {
 
     public static class LoadingIndir extends Loading {
 	public final int resid;
-	private final CachedRes res;
+	private transient final CachedRes res;
 	
 	private LoadingIndir(CachedRes res) {
+	    super("Waiting to resolve resource reference " + res.resid);
 	    this.res = res;
 	    this.resid = res.resid;
 	}

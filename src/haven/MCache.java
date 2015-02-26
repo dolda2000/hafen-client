@@ -52,8 +52,8 @@ public class MCache {
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
 
     public static class LoadingMap extends Loading {
-	public LoadingMap() {}
-	public LoadingMap(Throwable cause) {
+	public LoadingMap() {super("Waiting for map data");}
+	public LoadingMap(Loading cause) {
 	    super(cause);
 	}
     }
@@ -223,6 +223,10 @@ public class MCache {
 			rnd.setSeed(rnd.nextInt() ^ cc.x);
 			rnd.setSeed(rnd.nextInt() ^ cc.y);
 			return(MapMesh.build(MCache.this, rnd, ul.add(cc.mul(cutsz)), cutsz));
+		    }
+
+		    public String toString() {
+			return("Building map...");
 		    }
 		});
 	}
