@@ -106,9 +106,17 @@ public abstract class TexL extends TexGL {
 		    }
 
 		    public String toString() {
-			return("Finalizing texture...");
+			String nm = loadname();
+			if(nm != null)
+			    return("Finalizing " + nm + "...");
+			else
+			    return("Finalizing texture...");
 		    }
 		}));
+    }
+
+    public String loadname() {
+	return(null);
     }
 
     protected void fill(GOut g) {

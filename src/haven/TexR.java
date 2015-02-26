@@ -140,6 +140,10 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public String toString() {
 	    return("TexR(" + getres().name + ", " + id + ")");
 	}
+
+	public String loadname() {
+	    return("texture in " + getres().name);
+	}
     }
 
     public TexGL tex() {

@@ -857,6 +857,10 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		    public String toString() {
 			return("TileTex(" + Resource.this.name + ")");
 		    }
+
+		    public String loadname() {
+			return("tileset in " + Resource.this.name);
+		    }
 		};
 	    int x = 0, y = 0, n = 0;
 	    for(Tile t :  tiles) {
