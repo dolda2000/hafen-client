@@ -130,7 +130,11 @@ public class Utils {
 	return(buf.toString());
     }
 
+    /* These are horribly imprecise and ugly technically speaking, but
+     * they should do for these simple purposes. */
     public static String odformat(double num, int md) {
+	if(num < 0)
+	    return("-" + odformat(-num, md));
 	long dm = 1;
 	for(int i = 0; i < md; i++) dm *= 10;
 	long raw = (long)Math.round(num * dm);
@@ -142,6 +146,25 @@ public class Utils {
 	return(Long.toString(ip) + "." + Long.toString(dp));
     }
     
+    public static String odformat2(double num, int md) {
+	if(num < 0)
+	    return("-" + odformat2(-num, md));
+	if(num == 0) {
+	    return("0");
+	} else if(num < 1) {
+	    StringBuilder buf = new StringBuilder("0.");
+	    while((num *= 10) < 1)
+		buf.append('0');
+	    for(int i = 1; i < md; num *= 10, i++);
+	    long ds = (long)num;
+	    while((ds %  10) == 0) ds /= 10;
+	    buf.append(ds);
+	    return(buf.toString());
+	} else {
+	    return(odformat(num, md));
+	}
+    }
+
     static void line(Graphics g, Coord c1, Coord c2) {
 	g.drawLine(c1.x, c1.y, c2.x, c2.y);
     }
