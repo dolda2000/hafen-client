@@ -116,6 +116,8 @@ public abstract class ItemInfo {
     public static BufferedImage catimgs(int margin, BufferedImage... imgs) {
 	int w = 0, h = -margin;
 	for(BufferedImage img : imgs) {
+	    if(img == null)
+		continue;
 	    if(img.getWidth() > w)
 		w = img.getWidth();
 	    h += img.getHeight() + margin;
@@ -124,6 +126,8 @@ public abstract class ItemInfo {
 	Graphics g = ret.getGraphics();
 	int y = 0;
 	for(BufferedImage img : imgs) {
+	    if(img == null)
+		continue;
 	    g.drawImage(img, 0, y, null);
 	    y += img.getHeight() + margin;
 	}
@@ -134,6 +138,8 @@ public abstract class ItemInfo {
     public static BufferedImage catimgsh(int margin, BufferedImage... imgs) {
 	int w = -margin, h = 0;
 	for(BufferedImage img : imgs) {
+	    if(img == null)
+		continue;
 	    if(img.getHeight() > h)
 		h = img.getHeight();
 	    w += img.getWidth() + margin;
@@ -142,6 +148,8 @@ public abstract class ItemInfo {
 	Graphics g = ret.getGraphics();
 	int x = 0;
 	for(BufferedImage img : imgs) {
+	    if(img == null)
+		continue;
 	    g.drawImage(img, x, (h - img.getHeight()) / 2, null);
 	    x += img.getWidth() + margin;
 	}
