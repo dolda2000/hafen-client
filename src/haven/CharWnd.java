@@ -146,6 +146,7 @@ public class CharWnd extends Window {
 		try {
 		    Collections.sort(enew, dcmp);
 		    els = enew;
+		    rtip = null;
 		} catch(Loading l) {}
 	    }
 	    if(trev != null) {
@@ -191,6 +192,26 @@ public class CharWnd extends Window {
 	public void trig(Indir<Resource> ev) {
 	    etr = (enew != null)?enew:els;
 	    trev = ev;
+	}
+
+	private Tex rtip = null;
+	public Object tooltip(Coord c, Widget prev) {
+	    List<El> els = this.els;
+	    if(els.isEmpty())
+		return(null);
+	    if(rtip == null) {
+		BufferedImage cur = null;
+		for(El el : els) {
+		    Event ev = el.res.get().layer(Event.class);
+		    BufferedImage ln = Text.render(String.format("%s: %s", ev.nm, Utils.odformat2(el.a, 2)), ev.col).img;
+		    Resource.Image icon = el.res.get().layer(Resource.imgc);
+		    if(icon != null)
+			ln = ItemInfo.catimgsh(5, icon.img, ln);
+		    cur = ItemInfo.catimgs(0, cur, ln);
+		}
+		rtip = new TexI(cur);
+	    }
+	    return(rtip);
 	}
     }
 
