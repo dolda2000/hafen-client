@@ -178,7 +178,7 @@ public class Window extends Widget implements DTarget {
 	    }
 	    return(true);
 	}
-	return(false);
+	return(true);
     }
 
     public boolean mouseup(Coord c, int button) {
