@@ -36,7 +36,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     public MessageBuf sdt;
     public int meter = 0;
     public int num = -1;
-    public GSprite spr;
+    private GSprite spr;
     private Object[] rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
     
@@ -89,18 +89,21 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     public Resource getres() {return(res.get());}
     public Glob glob() {return(ui.sess.glob);}
 
-    public void tick(double dt) {
+    public GSprite spr() {
+	GSprite spr = this.spr;
 	if(spr == null) {
 	    try {
-		synchronized(this) {
-		    spr = GSprite.create(this, res.get(), sdt.clone());
-		}
+		spr = this.spr = GSprite.create(this, res.get(), sdt.clone());
 	    } catch(Loading l) {
-		spr = null;
 	    }
-	} else {
-	    spr.tick(dt);
 	}
+	return(spr);
+    }
+
+    public void tick(double dt) {
+	GSprite spr = spr();
+	if(spr != null)
+	    spr.tick(dt);
     }
 
     public List<ItemInfo> info() {
