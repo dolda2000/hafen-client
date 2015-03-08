@@ -266,7 +266,7 @@ public class FBConfig {
 		public void modify(ProgramContext prog) {
 		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			    public Expression expand(Expression in) {
-				return(Cons.texture2D(ctex.ref(), Tex2D.texcoord.ref()));
+				return(Cons.texture2D(ctex.ref(), Tex2D.rtexcoord.ref()));
 			    }
 			}, 0);
 		}
@@ -301,7 +301,7 @@ public class FBConfig {
 			    public Expression expand(Expression in) {
 				Expression[] texels = new Expression[samples];
 				for(int i = 0; i < samples; i++)
-				    texels[i] = Cons.texelFetch(ctex.ref(), Cons.ivec2(Cons.floor(Cons.mul(Tex2D.texcoord.ref(), MiscLib.screensize.ref()))), Cons.l(i));
+				    texels[i] = Cons.texelFetch(ctex.ref(), Cons.ivec2(Cons.floor(Cons.mul(Tex2D.rtexcoord.ref(), MiscLib.screensize.ref()))), Cons.l(i));
 				return(Cons.mul(Cons.add(texels), Cons.l(1.0 / samples)));
 			    }
 			}, 0);

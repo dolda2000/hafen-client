@@ -50,7 +50,7 @@ public class TexAnim extends GLState {
     private static final Uniform cax = new Uniform(VEC2);
     private static final ShaderMacro[] shaders = {new ShaderMacro() {
 	    public void modify(ProgramContext prog) {
-		Tex2D.texcoord.value(prog.vctx).mod(new Macro1<Expression>() {
+		Tex2D.rtexcoord.value(prog.vctx).mod(new Macro1<Expression>() {
 			public Expression expand(Expression in) {
 			    return(add(in, mul(cax.ref(), MiscLib.time.ref())));
 			}
