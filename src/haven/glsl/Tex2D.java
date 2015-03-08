@@ -35,7 +35,7 @@ public class Tex2D {
     public static final Uniform tex2d = new Uniform(Type.SAMPLER2D);
     public Varying.Interpol ipol = Varying.Interpol.NORMAL;
 
-    public static final AutoVarying texcoord = new AutoVarying(VEC2, "s_tex2d") {
+    public static final AutoVarying rtexcoord = new AutoVarying(VEC2, "s_tex2d") {
 	    protected Expression root(VertexContext vctx) {
 		return(pick(vctx.gl_MultiTexCoord[0].ref(), "st"));
 	    }
@@ -48,12 +48,25 @@ public class Tex2D {
 	    }
 	};
 
-    public static Value tex2d(FragmentContext fctx) {
+    public static Value texcoord(FragmentContext fctx) {
+	return(fctx.uniform.ext(rtexcoord, new ValBlock.Factory() {
+		public Value make(ValBlock vals) {
+		    return(vals.new Value(VEC2) {
+			    public Expression root() {
+				return(rtexcoord.ref());
+			    }
+			});
+		}
+	    }));
+    }
+
+    public static Value tex2d(final FragmentContext fctx) {
 	return(fctx.uniform.ext(tex2d, new ValBlock.Factory() {
 		public Value make(ValBlock vals) {
+		    texcoord(fctx);
 		    return(vals.new Value(VEC4) {
 			    public Expression root() {
-				return(texture2D(tex2d.ref(), texcoord.ref()));
+				return(texture2D(tex2d.ref(), texcoord(fctx).depref()));
 			    }
 			});
 		}
