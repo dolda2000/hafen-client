@@ -70,7 +70,7 @@ public class Outlines implements Rendered {
 
 		Function ofac = new Function.Def(FLOAT) {{
 		    Expression sample = param(PDir.IN, INT).ref();
-		    Expression tc = Tex2D.texcoord.ref();
+		    Expression tc = Tex2D.rtexcoord.ref();
 		    LValue ret = code.local(FLOAT, l(0.0)).ref();
 		    Expression lnrm = code.local(VEC3, mul(sub(pick(sample(true, tc, sample, Coord.z), "rgb"), l(0.5)), l(2.0))).ref();
 		    Expression ldep = code.local(FLOAT, pick(sample(false, tc, sample, Coord.z), "z")).ref();
