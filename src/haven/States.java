@@ -26,7 +26,7 @@
 
 package haven;
 
-import haven.glsl.ShaderMacro;
+import haven.glsl.*;
 import javax.media.opengl.*;
 import java.awt.Color;
 
@@ -327,4 +327,61 @@ public abstract class States extends GLState {
 		g.gl.glDisable(GL2.GL_NORMALIZE);
 	    }
 	};
+
+    public static final Slot<GLState> pointsize = new Slot<GLState>(Slot.Type.GEOM, GLState.class, HavenPanel.global);
+    public static class PointSize extends GLState {
+	private final float sz;
+
+	public PointSize(float sz) {
+	    this.sz = sz;
+	}
+
+	public void apply(GOut g) {
+	    g.gl.glPointSize(sz);
+	}
+
+	public void unapply(GOut g) {}
+
+	public void prep(Buffer buf) {
+	    buf.put(pointsize, this);
+	}
+    }
+    public static class ProgPointSize extends GLState {
+	public final ShaderMacro[] sh;
+
+	public ProgPointSize(final ShaderMacro sh) {
+	    this.sh = new ShaderMacro[] {new ShaderMacro() {
+		    public void modify(ProgramContext prog) {
+			prog.vctx.ptsz.force();
+			sh.modify(prog);
+		    }
+		}};
+	}
+
+	public ProgPointSize(final Expression ptsz) {
+	    this(new ShaderMacro() {
+		    public void modify(ProgramContext prog) {
+			prog.vctx.ptsz.mod(new Macro1<Expression>() {
+				public Expression expand(Expression in) {
+				    return(ptsz);
+				}
+			    }, 0);
+		    }
+		});
+	}
+
+	public void apply(GOut g) {
+	    g.gl.glEnable(GL3.GL_PROGRAM_POINT_SIZE);
+	}
+	
+	public void unapply(GOut g) {
+	    g.gl.glDisable(GL3.GL_PROGRAM_POINT_SIZE);
+	}
+
+	public ShaderMacro[] shaders() {return(sh);}
+
+	public void prep(Buffer buf) {
+	    buf.put(pointsize, this);
+	}
+    }
 }

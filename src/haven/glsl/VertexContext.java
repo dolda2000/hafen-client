@@ -48,6 +48,7 @@ public class VertexContext extends ShaderContext {
     public static final Variable gl_Normal = new Variable.Implicit(Type.VEC3, new Symbol.Fix("gl_Normal"));
     public static final Variable gl_Color = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Color"));
     public static final Variable gl_Position = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Position"));
+    public static final Variable gl_PointSize = new Variable.Implicit(Type.FLOAT, new Symbol.Fix("gl_PointSize"));
     public static final Variable[] gl_MultiTexCoord = {
 	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord0")),
 	new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_MultiTexCoord1")),
@@ -236,6 +237,16 @@ public class VertexContext extends ShaderContext {
 
 	    protected void cons2(Block blk) {
 		tgt = gl_Position.ref();
+		blk.add(new LBinOp.Assign(tgt, init));
+	    }
+	};
+    public final ValBlock.Value ptsz = mainvals.new Value(Type.FLOAT, new Symbol.Gen("ptsz")) {
+	    public Expression root() {
+		return(new FloatLiteral(1.0));
+	    }
+
+	    protected void cons2(Block blk) {
+		tgt = gl_PointSize.ref();
 		blk.add(new LBinOp.Assign(tgt, init));
 	    }
 	};
