@@ -295,9 +295,24 @@ public abstract class PView extends Widget {
     public static Matrix4f mvxf(GOut g) {
 	Camera cam_s = g.st.cur(cam);
 	Location.Chain loc_s = g.st.cur(loc);
-	Matrix4f ret = Matrix4f.id;
-	if(cam_s != null) ret = cam_s.fin(ret);
-	if(loc_s != null) ret = loc_s.fin(ret);
-	return(ret);
+	if((cam_s == null) && (loc_s == null))
+	    return(Matrix4f.id);
+	if(cam_s == null)
+	    return(g.mvtmp.load(loc_s.fin(Matrix4f.id)));
+	else if(loc_s == null)
+	    return(g.mvtmp.load(cam_s.fin(Matrix4f.id)));
+	else
+	    return(g.mvtmp.load(cam_s.fin(Matrix4f.id)).mul1(loc_s.fin(Matrix4f.id)));
+    }
+
+    public static Matrix4f pmvxf(GOut g) {
+	g.mvtmp.load(g.st.proj);
+	Camera cam_s = g.st.cur(cam);
+	Location.Chain loc_s = g.st.cur(loc);
+	if(cam_s != null)
+	    g.mvtmp.mul1(cam_s.fin(Matrix4f.id));
+	if(loc_s != null)
+	    g.mvtmp.mul1(loc_s.fin(Matrix4f.id));
+	return(g.mvtmp);
     }
 }
