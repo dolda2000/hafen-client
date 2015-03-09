@@ -104,8 +104,9 @@ public class CacheMap<K, V> extends AbstractMap<K, V> {
 	public K getKey()   {return(k);}
 	public V getValue() {return(v);}
 
+	@SuppressWarnings("unchecked")
 	public boolean equals(Object o) {
-	    return((o instanceof CacheMap.IteredEntry) && (((IteredEntry)o).k == k));
+	    return((o instanceof CacheMap.IteredEntry) && k.equals(((IteredEntry)o).k));
 	}
 
 	public int hashCode() {
