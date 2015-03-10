@@ -72,17 +72,17 @@ public class VertexContext extends ShaderContext {
 	};
     private static final InstancedUniform u_wxf = new InstancedUniform.Mat4("wxf", PView.loc) {
 	    public Matrix4f forstate(GOut g, GLState.Buffer buf) {
-		return(PView.locxf(g));
+		return(PView.locxf(buf));
 	    }
 	};
     private static final InstancedUniform u_mv = new InstancedUniform.Mat4("mv", PView.loc, PView.cam) {
 	    public Matrix4f forstate(GOut g, GLState.Buffer buf) {
-		return(PView.mvxf(g));
+		return(PView.mvxf(g, buf));
 	    }
 	};
     private static final InstancedUniform u_pmv = new InstancedUniform.Mat4("pmv", PView.loc, PView.cam, PView.proj) {
 	    public Matrix4f forstate(GOut g, GLState.Buffer buf) {
-		return(PView.pmvxf(g));
+		return(PView.pmvxf(g, buf));
 	    }
 	};
 

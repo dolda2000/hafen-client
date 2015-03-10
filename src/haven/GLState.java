@@ -431,6 +431,10 @@ public abstract class GLState {
 	    next.copy(dest);
 	}
 	
+	public Buffer cstate() {
+	    return(cur);
+	}
+
 	public Buffer state() {
 	    return(next);
 	}
