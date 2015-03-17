@@ -31,6 +31,7 @@ import java.io.*;
 public class StreamMessage extends Message implements Closeable, Flushable {
     private final InputStream bkin;
     private final OutputStream bkou;
+    private int behind = 0;
 
     public StreamMessage(InputStream in, OutputStream out) {
 	this.bkin = in;
@@ -58,6 +59,7 @@ public class StreamMessage extends Message implements Closeable, Flushable {
 	    System.arraycopy(rbuf, rh, n, 0, rt - rh);
 	    rbuf = n;
 	}
+	behind += rh;
 	rt -= rh;
 	rh = 0;
 	int rv;
@@ -70,6 +72,10 @@ public class StreamMessage extends Message implements Closeable, Flushable {
 	    return(false);
 	rt += rv;
 	return(true);
+    }
+
+    public int tell() {
+	return(behind + rh);
     }
 
     public void flush() {

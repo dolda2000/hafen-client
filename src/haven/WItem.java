@@ -186,26 +186,26 @@ public class WItem extends Widget implements DTarget {
 	/* XXX: This is ugly and there should be a better way to
 	 * ensure the resizing happens as it should, but I can't think
 	 * of one yet. */
-	if(item.spr == null)
-	    item.tick(0);
-	if((item.spr != null) && (item.spr != lspr)) {
-	    Coord sz = new Coord(item.spr.sz());
+	GSprite spr = item.spr();
+	if((spr != null) && (spr != lspr)) {
+	    Coord sz = new Coord(spr.sz());
 	    if((sz.x % sqsz.x) != 0)
 		sz.x = sqsz.x * ((sz.x / sqsz.x) + 1);
 	    if((sz.y % sqsz.y) != 0)
 		sz.y = sqsz.y * ((sz.y / sqsz.y) + 1);
 	    resize(sz);
-	    lspr = item.spr;
+	    lspr = spr;
 	}
     }
 
     public void draw(GOut g) {
-	if(item.spr != null) {
-	    Coord sz = item.spr.sz();
+	GSprite spr = item.spr();
+	if(spr != null) {
+	    Coord sz = spr.sz();
 	    g.defstate();
 	    if(olcol.get() != null)
 		g.usestate(new ColorMask(olcol.get()));
-	    drawmain(g, item.spr);
+	    drawmain(g, spr);
 	    g.defstate();
 	    if(item.num >= 0) {
 		g.atext(Integer.toString(item.num), sz, 1, 1);
@@ -234,7 +234,7 @@ public class WItem extends Widget implements DTarget {
 		item.wdgmsg("take", c);
 	    return(true);
 	} else if(btn == 3) {
-	    item.wdgmsg("iact", c);
+	    item.wdgmsg("iact", c, ui.modflags());
 	    return(true);
 	}
 	return(false);

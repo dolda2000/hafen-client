@@ -73,6 +73,7 @@ public class IntMap<V> extends AbstractMap<Integer, V> {
 	public Integer getKey() {return(k);}
 	public V getValue()     {return(get(k));}
 
+	@SuppressWarnings("unchecked")
 	public boolean equals(Object o) {
 	    return((o instanceof IntMap.IteredEntry) && (((IteredEntry)o).k == k));
 	}

@@ -67,35 +67,22 @@ public class VertexContext extends ShaderContext {
 	};
     private static final Uniform u_cam = new Uniform.AutoApply(Type.MAT4, "cam", PView.cam) {
 	    public void apply(GOut g, int loc) {
-		Camera cam_s = g.st.get(PView.cam);
-		Matrix4f cam = (cam_s == null)?Matrix4f.id:cam_s.fin(Matrix4f.id);
-		g.gl.glUniformMatrix4fv(loc, 1, false, cam.m, 0);
+		g.gl.glUniformMatrix4fv(loc, 1, false, PView.camxf(g).m, 0);
 	    }
 	};
     private static final InstancedUniform u_wxf = new InstancedUniform.Mat4("wxf", PView.loc) {
 	    public Matrix4f forstate(GOut g, GLState.Buffer buf) {
-		Location.Chain wxf_s = buf.get(PView.loc);
-		return((wxf_s == null)?Matrix4f.id:wxf_s.fin(Matrix4f.id));
+		return(PView.locxf(buf));
 	    }
 	};
     private static final InstancedUniform u_mv = new InstancedUniform.Mat4("mv", PView.loc, PView.cam) {
 	    public Matrix4f forstate(GOut g, GLState.Buffer buf) {
-		Matrix4f mv = Matrix4f.id;
-		Camera cam_s = buf.get(PView.cam);
-		if(cam_s != null) mv = cam_s.fin(mv);
-		Location.Chain wxf_s = buf.get(PView.loc);
-		if(wxf_s != null) mv = wxf_s.fin(mv);
-		return(mv);
+		return(PView.mvxf(g, buf));
 	    }
 	};
     private static final InstancedUniform u_pmv = new InstancedUniform.Mat4("pmv", PView.loc, PView.cam, PView.proj) {
 	    public Matrix4f forstate(GOut g, GLState.Buffer buf) {
-		Matrix4f pmv = g.st.proj;
-		Camera cam_s = buf.get(PView.cam);
-		if(cam_s != null) pmv = cam_s.fin(pmv);
-		Location.Chain wxf_s = buf.get(PView.loc);
-		if(wxf_s != null) pmv = wxf_s.fin(pmv);
-		return(pmv);
+		return(PView.pmvxf(g, buf));
 	    }
 	};
 
