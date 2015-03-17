@@ -47,7 +47,7 @@ public class MCache {
     Map<Coord, Grid> grids = new HashMap<Coord, Grid>();
     Session sess;
     Set<Overlay> ols = new HashSet<Overlay>();
-    int olseq = 0;
+    public int olseq = 0;
     Random gen = new Random();
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
 
@@ -369,7 +369,7 @@ public class MCache {
     private Grid cached = null;
     public Grid getgrid(Coord gc) {
 	synchronized(grids) {
-	    if((cached == null) || !cached.gc.equals(cached)) {
+	    if((cached == null) || !cached.gc.equals(gc)) {
 		cached = grids.get(gc);
 		if(cached == null) {
 		    request(gc);
