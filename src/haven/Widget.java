@@ -882,6 +882,10 @@ public class Widget {
 	prevtt = null;
 	return(tooltip(c, prev == this));
     }
+
+    public void settip(String text) {
+	tooltip = Text.render(text);
+    }
     
     public <T extends Widget> T getparent(Class<T> cl) {
 	for(Widget w = this; w != null; w = w.parent) {
