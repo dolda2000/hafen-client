@@ -920,8 +920,11 @@ public class CharWnd extends Window {
 
 	    tabs.pack();
 	    prev = new TB(new Coord(tabs.c.x + 5, tabs.c.y + tabs.sz.y + 10), "battr", battr);
+	    prev.settip("Base Attributes");
 	    prev = new TB(new Coord(prev.c.x + prev.sz.x + 10, prev.c.y), "sattr", sattr);
+	    prev.settip("Skill Values");
 	    prev = new TB(new Coord(prev.c.x + prev.sz.x + 10, prev.c.y), "skill", skills);
+	    prev.settip("Lore & Skills");
 	}
 
 	resize(contentsz().add(15, 10));
