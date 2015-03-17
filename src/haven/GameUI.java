@@ -526,7 +526,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			g.image(belt[slot].get().layer(Resource.imgc).tex(), c.add(1, 1));
 		} catch(Loading e) {}
 		g.chcolor(156, 180, 158, 255);
-		FastText.aprintf(g, c.add(invsq.sz()), 1, 1, "F%d", i + 1);
+		FastText.aprintf(g, c.add(invsq.sz().sub(2, 0)), 1, 1, "F%d", i + 1);
 		g.chcolor();
 	    }
 	}
@@ -616,7 +616,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			g.image(belt[slot].get().layer(Resource.imgc).tex(), c.add(1, 1));
 		} catch(Loading e) {}
 		g.chcolor(156, 180, 158, 255);
-		FastText.aprintf(g, c.add(invsq.sz()), 1, 1, "%d", (i + 1) % 10);
+		FastText.aprintf(g, c.add(invsq.sz().sub(2, 0)), 1, 1, "%d", (i + 1) % 10);
 		g.chcolor();
 	    }
 	}
