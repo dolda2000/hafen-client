@@ -235,19 +235,22 @@ public class Window extends Widget implements DTarget {
     }
 
     public boolean mousedown(Coord c, int button) {
-	parent.setfocus(this);
-	raise();
-	if(super.mousedown(c, button))
+	if(super.mousedown(c, button)) {
+	    parent.setfocus(this);
+	    raise();
 	    return(true);
+	}
 	Coord cpc = c.sub(cptl);
 	if(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128))) {
 	    if(button == 1) {
 		dm = ui.grabmouse(this);
 		doff = c;
 	    }
+	    parent.setfocus(this);
+	    raise();
 	    return(true);
 	}
-	return(true);
+	return(false);
     }
 
     public boolean mouseup(Coord c, int button) {
