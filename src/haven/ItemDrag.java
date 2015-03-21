@@ -41,6 +41,12 @@ public class ItemDrag extends WItem {
 	g.chcolor();
     }
 
+    public void tick(double dt) {
+	super.tick(dt);
+	if(parent.child != this)
+	    raise();
+    }
+
     public boolean dropon(Widget w, Coord c) {
 	if(w instanceof DTarget) {
 	    if(((DTarget)w).drop(c, c.add(doff.inv())))

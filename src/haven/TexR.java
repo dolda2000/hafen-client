@@ -34,6 +34,7 @@ import javax.imageio.ImageIO;
 import java.awt.color.ColorSpace;
 import java.nio.ByteBuffer;
 import javax.media.opengl.*;
+import java.security.*;
 import haven.Defer.Future;
 
 @Resource.LayerName("tex")
@@ -97,12 +98,20 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	    super(sz);
 	}
 
-	private BufferedImage rd(byte[] data) {
-	    try {
-		return(ImageIO.read(new ByteArrayInputStream(data)));
-	    } catch(IOException e) {
-		throw(new RuntimeException("Invalid image data in " + getres().name, e));
-	    }
+	private BufferedImage rd(final byte[] data) {
+	    return(AccessController.doPrivileged(new PrivilegedAction<BufferedImage>() {
+		    /* This can crash if not privileged due to ImageIO
+		     * creating tempfiles without doing that
+		     * privileged itself. It can very much be argued
+		     * that this is a bug in ImageIO. */
+		    public BufferedImage run() {
+			try {
+			    return(ImageIO.read(new ByteArrayInputStream(data)));
+			} catch(IOException e) {
+			    throw(new RuntimeException("Invalid image data in " + getres().name, e));
+			}
+		    }
+		}));
 	}
 
 	protected BufferedImage fill() {
