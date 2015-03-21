@@ -171,6 +171,8 @@ public class Material extends GLState {
 		return(Rendered.postpfx);
 	    } else if(nm.equals("eye")) {
 		return(Rendered.eyesort);
+	    } else if(nm.equals("earlyeye")) {
+		return(Rendered.eeyesort);
 	    } else if(nm.equals("premap")) {
 		return(MapMesh.premap);
 	    } else if(nm.equals("postmap")) {

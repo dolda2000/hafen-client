@@ -63,7 +63,7 @@ public interface Rendered extends Drawn {
 		return(z);
 	    }
 	    
-	    private RComparator<Rendered> cmp = new RComparator<Rendered>() {
+	    private final static RComparator<Rendered> cmp = new RComparator<Rendered>() {
 		public int compare(Rendered a, Rendered b, GLState.Buffer sa, GLState.Buffer sb) {
 		    return(0);
 		}
@@ -81,30 +81,37 @@ public interface Rendered extends Drawn {
     public final static Order postfx = new Order.Default(5000);
     public final static Order postpfx = new Order.Default(5500);
 
-    public final static Order eyesort = new Order.Default(10000) {
-	    private final RComparator<Rendered> cmp = new RComparator<Rendered>() {
-		public int compare(Rendered a, Rendered b, GLState.Buffer sa, GLState.Buffer sb) {
-		    /* It would be nice to be able to cache these
-		     * results somewhere. */
-		    Camera ca = sa.get(PView.cam);
-		    Location.Chain la = sa.get(PView.loc);
-		    Matrix4f mva = ca.fin(Matrix4f.id).mul(la.fin(Matrix4f.id));
-		    float da = (float)Math.sqrt((mva.m[12] * mva.m[12]) + (mva.m[13] * mva.m[13]) + (mva.m[14] * mva.m[14]));
-		    Camera cb = sb.get(PView.cam);
-		    Location.Chain lb = sb.get(PView.loc);
-		    Matrix4f mvb = cb.fin(Matrix4f.id).mul(lb.fin(Matrix4f.id));
-		    float db = (float)Math.sqrt((mvb.m[12] * mvb.m[12]) + (mvb.m[13] * mvb.m[13]) + (mvb.m[14] * mvb.m[14]));
-		    if(da < db)
-			return(1);
-		    else
-			return(-1);
-		}
-	    };
-	    
-	    public RComparator<Rendered> cmp() {
-		return(cmp);
+    public static class EyeOrder extends Order.Default {
+	public EyeOrder(int z) {super(z);}
+
+	private static final RComparator<Rendered> cmp = new RComparator<Rendered>() {
+	    public int compare(Rendered a, Rendered b, GLState.Buffer sa, GLState.Buffer sb) {
+		/* It would be nice to be able to cache these
+		 * results somewhere. */
+		Camera ca = sa.get(PView.cam);
+		Location.Chain la = sa.get(PView.loc);
+		Matrix4f mva = ca.fin(Matrix4f.id).mul(la.fin(Matrix4f.id));
+		float da = (float)Math.sqrt((mva.m[12] * mva.m[12]) + (mva.m[13] * mva.m[13]) + (mva.m[14] * mva.m[14]));
+		Camera cb = sb.get(PView.cam);
+		Location.Chain lb = sb.get(PView.loc);
+		Matrix4f mvb = cb.fin(Matrix4f.id).mul(lb.fin(Matrix4f.id));
+		float db = (float)Math.sqrt((mvb.m[12] * mvb.m[12]) + (mvb.m[13] * mvb.m[13]) + (mvb.m[14] * mvb.m[14]));
+		if(da < db)
+		    return(1);
+		else if(da > db)
+		    return(-1);
+		else
+		    return(0);
 	    }
 	};
+
+	public RComparator<Rendered> cmp() {
+	    return(cmp);
+	}
+    }
+
+    public final static Order eyesort = new EyeOrder(10000);
+    public final static Order eeyesort = new EyeOrder(4500);
 
     public final static GLState.StandAlone skip = new GLState.StandAlone(GLState.Slot.Type.GEOM, HavenPanel.global) {
 	    public void apply(GOut g) {}
