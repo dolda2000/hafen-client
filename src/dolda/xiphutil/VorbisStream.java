@@ -186,6 +186,7 @@ public class VorbisStream {
 		    for(int i = 0; i < inb[0].length; i++) {
 			for(int c = 0; c < chn; c++) {
 			    int s = (int)(inb[c][i] * 32767);
+			    s = Math.min(Math.max(s, -32767), 32767);
 			    buf[p++] = (byte)s;
 			    buf[p++] = (byte)(s >> 8);
 			}
@@ -248,8 +249,9 @@ public class VorbisStream {
 	InputStream pcm = vs.pcmstream();
 	byte[] buf = new byte[4096];
 	int ret;
-	while((ret = pcm.read(buf)) >= 0)
-	    System.out.write(buf);
+	while((ret = pcm.read(buf)) >= 0) {
+	    System.out.write(buf, 0, ret);
+	}
     }
     
     /**
