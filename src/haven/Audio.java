@@ -63,6 +63,7 @@ public class Audio {
 	private int ack = 0;
 	private final byte[] buf = new byte[256];
 	private int dp = 0, dl = 0;
+	private double[] lval = {0.0, 0.0}, nval = {0.0, 0.0};
 
 	public DataClip(InputStream clip, int rate, double vol, double sp) {
 	    this.clip = clip;
@@ -122,10 +123,14 @@ public class Audio {
 			    int v = b1 + (b2 << 8);
 			    if(v >= 32768)
 				v -= 65536;
-			    buf[i][off] = ((double)v / 32768.0) * vol;
+			    lval[i] = nval[i];
+			    nval[i] = ((double)v / 32768.0) * vol;
 			}
 			ack -= trate;
 		    }
+		    double ipos = (double)ack / (double)trate;
+		    for(int i = 0; i < 2; i++)
+			buf[i][off] = (lval[i] * (1.0 - ipos)) + (nval[i] * ipos);
 		}
 		return(buf[0].length);
 	    } catch(IOException e) {
