@@ -45,11 +45,22 @@ public class ActAudio extends GLState.Abstract {
 	public boolean cycle(ActAudio list);
     }
 
+    public static interface VolumeClip extends Audio.CS {
+	public void setvol(double vol);
+    }
+
     public static class PosClip implements Rendered {
-	private final Audio.DataClip clip;
+	private final VolumeClip clip;
 	
-	public PosClip(Audio.DataClip clip) {
+	public PosClip(VolumeClip clip) {
 	    this.clip = clip;
+	}
+
+	public PosClip(final Audio.DataClip clip) {
+	    this(new VolumeClip() {
+		    public int get(double[][] buf) {return(clip.get(buf));}
+		    public void setvol(double vol) {clip.vol = vol;}
+		});
 	}
 	
 	public void draw(GOut g) {
@@ -58,7 +69,7 @@ public class ActAudio extends GLState.Abstract {
 	    if(list != null) {
 		Coord3f pos = PView.mvxf(g).mul4(Coord3f.o);
 		double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
-		this.clip.vol = Math.min(1.0, 50.0 / pd);
+		this.clip.setvol(Math.min(1.0, 50.0 / pd));
 		list.add(clip);
 	    }
 	}
