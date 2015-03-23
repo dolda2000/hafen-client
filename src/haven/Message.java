@@ -308,6 +308,16 @@ public abstract class Message {
 	addint32(c.x); addint32(c.y);
 	return(this);
     }
+    public Message addfloat32(float num) {
+	int off = wget(4);
+	Utils.float32e(num, wbuf, off);
+	return(this);
+    }
+    public Message addfloat64(double num) {
+	int off = wget(8);
+	Utils.float64e(num, wbuf, off);
+	return(this);
+    }
 
     public Message addlist(Object... args) {
 	for(Object o : args) {
@@ -332,6 +342,12 @@ public abstract class Message {
 		    addint32(b.length);
 		}
 		addbytes(b);
+	    } else if(o instanceof Float) {
+		adduint8(T_FLOAT32);
+		addfloat32(((Float)o).floatValue());
+	    } else if(o instanceof Double) {
+		adduint8(T_FLOAT64);
+		addfloat64(((Float)o).floatValue());
 	    } else {
 		throw(new RuntimeException("Cannot encode a " + o.getClass() + " as TTO"));
 	    }

@@ -300,7 +300,14 @@ public class Utils {
 	    b |= ((long)ub(buf[i])) << (i * 8);
 	return(b);
     }
-	
+
+    public static void int64e(long num, byte[] buf, int off) {
+	for(int i = 0; i < 8; i++) {
+	    buf[off++] = (byte)(num & 0xff);
+	    num >>>= 8;
+	}
+    }
+
     public static void int32e(int num, byte[] buf, int off) {
 	uint32e(((long)num) & 0xffffffff, buf, off);
     }
@@ -345,6 +352,14 @@ public class Utils {
 
     public static double float64d(byte[] buf, int off) {
 	return(Double.longBitsToDouble(int64d(buf, off)));
+    }
+
+    public static void float32e(float num, byte[] buf, int off) {
+	int32e(Float.floatToIntBits(num), buf, off);
+    }
+
+    public static void float64e(double num, byte[] buf, int off) {
+	int64e(Double.doubleToLongBits(num), buf, off);
     }
 
     public static void float9995d(int word, float[] ret) {
