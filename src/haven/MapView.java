@@ -852,33 +852,61 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	camera.resized();
     }
 
-    private class Plob extends Gob {
-	Coord lastmc = null;
+    public static interface PlobAdjust {
+	public void adjust(Plob plob, Coord pc, Coord mc, int modflags);
+	public boolean rotate(Plob plob, int amount, int modflags);
+    }
+
+    public static class StdPlace implements PlobAdjust {
 	boolean freerot = false;
-	
+
+	public void adjust(Plob plob, Coord pc, Coord mc, int modflags) {
+	    if((modflags & 2) == 0)
+		plob.rc = mc.div(tilesz).mul(tilesz).add(tilesz.div(2));
+	    else
+		plob.rc = mc;
+	    Gob pl = plob.mv().player();
+	    if((pl != null) && !freerot)
+		plob.a = Math.round(plob.rc.angle(pl.rc) / (Math.PI / 2)) * (Math.PI / 2);
+	}
+
+	public boolean rotate(Plob plob, int amount, int modflags) {
+	    if((modflags & 1) == 0)
+		return(false);
+	    freerot = true;
+	    if((modflags & 2) == 0)
+		plob.a = (Math.PI / 4) * Math.round((plob.a + (amount * Math.PI / 4)) / (Math.PI / 4));
+	    else
+		plob.a += amount * Math.PI / 16;
+	    plob.a = Utils.cangle(plob.a);
+	    return(true);
+	}
+    }
+
+    public class Plob extends Gob {
+	public PlobAdjust adjust = new StdPlace();
+	Coord lastmc = null;
+
 	private Plob(Indir<Resource> res, Message sdt) {
 	    super(MapView.this.glob, Coord.z);
 	    setattr(new ResDrawable(this, res, sdt));
 	    if(ui.mc.isect(rootpos(), sz)) {
-		delay(new Adjust(ui.mc.sub(rootpos()), false));
+		delay(new Adjust(ui.mc.sub(rootpos()), 0));
 	    }
 	}
 
+	public MapView mv() {return(MapView.this);}
+
 	private class Adjust extends Maptest {
-	    boolean adjust;
+	    int modflags;
 	    
-	    Adjust(Coord c, boolean ta) {
+	    Adjust(Coord c, int modflags) {
 		super(c);
-		adjust = ta;
+		this.modflags = modflags;
 	    }
 	    
 	    public void hit(Coord pc, Coord mc) {
-		rc = mc;
-		if(adjust)
-		    rc = rc.div(tilesz).mul(tilesz).add(tilesz.div(2));
-		Gob pl = player();
-		if((pl != null) && !freerot)
-		    a = Math.round(rc.angle(pl.rc) / (Math.PI / 2)) * (Math.PI / 2);
+		adjust.adjust(Plob.this, pc, mc, modflags);
 		lastmc = pc;
 	    }
 	}
@@ -1069,7 +1097,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    ((Camera)camera).drag(c);
 	} else if(placing != null) {
 	    if((placing.lastmc == null) || !placing.lastmc.equals(c)) {
-		delay(placing.new Adjust(c, !ui.modctrl));
+		delay(placing.new Adjust(c, ui.modflags()));
 	    }
 	}
     }
@@ -1090,17 +1118,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public boolean mousewheel(Coord c, int amount) {
 	if((grab != null) && grab.mmousewheel(c, amount))
 	    return(true);
-	if(ui.modshift) {
-	    if(placing != null) {
-		placing.freerot = true;
-		if(!ui.modctrl)
-		    placing.a = (Math.PI / 4) * Math.round((placing.a + (amount * Math.PI / 4)) / (Math.PI / 4));
-		else
-		    placing.a += amount * Math.PI / 16;
-		placing.a = Utils.cangle(placing.a);
-	    }
+	if((placing != null) && placing.adjust.rotate(placing, amount, ui.modflags()))
 	    return(true);
-	}
 	return(((Camera)camera).wheel(c, amount));
     }
     
