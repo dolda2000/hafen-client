@@ -173,7 +173,18 @@ public class Utils {
 	java.awt.Graphics2D g2 = (java.awt.Graphics2D)g;
 	g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);		
     }
-	
+
+    public static Random mkrandoom(long seed) {
+	long rev = 0;
+	for(int i = 0; i < 32; i++) {
+	    rev |= (seed & (1l << i)) << (63 - (i * 2));
+	    rev |= (seed & (1l << (63 - i))) >>> (63 - (i * 2));
+	}
+	seed = seed ^ rev;
+	seed = (seed & 0x0000ffffffffffffl) ^ ((rev & 0xffffffffffff0000l) >>> 16);
+	return(new Random(seed));
+    }
+
     static synchronized Preferences prefs() {
 	if(prefs == null) {
 	    Preferences node = Preferences.userNodeForPackage(Utils.class);
