@@ -54,7 +54,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     }
 	
     public static Coord sc(double a, double r) {
-	return(new Coord((int)(Math.cos(a) * r), -(int)(Math.sin(a) * r)));
+	return(new Coord((int)Math.round(Math.cos(a) * r), -(int)Math.round(Math.sin(a) * r)));
     }
 	
     public boolean equals(Object o) {
