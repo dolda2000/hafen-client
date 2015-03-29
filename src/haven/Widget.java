@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.lang.annotation.*;
+import java.lang.reflect.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
@@ -96,9 +97,34 @@ public class Widget {
 	}
     }
 
-    @Resource.PublishedCode(name = "wdg")
+    @Resource.PublishedCode(name = "wdg", instancer = FactMaker.class)
     public interface Factory {
 	public Widget create(Coord c, Widget parent, Object[] par);
+    }
+
+    public static class FactMaker implements Resource.PublishedCode.Instancer {
+	public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
+	    if(Factory.class.isAssignableFrom(cl))
+		return(cl.asSubclass(Factory.class).newInstance());
+	    try {
+		final Method mkm = cl.getDeclaredMethod("mkwidget", Coord.class, Widget.class, Object[].class);
+		int mod = mkm.getModifiers();
+		if(Widget.class.isAssignableFrom(mkm.getReturnType()) && ((mod & Modifier.STATIC) != 0) && ((mod & Modifier.PUBLIC) != 0)) {
+		    return(new Factory() {
+			    public Widget create(Coord c, Widget parent, Object[] args) {
+				try {
+				    return((Widget)mkm.invoke(null, c, parent, args));
+				} catch(Exception e) {
+				    if(e instanceof RuntimeException) throw((RuntimeException)e);
+				    throw(new RuntimeException(e));
+				}
+			    }
+			});
+		}
+	    } catch(NoSuchMethodException e) {
+	    }
+	    return(null);
+	}
     }
 
     private static boolean inited = false;
