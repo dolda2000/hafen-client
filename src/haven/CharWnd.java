@@ -314,11 +314,12 @@ public class CharWnd extends Window {
 	private Text ct;
 	private int cbv, ccv;
 
-	private Attr(String attr, String rnm, Coord c, Widget parent, Color bg) {
+	private Attr(String attr, Coord c, Widget parent, Color bg) {
 	    super(c, new Coord(attrw, attrf.height() + 2), parent);
+	    Resource res = Resource.load("gfx/hud/chr/" + attr).loadwait();
 	    this.nm = attr;
-	    this.img = Resource.load("gfx/hud/chr/" + attr).loadwait().layer(Resource.imgc).tex();
-	    this.rnm = attrf.render(rnm);
+	    this.img = res.layer(Resource.imgc).tex();
+	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
 	    this.attr = ui.sess.glob.cattr.get(attr);
 	    this.bg = bg;
 	}
@@ -370,11 +371,12 @@ public class CharWnd extends Window {
 	private Text ct;
 	private int cbv, ccv;
 
-	private SAttr(String attr, String rnm, Coord c, Widget parent, Color bg) {
+	private SAttr(String attr, Coord c, Widget parent, Color bg) {
 	    super(c, new Coord(attrw, attrf.height() + 2), parent);
+	    Resource res = Resource.load("gfx/hud/chr/" + attr).loadwait();
 	    this.nm = attr;
-	    this.img = Resource.load("gfx/hud/chr/" + attr).loadwait().layer(Resource.imgc).tex();
-	    this.rnm = attrf.render(rnm);
+	    this.img = res.layer(Resource.imgc).tex();
+	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
 	    this.attr = ui.sess.glob.cattr.get(attr);
 	    this.bg = bg;
 	    new IButton(new Coord(sz.x - 19, (sz.y / 2) - 7), this, "gfx/hud/buttons/add", "u", "d", null) {
@@ -744,14 +746,14 @@ public class CharWnd extends Window {
 	    new Img(new Coord(x - 5, y), catf.render("Base Attributes").tex(), battr); y += 35;
 	    base = new ArrayList<Attr>();
 	    Attr aw;
-	    base.add(aw = new Attr("str", "Strength",     wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
-	    base.add(aw = new Attr("agi", "Agility",      wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
-	    base.add(aw = new Attr("int", "Intelligence", wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
-	    base.add(aw = new Attr("con", "Constitution", wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
-	    base.add(aw = new Attr("prc", "Perception",   wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
-	    base.add(aw = new Attr("csm", "Charisma",     wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
-	    base.add(aw = new Attr("dex", "Dexterity",    wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
-	    base.add(aw = new Attr("psy", "Psyche",       wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
+	    base.add(aw = new Attr("str", wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
+	    base.add(aw = new Attr("agi", wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
+	    base.add(aw = new Attr("int", wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
+	    base.add(aw = new Attr("con", wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
+	    base.add(aw = new Attr("prc", wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
+	    base.add(aw = new Attr("csm", wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
+	    base.add(aw = new Attr("dex", wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
+	    base.add(aw = new Attr("psy", wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
 	    Frame.around(battr, base);
 	    y += 24;
 	    new Img(new Coord(x - 5, y), catf.render("Food Event Points").tex(), battr); y += 35;
@@ -770,7 +772,8 @@ public class CharWnd extends Window {
 	    new Img(new Coord(x - 5, y), catf.render("Skill Values").tex(), sattr); y += 35;
 	    skill = new ArrayList<SAttr>();
 	    SAttr aw;
-	    skill.add(aw = new SAttr("unarmed", "Unarmed Combat", wbox.btloff().add(x, y), sattr, every)); y += aw.sz.y;
+	    skill.add(aw = new SAttr("unarmed", wbox.btloff().add(x, y), sattr, every)); y += aw.sz.y;
+	    skill.add(aw = new SAttr("explore", wbox.btloff().add(x, y), sattr, every)); y += aw.sz.y;
 	    Frame.around(sattr, skill);
 
 	    x = 260; y = 0;
