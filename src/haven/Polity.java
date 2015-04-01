@@ -93,7 +93,7 @@ public class Polity extends Window {
     public static final Text.Foundry membf = new Text.Foundry(Text.serif, 12);
 
     public Polity(Coord c, Widget parent, String name) {
-	super(c, new Coord(200, 200), parent, "Town");
+	super(c, new Coord(200, 200), parent, "Village", true, Coord.z, Coord.z);
 	this.name = name;
 	new Label(new Coord(0, 5), this, name, nmf);
 	new Label(new Coord(0, 45), this, "Members:");
