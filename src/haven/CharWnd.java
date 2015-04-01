@@ -773,7 +773,7 @@ public class CharWnd extends Window {
 	    skill = new ArrayList<SAttr>();
 	    SAttr aw;
 	    skill.add(aw = new SAttr("unarmed", wbox.btloff().add(x, y), sattr, every)); y += aw.sz.y;
-	    skill.add(aw = new SAttr("explore", wbox.btloff().add(x, y), sattr, every)); y += aw.sz.y;
+	    skill.add(aw = new SAttr("explore", wbox.btloff().add(x, y), sattr, other)); y += aw.sz.y;
 	    Frame.around(sattr, skill);
 
 	    x = 260; y = 0;
