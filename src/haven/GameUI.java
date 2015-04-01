@@ -431,7 +431,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		setfocus(buddies);
 	    }
 	    return(true);
-	} else if(key == 20) {
+	} else if(key == 16) {
 	    if((polity != null) && polity.show(!polity.visible)) {
 		polity.raise();
 		fitwdg(polity);
