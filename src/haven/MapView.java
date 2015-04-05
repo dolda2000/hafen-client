@@ -840,9 +840,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    camera.tick(dt);
 	    if((shake = shake * Math.pow(100, -dt)) < 0.01)
 		shake = 0;
-	    camoff.x = (float)(Math.random() * shake);
-	    camoff.y = (float)(Math.random() * shake);
-	    camoff.z = (float)(Math.random() * shake);
+	    camoff.x = (float)((Math.random() - 0.5) * shake);
+	    camoff.y = (float)((Math.random() - 0.5) * shake);
+	    camoff.z = (float)((Math.random() - 0.5) * shake);
 	} catch(Loading e) {
 	    camload = e;
 	}
