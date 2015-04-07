@@ -191,7 +191,7 @@ public class Widget {
 	this.sz = sz;
     }
 	
-    public Widget add(Widget child) {
+    public <T extends Widget> T add(T child) {
 	synchronized(this.ui) {
 	    child.c = c;
 	    child.ui = this.ui;
@@ -203,7 +203,7 @@ public class Widget {
 	}
     }
 
-    public Widget add(Widget child, Coord c) {
+    public <T extends Widget> T add(T child, Coord c) {
 	child.c = c;
 	return(add(child));
     }
