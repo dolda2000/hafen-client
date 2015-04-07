@@ -99,7 +99,7 @@ public class Widget {
 
     @Resource.PublishedCode(name = "wdg", instancer = FactMaker.class)
     public interface Factory {
-	public Widget create(Coord c, Widget parent, Object[] par);
+	public Widget create(Widget parent, Object[] par);
     }
 
     public static class FactMaker implements Resource.PublishedCode.Instancer {
@@ -107,13 +107,13 @@ public class Widget {
 	    if(Factory.class.isAssignableFrom(cl))
 		return(cl.asSubclass(Factory.class).newInstance());
 	    try {
-		final Method mkm = cl.getDeclaredMethod("mkwidget", Coord.class, Widget.class, Object[].class);
+		final Method mkm = cl.getDeclaredMethod("mkwidget", Widget.class, Object[].class);
 		int mod = mkm.getModifiers();
 		if(Widget.class.isAssignableFrom(mkm.getReturnType()) && ((mod & Modifier.STATIC) != 0) && ((mod & Modifier.PUBLIC) != 0)) {
 		    return(new Factory() {
-			    public Widget create(Coord c, Widget parent, Object[] args) {
+			    public Widget create(Widget parent, Object[] args) {
 				try {
-				    return((Widget)mkm.invoke(null, c, parent, args));
+				    return((Widget)mkm.invoke(null, parent, args));
 				} catch(Exception e) {
 				    if(e instanceof RuntimeException) throw((RuntimeException)e);
 				    throw(new RuntimeException(e));
@@ -302,16 +302,20 @@ public class Widget {
 	return((Coord)st.pop());
     }
 
-    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	Coord c;
-	if(pargs[0] instanceof Coord) {
-	    c = (Coord)pargs[0];
-	} else if(pargs[0] instanceof String) {
-	    c = relpos((String)pargs[0], pargs, 1);
+    public void addchild(Widget child, Object... args) {
+	if(args[0] instanceof Coord) {
+	    add(child, (Coord)args[0]);
+	} else if(args[0] instanceof String) {
+	    add(child, relpos((String)args[0], args, 1));
 	} else {
 	    throw(new RuntimeException("Unknown child widget creation specification."));
 	}
-	return(gettype(type).create(c, this, cargs));
+    }
+
+    public Widget makechild(Factory type, Object[] pargs, Object[] cargs) {
+	Widget child = type.create(this, cargs);
+	addchild(child, pargs);
+	return(child);
     }
 	
     public void newchild(Widget w) {
