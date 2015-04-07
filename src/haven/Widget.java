@@ -176,23 +176,40 @@ public class Widget {
 	return(f);
     }
     
+    public Widget(Coord sz) {
+	this.c = Coord.z;
+	this.sz = sz;
+    }
+
+    public Widget() {
+	this(Coord.z);
+    }
+
     public Widget(UI ui, Coord c, Coord sz) {
 	this.ui = ui;
 	this.c = c;
 	this.sz = sz;
     }
 	
-    public Widget(Coord c, Coord sz, Widget parent) {
-	synchronized(parent.ui) {
-	    this.ui = parent.ui;
-	    this.c = c;
-	    this.sz = sz;
-	    this.parent = parent;
-	    link();
-	    parent.newchild(this);
+    public Widget add(Widget child) {
+	synchronized(this.ui) {
+	    child.c = c;
+	    child.ui = this.ui;
+	    child.parent = this;
+	    child.link();
+	    child.added();
+	    newchild(child);
+	    return(child);
 	}
     }
-    
+
+    public Widget add(Widget child, Coord c) {
+	child.c = c;
+	return(add(child));
+    }
+
+    protected void added() {}
+
     private Coord relpos(String spec, Object[] args, int off) {
 	int i = 0;
 	Stack<Object> st = new Stack<Object>();
