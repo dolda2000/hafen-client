@@ -208,6 +208,18 @@ public class Widget {
 	return(add(child));
     }
 
+    public <T extends Widget> T add(T child, int x, int y) {
+	return(add(child, new Coord(x, y)));
+    }
+
+    public <T extends Widget> T adda(T child, int x, int y, double ax, double ay) {
+	return(add(child, x - (int)(child.sz.x * ax), y - (int)(child.sz.y * ay)));
+    }
+
+    public <T extends Widget> T adda(T child, Coord c, double ax, double ay) {
+	return(adda(child, c.x, c.y, ax, ay));
+    }
+
     protected void added() {}
 
     private Coord relpos(String spec, Object[] args, int off) {
@@ -779,6 +791,10 @@ public class Widget {
 	    ch.presize();
 	if(parent != null)
 	    parent.cresize(this);
+    }
+
+    public void resize(int x, int y) {
+	resize(new Coord(x, y));
     }
 
     public void cresize(Widget ch) {
