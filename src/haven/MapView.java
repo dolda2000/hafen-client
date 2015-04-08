@@ -334,13 +334,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    int pgob = -1;
 	    if(args.length > 2)
 		pgob = (Integer)args[2];
-	    return(new MapView(sz, mc, pgob));
+	    return(new MapView(sz, parent.ui.sess.glob, mc, pgob));
 	}
     }
     
-    public MapView(Coord sz, Coord cc, long plgob) {
+    public MapView(Coord sz, Glob glob, Coord cc, long plgob) {
 	super(sz);
-	glob = ui.sess.glob;
+	this.glob = glob;
 	this.cc = cc;
 	this.plgob = plgob;
 	setcanfocus(true);
