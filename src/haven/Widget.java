@@ -962,13 +962,13 @@ public class Widget {
 
     public void hide() {
 	visible = false;
-	if(canfocus)
+	if(canfocus && (parent != null))
 	    parent.delfocusable(this);
     }
 
     public void show() {
 	visible = true;
-	if(canfocus)
+	if(canfocus && (parent != null))
 	    parent.newfocusable(this);
     }
 
