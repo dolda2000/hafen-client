@@ -47,6 +47,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private int[] visol = new int[32];
     private Grabber grab;
     private Selector selection;
+    private Coord3f camoff = new Coord3f(Coord3f.o);
+    public double shake = 0.0;
     private static final Map<String, Class<? extends Camera>> camtypes = new HashMap<String, Class<? extends Camera>>();
     
     public interface Delayed {
@@ -170,7 +172,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	    
 	    float field = field(elev);
-	    view.update(PointedCam.compute(curc.add(0.0f, 0.0f, h), dist(elev), elev, angl));
+	    view.update(PointedCam.compute(curc.add(camoff).add(0.0f, 0.0f, h), dist(elev), elev, angl));
 	    proj.update(Projection.makefrustum(new Matrix4f(), -field, field, -ca * field, ca * field, 1, 5000));
 	}
 
@@ -206,7 +208,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void tick(double dt) {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
-	    view.update(PointedCam.compute(cc.add(0.0f, 0.0f, 15f), dist, elev, angl));
+	    view.update(PointedCam.compute(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl));
 	}
 	
 	public float angle() {
@@ -256,7 +258,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void tick(double dt) {
 	    tick2(dt);
 	    float aspect = ((float)sz.y) / ((float)sz.x);
-	    view.update(PointedCam.compute(cc.add(0.0f, 0.0f, 15f), dist, elev, angl));
+	    view.update(PointedCam.compute(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl));
 	    proj.update(Projection.makeortho(new Matrix4f(), -field, field, -field * aspect, field * aspect, 1, 5000));
 	}
 
@@ -836,6 +838,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	camload = null;
 	try {
 	    camera.tick(dt);
+	    if((shake = shake * Math.pow(100, -dt)) < 0.01)
+		shake = 0;
+	    camoff.x = (float)((Math.random() - 0.5) * shake);
+	    camoff.y = (float)((Math.random() - 0.5) * shake);
+	    camoff.z = (float)((Math.random() - 0.5) * shake);
 	} catch(Loading e) {
 	    camload = e;
 	}
@@ -959,6 +966,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		selection.destroy();
 		selection = null;
 	    }
+	} else if(msg == "shake") {
+	    shake = ((Number)args[0]).doubleValue();
 	} else {
 	    super.uimsg(msg, args);
 	}
