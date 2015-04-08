@@ -140,7 +140,7 @@ public class Widget {
 	    inited = true;
 	}
     }
-	
+
     public static Factory gettype2(String name) throws InterruptedException {
 	if(name.indexOf('/') < 0) {
 	    synchronized(types) {
@@ -162,7 +162,7 @@ public class Widget {
 	    }
 	}
     }
-    
+
     public static Factory gettype(String name) {
 	long start = System.currentTimeMillis();
 	Factory f;
@@ -177,7 +177,7 @@ public class Widget {
 	    throw(new RuntimeException("No such widget type: " + name));
 	return(f);
     }
-    
+
     public Widget(Coord sz) {
 	this.c = Coord.z;
 	this.sz = sz;
@@ -192,16 +192,23 @@ public class Widget {
 	this.c = c;
 	this.sz = sz;
     }
-	
+
+    public <T extends Widget> T add0(T child) {
+	child.ui = this.ui;
+	child.parent = this;
+	child.link();
+	child.added();
+	newchild(child);
+	return(child);
+    }
+
     public <T extends Widget> T add(T child) {
-	synchronized(this.ui) {
-	    child.c = c;
-	    child.ui = this.ui;
-	    child.parent = this;
-	    child.link();
-	    child.added();
-	    newchild(child);
-	    return(child);
+	if(ui != null) {
+	    synchronized(ui) {
+		return(add0(child));
+	    }
+	} else {
+	    return(add0(child));
 	}
     }
 
@@ -336,40 +343,34 @@ public class Widget {
     }
 
     public void link() {
-	synchronized(ui) {
-	    if(parent.lchild != null)
-		parent.lchild.next = this;
-	    if(parent.child == null)
-		parent.child = this;
-	    this.prev = parent.lchild;
-	    parent.lchild = this;
-	}
+	if(parent.lchild != null)
+	    parent.lchild.next = this;
+	if(parent.child == null)
+	    parent.child = this;
+	this.prev = parent.lchild;
+	parent.lchild = this;
     }
     
     public void linkfirst() {
-	synchronized(ui) {
-	    if(parent.child != null)
-		parent.child.prev = this;
-	    if(parent.lchild == null)
-		parent.lchild = this;
-	    this.next = parent.child;
-	    parent.child = this;
-	}
+	if(parent.child != null)
+	    parent.child.prev = this;
+	if(parent.lchild == null)
+	    parent.lchild = this;
+	this.next = parent.child;
+	parent.child = this;
     }
 	
     public void unlink() {
-	synchronized(ui) {
-	    if(next != null)
-		next.prev = prev;
-	    if(prev != null)
-		prev.next = next;
-	    if(parent.child == this)
-		parent.child = next;
-	    if(parent.lchild == this)
-		parent.lchild = prev;
-	    next = null;
-	    prev = null;
-	}
+	if(next != null)
+	    next.prev = prev;
+	if(prev != null)
+	    prev.next = next;
+	if(parent.child == this)
+	    parent.child = next;
+	if(parent.lchild == this)
+	    parent.lchild = prev;
+	next = null;
+	prev = null;
     }
 	
     public Coord xlate(Coord c, boolean in) {
