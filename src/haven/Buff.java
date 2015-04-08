@@ -79,7 +79,7 @@ public class Buff extends Widget {
 	    Tex img = res.get().layer(Resource.imgc).tex();
 	    g.image(img, imgoff);
 	    if(nmeter >= 0)
-		g.aimage(nmeter(), imgoff.add(img.sz()).sub(1, 1), -1, -1);
+		g.aimage(nmeter(), imgoff.add(img.sz()).sub(1, 1), 1, 1);
 	    if(cmeter >= 0) {
 		double m = cmeter / 100.0;
 		if(cticks >= 0) {
