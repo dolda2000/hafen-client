@@ -32,10 +32,6 @@ public class Bufflist extends Widget {
     static final int margin = 2;
     static final int num = 5;
 
-    public Bufflist(Coord c, Widget parent) {
-	super(c, Coord.z, parent);
-    }
-
     private void arrange(Widget imm) {
 	int i = 0;
 	Coord br = new Coord();
@@ -55,10 +51,8 @@ public class Bufflist extends Widget {
 	resize(br.add(Buff.cframe.sz()));
     }
 
-    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	Widget ret = gettype(type).create(Coord.z, this, cargs);
-	arrange(ret);
-	return(ret);
+    public void addchild(Widget child, Object... args) {
+	arrange(child);
     }
 
     public void cdestroy(Widget ch) {

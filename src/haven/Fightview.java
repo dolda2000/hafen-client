@@ -45,21 +45,21 @@ public class Fightview extends Widget {
     private GiveButton curgive;
     private Avaview curava;
     private Button curpurs;
-    public final Bufflist buffs = new Bufflist(Coord.z, this); {buffs.hide();}
+    public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
     
     public class Relation {
         public final long gobid;
         public final Avaview ava;
 	public final GiveButton give;
 	public final Button purs;
-	public final Bufflist buffs = new Bufflist(Coord.z, Fightview.this); {buffs.hide();}
+	public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
 	public int ip, oip;
         
         public Relation(long gobid) {
             this.gobid = gobid;
-            this.ava = new Avaview(Coord.z, avasz, Fightview.this, gobid, "avacam");
-	    this.give = new GiveButton(Coord.z, Fightview.this, 0, new Coord(15, 15));
-	    this.purs = new Button(Coord.z, 70, Fightview.this, "Pursue");
+            add(this.ava = new Avaview(avasz, gobid, "avacam"));
+	    add(this.give = new GiveButton(0, new Coord(15, 15)));
+	    add(this.purs = new Button(70, "Pursue"));
         }
 	
 	public void give(int state) {
@@ -83,33 +83,33 @@ public class Fightview extends Widget {
     
     @RName("frv")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Fightview(c, parent));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Fightview());
 	}
     }
     
-    public Fightview(Coord c, Widget parent) {
-        super(c, new Coord(width, (bg.sz().y + ymarg) * height), parent);
+    public Fightview() {
+        super(new Coord(width, (bg.sz().y + ymarg) * height));
     }
 
-    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	if(pargs[0].equals("buff")) {
+    public void addchild(Widget child, Object... args) {
+	if(args[0].equals("buff")) {
 	    Widget p;
-	    if(pargs[1] == null)
+	    if(args[1] == null)
 		p = buffs;
 	    else
-		p = getrel((Integer)pargs[1]).buffs;
-	    return(p.makechild(type, new Object[] {}, cargs));
+		p = getrel((Integer)args[1]).buffs;
+	    p.addchild(child);
 	} else {
-	    return(super.makechild(type, pargs, cargs));
+	    super.addchild(child, args);
 	}
     }
 
     private void setcur(Relation rel) {
 	if((current == null) && (rel != null)) {
-	    curgive = new GiveButton(cgivec, this, 0);
-	    curava = new Avaview(cavac, Avaview.dasz, this, rel.gobid, "avacam");
-	    curpurs = new Button(cpursc, 70, this, "Pursue");
+	    add(curgive = new GiveButton(0), cgivec);
+	    add(curava = new Avaview(Avaview.dasz, rel.gobid, "avacam"), cavac);
+	    add(curpurs = new Button(70, "Pursue"), cpursc);
 	} else if((current != null) && (rel == null)) {
 	    ui.destroy(curgive);
 	    ui.destroy(curava);

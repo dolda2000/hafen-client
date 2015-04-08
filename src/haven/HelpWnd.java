@@ -37,15 +37,15 @@ public class HelpWnd extends Window {
 	fnd.aa = true;
     }
     
-    public HelpWnd(Coord c, Widget parent, Indir<Resource> res) {
-	super(c, new Coord(300, 430), parent, "Help");
+    public HelpWnd(Indir<Resource> res) {
+	super(new Coord(300, 430), "Help");
 	this.res = res;
-	this.text = new RichTextBox(Coord.z, new Coord(300, 400), this, "", fnd);
-	new Button(new Coord(100, 410), 100, this, "Dismiss") {
-	    public void click() {
-		HelpWnd.this.wdgmsg("close");
-	    }
-	};
+	this.text = add(new RichTextBox(new Coord(300, 400), "", fnd), Coord.z);
+	add(new Button(100, "Dismiss") {
+		public void click() {
+		    HelpWnd.this.wdgmsg("close");
+		}
+	    }, new Coord(100, 410));
     }
     
     public void tick(double dt) {

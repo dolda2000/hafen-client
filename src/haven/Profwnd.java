@@ -34,8 +34,8 @@ public class Profwnd extends Window {
     private static final int h = 80;
     private final TexIM tex;
     
-    public Profwnd(Coord c, Widget parent, Profile prof, String title) {
-	super(c, new Coord(prof.hist.length, h), parent, title);
+    public Profwnd(Profile prof, String title) {
+	super(new Coord(prof.hist.length, h), title);
 	this.prof = prof;
 	this.tex = new TexIM(new Coord(prof.hist.length, h));
     }
