@@ -42,25 +42,28 @@ public class MapMod extends Window implements MapView.Grabber {
     
     @RName("mapmod")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new MapMod(c, parent));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new MapMod());
 	}
     }
 
-    public MapMod(Coord c, Widget parent) {
-        super(c, new Coord(200, 100), parent, "Kartlasskostning");
-        map = ui.sess.glob.map;
+    public MapMod() {
+        super(new Coord(200, 100), "Kartlasskostning");
+        walkmod = false;
+        cbox = add(new CheckBox("Walk drawing"), Coord.z);
+	cbox.canactivate = true;
+        add(new Button(40, "Change"), asz.add(-50, -30));
+        text = add(new Label(String.format(fmt, 0, 0)), Coord.z);
+        tilenm = add(new TextEntry(50, ""), new Coord(0, 40));
+        tilenm.canactivate = true;
+    }
+
+    protected void added() {
+	map = ui.sess.glob.map;
 	mv = getparent(GameUI.class).map;
 	grab = mv.new GrabXL(this);
-        walkmod = false;
         mv.enol(17);
         mv.grab(grab);
-        cbox = new CheckBox(Coord.z, this, "Walk drawing");
-	cbox.canactivate = true;
-        btn = new Button(asz.add(-50, -30), 40, this, "Change");
-        text = new Label(Coord.z, this, String.format(fmt, 0, 0));
-        tilenm = new TextEntry(new Coord(0, 40), new Coord(50, 17), this, "");
-        tilenm.canactivate = true;
     }
 
     public void destroy() {

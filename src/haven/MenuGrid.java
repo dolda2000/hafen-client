@@ -49,8 +49,8 @@ public class MenuGrid extends Widget {
 	
     @RName("scm")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new MenuGrid(c, parent));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new MenuGrid());
 	}
     }
 	
@@ -109,8 +109,8 @@ public class MenuGrid extends Widget {
 	return(ret);
     }
 	
-    public MenuGrid(Coord c, Widget parent) {
-	super(c, bgsz.mul(gsz).add(1, 1), parent);
+    public MenuGrid() {
+	super(bgsz.mul(gsz).add(1, 1));
     }
 	
     private static Comparator<Pagina> sorter = new Comparator<Pagina>() {

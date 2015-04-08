@@ -62,38 +62,36 @@ public class Equipory extends Widget implements DTarget {
 	
     @RName("epry")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    long gobid;
 	    if(args.length < 1)
 		gobid = parent.getparent(GameUI.class).plid;
 	    else
 		gobid = (Integer)args[0];
-	    return(new Equipory(c, parent, gobid));
+	    return(new Equipory(gobid));
 	}
     }
 	
-    public Equipory(Coord c, Widget parent, long gobid) {
-	super(c, isz, parent);
-	Avaview ava = new Avaview(new Coord(34, 0), new Coord(265, 265), this, gobid, "equcam") {
+    public Equipory(long gobid) {
+	super(isz);
+	Avaview ava = add(new Avaview(new Coord(265, 265), gobid, "equcam") {
 		public boolean mousedown(Coord c, int button) {
 		    return(false);
 		}
-	    };
+	    }, new Coord(34, 0));
 	ava.color = null;
     }
 	
-    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	Widget ret = gettype(type).create(Coord.z, this, cargs);
-	if(ret instanceof GItem) {
-	    GItem g = (GItem)ret;
-	    WItem[] v = new WItem[pargs.length];
-	    for(int i = 0; i < pargs.length; i++) {
-		int ep = (Integer)pargs[i];
-		v[i] = new WItem(ecoords[ep].add(1, 1), this, g);
+    public void addchild(Widget child, Object... args) {
+	if(child instanceof GItem) {
+	    GItem g = (GItem)child;
+	    WItem[] v = new WItem[args.length];
+	    for(int i = 0; i < args.length; i++) {
+		int ep = (Integer)args[i];
+		v[i] = add(new WItem(g), ecoords[ep].add(1, 1));
 	    }
 	    wmap.put(g, v);
 	}
-	return(ret);
     }
     
     public void cdestroy(Widget w) {

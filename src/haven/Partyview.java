@@ -41,13 +41,13 @@ public class Partyview extends Widget {
 	
     @RName("pv")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Partyview(c, parent, (Integer)args[0]));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Partyview((Integer)args[0]));
 	}
     }
 	
-    Partyview(Coord c, Widget parent, long ign) {
-	super(c, new Coord(84, 140), parent);
+    Partyview(long ign) {
+	super(new Coord(84, 140));
 	this.ign = ign;
 	update();
     }
@@ -60,7 +60,7 @@ public class Partyview extends Widget {
 		    continue;
 		Avaview w = avs.get(m);
 		if(w == null) {
-		    w = new Avaview(Coord.z, new Coord(27, 27), this, m.gobid, "avacam") {
+		    w = add(new Avaview(new Coord(27, 27), m.gobid, "avacam") {
 			    private Tex tooltip = null;
 			    
 			    public Object tooltip(Coord c, Widget prev) {
@@ -72,7 +72,7 @@ public class Partyview extends Widget {
 				    return(null);
 				return(tooltip = ki.rendered());
 			    }
-			};
+			});
 		    avs.put(m, w);
 		} else {
 		    old.remove(m);
@@ -103,7 +103,7 @@ public class Partyview extends Widget {
 	    e.getValue().color = e.getKey().col;
 	}
 	if((avs.size() > 0) && (leave == null)) {
-	    leave = new Button(Coord.z, 84, this, "Leave party");
+	    leave = add(new Button(84, "Leave party"), Coord.z);
 	}
 	if((avs.size() == 0) && (leave != null)) {
 	    ui.destroy(leave);

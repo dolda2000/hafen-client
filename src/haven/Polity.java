@@ -40,8 +40,8 @@ public class Polity extends Window {
     
     @RName("pol")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Polity(c, parent, (String)args[0]));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Polity((String)args[0]));
 	}
     }
     
@@ -57,8 +57,8 @@ public class Polity extends Window {
     private class MemberList extends Listbox<Member> {
 	final Text unk = Text.render("???");
 	
-	private MemberList(Coord c, int w, int h, Widget parent) {
-	    super(c, parent, w, h, 20);
+	private MemberList(int w, int h) {
+	    super(w, h, 20);
 	}
 	
 	public Member listitem(int idx) {return(memb.get(idx));}
@@ -83,8 +83,8 @@ public class Polity extends Window {
     public static abstract class MemberWidget extends Widget {
 	public final int id;
 	
-	public MemberWidget(Coord c, Coord sz, Widget parent, int id) {
-	    super(c, sz, parent);
+	public MemberWidget(Coord sz, int id) {
+	    super(sz);
 	    this.id = id;
 	}
     }
@@ -92,12 +92,12 @@ public class Polity extends Window {
     public static final Text.Foundry nmf = new Text.Foundry(Text.serif, 14).aa(true);
     public static final Text.Foundry membf = new Text.Foundry(Text.serif, 12);
 
-    public Polity(Coord c, Widget parent, String name) {
-	super(c, new Coord(200, 200), parent, "Town");
+    public Polity(String name) {
+	super(new Coord(200, 200), "Town");
 	this.name = name;
-	new Label(new Coord(0, 5), this, name, nmf);
-	new Label(new Coord(0, 45), this, "Members:");
-	ml = new MemberList(new Coord(0, 60), 200, 7, this);
+	add(new Label(name, nmf), new Coord(0, 5));
+	add(new Label("Members:"), new Coord(0, 45));
+	ml = add(new MemberList(200, 7), new Coord(0, 60));
 	pack();
     }
     
@@ -147,16 +147,16 @@ public class Polity extends Window {
 	}
     }
     
-    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	if(pargs[0] instanceof String) {
-	    String p = (String)pargs[0];
+    public void addchild(Widget child, Object... args) {
+	if(args[0] instanceof String) {
+	    String p = (String)args[0];
 	    if(p.equals("m")) {
-		mw = gettype(type).create(new Coord(0, 210), this, cargs);
+		add(child, 0, 210);
 		pack();
-		return(mw);
+		return;
 	    }
 	}
-	return(super.makechild(type, pargs, cargs));
+	super.addchild(child, args);
     }
 
     public void cdestroy(Widget w) {

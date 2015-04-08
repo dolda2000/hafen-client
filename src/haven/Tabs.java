@@ -29,40 +29,32 @@ package haven;
 import java.util.*;
 
 public class Tabs {
-    public Coord c, sz;
-    public Widget parent;
+    public Coord sz;
     public Tab curtab = null;
     public Collection<Tab> tabs = new LinkedList<Tab>();
 
-    public Tabs(Coord c, Coord sz, Widget parent) {
-	this.c = c;
+    public Tabs(Coord sz) {
 	this.sz = sz;
-	this.parent = parent;
     }
 
     public class Tab extends Widget {
 	public TabButton btn;
 	
 	public Tab() {
-	    super(Tabs.this.c, Tabs.this.sz, Tabs.this.parent);
+	    super(Tabs.this.sz);
 	    if(curtab == null)
 		curtab = this;
 	    else
 		hide();
 	    tabs.add(this);
 	}
-	
-	public Tab(Coord bc, int bw, String text) {
-	    this();
-	    this.btn = new TabButton(bc, bw, text, this);
-	}
     }
 
     public class TabButton extends Button {
 	public final Tab tab;
 
-	public TabButton(Coord c, int w, String text, Tab tab) {
-	    super(c, w, Tabs.this.parent, text);
+	public TabButton(int w, String text, Tab tab) {
+	    super(w, text);
 	    this.tab = tab;
 	}
 
