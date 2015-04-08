@@ -55,44 +55,46 @@ public class Widget {
 
     @RName("cnt")
     public static class $Cont implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Widget(c, (Coord)args[0], parent));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Widget((Coord)args[0]));
 	}
     }
     @RName("ccnt")
     public static class $CCont implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    Widget ret = new Widget(c, (Coord)args[0], parent) {
+	public Widget create(Widget parent, Object[] args) {
+	    Widget ret = new Widget((Coord)args[0]) {
 		    public void presize() {
 			c = parent.sz.div(2).sub(sz.div(2));
 		    }
+
+		    protected void added() {
+			presize();
+		    }
 		};
-	    ret.presize();
 	    return(ret);
 	}
     }
     @RName("fcnt")
     public static class $FCont implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    Widget ret = new Widget(c, parent.sz, parent) {
+	public Widget create(Widget parent, Object[] args) {
+	    Widget ret = new Widget(parent.sz) {
 		    Collection<Widget> fill = new ArrayList<Widget>();
 		    public void presize() {
 			resize(parent.sz);
 			for(Widget ch : fill)
 			    ch.resize(sz);
 		    }
-		    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-			if((pargs[0] instanceof String) && pargs[0].equals("fill")) {
-			    Widget ret = gettype(type).create(Coord.z, this, cargs);
-			    ret.resize(sz);
-			    fill.add(ret);
-			    return(ret);
+		    public void added() {presize();}
+		    public void addchild(Widget child, Object... args) {
+			if((args[0] instanceof String) && args[0].equals("fill")) {
+			    child.resize(sz);
+			    fill.add(child);
+			    add(child, Coord.z);
 			} else {
-			    return(super.makechild(type, pargs, cargs));
+			    super.addchild(child, args);
 			}
 		    }
 		};
-	    ret.presize();
 	    return(ret);
 	}
     }

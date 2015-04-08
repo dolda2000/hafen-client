@@ -29,13 +29,18 @@ package haven;
 public class Frame extends Widget {
     private final IBox box;
 
-    public Frame(Coord c, Coord sz, Widget parent, IBox box) {
-	super(c.sub(box.btloff()), sz.add(box.bisz()), parent);
+    public Frame(Coord sz, IBox box) {
+	super(sz);
 	this.box = box;
     }
 
-    public Frame(Coord c, Coord sz, Widget parent) {
-	this(c, sz, parent, Window.wbox);
+    public static Frame around(Widget parent, Area area, IBox box) {
+	return(parent.add(new Frame(area.sz().add(box.bisz()), box),
+			  area.ul.sub(box.btloff())));
+    }
+
+    public static Frame around(Widget parent, Area area) {
+	return(around(parent, area, Window.wbox));
     }
 
     public static Frame around(Widget parent, Iterable<? extends Widget> wl) {
@@ -48,7 +53,7 @@ public class Frame extends Widget {
 	    if(wbr.x > br.x) br.x = wbr.x;
 	    if(wbr.y > br.y) br.y = wbr.y;
 	}
-	return(new Frame(tl, br.sub(tl), parent));
+	return(around(parent, new Area(tl, br)));
     }
 
     public Coord xlate(Coord c, boolean in) {

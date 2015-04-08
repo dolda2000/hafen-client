@@ -32,8 +32,8 @@ public class Scrollbar extends Widget {
     public int val, min, max;
     private UI.Grab drag = null;
     
-    public Scrollbar(Coord c, int h, Widget parent, int min, int max) {
-	super(c.add(-sflarp.sz().x, 0), new Coord(sflarp.sz().x, h), parent);
+    public Scrollbar(int h, int min, int max) {
+	super(new Coord(sflarp.sz().x, h));
 	this.min = min;
 	this.max = max;
 	val = min;

@@ -33,8 +33,8 @@ public class CheckBox extends Widget {
 
     @RName("chk")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    CheckBox ret = new CheckBox(c, parent, (String)args[0]);
+	public Widget create(Widget parent, Object[] args) {
+	    CheckBox ret = new CheckBox((String)args[0]);
 	    ret.canactivate = true;
 	    return(ret);
 	}
@@ -45,8 +45,7 @@ public class CheckBox extends Widget {
 	mark = Resource.loadtex("gfx/hud/chkmark");
     }
 	
-    public CheckBox(Coord c, Widget parent, String lbl) {
-	super(c, box.sz(), parent);
+    public CheckBox(String lbl) {
 	this.lbl = Text.std.render(lbl, java.awt.Color.WHITE);
 	sz = box.sz().add(this.lbl.sz());
     }

@@ -46,38 +46,38 @@ public class Button extends SSWidget {
 	
     @RName("btn")
     public static class $Btn implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Button(c, (Integer)args[0], parent, (String)args[1]));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Button((Integer)args[0], (String)args[1]));
 	}
     }
     @RName("ltbtn")
     public static class $LTBtn implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(wrapped(c, (Integer)args[0], parent, (String)args[1]));
+	public Widget create(Widget parent, Object[] args) {
+	    return(wrapped((Integer)args[0], (String)args[1]));
 	}
     }
 	
-    public static Button wrapped(Coord c, int w, Widget parent, String text) {
-	Button ret = new Button(c, w, parent, tf.renderwrap(text, w - 10));
+    public static Button wrapped(int w, String text) {
+	Button ret = new Button(w, tf.renderwrap(text, w - 10));
 	return(ret);
     }
         
-    public Button(Coord c, Integer w, Widget parent, String text) {
-	super(c, new Coord(w, 19), parent);
+    public Button(Integer w, String text) {
+	super(new Coord(w, 19));
 	this.text = tf.render(text);
 	this.cont = this.text.img;
 	render();
     }
         
-    public Button(Coord c, Integer w, Widget parent, Text text) {
-	super(c, new Coord(w, 19), parent);
+    public Button(Integer w, Text text) {
+	super(new Coord(w, 19));
 	this.text = text;
 	this.cont = text.img;
 	render();
     }
 	
-    public Button(Coord c, Integer w, Widget parent, BufferedImage cont) {
-	super(c, new Coord(w, 19), parent);
+    public Button(Integer w, BufferedImage cont) {
+	super(new Coord(w, 19));
 	this.cont = cont;
 	render();
     }

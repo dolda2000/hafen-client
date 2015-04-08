@@ -40,11 +40,11 @@ public class TextEntry extends Widget {
 
     @RName("text")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    if(args[0] instanceof Coord)
-		return(new TextEntry(c, (Coord)args[0], parent, (String)args[1]));
+		return(new TextEntry((Coord)args[0], (String)args[1]));
 	    else
-		return(new TextEntry(c, (Integer)args[0], parent, (String)args[1]));
+		return(new TextEntry((Integer)args[0], (String)args[1]));
 	}
     }
 
@@ -106,14 +106,14 @@ public class TextEntry extends Widget {
 	}
     }
 
-    public TextEntry(Coord c, Coord sz, Widget parent, String deftext) {
-	super(c, sz, parent);
+    public TextEntry(Coord sz, String deftext) {
+	super(sz);
 	rsettext(deftext);
 	setcanfocus(true);
     }
 
-    public TextEntry(Coord c, int w, Widget parent, String deftext) {
-	this(c, new Coord(w, defh), parent, deftext);
+    public TextEntry(int w, String deftext) {
+	this(new Coord(w, defh), deftext);
     }
 
     protected void changed() {

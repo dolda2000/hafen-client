@@ -31,8 +31,8 @@ import java.awt.image.*;
 public abstract class SIWidget extends Widget {
     private Tex surf = null;
 
-    public SIWidget(Coord c, Coord sz, Widget parent) {
-	super(c, sz, parent);
+    public SIWidget(Coord sz) {
+	super(sz);
     }
 
     protected abstract void draw(BufferedImage buf);

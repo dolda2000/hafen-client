@@ -33,7 +33,7 @@ public class Img extends Widget {
 	
     @RName("img")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    Indir<Resource> res;
 	    int a = 0;
 	    if(args[a] instanceof String) {
@@ -43,7 +43,7 @@ public class Img extends Widget {
 	    } else {
 		res = parent.ui.sess.getres((Integer)args[a++]);
 	    }
-	    Img ret = new Img(c, res, parent);
+	    Img ret = new Img(res);
 	    if(args.length > a)
 		ret.hit = (Integer)args[a++] != 0;
 	    return(ret);
@@ -62,14 +62,14 @@ public class Img extends Widget {
 	    g.image(img, Coord.z);
     }
 	
-    public Img(Coord c, Tex img, Widget parent) {
-	super(c, img.sz(), parent);
+    public Img(Tex img) {
+	super(img.sz());
 	this.res = null;
 	this.img = img;
     }
 
-    public Img(Coord c, Indir<Resource> res, Widget parent) {
-	super(c, Coord.z, parent);
+    public Img(Indir<Resource> res) {
+	super(Coord.z);
 	this.res = res;
 	this.img = null;
     }
