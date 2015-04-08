@@ -199,6 +199,8 @@ public class Widget {
 	child.link();
 	child.added();
 	newchild(child);
+	if(((Widget)child).canfocus)
+	    newfocusable(child);
 	return(child);
     }
 
