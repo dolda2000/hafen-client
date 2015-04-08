@@ -50,45 +50,45 @@ public class Button extends SIWidget {
 	
     @RName("btn")
     public static class $Btn implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Button(c, (Integer)args[0], parent, (String)args[1]));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Button((Integer)args[0], (String)args[1]));
 	}
     }
     @RName("ltbtn")
     public static class $LTBtn implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(wrapped(c, (Integer)args[0], parent, (String)args[1]));
+	public Widget create(Widget parent, Object[] args) {
+	    return(wrapped((Integer)args[0], (String)args[1]));
 	}
     }
 	
-    public static Button wrapped(Coord c, int w, Widget parent, String text) {
-	Button ret = new Button(c, w, parent, tf.renderwrap(text, w - 10));
+    public static Button wrapped(int w, String text) {
+	Button ret = new Button(w, tf.renderwrap(text, w - 10));
 	return(ret);
     }
         
-    private Button(Coord c, int w, Widget parent, boolean lg) {
-	super(c, new Coord(w, lg?hl:hs), parent);
+    private Button(int w, boolean lg) {
+	super(new Coord(w, lg?hl:hs));
 	this.lg = lg;
     }
 
-    private Button(Coord c, int w, Widget parent) {
-	this(c, w, parent, w >= (bl.getWidth() + bm.getWidth() + br.getWidth()));
+    private Button(int w) {
+	this(w, w >= (bl.getWidth() + bm.getWidth() + br.getWidth()));
     }
 
-    public Button(Coord c, Integer w, Widget parent, String text) {
-	this(c, w, parent);
+    public Button(Integer w, String text) {
+	this(w);
 	this.text = nf.render(text);
 	this.cont = this.text.img;
     }
         
-    public Button(Coord c, Integer w, Widget parent, Text text) {
-	this(c, w, parent);
+    public Button(Integer w, Text text) {
+	this(w);
 	this.text = text;
 	this.cont = text.img;
     }
 	
-    public Button(Coord c, Integer w, Widget parent, BufferedImage cont) {
-	this(c, w, parent);
+    public Button(Integer w, BufferedImage cont) {
+	this(w);
 	this.cont = cont;
     }
 	

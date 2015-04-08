@@ -42,8 +42,8 @@ public class Textlog extends Widget {
 	
     @RName("log")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Textlog(c, (Coord)args[0], parent));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Textlog((Coord)args[0]));
 	}
     }
 	
@@ -76,8 +76,8 @@ public class Textlog extends Widget {
 	}
     }
 	
-    public Textlog(Coord c, Coord sz, Widget parent) {
-	super(c, sz, parent);
+    public Textlog(Coord sz) {
+	super(sz);
 	lines = new LinkedList<Text>();
 	maxy = cury = 0;
     }

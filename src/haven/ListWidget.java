@@ -30,8 +30,8 @@ public abstract class ListWidget<T> extends Widget {
     public final int itemh;
     public T sel;
 
-    public ListWidget(Coord c, Coord sz, Widget parent, int itemh) {
-	super(c, sz, parent);
+    public ListWidget(Coord sz, int itemh) {
+	super(sz);
 	this.itemh = itemh;
     }
 

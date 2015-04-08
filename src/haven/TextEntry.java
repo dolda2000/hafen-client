@@ -46,11 +46,11 @@ public class TextEntry extends SIWidget {
 
     @RName("text")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    if(args[0] instanceof Coord)
-		return(new TextEntry(c, (Coord)args[0], parent, (String)args[1]));
+		return(new TextEntry((Coord)args[0], (String)args[1]));
 	    else
-		return(new TextEntry(c, (Integer)args[0], parent, (String)args[1]));
+		return(new TextEntry((Integer)args[0], (String)args[1]));
 	}
     }
 
@@ -151,15 +151,15 @@ public class TextEntry extends SIWidget {
     }
     */
 
-    public TextEntry(Coord c, int w, Widget parent, String deftext) {
-	super(c, new Coord(w, mext.getHeight()), parent);
+    public TextEntry(int w, String deftext) {
+	super(new Coord(w, mext.getHeight()));
 	rsettext(deftext);
 	setcanfocus(true);
     }
 
     @Deprecated
-    public TextEntry(Coord c, Coord sz, Widget parent, String deftext) {
-	this(c, sz.x, parent, deftext);
+    public TextEntry(Coord sz, String deftext) {
+	this(sz.x, deftext);
     }
 
     protected void changed() {
