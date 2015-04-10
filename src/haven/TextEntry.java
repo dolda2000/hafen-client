@@ -186,4 +186,8 @@ public class TextEntry extends SIWidget {
 	}
 	return(true);
     }
+
+    public void resize(int w) {
+	resize(w, sz.y);
+    }
 }
