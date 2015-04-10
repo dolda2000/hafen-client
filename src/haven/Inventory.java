@@ -70,6 +70,7 @@ public class Inventory extends Widget implements DTarget {
     }
     
     public void addchild(Widget child, Object... args) {
+	add(child);
 	Coord c = (Coord)args[0];
 	if(child instanceof GItem) {
 	    GItem i = (GItem)child;

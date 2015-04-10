@@ -33,7 +33,7 @@ import java.util.Map.Entry;
 
 public class Partyview extends Widget {
     long ign;
-    Party party = ui.sess.glob.party;
+    Party party;
     Map<Long, Member> om = null;
     Member ol = null;
     Map<Member, Avaview> avs = new HashMap<Member, Avaview>();
@@ -49,6 +49,10 @@ public class Partyview extends Widget {
     Partyview(long ign) {
 	super(new Coord(84, 140));
 	this.ign = ign;
+    }
+
+    protected void added() {
+	party = ui.sess.glob.party;
 	update();
     }
 	

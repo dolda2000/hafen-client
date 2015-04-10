@@ -52,6 +52,7 @@ public class Bufflist extends Widget {
     }
 
     public void addchild(Widget child, Object... args) {
+	add(child);
 	arrange(child);
     }
 
