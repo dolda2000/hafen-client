@@ -29,12 +29,15 @@ package haven;
 import java.util.*;
 
 public class Tabs {
-    public Coord sz;
+    public Widget parent;
+    public Coord c, sz;
     public Tab curtab = null;
     public Collection<Tab> tabs = new LinkedList<Tab>();
 
-    public Tabs(Coord sz) {
+    public Tabs(Coord c, Coord sz, Widget parent) {
+	this.c = c;
 	this.sz = sz;
+	this.parent = parent;
     }
 
     public class Tab extends Widget {
@@ -48,6 +51,10 @@ public class Tabs {
 		hide();
 	    tabs.add(this);
 	}
+    }
+
+    public Tab add() {
+	return(parent.add(new Tab(), c));
     }
 
     public class TabButton extends Button {
