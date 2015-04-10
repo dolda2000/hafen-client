@@ -140,4 +140,8 @@ public class TextEntry extends Widget {
 	}
 	return(true);
     }
+
+    public void resize(int w) {
+	resize(w, sz.y);
+    }
 }

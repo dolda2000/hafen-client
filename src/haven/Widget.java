@@ -204,7 +204,6 @@ public class Widget {
 	child.parent = this;
 	child.link();
 	child.added();
-	newchild(child);
 	if(((Widget)child).canfocus)
 	    newfocusable(child);
 	return(child);
@@ -347,9 +346,6 @@ public class Widget {
 	return(child);
     }
 	
-    public void newchild(Widget w) {
-    }
-
     public void link() {
 	if(parent.lchild != null)
 	    parent.lchild.next = this;
