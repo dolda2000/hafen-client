@@ -29,13 +29,17 @@ package haven;
 public class Frame extends Widget {
     private final IBox box;
 
-    public Frame(Coord sz, IBox box) {
-	super(sz);
+    public Frame(Coord sz, boolean inner, IBox box) {
+	super(sz.add(inner?box.bisz():Coord.z));
 	this.box = box;
     }
 
+    public Frame(Coord sz, boolean inner) {
+	this(sz, inner, Window.wbox);
+    }
+
     public static Frame around(Widget parent, Area area, IBox box) {
-	return(parent.add(new Frame(area.sz().add(box.bisz()), box),
+	return(parent.add(new Frame(area.sz(), true, box),
 			  area.ul.sub(box.btloff())));
     }
 
