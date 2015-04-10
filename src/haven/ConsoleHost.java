@@ -95,6 +95,9 @@ public abstract class ConsoleHost extends Widget {
     public ConsoleHost(Coord sz) {
 	super(sz);
     }
+
+    public ConsoleHost() {
+    }
     
     public ConsoleHost(UI ui, Coord c, Coord sz) {
 	super(ui, c, sz);
