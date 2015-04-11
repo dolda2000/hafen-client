@@ -75,19 +75,19 @@ public class Button extends SIWidget {
 	this(w, w >= (bl.getWidth() + bm.getWidth() + br.getWidth()));
     }
 
-    public Button(Integer w, String text) {
+    public Button(int w, String text) {
 	this(w);
 	this.text = nf.render(text);
 	this.cont = this.text.img;
     }
         
-    public Button(Integer w, Text text) {
+    public Button(int w, Text text) {
 	this(w);
 	this.text = text;
 	this.cont = text.img;
     }
 	
-    public Button(Integer w, BufferedImage cont) {
+    public Button(int w, BufferedImage cont) {
 	this(w);
 	this.cont = cont;
     }
