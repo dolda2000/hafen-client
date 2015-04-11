@@ -96,8 +96,12 @@ public class Window extends Widget implements DTarget {
 	setfocustab(true);
     }
 
+    public Window(Coord sz, String cap, boolean lg) {
+	this(sz, cap, lg, Coord.z, Coord.z);
+    }
+
     public Window(Coord sz, String cap) {
-	this(sz, cap, false, Coord.z, Coord.z);
+	this(sz, cap, false);
     }
 
     protected void added() {
