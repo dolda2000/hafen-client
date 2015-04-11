@@ -67,7 +67,7 @@ public class Profwnd extends Window {
 	    prof.dump(System.err);
 	    return(true);
 	}
-	return(false);
+	return(super.type(k, ev));
     }
 
     public String tooltip(Coord c, Widget prev) {
