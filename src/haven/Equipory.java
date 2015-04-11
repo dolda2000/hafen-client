@@ -84,6 +84,7 @@ public class Equipory extends Widget implements DTarget {
 	
     public void addchild(Widget child, Object... args) {
 	if(child instanceof GItem) {
+	    add(child);
 	    GItem g = (GItem)child;
 	    WItem[] v = new WItem[args.length];
 	    for(int i = 0; i < args.length; i++) {
@@ -91,6 +92,8 @@ public class Equipory extends Widget implements DTarget {
 		v[i] = add(new WItem(g), ecoords[ep].add(1, 1));
 	    }
 	    wmap.put(g, v);
+	} else {
+	    super.addchild(child, args);
 	}
     }
     
