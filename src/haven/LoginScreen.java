@@ -59,9 +59,9 @@ public class LoginScreen extends Widget {
 	private Pwbox(String username, boolean save) {
 	    setfocustab(true);
 	    add(new Label("User name", textf), Coord.z);
-	    add(user = new TextEntry(new Coord(150, 20), username), new Coord(0, 20));
+	    add(user = new TextEntry(150, username), new Coord(0, 20));
 	    add(new Label("Password", textf), new Coord(0, 60));
-	    add(pass = new TextEntry(new Coord(150, 20), ""), new Coord(0, 80));
+	    add(pass = new TextEntry(150, ""), new Coord(0, 80));
 	    pass.pw = true;
 	    add(savepass = new CheckBox("Remember me"), new Coord(0, 110));
 	    savepass.a = save;
