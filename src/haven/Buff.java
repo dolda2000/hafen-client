@@ -47,14 +47,14 @@ public class Buff extends Widget {
 
     @RName("buff")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    Indir<Resource> res = parent.ui.sess.getres((Integer)args[0]);
-	    return(new Buff(c, parent, res));
+	    return(new Buff(res));
 	}
     }
 
-    public Buff(Coord c, Widget parent, Indir<Resource> res) {
-	super(c, cframe.sz(), parent);
+    public Buff(Indir<Resource> res) {
+	super(cframe.sz());
 	this.res = res;
     }
 

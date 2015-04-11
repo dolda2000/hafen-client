@@ -34,8 +34,8 @@ public abstract class Dropbox<T> extends ListWidget<T> {
     private final Coord dropc;
     private Droplist dl;
 
-    public Dropbox(Coord c, Widget parent, int w, int listh, int itemh) {
-	super(c, new Coord(w, itemh), parent, itemh);
+    public Dropbox(int w, int listh, int itemh) {
+	super(new Coord(w, itemh), itemh);
 	this.listh = listh;
 	dropc = new Coord(sz.x - drop.sz().x, 0);
     }
@@ -44,9 +44,10 @@ public abstract class Dropbox<T> extends ListWidget<T> {
 	private UI.Grab grab = null;
 
 	private Droplist() {
-	    super(Dropbox.this.rootpos().add(0, Dropbox.this.sz.y), Dropbox.this.ui.root, Dropbox.this.sz.x, Math.min(listh, Dropbox.this.listitems()), Dropbox.this.itemh);
-	    grab = ui.grabmouse(this);
+	    super(Dropbox.this.sz.x, Math.min(listh, Dropbox.this.listitems()), Dropbox.this.itemh);
 	    sel = Dropbox.this.sel;
+	    Dropbox.this.ui.root.add(this, Dropbox.this.rootpos().add(0, Dropbox.this.sz.y));
+	    grab = ui.grabmouse(this);
 	}
 
 	protected T listitem(int i) {return(Dropbox.this.listitem(i));}

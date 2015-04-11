@@ -48,15 +48,15 @@ public class Speedget extends Widget {
 
     @RName("speedget")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    int cur = (Integer)args[0];
 	    int max = (Integer)args[1];
-	    return(new Speedget(c, parent, cur, max));
+	    return(new Speedget(cur, max));
 	}
     }
 
-    public Speedget(Coord c, Widget parent, int cur, int max) {
-	super(c, tsz, parent);
+    public Speedget(int cur, int max) {
+	super(tsz);
 	this.cur = cur;
 	this.max = max;
     }

@@ -51,8 +51,8 @@ public class Fightview extends Widget {
         
         public Relation(long gobid) {
             this.gobid = gobid;
-            this.ava = new Avaview(Coord.z, avasz, Fightview.this, gobid, "avacam");
-	    this.give = new GiveButton(Coord.z, Fightview.this, 0, new Coord(15, 15));
+            add(this.ava = new Avaview(avasz, gobid, "avacam"));
+	    add(this.give = new GiveButton(0, new Coord(15, 15)));
         }
 	
 	public void give(int state) {
@@ -74,29 +74,29 @@ public class Fightview extends Widget {
     
     @RName("frv")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Fightview(c, parent));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Fightview());
 	}
     }
     
-    public Fightview(Coord c, Widget parent) {
-        super(c, new Coord(width, (bg.sz().y + ymarg) * height), parent);
+    public Fightview() {
+        super(new Coord(width, (bg.sz().y + ymarg) * height));
     }
 
     private void setcur(Relation rel) {
 	if((current == null) && (rel != null)) {
-	    curgive = new GiveButton(cgivec, this, 0) {
+	    add(curgive = new GiveButton(0) {
 		    public void wdgmsg(String name, Object... args) {
 			if(name == "click")
 			    Fightview.this.wdgmsg("give", (int)current.gobid, args[0]);
 		    }
-		};
-	    curava = new Avaview(cavac, Avaview.dasz, this, rel.gobid, "avacam") {
+		}, cgivec);
+	    add(curava = new Avaview(Avaview.dasz, rel.gobid, "avacam") {
 		    public void wdgmsg(String name, Object... args) {
 			if(name == "click")
 			    Fightview.this.wdgmsg("click", (int)current.gobid, args[0]);
 		    }
-		};
+		}, cavac);
 	} else if((current != null) && (rel == null)) {
 	    ui.destroy(curgive);
 	    ui.destroy(curava);

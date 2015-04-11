@@ -32,16 +32,16 @@ public class Chatwindow extends Window {
 	
     @RName("chat")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Chatwindow(c, (Coord)args[0], parent));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Chatwindow((Coord)args[0]));
 	}
     }
 	
-    public Chatwindow(Coord c, Coord sz, Widget parent) {
-	super(c, sz, parent, "Chat");
-	in = new TextEntry(new Coord(0, sz.y - 20), new Coord(sz.x, 20), this, "");
+    public Chatwindow(Coord sz) {
+	super(sz, "Chat");
+	in = add(new TextEntry(sz.x, ""), 0, sz.y - 20);
 	in.canactivate = true;
-	out = new Textlog(Coord.z, new Coord(sz.x, sz.y - 20), this);
+	out = add(new Textlog(new Coord(sz.x, sz.y - 20)), Coord.z);
     }
 	
     public void uimsg(String msg, Object... args) {

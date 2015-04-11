@@ -31,13 +31,13 @@ public class Progress extends Widget {
 
     @RName("prog")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Progress(c, parent, (Integer)args[0]));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Progress((Integer)args[0]));
 	}
     }
 
-    public Progress(Coord c, Widget parent, int p) {
-	super(c, new Coord(75, 20), parent);
+    public Progress(int p) {
+	super(new Coord(75, 20));
 	text = Text.renderf(FlowerMenu.pink, "%d%%", p);
     }
 

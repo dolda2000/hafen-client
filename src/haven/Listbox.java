@@ -32,10 +32,10 @@ public abstract class Listbox<T> extends ListWidget<T> {
     public final int h;
     public final Scrollbar sb;
 
-    public Listbox(Coord c, Widget parent, int w, int h, int itemh) {
-	super(c, new Coord(w, h * itemh), parent, itemh);
+    public Listbox(int w, int h, int itemh) {
+	super(new Coord(w, h * itemh), itemh);
 	this.h = h;
-	this.sb = new Scrollbar(new Coord(sz.x, 0), sz.y, this, 0, 0);
+	this.sb = adda(new Scrollbar(sz.y, 0, 0), sz.x, 0, 1, 0);
     }
 
     protected void drawsel(GOut g) {

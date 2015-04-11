@@ -60,8 +60,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Bufflist buffs;
 
     public abstract class Belt extends Widget {
-	public Belt(Coord c, Coord sz, Widget parent) {
-	    super(c, sz, parent);
+	public Belt(Coord sz) {
+	    super(sz);
 	}
 
 	public void keyact(final int slot) {
@@ -87,24 +87,27 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     
     @RName("gameui")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    String chrid = (String)args[0];
 	    int plid = (Integer)args[1];
-	    return(new GameUI(parent, chrid, plid));
+	    return(new GameUI(chrid, plid));
 	}
     }
     
-    public GameUI(Widget parent, String chrid, long plid) {
-	super(Coord.z, parent.sz, parent);
+    public GameUI(String chrid, long plid) {
 	this.chrid = chrid;
 	this.plid = plid;
 	setcanfocus(true);
 	setfocusctl(true);
-	menu = new MenuGrid(Coord.z, this);
-	new Avaview(new Coord(10, 10), Avaview.dasz, this, plid, "avacam");
-	buffs = new Bufflist(new Coord(95, 50), this);
-	chat = new ChatUI(Coord.z, 0, this);
-	syslog = new ChatUI.Log(chat, "System");
+	menu = add(new MenuGrid());
+	add(new Avaview(Avaview.dasz, plid, "avacam"), new Coord(10, 10));
+	buffs = add(new Bufflist(), new Coord(95, 50));
+	chat = add(new ChatUI(0));
+	syslog = chat.add(new ChatUI.Log("System"));
+    }
+
+    protected void added() {
+	resize(parent.sz);
 	ui.cons.out = new java.io.PrintWriter(new java.io.Writer() {
 		StringBuilder buf = new StringBuilder();
 		
@@ -121,12 +124,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		public void flush() {}
 	    });
 	Debug.log = ui.cons.out;
-	resize(sz);
     }
     
     static class Hidewnd extends Window {
-	Hidewnd(Coord c, Coord sz, Widget parent, String cap) {
-	    super(c, sz, parent, cap);
+	Hidewnd(Coord sz, String cap) {
+	    super(sz, cap);
 	}
 	
 	public void wdgmsg(Widget sender, String msg, Object... args) {
@@ -154,86 +156,79 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 	if(!hand.isEmpty() && (vhand == null)) {
 	    DraggedItem fi = hand.iterator().next();
-	    vhand = new ItemDrag(fi.dc, this, fi.item);
+	    vhand = add(new ItemDrag(fi.dc, fi.item));
 	}
     }
 
-    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	String place = ((String)pargs[0]).intern();
+    public void addchild(Widget child, Object... args) {
+	String place = ((String)args[0]).intern();
 	if(place == "mapview") {
-	    Coord cc = (Coord)cargs[0];
-	    map = new MapView(Coord.z, sz, this, cc, plid);
+	    child.resize(sz);
+	    map = add((MapView)child, Coord.z);
 	    map.lower();
 	    if(mmap != null)
 		ui.destroy(mmap);
-	    mmap = new Frame(Coord.z, new Coord(125, 125), this);
-	    new LocalMiniMap(Coord.z, new Coord(125, 125), mmap, map);
-	    mmap.c = new Coord(0, sz.y - mmap.sz.y);
-	    return(map);
+	    mmap = adda(new Frame(new Coord(125, 125), true), 0, sz.y, 0, 1);
+	    mmap.add(new LocalMiniMap(new Coord(125, 125), map));
 	} else if(place == "fight") {
-	    fv = (Fightview)gettype(type).create(new Coord(sz.x - Fightview.width, 0), this, cargs);
-	    return(fv);
+	    fv = adda((Fightview)child, sz.x, 0, 1, 0);
 	} else if(place == "inv") {
-	    invwnd = new Hidewnd(new Coord(100, 100), Coord.z, this, "Inventory") {
+	    invwnd = new Hidewnd(Coord.z, "Inventory") {
 		    public void cresize(Widget ch) {
 			pack();
 		    }
 		};
-	    Inventory inv = (Inventory)gettype(type).create(Coord.z, invwnd, cargs);
+	    invwnd.add(maininv = (Inventory)child, Coord.z);
 	    invwnd.pack();
 	    invwnd.hide();
-	    maininv = inv;
-	    return(inv);
+	    add(invwnd, new Coord(100, 100));
 	} else if(place == "equ") {
-	    equwnd = new Hidewnd(new Coord(400, 10), Coord.z, this, "Equipment");
-	    Widget equ = gettype(type).create(Coord.z, equwnd, cargs);
+	    equwnd = new Hidewnd(Coord.z, "Equipment");
+	    equwnd.add(child, Coord.z);
 	    equwnd.pack();
 	    equwnd.hide();
-	    return(equ);
+	    add(equwnd, new Coord(400, 10));
 	} else if(place == "hand") {
-	    GItem g = (GItem)gettype(type).create(Coord.z, this, cargs);
-	    Coord lc = (Coord)pargs[1];
+	    GItem g = add((GItem)child);
+	    Coord lc = (Coord)args[1];
 	    hand.add(new DraggedItem(g, lc));
 	    updhand();
-	    return(g);
 	} else if(place == "craft") {
-	    final Widget[] mk = {null};
-	    makewnd = new Window(new Coord(200, 100), Coord.z, this, "Crafting") {
+	    final Widget mkwdg = child;
+	    makewnd = new Window(Coord.z, "Crafting") {
 		    public void wdgmsg(Widget sender, String msg, Object... args) {
 			if((sender == this) && msg.equals("close")) {
-			    mk[0].wdgmsg("close");
+			    mkwdg.wdgmsg("close");
 			    return;
 			}
 			super.wdgmsg(sender, msg, args);
 		    }
 		    public void cdestroy(Widget w) {
-			if(w == mk[0]) {
+			if(w == mkwdg) {
 			    ui.destroy(this);
 			    makewnd = null;
 			}
 		    }
 		};
-	    mk[0] = gettype(type).create(Coord.z, makewnd, cargs);
+	    makewnd.add(mkwdg, Coord.z);
 	    makewnd.pack();
-	    return(mk[0]);
+	    add(makewnd, new Coord(400, 200));
 	} else if(place == "buddy") {
-	    buddies = (BuddyWnd)gettype(type).create(new Coord(187, 50), this, cargs);
+	    buddies = add((BuddyWnd)child, 187, 50);
 	    buddies.hide();
-	    return(buddies);
 	} else if(place == "pol") {
-	    polity = (Polity)gettype(type).create(new Coord(500, 50), this, cargs);
+	    polity = add((Polity)child, 500, 50);
 	    polity.hide();
-	    return(polity);
 	} else if(place == "chat") {
-	    return(chat.makechild(type, new Object[] {}, cargs));
+	    chat.addchild(child);
 	} else if(place == "party") {
-	    return(gettype(type).create(new Coord(10, 95), this, cargs));
+	    add(child, 10, 95);
 	} else if(place == "buff") {
-	    return(buffs.makechild(type, new Object[] {}, cargs));
+	    buffs.addchild(child);
 	} else if(place == "misc") {
-	    return(gettype(type).create((Coord)pargs[1], this, cargs));
+	    add(child, (Coord)args[1]);
 	} else {
-	    throw(new UI.UIException("Illegal gameui child", type, pargs));
+	    throw(new UI.UIException("Illegal gameui child", place, args));
 	}
     }
     
@@ -332,7 +327,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(msg == "showhelp") {
 	    Indir<Resource> res = ui.sess.getres((Integer)args[0]);
 	    if(help == null)
-		help = new HelpWnd(sz.div(2).sub(150, 200), this, res);
+		help = adda(new HelpWnd(res), sz.div(2), 0.5, 0.5);
 	    else
 		help.res = res;
 	} else {
@@ -459,8 +454,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 				       KeyEvent.VK_F9, KeyEvent.VK_F10, KeyEvent.VK_F11, KeyEvent.VK_F12};
 	public int curbelt = 0;
 
-	public FKeyBelt(Coord c, Widget parent) {
-	    super(c, new Coord(450, 34), parent);
+	public FKeyBelt() {
+	    super(new Coord(450, 34));
 	}
 
 	private Coord beltc(int i) {
@@ -549,8 +544,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public class NKeyBelt extends Belt implements DTarget, DropTarget {
 	public int curbelt = 0;
 
-	public NKeyBelt(Coord c, Widget parent) {
-	    super(c, new Coord(368, 34), parent);
+	public NKeyBelt() {
+	    super(new Coord(368, 34));
 	}
 	
 	private Coord beltc(int i) {
@@ -637,11 +632,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     {
 	String val = Utils.getpref("belttype", "n");
 	if(val.equals("n")) {
-	    beltwdg = new NKeyBelt(Coord.z, this);
+	    beltwdg = add(new NKeyBelt());
 	} else if(val.equals("f")) {
-	    beltwdg = new FKeyBelt(Coord.z, this);
+	    beltwdg = add(new FKeyBelt());
 	} else {
-	    beltwdg = new NKeyBelt(Coord.z, this);
+	    beltwdg = add(new NKeyBelt());
 	}
     }
     
@@ -664,12 +659,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		public void run(Console cons, String[] args) {
 		    if(args[1].equals("f")) {
 			beltwdg.destroy();
-			beltwdg = new FKeyBelt(Coord.z, GameUI.this);
+			beltwdg = add(new FKeyBelt());
 			Utils.setpref("belttype", "f");
 			resize(sz);
 		    } else if(args[1].equals("n")) {
 			beltwdg.destroy();
-			beltwdg = new NKeyBelt(Coord.z, GameUI.this);
+			beltwdg = add(new NKeyBelt());
 			Utils.setpref("belttype", "n");
 			resize(sz);
 		    }
@@ -677,7 +672,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    });
 	cmdmap.put("tool", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    gettype(args[1]).create(new Coord(200, 200), GameUI.this, new Object[0]);
+		    add(gettype(args[1]).create(GameUI.this, new Object[0]), 200, 200);
 		}
 	    });
     }

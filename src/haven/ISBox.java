@@ -38,13 +38,13 @@ public class ISBox extends Widget implements DTarget {
     
     @RName("isbox")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    Indir<Resource> res;
 	    if(args[0] instanceof String)
 		res = Resource.load((String)args[0]).indir();
 	    else
 		res = parent.ui.sess.getres((Integer)args[0]);
-	    return(new ISBox(c, parent, res, (Integer)args[1], (Integer)args[2], (Integer)args[3]));
+	    return(new ISBox(res, (Integer)args[1], (Integer)args[2], (Integer)args[3]));
 	}
     }
     
@@ -55,8 +55,8 @@ public class ISBox extends Widget implements DTarget {
 	    label = lf.renderf("%d/%d/%d", rem, av, bi);
     }
     
-    public ISBox(Coord c, Widget parent, Indir<Resource> res, int rem, int av, int bi) {
-        super(c, bg.sz(), parent);
+    public ISBox(Indir<Resource> res, int rem, int av, int bi) {
+        super(bg.sz());
         this.res = res;
         setlabel(rem, av, bi);
     }
