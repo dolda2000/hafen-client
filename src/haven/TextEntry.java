@@ -124,33 +124,6 @@ public class TextEntry extends SIWidget {
 	}
     }
 
-    /*
-    public void draw(GOut g) {
-	super.draw(g);
-	String dtext;
-	if(pw) {
-	    dtext = "";
-	    for(int i = 0; i < buf.line.length(); i++)
-		dtext += "*";
-	} else {
-	    dtext = buf.line;
-	}
-	drawbg(g);
-	if((tcache == null) || !tcache.text.equals(dtext))
-	    tcache = fnd.render(dtext);
-	int cx = tcache.advance(buf.point);
-	if(cx < sx) sx = cx;
-	if(cx > sx + (sz.x - 1)) sx = cx - (sz.x - 1);
-	g.image(tcache.tex(), new Coord(-sx, 0));
-	if(hasfocus && ((System.currentTimeMillis() % 1000) > 500)) {
-	    int lx = cx - sx + 1;
-	    g.chcolor(0, 0, 0, 255);
-	    g.line(new Coord(lx, 1), new Coord(lx, tcache.sz().y - 1), 1);
-	    g.chcolor();
-	}
-    }
-    */
-
     public TextEntry(int w, String deftext) {
 	super(new Coord(w, mext.getHeight()));
 	rsettext(deftext);
