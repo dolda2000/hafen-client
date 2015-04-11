@@ -883,7 +883,7 @@ public class CharWnd extends Window {
 		    }, wbox.btloff());
 		Frame.around(csk, Collections.singletonList(this.csk));
 	    }
-	    Tabs.Tab exps = lists.new Tab();
+	    Tabs.Tab exps = lists.add();
 	    {
 		this.exps = exps.add(new ExperienceList(lists.sz.x - wbox.bisz().x, 11) {
 			public void change(final Experience exp) {
