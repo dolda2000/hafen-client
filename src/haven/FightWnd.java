@@ -48,8 +48,8 @@ public class FightWnd extends Window {
 	static final int eh = 34;
 	private boolean loading = false;
 
-	public Actions(Coord c, Widget parent, int w, int h) {
-	    super(c, parent, w, h, eh);
+	public Actions(int w, int h) {
+	    super(w, h, eh);
 	}
 
 	protected Action listitem(int n) {return(acts.get(n));}
@@ -104,8 +104,8 @@ public class FightWnd extends Window {
 
     @RName("fmg")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new FightWnd(c, parent, (Integer)args[0]));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new FightWnd((Integer)args[0]));
 	}
     }
 
@@ -120,25 +120,25 @@ public class FightWnd extends Window {
 	FightWnd.this.wdgmsg("save", args.toArray(new Object[0]));
     }
 
-    public FightWnd(Coord c, Widget parent, int nsave) {
-	super(c, new Coord(475, 450), parent, "");
+    public FightWnd(int nsave) {
+	super(new Coord(475, 450), "");
 	this.nsave = nsave;
 	this.savesel = new CheckBox[nsave];
-	actlist = new Actions(new Coord(10, 10), this, 250, 12);
+	actlist = add(new Actions(250, 12), new Coord(10, 10));
 	int y = actlist.sz.y;
 	for(int i = nsave - 1; i >= 0; i--) {
 	    final int n = i;
-	    new Button(new Coord(270, y - Button.hs), 50, this, "Load") {
-		public void click() {
-		    FightWnd.this.wdgmsg("load", n);
-		}
-	    };
-	    new Button(new Coord(330, y - Button.hs), 50, this, "Save") {
-		public void click() {
-		    save(n);
-		}
-	    };
-	    savesel[n] = new CheckBox(new Coord(390, y - CheckBox.lbox.sz().y), this, "Use", true) {
+	    add(new Button(50, "Load") {
+		    public void click() {
+			FightWnd.this.wdgmsg("load", n);
+		    }
+		}, new Coord(270, y - Button.hs));
+	    add(new Button(50, "Save") {
+		    public void click() {
+			save(n);
+		    }
+		}, new Coord(330, y - Button.hs));
+	    savesel[n] = add(new CheckBox("Use", true) {
 		    public boolean mousedown(Coord c, int button) {
 			if(button == 1) {
 			    if(a)
@@ -148,7 +148,7 @@ public class FightWnd extends Window {
 			}
 			return(true);
 		    }
-		};
+		}, new Coord(390, y - CheckBox.lbox.sz().y));
 	    y -= Button.hs + 15;
 	}
     }

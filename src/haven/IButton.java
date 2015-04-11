@@ -37,25 +37,25 @@ public class IButton extends SSWidget {
 
     @RName("ibtn")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new IButton(c, parent, Resource.loadimg((String)args[0]), Resource.loadimg((String)args[1])));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new IButton(Resource.loadimg((String)args[0]), Resource.loadimg((String)args[1])));
 	}
     }
 
-    public IButton(Coord c, Widget parent, BufferedImage up, BufferedImage down, BufferedImage hover) {
-	super(c, Utils.imgsz(up), parent);
+    public IButton(BufferedImage up, BufferedImage down, BufferedImage hover) {
+	super(Utils.imgsz(up));
 	this.up = up;
 	this.down = down;
 	this.hover = hover;
 	render();
     }
 
-    public IButton(Coord c, Widget parent, BufferedImage up, BufferedImage down) {
-	this(c, parent, up, down, up);
+    public IButton(BufferedImage up, BufferedImage down) {
+	this(up, down, up);
     }
 
-    public IButton(Coord c, Widget parent, String base, String up, String down, String hover) {
-	this(c, parent, Resource.loadimg(base + up), Resource.loadimg(base + down), Resource.loadimg(base + (hover == null?up:hover)));
+    public IButton(String base, String up, String down, String hover) {
+	this(Resource.loadimg(base + up), Resource.loadimg(base + down), Resource.loadimg(base + (hover == null?up:hover)));
     }
 
     public void render() {

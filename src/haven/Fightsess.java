@@ -40,19 +40,26 @@ public class Fightsess extends Widget {
 
     @RName("fsess")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    int nact = (Integer)args[0];
-	    return(new Fightsess(parent, nact));
+	    return(new Fightsess(nact, parent.getparent(GameUI.class).fv));
 	}
     }
 
     @SuppressWarnings("unchecked")
-    public Fightsess(Widget parent, int nact) {
-	super(Coord.z, parent.sz, parent);
-	this.fv = getparent(GameUI.class).fv;
-	pcc = sz.div(2);
+    public Fightsess(int nact, Fightview fv) {
+	this.fv = fv;
 	pho = -40;
 	this.actions = (Indir<Resource>[])new Indir[nact];
+    }
+
+    public void presize() {
+	resize(parent.sz);
+	pcc = sz.div(2);
+    }
+
+    protected void added() {
+	presize();
     }
 
     private void updatepos() {

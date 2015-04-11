@@ -46,11 +46,11 @@ public class TextEntry extends SIWidget {
 
     @RName("text")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    if(args[0] instanceof Coord)
-		return(new TextEntry(c, (Coord)args[0], parent, (String)args[1]));
+		return(new TextEntry((Coord)args[0], (String)args[1]));
 	    else
-		return(new TextEntry(c, (Integer)args[0], parent, (String)args[1]));
+		return(new TextEntry((Integer)args[0], (String)args[1]));
 	}
     }
 
@@ -124,42 +124,15 @@ public class TextEntry extends SIWidget {
 	}
     }
 
-    /*
-    public void draw(GOut g) {
-	super.draw(g);
-	String dtext;
-	if(pw) {
-	    dtext = "";
-	    for(int i = 0; i < buf.line.length(); i++)
-		dtext += "*";
-	} else {
-	    dtext = buf.line;
-	}
-	drawbg(g);
-	if((tcache == null) || !tcache.text.equals(dtext))
-	    tcache = fnd.render(dtext);
-	int cx = tcache.advance(buf.point);
-	if(cx < sx) sx = cx;
-	if(cx > sx + (sz.x - 1)) sx = cx - (sz.x - 1);
-	g.image(tcache.tex(), new Coord(-sx, 0));
-	if(hasfocus && ((System.currentTimeMillis() % 1000) > 500)) {
-	    int lx = cx - sx + 1;
-	    g.chcolor(0, 0, 0, 255);
-	    g.line(new Coord(lx, 1), new Coord(lx, tcache.sz().y - 1), 1);
-	    g.chcolor();
-	}
-    }
-    */
-
-    public TextEntry(Coord c, int w, Widget parent, String deftext) {
-	super(c, new Coord(w, mext.getHeight()), parent);
+    public TextEntry(int w, String deftext) {
+	super(new Coord(w, mext.getHeight()));
 	rsettext(deftext);
 	setcanfocus(true);
     }
 
     @Deprecated
-    public TextEntry(Coord c, Coord sz, Widget parent, String deftext) {
-	this(c, sz.x, parent, deftext);
+    public TextEntry(Coord sz, String deftext) {
+	this(sz.x, deftext);
     }
 
     protected void changed() {
@@ -185,5 +158,9 @@ public class TextEntry extends SIWidget {
 	    buf.point = tcache.charat(c.x + sx);
 	}
 	return(true);
+    }
+
+    public void resize(int w) {
+	resize(w, sz.y);
     }
 }

@@ -36,15 +36,14 @@ public class CheckBox extends Widget {
 
     @RName("chk")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    CheckBox ret = new CheckBox(c, parent, (String)args[0]);
+	public Widget create(Widget parent, Object[] args) {
+	    CheckBox ret = new CheckBox((String)args[0]);
 	    ret.canactivate = true;
 	    return(ret);
 	}
     }
 
-    public CheckBox(Coord c, Widget parent, String lbl, boolean lg) {
-	super(c, Coord.z, parent);
+    public CheckBox(String lbl, boolean lg) {
 	this.lbl = Text.std.render(lbl, java.awt.Color.WHITE);
 	if(lg) {
 	    box = lbox; mark = lmark;
@@ -56,8 +55,8 @@ public class CheckBox extends Widget {
 	sz = new Coord(box.sz().x + 5 + this.lbl.sz().x, Math.max(box.sz().y, this.lbl.sz().y));
     }
 
-    public CheckBox(Coord c, Widget parent, String lbl) {
-	this(c, parent, lbl, false);
+    public CheckBox(String lbl) {
+	this(lbl, false);
     }
 
     public boolean mousedown(Coord c, int button) {

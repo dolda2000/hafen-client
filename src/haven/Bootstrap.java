@@ -69,7 +69,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 
     public Session run(UI ui) throws InterruptedException {
 	ui.setreceiver(this);
-	ui.bind(new LoginScreen(ui.root), 1);
+	ui.bind(ui.root.add(new LoginScreen()), 1);
 	String loginname = getpref("loginname", "");
 	boolean savepw = false;
 	byte[] token = null;

@@ -45,18 +45,22 @@ public class ChatUI extends Widget {
     public Channel sel = null;
     private final Selector chansel;
     public boolean expanded = false;
-    private Coord base;
+    private Coord base = Coord.z;
     private QuickLine qline = null;
     private final LinkedList<Notification> notifs = new LinkedList<Notification>();
     private UI.Grab qgrab;
 
-    public ChatUI(Coord c, int w, Widget parent) {
-	super(c.add(0, -50), new Coord(w, 50), parent);
-	chansel = new Selector(Coord.z, new Coord(selw, sz.y));
+    public ChatUI(int w) {
+	super(new Coord(w, 50));
+	chansel = add(new Selector(new Coord(selw, sz.y)), Coord.z);
 	chansel.hide();
-	base = c;
 	setfocusctl(true);
 	setcanfocus(false);
+    }
+
+    protected void added() {
+	base = this.c;
+	resize(this.sz);
     }
     
     public static class ChatAttribute extends Attribute {
@@ -157,13 +161,8 @@ public class ChatUI extends Widget {
 	    }
 	}
 
-	public Channel(Coord c, Coord sz, Widget parent) {
-	    super(c, sz, parent);
-	    sb = new Scrollbar(new Coord(sz.x, 0), ih(), this, 0, -ih());
-	}
-	
-	public Channel(Widget parent) {
-	    this(new Coord(selw, 0), parent.sz.sub(selw, 0), parent);
+	public Channel() {
+	    sb = adda(new Scrollbar(ih(), 0, -ih()), sz.x, 0, 1, 0);
 	}
 	
 	public void append(Message msg) {
@@ -536,8 +535,7 @@ public class ChatUI extends Widget {
     public static class Log extends Channel {
 	private final String name;
 	
-	public Log(Widget parent, String name) {
-	    super(parent);
+	public Log(String name) {
 	    this.name = name;
 	}
 	
@@ -550,10 +548,9 @@ public class ChatUI extends Widget {
 	private int hpos = 0;
 	private String hcurrent;
 	
-	public EntryChannel(Widget parent) {
-	    super(parent);
+	public EntryChannel() {
 	    setfocusctl(true);
-	    this.in = new TextEntry(new Coord(0, sz.y - 20), new Coord(sz.x, 20), this, "") {
+	    this.in = new TextEntry(0, "") {
 		    public void activate(String text) {
 			if(text.length() > 0)
 			    send(text);
@@ -582,6 +579,7 @@ public class ChatUI extends Widget {
 			}
 		    }
 		};
+	    add(this.in);
 	}
 	
 	public int ih() {
@@ -591,8 +589,8 @@ public class ChatUI extends Widget {
 	public void resize(Coord sz) {
 	    super.resize(sz);
 	    if(in != null) {
-		in.c = new Coord(0, this.sz.y - 20);
-		in.resize(new Coord(this.sz.x, 20));
+		in.c = new Coord(0, this.sz.y - in.sz.y);
+		in.resize(this.sz.x);
 	    }
 	}
 	
@@ -605,8 +603,7 @@ public class ChatUI extends Widget {
     public static class SimpleChat extends EntryChannel {
 	public final String name;
 
-	public SimpleChat(Widget parent, String name) {
-	    super(parent);
+	public SimpleChat(String name) {
 	    this.name = name;
 	}
 
@@ -679,8 +676,7 @@ public class ChatUI extends Widget {
 	    }
 	}
 
-	public MultiChat(Widget parent, String name, boolean notify) {
-	    super(parent);
+	public MultiChat(String name, boolean notify) {
 	    this.name = name;
 	    this.notify = notify;
 	}
@@ -726,8 +722,8 @@ public class ChatUI extends Widget {
     }
     
     public static class PartyChat extends MultiChat {
-	public PartyChat(Widget parent) {
-	    super(parent, "Party", true);
+	public PartyChat() {
+	    super("Party", true);
 	}
 
 	public void uimsg(String msg, Object... args) {
@@ -769,8 +765,7 @@ public class ChatUI extends Widget {
 	    }
 	}
 
-	public PrivChat(Widget parent, int other) {
-	    super(parent);
+	public PrivChat(int other) {
 	    this.other = other;
 	}
 	
@@ -806,37 +801,62 @@ public class ChatUI extends Widget {
     
     @RName("schan")
     public static class $SChan implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    String name = (String)args[0];
-	    return(new SimpleChat(parent, name));
+	    return(new SimpleChat(name));
 	}
     }
     @RName("mchat")
     public static class $MChat implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    String name = (String)args[0];
 	    boolean notify = ((Integer)args[1]) != 0;
-	    return(new MultiChat(parent, name, notify));
+	    return(new MultiChat(name, notify));
 	}
     }
     @RName("pchat")
     public static class $PChat implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new PartyChat(parent));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new PartyChat());
 	}
     }
     @RName("pmchat")
     public static class $PMChat implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    int other = (Integer)args[0];
-	    return(new PrivChat(parent, other));
+	    return(new PrivChat(other));
 	}
     }
 
-    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	return(gettype(type).create(Coord.z, this, cargs));
+    public void addchild(Widget child, Object... args) {
+	add(child);
     }
 
+    public <T extends Widget> T add(T w) {
+	if(w instanceof Channel) {
+	    Channel chan = (Channel)w;
+	    chan.c = new Coord(selw, 0);
+	    chan.resize(this.sz.sub(selw, 0));
+	    super.add(w);
+	    select(chan);
+	    chansel.add(chan);
+	    if(!expanded)
+		chan.hide();
+	    return(w);
+	} else {
+	    return(super.add(w));
+	}
+    }
+
+    public void cdestroy(Widget w) {
+	if(w instanceof Channel) {
+	    Channel chan = (Channel)w;
+	    if(chan == sel)
+		sel = null;
+	    chansel.rm(chan);
+	}
+    }
+    
     private class Selector extends Widget {
 	public final Text.Foundry nf = new Text.Foundry(Text.dfont, 10);
 	private final List<DarkChannel> chls = new ArrayList<DarkChannel>();
@@ -851,8 +871,8 @@ public class ChatUI extends Widget {
 	    }
 	}
 	
-	public Selector(Coord c, Coord sz) {
-	    super(c, sz, ChatUI.this);
+	public Selector(Coord sz) {
+	    super(sz);
 	}
 	
 	private void add(Channel chan) {
@@ -1015,25 +1035,6 @@ public class ChatUI extends Widget {
     public void notify(Channel chan, Channel.Message msg) {
 	synchronized(notifs) {
 	    notifs.addFirst(new Notification(chan, msg));
-	}
-    }
-    
-    public void newchild(Widget w) {
-	if(w instanceof Channel) {
-	    Channel chan = (Channel)w;
-	    select(chan);
-	    chansel.add(chan);
-	    if(!expanded)
-		chan.hide();
-	}
-    }
-
-    public void cdestroy(Widget w) {
-	if(w instanceof Channel) {
-	    Channel chan = (Channel)w;
-	    if(chan == sel)
-		sel = null;
-	    chansel.rm(chan);
 	}
     }
     

@@ -34,8 +34,8 @@ import java.awt.Graphics;
 public class SSWidget extends Widget {
     private TexIM surf;
 	
-    public SSWidget(Coord c, Coord sz, Widget parent) {
-	super(c, sz, parent);
+    public SSWidget(Coord sz) {
+	super(sz);
 	surf = new TexIM(sz);
     }
 	

@@ -36,12 +36,12 @@ public class Makewindow extends Widget {
     List<Spec> outputs = Collections.emptyList();
     static Coord boff = new Coord(7, 9);
     final int xoff = 40, yoff = 55;
-    public static final Text.Foundry nmf = new Text.Foundry(Text.serif, 20);
+    public static final Text.Foundry nmf = new Text.Foundry(Text.serif, 20).aa(true);
 
     @RName("make")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Makewindow(c, parent, (String)args[0]));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Makewindow((String)args[0]));
 	}
     }
     
@@ -91,15 +91,13 @@ public class Makewindow extends Widget {
 	}
     }
 
-    public Makewindow(Coord c, Widget parent, String rcpnm) {
-	super(c, Coord.z, parent);
-	Label nm = new Label(new Coord(0, 0), this, rcpnm, nmf);
-	nm.c = new Coord(sz.x - nm.sz.x, 0);
-	new Label(new Coord(0, 8), this, "Input:");
-	new Label(new Coord(0, 63), this, "Result:");
-	obtn = new Button(new Coord(265, 71), 85, this, "Craft");
-	cbtn = new Button(new Coord(360, 71), 85, this, "Craft All");
+    public Makewindow(String rcpnm) {
+	add(new Label("Input:"), new Coord(0, 8));
+	add(new Label("Result:"), new Coord(0, 63));
+	obtn = add(new Button(85, "Craft"), new Coord(265, 71));
+	cbtn = add(new Button(85, "Craft All"), new Coord(360, 71));
 	pack();
+	adda(new Label(rcpnm, nmf), sz.x, 0, 1, 0);
     }
 	
     public void uimsg(String msg, Object... args) {

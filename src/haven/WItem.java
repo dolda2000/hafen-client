@@ -39,8 +39,8 @@ public class WItem extends Widget implements DTarget {
     private Resource cspr = null;
     private Message csdt = Message.nil;
     
-    public WItem(Coord c, Widget parent, GItem item) {
-	super(c, sqsz, parent);
+    public WItem(GItem item) {
+	super(sqsz);
 	this.item = item;
     }
     

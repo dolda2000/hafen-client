@@ -157,8 +157,8 @@ public abstract class PView extends Widget {
 	}
     }
     
-    public PView(Coord c, Coord sz, Widget parent) {
-	super(c, sz, parent);
+    public PView(Coord sz) {
+	super(sz);
 	pstate = makeproj();
 	lm = new Light.Model();
 	lm.cc = GL2.GL_SEPARATE_SPECULAR_COLOR;

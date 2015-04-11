@@ -104,8 +104,8 @@ public class CharWnd extends Window {
 	    }
 	};
 
-	public FoodMeter(Coord c, Widget parent) {
-	    super(c, frame.sz(), parent);
+	public FoodMeter() {
+	    super(frame.sz());
 	}
 
 	private BufferedImage mktrol(List<El> els, Indir<Resource> trev) {
@@ -262,8 +262,8 @@ public class CharWnd extends Window {
 	    }
 	};
 
-	public Constipations(Coord c, Widget parent, int w, int h) {
-	    super(c, parent, w, h, El.h);
+	public Constipations(int w, int h) {
+	    super(w, h, El.h);
 	}
 
 	protected void drawbg(GOut g) {}
@@ -314,13 +314,13 @@ public class CharWnd extends Window {
 	private Text ct;
 	private int cbv, ccv;
 
-	private Attr(String attr, Coord c, Widget parent, Color bg) {
-	    super(c, new Coord(attrw, attrf.height() + 2), parent);
+	private Attr(Glob glob, String attr, Color bg) {
+	    super(new Coord(attrw, attrf.height() + 2));
 	    Resource res = Resource.load("gfx/hud/chr/" + attr).loadwait();
 	    this.nm = attr;
 	    this.img = res.layer(Resource.imgc).tex();
 	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
-	    this.attr = ui.sess.glob.cattr.get(attr);
+	    this.attr = glob.cattr.get(attr);
 	    this.bg = bg;
 	}
 
@@ -371,21 +371,21 @@ public class CharWnd extends Window {
 	private Text ct;
 	private int cbv, ccv;
 
-	private SAttr(String attr, Coord c, Widget parent, Color bg) {
-	    super(c, new Coord(attrw, attrf.height() + 2), parent);
+	private SAttr(Glob glob, String attr, Color bg) {
+	    super(new Coord(attrw, attrf.height() + 2));
 	    Resource res = Resource.load("gfx/hud/chr/" + attr).loadwait();
 	    this.nm = attr;
 	    this.img = res.layer(Resource.imgc).tex();
 	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
-	    this.attr = ui.sess.glob.cattr.get(attr);
+	    this.attr = glob.cattr.get(attr);
 	    this.bg = bg;
-	    new IButton(new Coord(sz.x - 19, (sz.y / 2) - 7), this, "gfx/hud/buttons/add", "u", "d", null) {
-		public void click() {adj(1);}
-	    };
-	    new IButton(new Coord(sz.x - 34, (sz.y / 2) - 7), this, "gfx/hud/buttons/sub", "u", "d", null) {
-		public void click() {adj(-1);}
-		public boolean mousewheel(Coord c, int a) {adj(-a); return(true);}
-	    };
+	    adda(new IButton("gfx/hud/buttons/add", "u", "d", null) {
+		    public void click() {adj(1);}
+		}, sz.x - 5, sz.y / 2, 1, 0.5);
+	    adda(new IButton("gfx/hud/buttons/sub", "u", "d", null) {
+		    public void click() {adj(-1);}
+		    public boolean mousewheel(Coord c, int a) {adj(-a); return(true);}
+		}, sz.x - 20, sz.y / 2, 1, 0.5);
 	}
 
 	public void tick(double dt) {
@@ -444,9 +444,12 @@ public class CharWnd extends Window {
     public static class RLabel extends Label {
 	private Coord oc;
 
-	public RLabel(Coord c, Widget parent, String text) {
-	    super(c, parent, text);
-	    oc = c;
+	public RLabel(Coord oc, String text) {
+	    super(text);
+	    this.oc = oc;
+	}
+
+	protected void added() {
 	    this.c = oc.add(-sz.x, 0);
 	}
 
@@ -459,8 +462,8 @@ public class CharWnd extends Window {
     public class ExpLabel extends RLabel {
 	private int cexp;
 
-	public ExpLabel(Coord c, Widget parent) {
-	    super(c, parent, "0");
+	public ExpLabel(Coord oc) {
+	    super(oc, "0");
 	}
 
 	public void draw(GOut g) {
@@ -478,16 +481,15 @@ public class CharWnd extends Window {
 	    public String text(Integer v) {return(Utils.thformat(v));}
 	};
 	private final Text.UText<?> twt = new Text.UText<Integer>(Text.std) {
-	    private Glob.CAttr intv = ui.sess.glob.cattr.get("int");
 	    public Integer value() {return(tw);}
-	    public String text(Integer v) {return(v + "/" + intv.comp);}
+	    public String text(Integer v) {return(v + "/" + ui.sess.glob.cattr.get("int").comp);}
 	};
 
-	private StudyInfo(Coord c, Coord sz, Widget parent, Widget study) {
-	    super(c, sz, parent);
+	private StudyInfo(Coord sz, Widget study) {
+	    super(sz);
 	    this.study = study;
-	    new Label(new Coord(2, 2), this, "Attention:");
-	    new Label(new Coord(2, sz.y - 32), this, "Learning points:");
+	    add(new Label("Attention:"), 2, 2);
+	    add(new Label("Learning points:"), 2, sz.y - 32);
 	}
 
 	private void upd() {
@@ -518,8 +520,8 @@ public class CharWnd extends Window {
     public static class LoadingTextBox extends RichTextBox {
 	private Indir<String> text = null;
 
-	public LoadingTextBox(Coord c, Coord sz, Widget parent, String text, RichText.Foundry fnd) {super(c, sz, parent, text, fnd);}
-	public LoadingTextBox(Coord c, Coord sz, Widget parent, String text, Object... attrs) {super(c, sz, parent, text, attrs);}
+	public LoadingTextBox(Coord sz, String text, RichText.Foundry fnd) {super(sz, text, fnd);}
+	public LoadingTextBox(Coord sz, String text, Object... attrs) {super(sz, text, attrs);}
 
 	public void settext(Indir<String> text) {
 	    this.text = text;
@@ -611,8 +613,8 @@ public class CharWnd extends Window {
 	    }
 	};
 
-	public SkillList(Coord c, int w, int h, Widget parent) {
-	    super(c, parent, w, h, attrf.height() + 2);
+	public SkillList(int w, int h) {
+	    super(w, h, attrf.height() + 2);
 	}
 
 	public void tick(double dt) {
@@ -678,8 +680,8 @@ public class CharWnd extends Window {
 	    }
 	};
 
-	public ExperienceList(Coord c, int w, int h, Widget parent) {
-	    super(c, parent, w, h, attrf.height() + 2);
+	public ExperienceList(int w, int h) {
+	    super(w, h, attrf.height() + 2);
 	}
 
 	public void tick(double dt) {
@@ -729,103 +731,103 @@ public class CharWnd extends Window {
 
     @RName("chr")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new CharWnd(c, parent));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new CharWnd(parent.ui.sess.glob));
 	}
     }
 
-    public CharWnd(Coord pc, Widget parent) {
-	super(pc, new Coord(300, 290), parent, "Character Sheet");
+    public CharWnd(Glob glob) {
+	super(new Coord(300, 290), "Character Sheet");
 
 	final Tabs tabs = new Tabs(new Coord(15, 10), Coord.z, this);
 	Tabs.Tab battr;
 	{ 
 	    int x = 5, y = 0;
 
-	    battr = tabs.new Tab();
-	    new Img(new Coord(x - 5, y), catf.render("Base Attributes").tex(), battr); y += 35;
+	    battr = tabs.add();
+	    battr.add(new Img(catf.render("Base Attributes").tex()), new Coord(x - 5, y)); y += 35;
 	    base = new ArrayList<Attr>();
 	    Attr aw;
-	    base.add(aw = new Attr("str", wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
-	    base.add(aw = new Attr("agi", wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
-	    base.add(aw = new Attr("int", wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
-	    base.add(aw = new Attr("con", wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
-	    base.add(aw = new Attr("prc", wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
-	    base.add(aw = new Attr("csm", wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
-	    base.add(aw = new Attr("dex", wbox.btloff().add(x, y), battr, every)); y += aw.sz.y;
-	    base.add(aw = new Attr("psy", wbox.btloff().add(x, y), battr, other)); y += aw.sz.y;
+	    base.add(aw = battr.add(new Attr(glob, "str", every), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    base.add(aw = battr.add(new Attr(glob, "agi", other), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    base.add(aw = battr.add(new Attr(glob, "int", every), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    base.add(aw = battr.add(new Attr(glob, "con", other), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    base.add(aw = battr.add(new Attr(glob, "prc", every), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    base.add(aw = battr.add(new Attr(glob, "csm", other), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    base.add(aw = battr.add(new Attr(glob, "dex", every), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    base.add(aw = battr.add(new Attr(glob, "psy", other), wbox.btloff().add(x, y))); y += aw.sz.y;
 	    Frame.around(battr, base);
 	    y += 24;
-	    new Img(new Coord(x - 5, y), catf.render("Food Event Points").tex(), battr); y += 35;
-	    feps = new FoodMeter(new Coord(x, y), battr);
+	    battr.add(new Img(catf.render("Food Event Points").tex()), new Coord(x - 5, y)); y += 35;
+	    feps = battr.add(new FoodMeter(), new Coord(x, y));
 
 	    x = 260; y = 0;
-	    new Img(new Coord(x - 5, y), catf.render("Food Satiations").tex(), battr); y += 35;
-	    cons = new Constipations(wbox.btloff().add(x, y), battr, attrw, base.size());
+	    battr.add(new Img(catf.render("Food Satiations").tex()), new Coord(x - 5, y)); y += 35;
+	    cons = battr.add(new Constipations(attrw, base.size()), wbox.btloff().add(x, y));
 	    Frame.around(battr, Collections.singletonList(cons));
 	}
 
 	{
 	    int x = 5, y = 0;
 
-	    sattr = tabs.new Tab();
-	    new Img(new Coord(x - 5, y), catf.render("Skill Values").tex(), sattr); y += 35;
+	    sattr = tabs.add();
+	    sattr.add(new Img(catf.render("Skill Values").tex()), new Coord(x - 5, y)); y += 35;
 	    skill = new ArrayList<SAttr>();
 	    SAttr aw;
-	    skill.add(aw = new SAttr("unarmed", wbox.btloff().add(x, y), sattr, every)); y += aw.sz.y;
-	    skill.add(aw = new SAttr("explore", wbox.btloff().add(x, y), sattr, other)); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "unarmed", every), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "explore", other), wbox.btloff().add(x, y))); y += aw.sz.y;
 	    Frame.around(sattr, skill);
 
 	    x = 260; y = 0;
-	    new Img(new Coord(x - 5, y), catf.render("Study Report").tex(), sattr); y += 35;
+	    sattr.add(new Img(catf.render("Study Report").tex()), new Coord(x - 5, y)); y += 35;
 	    y += 156;
 	    int rx = x + attrw - 10;
-	    new Frame(new Coord(x, y).add(wbox.btloff()), new Coord(attrw, 75), sattr);
-	    new Label(new Coord(x + 15, y + 10), sattr, "Learning points:");
-	    new ExpLabel(new Coord(rx, y + 10), sattr);
-	    new Label(new Coord(x + 15, y + 25), sattr, "Cost:");
-	    new RLabel(new Coord(rx, y + 25), sattr, "0") {
-		int cc;
+	    Frame.around(sattr, Area.sized(new Coord(x, y).add(wbox.btloff()), new Coord(attrw, 75)));
+	    sattr.add(new Label("Learning points:"), new Coord(x + 15, y + 10));
+	    sattr.add(new ExpLabel(new Coord(rx, y + 10)));
+	    sattr.add(new Label("Cost:"), new Coord(x + 15, y + 25));
+	    sattr.add(new RLabel(new Coord(rx, y + 25), "0") {
+		    int cc;
 
-		public void draw(GOut g) {
-		    if(cc > exp)
-			g.chcolor(debuff);
-		    super.draw(g);
-		    if(cc != scost)
-			settext(Utils.thformat(cc = scost));
-		}
-	    };
-	    new Button(new Coord(rx - 75, y + 50), 75, sattr, "Buy") {
-		public void click() {
-		    ArrayList<Object> args = new ArrayList<Object>();
-		    for(SAttr attr : skill) {
-			if(attr.tbv > attr.attr.base) {
-			    args.add(attr.attr.nm);
-			    args.add(attr.tbv);
-			}
+		    public void draw(GOut g) {
+			if(cc > exp)
+			    g.chcolor(debuff);
+			super.draw(g);
+			if(cc != scost)
+			    settext(Utils.thformat(cc = scost));
 		    }
-		    CharWnd.this.wdgmsg("sattr", args.toArray(new Object[0]));
-		}
-	    };
+		});
+	    sattr.add(new Button(75, "Buy") {
+		    public void click() {
+			ArrayList<Object> args = new ArrayList<Object>();
+			for(SAttr attr : skill) {
+			    if(attr.tbv > attr.attr.base) {
+				args.add(attr.attr.nm);
+				args.add(attr.tbv);
+			    }
+			}
+			CharWnd.this.wdgmsg("sattr", args.toArray(new Object[0]));
+		    }
+		}, new Coord(rx - 75, y + 50));
 	}
 
 	Tabs.Tab skills;
 	{
 	    int x = 5, y = 0;
 
-	    skills = tabs.new Tab();
-	    new Img(new Coord(x - 5, y), catf.render("Lore & Skills").tex(), skills); y += 35;
+	    skills = tabs.add();
+	    skills.add(new Img(catf.render("Lore & Skills").tex()), new Coord(x - 5, y)); y += 35;
 	    RichText.Foundry ifnd = new RichText.Foundry(java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, 9).aa(true);
-	    final LoadingTextBox info = new LoadingTextBox(new Coord(x, y).add(wbox.btloff()), new Coord(attrw, 260), skills, "", ifnd);
+	    final LoadingTextBox info = skills.add(new LoadingTextBox(new Coord(attrw, 260), "", ifnd), new Coord(x, y).add(wbox.btloff()));
 	    info.bg = new Color(0, 0, 0, 128);
 	    Frame.around(skills, Collections.singletonList(info));
 
 	    x = 260; y = 0;
-	    new Img(new Coord(x - 5, y), catf.render("Entries").tex(), skills); y += 35;
+	    skills.add(new Img(catf.render("Entries").tex()), new Coord(x - 5, y)); y += 35;
 	    Tabs lists = new Tabs(new Coord(x, y), new Coord(attrw + wbox.bisz().x, 0), skills);
-	    Tabs.Tab nsk = lists.new Tab();
+	    Tabs.Tab nsk = lists.add();
 	    {
-		this.nsk = new SkillList(wbox.btloff(), lists.sz.x - wbox.bisz().x, 7, nsk) {
+		this.nsk = nsk.add(new SkillList(lists.sz.x - wbox.bisz().x, 7) {
 			public void change(final Skill sk) {
 			    Skill p = sel;
 			    super.change(sk);
@@ -836,38 +838,38 @@ public class CharWnd extends Window {
 			    else if(p != null)
 				info.settext("");
 			}
-		    };
+		    }, wbox.btloff());
 		y = Frame.around(nsk, Collections.singletonList(this.nsk)).sz.y + 5;
 		int rx = attrw - 10;
-		new Frame(new Coord(0, y).add(wbox.btloff()), new Coord(attrw, 69), nsk);
-		new Label(new Coord(15, y + 10), nsk, "Learning points:");
-		new ExpLabel(new Coord(rx, y + 10), nsk);
-		new Label(new Coord(15, y + 25), nsk, "Cost:");
-		new RLabel(new Coord(rx, y + 25), nsk, "N/A") {
-		    Integer cc = null;
+		Frame.around(nsk, Area.sized(new Coord(0, y).add(wbox.btloff()), new Coord(attrw, 69)));
+		nsk.add(new Label("Learning points:"), new Coord(15, y + 10));
+		nsk.add(new ExpLabel(new Coord(rx, y + 10)));
+		nsk.add(new Label("Cost:"), new Coord(15, y + 25));
+		nsk.add(new RLabel(new Coord(rx, y + 25), "N/A") {
+			Integer cc = null;
 
-		    public void draw(GOut g) {
-			if((cc != null) && (cc > exp))
-			    g.chcolor(debuff);
-			super.draw(g);
-			if((CharWnd.this.nsk.sel == null) && (cc != null)) {
-			    settext("N/A");
-			    cc = null;
-			} else if((CharWnd.this.nsk.sel != null) && (cc == null)) {
-			    settext(Utils.thformat(cc = CharWnd.this.nsk.sel.cost));
+			public void draw(GOut g) {
+			    if((cc != null) && (cc > exp))
+				g.chcolor(debuff);
+			    super.draw(g);
+			    if((CharWnd.this.nsk.sel == null) && (cc != null)) {
+				settext("N/A");
+				cc = null;
+			    } else if((CharWnd.this.nsk.sel != null) && (cc == null)) {
+				settext(Utils.thformat(cc = CharWnd.this.nsk.sel.cost));
+			    }
 			}
-		    }
-		};
-		new Button(new Coord(rx - 75, y + 44), 75, nsk, "Buy") {
-		    public void click() {
-			if(CharWnd.this.nsk.sel != null)
-			    CharWnd.this.wdgmsg("buy", CharWnd.this.nsk.sel.nm);
-		    }
-		};
+		    });
+		nsk.add(new Button(75, "Buy") {
+			public void click() {
+			    if(CharWnd.this.nsk.sel != null)
+				CharWnd.this.wdgmsg("buy", CharWnd.this.nsk.sel.nm);
+			}
+		    }, new Coord(rx - 75, y + 44));
 	    }
-	    Tabs.Tab csk = lists.new Tab();
+	    Tabs.Tab csk = lists.add();
 	    {
-		this.csk = new SkillList(wbox.btloff(), lists.sz.x - wbox.bisz().x, 11, csk) {
+		this.csk = csk.add(new SkillList(lists.sz.x - wbox.bisz().x, 11) {
 			public void change(final Skill sk) {
 			    Skill p = sel;
 			    super.change(sk);
@@ -878,12 +880,12 @@ public class CharWnd extends Window {
 			    else if(p != null)
 				info.settext("");
 			}
-		    };
+		    }, wbox.btloff());
 		Frame.around(csk, Collections.singletonList(this.csk));
 	    }
 	    Tabs.Tab exps = lists.new Tab();
 	    {
-		this.exps = new ExperienceList(wbox.btloff(), lists.sz.x - wbox.bisz().x, 11, exps) {
+		this.exps = exps.add(new ExperienceList(lists.sz.x - wbox.bisz().x, 11) {
 			public void change(final Experience exp) {
 			    Experience p = sel;
 			    super.change(exp);
@@ -894,16 +896,16 @@ public class CharWnd extends Window {
 			    else if(p != null)
 				info.settext("");
 			}
-		    };
+		    }, wbox.btloff());
 		Frame.around(exps, Collections.singletonList(this.exps));
 	    }
 	    lists.pack();
 	    int bw = (lists.sz.x + 5) / 3;
 	    x = lists.c.x;
 	    y = lists.c.y + lists.sz.y + 5;
-	    lists.new TabButton(new Coord(x, y), bw - 5, "Available", nsk);
-	    lists.new TabButton(new Coord(x + bw, y), bw - 5, "Current", csk);
-	    lists.new TabButton(new Coord(x + bw * 2, y), bw - 5, "Lore", exps);
+	    skills.add(lists.new TabButton(bw - 5, "Available", nsk), new Coord(x, y));
+	    skills.add(lists.new TabButton(bw - 5, "Current", csk), new Coord(x + bw, y));
+	    skills.add(lists.new TabButton(bw - 5, "Lore", exps), new Coord(x + bw * 2, y));
 	}
 
 	{
@@ -911,8 +913,8 @@ public class CharWnd extends Window {
 
 	    class TB extends IButton {
 		final Tabs.Tab tab;
-		TB(Coord c, String nm, Tabs.Tab tab) {
-		    super(c, CharWnd.this, Resource.loadimg("gfx/hud/chr/" + nm + "u"), Resource.loadimg("gfx/hud/chr/" + nm + "d"));
+		TB(String nm, Tabs.Tab tab) {
+		    super(Resource.loadimg("gfx/hud/chr/" + nm + "u"), Resource.loadimg("gfx/hud/chr/" + nm + "d"));
 		    this.tab = tab;
 		}
 
@@ -922,27 +924,26 @@ public class CharWnd extends Window {
 	    }
 
 	    tabs.pack();
-	    prev = new TB(new Coord(tabs.c.x + 5, tabs.c.y + tabs.sz.y + 10), "battr", battr);
+	    prev = add(new TB("battr", battr), new Coord(tabs.c.x + 5, tabs.c.y + tabs.sz.y + 10));
 	    prev.settip("Base Attributes");
-	    prev = new TB(new Coord(prev.c.x + prev.sz.x + 10, prev.c.y), "sattr", sattr);
+	    prev = add(new TB("sattr", sattr), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
 	    prev.settip("Skill Values");
-	    prev = new TB(new Coord(prev.c.x + prev.sz.x + 10, prev.c.y), "skill", skills);
+	    prev = add(new TB("skill", skills), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
 	    prev.settip("Lore & Skills");
 	}
 
 	resize(contentsz().add(15, 10));
     }
 
-    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	String place = (pargs[0] instanceof String)?(((String)pargs[0]).intern()):null;
+    public void addchild(Widget child, Object... args) {
+	String place = (args[0] instanceof String)?(((String)args[0]).intern()):null;
 	if(place == "study") {
-	    Widget ret = gettype(type).create(new Coord(260, 35).add(wbox.btloff()), sattr, cargs);
-	    Frame.around(sattr, Collections.singletonList(ret));
-	    Widget inf = new StudyInfo(new Coord(260 + 150, ret.c.y).add(wbox.btloff().x, 0), new Coord(attrw - 150, ret.sz.y), sattr, ret);
+	    sattr.add(child, new Coord(260, 35).add(wbox.btloff()));
+	    Frame.around(sattr, Collections.singletonList(child));
+	    Widget inf = sattr.add(new StudyInfo(new Coord(attrw - 150, child.sz.y), child), new Coord(260 + 150, child.c.y).add(wbox.btloff().x, 0));
 	    Frame.around(sattr, Collections.singletonList(inf));
-	    return(ret);
 	} else {
-	    return(super.makechild(type, pargs, cargs));
+	    super.addchild(child, args);
 	}
     }
 

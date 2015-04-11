@@ -36,8 +36,8 @@ public class Inventory extends Widget implements DTarget {
 
     @RName("inv")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Inventory(c, (Coord)args[0], parent));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Inventory((Coord)args[0]));
 	}
     }
 
@@ -51,8 +51,8 @@ public class Inventory extends Widget implements DTarget {
 	super.draw(g);
     }
 	
-    public Inventory(Coord c, Coord sz, Widget parent) {
-	super(c, invsq.sz().add(new Coord(-1, -1)).mul(sz).add(new Coord(1, 1)), parent);
+    public Inventory(Coord sz) {
+	super(invsq.sz().add(new Coord(-1, -1)).mul(sz).add(new Coord(1, 1)));
 	isz = sz;
     }
     
@@ -69,14 +69,13 @@ public class Inventory extends Widget implements DTarget {
 	return(true);
     }
     
-    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	Coord c = (Coord)pargs[0];
-	Widget ret = gettype(type).create(c, this, cargs);
-	if(ret instanceof GItem) {
-	    GItem i = (GItem)ret;
-	    wmap.put(i, new WItem(c.mul(sqsz).add(1, 1), this, i));
+    public void addchild(Widget child, Object... args) {
+	add(child);
+	Coord c = (Coord)args[0];
+	if(child instanceof GItem) {
+	    GItem i = (GItem)child;
+	    wmap.put(i, add(new WItem(i), c.mul(sqsz).add(1, 1)));
 	}
-	return(ret);
     }
     
     public void cdestroy(Widget w) {

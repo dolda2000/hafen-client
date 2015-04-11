@@ -49,13 +49,13 @@ public class Charlist extends Widget {
     
     @RName("charlist")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Charlist(c, parent, (Integer)args[0]));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Charlist((Integer)args[0]));
 	}
     }
 
-    public Charlist(Coord c, Widget parent, int height) {
-	super(c, new Coord(bg.sz().x, 40 + (bg.sz().y * height) + (margin * (height - 1))), parent);
+    public Charlist(int height) {
+	super(new Coord(bg.sz().x, 40 + (bg.sz().y * height) + (margin * (height - 1))));
 	this.height = height;
 	y = 0;
     }
@@ -120,7 +120,7 @@ public class Charlist extends Widget {
 		resl.add(ui.sess.getres((Integer)args[i]));
 	    // c.ava = new Avaview(new Coord(0, 0), this, resl);
 	    // c.ava.hide();
-	    c.plb = new Button(new Coord(0, 0), 100, this, "Play");
+	    c.plb = add(new Button(100, "Play"));
 	    c.plb.hide();
 	    synchronized(chars) {
 		chars.add(c);

@@ -43,8 +43,8 @@ public class RadioGroup {
     }
 
     public class RadioButton extends CheckBox {
-	RadioButton(Coord c, Widget parent, String lbl) {
-	    super(c, parent, lbl);
+	RadioButton(String lbl) {
+	    super(lbl);
 	}
 
 	public boolean mousedown(Coord c, int button) {
@@ -62,7 +62,8 @@ public class RadioGroup {
     }
 
     public RadioButton add(String lbl, Coord c) {
-	RadioButton rb = new RadioButton(c, parent, lbl);
+	RadioButton rb = new RadioButton(lbl);
+	parent.add(rb, c);
 	btns.add(rb);
 	map.put(lbl, rb);
 	rmap.put(rb, lbl);

@@ -55,51 +55,53 @@ public class Widget {
 
     @RName("cnt")
     public static class $Cont implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Widget(c, (Coord)args[0], parent));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Widget((Coord)args[0]));
 	}
     }
     @RName("ccnt")
     public static class $CCont implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    Widget ret = new Widget(c, (Coord)args[0], parent) {
+	public Widget create(Widget parent, Object[] args) {
+	    Widget ret = new Widget((Coord)args[0]) {
 		    public void presize() {
 			c = parent.sz.div(2).sub(sz.div(2));
 		    }
+
+		    protected void added() {
+			presize();
+		    }
 		};
-	    ret.presize();
 	    return(ret);
 	}
     }
     @RName("fcnt")
     public static class $FCont implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    Widget ret = new Widget(c, parent.sz, parent) {
+	public Widget create(Widget parent, Object[] args) {
+	    Widget ret = new Widget(parent.sz) {
 		    Collection<Widget> fill = new ArrayList<Widget>();
 		    public void presize() {
 			resize(parent.sz);
 			for(Widget ch : fill)
 			    ch.resize(sz);
 		    }
-		    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-			if((pargs[0] instanceof String) && pargs[0].equals("fill")) {
-			    Widget ret = gettype(type).create(Coord.z, this, cargs);
-			    ret.resize(sz);
-			    fill.add(ret);
-			    return(ret);
+		    public void added() {presize();}
+		    public void addchild(Widget child, Object... args) {
+			if((args[0] instanceof String) && args[0].equals("fill")) {
+			    child.resize(sz);
+			    fill.add(child);
+			    add(child, Coord.z);
 			} else {
-			    return(super.makechild(type, pargs, cargs));
+			    super.addchild(child, args);
 			}
 		    }
 		};
-	    ret.presize();
 	    return(ret);
 	}
     }
 
     @Resource.PublishedCode(name = "wdg", instancer = FactMaker.class)
     public interface Factory {
-	public Widget create(Coord c, Widget parent, Object[] par);
+	public Widget create(Widget parent, Object[] par);
     }
 
     public static class FactMaker implements Resource.PublishedCode.Instancer {
@@ -107,13 +109,13 @@ public class Widget {
 	    if(Factory.class.isAssignableFrom(cl))
 		return(cl.asSubclass(Factory.class).newInstance());
 	    try {
-		final Method mkm = cl.getDeclaredMethod("mkwidget", Coord.class, Widget.class, Object[].class);
+		final Method mkm = cl.getDeclaredMethod("mkwidget", Widget.class, Object[].class);
 		int mod = mkm.getModifiers();
 		if(Widget.class.isAssignableFrom(mkm.getReturnType()) && ((mod & Modifier.STATIC) != 0) && ((mod & Modifier.PUBLIC) != 0)) {
 		    return(new Factory() {
-			    public Widget create(Coord c, Widget parent, Object[] args) {
+			    public Widget create(Widget parent, Object[] args) {
 				try {
-				    return((Widget)mkm.invoke(null, c, parent, args));
+				    return((Widget)mkm.invoke(null, parent, args));
 				} catch(Exception e) {
 				    if(e instanceof RuntimeException) throw((RuntimeException)e);
 				    throw(new RuntimeException(e));
@@ -138,7 +140,7 @@ public class Widget {
 	    inited = true;
 	}
     }
-	
+
     public static Factory gettype2(String name) throws InterruptedException {
 	if(name.indexOf('/') < 0) {
 	    synchronized(types) {
@@ -160,7 +162,7 @@ public class Widget {
 	    }
 	}
     }
-    
+
     public static Factory gettype(String name) {
 	long start = System.currentTimeMillis();
 	Factory f;
@@ -175,24 +177,67 @@ public class Widget {
 	    throw(new RuntimeException("No such widget type: " + name));
 	return(f);
     }
-    
+
+    public Widget(Coord sz) {
+	this.c = Coord.z;
+	this.sz = sz;
+    }
+
+    public Widget() {
+	this(Coord.z);
+    }
+
     public Widget(UI ui, Coord c, Coord sz) {
 	this.ui = ui;
 	this.c = c;
 	this.sz = sz;
     }
-	
-    public Widget(Coord c, Coord sz, Widget parent) {
-	synchronized(parent.ui) {
-	    this.ui = parent.ui;
-	    this.c = c;
-	    this.sz = sz;
-	    this.parent = parent;
-	    link();
-	    parent.newchild(this);
+
+    private void attach(UI ui) {
+	this.ui = ui;
+	for(Widget ch = child; ch != null; ch = ch.next)
+	    ch.attach(ui);
+    }
+
+    private <T extends Widget> T add0(T child) {
+	((Widget)child).attach(this.ui);
+	child.parent = this;
+	child.link();
+	child.added();
+	if(((Widget)child).canfocus)
+	    newfocusable(child);
+	return(child);
+    }
+
+    public <T extends Widget> T add(T child) {
+	if(ui != null) {
+	    synchronized(ui) {
+		return(add0(child));
+	    }
+	} else {
+	    return(add0(child));
 	}
     }
-    
+
+    public <T extends Widget> T add(T child, Coord c) {
+	child.c = c;
+	return(add(child));
+    }
+
+    public <T extends Widget> T add(T child, int x, int y) {
+	return(add(child, new Coord(x, y)));
+    }
+
+    public <T extends Widget> T adda(T child, int x, int y, double ax, double ay) {
+	return(add(child, x - (int)(child.sz.x * ax), y - (int)(child.sz.y * ay)));
+    }
+
+    public <T extends Widget> T adda(T child, Coord c, double ax, double ay) {
+	return(adda(child, c.x, c.y, ax, ay));
+    }
+
+    protected void added() {}
+
     private Coord relpos(String spec, Object[] args, int off) {
 	int i = 0;
 	Stack<Object> st = new Stack<Object>();
@@ -285,56 +330,51 @@ public class Widget {
 	return((Coord)st.pop());
     }
 
-    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	Coord c;
-	if(pargs[0] instanceof Coord) {
-	    c = (Coord)pargs[0];
-	} else if(pargs[0] instanceof String) {
-	    c = relpos((String)pargs[0], pargs, 1);
+    public void addchild(Widget child, Object... args) {
+	if(args[0] instanceof Coord) {
+	    add(child, (Coord)args[0]);
+	} else if(args[0] instanceof String) {
+	    add(child, relpos((String)args[0], args, 1));
 	} else {
 	    throw(new RuntimeException("Unknown child widget creation specification."));
 	}
-	return(gettype(type).create(c, this, cargs));
-    }
-	
-    public void newchild(Widget w) {
     }
 
+    public Widget makechild(Factory type, Object[] pargs, Object[] cargs) {
+	Widget child = type.create(this, cargs);
+	addchild(child, pargs);
+	return(child);
+    }
+	
     public void link() {
-	synchronized(ui) {
-	    if(parent.lchild != null)
-		parent.lchild.next = this;
-	    if(parent.child == null)
-		parent.child = this;
-	    this.prev = parent.lchild;
-	    parent.lchild = this;
-	}
+	if(parent.lchild != null)
+	    parent.lchild.next = this;
+	if(parent.child == null)
+	    parent.child = this;
+	this.prev = parent.lchild;
+	parent.lchild = this;
     }
     
     public void linkfirst() {
-	synchronized(ui) {
-	    if(parent.child != null)
-		parent.child.prev = this;
-	    if(parent.lchild == null)
-		parent.lchild = this;
-	    this.next = parent.child;
-	    parent.child = this;
-	}
+	if(parent.child != null)
+	    parent.child.prev = this;
+	if(parent.lchild == null)
+	    parent.lchild = this;
+	this.next = parent.child;
+	parent.child = this;
     }
 	
     public void unlink() {
-	synchronized(ui) {
-	    if(next != null)
-		next.prev = prev;
-	    if(prev != null)
-		prev.next = next;
-	    if(parent.child == this)
-		parent.child = next;
-	    if(parent.lchild == this)
-		parent.lchild = prev;
-	    next = null;
-	    prev = null;
-	}
+	if(next != null)
+	    next.prev = prev;
+	if(prev != null)
+	    prev.next = next;
+	if(parent.child == this)
+	    parent.child = next;
+	if(parent.lchild == this)
+	    parent.lchild = prev;
+	next = null;
+	prev = null;
     }
 	
     public Coord xlate(Coord c, boolean in) {
@@ -760,6 +800,10 @@ public class Widget {
 	    parent.cresize(this);
     }
 
+    public void resize(int x, int y) {
+	resize(new Coord(x, y));
+    }
+
     public void cresize(Widget ch) {
     }
     
@@ -923,13 +967,13 @@ public class Widget {
 
     public void hide() {
 	visible = false;
-	if(canfocus)
+	if(canfocus && (parent != null))
 	    parent.delfocusable(this);
     }
 
     public void show() {
 	visible = true;
-	if(canfocus)
+	if(canfocus && (parent != null))
 	    parent.newfocusable(this);
     }
 
