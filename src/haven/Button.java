@@ -62,21 +62,21 @@ public class Button extends SSWidget {
 	return(ret);
     }
         
-    public Button(Integer w, String text) {
+    public Button(int w, String text) {
 	super(new Coord(w, 19));
 	this.text = tf.render(text);
 	this.cont = this.text.img;
 	render();
     }
         
-    public Button(Integer w, Text text) {
+    public Button(int w, Text text) {
 	super(new Coord(w, 19));
 	this.text = text;
 	this.cont = text.img;
 	render();
     }
 	
-    public Button(Integer w, BufferedImage cont) {
+    public Button(int w, BufferedImage cont) {
 	super(new Coord(w, 19));
 	this.cont = cont;
 	render();
