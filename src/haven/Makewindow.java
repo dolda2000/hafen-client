@@ -92,7 +92,6 @@ public class Makewindow extends Widget {
     }
 
     public Makewindow(String rcpnm) {
-	super();
 	add(new Label("Input:"), new Coord(0, 8));
 	add(new Label("Result:"), new Coord(0, 63));
 	obtn = add(new Button(85, "Craft"), new Coord(265, 71));

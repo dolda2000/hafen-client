@@ -44,7 +44,6 @@ public class CheckBox extends Widget {
     }
 
     public CheckBox(String lbl, boolean lg) {
-	super(Coord.z);
 	this.lbl = Text.std.render(lbl, java.awt.Color.WHITE);
 	if(lg) {
 	    box = lbox; mark = lmark;
