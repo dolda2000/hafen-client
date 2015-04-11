@@ -186,7 +186,6 @@ public class FlowerMenu extends Widget {
 	    add(opts[i] = new Petal(options[i]));
 	    opts[i].num = i;
 	}
-	organize(opts);
     }
 
     protected void added() {
@@ -194,6 +193,7 @@ public class FlowerMenu extends Widget {
 	    c = parent.ui.lcc;
 	mg = ui.grabmouse(this);
 	kg = ui.grabkeys(this);
+	organize(opts);
 	new Opening();
     }
 
