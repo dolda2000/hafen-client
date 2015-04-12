@@ -52,7 +52,7 @@ public class MapMod extends Window implements MapView.Grabber {
         walkmod = false;
         cbox = add(new CheckBox("Walk drawing"), Coord.z);
 	cbox.canactivate = true;
-        add(new Button(40, "Change"), asz.add(-50, -30));
+        btn = add(new Button(40, "Change"), asz.add(-50, -30));
         text = add(new Label(String.format(fmt, 0, 0)), Coord.z);
         tilenm = add(new TextEntry(50, ""), new Coord(0, 40));
         tilenm.canactivate = true;
