@@ -240,22 +240,6 @@ public class RenderList {
 	}
     }
 
-    static int dumpseq = 0;
-    void dump() {
-	try {
-	    java.io.Writer out = new java.io.FileWriter("/tmp/rldump-" + dumpseq++);
-	    try {
-		for(int i = 0; (i < cur) && list[i].d; i++) {
-		    out.write(list[i].r + "\n");
-		}
-	    } finally {
-		out.close();
-	    }
-	} catch(java.io.IOException e) {
-	    throw(new RuntimeException(e));
-	}
-    }
-
     public int drawn, instanced, instancified;
     private final List<GLState.Buffer> instbuf = new ArrayList<GLState.Buffer>();
     public void render(GOut g) {
