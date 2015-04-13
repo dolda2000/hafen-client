@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 
 public class RenderList {
-    public static final int INSTANCE_THRESHOLD = 2;
+    public static final int INSTANCE_THRESHOLD = 10;
     public final GLConfig cfg;
     private Slot[] list = new Slot[100];
     private int cur = 0;
