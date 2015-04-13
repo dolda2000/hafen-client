@@ -149,6 +149,10 @@ public interface ShaderMacro {
 		super.dispose();
 		umap.clear();
 		amap.clear();
+		for(GLBuffer bo : curinst) {
+		    if(bo != null)
+			bo.dispose();
+		}
 	    }
 	}
 

@@ -562,14 +562,12 @@ public abstract class GLState {
 
 	public void bindiarr(GOut g, List<Buffer> instances) {
 	    for(int i = 0; i < prog.autoinst.length; i++)
-		prog.curinst[i] = prog.autoinst[i].bindiarr(g, instances);
+		prog.curinst[i] = prog.autoinst[i].bindiarr(g, instances, prog.curinst[i]);
 	}
 
 	public void unbindiarr(GOut g) {
-	    for(int i = 0; i < prog.autoinst.length; i++) {
+	    for(int i = 0; i < prog.autoinst.length; i++)
 		prog.autoinst[i].unbindiarr(g, prog.curinst[i]);
-		prog.curinst[i] = null;
-	    }
 	}
 	
 	public static class ApplyException extends RuntimeException {
