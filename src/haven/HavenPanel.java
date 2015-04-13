@@ -322,6 +322,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		try {
 		    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "MV pos: %s (%s)", gi.map.getcc(), gi.map.camera);
 		} catch(Loading e) {}
+		if(gi.map.rls != null)
+		    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Rendered: %,d+%,d(%,d)", gi.map.rls.drawn, gi.map.rls.instanced, gi.map.rls.instancified);
 	    }
 	    if(Resource.qdepth() > 0)
 		FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "RQ depth: %d (%d)", Resource.qdepth(), Resource.numloaded());
