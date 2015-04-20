@@ -75,4 +75,13 @@ public class Debug {
 	    }
 	}
     }
+
+    static int dumpseq = 0;
+    public static PrintWriter getdump() {
+	try {
+	    return(new java.io.PrintWriter(new java.io.FileWriter("/tmp/dbdump-" + dumpseq++)));
+	} catch(java.io.IOException e) {
+	    throw(new RuntimeException(e));
+	}
+    }
 }
