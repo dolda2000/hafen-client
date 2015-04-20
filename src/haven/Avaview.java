@@ -41,13 +41,13 @@ public class Avaview extends PView {
 	
     @RName("av")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Avaview(c, dasz, parent, (Integer)args[0], "avacam"));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Avaview(dasz, (Integer)args[0], "avacam"));
 	}
     }
 	
-    public Avaview(Coord c, Coord sz, Widget parent, long avagob, String camnm) {
-	super(c, sz, parent);
+    public Avaview(Coord sz, long avagob, String camnm) {
+	super(sz);
 	this.camnm = camnm;
 	this.avagob = avagob;
     }

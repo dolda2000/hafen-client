@@ -36,18 +36,18 @@ public class GiveButton extends Widget {
     
     @RName("give")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new GiveButton(c, parent, (Integer)args[0]));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new GiveButton((Integer)args[0]));
 	}
     }
 	
-    public GiveButton(Coord c, Widget parent, int state, Coord sz) {
-	super(c, sz, parent);
+    public GiveButton(int state, Coord sz) {
+	super(sz);
 	this.state = state;
     }
     
-    public GiveButton(Coord c, Widget parent, int state) {
-	this(c, parent, state, bg.sz());
+    public GiveButton(int state) {
+	this(state, bg.sz());
     }
     
     public void draw(GOut g) {

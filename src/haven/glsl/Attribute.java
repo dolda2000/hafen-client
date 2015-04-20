@@ -64,7 +64,7 @@ public class Attribute extends Variable.Global {
 	public AutoInstanced(Type type, String infix) {super(type, infix);}
 	public AutoInstanced(Type type) {super(type);}
 
-	public abstract GLBuffer bindiarr(GOut g, List<Buffer> inst);
+	public abstract GLBuffer bindiarr(GOut g, List<Buffer> inst, GLBuffer prevbuf);
 	public abstract void unbindiarr(GOut g, GLBuffer buf);
     }
 }

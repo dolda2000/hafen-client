@@ -36,11 +36,11 @@ public class Label extends Widget {
 	
     @RName("lbl")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    if(args.length > 1)
-		return(new Label(c, parent, (String)args[0], (Integer)args[1]));
+		return(new Label((String)args[0], (Integer)args[1]));
 	    else
-		return(new Label(c, parent, (String)args[0]));
+		return(new Label((String)args[0]));
 	}
     }
 	
@@ -48,26 +48,26 @@ public class Label extends Widget {
 	g.image(text.tex(), Coord.z);
     }
 	
-    public Label(Coord c, Widget parent, String text, int w, Text.Foundry f) {
-	super(c, Coord.z, parent);
+    public Label(String text, int w, Text.Foundry f) {
+	super(Coord.z);
 	this.f = f;
 	this.text = f.renderwrap(texts = text, this.col, w);
 	sz = this.text.sz();
     }
 
-    public Label(Coord c, Widget parent, String text, Text.Foundry f) {
-	super(c, Coord.z, parent);
+    public Label(String text, Text.Foundry f) {
+	super(Coord.z);
 	this.f = f;
 	this.text = f.render(texts = text, this.col);
 	sz = this.text.sz();
     }
 
-    public Label(Coord c, Widget parent, String text, int w) {
-	this(c, parent, text, w, Text.std);
+    public Label(String text, int w) {
+	this(text, w, Text.std);
     }
 	
-    public Label(Coord c, Widget parent, String text) {
-	this(c, parent, text, Text.std);
+    public Label(String text) {
+	this(text, Text.std);
     }
 	
     public void settext(String text) {

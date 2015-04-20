@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 
 public class RenderList {
-    public static final int INSTANCE_THRESHOLD = 2;
+    public static final int INSTANCE_THRESHOLD = 10;
     public final GLConfig cfg;
     private Slot[] list = new Slot[100];
     private int cur = 0;
@@ -240,10 +240,12 @@ public class RenderList {
 	}
     }
 
+    public int drawn, instanced, instancified;
     private final List<GLState.Buffer> instbuf = new ArrayList<GLState.Buffer>();
     public void render(GOut g) {
 	for(GLState.Global gs : gstates)
 	    gs.prerender(this, g);
+	drawn = instanced = instancified = 0;
 	int skipinst = 0, i = 0;
 	rloop: while((i < cur) && list[i].d) {
 	    Slot s = list[i];
@@ -264,6 +266,8 @@ public class RenderList {
 		    break tryinst;
 		Rendered.Instanced ir = (Rendered.Instanced)s.r;
 		if(ir.drawinst(g, instbuf)) {
+		    instanced++;
+		    instancified += instbuf.size();
 		    i = o;
 		    continue rloop;
 		} else {
@@ -272,6 +276,7 @@ public class RenderList {
 	    }
 	    g.st.set(s.os);
 	    render(g, s.r);
+	    drawn++;
 	    i++;
 	}
 	for(GLState.Global gs : gstates)

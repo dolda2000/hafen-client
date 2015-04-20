@@ -61,27 +61,29 @@ public class Window extends Widget implements DTarget {
 
     @RName("wnd")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    if(args.length < 2)
-		return(new Window(c, (Coord)args[0], parent, null));
+		return(new Window((Coord)args[0], null));
 	    else
-		return(new Window(c, (Coord)args[0], parent, (String)args[1]));
+		return(new Window((Coord)args[0], (String)args[1]));
 	}
     }
 
-    public Window(Coord c, Coord sz, Widget parent, String cap, Coord tlo, Coord rbo) {
-	super(c, new Coord(0, 0), parent);
+    public Window(Coord sz, String cap, Coord tlo, Coord rbo) {
 	this.tlo = tlo;
 	this.rbo = rbo;
-	cbtn = new IButton(Coord.z, this, cbtni[0], cbtni[1], cbtni[2]);
+	cbtn = add(new IButton(cbtni[0], cbtni[1], cbtni[2]));
 	chcap(cap);
 	resize(sz);
 	setfocustab(true);
-	parent.setfocus(this);
     }
 
-    public Window(Coord c, Coord sz, Widget parent, String cap) {
-	this(c, sz, parent, cap, new Coord(0, 0), new Coord(0, 0));
+    public Window(Coord sz, String cap) {
+	this(sz, cap, new Coord(0, 0), new Coord(0, 0));
+    }
+
+    protected void added() {
+	parent.setfocus(this);
     }
 
     public void chcap(String cap) {

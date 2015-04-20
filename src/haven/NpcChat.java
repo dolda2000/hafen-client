@@ -35,14 +35,14 @@ public class NpcChat extends Window {
 	
 	@RName("npc")
 	public static class $_ implements Factory {
-		public Widget create(Coord c, Widget parent, Object[] args) {
-			return(new NpcChat(c, (Coord)args[0], parent, (String)args[1]));
+		public Widget create(Widget parent, Object[] args) {
+			return(new NpcChat((Coord)args[0], (String)args[1]));
 		}
 	}
 	
-	public NpcChat(Coord c, Coord sz, Widget parent, String title) {
-		super(c, sz, parent, title);
-		out = new Textlog(Coord.z, new Coord(sz.x, sz.y), this);
+	public NpcChat(Coord sz, String title) {
+		super(sz, title);
+		out = add(new Textlog(new Coord(sz.x, sz.y)), Coord.z);
 	}
 	
 	public void uimsg(String msg, Object... args) {
@@ -61,7 +61,7 @@ public class NpcChat extends Window {
                             int y = out.sz.y + 3;
                             btns = new LinkedList<Button>();
                             for(Object text : args) {
-                                    Button b = Button.wrapped(new Coord(0, y), out.sz.x, this, (String)text);
+				Button b = add(Button.wrapped(out.sz.x, (String)text), new Coord(0, y));
                                     btns.add(b);
                                     y += b.sz.y + 3;
                             }

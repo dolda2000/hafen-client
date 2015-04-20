@@ -34,15 +34,15 @@ public class RichTextBox extends Widget {
     private RichText text;
     private Scrollbar sb;
     
-    public RichTextBox(Coord c, Coord sz, Widget parent, String text, RichText.Foundry fnd) {
-	super(c, sz, parent);
+    public RichTextBox(Coord sz, String text, RichText.Foundry fnd) {
+	super(sz);
 	this.fnd = fnd;
 	this.text = fnd.render(text, sz.x - 20);
-	this.sb = new Scrollbar(new Coord(sz.x, 0), sz.y, this, 0, this.text.sz().y + 20 - sz.y);
+	this.sb = adda(new Scrollbar(sz.y, 0, this.text.sz().y + 20 - sz.y), sz.x, 0, 1, 0);
     }
     
-    public RichTextBox(Coord c, Coord sz, Widget parent, String text, Object... attrs) {
-	this(c, sz, parent, text, new RichText.Foundry(attrs));
+    public RichTextBox(Coord sz, String text, Object... attrs) {
+	this(sz, text, new RichText.Foundry(attrs));
     }
     
     public void draw(GOut g) {

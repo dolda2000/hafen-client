@@ -34,12 +34,12 @@ public class SessWidget extends AWidget {
 
     @RName("sess")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    String host = (String)args[0];
 	    int port = (Integer)args[1];
 	    byte[] cookie = Utils.hex2byte((String)args[2]);
 	    Object[] sargs = Utils.splice(args, 3);
-	    return(new SessWidget(parent, host, port, cookie, sargs));
+	    return(new SessWidget(host, port, cookie, sargs));
 	}
     }
 
@@ -53,8 +53,7 @@ public class SessWidget extends AWidget {
 	}
     }
 
-    public SessWidget(Widget parent, final String addr, final int port, final byte[] cookie, final Object... args) {
-	super(parent);
+    public SessWidget(final String addr, final int port, final byte[] cookie, final Object... args) {
 	conn = Defer.later(new Defer.Callable<Connection>() {
 		public Connection call() throws InterruptedException {
 		    InetAddress host;

@@ -29,9 +29,13 @@ package haven;
 public class ItemDrag extends WItem {
     public Coord doff;
     
-    public ItemDrag(Coord dc, Widget parent, GItem item) {
-	super(parent.ui.mc.add(dc.inv()), parent, item);
+    public ItemDrag(Coord dc, GItem item) {
+	super(item);
 	this.doff = dc;
+    }
+
+    protected void added() {
+	this.c = parent.ui.mc.add(doff.inv());
 	ui.grabmouse(this);
     }
     

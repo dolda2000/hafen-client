@@ -42,13 +42,11 @@ public class FlowerMenu extends Widget {
 
     @RName("sm")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    if((c.x == -1) && (c.y == -1))
-		c = parent.ui.lcc;
+	public Widget create(Widget parent, Object[] args) {
 	    String[] opts = new String[args.length];
 	    for(int i = 0; i < args.length; i++)
 		opts[i] = (String)args[i];
-	    return(new FlowerMenu(c, parent, opts));
+	    return(new FlowerMenu(opts));
 	}
     }
 
@@ -60,10 +58,10 @@ public class FlowerMenu extends Widget {
 	private double a = 1;
 
 	public Petal(String name) {
-	    super(Coord.z, Coord.z, FlowerMenu.this);
+	    super(Coord.z);
 	    this.name = name;
 	    text = ptf.render(name, ptc);
-	    sz = new Coord(text.sz().x + 25, ph);
+	    resize(text.sz().x + 25, ph);
 	}
 
 	public void move(Coord c) {
@@ -181,16 +179,21 @@ public class FlowerMenu extends Widget {
 	}
     }
 
-    public FlowerMenu(Coord c, Widget parent, String... options) {
-	super(c, Coord.z, parent);
+    public FlowerMenu(String... options) {
+	super(Coord.z);
 	opts = new Petal[options.length];
 	for(int i = 0; i < options.length; i++) {
-	    opts[i] = new Petal(options[i]);
+	    add(opts[i] = new Petal(options[i]));
 	    opts[i].num = i;
 	}
-	organize(opts);
+    }
+
+    protected void added() {
+	if(c.equals(-1, -1))
+	    c = parent.ui.lcc;
 	mg = ui.grabmouse(this);
 	kg = ui.grabkeys(this);
+	organize(opts);
 	new Opening();
     }
 

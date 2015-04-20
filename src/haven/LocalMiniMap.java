@@ -129,8 +129,8 @@ public class LocalMiniMap extends Widget {
 	return(buf);
     }
 
-    public LocalMiniMap(Coord c, Coord sz, Widget parent, MapView mv) {
-	super(c, sz, parent);
+    public LocalMiniMap(Coord sz, MapView mv) {
+	super(sz);
 	this.mv = mv;
     }
     

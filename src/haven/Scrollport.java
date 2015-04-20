@@ -32,30 +32,30 @@ public class Scrollport extends Widget {
     
     @RName("scr")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
-	    return(new Scrollport(c, (Coord)args[0], parent));
+	public Widget create(Widget parent, Object[] args) {
+	    return(new Scrollport((Coord)args[0]));
 	}
     }
 
-    public Scrollport(Coord c, Coord sz, Widget parent) {
-	super(c, sz, parent);
-	bar = new Scrollbar(new Coord(sz.x, 0), sz.y, this, 0, 0) {
+    public Scrollport(Coord sz) {
+	super(sz);
+	bar = adda(new Scrollbar(sz.y, 0, 0) {
 		public void changed() {
 		    cont.sy = bar.val;
 		}
-	    };
-	cont = new Scrollcont(Coord.z, sz.sub(bar.sz.x, 0), this) {
+	    }, sz.x, 0, 1, 0);
+	cont = add(new Scrollcont(sz.sub(bar.sz.x, 0)) {
 		public void update() {
 		    bar.max = Math.max(0, csz().y - sz.y);
 		}
-	    };
+	    }, Coord.z);
     }
 
     public static class Scrollcont extends Widget {
 	public int sy = 0;
 
-	public Scrollcont(Coord c, Coord sz, Widget parent) {
-	    super(c, sz, parent);
+	public Scrollcont(Coord sz) {
+	    super(sz);
 	}
 	
 	public Coord csz() {
@@ -71,10 +71,9 @@ public class Scrollport extends Widget {
     
 	public void update() {}
 
-	public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	    Widget ret = super.makechild(type, pargs, cargs);
+	public void addchild(Widget child, Object... args) {
+	    super.addchild(child, args);
 	    update();
-	    return(ret);
 	}
     
 	public Coord xlate(Coord c, boolean in) {
@@ -104,8 +103,8 @@ public class Scrollport extends Widget {
 	return(true);
     }
     
-    public Widget makechild(String type, Object[] pargs, Object[] cargs) {
-	return(cont.makechild(type, pargs, cargs));
+    public void addchild(Widget child, Object... args) {
+	cont.addchild(child, args);
     }
 
     public void resize(Coord nsz) {

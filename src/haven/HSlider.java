@@ -44,8 +44,8 @@ public class HSlider extends Widget {
 	schain = new TexI(hc);
     }
 
-    public HSlider(Coord c, int w, Widget parent, int min, int max, int val) {
-	super(c, new Coord(w, sflarp.sz().y), parent);
+    public HSlider(int w, int min, int max, int val) {
+	super(new Coord(w, sflarp.sz().y));
 	this.val = val;
 	this.min = min;
 	this.max = max;

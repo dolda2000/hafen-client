@@ -44,7 +44,7 @@ public abstract class InstancedUniform {
 		public void apply(GOut g, int location) {InstancedUniform.this.apply(g, location);}
 	    };
 	attrib = new Attribute.AutoInstanced(type, infix) {
-		public GLBuffer bindiarr(GOut g, List<Buffer> inst) {return(InstancedUniform.this.bindiarr(g, inst));}
+		public GLBuffer bindiarr(GOut g, List<Buffer> inst, GLBuffer prev) {return(InstancedUniform.this.bindiarr(g, inst, prev));}
 		public void unbindiarr(GOut g, GLBuffer buf) {InstancedUniform.this.unbindiarr(g, buf);}
 	    };
     }
@@ -62,7 +62,7 @@ public abstract class InstancedUniform {
     }
 
     protected abstract void apply(GOut g, int location);
-    protected abstract GLBuffer bindiarr(GOut g, List<Buffer> inst);
+    protected abstract GLBuffer bindiarr(GOut g, List<Buffer> inst, GLBuffer prevbuf);
     protected abstract void unbindiarr(GOut g, GLBuffer buf);
 
     public static abstract class Mat4 extends InstancedUniform {
@@ -74,7 +74,7 @@ public abstract class InstancedUniform {
 	    g.gl.glUniformMatrix4fv(loc, 1, false, forstate(g, g.st.state()).m, 0);
 	}
 
-	protected GLBuffer bindiarr(GOut g, List<Buffer> inst) {
+	protected GLBuffer bindiarr(GOut g, List<Buffer> inst, GLBuffer prev) {
 	    float[] buf = new float[inst.size() * 16];
 	    int i = 0;
 	    for(Buffer st : inst) {
@@ -82,7 +82,7 @@ public abstract class InstancedUniform {
 		i += 16;
 	    }
 	    GL2 gl = g.gl;
-	    GLBuffer bo = new GLBuffer(gl);
+	    GLBuffer bo = (prev == null)?new GLBuffer(gl):prev;
 	    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, bo.id);
 	    gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.length * 4, FloatBuffer.wrap(buf), GL.GL_STATIC_DRAW);
 	    int loc = g.st.prog.attrib(attrib);
@@ -113,7 +113,6 @@ public abstract class InstancedUniform {
 	    ((GL3)gl).glVertexAttribDivisor(loc + 1, 0);
 	    ((GL3)gl).glVertexAttribDivisor(loc + 2, 0);
 	    ((GL3)gl).glVertexAttribDivisor(loc + 3, 0);
-	    buf.dispose();
 	}
     }
 }

@@ -328,19 +328,19 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     @RName("mapview")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    Coord sz = (Coord)args[0];
 	    Coord mc = (Coord)args[1];
 	    int pgob = -1;
 	    if(args.length > 2)
 		pgob = (Integer)args[2];
-	    return(new MapView(c, sz, parent, mc, pgob));
+	    return(new MapView(sz, parent.ui.sess.glob, mc, pgob));
 	}
     }
     
-    public MapView(Coord c, Coord sz, Widget parent, Coord cc, long plgob) {
-	super(c, sz, parent);
-	glob = ui.sess.glob;
+    public MapView(Coord sz, Glob glob, Coord cc, long plgob) {
+	super(sz);
+	this.glob = glob;
 	this.cc = cc;
 	this.plgob = plgob;
 	setcanfocus(true);

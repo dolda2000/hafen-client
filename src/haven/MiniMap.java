@@ -140,8 +140,8 @@ public class MiniMap extends Widget {
 	}
     }
     
-    public MiniMap(Coord c, Coord sz, Widget parent, MapView mv) {
-	super(c, sz, parent);
+    public MiniMap(Coord sz, MapView mv) {
+	super(sz);
 	this.mv = mv;
     }
     

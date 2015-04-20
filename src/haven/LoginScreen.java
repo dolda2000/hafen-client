@@ -35,24 +35,19 @@ public class LoginScreen extends Widget {
     static Text.Foundry textf, textfs;
     static Tex bg = Resource.loadtex("gfx/loginscr");
     Text progress = null;
-	
+
     static {
 	textf = new Text.Foundry(Text.sans, 16).aa(true);
 	textfs = new Text.Foundry(Text.sans, 14).aa(true);
     }
-	
-    public LoginScreen(Widget parent) {
-	super(parent.sz.div(2).sub(bg.sz().div(2)), bg.sz(), parent);
+
+    public LoginScreen() {
+	super(bg.sz());
 	setfocustab(true);
-	parent.setfocus(this);
-	new Img(Coord.z, bg, this);
+	add(new Img(bg), Coord.z);
     }
 
     private static abstract class Login extends Widget {
-	private Login(Coord c, Coord sz, Widget parent) {
-	    super(c, sz, parent);
-	}
-		
 	abstract Object[] data();
 	abstract boolean enter();
     }
@@ -60,30 +55,31 @@ public class LoginScreen extends Widget {
     private class Pwbox extends Login {
 	TextEntry user, pass;
 	CheckBox savepass;
-		
+
 	private Pwbox(String username, boolean save) {
-	    super(new Coord(345, 310), new Coord(150, 150), LoginScreen.this);
 	    setfocustab(true);
-	    new Label(new Coord(0, 0), this, "User name", textf);
-	    user = new TextEntry(new Coord(0, 20), new Coord(150, 20), this, username);
-	    new Label(new Coord(0, 60), this, "Password", textf);
-	    pass = new TextEntry(new Coord(0, 80), new Coord(150, 20), this, "");
+	    add(new Label("User name", textf), Coord.z);
+	    add(user = new TextEntry(150, username), new Coord(0, 20));
+	    add(new Label("Password", textf), new Coord(0, 60));
+	    add(pass = new TextEntry(150, ""), new Coord(0, 80));
 	    pass.pw = true;
-	    savepass = new CheckBox(new Coord(0, 110), this, "Remember me");
+	    add(savepass = new CheckBox("Remember me"), new Coord(0, 110));
 	    savepass.a = save;
 	    if(user.text.equals(""))
 		setfocus(user);
 	    else
 		setfocus(pass);
+	    resize(new Coord(150, 150));
+	    LoginScreen.this.add(this, new Coord(345, 310));
 	}
-		
+
 	public void wdgmsg(Widget sender, String name, Object... args) {
 	}
-		
+
 	Object[] data() {
 	    return(new Object[] {new AuthClient.NativeCred(user.text, pass.text), savepass.a});
 	}
-		
+
 	boolean enter() {
 	    if(user.text.equals("")) {
 		setfocus(user);
@@ -104,15 +100,16 @@ public class LoginScreen extends Widget {
 	    return(false);
 	}
     }
-	
+
     private class Tokenbox extends Login {
 	Text label;
 	Button btn;
 		
 	private Tokenbox(String username) {
-	    super(new Coord(295, 310), new Coord(250, 100), LoginScreen.this);
 	    label = textfs.render("Identity is saved for " + username, java.awt.Color.WHITE);
-	    btn = new Button(new Coord(75, 30), 100, this, "Forget me");
+	    add(btn = new Button(100, "Forget me"), new Coord(75, 30));
+	    resize(new Coord(250, 100));
+	    LoginScreen.this.add(this, new Coord(295, 310));
 	}
 		
 	Object[] data() {
@@ -147,11 +144,11 @@ public class LoginScreen extends Widget {
 
     private void mklogin() {
 	synchronized(ui) {
-	    btn = new IButton(new Coord(373, 460), this, Resource.loadimg("gfx/hud/buttons/loginu"), Resource.loadimg("gfx/hud/buttons/logind"));
+	    adda(btn = new IButton(Resource.loadimg("gfx/hud/buttons/loginu"), Resource.loadimg("gfx/hud/buttons/logind")), 419, 474, 0.5, 0.5);
 	    progress(null);
 	}
     }
-	
+
     private void error(String error) {
 	synchronized(ui) {
 	    if(this.error != null)
@@ -160,7 +157,7 @@ public class LoginScreen extends Widget {
 		this.error = textf.render(error, java.awt.Color.RED);
 	}
     }
-    
+
     private void progress(String p) {
 	synchronized(ui) {
 	    if(progress != null)
@@ -169,7 +166,7 @@ public class LoginScreen extends Widget {
 		progress = textf.render(p, java.awt.Color.WHITE);
 	}
     }
-    
+
     private void clear() {
 	if(cur != null) {
 	    ui.destroy(cur);
@@ -179,7 +176,7 @@ public class LoginScreen extends Widget {
 	}
 	progress(null);
     }
-    
+
     public void wdgmsg(Widget sender, String msg, Object... args) {
 	if(sender == btn) {
 	    if(cur.enter())
@@ -188,7 +185,7 @@ public class LoginScreen extends Widget {
 	}
 	super.wdgmsg(sender, msg, args);
     }
-	
+
     public void uimsg(String msg, Object... args) {
 	synchronized(ui) {
 	    if(msg == "passwd") {
@@ -208,11 +205,16 @@ public class LoginScreen extends Widget {
 	    }
 	}
     }
-    
+
     public void presize() {
 	c = parent.sz.div(2).sub(sz.div(2));
     }
-	
+
+    protected void added() {
+	presize();
+	parent.setfocus(this);
+    }
+
     public void draw(GOut g) {
 	super.draw(g);
 	if(error != null)
@@ -220,7 +222,7 @@ public class LoginScreen extends Widget {
 	if(progress != null)
 	    g.image(progress.tex(), new Coord(420 - (progress.sz().x / 2), 350));
     }
-	
+
     public boolean type(char k, KeyEvent ev) {
 	if(k == 10) {
 	    if((cur != null) && cur.enter())

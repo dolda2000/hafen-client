@@ -38,17 +38,17 @@ public class IMeter extends Widget {
     
     @RName("im")
     public static class $_ implements Factory {
-	public Widget create(Coord c, Widget parent, Object[] args) {
+	public Widget create(Widget parent, Object[] args) {
 	    Indir<Resource> bg = parent.ui.sess.getres((Integer)args[0]);
 	    List<Meter> meters = new LinkedList<Meter>();
 	    for(int i = 1; i < args.length; i += 2)
 		meters.add(new Meter((Color)args[i], (Integer)args[i + 1]));
-	    return(new IMeter(c, parent, bg, meters));
+	    return(new IMeter(bg, meters));
 	}
     }
     
-    public IMeter(Coord c, Widget parent, Indir<Resource> bg, List<Meter> meters) {
-	super(c, fsz, parent);
+    public IMeter(Indir<Resource> bg, List<Meter> meters) {
+	super(fsz);
 	this.bg = bg;
 	this.meters = meters;
     }
