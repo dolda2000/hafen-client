@@ -352,7 +352,6 @@ public class Material extends GLState {
 	    final int id = (args.length > 2)?(Integer)args[2]:-1;
 	    left.add(new Res.Resolver() {
 		    public void resolve(Collection<GLState> buf) {
-			System.err.println(res.name + "-> " + lres.name);
 			if(id >= 0) {
 			    Res mat = lres.layer(Res.class, id);
 			    if(mat == null)
