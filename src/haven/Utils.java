@@ -142,27 +142,37 @@ public class Utils {
 	long dp = raw % dm;
 	if(dp == 0)
 	    return(Long.toString(ip));
+	StringBuilder buf = new StringBuilder();
+	buf.append(ip);
+	buf.append('.');
+	for(dm /= 10; dm > dp; dm /= 10) buf.append('0');
 	while((dp % 10) == 0) dp /= 10;
-	return(Long.toString(ip) + "." + Long.toString(dp));
+	buf.append(dp);
+	return(buf.toString());
     }
     
     public static String odformat2(double num, int md) {
 	if(num < 0)
 	    return("-" + odformat2(-num, md));
-	if(num == 0) {
+	if(num == 0)
 	    return("0");
-	} else if(num < 1) {
-	    StringBuilder buf = new StringBuilder("0.");
-	    while((num *= 10) < 1)
-		buf.append('0');
-	    for(int i = 1; i < md; num *= 10, i++);
-	    long ds = (long)num;
-	    while((ds %  10) == 0) ds /= 10;
-	    buf.append(ds);
-	    return(buf.toString());
-	} else {
-	    return(odformat(num, md));
-	}
+	long tm = 1;
+	for(int i = 0; i < md; i++) tm *= 10;
+	long dm;
+	for(dm = tm; ((long)Math.round(num * dm)) < tm; dm *= 10);
+	dm /= 10;
+	long raw = (long)Math.round(num * dm);
+	long ip = raw / dm;
+	long dp = raw % dm;
+	if(dp == 0)
+	    return(Long.toString(ip));
+	StringBuilder buf = new StringBuilder();
+	buf.append(ip);
+	buf.append('.');
+	for(dm /= 10; dm > dp; dm /= 10) buf.append('0');
+	while((dp % 10) == 0) dp /= 10;
+	buf.append(dp);
+	return(buf.toString());
     }
 
     static void line(Graphics g, Coord c1, Coord c2) {
