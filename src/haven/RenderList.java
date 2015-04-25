@@ -240,6 +240,17 @@ public class RenderList {
 	}
     }
 
+    protected boolean renderinst(GOut g, Rendered.Instanced r, List<GLState.Buffer> instances) {
+	try {
+	    return(r.drawinst(g, instances));
+	} catch(RLoad l) {
+	    if(ignload)
+		return(true);
+	    else
+		throw(l);
+	}
+    }
+
     public int drawn, instanced, instancified;
     private final List<GLState.Buffer> instbuf = new ArrayList<GLState.Buffer>();
     public void render(GOut g) {
@@ -265,7 +276,7 @@ public class RenderList {
 		if(o - i < INSTANCE_THRESHOLD)
 		    break tryinst;
 		Rendered.Instanced ir = (Rendered.Instanced)s.r;
-		if(ir.drawinst(g, instbuf)) {
+		if(renderinst(g, ir, instbuf)) {
 		    instanced++;
 		    instancified += instbuf.size();
 		    i = o;
