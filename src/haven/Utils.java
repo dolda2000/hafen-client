@@ -160,7 +160,8 @@ public class Utils {
 	for(int i = 0; i < md; i++) tm *= 10;
 	long dm;
 	for(dm = tm; ((long)Math.round(num * dm)) < tm; dm *= 10);
-	dm /= 10;
+	if(dm > tm)
+	    dm /= 10;
 	long raw = (long)Math.round(num * dm);
 	long ip = raw / dm;
 	long dp = raw % dm;
