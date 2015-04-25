@@ -595,6 +595,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if(ignload) return; else throw(l);
 	    }
 	}
+
+	protected boolean renderinst(GOut g, Rendered.Instanced r, List<GLState.Buffer> instances) {
+	    return(false);
+	}
 	
 	public T get(GOut g, Coord c) {
 	    return(rmap.get(g.getpixel(c)));
