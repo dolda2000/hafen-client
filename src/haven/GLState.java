@@ -361,8 +361,8 @@ public abstract class GLState {
 	    this.id = id;
 	}
 
-	public void act() {
-	    st.texunit(id);
+	public void act(GOut g) {
+	    st.texunit(g, id);
 	}
 
 	public void free() {
@@ -371,9 +371,9 @@ public abstract class GLState {
 	    st.textab[id] = this;
 	}
 
-	public void ufree() {
-	    act();
-	    st.gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+	public void ufree(GOut g) {
+	    act(g);
+	    g.gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
 	    free();
 	}
     }
@@ -532,12 +532,12 @@ public abstract class GLState {
 		}
 	    }
 	    if(cproj != proj) {
-		matmode(GL2.GL_PROJECTION);
-		gl.glLoadMatrixf((cproj = proj).m, 0);
+		matmode(g, GL2.GL_PROJECTION);
+		g.gl.glLoadMatrixf((cproj = proj).m, 0);
 	    }
 	    prog.autoapply(g, pdirty);
 	    pdirty = sdirty = false;
-	    checkerr(gl);
+	    checkerr(g.gl);
 	    if(Config.profile)
 		time += System.nanoTime() - st;
 	}
@@ -593,16 +593,16 @@ public abstract class GLState {
 	private int matmode = GL2.GL_MODELVIEW;
 	private int texunit = 0;
 	
-	public void matmode(int mode) {
+	public void matmode(GOut g, int mode) {
 	    if(mode != matmode) {
-		gl.glMatrixMode(mode);
+		g.gl.glMatrixMode(mode);
 		matmode = mode;
 	    }
 	}
 	
-	public void texunit(int unit) {
+	public void texunit(GOut g, int unit) {
 	    if(unit != texunit) {
-		gl.glActiveTexture(GL.GL_TEXTURE0 + unit);
+		g.gl.glActiveTexture(GL.GL_TEXTURE0 + unit);
 		texunit = unit;
 	    }
 	}
@@ -624,15 +624,15 @@ public abstract class GLState {
 
 	public TexUnit texalloc(GOut g, TexGL tex) {
 	    TexUnit ret = texalloc();
-	    ret.act();
-	    gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
+	    ret.act(g);
+	    g.gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
 	    return(ret);
 	}
 
 	public TexUnit texalloc(GOut g, TexMS tex) {
 	    TexUnit ret = texalloc();
-	    ret.act();
-	    gl.glBindTexture(GL3.GL_TEXTURE_2D_MULTISAMPLE, tex.glid(g));
+	    ret.act(g);
+	    g.gl.glBindTexture(GL3.GL_TEXTURE_2D_MULTISAMPLE, tex.glid(g));
 	    return(ret);
 	}
 

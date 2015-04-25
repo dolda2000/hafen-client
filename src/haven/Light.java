@@ -206,7 +206,7 @@ public class Light implements Rendered {
 	    for(int i = 0; i < nl; i++) {
 		Matrix4f mv = vl.get(i);
 		Light l = ll.get(i);
-		g.st.matmode(GL2.GL_MODELVIEW);
+		g.st.matmode(g, GL2.GL_MODELVIEW);
 		gl.glLoadMatrixf(mv.m, 0);
 		en.add(l);
 		l.enable(g, i);

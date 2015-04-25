@@ -69,7 +69,7 @@ public abstract class TexGL extends Tex {
 
     public static GLState.TexUnit lbind(GOut g, TexGL tex) {
 	GLState.TexUnit sampler = g.st.texalloc();
-	sampler.act();
+	sampler.act(g);
 	try {
 	    g.gl.glBindTexture(GL.GL_TEXTURE_2D, tex.glid(g));
 	    return(sampler);
@@ -107,7 +107,7 @@ public abstract class TexGL extends Tex {
 
 	public void unapply(GOut g) {
 	    GL2 gl = g.gl;
-	    sampler.ufree(); sampler = null;
+	    sampler.ufree(g); sampler = null;
 	}
     
 	public ShaderMacro[] shaders() {
@@ -131,7 +131,7 @@ public abstract class TexGL extends Tex {
 	public void applyfrom(GOut g, GLState sfrom) {
 	    GL2 gl = g.gl;
 	    TexDraw from = (TexDraw)sfrom;
-	    from.sampler.act();
+	    from.sampler.act(g);
 	    int glid = tex.glid(g);
 	    sampler = from.sampler; from.sampler = null;
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, glid);
@@ -173,7 +173,7 @@ public abstract class TexGL extends Tex {
 	public void unapply(GOut g) {
 	    GL2 gl = g.gl;
 	    if(g.st.old(TexDraw.slot) == null) {
-		sampler.act();
+		sampler.act(g);
 		sampler.free(); sampler = null;
 	    }
 	    if(g.gc.pref.alphacov.val) {
@@ -202,7 +202,7 @@ public abstract class TexGL extends Tex {
 		throw(new RuntimeException("TexClip is somehow being transition even though there is a TexDraw"));
 	    GL2 gl = g.gl;
 	    TexClip from = (TexClip)sfrom;
-	    from.sampler.act();
+	    from.sampler.act(g);
 	    int glid = tex.glid(g);
 	    sampler = from.sampler; from.sampler = null;
 	    gl.glBindTexture(GL2.GL_TEXTURE_2D, glid);
@@ -359,7 +359,7 @@ public abstract class TexGL extends Tex {
 	g.state2d();
 	g.apply();
 	GLState.TexUnit s = g.st.texalloc();
-	s.act();
+	s.act(g);
 	gl.glBindTexture(GL.GL_TEXTURE_2D, glid(g));
 	byte[] buf = new byte[tdim.x * tdim.y * 4];
 	gl.glGetTexImage(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));

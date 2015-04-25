@@ -112,7 +112,7 @@ public class AlphaTex extends GLState {
     }
 
     public void unapply(GOut g) {
-	sampler.ufree(); sampler = null;
+	sampler.ufree(g); sampler = null;
     }
 
     public void prep(Buffer buf) {
