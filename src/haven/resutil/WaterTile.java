@@ -191,7 +191,7 @@ public class WaterTile extends Tiler {
 
 	public void apply(GOut g) {
 	    GL2 gl = g.gl;
-	    (tsky = g.st.texalloc()).act();
+	    (tsky = g.st.texalloc()).act(g);
 	    gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
 	    gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
 	    gl.glTexGeni(GL2.GL_R, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
@@ -202,15 +202,15 @@ public class WaterTile extends Tiler {
 	    gl.glEnable(GL.GL_TEXTURE_CUBE_MAP);
 	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
 	    gl.glColor4f(1, 1, 1, 0.5f);
-	    g.st.matmode(GL.GL_TEXTURE);
+	    g.st.matmode(g, GL.GL_TEXTURE);
 	    gl.glPushMatrix();
 	    PView.camxf(g).transpose().trim3(1).loadgl(gl);
 	}
 
 	public void unapply(GOut g) {
 	    GL2 gl = g.gl;
-	    tsky.act();
-	    g.st.matmode(GL.GL_TEXTURE);
+	    tsky.act(g);
+	    g.st.matmode(g, GL.GL_TEXTURE);
 	    gl.glPopMatrix();
 	    gl.glDisable(GL.GL_TEXTURE_CUBE_MAP);
 	    gl.glDisable(GL2.GL_TEXTURE_GEN_S);
@@ -328,18 +328,18 @@ public class WaterTile extends Tiler {
 	public void apply(GOut g) {
 	    GL2 gl = g.gl;
 	    gl.glBlendFunc(GL.GL_ONE, GL.GL_ONE);
-	    (tsky = g.st.texalloc()).act();
+	    (tsky = g.st.texalloc()).act(g);
 	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
-	    (tnrm = g.st.texalloc()).act();
+	    (tnrm = g.st.texalloc()).act(g);
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, nrm.glid(g));
 	    reapply(g);
 	}
 
 	public void unapply(GOut g) {
 	    GL2 gl = g.gl;
-	    tsky.act();
+	    tsky.act(g);
 	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, 0);
-	    tnrm.act();
+	    tnrm.act(g);
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
 	    tsky.free(); tsky = null;
 	    tnrm.free(); tnrm = null;

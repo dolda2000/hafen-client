@@ -109,7 +109,7 @@ public class CloudShadow extends GLState {
     }
 
     public void unapply(GOut g) {
-	sampler.act();
+	sampler.act(g);
 	g.gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
 	sampler.free(); sampler = null;
     }

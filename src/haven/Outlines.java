@@ -167,8 +167,8 @@ public class Outlines implements Rendered {
 
 		public void unapply(GOut g) {
 		    GL gl = g.gl;
-		    tnrm.ufree(); tnrm = null;
-		    tdep.ufree(); tdep = null;
+		    tnrm.ufree(g); tnrm = null;
+		    tdep.ufree(g); tdep = null;
 		}
 	    });
 	return(false);

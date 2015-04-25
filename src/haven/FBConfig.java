@@ -279,7 +279,7 @@ public class FBConfig {
 	    g.gl.glUniform1i(g.st.prog.uniform(ctex), csmp.id);
 	}
 	public void unapply(FBConfig cfg, GOut g) {
-	    csmp.ufree(); csmp = null;
+	    csmp.ufree(g); csmp = null;
 	}
 
 	public boolean equals(Object o) {return(o instanceof Resolve1);}
@@ -315,7 +315,7 @@ public class FBConfig {
 	    g.gl.glUniform1i(g.st.prog.uniform(ctex), csmp.id);
 	}
 	public void unapply(FBConfig cfg, GOut g) {
-	    csmp.ufree(); csmp = null;
+	    csmp.ufree(g); csmp = null;
 	}
 
 	public boolean equals(Object o) {return((o instanceof ResolveMS) && (((ResolveMS)o).samples == samples));}

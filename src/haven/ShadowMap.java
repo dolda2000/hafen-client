@@ -203,7 +203,7 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
     public void apply(GOut g) {
 	sampler = g.st.texalloc();
 	GL gl = g.gl;
-	sampler.act();
+	sampler.act(g);
 	gl.glBindTexture(GL.GL_TEXTURE_2D, lbuf.glid(g));
 	reapply(g);
     }
@@ -220,7 +220,7 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 
     public void unapply(GOut g) {
 	GL gl = g.gl;
-	sampler.act();
+	sampler.act(g);
 	gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
 	sampler.free(); sampler = null;
     }
