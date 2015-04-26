@@ -132,14 +132,17 @@ public class GLProgram implements java.io.Serializable {
 	}
     }
     
+    protected void link(GOut g) {
+	glp = new ProgOb(g.gl);
+	glp.link(this);
+    }
+
     public void apply(GOut g) {
 	synchronized(this) {
 	    if((glp != null) && (glp.gl != g.gl))
 		dispose();
-	    if(glp == null) {
-		glp = new ProgOb(g.gl);
-		glp.link(this);
-	    }
+	    if(glp == null)
+		link(g);
 	    g.gl.glUseProgramObjectARB(glp.id);
 	}
     }
