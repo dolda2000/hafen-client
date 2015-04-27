@@ -32,10 +32,10 @@ import javax.media.opengl.*;
 import java.nio.*;
 
 public class GOut {
-    public final GL2 gl;
+    public final BGL gl;
     public final GLConfig gc;
     public Coord ul, sz, tx;
-    public final GLContext ctx;
+    public final CurrentGL curgl;
     private final GOut root;
     public final GLState.Applier st;
     private final GLState.Buffer def2d, cur2d;
@@ -48,7 +48,7 @@ public class GOut {
 	this.ul = o.ul;
 	this.sz = o.sz;
 	this.tx = o.tx;
-	this.ctx = o.ctx;
+	this.curgl = o.curgl;
 	this.root = o.root;
 	this.st = o.st;
 	this.def2d = o.def2d;
@@ -56,12 +56,12 @@ public class GOut {
 	defstate();
     }
 
-    public GOut(GL2 gl, GLContext ctx, GLConfig cfg, GLState.Applier st, GLState.Buffer def2d, Coord sz) {
+    public GOut(BGL gl, CurrentGL curgl, GLConfig cfg, GLState.Applier st, GLState.Buffer def2d, Coord sz) {
 	this.gl = gl;
 	this.gc = cfg;
 	this.ul = this.tx = Coord.z;
 	this.sz = sz;
-	this.ctx = ctx;
+	this.curgl = curgl;
 	this.st = st;
 	this.root = this;
 	this.def2d = def2d;
@@ -139,10 +139,14 @@ public class GOut {
 	    throw(glexcfor(err));
     }
 
+    public static void checkerr(BGL gl) {
+	gl.bglCheckErr();
+    }
+	
     private void checkerr() {
 	checkerr(gl);
     }
-	
+
     public GOut root() {
 	return(root);
     }
@@ -505,6 +509,7 @@ public class GOut {
 	return(g);
     }
     
+    /*
     public Color getpixel(Coord c) {
 	byte[] buf = new byte[4];
 	gl.glReadPixels(c.x + tx.x, root.sz.y - c.y - tx.y, 1, 1, GL.GL_RGBA, GL2.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
@@ -531,4 +536,5 @@ public class GOut {
     public BufferedImage getimage() {
 	return(getimage(Coord.z, sz));
     }
+    */
 }

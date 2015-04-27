@@ -27,6 +27,7 @@
 package haven.glsl;
 
 import haven.*;
+import haven.GLProgram.VarID;
 
 public class VertexContext extends ShaderContext {
     public VertexContext(ProgramContext prog) {
@@ -61,12 +62,12 @@ public class VertexContext extends ShaderContext {
     };
 
     private static final Uniform u_proj = new Uniform.AutoApply(Type.MAT4, "proj", PView.proj) {
-	    public void apply(GOut g, int loc) {
+	    public void apply(GOut g, VarID loc) {
 		g.gl.glUniformMatrix4fv(loc, 1, false, g.st.proj.m, 0);
 	    }
 	};
     private static final Uniform u_cam = new Uniform.AutoApply(Type.MAT4, "cam", PView.cam) {
-	    public void apply(GOut g, int loc) {
+	    public void apply(GOut g, VarID loc) {
 		g.gl.glUniformMatrix4fv(loc, 1, false, PView.camxf(g).m, 0);
 	    }
 	};
