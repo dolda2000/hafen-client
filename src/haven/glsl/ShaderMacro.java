@@ -156,18 +156,26 @@ public interface ShaderMacro {
 	    }
 	}
 
+	protected void link(GOut g) {
+	    super.link(g);
+	    for(Uniform var : built.uniforms) {
+		String nm = built.symtab.get(var.name);
+		int loc = uniform(nm);
+		umap.put(var, loc);
+	    }
+	    for(Attribute var : built.attribs) {
+		String nm = built.symtab.get(var.name);
+		int loc = attrib(nm);
+		amap.put(var, loc);
+	    }
+	}
+
 	/* XXX: It would be terribly nice to replace these with some faster operation. */
 	private final transient Map<Uniform, Integer> umap = new IdentityHashMap<Uniform, Integer>();
 	public int cuniform(Uniform var) {
 	    Integer r = umap.get(var);
-	    if(r == null) {
-		String nm = built.symtab.get(var.name);
-		if(nm == null)
-		    r = new Integer(-1);
-		else
-		    r = new Integer(uniform(nm));
-		umap.put(var, r);
-	    }
+	    if(r == null)
+		return(-1);
 	    return(r.intValue());
 	}
 	public int uniform(Uniform var) {
@@ -179,14 +187,8 @@ public interface ShaderMacro {
 	private final transient Map<Attribute, Integer> amap = new IdentityHashMap<Attribute, Integer>();
 	public int cattrib(Attribute var) {
 	    Integer r = amap.get(var);
-	    if(r == null) {
-		String nm = built.symtab.get(var.name);
-		if(nm == null)
-		    r = new Integer(-1);
-		else
-		    r = new Integer(attrib(nm));
-		amap.put(var, r);
-	    }
+	    if(r == null)
+		return(-1);
 	    return(r.intValue());
 	}
 	public int attrib(Attribute var) {
