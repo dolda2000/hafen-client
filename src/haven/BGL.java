@@ -27,6 +27,7 @@
 package haven;
 
 import javax.media.opengl.*;
+import java.nio.Buffer;
 
 public class BGL {
     private static abstract class Command {
@@ -61,8 +62,16 @@ public class BGL {
     }
 
     public void bglCheckErr() {
+	final Throwable place = null;
 	add(new Command() {
-		public void run(GL2 gl) {GOut.checkerr(gl);}
+		public void run(GL2 gl) {
+		    try {
+			GOut.checkerr(gl);
+		    } catch(GOut.GLException e) {
+			e.initCause(place);
+			throw(e);
+		    }
+		}
 	    });
     }
 
@@ -96,9 +105,15 @@ public class BGL {
 	    });
     }
 
-    public void glBindTexture(final int target, final int texture) {
+    public void glBindBuffer(final int target, final ID buffer) {
 	add(new Command() {
-		public void run(GL2 gl) {gl.glBindTexture(target, texture);}
+		public void run(GL2 gl) {gl.glBindTexture(target, (buffer == null)?0:buffer.glid());}
+	    });
+    }
+
+    public void glBindTexture(final int target, final ID texture) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glBindTexture(target, (texture == null)?0:texture.glid());}
 	    });
     }
 
@@ -111,6 +126,12 @@ public class BGL {
     public void glBlendFunc(final int sfac, final int dfac) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glBlendFunc(sfac, dfac);}
+	    });
+    }
+
+    public void glBufferData(final int target, final long size, final Buffer data, final int usage) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glBufferData(target, size, data, usage);}
 	    });
     }
 
@@ -138,9 +159,37 @@ public class BGL {
 	    });
     }
 
-    public void glDeleteObjectARB(final int id) {
+    public void glCompileShaderARB(final ID shader) {
 	add(new Command() {
-		public void run(GL2 gl) {gl.glDeleteObjectARB(id);}
+		public void run(GL2 gl) {gl.glCompileShaderARB(shader.glid());}
+	    });
+    }
+
+    public void glDeleteBuffers(final int count, final ID[] buffers, final int n) {
+	add(new Command() {
+		public void run(GL2 gl) {
+		    int[] buf = new int[buffers.length];
+		    for(int i = 0; i < buf.length; i++)
+			buf[i] = buffers[i].glid();
+		    gl.glDeleteBuffers(count, buf, n);
+		}
+	    });
+    }
+
+    public void glDeleteTextures(final int count, final ID[] buffers, final int n) {
+	add(new Command() {
+		public void run(GL2 gl) {
+		    int[] buf = new int[buffers.length];
+		    for(int i = 0; i < buf.length; i++)
+			buf[i] = buffers[i].glid();
+		    gl.glDeleteTextures(count, buf, n);
+		}
+	    });
+    }
+
+    public void glDeleteObjectARB(final ID id) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDeleteObjectARB(id.glid());}
 	    });
     }
 
@@ -150,9 +199,33 @@ public class BGL {
 	    });
     }
 
+    public void glDisableVertexAttribArray(final ID location) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDisableVertexAttribArray(location.glid());}
+	    });
+    }
+
+    public void glDisableVertexAttribArray(final ID location, final int offset) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDisableVertexAttribArray(location.glid() + offset);}
+	    });
+    }
+
     public void glEnable(final int cap) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glEnable(cap);}
+	    });
+    }
+
+    public void glEnableVertexAttribArray(final ID location) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glEnableVertexAttribArray(location.glid());}
+	    });
+    }
+
+    public void glEnableVertexAttribArray(final ID location, final int offset) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glEnableVertexAttribArray(location.glid() + offset);}
 	    });
     }
 
@@ -186,15 +259,69 @@ public class BGL {
 	    });
     }
 
+    public void glPixelStorei(final int pname, final int param) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glPixelStorei(pname, param);}
+	    });
+    }
+
     public void glPointSize(final float size) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glPointSize(size);}
 	    });
     }
 
+    public void glShaderSourceARB(final ID shader, final int count, final String[] string, final int[] length, final int n) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glShaderSourceARB(shader.glid(), count, string, length, n);}
+	    });
+    }
+
     public void glTexCoord2f(final float s, final float t) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glTexCoord2f(s, t);}
+	    });
+    }
+
+    public void glTexImage2D(final int target, final int level, final int internalformat, final int width, final int height, final int border, final int format, final int type, final Buffer data) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glTexImage2D(target, level, internalformat, width, height, border, format, type, data);}
+	    });
+    }
+
+    public void glTexSubImage2D(final int target, final int level, final int xoff, final int yoff, final int width, final int height, final int format, final int type, final Buffer data) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glTexSubImage2D(target, level, xoff, yoff, width, height, format, type, data);}
+	    });
+    }
+
+    public void glTexParameterf(final int target, final int pname, final float param) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glTexParameterf(target, pname, param);}
+	    });
+    }
+
+    public void glTexParameteri(final int target, final int pname, final int param) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glTexParameteri(target, pname, param);}
+	    });
+    }
+
+    public void glUniform1i(final ID location, final int v0) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glUniform1i(location.glid(), v0);}
+	    });
+    }
+
+    public void glUniformMatrix4fv(final ID location, final int count, final boolean transpose, final float[] value, final int n) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glUniformMatrix4fv(location.glid(), count, transpose, value, n);}
+	    });
+    }
+
+    public void glUseProgramObjectARB(final ID program) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glUseProgramObjectARB(program.glid());}
 	    });
     }
 
@@ -207,6 +334,36 @@ public class BGL {
     public void glVertex2i(final int x, final int y) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glVertex2i(x, y);}
+	    });
+    }
+
+    public void glVertex3i(final int x, final int y, final int z) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glVertex3i(x, y, z);}
+	    });
+    }
+
+    public void glVertexAttribDivisor(final ID location, final int divisor) {
+	add(new Command() {
+		public void run(GL2 gl) {((GL3)gl).glVertexAttribDivisor(location.glid(), divisor);}
+	    });
+    }
+
+    public void glVertexAttribDivisor(final ID location, final int offset, final int divisor) {
+	add(new Command() {
+		public void run(GL2 gl) {((GL3)gl).glVertexAttribDivisor(location.glid() + offset, divisor);}
+	    });
+    }
+
+    public void glVertexAttribPointer(final ID location, final int size, final int type, final boolean normalized, final int stride, final long pointer) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glVertexAttribPointer(location.glid(), size, type, normalized, stride, pointer);}
+	    });
+    }
+
+    public void glVertexAttribPointer(final ID location, final int offset, final int size, final int type, final boolean normalized, final int stride, final long pointer) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glVertexAttribPointer(location.glid() + offset, size, type, normalized, stride, pointer);}
 	    });
     }
 
