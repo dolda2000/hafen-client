@@ -27,6 +27,7 @@
 package haven;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.util.*;
 
 public class Polity extends Window {
@@ -46,16 +47,16 @@ public class Polity extends Window {
     }
     
     public class Member {
-	public final int id;
-	private Text rname = null;
+	public final Integer id;
 	
-	private Member(int id) {
+	private Member(Integer id) {
 	    this.id = id;
 	}
     }
     
     private class MemberList extends Listbox<Member> {
 	final Text unk = Text.render("???");
+	final Text self = Text.render("You", new Color(192, 192, 255));
 	
 	private MemberList(int w, int h) {
 	    super(w, h, 20);
@@ -67,30 +68,35 @@ public class Polity extends Window {
 	public void drawitem(GOut g, Member m, int idx) {
 	    if((mw instanceof MemberWidget) && (((MemberWidget)mw).id == m.id))
 		drawsel(g);
-	    BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(m.id);
-	    Text rn = (b == null)?unk:(b.rname());
+	    Text rn;
+	    if(m.id == null) {
+		rn = self;
+	    } else {
+		BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(m.id);
+		rn = (b == null)?unk:(b.rname());
+	    }
 	    g.aimage(rn.tex(), new Coord(0, 10), 0, 0.5);
 	}
 
 	public void change(Member pm) {
 	    if(pm == null)
-		Polity.this.wdgmsg("sel", (Object)null);
+		Polity.this.wdgmsg("sel");
 	    else
 		Polity.this.wdgmsg("sel", pm.id);
 	}
     }
     
     public static abstract class MemberWidget extends Widget {
-	public final int id;
+	public final Integer id;
 	
-	public MemberWidget(Coord sz, int id) {
+	public MemberWidget(Coord sz, Integer id) {
 	    super(sz);
 	    this.id = id;
 	}
     }
 
-    public static final Text.Foundry nmf = new Text.Foundry(Text.serif, 14).aa(true);
-    public static final Text.Foundry membf = new Text.Foundry(Text.serif, 12);
+    public static final Text.Foundry nmf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 14)).aa(true);
+    public static final Text.Foundry membf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
 
     public Polity(String name) {
 	super(new Coord(200, 200), "Town");
@@ -129,14 +135,14 @@ public class Polity extends Window {
 		rauth = null;
 	    }
 	} else if(msg == "add") {
-	    int id = (Integer)args[0];
+	    Integer id = (Integer)args[0];
 	    Member pm = new Member(id);
 	    synchronized(this) {
 		memb.add(pm);
 		idmap.put(id, pm);
 	    }
 	} else if(msg == "rm") {
-	    int id = (Integer)args[0];
+	    Integer id = (Integer)args[0];
 	    synchronized(this) {
 		Member pm = idmap.get(id);
 		memb.remove(pm);
@@ -151,6 +157,7 @@ public class Polity extends Window {
 	if(args[0] instanceof String) {
 	    String p = (String)args[0];
 	    if(p.equals("m")) {
+		mw = child;
 		add(child, 0, 210);
 		pack();
 		return;
