@@ -49,7 +49,7 @@ public abstract class States extends GLState {
 	}
 	
 	public void apply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glColor4fv(ca, 0);
 	}
 	
@@ -58,7 +58,7 @@ public abstract class States extends GLState {
 	}
 	
 	public void unapply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glColor3f(1, 1, 1);
 	}
 	
@@ -137,13 +137,13 @@ public abstract class States extends GLState {
 	}
 	
 	public void apply(GOut g) {
-	    GL gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glEnable(GL.GL_SAMPLE_COVERAGE);
 	    gl.glSampleCoverage(cov, inv);
 	}
 	
 	public void unapply(GOut g) {
-	    GL gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glSampleCoverage(1.0f, false);
 	    gl.glDisable(GL.GL_SAMPLE_COVERAGE);
 	}
@@ -193,7 +193,7 @@ public abstract class States extends GLState {
 	}
 	
 	public void apply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glFogi(GL2.GL_FOG_MODE, GL2.GL_LINEAR);
 	    gl.glFogf(GL2.GL_FOG_START, s);
 	    gl.glFogf(GL2.GL_FOG_END, e);
@@ -202,7 +202,7 @@ public abstract class States extends GLState {
 	}
 	
 	public void unapply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glDisable(GL2.GL_FOG);
 	}
 	
@@ -227,13 +227,13 @@ public abstract class States extends GLState {
 	}
 	
 	public void apply(GOut g) {
-	    GL gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glPolygonOffset(factor, units);
 	    gl.glEnable(mode);
 	}
 	
 	public void unapply(GOut g) {
-	    GL gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glDisable(mode);
 	}
 	

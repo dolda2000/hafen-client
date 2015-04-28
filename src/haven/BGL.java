@@ -159,6 +159,18 @@ public class BGL {
 	    });
     }
 
+    public void glColor4fv(final float[] v, final int n) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glColor4fv(v, n);}
+	    });
+    }
+
+    public void glColorMask(final boolean r, final boolean g, final boolean b, final boolean a) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glColorMask(r, g, b, a);}
+	    });
+    }
+
     public void glCompileShaderARB(final ID shader) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glCompileShaderARB(shader.glid());}
@@ -190,6 +202,12 @@ public class BGL {
     public void glDeleteObjectARB(final ID id) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glDeleteObjectARB(id.glid());}
+	    });
+    }
+
+    public void glDepthMask(final boolean mask) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDepthMask(mask);}
 	    });
     }
 
@@ -235,6 +253,24 @@ public class BGL {
 	    });
     }
 
+    public void glFogi(final int pname, final int param) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glFogi(pname, param);}
+	    });
+    }
+
+    public void glFogf(final int pname, final float param) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glFogf(pname, param);}
+	    });
+    }
+
+    public void glFogfv(final int pname, final float[] param, final int n) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glFogfv(pname, param, n);}
+	    });
+    }
+
     public void glLineWidth(final float w) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glLineWidth(w);}
@@ -268,6 +304,24 @@ public class BGL {
     public void glPointSize(final float size) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glPointSize(size);}
+	    });
+    }
+
+    public void glPolygonMode(final int face, final int mode) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glPolygonMode(face, mode);}
+	    });
+    }
+
+    public void glPolygonOffset(final float factor, final float units) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glPolygonOffset(factor, units);}
+	    });
+    }
+
+    public void glSampleCoverage(final float value, final boolean invert) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glSampleCoverage(value, invert);}
 	    });
     }
 
