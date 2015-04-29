@@ -120,7 +120,7 @@ public interface Rendered extends Drawn {
 
     public static class Dot implements Rendered {
 	public void draw(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    g.st.put(Light.lighting, null);
 	    g.state(States.xray);
 	    g.apply();
@@ -147,7 +147,7 @@ public interface Rendered extends Drawn {
 	}
 	
 	public void draw(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    g.st.put(Light.lighting, null);
 	    g.state(States.xray);
 	    g.apply();
@@ -181,7 +181,7 @@ public interface Rendered extends Drawn {
 	}
 	
 	public void draw(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    g.apply();
 	    gl.glBegin(GL.GL_LINES);
 	    gl.glColor3f(1, 0, 0);
@@ -200,7 +200,7 @@ public interface Rendered extends Drawn {
     
     public static class Cube implements Rendered {
 	public void draw(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    g.apply();
 	    
 	    gl.glEnable(GL2.GL_COLOR_MATERIAL);
@@ -267,13 +267,13 @@ public interface Rendered extends Drawn {
 	}
 
 	public void draw(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 
 	    g.state(Light.deflight);
 	    g.state(sc);
 	    g.apply();
 	    gl.glEnable(GL2.GL_COLOR_MATERIAL);
-	    gl.glBegin(gl.GL_QUADS);
+	    gl.glBegin(GL2.GL_QUADS);
 	    gl.glNormal3f(0.0f, 0.0f, 1.0f);
 	    gl.glVertex3f(bn.x, bp.y, bp.z);
 	    gl.glVertex3f(bn.x, bn.y, bp.z);
@@ -316,28 +316,28 @@ public interface Rendered extends Drawn {
 	    g.state(ec);
 	    g.apply();
 	    gl.glLineWidth(1.2f);
-	    gl.glBegin(gl.GL_LINE_STRIP);
+	    gl.glBegin(GL2.GL_LINE_STRIP);
 	    gl.glVertex3f(bn.x, bn.y, bp.z);
 	    gl.glVertex3f(bn.x, bp.y, bp.z);
 	    gl.glVertex3f(bp.x, bp.y, bp.z);
 	    gl.glVertex3f(bp.x, bn.y, bp.z);
 	    gl.glVertex3f(bn.x, bn.y, bp.z);
 	    gl.glEnd();
-	    gl.glBegin(gl.GL_LINE_STRIP);
+	    gl.glBegin(GL2.GL_LINE_STRIP);
 	    gl.glVertex3f(bn.x, bn.y, bn.z);
 	    gl.glVertex3f(bn.x, bp.y, bn.z);
 	    gl.glVertex3f(bp.x, bp.y, bn.z);
 	    gl.glVertex3f(bp.x, bn.y, bn.z);
 	    gl.glVertex3f(bn.x, bn.y, bn.z);
 	    gl.glEnd();
-	    gl.glBegin(gl.GL_LINES);
+	    gl.glBegin(GL2.GL_LINES);
 	    gl.glVertex3f(bn.x, bn.y, bn.z); gl.glVertex3f(bn.x, bn.y, bp.z);
 	    gl.glVertex3f(bp.x, bn.y, bn.z); gl.glVertex3f(bp.x, bn.y, bp.z);
 	    gl.glVertex3f(bp.x, bp.y, bn.z); gl.glVertex3f(bp.x, bp.y, bp.z);
 	    gl.glVertex3f(bn.x, bp.y, bn.z); gl.glVertex3f(bn.x, bp.y, bp.z);
 	    gl.glEnd();
 	    gl.glPointSize(5);
-	    gl.glBegin(gl.GL_POINTS);
+	    gl.glBegin(GL2.GL_POINTS);
 	    gl.glVertex3f(bn.x, bn.y, bn.z); gl.glVertex3f(bn.x, bn.y, bp.z);
 	    gl.glVertex3f(bp.x, bn.y, bn.z); gl.glVertex3f(bp.x, bn.y, bp.z);
 	    gl.glVertex3f(bp.x, bp.y, bn.z); gl.glVertex3f(bp.x, bp.y, bp.z);
@@ -378,7 +378,7 @@ public interface Rendered extends Drawn {
 	    };
 
 	public void draw(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    g.apply();
 	    pos.bind(g, false);
 	    tex.bind(g, false);

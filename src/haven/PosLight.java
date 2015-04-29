@@ -65,7 +65,7 @@ public class PosLight extends Light {
 
     public void enable(GOut g, int idx) {
 	super.enable(g, idx);
-	GL2 gl = g.gl;
+	BGL gl = g.gl;
 	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_POSITION, pos, 0);
 	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_CONSTANT_ATTENUATION, ac);
 	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_LINEAR_ATTENUATION, al);
@@ -73,7 +73,7 @@ public class PosLight extends Light {
     }
 
     public void disable(GOut g, int idx) {
-	GL2 gl = g.gl;
+	BGL gl = g.gl;
 	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_CONSTANT_ATTENUATION, 1.0f);
 	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_LINEAR_ATTENUATION, 0.0f);
 	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_QUADRATIC_ATTENUATION, 0.0f);

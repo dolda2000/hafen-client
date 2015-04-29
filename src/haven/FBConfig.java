@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import javax.media.opengl.*;
 import haven.glsl.*;
+import haven.GLProgram.VarID;
 import haven.GLFrameBuffer.Attachment;
 
 public class FBConfig {
@@ -244,7 +245,7 @@ public class FBConfig {
     }
 
     public static final Uniform numsamples = new Uniform.AutoApply(Type.INT) {
-	    public void apply(GOut g, int loc) {
+	    public void apply(GOut g, VarID loc) {
 		g.gl.glUniform1i(loc, ((PView.ConfContext)g.st.get(PView.ctx)).cur.ms);
 	    }
 	};

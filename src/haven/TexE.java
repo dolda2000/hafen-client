@@ -49,8 +49,7 @@ public class TexE extends TexGL {
     }
     
     protected void fill(GOut g) {
-	GL gl = g.gl;
-	gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, tdim.x, tdim.y, 0, dfmt, dtype, null);
+	g.gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, tdim.x, tdim.y, 0, dfmt, dtype, null);
     }
 
     public void render(GOut g, Coord c, Coord ul, Coord br, Coord sz) {

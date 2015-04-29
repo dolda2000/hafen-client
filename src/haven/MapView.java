@@ -29,6 +29,7 @@ package haven;
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 import haven.Resource.Tile;
+import haven.GLProgram.VarID;
 import java.awt.Color;
 import java.util.*;
 import java.lang.reflect.*;
@@ -523,7 +524,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     public static final haven.glsl.Uniform amblight = new haven.glsl.Uniform.AutoApply(haven.glsl.Type.INT) {
-	    public void apply(GOut g, int loc) {
+	    public void apply(GOut g, VarID loc) {
 		int idx = -1;
 		RenderContext ctx = g.st.get(PView.ctx);
 		if(ctx instanceof WidgetContext) {
@@ -597,7 +598,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	
 	public T get(GOut g, Coord c) {
-	    return(rmap.get(g.getpixel(c)));
+	    // return(rmap.get(g.getpixel(c)));
+	    return(null);
 	}
 	
 	protected void setup(Slot s, Rendered r) {
@@ -649,6 +651,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		return(null);
 	    rl.limit = (MapMesh)hit;
 	}
+	return(null);
+	/*
 	Coord tile;
 	{
 	    rl.mode = 1;
@@ -668,6 +672,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    pixel = new Coord((hitcol.getRed() * tilesz.x) / 255, (hitcol.getGreen() * tilesz.y) / 255);
 	}
 	return(rl.limit.ul.add(tile).mul(tilesz).add(pixel));
+	*/
     }
     
     public static class ClickInfo {
@@ -990,7 +995,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    GLState.Buffer bk = g.st.copy();
 	    Coord mc;
 	    try {
-		GL gl = g.gl;
+		BGL gl = g.gl;
 		g.st.set(clickbasic(g));
 		g.apply();
 		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
@@ -1020,7 +1025,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Coord mapcl;
 	    ClickInfo gobcl;
 	    try {
-		GL gl = g.gl;
+		BGL gl = g.gl;
 		g.st.set(clickbasic(g));
 		g.apply();
 		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);

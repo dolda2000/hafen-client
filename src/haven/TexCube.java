@@ -59,7 +59,7 @@ public class TexCube {
 	{0, 1},			// -Z
     };
     protected void fill(GOut g) {
-	GL gl = g.gl;
+	BGL gl = g.gl;
 	Coord dim = new Coord(tdim, tdim);
 	for(int i = 0; i < order.length; i++) {
 	    ByteBuffer data = ByteBuffer.wrap(TexI.convert(back, dim, new Coord(order[i][0] * tdim, order[i][1] * tdim), dim));
@@ -68,23 +68,22 @@ public class TexCube {
     }
 
     private void create(GOut g) {
-	GL2 gl = g.gl;
-	t = new TexOb(gl);
-	gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, t.id);
+	BGL gl = g.gl;
+	t = new TexOb(g);
+	gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, t);
 	gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
 	gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
 	fill(g);
 	checkerr(gl);
     }
 
-    public int glid(GOut g) {
-	GL gl = g.gl;
+    public TexOb glid(GOut g) {
 	synchronized(idmon) {
-	    if((t != null) && (t.gl != gl))
+	    if((t != null) && (t.cur != g.curgl))
 		dispose();
 	    if(t == null)
 		create(g);
-	    return(t.id);
+	    return(t);
 	}
     }
     

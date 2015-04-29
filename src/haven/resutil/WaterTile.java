@@ -184,50 +184,6 @@ public class WaterTile extends Tiler {
 
     private static final GLState.Slot<GLState> surfslot = new GLState.Slot<GLState>(GLState.Slot.Type.DRAW, GLState.class, PView.cam, HavenPanel.global);
     private static final States.DepthOffset surfoff = new States.DepthOffset(2, 2);
-    public static class SimpleSurface extends GLState {
-	private TexUnit tsky;
-
-	private SimpleSurface() {}
-
-	public void apply(GOut g) {
-	    GL2 gl = g.gl;
-	    (tsky = g.st.texalloc()).act(g);
-	    gl.glTexGeni(GL2.GL_S, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
-	    gl.glTexGeni(GL2.GL_T, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
-	    gl.glTexGeni(GL2.GL_R, GL2.GL_TEXTURE_GEN_MODE, GL2.GL_REFLECTION_MAP);
-	    gl.glEnable(GL2.GL_TEXTURE_GEN_S);
-	    gl.glEnable(GL2.GL_TEXTURE_GEN_T);
-	    gl.glEnable(GL2.GL_TEXTURE_GEN_R);
-	    gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, GL2.GL_MODULATE);
-	    gl.glEnable(GL.GL_TEXTURE_CUBE_MAP);
-	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
-	    gl.glColor4f(1, 1, 1, 0.5f);
-	    g.st.matmode(g, GL.GL_TEXTURE);
-	    gl.glPushMatrix();
-	    PView.camxf(g).transpose().trim3(1).loadgl(gl);
-	}
-
-	public void unapply(GOut g) {
-	    GL2 gl = g.gl;
-	    tsky.act(g);
-	    g.st.matmode(g, GL.GL_TEXTURE);
-	    gl.glPopMatrix();
-	    gl.glDisable(GL.GL_TEXTURE_CUBE_MAP);
-	    gl.glDisable(GL2.GL_TEXTURE_GEN_S);
-	    gl.glDisable(GL2.GL_TEXTURE_GEN_T);
-	    gl.glDisable(GL2.GL_TEXTURE_GEN_R);
-	    gl.glColor3f(1, 1, 1);
-	    tsky.free(); tsky = null;
-	}
-
-	public void prep(Buffer buf) {
-	    buf.put(surfslot, this);
-	    buf.put(States.color, null);
-	    buf.put(Light.lighting, null);
-	    surfoff.prep(buf);
-	}
-    }
-
     public static class BetterSurface extends GLState {
 	private TexUnit tsky, tnrm;
 	private final Uniform ssky = new Uniform(Type.SAMPLERCUBE);
@@ -317,7 +273,7 @@ public class WaterTile extends Tiler {
 	};
 
 	public void reapply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glUniform1i(g.st.prog.uniform(ssky), tsky.id);
 	    gl.glUniform1i(g.st.prog.uniform(snrm), tnrm.id);
 	    gl.glUniformMatrix3fv(g.st.prog.uniform(icam), 1, false, PView.camxf(g).transpose().trim3(), 0);
@@ -326,7 +282,7 @@ public class WaterTile extends Tiler {
 	public ShaderMacro[] shaders() {return(shaders);}
 
 	public void apply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glBlendFunc(GL.GL_ONE, GL.GL_ONE);
 	    (tsky = g.st.texalloc()).act(g);
 	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
@@ -336,11 +292,11 @@ public class WaterTile extends Tiler {
 	}
 
 	public void unapply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    tsky.act(g);
-	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, 0);
+	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, null);
 	    tnrm.act(g);
-	    gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+	    gl.glBindTexture(GL.GL_TEXTURE_2D, null);
 	    tsky.free(); tsky = null;
 	    tnrm.free(); tnrm = null;
 	    gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
@@ -355,12 +311,9 @@ public class WaterTile extends Tiler {
     }
 
     public static final GLState surfmat = new GLState.Abstract() {
-	    final GLState s1 = new SimpleSurface(), s2 = new BetterSurface();
+	    final GLState s = new BetterSurface();
 	    public void prep(Buffer buf) {
-		if(buf.cfg.pref.wsurf.val)
-		    s2.prep(buf);
-		else
-		    s1.prep(buf);
+		s.prep(buf);
 	    }
 	};
     public static final GLState surfmatc = GLState.compose(surfmat, new Rendered.Order.Default(6000));

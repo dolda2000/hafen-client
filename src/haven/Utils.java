@@ -1035,6 +1035,15 @@ public class Utils {
 	return(splice(src, off, src.length - off));
     }
 
+    public static int[] splice(int[] src, int off, int len) {
+	int[] dst = new int[len];
+	System.arraycopy(src, off, dst, 0, len);
+	return(dst);
+    }
+    public static int[] splice(int[] src, int off) {
+	return(splice(src, off, src.length - off));
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> T[] extend(T[] src, int off, int nl) {
 	T[] dst = (T[])Array.newInstance(src.getClass().getComponentType(), nl);
