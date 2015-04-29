@@ -297,26 +297,20 @@ public abstract class PView extends Widget {
     public static Matrix4f mvxf(GOut g, GLState.Buffer buf) {
 	Camera cam_s = buf.get(cam);
 	Location.Chain loc_s = buf.get(loc);
-	if((cam_s == null) && (loc_s == null))
-	    return(Matrix4f.id);
-	if(cam_s == null)
-	    return(g.mvtmp.load(loc_s.fin(Matrix4f.id)));
-	else if(loc_s == null)
-	    return(g.mvtmp.load(cam_s.fin(Matrix4f.id)));
-	else
-	    return(g.mvtmp.load(cam_s.fin(Matrix4f.id)).mul1(loc_s.fin(Matrix4f.id)));
+	Matrix4f ret = Matrix4f.id;
+	if(cam_s != null) ret = cam_s.fin(ret);
+	if(loc_s != null) ret = loc_s.fin(ret);
+	return(ret);
     }
     public static Matrix4f mvxf(GOut g) {return(mvxf(g, g.st.cstate()));}
 
     public static Matrix4f pmvxf(GOut g, GLState.Buffer buf) {
-	g.mvtmp.load(g.st.proj);
 	Camera cam_s = buf.get(cam);
 	Location.Chain loc_s = buf.get(loc);
-	if(cam_s != null)
-	    g.mvtmp.mul1(cam_s.fin(Matrix4f.id));
-	if(loc_s != null)
-	    g.mvtmp.mul1(loc_s.fin(Matrix4f.id));
-	return(g.mvtmp);
+	Matrix4f ret = g.st.proj;
+	if(cam_s != null) ret = cam_s.fin(ret);
+	if(loc_s != null) ret = loc_s.fin(ret);
+	return(ret);
     }
     public static Matrix4f pmvxf(GOut g) {return(pmvxf(g, g.st.cstate()));}
 }

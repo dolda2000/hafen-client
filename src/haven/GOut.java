@@ -39,8 +39,6 @@ public class GOut {
     private final GOut root;
     public final GLState.Applier st;
     private final GLState.Buffer def2d, cur2d;
-    /* XXX: This is horribly ugly, but I can't see any obvious alternative. */
-    Matrix4f mvtmp = new Matrix4f();
 	
     protected GOut(GOut o) {
 	this.gl = o.gl;
