@@ -142,18 +142,18 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	    private DisplayList list;
 
 	    public void draw(GOut g) {
-		GL2 gl = g.gl;
-		if((list != null) && (list.gl != gl)) {
+		BGL gl = g.gl;
+		if((list != null) && (list.cur != g.curgl)) {
 		    list.dispose();
 		    list = null;
 		}
 		if(list == null) {
-		    list = new DisplayList(gl);
-		    gl.glNewList(list.id, GL2.GL_COMPILE);
+		    list = new DisplayList(g);
+		    gl.glNewList(list, GL2.GL_COMPILE);
 		    cdraw(g);
 		    gl.glEndList();
 		}
-		gl.glCallList(list.id);
+		gl.glCallList(list);
 	    }
 
 	    public void dispose() {
@@ -171,45 +171,46 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	private GLBuffer ind;
 	private GLVertexArray vao;
 
-	private void bindindbo(GL2 gl) {
-	    if((ind != null) && (ind.gl != gl)) {
+	private void bindindbo(GOut g) {
+	    BGL gl = g.gl;
+	    if((ind != null) && (ind.cur != g.curgl)) {
 		ind.dispose();
 		ind = null;
 	    }
 	    if(ind == null) {
-		ind = new GLBuffer(gl);
-		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ind.id);
+		ind = new GLBuffer(g);
+		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ind);
 		indb.rewind();
 		gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, indb.remaining() * 2, indb, GL.GL_STATIC_DRAW);
 		GOut.checkerr(gl);
 	    } else {
-		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ind.id);
+		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ind);
 	    }
 	}
 
 	public void apply(GOut g) {
-	    GL2 gl = g.gl;
-	    if((vao != null) && (vao.gl != gl)) {
+	    BGL gl = g.gl;
+	    if((vao != null) && (vao.cur != g.curgl)) {
 		vao.dispose();
 		vao = null;
 	    }
 	    if(vao == null) {
-		vao = new GLVertexArray(gl);
-		gl.glBindVertexArray(vao.id);
+		vao = new GLVertexArray(g);
+		gl.glBindVertexArray(vao);
 		for(VertexBuf.AttribArray buf : vert.bufs) {
 		    if(buf instanceof VertexBuf.GLArray)
 			((VertexBuf.GLArray)buf).bind(g, true);
 		}
-		bindindbo(gl);
+		bindindbo(g);
 	    } else {
-		gl.glBindVertexArray(vao.id);
+		gl.glBindVertexArray(vao);
 	    }
 	}
 
 	public void unapply(GOut g) {
-	    GL2 gl = g.gl;
-	    gl.glBindVertexArray(0);
-	    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0);
+	    BGL gl = g.gl;
+	    gl.glBindVertexArray(null);
+	    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, null);
 	}
 
 	public int capplyfrom(GLState o) {
@@ -249,7 +250,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	    }
 
 	    public void draw(GOut g) {
-		GL2 gl = g.gl;
+		BGL gl = g.gl;
 		if(g.st.cur(vstate) != st) {
 		    g.state(st);
 		    g.apply();
@@ -258,7 +259,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	    }
 
 	    public boolean drawinst(GOut g, List<GLState.Buffer> inst) {
-		GL2 gl = g.gl;
+		BGL gl = g.gl;
 		g.state(st);
 		g.apply();
 		g.st.bindiarr(g, inst);
@@ -350,7 +351,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     }
 
     public void draw(GOut g) {
-	GL2 gl = g.gl;
+	BGL gl = g.gl;
 	Compiler compiler = compiler(g);
 	if(compiler != null) {
 	    compiler.get(g).draw(g);

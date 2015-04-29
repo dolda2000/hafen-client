@@ -28,18 +28,23 @@ package haven;
 
 import javax.media.opengl.*;
 
-public class GLVertexArray extends GLObject {
-    public final int id;
+public class GLVertexArray extends GLObject implements BGL.ID {
+    private int id;
     
-    public GLVertexArray(GL2 gl) {
-	super(gl);
+    public GLVertexArray(GOut g) {super(g);}
+
+    public void create(GL2 gl) {
 	int[] buf = new int[1];
 	gl.glGenVertexArrays(1, buf, 0);
 	this.id = buf[0];
     }
-    
-    protected void delete() {
-	int[] buf = {id};
+
+    protected void delete(BGL gl) {
+	BGL.ID[] buf = {this};
 	gl.glDeleteVertexArrays(1, buf, 0);
+    }
+
+    public int glid() {
+	return(id);
     }
 }

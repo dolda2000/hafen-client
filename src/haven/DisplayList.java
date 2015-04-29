@@ -28,15 +28,20 @@ package haven;
 
 import javax.media.opengl.*;
 
-public class DisplayList extends GLObject {
-    public final int id;
+public class DisplayList extends GLObject implements BGL.ID {
+    private int id;
     
-    public DisplayList(GL2 gl) {
-	super(gl);
+    public DisplayList(GOut g) {super(g);}
+
+    public void create(GL2 gl) {
 	id = gl.glGenLists(1);
     }
     
-    protected void delete() {
-	gl.glDeleteLists(id, 1);
+    protected void delete(BGL gl) {
+	gl.glDeleteLists(this, 1);
+    }
+
+    public int glid() {
+	return(id);
     }
 }
