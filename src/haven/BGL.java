@@ -604,6 +604,12 @@ public class BGL {
 	    });
     }
 
+    public void glTexImage2DMultisample(final int target, final int samples, final int internalformat, final int width, final int height, final boolean fixedsamplelocations) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.getGL3bc().glTexImage2DMultisample(target, samples, internalformat, width, height, fixedsamplelocations);}
+	    });
+    }
+
     public void glTexParameterf(final int target, final int pname, final float param) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glTexParameterf(target, pname, param);}
@@ -637,6 +643,12 @@ public class BGL {
     public void glUniform4f(final ID location, final float v0, final float v1, final float v2, final float v3) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glUniform4f(location.glid(), v0, v1, v2, v3);}
+	    });
+    }
+
+    public void glUniform4fv(final ID location, final int count, final float[] val, final int n) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glUniform4fv(location.glid(), count, val, n);}
 	    });
     }
 

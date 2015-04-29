@@ -45,20 +45,20 @@ public abstract class Tex3D {
     protected abstract void fill(GOut g);
 
     private void create(GOut g) {
-	GL2 gl = g.gl;
-	t = new TexOb(gl);
-	gl.glBindTexture(GL2.GL_TEXTURE_3D, t.id);
+	BGL gl = g.gl;
+	t = new TexOb(g);
+	gl.glBindTexture(GL2.GL_TEXTURE_3D, t);
 	fill(g);
 	checkerr(gl);
     }
 
-    public int glid(GOut g) {
+    public TexOb glid(GOut g) {
 	synchronized(this) {
-	    if((t != null) && (t.gl != g.gl))
+	    if((t != null) && (t.cur != g.curgl))
 		dispose();
 	    if(t == null)
 		create(g);
-	    return(t.id);
+	    return(t);
 	}
     }
 
