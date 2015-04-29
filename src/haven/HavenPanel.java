@@ -376,12 +376,14 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	BGL buf = new BGL();
 	UI ui = this.ui;
 	redraw2(state, ui, buf);
+	curf.tick("ui");
 
 	GPUProfile.Frame curgf = null;
 	if(Config.profilegpu)
 	    curgf = gprof.new Frame((GL3)gl);
 	buf.run(gl);
 	GOut.checkerr(gl);
+	curf.tick("gl");
 	if(curgf != null)
 	    curgf.tick("draw");
 	if(curgf != null)
