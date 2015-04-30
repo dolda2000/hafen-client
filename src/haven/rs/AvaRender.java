@@ -81,7 +81,9 @@ public class AvaRender {
 				return(false);
 			    }
 			}, g);
-		    ret[0] = g.getimage();
+		    g.getimage(new Callback<BufferedImage>() {
+			    public void done(BufferedImage res) {ret[0] = res;}
+			});
 		}
 	    });
 	buf.dispose();
