@@ -374,6 +374,12 @@ public class BGL {
 	    });
     }
 
+    public void glDrawElements(final int mode, final int count, final int type, final Buffer indices) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDrawElements(mode, count, type, indices);}
+	    });
+    }
+
     public void glDrawRangeElements(final int mode, final int start, final int end, final int count, final int type, final Buffer indices) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glDrawRangeElements(mode, start, end, count, type, indices);}
