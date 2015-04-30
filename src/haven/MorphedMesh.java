@@ -59,6 +59,11 @@ public class MorphedMesh extends FastMesh {
 	((MorphedBuf)vert).update();
 	return(super.setup(rl));
     }
+
+    public void cdraw(GOut g) {
+	((MorphedBuf)vert).update2(g);
+	super.cdraw(g);
+    }
     
     protected boolean compile() {
 	return(false);
@@ -94,6 +99,7 @@ public class MorphedMesh extends FastMesh {
 
 	private static class Pair {
 	    final FloatArray o, n;
+	    private FloatBuffer upd;
 	    Pair(FloatArray o, FloatArray n) {this.o = o; this.n = n;}
 	}
 
@@ -132,13 +138,26 @@ public class MorphedMesh extends FastMesh {
 	public void update() {
 	    if(!morph.update())
 		return;
+	    for(Pair p : parrays)
+		morph.morphp(p.upd = Utils.wfbuf(p.n.data.capacity()), p.o.data);
+	    for(Pair p : darrays)
+		morph.morphd(p.upd = Utils.wfbuf(p.n.data.capacity()), p.o.data);
+	}
+
+	public void update2(GOut g) {
 	    for(Pair p : parrays) {
-		morph.morphp(p.n.data, p.o.data);
-		p.n.update();
+		if(p.upd != null) {
+		    g.gl.bglCopyBufferf(p.n.data, 0, p.upd, 0, p.upd.capacity());
+		    p.n.update();
+		    p.upd = null;
+		}
 	    }
 	    for(Pair p : darrays) {
-		morph.morphd(p.n.data, p.o.data);
-		p.n.update();
+		if(p.upd != null) {
+		    g.gl.bglCopyBufferf(p.n.data, 0, p.upd, 0, p.upd.capacity());
+		    p.n.update();
+		    p.upd = null;
+		}
 	    }
 	}
     }

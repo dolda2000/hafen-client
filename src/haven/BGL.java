@@ -27,7 +27,7 @@
 package haven;
 
 import javax.media.opengl.*;
-import java.nio.Buffer;
+import java.nio.*;
 
 public class BGL {
     private static abstract class Command {
@@ -84,6 +84,28 @@ public class BGL {
     public void bglSubmit(final Request req) {
 	add(new Command() {
 		public void run(GL2 gl) {req.run(gl);}
+	    });
+    }
+
+    public void bglCopyBufferf(final FloatBuffer dst, final int doff, final FloatBuffer src, final int soff, final int len) {
+	add(new Command() {
+		public void run(GL2 gl) {
+		    dst.position(doff);
+		    src.position(soff).limit(len);
+		    dst.put(src);
+		    dst.rewind();
+		    src.rewind().limit(src.capacity());
+		}
+	    });
+    }
+
+    public void bglCopyBufferf(final FloatBuffer dst, final int doff, final float[] src, final int soff, final int len) {
+	add(new Command() {
+		public void run(GL2 gl) {
+		    dst.position(doff);
+		    dst.put(src, soff, len);
+		    dst.rewind();
+		}
 	    });
     }
 
