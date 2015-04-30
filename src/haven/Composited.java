@@ -34,8 +34,8 @@ public class Composited implements Rendered {
     public final Skeleton skel;
     public final Pose pose;
     private final PoseMorph morph;
-    private Collection<Model> mod = new LinkedList<Model>();
-    private Collection<Equ> equ = new LinkedList<Equ>();
+    public Collection<Model> mod = new LinkedList<Model>();
+    public Collection<Equ> equ = new LinkedList<Equ>();
     public Poses poses = new Poses();
     public List<MD> nmod = null, cmod = new LinkedList<MD>();
     public List<ED> nequ = null, cequ = new LinkedList<ED>();
@@ -141,10 +141,10 @@ public class Composited implements Rendered {
 	}
     };
 
-    private class Model implements Rendered {
-	private final MorphedMesh m;
+    public class Model implements Rendered {
+	public final MorphedMesh m;
 	int z = 0, lz = 0;
-	private class Layer implements FRendered {
+	public class Layer implements FRendered {
 	    private final Material mat;
 	    private final int z1, z2;
 	    
@@ -169,7 +169,7 @@ public class Composited implements Rendered {
 		return(true);
 	    }
 	}
-	private final List<Layer> lay = new ArrayList<Layer>();
+	public final List<Layer> lay = new ArrayList<Layer>();
 	
 	private Model(FastMesh m) {
 	    this.m = new MorphedMesh(m, morph);
@@ -190,7 +190,7 @@ public class Composited implements Rendered {
 	}
     }
     
-    private class SpriteEqu extends Equ {
+    public class SpriteEqu extends Equ {
 	private final Sprite spr;
 	
 	private SpriteEqu(ED ed) {
@@ -211,7 +211,7 @@ public class Composited implements Rendered {
 	}
     }
     
-    private class LightEqu extends Equ {
+    public class LightEqu extends Equ {
 	private final Light l;
 	
 	private LightEqu(ED ed) {
@@ -228,7 +228,7 @@ public class Composited implements Rendered {
 	}
     }
 
-    private abstract class Equ implements Rendered {
+    public abstract class Equ implements Rendered {
 	private final GLState et;
 	public final ED desc;
 	private boolean matched;
