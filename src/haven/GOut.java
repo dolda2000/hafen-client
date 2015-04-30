@@ -507,32 +507,38 @@ public class GOut {
 	return(g);
     }
     
-    /*
-    public Color getpixel(Coord c) {
-	byte[] buf = new byte[4];
-	gl.glReadPixels(c.x + tx.x, root.sz.y - c.y - tx.y, 1, 1, GL.GL_RGBA, GL2.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
-	checkerr();
-	return(new Color(((int)buf[0]) & 0xff, ((int)buf[1]) & 0xff, ((int)buf[2]) & 0xff));
+    public void getpixel(final Coord c, final Callback<Color> cb) {
+	gl.bglSubmit(new BGL.Request() {
+		public void run(GL2 gl) {
+		    byte[] buf = new byte[4];
+		    gl.glReadPixels(c.x + tx.x, root.sz.y - c.y - tx.y, 1, 1, GL.GL_RGBA, GL2.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
+		    checkerr();
+		    cb.done(new Color(((int)buf[0]) & 0xff, ((int)buf[1]) & 0xff, ((int)buf[2]) & 0xff));
+		}
+	    });
     }
     
-    public BufferedImage getimage(Coord ul, Coord sz) {
-	byte[] buf = new byte[sz.x * sz.y * 4];
-	gl.glReadPixels(ul.x + tx.x, root.sz.y - ul.y - sz.y - tx.y, sz.x, sz.y, GL.GL_RGBA, GL2.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
-	checkerr();
-	for(int y = 0; y < sz.y / 2; y++) {
-	    int to = y * sz.x * 4, bo = (sz.y - y - 1) * sz.x * 4;
-	    for(int o = 0; o < sz.x * 4; o++, to++, bo++) {
-		byte t = buf[to];
-		buf[to] = buf[bo];
-		buf[bo] = t;
-	    }
-	}
-	WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(buf, buf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
-	return(new BufferedImage(TexI.glcm, raster, false, null));
+    public void getimage(final Coord ul, final Coord sz, final Callback<BufferedImage> cb) {
+	gl.bglSubmit(new BGL.Request() {
+		public void run(GL2 gl) {
+		    byte[] buf = new byte[sz.x * sz.y * 4];
+		    gl.glReadPixels(ul.x + tx.x, root.sz.y - ul.y - sz.y - tx.y, sz.x, sz.y, GL.GL_RGBA, GL2.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
+		    checkerr();
+		    for(int y = 0; y < sz.y / 2; y++) {
+			int to = y * sz.x * 4, bo = (sz.y - y - 1) * sz.x * 4;
+			for(int o = 0; o < sz.x * 4; o++, to++, bo++) {
+			    byte t = buf[to];
+			    buf[to] = buf[bo];
+			    buf[bo] = t;
+			}
+		    }
+		    WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(buf, buf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
+		    cb.done(new BufferedImage(TexI.glcm, raster, false, null));
+		}
+	    });
     }
 
-    public BufferedImage getimage() {
-	return(getimage(Coord.z, sz));
+    public void getimage(final Callback<BufferedImage> cb) {
+	getimage(Coord.z, sz, cb);
     }
-    */
 }
