@@ -111,7 +111,7 @@ public abstract class PView extends Widget {
 
     public static abstract class RenderState extends GLState {
 	public void apply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glScissor(g.ul.x, g.root().sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
 	    /* For the viewport, use the renderstate's indicated size
 	     * and offset explicitly, so as to not fail on partially
@@ -120,20 +120,20 @@ public abstract class PView extends Widget {
 	    Coord sz = sz();
 	    gl.glViewport(ul.x, g.root().sz.y - ul.y - sz.y, sz.x, sz.y);
 
-	    gl.glAlphaFunc(gl.GL_GREATER, 0.5f);
-	    gl.glEnable(gl.GL_DEPTH_TEST);
-	    gl.glEnable(gl.GL_CULL_FACE);
-	    gl.glEnable(gl.GL_SCISSOR_TEST);
-	    gl.glDepthFunc(gl.GL_LEQUAL);
+	    gl.glAlphaFunc(GL.GL_GREATER, 0.5f);
+	    gl.glEnable(GL.GL_DEPTH_TEST);
+	    gl.glEnable(GL.GL_CULL_FACE);
+	    gl.glEnable(GL.GL_SCISSOR_TEST);
+	    gl.glDepthFunc(GL.GL_LEQUAL);
 	    gl.glClearDepth(1.0);
 	}
 	
 	public void unapply(GOut g) {
-	    GL gl = g.gl;
+	    BGL gl = g.gl;
 
-	    gl.glDisable(gl.GL_DEPTH_TEST);
-	    gl.glDisable(gl.GL_CULL_FACE);
-	    gl.glDisable(gl.GL_SCISSOR_TEST);
+	    gl.glDisable(GL.GL_DEPTH_TEST);
+	    gl.glDisable(GL.GL_CULL_FACE);
+	    gl.glDisable(GL.GL_SCISSOR_TEST);
 
 	    gl.glViewport(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
 	    gl.glScissor(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
@@ -231,7 +231,7 @@ public abstract class PView extends Widget {
 		HavenPanel.OrthoState.fixed(cstate.cur.fb.sz()).prep(gb);
 		cstate.cur.fb.prep(gb);
 		cstate.cur.fb.prep(def);
-		rg = new GOut(g.gl, g.ctx, g.gc, g.st, gb, cstate.cur.fb.sz());
+		rg = new GOut(g.gl, g.curgl, g.gc, g.st, gb, cstate.cur.fb.sz());
 	    } else {
 		rg = g;
 	    }
@@ -240,12 +240,12 @@ public abstract class PView extends Widget {
 	    if((cc == null) && (cstate.cur.fb != null))
 		cc = new Color(0, 0, 0, 0);
 	    rg.apply();
-	    GL gl = rg.gl;
+	    BGL gl = rg.gl;
 	    if(cc == null) {
-		gl.glClear(gl.GL_DEPTH_BUFFER_BIT);
+		gl.glClear(GL.GL_DEPTH_BUFFER_BIT);
 	    } else {
 		gl.glClearColor((float)cc.getRed() / 255f, (float)cc.getGreen() / 255f, (float)cc.getBlue() / 255f, (float)cc.getAlpha() / 255f);
-		gl.glClear(gl.GL_DEPTH_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT);
+		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
 	    }
 	    if(curf != null)
 		curf.tick("cls");
@@ -297,26 +297,20 @@ public abstract class PView extends Widget {
     public static Matrix4f mvxf(GOut g, GLState.Buffer buf) {
 	Camera cam_s = buf.get(cam);
 	Location.Chain loc_s = buf.get(loc);
-	if((cam_s == null) && (loc_s == null))
-	    return(Matrix4f.id);
-	if(cam_s == null)
-	    return(g.mvtmp.load(loc_s.fin(Matrix4f.id)));
-	else if(loc_s == null)
-	    return(g.mvtmp.load(cam_s.fin(Matrix4f.id)));
-	else
-	    return(g.mvtmp.load(cam_s.fin(Matrix4f.id)).mul1(loc_s.fin(Matrix4f.id)));
+	Matrix4f ret = Matrix4f.id;
+	if(cam_s != null) ret = cam_s.fin(ret);
+	if(loc_s != null) ret = loc_s.fin(ret);
+	return(ret);
     }
     public static Matrix4f mvxf(GOut g) {return(mvxf(g, g.st.cstate()));}
 
     public static Matrix4f pmvxf(GOut g, GLState.Buffer buf) {
-	g.mvtmp.load(g.st.proj);
 	Camera cam_s = buf.get(cam);
 	Location.Chain loc_s = buf.get(loc);
-	if(cam_s != null)
-	    g.mvtmp.mul1(cam_s.fin(Matrix4f.id));
-	if(loc_s != null)
-	    g.mvtmp.mul1(loc_s.fin(Matrix4f.id));
-	return(g.mvtmp);
+	Matrix4f ret = g.st.proj;
+	if(cam_s != null) ret = cam_s.fin(ret);
+	if(loc_s != null) ret = loc_s.fin(ret);
+	return(ret);
     }
     public static Matrix4f pmvxf(GOut g) {return(pmvxf(g, g.st.cstate()));}
 }

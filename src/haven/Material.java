@@ -109,7 +109,7 @@ public class Material extends GLState {
 	}
 
 	public void apply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_AMBIENT, amb, 0);
 	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, dif, 0);
 	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, spc, 0);
@@ -118,7 +118,7 @@ public class Material extends GLState {
 	}
 
 	public void unapply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_AMBIENT, defamb, 0);
 	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, defdif, 0);
 	    gl.glMaterialfv(GL.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, defspc, 0);

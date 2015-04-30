@@ -99,7 +99,6 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		    */
 		    if(inited && rdr)
 			redraw(gl);
-		    GLObject.disposeall(gl);
 		}
 			
 		public void init(GLAutoDrawable d) {
@@ -117,10 +116,10 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		    }
 		    gstate = new GLState() {
 			    public void apply(GOut g) {
-				GL2 gl = g.gl;
+				BGL gl = g.gl;
 				gl.glColor3f(1, 1, 1);
 				gl.glPointSize(4);
-				gl.setSwapInterval(1);
+				gl.joglSetSwapInterval(1);
 				gl.glEnable(GL.GL_BLEND);
 				//gl.glEnable(GL.GL_LINE_SMOOTH);
 				gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
@@ -273,24 +272,12 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	return(Toolkit.getDefaultToolkit().createCustomCursor(buf, new java.awt.Point(hs.x, hs.y), ""));
     }
     
-    void redraw(GL2 gl) {
-	GPUProfile.Frame curgf = null;
-	if(Config.profilegpu)
-	    curgf = gprof.new Frame((GL3)gl);
-
-	if((state == null) || (state.gl != gl))
-	    state = new GLState.Applier(gl, glconf);
-	GLState.Buffer ibuf = new GLState.Buffer(glconf);
+    void redraw2(GLState.Applier state, UI ui, BGL gl) {
+	GLState.Buffer ibuf = new GLState.Buffer(state.cfg);
 	gstate.prep(ibuf);
 	ostate.prep(ibuf);
-	GOut g = new GOut(gl, getContext(), glconf, state, ibuf, new Coord(w, h));
-	UI ui = this.ui;
+	GOut g = new GOut(gl, state.cgl, state.cfg, state, ibuf, new Coord(w, h));
 	state.set(ibuf);
-
-	g.state(rtstate);
-	TexRT.renderall(g);
-	if(curf != null)
-	    curf.tick("texrt");
 
 	g.state(ostate);
 	g.apply();
@@ -298,15 +285,11 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	gl.glClear(GL.GL_COLOR_BUFFER_BIT);
 	if(curf != null)
 	    curf.tick("cls");
-	if(curgf != null)
-	    curgf.tick("cls");
 	synchronized(ui) {
 	    ui.draw(g);
 	}
 	if(curf != null)
 	    curf.tick("draw");
-	if(curgf != null)
-	    curgf.tick("draw");
 
 	if(Config.dbtext) {
 	    int y = h - 150;
@@ -315,7 +298,6 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	    long free = rt.freeMemory(), total = rt.totalMemory();
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Tex-current: %d", TexGL.num());
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "RT-current: %d", TexRT.current.get(gl).size());
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "GL progs: %d", g.st.numprogs());
 	    GameUI gi = ui.root.findchild(GameUI.class);
 	    if((gi != null) && (gi.map != null)) {
@@ -384,13 +366,33 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	    }
 	}
 	state.clean();
+	GLObject.disposeall(state.cgl, gl);
+    }
+
+    void redraw(GL2 gl) {
+	if((state == null) || (state.cgl.gl != gl))
+	    state = new GLState.Applier(new CurrentGL(gl, glconf));
+
+	BGL buf = new BGL();
+	UI ui = this.ui;
+	redraw2(state, ui, buf);
+	curf.tick("ui");
+
+	GPUProfile.Frame curgf = null;
+	if(Config.profilegpu)
+	    curgf = gprof.new Frame((GL3)gl);
+	buf.run(gl);
+	GOut.checkerr(gl);
+	curf.tick("gl");
+	if(curgf != null)
+	    curgf.tick("draw");
+	if(curgf != null)
+	    curgf.fin();
+
 	if(glconf.pref.dirty) {
 	    glconf.pref.save();
 	    glconf.pref.dirty = false;
 	}
-
-	if(curgf != null)
-	    curgf.fin();
     }
 	
     void dispatch() {

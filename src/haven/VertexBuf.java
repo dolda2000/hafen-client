@@ -30,6 +30,7 @@ import java.nio.*;
 import java.util.*;
 import java.lang.annotation.*;
 import javax.media.opengl.*;
+import haven.GLProgram.VarID;
 
 public class VertexBuf {
     public static final GLState.Slot<Binding> bound = new GLState.Slot<Binding>(GLState.Slot.Type.GEOM, Binding.class);
@@ -104,26 +105,26 @@ public class VertexBuf {
 	private boolean update = false;
 
 	public void bindvbo(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    synchronized(this) {
-		if((bufobj != null) && (bufobj.gl != gl))
+		if((bufobj != null) && (bufobj.cur != g.curgl))
 		    dispose();
 		if(bufobj == null) {
-		    bufobj = new GLBuffer(gl);
-		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, bufobj.id);
+		    bufobj = new GLBuffer(g);
+		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, bufobj);
 		    Buffer data = data();
 		    data.rewind();
 		    gl.glBufferData(GL.GL_ARRAY_BUFFER, data.remaining() * elsize(), data, bufmode);
 		    GOut.checkerr(gl);
 		    update = false;
 		} else if(update) {
-		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, bufobj.id);
+		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, bufobj);
 		    Buffer data = data();
 		    data.rewind();
 		    gl.glBufferData(GL.GL_ARRAY_BUFFER, data.remaining() * elsize(), data, bufmode);
 		    update = false;
 		} else {
-		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, bufobj.id);
+		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, bufobj);
 		}
 	    }
 	}
@@ -206,11 +207,11 @@ public class VertexBuf {
 	public VertexArray dup() {return(new VertexArray(Utils.bufcp(data)));}
 	
 	public void bind(GOut g, boolean asvbo) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    if(asvbo) {
 		bindvbo(g);
 		gl.glVertexPointer(3, GL.GL_FLOAT, 0, 0);
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, null);
 	    } else {
 		data.rewind();
 		gl.glVertexPointer(3, GL.GL_FLOAT, 0, direct());
@@ -243,11 +244,11 @@ public class VertexBuf {
 	public NormalArray dup() {return(new NormalArray(Utils.bufcp(data)));}
 
 	public void bind(GOut g, boolean asvbo) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    if(asvbo) {
 		bindvbo(g);
 		gl.glNormalPointer(GL.GL_FLOAT, 0, 0);
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, null);
 	    } else {
 		data.rewind();
 		gl.glNormalPointer(GL.GL_FLOAT, 0, direct());
@@ -277,11 +278,11 @@ public class VertexBuf {
 	public ColorArray dup() {return(new ColorArray(Utils.bufcp(data)));}
 
 	public void bind(GOut g, boolean asvbo) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    if(asvbo) {
 		bindvbo(g);
 		gl.glColorPointer(4, GL.GL_FLOAT, 0, 0);
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, null);
 	    } else {
 		data.rewind();
 		gl.glColorPointer(4, GL.GL_FLOAT, 0, direct());
@@ -309,11 +310,11 @@ public class VertexBuf {
 	public TexelArray dup() {return(new TexelArray(Utils.bufcp(data)));}
 
 	public void bind(GOut g, boolean asvbo) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    if(asvbo) {
 		bindvbo(g);
 		gl.glTexCoordPointer(2, GL.GL_FLOAT, 0, 0);
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, null);
 	    } else {
 		data.rewind();
 		gl.glTexCoordPointer(2, GL.GL_FLOAT, 0, direct());
@@ -330,7 +331,7 @@ public class VertexBuf {
 
     public static class NamedFloatArray extends FloatArray implements GLArray {
 	public final haven.glsl.Attribute attr;
-	private int bound = -1;
+	private VarID bound = null;
 
 	public NamedFloatArray(int n, FloatBuffer data, haven.glsl.Attribute attr) {
 	    super(n, data);
@@ -338,12 +339,12 @@ public class VertexBuf {
 	}
 
 	public void bind(GOut g, boolean asvbo) {
-	    if((bound = g.st.prog.cattrib(attr)) != -1) {
-		GL2 gl = g.gl;
+	    if((bound = g.st.prog.cattrib(attr)) != null) {
+		BGL gl = g.gl;
 		if(asvbo) {
 		    bindvbo(g);
 		    gl.glVertexAttribPointer(bound, n, GL2.GL_FLOAT, false, 0, 0);
-		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, 0);
+		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, null);
 		} else {
 		    data.rewind();
 		    gl.glVertexAttribPointer(bound, n, GL2.GL_FLOAT, false, 0, direct());
@@ -353,14 +354,16 @@ public class VertexBuf {
 	}
 
 	public void unbind(GOut g) {
-	    if(bound != -1) {
+	    if(bound != null) {
 		g.gl.glDisableVertexAttribArray(bound);
-		bound = -1;
+		bound = null;
 	    }
 	}
 
 	public Object progid(GOut g) {
-	    return(Integer.valueOf(g.st.prog.cattrib(attr)));
+	    /* XXX: This is not a good ID, as it doesn't intern
+	     * locations in various programs. */
+	    return(g.st.prog.cattrib(attr));
 	}
     }
 

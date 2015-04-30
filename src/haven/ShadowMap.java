@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import javax.media.opengl.*;
 import haven.glsl.*;
+import haven.GLProgram.VarID;
 import static haven.glsl.Cons.*;
 import static haven.glsl.Function.PDir.*;
 import static haven.glsl.Type.*;
@@ -202,16 +203,16 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 
     public void apply(GOut g) {
 	sampler = g.st.texalloc();
-	GL gl = g.gl;
+	BGL gl = g.gl;
 	sampler.act(g);
 	gl.glBindTexture(GL.GL_TEXTURE_2D, lbuf.glid(g));
 	reapply(g);
     }
 
     public void reapply(GOut g) {
-	GL2 gl = g.gl;
-	int mapu = g.st.prog.cuniform(Shader.map);
-	if(mapu >= 0) {
+	BGL gl = g.gl;
+	VarID mapu = g.st.prog.cuniform(Shader.map);
+	if(mapu != null) {
 	    gl.glUniform1i(mapu, sampler.id);
 	    gl.glUniformMatrix4fv(g.st.prog.uniform(Shader.txf), 1, false, txf.m, 0);
 	    gl.glUniform1i(g.st.prog.uniform(Shader.sl), slidx);
@@ -219,9 +220,9 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
     }
 
     public void unapply(GOut g) {
-	GL gl = g.gl;
+	BGL gl = g.gl;
 	sampler.act(g);
-	gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+	gl.glBindTexture(GL.GL_TEXTURE_2D, null);
 	sampler.free(); sampler = null;
     }
 }

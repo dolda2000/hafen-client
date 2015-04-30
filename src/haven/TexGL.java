@@ -45,19 +45,26 @@ public abstract class TexGL extends Tex {
     private WeakList.Entry<TexGL> actref;
     private boolean setparams = true;
     
-    public static class TexOb extends GLObject {
-	public final int id;
+    public static class TexOb extends GLObject implements BGL.ID {
+	private int id;
 	
-	public TexOb(GL2 gl) {
-	    super(gl);
+	public TexOb(GOut g) {
+	    super(g);
+	}
+
+	public void create(GL2 gl) {
 	    int[] buf = new int[1];
 	    gl.glGenTextures(1, buf, 0);
 	    this.id = buf[0];
 	}
 	
-	protected void delete() {
-	    int[] buf = {id};
+	protected void delete(BGL gl) {
+	    BGL.ID[] buf = {this};
 	    gl.glDeleteTextures(1, buf, 0);
+	}
+
+	public int glid() {
+	    return(id);
 	}
     }
     
@@ -95,18 +102,18 @@ public abstract class TexGL extends Tex {
 	}
     
 	public void reapply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glUniform1i(g.st.prog.uniform(Tex2D.tex2d), sampler.id);
 	}
 
 	public void apply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    sampler = lbind(g, tex);
 	    reapply(g);
 	}
 
 	public void unapply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    sampler.ufree(g); sampler = null;
 	}
     
@@ -129,10 +136,10 @@ public abstract class TexGL extends Tex {
 	}
     
 	public void applyfrom(GOut g, GLState sfrom) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    TexDraw from = (TexDraw)sfrom;
 	    from.sampler.act(g);
-	    int glid = tex.glid(g);
+	    TexOb glid = tex.glid(g);
 	    sampler = from.sampler; from.sampler = null;
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, glid);
 	    if(g.st.pdirty)
@@ -171,7 +178,7 @@ public abstract class TexGL extends Tex {
 	}
 	
 	public void unapply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    if(g.st.old(TexDraw.slot) == null) {
 		sampler.act(g);
 		sampler.free(); sampler = null;
@@ -200,10 +207,10 @@ public abstract class TexGL extends Tex {
 	    TexDraw draw = g.st.get(TexDraw.slot), old = g.st.old(TexDraw.slot);
 	    if((old != null) || (draw != null))
 		throw(new RuntimeException("TexClip is somehow being transition even though there is a TexDraw"));
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    TexClip from = (TexClip)sfrom;
 	    from.sampler.act(g);
-	    int glid = tex.glid(g);
+	    TexOb glid = tex.glid(g);
 	    sampler = from.sampler; from.sampler = null;
 	    gl.glBindTexture(GL2.GL_TEXTURE_2D, glid);
 	}
@@ -244,7 +251,7 @@ public abstract class TexGL extends Tex {
     }
 
     protected void setparams(GOut g) {
-	GL gl = g.gl;
+	BGL gl = g.gl;
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, minfilter);
 	gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, magfilter);
 	if((minfilter == GL.GL_LINEAR_MIPMAP_LINEAR) && (g.gc.pref.anisotex.val >= 1))
@@ -254,9 +261,9 @@ public abstract class TexGL extends Tex {
     }
 
     private void create(GOut g) {
-	GL2 gl = g.gl;
-	t = new TexOb(gl);
-	gl.glBindTexture(GL.GL_TEXTURE_2D, t.id);
+	BGL gl = g.gl;
+	t = new TexOb(g);
+	gl.glBindTexture(GL.GL_TEXTURE_2D, t);
 	setparams(g);
 	try {
 	    fill(g);
@@ -302,10 +309,10 @@ public abstract class TexGL extends Tex {
 	setparams = true;
     }
 
-    public int glid(GOut g) {
-	GL gl = g.gl;
+    public TexOb glid(GOut g) {
+	BGL gl = g.gl;
 	synchronized(idmon) {
-	    if((t != null) && (t.gl != gl))
+	    if((t != null) && (t.cur != g.curgl))
 		dispose();
 	    if(t == null) {
 		create(g);
@@ -313,16 +320,16 @@ public abstract class TexGL extends Tex {
 		    actref = active.add2(this);
 		}
 	    } else if(setparams) {
-		gl.glBindTexture(GL.GL_TEXTURE_2D, t.id);
+		gl.glBindTexture(GL.GL_TEXTURE_2D, t);
 		setparams(g);
 		setparams = false;
 	    }
-	    return(t.id);
+	    return(t);
 	}
     }
 
     public void render(GOut g, Coord c, Coord ul, Coord br, Coord sz) {
-	GL2 gl = g.gl;
+	BGL gl = g.gl;
 	g.st.prep(draw);
 	g.apply();
 	checkerr(gl);
@@ -354,8 +361,9 @@ public abstract class TexGL extends Tex {
 	}
     }
 
+    /*
     public BufferedImage get(GOut g, boolean invert) {
-	GL2 gl = g.gl;
+	BGL gl = g.gl;
 	g.state2d();
 	g.apply();
 	GLState.TexUnit s = g.st.texalloc();
@@ -382,6 +390,7 @@ public abstract class TexGL extends Tex {
     public BufferedImage get(GOut g) {
 	return(get(g, true));
     }
+    */
 
     @Material.ResName("tex")
     public static class $tex implements Material.ResCons2 {

@@ -124,7 +124,7 @@ public abstract class TexL extends TexGL {
 	    decode = prepare();
 	Prepared prep = decode.get();
 	decode = null;
-	GL2 gl = g.gl;
+	BGL gl = g.gl;
 	gl.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1);
 	Coord cdim = tdim;
 	for(int i = 0; i < prep.data.length; i++) {

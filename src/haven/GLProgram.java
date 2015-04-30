@@ -86,45 +86,55 @@ public class GLProgram implements java.io.Serializable {
 	}
     }
     
-    public static class ProgOb extends GLObject {
-	public final int id;
+    public static class ProgOb extends GLObject implements BGL.ID {
+	private int id;
 	
-	public ProgOb(GL2 gl) {
-	    super(gl);
+	public ProgOb(GOut g) {super(g);}
+
+	public void create(GL2 gl) {
 	    id = gl.glCreateProgramObjectARB();
 	}
-	
-	public void delete() {
-	    gl.glDeleteObjectARB(id);
+
+	public void delete(BGL gl) {
+	    gl.glDeleteObjectARB(this);
+	}
+
+	public int glid() {
+	    return(id);
 	}
 	
-	public void link(GLProgram prog) {
+	public void link(GOut g, final GLProgram prog) {
+	    BGL gl = g.gl;
 	    for(GLShader sh : prog.shaders)
-		gl.glAttachShader(id, sh.glid(gl));
-	    gl.glLinkProgram(id);
-	    int[] buf = {0};
-	    gl.glGetObjectParameterivARB(id, GL2.GL_OBJECT_LINK_STATUS_ARB, buf, 0);
-	    if(buf[0] != 1) {
-		String info = null;
-		gl.glGetObjectParameterivARB(id, GL2.GL_OBJECT_INFO_LOG_LENGTH_ARB, buf, 0);
-		if(buf[0] > 0) {
-		    byte[] logbuf = new byte[buf[0]];
-		    gl.glGetInfoLogARB(id, logbuf.length, buf, 0, logbuf, 0);
-		    /* The "platform's default charset" is probably a reasonable choice. */
-		    info = new String(logbuf, 0, buf[0]);
-		}
-		throw(new LinkException("Failed to link GL program", prog, info));
-	    }
+		gl.glAttachShader(this, sh.glid(g));
+	    gl.glLinkProgram(this);
+	    gl.bglSubmit(new BGL.Request() {
+		    public void run(GL2 rgl) {
+			int[] buf = {0};
+			rgl.glGetObjectParameterivARB(id, GL2.GL_OBJECT_LINK_STATUS_ARB, buf, 0);
+			if(buf[0] != 1) {
+			    String info = null;
+			    rgl.glGetObjectParameterivARB(id, GL2.GL_OBJECT_INFO_LOG_LENGTH_ARB, buf, 0);
+			    if(buf[0] > 0) {
+				byte[] logbuf = new byte[buf[0]];
+				rgl.glGetInfoLogARB(id, logbuf.length, buf, 0, logbuf, 0);
+				/* The "platform's default charset" is probably a reasonable choice. */
+				info = new String(logbuf, 0, buf[0]);
+			    }
+			    throw(new LinkException("Failed to link GL program", prog, info));
+			}
+		    }
+		});
 	}
 	
-	public int uniform(String name) {
+	public int uniform(GL2 gl, String name) {
 	    int r = gl.glGetUniformLocationARB(id, name);
 	    if(r < 0)
 		throw(new NoSuchElementException(name));
 	    return(r);
 	}
 	
-	public int attrib(String name) {
+	public int attrib(GL2 gl, String name) {
 	    int r = gl.glGetAttribLocation(id, name);
 	    if(r < 0)
 		throw(new NoSuchElementException(name));
@@ -133,20 +143,35 @@ public class GLProgram implements java.io.Serializable {
     }
     
     protected void link(GOut g) {
-	glp = new ProgOb(g.gl);
-	glp.link(this);
+	glp = new ProgOb(g);
+	glp.link(g, this);
     }
 
-    public void apply(GOut g) {
+    public ProgOb glob(GOut g) {
 	synchronized(this) {
-	    if((glp != null) && (glp.gl != g.gl))
+	    if((glp != null) && (glp.cur != g.curgl))
 		dispose();
 	    if(glp == null)
 		link(g);
-	    g.gl.glUseProgramObjectARB(glp.id);
+	    return(glp);
 	}
     }
+
+    public void apply(GOut g) {
+	g.gl.glUseProgramObjectARB(glob(g));
+    }
     
+    public abstract static class VarID implements BGL.ID, BGL.Request {
+	public final String name;
+	protected int id;
+
+	private VarID(String name) {
+	    this.name = name;
+	}
+
+	public int glid() {return(id);}
+    }
+
     public void dispose() {
 	synchronized(this) {
 	    if(glp != null) {
@@ -159,29 +184,37 @@ public class GLProgram implements java.io.Serializable {
 	}
     }
 
-    private final Map<String, Integer> umap = new IdentityHashMap<String, Integer>();
-    public int uniform(String name) {
-	Integer r = umap.get(name);
+    private final Map<String, VarID> umap = new IdentityHashMap<String, VarID>();
+    public VarID uniform(GOut g, String name) {
+	VarID r = umap.get(name);
 	if(r == null) {
-	    try {
-		umap.put(name, r = new Integer(glp.uniform(name)));
-	    } catch(NoSuchElementException e) {
-		throw(new UnknownExternException("Unknown uniform name: " + name, this, "uniform", name));
-	    }
+	    final ProgOb glob = glob(g);
+	    r = new VarID(name) {
+		    public void run(GL2 gl) {
+			if((this.id = glob.uniform(gl, name)) < 0)
+			    throw(new UnknownExternException("Unknown uniform name: " + name, GLProgram.this, "uniform", name));
+		    }
+		};
+	    g.gl.bglSubmit(r);
+	    umap.put(name, r);
 	}
-	return(r.intValue());
+	return(r);
     }
 
-    private final Map<String, Integer> amap = new IdentityHashMap<String, Integer>();
-    public int attrib(String name) {
-	Integer r = amap.get(name);
+    private final Map<String, VarID> amap = new IdentityHashMap<String, VarID>();
+    public VarID attrib(GOut g, String name) {
+	VarID r = amap.get(name);
 	if(r == null) {
-	    try {
-		amap.put(name, r = new Integer(glp.attrib(name)));
-	    } catch(NoSuchElementException e) {
-		throw(new UnknownExternException("Unknown attribute name: " + name, this, "attrib", name));
-	    }
+	    final ProgOb glob = glob(g);
+	    r = new VarID(name) {
+		    public void run(GL2 gl) {
+			if((this.id = glob.attrib(gl, name)) < 0)
+			    throw(new UnknownExternException("Unknown attribute name: " + name, GLProgram.this, "attrib", name));
+		    }
+		};
+	    g.gl.bglSubmit(r);
+	    amap.put(name, r);
 	}
-	return(r.intValue());
+	return(r);
     }
 }

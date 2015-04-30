@@ -28,6 +28,7 @@ package haven.rs;
 
 import haven.*;
 import javax.media.opengl.*;
+import java.awt.image.BufferedImage;
 
 public class GBuffer {
     public final Context ctx;
@@ -40,8 +41,8 @@ public class GBuffer {
 	public final GLProfile prof;
 	public final GLAutoDrawable buf;
 	private final GLState gstate;
-	private GLConfig glconf;
 	private GBuffer curdraw;
+	private CurrentGL curgl;
 	private GLState.Applier state;
 
 	public Context() {
@@ -49,10 +50,10 @@ public class GBuffer {
 	    GLDrawableFactory df = GLDrawableFactory.getFactory(prof);
 	    gstate = new GLState() {
 		    public void apply(GOut g) {
-			GL2 gl = g.gl;
+			BGL gl = g.gl;
 			gl.glColor3f(1, 1, 1);
 			gl.glPointSize(4);
-			gl.setSwapInterval(1);
+			gl.joglSetSwapInterval(1);
 			gl.glEnable(GL.GL_BLEND);
 			gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
 			if(g.gc.havefsaa())
@@ -76,22 +77,25 @@ public class GBuffer {
 			GL2 gl = d.getGL().getGL2();
 			/* gl = new TraceGL2(gl, System.err) */
 			redraw(gl);
-			GLObject.disposeall(gl);
 		    }
 
 		    public void init(GLAutoDrawable d) {
 			GL2 gl = d.getGL().getGL2();
-			glconf = GLConfig.fromgl(gl, d.getContext(), d.getChosenGLCapabilities());
-			glconf.pref = GLSettings.defconf(glconf);
-			glconf.pref.meshmode.val = GLSettings.MeshMode.MEM;
+			if((curgl == null) || (curgl.gl != gl)) {
+			    GLConfig glconf = GLConfig.fromgl(gl, d.getContext(), d.getChosenGLCapabilities());
+			    glconf.pref = GLSettings.defconf(glconf);
+			    glconf.pref.meshmode.val = GLSettings.MeshMode.MEM;
+			    curgl = new CurrentGL(gl, glconf);
+			}
 		    }
 
 		    public void reshape(GLAutoDrawable d, final int x, final int y, final int w, final int h) {
 		    }
 
 		    public void dispose(GLAutoDrawable d) {
-			GL2 gl = d.getGL().getGL2();
-			GLObject.disposeall(gl);
+			BGL buf = new BGL();
+			GLObject.disposeall(curgl, buf);
+			buf.run(d.getGL().getGL2());
 		    }
 		});
 	}
@@ -135,18 +139,24 @@ public class GBuffer {
     private Drawn curdraw;
 
     protected void redraw(GL2 gl) {
-	if((ctx.state == null) || (ctx.state.gl != gl))
-	    ctx.state = new GLState.Applier(gl, ctx.glconf);
-	GLState.Buffer ibuf = new GLState.Buffer(ctx.glconf);
+	if((ctx.state == null) || (ctx.state.cgl.gl != gl))
+	    ctx.state = new GLState.Applier(ctx.curgl);
+	BGL glbuf = new BGL();
+
+	GLState.Buffer ibuf = new GLState.Buffer(ctx.state.cfg);
 	ctx.gstate.prep(ibuf);
 	ostate.prep(ibuf);
 	buf.prep(ibuf);
-	GOut g = new GOut(gl, ctx.buf.getContext(), ctx.glconf, ctx.state, ibuf, sz);
+	GOut g = new GOut(glbuf, ctx.curgl, ctx.state.cfg, ctx.state, ibuf, sz);
+	g.state2d();
 	g.apply();
-	gl.glClearColor(0, 0, 0, 0);
-	gl.glClear(GL.GL_COLOR_BUFFER_BIT);
+	glbuf.glClearColor(0, 0, 0, 0);
+	glbuf.glClear(GL.GL_COLOR_BUFFER_BIT);
 	curdraw.draw(g);
 	ctx.state.clean();
+	GLObject.disposeall(ctx.curgl, glbuf);
+
+	glbuf.run(gl);
     }
 
     public void render(Drawn thing) {
@@ -172,11 +182,15 @@ public class GBuffer {
 		public void draw(GOut g) {
 		    g.chcolor(255, 0, 128, 255);
 		    g.frect(new Coord(50, 50), new Coord(100, 100));
-		    try {
-			javax.imageio.ImageIO.write(g.getimage(), "PNG", new java.io.File("/tmp/bard.png"));
-		    } catch(java.io.IOException e) {
-			throw(new RuntimeException(e));
-		    }
+		    g.getimage(new Callback<BufferedImage>() {
+			    public void done(BufferedImage img) {
+				try {
+				    javax.imageio.ImageIO.write(img, "PNG", new java.io.File("/tmp/bard.png"));
+				} catch(java.io.IOException e) {
+				    throw(new RuntimeException(e));
+				}
+			    }
+			});
 		    g.checkerr(g.gl);
 		}
 	    });

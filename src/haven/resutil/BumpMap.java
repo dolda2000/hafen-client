@@ -98,9 +98,9 @@ public class BumpMap extends GLState {
     }
 
     public void unapply(GOut g) {
-	GL2 gl = g.gl;
+	BGL gl = g.gl;
 	sampler.act(g);
-	gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+	gl.glBindTexture(GL.GL_TEXTURE_2D, null);
 	sampler.free(); sampler = null;
     }
 

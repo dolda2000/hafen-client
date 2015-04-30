@@ -373,7 +373,7 @@ public abstract class GLState {
 
 	public void ufree(GOut g) {
 	    act(g);
-	    g.gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+	    g.gl.glBindTexture(GL.GL_TEXTURE_2D, null);
 	    free();
 	}
     }
@@ -381,7 +381,7 @@ public abstract class GLState {
     public static class Applier {
 	public static boolean debug = false;
 	private Buffer old, cur, next;
-	public final GL2 gl;
+	public final CurrentGL cgl;
 	public final GLConfig cfg;
 	private boolean[] trans = new boolean[0], repl = new boolean[0], adirty = new boolean[0];
 	private ShaderMacro[][] shaders = new ShaderMacro[0][], nshaders = new ShaderMacro[0][];
@@ -395,9 +395,9 @@ public abstract class GLState {
 	public Matrix4f proj = Matrix4f.id;
 	private Matrix4f cproj = null;
 	
-	public Applier(GL2 gl, GLConfig cfg) {
-	    this.gl = gl;
-	    this.cfg = cfg;
+	public Applier(CurrentGL cgl) {
+	    this.cgl = cgl;
+	    this.cfg = cgl.cfg;
 	    this.old = new Buffer(cfg);
 	    this.cur = new Buffer(cfg);
 	    this.next = new Buffer(cfg);

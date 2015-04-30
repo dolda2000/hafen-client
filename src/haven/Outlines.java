@@ -148,13 +148,12 @@ public class Outlines implements Rendered {
 		private TexUnit tdep;
 
 		public void reapply(GOut g) {
-		    GL2 gl = g.gl;
+		    BGL gl = g.gl;
 		    gl.glUniform1i(g.st.prog.uniform(!ms?snrm:msnrm), tnrm.id);
 		    gl.glUniform1i(g.st.prog.uniform(!ms?sdep:msdep), tdep.id);
 		}
 
 		public void apply(GOut g) {
-		    GL gl = g.gl;
 		    if(!ms) {
 			tnrm = g.st.texalloc(g, ((GLFrameBuffer.Attach2D)nrm.tex).tex);
 			tdep = g.st.texalloc(g, ((GLFrameBuffer.Attach2D)ctx.cur.depth).tex);
@@ -166,7 +165,6 @@ public class Outlines implements Rendered {
 		}
 
 		public void unapply(GOut g) {
-		    GL gl = g.gl;
 		    tnrm.ufree(g); tnrm = null;
 		    tdep.ufree(g); tdep = null;
 		}

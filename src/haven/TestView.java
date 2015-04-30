@@ -32,7 +32,7 @@ import javax.media.opengl.*;
 public class TestView extends PView {
     static final FastMesh[] tmesh;
     static {
-	Resource res = Resource.load("gfx/borka/body");
+	Resource res = Resource.load("gfx/borka/male");
 	res.loadwait();
 	List<FastMesh> l = new ArrayList<FastMesh>();
 	for(FastMesh.MeshRes m : res.layers(FastMesh.MeshRes.class))
@@ -57,9 +57,10 @@ public class TestView extends PView {
 
     public static class Cube implements Rendered {
 	public void draw(GOut g) {
-	    GL2 gl = g.gl;
+	    g.apply();
+	    BGL gl = g.gl;
 	    
-	    gl.glBegin(gl.GL_QUADS);
+	    gl.glBegin(GL2.GL_QUADS);
 	    gl.glNormal3f(0.0f, 0.0f, 1.0f);
 	    gl.glColor3f(1.0f, 0.0f, 0.0f);
 	    gl.glVertex3f(-1.0f, 1.0f, 1.0f);
@@ -105,7 +106,7 @@ public class TestView extends PView {
 	}
 	
 	public boolean setup(RenderList rls) {
-	    rls.state().put(States.color, null);
+	    rls.state().put(States.color, States.vertexcolor);
 	    return(true);
 	}
     }
@@ -114,7 +115,7 @@ public class TestView extends PView {
 	int i = 0;
 	for(FastMesh m : tmesh) {
 	    if((sel == -1) || (i == sel))
-		rls.add(m, Location.rot(new Coord3f(1, 0, 0), 180));
+		rls.add(m, null);
 	    i++;
 	}
 	rls.add(new Cube(), Location.xlate(new Coord3f(-1.5f, 0, 0)));

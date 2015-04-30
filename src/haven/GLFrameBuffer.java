@@ -36,21 +36,25 @@ public class GLFrameBuffer extends GLState {
     private FBO fbo;
     private final int[] bufmask;
 
-    public static class FBO extends GLObject {
-	public final int id;
+    public static class FBO extends GLObject implements BGL.ID {
+	private int id;
 	
-	public FBO(GL2 gl) {
-	    super(gl);
+	public FBO(GOut g) {super(g);}
+	
+	public void create(GL2 gl) {
 	    int[] buf = new int[1];
 	    gl.glGenFramebuffers(1, buf, 0);
 	    this.id = buf[0];
 	    GOut.checkerr(gl);
 	}
 	
-	protected void delete() {
-	    int[] buf = {id};
+	protected void delete(BGL gl) {
+	    BGL.ID[] buf = {this};
 	    gl.glDeleteFramebuffers(1, buf, 0);
-	    GOut.checkerr(gl);
+	}
+	
+	public int glid() {
+	    return(id);
 	}
     }
     
@@ -70,18 +74,19 @@ public class GLFrameBuffer extends GLState {
 	    this(sz, fmt, 1);
 	}
 
-	public int glid(GL2 gl) {
-	    if((rbo != null) && (rbo.gl != gl))
+	public RBO glid(GOut g) {
+	    BGL gl = g.gl;
+	    if((rbo != null) && (rbo.cur != g.curgl))
 		dispose();
 	    if(rbo == null) {
-		rbo = new RBO(gl);
-		gl.glBindRenderbuffer(GL.GL_RENDERBUFFER, rbo.id);
+		rbo = new RBO(g);
+		gl.glBindRenderbuffer(GL.GL_RENDERBUFFER, rbo);
 		if(samples <= 1)
 		    gl.glRenderbufferStorage(GL.GL_RENDERBUFFER, fmt, sz.x, sz.y);
 		else
 		    gl.glRenderbufferStorageMultisample(GL.GL_RENDERBUFFER, samples, fmt, sz.x, sz.y);
 	    }
-	    return(rbo.id);
+	    return(rbo);
 	}
 	
 	public void dispose() {
@@ -93,21 +98,25 @@ public class GLFrameBuffer extends GLState {
 	    }
 	}
 	
-	public static class RBO extends GLObject {
-	    public final int id;
+	public static class RBO extends GLObject implements BGL.ID {
+	    private int id;
 	    
-	    public RBO(GL2 gl) {
-		super(gl);
+	    public RBO(GOut g) {super(g);}
+
+	    public void create(GL2 gl) {
 		int[] buf = new int[1];
 		gl.glGenRenderbuffers(1, buf, 0);
 		this.id = buf[0];
 		GOut.checkerr(gl);
 	    }
 	    
-	    protected void delete() {
-		int[] buf = {id};
+	    protected void delete(BGL gl) {
+		BGL.ID[] buf = {this};
 		gl.glDeleteRenderbuffers(1, buf, 0);
-		GOut.checkerr(gl);
+	    }
+
+	    public int glid() {
+		return(id);
 	    }
 	}
     }
@@ -153,7 +162,7 @@ public class GLFrameBuffer extends GLState {
 	public AttachRBO(RenderBuffer rbo) {this.rbo = rbo;}
 
 	public void attach(GOut g, GLFrameBuffer fbo, int point) {
-	    g.gl.glFramebufferRenderbuffer(GL.GL_FRAMEBUFFER, point, GL.GL_RENDERBUFFER, rbo.glid(g.gl));
+	    g.gl.glFramebufferRenderbuffer(GL.GL_FRAMEBUFFER, point, GL.GL_RENDERBUFFER, rbo.glid(g));
 	}
 
 	public Coord sz() {return(rbo.sz);}
@@ -193,13 +202,13 @@ public class GLFrameBuffer extends GLState {
     }
     
     public void apply(GOut g) {
-	GL2 gl = g.gl;
+	BGL gl = g.gl;
 	synchronized(this) {
-	    if((fbo != null) && (fbo.gl != gl))
+	    if((fbo != null) && (fbo.cur != g.curgl))
 		dispose();
 	    if(fbo == null) {
-		fbo = new FBO(gl);
-		gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo.id);
+		fbo = new FBO(g);
+		gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo);
 		for(int i = 0; i < color.length; i++)
 		    color[i].attach(g, this, GL.GL_COLOR_ATTACHMENT0 + i);
 		depth.attach(g, this, GL.GL_DEPTH_ATTACHMENT);
@@ -209,14 +218,18 @@ public class GLFrameBuffer extends GLState {
 		} else if(color.length > 1) {
 		    for(int i = 0; i < color.length; i++)
 			bufmask[i] = GL.GL_COLOR_ATTACHMENT0 + i;
-		    gl.glDrawBuffers(color.length, bufmask, 0);
+		    gl.glDrawBuffers(color.length, Utils.splice(bufmask, 0), 0);
 		}
 		GOut.checkerr(gl);
-		int st = gl.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER);
-		if(st != GL.GL_FRAMEBUFFER_COMPLETE)
-		    throw(new RuntimeException("FBO failed completeness test: " + GOut.GLException.constname(st)));
+		gl.bglSubmit(new BGL.Request() {
+			public void run(GL2 gl) {
+			    int st = gl.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER);
+			    if(st != GL.GL_FRAMEBUFFER_COMPLETE)
+				throw(new RuntimeException("FBO failed completeness test: " + GOut.GLException.constname(st)));
+			}
+		    });
 	    } else {
-		gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo.id);
+		gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo);
 	    }
 	}
 	gl.glViewport(0, 0, sz().x, sz().y);
@@ -226,13 +239,13 @@ public class GLFrameBuffer extends GLState {
 	int nb = flag?(GL.GL_COLOR_ATTACHMENT0 + id):(GL.GL_NONE);
 	if(bufmask[id] != nb) {
 	    bufmask[id] = nb;
-	    g.gl.glDrawBuffers(color.length, bufmask, 0);
+	    g.gl.glDrawBuffers(color.length, Utils.splice(bufmask, 0), 0);
 	}
     }
     
     public void unapply(GOut g) {
-	GL2 gl = g.gl;
-	gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0);
+	BGL gl = g.gl;
+	gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, null);
 	gl.glViewport(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
     }
 
