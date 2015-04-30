@@ -43,6 +43,12 @@ public class AvaRender {
 	return(comp);
     }
 
+    private static class IntException extends RuntimeException {
+	private IntException(InterruptedException cause) {
+	    super(cause);
+	}
+    }
+
     public static BufferedImage render(Coord sz, Resource base, String camnm, List<MD> mod, List<ED> equ) throws InterruptedException {
 	Composited tcomp;
 	Camera tcam;
@@ -62,6 +68,7 @@ public class AvaRender {
 	final Camera cam = tcam;
 	final GBuffer buf = new GBuffer(sz);
 	final BufferedImage[] ret = {null};
+	try {
 	buf.render(new Drawn() {
 		public void draw(GOut g) {
 		    float field = 0.5f;
@@ -72,21 +79,36 @@ public class AvaRender {
 		    lmod.cc = javax.media.opengl.GL2.GL_SEPARATE_SPECULAR_COLOR;
 
 		    BufView view = new BufView(buf, GLState.compose(proj, cam, lmod, new Light.LightList()));
-		    view.render(new Rendered() {
-			    public void draw(GOut g) {}
+		    while(true) {
+			try {
+			    view.render(new Rendered() {
+				    public void draw(GOut g) {}
 
-			    public boolean setup(RenderList rl) {
-				rl.add(comp, null);
-				rl.add(new DirLight(Color.WHITE, Color.WHITE, Color.WHITE, new Coord3f(1, 1, 1).norm()), null);
-				return(false);
+				    public boolean setup(RenderList rl) {
+					rl.add(comp, null);
+					rl.add(new DirLight(Color.WHITE, Color.WHITE, Color.WHITE, new Coord3f(1, 1, 1).norm()), null);
+					return(false);
+				    }
+				}, g);
+			    break;
+			} catch(Loading l) {
+			    try {
+				l.waitfor();
+			    } catch(InterruptedException e) {
+				throw(new IntException(e));
 			    }
-			}, g);
+			}
+		    }
 		    g.getimage(new Callback<BufferedImage>() {
 			    public void done(BufferedImage res) {ret[0] = res;}
 			});
 		}
 	    });
-	buf.dispose();
+	} catch(IntException e) {
+	    throw((InterruptedException)e.getCause());
+	} finally {
+	    buf.dispose();
+	}
 	return(ret[0]);
     }
 
