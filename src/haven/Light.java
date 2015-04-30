@@ -68,7 +68,7 @@ public class Light implements Rendered {
     }
 
     public void enable(GOut g, int idx) {
-	GL2 gl = g.gl;
+	BGL gl = g.gl;
 	gl.glEnable(GL2.GL_LIGHT0 + idx);
 	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_AMBIENT, amb, 0);
 	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_DIFFUSE, dif, 0);
@@ -76,7 +76,7 @@ public class Light implements Rendered {
     }
     
     public void disable(GOut g, int idx) {
-	GL2 gl = g.gl;
+	BGL gl = g.gl;
 	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_AMBIENT, defamb, 0);
 	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_DIFFUSE, defdif, 0);
 	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_SPECULAR, defspc, 0);
@@ -95,7 +95,7 @@ public class Light implements Rendered {
 	}
 	    
 	public void reapply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glUniform1i(g.st.prog.uniform(Phong.nlights), g.st.get(lights).nlights);
 	}
 
@@ -198,7 +198,7 @@ public class Light implements Rendered {
 	public int nlights = 0;
 	
 	public void apply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    int nl = ll.size();
 	    if(g.gc.maxlights < nl)
 		nl = g.gc.maxlights;
@@ -261,13 +261,13 @@ public class Light implements Rendered {
 	}
 	
 	public void apply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glLightModelfv(GL2.GL_LIGHT_MODEL_AMBIENT, amb, 0);
 	    gl.glLightModeli(GL2.GL_LIGHT_MODEL_COLOR_CONTROL, cc);
 	}
 	
 	public void unapply(GOut g) {
-	    GL2 gl = g.gl;
+	    BGL gl = g.gl;
 	    gl.glLightModelfv(GL2.GL_LIGHT_MODEL_AMBIENT, defamb, 0);
 	    gl.glLightModeli(GL2.GL_LIGHT_MODEL_COLOR_CONTROL, GL2.GL_SINGLE_COLOR);
 	}

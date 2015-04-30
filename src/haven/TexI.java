@@ -35,16 +35,19 @@ import javax.media.opengl.*;
 public class TexI extends TexGL {
     public static ComponentColorModel glcm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), new int[] {8, 8, 8, 8}, true, false, ComponentColorModel.TRANSLUCENT, DataBuffer.TYPE_BYTE);
     public BufferedImage back;
+    public boolean mutable;
     private int fmt = GL.GL_RGBA;
     public Mipmapper mmalg = Mipmapper.avg;
 
     public TexI(BufferedImage img) {
 	super(Utils.imgsz(img));
 	back = img;
+	mutable = false;
     }
 
     public TexI(Coord sz) {
 	super(sz);
+	mutable = true;
     }
     
     /* Java's image model is a little bit complex, so these may not be
@@ -90,11 +93,13 @@ public class TexI extends TexGL {
     }
 
     protected void fill(GOut g) {
-	GL gl = g.gl;
+	BGL gl = g.gl;
 	Coord sz = Utils.imgsz(back);
 	int ifmt = detectfmt(back);
 	if((ifmt == GL.GL_RGBA) || (ifmt == GL.GL_BGRA)) {
 	    byte[] pixels = ((DataBufferByte)back.getRaster().getDataBuffer()).getData();
+	    if(mutable)
+		pixels = Utils.splice(pixels, 0);
 	    if(sz.equals(tdim)) {
 		gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, fmt, tdim.x, tdim.y, 0, ifmt, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(pixels));
 		if(mipmap)
@@ -106,6 +111,8 @@ public class TexI extends TexGL {
 	} else if((ifmt == GL.GL_RGB) || (ifmt == GL2.GL_BGR)) {
 	    gl.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1);
 	    byte[] pixels = ((DataBufferByte)back.getRaster().getDataBuffer()).getData();
+	    if(mutable)
+		pixels = Utils.splice(pixels, 0);
 	    if(sz.equals(tdim)) {
 		gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, fmt, tdim.x, tdim.y, 0, ifmt, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(pixels));
 		if(mipmap)
@@ -123,7 +130,7 @@ public class TexI extends TexGL {
 	}
     }
     
-    private void genmipmap(GL gl, int lev, Coord dim, byte[] data, int ifmt) {
+    private void genmipmap(BGL gl, int lev, Coord dim, byte[] data, int ifmt) {
 	Coord ndim = Mipmapper.nextsz(dim);
 	byte[] ndata = mmalg.gen4(dim, data, ifmt);
 	gl.glTexImage2D(GL.GL_TEXTURE_2D, lev, fmt, ndim.x, ndim.y, 0, ifmt, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(ndata));
@@ -131,7 +138,7 @@ public class TexI extends TexGL {
 	    genmipmap(gl, lev + 1, ndim, ndata, ifmt);
     }
 	
-    private void genmipmap3(GL gl, int lev, Coord dim, byte[] data, int ifmt) {
+    private void genmipmap3(BGL gl, int lev, Coord dim, byte[] data, int ifmt) {
 	if(mmalg instanceof Mipmapper.Mipmapper3) {
 	    Coord ndim = Mipmapper.nextsz(dim);
 	    byte[] ndata = ((Mipmapper.Mipmapper3)mmalg).gen3(dim, data, ifmt);

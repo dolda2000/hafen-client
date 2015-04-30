@@ -27,6 +27,7 @@
 package haven.glsl;
 
 import haven.*;
+import haven.GLProgram.VarID;
 import static haven.glsl.Cons.*;
 import static haven.glsl.Function.PDir.*;
 import static haven.glsl.Type.*;
@@ -97,7 +98,7 @@ public abstract class MiscLib {
     }
 
     public static final Uniform maploc = new Uniform.AutoApply(VEC3, PView.loc) {
-	    public void apply(GOut g, int loc) {
+	    public void apply(GOut g, VarID loc) {
 		Coord3f orig = PView.locxf(g).mul4(Coord3f.o);
 		orig.z = g.st.get(PView.ctx).glob().map.getcz(orig.x, -orig.y);
 		g.gl.glUniform3f(loc, orig.x, orig.y, orig.z);
@@ -105,12 +106,12 @@ public abstract class MiscLib {
 	};
 
     public static final Uniform time = new Uniform.AutoApply(FLOAT, "time") {
-	    public void apply(GOut g, int loc) {
+	    public void apply(GOut g, VarID loc) {
 		g.gl.glUniform1f(loc, (System.currentTimeMillis() % 3000000L) / 1000f);
 	    }
 	};
     public static final Uniform globtime = new Uniform.AutoApply(FLOAT, "globtime") {
-	    public void apply(GOut g, int loc) {
+	    public void apply(GOut g, VarID loc) {
 		Glob glob = g.st.cur(PView.ctx).glob();
 		g.gl.glUniform1f(loc, (glob.globtime() % 10000000L) / 1000f);
 	    }
@@ -124,13 +125,13 @@ public abstract class MiscLib {
 	    return(wnd.sz());
     }
     public static final Uniform pixelpitch = new Uniform.AutoApply(VEC2) {
-	    public void apply(GOut g, int loc) {
+	    public void apply(GOut g, VarID loc) {
 		Coord sz = ssz(g);
 		g.gl.glUniform2f(loc, 1.0f / sz.x, 1.0f / sz.y);
 	    }
 	};
     public static final Uniform screensize = new Uniform.AutoApply(VEC2) {
-	    public void apply(GOut g, int loc) {
+	    public void apply(GOut g, VarID loc) {
 		Coord sz = ssz(g);
 		g.gl.glUniform2f(loc, sz.x, sz.y);
 	    }

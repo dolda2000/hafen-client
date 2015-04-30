@@ -45,7 +45,6 @@ public class TexMSE extends TexMS {
     }
 
     protected void fill(GOut g) {
-	GL3bc gl = g.gl.getGL3bc();
-	gl.glTexImage2DMultisample(GL3.GL_TEXTURE_2D_MULTISAMPLE, s, ifmt, w, h, fixed);
+	g.gl.glTexImage2DMultisample(GL3.GL_TEXTURE_2D_MULTISAMPLE, s, ifmt, w, h, fixed);
     }
 }

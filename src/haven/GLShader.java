@@ -39,40 +39,53 @@ public abstract class GLShader implements java.io.Serializable {
 	this.header = header;
     }
     
-    public static class ShaderOb extends GLObject {
-	public final int id;
+    public static class ShaderOb extends GLObject implements BGL.ID {
+	public final int type;
+	private int id;
 	
-	public ShaderOb(GL2 gl, int type) {
-	    super(gl);
+	public ShaderOb(GOut g, int type) {
+	    super(g);
+	    this.type = type;
+	}
+
+	public void create(GL2 gl) {
 	    id = gl.glCreateShaderObjectARB(type);
 	    GOut.checkerr(gl);
 	}
 	
-	protected void delete() {
-	    gl.glDeleteObjectARB(id);
+	protected void delete(BGL gl) {
+	    gl.glDeleteObjectARB(this);
+	}
+
+	public int glid() {
+	    return(id);
 	}
 	
-	public void compile(GLShader sh) {
+	public void compile(BGL gl, final GLShader sh) {
 	    /* Does JOGL use the byte or char length or the supplied
 	     * String, and in case of the former, how does one know
 	     * the coding it encodes the String as so as to supply the
 	     * corrent length? It won't matter since all reasonable
 	     * programs will be ASCII, of course, but still... */
-	    gl.glShaderSourceARB(id, 1, new String[] {sh.source}, new int[] {sh.source.length()}, 0);
-	    gl.glCompileShaderARB(id);
-	    int[] buf = {0};
-	    gl.glGetObjectParameterivARB(id, GL2.GL_OBJECT_COMPILE_STATUS_ARB, buf, 0);
-	    if(buf[0] != 1) {
-		String info = null;
-		gl.glGetObjectParameterivARB(id, GL2.GL_OBJECT_INFO_LOG_LENGTH_ARB, buf, 0);
-		if(buf[0] > 0) {
-		    byte[] logbuf = new byte[buf[0]];
-		    gl.glGetInfoLogARB(id, logbuf.length, buf, 0, logbuf, 0);
-		    /* The "platform's default charset" is probably a reasonable choice. */
-		    info = new String(logbuf, 0, buf[0]);
-		}
-		throw(new ShaderException("Failed to compile shader", sh, info));
-	    }
+	    gl.glShaderSourceARB(this, 1, new String[] {sh.source}, new int[] {sh.source.length()}, 0);
+	    gl.glCompileShaderARB(this);
+	    gl.bglSubmit(new BGL.Request() {
+		    public void run(GL2 rgl) {
+			int[] buf = {0};
+			rgl.glGetObjectParameterivARB(id, GL2.GL_OBJECT_COMPILE_STATUS_ARB, buf, 0);
+			if(buf[0] != 1) {
+			    String info = null;
+			    rgl.glGetObjectParameterivARB(id, GL2.GL_OBJECT_INFO_LOG_LENGTH_ARB, buf, 0);
+			    if(buf[0] > 0) {
+				byte[] logbuf = new byte[buf[0]];
+				rgl.glGetInfoLogARB(id, logbuf.length, buf, 0, logbuf, 0);
+				/* The "platform's default charset" is probably a reasonable choice. */
+				info = new String(logbuf, 0, buf[0]);
+			    }
+			    throw(new ShaderException("Failed to compile shader", sh, info));
+			}
+		    }
+		});
 	}
     }
     
@@ -138,9 +151,9 @@ public abstract class GLShader implements java.io.Serializable {
 	    this(source, "");
 	}
 
-	protected ShaderOb create(GL2 gl) {
-	    ShaderOb r = new ShaderOb(gl, GL2.GL_VERTEX_SHADER);
-	    r.compile(this);
+	protected ShaderOb create(GOut g) {
+	    ShaderOb r = new ShaderOb(g, GL2.GL_VERTEX_SHADER);
+	    r.compile(g.gl, this);
 	    return(r);
 	}
 	
@@ -186,9 +199,9 @@ public abstract class GLShader implements java.io.Serializable {
 	    this(source, "");
 	}
 	
-	protected ShaderOb create(GL2 gl) {
-	    ShaderOb r = new ShaderOb(gl, GL2.GL_FRAGMENT_SHADER);
-	    r.compile(this);
+	protected ShaderOb create(GOut g) {
+	    ShaderOb r = new ShaderOb(g, GL2.GL_FRAGMENT_SHADER);
+	    r.compile(g.gl, this);
 	    return(r);
 	}
 
@@ -225,15 +238,17 @@ public abstract class GLShader implements java.io.Serializable {
 	}
     }
     
-    public int glid(GL2 gl) {
-	if((gls != null) && (gls.gl != gl)) {
-	    gls.dispose();
-	    gls = null;
+    public ShaderOb glid(GOut g) {
+	synchronized(this) {
+	    if((gls != null) && (gls.cur != g.curgl)) {
+		gls.dispose();
+		gls = null;
+	    }
+	    if(gls == null)
+		gls = create(g);
+	    return(gls);
 	}
-	if(gls == null)
-	    gls = create(gl);
-	return(gls.id);
     }
     
-    protected abstract ShaderOb create(GL2 gl);
+    protected abstract ShaderOb create(GOut g);
 }

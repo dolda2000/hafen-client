@@ -31,12 +31,13 @@ import javax.media.opengl.*;
 import static haven.GOut.checkerr;
 
 public abstract class GLObject {
-    private static final Map<GL, Collection<GLObject>> disposed = new HashMap<GL, Collection<GLObject>>();
+    private static final Map<CurrentGL, Collection<GLObject>> disposed = new HashMap<CurrentGL, Collection<GLObject>>();
     private boolean del;
-    public final GL2 gl;
+    public final CurrentGL cur;
     
-    public GLObject(GL2 gl) {
-	this.gl = gl;
+    public GLObject(GOut g) {
+	this.cur = g.curgl;
+	g.gl.bglCreate(this);
     }
     
     public void dispose() {
@@ -45,10 +46,10 @@ public abstract class GLObject {
 	    if(del)
 		return;
 	    del = true;
-	    can = disposed.get(gl);
+	    can = disposed.get(cur);
 	    if(can == null) {
 		can = new LinkedList<GLObject>();
-		disposed.put(gl, can);
+		disposed.put(cur, can);
 	    }
 	}
 	synchronized(can) {
@@ -60,12 +61,14 @@ public abstract class GLObject {
 	dispose();
     }
     
-    protected abstract void delete();
+    public abstract void create(GL2 gl);
+
+    protected abstract void delete(BGL gl);
     
-    public static void disposeall(GL2 gl) {
+    public static void disposeall(CurrentGL cur, BGL gl) {
 	Collection<GLObject> can;
 	synchronized(disposed) {
-	    can = disposed.get(gl);
+	    can = disposed.get(cur);
 	    if(can == null)
 		return;
 	}
@@ -75,7 +78,7 @@ public abstract class GLObject {
 	    can.clear();
 	}
 	for(GLObject obj : copy)
-	    obj.delete();
+	    obj.delete(gl);
 	checkerr(gl);
     }
 }

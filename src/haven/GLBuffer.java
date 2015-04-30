@@ -28,18 +28,25 @@ package haven;
 
 import javax.media.opengl.*;
 
-public class GLBuffer extends GLObject {
-    public final int id;
+public class GLBuffer extends GLObject implements BGL.ID {
+    private int id;
     
-    public GLBuffer(GL2 gl) {
-	super(gl);
+    public GLBuffer(GOut g) {
+	super(g);
+    }
+
+    public void create(GL2 gl) {
 	int[] buf = new int[1];
 	gl.glGenBuffers(1, buf, 0);
 	this.id = buf[0];
     }
     
-    protected void delete() {
-	int[] buf = {id};
+    protected void delete(BGL gl) {
+	BGL.ID[] buf = {this};
 	gl.glDeleteBuffers(1, buf, 0);
+    }
+
+    public int glid() {
+	return(id);
     }
 }

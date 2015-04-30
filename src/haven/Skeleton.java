@@ -352,7 +352,7 @@ public class Skeleton {
 	
 	public final Rendered debug = new Rendered() {
 		public void draw(GOut g) {
-		    GL2 gl = g.gl;
+		    BGL gl = g.gl;
 		    g.st.put(Light.lighting, null);
 		    g.state(States.xray);
 		    g.apply();

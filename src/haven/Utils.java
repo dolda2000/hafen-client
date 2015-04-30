@@ -1017,12 +1017,30 @@ public class Utils {
 	return(splice(src, off, src.length - off));
     }
 
+    public static byte[] splice(byte[] src, int off, int len) {
+	byte[] dst = new byte[len];
+	System.arraycopy(src, off, dst, 0, len);
+	return(dst);
+    }
+    public static byte[] splice(byte[] src, int off) {
+	return(splice(src, off, src.length - off));
+    }
+
     public static float[] splice(float[] src, int off, int len) {
 	float[] dst = new float[len];
 	System.arraycopy(src, off, dst, 0, len);
 	return(dst);
     }
     public static float[] splice(float[] src, int off) {
+	return(splice(src, off, src.length - off));
+    }
+
+    public static int[] splice(int[] src, int off, int len) {
+	int[] dst = new int[len];
+	System.arraycopy(src, off, dst, 0, len);
+	return(dst);
+    }
+    public static int[] splice(int[] src, int off) {
 	return(splice(src, off, src.length - off));
     }
 

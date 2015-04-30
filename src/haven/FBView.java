@@ -93,7 +93,7 @@ public class FBView {
 	GLState.Buffer def = orig.basicstate();
 	fbo.prep(def);
 	ostate.prep(def);
-	return(new GOut(orig.gl, orig.ctx, orig.gc, orig.st, def, fbo.sz()));
+	return(new GOut(orig.gl, orig.curgl, orig.gc, orig.st, def, fbo.sz()));
     }
     
     public void dispose() {

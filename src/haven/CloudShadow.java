@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import javax.media.opengl.*;
 import haven.glsl.*;
+import haven.GLProgram.VarID;
 import static haven.glsl.Cons.*;
 import static haven.glsl.Function.PDir.*;
 import static haven.glsl.Type.*;
@@ -91,8 +92,8 @@ public class CloudShadow extends GLState {
     private TexUnit sampler;
 
     public void reapply(GOut g) {
-	int u = g.st.prog.cuniform(tsky);
-	if(u >= 0) {
+	VarID u = g.st.prog.cuniform(tsky);
+	if(u != null) {
 	    g.gl.glUniform1i(u, sampler.id);
 	    float zf = 1.0f / (light.dir[2] + 1.1f);
 	    float xd = -light.dir[0] * zf, yd = -light.dir[1] * zf;
@@ -110,7 +111,7 @@ public class CloudShadow extends GLState {
 
     public void unapply(GOut g) {
 	sampler.act(g);
-	g.gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+	g.gl.glBindTexture(GL.GL_TEXTURE_2D, null);
 	sampler.free(); sampler = null;
     }
 

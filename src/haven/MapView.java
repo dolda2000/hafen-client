@@ -29,6 +29,7 @@ package haven;
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 import haven.Resource.Tile;
+import haven.GLProgram.VarID;
 import java.awt.Color;
 import java.util.*;
 import java.lang.reflect.*;
@@ -527,7 +528,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     public static final haven.glsl.Uniform amblight = new haven.glsl.Uniform.AutoApply(haven.glsl.Type.INT) {
-	    public void apply(GOut g, int loc) {
+	    public void apply(GOut g, VarID loc) {
 		int idx = -1;
 		RenderContext ctx = g.st.get(PView.ctx);
 		if(ctx instanceof WidgetContext) {
@@ -600,8 +601,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(false);
 	}
 	
-	public T get(GOut g, Coord c) {
-	    return(rmap.get(g.getpixel(c)));
+	public void get(GOut g, Coord c, final Callback<T> cb) {
+	    g.getpixel(c, new Callback<Color>() {
+		    public void done(Color c) {
+			cb.done(rmap.get(c));
+		    }
+		});
 	}
 	
 	protected void setup(Slot s, Rendered r) {
@@ -642,36 +647,56 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
-    private Coord checkmapclick(GOut g, Coord c) {
-	Maplist rl = new Maplist(clickbasic(g));
-	rl.setup(map, clickbasic(g));
-	rl.fin();
-	{
-	    rl.render(g);
-	    MapMesh hit = rl.get(g, c);
-	    if(hit == null)
-		return(null);
-	    rl.limit = (MapMesh)hit;
-	}
-	Coord tile;
-	{
-	    rl.mode = 1;
-	    rl.render(g);
-	    Color hitcol = g.getpixel(c);
-	    tile = new Coord(hitcol.getRed() - 1, hitcol.getGreen() - 1);
-	    if(!tile.isect(Coord.z, rl.limit.sz))
-		return(null);
-	}
-	Coord pixel;
-	{
-	    rl.mode = 2;
-	    rl.render(g);
-	    Color hitcol = g.getpixel(c);
-	    if(hitcol.getBlue() != 0)
-		return(null);
-	    pixel = new Coord((hitcol.getRed() * tilesz.x) / 255, (hitcol.getGreen() * tilesz.y) / 255);
-	}
-	return(rl.limit.ul.add(tile).mul(tilesz).add(pixel));
+    private void checkmapclick(final GOut g, final Coord c, final Callback<Coord> cb) {
+	new Object() {
+	    MapMesh cut;
+	    Coord tile, pixel;
+	    int dfl = 0;
+
+	    {
+		Maplist rl = new Maplist(clickbasic(g));
+		rl.setup(map, clickbasic(g));
+		rl.fin();
+
+		rl.render(g);
+		rl.get(g, c, new Callback<MapMesh>() {
+			public void done(MapMesh hit) {cut = hit; ckdone(1);}
+		    });
+		// rl.limit = hit;
+
+		rl.mode = 1;
+		rl.render(g);
+		g.getpixel(c, new Callback<Color>() {
+			public void done(Color col) {
+			    tile = new Coord(col.getRed() - 1, col.getGreen() - 1);
+			    ckdone(2);
+			}
+		    });
+
+		rl.mode = 2;
+		rl.render(g);
+		g.getpixel(c, new Callback<Color>() {
+			public void done(Color col) {
+			    if(col.getBlue() != 0)
+				pixel = null;
+			    else
+				pixel = new Coord((col.getRed() * tilesz.x) / 255, (col.getGreen() * tilesz.y) / 255);
+			    ckdone(4);
+			}
+		    });
+	    }
+
+	    void ckdone(int fl) {
+		synchronized(this) {
+		    if((dfl |= fl) == 7) {
+			if((cut == null) || !tile.isect(Coord.z, cut.sz))
+			    cb.done(null);
+			else
+			    cb.done(cut.ul.add(tile).mul(tilesz).add(pixel));
+		    }
+		}
+	    }
+	};
     }
     
     public static class ClickInfo {
@@ -684,7 +709,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
-    private ClickInfo checkgobclick(GOut g, Coord c) {
+    private void checkgobclick(GOut g, Coord c, Callback<ClickInfo> cb) {
 	Clicklist<ClickInfo> rl = new Clicklist<ClickInfo>(clickbasic(g)) {
 		Gob curgob;
 		Gob.Overlay curol;
@@ -712,7 +737,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	rl.setup(gobs, clickbasic(g));
 	rl.fin();
 	rl.render(g);
-	return(rl.get(g, c));
+	rl.get(g, c, cb);
     }
     
     public void delay(Delayed d) {
@@ -994,18 +1019,21 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    GLState.Buffer bk = g.st.copy();
 	    Coord mc;
 	    try {
-		GL gl = g.gl;
+		BGL gl = g.gl;
 		g.st.set(clickbasic(g));
 		g.apply();
 		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
-		mc = checkmapclick(g, pc);
+		checkmapclick(g, pc, new Callback<Coord>() {
+			public void done(Coord mc) {
+			    if(mc != null)
+				hit(pc, mc);
+			    else
+				nohit(pc);
+			}
+		    });
 	    } finally {
 		g.st.set(bk);
 	    }
-	    if(mc != null)
-		hit(pc, mc);
-	    else
-		nohit(pc);
 	}
 
 	protected abstract void hit(Coord pc, Coord mc);
@@ -1014,6 +1042,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public abstract class Hittest implements Delayed {
 	private final Coord clickc;
+	private Coord mapcl;
+	private ClickInfo gobcl;
+	private int dfl = 0;
 	
 	public Hittest(Coord c) {
 	    clickc = c;
@@ -1021,29 +1052,38 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	
 	public void run(GOut g) {
 	    GLState.Buffer bk = g.st.copy();
-	    Coord mapcl;
-	    ClickInfo gobcl;
 	    try {
-		GL gl = g.gl;
+		BGL gl = g.gl;
 		g.st.set(clickbasic(g));
 		g.apply();
 		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
-		mapcl = checkmapclick(g, clickc);
+		checkmapclick(g, clickc, new Callback<Coord>() {
+			public void done(Coord mc) {mapcl = mc; ckdone(1);}
+		    });
 		g.st.set(bk);
 		g.st.set(clickbasic(g));
 		g.apply();
 		gl.glClear(GL.GL_COLOR_BUFFER_BIT);
-		gobcl = checkgobclick(g, clickc);
+		checkgobclick(g, clickc, new Callback<ClickInfo>() {
+			public void done(ClickInfo cl) {gobcl = cl; ckdone(2);}
+		    });
 	    } finally {
 		g.st.set(bk);
 	    }
-	    if(mapcl != null) {
-		if(gobcl == null)
-		    hit(clickc, mapcl, null);
-		else
-		    hit(clickc, mapcl, gobcl);
-	    } else {
-		nohit(clickc);
+	}
+
+	private void ckdone(int fl) {
+	    synchronized(this) {
+		if((dfl |= fl) == 3) {
+		    if(mapcl != null) {
+			if(gobcl == null)
+			    hit(clickc, mapcl, null);
+			else
+			    hit(clickc, mapcl, gobcl);
+		    } else {
+			nohit(clickc);
+		    }
+		}
 	    }
 	}
 	

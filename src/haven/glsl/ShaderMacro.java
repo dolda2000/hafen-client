@@ -41,7 +41,7 @@ public interface ShaderMacro {
 	private final transient int[][] automask;
 	private final transient Uniform.AutoApply[] auto;
 	private final transient boolean[] adirty;
-	private transient int[] autolocs;
+	private transient VarID[] autolocs;
 	public final transient Attribute.AutoInstanced[] autoinst;
 	public final transient GLBuffer[] curinst;
 
@@ -115,7 +115,7 @@ public interface ShaderMacro {
 
 	public void autoapply(GOut g, boolean all) {
 	    if(autolocs == null) {
-		autolocs = new int[auto.length];
+		autolocs = new VarID[auto.length];
 		for(int i = 0; i < auto.length; i++)
 		    autolocs[i] = uniform(auto[i]);
 	    }
@@ -160,40 +160,34 @@ public interface ShaderMacro {
 	    super.link(g);
 	    for(Uniform var : built.uniforms) {
 		String nm = built.symtab.get(var.name);
-		int loc = uniform(nm);
+		VarID loc = uniform(g, nm);
 		umap.put(var, loc);
 	    }
 	    for(Attribute var : built.attribs) {
 		String nm = built.symtab.get(var.name);
-		int loc = attrib(nm);
+		VarID loc = attrib(g, nm);
 		amap.put(var, loc);
 	    }
 	}
 
 	/* XXX: It would be terribly nice to replace these with some faster operation. */
-	private final transient Map<Uniform, Integer> umap = new IdentityHashMap<Uniform, Integer>();
-	public int cuniform(Uniform var) {
-	    Integer r = umap.get(var);
-	    if(r == null)
-		return(-1);
-	    return(r.intValue());
+	private final transient Map<Uniform, VarID> umap = new IdentityHashMap<Uniform, VarID>();
+	public VarID cuniform(Uniform var) {
+	    return(umap.get(var));
 	}
-	public int uniform(Uniform var) {
-	    int r = cuniform(var);
-	    if(r < 0)
+	public VarID uniform(Uniform var) {
+	    VarID r = cuniform(var);
+	    if(r  == null)
 		throw(new UnknownExternException("Uniform not found in symtab: " + var, this, "uniform", var.toString()));
 	    return(r);
 	}
-	private final transient Map<Attribute, Integer> amap = new IdentityHashMap<Attribute, Integer>();
-	public int cattrib(Attribute var) {
-	    Integer r = amap.get(var);
-	    if(r == null)
-		return(-1);
-	    return(r.intValue());
+	private final transient Map<Attribute, VarID> amap = new IdentityHashMap<Attribute, VarID>();
+	public VarID cattrib(Attribute var) {
+	    return(amap.get(var));
 	}
-	public int attrib(Attribute var) {
-	    int r = cattrib(var);
-	    if(r < 0)
+	public VarID attrib(Attribute var) {
+	    VarID r = cattrib(var);
+	    if(r == null)
 		throw(new UnknownExternException("Attribute not found in symtab: " + var, this, "attrib", var.toString()));
 	    return(r);
 	}

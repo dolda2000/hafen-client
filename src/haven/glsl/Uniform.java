@@ -28,6 +28,7 @@ package haven.glsl;
 
 import haven.GLState.Slot;
 import haven.GOut;
+import haven.GLProgram.VarID;
 
 public class Uniform extends Variable.Global {
     public Uniform(Type type, Symbol name) {
@@ -66,6 +67,6 @@ public class Uniform extends Variable.Global {
 	public AutoApply(Type type, String infix, Slot... deps) {super(type, infix); this.deps = deps;}
 	public AutoApply(Type type, Slot... deps)               {super(type);        this.deps = deps;}
 
-	public abstract void apply(GOut g, int location);
+	public abstract void apply(GOut g, VarID location);
     }
 }

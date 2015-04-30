@@ -65,14 +65,14 @@ public class SpotLight extends PosLight {
 
     public void enable(GOut g, int idx) {
 	super.enable(g, idx);
-	GL2 gl = g.gl;
+	BGL gl = g.gl;
 	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_SPOT_DIRECTION, dir, 0);
 	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_SPOT_EXPONENT, exp);
 	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_SPOT_CUTOFF, cut);
     }
 
     public void disable(GOut g, int idx) {
-	GL2 gl = g.gl;
+	BGL gl = g.gl;
 	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_SPOT_DIRECTION, defdir, 0);
 	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_SPOT_EXPONENT, 0.0f);
 	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_SPOT_CUTOFF, 180.0f);
