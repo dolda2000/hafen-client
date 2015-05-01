@@ -94,7 +94,7 @@ public abstract class Profile {
 	    double a = 0;
 	    for(int o = 0; o < f.prt.length; o++) {
 		double c = a + f.prt[o];
-		g.setColor(cols[o]);
+		g.setColor(cols[o + 1]);
 		g.drawLine(i, (int)(h - (a / scale)), i, (int)(h - (c / scale)));
 		a = c;
 	    }

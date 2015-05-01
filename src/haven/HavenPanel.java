@@ -46,9 +46,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     private String cursmode = "tex";
     private Resource lastcursor = null;
     public Coord mousepos = new Coord(0, 0);
-    public CPUProfile prof = new CPUProfile(300);
+    public CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
     public GPUProfile gprof = new GPUProfile(300);
-    private CPUProfile.Frame curf = null;
     public static final GLState.Slot<GLState> global = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class);
     public static final GLState.Slot<GLState> proj2d = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class, global);
     private GLState gstate, rtstate, ostate;
@@ -253,7 +252,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	if(ui != null)
 	    ui.destroy();
 	ui = new UI(new Coord(w, h), sess);
-	ui.root.gcprof = prof;
+	ui.root.guprof = uprof;
+	ui.root.grprof = rprof;
 	ui.root.ggprof = gprof;
 	if(getParent() instanceof Console.Directory)
 	    ui.cons.add((Console.Directory)getParent());
@@ -283,13 +283,9 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	g.apply();
 	gl.glClearColor(0, 0, 0, 1);
 	gl.glClear(GL.GL_COLOR_BUFFER_BIT);
-	if(curf != null)
-	    curf.tick("cls");
 	synchronized(ui) {
 	    ui.draw(g);
 	}
-	if(curf != null)
-	    curf.tick("draw");
 
 	if(Config.dbtext) {
 	    int y = h - 150;
@@ -370,7 +366,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     }
 
     private static class Frame {
-	BGL buf; CurrentGL on;
+	BGL buf; CurrentGL on; CPUProfile.Frame pf;
 	Frame(BGL buf, CurrentGL on) {this.buf = buf; this.on = on;}
     }
 
@@ -383,8 +379,12 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	    GPUProfile.Frame curgf = null;
 	    if(Config.profilegpu)
 		curgf = gprof.new Frame((GL3)gl);
+	    if(f.pf != null)
+		f.pf.tick("awt");
 	    f.buf.run(gl);
 	    GOut.checkerr(gl);
+	    if(f.pf != null)
+		f.pf.tick("gl");
 	    if(curgf != null) {
 		curgf.tick("draw");
 		curgf.fin();
@@ -457,7 +457,14 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			    bufdraw = null;
 			    drawfun.notifyAll();
 			}
+			CPUProfile.Frame curf = null;
+			if(Config.profile)
+			    curdraw.pf = curf = rprof.new Frame();
 			uglyjoglhack();
+			if(curf != null) {
+			    curf.tick("aux");
+			    curf.fin();
+			}
 			curdraw = null;
 		    }
 		} catch(InterruptedException e) {
@@ -482,8 +489,9 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		    Debug.cycle();
 		    UI ui = this.ui;
 		    then = System.currentTimeMillis();
+		    CPUProfile.Frame curf = null;
 		    if(Config.profile)
-			curf = prof.new Frame();
+			curf = uprof.new Frame();
 		    synchronized(ui) {
 			if(ui.sess != null)
 			    ui.sess.glob.ctick();
@@ -498,6 +506,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		    BGL buf = new BGL();
 		    GLState.Applier state = this.state;
 		    rootdraw(state, ui, buf);
+		    if(curf != null)
+			curf.tick("draw");
 		    synchronized(drawfun) {
 			while(bufdraw != null)
 			    drawfun.wait();
