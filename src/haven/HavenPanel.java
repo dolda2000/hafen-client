@@ -41,7 +41,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     boolean inited = false;
     int w, h;
     long fd = 10, fps = 0;
-    double idle = 0.0;
+    double uidle = 0.0, ridle = 0.0;
     Queue<InputEvent> events = new LinkedList<InputEvent>();
     private String cursmode = "tex";
     private Resource lastcursor = null;
@@ -289,7 +289,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 
 	if(Config.dbtext) {
 	    int y = h - 150;
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%% idle)", fps, (int)(idle * 100.0));
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0));
 	    Runtime rt = Runtime.getRuntime();
 	    long free = rt.freeMemory(), total = rt.totalMemory();
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
@@ -366,7 +366,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     }
 
     private static class Frame {
-	BGL buf; CurrentGL on; CPUProfile.Frame pf;
+	BGL buf; CurrentGL on;
+	CPUProfile.Frame pf; long doneat;
 	Frame(BGL buf, CurrentGL on) {this.buf = buf; this.on = on;}
     }
 
@@ -394,6 +395,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		glconf.pref.save();
 		glconf.pref.dirty = false;
 	    }
+	    f.doneat = System.currentTimeMillis();
 	}
     }
 	
@@ -451,11 +453,14 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			drawfun.notifyAll();
 		    }
 		    while(true) {
+			long then = System.currentTimeMillis();
+			int waited = 0;
 			synchronized(drawfun) {
 			    while((curdraw = bufdraw) == null)
 				drawfun.wait();
 			    bufdraw = null;
 			    drawfun.notifyAll();
+			    waited += System.currentTimeMillis() - then;
 			}
 			CPUProfile.Frame curf = null;
 			if(Config.profile)
@@ -465,6 +470,9 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			    curf.tick("aux");
 			    curf.fin();
 			}
+			long now = System.currentTimeMillis();
+			waited += now - curdraw.doneat;
+			ridle = (ridle * 0.95) + (((double)waited / ((double)(now - then))) * 0.05);
 			curdraw = null;
 		    }
 		} catch(InterruptedException e) {
@@ -537,7 +545,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			twait += waited[ckf];
 			if(now - frames[ckf] > 1000) {
 			    fps = i;
-			    idle = ((double)twait) / ((double)(now - frames[ckf]));
+			    uidle = ((double)twait) / ((double)(now - frames[ckf]));
 			    break;
 			}
 		    }
