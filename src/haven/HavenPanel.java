@@ -486,6 +486,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		long frames[] = new long[128];
 		int framep = 0, waited[] = new int[128];
 		while(true) {
+		    int fwaited = 0;
 		    Debug.cycle();
 		    UI ui = this.ui;
 		    then = System.currentTimeMillis();
@@ -509,10 +510,12 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		    if(curf != null)
 			curf.tick("draw");
 		    synchronized(drawfun) {
+			now = System.currentTimeMillis();
 			while(bufdraw != null)
 			    drawfun.wait();
 			bufdraw = new Frame(buf, state.cgl);
 			drawfun.notifyAll();
+			fwaited += System.currentTimeMillis() - now;
 		    }
 
 		    ui.audio.cycle();
@@ -524,10 +527,11 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			synchronized(events) {
 			    events.wait(fd - (now - then));
 			}
+			fwaited += System.currentTimeMillis() - now;
 		    }
 
 		    frames[framep] = now;
-		    waited[framep] = (int)(System.currentTimeMillis() - now);
+		    waited[framep] = fwaited;
 		    for(int i = 0, ckf = framep, twait = 0; i < frames.length; i++) {
 			ckf = (ckf - 1 + frames.length) % frames.length;
 			twait += waited[ckf];
