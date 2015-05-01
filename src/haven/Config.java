@@ -156,5 +156,18 @@ public class Config {
 		    dbtext = Utils.parsebool(args[1]);
 		}
 	    });
+	Console.setscmd("profile", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    if(args[1].equals("none") || args[1].equals("off")) {
+			profile = profilegpu = false;
+		    } else if(args[1].equals("cpu")) {
+			profile = true;
+		    } else if(args[1].equals("gpu")) {
+			profilegpu = true;
+		    } else if(args[1].equals("all")) {
+			profile = profilegpu = true;
+		    }
+		}
+	    });
     }
 }
