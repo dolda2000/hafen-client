@@ -149,4 +149,12 @@ public class Config {
 	    }
 	}
     }
+
+    static {
+	Console.setscmd("stats", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    dbtext = Utils.parsebool(args[1]);
+		}
+	    });
+    }
 }
