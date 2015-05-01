@@ -34,6 +34,25 @@ public class BGL {
 	public abstract void run(GL2 gl);
     }
 
+    private static class BufState {
+	Buffer buf;
+	int position, limit;
+
+	BufState(Buffer buf) {
+	    if((this.buf = buf) != null) {
+		position = buf.position();
+		limit = buf.limit();
+	    }
+	}
+
+	void restore() {
+	    if(buf != null) {
+		buf.position(position);
+		buf.limit(limit);
+	    }
+	}
+    }
+
     public interface ID {
 	public int glid();
     }
@@ -175,9 +194,10 @@ public class BGL {
 	    });
     }
 
-    public void glBufferData(final int target, final long size, final Buffer data, final int usage) {
+    public void glBufferData(final int target, final long size, Buffer data, final int usage) {
+	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL2 gl) {gl.glBufferData(target, size, data, usage);}
+		public void run(GL2 gl) {ds.restore(); gl.glBufferData(target, size, ds.buf, usage);}
 	    });
     }
 
@@ -235,9 +255,10 @@ public class BGL {
 	    });
     }
 
-    public void glColorPointer(final int size, final int type, final int stride, final Buffer data) {
+    public void glColorPointer(final int size, final int type, final int stride, Buffer data) {
+	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL2 gl) {gl.glColorPointer(size, type, stride, data);}
+		public void run(GL2 gl) {ds.restore(); gl.glColorPointer(size, type, stride, ds.buf);}
 	    });
     }
 
@@ -374,15 +395,17 @@ public class BGL {
 	    });
     }
 
-    public void glDrawElements(final int mode, final int count, final int type, final Buffer indices) {
+    public void glDrawElements(final int mode, final int count, final int type, Buffer indices) {
+	final BufState is = new BufState(indices);
 	add(new Command() {
-		public void run(GL2 gl) {gl.glDrawElements(mode, count, type, indices);}
+		public void run(GL2 gl) {is.restore(); gl.glDrawElements(mode, count, type, is.buf);}
 	    });
     }
 
-    public void glDrawRangeElements(final int mode, final int start, final int end, final int count, final int type, final Buffer indices) {
+    public void glDrawRangeElements(final int mode, final int start, final int end, final int count, final int type, Buffer indices) {
+	final BufState is = new BufState(indices);
 	add(new Command() {
-		public void run(GL2 gl) {gl.glDrawRangeElements(mode, start, end, count, type, indices);}
+		public void run(GL2 gl) {is.restore(); gl.glDrawRangeElements(mode, start, end, count, type, is.buf);}
 	    });
     }
 
@@ -536,9 +559,10 @@ public class BGL {
 	    });
     }
 
-    public void glNormalPointer(final int type, final int stride, final Buffer data) {
+    public void glNormalPointer(final int type, final int stride, Buffer data) {
+	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL2 gl) {gl.glNormalPointer(type, stride, data);}
+		public void run(GL2 gl) {ds.restore(); gl.glNormalPointer(type, stride, ds.buf);}
 	    });
     }
 
@@ -614,21 +638,24 @@ public class BGL {
 	    });
     }
 
-    public void glTexCoordPointer(final int size, final int type, final int stride, final Buffer data) {
+    public void glTexCoordPointer(final int size, final int type, final int stride, Buffer data) {
+	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL2 gl) {gl.glTexCoordPointer(size, type, stride, data);}
+		public void run(GL2 gl) {ds.restore(); gl.glTexCoordPointer(size, type, stride, ds.buf);}
 	    });
     }
 
-    public void glTexImage2D(final int target, final int level, final int internalformat, final int width, final int height, final int border, final int format, final int type, final Buffer data) {
+    public void glTexImage2D(final int target, final int level, final int internalformat, final int width, final int height, final int border, final int format, final int type, Buffer data) {
+	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL2 gl) {gl.glTexImage2D(target, level, internalformat, width, height, border, format, type, data);}
+		public void run(GL2 gl) {ds.restore(); gl.glTexImage2D(target, level, internalformat, width, height, border, format, type, ds.buf);}
 	    });
     }
 
-    public void glTexSubImage2D(final int target, final int level, final int xoff, final int yoff, final int width, final int height, final int format, final int type, final Buffer data) {
+    public void glTexSubImage2D(final int target, final int level, final int xoff, final int yoff, final int width, final int height, final int format, final int type, Buffer data) {
+	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL2 gl) {gl.glTexSubImage2D(target, level, xoff, yoff, width, height, format, type, data);}
+		public void run(GL2 gl) {ds.restore(); gl.glTexSubImage2D(target, level, xoff, yoff, width, height, format, type, ds.buf);}
 	    });
     }
 
@@ -740,9 +767,10 @@ public class BGL {
 	    });
     }
 
-    public void glVertexAttribPointer(final ID location, final int size, final int type, final boolean normalized, final int stride, final Buffer pointer) {
+    public void glVertexAttribPointer(final ID location, final int size, final int type, final boolean normalized, final int stride, Buffer pointer) {
+	final BufState ps = new BufState(pointer);
 	add(new Command() {
-		public void run(GL2 gl) {gl.glVertexAttribPointer(location.glid(), size, type, normalized, stride, pointer);}
+		public void run(GL2 gl) {ps.restore(); gl.glVertexAttribPointer(location.glid(), size, type, normalized, stride, ps.buf);}
 	    });
     }
 
@@ -764,9 +792,10 @@ public class BGL {
 	    });
     }
 
-    public void glVertexPointer(final int size, final int type, final int stride, final Buffer data) {
+    public void glVertexPointer(final int size, final int type, final int stride, Buffer data) {
+	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL2 gl) {gl.glVertexPointer(size, type, stride, data);}
+		public void run(GL2 gl) {ds.restore(); gl.glVertexPointer(size, type, stride, ds.buf);}
 	    });
     }
 
