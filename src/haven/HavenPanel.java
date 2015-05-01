@@ -38,7 +38,7 @@ import javax.media.opengl.glu.GLU;
 
 public class HavenPanel extends GLCanvas implements Runnable, Console.Directory {
     UI ui;
-    boolean inited = false, rdr = false;
+    boolean inited = false;
     int w, h;
     long fd = 20, fps = 0;
     double idle = 0.0;
@@ -97,7 +97,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		    dump.reset();
 		    gl = dump;
 		    */
-		    if(inited && rdr)
+		    if(inited)
 			redraw(gl);
 		}
 			
@@ -272,7 +272,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	return(Toolkit.getDefaultToolkit().createCustomCursor(buf, new java.awt.Point(hs.x, hs.y), ""));
     }
     
-    void redraw2(GLState.Applier state, UI ui, BGL gl) {
+    void rootdraw(GLState.Applier state, UI ui, BGL gl) {
 	GLState.Buffer ibuf = new GLState.Buffer(state.cfg);
 	gstate.prep(ibuf);
 	ostate.prep(ibuf);
@@ -369,31 +369,31 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	GLObject.disposeall(state.cgl, gl);
     }
 
+    private static class Frame {
+	BGL buf; CurrentGL on;
+	Frame(BGL buf, CurrentGL on) {this.buf = buf; this.on = on;}
+    }
+
     void redraw(GL2 gl) {
 	if((state == null) || (state.cgl.gl != gl))
 	    state = new GLState.Applier(new CurrentGL(gl, glconf));
 
-	BGL buf = new BGL();
-	UI ui = this.ui;
-	redraw2(state, ui, buf);
-	if(curf != null)
-	    curf.tick("ui");
+	Frame f = curdraw;
+	if((f != null) && (f.on.gl == gl)) {
+	    GPUProfile.Frame curgf = null;
+	    if(Config.profilegpu)
+		curgf = gprof.new Frame((GL3)gl);
+	    f.buf.run(gl);
+	    GOut.checkerr(gl);
+	    if(curgf != null) {
+		curgf.tick("draw");
+		curgf.fin();
+	    }
 
-	GPUProfile.Frame curgf = null;
-	if(Config.profilegpu)
-	    curgf = gprof.new Frame((GL3)gl);
-	buf.run(gl);
-	GOut.checkerr(gl);
-	if(curf != null)
-	    curf.tick("gl");
-	if(curgf != null)
-	    curgf.tick("draw");
-	if(curgf != null)
-	    curgf.fin();
-
-	if(glconf.pref.dirty) {
-	    glconf.pref.save();
-	    glconf.pref.dirty = false;
+	    if(glconf.pref.dirty) {
+		glconf.pref.save();
+		glconf.pref.dirty = false;
+	    }
 	}
     }
 	
@@ -428,67 +428,111 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	}
     }
 	
-    public void uglyjoglhack() throws InterruptedException {
-	try {
-	    rdr = true;
-	    display();
-	} catch(RuntimeException e) {
-	    if(e.getCause() instanceof InterruptedException) {
-		throw((InterruptedException)e.getCause());
-	    } else {
-		throw(e);
+    private Frame bufdraw = null, curdraw = null;;
+    private final Runnable drawfun = new Runnable() {
+	    private void uglyjoglhack() throws InterruptedException {
+		try {
+		    display();
+		} catch(RuntimeException e) {
+		    if(e.getCause() instanceof InterruptedException) {
+			throw((InterruptedException)e.getCause());
+		    } else {
+			throw(e);
+		    }
+		}
 	    }
-	} finally {
-	    rdr = false;
-	}
-    }
-	
+
+	    public void run() {
+		try {
+		    uglyjoglhack();
+		    if(state == null)
+			throw(new RuntimeException("State applier is still null after redraw"));
+		    synchronized(drawfun) {
+			drawfun.notifyAll();
+		    }
+		    while(true) {
+			synchronized(drawfun) {
+			    while((curdraw = bufdraw) == null)
+				drawfun.wait();
+			    bufdraw = null;
+			    drawfun.notifyAll();
+			}
+			uglyjoglhack();
+			curdraw = null;
+		    }
+		} catch(InterruptedException e) {
+		    return;
+		}
+	    }
+	};
+
     public void run() {
 	try {
-	    long now, fthen, then;
-	    int frames = 0, waited = 0;
-	    fthen = System.currentTimeMillis();
-	    while(true) {
-		Debug.cycle();
-		UI ui = this.ui;
-		then = System.currentTimeMillis();
-		if(Config.profile)
-		    curf = prof.new Frame();
-		synchronized(ui) {
-		    if(ui.sess != null)
-			ui.sess.glob.ctick();
-		    dispatch();
-		    ui.tick();
-		    if((ui.root.sz.x != w) || (ui.root.sz.y != h))
-			ui.root.resize(new Coord(w, h));
-		}
-		if(curf != null)
-		    curf.tick("dsp");
-		uglyjoglhack();
-		ui.audio.cycle();
-		if(curf != null)
-		    curf.tick("aux");
-		frames++;
-		now = System.currentTimeMillis();
-		if(now - then < fd) {
-		    synchronized(events) {
-			events.wait(fd - (now - then));
+	    Thread drawthread = new HackThread(drawfun, "Render thread");
+	    drawthread.start();
+	    synchronized(drawfun) {
+		while(state == null)
+		    drawfun.wait();
+	    }
+	    try {
+		long now, fthen, then;
+		int frames = 0, waited = 0;
+		fthen = System.currentTimeMillis();
+		while(true) {
+		    Debug.cycle();
+		    UI ui = this.ui;
+		    then = System.currentTimeMillis();
+		    if(Config.profile)
+			curf = prof.new Frame();
+		    synchronized(ui) {
+			if(ui.sess != null)
+			    ui.sess.glob.ctick();
+			dispatch();
+			ui.tick();
+			if((ui.root.sz.x != w) || (ui.root.sz.y != h))
+			    ui.root.resize(new Coord(w, h));
 		    }
-		    waited += System.currentTimeMillis() - now;
+		    if(curf != null)
+			curf.tick("dsp");
+
+		    BGL buf = new BGL();
+		    GLState.Applier state = this.state;
+		    rootdraw(state, ui, buf);
+		    synchronized(drawfun) {
+			while(bufdraw != null)
+			    drawfun.wait();
+			bufdraw = new Frame(buf, state.cgl);
+			drawfun.notifyAll();
+		    }
+
+		    ui.audio.cycle();
+		    if(curf != null)
+			curf.tick("aux");
+		    frames++;
+		    now = System.currentTimeMillis();
+		    if(now - then < fd) {
+			synchronized(events) {
+			    events.wait(fd - (now - then));
+			}
+			waited += System.currentTimeMillis() - now;
+		    }
+		    if(curf != null)
+			curf.tick("wait");
+		    if(now - fthen > 1000) {
+			fps = frames;
+			idle = ((double)waited) / ((double)(now - fthen));
+			frames = 0;
+			waited = 0;
+			fthen = now;
+		    }
+		    if(curf != null)
+			curf.fin();
+		    if(Thread.interrupted())
+			throw(new InterruptedException());
 		}
-		if(curf != null)
-		    curf.tick("wait");
-		if(now - fthen > 1000) {
-		    fps = frames;
-		    idle = ((double)waited) / ((double)(now - fthen));
-		    frames = 0;
-		    waited = 0;
-		    fthen = now;
-		}
-		if(curf != null)
-		    curf.fin();
-		if(Thread.interrupted())
-		    throw(new InterruptedException());
+	    } finally {
+		drawthread.interrupt();
+		drawthread.join();
 	    }
 	} catch(InterruptedException e) {
 	} finally {
