@@ -482,9 +482,9 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		    drawfun.wait();
 	    }
 	    try {
-		long now, fthen, then;
-		int frames = 0, waited = 0;
-		fthen = System.currentTimeMillis();
+		long now, then;
+		long frames[] = new long[128];
+		int framep = 0, waited[] = new int[128];
 		while(true) {
 		    Debug.cycle();
 		    UI ui = this.ui;
@@ -518,23 +518,29 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		    ui.audio.cycle();
 		    if(curf != null)
 			curf.tick("aux");
-		    frames++;
+
 		    now = System.currentTimeMillis();
 		    if(now - then < fd) {
 			synchronized(events) {
 			    events.wait(fd - (now - then));
 			}
-			waited += System.currentTimeMillis() - now;
 		    }
+
+		    frames[framep] = now;
+		    waited[framep] = (int)(System.currentTimeMillis() - now);
+		    for(int i = 0, ckf = framep, twait = 0; i < frames.length; i++) {
+			ckf = (ckf - 1 + frames.length) % frames.length;
+			twait += waited[ckf];
+			if(now - frames[ckf] > 1000) {
+			    fps = i;
+			    idle = ((double)twait) / ((double)(now - frames[ckf]));
+			    break;
+			}
+		    }
+		    framep = (framep + 1) % frames.length;
+
 		    if(curf != null)
 			curf.tick("wait");
-		    if(now - fthen > 1000) {
-			fps = frames;
-			idle = ((double)waited) / ((double)(now - fthen));
-			frames = 0;
-			waited = 0;
-			fthen = now;
-		    }
 		    if(curf != null)
 			curf.fin();
 		    if(Thread.interrupted())
