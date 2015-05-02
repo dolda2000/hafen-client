@@ -46,6 +46,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     private String cursmode = "tex";
     private Resource lastcursor = null;
     public Coord mousepos = new Coord(0, 0);
+    private MouseEvent mousemv = null;
     public CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
     public GPUProfile gprof = new GPUProfile(300);
     public static final GLState.Slot<GLState> global = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class);
@@ -227,13 +228,13 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	addMouseMotionListener(new MouseMotionListener() {
 		public void mouseDragged(MouseEvent e) {
 		    synchronized(events) {
-			events.add(e);
+			mousemv = e;
 		    }
 		}
 
 		public void mouseMoved(MouseEvent e) {
 		    synchronized(events) {
-			events.add(e);
+			mousemv = e;
 		    }
 		}
 	    });
@@ -401,6 +402,11 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	
     void dispatch() {
 	synchronized(events) {
+	    if(mousemv != null) {
+		mousepos = new Coord(mousemv.getX(), mousemv.getY());
+		ui.mousemove(mousemv, mousepos);
+		mousemv = null;
+	    }
 	    InputEvent e = null;
 	    while((e = events.poll()) != null) {
 		if(e instanceof MouseEvent) {
@@ -409,9 +415,6 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			ui.mousedown(me, new Coord(me.getX(), me.getY()), me.getButton());
 		    } else if(me.getID() == MouseEvent.MOUSE_RELEASED) {
 			ui.mouseup(me, new Coord(me.getX(), me.getY()), me.getButton());
-		    } else if(me.getID() == MouseEvent.MOUSE_MOVED || me.getID() == MouseEvent.MOUSE_DRAGGED) {
-			mousepos = new Coord(me.getX(), me.getY());
-			ui.mousemove(me, mousepos);
 		    } else if(me instanceof MouseWheelEvent) {
 			ui.mousewheel(me, new Coord(me.getX(), me.getY()), ((MouseWheelEvent)me).getWheelRotation());
 		    }
