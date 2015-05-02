@@ -1218,8 +1218,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public boolean mmousedown(Coord cc, final int button) {
-	    delay(new Hittest(cc) {
-		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
+	    delay(new Maptest(cc) {
+		    public void hit(Coord pc, Coord mc) {
 			bk.mmousedown(mc, button);
 		    }
 		});
@@ -1227,8 +1227,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public boolean mmouseup(Coord cc, final int button) {
-	    delay(new Hittest(cc) {
-		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
+	    delay(new Maptest(cc) {
+		    public void hit(Coord pc, Coord mc) {
 			bk.mmouseup(mc, button);
 		    }
 		});
@@ -1236,8 +1236,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public boolean mmousewheel(Coord cc, final int amount) {
-	    delay(new Hittest(cc) {
-		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
+	    delay(new Maptest(cc) {
+		    public void hit(Coord pc, Coord mc) {
 			bk.mmousewheel(mc, amount);
 		    }
 		});
@@ -1246,8 +1246,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	public void mmousemove(Coord cc) {
 	    if(mv) {
-		delay(new Hittest(cc) {
-			public void hit(Coord pc, Coord mc, ClickInfo inf) {
+		delay(new Maptest(cc) {
+			public void hit(Coord pc, Coord mc) {
 			    bk.mmousemove(mc);
 			}
 		    });
