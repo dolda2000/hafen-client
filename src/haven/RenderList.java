@@ -212,14 +212,29 @@ public class RenderList {
     public void fin() {
 	for(int i = 0; i < cur; i++) {
 	    Slot s = list[i];
-	    if((s.o = s.os.get(Rendered.order)) == null)
-		s.o = Rendered.deflt;
 	    if(s.os.get(Rendered.skip.slot) != null)
 		s.d = false;
+	}
+	int nd = 0;
+	for(int i = 0, o = cur - 1; i < o;) {
+	    for(; (i < o) && list[i].d; i++);
+	    for(; (i < o) && !list[o].d; o--);
+	    if(i < o) {
+		Slot t = list[i];
+		list[i] = list[o];
+		list[o] = t;
+		i++; o--;
+	    }
+	    nd = i;
+	}
+	for(int i = 0; i < nd; i++) {
+	    Slot s = list[i];
+	    if((s.o = s.os.get(Rendered.order)) == null)
+		s.o = Rendered.deflt;
 	    if(s.d)
 		s.ihash = s.os.ihash();
 	}
-	Arrays.sort(list, 0, cur, cmp);
+	Arrays.sort(list, 0, nd, cmp);
     }
 
     public static class RLoad extends Loading {

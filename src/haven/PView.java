@@ -261,6 +261,8 @@ public abstract class PView extends Widget {
 	    g.st.set(bk);
 	}
 	for(RenderList.Slot s : rls.slots()) {
+	    if(!s.d)
+		break;
 	    if(s.r instanceof Render2D)
 		((Render2D)s.r).draw2d(g);
 	}
