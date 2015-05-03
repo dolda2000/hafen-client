@@ -280,7 +280,7 @@ public abstract class PView extends Widget {
 	public void draw(GOut g) {}
 	
 	public boolean setup(RenderList r) {
-	    return(false);
+	    return(true);
 	}
     }
 
