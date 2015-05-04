@@ -681,20 +681,16 @@ public class ChatUI extends Widget {
 	    this.notify = notify;
 	}
 	
-	private static final Random cr = new Random();
-	private static Color randcol() {
-	    int[] c = {cr.nextInt(256), cr.nextInt(256), cr.nextInt(256)};
-	    int mc = Math.max(c[0], Math.max(c[1], c[2]));
-	    for(int i = 0; i < c.length; i++)
-		c[i] = (c[i] * 255) / mc;
-	    return(new Color(c[0], c[1], c[2]));
+	private float colseq = 0;
+	private Color nextcol() {
+	    return(new Color(Color.HSBtoRGB(colseq = ((colseq + (float)Math.sqrt(2)) % 1.0f), 0.5f, 1.0f)));
 	}
 
 	public Color fromcolor(int from) {
 	    synchronized(pc) {
 		Color c = pc.get(from);
 		if(c == null)
-		    pc.put(from, c = randcol());
+		    pc.put(from, c = nextcol());
 		return(c);
 	    }
 	}

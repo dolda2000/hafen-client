@@ -38,17 +38,17 @@ import javax.media.opengl.glu.GLU;
 
 public class HavenPanel extends GLCanvas implements Runnable, Console.Directory {
     UI ui;
-    boolean inited = false, rdr = false;
+    boolean inited = false;
     int w, h;
-    long fd = 20, fps = 0;
-    double idle = 0.0;
+    long fd = 10, fps = 0;
+    double uidle = 0.0, ridle = 0.0;
     Queue<InputEvent> events = new LinkedList<InputEvent>();
     private String cursmode = "tex";
     private Resource lastcursor = null;
     public Coord mousepos = new Coord(0, 0);
-    public CPUProfile prof = new CPUProfile(300);
+    private MouseEvent mousemv = null;
+    public CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
     public GPUProfile gprof = new GPUProfile(300);
-    private CPUProfile.Frame curf = null;
     public static final GLState.Slot<GLState> global = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class);
     public static final GLState.Slot<GLState> proj2d = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class, global);
     private GLState gstate, rtstate, ostate;
@@ -97,7 +97,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		    dump.reset();
 		    gl = dump;
 		    */
-		    if(inited && rdr)
+		    if(inited)
 			redraw(gl);
 		}
 			
@@ -228,13 +228,13 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	addMouseMotionListener(new MouseMotionListener() {
 		public void mouseDragged(MouseEvent e) {
 		    synchronized(events) {
-			events.add(e);
+			mousemv = e;
 		    }
 		}
 
 		public void mouseMoved(MouseEvent e) {
 		    synchronized(events) {
-			events.add(e);
+			mousemv = e;
 		    }
 		}
 	    });
@@ -253,7 +253,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	if(ui != null)
 	    ui.destroy();
 	ui = new UI(new Coord(w, h), sess);
-	ui.root.gcprof = prof;
+	ui.root.guprof = uprof;
+	ui.root.grprof = rprof;
 	ui.root.ggprof = gprof;
 	if(getParent() instanceof Console.Directory)
 	    ui.cons.add((Console.Directory)getParent());
@@ -272,7 +273,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	return(Toolkit.getDefaultToolkit().createCustomCursor(buf, new java.awt.Point(hs.x, hs.y), ""));
     }
     
-    void redraw2(GLState.Applier state, UI ui, BGL gl) {
+    void rootdraw(GLState.Applier state, UI ui, BGL gl) {
 	GLState.Buffer ibuf = new GLState.Buffer(state.cfg);
 	gstate.prep(ibuf);
 	ostate.prep(ibuf);
@@ -283,17 +284,13 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	g.apply();
 	gl.glClearColor(0, 0, 0, 1);
 	gl.glClear(GL.GL_COLOR_BUFFER_BIT);
-	if(curf != null)
-	    curf.tick("cls");
 	synchronized(ui) {
 	    ui.draw(g);
 	}
-	if(curf != null)
-	    curf.tick("draw");
 
 	if(Config.dbtext) {
 	    int y = h - 150;
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%% idle)", fps, (int)(idle * 100.0));
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0));
 	    Runtime rt = Runtime.getRuntime();
 	    long free = rt.freeMemory(), total = rt.totalMemory();
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
@@ -369,36 +366,47 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	GLObject.disposeall(state.cgl, gl);
     }
 
+    private static class Frame {
+	BGL buf; CurrentGL on;
+	CPUProfile.Frame pf; long doneat;
+	Frame(BGL buf, CurrentGL on) {this.buf = buf; this.on = on;}
+    }
+
     void redraw(GL2 gl) {
 	if((state == null) || (state.cgl.gl != gl))
 	    state = new GLState.Applier(new CurrentGL(gl, glconf));
 
-	BGL buf = new BGL();
-	UI ui = this.ui;
-	redraw2(state, ui, buf);
-	if(curf != null)
-	    curf.tick("ui");
+	Frame f = curdraw;
+	if((f != null) && (f.on.gl == gl)) {
+	    GPUProfile.Frame curgf = null;
+	    if(Config.profilegpu)
+		curgf = gprof.new Frame((GL3)gl);
+	    if(f.pf != null)
+		f.pf.tick("awt");
+	    f.buf.run(gl);
+	    GOut.checkerr(gl);
+	    if(f.pf != null)
+		f.pf.tick("gl");
+	    if(curgf != null) {
+		curgf.tick("draw");
+		curgf.fin();
+	    }
 
-	GPUProfile.Frame curgf = null;
-	if(Config.profilegpu)
-	    curgf = gprof.new Frame((GL3)gl);
-	buf.run(gl);
-	GOut.checkerr(gl);
-	if(curf != null)
-	    curf.tick("gl");
-	if(curgf != null)
-	    curgf.tick("draw");
-	if(curgf != null)
-	    curgf.fin();
-
-	if(glconf.pref.dirty) {
-	    glconf.pref.save();
-	    glconf.pref.dirty = false;
+	    if(glconf.pref.dirty) {
+		glconf.pref.save();
+		glconf.pref.dirty = false;
+	    }
+	    f.doneat = System.currentTimeMillis();
 	}
     }
 	
     void dispatch() {
 	synchronized(events) {
+	    if(mousemv != null) {
+		mousepos = new Coord(mousemv.getX(), mousemv.getY());
+		ui.mousemove(mousemv, mousepos);
+		mousemv = null;
+	    }
 	    InputEvent e = null;
 	    while((e = events.poll()) != null) {
 		if(e instanceof MouseEvent) {
@@ -407,9 +415,6 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			ui.mousedown(me, new Coord(me.getX(), me.getY()), me.getButton());
 		    } else if(me.getID() == MouseEvent.MOUSE_RELEASED) {
 			ui.mouseup(me, new Coord(me.getX(), me.getY()), me.getButton());
-		    } else if(me.getID() == MouseEvent.MOUSE_MOVED || me.getID() == MouseEvent.MOUSE_DRAGGED) {
-			mousepos = new Coord(me.getX(), me.getY());
-			ui.mousemove(me, mousepos);
 		    } else if(me instanceof MouseWheelEvent) {
 			ui.mousewheel(me, new Coord(me.getX(), me.getY()), ((MouseWheelEvent)me).getWheelRotation());
 		    }
@@ -428,67 +433,137 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	}
     }
 	
-    public void uglyjoglhack() throws InterruptedException {
-	try {
-	    rdr = true;
-	    display();
-	} catch(RuntimeException e) {
-	    if(e.getCause() instanceof InterruptedException) {
-		throw((InterruptedException)e.getCause());
-	    } else {
-		throw(e);
+    private Frame bufdraw = null, curdraw = null;;
+    private final Runnable drawfun = new Runnable() {
+	    private void uglyjoglhack() throws InterruptedException {
+		try {
+		    display();
+		} catch(RuntimeException e) {
+		    if(e.getCause() instanceof InterruptedException) {
+			throw((InterruptedException)e.getCause());
+		    } else {
+			throw(e);
+		    }
+		}
 	    }
-	} finally {
-	    rdr = false;
-	}
-    }
-	
+
+	    public void run() {
+		try {
+		    uglyjoglhack();
+		    if(state == null)
+			throw(new RuntimeException("State applier is still null after redraw"));
+		    synchronized(drawfun) {
+			drawfun.notifyAll();
+		    }
+		    while(true) {
+			long then = System.currentTimeMillis();
+			int waited = 0;
+			synchronized(drawfun) {
+			    while((curdraw = bufdraw) == null)
+				drawfun.wait();
+			    bufdraw = null;
+			    drawfun.notifyAll();
+			    waited += System.currentTimeMillis() - then;
+			}
+			CPUProfile.Frame curf = null;
+			if(Config.profile)
+			    curdraw.pf = curf = rprof.new Frame();
+			uglyjoglhack();
+			if(curf != null) {
+			    curf.tick("aux");
+			    curf.fin();
+			}
+			long now = System.currentTimeMillis();
+			waited += now - curdraw.doneat;
+			ridle = (ridle * 0.95) + (((double)waited / ((double)(now - then))) * 0.05);
+			curdraw = null;
+		    }
+		} catch(InterruptedException e) {
+		    return;
+		}
+	    }
+	};
+
     public void run() {
 	try {
-	    long now, fthen, then;
-	    int frames = 0, waited = 0;
-	    fthen = System.currentTimeMillis();
-	    while(true) {
-		Debug.cycle();
-		UI ui = this.ui;
-		then = System.currentTimeMillis();
-		if(Config.profile)
-		    curf = prof.new Frame();
-		synchronized(ui) {
-		    if(ui.sess != null)
-			ui.sess.glob.ctick();
-		    dispatch();
-		    ui.tick();
-		    if((ui.root.sz.x != w) || (ui.root.sz.y != h))
-			ui.root.resize(new Coord(w, h));
-		}
-		if(curf != null)
-		    curf.tick("dsp");
-		uglyjoglhack();
-		ui.audio.cycle();
-		if(curf != null)
-		    curf.tick("aux");
-		frames++;
-		now = System.currentTimeMillis();
-		if(now - then < fd) {
-		    synchronized(events) {
-			events.wait(fd - (now - then));
+	    Thread drawthread = new HackThread(drawfun, "Render thread");
+	    drawthread.start();
+	    synchronized(drawfun) {
+		while(state == null)
+		    drawfun.wait();
+	    }
+	    try {
+		long now, then;
+		long frames[] = new long[128];
+		int framep = 0, waited[] = new int[128];
+		while(true) {
+		    int fwaited = 0;
+		    Debug.cycle();
+		    UI ui = this.ui;
+		    then = System.currentTimeMillis();
+		    CPUProfile.Frame curf = null;
+		    if(Config.profile)
+			curf = uprof.new Frame();
+		    synchronized(ui) {
+			if(ui.sess != null)
+			    ui.sess.glob.ctick();
+			dispatch();
+			ui.tick();
+			if((ui.root.sz.x != w) || (ui.root.sz.y != h))
+			    ui.root.resize(new Coord(w, h));
 		    }
-		    waited += System.currentTimeMillis() - now;
+		    if(curf != null)
+			curf.tick("dsp");
+
+		    BGL buf = new BGL();
+		    GLState.Applier state = this.state;
+		    rootdraw(state, ui, buf);
+		    if(curf != null)
+			curf.tick("draw");
+		    synchronized(drawfun) {
+			now = System.currentTimeMillis();
+			while(bufdraw != null)
+			    drawfun.wait();
+			bufdraw = new Frame(buf, state.cgl);
+			drawfun.notifyAll();
+			fwaited += System.currentTimeMillis() - now;
+		    }
+
+		    ui.audio.cycle();
+		    if(curf != null)
+			curf.tick("aux");
+
+		    now = System.currentTimeMillis();
+		    if(now - then < fd) {
+			synchronized(events) {
+			    events.wait(fd - (now - then));
+			}
+			fwaited += System.currentTimeMillis() - now;
+		    }
+
+		    frames[framep] = now;
+		    waited[framep] = fwaited;
+		    for(int i = 0, ckf = framep, twait = 0; i < frames.length; i++) {
+			ckf = (ckf - 1 + frames.length) % frames.length;
+			twait += waited[ckf];
+			if(now - frames[ckf] > 1000) {
+			    fps = i;
+			    uidle = ((double)twait) / ((double)(now - frames[ckf]));
+			    break;
+			}
+		    }
+		    framep = (framep + 1) % frames.length;
+
+		    if(curf != null)
+			curf.tick("wait");
+		    if(curf != null)
+			curf.fin();
+		    if(Thread.interrupted())
+			throw(new InterruptedException());
 		}
-		if(curf != null)
-		    curf.tick("wait");
-		if(now - fthen > 1000) {
-		    fps = frames;
-		    idle = ((double)waited) / ((double)(now - fthen));
-		    frames = 0;
-		    waited = 0;
-		    fthen = now;
-		}
-		if(curf != null)
-		    curf.fin();
-		if(Thread.interrupted())
-		    throw(new InterruptedException());
+	    } finally {
+		drawthread.interrupt();
+		drawthread.join();
 	    }
 	} catch(InterruptedException e) {
 	} finally {

@@ -30,7 +30,7 @@ import java.awt.event.KeyEvent;
 
 public class RootWidget extends ConsoleHost {
     public static Resource defcurs = Resource.load("gfx/hud/curs/arw");
-    Profile gcprof, ggprof;
+    Profile guprof, grprof, ggprof;
     boolean afk = false;
 	
     public RootWidget(UI ui, Coord sz) {
@@ -41,14 +41,17 @@ public class RootWidget extends ConsoleHost {
 	
     public boolean globtype(char key, KeyEvent ev) {
 	if(!super.globtype(key, ev)) {
-	    if(Config.profile && (key == '`')) {
-		add(new Profwnd(gcprof, "Glob prof"), new Coord(100, 100));
-	    } else if(Config.profilegpu && (key == '!')) {
-		add(new Profwnd(ggprof, "GPU prof"), new Coord(100, 100));
-	    } else if(Config.profile && (key == '~')) {
+	    if(key == '`') {
 		GameUI gi = findchild(GameUI.class);
-		if((gi != null) && (gi.map != null))
-		    add(new Profwnd(gi.map.prof, "MV prof"), new Coord(100, 100));
+		if(Config.profile) {
+		    add(new Profwnd(guprof, "UI profile"), new Coord(100, 100));
+		    add(new Profwnd(grprof, "GL profile"), new Coord(450, 100));
+		    if((gi != null) && (gi.map != null))
+			add(new Profwnd(gi.map.prof, "Map profile"), new Coord(100, 250));
+		}
+		if(Config.profilegpu) {
+		    add(new Profwnd(ggprof, "GPU profile"), new Coord(450, 250));
+		}
 	    } else if(key == ':') {
 		entercmd();
 	    } else if(key != 0) {

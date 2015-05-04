@@ -43,7 +43,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Collection<Delayed> delayed = new LinkedList<Delayed>();
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
     private Collection<Rendered> extradraw = new LinkedList<Rendered>();
-    public Camera camera = new SOrthoCam();
+    public Camera camera = restorecam();
     private Plob placing = null;
     private int[] visol = new int[32];
     private Grabber grab;
@@ -239,16 +239,23 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(true);
 	}
     }
-    static {camtypes.put("sucky", FreeCam.class);}
+    static {camtypes.put("bad", FreeCam.class);}
     
     public class OrthoCam extends Camera {
+	public boolean exact;
 	protected float dist = 500.0f;
 	protected float elev = (float)Math.PI / 6.0f;
 	protected float angl = -(float)Math.PI / 4.0f;
 	protected float field = (float)(100 * Math.sqrt(2));
 	private Coord dragorig = null;
 	private float anglorig;
-	protected Coord3f cc;
+	protected Coord3f cc, jc;
+
+	public OrthoCam(boolean exact) {
+	    this.exact = exact;
+	}
+
+	public OrthoCam() {this(false);}
 
 	public void tick2(double dt) {
 	    Coord3f cc = getcc();
@@ -259,7 +266,18 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void tick(double dt) {
 	    tick2(dt);
 	    float aspect = ((float)sz.y) / ((float)sz.x);
-	    view.update(PointedCam.compute(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl));
+	    Matrix4f vm = PointedCam.compute(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl);
+	    if(exact) {
+		if(jc == null)
+		    jc = cc;
+		float pfac = sz.x / (field * 2);
+		Coord3f vjc = vm.mul4(jc).mul(pfac);
+		Coord3f corr = new Coord3f(Math.round(vjc.x) - vjc.x, Math.round(vjc.y) - vjc.y, 0).div(pfac);
+		if((Math.abs(vjc.x) > 500) || (Math.abs(vjc.y) > 500))
+		    jc = null;
+		vm = Location.makexlate(new Matrix4f(), corr).mul1(vm);
+	    }
+	    view.update(vm);
 	    proj.update(Projection.makeortho(new Matrix4f(), -field, field, -field * aspect, field * aspect, 1, 5000));
 	}
 
@@ -290,23 +308,42 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private float tfield = field;
 	private final float pi2 = (float)(Math.PI * 2);
 
+	public SOrthoCam(boolean exact) {
+	    super(exact);
+	}
+
+	public SOrthoCam(String... args) {
+	    PosixArgs opt = PosixArgs.getopt(args, "e");
+	    for(char c : opt.parsed()) {
+		switch(c) {
+		case 'e':
+		    exact = true;
+		    break;
+		}
+	    }
+	}
+
 	public void tick2(double dt) {
 	    Coord3f mc = getcc();
 	    mc.y = -mc.y;
 	    if((cc == null) || (Math.hypot(mc.x - cc.x, mc.y - cc.y) > 250))
 		cc = mc;
-	    else
+	    else if(!exact || (mc.dist(cc) > 2))
 		cc = cc.add(mc.sub(cc).mul(1f - (float)Math.pow(500, -dt)));
 
 	    angl = angl + ((tangl - angl) * (1f - (float)Math.pow(500, -dt)));
 	    while(angl > pi2) {angl -= pi2; tangl -= pi2; anglorig -= pi2;}
 	    while(angl < 0)   {angl += pi2; tangl += pi2; anglorig += pi2;}
-	    if(Math.abs(tangl - angl) < 0.0001)
+	    if(Math.abs(tangl - angl) < 0.001)
 		angl = tangl;
+	    else
+		jc = cc;
 
 	    field = field + ((tfield - field) * (1f - (float)Math.pow(500, -dt)));
-	    if(Math.abs(tfield - field) < 0.0001)
+	    if(Math.abs(tfield - field) < 0.1)
 		field = tfield;
+	    else
+		jc = cc;
 	}
 
 	public boolean click(Coord c) {
@@ -1218,8 +1255,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public boolean mmousedown(Coord cc, final int button) {
-	    delay(new Hittest(cc) {
-		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
+	    delay(new Maptest(cc) {
+		    public void hit(Coord pc, Coord mc) {
 			bk.mmousedown(mc, button);
 		    }
 		});
@@ -1227,8 +1264,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public boolean mmouseup(Coord cc, final int button) {
-	    delay(new Hittest(cc) {
-		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
+	    delay(new Maptest(cc) {
+		    public void hit(Coord pc, Coord mc) {
 			bk.mmouseup(mc, button);
 		    }
 		});
@@ -1236,8 +1273,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public boolean mmousewheel(Coord cc, final int amount) {
-	    delay(new Hittest(cc) {
-		    public void hit(Coord pc, Coord mc, ClickInfo inf) {
+	    delay(new Maptest(cc) {
+		    public void hit(Coord pc, Coord mc) {
 			bk.mmousewheel(mc, amount);
 		    }
 		});
@@ -1246,8 +1283,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	public void mmousemove(Coord cc) {
 	    if(mv) {
-		delay(new Hittest(cc) {
-			public void hit(Coord pc, Coord mc, ClickInfo inf) {
+		delay(new Maptest(cc) {
+			public void hit(Coord pc, Coord mc) {
 			    bk.mmousemove(mc);
 			}
 		    });
@@ -1327,14 +1364,58 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
+    private Camera makecam(Class<? extends Camera> ct, String... args) {
+	try {
+	    try {
+		Constructor<? extends Camera> cons = ct.getConstructor(MapView.class, String[].class);
+		return(cons.newInstance(new Object[] {this, args}));
+	    } catch(IllegalAccessException e) {
+	    } catch(NoSuchMethodException e) {
+	    }
+	    try {
+		Constructor<? extends Camera> cons = ct.getConstructor(MapView.class);
+		return(cons.newInstance(new Object[] {this}));
+	    } catch(IllegalAccessException e) {
+	    } catch(NoSuchMethodException e) {
+	    }
+	} catch(InstantiationException e) {
+	    throw(new Error(e));
+	} catch(InvocationTargetException e) {
+	    if(e.getCause() instanceof RuntimeException)
+		throw((RuntimeException)e.getCause());
+	    throw(new RuntimeException(e));
+	}
+	throw(new RuntimeException("No valid constructor found for camera " + ct.getName()));
+    }
+
+    private Camera restorecam() {
+	Class<? extends Camera> ct = camtypes.get(Utils.getpref("defcam", null));
+	if(ct == null)
+	    return(new SOrthoCam(false));
+	String[] args = (String [])Utils.deserialize(Utils.getprefb("camargs", null));
+	if(args == null) args = new String[0];
+	try {
+	    return(makecam(ct, args));
+	} catch(Exception e) {
+	    return(new SOrthoCam(false));
+	}
+    }
+
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("cam", new Console.Command() {
 		public void run(Console cons, String[] args) throws Exception {
-		    Class<? extends Camera> cc = camtypes.get(args[1]);
-		    if(cc == null)
-			throw(new Exception("no such camera type: " + args[1]));
-		    camera = Utils.construct(cc.getConstructor(MapView.class), MapView.this);
+		    if(args.length >= 2) {
+			Class<? extends Camera> ct = camtypes.get(args[1]);
+			String[] cargs = Utils.splice(args, 2);
+			if(ct != null) {
+				camera = makecam(ct, cargs);
+				Utils.setpref("defcam", args[1]);
+				Utils.setprefb("camargs", Utils.serialize(cargs));
+			} else {
+			    throw(new Exception("no such camera: " + args[1]));
+			}
+		    }
 		}
 	    });
 	cmdmap.put("whyload", new Console.Command() {
