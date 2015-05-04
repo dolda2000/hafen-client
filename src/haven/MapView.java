@@ -242,13 +242,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
     static {camtypes.put("sucky", FreeCam.class);}
     
     public class OrthoCam extends Camera {
+	public boolean exact = false;
 	protected float dist = 500.0f;
 	protected float elev = (float)Math.PI / 6.0f;
 	protected float angl = -(float)Math.PI / 4.0f;
 	protected float field = (float)(100 * Math.sqrt(2));
 	private Coord dragorig = null;
 	private float anglorig;
-	protected Coord3f cc;
+	protected Coord3f cc, jc;
 
 	public void tick2(double dt) {
 	    Coord3f cc = getcc();
@@ -259,7 +260,18 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void tick(double dt) {
 	    tick2(dt);
 	    float aspect = ((float)sz.y) / ((float)sz.x);
-	    view.update(PointedCam.compute(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl));
+	    Matrix4f vm = PointedCam.compute(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl);
+	    if(exact) {
+		if(jc == null)
+		    jc = cc;
+		float pfac = sz.x / (field * 2);
+		Coord3f vjc = vm.mul4(jc).mul(pfac);
+		Coord3f corr = new Coord3f(Math.round(vjc.x) - vjc.x, Math.round(vjc.y) - vjc.y, 0).div(pfac);
+		if((Math.abs(vjc.x) > 500) || (Math.abs(vjc.y) > 500))
+		    jc = null;
+		vm = Location.makexlate(new Matrix4f(), corr).mul1(vm);
+	    }
+	    view.update(vm);
 	    proj.update(Projection.makeortho(new Matrix4f(), -field, field, -field * aspect, field * aspect, 1, 5000));
 	}
 
