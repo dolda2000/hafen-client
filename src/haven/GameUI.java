@@ -51,6 +51,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public BuddyWnd buddies;
     public Polity polity;
     public HelpWnd help;
+    public OptWnd opts;
     public Collection<DraggedItem> hand = new LinkedList<DraggedItem>();
     private WItem vhand;
     public ChatUI chat;
@@ -108,6 +109,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	buffs = add(new Bufflist(), new Coord(95, 50));
 	chat = add(new ChatUI(0));
 	syslog = chat.add(new ChatUI.Log("System"));
+	opts = add(new OptWnd());
+	opts.hide();
     }
 
     protected void added() {
@@ -128,6 +131,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		public void flush() {}
 	    });
 	Debug.log = ui.cons.out;
+	opts.c = sz.sub(opts.sz).div(2);
     }
     
     static class Hidewnd extends Window {
@@ -428,6 +432,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		polity.raise();
 		fitwdg(polity);
 		setfocus(polity);
+	    }
+	    return(true);
+	} else if(key == 15) {
+	    if(opts.show(!opts.visible)) {
+		opts.raise();
+		fitwdg(opts);
+		setfocus(opts);
 	    }
 	    return(true);
 	}
