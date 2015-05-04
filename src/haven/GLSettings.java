@@ -183,7 +183,7 @@ public class GLSettings implements java.io.Serializable {
 	    }
 	};
     public final BoolSetting outline = new BoolSetting("outl") {
-	    public Boolean defval() {return(false);}
+	    public Boolean defval() {return(true);}
 	    public void validate(Boolean val) {
 		if(val) {
 		    if(!cfg.havefbo()) throw(new SettingException("Outline rendering requires a video card supporting framebuffers."));
