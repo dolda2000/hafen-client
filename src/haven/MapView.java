@@ -307,18 +307,22 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    mc.y = -mc.y;
 	    if((cc == null) || (Math.hypot(mc.x - cc.x, mc.y - cc.y) > 250))
 		cc = mc;
-	    else
+	    else if(!exact || (mc.dist(cc) > 2))
 		cc = cc.add(mc.sub(cc).mul(1f - (float)Math.pow(500, -dt)));
 
 	    angl = angl + ((tangl - angl) * (1f - (float)Math.pow(500, -dt)));
 	    while(angl > pi2) {angl -= pi2; tangl -= pi2; anglorig -= pi2;}
 	    while(angl < 0)   {angl += pi2; tangl += pi2; anglorig += pi2;}
-	    if(Math.abs(tangl - angl) < 0.0001)
+	    if(Math.abs(tangl - angl) < 0.001)
 		angl = tangl;
+	    else
+		jc = cc;
 
 	    field = field + ((tfield - field) * (1f - (float)Math.pow(500, -dt)));
-	    if(Math.abs(tfield - field) < 0.0001)
+	    if(Math.abs(tfield - field) < 0.1)
 		field = tfield;
+	    else
+		jc = cc;
 	}
 
 	public boolean click(Coord c) {
