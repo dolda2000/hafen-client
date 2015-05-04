@@ -242,7 +242,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     static {camtypes.put("bad", FreeCam.class);}
     
     public class OrthoCam extends Camera {
-	public boolean exact = false;
+	public boolean exact;
 	protected float dist = 500.0f;
 	protected float elev = (float)Math.PI / 6.0f;
 	protected float angl = -(float)Math.PI / 4.0f;
@@ -250,6 +250,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private Coord dragorig = null;
 	private float anglorig;
 	protected Coord3f cc, jc;
+
+	public OrthoCam(boolean exact) {
+	    this.exact = exact;
+	}
+
+	public OrthoCam() {this(false);}
 
 	public void tick2(double dt) {
 	    Coord3f cc = getcc();
@@ -301,6 +307,21 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private float tangl = angl;
 	private float tfield = field;
 	private final float pi2 = (float)(Math.PI * 2);
+
+	public SOrthoCam(boolean exact) {
+	    super(exact);
+	}
+
+	public SOrthoCam(String... args) {
+	    PosixArgs opt = PosixArgs.getopt(args, "e");
+	    for(char c : opt.parsed()) {
+		switch(c) {
+		case 'e':
+		    exact = true;
+		    break;
+		}
+	    }
+	}
 
 	public void tick2(double dt) {
 	    Coord3f mc = getcc();
