@@ -43,7 +43,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Collection<Delayed> delayed = new LinkedList<Delayed>();
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
     private Collection<Rendered> extradraw = new LinkedList<Rendered>();
-    public Camera camera = new SOrthoCam();
+    public Camera camera = restorecam();
     private Plob placing = null;
     private int[] visol = new int[32];
     private Grabber grab;
@@ -239,10 +239,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(true);
 	}
     }
-    static {camtypes.put("sucky", FreeCam.class);}
+    static {camtypes.put("bad", FreeCam.class);}
     
     public class OrthoCam extends Camera {
-	public boolean exact = false;
+	public boolean exact;
 	protected float dist = 500.0f;
 	protected float elev = (float)Math.PI / 6.0f;
 	protected float angl = -(float)Math.PI / 4.0f;
@@ -250,6 +250,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private Coord dragorig = null;
 	private float anglorig;
 	protected Coord3f cc, jc;
+
+	public OrthoCam(boolean exact) {
+	    this.exact = exact;
+	}
+
+	public OrthoCam() {this(false);}
 
 	public void tick2(double dt) {
 	    Coord3f cc = getcc();
@@ -301,6 +307,21 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private float tangl = angl;
 	private float tfield = field;
 	private final float pi2 = (float)(Math.PI * 2);
+
+	public SOrthoCam(boolean exact) {
+	    super(exact);
+	}
+
+	public SOrthoCam(String... args) {
+	    PosixArgs opt = PosixArgs.getopt(args, "e");
+	    for(char c : opt.parsed()) {
+		switch(c) {
+		case 'e':
+		    exact = true;
+		    break;
+		}
+	    }
+	}
 
 	public void tick2(double dt) {
 	    Coord3f mc = getcc();
@@ -1347,14 +1368,58 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
+    private Camera makecam(Class<? extends Camera> ct, String... args) {
+	try {
+	    try {
+		Constructor<? extends Camera> cons = ct.getConstructor(MapView.class, String[].class);
+		return(cons.newInstance(new Object[] {this, args}));
+	    } catch(IllegalAccessException e) {
+	    } catch(NoSuchMethodException e) {
+	    }
+	    try {
+		Constructor<? extends Camera> cons = ct.getConstructor(MapView.class);
+		return(cons.newInstance(new Object[] {this}));
+	    } catch(IllegalAccessException e) {
+	    } catch(NoSuchMethodException e) {
+	    }
+	} catch(InstantiationException e) {
+	    throw(new Error(e));
+	} catch(InvocationTargetException e) {
+	    if(e.getCause() instanceof RuntimeException)
+		throw((RuntimeException)e.getCause());
+	    throw(new RuntimeException(e));
+	}
+	throw(new RuntimeException("No valid constructor found for camera " + ct.getName()));
+    }
+
+    private Camera restorecam() {
+	Class<? extends Camera> ct = camtypes.get(Utils.getpref("defcam", null));
+	if(ct == null)
+	    return(new SOrthoCam(false));
+	String[] args = (String [])Utils.deserialize(Utils.getprefb("camargs", null));
+	if(args == null) args = new String[0];
+	try {
+	    return(makecam(ct, args));
+	} catch(Exception e) {
+	    return(new SOrthoCam(false));
+	}
+    }
+
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("cam", new Console.Command() {
 		public void run(Console cons, String[] args) throws Exception {
-		    Class<? extends Camera> cc = camtypes.get(args[1]);
-		    if(cc == null)
-			throw(new Exception("no such camera type: " + args[1]));
-		    camera = Utils.construct(cc.getConstructor(MapView.class), MapView.this);
+		    if(args.length >= 2) {
+			Class<? extends Camera> ct = camtypes.get(args[1]);
+			String[] cargs = Utils.splice(args, 2);
+			if(ct != null) {
+				camera = makecam(ct, cargs);
+				Utils.setpref("defcam", args[1]);
+				Utils.setprefb("camargs", Utils.serialize(cargs));
+			} else {
+			    throw(new Exception("no such camera: " + args[1]));
+			}
+		    }
 		}
 	    });
 	cmdmap.put("whyload", new Console.Command() {
