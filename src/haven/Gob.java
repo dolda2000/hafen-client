@@ -259,28 +259,26 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     }
     
     public final Save save = new Save();
-    public class GobLocation extends Location {
+    public class GobLocation extends GLState.Abstract {
 	private Coord3f c = null;
 	private double a = 0.0;
 	private Matrix4f update = null;
+	private final Location xl = new Location(Matrix4f.id, "gobx"), rot = new Location(Matrix4f.id, "gob");
 
-	public GobLocation() {
-	    super(Matrix4f.id);
-	}
-	
 	public void tick() {
 	    try {
 		Coord3f c = getc();
 		c.y = -c.y;
-		if((this.c == null) || !c.equals(this.c) || (this.a != Gob.this.a)) {
-		    update(makexlate(new Matrix4f(), this.c = c)
-			   .mul1(makerot(new Matrix4f(), Coord3f.zu, (float)-(this.a = Gob.this.a))));
-		}
+		if((this.c == null) || !c.equals(this.c))
+		    xl.update(Transform.makexlate(new Matrix4f(), this.c = c));
+		if(this.a != Gob.this.a)
+		    rot.update(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-(this.a = Gob.this.a)));
 	    } catch(Loading l) {}
 	}
 
-	public Location freeze() {
-	    return(new Location(fin(Matrix4f.id)));
+	public void prep(Buffer buf) {
+	    xl.prep(buf);
+	    rot.prep(buf);
 	}
     }
     public final GobLocation loc = new GobLocation();

@@ -29,10 +29,17 @@ package haven;
 import javax.media.opengl.*;
 
 public class Location extends Transform {
-    public Location(Matrix4f xf) {
+    public final String id;
+
+    public Location(Matrix4f xf, String id) {
 	super(xf);
+	this.id = id;
     }
-    
+
+    public Location(Matrix4f xf) {
+	this(xf, null);
+    }
+
     public static class Chain extends GLState {
 	public final Location loc;
 	public final Chain p;
@@ -58,7 +65,15 @@ public class Location extends Transform {
 	public void prep(Buffer b) {
 	    throw(new RuntimeException("Location chains should not be applied directly."));
 	}
-    
+
+	public Chain back(String id) {
+	    for(Chain cur = this; cur != null; cur = cur.p) {
+		if(cur.loc.id == id)
+		    return(cur);
+	    }
+	    return(null);
+	}
+
 	public String toString() {
 	    String ret = loc.toString();
 	    if(p != null)
@@ -87,7 +102,7 @@ public class Location extends Transform {
     public void apply(GOut g) {
 	throw(new RuntimeException("Locations should not be applied directly."));
     }
-    
+
     public void unapply(GOut g) {
 	throw(new RuntimeException("Locations should not be applied directly."));
     }
@@ -96,11 +111,24 @@ public class Location extends Transform {
 	Chain p = b.get(PView.loc);
 	b.put(PView.loc, new Chain(this, p));
     }
-    
+
+    public static Chain back(Buffer b, String id) {
+	Chain s = b.get(PView.loc);
+	return(s == null?s:s.back(id));
+    }
+
+    public static Chain goback(Buffer b, String id) {
+	Chain s = back(b, id);
+	if(s == null)
+	    throw(new IllegalStateException("No such back-link: " + id));
+	b.put(PView.loc, s);
+	return(s);
+    }
+
     public static Location xlate(Coord3f c) {
 	return(new Location(makexlate(new Matrix4f(), c)));
     }
-    
+
     public static Location rot(Coord3f axis, float angle) {
 	return(new Location(makerot(new Matrix4f(), axis.norm(), angle)));
     }
