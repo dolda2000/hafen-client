@@ -1395,13 +1395,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Camera restorecam() {
 	Class<? extends Camera> ct = camtypes.get(Utils.getpref("defcam", null));
 	if(ct == null)
-	    return(new SOrthoCam(false));
+	    return(new SOrthoCam(true));
 	String[] args = (String [])Utils.deserialize(Utils.getprefb("camargs", null));
 	if(args == null) args = new String[0];
 	try {
 	    return(makecam(ct, args));
 	} catch(Exception e) {
-	    return(new SOrthoCam(false));
+	    return(new SOrthoCam(true));
 	}
     }
 
