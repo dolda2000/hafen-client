@@ -394,7 +394,7 @@ public abstract class TexGL extends Tex {
 
     @Material.ResName("tex")
     public static class $tex implements Material.ResCons2 {
-	public void cons(final Resource res, List<GLState> states, List<Material.Res.Resolver> left, Object... args) {
+	public Material.Res.Resolver cons(final Resource res, Object... args) {
 	    final Resource tres;
 	    final int tid;
 	    int a = 0;
@@ -414,7 +414,7 @@ public abstract class TexGL extends Tex {
 		    tclip = false;
 	    }
 	    final boolean clip = tclip; /* ¦] */
-	    left.add(new Material.Res.Resolver() {
+	    return(new Material.Res.Resolver() {
 		    public void resolve(Collection<GLState> buf) {
 			Tex tex;
 			TexR rt = tres.layer(TexR.class, tid);
