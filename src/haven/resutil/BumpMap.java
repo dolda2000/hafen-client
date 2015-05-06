@@ -114,7 +114,7 @@ public class BumpMap extends GLState {
 
     @Material.ResName("bump")
     public static class $bump implements Material.ResCons2 {
-	public void cons(final Resource res, List<GLState> states, List<Material.Res.Resolver> left, Object... args) {
+	public Material.Res.Resolver cons(final Resource res, Object... args) {
 	    final Resource tres;
 	    final int tid;
 	    int a = 0;
@@ -127,7 +127,7 @@ public class BumpMap extends GLState {
 		tid = (Integer)args[a];
 		a += 1;
 	    }
-	    left.add(new Material.Res.Resolver() {
+	    return(new Material.Res.Resolver() {
 		    public void resolve(Collection<GLState> buf) {
 			TexR rt = tres.layer(TexR.class, tid);
 			if(rt == null)

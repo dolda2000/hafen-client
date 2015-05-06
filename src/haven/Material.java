@@ -347,10 +347,10 @@ public class Material extends GLState {
 
     @ResName("mlink")
     public static class $mlink implements ResCons2 {
-	public void cons(final Resource res, List<GLState> states, List<Res.Resolver> left, Object... args) {
+	public Res.Resolver cons(final Resource res, Object... args) {
 	    final Resource lres = Resource.load((String)args[0], (Integer)args[1]);
 	    final int id = (args.length > 2)?(Integer)args[2]:-1;
-	    left.add(new Res.Resolver() {
+	    return(new Res.Resolver() {
 		    public void resolve(Collection<GLState> buf) {
 			if(id >= 0) {
 			    Res mat = lres.layer(Res.class, id);
@@ -380,7 +380,7 @@ public class Material extends GLState {
     }
 
     public interface ResCons2 {
-	public void cons(Resource res, List<GLState> states, List<Res.Resolver> left, Object... args);
+	public Res.Resolver cons(Resource res, Object... args);
     }
 
     private static final Map<String, ResCons2> rnames = new TreeMap<String, ResCons2>();
@@ -398,10 +398,14 @@ public class Material extends GLState {
 		    throw(new Error(e));
 		}
 		rnames.put(nm, new ResCons2() {
-			public void cons(Resource res, List<GLState> states, List<Res.Resolver> left, Object... args) {
-			    GLState ret = scons.cons(res, args);
-			    if(ret != null)
-				states.add(ret);
+			public Res.Resolver cons(Resource res, Object... args) {
+			    final GLState ret = scons.cons(res, args);
+			    return(new Res.Resolver() {
+				    public void resolve(Collection<GLState> buf) {
+					if(ret != null)
+					    buf.add(ret);
+				    }
+				});
 			}
 		    });
 	    } else if(ResCons2.class.isAssignableFrom(cl)) {
@@ -420,8 +424,12 @@ public class Material extends GLState {
 		    throw(new Error("No proper constructor for res-consable GL state " + cl.getName(), e));
 		}
 		rnames.put(nm, new ResCons2() {
-			public void cons(Resource res, List<GLState> states, List<Res.Resolver> left, Object... args) {
-			    states.add(Utils.construct(cons, res, args));
+			public Res.Resolver cons(final Resource res, final Object... args) {
+			    return(new Res.Resolver() {
+				    public void resolve(Collection<GLState> buf) {
+					buf.add(Utils.construct(cons, res, args));
+				    }
+				});
 			}
 		    });
 	    } else {
@@ -449,7 +457,7 @@ public class Material extends GLState {
 		    ResCons2 cons = rnames.get(nm);
 		    if(cons == null)
 			throw(new Resource.LoadException("Unknown material part name: " + nm, res));
-		    cons.cons(res, ret.states, ret.left, args);
+		    ret.left.add(cons.cons(res, args));
 		}
 	    }
 	    return(ret);
