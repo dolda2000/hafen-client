@@ -55,21 +55,23 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 	ui.setreceiver(this);
 	while(true) {
 	    PMessage msg;
-	    while((msg = sess.getuimsg()) != null) {
-		if(msg.type == RMessage.RMSG_NEWWDG) {
-		    int id = msg.uint16();
-		    String type = msg.string();
-		    int parent = msg.uint16();
-		    Object[] pargs = msg.list();
-		    Object[] cargs = msg.list();
-		    ui.newwidget(id, type, parent, pargs, cargs);
-		} else if(msg.type == RMessage.RMSG_WDGMSG) {
-		    int id = msg.uint16();
-		    String name = msg.string();
-		    ui.uimsg(id, name, msg.list());
-		} else if(msg.type == RMessage.RMSG_DSTWDG) {
-		    int id = msg.uint16();
-		    ui.destroy(id);
+	    synchronized(ui) {
+		while((msg = sess.getuimsg()) != null) {
+		    if(msg.type == RMessage.RMSG_NEWWDG) {
+			int id = msg.uint16();
+			String type = msg.string();
+			int parent = msg.uint16();
+			Object[] pargs = msg.list();
+			Object[] cargs = msg.list();
+			ui.newwidget(id, type, parent, pargs, cargs);
+		    } else if(msg.type == RMessage.RMSG_WDGMSG) {
+			int id = msg.uint16();
+			String name = msg.string();
+			ui.uimsg(id, name, msg.list());
+		    } else if(msg.type == RMessage.RMSG_DSTWDG) {
+			int id = msg.uint16();
+			ui.destroy(id);
+		    }
 		}
 	    }
 	    synchronized(sess) {
