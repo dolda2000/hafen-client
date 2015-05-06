@@ -125,6 +125,14 @@ public class Location extends Transform {
 	return(s);
     }
 
+    public static GLState goback(final String id) {
+	return(new GLState.Abstract() {
+		public void prep(Buffer buf) {
+		    goback(buf, id);
+		}
+	    });
+    }
+
     public static Location xlate(Coord3f c) {
 	return(new Location(makexlate(new Matrix4f(), c)));
     }
