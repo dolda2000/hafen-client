@@ -31,7 +31,7 @@ import java.util.*;
 public class Charlist extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/avakort");
     public static final int margin = 6;
-    public int height, y;
+    public int height, y, sel = 0;
     public List<Char> chars = new ArrayList<Char>();
     
     public static class Char {
@@ -58,8 +58,13 @@ public class Charlist extends Widget {
 	super(new Coord(bg.sz().x, 40 + (bg.sz().y * height) + (margin * (height - 1))));
 	this.height = height;
 	y = 0;
+	setcanfocus(true);
     }
-    
+
+    protected void added() {
+	parent.setfocus(this);
+    }
+
     public void scroll(int amount) {
 	y += amount;
 	synchronized(chars) {
@@ -78,8 +83,15 @@ public class Charlist extends Widget {
 		c.plb.hide();
 	    }
 	    for(int i = 0; (i < height) && (i + this.y < chars.size()); i++) {
+		boolean sel = (i + this.y) == this.sel;
 		Char c = chars.get(i + this.y);
-		g.image(bg, new Coord(0, y));
+		if(hasfocus && sel) {
+		    g.chcolor(255, 255, 128, 255);
+		    g.image(bg, new Coord(0, y));
+		    g.chcolor();
+		} else {
+		    g.image(bg, new Coord(0, y));
+		}
 		// c.ava.show();
 		c.plb.show();
 		// int off = (bg.sz().y - c.ava.sz.y) / 2;
@@ -126,5 +138,21 @@ public class Charlist extends Widget {
 		chars.add(c);
 	    }
 	}
+    }
+
+    public boolean keydown(java.awt.event.KeyEvent ev) {
+	if(ev.getKeyCode() == ev.VK_UP) {
+	    sel = Math.max(sel - 1, 0);
+	    return(true);
+	} else if(ev.getKeyCode() == ev.VK_DOWN) {
+	    sel = Math.min(sel + 1, chars.size() - 1);
+	    return(true);
+	} else if(ev.getKeyCode() == ev.VK_ENTER) {
+	    if((sel >= 0) && (sel < chars.size())) {
+		chars.get(sel).plb.click();
+	    }
+	    return(true);
+	}
+	return(false);
     }
 }
