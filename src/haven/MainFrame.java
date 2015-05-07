@@ -203,6 +203,14 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 		public void windowClosing(WindowEvent e) {
 		    g.interrupt();
 		}
+
+		public void windowActivated(WindowEvent e) {
+		    p.bgmode = false;
+		}
+
+		public void windowDeactivated(WindowEvent e) {
+		    p.bgmode = true;
+		}
 	    });
 	if((isz == null) && Utils.getprefb("wndmax", false))
 	    setExtendedState(getExtendedState() | MAXIMIZED_BOTH);
