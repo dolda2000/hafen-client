@@ -269,6 +269,7 @@ public class OCache implements Iterable<Gob> {
     public synchronized void overlay(Gob g, int olid, boolean prs, Indir<Resource> resid, Message sdt) {
 	Gob.Overlay ol = g.findol(olid);
 	if(resid != null) {
+	    sdt = new MessageBuf(sdt);
 	    if(ol == null) {
 		g.ols.add(ol = new Gob.Overlay(olid, resid, sdt));
 	    } else if(!ol.sdt.equals(sdt)) {
