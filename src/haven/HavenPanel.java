@@ -40,7 +40,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     UI ui;
     boolean inited = false;
     int w, h;
-    long fd = 10, fps = 0;
+    public boolean bgmode = false;
+    long fd = 10, bgfd = 200, fps = 0;
     double uidle = 0.0, ridle = 0.0;
     Queue<InputEvent> events = new LinkedList<InputEvent>();
     private String cursmode = "tex";
@@ -534,6 +535,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			curf.tick("aux");
 
 		    now = System.currentTimeMillis();
+		    long fd = bgmode?this.bgfd:this.fd;
 		    if(now - then < fd) {
 			synchronized(events) {
 			    events.wait(fd - (now - then));
@@ -580,6 +582,11 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	cmdmap.put("hz", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    fd = 1000 / Integer.parseInt(args[1]);
+		}
+	    });
+	cmdmap.put("bghz", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    bgfd = 1000 / Integer.parseInt(args[1]);
 		}
 	    });
     }
