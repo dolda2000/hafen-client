@@ -443,6 +443,36 @@ public abstract class GLState {
 	    return(next.copy());
 	}
 	
+	public <T extends GLState> void apply(GOut g, Slot<T> slot, T state) {
+	    int id = slot.id;
+	    next.states[id] = state;
+	    GLState old = cur.states[id];
+	    if((old == null) && (state == null)) {
+	    } else if((old != null) && (state == null)) {
+		if(shaders[id] != null)
+		    throw(new RuntimeException("Cannot quick-apply states with shaders"));
+		old.unapply(g);
+		cur.states[id] = null;
+	    } else if((old == null) && (state != null)) {
+		if(state.shaders() != null)
+		    throw(new RuntimeException("Cannot quick-apply states with shaders"));
+		state.apply(g);
+		cur.states[id] = state;
+	    } else if((old != null) && (state != null) && !old.equals(state)) {
+		if(state.shaders() != shaders[id])
+		    throw(new RuntimeException("Cannot quick-apply states with shader replacement"));
+		if(state.capplyfrom(old) >= 0) {
+		    state.applyfrom(g, old);
+		    cur.states[id] = state;
+		} else {
+		    old.unapply(g);
+		    cur.states[id] = null;
+		    state.apply(g);
+		    cur.states[id] = state;
+		}
+	    }
+	}
+
 	public void apply(GOut g) {
 	    long st = 0;
 	    if(Config.profile) st = System.nanoTime();
