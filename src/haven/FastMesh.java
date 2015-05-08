@@ -251,17 +251,13 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 
 	    public void draw(GOut g) {
 		BGL gl = g.gl;
-		if(g.st.cur(vstate) != st) {
-		    g.state(st);
-		    g.apply();
-		}
+		g.st.apply(g, vstate, st);
 		gl.glDrawRangeElements(GL.GL_TRIANGLES, lo, hi, num * 3, GL.GL_UNSIGNED_SHORT, 0);
 	    }
 
 	    public boolean drawinst(GOut g, List<GLState.Buffer> inst) {
 		BGL gl = g.gl;
-		g.state(st);
-		g.apply();
+		g.st.apply(g, vstate, st);
 		g.st.bindiarr(g, inst);
 		gl.glDrawElementsInstanced(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, 0, inst.size());
 		g.st.unbindiarr(g);
