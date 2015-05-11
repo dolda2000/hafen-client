@@ -163,7 +163,8 @@ public class Makewindow extends Widget {
 		c = c.add(31, 0);
 	    }
 	}
-	if(tres == null)
+	Resource.Tooltip tt;
+	if((tres == null) || ((tt = tres.layer(Resource.tooltip)) == null))
 	    return(null);
 	if(lasttip != tres) {
 	    lasttip = tres;
@@ -177,11 +178,11 @@ public class Makewindow extends Widget {
 	    sh = false;
 	if(sh) {
 	    if(stip == null)
-		stip = Text.render(tres.layer(Resource.tooltip).t);
+		stip = Text.render(tt.t);
 	    return(stip);
 	} else {
 	    if(ltip == null) {
-		String t = tres.layer(Resource.tooltip).t;
+		String t = tt.t;
 		Resource.Pagina p = tres.layer(Resource.pagina);
 		if(p != null)
 		    t += "\n\n" + tres.layer(Resource.pagina).text;
