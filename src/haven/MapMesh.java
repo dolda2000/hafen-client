@@ -451,7 +451,13 @@ public class MapMesh implements Rendered, Disposable {
 	}
     }
     
-    public static final Order olorder = new Order.Default(1002);
+    private static class OLOrder extends MLOrder {
+	OLOrder(int z) {super(z);}
+
+	public int mainz() {
+	    return(1002);
+	}
+    }
     public Rendered[] makeols() {
 	final MeshBuf buf = new MeshBuf();
 	final MapSurface ms = data(gnd);
@@ -500,6 +506,7 @@ public class MapMesh implements Rendered, Disposable {
 		for(int o = 0; o < fn; o += 3)
 		    buf.new Face(vl[fl[o]], vl[fl[o + 1]], vl[fl[o + 2]]);
 		final FastMesh mesh = buf.mkmesh();
+		final int z = i;
 		class OL implements Rendered, Disposable {
 		    public void draw(GOut g) {
 			mesh.draw(g);
@@ -510,7 +517,7 @@ public class MapMesh implements Rendered, Disposable {
 		    }
 
 		    public boolean setup(RenderList rl) {
-			rl.prepo(olorder);
+			rl.prepo(new OLOrder(z));
 			return(true);
 		    }
 		}
