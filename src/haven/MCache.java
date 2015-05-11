@@ -217,6 +217,8 @@ public class MCache {
 	private void buildcut(final Coord cc) {
 	    final Cut cut = geticut(cc);
 	    final int deftag = ++cut.deftag;
+	    if(cut.dmesh != null)
+		cut.dmesh.cancel();
 	    cut.dmesh = Defer.later(new Defer.Callable<MapMesh>() {
 		    public MapMesh call() {
 			Random rnd = new Random(id);
@@ -270,6 +272,8 @@ public class MCache {
 
 	public void dispose() {
 	    for(Cut cut : cuts) {
+		if(cut.dmesh != null)
+		    cut.dmesh.cancel();
 		if(cut.mesh != null)
 		    cut.mesh.dispose();
 		if(cut.ols != null) {
