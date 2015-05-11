@@ -113,7 +113,7 @@ public class Defer extends ThreadGroup {
 	    synchronized(this) {
 		if(running != null) {
 		    running.interrupt();
-		} else {
+		} else if(state != "done") {
 		    exc = new CancelledException();
 		    chstate("done");
 		}
