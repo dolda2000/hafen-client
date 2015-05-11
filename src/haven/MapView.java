@@ -423,16 +423,22 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    private final GLState[] mats;
 	    {
 		mats = new GLState[32];
-		mats[0] = new Material(new Color(255, 0, 128, 32));
-		mats[1] = new Material(new Color(0, 0, 255, 32));
-		mats[2] = new Material(new Color(255, 0, 0, 32));
-		mats[3] = new Material(new Color(128, 0, 255, 32));
-		mats[16] = new Material(new Color(0, 255, 0, 32));
-		mats[17] = new Material(new Color(255, 255, 0, 32));
+		mats[0] = olmat(255, 0, 128, 32);
+		mats[1] = olmat(0, 0, 255, 32);
+		mats[2] = olmat(255, 0, 0, 32);
+		mats[3] = olmat(128, 0, 255, 32);
+		mats[16] = olmat(0, 255, 0, 32);
+		mats[17] = olmat(255, 255, 0, 32);
 	    }
-	    
+
+	    private GLState olmat(int r, int g, int b, int a) {
+		return(new Material(Light.deflight,
+				    new Material.Colors(Color.BLACK, new Color(0, 0, 0, a), Color.BLACK, new Color(r, g, b, 255), 0),
+				    States.presdepth));
+	    }
+
 	    public void draw(GOut g) {}
-	    
+
 	    public boolean setup(RenderList rl) {
 		Coord cc = MapView.this.cc.div(tilesz).div(MCache.cutsz);
 		Coord o = new Coord();
