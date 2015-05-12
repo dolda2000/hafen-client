@@ -236,6 +236,10 @@ public class Widget {
 	return(adda(child, c.x, c.y, ax, ay));
     }
 
+    public <T extends Widget> T adda(T child, double ax, double ay) {
+	return(adda(child, (int)(sz.x * ax), (int)(sz.y * ay), ax, ay));
+    }
+
     protected void added() {}
 
     private Coord relpos(String spec, Object[] args, int off) {

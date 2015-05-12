@@ -118,4 +118,10 @@ public class IButton extends SSWidget {
 	    render();
 	}
     }
+
+    public Object tooltip(Coord c, Widget prev) {
+	if(!checkhit(c))
+	    return(null);
+	return(super.tooltip(c, prev));
+    }
 }
