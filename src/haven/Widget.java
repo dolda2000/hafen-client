@@ -994,6 +994,14 @@ public class Widget {
 	return(true);
     }
 
+    public <T extends Anim> void clearanims(Class<T> type) {
+	for(Iterator<Anim> i = anims.iterator(); i.hasNext();) {
+	    Anim a = i.next();
+	    if(type.isInstance(a))
+		i.remove();
+	}
+    }
+
     public abstract class Anim {
 	public Anim() {
 	    synchronized(ui) {
