@@ -279,7 +279,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	progt = p;
     }
     public void draw(GOut g) {
-	boolean beltp = !chat.expanded;
+	boolean beltp = !chat.visible;
 	beltwdg.show(beltp);
 	super.draw(g);
 	if(prog >= 0) {
@@ -287,7 +287,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    g.aimage(pi, new Coord(sz.x / 2, (sz.y * 4) / 10), 0.5, 0.5);
 	}
 	int by = sz.y;
-	if(chat.expanded)
+	if(chat.visible)
 	    by = Math.min(by, chat.c.y);
 	if(beltwdg.visible)
 	    by = Math.min(by, beltwdg.c.y);
@@ -303,7 +303,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		g.image(lasterr.tex(), new Coord(cnto + 10, by -= 20));
 	    }
 	}
-	if(!chat.expanded) {
+	if(!chat.visible) {
 	    chat.drawsmall(g, new Coord(cnto + 10, by), 50);
 	}
     }

@@ -44,18 +44,17 @@ public class ChatUI extends Widget {
     public static final int selw = 100;
     public Channel sel = null;
     private final Selector chansel;
-    public boolean expanded = false;
     private Coord base = Coord.z;
     private QuickLine qline = null;
     private final LinkedList<Notification> notifs = new LinkedList<Notification>();
     private UI.Grab qgrab;
 
     public ChatUI(int w) {
-	super(new Coord(w, 50));
+	super(new Coord(w, 0));
 	chansel = add(new Selector(new Coord(selw, sz.y)), Coord.z);
-	chansel.hide();
 	setfocusctl(true);
-	setcanfocus(false);
+	setcanfocus(true);
+	hide();
     }
 
     protected void added() {
@@ -836,8 +835,6 @@ public class ChatUI extends Widget {
 	    super.add(w);
 	    select(chan);
 	    chansel.add(chan);
-	    if(!expanded)
-		chan.hide();
 	    return(w);
 	} else {
 	    return(super.add(w));
@@ -973,12 +970,10 @@ public class ChatUI extends Widget {
     public void select(Channel chan) {
 	Channel prev = sel;
 	sel = chan;
-	if(expanded) {
-	    if(prev != null)
-		prev.hide();
-	    sel.show();
-	    resize(sz);
-	}
+	if(prev != null)
+	    prev.hide();
+	sel.show();
+	resize(sz);
 	setfocus(chan);
     }
 
@@ -1042,6 +1037,11 @@ public class ChatUI extends Widget {
 	    sel.resize(new Coord(this.sz.x - selw, this.sz.y));
     }
 
+    public void sresize(int h) {
+	resize(new Coord(sz.x, h));
+	show(h != 0);
+    }
+
     public void resize(int w) {
 	resize(new Coord(w, sz.y));
     }
@@ -1051,25 +1051,8 @@ public class ChatUI extends Widget {
     }
 
     public void expand() {
-	if(expanded)
-	    return;
-	resize(new Coord(sz.x, 100));
-	setcanfocus(true);
-	if(sel != null)
-	    sel.show();
-	chansel.show();
-	expanded = true;
-    }
-    
-    public void contract() {
-	if(!expanded)
-	    return;
-	resize(new Coord(sz.x, 50));
-	setcanfocus(false);
-	if(sel != null)
-	    sel.hide();
-	chansel.hide();
-	expanded = false;
+	if(!visible)
+	    sresize(100);
     }
 
     private class QuickLine extends LineEdit {
@@ -1149,12 +1132,12 @@ public class ChatUI extends Widget {
 	} else {
 	    if(key == 3) {
 		if(sz.y == 100)
-		    resize(new Coord(sz.x, 300));
+		    sresize(300);
 		else
-		    resize(new Coord(sz.x, 100));
+		    sresize(100);
 		return(true);
 	    } else if(key == 27) {
-		contract();
+		sresize(0);
 		return(true);
 	    }
 	    return(super.type(key, ev));
@@ -1163,13 +1146,13 @@ public class ChatUI extends Widget {
 
     public boolean globtype(char key, KeyEvent ev) {
 	if(key == 3) {
-	    if(!expanded) {
-		expand();
+	    if(!visible) {
+		sresize(100);
 	    }
 	    parent.setfocus(this);
 	    return(true);
 	} else if(key == 10) {
-	    if(!expanded && (sel instanceof EntryChannel)) {
+	    if(!visible && (sel instanceof EntryChannel)) {
 		qgrab = ui.grabkeys(this);
 		qline = new QuickLine((EntryChannel)sel);
 		return(true);
