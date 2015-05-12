@@ -249,7 +249,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     static Text.Furnace progf = new PUtils.BlurFurn(new Text.Foundry(new java.awt.Font("serif", java.awt.Font.BOLD, 24)).aa(true), 2, 1, new Color(0, 16, 16));
     Text progt = null;
     public void draw(GOut g) {
-	boolean beltp = !chat.expanded;
+	boolean beltp = !chat.visible;
 	beltwdg.show(beltp);
 	super.draw(g);
 	if(prog >= 0) {
@@ -259,7 +259,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    g.aimage(progt.tex(), new Coord(sz.x / 2, (sz.y * 4) / 10), 0.5, 0.5);
 	}
 	int by = sz.y;
-	if(chat.expanded)
+	if(chat.visible)
 	    by = Math.min(by, chat.c.y);
 	if(beltwdg.visible)
 	    by = Math.min(by, beltwdg.c.y);
@@ -275,7 +275,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		g.image(lasterr.tex(), new Coord(cnto + 10, by -= 20));
 	    }
 	}
-	if(!chat.expanded) {
+	if(!chat.visible) {
 	    chat.drawsmall(g, new Coord(cnto + 10, by), 50);
 	}
     }
