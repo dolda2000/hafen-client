@@ -1028,7 +1028,24 @@ public class ChatUI extends Widget {
 	    notifs.addFirst(new Notification(chan, msg));
 	}
     }
-    
+
+    private class Spring extends NormAnim {
+	final int oh = sz.y, nh;
+	Spring(int nh) {
+	    super(0.15);
+	    this.nh = nh;
+	    show();
+	}
+
+	public void ntick(double a) {
+	    double b = Math.cos(Math.PI * 2.5 * a) * Math.exp(-5 * a);
+	    resize(sz.x, nh + (int)((nh - oh) * b));
+	    if((a == 1.0) && (nh == 0)) {
+		hide();
+	    }
+	}
+    }
+
     public void resize(Coord sz) {
 	super.resize(sz);
 	this.c = base.add(0, -this.sz.y);
@@ -1037,9 +1054,10 @@ public class ChatUI extends Widget {
 	    sel.resize(new Coord(this.sz.x - selw, this.sz.y));
     }
 
+    public int targeth;
     public void sresize(int h) {
-	resize(new Coord(sz.x, h));
-	show(h != 0);
+	clearanims(Spring.class);
+	new Spring(targeth = h);
     }
 
     public void resize(int w) {
@@ -1131,7 +1149,7 @@ public class ChatUI extends Widget {
 	    return(true);
 	} else {
 	    if(key == 3) {
-		if(sz.y == 100)
+		if(targeth == 100)
 		    sresize(300);
 		else
 		    sresize(100);

@@ -279,7 +279,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	progt = p;
     }
     public void draw(GOut g) {
-	boolean beltp = !chat.visible;
+	boolean beltp = (chat.targeth == 0);
 	beltwdg.show(beltp);
 	super.draw(g);
 	if(prog >= 0) {
