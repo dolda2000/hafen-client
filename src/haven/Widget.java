@@ -816,14 +816,14 @@ public class Widget {
     }
 	
     public void raise() {
-	synchronized(ui) {
+	synchronized((ui != null)?ui:new Object()) {
 	    unlink();
 	    link();
 	}
     }
     
     public void lower() {
-	synchronized(ui) {
+	synchronized((ui != null)?ui:new Object()) {
 	    unlink();
 	    linkfirst();
 	}
