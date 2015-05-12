@@ -204,7 +204,7 @@ public class Widget {
 	child.parent = this;
 	child.link();
 	child.added();
-	if(((Widget)child).canfocus)
+	if(((Widget)child).canfocus && child.visible)
 	    newfocusable(child);
 	return(child);
     }
@@ -452,7 +452,7 @@ public class Widget {
 		if((ui != null) && ui.rwidgets.containsKey(w) && ui.rwidgets.containsKey(this))
 		    wdgmsg("focus", ui.rwidgets.get(w));
 	    }
-	    if((parent != null) && canfocus)
+	    if((parent != null) && visible && canfocus)
 		parent.setfocus(this);
 	} else {
 	    parent.setfocus(w);
@@ -481,8 +481,9 @@ public class Widget {
 	
     public void delfocusable(Widget w) {
 	if(focusctl) {
-	    if(focused == w)
+	    if((focused != null) && focused.hasparent(w)) {
 		findfocus();
+	    }
 	} else {
 	    parent.delfocusable(w);
 	}
