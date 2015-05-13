@@ -33,9 +33,10 @@ import static haven.Inventory.invsq;
 
 public class GameUI extends ConsoleHost implements Console.Directory {
     public static final Text.Foundry errfoundry = new Text.Foundry(Text.dfont, 14, new Color(192, 0, 0));
-    private static final int cnto = 135;
+    private static final int blpw = 142, brpw = 142;
     public final String chrid;
     public final long plid;
+    private final Hidepanel ulpanel, urpanel, blpanel, brpanel, menupanel;
     public Avaview portrait;
     public MenuGrid menu;
     public MapView map;
@@ -104,13 +105,142 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	this.plid = plid;
 	setcanfocus(true);
 	setfocusctl(true);
-	menu = add(new MenuGrid());
-	portrait = add(new Avaview(Avaview.dasz, plid, "avacam"), new Coord(10, 10));
-	buffs = add(new Bufflist(), new Coord(95, 50));
-	chat = add(new ChatUI(0));
+	ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1)));
+	urpanel = add(new Hidepanel("gui-ur", null, new Coord( 1, -1)));
+	blpanel = add(new Hidepanel("gui-bl", null, new Coord(-1,  1)));
+	brpanel = add(new Hidepanel("gui-br", null, new Coord( 1,  1)) {
+		public void move(double a) {
+		    super.move(a);
+		    menupanel.move();
+		}
+	    });
+	menupanel = add(new Hidepanel("menu", new Indir<Coord>() {
+		    public Coord get() {
+			return(new Coord(GameUI.this.sz.x, Math.min(brpanel.c.y - 79, GameUI.this.sz.y - menupanel.sz.y)));
+		    }
+		}, new Coord(1, 0)));
+	blpanel.add(new Img(Resource.loadtex("gfx/hud/blframe")), 0, 9);
+	blpanel.add(new Img(Resource.loadtex("gfx/hud/lbtn-bg")), 0, 0);
+	menu = brpanel.add(new MenuGrid(), 20, 34);
+	brpanel.add(new Img(Resource.loadtex("gfx/hud/brframe")), 0, 0);
+	menupanel.add(new MainMenu(), 0, 0);
+	mapbuttons();
+	foldbuttons();
+	portrait = ulpanel.add(new Avaview(Avaview.dasz, plid, "avacam"), new Coord(10, 10));
+	buffs = ulpanel.add(new Bufflist(), new Coord(95, 50));
+	chat = add(new ChatUI(0, Utils.getprefi("chatsize", 0)));
 	syslog = chat.add(new ChatUI.Log("System"));
 	opts = add(new OptWnd());
 	opts.hide();
+    }
+
+    private void mapbuttons() {
+	blpanel.add(new IButton("gfx/hud/lbtn-vil", "", "-d", "-h") {
+		{tooltip = Text.render("Display personal claims");}
+		public void click() {
+		    if((map != null) && !map.visol(0))
+			map.enol(0, 1);
+		    else
+			map.disol(0, 1);
+		}
+	    }, 0, 0);
+	blpanel.add(new IButton("gfx/hud/lbtn-claim", "", "-d", "-h") {
+		{tooltip = Text.render("Display village claims");}
+		public void click() {
+		    if((map != null) && !map.visol(2))
+			map.enol(2, 3);
+		    else
+			map.disol(2, 3);
+		}
+	    }, 0, 0);
+    }
+
+    /* Ice cream */
+    private final IButton[] fold_br = new IButton[4];
+    private final IButton[] fold_bl = new IButton[2];
+    private void updfold(boolean reset) {
+	int br;
+	if(brpanel.tvis && menupanel.tvis)
+	    br = 0;
+	else if(brpanel.tvis && !menupanel.tvis)
+	    br = 1;
+	else if(!brpanel.tvis && !menupanel.tvis)
+	    br = 2;
+	else
+	    br = 3;
+	for(int i = 0; i < fold_br.length; i++)
+	    fold_br[i].show(i == br);
+
+	fold_bl[1].show(!blpanel.tvis);
+
+	if(reset)
+	    resetui();
+    }
+
+    private void foldbuttons() {
+	final Tex rdnbg = Resource.loadtex("gfx/hud/rbtn-maindwn");
+	final Tex rupbg = Resource.loadtex("gfx/hud/rbtn-upbg");
+	fold_br[0] = new IButton("gfx/hud/rbtn-dwn", "", "-d", "-h") {
+		public void draw(GOut g) {g.image(rdnbg, Coord.z); super.draw(g);}
+		public void click() {
+		    menupanel.cshow(false);
+		    updfold(true);
+		}
+	    };
+	fold_br[1] = new IButton("gfx/hud/rbtn-dwn", "", "-d", "-h") {
+		public void draw(GOut g) {g.image(rdnbg, Coord.z); super.draw(g);}
+		public void click() {
+		    brpanel.cshow(false);
+		    updfold(true);
+		}
+	    };
+	fold_br[2] = new IButton("gfx/hud/rbtn-up", "", "-d", "-h") {
+		public void draw(GOut g) {g.image(rupbg, Coord.z); super.draw(g);}
+		public void click() {
+		    menupanel.cshow(true);
+		    updfold(true);
+		}
+		public void presize() {
+		    this.c = parent.sz.sub(this.sz);
+		}
+	    };
+	fold_br[3] = new IButton("gfx/hud/rbtn-dwn", "", "-d", "-h") {
+		public void draw(GOut g) {g.image(rdnbg, Coord.z); super.draw(g);}
+		public void click() {
+		    brpanel.cshow(true);
+		    updfold(true);
+		}
+	    };
+	menupanel.add(fold_br[0], 0, 0);
+	fold_br[0].lower();
+	brpanel.adda(fold_br[1], brpanel.sz.x, 32, 1, 1);
+	adda(fold_br[2], 1, 1);
+	fold_br[2].lower();
+	menupanel.add(fold_br[3], 0, 0);
+	fold_br[3].lower();
+
+	final Tex lupbg = Resource.loadtex("gfx/hud/lbtn-upbg");
+	fold_bl[0] = new IButton("gfx/hud/lbtn-dwn", "", "-d", "-h") {
+		public void click() {
+		    blpanel.cshow(false);
+		    updfold(true);
+		}
+	    };
+	fold_bl[1] = new IButton("gfx/hud/lbtn-up", "", "-d", "-h") {
+		public void draw(GOut g) {g.image(lupbg, Coord.z); super.draw(g);}
+		public void click() {
+		    blpanel.cshow(true);
+		    updfold(true);
+		}
+		public void presize() {
+		    this.c = new Coord(0, parent.sz.y - sz.y);
+		}
+	    };
+	blpanel.add(fold_bl[0], 0, 0);
+	adda(fold_bl[1], 0, 1);
+	fold_bl[1].lower();
+
+	updfold(false);
     }
 
     protected void added() {
@@ -134,6 +264,86 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	opts.c = sz.sub(opts.sz).div(2);
     }
     
+    public class Hidepanel extends Widget {
+	public final String id;
+	public final Coord g;
+	public final Indir<Coord> base;
+	public boolean tvis;
+	private double cur;
+
+	public Hidepanel(String id, Indir<Coord> base, Coord g) {
+	    this.id = id;
+	    this.base = base;
+	    this.g = g;
+	    cur = show(tvis = Utils.getprefb(id + "-visible", true))?0:1;
+	}
+
+	public <T extends Widget> T add(T child) {
+	    super.add(child);
+	    pack();
+	    if(parent != null)
+		move();
+	    return(child);
+	}
+
+	public Coord base() {
+	    if(base != null) return(base.get());
+	    return(new Coord((g.x > 0)?parent.sz.x:0,
+			     (g.y > 0)?parent.sz.y:0));
+	}
+
+	public void move(double a) {
+	    cur = a;
+	    Coord c = new Coord(base());
+	    if(g.x < 0)
+		c.x -= (int)(sz.x * a);
+	    else if(g.x > 0)
+		c.x -= (int)(sz.x * (1 - a));
+	    if(g.y < 0)
+		c.y -= (int)(sz.y * a);
+	    else if(g.y > 0)
+		c.y -= (int)(sz.y * (1 - a));
+	    this.c = c;
+	}
+
+	public void move() {
+	    move(cur);
+	}
+
+	public void presize() {
+	    move();
+	}
+
+	public boolean mshow(final boolean vis) {
+	    clearanims(Anim.class);
+	    if(vis)
+		show();
+	    new NormAnim(0.25) {
+		final double st = cur, f = vis?0:1;
+
+		public void ntick(double a) {
+		    if((a == 1.0) && !vis)
+			hide();
+		    move(st + (Utils.smoothstep(a) * (f - st)));
+		}
+	    };
+	    tvis = vis;
+	    updfold(false);
+	    return(vis);
+	}
+
+	public boolean mshow() {
+	    return(mshow(Utils.getprefb(id + "-visible", true)));
+	}
+
+	public boolean cshow(boolean vis) {
+	    Utils.setprefb(id + "-visible", vis);
+	    if(vis != tvis)
+		mshow(vis);
+	    return(vis);
+	}
+    }
+
     static class Hidewnd extends Window {
 	Hidewnd(Coord sz, String cap) {
 	    super(sz, cap);
@@ -176,10 +386,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    map.lower();
 	    if(mmap != null)
 		ui.destroy(mmap);
-	    mmap = adda(new Frame(new Coord(125, 125), true), 0, sz.y, 0, 1);
-	    mmap.add(new LocalMiniMap(new Coord(125, 125), map));
+	    mmap = blpanel.add(new LocalMiniMap(new Coord(133, 133), map), 4, 34 + 9);
+	    mmap.lower();
 	} else if(place == "fight") {
-	    fv = adda((Fightview)child, sz.x, 0, 1, 0);
+	    fv = urpanel.add((Fightview)child, 0, 0);
 	} else if(place == "fmg") {
 	    fw = add((FightWnd)child, 50, 50);
 	    fw.hide();
@@ -242,7 +452,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(place == "meter") {
 	    int x = (meters.length % 3) * 65;
 	    int y = (meters.length / 3) * 20;
-	    add(child, portrait.c.x + portrait.sz.x + 10 + x, portrait.c.y + y);
+	    ulpanel.add(child, portrait.c.x + portrait.sz.x + 10 + x, portrait.c.y + y);
 	    meters = Utils.extend(meters, child);
 	} else if(place == "buff") {
 	    buffs.addchild(child);
@@ -292,19 +502,19 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(beltwdg.visible)
 	    by = Math.min(by, beltwdg.c.y);
 	if(cmdline != null) {
-	    drawcmd(g, new Coord(cnto + 10, by -= 20));
+	    drawcmd(g, new Coord(blpw + 10, by -= 20));
 	} else if(lasterr != null) {
 	    if((System.currentTimeMillis() - errtime) > 3000) {
 		lasterr = null;
 	    } else {
 		g.chcolor(0, 0, 0, 192);
-		g.frect(new Coord(cnto + 8, by - 22), lasterr.sz().add(4, 4));
+		g.frect(new Coord(blpw + 8, by - 22), lasterr.sz().add(4, 4));
 		g.chcolor();
-		g.image(lasterr.tex(), new Coord(cnto + 10, by -= 20));
+		g.image(lasterr.tex(), new Coord(blpw + 10, by -= 20));
 	    }
 	}
 	if(!chat.visible) {
-	    chat.drawsmall(g, new Coord(cnto + 10, by), 50);
+	    chat.drawsmall(g, new Coord(blpw + 10, by), 50);
 	}
     }
     
@@ -355,7 +565,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(msg == "showhelp") {
 	    Indir<Resource> res = ui.sess.getres((Integer)args[0]);
 	    if(help == null)
-		help = adda(new HelpWnd(res), sz.div(2), 0.5, 0.5);
+		help = adda(new HelpWnd(res), 0.5, 0.5);
 	    else
 		help.res = res;
 	} else {
@@ -394,39 +604,106 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    wdg.c.y = sz.y - wdg.sz.y;
     }
 
+    public static class MenuButton extends IButton {
+	private final int gkey;
+
+	MenuButton(String base, int gkey, String tooltip) {
+	    super("gfx/hud/" + base, "", "-d", "-h");
+	    this.gkey = (char)gkey;
+	    this.tooltip = RichText.render(tooltip, 0);
+	}
+
+	public void click() {}
+
+	public boolean globtype(char key, KeyEvent ev) {
+	    if((gkey != -1) && (key == gkey)) {
+		click();
+		return(true);
+	    }
+	    return(super.globtype(key, ev));
+	}
+    }
+
+    private static final Tex menubg = Resource.loadtex("gfx/hud/rbtn-bg");
+    public class MainMenu extends Widget {
+	public MainMenu() {
+	    super(menubg.sz());
+	    add(new MenuButton("rbtn-inv", 9, "Inventory ($col[255,255,0]{Tab})") {
+		    public void click() {
+			if((invwnd != null) && invwnd.show(!invwnd.visible)) {
+			    invwnd.raise();
+			    fitwdg(invwnd);
+			}
+		    }
+		}, 0, 0);
+	    add(new MenuButton("rbtn-equ", 5, "Equipment ($col[255,255,0]{Ctrl+E})") {
+		    public void click() {
+			if((equwnd != null) && equwnd.show(!equwnd.visible)) {
+			    equwnd.raise();
+			    fitwdg(equwnd);
+			}
+		    }
+		}, 0, 0);
+	    add(new MenuButton("rbtn-chr", 20, "Character Sheet ($col[255,255,0]{Ctrl+T})") {
+		    public void click() {
+			if((chrwdg != null) && chrwdg.show(!chrwdg.visible)) {
+			    chrwdg.raise();
+			    fitwdg(chrwdg);
+			}
+		    }
+		}, 0, 0);
+	    add(new MenuButton("rbtn-bud", 2, "Kith & Kin ($col[255,255,0]{Ctrl+B})") {
+		    public void click() {
+			if((buddies != null) && buddies.show(!buddies.visible)) {
+			    buddies.raise();
+			    fitwdg(buddies);
+			    setfocus(buddies);
+			}
+		    }
+		}, 0, 0);
+	    add(new MenuButton("rbtn-opt", 15, "Options ($col[255,255,0]{Ctrl+O})") {
+		    public void click() {
+			if(opts.show(!opts.visible)) {
+			    opts.raise();
+			    fitwdg(opts);
+			    setfocus(opts);
+			}
+		    }
+		}, 0, 0);
+	}
+
+	public void draw(GOut g) {
+	    g.image(menubg, Coord.z);
+	    super.draw(g);
+	}
+    }
+
     public boolean globtype(char key, KeyEvent ev) {
 	if(key == ':') {
 	    entercmd();
 	    return(true);
-	} else if(key == 9) {
-	    if((invwnd != null) && invwnd.show(!invwnd.visible)) {
-		invwnd.raise();
-		fitwdg(invwnd);
-	    }
+	} else if(key == ' ') {
+	    toggleui();
 	    return(true);
-	} else if(key == 5) {
-	    if((equwnd != null) && equwnd.show(!equwnd.visible)) {
-		equwnd.raise();
-		fitwdg(equwnd);
+	} else if(key == 3) {
+	    if(chat.visible && !chat.hasfocus) {
+		setfocus(chat);
+	    } else {
+		if(chat.targeth == 0) {
+		    chat.sresize(100);
+		    setfocus(chat);
+		} else if(chat.targeth == 100) {
+		    chat.sresize(400);
+		} else {
+		    chat.sresize(0);
+		}
 	    }
-	    return(true);
-	} else if(key == 20) {
-	    if((chrwdg != null) && chrwdg.show(!chrwdg.visible)) {
-		chrwdg.raise();
-		fitwdg(chrwdg);
-	    }
+	    Utils.setprefi("chatsize", chat.targeth);
 	} else if(key == 6) {
 	    if((fw != null) && fw.show(!fw.visible)) {
 		fw.raise();
 		fitwdg(fw);
 	    }
-	} else if(key == 2) {
-	    if((buddies != null) && buddies.show(!buddies.visible)) {
-		buddies.raise();
-		fitwdg(buddies);
-		setfocus(buddies);
-	    }
-	    return(true);
 	} else if(key == 16) {
 	    if((polity != null) && polity.show(!polity.visible)) {
 		polity.raise();
@@ -434,12 +711,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		setfocus(polity);
 	    }
 	    return(true);
-	} else if(key == 15) {
-	    if(opts.show(!opts.visible)) {
-		opts.raise();
-		fitwdg(opts);
-		setfocus(opts);
-	    }
+	} else if((key == 27) && (map != null) && !map.hasfocus) {
+	    setfocus(map);
 	    return(true);
 	}
 	return(super.globtype(key, ev));
@@ -449,18 +722,43 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	return(super.mousedown(c, button));
     }
 
+    private int uimode = 1;
+    public void toggleui(int mode) {
+	Hidepanel[] panels = {blpanel, brpanel, ulpanel, urpanel, menupanel};
+	switch(uimode = mode) {
+	case 0:
+	    for(Hidepanel p : panels)
+		p.mshow(true);
+	    break;
+	case 1:
+	    for(Hidepanel p : panels)
+		p.mshow();
+	    break;
+	case 2:
+	    for(Hidepanel p : panels)
+		p.mshow(false);
+	    break;
+	}
+    }
+
+    public void resetui() {
+	Hidepanel[] panels = {blpanel, brpanel, ulpanel, urpanel, menupanel};
+	for(Hidepanel p : panels)
+	    p.cshow(p.tvis);
+	uimode = 1;
+    }
+
+    public void toggleui() {
+	toggleui((uimode + 1) % 3);
+    }
+
     public void resize(Coord sz) {
 	this.sz = sz;
-	menu.c = sz.sub(menu.sz);
-	chat.resize(sz.x - cnto - menu.sz.x);
-	chat.move(new Coord(cnto, sz.y));
+	chat.resize(sz.x - blpw - brpw);
+	chat.move(new Coord(blpw, sz.y));
 	if(map != null)
 	    map.resize(sz);
-	if(mmap != null)
-	    mmap.c = new Coord(0, sz.y - mmap.sz.y);
-	if(fv != null)
-	    fv.c = new Coord(sz.x - Fightview.width, 0);
-	beltwdg.c = new Coord(cnto + 10, sz.y - beltwdg.sz.y - 5);
+	beltwdg.c = new Coord(blpw + 10, sz.y - beltwdg.sz.y - 5);
 	super.resize(sz);
     }
     

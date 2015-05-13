@@ -388,6 +388,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	setcanfocus(true);
     }
     
+    public boolean visol(int ol) {
+	return(visol[ol] > 0);
+    }
+
     public void enol(int... overlays) {
 	for(int ol : overlays)
 	    visol[ol]++;

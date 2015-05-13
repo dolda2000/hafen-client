@@ -49,12 +49,13 @@ public class ChatUI extends Widget {
     private final LinkedList<Notification> notifs = new LinkedList<Notification>();
     private UI.Grab qgrab;
 
-    public ChatUI(int w) {
-	super(new Coord(w, 0));
+    public ChatUI(int w, int h) {
+	super(new Coord(w, h));
 	chansel = add(new Selector(new Coord(selw, sz.y)), Coord.z);
 	setfocusctl(true);
 	setcanfocus(true);
-	hide();
+	if(h < 1)
+	    hide();
     }
 
     protected void added() {
@@ -1054,7 +1055,7 @@ public class ChatUI extends Widget {
 	    sel.resize(new Coord(this.sz.x - selw, this.sz.y));
     }
 
-    public int targeth;
+    public int targeth = sz.y;
     public void sresize(int h) {
 	clearanims(Spring.class);
 	new Spring(targeth = h);
@@ -1148,28 +1149,12 @@ public class ChatUI extends Widget {
 	    qline.key(ev);
 	    return(true);
 	} else {
-	    if(key == 3) {
-		if(targeth == 100)
-		    sresize(300);
-		else
-		    sresize(100);
-		return(true);
-	    } else if(key == 27) {
-		sresize(0);
-		return(true);
-	    }
 	    return(super.type(key, ev));
 	}
     }
 
     public boolean globtype(char key, KeyEvent ev) {
-	if(key == 3) {
-	    if(!visible) {
-		sresize(100);
-	    }
-	    parent.setfocus(this);
-	    return(true);
-	} else if(key == 10) {
+	if(key == 10) {
 	    if(!visible && (sel instanceof EntryChannel)) {
 		qgrab = ui.grabkeys(this);
 		qline = new QuickLine((EntryChannel)sel);
