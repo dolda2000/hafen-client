@@ -1798,15 +1798,11 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     }
 
     public static BufferedImage loadimg(String name) {
-	Resource res = load(name);
-	res.loadwait();
-	return(res.layer(imgc).img);
+	return(local().loadwait(name).layer(imgc).img);
     }
 	
     public static Tex loadtex(String name) {
-	Resource res = load(name);
-	res.loadwait();
-	return(res.layer(imgc).tex());
+	return(local().loadwait(name).layer(imgc).tex());
     }
 	
     public String toString() {
