@@ -110,6 +110,7 @@ public class Fightview extends Widget {
 	    add(curgive = new GiveButton(0), cgivec);
 	    add(curava = new Avaview(Avaview.dasz, rel.gobid, "avacam"), cavac);
 	    add(curpurs = new Button(70, "Pursue"), cpursc);
+	    curgive.state = rel.give.state;
 	} else if((current != null) && (rel == null)) {
 	    ui.destroy(curgive);
 	    ui.destroy(curava);
