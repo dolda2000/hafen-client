@@ -1770,19 +1770,9 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	if(indir != null)
 	    return(indir);
 	indir = new Indir<Resource>() {
-	    public Resource res = Resource.this;
-			
 	    public Resource get() {
 		checkload();
 		return(Resource.this);
-	    }
-			
-	    public void set(Resource r) {
-		throw(new RuntimeException());
-	    }
-			
-	    public int compareTo(Indir<Resource> x) {
-		return(Resource.this.compareTo(this.getClass().cast(x).res));
 	    }
 	};
 	return(indir);
