@@ -188,6 +188,19 @@ public class PUtils {
 	return(dst);
     }
 
+    public static WritableRaster blendblit(WritableRaster dst, Raster src, Coord off, int a) {
+	int w = src.getWidth(), h = src.getHeight(), nb = dst.getNumBands();
+	for(int y = 0; y < h; y++) {
+	    for(int x = 0; x < w; x++) {
+		for(int b = 0; b < nb; b++) {
+		    int dx = x + off.x, dy = y + off.y;
+		    dst.setSample(dx, dy, b, ((src.getSample(x, y, b) * a) + (dst.getSample(dx, dy, b) * (255 - a))) / 255);
+		}
+	    }
+	}
+	return(dst);
+    }
+
     public static WritableRaster tilemod(WritableRaster dst, Raster tile, Coord off) {
        int w = dst.getWidth(), h = dst.getHeight(), b = dst.getNumBands();
        int tw = tile.getWidth(), th = tile.getHeight(), tb = tile.getNumBands();
