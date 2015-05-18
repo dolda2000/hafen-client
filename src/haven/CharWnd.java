@@ -148,6 +148,7 @@ public class CharWnd extends Window {
 		    els = enew;
 		    rtip = null;
 		} catch(Loading l) {}
+		enew = null;
 	    }
 	    if(trev != null) {
 		try {
