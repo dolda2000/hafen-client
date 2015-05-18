@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
+import java.awt.image.WritableRaster;
 import static haven.Inventory.invsq;
 
 public class GameUI extends ConsoleHost implements Console.Directory {
@@ -57,7 +58,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private WItem vhand;
     public ChatUI chat;
     public ChatUI.Channel syslog;
-    public int prog = -1;
+    public double prog = -1;
     private boolean afk = false;
     @SuppressWarnings("unchecked")
     public Indir<Resource>[] belt = new Indir[144];
@@ -481,21 +482,29 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
-    static final Tex[] progt;
-    static {
-	Tex[] p = new Tex[22];
-	for(int i = 0; i < p.length; i++)
-	    p[i] = Resource.loadtex(String.format("gfx/hud/prog/%02d", i));
-	progt = p;
+    private static final Resource.Anim progt = Resource.load("gfx/hud/prog").loadwait().layer(Resource.animc);
+    private Tex curprog = null;
+    private int curprogf, curprogb;
+    private void drawprog(GOut g, double prog) {
+	int fr = Utils.clip((int)Math.floor(prog * progt.f.length), 0, progt.f.length - 2);
+	int bf = Utils.clip((int)(((prog * progt.f.length) - fr) * 255), 0, 255);
+	if((curprog == null) || (curprogf != fr) || (curprogb != bf)) {
+	    if(curprog != null)
+		curprog.dispose();
+	    WritableRaster buf = PUtils.imgraster(progt.f[fr][0].sz);
+	    PUtils.blit(buf, progt.f[fr][0].img.getRaster(), Coord.z);
+	    PUtils.blendblit(buf, progt.f[fr + 1][0].img.getRaster(), Coord.z, bf);
+	    curprog = new TexI(PUtils.rasterimg(buf)); curprogf = fr; curprogb = bf;
+	}
+	g.aimage(curprog, new Coord(sz.x / 2, (sz.y * 4) / 10), 0.5, 0.5);
     }
+
     public void draw(GOut g) {
 	boolean beltp = (chat.targeth == 0);
 	beltwdg.show(beltp);
 	super.draw(g);
-	if(prog >= 0) {
-	    Tex pi = progt[Utils.clip((prog * progt.length + 50) / 100, 0, progt.length - 1)];
-	    g.aimage(pi, new Coord(sz.x / 2, (sz.y * 4) / 10), 0.5, 0.5);
-	}
+	if(prog >= 0)
+	    drawprog(g, prog);
 	int by = sz.y;
 	if(chat.visible)
 	    by = Math.min(by, chat.c.y);
@@ -534,7 +543,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    error(err);
 	} else if(msg == "prog") {
 	    if(args.length > 0)
-		prog = (Integer)args[0];
+		prog = ((Number)args[0]).doubleValue() / 100.0;
 	    else
 		prog = -1;
 	} else if(msg == "setbelt") {
