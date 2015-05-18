@@ -204,7 +204,8 @@ public class CharWnd extends Window {
 		BufferedImage cur = null;
 		for(El el : els) {
 		    Event ev = el.res.get().layer(Event.class);
-		    BufferedImage ln = Text.render(String.format("%s: %s", ev.nm, Utils.odformat2(el.a, 2)), ev.col).img;
+		    Color col = Utils.blendcol(ev.col, Color.WHITE, 0.5);
+		    BufferedImage ln = Text.render(String.format("%s: %s", ev.nm, Utils.odformat2(el.a, 2)), col).img;
 		    Resource.Image icon = el.res.get().layer(Resource.imgc);
 		    if(icon != null)
 			ln = ItemInfo.catimgsh(5, icon.img, ln);
