@@ -97,6 +97,7 @@ public class Fightview extends Widget {
 			    Fightview.this.wdgmsg("click", (int)current.gobid, args[0]);
 		    }
 		}, cavac);
+	    curgive.state = rel.give.state;
 	} else if((current != null) && (rel == null)) {
 	    ui.destroy(curgive);
 	    ui.destroy(curava);
