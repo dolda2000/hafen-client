@@ -380,6 +380,324 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
     }
 
+    public static class Loading2 extends haven.Loading {
+	private final Pool.Queued res;
+
+	private Loading2(Pool.Queued res) {
+	    super("Waiting for resource " + res.name + "...");
+	    this.res = res;
+	}
+
+	public String toString() {
+	    return("#<Resource " + res.name + ">");
+	}
+
+	public boolean canwait() {return(true);}
+	public void waitfor() throws InterruptedException {
+	    synchronized(res) {
+		while(!res.done) {
+		    res.wait();
+		}
+	    }
+	}
+    }
+
+    public static class Pool {
+	public int nloaders = 2;
+	private final Collection<Loader> loaders = new LinkedList<Loader>();
+	private final List<ResSource> sources = new LinkedList<ResSource>();
+	private final Map<String, Resource> cache = new CacheMap<String, Resource>();
+	private final Queue<Queued> queue = new PrioQueue<Queued>();
+	private final Map<String, Queued> queued = new HashMap<String, Queued>();
+	private final Pool parent;
+
+	public Pool(Pool parent, ResSource... sources) {
+	    this.parent = parent;
+	    for(ResSource source : sources)
+		this.sources.add(source);
+	}
+
+	public Pool(ResSource... sources) {
+	    this(null, sources);
+	}
+
+	public void add(ResSource src) {
+	    sources.add(src);
+	}
+
+	private class Queued implements Indir<Resource>, Prioritized {
+	    final String name;
+	    final int ver;
+	    volatile int prio;
+	    final Collection<Queued> rdep = new LinkedList<Queued>();
+	    volatile boolean done = false;
+	    Resource res;
+	    LoadException error;
+
+	    Queued(String name, int ver, int prio) {
+		this.name = name;
+		this.ver = ver;
+		this.prio = prio;
+	    }
+
+	    public int priority() {
+		return(prio);
+	    }
+
+	    public Resource get() {
+		if(!done)
+		    throw(new Loading2(this));
+		if(error != null)
+		    throw(new RuntimeException("Delayed error in resource " + name + " (v" + ver + "), from " + error.src, error));
+		return(res);
+	    }
+
+	    private void done() {
+		synchronized(this) {
+		    done = true;
+		    for(Iterator<Queued> i = rdep.iterator(); i.hasNext();) {
+			Queued dq = i.next();
+			i.remove();
+			dq.prior(this);
+		    }
+		    this.notifyAll();
+		}
+		if(res != null) {
+		    synchronized(cache) {
+			cache.put(name, res);
+		    }
+		    synchronized(queue) {
+			queued.remove(name, this);
+		    }
+		}
+	    }
+
+	    private void prior(Queued prior) {
+		if((res = prior.res) == null) {
+		    error = prior.error;
+		    synchronized(queue) {
+			queue.add(this);
+			queue.notify();
+		    }
+		    ckld();
+		} else {
+		    done();
+		}
+	    }
+	}
+
+	private void handle(Queued res) {
+	    for(ResSource src : sources) {
+		try {
+		    InputStream in = src.get(res.name);
+		    try {
+			Resource ret = new Resource(res.name, res.ver);
+			ret.source = src;
+			ret.load(in);
+			ret.loading = false;
+			res.res = ret;
+			res.error = null;
+			break;
+		    } finally {
+			in.close();
+		    }
+		} catch(Throwable t) {
+		    LoadException error;
+		    if(t instanceof LoadException)
+			error = (LoadException)t;
+		    else
+			error = new LoadException(String.format("Load error in resource %s(v%d), from %s", res.name, res.ver, src), t, null);
+		    error.src = src;
+		    error.prev = res.error;
+		    res.error = error;
+		}
+	    }
+	    res.done();
+	}
+
+	public Indir<Resource> load(String name, int ver, int prio) {
+	    Queued ret;
+	    synchronized(cache) {
+		Resource cur = cache.get(name);
+		if(cur != null) {
+		    if((ver == -1) || (cur.ver == ver)) {
+			return(cur.indir());
+		    } else if(ver < cur.ver) {
+			/* Throw LoadException rather than
+			 * RuntimeException here, to make sure
+			 * obsolete resources doing nested loading get
+			 * properly handled. This could be the wrong
+			 * way of going about it, however; I'm not
+			 * sure. */
+			throw(new LoadException(String.format("Weird version number on %s (%d > %d), loaded from %s", cur.name, cur.ver, ver, cur.source), cur));
+		    }
+		}
+		synchronized(queue) {
+		    Queued cq = queued.get(name);
+		    if(cq != null) {
+			if((ver == -1) || (cq.ver == ver))
+			    return(cq);
+			if(ver < cq.ver)
+			    throw(new LoadException(String.format("Weird version number on %s (%d > %d)", cq.name, cq.ver, ver), null));
+			queued.remove(name);
+			queue.remove(cq);
+		    }
+		    Queued nq = new Queued(name, ver, prio);
+		    queued.put(name, nq);
+		    if(parent == null) {
+			queue.add(nq);
+			queue.notify();
+		    } else {
+			Indir<Resource> pr = parent.load(name, ver, prio);
+			if(pr instanceof Queued) {
+			    Queued pq = (Queued)pr;
+			    synchronized(pq) {
+				if(pq.done)
+				    nq.prior(pq);
+				else
+				    pq.rdep.add(nq);
+			    }
+			} else {
+			    nq.res = pr.get();
+			    nq.done = true;
+			}
+		    }
+		    ret = nq;
+		}
+	    }
+	    ckld();
+	    return(ret);
+	}
+
+	public Indir<Resource> load(String name, int ver) {return(load(name, ver, -5));}
+	public Indir<Resource> load(String name) {return(load(name, -1));}
+
+	private void ckld() {
+	    int qsz;
+	    synchronized(queue) {
+		qsz = queue.size();
+	    }
+	    synchronized(loaders) {
+		while(loaders.size() < Math.min(nloaders, qsz)) {
+		    Loader n = new Loader();
+		    Thread th = new HackThread(loadergroup, n, "Haven resource loader");
+		    th.setDaemon(true);
+		    th.start();
+		    while(!n.added) {
+			try {
+			    loaders.wait();
+			} catch(InterruptedException e) {
+			    Thread.currentThread().interrupt();
+			    return;
+			}
+		    }
+		}
+	    }
+	}
+
+	public class Loader implements Runnable {
+	    private boolean added = false;
+
+	    public void run() {
+		synchronized(loaders) {
+		    loaders.add(this);
+		    added = true;
+		    loaders.notifyAll();
+		}
+		boolean intd = false;
+		try {
+		    while(true) {
+			Queued cur;
+			synchronized(queue) {
+			    long start = System.currentTimeMillis(), now = start;
+			    while((cur = queue.poll()) == null) {
+				queue.wait(10000 - (now - start));
+				now = System.currentTimeMillis();
+				if(now - start >= 10000)
+				    return;
+			    }
+			}
+			handle(cur);
+			cur = null;
+		    }
+		} catch(InterruptedException e) {
+		    intd = true;
+		} finally {
+		    synchronized(loaders) {
+			loaders.remove(this);
+		    }
+		    if(!intd)
+			ckld();
+		}
+	    }
+	}
+
+	public Resource loadwaitint(String name) throws InterruptedException {
+	    Indir<Resource> q = load(name);
+	    while(true) {
+		try {
+		    return(q.get());
+		} catch(haven.Loading e) {
+		    e.waitfor();
+		}
+	    }
+	}
+
+	public Resource loadwait(String name) {
+	    boolean intd = false;
+	    try {
+		while(true) {
+		    try {
+			return(loadwaitint(name));
+		    } catch(InterruptedException e) {
+			intd = true;
+		    }
+		}
+	    } finally {
+		if(intd)
+		    Thread.currentThread().interrupt();
+	    }
+	}
+    }
+
+    private static Pool _local = null;
+    public static Pool local() {
+	if(_local == null) {
+	    synchronized(Resource.class) {
+		if(_local == null) {
+		    Pool local = new Pool(new JarSource());
+		    try {
+			String dir = Config.resdir;
+			/*
+			if(dir == null)
+			    dir = System.getenv("HAVEN_RESDIR");
+			*/
+			if(dir != null)
+			    local.add(new FileSource(new File(dir)));
+		    } catch(Exception e) {
+			/* Ignore these. We don't want to be crashing the client
+			 * for users just because of errors in development
+			 * aids. */
+		    }
+		    _local = local;
+		}
+	    }
+	}
+	return(_local);
+    }
+
+    private static Pool _remote = null;
+    public static Pool remote() {
+	if(_remote == null) {
+	    synchronized(Resource.class) {
+		if(_remote == null) {
+		    _remote = new Pool(local(), new HttpSource(Config.resurl));
+		}
+	    }
+	}
+	return(_remote);
+    }
+
     private static class Loader implements Runnable {
 	private ResSource src;
 	private Loader next = null;
