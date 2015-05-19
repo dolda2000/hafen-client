@@ -1148,7 +1148,7 @@ public class ChatUI extends Widget {
 
     private UI.Grab dm = null;
     private Coord doff;
-    public int savedh = Math.max(100, Utils.getprefi("chatsize", 100));
+    public int savedh = Math.max(111, Utils.getprefi("chatsize", 111));
     public boolean mousedown(Coord c, int button) {
 	int bmfx = (sz.x - bmf.sz().x) / 2;
 	if((button == 1) && (c.y < bmf.sz().y) && (c.x >= bmfx) && (c.x <= (bmfx + bmf.sz().x))) {
@@ -1162,7 +1162,7 @@ public class ChatUI extends Widget {
 
     public void mousemove(Coord c) {
 	if(dm != null) {
-	    resize(sz.x, savedh = Math.max(100, sz.y + doff.y - c.y));
+	    resize(sz.x, savedh = Math.max(111, sz.y + doff.y - c.y));
 	} else {
 	    super.mousemove(c);
 	}
