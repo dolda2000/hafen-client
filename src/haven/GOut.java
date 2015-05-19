@@ -213,6 +213,28 @@ public class GOut {
 	checkerr();
     }
 
+    public void rimagev(Tex tex, Coord c, int h) {
+	Coord cc = new Coord(c);
+	Coord sz = new Coord(tex.sz().x, h);
+	for(; cc.y < c.y + h; cc.y += tex.sz().y)
+	    image(tex, cc, c, sz);
+    }
+
+    public void rimageh(Tex tex, Coord c, int w) {
+	Coord cc = new Coord(c);
+	Coord sz = new Coord(w, tex.sz().y);
+	for(; cc.x < c.x + w; cc.x += tex.sz().x)
+	    image(tex, cc, c, sz);
+    }
+
+    public void rimage(Tex tex, Coord c, Coord sz) {
+	Coord cc = new Coord();
+	for(cc.y = c.y; cc.y < c.y + sz.y; cc.y += tex.sz().y) {
+	    for(cc.x = c.x; cc.x < c.x + sz.x; cc.x += tex.sz().x)
+		image(tex, cc, c, sz);
+	}
+    }
+
     /* Draw texture at c, with the extra state s applied. */
     public void image(Tex tex, Coord c, GLState s) {
 	st.set(cur2d);
