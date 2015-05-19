@@ -28,9 +28,11 @@ package haven;
 
 import java.util.*;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import java.awt.font.TextHitInfo;
+import java.awt.image.BufferedImage;
 import java.text.*;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.net.URL;
@@ -41,7 +43,8 @@ import java.awt.datatransfer.*;
 public class ChatUI extends Widget {
     public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(10f), TextAttribute.FOREGROUND, Color.BLACK));
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
-    public static final int selw = 100;
+    public static final int selw = 130;
+    public static final Coord marg = new Coord(9, 9);
     public Channel sel = null;
     private final Selector chansel;
     private Coord base = Coord.z;
@@ -51,7 +54,7 @@ public class ChatUI extends Widget {
 
     public ChatUI(int w, int h) {
 	super(new Coord(w, h));
-	chansel = add(new Selector(new Coord(selw, sz.y)), Coord.z);
+	chansel = add(new Selector(new Coord(selw, sz.y - marg.y)), marg);
 	setfocusctl(true);
 	setcanfocus(true);
 	if(h < 1)
@@ -129,6 +132,7 @@ public class ChatUI extends Widget {
     public static abstract class Channel extends Widget {
 	public final List<Message> msgs = new LinkedList<Message>();
 	private final Scrollbar sb;
+	private final IButton cb;
 	
 	public static abstract class Message {
 	    public final long time = System.currentTimeMillis();
@@ -161,8 +165,12 @@ public class ChatUI extends Widget {
 	    }
 	}
 
-	public Channel() {
-	    sb = adda(new Scrollbar(ih(), 0, -ih()), sz.x, 0, 1, 0);
+	public Channel(boolean closable) {
+	    sb = add(new Scrollbar(0, 0, 0));
+	    if(closable)
+		cb = add(new IButton("gfx/hud/chat-close", "", "-d", "-h"));
+	    else
+		cb = null;
 	}
 	
 	public void append(Message msg) {
@@ -191,7 +199,7 @@ public class ChatUI extends Widget {
 	}
 	
 	public void draw(GOut g) {
-	    g.chcolor(0, 0, 0, 255);
+	    g.chcolor(0, 0, 0, 128);
 	    g.frect(Coord.z, sz);
 	    g.chcolor();
 	    int y = 0;
@@ -224,8 +232,8 @@ public class ChatUI extends Widget {
 	public void resize(Coord sz) {
 	    super.resize(sz);
 	    if(sb != null) {
-		sb.resize(ih());
-		sb.move(new Coord(sz.x, 0));
+		sb.move(new Coord(sz.x - (12 - marg.x), 34 - marg.y));
+		sb.resize(ih() - sb.c.y);
 		int y = 0;
 		for(Message m : msgs)
 		    y += m.sz().y;
@@ -233,6 +241,9 @@ public class ChatUI extends Widget {
 		sb.max = y - ih();
 		if(b)
 		    sb.val = sb.max;
+	    }
+	    if(cb != null) {
+		cb.c = new Coord(sz.x + marg.x - cb.sz.x, -marg.y);
 	    }
 	}
 	
@@ -529,6 +540,14 @@ public class ChatUI extends Widget {
 	    }
 	}
 
+	public void wdgmsg(Widget sender, String msg, Object... args) {
+	    if(sender == cb) {
+		wdgmsg("close");
+	    } else {
+		super.wdgmsg(sender, msg, args);
+	    }
+	}
+
 	public abstract String name();
     }
     
@@ -536,6 +555,7 @@ public class ChatUI extends Widget {
 	private final String name;
 	
 	public Log(String name) {
+	    super(false);
 	    this.name = name;
 	}
 	
@@ -548,7 +568,8 @@ public class ChatUI extends Widget {
 	private int hpos = 0;
 	private String hcurrent;
 	
-	public EntryChannel() {
+	public EntryChannel(boolean closable) {
+	    super(closable);
 	    setfocusctl(true);
 	    this.in = new TextEntry(0, "") {
 		    public void activate(String text) {
@@ -583,7 +604,7 @@ public class ChatUI extends Widget {
 	}
 	
 	public int ih() {
-	    return(sz.y - 20);
+	    return(sz.y - in.sz.y);
 	}
 	
 	public void resize(Coord sz) {
@@ -603,7 +624,8 @@ public class ChatUI extends Widget {
     public static class SimpleChat extends EntryChannel {
 	public final String name;
 
-	public SimpleChat(String name) {
+	public SimpleChat(boolean closable, String name) {
+	    super(closable);
 	    this.name = name;
 	}
 
@@ -676,7 +698,8 @@ public class ChatUI extends Widget {
 	    }
 	}
 
-	public MultiChat(String name, boolean notify) {
+	public MultiChat(boolean closable, String name, boolean notify) {
+	    super(closable);
 	    this.name = name;
 	    this.notify = notify;
 	}
@@ -719,7 +742,7 @@ public class ChatUI extends Widget {
     
     public static class PartyChat extends MultiChat {
 	public PartyChat() {
-	    super("Party", true);
+	    super(false, "Party", true);
 	}
 
 	public void uimsg(String msg, Object... args) {
@@ -761,7 +784,8 @@ public class ChatUI extends Widget {
 	    }
 	}
 
-	public PrivChat(int other) {
+	public PrivChat(boolean closable, int other) {
+	    super(closable);
 	    this.other = other;
 	}
 	
@@ -799,7 +823,7 @@ public class ChatUI extends Widget {
     public static class $SChan implements Factory {
 	public Widget create(Widget parent, Object[] args) {
 	    String name = (String)args[0];
-	    return(new SimpleChat(name));
+	    return(new SimpleChat(false, name));
 	}
     }
     @RName("mchat")
@@ -807,7 +831,7 @@ public class ChatUI extends Widget {
 	public Widget create(Widget parent, Object[] args) {
 	    String name = (String)args[0];
 	    boolean notify = ((Integer)args[1]) != 0;
-	    return(new MultiChat(name, notify));
+	    return(new MultiChat(false, name, notify));
 	}
     }
     @RName("pchat")
@@ -820,7 +844,7 @@ public class ChatUI extends Widget {
     public static class $PMChat implements Factory {
 	public Widget create(Widget parent, Object[] args) {
 	    int other = (Integer)args[0];
-	    return(new PrivChat(other));
+	    return(new PrivChat(true, other));
 	}
     }
 
@@ -831,8 +855,8 @@ public class ChatUI extends Widget {
     public <T extends Widget> T add(T w) {
 	if(w instanceof Channel) {
 	    Channel chan = (Channel)w;
-	    chan.c = new Coord(selw, 0);
-	    chan.resize(this.sz.sub(selw, 0));
+	    chan.c = chansel.c.add(chansel.sz.x, 0);
+	    chan.resize(sz.x - marg.x - chan.c.x, sz.y - chan.c.y);
 	    super.add(w);
 	    select(chan);
 	    chansel.add(chan);
@@ -851,8 +875,12 @@ public class ChatUI extends Widget {
 	}
     }
     
+    private static final Tex chandiv = Resource.loadtex("gfx/hud/chat-cdiv");
+    private static final Tex chanseld = Resource.loadtex("gfx/hud/chat-csel");
     private class Selector extends Widget {
-	public final Text.Foundry nf = new Text.Foundry(Text.dfont, 10);
+	public final BufferedImage ctex = Resource.loadimg("gfx/hud/chantex");
+	public final Text.Foundry tf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
+	public final Text.Furnace nf = new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(80, 40, 0));
 	private final List<DarkChannel> chls = new ArrayList<DarkChannel>();
 	private int s = 0;
 	
@@ -886,23 +914,19 @@ public class ChatUI extends Widget {
 	}
 	
 	public void draw(GOut g) {
-	    g.chcolor(64, 64, 64, 192);
-	    g.frect(Coord.z, sz);
 	    int i = s;
 	    int y = 0;
 	    synchronized(chls) {
 		while(i < chls.size()) {
 		    DarkChannel ch = chls.get(i);
-		    if(ch.chan == sel) {
-			g.chcolor(128, 128, 192, 255);
-			g.frect(new Coord(0, y), new Coord(sz.x, 19));
-		    }
+		    if(ch.chan == sel)
+			g.image(chanseld, new Coord(0, y));
 		    g.chcolor(255, 255, 255, 255);
 		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()))
 			ch.rname = nf.render(ch.chan.name());
-		    g.aimage(ch.rname.tex(), new Coord(sz.x / 2, y + 10), 0.5, 0.5);
-		    g.line(new Coord(5, y + 19), new Coord(sz.x - 5, y + 19), 1);
-		    y += 20;
+		    g.aimage(ch.rname.tex(), new Coord(sz.x / 2, y + 8), 0.5, 0.5);
+		    g.image(chandiv, new Coord(0, y + 18));
+		    y += 28;
 		    if(y >= sz.y)
 			break;
 		    i++;
@@ -943,7 +967,7 @@ public class ChatUI extends Widget {
 	}
 	
 	private Channel bypos(Coord c) {
-	    int i = (c.y / 20) + s;
+	    int i = (c.y / 28) + s;
 	    if((i >= 0) && (i < chls.size()))
 		return(chls.get(i).chan);
 	    return(null);
@@ -987,7 +1011,7 @@ public class ChatUI extends Widget {
 	private Notification(Channel chan, Channel.Message msg) {
 	    this.chan = chan;
 	    this.msg = msg;
-	    this.chnm = chansel.nf.render(chan.name(), Color.WHITE);
+	    this.chnm = chansel.nf.render(chan.name());
 	}
     }
 
@@ -1024,6 +1048,26 @@ public class ChatUI extends Widget {
 	}
     }
 
+    private static final Tex bulc = Resource.loadtex("gfx/hud/chat-lc");
+    private static final Tex burc = Resource.loadtex("gfx/hud/chat-rc");
+    private static final Tex bhb = Resource.loadtex("gfx/hud/chat-hori");
+    private static final Tex bvlb = Resource.loadtex("gfx/hud/chat-verti");
+    private static final Tex bvrb = bvlb;
+    private static final Tex bmf = Resource.loadtex("gfx/hud/chat-mid");
+    private static final Tex bcbd = Resource.loadtex("gfx/hud/chat-close-g");
+    public void draw(GOut g) {
+	g.rimage(Window.bg, marg, sz.sub(marg.x * 2, marg.y));
+	super.draw(g);
+	g.image(bulc, new Coord(0, 0));
+	g.image(burc, new Coord(sz.x - burc.sz().x, 0));
+	g.rimagev(bvlb, new Coord(0, bulc.sz().y), sz.y - bulc.sz().y);
+	g.rimagev(bvrb, new Coord(sz.x - bvrb.sz().x, burc.sz().y), sz.y - burc.sz().y);
+	g.rimageh(bhb, new Coord(bulc.sz().x, 0), sz.x - bulc.sz().x - burc.sz().x);
+	g.aimage(bmf, new Coord(sz.x / 2, 0), 0.5, 0);
+	if((sel == null) || (sel.cb == null))
+	    g.aimage(bcbd, new Coord(sz.x, 0), 1, 0);
+    }
+
     public void notify(Channel chan, Channel.Message msg) {
 	synchronized(notifs) {
 	    notifs.addFirst(new Notification(chan, msg));
@@ -1050,9 +1094,9 @@ public class ChatUI extends Widget {
     public void resize(Coord sz) {
 	super.resize(sz);
 	this.c = base.add(0, -this.sz.y);
-	chansel.resize(new Coord(selw, this.sz.y));
+	chansel.resize(new Coord(selw, this.sz.y - marg.y));
 	if(sel != null)
-	    sel.resize(new Coord(this.sz.x - selw, this.sz.y));
+	    sel.resize(new Coord(this.sz.x - marg.x - sel.c.x, this.sz.y - sel.c.y));
     }
 
     public int targeth = sz.y;
@@ -1071,7 +1115,7 @@ public class ChatUI extends Widget {
 
     public void expand() {
 	if(!visible)
-	    sresize(100);
+	    sresize(savedh);
     }
 
     private class QuickLine extends LineEdit {
@@ -1099,6 +1143,39 @@ public class ChatUI extends Widget {
 		return(super.key(c, code, mod));
 	    }
 	    return(true);
+	}
+    }
+
+    private UI.Grab dm = null;
+    private Coord doff;
+    public int savedh = Math.max(100, Utils.getprefi("chatsize", 100));
+    public boolean mousedown(Coord c, int button) {
+	int bmfx = (sz.x - bmf.sz().x) / 2;
+	if((button == 1) && (c.y < bmf.sz().y) && (c.x >= bmfx) && (c.x <= (bmfx + bmf.sz().x))) {
+	    dm = ui.grabmouse(this);
+	    doff = c;
+	    return(true);
+	} else {
+	    return(super.mousedown(c, button));
+	}
+    }
+
+    public void mousemove(Coord c) {
+	if(dm != null) {
+	    resize(sz.x, savedh = Math.max(100, sz.y + doff.y - c.y));
+	} else {
+	    super.mousemove(c);
+	}
+    }
+
+    public boolean mouseup(Coord c, int button) {
+	if(dm != null) {
+	    dm.remove();
+	    dm = null;
+	    Utils.setprefi("chatsize", savedh);
+	    return(true);
+	} else {
+	    return(super.mouseup(c, button));
 	}
     }
 

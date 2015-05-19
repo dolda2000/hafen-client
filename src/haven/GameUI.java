@@ -106,6 +106,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	this.plid = plid;
 	setcanfocus(true);
 	setfocusctl(true);
+	chat = add(new ChatUI(0, 0));
+	if(Utils.getprefb("chatvis", true)) {
+	    chat.resize(0, chat.savedh);
+	    chat.show();
+	}
+	beltwdg.raise();
 	ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1)));
 	urpanel = add(new Hidepanel("gui-ur", null, new Coord( 1, -1)));
 	blpanel = add(new Hidepanel("gui-bl", null, new Coord(-1,  1)));
@@ -129,7 +135,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	foldbuttons();
 	portrait = ulpanel.add(new Avaview(Avaview.dasz, plid, "avacam"), new Coord(10, 10));
 	buffs = ulpanel.add(new Bufflist(), new Coord(95, 50));
-	chat = add(new ChatUI(0, Utils.getprefi("chatsize", 0)));
 	syslog = chat.add(new ChatUI.Log("System"));
 	opts = add(new OptWnd());
 	opts.hide();
@@ -500,8 +505,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public void draw(GOut g) {
-	boolean beltp = (chat.targeth == 0);
-	beltwdg.show(beltp);
+	beltwdg.c = new Coord(chat.c.x, Math.min(chat.c.y - beltwdg.sz.y + 4, sz.y - beltwdg.sz.y));
 	super.draw(g);
 	if(prog >= 0)
 	    drawprog(g, prog);
@@ -699,15 +703,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		setfocus(chat);
 	    } else {
 		if(chat.targeth == 0) {
-		    chat.sresize(100);
+		    chat.sresize(chat.savedh);
 		    setfocus(chat);
-		} else if(chat.targeth == 100) {
-		    chat.sresize(400);
 		} else {
 		    chat.sresize(0);
 		}
 	    }
-	    Utils.setprefi("chatsize", chat.targeth);
+	    Utils.setprefb("chatvis", chat.targeth != 0);
 	} else if(key == 6) {
 	    if((fw != null) && fw.show(!fw.visible)) {
 		fw.raise();
@@ -897,15 +899,31 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
+    private static final Tex nkeybg = Resource.loadtex("gfx/hud/hb-main");
     public class NKeyBelt extends Belt implements DTarget, DropTarget {
 	public int curbelt = 0;
+	final Coord pagoff = new Coord(5, 25);
 
 	public NKeyBelt() {
-	    super(new Coord(368, 34));
+	    super(nkeybg.sz());
+	    adda(new IButton("gfx/hud/hb-btn-chat", "", "-d", "-h") {{
+			this.tooltip = RichText.render("Chat ($col[255,255,0]{Ctrl+C})", 0);
+		    }
+
+		    public void click() {
+			if(chat.targeth == 0) {
+			    chat.sresize(chat.savedh);
+			    setfocus(chat);
+			} else {
+			    chat.sresize(0);
+			}
+			Utils.setprefb("chatvis", chat.targeth != 0);
+		    }
+		}, sz, 1, 1);
 	}
 	
 	private Coord beltc(int i) {
-	    return(new Coord(((invsq.sz().x + 2) * i) + (10 * (i / 5)), 0));
+	    return(pagoff.add(((invsq.sz().x + 2) * i) + (10 * (i / 5)), 0));
 	}
     
 	private int beltslot(Coord c) {
@@ -917,6 +935,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     
 	public void draw(GOut g) {
+	    g.image(nkeybg, Coord.z);
 	    for(int i = 0; i < 10; i++) {
 		int slot = i + (curbelt * 12);
 		Coord c = beltc(i);
@@ -929,6 +948,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		FastText.aprintf(g, c.add(invsq.sz().sub(2, 0)), 1, 1, "%d", (i + 1) % 10);
 		g.chcolor();
 	    }
+	    super.draw(g);
 	}
 	
 	public boolean mousedown(Coord c, int button) {
@@ -940,7 +960,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    GameUI.this.wdgmsg("setbelt", slot, 1);
 		return(true);
 	    }
-	    return(false);
+	    return(super.mousedown(c, button));
 	}
 
 	public boolean globtype(char key, KeyEvent ev) {
