@@ -76,6 +76,20 @@ public class Resource implements Serializable {
 	public Resource get() {
 	    return(get(0));
 	}
+
+	public boolean equals(Object other) {
+	    if(!(other instanceof Spec))
+		return(false);
+	    Spec o = (Spec)other;
+	    return((o.pool == this.pool) && o.name.equals(this.name) && (o.ver == this.ver));
+	}
+
+	public int hashCode() {
+	    int ret = pool.hashCode();
+	    ret = (ret * 31) + name.hashCode();
+	    ret = (ret * 31) + ver;
+	    return(ret);
+	}
     }
 
     private Resource(Pool pool, String name, int ver) {
