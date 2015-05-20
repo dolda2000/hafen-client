@@ -80,4 +80,30 @@ public class Loading extends RuntimeException {
 	    throw(new RuntimeException("Tried to wait for unwaitable event", this));
 	}
     }
+
+    public static <T> T waitforint(Indir<T> x) throws InterruptedException {
+	while(true) {
+	    try {
+		return(x.get());
+	    } catch(Loading l) {
+		l.waitfor();
+	    }
+	}
+    }
+
+    public static <T> T waitfor(Indir<T> x) {
+	boolean intd = false;
+	try {
+	    while(true) {
+		try {
+		    return(waitforint(x));
+		} catch(InterruptedException e) {
+		    intd = true;
+		}
+	    }
+	} finally {
+	    if(intd)
+		Thread.currentThread().interrupt();
+	}
+    }
 }
