@@ -40,7 +40,7 @@ public class Widget {
     private boolean canfocus = false, autofocus = false;
     public boolean canactivate = false, cancancel = false;
     public Widget focused;
-    public Resource cursor = null;
+    public Indir<Resource> cursor = null;
     public Object tooltip = null;
     private Widget prevtt;
     public final Collection<Anim> anims = new LinkedList<Anim>();
@@ -152,12 +152,12 @@ public class Widget {
 		ver = Integer.parseInt(name.substring(p + 1));
 		name = name.substring(0, p);
 	    }
-	    Resource res = Resource.load(name, ver);
+	    Indir<Resource> res = Resource.remote().load(name, ver);
 	    while(true) {
 		try {
-		    return(res.getcode(Factory.class, true));
-		} catch(Resource.Loading l) {
-		    l.res.loadwaitint();
+		    return(res.get().getcode(Factory.class, true));
+		} catch(Loading l) {
+		    l.waitfor();
 		}
 	    }
 	}
@@ -538,7 +538,7 @@ public class Widget {
 	    if(args.length == 0)
 		cursor = null;
 	    else
-		cursor = Resource.load((String)args[0], (Integer)args[1]);
+		cursor = Resource.remote().load((String)args[0], (Integer)args[1]);
 	} else if(msg == "tip") {
 	    int a = 0;
 	    Object tt = args[a++];
@@ -927,7 +927,11 @@ public class Widget {
 		    return(ret);
 	    }
 	}
-	return(cursor);
+	try {
+	    return(cursor.get());
+	} catch(Loading l) {
+	    return(null);
+	}
     }
 
     @Deprecated

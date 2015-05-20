@@ -350,20 +350,18 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	}
 	ui.lasttip = tooltip;
 	Resource curs = ui.root.getcurs(mousepos);
-	if(!curs.loading) {
-	    if(cursmode == "awt") {
-		if(curs != lastcursor) {
-		    try {
-			setCursor(makeawtcurs(curs.layer(Resource.imgc).img, curs.layer(Resource.negc).cc));
-			lastcursor = curs;
-		    } catch(Exception e) {
-			cursmode = "tex";
-		    }
+	if(cursmode == "awt") {
+	    if(curs != lastcursor) {
+		try {
+		    setCursor(makeawtcurs(curs.layer(Resource.imgc).img, curs.layer(Resource.negc).cc));
+		    lastcursor = curs;
+		} catch(Exception e) {
+		    cursmode = "tex";
 		}
-	    } else if(cursmode == "tex") {
-		Coord dc = mousepos.add(curs.layer(Resource.negc).cc.inv());
-		g.image(curs.layer(Resource.imgc), dc);
 	    }
+	} else if(cursmode == "tex") {
+	    Coord dc = mousepos.add(curs.layer(Resource.negc).cc.inv());
+	    g.image(curs.layer(Resource.imgc), dc);
 	}
 	state.clean();
 	GLObject.disposeall(state.cgl, gl);

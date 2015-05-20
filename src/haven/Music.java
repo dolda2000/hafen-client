@@ -43,14 +43,14 @@ public class Music {
     }
 
     private static class Player extends HackThread {
-	private Resource res;
+	private Indir<Resource> res;
 	private Thread waitfor;
 	private Sequencer seq;
 	private Synthesizer synth;
 	private boolean done;
 	private boolean loop = false;
 	
-	private Player(Resource res, Thread waitfor) {
+	private Player(Indir<Resource> res, Thread waitfor) {
 	    super("Music player");
 	    setDaemon(true);
 	    this.res = res;
@@ -61,7 +61,7 @@ public class Music {
 	    try {
 		if(waitfor != null)
 		    waitfor.join();
-		res.loadwaitint();
+		Resource res = Loading.waitforint(this.res);
 		try {
 		    seq = MidiSystem.getSequencer(false);
 		    synth = MidiSystem.getSynthesizer();
@@ -135,7 +135,7 @@ public class Music {
 	}
     }
     
-    public static void play(Resource res, boolean loop) {
+    public static void play(Indir<Resource> res, boolean loop) {
 	synchronized(Music.class) {
 	    if(player != null)
 		player.interrupt();
@@ -150,7 +150,7 @@ public class Music {
     public static void main(String[] args) throws Exception {
 	Resource.addurl(new java.net.URL("https://www.havenandhearth.com/res/"));
 	debug = true;
-	play(Resource.load(args[0]), (args.length > 1)?args[1].equals("y"):false);
+	play(Resource.remote().load(args[0]), (args.length > 1)?args[1].equals("y"):false);
 	player.join();
     }
     
@@ -177,7 +177,7 @@ public class Music {
 			int ver = -1;
 			if(i < args.length)
 			    ver = Integer.parseInt(args[i++]);
-			Music.play(Resource.load(resnm, ver), loop);
+			Music.play(Resource.remote().load(resnm, ver), loop);
 		    } else {
 			Music.play(null, false);
 		    }		
