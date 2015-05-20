@@ -1491,6 +1491,7 @@ public class Resource implements Serializable {
 	return(name + "(v" + ver + ")");
     }
 	
+    /*
     public static void loadlist(InputStream list, int prio) throws IOException {
 	BufferedReader in = new BufferedReader(new InputStreamReader(list, "us-ascii"));
 	String ln;
@@ -1574,4 +1575,5 @@ public class Resource implements Serializable {
 	    updateloadlist(new File(args[1]));
 	}
     }
+    */
 }

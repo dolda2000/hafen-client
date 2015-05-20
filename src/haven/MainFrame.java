@@ -267,6 +267,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    Resource.addcache(ResCache.global);
 	if(Config.resurl != null)
 	    Resource.addurl(Config.resurl);
+	/*
 	if(ResCache.global != null) {
 	    try {
 		Resource.loadlist(ResCache.global.fetch("tmp/allused"), -10);
@@ -285,6 +286,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 		throw(new Error(e));
 	    }
 	}
+	*/
     }
     
     static {
@@ -386,6 +388,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    f.g.interrupt();
 	    return;
 	}
+	/*
 	dumplist(Resource.loadwaited, Config.loadwaited);
 	dumplist(Resource.cached(), Config.allused);
 	if(ResCache.global != null) {
@@ -409,6 +412,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 		}
 	    } catch(IOException e) {}
 	}
+	*/
 	System.exit(0);
     }
     
@@ -436,6 +440,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	main.start();
     }
 	
+    /*
     private static void dumplist(Collection<Resource> list, String fn) {
 	try {
 	    if(fn != null) {
@@ -450,4 +455,5 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    throw(new RuntimeException(e));
 	}
     }
+    */
 }
