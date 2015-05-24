@@ -69,6 +69,10 @@ public class Resource implements Serializable {
 	    this.ver = ver;
 	}
 
+	public Spec(Pool pool, String name) {
+	    this(pool, name, -1);
+	}
+
 	public Resource get(int prio) {
 	    return(pool.load(name, ver, prio).get());
 	}
@@ -1025,7 +1029,7 @@ public class Resource implements Serializable {
     @LayerName("action")
     public class AButton extends Layer {
 	public final String name;
-	public final Indir<Resource> parent;
+	public final Spec parent;
 	public final char hk;
 	public final String[] ad;
 		
@@ -1036,7 +1040,7 @@ public class Resource implements Serializable {
 		parent = null;
 	    } else {
 		try {
-		    parent = pool.load(pr, pver);
+		    parent = new Spec(pool, pr, pver);
 		} catch(RuntimeException e) {
 		    throw(new LoadException("Illegal resource dependency", e, Resource.this));
 		}
