@@ -49,7 +49,7 @@ public class SpriteLink extends Resource.Layer {
 	private final Factory[] sub;
 	private final Factory def;
 
-	private ByTile(Message buf, Map<Integer, Factory> refs) {
+	private ByTile(Resource res, Message buf, Map<Integer, Factory> refs) {
 	    tag = new String[buf.uint8()];
 	    sub = new Factory[tag.length];
 	    for(int i = 0; i < tag.length; i++) {
@@ -72,20 +72,20 @@ public class SpriteLink extends Resource.Layer {
     }
 
     public static class ByRes implements Factory {
-	private final Resource res;
+	private final Indir<Resource> res;
 
-	private ByRes(Message buf, Map<Integer, Factory> refs) {
+	private ByRes(Resource res, Message buf, Map<Integer, Factory> refs) {
 	    String resnm = buf.string();
 	    int resver = buf.uint16();
-	    this.res = Resource.load(resnm, resver);
+	    this.res = res.pool.load(resnm, resver);
 	}
 
 	public Sprite create(Owner owner, Resource res, Message sdt) {
-	    return(Sprite.create(owner, this.res, sdt));
+	    return(Sprite.create(owner, this.res.get(), sdt));
 	}
 
 	public String toString() {
-	    return(res.name);
+	    return(res.toString());
 	}
     }
 
@@ -103,10 +103,10 @@ public class SpriteLink extends Resource.Layer {
 	    Factory f;
 	    switch(t) {
 	    case 't':
-		f = new ByTile(buf, refs);
+		f = new ByTile(res, buf, refs);
 		break;
 	    case 'r':
-		f = new ByRes(buf, refs);
+		f = new ByRes(res, buf, refs);
 		break;
 	    default:
 		throw(new Resource.LoadException("Unknown spritelink type: `" + t + "'", getres()));

@@ -228,7 +228,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		    double nz = (res.name.hashCode() * mid * 8129) % 10000;
 		    var.add(new Var(res.layer(Material.Res.class, mid).get(), thrl, thrh, nz));
 		} else if(p.equals("trans")) {
-		    Resource tres = Resource.load((String)desc[1], (Integer)desc[2]);
+		    Resource tres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
 		    trans = tres.layer(Resource.tileset);
 		}
 	    }
@@ -351,7 +351,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		    Object[] desc = (Object[])rdesc;
 		    String p = (String)desc[0];
 		    if(p.equals("rmat")) {
-			Resource mres = Resource.load((String)desc[1], (Integer)desc[2]);
+			Resource mres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
 			mat = mres.layer(Material.Res.class).get();
 			if(desc.length > 3)
 			    texh = (Float)desc[3];

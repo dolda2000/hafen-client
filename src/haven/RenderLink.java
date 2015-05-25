@@ -56,21 +56,21 @@ public interface RenderLink {
 		String matnm = buf.string();
 		int matver = buf.uint16();
 		final int matid = buf.int16();
-		final Resource mesh = meshnm.equals("")?res:Resource.load(meshnm, meshver);
-		final Resource mat = matnm.equals("")?res:Resource.load(matnm, matver);
+		final Indir<Resource> mesh = meshnm.equals("")?res.indir():res.pool.load(meshnm, meshver);
+		final Indir<Resource> mat = matnm.equals("")?res.indir():res.pool.load(matnm, matver);
 		l = new RenderLink() {
 			Rendered res = null;
 			public Rendered make() {
 			    if(res == null) {
 				FastMesh m = null;
-				for(FastMesh.MeshRes mr : mesh.layers(FastMesh.MeshRes.class)) {
+				for(FastMesh.MeshRes mr : mesh.get().layers(FastMesh.MeshRes.class)) {
 				    if((meshid < 0) || (mr.id == meshid)) {
 					m = mr.m;
 					break;
 				    }
 				}
 				Material M = null;
-				for(Material.Res mr : mat.layers(Material.Res.class)) {
+				for(Material.Res mr : mat.get().layers(Material.Res.class)) {
 				    if((matid < 0) || (mr.id == matid)) {
 					M = mr.get();
 					break;
@@ -88,23 +88,23 @@ public interface RenderLink {
 	    } else if(t == 1) {
 		String nm = buf.string();
 		int ver = buf.uint16();
-		final Resource amb = Resource.load(nm, ver);
+		final Indir<Resource> amb = res.pool.load(nm, ver);
 		l = new RenderLink() {
 			public Rendered make() {
-			    return(new ActAudio.Ambience(amb));
+			    return(new ActAudio.Ambience(amb.get()));
 			}
 		    };
 	    } else if(t == 2) {
 		String nm = buf.string();
 		int ver = buf.uint16();
-		final Resource lres = Resource.load(nm, ver);
+		final Indir<Resource> lres = res.pool.load(nm, ver);
 		final int meshid = buf.int16();
 		l = new RenderLink() {
 			Rendered res = null;
 			public Rendered make() {
 			    if(res == null) {
 				ArrayList<Rendered> cl = new ArrayList<Rendered>();
-				for(FastMesh.MeshRes mr : lres.layers(FastMesh.MeshRes.class)) {
+				for(FastMesh.MeshRes mr : lres.get().layers(FastMesh.MeshRes.class)) {
 				    if(((meshid >= 0) && (mr.id < 0)) || (mr.id == meshid))
 					cl.add(mr.mat.get().apply(mr.m));
 				}

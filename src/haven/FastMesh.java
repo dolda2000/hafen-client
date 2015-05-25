@@ -433,11 +433,11 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	}
 	
 	public void init() {
-	    VertexBuf v = getres().layer(VertexBuf.VertexRes.class, false).b;
+	    VertexBuf v = getres().layer(VertexBuf.VertexRes.class).b;
 	    this.m = new ResourceMesh(v, this.tmp, this);
 	    this.tmp = null;
 	    if(matid >= 0) {
-		for(Material.Res mr : getres().layers(Material.Res.class, false)) {
+		for(Material.Res mr : getres().layers(Material.Res.class)) {
 		    if(mr.id == matid)
 			this.mat = mr;
 		}

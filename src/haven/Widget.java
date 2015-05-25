@@ -928,7 +928,7 @@ public class Widget {
 	    }
 	}
 	try {
-	    return(cursor.get());
+	    return((cursor == null)?null:cursor.get());
 	} catch(Loading l) {
 	    return(null);
 	}

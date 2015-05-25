@@ -41,7 +41,7 @@ public class MiniMap extends Widget {
     static Loader loader = new Loader();
     public static final Tex bg = Resource.loadtex("gfx/hud/mmap/ptex");
     public static final Tex nomap = Resource.loadtex("gfx/hud/mmap/nomap");
-    public static final Resource plx = Resource.load("gfx/hud/mmap/x");
+    public static final Resource plx = Resource.local().loadwait("gfx/hud/mmap/x");
     MapView mv;
     
     static class Loader implements Runnable {
@@ -196,22 +196,20 @@ public class MiniMap extends Widget {
 	if(missing) {
 	    g.image(nomap, Coord.z);
 	} else {
-	    if(!plx.loading) {
-		synchronized(ui.sess.glob.party.memb) {
-		    for(Party.Member m : ui.sess.glob.party.memb.values()) {
-			Coord ptc;
-			try {
-			    ptc = m.getc();
-			} catch(MCache.LoadingMap e) {
-			    ptc = null;
-			}
-			if(ptc == null)
-			    continue;
-			ptc = ptc.div(tilesz).add(tc.inv()).add(sz.div(2));
-			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 128);
-			g.image(plx.layer(Resource.imgc).tex(), ptc.add(plx.layer(Resource.negc).cc.inv()));
-			g.chcolor();
+	    synchronized(ui.sess.glob.party.memb) {
+		for(Party.Member m : ui.sess.glob.party.memb.values()) {
+		    Coord ptc;
+		    try {
+			ptc = m.getc();
+		    } catch(MCache.LoadingMap e) {
+			ptc = null;
 		    }
+		    if(ptc == null)
+			continue;
+		    ptc = ptc.div(tilesz).add(tc.inv()).add(sz.div(2));
+		    g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 128);
+		    g.image(plx.layer(Resource.imgc).tex(), ptc.add(plx.layer(Resource.negc).cc.inv()));
+		    g.chcolor();
 		}
 	    }
 	}

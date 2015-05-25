@@ -855,7 +855,7 @@ public class Skeleton {
 		    String resnm = buf.string();
 		    int resver = buf.uint16();
 		    byte[] sdt = buf.bytes(buf.uint8());
-		    Indir<Resource> res = Resource.load(resnm, resver).indir();
+		    Indir<Resource> res = getres().pool.load(resnm, resver);
 		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, null);
 		    break;
 		case 1:
