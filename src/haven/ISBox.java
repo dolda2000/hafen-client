@@ -41,7 +41,7 @@ public class ISBox extends Widget implements DTarget {
 	public Widget create(Widget parent, Object[] args) {
 	    Indir<Resource> res;
 	    if(args[0] instanceof String)
-		res = Resource.load((String)args[0]).indir();
+		res = Resource.remote().load((String)args[0]);
 	    else
 		res = parent.ui.sess.getres((Integer)args[0]);
 	    return(new ISBox(res, (Integer)args[1], (Integer)args[2], (Integer)args[3]));

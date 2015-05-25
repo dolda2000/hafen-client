@@ -3,25 +3,25 @@ package haven.resutil;
 import haven.*;
 
 public class CompilerClassLoader extends ClassLoader {
-    private Resource[] useres;
+    private Indir<Resource>[] useres;
 
     static {
 	Config.nopreload = true;
     }
     
+    @SuppressWarnings("unchecked")
     public CompilerClassLoader(ClassLoader parent) {
 	super(parent);
 	String[] useresnm = Utils.getprop("haven.resutil.classloader.useres", null).split(":");
-	this.useres = new Resource[useresnm.length];
+	this.useres = new Indir[useresnm.length];
 	for(int i = 0; i < useresnm.length; i++)
-	    this.useres[i] = Resource.load(useresnm[i]);
+	    this.useres[i] = Resource.local().load(useresnm[i]);
     }
     
     public Class<?> findClass(String name) throws ClassNotFoundException {
-	for(Resource res : useres) {
-	    res.loadwait();
+	for(Indir<Resource> res : useres) {
 	    try {
-		return(res.layer(Resource.CodeEntry.class).loader(true).loadClass(name));
+		return(Loading.waitfor(res).layer(Resource.CodeEntry.class).loader(true).loadClass(name));
 	    } catch(ClassNotFoundException e) {}
 	}
 	throw(new ClassNotFoundException(name + " was not found in any of the requested resources."));

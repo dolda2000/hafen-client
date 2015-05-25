@@ -103,7 +103,6 @@ public class RichText extends Text {
 	}
 	
 	public Image(Resource res, int id) {
-	    res.loadwait();
 	    for(Resource.Image img : res.layers(Resource.imgc)) {
 		if(img.id == id) {
 		    this.img = img.img;
@@ -389,7 +388,7 @@ public class RichText extends Text {
 
 	protected Part tag(PState s, String tn, String[] args, Map<? extends Attribute, ?> attrs) throws IOException {
 	    if(tn == "img") {
-		Resource res = Resource.load(args[0]);
+		Resource res = Resource.local().loadwait(args[0]);
 		int id = -1;
 		if(args.length > 1)
 		    id = Integer.parseInt(args[1]);
@@ -697,8 +696,7 @@ public class RichText extends Text {
 	    }
 	    Foundry fnd = new Foundry();
 	    fnd.aa = aa;
-	    Resource res = Resource.load(opt.rest[0]);
-	    res.loadwaitint();
+	    Resource res = Resource.local().loadwait(opt.rest[0]);
 	    Resource.Pagina p = res.layer(Resource.pagina);
 	    if(p == null)
 		throw(new Exception("No pagina in " + res + ", loaded from " + res.source));

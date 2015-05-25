@@ -32,8 +32,7 @@ import javax.media.opengl.*;
 public class TestView extends PView {
     static final FastMesh[] tmesh;
     static {
-	Resource res = Resource.load("gfx/borka/male");
-	res.loadwait();
+	Resource res = Resource.local().loadwait("gfx/borka/male");
 	List<FastMesh> l = new ArrayList<FastMesh>();
 	for(FastMesh.MeshRes m : res.layers(FastMesh.MeshRes.class))
 	    l.add(m.m);
