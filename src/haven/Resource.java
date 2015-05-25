@@ -266,6 +266,10 @@ public class Resource implements Serializable {
 		}
 	    }
 	}
+
+	public void boostprio(int prio) {
+	    res.boostprio(prio);
+	}
     }
 
     public static class Pool {
@@ -296,6 +300,7 @@ public class Resource implements Serializable {
 	    final int ver;
 	    volatile int prio;
 	    final Collection<Queued> rdep = new LinkedList<Queued>();
+	    Queued awaiting;
 	    volatile boolean done = false;
 	    Resource res;
 	    LoadException error;
@@ -310,9 +315,19 @@ public class Resource implements Serializable {
 		return(prio);
 	    }
 
+	    public void boostprio(int prio) {
+		if(this.prio < prio)
+		    this.prio = prio;
+		Queued p = awaiting;
+		if(p != null)
+		    p.boostprio(prio);
+	    }
+
 	    public Resource get() {
-		if(!done)
+		if(!done) {
+		    boostprio(1);
 		    throw(new Loading(this));
+		}
 		if(error != null)
 		    throw(new RuntimeException("Delayed error in resource " + name + " (v" + ver + "), from " + error.src, error));
 		return(res);
@@ -400,8 +415,10 @@ public class Resource implements Serializable {
 		synchronized(queue) {
 		    Queued cq = queued.get(name);
 		    if(cq != null) {
-			if((ver == -1) || (cq.ver == ver))
+			if((ver == -1) || (cq.ver == ver)) {
+			    cq.boostprio(prio);
 			    return(cq);
+			}
 			if(ver < cq.ver)
 			    throw(new LoadException(String.format("Weird version number on %s (%d > %d)", cq.name, cq.ver, ver), null));
 			queued.remove(name);
@@ -417,10 +434,12 @@ public class Resource implements Serializable {
 			if(pr instanceof Queued) {
 			    Queued pq = (Queued)pr;
 			    synchronized(pq) {
-				if(pq.done)
+				if(pq.done) {
 				    nq.prior(pq);
-				else
+				} else {
+				    nq.awaiting = pq;
 				    pq.rdep.add(nq);
+				}
 			    }
 			} else {
 			    nq.res = pr.get();
@@ -498,7 +517,7 @@ public class Resource implements Serializable {
 	}
 
 	public Resource loadwaitint(String name) throws InterruptedException {
-	    Indir<Resource> q = load(name);
+	    Indir<Resource> q = load(name, -1, 10);
 	    while(true) {
 		try {
 		    return(q.get());
@@ -1492,6 +1511,10 @@ public class Resource implements Serializable {
 	indir = new Indir<Resource>() {
 	    public Resource get() {
 		return(Resource.this);
+	    }
+
+	    public String toString() {
+		return(name);
 	    }
 	};
 	return(indir);
