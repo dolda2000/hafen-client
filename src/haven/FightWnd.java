@@ -60,7 +60,6 @@ public class FightWnd extends Window {
 	    try {
 		g.image(act.res.get().layer(Resource.imgc).tex(), Coord.z);
 	    } catch(Loading l) {
-		WItem.missing.loadwait();
 		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, sz);
 	    }
 	    int ty = (eh - act.rnm.sz().y) / 2;
