@@ -318,7 +318,7 @@ public class CharWnd extends Window {
 
 	private Attr(Glob glob, String attr, Color bg) {
 	    super(new Coord(attrw, attrf.height() + 2));
-	    Resource res = Resource.load("gfx/hud/chr/" + attr).loadwait();
+	    Resource res = Resource.local().loadwait("gfx/hud/chr/" + attr);
 	    this.nm = attr;
 	    this.img = res.layer(Resource.imgc).tex();
 	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
@@ -375,7 +375,7 @@ public class CharWnd extends Window {
 
 	private SAttr(Glob glob, String attr, Color bg) {
 	    super(new Coord(attrw, attrf.height() + 2));
-	    Resource res = Resource.load("gfx/hud/chr/" + attr).loadwait();
+	    Resource res = Resource.local().loadwait("gfx/hud/chr/" + attr);
 	    this.nm = attr;
 	    this.img = res.layer(Resource.imgc).tex();
 	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
@@ -648,7 +648,6 @@ public class CharWnd extends Window {
 		    sk.small = new TexI(PUtils.convolvedown(sk.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
 		g.image(sk.small, Coord.z);
 	    } catch(Loading e) {
-		WItem.missing.loadwait();
 		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
 	    }
 	    g.aimage(sk.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
@@ -715,7 +714,6 @@ public class CharWnd extends Window {
 		    exp.small = new TexI(PUtils.convolvedown(exp.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
 		g.image(exp.small, Coord.z);
 	    } catch(Loading e) {
-		WItem.missing.loadwait();
 		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
 	    }
 	    g.aimage(exp.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
