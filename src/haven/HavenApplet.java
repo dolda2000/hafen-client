@@ -112,21 +112,19 @@ public class HavenApplet extends Applet {
 	} catch(java.net.MalformedURLException e) {
 	    throw(new RuntimeException(e));
 	}
-	/*
 	if(!Config.nopreload) {
 	    try {
 		InputStream pls;
 		pls = Resource.class.getResourceAsStream("res-preload");
 		if(pls != null)
-		    Resource.loadlist(pls, -5);
+		    Resource.loadlist(Resource.remote(), pls, -5);
 		pls = Resource.class.getResourceAsStream("res-bgload");
 		if(pls != null)
-		    Resource.loadlist(pls, -10);
+		    Resource.loadlist(Resource.remote(), pls, -10);
 	    } catch(IOException e) {
 		throw(new Error(e));
 	    }
 	}
-	*/
     }
     
     public void destroy() {

@@ -40,7 +40,6 @@ public class Resource implements Serializable {
     private static ResCache prscache;
     public static ThreadGroup loadergroup = null;
     private static Map<String, LayerFactory<?>> ltypes = new TreeMap<String, LayerFactory<?>>();
-    static Set<Resource> loadwaited = new HashSet<Resource>();
     public static Class<Image> imgc = Image.class;
     public static Class<Tile> tile = Tile.class;
     public static Class<Neg> negc = Neg.class;
@@ -516,12 +515,56 @@ public class Resource implements Serializable {
 	    }
 	}
 
+	public int qdepth() {
+	    int ret = (parent == null)?0:parent.qdepth();
+	    synchronized(queue) {
+		ret += queue.size();
+	    }
+	    return(ret);
+	}
+
+	public int numloaded() {
+	    int ret = (parent == null)?0:parent.numloaded();
+	    synchronized(cache) {
+		ret += cache.size();
+	    }
+	    return(ret);
+	}
+
+	public Collection<Resource> cached() {
+	    Set<Resource> ret = new HashSet<Resource>();
+	    if(parent != null)
+		ret.addAll(parent.cached());
+	    synchronized(cache) {
+		ret.addAll(cache.values());
+	    }
+	    return(ret);
+	}
+
+	private final Set<Resource> loadwaited = new HashSet<Resource>();
+	public Collection<Resource> loadwaited() {
+	    Set<Resource> ret = new HashSet<Resource>();
+	    if(parent != null)
+		ret.addAll(parent.loadwaited());
+	    synchronized(loadwaited) {
+		ret.addAll(loadwaited);
+	    }
+	    return(ret);
+	}
+
+	private Resource loadwaited(Resource res) {
+	    synchronized(loadwaited) {
+		loadwaited.add(res);
+	    }
+	    return(res);
+	}
+
 	public Resource loadwaitint(String name) throws InterruptedException {
-	    return(Loading.waitforint(load(name, -1, 10)));
+	    return(loadwaited(Loading.waitforint(load(name, -1, 10))));
 	}
 
 	public Resource loadwait(String name) {
-	    return(Loading.waitfor(load(name, -1, 10)));
+	    return(loadwaited(Loading.waitfor(load(name, -1, 10))));
 	}
     }
 
@@ -1446,7 +1489,7 @@ public class Resource implements Serializable {
 		}
 	    });
     }
-    
+
     public <L extends Layer> L layer(Class<L> cl) {
 	for(Layer l : layers) {
 	    if(cl.isInstance(l))
@@ -1454,7 +1497,7 @@ public class Resource implements Serializable {
 	}
 	return(null);
     }
-    
+
     public <I, L extends IDLayer<I>> L layer(Class<L> cl, I id) {
 	for(Layer l : layers) {
 	    if(cl.isInstance(l)) {
@@ -1465,14 +1508,14 @@ public class Resource implements Serializable {
 	}
 	return(null);
     }
-    
+
     public boolean equals(Object other) {
 	if(!(other instanceof Resource))
 	    return(false);
 	Resource o = (Resource)other;
 	return(o.name.equals(this.name) && (o.ver == this.ver));
     }
-	
+
     private void load(InputStream st) throws IOException {
 	Message in = new StreamMessage(st);
 	byte[] sig = "Haven Resource 1".getBytes(Utils.ascii);
@@ -1501,7 +1544,7 @@ public class Resource implements Serializable {
 	for(Layer l : layers)
 	    l.init();
     }
-	
+
     public Indir<Resource> indir() {
 	if(indir != null)
 	    return(indir);
@@ -1516,21 +1559,20 @@ public class Resource implements Serializable {
 	};
 	return(indir);
     }
-	
+
     public static BufferedImage loadimg(String name) {
 	return(local().loadwait(name).layer(imgc).img);
     }
-	
+
     public static Tex loadtex(String name) {
 	return(local().loadwait(name).layer(imgc).tex());
     }
-	
+
     public String toString() {
 	return(name + "(v" + ver + ")");
     }
-	
-    /*
-    public static void loadlist(InputStream list, int prio) throws IOException {
+
+    public static void loadlist(Pool pool, InputStream list, int prio) throws IOException {
 	BufferedReader in = new BufferedReader(new InputStreamReader(list, "us-ascii"));
 	String ln;
 	while((ln = in.readLine()) != null) {
@@ -1545,7 +1587,7 @@ public class Resource implements Serializable {
 		continue;
 	    }
 	    try {
-		load(nm, ver, prio);
+		pool.load(nm, ver, prio);
 	    } catch(RuntimeException e) {
 	    }
 	}
@@ -1555,14 +1597,16 @@ public class Resource implements Serializable {
     public static void dumplist(Collection<Resource> list, Writer dest) {
 	PrintWriter out = new PrintWriter(dest);
 	List<Resource> sorted = new ArrayList<Resource>(list);
-	Collections.sort(sorted);
-	for(Resource res : sorted) {
-	    if(res.loading)
-		continue;
+	Collections.sort(sorted, new Comparator<Resource>() {
+		public int compare(Resource a, Resource b) {
+		    return(a.name.compareTo(b.name));
+		}
+	    });
+	for(Resource res : sorted)
 	    out.println(res.name + ":" + res.ver);
-	}
     }
 
+    /*
     public static void updateloadlist(File file) throws Exception {
 	BufferedReader r = new BufferedReader(new FileReader(file));
 	Map<String, Integer> orig = new HashMap<String, Integer>();

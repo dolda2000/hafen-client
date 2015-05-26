@@ -267,10 +267,9 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    Resource.setcache(ResCache.global);
 	if(Config.resurl != null)
 	    Resource.addurl(Config.resurl);
-	/*
 	if(ResCache.global != null) {
 	    try {
-		Resource.loadlist(ResCache.global.fetch("tmp/allused"), -10);
+		Resource.loadlist(Resource.remote(), ResCache.global.fetch("tmp/allused"), -10);
 	    } catch(IOException e) {}
 	}
 	if(!Config.nopreload) {
@@ -278,15 +277,14 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 		InputStream pls;
 		pls = Resource.class.getResourceAsStream("res-preload");
 		if(pls != null)
-		    Resource.loadlist(pls, -5);
+		    Resource.loadlist(Resource.remote(), pls, -5);
 		pls = Resource.class.getResourceAsStream("res-bgload");
 		if(pls != null)
-		    Resource.loadlist(pls, -10);
+		    Resource.loadlist(Resource.remote(), pls, -10);
 	    } catch(IOException e) {
 		throw(new Error(e));
 	    }
 	}
-	*/
     }
     
     static {
@@ -388,9 +386,9 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    f.g.interrupt();
 	    return;
 	}
+	dumplist(Resource.remote().loadwaited(), Config.loadwaited);
+	dumplist(Resource.remote().cached(), Config.allused);
 	/*
-	dumplist(Resource.loadwaited, Config.loadwaited);
-	dumplist(Resource.cached(), Config.allused);
 	if(ResCache.global != null) {
 	    try {
 		Collection<Resource> used = new LinkedList<Resource>();
@@ -440,7 +438,6 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	main.start();
     }
 	
-    /*
     private static void dumplist(Collection<Resource> list, String fn) {
 	try {
 	    if(fn != null) {
@@ -455,5 +452,4 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    throw(new RuntimeException(e));
 	}
     }
-    */
 }
