@@ -587,10 +587,8 @@ public class Resource implements Serializable {
 		    Pool local = new Pool(new JarSource());
 		    try {
 			String dir = Config.resdir;
-			/*
 			if(dir == null)
 			    dir = System.getenv("HAVEN_RESDIR");
-			*/
 			if(dir != null)
 			    local.add(new FileSource(new File(dir)));
 		    } catch(Exception e) {
