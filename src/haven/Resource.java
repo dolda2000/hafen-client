@@ -56,6 +56,7 @@ public class Resource implements Serializable {
     public ResSource source;
     public final Pool pool;
     private transient Indir<Resource> indir = null;
+    private boolean used = false;
 
     public static class Spec implements Indir<Resource> {
 	public final Pool pool;
@@ -537,6 +538,16 @@ public class Resource implements Serializable {
 		ret.addAll(parent.cached());
 	    synchronized(cache) {
 		ret.addAll(cache.values());
+	    }
+	    return(ret);
+	}
+
+	public Collection<Resource> used() {
+	    Collection<Resource> ret = cached();
+	    for(Iterator<Resource> i = ret.iterator(); i.hasNext();) {
+		Resource r = i.next();
+		if(!r.used)
+		    i.remove();
 	    }
 	    return(ret);
 	}
@@ -1200,7 +1211,7 @@ public class Resource implements Serializable {
 	transient private ClassLoader loader;
 	transient private Map<String, Class<?>> lpe = null;
 	transient private Map<Class<?>, Object> ipe = new HashMap<Class<?>, Object>();
-		
+
 	public CodeEntry(Message buf) {
 	    while(!buf.eom()) {
 		int t = buf.uint8();
@@ -1225,12 +1236,12 @@ public class Resource implements Serializable {
 		}
 	    }
 	}
-		
+
 	public void init() {
 	    for(Code c : layers(Code.class))
 		clmap.put(c.name, c);
 	}
-	
+
 	public ClassLoader loader(final boolean wait) {
 	    synchronized(CodeEntry.this) {
 		if(this.loader == null) {
@@ -1280,7 +1291,7 @@ public class Resource implements Serializable {
 		}
 	    }
 	}
-	
+
 	public <T> Class<? extends T> getcl(Class<T> cl, boolean fail) {
 	    load();
 	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
@@ -1398,7 +1409,7 @@ public class Resource implements Serializable {
     @LayerName("midi")
     public class Music extends Resource.Layer {
 	transient javax.sound.midi.Sequence seq;
-	
+
 	public Music(Message buf) {
 	    try {
 		seq = javax.sound.midi.MidiSystem.getSequence(new MessageInputStream(buf));
@@ -1408,7 +1419,7 @@ public class Resource implements Serializable {
 		throw(new LoadException(e, Resource.this));
 	    }
 	}
-	
+
 	public void init() {}
     }
 
@@ -1448,6 +1459,7 @@ public class Resource implements Serializable {
     }
 
     public <L extends Layer> Collection<L> layers(final Class<L> cl) {
+	used = true;
 	return(new AbstractCollection<L>() {
 		public int size() {
 		    int s = 0;
@@ -1491,6 +1503,7 @@ public class Resource implements Serializable {
     }
 
     public <L extends Layer> L layer(Class<L> cl) {
+	used = true;
 	for(Layer l : layers) {
 	    if(cl.isInstance(l))
 		return(cl.cast(l));
@@ -1499,6 +1512,7 @@ public class Resource implements Serializable {
     }
 
     public <I, L extends IDLayer<I>> L layer(Class<L> cl, I id) {
+	used = true;
 	for(Layer l : layers) {
 	    if(cl.isInstance(l)) {
 		L ll = cl.cast(l);
@@ -1523,12 +1537,10 @@ public class Resource implements Serializable {
 	    throw(new LoadException("Invalid res signature", this));
 	int ver = in.uint16();
 	List<Layer> layers = new LinkedList<Layer>();
-	if(this.ver == -1) {
+	if(this.ver == -1)
 	    this.ver = ver;
-	} else {
-	    if(ver != this.ver)
-		throw(new LoadException("Wrong res version (" + ver + " != " + this.ver + ")", this));
-	}
+	else if(ver != this.ver)
+	    throw(new LoadException("Wrong res version (" + ver + " != " + this.ver + ")", this));
 	while(!in.eom()) {
 	    LayerFactory<?> lc = ltypes.get(in.string());
 	    int len = in.int32();
@@ -1543,6 +1555,7 @@ public class Resource implements Serializable {
 	this.layers = layers;
 	for(Layer l : layers)
 	    l.init();
+	used = false;
     }
 
     public Indir<Resource> indir() {

@@ -388,29 +388,16 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	}
 	dumplist(Resource.remote().loadwaited(), Config.loadwaited);
 	dumplist(Resource.remote().cached(), Config.allused);
-	/*
 	if(ResCache.global != null) {
 	    try {
-		Collection<Resource> used = new LinkedList<Resource>();
-		for(Resource res : Resource.cached()) {
-		    if(res.prio >= 0) {
-			try {
-			    res.checkerr();
-			} catch(Exception e) {
-			    continue;
-			}
-			used.add(res);
-		    }
-		}
 		Writer w = new OutputStreamWriter(ResCache.global.store("tmp/allused"), "UTF-8");
 		try {
-		    Resource.dumplist(used, w);
+		    Resource.dumplist(Resource.remote().used(), w);
 		} finally {
 		    w.close();
 		}
 	    } catch(IOException e) {}
 	}
-	*/
 	System.exit(0);
     }
     
