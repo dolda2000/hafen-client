@@ -569,12 +569,20 @@ public class Resource implements Serializable {
 	    return(res);
 	}
 
+	public Resource loadwaitint(String name, int ver) throws InterruptedException {
+	    return(loadwaited(Loading.waitforint(load(name, ver, 10))));
+	}
+
 	public Resource loadwaitint(String name) throws InterruptedException {
-	    return(loadwaited(Loading.waitforint(load(name, -1, 10))));
+	    return(loadwaitint(name, -1));
+	}
+
+	public Resource loadwait(String name, int ver) {
+	    return(loadwaited(Loading.waitfor(load(name, ver, 10))));
 	}
 
 	public Resource loadwait(String name) {
-	    return(loadwaited(Loading.waitfor(load(name, -1, 10))));
+	    return(loadwait(name, -1));
 	}
     }
 
@@ -628,6 +636,16 @@ public class Resource implements Serializable {
 		};
 	}
 	remote().add(src);
+    }
+
+    @Deprecated
+    public static Resource load(String name, int ver) {
+	return(remote().loadwait(name, ver));
+    }
+
+    @Deprecated
+    public Resource loadwait() {
+	return(this);
     }
 
     public static class LoadException extends RuntimeException {
