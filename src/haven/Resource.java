@@ -1617,8 +1617,7 @@ public class Resource implements Serializable {
 	    out.println(res.name + ":" + res.ver);
     }
 
-    /*
-    public static void updateloadlist(File file) throws Exception {
+    public static void updateloadlist(File file, File resdir) throws Exception {
 	BufferedReader r = new BufferedReader(new FileReader(file));
 	Map<String, Integer> orig = new HashMap<String, Integer>();
 	String ln;
@@ -1633,10 +1632,11 @@ public class Resource implements Serializable {
 	    orig.put(nm, ver);
 	}
 	r.close();
+	Pool pool = new Pool(new FileSource(resdir));
 	for(String nm : orig.keySet())
-	    load(nm);
+	    pool.load(nm);
 	while(true) {
-	    int d = qdepth();
+	    int d = pool.qdepth();
 	    if(d == 0)
 		break;
 	    System.out.print("\033[1GLoading... " + d + "\033[K");
@@ -1647,9 +1647,7 @@ public class Resource implements Serializable {
 	for(Map.Entry<String, Integer> e : orig.entrySet()) {
 	    String nm = e.getKey();
 	    int ver = e.getValue();
-	    Resource res = load(nm);
-	    res.loadwait();
-	    res.checkerr();
+	    Resource res = Loading.waitfor(pool.load(nm));
 	    if(res.ver != ver)
 		System.out.println(nm + ": " + ver + " -> " + res.ver);
 	    cur.add(res);
@@ -1665,8 +1663,7 @@ public class Resource implements Serializable {
     public static void main(String[] args) throws Exception {
 	String cmd = args[0].intern();
 	if(cmd == "update") {
-	    updateloadlist(new File(args[1]));
+	    updateloadlist(new File(args[1]), new File(args[2]));
 	}
     }
-    */
 }
