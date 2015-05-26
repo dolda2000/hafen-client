@@ -102,7 +102,7 @@ public class Resource implements Serializable {
 	this.ver = ver;
     }
 	
-    public static void addcache(ResCache cache) {
+    public static void setcache(ResCache cache) {
 	prscache = cache;
     }
 
@@ -517,30 +517,11 @@ public class Resource implements Serializable {
 	}
 
 	public Resource loadwaitint(String name) throws InterruptedException {
-	    Indir<Resource> q = load(name, -1, 10);
-	    while(true) {
-		try {
-		    return(q.get());
-		} catch(haven.Loading e) {
-		    e.waitfor();
-		}
-	    }
+	    return(Loading.waitforint(load(name, -1, 10)));
 	}
 
 	public Resource loadwait(String name) {
-	    boolean intd = false;
-	    try {
-		while(true) {
-		    try {
-			return(loadwaitint(name));
-		    } catch(InterruptedException e) {
-			intd = true;
-		    }
-		}
-	    } finally {
-		if(intd)
-		    Thread.currentThread().interrupt();
-	    }
+	    return(Loading.waitfor(load(name, -1, 10)));
 	}
     }
 
@@ -575,11 +556,27 @@ public class Resource implements Serializable {
 	if(_remote == null) {
 	    synchronized(Resource.class) {
 		if(_remote == null) {
-		    _remote = new Pool(local(), new HttpSource(Config.resurl));
+		    Pool remote = new Pool(local());
+		    if(prscache != null)
+			remote.add(new CacheSource(prscache));
+		    _remote = remote;;
 		}
 	    }
 	}
 	return(_remote);
+    }
+
+    public static void addurl(URL url) {
+	ResSource src = new HttpSource(url);
+	final ResCache mc = prscache;
+	if(mc != null) {
+	    src = new TeeSource(src) {
+		    public OutputStream fork(String name) throws IOException {
+			return(mc.store("res/" + name));
+		    }
+		};
+	}
+	remote().add(src);
     }
 
     public static class LoadException extends RuntimeException {

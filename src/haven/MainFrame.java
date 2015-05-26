@@ -264,7 +264,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
     
     public static void setupres() {
 	if(ResCache.global != null)
-	    Resource.addcache(ResCache.global);
+	    Resource.setcache(ResCache.global);
 	if(Config.resurl != null)
 	    Resource.addurl(Config.resurl);
 	/*

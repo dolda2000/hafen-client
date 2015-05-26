@@ -112,6 +112,7 @@ public class HavenApplet extends Applet {
 	} catch(java.net.MalformedURLException e) {
 	    throw(new RuntimeException(e));
 	}
+	/*
 	if(!Config.nopreload) {
 	    try {
 		InputStream pls;
@@ -125,6 +126,7 @@ public class HavenApplet extends Applet {
 		throw(new Error(e));
 	    }
 	}
+	*/
     }
     
     public void destroy() {
