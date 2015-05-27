@@ -347,7 +347,7 @@ public class Resource implements Serializable {
 			cache.put(name, res);
 		    }
 		    synchronized(queue) {
-			queued.remove(name, this);
+			queued.remove(name);
 		    }
 		}
 	    }
@@ -441,6 +441,7 @@ public class Resource implements Serializable {
 				}
 			    }
 			} else {
+			    queued.remove(name);
 			    nq.res = pr.get();
 			    nq.done = true;
 			}
