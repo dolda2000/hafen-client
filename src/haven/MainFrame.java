@@ -266,12 +266,12 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
     
     public static void setupres() {
 	if(ResCache.global != null)
-	    Resource.addcache(ResCache.global);
+	    Resource.setcache(ResCache.global);
 	if(Config.resurl != null)
 	    Resource.addurl(Config.resurl);
 	if(ResCache.global != null) {
 	    try {
-		Resource.loadlist(ResCache.global.fetch("tmp/allused"), -10);
+		Resource.loadlist(Resource.remote(), ResCache.global.fetch("tmp/allused"), -10);
 	    } catch(IOException e) {}
 	}
 	if(!Config.nopreload) {
@@ -279,10 +279,10 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 		InputStream pls;
 		pls = Resource.class.getResourceAsStream("res-preload");
 		if(pls != null)
-		    Resource.loadlist(pls, -5);
+		    Resource.loadlist(Resource.remote(), pls, -5);
 		pls = Resource.class.getResourceAsStream("res-bgload");
 		if(pls != null)
-		    Resource.loadlist(pls, -10);
+		    Resource.loadlist(Resource.remote(), pls, -10);
 	    } catch(IOException e) {
 		throw(new Error(e));
 	    }
@@ -388,24 +388,13 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    f.g.interrupt();
 	    return;
 	}
-	dumplist(Resource.loadwaited, Config.loadwaited);
-	dumplist(Resource.cached(), Config.allused);
+	dumplist(Resource.remote().loadwaited(), Config.loadwaited);
+	dumplist(Resource.remote().cached(), Config.allused);
 	if(ResCache.global != null) {
 	    try {
-		Collection<Resource> used = new LinkedList<Resource>();
-		for(Resource res : Resource.cached()) {
-		    if(res.prio >= 0) {
-			try {
-			    res.checkerr();
-			} catch(Exception e) {
-			    continue;
-			}
-			used.add(res);
-		    }
-		}
 		Writer w = new OutputStreamWriter(ResCache.global.store("tmp/allused"), "UTF-8");
 		try {
-		    Resource.dumplist(used, w);
+		    Resource.dumplist(Resource.remote().used(), w);
 		} finally {
 		    w.close();
 		}

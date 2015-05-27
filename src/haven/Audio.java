@@ -321,15 +321,8 @@ public class Audio {
 	return(play(clip.pcmstream(), 1.0, 1.0));
     }
 
-    public static void play(final Resource clip) {
-	queue(new Runnable() {
-		public void run() {
-		    if(clip.loading)
-			queue.add(this);
-		    else
-			playres(clip);
-		}
-	    });
+    public static void play(Resource clip) {
+	playres(clip);
     }
     
     public static void play(final Indir<Resource> clip) {
@@ -381,7 +374,7 @@ public class Audio {
     static {
 	Console.setscmd("sfx", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    play(Resource.load(args[1]));
+		    play(Resource.local().load(args[1]));
 		}
 	    });
 	Console.setscmd("sfxvol", new Console.Command() {

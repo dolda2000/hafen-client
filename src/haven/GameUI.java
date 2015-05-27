@@ -777,7 +777,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	resize(parent.sz);
     }
     
-    private static final Resource errsfx = Resource.load("sfx/error");
+    private static final Resource errsfx = Resource.local().loadwait("sfx/error");
     public void error(String msg) {
 	errtime = System.currentTimeMillis();
 	lasterr = errfoundry.render(msg);

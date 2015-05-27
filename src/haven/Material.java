@@ -251,7 +251,7 @@ public class Material extends GLState {
 	}
 
 	public void init() {
-	    for(Resource.Image img : getres().layers(Resource.imgc, false)) {
+	    for(Resource.Image img : getres().layers(Resource.imgc)) {
 		TexGL tex = (TexGL)img.tex();
 		if(mipmap)
 		    tex.mipmap();
@@ -313,8 +313,8 @@ public class Material extends GLState {
 		    final int tid = buf.uint16();
 		    ret.left.add(new Res.Resolver() {
 			    public void resolve(Collection<GLState> buf) {
-				Resource tres = Resource.load(nm, ver);
-				for(Resource.Image img : tres.layers(Resource.imgc)) {
+				Indir<Resource> tres = res.pool.load(nm, ver);
+				for(Resource.Image img : tres.get().layers(Resource.imgc)) {
 				    if(img.id == tid) {
 					buf.add(img.tex().draw());
 					buf.add(img.tex().clip());
@@ -348,19 +348,19 @@ public class Material extends GLState {
     @ResName("mlink")
     public static class $mlink implements ResCons2 {
 	public Res.Resolver cons(final Resource res, Object... args) {
-	    final Resource lres = Resource.load((String)args[0], (Integer)args[1]);
+	    final Indir<Resource> lres = res.pool.load((String)args[0], (Integer)args[1]);
 	    final int id = (args.length > 2)?(Integer)args[2]:-1;
 	    return(new Res.Resolver() {
 		    public void resolve(Collection<GLState> buf) {
 			if(id >= 0) {
-			    Res mat = lres.layer(Res.class, id);
+			    Res mat = lres.get().layer(Res.class, id);
 			    if(mat == null)
-				throw(new Resource.LoadException("No such material in " + lres.name + ": " + id, res));
+				throw(new Resource.LoadException("No such material in " + lres + ": " + id, res));
 			    buf.add(mat.get());
 			} else {
-			    Res mat = lres.layer(Res.class);
+			    Res mat = lres.get().layer(Res.class);
 			    if(mat == null)
-				throw(new Resource.LoadException("No material in " + lres.name, res));
+				throw(new Resource.LoadException("No material in " + lres, res));
 			    buf.add(mat.get());
 			}
 		    }

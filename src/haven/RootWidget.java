@@ -29,14 +29,14 @@ package haven;
 import java.awt.event.KeyEvent;
 
 public class RootWidget extends ConsoleHost {
-    public static Resource defcurs = Resource.load("gfx/hud/curs/arw");
+    public static final Resource defcurs = Resource.local().loadwait("gfx/hud/curs/arw");
     Profile guprof, grprof, ggprof;
     boolean afk = false;
 	
     public RootWidget(UI ui, Coord sz) {
 	super(ui, new Coord(0, 0), sz);
 	setfocusctl(true);
-	cursor = defcurs;
+	cursor = defcurs.indir();
     }
 	
     public boolean globtype(char key, KeyEvent ev) {

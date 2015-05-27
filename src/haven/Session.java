@@ -137,9 +137,7 @@ public class Session {
 		if(resnm == null)
 		    throw(new LoadingIndir(CachedRes.this));
 		if(res == null)
-		    res = Resource.load(resnm, resver, 0);
-		if(res.loading)
-		    throw(new Resource.Loading(res));
+		    res = Resource.remote().load(resnm, resver, 0).get();
 		return(res);
 	    }
 	
@@ -147,10 +145,7 @@ public class Session {
 		if(res == null) {
 		    return("<res:" + resid + ">");
 		} else {
-		    if(res.loading)
-			return("<!" + res + ">");
-		    else
-			return("<" + res + ">");
+		    return("<" + res + ">");
 		}
 	    }
 
@@ -167,7 +162,7 @@ public class Session {
 	}
 	
 	public void set(String nm, int ver) {
-	    Resource.load(nm, ver, -5);
+	    Resource.remote().load(nm, ver, -5);
 	    synchronized(this) {
 		this.resnm = nm;
 		this.resver = ver;
@@ -529,7 +524,7 @@ public class Session {
 		    if(resnm.equals(""))
 			Music.play(null, false);
 		    else
-			Music.play(Resource.load(resnm, resver), loop);
+			Music.play(Resource.remote().load(resnm, resver), loop);
 		}
 	    } else if(msg.type == RMessage.RMSG_TILES) {
 		glob.map.tilemap(msg);

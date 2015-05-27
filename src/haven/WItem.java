@@ -34,7 +34,7 @@ import static haven.ItemInfo.find;
 import static haven.Inventory.sqsz;
 
 public class WItem extends Widget implements DTarget {
-    public static final Resource missing = Resource.load("gfx/invobjs/missing");
+    public static final Resource missing = Resource.local().loadwait("gfx/invobjs/missing");
     public final GItem item;
     private Resource cspr = null;
     private Message csdt = Message.nil;
@@ -220,7 +220,6 @@ public class WItem extends Widget implements DTarget {
 		g.chcolor();
 	    }
 	} else {
-	    missing.loadwait();
 	    g.image(missing.layer(Resource.imgc).tex(), Coord.z, sz);
 	}
     }

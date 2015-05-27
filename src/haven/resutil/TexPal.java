@@ -77,21 +77,21 @@ public class TexPal extends GLState {
     @Material.ResName("pal")
     public static class $res implements Material.ResCons2 {
 	public Material.Res.Resolver cons(final Resource res, Object... args) {
-	    final Resource tres;
+	    final Indir<Resource> tres;
 	    final int tid;
 	    int a = 0;
 	    if(args[a] instanceof String) {
-		tres = Resource.load((String)args[a], (Integer)args[a + 1]);
+		tres = res.pool.load((String)args[a], (Integer)args[a + 1]);
 		tid = (Integer)args[a + 2];
 		a += 3;
 	    } else {
-		tres = res;
+		tres = res.indir();
 		tid = (Integer)args[a];
 		a += 1;
 	    }
 	    return(new Material.Res.Resolver() {
 		    public void resolve(Collection<GLState> buf) {
-			TexR rt = tres.layer(TexR.class, tid);
+			TexR rt = tres.get().layer(TexR.class, tid);
 			if(rt == null)
 			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
 			buf.add(new TexPal((TexGL)rt.tex()));

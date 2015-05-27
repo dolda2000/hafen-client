@@ -36,8 +36,8 @@ import java.util.*;
 public class MenuGrid extends Widget {
     public final static Tex bg = Resource.loadtex("gfx/hud/invsq");
     public final static Coord bgsz = bg.sz().add(-1, -1);
-    public final static Pagina next = new Glob.Pagina(Resource.load("gfx/hud/sc-next").loadwait());
-    public final static Pagina bk = new Glob.Pagina(Resource.load("gfx/hud/sc-back").loadwait());
+    public final static Pagina next = new Glob.Pagina(Resource.local().loadwait("gfx/hud/sc-next").indir());
+    public final static Pagina bk = new Glob.Pagina(Resource.local().loadwait("gfx/hud/sc-back").indir());
     public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 10);
     private static Coord gsz = new Coord(4, 4);
     private Pagina cur, pressed, dragging, layout[][] = new Pagina[gsz.x][gsz.y];
@@ -58,7 +58,7 @@ public class MenuGrid extends Widget {
 	public Pagina pag;
 	
 	public PaginaException(Pagina p) {
-	    super("Invalid pagina: " + p.res().name);
+	    super("Invalid pagina: " + p.res);
 	    pag = p;
 	}
     }
@@ -88,8 +88,7 @@ public class MenuGrid extends Widget {
 	    Pagina pag = iter.next();
 	    iter.remove();
 	    try {
-		Resource r = pag.res();
-		AButton ad = r.layer(Resource.action);
+		AButton ad = pag.act();
 		if(ad == null)
 		    throw(new PaginaException(pag));
 		Pagina parent = paginafor(ad.parent);
@@ -277,7 +276,7 @@ public class MenuGrid extends Widget {
 	}
     }
 	
-    private Pagina paginafor(Resource res) {
+    private Pagina paginafor(Resource.Spec res) {
 	return(ui.sess.glob.paginafor(res));
     }
 
@@ -331,11 +330,13 @@ public class MenuGrid extends Widget {
 	
     public void uimsg(String msg, Object... args) {
 	if(msg == "goto") {
-	    String res = (String)args[0];
-	    if(res.equals(""))
+	    String resnm = (String)args[0];
+	    if(resnm.equals("")) {
 		cur = null;
-	    else
-		cur = paginafor(Resource.load(res));
+	    } else {
+		Resource.Spec res = new Resource.Spec(Resource.remote(), resnm, (Integer)args[1]);
+		cur = paginafor(res);
+	    }
 	    curoff = 0;
 	    updlayout();
 	}

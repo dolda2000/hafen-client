@@ -36,13 +36,10 @@ import javax.imageio.*;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
-public class Resource implements Comparable<Resource>, Prioritized, Serializable {
-    private final static Map<String, Resource> cache;
-    private static Loader loader;
-    private static CacheSource prscache;
+public class Resource implements Serializable {
+    private static ResCache prscache;
     public static ThreadGroup loadergroup = null;
     private static Map<String, LayerFactory<?>> ltypes = new TreeMap<String, LayerFactory<?>>();
-    static Set<Resource> loadwaited = new HashSet<Resource>();
     public static Class<Image> imgc = Image.class;
     public static Class<Tile> tile = Tile.class;
     public static Class<Neg> negc = Neg.class;
@@ -53,173 +50,61 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public static Class<Audio> audio = Audio.class;
     public static Class<Tooltip> tooltip = Tooltip.class;
     
-    static {
-	if(Config.softres)
-	    cache = new CacheMap<String, Resource>();
-	else
-	    cache = new TreeMap<String, Resource>();
-    }
-
-    static {
-	if(!Config.nolocalres)
-	    loader = new Loader(new JarSource());
-	try {
-	    String dir = Config.resdir;
-	    if(dir == null)
-		dir = System.getenv("HAFEN_RESDIR");
-	    if(dir != null)
-		chainloader(new Loader(new FileSource(new File(dir))));
-	} catch(Exception e) {
-	    /* Ignore these. We don't want to be crashing the client
-	     * for users just because of errors in development
-	     * aids. */
-	}
-    }
-	
-    private LoadException error;
     private Collection<Layer> layers = new LinkedList<Layer>();
     public final String name;
     public int ver;
-    public boolean loading;
     public ResSource source;
+    public final Pool pool;
     private transient Indir<Resource> indir = null;
-    int prio = 0;
+    private boolean used = false;
 
     public static class Spec implements Indir<Resource> {
+	public final Pool pool;
 	public final String name;
 	public final int ver;
 
-	public Spec(String name, int ver) {
+	public Spec(Pool pool, String name, int ver) {
+	    this.pool = pool;
 	    this.name = name;
 	    this.ver = ver;
 	}
 
+	public Spec(Pool pool, String name) {
+	    this(pool, name, -1);
+	}
+
 	public Resource get(int prio) {
-	    return(load(name, ver));
+	    return(pool.load(name, ver, prio).get());
 	}
 	
 	public Resource get() {
 	    return(get(0));
 	}
+
+	public boolean equals(Object other) {
+	    if(!(other instanceof Spec))
+		return(false);
+	    Spec o = (Spec)other;
+	    return(o.name.equals(this.name) && (o.ver == this.ver));
+	}
+
+	public int hashCode() {
+	    int ret = name.hashCode();
+	    ret = (ret * 31) + ver;
+	    return(ret);
+	}
     }
 
-    private Resource(String name, int ver) {
+    private Resource(Pool pool, String name, int ver) {
+	this.pool = pool;
 	this.name = name;
 	this.ver = ver;
-	error = null;
-	loading = true;
     }
 	
-    public static void addcache(ResCache cache) {
-	CacheSource src = new CacheSource(cache);
-	prscache = src;
-	chainloader(new Loader(src));
+    public static void setcache(ResCache cache) {
+	prscache = cache;
     }
 
-    public static void addurl(URL url) {
-	ResSource src = new HttpSource(url);
-	final CacheSource mc = prscache;
-	if(mc != null) {
-	    src = new TeeSource(src) {
-		    public OutputStream fork(String name) throws IOException {
-			return(mc.cache.store("res/" + name));
-		    }
-		};
-	}
-	chainloader(new Loader(src));
-    }
-    
-    private static void chainloader(Loader nl) {
-	synchronized(Resource.class) {
-	    if(loader == null) {
-		loader = nl;
-	    } else {
-		Loader l;
-		for(l = loader; l.next != null; l = l.next);
-		l.chain(nl);
-	    }
-	}
-    }
-    
-    public static Resource load(String name, int ver, int prio) {
-	Resource res;
-	synchronized(cache) {
-	    res = cache.get(name);
-	    if(res != null) {
-		if((res.ver != -1) && (ver != -1)) {
-		    if(res.ver < ver) {
-			res = null;
-			cache.remove(name);
-		    } else if(res.ver > ver) {
-			/* Throw LoadException rather than
-			 * RuntimeException here, to make sure
-			 * obsolete resources doing nested loading get
-			 * properly handled. This could be the wrong
-			 * way of going about it, however; I'm not
-			 * sure. */
-			throw(new LoadException(String.format("Weird version number on %s (%d > %d), loaded from %s", res.name, res.ver, ver, res.source), res));
-		    }
-		} else if(ver == -1) {
-		    if(res.error != null) {
-			res = null;
-			cache.remove(name);
-		    }
-		}
-	    }
-	    if(res != null) {
-		res.boostprio(prio);
-		return(res);
-	    }
-	    res = new Resource(name, ver);
-	    res.prio = prio;
-	    cache.put(name, res);
-	}
-	loader.load(res);
-	return(res);
-    }
-    
-    public static int numloaded() {
-	synchronized(cache) {
-	    return(cache.size());
-	}
-    }
-    
-    public static Collection<Resource> cached() {
-	synchronized(cache) {
-	    return(cache.values());
-	}
-    }
-	
-    public static Resource load(String name, int ver) {
-	return(load(name, ver, 0));
-    }
-
-    public static int qdepth() {
-	int ret = 0;
-	for(Loader l = loader; l != null; l = l.next)
-	    ret += l.queue.size();
-	return(ret);
-    }
-    
-    public static Resource load(String name) {
-	return(load(name, -1));
-    }
-    
-    public void boostprio(int newprio) {
-	if(prio < newprio)
-	    prio = newprio;
-    }
-    
-    public Resource loadwaitint() throws InterruptedException {
-	synchronized(this) {
-	    boostprio(10);
-	    while(loading) {
-		wait();
-	    }
-	}
-	return(this);
-    }
-	
     public String basename() {
 	int p = name.lastIndexOf('/');
 	if(p < 0)
@@ -227,26 +112,6 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	return(name.substring(p + 1));
     }
 
-    public Resource loadwait() {
-	boolean i = false;
-	synchronized(loadwaited) {
-	    loadwaited.add(this);
-	}
-	synchronized(this) {
-	    boostprio(10);
-	    while(loading) {
-		try {
-		    wait();
-		} catch(InterruptedException e) {
-		    i = true;
-		}
-	    }
-	}
-	if(i)
-	    Thread.currentThread().interrupt();
-	return(this);
-    }
-	
     public static interface ResSource {
 	public InputStream get(String name) throws IOException;
     }
@@ -380,96 +245,409 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
     }
 
-    private static class Loader implements Runnable {
-	private ResSource src;
-	private Loader next = null;
-	private Queue<Resource> queue = new PrioQueue<Resource>();
-	private transient Thread th = null;
-	
-	public Loader(ResSource src) {
-	    this.src = src;
+    public static class Loading extends haven.Loading {
+	private final Pool.Queued res;
+
+	private Loading(Pool.Queued res) {
+	    super("Waiting for resource " + res.name + "...");
+	    this.res = res;
 	}
-	
-	public void chain(Loader next) {
-	    this.next = next;
+
+	public String toString() {
+	    return("#<Resource " + res.name + ">");
 	}
-	
-	public void load(Resource res) {
-	    synchronized(queue) {
-		queue.add(res);
-		queue.notifyAll();
-	    }
-	    synchronized(Loader.this) {
-		if(th == null) {
-		    th = new HackThread(loadergroup, Loader.this, "Haven resource loader");
-		    th.setDaemon(true);
-		    th.start();
+
+	public boolean canwait() {return(true);}
+	public void waitfor() throws InterruptedException {
+	    synchronized(res) {
+		while(!res.done) {
+		    res.wait();
 		}
 	    }
 	}
-		
-	public void run() {
-	    try {
-		while(true) {
-		    Resource cur;
+
+	public void boostprio(int prio) {
+	    res.boostprio(prio);
+	}
+    }
+
+    public static class Pool {
+	public int nloaders = 2;
+	private final Collection<Loader> loaders = new LinkedList<Loader>();
+	private final List<ResSource> sources = new LinkedList<ResSource>();
+	private final Map<String, Resource> cache = new CacheMap<String, Resource>();
+	private final Queue<Queued> queue = new PrioQueue<Queued>();
+	private final Map<String, Queued> queued = new HashMap<String, Queued>();
+	private final Pool parent;
+
+	public Pool(Pool parent, ResSource... sources) {
+	    this.parent = parent;
+	    for(ResSource source : sources)
+		this.sources.add(source);
+	}
+
+	public Pool(ResSource... sources) {
+	    this(null, sources);
+	}
+
+	public void add(ResSource src) {
+	    sources.add(src);
+	}
+
+	private class Queued implements Indir<Resource>, Prioritized {
+	    final String name;
+	    final int ver;
+	    volatile int prio;
+	    final Collection<Queued> rdep = new LinkedList<Queued>();
+	    Queued awaiting;
+	    volatile boolean done = false;
+	    Resource res;
+	    LoadException error;
+
+	    Queued(String name, int ver, int prio) {
+		this.name = name;
+		this.ver = ver;
+		this.prio = prio;
+	    }
+
+	    public int priority() {
+		return(prio);
+	    }
+
+	    public void boostprio(int prio) {
+		if(this.prio < prio)
+		    this.prio = prio;
+		Queued p = awaiting;
+		if(p != null)
+		    p.boostprio(prio);
+	    }
+
+	    public Resource get() {
+		if(!done) {
+		    boostprio(1);
+		    throw(new Loading(this));
+		}
+		if(error != null)
+		    throw(new RuntimeException("Delayed error in resource " + name + " (v" + ver + "), from " + error.src, error));
+		return(res);
+	    }
+
+	    private void done() {
+		synchronized(this) {
+		    done = true;
+		    for(Iterator<Queued> i = rdep.iterator(); i.hasNext();) {
+			Queued dq = i.next();
+			i.remove();
+			dq.prior(this);
+		    }
+		    this.notifyAll();
+		}
+		if(res != null) {
+		    synchronized(cache) {
+			cache.put(name, res);
+		    }
 		    synchronized(queue) {
-			while((cur = queue.poll()) == null)
-			    queue.wait();
+			queued.remove(name, this);
 		    }
-		    synchronized(cur) {
-			handle(cur);
-		    }
-		    cur = null;
 		}
-	    } catch(InterruptedException e) {
-	    } finally {
-		synchronized(Loader.this) {
-		    /* Yes, I know there's a race condition. */
-		    th = null;
+	    }
+
+	    private void prior(Queued prior) {
+		if((res = prior.res) == null) {
+		    error = prior.error;
+		    synchronized(queue) {
+			queue.add(this);
+			queue.notify();
+		    }
+		    ckld();
+		} else {
+		    done();
 		}
 	    }
 	}
-		
-	private void handle(Resource res) {
-	    InputStream in = null;
-	    try {
-		res.source = src;
+
+	private void handle(Queued res) {
+	    for(ResSource src : sources) {
 		try {
+		    InputStream in = src.get(res.name);
 		    try {
-			in = src.get(res.name);
-			res.load(in);
+			Resource ret = new Resource(this, res.name, res.ver);
+			ret.source = src;
+			ret.load(in);
+			res.res = ret;
 			res.error = null;
-			res.loading = false;
-			res.notifyAll();
-			return;
-		    } catch(IOException e) {
-			throw(new LoadException(e, res));
+			break;
+		    } finally {
+			in.close();
 		    }
-		} catch(RuntimeException e) {
+		} catch(Throwable t) {
 		    LoadException error;
-		    if(e instanceof LoadException)
-			error = (LoadException)e;
+		    if(t instanceof LoadException)
+			error = (LoadException)t;
 		    else
-			error = new LoadException(e, res);
+			error = new LoadException(String.format("Load error in resource %s(v%d), from %s", res.name, res.ver, src), t, null);
 		    error.src = src;
 		    error.prev = res.error;
 		    res.error = error;
-		    if(next == null) {
-			res.loading = false;
-			res.notifyAll();
-		    } else {
-			next.load(res);
+		}
+	    }
+	    res.done();
+	}
+
+	public Indir<Resource> load(String name, int ver, int prio) {
+	    Queued ret;
+	    synchronized(cache) {
+		Resource cur = cache.get(name);
+		if(cur != null) {
+		    if((ver == -1) || (cur.ver == ver)) {
+			return(cur.indir());
+		    } else if(ver < cur.ver) {
+			/* Throw LoadException rather than
+			 * RuntimeException here, to make sure
+			 * obsolete resources doing nested loading get
+			 * properly handled. This could be the wrong
+			 * way of going about it, however; I'm not
+			 * sure. */
+			throw(new LoadException(String.format("Weird version number on %s (%d > %d), loaded from %s", cur.name, cur.ver, ver, cur.source), cur));
 		    }
 		}
-	    } finally {
-		try {
-		    if(in != null)
-			in.close();
-		} catch(IOException e) {}
+		synchronized(queue) {
+		    Queued cq = queued.get(name);
+		    if(cq != null) {
+			if((ver == -1) || (cq.ver == ver)) {
+			    cq.boostprio(prio);
+			    return(cq);
+			}
+			if(ver < cq.ver)
+			    throw(new LoadException(String.format("Weird version number on %s (%d > %d)", cq.name, cq.ver, ver), null));
+			queued.remove(name);
+			queue.remove(cq);
+		    }
+		    Queued nq = new Queued(name, ver, prio);
+		    queued.put(name, nq);
+		    if(parent == null) {
+			queue.add(nq);
+			queue.notify();
+		    } else {
+			Indir<Resource> pr = parent.load(name, ver, prio);
+			if(pr instanceof Queued) {
+			    Queued pq = (Queued)pr;
+			    synchronized(pq) {
+				if(pq.done) {
+				    nq.prior(pq);
+				} else {
+				    nq.awaiting = pq;
+				    pq.rdep.add(nq);
+				}
+			    }
+			} else {
+			    nq.res = pr.get();
+			    nq.done = true;
+			}
+		    }
+		    ret = nq;
+		}
+	    }
+	    ckld();
+	    return(ret);
+	}
+
+	public Indir<Resource> load(String name, int ver) {return(load(name, ver, -5));}
+	public Indir<Resource> load(String name) {return(load(name, -1));}
+
+	private void ckld() {
+	    int qsz;
+	    synchronized(queue) {
+		qsz = queue.size();
+	    }
+	    synchronized(loaders) {
+		while(loaders.size() < Math.min(nloaders, qsz)) {
+		    Loader n = new Loader();
+		    Thread th = new HackThread(loadergroup, n, "Haven resource loader");
+		    th.setDaemon(true);
+		    th.start();
+		    while(!n.added) {
+			try {
+			    loaders.wait();
+			} catch(InterruptedException e) {
+			    Thread.currentThread().interrupt();
+			    return;
+			}
+		    }
+		}
 	    }
 	}
+
+	public class Loader implements Runnable {
+	    private boolean added = false;
+
+	    public void run() {
+		synchronized(loaders) {
+		    loaders.add(this);
+		    added = true;
+		    loaders.notifyAll();
+		}
+		boolean intd = false;
+		try {
+		    while(true) {
+			Queued cur;
+			synchronized(queue) {
+			    long start = System.currentTimeMillis(), now = start;
+			    while((cur = queue.poll()) == null) {
+				queue.wait(10000 - (now - start));
+				now = System.currentTimeMillis();
+				if(now - start >= 10000)
+				    return;
+			    }
+			}
+			handle(cur);
+			cur = null;
+		    }
+		} catch(InterruptedException e) {
+		    intd = true;
+		} finally {
+		    synchronized(loaders) {
+			loaders.remove(this);
+		    }
+		    if(!intd)
+			ckld();
+		}
+	    }
+	}
+
+	public int qdepth() {
+	    int ret = (parent == null)?0:parent.qdepth();
+	    synchronized(queue) {
+		ret += queue.size();
+	    }
+	    return(ret);
+	}
+
+	public int numloaded() {
+	    int ret = (parent == null)?0:parent.numloaded();
+	    synchronized(cache) {
+		ret += cache.size();
+	    }
+	    return(ret);
+	}
+
+	public Collection<Resource> cached() {
+	    Set<Resource> ret = new HashSet<Resource>();
+	    if(parent != null)
+		ret.addAll(parent.cached());
+	    synchronized(cache) {
+		ret.addAll(cache.values());
+	    }
+	    return(ret);
+	}
+
+	public Collection<Resource> used() {
+	    Collection<Resource> ret = cached();
+	    for(Iterator<Resource> i = ret.iterator(); i.hasNext();) {
+		Resource r = i.next();
+		if(!r.used)
+		    i.remove();
+	    }
+	    return(ret);
+	}
+
+	private final Set<Resource> loadwaited = new HashSet<Resource>();
+	public Collection<Resource> loadwaited() {
+	    Set<Resource> ret = new HashSet<Resource>();
+	    if(parent != null)
+		ret.addAll(parent.loadwaited());
+	    synchronized(loadwaited) {
+		ret.addAll(loadwaited);
+	    }
+	    return(ret);
+	}
+
+	private Resource loadwaited(Resource res) {
+	    synchronized(loadwaited) {
+		loadwaited.add(res);
+	    }
+	    return(res);
+	}
+
+	public Resource loadwaitint(String name, int ver) throws InterruptedException {
+	    return(loadwaited(Loading.waitforint(load(name, ver, 10))));
+	}
+
+	public Resource loadwaitint(String name) throws InterruptedException {
+	    return(loadwaitint(name, -1));
+	}
+
+	public Resource loadwait(String name, int ver) {
+	    return(loadwaited(Loading.waitfor(load(name, ver, 10))));
+	}
+
+	public Resource loadwait(String name) {
+	    return(loadwait(name, -1));
+	}
     }
-	
+
+    private static Pool _local = null;
+    public static Pool local() {
+	if(_local == null) {
+	    synchronized(Resource.class) {
+		if(_local == null) {
+		    Pool local = new Pool(new JarSource());
+		    try {
+			String dir = Config.resdir;
+			if(dir == null)
+			    dir = System.getenv("HAFEN_RESDIR");
+			if(dir != null)
+			    local.add(new FileSource(new File(dir)));
+		    } catch(Exception e) {
+			/* Ignore these. We don't want to be crashing the client
+			 * for users just because of errors in development
+			 * aids. */
+		    }
+		    _local = local;
+		}
+	    }
+	}
+	return(_local);
+    }
+
+    private static Pool _remote = null;
+    public static Pool remote() {
+	if(_remote == null) {
+	    synchronized(Resource.class) {
+		if(_remote == null) {
+		    Pool remote = new Pool(local());
+		    if(prscache != null)
+			remote.add(new CacheSource(prscache));
+		    _remote = remote;;
+		}
+	    }
+	}
+	return(_remote);
+    }
+
+    public static void addurl(URL url) {
+	ResSource src = new HttpSource(url);
+	final ResCache mc = prscache;
+	if(mc != null) {
+	    src = new TeeSource(src) {
+		    public OutputStream fork(String name) throws IOException {
+			return(mc.store("res/" + name));
+		    }
+		};
+	}
+	remote().add(src);
+    }
+
+    @Deprecated
+    public static Resource load(String name, int ver) {
+	return(remote().loadwait(name, ver));
+    }
+
+    @Deprecated
+    public Resource loadwait() {
+	return(this);
+    }
+
     public static class LoadException extends RuntimeException {
 	public Resource res;
 	public ResSource src;
@@ -491,24 +669,6 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
     }
     
-    public static class Loading extends haven.Loading {
-	public final Resource res;
-	
-	public Loading(Resource res) {
-	    super("Waiting for resource " + res.name + "...");
-	    this.res = res;
-	}
-
-	public String toString() {
-	    return("#<Resource " + res.name + ">");
-	}
-
-	public boolean canwait() {return(true);}
-	public void waitfor() throws InterruptedException {
-	    res.loadwaitint();
-	}
-    }
-	
     public static Coord cdec(Message buf) {
 	return(new Coord(buf.int16(), buf.int16()));
     }
@@ -742,7 +902,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    Image[] typeinfo = new Image[0];
 	    for(int i = 0; i < ids.length; i++) {
 		LinkedList<Image> buf = new LinkedList<Image>();
-		for(Image img : layers(Image.class, false)) {
+		for(Image img : layers(Image.class)) {
 		    if(img.id == ids[i])
 			buf.add(img);
 		}
@@ -757,7 +917,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	public String[] tags = {};
 	public Object[] ta = new Object[0];
 	private transient Tiler.Factory tfac;
-	public WeightList<Resource> flavobjs = new WeightList<Resource>();
+	public WeightList<Indir<Resource>> flavobjs = new WeightList<Indir<Resource>>();
 	public WeightList<Tile> ground;
 	public WeightList<Tile>[] ctrans, btrans;
 	public int flavprob;
@@ -781,7 +941,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 			int flv = buf.uint16();
 			int flw = buf.uint8();
 			try {
-			    flavobjs.add(load(fln, flv), flw);
+			    flavobjs.add(pool.load(fln, flv), flw);
 			} catch(RuntimeException e) {
 			    throw(new LoadException("Illegal resource dependency", e, Resource.this));
 			}
@@ -889,7 +1049,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    int cn = 0, bn = 0;
 	    Collection<Tile> tiles = new LinkedList<Tile>();
 	    Coord tsz = null;
-	    for(Tile t : layers(Tile.class, false)) {
+	    for(Tile t : layers(Tile.class)) {
 		if(t.t == 'g') {
 		    ground.add(t, t.w);
 		} else if(t.t == 'b') {
@@ -931,7 +1091,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		int flv = buf.uint16();
 		int flw = buf.uint8();
 		try {
-		    ret.flavobjs.add(load(fln, flv), flw);
+		    ret.flavobjs.add(res.pool.load(fln, flv), flw);
 		} catch(RuntimeException e) {
 		    throw(new LoadException("Illegal resource dependency", e, res));
 		}
@@ -954,7 +1114,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     @LayerName("action")
     public class AButton extends Layer {
 	public final String name;
-	public final Resource parent;
+	public final Spec parent;
 	public final char hk;
 	public final String[] ad;
 		
@@ -965,7 +1125,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		parent = null;
 	    } else {
 		try {
-		    parent = load(pr, pver);
+		    parent = new Spec(pool, pr, pver);
 		} catch(RuntimeException e) {
 		    throw(new LoadException("Illegal resource dependency", e, Resource.this));
 		}
@@ -1062,11 +1222,11 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	private String clnm;
 	private Map<String, Code> clmap = new TreeMap<String, Code>();
 	private Map<String, String> pe = new TreeMap<String, String>();
-	private Collection<Resource> classpath = new LinkedList<Resource>();
+	private Collection<Indir<Resource>> classpath = new LinkedList<Indir<Resource>>();
 	transient private ClassLoader loader;
 	transient private Map<String, Class<?>> lpe = null;
 	transient private Map<Class<?>, Object> ipe = new HashMap<Class<?>, Object>();
-		
+
 	public CodeEntry(Message buf) {
 	    while(!buf.eom()) {
 		int t = buf.uint8();
@@ -1084,19 +1244,19 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 			if(ln.length() == 0)
 			    break;
 			int ver = buf.uint16();
-			classpath.add(Resource.load(ln, ver));
+			classpath.add(pool.load(ln, ver));
 		    }
 		} else {
 		    throw(new LoadException("Unknown codeentry data type: " + t, Resource.this));
 		}
 	    }
 	}
-		
+
 	public void init() {
-	    for(Code c : layers(Code.class, false))
+	    for(Code c : layers(Code.class))
 		clmap.put(c.name, c);
 	}
-	
+
 	public ClassLoader loader(final boolean wait) {
 	    synchronized(CodeEntry.this) {
 		if(this.loader == null) {
@@ -1105,10 +1265,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 				ClassLoader ret = Resource.class.getClassLoader();
 				if(classpath.size() > 0) {
 				    Collection<ClassLoader> loaders = new LinkedList<ClassLoader>();
-				    for(Resource res : classpath) {
-					if(wait)
-					    res.loadwait();
-					loaders.add(res.layer(CodeEntry.class).loader(wait));
+				    for(Indir<Resource> res : classpath) {
+					loaders.add((wait?Loading.waitfor(res):res.get()).layer(CodeEntry.class).loader(wait));
 				    }
 				    ret = new LibClassLoader(ret, loaders);
 				}
@@ -1148,7 +1306,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		}
 	    }
 	}
-	
+
 	public <T> Class<? extends T> getcl(Class<T> cl, boolean fail) {
 	    load();
 	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
@@ -1266,7 +1424,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     @LayerName("midi")
     public class Music extends Resource.Layer {
 	transient javax.sound.midi.Sequence seq;
-	
+
 	public Music(Message buf) {
 	    try {
 		seq = javax.sound.midi.MidiSystem.getSequence(new MessageInputStream(buf));
@@ -1276,7 +1434,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		throw(new LoadException(e, Resource.this));
 	    }
 	}
-	
+
 	public void init() {}
     }
 
@@ -1315,17 +1473,8 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
     }
 
-    private void checkload() {
-	if(loading) {
-	    boostprio(1);
-	    throw(new Loading(this));
-	}
-    }
-
-    public <L extends Layer> Collection<L> layers(final Class<L> cl, boolean th) {
-	if(th)
-	    checkload();
-	checkerr();
+    public <L extends Layer> Collection<L> layers(final Class<L> cl) {
+	used = true;
 	return(new AbstractCollection<L>() {
 		public int size() {
 		    int s = 0;
@@ -1367,29 +1516,18 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		}
 	    });
     }
-    
-    public <L extends Layer> Collection<L> layers(Class<L> cl) {
-	return(layers(cl, true));
-    }
-	
-    public <L extends Layer> L layer(Class<L> cl, boolean th) {
-	if(th)
-	    checkload();
-	checkerr();
+
+    public <L extends Layer> L layer(Class<L> cl) {
+	used = true;
 	for(Layer l : layers) {
 	    if(cl.isInstance(l))
 		return(cl.cast(l));
 	}
 	return(null);
     }
-	
-    public <L extends Layer> L layer(Class<L> cl) {
-	return(layer(cl, true));
-    }
-    
+
     public <I, L extends IDLayer<I>> L layer(Class<L> cl, I id) {
-	checkload();
-	checkerr();
+	used = true;
 	for(Layer l : layers) {
 	    if(cl.isInstance(l)) {
 		L ll = cl.cast(l);
@@ -1399,26 +1537,14 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	}
 	return(null);
     }
-    
-    public int compareTo(Resource other) {
-	checkerr();
-	int nc = name.compareTo(other.name);
-	if(nc != 0)
-	    return(nc);
-	if(ver != other.ver)
-	    return(ver - other.ver);
-	if(other != this)
-	    throw(new RuntimeException("Resource identity crisis!"));
-	return(0);
-    }
-	
+
     public boolean equals(Object other) {
 	if(!(other instanceof Resource))
 	    return(false);
 	Resource o = (Resource)other;
 	return(o.name.equals(this.name) && (o.ver == this.ver));
     }
-	
+
     private void load(InputStream st) throws IOException {
 	Message in = new StreamMessage(st);
 	byte[] sig = "Haven Resource 1".getBytes(Utils.ascii);
@@ -1426,12 +1552,10 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    throw(new LoadException("Invalid res signature", this));
 	int ver = in.uint16();
 	List<Layer> layers = new LinkedList<Layer>();
-	if(this.ver == -1) {
+	if(this.ver == -1)
 	    this.ver = ver;
-	} else {
-	    if(ver != this.ver)
-		throw(new LoadException("Wrong res version (" + ver + " != " + this.ver + ")", this));
-	}
+	else if(ver != this.ver)
+	    throw(new LoadException("Wrong res version (" + ver + " != " + this.ver + ")", this));
 	while(!in.eom()) {
 	    LayerFactory<?> lc = ltypes.get(in.string());
 	    int len = in.int32();
@@ -1446,56 +1570,37 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	this.layers = layers;
 	for(Layer l : layers)
 	    l.init();
+	used = false;
     }
-	
+
     public Indir<Resource> indir() {
 	if(indir != null)
 	    return(indir);
 	indir = new Indir<Resource>() {
-	    public Resource res = Resource.this;
-			
 	    public Resource get() {
-		checkload();
 		return(Resource.this);
 	    }
-			
-	    public void set(Resource r) {
-		throw(new RuntimeException());
-	    }
-			
-	    public int compareTo(Indir<Resource> x) {
-		return(Resource.this.compareTo(this.getClass().cast(x).res));
+
+	    public String toString() {
+		return(name);
 	    }
 	};
 	return(indir);
     }
-	
-    public void checkerr() {
-	if(!loading && (error != null))
-	    throw(new RuntimeException("Delayed error in resource " + name + " (v" + ver + "), from " + source, error));
-    }
-	
-    public int priority() {
-	return(prio);
-    }
 
     public static BufferedImage loadimg(String name) {
-	Resource res = load(name);
-	res.loadwait();
-	return(res.layer(imgc).img);
+	return(local().loadwait(name).layer(imgc).img);
     }
-	
+
     public static Tex loadtex(String name) {
-	Resource res = load(name);
-	res.loadwait();
-	return(res.layer(imgc).tex());
+	return(local().loadwait(name).layer(imgc).tex());
     }
-	
+
     public String toString() {
 	return(name + "(v" + ver + ")");
     }
-	
-    public static void loadlist(InputStream list, int prio) throws IOException {
+
+    public static void loadlist(Pool pool, InputStream list, int prio) throws IOException {
 	BufferedReader in = new BufferedReader(new InputStreamReader(list, "us-ascii"));
 	String ln;
 	while((ln = in.readLine()) != null) {
@@ -1510,7 +1615,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 		continue;
 	    }
 	    try {
-		load(nm, ver, prio);
+		pool.load(nm, ver, prio);
 	    } catch(RuntimeException e) {
 	    }
 	}
@@ -1520,15 +1625,16 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public static void dumplist(Collection<Resource> list, Writer dest) {
 	PrintWriter out = new PrintWriter(dest);
 	List<Resource> sorted = new ArrayList<Resource>(list);
-	Collections.sort(sorted);
-	for(Resource res : sorted) {
-	    if(res.loading)
-		continue;
+	Collections.sort(sorted, new Comparator<Resource>() {
+		public int compare(Resource a, Resource b) {
+		    return(a.name.compareTo(b.name));
+		}
+	    });
+	for(Resource res : sorted)
 	    out.println(res.name + ":" + res.ver);
-	}
     }
 
-    public static void updateloadlist(File file) throws Exception {
+    public static void updateloadlist(File file, File resdir) throws Exception {
 	BufferedReader r = new BufferedReader(new FileReader(file));
 	Map<String, Integer> orig = new HashMap<String, Integer>();
 	String ln;
@@ -1543,10 +1649,11 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	    orig.put(nm, ver);
 	}
 	r.close();
+	Pool pool = new Pool(new FileSource(resdir));
 	for(String nm : orig.keySet())
-	    load(nm);
+	    pool.load(nm);
 	while(true) {
-	    int d = qdepth();
+	    int d = pool.qdepth();
 	    if(d == 0)
 		break;
 	    System.out.print("\033[1GLoading... " + d + "\033[K");
@@ -1557,9 +1664,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
 	for(Map.Entry<String, Integer> e : orig.entrySet()) {
 	    String nm = e.getKey();
 	    int ver = e.getValue();
-	    Resource res = load(nm);
-	    res.loadwait();
-	    res.checkerr();
+	    Resource res = Loading.waitfor(pool.load(nm));
 	    if(res.ver != ver)
 		System.out.println(nm + ": " + ver + " -> " + res.ver);
 	    cur.add(res);
@@ -1575,7 +1680,7 @@ public class Resource implements Comparable<Resource>, Prioritized, Serializable
     public static void main(String[] args) throws Exception {
 	String cmd = args[0].intern();
 	if(cmd == "update") {
-	    updateloadlist(new File(args[1]));
+	    updateloadlist(new File(args[1]), new File(args[2]));
 	}
     }
 }

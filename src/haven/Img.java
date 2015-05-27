@@ -39,7 +39,7 @@ public class Img extends Widget {
 	    if(args[a] instanceof String) {
 		String nm = (String)args[a++];
 		int ver = (args.length > a)?((Integer)args[a++]):-1;
-		res = new Resource.Spec(nm, ver);
+		res = new Resource.Spec(Resource.remote(), nm, ver);
 	    } else {
 		res = parent.ui.sess.getres((Integer)args[a++]);
 	    }
@@ -79,7 +79,7 @@ public class Img extends Widget {
 	    if(args[0] instanceof String) {
 		String nm = (String)args[0];
 		int ver = (args.length > 1)?((Integer)args[1]):-1;
-		this.res = new Resource.Spec(nm, ver);
+		this.res = new Resource.Spec(Resource.remote(), nm, ver);
 	    } else {
 		this.res = ui.sess.getres((Integer)args[0]);
 	    }

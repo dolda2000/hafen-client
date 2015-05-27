@@ -158,9 +158,9 @@ public class MCache {
 		    double a = rnd.nextDouble();
 		    if(set.flavobjs.size() > 0) {
 			if((fp % set.flavprob) == 0) {
-			    Resource r = set.flavobjs.pick(rp % set.flavobjs.tw);
+			    Indir<Resource> r = set.flavobjs.pick(rp % set.flavobjs.tw);
 			    Gob g = new Flavobj(c.add(tc).mul(tilesz).add(tilesz.div(2)), a * 2 * Math.PI);
-			    g.setattr(new ResDrawable(g, r));
+			    g.setattr(new ResDrawable(g, r, Message.nil));
 			    Coord cc = c.div(cutsz);
 			    fo[cc.x + (cc.y * cutn.x)].add(g);
 			}
@@ -527,7 +527,7 @@ public class MCache {
 	    int id = msg.uint8();
 	    String resnm = msg.string();
 	    int resver = msg.uint16();
-	    nsets[id] = new Resource.Spec(resnm, resver);
+	    nsets[id] = new Resource.Spec(Resource.remote(), resnm, resver);
 	}
     }
 

@@ -43,7 +43,7 @@ public class Glob {
     public Party party;
     public Set<Pagina> paginae = new HashSet<Pagina>();
     public int pagseq = 0;
-    public Map<Resource, Pagina> pmap = new WeakHashMap<Resource, Pagina>();
+    public Map<Resource.Spec, Pagina> pmap = new WeakHashMap<Resource.Spec, Pagina>();
     public Map<String, CAttr> cattr = new HashMap<String, CAttr>();
     public Color lightamb = null, lightdif = null, lightspc = null;
     public Color olightamb = null, olightdif = null, olightspc = null;
@@ -90,7 +90,7 @@ public class Glob {
     }
     
     public static class Pagina implements java.io.Serializable {
-	private final Resource res;
+	public final Indir<Resource> res;
 	public State st;
 	public int meter, dtime;
 	public long gettime;
@@ -130,18 +130,16 @@ public class Glob {
 	    }
 	}
 	
-	public Pagina(Resource res) {
+	public Pagina(Indir<Resource> res) {
 	    this.res = res;
 	    state(State.ENABLED);
 	}
 	
 	public Resource res() {
-	    return(res);
+	    return(res.get());
 	}
 	
 	public Resource.AButton act() {
-	    if(res().loading)
-		return(null);
 	    return(res().layer(Resource.action));
 	}
 	
@@ -368,7 +366,7 @@ public class Glob {
 	return(((MapView)((PView.WidgetContext)rl.state().get(PView.ctx)).widget()).amb);
     }
 
-    public Pagina paginafor(Resource res) {
+    public Pagina paginafor(Resource.Spec res) {
 	if(res == null)
 	    return(null);
 	synchronized(pmap) {
@@ -386,7 +384,7 @@ public class Glob {
 		if(act == '+') {
 		    String nm = msg.string();
 		    int ver = msg.uint16();
-		    Pagina pag = paginafor(Resource.load(nm, ver));
+		    Pagina pag = paginafor(new Resource.Spec(Resource.remote(), nm, ver));
 		    paginae.add(pag);
 		    pag.state(Pagina.State.ENABLED);
 		    pag.meter = 0;
@@ -405,7 +403,7 @@ public class Glob {
 		} else if(act == '-') {
 		    String nm = msg.string();
 		    int ver = msg.uint16();
-		    paginae.remove(paginafor(Resource.load(nm, ver))); 
+		    paginae.remove(paginafor(new Resource.Spec(Resource.remote(), nm, ver))); 
 		}
 	    }
 	    pagseq++;

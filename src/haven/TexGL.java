@@ -395,15 +395,15 @@ public abstract class TexGL extends Tex {
     @Material.ResName("tex")
     public static class $tex implements Material.ResCons2 {
 	public Material.Res.Resolver cons(final Resource res, Object... args) {
-	    final Resource tres;
+	    final Indir<Resource> tres;
 	    final int tid;
 	    int a = 0;
 	    if(args[a] instanceof String) {
-		tres = Resource.load((String)args[a], (Integer)args[a + 1]);
+		tres = res.pool.load((String)args[a], (Integer)args[a + 1]);
 		tid = (Integer)args[a + 2];
 		a += 3;
 	    } else {
-		tres = res;
+		tres = res.indir();
 		tid = (Integer)args[a];
 		a += 1;
 	    }
@@ -417,11 +417,11 @@ public abstract class TexGL extends Tex {
 	    return(new Material.Res.Resolver() {
 		    public void resolve(Collection<GLState> buf) {
 			Tex tex;
-			TexR rt = tres.layer(TexR.class, tid);
+			TexR rt = tres.get().layer(TexR.class, tid);
 			if(rt != null) {
 			    tex = rt.tex();
 			} else {
-			    Resource.Image img = tres.layer(Resource.imgc, tid);
+			    Resource.Image img = tres.get().layer(Resource.imgc, tid);
 			    if(img != null) {
 				tex = img.tex();
 			    } else {
