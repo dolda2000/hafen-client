@@ -523,7 +523,7 @@ public class CharWnd extends Window {
 	private Indir<String> text = null;
 
 	public LoadingTextBox(Coord sz, String text, RichText.Foundry fnd) {super(sz, text, fnd);}
-	public LoadingTextBox(Coord sz, String text, Object... attrs) {super(sz, text, attrs);}
+	public LoadingTextBox(Coord sz, String text, Object... attrs) {super(sz, text, new RichText.Foundry(Resource.remote(), attrs));}
 
 	public void settext(Indir<String> text) {
 	    this.text = text;
