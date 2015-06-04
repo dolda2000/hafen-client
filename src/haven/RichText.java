@@ -338,13 +338,23 @@ public class RichText extends Text {
 
     public static class Parser {
 	private final Map<? extends Attribute, ?> defattrs;
+	private final Resource.Pool respool;
 	
-	public Parser(Map<? extends Attribute, ?> defattrs) {
+	public Parser(Resource.Pool respool, Map<? extends Attribute, ?> defattrs) {
+	    this.respool = respool;
 	    this.defattrs = fixattrs(defattrs);
 	}
 	
+	public Parser(Map<? extends Attribute, ?> defattrs) {
+	    this(Resource.local(), defattrs);
+	}
+	
+	public Parser(Resource.Pool respool, Object... attrs) {
+	    this(respool, fillattrs2(std.defattrs, attrs));
+	}
+	
 	public Parser(Object... attrs) {
-	    this(fillattrs2(std.defattrs, attrs));
+	    this(Resource.local(), attrs);
 	}
 	
 	public static class PState {
@@ -388,7 +398,7 @@ public class RichText extends Text {
 
 	protected Part tag(PState s, String tn, String[] args, Map<? extends Attribute, ?> attrs) throws IOException {
 	    if(tn == "img") {
-		Resource res = Resource.local().loadwait(args[0]);
+		Resource res = respool.loadwait(args[0]);
 		int id = -1;
 		if(args.length > 1)
 		    id = Integer.parseInt(args[1]);
@@ -542,8 +552,16 @@ public class RichText extends Text {
 	    rs = new RState(g.getFontRenderContext());
 	}
 
+	public Foundry(Resource.Pool respool, Map<? extends Attribute, ?> defattrs) {
+	    this(new Parser(respool, defattrs));
+	}
+	
 	public Foundry(Map<? extends Attribute, ?> defattrs) {
 	    this(new Parser(defattrs));
+	}
+	
+	public Foundry(Resource.Pool respool, Object... attrs) {
+	    this(new Parser(respool, attrs));
 	}
 	
 	public Foundry(Object... attrs) {
