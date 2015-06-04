@@ -523,7 +523,7 @@ public class CharWnd extends Window {
 	private Indir<String> text = null;
 
 	public LoadingTextBox(Coord sz, String text, RichText.Foundry fnd) {super(sz, text, fnd);}
-	public LoadingTextBox(Coord sz, String text, Object... attrs) {super(sz, text, new RichText.Foundry(Resource.remote(), attrs));}
+	public LoadingTextBox(Coord sz, String text, Object... attrs) {super(sz, text, attrs);}
 
 	public void settext(Indir<String> text) {
 	    this.text = text;
@@ -818,7 +818,7 @@ public class CharWnd extends Window {
 
 	    skills = tabs.add();
 	    skills.add(new Img(catf.render("Lore & Skills").tex()), new Coord(x - 5, y)); y += 35;
-	    RichText.Foundry ifnd = new RichText.Foundry(java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, 9).aa(true);
+	    RichText.Foundry ifnd = new RichText.Foundry(Resource.remote(), java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, 9).aa(true);
 	    final LoadingTextBox info = skills.add(new LoadingTextBox(new Coord(attrw, 260), "", ifnd), new Coord(x, y).add(wbox.btloff()));
 	    info.bg = new Color(0, 0, 0, 128);
 	    Frame.around(skills, Collections.singletonList(info));
