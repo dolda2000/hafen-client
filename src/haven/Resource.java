@@ -463,8 +463,12 @@ public class Resource implements Serializable {
 	    }
 	    synchronized(loaders) {
 		while(loaders.size() < Math.min(nloaders, qsz)) {
-		    Loader n = new Loader();
-		    Thread th = new HackThread(loadergroup, n, "Haven resource loader");
+		    final Loader n = new Loader();
+		    Thread th = java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<Thread>() {
+			    public Thread run() {
+				return(new HackThread(loadergroup, n, "Haven resource loader"));
+			    }
+			});
 		    th.setDaemon(true);
 		    th.start();
 		    while(!n.added) {
