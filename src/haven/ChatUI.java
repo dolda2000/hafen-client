@@ -983,11 +983,18 @@ public class ChatUI extends Widget {
 	}
 	
 	public boolean mousewheel(Coord c, int amount) {
-	    s += amount;
-	    if(s >= chls.size() - (sz.y / 20))
-		s = chls.size() - (sz.y / 20);
-	    if(s < 0)
-		s = 0;
+	    if(!ui.modshift) {
+		s += amount;
+		if(s >= chls.size() - (sz.y / 20))
+		    s = chls.size() - (sz.y / 20);
+		if(s < 0)
+		    s = 0;
+	    } else {
+		if(amount < 0)
+		    up();
+		else if(amount > 0)
+		    down();
+	    }
 	    return(true);
 	}
     }
