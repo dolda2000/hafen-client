@@ -116,18 +116,7 @@ public class Utils {
     }
 
     public static String thformat(long num) {
-	if(num == 0)
-	    return("0");
-	else if(num < 0)
-	    return("-" + thformat(-num));
-	StringBuilder buf = new StringBuilder();
-	while(num > 0) {
-	    if((buf.length() % 3 == 0) && (buf.length() != 0))
-		buf.insert(0, ",");
-	    buf.insert(0, num % 10);
-	    num /= 10;
-	}
-	return(buf.toString());
+	return(String.format("%,d", num));
     }
 
     /* These are horribly imprecise and ugly technically speaking, but
