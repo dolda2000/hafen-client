@@ -253,10 +253,10 @@ public class Composited implements Rendered {
 
     public static class MD implements Cloneable {
 	public Indir<Resource> mod;
-	public List<Indir<Resource>> tex;
+	public List<? extends Indir<Resource>> tex;
 	private Model real;
 	
-	public MD(Indir<Resource> mod, List<Indir<Resource>> tex) {
+	public MD(Indir<Resource> mod, List<? extends Indir<Resource>> tex) {
 	    this.mod = mod;
 	    this.tex = tex;
 	}
@@ -340,7 +340,7 @@ public class Composited implements Rendered {
 			md.real.z = -1;
 		    this.mod.add(md.real);
 		}
-		for(Iterator<Indir<Resource>> o = md.tex.iterator(); o.hasNext();) {
+		for(Iterator<? extends Indir<Resource>> o = md.tex.iterator(); o.hasNext();) {
 		    Indir<Resource> res = o.next();
 		    for(Material.Res mr : res.get().layers(Material.Res.class))
 			md.real.addlay(mr.get());
