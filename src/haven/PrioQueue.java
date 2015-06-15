@@ -51,7 +51,7 @@ public class PrioQueue<E extends Prioritized> extends LinkedList<E> {
     
     public E poll() {
 	E rv = peek();
-	remove(rv);
+	removeid(rv);
 	return(rv);
     }
     
@@ -60,5 +60,15 @@ public class PrioQueue<E extends Prioritized> extends LinkedList<E> {
 	if((rv = poll()) == null)
 	    throw(new NoSuchElementException());
 	return(rv);
+    }
+
+    public boolean removeid(E el) {
+	for(Iterator<E> i = iterator(); i.hasNext();) {
+	    if(i.next() == el) {
+		i.remove();
+		return(true);
+	    }
+	}
+	return(false);
     }
 }
