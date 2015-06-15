@@ -276,7 +276,7 @@ public class MenuGrid extends Widget {
 	}
     }
 	
-    private Pagina paginafor(Resource.Spec res) {
+    private Pagina paginafor(Resource.Named res) {
 	return(ui.sess.glob.paginafor(res));
     }
 
@@ -334,7 +334,7 @@ public class MenuGrid extends Widget {
 	    if(resnm.equals("")) {
 		cur = null;
 	    } else {
-		Resource.Spec res = new Resource.Spec(Resource.remote(), resnm, (Integer)args[1]);
+		Resource.Named res = Resource.remote().load(resnm, (Integer)args[1]);
 		cur = paginafor(res);
 	    }
 	    curoff = 0;

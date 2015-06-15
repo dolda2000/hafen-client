@@ -43,7 +43,7 @@ public class Glob {
     public Party party;
     public Set<Pagina> paginae = new HashSet<Pagina>();
     public int pagseq = 0;
-    public Map<Resource.Spec, Pagina> pmap = new WeakHashMap<Resource.Spec, Pagina>();
+    public Map<Resource.Named, Pagina> pmap = new WeakHashMap<Resource.Named, Pagina>();
     public Map<String, CAttr> cattr = new HashMap<String, CAttr>();
     public Color lightamb = null, lightdif = null, lightspc = null;
     public Color olightamb = null, olightdif = null, olightspc = null;
@@ -366,7 +366,7 @@ public class Glob {
 	return(((MapView)((PView.WidgetContext)rl.state().get(PView.ctx)).widget()).amb);
     }
 
-    public Pagina paginafor(Resource.Spec res) {
+    public Pagina paginafor(Resource.Named res) {
 	if(res == null)
 	    return(null);
 	synchronized(pmap) {
@@ -384,7 +384,7 @@ public class Glob {
 		if(act == '+') {
 		    String nm = msg.string();
 		    int ver = msg.uint16();
-		    Pagina pag = paginafor(new Resource.Spec(Resource.remote(), nm, ver));
+		    Pagina pag = paginafor(Resource.remote().load(nm, ver));
 		    paginae.add(pag);
 		    pag.state(Pagina.State.ENABLED);
 		    pag.meter = 0;
@@ -403,7 +403,7 @@ public class Glob {
 		} else if(act == '-') {
 		    String nm = msg.string();
 		    int ver = msg.uint16();
-		    paginae.remove(paginafor(new Resource.Spec(Resource.remote(), nm, ver))); 
+		    paginae.remove(paginafor(Resource.remote().load(nm, ver))); 
 		}
 	    }
 	    pagseq++;
