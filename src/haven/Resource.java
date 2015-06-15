@@ -55,18 +55,37 @@ public class Resource implements Serializable {
     public int ver;
     public ResSource source;
     public final Pool pool;
-    private transient Indir<Resource> indir = null;
     private boolean used = false;
 
-    public static class Spec implements Indir<Resource> {
-	public final Pool pool;
+    public abstract static class Named implements Indir<Resource> {
 	public final String name;
 	public final int ver;
 
-	public Spec(Pool pool, String name, int ver) {
-	    this.pool = pool;
+	public Named(String name, int ver) {
 	    this.name = name;
 	    this.ver = ver;
+	}
+
+	public boolean equals(Object other) {
+	    if(!(other instanceof Named))
+		return(false);
+	    Named o = (Named)other;
+	    return(o.name.equals(this.name) && (o.ver == this.ver));
+	}
+
+	public int hashCode() {
+	    int ret = name.hashCode();
+	    ret = (ret * 31) + ver;
+	    return(ret);
+	}
+    }
+
+    public static class Spec extends Named {
+	public final Pool pool;
+
+	public Spec(Pool pool, String name, int ver) {
+	    super(name, ver);
+	    this.pool = pool;
 	}
 
 	public Spec(Pool pool, String name) {
@@ -79,19 +98,6 @@ public class Resource implements Serializable {
 	
 	public Resource get() {
 	    return(get(0));
-	}
-
-	public boolean equals(Object other) {
-	    if(!(other instanceof Spec))
-		return(false);
-	    Spec o = (Spec)other;
-	    return(o.name.equals(this.name) && (o.ver == this.ver));
-	}
-
-	public int hashCode() {
-	    int ret = name.hashCode();
-	    ret = (ret * 31) + ver;
-	    return(ret);
 	}
     }
 
@@ -276,7 +282,7 @@ public class Resource implements Serializable {
 	private final Collection<Loader> loaders = new LinkedList<Loader>();
 	private final List<ResSource> sources = new LinkedList<ResSource>();
 	private final Map<String, Resource> cache = new CacheMap<String, Resource>();
-	private final Queue<Queued> queue = new PrioQueue<Queued>();
+	private final PrioQueue<Queued> queue = new PrioQueue<Queued>();
 	private final Map<String, Queued> queued = new HashMap<String, Queued>();
 	private final Pool parent;
 
@@ -294,9 +300,7 @@ public class Resource implements Serializable {
 	    sources.add(src);
 	}
 
-	private class Queued implements Indir<Resource>, Prioritized {
-	    final String name;
-	    final int ver;
+	private class Queued extends Named implements Prioritized {
 	    volatile int prio;
 	    final Collection<Queued> rdep = new LinkedList<Queued>();
 	    Queued awaiting;
@@ -305,8 +309,7 @@ public class Resource implements Serializable {
 	    LoadException error;
 
 	    Queued(String name, int ver, int prio) {
-		this.name = name;
-		this.ver = ver;
+		super(name, ver);
 		this.prio = prio;
 	    }
 
@@ -394,7 +397,7 @@ public class Resource implements Serializable {
 	    res.done();
 	}
 
-	public Indir<Resource> load(String name, int ver, int prio) {
+	public Named load(String name, int ver, int prio) {
 	    Queued ret;
 	    synchronized(cache) {
 		Resource cur = cache.get(name);
@@ -421,7 +424,7 @@ public class Resource implements Serializable {
 			if(ver < cq.ver)
 			    throw(new LoadException(String.format("Weird version number on %s (%d > %d)", cq.name, cq.ver, ver), null));
 			queued.remove(name);
-			queue.remove(cq);
+			queue.removeid(cq);
 		    }
 		    Queued nq = new Queued(name, ver, prio);
 		    queued.put(name, nq);
@@ -453,8 +456,8 @@ public class Resource implements Serializable {
 	    return(ret);
 	}
 
-	public Indir<Resource> load(String name, int ver) {return(load(name, ver, -5));}
-	public Indir<Resource> load(String name) {return(load(name, -1));}
+	public Named load(String name, int ver) {return(load(name, ver, -5));}
+	public Named load(String name) {return(load(name, -1));}
 
 	private void ckld() {
 	    int qsz;
@@ -1578,10 +1581,11 @@ public class Resource implements Serializable {
 	used = false;
     }
 
-    public Indir<Resource> indir() {
+    private transient Named indir = null;
+    public Named indir() {
 	if(indir != null)
 	    return(indir);
-	indir = new Indir<Resource>() {
+	indir = new Named(name, ver) {
 	    public Resource get() {
 		return(Resource.this);
 	    }
