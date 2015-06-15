@@ -80,7 +80,7 @@ public class Resource implements Serializable {
 	}
     }
 
-    public static class Spec extends Named {
+    public static class Spec extends Named implements Serializable {
 	public final Pool pool;
 
 	public Spec(Pool pool, String name, int ver) {
@@ -300,9 +300,9 @@ public class Resource implements Serializable {
 	    sources.add(src);
 	}
 
-	private class Queued extends Named implements Prioritized {
+	private class Queued extends Named implements Prioritized, Serializable {
 	    volatile int prio;
-	    final Collection<Queued> rdep = new LinkedList<Queued>();
+	    transient final Collection<Queued> rdep = new LinkedList<Queued>();
 	    Queued awaiting;
 	    volatile boolean done = false;
 	    Resource res;
@@ -1581,11 +1581,13 @@ public class Resource implements Serializable {
 	used = false;
     }
 
-    private transient Named indir = null;
+    private Named indir = null;
     public Named indir() {
 	if(indir != null)
 	    return(indir);
-	indir = new Named(name, ver) {
+	class Ret extends Named implements Serializable {
+	    Ret(String name, int ver) {super(name, ver);}
+
 	    public Resource get() {
 		return(Resource.this);
 	    }
@@ -1593,7 +1595,8 @@ public class Resource implements Serializable {
 	    public String toString() {
 		return(name);
 	    }
-	};
+	}
+	indir = new Ret(name, ver);
 	return(indir);
     }
 
