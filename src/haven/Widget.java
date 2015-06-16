@@ -242,7 +242,7 @@ public class Widget {
 
     protected void added() {}
 
-    private Coord relpos(String spec, Object[] args, int off) {
+    private Coord relpos(String spec, Object self, Object[] args, int off) {
 	int i = 0;
 	Stack<Object> st = new Stack<Object>();
 	while(i < spec.length()) {
@@ -254,6 +254,8 @@ public class Widget {
 		i = e;
 	    } else if(op == '!') {
 		st.push(args[off++]);
+	    } else if(op == '$') {
+		st.push(self);
 	    } else if(op == '_') {
 		st.push(st.peek());
 	    } else if(op == '.') {
@@ -338,7 +340,7 @@ public class Widget {
 	if(args[0] instanceof Coord) {
 	    add(child, (Coord)args[0]);
 	} else if(args[0] instanceof String) {
-	    add(child, relpos((String)args[0], args, 1));
+	    add(child, relpos((String)args[0], child, args, 1));
 	} else {
 	    throw(new RuntimeException("Unknown child widget creation specification."));
 	}
