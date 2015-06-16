@@ -31,17 +31,20 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
 public class TextEntry extends SIWidget {
-    public static final Text.Foundry fnd = new Text.Foundry(Text.serif, 12, new Color(255, 205, 109)).aa(true);
+    public static final Color defcol = new Color(255, 205, 109), dirtycol = new Color(255, 232, 209);
+    public static final Text.Foundry fnd = new Text.Foundry(Text.serif, 12).aa(true);
     public static final BufferedImage lcap = Resource.loadimg("gfx/hud/text/l");
     public static final BufferedImage rcap = Resource.loadimg("gfx/hud/text/r");
     public static final BufferedImage mext = Resource.loadimg("gfx/hud/text/m");
     public static final BufferedImage caret = Resource.loadimg("gfx/hud/text/caret");
     public static final Coord toff = new Coord(lcap.getWidth() - 1, 3);
     public static final Coord coff = new Coord(-3, -1);
+    public boolean dshow = false;
     public LineEdit buf;
     public int sx;
     public boolean pw = false;
     public String text;
+    private boolean dirty = false;
     private long focusstart;
     private Text.Line tcache = null;
 
@@ -81,7 +84,12 @@ public class TextEntry extends SIWidget {
 	} else if(name == "get") {
 	    wdgmsg("text", buf.line);
 	} else if(name == "pw") {
-	    pw = ((Integer)args[0]) == 1;
+	    pw = ((Integer)args[0]) != 0;
+	} else if(name == "dshow") {
+	    dshow = ((Integer)args[0]) != 0;
+	} else if(name == "cmt") {
+	    dirty = false;
+	    redraw();
 	} else {
 	    super.uimsg(name, args);
 	}
@@ -101,8 +109,7 @@ public class TextEntry extends SIWidget {
     public void draw(BufferedImage img) {
 	Graphics g = img.getGraphics();
 	String dtext = dtext();
-	if((tcache == null) || !tcache.text.equals(dtext))
-	    tcache = fnd.render(dtext);
+	tcache = fnd.render(dtext, (dshow && dirty)?dirtycol:defcol);
 	g.drawImage(mext, 0, 0, sz.x, sz.y, null);
 
 	int cx = tcache.advance(buf.point);
@@ -137,6 +144,7 @@ public class TextEntry extends SIWidget {
     }
 
     protected void changed() {
+	dirty = true;
     }
 
     public void activate(String text) {
