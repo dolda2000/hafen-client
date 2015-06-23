@@ -185,21 +185,25 @@ public class ActAudio extends GLState.Abstract {
 	    if(glob.cycle(this))
 		i.remove();
 	}
-	for(CS clip : current) {
-	    if(!clips.contains(clip))
-		Audio.stop(clip);
+	synchronized(current) {
+	    for(CS clip : current) {
+		if(!clips.contains(clip))
+		    Audio.stop(clip);
+	    }
+	    for(CS clip : clips) {
+		if(!current.contains(clip))
+		    Audio.play(clip);
+	    }
+	    current.clear();
+	    current.addAll(clips);
+	    clips.clear();
 	}
-	for(CS clip : clips) {
-	    if(!current.contains(clip))
-		Audio.play(clip);
-	}
-	current.clear();
-	current.addAll(clips);
-	clips.clear();
     }
     
     public void clear() {
-	for(CS clip : current)
-	    Audio.stop(clip);
+	synchronized(current) {
+	    for(CS clip : current)
+		Audio.stop(clip);
+	}
     }
 }
