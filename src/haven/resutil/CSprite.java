@@ -46,13 +46,14 @@ public class CSprite extends Sprite {
     }
 
     public void addpart(float xo, float yo, GLState mat, Rendered part) {
-	Coord3f pc = new Coord3f(xo, yo, owner.glob().map.getcz(cc.x + xo, cc.y + yo) - cc.z);
+	Coord3f pc = new Coord3f(xo, -yo, owner.glob().map.getcz(cc.x + xo, cc.y + yo) - cc.z);
 	Location loc = new Location(Transform.makexlate(new Matrix4f(), pc)
 				    .mul1(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)(rnd.nextFloat() * Math.PI * 2))));
 	addpart(loc, mat, part);
     }
 
     public boolean setup(RenderList rl) {
+	rl.prepc(Location.goback("gobx"));
 	for(Rendered p : parts)
 	    rl.add(p, null);
 	return(false);
