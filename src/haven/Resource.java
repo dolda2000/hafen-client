@@ -1122,7 +1122,7 @@ public class Resource implements Serializable {
     @LayerName("action")
     public class AButton extends Layer {
 	public final String name;
-	public final Spec parent;
+	public final Named parent;
 	public final char hk;
 	public final String[] ad;
 		
@@ -1133,7 +1133,7 @@ public class Resource implements Serializable {
 		parent = null;
 	    } else {
 		try {
-		    parent = new Spec(pool, pr, pver);
+		    parent = pool.load(pr, pver);
 		} catch(RuntimeException e) {
 		    throw(new LoadException("Illegal resource dependency", e, Resource.this));
 		}
