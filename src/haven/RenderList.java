@@ -225,7 +225,7 @@ public class RenderList {
 		list[o] = t;
 		i++; o--;
 	    }
-	    nd = i;
+	    nd = i + 1;
 	}
 	for(int i = 0; i < nd; i++) {
 	    Slot s = list[i];
