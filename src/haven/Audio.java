@@ -374,7 +374,7 @@ public class Audio {
     static {
 	Console.setscmd("sfx", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    play(Resource.local().load(args[1]));
+		    play(Resource.remote().load(args[1]));
 		}
 	    });
 	Console.setscmd("sfxvol", new Console.Command() {

@@ -365,7 +365,8 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	Compiler compiler = compiler(g);
 	if(!(compiler instanceof VAOCompiler))
 	    return(false);
-	g.st.inststate(st);
+	if(!g.st.inststate(st))
+	    return(false);
 	return(((VAOCompiler.VAOCompiled)compiler.get(g)).drawinst(g, st));
     }
     

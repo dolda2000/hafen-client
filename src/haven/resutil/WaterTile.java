@@ -366,6 +366,13 @@ public class WaterTile extends Tiler {
     private static final GLState botmat = GLState.compose(waterfog, boff);
 
     public static final GLState obfog = new GLState.StandAlone(GLState.Slot.Type.DRAW) {
+	    {
+		slot.instanced = new GLState.Instancer<StandAlone>() {
+			public StandAlone inststate(StandAlone[] states) {
+			    return(null);
+			}
+		    };
+	    }
 	final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
 		protected Expression root(VertexContext vctx) {
 		    return(sub(pick(MiscLib.maploc.ref(), "z"), pick(vctx.mapv.depref(), "z")));
