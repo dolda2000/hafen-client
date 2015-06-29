@@ -572,22 +572,29 @@ public abstract class GLState {
 		time += System.nanoTime() - st;
 	}
 
-	private static <S extends GLState> void inststate0(Buffer tgt, Slot<S> slot, List<Buffer> instances) {
+	private static <S extends GLState> boolean inststate0(Buffer tgt, Slot<S> slot, List<Buffer> instances) {
 	    S[] buf = Utils.mkarray(slot.scl, instances.size());
 	    int n = 0;
 	    for(Buffer st : instances)
 		buf[n++] = st.get(slot);
-	    tgt.put(slot, slot.instanced.inststate(buf));
+	    S st = slot.instanced.inststate(buf);
+	    if(st == null)
+		return(false);
+	    tgt.put(slot, st);
+	    return(true);
 	}
 
-	public void inststate(List<Buffer> instances) {
+	public boolean inststate(List<Buffer> instances) {
 	    Buffer first = Utils.el(instances);
 	    set(first);
 	    next.adjust();
 	    for(int i = 0; i < next.states.length; i++) {
-		if(idlist[i].instanced != null)
-		    inststate0(next, idlist[i], instances);
+		if(idlist[i].instanced != null) {
+		    if(!inststate0(next, idlist[i], instances))
+			return(false);
+		}
 	    }
+	    return(true);
 	}
 
 	public void bindiarr(GOut g, List<Buffer> instances) {
