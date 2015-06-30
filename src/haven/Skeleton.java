@@ -520,7 +520,7 @@ public class Skeleton {
     
     @Resource.LayerName("skel")
     public static class Res extends Resource.Layer {
-	public final Skeleton s;
+	public final transient Skeleton s;
 	
 	public Res(Resource res, Message buf) {
 	    res.super();
@@ -827,8 +827,8 @@ public class Skeleton {
     public static class ResPose extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
 	public final float len;
-	public final Track[] tracks;
-	public final FxTrack[] effects;
+	public final transient Track[] tracks;
+	public final transient FxTrack[] effects;
 	public final double nspeed;
 	public final WrapMode defmode;
 	
@@ -959,7 +959,7 @@ public class Skeleton {
     @Resource.LayerName("boneoff")
     public static class BoneOffset extends Resource.Layer implements Resource.IDLayer<String> {
 	public final String nm;
-	public final Command[] prog;
+	public final transient Command[] prog;
 	private static final HatingJava[] opcodes = new HatingJava[256];
 	static {
 	    opcodes[0] = new HatingJava() {
