@@ -54,7 +54,7 @@ public class Resource implements Serializable {
     public final String name;
     public int ver;
     public ResSource source;
-    public final Pool pool;
+    public final transient Pool pool;
     private boolean used = false;
 
     public abstract static class Named implements Indir<Resource> {
@@ -81,7 +81,7 @@ public class Resource implements Serializable {
     }
 
     public static class Spec extends Named implements Serializable {
-	public final Pool pool;
+	public final transient Pool pool;
 
 	public Spec(Pool pool, String name, int ver) {
 	    super(name, ver);
