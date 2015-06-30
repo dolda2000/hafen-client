@@ -606,7 +606,10 @@ public class Skeleton {
 		    Track.Frame cf, nf;
 		    float ct, nt;
 		    int l = 0, r = t.frames.length;
+		    int n = 0;
 		    while(true) {
+			if(++n > 100)
+			    throw(new RuntimeException("Cannot find track frame in " + this + " for time " + time));
 			/* c should never be able to be >= frames.length */
 			int c = l + ((r - l) >> 1);
 			ct = t.frames[c].time;
@@ -925,6 +928,10 @@ public class Skeleton {
 
 	    public ResMod(ModOwner owner, Skeleton skel) {
 		this(owner, skel, defmode);
+	    }
+
+	    public String toString() {
+		return(String.format("#<pose %d in %s>", id, getres().name));
 	    }
 	}
 
