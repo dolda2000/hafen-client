@@ -35,6 +35,7 @@ import static haven.Window.wbox;
 import static haven.PUtils.*;
 
 public class CharWnd extends Window {
+    public static final RichText.Foundry ifnd = new RichText.Foundry(Resource.remote(), java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, 9).aa(true);
     public static final Text.Furnace catf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Window.ctex), 3, 2, new Color(96, 48, 0));
     public static final Text.Foundry attrf = new Text.Foundry(Text.fraktur, 18).aa(true);
     public static final Color debuff = new Color(255, 128, 128);
@@ -47,6 +48,9 @@ public class CharWnd extends Window {
     public final Constipations cons;
     public final SkillList csk, nsk;
     public final ExperienceList exps;
+    public final Widget woundbox;
+    public final WoundList wounds;
+    public Wound.Info wound;
     public int exp;
     private int scost;
     private final Tabs.Tab sattr;
@@ -606,6 +610,74 @@ public class CharWnd extends Window {
 	}
     }
 
+    public static class Wound {
+	public final int id;
+	public Indir<Resource> res;
+	public Object qdata;
+	private String sortkey = "\uffff";
+	private Tex small;
+	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
+	    public String value() {
+		try {
+		    return(res.get().layer(Resource.tooltip).t);
+		} catch(Loading l) {
+		    return("...");
+		}
+	    }
+	};
+	private final Text.UText<?> rqd = new Text.UText<Object>(attrf) {
+	    public Object value() {
+		return(qdata);
+	    }
+	};
+
+	private Wound(int id, Indir<Resource> res, Object qdata) {
+	    this.id = id;
+	    this.res = res;
+	    this.qdata = qdata;
+	}
+
+	public static class Box extends LoadingTextBox implements Info {
+	    public final int id;
+	    public final Indir<Resource> res;
+
+	    public Box(int id, Indir<Resource> res) {
+		super(Coord.z, "", ifnd);
+		bg = null;
+		this.id = id;
+		this.res = res;
+		settext(new Indir<String>() {public String get() {return(rendertext());}});
+	    }
+
+	    protected void added() {
+		resize(parent.sz);
+	    }
+
+	    public String rendertext() {
+		StringBuilder buf = new StringBuilder();
+		Resource res = this.res.get();
+		buf.append("$img[" + res.name + "]\n\n");
+		buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+		buf.append(res.layer(Resource.pagina).text);
+		return(buf.toString());
+	    }
+
+	    public int woundid() {return(id);}
+	}
+
+	@RName("wound")
+	public static class $wound implements Factory {
+	    public Widget create(Widget parent, Object[] args) {
+		int id = (Integer)args[0];
+		Indir<Resource> res = parent.ui.sess.getres((Integer)args[1]);
+		return(new Box(id, res));
+	    }
+	}
+	public interface Info {
+	    public int woundid();
+	}
+    }
+
     public static class SkillList extends Listbox<Skill> {
 	public Skill[] skills = new Skill[0];
 	private boolean loading = false;
@@ -729,6 +801,105 @@ public class CharWnd extends Window {
 	}
     }
 
+    public class WoundList extends Listbox<Wound> implements DTarget {
+	public List<Wound> wounds = new ArrayList<Wound>();
+	private boolean loading = false;
+	private final Comparator<Wound> wcomp = new Comparator<Wound>() {
+	    public int compare(Wound a, Wound b) {
+		return(a.sortkey.compareTo(b.sortkey));
+	    }
+	};
+
+	private WoundList(int w, int h) {
+	    super(w, h, attrf.height() + 2);
+	}
+
+	public void tick(double dt) {
+	    if(loading) {
+		loading = false;
+		for(Wound w : wounds) {
+		    try {
+			w.sortkey = w.res.get().layer(Resource.tooltip).t;
+		    } catch(Loading l) {
+			w.sortkey = "\uffff";
+			loading = true;
+		    }
+		}
+		Collections.sort(wounds, wcomp);
+	    }
+	}
+
+	protected Wound listitem(int idx) {return(wounds.get(idx));}
+	protected int listitems() {return(wounds.size());}
+
+	protected void drawbg(GOut g) {}
+
+	protected void drawitem(GOut g, Wound w, int idx) {
+	    if((wound != null) && (wound.woundid() == w.id))
+		drawsel(g);
+	    g.chcolor((idx % 2 == 0)?every:other);
+	    g.frect(Coord.z, g.sz);
+	    g.chcolor();
+	    try {
+		if(w.small == null)
+		    w.small = new TexI(PUtils.convolvedown(w.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
+		g.image(w.small, Coord.z);
+	    } catch(Loading e) {
+		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
+	    }
+	    g.aimage(w.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
+	}
+
+	protected void itemclick(Wound item, int button) {
+	    if(button == 3) {
+		CharWnd.this.wdgmsg("wclick", item.id, button, ui.modflags());
+	    } else {
+		super.itemclick(item, button);
+	    }
+	}
+
+	public boolean drop(Coord cc, Coord ul) {
+	    return(false);
+	}
+
+	public boolean iteminteract(Coord cc, Coord ul) {
+	    Wound w = itemat(cc);
+	    if(w != null)
+		CharWnd.this.wdgmsg("wiact", w.id, ui.modflags());
+	    return(true);
+	}
+
+	public void change(Wound w) {
+	    if(w == null)
+		CharWnd.this.wdgmsg("wsel", (Object)null);
+	    else
+		CharWnd.this.wdgmsg("wsel", w.id);
+	}
+
+	public Wound get(int id) {
+	    for(Wound w : wounds) {
+		if(w.id == id)
+		    return(w);
+	    }
+	    return(null);
+	}
+
+	public void add(Wound w) {
+	    wounds.add(w);
+	}
+
+	public Wound remove(int id) {
+	    for(Iterator<Wound> i = wounds.iterator(); i.hasNext();) {
+		Wound w = i.next();
+		if(w.id == id) {
+		    i.remove();
+		    return(w);
+		}
+	    }
+	    return(null);
+	}
+    }
+
     @RName("chr")
     public static class $_ implements Factory {
 	public Widget create(Widget parent, Object[] args) {
@@ -818,7 +989,6 @@ public class CharWnd extends Window {
 
 	    skills = tabs.add();
 	    skills.add(new Img(catf.render("Lore & Skills").tex()), new Coord(x - 5, y)); y += 35;
-	    RichText.Foundry ifnd = new RichText.Foundry(Resource.remote(), java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, 9).aa(true);
 	    final LoadingTextBox info = skills.add(new LoadingTextBox(new Coord(attrw, 260), "", ifnd), new Coord(x, y).add(wbox.btloff()));
 	    info.bg = new Color(0, 0, 0, 128);
 	    Frame.around(skills, Collections.singletonList(info));
@@ -909,6 +1079,28 @@ public class CharWnd extends Window {
 	    skills.add(lists.new TabButton(bw - 5, "Lore", exps), new Coord(x + bw * 2, y));
 	}
 
+	Tabs.Tab wounds;
+	{
+	    wounds = tabs.add();
+	    wounds.add(new Img(catf.render("Health & Wounds").tex()), new Coord(0, 0));
+	    this.wounds = wounds.add(new WoundList(attrw, 12), new Coord(260, 35).add(wbox.btloff()));
+	    Frame.around(wounds, Collections.singletonList(this.wounds));
+	    woundbox = wounds.add(new Widget(new Coord(attrw, this.wounds.sz.y)) {
+		    public void draw(GOut g) {
+			g.chcolor(0, 0, 0, 128);
+			g.frect(Coord.z, sz);
+			g.chcolor();
+			super.draw(g);
+		    }
+
+		    public void cdestroy(Widget w) {
+			if(w == wound)
+			    wound = null;
+		    }
+		}, new Coord(5, 35).add(wbox.btloff()));
+	    Frame.around(wounds, Collections.singletonList(woundbox));
+	}
+
 	{
 	    Widget prev;
 
@@ -931,6 +1123,8 @@ public class CharWnd extends Window {
 	    prev.settip("Skill Values");
 	    prev = add(new TB("skill", skills), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
 	    prev.settip("Lore & Skills");
+	    prev = add(new TB("wound", wounds), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
+	    prev.settip("Health & Wounds");
 	}
 
 	resize(contentsz().add(15, 10));
@@ -943,6 +1137,9 @@ public class CharWnd extends Window {
 	    Frame.around(sattr, Collections.singletonList(child));
 	    Widget inf = sattr.add(new StudyInfo(new Coord(attrw - 150, child.sz.y), child), new Coord(260 + 150, child.c.y).add(wbox.btloff().x, 0));
 	    Frame.around(sattr, Collections.singletonList(inf));
+	} else if(place == "wound") {
+	    this.wound = (Wound.Info)child;
+	    woundbox.add(child, Coord.z);
 	} else {
 	    super.addchild(child, args);
 	}
@@ -1001,6 +1198,24 @@ public class CharWnd extends Window {
 	    Collection<Experience> buf = rst?new ArrayList<Experience>():new ArrayList<Experience>(Arrays.asList(exps.exps));
 	    decexplist(buf, args, 1);
 	    exps.pop(buf);
+	} else if(nm == "wounds") {
+	    for(int i = 0; i < args.length; i += 3) {
+		int id = (Integer)args[i];
+		Indir<Resource> res = (args[i + 1] == null)?null:ui.sess.getres((Integer)args[i + 1]);
+		Object qdata = args[i + 2];
+		if(res != null) {
+		    Wound w = wounds.get(id);
+		    if(w == null) {
+			wounds.add(new Wound(id, res, qdata));
+		    } else {
+			w.res = res;
+			w.qdata = qdata;
+		    }
+		    wounds.loading = true;
+		} else {
+		    wounds.remove(id);
+		}
+	    }
 	} else {
 	    super.uimsg(nm, args);
 	}
