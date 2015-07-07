@@ -848,6 +848,9 @@ public class CharWnd extends Window {
 		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
 	    }
 	    g.aimage(w.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
+	    Text qd = w.rqd.get();
+	    if(qd != null)
+		g.aimage(qd.tex(), new Coord(sz.x - 5, itemh / 2), 1.0, 0.5);
 	}
 
 	protected void itemclick(Wound item, int button) {
