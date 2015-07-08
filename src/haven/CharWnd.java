@@ -949,8 +949,16 @@ public class CharWnd extends Window {
 	    skill = new ArrayList<SAttr>();
 	    SAttr aw;
 	    skill.add(aw = sattr.add(new SAttr(glob, "unarmed", every), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "melee", other), wbox.btloff().add(x, y))); y += aw.sz.y;
 	    skill.add(aw = sattr.add(new SAttr(glob, "ranged", every), wbox.btloff().add(x, y))); y += aw.sz.y;
 	    skill.add(aw = sattr.add(new SAttr(glob, "explore", other), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "stealth", every), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "sewing", other), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "smithing", every), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "carpentry", other), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "cooking", every), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "farming", other), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "survive", every), wbox.btloff().add(x, y))); y += aw.sz.y;
 	    Frame.around(sattr, skill);
 
 	    x = 260; y = 0;
