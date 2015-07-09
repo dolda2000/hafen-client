@@ -57,7 +57,7 @@ public class Audio {
     public static class DataClip implements CS {
 	public final int rate;
 	public boolean eof;
-	public double vol, sp;
+	public double vol, sp, bal;
 	private InputStream clip;
 	private final int trate;
 	private int ack = 0;
@@ -99,6 +99,11 @@ public class Audio {
 	public int get(double[][] buf) {
 	    if(eof)
 		return(-1);
+	    double[] balm = {1.0, 1.0};
+	    if(bal < 0)
+		balm[1] = 1.0 + bal;
+	    if(bal > 0)
+		balm[0] = 1.0 - bal;
 	    try {
 		for(int off = 0; off < buf[0].length; off++) {
 		    ack += rate * sp;
@@ -130,7 +135,7 @@ public class Audio {
 		    }
 		    double ipos = (double)ack / (double)trate;
 		    for(int i = 0; i < 2; i++)
-			buf[i][off] = (lval[i] * (1.0 - ipos)) + (nval[i] * ipos);
+			buf[i][off] = ((lval[i] * (1.0 - ipos)) + (nval[i] * ipos)) * balm[i];
 		}
 		return(buf[0].length);
 	    } catch(IOException e) {
