@@ -48,27 +48,8 @@ public class WItem extends Widget implements DTarget {
 	spr.draw(g);
     }
 
-    public static BufferedImage rendershort(List<ItemInfo> info) {
-	ItemInfo.Name nm = find(ItemInfo.Name.class, info);
-	if(nm == null)
-	    return(null);
-	BufferedImage img = nm.str.img;
-	return(img);
-    }
-
     public static BufferedImage shorttip(List<ItemInfo> info) {
-	BufferedImage img = rendershort(info);
-	ItemInfo.Contents cont = find(ItemInfo.Contents.class, info);
-	if(cont != null) {
-	    BufferedImage rc = rendershort(cont.sub);
-	    if((img != null) && (rc != null))
-		img = ItemInfo.catimgs(0, img, rc);
-	    else if((img == null) && (rc != null))
-		img = rc;
-	}
-	if(img == null)
-	    return(null);
-	return(img);
+	return(ItemInfo.shorttip(info));
     }
     
     public static BufferedImage longtip(GItem item, List<ItemInfo> info) {

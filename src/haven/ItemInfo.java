@@ -55,12 +55,58 @@ public abstract class ItemInfo {
 	this.owner = owner;
     }
     
+    public static class Layout {
+	private final List<Tip> tips = new ArrayList<Tip>();
+	private final Map<ID, Tip> itab = new HashMap<ID, Tip>();
+	public final CompImage cmp = new CompImage();
+
+	public interface ID<T extends Tip> {
+	    public T make();
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T extends Tip> T intern(ID<T> id) {
+	    T ret = (T)itab.get(id);
+	    if(ret == null) {
+		itab.put(id, ret = id.make());
+		add(ret);
+	    }
+	    return(ret);
+	}
+
+	public void add(Tip tip) {
+	    tips.add(tip);
+	    tip.prepare(this);
+	}
+
+	public BufferedImage render() {
+	    Collections.sort(tips, new Comparator<Tip>() {
+		    public int compare(Tip a, Tip b) {
+			return(a.order() - b.order());
+		    }
+		});
+	    for(Tip tip : tips)
+		tip.layout(this);
+	    return(cmp.compose());
+	}
+    }
+
     public static abstract class Tip extends ItemInfo {
-	public abstract BufferedImage longtip();
-	
 	public Tip(Owner owner) {
 	    super(owner);
 	}
+
+	@Deprecated
+	public BufferedImage longtip() {return(null);}
+	public BufferedImage tipimg() {return(longtip());}
+	public Tip shortvar() {return(null);}
+	public void prepare(Layout l) {}
+	public void layout(Layout l) {
+	    BufferedImage t = tipimg();
+	    if(t != null)
+		l.cmp.add(tipimg(), new Coord(0, l.cmp.sz.y));
+	}
+	public int order() {return(100);}
     }
     
     public static class AdHoc extends Tip {
@@ -71,7 +117,7 @@ public abstract class ItemInfo {
 	    this.str = Text.render(str);
 	}
 	
-	public BufferedImage longtip() {
+	public BufferedImage tipimg() {
 	    return(str.img);
 	}
     }
@@ -88,8 +134,17 @@ public abstract class ItemInfo {
 	    this(owner, Text.render(str));
 	}
 	
-	public BufferedImage longtip() {
+	public BufferedImage tipimg() {
 	    return(str.img);
+	}
+
+	public int order() {return(0);}
+
+	public Tip shortvar() {
+	    return(new Tip(owner) {
+		    public BufferedImage tipimg() {return(str.img);}
+		    public int order() {return(0);}
+		});
 	}
     }
 
@@ -102,7 +157,7 @@ public abstract class ItemInfo {
 	    this.sub = sub;
 	}
 	
-	public BufferedImage longtip() {
+	public BufferedImage tipimg() {
 	    BufferedImage stip = longtip(sub);
 	    BufferedImage img = TexI.mkbuf(new Coord(stip.getWidth() + 10, stip.getHeight() + 15));
 	    Graphics g = img.getGraphics();
@@ -110,6 +165,13 @@ public abstract class ItemInfo {
 	    g.drawImage(stip, 10, 15, null);
 	    g.dispose();
 	    return(img);
+	}
+
+	public Tip shortvar() {
+	    return(new Tip(owner) {
+		    public BufferedImage tipimg() {return(shorttip(sub));}
+		    public int order() {return(100);}
+		});
 	}
     }
 
@@ -158,16 +220,30 @@ public abstract class ItemInfo {
     }
 
     public static BufferedImage longtip(List<ItemInfo> info) {
-	List<BufferedImage> buf = new ArrayList<BufferedImage>();
+	Layout l = new Layout();
 	for(ItemInfo ii : info) {
 	    if(ii instanceof Tip) {
 		Tip tip = (Tip)ii;
-		buf.add(tip.longtip());
+		l.add(tip);
 	    }
 	}
-	if(buf.size() < 1)
+	if(l.tips.size() < 1)
 	    return(null);
-	return(catimgs(0, buf.toArray(new BufferedImage[0])));
+	return(l.render());
+    }
+
+    public static BufferedImage shorttip(List<ItemInfo> info) {
+	Layout l = new Layout();
+	for(ItemInfo ii : info) {
+	    if(ii instanceof Tip) {
+		Tip tip = ((Tip)ii).shortvar();
+		if(tip != null)
+		    l.add(tip);
+	    }
+	}
+	if(l.tips.size() < 1)
+	    return(null);
+	return(l.render());
     }
 
     public static <T> T find(Class<T> cl, List<ItemInfo> il) {
