@@ -97,7 +97,16 @@ public class CompImage {
 	return(ret);
     }
 
-    public CompImage table(Coord base, Image[][] cells, int cs, int rs, int[] cj) {
+    public CompImage table(Coord base, Image[][] cells, Object cs, int rs, int[] cj) {
+	int[] _cs = new int[cells.length];
+	if(cs instanceof int[]) {
+	    int[] $cs = (int[])cs;
+	    for(int i = 0; i < $cs.length; i++)
+		_cs[i] = $cs[i];
+	} else {
+	    for(int i = 0; i < _cs.length; i++)
+		_cs[i] = ((Number)cs).intValue();
+	}
 	int[] w = new int[cells.length];
 	for(int c = 0; c < cells.length; c++) {
 	    for(int r = 0; r < cells[c].length; r++)
@@ -119,7 +128,7 @@ public class CompImage {
 		else if(j == 2)
 		    cx = (w[c] - cells[c][r].sz().x) / 2;
 		add(cells[c][r], base.add(x + cx, y));
-		x += w[c] + cs;
+		x += w[c] + _cs[c];
 		mh = Math.max(mh, cells[c][r].sz().y);
 	    }
 	    if(!a)
