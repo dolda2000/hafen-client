@@ -38,7 +38,7 @@ public class Curiosity extends ItemInfo.Tip {
 	this.mw = mw;
     }
 
-    public BufferedImage longtip() {
+    public BufferedImage tipimg() {
 	return(RichText.render(String.format("Learning points: $col[192,192,255]{%s}\nMental weight: $col[255,192,255]{%d}", Utils.thformat(exp), mw), 0).img);
     }
 }
