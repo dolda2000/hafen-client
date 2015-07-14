@@ -34,18 +34,10 @@ public class Polity extends Window {
     public final String name;
     public int auth, acap, adrain;
     public boolean offline;
-    private final List<Member> memb = new ArrayList<Member>();
-    private final Map<Integer, Member> idmap = new HashMap<Integer, Member>();
-    private MemberList ml;
-    private Widget mw;
-    
-    @RName("pol")
-    public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
-	    return(new Polity((String)args[0]));
-	}
-    }
-    
+    public final List<Member> memb = new ArrayList<Member>();
+    public final Map<Integer, Member> idmap = new HashMap<Integer, Member>();
+    protected Widget mw;
+
     public class Member {
 	public final Integer id;
 	
@@ -53,20 +45,20 @@ public class Polity extends Window {
 	    this.id = id;
 	}
     }
-    
-    private class MemberList extends Listbox<Member> {
+
+    public class MemberList extends Listbox<Member> {
 	final Text unk = Text.render("???");
 	final Text self = Text.render("You", new Color(192, 192, 255));
-	
-	private MemberList(int w, int h) {
+
+	public MemberList(int w, int h) {
 	    super(w, h, 20);
 	}
-	
+
 	public Member listitem(int idx) {return(memb.get(idx));}
 	public int listitems() {return(memb.size());}
 
 	public void drawitem(GOut g, Member m, int idx) {
-	    if((mw instanceof MemberWidget) && (((MemberWidget)mw).id == m.id))
+	    if((mw instanceof MemberWidget) && Utils.eq(((MemberWidget)mw).id, m.id))
 		drawsel(g);
 	    Text rn;
 	    if(m.id == null) {
@@ -85,10 +77,10 @@ public class Polity extends Window {
 		Polity.this.wdgmsg("sel", pm.id);
 	}
     }
-    
+
     public static abstract class MemberWidget extends Widget {
 	public final Integer id;
-	
+
 	public MemberWidget(Coord sz, Integer id) {
 	    super(sz);
 	    this.id = id;
@@ -98,15 +90,11 @@ public class Polity extends Window {
     public static final Text.Foundry nmf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 14)).aa(true);
     public static final Text.Foundry membf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
 
-    public Polity(String name) {
-	super(new Coord(200, 200), "Village", true, Coord.z, Coord.z);
+    public Polity(String cap, String name) {
+	super(new Coord(200, 200), cap, true, Coord.z, Coord.z);
 	this.name = name;
-	add(new Label(name, nmf), new Coord(0, 5));
-	add(new Label("Members:"), new Coord(0, 45));
-	ml = add(new MemberList(200, 7), new Coord(0, 60));
-	pack();
     }
-    
+
     private Tex rauth = null;
     public void cdraw(GOut g) {
 	if(acap > 0) {
@@ -124,7 +112,7 @@ public class Polity extends Window {
 	    }
 	}
     }
-    
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "auth") {
 	    synchronized(this) {
@@ -152,7 +140,7 @@ public class Polity extends Window {
 	    super.uimsg(msg, args);
 	}
     }
-    
+
     public void addchild(Widget child, Object... args) {
 	if(args[0] instanceof String) {
 	    String p = (String)args[0];
