@@ -43,7 +43,6 @@ public class Widget {
     public Indir<Resource> cursor = null;
     public Object tooltip = null;
     private Widget prevtt;
-    public final Collection<Anim> anims = new LinkedList<Anim>();
     static Map<String, Factory> types = new TreeMap<String, Factory>();
 
     @dolda.jglob.Discoverable
@@ -589,6 +588,8 @@ public class Widget {
 	}
 	/* It would be very nice to do these things in harmless mix-in
 	 * classes, but alas, this is Java. */
+	anims.addAll(nanims);
+	nanims.clear();
 	for(Iterator<Anim> i = anims.iterator(); i.hasNext();) {
 	    Anim anim = i.next();
 	    if(anim.tick(dt))
@@ -1004,7 +1005,14 @@ public class Widget {
 	return(true);
     }
 
+    public final Collection<Anim> anims = new LinkedList<Anim>();
+    public final Collection<Anim> nanims = new LinkedList<Anim>();
     public <T extends Anim> void clearanims(Class<T> type) {
+	for(Iterator<Anim> i = nanims.iterator(); i.hasNext();) {
+	    Anim a = i.next();
+	    if(type.isInstance(a))
+		i.remove();
+	}
 	for(Iterator<Anim> i = anims.iterator(); i.hasNext();) {
 	    Anim a = i.next();
 	    if(type.isInstance(a))
@@ -1015,12 +1023,13 @@ public class Widget {
     public abstract class Anim {
 	public Anim() {
 	    synchronized(ui) {
-		anims.add(this);
+		nanims.add(this);
 	    }
 	}
 
 	public void clear() {
 	    synchronized(ui) {
+		nanims.remove(this);
 		anims.remove(this);
 	    }
 	}
