@@ -857,6 +857,8 @@ public class BGL {
 	    public final Object[] args;
 
 	    private Object mapval(Dump d, Object o) {
+		if(o == null)
+		    return(null);
 		Class<?> ft = o.getClass();
 		if(ft.isPrimitive()) {
 		    return(o);
