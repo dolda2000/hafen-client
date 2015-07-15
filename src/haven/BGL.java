@@ -28,6 +28,9 @@ package haven;
 
 import javax.media.opengl.*;
 import java.nio.*;
+import java.util.*;
+import java.io.*;
+import java.lang.reflect.*;
 
 public class BGL {
     private static abstract class Command {
@@ -80,6 +83,15 @@ public class BGL {
 	list[n++] = cmd;
     }
 
+    public static class BGLException extends RuntimeException {
+	public final Dump dump;
+
+	public BGLException(BGL buf, Command mark, Throwable cause) {
+	    super(cause);
+	    dump = new Dump(buf, mark);
+	}
+    }
+
     public void bglCheckErr() {
 	final Throwable place = null;
 	add(new Command() {
@@ -88,7 +100,7 @@ public class BGL {
 			GOut.checkerr(gl);
 		    } catch(GOut.GLException e) {
 			e.initCause(place);
-			throw(e);
+			throw(new BGLException(BGL.this, this, e));
 		    }
 		}
 	    });
@@ -809,5 +821,108 @@ public class BGL {
 	add(new Command() {
 		public void run(GL2 gl) {gl.setSwapInterval(swap);}
 	    });
+    }
+
+    public static class Dump implements Serializable {
+	public final List<DCmd> list;
+	public final DCmd mark;
+	private final transient Map<Object, Dummy> dummies = new IdentityHashMap<Object, Dummy>();
+
+	public static class Dummy implements Serializable {
+	    public final int id;
+	    public final String clnm;
+
+	    public Dummy(int id, Object o) {
+		this.id = id;
+		this.clnm = o.getClass().getName();
+	    }
+
+	    public String toString() {
+		return(String.format("#<dummy %s #%d>", clnm, id));
+	    }
+	}
+
+	private Dummy intern(Object o) {
+	    if(o == null)
+		return(null);
+	    Dummy ret = dummies.get(o);
+	    if(ret == null)
+		dummies.put(o, ret = new Dummy(dummies.size(), o));
+	    return(ret);
+	}
+
+	public static class DCmd implements Serializable {
+	    public final String clnm, mnm;
+	    public final String[] argn;
+	    public final Object[] args;
+
+	    public DCmd(Dump d, Object o) {
+		this.clnm = o.getClass().getName();
+		if(o.getClass().getEnclosingMethod() != null) {
+		    mnm = o.getClass().getEnclosingMethod().getName();
+		} else {
+		    mnm = null;
+		}
+		Field[] fl = o.getClass().getDeclaredFields();
+		argn = new String[fl.length];
+		args = new Object[fl.length];
+		for(int i = 0; i < fl.length; i++) {
+		    Field f = fl[i];
+		    try {
+			f.setAccessible(true);
+		    } catch(SecurityException e) {}
+		    argn[i] = f.getName();
+		    try {
+			if(f.getType().isPrimitive()) {
+			    args[i] = f.get(o);
+			} else {
+			    args[i] = d.intern(f.get(o));
+			}
+		    } catch(IllegalAccessException e) {
+		    }
+		}
+	    }
+
+	    public String toString() {
+		StringBuilder buf = new StringBuilder();
+		buf.append("#<cmd ");
+		buf.append((mnm != null)?mnm:clnm);
+		buf.append("(");
+		for(int i = 0; i < argn.length; i++) {
+		    if(i > 0)
+			buf.append(", ");
+		    buf.append(argn[i]);
+		    buf.append("=");
+		    buf.append(args[i]);
+		}
+		buf.append(")>");
+		return(buf.toString());
+	    }
+	}
+
+	public Dump(BGL buf, Command mark) {
+	    int n = buf.n;
+	    this.list = new ArrayList<DCmd>(n);
+	    DCmd marked = null;
+	    for(int i = 0; i < n; i++) {
+		DCmd cmd = new DCmd(this, buf.list[i]);
+		list.add(cmd);
+		if(buf.list[i] == mark)
+		    marked = cmd;
+	    }
+	    this.mark = marked;
+	}
+
+	public void dump(PrintStream out) {
+	    for(DCmd cmd : list) {
+		if(cmd == mark)
+		    out.print("==> ");
+		out.println(cmd);
+	    }
+	}
+
+	public void dump() {
+	    dump(System.out);
+	}
     }
 }
