@@ -856,6 +856,21 @@ public class BGL {
 	    public final String[] argn;
 	    public final Object[] args;
 
+	    private Object mapval(Dump d, Object o) {
+		Class<?> ft = o.getClass();
+		if(ft.isPrimitive()) {
+		    return(o);
+		} else if(ft.isArray()) {
+		    int len = Array.getLength(o);
+		    Object[] na = new Object[len];
+		    for(int i = 0; i < len; i++)
+			na[i] = mapval(d, Array.get(o, i));
+		    return(na);
+		} else {
+		    return(d.intern(o));
+		}
+	    }
+
 	    public DCmd(Dump d, Object o) {
 		this.clnm = o.getClass().getName();
 		if(o.getClass().getEnclosingMethod() != null) {
@@ -873,13 +888,8 @@ public class BGL {
 		    } catch(SecurityException e) {}
 		    argn[i] = f.getName();
 		    try {
-			if(f.getType().isPrimitive()) {
-			    args[i] = f.get(o);
-			} else {
-			    args[i] = d.intern(f.get(o));
-			}
-		    } catch(IllegalAccessException e) {
-		    }
+			args[i] = mapval(d, f.get(o));
+		    } catch(IllegalAccessException e) {}
 		}
 	    }
 
