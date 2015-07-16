@@ -65,7 +65,7 @@ public class ClipAmbiance implements Rendered {
 	private void addclip(final int chan, final int idx) {
 	    Resource.Audio clip = AudioSprite.randoom(chans[chan].getres(), chans[chan].cnms[idx]);
 	    synchronized(this) {
-		cur[chan][idx] = new VolAdjust(new Audio.Monitor(new Audio.PCMClip(clip.pcmstream(), 2)) {
+		cur[chan][idx] = new VolAdjust(new Audio.Monitor(clip.stream()) {
 			protected void eof() {
 			    synchronized(Glob.this) {
 				cur[chan][idx] = null;

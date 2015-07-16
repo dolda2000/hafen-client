@@ -1398,9 +1398,9 @@ public class Resource implements Serializable {
 
 	public void init() {}
 
-	public InputStream pcmstream() {
+	public haven.Audio.CS stream() {
 	    try {
-		return(new dolda.xiphutil.VorbisStream(new ByteArrayInputStream(coded)).pcmstream());
+		return(new haven.Audio.VorbisClip(new dolda.xiphutil.VorbisStream(new ByteArrayInputStream(coded))));
 	    } catch(IOException e) {
 		throw(new RuntimeException(e));
 	    }

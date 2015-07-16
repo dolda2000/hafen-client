@@ -67,7 +67,7 @@ public class AudioSprite {
 
 	public ClipSprite(Owner owner, Resource res, Resource.Audio clip) {
 	    super(owner, res);
-	    this.clip = new ActAudio.PosClip(new Audio.Monitor(new Audio.PCMClip(clip.pcmstream(), 2)) {
+	    this.clip = new ActAudio.PosClip(new Audio.Monitor(clip.stream()) {
 		    protected void eof() {
 			super.eof();
 			done = true;
@@ -98,9 +98,9 @@ public class AudioSprite {
 		    public CS cons() {
 			if(f && (beg != null)) {
 			    f = false;
-			    return(new Audio.PCMClip(beg.pcmstream(), 2));
+			    return(beg.stream());
 			}
-			return(new Audio.PCMClip(clip.pcmstream(), 2));
+			return(clip.stream());
 		    }
 		};
 	    this.clip = new ActAudio.PosClip(rep);
@@ -118,7 +118,7 @@ public class AudioSprite {
 
 	public void delete() {
 	    if(end != null)
-		clip = new ActAudio.PosClip(new Audio.Monitor(new Audio.PCMClip(end.pcmstream(), 2)) {
+		clip = new ActAudio.PosClip(new Audio.Monitor(end.stream()) {
 			protected void eof() {
 			    super.eof();
 			    RepeatSprite.this.clip = null;

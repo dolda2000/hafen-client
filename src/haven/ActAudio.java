@@ -107,7 +107,7 @@ public class ActAudio extends GLState.Abstract {
 		    throw(new RuntimeException("No ambient clip found in " + res));
 		this.clip = new VolAdjust(new Audio.Repeater() {
 			public CS cons() {
-			    return(new Audio.PCMClip(clip.pcmstream(), 2));
+			    return(clip.stream());
 			}
 		    });
 	    }

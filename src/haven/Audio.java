@@ -491,7 +491,7 @@ public class Audio {
 	    if(--s < 0)
 		break;
 	}
-	return(new PCMClip(clip.pcmstream(), 2));
+	return(clip.stream());
     }
 
     public static void play(Resource res) {
