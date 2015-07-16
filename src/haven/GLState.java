@@ -575,8 +575,15 @@ public abstract class GLState {
 	private static <S extends GLState> boolean inststate0(Buffer tgt, Slot<S> slot, List<Buffer> instances) {
 	    S[] buf = Utils.mkarray(slot.scl, instances.size());
 	    int n = 0;
-	    for(Buffer st : instances)
-		buf[n++] = st.get(slot);
+	    boolean hnn = false;
+	    for(Buffer st : instances) {
+		if((buf[n++] = st.get(slot)) != null)
+		    hnn = true;
+	    }
+	    if(!hnn) {
+		tgt.put(slot, null);
+		return(true);
+	    }
 	    S st = slot.instanced.inststate(buf);
 	    if(st == null)
 		return(false);
