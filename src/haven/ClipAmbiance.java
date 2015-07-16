@@ -163,7 +163,7 @@ public class ClipAmbiance implements Rendered {
 		for(VolAdjust clip : cur[i]) {
 		    if(clip == null) continue;
 		    clip.vol = cvol;
-		    list.add(clip);
+		    list.amb.add(clip);
 		}
 	    }
 	    return(false);
