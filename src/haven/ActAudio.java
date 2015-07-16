@@ -64,6 +64,7 @@ public class ActAudio extends GLState.Abstract {
 		Coord3f pos = PView.mvxf(g).mul4(Coord3f.o);
 		double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
 		this.clip.vol = Math.min(1.0, 50.0 / pd);
+		this.clip.bal = Utils.clip(Math.atan2(pos.x, -pos.z) / (Math.PI / 8.0), -1, 1);
 		list.add(clip);
 	    }
 	}
