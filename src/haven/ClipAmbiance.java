@@ -27,6 +27,8 @@
 package haven;
 
 import java.util.*;
+import haven.Audio.CS;
+import haven.Audio.VolAdjust;
 
 public class ClipAmbiance implements Rendered {
     public final Desc desc;
@@ -42,7 +44,7 @@ public class ClipAmbiance implements Rendered {
 	public final Desc desc;
 	private boolean dead = false;
 	private Desc[] chans = {null};
-	private Audio.DataClip[][] cur = {null};
+	private VolAdjust[][] cur = {null};
 	private int curn, ns;
 	private int[] n = {0};
 	private double vacc, cvol;
@@ -63,15 +65,14 @@ public class ClipAmbiance implements Rendered {
 	private void addclip(final int chan, final int idx) {
 	    Resource.Audio clip = AudioSprite.randoom(chans[chan].getres(), chans[chan].cnms[idx]);
 	    synchronized(this) {
-		cur[chan][idx] = new Audio.DataClip(clip.pcmstream(), 0.0, 1.0) {
+		cur[chan][idx] = new VolAdjust(new Audio.Monitor(clip.stream()) {
 			protected void eof() {
-			    super.eof();
-			    synchronized(this) {
+			    synchronized(Glob.this) {
 				cur[chan][idx] = null;
 				curn--;
 			    }
 			}
-		    };
+		    }, 0.0);
 		curn++;
 	    }
 	}
@@ -159,7 +160,7 @@ public class ClipAmbiance implements Rendered {
 		n[i] = 0;
 	    lastupd = now;
 	    for(int i = 0; (i < cur.length) && (cur[i] != null); i++) {
-		for(Audio.DataClip clip : cur[i]) {
+		for(VolAdjust clip : cur[i]) {
 		    if(clip == null) continue;
 		    clip.vol = cvol;
 		    list.add(clip);
@@ -182,7 +183,7 @@ public class ClipAmbiance implements Rendered {
 	    }
 	    if(chans[i] == null) {
 		chans[i] = ch;
-		cur[i] = new Audio.DataClip[ch.cnms.length];
+		cur[i] = new VolAdjust[ch.cnms.length];
 		n[i] = 0;
 	    }
 	    vacc += vol;

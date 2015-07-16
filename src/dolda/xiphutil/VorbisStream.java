@@ -178,7 +178,7 @@ public class VorbisStream {
 		private boolean convert() throws IOException {
 		    float[][] inb = decode();
 		    if(inb == null) {
-			buf = new byte[0];
+			buf = null;
 			return(false);
 		    }
 		    buf = new byte[2 * chn * inb[0].length];

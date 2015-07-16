@@ -30,11 +30,12 @@ import java.util.*;
 import java.io.*;
 import java.lang.ref.WeakReference;
 import haven.Audio.CS;
+import haven.Audio.VolAdjust;
 
 public class ActAudio extends GLState.Abstract {
     public static final GLState.Slot<ActAudio> slot = new GLState.Slot<ActAudio>(GLState.Slot.Type.SYS, ActAudio.class);
+    private Audio.Mixer mixer = null;
     private final Collection<CS> clips = new ArrayList<CS>();
-    private final Collection<CS> current = new ArrayList<CS>();
     private final Map<Global, Global> global = new HashMap<Global, Global>();
 
     public void prep(Buffer st) {
@@ -45,22 +46,15 @@ public class ActAudio extends GLState.Abstract {
 	public boolean cycle(ActAudio list);
     }
 
-    public static interface VolumeClip extends Audio.CS {
-	public void setvol(double vol);
-    }
-
     public static class PosClip implements Rendered {
-	private final VolumeClip clip;
+	private final VolAdjust clip;
 	
-	public PosClip(VolumeClip clip) {
+	public PosClip(VolAdjust clip) {
 	    this.clip = clip;
 	}
 
-	public PosClip(final Audio.DataClip clip) {
-	    this(new VolumeClip() {
-		    public int get(double[][] buf) {return(clip.get(buf));}
-		    public void setvol(double vol) {clip.vol = vol;}
-		});
+	public PosClip(CS clip) {
+	    this(new VolAdjust(clip));
 	}
 	
 	public void draw(GOut g) {
@@ -69,7 +63,7 @@ public class ActAudio extends GLState.Abstract {
 	    if(list != null) {
 		Coord3f pos = PView.mvxf(g).mul4(Coord3f.o);
 		double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
-		this.clip.setvol(Math.min(1.0, 50.0 / pd));
+		this.clip.vol = Math.min(1.0, 50.0 / pd);
 		list.add(clip);
 	    }
 	}
@@ -101,7 +95,7 @@ public class ActAudio extends GLState.Abstract {
 
 	public static class Glob implements Global {
 	    public final Resource res;
-	    private final Audio.DataClip clip;
+	    private final VolAdjust clip;
 	    private int n;
 	    private double vacc;
 	    private double lastupd = System.currentTimeMillis() / 1000.0;
@@ -111,11 +105,11 @@ public class ActAudio extends GLState.Abstract {
 		final Resource.Audio clip = res.layer(Resource.audio, "amb");
 		if(clip == null)
 		    throw(new RuntimeException("No ambient clip found in " + res));
-		this.clip = new Audio.DataClip(new RepeatStream(new RepeatStream.Repeater() {
-			public InputStream cons() {
-			    return(clip.pcmstream());
+		this.clip = new VolAdjust(new Audio.Repeater() {
+			public CS cons() {
+			    return(clip.stream());
 			}
-		    }), 0.0, 1.0);
+		    });
 	    }
 
 	    public int hashCode() {
@@ -168,7 +162,9 @@ public class ActAudio extends GLState.Abstract {
     }
 
     public void add(CS clip) {
-	clips.add(clip);
+	synchronized(clips) {
+	    clips.add(clip);
+	}
     }
 
     @SuppressWarnings("unchecked")
@@ -185,25 +181,31 @@ public class ActAudio extends GLState.Abstract {
 	    if(glob.cycle(this))
 		i.remove();
 	}
-	synchronized(current) {
-	    for(CS clip : current) {
-		if(!clips.contains(clip))
-		    Audio.stop(clip);
+	synchronized(clips) {
+	    if(mixer != null) {
+		for(CS clip : mixer.current()) {
+		    if(!clips.contains(clip))
+			mixer.stop(clip);
+		}
 	    }
 	    for(CS clip : clips) {
-		if(!current.contains(clip))
-		    Audio.play(clip);
+		if(mixer == null) {
+		    mixer = new Audio.Mixer(true);
+		    Audio.play(mixer);
+		}
+		if(!mixer.playing(clip))
+		    mixer.add(clip);
 	    }
-	    current.clear();
-	    current.addAll(clips);
 	    clips.clear();
 	}
     }
     
     public void clear() {
-	synchronized(current) {
-	    for(CS clip : current)
-		Audio.stop(clip);
+	synchronized(clips) {
+	    if(mixer != null) {
+		Audio.stop(mixer);
+		mixer = null;
+	    }
 	}
     }
 }

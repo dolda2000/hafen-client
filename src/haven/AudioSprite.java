@@ -27,7 +27,7 @@
 package haven;
 
 import java.util.*;
-import java.io.*;
+import haven.Audio.CS;
 
 public class AudioSprite {
     public static Resource.Audio randoom(Resource res, String id) {
@@ -67,7 +67,7 @@ public class AudioSprite {
 
 	public ClipSprite(Owner owner, Resource res, Resource.Audio clip) {
 	    super(owner, res);
-	    this.clip = new ActAudio.PosClip(new Audio.DataClip(clip.pcmstream()) {
+	    this.clip = new ActAudio.PosClip(new Audio.Monitor(clip.stream()) {
 		    protected void eof() {
 			super.eof();
 			done = true;
@@ -92,18 +92,18 @@ public class AudioSprite {
 	public RepeatSprite(Owner owner, Resource res, final Resource.Audio beg, final Resource.Audio clip, Resource.Audio end) {
 	    super(owner, res);
 	    this.end = end;
-	    RepeatStream.Repeater rep = new RepeatStream.Repeater() {
+	    CS rep = new Audio.Repeater() {
 		    private boolean f = true;
 
-		    public InputStream cons() {
+		    public CS cons() {
 			if(f && (beg != null)) {
 			    f = false;
-			    return(beg.pcmstream());
+			    return(beg.stream());
 			}
-			return(clip.pcmstream());
+			return(clip.stream());
 		    }
 		};
-	    this.clip = new ActAudio.PosClip(new Audio.DataClip(new RepeatStream(rep)));
+	    this.clip = new ActAudio.PosClip(rep);
 	}
 
 	public boolean setup(RenderList r) {
@@ -118,7 +118,7 @@ public class AudioSprite {
 
 	public void delete() {
 	    if(end != null)
-		clip = new ActAudio.PosClip(new Audio.DataClip(end.pcmstream()) {
+		clip = new ActAudio.PosClip(new Audio.Monitor(end.stream()) {
 			protected void eof() {
 			    super.eof();
 			    RepeatSprite.this.clip = null;
