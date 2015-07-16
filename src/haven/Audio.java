@@ -202,6 +202,8 @@ public class Audio {
 
 	public int get(double[][] dst, int ns) {
 	    int nch = dst.length;
+	    if(data == null)
+		return(-1);
 	    for(int sm = 0; sm < ns; sm++) {
 		while(dp >= data[0].length) {
 		    try {
