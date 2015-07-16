@@ -58,7 +58,7 @@ public class ActAudio extends GLState.Abstract {
 
 	public PosClip(final Audio.DataClip clip) {
 	    this(new VolumeClip() {
-		    public int get(double[][] buf) {return(clip.get(buf));}
+		    public int get(double[][] buf, int ns) {return(clip.get(buf, ns));}
 		    public void setvol(double vol) {clip.vol = vol;}
 		});
 	}
