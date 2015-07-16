@@ -366,6 +366,42 @@ public class Audio {
 	protected abstract CS cons();
     }
 
+    public static class LDump implements CS {
+	public final CS bk;
+	private double val = 0.0;
+	private int n = 0, iv;
+
+	public LDump(CS bk, int iv) {
+	    this.bk = bk;
+	    this.iv = iv;
+	}
+
+	public LDump(CS bk) {
+	    this(bk, 44100);
+	}
+
+	public int get(double[][] buf, int ns) {
+	    int nch = buf.length;
+	    int ret = bk.get(buf, ns);
+	    if(ret < 0) {
+		if(n > 0)
+		    System.err.println(val / n);
+	    } else {
+		for(int ch = 0; ch < nch; ch++) {
+		    for(int sm = 0; sm < ret; sm++) {
+			val += Math.abs(buf[ch][sm]);
+			if(++n >= 44100) {
+			    System.err.print((val / n) + " ");
+			    val = 0;
+			    n = 0;
+			}
+		    }
+		}
+	    }
+	    return(ret);
+	}
+    }
+
     private static class Player extends HackThread {
 	private final CS stream;
 	private final int nch;
