@@ -78,13 +78,17 @@ public class Audio {
 			    i.remove();
 			    continue clip;
 			}
+			if(boff + ret > max) {
+			    for(int ch = 0; ch < nch; ch++)
+				Arrays.fill(dst[ch], max, boff + ret, 0.0);
+			    max = boff + ret;
+			}
 			for(int ch = 0; ch < nch; ch++) {
 			    for(int sm = 0; sm < ret; sm++)
 				dst[ch][boff + sm] += buf[ch][sm];
 			}
 			left -= ret;
 			boff += ret;
-			max = Math.max(boff, max);
 		    }
 		}
 	    }
