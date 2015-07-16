@@ -1584,7 +1584,7 @@ public class Resource implements Serializable {
 	used = false;
     }
 
-    private Named indir = null;
+    private transient Named indir = null;
     public Named indir() {
 	if(indir != null)
 	    return(indir);
