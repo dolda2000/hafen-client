@@ -333,6 +333,8 @@ public class Composited implements Rendered {
 	    try {
 		if(md.real == null) {
 		    FastMesh.MeshRes mr = md.mod.get().layer(FastMesh.MeshRes.class);
+		    if(mr == null)
+			throw(new Sprite.ResourceException("Model resource contains no mesh", md.mod.get()));
 		    md.real = new Model(mr.m);
 		    /* This is really ugly, but I can't really think of
 		     * anything less ugly right now. */
