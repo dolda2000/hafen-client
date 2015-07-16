@@ -905,7 +905,10 @@ public class BGL {
 			buf.append(", ");
 		    buf.append(argn[i]);
 		    buf.append("=");
-		    buf.append(args[i]);
+		    if(args[i] instanceof Object[])
+			buf.append(Arrays.asList((Object[])args[i]).toString());
+		    else
+			buf.append(args[i]);
 		}
 		buf.append(")>");
 		return(buf.toString());
