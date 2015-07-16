@@ -30,7 +30,7 @@ import java.util.*;
 import java.awt.font.TextAttribute;
 
 public class OptWnd extends Window {
-    public final Panel main;
+    public final Panel main, video, audio;
     public Panel current;
 
     public void chpanel(Panel p) {
@@ -183,8 +183,8 @@ public class OptWnd extends Window {
     public OptWnd() {
 	super(Coord.z, "Options", true);
 	main = add(new Panel());
-	Panel video = add(new VideoPanel(main));
-	Panel audio = add(new Panel());
+	video = add(new VideoPanel(main));
+	audio = add(new Panel());
 	int y;
 
 	main.add(new PButton(200, "Video settings", 'v', video), new Coord(0, 0));
@@ -207,11 +207,35 @@ public class OptWnd extends Window {
 	main.pack();
 
 	y = 0;
-	audio.add(new Label("Audio volume"), new Coord(0, y));
-	y += 20;
+	audio.add(new Label("Master audio volume"), new Coord(0, y));
+	y += 15;
 	audio.add(new HSlider(200, 0, 1000, (int)(Audio.volume * 1000)) {
 		public void changed() {
 		    Audio.setvolume(val / 1000.0);
+		}
+	    }, new Coord(0, y));
+	y += 30;
+	audio.add(new Label("In-game event volume"), new Coord(0, y));
+	y += 15;
+	audio.add(new HSlider(200, 0, 1000, 0) {
+		protected void attach(UI ui) {
+		    super.attach(ui);
+		    val = (int)(ui.audio.pos.volume * 1000);
+		}
+		public void changed() {
+		    ui.audio.pos.setvolume(val / 1000.0);
+		}
+	    }, new Coord(0, y));
+	y += 20;
+	audio.add(new Label("Ambient volume"), new Coord(0, y));
+	y += 15;
+	audio.add(new HSlider(200, 0, 1000, 0) {
+		protected void attach(UI ui) {
+		    super.attach(ui);
+		    val = (int)(ui.audio.pos.volume * 1000);
+		}
+		public void changed() {
+		    ui.audio.amb.setvolume(val / 1000.0);
 		}
 	    }, new Coord(0, y));
 	y += 35;
