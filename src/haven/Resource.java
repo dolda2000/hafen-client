@@ -635,13 +635,16 @@ public class Resource implements Serializable {
 
     public static void addurl(URL url) {
 	ResSource src = new HttpSource(url);
-	final ResCache mc = prscache;
-	if(mc != null) {
-	    src = new TeeSource(src) {
-		    public OutputStream fork(String name) throws IOException {
-			return(mc.store("res/" + name));
-		    }
-		};
+	if(prscache != null) {
+	    class Caching extends TeeSource {
+		private final transient ResCache cache;
+		Caching(ResSource bk, ResCache cache) {super(bk); this.cache = cache;}
+
+		public OutputStream fork(String name) throws IOException {
+		    return(cache.store("res/" + name));
+		}
+	    }
+	    src = new Caching(src, prscache);
 	}
 	remote().add(src);
     }
@@ -1581,7 +1584,7 @@ public class Resource implements Serializable {
 	used = false;
     }
 
-    private Named indir = null;
+    private transient Named indir = null;
     public Named indir() {
 	if(indir != null)
 	    return(indir);
