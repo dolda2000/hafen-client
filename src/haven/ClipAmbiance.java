@@ -78,7 +78,7 @@ public class ClipAmbiance implements Rendered {
 	}
 
 	private void addmin() {
-	    while(curn < desc.minc) {
+	    while((curn < desc.minc) && (chans[0] != null)) {
 		double wsum = 0.0;
 		for(int i = 0; (i < chans.length) && (chans[i] != null); i++) {
 		    for(int o = 0; o < chans[i].cnms.length; o++) {
