@@ -860,7 +860,7 @@ public class BGL {
 		if(o == null)
 		    return(null);
 		Class<?> ft = o.getClass();
-		if((o instanceof Number) || (o instanceof String)) {
+		if((o instanceof Number) || (o instanceof Boolean) || (o instanceof String)) {
 		    return(o);
 		} else if(ft.isArray()) {
 		    int len = Array.getLength(o);
