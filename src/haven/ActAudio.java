@@ -86,8 +86,11 @@ public class ActAudio extends GLState.Abstract {
 	    synchronized(clips) {
 		if(mixer != null) {
 		    Audio.stop(volc);
+		    /* XXX: More likely, cycling should be fixed so as
+		     * to not go on cycling a discarded actaudio.
 		    mixer = null;
 		    volc = null;
+		    */
 		}
 	    }
 	}
