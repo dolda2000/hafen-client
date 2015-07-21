@@ -138,4 +138,22 @@ public class CompImage {
 	}
 	return(this);
     }
+
+    public static Image[][] transpose(Image[][] cells) {
+	int w = 0;
+	for(int r = 0; r < cells.length; r++)
+	    w = Math.max(w, cells[r].length);
+	Image[][] ret = new Image[w][];
+	for(int c = 0; c < w; c++) {
+	    ret[c] = new Image[cells.length];
+	    for(int r = 0; r < cells.length; r++) {
+		ret[c][r] = cells[r][c];
+	    }
+	}
+	return(ret);
+    }
+
+    public static Image[][] transpose(Collection<Image[]> rows) {
+	return(transpose(rows.toArray(new Image[0][])));
+    }
 }
