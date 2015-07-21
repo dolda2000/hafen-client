@@ -604,7 +604,7 @@ public class CharWnd extends Window {
 
     public class Experience {
 	public final Indir<Resource> res;
-	public final int mtime;
+	public final int mtime, score;
 	private String sortkey = "\uffff";
 	private Tex small;
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
@@ -617,9 +617,10 @@ public class CharWnd extends Window {
 	    }
 	};
 
-	private Experience(Indir<Resource> res, int mtime) {
+	private Experience(Indir<Resource> res, int mtime, int score) {
 	    this.res = res;
 	    this.mtime = mtime;
+	    this.score = score;
 	}
 
 	public String rendertext() {
@@ -627,6 +628,8 @@ public class CharWnd extends Window {
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
 	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+	    if(score > 0)
+		buf.append("Experience points: " + Utils.thformat(score) + "\n\n");
 	    buf.append(res.layer(Resource.pagina).text);
 	    return(buf.toString());
 	}
@@ -1194,7 +1197,8 @@ public class CharWnd extends Window {
 	while(a < args.length) {
 	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
 	    int mtime = ((Number)args[a++]).intValue();
-	    buf.add(new Experience(res, mtime));
+	    int score = ((Number)args[a++]).intValue();
+	    buf.add(new Experience(res, mtime, score));
 	}
     }
 
