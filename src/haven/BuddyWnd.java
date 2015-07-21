@@ -212,8 +212,10 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	    } else {
 		if(editing == null) {
 		    BuddyWnd.this.add(nicksel = new TextEntry(190, "") {
+			    {dshow = true;}
 			    public void activate(String text) {
 				editing.chname(text);
+				commit();
 			    }
 			}, new Coord(5, 150));
 		    BuddyWnd.this.adda(grpsel = new GroupSelector(0) {
@@ -226,6 +228,7 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 		editing = b;
 		nicksel.settext(b.name);
 		nicksel.buf.point = nicksel.buf.line.length();
+		nicksel.commit();
 		grpsel.group = b.group;
 	    }
 	}
@@ -301,6 +304,7 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	add(new Label("Presentation name:"), new Coord(0, y));
 	y += 15;
 	pname = add(new TextEntry(200, "") {
+		{dshow = true;}
 		public void activate(String text) {
 		    setpname(text);
 		}
@@ -316,6 +320,7 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	add(new Label("My hearth secret:"), new Coord(0, y));
 	y += 15;
 	charpass = add(new TextEntry(200, "") {
+		{dshow = true;}
 		public void activate(String text) {
 		    setpwd(text);
 		}
@@ -355,11 +360,13 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
     public void setpwd(String pass) {
 	wdgmsg("pwd", pass);
 	charpass.settext(pass);
+	charpass.commit();
     }
 
     public void setpname(String name) {
 	wdgmsg("pname", name);
 	pname.settext(name);
+	pname.commit();
     }
 
     private void setcmp(Comparator<Buddy> cmp) {
@@ -434,9 +441,11 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	} else if(msg == "pwd") {
 	    charpass.settext((String)args[0]);
 	    charpass.buf.point = charpass.buf.line.length();
+	    charpass.commit();
 	} else if(msg == "pname") {
 	    pname.settext((String)args[0]);
 	    pname.buf.point = pname.buf.line.length();
+	    pname.commit();
 	} else {
 	    super.uimsg(msg, args);
 	}
