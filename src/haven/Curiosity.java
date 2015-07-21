@@ -30,15 +30,20 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class Curiosity extends ItemInfo.Tip {
-    public final int exp, mw;
+    public final int exp, mw, enc;
 
-    public Curiosity(Owner owner, int exp, int mw) {
+    public Curiosity(Owner owner, int exp, int mw, int enc) {
 	super(owner);
 	this.exp = exp;
 	this.mw = mw;
+	this.enc = enc;
     }
 
     public BufferedImage tipimg() {
-	return(RichText.render(String.format("Learning points: $col[192,192,255]{%s}\nMental weight: $col[255,192,255]{%d}", Utils.thformat(exp), mw), 0).img);
+	StringBuilder buf = new StringBuilder();
+	buf.append(String.format("Learning points: $col[192,192,255]{%s}\nMental weight: $col[255,192,255]{%d}\n", Utils.thformat(exp), mw));
+	if(enc > 0)
+	    buf.append(String.format("Experience points: $col[255,255,192]{%d}\n", enc));
+	return(RichText.render(buf.toString(), 0).img);
     }
 }
