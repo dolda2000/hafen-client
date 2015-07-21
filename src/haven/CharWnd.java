@@ -1034,11 +1034,12 @@ public class CharWnd extends Window {
 			    if((cc != null) && (cc > exp))
 				g.chcolor(debuff);
 			    super.draw(g);
-			    if((CharWnd.this.nsk.sel == null) && (cc != null)) {
+			    Skill sel = CharWnd.this.nsk.sel;
+			    if((sel == null) && (cc != null)) {
 				settext("N/A");
 				cc = null;
-			    } else if((CharWnd.this.nsk.sel != null) && (cc == null)) {
-				settext(Utils.thformat(cc = CharWnd.this.nsk.sel.cost));
+			    } else if((sel != null) && ((cc == null) || (cc != sel.cost))) {
+				settext(Utils.thformat(cc = sel.cost));
 			    }
 			}
 		    });
