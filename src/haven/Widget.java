@@ -192,14 +192,15 @@ public class Widget {
 	this.sz = sz;
     }
 
-    private void attach(UI ui) {
+    protected void attach(UI ui) {
 	this.ui = ui;
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.attach(ui);
     }
 
     private <T extends Widget> T add0(T child) {
-	((Widget)child).attach(this.ui);
+	if(this.ui != null)
+	    ((Widget)child).attach(this.ui);
 	child.parent = this;
 	child.link();
 	child.added();

@@ -34,12 +34,72 @@ import haven.Audio.VolAdjust;
 
 public class ActAudio extends GLState.Abstract {
     public static final GLState.Slot<ActAudio> slot = new GLState.Slot<ActAudio>(GLState.Slot.Type.SYS, ActAudio.class);
-    private Audio.Mixer mixer = null;
-    private final Collection<CS> clips = new ArrayList<CS>();
+    public final Channel pos = new Channel("pos");
+    public final Channel amb = new Channel("amb");
     private final Map<Global, Global> global = new HashMap<Global, Global>();
 
     public void prep(Buffer st) {
 	st.put(slot, this);
+    }
+
+    public class Channel {
+	public final String name;
+	public double volume;
+	private Audio.VolAdjust volc = null;
+	private Audio.Mixer mixer = null;
+	private final Collection<CS> clips = new ArrayList<CS>();
+
+	private Channel(String name) {
+	    this.name = name;
+	    this.volume = Double.parseDouble(Utils.getpref("sfxvol-" + name, "1.0"));
+	}
+
+	public void setvolume(double volume) {
+	    this.volume = volume;
+	    Utils.setpref("sfxvol-" + name, Double.toString(volume));
+	}
+
+	private void cycle() {
+	    synchronized(clips) {
+		if(mixer != null) {
+		    for(CS clip : mixer.current()) {
+			if(!clips.contains(clip))
+			    mixer.stop(clip);
+		    }
+		}
+		for(CS clip : clips) {
+		    if(mixer == null) {
+			volc = new Audio.VolAdjust(mixer = new Audio.Mixer(true));
+			volc.vol = volume;
+			Audio.play(volc);
+		    }
+		    if(!mixer.playing(clip))
+			mixer.add(clip);
+		}
+		if(volc != null)
+		    volc.vol = volume;
+		clips.clear();
+	    }
+	}
+
+	public void clear() {
+	    synchronized(clips) {
+		if(mixer != null) {
+		    Audio.stop(volc);
+		    /* XXX: More likely, cycling should be fixed so as
+		     * to not go on cycling a discarded actaudio.
+		    mixer = null;
+		    volc = null;
+		    */
+		}
+	    }
+	}
+
+	public void add(CS clip) {
+	    synchronized(clips) {
+		clips.add(clip);
+	    }
+	}
     }
 
     public interface Global {
@@ -65,7 +125,7 @@ public class ActAudio extends GLState.Abstract {
 		double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
 		this.clip.vol = Math.min(1.0, 50.0 / pd);
 		this.clip.bal = Utils.clip(Math.atan2(pos.x, -pos.z) / (Math.PI / 8.0), -1, 1);
-		list.add(clip);
+		list.pos.add(clip);
 	    }
 	}
 
@@ -133,7 +193,7 @@ public class ActAudio extends GLState.Abstract {
 		vacc = 0.0;
 		n = 0;
 		lastupd = now;
-		list.add(clip);
+		list.amb.add(clip);
 		return(false);
 	    }
 
@@ -162,12 +222,6 @@ public class ActAudio extends GLState.Abstract {
 	}
     }
 
-    public void add(CS clip) {
-	synchronized(clips) {
-	    clips.add(clip);
-	}
-    }
-
     @SuppressWarnings("unchecked")
     public <T extends Global> T intern(T glob) {
 	T ret = (T)global.get(glob);
@@ -175,38 +229,19 @@ public class ActAudio extends GLState.Abstract {
 	    global.put(glob, ret = glob);
 	return(ret);
     }
-    
+
     public void cycle() {
 	for(Iterator<Global> i = global.keySet().iterator(); i.hasNext();) {
 	    Global glob = i.next();
 	    if(glob.cycle(this))
 		i.remove();
 	}
-	synchronized(clips) {
-	    if(mixer != null) {
-		for(CS clip : mixer.current()) {
-		    if(!clips.contains(clip))
-			mixer.stop(clip);
-		}
-	    }
-	    for(CS clip : clips) {
-		if(mixer == null) {
-		    mixer = new Audio.Mixer(true);
-		    Audio.play(mixer);
-		}
-		if(!mixer.playing(clip))
-		    mixer.add(clip);
-	    }
-	    clips.clear();
-	}
+	pos.cycle();
+	amb.cycle();
     }
     
     public void clear() {
-	synchronized(clips) {
-	    if(mixer != null) {
-		Audio.stop(mixer);
-		mixer = null;
-	    }
-	}
+	pos.clear();
+	amb.clear();
     }
 }
