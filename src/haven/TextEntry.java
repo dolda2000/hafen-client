@@ -78,6 +78,11 @@ public class TextEntry extends SIWidget {
 	redraw();
     }
 
+    public void commit() {
+	dirty = false;
+	redraw();
+    }
+
     public void uimsg(String name, Object... args) {
 	if(name == "settext") {
 	    settext((String)args[0]);
@@ -88,8 +93,7 @@ public class TextEntry extends SIWidget {
 	} else if(name == "dshow") {
 	    dshow = ((Integer)args[0]) != 0;
 	} else if(name == "cmt") {
-	    dirty = false;
-	    redraw();
+	    commit();
 	} else {
 	    super.uimsg(name, args);
 	}
