@@ -185,6 +185,12 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	public Buddy listitem(int idx) {return(buddies.get(idx));}
 	public int listitems() {return(buddies.size());}
 
+	protected void drawbg(GOut g) {
+	    g.chcolor(0, 0, 0, 128);
+	    g.frect(Coord.z, sz);
+	    g.chcolor();
+	}
+
 	public void drawitem(GOut g, Buddy b, int idx) {
 	    if(b.online == 1)
 		g.image(online, Coord.z);
@@ -217,12 +223,12 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 				editing.chname(text);
 				commit();
 			    }
-			}, new Coord(5, 150));
+			}, new Coord(5, 185));
 		    BuddyWnd.this.adda(grpsel = new GroupSelector(0) {
 			    public void changed(int group) {
 				editing.chgrp(group);
 			    }
-			}, new Coord(100, 175), 0.5, 0);
+			}, new Coord(100, 210), 0.5, 0);
 		    BuddyWnd.this.setfocus(nicksel);
 		}
 		editing = b;
@@ -281,9 +287,14 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
     }
 
     public BuddyWnd() {
-	super(new Coord(200, 370), "Kin");
+	super(new Coord(200, 380));
+	setfocustab(true);
 	int y = 0;
-	bl = add(new BuddyList(200, 7), new Coord(0, y));
+	add(new Img(CharWnd.catf.render("Kin").tex()), new Coord(0, 0));
+	y += 35;
+
+	bl = add(new BuddyList(200 - Window.wbox.bisz().x, 7), new Coord(Window.wbox.btloff().x, y));
+	Frame.around(this, Collections.singletonList(bl));
 	y += 195;
 
 	add(new Label("Sort by:"), new Coord(0, y));
