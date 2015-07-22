@@ -196,9 +196,9 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
 	}
 
 	public void draw(GOut g) {
+	    super.draw(g);
 	    if(buddies.size() == 0)
 		g.atext("You are alone in the world", sz.div(2), 0.5, 0.5);
-	    super.draw(g);
 	}
 	
 	public void change(Buddy b) {
