@@ -30,8 +30,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.util.*;
 
-public class Polity extends Window {
-    public final String name;
+public class Polity extends Widget {
+    public final String cap, name;
     public int auth, acap, adrain, aseq;
     public boolean offline;
     public final List<Member> memb = new ArrayList<Member>();
@@ -97,7 +97,8 @@ public class Polity extends Window {
     public static final Text.Foundry membf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
 
     public Polity(String cap, String name) {
-	super(new Coord(200, 200), cap);
+	super(new Coord(200, 200));
+	this.cap = cap;
 	this.name = name;
     }
 

@@ -30,7 +30,7 @@ import java.awt.Color;
 import java.util.*;
 import java.text.Collator;
 
-public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
+public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     private List<Buddy> buddies = new ArrayList<Buddy>();
     private Map<Integer, Buddy> idmap = new HashMap<Integer, Buddy>();
     private BuddyList bl;

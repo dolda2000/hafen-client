@@ -51,6 +51,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Inventory maininv;
     public CharWnd chrwdg;
     public BuddyWnd buddies;
+    private final Zergwnd zerg;
     public Polity polity;
     public HelpWnd help;
     public OptWnd opts;
@@ -138,6 +139,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	syslog = chat.add(new ChatUI.Log("System"));
 	opts = add(new OptWnd());
 	opts.hide();
+	zerg = add(new Zergwnd(), 187, 50);
+	zerg.hide();
     }
 
     private void mapbuttons() {
@@ -351,16 +354,84 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     static class Hidewnd extends Window {
+	Hidewnd(Coord sz, String cap, boolean lg) {
+	    super(sz, cap, lg);
+	}
+
 	Hidewnd(Coord sz, String cap) {
 	    super(sz, cap);
 	}
-	
+
 	public void wdgmsg(Widget sender, String msg, Object... args) {
 	    if((sender == this) && msg.equals("close")) {
 		this.hide();
 		return;
 	    }
 	    super.wdgmsg(sender, msg, args);
+	}
+    }
+
+    static class Zergwnd extends Hidewnd {
+	Tabs tabs = new Tabs(Coord.z, Coord.z, this);
+	final TButton kin, pol;
+
+	class TButton extends IButton {
+	    Tabs.Tab tab = null;
+	    final Tex inv;
+
+	    TButton(String nm, boolean g) {
+		super(Resource.loadimg("gfx/hud/buttons/" + nm + "u"), Resource.loadimg("gfx/hud/buttons/" + nm + "d"));
+		if(g)
+		    inv = Resource.loadtex("gfx/hud/buttons/" + nm + "g");
+		else
+		    inv = null;
+	    }
+
+	    public void draw(GOut g) {
+		if((tab == null) && (inv != null))
+		    g.image(inv, Coord.z);
+		else
+		    super.draw(g);
+	    }
+
+	    public void click() {
+		if(tab != null) {
+		    tabs.showtab(tab);
+		    repack();
+		}
+	    }
+	}
+
+	Zergwnd() {
+	    super(Coord.z, "Kith & Kin", true);
+	    kin = add(new TButton("kin", false));
+	    kin.tooltip = Text.render("Kin");
+	    pol = add(new TButton("pol", true));
+	}
+
+	private void repack() {
+	    tabs.indpack();
+	    kin.c = new Coord(0, tabs.curtab.contentsz().y + 20);
+	    pol.c = new Coord(kin.c.x + kin.sz.x + 10, kin.c.y);
+	    this.pack();
+	}
+
+	Tabs.Tab ntab(Widget ch, TButton btn) {
+	    Tabs.Tab tab = add(tabs.new Tab() {
+		    public void cresize(Widget ch) {
+			repack();
+		    }
+		}, tabs.c);
+	    tab.add(ch, Coord.z);
+	    btn.tab = tab;
+	    repack();
+	    return(tab);
+	}
+
+	void dtab(TButton btn) {
+	    btn.tab.destroy();
+	    btn.tab = null;
+	    repack();
 	}
     }
 
@@ -446,11 +517,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    makewnd.pack();
 	    add(makewnd, new Coord(400, 200));
 	} else if(place == "buddy") {
-	    buddies = add((BuddyWnd)child, 187, 50);
-	    buddies.hide();
+	    zerg.ntab(buddies = (BuddyWnd)child, zerg.kin);
 	} else if(place == "pol") {
-	    polity = add((Polity)child, 500, 50);
-	    polity.hide();
+	    zerg.ntab(polity = (Polity)child, zerg.pol);
+	    zerg.pol.tooltip = Text.render(polity.cap);
 	} else if(place == "chat") {
 	    chat.addchild(child);
 	} else if(place == "party") {
@@ -480,6 +550,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	} else if(w == polity) {
 	    polity = null;
+	    zerg.dtab(zerg.pol);
 	} else if(w == chrwdg) {
 	    chrwdg = null;
 	} else if(w == fw) {
@@ -592,10 +663,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return;
 	} else if((sender == chrwdg) && (msg == "close")) {
 	    chrwdg.hide();
-	} else if((sender == buddies) && (msg == "close")) {
-	    buddies.hide();
-	} else if((sender == polity) && (msg == "close")) {
-	    polity.hide();
 	} else if((sender == help) && (msg == "close")) {
 	    ui.destroy(help);
 	    help = null;
@@ -667,10 +734,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		}, 0, 0);
 	    add(new MenuButton("rbtn-bud", 2, "Kith & Kin ($col[255,255,0]{Ctrl+B})") {
 		    public void click() {
-			if((buddies != null) && buddies.show(!buddies.visible)) {
-			    buddies.raise();
-			    fitwdg(buddies);
-			    setfocus(buddies);
+			if(zerg.show(!zerg.visible)) {
+			    zerg.raise();
+			    fitwdg(zerg);
+			    setfocus(zerg);
 			}
 		    }
 		}, 0, 0);
@@ -716,11 +783,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		fitwdg(fw);
 	    }
 	} else if(key == 16) {
+	    /*
 	    if((polity != null) && polity.show(!polity.visible)) {
 		polity.raise();
 		fitwdg(polity);
 		setfocus(polity);
 	    }
+	    */
 	    return(true);
 	} else if((key == 27) && (map != null) && !map.hasfocus) {
 	    setfocus(map);
