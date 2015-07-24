@@ -51,6 +51,11 @@ public class Tabs {
 		hide();
 	    tabs.add(this);
 	}
+
+	public void destroy() {
+	    super.destroy();
+	    tabs.remove(this);
+	}
     }
 
     public Tab add() {
@@ -97,6 +102,12 @@ public class Tabs {
 
     public void pack() {
 	resize(contentsz());
+    }
+
+    public void indpack() {
+	for(Tab tab : tabs)
+	    tab.pack();
+	this.sz = contentsz();
     }
 
     public void changed(Tab from, Tab to) {}

@@ -32,7 +32,7 @@ import java.util.*;
 
 public class Polity extends Window {
     public final String name;
-    public int auth, acap, adrain;
+    public int auth, acap, adrain, aseq;
     public boolean offline;
     public final List<Member> memb = new ArrayList<Member>();
     public final Map<Integer, Member> idmap = new HashMap<Integer, Member>();
@@ -91,24 +91,34 @@ public class Polity extends Window {
     public static final Text.Foundry membf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
 
     public Polity(String cap, String name) {
-	super(new Coord(200, 200), cap, true, Coord.z, Coord.z);
+	super(new Coord(200, 200), cap);
 	this.name = name;
     }
 
-    private Tex rauth = null;
-    public void cdraw(GOut g) {
-	if(acap > 0) {
-	    synchronized(this) {
+    public class AuthMeter extends Widget {
+	public AuthMeter(Coord sz) {
+	    super(sz);
+	}
+
+	private int aseq = -1;
+	private Tex rauth = null;
+	public void draw(GOut g) {
+	    synchronized(Polity.this) {
 		g.chcolor(0, 0, 0, 255);
-		g.frect(new Coord(0, 23), new Coord(200, 20));
+		g.frect(new Coord(0, 0), new Coord(200, 20));
 		g.chcolor(128, 0, 0, 255);
-		g.frect(new Coord(0, 24), new Coord((200 * auth) / acap, 18));
+		g.frect(new Coord(1, 1), new Coord(((sz.x - 2) * auth) / acap, sz.y - 2));
 		g.chcolor();
+		if((rauth != null) && (aseq != Polity.this.aseq)) {
+		    rauth.dispose();
+		    rauth = null;
+		    aseq = Polity.this.aseq;
+		}
 		if(rauth == null) {
 		    Color col = offline?Color.RED:Color.WHITE;
 		    rauth = new TexI(Utils.outline2(Text.render(String.format("%s/%s", auth, acap), col).img, Utils.contrast(col)));
 		}
-		g.aimage(rauth, new Coord(100, 33), 0.5, 0.5);
+		g.aimage(rauth, sz.div(2), 0.5, 0.5);
 	    }
 	}
     }
@@ -120,7 +130,7 @@ public class Polity extends Window {
 		acap = (Integer)args[1];
 		adrain = (Integer)args[2];
 		offline = ((Integer)args[3]) != 0;
-		rauth = null;
+		aseq++;
 	    }
 	} else if(msg == "add") {
 	    Integer id = (Integer)args[0];
