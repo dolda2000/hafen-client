@@ -100,14 +100,10 @@ public class LocalMiniMap extends Widget {
 		Tiler tl = m.tiler(t);
 		if(tl instanceof Ridges.RidgeTile) {
 		    if(Ridges.brokenp(m, ul.add(c))) {
-			for(int y = c.y; y <= c.y + 1; y++) {
-			    for(int x = c.x; x <= c.x + 1; x++) {
-				int rgb = buf.getRGB(x, y);
-				rgb = (rgb & 0xff000000) |
-				    (((rgb & 0x00ff0000) >> 17) << 16) |
-				    (((rgb & 0x0000ff00) >>  9) << 8) |
-				    (((rgb & 0x000000ff) >>  1) << 0);
-				buf.setRGB(x, y, rgb);
+			for(int y = c.y - 1; y <= c.y + 1; y++) {
+			    for(int x = c.x - 1; x <= c.x + 1; x++) {
+				Color cc = new Color(buf.getRGB(x, y));
+				buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y))?1:0.1).getRGB());
 			    }
 			}
 		    }
