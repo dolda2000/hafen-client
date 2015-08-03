@@ -470,6 +470,7 @@ public class CharWnd extends Window {
 
 	public ExpLabel(Coord oc) {
 	    super(oc, "0");
+	    setcolor(new Color(192, 192, 255));
 	}
 
 	public void draw(GOut g) {
@@ -484,6 +485,7 @@ public class CharWnd extends Window {
 
 	public EncLabel(Coord oc) {
 	    super(oc, "0");
+	    setcolor(new Color(255, 255, 192));
 	}
 
 	public void draw(GOut g) {
