@@ -502,9 +502,8 @@ public class CharWnd extends Window {
 	    public Integer value() {return(texp);}
 	    public String text(Integer v) {return(Utils.thformat(v));}
 	};
-	private final Text.UText<?> twt = new Text.UText<Integer>(Text.std) {
-	    public Integer value() {return(tw);}
-	    public String text(Integer v) {return(v + "/" + ui.sess.glob.cattr.get("int").comp);}
+	private final Text.UText<?> twt = new Text.UText<String>(Text.std) {
+	    public String value() {return(tw + "/" + ui.sess.glob.cattr.get("int").comp);}
 	};
 	private final Text.UText<?> tenct = new Text.UText<Integer>(Text.std) {
 	    public Integer value() {return(tenc);}
