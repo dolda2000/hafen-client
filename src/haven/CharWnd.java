@@ -45,6 +45,7 @@ public class CharWnd extends Window {
     public final Collection<Attr> base;
     public final Collection<SAttr> skill;
     public final FoodMeter feps;
+    public final GlutMeter glut;
     public final Constipations cons;
     public final SkillList csk, nsk;
     public final ExperienceList exps;
@@ -216,6 +217,47 @@ public class CharWnd extends Window {
 		    cur = ItemInfo.catimgs(0, cur, ln);
 		}
 		rtip = new TexI(cur);
+	    }
+	    return(rtip);
+	}
+    }
+
+    public static class GlutMeter extends Widget {
+	public static final Tex frame = Resource.loadtex("gfx/hud/chr/glutm");
+	public static final Coord marg = new Coord(5, 5);
+	public Color fg, bg;
+	public double glut, lglut, gmod;
+	public String lbl;
+
+	public GlutMeter() {
+	    super(frame.sz());
+	}
+
+	public void draw(GOut g) {
+	    Coord isz = sz.sub(marg.mul(2));
+	    g.chcolor(bg);
+	    g.frect(marg, isz);
+	    g.chcolor(fg);
+	    g.frect(marg, new Coord((int)Math.round(isz.x * (glut - Math.floor(glut))), isz.y));
+	    g.chcolor();
+	    g.image(frame, Coord.z);
+	}
+
+	public void update(Object... args) {
+	    int a = 0;
+	    this.glut = ((Number)args[a++]).doubleValue();
+	    this.lglut = ((Number)args[a++]).doubleValue();
+	    this.gmod = ((Number)args[a++]).doubleValue();
+	    this.lbl = (String)args[a++];
+	    this.bg = (Color)args[a++];
+	    this.fg = (Color)args[a++];
+	    rtip = null;
+	}
+
+	private Tex rtip = null;
+	public Object tooltip(Coord c, Widget prev) {
+	    if(rtip == null) {
+		rtip = RichText.render(String.format("%s: %d%%\nFood efficacy: %d%%", lbl, Math.round((lglut) * 100), Math.round(gmod * 100)), -1).tex();
 	    }
 	    return(rtip);
 	}
@@ -963,8 +1005,11 @@ public class CharWnd extends Window {
 
 	    x = 260; y = 0;
 	    battr.add(new Img(catf.render("Food Satiations").tex()), new Coord(x - 5, y)); y += 35;
-	    cons = battr.add(new Constipations(attrw, base.size()), wbox.btloff().add(x, y));
+	    cons = battr.add(new Constipations(attrw, base.size()), wbox.btloff().add(x, y)); y += cons.sz.y;
 	    Frame.around(battr, Collections.singletonList(cons));
+	    y += 24;
+	    battr.add(new Img(catf.render("Hunger Level").tex()), new Coord(x - 5, y)); y += 35;
+	    glut = battr.add(new GlutMeter(), new Coord(x, y));
 	}
 
 	{
@@ -1210,6 +1255,9 @@ public class CharWnd extends Window {
 	    enc = ((Number)args[0]).intValue();
 	} else if(nm == "food") {
 	    feps.update(args);
+	} else if(nm == "glut") {
+	    glut.update(args);
+	} else if(nm == "glut") {
 	} else if(nm == "ftrig") {
 	    feps.trig(ui.sess.getres((Integer)args[0]));
 	} else if(nm == "lvl") {
