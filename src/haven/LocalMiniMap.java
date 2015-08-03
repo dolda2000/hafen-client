@@ -94,7 +94,6 @@ public class LocalMiniMap extends Widget {
 		buf.setRGB(c.x, c.y, rgb);
 	    }
 	}
-	/*
 	for(c.y = 1; c.y < sz.y - 1; c.y++) {
 	    for(c.x = 1; c.x < sz.x - 1; c.x++) {
 		int t = m.gettile(ul.add(c));
@@ -115,7 +114,6 @@ public class LocalMiniMap extends Widget {
 		}
 	    }
 	}
-	*/
 	for(c.y = 0; c.y < sz.y; c.y++) {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
 		int t = m.gettile(ul.add(c));
