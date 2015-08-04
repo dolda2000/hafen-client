@@ -30,9 +30,9 @@ import java.awt.Color;
 import java.util.*;
 
 public class IMeter extends Widget {
-    static Coord off = new Coord(13, 7);
-    static Coord fsz = new Coord(63, 18);
-    static Coord msz = new Coord(49, 4);
+    static Coord off = new Coord(22, 7);
+    static Coord fsz = new Coord(101, 24);
+    static Coord msz = new Coord(75, 10);
     Indir<Resource> bg;
     List<Meter> meters;
     

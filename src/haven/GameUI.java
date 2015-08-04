@@ -526,8 +526,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(place == "party") {
 	    add(child, 10, 95);
 	} else if(place == "meter") {
-	    int x = (meters.length % 3) * 65;
-	    int y = (meters.length / 3) * 20;
+	    int x = (meters.length % 3) * (IMeter.fsz.x + 5);
+	    int y = (meters.length / 3) * (IMeter.fsz.y + 2);
 	    ulpanel.add(child, portrait.c.x + portrait.sz.x + 10 + x, portrait.c.y + y);
 	    meters = Utils.extend(meters, child);
 	} else if(place == "buff") {
