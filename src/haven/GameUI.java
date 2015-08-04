@@ -498,7 +498,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    chrwdg.hide();
 	} else if(place == "craft") {
 	    final Widget mkwdg = child;
-	    makewnd = new Window(Coord.z, "Crafting") {
+	    makewnd = new Window(Coord.z, "Crafting", true) {
 		    public void wdgmsg(Widget sender, String msg, Object... args) {
 			if((sender == this) && msg.equals("close")) {
 			    mkwdg.wdgmsg("close");
