@@ -44,7 +44,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Widget mmap;
     public Fightview fv;
     public FightWnd fw;
-    private Widget[] meters = {};
+    private List<Widget> meters = new LinkedList<Widget>();
     private Text lasterr;
     private long errtime;
     private Window invwnd, equwnd, makewnd;
@@ -351,6 +351,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		mshow(vis);
 	    return(vis);
 	}
+
+	public void cdestroy(Widget w) {
+	    parent.cdestroy(w);
+	}
     }
 
     static class Hidewnd extends Window {
@@ -526,10 +530,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(place == "party") {
 	    add(child, 10, 95);
 	} else if(place == "meter") {
-	    int x = (meters.length % 3) * (IMeter.fsz.x + 5);
-	    int y = (meters.length / 3) * (IMeter.fsz.y + 2);
+	    int x = (meters.size() % 3) * (IMeter.fsz.x + 5);
+	    int y = (meters.size() / 3) * (IMeter.fsz.y + 2);
 	    ulpanel.add(child, portrait.c.x + portrait.sz.x + 10 + x, portrait.c.y + y);
-	    meters = Utils.extend(meters, child);
+	    meters.add(child);
 	} else if(place == "buff") {
 	    buffs.addchild(child);
 	} else if(place == "misc") {
@@ -556,6 +560,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(w == fw) {
 	    fw = null;
 	}
+	meters.remove(w);
     }
     
     private static final Resource.Anim progt = Resource.local().loadwait("gfx/hud/prog").layer(Resource.animc);
