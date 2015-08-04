@@ -172,6 +172,7 @@ public class Ridges extends MapMesh.Hooks {
 	    return(new Coord3f(0, m, 0));
     }
 
+    private static final Coord[] tecs = {new Coord(0, -1), new Coord(1, 0), new Coord(0, 1), new Coord(-1, 0)};
     private static final Coord[] tccs = {new Coord(0, 0), new Coord(1, 0), new Coord(1, 1), new Coord(0, 1)};
     private boolean edgelc(Coord tc, int e) {
 	Coord gc = tc.add(m.ul);
@@ -691,9 +692,20 @@ public class Ridges extends MapMesh.Hooks {
     }
 
     public static boolean brokenp(MCache map, Coord tc) {
-	MapMesh cut = map.getcut(tc.div(MCache.cutsz));
-	boolean[] b = cut.data(id).breaks(tc.mod(MCache.cutsz));
-	return(b[0] || b[1] || b[2] || b[3]);
+	Tiler t = map.tiler(map.gettile(tc));
+	if(!(t instanceof RidgeTile))
+	    return(false);
+	int bz = ((RidgeTile)t).breakz();
+	for(Coord ec : tecs) {
+	    t = map.tiler(map.gettile(tc.add(ec)));
+	    if(t instanceof RidgeTile)
+		bz = Math.min(bz, ((RidgeTile)t).breakz());
+	}
+	for(int i = 0; i < 4; i++) {
+	    if(Math.abs(map.getz(tc.add(tccs[(i + 1) % 4])) - map.getz(tc.add(tccs[i]))) > bz)
+		return(true);
+	}
+	return(false);
     }
 
     public static float edgeoff(MCache map, Coord tc, int edge, boolean hi) {

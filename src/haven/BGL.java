@@ -73,8 +73,13 @@ public class BGL {
     public BGL() {this(128);}
 
     public void run(GL2 gl) {
-	for(int i = 0; i < n; i++)
-	    list[i].run(gl);
+	for(int i = 0; i < n; i++) {
+	    try {
+		list[i].run(gl);
+	    } catch(Exception exc) {
+		throw(new BGLException(this, list[i], exc));
+	    }
+	}
     }
 
     private void add(Command cmd) {
@@ -96,12 +101,7 @@ public class BGL {
 	final Throwable place = null;
 	add(new Command() {
 		public void run(GL2 gl) {
-		    try {
-			GOut.checkerr(gl);
-		    } catch(GOut.GLException e) {
-			e.initCause(place);
-			throw(new BGLException(BGL.this, this, e));
-		    }
+		    GOut.checkerr(gl);
 		}
 	    });
     }
