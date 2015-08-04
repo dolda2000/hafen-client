@@ -34,8 +34,10 @@ public class Makewindow extends Widget {
     Widget obtn, cbtn;
     List<Spec> inputs = Collections.emptyList();
     List<Spec> outputs = Collections.emptyList();
+    List<Indir<Resource>> qmod = null;
+    static final Text qmodl = Text.render("Quality:");
     static Coord boff = new Coord(7, 9);
-    final int xoff = 40, yoff = 55;
+    final int xoff = 45, qmy = 38, outy = 65;
     public static final Text.Foundry nmf = new Text.Foundry(Text.serif, 20).aa(true);
 
     @RName("make")
@@ -93,7 +95,7 @@ public class Makewindow extends Widget {
 
     public Makewindow(String rcpnm) {
 	add(new Label("Input:"), new Coord(0, 8));
-	add(new Label("Result:"), new Coord(0, 63));
+	add(new Label("Result:"), new Coord(0, outy + 8));
 	obtn = add(new Button(85, "Craft"), new Coord(265, 71));
 	cbtn = add(new Button(85, "Craft All"), new Coord(360, 71));
 	pack();
@@ -119,6 +121,13 @@ public class Makewindow extends Widget {
 		outputs.add(new Spec(ui.sess.getres(resid), sdt, num));
 	    }
 	    this.outputs = outputs;
+	} else if(msg == "qmod") {
+	    List<Indir<Resource>> qmod = new ArrayList<Indir<Resource>>();
+	    for(Object arg : args)
+		qmod.add(ui.sess.getres((Integer)arg));
+	    this.qmod = qmod;
+	} else {
+	    super.uimsg(msg, args);
 	}
     }
 	
@@ -130,7 +139,19 @@ public class Makewindow extends Widget {
 	    s.draw(sg);
 	    c = c.add(Inventory.sqsz.x, 0);
 	}
-	c = new Coord(xoff, yoff);
+	if(qmod != null) {
+	    g.image(qmodl.tex(), new Coord(0, qmy + 4));
+	    c = new Coord(xoff, qmy);
+	    for(Indir<Resource> qm : qmod) {
+		try {
+		    Tex t = qm.get().layer(Resource.imgc).tex();
+		    g.image(t, c);
+		    c = c.add(t.sz().x + 1, 0);
+		} catch(Loading l) {
+		}
+	    }
+	}
+	c = new Coord(xoff, outy);
 	for(Spec s : outputs) {
 	    GOut sg = g.reclip(c, Inventory.invsq.sz());
 	    sg.image(Inventory.invsq, Coord.z);
@@ -145,8 +166,21 @@ public class Makewindow extends Widget {
     private Object stip, ltip;
     public Object tooltip(Coord mc, Widget prev) {
 	Resource tres = null;
-	Coord c = new Coord(xoff, 0);
+	Coord c;
+	if(qmod != null) {
+	    c = new Coord(xoff, qmy);
+	    try {
+		for(Indir<Resource> qm : qmod) {
+		    Tex t = qm.get().layer(Resource.imgc).tex();
+		    if(mc.isect(c, t.sz()))
+			return(qm.get().layer(Resource.tooltip).t);
+		    c = c.add(t.sz().x + 1, 0);
+		}
+	    } catch(Loading l) {
+	    }
+	}
 	find: {
+	    c = new Coord(xoff, 0);
 	    for(Spec s : inputs) {
 		if(mc.isect(c, Inventory.invsq.sz())) {
 		    tres = s.res.get();
@@ -154,7 +188,7 @@ public class Makewindow extends Widget {
 		}
 		c = c.add(31, 0);
 	    }
-	    c = new Coord(xoff, yoff);
+	    c = new Coord(xoff, outy);
 	    for(Spec s : outputs) {
 		if(mc.isect(c, Inventory.invsq.sz())) {
 		    tres = s.res.get();
