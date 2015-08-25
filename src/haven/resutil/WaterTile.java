@@ -321,8 +321,8 @@ public class WaterTile extends Tiler {
     public static final MeshBuf.LayerID<MeshBuf.Vec1Layer> depthlayer = new MeshBuf.V1LayerID(BottomFog.depth);
 
     public static class BottomFog extends GLState.StandAlone {
-	public static final double maxdepth = 25;
-	public static final Color fogcolor = new Color(13, 38, 25);
+	public static final double maxdepth = 8; /* XXX: These should be parameterized. */
+	public static final Color fogcolor = new Color(0, 16, 48);
 	public static final Expression mfogcolor = mul(col3(fogcolor), pick(fref(idx(ProgramContext.gl_LightSource.ref(), MapView.amblight.ref()), "diffuse"), "rgb"));
 	public static Function rgbmix = new Function.Def(Type.VEC4) {{
 	    Expression a = param(PDir.IN, Type.VEC4).ref();
