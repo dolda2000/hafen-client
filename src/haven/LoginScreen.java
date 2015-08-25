@@ -32,6 +32,8 @@ public class LoginScreen extends Widget {
     Login cur;
     Text error;
     IButton btn;
+    Button optbtn;
+    OptWnd opts;
     static Text.Foundry textf, textfs;
     static Tex bg = Resource.loadtex("gfx/loginscr");
     Text progress = null;
@@ -45,6 +47,7 @@ public class LoginScreen extends Widget {
 	super(bg.sz());
 	setfocustab(true);
 	add(new Img(bg), Coord.z);
+	optbtn = adda(new Button(100, "Options"), 10, sz.y - 10, 0, 1);
     }
 
     private static abstract class Login extends Widget {
@@ -182,8 +185,30 @@ public class LoginScreen extends Widget {
 	    if(cur.enter())
 		super.wdgmsg("login", cur.data());
 	    return;
+	} else if(sender == optbtn) {
+	    if(opts == null) {
+		opts = adda(new OptWnd(false) {
+			public void hide() {
+			    /* XXX */
+			    reqdestroy();
+			}
+		    }, sz.div(2), 0.5, 0.5);
+	    } else {
+		opts.reqdestroy();
+		opts = null;
+	    }
+	    return;
+	} else if(sender == opts) {
+	    opts.reqdestroy();
+	    opts = null;
 	}
 	super.wdgmsg(sender, msg, args);
+    }
+
+    public void cdestroy(Widget ch) {
+	if(ch == opts) {
+	    opts = null;
+	}
     }
 
     public void uimsg(String msg, Object... args) {

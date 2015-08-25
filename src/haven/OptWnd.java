@@ -165,6 +165,13 @@ public class OptWnd extends Window {
 			}, new Coord(0, y + 15));
 		}
 		y += 35;
+		add(new Button(200, "Reset to defaults") {
+			public void click() {
+			    cf.cfg.resetprefs();
+			    curcf.destroy();
+			    curcf = null;
+			}
+		    }, new Coord(0, 150));
 		pack();
 	    }
 	}
@@ -180,7 +187,7 @@ public class OptWnd extends Window {
 	}
     }
 
-    public OptWnd() {
+    public OptWnd(boolean gopts) {
 	super(Coord.z, "Options", true);
 	main = add(new Panel());
 	video = add(new VideoPanel(main));
@@ -189,16 +196,18 @@ public class OptWnd extends Window {
 
 	main.add(new PButton(200, "Video settings", 'v', video), new Coord(0, 0));
 	main.add(new PButton(200, "Audio settings", 'a', audio), new Coord(0, 30));
-	main.add(new Button(200, "Switch character") {
-		public void click() {
-		    getparent(GameUI.class).act("lo", "cs");
-		}
-	    }, new Coord(0, 120));
-	main.add(new Button(200, "Log out") {
-		public void click() {
-		    getparent(GameUI.class).act("lo");
-		}
-	    }, new Coord(0, 150));
+	if(gopts) {
+	    main.add(new Button(200, "Switch character") {
+		    public void click() {
+			getparent(GameUI.class).act("lo", "cs");
+		    }
+		}, new Coord(0, 120));
+	    main.add(new Button(200, "Log out") {
+		    public void click() {
+			getparent(GameUI.class).act("lo");
+		    }
+		}, new Coord(0, 150));
+	}
 	main.add(new Button(200, "Close") {
 		public void click() {
 		    OptWnd.this.hide();
@@ -243,6 +252,10 @@ public class OptWnd extends Window {
 	audio.pack();
 
 	chpanel(main);
+    }
+
+    public OptWnd() {
+	this(true);
     }
 
     public void wdgmsg(Widget sender, String msg, Object... args) {
