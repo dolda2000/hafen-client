@@ -54,7 +54,7 @@ public class CharWnd extends Window {
     public Wound.Info wound;
     public int exp, enc;
     private int scost;
-    private final Tabs.Tab sattr;
+    private final Tabs.Tab sattr, fgt;
 
     public static class FoodMeter extends Widget {
 	public static final Tex frame = Resource.loadtex("gfx/hud/chr/foodm");
@@ -610,7 +610,7 @@ public class CharWnd extends Window {
 	}
     }
 
-    private static final PUtils.Convolution iconfilter = new PUtils.Lanczos(3);
+    public static final PUtils.Convolution iconfilter = new PUtils.Lanczos(3);
     public class Skill {
 	public final String nm;
 	public final Indir<Resource> res;
@@ -1202,12 +1202,17 @@ public class CharWnd extends Window {
 	    }
 
 	    tabs.pack();
+
+	    fgt = tabs.add();
+
 	    prev = add(new TB("battr", battr), new Coord(tabs.c.x + 5, tabs.c.y + tabs.sz.y + 10));
 	    prev.settip("Base Attributes");
 	    prev = add(new TB("sattr", sattr), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
 	    prev.settip("Skill Values");
 	    prev = add(new TB("skill", skills), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
 	    prev.settip("Lore & Skills");
+	    prev = add(new TB("fgt", fgt), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
+	    prev.settip("Martial Arts & Combat Schools");
 	    prev = add(new TB("wound", wounds), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
 	    prev.settip("Health & Wounds");
 	}
@@ -1222,6 +1227,8 @@ public class CharWnd extends Window {
 	    Frame.around(sattr, Collections.singletonList(child));
 	    Widget inf = sattr.add(new StudyInfo(new Coord(attrw - 150, child.sz.y), child), new Coord(260 + 150, child.c.y).add(wbox.btloff().x, 0));
 	    Frame.around(sattr, Collections.singletonList(inf));
+	} else if(place == "fmg") {
+	    fgt.add(child, 0, 0);
 	} else if(place == "wound") {
 	    this.wound = (Wound.Info)child;
 	    woundbox.add(child, Coord.z);

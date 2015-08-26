@@ -43,7 +43,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public MapView map;
     public Widget mmap;
     public Fightview fv;
-    public FightWnd fw;
     private List<Widget> meters = new LinkedList<Widget>();
     private Text lasterr;
     private long errtime;
@@ -471,9 +470,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    mmap.lower();
 	} else if(place == "fight") {
 	    fv = urpanel.add((Fightview)child, 0, 0);
-	} else if(place == "fmg") {
-	    fw = add((FightWnd)child, 50, 50);
-	    fw.hide();
 	} else if(place == "fsess") {
 	    add(child, Coord.z);
 	} else if(place == "inv") {
@@ -557,8 +553,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    zerg.dtab(zerg.pol);
 	} else if(w == chrwdg) {
 	    chrwdg = null;
-	} else if(w == fw) {
-	    fw = null;
 	}
 	meters.remove(w);
     }
@@ -672,8 +666,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    ui.destroy(help);
 	    help = null;
 	    return;
-	} else if((sender == fw) && (msg == "close")) {
-	    fw.hide();
 	}
 	super.wdgmsg(sender, msg, args);
     }
@@ -782,11 +774,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		}
 	    }
 	    Utils.setprefb("chatvis", chat.targeth != 0);
-	} else if(key == 6) {
-	    if((fw != null) && fw.show(!fw.visible)) {
-		fw.raise();
-		fitwdg(fw);
-	    }
 	} else if(key == 16) {
 	    /*
 	    if((polity != null) && polity.show(!polity.visible)) {
