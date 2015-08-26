@@ -202,11 +202,10 @@ public class CharWnd extends Window {
 
 	private Tex rtip = null;
 	public Object tooltip(Coord c, Widget prev) {
-	    List<El> els = this.els;
-	    if(els.isEmpty())
-		return(null);
 	    if(rtip == null) {
+		List<El> els = this.els;
 		BufferedImage cur = null;
+		double sum = 0.0;
 		for(El el : els) {
 		    Event ev = el.res.get().layer(Event.class);
 		    Color col = Utils.blendcol(ev.col, Color.WHITE, 0.5);
@@ -215,7 +214,9 @@ public class CharWnd extends Window {
 		    if(icon != null)
 			ln = ItemInfo.catimgsh(5, icon.img, ln);
 		    cur = ItemInfo.catimgs(0, cur, ln);
+		    sum += el.a;
 		}
+		cur = ItemInfo.catimgs(0, cur, Text.render(String.format("Total: %s/%s", Utils.odformat2(sum, 2), Utils.odformat(cap, 2))).img);
 		rtip = new TexI(cur);
 	    }
 	    return(rtip);
