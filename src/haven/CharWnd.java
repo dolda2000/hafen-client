@@ -1016,7 +1016,7 @@ public class CharWnd extends Window {
 	    int x = 5, y = 0;
 
 	    sattr = tabs.add();
-	    sattr.add(new Img(catf.render("Skill Values").tex()), new Coord(x - 5, y)); y += 35;
+	    sattr.add(new Img(catf.render("Abilities").tex()), new Coord(x - 5, y)); y += 35;
 	    skill = new ArrayList<SAttr>();
 	    SAttr aw;
 	    skill.add(aw = sattr.add(new SAttr(glob, "unarmed", every), wbox.btloff().add(x, y))); y += aw.sz.y;
