@@ -906,7 +906,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			     cc.div(tilesz).add(MCache.cutsz.mul(view + 1)));
 	} catch(Loading e) {
 	    lastload = e;
-	    String text = "Loading...";
+	    String text = e.getMessage();
+	    if(text == null)
+		text = "Loading...";
 	    g.chcolor(Color.BLACK);
 	    g.frect(Coord.z, sz);
 	    g.chcolor(Color.WHITE);
