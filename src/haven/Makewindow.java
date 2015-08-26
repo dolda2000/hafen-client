@@ -96,8 +96,8 @@ public class Makewindow extends Widget {
     public Makewindow(String rcpnm) {
 	add(new Label("Input:"), new Coord(0, 8));
 	add(new Label("Result:"), new Coord(0, outy + 8));
-	obtn = add(new Button(85, "Craft"), new Coord(265, 71));
-	cbtn = add(new Button(85, "Craft All"), new Coord(360, 71));
+	obtn = add(new Button(85, "Craft"), new Coord(265, 75));
+	cbtn = add(new Button(85, "Craft All"), new Coord(360, 75));
 	pack();
 	adda(new Label(rcpnm, nmf), sz.x, 0, 1, 0);
     }
