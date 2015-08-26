@@ -552,6 +552,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    rl.add((Rendered)w, null);
 	    }
 	}
+	/* XXX: MSAA level should be configurable. */
+	if(rl.cfg.pref.fsaa.val) {
+	    FBConfig cfg = ((PView.ConfContext)rl.state().get(PView.ctx)).cfg;
+	    cfg.ms = 4;
+	}
 	if(rl.cfg.pref.outline.val)
 	    rl.add(outlines, null);
 	rl.add(map, null);
