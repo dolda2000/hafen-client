@@ -31,8 +31,10 @@ import java.awt.Color;
 import java.awt.event.KeyEvent;
 
 public class Fightsess extends Widget {
+    public static final Tex lframe = Resource.loadtex("gfx/hud/combat/lframe");
     public static final int actpitch = 50;
     public final Indir<Resource>[] actions;
+    public final boolean[] dyn;
     public int use = -1;
     public Coord pcc;
     public int pho;
@@ -51,6 +53,7 @@ public class Fightsess extends Widget {
 	this.fv = fv;
 	pho = -40;
 	this.actions = (Indir<Resource>[])new Indir[nact];
+	this.dyn = new boolean[nact];
     }
 
     public void presize() {
@@ -108,6 +111,7 @@ public class Fightsess extends Widget {
 		if(act != null) {
 		    Tex img = act.get().layer(Resource.imgc).tex();
 		    g.image(img, ca);
+		    g.image(dyn[i]?lframe:Buff.frame, ca.sub(Buff.imgoff));
 		    if(i == use) {
 			g.chcolor(255, 0, 128, 255);
 			Coord cc = ca.add(img.sz().x / 2, img.sz().y + 5);
@@ -120,11 +124,54 @@ public class Fightsess extends Widget {
 	}
     }
 
+    private Widget prevtt = null;
+    public Object tooltip(Coord c, Widget prev) {
+	for(Buff buff : fv.buffs.children(Buff.class)) {
+	    Coord dc = pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y);
+	    if(c.isect(dc, buff.sz)) {
+		Object ret = buff.tooltip(c.sub(dc), prevtt);
+		if(ret != null) {
+		    prevtt = buff;
+		    return(ret);
+		}
+	    }
+	}
+	if(fv.current != null) {
+	    for(Buff buff : fv.current.buffs.children(Buff.class)) {
+		Coord dc = pcc.add(buff.c.x + 20, buff.c.y + pho - Buff.cframe.sz().y);
+		if(c.isect(dc, buff.sz)) {
+		    Object ret = buff.tooltip(c.sub(dc), prevtt);
+		    if(ret != null) {
+			prevtt = buff;
+			return(ret);
+		    }
+		}
+	    }
+	}
+	Coord ca = pcc.add(-(actions.length * actpitch) / 2, 45);
+	for(int i = 0; i < actions.length; i++) {
+	    Indir<Resource> act = actions[i];
+	    try {
+		if(act != null) {
+		    Tex img = act.get().layer(Resource.imgc).tex();
+		    if(c.isect(ca, img.sz())) {
+			if(dyn[i])
+			    return("Combat discovery");
+			return(act.get().layer(Resource.tooltip).t);
+		    }
+		}
+	    } catch(Loading l) {}
+	    ca.x += actpitch;
+	}
+	return(null);
+    }
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "act") {
 	    int n = (Integer)args[0];
 	    Indir<Resource> res = (args.length > 1)?ui.sess.getres((Integer)args[1]):null;
 	    actions[n] = res;
+	    dyn[n] = ((Integer)args[2]) != 0;
 	} else if(msg == "use") {
 	    this.use = (Integer)args[0];
 	} else if(msg == "used") {
