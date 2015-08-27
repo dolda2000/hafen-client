@@ -33,6 +33,7 @@ import java.awt.font.TextAttribute;
 import java.util.*;
 import static haven.Window.wbox;
 import static haven.PUtils.*;
+import haven.resutil.FoodInfo;
 
 public class CharWnd extends Window {
     public static final RichText.Foundry ifnd = new RichText.Foundry(Resource.remote(), java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, 9).aa(true);
@@ -265,16 +266,19 @@ public class CharWnd extends Window {
     }
 
     public static class Constipations extends Listbox<Constipations.El> {
+	public static final Color hilit = new Color(255, 255, 0, 48);
 	public static final Text.Foundry elf = attrf;
 	public static final Convolution tflt = new Hanning(1);
 	public static final Color full = new Color(250, 230, 64), none = new Color(250, 19, 43);
 	public final List<El> els = new ArrayList<El>();
+	private Integer[] order = {};
 
 	public static class El {
 	    public static final int h = elf.height() + 2;
 	    public final Indir<Resource> t;
 	    public double a;
 	    private Tex tt, at;
+	    private boolean hl;
 
 	    public El(Indir<Resource> t, double a) {this.t = t; this.a = a;}
 	    public void update(double a) {this.a = a; at = null;}
@@ -301,6 +305,31 @@ public class CharWnd extends Window {
 	    }
 	}
 
+	private WItem.ItemTip lasttip = null;
+	public void draw(GOut g) {
+	    WItem.ItemTip tip = null;
+	    if(ui.lasttip instanceof WItem.ItemTip)
+		tip = (WItem.ItemTip)ui.lasttip;
+	    if(tip != lasttip) {
+		for(El el : els)
+		    el.hl = false;
+		FoodInfo finf = (tip == null)?null:ItemInfo.find(FoodInfo.class, tip.item().info());
+		if(finf != null) {
+		    for(int i = 0; i < els.size(); i++) {
+			El el = els.get(i);
+			for(int o = 0; o < finf.types.length; o++) {
+			    if(finf.types[o] == i) {
+				el.hl = true;
+				break;
+			    }
+			}
+		    }
+		}
+		lasttip = tip;
+	    }
+	    super.draw(g);
+	}
+
 	public static final Comparator<El> ecmp = new Comparator<El>() {
 	    public int compare(El a, El b) {
 		if(a.a < b.a)
@@ -316,18 +345,30 @@ public class CharWnd extends Window {
 	}
 
 	protected void drawbg(GOut g) {}
-	protected El listitem(int i) {return(els.get(i));}
-	protected int listitems() {return(els.size());}
+	protected El listitem(int i) {return(els.get(order[i]));}
+	protected int listitems() {return(order.length);}
 
 	protected void drawitem(GOut g, El el, int idx) {
-	    g.chcolor(((idx % 2) == 0)?every:other);
+	    g.chcolor(el.hl?hilit:(((idx % 2) == 0)?every:other));
 	    g.frect(Coord.z, g.sz);
 	    g.chcolor();
 	    try {
 		g.image(el.tt(), Coord.z);
 	    } catch(Loading e) {}
 	    Tex at = el.at();
-	    g.image(at, new Coord(sz.x - at.sz().x, (El.h - at.sz().y) / 2));
+	    g.image(at, new Coord(sz.x - at.sz().x - sb.sz.x, (El.h - at.sz().y) / 2));
+	}
+
+	private void order() {
+	    int n = els.size();
+	    order = new Integer[n];
+	    for(int i = 0; i < n; i++)
+		order[i] = i;
+	    Arrays.sort(order, new Comparator<Integer>() {
+		    public int compare(Integer a, Integer b) {
+			return(ecmp.compare(els.get(a), els.get(b)));
+		    }
+		});
 	}
 
 	public void update(Indir<Resource> t, double a) {
@@ -344,7 +385,7 @@ public class CharWnd extends Window {
 		}
 		els.add(new El(t, a));
 	    }
-	    Collections.sort(els, ecmp);
+	    order();
 	}
 
 	public boolean mousedown(Coord c, int button) {
