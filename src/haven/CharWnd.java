@@ -300,7 +300,7 @@ public class CharWnd extends Window {
 
 	    public Tex at() {
 		if(at == null)
-		    at = elf.render(String.format("%d%%", (int)Math.round(a * 100)), Utils.blendcol(none, full, a)).tex();
+		    at = elf.render(String.format("%d%%", (int)Math.floor(a * 100)), Utils.blendcol(none, full, a)).tex();
 		return(at);
 	    }
 	}
@@ -1250,7 +1250,7 @@ public class CharWnd extends Window {
 	    prev = add(new TB("battr", battr), new Coord(tabs.c.x + 5, tabs.c.y + tabs.sz.y + 10));
 	    prev.settip("Base Attributes");
 	    prev = add(new TB("sattr", sattr), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
-	    prev.settip("Skill Values");
+	    prev.settip("Abilities");
 	    prev = add(new TB("skill", skills), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
 	    prev.settip("Lore & Skills");
 	    prev = add(new TB("fgt", fgt), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
