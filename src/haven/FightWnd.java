@@ -197,6 +197,7 @@ public class FightWnd extends Widget {
     public class Savelist extends Listbox<Integer> {
 	public Savelist(int w, int h) {
 	    super(w, h, attrf.height() + 2);
+	    sel = Integer.valueOf(0);
 	}
 
 	protected Integer listitem(int idx) {return(idx);}
