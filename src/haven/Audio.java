@@ -522,16 +522,25 @@ public class Audio {
 	}
     }
 
+    private static Map<Resource, Resource.Audio> reslastc = new HashMap<Resource, Resource.Audio>();
     public static CS fromres(Resource res) {
 	Collection<Resource.Audio> clips = res.layers(Resource.audio);
-	int s = (int)(Math.random() * clips.size());
-	Resource.Audio clip = null;
-	for(Resource.Audio cp : clips) {
-	    clip = cp;
-	    if(--s < 0)
-		break;
+	synchronized(reslastc) {
+	    Resource.Audio last = reslastc.get(res);
+	    int sz = clips.size();
+	    int s = (int)(Math.random() *  (((sz > 2) && (last != null))?(sz - 1):sz));
+	    Resource.Audio clip = null;
+	    for(Resource.Audio cp : clips) {
+		if(cp == last)
+		    continue;
+		clip = cp;
+		if(--s < 0)
+		    break;
+	    }
+	    if(sz > 2)
+		reslastc.put(res, clip);
+	    return(clip.stream());
 	}
-	return(clip.stream());
     }
 
     public static void play(Resource res) {
