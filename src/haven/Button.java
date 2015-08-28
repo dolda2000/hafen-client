@@ -40,6 +40,9 @@ public class Button extends SIWidget {
     public static final BufferedImage ut = Resource.loadimg("gfx/hud/buttons/tbtn/utex");
     public static final BufferedImage bm = Resource.loadimg("gfx/hud/buttons/tbtn/mid");
     public static final int hs = bl.getHeight(), hl = bm.getHeight();
+    public static final Resource click = Loading.waitfor(Resource.local().load("sfx/hud/btn"));
+    public static final Resource.Audio lbtdown = Loading.waitfor(Resource.local().load("sfx/hud/lbtn")).layer(Resource.audio, "down");
+    public static final Resource.Audio lbtup   = Loading.waitfor(Resource.local().load("sfx/hud/lbtn")).layer(Resource.audio, "up");
     public boolean lg;
     public Text text;
     public BufferedImage cont;
@@ -153,11 +156,20 @@ public class Button extends SIWidget {
 	}
     }
 
+    protected void depress() {
+	Audio.play(click);
+    }
+
+    protected void unpress() {
+	Audio.play(click);
+    }
+
     public boolean mousedown(Coord c, int button) {
 	if(button != 1)
 	    return(false);
 	a = true;
 	d = ui.grabmouse(this);
+	depress();
 	redraw();
 	return(true);
     }
@@ -168,8 +180,10 @@ public class Button extends SIWidget {
 	    d = null;
 	    a = false;
 	    redraw();
-	    if(c.isect(new Coord(0, 0), sz))
+	    if(c.isect(new Coord(0, 0), sz)) {
+		unpress();
 		click();
+	    }
 	    return(true);
 	}
 	return(false);

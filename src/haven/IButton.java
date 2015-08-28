@@ -82,6 +82,12 @@ public class IButton extends SSWidget {
 	wdgmsg("activate");
     }
 
+    protected void depress() {
+    }
+
+    protected void unpress() {
+    }
+
     public boolean mousedown(Coord c, int button) {
 	if(button != 1)
 	    return(false);
@@ -89,6 +95,7 @@ public class IButton extends SSWidget {
 	    return(false);
 	a = true;
 	d = ui.grabmouse(this);
+	depress();
 	render();
 	return(true);
     }
@@ -98,8 +105,10 @@ public class IButton extends SSWidget {
 	    d.remove();
 	    d = null;
 	    mousemove(c);
-	    if(checkhit(c))
+	    if(checkhit(c)) {
+		unpress();
 		click();
+	    }
 	    return(true);
 	}
 	return(false);

@@ -147,7 +147,10 @@ public class LoginScreen extends Widget {
 
     private void mklogin() {
 	synchronized(ui) {
-	    adda(btn = new IButton("gfx/hud/buttons/login", "u", "d", "o"), 419, 510, 0.5, 0.5);
+	    adda(btn = new IButton("gfx/hud/buttons/login", "u", "d", "o") {
+		    protected void depress() {Audio.play(Button.lbtdown.stream());}
+		    protected void unpress() {Audio.play(Button.lbtup.stream());}
+		}, 419, 510, 0.5, 0.5);
 	    progress(null);
 	}
     }

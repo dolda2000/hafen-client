@@ -1241,6 +1241,14 @@ public class CharWnd extends Window {
 		public void click() {
 		    tabs.showtab(tab);
 		}
+
+		protected void depress() {
+		    Audio.play(Button.lbtdown.stream());
+		}
+
+		protected void unpress() {
+		    Audio.play(Button.lbtup.stream());
+		}
 	    }
 
 	    tabs.pack();
