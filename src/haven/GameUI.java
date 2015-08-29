@@ -133,7 +133,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	menupanel.add(new MainMenu(), 0, 0);
 	mapbuttons();
 	foldbuttons();
-	portrait = ulpanel.add(new Avaview(Avaview.dasz, plid, "avacam"), new Coord(10, 10));
+	portrait = ulpanel.add(new Avaview(Avaview.dasz, plid, "avacam") {
+		public boolean mousedown(Coord c, int button) {
+		    return(true);
+		}
+	    }, new Coord(10, 10));
 	buffs = ulpanel.add(new Bufflist(), new Coord(95, 65));
 	syslog = chat.add(new ChatUI.Log("System"));
 	opts = add(new OptWnd());
