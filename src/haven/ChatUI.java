@@ -774,13 +774,13 @@ public class ChatUI extends Widget {
 	
 	public class InMessage extends SimpleMessage {
 	    public InMessage(String text, int w) {
-		super(text, new Color(192, 0, 0, 255), w);
+		super(text, new Color(255, 128, 128, 255), w);
 	    }
 	}
 
 	public class OutMessage extends SimpleMessage {
 	    public OutMessage(String text, int w) {
-		super(text, new Color(0, 0, 192, 255), w);
+		super(text, new Color(128, 128, 255, 255), w);
 	    }
 	}
 
