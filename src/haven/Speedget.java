@@ -30,20 +30,25 @@ import java.awt.event.KeyEvent;
 
 public class Speedget extends Widget {
     public static final Tex imgs[][];
+    public static final String tips[];
     public static final Coord tsz;
     public int cur, max;
 
     static {
-	imgs = new Tex[4][3];
 	String[] names = {"crawl", "walk", "run", "sprint"};
 	String[] vars = {"dis", "off", "on"};
+	imgs = new Tex[names.length][vars.length];
 	int w = 0;
-	for(int i = 0; i < 4; i++) {
-	    for(int o = 0; o < 3; o++)
+	for(int i = 0; i < names.length; i++) {
+	    for(int o = 0; o < vars.length; o++)
 		imgs[i][o] = Resource.loadtex("gfx/hud/meter/rmeter/" + names[i] + "-" + vars[o]);
 	    w += imgs[i][0].sz().x;
 	}
 	tsz = new Coord(w, imgs[0][0].sz().y);
+	tips = new String[names.length];
+	for(int i = 0; i < names.length; i++) {
+	    tips[i] = Resource.local().loadwait("gfx/hud/meter/rmeter/" + names[i] + "-on").layer(Resource.tooltip).t;
+	}
     }
 
     @RName("speedget")
@@ -103,6 +108,12 @@ public class Speedget extends Widget {
 	if(max >= 0)
 	    set((cur + max + 1 + amount) % (max + 1));
 	return(true);
+    }
+
+    public Object tooltip(Coord c, Widget prev) {
+	if((cur >= 0) && (cur < tips.length))
+	    return(String.format("Selected speed: " + tips[cur]));
+	return(null);
     }
 
     public boolean globtype(char key, KeyEvent ev) {

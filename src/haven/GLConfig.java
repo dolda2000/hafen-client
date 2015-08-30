@@ -121,6 +121,11 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	return(exts.contains("GL_EXT_framebuffer_object"));
     }
 
+    public void resetprefs() {
+	pref = GLSettings.defconf(this);
+	pref.dirty = true;
+    }
+
     private transient Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("gl", new Console.Command() {
@@ -140,8 +145,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	    });
 	cmdmap.put("glreset", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    pref = GLSettings.defconf(GLConfig.this);
-		    pref.dirty = true;
+		    resetprefs();
 		}
 	    });
     }
