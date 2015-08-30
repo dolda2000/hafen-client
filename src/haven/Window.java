@@ -314,4 +314,8 @@ public class Window extends Widget implements DTarget {
 	else
 	    return("");
     }
+
+	public boolean isGrabbed() {
+		return dm != null;
+	}
 }

@@ -47,7 +47,7 @@ public class LocalMiniMap extends Widget {
     private MapTile cur = null;
     private final Map<Coord, Defer.Future<MapTile>> cache = new LinkedHashMap<Coord, Defer.Future<MapTile>>(5, 0.75f, true) {
 	protected boolean removeEldestEntry(Map.Entry<Coord, Defer.Future<MapTile>> eldest) {
-	    if(size() > 5) {
+	    if(size() > 50) {
 		try {
 		    MapTile t = eldest.getValue().get();
 		    t.img.dispose();
@@ -217,7 +217,6 @@ public class LocalMiniMap extends Widget {
 		cur = f.get();
 	}
 	if(cur != null) {
-	    g.image(MiniMap.bg, Coord.z);
 	    g.image(cur.img, cur.ul.sub(cc).add(sz.div(2)));
 	    try {
 		synchronized(ui.sess.glob.party.memb) {

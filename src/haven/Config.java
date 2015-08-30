@@ -28,7 +28,8 @@ package haven;
 
 import java.net.URL;
 import java.io.PrintStream;
-import static haven.Utils.getprop;
+
+import static haven.Utils.*;
 
 public class Config {
     public static String authuser = getprop("haven.authuser", null);
@@ -56,6 +57,30 @@ public class Config {
 	if((p = getprop("haven.authck", null)) != null)
 	    authck = Utils.hex2byte(p);
     }
+
+	public static Coord getMinimapPosition() {
+		return getprefc("haven.mmpos", new Coord(500, 100));
+	}
+
+	public static void setMinimapPosition(Coord pos) {
+		setprefc("haven.mmpos", pos);
+	}
+
+	public static Coord getMinimapSize() {
+		return getprefc("haven.mmsize", new Coord(300, 300));
+	}
+
+	public static void setMinimapSize(Coord size) {
+		setprefc("haven.mmsize", size);
+	}
+
+	public static boolean getEnableFloatingMinimap() {
+		return getprefb("haven.mmfloat", true);
+	}
+
+	public static void setEnableFloatingMinimap(boolean value) {
+		setprefb("haven.mmfloat",value);
+	}
     
     private static int getint(String name, int def) {
 	String val = getprop(name, null);
