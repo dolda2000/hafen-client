@@ -28,6 +28,13 @@ package haven;
 
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -51,8 +58,13 @@ public class LocalMiniMap extends Widget {
 	    return(false);
 	}
     };
-    
-    public static class MapTile {
+
+	private String session;
+	private Coord sp;
+	private Coord cgrid = null;
+	private static final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss");
+
+	public static class MapTile {
 	public final Tex img;
 	public final Coord ul, c;
 	
@@ -183,6 +195,7 @@ public class LocalMiniMap extends Widget {
 	if(cc == null)
 	    return;
 	final Coord plg = cc.div(cmaps);
+	checkSession(plg);
 	if((cur == null) || !plg.equals(cur.c)) {
 	    Defer.Future<MapTile> f;
 	    synchronized(cache) {
@@ -191,8 +204,11 @@ public class LocalMiniMap extends Widget {
 		    f = Defer.later(new Defer.Callable<MapTile> () {
 			    public MapTile call() {
 				Coord ul = plg.mul(cmaps).sub(cmaps).add(1, 1);
-				return(new MapTile(new TexI(drawmap(ul, cmaps.mul(3).sub(2, 2))), ul, plg));
-			    }
+				BufferedImage img = LocalMiniMap.this.drawmap(ul, MCache.cmaps.mul(3).sub(2, 2));
+				MapTile mapTile = new MapTile(new TexI(img), ul, plg);
+				store(img, plg);
+				return mapTile;
+				}
 			});
 		    cache.put(plg, f);
 		}
@@ -237,4 +253,57 @@ public class LocalMiniMap extends Widget {
 	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags(), 0, (int)gob.id, gob.rc, 0, -1);
 	return(true);
     }
+
+	private String mapfolder(){
+		return String.format("%s/map/", ".");
+	}
+
+	private String mapfile(String file){
+		return String.format("%s%s", mapfolder(), file);
+	}
+
+	private String mapsessfile(String file){
+		return String.format("%s%s/%s", mapfolder(), session, file);
+	}
+
+	private String mapsessfolder(){
+		return mapsessfile("");
+	}
+
+	private void store(BufferedImage img, Coord cg) {
+		if (img == null) return;
+		Coord c = cg.sub(sp);
+		String fileName = mapsessfile(String.format("tile_%d_%d.png", c.x, c.y));
+		File outputfile = new File(fileName);
+		try {
+			ImageIO.write(img, "png", outputfile);
+		} catch (IOException e) {}
+	}
+
+	private void checkSession(Coord plg) {
+		if(cgrid == null || cgrid.manhattan(plg) > 5){
+			sp = plg;
+			synchronized (cache) {
+				for (Defer.Future<MapTile> v : cache.values()) {
+					if(v != null && v.done()) {
+						MapTile tile = v.get();
+						if(tile != null && tile.img != null) {
+							tile.img.dispose();
+						}
+					}
+				}
+				cache.clear();
+			}
+			session = datefmt.format(new Date(System.currentTimeMillis()));
+			if(true){
+				(new File(mapsessfolder())).mkdirs();
+				try {
+					Writer currentSessionFile = new FileWriter(mapfile("currentsession.js"));
+					currentSessionFile.write("var currentSession = '" + session + "';\n");
+					currentSessionFile.close();
+				} catch (IOException e) {}
+			}
+		}
+		cgrid = plg;
+	}
 }
