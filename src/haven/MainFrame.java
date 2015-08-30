@@ -195,7 +195,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	add(p);
 	pack();
 	setResizable(!Utils.getprefb("wndlock", false));
-	p.requestFocus();
+	p.requestFocusInWindow();
 	seticon();
 	setVisible(true);
 	p.init();
