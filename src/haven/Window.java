@@ -105,6 +105,10 @@ public class Window extends Widget implements DTarget {
 	    this.cap = cf.render(cap);
     }
 
+    public String caption() {
+	return (cap != null) ? cap.text : null;
+    }
+
     public void cdraw(GOut g) {
     }
 
