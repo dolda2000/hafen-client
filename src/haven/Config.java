@@ -79,7 +79,15 @@ public class Config {
 	}
 
 	public static void setEnableFloatingMinimap(boolean value) {
-		setprefb("haven.mmfloat",value);
+		setprefb("haven.mmfloat", value);
+	}
+
+	public static boolean getEnableNightVision() {
+		return getprefb("haven.nightvision", false);
+	}
+
+	public static void setEnableNightVision(boolean value) {
+		setprefb("haven.nightvision",value);
 	}
     
     private static int getint(String name, int def) {

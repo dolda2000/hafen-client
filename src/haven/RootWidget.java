@@ -53,7 +53,9 @@ public class RootWidget extends ConsoleHost {
 		    add(new Profwnd(ggprof, "GPU profile"), new Coord(450, 250));
 		}
 	    } else if(key == ':') {
-		entercmd();
+			entercmd();
+		} else if(ev.isControlDown() && ev.getKeyCode() == KeyEvent.VK_N) {
+			Config.setEnableNightVision(!Config.getEnableNightVision());
 	    } else if(key != 0) {
 		wdgmsg("gk", (int)key);
 	    }
