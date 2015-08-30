@@ -40,7 +40,7 @@ public class CloudShadow extends GLState {
     public DirLight light;
     public Coord3f vel;
     public float scale;
-    public float cmin = 0.5f, cmax = 1.0f, rmin = 0.4f, rmax = 1.0f;
+    public float cmin = 0f, cmax = 0f, rmin = 0f, rmax = 0f;
 
     public CloudShadow(TexGL tex, DirLight light, Coord3f vel, float scale) {
 	this.tex = tex;
