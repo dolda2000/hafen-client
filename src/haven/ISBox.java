@@ -99,7 +99,7 @@ public class ISBox extends Widget implements DTarget {
             Tex t = res.get().layer(Resource.imgc).tex();
             Coord dc = new Coord(6, (bg.sz().y / 2) - (t.sz().y / 2));
             g.image(t, dc);
-        } catch(Loading e) {}
+        } catch(Loading ignored) {}
         g.image(label.tex(), new Coord(40, (bg.sz().y / 2) - (label.tex().sz().y / 2)));
 	super.draw(g);
     }
@@ -108,7 +108,7 @@ public class ISBox extends Widget implements DTarget {
 	try {
 	    if(res.get().layer(Resource.tooltip) != null)
 		return(res.get().layer(Resource.tooltip).t);
-	} catch(Loading e) {}
+	} catch(Loading ignored) {}
 	return(null);
     }
     
@@ -156,7 +156,7 @@ public class ISBox extends Widget implements DTarget {
     }
     
     public void uimsg(String msg, Object... args) {
-        if(msg == "chnum") {
+        if(msg.equals("chnum")) {
             setlabel((Integer)args[0], (Integer)args[1], (Integer)args[2]);
         } else {
             super.uimsg(msg, args);
