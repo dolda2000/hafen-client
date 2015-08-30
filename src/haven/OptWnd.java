@@ -253,11 +253,20 @@ public class OptWnd extends Window {
 	audio.pack();
 
 	y = 0;
-	display.add(new CheckBox("Always show kin names") {
-		{
-			a = Config.getAlwaysShowKinNames();
+	display.add(new CheckBox("Show flavor objects") {
+		{ a = Utils.getprefb("showflo", true); }
+		public void set(boolean val) {
+			if (val) {
+				Utils.setprefb("showflo", true);
+			} else {
+				Utils.setprefb("showflo", false);
+			}
+			a = val;
 		}
-
+	}, new Coord(0, y));
+	y += 15;
+	display.add(new CheckBox("Always show kin names") {
+		{ a = Config.getAlwaysShowKinNames(); }
 		public void set(boolean val) {
 			Config.setAlwaysShowKinNames(val);
 			a = val;
@@ -269,7 +278,6 @@ public class OptWnd extends Window {
 	y = 0;
 	ui.add(new CheckBox("Enable floating minimap (requires relogin)") {
 		{ a = Config.getEnableFloatingMinimap(); }
-
 		public void set(boolean val) {
 			Config.setEnableFloatingMinimap(val);
 			a = val;
