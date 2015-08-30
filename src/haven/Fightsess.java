@@ -169,9 +169,13 @@ public class Fightsess extends Widget {
     public void uimsg(String msg, Object... args) {
 	if(msg == "act") {
 	    int n = (Integer)args[0];
-	    Indir<Resource> res = (args.length > 1)?ui.sess.getres((Integer)args[1]):null;
-	    actions[n] = res;
-	    dyn[n] = ((Integer)args[2]) != 0;
+	    if(args.length > 1) {
+		Indir<Resource> res = ui.sess.getres((Integer)args[1]);
+		actions[n] = res;
+		dyn[n] = ((Integer)args[2]) != 0;
+	    } else {
+		actions[n] = null;
+	    }
 	} else if(msg == "use") {
 	    this.use = (Integer)args[0];
 	} else if(msg == "used") {

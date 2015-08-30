@@ -32,7 +32,7 @@ import java.io.*;
 import java.lang.ref.*;
 
 public class Session {
-    public static final int PVER = 1;
+    public static final int PVER = 2;
 
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
@@ -530,8 +530,6 @@ public class Session {
 		    else
 			Music.play(Resource.remote().load(resnm, resver), loop);
 		}
-	    } else if(msg.type == RMessage.RMSG_TILES) {
-		glob.map.tilemap(msg);
 	    } else if(msg.type == RMessage.RMSG_SESSKEY) {
 		sesskey = msg.bytes();
 	    } else {

@@ -160,7 +160,7 @@ public class GLSettings implements java.io.Serializable {
 	};
 
     public final BoolSetting flight = new BoolSetting("flight") {
-	    public Boolean defval() {return(false);}
+	    public Boolean defval() {return(true);}
 	    public void validate(Boolean val) {}
 	};
 
@@ -174,7 +174,7 @@ public class GLSettings implements java.io.Serializable {
 	};
 
     public final BoolSetting lshadow = new BoolSetting("sdw") {
-	    public Boolean defval() {return(false);}
+	    public Boolean defval() {return(true);}
 	    public void validate(Boolean val) {
 		if(val) {
 		    if(!flight.val) throw(new SettingException("Shadowed lighting requires per-fragment lighting."));
