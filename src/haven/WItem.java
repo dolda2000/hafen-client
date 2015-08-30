@@ -206,19 +206,42 @@ public class WItem extends Widget implements DTarget {
     }
     
     public boolean mousedown(Coord c, int btn) {
-	if(btn == 1) {
-	    if(ui.modshift)
-		item.wdgmsg("transfer", c);
-	    else if(ui.modctrl)
-		item.wdgmsg("drop", c);
-	    else
-		item.wdgmsg("take", c);
-	    return(true);
+	if(checkXfer(btn)) {
+	    return true;
+	} else if(btn == 1) {
+	    item.wdgmsg("take", c);
+	    return true;
 	} else if(btn == 3) {
 	    item.wdgmsg("iact", c, ui.modflags());
 	    return(true);
 	}
 	return(false);
+    }
+
+    private boolean checkXfer(int button) {
+	boolean inv = parent instanceof Inventory;
+	if(ui.modshift) {
+	    if(ui.modmeta) {
+		if(inv) {
+		    wdgmsg("transfer-same", item.resname(), button == 3);
+		    return true;
+		}
+	    } else if(button == 1) {
+		item.wdgmsg("transfer", c);
+		return true;
+	    }
+	} else if(ui.modctrl) {
+	    if(ui.modmeta) {
+		if(inv) {
+		    wdgmsg("drop-same", item.resname(), button == 3);
+		    return true;
+		}
+	    } else if(button == 1) {
+		item.wdgmsg("drop", c);
+		return true;
+	    }
+	}
+	return false;
     }
 
     public boolean drop(Coord cc, Coord ul) {

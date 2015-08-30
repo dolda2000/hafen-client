@@ -98,7 +98,7 @@ public class Inventory extends Widget implements DTarget {
     }
 	
     public void uimsg(String msg, Object... args) {
-	if(msg == "sz") {
+	if(msg.equals("sz")) {
 	    isz = (Coord)args[0];
 	    resize(invsq.sz().add(new Coord(-1, -1)).mul(isz).add(new Coord(1, 1)));
 	}
