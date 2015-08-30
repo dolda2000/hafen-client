@@ -530,8 +530,6 @@ public class Session {
 		    else
 			Music.play(Resource.remote().load(resnm, resver), loop);
 		}
-	    } else if(msg.type == RMessage.RMSG_TILES) {
-		glob.map.tilemap(msg);
 	    } else if(msg.type == RMessage.RMSG_SESSKEY) {
 		sesskey = msg.bytes();
 	    } else {
