@@ -300,6 +300,14 @@ public class MCache {
 	    }
 	    Message blob = new ZMessage(msg);
 	    id = blob.int64();
+	    while(true) {
+		int tileid = blob.uint8();
+		if(tileid == 255)
+		    break;
+		String resnm = blob.string();
+		int resver = blob.uint16();
+		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
+	    }
 	    for(int i = 0; i < tiles.length; i++)
 		tiles[i] = blob.uint8();
 	    for(int i = 0; i < z.length; i++)
@@ -519,15 +527,6 @@ public class MCache {
 		tiles[i] = new SoftReference<Tiler>(tile);
 	    }
 	    return(tile);
-	}
-    }
-
-    public void tilemap(Message msg) {
-	while(!msg.eom()) {
-	    int id = msg.uint8();
-	    String resnm = msg.string();
-	    int resver = msg.uint16();
-	    nsets[id] = new Resource.Spec(Resource.remote(), resnm, resver);
 	}
     }
 
