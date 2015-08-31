@@ -73,10 +73,13 @@
   </target>
   
   <target name="res-jar" depends="build-env" unless="has-res-jar">
-    <!--
-    <get src="http://www.havenandhearth.com/java/haven-res.jar" dest="lib/haven-res.jar"
+
+    <get src="http://www.havenandhearth.com/java/hafen-res.jar" dest="lib/hafen-res.jar"
 	 usetimestamp="true" />
-    -->
+
+    <get src="http://www.havenandhearth.com/java/builtin-res.jar" dest="lib/builtin-res.jar"
+         usetimestamp="true" />
+
     <available property="lib-res-jar" file="lib/hafen-res.jar" />
     <fail unless="lib-res-jar" message="hafen-res.jar not available" />
     <available property="lib-builtin-jar" file="lib/builtin-res.jar" />
