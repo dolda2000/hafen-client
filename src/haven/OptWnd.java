@@ -26,11 +26,8 @@
 
 package haven;
 
-import java.util.*;
-import java.awt.font.TextAttribute;
-
 public class OptWnd extends Window {
-    public final Panel main, video, audio, ui;
+    public final Panel main, video, audio, display, ui;
     public Panel current;
 
     public void chpanel(Panel p) {
@@ -192,12 +189,14 @@ public class OptWnd extends Window {
 	main = add(new Panel());
 	video = add(new VideoPanel(main));
 	audio = add(new Panel());
+	display = add(new Panel());
 	ui = add(new Panel());
 	int y;
 
 	main.add(new PButton(200, "Video settings", 'v', video), new Coord(0, 0));
 	main.add(new PButton(200, "Audio settings", 'a', audio), new Coord(0, 30));
-	main.add(new PButton(200, "UI settings", 'u', ui), new Coord(0, 60));
+	main.add(new PButton(200, "Display settings", 'd', display), new Coord(0, 60));
+	main.add(new PButton(200, "UI settings", 'u', ui), new Coord(0, 90));
 	if(gopts) {
 	    main.add(new Button(200, "Switch character") {
 		    public void click() {
@@ -254,6 +253,20 @@ public class OptWnd extends Window {
 	audio.pack();
 
 	y = 0;
+	display.add(new CheckBox("Always show kin names") {
+		{
+			a = Config.getAlwaysShowKinNames();
+		}
+
+		public void set(boolean val) {
+			Config.setAlwaysShowKinNames(val);
+			a = val;
+		}
+	}, new Coord(0, y));
+	display.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
+	display.pack();
+
+	y = 0;
 	ui.add(new CheckBox("Enable floating minimap (requires relogin)") {
 		{ a = Config.getEnableFloatingMinimap(); }
 
@@ -262,7 +275,6 @@ public class OptWnd extends Window {
 			a = val;
 		}
 	}, new Coord(0, y));
-
 	ui.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
 	ui.pack();
 

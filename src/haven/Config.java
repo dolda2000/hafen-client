@@ -89,6 +89,14 @@ public class Config {
 	public static void setEnableNightVision(boolean value) {
 		setprefb("haven.nightvision",value);
 	}
+
+	public static boolean getAlwaysShowKinNames() {
+		return getprefb("haven.alwaysshowkin", true);
+	}
+
+	public static void setAlwaysShowKinNames(boolean value) {
+		setprefb("haven.alwaysshowkin", value);
+	}
     
     private static int getint(String name, int def) {
 	String val = getprop(name, null);
