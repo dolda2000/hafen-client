@@ -28,116 +28,17 @@ package haven;
 
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
-import javax.imageio.ImageIO;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
-import java.util.*;
-import haven.resutil.Ridges;
 
 public class LocalMiniMap extends Widget {
     public final MapView mv;
+	private final MinimapCache cache;
     private Coord cc = null;
-    private MapTile cur = null;
-    private final Map<Coord, Defer.Future<MapTile>> cache = new LinkedHashMap<Coord, Defer.Future<MapTile>>(5, 0.75f, true) {
-	protected boolean removeEldestEntry(Map.Entry<Coord, Defer.Future<MapTile>> eldest) {
-	    if(size() > 50) {
-		try {
-		    MapTile t = eldest.getValue().get();
-		    t.img.dispose();
-		} catch(RuntimeException e) {
-		}
-		return(true);
-	    }
-	    return(false);
-	}
-    };
-
-	private String session;
-	private Coord sp;
-	private Coord cgrid = null;
-	private static final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss");
-
-	public static class MapTile {
-	public final Tex img;
-	public final Coord ul, c;
-	
-	public MapTile(Tex img, Coord ul, Coord c) {
-	    this.img = img;
-	    this.ul = ul;
-	    this.c = c;
-	}
-    }
-
-    private BufferedImage tileimg(int t, BufferedImage[] texes) {
-	BufferedImage img = texes[t];
-	if(img == null) {
-	    Resource r = ui.sess.glob.map.tilesetr(t);
-	    if(r == null)
-		return(null);
-	    Resource.Image ir = r.layer(Resource.imgc);
-	    if(ir == null)
-		return(null);
-	    img = ir.img;
-	    texes[t] = img;
-	}
-	return(img);
-    }
-    
-    public BufferedImage drawmap(Coord ul, Coord sz) {
-	BufferedImage[] texes = new BufferedImage[256];
-	MCache m = ui.sess.glob.map;
-	BufferedImage buf = TexI.mkbuf(sz);
-	Coord c = new Coord();
-	for(c.y = 0; c.y < sz.y; c.y++) {
-	    for(c.x = 0; c.x < sz.x; c.x++) {
-		int t = m.gettile(ul.add(c));
-		BufferedImage tex = tileimg(t, texes);
-		int rgb = 0;
-		if(tex != null)
-		    rgb = tex.getRGB(Utils.floormod(c.x + ul.x, tex.getWidth()),
-				     Utils.floormod(c.y + ul.y, tex.getHeight()));
-		buf.setRGB(c.x, c.y, rgb);
-	    }
-	}
-	for(c.y = 1; c.y < sz.y - 1; c.y++) {
-	    for(c.x = 1; c.x < sz.x - 1; c.x++) {
-		int t = m.gettile(ul.add(c));
-		Tiler tl = m.tiler(t);
-		if(tl instanceof Ridges.RidgeTile) {
-		    if(Ridges.brokenp(m, ul.add(c))) {
-			for(int y = c.y - 1; y <= c.y + 1; y++) {
-			    for(int x = c.x - 1; x <= c.x + 1; x++) {
-				Color cc = new Color(buf.getRGB(x, y));
-				buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y))?1:0.1).getRGB());
-			    }
-			}
-		    }
-		}
-	    }
-	}
-	for(c.y = 0; c.y < sz.y; c.y++) {
-	    for(c.x = 0; c.x < sz.x; c.x++) {
-		int t = m.gettile(ul.add(c));
-		if((m.gettile(ul.add(c).add(-1, 0)) > t) ||
-		   (m.gettile(ul.add(c).add( 1, 0)) > t) ||
-		   (m.gettile(ul.add(c).add(0, -1)) > t) ||
-		   (m.gettile(ul.add(c).add(0,  1)) > t))
-		    buf.setRGB(c.x, c.y, Color.BLACK.getRGB());
-	    }
-	}
-	return(buf);
-    }
+    private MinimapTile cur = null;
 
     public LocalMiniMap(Coord sz, MapView mv) {
 	super(sz);
 	this.mv = mv;
+	this.cache = new MinimapCache(new MinimapRenderer(mv.ui.sess.glob.map));
     }
     
     public Coord p2c(Coord pc) {
@@ -195,26 +96,16 @@ public class LocalMiniMap extends Widget {
 	if(cc == null)
 	    return;
 	final Coord plg = cc.div(cmaps);
-	checkSession(plg);
+	synchronized (cache) {
+		cache.checkSession(plg);
+	}
 	if((cur == null) || !plg.equals(cur.c)) {
-	    Defer.Future<MapTile> f;
+	    Defer.Future<MinimapTile> f;
 	    synchronized(cache) {
-		f = cache.get(plg);
-		if(f == null) {
-		    f = Defer.later(new Defer.Callable<MapTile> () {
-			    public MapTile call() {
-				Coord ul = plg.mul(cmaps).sub(cmaps).add(1, 1);
-				BufferedImage img = LocalMiniMap.this.drawmap(ul, MCache.cmaps.mul(3).sub(2, 2));
-				MapTile mapTile = new MapTile(new TexI(img), ul, plg);
-				store(img, plg);
-				return mapTile;
-				}
-			});
-		    cache.put(plg, f);
+			f = cache.get(plg);
 		}
-	    }
 	    if(f.done())
-		cur = f.get();
+			cur = f.get();
 	}
 	if(cur != null) {
 	    g.image(cur.img, cur.ul.sub(cc).add(sz.div(2)));
@@ -252,57 +143,4 @@ public class LocalMiniMap extends Widget {
 	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags(), 0, (int)gob.id, gob.rc, 0, -1);
 	return(true);
     }
-
-	private String mapfolder(){
-		return String.format("%s/map/", ".");
-	}
-
-	private String mapfile(String file){
-		return String.format("%s%s", mapfolder(), file);
-	}
-
-	private String mapsessfile(String file){
-		return String.format("%s%s/%s", mapfolder(), session, file);
-	}
-
-	private String mapsessfolder(){
-		return mapsessfile("");
-	}
-
-	private void store(BufferedImage img, Coord cg) {
-		if (img == null) return;
-		Coord c = cg.sub(sp);
-		String fileName = mapsessfile(String.format("tile_%d_%d.png", c.x, c.y));
-		File outputfile = new File(fileName);
-		try {
-			ImageIO.write(img, "png", outputfile);
-		} catch (IOException e) {}
-	}
-
-	private void checkSession(Coord plg) {
-		if(cgrid == null || cgrid.manhattan(plg) > 5){
-			sp = plg;
-			synchronized (cache) {
-				for (Defer.Future<MapTile> v : cache.values()) {
-					if(v != null && v.done()) {
-						MapTile tile = v.get();
-						if(tile != null && tile.img != null) {
-							tile.img.dispose();
-						}
-					}
-				}
-				cache.clear();
-			}
-			session = datefmt.format(new Date(System.currentTimeMillis()));
-			if(true){
-				(new File(mapsessfolder())).mkdirs();
-				try {
-					Writer currentSessionFile = new FileWriter(mapfile("currentsession.js"));
-					currentSessionFile.write("var currentSession = '" + session + "';\n");
-					currentSessionFile.close();
-				} catch (IOException e) {}
-			}
-		}
-		cgrid = plg;
-	}
 }
