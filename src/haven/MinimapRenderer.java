@@ -45,12 +45,17 @@ public class MinimapRenderer {
         }
         for(c.y = 0; c.y < sz.y; c.y++) {
             for(c.x = 0; c.x < sz.x; c.x++) {
-                int t = map.gettile(ul.add(c));
-                if((map.gettile(ul.add(c).add(-1, 0)) > t) ||
-                        (map.gettile(ul.add(c).add( 1, 0)) > t) ||
-                        (map.gettile(ul.add(c).add(0, -1)) > t) ||
-                        (map.gettile(ul.add(c).add(0,  1)) > t))
-                    buf.setRGB(c.x, c.y, Color.BLACK.getRGB());
+                try {
+                    int t = map.gettile(ul.add(c));
+                    if ((map.gettile(ul.add(c).add(-1, 0)) > t) ||
+                            (map.gettile(ul.add(c).add(1, 0)) > t) ||
+                            (map.gettile(ul.add(c).add(0, -1)) > t) ||
+                            (map.gettile(ul.add(c).add(0, 1)) > t))
+                        buf.setRGB(c.x, c.y, Color.BLACK.getRGB());
+                } catch (Loading ex) {
+                    // ignore loading exceptions
+                    // might be better to add check beforehand to improve performance
+                }
             }
         }
         return(buf);

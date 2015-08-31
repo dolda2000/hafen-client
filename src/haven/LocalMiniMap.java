@@ -99,17 +99,24 @@ public class LocalMiniMap extends Widget {
 	synchronized (cache) {
 		cache.checkSession(plg);
 	}
-	if((cur == null) || !plg.equals(cur.c)) {
-	    Defer.Future<MinimapTile> f;
-	    synchronized(cache) {
-			f = cache.get(plg);
+
+	Coord ulg = cc.sub(sz.div(2)).div(cmaps);
+	Coord blg = cc.add(sz.div(2)).div(cmaps);
+	Coord cg = new Coord();
+
+	synchronized (cache) {
+		for (cg.y = ulg.y; cg.y <= blg.y; cg.y++) {
+			for (cg.x = ulg.x; cg.x <= blg.x; cg.x++) {
+				Defer.Future<MinimapTile> f = cache.get(cg);
+				if (!f.done())
+					continue;
+				MinimapTile tile = f.get();
+				g.image(tile.img, cg.mul(cmaps).sub(cc).add(sz.div(2)));
+			}
 		}
-	    if(f.done())
-			cur = f.get();
 	}
-	if(cur != null) {
-	    g.image(cur.img, cur.ul.sub(cc).add(sz.div(2)));
-	    try {
+
+	try {
 		synchronized(ui.sess.glob.party.memb) {
 		    for(Party.Member m : ui.sess.glob.party.memb.values()) {
 			Coord ptc;
@@ -126,10 +133,7 @@ public class LocalMiniMap extends Widget {
 			g.chcolor();
 		    }
 		}
-	    } catch(Loading l) {}
-	} else {
-	    g.image(MiniMap.nomap, Coord.z);
-	}
+	} catch(Loading l) {}
 	drawicons(g);
     }
 

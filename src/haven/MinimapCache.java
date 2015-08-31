@@ -22,9 +22,9 @@ public class MinimapCache {
     private Coord cgrid = null;
 
     private final Map<Coord, Defer.Future<MinimapTile>> cache =
-            new LinkedHashMap<Coord, Defer.Future<MinimapTile>>(5, 0.75f, true) {
+            new LinkedHashMap<Coord, Defer.Future<MinimapTile>>(50, 0.75f, true) {
                 protected boolean removeEldestEntry(Map.Entry<Coord, Defer.Future<MinimapTile>> eldest) {
-                    if(size() > 50) {
+                    if(size() > 100) {
                         try {
                             MinimapTile t = eldest.getValue().get();
                             t.img.dispose();
@@ -40,20 +40,21 @@ public class MinimapCache {
         this.renderer = renderer;
     }
 
-    public Defer.Future<MinimapTile> get(final Coord gc) {
-        Defer.Future<MinimapTile> f = cache.get(gc);
+    public Defer.Future<MinimapTile> get(Coord gc) {
+        final Coord tgc = new Coord(gc);
+        Defer.Future<MinimapTile> f = cache.get(tgc);
         if(f == null) {
             f = Defer.later(new Defer.Callable<MinimapTile>() {
                 @Override
                 public MinimapTile call() {
-                    Coord ul = gc.mul(cmaps).sub(cmaps).add(1, 1);
-                    BufferedImage img = renderer.draw(ul, MCache.cmaps.mul(3).sub(2, 2));
-                    MinimapTile mapTile = new MinimapTile(new TexI(img), ul, gc);
-                    store(img, gc);
+                    Coord ul = tgc.mul(cmaps);
+                    BufferedImage img = renderer.draw(ul, MCache.cmaps);
+                    MinimapTile mapTile = new MinimapTile(new TexI(img), ul, tgc);
+                    store(img, tgc);
                     return mapTile;
                 }
             });
-            cache.put(gc, f);
+            cache.put(tgc, f);
         }
         return f;
     }
