@@ -1079,11 +1079,11 @@ public class CharWnd extends Window {
 	    y += 151;
 	    int rx = x + attrw - 10;
 	    Frame.around(sattr, Area.sized(new Coord(x, y).add(wbox.btloff()), new Coord(attrw, 80)));
-	    sattr.add(new Label("Learning points:"), new Coord(x + 15, y + 10));
-	    sattr.add(new ExpLabel(new Coord(rx, y + 10)));
-	    sattr.add(new Label("Experience points:"), new Coord(x + 15, y + 25));
-	    sattr.add(new EncLabel(new Coord(rx, y + 25)));
-	    sattr.add(new Label("Cost:"), new Coord(x + 15, y + 40));
+	    sattr.add(new Label("Experience points:"), new Coord(x + 15, y + 10));
+	    sattr.add(new EncLabel(new Coord(rx, y + 10)));
+	    sattr.add(new Label("Learning points:"), new Coord(x + 15, y + 25));
+	    sattr.add(new ExpLabel(new Coord(rx, y + 25)));
+	    sattr.add(new Label("Learning cost:"), new Coord(x + 15, y + 40));
 	    sattr.add(new RLabel(new Coord(rx, y + 40), "0") {
 		    int cc;
 
