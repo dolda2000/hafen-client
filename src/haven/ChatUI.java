@@ -759,7 +759,7 @@ public class ChatUI extends Widget {
 		if(from == null) {
 		    append(new MyMessage(line, iw()));
 		} else {
-		    Message cmsg = new NamedMessage(from, line, col, iw());
+		    Message cmsg = new NamedMessage(from, line, Utils.blendcol(col, Color.WHITE, 0.5), iw());
 		    append(cmsg);
 		    notify(cmsg);
 		}
