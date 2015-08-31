@@ -513,7 +513,8 @@ public abstract class GLState {
 	    cur.copy(old);
 	    for(int i = deplist.length - 1; i >= 0; i--) {
 		int id = deplist[i].id;
-		if(repl[id]) {
+		// FIXME: dirty fix for ArrayIndexOutOfBoundsException id >= repl.length
+		if (id < repl.length && repl[id]) {
 		    if(cur.states[id] != null) {
 			cur.states[id].unapply(g);
 			if(debug)
@@ -532,7 +533,8 @@ public abstract class GLState {
 	     * been altered, future results are undefined. */
 	    for(int i = 0; i < deplist.length; i++) {
 		int id = deplist[i].id;
-		if(repl[id]) {
+		// FIXME: dirty fix for ArrayIndexOutOfBoundsException on id >= repl.length
+		if (id < repl.length && repl[id]) {
 		    if(next.states[id] != null) {
 			next.states[id].apply(g);
 			cur.states[id] = next.states[id];
@@ -543,7 +545,8 @@ public abstract class GLState {
 		    }
 		    if(!pdirty)
 			prog.adirty(deplist[i]);
-		} else if(trans[id]) {
+			// FIXME: dirty fix for ArrayIndexOutOfBoundsException on id >= trans.length
+			} else if (id < trans.length && trans[id]) {
 		    cur.states[id].applyto(g, next.states[id]);
 		    if(debug)
 			stcheckerr(g, "applyto", cur.states[id]);
@@ -555,7 +558,8 @@ public abstract class GLState {
 			stcheckerr(g, "applyfrom", cur.states[id]);
 		    if(!pdirty)
 			prog.adirty(deplist[i]);
-		} else if(pdirty && (shaders[id] != null)) {
+			// FIXME: dirty fix for ArrayIndexOutOfBoundsException on id >= shaders.length
+			} else if (pdirty && (id < shaders.length && shaders[id] != null)) {
 		    cur.states[id].reapply(g);
 		    if(debug)
 			stcheckerr(g, "reapply", cur.states[id]);
