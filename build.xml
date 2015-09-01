@@ -71,7 +71,7 @@
       <fileset dir="build/classes-lib" />
       <manifest>
 	<attribute name="Main-Class" value="haven.MainFrame" />
-	<attribute name="Class-Path" value="jogl.jar gluegen-rt.jar builtin-res.jar hafen-res.jar custom-res.jar" />
+	<attribute name="Class-Path" value="jogl-all.jar gluegen-rt.jar builtin-res.jar hafen-res.jar custom-res.jar" />
         <attribute name="Implementation-Version" value="${buildversion}" />
       </manifest>
     </jar>
