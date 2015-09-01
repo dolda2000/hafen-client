@@ -1,6 +1,11 @@
 <?xml version="1.0" ?>
 
 <project name="hafen" default="deftgt">
+  <property environment="env" />
+  <condition property="buildversion" value="${env.TRAVIS_TAG}" else="dev">
+    <isset property="env.TRAVIS_TAG" />
+  </condition>
+
   <target name="build-env">
     <mkdir dir="build" />
     <mkdir dir="build/classes" />
@@ -67,6 +72,7 @@
       <manifest>
 	<attribute name="Main-Class" value="haven.MainFrame" />
 	<attribute name="Class-Path" value="jogl.jar gluegen-rt.jar builtin-res.jar hafen-res.jar kthafen-res.jar" />
+        <attribute name="Implementation-Version" value="${buildversion}" />
       </manifest>
     </jar>
     <chmod file="build/hafen.jar" perm="a+x" />

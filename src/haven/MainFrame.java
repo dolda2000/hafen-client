@@ -37,6 +37,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
     private final ThreadGroup g;
     public final Thread mt;
     DisplayMode fsmode = null, prefs = null;
+	private final String version;
 	
     static {
 	try {
@@ -170,6 +171,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 
     public MainFrame(Coord isz) {
 	super("Haven and Hearth");
+	version = getClass().getPackage().getImplementationVersion();
 	Coord sz;
 	if(isz == null) {
 	    sz = Utils.getprefc("wndsz", new Coord(800, 600));
@@ -249,10 +251,10 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 			    Config.authck = null;
 			}
 			fun = bill;
-			setTitle("Haven and Hearth");
+			setTitle(String.format("Haven and Hearth (KT %s)", version));
 		    } else {
 			fun = new RemoteUI(sess);
-			setTitle("Haven and Hearth \u2013 " + sess.username);
+			setTitle(String.format("Haven and Hearth (KT %s) \u2013 %s", version, sess.username));
 		    }
 		    sess = fun.run(p.newui(sess));
 		}
