@@ -285,9 +285,9 @@ public class OptWnd extends Window {
 	}, new Coord(0, y));
 	y += 15;
 	display.add(new CheckBox("Enable floating minimap (requires relogin)") {
-		{ a = Config.getEnableFloatingMinimap(); }
+		{ a = Config.getFloatMinimapEnabled(); }
 		public void set(boolean val) {
-			Config.setEnableFloatingMinimap(val);
+			Config.setFloatMinimapEnabled(val);
 			a = val;
 		}
 	}, new Coord(0, y));

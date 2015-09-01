@@ -476,7 +476,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		if (minimapPanel != null)
 			ui.destroy(minimapPanel);
 
-		if (Config.getEnableFloatingMinimap()) {
+		if (Config.getFloatMinimapEnabled()) {
 			mmap = new LocalMiniMap(Config.getMinimapSize(), map);
 			minimapPanel = new MinimapPanel(Config.getMinimapPosition(), mmap.sz, map, mmap);
 			add(minimapPanel);

@@ -26,9 +26,8 @@
 
 package haven;
 
-import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
-import haven.Resource.Tile;
+
 import haven.GLProgram.VarID;
 import java.awt.Color;
 import java.util.*;
@@ -556,7 +555,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	synchronized(glob) {
 	    if(glob.lightamb != null) {
 			Color lightamb, lightdif, lightspc;
-			if (Config.getEnableNightVision()) {
+			if (Config.getNightVisionEnabled()) {
 				lightamb = daylightamb;
 				lightdif = daylightdif;
 				lightspc = daylightspc;
