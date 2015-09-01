@@ -86,7 +86,7 @@
     <fail unless="lib-builtin-jar" message="builtin-res.jar not available" />
   </target>
   
-  <target name="jars" depends="build-env, jar, res-jar">
+  <target name="jars" depends="build-env, jar">
     <copy todir="build">
       <fileset dir="lib">
 	<include name="jogl.jar" />
