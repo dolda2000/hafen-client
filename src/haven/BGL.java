@@ -80,6 +80,8 @@ public class BGL {
 		throw(new BGLException(this, list[i], exc));
 	    }
 	}
+                if (i < list.length) // FIMXE: dirty fix for ArrayIndexOutOfBoundsException
+                    list[i].run(gl);
     }
 
     private void add(Command cmd) {
