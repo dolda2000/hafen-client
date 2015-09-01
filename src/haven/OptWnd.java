@@ -27,7 +27,7 @@
 package haven;
 
 public class OptWnd extends Window {
-    public final Panel main, video, audio, display, ui;
+    public final Panel main, video, audio, display, misc;
     public Panel current;
 
     public void chpanel(Panel p) {
@@ -190,13 +190,13 @@ public class OptWnd extends Window {
 	video = add(new VideoPanel(main));
 	audio = add(new Panel());
 	display = add(new Panel());
-	ui = add(new Panel());
+	misc = add(new Panel());
 	int y;
 
 	main.add(new PButton(200, "Video settings", 'v', video), new Coord(0, 0));
 	main.add(new PButton(200, "Audio settings", 'a', audio), new Coord(0, 30));
 	main.add(new PButton(200, "Display settings", 'd', display), new Coord(0, 60));
-	main.add(new PButton(200, "UI settings", 'u', ui), new Coord(0, 90));
+	main.add(new PButton(200, "Misc settings", 'u', misc), new Coord(0, 90));
 	if(gopts) {
 	    main.add(new Button(200, "Switch character") {
 		    public void click() {
@@ -283,19 +283,27 @@ public class OptWnd extends Window {
 			a = val;
 		}
 	}, new Coord(0, y));
-	display.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
-	display.pack();
-
-	y = 0;
-	ui.add(new CheckBox("Enable floating minimap (requires relogin)") {
+	y += 15;
+	display.add(new CheckBox("Enable floating minimap (requires relogin)") {
 		{ a = Config.getEnableFloatingMinimap(); }
 		public void set(boolean val) {
 			Config.setEnableFloatingMinimap(val);
 			a = val;
 		}
 	}, new Coord(0, y));
-	ui.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
-	ui.pack();
+	display.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
+	display.pack();
+
+	y = 0;
+	misc.add(new CheckBox("Save minimaps") {
+		{ a = Config.getMinimapSaveEnabled(); }
+		public void set(boolean val) {
+			Config.setMinimapSaveEnabled(val);
+			a = val;
+		}
+	}, new Coord(0, y));
+	misc.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
+	misc.pack();
 
 	chpanel(main);
     }

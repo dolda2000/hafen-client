@@ -50,7 +50,8 @@ public class MinimapCache {
                     Coord ul = tgc.mul(cmaps);
                     BufferedImage img = renderer.draw(ul, MCache.cmaps);
                     MinimapTile mapTile = new MinimapTile(new TexI(img), ul, tgc);
-                    store(img, tgc);
+                    if (Config.getMinimapSaveEnabled())
+                        store(img, tgc);
                     return mapTile;
                 }
             });
@@ -60,6 +61,10 @@ public class MinimapCache {
     }
 
     public void checkSession(Coord gc) {
+        if (!Config.getMinimapSaveEnabled()) {
+            cgrid = null;
+            return;
+        }
         if(cgrid == null || cgrid.manhattan(gc) > 5){
             sp = gc;
             synchronized (cache) {

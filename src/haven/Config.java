@@ -105,6 +105,14 @@ public class Config {
 	public static void setEnableCameraSnapping(boolean value) {
 		setprefb("haven.display.snapcamera", value);
 	}
+
+	public static boolean getMinimapSaveEnabled() {
+		return getprefb("haven.minimap.save", true);
+	}
+
+	public static void setMinimapSaveEnabled(boolean value) {
+		setprefb("haven.minimap.save", value);
+	}
     
     private static int getint(String name, int def) {
 	String val = getprop(name, null);
