@@ -254,7 +254,10 @@ public class OptWnd extends Window {
 
 	y = 0;
 	display.add(new CheckBox("Show flavor objects") {
-		{ a = Utils.getprefb("showflo", true); }
+		{
+			a = Utils.getprefb("showflo", true);
+		}
+
 		public void set(boolean val) {
 			if (val) {
 				Utils.setprefb("showflo", true);
@@ -269,6 +272,14 @@ public class OptWnd extends Window {
 		{ a = Config.getAlwaysShowKinNames(); }
 		public void set(boolean val) {
 			Config.setAlwaysShowKinNames(val);
+			a = val;
+		}
+	}, new Coord(0, y));
+	y += 15;
+	display.add(new CheckBox("Enable camera snapping") {
+		{ a = Config.getEnableCameraSnapping(); }
+		public void set(boolean val) {
+			Config.setEnableCameraSnapping(val);
 			a = val;
 		}
 	}, new Coord(0, y));

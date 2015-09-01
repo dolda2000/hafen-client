@@ -357,15 +357,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void release() {
-	    if(tfield > 100)
+	    if(tfield > 100 && Config.getEnableCameraSnapping())
 		tangl = (float)(Math.PI * 0.5 * (Math.floor(tangl / (Math.PI * 0.5)) + 0.5));
 	}
 
 	public boolean wheel(Coord c, int amount) {
 	    tfield += amount * 10;
 	    tfield = Math.max(Math.min(tfield, sz.x * (float)Math.sqrt(2) / 8f), 50);
-	    if(tfield > 100)
-		release();
+	    release();
 	    return(true);
 	}
     }

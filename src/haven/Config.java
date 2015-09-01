@@ -59,27 +59,27 @@ public class Config {
     }
 
 	public static Coord getMinimapPosition() {
-		return getprefc("haven.mmpos", new Coord(500, 100));
+		return getprefc("haven.minimap.position", new Coord(500, 100));
 	}
 
 	public static void setMinimapPosition(Coord pos) {
-		setprefc("haven.mmpos", pos);
+		setprefc("haven.minimap.position", pos);
 	}
 
 	public static Coord getMinimapSize() {
-		return getprefc("haven.mmsize", new Coord(300, 300));
+		return getprefc("haven.minimap.size", new Coord(300, 300));
 	}
 
 	public static void setMinimapSize(Coord size) {
-		setprefc("haven.mmsize", size);
+		setprefc("haven.minimap.size", size);
 	}
 
 	public static boolean getEnableFloatingMinimap() {
-		return getprefb("haven.mmfloat", true);
+		return getprefb("haven.minimap.float", true);
 	}
 
 	public static void setEnableFloatingMinimap(boolean value) {
-		setprefb("haven.mmfloat", value);
+		setprefb("haven.minimap.float", value);
 	}
 
 	public static boolean getEnableNightVision() {
@@ -96,6 +96,14 @@ public class Config {
 
 	public static void setAlwaysShowKinNames(boolean value) {
 		setprefb("haven.alwaysshowkin", value);
+	}
+
+	public static boolean getEnableCameraSnapping() {
+		return getprefb("haven.display.snapcamera", false);
+	}
+
+	public static void setEnableCameraSnapping(boolean value) {
+		setprefb("haven.display.snapcamera", value);
 	}
     
     private static int getint(String name, int def) {
