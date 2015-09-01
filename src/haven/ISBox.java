@@ -113,9 +113,11 @@ public class ISBox extends Widget implements DTarget {
     }
     
     public boolean mousedown(Coord c, int button) {
-	Coord cc = xlate(take.c, true);
-	if(c.isect(cc, take.sz)) {
-	    return take.mousedown(c.sub(cc), button);
+	if(take != null) {
+	    Coord cc = xlate(take.c, true);
+	    if(c.isect(cc, take.sz)) {
+		return take.mousedown(c.sub(cc), button);
+	    }
 	}
 	if (button == 1) {
 	    if (ui.modshift ^ ui.modctrl) {           //SHIFT or CTRL means pull
