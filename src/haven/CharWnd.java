@@ -960,7 +960,7 @@ public class CharWnd extends Window {
 	    g.aimage(w.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
 	    Text qd = w.rqd.get();
 	    if(qd != null)
-		g.aimage(qd.tex(), new Coord(sz.x - 5, itemh / 2), 1.0, 0.5);
+		g.aimage(qd.tex(), new Coord(sz.x - 15, itemh / 2), 1.0, 0.5);
 	}
 
 	protected void itemclick(Wound item, int button) {
@@ -1079,11 +1079,11 @@ public class CharWnd extends Window {
 	    y += 151;
 	    int rx = x + attrw - 10;
 	    Frame.around(sattr, Area.sized(new Coord(x, y).add(wbox.btloff()), new Coord(attrw, 80)));
-	    sattr.add(new Label("Learning points:"), new Coord(x + 15, y + 10));
-	    sattr.add(new ExpLabel(new Coord(rx, y + 10)));
-	    sattr.add(new Label("Experience points:"), new Coord(x + 15, y + 25));
-	    sattr.add(new EncLabel(new Coord(rx, y + 25)));
-	    sattr.add(new Label("Cost:"), new Coord(x + 15, y + 40));
+	    sattr.add(new Label("Experience points:"), new Coord(x + 15, y + 10));
+	    sattr.add(new EncLabel(new Coord(rx, y + 10)));
+	    sattr.add(new Label("Learning points:"), new Coord(x + 15, y + 25));
+	    sattr.add(new ExpLabel(new Coord(rx, y + 25)));
+	    sattr.add(new Label("Learning cost:"), new Coord(x + 15, y + 40));
 	    sattr.add(new RLabel(new Coord(rx, y + 40), "0") {
 		    int cc;
 
