@@ -1057,7 +1057,7 @@ public class CharWnd extends Window {
 	{
 	    int x = 5, y = 0;
 
-	    sattr = tabs.add();
+            sattr = tabs.addStudy();
 	    sattr.add(new Img(catf.render("Abilities").tex()), new Coord(x - 5, y)); y += 35;
 	    skill = new ArrayList<SAttr>();
 	    SAttr aw;
@@ -1276,6 +1276,16 @@ public class CharWnd extends Window {
 	    sattr.add(child, new Coord(260, 35).add(wbox.btloff()));
 	    Frame.around(sattr, Collections.singletonList(child));
 	    Widget inf = sattr.add(new StudyInfo(new Coord(attrw - 150, child.sz.y), child), new Coord(260 + 150, child.c.y).add(wbox.btloff().x, 0));
+            sattr.add(new CheckBox("Lock") {
+                {
+                    a = Config.studylock;
+                }
+                public void set(boolean val) {
+                    Utils.setprefb("studylock", val);
+                    Config.studylock = val;
+                    a = val;
+                }
+            }, new Coord(415, 10));
 	    Frame.around(sattr, Collections.singletonList(inf));
 	} else if(place == "fmg") {
 	    fgt.add(child, 0, 0);

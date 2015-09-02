@@ -62,6 +62,24 @@ public class Tabs {
 	return(parent.add(new Tab(), c));
     }
 
+    public Tab addStudy() {
+        return (parent.add(new Tab() {
+            @Override
+            public boolean mousedown(Coord c, int button) {
+                if (Config.studylock && c.x > 265 && c.x < 265 + 133 && c.y > 40 && c.y < 40 + 133)
+                    return false;
+                return super.mousedown(c, button);
+            }
+            @Override
+            public void wdgmsg(Widget sender, String msg, Object... args) {
+                if(Config.studylock && msg.equals("invxf"))
+                    return;
+                else
+                    super.wdgmsg(sender, msg, args);
+            }
+        }, c));
+    }
+
     public class TabButton extends Button {
 	public final Tab tab;
 
