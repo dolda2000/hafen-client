@@ -219,9 +219,9 @@ public class GOut {
         st.set(cur2d);
         origin = c.add(origin);
         Coord ul = c.rotate(origin, angle).add(tx);
-        Coord bl = c.add(tex.sz().x, 0).rotate(origin, angle).add(tx);
+        Coord bl = c.add(0, tex.sz().y).rotate(origin, angle).add(tx);
         Coord br = c.add(tex.sz()).rotate(origin, angle).add(tx);
-        Coord ur = c.add(0, tex.sz().y).rotate(origin, angle).add(tx);
+        Coord ur = new Coord(ul.x + (br.x - bl.x), br.y - (bl.y - ul.y));
         tex.renderquad(this, ul, bl, br, ur);
         checkerr();
     }

@@ -130,7 +130,7 @@ public class LocalMiniMap extends Widget {
 			if(ptc == null)
 			    continue;
 			ptc = p2c(ptc);
-			double angle = m.getangle() - Math.PI;
+			double angle = m.getangle() + Math.PI / 2;
 			Coord origin = plarrow.layer(Resource.negc).cc;
 			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 180);
 			g.image(plarrow.layer(Resource.imgc).tex(), ptc.sub(origin), origin, angle);
