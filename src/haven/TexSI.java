@@ -49,8 +49,8 @@ public class TexSI extends Tex {
     }
 
     @Override
-    public void render(GOut g, Coord ul, Coord br) {
-        parent.render(g, ul, br);
+    public void renderquad(GOut g, Coord ul, Coord bl, Coord br, Coord ur) {
+        parent.render(g, ul, bl, br, ur);
     }
 
     public GLState draw() {
