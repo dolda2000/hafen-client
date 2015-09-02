@@ -971,8 +971,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
 	public NKeyBelt() {
 	    super(nkeybg.sz());
-	    adda(new IButton("gfx/hud/hb-btn-chat", "", "-d", "-h") {{
+	    adda(new IButton("gfx/hud/hb-btn-chat", "", "-d", "-h") {
+		    Tex glow;
+		    {
 			this.tooltip = RichText.render("Chat ($col[255,255,0]{Ctrl+C})", 0);
+			glow = new TexI(PUtils.rasterimg(PUtils.blurmask(up.getRaster(), 2, 2, Color.WHITE)));
 		    }
 
 		    public void click() {
@@ -983,6 +986,16 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			    chat.sresize(0);
 			}
 			Utils.setprefb("chatvis", chat.targeth != 0);
+		    }
+
+		    public void draw(GOut g) {
+			super.draw(g);
+			Color urg = chat.urgcols[chat.urgency];
+			if(urg != null) {
+			    GOut g2 = g.reclipl(new Coord(-2, -2), g.sz.add(4, 4));
+			    g2.chcolor(urg.getRed(), urg.getGreen(), urg.getBlue(), 128);
+			    g2.image(glow, Coord.z);
+			}
 		    }
 		}, sz, 1, 1);
 	}

@@ -45,6 +45,12 @@ public class ChatUI extends Widget {
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = 130;
     public static final Coord marg = new Coord(9, 9);
+    public static final Color[] urgcols = new Color[] {
+	null,
+	new Color(0, 128, 255),
+	new Color(255, 128, 0),
+	new Color(255, 0, 0),
+    };
     public Channel sel = null;
     public int urgency = 0;
     private final Selector chansel;
@@ -896,13 +902,19 @@ public class ChatUI extends Widget {
     private class Selector extends Widget {
 	public final BufferedImage ctex = Resource.loadimg("gfx/hud/chantex");
 	public final Text.Foundry tf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
-	public final Text.Furnace nf = new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(80, 40, 0));
+	public final Text.Furnace[] nf = {
+	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(80, 40, 0)),
+	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(0, 128, 255)),
+	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(255, 128, 0)),
+	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(255, 0, 0)),
+	};
 	private final List<DarkChannel> chls = new ArrayList<DarkChannel>();
 	private int s = 0;
 	
 	private class DarkChannel {
 	    public final Channel chan;
 	    public Text rname;
+	    private int urgency = 0;
 	    
 	    private DarkChannel(Channel chan) {
 		this.chan = chan;
@@ -938,8 +950,8 @@ public class ChatUI extends Widget {
 		    if(ch.chan == sel)
 			g.image(chanseld, new Coord(0, y));
 		    g.chcolor(255, 255, 255, 255);
-		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()))
-			ch.rname = nf.render(ch.chan.name());
+		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency))
+			ch.rname = nf[ch.urgency = ch.chan.urgency].render(ch.chan.name());
 		    g.aimage(ch.rname.tex(), new Coord(sz.x / 2, y + 8), 0.5, 0.5);
 		    g.image(chandiv, new Coord(0, y + 18));
 		    y += 28;
@@ -1034,7 +1046,7 @@ public class ChatUI extends Widget {
 	private Notification(Channel chan, Channel.Message msg) {
 	    this.chan = chan;
 	    this.msg = msg;
-	    this.chnm = chansel.nf.render(chan.name());
+	    this.chnm = chansel.nf[0].render(chan.name());
 	}
     }
 
