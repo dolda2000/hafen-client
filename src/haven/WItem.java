@@ -194,6 +194,10 @@ public class WItem extends Widget implements DTarget {
 		g.aimage(itemnum.get(), sz, 1, 1);
 	    }
 	    if(item.meter > 0) {
+		g.chcolor(0, 0, 0, 255);
+		g.text(String.format("%d%%", item.meter), new Coord(0, -5));
+		g.chcolor(255, 255, 255, 255);
+		g.text(String.format("%d%%", item.meter), new Coord(1, -4));
 		double a = ((double)item.meter) / 100.0;
 		g.chcolor(255, 255, 255, 64);
 		Coord half = sz.div(2);
