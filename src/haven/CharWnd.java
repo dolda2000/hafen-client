@@ -1202,7 +1202,7 @@ public class CharWnd extends Window {
 	    x = lists.c.x;
 	    y = lists.c.y + lists.sz.y + 5;
 	    skills.add(lists.new TabButton(bw - 5, "Available", nsk), new Coord(x, y));
-	    skills.add(lists.new TabButton(bw - 5, "Current", csk), new Coord(x + bw, y));
+	    skills.add(lists.new TabButton(bw - 5, "Known", csk), new Coord(x + bw, y));
 	    skills.add(lists.new TabButton(bw - 5, "Lore", exps), new Coord(x + bw * 2, y));
 	}
 
