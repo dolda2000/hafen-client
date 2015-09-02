@@ -30,6 +30,8 @@ import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 
 public class LocalMiniMap extends Widget {
+	public static final Resource plarrow = Resource.local().loadwait("gfx/hud/mmap/plarrow");
+
     public final MapView mv;
 	private final MinimapCache cache;
     private Coord cc = null;
@@ -128,8 +130,10 @@ public class LocalMiniMap extends Widget {
 			if(ptc == null)
 			    continue;
 			ptc = p2c(ptc);
-			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 128);
-			g.image(MiniMap.plx.layer(Resource.imgc).tex(), ptc.add(MiniMap.plx.layer(Resource.negc).cc.inv()));
+			double angle = m.getangle() - Math.PI;
+			Coord origin = plarrow.layer(Resource.negc).cc;
+			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 180);
+			g.image(plarrow.layer(Resource.imgc).tex(), ptc.sub(origin), origin, angle);
 			g.chcolor();
 		    }
 		}

@@ -45,6 +45,9 @@ public abstract class Tex {
     /* Render texture coordinates from ul to br at c to c + sz, scaling if necessary. */
     public abstract void render(GOut g, Coord c, Coord ul, Coord br, Coord sz);
 
+    /* Render texture into arbitrary quad. */
+    public abstract void renderquad(GOut g, Coord ul, Coord bl, Coord br, Coord ur);
+
     public abstract float tcx(int x);
     public abstract float tcy(int y);
     public abstract GLState draw();
@@ -99,6 +102,7 @@ public abstract class Tex {
 
     public static final Tex empty = new Tex(Coord.z) {
 	    public void render(GOut g, Coord c, Coord ul, Coord br, Coord sz) {}
+        public void renderquad(GOut g, Coord ul, Coord bl, Coord br, Coord ur) {}
 	    public float tcx(int x) {return(0);}
 	    public float tcy(int y) {return(0);}
 	    public GLState draw() {return(null);}

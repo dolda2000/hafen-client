@@ -328,6 +328,30 @@ public abstract class TexGL extends Tex {
 	}
     }
 
+	public void renderquad(GOut g, Coord ul, Coord bl, Coord br, Coord ur) {
+		BGL gl = g.gl;
+		g.st.prep(draw);
+		g.apply();
+		checkerr(gl);
+		if(!disableall) {
+			gl.glBegin(GL2.GL_QUADS);
+			float l = 0;
+			float t = 0;
+			float r = 1;
+			float b = 1;
+			gl.glTexCoord2f(l, t);
+			gl.glVertex3i(ul.x, ul.y, 0);
+			gl.glTexCoord2f(r, t);
+			gl.glVertex3i(ur.x, ur.y, 0);
+			gl.glTexCoord2f(r, b);
+			gl.glVertex3i(br.x, br.y, 0);
+			gl.glTexCoord2f(l, b);
+			gl.glVertex3i(bl.x, bl.y, 0);
+			gl.glEnd();
+			checkerr(gl);
+		}
+	}
+
     public void render(GOut g, Coord c, Coord ul, Coord br, Coord sz) {
 	BGL gl = g.gl;
 	g.st.prep(draw);

@@ -58,6 +58,11 @@ public class Party {
 	    } catch(Loading e) {}
 	    return(c);
 	}
+
+	public double getangle() {
+		Gob gob = getgob();
+		return (gob != null) ? gob.a : Math.PI / 2;
+	}
     }
 	
     public void msg(Message msg) {
