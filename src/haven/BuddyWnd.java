@@ -446,8 +446,11 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    serial++;
 	} else if(msg == "sel") {
 	    int id = (Integer)args[0];
-	    show();
-	    raise();
+	    Window p = getparent(Window.class);
+	    if(p != null) {
+		p.show();
+		p.raise();
+	    }
 	    bl.change(find(id));
 	} else if(msg == "pwd") {
 	    charpass.settext((String)args[0]);
