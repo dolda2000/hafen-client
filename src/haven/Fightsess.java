@@ -187,7 +187,7 @@ public class Fightsess extends Widget {
 
     public boolean globtype(char key, KeyEvent ev) {
 	int c = ev.getKeyChar();
-	if((key == 0) && (c >= KeyEvent.VK_1) && (key < KeyEvent.VK_1 + actions.length)) {
+	if((key == 0) && (c >= KeyEvent.VK_1) && (c < KeyEvent.VK_1 + actions.length)) {
 	    int n = c - KeyEvent.VK_1;
 	    if((ev.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0)
 		wdgmsg("drop", n);
