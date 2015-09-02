@@ -43,6 +43,7 @@ public class ChatUI extends Widget {
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = 100;
     public Channel sel = null;
+    public int urgency = 0;
     private final Selector chansel;
     private Coord base = Coord.z;
     private QuickLine qline = null;
@@ -128,6 +129,7 @@ public class ChatUI extends Widget {
     public static abstract class Channel extends Widget {
 	public final List<Message> msgs = new LinkedList<Message>();
 	private final Scrollbar sb;
+	public int urgency = 0;
 	
 	public static abstract class Message {
 	    public final long time = System.currentTimeMillis();
@@ -189,6 +191,17 @@ public class ChatUI extends Widget {
 	    return(sz.y);
 	}
 	
+	public void updurgency(int urg) {
+	    if(urgency != urg) {
+		urgency = urg;
+		int mu = 0;
+		ChatUI p = getparent(ChatUI.class);
+		for(Selector.DarkChannel ch : p.chansel.chls)
+		    mu = Math.max(mu, ch.chan.urgency);
+		p.urgency = mu;
+	    }
+	}
+
 	public void draw(GOut g) {
 	    g.chcolor(0, 0, 0, 255);
 	    g.frect(Coord.z, sz);
@@ -213,6 +226,7 @@ public class ChatUI extends Widget {
 	    }
 	    sb.max = y - ih();
 	    super.draw(g);
+	    updurgency(0);
 	}
 	
 	public boolean mousewheel(Coord c, int amount) {
@@ -235,8 +249,9 @@ public class ChatUI extends Widget {
 	    }
 	}
 	
-	public void notify(Message msg) {
+	public void notify(Message msg, int urgency) {
 	    getparent(ChatUI.class).notify(this, msg);
+	    updurgency(Math.max(this.urgency, urgency));
 	}
 	
 	public static class CharPos {
@@ -612,11 +627,11 @@ public class ChatUI extends Widget {
 		Color col = null;
 		if(args.length > 1) col = (Color)args[1];
 		if(col == null) col = Color.WHITE;
-		boolean notify = (args.length > 2)?(((Integer)args[2]) != 0):false;
+		int urgency = (args.length > 2)?(Integer)args[2]:0;
 		Message cmsg = new SimpleMessage(line, col, iw());
 		append(cmsg);
-		if(notify)
-		    notify(cmsg);
+		if(urgency > 0)
+		    notify(cmsg, urgency);
 	    } else {
 		super.uimsg(msg, args);
 	    }
@@ -628,8 +643,8 @@ public class ChatUI extends Widget {
     }
 
     public static class MultiChat extends EntryChannel {
+	public final int urgency;
 	private final String name;
-	private final boolean notify;
 	private final Map<Integer, Color> pc = new HashMap<Integer, Color>();
 	
 	public class NamedMessage extends Message {
@@ -675,9 +690,9 @@ public class ChatUI extends Widget {
 	    }
 	}
 
-	public MultiChat(String name, boolean notify) {
+	public MultiChat(String name, int urgency) {
 	    this.name = name;
-	    this.notify = notify;
+	    this.urgency = urgency;
 	}
 	
 	private float colseq = 0;
@@ -703,8 +718,8 @@ public class ChatUI extends Widget {
 		} else {
 		    Message cmsg = new NamedMessage(from, line, fromcolor(from), iw());
 		    append(cmsg);
-		    if(notify)
-			notify(cmsg);
+		    if(urgency > 0)
+			notify(cmsg, urgency);
 		}
 	    } else {
 		super.uimsg(msg, args);
@@ -718,7 +733,7 @@ public class ChatUI extends Widget {
     
     public static class PartyChat extends MultiChat {
 	public PartyChat() {
-	    super("Party", true);
+	    super("Party", 2);
 	}
 
 	public void uimsg(String msg, Object... args) {
@@ -737,7 +752,8 @@ public class ChatUI extends Widget {
 		} else {
 		    Message cmsg = new NamedMessage(from, line, col, iw());
 		    append(cmsg);
-		    notify(cmsg);
+		    if(urgency > 0)
+			notify(cmsg, urgency);
 		}
 	    } else {
 		super.uimsg(msg, args);
@@ -771,7 +787,7 @@ public class ChatUI extends Widget {
 		if(t.equals("in")) {
 		    Message cmsg = new InMessage(line, iw());
 		    append(cmsg);
-		    notify(cmsg);
+		    notify(cmsg, 3);
 		} else if(t.equals("out")) {
 		    append(new OutMessage(line, iw()));
 		}
@@ -779,7 +795,7 @@ public class ChatUI extends Widget {
 		String err = (String)args[0];
 		Message cmsg = new SimpleMessage(err, Color.RED, iw());
 		append(cmsg);
-		notify(cmsg);
+		notify(cmsg, 3);
 	    } else {
 		super.uimsg(msg, args);
 	    }
@@ -805,8 +821,8 @@ public class ChatUI extends Widget {
     public static class $MChat implements Factory {
 	public Widget create(Widget parent, Object[] args) {
 	    String name = (String)args[0];
-	    boolean notify = ((Integer)args[1]) != 0;
-	    return(new MultiChat(name, notify));
+	    int urgency = (Integer)args[1];
+	    return(new MultiChat(name, urgency));
 	}
     }
     @RName("pchat")
