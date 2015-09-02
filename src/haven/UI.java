@@ -47,6 +47,7 @@ public class UI {
     public Console cons = new WidgetConsole();
     private Collection<AfterDraw> afterdraws = new LinkedList<AfterDraw>();
     public final ActAudio audio = new ActAudio();
+    public GameUI gui = null;
     
     {
 	lastevent = lasttick = System.currentTimeMillis();

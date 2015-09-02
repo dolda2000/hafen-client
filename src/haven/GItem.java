@@ -99,6 +99,14 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	return(spr);
     }
 
+    public String resname(){
+        Resource res = resource();
+        if(res != null){
+            return res.name;
+        }
+        return "";
+    }
+
     public void tick(double dt) {
 	GSprite spr = spr();
 	if(spr != null)

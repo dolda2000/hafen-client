@@ -60,6 +60,8 @@ public class Equipory extends Widget implements DTarget {
 		isz.y = ec.y + invsq.sz().y;
 	}
     }
+
+    WItem[] slots = new WItem[ecoords.length];
     Map<GItem, WItem[]> wmap = new HashMap<GItem, WItem[]>();
 	
     @RName("epry")
@@ -105,6 +107,7 @@ public class Equipory extends Widget implements DTarget {
 	    for(int i = 0; i < args.length; i++) {
 		int ep = (Integer)args[i];
 		v[i] = add(new WItem(g), ecoords[ep].add(1, 1));
+	    	slots[ep] = v[i];
 	    }
 	    wmap.put(g, v);
 	} else {
@@ -116,8 +119,13 @@ public class Equipory extends Widget implements DTarget {
 	super.cdestroy(w);
 	if(w instanceof GItem) {
 	    GItem i = (GItem)w;
-	    for(WItem v : wmap.remove(i))
+	    for(WItem v : wmap.remove(i)) {
 		ui.destroy(v);
+		for(int s = 0; s < slots.length; s++) {
+		    if(slots[s] == v)
+			slots[s] = null;
+		}
+	    }
 	}
     }
     

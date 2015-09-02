@@ -101,4 +101,45 @@ public class Inventory extends Widget implements DTarget {
 	    resize(invsq.sz().add(new Coord(-1, -1)).mul(isz).add(new Coord(1, 1)));
 	}
     }
+
+    @Override
+    public void wdgmsg(Widget sender, String msg, Object... args) {
+	if(msg.equals("transfer-same")){
+	    process(getSame((String) args[0],(Boolean)args[1]), "transfer");
+	} else if(msg.equals("drop-same")){
+	    process(getSame((String) args[0], (Boolean) args[1]), "drop");
+	} else {
+	    super.wdgmsg(sender, msg, args);
+	}
+    }
+
+    private void process(List<WItem> items, String action) {
+	for (WItem item : items){
+	    item.item.wdgmsg(action, Coord.z);
+	}
+    }
+
+    @SuppressWarnings("UnusedParameters")
+    private List<WItem> getSame(String name, Boolean ascending) {
+	List<WItem> items = new ArrayList<WItem>();
+	for (Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
+	    if (wdg.visible && wdg instanceof WItem) {
+		if (((WItem) wdg).item.resname().equals(name))
+		    items.add((WItem) wdg);
+	    }
+	}
+	return items;
+    }
+
+    public static Coord invsz(Coord sz) {
+	return invsq.sz().add(new Coord(-1, -1)).mul(sz).add(new Coord(1, 1));
+    }
+
+    public static Coord sqroff(Coord c){
+	return c.div(invsq.sz());
+    }
+
+    public static Coord sqoff(Coord c){
+	return c.mul(invsq.sz());
+    }
 }
