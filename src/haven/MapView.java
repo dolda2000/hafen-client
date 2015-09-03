@@ -50,6 +50,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Coord3f camoff = new Coord3f(Coord3f.o);
     public double shake = 0.0;
     private static final Map<String, Class<? extends Camera>> camtypes = new HashMap<String, Class<? extends Camera>>();
+
+    private Timer holdtimer;
+    private UI.Grab holdgrab;
+    private TimerTask clicktask;
     
     public interface Delayed {
 	public void run(GOut g);
@@ -386,6 +390,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.glob = glob;
 	this.cc = cc;
 	this.plgob = plgob;
+    this.holdtimer = new Timer();
 	setcanfocus(true);
     }
     
@@ -1211,6 +1216,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	} else if((grab != null) && grab.mmousedown(c, button)) {
 	} else {
 	    delay(new Click(c, button));
+        if (button == 1)
+            holdclick();
+
 	}
 	return(true);
     }
@@ -1236,7 +1244,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	} else if(grab != null) {
 	    grab.mmouseup(c, button);
-	}
+	} else if (button == 1) {
+        unholdclick();
+    }
 	return(true);
     }
 
@@ -1468,5 +1478,27 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);
+    }
+
+    private void holdclick() {
+        unholdclick();
+        holdgrab = ui.grabmouse(this);
+        clicktask = new LeftClickTimerTask();
+        holdtimer.scheduleAtFixedRate(clicktask, 500, 500);
+    }
+
+    private void unholdclick() {
+        if (clicktask == null)
+            return;
+        holdgrab.remove();
+        holdgrab = null;
+        clicktask.cancel();
+        clicktask = null;
+    }
+
+    private class LeftClickTimerTask extends TimerTask  {
+        public void run() {
+            delay(new Click(MapView.this.ui.mc, 1));
+        }
     }
 }
