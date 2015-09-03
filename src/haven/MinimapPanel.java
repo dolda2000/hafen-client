@@ -9,20 +9,21 @@ public class MinimapPanel extends Window {
     static final Coord minsz = new Coord(150, 125);
 
     private final MapView map;
-    private final Widget minimap;
+    private final LocalMiniMap minimap;
     private IButton vclaimButton;
     private IButton pclaimButton;
+    private IButton centerButton;
     private Coord doff;
     private boolean folded;
     private UI.Grab resizegrab = null;
 
-    public MinimapPanel(Coord c, Coord sz, MapView map, Widget minimap) {
+    public MinimapPanel(Coord c, Coord sz, MapView map, LocalMiniMap minimap) {
         super(sz, "Minimap");
         this.map = map;
         this.minimap = minimap;
         this.c = c;
         add(minimap, 0, 0);
-        mapbuttons();
+        initbuttons();
     }
 
     public void draw(GOut g) {
@@ -96,6 +97,7 @@ public class MinimapPanel extends Window {
         minimap.visible = !folded;
         vclaimButton.visible = !folded;
         pclaimButton.visible = !folded;
+        centerButton.visible = !folded;
         if (folded) {
             resize(new Coord(minimap.sz.x, 0));
         } else {
@@ -103,7 +105,7 @@ public class MinimapPanel extends Window {
         }
     }
 
-    private void mapbuttons() {
+    private void initbuttons() {
         vclaimButton = add(new IButton("gfx/hud/lbtn-vil", "", "-d", "-h") {
             {
                 tooltip = Text.render("Display personal claims");
@@ -128,6 +130,16 @@ public class MinimapPanel extends Window {
                 else
                     map.disol(2, 3);
             }
-        }, -31, 15);
+        }, -6, -10);
+
+        centerButton = add(new IButton("gfx/hud/buttons/center", "-u", "-d", "-d") {
+            {
+                tooltip = Text.render("Center map");
+            }
+
+            public void click() {
+                minimap.setOffset(Coord.z);
+            }
+        }, 53, 3);
     }
 }

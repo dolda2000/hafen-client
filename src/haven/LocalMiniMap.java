@@ -36,6 +36,9 @@ public class LocalMiniMap extends Widget {
 	private final MinimapCache cache;
     private Coord cc = null;
     private MinimapTile cur = null;
+    private Coord off = Coord.z;
+    private Coord doff;
+    private UI.Grab grab;
 
     public LocalMiniMap(Coord sz, MapView mv) {
 	super(sz);
@@ -58,7 +61,7 @@ public class LocalMiniMap extends Widget {
 		try {
 		    GobIcon icon = gob.getattr(GobIcon.class);
 		    if(icon != null) {
-			Coord gc = p2c(gob.rc);
+			Coord gc = p2c(gob.rc).sub(off);
 			Tex tex = icon.tex();
 			g.image(tex, gc.sub(tex.sz().div(2)));
 		    }
@@ -95,6 +98,7 @@ public class LocalMiniMap extends Widget {
     }
 
     public void draw(GOut g) {
+    g = g.reclip(Coord.z, sz);
 	if(cc == null)
 	    return;
 	final Coord plg = cc.div(cmaps);
@@ -102,8 +106,9 @@ public class LocalMiniMap extends Widget {
 		cache.checkSession(plg);
 	}
 
-	Coord ulg = cc.sub(sz.div(2)).div(cmaps);
-	Coord blg = cc.add(sz.div(2)).div(cmaps);
+    Coord coff = cc.add(off);
+	Coord ulg = coff.sub(sz.div(2)).div(cmaps);
+	Coord blg = coff.add(sz.div(2)).div(cmaps);
 	Coord cg = new Coord();
 
 	synchronized (cache) {
@@ -113,7 +118,7 @@ public class LocalMiniMap extends Widget {
 				if (!f.done())
 					continue;
 				MinimapTile tile = f.get();
-				g.image(tile.img, cg.mul(cmaps).sub(cc).add(sz.div(2)));
+				g.image(tile.img, cg.mul(cmaps).sub(coff).add(sz.div(2)));
 			}
 		}
 	}
@@ -129,7 +134,7 @@ public class LocalMiniMap extends Widget {
 			}
 			if(ptc == null)
 			    continue;
-			ptc = p2c(ptc);
+			ptc = p2c(ptc).sub(off);
 			double angle = m.getangle() + Math.PI / 2;
 			Coord origin = plarrow.layer(Resource.negc).cc;
 			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 180);
@@ -144,11 +149,44 @@ public class LocalMiniMap extends Widget {
     public boolean mousedown(Coord c, int button) {
 	if(cc == null)
 	    return(false);
-	Gob gob = findicongob(c);
+
+    // allow to drag minimap with middle button
+    if (button == 2) {
+        grab = this.ui.grabmouse(this);
+        doff = c;
+        return true;
+    }
+
+    Coord coff = c.add(off);
+	Gob gob = findicongob(coff);
 	if(gob == null)
-	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags());
+	    mv.wdgmsg("click", rootpos().add(c), c2p(coff), button, ui.modflags());
 	else
-	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags(), 0, (int)gob.id, gob.rc, 0, -1);
+	    mv.wdgmsg("click", rootpos().add(c), c2p(coff), button, ui.modflags(), 0, (int)gob.id, gob.rc, 0, -1);
 	return(true);
+    }
+
+    @Override
+    public boolean mouseup(Coord c, int button) {
+        if (grab != null) {
+            grab.remove();
+            grab = null;
+            return true;
+        }
+        return super.mouseup(c, button);
+    }
+
+    @Override
+    public void mousemove(Coord c) {
+        if (grab != null) {
+            off = off.add(doff.sub(c));
+            doff = c;
+        } else {
+            super.mousemove(c);
+        }
+    }
+
+    public void setOffset(Coord value) {
+        off = value;
     }
 }
