@@ -557,6 +557,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     public void draw(GOut g) {
 	beltwdg.c = new Coord(chat.c.x, Math.min(chat.c.y - beltwdg.sz.y + 4, sz.y - beltwdg.sz.y));
+    eqproxy.c = new Coord(chat.c.x + beltwdg.sz.x + 20, Math.min(chat.c.y - eqproxy.sz.y, sz.y - eqproxy.sz.y - 1));
 	super.draw(g);
 	if(prog >= 0)
 	    drawprog(g, prog);
@@ -812,6 +813,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(map != null)
 	    map.resize(sz);
 	beltwdg.c = new Coord(blpw + 10, sz.y - beltwdg.sz.y - 5);
+    eqproxy.c = new Coord(blpw + beltwdg.sz.x + 20, sz.y - eqproxy.sz.y - 5);
 	super.resize(sz);
     }
     
