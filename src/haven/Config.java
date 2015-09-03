@@ -74,14 +74,6 @@ public class Config {
 		setprefc("haven.minimap.size", size);
 	}
 
-	public static boolean getFloatMinimapEnabled() {
-		return getprefb("haven.minimap.float", true);
-	}
-
-	public static void setFloatMinimapEnabled(boolean value) {
-		setprefb("haven.minimap.float", value);
-	}
-
 	public static boolean getNightVisionEnabled() {
 		return getprefb("haven.nightvision", false);
 	}

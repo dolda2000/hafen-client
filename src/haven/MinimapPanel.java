@@ -8,15 +8,21 @@ public class MinimapPanel extends Window {
     static final Coord gzsz = new Coord(30, 40);
     static final Coord minsz = new Coord(150, 125);
 
-    Coord doff;
-    boolean folded;
-    Widget mm;
-    UI.Grab resizegrab = null;
+    private final MapView map;
+    private final Widget minimap;
+    private IButton vclaimButton;
+    private IButton pclaimButton;
+    private Coord doff;
+    private boolean folded;
+    private UI.Grab resizegrab = null;
 
-    public MinimapPanel(Coord c, Coord sz, MapView map, Widget mm) {
+    public MinimapPanel(Coord c, Coord sz, MapView map, Widget minimap) {
         super(sz, "Minimap");
-        this.mm = mm;
+        this.map = map;
+        this.minimap = minimap;
         this.c = c;
+        add(minimap, 0, 0);
+        mapbuttons();
     }
 
     public void draw(GOut g) {
@@ -48,7 +54,7 @@ public class MinimapPanel extends Window {
         if (resizegrab != null) {
             resizegrab.remove();
             resizegrab = null;
-                Config.setMinimapSize(mm.sz);
+                Config.setMinimapSize(minimap.sz);
         } else {
             super.mouseup(c, button);
         }
@@ -58,9 +64,9 @@ public class MinimapPanel extends Window {
     public void mousemove(Coord c) {
         if (resizegrab != null) {
             Coord d = c.sub(doff);
-            mm.sz = mm.sz.add(d);
-            mm.sz.x = Math.max(minsz.x, mm.sz.x);
-            mm.sz.y = Math.max(minsz.y, mm.sz.y);
+            minimap.sz = minimap.sz.add(d);
+            minimap.sz.x = Math.max(minsz.x, minimap.sz.x);
+            minimap.sz.y = Math.max(minsz.y, minimap.sz.y);
             doff = c;
             pack();
         } else {
@@ -87,11 +93,41 @@ public class MinimapPanel extends Window {
 
     private void togglefold() {
         folded = !folded;
-        mm.visible = !folded;
+        minimap.visible = !folded;
+        vclaimButton.visible = !folded;
+        pclaimButton.visible = !folded;
         if (folded) {
-            resize(new Coord(mm.sz.x, 0));
+            resize(new Coord(minimap.sz.x, 0));
         } else {
             resize(Config.getMinimapSize());
         }
+    }
+
+    private void mapbuttons() {
+        vclaimButton = add(new IButton("gfx/hud/lbtn-vil", "", "-d", "-h") {
+            {
+                tooltip = Text.render("Display personal claims");
+            }
+
+            public void click() {
+                if ((map != null) && !map.visol(0))
+                    map.enol(0, 1);
+                else
+                    map.disol(0, 1);
+            }
+        }, -6, -5);
+
+        pclaimButton = add(new IButton("gfx/hud/lbtn-claim", "", "-d", "-h") {
+            {
+                tooltip = Text.render("Display village claims");
+            }
+
+            public void click() {
+                if ((map != null) && !map.visol(2))
+                    map.enol(2, 3);
+                else
+                    map.disol(2, 3);
+            }
+        }, -31, 15);
     }
 }
