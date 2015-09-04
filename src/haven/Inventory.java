@@ -85,10 +85,12 @@ public class Inventory extends Widget implements DTarget {
 	    ui.destroy(wmap.remove(i));
 	}
     }
-    
+
+
+
     public boolean drop(Coord cc, Coord ul) {
 	wdgmsg("drop", ul.add(sqsz.div(2)).div(invsq.sz()));
-	return(true);
+        return(true);
     }
 	
     public boolean iteminteract(Coord cc, Coord ul) {

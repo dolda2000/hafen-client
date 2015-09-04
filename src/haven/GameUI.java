@@ -26,6 +26,8 @@
 
 package haven;
 
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
@@ -46,7 +48,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private List<Widget> meters = new LinkedList<Widget>();
     private Text lasterr;
     private long errtime;
-    private Window invwnd, equwnd, makewnd;
+    private Window invwnd, equwnd, makewnd, trees,bumlings,bushes;
     public Inventory maininv;
     public CharWnd chrwdg;
     public BuddyWnd buddies;
@@ -67,6 +69,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public String polowner;
     public Bufflist buffs;
 	public MinimapPanel minimapPanel;
+    public boolean treetoggle,rocktoggle,bushtoggle = true;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -84,7 +87,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 				else
 				    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags(), mc, (int)inf.gob.id, inf.gob.rc);
 			    }
-			    
+
 			    protected void nohit(Coord pc) {
 				GameUI.this.wdgmsg("belt", slot, 1, ui.modflags());
 			    }
@@ -93,7 +96,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	}
     }
-    
+
     @RName("gameui")
     public static class $_ implements Factory {
 	public Widget create(Widget parent, Object[] args) {
@@ -102,7 +105,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return(new GameUI(chrid, plid));
 	}
     }
-    
+
     public GameUI(String chrid, long plid) {
 	this.chrid = chrid;
 	this.plid = plid;
@@ -229,7 +232,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	resize(parent.sz);
 	ui.cons.out = new java.io.PrintWriter(new java.io.Writer() {
 		StringBuilder buf = new StringBuilder();
-		
+
 		public void write(char[] src, int off, int len) {
 		    buf.append(src, off, len);
 		    int p;
@@ -238,14 +241,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			buf.delete(0, p + 1);
 		    }
 		}
-		
+
 		public void close() {}
 		public void flush() {}
 	    });
 	Debug.log = ui.cons.out;
 	opts.c = sz.sub(opts.sz).div(2);
     }
-    
+
     public class Hidepanel extends Widget {
 	public final String id;
 	public final Coord g;
@@ -448,6 +451,114 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		mmap = new LocalMiniMap(Config.getMinimapSize(), map);
 		minimapPanel = new MinimapPanel(Config.getMinimapPosition(), mmap.sz, map, mmap);
 		add(minimapPanel);
+
+
+            try {
+				if(MinimapIcons.res.isEmpty()){
+                    MinimapIcons.readnames();
+                }
+                MinimapIcons.readToggles();
+                System.out.println("reading minimap icons");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            trees = new Window(Coord.z, "Toggle Trees"){
+                public void wdgmsg(Widget sender, String msg, Object... args) {
+                    if(sender == cbtn) {
+                        trees.hide();
+                        treetoggle = true;
+                    } else {
+                        super.wdgmsg(sender, msg, args);
+                    }
+                }
+            };
+            MinimapIcons.addSelection("trees", trees);
+            add(trees, new Coord(100, 100));
+            trees.pack();
+            trees.hide();
+            minimapPanel.add(new IButton("gfx/hud/treebutton", "", "-d", "-h") {
+                {
+                    tooltip = Text.render("Toggle Trees on minimap");
+                }
+
+                public void click() {
+                    if (treetoggle) {
+                        trees.show();
+                    }
+                    if (!treetoggle) {
+                        trees.hide();
+                    }
+                    treetoggle = !treetoggle;
+                }
+            }, -20, 0);
+
+            bushes = new Window(Coord.z, "Toggle Bushes"){
+                public void wdgmsg(Widget sender, String msg, Object... args) {
+                    if(sender == cbtn) {
+                        bushes.hide();
+                        bushtoggle = true;
+                    } else {
+                        super.wdgmsg(sender, msg, args);
+                    }
+                }
+            };
+
+            minimapPanel.add(new IButton("gfx/hud/bushbutton", "", "", "") {
+                {
+                    tooltip = Text.render("Toggle Bushes on minimap");
+                }
+
+                public void click() {
+                    if (bushtoggle) {
+                        bushes.show();
+                    }
+                    if (!bushtoggle) {
+                        bushes.hide();
+                    }
+                    bushtoggle = !bushtoggle;
+                }
+            }, -20, 25);
+
+            MinimapIcons.addSelection("bushes", bushes);
+            add(bushes, new Coord(100, 100));
+            bushes.pack();
+            bushes.hide();
+
+
+            bumlings = new Window(Coord.z, "Toggle Rocks"){
+                public void wdgmsg(Widget sender, String msg, Object... args) {
+                    if(sender == cbtn) {
+                        bumlings.hide();
+                        rocktoggle = true;
+                    } else {
+                        super.wdgmsg(sender, msg, args);
+                    }
+                }
+            };
+
+            minimapPanel.add(new IButton("gfx/hud/rockbutton", "","","") {
+                {
+                    tooltip = Text.render("Toggle Rocks on minimap");
+                }
+
+                public void click() {
+                    if (rocktoggle) {
+                        bumlings.show();
+                    }
+                    if (!rocktoggle) {
+                        bumlings.hide();
+                    }
+                    rocktoggle = !rocktoggle;
+                }
+            }, -20, 50);
+
+            MinimapIcons.addSelection("bumlings", bumlings);
+            add(bumlings, new Coord(100, 100));
+            bumlings.pack();
+            bumlings.hide();
+
+
+
 		minimapPanel.pack();
 	} else if(place == "fight") {
 	    fv = urpanel.add((Fightview)child, 0, 0);
@@ -459,7 +570,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			pack();
 		    }
 		};
-	    invwnd.add(maininv = (Inventory)child, Coord.z);
+	    invwnd.add(maininv = (Inventory) child, Coord.z);
 	    invwnd.pack();
 	    invwnd.hide();
 	    add(invwnd, new Coord(100, 100));
@@ -519,7 +630,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    throw(new UI.UIException("Illegal gameui child", place, args));
 	}
     }
-    
+
     public void cdestroy(Widget w) {
 	if(w instanceof GItem) {
 	    for(Iterator<DraggedItem> i = hand.iterator(); i.hasNext();) {
@@ -537,7 +648,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 	meters.remove(w);
     }
-    
+
     private static final Resource.Anim progt = Resource.local().loadwait("gfx/hud/prog").layer(Resource.animc);
     private Tex curprog = null;
     private int curprogf, curprogb;
@@ -582,7 +693,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    chat.drawsmall(g, new Coord(blpw + 10, by), 50);
 	}
     }
-    
+
     public void tick(double dt) {
 	super.tick(dt);
 	if(!afk && (System.currentTimeMillis() - ui.lastevent > 300000)) {
@@ -592,7 +703,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    afk = false;
 	}
     }
-    
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "err") {
 	    String err = (String)args[0];
@@ -771,7 +882,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 	return(super.globtype(key, ev));
     }
-    
+
     public boolean mousedown(Coord c, int button) {
 	return(super.mousedown(c, button));
     }
@@ -816,11 +927,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     eqproxy.c = new Coord(blpw + beltwdg.sz.x + 20, sz.y - eqproxy.sz.y - 5);
 	super.resize(sz);
     }
-    
+
     public void presize() {
 	resize(parent.sz);
     }
-    
+
     private static final Resource errsfx = Resource.local().loadwait("sfx/error");
     public void error(String msg) {
 	errtime = System.currentTimeMillis();
@@ -828,7 +939,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	syslog.append(msg, Color.RED);
 	Audio.play(errsfx);
     }
-    
+
     public void act(String... args) {
 	wdgmsg("act", (Object[])args);
     }
@@ -863,7 +974,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	private Coord beltc(int i) {
 	    return(new Coord(((invsq.sz().x + 2) * i) + (10 * (i / 4)), 0));
 	}
-    
+
 	private int beltslot(Coord c) {
 	    for(int i = 0; i < 12; i++) {
 		if(c.isect(beltc(i), invsq.sz()))
@@ -871,7 +982,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    return(-1);
 	}
-    
+
 	public void draw(GOut g) {
 	    for(int i = 0; i < 12; i++) {
 		int slot = i + (curbelt * 12);
@@ -886,7 +997,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		g.chcolor();
 	    }
 	}
-	
+
 	public boolean mousedown(Coord c, int button) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
@@ -916,7 +1027,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    return(false);
 	}
-	
+
 	public boolean drop(Coord c, Coord ul) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
@@ -927,7 +1038,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 
 	public boolean iteminteract(Coord c, Coord ul) {return(false);}
-	
+
 	public boolean dropthing(Coord c, Object thing) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
@@ -942,7 +1053,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return(false);
 	}
     }
-    
+
     private static final Tex nkeybg = Resource.loadtex("gfx/hud/hb-main");
     public class NKeyBelt extends Belt implements DTarget, DropTarget {
 	public int curbelt = 0;
@@ -978,11 +1089,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}, sz, 1, 1);
 	}
-	
+
 	private Coord beltc(int i) {
 	    return(pagoff.add(((invsq.sz().x + 2) * i) + (10 * (i / 5)), 0));
 	}
-    
+
 	private int beltslot(Coord c) {
 	    for(int i = 0; i < 10; i++) {
 		if(c.isect(beltc(i), invsq.sz()))
@@ -990,7 +1101,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    return(-1);
 	}
-    
+
 	public void draw(GOut g) {
 	    g.image(nkeybg, Coord.z);
 	    for(int i = 0; i < 10; i++) {
@@ -1007,7 +1118,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    super.draw(g);
 	}
-	
+
 	public boolean mousedown(Coord c, int button) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
@@ -1035,7 +1146,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    return(true);
 	}
-	
+
 	public boolean drop(Coord c, Coord ul) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
@@ -1046,7 +1157,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 
 	public boolean iteminteract(Coord c, Coord ul) {return(false);}
-	
+
 	public boolean dropthing(Coord c, Object thing) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
@@ -1061,7 +1172,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return(false);
 	}
     }
-    
+
     {
 	String val = Utils.getpref("belttype", "n");
 	if(val.equals("n")) {
@@ -1072,7 +1183,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    beltwdg = add(new NKeyBelt());
 	}
     }
-    
+
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("afk", new Console.Command() {
