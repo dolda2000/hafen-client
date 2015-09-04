@@ -82,14 +82,6 @@ public class Config {
 		setprefb("haven.nightvision",value);
 	}
 
-	public static boolean getAlwaysShowKinNames() {
-		return getprefb("haven.alwaysshowkin", true);
-	}
-
-	public static void setAlwaysShowKinNames(boolean value) {
-		setprefb("haven.alwaysshowkin", value);
-	}
-
 	public static boolean getEnableCameraSnapping() {
 		return getprefb("haven.display.snapcamera", false);
 	}

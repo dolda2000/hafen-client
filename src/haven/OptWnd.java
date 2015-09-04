@@ -268,14 +268,6 @@ public class OptWnd extends Window {
 		}
 	}, new Coord(0, y));
 	y += 15;
-	display.add(new CheckBox("Always show kin names") {
-		{ a = Config.getAlwaysShowKinNames(); }
-		public void set(boolean val) {
-			Config.setAlwaysShowKinNames(val);
-			a = val;
-		}
-	}, new Coord(0, y));
-	y += 15;
 	display.add(new CheckBox("Enable camera snapping") {
 		{ a = Config.getEnableCameraSnapping(); }
 		public void set(boolean val) {
