@@ -51,7 +51,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Coord3f camoff = new Coord3f(Coord3f.o);
     public double shake = 0.0;
     private static final Map<String, Class<? extends Camera>> camtypes = new HashMap<String, Class<? extends Camera>>();
-    
+
     public interface Delayed {
 	public void run(GOut g);
     }
@@ -66,7 +66,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public abstract class Camera extends GLState.Abstract {
 	protected haven.Camera view = new haven.Camera(Matrix4f.identity());
 	protected Projection proj = new Projection(Matrix4f.identity());
-	
+
 	public Camera() {
 	    resized();
 	}
@@ -79,7 +79,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public boolean wheel(Coord sc, int amount) {
 	    return(false);
 	}
-	
+
 	public void resized() {
 	    float field = 0.5f;
 	    float aspect = ((float)sz.y) / ((float)sz.x);
@@ -90,11 +90,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    proj.prep(buf);
 	    view.prep(buf);
 	}
-	
+
 	public abstract float angle();
 	public abstract void tick(double dt);
     }
-    
+
     public class FollowCam extends Camera {
 	private final float fr = 0.0f, h = 10.0f;
 	private float ca, cd;
@@ -103,23 +103,23 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private float angl, tangl;
 	private Coord dragorig = null;
 	private float anglorig;
-	
+
 	public FollowCam() {
 	    elev = telev = (float)Math.PI / 6.0f;
 	    angl = tangl = 0.0f;
 	}
-	
+
 	public void resized() {
 	    ca = (float)sz.y / (float)sz.x;
 	    cd = 400.0f * ca;
 	}
-	
+
 	public boolean click(Coord c) {
 	    anglorig = tangl;
 	    dragorig = c;
 	    return(true);
 	}
-	
+
 	public void drag(Coord c) {
 	    tangl = anglorig + ((float)(c.x - dragorig.x) / 100.0f);
 	    tangl = tangl % ((float)Math.PI * 2.0f);
@@ -143,14 +143,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    elev += (telev - elev) * (float)(1.0 - Math.pow(500, -dt));
 	    if(Math.abs(telev - elev) < 0.0001)
 		elev = telev;
-	    
+
 	    float dangl = tangl - angl;
 	    while(dangl >  Math.PI) dangl -= (float)(2 * Math.PI);
 	    while(dangl < -Math.PI) dangl += (float)(2 * Math.PI);
 	    angl += dangl * (float)(1.0 - Math.pow(500, -dt));
 	    if(Math.abs(tangl - angl) < 0.0001)
 		angl = tangl;
-	    
+
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
 	    if(curc == null)
@@ -171,7 +171,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    curc = tgtc;
 		tangl = curc.xyangle(cambase);
 	    }
-	    
+
 	    float field = field(elev);
 	    view.update(PointedCam.compute(curc.add(camoff).add(0.0f, 0.0f, h), dist(elev), elev, angl));
 	    proj.update(Projection.makefrustum(new Matrix4f(), -field, field, -ca * field, ca * field, 1, 5000));
@@ -180,7 +180,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public float angle() {
 	    return(angl);
 	}
-	
+
 	private static final float maxang = (float)(Math.PI / 2 - 0.1);
 	private static final float mindist = 50.0f;
 	public boolean wheel(Coord c, int amount) {
@@ -211,18 +211,18 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    cc.y = -cc.y;
 	    view.update(PointedCam.compute(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl));
 	}
-	
+
 	public float angle() {
 	    return(angl);
 	}
-	
+
 	public boolean click(Coord c) {
 	    elevorig = elev;
 	    anglorig = angl;
 	    dragorig = c;
 	    return(true);
 	}
-	
+
 	public void drag(Coord c) {
 	    elev = elevorig - ((float)(c.y - dragorig.y) / 100.0f);
 	    if(elev < 0.0f) elev = 0.0f;
@@ -240,7 +240,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
     static {camtypes.put("bad", FreeCam.class);}
-    
+
     public class OrthoCam extends Camera {
 	public boolean exact;
 	protected float dist = 500.0f;
@@ -357,15 +357,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void release() {
-	    if(tfield > 100)
-		tangl = (float)(Math.PI * 0.5 * (Math.floor(tangl / (Math.PI * 0.5)) + 0.5));
 	}
 
 	public boolean wheel(Coord c, int amount) {
 	    tfield += amount * 10;
-	    tfield = Math.max(Math.min(tfield, sz.x * (float)Math.sqrt(2) / 8f), 50);
-	    if(tfield > 100)
-		release();
+	    tfield = Math.max(tfield, 50);
 	    return(true);
 	}
     }
@@ -382,7 +378,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(new MapView(sz, parent.ui.sess.glob, mc, pgob));
 	}
     }
-    
+
     public MapView(Coord sz, Glob glob, Coord cc, long plgob) {
 	super(sz);
 	this.glob = glob;
@@ -390,7 +386,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.plgob = plgob;
 	setcanfocus(true);
     }
-    
+
     public boolean visol(int ol) {
 	return(visol[ol] > 0);
     }
@@ -399,7 +395,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	for(int ol : overlays)
 	    visol[ol]++;
     }
-	
+
     public void disol(int... overlays) {
 	for(int ol : overlays)
 	    visol[ol]--;
@@ -407,7 +403,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     private final Rendered map = new Rendered() {
 	    public void draw(GOut g) {}
-	    
+
 	    public boolean setup(RenderList rl) {
 		Coord cc = MapView.this.cc.div(tilesz).div(MCache.cutsz);
 		Coord o = new Coord();
@@ -432,7 +428,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		return(false);
 	    }
 	};
-    
+
     private final Rendered mapol = new Rendered() {
 	    private final GLState[] mats;
 	    {
@@ -474,7 +470,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		return(false);
 	    }
 	};
-    
+
     void addgob(RenderList rl, final Gob gob) {
 	GLState xf;
 	try {
@@ -498,7 +494,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     private final Rendered gobs = new Rendered() {
 	    public void draw(GOut g) {}
-	    
+
 	    public boolean setup(RenderList rl) {
 		synchronized(glob.oc) {
 		    for(Gob gob : glob.oc)
@@ -621,7 +617,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public Gob player() {
 	return(glob.oc.getgob(plgob));
     }
-    
+
     public Coord3f getcc() {
 	Gob pl = player();
 	if(pl != null)
@@ -641,15 +637,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private Map<Color, T> rmap = new HashMap<Color, T>();
 	private int i = 1;
 	private GLState.Buffer plain, bk;
-	
+
 	abstract protected T map(Rendered r);
-	
+
 	private Clicklist(GLState.Buffer plain) {
 	    super(plain.cfg);
 	    this.plain = plain;
 	    this.bk = new GLState.Buffer(plain.cfg);
 	}
-	
+
 	protected Color newcol(T t) {
 	    int cr = ((i & 0x00000f) << 4) | ((i & 0x00f000) >> 12),
 		cg = ((i & 0x0000f0) << 0) | ((i & 0x0f0000) >> 16),
@@ -672,7 +668,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	protected boolean renderinst(GOut g, Rendered.Instanced r, List<GLState.Buffer> instances) {
 	    return(false);
 	}
-	
+
 	public void get(GOut g, Coord c, final Callback<T> cb) {
 	    g.getpixel(c, new Callback<Color>() {
 		    public void done(Color c) {
@@ -680,7 +676,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    }
 		});
 	}
-	
+
 	protected void setup(Slot s, Rendered r) {
 	    T t = map(r);
 	    super.setup(s, r);
@@ -693,21 +689,21 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
     }
-    
+
     private static class Maplist extends Clicklist<MapMesh> {
 	private int mode = 0;
 	private MapMesh limit = null;
-	
+
 	private Maplist(GLState.Buffer plain) {
 	    super(plain);
 	}
-	
+
 	protected MapMesh map(Rendered r) {
 	    if(r instanceof MapMesh)
 		return((MapMesh)r);
 	    return(null);
 	}
-	
+
 	protected void render(GOut g, Rendered r) {
 	    if(r instanceof MapMesh) {
 		MapMesh m = (MapMesh)r;
@@ -770,12 +766,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	};
     }
-    
+
     public static class ClickInfo {
 	Gob gob;
 	Gob.Overlay ol;
 	Rendered r;
-	
+
 	ClickInfo(Gob gob, Gob.Overlay ol, Rendered r) {
 	    this.gob = gob; this.ol = ol; this.r = r;
 	}
@@ -789,7 +785,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		public ClickInfo map(Rendered r) {
 		    return(curinfo);
 		}
-		
+
 		public void add(Rendered r, GLState t) {
 		    Gob prevg = curgob;
 		    Gob.Overlay prevo = curol;
@@ -811,7 +807,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	rl.render(g);
 	rl.get(g, c, cb);
     }
-    
+
     public void delay(Delayed d) {
 	synchronized(delayed) {
 	    delayed.add(d);
@@ -857,7 +853,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    g.chcolor();
 	}
     }
-    
+
     private void drawarrow(GOut g, double a) {
 	Coord hsz = sz.div(2);
 	double ca = -Coord.z.angle(hsz);
@@ -940,7 +936,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
     }
-    
+
     public void tick(double dt) {
 	camload = null;
 	try {
@@ -956,7 +952,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	if(placing != null)
 	    placing.ctick((int)(dt * 1000));
     }
-    
+
     public void resize(Coord sz) {
 	super.resize(sz);
 	camera.resized();
@@ -1009,12 +1005,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	private class Adjust extends Maptest {
 	    int modflags;
-	    
+
 	    Adjust(Coord c, int modflags) {
 		super(c);
 		this.modflags = modflags;
 	    }
-	    
+
 	    public void hit(Coord pc, Coord mc) {
 		adjust.adjust(Plob.this, pc, mc, modflags);
 		lastmc = pc;
@@ -1081,7 +1077,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     private UI.Grab camdrag = null;
-    
+
     public abstract class Maptest implements Delayed {
 	private final Coord pc;
 
@@ -1119,11 +1115,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private Coord mapcl;
 	private ClickInfo gobcl;
 	private int dfl = 0;
-	
+
 	public Hittest(Coord c) {
 	    clickc = c;
 	}
-	
+
 	public void run(GOut g) {
 	    GLState.Buffer bk = g.st.copy();
 	    try {
@@ -1160,7 +1156,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		}
 	    }
 	}
-	
+
 	protected abstract void hit(Coord pc, Coord mc, ClickInfo inf);
 	protected void nohit(Coord pc) {}
     }
@@ -1173,12 +1169,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     private class Click extends Hittest {
 	int clickb;
-	
+
 	private Click(Coord c, int b) {
 	    super(c);
 	    clickb = b;
 	}
-	
+
 	protected void hit(Coord pc, Coord mc, ClickInfo inf) {
 	    if(inf == null) {
 		wdgmsg("click", pc, mc, clickb, ui.modflags());
@@ -1191,16 +1187,16 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
     }
-    
+
     public void grab(Grabber grab) {
 	this.grab = grab;
     }
-    
+
     public void release(Grabber grab) {
 	if(this.grab == grab)
 	    this.grab = null;
     }
-    
+
     public boolean mousedown(Coord c, int button) {
 	parent.setfocus(this);
 	if(button == 2) {
@@ -1216,7 +1212,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	return(true);
     }
-    
+
     public void mousemove(Coord c) {
 	if(grab != null)
 	    grab.mmousemove(c);
@@ -1228,7 +1224,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
     }
-    
+
     public boolean mouseup(Coord c, int button) {
 	if(button == 2) {
 	    if(camdrag != null) {
@@ -1243,13 +1239,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     public boolean mousewheel(Coord c, int amount) {
-	if((grab != null) && grab.mmousewheel(c, amount))
+
+        if((grab != null) && grab.mmousewheel(c, amount))
 	    return(true);
 	if((placing != null) && placing.adjust.rotate(placing, amount, ui.modflags()))
 	    return(true);
 	return(((Camera)camera).wheel(c, amount));
     }
-    
+
     public boolean drop(final Coord cc, final Coord ul) {
 	delay(new Hittest(cc) {
 		public void hit(Coord pc, Coord mc, ClickInfo inf) {
@@ -1258,7 +1255,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    });
 	return(true);
     }
-    
+
     public boolean iteminteract(Coord cc, Coord ul) {
 	delay(new Hittest(cc) {
 		public void hit(Coord pc, Coord mc, ClickInfo inf) {

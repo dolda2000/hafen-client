@@ -41,7 +41,7 @@ import java.io.IOException;
 import java.awt.datatransfer.*;
 
 public class ChatUI extends Widget {
-    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(10f), TextAttribute.FOREGROUND, Color.BLACK));
+    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(14f), TextAttribute.FOREGROUND, Color.BLACK));
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = 130;
     public static final Coord marg = new Coord(9, 9);
@@ -723,7 +723,7 @@ public class ChatUI extends Widget {
 		Integer from = (Integer)args[0];
 		String line = (String)args[1];
 		if(from == null) {
-		    append(new MyMessage(line, iw()));
+		    append(new MyMessage("You: "+ line, iw()));
 		} else {
 		    Message cmsg = new NamedMessage(from, line, fromcolor(from), iw());
 		    append(cmsg);

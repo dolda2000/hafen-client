@@ -26,10 +26,17 @@
 
 package haven;
 
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 
 public class LocalMiniMap extends Widget {
+
+
     public final MapView mv;
 	private final MinimapCache cache;
     private Coord cc = null;
@@ -53,13 +60,27 @@ public class LocalMiniMap extends Widget {
 	OCache oc = ui.sess.glob.oc;
 	synchronized(oc) {
 	    for(Gob gob : oc) {
+
 		try {
 		    GobIcon icon = gob.getattr(GobIcon.class);
-		    if(icon != null) {
+             if(icon != null) {
 			Coord gc = p2c(gob.rc);
 			Tex tex = icon.tex();
 			g.image(tex, gc.sub(tex.sz().div(2)));
 		    }
+			if(icon == null){
+                try{
+                    String resname = gob.getres().name;
+                    String realname = resname.split("\\.")[0].split("/")[resname.split("\\.")[0].split("/").length - 1];
+                    if(MinimapIcons.ToggledIcons.contains(realname)){
+                        BufferedImage treename = Resource.loadimg("gfx/minimap/" + resname.split("/")[2] +"/" +  resname.split("/")[3]);
+                        Coord test = p2c(gob.rc);
+                        g.image(treename, test.add(-(treename.getWidth()/2),-(treename.getHeight()/2)));
+                    }
+                }catch (Exception e){
+                    continue;
+                };
+            }
 		} catch(Loading l) {}
 	    }
 	}
