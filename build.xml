@@ -34,6 +34,7 @@
 	<pathelement path="lib/jogg.jar" />
 	<pathelement path="lib/jglob.jar" />
 	<pathelement path="lib/commons-io-2.4.jar" />
+	<pathelement path="lib/gson-2.3.1.jar" />
       </classpath>
       <compilerarg value="-Xlint:unchecked" />
       <compilerarg value="-Xlint:-options" />
@@ -63,6 +64,9 @@
       <patternset excludes="META-INF/**" />
     </unjar>
     <unjar src="lib/jglob.jar" dest="build/classes-lib">
+      <patternset excludes="META-INF/**" />
+    </unjar>
+    <unjar src="lib/gson-2.3.1.jar" dest="build/classes-lib">
       <patternset excludes="META-INF/**" />
     </unjar>
   </target>
