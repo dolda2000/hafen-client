@@ -135,6 +135,10 @@ public class LocalMiniMap extends Widget {
 			if(ptc == null)
 			    continue;
 			ptc = p2c(ptc).sub(off);
+			// do not display party members outside of window
+			// this should be replaced with the proper method of clipping rotated texture
+			if (!ptc.isect(c, sz))
+				continue;
 			double angle = m.getangle() + Math.PI / 2;
 			Coord origin = plarrow.layer(Resource.negc).cc;
 			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 180);
