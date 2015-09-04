@@ -1,3 +1,5 @@
+## Changelog
+
 ### r7 (2015-09-04)
 
 - Merged changes from the vanilla client
