@@ -45,7 +45,14 @@ public class ChatUI extends Widget {
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = 130;
     public static final Coord marg = new Coord(9, 9);
+    public static final Color[] urgcols = new Color[] {
+	null,
+	new Color(0, 128, 255),
+	new Color(255, 128, 0),
+	new Color(255, 0, 0),
+    };
     public Channel sel = null;
+    public int urgency = 0;
     private final Selector chansel;
     private Coord base = Coord.z;
     private QuickLine qline = null;
@@ -133,6 +140,7 @@ public class ChatUI extends Widget {
 	public final List<Message> msgs = new LinkedList<Message>();
 	private final Scrollbar sb;
 	private final IButton cb;
+	public int urgency = 0;
 	
 	public static abstract class Message {
 	    public final long time = System.currentTimeMillis();
@@ -198,6 +206,17 @@ public class ChatUI extends Widget {
 	    return(sz.y);
 	}
 	
+	public void updurgency(int urg) {
+	    if(urgency != urg) {
+		urgency = urg;
+		int mu = 0;
+		ChatUI p = getparent(ChatUI.class);
+		for(Selector.DarkChannel ch : p.chansel.chls)
+		    mu = Math.max(mu, ch.chan.urgency);
+		p.urgency = mu;
+	    }
+	}
+
 	public void draw(GOut g) {
 	    g.chcolor(0, 0, 0, 128);
 	    g.frect(Coord.z, sz);
@@ -222,6 +241,7 @@ public class ChatUI extends Widget {
 	    }
 	    sb.max = y - ih();
 	    super.draw(g);
+	    updurgency(0);
 	}
 	
 	public boolean mousewheel(Coord c, int amount) {
@@ -247,8 +267,9 @@ public class ChatUI extends Widget {
 	    }
 	}
 	
-	public void notify(Message msg) {
+	public void notify(Message msg, int urgency) {
 	    getparent(ChatUI.class).notify(this, msg);
+	    updurgency(Math.max(this.urgency, urgency));
 	}
 	
 	public static class CharPos {
@@ -635,11 +656,11 @@ public class ChatUI extends Widget {
 		Color col = null;
 		if(args.length > 1) col = (Color)args[1];
 		if(col == null) col = Color.WHITE;
-		boolean notify = (args.length > 2)?(((Integer)args[2]) != 0):false;
+		int urgency = (args.length > 2)?(Integer)args[2]:0;
 		Message cmsg = new SimpleMessage(line, col, iw());
 		append(cmsg);
-		if(notify)
-		    notify(cmsg);
+		if(urgency > 0)
+		    notify(cmsg, urgency);
 	    } else {
 		super.uimsg(msg, args);
 	    }
@@ -651,8 +672,8 @@ public class ChatUI extends Widget {
     }
 
     public static class MultiChat extends EntryChannel {
+	public final int urgency;
 	private final String name;
-	private final boolean notify;
 	private final Map<Integer, Color> pc = new HashMap<Integer, Color>();
 	
 	public class NamedMessage extends Message {
@@ -698,10 +719,10 @@ public class ChatUI extends Widget {
 	    }
 	}
 
-	public MultiChat(boolean closable, String name, boolean notify) {
+	public MultiChat(boolean closable, String name, int urgency) {
 	    super(closable);
 	    this.name = name;
-	    this.notify = notify;
+	    this.urgency = urgency;
 	}
 	
 	private float colseq = 0;
@@ -727,8 +748,8 @@ public class ChatUI extends Widget {
 		} else {
 		    Message cmsg = new NamedMessage(from, line, fromcolor(from), iw());
 		    append(cmsg);
-		    if(notify)
-			notify(cmsg);
+		    if(urgency > 0)
+			notify(cmsg, urgency);
 		}
 	    } else {
 		super.uimsg(msg, args);
@@ -742,7 +763,7 @@ public class ChatUI extends Widget {
     
     public static class PartyChat extends MultiChat {
 	public PartyChat() {
-	    super(false, "Party", true);
+	    super(false, "Party", 2);
 	}
 
 	public void uimsg(String msg, Object... args) {
@@ -761,7 +782,8 @@ public class ChatUI extends Widget {
 		} else {
 		    Message cmsg = new NamedMessage(from, line, Utils.blendcol(col, Color.WHITE, 0.5), iw());
 		    append(cmsg);
-		    notify(cmsg);
+		    if(urgency > 0)
+			notify(cmsg, urgency);
 		}
 	    } else {
 		super.uimsg(msg, args);
@@ -796,7 +818,7 @@ public class ChatUI extends Widget {
 		if(t.equals("in")) {
 		    Message cmsg = new InMessage(line, iw());
 		    append(cmsg);
-		    notify(cmsg);
+		    notify(cmsg, 3);
 		} else if(t.equals("out")) {
 		    append(new OutMessage(line, iw()));
 		}
@@ -804,7 +826,7 @@ public class ChatUI extends Widget {
 		String err = (String)args[0];
 		Message cmsg = new SimpleMessage(err, Color.RED, iw());
 		append(cmsg);
-		notify(cmsg);
+		notify(cmsg, 3);
 	    } else {
 		super.uimsg(msg, args);
 	    }
@@ -830,8 +852,8 @@ public class ChatUI extends Widget {
     public static class $MChat implements Factory {
 	public Widget create(Widget parent, Object[] args) {
 	    String name = (String)args[0];
-	    boolean notify = ((Integer)args[1]) != 0;
-	    return(new MultiChat(false, name, notify));
+	    int urgency = (Integer)args[1];
+	    return(new MultiChat(false, name, urgency));
 	}
     }
     @RName("pchat")
@@ -880,13 +902,19 @@ public class ChatUI extends Widget {
     private class Selector extends Widget {
 	public final BufferedImage ctex = Resource.loadimg("gfx/hud/chantex");
 	public final Text.Foundry tf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
-	public final Text.Furnace nf = new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(80, 40, 0));
+	public final Text.Furnace[] nf = {
+	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(80, 40, 0)),
+	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(0, 128, 255)),
+	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(255, 128, 0)),
+	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(255, 0, 0)),
+	};
 	private final List<DarkChannel> chls = new ArrayList<DarkChannel>();
 	private int s = 0;
 	
 	private class DarkChannel {
 	    public final Channel chan;
 	    public Text rname;
+	    private int urgency = 0;
 	    
 	    private DarkChannel(Channel chan) {
 		this.chan = chan;
@@ -922,8 +950,8 @@ public class ChatUI extends Widget {
 		    if(ch.chan == sel)
 			g.image(chanseld, new Coord(0, y));
 		    g.chcolor(255, 255, 255, 255);
-		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()))
-			ch.rname = nf.render(ch.chan.name());
+		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency))
+			ch.rname = nf[ch.urgency = ch.chan.urgency].render(ch.chan.name());
 		    g.aimage(ch.rname.tex(), new Coord(sz.x / 2, y + 8), 0.5, 0.5);
 		    g.image(chandiv, new Coord(0, y + 18));
 		    y += 28;
@@ -985,8 +1013,8 @@ public class ChatUI extends Widget {
 	public boolean mousewheel(Coord c, int amount) {
 	    if(!ui.modshift) {
 		s += amount;
-		if(s >= chls.size() - (sz.y / 20))
-		    s = chls.size() - (sz.y / 20);
+		if(s >= chls.size() - (sz.y / 28))
+		    s = chls.size() - (sz.y / 28);
 		if(s < 0)
 		    s = 0;
 	    } else {
@@ -1018,7 +1046,7 @@ public class ChatUI extends Widget {
 	private Notification(Channel chan, Channel.Message msg) {
 	    this.chan = chan;
 	    this.msg = msg;
-	    this.chnm = chansel.nf.render(chan.name());
+	    this.chnm = chansel.nf[0].render(chan.name());
 	}
     }
 

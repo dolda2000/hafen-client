@@ -66,7 +66,7 @@ public class FoodInfo extends ItemInfo.Tip {
     }
 
     public BufferedImage longtip() {
-	BufferedImage base = RichText.render(String.format("Stamina: $col[128,128,255]{%s%%}, Hunger: $col[255,192,128]{%s%%}", Utils.odformat2(end * 100, 2), Utils.odformat2(glut * 100, 2)), 0).img;
+	BufferedImage base = RichText.render(String.format("Energy: $col[128,128,255]{%s%%}, Hunger: $col[255,192,128]{%s%%}", Utils.odformat2(end * 100, 2), Utils.odformat2(glut * 100, 2)), 0).img;
 	Collection<BufferedImage> imgs = new LinkedList<BufferedImage>();
 	imgs.add(base);
 	for(int i = 0; i < evs.length; i++) {
