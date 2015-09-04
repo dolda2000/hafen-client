@@ -1,5 +1,11 @@
 ## Changelog
 
+### r8 by Darki (2015-09-04) 
+
+- Optional display of trees, bushes and rocks on the minimap
+- Increased chat font size
+- Unlimited zoom
+
 ### r7 (2015-09-04)
 
 - Merged changes from the vanilla client
