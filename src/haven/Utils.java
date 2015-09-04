@@ -734,6 +734,10 @@ public class Utils {
     }
     
     public static BufferedImage outline(BufferedImage img, Color col) {
+	return outline(img, col, false);
+    }
+
+    public static BufferedImage outline(BufferedImage img, Color col, boolean thick) {
 	Coord sz = imgsz(img).add(2, 2);
 	BufferedImage ol = TexI.mkbuf(sz);
 	Object fcol = ol.getColorModel().getDataElements(col.getRGB(), null);
@@ -754,13 +758,24 @@ public class Utils {
 		   ((x < sz.x - 2) && (y > 0) && (y < sz.y - 1) && (src.getSample(x, y - 1, 3) >= 250)) ||
 		   ((x > 0) && (y < sz.y - 2) && (x < sz.x - 1) && (src.getSample(x - 1, y, 3) >= 250)))
 		    dst.setDataElements(x, y, fcol);
+		if(thick) {
+		    if(((x > 1) && (y > 1) && (src.getSample(x - 2, y - 2, 3)) >= 250) ||
+			((x < sz.x - 2) && (y < sz.y - 2) && (src.getSample(x, y, 3) >= 250)) ||
+			((x < sz.x - 2) && (y > 1) && (src.getSample(x, y - 2, 3) >= 250)) ||
+			((x > 1) && (y < sz.y - 2) && (src.getSample(x - 2, y, 3) >= 250)))
+			dst.setDataElements(x, y, fcol);
+		}
 	    }
 	}
 	return(ol);
     }
-    
+
     public static BufferedImage outline2(BufferedImage img, Color col) {
-	BufferedImage ol = outline(img, col);
+	return outline2(img, col, false);
+    }
+
+    public static BufferedImage outline2(BufferedImage img, Color col, boolean thick) {
+	BufferedImage ol = outline(img, col, thick);
 	Graphics g = ol.getGraphics();
 	g.drawImage(img, 1, 1, null);
 	g.dispose();
