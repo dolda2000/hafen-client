@@ -63,26 +63,26 @@ public class LocalMiniMap extends Widget {
 	OCache oc = ui.sess.glob.oc;
 	synchronized(oc) {
 	    for(Gob gob : oc) {
-
-		try {
-		    GobIcon icon = gob.getattr(GobIcon.class);
-             if(icon != null) {
-			Coord gc = p2c(gob.rc).sub(off);
-			Tex tex = icon.tex();
-			g.image(tex, gc.sub(tex.sz().div(2)));
-		    }
-			if(icon == null){
-                try{
-                    String resname = gob.getres().name;
-                    String realname = resname.split("\\.")[0].split("/")[resname.split("\\.")[0].split("/").length - 1];
-                    if(MinimapIcons.ToggledIcons.contains(realname)){
-                        BufferedImage treename = Resource.loadimg("gfx/minimap/" + resname.split("/")[2] +"/" +  resname.split("/")[3]);
-                        Coord test = p2c(gob.rc);
-                        g.image(treename, test.add(-(treename.getWidth()/2),-(treename.getHeight()/2)));
+        try {
+            GobIcon icon = gob.getattr(GobIcon.class);
+            if (icon == null) {
+                try {
+                    if (MinimapIcons.isVisible(gob)) {
+                        String resname = MinimapIcons.getIconResourceName(gob);
+                        icon = new GobIcon(gob, Resource.local().load(resname), true);
+                        gob.setattr(icon);
                     }
-                }catch (Exception e){
+                } catch (Exception e){
                     continue;
                 };
+            } else if (icon.custom) {
+                if (!MinimapIcons.isVisible(gob))
+                    gob.delattr(GobIcon.class);
+            }
+            if (icon != null) {
+                Coord gc = p2c(gob.rc).sub(off);
+                Tex tex = icon.tex();
+                g.image(tex, gc.sub(tex.sz().div(2)));
             }
 		} catch(Loading l) {}
 	    }

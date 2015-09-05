@@ -34,11 +34,17 @@ public class GobIcon extends GAttrib {
     public static final PUtils.Convolution filter = new PUtils.Hanning(1);
     private static final Map<Indir<Resource>, Tex> cache = new WeakHashMap<Indir<Resource>, Tex>();
     public final Indir<Resource> res;
+    public final boolean custom;
     private Tex tex;
 
     public GobIcon(Gob g, Indir<Resource> res) {
-	super(g);
-	this.res = res;
+        this(g, res, false);
+    }
+
+    public GobIcon(Gob g, Indir<Resource> res, boolean custom) {
+        super(g);
+        this.res = res;
+        this.custom = custom;
     }
 
     public Tex tex() {
@@ -47,7 +53,7 @@ public class GobIcon extends GAttrib {
 		if(!cache.containsKey(res)) {
 		    Resource.Image img = res.get().layer(Resource.imgc);
 		    Tex tex = img.tex();
-		    if((tex.sz().x <= 20) && (tex.sz().y <= 20)) {
+		    if((tex.sz().x <= 20) && (tex.sz().y <= 20) || custom) {
 			cache.put(res, tex);
 		    } else {
 			BufferedImage buf = img.img;

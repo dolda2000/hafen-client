@@ -9,8 +9,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class MinimapIcons {
-    public static List<String> res = new ArrayList<String>();
-    public static List<String> ToggledIcons = new ArrayList<String>();
+    public static final List<String> res = new ArrayList<String>();
+    public static final List<String> ToggledIcons = new ArrayList<String>();
 
     public static void readnames() throws IOException {
         JarFile jarFile = new JarFile("custom-res.jar");
@@ -121,6 +121,24 @@ public class MinimapIcons {
             }, new Coord(x, y));
             y += 35;
         }
+    }
+
+    public static boolean isVisible(Gob gob) {
+        Resource res = gob.getres();
+        if (res == null)
+            return false;
+        String resname = gob.getres().name;
+        String realname = resname.split("\\.")[0].split("/")[resname.split("\\.")[0].split("/").length - 1];
+        return MinimapIcons.ToggledIcons.contains(realname);
+    }
+
+    public static String getIconResourceName(Gob gob) {
+        Resource res = gob.getres();
+        if (res != null) {
+            String resname = res.name;
+            return "gfx/minimap/" + resname.split("/")[2] +"/" +  resname.split("/")[3];
+        }
+        return "";
     }
 }
 
