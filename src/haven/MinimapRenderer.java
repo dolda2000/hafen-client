@@ -24,6 +24,8 @@ public class MinimapRenderer {
                 if(tex != null)
                     rgb = tex.getRGB(Utils.floormod(c.x + ul.x, tex.getWidth()),
                             Utils.floormod(c.y + ul.y, tex.getHeight()));
+                if (rgb == 0)
+                    rgb = Integer.MAX_VALUE;
                 buf.setRGB(c.x, c.y, rgb);
             }
         }
