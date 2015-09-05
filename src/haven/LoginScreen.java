@@ -34,6 +34,7 @@ public class LoginScreen extends Widget {
     IButton btn;
     Button optbtn;
     OptWnd opts;
+    AccountList accounts;
     static Text.Foundry textf, textfs;
     static Tex bg = Resource.loadtex("gfx/loginscr");
     Text progress = null;
@@ -48,6 +49,7 @@ public class LoginScreen extends Widget {
 	setfocustab(true);
 	add(new Img(bg), Coord.z);
 	optbtn = adda(new Button(100, "Options"), 10, sz.y - 10, 0, 1);
+	accounts = add(new AccountList(10));
     }
 
     private static abstract class Login extends Widget {
@@ -105,18 +107,22 @@ public class LoginScreen extends Widget {
     }
 
     private class Tokenbox extends Login {
+	private final String name;
+	private final String token;
 	Text label;
 	Button btn;
-		
-	private Tokenbox(String username) {
+
+	private Tokenbox(String username, String token) {
 	    label = textfs.render("Identity is saved for " + username, java.awt.Color.WHITE);
 	    add(btn = new Button(100, "Forget me"), new Coord(75, 30));
 	    resize(new Coord(250, 100));
 	    LoginScreen.this.add(this, new Coord(295, 330));
+	    this.name = username;
+	    this.token = token;
 	}
-		
+
 	Object[] data() {
-	    return(new Object[0]);
+	    return(new Object[]{name, token});
 	}
 		
 	boolean enter() {
@@ -188,6 +194,14 @@ public class LoginScreen extends Widget {
 	    if(cur.enter())
 		super.wdgmsg("login", cur.data());
 	    return;
+	} else if(msg.equals("account")){
+	    //repeat if was not token box to do actual login
+	    boolean repeat = !(cur instanceof Tokenbox);
+	    if(repeat){
+		super.wdgmsg("login", args[0], args[1]);
+	    }
+	    super.wdgmsg("login", args[0], args[1]);
+	    return;
 	} else if(sender == optbtn) {
 	    if(opts == null) {
 		opts = adda(new OptWnd(false) {
@@ -222,7 +236,7 @@ public class LoginScreen extends Widget {
 		mklogin();
 	    } else if(msg == "token") {
 		clear();
-		cur = new Tokenbox((String)args[0]);
+		cur = new Tokenbox((String)args[0], (String)args[1]);
 		mklogin();
 	    } else if(msg == "error") {
 		error((String)args[0]);

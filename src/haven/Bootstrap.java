@@ -33,7 +33,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
     Session sess;
     String hostname;
     int port;
-    Queue<Message> msgs = new LinkedList<Message>();
+    final Queue<Message> msgs = new LinkedList<Message>();
     String inituser = null;
     byte[] initcookie = null;
 	
@@ -73,8 +73,9 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	String loginname = getpref("loginname", "");
 	boolean savepw = false;
 	byte[] token = null;
-	if(getpref("savedtoken", "").length() == 64)
-	    token = Utils.hex2byte(getpref("savedtoken", null));
+	String tokenhex = getpref("savedtoken", "");
+	if(tokenhex.length() == 64)
+	    token = Utils.hex2byte(tokenhex);
 	String authserver = (Config.authserv == null)?hostname:Config.authserv;
 	int authport = Config.authport;
 	retry: do {
@@ -86,7 +87,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		initcookie = null;
 	    } else if((token != null) && ((tokenname = getpref("tokenname", null)) != null)) {
 		savepw = true;
-		ui.uimsg(1, "token", loginname);
+		ui.uimsg(1, "token", loginname, tokenhex);
 		while(true) {
 		    Message msg;
 		    synchronized(msgs) {
@@ -95,6 +96,9 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		    }
 		    if(msg.id == 1) {
 			if(msg.name == "login") {
+			    loginname = tokenname = (String) msg.args[0];
+			    tokenhex = (String) msg.args[1];
+			    token = Utils.hex2byte(tokenhex);
 			    break;
 			} else if(msg.name == "forget") {
 			    token = null;
@@ -114,6 +118,11 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			    continue retry;
 			}
 			cookie = auth.getcookie();
+
+			String hex = Utils.byte2hex(token);
+			setpref("savedtoken", hex);
+			setpref("tokenname", acctname);
+			AccountList.storeAccount(acctname, hex);
 		    } finally {
 			auth.close();
 		    }
@@ -132,9 +141,18 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		    }
 		    if(msg.id == 1) {
 			if(msg.name == "login") {
-			    creds = (AuthClient.Credentials)msg.args[0];
-			    savepw = (Boolean)msg.args[1];
-			    loginname = creds.name();
+			    if(msg.args[0] instanceof String && msg.args[1] instanceof String) {
+				loginname = tokenname = (String) msg.args[0];
+				tokenhex = (String) msg.args[1];
+				token = Utils.hex2byte(tokenhex);
+				setpref("savedtoken", tokenhex);
+				setpref("tokenname", tokenname);
+				continue retry;
+			    } else {
+				creds = (AuthClient.Credentials) msg.args[0];
+				savepw = (Boolean) msg.args[1];
+				loginname = creds.name();
+			    }
 			    break;
 			}
 		    }
@@ -151,8 +169,10 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			}
 			cookie = auth.getcookie();
 			if(savepw) {
-			    setpref("savedtoken", Utils.byte2hex(auth.gettoken()));
+			    String hex = Utils.byte2hex(auth.gettoken());
+			    setpref("savedtoken", hex);
 			    setpref("tokenname", acctname);
+			    AccountList.storeAccount(acctname, hex);
 			}
 		    } finally {
 			auth.close();
