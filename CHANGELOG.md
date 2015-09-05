@@ -1,5 +1,12 @@
 ## Changelog
 
+### r9 (2015-09-05)
+
+- Mass transfer for inventories (made by @EnderWiggin)
+  - `CTRL`+`ALT`+`Click` drops all similar items
+  - `SHIFT`+`ALT`+`Click` transfers all similar items
+- Add option to show online/offline notifications for kins
+
 ### r8 by Darki (2015-09-04) 
 
 - Optional display of trees, bushes and rocks on the minimap
@@ -38,7 +45,7 @@
 
 - Minimap caching
 - Floating resizable minimap window</li>
-- Nightvision (can be toggled with the shortcut `Ctrl`+`N`)
+- Nightvision (can be toggled with the shortcut `CTRL`+`N`)
 - Option to make kin names always visible
 - Added option to disable flavor objects (made by @romovs)
 - Added option to disable camera snapping during rotation
