@@ -29,10 +29,14 @@ package haven;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.lang.reflect.*;
 
 public class MainFrame extends java.awt.Frame implements Runnable, Console.Directory {
+    private static final String LOG_DIR = "logs";
+    private static final SimpleDateFormat timestampf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     HavenPanel p;
     private final ThreadGroup g;
     public final Thread mt;
@@ -406,6 +410,21 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
     }
     
     public static void main(final String[] args) {
+
+    File logdir = new File(LOG_DIR);
+    if (!logdir.exists())
+        logdir.mkdirs();
+    File log = new File(logdir, "client.log");
+    // redirect all console output to the file
+    try {
+        PrintStream out = new PrintStream(new FileOutputStream(log, true), true);
+        out.format("[%s] ===== Client started =====%n", timestampf.format(new Date()));
+        System.setOut(out);
+        System.setErr(out);
+    } catch (FileNotFoundException e) {
+        e.printStackTrace();
+    }
+
 	/* Set up the error handler as early as humanly possible. */
 	ThreadGroup g = new ThreadGroup("Haven main group");
 	String ed;
