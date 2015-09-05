@@ -97,8 +97,17 @@ public class Config {
 	public static void setMinimapSaveEnabled(boolean value) {
 		setprefb("haven.minimap.save", value);
 	}
-    
-    private static int getint(String name, int def) {
+
+	public static boolean getKinNotificationEnabled() {
+		return getprefb("haven.notifications.kinstatus", true);
+	}
+
+	public static void setKinNotificationEnabled(boolean value) {
+		setprefb("haven.notifications.kinstatus", value);
+	}
+
+
+	private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)
 	    return(def);

@@ -940,6 +940,16 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	Audio.play(errsfx);
     }
 
+    public void notification(String format, Object... args) {
+        notification(String.format(format, args));
+    }
+
+    public void notification(String msg) {
+        errtime = System.currentTimeMillis();
+        lasterr = errfoundry.render(msg);
+        syslog.append(msg, Color.WHITE);
+    }
+
     public void act(String... args) {
 	wdgmsg("act", (Object[])args);
     }

@@ -425,7 +425,12 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	} else if(msg == "chst") {
 	    int id = (Integer)args[0];
 	    int online = (Integer)args[1];
-	    find(id).online = online;
+        Buddy buddy = find(id);
+        if (buddy != null) {
+            buddy.online = online;
+            if (Config.getKinNotificationEnabled())
+                getparent(GameUI.class).notification("%s is %s now", buddy.name, buddy.online > 0 ? "online" : "offline");
+        }
 	} else if(msg == "upd") {
 	    int id = (Integer)args[0];
 	    String name = (String)args[1];
