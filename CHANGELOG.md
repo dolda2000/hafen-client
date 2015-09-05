@@ -1,5 +1,9 @@
 ## Changelog
 
+### r11 (2015-09-05)
+
+- Client now logs all errors to the file `logs/client.log` 
+
 ### r10 (2015-09-05)
 
 - Made Darki's minimap icons clickable
