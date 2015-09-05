@@ -48,7 +48,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private List<Widget> meters = new LinkedList<Widget>();
     private Text lasterr;
     private long errtime;
-    private Window invwnd, equwnd, makewnd, trees,bumlings,bushes;
+    private Window invwnd, equwnd, makewnd;
     public Inventory maininv;
     public CharWnd chrwdg;
     public BuddyWnd buddies;
@@ -69,7 +69,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public String polowner;
     public Bufflist buffs;
 	public MinimapPanel minimapPanel;
-    public boolean treetoggle,rocktoggle,bushtoggle = true;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -448,117 +447,19 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		if (minimapPanel != null)
 			ui.destroy(minimapPanel);
 
-		mmap = new LocalMiniMap(Config.getMinimapSize(), map);
-		minimapPanel = new MinimapPanel(Config.getMinimapPosition(), mmap.sz, map, mmap);
-		add(minimapPanel);
-
-
-            try {
-				if(MinimapIcons.res.isEmpty()){
-                    MinimapIcons.readnames();
-                }
-                MinimapIcons.readToggles();
-                System.out.println("reading minimap icons");
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            if(MinimapIcons.res.isEmpty()){
+                MinimapIcons.readnames();
             }
-            trees = new Window(Coord.z, "Toggle Trees"){
-                public void wdgmsg(Widget sender, String msg, Object... args) {
-                    if(sender == cbtn) {
-                        trees.hide();
-                        treetoggle = true;
-                    } else {
-                        super.wdgmsg(sender, msg, args);
-                    }
-                }
-            };
-            MinimapIcons.addSelection("trees", trees);
-            add(trees, new Coord(100, 100));
-            trees.pack();
-            trees.hide();
-            minimapPanel.add(new IButton("gfx/hud/treebutton", "", "-d", "-h") {
-                {
-                    tooltip = Text.render("Toggle Trees on minimap");
-                }
+            MinimapIcons.readToggles();
+            System.out.println("reading minimap icons");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-                public void click() {
-                    if (treetoggle) {
-                        trees.show();
-                    }
-                    if (!treetoggle) {
-                        trees.hide();
-                    }
-                    treetoggle = !treetoggle;
-                }
-            }, -20, 0);
-
-            bushes = new Window(Coord.z, "Toggle Bushes"){
-                public void wdgmsg(Widget sender, String msg, Object... args) {
-                    if(sender == cbtn) {
-                        bushes.hide();
-                        bushtoggle = true;
-                    } else {
-                        super.wdgmsg(sender, msg, args);
-                    }
-                }
-            };
-
-            minimapPanel.add(new IButton("gfx/hud/bushbutton", "", "", "") {
-                {
-                    tooltip = Text.render("Toggle Bushes on minimap");
-                }
-
-                public void click() {
-                    if (bushtoggle) {
-                        bushes.show();
-                    }
-                    if (!bushtoggle) {
-                        bushes.hide();
-                    }
-                    bushtoggle = !bushtoggle;
-                }
-            }, -20, 25);
-
-            MinimapIcons.addSelection("bushes", bushes);
-            add(bushes, new Coord(100, 100));
-            bushes.pack();
-            bushes.hide();
-
-
-            bumlings = new Window(Coord.z, "Toggle Rocks"){
-                public void wdgmsg(Widget sender, String msg, Object... args) {
-                    if(sender == cbtn) {
-                        bumlings.hide();
-                        rocktoggle = true;
-                    } else {
-                        super.wdgmsg(sender, msg, args);
-                    }
-                }
-            };
-
-            minimapPanel.add(new IButton("gfx/hud/rockbutton", "","","") {
-                {
-                    tooltip = Text.render("Toggle Rocks on minimap");
-                }
-
-                public void click() {
-                    if (rocktoggle) {
-                        bumlings.show();
-                    }
-                    if (!rocktoggle) {
-                        bumlings.hide();
-                    }
-                    rocktoggle = !rocktoggle;
-                }
-            }, -20, 50);
-
-            MinimapIcons.addSelection("bumlings", bumlings);
-            add(bumlings, new Coord(100, 100));
-            bumlings.pack();
-            bumlings.hide();
-
-
-
+		mmap = new LocalMiniMap(Config.getMinimapSize(), map);
+		minimapPanel = new MinimapPanel(Config.getMinimapPosition(), mmap.sz, this, map, mmap);
+		add(minimapPanel);
 		minimapPanel.pack();
 	} else if(place == "fight") {
 	    fv = urpanel.add((Fightview)child, 0, 0);

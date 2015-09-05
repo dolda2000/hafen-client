@@ -10,19 +10,27 @@ public class MinimapPanel extends Window {
 
     private final MapView map;
     private final LocalMiniMap minimap;
+    private final GameUI gui;
     private IButton vclaimButton;
     private IButton pclaimButton;
     private IButton centerButton;
     private Coord doff;
     private boolean folded;
     private UI.Grab resizegrab = null;
+    private final Window trees, bushes, bumlings;
 
-    public MinimapPanel(Coord c, Coord sz, MapView map, LocalMiniMap minimap) {
+    public MinimapPanel(Coord c, Coord sz, GameUI gui, MapView map, LocalMiniMap minimap) {
         super(sz, "Minimap");
         this.map = map;
         this.minimap = minimap;
+        this.gui = gui;
         this.c = c;
+
         add(minimap, 0, 0);
+        trees = createIconWindow("Toggle Trees", "trees");
+        bushes = createIconWindow("Toggle Bushes", "bushes");
+        bumlings = createIconWindow("Toggle Rocks", "bumlings");
+
         initbuttons();
     }
 
@@ -84,6 +92,14 @@ public class MinimapPanel extends Window {
         }
     }
 
+    @Override
+    public void destroy() {
+        bushes.destroy();
+        trees.destroy();
+        bumlings.destroy();
+        super.destroy();
+    }
+
     public boolean type(char key, java.awt.event.KeyEvent ev) {
         if(key == 27) {
             wdgmsg(cbtn, "click");
@@ -107,9 +123,7 @@ public class MinimapPanel extends Window {
 
     private void initbuttons() {
         vclaimButton = add(new IButton("gfx/hud/lbtn-vil", "", "-d", "-h") {
-            {
-                tooltip = Text.render("Display personal claims");
-            }
+            { tooltip = Text.render("Display personal claims");  }
 
             public void click() {
                 if ((map != null) && !map.visol(0))
@@ -120,9 +134,7 @@ public class MinimapPanel extends Window {
         }, -6, -5);
 
         pclaimButton = add(new IButton("gfx/hud/lbtn-claim", "", "-d", "-h") {
-            {
-                tooltip = Text.render("Display village claims");
-            }
+            { tooltip = Text.render("Display village claims"); }
 
             public void click() {
                 if ((map != null) && !map.visol(2))
@@ -133,13 +145,36 @@ public class MinimapPanel extends Window {
         }, -6, -10);
 
         centerButton = add(new IButton("gfx/hud/buttons/center", "-u", "-d", "-d") {
-            {
-                tooltip = Text.render("Center map");
-            }
+            { tooltip = Text.render("Center map"); }
 
             public void click() {
                 minimap.setOffset(Coord.z);
             }
         }, 53, 3);
+
+        add(createIconButton(trees, "gfx/hud/treebutton", "Toggle Trees on minimap"), -20, 0);
+        add(createIconButton(bushes, "gfx/hud/bushbutton", "Toggle Bushes on minimap"), -20, 25);
+        add(createIconButton(bumlings, "gfx/hud/rockbutton", "Toggle Rocks on minimap"), -20, 50);
+    }
+
+    private IButton createIconButton(final Window window, final String res, final String tt) {
+        return new IButton(res, "", "", "") {
+            { tooltip = Text.render(tt); }
+
+            public void click() {
+                if (window.visible)
+                    window.hide();
+                else
+                    window.show();
+            }
+        };
+    }
+
+    private Window createIconWindow(String cap, String type) {
+        Window wnd = new MinimapIconsWindow(Coord.z, cap, type);
+        gui.add(wnd, 100, 100);
+        wnd.pack();
+        wnd.hide();
+        return wnd;
     }
 }
