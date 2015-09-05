@@ -10,6 +10,7 @@ import java.util.*;
 import static haven.Utils.setpref;
 
 public class AccountList extends Widget {
+    public static final String ACCOUNTS_JSON = "accounts.json";
     public static final Map<String, String> accountmap = new HashMap<String, String>();
     private static final Coord SZ = new Coord(230, 30);
     private static final Comparator<Account> accountComparator = new Comparator<Account>() {
@@ -27,7 +28,7 @@ public class AccountList extends Widget {
     public final List<Account> accounts = new ArrayList<Account>();
 
     static void loadAccounts() {
-	String json = Config.loadFile("accountmap.json");
+	String json = Config.loadFile(ACCOUNTS_JSON);
 	if(json != null) {
 	    try {
 		Gson gson = (new GsonBuilder()).create();
@@ -57,7 +58,7 @@ public class AccountList extends Widget {
     public static void saveAccounts() {
 	synchronized(accountmap) {
 	    Gson gson = (new GsonBuilder()).setPrettyPrinting().create();
-	    Config.saveFile("accountmap.json", gson.toJson(accountmap));
+	    Config.saveFile(ACCOUNTS_JSON, gson.toJson(accountmap));
 	}
     }
 
