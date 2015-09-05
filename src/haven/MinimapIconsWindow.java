@@ -9,7 +9,7 @@ public class MinimapIconsWindow extends Window {
 
     @Override
     public void wdgmsg(Widget sender, String msg, Object... args) {
-        if(sender == cbtn) {
+        if (sender == cbtn || (sender == this && msg.equals("close"))) {
             hide();
         } else {
             super.wdgmsg(sender, msg, args);
