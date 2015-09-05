@@ -1,5 +1,11 @@
 ## Changelog
 
+### r10 (2015-09-05)
+
+- Made Darki's minimap icons clickable
+- Fixed transparent minimap roads
+- Fixed crash when `Esc` is pressed on the icon toggles window
+
 ### r9 (2015-09-05)
 
 - Mass transfer for inventories (made by @EnderWiggin)
