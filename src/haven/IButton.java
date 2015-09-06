@@ -34,6 +34,7 @@ public class IButton extends SSWidget {
     boolean h = false;
     boolean a = false;
     UI.Grab d = null;
+    boolean pixelperfect;
 
     @RName("ibtn")
     public static class $_ implements Factory {
@@ -42,12 +43,17 @@ public class IButton extends SSWidget {
 	}
     }
 
+    public IButton(BufferedImage up, BufferedImage down, BufferedImage hover, boolean pixelperfect) {
+        super(Utils.imgsz(up));
+        this.up = up;
+        this.down = down;
+        this.hover = hover;
+        this.pixelperfect = pixelperfect;
+        render();
+    }
+
     public IButton(BufferedImage up, BufferedImage down, BufferedImage hover) {
-	super(Utils.imgsz(up));
-	this.up = up;
-	this.down = down;
-	this.hover = hover;
-	render();
+        this(up, down, hover, true);
     }
 
     public IButton(BufferedImage up, BufferedImage down) {
@@ -73,7 +79,7 @@ public class IButton extends SSWidget {
     public boolean checkhit(Coord c) {
 	if(!c.isect(Coord.z, sz))
 	    return(false);
-	if(up.getRaster().getNumBands() < 4)
+	if(!pixelperfect || up.getRaster().getNumBands() < 4)
 	    return(true);
 	return(up.getRaster().getSample(c.x, c.y, 3) >= 128);
     }
