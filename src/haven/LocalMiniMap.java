@@ -130,17 +130,15 @@ public class LocalMiniMap extends Widget {
 	Coord blg = coff.add(sz.div(2)).div(cmaps);
 	Coord cg = new Coord();
 
-	synchronized (cache) {
-		for (cg.y = ulg.y; cg.y <= blg.y; cg.y++) {
-			for (cg.x = ulg.x; cg.x <= blg.x; cg.x++) {
-				Defer.Future<MinimapTile> f = cache.get(cg);
-				if (!f.done())
-					continue;
-				MinimapTile tile = f.get();
-				g.image(tile.img, cg.mul(cmaps).sub(coff).add(sz.div(2)));
-			}
-		}
-	}
+    synchronized (cache) {
+        for (cg.y = ulg.y; cg.y <= blg.y; cg.y++) {
+            for (cg.x = ulg.x; cg.x <= blg.x; cg.x++) {
+                Defer.Future<MinimapTile> f = cache.get(cg);
+                Tex image = f.done() ? f.get().img : MiniMap.bg;
+                g.image(image, cg.mul(cmaps).sub(coff).add(sz.div(2)));
+            }
+        }
+    }
 
 	try {
 		synchronized(ui.sess.glob.party.memb) {
