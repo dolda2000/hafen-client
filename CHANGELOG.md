@@ -1,5 +1,11 @@
 ## Changelog
 
+### r13 (2015-09-06)
+
+- Added completion percent overlay text to items (made by @bdew-hnh)
+- Added ability to lock study inventory (made by @romovs)
+- Changed client window skin
+
 ### r12 (2015-09-06)
 
 - Fixed client crashes that happen when items with the name similar to the name of the enabled toggle are dropped to the ground
