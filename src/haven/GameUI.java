@@ -26,7 +26,6 @@
 
 package haven;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.*;
 import java.awt.Color;
@@ -448,7 +447,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			ui.destroy(minimapPanel);
 
         try {
-            if(MinimapIcons.res.isEmpty()){
+            if(MinimapIcons.icons.isEmpty()){
                 MinimapIcons.readnames();
             }
             MinimapIcons.readToggles();

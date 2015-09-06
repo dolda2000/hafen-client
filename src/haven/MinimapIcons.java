@@ -1,15 +1,12 @@
 package haven;
 
 import java.io.*;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class MinimapIcons {
-    public static final List<String> res = new ArrayList<String>();
+    public static final List<String> icons = new ArrayList<String>();
     public static final List<String> ToggledIcons = new ArrayList<String>();
 
     public static void readnames() throws IOException {
@@ -18,7 +15,7 @@ public class MinimapIcons {
         while (entries.hasMoreElements()) {
             final JarEntry entry = entries.nextElement();
             if (entry.getName().contains("gfx/minimap") && entry.getName().contains(".res")) {
-                res.add(entry.getName());
+                icons.add(entry.getName());
                 JarEntry fileEntry = jarFile.getJarEntry(entry.getName());
                 InputStream input = jarFile.getInputStream(fileEntry);
             }
@@ -84,7 +81,7 @@ public class MinimapIcons {
 
     public static List<String> readspecific(String type) {
         List<String> speclist = new ArrayList<String>();
-        for (String seperate : res) {
+        for (String seperate : icons) {
             if (seperate.contains(type)) {
                 speclist.add(seperate.split("/")[4]);
             }
@@ -129,14 +126,15 @@ public class MinimapIcons {
             return false;
         String resname = gob.getres().name;
         String realname = resname.split("\\.")[0].split("/")[resname.split("\\.")[0].split("/").length - 1];
-        return MinimapIcons.ToggledIcons.contains(realname);
+        String iconname = "res/".concat(getIconResourceName(gob)).concat(".res");
+        return icons.contains(iconname) && ToggledIcons.contains(realname);
     }
 
     public static String getIconResourceName(Gob gob) {
         Resource res = gob.getres();
         if (res != null) {
             String resname = res.name;
-            return "gfx/minimap/" + resname.split("/")[2] +"/" +  resname.split("/")[3];
+            return "gfx/minimap/" + resname.split("/")[2] + "/" + resname.split("/")[3];
         }
         return "";
     }
