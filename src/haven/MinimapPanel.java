@@ -5,7 +5,7 @@ import java.awt.image.BufferedImage;
 public class MinimapPanel extends Window {
 
     static final BufferedImage grip = Resource.loadimg("gfx/hud/gripbr");
-    static final Coord gzsz = new Coord(30, 40);
+    static final Coord gzsz = new Coord(20, 20);
     static final Coord minsz = new Coord(150, 125);
 
     private final MapView map;
@@ -152,9 +152,13 @@ public class MinimapPanel extends Window {
             }
         }, 53, 3);
 
-        add(createIconButton(trees, "gfx/hud/treebutton", "Toggle Trees on minimap"), -20, 0);
-        add(createIconButton(bushes, "gfx/hud/bushbutton", "Toggle Bushes on minimap"), -20, 25);
-        add(createIconButton(bumlings, "gfx/hud/rockbutton", "Toggle Rocks on minimap"), -20, 50);
+        int x = 65;
+        int y = -18;
+        add(createIconButton(trees, "gfx/hud/treebutton", "Toggle Trees on minimap"), x, y);
+        x += 20;
+        add(createIconButton(bushes, "gfx/hud/bushbutton", "Toggle Bushes on minimap"), x, y);
+        x += 20;
+        add(createIconButton(bumlings, "gfx/hud/rockbutton", "Toggle Rocks on minimap"), x, y);
     }
 
     private IButton createIconButton(final Window window, final String res, final String tt) {
