@@ -2,7 +2,7 @@
 
 ### r12 (2015-09-06)
 
-- Fix client crashes that happen when items with the name similar to the name of the enabled toggle are dropped to the ground
+- Fixed client crashes that happen when items with the name similar to the name of the enabled toggle are dropped to the ground
 
 ### r11 (2015-09-05)
 
