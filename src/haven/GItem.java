@@ -120,7 +120,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
         ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(rawinfo));
         if (meterCompletionTime != null)
             list.add(meterCompletionTime);
-        info = ItemInfo.buildinfo(this, list);
+        info = ItemInfo.buildinfo(this, list.toArray());
     }
 	return(info);
     }
