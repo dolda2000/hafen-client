@@ -80,7 +80,7 @@ public class Config {
 	}
 
 	public static void setNightVisionEnabled(boolean value) {
-		setprefb("haven.nightvision",value);
+		setprefb("haven.nightvision", value);
 	}
 
 	public static boolean getEnableCameraSnapping() {
@@ -121,6 +121,14 @@ public class Config {
 
 	public static void setStudyVisible(boolean value) {
 		setprefb("haven.study.visible", value);
+	}
+
+	public static boolean getMinimapRadiusEnabled() {
+		return getprefb("haven.minimap.radius", false);
+	}
+
+	public static void setMinimapRadiusEnabled(boolean value) {
+		setprefb("haven.minimap.radius", value);
 	}
 
 	private static int getint(String name, int def) {

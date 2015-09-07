@@ -14,6 +14,7 @@ public class MinimapWnd extends Window {
     private IButton vclaimButton;
     private IButton pclaimButton;
     private IButton centerButton;
+    private IButton radiusButton;
     private Coord doff;
     private boolean folded;
     private UI.Grab resizegrab = null;
@@ -114,6 +115,7 @@ public class MinimapWnd extends Window {
         vclaimButton.visible = !folded;
         pclaimButton.visible = !folded;
         centerButton.visible = !folded;
+        radiusButton.visible = !folded;
         if (folded) {
             resize(new Coord(minimap.sz.x, 0));
         } else {
@@ -151,6 +153,14 @@ public class MinimapWnd extends Window {
                 minimap.setOffset(Coord.z);
             }
         }, 53, 3);
+
+        radiusButton = add(new IButton("gfx/hud/buttons/dispradius", "", "", "") {
+            { tooltip = Text.render("Show view radius"); }
+
+            public void click() {
+                minimap.toggleRadius();
+            }
+        }, 78, 3);
 
         int x = 65;
         int y = -18;

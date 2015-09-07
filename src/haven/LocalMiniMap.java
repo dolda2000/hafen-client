@@ -44,11 +44,13 @@ public class LocalMiniMap extends Widget {
     private Coord off = Coord.z;
     private Coord doff;
     private UI.Grab grab;
+    private boolean showradius;
 
     public LocalMiniMap(Coord sz, MapView mv) {
 	super(sz);
 	this.mv = mv;
 	this.cache = new MinimapCache(new MinimapRenderer(mv.ui.sess.glob.map));
+    this.showradius = Config.getMinimapRadiusEnabled();
     }
     
     public Coord p2c(Coord pc) {
@@ -161,6 +163,16 @@ public class LocalMiniMap extends Widget {
 			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 180);
 			g.image(plarrow.layer(Resource.imgc).tex(), ptc.sub(origin), origin, angle);
 			g.chcolor();
+
+            if (showradius && m.gobid == mv.plgob) {
+                Coord rc = ptc.add((-500 / tilesz.x), (-500 / tilesz.y));
+                Coord rs = new Coord((1000 / tilesz.x), (1000 / tilesz.y));
+                g.chcolor(255, 255, 255, 60);
+                g.frect(rc, rs);
+                g.chcolor(0, 0, 0, 128);
+                g.rect(rc, rs);
+                g.chcolor();
+            }
 		    }
 		}
 	} catch(Loading l) {}
@@ -209,5 +221,10 @@ public class LocalMiniMap extends Widget {
 
     public void setOffset(Coord value) {
         off = value;
+    }
+
+    public void toggleRadius() {
+        showradius = !showradius;
+        Config.setMinimapRadiusEnabled(showradius);
     }
 }
