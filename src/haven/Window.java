@@ -152,7 +152,7 @@ public class Window extends Widget implements DTarget {
 	this.sz = wsz.add(tlo).add(rbo);
 	ctl = tlo.add(tlm);
 	atl = ctl.add(mrgn);
-	cbtn.c = xlate(tlo.add(wsz.x - cbtn.sz.x - 3, wtl.y + 3), false);
+	cbtn.c = xlate(tlo.add(wsz.x - cbtn.sz.x - 3, wtl.y + 4), false);
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.presize();
     }
