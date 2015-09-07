@@ -34,7 +34,7 @@ import static haven.PUtils.*;
 public class Window extends Widget implements DTarget {
     public static final Tex bg = Resource.loadtex("gfx/hud/wnd/lg/bg");
     public static Coord wtl = new Coord(0, 9);
-    public static final Coord tlm = new Coord(1, 21), brm = new Coord(1, 1), cpo = new Coord(10, 1);
+    public static final Coord tlm = new Coord(1, 30), brm = new Coord(1, 1), cpo = new Coord(10, 1);
     public static final Coord dlmrgn = new Coord(23, 14), dsmrgn = new Coord(9, 9);
     public static final BufferedImage ctex = Resource.loadimg("gfx/hud/chantex");
     public static final Text.Furnace cf = new Text.Foundry(Text.fraktur, 15, new Color(244, 216, 142)).aa(true);
