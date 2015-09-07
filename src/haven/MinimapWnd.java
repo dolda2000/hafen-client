@@ -2,7 +2,7 @@ package haven;
 
 import java.awt.image.BufferedImage;
 
-public class MinimapPanel extends Window {
+public class MinimapWnd extends Window {
 
     static final BufferedImage grip = Resource.loadimg("gfx/hud/gripbr");
     static final Coord gzsz = new Coord(20, 20);
@@ -19,7 +19,7 @@ public class MinimapPanel extends Window {
     private UI.Grab resizegrab = null;
     private final Window trees, bushes, bumlings;
 
-    public MinimapPanel(Coord c, Coord sz, GameUI gui, MapView map, LocalMiniMap minimap) {
+    public MinimapWnd(Coord c, Coord sz, GameUI gui, MapView map, LocalMiniMap minimap) {
         super(sz, "Minimap");
         this.map = map;
         this.minimap = minimap;

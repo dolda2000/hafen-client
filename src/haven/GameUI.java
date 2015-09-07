@@ -43,6 +43,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public MenuGrid menu;
     public MapView map;
     public LocalMiniMap mmap;
+    public MinimapWnd mmapwnd;
     public Fightview fv;
     private List<Widget> meters = new LinkedList<Widget>();
     private Text lasterr;
@@ -67,7 +68,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Belt beltwdg;
     public String polowner;
     public Bufflist buffs;
-	public MinimapPanel minimapPanel;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -443,8 +443,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
 		if (mmap != null)
 			ui.destroy(mmap);
-		if (minimapPanel != null)
-			ui.destroy(minimapPanel);
+		if (mmapwnd != null)
+			ui.destroy(mmapwnd);
 
         try {
             if(MinimapIcons.icons.isEmpty()){
@@ -457,9 +457,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         }
 
 		mmap = new LocalMiniMap(Config.getMinimapSize(), map);
-		minimapPanel = new MinimapPanel(Config.getMinimapPosition(), mmap.sz, this, map, mmap);
-		add(minimapPanel);
-		minimapPanel.pack();
+		mmapwnd = new MinimapWnd(Config.getMinimapPosition(), mmap.sz, this, map, mmap);
+		add(mmapwnd);
+		mmapwnd.pack();
 	} else if(place == "fight") {
 	    fv = urpanel.add((Fightview)child, 0, 0);
 	} else if(place == "fsess") {
