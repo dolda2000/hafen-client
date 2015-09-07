@@ -163,7 +163,7 @@ public class MinimapWnd extends Window {
         }, 78, 3);
 
         int x = 65;
-        int y = -18;
+        int y = -27;
         add(createIconButton(trees, "gfx/hud/treebutton", "Toggle Trees on minimap"), x, y);
         x += 20;
         add(createIconButton(bushes, "gfx/hud/bushbutton", "Toggle Bushes on minimap"), x, y);
