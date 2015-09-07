@@ -494,6 +494,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    chrwdg = add((CharWnd)child, new Coord(300, 50));
         // custom meter for hunger level
         addcmeter(new HungerMeter(chrwdg.glut));
+        // custom meter for FEPs
+        addcmeter(new FepMeter(chrwdg.feps));
 	    chrwdg.hide();
 	} else if(place == "craft") {
 	    final Widget mkwdg = child;
