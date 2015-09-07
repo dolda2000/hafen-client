@@ -1120,8 +1120,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private void updcmeters() {
         int i = 0;
         for (Widget meter : cmeters) {
-            int x = (meters.size() % 3 + i) * (IMeter.fsz.x + 5);
-            int y = (meters.size() / 3 + i) * (IMeter.fsz.y + 2);
+            int x = ((meters.size() + i) % 3) * (IMeter.fsz.x + 5);
+            int y = ((meters.size() + i) / 3) * (IMeter.fsz.y + 2);
             meter.c = new Coord(portrait.c.x + portrait.sz.x + 10 + x, portrait.c.y + y);
             i++;
         }
