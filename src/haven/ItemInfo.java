@@ -254,7 +254,7 @@ public abstract class ItemInfo {
 	return(null);
     }
 
-    public static List<ItemInfo> buildinfo(Owner owner, Object[] rawinfo) {
+    public static List<ItemInfo> buildinfo(Owner owner, List<Object> rawinfo) {
 	List<ItemInfo> ret = new ArrayList<ItemInfo>();
 	for(Object o : rawinfo) {
 	    if(o instanceof Object[]) {

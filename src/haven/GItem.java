@@ -27,8 +27,7 @@
 package haven;
 
 import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
+import java.time.Duration;
 import java.util.*;
 
 public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owner {
@@ -39,6 +38,9 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     private GSprite spr;
     private Object[] rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
+    private boolean meterChanged;
+    private Date lastMeterChangeTime;
+    private String meterCompletionTime;
     
     @RName("item")
     public static class $_ implements Factory {
@@ -114,8 +116,12 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     }
 
     public List<ItemInfo> info() {
-	if(info == null)
-	    info = ItemInfo.buildinfo(this, rawinfo);
+	if(info == null) {
+        ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(rawinfo));
+        if (meterCompletionTime != null)
+            list.add(meterCompletionTime);
+        info = ItemInfo.buildinfo(this, list);
+    }
 	return(info);
     }
     
@@ -142,7 +148,25 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    info = null;
 	    rawinfo = args;
 	} else if(name == "meter") {
-	    meter = (Integer)args[0];
+        int value = (Integer)args[0];
+        if (value == meter)
+            return;
+        if (!meterChanged) {
+            meterChanged = true;
+        } else if (lastMeterChangeTime == null) {
+            lastMeterChangeTime = new Date();
+        } else {
+            Date now = new Date();
+            int diff = value - meter;
+            long millisPerTick = (long)((float)(now.getTime() - lastMeterChangeTime.getTime()) / diff);
+            long millisToComplete = millisPerTick * (100 - value);
+            Duration dur = Duration.ofMillis(millisToComplete);
+            meterCompletionTime = String.format("Estimated completion time: %02d:%02d:%02d", dur.toHours(), dur.toMinutes() % 60, dur.getSeconds() % 60);
+            lastMeterChangeTime = now;
+            // reset tooltip
+            info = null;
+        }
+	    meter = value;
 	}
     }
 }
