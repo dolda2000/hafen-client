@@ -46,6 +46,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public MinimapWnd mmapwnd;
     public Fightview fv;
     private List<Widget> meters = new LinkedList<Widget>();
+    private List<Widget> cmeters = new LinkedList<Widget>();
     private Text lasterr;
     private long errtime;
     private Window invwnd, equwnd, makewnd;
@@ -526,6 +527,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    int y = (meters.size() / 3) * (IMeter.fsz.y + 2);
 	    ulpanel.add(child, portrait.c.x + portrait.sz.x + 10 + x, portrait.c.y + y);
 	    meters.add(child);
+        updcmeters();
 	} else if(place == "buff") {
 	    buffs.addchild(child);
 	} else if(place == "misc") {
@@ -551,6 +553,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    chrwdg = null;
 	}
 	meters.remove(w);
+    cmeters.remove(w);
     }
 
     private static final Resource.Anim progt = Resource.local().loadwait("gfx/hud/prog").layer(Resource.animc);
@@ -1104,6 +1107,22 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else {
 	    beltwdg = add(new NKeyBelt());
 	}
+    }
+
+    public void addcmeter(Widget meter) {
+        ulpanel.add(meter);
+        cmeters.add(meter);
+        updcmeters();
+    }
+
+    private void updcmeters() {
+        int i = 0;
+        for (Widget meter : cmeters) {
+            int x = (meters.size() % 3 + i) * (IMeter.fsz.x + 5);
+            int y = (meters.size() / 3 + i) * (IMeter.fsz.y + 2);
+            meter.c = new Coord(portrait.c.x + portrait.sz.x + 10 + x, portrait.c.y + y);
+            i++;
+        }
     }
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
