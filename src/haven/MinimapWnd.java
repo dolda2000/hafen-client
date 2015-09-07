@@ -108,7 +108,7 @@ public class MinimapWnd extends Window {
         return(super.type(key, ev));
     }
 
-    private void togglefold() {
+    public void togglefold() {
         folded = !folded;
         minimap.visible = !folded;
         vclaimButton.visible = !folded;

@@ -784,11 +784,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    setfocus(map);
 	    return(true);
 	} else if (ev.isAltDown() && ev.getKeyCode() == KeyEvent.VK_S) {
-        if (studywnd.visible)
-            studywnd.hide();
-        else
-            studywnd.show();
+        studywnd.show(!studywnd.visible);
         return true;
+    } else if (ev.isAltDown() && ev.getKeyCode() == KeyEvent.VK_M) {
+        if (mmapwnd != null) {
+            mmapwnd.togglefold();
+            return true;
+        }
     }
 	return(super.globtype(key, ev));
     }
