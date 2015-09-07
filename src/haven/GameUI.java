@@ -68,6 +68,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Belt beltwdg;
     public String polowner;
     public Bufflist buffs;
+    public StudyWnd studywnd;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -144,6 +145,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	opts.hide();
 	zerg = add(new Zergwnd(), 187, 50);
 	zerg.hide();
+
+    studywnd = add(new StudyWnd(Coord.z), Config.getStudyPosition());
+    studywnd.visible = Config.getStudyVisible();
     }
 
     @Override
@@ -779,7 +783,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if((key == 27) && (map != null) && !map.hasfocus) {
 	    setfocus(map);
 	    return(true);
-	}
+	} else if (ev.isAltDown() && ev.getKeyCode() == KeyEvent.VK_S) {
+        if (studywnd.visible)
+            studywnd.hide();
+        else
+            studywnd.show();
+        return true;
+    }
 	return(super.globtype(key, ev));
     }
 

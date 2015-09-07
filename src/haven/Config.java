@@ -107,6 +107,21 @@ public class Config {
 		setprefb("haven.notifications.kinstatus", value);
 	}
 
+	public static Coord getStudyPosition() {
+		return getprefc("haven.study.position", new Coord(100, 100));
+	}
+
+	public static void setStudyPosition(Coord value) {
+		setprefc("haven.study.position", value);
+	}
+
+	public static boolean getStudyVisible() {
+		return getprefb("haven.study.visible", false);
+	}
+
+	public static void setStudyVisible(boolean value) {
+		setprefb("haven.study.visible", value);
+	}
 
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);

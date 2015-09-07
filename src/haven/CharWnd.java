@@ -1287,6 +1287,7 @@ public class CharWnd extends Window {
                 }
             }, new Coord(415, 10));
 	    Frame.around(sattr, Collections.singletonList(inf));
+        getparent(GameUI.class).studywnd.setStudy((Inventory)child);
 	} else if(place == "fmg") {
 	    fgt.add(child, 0, 0);
 	} else if(place == "wound") {
