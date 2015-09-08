@@ -1,5 +1,9 @@
 ## Changelog
 
+### r15 (2015-09-08)
+
+- Merged vanilla client changes
+
 ### r14 (2015-09-08)
 
 - Added study window. Use hotkey `Alt`+`S` to toggle it on/off
