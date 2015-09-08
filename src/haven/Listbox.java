@@ -95,4 +95,12 @@ public abstract class Listbox<T> extends ListWidget<T> {
 	    itemclick(item, button);
 	return(true);
     }
+
+    // ensures that selected element is visible
+    public void showsel() {
+        if (sb.val + h - 1 < selindex)
+            sb.val = selindex - h + 1;
+        if (sb.val > selindex)
+            sb.val = selindex;
+    }
 }
