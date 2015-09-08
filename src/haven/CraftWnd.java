@@ -131,6 +131,15 @@ public class CraftWnd extends Window {
     }
 
     private static boolean iscraft(Glob.Pagina pagina) {
-        return pagina.res().name.startsWith("paginae/craft/");
+        Resource res = null;
+        try {
+            res = pagina.res();
+        } catch (Loading e) {
+            try {
+                e.waitfor();
+                res = pagina.res();
+            } catch (InterruptedException ex) {}
+        }
+        return (res != null) && res.name.startsWith("paginae/craft/");
     }
 }
