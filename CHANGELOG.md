@@ -1,5 +1,9 @@
 ## Changelog
 
+### r17 (2015-09-08)
+
+- Added window with quick search for crafting recipes. Open it with `Alt`+`C` and start typing a part of recipe name. Navigate between recipes with arrow keys and hit `Enter` when needed recipe is selected.
+
 ### r16 (2015-09-08)
 
 - Fixed compatibility issues with OpenJDK 6
