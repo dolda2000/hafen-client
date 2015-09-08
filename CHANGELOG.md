@@ -6,7 +6,7 @@
 - Added hunger and FEP meters. Both meters can be disabled in Display settings
 - Added button to show approximate view radius on the minimap
 - Minimap can be folded with the `Alt`+`M` hotkey now
-- Client can display very rough estimate of completion time (for curious and other items with progress meters)  (and other items with progress meters). It displays in the extended tooltip once item progress was updated at least two times and progress changed for at least 2%. This estimate shouldn't be really relied upon and  sometimes it displays very weird values
+- Client can display very rough estimate of completion time (for curious and other items with progress meters). It displays in the extended tooltip once item progress was updated at least two times and progress changed for at least 2%. This estimate shouldn't be really relied upon and  sometimes it displays very weird values
 
 ### r13 (2015-09-06)
 
