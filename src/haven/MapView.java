@@ -30,6 +30,7 @@ import static haven.MCache.tilesz;
 
 import haven.GLProgram.VarID;
 import java.awt.Color;
+import java.awt.event.KeyEvent;
 import java.util.*;
 import java.lang.reflect.*;
 import javax.media.opengl.*;
@@ -72,6 +73,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	public Camera() {
 	    resized();
+	}
+
+	public boolean keydown(KeyEvent ev) {
+	    return(false);
 	}
 
 	public boolean click(Coord sc) {
@@ -364,11 +369,35 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		tangl = (float)(Math.PI * 0.5 * (Math.floor(tangl / (Math.PI * 0.5)) + 0.5));
 	}
 
-	public boolean wheel(Coord c, int amount) {
-	    tfield += amount * 10;
+	private void chfield(float nf) {
+	    tfield = nf;
 	    tfield = Math.max(tfield, 50);
 	    release();
+	}
+
+	public boolean wheel(Coord c, int amount) {
+	    chfield(tfield + amount * 10);
 	    return(true);
+	}
+
+	public boolean keydown(KeyEvent ev) {
+	    if(ev.getKeyCode() == KeyEvent.VK_LEFT) {
+		tangl = (float)(Math.PI * 0.5 * (Math.floor((tangl / (Math.PI * 0.5)) - 0.51) + 0.5));
+		return(true);
+	    } else if(ev.getKeyCode() == KeyEvent.VK_RIGHT) {
+		tangl = (float)(Math.PI * 0.5 * (Math.floor((tangl / (Math.PI * 0.5)) + 0.51) + 0.5));
+		return(true);
+	    } else if(ev.getKeyCode() == KeyEvent.VK_UP) {
+		chfield(tfield - 50);
+		return(true);
+	    } else if(ev.getKeyCode() == KeyEvent.VK_DOWN) {
+		chfield(tfield + 50);
+		return(true);
+	    } else if(ev.getKeyCode() == KeyEvent.VK_HOME) {
+		tangl = angl + (float)Utils.cangle(-(float)Math.PI * 0.25f - angl);
+		chfield((float)(100 * Math.sqrt(2)));
+	    }
+	    return(false);
 	}
     }
     static {camtypes.put("ortho", SOrthoCam.class);}
@@ -1284,7 +1313,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return(true);
     }
 
-    public boolean globtype(char c, java.awt.event.KeyEvent ev) {
+    public boolean keydown(KeyEvent ev) {
+	if(camera.keydown(ev))
+	    return(true);
+	return(super.keydown(ev));
+    }
+
+    public boolean globtype(char c, KeyEvent ev) {
 	return(false);
     }
 
