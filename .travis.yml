@@ -13,3 +13,4 @@ deploy:
     - "lib/custom-res.jar"
   on:
     tags: true
+    jdk: oraclejdk8
