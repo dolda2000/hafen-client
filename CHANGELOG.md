@@ -1,5 +1,9 @@
 ## Changelog
 
+### r16 (2015-09-08)
+
+- Fixed compatibility issues with OpenJDK 6
+
 ### r15 (2015-09-08)
 
 - Merged vanilla client changes
