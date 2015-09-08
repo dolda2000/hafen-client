@@ -2,6 +2,7 @@ language: java
 script: ant deftgt
 jdk:
 - oraclejdk8
+- openjdk6
 deploy:
   skip_cleanup: true
   provider: releases
