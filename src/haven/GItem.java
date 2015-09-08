@@ -29,6 +29,7 @@ package haven;
 import java.awt.Color;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owner {
     public Indir<Resource> res;
@@ -160,8 +161,10 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
             int diff = value - meter;
             long millisPerTick = (long)((float)(now.getTime() - lastMeterChangeTime.getTime()) / diff);
             long millisToComplete = millisPerTick * (100 - value);
-            Duration dur = Duration.ofMillis(millisToComplete);
-            meterCompletionTime = String.format("Estimated completion time: %02d:%02d:%02d", dur.toHours(), dur.toMinutes() % 60, dur.getSeconds() % 60);
+            int seconds = (int)(millisToComplete / 1000) % 60 ;
+            int minutes = (int)((millisToComplete / (1000*60)) % 60);
+            int hours = (int)((millisToComplete / (1000*60*60)) % 24);
+            meterCompletionTime = String.format("Estimated completion time: %02d:%02d:%02d", hours, minutes % 60, seconds);
             lastMeterChangeTime = now;
             // reset tooltip
             info = null;
