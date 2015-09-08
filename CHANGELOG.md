@@ -1,5 +1,10 @@
 ## Changelog
 
+### r18 (2015-09-09)
+
+- Fixed crash on character creation (due to a crafting list being empty)
+- Fixed crash in case when craft button resources aren't in the cache (or just not loaded instantly)
+
 ### r17 (2015-09-08)
 
 - Added window with quick search for crafting recipes. Open it with `Alt`+`C` and start typing a part of recipe name. Navigate between recipes with arrow keys and hit `Enter` when needed recipe is selected.
