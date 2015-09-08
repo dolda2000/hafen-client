@@ -70,6 +70,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public String polowner;
     public Bufflist buffs;
     public StudyWnd studywnd;
+    public CraftWnd craftwnd;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -149,6 +150,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     studywnd = add(new StudyWnd(Coord.z), Config.getStudyPosition());
     studywnd.visible = Config.getStudyVisible();
+
+    craftwnd = add(new CraftWnd());
+    craftwnd.hide();
     }
 
     @Override
@@ -250,6 +254,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    });
 	Debug.log = ui.cons.out;
 	opts.c = sz.sub(opts.sz).div(2);
+    craftwnd.c = sz.sub(craftwnd.sz).div(2);
     }
 
     public class Hidepanel extends Widget {
@@ -801,6 +806,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
                 mmapwnd.togglefold();
                 return true;
             }
+        } else if (ev.isAltDown() && ev.getKeyCode() == KeyEvent.VK_C) {
+            craftwnd.show(!craftwnd.visible);
+            if (craftwnd.visible)
+                craftwnd.raise();
+            return true;
         }
     }
 	return(super.globtype(key, ev));
