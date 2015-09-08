@@ -26,6 +26,8 @@
 
 package haven;
 
+import haven.util.ObservableCollection;
+
 import java.util.*;
 import java.awt.Color;
 
@@ -41,7 +43,7 @@ public class Glob {
     public MCache map;
     public Session sess;
     public Party party;
-    public Set<Pagina> paginae = new HashSet<Pagina>();
+    public ObservableCollection<Pagina> paginae = new ObservableCollection<Pagina>(new HashSet<Pagina>());
     public int pagseq = 0;
     public Map<Resource.Named, Pagina> pmap = new WeakHashMap<Resource.Named, Pagina>();
     public Map<String, CAttr> cattr = new HashMap<String, CAttr>();
