@@ -29,7 +29,7 @@ public class CraftList extends Listbox<CraftList.CraftItem> {
     }
 
     public void sort(Comparator<CraftItem> comparator) {
-        items.sort(comparator);
+        Collections.sort(items, comparator);
     }
 
     @Override
