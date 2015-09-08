@@ -283,6 +283,34 @@ public class OptWnd extends Window {
 			a = val;
 		}
 	}, new Coord(0, y));
+	y += 15;
+    display.add(new CheckBox("Display hunger meter") {
+        { a = Config.getHungerMeterEnabled(); }
+        public void set(boolean val) {
+            Config.setHungerMeterEnabled(val);
+            a = val;
+            GameUI ui = getparent(GameUI.class);
+            if (ui == null) return;
+            if (val)
+                ui.addcmeter(new HungerMeter(ui.chrwdg.glut));
+            else
+                ui.delcmeter(HungerMeter.class);
+        }
+    }, new Coord(0, y));
+    y += 15;
+    display.add(new CheckBox("Display FEP meter") {
+        { a = Config.getFepMeterEnabled(); }
+        public void set(boolean val) {
+            Config.setFepMeterEnabled(val);
+            a = val;
+            GameUI ui = getparent(GameUI.class);
+            if (ui == null) return;
+            if (val)
+                ui.addcmeter(new FepMeter(ui.chrwdg.feps));
+            else
+                ui.delcmeter(FepMeter.class);
+        }
+    }, new Coord(0, y));
 	display.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
 	display.pack();
 

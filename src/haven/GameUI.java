@@ -492,11 +492,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    updhand();
 	} else if(place == "chr") {
 	    chrwdg = add((CharWnd)child, new Coord(300, 50));
-        // custom meter for hunger level
-        addcmeter(new HungerMeter(chrwdg.glut));
-        // custom meter for FEPs
-        addcmeter(new FepMeter(chrwdg.feps));
 	    chrwdg.hide();
+        // custom meter for hunger level
+        if (Config.getHungerMeterEnabled())
+            addcmeter(new HungerMeter(chrwdg.glut));
+        // custom meter for FEPs
+        if (Config.getFepMeterEnabled())
+            addcmeter(new FepMeter(chrwdg.feps));
 	} else if(place == "craft") {
 	    final Widget mkwdg = child;
 	    makewnd = new Window(Coord.z, "Crafting", true) {
@@ -1117,6 +1119,21 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         ulpanel.add(meter);
         cmeters.add(meter);
         updcmeters();
+    }
+
+    public <T extends Widget> void delcmeter(Class<T> cl) {
+        Widget widget = null;
+        for (Widget meter : cmeters) {
+            if (cl.isAssignableFrom(meter.getClass())) {
+                widget = meter;
+                break;
+            }
+        }
+        if (widget != null) {
+            cmeters.remove(widget);
+            widget.destroy();
+            updcmeters();
+        }
     }
 
     private void updcmeters() {

@@ -131,6 +131,22 @@ public class Config {
 		setprefb("haven.minimap.radius", value);
 	}
 
+	public static boolean getHungerMeterEnabled() {
+		return getprefb("haven.meters.hunger", true);
+	}
+
+	public static void setHungerMeterEnabled(boolean value) {
+		setprefb("haven.meters.hunger", value);
+	}
+
+	public static boolean getFepMeterEnabled() {
+		return getprefb("haven.meters.fep", true);
+	}
+
+	public static void setFepMeterEnabled(boolean value) {
+		setprefb("haven.meters.fep", value);
+	}
+
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)
