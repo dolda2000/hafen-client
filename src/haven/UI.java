@@ -48,6 +48,7 @@ public class UI {
     private Collection<AfterDraw> afterdraws = new LinkedList<AfterDraw>();
     public final ActAudio audio = new ActAudio();
     public GameUI gui = null;
+    private int lastkeycode;
     
     {
 	lastevent = lasttick = System.currentTimeMillis();
@@ -254,6 +255,8 @@ public class UI {
 
     public void type(KeyEvent ev) {
 	setmods(ev);
+    // HACK: client sends pressed hotkeys during type event which doesn't have key code
+    ev.setKeyCode(lastkeycode);
 	for(Grab g : c(keygrab)) {
 	    if(g.wdg.type(ev.getKeyChar(), ev))
 		return;
@@ -264,6 +267,7 @@ public class UI {
 	
     public void keydown(KeyEvent ev) {
 	setmods(ev);
+    lastkeycode = ev.getKeyCode();
 	for(Grab g : c(keygrab)) {
 	    if(g.wdg.keydown(ev))
 		return;

@@ -792,13 +792,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if((key == 27) && (map != null) && !map.hasfocus) {
 	    setfocus(map);
 	    return(true);
-	} else if (ev.isAltDown() && ev.getKeyCode() == KeyEvent.VK_S) {
-        studywnd.show(!studywnd.visible);
-        return true;
-    } else if (ev.isAltDown() && ev.getKeyCode() == KeyEvent.VK_M) {
-        if (mmapwnd != null) {
-            mmapwnd.togglefold();
+	} else if (key != 0) {
+        if (ev.isAltDown() && ev.getKeyCode() == KeyEvent.VK_S) {
+            studywnd.show(!studywnd.visible);
             return true;
+        } else if (ev.isAltDown() && ev.getKeyCode() == KeyEvent.VK_M) {
+            if (mmapwnd != null) {
+                mmapwnd.togglefold();
+                return true;
+            }
         }
     }
 	return(super.globtype(key, ev));
