@@ -99,8 +99,8 @@ public abstract class Listbox<T> extends ListWidget<T> {
     // ensures that selected element is visible
     public void showsel() {
         if (sb.val + h - 1 < selindex)
-            sb.val = selindex - h + 1;
+            sb.val = Math.max(0, selindex - h + 1);
         if (sb.val > selindex)
-            sb.val = selindex;
+            sb.val = Math.max(0, selindex);
     }
 }
