@@ -54,8 +54,6 @@ public class RootWidget extends ConsoleHost {
 		}
 	    } else if(key == ':') {
 			entercmd();
-		} else if(ev.isControlDown() && ev.getKeyCode() == KeyEvent.VK_N) {
-			Config.setNightVisionEnabled(!Config.getNightVisionEnabled());
 	    } else if(key != 0) {
 		wdgmsg("gk", (int)key);
 	    }

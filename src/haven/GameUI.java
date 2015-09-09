@@ -798,19 +798,24 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    setfocus(map);
 	    return(true);
 	} else if (key != 0) {
-        if (ev.isAltDown() && ev.getKeyCode() == KeyEvent.VK_S) {
+        boolean alt = ev.isAltDown();
+        boolean ctrl = ev.isControlDown();
+        int keycode = ev.getKeyCode();
+        if (alt && keycode == KeyEvent.VK_S) {
             studywnd.show(!studywnd.visible);
             return true;
-        } else if (ev.isAltDown() && ev.getKeyCode() == KeyEvent.VK_M) {
+        } else if (alt && keycode == KeyEvent.VK_M) {
             if (mmapwnd != null) {
                 mmapwnd.togglefold();
                 return true;
             }
-        } else if (ev.isAltDown() && ev.getKeyCode() == KeyEvent.VK_C) {
+        } else if (alt && keycode == KeyEvent.VK_C) {
             craftwnd.show(!craftwnd.visible);
             if (craftwnd.visible)
                 craftwnd.raise();
             return true;
+        } else if (ctrl && keycode == KeyEvent.VK_N) {
+            Config.setNightVisionEnabled(!Config.getNightVisionEnabled());
         }
     }
 	return(super.globtype(key, ev));
