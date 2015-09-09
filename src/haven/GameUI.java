@@ -816,6 +816,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
             return true;
         } else if (ctrl && keycode == KeyEvent.VK_N) {
             Config.setNightVisionEnabled(!Config.getNightVisionEnabled());
+        } else if (ctrl && keycode == KeyEvent.VK_G) {
+            if (map != null)
+                map.togglegrid();
         }
     }
 	return(super.globtype(key, ev));

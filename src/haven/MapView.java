@@ -29,6 +29,8 @@ package haven;
 import static haven.MCache.tilesz;
 
 import haven.GLProgram.VarID;
+import me.kt.TileOutline;
+
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.util.*;
@@ -55,7 +57,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Timer holdtimer;
     private UI.Grab holdgrab;
     private TimerTask clicktask;
-    
+
+    private boolean showgrid;
+    private TileOutline gridol;
+    private Coord lasttc = Coord.z;
+
     public interface Delayed {
 	public void run(GOut g);
     }
@@ -420,6 +426,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.cc = cc;
 	this.plgob = plgob;
     this.holdtimer = new Timer();
+    this.gridol = new TileOutline(glob.map, MCache.cutsz.mul(2 * (view + 1)));
 	setcanfocus(true);
     }
 
@@ -620,6 +627,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	if(rl.cfg.pref.outline.val)
 	    rl.add(outlines, null);
 	rl.add(map, null);
+    if (showgrid)
+        rl.add(gridol, null);
 	rl.add(mapol, null);
 	rl.add(gobs, null);
 	if(placing != null)
@@ -958,6 +967,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    partydraw(g);
 	    glob.map.reqarea(cc.div(tilesz).sub(MCache.cutsz.mul(view + 1)),
 			     cc.div(tilesz).add(MCache.cutsz.mul(view + 1)));
+        // change grid overlay position when player moves by 20 tiles
+        if (showgrid) {
+            Coord tc = cc.div(MCache.tilesz);
+            if (tc.manhattan2(lasttc) > 20) {
+                lasttc = tc;
+                gridol.update(tc.sub(MCache.cutsz.mul(view + 1)));
+            }
+        }
 	} catch(Loading e) {
 	    lastload = e;
 	    String text = e.getMessage();
@@ -1530,6 +1547,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
         holdgrab = null;
         clicktask.cancel();
         clicktask = null;
+    }
+
+    public void togglegrid() {
+        showgrid = !showgrid;
+        if (showgrid) {
+            Coord tc = cc.div(tilesz);
+            lasttc = tc.div(MCache.cmaps);
+            gridol.update(tc.sub(MCache.cutsz.mul(view + 1)));
+        }
     }
 
     private class LeftClickTimerTask extends TimerTask  {
