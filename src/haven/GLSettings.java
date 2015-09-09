@@ -143,6 +143,14 @@ public class GLSettings implements java.io.Serializable {
 	}
     };
 
+    public final BoolSetting instancing = new BoolSetting("instance") {
+	    public Boolean defval() {return(cfg.exts.contains("GL_ARB_instanced_arrays"));}
+	    public void validate(Boolean val) {
+		if(!cfg.exts.contains("GL_ARB_instanced_arrays"))
+		    throw(new SettingException("Video card does not support instancing."));
+	    }
+	};
+
     public final BoolSetting fsaa = new BoolSetting("fsaa") {
 	    public Boolean defval() {return(false);}
 	    public void validate(Boolean val) {

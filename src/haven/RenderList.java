@@ -272,11 +272,12 @@ public class RenderList {
 	for(GLState.Global gs : gstates)
 	    gs.prerender(this, g);
 	drawn = instanced = instancified = 0;
+	boolean doinst = g.gc.pref.instancing.val;
 	int skipinst = 0, i = 0;
 	rloop: while((i < cur) && list[i].d) {
 	    Slot s = list[i];
 	    tryinst: {
-		if((i < skipinst) || !(s.r instanceof Rendered.Instanced))
+		if(!doinst || (i < skipinst) || !(s.r instanceof Rendered.Instanced))
 		    break tryinst;
 		int o;
 		instbuf.clear();
