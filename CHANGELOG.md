@@ -1,5 +1,9 @@
 ## Changelog
 
+### r19 (2015-09-10)
+
+- Implemented grid overlay which can be toggled with `Ctrl`+`G`
+
 ### r18 (2015-09-09)
 
 - Fixed crash on character creation (due to a crafting list being empty)
@@ -89,7 +93,7 @@
 ### r1 (2015-09-01)
 
 - Minimap caching
-- Floating resizable minimap window</li>
+- Floating resizable minimap window
 - Nightvision (can be toggled with the shortcut `CTRL`+`N`)
 - Option to make kin names always visible
 - Added option to disable flavor objects (made by @romovs)
