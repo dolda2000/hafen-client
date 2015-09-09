@@ -241,7 +241,7 @@ public class OptWnd extends Window {
 	audio.add(new HSlider(200, 0, 1000, 0) {
 		protected void attach(UI ui) {
 		    super.attach(ui);
-		    val = (int)(ui.audio.pos.volume * 1000);
+		    val = (int)(ui.audio.amb.volume * 1000);
 		}
 		public void changed() {
 		    ui.audio.amb.setvolume(val / 1000.0);
