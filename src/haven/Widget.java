@@ -770,6 +770,18 @@ public class Widget {
 	}
 	return(false);
     }
+
+    public boolean mouseclick(Coord c, int button, int count) {
+        for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
+            if(!wdg.visible)
+                continue;
+            Coord cc = xlate(wdg.c, true);
+            if(c.isect(cc, wdg.sz))
+                if(wdg.mouseclick(c.add(cc.inv()), button, count))
+                    return(true);
+        }
+        return(false);
+    }
     
     public Area area() {
 	return(Area.sized(c, sz));

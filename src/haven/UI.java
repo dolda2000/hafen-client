@@ -339,6 +339,16 @@ public class UI {
 	}
 	root.mousewheel(c, amount);
     }
+
+    public void mouseclick(MouseEvent ev, Coord c, int button, int count) {
+        setmods(ev);
+        lcc = mc = c;
+        for(Grab g : c(mousegrab)) {
+            if(g.wdg.mouseclick(wdgxlate(c, g.wdg), button, count))
+                return;
+        }
+        root.mouseclick(c, button, count);
+    }
     
     public int modflags() {
 	return((modshift?1:0) |

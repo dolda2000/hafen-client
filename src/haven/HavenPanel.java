@@ -225,6 +225,13 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			events.notifyAll();
 		    }
 		}
+
+		public void mouseClicked(MouseEvent e) {
+			synchronized(events) {
+			events.add(e);
+			events.notifyAll();
+			}
+		}
 	    });
 	addMouseMotionListener(new MouseMotionListener() {
 		public void mouseDragged(MouseEvent e) {
@@ -417,7 +424,9 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		    } else if(me.getID() == MouseEvent.MOUSE_RELEASED) {
 			ui.mouseup(me, new Coord(me.getX(), me.getY()), me.getButton());
 		    } else if(me instanceof MouseWheelEvent) {
-			ui.mousewheel(me, new Coord(me.getX(), me.getY()), ((MouseWheelEvent)me).getWheelRotation());
+			ui.mousewheel(me, new Coord(me.getX(), me.getY()), ((MouseWheelEvent) me).getWheelRotation());
+			} else if(me.getID() == MouseEvent.MOUSE_CLICKED) {
+			ui.mouseclick(me, new Coord(me.getX(), me.getY()), me.getButton(), me.getClickCount());
 		    }
 		} else if(e instanceof KeyEvent) {
 		    KeyEvent ke = (KeyEvent)e;
