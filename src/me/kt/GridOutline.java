@@ -12,6 +12,7 @@ public class GridOutline implements Rendered {
     private final Coord size;
     private final States.ColState color;
     private Location location;
+    private Coord ul;
     private int curIndex;
 
     public GridOutline(MCache map, Coord size) {
@@ -31,7 +32,7 @@ public class GridOutline implements Rendered {
     public void draw(GOut g) {
         g.apply();
         BGL gl = g.gl;
-        FloatBuffer vbuf = getVertexBuffer();
+        FloatBuffer vbuf = getCurrentBuffer();
         vbuf.rewind();
         gl.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         gl.glVertexPointer(3, GL2.GL_FLOAT, 0, vbuf);
@@ -50,25 +51,31 @@ public class GridOutline implements Rendered {
 
     public void update(Coord ul) {
         try {
-            location = Location.xlate(new Coord3f(ul.x * MCache.tilesz.x, -ul.y * MCache.tilesz.y, 0.0F));
+            this.ul = ul;
+            this.location = Location.xlate(new Coord3f(ul.x * MCache.tilesz.x, -ul.y * MCache.tilesz.y, 0.0F));
             swapBuffers();
-            FloatBuffer vbuf = getVertexBuffer();
-            for (int y = 0; y <= size.y - 1; y++) {
-                for (int x = 0; x <= size.x - 1; x++) {
-                    Coord a = new Coord(ul.x + x, ul.y + y);
-                    int az = map.getz(a);
-                    int bz = map.getz(a.add(1, 0));
-                    int cz = map.getz(a.add(1, 1));
-                    vbuf.put(x * MCache.tilesz.x).put(-y * MCache.tilesz.y).put(az);
-                    vbuf.put((x + 1) * MCache.tilesz.x).put(-y * MCache.tilesz.y).put(bz);
-                    vbuf.put((x + 1) * MCache.tilesz.x).put(-y * MCache.tilesz.y).put(bz);
-                    vbuf.put((x + 1) * MCache.tilesz.x).put(-(y + 1) * MCache.tilesz.y).put(cz);
-                }
-            }
+            Coord c = new Coord();
+            for (c.y = ul.y; c.y <= ul.y + size.y; c.y++)
+                for (c.x = ul.x; c.x <= ul.x + size.x; c.x++)
+                   addLineStrip(mapToScreen(c), mapToScreen(c.add(1, 0)), mapToScreen(c.add(1, 1)));
         } catch (Loading e) {}
     }
 
-    private FloatBuffer getVertexBuffer() {
+    private Coord3f mapToScreen(Coord c) {
+        return new Coord3f((c.x - ul.x) * MCache.tilesz.x, -(c.y - ul.y) * MCache.tilesz.y, map.getz(c));
+    }
+
+    private void addLineStrip(Coord3f... vertices) {
+        FloatBuffer vbuf = getCurrentBuffer();
+        for (int i = 0; i < vertices.length - 1; i++) {
+            Coord3f a = vertices[i];
+            Coord3f b = vertices[i + 1];
+            vbuf.put(a.x).put(a.y).put(a.z);
+            vbuf.put(b.x).put(b.y).put(b.z);
+        }
+    }
+
+    private FloatBuffer getCurrentBuffer() {
         return vertexBuffers[curIndex];
     }
 
