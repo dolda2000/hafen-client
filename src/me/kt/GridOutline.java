@@ -5,7 +5,7 @@ import haven.*;
 import javax.media.opengl.GL2;
 import java.nio.FloatBuffer;
 
-public class TileOutline implements Rendered {
+public class GridOutline implements Rendered {
     private final MCache map;
     private final FloatBuffer[] vertexBuffers;
     private final int area;
@@ -14,7 +14,7 @@ public class TileOutline implements Rendered {
     private Location location;
     private int curIndex;
 
-    public TileOutline(MCache map, Coord size) {
+    public GridOutline(MCache map, Coord size) {
         this.map = map;
         this.size = size;
         this.area = (size.x + 1) * (size.y + 1);
