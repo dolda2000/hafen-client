@@ -20,7 +20,7 @@ public class CraftWnd extends Window {
         entry = add(new TextEntry(WIDTH, "") {
             @Override
             public void activate(String text) {
-                getparent(GameUI.class).menu.wdgmsg("act", ((Object[]) list.sel.cmd));
+                getparent(GameUI.class).menu.wdgmsg("act", ((Object[])list.sel.cmd));
             }
 
             @Override
@@ -45,7 +45,14 @@ public class CraftWnd extends Window {
             }
         });
         setfocus(entry);
-        list = add(new CraftList(WIDTH, 10), 0, entry.sz.y + 5);
+        list = add(new CraftList(WIDTH, 10) {
+            @Override
+            protected void itemactivate(CraftItem item) {
+                getparent(GameUI.class).menu.wdgmsg("act", ((Object[])list.sel.cmd));
+            }
+        }, 0, entry.sz.y + 5);
+
+
         pack();
     }
 
