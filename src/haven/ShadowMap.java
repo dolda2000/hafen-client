@@ -101,28 +101,30 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 	}
 
 	slidx = -1;
-	for(int i = 0; i < ll.ll.size(); i++) {
-	    if(ll.ll.get(i) == light) {
-		slidx = i;
-		break;
+	if((ll != null) && (cam != null)) {
+	    for(int i = 0; i < ll.ll.size(); i++) {
+		if(ll.ll.get(i) == light) {
+		    slidx = i;
+		    break;
+		}
 	    }
+	    Matrix4f cm = Transform.rxinvert(cam.fin(Matrix4f.id));
+	    /*
+	      txf = cm;
+	      barda(txf);
+	      txf = lcam.fin(Matrix4f.id).mul(txf);
+	      barda(txf);
+	      txf = lproj.fin(Matrix4f.id).mul(txf);
+	      barda(txf);
+	      txf = texbias.mul(txf);
+	      barda(txf);
+	    */
+	    txf = texbias
+		.mul(lproj.fin(Matrix4f.id))
+		.mul(lcam.fin(Matrix4f.id))
+		.mul(cm);
+	    tgt.render(scene, g);
 	}
-	Matrix4f cm = Transform.rxinvert(cam.fin(Matrix4f.id));
-	/*
-	  txf = cm;
-	  barda(txf);
-	  txf = lcam.fin(Matrix4f.id).mul(txf);
-	  barda(txf);
-	  txf = lproj.fin(Matrix4f.id).mul(txf);
-	  barda(txf);
-	  txf = texbias.mul(txf);
-	  barda(txf);
-	*/
-	txf = texbias
-	    .mul(lproj.fin(Matrix4f.id))
-	    .mul(lcam.fin(Matrix4f.id))
-	    .mul(cm);
-	tgt.render(scene, g);
     }
 
     /*
