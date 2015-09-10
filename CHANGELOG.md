@@ -2,7 +2,7 @@
 
 ### r20 (2015-09-10)
 
-- Custom minimap icons can be toggled on/off with `Ctrl`+`R`
+- Custom minimap icons can be toggled on/off with `Alt`+`R`
 - Double click now activates the selected recipe in the quick search window
 - Added stockpile transfer from the Ender's client. Use `Shift`+`Click` or `Ctrl`+`Click` to put/remove single item, hold `Alt` to move all.
 
