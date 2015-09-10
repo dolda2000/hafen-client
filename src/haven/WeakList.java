@@ -37,7 +37,8 @@ public class WeakList<T> extends AbstractCollection<T> {
 	Reference<? extends T> ref;
 	while((ref = cleanq.poll()) != null) {
 	    Entry e = (Entry)ref;
-	    e.unlink();
+	    if(e.l != null)
+		e.unlink();
 	}
     }
 
