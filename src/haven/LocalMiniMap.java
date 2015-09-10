@@ -40,12 +40,14 @@ public class LocalMiniMap extends Widget {
     private Coord doff;
     private UI.Grab grab;
     private boolean showradius;
+    private boolean showcustomicons;
 
     public LocalMiniMap(Coord sz, MapView mv) {
 	super(sz);
 	this.mv = mv;
 	this.cache = new MinimapCache(new MinimapRenderer(mv.ui.sess.glob.map));
     this.showradius = Config.getMinimapRadiusEnabled();
+    this.showcustomicons = Config.getCustomIconsEnabled();
     }
     
     public Coord p2c(Coord pc) {
@@ -63,18 +65,22 @@ public class LocalMiniMap extends Widget {
         try {
             GobIcon icon = gob.getattr(GobIcon.class);
             if (icon == null) {
+                if (!showcustomicons)
+                    continue;
                 try {
                     if (MinimapIcons.isVisible(gob)) {
                         String resname = MinimapIcons.getIconResourceName(gob);
                         icon = new GobIcon(gob, Resource.local().load(resname), true);
                         gob.setattr(icon);
                     }
-                } catch (Exception e){
+                } catch (Exception e) {
                     continue;
                 };
             } else if (icon.custom) {
-                if (!MinimapIcons.isVisible(gob))
+                if (!MinimapIcons.isVisible(gob) || !showcustomicons) {
                     gob.delattr(GobIcon.class);
+                    icon = null;
+                }
             }
             if (icon != null) {
                 Coord gc = p2c(gob.rc).sub(off);
@@ -221,5 +227,10 @@ public class LocalMiniMap extends Widget {
     public void toggleRadius() {
         showradius = !showradius;
         Config.setMinimapRadiusEnabled(showradius);
+    }
+
+    public void toggleCustomIcons() {
+        showcustomicons = !showcustomicons;
+        Config.setCustomIconsEnabled(showcustomicons);
     }
 }

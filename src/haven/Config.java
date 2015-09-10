@@ -147,6 +147,14 @@ public class Config {
 		setprefb("haven.meters.fep", value);
 	}
 
+	public static boolean getCustomIconsEnabled() {
+		return getprefb("haven.minimap.customicons", true);
+	}
+
+	public static void setCustomIconsEnabled(boolean value) {
+		setprefb("haven.minimap.customicons", value);
+	}
+
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)
