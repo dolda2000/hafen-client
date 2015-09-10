@@ -232,5 +232,6 @@ public class LocalMiniMap extends Widget {
     public void toggleCustomIcons() {
         showcustomicons = !showcustomicons;
         Config.setCustomIconsEnabled(showcustomicons);
+        getparent(GameUI.class).notification("Darki's icons are %s", showcustomicons ? "enabled" : "disabled");
     }
 }
