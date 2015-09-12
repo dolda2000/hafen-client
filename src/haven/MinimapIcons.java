@@ -124,10 +124,15 @@ public class MinimapIcons {
         Resource res = gob.getres();
         if (res == null)
             return false;
-        String resname = gob.getres().name;
-        String realname = resname.split("\\.")[0].split("/")[resname.split("\\.")[0].split("/").length - 1];
-        String iconname = "res/".concat(getIconResourceName(gob)).concat(".res");
-        return icons.contains(iconname) && ToggledIcons.contains(realname);
+        try {
+            String resname = gob.getres().name;
+            // ugh...
+            String realname = resname.split("\\.")[0].split("/")[resname.split("\\.")[0].split("/").length - 1];
+            String iconname = "res/".concat(getIconResourceName(gob)).concat(".res");
+            return icons.contains(iconname) && ToggledIcons.contains(realname);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public static String getIconResourceName(Gob gob) {

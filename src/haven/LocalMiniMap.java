@@ -40,14 +40,14 @@ public class LocalMiniMap extends Widget {
     private Coord doff;
     private UI.Grab grab;
     private boolean showradius;
-    private boolean showcustomicons;
+    private CustomIconConfig iconconf;
 
     public LocalMiniMap(Coord sz, MapView mv) {
 	super(sz);
 	this.mv = mv;
 	this.cache = new MinimapCache(new MinimapRenderer(mv.ui.sess.glob.map));
     this.showradius = Config.getMinimapRadiusEnabled();
-    this.showcustomicons = Config.getCustomIconsEnabled();
+    this.iconconf = new CustomIconConfig();
     }
     
     public Coord p2c(Coord pc) {
@@ -63,26 +63,12 @@ public class LocalMiniMap extends Widget {
 	synchronized(oc) {
 	    for(Gob gob : oc) {
         try {
-            GobIcon icon = gob.getattr(GobIcon.class);
+            BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
             if (icon == null) {
-                if (!showcustomicons)
-                    continue;
-                try {
-                    if (MinimapIcons.isVisible(gob)) {
-                        String resname = MinimapIcons.getIconResourceName(gob);
-                        icon = new GobIcon(gob, Resource.local().load(resname), true);
-                        gob.setattr(icon);
-                    }
-                } catch (Exception e) {
-                    continue;
-                };
-            } else if (icon.custom) {
-                if (!MinimapIcons.isVisible(gob) || !showcustomicons) {
-                    gob.delattr(GobIcon.class);
-                    icon = null;
-                }
+                icon = new CustomGobIcon(gob, iconconf);
+                gob.setattr(icon);
             }
-            if (icon != null) {
+            if (icon.visible()) {
                 Coord gc = p2c(gob.rc).sub(off);
                 Tex tex = icon.tex();
                 g.image(tex, gc.sub(tex.sz().div(2)));
@@ -97,8 +83,8 @@ public class LocalMiniMap extends Widget {
 	synchronized(oc) {
 	    for(Gob gob : oc) {
 		try {
-		    GobIcon icon = gob.getattr(GobIcon.class);
-		    if(icon != null) {
+            BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
+		    if(icon != null && icon.visible()) {
 			Coord gc = p2c(gob.rc);
 			Coord sz = icon.tex().sz();
 			if(c.isect(gc.sub(sz.div(2)), sz))
@@ -230,8 +216,7 @@ public class LocalMiniMap extends Widget {
     }
 
     public void toggleCustomIcons() {
-        showcustomicons = !showcustomicons;
-        Config.setCustomIconsEnabled(showcustomicons);
-        getparent(GameUI.class).notification("Darki's icons are %s", showcustomicons ? "enabled" : "disabled");
+        iconconf.toggle();
+        getparent(GameUI.class).notification("Darki's icons are %s", iconconf.enabled() ? "enabled" : "disabled");
     }
 }
