@@ -26,10 +26,13 @@
 
 package haven;
 
+import java.util.Map;
+import java.util.TreeMap;
+
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 
-public class LocalMiniMap extends Widget {
+public class LocalMiniMap extends Widget implements Console.Directory {
 	public static final Resource plarrow = Resource.local().loadwait("gfx/hud/mmap/plarrow");
 
     public final MapView mv;
@@ -206,6 +209,11 @@ public class LocalMiniMap extends Widget {
         }
     }
 
+    @Override
+    public Map<String, Console.Command> findcmds() {
+        return(cmdmap);
+    }
+
     public void setOffset(Coord value) {
         off = value;
     }
@@ -217,6 +225,27 @@ public class LocalMiniMap extends Widget {
 
     public void toggleCustomIcons() {
         iconconf.toggle();
-        getparent(GameUI.class).notification("Darki's icons are %s", iconconf.enabled() ? "enabled" : "disabled");
+        getparent(GameUI.class).notification("Custom icons are %s", iconconf.enabled() ? "enabled" : "disabled");
+    }
+
+    private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>(); {
+        cmdmap.put("icons", new Console.Command() {
+            public void run(Console console, String[] args) throws Exception {
+                if (args.length == 2) {
+                    String arg = args[1];
+                    if (arg.equals("reload")) {
+                        iconconf.reload();
+                        synchronized(ui.sess.glob.oc) {
+                            for(Gob gob : ui.sess.glob.oc) {
+                                gob.delattr(CustomGobIcon.class);
+                            }
+                        }
+                        getparent(GameUI.class).notification("Custom icons configuration is reloaded");
+                        return;
+                    }
+                }
+                throw new Exception("No such setting");
+            }
+        });
     }
 }

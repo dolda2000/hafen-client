@@ -23,10 +23,10 @@ public class CustomIconConfig {
     private static final String MATCH_STARTS_WITH = "startsWith";
     private static final String MATCH_CONTAINS = "contains";
 
-    private static final Map<String, Optional<Tex>> cache = new WeakHashMap<String, Optional<Tex>>();
     private static final Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 10);
     private static final FontMetrics metrics;
 
+    private final Map<String, Optional<Tex>> cache = new WeakHashMap<String, Optional<Tex>>();
     private final File file;
     private final List<Group> groups = new ArrayList<Group>();
     private boolean enabled;
@@ -76,6 +76,7 @@ public class CustomIconConfig {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        cache.clear();
     }
 
     private Tex matchIcon(String resName) {
