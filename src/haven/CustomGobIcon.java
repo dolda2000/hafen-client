@@ -1,18 +1,18 @@
 package haven;
 
 import haven.minimap.CustomIcon;
-import haven.minimap.CustomIconConfig;
+import haven.minimap.CustomIconCache;
 import haven.util.Optional;
 
 import java.awt.*;
 
 public class CustomGobIcon extends BaseGobIcon {
-    private final CustomIconConfig config;
+    private final CustomIconCache icons;
     private Optional<CustomIcon> icon;
 
-    public CustomGobIcon(Gob gob, CustomIconConfig config) {
+    public CustomGobIcon(Gob gob, CustomIconCache icons) {
         super(gob);
-        this.config = config;
+        this.icons = icons;
     }
 
     @Override
@@ -31,8 +31,8 @@ public class CustomGobIcon extends BaseGobIcon {
             Resource res = gob.getres();
             if (res == null)
                 return false;
-            icon = Optional.of(config.getIcon(res.name));
+            icon = Optional.of(icons.get(res.name));
         }
-        return icon.hasValue() && config.enabled();
+        return icon.hasValue() && icons.enabled();
     }
 }

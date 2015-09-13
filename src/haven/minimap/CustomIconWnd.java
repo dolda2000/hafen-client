@@ -5,7 +5,7 @@ import haven.*;
 public class CustomIconWnd extends Window {
     private final CheckBoxList groups;
     private final CheckBoxList matches;
-    private CustomIconConfig icons;
+    private CustomIconConfig config;
 
     public CustomIconWnd() {
         super(Coord.z, "Toggle...");
@@ -16,13 +16,13 @@ public class CustomIconWnd extends Window {
 
         add(new Button(310, "Apply") {
             public void click() {
-                icons.reset();
+                ui.sess.glob.icons.reset();
             }
         }, 0, groups.sz.y + 15);
 
         add(new Button(310, "Save & close") {
             public void click() {
-                icons.reset();
+                ui.sess.glob.icons.reset();
                 CustomIconWnd.this.hide();
             }
         }, 0, groups.sz.y + 45);
@@ -33,13 +33,13 @@ public class CustomIconWnd extends Window {
                 matches.clear();
                 if (index == -1)
                     return;
-                CustomIconConfig.Group group = icons.groups.get(index);
-                for (CustomIconConfig.Match match : group.matches)
+                CustomIconGroup group = config.groups.get(index);
+                for (CustomIconMatch match : group.matches)
                     matches.addItem(match.title, match.show);
             }
 
             public void itemChecked(int index, boolean checked) {
-                CustomIconConfig.Group group = icons.groups.get(index);
+                CustomIconGroup group = config.groups.get(index);
                 group.show = checked;
             }
         });
@@ -48,8 +48,8 @@ public class CustomIconWnd extends Window {
             public void itemChecked(int index, boolean checked) {
                 if (index == -1)
                     return;
-                CustomIconConfig.Group group = icons.groups.get(groups.selindex);
-                CustomIconConfig.Match match = group.matches.get(index);
+                CustomIconGroup group = config.groups.get(groups.selindex);
+                CustomIconMatch match = group.matches.get(index);
                 match.show = checked;
             }
         });
@@ -58,10 +58,10 @@ public class CustomIconWnd extends Window {
     @Override
     protected void attach(UI ui) {
         super.attach(ui);
-        icons = ui.sess.glob.icons;
-        for (CustomIconConfig.Group group : icons.groups)
+        config = ui.sess.glob.icons.config;
+        for (CustomIconGroup group : config.groups)
             groups.addItem(group.name, group.show);
-        if (icons.groups.size() > 0)
+        if (config.groups.size() > 0)
             groups.change(0);
     }
 
