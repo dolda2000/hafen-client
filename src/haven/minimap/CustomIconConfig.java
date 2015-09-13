@@ -71,23 +71,11 @@ public class CustomIconConfig {
         cache.clear();
     }
 
-    private CustomIcon match(String resName) {
+    private CustomIcon match(String resname) {
         for (Group g : groups)
-            for (Match m : g.matches) {
-                if (m.type.equals(MATCH_EXACT)) {
-                    if (resName.equals(m.value))
-                        return m.show ? factory.text(m.title.toUpperCase(), g.color) : null;
-                } else if (m.type.equals(MATCH_STARTS_WITH)) {
-                    if (resName.startsWith(m.value))
-                        return m.show ? factory.text(m.title.toUpperCase(), g.color) : null;
-                } else if (m.type.equals(MATCH_CONTAINS)) {
-                    if (resName.contains(m.value))
-                        return m.show ? factory.text(m.title.toUpperCase(), g.color) : null;
-                } else if (m.type.equals(MATCH_REGEX)) {
-                    if (resName.matches(m.value))
-                        return m.show ? factory.text(m.title.toUpperCase(), g.color) : null;
-                }
-            }
+            for (Match m : g.matches)
+                if (m.matches(resname))
+                    return m.show ? factory.text(m.title.toUpperCase(), g.color) : null;
         return null;
     }
 
@@ -115,7 +103,7 @@ public class CustomIconConfig {
             color = Color.decode(el.getAttribute("color"));
             NodeList matchNodes = el.getElementsByTagName("match");
             for (int i = 0; i < matchNodes.getLength(); i++)
-                matches.add(new Match((Element)matchNodes.item(i)));
+                matches.add(Match.parse((Element)matchNodes.item(i)));
         }
     }
 
@@ -125,25 +113,35 @@ public class CustomIconConfig {
         public String title;
         public boolean show;
 
-        public Match(Element el) {
-            if (el.hasAttribute(MATCH_EXACT)) {
-                parseType(MATCH_EXACT, el);
-            } else if (el.hasAttribute(MATCH_REGEX)) {
-                parseType(MATCH_REGEX, el);
-            } else if (el.hasAttribute(MATCH_CONTAINS)) {
-                parseType(MATCH_CONTAINS, el);
-            } else if (el.hasAttribute(MATCH_STARTS_WITH)) {
-                parseType(MATCH_STARTS_WITH, el);
-            } else {
-                throw new UnsupportedOperationException("Unknown match type");
-            }
+        private Match(String type, Element el) {
+            this.type = type;
+            this.value = el.getAttribute(type);
             this.title = el.getAttribute("title");
             this.show = Boolean.parseBoolean(el.hasAttribute("show") ? el.getAttribute("show") : "true");
         }
 
-        private void parseType(String type, Element el) {
-            this.type = type;
-            this.value = el.getAttribute(type);
+        public static Match parse(Element el) {
+            if (el.hasAttribute(MATCH_EXACT))
+                return new Match(MATCH_EXACT, el);
+            if (el.hasAttribute(MATCH_REGEX))
+                return new Match(MATCH_REGEX, el);
+            if (el.hasAttribute(MATCH_CONTAINS))
+                return new Match(MATCH_CONTAINS, el);
+            if (el.hasAttribute(MATCH_STARTS_WITH))
+                return new Match(MATCH_STARTS_WITH, el);
+            throw new UnsupportedOperationException("Unknown match type");
+        }
+
+        public boolean matches(String str) {
+            if (type.equals(MATCH_EXACT))
+                return str.equals(value);
+            if (type.equals(MATCH_STARTS_WITH))
+                return str.startsWith(value);
+            if (type.equals(MATCH_CONTAINS))
+                return str.contains(value);
+            if (type.equals(MATCH_REGEX))
+                return str.matches(value);
+            return false;
         }
     }
 }
