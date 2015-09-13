@@ -85,7 +85,7 @@ public class CustomIconConfig {
         for (Group g : groups)
             for (Match m : g.matches)
                 if (m.matches(resname)) {
-                    if (m.show) {
+                    if (g.show && m.show) {
                         return (m.image != null)
                             ? factory.res(Resource.remote().load(m.image), g.color)
                             : factory.text(m.title.toUpperCase(), g.color);
