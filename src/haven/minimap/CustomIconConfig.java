@@ -1,5 +1,6 @@
-package haven;
+package haven.minimap;
 
+import haven.*;
 import haven.util.Optional;
 import org.apache.commons.io.IOUtils;
 import org.w3c.dom.Document;

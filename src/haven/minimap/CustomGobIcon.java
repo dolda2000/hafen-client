@@ -1,5 +1,6 @@
-package haven;
+package haven.minimap;
 
+import haven.*;
 import haven.util.Optional;
 
 public class CustomGobIcon extends BaseGobIcon {

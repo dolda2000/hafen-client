@@ -26,6 +26,8 @@
 
 package haven;
 
+import haven.minimap.CustomIconConfig;
+
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -43,7 +45,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
     private Coord doff;
     private UI.Grab grab;
     private boolean showradius;
-    private CustomIconConfig iconconf;
+    private haven.minimap.CustomIconConfig iconconf;
 
     public LocalMiniMap(Coord sz, MapView mv) {
 	super(sz);
@@ -68,7 +70,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
         try {
             BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
             if (icon == null) {
-                icon = new CustomGobIcon(gob, iconconf);
+                icon = new haven.minimap.CustomGobIcon(gob, iconconf);
                 gob.setattr(icon);
             }
             if (icon.visible()) {
@@ -243,7 +245,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
                         iconconf.reload();
                         synchronized(ui.sess.glob.oc) {
                             for(Gob gob : ui.sess.glob.oc) {
-                                gob.delattr(CustomGobIcon.class);
+                                gob.delattr(haven.minimap.CustomGobIcon.class);
                             }
                         }
                         getparent(GameUI.class).notification("Custom icons configuration is reloaded");

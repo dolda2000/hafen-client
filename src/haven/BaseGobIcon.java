@@ -5,6 +5,6 @@ public abstract class BaseGobIcon extends GAttrib {
         super(gob);
     }
 
-    abstract boolean visible();
-    abstract Tex tex();
+    public abstract boolean visible();
+    public abstract Tex tex();
 }
