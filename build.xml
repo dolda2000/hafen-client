@@ -33,6 +33,7 @@
 	<pathelement path="lib/jorbis.jar" />
 	<pathelement path="lib/jogg.jar" />
 	<pathelement path="lib/jglob.jar" />
+	<pathelement path="lib/commons-io-2.4.jar" />
       </classpath>
       <compilerarg value="-Xlint:unchecked" />
       <compilerarg value="-Xlint:-options" />
@@ -69,6 +70,7 @@
     <jar destfile="build/hafen.jar" update="true">
       <fileset dir="build/classes" />
       <fileset dir="build/classes-lib" />
+	  <zipgroupfileset dir="lib" includes="commons-io-2.4.jar"/>
       <manifest>
 	<attribute name="Main-Class" value="haven.MainFrame" />
 	<attribute name="Class-Path" value="jogl-all.jar gluegen-rt.jar custom-res.jar builtin-res.jar hafen-res.jar" />
