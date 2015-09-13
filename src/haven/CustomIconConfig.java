@@ -101,7 +101,7 @@ public class CustomIconConfig {
 
     private Tex render(String text, Color backColor) {
         text = text.toUpperCase();
-        Coord sz = new Coord(metrics.stringWidth(text), metrics.getAscent() + metrics.getDescent()).add(4, 2);
+        Coord sz = new Coord(metrics.stringWidth(text) + 3, metrics.getAscent() + metrics.getDescent());
         if(sz.x < 1)
             sz = sz.add(1, 0);
         BufferedImage img = TexI.mkbuf(sz);
@@ -112,7 +112,7 @@ public class CustomIconConfig {
         g.drawRect(0, 0, sz.x - 1, sz.y - 1);
         g.setFont(font);
         FontMetrics m = g.getFontMetrics();
-        g.drawString(text, 2, m.getAscent() + 1);
+        g.drawString(text, 1, m.getAscent());
         g.dispose();
         return new TexI(img);
     }
