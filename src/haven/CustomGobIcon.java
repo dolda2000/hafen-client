@@ -1,11 +1,13 @@
-package haven.minimap;
+package haven;
 
 import haven.*;
+import haven.minimap.CustomIcon;
+import haven.minimap.CustomIconConfig;
 import haven.util.Optional;
 
 public class CustomGobIcon extends BaseGobIcon {
     private final CustomIconConfig config;
-    private Optional<Tex> tex;
+    private Optional<CustomIcon> icon;
 
     public CustomGobIcon(Gob gob, CustomIconConfig config) {
         super(gob);
@@ -14,17 +16,17 @@ public class CustomGobIcon extends BaseGobIcon {
 
     @Override
     public Tex tex() {
-        return tex.getValue();
+        return icon.hasValue() ? icon.getValue().tex : null;
     }
 
     @Override
     public boolean visible() {
-        if (tex == null) {
+        if (icon == null) {
             Resource res = gob.getres();
             if (res == null)
                 return false;
-            tex = Optional.of(config.getIcon(res.name));
+            icon = Optional.of(config.getIcon(res.name));
         }
-        return tex.hasValue() && config.enabled();
+        return icon.hasValue() && config.enabled();
     }
 }

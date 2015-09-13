@@ -8,7 +8,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,23 +23,15 @@ public class CustomIconConfig {
     private static final String MATCH_STARTS_WITH = "startsWith";
     private static final String MATCH_CONTAINS = "contains";
 
-    private static final Font font = Resource.loadfont("ui/msreferencesansserif").deriveFont(9f);
-    private static final FontMetrics metrics;
-
-    private final Map<String, Optional<Tex>> cache = new WeakHashMap<String, Optional<Tex>>();
+    private final Map<String, Optional<CustomIcon>> cache = new WeakHashMap<String, Optional<CustomIcon>>();
+    private final CustomIconFactory factory;
     private final File file;
     private final List<Group> groups = new ArrayList<Group>();
     private boolean enabled;
 
-    static {
-        BufferedImage junk = TexI.mkbuf(new Coord(10, 10));
-        Graphics tmpl = junk.getGraphics();
-        tmpl.setFont(font);
-        metrics = tmpl.getFontMetrics();
-    }
-
     public CustomIconConfig() {
         this.file = new File(FILE_PATH);
+        this.factory = new CustomIconFactory();
         this.enabled = Config.getCustomIconsEnabled();
         reload();
     }
@@ -54,10 +45,10 @@ public class CustomIconConfig {
         Config.setCustomIconsEnabled(enabled);
     }
 
-    public Tex getIcon(String resName) {
-        Optional<Tex> icon = cache.get(resName);
+    public CustomIcon getIcon(String resName) {
+        Optional<CustomIcon> icon = cache.get(resName);
         if (icon == null) {
-            icon = Optional.of(matchIcon(resName));
+            icon = Optional.of(match(resName));
             cache.put(resName, icon);
         }
         return icon.hasValue() ? icon.getValue() : null;
@@ -80,42 +71,24 @@ public class CustomIconConfig {
         cache.clear();
     }
 
-    private Tex matchIcon(String resName) {
+    private CustomIcon match(String resName) {
         for (Group g : groups)
             for (Match m : g.matches) {
                 if (m.type.equals(MATCH_EXACT)) {
                     if (resName.equals(m.value))
-                        return m.show ? render(m.title, g.color) : null;
+                        return m.show ? factory.text(m.title, g.color) : null;
                 } else if (m.type.equals(MATCH_STARTS_WITH)) {
                     if (resName.startsWith(m.value))
-                        return m.show ? render(m.title, g.color) : null;
+                        return m.show ? factory.text(m.title, g.color) : null;
                 } else if (m.type.equals(MATCH_CONTAINS)) {
                     if (resName.contains(m.value))
-                        return m.show ? render(m.title, g.color) : null;
+                        return m.show ? factory.text(m.title, g.color) : null;
                 } else if (m.type.equals(MATCH_REGEX)) {
                     if (resName.matches(m.value))
-                        return m.show ? render(m.title, g.color) : null;
+                        return m.show ? factory.text(m.title, g.color) : null;
                 }
             }
         return null;
-    }
-
-    private Tex render(String text, Color backColor) {
-        text = text.toUpperCase();
-        Coord sz = new Coord(metrics.stringWidth(text) + 3, metrics.getAscent() + metrics.getDescent());
-        if(sz.x < 1)
-            sz = sz.add(1, 0);
-        BufferedImage img = TexI.mkbuf(sz);
-        Graphics g = img.createGraphics();
-        g.setColor(backColor);
-        g.fillRect(0, 0, sz.x - 1, sz.y - 1);
-        g.setColor(Color.BLACK);
-        g.drawRect(0, 0, sz.x - 1, sz.y - 1);
-        g.setFont(font);
-        FontMetrics m = g.getFontMetrics();
-        g.drawString(text, 1, m.getAscent());
-        g.dispose();
-        return new TexI(img);
     }
 
     private void copyDefaultConfig() throws IOException {

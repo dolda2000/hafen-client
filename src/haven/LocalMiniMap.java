@@ -70,7 +70,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
         try {
             BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
             if (icon == null) {
-                icon = new haven.minimap.CustomGobIcon(gob, iconconf);
+                icon = new CustomGobIcon(gob, iconconf);
                 gob.setattr(icon);
             }
             if (icon.visible()) {
@@ -245,7 +245,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
                         iconconf.reload();
                         synchronized(ui.sess.glob.oc) {
                             for(Gob gob : ui.sess.glob.oc) {
-                                gob.delattr(haven.minimap.CustomGobIcon.class);
+                                gob.delattr(CustomGobIcon.class);
                             }
                         }
                         getparent(GameUI.class).notification("Custom icons configuration is reloaded");
