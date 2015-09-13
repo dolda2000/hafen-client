@@ -184,8 +184,11 @@ public class LocalMiniMap extends Widget implements Console.Directory {
 	Gob gob = findicongob(coff);
 	if(gob == null)
 	    mv.wdgmsg("click", rootpos().add(c), c2p(coff), button, ui.modflags());
-	else
+	else {
+        if (ui.modmeta && button == 1)
+            tooltip = gob.getres().name;
 	    mv.wdgmsg("click", rootpos().add(c), c2p(coff), button, ui.modflags(), 0, (int)gob.id, gob.rc, 0, -1);
+    }
 	return(true);
     }
 
@@ -207,6 +210,9 @@ public class LocalMiniMap extends Widget implements Console.Directory {
         } else {
             super.mousemove(c);
         }
+        // remove gob tooltip
+        if (!ui.modmeta)
+            tooltip = null;
     }
 
     @Override
