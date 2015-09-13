@@ -10,6 +10,8 @@ import java.util.WeakHashMap;
 public class CustomIconFactory {
     private static final Font font = Resource.loadfont("ui/msreferencesansserif").deriveFont(9f);
     private static final FontMetrics metrics;
+
+    private final Map<Indir<Resource>, Tex> resCache = new WeakHashMap<Indir<Resource>, Tex>();
     private final Map<String, Tex> textCache = new WeakHashMap<String, Tex>();
 
     static {
@@ -17,6 +19,22 @@ public class CustomIconFactory {
         Graphics tmpl = junk.getGraphics();
         tmpl.setFont(font);
         metrics = tmpl.getFontMetrics();
+    }
+
+    public CustomIcon res(Indir<Resource> res, Color color) {
+        Tex tex = resCache.get(res);
+        if (tex == null) {
+            Resource.Image img = res.get().layer(Resource.imgc);
+            tex = img.tex();
+            if (tex.sz().x > 20 || tex.sz().y > 20) {
+                BufferedImage buf = img.img;
+                buf = PUtils.rasterimg(PUtils.blurmask2(buf.getRaster(), 1, 1, Color.BLACK));
+                buf = PUtils.convolvedown(buf, new Coord(20, 20), GobIcon.filter);
+                tex = new TexI(buf);
+            }
+            resCache.put(res, tex);
+        }
+        return new CustomIcon(tex, color);
     }
 
     public CustomIcon text(String text, Color color) {

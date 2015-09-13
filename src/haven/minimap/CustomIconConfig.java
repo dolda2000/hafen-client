@@ -74,8 +74,14 @@ public class CustomIconConfig {
     private CustomIcon match(String resname) {
         for (Group g : groups)
             for (Match m : g.matches)
-                if (m.matches(resname))
-                    return m.show ? factory.text(m.title.toUpperCase(), g.color) : null;
+                if (m.matches(resname)) {
+                    if (m.show) {
+                        return (m.image != null)
+                            ? factory.res(Resource.remote().load(m.image), g.color)
+                            : factory.text(m.title.toUpperCase(), g.color);
+                    } else
+                        return null;
+                }
         return null;
     }
 
@@ -112,12 +118,14 @@ public class CustomIconConfig {
         public String value;
         public String title;
         public boolean show;
+        public String image;
 
         private Match(String type, Element el) {
             this.type = type;
             this.value = el.getAttribute(type);
             this.title = el.getAttribute("title");
             this.show = Boolean.parseBoolean(el.hasAttribute("show") ? el.getAttribute("show") : "true");
+            this.image = el.hasAttribute("image") ? el.getAttribute("image") : null;
         }
 
         public static Match parse(Element el) {
