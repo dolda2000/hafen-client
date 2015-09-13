@@ -47,7 +47,7 @@
     <copy todir="build/classes/haven" file="etc/res-preload" />
     <copy todir="build/classes/haven" file="etc/res-bgload" />
     <copy todir="build/classes/haven" file="etc/icon.png" />
-	<copy todir="build/classes/" file="etc/minimap-icons.config" />
+	<copy todir="build/classes/" file="etc/custom-icons.config" />
   </target>
   
   <target name="appletview" depends="build-env">

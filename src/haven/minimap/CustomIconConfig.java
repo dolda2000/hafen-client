@@ -16,8 +16,8 @@ import java.util.WeakHashMap;
 import javax.xml.parsers.*;
 
 public class CustomIconConfig {
-    private static final String FILE_PATH = "./config/minimap-icons.config";
-    private static final String RESOURCE_PATH = "/minimap-icons.config";
+    private static final String FILE_PATH = "./config/custom-icons.config";
+    private static final String RESOURCE_PATH = "/custom-icons.config";
     private static final String MATCH_EXACT = "exact";
     private static final String MATCH_REGEX = "regex";
     private static final String MATCH_STARTS_WITH = "startsWith";
