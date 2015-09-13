@@ -1229,6 +1229,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	protected void hit(Coord pc, Coord mc, ClickInfo inf) {
+		if (ui.modmeta) {
+			if (inf != null)
+				MapView.this.tooltip = inf.gob.getres().name;
+			else {
+				int tile = glob.map.gettile(mc.div(MCache.tilesz));
+				Resource.Tileset tileset = glob.map.tileset(tile);
+				MapView.this.tooltip = tileset.getres().name;
+			}
+		}
 	    if(inf == null) {
 		wdgmsg("click", pc, mc, clickb, ui.modflags());
 	    } else {
@@ -1335,6 +1344,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(true);
 	return(super.keydown(ev));
     }
+
+	public boolean keyup(KeyEvent ev) {
+		// clear tooltip when ALT is up
+		if(selection == null && grab == null && ev.getKeyCode() == KeyEvent.VK_ALT) {
+			tooltip = null;
+			return(true);
+		}
+		return(super.keydown(ev));
+	}
 
     public boolean globtype(char c, KeyEvent ev) {
 	return(false);
