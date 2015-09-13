@@ -64,7 +64,7 @@ public class Glob {
 	this.sess = sess;
 	map = new MCache(sess);
 	party = new Party(this);
-    icons = new CustomIconConfig();
+    icons = new CustomIconConfig(this);
     icons.reload();
     }
 

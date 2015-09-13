@@ -240,11 +240,6 @@ public class LocalMiniMap extends Widget implements Console.Directory {
                     String arg = args[1];
                     if (arg.equals("reload")) {
                         ui.sess.glob.icons.reload();
-                        synchronized(ui.sess.glob.oc) {
-                            for(Gob gob : ui.sess.glob.oc) {
-                                gob.delattr(CustomGobIcon.class);
-                            }
-                        }
                         getparent(GameUI.class).notification("Custom icons configuration is reloaded");
                         return;
                     }

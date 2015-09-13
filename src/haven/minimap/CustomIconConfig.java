@@ -23,16 +23,18 @@ public class CustomIconConfig {
     private static final String MATCH_STARTS_WITH = "startsWith";
     private static final String MATCH_CONTAINS = "contains";
 
+    public final List<Group> groups = new ArrayList<Group>();
     private final Map<String, Optional<CustomIcon>> cache = new WeakHashMap<String, Optional<CustomIcon>>();
     private final CustomIconFactory factory;
+    private final Glob glob;
     private final File file;
-    private final List<Group> groups = new ArrayList<Group>();
     private boolean enabled;
 
-    public CustomIconConfig() {
+    public CustomIconConfig(Glob glob) {
         this.file = new File(FILE_PATH);
         this.factory = new CustomIconFactory();
         this.enabled = Config.getCustomIconsEnabled();
+        this.glob = glob;
         reload();
     }
 
@@ -68,7 +70,15 @@ public class CustomIconConfig {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        reset();
+    }
+
+    public void reset() {
         cache.clear();
+        synchronized(glob.oc) {
+            for(Gob gob : glob.oc)
+                gob.delattr(CustomGobIcon.class);
+        }
     }
 
     private CustomIcon match(String resname) {
@@ -99,21 +109,24 @@ public class CustomIconConfig {
         }
     }
 
-    private static class Group {
+    public static class Group {
         public String name;
         public Color color;
+        public boolean show;
         public final List<Match> matches = new ArrayList<Match>();
 
         public Group(Element el) {
             name = el.getAttribute("name");
             color = Color.decode(el.getAttribute("color"));
+            show = Boolean.parseBoolean(el.hasAttribute("show") ? el.getAttribute("show") : "true");
+
             NodeList matchNodes = el.getElementsByTagName("match");
             for (int i = 0; i < matchNodes.getLength(); i++)
                 matches.add(Match.parse((Element)matchNodes.item(i)));
         }
     }
 
-    private static class Match {
+    public static class Match {
         public String type;
         public String value;
         public String title;

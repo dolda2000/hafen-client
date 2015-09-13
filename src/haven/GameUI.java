@@ -26,6 +26,8 @@
 
 package haven;
 
+import haven.minimap.CustomIconWnd;
+
 import java.io.IOException;
 import java.util.*;
 import java.awt.Color;
@@ -71,6 +73,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Bufflist buffs;
     public StudyWnd studywnd;
     public CraftWnd craftwnd;
+    public Window iconwnd;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -153,6 +156,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     craftwnd = add(new CraftWnd());
     craftwnd.hide();
+
+    iconwnd = add(new CustomIconWnd(), 100, 100);
+    iconwnd.hide();
     }
 
     @Override

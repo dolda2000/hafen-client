@@ -14,6 +14,7 @@ public class MinimapWnd extends Window {
     private IButton pclaimButton;
     private IButton centerButton;
     private IButton radiusButton;
+    private IButton radarButton;
     private Coord doff;
     private boolean folded;
     private UI.Grab resizegrab = null;
@@ -145,5 +146,13 @@ public class MinimapWnd extends Window {
                 minimap.toggleRadius();
             }
         }, 78, 3);
+
+        radarButton = add(new IButton("gfx/hud/buttons/radar", "", "", "") {
+            { tooltip = Text.render("Select icons to display"); }
+
+            public void click() {
+                getparent(GameUI.class).iconwnd.toggle();
+            }
+        }, 103, 3);
     }
 }

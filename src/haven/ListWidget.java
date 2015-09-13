@@ -41,8 +41,7 @@ public abstract class ListWidget<T> extends Widget {
     protected abstract void drawitem(GOut g, T item, int i);
 
     public void change(T item) {
-        selindex = indexof(item);
-        sel = (selindex != -1) ? item : null;
+        change(indexof(item));
     }
 
     public void change(int index) {

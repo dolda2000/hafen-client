@@ -1,0 +1,76 @@
+package haven.minimap;
+
+import haven.*;
+
+public class CustomIconWnd extends Window {
+    private final CheckBoxList groups;
+    private final CheckBoxList matches;
+    private CustomIconConfig icons;
+
+    public CustomIconWnd() {
+        super(Coord.z, "Toggle...");
+        add(new Label("Groups:"), 0, 0);
+        add(new Label("Objects:"), 160, 0);
+        groups = add(new CheckBoxList(150, 20), 0, 15);
+        matches = add(new CheckBoxList(150, 20), 160, 15);
+
+        add(new Button(310, "Apply") {
+            public void click() {
+                icons.reset();
+            }
+        }, 0, groups.sz.y + 15);
+
+        add(new Button(310, "Save & close") {
+            public void click() {
+                icons.reset();
+                CustomIconWnd.this.hide();
+            }
+        }, 0, groups.sz.y + 45);
+        pack();
+
+        groups.addListener(new CheckBoxListAdapter() {
+            public void itemSelected(int index) {
+                matches.clear();
+                if (index == -1)
+                    return;
+                CustomIconConfig.Group group = icons.groups.get(index);
+                for (CustomIconConfig.Match match : group.matches)
+                    matches.addItem(match.title, match.show);
+            }
+
+            public void itemChecked(int index, boolean checked) {
+                CustomIconConfig.Group group = icons.groups.get(index);
+                group.show = checked;
+            }
+        });
+
+        matches.addListener(new CheckBoxListAdapter() {
+            public void itemChecked(int index, boolean checked) {
+                if (index == -1)
+                    return;
+                CustomIconConfig.Group group = icons.groups.get(groups.selindex);
+                CustomIconConfig.Match match = group.matches.get(index);
+                match.show = checked;
+            }
+        });
+    }
+
+    @Override
+    protected void attach(UI ui) {
+        super.attach(ui);
+        icons = ui.sess.glob.icons;
+        for (CustomIconConfig.Group group : icons.groups)
+            groups.addItem(group.name, group.show);
+        if (icons.groups.size() > 0)
+            groups.change(0);
+    }
+
+    @Override
+    public void wdgmsg(Widget sender, String msg, Object... args) {
+        if((sender == this) && (msg.equals("close"))) {
+            hide();
+        } else {
+            super.wdgmsg(sender, msg, args);
+        }
+    }
+}

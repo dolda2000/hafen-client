@@ -1010,6 +1010,13 @@ public class Widget {
 	return(show);
     }
 
+    public void toggle() {
+        if (visible)
+            hide();
+        else
+            show();
+    }
+
     public boolean tvisible() {
 	for(Widget w = this; w != null; w = w.parent) {
 	    if(!w.visible)
