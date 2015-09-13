@@ -1,6 +1,5 @@
 package haven;
 
-import haven.*;
 import haven.minimap.CustomIcon;
 import haven.minimap.CustomIconConfig;
 import haven.util.Optional;

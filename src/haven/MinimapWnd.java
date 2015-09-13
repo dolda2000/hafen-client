@@ -10,7 +10,6 @@ public class MinimapWnd extends Window {
 
     private final MapView map;
     private final LocalMiniMap minimap;
-    private final GameUI gui;
     private IButton vclaimButton;
     private IButton pclaimButton;
     private IButton centerButton;
@@ -18,20 +17,13 @@ public class MinimapWnd extends Window {
     private Coord doff;
     private boolean folded;
     private UI.Grab resizegrab = null;
-    private final Window trees, bushes, bumlings;
 
-    public MinimapWnd(Coord c, Coord sz, GameUI gui, MapView map, LocalMiniMap minimap) {
+    public MinimapWnd(Coord c, Coord sz, MapView map, LocalMiniMap minimap) {
         super(sz, "Minimap");
         this.map = map;
         this.minimap = minimap;
-        this.gui = gui;
         this.c = c;
-
         add(minimap, 0, 0);
-        trees = createIconWindow("Toggle Trees", "trees");
-        bushes = createIconWindow("Toggle Bushes", "bushes");
-        bumlings = createIconWindow("Toggle Rocks", "bumlings");
-
         initbuttons();
     }
 
@@ -91,14 +83,6 @@ public class MinimapWnd extends Window {
         } else {
             super.wdgmsg(sender, msg, args);
         }
-    }
-
-    @Override
-    public void destroy() {
-        bushes.destroy();
-        trees.destroy();
-        bumlings.destroy();
-        super.destroy();
     }
 
     public boolean type(char key, java.awt.event.KeyEvent ev) {
@@ -161,34 +145,5 @@ public class MinimapWnd extends Window {
                 minimap.toggleRadius();
             }
         }, 78, 3);
-
-        int x = 65;
-        int y = -27;
-        add(createIconButton(trees, "gfx/hud/treebutton", "Toggle Trees on minimap"), x, y);
-        x += 20;
-        add(createIconButton(bushes, "gfx/hud/bushbutton", "Toggle Bushes on minimap"), x, y);
-        x += 20;
-        add(createIconButton(bumlings, "gfx/hud/rockbutton", "Toggle Rocks on minimap"), x, y);
-    }
-
-    private IButton createIconButton(final Window window, final String res, final String tt) {
-        return new IButton(res, "", "", "") {
-            { tooltip = Text.render(tt); }
-
-            public void click() {
-                if (window.visible)
-                    window.hide();
-                else
-                    window.show();
-            }
-        };
-    }
-
-    private Window createIconWindow(String cap, String type) {
-        Window wnd = new MinimapIconsWindow(Coord.z, cap, type);
-        gui.add(wnd, 100, 100);
-        wnd.pack();
-        wnd.hide();
-        return wnd;
     }
 }

@@ -447,27 +447,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	String place = ((String)args[0]).intern();
 	if(place == "mapview") {
 	    child.resize(sz);
-
 		map = add((MapView)child, Coord.z);
 	    map.lower();
-
 		if (mmap != null)
 			ui.destroy(mmap);
 		if (mmapwnd != null)
 			ui.destroy(mmapwnd);
-
-        try {
-            if(MinimapIcons.icons.isEmpty()){
-                MinimapIcons.readnames();
-            }
-            MinimapIcons.readToggles();
-            System.out.println("reading minimap icons");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
 		mmap = new LocalMiniMap(Config.getMinimapSize(), map);
-		mmapwnd = new MinimapWnd(Config.getMinimapPosition(), mmap.sz, this, map, mmap);
+		mmapwnd = new MinimapWnd(Config.getMinimapPosition(), mmap.sz, map, mmap);
 		add(mmapwnd);
 		mmapwnd.pack();
 	} else if(place == "fight") {
