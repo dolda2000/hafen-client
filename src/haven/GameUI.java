@@ -157,7 +157,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     craftwnd = add(new CraftWnd());
     craftwnd.hide();
 
-    iconwnd = add(new CustomIconWnd(), 100, 100);
+    iconwnd = add(new CustomIconWnd());
     iconwnd.hide();
     }
 
@@ -261,6 +261,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	Debug.log = ui.cons.out;
 	opts.c = sz.sub(opts.sz).div(2);
     craftwnd.c = sz.sub(craftwnd.sz).div(2);
+    iconwnd.c = sz.sub(iconwnd.sz).div(2);
     }
 
     public class Hidepanel extends Widget {
@@ -862,6 +863,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    map.resize(sz);
 	beltwdg.c = new Coord(blpw + 10, sz.y - beltwdg.sz.y - 5);
     eqproxy.c = new Coord(blpw + beltwdg.sz.x + 20, sz.y - eqproxy.sz.y - 5);
+    iconwnd.c = sz.sub(iconwnd.sz).div(2);
 	super.resize(sz);
     }
 

@@ -66,6 +66,12 @@ public class CustomIconWnd extends Window {
     }
 
     @Override
+    public void show() {
+        super.show();
+        raise();
+    }
+
+    @Override
     public void wdgmsg(Widget sender, String msg, Object... args) {
         if((sender == this) && (msg.equals("close"))) {
             hide();
