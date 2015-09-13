@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.minimap.CustomIconConfig;
 import haven.util.ObservableCollection;
 
 import java.util.*;
@@ -57,11 +58,14 @@ public class Glob {
     public Indir<Resource> sky1 = null, sky2 = null;
     public double skyblend = 0.0;
     private Map<Indir<Resource>, Object> wmap = new HashMap<Indir<Resource>, Object>();
+    public final CustomIconConfig icons;
     
     public Glob(Session sess) {
 	this.sess = sess;
 	map = new MCache(sess);
 	party = new Party(this);
+    icons = new CustomIconConfig();
+    icons.reload();
     }
 
     @Resource.PublishedCode(name = "wtr")

@@ -26,8 +26,6 @@
 
 package haven;
 
-import haven.minimap.CustomIconConfig;
-
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -45,14 +43,12 @@ public class LocalMiniMap extends Widget implements Console.Directory {
     private Coord doff;
     private UI.Grab grab;
     private boolean showradius;
-    private haven.minimap.CustomIconConfig iconconf;
 
     public LocalMiniMap(Coord sz, MapView mv) {
 	super(sz);
 	this.mv = mv;
 	this.cache = new MinimapCache(new MinimapRenderer(mv.ui.sess.glob.map));
     this.showradius = Config.getMinimapRadiusEnabled();
-    this.iconconf = new CustomIconConfig();
     }
     
     public Coord p2c(Coord pc) {
@@ -70,7 +66,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
         try {
             BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
             if (icon == null) {
-                icon = new CustomGobIcon(gob, iconconf);
+                icon = new CustomGobIcon(gob, ui.sess.glob.icons);
                 gob.setattr(icon);
             }
             if (icon.visible()) {
@@ -233,8 +229,8 @@ public class LocalMiniMap extends Widget implements Console.Directory {
     }
 
     public void toggleCustomIcons() {
-        iconconf.toggle();
-        getparent(GameUI.class).notification("Custom icons are %s", iconconf.enabled() ? "enabled" : "disabled");
+        ui.sess.glob.icons.toggle();
+        getparent(GameUI.class).notification("Custom icons are %s", ui.sess.glob.icons.enabled() ? "enabled" : "disabled");
     }
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>(); {
@@ -243,7 +239,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
                 if (args.length == 2) {
                     String arg = args[1];
                     if (arg.equals("reload")) {
-                        iconconf.reload();
+                        ui.sess.glob.icons.reload();
                         synchronized(ui.sess.glob.oc) {
                             for(Gob gob : ui.sess.glob.oc) {
                                 gob.delattr(CustomGobIcon.class);
