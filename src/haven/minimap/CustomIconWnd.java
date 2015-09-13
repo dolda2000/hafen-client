@@ -16,12 +16,14 @@ public class CustomIconWnd extends Window {
 
         add(new Button(310, "Apply") {
             public void click() {
+                config.save();
                 ui.sess.glob.icons.reset();
             }
         }, 0, groups.sz.y + 15);
 
         add(new Button(310, "Save & close") {
             public void click() {
+                config.save();
                 ui.sess.glob.icons.reset();
                 CustomIconWnd.this.hide();
             }

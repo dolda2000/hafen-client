@@ -1,5 +1,6 @@
 package haven.minimap;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 public class CustomIconMatch {
@@ -50,5 +51,15 @@ public class CustomIconMatch {
 
     public String text() {
         return (text != null && !text.isEmpty()) ? text : name;
+    }
+
+    public void write(Element el) {
+        el.setAttribute(type, value);
+        el.setAttribute("name", name);
+        el.setAttribute("show", Boolean.toString(show));
+        if (text != null && !text.isEmpty())
+            el.setAttribute("text", text);
+        if (image != null)
+            el.setAttribute("image", image);
     }
 }
