@@ -23,7 +23,7 @@ public class CustomIconConfig {
     private static final String MATCH_STARTS_WITH = "startsWith";
     private static final String MATCH_CONTAINS = "contains";
 
-    private static final Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 10);
+    private static final Font font = Resource.loadfont("ui/msreferencesansserif").deriveFont(9f);
     private static final FontMetrics metrics;
 
     private final Map<String, Optional<Tex>> cache = new WeakHashMap<String, Optional<Tex>>();

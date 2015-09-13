@@ -1612,6 +1612,10 @@ public class Resource implements Serializable {
 	return(local().loadwait(name).layer(imgc).tex());
     }
 
+    public static java.awt.Font loadfont(String name) {
+        return local().loadwait(name).layer(Font.class).font;
+    }
+
     public String toString() {
 	return(name + "(v" + ver + ")");
     }
