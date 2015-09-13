@@ -65,7 +65,7 @@ public class CustomIconCache {
                     if (g.show && m.show) {
                         return (m.image != null)
                                 ? factory.res(Resource.remote().load(m.image), g.color)
-                                : factory.text(m.title.toUpperCase(), g.color);
+                                : factory.text(m.text().toUpperCase(), g.color);
                     } else
                         return null;
                 }

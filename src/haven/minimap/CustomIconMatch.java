@@ -10,14 +10,16 @@ public class CustomIconMatch {
 
     public String type;
     public String value;
-    public String title;
+    public String name;
+    private String text;
     public boolean show;
     public String image;
 
     private CustomIconMatch(String type, Element el) {
         this.type = type;
         this.value = el.getAttribute(type);
-        this.title = el.getAttribute("title");
+        this.name = el.getAttribute("name");
+        this.text = el.getAttribute("text");
         this.show = Boolean.parseBoolean(el.hasAttribute("show") ? el.getAttribute("show") : "true");
         this.image = el.hasAttribute("image") ? el.getAttribute("image") : null;
     }
@@ -44,5 +46,9 @@ public class CustomIconMatch {
         if (type.equals(TYPE_REGEX))
             return str.matches(value);
         return false;
+    }
+
+    public String text() {
+        return (text != null && !text.isEmpty()) ? text : name;
     }
 }

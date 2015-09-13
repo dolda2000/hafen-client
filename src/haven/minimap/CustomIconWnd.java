@@ -35,7 +35,7 @@ public class CustomIconWnd extends Window {
                     return;
                 CustomIconGroup group = config.groups.get(index);
                 for (CustomIconMatch match : group.matches)
-                    matches.addItem(match.title, match.show);
+                    matches.addItem(match.name, match.show);
             }
 
             public void itemChecked(int index, boolean checked) {
