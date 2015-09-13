@@ -83,16 +83,16 @@ public class CustomIconConfig {
             for (Match m : g.matches) {
                 if (m.type.equals(MATCH_EXACT)) {
                     if (resName.equals(m.value))
-                        return render(m.title, g.color);
+                        return m.show ? render(m.title, g.color) : null;
                 } else if (m.type.equals(MATCH_STARTS_WITH)) {
                     if (resName.startsWith(m.value))
-                        return render(m.title, g.color);
+                        return m.show ? render(m.title, g.color) : null;
                 } else if (m.type.equals(MATCH_CONTAINS)) {
                     if (resName.contains(m.value))
-                        return render(m.title, g.color);
+                        return m.show ? render(m.title, g.color) : null;
                 } else if (m.type.equals(MATCH_REGEX)) {
                     if (resName.matches(m.value))
-                        return render(m.title, g.color);
+                        return m.show ? render(m.title, g.color) : null;
                 }
             }
         return null;
@@ -148,6 +148,7 @@ public class CustomIconConfig {
         public String type;
         public String value;
         public String title;
+        public boolean show;
 
         public Match(Element el) {
             if (el.hasAttribute(MATCH_EXACT)) {
@@ -162,6 +163,7 @@ public class CustomIconConfig {
                 throw new UnsupportedOperationException("Unknown match type");
             }
             this.title = el.getAttribute("title");
+            this.show = Boolean.parseBoolean(el.hasAttribute("show") ? el.getAttribute("show") : "true");
         }
 
         private void parseType(String type, Element el) {
