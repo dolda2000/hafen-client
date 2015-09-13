@@ -76,16 +76,16 @@ public class CustomIconConfig {
             for (Match m : g.matches) {
                 if (m.type.equals(MATCH_EXACT)) {
                     if (resName.equals(m.value))
-                        return m.show ? factory.text(m.title, g.color) : null;
+                        return m.show ? factory.text(m.title.toUpperCase(), g.color) : null;
                 } else if (m.type.equals(MATCH_STARTS_WITH)) {
                     if (resName.startsWith(m.value))
-                        return m.show ? factory.text(m.title, g.color) : null;
+                        return m.show ? factory.text(m.title.toUpperCase(), g.color) : null;
                 } else if (m.type.equals(MATCH_CONTAINS)) {
                     if (resName.contains(m.value))
-                        return m.show ? factory.text(m.title, g.color) : null;
+                        return m.show ? factory.text(m.title.toUpperCase(), g.color) : null;
                 } else if (m.type.equals(MATCH_REGEX)) {
                     if (resName.matches(m.value))
-                        return m.show ? factory.text(m.title, g.color) : null;
+                        return m.show ? factory.text(m.title.toUpperCase(), g.color) : null;
                 }
             }
         return null;
