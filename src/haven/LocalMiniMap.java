@@ -76,6 +76,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
             if (icon.visible()) {
                 Coord gc = p2c(gob.rc).sub(off);
                 Tex tex = icon.tex();
+                g.chcolor(icon.color());
                 g.image(tex, gc.sub(tex.sz().div(2)));
             }
 		} catch(Loading l) {}

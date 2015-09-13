@@ -62,9 +62,4 @@ public class GobIcon extends BaseGobIcon {
 	}
 	return(this.tex);
     }
-
-    @Override
-    public boolean visible() {
-        return true;
-    }
 }
