@@ -60,16 +60,17 @@ public class CustomIconWnd extends Window {
     @Override
     protected void attach(UI ui) {
         super.attach(ui);
-        config = ui.sess.glob.icons.config;
-        for (CustomIconGroup group : config.groups)
-            groups.addItem(group.name, group.show);
-        if (config.groups.size() > 0)
-            groups.change(0);
     }
 
     @Override
     public void show() {
         super.show();
+        config = ui.sess.glob.icons.config;
+        groups.clear();
+        for (CustomIconGroup group : config.groups)
+            groups.addItem(group.name, group.show);
+        if (config.groups.size() > 0)
+            groups.change(0);
         raise();
     }
 
