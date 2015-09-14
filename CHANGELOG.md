@@ -1,5 +1,9 @@
 ## Changelog
 
+### r24 (2015-09-14)
+
+- Implemented ability to transfer items between inventories in the order by the average quality using `Alt`+`Wheel`
+
 ### r23 (2015-09-14)
 
 - Added world tooltip from the bdew's client showing plant stages, tree growth level and object damage
