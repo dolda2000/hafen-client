@@ -1,5 +1,16 @@
 ## Changelog
 
+### r21 (2015-09-14)
+
+- Other players are displayed on the minimap now
+- Overhauled UI for custom icon toggles
+- All unknown bushes, rocks and trees are displayed on the minimap by default
+- Custom icon toggles can be manually added (or removed) through the `config/custom-icons.config` file
+- Added command `:icons reload` to reload manually edited custom icon configuration
+- `Alt`+`Click` on the map tile or the object will show its resname
+- `Alt`+`Click` on the minimap icon will show its resname
+- Fixed wrong amount of hours on when estimate is longer than 24 hours
+
 ### r20 (2015-09-10)
 
 - Custom minimap icons can be toggled on/off with `Alt`+`R`
