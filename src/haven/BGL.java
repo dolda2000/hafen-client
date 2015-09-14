@@ -842,36 +842,88 @@ public class BGL {
 	    }
 	}
 
+	public static class InfoDummy extends Dummy {
+	    public final String info;
+
+	    public InfoDummy(int id, Object o, String info) {
+		super(id, o);
+		this.info = info;
+	    }
+
+	    public String toString() {
+		return(String.format("#<dummy %s(%s) #%d>", clnm, info, id));
+	    }
+	}
+
+	public static class PopDummy extends Dummy {
+	    public final String[] varn;
+	    public final Object[] vars;
+
+	    public PopDummy(int id, Object o, Dump d) {
+		super(id, o);
+		int n = 0;
+		for(Class<?> cl = o.getClass(); cl != null; cl = cl.getSuperclass())
+		    n += cl.getDeclaredFields().length;
+		String[] varn = new String[n];
+		Object[] vars = new Object[n];
+		int i = 0;
+		for(Class<?> cl = o.getClass(); cl != null; cl = cl.getSuperclass()) {
+		    for(Field f : cl.getDeclaredFields()) {
+			try {
+			    f.setAccessible(true);
+			} catch(SecurityException e) {}
+			varn[i] = f.getName();
+			try {
+			    vars[i] = d.mapval(f.get(o));
+			} catch(IllegalAccessException e) {}
+			i++;
+		    }
+		}
+		this.varn = varn;
+		this.vars = vars;
+	    }
+	}
+
 	private Dummy intern(Object o) {
 	    if(o == null)
 		return(null);
 	    Dummy ret = dummies.get(o);
-	    if(ret == null)
-		dummies.put(o, ret = new Dummy(dummies.size(), o));
+	    if(ret == null) {
+		int id = dummies.size();
+		if(o instanceof BufState) {
+		    ret = new PopDummy(id, o, this);
+		} else if(o instanceof Buffer) {
+		    Buffer bo = (Buffer)o;
+		    ret = new InfoDummy(id, bo, String.format("p=%d, l=%d, c=%d", bo.position(), bo.limit(), bo.capacity()));
+		} else {
+		    ret = new Dummy(id, o);
+		}
+		dummies.put(o, ret);
+	    }
 	    return(ret);
+	}
+
+	private Object mapval(Object o) {
+	    if(o == null)
+		return(null);
+	    Class<?> ft = o.getClass();
+	    if((o instanceof Number) || (o instanceof Boolean) || (o instanceof String)) {
+		return(o);
+	    } else if(ft.isArray()) {
+		int len = Array.getLength(o);
+		Object[] na = new Object[len];
+		for(int i = 0; i < len; i++)
+		    na[i] = mapval(Array.get(o, i));
+		return(na);
+	    } else {
+		return(intern(o));
+	    }
 	}
 
 	public static class DCmd implements Serializable {
 	    public final String clnm, mnm;
 	    public final String[] argn;
 	    public final Object[] args;
-
-	    private Object mapval(Dump d, Object o) {
-		if(o == null)
-		    return(null);
-		Class<?> ft = o.getClass();
-		if((o instanceof Number) || (o instanceof Boolean) || (o instanceof String)) {
-		    return(o);
-		} else if(ft.isArray()) {
-		    int len = Array.getLength(o);
-		    Object[] na = new Object[len];
-		    for(int i = 0; i < len; i++)
-			na[i] = mapval(d, Array.get(o, i));
-		    return(na);
-		} else {
-		    return(d.intern(o));
-		}
-	    }
 
 	    public DCmd(Dump d, Object o) {
 		this.clnm = o.getClass().getName();
@@ -890,7 +942,7 @@ public class BGL {
 		    } catch(SecurityException e) {}
 		    argn[i] = f.getName();
 		    try {
-			args[i] = mapval(d, f.get(o));
+			args[i] = d.mapval(f.get(o));
 		    } catch(IllegalAccessException e) {}
 		}
 	    }
