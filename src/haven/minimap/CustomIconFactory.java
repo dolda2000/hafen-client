@@ -21,7 +21,7 @@ public class CustomIconFactory {
         metrics = tmpl.getFontMetrics();
     }
 
-    public CustomIcon res(Indir<Resource> res, Color color) {
+    public CustomIcon res(Indir<Resource> res) {
         Tex tex = resCache.get(res);
         if (tex == null) {
             Resource.Image img = res.get().layer(Resource.imgc);
@@ -34,7 +34,7 @@ public class CustomIconFactory {
             }
             resCache.put(res, tex);
         }
-        return CustomIcon.simple(tex, color);
+        return CustomIcon.simple(tex, Color.WHITE);
     }
 
     public CustomIcon text(String text, Color color) {
