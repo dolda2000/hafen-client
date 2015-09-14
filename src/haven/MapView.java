@@ -53,11 +53,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Coord3f camoff = new Coord3f(Coord3f.o);
     public double shake = 0.0;
     private static final Map<String, Class<? extends Camera>> camtypes = new HashMap<String, Class<? extends Camera>>();
+    private static final Gob.Overlay rol = new Gob.Overlay(-1, Resource.remote().load("gfx/fx/bprad"), new MessageBuf(new byte[] { -24, 3 }, 0, 2));
 
     private Timer holdtimer;
     private UI.Grab holdgrab;
     private TimerTask clicktask;
 
+    private boolean showgobrad;
     private boolean showgrid;
     private GridOutline gridol;
     private Coord lasttc = Coord.z;
@@ -1571,6 +1573,21 @@ public class MapView extends PView implements DTarget, Console.Directory {
             Coord tc = cc.div(tilesz);
             lasttc = tc.div(MCache.cmaps);
             gridol.update(tc.sub(MCache.cutsz.mul(view + 1)));
+        }
+    }
+
+    public void togglegobradius() {
+        showgobrad = !showgobrad;
+        synchronized (ui.sess.glob.oc) {
+            for (Gob gob : ui.sess.glob.oc) {
+                Resource res = gob.getres();
+                if (res != null && res.name.equals("gfx/terobjs/minesupport")) {
+                    if (showgobrad)
+                        gob.ols.add(rol);
+                    else
+                        gob.ols.remove(rol);
+                }
+            }
         }
     }
 
