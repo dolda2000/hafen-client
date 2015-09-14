@@ -1,5 +1,9 @@
 ## Changelog
 
+### r22 (2015-09-14)
+
+- Fixed disappearing default icons when custom icons toggles are saved or reloaded
+
 ### r21 (2015-09-14)
 
 - Other players are displayed on the minimap now
