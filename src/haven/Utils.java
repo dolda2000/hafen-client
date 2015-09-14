@@ -1163,6 +1163,12 @@ public class Utils {
         return sb.toString();
     }
 
+    public static <T> List<T> asSortedList(Collection<T> c, Comparator<T> cmp) {
+        List<T> list = new ArrayList<T>(c);
+        java.util.Collections.sort(list, cmp);
+        return list;
+    }
+
     static {
 	Console.setscmd("die", new Console.Command() {
 		public void run(Console cons, String[] args) {

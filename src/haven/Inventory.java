@@ -31,6 +31,7 @@ import java.util.*;
 public class Inventory extends Widget implements DTarget {
     public static final Tex invsq = Resource.loadtex("gfx/hud/invsq");
     public static final Coord sqsz = new Coord(33, 33);
+    private static final AvgQualityComparator qcomparator = new AvgQualityComparator();
     Coord isz;
     Map<GItem, WItem> wmap = new HashMap<GItem, WItem>();
 
@@ -65,7 +66,16 @@ public class Inventory extends Widget implements DTarget {
 		else if(amount > 0)
 		    minv.wdgmsg("invxf", this.wdgid(), 1);
 	    }
-	}
+    } else if (ui.modmeta) {
+        Inventory minv = getparent(GameUI.class).maininv;
+        if (minv != this) {
+            Inventory src = (amount < 0) ? this : minv;
+            List<WItem> items = Utils.asSortedList(src.children(WItem.class), qcomparator);
+            for (int i = 0; i < Math.min(items.size(), Math.abs(amount)); i++) {
+                items.get(i).item.wdgmsg("transfer", c);
+            }
+        }
+    }
 	return(true);
     }
     
@@ -143,5 +153,18 @@ public class Inventory extends Widget implements DTarget {
 
     public static Coord sqoff(Coord c){
 	return c.mul(invsq.sz());
+    }
+
+    private static class AvgQualityComparator implements Comparator<WItem> {
+        @Override
+        public int compare(WItem a, WItem b) {
+            ItemQuality aq = a.quality.get();
+            ItemQuality bq = b.quality.get();
+            if (aq != null && bq != null)
+                return (int)Math.signum(bq.avg() - aq.avg());
+            if (aq == null)
+                return (bq == null) ? 0 : 1;
+            return -1;
+        }
     }
 }

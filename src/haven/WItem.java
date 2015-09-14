@@ -162,6 +162,12 @@ public class WItem extends Widget implements DTarget {
 	}
     };
 
+    public final AttrCache<ItemQuality> quality = new AttrCache<ItemQuality>() {
+        protected ItemQuality find(List<ItemInfo> info) {
+            return ItemQuality.fromItemInfo(info);
+        }
+    };
+
     private GSprite lspr = null;
     public void tick(double dt) {
 	/* XXX: This is ugly and there should be a better way to
