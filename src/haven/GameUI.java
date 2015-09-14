@@ -122,9 +122,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 	eqproxy = add(new EquipProxy(new int[]{6, 7}), new Coord(3, 85));
 	beltwdg.raise();
-	ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1)));
-	urpanel = add(new Hidepanel("gui-ur", null, new Coord( 1, -1)));
-	brpanel = add(new Hidepanel("gui-br", null, new Coord( 1,  1)) {
+	ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1), false));
+	urpanel = add(new Hidepanel("gui-ur", null, new Coord( 1, -1), true));
+	brpanel = add(new Hidepanel("gui-br", null, new Coord( 1,  1), true) {
 		public void move(double a) {
 		    super.move(a);
 		    menupanel.move();
@@ -134,7 +134,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    public Coord get() {
 			return(new Coord(GameUI.this.sz.x, Math.min(brpanel.c.y - 79, GameUI.this.sz.y - menupanel.sz.y)));
 		    }
-		}, new Coord(1, 0)));
+		}, new Coord(1, 0), true));
 	menu = brpanel.add(new MenuGrid(), 20, 34);
 	brpanel.add(new Img(Resource.loadtex("gfx/hud/brframe")), 0, 0);
 	menupanel.add(new MainMenu(), 0, 0);
@@ -270,12 +270,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	public final Indir<Coord> base;
 	public boolean tvis;
 	private double cur;
+	private boolean persist;
 
-	public Hidepanel(String id, Indir<Coord> base, Coord g) {
+	public Hidepanel(String id, Indir<Coord> base, Coord g, boolean persist) {
 	    this.id = id;
 	    this.base = base;
 	    this.g = g;
-	    cur = show(tvis = Utils.getprefb(id + "-visible", true))?0:1;
+	    this.persist = persist;
+	    this.tvis = persist ? Utils.getprefb(id + "-visible", true) : true;
+	    cur = show(tvis)?0:1;
 	}
 
 	public <T extends Widget> T add(T child) {
@@ -333,11 +336,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 
 	public boolean mshow() {
-	    return(mshow(Utils.getprefb(id + "-visible", true)));
+	    return(mshow(persist ? Utils.getprefb(id + "-visible", true) : true));
 	}
 
 	public boolean cshow(boolean vis) {
-	    Utils.setprefb(id + "-visible", vis);
+	    if (persist)
+	        Utils.setprefb(id + "-visible", vis);
 	    if(vis != tvis)
 		mshow(vis);
 	    return(vis);
