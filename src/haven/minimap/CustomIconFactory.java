@@ -21,7 +21,7 @@ public class CustomIconFactory {
         metrics = tmpl.getFontMetrics();
     }
 
-    public CustomIcon res(Indir<Resource> res) {
+    public CustomIcon image(Indir<Resource> res) {
         Tex tex = resCache.get(res);
         if (tex == null) {
             Resource.Image img = res.get().layer(Resource.imgc);
