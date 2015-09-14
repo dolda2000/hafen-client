@@ -53,8 +53,11 @@ public class CustomIconCache {
     public void reset() {
         cache.clear();
         synchronized(glob.oc) {
-            for(Gob gob : glob.oc)
-                gob.delattr(CustomGobIcon.class);
+            for(Gob gob : glob.oc) {
+                CustomGobIcon icon = gob.getattr(CustomGobIcon.class);
+                if (icon != null)
+                    gob.delattr(CustomGobIcon.class);
+            }
         }
     }
 
