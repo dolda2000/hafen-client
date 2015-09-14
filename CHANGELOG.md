@@ -1,5 +1,10 @@
 ## Changelog
 
+### r23 (2015-09-14)
+
+- Added world tooltip from the bdew's client showing plant stages, tree growth level and object damage
+- `Alt`+`D` allows to toggle mine support radius
+
 ### r22 (2015-09-14)
 
 - Fixed disappearing default icons when custom icons toggles are saved or reloaded
