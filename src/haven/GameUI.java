@@ -561,7 +561,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(w == chrwdg) {
 	    chrwdg = null;
 	}
-	meters.remove(w);
+	if (meters.remove(w))
+        updcmeters();
     cmeters.remove(w);
     }
 
