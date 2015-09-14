@@ -2,13 +2,14 @@ package haven;
 
 import haven.minimap.CustomIcon;
 import haven.minimap.CustomIconCache;
-import haven.util.Optional;
 
 import java.awt.*;
 
 public class CustomGobIcon extends BaseGobIcon {
+    private static final String PLAYER_RES = "gfx/borka/body";
+
     private final CustomIconCache icons;
-    private Optional<CustomIcon> icon;
+    private CustomIcon icon;
 
     public CustomGobIcon(Gob gob, CustomIconCache icons) {
         super(gob);
@@ -17,12 +18,12 @@ public class CustomGobIcon extends BaseGobIcon {
 
     @Override
     public Color color() {
-        return icon.hasValue() ? icon.getValue().color : null;
+        return icon.color();
     }
 
     @Override
     public Tex tex() {
-        return icon.hasValue() ? icon.getValue().tex : null;
+        return icon.tex();
     }
 
     @Override
@@ -31,8 +32,14 @@ public class CustomGobIcon extends BaseGobIcon {
             Resource res = gob.getres();
             if (res == null)
                 return false;
-            icon = Optional.of(icons.get(res.name));
+            if (res.name.equals(PLAYER_RES)) {
+                icon = CustomIcon.player(gob);
+            } else {
+                icon = icons.get(res.name);
+                if (icon == null)
+                    icon = CustomIcon.none;
+            }
         }
-        return icon.hasValue() && icons.enabled();
+        return (icon != CustomIcon.none) && icons.enabled();
     }
 }

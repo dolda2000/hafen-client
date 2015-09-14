@@ -64,6 +64,9 @@ public class LocalMiniMap extends Widget implements Console.Directory {
 	synchronized(oc) {
 	    for(Gob gob : oc) {
         try {
+            // don't display icons for party members
+            if (ui.sess.glob.party.memb.containsKey(gob.id))
+                continue;
             BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
             if (icon == null) {
                 icon = new CustomGobIcon(gob, ui.sess.glob.icons);

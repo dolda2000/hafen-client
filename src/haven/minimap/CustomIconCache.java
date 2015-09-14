@@ -58,10 +58,10 @@ public class CustomIconCache {
         }
     }
 
-    private CustomIcon match(String resname) {
+    private CustomIcon match(String resName) {
         for (CustomIconGroup g : config.groups)
             for (CustomIconMatch m : g.matches)
-                if (m.matches(resname)) {
+                if (m.matches(resName)) {
                     if (g.show && m.show) {
                         return (m.image != null)
                             ? factory.res(Resource.remote().load(m.image), g.color)

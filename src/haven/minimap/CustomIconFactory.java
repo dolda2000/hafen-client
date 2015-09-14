@@ -34,7 +34,7 @@ public class CustomIconFactory {
             }
             resCache.put(res, tex);
         }
-        return new CustomIcon(tex, color);
+        return CustomIcon.simple(tex, color);
     }
 
     public CustomIcon text(String text, Color color) {
@@ -56,6 +56,6 @@ public class CustomIconFactory {
             tex = new TexI(img);
             textCache.put(text, tex);
         }
-        return new CustomIcon(tex, color);
+        return CustomIcon.simple(tex, color);
     }
 }
