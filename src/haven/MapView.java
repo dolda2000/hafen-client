@@ -1230,13 +1230,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	protected void hit(Coord pc, Coord mc, ClickInfo inf) {
 		if (ui.modmeta) {
-			if (inf != null)
-				MapView.this.tooltip = inf.gob.getres().name;
-			else {
-				int tile = glob.map.gettile(mc.div(MCache.tilesz));
-				Resource.Tileset tileset = glob.map.tileset(tile);
-				MapView.this.tooltip = tileset.getres().name;
-			}
+			List<String> tip = (inf != null && inf.gob != null)
+				? WorldTooltip.getTooltipFromGob(inf.gob)
+				: Collections.singletonList(WorldTooltip.getTooltipFromMap(ui.sess.glob.map, mc));
+			if (tip != null)
+				MapView.this.tooltip = RichText.render(String.join("\n", tip), sz.x / 2);
 		}
 	    if(inf == null) {
 		wdgmsg("click", pc, mc, clickb, ui.modflags());

@@ -1335,6 +1335,19 @@ public class Resource implements Serializable {
 	    return(acl.asSubclass(cl));
 	}
 
+    public Class getClassByTag(String tag, boolean fail) {
+        load();
+        Class<?> acl;
+        synchronized(lpe) {
+            if((acl = lpe.get(tag)) == null) {
+                if(fail)
+                    throw(new RuntimeException("Tried to fetch non-present res-loaded class " + tag + " from " + Resource.this.name));
+                return(null);
+            }
+        }
+        return(acl);
+    }
+
 	public <T> Class<? extends T> getcl(Class<T> cl) {
 	    return(getcl(cl, true));
 	}
