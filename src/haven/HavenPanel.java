@@ -377,6 +377,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     private static class Frame {
 	BGL buf; CurrentGL on;
 	CPUProfile.Frame pf; long doneat;
+	public boolean done;
+
 	Frame(BGL buf, CurrentGL on) {this.buf = buf; this.on = on;}
     }
 
@@ -385,7 +387,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	    state = new GLState.Applier(new CurrentGL(gl, glconf));
 
 	Frame f = curdraw;
-	if((f != null) && (f.on.gl == gl)) {
+	if((f != null) && (f.on.gl == gl) && !f.done) {
 	    GPUProfile.Frame curgf = null;
 	    if(Config.profilegpu)
 		curgf = gprof.new Frame((GL3)gl);
@@ -405,6 +407,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		glconf.pref.dirty = false;
 	    }
 	    f.doneat = System.currentTimeMillis();
+	    f.done = true;
 	}
     }
 	
