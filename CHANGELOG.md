@@ -1,5 +1,9 @@
 ## Changelog
 
+### r25 (2015-09-15)
+
+- Added to option to use old paving tile set instead of gneiss paving
+
 ### r24 (2015-09-14)
 
 - Implemented ability to transfer items between inventories in the order by the average quality using `Alt`+`Wheel`
