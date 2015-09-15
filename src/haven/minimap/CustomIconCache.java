@@ -1,7 +1,6 @@
 package haven.minimap;
 
 import haven.*;
-import haven.util.Optional;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -14,7 +13,7 @@ public class CustomIconCache {
     private static final Coord defaultImageSize = new Coord(20, 20);
 
     public final CustomIconConfig config;
-    private final Map<String, Optional<CustomIcon>> cache = new WeakHashMap<String, Optional<CustomIcon>>();
+    private final Map<String, CustomIcon> cache = new WeakHashMap<String, CustomIcon>();
     private final CustomIconFactory factory;
     private final Glob glob;
     private boolean enabled;
@@ -43,12 +42,14 @@ public class CustomIconCache {
     }
 
     public CustomIcon get(String resName) {
-        Optional<CustomIcon> icon = cache.get(resName);
-        if (icon == null) {
-            icon = Optional.of(match(resName));
+        CustomIcon icon;
+        if (cache.containsKey(resName)) {
+            icon = cache.get(resName);
+        } else {
+            icon = match(resName);
             cache.put(resName, icon);
         }
-        return icon.hasValue() ? icon.getValue() : null;
+        return icon;
     }
 
     public void reset() {
