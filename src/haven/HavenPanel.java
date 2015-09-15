@@ -373,11 +373,16 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	Frame(BGL buf, CurrentGL on) {this.buf = buf; this.on = on;}
     }
 
+    private Frame[] curdraw = {null};
     void redraw(GL2 gl) {
 	if((state == null) || (state.cgl.gl != gl))
 	    state = new GLState.Applier(new CurrentGL(gl, glconf));
 
-	Frame f = curdraw;
+	Frame f;
+	synchronized(curdraw) {
+	    f = curdraw[0];
+	    curdraw[0] = null;
+	}
 	if((f != null) && (f.on.gl == gl)) {
 	    GPUProfile.Frame curgf = null;
 	    if(Config.profilegpu)
@@ -434,7 +439,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	}
     }
 	
-    private Frame bufdraw = null, curdraw = null;;
+    private Frame bufdraw = null;
     private final Runnable drawfun = new Runnable() {
 	    private void uglyjoglhack() throws InterruptedException {
 		try {
@@ -459,8 +464,9 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		    while(true) {
 			long then = System.currentTimeMillis();
 			int waited = 0;
+			Frame current;
 			synchronized(drawfun) {
-			    while((curdraw = bufdraw) == null)
+			    while((current = bufdraw) == null)
 				drawfun.wait();
 			    bufdraw = null;
 			    drawfun.notifyAll();
@@ -468,16 +474,19 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			}
 			CPUProfile.Frame curf = null;
 			if(Config.profile)
-			    curdraw.pf = curf = rprof.new Frame();
+			    current.pf = curf = rprof.new Frame();
+			synchronized(curdraw) {
+			    curdraw[0] = current;
+			}
 			uglyjoglhack();
 			if(curf != null) {
 			    curf.tick("aux");
 			    curf.fin();
 			}
 			long now = System.currentTimeMillis();
-			waited += now - curdraw.doneat;
+			waited += now - current.doneat;
 			ridle = (ridle * 0.95) + (((double)waited / ((double)(now - then))) * 0.05);
-			curdraw = null;
+			current = null; /* Just for the GC. */
 		    }
 		} catch(InterruptedException e) {
 		    return;
