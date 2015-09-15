@@ -64,26 +64,29 @@ public class BGL {
 	public void run(GL2 gl);
     }
 
-    private final Queue<Command> list;
+    private Command[] list;
+    private int n = 0;
 
     public BGL(int c) {
-	list = new LinkedList<Command>();
+	list = new Command[c];
     }
     public BGL() {this(128);}
 
     public void run(GL2 gl) {
-	Command cmd;
-	while((cmd = list.poll()) != null) {
+	for(int i = 0; i < n; i++) {
 	    try {
-	        cmd.run(gl);
+        if (i < list.length) // FIMXE: dirty fix for ArrayIndexOutOfBoundsException
+            list[i].run(gl);
 	    } catch(Exception exc) {
-		throw(new BGLException(this, cmd, exc));
+		throw(new BGLException(this, list[i], exc));
 	    }
 	}
     }
 
     private void add(Command cmd) {
-	list.add(cmd);
+	if(n >= list.length)
+	    list = Utils.extend(list, list.length * 2);
+	list[n++] = cmd;
     }
 
     public static class BGLException extends RuntimeException {
@@ -966,13 +969,14 @@ public class BGL {
 	}
 
 	public Dump(BGL buf, Command mark) {
-	    this.list = new ArrayList<DCmd>(buf.list.size());
+	    int n = buf.n;
+	    this.list = new ArrayList<DCmd>(n);
 	    DCmd marked = null;
-	    for(Command c : buf.list) {
-	    DCmd cmd = new DCmd(this, c);
-	    list.add(cmd);
-	    if(c == mark)
-	        marked = cmd;
+	    for(int i = 0; i < n; i++) {
+		DCmd cmd = new DCmd(this, buf.list[i]);
+		list.add(cmd);
+		if(buf.list[i] == mark)
+		    marked = cmd;
 	    }
 	    this.mark = marked;
 	}
