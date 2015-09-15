@@ -311,6 +311,14 @@ public class OptWnd extends Window {
                 ui.delcmeter(FepMeter.class);
         }
     }, new Coord(0, y));
+    y += 15;
+    display.add(new CheckBox("Use old paving tileset (requires re-login)") {
+        { a = Config.getOldPavingEnabled(); }
+        public void set(boolean val) {
+            Config.setOldPavingEnabled(val);
+            a = val;
+        }
+    }, new Coord(0, y));
 	display.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
 	display.pack();
 

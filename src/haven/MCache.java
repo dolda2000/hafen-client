@@ -32,6 +32,7 @@ import haven.Resource.Tileset;
 import haven.Resource.Tile;
 
 public class MCache {
+    public static final int TILESET_GNEISS = 43;
     public static final Coord tilesz = new Coord(11, 11);
     public static final Coord cmaps = new Coord(100, 100);
     public static final Coord cutsz = new Coord(25, 25);
@@ -306,6 +307,10 @@ public class MCache {
 		    break;
 		String resnm = blob.string();
 		int resver = blob.uint16();
+		if (tileid == TILESET_GNEISS && Config.getOldPavingEnabled()) {
+			resnm = "gfx/tiles/spave";
+			resver = 14;
+		}
 		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
 	    }
 	    for(int i = 0; i < tiles.length; i++)

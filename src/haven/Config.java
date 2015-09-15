@@ -155,6 +155,14 @@ public class Config {
 		setprefb("haven.minimap.customicons", value);
 	}
 
+	public static boolean getOldPavingEnabled() {
+		return getprefb("haven.display.oldpaving", false);
+	}
+
+	public static void setOldPavingEnabled(boolean value) {
+		setprefb("haven.display.oldpaving", value);
+	}
+
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)
