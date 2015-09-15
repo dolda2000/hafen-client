@@ -21,15 +21,15 @@ public class CustomIconFactory {
         metrics = tmpl.getFontMetrics();
     }
 
-    public CustomIcon image(Indir<Resource> res) {
+    public CustomIcon image(Indir<Resource> res, Coord size) {
         Tex tex = resCache.get(res);
         if (tex == null) {
             Resource.Image img = res.get().layer(Resource.imgc);
             tex = img.tex();
-            if (tex.sz().x > 20 || tex.sz().y > 20) {
+            if (tex.sz().x > size.x || tex.sz().y > size.y) {
                 BufferedImage buf = img.img;
                 buf = PUtils.rasterimg(PUtils.blurmask2(buf.getRaster(), 1, 1, Color.BLACK));
-                buf = PUtils.convolvedown(buf, new Coord(20, 20), GobIcon.filter);
+                buf = PUtils.convolvedown(buf, new Coord(size.x, size.y), GobIcon.filter);
                 tex = new TexI(buf);
             }
             resCache.put(res, tex);

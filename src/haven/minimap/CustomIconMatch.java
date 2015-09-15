@@ -1,6 +1,6 @@
 package haven.minimap;
 
-import org.w3c.dom.Document;
+import haven.Coord;
 import org.w3c.dom.Element;
 
 public class CustomIconMatch {
@@ -15,6 +15,7 @@ public class CustomIconMatch {
     private String text;
     public boolean show;
     public String image;
+    public Coord size;
 
     private CustomIconMatch(String type, Element el) {
         this.type = type;
@@ -23,6 +24,8 @@ public class CustomIconMatch {
         this.text = el.getAttribute("text");
         this.show = Boolean.parseBoolean(el.hasAttribute("show") ? el.getAttribute("show") : "true");
         this.image = el.hasAttribute("image") ? el.getAttribute("image") : null;
+        if (el.hasAttribute("size"))
+            this.size = parseSize(el.getAttribute("size"));
     }
 
     public static CustomIconMatch parse(Element el) {
@@ -61,5 +64,28 @@ public class CustomIconMatch {
             el.setAttribute("text", text);
         if (image != null)
             el.setAttribute("image", image);
+        if (size != null)
+            el.setAttribute("size", formatSize(size));
+    }
+
+    private static Coord parseSize(String str) {
+        String[] parts = str.split("x");
+        try {
+            if (parts.length == 2) {
+                int w = Integer.parseInt(parts[0]);
+                int h = Integer.parseInt(parts[1]);
+                return new Coord(w, h);
+            } else if (parts.length == 1) {
+                int n = Integer.parseInt(parts[0]);
+                return new Coord(n, n);
+            }
+            return null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static String formatSize(Coord coord) {
+        return String.format("%dx%d", coord.x, coord.y);
     }
 }

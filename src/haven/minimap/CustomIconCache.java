@@ -11,6 +11,7 @@ import java.util.WeakHashMap;
 public class CustomIconCache {
     private static final String CONFIG_FILE_PATH = "./config/custom-icons.config";
     private static final String CONFIG_RES_PATH = "/custom-icons.config";
+    private static final Coord defaultImageSize = new Coord(20, 20);
 
     public final CustomIconConfig config;
     private final Map<String, Optional<CustomIcon>> cache = new WeakHashMap<String, Optional<CustomIcon>>();
@@ -67,7 +68,7 @@ public class CustomIconCache {
                 if (m.matches(resName)) {
                     if (g.show && m.show) {
                         return (m.image != null)
-                            ? factory.image(Resource.remote().load(m.image))
+                            ? factory.image(Resource.remote().load(m.image), m.size != null ? m.size : defaultImageSize)
                             : factory.text(m.text().toUpperCase(), g.color);
                     } else
                         return null;
