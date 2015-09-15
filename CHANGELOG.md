@@ -1,5 +1,9 @@
 ## Changelog
 
+### r26 (2015-09-15)
+
+- Made experimental fix for crashes that happen when game window is resized
+
 ### r25 (2015-09-15)
 
 - Added to option to use old paving tile set instead of gneiss paving
