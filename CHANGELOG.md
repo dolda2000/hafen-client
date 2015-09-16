@@ -1,5 +1,9 @@
 ## Changelog
 
+### r28 (2015-09-17)
+
+- Added potential quick fix for the mansion loading bug
+
 ### r27 (2015-09-16)
 
 - Players riding a horse should be visible on the minimap now
