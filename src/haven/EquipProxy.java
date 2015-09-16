@@ -31,7 +31,7 @@ public class EquipProxy extends Widget implements DTarget{
 	if(e != null){
 	    WItem w = e.slots[slot(c)];
 	    if(w != null){
-		w.mousedown(Coord.z, button);
+		w.mousedown(c.add(-sqroff(c).x * invsq.sz().x, 0), button);
 		return true;
 	    }
 	}
