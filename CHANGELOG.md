@@ -1,5 +1,10 @@
 ## Changelog
 
+### r27 (2015-09-16)
+
+- Players riding a horse should be visible on the minimap now
+- Made custom icon size configurable
+
 ### r26 (2015-09-15)
 
 - Made experimental fix for crashes that happen when game window is resized
