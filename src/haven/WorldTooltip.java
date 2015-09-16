@@ -29,24 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WorldTooltip {
-    private static Message getDrawableData(Gob gob) {
-        Drawable dr = gob.getattr(Drawable.class);
-        ResDrawable d = (dr instanceof ResDrawable) ? (ResDrawable) dr : null;
-        if (d != null)
-            return d.sdt.clone();
-        else
-            return null;
-    }
-
-    private static boolean isSpriteKind(String kind, Gob gob) {
-        Resource.CodeEntry ce = gob.getres().layer(Resource.CodeEntry.class);
-        if (ce!=null) {
-            Class spc = ce.getClassByTag("spr", false);
-            return spc != null && (spc.getSimpleName().equals(kind) || spc.getSuperclass().getSimpleName().equals(kind));
-        } else {
-            return false;
-        }
-    }
 
     public static List<String> getTooltipFromGob(Gob gob) {
         if (gob.getres() != null) {
@@ -56,29 +38,6 @@ public class WorldTooltip {
                 res.add(tip.t);
             else
                 res.add(gob.getres().name);
-            try {
-                if (isSpriteKind("GrowingPlant", gob) || isSpriteKind("TrellisPlant", gob)) {
-                    int maxStage = 0;
-                    for (FastMesh.MeshRes layer : gob.getres().layers(FastMesh.MeshRes.class)) {
-                        if (layer.id / 10 > maxStage)
-                            maxStage = layer.id / 10;
-                    }
-                    Message data = getDrawableData(gob);
-                    if (data != null) {
-                        res.add(String.format("Stage: %d/%d", data.uint8(), maxStage));
-                    }
-                } else if (isSpriteKind("Tree", gob)) {
-                    Message data = getDrawableData(gob);
-                    if (data != null && !data.eom()) {
-                        res.add(String.format("Growth: %d%%", data.uint8()));
-                    }
-                }
-            } catch (Exception ignored) {
-                ignored.printStackTrace();
-            }
-            GobHealth hp = gob.getattr(GobHealth.class);
-            if (hp != null)
-                res.add(String.format("HP: %d/%d", hp.hp, 4));
             return res;
         } else return null;
     }

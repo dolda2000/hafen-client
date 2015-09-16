@@ -205,6 +205,9 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	KinInfo ki = getattr(KinInfo.class);
 	if(ki != null)
 	    rl.add(ki.fx, null);
+	GobInfo gi = GobInfo.get(this);
+	if (gi!=null)
+		rl.add(gi.draw(sc), null);
 	return(false);
     }
 
