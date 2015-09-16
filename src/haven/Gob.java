@@ -29,6 +29,8 @@ package haven;
 import java.util.*;
 
 public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
+    public static final String PLAYER_RES = "gfx/borka/body";
+
     public Coord rc, sc;
     public Coord3f sczu;
     public double a;
@@ -282,4 +284,9 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	}
     }
     public final GobLocation loc = new GobLocation();
+
+    public boolean isPlayer() {
+        Resource res = getres();
+        return (res != null) && PLAYER_RES.equals(res.name);
+    }
 }

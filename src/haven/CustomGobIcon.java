@@ -6,8 +6,6 @@ import haven.minimap.CustomIconCache;
 import java.awt.*;
 
 public class CustomGobIcon extends BaseGobIcon {
-    private static final String PLAYER_RES = "gfx/borka/body";
-
     private final CustomIconCache icons;
     private CustomIcon icon;
 
@@ -29,12 +27,12 @@ public class CustomGobIcon extends BaseGobIcon {
     @Override
     public boolean visible() {
         if (icon == null) {
-            Resource res = gob.getres();
-            if (res == null)
-                return false;
-            if (res.name.equals(PLAYER_RES)) {
+            if (gob.isPlayer()) {
                 icon = CustomIcon.player(gob);
             } else {
+                Resource res = gob.getres();
+                if (res == null)
+                    return false;
                 icon = icons.get(res.name);
                 if (icon == null)
                     icon = CustomIcon.none;

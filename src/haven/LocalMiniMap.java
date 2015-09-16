@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -61,6 +62,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
 
     public void drawicons(GOut g) {
 	OCache oc = ui.sess.glob.oc;
+    ArrayList<Gob> players = new ArrayList<Gob>();
 	synchronized(oc) {
 	    for(Gob gob : oc) {
         try {
@@ -72,6 +74,10 @@ public class LocalMiniMap extends Widget implements Console.Directory {
                 icon = new CustomGobIcon(gob, ui.sess.glob.icons);
                 gob.setattr(icon);
             }
+            if (gob.isPlayer()) {
+                players.add(gob);
+                continue;
+            }
             if (icon.visible()) {
                 Coord gc = p2c(gob.rc).sub(off);
                 Tex tex = icon.tex();
@@ -80,6 +86,15 @@ public class LocalMiniMap extends Widget implements Console.Directory {
             }
 		} catch(Loading l) {}
 	    }
+        for (Gob gob : players) {
+            BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
+            if (icon != null && icon.visible()) {
+                Coord gc = p2c(gob.rc).sub(off);
+                Tex tex = icon.tex();
+                g.chcolor(icon.color());
+                g.image(tex, gc.sub(tex.sz().div(2)));
+            }
+        }
 	}
     }
 
