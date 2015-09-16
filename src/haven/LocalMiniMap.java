@@ -78,30 +78,22 @@ public class LocalMiniMap extends Widget implements Console.Directory {
                 players.add(gob);
                 continue;
             }
-            if (icon.visible()) {
-                Coord gc = p2c(gob.rc).sub(off);
-                Tex tex = icon.tex();
-                g.chcolor(icon.color());
-                g.image(tex, gc.sub(tex.sz().div(2)));
-            }
+            if (icon.visible())
+                icon.draw(g, p2c(gob.rc).sub(off));
 		} catch(Loading l) {}
 	    }
         for (Gob gob : players) {
             BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
-            if (icon != null && icon.visible()) {
-                Coord gc = p2c(gob.rc).sub(off);
-                Tex tex = icon.tex();
-                g.chcolor(icon.color());
-                g.image(tex, gc.sub(tex.sz().div(2)));
-            }
+            if (icon != null && icon.visible())
+                icon.draw(g, p2c(gob.rc).sub(off));
         }
 	}
     }
 
     public Gob findicongob(Coord c) {
 	OCache oc = ui.sess.glob.oc;
-	synchronized(oc) {
-	    for(Gob gob : oc) {
+	synchronized (oc) {
+        for(Gob gob : oc) {
 		try {
             BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
 		    if(icon != null && icon.visible()) {

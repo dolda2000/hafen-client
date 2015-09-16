@@ -16,4 +16,10 @@ public abstract class BaseGobIcon extends GAttrib {
     }
 
     public abstract Tex tex();
+
+    public void draw(GOut g, Coord gc) {
+        Tex tex = tex();
+        g.chcolor(color());
+        g.image(tex(), gc.sub(tex.sz().div(2)));
+    }
 }
