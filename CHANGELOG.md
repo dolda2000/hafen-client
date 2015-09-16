@@ -11,7 +11,7 @@
 
 ### r25 (2015-09-15)
 
-- Added to option to use old paving tile set instead of gneiss paving
+- Added option to use old paving tile set instead of gneiss paving
 
 ### r24 (2015-09-14)
 
