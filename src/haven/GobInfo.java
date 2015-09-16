@@ -26,22 +26,20 @@ package haven;
 
 import java.awt.*;
 
-public class GobInfo {
+public class GobInfo extends PView.Draw2D {
+    private Gob gob;
     private String text;
     private Color color;
 
-    public GobInfo(String text, Color color) {
+    public GobInfo(Gob gob, String text, Color color) {
+        this.gob = gob;
         this.text = text;
         this.color = color;
     }
 
-    public PView.Draw2D draw(final Coord sc) {
-        return new PView.Draw2D() {
-            @Override
-            public void draw2d(GOut g) {
-                g.atextstroked(text, sc, color, Color.BLACK);
-            }
-        };
+    @Override
+    public void draw2d(GOut g) {
+        g.atextstroked(text, gob.sc, color, Color.BLACK, 0.5D, 0.5D);
     }
 
     public static GobInfo get(Gob gob) {
@@ -57,9 +55,9 @@ public class GobInfo {
                 if (data != null) {
                     int stage = data.uint8();
                     if (stage >= maxStage) {
-                        return new GobInfo(String.format("%d/%d", stage, maxStage), Color.GREEN);
+                        return new GobInfo(gob, String.format("%d/%d", stage, maxStage), Color.GREEN);
                     } else {
-                        return new GobInfo(String.format("%d/%d", stage, maxStage), Color.RED);
+                        return new GobInfo(gob, String.format("%d/%d", stage, maxStage), Color.RED);
                     }
                 }
             } else if (isSpriteKind("Tree", gob)) {
@@ -67,7 +65,7 @@ public class GobInfo {
                 if (data != null && !data.eom()) {
                     int growth = data.uint8();
                     if (growth < 100)
-                        return new GobInfo(String.format("%d%%", growth), Color.YELLOW);
+                        return new GobInfo(gob, String.format("%d%%", growth), Color.YELLOW);
                 }
             }
         } catch (Exception e) {
@@ -75,7 +73,7 @@ public class GobInfo {
         }
         GobHealth hp = gob.getattr(GobHealth.class);
         if (hp != null && hp.hp < 4)
-            return new GobInfo(String.format("%.0f%%", (1f - hp.hp / 4f) * 100f), Color.RED);
+            return new GobInfo(gob, String.format("%.0f%%", (1f - hp.hp / 4f) * 100f), Color.RED);
         return null;
     }
 

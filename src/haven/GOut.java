@@ -300,7 +300,20 @@ public class GOut {
 	T.dispose();
 	checkerr();
     }
-    
+
+	public void textstroked(String text, Coord c, Color color, Color stroke) {
+		atextstroked(text, c, color, stroke, 0, 0);
+	}
+
+	public void atextstroked(String text, Coord c, Color color, Color stroke, double ax, double ay) {
+		Text t = Text.renderstroked(text, color, stroke);
+		Tex T = t.tex();
+		Coord sz = t.sz();
+		image(T, c.add((int)((double)sz.x * -ax), (int)((double)sz.y * -ay)));
+		T.dispose();
+		checkerr();
+	}
+
     public void poly(Coord... c) {
 	st.set(cur2d);
 	apply();
