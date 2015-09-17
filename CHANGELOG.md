@@ -1,5 +1,10 @@
 ## Changelog
 
+### r29 (2015-09-17)
+
+- Added notifications for attribute changes
+- Added display of in-game time. It can be turned off in Display settings.
+
 ### r28 (2015-09-17)
 
 - Added potential quick fix for the mansion loading bug
