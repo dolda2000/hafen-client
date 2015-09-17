@@ -957,9 +957,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	if((olftimer != 0) && (olftimer < System.currentTimeMillis()))
 	    unflashol();
 	try {
-		Gob pl = player();
-		if(pl != null)
-			this.cc = new Coord(pl.getc());
 	    if(camload != null)
 		throw(new Loading(camload));
 		Gob pl = player();
