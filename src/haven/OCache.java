@@ -141,6 +141,7 @@ public class OCache implements Iterable<Gob> {
 	} else if((d == null) || (d.res != res) || !d.sdt.equals(sdt)) {
 	    g.setattr(new ResDrawable(g, res, sdt));
 	}
+	g.delattr(GobInfo.class);
     }
 	
     public synchronized void linbeg(Gob g, Coord s, Coord t, int c) {
@@ -292,6 +293,7 @@ public class OCache implements Iterable<Gob> {
 
     public synchronized void health(Gob g, int hp) {
 	g.setattr(new GobHealth(g, hp));
+	g.delattr(GobInfo.class);
     }
 	
     public synchronized void buddy(Gob g, String name, int group, int type) {

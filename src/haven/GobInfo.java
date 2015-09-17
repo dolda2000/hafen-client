@@ -26,55 +26,80 @@ package haven;
 
 import java.awt.*;
 
-public class GobInfo extends PView.Draw2D {
-    private Gob gob;
-    private String text;
-    private Color color;
+public class GobInfo extends GAttrib {
+    private GobInfoTex infoTex;
 
-    public GobInfo(Gob gob, String text, Color color) {
-        this.gob = gob;
-        this.text = text;
-        this.color = color;
+    static class GobInfoTex extends PView.Draw2D {
+        private Tex tex;
+        private Gob gob;
+
+        public GobInfoTex(Gob gob, Tex tex) {
+            this.gob = gob;
+            this.tex = tex;
+        }
+
+        @Override
+        public void draw2d(GOut g) {
+            if (tex != null)
+                g.aimage(tex, gob.sc, 0.5, 0.5);
+        }
     }
 
-    @Override
-    public void draw2d(GOut g) {
-        g.atextstroked(text, gob.sc, color, Color.BLACK, 0.5D, 0.5D);
+    static GobInfoTex nullTex = new GobInfoTex(null, null);
+
+    public GobInfo(Gob gob, Tex tex) {
+        super(gob);
+        if (tex != null)
+            infoTex = new GobInfoTex(gob, tex);
+        else
+            infoTex = nullTex;
+    }
+
+    public GobInfoTex draw() {
+        return infoTex;
     }
 
     public static GobInfo get(Gob gob) {
-        if (gob == null || gob.getres() == null) return null;
-        try {
-            if (isSpriteKind("GrowingPlant", gob) || isSpriteKind("TrellisPlant", gob)) {
-                int maxStage = 0;
-                for (FastMesh.MeshRes layer : gob.getres().layers(FastMesh.MeshRes.class)) {
-                    if (layer.id / 10 > maxStage)
-                        maxStage = layer.id / 10;
-                }
-                Message data = getDrawableData(gob);
-                if (data != null) {
-                    int stage = data.uint8();
-                    if (stage >= maxStage) {
-                        return new GobInfo(gob, String.format("%d/%d", stage, maxStage), Color.GREEN);
-                    } else {
-                        return new GobInfo(gob, String.format("%d/%d", stage, maxStage), Color.RED);
+        if (gob == null || gob.getres() == null) return new GobInfo(gob, null);
+        Text.Line line = null;
+        if (Config.showPlantGrowth.isEnabled()) {
+            try {
+                if (isSpriteKind("GrowingPlant", gob) || isSpriteKind("TrellisPlant", gob)) {
+                    int maxStage = 0;
+                    for (FastMesh.MeshRes layer : gob.getres().layers(FastMesh.MeshRes.class)) {
+                        if (layer.id / 10 > maxStage)
+                            maxStage = layer.id / 10;
+                    }
+                    Message data = getDrawableData(gob);
+                    if (data != null) {
+                        int stage = data.uint8();
+                        if (stage >= maxStage) {
+                            line = Text.std.renderstroked(String.format("%d/%d", stage, maxStage), Color.GREEN, Color.BLACK);
+                        } else {
+                            line = Text.std.renderstroked(String.format("%d/%d", stage, maxStage), Color.RED, Color.BLACK);
+                        }
+                    }
+                } else if (isSpriteKind("Tree", gob)) {
+                    Message data = getDrawableData(gob);
+                    if (data != null && !data.eom()) {
+                        int growth = data.uint8();
+                        if (growth < 100)
+                            line = Text.std.renderstroked(String.format("%d%%", growth), Color.YELLOW, Color.BLACK);
                     }
                 }
-            } else if (isSpriteKind("Tree", gob)) {
-                Message data = getDrawableData(gob);
-                if (data != null && !data.eom()) {
-                    int growth = data.uint8();
-                    if (growth < 100)
-                        return new GobInfo(gob, String.format("%d%%", growth), Color.YELLOW);
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        GobHealth hp = gob.getattr(GobHealth.class);
-        if (hp != null && hp.hp < 4)
-            return new GobInfo(gob, String.format("%.0f%%", (1f - hp.hp / 4f) * 100f), Color.RED);
-        return null;
+        if (line == null && Config.showObjectDamage.isEnabled()) {
+            GobHealth hp = gob.getattr(GobHealth.class);
+            if (hp != null && hp.hp < 4)
+                line = Text.std.renderstroked(String.format("%.0f%%", (1f - hp.hp / 4f) * 100f), Color.RED, Color.BLACK);
+        }
+        if (line != null)
+            return new GobInfo(gob, line.tex());
+        else
+            return new GobInfo(gob, null);
     }
 
     private static Message getDrawableData(Gob gob) {
@@ -95,5 +120,4 @@ public class GobInfo extends PView.Draw2D {
             return false;
         }
     }
-
-};
+}
