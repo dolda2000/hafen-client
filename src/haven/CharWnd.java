@@ -416,6 +416,12 @@ public class CharWnd extends Window {
 
 	public void tick(double dt) {
 	    if((attr.base != cbv) || (attr.comp != ccv)) {
+        if (cbv != 0 && attr.base != cbv) {
+            int diff = attr.base - cbv;
+            GameUI ui = getparent(GameUI.class);
+            if (ui != null)
+                ui.notification("You've %s %d %s!", (diff > 0) ? "gained" : "lost", diff, rnm.text);
+        }
 		cbv = attr.base; ccv = attr.comp;
 		Color c = Color.WHITE;
 		if(ccv > cbv) {
