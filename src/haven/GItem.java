@@ -162,7 +162,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
             int seconds = (int)(millisToComplete / 1000) % 60 ;
             int minutes = (int)((millisToComplete / (1000*60)) % 60);
             int hours = (int)((millisToComplete / (1000*60*60)));
-            meterCompletionTime = String.format("Estimated completion time: %02d:%02d:%02d", hours, minutes % 60, seconds);
+            meterCompletionTime = String.format("Estimated completion time: %02d:%02d:%02d", hours, minutes, seconds);
             lastMeterChangeTime = now;
             // reset tooltip
             info = null;
