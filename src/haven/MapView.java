@@ -29,7 +29,6 @@ package haven;
 import static haven.MCache.tilesz;
 
 import haven.GLProgram.VarID;
-import me.kt.GridOutline;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;
