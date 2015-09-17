@@ -162,6 +162,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     iconwnd.hide();
 
     timelbl = add(new Label("", 20));
+    timelbl.visible = Config.getClockVisible();
     }
 
     @Override
@@ -623,7 +624,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    afk = false;
 	}
 
-    timelbl.settext(Utils.formatGameTime(ui.sess.glob.globtime()));
+    timelbl.visible = Config.getClockVisible();
+    if (timelbl.visible)
+        timelbl.settext(Utils.formatGameTime(ui.sess.glob.globtime()));
     }
 
     public void uimsg(String msg, Object... args) {

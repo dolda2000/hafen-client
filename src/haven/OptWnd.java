@@ -319,6 +319,14 @@ public class OptWnd extends Window {
             a = val;
         }
     }, new Coord(0, y));
+    y += 15;
+    display.add(new CheckBox("Display current game time") {
+        { a = Config.getClockVisible(); }
+        public void set(boolean val) {
+            Config.setClockVisible(val);
+            a = val;
+        }
+    }, new Coord(0, y));
 	display.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
 	display.pack();
 

@@ -163,6 +163,14 @@ public class Config {
 		setprefb("haven.display.oldpaving", value);
 	}
 
+	public static boolean getClockVisible() {
+		return getprefb("haven.display.clock", true);
+	}
+
+	public static void setClockVisible(boolean value) {
+		setprefb("haven.display.clock", value);
+	}
+
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)
