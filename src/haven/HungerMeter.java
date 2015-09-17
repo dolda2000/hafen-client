@@ -12,6 +12,8 @@ public class HungerMeter extends Widget {
 
     @Override
     public void draw(GOut g) {
+        if (glut.bg == null)
+            return;
         Coord isz = IMeter.msz;
         Coord off = IMeter.off;
         g.chcolor(glut.bg);
