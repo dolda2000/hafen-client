@@ -1169,6 +1169,13 @@ public class Utils {
         return list;
     }
 
+    public static String formatGameTime(long milliseconds) {
+        long seconds = milliseconds / 1000;
+        long hours = (seconds / 3600) % 24;
+        long minutes = (seconds / 60) % 60;
+        return String.format("%02d:%02d", hours, minutes);
+    }
+
     static {
 	Console.setscmd("die", new Console.Command() {
 		public void run(Console cons, String[] args) {
