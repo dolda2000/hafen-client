@@ -1,7 +1,5 @@
 package haven;
 
-import haven.*;
-
 import javax.media.opengl.GL2;
 import java.nio.FloatBuffer;
 
@@ -81,5 +79,6 @@ public class GridOutline implements Rendered {
 
     private void swapBuffers() {
         curIndex = (curIndex + 1) % 2;
+        getCurrentBuffer().rewind();
     }
 }
