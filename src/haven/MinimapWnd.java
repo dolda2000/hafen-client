@@ -103,6 +103,7 @@ public class MinimapWnd extends Window {
         pclaimButton.visible = !folded;
         centerButton.visible = !folded;
         radiusButton.visible = !folded;
+        radarButton.visible = !folded;
         gridButton.visible = !folded;
         if (folded) {
             resize(new Coord(minimap.sz.x, 0));
