@@ -178,9 +178,15 @@ public class Text {
 	    g.dispose();
 	    return(new Line(text, img, m));
 	}
-		
+
 	public Line render(String text) {
 	    return(render(text, defcol));
+	}
+
+	public Line renderstroked(String text, Color c, Color s){
+	    Line line = render(text, c);
+	    BufferedImage img = Utils.outline2(line.img, s, true);
+	    return new Line(text, img, line.m);
 	}
     }
 
@@ -261,6 +267,30 @@ public class Text {
 	
     public static Line renderf(Color c, String text, Object... args) {
 	return(std.render(String.format(text, args), c));
+    }
+
+    public static Line renderstroked(String text, Color c, Color s, Text.Foundry fnd) {
+	return fnd.renderstroked(text, c, s);
+    }
+
+    public static Line renderstroked(String text, Color c, Color s) {
+	return renderstroked(text, c, s, std);
+    }
+
+    public static Line rerenderstroked(String text, Color c) {
+	return renderstroked(text, c, Utils.contrast(c));
+    }
+
+    public static Line rerenderstroked(String text, Color c, Text.Foundry fnd) {
+	return renderstroked(text, c, Utils.contrast(c), fnd);
+    }
+
+    public static Line rerenderstroked(String text) {
+	return rerenderstroked(text, Color.WHITE);
+    }
+
+    public static Line rerenderstroked(String text, Text.Foundry fnd) {
+	return rerenderstroked(text, Color.WHITE, fnd);
     }
 	
     public static Line render(String text) {
