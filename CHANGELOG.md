@@ -1,5 +1,10 @@
 ## Changelog
 
+### r30 (2015-09-18)
+
+- Added button allowing to show grid lines on the minimap
+- Added option to display "server" grids. It can be enabled in Display settings.
+
 ### r29 (2015-09-17)
 
 - Added notifications for attribute changes
