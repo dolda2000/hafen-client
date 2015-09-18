@@ -327,6 +327,17 @@ public class OptWnd extends Window {
             a = val;
         }
     }, new Coord(0, y));
+    y += 15;
+    display.add(new CheckBox("Display server grid") {
+        { a = Config.getServerGridEnabled(); }
+        public void set(boolean val) {
+            Config.setServerGridEnabled(val);
+            a = val;
+            GameUI ui = getparent(GameUI.class);
+            if (ui != null)
+                ui.map.toggleservergrid();
+        }
+    }, new Coord(0, y));
 	display.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
 	display.pack();
 

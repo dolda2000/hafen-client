@@ -60,7 +60,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     private boolean showgobrad;
     private boolean showgrid;
+    private boolean showservgrid;
     private GridOutline gridol;
+    private ServerGridOutline servgridol;
     private Coord lasttc = Coord.z;
 
     public interface Delayed {
@@ -428,6 +430,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.plgob = plgob;
     this.holdtimer = new Timer();
     this.gridol = new GridOutline(glob.map, MCache.cutsz.mul(2 * (view + 1)));
+    this.servgridol = new ServerGridOutline(glob.map, new Coord(20, 20));
+    this.showservgrid = Config.getServerGridEnabled();
 	setcanfocus(true);
     }
 
@@ -625,8 +629,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	if(rl.cfg.pref.outline.val)
 	    rl.add(outlines, null);
 	rl.add(map, null);
-    if (showgrid)
+    if (showgrid) {
         rl.add(gridol, null);
+        if (showservgrid)
+            rl.add(servgridol, null);
+    }
 	rl.add(mapol, null);
 	rl.add(gobs, null);
 	if(placing != null)
@@ -974,6 +981,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
             if (tc.manhattan2(lasttc) > 20) {
                 lasttc = tc;
                 gridol.update(tc.sub(MCache.cutsz.mul(view + 1)));
+                servgridol.update(tc.sub(MCache.cutsz.mul(view + 1)));
             }
         }
 	} catch(Loading e) {
@@ -1572,6 +1580,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
             Coord tc = cc.div(tilesz);
             lasttc = tc.div(MCache.cmaps);
             gridol.update(tc.sub(MCache.cutsz.mul(view + 1)));
+            servgridol.update(tc.sub(MCache.cutsz.mul(view + 1)));
         }
     }
 
@@ -1588,6 +1597,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
                 }
             }
         }
+    }
+
+    public void toggleservergrid() {
+        showservgrid = !showservgrid;
     }
 
     private class LeftClickTimerTask extends TimerTask  {

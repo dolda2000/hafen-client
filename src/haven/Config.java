@@ -179,6 +179,14 @@ public class Config {
 		setprefb("haven.minimap.grid", value);
 	}
 
+	public static boolean getServerGridEnabled() {
+		return getprefb("haven.display.servergrid", false);
+	}
+
+	public static void setServerGridEnabled(boolean value) {
+		setprefb("haven.display.servergrid", value);
+	}
+
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)
