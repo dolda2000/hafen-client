@@ -15,6 +15,7 @@ public class MinimapWnd extends Window {
     private IButton centerButton;
     private IButton radiusButton;
     private IButton radarButton;
+    private IButton gridButton;
     private Coord doff;
     private boolean folded;
     private UI.Grab resizegrab = null;
@@ -96,11 +97,13 @@ public class MinimapWnd extends Window {
 
     public void togglefold() {
         folded = !folded;
+        // TODO: toolbar widget?
         minimap.visible = !folded;
         vclaimButton.visible = !folded;
         pclaimButton.visible = !folded;
         centerButton.visible = !folded;
         radiusButton.visible = !folded;
+        gridButton.visible = !folded;
         if (folded) {
             resize(new Coord(minimap.sz.x, 0));
         } else {
@@ -140,7 +143,7 @@ public class MinimapWnd extends Window {
         }, 53, 3);
 
         radiusButton = add(new IButton("gfx/hud/buttons/dispradius", "", "", "") {
-            { tooltip = Text.render("Show view radius"); }
+            { tooltip = Text.render("Toggle view radius"); }
 
             public void click() {
                 minimap.toggleRadius();
@@ -154,5 +157,13 @@ public class MinimapWnd extends Window {
                 getparent(GameUI.class).iconwnd.toggle();
             }
         }, 103, 3);
+
+        gridButton = add(new IButton("gfx/hud/buttons/grid", "", "", "") {
+            { tooltip = Text.render("Toggle grid"); }
+
+            public void click() {
+                minimap.toggleGrid();
+            }
+        }, 128, 3);
     }
 }

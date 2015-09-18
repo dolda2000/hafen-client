@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
@@ -44,12 +45,14 @@ public class LocalMiniMap extends Widget implements Console.Directory {
     private Coord doff;
     private UI.Grab grab;
     private boolean showradius;
+    private boolean showgrid;
 
     public LocalMiniMap(Coord sz, MapView mv) {
 	super(sz);
 	this.mv = mv;
 	this.cache = new MinimapCache(new MinimapRenderer(mv.ui.sess.glob.map));
     this.showradius = Config.getMinimapRadiusEnabled();
+    this.showgrid = Config.getMinimapGridEnabled();
     }
     
     public Coord p2c(Coord pc) {
@@ -137,6 +140,11 @@ public class LocalMiniMap extends Widget implements Console.Directory {
                 Defer.Future<MinimapTile> f = cache.get(cg);
                 Tex image = f.done() ? f.get().img : MiniMap.bg;
                 g.image(image, cg.mul(cmaps).sub(coff).add(sz.div(2)));
+                if (showgrid) {
+                    g.chcolor(Color.DARK_GRAY);
+                    g.rect(cg.mul(cmaps).sub(coff).add(sz.div(2)), MCache.cmaps);
+                    g.chcolor();
+                }
             }
         }
     }
@@ -241,6 +249,11 @@ public class LocalMiniMap extends Widget implements Console.Directory {
     public void toggleCustomIcons() {
         ui.sess.glob.icons.toggle();
         getparent(GameUI.class).notification("Custom icons are %s", ui.sess.glob.icons.enabled() ? "enabled" : "disabled");
+    }
+
+    public void toggleGrid() {
+        showgrid = !showgrid;
+        Config.setMinimapGridEnabled(showgrid);
     }
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>(); {

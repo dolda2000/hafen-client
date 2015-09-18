@@ -171,6 +171,14 @@ public class Config {
 		setprefb("haven.display.clock", value);
 	}
 
+	public static boolean getMinimapGridEnabled() {
+		return getprefb("haven.minimap.grid", false);
+	}
+
+	public static void setMinimapGridEnabled(boolean value) {
+		setprefb("haven.minimap.grid", value);
+	}
+
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)
