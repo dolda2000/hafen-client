@@ -1,5 +1,9 @@
 ## Changelog
 
+### r31 (2015-09-19)
+
+- Added game time indicator from legacy haven. Moon phase might be misleading since there isn't clear moon indication in the current game and it might've changed somehow
+
 ### r30 (2015-09-18)
 
 - Added button allowing to show grid lines on the minimap
