@@ -28,7 +28,7 @@ package haven;
 
 public class Astronomy {
     private static final double DAY = 86400; // 1 day in seconds
-    private static final double LUNAR_MONTH = 259200; // 30 days in seconds
+    private static final double LUNAR_MONTH = 2592000; // 30 days in seconds
     private static final double YEAR = 31536000; // 365 days in seconds
 
     double dt, mp, yt;
