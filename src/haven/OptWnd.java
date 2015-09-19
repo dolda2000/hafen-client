@@ -320,11 +320,14 @@ public class OptWnd extends Window {
         }
     }, new Coord(0, y));
     y += 15;
-    display.add(new CheckBox("Display current game time") {
+    display.add(new CheckBox("Display game time indicator") {
         { a = Config.getClockVisible(); }
         public void set(boolean val) {
             Config.setClockVisible(val);
             a = val;
+            GameUI ui = getparent(GameUI.class);
+            if (ui != null)
+                ui.cal.show(val);
         }
     }, new Coord(0, y));
     y += 15;

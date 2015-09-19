@@ -28,7 +28,6 @@ package haven;
 
 import haven.minimap.CustomIconWnd;
 
-import java.io.IOException;
 import java.util.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
@@ -74,7 +73,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public StudyWnd studywnd;
     public CraftWnd craftwnd;
     public Window iconwnd;
-    private final Label timelbl;
+    public final Cal cal;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -161,8 +160,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     iconwnd = add(new CustomIconWnd());
     iconwnd.hide();
 
-    timelbl = add(new Label("", 20));
-    timelbl.visible = Config.getClockVisible();
+    cal = add(new Cal());
     }
 
     @Override
@@ -623,10 +621,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(afk && (System.currentTimeMillis() - ui.lastevent < 300000)) {
 	    afk = false;
 	}
-
-    timelbl.visible = Config.getClockVisible();
-    if (timelbl.visible)
-        timelbl.settext(Utils.formatGameTime(ui.sess.glob.globtime()));
     }
 
     public void uimsg(String msg, Object... args) {
@@ -880,7 +874,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	beltwdg.c = new Coord(blpw + 10, sz.y - beltwdg.sz.y - 5);
     eqproxy.c = new Coord(blpw + beltwdg.sz.x + 20, sz.y - eqproxy.sz.y - 5);
     iconwnd.c = sz.sub(iconwnd.sz).div(2);
-    timelbl.c = new Coord((sz.x - timelbl.sz.x) / 2, 10);
+    cal.c = new Coord((sz.x - cal.sz.x) / 2, 10);
 	super.resize(sz);
     }
 
