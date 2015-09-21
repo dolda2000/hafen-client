@@ -1037,11 +1037,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    olftimer = System.currentTimeMillis() + (Integer)args[1];
 	} else if(msg == "sel") {
 	    boolean sel = ((Integer)args[0]) != 0;
-	    if(sel && (selection == null)) {
-		selection = new Selector();
-	    } else if(!sel && (selection != null)) {
-		selection.destroy();
-		selection = null;
+	    synchronized(this) {
+		if(sel && (selection == null)) {
+		    selection = new Selector();
+		} else if(!sel && (selection != null)) {
+		    selection.destroy();
+		    selection = null;
+		}
 	    }
 	} else if(msg == "shake") {
 	    shake = ((Number)args[0]).doubleValue();
@@ -1326,29 +1328,35 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public boolean mmousedown(Coord mc, int button) {
-	    if(sc != null) {
-		ol.destroy();
-		mgrab.remove();
+	    synchronized(MapView.this) {
+		if(selection != this)
+		    return(false);
+		if(sc != null) {
+		    ol.destroy();
+		    mgrab.remove();
+		}
+		sc = mc.div(tilesz);
+		modflags = ui.modflags();
+		xl.mv = true;
+		mgrab = ui.grabmouse(MapView.this);
+		ol = glob.map.new Overlay(sc, sc, 1 << 17);
+		return(true);
 	    }
-	    sc = mc.div(tilesz);
-	    modflags = ui.modflags();
-	    xl.mv = true;
-	    mgrab = ui.grabmouse(MapView.this);
-	    ol = glob.map.new Overlay(sc, sc, 1 << 17);
-	    return(true);
 	}
 
 	public boolean mmouseup(Coord mc, int button) {
-	    if(sc != null) {
-		Coord ec = mc.div(tilesz);
-		xl.mv = false;
-		tt = null;
-		ol.destroy();
-		mgrab.remove();
-		wdgmsg("sel", sc, ec, modflags);
-		sc = null;
+	    synchronized(MapView.this) {
+		if(sc != null) {
+		    Coord ec = mc.div(tilesz);
+		    xl.mv = false;
+		    tt = null;
+		    ol.destroy();
+		    mgrab.remove();
+		    wdgmsg("sel", sc, ec, modflags);
+		    sc = null;
+		}
+		return(true);
 	    }
-	    return(true);
 	}
 
 	public boolean mmousewheel(Coord mc, int amount) {
@@ -1356,22 +1364,26 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void mmousemove(Coord mc) {
-	    if(sc != null) {
-		Coord tc = mc.div(MCache.tilesz);
-		Coord c1 = new Coord(Math.min(tc.x, sc.x), Math.min(tc.y, sc.y));
-		Coord c2 = new Coord(Math.max(tc.x, sc.x), Math.max(tc.y, sc.y));
-		ol.update(c1, c2);
-		tt = Text.render(String.format("%d\u00d7%d", c2.x - c1.x + 1, c2.y - c1.y + 1));
+	    synchronized(MapView.this) {
+		if(sc != null) {
+		    Coord tc = mc.div(MCache.tilesz);
+		    Coord c1 = new Coord(Math.min(tc.x, sc.x), Math.min(tc.y, sc.y));
+		    Coord c2 = new Coord(Math.max(tc.x, sc.x), Math.max(tc.y, sc.y));
+		    ol.update(c1, c2);
+		    tt = Text.render(String.format("%d\u00d7%d", c2.x - c1.x + 1, c2.y - c1.y + 1));
+		}
 	    }
 	}
 
 	public void destroy() {
-	    if(sc != null) {
-		ol.destroy();
-		mgrab.remove();
+	    synchronized(MapView.this) {
+		if(sc != null) {
+		    ol.destroy();
+		    mgrab.remove();
+		}
+		release(xl);
+		disol(17);
 	    }
-	    release(xl);
-	    disol(17);
 	}
     }
 
