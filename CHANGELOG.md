@@ -1,5 +1,11 @@
 ## Changelog
 
+### r33 (2015-09-22)
+
+- Merged vanilla client changes
+- Changed toggle grid hotkey to `Alt`+`G`
+- Changed toggle nightvision hotkey to `Alt`+`N`
+
 ### r32 (2015-09-19)
 
 - Fixed moon cycle duration
