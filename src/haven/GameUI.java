@@ -803,7 +803,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return(true);
 	} else if (key != 0) {
         boolean alt = ev.isAltDown();
-        boolean ctrl = ev.isControlDown();
         int keycode = ev.getKeyCode();
         if (alt && keycode == KeyEvent.VK_S) {
             studywnd.show(!studywnd.visible);
@@ -818,9 +817,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
             if (craftwnd.visible)
                 craftwnd.raise();
             return true;
-        } else if (ctrl && keycode == KeyEvent.VK_N) {
+        } else if (alt && keycode == KeyEvent.VK_N) {
             Config.setNightVisionEnabled(!Config.getNightVisionEnabled());
-        } else if (ctrl && keycode == KeyEvent.VK_G) {
+        } else if (alt && keycode == KeyEvent.VK_G) {
             if (map != null)
                 map.togglegrid();
         } else if (alt && keycode == KeyEvent.VK_R) {
