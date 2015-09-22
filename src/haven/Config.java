@@ -50,6 +50,7 @@ public class Config {
     public static int authport = getint("haven.authport", 1871);
     public static boolean softres = getprop("haven.softres", "on").equals("on");
     public static boolean studylock = Utils.getprefb("studylock", false);
+    public static boolean simplecrops = Utils.getprefb("simplecrops", false);
     public static byte[] authck = null;
     public static String prefspec = "hafen";
     
