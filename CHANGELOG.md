@@ -1,5 +1,9 @@
 ## Changelog
 
+### r34 (2015-09-24)
+
+- Merged vanilla client changes
+
 ### r33 (2015-09-22)
 
 - Merged vanilla client changes
