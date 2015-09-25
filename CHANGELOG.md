@@ -1,5 +1,10 @@
 ## Changelog
 
+### r35 (2015-09-25)
+
+- Added display of stone column radius
+- Flattened cupboards 
+
 ### r34 (2015-09-24)
 
 - Merged vanilla client changes
