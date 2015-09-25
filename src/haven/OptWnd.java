@@ -379,7 +379,7 @@ public class OptWnd extends Window {
 	super.show();
     }
 
-    private static class PrefCheckBox extends CheckBox {
+    public static class PrefCheckBox extends CheckBox {
         private final Config.Pref<Boolean> pref;
 
         public PrefCheckBox(String label, Config.Pref<Boolean> pref) {

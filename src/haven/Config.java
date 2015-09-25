@@ -62,7 +62,6 @@ public class Config {
     public static int mainport = getint("haven.mainport", 1870);
     public static int authport = getint("haven.authport", 1871);
     public static boolean softres = getprop("haven.softres", "on").equals("on");
-    public static boolean studylock = Utils.getprefb("studylock", false);
     public static byte[] authck = null;
     public static String prefspec = "hafen";
 
@@ -90,6 +89,7 @@ public class Config {
     public static Pref<Boolean> showFlavor = new Pref<Boolean>("showflo", true, TYPE_BOOL);
     public static Pref<Boolean> showQuality = new Pref<Boolean>("haven.display.quality", false, TYPE_BOOL);
     public static Pref<Integer> showQualityMode = new Pref<Integer>("haven.display.quality.mode", 0, TYPE_INT);
+    public static Pref<Boolean> lockStudy = new Pref<Boolean>("studylock", false, TYPE_BOOL);
     
     static {
 	String p;
