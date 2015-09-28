@@ -1593,6 +1593,7 @@ public class Resource implements Serializable {
 	    buf.skip();
 	}
 	this.layers = layers;
+	ResourceTransformer.transform(this);
 	for(Layer l : layers)
 	    l.init();
 	used = false;
