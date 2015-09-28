@@ -13,19 +13,28 @@ public class CupboardFlattener implements ResourceTransformer.Transformer {
     private static final double sa = Math.sin(angle);
 
     public void transform(Resource res) {
-        // process animations
-        for (Skeleton.ResPose pose : res.layers(Skeleton.ResPose.class)) {
-            for (Skeleton.Track track : pose.tracks) {
-                if (track.frames.length > 2) {
-                    double a0 = track.frames[0].rang;
-                    double an = track.frames[track.frames.length - 1].rang;
-                    for (Skeleton.Track.Frame frame : track.frames) {
-                        float a = (float)(a0 + (an - a0) * (frame.time / pose.len));
-                        // swap rotation axis
-                        frame.rot = Skeleton.rotasq(new float[4], new float[] {
-                                Math.abs(frame.rax[2]),
-                                frame.rax[1],
-                                frame.rax[0]}, a);
+        int scale = Config.getCupboardScale();
+        if (scale >= 100 || scale < 10)
+            return;
+
+        boolean rotate = scale < 30;
+        boolean unclip = scale <= 15;
+
+        if (rotate) {
+            // rotate animations
+            for (Skeleton.ResPose pose : res.layers(Skeleton.ResPose.class)) {
+                for (Skeleton.Track track : pose.tracks) {
+                    if (track.frames.length > 2) {
+                        double a0 = track.frames[0].rang;
+                        double an = track.frames[track.frames.length - 1].rang;
+                        for (Skeleton.Track.Frame frame : track.frames) {
+                            float rang = unclip ? (float) (a0 + (an - a0) * (frame.time / pose.len)) : frame.rang;
+                            // swap rotation axis
+                            frame.rot = Skeleton.rotasq(new float[4], new float[]{
+                                    Math.abs(frame.rax[2]),
+                                    frame.rax[1],
+                                    frame.rax[0]}, rang);
+                        }
                     }
                 }
             }
@@ -59,6 +68,9 @@ public class CupboardFlattener implements ResourceTransformer.Transformer {
                     float h = Math.abs(max.z - min.z);
                     float k = w / h;
 
+                    float sx = rotate ? (scale / 100.0f) : 1.0f;
+                    float sz = rotate ? k : (scale / 100.0f);
+
                     // make basis at 0, 0, 0
                     for (Coord3f v : vertices) {
                         v.x -= min.x;
@@ -68,14 +80,14 @@ public class CupboardFlattener implements ResourceTransformer.Transformer {
 
                     // transform vertices
                     for (Coord3f v : vertices) {
-                        // flatten
-                        v.x = v.x * 0.1f;
-                        v.z = v.z * k;
-                        // rotate
-                        float ox = v.x;
-                        float oz = v.z;
-                        v.x = (float)(ox * ca - oz * sa) + max.z * k;
-                        v.z = (float)(ox * sa + oz * ca);
+                        v.x = v.x * sx;
+                        v.z = v.z * sz;
+                        if (rotate) {
+                            float ox = v.x;
+                            float oz = v.z;
+                            v.x = (float) (ox * ca - oz * sa) + max.z * k;
+                            v.z = (float) (ox * sa + oz * ca);
+                        }
                     }
 
                     // write transformed vertex data back
@@ -89,16 +101,24 @@ public class CupboardFlattener implements ResourceTransformer.Transformer {
                     // transform skeleton
                     for (Skeleton.Res sk : res.layers(Skeleton.Res.class)) {
                         for (Skeleton.Bone bone : sk.s.bones.values()) {
-                            // flatten
-                            float x = bone.ipos.x * 0.1f;
-                            float z = bone.ipos.z;
-                            //rotate
-                            bone.ipos.x = (float)(x * ca - z * sa);
-                            bone.ipos.z = (float)(x * sa + z * ca);
-                            // swap axis
-                            float tmp = bone.irax.x;
-                            bone.irax.x = bone.irax.z;
-                            bone.irax.z = tmp;
+                            // scale
+                            float x = bone.ipos.x - min.x;
+                            float z = bone.ipos.z - min.z;
+                            x *= sx;
+                            z *= sz;
+                            if (rotate) {
+                                //rotate
+                                float rx = (float) (x * ca - z * sa);
+                                float rz = (float) (x * sa + z * ca);
+                                x = rx;
+                                z = rz;
+                                // swap axis
+                                float tmp = bone.irax.x;
+                                bone.irax.x = bone.irax.z;
+                                bone.irax.z = tmp;
+                            }
+                            bone.ipos.x = min.x + x;
+                            bone.ipos.z = min.z + z;
                         }
                     }
                 }

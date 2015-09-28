@@ -187,6 +187,14 @@ public class Config {
 		setprefb("haven.display.servergrid", value);
 	}
 
+	public static int getCupboardScale() {
+		return getprefi("haven.display.cupboardscale", 10);
+	}
+
+	public static void setCupboardScale(int value) {
+		setprefi("haven.display.cupboardscale", value);
+	}
+
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)

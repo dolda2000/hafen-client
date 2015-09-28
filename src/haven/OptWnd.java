@@ -341,6 +341,25 @@ public class OptWnd extends Window {
                 ui.map.toggleservergrid();
         }
     }, new Coord(0, y));
+    y += 20;
+    display.add(new Label("Cupboards scale:"), new Coord(0, y));
+    final Label sc = display.add(new Label(""), new Coord(165, y + 15));
+    display.add(new HSlider(160, 10, 100, Config.getCupboardScale()) {
+        protected void added() {
+            dpy();
+            this.c.y = sc.c.y + ((sc.sz.y - this.sz.y) / 2);
+        }
+
+        void dpy() {
+            sc.settext(String.format("%d%%", val));
+        }
+
+        public void changed() {
+            dpy();
+            Config.setCupboardScale(val);
+        }
+    }, new Coord(0, y + 15));
+
 	display.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
 	display.pack();
 
