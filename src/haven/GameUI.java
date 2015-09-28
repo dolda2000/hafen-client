@@ -123,7 +123,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	eqproxy = add(new EquipProxy(new int[]{6, 7}), new Coord(3, 85));
 	beltwdg.raise();
 	ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1), false));
-	urpanel = add(new Hidepanel("gui-ur", null, new Coord( 1, -1), true));
+	urpanel = add(new Hidepanel("gui-ur", null, new Coord( 1, -1), false));
 	brpanel = add(new Hidepanel("gui-br", null, new Coord( 1,  1), true) {
 		public void move(double a) {
 		    super.move(a);
