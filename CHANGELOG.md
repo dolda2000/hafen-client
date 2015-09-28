@@ -1,5 +1,11 @@
 ## Changelog
 
+### r36 (2015-09-28)
+
+- Added option to display simplified crops (from Amber client). See `Video settings`
+- Changed speed hotkey to `Shift`+`R`
+- Cupboard size is now optional and can be changed through the `Display settings`
+
 ### r35 (2015-09-25)
 
 - Added display of stone column radius
