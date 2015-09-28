@@ -26,12 +26,16 @@
 
 package haven;
 
+import java.awt.*;
 import java.util.*;
 import static haven.Inventory.invsq;
 
 public class Equipory extends Widget implements DTarget {
     private static final Tex bg = Resource.loadtex("gfx/hud/equip/bg");
     private static final int rx = 34 + bg.sz().x;
+    private static final int acx = 34 + bg.sz().x/2;
+    private static final Text.Foundry acf = new Text.Foundry(Text.sansb, 10).aa(true);
+    private Tex armorclass = null;
     static Coord ecoords[] = {
 	new Coord(0, 0),
 	new Coord(rx, 0),
@@ -110,6 +114,11 @@ public class Equipory extends Widget implements DTarget {
 	    	slots[ep] = v[i];
 	    }
 	    wmap.put(g, v);
+
+            if (armorclass != null) {
+                armorclass.dispose();
+                armorclass = null;
+            }
 	} else {
 	    super.addchild(child, args);
 	}
@@ -126,6 +135,10 @@ public class Equipory extends Widget implements DTarget {
 			slots[s] = null;
 		}
 	    }
+            if (armorclass != null) {
+                armorclass.dispose();
+                armorclass = null;
+            }
 	}
     }
     
@@ -145,6 +158,27 @@ public class Equipory extends Widget implements DTarget {
 	for(Coord ec : ecoords)
 	    g.image(invsq, ec);
 	super.draw(g);
+
+        if (armorclass == null) {
+            int h = 0, s = 0;
+            for (int i = 0; i < quickslots.length; i++) {
+                WItem itm = quickslots[i];
+                if (itm != null) {
+                    for (ItemInfo info : itm.item.info()) {
+                        if (info.getClass().getSimpleName().equals("Wear")) {
+                            try {
+                                h += (int) info.getClass().getDeclaredField("hard").get(info);
+                                s += (int) info.getClass().getDeclaredField("soft").get(info);
+                            } catch (Exception ex) { // ignore everything
+                            }
+                        }
+
+                    }
+                }
+            }
+            armorclass = Text.render("Armor Class: " + h + "/" + s, Color.BLACK, acf).tex();
+        }
+        g.image(armorclass, new Coord(acx - armorclass.sz().x/2, bg.sz().y - 15));
     }
 	
     public boolean iteminteract(Coord cc, Coord ul) {
