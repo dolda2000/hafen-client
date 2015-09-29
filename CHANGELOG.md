@@ -3,7 +3,7 @@
 ### r37 (2015-09-29)
 
 - Added more visible defense bars. Can be disabled through the option in `Misc settings`
-- Added build menu similar to the existing craft menu accessible on `Ctrl`+`B`
+- Added build menu similar to the existing craft menu accessible on `Alt`+`B`
 - Objects can be inspected with `Alt`+`Shift`+`Click`
 
 ### r36 (2015-09-28)
