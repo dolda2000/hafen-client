@@ -91,15 +91,15 @@ public class Fightsess extends Widget {
 	updatepos();
 	double now = System.currentTimeMillis() / 1000.0;
 
-    DefBar my = new DefBar();
+    DefBar my = new DefBar(true);
     for(Buff buff : fv.buffs.children(Buff.class)) {
         Coord c = pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y);
 		buff.draw(g.reclip(c, buff.sz));
         my.addBuff(buff);
 	}
-    my.draw(g, pcc.add(-Buff.cframe.sz().x - 20,pho - Buff.cframe.sz().y));
+    my.draw(g, pcc.add(-40, pho - Buff.cframe.sz().y));
 	if(fv.current != null) {
-        DefBar opp = new DefBar();
+        DefBar opp = new DefBar(false);
 	    for(Buff buff : fv.current.buffs.children(Buff.class)) {
             buff.draw(g.reclip(pcc.add(buff.c.x + 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
             opp.addBuff(buff);
@@ -214,6 +214,11 @@ public class Fightsess extends Widget {
         private static final Coord bsz = new Coord(20, 10);
 
         private final Map<AttackType, List<Buff>> defs = new HashMap<AttackType, List<Buff>>();
+        private final boolean invert;
+
+        public DefBar(boolean invert) {
+            this.invert = invert;
+        }
 
         public void addBuff(Buff buff) {
             Resource.Image img = buff.getImage();
@@ -242,7 +247,7 @@ public class Fightsess extends Widget {
                     g.chcolor(Color.LIGHT_GRAY);
                     g.rect(c.add(x, -y), bsz);
                     g.chcolor();
-                    x += bsz.x + 5;
+                    x += (bsz.x + 5) * (invert ? -1 : 1);
                 }
                 y += bsz.y + 5;
             }
