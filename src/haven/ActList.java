@@ -2,23 +2,23 @@ package haven;
 
 import java.util.*;
 
-public class CraftList extends Listbox<CraftList.CraftItem> {
+public class ActList extends Listbox<ActList.ActItem> {
     private static final Text.Foundry font = new Text.Foundry(Text.fraktur, 15).aa(true);
-    private final List<CraftItem> items = new ArrayList<CraftItem>();
-    private final Map<Glob.Pagina, CraftItem> map = new HashMap<Glob.Pagina, CraftItem>();
+    private final List<ActItem> items = new ArrayList<ActItem>();
+    private final Map<Glob.Pagina, ActItem> map = new HashMap<Glob.Pagina, ActItem>();
 
-    public CraftList(int w, int h) {
+    public ActList(int w, int h) {
         super(w, h, font.height() + 2);
     }
 
     public void add(Glob.Pagina pagina) {
-        CraftItem item = new CraftItem(pagina);
+        ActItem item = new ActItem(pagina);
         map.put(pagina, item);
         items.add(item);
     }
 
     public void remove(Glob.Pagina pagina) {
-        CraftItem item = map.remove(pagina);
+        ActItem item = map.remove(pagina);
         if (item != null)
             items.remove(item);
     }
@@ -28,12 +28,12 @@ public class CraftList extends Listbox<CraftList.CraftItem> {
         items.clear();
     }
 
-    public void sort(Comparator<CraftItem> comparator) {
+    public void sort(Comparator<ActItem> comparator) {
         Collections.sort(items, comparator);
     }
 
     @Override
-    protected CraftItem listitem(int i) {
+    protected ActItem listitem(int i) {
         return items.get(i);
     }
 
@@ -50,18 +50,18 @@ public class CraftList extends Listbox<CraftList.CraftItem> {
     }
 
     @Override
-    protected void drawitem(GOut g, CraftItem item, int i) {
+    protected void drawitem(GOut g, ActItem item, int i) {
         g.image(item.icon, Coord.z);
         g.aimage(item.rname.tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
     }
 
-    public class CraftItem {
+    public class ActItem {
         public final String name;
         public final Text rname;
         public final Tex icon;
         public final String[] cmd;
 
-        public CraftItem(Glob.Pagina pagina) {
+        public ActItem(Glob.Pagina pagina) {
             Resource.AButton act = pagina.act();
             this.name = act.name;
             this.cmd = act.ad;

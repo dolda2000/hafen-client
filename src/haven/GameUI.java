@@ -71,7 +71,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public String polowner;
     public Bufflist buffs;
     public StudyWnd studywnd;
-    public CraftWnd craftwnd;
+    public ActWnd craftwnd;
+    public ActWnd buildwnd;
     public Window iconwnd;
     public final Cal cal;
 
@@ -154,8 +155,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     studywnd = add(new StudyWnd(Coord.z), Config.getStudyPosition());
     studywnd.visible = Config.getStudyVisible();
 
-    craftwnd = add(new CraftWnd());
+    craftwnd = add(new ActWnd("Craft...", "paginae/craft/"));
     craftwnd.hide();
+    buildwnd = add(new ActWnd("Build...", "paginae/bld/"));
+    buildwnd.hide();
 
     iconwnd = add(new CustomIconWnd());
     iconwnd.hide();
@@ -263,6 +266,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	Debug.log = ui.cons.out;
 	opts.c = sz.sub(opts.sz).div(2);
     craftwnd.c = sz.sub(craftwnd.sz).div(2);
+    buildwnd.c = sz.sub(buildwnd.sz).div(2);
     iconwnd.c = sz.sub(iconwnd.sz).div(2);
     }
 
@@ -816,6 +820,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
             craftwnd.show(!craftwnd.visible);
             if (craftwnd.visible)
                 craftwnd.raise();
+            return true;
+        } else if (alt && keycode == KeyEvent.VK_B) {
+            buildwnd.toggle();
+            if (buildwnd.visible)
+                buildwnd.raise();
             return true;
         } else if (alt && keycode == KeyEvent.VK_N) {
             Config.setNightVisionEnabled(!Config.getNightVisionEnabled());

@@ -3,24 +3,29 @@ package haven;
 import haven.util.CollectionListener;
 
 import java.awt.event.KeyEvent;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
-public class CraftWnd extends Window {
+public class ActWnd extends Window {
     private static final int WIDTH = 200;
 
     private final TextEntry entry;
     private final List<Glob.Pagina> all = new ArrayList<Glob.Pagina>();
-    private final CraftList list;
+    private final ActList list;
+    private final String filter;
     private PaginaeListener listener;
 
-    public CraftWnd() {
-        super(Coord.z, "Craft...");
+    public ActWnd(String caption, String filter) {
+        super(Coord.z, caption);
+        this.filter = filter;
         setcanfocus(true);
         setfocusctl(true);
         entry = add(new TextEntry(WIDTH, "") {
             @Override
             public void activate(String text) {
                 getparent(GameUI.class).menu.wdgmsg("act", ((Object[])list.sel.cmd));
+                ActWnd.this.hide();
             }
 
             @Override
@@ -45,10 +50,11 @@ public class CraftWnd extends Window {
             }
         });
         setfocus(entry);
-        list = add(new CraftList(WIDTH, 10) {
+        list = add(new ActList(WIDTH, 10) {
             @Override
-            protected void itemactivate(CraftItem item) {
+            protected void itemactivate(ActItem item) {
                 getparent(GameUI.class).menu.wdgmsg("act", ((Object[])list.sel.cmd));
+                ActWnd.this.hide();
             }
         }, 0, entry.sz.y + 5);
 
@@ -81,7 +87,7 @@ public class CraftWnd extends Window {
             all.clear();
             synchronized (ui.sess.glob.paginae) {
                 for (Glob.Pagina pagina : ui.sess.glob.paginae) {
-                    if (iscraft(pagina))
+                    if (isIncluded(pagina))
                         all.add(pagina);
                 }
                 listener = new PaginaeListener();
@@ -117,7 +123,7 @@ public class CraftWnd extends Window {
     private class PaginaeListener implements CollectionListener<Glob.Pagina> {
         @Override
         public void onItemAdded(Glob.Pagina item) {
-            if (iscraft(item)) {
+            if (isIncluded(item)) {
                 all.add(item);
                 refilter();
             }
@@ -130,14 +136,14 @@ public class CraftWnd extends Window {
         }
     }
 
-    private class ItemComparator implements Comparator<CraftList.CraftItem> {
+    private class ItemComparator implements Comparator<ActList.ActItem> {
         @Override
-        public int compare(CraftList.CraftItem a, CraftList.CraftItem b) {
+        public int compare(ActList.ActItem a, ActList.ActItem b) {
             return a.name.compareTo(b.name);
         }
     }
 
-    private static boolean iscraft(Glob.Pagina pagina) {
+    private boolean isIncluded(Glob.Pagina pagina) {
         Resource res = null;
         try {
             res = pagina.res();
@@ -147,6 +153,6 @@ public class CraftWnd extends Window {
                 res = pagina.res();
             } catch (InterruptedException ex) {}
         }
-        return (res != null) && res.name.startsWith("paginae/craft/");
+        return (res != null) && res.name.startsWith(filter);
     }
 }
