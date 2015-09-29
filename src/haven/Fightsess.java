@@ -95,7 +95,8 @@ public class Fightsess extends Widget {
     for(Buff buff : fv.buffs.children(Buff.class)) {
         Coord c = pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y);
 		buff.draw(g.reclip(c, buff.sz));
-        my.addBuff(buff);
+        if (!buff.dest)
+            my.addBuff(buff);
 	}
     if (Config.getCustomDefenceBarEnabled())
         my.draw(g, pcc.add(-40, pho - Buff.cframe.sz().y));
@@ -103,7 +104,8 @@ public class Fightsess extends Widget {
         DefBar opp = new DefBar(false);
 	    for(Buff buff : fv.current.buffs.children(Buff.class)) {
             buff.draw(g.reclip(pcc.add(buff.c.x + 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
-            opp.addBuff(buff);
+            if (!buff.dest)
+                opp.addBuff(buff);
         }
         if (Config.getCustomDefenceBarEnabled())
             opp.draw(g, pcc.add(20, pho - Buff.cframe.sz().y));
