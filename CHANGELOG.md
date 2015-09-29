@@ -1,5 +1,9 @@
 ## Changelog
 
+### r38 (2015-09-29)
+
+- Do not display defense bars requested to be removed
+
 ### r37 (2015-09-29)
 
 - Added more visible defense bars. Can be disabled through the option in `Misc settings`
