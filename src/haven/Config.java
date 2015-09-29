@@ -196,6 +196,14 @@ public class Config {
 		setprefi("haven.display.cupboardscale", value);
 	}
 
+	public static boolean getCustomDefenceBarEnabled() {
+		return getprefb("haven.combat.defbar.visible", true);
+	}
+
+	public static void setCustomDefenceBarEnabled(boolean value) {
+		setprefb("haven.combat.defbar.visible", value);
+	}
+
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)

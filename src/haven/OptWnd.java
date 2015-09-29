@@ -375,13 +375,21 @@ public class OptWnd extends Window {
 	display.pack();
 
 	y = 0;
-	misc.add(new CheckBox("Save minimaps") {
-		{ a = Config.getMinimapSaveEnabled(); }
-		public void set(boolean val) {
-			Config.setMinimapSaveEnabled(val);
-			a = val;
-		}
-	}, new Coord(0, y));
+    misc.add(new CheckBox("Save minimaps") {
+        { a = Config.getMinimapSaveEnabled(); }
+        public void set(boolean val) {
+            Config.setMinimapSaveEnabled(val);
+            a = val;
+        }
+    }, new Coord(0, y));
+    y += 15;
+    misc.add(new CheckBox("Display additional defense bars") {
+        { a = Config.getCustomDefenceBarEnabled(); }
+        public void set(boolean val) {
+            Config.setCustomDefenceBarEnabled(val);
+            a = val;
+        }
+    }, new Coord(0, y));
 	misc.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
 	misc.pack();
 
