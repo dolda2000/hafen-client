@@ -520,6 +520,10 @@ public class GOut {
 	usestate(States.color);
     }
 
+    public void chcolor(Color c, int a) {
+        chcolor(c.getRed(), c.getGreen(), c.getBlue(), a);
+    }
+
     Color getcolor() {
 	States.ColState color = curstate(States.color);
 	return((color == null)?Color.WHITE:color.c);
