@@ -162,6 +162,10 @@ public abstract class States extends GLState {
 		g.gl.glDepthMask(true);
 	    }
 	};
+    @Material.ResName("maskdepth")
+    public static class $maskdepth implements Material.ResCons {
+	public GLState cons(Resource res, Object... args) {return(presdepth);}
+    }
 
     public static final StandAlone prescolor = new StandAlone(Slot.Type.DRAW, PView.proj) {
 	    public void apply(GOut g) {
