@@ -50,7 +50,7 @@ public class MapMod extends Window implements MapView.Grabber {
     public MapMod() {
         super(new Coord(200, 100), "Kartlasskostning");
         walkmod = false;
-        cbox = add(new CheckBox("Walk drawing"), 0, 20);
+        cbox = add(new CheckBox("Walk drawing", true), Coord.z);
 	cbox.canactivate = true;
         btn = add(new Button(40, "Change"), asz.add(-50, -30));
         text = add(new Label(String.format(fmt, 0, 0)), 0, 0);
