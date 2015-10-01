@@ -1,5 +1,9 @@
 ## Changelog
 
+### r39 (2015-10-01)
+
+- Added optional autohearth. Can be enabled through the options in `Misc settings`
+
 ### r38 (2015-09-29)
 
 - Do not display defense bars requested to be removed
