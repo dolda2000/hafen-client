@@ -390,6 +390,14 @@ public class OptWnd extends Window {
             a = val;
         }
     }, new Coord(0, y));
+    y += 15;
+    misc.add(new CheckBox("Autohearth") {
+        { a = Config.getAutoHearthEnabled(); }
+        public void set(boolean val) {
+            Config.setAutoHearthEnabled(val);
+            a = val;
+        }
+    }, new Coord(0, y));
 	misc.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
 	misc.pack();
 

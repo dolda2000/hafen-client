@@ -28,6 +28,7 @@ package haven;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -46,6 +47,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
     private UI.Grab grab;
     private boolean showradius;
     private boolean showgrid;
+    private final HashSet<Long> spottedplayers = new HashSet<Long>();
 
     public LocalMiniMap(Coord sz, MapView mv) {
 	super(sz);
@@ -85,7 +87,15 @@ public class LocalMiniMap extends Widget implements Console.Directory {
                 icon.draw(g, p2c(gob.rc).sub(off));
 		} catch(Loading l) {}
 	    }
+        boolean autohearth = Config.getAutoHearthEnabled();
         for (Gob gob : players) {
+            if (autohearth) {
+                KinInfo kin = gob.getattr(KinInfo.class);
+                if (kin == null && !spottedplayers.contains(gob.id)) {
+                    spottedplayers.add(gob.id);
+                    getparent(GameUI.class).menu.wdgmsg("act", "travel", "hearth");
+                }
+            }
             BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
             if (icon != null && icon.visible())
                 icon.draw(g, p2c(gob.rc).sub(off));

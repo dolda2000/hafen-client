@@ -204,6 +204,14 @@ public class Config {
 		setprefb("haven.combat.defbar.visible", value);
 	}
 
+	public static boolean getAutoHearthEnabled() {
+		return getprefb("haven.autohearth", false);
+	}
+
+	public static void setAutoHearthEnabled(boolean value) {
+		setprefb("haven.autohearth", value);
+	}
+
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)
