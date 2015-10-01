@@ -161,20 +161,23 @@ public class Equipory extends Widget implements DTarget {
 
         if (armorclass == null) {
             int h = 0, s = 0;
-            for (int i = 0; i < quickslots.length; i++) {
-                WItem itm = quickslots[i];
-                if (itm != null) {
-                    for (ItemInfo info : itm.item.info()) {
-                        if (info.getClass().getSimpleName().equals("Wear")) {
-                            try {
-                                h += (int) info.getClass().getDeclaredField("hard").get(info);
-                                s += (int) info.getClass().getDeclaredField("soft").get(info);
-                            } catch (Exception ex) { // ignore everything
+            try {
+                for (int i = 0; i < quickslots.length; i++) {
+                    WItem itm = quickslots[i];
+                    if (itm != null) {
+                        for (ItemInfo info : itm.item.info()) {
+                            if (info.getClass().getSimpleName().equals("Wear")) {
+                                try {
+                                    h += (int) info.getClass().getDeclaredField("hard").get(info);
+                                    s += (int) info.getClass().getDeclaredField("soft").get(info);
+                                } catch (Exception ex) { // ignore everything
+                                }
                             }
-                        }
 
+                        }
                     }
                 }
+            } catch (Exception e) { // fail silently
             }
             armorclass = Text.render("Armor Class: " + h + "/" + s, Color.BLACK, acf).tex();
         }
