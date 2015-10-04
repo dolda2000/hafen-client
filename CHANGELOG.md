@@ -1,5 +1,15 @@
 ## Changelog
 
+### r40 (2015-10-04)
+
+- Added sound alarm for unknown players. It can be disabled through the option in `Misc settings`.
+- Added slider for alarm volume into `Audio settings`
+- Both alarm and auto hearth now trigger on players marked with Red color
+- Added item quality display toggled by `Alt`+`Q`. There are 3 modes of quality display: All (show all qualities), Average (show average quality) and Max (show best quality). Preferred one can be selected using a slider in `Display settings`
+- Replaced item progress percentage with the vertical progress bar from legacy Ender's client
+- Added cursor item hide feature from bdew's client. Use `Alt`+`H` to hide/show item on cursor
+- Added auto study from bdew's client
+
 ### r39 (2015-10-01)
 
 - Added optional autohearth. Can be enabled through the options in `Misc settings`
