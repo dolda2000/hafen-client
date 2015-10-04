@@ -2,6 +2,7 @@ package haven;
 
 public class InventoryProxy extends Inventory {
     private final Inventory inv;
+    private boolean locked;
 
     public InventoryProxy(Inventory inv) {
         super(inv.isz);
@@ -26,6 +27,8 @@ public class InventoryProxy extends Inventory {
 
     @Override
     public boolean mousedown(Coord c, int button) {
+        if (locked)
+            return false;
         WItem item = itemat(c);
         return (item != null) && item.mousedown(c.sub(item.c), button);
     }
@@ -51,5 +54,9 @@ public class InventoryProxy extends Inventory {
                 return item;
         }
         return null;
+    }
+
+    public void setLocked(boolean value) {
+        locked = value;
     }
 }
