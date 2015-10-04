@@ -161,18 +161,8 @@ public class OptWnd extends Window {
 			    }
 			}, new Coord(0, y + 15));
 		}
-                y += 35;
-                add(new CheckBox("Simple crops (req. logout)") {
-                    {
-                        a = Config.simplecrops;
-                    }
-
-                    public void set(boolean val) {
-                        Utils.setprefb("simplecrops", val);
-                        Config.simplecrops = val;
-                        a = val;
-                    }
-                }, new Coord(0, y));
+        y += 35;
+        add(new PrefCheckBox("Simple crops (req. logout)", Config.simplifyCrops), new Coord(0, y));
 		add(new Button(200, "Reset to defaults") {
 			public void click() {
 			    cf.cfg.resetprefs();
@@ -272,20 +262,7 @@ public class OptWnd extends Window {
 	audio.pack();
 
 	y = 0;
-	display.add(new CheckBox("Show flavor objects") {
-		{
-			a = Utils.getprefb("showflo", true);
-		}
-
-		public void set(boolean val) {
-			if (val) {
-				Utils.setprefb("showflo", true);
-			} else {
-				Utils.setprefb("showflo", false);
-			}
-			a = val;
-		}
-	}, new Coord(0, y));
+	display.add(new PrefCheckBox("Show flavor objects", Config.showFlavor), new Coord(0, y));
 	y += 15;
 	display.add(new PrefCheckBox("Enable camera snapping", Config.snapCamera), new Coord(0, y));
 	y += 15;

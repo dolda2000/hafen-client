@@ -63,7 +63,6 @@ public class Config {
     public static int authport = getint("haven.authport", 1871);
     public static boolean softres = getprop("haven.softres", "on").equals("on");
     public static boolean studylock = Utils.getprefb("studylock", false);
-    public static boolean simplecrops = Utils.getprefb("simplecrops", false);
     public static byte[] authck = null;
     public static String prefspec = "hafen";
 
@@ -87,6 +86,8 @@ public class Config {
     public static Pref<Boolean> enableAutoHearth = new Pref<Boolean>("haven.autohearth", false, TYPE_BOOL);
     public static Pref<Boolean> enableStrangerAlarm = new Pref<Boolean>("haven.alarm.strangers", true, TYPE_BOOL);
     public static Pref<Integer> alarmVolume = new Pref<Integer>("haven.alarm.volume", 500, TYPE_INT);
+    public static Pref<Boolean> simplifyCrops = new Pref<Boolean>("simplecrops", false, TYPE_BOOL);
+    public static Pref<Boolean> showFlavor = new Pref<Boolean>("showflo", true, TYPE_BOOL);
     
     static {
 	String p;
