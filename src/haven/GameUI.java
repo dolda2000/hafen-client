@@ -626,6 +626,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(afk && (System.currentTimeMillis() - ui.lastevent < 300000)) {
 	    afk = false;
 	}
+	if (Config.enableAutoStudy.get())
+		AutoStudy.update(this);
     }
 
     public void uimsg(String msg, Object... args) {

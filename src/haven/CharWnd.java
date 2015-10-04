@@ -55,7 +55,7 @@ public class CharWnd extends Window {
     public Wound.Info wound;
     public int exp, enc;
     private int scost;
-    private final Tabs.Tab sattr, fgt;
+    public final Tabs.Tab sattr, fgt;
 
     public static class FoodMeter extends Widget {
 	public static final Tex frame = Resource.loadtex("gfx/hud/chr/foodm");
@@ -1299,6 +1299,7 @@ public class CharWnd extends Window {
 	    Frame.around(sattr, Collections.singletonList(child));
 	    Widget inf = sattr.add(new StudyInfo(new Coord(attrw - 150, child.sz.y), child), new Coord(260 + 150, child.c.y).add(wbox.btloff().x, 0));
         sattr.add(new OptWnd.PrefCheckBox("Lock", Config.lockStudy), new Coord(415, 10));
+        sattr.add(new OptWnd.PrefCheckBox("Auto", Config.enableAutoStudy), new Coord(465, 10));
 	    Frame.around(sattr, Collections.singletonList(inf));
         getparent(GameUI.class).studywnd.setStudy((Inventory)child);
 	} else if(place == "fmg") {

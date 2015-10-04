@@ -353,7 +353,7 @@ public class OptWnd extends Window {
     y += 15;
     misc.add(new PrefCheckBox("Display additional defense bars", Config.showCustomDefenseBars), new Coord(0, y));
     y += 15;
-    misc.add(new PrefCheckBox("Autohearth", Config.enableAutoHearth), new Coord(0, y));
+    misc.add(new PrefCheckBox("Auto hearth", Config.enableAutoHearth), new Coord(0, y));
     y += 15;
     misc.add(new PrefCheckBox("Play alarm for unknown or RED players", Config.enableStrangerAlarm), new Coord(0, y));
 	misc.add(new PButton(200, "Back", 27, main), new Coord(0, 190));

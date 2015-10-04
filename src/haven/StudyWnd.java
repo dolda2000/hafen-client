@@ -22,6 +22,7 @@ public class StudyWnd extends Window {
                 invp.setLocked(val);
             }
         }, new Coord(0, 0));
+        add(new OptWnd.PrefCheckBox("Auto", Config.enableAutoStudy), new Coord(55, 0));
         study = add(invp, 0, 20);
         studyInfo = add(new StudyInfo(new Coord(study.sz.x, 50), inv), 0, study.c.y + study.sz.y + 5);
         pack();
