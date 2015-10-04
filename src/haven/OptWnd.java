@@ -70,7 +70,7 @@ public class OptWnd extends Window {
     public class VideoPanel extends Panel {
 	public VideoPanel(Panel back) {
 	    super();
-	    add(new PButton(200, "Back", 27, back), new Coord(0, 180));
+	    add(new PButton(200, "Back", 27, back), new Coord(0, 190));
 	    pack();
 	}
 
@@ -169,7 +169,7 @@ public class OptWnd extends Window {
 			    curcf.destroy();
 			    curcf = null;
 			}
-		    }, new Coord(0, 150));
+		    }, new Coord(0, 160));
 		pack();
 	    }
 	}
@@ -214,7 +214,7 @@ public class OptWnd extends Window {
 		public void click() {
 		    OptWnd.this.hide();
 		}
-	    }, new Coord(0, 180));
+	    }, new Coord(0, 190));
 	main.pack();
 
 	y = 0;
@@ -258,7 +258,7 @@ public class OptWnd extends Window {
         }
     }, new Coord(0, y));
 	y += 35;
-	audio.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
+	audio.add(new PButton(200, "Back", 27, main), new Coord(0, 190));
 	audio.pack();
 
 	y = 0;
@@ -311,7 +311,8 @@ public class OptWnd extends Window {
     }, new Coord(0, y));
     y += 20;
     display.add(new Label("Cupboards scale:"), new Coord(0, y));
-    final Label sc = display.add(new Label(""), new Coord(165, y + 15));
+    y += 15;
+    final Label sc = display.add(new Label(""), new Coord(165, y));
     display.add(new HSlider(160, 10, 100, Config.cupboardScale.get()) {
         protected void added() {
             dpy();
@@ -326,9 +327,25 @@ public class OptWnd extends Window {
             dpy();
             Config.cupboardScale.set(val);
         }
-    }, new Coord(0, y + 15));
+    }, new Coord(0, y));
+    y += 20;
+    display.add(new Label("Show item quality mode:"), new Coord(0, y));
+    y += 15;
+    display.add(new Label("All"), new Coord(0, y));
+    display.add(new Label("Avg"), new Coord(95, y));
+    display.add(new Label("Max"), new Coord(180, y));
+    y += 10;
+    display.add(new HSlider(200, 0, 2, 0) {
+        protected void attach(UI ui) {
+            super.attach(ui);
+            val = Config.showQualityMode.get();
+        }
+        public void changed() {
+            Config.showQualityMode.set(val);
+        }
+    }, new Coord(0, y));
 
-	display.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
+	display.add(new PButton(200, "Back", 27, main), new Coord(0, 190));
 	display.pack();
 
 	y = 0;
@@ -339,7 +356,7 @@ public class OptWnd extends Window {
     misc.add(new PrefCheckBox("Autohearth", Config.enableAutoHearth), new Coord(0, y));
     y += 15;
     misc.add(new PrefCheckBox("Play alarm for unknown or RED players", Config.enableStrangerAlarm), new Coord(0, y));
-	misc.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
+	misc.add(new PButton(200, "Back", 27, main), new Coord(0, 190));
 	misc.pack();
 
 	chpanel(main);

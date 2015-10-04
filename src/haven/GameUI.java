@@ -837,6 +837,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         } else if (alt && keycode == KeyEvent.VK_D) {
             if (map != null)
                 map.togglegobradius();
+        } else if (alt && keycode == KeyEvent.VK_Q) {
+            Config.showQuality.set(!Config.showQuality.get());
         }
     }
 	return(super.globtype(key, ev));

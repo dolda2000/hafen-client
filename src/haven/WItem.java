@@ -34,6 +34,10 @@ import static haven.ItemInfo.find;
 import static haven.Inventory.sqsz;
 
 public class WItem extends Widget implements DTarget {
+    private static final int SHOW_QUALITY_ALL = 0;
+    private static final int SHOW_QUALITY_AVG = 1;
+    private static final int SHOW_QUALITY_MAX = 2;
+
     public static final Resource missing = Resource.local().loadwait("gfx/invobjs/missing");
     public final GItem item;
     private Resource cspr = null;
@@ -208,6 +212,7 @@ public class WItem extends Widget implements DTarget {
             g.frect(new Coord(sz.x-5,(int) ((1-a)*sz.y)), new Coord(5,(int) (a*sz.y)));
             g.chcolor();
         }
+        drawquality(g);
 	} else {
 	    g.image(missing.layer(Resource.imgc).tex(), Coord.z, sz);
 	}
@@ -259,5 +264,27 @@ public class WItem extends Widget implements DTarget {
     public boolean iteminteract(Coord cc, Coord ul) {
 	item.wdgmsg("itemact", ui.modflags());
 	return(true);
+    }
+
+    private void drawquality(GOut g) {
+        ItemQuality q = quality.get();
+        if (q == null || !Config.showQuality.get())
+            return;
+        Coord c = new Coord(0, -5);
+        switch (Config.showQualityMode.get()) {
+            case SHOW_QUALITY_ALL:
+                g.aimage(q.essence.tex(), c, 0, 0);
+                c.y += 10;
+                g.aimage(q.substance.tex(), c, 0, 0);
+                c.y += 10;
+                g.aimage(q.vitality.tex(), c, 0, 0);
+                break;
+            case SHOW_QUALITY_AVG:
+                g.aimage(q.average.tex(), c, 0, 0);
+                break;
+            case SHOW_QUALITY_MAX:
+                g.aimage(q.getMaxElement().tex(), c, 0, 0);
+                break;
+        }
     }
 }
