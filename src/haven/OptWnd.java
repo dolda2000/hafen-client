@@ -331,14 +331,6 @@ public class OptWnd extends Window {
         }
     }, new Coord(0, y));
     y += 15;
-    display.add(new CheckBox("Use old paving tileset (requires re-login)") {
-        { a = Config.showOldPaving.get(); }
-        public void set(boolean val) {
-            Config.showOldPaving.set(val);
-            a = val;
-        }
-    }, new Coord(0, y));
-    y += 15;
     display.add(new CheckBox("Display game time indicator") {
         { a = Config.showClock.get(); }
         public void set(boolean val) {

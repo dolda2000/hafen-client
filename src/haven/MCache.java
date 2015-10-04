@@ -307,10 +307,6 @@ public class MCache {
 		    break;
 		String resnm = blob.string();
 		int resver = blob.uint16();
-		if (tileid == TILESET_GNEISS && Config.showOldPaving.get()) {
-			resnm = "gfx/tiles/spave";
-			resver = 14;
-		}
 		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
 	    }
 	    for(int i = 0; i < tiles.length; i++)

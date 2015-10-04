@@ -80,7 +80,6 @@ public class Config {
     public static Pref<Boolean> showHungerMeter = new Pref<Boolean>("haven.meters.hunger", true, TYPE_BOOL);
     public static Pref<Boolean> showFepMeter = new Pref<Boolean>("haven.meters.fep", true, TYPE_BOOL);
     public static Pref<Boolean> showCustomIcons = new Pref<Boolean>("haven.minimap.customicons", true, TYPE_BOOL);
-    public static Pref<Boolean> showOldPaving = new Pref<Boolean>("haven.display.oldpaving", false, TYPE_BOOL);
     public static Pref<Boolean> showClock = new Pref<Boolean>("haven.display.clock", true, TYPE_BOOL);
     public static Pref<Boolean> showServerGrid = new Pref<Boolean>("haven.display.servergrid", false, TYPE_BOOL);
     public static Pref<Boolean> showCustomDefenseBars = new Pref<Boolean>("haven.combat.defbar.visible", true, TYPE_BOOL);
