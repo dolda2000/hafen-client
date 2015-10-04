@@ -399,7 +399,7 @@ public class OptWnd extends Window {
         }
     }, new Coord(0, y));
     y += 15;
-    misc.add(new CheckBox("Play alarm for unknown players") {
+    misc.add(new CheckBox("Play alarm for unknown or RED players") {
         { a = Config.getStrangerAlarmEnabled(); }
         public void set(boolean val) {
             Config.setStrangerAlarmEnabled(val);

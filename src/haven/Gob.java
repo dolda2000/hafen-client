@@ -292,6 +292,6 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 
     public boolean isThreat() {
         KinInfo kin = getattr(KinInfo.class);
-        return (kin == null);
+        return (kin == null) || (kin.group == 2 /* RED */);
     }
 }
