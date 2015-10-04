@@ -831,14 +831,18 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         } else if (alt && keycode == KeyEvent.VK_G) {
             if (map != null)
                 map.togglegrid();
+            return true;
         } else if (alt && keycode == KeyEvent.VK_R) {
             if (mmap != null)
                 mmap.toggleCustomIcons();
+            return true;
         } else if (alt && keycode == KeyEvent.VK_D) {
             if (map != null)
                 map.togglegobradius();
+            return true;
         } else if (alt && keycode == KeyEvent.VK_Q) {
             Config.showQuality.set(!Config.showQuality.get());
+            return true;
         }
     }
 	return(super.globtype(key, ev));
