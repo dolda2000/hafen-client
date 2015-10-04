@@ -287,27 +287,13 @@ public class OptWnd extends Window {
 		}
 	}, new Coord(0, y));
 	y += 15;
-	display.add(new CheckBox("Enable camera snapping") {
-		{ a = Config.snapCamera.get(); }
-		public void set(boolean val) {
-			Config.snapCamera.set(val);
-			a = val;
-		}
-	}, new Coord(0, y));
+	display.add(new PrefCheckBox("Enable camera snapping", Config.snapCamera), new Coord(0, y));
 	y += 15;
-	display.add(new CheckBox("Show kin status notifications") {
-		{ a = Config.showKinNotifications.get(); }
-		public void set(boolean val) {
-			Config.showKinNotifications.set(val);
-			a = val;
-		}
-	}, new Coord(0, y));
+	display.add(new PrefCheckBox("Show kin status notifications", Config.showKinNotifications), new Coord(0, y));
 	y += 15;
-    display.add(new CheckBox("Display hunger meter") {
-        { a = Config.showHungerMeter.get(); }
+    display.add(new PrefCheckBox("Display hunger meter", Config.showHungerMeter) {
         public void set(boolean val) {
-            Config.showHungerMeter.set(val);
-            a = val;
+            super.set(val);
             GameUI ui = getparent(GameUI.class);
             if (ui == null) return;
             if (val)
@@ -317,11 +303,9 @@ public class OptWnd extends Window {
         }
     }, new Coord(0, y));
     y += 15;
-    display.add(new CheckBox("Display FEP meter") {
-        { a = Config.showFepMeter.get(); }
+    display.add(new PrefCheckBox("Display FEP meter", Config.showFepMeter) {
         public void set(boolean val) {
-            Config.showFepMeter.set(val);
-            a = val;
+            super.set(val);
             GameUI ui = getparent(GameUI.class);
             if (ui == null) return;
             if (val)
@@ -331,22 +315,18 @@ public class OptWnd extends Window {
         }
     }, new Coord(0, y));
     y += 15;
-    display.add(new CheckBox("Display game time indicator") {
-        { a = Config.showClock.get(); }
+    display.add(new PrefCheckBox("Display game time indicator", Config.showClock) {
         public void set(boolean val) {
-            Config.showClock.set(val);
-            a = val;
+            super.set(val);
             GameUI ui = getparent(GameUI.class);
             if (ui != null)
                 ui.cal.show(val);
         }
     }, new Coord(0, y));
     y += 15;
-    display.add(new CheckBox("Display server grid") {
-        { a = Config.showServerGrid.get(); }
+    display.add(new PrefCheckBox("Display server grid", Config.showServerGrid) {
         public void set(boolean val) {
-            Config.showServerGrid.set(val);
-            a = val;
+            super.set(val);
             GameUI ui = getparent(GameUI.class);
             if (ui != null)
                 ui.map.toggleservergrid();
@@ -375,37 +355,13 @@ public class OptWnd extends Window {
 	display.pack();
 
 	y = 0;
-    misc.add(new CheckBox("Save minimaps") {
-        { a = Config.minimapEnableSave.get(); }
-        public void set(boolean val) {
-            Config.minimapEnableSave.set(val);
-            a = val;
-        }
-    }, new Coord(0, y));
+    misc.add(new PrefCheckBox("Save minimaps", Config.minimapEnableSave), new Coord(0, y));
     y += 15;
-    misc.add(new CheckBox("Display additional defense bars") {
-        { a = Config.showCustomDefenseBars.get(); }
-        public void set(boolean val) {
-            Config.showCustomDefenseBars.set(val);
-            a = val;
-        }
-    }, new Coord(0, y));
+    misc.add(new PrefCheckBox("Display additional defense bars", Config.showCustomDefenseBars), new Coord(0, y));
     y += 15;
-    misc.add(new CheckBox("Autohearth") {
-        { a = Config.enableAutoHearth.get(); }
-        public void set(boolean val) {
-            Config.enableAutoHearth.set(val);
-            a = val;
-        }
-    }, new Coord(0, y));
+    misc.add(new PrefCheckBox("Autohearth", Config.enableAutoHearth), new Coord(0, y));
     y += 15;
-    misc.add(new CheckBox("Play alarm for unknown or RED players") {
-        { a = Config.enableStrangerAlarm.get(); }
-        public void set(boolean val) {
-            Config.enableStrangerAlarm.set(val);
-            a = val;
-        }
-    }, new Coord(0, y));
+    misc.add(new PrefCheckBox("Play alarm for unknown or RED players", Config.enableStrangerAlarm), new Coord(0, y));
 	misc.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
 	misc.pack();
 
@@ -427,5 +383,21 @@ public class OptWnd extends Window {
     public void show() {
 	chpanel(main);
 	super.show();
+    }
+
+    private static class PrefCheckBox extends CheckBox {
+        private final Config.Pref<Boolean> pref;
+
+        public PrefCheckBox(String label, Config.Pref<Boolean> pref) {
+            super(label);
+            this.pref = pref;
+            this.a = pref.get();
+        }
+
+        @Override
+        public void set(boolean val) {
+            pref.set(val);
+            a = val;
+        }
     }
 }
