@@ -220,6 +220,14 @@ public class Config {
 		setprefb("haven.alarm.strangers", value);
 	}
 
+	public static int getAlarmVolume() {
+		return getprefi("haven.alarm.volume", 500);
+	}
+
+	public static void setAlarmVolume(int value) {
+		setprefi("haven.alarm.volume", value);
+	}
+
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)

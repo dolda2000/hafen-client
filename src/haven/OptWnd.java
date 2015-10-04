@@ -259,6 +259,14 @@ public class OptWnd extends Window {
 		    ui.audio.amb.setvolume(val / 1000.0);
 		}
 	    }, new Coord(0, y));
+    y += 20;
+    audio.add(new Label("Alarm volume"), new Coord(0, y));
+    y += 15;
+    audio.add(new HSlider(200, 0, 1000, Config.getAlarmVolume()) {
+        public void changed() {
+            Config.setAlarmVolume(val);
+        }
+    }, new Coord(0, y));
 	y += 35;
 	audio.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
 	audio.pack();

@@ -95,7 +95,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
                 if (gob.isThreat() && !threats.contains(gob.id)) {
                     threats.add(gob.id);
                     if (alarm)
-                        Audio.play(plalarm);
+                        Audio.play(plalarm, Config.getAlarmVolume() / 1000.0f);
                     if (autohearth)
                         getparent(GameUI.class).menu.wdgmsg("act", "travel", "hearth");
                 }
