@@ -289,4 +289,9 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
         Resource res = getres();
         return (res != null) && PLAYER_RES.equals(res.name);
     }
+
+    public boolean isThreat() {
+        KinInfo kin = getattr(KinInfo.class);
+        return (kin == null);
+    }
 }

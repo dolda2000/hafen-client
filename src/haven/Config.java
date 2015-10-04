@@ -212,6 +212,14 @@ public class Config {
 		setprefb("haven.autohearth", value);
 	}
 
+	public static boolean getStrangerAlarmEnabled() {
+		return getprefb("haven.alarm.strangers", false);
+	}
+
+	public static void setStrangerAlarmEnabled(boolean value) {
+		setprefb("haven.alarm.strangers", value);
+	}
+
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)
