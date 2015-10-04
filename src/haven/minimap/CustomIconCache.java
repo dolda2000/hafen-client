@@ -28,7 +28,7 @@ public class CustomIconCache {
         }
         this.config = new CustomIconConfig(file);
         this.factory = new CustomIconFactory();
-        this.enabled = Config.getCustomIconsEnabled();
+        this.enabled = Config.showCustomIcons.get();
         this.glob = glob;
     }
 
@@ -38,7 +38,7 @@ public class CustomIconCache {
 
     public void toggle() {
         enabled = !enabled;
-        Config.setCustomIconsEnabled(enabled);
+        Config.showCustomIcons.set(enabled);
     }
 
     public CustomIcon get(String resName) {

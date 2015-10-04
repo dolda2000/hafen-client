@@ -307,7 +307,7 @@ public class MCache {
 		    break;
 		String resnm = blob.string();
 		int resver = blob.uint16();
-		if (tileid == TILESET_GNEISS && Config.getOldPavingEnabled()) {
+		if (tileid == TILESET_GNEISS && Config.showOldPaving.get()) {
 			resnm = "gfx/tiles/spave";
 			resver = 14;
 		}

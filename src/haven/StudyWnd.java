@@ -21,19 +21,19 @@ public class StudyWnd extends Window {
     @Override
     public void hide() {
         super.hide();
-        Config.setStudyVisible(false);
+        Config.studyVisible.set(false);
     }
 
     @Override
     public void show() {
         super.show();
-        Config.setStudyVisible(true);
+        Config.studyVisible.set(true);
     }
 
     @Override
     public boolean mouseup(Coord c, int button) {
         if (isGrabbed()) {
-            Config.setStudyPosition(this.c);
+            Config.studyPosition.set(this.c);
         }
         return super.mouseup(c, button);
     }

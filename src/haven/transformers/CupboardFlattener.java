@@ -13,7 +13,7 @@ public class CupboardFlattener implements ResourceTransformer.Transformer {
     private static final double sa = Math.sin(angle);
 
     public void transform(Resource res) {
-        int scale = Config.getCupboardScale();
+        int scale = Config.cupboardScale.get();
         if (scale >= 100 || scale < 10)
             return;
 

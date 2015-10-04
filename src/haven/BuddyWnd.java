@@ -428,7 +428,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
         Buddy buddy = find(id);
         if (buddy != null) {
             buddy.online = online;
-            if (Config.getKinNotificationEnabled())
+            if (Config.showKinNotifications.get())
                 getparent(GameUI.class).notification("%s is %s now", buddy.name, buddy.online > 0 ? "online" : "offline");
         }
 	} else if(msg == "upd") {

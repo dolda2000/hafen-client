@@ -54,8 +54,8 @@ public class LocalMiniMap extends Widget implements Console.Directory {
 	super(sz);
 	this.mv = mv;
 	this.cache = new MinimapCache(new MinimapRenderer(mv.ui.sess.glob.map));
-    this.showradius = Config.getMinimapRadiusEnabled();
-    this.showgrid = Config.getMinimapGridEnabled();
+    this.showradius = Config.minimapShowRadius.get();
+    this.showgrid = Config.minimapShowGrid.get();
     }
     
     public Coord p2c(Coord pc) {
@@ -88,14 +88,14 @@ public class LocalMiniMap extends Widget implements Console.Directory {
                 icon.draw(g, p2c(gob.rc).sub(off));
 		} catch(Loading l) {}
 	    }
-        boolean autohearth = Config.getAutoHearthEnabled();
-        boolean alarm = Config.getStrangerAlarmEnabled();
+        boolean autohearth = Config.enableAutoHearth.get();
+        boolean alarm = Config.enableStrangerAlarm.get();
         for (Gob gob : players) {
             if (autohearth || alarm) {
                 if (gob.isThreat() && !threats.contains(gob.id)) {
                     threats.add(gob.id);
                     if (alarm)
-                        Audio.play(plalarm, Config.getAlarmVolume() / 1000.0f);
+                        Audio.play(plalarm, Config.alarmVolume.get() / 1000.0f);
                     if (autohearth)
                         getparent(GameUI.class).menu.wdgmsg("act", "travel", "hearth");
                 }
@@ -257,7 +257,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
 
     public void toggleRadius() {
         showradius = !showradius;
-        Config.setMinimapRadiusEnabled(showradius);
+        Config.minimapShowRadius.set(showradius);
     }
 
     public void toggleCustomIcons() {
@@ -267,7 +267,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
 
     public void toggleGrid() {
         showgrid = !showgrid;
-        Config.setMinimapGridEnabled(showgrid);
+        Config.minimapShowGrid.set(showgrid);
     }
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>(); {

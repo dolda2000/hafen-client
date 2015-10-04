@@ -98,7 +98,7 @@ public class Fightsess extends Widget {
         if (!buff.dest)
             my.addBuff(buff);
 	}
-    if (Config.getCustomDefenceBarEnabled())
+    if (Config.showCustomDefenseBars.get())
         my.draw(g, pcc.add(-40, pho - Buff.cframe.sz().y));
 	if(fv.current != null) {
         DefBar opp = new DefBar(false);
@@ -107,7 +107,7 @@ public class Fightsess extends Widget {
             if (!buff.dest)
                 opp.addBuff(buff);
         }
-        if (Config.getCustomDefenceBarEnabled())
+        if (Config.showCustomDefenseBars.get())
             opp.draw(g, pcc.add(20, pho - Buff.cframe.sz().y));
 
 	    g.aimage(ip.get().tex(), pcc.add(-75, 0), 1, 0.5);

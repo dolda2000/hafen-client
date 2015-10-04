@@ -262,9 +262,9 @@ public class OptWnd extends Window {
     y += 20;
     audio.add(new Label("Alarm volume"), new Coord(0, y));
     y += 15;
-    audio.add(new HSlider(200, 0, 1000, Config.getAlarmVolume()) {
+    audio.add(new HSlider(200, 0, 1000, Config.alarmVolume.get()) {
         public void changed() {
-            Config.setAlarmVolume(val);
+            Config.alarmVolume.set(val);
         }
     }, new Coord(0, y));
 	y += 35;
@@ -288,25 +288,25 @@ public class OptWnd extends Window {
 	}, new Coord(0, y));
 	y += 15;
 	display.add(new CheckBox("Enable camera snapping") {
-		{ a = Config.getEnableCameraSnapping(); }
+		{ a = Config.snapCamera.get(); }
 		public void set(boolean val) {
-			Config.setEnableCameraSnapping(val);
+			Config.snapCamera.set(val);
 			a = val;
 		}
 	}, new Coord(0, y));
 	y += 15;
 	display.add(new CheckBox("Show kin status notifications") {
-		{ a = Config.getKinNotificationEnabled(); }
+		{ a = Config.showKinNotifications.get(); }
 		public void set(boolean val) {
-			Config.setKinNotificationEnabled(val);
+			Config.showKinNotifications.set(val);
 			a = val;
 		}
 	}, new Coord(0, y));
 	y += 15;
     display.add(new CheckBox("Display hunger meter") {
-        { a = Config.getHungerMeterEnabled(); }
+        { a = Config.showHungerMeter.get(); }
         public void set(boolean val) {
-            Config.setHungerMeterEnabled(val);
+            Config.showHungerMeter.set(val);
             a = val;
             GameUI ui = getparent(GameUI.class);
             if (ui == null) return;
@@ -318,9 +318,9 @@ public class OptWnd extends Window {
     }, new Coord(0, y));
     y += 15;
     display.add(new CheckBox("Display FEP meter") {
-        { a = Config.getFepMeterEnabled(); }
+        { a = Config.showFepMeter.get(); }
         public void set(boolean val) {
-            Config.setFepMeterEnabled(val);
+            Config.showFepMeter.set(val);
             a = val;
             GameUI ui = getparent(GameUI.class);
             if (ui == null) return;
@@ -332,17 +332,17 @@ public class OptWnd extends Window {
     }, new Coord(0, y));
     y += 15;
     display.add(new CheckBox("Use old paving tileset (requires re-login)") {
-        { a = Config.getOldPavingEnabled(); }
+        { a = Config.showOldPaving.get(); }
         public void set(boolean val) {
-            Config.setOldPavingEnabled(val);
+            Config.showOldPaving.set(val);
             a = val;
         }
     }, new Coord(0, y));
     y += 15;
     display.add(new CheckBox("Display game time indicator") {
-        { a = Config.getClockVisible(); }
+        { a = Config.showClock.get(); }
         public void set(boolean val) {
-            Config.setClockVisible(val);
+            Config.showClock.set(val);
             a = val;
             GameUI ui = getparent(GameUI.class);
             if (ui != null)
@@ -351,9 +351,9 @@ public class OptWnd extends Window {
     }, new Coord(0, y));
     y += 15;
     display.add(new CheckBox("Display server grid") {
-        { a = Config.getServerGridEnabled(); }
+        { a = Config.showServerGrid.get(); }
         public void set(boolean val) {
-            Config.setServerGridEnabled(val);
+            Config.showServerGrid.set(val);
             a = val;
             GameUI ui = getparent(GameUI.class);
             if (ui != null)
@@ -363,7 +363,7 @@ public class OptWnd extends Window {
     y += 20;
     display.add(new Label("Cupboards scale:"), new Coord(0, y));
     final Label sc = display.add(new Label(""), new Coord(165, y + 15));
-    display.add(new HSlider(160, 10, 100, Config.getCupboardScale()) {
+    display.add(new HSlider(160, 10, 100, Config.cupboardScale.get()) {
         protected void added() {
             dpy();
             this.c.y = sc.c.y + ((sc.sz.y - this.sz.y) / 2);
@@ -375,7 +375,7 @@ public class OptWnd extends Window {
 
         public void changed() {
             dpy();
-            Config.setCupboardScale(val);
+            Config.cupboardScale.set(val);
         }
     }, new Coord(0, y + 15));
 
@@ -384,33 +384,33 @@ public class OptWnd extends Window {
 
 	y = 0;
     misc.add(new CheckBox("Save minimaps") {
-        { a = Config.getMinimapSaveEnabled(); }
+        { a = Config.minimapEnableSave.get(); }
         public void set(boolean val) {
-            Config.setMinimapSaveEnabled(val);
+            Config.minimapEnableSave.set(val);
             a = val;
         }
     }, new Coord(0, y));
     y += 15;
     misc.add(new CheckBox("Display additional defense bars") {
-        { a = Config.getCustomDefenceBarEnabled(); }
+        { a = Config.showCustomDefenseBars.get(); }
         public void set(boolean val) {
-            Config.setCustomDefenceBarEnabled(val);
+            Config.showCustomDefenseBars.set(val);
             a = val;
         }
     }, new Coord(0, y));
     y += 15;
     misc.add(new CheckBox("Autohearth") {
-        { a = Config.getAutoHearthEnabled(); }
+        { a = Config.enableAutoHearth.get(); }
         public void set(boolean val) {
-            Config.setAutoHearthEnabled(val);
+            Config.enableAutoHearth.set(val);
             a = val;
         }
     }, new Coord(0, y));
     y += 15;
     misc.add(new CheckBox("Play alarm for unknown or RED players") {
-        { a = Config.getStrangerAlarmEnabled(); }
+        { a = Config.enableStrangerAlarm.get(); }
         public void set(boolean val) {
-            Config.setStrangerAlarmEnabled(val);
+            Config.enableStrangerAlarm.set(val);
             a = val;
         }
     }, new Coord(0, y));

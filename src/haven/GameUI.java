@@ -152,8 +152,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	zerg = add(new Zergwnd(), 187, 50);
 	zerg.hide();
 
-    studywnd = add(new StudyWnd(Coord.z), Config.getStudyPosition());
-    studywnd.visible = Config.getStudyVisible();
+    studywnd = add(new StudyWnd(Coord.z), Config.studyPosition.get());
+    studywnd.visible = Config.studyVisible.get();
 
     craftwnd = add(new ActWnd("Craft...", "paginae/craft/"));
     craftwnd.hide();
@@ -470,8 +470,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			ui.destroy(mmap);
 		if (mmapwnd != null)
 			ui.destroy(mmapwnd);
-		mmap = new LocalMiniMap(Config.getMinimapSize(), map);
-		mmapwnd = new MinimapWnd(Config.getMinimapPosition(), mmap.sz, map, mmap);
+		mmap = new LocalMiniMap(Config.minimapSize.get(), map);
+		mmapwnd = new MinimapWnd(Config.minimapPosition.get(), mmap.sz, map, mmap);
 		add(mmapwnd);
 		mmapwnd.pack();
 	} else if(place == "fight") {
@@ -503,10 +503,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    chrwdg = add((CharWnd)child, new Coord(300, 50));
 	    chrwdg.hide();
         // custom meter for hunger level
-        if (Config.getHungerMeterEnabled())
+        if (Config.showHungerMeter.get())
             addcmeter(new HungerMeter(chrwdg.glut));
         // custom meter for FEPs
-        if (Config.getFepMeterEnabled())
+        if (Config.showFepMeter.get())
             addcmeter(new FepMeter(chrwdg.feps));
 	} else if(place == "craft") {
 	    final Widget mkwdg = child;
@@ -827,7 +827,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
                 buildwnd.raise();
             return true;
         } else if (alt && keycode == KeyEvent.VK_N) {
-            Config.setNightVisionEnabled(!Config.getNightVisionEnabled());
+            Config.nightvision.set(!Config.nightvision.get());
         } else if (alt && keycode == KeyEvent.VK_G) {
             if (map != null)
                 map.togglegrid();

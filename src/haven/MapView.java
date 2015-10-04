@@ -376,7 +376,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void release() {
-	    if(tfield > 100 && Config.getEnableCameraSnapping())
+	    if(tfield > 100 && Config.snapCamera.get())
 		tangl = (float)(Math.PI * 0.5 * (Math.floor(tangl / (Math.PI * 0.5)) + 0.5));
 	}
 
@@ -433,7 +433,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     this.holdtimer = new Timer();
     this.gridol = new GridOutline(glob.map, MCache.cutsz.mul(2 * (view + 1)));
     this.servgridol = new ServerGridOutline(glob.map, new Coord(20, 20));
-    this.showservgrid = Config.getServerGridEnabled();
+    this.showservgrid = Config.showServerGrid.get();
 	setcanfocus(true);
     }
 
@@ -600,7 +600,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	synchronized(glob) {
 	    if(glob.lightamb != null) {
 			Color lightamb, lightdif, lightspc;
-			if (Config.getNightVisionEnabled()) {
+			if (Config.nightvision.get()) {
 				lightamb = daylightamb;
 				lightdif = daylightdif;
 				lightspc = daylightspc;

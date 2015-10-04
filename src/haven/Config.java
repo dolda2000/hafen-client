@@ -32,6 +32,19 @@ import java.io.PrintStream;
 import static haven.Utils.*;
 
 public class Config {
+    private static final PrefProvider<Boolean> TYPE_BOOL = new PrefProvider<Boolean>() {
+        public Boolean get(String prefName, Boolean defaultValue) { return getprefb(prefName, defaultValue); }
+        public void set(String prefName, Boolean value) { setprefb(prefName, value); }
+    };
+    private static final PrefProvider<Integer> TYPE_INT = new PrefProvider<Integer>() {
+        public Integer get(String prefName, Integer defaultValue) { return getprefi(prefName, defaultValue); }
+        public void set(String prefName, Integer value) { setprefi(prefName, value); }
+    };
+    private static final PrefProvider<Coord> TYPE_COORD = new PrefProvider<Coord>() {
+        public Coord get(String prefName, Coord defaultValue) { return getprefc(prefName, defaultValue); }
+        public void set(String prefName, Coord value) { setprefc(prefName, value); }
+    };
+
     public static String authuser = getprop("haven.authuser", null);
     public static String authserv = getprop("haven.authserv", null);
     public static String defserv = getprop("haven.defserv", "127.0.0.1");
@@ -53,180 +66,34 @@ public class Config {
     public static boolean simplecrops = Utils.getprefb("simplecrops", false);
     public static byte[] authck = null;
     public static String prefspec = "hafen";
+
+    public static Pref<Coord> minimapPosition = new Pref<Coord>("haven.minimap.position", new Coord(500, 100), TYPE_COORD);
+    public static Pref<Coord> minimapSize = new Pref<Coord>("haven.minimap.size", new Coord(300, 300), TYPE_COORD);
+    public static Pref<Boolean> minimapShowRadius = new Pref<Boolean>("haven.minimap.radius", false, TYPE_BOOL);
+    public static Pref<Boolean> minimapShowGrid = new Pref<Boolean>("haven.minimap.grid", false, TYPE_BOOL);
+    public static Pref<Boolean> minimapEnableSave = new Pref<Boolean>("haven.minimap.save", true, TYPE_BOOL);
+    public static Pref<Boolean> nightvision = new Pref<Boolean>("haven.nightvision", false, TYPE_BOOL);
+    public static Pref<Boolean> snapCamera = new Pref<Boolean>("haven.display.snapcamera", false, TYPE_BOOL);
+    public static Pref<Boolean> showKinNotifications = new Pref<Boolean>("haven.notifications.kinstatus", true, TYPE_BOOL);
+    public static Pref<Coord> studyPosition = new Pref<Coord>("haven.study.position", new Coord(100, 100), TYPE_COORD);
+    public static Pref<Boolean> studyVisible = new Pref<Boolean>("haven.study.visible", false, TYPE_BOOL);
+    public static Pref<Boolean> showHungerMeter = new Pref<Boolean>("haven.meters.hunger", true, TYPE_BOOL);
+    public static Pref<Boolean> showFepMeter = new Pref<Boolean>("haven.meters.fep", true, TYPE_BOOL);
+    public static Pref<Boolean> showCustomIcons = new Pref<Boolean>("haven.minimap.customicons", true, TYPE_BOOL);
+    public static Pref<Boolean> showOldPaving = new Pref<Boolean>("haven.display.oldpaving", false, TYPE_BOOL);
+    public static Pref<Boolean> showClock = new Pref<Boolean>("haven.display.clock", true, TYPE_BOOL);
+    public static Pref<Boolean> showServerGrid = new Pref<Boolean>("haven.display.servergrid", false, TYPE_BOOL);
+    public static Pref<Boolean> showCustomDefenseBars = new Pref<Boolean>("haven.combat.defbar.visible", true, TYPE_BOOL);
+    public static Pref<Integer> cupboardScale = new Pref<Integer>("haven.display.cupboardscale", 10, TYPE_INT);
+    public static Pref<Boolean> enableAutoHearth = new Pref<Boolean>("haven.autohearth", false, TYPE_BOOL);
+    public static Pref<Boolean> enableStrangerAlarm = new Pref<Boolean>("haven.alarm.strangers", true, TYPE_BOOL);
+    public static Pref<Integer> alarmVolume = new Pref<Integer>("haven.alarm.volume", 500, TYPE_INT);
     
     static {
 	String p;
 	if((p = getprop("haven.authck", null)) != null)
 	    authck = Utils.hex2byte(p);
     }
-
-	public static Coord getMinimapPosition() {
-		return getprefc("haven.minimap.position", new Coord(500, 100));
-	}
-
-	public static void setMinimapPosition(Coord pos) {
-		setprefc("haven.minimap.position", pos);
-	}
-
-	public static Coord getMinimapSize() {
-		return getprefc("haven.minimap.size", new Coord(300, 300));
-	}
-
-	public static void setMinimapSize(Coord size) {
-		setprefc("haven.minimap.size", size);
-	}
-
-	public static boolean getNightVisionEnabled() {
-		return getprefb("haven.nightvision", false);
-	}
-
-	public static void setNightVisionEnabled(boolean value) {
-		setprefb("haven.nightvision", value);
-	}
-
-	public static boolean getEnableCameraSnapping() {
-		return getprefb("haven.display.snapcamera", false);
-	}
-
-	public static void setEnableCameraSnapping(boolean value) {
-		setprefb("haven.display.snapcamera", value);
-	}
-
-	public static boolean getMinimapSaveEnabled() {
-		return getprefb("haven.minimap.save", true);
-	}
-
-	public static void setMinimapSaveEnabled(boolean value) {
-		setprefb("haven.minimap.save", value);
-	}
-
-	public static boolean getKinNotificationEnabled() {
-		return getprefb("haven.notifications.kinstatus", true);
-	}
-
-	public static void setKinNotificationEnabled(boolean value) {
-		setprefb("haven.notifications.kinstatus", value);
-	}
-
-	public static Coord getStudyPosition() {
-		return getprefc("haven.study.position", new Coord(100, 100));
-	}
-
-	public static void setStudyPosition(Coord value) {
-		setprefc("haven.study.position", value);
-	}
-
-	public static boolean getStudyVisible() {
-		return getprefb("haven.study.visible", false);
-	}
-
-	public static void setStudyVisible(boolean value) {
-		setprefb("haven.study.visible", value);
-	}
-
-	public static boolean getMinimapRadiusEnabled() {
-		return getprefb("haven.minimap.radius", false);
-	}
-
-	public static void setMinimapRadiusEnabled(boolean value) {
-		setprefb("haven.minimap.radius", value);
-	}
-
-	public static boolean getHungerMeterEnabled() {
-		return getprefb("haven.meters.hunger", true);
-	}
-
-	public static void setHungerMeterEnabled(boolean value) {
-		setprefb("haven.meters.hunger", value);
-	}
-
-	public static boolean getFepMeterEnabled() {
-		return getprefb("haven.meters.fep", true);
-	}
-
-	public static void setFepMeterEnabled(boolean value) {
-		setprefb("haven.meters.fep", value);
-	}
-
-	public static boolean getCustomIconsEnabled() {
-		return getprefb("haven.minimap.customicons", true);
-	}
-
-	public static void setCustomIconsEnabled(boolean value) {
-		setprefb("haven.minimap.customicons", value);
-	}
-
-	public static boolean getOldPavingEnabled() {
-		return getprefb("haven.display.oldpaving", false);
-	}
-
-	public static void setOldPavingEnabled(boolean value) {
-		setprefb("haven.display.oldpaving", value);
-	}
-
-	public static boolean getClockVisible() {
-		return getprefb("haven.display.clock", true);
-	}
-
-	public static void setClockVisible(boolean value) {
-		setprefb("haven.display.clock", value);
-	}
-
-	public static boolean getMinimapGridEnabled() {
-		return getprefb("haven.minimap.grid", false);
-	}
-
-	public static void setMinimapGridEnabled(boolean value) {
-		setprefb("haven.minimap.grid", value);
-	}
-
-	public static boolean getServerGridEnabled() {
-		return getprefb("haven.display.servergrid", false);
-	}
-
-	public static void setServerGridEnabled(boolean value) {
-		setprefb("haven.display.servergrid", value);
-	}
-
-	public static int getCupboardScale() {
-		return getprefi("haven.display.cupboardscale", 10);
-	}
-
-	public static void setCupboardScale(int value) {
-		setprefi("haven.display.cupboardscale", value);
-	}
-
-	public static boolean getCustomDefenceBarEnabled() {
-		return getprefb("haven.combat.defbar.visible", true);
-	}
-
-	public static void setCustomDefenceBarEnabled(boolean value) {
-		setprefb("haven.combat.defbar.visible", value);
-	}
-
-	public static boolean getAutoHearthEnabled() {
-		return getprefb("haven.autohearth", false);
-	}
-
-	public static void setAutoHearthEnabled(boolean value) {
-		setprefb("haven.autohearth", value);
-	}
-
-	public static boolean getStrangerAlarmEnabled() {
-		return getprefb("haven.alarm.strangers", false);
-	}
-
-	public static void setStrangerAlarmEnabled(boolean value) {
-		setprefb("haven.alarm.strangers", value);
-	}
-
-	public static int getAlarmVolume() {
-		return getprefi("haven.alarm.volume", 500);
-	}
-
-	public static void setAlarmVolume(int value) {
-		setprefi("haven.alarm.volume", value);
-	}
 
 	private static int getint(String name, int def) {
 	String val = getprop(name, null);
@@ -339,5 +206,31 @@ public class Config {
 		    }
 		}
 	    });
+    }
+
+    public static class Pref<T> {
+        private final PrefProvider<T> provider;
+        private final String name;
+        private T value;
+
+        public Pref(String name, T defaultValue, PrefProvider<T> provider) {
+            this.name = name;
+            this.provider = provider;
+            this.value = provider.get(name, defaultValue);
+        }
+
+        public T get() {
+            return value;
+        }
+
+        public void set(T value) {
+            this.value = value;
+            provider.set(name, value);
+        }
+    }
+
+    private interface PrefProvider<T> {
+        T get(String prefName, T defaultValue);
+        void set(String prefName, T value);
     }
 }

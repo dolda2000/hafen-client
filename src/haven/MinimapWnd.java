@@ -53,12 +53,12 @@ public class MinimapWnd extends Window {
 
     public boolean mouseup(Coord c, int button) {
         if (isGrabbed()) {
-            Config.setMinimapPosition(this.c);
+            Config.minimapPosition.set(this.c);
         }
         if (resizegrab != null) {
             resizegrab.remove();
             resizegrab = null;
-                Config.setMinimapSize(minimap.sz);
+                Config.minimapSize.set(minimap.sz);
         } else {
             super.mouseup(c, button);
         }
@@ -108,7 +108,7 @@ public class MinimapWnd extends Window {
         if (folded) {
             resize(new Coord(minimap.sz.x, 0));
         } else {
-            resize(Config.getMinimapSize());
+            resize(Config.minimapSize.get());
         }
     }
 
