@@ -60,6 +60,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public HelpWnd help;
     public OptWnd opts;
     public Collection<DraggedItem> hand = new LinkedList<DraggedItem>();
+    public Collection<DraggedItem> handSave = new LinkedList<DraggedItem>();
     private WItem vhand;
     public ChatUI chat;
     public ChatUI.Channel syslog;
@@ -843,6 +844,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         } else if (alt && keycode == KeyEvent.VK_Q) {
             Config.showQuality.set(!Config.showQuality.get());
             return true;
+        } else if (alt && keycode == KeyEvent.VK_H) {
+            swapHand();
+            return true;
         }
     }
 	return(super.globtype(key, ev));
@@ -1195,6 +1199,18 @@ public class GameUI extends ConsoleHost implements Console.Directory {
             int y = ((meters.size() + i) / 3) * (IMeter.fsz.y + 2);
             meter.c = new Coord(portrait.c.x + portrait.sz.x + 10 + x, portrait.c.y + y);
             i++;
+        }
+    }
+
+    public void swapHand() {
+        if (hand.isEmpty()) {
+            hand.addAll(handSave);
+            handSave.clear();
+            updhand();
+        } else {
+            handSave.addAll(hand);
+            hand.clear();
+            updhand();
         }
     }
 
