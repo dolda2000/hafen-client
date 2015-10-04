@@ -199,17 +199,15 @@ public class WItem extends Widget implements DTarget {
 	    } else if(itemnum.get() != null) {
 		g.aimage(itemnum.get(), sz, 1, 1);
 	    }
-	    if(item.meter > 0) {
-		g.chcolor(0, 0, 0, 255);
-		g.text(String.format("%d%%", item.meter), new Coord(0, -5));
-		g.chcolor(255, 255, 255, 255);
-		g.text(String.format("%d%%", item.meter), new Coord(1, -4));
-		double a = ((double)item.meter) / 100.0;
-		g.chcolor(255, 255, 255, 64);
-		Coord half = sz.div(2);
-		g.prect(half, half.inv(), half, a * Math.PI * 2);
-		g.chcolor();
-	    }
+        if (item.meter > 0) {
+            double a = ((double)item.meter) / 100.0;
+            int r = (int) ((1-a)*255);
+            int gr = (int) (a*255);
+            int b = 0;
+            g.chcolor(r, gr, b, 255);
+            g.frect(new Coord(sz.x-5,(int) ((1-a)*sz.y)), new Coord(5,(int) (a*sz.y)));
+            g.chcolor();
+        }
 	} else {
 	    g.image(missing.layer(Resource.imgc).tex(), Coord.z, sz);
 	}
