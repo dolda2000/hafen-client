@@ -204,12 +204,19 @@ public class WItem extends Widget implements DTarget {
 		g.aimage(itemnum.get(), sz, 1, 1);
 	    }
         if (item.meter > 0) {
-            double a = ((double)item.meter) / 100.0;
-            int r = (int) ((1-a)*255);
-            int gr = (int) (a*255);
+            double a = ((double) item.meter) / 100.0;
+            int r = (int) ((1 - a) * 255);
+            int gr = (int) (a * 255);
             int b = 0;
             g.chcolor(r, gr, b, 255);
-            g.frect(new Coord(sz.x-5,(int) ((1-a)*sz.y)), new Coord(5,(int) (a*sz.y)));
+            g.frect(new Coord(sz.x - 5, (int) ((1 - a) * sz.y)), new Coord(5, (int) (a * sz.y)));
+            // draw percentage when quality is not shown
+            if (!Config.showQuality.get() || quality.get() == null) {
+                g.chcolor(0, 0, 0, 255);
+                g.text(String.format("%d%%", item.meter), new Coord(0, -5));
+                g.chcolor(255, 255, 255, 255);
+                g.text(String.format("%d%%", item.meter), new Coord(1, -4));
+            }
             g.chcolor();
         }
         drawquality(g);
