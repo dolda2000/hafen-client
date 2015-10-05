@@ -9,27 +9,28 @@ public abstract class DeckSelector extends Window {
     private static final int MAX_NUMBER = 9;
     private static final int MIN_WIDTH = 150;
 
-    private int[] indexes = new int[0];
-    private Label[] numLabels = new Label[0];
-    private Label[] deckLabels = new Label[0];
+    private Deck[] decks = new Deck[0];
     private int selected = -1;
 
     public DeckSelector() {
         super(Coord.z, "Switch deck...");
     }
 
-    public void select(int index) {
-    }
-
+    public abstract void select(int index);
     public abstract int getSelected();
 
     @Override
     public void cdraw(GOut g) {
-        if (selected >= 0) {
-            Widget label = numLabels[selected];
-            g.chcolor(0, 0, 0, 128);
-            g.frect(new Coord(0, label.c.y), new Coord(csz.x, label.sz.y));
-            g.chcolor();
+        Coord c = new Coord(2, 0);
+        for (Deck deck : decks) {
+            if (deck.num - 1 == selected) {
+                g.chcolor(0, 0, 0, 128);
+                g.frect(new Coord(0, c.y), new Coord(csz.x, deck.name.sz().y));
+                g.chcolor();
+            }
+            g.image(deck.numText.tex(), c);
+            g.image(deck.name.tex(), c.add(28, 0));
+            c.y += 20;
         }
     }
 
@@ -58,7 +59,7 @@ public abstract class DeckSelector extends Window {
     @Override
     public boolean keydown(KeyEvent ev) {
         int num = (ev.getKeyChar() - '1');
-        if (num >= 0 && num < deckLabels.length) {
+        if (num >= 0 && num < decks.length) {
             selected = num;
             return true;
         }
@@ -68,8 +69,8 @@ public abstract class DeckSelector extends Window {
     @Override
     public boolean keyup(KeyEvent ev) {
         int num = (ev.getKeyChar() - '1');
-        if (num >= 0 && num < deckLabels.length) {
-            select(indexes[num]);
+        if (num >= 0 && num < decks.length) {
+            select(decks[num].index);
             hide();
             return true;
         }
@@ -77,31 +78,23 @@ public abstract class DeckSelector extends Window {
     }
 
     private void updateDecks() {
-        // clear
-        selected = -1;
-        for (int i = 0; i < deckLabels.length; i++) {
-            numLabels[i].destroy();
-            deckLabels[i].destroy();
-        }
-        // update
+        int selectedDeckIndex = getSelected();
         String[] all = Config.getDeckNames(ui.sess.username, ui.sess.charname).get();
         List<String> filtered = filterEmpty(all);
         int count = Math.min(MAX_NUMBER, filtered.size());
-        numLabels = new Label[count];
-        deckLabels = new Label[count];
-        indexes = new int[count];
-        int sel =  getSelected();
-        int y = 0;
+        decks = new Deck[count];
+        int w = MIN_WIDTH;
+        int h = 0;
         for (int i = 0; i < count; i++) {
-            indexes[i] = Utils.indexOf(all, filtered.get(i));
-            if (indexes[i] == sel)
+            String name = filtered.get(i);
+            int index = Utils.indexOf(all, name);
+            if (index == selectedDeckIndex)
                 selected = i;
-            numLabels[i] = add(new Label(String.format("(%d)", i + 1), CharWnd.attrf), 2, y);
-            numLabels[i].setcolor(Color.YELLOW);
-            deckLabels[i] = add(new Label(filtered.get(i), CharWnd.attrf), 28, y);
-            y += 20;
+            decks[i] = new Deck(index, i + 1, name);
+            w = Math.max(decks[i].name.sz().x, MIN_WIDTH);
+            h += decks[i].name.sz().y;
         }
-        resize(Math.max(contentsz().x, MIN_WIDTH), contentsz().y);
+        resize(w, h);
     }
 
     private static List<String> filterEmpty(String[] array) {
@@ -110,5 +103,19 @@ public abstract class DeckSelector extends Window {
             if (str != null && !str.isEmpty())
                 result.add(str);
         return result;
+    }
+
+    private static class Deck {
+        public final int index;
+        public final int num;
+        public final Text name;
+        public final Text numText;
+
+        public Deck(int index, int num, String name) {
+            this.index = index;
+            this.num = num;
+            this.name = CharWnd.attrf.render(name);
+            this.numText = CharWnd.attrf.render(String.format("(%d)", num), Color.YELLOW);
+        }
     }
 }
