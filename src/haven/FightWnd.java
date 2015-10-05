@@ -299,6 +299,20 @@ public class FightWnd extends Widget {
             }
 		}
 	    }, 127, 274);
+    add(new Button(110, "Rename", false) {
+        public void click() {
+            final int idx = savelist.sel;
+            if (saves[idx] != unused) {
+                Window input = new SaveNameWnd(savenames[idx]) {
+                    public void setname(String name) {
+                        setsave(idx, name);
+                        destroy();
+                    }
+                };
+                FightWnd.this.add(input, FightWnd.this.sz.sub(input.sz).div(2));
+            }
+        }
+    }, 5, 304);
 	/*
 	int y = actlist.sz.y;
 	for(int i = nsave - 1; i >= 0; i--) {
