@@ -76,6 +76,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public ActWnd buildwnd;
     public Window iconwnd;
     public final Cal cal;
+    public Window deckwnd;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -163,6 +164,20 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     iconwnd = add(new CustomIconWnd());
     iconwnd.hide();
+
+    deckwnd = add(new DeckSelector() {
+        public int getSelected() {
+            FightWnd fight = GameUI.this.chrwdg.fgt.findchild(FightWnd.class);
+            return (fight != null) ? fight.usesave : -1;
+        }
+
+        public void select(int index) {
+            FightWnd fight = GameUI.this.chrwdg.fgt.findchild(FightWnd.class);
+            if (fight != null)
+                fight.use(index);
+        }
+    });
+    deckwnd.hide();
 
     cal = add(new Cal());
     }
@@ -848,6 +863,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
             return true;
         } else if (alt && keycode == KeyEvent.VK_H) {
             swapHand();
+            return true;
+        } else if (alt && keycode == KeyEvent.VK_K) {
+            deckwnd.show(!deckwnd.visible);
+            deckwnd.c = new Coord(sz.sub(deckwnd.sz).div(2));
+            if (deckwnd.visible)
+                deckwnd.raise();
             return true;
         }
     }
