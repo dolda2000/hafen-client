@@ -166,15 +166,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     iconwnd.hide();
 
     deckwnd = add(new DeckSelector() {
-        public int getSelected() {
+        public int getSelectedDeck() {
             FightWnd fight = GameUI.this.chrwdg.fgt.findchild(FightWnd.class);
             return (fight != null) ? fight.usesave : -1;
         }
 
-        public void select(int index) {
+        public void setSelectedDeck(int deckIndex) {
             FightWnd fight = GameUI.this.chrwdg.fgt.findchild(FightWnd.class);
             if (fight != null)
-                fight.use(index);
+                fight.use(deckIndex);
         }
     });
     deckwnd.hide();
