@@ -1,5 +1,10 @@
 ## Changelog
 
+### r41
+
+- Implemented ability to name saved decks using double-click
+- Implemented deck switcher. To switch decks press 'Alt'+'K' and then press number displayed in the deck window
+
 ### r40 (2015-10-04)
 
 - Added sound alarm for unknown players. It can be disabled through the option in `Misc settings`.
