@@ -3,7 +3,7 @@
 ### r41
 
 - Implemented ability to name saved decks using double-click
-- Implemented deck switcher. To switch decks press 'Alt'+'K' and then press number displayed in the deck window
+- Implemented deck switcher. To switch decks press 'Alt'+'K' and then press number displayed in the deck list
 
 ### r40 (2015-10-04)
 
