@@ -90,6 +90,7 @@ public class Session {
     final Map<Integer, CachedRes> rescache = new TreeMap<Integer, CachedRes>();
     public final Glob glob;
     public byte[] sesskey;
+    public String charname;
 
     @SuppressWarnings("serial")
 	public class MessageException extends RuntimeException {
