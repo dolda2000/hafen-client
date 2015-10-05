@@ -1172,6 +1172,13 @@ public class Utils {
         return sb.toString();
     }
 
+    public static int indexOf(Object[] array, Object o) {
+        for (int i = 0; i < array.length; i++)
+            if ((o == null ? array[i] == null : o.equals(array[i])))
+                return i;
+        return -1;
+    }
+
     public static <T> List<T> asSortedList(Collection<T> c, Comparator<T> cmp) {
         List<T> list = new ArrayList<T>(c);
         java.util.Collections.sort(list, cmp);
