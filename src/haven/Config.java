@@ -44,6 +44,15 @@ public class Config {
         public Coord get(String prefName, Coord defaultValue) { return getprefc(prefName, defaultValue); }
         public void set(String prefName, Coord value) { setprefc(prefName, value); }
     };
+    private static final PrefProvider<String[]> TYPE_STRING_ARRAY = new PrefProvider<String[]>() {
+        private static final String SEPARATOR = ";";
+
+        public String[] get(String prefName, String[] defaultValue) {
+            return getpref(prefName, "").split(SEPARATOR); }
+
+        public void set(String prefName, String[] values) {
+            setpref(prefName, Utils.join(SEPARATOR, values)); }
+    };
 
     public static String authuser = getprop("haven.authuser", null);
     public static String authserv = getprop("haven.authserv", null);
@@ -96,6 +105,11 @@ public class Config {
 	String p;
 	if((p = getprop("haven.authck", null)) != null)
 	    authck = Utils.hex2byte(p);
+    }
+
+    public static Pref<String[]> getDeckNames(String accname, String charname) {
+        String prefName = String.format("decknames@%s@%s", accname, charname);
+        return new Pref<String[]>(prefName, new String[0], TYPE_STRING_ARRAY);
     }
 
 	private static int getint(String name, int def) {

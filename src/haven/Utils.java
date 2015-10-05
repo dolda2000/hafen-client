@@ -1163,6 +1163,15 @@ public class Utils {
         return sb.toString();
     }
 
+    public static String join(String separator, String[] array) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < array.length - 1; i++)
+            sb.append(array[i]).append(separator);
+        if (array.length > 0)
+            sb.append(array[array.length - 1]);
+        return sb.toString();
+    }
+
     public static <T> List<T> asSortedList(Collection<T> c, Comparator<T> cmp) {
         List<T> list = new ArrayList<T>(c);
         java.util.Collections.sort(list, cmp);
