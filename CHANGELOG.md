@@ -1,5 +1,11 @@
 ## Changelog
 
+### r42
+
+- Improved deck switcher: deck can be selected by arrow keys and Enter as well, like in craft and build windows
+- Added rename button to the Combat Schools tab
+- Item progress percentage now shows when quality display is toggled off
+
 ### r41
 
 - Implemented ability to name saved decks using double-click
