@@ -1140,6 +1140,11 @@ public class ChatUI extends Widget {
 	new Spring(targeth = h);
     }
 
+    public void hresize(int h) {
+	clearanims(Spring.class);
+	resize(sz.x, targeth = h);
+    }
+
     public void resize(int w) {
 	resize(new Coord(w, sz.y));
     }
