@@ -779,7 +779,7 @@ public class ChatUI extends Widget {
 	public PrivChat(int other) {
 	    this.other = other;
 	}
-	
+
 	public void uimsg(String msg, Object... args) {
 	    if(msg == "msg") {
 		String t = (String)args[0];
@@ -849,7 +849,7 @@ public class ChatUI extends Widget {
 	    chan.c = new Coord(selw, 0);
 	    chan.resize(this.sz.sub(selw, 0));
 	    super.add(w);
-	    select(chan);
+	    select(chan, false);
 	    chansel.add(chan);
 	    return(w);
 	} else {
@@ -983,14 +983,19 @@ public class ChatUI extends Widget {
 	}
     }
     
-    public void select(Channel chan) {
+    public void select(Channel chan, boolean focus) {
 	Channel prev = sel;
 	sel = chan;
 	if(prev != null)
 	    prev.hide();
 	sel.show();
 	resize(sz);
-	setfocus(chan);
+	if(focus || hasfocus)
+	    setfocus(chan);
+    }
+
+    public void select(Channel chan) {
+	select(chan, true);
     }
 
     private class Notification {
