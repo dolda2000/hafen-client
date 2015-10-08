@@ -810,7 +810,7 @@ public class ChatUI extends Widget {
 	    super(closable);
 	    this.other = other;
 	}
-	
+
 	public void uimsg(String msg, Object... args) {
 	    if(msg == "msg") {
 		String t = (String)args[0];
@@ -880,7 +880,7 @@ public class ChatUI extends Widget {
 	    chan.c = chansel.c.add(chansel.sz.x, 0);
 	    chan.resize(sz.x - marg.x - chan.c.x, sz.y - chan.c.y);
 	    super.add(w);
-	    select(chan);
+	    select(chan, false);
 	    chansel.add(chan);
 	    return(w);
 	} else {
@@ -1027,14 +1027,19 @@ public class ChatUI extends Widget {
 	}
     }
     
-    public void select(Channel chan) {
+    public void select(Channel chan, boolean focus) {
 	Channel prev = sel;
 	sel = chan;
 	if(prev != null)
 	    prev.hide();
 	sel.show();
 	resize(sz);
-	setfocus(chan);
+	if(focus || hasfocus)
+	    setfocus(chan);
+    }
+
+    public void select(Channel chan) {
+	select(chan, true);
     }
 
     private class Notification {
@@ -1138,6 +1143,11 @@ public class ChatUI extends Widget {
     public void sresize(int h) {
 	clearanims(Spring.class);
 	new Spring(targeth = h);
+    }
+
+    public void hresize(int h) {
+	clearanims(Spring.class);
+	resize(sz.x, targeth = h);
     }
 
     public void resize(int w) {

@@ -120,7 +120,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	setfocusctl(true);
 	chat = add(new ChatUI(0, 0));
 	if(Utils.getprefb("chatvis", true)) {
-	    chat.resize(0, chat.savedh);
+	    chat.hresize(chat.savedh);
 	    chat.show();
 	}
 	eqproxy = add(new EquipProxy(new int[]{6, 7}), new Coord(3, 85));
