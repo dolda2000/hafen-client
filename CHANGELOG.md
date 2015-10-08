@@ -1,5 +1,9 @@
 ## Changelog
 
+### r43
+
+- Merged latest changes from vanilla client, including added describe action
+
 ### r42
 
 - Improved deck switcher: deck can be selected by arrow keys and Enter as well, like in craft and build windows
