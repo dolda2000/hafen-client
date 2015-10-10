@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class ActWnd extends Window {
+public abstract class ActWnd extends Window {
     private static final int WIDTH = 200;
 
     private final TextEntry entry;
@@ -24,7 +24,7 @@ public class ActWnd extends Window {
         entry = add(new TextEntry(WIDTH, "") {
             @Override
             public void activate(String text) {
-                getparent(GameUI.class).menu.wdgmsg("act", ((Object[])list.sel.cmd));
+                act(list.sel.act);
                 ActWnd.this.hide();
             }
 
@@ -53,7 +53,7 @@ public class ActWnd extends Window {
         list = add(new ActList(WIDTH, 10) {
             @Override
             protected void itemactivate(ActItem item) {
-                getparent(GameUI.class).menu.wdgmsg("act", ((Object[])list.sel.cmd));
+                act(list.sel.act);
                 ActWnd.this.hide();
             }
         }, 0, entry.sz.y + 5);
@@ -61,6 +61,8 @@ public class ActWnd extends Window {
 
         pack();
     }
+
+    protected abstract void act(Resource.AButton act);
 
     @Override
     public void show() {
@@ -139,7 +141,7 @@ public class ActWnd extends Window {
     private class ItemComparator implements Comparator<ActList.ActItem> {
         @Override
         public int compare(ActList.ActItem a, ActList.ActItem b) {
-            return a.name.compareTo(b.name);
+            return a.name.text.compareTo(b.name.text);
         }
     }
 

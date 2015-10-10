@@ -157,9 +157,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     studywnd = add(new StudyWnd(Coord.z), Config.studyPosition.get());
     studywnd.visible = Config.studyVisible.get();
 
-    craftwnd = add(new ActWnd("Craft...", "paginae/craft/"));
+    craftwnd = add(new ActWnd("Craft...", "paginae/craft/") {
+        protected void act(Resource.AButton act) {
+            GameUI.this.wdgmsg("act", ((Object[])act.ad));
+        }
+    });
     craftwnd.hide();
-    buildwnd = add(new ActWnd("Build...", "paginae/bld/"));
+    buildwnd = add(new ActWnd("Build...", "paginae/bld/") {
+        protected void act(Resource.AButton act) {
+            GameUI.this.wdgmsg("act", ((Object[])act.ad));
+        }
+    });
     buildwnd.hide();
 
     iconwnd = add(new CustomIconWnd());

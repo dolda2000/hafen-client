@@ -52,20 +52,17 @@ public class ActList extends Listbox<ActList.ActItem> {
     @Override
     protected void drawitem(GOut g, ActItem item, int i) {
         g.image(item.icon, Coord.z);
-        g.aimage(item.rname.tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
+        g.aimage(item.name.tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
     }
 
     public class ActItem {
-        public final String name;
-        public final Text rname;
+        public final Resource.AButton act;
+        public final Text name;
         public final Tex icon;
-        public final String[] cmd;
 
         public ActItem(Glob.Pagina pagina) {
-            Resource.AButton act = pagina.act();
-            this.name = act.name;
-            this.cmd = act.ad;
-            this.rname = font.render(name);
+            this.act = pagina.act();
+            this.name = font.render(act.name);
             this.icon = new TexI(PUtils.convolvedown(pagina.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), CharWnd.iconfilter));
         }
     }
