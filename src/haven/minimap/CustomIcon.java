@@ -42,7 +42,7 @@ public abstract class CustomIcon {
 
         public Color color() {
             KinInfo kinInfo = gob.getattr(KinInfo.class);
-            return (kinInfo != null) ? BuddyWnd.gc[kinInfo.group] : Color.RED;
+            return (kinInfo != null) ? BuddyWnd.gc[kinInfo.group] : Color.GRAY;
         }
     }
 
