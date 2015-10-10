@@ -1237,6 +1237,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         }
     }
 
+    @Override
+    public void bound() {
+        if (Config.toggleTracking.get())
+            act("tracking");
+    }
+
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("afk", new Console.Command() {

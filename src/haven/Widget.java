@@ -1033,6 +1033,9 @@ public class Widget {
 	return(true);
     }
 
+    // called once widget is bound to the server ID
+    public void bound() {}
+
     public final Collection<Anim> anims = new LinkedList<Anim>();
     public final Collection<Anim> nanims = new LinkedList<Anim>();
     public <T extends Anim> void clearanims(Class<T> type) {
