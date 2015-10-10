@@ -170,4 +170,12 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    meter = value;
 	}
     }
+
+    public boolean isSameKind(GItem item) {
+        if (item == null)
+            return false;
+        GSprite mySpr = spr();
+        GSprite otherSpr = item.spr();
+        return resname().equals(item.resname()) && (mySpr == otherSpr || (spr != null && spr.isSame(otherSpr)));
+    }
 }
