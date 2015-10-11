@@ -26,6 +26,8 @@
 
 package haven;
 
+import haven.minimap.CustomIcon;
+
 import java.util.*;
 
 public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
@@ -293,5 +295,18 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public boolean isThreat() {
         KinInfo kin = getattr(KinInfo.class);
         return (kin == null) || (kin.group == 2 /* RED */);
+    }
+
+    public MinimapIcon getMinimapIcon() {
+        if (Config.showCustomIcons.get()) {
+            CustomGobIcon icon = getattr(CustomGobIcon.class);
+            if (icon == null) {
+                icon = new CustomGobIcon(this, glob.icons);
+                setattr(icon);
+            }
+            return icon;
+        } else {
+            return getattr(GobIcon.class);
+        }
     }
 }

@@ -75,17 +75,13 @@ public class LocalMiniMap extends Widget implements Console.Directory {
             // don't display icons for party members
             if (ui.sess.glob.party.memb.containsKey(gob.id))
                 continue;
-            BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
-            if (icon == null) {
-                icon = new CustomGobIcon(gob, ui.sess.glob.icons);
-                gob.setattr(icon);
-            }
             if (gob.isPlayer()) {
                 players.add(gob);
                 continue;
             }
-            if (icon.visible())
-                icon.draw(g, p2c(gob.rc).sub(off));
+            MinimapIcon icon = gob.getMinimapIcon();
+            if (icon != null && icon.visible())
+                drawicon(g, icon, p2c(gob.rc).sub(off));
 		} catch(Loading l) {}
 	    }
         boolean autohearth = Config.enableAutoHearth.get();
@@ -100,11 +96,19 @@ public class LocalMiniMap extends Widget implements Console.Directory {
                         getparent(GameUI.class).menu.wdgmsg("act", "travel", "hearth");
                 }
             }
-            BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
+            MinimapIcon icon = gob.getMinimapIcon();
             if (icon != null && icon.visible())
-                icon.draw(g, p2c(gob.rc).sub(off));
+                drawicon(g, icon, p2c(gob.rc).sub(off));
         }
 	}
+    }
+
+    private static void drawicon(GOut g, MinimapIcon icon, Coord gc) {
+        Tex tex = icon.tex();
+        if (tex != null) {
+            g.chcolor(icon.color());
+            g.image(icon.tex(), gc.sub(tex.sz().div(2)));
+        }
     }
 
     public Gob findicongob(Coord c) {
@@ -112,8 +116,8 @@ public class LocalMiniMap extends Widget implements Console.Directory {
 	synchronized (oc) {
         for(Gob gob : oc) {
 		try {
-            BaseGobIcon icon = gob.getattr(BaseGobIcon.class);
-		    if(icon != null && icon.visible()) {
+            MinimapIcon icon = gob.getMinimapIcon();
+		    if (icon != null && icon.visible()) {
 			Coord gc = p2c(gob.rc);
 			Coord sz = icon.tex().sz();
 			if(c.isect(gc.sub(sz.div(2)), sz))

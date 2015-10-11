@@ -5,7 +5,7 @@ import haven.minimap.CustomIconCache;
 
 import java.awt.*;
 
-public class CustomGobIcon extends BaseGobIcon {
+public class CustomGobIcon extends GAttrib implements MinimapIcon {
     private final CustomIconCache icons;
     private CustomIcon icon;
 
@@ -35,9 +35,9 @@ public class CustomGobIcon extends BaseGobIcon {
                     return false;
                 icon = icons.get(res.name);
                 if (icon == null)
-                    icon = CustomIcon.none;
+                    icon = CustomIcon.defaultIcon(gob);
             }
         }
-        return (icon != CustomIcon.none) && icons.enabled();
+        return (icon != CustomIcon.none) && icons.enabled() && (icon.tex() != null);
     }
 }

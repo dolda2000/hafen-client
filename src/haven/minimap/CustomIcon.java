@@ -18,6 +18,10 @@ public abstract class CustomIcon {
         return new Player(gob);
     }
 
+    public static CustomIcon defaultIcon(Gob gob) {
+        return new Default(gob);
+    }
+
     private static class None extends CustomIcon {
         public Tex tex() {
             return null;
@@ -61,6 +65,25 @@ public abstract class CustomIcon {
 
         public Color color() {
             return color;
+        }
+    }
+
+    private static class Default extends CustomIcon {
+        private final Gob gob;
+
+        public Default(Gob icon) {
+            this.gob = icon;
+        }
+
+        @Override
+        public Tex tex() {
+            GobIcon icon = gob.getattr(GobIcon.class);
+            return (icon != null) ? icon.tex() : null;
+        }
+
+        @Override
+        public Color color() {
+            return Color.WHITE;
         }
     }
 }
