@@ -72,7 +72,7 @@ public class CustomIconCache {
                             ? factory.image(Resource.remote().load(m.image), m.size != null ? m.size : defaultImageSize)
                             : factory.text(m.text().toUpperCase(), g.color);
                     } else
-                        return null;
+                        return CustomIcon.none;
                 }
         return null;
     }
