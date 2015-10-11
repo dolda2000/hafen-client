@@ -1,5 +1,9 @@
 ## Changelog
 
+### r45
+
+- Fixed broken custom icon config.
+
 ### r44
 
 - Added option to toggle tracking on login
