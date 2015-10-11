@@ -1,5 +1,15 @@
 ## Changelog
 
+### r44
+
+- Added option to toggle tracking on login
+- Grey color is used for unknown players now
+- Fixed mass transfer for different types of meat
+- Added ability to hide some useless critters and forageables
+- Most bushes, fruit and nut trees now have an icon instead of the text
+
+Note: to see changes related to minimap icons you have to remove file `config/custom-icons.xml`
+
 ### r43
 
 - Merged latest changes from vanilla client, including added describe action
