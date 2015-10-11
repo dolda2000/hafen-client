@@ -1,5 +1,9 @@
 ## Changelog
 
+### r46
+
+- Added mode that prevents accidental aggro on players marked with green, cyan and yellow colors. It can be toggled on with `Alt`+`F`
+
 ### r45
 
 - Fixed broken custom icon config.
@@ -12,7 +16,7 @@
 - Added ability to hide some useless critters and forageables
 - Most bushes, fruit and nut trees now have an icon instead of the text
 
-Note: to see changes related to minimap icons you have to remove file `config/custom-icons.xml`
+Note: to see changes related to minimap icons you have to remove file `config/custom-icons.config`
 
 ### r43
 
