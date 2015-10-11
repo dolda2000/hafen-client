@@ -878,6 +878,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
             if (deckwnd.visible)
                 deckwnd.raise();
             return true;
+        } else if (alt && keycode == KeyEvent.VK_F) {
+            if (map != null) {
+                map.toggleFriendlyFire();
+                msg("Friendly fire prevention is turned " + (map.isPreventFriendlyFireEnabled() ? "on" : "off"));
+            }
+            return true;
         }
     }
 	return(super.globtype(key, ev));

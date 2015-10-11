@@ -60,6 +60,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private UI.Grab holdgrab;
     private TimerTask clicktask;
 
+    private boolean preventFriendlyFire;
     private boolean showgobrad;
     private boolean showgrid;
     private boolean showservgrid;
@@ -1253,7 +1254,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 				if (tip != null)
 					MapView.this.tooltip = RichText.render(Utils.join("\n", tip), sz.x / 2);
 			}
-		}
+		} else if (preventFriendlyFire && inf != null && inf.gob != null && isAttackMode()) {
+            if (inf.gob.isAlly())
+                return;
+        }
 	    if(inf == null) {
 		wdgmsg("click", pc, mc, clickb, ui.modflags());
 	    } else {
@@ -1628,6 +1632,22 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public void toggleservergrid() {
         showservgrid = !showservgrid;
+    }
+
+    public boolean isPreventFriendlyFireEnabled() {
+        return preventFriendlyFire;
+    }
+
+    public void toggleFriendlyFire() {
+        preventFriendlyFire = !preventFriendlyFire;
+    }
+
+    private boolean isAttackMode() {
+        if (ui != null) {
+            Resource curs = ui.root.cursor.get();
+            return (curs != null) && curs.name.equals("gfx/hud/curs/atk");
+        }
+        return false;
     }
 
     private class LeftClickTimerTask extends TimerTask  {

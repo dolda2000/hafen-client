@@ -297,6 +297,14 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
         return (kin == null) || (kin.group == 2 /* RED */);
     }
 
+    public boolean isAlly() {
+        KinInfo kin = getattr(KinInfo.class);
+        return (kin != null) && (
+            kin.group == 1 || /* GREEN */
+            kin.group == 4 || /* CYAN */
+            kin.group == 5)   /* YELLOW */;
+    }
+
     public MinimapIcon getMinimapIcon() {
         if (Config.showCustomIcons.get()) {
             CustomGobIcon icon = getattr(CustomGobIcon.class);
