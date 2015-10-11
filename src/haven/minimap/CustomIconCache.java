@@ -41,12 +41,12 @@ public class CustomIconCache {
         Config.showCustomIcons.set(enabled);
     }
 
-    public CustomIcon get(String resName) {
+    public CustomIcon get(Gob gob, String resName) {
         CustomIcon icon;
         if (cache.containsKey(resName)) {
             icon = cache.get(resName);
         } else {
-            icon = match(resName);
+            icon = match(gob, resName);
             cache.put(resName, icon);
         }
         return icon;
@@ -63,14 +63,17 @@ public class CustomIconCache {
         }
     }
 
-    private CustomIcon match(String resName) {
+    private CustomIcon match(Gob gob, String resName) {
         for (CustomIconGroup g : config.groups)
             for (CustomIconMatch m : g.matches)
                 if (m.matches(resName)) {
                     if (g.show && m.show) {
-                        return (m.image != null)
-                            ? factory.image(Resource.remote().load(m.image), m.size != null ? m.size : defaultImageSize)
-                            : factory.text(m.text().toUpperCase(), g.color);
+                        if (m.useDefaultIcon)
+                            return CustomIcon.defaultIcon(gob);
+                        if (m.image != null)
+                            return factory.image(Resource.remote().load(m.image), m.size != null ? m.size : defaultImageSize);
+                        // got nothing nice, show ugly text
+                        return factory.text(m.text().toUpperCase(), g.color);
                     } else
                         return CustomIcon.none;
                 }

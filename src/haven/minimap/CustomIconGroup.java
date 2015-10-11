@@ -15,7 +15,7 @@ public class CustomIconGroup {
     public CustomIconGroup(Element el) {
         name = el.getAttribute("name");
         color = Color.decode(el.getAttribute("color"));
-        show = Boolean.parseBoolean(el.hasAttribute("show") ? el.getAttribute("show") : "true");
+        show = XmlUtils.getBool(el, "show", true);
 
         NodeList matchNodes = el.getElementsByTagName("match");
         for (int i = 0; i < matchNodes.getLength(); i++)

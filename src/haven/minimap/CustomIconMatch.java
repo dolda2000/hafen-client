@@ -16,14 +16,16 @@ public class CustomIconMatch {
     public boolean show;
     public String image;
     public Coord size;
+    public boolean useDefaultIcon;
 
     private CustomIconMatch(String type, Element el) {
         this.type = type;
         this.value = el.getAttribute(type);
         this.name = el.getAttribute("name");
         this.text = el.getAttribute("text");
-        this.show = Boolean.parseBoolean(el.hasAttribute("show") ? el.getAttribute("show") : "true");
+        this.show = XmlUtils.getBool(el, "show", true);;
         this.image = el.hasAttribute("image") ? el.getAttribute("image") : null;
+        this.useDefaultIcon = XmlUtils.getBool(el, "defaultIcon", false);
         if (el.hasAttribute("size"))
             this.size = parseSize(el.getAttribute("size"));
     }
@@ -60,6 +62,8 @@ public class CustomIconMatch {
         el.setAttribute(type, value);
         el.setAttribute("name", name);
         el.setAttribute("show", Boolean.toString(show));
+        if (useDefaultIcon)
+            el.setAttribute("defaultIcon", Boolean.toString(useDefaultIcon));
         if (text != null && !text.isEmpty())
             el.setAttribute("text", text);
         if (image != null)
