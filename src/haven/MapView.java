@@ -1071,10 +1071,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
 		checkmapclick(g, pc, new Callback<Coord>() {
 			public void done(Coord mc) {
-			    if(mc != null)
-				hit(pc, mc);
-			    else
-				nohit(pc);
+			    synchronized(ui) {
+				if(mc != null)
+				    hit(pc, mc);
+				else
+				    nohit(pc);
+			    }
 			}
 		    });
 	    } finally {
@@ -1120,14 +1122,16 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	private void ckdone(int fl) {
 	    synchronized(this) {
-		if((dfl |= fl) == 3) {
-		    if(mapcl != null) {
-			if(gobcl == null)
-			    hit(clickc, mapcl, null);
-			else
-			    hit(clickc, mapcl, gobcl);
-		    } else {
-			nohit(clickc);
+		synchronized(ui) {
+		    if((dfl |= fl) == 3) {
+			if(mapcl != null) {
+			    if(gobcl == null)
+				hit(clickc, mapcl, null);
+			    else
+				hit(clickc, mapcl, gobcl);
+			} else {
+			    nohit(clickc);
+			}
 		    }
 		}
 	    }
