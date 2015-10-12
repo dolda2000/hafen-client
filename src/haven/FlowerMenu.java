@@ -94,7 +94,7 @@ public class FlowerMenu extends Widget {
     }
 
     public class Opening extends NormAnim {
-	Opening() {super(0.25);}
+	Opening() {super(Config.enableMenuAnimation.get() ? 0.25 : 0);}
 	
 	public void ntick(double s) {
 	    for(Petal p : opts) {
@@ -133,7 +133,7 @@ public class FlowerMenu extends Widget {
     }
 
     public class Cancel extends NormAnim {
-	Cancel() {super(0.25);}
+	Cancel() {super(Config.enableMenuAnimation.get() ? 0.25 : 0);}
 
 	public void ntick(double s) {
 	    for(Petal p : opts) {
