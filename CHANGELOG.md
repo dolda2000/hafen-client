@@ -1,5 +1,10 @@
 ## Changelog
 
+### r47
+
+- Added option to toggle on/off flower menu animations. They're disabled by default and can be enabled back through the option in `Misc Settings`
+- Added circle highlight for party members. It can be disabled through the option in `Display Settings`
+
 ### r46
 
 - Added mode that prevents accidental aggro on players marked with green, cyan and yellow colors. It can be toggled on with `Alt`+`F`
