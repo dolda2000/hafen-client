@@ -28,10 +28,15 @@ package haven;
 
 import haven.Party.Member;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.Map.Entry;
 
 public class Partyview extends Widget {
+    private static final Color PLAYER_OL_COLOR = new Color(255, 255, 255, 128);
+    private static final Color MEMBER_OL_COLOR = new Color(0, 255, 0, 128);
+
     long ign;
     Party party;
     Map<Long, Member> om = null;
@@ -60,8 +65,17 @@ public class Partyview extends Widget {
 	if(party.memb != om) {
 	    Collection<Member> old = new HashSet<Member>(avs.keySet());
 	    for(final Member m : (om = party.memb).values()) {
-		if(m.gobid == ign)
-		    continue;
+        if (m.gobid == ign) {
+            Gob gob = m.getgob();
+            if (gob != null) {
+                if (party.memb.size() < 2) { // no party
+                    if (gob.hasSelection()) gob.resetSelection();
+                }
+                else if (!gob.hasSelection())
+                    gob.setSelection(PLAYER_OL_COLOR);
+            }
+            continue;
+        }
 		Avaview w = avs.get(m);
 		if(w == null) {
 		    w = add(new Avaview(new Coord(27, 27), m.gobid, "avacam") {
@@ -78,14 +92,20 @@ public class Partyview extends Widget {
 			    }
 			});
 		    avs.put(m, w);
+            Gob gob = m.getgob();
+            if (gob != null)
+                gob.setSelection(MEMBER_OL_COLOR);
 		} else {
-		    old.remove(m);
+			old.remove(m);
 		}
 	    }
 	    for(Member m : old) {
 		ui.destroy(avs.get(m));
 		avs.remove(m);
-	    }
+        Gob gob = m.getgob();
+        if (gob != null)
+            gob.resetSelection();
+        }
 	    List<Map.Entry<Member, Avaview>> wl = new ArrayList<Map.Entry<Member, Avaview>>(avs.entrySet());
 	    Collections.sort(wl, new Comparator<Map.Entry<Member, Avaview>>() {
 		    public int compare(Entry<Member, Avaview> a, Entry<Member, Avaview> b) {

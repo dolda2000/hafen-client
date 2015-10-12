@@ -26,8 +26,7 @@
 
 package haven;
 
-import haven.minimap.CustomIcon;
-
+import java.awt.*;
 import java.util.*;
 
 public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
@@ -43,6 +42,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     public Collection<Overlay> ols = new LinkedList<Overlay>();
+    private Overlay selection;
 	
     public static class Overlay implements Rendered {
 	public Indir<Resource> res;
@@ -316,5 +316,21 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
         } else {
             return getattr(GobIcon.class);
         }
+    }
+
+    public boolean hasSelection() {
+        return selection != null;
+    }
+
+    public void resetSelection() {
+        ols.remove(selection);
+        selection = null;
+    }
+
+    public void setSelection(Color color) {
+        if (hasSelection())
+            resetSelection();
+        selection = new Overlay(new PartyMemberOutline(this, color));
+        ols.add(selection);
     }
 }
