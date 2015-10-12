@@ -1,5 +1,9 @@
 ## Changelog
 
+### r49
+
+- Made account manager optional. It is disabled by default and can be enabled through the option in `Misc Settings`
+
 ### r48
 
 - Added account manager from Ender's client
