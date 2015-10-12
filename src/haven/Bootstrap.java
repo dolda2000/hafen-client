@@ -122,7 +122,8 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			String hex = Utils.byte2hex(token);
 			setpref("savedtoken", hex);
 			setpref("tokenname", acctname);
-			AccountList.storeAccount(acctname, hex);
+			if (Config.enableAccountStoring.get())
+				AccountList.storeAccount(acctname, hex);
 		    } finally {
 			auth.close();
 		    }
@@ -172,7 +173,8 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			    String hex = Utils.byte2hex(auth.gettoken());
 			    setpref("savedtoken", hex);
 			    setpref("tokenname", acctname);
-			    AccountList.storeAccount(acctname, hex);
+				if (Config.enableAccountStoring.get())
+					AccountList.storeAccount(acctname, hex);
 			}
 		    } finally {
 			auth.close();

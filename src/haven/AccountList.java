@@ -23,7 +23,8 @@ public class AccountList extends Widget {
     };
 
     static {
-	AccountList.loadAccounts();
+    if (Config.enableAccountStoring.get())
+        AccountList.loadAccounts();
     }
 
     public int height, y;

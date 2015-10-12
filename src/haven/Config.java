@@ -103,6 +103,7 @@ public class Config {
     public static Pref<Boolean> toggleTracking = new Pref<Boolean>("toggle.tracking", true, TYPE_BOOL);
     public static Pref<Boolean> highlightParty = new Pref<Boolean>("highlight.party", true, TYPE_BOOL);
     public static Pref<Boolean> enableMenuAnimation = new Pref<Boolean>("menu.animation", false, TYPE_BOOL);
+    public static Pref<Boolean> enableAccountStoring = new Pref<Boolean>("account.storing", false, TYPE_BOOL);
     
     static {
 	String p;

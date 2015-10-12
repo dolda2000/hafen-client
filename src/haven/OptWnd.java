@@ -368,7 +368,9 @@ public class OptWnd extends Window {
 	display.pack();
 
 	y = 0;
-    misc.add(new PrefCheckBox("Save minimaps", Config.minimapEnableSave), new Coord(0, y));
+    misc.add(new PrefCheckBox("Enable account storing (requires restart)", Config.enableAccountStoring), new Coord(0, y));
+    y += 15;
+    misc.add(new PrefCheckBox("Enable minimap storing", Config.minimapEnableSave), new Coord(0, y));
     y += 15;
     misc.add(new PrefCheckBox("Display additional defense bars", Config.showCustomDefenseBars), new Coord(0, y));
     y += 15;
