@@ -1,5 +1,9 @@
 ## Changelog
 
+### r48
+
+- Added account manager from Ender's client
+
 ### r47
 
 - Added option to toggle on/off flower menu animations. They're disabled by default and can be enabled back through the option in `Misc Settings`
