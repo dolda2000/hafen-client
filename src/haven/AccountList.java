@@ -121,7 +121,7 @@ public class AccountList extends Widget {
 		account.plb.show();
 		account.plb.c = cc;
 		account.del.show();
-		account.del.c = cc.add(account.plb.sz.x + 5, 5);
+		account.del.c = cc.add(account.plb.sz.x + 5, 6);
 		cc = cc.add(0, SZ.y);
 	    }
 	}
