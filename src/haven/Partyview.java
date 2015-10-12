@@ -34,8 +34,8 @@ import java.util.List;
 import java.util.Map.Entry;
 
 public class Partyview extends Widget {
-    private static final Color PLAYER_OL_COLOR = new Color(255, 255, 255, 128);
-    private static final Color MEMBER_OL_COLOR = new Color(0, 255, 0, 128);
+    public static final Color PLAYER_OL_COLOR = new Color(255, 255, 255, 128);
+    public static final Color MEMBER_OL_COLOR = new Color(0, 255, 0, 128);
 
     long ign;
     Party party;
@@ -66,13 +66,14 @@ public class Partyview extends Widget {
 	    Collection<Member> old = new HashSet<Member>(avs.keySet());
 	    for(final Member m : (om = party.memb).values()) {
         if (m.gobid == ign) {
-            Gob gob = m.getgob();
-            if (gob != null) {
-                if (party.memb.size() < 2) { // no party
-                    if (gob.hasSelection()) gob.resetSelection();
+            if (Config.highlightParty.get()) {
+                Gob gob = m.getgob();
+                if (gob != null) {
+                    if (party.memb.size() < 2) { // no party
+                        if (gob.hasSelection()) gob.resetSelection();
+                    } else if (!gob.hasSelection())
+                        gob.setSelection(PLAYER_OL_COLOR);
                 }
-                else if (!gob.hasSelection())
-                    gob.setSelection(PLAYER_OL_COLOR);
             }
             continue;
         }
@@ -92,9 +93,11 @@ public class Partyview extends Widget {
 			    }
 			});
 		    avs.put(m, w);
-            Gob gob = m.getgob();
-            if (gob != null)
-                gob.setSelection(MEMBER_OL_COLOR);
+            if (Config.highlightParty.get()) {
+                Gob gob = m.getgob();
+                if (gob != null)
+                    gob.setSelection(MEMBER_OL_COLOR);
+            }
 		} else {
 			old.remove(m);
 		}

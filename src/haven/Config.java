@@ -101,6 +101,7 @@ public class Config {
     public static Pref<Boolean> enableAutoStudy = new Pref<Boolean>("haven.autostudy", false, TYPE_BOOL);
     public static Pref<Boolean> lockStudy = new Pref<Boolean>("studylock", false, TYPE_BOOL);
     public static Pref<Boolean> toggleTracking = new Pref<Boolean>("toggle.tracking", true, TYPE_BOOL);
+    public static Pref<Boolean> highlightParty = new Pref<Boolean>("highlight.party", true, TYPE_BOOL);
     
     static {
 	String p;

@@ -70,7 +70,7 @@ public class OptWnd extends Window {
     public class VideoPanel extends Panel {
 	public VideoPanel(Panel back) {
 	    super();
-	    add(new PButton(200, "Back", 27, back), new Coord(0, 190));
+	    add(new PButton(200, "Back", 27, back), new Coord(0, 200));
 	    pack();
 	}
 
@@ -214,7 +214,7 @@ public class OptWnd extends Window {
 		public void click() {
 		    OptWnd.this.hide();
 		}
-	    }, new Coord(0, 190));
+	    }, new Coord(0, 200));
 	main.pack();
 
 	y = 0;
@@ -258,7 +258,7 @@ public class OptWnd extends Window {
         }
     }, new Coord(0, y));
 	y += 35;
-	audio.add(new PButton(200, "Back", 27, main), new Coord(0, 190));
+	audio.add(new PButton(200, "Back", 27, main), new Coord(0, 200));
 	audio.pack();
 
 	y = 0;
@@ -309,6 +309,25 @@ public class OptWnd extends Window {
                 ui.map.toggleservergrid();
         }
     }, new Coord(0, y));
+    y += 15;
+    display.add(new PrefCheckBox("Highlight party members", Config.highlightParty) {
+        public void set(boolean val) {
+            super.set(val);
+            GameUI gui = getparent(GameUI.class);
+            if (gui != null && gui.ui.sess != null && gui.ui.sess.glob.party.memb.size() > 1) {
+                for (Party.Member m : gui.ui.sess.glob.party.memb.values()) {
+                    Gob gob = m.getgob();
+                    if (gob == null)
+                        continue;
+                    if (val) {
+                        gob.setSelection((gob.id == gui.map.plgob) ? Partyview.PLAYER_OL_COLOR : Partyview.MEMBER_OL_COLOR);
+                    } else {
+                        gob.resetSelection();
+                    }
+                }
+            }
+        }
+    }, new Coord(0, y));
     y += 20;
     display.add(new Label("Cupboards scale:"), new Coord(0, y));
     y += 15;
@@ -345,7 +364,7 @@ public class OptWnd extends Window {
         }
     }, new Coord(0, y));
 
-	display.add(new PButton(200, "Back", 27, main), new Coord(0, 190));
+	display.add(new PButton(200, "Back", 27, main), new Coord(0, 200));
 	display.pack();
 
 	y = 0;
@@ -358,7 +377,7 @@ public class OptWnd extends Window {
     misc.add(new PrefCheckBox("Play alarm for unknown or RED players", Config.enableStrangerAlarm), new Coord(0, y));
     y += 15;
     misc.add(new PrefCheckBox("Toggle tracking on startup", Config.toggleTracking), new Coord(0, y));
-	misc.add(new PButton(200, "Back", 27, main), new Coord(0, 190));
+	misc.add(new PButton(200, "Back", 27, main), new Coord(0, 200));
 	misc.pack();
 
 	chpanel(main);
