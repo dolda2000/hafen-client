@@ -29,10 +29,8 @@ package haven;
 import java.util.*;
 import java.lang.ref.*;
 import haven.Resource.Tileset;
-import haven.Resource.Tile;
 
 public class MCache {
-    public static final int TILESET_GNEISS = 43;
     public static final Coord tilesz = new Coord(11, 11);
     public static final Coord cmaps = new Coord(100, 100);
     public static final Coord cutsz = new Coord(25, 25);
