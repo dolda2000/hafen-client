@@ -34,6 +34,7 @@ public class GridOutline implements Rendered {
         vbuf.rewind();
         gl.glEnableClientState(GL2.GL_VERTEX_ARRAY);
         gl.glVertexPointer(3, GL2.GL_FLOAT, 0, vbuf);
+        gl.glLineWidth(1.0F);
         gl.glDrawArrays(GL2.GL_LINES, 0, area * 4);
         gl.glDisableClientState(GL2.GL_VERTEX_ARRAY);
     }
