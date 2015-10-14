@@ -57,17 +57,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private static final Gob.Overlay rol = new Gob.Overlay(-1, Resource.remote().load("gfx/fx/bprad"), new MessageBuf(new byte[] { -24, 3 }, 0, 2));
     private static final Gob.Overlay rol2 = new Gob.Overlay(-1, Resource.remote().load("gfx/fx/bprad"), new MessageBuf(new byte[] { -30, 4 }, 0, 2));
 
-
     private Timer holdtimer;
     private UI.Grab holdgrab;
     private TimerTask clicktask;
 
     private boolean preventFriendlyFire;
     private boolean showgobrad;
-    private boolean showgrid;
-    private boolean showservgrid;
-    private MapOverlay gridol;
-    private MapOverlay servgridol;
+    public final MapOverlay gridOverlay;
+    public final MapOverlay serverGridOverlay;
 
     public interface Delayed {
 	public void run(GOut g);
@@ -433,9 +430,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.cc = cc;
 	this.plgob = plgob;
     this.holdtimer = new Timer();
-    this.gridol = new GridOverlay(glob.map, cutsz.mul(view * 2 + 1));
-    this.servgridol = new ServerGridOverlay(glob.map, cutsz.mul(view * 2 + 1).mul(tilesz).div(sgridsz).add(2, 2));
-    this.showservgrid = Config.showServerGrid.get();
+    this.gridOverlay = new GridOverlay(glob.map, cutsz.mul(view * 2 + 1));
+    this.gridOverlay.setVisible(false);
+    this.serverGridOverlay = new ServerGridOverlay(glob.map, cutsz.mul(view * 2 + 1).mul(tilesz).div(sgridsz).add(2, 2));
+    this.serverGridOverlay.setVisible(Config.showServerGrid.get());
 	setcanfocus(true);
     }
 
@@ -633,10 +631,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	if(rl.cfg.pref.outline.val)
 	    rl.add(outlines, null);
 	rl.add(map, null);
-    if (showgrid) {
-        rl.add(gridol, null);
-        if (showservgrid)
-            rl.add(servgridol, null);
+    if (gridOverlay.isVisible()) {
+        rl.add(gridOverlay, null);
+        if (serverGridOverlay.isVisible())
+            rl.add(serverGridOverlay, null);
     }
 	rl.add(mapol, null);
 	rl.add(gobs, null);
@@ -967,6 +965,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	if((olftimer != 0) && (olftimer < System.currentTimeMillis()))
 	    unflashol();
 	try {
+        if (gridOverlay.isVisible()) {
+            gridOverlay.update(cc);
+            serverGridOverlay.update(cc);
+        }
 	    if(camload != null)
 		throw(new Loading(camload));
 		Gob pl = player();
@@ -979,10 +981,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    partydraw(g);
 	    glob.map.reqarea(cc.div(tilesz).sub(MCache.cutsz.mul(view + 1)),
 			     cc.div(tilesz).add(MCache.cutsz.mul(view + 1)));
-        if (showgrid) {
-            gridol.update(cc);
-            servgridol.update(cc);
-        }
 	} catch(Loading e) {
 	    lastload = e;
 	    String text = e.getMessage();
@@ -1597,14 +1595,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
         clicktask = null;
     }
 
-    public void togglegrid() {
-        showgrid = !showgrid;
-        if (showgrid) {
-            gridol.update(cc);
-            servgridol.update(cc);
-        }
-    }
-
     public void togglegobradius() {
         showgobrad = !showgobrad;
         synchronized (ui.sess.glob.oc) {
@@ -1626,10 +1616,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
                 }
             }
         }
-    }
-
-    public void toggleservergrid() {
-        showservgrid = !showservgrid;
     }
 
     public boolean isPreventFriendlyFireEnabled() {

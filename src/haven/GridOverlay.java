@@ -6,7 +6,7 @@ import java.nio.FloatBuffer;
 import static haven.MCache.cutsz;
 import static haven.MCache.tilesz;
 
-public class GridOverlay implements MapOverlay {
+public class GridOverlay extends MapOverlay {
     private final MCache map;
     private final FloatBuffer[] vertexBuffers;
     private final int area;

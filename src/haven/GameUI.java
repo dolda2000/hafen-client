@@ -856,7 +856,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
             Config.nightvision.set(!Config.nightvision.get());
         } else if (alt && keycode == KeyEvent.VK_G) {
             if (map != null)
-                map.togglegrid();
+                map.gridOverlay.setVisible(!map.gridOverlay.isVisible());
             return true;
         } else if (alt && keycode == KeyEvent.VK_R) {
             if (mmap != null)

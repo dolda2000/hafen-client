@@ -306,7 +306,7 @@ public class OptWnd extends Window {
             super.set(val);
             GameUI ui = getparent(GameUI.class);
             if (ui != null)
-                ui.map.toggleservergrid();
+                ui.map.serverGridOverlay.setVisible(val);
         }
     }, new Coord(0, y));
     y += 15;

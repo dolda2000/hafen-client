@@ -7,7 +7,7 @@ import static haven.MCache.cutsz;
 import static haven.MCache.tilesz;
 import static haven.MCache.sgridsz;
 
-public class ServerGridOverlay implements MapOverlay {
+public class ServerGridOverlay extends MapOverlay {
     private final MCache map;
     private final FloatBuffer[] vertexBuffers;
     private final int area;
