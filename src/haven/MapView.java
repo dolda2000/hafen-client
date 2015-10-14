@@ -65,6 +65,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private boolean showgobrad;
     public final MapOverlay gridOverlay;
     public final MapOverlay serverGridOverlay;
+    private final PartyHighlight partyHighlight;
 
     public interface Delayed {
 	public void run(GOut g);
@@ -434,6 +435,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     this.gridOverlay.setVisible(false);
     this.serverGridOverlay = new ServerGridOverlay(glob.map, cutsz.mul(view * 2 + 1).mul(tilesz).div(sgridsz).add(2, 2));
     this.serverGridOverlay.setVisible(Config.showServerGrid.get());
+    this.partyHighlight = new PartyHighlight(glob.party, plgob);
 	setcanfocus(true);
     }
 
@@ -1010,6 +1012,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	if(placing != null)
 	    placing.ctick((int)(dt * 1000));
+    partyHighlight.update();
     }
 
     public void resize(Coord sz) {

@@ -310,24 +310,7 @@ public class OptWnd extends Window {
         }
     }, new Coord(0, y));
     y += 15;
-    display.add(new PrefCheckBox("Highlight party members", Config.highlightParty) {
-        public void set(boolean val) {
-            super.set(val);
-            GameUI gui = getparent(GameUI.class);
-            if (gui != null && gui.ui.sess != null && gui.ui.sess.glob.party.memb.size() > 1) {
-                for (Party.Member m : gui.ui.sess.glob.party.memb.values()) {
-                    Gob gob = m.getgob();
-                    if (gob == null)
-                        continue;
-                    if (val) {
-                        gob.setSelection((gob.id == gui.map.plgob) ? Partyview.PLAYER_OL_COLOR : Partyview.MEMBER_OL_COLOR);
-                    } else {
-                        gob.resetSelection();
-                    }
-                }
-            }
-        }
-    }, new Coord(0, y));
+    display.add(new PrefCheckBox("Highlight party members", Config.highlightParty), new Coord(0, y));
     y += 20;
     display.add(new Label("Cupboards scale:"), new Coord(0, y));
     y += 15;
