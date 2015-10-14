@@ -190,7 +190,7 @@ public class LocalMiniMap extends Widget implements Console.Directory {
 			g.chcolor();
             if (showradius && m.gobid == mv.plgob) {
                 // view radius is 9x9 "server" grids
-                Coord rc = p2c(mc.div(MCache.sgridsz).sub(4, 4).mul(MCache.sgridsz));
+                Coord rc = p2c(mc.div(MCache.sgridsz).sub(4, 4).mul(MCache.sgridsz)).sub(off);
                 Coord rs = MCache.sgridsz.mul(9).div(tilesz);
                 g.chcolor(255, 255, 255, 60);
                 g.frect(rc, rs);
