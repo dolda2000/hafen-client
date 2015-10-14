@@ -3,10 +3,11 @@ package haven;
 import javax.media.opengl.GL2;
 import java.nio.FloatBuffer;
 
+import static haven.MCache.cutsz;
 import static haven.MCache.tilesz;
 import static haven.MCache.sgridsz;
 
-public class ServerGridOutline implements Rendered {
+public class ServerGridOverlay implements MapOverlay {
     private final MCache map;
     private final FloatBuffer[] vertexBuffers;
     private final int area;
@@ -15,8 +16,9 @@ public class ServerGridOutline implements Rendered {
     private Location location;
     private Coord ul;
     private int curIndex;
+    private Coord cut;
 
-    public ServerGridOutline(MCache map, Coord size) {
+    public ServerGridOverlay(MCache map, Coord size) {
         this.map = map;
         this.size = size;
         this.area = (size.x + 1) * (size.y + 1);
@@ -51,9 +53,15 @@ public class ServerGridOutline implements Rendered {
         return true;
     }
 
-    public void update(Coord ul) {
+    @Override
+    public void update(Coord cc) {
+        Coord cut = cc.div(MCache.tilesz).div(cutsz);
+        if (cut.equals(this.cut))
+            return;
+        this.cut = cut;
         try {
-            this.ul = ul.mul(tilesz).div(sgridsz);
+            // TODO: coord conversion methods to make code like this readable?
+            this.ul = cut.sub(MapView.view, MapView.view).mul(cutsz).mul(tilesz).div(sgridsz);
             this.location = Location.xlate(new Coord3f(this.ul.x * sgridsz.x, -this.ul.y * sgridsz.y, 0.0F));
 
             swapBuffers();

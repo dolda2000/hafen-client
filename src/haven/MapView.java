@@ -39,10 +39,10 @@ import java.lang.reflect.*;
 import javax.media.opengl.*;
 
 public class MapView extends PView implements DTarget, Console.Directory {
+    public static final int view = 2;
     public long plgob = -1;
     public Coord cc;
     private final Glob glob;
-    private int view = 2;
     private Collection<Delayed> delayed = new LinkedList<Delayed>();
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
     private Collection<Rendered> extradraw = new LinkedList<Rendered>();
@@ -66,9 +66,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private boolean showgobrad;
     private boolean showgrid;
     private boolean showservgrid;
-    private GridOutline gridol;
-    private ServerGridOutline servgridol;
-    private Coord lastcutc = Coord.z;
+    private MapOverlay gridol;
+    private MapOverlay servgridol;
 
     public interface Delayed {
 	public void run(GOut g);
@@ -434,8 +433,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.cc = cc;
 	this.plgob = plgob;
     this.holdtimer = new Timer();
-    this.gridol = new GridOutline(glob.map, cutsz.mul(view * 2 + 1));
-    this.servgridol = new ServerGridOutline(glob.map, cutsz.mul(view * 2 + 1).mul(tilesz).div(sgridsz).add(2, 2));
+    this.gridol = new GridOverlay(glob.map, cutsz.mul(view * 2 + 1));
+    this.servgridol = new ServerGridOverlay(glob.map, cutsz.mul(view * 2 + 1).mul(tilesz).div(sgridsz).add(2, 2));
     this.showservgrid = Config.showServerGrid.get();
 	setcanfocus(true);
     }
@@ -981,12 +980,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    glob.map.reqarea(cc.div(tilesz).sub(MCache.cutsz.mul(view + 1)),
 			     cc.div(tilesz).add(MCache.cutsz.mul(view + 1)));
         if (showgrid) {
-            Coord cutc = cc.div(MCache.tilesz).div(cutsz);
-            if (!cutc.equals(lastcutc)) {
-                lastcutc = cutc;
-                gridol.update(cutc.sub(view, view).mul(MCache.cutsz));
-                servgridol.update(cutc.sub(view, view).mul(MCache.cutsz));
-            }
+            gridol.update(cc);
+            servgridol.update(cc);
         }
 	} catch(Loading e) {
 	    lastload = e;
@@ -1605,9 +1600,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public void togglegrid() {
         showgrid = !showgrid;
         if (showgrid) {
-            lastcutc = cc.div(MCache.tilesz).div(cutsz);
-            gridol.update(lastcutc.sub(view, view).mul(MCache.cutsz));
-            servgridol.update(lastcutc.sub(view, view).mul(MCache.cutsz));
+            gridol.update(cc);
+            servgridol.update(cc);
         }
     }
 

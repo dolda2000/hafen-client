@@ -3,7 +3,10 @@ package haven;
 import javax.media.opengl.GL2;
 import java.nio.FloatBuffer;
 
-public class GridOutline implements Rendered {
+import static haven.MCache.cutsz;
+import static haven.MCache.tilesz;
+
+public class GridOverlay implements MapOverlay {
     private final MCache map;
     private final FloatBuffer[] vertexBuffers;
     private final int area;
@@ -12,8 +15,9 @@ public class GridOutline implements Rendered {
     private Location location;
     private Coord ul;
     private int curIndex;
+    private Coord cut;
 
-    public GridOutline(MCache map, Coord size) {
+    public GridOverlay(MCache map, Coord size) {
         this.map = map;
         this.size = size;
         this.area = (size.x + 1) * (size.y + 1);
@@ -48,10 +52,15 @@ public class GridOutline implements Rendered {
         return true;
     }
 
-    public void update(Coord ul) {
+    @Override
+    public void update(Coord cc) {
+        Coord cut = cc.div(MCache.tilesz).div(cutsz);
+        if (cut.equals(this.cut))
+            return;
+        this.cut = cut;
         try {
-            this.ul = ul;
-            this.location = Location.xlate(new Coord3f(ul.x * MCache.tilesz.x, -ul.y * MCache.tilesz.y, 0.0F));
+            this.ul = cut.sub(MapView.view, MapView.view).mul(cutsz);
+            this.location = Location.xlate(new Coord3f(ul.x * tilesz.x, -ul.y * tilesz.y, 0.0F));
             swapBuffers();
             Coord c = new Coord();
             for (c.y = ul.y; c.y < ul.y + size.y; c.y++)
@@ -61,7 +70,7 @@ public class GridOutline implements Rendered {
     }
 
     private Coord3f mapToScreen(Coord c) {
-        return new Coord3f((c.x - ul.x) * MCache.tilesz.x, -(c.y - ul.y) * MCache.tilesz.y, map.getz(c));
+        return new Coord3f((c.x - ul.x) * tilesz.x, -(c.y - ul.y) * tilesz.y, map.getz(c));
     }
 
     private void addLineStrip(Coord3f... vertices) {
