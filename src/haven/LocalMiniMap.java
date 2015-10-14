@@ -170,15 +170,15 @@ public class LocalMiniMap extends Widget implements Console.Directory {
 	try {
 		synchronized(ui.sess.glob.party.memb) {
 		    for(Party.Member m : ui.sess.glob.party.memb.values()) {
-			Coord ptc;
+			Coord mc;
 			try {
-			    ptc = m.getc();
+                mc = m.getc();
 			} catch(MCache.LoadingMap e) {
-			    ptc = null;
+                mc = null;
 			}
-			if(ptc == null)
+			if(mc == null)
 			    continue;
-			ptc = p2c(ptc).sub(off);
+			Coord ptc = p2c(mc).sub(off);
 			// do not display party members outside of window
 			// this should be replaced with the proper method of clipping rotated texture
 			if (!ptc.isect(c, sz))
@@ -188,10 +188,10 @@ public class LocalMiniMap extends Widget implements Console.Directory {
 			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 180);
 			g.image(plarrow.layer(Resource.imgc).tex(), ptc.sub(origin), origin, angle);
 			g.chcolor();
-
             if (showradius && m.gobid == mv.plgob) {
-                Coord rc = ptc.add((-500 / tilesz.x), (-500 / tilesz.y));
-                Coord rs = new Coord((1000 / tilesz.x), (1000 / tilesz.y));
+                // view radius is 9x9 "server" grids
+                Coord rc = p2c(mc.div(MCache.sgridsz).sub(4, 4).mul(MCache.sgridsz));
+                Coord rs = MCache.sgridsz.mul(9).div(tilesz);
                 g.chcolor(255, 255, 255, 60);
                 g.frect(rc, rs);
                 g.chcolor(0, 0, 0, 128);
