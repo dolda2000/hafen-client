@@ -28,6 +28,7 @@ package haven;
 
 import static haven.MCache.cutsz;
 import static haven.MCache.tilesz;
+import static haven.MCache.sgridsz;
 
 import haven.GLProgram.VarID;
 
@@ -433,8 +434,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.cc = cc;
 	this.plgob = plgob;
     this.holdtimer = new Timer();
-    this.gridol = new GridOutline(glob.map, MCache.cutsz.mul(view * 2 + 1));
-    this.servgridol = new ServerGridOutline(glob.map, new Coord(20, 20));
+    this.gridol = new GridOutline(glob.map, cutsz.mul(view * 2 + 1));
+    this.servgridol = new ServerGridOutline(glob.map, cutsz.mul(view * 2 + 1).mul(tilesz).div(sgridsz).add(2, 2));
     this.showservgrid = Config.showServerGrid.get();
 	setcanfocus(true);
     }
