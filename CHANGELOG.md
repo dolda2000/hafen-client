@@ -1,5 +1,13 @@
 ## Changelog
 
+### r50
+
+- Added overlay that shows object damage, plant and tree growth stages from bdew's client. It can be toggled on/off with `Alt`+`I`
+- Added ability to transfer items from lowest to highest quality using `Alt`+`Shift`+`Wheel`
+- Fixed issue with "fat" grid lines when party or radius outlines are shown
+- Fixed issue with disappearing party outline when party member goes out of sight and back
+- Minimap view radius uses distance measured in "server" grids which makes it precise (based on legacy XCom's client)
+
 ### r49
 
 - Made account manager optional. It is disabled by default and can be enabled through the option in `Misc Settings`
