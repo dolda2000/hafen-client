@@ -40,7 +40,7 @@ public class GobInfo extends GAttrib {
 
         @Override
         public void draw2d(GOut g) {
-            if (tex != null)
+            if (tex != null && Config.showGobInfo.get())
                 g.aimage(tex, gob.sc, 0.5, 0.5);
         }
     }
@@ -62,36 +62,34 @@ public class GobInfo extends GAttrib {
     public static GobInfo get(Gob gob) {
         if (gob == null || gob.getres() == null) return new GobInfo(gob, null);
         Text.Line line = null;
-        if (Config.showPlantGrowth.isEnabled()) {
-            try {
-                if (isSpriteKind("GrowingPlant", gob) || isSpriteKind("TrellisPlant", gob)) {
-                    int maxStage = 0;
-                    for (FastMesh.MeshRes layer : gob.getres().layers(FastMesh.MeshRes.class)) {
-                        if (layer.id / 10 > maxStage)
-                            maxStage = layer.id / 10;
-                    }
-                    Message data = getDrawableData(gob);
-                    if (data != null) {
-                        int stage = data.uint8();
-                        if (stage >= maxStage) {
-                            line = Text.std.renderstroked(String.format("%d/%d", stage, maxStage), Color.GREEN, Color.BLACK);
-                        } else {
-                            line = Text.std.renderstroked(String.format("%d/%d", stage, maxStage), Color.RED, Color.BLACK);
-                        }
-                    }
-                } else if (isSpriteKind("Tree", gob)) {
-                    Message data = getDrawableData(gob);
-                    if (data != null && !data.eom()) {
-                        int growth = data.uint8();
-                        if (growth < 100)
-                            line = Text.std.renderstroked(String.format("%d%%", growth), Color.YELLOW, Color.BLACK);
+        try {
+            if (isSpriteKind("GrowingPlant", gob) || isSpriteKind("TrellisPlant", gob)) {
+                int maxStage = 0;
+                for (FastMesh.MeshRes layer : gob.getres().layers(FastMesh.MeshRes.class)) {
+                    if (layer.id / 10 > maxStage)
+                        maxStage = layer.id / 10;
+                }
+                Message data = getDrawableData(gob);
+                if (data != null) {
+                    int stage = data.uint8();
+                    if (stage >= maxStage) {
+                        line = Text.std.renderstroked(String.format("%d/%d", stage, maxStage), Color.GREEN, Color.BLACK);
+                    } else {
+                        line = Text.std.renderstroked(String.format("%d/%d", stage, maxStage), Color.RED, Color.BLACK);
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } else if (isSpriteKind("Tree", gob)) {
+                Message data = getDrawableData(gob);
+                if (data != null && !data.eom()) {
+                    int growth = data.uint8();
+                    if (growth < 100)
+                        line = Text.std.renderstroked(String.format("%d%%", growth), Color.YELLOW, Color.BLACK);
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        if (line == null && Config.showObjectDamage.isEnabled()) {
+        if (line == null) {
             GobHealth hp = gob.getattr(GobHealth.class);
             if (hp != null && hp.hp < 4)
                 line = Text.std.renderstroked(String.format("%.0f%%", (1f - hp.hp / 4f) * 100f), Color.RED, Color.BLACK);

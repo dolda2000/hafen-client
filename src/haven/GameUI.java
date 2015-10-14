@@ -884,6 +884,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
                 msg("Friendly fire prevention is turned " + (map.isPreventFriendlyFireEnabled() ? "on" : "off"));
             }
             return true;
+        } else if (alt && keycode == KeyEvent.VK_I) {
+            Config.showGobInfo.set(!Config.showGobInfo.get());
+            return true;
         }
     }
 	return(super.globtype(key, ev));
