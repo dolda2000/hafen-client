@@ -31,7 +31,8 @@ import java.util.*;
 public class Inventory extends Widget implements DTarget {
     public static final Tex invsq = Resource.loadtex("gfx/hud/invsq");
     public static final Coord sqsz = new Coord(33, 33);
-    private static final AvgQualityComparator qcomparator = new AvgQualityComparator();
+    private static final Comparator<WItem> qComparator = new AvgQualityComparator();
+    private static final Comparator<WItem> descQComparator = Collections.reverseOrder(qComparator);
     Coord isz;
     Map<GItem, WItem> wmap = new HashMap<GItem, WItem>();
 
@@ -58,22 +59,23 @@ public class Inventory extends Widget implements DTarget {
     }
     
     public boolean mousewheel(Coord c, int amount) {
-	if(ui.modshift) {
-	    Inventory minv = getparent(GameUI.class).maininv;
-	    if(minv != this) {
-		if(amount < 0)
-		    wdgmsg("invxf", minv.wdgid(), 1);
-		else if(amount > 0)
-		    minv.wdgmsg("invxf", this.wdgid(), 1);
-	    }
-    } else if (ui.modmeta) {
+    if (ui.modmeta) {
         Inventory minv = getparent(GameUI.class).maininv;
         if (minv != this) {
+            Comparator<WItem> comparator = ui.modshift ? qComparator : descQComparator;
             Inventory src = (amount < 0) ? this : minv;
-            List<WItem> items = Utils.asSortedList(src.children(WItem.class), qcomparator);
+            List<WItem> items = Utils.asSortedList(src.children(WItem.class), comparator);
             for (int i = 0; i < Math.min(items.size(), Math.abs(amount)); i++) {
                 items.get(i).item.wdgmsg("transfer", c);
             }
+        }
+    } else if(ui.modshift) {
+        Inventory minv = getparent(GameUI.class).maininv;
+        if (minv != this) {
+            if (amount < 0)
+                wdgmsg("invxf", minv.wdgid(), 1);
+            else if (amount > 0)
+                minv.wdgmsg("invxf", this.wdgid(), 1);
         }
     }
 	return(true);
@@ -161,10 +163,10 @@ public class Inventory extends Widget implements DTarget {
             ItemQuality aq = a.quality.get();
             ItemQuality bq = b.quality.get();
             if (aq != null && bq != null)
-                return (int)Math.signum(bq.average.value - aq.average.value);
+                return (int)Math.signum(aq.average.value - bq.average.value);
             if (aq == null)
-                return (bq == null) ? 0 : 1;
-            return -1;
+                return (bq == null) ? 0 : -1;
+            return 1;
         }
     }
 }
