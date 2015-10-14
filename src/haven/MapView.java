@@ -26,6 +26,7 @@
 
 package haven;
 
+import static haven.MCache.cutsz;
 import static haven.MCache.tilesz;
 
 import haven.GLProgram.VarID;
@@ -66,7 +67,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private boolean showservgrid;
     private GridOutline gridol;
     private ServerGridOutline servgridol;
-    private Coord lasttc = Coord.z;
+    private Coord lastcutc = Coord.z;
 
     public interface Delayed {
 	public void run(GOut g);
@@ -432,7 +433,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.cc = cc;
 	this.plgob = plgob;
     this.holdtimer = new Timer();
-    this.gridol = new GridOutline(glob.map, MCache.cutsz.mul(2 * (view + 1)));
+    this.gridol = new GridOutline(glob.map, MCache.cutsz.mul(view * 2 + 1));
     this.servgridol = new ServerGridOutline(glob.map, new Coord(20, 20));
     this.showservgrid = Config.showServerGrid.get();
 	setcanfocus(true);
@@ -978,13 +979,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    partydraw(g);
 	    glob.map.reqarea(cc.div(tilesz).sub(MCache.cutsz.mul(view + 1)),
 			     cc.div(tilesz).add(MCache.cutsz.mul(view + 1)));
-        // change grid overlay position when player moves by 20 tiles
         if (showgrid) {
-            Coord tc = cc.div(MCache.tilesz);
-            if (tc.manhattan2(lasttc) > 20) {
-                lasttc = tc;
-                gridol.update(tc.sub(MCache.cutsz.mul(view + 1)));
-                servgridol.update(tc.sub(MCache.cutsz.mul(view + 1)));
+            Coord cutc = cc.div(MCache.tilesz).div(cutsz);
+            if (!cutc.equals(lastcutc)) {
+                lastcutc = cutc;
+                gridol.update(cutc.sub(view, view).mul(MCache.cutsz));
+                servgridol.update(cutc.sub(view, view).mul(MCache.cutsz));
             }
         }
 	} catch(Loading e) {
@@ -1604,10 +1604,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public void togglegrid() {
         showgrid = !showgrid;
         if (showgrid) {
-            Coord tc = cc.div(tilesz);
-            lasttc = tc.div(MCache.cmaps);
-            gridol.update(tc.sub(MCache.cutsz.mul(view + 1)));
-            servgridol.update(tc.sub(MCache.cutsz.mul(view + 1)));
+            lastcutc = cc.div(MCache.tilesz).div(cutsz);
+            gridol.update(lastcutc.sub(view, view).mul(MCache.cutsz));
+            servgridol.update(lastcutc.sub(view, view).mul(MCache.cutsz));
         }
     }
 

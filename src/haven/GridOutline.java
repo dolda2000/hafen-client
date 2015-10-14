@@ -54,8 +54,8 @@ public class GridOutline implements Rendered {
             this.location = Location.xlate(new Coord3f(ul.x * MCache.tilesz.x, -ul.y * MCache.tilesz.y, 0.0F));
             swapBuffers();
             Coord c = new Coord();
-            for (c.y = ul.y; c.y <= ul.y + size.y; c.y++)
-                for (c.x = ul.x; c.x <= ul.x + size.x; c.x++)
+            for (c.y = ul.y; c.y < ul.y + size.y; c.y++)
+                for (c.x = ul.x; c.x < ul.x + size.x; c.x++)
                    addLineStrip(mapToScreen(c), mapToScreen(c.add(1, 0)), mapToScreen(c.add(1, 1)));
         } catch (Loading e) {}
     }
