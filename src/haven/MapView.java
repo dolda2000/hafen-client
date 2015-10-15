@@ -433,8 +433,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
     this.holdtimer = new Timer();
     this.gridOverlay = new GridOverlay(glob.map, cutsz.mul(view * 2 + 1));
     this.gridOverlay.setVisible(false);
+    this.gridOverlay.update(cc);
     this.serverGridOverlay = new ServerGridOverlay(glob.map, cutsz.mul(view * 2 + 1).mul(tilesz).div(sgridsz).add(2, 2));
     this.serverGridOverlay.setVisible(Config.showServerGrid.get());
+    this.serverGridOverlay.update(cc);
     this.partyHighlight = new PartyHighlight(glob.party, plgob);
 	setcanfocus(true);
     }
@@ -967,11 +969,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	if((olftimer != 0) && (olftimer < System.currentTimeMillis()))
 	    unflashol();
 	try {
-        if (gridOverlay.isVisible()) {
-            gridOverlay.update(cc);
-            serverGridOverlay.update(cc);
-        }
-	    if(camload != null)
+        if(camload != null)
 		throw(new Loading(camload));
 		Gob pl = player();
 		if(pl != null)
@@ -1013,7 +1011,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	if(placing != null)
 	    placing.ctick((int)(dt * 1000));
     partyHighlight.update();
+    if (gridOverlay.isVisible()) {
+        gridOverlay.update(cc);
+        serverGridOverlay.update(cc);
     }
+	}
 
     public void resize(Coord sz) {
 	super.resize(sz);
