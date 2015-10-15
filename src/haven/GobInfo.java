@@ -60,9 +60,10 @@ public class GobInfo extends GAttrib {
     }
 
     public static GobInfo get(Gob gob) {
-        if (gob == null || gob.getres() == null) return new GobInfo(gob, null);
-        Text.Line line = null;
         try {
+            if (gob == null || gob.getres() == null) return new GobInfo(gob, null);
+            Text.Line line = null;
+
             if (isSpriteKind("GrowingPlant", gob) || isSpriteKind("TrellisPlant", gob)) {
                 int maxStage = 0;
                 for (FastMesh.MeshRes layer : gob.getres().layers(FastMesh.MeshRes.class)) {
@@ -86,18 +87,19 @@ public class GobInfo extends GAttrib {
                         line = Text.std.renderstroked(String.format("%d%%", growth), Color.YELLOW, Color.BLACK);
                 }
             }
+
+            if (line == null) {
+                GobHealth hp = gob.getattr(GobHealth.class);
+                if (hp != null && hp.hp < 4)
+                    line = Text.std.renderstroked(String.format("%.0f%%", (1f - hp.hp / 4f) * 100f), Color.RED, Color.BLACK);
+            }
+            if (line != null)
+                return new GobInfo(gob, line.tex());
+        } catch (Loading e) {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if (line == null) {
-            GobHealth hp = gob.getattr(GobHealth.class);
-            if (hp != null && hp.hp < 4)
-                line = Text.std.renderstroked(String.format("%.0f%%", (1f - hp.hp / 4f) * 100f), Color.RED, Color.BLACK);
-        }
-        if (line != null)
-            return new GobInfo(gob, line.tex());
-        else
-            return new GobInfo(gob, null);
+        return new GobInfo(gob, null);
     }
 
     private static Message getDrawableData(Gob gob) {
