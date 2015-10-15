@@ -205,12 +205,14 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	KinInfo ki = getattr(KinInfo.class);
 	if(ki != null)
 	    rl.add(ki.fx, null);
-	GobInfo gi = getattr(GobInfo.class);
-	if (gi==null) {
-		gi = GobInfo.get(this);
-		setattr(gi);
+	if (Config.showGobInfo.get()) {
+		GobInfo gi = getattr(GobInfo.class);
+		if (gi==null) {
+			gi = GobInfo.get(this);
+			setattr(gi);
+		}
+		rl.add(gi.draw(), null);
 	}
-	rl.add(gi.draw(), null);
 	return(false);
     }
 
