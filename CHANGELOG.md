@@ -1,5 +1,10 @@
 ## Changelog
 
+### r51
+
+- Fixed issue with view radius position when minimap is offset
+- Fixed flashing black screen which was constantly appearing during movement
+
 ### r50
 
 - Added overlay that shows object damage, plant and tree growth stages from bdew's client. It can be toggled on/off with `Alt`+`I`
