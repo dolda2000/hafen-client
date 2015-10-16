@@ -16,7 +16,7 @@ public class ItemQuality {
     public final Element vitality;
     public final Element average;
 
-    public ItemQuality(int substance, int essence, int vitality) {
+    public ItemQuality(int essence, int substance, int vitality) {
         this.essence = new Element(essence, COLOR_ESSENCE);
         this.substance = new Element(substance, COLOR_SUBSTANCE);
         this.vitality = new Element(vitality, COLOR_VITALITY);
