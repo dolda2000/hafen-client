@@ -1,5 +1,9 @@
 ## Changelog
 
+### r52
+
+- Fixed wrong quality display: essence was mixed with substance
+
 ### r51
 
 - Fixed issue with view radius position when minimap is offset
