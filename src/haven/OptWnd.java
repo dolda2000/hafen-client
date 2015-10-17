@@ -364,6 +364,8 @@ public class OptWnd extends Window {
     misc.add(new PrefCheckBox("Toggle tracking on startup", Config.toggleTracking), new Coord(0, y));
     y += 15;
     misc.add(new PrefCheckBox("Enable flower menu animations", Config.enableMenuAnimation), new Coord(0, y));
+    y += 15;
+    misc.add(new PrefCheckBox("Use CTRL for sorted by quality transfer", Config.useControlForSortTransfer), new Coord(0, y));
 	misc.add(new PButton(200, "Back", 27, main), new Coord(0, 200));
 	misc.pack();
 

@@ -59,7 +59,7 @@ public class Inventory extends Widget implements DTarget {
     }
     
     public boolean mousewheel(Coord c, int amount) {
-    if (ui.modmeta) {
+    if ((Config.useControlForSortTransfer.get() && ui.modctrl) || ui.modmeta) {
         Inventory minv = getparent(GameUI.class).maininv;
         if (minv != this) {
             Comparator<WItem> comparator = ui.modshift ? qComparator : descQComparator;
