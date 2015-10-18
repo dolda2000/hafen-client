@@ -1,5 +1,10 @@
 ## Changelog
 
+### r53
+
+- Added option to use `Ctrl` instead of `Alt` for quality transfer
+- Added tool for planting trees in the center of the tile. Take treeplanter's pot, hide it using `Alt`+`H`, then use the tool from the extended menu to select a tile
+
 ### r52
 
 - Fixed wrong quality display: essence was mixed with substance
