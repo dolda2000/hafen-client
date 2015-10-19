@@ -460,10 +460,12 @@ public class Session {
 			    int resid = msg.uint16();
 			    Indir<Resource> res;
 			    if(resid == 65535) {
-				oc.icon(gob, null);
+				if(gob != null)
+				    oc.icon(gob, null);
 			    } else {
 				int ifl = msg.uint8();
-				oc.icon(gob, getres(resid));
+				if(gob != null)
+				    oc.icon(gob, getres(resid));
 			    }
 			} else if(type == OD_END) {
 			    break;
