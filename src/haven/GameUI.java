@@ -615,7 +615,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     public void draw(GOut g) {
 	beltwdg.c = new Coord(chat.c.x, Math.min(chat.c.y - beltwdg.sz.y + 4, sz.y - beltwdg.sz.y));
-    eqproxy.c = new Coord(chat.c.x + beltwdg.sz.x + 20, Math.min(chat.c.y - eqproxy.sz.y, sz.y - eqproxy.sz.y - 1));
+    eqproxy.c = new Coord(chat.c.x + beltwdg.sz.x + 20, Math.min(chat.c.y - eqproxy.sz.y, sz.y - eqproxy.sz.y - 2));
 	super.draw(g);
 	if(prog >= 0)
 	    drawprog(g, prog);

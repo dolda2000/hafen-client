@@ -145,18 +145,6 @@ public class Inventory extends Widget implements DTarget {
 	return items;
     }
 
-    public static Coord invsz(Coord sz) {
-	return invsq.sz().add(new Coord(-1, -1)).mul(sz).add(new Coord(1, 1));
-    }
-
-    public static Coord sqroff(Coord c){
-	return c.div(invsq.sz());
-    }
-
-    public static Coord sqoff(Coord c){
-	return c.mul(invsq.sz());
-    }
-
     private static class AvgQualityComparator implements Comparator<WItem> {
         @Override
         public int compare(WItem a, WItem b) {
