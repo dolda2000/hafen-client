@@ -1,5 +1,7 @@
 package haven;
 
+import java.awt.event.KeyEvent;
+
 public class TileGrabber extends GrabberWnd {
     static final String title = "Tile selection";
     static final String defaultText = "Selected tile: (none)";
@@ -29,6 +31,8 @@ public class TileGrabber extends GrabberWnd {
 
     @Override
     public boolean mmousedown(Coord mc, int button) {
+        if (isDone())
+            return false;
         c = mc.div(MCache.tilesz);
         if (this.ol != null)
             this.ol.destroy();

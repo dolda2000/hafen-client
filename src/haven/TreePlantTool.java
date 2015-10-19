@@ -10,9 +10,13 @@ public class TreePlantTool extends TileGrabber {
 
     @Override
     protected void done(Coord tile) {
-        ui.gui.map.
-        ui.gui.map.wdgmsg("itemact", Coord.z, tile.mul(MCache.tilesz).add(MCache.tilesz.div(2)), ui.modflags());
-        clicked = true;
+        if (tile != null) {
+            ui.gui.map.wdgmsg("itemact", Coord.z, tile.mul(MCache.tilesz).add(MCache.tilesz.div(2)), ui.modflags());
+            clicked = true;
+            hide();
+        } else {
+            ui.gui.error("No tile selected!");
+        }
     }
 
     @Override
