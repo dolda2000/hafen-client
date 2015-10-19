@@ -42,12 +42,16 @@ public abstract class GrabberWnd extends Window implements MapView.Grabber {
         super.destroy();
     }
 
-    public boolean type(char key, java.awt.event.KeyEvent ev) {
+    public boolean globtype(char key, java.awt.event.KeyEvent ev) {
         if(key == KeyEvent.VK_ENTER) {
-            done();
-            close();
+            if (!done) {
+                done = true;
+                done();
+                close();
+                return true;
+            }
         }
-        return true;
+        return false;
     }
 
     @Override
