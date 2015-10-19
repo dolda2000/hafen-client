@@ -332,12 +332,7 @@ public class MenuGrid extends Widget {
     private void usecustom(String[] ad) {
         if(ad[1].equals("plant-tree")) {
             if (ui != null && ui.gui != null) {
-                ui.gui.add(new TileGrabber("Select tile...", ui.gui) {
-                    @Override
-                    protected void done(Coord tile) {
-                        ui.gui.map.wdgmsg("itemact", Coord.z, tile.mul(MCache.tilesz).add(MCache.tilesz.div(2)), ui.modflags());
-                    }
-                }, 300, 200);
+                ui.gui.add(new TreePlantTool(ui.gui), 300, 200);
             }
         }
     }

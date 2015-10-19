@@ -20,7 +20,7 @@ public class TileGrabber extends GrabberWnd {
     }
 
     @Override
-     protected void done() {
+    protected void done() {
         done(c);
     }
 
@@ -33,7 +33,7 @@ public class TileGrabber extends GrabberWnd {
         if (this.ol != null)
             this.ol.destroy();
         this.ol = map.new Overlay(c, c, 1 << 16);
-        setLabel(String.format("Select tile: (%d, %d)", c.x, c.y));
+        setLabel(String.format("Selected tile: (%d, %d)", c.x, c.y));
         return true;
     }
 
