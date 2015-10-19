@@ -405,6 +405,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		chfield(tfield + 50);
 		return(true);
 	    } else if(ev.getKeyCode() == KeyEvent.VK_HOME) {
+            if (ev.isControlDown()) {
+                // face north direction without changing field of view
+                angl = tangl = -(float)Math.PI / 2;
+                return true;
+            }
 		tangl = angl + (float)Utils.cangle(-(float)Math.PI * 0.25f - angl);
 		chfield((float)(100 * Math.sqrt(2)));
 	    }
