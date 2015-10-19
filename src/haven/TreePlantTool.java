@@ -9,6 +9,14 @@ public class TreePlantTool extends TileGrabber {
     }
 
     @Override
+    protected void added() {
+        if (ui.gui.hand.isEmpty() && ui.gui.handSave.isEmpty()) {
+            ui.gui.error("There are no items in the hand!");
+            destroy();
+        }
+    }
+
+    @Override
     protected void done(Coord tile) {
         if (tile != null) {
             ui.gui.map.wdgmsg("itemact", Coord.z, tile.mul(MCache.tilesz).add(MCache.tilesz.div(2)), ui.modflags());
