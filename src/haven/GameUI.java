@@ -548,6 +548,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(place == "craft") {
 	    makewnd.add(child);
         makewnd.pack();
+        makewnd.raise();
         makewnd.show();
 	} else if(place == "buddy") {
 	    zerg.ntab(buddies = (BuddyWnd)child, zerg.kin);
