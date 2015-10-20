@@ -50,7 +50,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private List<Widget> cmeters = new LinkedList<Widget>();
     private Text lastmsg;
     private long msgtime;
-    private Window invwnd, equwnd, makewnd;
+    private Window invwnd, equwnd;
     public Inventory maininv;
     public CharWnd chrwdg;
     public BuddyWnd buddies;
@@ -77,6 +77,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Window iconwnd;
     public final Cal cal;
     public Window deckwnd;
+    public final CraftWindow makewnd;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -188,6 +189,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     deckwnd.hide();
 
     cal = add(new Cal());
+    makewnd = add(new CraftWindow(), new Coord(400, 200));
+    makewnd.hide();
     }
 
     @Override
@@ -533,25 +536,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         if (Config.showFepMeter.get())
             addcmeter(new FepMeter(chrwdg.feps));
 	} else if(place == "craft") {
-	    final Widget mkwdg = child;
-	    makewnd = new Window(Coord.z, "Crafting", true) {
-		    public void wdgmsg(Widget sender, String msg, Object... args) {
-			if((sender == this) && msg.equals("close")) {
-			    mkwdg.wdgmsg("close");
-			    return;
-			}
-			super.wdgmsg(sender, msg, args);
-		    }
-		    public void cdestroy(Widget w) {
-			if(w == mkwdg) {
-			    ui.destroy(this);
-			    makewnd = null;
-			}
-		    }
-		};
-	    makewnd.add(mkwdg, Coord.z);
-	    makewnd.pack();
-	    add(makewnd, new Coord(400, 200));
+	    makewnd.add(child, Coord.z);
+        makewnd.pack();
+        makewnd.show();
 	} else if(place == "buddy") {
 	    zerg.ntab(buddies = (BuddyWnd)child, zerg.kin);
 	} else if(place == "pol") {
