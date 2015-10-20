@@ -250,8 +250,8 @@ public class Makewindow extends Widget {
 
     public void resize(Coord sz) {
         super.resize(sz);
-        obtn.c = sz.sub(obtn.sz);
-        cbtn.c = sz.sub(cbtn.sz).sub(obtn.sz.x + 10, 0);
+        cbtn.c = sz.sub(cbtn.sz);
+        obtn.c = sz.sub(obtn.sz).sub(cbtn.sz.x + 10, 0);
     }
     
     public static class MakePrep extends ItemInfo implements GItem.ColorInfo {
