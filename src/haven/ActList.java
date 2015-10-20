@@ -56,13 +56,13 @@ public class ActList extends Listbox<ActList.ActItem> {
     }
 
     public class ActItem {
-        public final Resource.AButton act;
+        public final Glob.Pagina pagina;
         public final Text name;
         public final Tex icon;
 
         public ActItem(Glob.Pagina pagina) {
-            this.act = pagina.act();
-            this.name = font.render(act.name);
+            this.pagina = pagina;
+            this.name = font.render(this.pagina.act().name);
             this.icon = new TexI(PUtils.convolvedown(pagina.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), CharWnd.iconfilter));
         }
     }

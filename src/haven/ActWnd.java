@@ -26,7 +26,7 @@ public abstract class ActWnd extends Window {
         entry = add(new TextEntry(WIDTH, "") {
             @Override
             public void activate(String text) {
-                act(list.sel.act);
+                act(list.sel.pagina);
                 ActWnd.this.hide();
             }
 
@@ -55,14 +55,14 @@ public abstract class ActWnd extends Window {
         list = add(new ActList(WIDTH, 10) {
             @Override
             protected void itemactivate(ActItem item) {
-                act(list.sel.act);
+                act(list.sel.pagina);
                 ActWnd.this.hide();
             }
         }, 0, entry.sz.y + 5);
         pack();
     }
 
-    protected abstract void act(Resource.AButton act);
+    protected abstract void act(Glob.Pagina act);
 
     @Override
     public void show() {
