@@ -1,5 +1,13 @@
 ## Changelog
 
+### r54
+
+- Improved tree planting tool (which was done in a rather half-assed way before). Now it clicks automatically on the "Plant tree" menu item and displays various error messages. Also fixed non-working `Enter` key which was supposed to work for a tile selection as alternative to clicking `Done` button
+- Added ability to switch between 5 recently used recipes in the crafting window
+- Added hotkey `Ctrl`+`Home` to turn the camera in the northern direction
+- Made quick access slots bigger
+- Merged latest changes from the vanilla client
+
 ### r53
 
 - Added option to use `Ctrl` instead of `Alt` for quality transfer
