@@ -106,7 +106,7 @@ public class CraftWindow extends Window {
             text = text.substring(0, 12 - 2) + "..";
         TabStrip.Button added = tabStrip.insert(0, icon, text, lastAction.act().name);
         tabStrip.select(added);
-        if (tabStrip.getButtonCount() > 5) {
+        if (tabStrip.getButtonCount() > 4) {
             removeTab(tabStrip.getButtonCount() - 1);
         }
         tabs.put(lastAction, added);
