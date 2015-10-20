@@ -60,7 +60,8 @@ public class CraftWindow extends Window {
     public void cdestroy(Widget w) {
         if (makeWidget == w) {
             makeWidget = null;
-            hide();
+            if (visible)
+                hide();
         }
     }
 
@@ -84,6 +85,13 @@ public class CraftWindow extends Window {
             return true;
         }
         return super.globtype(ch, ev);
+    }
+
+    @Override
+    public void hide() {
+        super.hide();
+        if (makeWidget != null)
+            makeWidget.wdgmsg("close");
     }
 
     private void addTab(Glob.Pagina pagina) {
