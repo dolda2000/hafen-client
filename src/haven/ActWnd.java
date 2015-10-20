@@ -19,6 +19,8 @@ public abstract class ActWnd extends Window {
     public ActWnd(String caption, String filter) {
         super(Coord.z, caption);
         this.filter = filter;
+        setLocal(true);
+        setHideOnClose(true);
         setcanfocus(true);
         setfocusctl(true);
         entry = add(new TextEntry(WIDTH, "") {
@@ -57,8 +59,6 @@ public abstract class ActWnd extends Window {
                 ActWnd.this.hide();
             }
         }, 0, entry.sz.y + 5);
-
-
         pack();
     }
 
@@ -96,15 +96,6 @@ public abstract class ActWnd extends Window {
                 ui.sess.glob.paginae.addListener(listener);
                 refilter();
             }
-        }
-    }
-
-    @Override
-    public void wdgmsg(Widget sender, String msg, Object... args) {
-        if((sender == this) && (msg.equals("close"))) {
-            hide();
-        } else {
-            super.wdgmsg(sender, msg, args);
         }
     }
 

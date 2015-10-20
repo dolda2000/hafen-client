@@ -65,6 +65,9 @@ public class Window extends Widget implements DTarget {
     public Coord wsz, ctl, csz, atl, asz;
     private UI.Grab dm = null;
     private Coord doff;
+    private boolean local = false; // indicates whether window is not created by the server
+    private boolean hideOnClose = false; // indicates whether windows should be destroyed or just hidden on close message
+
 
     @RName("wnd")
     public static class $_ implements Factory {
@@ -219,7 +222,7 @@ public class Window extends Widget implements DTarget {
 
     public void wdgmsg(Widget sender, String msg, Object... args) {
 	if(sender == cbtn) {
-	    wdgmsg("close");
+        close();
 	} else {
 	    super.wdgmsg(sender, msg, args);
 	}
@@ -229,7 +232,7 @@ public class Window extends Widget implements DTarget {
 	if(super.type(key, ev))
 	    return(true);
 	if(key == 27) {
-	    wdgmsg("close");
+	    close();
 	    return(true);
 	}
 	return(false);
@@ -255,7 +258,23 @@ public class Window extends Widget implements DTarget {
 	    return("");
     }
 
+    private void close() {
+        if (local) {
+            if (hideOnClose) hide(); else destroy();
+        } else {
+            wdgmsg("close");
+        }
+    }
+
 	public boolean isGrabbed() {
 		return dm != null;
 	}
+
+    public void setLocal(boolean value) {
+        local = value;
+    }
+
+    public void setHideOnClose(boolean value) {
+        hideOnClose = value;
+    }
 }

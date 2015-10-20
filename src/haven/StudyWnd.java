@@ -6,6 +6,8 @@ public class StudyWnd extends Window {
 
     public StudyWnd(Coord sz) {
         super(sz, "Study");
+        setLocal(true);
+        setHideOnClose(true);
     }
 
     public void setStudy(Inventory inv) {
@@ -46,16 +48,6 @@ public class StudyWnd extends Window {
             Config.studyPosition.set(this.c);
         }
         return super.mouseup(c, button);
-    }
-
-
-    @Override
-    public void wdgmsg(Widget sender, String msg, Object... args) {
-        if (sender == this && msg.equals("close")) {
-            hide();
-        } else {
-            super.wdgmsg(sender, msg, args);
-        }
     }
 
     private class StudyInfo extends Widget {

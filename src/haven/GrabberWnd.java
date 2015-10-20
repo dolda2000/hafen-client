@@ -11,6 +11,7 @@ public abstract class GrabberWnd extends Window implements MapView.Grabber {
 
     public GrabberWnd(String title, String label, GameUI gui) {
         super(new Coord(150, 50), title);
+        setLocal(true);
         this.label = add(new Label(label));
         this.btn = new Button(40, "Done");
         add(btn, this.asz.sub(btn.sz));
@@ -61,9 +62,7 @@ public abstract class GrabberWnd extends Window implements MapView.Grabber {
 
     @Override
     public void wdgmsg(Widget sender, String msg, Object... args) {
-        if((sender == this) && (msg.equals("close"))) {
-            destroy();
-        } else if (sender == this.btn) {
+        if (sender == this.btn) {
             done = true;
             done();
             close();

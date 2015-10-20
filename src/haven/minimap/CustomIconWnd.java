@@ -9,6 +9,9 @@ public class CustomIconWnd extends Window {
 
     public CustomIconWnd() {
         super(Coord.z, "Toggle...");
+        setLocal(true);
+        setHideOnClose(true);
+
         add(new Label("Groups:"), 0, 0);
         add(new Label("Objects:"), 160, 0);
         groups = add(new CheckBoxList(150, 20), 0, 15);
@@ -72,14 +75,5 @@ public class CustomIconWnd extends Window {
         if (config.groups.size() > 0)
             groups.change(0);
         raise();
-    }
-
-    @Override
-    public void wdgmsg(Widget sender, String msg, Object... args) {
-        if((sender == this) && (msg.equals("close"))) {
-            hide();
-        } else {
-            super.wdgmsg(sender, msg, args);
-        }
     }
 }

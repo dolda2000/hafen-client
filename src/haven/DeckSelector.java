@@ -13,6 +13,8 @@ public abstract class DeckSelector extends Window {
 
     public DeckSelector() {
         super(Coord.z, "Switch deck...");
+        setLocal(true);
+        setHideOnClose(true);
     }
 
     protected abstract int getSelectedDeck();
@@ -29,15 +31,6 @@ public abstract class DeckSelector extends Window {
     public void lostfocus() {
         super.lostfocus();
         hide();
-    }
-
-    @Override
-    public void wdgmsg(Widget sender, String msg, Object... args) {
-        if((sender == this) && (msg.equals("close"))) {
-            hide();
-        } else {
-            super.wdgmsg(sender, msg, args);
-        }
     }
 
     @Override
