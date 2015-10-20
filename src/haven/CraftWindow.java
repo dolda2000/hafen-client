@@ -76,7 +76,7 @@ public class CraftWindow extends Window {
     }
 
     public boolean globtype(char ch, java.awt.event.KeyEvent ev) {
-        if (ch == 9) {
+        if (visible && ch == 9) {
             int nextIndex = tabStrip.getSelectedButtonIndex() + 1;
             if (nextIndex >= tabStrip.getButtonCount())
                 nextIndex = 0;
