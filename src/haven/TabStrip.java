@@ -5,8 +5,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TabStrip extends Widget {
+
+    public enum Orientation {
+        VERTICAL,
+        HORIZONTAL
+    }
+
     private final List<Button> buttons = new ArrayList<Button>();
     private Button selected;
+    private Orientation orientation = Orientation.HORIZONTAL;
+    private int minWidth;
 
     protected void selected(Button button) {}
 
@@ -26,7 +34,7 @@ public class TabStrip extends Widget {
         });
         button.tooltip = tooltip;
         buttons.add(index, button);
-        alignButtons();
+        updateLayout();
         return button;
     }
 
@@ -47,22 +55,49 @@ public class TabStrip extends Widget {
     public Button remove(int buttonIndex) {
         Button button = buttons.remove(buttonIndex);
         button.destroy();
-        alignButtons();
+        updateLayout();
         return button;
     }
 
     public void remove(Button button) {
         if (buttons.remove(button)) {
             button.destroy();
-            alignButtons();
+            updateLayout();
         }
     }
 
-    private void alignButtons() {
-        int x = 0;
-        for (Button button : buttons) {
-            button.c = new Coord(x, 0);
-            x += button.sz.x - 1;
+    public void setOrientation(Orientation value) {
+        if (value != orientation) {
+            orientation = value;
+            updateLayout();
+        }
+    }
+
+    public void setMinWidth(int value) {
+        minWidth = value;
+    }
+
+    private void updateLayout() {
+        switch (orientation) {
+            case HORIZONTAL:
+                int x = 0;
+                for (Button button : buttons) {
+                    button.c = new Coord(x, 0);
+                    x += button.sz.x - 1;
+                }
+                break;
+            case VERTICAL:
+                int y = 0;
+                int width = minWidth;
+                for (Button button : buttons) {
+                    button.c = new Coord(0, y);
+                    y += button.sz.y - 1;
+                    width = Math.max(width, button.sz.x);
+                }
+                // set same size for all buttons
+                for (Button button : buttons)
+                    button.resize(width, button.sz.y);
+                break;
         }
         pack();
     }
