@@ -51,6 +51,7 @@ public class CraftWindow extends Window {
             }
             makeWidget = child;
             makeWidget.c = new Coord(5, tabStrip.sz.y + 5);
+            makeWidget.resize(Math.max(makeWidget.sz.x, tabStrip.sz.x), makeWidget.sz.y);
         }
         return child;
     }
@@ -90,7 +91,11 @@ public class CraftWindow extends Window {
             TabStrip.Button old = tabs.get(pagina);
             tabStrip.remove(old);
         }
-        TabStrip.Button added = tabStrip.insert(0, lastAction.act().name);
+        Tex icon = new TexI(PUtils.convolvedown(lastAction.res.get().layer(Resource.imgc).img, new Coord(20, 20), CharWnd.iconfilter));
+        String text = lastAction.act().name;
+        if (text.length() > 12)
+            text = text.substring(0, 12 - 2) + "..";
+        TabStrip.Button added = tabStrip.insert(0, icon, text, lastAction.act().name);
         tabStrip.select(added);
         if (tabStrip.getButtonCount() > 5) {
             removeTab(tabStrip.getButtonCount() - 1);

@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TabStrip extends Widget {
-    private static final int MAX_BUTTON_TEXT_LENGTH = 12;
-
     private final List<Button> buttons = new ArrayList<Button>();
     private Button selected;
 
@@ -20,13 +18,8 @@ public class TabStrip extends Widget {
         return buttons.size();
     }
 
-    public Button insert(int index, String text) {
-        String tooltip = null;
-        if (text.length() > MAX_BUTTON_TEXT_LENGTH) {
-            tooltip = text; // preserve full text in tooltip
-            text = text.substring(0, MAX_BUTTON_TEXT_LENGTH - 2) + "..";
-        }
-        final Button button = add(new Button(text) {
+    public Button insert(int index, Tex image, String text, String tooltip) {
+        final Button button = add(new Button(image, text) {
             public void click() {
                 select(this);
             }
@@ -76,15 +69,21 @@ public class TabStrip extends Widget {
 
     public abstract static class Button extends Widget {
         public static final Coord padding = new Coord(5, 2);
-        public static final Text.Foundry font = new Text.Foundry(Text.fraktur, 15).aa(true);
+        public static final Text.Foundry font = new Text.Foundry(Text.fraktur, 14).aa(true);
         private static final IBox frame = new IBox("gfx/hud/tab", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb");
         private static final Color bg = new Color(0, 0, 0, 128);
+        private Tex image;
         private Text text;
         private boolean active;
 
-        Button(String text) {
+        Button(Tex image, String text) {
+            this.image = image;
             this.text = font.render(text);
-            resize(this.text.sz().add(padding.mul(2)));
+            int w = this.text.sz().x + this.image.sz().x + padding.x * 2;
+            if (text != null && !text.isEmpty())
+                w += 10; // space between image and text
+            int h = Math.max(this.text.sz().y, this.image.sz().y) + padding.y * 2;
+            resize(w, h);
         }
 
         public abstract void click();
@@ -97,7 +96,8 @@ public class TabStrip extends Widget {
                 g.chcolor();
             }
             frame.draw(g, Coord.z, sz);
-            g.image(text.tex(), padding);
+            g.image(image, padding);
+            g.image(text.tex(), new Coord(image.sz().x + 10, padding.y));
         }
 
         @Override
