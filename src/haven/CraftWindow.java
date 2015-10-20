@@ -76,8 +76,9 @@ public class CraftWindow extends Window {
         super.resize(sz.add(5, 5));
     }
 
+    @Override
     public boolean globtype(char ch, java.awt.event.KeyEvent ev) {
-        if (visible && ch == 9) {
+        if (visible && ch == 9 && ev.isShiftDown()) {
             int nextIndex = tabStrip.getSelectedButtonIndex() + 1;
             if (nextIndex >= tabStrip.getButtonCount())
                 nextIndex = 0;
