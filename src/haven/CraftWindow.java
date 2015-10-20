@@ -1,6 +1,5 @@
 package haven;
 
-import java.awt.event.KeyEvent;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -73,6 +72,17 @@ public class CraftWindow extends Window {
     @Override
     public void resize(Coord sz) {
         super.resize(sz.add(5, 5));
+    }
+
+    public boolean globtype(char ch, java.awt.event.KeyEvent ev) {
+        if (ch == 9) {
+            int nextIndex = tabStrip.getSelectedButtonIndex() + 1;
+            if (nextIndex >= tabStrip.getButtonCount())
+                nextIndex = 0;
+            tabStrip.select(nextIndex);
+            return true;
+        }
+        return super.globtype(ch, ev);
     }
 
     private void addTab(Glob.Pagina pagina) {
