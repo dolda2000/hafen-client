@@ -187,10 +187,6 @@ public class Session {
 	return(cachedres(id).get());
     }
 
-    public Indir<Resource> dynres(long id) {
-	return(Resource.remote().load(String.format("dyn/%x", id), 1));
-    }
-
     private class ObjAck {
 	long id;
 	int frame;
