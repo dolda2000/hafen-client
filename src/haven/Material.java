@@ -216,6 +216,18 @@ public class Material extends GLState {
 	    st.prep(buf);
     }
     
+    @Resource.PublishedCode(name = "mat")
+    public static interface Factory {
+	public Material create(Glob glob, Resource res, Message sdt);
+    }
+
+    public static Material fromres(Glob glob, Resource res, Message sdt) {
+	Factory f = res.getcode(Factory.class, false);
+	if(f != null)
+	    return(f.create(glob, res, sdt));
+	return(res.layer(Material.Res.class).get());
+    }
+
     public static class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
 	private transient List<GLState> states = new LinkedList<GLState>();
