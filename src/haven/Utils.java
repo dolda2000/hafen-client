@@ -467,7 +467,7 @@ public class Utils {
 	    throw(new IllegalArgumentException());
     }
 
-    static String byte2hex(byte[] in) {
+    public static String byte2hex(byte[] in) {
 	StringBuilder buf = new StringBuilder();
 	for(byte b : in) {
 	    buf.append(num2hex((b & 0xf0) >> 4));
@@ -476,7 +476,7 @@ public class Utils {
 	return(buf.toString());
     }
 
-    static byte[] hex2byte(String hex) {
+    public static byte[] hex2byte(String hex) {
 	if(hex.length() % 2 != 0)
 	    throw(new IllegalArgumentException("Invalid hex-encoded string"));
 	byte[] ret = new byte[hex.length() / 2];
