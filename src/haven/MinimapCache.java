@@ -24,7 +24,7 @@ public class MinimapCache {
     private final Map<Coord, Defer.Future<MinimapTile>> cache =
             new LinkedHashMap<Coord, Defer.Future<MinimapTile>>(50, 0.75f, true) {
                 protected boolean removeEldestEntry(Map.Entry<Coord, Defer.Future<MinimapTile>> eldest) {
-                    if(size() > 100) {
+                    if (size() > 900) {
                         try {
                             MinimapTile t = eldest.getValue().get();
                             t.img.dispose();
