@@ -37,8 +37,9 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     private GSprite spr;
     private Object[] rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
-    private boolean meterChanged;
-    private Date lastMeterChangeTime;
+    private boolean meterInitialized;
+    private Date initialMeterChangeTime;
+    private int initialMeterValue;
     private String meterCompletionTime;
     
     @RName("item")
@@ -150,20 +151,22 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
         int value = (Integer)args[0];
         if (value == meter)
             return;
-        if (!meterChanged) {
-            meterChanged = true;
-        } else if (lastMeterChangeTime == null) {
-            lastMeterChangeTime = new Date();
+        if (!meterInitialized) {
+            meterInitialized = true;
+            meterCompletionTime ="Estimated completion time: calculating...";
+            info = null;
+        } else if (initialMeterChangeTime == null) {
+            initialMeterChangeTime = new Date();
+            initialMeterValue = value;
         } else {
             Date now = new Date();
-            int diff = value - meter;
-            long millisPerTick = (long)((float)(now.getTime() - lastMeterChangeTime.getTime()) / diff);
+            int diff = value - initialMeterValue;
+            long millisPerTick = (long)((float)(now.getTime() - initialMeterChangeTime.getTime()) / diff);
             long millisToComplete = millisPerTick * (100 - value);
             int seconds = (int)(millisToComplete / 1000) % 60 ;
             int minutes = (int)((millisToComplete / (1000*60)) % 60);
             int hours = (int)((millisToComplete / (1000*60*60)));
             meterCompletionTime = String.format("Estimated completion time: %02d:%02d:%02d", hours, minutes, seconds);
-            lastMeterChangeTime = now;
             // reset tooltip
             info = null;
         }
