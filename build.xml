@@ -49,6 +49,7 @@
     <copy todir="build/classes/haven" file="etc/res-bgload" />
     <copy todir="build/classes/haven" file="etc/icon.png" />
 	<copy todir="build/classes/" file="etc/custom-icons.config" />
+    <copy todir="build/classes/haven" file="etc/curio.config" />
   </target>
   
   <target name="appletview" depends="build-env">
