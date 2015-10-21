@@ -58,7 +58,8 @@ public class Window extends Widget implements DTarget {
 	Resource.loadimg("gfx/hud/wnd/custom/cbtnu"),
 	Resource.loadimg("gfx/hud/wnd/custom/cbtnd"),
 	Resource.loadimg("gfx/hud/wnd/custom/cbtnh")};
-    public final Coord tlo, rbo, mrgn;
+    public Coord mrgn;
+    public final Coord tlo, rbo;
     public final IButton cbtn;
     public boolean dt = false;
     public Text cap;
@@ -126,7 +127,7 @@ public class Window extends Widget implements DTarget {
 
     cbox.draw(g, wtl, wsz.sub(wtl));
 	if(cap != null) {
-	    g.image(cap.tex(), wtl.add(cpo));
+	    g.image(cap.tex(), wtl.add(Math.max(5, mrgn.x), 1));
 	}
 
 	super.draw(g);
@@ -276,5 +277,10 @@ public class Window extends Widget implements DTarget {
 
     public void setHideOnClose(boolean value) {
         hideOnClose = value;
+    }
+
+    public void setMargin(Coord value) {
+        mrgn = value;
+        resize(sz);
     }
 }

@@ -27,6 +27,7 @@ public class MinimapWnd extends Window {
         this.c = c;
         add(minimap, 0, 0);
         initbuttons();
+        setMargin(Coord.z);
     }
 
     public void draw(GOut g) {
