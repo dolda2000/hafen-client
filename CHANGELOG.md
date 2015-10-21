@@ -1,5 +1,11 @@
 ## Changelog
 
+### r56
+
+- Added total time, LP/H/Slot and LP/H/MW to the tooltip for curiosities. This information is not displayed for some items since it is incomplete and it might be not accurate at the moment
+- Made minimap borderless
+- Fixed issue with empty minimap when its size is too big
+
 ### r55
 
 - Fixed issues with new crafting window and redesigned it a bit
