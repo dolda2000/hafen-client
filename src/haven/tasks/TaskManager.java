@@ -7,6 +7,7 @@ import java.util.List;
 
 public class TaskManager {
     private final List<Task> tasks = new ArrayList<Task>();
+    private final List<Task> stopped = new ArrayList<Task>();
     private final TaskContext context;
 
     public TaskManager(UI ui) {
@@ -19,7 +20,7 @@ public class TaskManager {
         task.setListener(new TaskListener() {
             @Override
             public void stopped() {
-                tasks.remove(task);
+                stopped.add(task);
             }
         });
         task.start();
@@ -28,5 +29,10 @@ public class TaskManager {
     public void tick(double dt) {
         for (Task task : tasks)
             task.tick(dt);
+        if (stopped.size() > 0) {
+            for (Task task : stopped)
+                tasks.remove(task);
+            stopped.clear();
+        }
     }
 }

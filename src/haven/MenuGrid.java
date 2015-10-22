@@ -31,6 +31,9 @@ import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import haven.Resource.AButton;
 import haven.Glob.Pagina;
+import haven.tasks.FeedBlocksTask;
+import haven.tasks.FeedEdiblesTask;
+import haven.tasks.FeedTask;
 import haven.util.ObservableCollection;
 
 import java.util.*;
@@ -119,7 +122,10 @@ public class MenuGrid extends Widget {
 		super.attach(ui);
 		Glob glob = ui.sess.glob;
 		ObservableCollection<Pagina> p = glob.paginae;
-		p.add(glob.paginafor(Resource.local().load("paginae/custom/plant-tree")));
+        p.add(glob.paginafor(Resource.local().load("paginae/custom/plant-tree")));
+        p.add(glob.paginafor(Resource.local().load("paginae/custom/fill-trough")));
+        p.add(glob.paginafor(Resource.local().load("paginae/custom/fill-coop")));
+        p.add(glob.paginafor(Resource.local().load("paginae/custom/fill-tarkiln")));
 	}
 	
     private static Comparator<Pagina> sorter = new Comparator<Pagina>() {
@@ -334,6 +340,12 @@ public class MenuGrid extends Widget {
             if (ui != null && ui.gui != null) {
                 ui.gui.add(new TreePlantTool(ui.gui), 300, 200);
             }
+        } else if (ad[1].equals("fill-trough")) {
+            ui.gui.tasks.add(new FeedEdiblesTask("trough"));
+        } else if (ad[1].equals("fill-coop")) {
+            ui.gui.tasks.add(new FeedEdiblesTask("chickencoop"));
+        } else if (ad[1].equals("fill-tarkiln")) {
+            ui.gui.tasks.add(new FeedBlocksTask("tarkiln"));
         }
     }
 

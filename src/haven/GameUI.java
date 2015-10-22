@@ -80,7 +80,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public final Cal cal;
     public Window deckwnd;
     public final CraftWindow makewnd;
-    private TaskManager tasks;
+    public TaskManager tasks;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -482,9 +482,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
-    static class DraggedItem {
-	final GItem item;
-	final Coord dc;
+    public static class DraggedItem {
+	public final GItem item;
+    public final Coord dc;
 
 	DraggedItem(GItem item, Coord dc) {
 	    this.item = item; this.dc = dc;
