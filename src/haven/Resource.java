@@ -1020,7 +1020,7 @@ public class Resource implements Serializable {
 			centroid = true;
 		    }
 
-		    protected BufferedImage fill() {
+		    public BufferedImage fill() {
 			BufferedImage buf = TexI.mkbuf(dim);
 			Graphics g = buf.createGraphics();
 			for(int i = 0; i < nt; i++)
