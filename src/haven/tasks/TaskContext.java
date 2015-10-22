@@ -29,6 +29,18 @@ class TaskContext {
         return null;
     }
 
+    public FlowerMenu getMenu() {
+        return ui.root.findchild(FlowerMenu.class);
+    }
+
+    public void click(Gob gob, int button, int mod) {
+        ui.gui.map.wdgmsg("click", Coord.z, gob.rc, button, 0, mod, (int)gob.id, gob.rc, 0, -1);
+    }
+
+    public Gob findObjectById(long id) {
+        return ui.sess.glob.oc.getgob(id);
+    }
+
     public Gob findObjectByName(int radius, String name) {
         Coord plc = player().rc;
         double min = radius;
@@ -46,7 +58,7 @@ class TaskContext {
         return nearest;
     }
 
-    public void mapInteractClick(Gob gob, int mod) {
+    public void itemact(Gob gob, int mod) {
         ui.gui.map.wdgmsg("itemact", Coord.z, gob.rc, mod, 0, (int)gob.id, gob.rc, 0, -1);
     }
 

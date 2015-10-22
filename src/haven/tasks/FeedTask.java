@@ -92,7 +92,7 @@ public abstract class FeedTask extends Task {
             GItem item = context().getItemAtHand();
             if (item != null) {
                 // click with shift
-                context().mapInteractClick(gob, 1);
+                context().itemact(gob, 1);
                 setState(new Wait(0.2));
             } else {
                 t += dt;

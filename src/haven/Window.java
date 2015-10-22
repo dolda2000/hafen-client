@@ -222,8 +222,10 @@ public class Window extends Widget implements DTarget {
     }
 
     public void wdgmsg(Widget sender, String msg, Object... args) {
-	if(sender == cbtn) {
-        close();
+	if (sender == cbtn) {
+        wdgmsg("close");
+    } else if (local && sender == this && msg.equals("close")) {
+        if (hideOnClose) hide(); else destroy();
 	} else {
 	    super.wdgmsg(sender, msg, args);
 	}
@@ -233,7 +235,7 @@ public class Window extends Widget implements DTarget {
 	if(super.type(key, ev))
 	    return(true);
 	if(key == 27) {
-	    close();
+	    wdgmsg("close");
 	    return(true);
 	}
 	return(false);
@@ -257,14 +259,6 @@ public class Window extends Widget implements DTarget {
 	    return(ret);
 	else
 	    return("");
-    }
-
-    private void close() {
-        if (local) {
-            if (hideOnClose) hide(); else destroy();
-        } else {
-            wdgmsg("close");
-        }
     }
 
 	public boolean isGrabbed() {
