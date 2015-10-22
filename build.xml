@@ -109,8 +109,8 @@
     <exec executable="mono" osfamily="unix">
       <arg value="tools/restool/restool.exe" />
       <arg value="pack" />
-      <arg value="res" />
-      <arg value="build/custom-res/res" />
+      <arg value="./res" />
+      <arg value="./build/custom-res/res" />
     </exec>
     <copy todir="build/custom-res/res">
       <fileset dir="res">
