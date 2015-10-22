@@ -40,6 +40,7 @@ public abstract class Message {
     public static final int T_INT8 = 9;
     public static final int T_INT16 = 10;
     public static final int T_NIL = 12;
+    public static final int T_UID = 13;
     public static final int T_BYTES = 14;
     public static final int T_FLOAT32 = 15;
     public static final int T_FLOAT64 = 16;
@@ -233,6 +234,9 @@ public abstract class Message {
 		break;
 	    case T_NIL:
 		ret.add(null);
+		break;
+	    case T_UID:
+		ret.add(int64());
 		break;
 	    case T_BYTES:
 		int len = uint8();
