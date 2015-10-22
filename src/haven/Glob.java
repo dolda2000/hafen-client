@@ -76,7 +76,7 @@ public class Glob {
 
     public static class CAttr extends Observable {
 	String nm;
-	int base, comp;
+	public int base, comp;
 	
 	public CAttr(String nm, int base, int comp) {
 	    this.nm = nm.intern();

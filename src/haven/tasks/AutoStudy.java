@@ -1,4 +1,4 @@
-package haven;/*
+package haven.tasks;/*
  *  This file is part of bdew's Haven & Hearth modified client.
  *  Copyright (C) 2015 bdew
  *
@@ -23,16 +23,18 @@ package haven;/*
  *  Boston, MA 02111-1307 USA
  */
 
+import haven.*;
+
 import java.awt.*;
 import java.util.HashSet;
 import java.util.Set;
 
-public class AutoStudy {
-    private static long last = Long.MIN_VALUE;
+public class AutoStudy extends Task {
+    private long last = Long.MIN_VALUE;
 
     private static void closeAllInv(GameUI gui) {
         for (Widget c = gui.child; c != null; c = c.next) {
-            if (c instanceof Window) {
+            if (c instanceof haven.Window) {
                 Inventory inv = c.findchild(Inventory.class);
                 if (inv != null && inv != gui.maininv && inv.parent != gui.studywnd) {
                     c.wdgmsg("close");
@@ -41,13 +43,17 @@ public class AutoStudy {
         }
     }
 
-    public static void update(GameUI gui) {
-        Inventory study = gui.chrwdg.sattr.findchild(Inventory.class);
+    @Override
+    protected void onTick(double dt) {
+        if (!Config.enableAutoStudy.get())
+            return;
+
+        Inventory study = context().gui().chrwdg.sattr.findchild(Inventory.class);
         if (study == null || System.currentTimeMillis() < last + 10000) return;
         last = System.currentTimeMillis();
         try {
             int attn = 0;
-            int cap = gui.ui.sess.glob.cattr.get("int").comp;
+            int cap = context().gui().ui.sess.glob.cattr.get("int").comp;
             Set<String> active = new HashSet<String>();
 
             for (GItem i : study.children(GItem.class)) {
@@ -61,12 +67,12 @@ public class AutoStudy {
 
             if (attn >= cap) return;
 
-            for (GItem i : gui.maininv.children(GItem.class)) {
+            for (GItem i : context().gui().maininv.children(GItem.class)) {
                 ItemInfo.Name nm = ItemInfo.find(ItemInfo.Name.class, i.info());
                 Curiosity cr = ItemInfo.find(Curiosity.class, i.info());
                 if (nm != null && cr != null && cr.mw <= cap - attn && !active.contains(nm.str.text)) {
-                    gui.msg("Auto adding curiosity: " + nm.str.text, Color.WHITE);
-                    closeAllInv(gui);
+                    context().gui().msg("Auto adding curiosity: " + nm.str.text, Color.WHITE);
+                    closeAllInv(context().gui());
                     active.add(nm.str.text);
                     attn += cr.mw;
                     i.wdgmsg("transfer", Coord.z);

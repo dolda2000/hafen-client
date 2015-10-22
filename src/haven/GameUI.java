@@ -27,6 +27,8 @@
 package haven;
 
 import haven.minimap.CustomIconWnd;
+import haven.tasks.*;
+import haven.tasks.AutoStudy;
 
 import java.util.*;
 import java.awt.Color;
@@ -78,6 +80,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public final Cal cal;
     public Window deckwnd;
     public final CraftWindow makewnd;
+    private TaskManager tasks;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -207,6 +210,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     protected void attach(UI ui) {
 	super.attach(ui);
 	ui.gui = this;
+    tasks = new TaskManager(ui);
+    tasks.add(new AutoStudy());
     }
 
     public Equipory getEquipory() {
@@ -647,8 +652,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(afk && (System.currentTimeMillis() - ui.lastevent < 300000)) {
 	    afk = false;
 	}
-	if (Config.enableAutoStudy.get())
-		AutoStudy.update(this);
+    tasks.tick(dt);
     }
 
     public void uimsg(String msg, Object... args) {
