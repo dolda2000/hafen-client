@@ -1,10 +1,14 @@
 language: java
 script: ant deftgt
+sudo: required
+dist: trusty
 jdk:
 - oraclejdk8
 - openjdk6
-mono:
-- latest
+addons:
+  apt:
+    packages:
+    - mono-devel
 deploy:
   skip_cleanup: true
   provider: releases
