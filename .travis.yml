@@ -3,9 +3,10 @@ script: ant deftgt
 jdk:
 - oraclejdk8
 - openjdk6
-install:
-- sudo apt-get update -qq
-- sudo apt-get install -qq mono-devel
+addons:
+  apt:
+    packages:
+    - mono-devel
 deploy:
   skip_cleanup: true
   provider: releases
