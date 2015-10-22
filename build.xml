@@ -99,8 +99,33 @@
     <available property="lib-builtin-jar" file="lib/builtin-res.jar" />
     <fail unless="lib-builtin-jar" message="builtin-res.jar not available" />
   </target>
-  
-  <target name="jars" depends="build-env, jar">
+
+  <target name="custom-res">
+    <exec executable="tools/restool/restool.exe" osfamily="windows">
+      <arg value="pack" />
+      <arg value="res" />
+      <arg value="build/custom-res/res" />
+    </exec>
+    <exec executable="mono" osfamily="unix">
+      <arg value="tools/restool/restool.exe" />
+      <arg value="pack" />
+      <arg value="res" />
+      <arg value="build/custom-res/res" />
+    </exec>
+    <copy todir="build/custom-res/res">
+      <fileset dir="res">
+        <include name="**/*.res"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="custom-res-jar" depends="custom-res">
+    <jar destfile="build/custom-res.jar">
+      <fileset dir="build/custom-res" />
+    </jar>
+  </target>
+
+  <target name="jars" depends="build-env, jar, custom-res-jar">
     <copy todir="build">
       <fileset dir="lib">
 	<include name="jogl.jar" />

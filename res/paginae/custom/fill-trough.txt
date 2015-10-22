@@ -1,0 +1,1 @@
+Automatically fills nearest trough using edible items from the inventory.

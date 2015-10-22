@@ -10,7 +10,7 @@ deploy:
     secure: PZx1puMvzg+MOU2UEs/NW9s7oeVDWRKuU+1VdSuWCc+1pb2Bl8XalLJ4uIdBr1HOD2Vs4rblduCFcJabk/VeuqFBLxOPlPn0ORc2SlqilhWjbIM5PLVnczTvfuQoi1J+Lw3XyXypqKeJaNYHCHqgbMEl+RYTJzJjYo1gb2zCTXu/QuRTgR1Z9/B3xrPklyArZoYlcVNuU6QDgQRP3Pb4GkNp0FmDEZ+h3Yo74m9sTqKPrOZ8Cr2P/jFTGHdsO6ygfPJI0iSzebMImVzuMqTInlfJ3AlMkdE+pub+8DLjhT4jbz2+wNrMAOxk+66VobFVoZsuc1bbfVdWA/vtXCL+UbdyOxcfuu7ImMyjmnliHjml1sOqBd5jfs6PLv/EJqhrRVdBdvFbf2HXpXsYGrc2D04Z2YiQAQo+SweXKYg26BFjt9ClL4aAkG0DcRCUW0uPgFtzyQ1bzWaMtmwh+32EBZdm0P6JgNEBg/ScALHsh4NggpBkqcT6wrq0vy/oZyuSiOxetDdniPu1YufEDvvGZZAYeT2z26+P+NlSQ7Mah4DBVfW37jVSs/ln1rMNKUOPAqg7n7sSVF0uFBdX0wOq3DlexzJbRA6ntsCIpyoLu/NRl8e51rRmfA8wNyJKXpR0Itl+mOxaIwVlGqG6b7UKQf2KpAhaZXrFLLP8+veQLK4=
   file: 
     - "build/hafen.jar"
-    - "lib/custom-res.jar"
+    - "build/custom-res.jar"
   on:
     tags: true
     jdk: oraclejdk8
