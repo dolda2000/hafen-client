@@ -3,10 +3,8 @@ script: ant deftgt
 jdk:
 - oraclejdk8
 - openjdk6
-before_install:
-- sudo add-apt-repository ppa:keks9n/monodevelop-latest -y
-- sudo apt-get update -qq -y
-- sudo apt-get install mono-3-opt
+mono:
+- latest
 deploy:
   skip_cleanup: true
   provider: releases
