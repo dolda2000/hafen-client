@@ -1,5 +1,9 @@
 ## Changelog
 
+### r57
+
+- Added tools for filling nearest troughs and coops with edibles and tar kilns with blocks. They are available through the extended menu.
+
 ### r56
 
 - Added total time, LP/H/Slot and LP/H/MW to the tooltip for curiosities. This information is not displayed for some items since it is incomplete and it might be not accurate at the moment
