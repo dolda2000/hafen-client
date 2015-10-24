@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EquipBelt extends DraggableBelt {
-    public static final Tex sq = Resource.loadtex("gfx/hud/eqproxysq");
+    public static final Tex sq = Resource.loadtex("gfx/hud/belt/custom/eqbeltsq");
 
     public EquipBelt(String name, int... slotIndexes) {
         super(name, sq.sz());
