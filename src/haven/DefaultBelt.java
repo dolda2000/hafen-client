@@ -2,14 +2,15 @@ package haven;
 
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+
+import static haven.Inventory.invsq;
 
 public abstract class DefaultBelt extends DraggableBelt {
     private int currentBelt;
 
     public DefaultBelt(String name) {
-        super(name);
+        super(name, Inventory.invsq.sz());
     }
 
     public void setCurrentBelt(int value) {
@@ -23,14 +24,10 @@ public abstract class DefaultBelt extends DraggableBelt {
 
         public NKeys(String name) {
             super(name);
-        }
-
-        @Override
-        protected Collection<Slot> createSlots() {
             List<Slot> slots = new ArrayList<Slot>(keys.length);
             for (int i = 0; i < keys.length; i++)
                 slots.add(new DefaultSlot(i, keys[i], 0, String.format("%d", (i + 1) % 10)));
-            return slots;
+            addSlots(slots);
         }
     }
 
@@ -41,19 +38,14 @@ public abstract class DefaultBelt extends DraggableBelt {
 
         public FKeys(String name) {
             super(name);
-        }
-
-        @Override
-        protected Collection<Slot> createSlots() {
             List<Slot> slots = new ArrayList<Slot>(keys.length);
             for (int i = 0; i < keys.length; i++)
                 slots.add(new DefaultSlot(i, keys[i], 0, String.format("F%d", i + 1)));
-            return slots;
+            addSlots(slots);
         }
     }
 
     private class DefaultSlot extends Slot {
-
         private final int index;
 
         public DefaultSlot(int index, int key, int mods, String text) {
@@ -62,38 +54,43 @@ public abstract class DefaultBelt extends DraggableBelt {
         }
 
         @Override
-        public void activate(boolean checkMapHit) {
-            if (checkMapHit) {
-                MapView map = ui.gui.map;
-                if (map == null)
-                    return;
-                Coord mvc = map.rootxlate(ui.mc);
-                if(mvc.isect(Coord.z, map.sz)) {
-                    map.delay(map.new Hittest(mvc) {
-                        protected void hit(Coord pc, Coord mc, MapView.ClickInfo inf) {
-                            if(inf == null)
-                                ui.gui.wdgmsg("belt", slot(), 1, ui.modflags(), mc);
-                            else
-                                ui.gui.wdgmsg("belt", slot(), 1, ui.modflags(), mc, (int)inf.gob.id, inf.gob.rc);
-                        }
+        public boolean click(Coord c, int button) {
+            switch (button) {
+                case 1:
+                    ui.gui.wdgmsg("belt", slot(), 1, ui.modflags());
+                    break;
+                case 3:
+                    ui.gui.wdgmsg("setbelt", slot(), 1);
+                    break;
+            }
+            return true;
+        }
 
-                        protected void nohit(Coord pc) {
-                            ui.gui.wdgmsg("belt", slot(), 1, ui.modflags());
-                        }
-                    });
-                }
-            } else {
-                ui.gui.wdgmsg("belt", slot(), 1, ui.modflags());
+        @Override
+        public void keyact() {
+            MapView map = ui.gui.map;
+            if (map == null)
+                return;
+            Coord mvc = map.rootxlate(ui.mc);
+            if(mvc.isect(Coord.z, map.sz)) {
+                map.delay(map.new Hittest(mvc) {
+                    protected void hit(Coord pc, Coord mc, MapView.ClickInfo inf) {
+                        if (inf == null)
+                            ui.gui.wdgmsg("belt", slot(), 1, ui.modflags(), mc);
+                        else
+                            ui.gui.wdgmsg("belt", slot(), 1, ui.modflags(), mc, (int) inf.gob.id, inf.gob.rc);
+                    }
+
+                    protected void nohit(Coord pc) {
+                        ui.gui.wdgmsg("belt", slot(), 1, ui.modflags());
+                    }
+                });
             }
         }
 
         @Override
-        public void clear() {
-            ui.gui.wdgmsg("setbelt", slot(), 1);
-        }
-
-        @Override
         public void draw(GOut g) {
+            g.image(invsq, Coord.z);
             Indir<Resource> slot = ui.gui.belt[slot()];
             try {
                 if (slot != null)

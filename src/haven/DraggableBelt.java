@@ -4,12 +4,9 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
-import static haven.Inventory.invsq;
-
-public abstract class DraggableBelt extends Widget {
+public class DraggableBelt extends Widget {
     private static final Tex vertGripTex = Resource.loadtex("gfx/hud/belt/custom/grip-v");
     private static final Tex horzGripTex = Resource.loadtex("gfx/hud/belt/custom/grip-h");
     private static final BufferedImage rotateImg = Resource.loadimg("gfx/hud/belt/custom/rotate");
@@ -19,19 +16,18 @@ public abstract class DraggableBelt extends Widget {
     private final String name;
     private final Grip grip;
     private final List<SlotWidget> slots;
+    private final Coord slotSize;
     private Orientation orientation;
     private UI.Grab dm = null;
     private Coord doff;
 
-    public DraggableBelt(String name) {
+    public DraggableBelt(String name, Coord slotSize) {
         this.name = name;
         this.c = BeltConfig.getBeltPosition(name, Coord.z);
         this.orientation = BeltConfig.getBeltOrienation(name, Orientation.Horizontal);;
         this.grip = add(new Grip(this.orientation));
-        Collection<Slot> slots = createSlots();
-        this.slots = new ArrayList<SlotWidget>(slots.size());
-        for (Slot slot : slots)
-            this.slots.add(add(new SlotWidget(slot), Coord.z));
+        this.slots = new ArrayList<SlotWidget>();
+        this.slotSize = slotSize;
         updateLayout();
         setHovered(false);
     }
@@ -51,8 +47,6 @@ public abstract class DraggableBelt extends Widget {
         BeltConfig.setBeltPosition(name, value);
         this.c = value;
     }
-
-    protected abstract Collection<Slot> createSlots();
 
     @Override
     public void wdgmsg(Widget sender, String msg, Object... args) {
@@ -93,11 +87,17 @@ public abstract class DraggableBelt extends Widget {
         for (SlotWidget widget : slots) {
             Slot slot = widget.slot;
             if (slot.key == ev.getKeyCode() && slot.mods == ui.modflags()) {
-                slot.activate(true);
+                slot.keyact();
                 return true;
             }
         }
         return super.globtype(key, ev);
+    }
+
+    protected void addSlots(Iterable<Slot> slots) {
+        for (Slot slot : slots)
+            this.slots.add(add(new SlotWidget(slot, slotSize), Coord.z));
+        updateLayout();
     }
 
     private void drag(Coord c) {
@@ -187,38 +187,36 @@ public abstract class DraggableBelt extends Widget {
             this.text =  fnd.renderstroked(text, new Color(200, 200, 200), Color.BLACK);
         }
 
-        public void activate(boolean checkMapHit) {}
-        public void clear() {}
+        public boolean click(Coord c, int button) { return false; }
         public void draw(GOut g) {}
         public boolean drop() { return false; }
         public boolean drop(Object thing) { return false; }
+        public boolean interact(Coord cc, Coord ul) { return false; }
         public boolean isEmpty() { return true; }
+        public void keyact() {}
+        public Object tooltip(Coord c, Widget prev, boolean again) { return null; }
     }
 
-    private class SlotWidget extends Widget implements DTarget, DropTarget {
+    private static class SlotWidget extends Widget implements DTarget, DropTarget {
         public final Slot slot;
 
-        public SlotWidget(Slot slot) {
-            super(invsq.sz());
+        public SlotWidget(Slot slot, Coord slotSize) {
+            super(slotSize);
             this.slot = slot;
         }
 
         @Override
         public void draw(GOut g) {
-            g.image(invsq, Coord.z);
             slot.draw(g);
-            g.aimage(slot.text.tex(), invsq.sz().sub(2, 0), 1, 1);
+            g.aimage(slot.text.tex(), sz.sub(2, 0), 1, 1);
         }
 
         @Override
         public boolean mousedown(Coord c, int button) {
-            if (button == 1) {
-                if (slot.isEmpty())
-                    wdgmsg("drag", this.c.add(c));
-                else
-                    slot.activate(false);
-            } else if (button == 3) {
-                slot.clear();
+            if (button == 1 && slot.isEmpty()) {
+                wdgmsg("drag", this.c.add(c));
+            } else {
+                slot.click(c, button);
             }
             return true;
         }
@@ -230,12 +228,17 @@ public abstract class DraggableBelt extends Widget {
 
         @Override
         public boolean iteminteract(Coord cc, Coord ul) {
-            return false;
+            return slot.interact(cc, ul);
         }
 
         @Override
         public boolean dropthing(Coord cc, Object thing) {
             return slot.drop(thing);
+        }
+
+        @Override
+        public Object tooltip(Coord c, Widget prev) {
+            return slot.tooltip(c, prev, prev == this);
         }
     }
 }
