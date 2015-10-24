@@ -5,15 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TabStrip extends Widget {
-
-    public enum Orientation {
-        VERTICAL,
-        HORIZONTAL
-    }
-
     private final List<Button> buttons = new ArrayList<Button>();
     private Button selected;
-    private Orientation orientation = Orientation.HORIZONTAL;
+    private Orientation orientation = Orientation.Horizontal;
     private int minWidth;
 
     protected void selected(Button button) {}
@@ -79,14 +73,14 @@ public class TabStrip extends Widget {
 
     private void updateLayout() {
         switch (orientation) {
-            case HORIZONTAL:
+            case Horizontal:
                 int x = 0;
                 for (Button button : buttons) {
                     button.c = new Coord(x, 0);
                     x += button.sz.x - 1;
                 }
                 break;
-            case VERTICAL:
+            case Vertical:
                 int y = 0;
                 int width = minWidth;
                 for (Button button : buttons) {
