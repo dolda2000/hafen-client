@@ -56,7 +56,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Inventory maininv;
     public CharWnd chrwdg;
     public BuddyWnd buddies;
-    public EquipProxy eqproxy;
+    public EquipBelt eqbelt;
     private final Zergwnd zerg;
     public Polity polity;
     public HelpWnd help;
@@ -127,9 +127,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    chat.hresize(chat.savedh);
 	    chat.show();
 	}
-	eqproxy = add(new EquipProxy(new int[]{6, 7}), new Coord(3, 85));
 	beltwdg.raise();
 	ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1), false));
+	eqbelt = add(new EquipBelt("equip", 6, 7));
+    if (eqbelt.c.equals(Coord.z))
+        eqbelt.setPosition(new Coord(3, 85));
 	urpanel = add(new Hidepanel("gui-ur", null, new Coord( 1, -1), false));
 	brpanel = add(new Hidepanel("gui-br", null, new Coord( 1,  1), true) {
 		public void move(double a) {
@@ -618,7 +620,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     public void draw(GOut g) {
 	beltwdg.c = new Coord(chat.c.x, Math.min(chat.c.y - beltwdg.sz.y + 4, sz.y - beltwdg.sz.y));
-    eqproxy.c = new Coord(chat.c.x + beltwdg.sz.x + 20, Math.min(chat.c.y - eqproxy.sz.y, sz.y - eqproxy.sz.y - 2));
 	super.draw(g);
 	if(prog >= 0)
 	    drawprog(g, prog);
@@ -930,15 +931,19 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public void resize(Coord sz) {
+    Coord oldsz = this.sz;
 	this.sz = sz;
 	chat.resize(sz.x - blpw - brpw);
 	chat.move(new Coord(blpw, sz.y));
 	if(map != null)
 	    map.resize(sz);
 	beltwdg.c = new Coord(blpw + 10, sz.y - beltwdg.sz.y - 5);
-    eqproxy.c = new Coord(blpw + beltwdg.sz.x + 20, sz.y - eqproxy.sz.y - 5);
     iconwnd.c = sz.sub(iconwnd.sz).div(2);
     cal.c = new Coord((sz.x - cal.sz.x) / 2, 10);
+    if (!Coord.z.equals(oldsz)) {
+        if (eqbelt.c.y > oldsz.y / 2)
+            eqbelt.setPosition(eqbelt.c.x, sz.y - (oldsz.y - eqbelt.c.y));
+    }
 	super.resize(sz);
     }
 
