@@ -145,6 +145,10 @@
   <target name="clean">
     <delete dir="build" />
   </target>
+
+  <target name="clean-res">
+    <delete dir="build/custom-res" />
+  </target>
   
   <target name="profile" depends="jars">
     <nbprofiledirect>
