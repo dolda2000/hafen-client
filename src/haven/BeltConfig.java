@@ -16,8 +16,10 @@ public class BeltConfig {
     private static final List<Belt> belts;
 
     static {
+        belts = new ArrayList<Belt>();
         Belt[] loaded = load();
-        belts = (loaded != null) ? Arrays.asList(loaded) : new ArrayList<Belt>();
+        if (loaded != null)
+            belts.addAll(Arrays.asList(loaded));
 
     }
 
