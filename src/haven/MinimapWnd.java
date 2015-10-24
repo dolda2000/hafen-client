@@ -5,7 +5,7 @@ import java.awt.image.BufferedImage;
 public class MinimapWnd extends Window {
 
     static final BufferedImage grip = Resource.loadimg("gfx/hud/gripbr");
-    static final Coord gzsz = new Coord(20, 20);
+    static final Coord gzsz = new Coord(19, 18);
     static final Coord minsz = new Coord(150, 125);
 
     private final MapView map;
@@ -59,7 +59,7 @@ public class MinimapWnd extends Window {
         if (resizegrab != null) {
             resizegrab.remove();
             resizegrab = null;
-                Config.minimapSize.set(minimap.sz);
+            Config.minimapSize.set(minimap.sz);
         } else {
             super.mouseup(c, button);
         }
