@@ -26,7 +26,7 @@ public abstract class DefaultBelt extends DraggableBelt {
             super(name);
             List<Slot> slots = new ArrayList<Slot>(keys.length);
             for (int i = 0; i < keys.length; i++)
-                slots.add(new DefaultSlot(i, keys[i], 0, String.format("%d", (i + 1) % 10)));
+                slots.add(this.new DefaultSlot(i, keys[i], 0, String.format("%d", (i + 1) % 10)));
             addSlots(slots);
         }
     }
@@ -40,12 +40,12 @@ public abstract class DefaultBelt extends DraggableBelt {
             super(name);
             List<Slot> slots = new ArrayList<Slot>(keys.length);
             for (int i = 0; i < keys.length; i++)
-                slots.add(new DefaultSlot(i, keys[i], 0, String.format("F%d", i + 1)));
+                slots.add(this.new DefaultSlot(i, keys[i], 0, String.format("F%d", i + 1)));
             addSlots(slots);
         }
     }
 
-    private class DefaultSlot extends Slot {
+    class DefaultSlot extends Slot {
         private final int index;
 
         public DefaultSlot(int index, int key, int mods, String text) {
