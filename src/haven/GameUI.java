@@ -839,6 +839,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         int keycode = ev.getKeyCode();
         if (alt && keycode == KeyEvent.VK_S) {
             studywnd.show(!studywnd.visible);
+            if (studywnd.visible)
+                studywnd.raise();
             return true;
         } else if (alt && keycode == KeyEvent.VK_M) {
             if (mmapwnd != null) {
