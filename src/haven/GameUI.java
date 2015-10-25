@@ -1255,6 +1255,34 @@ public class GameUI extends ConsoleHost implements Console.Directory {
             act("tracking");
     }
 
+    public void actBelt(final int slot, boolean checkMapHit) {
+        if (checkMapHit) {
+            MapView map = ui.gui.map;
+            if (map == null)
+                return;
+            Coord mvc = map.rootxlate(ui.mc);
+            if(mvc.isect(Coord.z, map.sz)) {
+                map.delay(map.new Hittest(mvc) {
+                    protected void hit(Coord pc, Coord mc, MapView.ClickInfo inf) {
+                        if (inf == null)
+                            ui.gui.wdgmsg("belt", slot, 1, ui.modflags(), mc);
+                        else
+                            ui.gui.wdgmsg("belt", slot, 1, ui.modflags(), mc, (int) inf.gob.id, inf.gob.rc);
+                    }
+
+                    protected void nohit(Coord pc) {
+                        ui.gui.wdgmsg("belt", slot, 1, ui.modflags());
+                    }
+                });
+            }
+        } else
+            wdgmsg("belt", slot, 1, ui.modflags());
+
+        if (belt[slot] != null) {
+            makewnd.setLastAction(new Glob.Pagina(belt[slot]));
+        }
+    }
+
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("afk", new Console.Command() {

@@ -6,7 +6,7 @@ import java.util.Map;
 public class CraftWindow extends Window {
     private static final IBox frame = new IBox("gfx/hud/tab", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb");
     private final TabStrip tabStrip;
-    private final Map<Glob.Pagina, TabStrip.Button> tabs = new HashMap<Glob.Pagina, TabStrip.Button>();
+    private final Map<String, TabStrip.Button> tabs = new HashMap<String, TabStrip.Button>();
     private Widget makeWidget;
     private Glob.Pagina lastAction;
 
@@ -14,8 +14,8 @@ public class CraftWindow extends Window {
         super(Coord.z, "Crafting");
         tabStrip = add(new TabStrip() {
             protected void selected(Button button) {
-                for (Map.Entry<Glob.Pagina, Button> entry : tabs.entrySet()) {
-                    Glob.Pagina pagina = entry.getKey();
+                for (Map.Entry<String, Button> entry : tabs.entrySet()) {
+                    Glob.Pagina pagina = (Glob.Pagina)entry.getValue().tag;
                     if (entry.getValue().equals(button) && pagina != lastAction) {
                         ui.gui.wdgmsg("act", (Object[])pagina.act().ad);
                         lastAction = null;
@@ -96,20 +96,22 @@ public class CraftWindow extends Window {
     }
 
     private void addTab(Glob.Pagina pagina) {
-        if (tabs.containsKey(pagina)) {
-            TabStrip.Button old = tabs.get(pagina);
+        String resName = pagina.res().name;
+        if (tabs.containsKey(resName)) {
+            TabStrip.Button old = tabs.get(resName);
             tabStrip.remove(old);
         }
-        Tex icon = new TexI(PUtils.convolvedown(lastAction.res.get().layer(Resource.imgc).img, new Coord(20, 20), CharWnd.iconfilter));
-        String text = lastAction.act().name;
+        Tex icon = new TexI(PUtils.convolvedown(pagina.res.get().layer(Resource.imgc).img, new Coord(20, 20), CharWnd.iconfilter));
+        String text = pagina.act().name;
         if (text.length() > 12)
             text = text.substring(0, 12 - 2) + "..";
-        TabStrip.Button added = tabStrip.insert(0, icon, text, lastAction.act().name);
+        TabStrip.Button added = tabStrip.insert(0, icon, text, pagina.act().name);
+        added.tag = pagina;
         tabStrip.select(added);
         if (tabStrip.getButtonCount() > 4) {
             removeTab(tabStrip.getButtonCount() - 1);
         }
-        tabs.put(lastAction, added);
+        tabs.put(resName, added);
     }
 
     private void removeTab(int index) {

@@ -104,6 +104,7 @@ public class TabStrip extends Widget {
         private Tex image;
         private Text text;
         private boolean active;
+        public Object tag;
 
         Button(Tex image, String text) {
             this.image = image;

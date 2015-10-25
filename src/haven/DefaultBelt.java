@@ -58,7 +58,7 @@ public abstract class DefaultBelt extends DraggableBelt {
         public boolean click(Coord c, int button) {
             switch (button) {
                 case 1:
-                    ui.gui.wdgmsg("belt", slot(), 1, ui.modflags());
+                    ui.gui.actBelt(slot(), false);
                     break;
                 case 3:
                     ui.gui.wdgmsg("setbelt", slot(), 1);
@@ -69,24 +69,7 @@ public abstract class DefaultBelt extends DraggableBelt {
 
         @Override
         public void keyact() {
-            MapView map = ui.gui.map;
-            if (map == null)
-                return;
-            Coord mvc = map.rootxlate(ui.mc);
-            if(mvc.isect(Coord.z, map.sz)) {
-                map.delay(map.new Hittest(mvc) {
-                    protected void hit(Coord pc, Coord mc, MapView.ClickInfo inf) {
-                        if (inf == null)
-                            ui.gui.wdgmsg("belt", slot(), 1, ui.modflags(), mc);
-                        else
-                            ui.gui.wdgmsg("belt", slot(), 1, ui.modflags(), mc, (int) inf.gob.id, inf.gob.rc);
-                    }
-
-                    protected void nohit(Coord pc) {
-                        ui.gui.wdgmsg("belt", slot(), 1, ui.modflags());
-                    }
-                });
-            }
+            ui.gui.actBelt(slot(), true);
         }
 
         @Override
