@@ -38,7 +38,7 @@ import static haven.Inventory.invsq;
 
 public class GameUI extends ConsoleHost implements Console.Directory {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
-    private static final int blpw = 142, brpw = 142;
+    private static final int blpw = 0, brpw = 142;
     public final String chrid;
     public final long plid;
     private final Hidepanel ulpanel, urpanel, brpanel, menupanel;
@@ -122,9 +122,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	this.plid = plid;
 	setcanfocus(true);
 	setfocusctl(true);
-	chat = add(new ChatUI(0, 0));
+	chat = add(new ChatUI(400, 300), Coord.z);
 	if(Utils.getprefb("chatvis", true)) {
-	    chat.hresize(chat.savedh);
+	    chat.resize(chat.savedw, chat.savedh);
 	    chat.show();
 	}
 	beltwdg.raise();
@@ -619,7 +619,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public void draw(GOut g) {
-	beltwdg.c = new Coord(chat.c.x, Math.min(chat.c.y - beltwdg.sz.y + 4, sz.y - beltwdg.sz.y));
+	beltwdg.c = new Coord(chat.c.x, Math.min(chat.c.y - beltwdg.sz.y, sz.y - beltwdg.sz.y));
 	super.draw(g);
 	if(prog >= 0)
 	    drawprog(g, prog);
@@ -814,14 +814,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if(chat.visible && !chat.hasfocus) {
 		setfocus(chat);
 	    } else {
-		if(chat.targeth == 0) {
-		    chat.sresize(chat.savedh);
+		if(chat.sz.y == 0) {
+		    chat.resize(chat.savedw, chat.savedh);
 		    setfocus(chat);
 		} else {
-		    chat.sresize(0);
+		    chat.resize(0, 0);
 		}
 	    }
-	    Utils.setprefb("chatvis", chat.targeth != 0);
+	    Utils.setprefb("chatvis", chat.sz.y != 0);
 	} else if(key == 16) {
 	    /*
 	    if((polity != null) && polity.show(!polity.visible)) {
@@ -935,7 +935,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public void resize(Coord sz) {
     Coord oldsz = this.sz;
 	this.sz = sz;
-	chat.resize(sz.x - blpw - brpw);
+	//chat.resize(sz.x - blpw - brpw);
 	chat.move(new Coord(blpw, sz.y));
 	if(map != null)
 	    map.resize(sz);

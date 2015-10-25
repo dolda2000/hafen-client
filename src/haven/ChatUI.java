@@ -41,10 +41,13 @@ import java.io.IOException;
 import java.awt.datatransfer.*;
 
 public class ChatUI extends Widget {
+    private static final int MIN_HEIGHT = 111;
+    private static final int MIN_WIDTH = 333;
+
     public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(14f), TextAttribute.FOREGROUND, Color.BLACK));
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = 130;
-    public static final Coord marg = new Coord(9, 9);
+	public static final Coord marg = new Coord(1, 1);
     public static final Color[] urgcols = new Color[] {
 	null,
 	new Color(0, 128, 255),
@@ -252,8 +255,8 @@ public class ChatUI extends Widget {
 	public void resize(Coord sz) {
 	    super.resize(sz);
 	    if(sb != null) {
-		sb.move(new Coord(sz.x - (12 - marg.x), 34 - marg.y));
-		sb.resize(ih() - sb.c.y);
+		sb.move(new Coord(sz.x - (12 - marg.x), 28 - marg.y));
+		sb.resize(ih() - sb.c.y - 8);
 		int y = 0;
 		for(Message m : msgs)
 		    y += m.sz().y;
@@ -1088,24 +1091,16 @@ public class ChatUI extends Widget {
 	}
     }
 
-    private static final Tex bulc = Resource.loadtex("gfx/hud/chat-lc");
-    private static final Tex burc = Resource.loadtex("gfx/hud/chat-rc");
-    private static final Tex bhb = Resource.loadtex("gfx/hud/chat-hori");
-    private static final Tex bvlb = Resource.loadtex("gfx/hud/chat-verti");
-    private static final Tex bvrb = bvlb;
-    private static final Tex bmf = Resource.loadtex("gfx/hud/chat-mid");
     private static final Tex bcbd = Resource.loadtex("gfx/hud/chat-close-g");
+    private static final Tex grip = Resource.loadtex("gfx/hud/griptr");
+    private static final IBox frame = new IBox("gfx/hud/tab", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb");
     public void draw(GOut g) {
 	g.rimage(Window.bg, marg, sz.sub(marg.x * 2, marg.y));
 	super.draw(g);
-	g.image(bulc, new Coord(0, 0));
-	g.image(burc, new Coord(sz.x - burc.sz().x, 0));
-	g.rimagev(bvlb, new Coord(0, bulc.sz().y), sz.y - bulc.sz().y);
-	g.rimagev(bvrb, new Coord(sz.x - bvrb.sz().x, burc.sz().y), sz.y - burc.sz().y);
-	g.rimageh(bhb, new Coord(bulc.sz().x, 0), sz.x - bulc.sz().x - burc.sz().x);
-	g.aimage(bmf, new Coord(sz.x / 2, 0), 0.5, 0);
+    frame.draw(g, Coord.z, sz);
 	if((sel == null) || (sel.cb == null))
 	    g.aimage(bcbd, new Coord(sz.x, 0), 1, 0);
+    g.aimage(grip, new Coord(sz.x, 0), 1, 0);
     }
 
     public void notify(Channel chan, Channel.Message msg) {
@@ -1114,6 +1109,7 @@ public class ChatUI extends Widget {
 	}
     }
 
+    /*
     private class Spring extends NormAnim {
 	final int oh = sz.y, nh;
 	Spring(int nh) {
@@ -1130,23 +1126,25 @@ public class ChatUI extends Widget {
 	    }
 	}
     }
+    */
 
     public void resize(Coord sz) {
 	super.resize(sz);
-	this.c = base.add(0, -this.sz.y);
+	this.c = base.add(10, -this.sz.y - 10);
 	chansel.resize(new Coord(selw, this.sz.y - marg.y));
 	if(sel != null)
-	    sel.resize(new Coord(this.sz.x - marg.x - sel.c.x, this.sz.y - sel.c.y));
+	    sel.resize(new Coord(this.sz.x - marg.x - sel.c.x, this.sz.y - marg.y - sel.c.y));
     }
 
     public int targeth = sz.y;
     public void sresize(int h) {
-	clearanims(Spring.class);
-	new Spring(targeth = h);
+	//clearanims(Spring.class);
+	//new Spring(targeth = h);
+    resize(sz.x, targeth = h);
     }
 
     public void hresize(int h) {
-	clearanims(Spring.class);
+	//clearanims(Spring.class);
 	resize(sz.x, targeth = h);
     }
 
@@ -1155,12 +1153,12 @@ public class ChatUI extends Widget {
     }
     
     public void move(Coord base) {
-	this.c = (this.base = base).add(0, -sz.y);
+	this.c = (this.base = base).add(10, -sz.y - 10);
     }
 
     public void expand() {
 	if(!visible)
-	    sresize(savedh);
+	    resize(savedw, savedh);
     }
 
     private class QuickLine extends LineEdit {
@@ -1193,21 +1191,26 @@ public class ChatUI extends Widget {
 
     private UI.Grab dm = null;
     private Coord doff;
-    public int savedh = Math.max(111, Utils.getprefi("chatsize", 111));
+    private int dwidth;
+    public int savedh = Math.max(MIN_HEIGHT, Utils.getprefi("chatsize", MIN_HEIGHT));
+    public int savedw = Math.max(MIN_WIDTH, Utils.getprefi("chatwidth", MIN_WIDTH));
     public boolean mousedown(Coord c, int button) {
-	int bmfx = (sz.x - bmf.sz().x) / 2;
-	if((button == 1) && (c.y < bmf.sz().y) && (c.x >= bmfx) && (c.x <= (bmfx + bmf.sz().x))) {
-	    dm = ui.grabmouse(this);
-	    doff = c;
-	    return(true);
-	} else {
-	    return(super.mousedown(c, button));
-	}
+		int gripx = sz.x - grip.sz().x;
+		if((button == 1) && (c.y < grip.sz().y) && (c.x >= gripx) && (c.x <= (gripx + grip.sz().x))) {
+			dm = ui.grabmouse(this);
+			doff = c;
+            dwidth = sz.x;
+			return(true);
+		} else {
+        return(super.mousedown(c, button));
+		}
     }
 
     public void mousemove(Coord c) {
 	if(dm != null) {
-	    resize(sz.x, savedh = Math.max(111, sz.y + doff.y - c.y));
+        savedw = Math.max(MIN_WIDTH, dwidth + c.x - doff.x);
+        savedh = Math.max(MIN_HEIGHT, sz.y + doff.y - c.y);
+	    resize(savedw, savedh);
 	} else {
 	    super.mousemove(c);
 	}
@@ -1218,6 +1221,7 @@ public class ChatUI extends Widget {
 	    dm.remove();
 	    dm = null;
 	    Utils.setprefi("chatsize", savedh);
+        Utils.setprefi("chatwidth", savedw);
 	    return(true);
 	} else {
 	    return(super.mouseup(c, button));
