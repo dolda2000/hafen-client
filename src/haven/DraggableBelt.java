@@ -84,7 +84,7 @@ public class DraggableBelt extends Widget {
 
     @Override
     public boolean globtype(char key, KeyEvent ev) {
-        if (!visible)
+        if (!visible || key != 0)
             return false;
         for (SlotWidget widget : slots) {
             Slot slot = widget.slot;
