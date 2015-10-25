@@ -947,6 +947,8 @@ public class ChatUI extends Widget {
 	public void draw(GOut g) {
 	    int i = s;
 	    int y = 0;
+        g.image(chandiv, new Coord(0, y));
+        y += chandiv.sz().y;
 	    synchronized(chls) {
 		while(i < chls.size()) {
 		    DarkChannel ch = chls.get(i);
