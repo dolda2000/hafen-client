@@ -116,6 +116,8 @@ public class LocalMiniMap extends Widget implements Console.Directory {
 	synchronized (oc) {
         for(Gob gob : oc) {
 		try {
+            if (gob.id == mv.plgob)
+                continue;
             MinimapIcon icon = gob.getMinimapIcon();
 		    if (icon != null && icon.visible()) {
 			Coord gc = p2c(gob.rc);
