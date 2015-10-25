@@ -84,6 +84,8 @@ public class DraggableBelt extends Widget {
 
     @Override
     public boolean globtype(char key, KeyEvent ev) {
+        if (!visible)
+            return false;
         for (SlotWidget widget : slots) {
             Slot slot = widget.slot;
             if (slot.key == ev.getKeyCode() && slot.mods == ui.modflags()) {
