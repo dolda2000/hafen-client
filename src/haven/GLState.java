@@ -752,7 +752,7 @@ public abstract class GLState {
 	    if(now - lastclean > 60000) {
 		for(int i = 0; i < ptab.length; i++) {
 		    SavedProg c, p;
-		    for(c = ptab[i], p = null; c != null; p = c, c = c.next) {
+		    for(c = ptab[i], p = null; c != null; c = c.next) {
 			if(!c.used) {
 			    if(p != null)
 				p.next = c.next;
@@ -762,6 +762,7 @@ public abstract class GLState {
 			    nprog--;
 			} else {
 			    c.used = false;
+			    p = c;
 			}
 		    }
 		}
