@@ -4,13 +4,14 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-import static haven.Inventory.invsq;
-
 public abstract class DefaultBelt extends DraggableBelt {
+    private static final Tex bg = Window.bg;
+    private static final Tex sq = Resource.loadtex("gfx/hud/belt/custom/sq");
+
     private int currentBelt;
 
     public DefaultBelt(String name) {
-        super(name, Inventory.invsq.sz());
+        super(name, sq.sz());
     }
 
     public void setCurrentBelt(int value) {
@@ -90,7 +91,8 @@ public abstract class DefaultBelt extends DraggableBelt {
 
         @Override
         public void draw(GOut g) {
-            g.image(invsq, Coord.z);
+            g.rimage(bg, Coord.z, sz);
+            g.image(sq, Coord.z);
             Indir<Resource> slot = ui.gui.belt[slot()];
             try {
                 if (slot != null)

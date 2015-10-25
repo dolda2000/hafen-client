@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EquipBelt extends DraggableBelt {
-    public static final Tex sq = Resource.loadtex("gfx/hud/belt/custom/eqbeltsq");
+    public static final Tex bg = Window.bg;
+    public static final Tex sq = Resource.loadtex("gfx/hud/belt/custom/eqsq");
 
     public EquipBelt(String name, int... slotIndexes) {
         super(name, sq.sz());
@@ -42,6 +43,7 @@ public class EquipBelt extends DraggableBelt {
         public void draw(GOut g) {
             Equipory e = ui.gui.getEquipory();
             if(e != null){
+                g.rimage(Window.bg, Coord.z, sz);
                 g.image(sq, Coord.z);
                 WItem w = e.slots[index];
                 if (w != null){
