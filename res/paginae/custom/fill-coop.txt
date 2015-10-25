@@ -1,1 +1,1 @@
-Automatically fills nearest chicken coop using edible items from the inventory.
+Fills nearest chicken coop using edible items from the inventory.
