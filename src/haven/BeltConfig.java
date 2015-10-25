@@ -11,7 +11,7 @@ import java.lang.reflect.Type;
 import java.util.*;
 
 public class BeltConfig {
-    public static final String BELTS_JSON = "config/belt.config";
+    public static final String BELTS_JSON = "config/belts.config";
 
     private static final List<Belt> belts;
 
