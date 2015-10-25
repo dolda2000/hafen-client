@@ -629,6 +629,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public void draw(GOut g) {
+    if (Config.screenshotMode) {
+        if (map != null)
+            map.draw(g);
+        return;
+    }
 	super.draw(g);
 	if(prog >= 0)
 	    drawprog(g, prog);
@@ -902,6 +907,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         } else if (alt && keycode == KeyEvent.VK_I) {
             Config.showGobInfo.set(!Config.showGobInfo.get());
             msg("Object overlay is now turned " + (Config.showGobInfo.get() ? "on" : "off"));
+            return true;
+        } else if (alt && keycode == KeyEvent.VK_W) {
+            Config.screenshotMode = !Config.screenshotMode;
             return true;
         }
     }

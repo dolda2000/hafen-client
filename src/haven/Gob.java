@@ -294,8 +294,12 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public final GobLocation loc = new GobLocation();
 
     public boolean isPlayer() {
-        Resource res = getres();
-        return (res != null) && PLAYER_RES.equals(res.name);
+        try {
+            Resource res = getres();
+            return (res != null) && PLAYER_RES.equals(res.name);
+        } catch (Loading e) {
+            return false;
+        }
     }
 
     public boolean isThreat() {

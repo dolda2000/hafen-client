@@ -531,6 +531,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	};
 
     void addgob(RenderList rl, final Gob gob) {
+    if (Config.screenshotMode && gob.isPlayer())
+        return;
 	GLState xf;
 	try {
 	    xf = Following.xf(gob);

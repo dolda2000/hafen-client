@@ -107,6 +107,7 @@ public class Config {
     public static Pref<Boolean> showGobInfo = new Pref<Boolean>("display.gobinfo", false, TYPE_BOOL);
     public static Pref<Boolean> useControlForSortTransfer = new Pref<Boolean>("useControlForSortTransfer", false, TYPE_BOOL);
     public static Pref<Boolean> showCustomFKeysBelt = new Pref<Boolean>("display.fbelt", true, TYPE_BOOL);
+    public static boolean screenshotMode;
 
     static {
 	String p;
