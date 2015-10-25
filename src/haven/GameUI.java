@@ -123,16 +123,18 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	this.plid = plid;
 	setcanfocus(true);
 	setfocusctl(true);
-	chat = add(new ChatUI(400, 300), Coord.z);
-	if(Utils.getprefb("chatvis", true)) {
+	chat = add(new ChatUI(0, 0), Coord.z);
+    chat.visible = Utils.getprefb("chatvis", true);
+	if (chat.visible) {
 	    chat.resize(chat.savedw, chat.savedh);
-	    chat.show();
 	}
 	beltwdg.raise();
-	ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1), false));
+    if (beltwdg.c.equals(Coord.z))
+        beltwdg.c = new Coord(10, 180);
 	eqbelt = add(new EquipBelt("equip", 6, 7));
     if (eqbelt.c.equals(Coord.z))
-        eqbelt.setPosition(new Coord(3, 85));
+        eqbelt.c = new Coord(10, 220);
+    ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1), false));
 	urpanel = add(new Hidepanel("gui-ur", null, new Coord( 1, -1), false));
 	brpanel = add(new Hidepanel("gui-br", null, new Coord( 1,  1), true) {
 		public void move(double a) {
