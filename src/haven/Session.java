@@ -187,10 +187,6 @@ public class Session {
 	return(cachedres(id).get());
     }
 
-    public Indir<Resource> dynres(long id) {
-	return(Resource.remote().load(String.format("dyn/%x", id), 1));
-    }
-
     private class ObjAck {
 	long id;
 	int frame;
@@ -338,12 +334,17 @@ public class Session {
 				if(modid == 65535)
 				    break;
 				Indir<Resource> modr = getres(modid);
-				List<Indir<Resource>> tex = new LinkedList<Indir<Resource>>();
+				List<ResData> tex = new LinkedList<ResData>();
 				while(true) {
 				    int resid = msg.uint16();
 				    if(resid == 65535)
 					break;
-				    tex.add(getres(resid));
+				    Message sdt = Message.nil;
+				    if((resid & 0x8000) != 0) {
+					resid &= ~0x8000;
+					sdt = new MessageBuf(msg.bytes(msg.uint8()));
+				    }
+				    tex.add(new ResData(getres(resid), sdt));
 				}
 				mod.add(new Composited.MD(modr, tex));
 			    }
@@ -460,10 +461,12 @@ public class Session {
 			    int resid = msg.uint16();
 			    Indir<Resource> res;
 			    if(resid == 65535) {
-				oc.icon(gob, null);
+				if(gob != null)
+				    oc.icon(gob, null);
 			    } else {
 				int ifl = msg.uint8();
-				oc.icon(gob, getres(resid));
+				if(gob != null)
+				    oc.icon(gob, getres(resid));
 			    }
 			} else if(type == OD_END) {
 			    break;

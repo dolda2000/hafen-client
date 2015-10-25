@@ -253,10 +253,10 @@ public class Composited implements Rendered {
 
     public static class MD implements Cloneable {
 	public Indir<Resource> mod;
-	public List<? extends Indir<Resource>> tex;
+	public List<ResData> tex;
 	private Model real;
 	
-	public MD(Indir<Resource> mod, List<? extends Indir<Resource>> tex) {
+	public MD(Indir<Resource> mod, List<ResData> tex) {
 	    this.mod = mod;
 	    this.tex = tex;
 	}
@@ -271,7 +271,7 @@ public class Composited implements Rendered {
 	public MD clone() {
 	    try {
 		MD ret = (MD)super.clone();
-		ret.tex = new LinkedList<Indir<Resource>>(tex);
+		ret.tex = new ArrayList<ResData>(tex);
 		return(ret);
 	    } catch(CloneNotSupportedException e) {
 		/* This is ridiculous. */
@@ -342,10 +342,9 @@ public class Composited implements Rendered {
 			md.real.z = -1;
 		    this.mod.add(md.real);
 		}
-		for(Iterator<? extends Indir<Resource>> o = md.tex.iterator(); o.hasNext();) {
-		    Indir<Resource> res = o.next();
-		    for(Material.Res mr : res.get().layers(Material.Res.class))
-			md.real.addlay(mr.get());
+		for(Iterator<ResData> o = md.tex.iterator(); o.hasNext();) {
+		    ResData res = o.next();
+		    md.real.addlay(Material.fromres((eqowner == null)?null:eqowner.glob(), res.res.get(), new MessageBuf(res.sdt)));
 		    o.remove();
 		}
 		i.remove();
