@@ -1,5 +1,16 @@
 ## Changelog
 
+### r58
+
+- Made it possible to drag and rotate the belt and equipment slots
+- Added optional belt for Fn keys where it's possible to drop custom menu items (like `Plant Tree`, `Fill Trough`, etc). It can hidden through the option in `Misc settings`.
+- Changed chat UI and added ability to change chat width
+- Added tool for picking all nearby mussels
+- Added total armor display to the equipment window (from romovs)
+- Tuned down chipping, quern and ant sounds
+- Fixed issue with a recipe not adding properly to the list of the recent recipes when it is used from the belt
+- Added hotkey `Alt`+`W` to hide UI and player characters
+
 ### r57
 
 - Added tools for filling nearest troughs and coops with edibles and tar kilns with blocks. They are available through the extended menu.
