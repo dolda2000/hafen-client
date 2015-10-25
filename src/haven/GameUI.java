@@ -57,6 +57,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public CharWnd chrwdg;
     public BuddyWnd buddies;
     public EquipBelt eqbelt;
+    public DraggableBelt fkeybelt;
     private final Zergwnd zerg;
     public Polity polity;
     public HelpWnd help;
@@ -131,7 +132,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	beltwdg.raise();
     if (beltwdg.c.equals(Coord.z))
         beltwdg.c = new Coord(10, 180);
-	eqbelt = add(new EquipBelt("equip", 6, 7));
+    eqbelt = add(new EquipBelt("equip", 6, 7));
     if (eqbelt.c.equals(Coord.z))
         eqbelt.c = new Coord(10, 220);
     ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1), false));
@@ -219,6 +220,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	ui.gui = this;
     tasks = new TaskManager(ui);
     tasks.add(new AutoStudy());
+    fkeybelt = add(new CustomBelt.FKeys("custom-fkeys", ui.sess.username, ui.sess.charname));
+    fkeybelt.visible = Config.showCustomFKeysBelt.get();
+    if (fkeybelt.c.equals(Coord.z))
+        fkeybelt.c = new Coord(10, 280);
     }
 
     public Equipory getEquipory() {

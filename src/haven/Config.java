@@ -106,7 +106,8 @@ public class Config {
     public static Pref<Boolean> enableAccountStoring = new Pref<Boolean>("account.storing", false, TYPE_BOOL);
     public static Pref<Boolean> showGobInfo = new Pref<Boolean>("display.gobinfo", false, TYPE_BOOL);
     public static Pref<Boolean> useControlForSortTransfer = new Pref<Boolean>("useControlForSortTransfer", false, TYPE_BOOL);
-    
+    public static Pref<Boolean> showCustomFKeysBelt = new Pref<Boolean>("display.fbelt", true, TYPE_BOOL);
+
     static {
 	String p;
 	if((p = getprop("haven.authck", null)) != null)

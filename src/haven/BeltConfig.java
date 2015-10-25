@@ -48,6 +48,35 @@ public class BeltConfig {
         save();
     }
 
+    public static List<Indir<Resource>> getSlots(String beltName, String accountName, String charName) {
+        List<Indir<Resource>> slots = new ArrayList<Indir<Resource>>();
+        Belt belt = findBelt(beltName);
+        if (belt != null) {
+            SlotCollection sc = belt.findSlots(accountName, charName);
+            if (sc != null) {
+                if (sc.content != null) {
+                    for (int i = 0; i < sc.content.length; i++) {
+                        String resName = sc.content[i];
+                        slots.add((resName != null) ? Resource.remote().load(sc.content[i]) : null);
+                    }
+                }
+            }
+        }
+        return slots;
+    }
+
+    public static void saveSlots(String beltName, String accountName, String charName, List<Indir<Resource>> slots) {
+        Belt belt = findOrAddBelt(beltName);
+        SlotCollection sc = belt.findOrAddSlots(accountName, charName);
+        sc.content = new String[slots.size()];
+        int i = 0;
+        for (Indir<Resource> slot : slots) {
+            Resource res = (slot != null) ? slot.get() : null;
+            sc.content[i++] = (res != null) ? res.name : null;
+        }
+        save();
+    }
+
     private static Belt findBelt(String name) {
         for (Belt belt : belts) {
             if (belt.name.equals(name))
@@ -61,6 +90,7 @@ public class BeltConfig {
         if (belt == null) {
             belt = new Belt();
             belt.name = name;
+            belt.slots = new ArrayList<SlotCollection>();
             belts.add(belt);
         }
         return belt;
@@ -105,5 +135,42 @@ public class BeltConfig {
 
         @SerializedName("or")
         public int orientation;
+
+        @SerializedName("slots")
+        public ArrayList<SlotCollection> slots;
+
+        public SlotCollection findSlots(String accountName, String charName) {
+            if (slots != null) {
+                for (SlotCollection sc : slots) {
+                    if (sc.accountName.equals(accountName) && sc.charName.equals(charName))
+                        return sc;
+                }
+            }
+            return null;
+        }
+
+        public SlotCollection findOrAddSlots(String accountName, String charName) {
+            SlotCollection sc = findSlots(accountName, charName);
+            if (sc == null) {
+                if (slots == null)
+                    slots = new ArrayList<SlotCollection>();
+                sc = new SlotCollection();
+                sc.accountName = accountName;
+                sc.charName = charName;
+                slots.add(sc);
+            }
+            return sc;
+        }
+    }
+
+    private static class SlotCollection {
+        @SerializedName("accountName")
+        public String accountName;
+
+        @SerializedName("charName")
+        public String charName;
+
+        @SerializedName("content")
+        public String[] content;
     }
 }

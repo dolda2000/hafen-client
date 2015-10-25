@@ -13,7 +13,7 @@ public class DraggableBelt extends Widget {
     private static final BufferedImage rotateHoveredImg = Resource.loadimg("gfx/hud/belt/custom/rotate-h");
     private static final Text.Foundry fnd = new Text.Foundry(Text.sans, 10);
 
-    private final String name;
+    protected final String name;
     private final Grip grip;
     private final List<SlotWidget> slots;
     private final Coord slotSize;
