@@ -34,7 +34,7 @@ public class Equipory extends Widget implements DTarget {
     private static final Tex bg = Resource.loadtex("gfx/hud/equip/bg");
     private static final int rx = 34 + bg.sz().x;
     private static final int acx = 34 + bg.sz().x/2;
-    private static final Text.Foundry acf = new Text.Foundry(Text.sans, 12).aa(true);
+    private static final Text.Foundry acf = new Text.Foundry(Text.fraktur, 16).aa(true);
     private Tex armorclass = null;
     static Coord ecoords[] = {
 	new Coord(0, 0),
@@ -162,14 +162,14 @@ public class Equipory extends Widget implements DTarget {
         if (armorclass == null) {
             int h = 0, s = 0;
             try {
-                for (int i = 0; i < quickslots.length; i++) {
-                    WItem itm = quickslots[i];
+                for (int i = 0; i < slots.length; i++) {
+                    WItem itm = slots[i];
                     if (itm != null) {
                         for (ItemInfo info : itm.item.info()) {
                             if (info.getClass().getSimpleName().equals("Wear")) {
                                 try {
-                                    h += (int) info.getClass().getDeclaredField("hard").get(info);
-                                    s += (int) info.getClass().getDeclaredField("soft").get(info);
+                                    h += (Integer)info.getClass().getDeclaredField("hard").get(info);
+                                    s += (Integer)info.getClass().getDeclaredField("soft").get(info);
                                 } catch (Exception ex) { // ignore everything
                                 }
                             }
@@ -177,12 +177,12 @@ public class Equipory extends Widget implements DTarget {
                         }
                     }
                 }
-                armorclass = Text.render("Armor Class: " + h + "/" + s, Color.BLACK, acf).tex();
+                armorclass = acf.render("Armor Class: " + h + "/" + s, Color.BLACK).tex();
             } catch (Exception e) { // fail silently
             }
         }
         if (armorclass != null)
-            g.image(armorclass, new Coord(acx - armorclass.sz().x/2, bg.sz().y - 15));
+            g.image(armorclass, new Coord(acx - armorclass.sz().x/2, bg.sz().y - 20));
     }
 	
     public boolean iteminteract(Coord cc, Coord ul) {
