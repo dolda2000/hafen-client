@@ -44,8 +44,8 @@ public class DraggableBelt extends Widget {
     }
 
     public void setPosition(Coord value) {
-        BeltConfig.setBeltPosition(name, value);
-        this.c = value;
+        this.c = clipToParent(value);
+        BeltConfig.setBeltPosition(name, this.c);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class DraggableBelt extends Widget {
     public void mousemove(Coord c) {
         if (dm != null) {
             setHovered(true);
-            this.c = this.c.add(c.add(doff.inv()));
+            this.c = clipToParent(this.c.add(c.add(doff.inv())));
         } else {
             setHovered(c.isect(Coord.z, sz));
             super.mousemove(c);
@@ -129,6 +129,15 @@ public class DraggableBelt extends Widget {
                 break;
         }
         pack();
+    }
+
+    private Coord clipToParent(Coord c) {
+        Coord clipped = new Coord(c);
+        clipped.x = Math.min(parent.sz.x - sz.x, c.x);
+        clipped.y = Math.min(parent.sz.y - sz.y, c.y);
+        clipped.x = Math.max(0, clipped.x);
+        clipped.y = Math.max(0, clipped.y);
+        return clipped;
     }
 
     private class Grip extends Widget {
