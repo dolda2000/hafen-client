@@ -3,7 +3,7 @@
 ### r58
 
 - Made it possible to drag and rotate the belt and equipment slots
-- Added optional belt for Fn keys where it's possible to drop custom menu items (like `Plant Tree`, `Fill Trough`, etc). It can hidden through the option in `Misc settings`.
+- Added optional belt for Fn keys where it's possible to drop custom menu items (like `Plant Tree`, `Fill Trough`, etc). It can be hidden through the option in `Misc settings`.
 - Changed chat UI and added ability to change chat width
 - Added tool for picking all nearby mussels
 - Added total armor display to the equipment window (from romovs)
