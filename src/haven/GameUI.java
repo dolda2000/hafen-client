@@ -635,7 +635,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		lastmsg = null;
 	    } else {
 		g.chcolor(0, 0, 0, 192);
-		g.frect(new Coord(chat.c.x, by - 25), lastmsg.sz().add(4, 4));
+		g.frect(new Coord(chat.c.x, by - 25), lastmsg.sz().add(8, 4));
 		g.chcolor();
 		g.image(lastmsg.tex(), new Coord(chat.c.x + 5, by -= 23));
 	    }
