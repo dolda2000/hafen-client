@@ -837,7 +837,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if (key != 0) {
         boolean alt = ev.isAltDown();
         int keycode = ev.getKeyCode();
-        if (alt && keycode == KeyEvent.VK_S) {
+        if (alt && keycode >= KeyEvent.VK_0 && keycode <= KeyEvent.VK_9) {
+            beltwdg.setCurrentBelt(Utils.floormod(keycode - KeyEvent.VK_0 - 1, 10));
+            return true;
+        } else if (alt && keycode == KeyEvent.VK_S) {
             studywnd.show(!studywnd.visible);
             if (studywnd.visible)
                 studywnd.raise();
