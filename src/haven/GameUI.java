@@ -70,7 +70,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private boolean afk = false;
     @SuppressWarnings("unchecked")
     public Indir<Resource>[] belt = new Indir[144];
-    public Belt beltwdg;
+    public DefaultBelt beltwdg;
     public String polowner;
     public Bufflist buffs;
     public StudyWnd studywnd;
@@ -81,6 +81,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Window deckwnd;
     public final CraftWindow makewnd;
     public TaskManager tasks;
+    public ChatHidePanel chatHidePanel;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -206,6 +207,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     cal = add(new Cal());
     makewnd = add(new CraftWindow(), new Coord(400, 200));
     makewnd.hide();
+
+    chatHidePanel = add(new ChatHidePanel(chat));
     }
 
     @Override
@@ -619,7 +622,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public void draw(GOut g) {
-	beltwdg.c = new Coord(chat.c.x, Math.min(chat.c.y - beltwdg.sz.y, sz.y - beltwdg.sz.y));
 	super.draw(g);
 	if(prog >= 0)
 	    drawprog(g, prog);
@@ -935,16 +937,18 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public void resize(Coord sz) {
     Coord oldsz = this.sz;
 	this.sz = sz;
-	//chat.resize(sz.x - blpw - brpw);
+    chatHidePanel.c = new Coord(0, sz.y - chatHidePanel.sz.y);
 	chat.move(new Coord(blpw, sz.y));
 	if(map != null)
 	    map.resize(sz);
-	beltwdg.c = new Coord(blpw + 10, sz.y - beltwdg.sz.y - 5);
     iconwnd.c = sz.sub(iconwnd.sz).div(2);
     cal.c = new Coord((sz.x - cal.sz.x) / 2, 10);
     if (!Coord.z.equals(oldsz)) {
+        // adjust position relative to the bottom of the screen
         if (eqbelt.c.y > oldsz.y / 2)
             eqbelt.setPosition(eqbelt.c.x, sz.y - (oldsz.y - eqbelt.c.y));
+        if (beltwdg.c.y > oldsz.y / 2)
+            beltwdg.setPosition(beltwdg.c.x, sz.y - (oldsz.y - beltwdg.c.y));
     }
 	super.resize(sz);
     }
@@ -1098,33 +1102,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
 	public NKeyBelt() {
 	    super(nkeybg.sz());
-	    adda(new IButton("gfx/hud/hb-btn-chat", "", "-d", "-h") {
-		    Tex glow;
-		    {
-			this.tooltip = RichText.render("Chat ($col[255,255,0]{Ctrl+C})", 0);
-			glow = new TexI(PUtils.rasterimg(PUtils.blurmask(up.getRaster(), 2, 2, Color.WHITE)));
-		    }
-
-		    public void click() {
-			if(chat.targeth == 0) {
-			    chat.sresize(chat.savedh);
-			    setfocus(chat);
-			} else {
-			    chat.sresize(0);
-			}
-			Utils.setprefb("chatvis", chat.targeth != 0);
-		    }
-
-		    public void draw(GOut g) {
-			super.draw(g);
-			Color urg = chat.urgcols[chat.urgency];
-			if(urg != null) {
-			    GOut g2 = g.reclipl(new Coord(-2, -2), g.sz.add(4, 4));
-			    g2.chcolor(urg.getRed(), urg.getGreen(), urg.getBlue(), 128);
-			    g2.image(glow, Coord.z);
-			}
-		    }
-		}, sz, 1, 1);
 	}
 
 	private Coord beltc(int i) {
@@ -1213,11 +1190,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     {
 	String val = Utils.getpref("belttype", "n");
 	if(val.equals("n")) {
-	    beltwdg = add(new NKeyBelt());
+	    beltwdg = add(new DefaultBelt.NKeys("default"));
 	} else if(val.equals("f")) {
-	    beltwdg = add(new FKeyBelt());
+	    beltwdg = add(new DefaultBelt.FKeys("default"));
 	} else {
-	    beltwdg = add(new NKeyBelt());
+	    beltwdg = add(new DefaultBelt.NKeys("default"));
 	}
     }
 
@@ -1289,12 +1266,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		public void run(Console cons, String[] args) {
 		    if(args[1].equals("f")) {
 			beltwdg.destroy();
-			beltwdg = add(new FKeyBelt());
+			beltwdg = add(new DefaultBelt.FKeys("default"));
 			Utils.setpref("belttype", "f");
 			resize(sz);
 		    } else if(args[1].equals("n")) {
 			beltwdg.destroy();
-			beltwdg = add(new NKeyBelt());
+			beltwdg = add(new DefaultBelt.NKeys("default"));
 			Utils.setpref("belttype", "n");
 			resize(sz);
 		    }
