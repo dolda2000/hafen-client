@@ -1,5 +1,10 @@
 ## Changelog
 
+### r59
+
+- Fixed wrong belt behavoir during combat
+- Fixed issue with inablity to click the object under the player on the minimap
+
 ### r58
 
 - Made it possible to drag and rotate the belt and equipment slots
