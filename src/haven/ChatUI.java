@@ -43,13 +43,13 @@ import java.awt.datatransfer.*;
 public class ChatUI extends Widget {
     private static final int MIN_HEIGHT = 111;
     private static final int MIN_WIDTH = 333;
-    private static final BufferedImage drag = Resource.loadimg("gfx/hud/belt/custom/drag");
-    private static final BufferedImage dragh = Resource.loadimg("gfx/hud/belt/custom/drag-h");
+    private static final BufferedImage drag = Resource.loadimg("gfx/hud/chat-drag");
+    private static final BufferedImage dragh = Resource.loadimg("gfx/hud/chat-drag-h");
 
     public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(14f), TextAttribute.FOREGROUND, Color.BLACK));
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
-    public static final int selw = 130;
-    public static final int selh = 20;
+    public static final int selw = 78;
+    public static final int selh = 23;
 	public static final Coord marg = new Coord(1, 1);
     public static final Color[] urgcols = new Color[] {
 	null,
@@ -64,11 +64,10 @@ public class ChatUI extends Widget {
     private QuickLine qline = null;
     private final LinkedList<Notification> notifs = new LinkedList<Notification>();
     private UI.Grab qgrab;
-    private final IButton dragButton;
 
     public ChatUI(int w, int h) {
 	super(new Coord(w, h));
-    dragButton = add(new IButton(drag, dragh, dragh, false) {
+    Widget dragButton = add(new IButton(drag, dragh, dragh, false) {
         public boolean mousedown(Coord c, int button) {
             if (button == 1) {
                 drag(this.c.add(c));
@@ -76,8 +75,8 @@ public class ChatUI extends Widget {
             }
             return false;
         }
-    }, 2, 2);
-    chansel = add(new Selector(new Coord(selw, sz.y - marg.y)), marg.add(dragButton.sz.x + 2, 0));
+    }, 2, (selh - drag.getHeight()) / 2);
+    chansel = add(new Selector(new Coord(selw, sz.y - marg.y)), dragButton.sz.x + 4, (selh - chanseld.sz().y) / 2);
 	setfocusctl(true);
 	setcanfocus(true);
 	if(h < 1)
@@ -969,7 +968,7 @@ public class ChatUI extends Widget {
 		    g.chcolor(255, 255, 255, 255);
 		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency))
 			ch.rname = nf[ch.urgency = ch.chan.urgency].render(ch.chan.name());
-		    g.aimage(ch.rname.tex(), new Coord(x + selw / 2, selh / 2), 0.5, 0.5);
+		    g.aimage(ch.rname.tex(), new Coord(x + selw / 2, chanseld.sz().y / 2), 0.5, 0.5);
 		    //g.image(chandiv, new Coord(0, y + 18));
 		    //y += 28;
             x += selw;
@@ -1033,8 +1032,8 @@ public class ChatUI extends Widget {
 	public boolean mousewheel(Coord c, int amount) {
 	    if(!ui.modshift) {
 		s += amount;
-		if(s >= chls.size() - (sz.y / 28))
-		    s = chls.size() - (sz.y / 28);
+		if(s >= chls.size() - (sz.x / selw))
+		    s = chls.size() - (sz.x / selw);
 		if(s < 0)
 		    s = 0;
 	    } else {
