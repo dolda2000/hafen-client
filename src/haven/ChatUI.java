@@ -47,6 +47,7 @@ public class ChatUI extends Widget {
     public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(14f), TextAttribute.FOREGROUND, Color.BLACK));
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = 130;
+    public static final int selh = 20;
 	public static final Coord marg = new Coord(1, 1);
     public static final Color[] urgcols = new Color[] {
 	null,
@@ -880,7 +881,7 @@ public class ChatUI extends Widget {
     public <T extends Widget> T add(T w) {
 	if(w instanceof Channel) {
 	    Channel chan = (Channel)w;
-	    chan.c = chansel.c.add(chansel.sz.x, 0);
+	    chan.c = chansel.c.add(0, chansel.sz.y);
 	    chan.resize(sz.x - marg.x - chan.c.x, sz.y - chan.c.y);
 	    super.add(w);
 	    select(chan, false);
@@ -947,21 +948,23 @@ public class ChatUI extends Widget {
 	public void draw(GOut g) {
 	    int i = s;
 	    int y = 0;
-        g.image(chandiv, new Coord(0, y));
-        y += chandiv.sz().y;
+        int x = 0;
 	    synchronized(chls) {
 		while(i < chls.size()) {
 		    DarkChannel ch = chls.get(i);
 		    if(ch.chan == sel)
-			g.image(chanseld, new Coord(0, y));
+			g.image(chanseld, new Coord(x, y + 1));
 		    g.chcolor(255, 255, 255, 255);
 		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency))
 			ch.rname = nf[ch.urgency = ch.chan.urgency].render(ch.chan.name());
-		    g.aimage(ch.rname.tex(), new Coord(sz.x / 2, y + 8), 0.5, 0.5);
-		    g.image(chandiv, new Coord(0, y + 18));
-		    y += 28;
-		    if(y >= sz.y)
-			break;
+		    g.aimage(ch.rname.tex(), new Coord(x + selw / 2, selh / 2), 0.5, 0.5);
+		    //g.image(chandiv, new Coord(0, y + 18));
+		    //y += 28;
+            x += selw;
+            if (x >= sz.x)
+                break;
+		    //if(y >= sz.y)
+			//break;
 		    i++;
 		}
 	    }
@@ -1000,7 +1003,7 @@ public class ChatUI extends Widget {
 	}
 	
 	private Channel bypos(Coord c) {
-	    int i = (c.y / 28) + s;
+	    int i = (c.x / selw) + s;
 	    if((i >= 0) && (i < chls.size()))
 		return(chls.get(i).chan);
 	    return(null);
@@ -1093,15 +1096,12 @@ public class ChatUI extends Widget {
 	}
     }
 
-    private static final Tex bcbd = Resource.loadtex("gfx/hud/chat-close-g");
     private static final Tex grip = Resource.loadtex("gfx/hud/griptr");
     private static final IBox frame = new IBox("gfx/hud/tab", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb");
     public void draw(GOut g) {
 	g.rimage(Window.bg, marg, sz.sub(marg.x * 2, marg.y));
 	super.draw(g);
     frame.draw(g, Coord.z, sz);
-	if((sel == null) || (sel.cb == null))
-	    g.aimage(bcbd, new Coord(sz.x, 0), 1, 0);
     g.aimage(grip, new Coord(sz.x, 0), 1, 0);
     }
 
@@ -1133,9 +1133,9 @@ public class ChatUI extends Widget {
     public void resize(Coord sz) {
 	super.resize(sz);
 	this.c = base.add(10, -this.sz.y - 10);
-	chansel.resize(new Coord(selw, this.sz.y - marg.y));
+	chansel.resize(new Coord(this.sz.x - marg.x, selh));
 	if(sel != null)
-	    sel.resize(new Coord(this.sz.x - marg.x - sel.c.x, this.sz.y - marg.y - sel.c.y));
+	    sel.resize(new Coord(this.sz.x - marg.x, this.sz.y - marg.y - sel.c.y));
     }
 
     public int targeth = sz.y;
