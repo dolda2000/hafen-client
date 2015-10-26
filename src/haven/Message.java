@@ -300,6 +300,11 @@ public abstract class Message {
 	Utils.uint32e(num, wbuf, off);
 	return(this);
     }
+    public Message addint64(long num) {
+	int off = wget(8);
+	Utils.int64e(num, wbuf, off);
+	return(this);
+    }
     public Message addstring2(String str) {
 	addbytes(str.getBytes(Utils.utf8));
 	return(this);
