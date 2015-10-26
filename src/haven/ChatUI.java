@@ -43,6 +43,8 @@ import java.awt.datatransfer.*;
 public class ChatUI extends Widget {
     private static final int MIN_HEIGHT = 111;
     private static final int MIN_WIDTH = 333;
+    private static final BufferedImage drag = Resource.loadimg("gfx/hud/belt/custom/drag");
+    private static final BufferedImage dragh = Resource.loadimg("gfx/hud/belt/custom/drag-h");
 
     public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(14f), TextAttribute.FOREGROUND, Color.BLACK));
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
@@ -62,10 +64,20 @@ public class ChatUI extends Widget {
     private QuickLine qline = null;
     private final LinkedList<Notification> notifs = new LinkedList<Notification>();
     private UI.Grab qgrab;
+    private final IButton dragButton;
 
     public ChatUI(int w, int h) {
 	super(new Coord(w, h));
-	chansel = add(new Selector(new Coord(selw, sz.y - marg.y)), marg);
+    dragButton = add(new IButton(drag, dragh, dragh, false) {
+        public boolean mousedown(Coord c, int button) {
+            if (button == 1) {
+                drag(this.c.add(c));
+                return true;
+            }
+            return false;
+        }
+    }, 2, 2);
+    chansel = add(new Selector(new Coord(selw, sz.y - marg.y)), marg.add(dragButton.sz.x + 2, 0));
 	setfocusctl(true);
 	setcanfocus(true);
 	if(h < 1)
@@ -881,7 +893,7 @@ public class ChatUI extends Widget {
     public <T extends Widget> T add(T w) {
 	if(w instanceof Channel) {
 	    Channel chan = (Channel)w;
-	    chan.c = chansel.c.add(0, chansel.sz.y);
+	    chan.c = new Coord(0, chansel.sz.y);
 	    chan.resize(sz.x - marg.x - chan.c.x, sz.y - chan.c.y);
 	    super.add(w);
 	    select(chan, false);
@@ -1132,7 +1144,6 @@ public class ChatUI extends Widget {
 
     public void resize(Coord sz) {
 	super.resize(sz);
-	this.c = base.add(10, -this.sz.y - 10);
 	chansel.resize(new Coord(this.sz.x - marg.x, selh));
 	if(sel != null)
 	    sel.resize(new Coord(this.sz.x - marg.x, this.sz.y - marg.y - sel.c.y));
@@ -1155,7 +1166,7 @@ public class ChatUI extends Widget {
     }
     
     public void move(Coord base) {
-	this.c = (this.base = base).add(10, -sz.y - 10);
+	this.c = base;
     }
 
     public void expand() {
@@ -1191,11 +1202,18 @@ public class ChatUI extends Widget {
 	}
     }
 
+    private UI.Grab dragGrab = null;
+    private void drag(Coord c) {
+        dragGrab = ui.grabmouse(this);
+        doff = c;
+    }
+
     private UI.Grab dm = null;
     private Coord doff;
     private int dwidth;
     public int savedh = Math.max(MIN_HEIGHT, Utils.getprefi("chatsize", MIN_HEIGHT));
     public int savedw = Math.max(MIN_WIDTH, Utils.getprefi("chatwidth", MIN_WIDTH));
+    public Coord savedpos = Utils.getprefc("chatpos", Coord.z);
     public boolean mousedown(Coord c, int button) {
 		int gripx = sz.x - grip.sz().x;
 		if((button == 1) && (c.y < grip.sz().y) && (c.x >= gripx) && (c.x <= (gripx + grip.sz().x))) {
@@ -1212,7 +1230,10 @@ public class ChatUI extends Widget {
 	if(dm != null) {
         savedw = Math.max(MIN_WIDTH, dwidth + c.x - doff.x);
         savedh = Math.max(MIN_HEIGHT, sz.y + doff.y - c.y);
-	    resize(savedw, savedh);
+        resize(savedw, savedh);
+        this.c = this.c.add(0, c.y - doff.y);
+    } else if (dragGrab != null) {
+        this.c = this.c.add(c.sub(doff));
 	} else {
 	    super.mousemove(c);
 	}
@@ -1220,11 +1241,17 @@ public class ChatUI extends Widget {
 
     public boolean mouseup(Coord c, int button) {
 	if(dm != null) {
-	    dm.remove();
-	    dm = null;
-	    Utils.setprefi("chatsize", savedh);
+        dm.remove();
+        dm = null;
+        Utils.setprefi("chatsize", savedh);
         Utils.setprefi("chatwidth", savedw);
-	    return(true);
+        Utils.setprefc("chatpos", this.c);
+        return (true);
+    } else if (dragGrab != null) {
+        dragGrab.remove();
+        dragGrab = null;
+        Utils.setprefc("chatpos", this.c);
+        return true;
 	} else {
 	    return(super.mouseup(c, button));
 	}

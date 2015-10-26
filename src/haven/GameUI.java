@@ -127,6 +127,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	chat = add(new ChatUI(0, 0), Coord.z);
     chat.visible = Utils.getprefb("chatvis", true);
 	if (chat.visible) {
+        chat.move(chat.savedpos);
 	    chat.resize(chat.savedw, chat.savedh);
 	}
 	beltwdg.raise();
@@ -954,7 +955,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     Coord oldsz = this.sz;
 	this.sz = sz;
     chatHidePanel.c = new Coord(0, sz.y - chatHidePanel.sz.y);
-	chat.move(new Coord(blpw, sz.y));
 	if(map != null)
 	    map.resize(sz);
     iconwnd.c = sz.sub(iconwnd.sz).div(2);
