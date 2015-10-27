@@ -53,9 +53,6 @@ public class MinimapWnd extends Window {
     }
 
     public boolean mouseup(Coord c, int button) {
-        if (isGrabbed()) {
-            Config.minimapPosition.set(this.c);
-        }
         if (resizegrab != null) {
             resizegrab.remove();
             resizegrab = null;
@@ -94,6 +91,11 @@ public class MinimapWnd extends Window {
             return(true);
         }
         return(super.type(key, ev));
+    }
+
+    public void move(Coord c) {
+        super.move(c);
+        Config.minimapPosition.set(this.c);
     }
 
     public void togglefold() {

@@ -207,6 +207,7 @@ public class Window extends Widget implements DTarget {
 	if(dm != null) {
 	    dm.remove();
 	    dm = null;
+        move(this.c);
 	} else {
 	    super.mouseup(c, button);
 	}
@@ -260,10 +261,6 @@ public class Window extends Widget implements DTarget {
 	else
 	    return("");
     }
-
-	public boolean isGrabbed() {
-		return dm != null;
-	}
 
     public void setLocal(boolean value) {
         local = value;

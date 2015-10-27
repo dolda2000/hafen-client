@@ -1181,8 +1181,9 @@ public class ChatUI extends Widget {
 	resize(new Coord(w, sz.y));
     }
     
-    public void move(Coord base) {
-	this.c = base;
+    public void move(Coord c) {
+        super.move(c);
+        Utils.setprefc("chatpos", this.c);
     }
 
     public void expand() {

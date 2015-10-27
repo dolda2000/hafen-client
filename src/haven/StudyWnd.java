@@ -43,11 +43,9 @@ public class StudyWnd extends Window {
     }
 
     @Override
-    public boolean mouseup(Coord c, int button) {
-        if (isGrabbed()) {
-            Config.studyPosition.set(this.c);
-        }
-        return super.mouseup(c, button);
+    public void move(Coord c) {
+        super.move(c);
+        Config.studyPosition.set(this.c);
     }
 
     private class StudyInfo extends Widget {
