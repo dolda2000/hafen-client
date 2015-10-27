@@ -1,5 +1,11 @@
 ## Changelog
 
+### r61
+
+- Made it possible to move chat window
+- Remade chat tabs to align horizontally
+- All draggable widgets (belts, chat, minimap, study) now shouldn't disappear from the screen when it is resized
+
 ### r60
 
 - Merged latest vanilla client changes
