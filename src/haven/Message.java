@@ -40,6 +40,7 @@ public abstract class Message {
     public static final int T_INT8 = 9;
     public static final int T_INT16 = 10;
     public static final int T_NIL = 12;
+    public static final int T_UID = 13;
     public static final int T_BYTES = 14;
     public static final int T_FLOAT32 = 15;
     public static final int T_FLOAT64 = 16;
@@ -234,6 +235,9 @@ public abstract class Message {
 	    case T_NIL:
 		ret.add(null);
 		break;
+	    case T_UID:
+		ret.add(int64());
+		break;
 	    case T_BYTES:
 		int len = uint8();
 		if((len & 128) != 0)
@@ -294,6 +298,11 @@ public abstract class Message {
     public Message adduint32(long num) {
 	int off = wget(4);
 	Utils.uint32e(num, wbuf, off);
+	return(this);
+    }
+    public Message addint64(long num) {
+	int off = wget(8);
+	Utils.int64e(num, wbuf, off);
 	return(this);
     }
     public Message addstring2(String str) {
