@@ -438,10 +438,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     this.holdtimer = new Timer();
     this.gridOverlay = new GridOverlay(glob.map, cutsz.mul(view * 2 + 1));
     this.gridOverlay.setVisible(false);
-    this.gridOverlay.update(cc);
     this.serverGridOverlay = new ServerGridOverlay(glob.map, cutsz.mul(view * 2 + 1).mul(tilesz).div(sgridsz).add(2, 2));
     this.serverGridOverlay.setVisible(Config.showServerGrid.get());
-    this.serverGridOverlay.update(cc);
     this.partyHighlight = new PartyHighlight(glob.party, plgob);
 	setcanfocus(true);
     }
