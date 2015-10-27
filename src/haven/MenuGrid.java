@@ -349,7 +349,7 @@ public class MenuGrid extends Widget {
         } else if (ad[1].equals("pick-mussels")) {
             ui.gui.tasks.add(new MusselPicker());
         } else if (ad[1].equals("fill-smelter")) {
-            ui.gui.tasks.add(new FeedCoalTask("smelter", 12));
+            ui.gui.tasks.add(new FeedCoalTask("smelter", 11));
         }
     }
 
