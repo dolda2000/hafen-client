@@ -895,8 +895,8 @@ public class ChatUI extends Widget {
 	    chan.c = new Coord(0, chansel.sz.y);
 	    chan.resize(sz.x - marg.x - chan.c.x, sz.y - chan.c.y);
 	    super.add(w);
+        chansel.add(chan);
 	    select(chan, false);
-	    chansel.add(chan);
 	    return(w);
 	} else {
 	    return(super.add(w));
@@ -969,13 +969,9 @@ public class ChatUI extends Widget {
 		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency))
 			ch.rname = nf[ch.urgency = ch.chan.urgency].render(ch.chan.name());
 		    g.aimage(ch.rname.tex(), new Coord(x + selw / 2, chanseld.sz().y / 2), 0.5, 0.5);
-		    //g.image(chandiv, new Coord(0, y + 18));
-		    //y += 28;
             x += selw;
             if (x >= sz.x)
                 break;
-		    //if(y >= sz.y)
-			//break;
 		    i++;
 		}
 	    }
@@ -987,7 +983,7 @@ public class ChatUI extends Widget {
 	    for(DarkChannel ch : chls) {
 		if(ch.chan == sel) {
 		    if(prev != null) {
-			select(prev);
+			ChatUI.this.select(prev);
 			return(true);
 		    } else {
 			return(false);
@@ -1003,7 +999,7 @@ public class ChatUI extends Widget {
 		DarkChannel ch = i.next();
 		if(ch.chan == sel) {
 		    if(i.hasNext()) {
-			select(i.next().chan);
+			ChatUI.this.select(i.next().chan);
 			return(true);
 		    } else {
 			return(false);
@@ -1024,7 +1020,9 @@ public class ChatUI extends Widget {
 	    if(button == 1) {
 		Channel chan = bypos(c);
 		if(chan != null)
-		    select(chan);
+		    ChatUI.this.select(chan);
+        else
+            drag(this.c.add(c));
 	    }
 	    return(true);
 	}
@@ -1044,6 +1042,24 @@ public class ChatUI extends Widget {
 	    }
 	    return(true);
 	}
+
+    private void ensureVisible(int index) {
+        if (s > index)
+            s = index;
+        else if (s + sz.x / selw < index)
+            s = index - sz.x / selw;
+    }
+
+    public void ensureVisible(Channel channel) {
+        int i = 0;
+        for (DarkChannel ch : chls) {
+            if (ch.chan == channel) {
+                ensureVisible(i);
+                return;
+            }
+            i++;
+        }
+    }
     }
     
     public void select(Channel chan, boolean focus) {
@@ -1055,6 +1071,7 @@ public class ChatUI extends Widget {
 	resize(sz);
 	if(focus || hasfocus)
 	    setfocus(chan);
+    chansel.ensureVisible(chan);
     }
 
     public void select(Channel chan) {
@@ -1229,8 +1246,8 @@ public class ChatUI extends Widget {
 	if(dm != null) {
         savedw = Math.max(MIN_WIDTH, dwidth + c.x - doff.x);
         savedh = Math.max(MIN_HEIGHT, sz.y + doff.y - c.y);
+        this.c = this.c.add(0, sz.y - savedh);
         resize(savedw, savedh);
-        this.c = this.c.add(0, c.y - doff.y);
     } else if (dragGrab != null) {
         this.c = this.c.add(c.sub(doff));
 	} else {
