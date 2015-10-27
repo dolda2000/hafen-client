@@ -615,7 +615,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 				lightspc = daylightspc;
 			} else {
 				lightamb = glob.lightamb;
-				lightdif = glob.lightamb;
+				lightdif = glob.lightdif;
 				lightspc = glob.lightspc;
 			}
 		DirLight light = new DirLight(lightamb, lightdif, lightspc, Coord3f.o.sadd((float)glob.lightelev, (float)glob.lightang, 1f));
