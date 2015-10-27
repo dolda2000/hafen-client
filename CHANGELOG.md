@@ -1,5 +1,9 @@
 ## Changelog
 
+### r60
+
+- Merged latest vanilla client changes
+
 ### r59
 
 - Fixed wrong belt behavoir during combat
