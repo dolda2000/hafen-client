@@ -76,9 +76,17 @@ public class Avaview extends PView {
 	return(gc);
     }
 
+    private class AvaOwner implements Sprite.Owner {
+	public Random mkrandoom() {return(new Random());}
+	public Resource getres() {return(null);}
+	public Glob glob() {return(ui.sess.glob);}
+    }
+
     private void initcomp(Composite gc) {
-	if((comp == null) || (comp.skel != gc.comp.skel))
+	if((comp == null) || (comp.skel != gc.comp.skel)) {
 	    comp = new Composited(gc.comp.skel);
+	    comp.eqowner = new AvaOwner();
+	}
     }
 
     private Camera makecam(Composite gc, String camnm) {
