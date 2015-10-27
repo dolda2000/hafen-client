@@ -29,7 +29,9 @@ package haven;
 import haven.minimap.CustomIconWnd;
 import haven.tasks.*;
 import haven.tasks.AutoStudy;
+import org.apache.commons.io.FileUtils;
 
+import java.io.File;
 import java.util.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
@@ -1297,6 +1299,25 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
+    cmdmap.put("kinfile", new Console.Command() {
+        public void run(Console cons, String[] args) throws Exception {
+            try {
+                StringBuffer path = new StringBuffer();
+                for (int i = 1; i < args.length; i++) {
+                    path.append(args[i]);
+                    if (i < args.length - 1)
+                        path.append(" ");
+                }
+                if (path.length() > 0) {
+                    List<String> lines = FileUtils.readLines(new File(path.toString()));
+                    // use task that will add kins trying not to spam server
+                    tasks.add(new AddKinsTask(lines));
+                }
+            } catch (Exception e) {
+                error(e.getMessage());
+            }
+        }
+    });
 	cmdmap.put("afk", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    afk = true;
