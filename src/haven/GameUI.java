@@ -919,6 +919,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         } else if (alt && keycode == KeyEvent.VK_W) {
             Config.screenshotMode = !Config.screenshotMode;
             return true;
+        } else if (alt && keycode == KeyEvent.VK_T) {
+            Config.disableTileTransitions.set(!Config.disableTileTransitions.get());
+            ui.sess.glob.map.rebuild();
+            return true;
         }
     }
 	return(super.globtype(key, ev));

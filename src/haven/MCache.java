@@ -541,6 +541,13 @@ public class MCache {
 	}
     }
 
+    public void rebuild() {
+        synchronized(grids) {
+            for(Grid g : grids.values())
+                g.invalidate();
+        }
+    }
+
     public void trim(Coord ul, Coord lr) {
 	synchronized(grids) {
 	    synchronized(req) {
