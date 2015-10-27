@@ -31,10 +31,7 @@ import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import haven.Resource.AButton;
 import haven.Glob.Pagina;
-import haven.tasks.FeedBlocksTask;
-import haven.tasks.FeedEdiblesTask;
-import haven.tasks.FeedTask;
-import haven.tasks.MusselPicker;
+import haven.tasks.*;
 import haven.util.ObservableCollection;
 
 import java.util.*;
@@ -128,6 +125,7 @@ public class MenuGrid extends Widget {
         p.add(glob.paginafor(Resource.local().load("paginae/custom/fill-coop")));
         p.add(glob.paginafor(Resource.local().load("paginae/custom/fill-tarkiln")));
         p.add(glob.paginafor(Resource.local().load("paginae/custom/pick-mussels")));
+        p.add(glob.paginafor(Resource.local().load("paginae/custom/fill-smelter")));
 	}
 	
     private static Comparator<Pagina> sorter = new Comparator<Pagina>() {
@@ -350,6 +348,8 @@ public class MenuGrid extends Widget {
             ui.gui.tasks.add(new FeedBlocksTask("tarkiln"));
         } else if (ad[1].equals("pick-mussels")) {
             ui.gui.tasks.add(new MusselPicker());
+        } else if (ad[1].equals("fill-smelter")) {
+            ui.gui.tasks.add(new FeedCoalTask("smelter", 12));
         }
     }
 

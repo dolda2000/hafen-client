@@ -4,13 +4,20 @@ import haven.*;
 
 public abstract class FeedTask extends Task {
     private final String objectName;
+    private final int maxItemCount;
     private State state;
     private Gob gob;
     private String error;
+    private int itemCount;
 
-    public FeedTask(String objectName) {
+    public FeedTask(String objectName, int maxItemCount) {
         this.objectName = objectName;
         this.state = new FindTrough();
+        this.maxItemCount = maxItemCount;
+    }
+
+    public FeedTask(String objectName) {
+        this(objectName, -1);
     }
 
     protected abstract boolean isFiller(GItem item);
@@ -25,7 +32,7 @@ public abstract class FeedTask extends Task {
         if (error != null && !error.isEmpty())
             context().error(error);
         else
-            context().info("Task completed");
+            context().info("Done");
     }
 
     private void setState(State value) {
@@ -56,7 +63,7 @@ public abstract class FeedTask extends Task {
     private class FindFood implements State {
         @Override
         public void tick(double dt) {
-            // check if there is food at the hand already
+            // check if there is filler at the hand already
             GItem item = context().getItemAtHand();
             if (item == null) {
                 Inventory inv = context().playerInventory();
@@ -91,14 +98,28 @@ public abstract class FeedTask extends Task {
         public void tick(double dt) {
             GItem item = context().getItemAtHand();
             if (item != null) {
-                // click with shift
-                context().itemact(gob, 1);
-                setState(new Wait(0.2));
+                itemCount++;
+                if (!isLastItem()) {
+                    // click with shift
+                    context().itemact(gob, 1);
+                    setState(new Wait(0.2));
+                } else {
+                    context().itemact(gob, 0);
+                    stop();
+                }
+
             } else {
                 t += dt;
-                if (t > timeout)
+                if (t > timeout) {
+                    if (!isLastItem())
+                        error = String.format("Only %d out of %d items were put", itemCount, maxItemCount);
                     stop();
+                }
             }
+        }
+
+        private boolean isLastItem() {
+            return (maxItemCount != -1) && (maxItemCount == itemCount);
         }
     }
 
