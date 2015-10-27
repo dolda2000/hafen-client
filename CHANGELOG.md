@@ -1,5 +1,10 @@
 ## Changelog
 
+### r63
+
+- Toned down ambient lighting
+- Changed the number of coals to fill a smelter to 11 
+
 ### r62
 
 - Added hotkey `Alt`+`T` to toggle on/off tile transitions
