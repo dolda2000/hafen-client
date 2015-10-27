@@ -34,6 +34,8 @@ import java.util.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.image.WritableRaster;
+
+import static haven.GameUILayout.*;
 import static haven.Inventory.invsq;
 
 public class GameUI extends ConsoleHost implements Console.Directory {
@@ -83,6 +85,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public final CraftWindow makewnd;
     public TaskManager tasks;
     public ChatHidePanel chatHidePanel;
+    private final GameUILayout layout;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -124,26 +127,22 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	this.plid = plid;
 	setcanfocus(true);
 	setfocusctl(true);
-	chat = add(new ChatUI(0, 0), Coord.z);
+	chat = add(new ChatUI(0, 0));
     chat.visible = Utils.getprefb("chatvis", true);
 	if (chat.visible) {
         chat.move(chat.savedpos);
 	    chat.resize(chat.savedw, chat.savedh);
 	}
 	beltwdg.raise();
-    if (beltwdg.c.equals(Coord.z))
-        beltwdg.c = new Coord(10, 180);
     eqbelt = add(new EquipBelt("equip", 6, 7));
-    if (eqbelt.c.equals(Coord.z))
-        eqbelt.c = new Coord(10, 220);
     ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1), false));
 	urpanel = add(new Hidepanel("gui-ur", null, new Coord( 1, -1), false));
-	brpanel = add(new Hidepanel("gui-br", null, new Coord( 1,  1), true) {
-		public void move(double a) {
-		    super.move(a);
-		    menupanel.move();
-		}
-	    });
+	brpanel = add(new Hidepanel("gui-br", null, new Coord(1, 1), true) {
+        public void move(double a) {
+            super.move(a);
+            menupanel.move();
+        }
+    });
 	menupanel = add(new Hidepanel("menu", new Indir<Coord>() {
 		    public Coord get() {
 			return(new Coord(GameUI.this.sz.x, Math.min(brpanel.c.y - 79, GameUI.this.sz.y - menupanel.sz.y)));
@@ -213,18 +212,23 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     makewnd.hide();
 
     chatHidePanel = add(new ChatHidePanel(chat));
+
+    layout = new GameUILayout();
+    layout.addDraggable(beltwdg, new RelativePosition(HAlign.Left, VAlign.Top, new Coord(10, 180)), false, true);
+    layout.addDraggable(eqbelt, new RelativePosition(HAlign.Left, VAlign.Top, new Coord(10, 220)), false, true);
+    layout.addDraggable(studywnd, new RelativePosition(HAlign.Left, VAlign.Top, new Coord(100, 100)), true, true);
+    layout.addDraggable(chat, new RelativePosition(HAlign.Left, VAlign.Bottom, new Coord(15, 30)), true, true);
     }
 
     @Override
     protected void attach(UI ui) {
-	super.attach(ui);
-	ui.gui = this;
-    tasks = new TaskManager(ui);
-    tasks.add(new AutoStudy());
-    fkeybelt = add(new CustomBelt.FKeys("custom-fkeys", ui.sess.username, ui.sess.charname));
-    fkeybelt.visible = Config.showCustomFKeysBelt.get();
-    if (fkeybelt.c.equals(Coord.z))
-        fkeybelt.c = new Coord(10, 280);
+        super.attach(ui);
+        ui.gui = this;
+        tasks = new TaskManager(ui);
+        tasks.add(new AutoStudy());
+        fkeybelt = add(new CustomBelt.FKeys("custom-fkeys", ui.sess.username, ui.sess.charname));
+        fkeybelt.visible = Config.showCustomFKeysBelt.get();
+        layout.addDraggable(fkeybelt, new RelativePosition(HAlign.Left, VAlign.Top, new Coord(10, 280)), false, true);
     }
 
     public Equipory getEquipory() {
@@ -523,10 +527,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    map.lower();
 		if (mmap != null)
 			ui.destroy(mmap);
-		if (mmapwnd != null)
-			ui.destroy(mmapwnd);
+        if (mmapwnd != null) {
+            ui.destroy(mmapwnd);
+            layout.removeDraggable(mmapwnd);
+        }
 		mmap = new LocalMiniMap(Config.minimapSize.get(), map);
 		mmapwnd = new MinimapWnd(Config.minimapPosition.get(), mmap.sz, map, mmap);
+        layout.addDraggable(mmapwnd, new RelativePosition(HAlign.Left, VAlign.Top, new Coord(500, 100)), true, true);
 		add(mmapwnd);
 		mmapwnd.pack();
 	} else if(place == "fight") {
@@ -952,20 +959,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public void resize(Coord sz) {
-    Coord oldsz = this.sz;
 	this.sz = sz;
     chatHidePanel.c = new Coord(0, sz.y - chatHidePanel.sz.y);
 	if(map != null)
 	    map.resize(sz);
     iconwnd.c = sz.sub(iconwnd.sz).div(2);
     cal.c = new Coord((sz.x - cal.sz.x) / 2, 10);
-    if (!Coord.z.equals(oldsz)) {
-        // adjust position relative to the bottom of the screen
-        if (eqbelt.c.y > oldsz.y / 2)
-            eqbelt.setPosition(eqbelt.c.x, sz.y - (oldsz.y - eqbelt.c.y));
-        if (beltwdg.c.y > oldsz.y / 2)
-            beltwdg.setPosition(beltwdg.c.x, sz.y - (oldsz.y - beltwdg.c.y));
-    }
+    layout.update(sz);
 	super.resize(sz);
     }
 

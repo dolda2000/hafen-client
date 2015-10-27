@@ -39,12 +39,9 @@ public class DraggableBelt extends Widget {
         updateLayout();
     }
 
-    public void setPosition(int x, int y) {
-        setPosition(new Coord(x, y));
-    }
-
-    public void setPosition(Coord value) {
-        this.c = clipToParent(value);
+    @Override
+    public void move(Coord c) {
+        super.move(clipToParent(c));
         BeltConfig.setBeltPosition(name, this.c);
     }
 

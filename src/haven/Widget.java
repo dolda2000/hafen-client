@@ -1036,6 +1036,14 @@ public class Widget {
     // called once widget is bound to the server ID
     public void bound() {}
 
+    public void move(int x, int y) {
+        move(new Coord(x, y));
+    }
+
+    public void move(Coord c) {
+        this.c = new Coord(c);
+    }
+
     public final Collection<Anim> anims = new LinkedList<Anim>();
     public final Collection<Anim> nanims = new LinkedList<Anim>();
     public <T extends Anim> void clearanims(Class<T> type) {

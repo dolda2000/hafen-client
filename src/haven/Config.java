@@ -74,7 +74,7 @@ public class Config {
     public static byte[] authck = null;
     public static String prefspec = "hafen";
 
-    public static Pref<Coord> minimapPosition = new Pref<Coord>("haven.minimap.position", new Coord(500, 100), TYPE_COORD);
+    public static Pref<Coord> minimapPosition = new Pref<Coord>("haven.minimap.position", Coord.z, TYPE_COORD);
     public static Pref<Coord> minimapSize = new Pref<Coord>("haven.minimap.size", new Coord(300, 300), TYPE_COORD);
     public static Pref<Boolean> minimapShowRadius = new Pref<Boolean>("haven.minimap.radius", false, TYPE_BOOL);
     public static Pref<Boolean> minimapShowGrid = new Pref<Boolean>("haven.minimap.grid", false, TYPE_BOOL);
@@ -82,7 +82,7 @@ public class Config {
     public static Pref<Boolean> nightvision = new Pref<Boolean>("haven.nightvision", false, TYPE_BOOL);
     public static Pref<Boolean> snapCamera = new Pref<Boolean>("haven.display.snapcamera", false, TYPE_BOOL);
     public static Pref<Boolean> showKinNotifications = new Pref<Boolean>("haven.notifications.kinstatus", true, TYPE_BOOL);
-    public static Pref<Coord> studyPosition = new Pref<Coord>("haven.study.position", new Coord(100, 100), TYPE_COORD);
+    public static Pref<Coord> studyPosition = new Pref<Coord>("haven.study.position", Coord.z, TYPE_COORD);
     public static Pref<Boolean> studyVisible = new Pref<Boolean>("haven.study.visible", false, TYPE_BOOL);
     public static Pref<Boolean> showHungerMeter = new Pref<Boolean>("haven.meters.hunger", true, TYPE_BOOL);
     public static Pref<Boolean> showFepMeter = new Pref<Boolean>("haven.meters.fep", true, TYPE_BOOL);
