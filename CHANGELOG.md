@@ -1,5 +1,13 @@
 ## Changelog
 
+### r62
+
+- Added hotkey `Alt`+`T` to toggle on/off tile transitions
+- Added tool to fill smelters with exactly 12 coals
+- Added option to show growth stage on fully grown trees which can be changed in `Display Settings`
+- Fixed ambient lighting
+- Fixed issue with grid overlay now always working right after logging in
+
 ### r61
 
 - Made it possible to move chat window
