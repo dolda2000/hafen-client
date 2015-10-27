@@ -1,5 +1,10 @@
 ## Changelog
 
+### r64
+
+- Added command `kinfile <path/to/file>` that can add kins by secrets listed in the specified file
+- Fixed wrong error message for filling tasks with unlimited amount of items to use
+
 ### r63
 
 - Toned down ambient lighting
