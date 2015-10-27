@@ -111,7 +111,7 @@ public abstract class FeedTask extends Task {
             } else {
                 t += dt;
                 if (t > timeout) {
-                    if (!isLastItem())
+                    if ((maxItemCount != -1) && (maxItemCount != itemCount))
                         error = String.format("Only %d out of %d items were put", itemCount, maxItemCount);
                     stop();
                 }
