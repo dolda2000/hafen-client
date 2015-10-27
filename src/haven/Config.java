@@ -105,6 +105,7 @@ public class Config {
     public static Pref<Boolean> enableMenuAnimation = new Pref<Boolean>("menu.animation", false, TYPE_BOOL);
     public static Pref<Boolean> enableAccountStoring = new Pref<Boolean>("account.storing", false, TYPE_BOOL);
     public static Pref<Boolean> showGobInfo = new Pref<Boolean>("display.gobinfo", false, TYPE_BOOL);
+    public static Pref<Boolean> showGobInfoForGrownTrees = new Pref<Boolean>("display.gobinfo.growntrees", false, TYPE_BOOL);
     public static Pref<Boolean> useControlForSortTransfer = new Pref<Boolean>("useControlForSortTransfer", false, TYPE_BOOL);
     public static Pref<Boolean> showCustomFKeysBelt = new Pref<Boolean>("display.fbelt", true, TYPE_BOOL);
     public static Pref<Boolean> disableTileTransitions = new Pref<Boolean>("tile.transitions.disabled", false, TYPE_BOOL);

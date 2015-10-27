@@ -85,6 +85,8 @@ public class GobInfo extends GAttrib {
                     int growth = data.uint8();
                     if (growth < 100)
                         line = Text.std.renderstroked(String.format("%d%%", growth), Color.YELLOW, Color.BLACK);
+                    else if (growth == 100 && Config.showGobInfoForGrownTrees.get())
+                        line = Text.std.renderstroked(String.format("%d%%", growth), Color.GREEN, Color.BLACK);
                 }
             }
 

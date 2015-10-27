@@ -310,6 +310,8 @@ public class OptWnd extends Window {
     }, new Coord(0, y));
     y += 15;
     display.add(new PrefCheckBox("Highlight party members", Config.highlightParty), new Coord(0, y));
+    y += 15;
+    display.add(new PrefCheckBox("Display growth stage on grown trees", Config.showGobInfoForGrownTrees), new Coord(0, y));
     y += 20;
     display.add(new Label("Cupboards scale:"), new Coord(0, y));
     y += 15;
@@ -346,7 +348,7 @@ public class OptWnd extends Window {
         }
     }, new Coord(0, y));
 
-	display.add(new PButton(200, "Back", 27, main), new Coord(0, 200));
+	display.add(new PButton(200, "Back", 27, main), new Coord(0, 210));
 	display.pack();
 
 	y = 0;
