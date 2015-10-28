@@ -1,5 +1,9 @@
 ## Changelog
 
+### r65
+
+- Autostudy picks up curiosities from all opened cupboards now
+
 ### r64
 
 - Added command `kinfile <path/to/file>` that can add kins by secrets listed in the specified file
