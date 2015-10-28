@@ -33,7 +33,7 @@ public class Inventory extends Widget implements DTarget {
     public static final Coord sqsz = new Coord(33, 33);
     private static final Comparator<WItem> qComparator = new AvgQualityComparator();
     private static final Comparator<WItem> descQComparator = Collections.reverseOrder(qComparator);
-    Coord isz;
+    public Coord isz;
     Map<GItem, WItem> wmap = new HashMap<GItem, WItem>();
 
     @RName("inv")

@@ -2,6 +2,9 @@ package haven.tasks;
 
 import haven.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 class TaskContext {
     private final UI ui;
 
@@ -56,6 +59,18 @@ class TaskContext {
             }
         }
         return nearest;
+    }
+
+    public List<Window> findWindows(String name) {
+        List<Window> result = new ArrayList<Window>();
+        for (Widget w = ui.gui.child; w != null; w = w.next) {
+            if (w instanceof Window) {
+                Window window = (Window)w;
+                if (name.equals(window.cap.text))
+                    result.add(window);
+            }
+        }
+        return result;
     }
 
     public void itemact(Gob gob, int mod) {
