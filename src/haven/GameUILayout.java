@@ -33,14 +33,12 @@ public class GameUILayout {
 
                 if (d.keepHorzOffset && (x > this.sz.x - (d.widget.sz.x + x)))
                     x = sz.x - (this.sz.x - x);
-                else // clip
-                    x = Math.min(sz.x - d.widget.sz.x, x);
-
                 if (d.keepVertOffset && (y > this.sz.y - (d.widget.sz.y + y)))
                     y = sz.y - (this.sz.y - y);
-                else // clip
-                    y = Math.min(sz.y - d.widget.sz.y, y);
 
+                // clip
+                x = Math.min(sz.x - d.widget.sz.x, x);
+                y = Math.min(sz.y - d.widget.sz.y, y);
                 d.widget.move(x, y);
             }
             this.sz = sz;
