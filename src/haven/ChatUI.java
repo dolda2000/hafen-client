@@ -76,7 +76,7 @@ public class ChatUI extends Widget {
             return false;
         }
     }, 2, (selh - drag.getHeight()) / 2);
-    chansel = add(new Selector(new Coord(selw, sz.y - marg.y)), dragButton.sz.x + 4, (selh - chanseld.sz().y) / 2);
+    chansel = add(new Selector(new Coord(selw, selh)), dragButton.sz.x + 4, 0);
 	setfocusctl(true);
 	setcanfocus(true);
 	if(h < 1)
@@ -266,9 +266,12 @@ public class ChatUI extends Widget {
 	
 	public void resize(Coord sz) {
 	    super.resize(sz);
+        if(cb != null) {
+            cb.c = new Coord(sz.x - cb.sz.x + 7, -marg.y - 3);
+        }
 	    if(sb != null) {
-		sb.move(new Coord(sz.x - (12 - marg.x), 28 - marg.y));
-		sb.resize(ih() - sb.c.y - 8);
+        sb.move(new Coord(sz.x - marg.x - 4, (cb != null) ? 23 : 2));
+		sb.resize(ih() - sb.c.y - 2);
 		int y = 0;
 		for(Message m : msgs)
 		    y += m.sz().y;
@@ -276,9 +279,6 @@ public class ChatUI extends Widget {
 		sb.max = y - ih();
 		if(b)
 		    sb.val = sb.max;
-	    }
-	    if(cb != null) {
-		cb.c = new Coord(sz.x + marg.x - cb.sz.x, -marg.y);
 	    }
 	}
 	
@@ -892,7 +892,7 @@ public class ChatUI extends Widget {
     public <T extends Widget> T add(T w) {
 	if(w instanceof Channel) {
 	    Channel chan = (Channel)w;
-	    chan.c = new Coord(0, chansel.sz.y);
+	    chan.c = new Coord(marg.x, chansel.c.y + chansel.sz.y);
 	    chan.resize(sz.x - marg.x - chan.c.x, sz.y - chan.c.y);
 	    super.add(w);
         chansel.add(chan);
@@ -964,11 +964,11 @@ public class ChatUI extends Widget {
 		while(i < chls.size()) {
 		    DarkChannel ch = chls.get(i);
 		    if(ch.chan == sel)
-			g.image(chanseld, new Coord(x, y + 1));
+			g.aimage(chanseld, new Coord(x + selw / 2, selh / 2), 0.5, 0.5);
 		    g.chcolor(255, 255, 255, 255);
 		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency))
 			ch.rname = nf[ch.urgency = ch.chan.urgency].render(ch.chan.name());
-		    g.aimage(ch.rname.tex(), new Coord(x + selw / 2, chanseld.sz().y / 2), 0.5, 0.5);
+		    g.aimage(ch.rname.tex(), new Coord(x + selw / 2, selh / 2), 0.5, 0.5);
             x += selw;
             if (x >= sz.x)
                 break;
