@@ -916,7 +916,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
             return true;
         } else if (alt && keycode == KeyEvent.VK_I) {
             Config.showGobInfo.set(!Config.showGobInfo.get());
-            msg("Object overlay is now turned " + (Config.showGobInfo.get() ? "on" : "off"));
             return true;
         } else if (alt && keycode == KeyEvent.VK_W) {
             Config.screenshotMode = !Config.screenshotMode;
