@@ -4,13 +4,18 @@ import haven.*;
 
 public class Forager extends Task {
     private final String[] objectNames;
+    private final int radius;
+    private final int maxItemCount;
     private State state;
-    private Gob mussel;
+    private Gob obj;
     private Widget window;
     private String error;
+    private int itemCount;
 
-    public Forager(String... objectNames) {
+    public Forager(int radius, int itemCount, String... objectNames) {
         this.objectNames = objectNames;
+        this.radius = radius;
+        this.maxItemCount = itemCount;
     }
 
     @Override
@@ -44,11 +49,11 @@ public class Forager extends Task {
     private class FindMussel implements State {
         @Override
         public void tick(double dt) {
-            mussel = context().findObjectByNames(200, objectNames);
-            if (mussel != null) {
-                if (window == null)
+            obj = context().findObjectByNames(radius, objectNames);
+            if (obj != null) {
+                if (window == null && maxItemCount > 1)
                     window = context().gui().add(new StatusWindow(), 300, 200);
-                context().click(mussel, 3, 0);
+                context().click(obj, 3, 0);
                 setState(new WaitMenu("Pick", 2));
             } else {
                 if (window == null)
@@ -76,7 +81,7 @@ public class Forager extends Task {
                     if (opt.name.equals(text)) {
                         menu.choose(opt);
                         menu.destroy();
-                        setState(new WaitGobRemoval(mussel.id, 5));
+                        setState(new WaitGobRemoval(obj.id, 5));
                         return;
                     }
                 }
@@ -104,7 +109,11 @@ public class Forager extends Task {
         public void tick(double dt) {
             Gob gob = context().findObjectById(gobId);
             if (gob == null) {
-                setState(new Wait(0.5)); // wait for animation to complete
+                itemCount++;
+                if (itemCount == maxItemCount)
+                    stop();
+                else
+                    setState(new Wait(0.5)); // wait for animation to complete
             } else {
                 t += dt;
                 if (t > timeout) {
@@ -133,7 +142,7 @@ public class Forager extends Task {
 
     private class StatusWindow extends Window {
         public StatusWindow() {
-            super(Coord.z, "Picking stuff...");
+            super(Coord.z, "Picking...");
             setLocal(true);
             add(new Button(120, "Cancel") {
                 public void click() {
