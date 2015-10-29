@@ -95,10 +95,11 @@ public class Inventory extends Widget implements DTarget {
 	if(w instanceof GItem) {
 	    GItem i = (GItem)w;
 	    ui.destroy(wmap.remove(i));
+        if (Config.enableAutoloader && this == ui.gui.maininv) {
+            Autoloader.replace(this, i);
+        }
 	}
     }
-
-
 
     public boolean drop(Coord cc, Coord ul) {
 	wdgmsg("drop", ul.add(sqsz.div(2)).div(invsq.sz()));
