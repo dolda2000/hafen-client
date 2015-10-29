@@ -45,20 +45,7 @@ class TaskContext {
     }
 
     public Gob findObjectByName(int radius, String name) {
-        Coord plc = player().rc;
-        double min = radius;
-        Gob nearest = null;
-        synchronized (ui.sess.glob.oc) {
-            for (Gob gob : ui.sess.glob.oc) {
-                double dist = gob.rc.dist(plc);
-                boolean matches = Utils.isObjectName(gob, name);
-                if (matches && dist < min) {
-                    min = dist;
-                    nearest = gob;
-                }
-            }
-        }
-        return nearest;
+        return findObjectByNames(radius, name);
     }
 
     public Gob findObjectByNames(int radius, String... names) {
