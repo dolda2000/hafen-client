@@ -20,7 +20,7 @@ public class Forager extends Task {
 
     @Override
     protected void onStart() {
-        state = new FindMussel();
+        state = new FindObject();
     }
 
     @Override
@@ -29,8 +29,6 @@ public class Forager extends Task {
             window.destroy();
         if (error != null && !error.isEmpty())
             context().error(error);
-        else
-            context().info("Done");
     }
 
     @Override
@@ -46,7 +44,7 @@ public class Forager extends Task {
         void tick(double dt);
     }
 
-    private class FindMussel implements State {
+    private class FindObject implements State {
         @Override
         public void tick(double dt) {
             obj = context().findObjectByNames(radius, objectNames);
@@ -136,7 +134,7 @@ public class Forager extends Task {
         public void tick(double dt) {
             t += dt;
             if (t > timeout)
-                setState(new FindMussel());
+                setState(new FindObject());
         }
     }
 

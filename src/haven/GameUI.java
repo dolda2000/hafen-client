@@ -26,6 +26,8 @@
 
 package haven;
 
+import haven.minimap.CustomIconGroup;
+import haven.minimap.CustomIconMatch;
 import haven.minimap.CustomIconWnd;
 import haven.tasks.*;
 import haven.tasks.AutoStudy;
@@ -923,6 +925,19 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         } else if (alt && keycode == KeyEvent.VK_T) {
             Config.disableTileTransitions.set(!Config.disableTileTransitions.get());
             ui.sess.glob.map.rebuild();
+            return true;
+        } else if (keycode == KeyEvent.VK_Q && ev.getModifiers() == 0) {
+            // get all forageables from config
+            List<String> names = new ArrayList<String>();
+            for (CustomIconGroup group : ui.sess.glob.icons.config.groups) {
+                if ("Forageables".equals(group.name)) {
+                    for (CustomIconMatch match : group.matches)
+                        if (match.show)
+                            names.add(match.value);
+                    break;
+                }
+            }
+            ui.gui.tasks.add(new Forager(33, 1, names.toArray(new String[names.size()])));
             return true;
         }
     }
