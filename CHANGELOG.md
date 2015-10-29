@@ -1,5 +1,9 @@
 ## Changelog
 
+### r66
+
+- Added hotkey `Q` to pick nearby forageable shown on the minimap. To update list of forageables you have to remove `config/custom-icons.xml` file from the client folder and restart client
+
 ### r65
 
 - Autostudy picks up curiosities from all opened cupboards now
