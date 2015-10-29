@@ -61,6 +61,31 @@ class TaskContext {
         return nearest;
     }
 
+    public Gob findObjectByNames(int radius, String... names) {
+        Coord plc = player().rc;
+        double min = radius;
+        Gob nearest = null;
+        synchronized (ui.sess.glob.oc) {
+            for (Gob gob : ui.sess.glob.oc) {
+                double dist = gob.rc.dist(plc);
+                if (dist < min) {
+                    boolean matches = false;
+                    for (String name : names) {
+                        if (Utils.isObjectName(gob, name)) {
+                            matches = true;
+                            break;
+                        }
+                    }
+                    if (matches) {
+                        min = dist;
+                        nearest = gob;
+                    }
+                }
+            }
+        }
+        return nearest;
+    }
+
     public List<Window> findWindows(String name) {
         List<Window> result = new ArrayList<Window>();
         for (Widget w = ui.gui.child; w != null; w = w.next) {

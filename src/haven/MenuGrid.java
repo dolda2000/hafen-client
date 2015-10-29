@@ -347,7 +347,7 @@ public class MenuGrid extends Widget {
         } else if (ad[1].equals("fill-tarkiln")) {
             ui.gui.tasks.add(new FeedBlocksTask("tarkiln"));
         } else if (ad[1].equals("pick-mussels")) {
-            ui.gui.tasks.add(new MusselPicker());
+            ui.gui.tasks.add(new Forager("mussels"));
         } else if (ad[1].equals("fill-smelter")) {
             ui.gui.tasks.add(new FeedCoalTask("smelter", 11));
         }

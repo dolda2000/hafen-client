@@ -2,11 +2,16 @@ package haven.tasks;
 
 import haven.*;
 
-public class MusselPicker extends Task {
+public class Forager extends Task {
+    private final String[] objectNames;
     private State state;
     private Gob mussel;
     private Widget window;
     private String error;
+
+    public Forager(String... objectNames) {
+        this.objectNames = objectNames;
+    }
 
     @Override
     protected void onStart() {
@@ -20,7 +25,7 @@ public class MusselPicker extends Task {
         if (error != null && !error.isEmpty())
             context().error(error);
         else
-            context().info("Task completed");
+            context().info("Done");
     }
 
     @Override
@@ -39,7 +44,7 @@ public class MusselPicker extends Task {
     private class FindMussel implements State {
         @Override
         public void tick(double dt) {
-            mussel = context().findObjectByName(200, "mussels");
+            mussel = context().findObjectByNames(200, objectNames);
             if (mussel != null) {
                 if (window == null)
                     window = context().gui().add(new StatusWindow(), 300, 200);
@@ -47,7 +52,7 @@ public class MusselPicker extends Task {
                 setState(new WaitMenu("Pick", 2));
             } else {
                 if (window == null)
-                    error = "No mussels nearby";
+                    error = "Nothing to pick nearby";
                 stop();
             }
         }
@@ -78,7 +83,7 @@ public class MusselPicker extends Task {
             } else {
                 t += dt;
                 if (t > timeout) {
-                    error = "Couldn't pick mussel in time";
+                    error = "Couldn't pick anything in time";
                     stop();
                 }
             }
@@ -103,7 +108,7 @@ public class MusselPicker extends Task {
             } else {
                 t += dt;
                 if (t > timeout) {
-                    error = "Couldn't pick mussel in time";
+                    error = "Couldn't pick anything in time";
                     stop();
                 }
             }
@@ -128,11 +133,11 @@ public class MusselPicker extends Task {
 
     private class StatusWindow extends Window {
         public StatusWindow() {
-            super(Coord.z, "Picking mussels...");
+            super(Coord.z, "Picking stuff...");
             setLocal(true);
             add(new Button(120, "Cancel") {
                 public void click() {
-                    MusselPicker.this.stop();
+                    Forager.this.stop();
                 }
             });
             pack();
@@ -140,7 +145,7 @@ public class MusselPicker extends Task {
 
         public void wdgmsg(Widget sender, String msg, Object... args) {
             if (sender == this && msg.equals("close")) {
-                MusselPicker.this.stop();
+                Forager.this.stop();
             }
             super.wdgmsg(sender, msg, args);
         }
