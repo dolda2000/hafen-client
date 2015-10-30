@@ -68,11 +68,14 @@ public class AutoStudy extends Task {
                 if (study.attn >= cap) return;
 
                 fillStudyFrom(study, context().playerInventory());
-                List<Window> cupboards = context().findWindows("Cupboard");
-                for (Window window : cupboards) {
-                    Inventory inv = window.findchild(Inventory.class);
-                    if (inv != null)
-                        fillStudyFrom(study, inv);
+
+                if (Config.useCupboardsForAutoStudy.get()) {
+                    List<Window> cupboards = context().findWindows("Cupboard");
+                    for (Window window : cupboards) {
+                        Inventory inv = window.findchild(Inventory.class);
+                        if (inv != null)
+                            fillStudyFrom(study, inv);
+                    }
                 }
 
                 setState(new Wait(10, this));

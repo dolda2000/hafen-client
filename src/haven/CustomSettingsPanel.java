@@ -18,6 +18,8 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         categoryList.add(new Category(0, "Display", null));
         categoryList.add(new Category(1, "Game", createGameDisplay()));
         categoryList.add(new Category(1, "UI", createGameUI()));
+        categoryList.add(new Category(0, "Tasks", null));
+        categoryList.add(new Category(1, "Autostudy", createAutostudy()));
         categoryList.change(0);
 
         add(opts.new PButton(80, "Back", 27, opts.main), frame.c.x + frame.sz.x - 80, frame.sz.y + 5);
@@ -174,6 +176,14 @@ public class CustomSettingsPanel extends OptWnd.Panel {
                     ui.gui.fkeybelt.show(val);
             }
         }, new Coord(0, y));
+        panel.pack();
+        return panel;
+    }
+
+    private static Widget createAutostudy() {
+        Widget panel = new Widget();
+        int y = 0;
+        panel.add(new PrefCheckBox("Use all opened cupboards", Config.useCupboardsForAutoStudy), new Coord(0, y));
         panel.pack();
         return panel;
     }
