@@ -22,7 +22,7 @@ public class ServerGridOverlay extends MapOverlay {
         this.map = map;
         this.size = size;
         this.area = (size.x + 1) * (size.y + 1);
-        this.color = new States.ColState(255, 36, 0, 255);
+        this.color = new States.ColState(255, 36, 0, 128);
 
         // double-buffer to prevent flickering
         vertexBuffers = new FloatBuffer[2];
@@ -47,8 +47,6 @@ public class ServerGridOverlay extends MapOverlay {
     @Override
     public boolean setup(RenderList rl) {
         rl.prepo(location);
-        rl.prepo(States.ndepthtest);
-        rl.prepo(last);
         rl.prepo(color);
         return true;
     }
@@ -83,8 +81,8 @@ public class ServerGridOverlay extends MapOverlay {
         for (int i = 0; i < vertices.length - 1; i++) {
             Coord3f a = vertices[i];
             Coord3f b = vertices[i + 1];
-            vbuf.put(a.x).put(a.y).put(a.z);
-            vbuf.put(b.x).put(b.y).put(b.z);
+            vbuf.put(a.x).put(a.y).put(a.z + 0.1f);
+            vbuf.put(b.x).put(b.y).put(b.z + 0.1f);
         }
     }
 
