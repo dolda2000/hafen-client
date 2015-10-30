@@ -277,20 +277,20 @@ public class Text {
 	return renderstroked(text, c, s, std);
     }
 
-    public static Line rerenderstroked(String text, Color c) {
+    public static Line renderstroked(String text, Color c) {
 	return renderstroked(text, c, Utils.contrast(c));
     }
 
-    public static Line rerenderstroked(String text, Color c, Text.Foundry fnd) {
+    public static Line renderstroked(String text, Color c, Text.Foundry fnd) {
 	return renderstroked(text, c, Utils.contrast(c), fnd);
     }
 
-    public static Line rerenderstroked(String text) {
-	return rerenderstroked(text, Color.WHITE);
+    public static Line renderstroked(String text) {
+	return renderstroked(text, Color.WHITE);
     }
 
-    public static Line rerenderstroked(String text, Text.Foundry fnd) {
-	return rerenderstroked(text, Color.WHITE, fnd);
+    public static Line renderstroked(String text, Text.Foundry fnd) {
+	return renderstroked(text, Color.WHITE, fnd);
     }
 	
     public static Line render(String text) {

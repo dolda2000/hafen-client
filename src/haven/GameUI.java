@@ -26,8 +26,8 @@
 
 package haven;
 
-import haven.minimap.CustomIconGroup;
 import java.awt.image.BufferedImage;
+import haven.minimap.CustomIconGroup;
 import haven.minimap.CustomIconMatch;
 import haven.minimap.CustomIconWnd;
 import haven.tasks.*;
@@ -638,9 +638,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    PUtils.blendblit(buf, progt.f[fr + 1][0].img.getRaster(), Coord.z, bf);
 	    BufferedImage img = PUtils.rasterimg(buf);
 
-	    BufferedImage txt = Text.render(String.format("%d%%", (int) (100 * prog))).img;
-	    txt = Utils.outline2(txt, Utils.contrast(Color.WHITE), true);
-	    img.getGraphics().drawImage(txt, 24 - txt.getWidth() / 2, 9 - txt.getHeight() / 2, null);
+        if (Config.showHourglassPercentage.get()) {
+            BufferedImage txt = Text.renderstroked(String.format("%d%%", (int) (100 * prog)), Color.WHITE, Color.BLACK).img;
+            img.getGraphics().drawImage(txt, 24 - txt.getWidth() / 2, 9 - txt.getHeight() / 2, null);
+        }
 
 	    curprog = new TexI(img); curprogf = fr; curprogb = bf;
 	}
@@ -1316,6 +1317,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         if (belt[slot] != null) {
             makewnd.setLastAction(new Glob.Pagina(belt[slot]));
         }
+    }
+
+    public void refreshProgress() {
+        curprog = null;
     }
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();

@@ -83,6 +83,14 @@ public class CustomSettingsPanel extends OptWnd.Panel {
             }
         }, new Coord(0, y));
         y += 20;
+        panel.add(new PrefCheckBox("Display hourglass progress in percents", Config.showHourglassPercentage) {
+            public void set(boolean val) {
+                super.set(val);
+                if (ui != null && ui.gui != null)
+                    ui.gui.refreshProgress();
+            }
+        }, new Coord(0, y));
+        y += 20;
         panel.add(new Label("Cupboards scale (requires restart):"), new Coord(0, y));
         y += 15;
         final Label sc = panel.add(new Label(""), new Coord(260, y));
