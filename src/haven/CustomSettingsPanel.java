@@ -33,7 +33,7 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         y += 20;
         panel.add(new PrefCheckBox("Enable auto hearth", Config.enableAutoHearth), new Coord(0, y));
         y += 20;
-        panel.add(new PrefCheckBox("Enable free camera rotation", Config.snapCamera), new Coord(0, y));
+        panel.add(new PrefCheckBox("Enable free camera rotation", Config.snapCamera, true), new Coord(0, y));
         y += 20;
         panel.add(new PrefCheckBox("Enable kin status notifications", Config.showKinNotifications), new Coord(0, y));
         y += 20;
