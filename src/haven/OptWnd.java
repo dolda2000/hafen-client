@@ -26,8 +26,11 @@
 
 package haven;
 
+import java.util.*;
+import java.awt.font.TextAttribute;
+
 public class OptWnd extends Window {
-    public final Panel main, video, audio, display, misc;
+    public final Panel main, video, audio, custom;
     public Panel current;
 
     public void chpanel(Panel p) {
@@ -35,6 +38,8 @@ public class OptWnd extends Window {
 	    current.hide();
 	(current = p).show();
 	pack();
+    if (parent != null)
+        move(parent.sz.sub(sz).div(2));
     }
 
     public class PButton extends Button {
@@ -60,7 +65,7 @@ public class OptWnd extends Window {
 	}
     }
 
-    public class Panel extends Widget {
+    public static class Panel extends Widget {
 	public Panel() {
 	    visible = false;
 	    c = Coord.z;
@@ -70,7 +75,7 @@ public class OptWnd extends Window {
     public class VideoPanel extends Panel {
 	public VideoPanel(Panel back) {
 	    super();
-	    add(new PButton(200, "Back", 27, back), new Coord(0, 200));
+	    add(new PButton(200, "Back", 27, back), new Coord(0, 180));
 	    pack();
 	}
 
@@ -161,15 +166,14 @@ public class OptWnd extends Window {
 			    }
 			}, new Coord(0, y + 15));
 		}
-        y += 35;
-        add(new PrefCheckBox("Simple crops (req. logout)", Config.simplifyCrops), new Coord(0, y));
+		y += 35;
 		add(new Button(200, "Reset to defaults") {
 			public void click() {
 			    cf.cfg.resetprefs();
 			    curcf.destroy();
 			    curcf = null;
 			}
-		    }, new Coord(0, 160));
+		    }, new Coord(0, 150));
 		pack();
 	    }
 	}
@@ -190,14 +194,12 @@ public class OptWnd extends Window {
 	main = add(new Panel());
 	video = add(new VideoPanel(main));
 	audio = add(new Panel());
-	display = add(new Panel());
-	misc = add(new Panel());
+	custom = add(new CustomSettingsPanel(this));
 	int y;
 
 	main.add(new PButton(200, "Video settings", 'v', video), new Coord(0, 0));
 	main.add(new PButton(200, "Audio settings", 'a', audio), new Coord(0, 30));
-	main.add(new PButton(200, "Display settings", 'd', display), new Coord(0, 60));
-	main.add(new PButton(200, "Misc settings", 'u', misc), new Coord(0, 90));
+	main.add(new PButton(200, "Custom settings", 'c', custom), new Coord(0, 60));
 	if(gopts) {
 	    main.add(new Button(200, "Switch character") {
 		    public void click() {
@@ -214,7 +216,7 @@ public class OptWnd extends Window {
 		public void click() {
 		    OptWnd.this.hide();
 		}
-	    }, new Coord(0, 200));
+	    }, new Coord(0, 180));
 	main.pack();
 
 	y = 0;
@@ -249,134 +251,9 @@ public class OptWnd extends Window {
 		    ui.audio.amb.setvolume(val / 1000.0);
 		}
 	    }, new Coord(0, y));
-    y += 20;
-    audio.add(new Label("Alarm volume"), new Coord(0, y));
-    y += 15;
-    audio.add(new HSlider(200, 0, 1000, Config.alarmVolume.get()) {
-        public void changed() {
-            Config.alarmVolume.set(val);
-        }
-    }, new Coord(0, y));
 	y += 35;
-	audio.add(new PButton(200, "Back", 27, main), new Coord(0, 200));
+	audio.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
 	audio.pack();
-
-	y = 0;
-	display.add(new PrefCheckBox("Show flavor objects", Config.showFlavor), new Coord(0, y));
-	y += 15;
-	display.add(new PrefCheckBox("Enable camera snapping", Config.snapCamera), new Coord(0, y));
-	y += 15;
-	display.add(new PrefCheckBox("Show kin status notifications", Config.showKinNotifications), new Coord(0, y));
-	y += 15;
-    display.add(new PrefCheckBox("Display hunger meter", Config.showHungerMeter) {
-        public void set(boolean val) {
-            super.set(val);
-            GameUI ui = getparent(GameUI.class);
-            if (ui == null) return;
-            if (val)
-                ui.addcmeter(new HungerMeter(ui.chrwdg.glut));
-            else
-                ui.delcmeter(HungerMeter.class);
-        }
-    }, new Coord(0, y));
-    y += 15;
-    display.add(new PrefCheckBox("Display FEP meter", Config.showFepMeter) {
-        public void set(boolean val) {
-            super.set(val);
-            GameUI ui = getparent(GameUI.class);
-            if (ui == null) return;
-            if (val)
-                ui.addcmeter(new FepMeter(ui.chrwdg.feps));
-            else
-                ui.delcmeter(FepMeter.class);
-        }
-    }, new Coord(0, y));
-    y += 15;
-    display.add(new PrefCheckBox("Display game time indicator", Config.showClock) {
-        public void set(boolean val) {
-            super.set(val);
-            GameUI ui = getparent(GameUI.class);
-            if (ui != null)
-                ui.cal.show(val);
-        }
-    }, new Coord(0, y));
-    y += 15;
-    display.add(new PrefCheckBox("Display server grid", Config.showServerGrid) {
-        public void set(boolean val) {
-            super.set(val);
-            if (ui != null && ui.gui != null)
-                ui.gui.map.serverGridOverlay.setVisible(val);
-        }
-    }, new Coord(0, y));
-    y += 15;
-    display.add(new PrefCheckBox("Highlight party members", Config.highlightParty), new Coord(0, y));
-    y += 15;
-    display.add(new PrefCheckBox("Display growth stage on grown trees", Config.showGobInfoForGrownTrees), new Coord(0, y));
-    y += 20;
-    display.add(new Label("Cupboards scale:"), new Coord(0, y));
-    y += 15;
-    final Label sc = display.add(new Label(""), new Coord(165, y));
-    display.add(new HSlider(160, 10, 100, Config.cupboardScale.get()) {
-        protected void added() {
-            dpy();
-            this.c.y = sc.c.y + ((sc.sz.y - this.sz.y) / 2);
-        }
-
-        void dpy() {
-            sc.settext(String.format("%d%%", val));
-        }
-
-        public void changed() {
-            dpy();
-            Config.cupboardScale.set(val);
-        }
-    }, new Coord(0, y));
-    y += 20;
-    display.add(new Label("Show item quality mode:"), new Coord(0, y));
-    y += 15;
-    display.add(new Label("All"), new Coord(0, y));
-    display.add(new Label("Avg"), new Coord(95, y));
-    display.add(new Label("Max"), new Coord(180, y));
-    y += 10;
-    display.add(new HSlider(200, 0, 2, 0) {
-        protected void attach(UI ui) {
-            super.attach(ui);
-            val = Config.showQualityMode.get();
-        }
-        public void changed() {
-            Config.showQualityMode.set(val);
-        }
-    }, new Coord(0, y));
-
-	display.add(new PButton(200, "Back", 27, main), new Coord(0, 210));
-	display.pack();
-
-	y = 0;
-    misc.add(new PrefCheckBox("Enable account storing (requires restart)", Config.enableAccountStoring), new Coord(0, y));
-    y += 15;
-    misc.add(new PrefCheckBox("Enable minimap storing", Config.minimapEnableSave), new Coord(0, y));
-    y += 15;
-    misc.add(new PrefCheckBox("Display additional defense bars", Config.showCustomDefenseBars), new Coord(0, y));
-    y += 15;
-    misc.add(new PrefCheckBox("Auto hearth", Config.enableAutoHearth), new Coord(0, y));
-    y += 15;
-    misc.add(new PrefCheckBox("Play alarm for unknown or RED players", Config.enableStrangerAlarm), new Coord(0, y));
-    y += 15;
-    misc.add(new PrefCheckBox("Toggle tracking on startup", Config.toggleTracking), new Coord(0, y));
-    y += 15;
-    misc.add(new PrefCheckBox("Enable flower menu animations", Config.enableMenuAnimation), new Coord(0, y));
-    y += 15;
-    misc.add(new PrefCheckBox("Use CTRL for sorted by quality transfer", Config.useControlForSortTransfer), new Coord(0, y));
-    y += 15;
-    misc.add(new PrefCheckBox("Display additional belt for Fn keys", Config.showCustomFKeysBelt) {
-        public void set(boolean val) {
-            super.set(val);
-            if (ui != null && ui.gui != null)
-                ui.gui.fkeybelt.show(val);
-        }
-    }, new Coord(0, y));
-	misc.add(new PButton(200, "Back", 27, main), new Coord(0, 200));
-	misc.pack();
 
 	chpanel(main);
     }
@@ -396,21 +273,5 @@ public class OptWnd extends Window {
     public void show() {
 	chpanel(main);
 	super.show();
-    }
-
-    public static class PrefCheckBox extends CheckBox {
-        private final Config.Pref<Boolean> pref;
-
-        public PrefCheckBox(String label, Config.Pref<Boolean> pref) {
-            super(label);
-            this.pref = pref;
-            this.a = pref.get();
-        }
-
-        @Override
-        public void set(boolean val) {
-            pref.set(val);
-            a = val;
-        }
     }
 }
