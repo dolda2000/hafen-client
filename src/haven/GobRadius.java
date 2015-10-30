@@ -11,6 +11,7 @@ public class GobRadius {
         overlays = new HashMap<String, Gob.Overlay>();
         overlays.put("gfx/terobjs/minesupport", new Gob.Overlay(-1, bprad, new MessageBuf(new byte[] { -24, 3 }, 0, 2)));
         overlays.put("gfx/terobjs/column", new Gob.Overlay(-1, bprad, new MessageBuf(new byte[] { -30, 4 }, 0, 2)));
+        overlays.put("gfx/terobjs/beehive", new Gob.Overlay(-1, bprad, new MessageBuf(new byte[] { -36, 5 }, 0, 2)));
     }
 
     public static void toggle(final OCache objects, boolean show) {
