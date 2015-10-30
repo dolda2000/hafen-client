@@ -54,8 +54,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Coord3f camoff = new Coord3f(Coord3f.o);
     public double shake = 0.0;
     private static final Map<String, Class<? extends Camera>> camtypes = new HashMap<String, Class<? extends Camera>>();
-    private static final Gob.Overlay rol = new Gob.Overlay(-1, Resource.remote().load("gfx/fx/bprad"), new MessageBuf(new byte[] { -24, 3 }, 0, 2));
-    private static final Gob.Overlay rol2 = new Gob.Overlay(-1, Resource.remote().load("gfx/fx/bprad"), new MessageBuf(new byte[] { -30, 4 }, 0, 2));
 
     private Timer holdtimer;
     private UI.Grab holdgrab;
@@ -1605,27 +1603,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
         clicktask = null;
     }
 
-    public void togglegobradius() {
+    public void toggleGobRadius() {
         showgobrad = !showgobrad;
-        synchronized (ui.sess.glob.oc) {
-            for (Gob gob : ui.sess.glob.oc) {
-                Resource res = gob.getres();
-                if (res == null)
-                    continue;
-                // TODO: need to rewrite this ugliness
-                if (res.name.equals("gfx/terobjs/minesupport")) {
-                    if (showgobrad)
-                        gob.ols.add(rol);
-                    else
-                        gob.ols.remove(rol);
-                } else if (res.name.equals("gfx/terobjs/column")) {
-                    if (showgobrad)
-                        gob.ols.add(rol2);
-                    else
-                        gob.ols.remove(rol2);
-                }
-            }
-        }
+        GobRadius.toggle(ui.sess.glob.oc, showgobrad);
     }
 
     public boolean isPreventFriendlyFireEnabled() {
