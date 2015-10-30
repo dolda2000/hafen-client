@@ -109,6 +109,7 @@ public class Config {
     public static Pref<Boolean> useControlForSortTransfer = new Pref<Boolean>("useControlForSortTransfer", false, TYPE_BOOL);
     public static Pref<Boolean> showCustomFKeysBelt = new Pref<Boolean>("display.fbelt", true, TYPE_BOOL);
     public static Pref<Boolean> disableTileTransitions = new Pref<Boolean>("tile.transitions.disabled", false, TYPE_BOOL);
+    public static Pref<Boolean> showChatTimestamps = new Pref<Boolean>("chat.timestamp", true, TYPE_BOOL);
     public static boolean screenshotMode;
     public static boolean enableAutoloader;
 

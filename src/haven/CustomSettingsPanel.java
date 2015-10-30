@@ -42,6 +42,8 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         panel.add(new PrefCheckBox("Toggle tracking on startup", Config.toggleTracking), new Coord(0, y));
         y += 20;
         panel.add(new PrefCheckBox("Use CTRL instead of ALT for quality transfer", Config.useControlForSortTransfer), new Coord(0, y));
+        y += 20;
+        panel.add(new PrefCheckBox("Display timestamps in chat log", Config.showChatTimestamps), new Coord(0, y));
         panel.pack();
         return panel;
     }
