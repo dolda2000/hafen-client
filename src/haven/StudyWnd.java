@@ -17,14 +17,14 @@ public class StudyWnd extends Window {
         }
         final InventoryProxy invp = new InventoryProxy(inv);
         invp.setLocked(Config.lockStudy.get());
-        add(new OptWnd.PrefCheckBox("Lock", Config.lockStudy) {
+        add(new CustomSettingsPanel.PrefCheckBox("Lock", Config.lockStudy) {
             @Override
             public void set(boolean val) {
                 super.set(val);
                 invp.setLocked(val);
             }
         }, new Coord(0, 0));
-        add(new OptWnd.PrefCheckBox("Auto", Config.enableAutoStudy), new Coord(55, 0));
+        add(new CustomSettingsPanel.PrefCheckBox("Auto", Config.enableAutoStudy), new Coord(55, 0));
         study = add(invp, 0, 20);
         studyInfo = add(new StudyInfo(new Coord(study.sz.x, 50), inv), 0, study.c.y + study.sz.y + 5);
         pack();

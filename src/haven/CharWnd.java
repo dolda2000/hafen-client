@@ -1298,8 +1298,8 @@ public class CharWnd extends Window {
 	    sattr.add(child, new Coord(260, 35).add(wbox.btloff()));
 	    Frame.around(sattr, Collections.singletonList(child));
 	    Widget inf = sattr.add(new StudyInfo(new Coord(attrw - 150, child.sz.y), child), new Coord(260 + 150, child.c.y).add(wbox.btloff().x, 0));
-        sattr.add(new OptWnd.PrefCheckBox("Lock", Config.lockStudy), new Coord(415, 10));
-        sattr.add(new OptWnd.PrefCheckBox("Auto", Config.enableAutoStudy), new Coord(465, 10));
+        sattr.add(new CustomSettingsPanel.PrefCheckBox("Lock", Config.lockStudy), new Coord(415, 10));
+        sattr.add(new CustomSettingsPanel.PrefCheckBox("Auto", Config.enableAutoStudy), new Coord(465, 10));
 	    Frame.around(sattr, Collections.singletonList(inf));
         getparent(GameUI.class).studywnd.setStudy((Inventory)child);
 	} else if(place == "fmg") {
