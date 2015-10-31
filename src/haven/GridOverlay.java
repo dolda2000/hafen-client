@@ -21,7 +21,7 @@ public class GridOverlay extends MapOverlay {
         this.map = map;
         this.size = size;
         this.area = (size.x + 1) * (size.y + 1);
-        this.color = new States.ColState(120, 120, 120, 100);
+        this.color = new States.ColState(255, 36, 0, 128);
 
         // double-buffer to prevent flickering
         vertexBuffers = new FloatBuffer[2];
