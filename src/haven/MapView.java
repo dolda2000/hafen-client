@@ -598,7 +598,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
 	private static Color daylightamb = new Color(96, 96, 160);
-	private static Color daylightdif = new Color(200, 200, 200);
 	private static Color daylightspc = new Color(255, 255, 255);
 
     public DirLight amb = null;
@@ -608,8 +607,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(glob.lightamb != null) {
 			Color lightamb, lightdif, lightspc;
 			if (Config.nightvision.get()) {
+				int brightness = Config.nightvisionBrightness.get();
 				lightamb = daylightamb;
-				lightdif = daylightdif;
+				lightdif = new Color(brightness, brightness, brightness);
 				lightspc = daylightspc;
 			} else {
 				lightamb = glob.lightamb;

@@ -93,6 +93,18 @@ public class CustomSettingsPanel extends OptWnd.Panel {
             }
         }, new Coord(0, y));
         y += 20;
+        panel.add(new Label("Nightvision brightness:"), new Coord(0, y));
+        y += 10;
+        panel.add(new HSlider(280, 0, 255, 0) {
+            protected void attach(UI ui) {
+                super.attach(ui);
+                val = Config.nightvisionBrightness.get();
+            }
+            public void changed() {
+                Config.nightvisionBrightness.set(val);
+            }
+        }, new Coord(0, y));
+        y += 20;
         panel.add(new Label("Cupboards scale (requires restart):"), new Coord(0, y));
         y += 15;
         final Label sc = panel.add(new Label(""), new Coord(260, y));

@@ -112,6 +112,7 @@ public class Config {
     public static Pref<Boolean> disableTileTransitions = new Pref<Boolean>("tile.transitions.disabled", false, TYPE_BOOL);
     public static Pref<Boolean> showChatTimestamps = new Pref<Boolean>("chat.timestamp", true, TYPE_BOOL);
     public static Pref<Boolean> showHourglassPercentage = new Pref<Boolean>("hourglass.percentage", false, TYPE_BOOL);
+    public static Pref<Integer> nightvisionBrightness = new Pref<Integer>("haven.nightvision.brightness", 220, TYPE_INT);
     public static boolean screenshotMode;
     public static boolean enableAutoloader;
 
