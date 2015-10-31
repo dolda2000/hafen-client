@@ -298,7 +298,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	super(new Coord(200, 380));
 	setfocustab(true);
 	int y = 0;
-	add(new Img(CharWnd.catf.render("Kin").tex()), new Coord(0, 0));
+	add(new Img(CharWnd.catf.render("Kin").tex()), new Coord(0, -5));
 	y += 35;
 
 	bl = add(new BuddyList(200 - Window.wbox.bisz().x, 7), new Coord(Window.wbox.btloff().x, y));
