@@ -96,7 +96,7 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         }, new Coord(0, y));
         y += 20;
         panel.add(new Label("Nightvision brightness:"), new Coord(0, y));
-        y += 10;
+        y += 15;
         panel.add(new HSlider(280, 0, 255, 0) {
             protected void attach(UI ui) {
                 super.attach(ui);
