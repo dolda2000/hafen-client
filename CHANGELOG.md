@@ -1,5 +1,11 @@
 ## Changelog
 
+### r69
+
+- Added option to disable weather effects
+- Added slider that adjustes nighvision brightness. See `Display->Game` settings
+- Changed grid overlay color
+
 ### r68
 
 - Fixed non-disappearing radiuses
