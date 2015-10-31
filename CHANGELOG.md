@@ -1,5 +1,14 @@
 ## Changelog
 
+### r67
+
+- Moved all custom options to the separate panel accessible through the `Custom settings` in the settings menu
+- Added option to show timestamps in chat
+- Added option to show percentages on the hourglass
+- Added option to disable autostudy from cupboards (sorry for the pearl, Avu)
+- Added radius display for beehives and made radiuses less intrusive
+- Added mode that automatically transfers arrows from the quiver to the inventory (see `eXtended` menu)
+
 ### r66
 
 - Added hotkey `Q` to pick nearby forageable shown on the minimap. To update list of forageables you have to remove `config/custom-icons.xml` file from the client folder and restart client
