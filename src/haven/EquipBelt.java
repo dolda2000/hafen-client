@@ -1,17 +1,20 @@
 package haven;
 
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 
 public class EquipBelt extends DraggableBelt {
-    public static final Tex bg = Window.bg;
-    public static final Tex sq = Resource.loadtex("gfx/hud/belt/custom/eqsq");
+    private static final Tex sq = Resource.loadtex("gfx/hud/belt/custom/eqsq");
+    private static final int keys[] = {
+        KeyEvent.VK_1, KeyEvent.VK_2, KeyEvent.VK_3, KeyEvent.VK_4, KeyEvent.VK_5,
+        KeyEvent.VK_6, KeyEvent.VK_7, KeyEvent.VK_8, KeyEvent.VK_9, KeyEvent.VK_0 };
 
     public EquipBelt(String name, int... slotIndexes) {
         super(name, sq.sz());
         List<Slot> slot = new ArrayList<Slot>(slotIndexes.length);
         for (int i = 0; i < slotIndexes.length; i++)
-            slot.add(new EquipSlot(slotIndexes[i]));
+            slot.add(new EquipSlot(slotIndexes[i], keys[i], 2, "Ctrl " + (i + 1) % 10));
         addSlots(slot);
     }
 
@@ -22,8 +25,8 @@ public class EquipBelt extends DraggableBelt {
     private class EquipSlot extends Slot {
         private final int index;
 
-        public EquipSlot(int index) {
-            super(-1, 0, "");
+        public EquipSlot(int index, int key, int mods, String text) {
+            super(key, mods, text);
             this.index = index;
         }
 
@@ -90,6 +93,26 @@ public class EquipBelt extends DraggableBelt {
                 }
             }
             return null;
+        }
+
+        @Override
+        public void keyact() {
+            if (isEmpty()) {
+                // try to put item in hand to the slot
+                Equipory e = ui.gui.getEquipory();
+                if(e != null) {
+                    e.wdgmsg("drop", index);
+                }
+            } else {
+                // try to take item
+                Equipory e = ui.gui.getEquipory();
+                if(e != null){
+                    WItem w = e.slots[index];
+                    if(w != null){
+                        w.item.wdgmsg("take", w.sz.div(2));
+                    }
+                }
+            }
         }
     }
 }
