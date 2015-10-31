@@ -1,5 +1,9 @@
 ## Changelog
 
+### r68
+
+- Fixed non-disappearing radiuses
+
 ### r67
 
 - Moved all custom options to the separate panel accessible through the `Custom settings` in the settings menu
