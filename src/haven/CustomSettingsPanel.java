@@ -69,7 +69,9 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         int y = 0;
         panel.add(new PrefCheckBox("Hide flavor objects", Config.showFlavor, true), new Coord(0, y));
         y += 20;
-        panel.add(new PrefCheckBox("Simple crops (requires relogin)", Config.simplifyCrops), new Coord(0, y));
+        panel.add(new PrefCheckBox("Disable weather effects", Config.disableWeatherEffects), new Coord(0, y));
+        y += 20;
+        panel.add(new PrefCheckBox("Use simple crops (requires relogin)", Config.simplifyCrops), new Coord(0, y));
         y += 20;
         panel.add(new PrefCheckBox("Display growth stage on grown trees", Config.showGobInfoForGrownTrees), new Coord(0, y));
         y += 20;
