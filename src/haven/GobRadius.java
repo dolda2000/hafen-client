@@ -28,8 +28,11 @@ public class GobRadius {
                         if (res == null)
                             continue;
                         RadiusSpriteFactory factory = factories.get(res.name);
-                        if (factory != null)
-                            gob.ols.add(new Gob.Overlay(factory.create(gob)));
+                        if (factory != null) {
+                            Gob.Overlay overlay = new Gob.Overlay(factory.create(gob));
+                            gob.ols.add(overlay);
+                            overlays.put(gob, overlay);
+                        }
                     }
                 }
             } else {
