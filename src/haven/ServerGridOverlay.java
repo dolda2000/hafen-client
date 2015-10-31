@@ -47,6 +47,8 @@ public class ServerGridOverlay extends MapOverlay {
     @Override
     public boolean setup(RenderList rl) {
         rl.prepo(location);
+        rl.prepo(States.ndepthtest);
+        rl.prepo(last);
         rl.prepo(color);
         return true;
     }
@@ -81,8 +83,8 @@ public class ServerGridOverlay extends MapOverlay {
         for (int i = 0; i < vertices.length - 1; i++) {
             Coord3f a = vertices[i];
             Coord3f b = vertices[i + 1];
-            vbuf.put(a.x).put(a.y).put(a.z + 0.1f);
-            vbuf.put(b.x).put(b.y).put(b.z + 0.1f);
+            vbuf.put(a.x).put(a.y).put(a.z);
+            vbuf.put(b.x).put(b.y).put(b.z);
         }
     }
 
