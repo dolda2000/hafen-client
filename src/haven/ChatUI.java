@@ -132,7 +132,6 @@ public class ChatUI extends Widget {
             na = new HashMap<Attribute, Object>(attrs);
             na.putAll(urlstyle);
             na.put(ChatAttribute.HEARTH_SECRET, hs);
-            p = m.end();
         } else {
             m = urlpat.matcher(text);
             if (m.find(p)) {
@@ -149,14 +148,14 @@ public class ChatUI extends Widget {
                 na = new HashMap<Attribute, Object>(attrs);
                 na.putAll(urlstyle);
                 na.put(ChatAttribute.HYPERLINK, new FuckMeGentlyWithAChainsaw(url));
-                p = m.end();
             }
         }
         if (na == null)
             break;
-		RichText.Part lead = new RichText.TextPart(text.substring(0, m.start()), attrs);
+		RichText.Part lead = new RichText.TextPart(text.substring(p, m.start()), attrs);
 		if(ret == null) ret = lead; else ret.append(lead);
 		ret.append(new RichText.TextPart(text.substring(m.start(), m.end()), na));
+		p = m.end();
 	    }
 	    if(ret == null)
 		ret = new RichText.TextPart(text, attrs);
