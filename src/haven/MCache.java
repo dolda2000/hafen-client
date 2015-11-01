@@ -217,8 +217,7 @@ public class MCache {
 	private void buildcut(final Coord cc) {
 	    final Cut cut = geticut(cc);
 	    final int deftag = ++cut.deftag;
-	    if(cut.dmesh != null)
-		cut.dmesh.cancel();
+	    Defer.Future<?> prev = cut.dmesh;
 	    cut.dmesh = Defer.later(new Defer.Callable<MapMesh>() {
 		    public MapMesh call() {
 			Random rnd = new Random(id);
@@ -231,6 +230,8 @@ public class MCache {
 			return("Building map...");
 		    }
 		});
+	    if(prev != null)
+		prev.cancel();
 	}
 
 	public void ivneigh(Coord nc) {
