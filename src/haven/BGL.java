@@ -41,6 +41,13 @@ public class BGL {
 	Buffer buf;
 	int position, limit;
 
+	BufState(Buffer buf, int position) {
+	    if((this.buf = buf) != null) {
+		this.position = position;
+		limit = buf.limit();
+	    }
+	}
+
 	BufState(Buffer buf) {
 	    if((this.buf = buf) != null) {
 		position = buf.position();
@@ -269,6 +276,13 @@ public class BGL {
 
     public void glColorPointer(final int size, final int type, final int stride, Buffer data) {
 	final BufState ds = new BufState(data);
+	add(new Command() {
+		public void run(GL2 gl) {ds.restore(); gl.glColorPointer(size, type, stride, ds.buf);}
+	    });
+    }
+
+    public void glColorPointer(final int size, final int type, final int stride, Buffer data, int position) {
+	final BufState ds = new BufState(data, position);
 	add(new Command() {
 		public void run(GL2 gl) {ds.restore(); gl.glColorPointer(size, type, stride, ds.buf);}
 	    });
@@ -578,6 +592,13 @@ public class BGL {
 	    });
     }
 
+    public void glNormalPointer(final int type, final int stride, Buffer data, int position) {
+	final BufState ds = new BufState(data, position);
+	add(new Command() {
+		public void run(GL2 gl) {ds.restore(); gl.glNormalPointer(type, stride, ds.buf);}
+	    });
+    }
+
     public void glPixelStorei(final int pname, final int param) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glPixelStorei(pname, param);}
@@ -652,6 +673,13 @@ public class BGL {
 
     public void glTexCoordPointer(final int size, final int type, final int stride, Buffer data) {
 	final BufState ds = new BufState(data);
+	add(new Command() {
+		public void run(GL2 gl) {ds.restore(); gl.glTexCoordPointer(size, type, stride, ds.buf);}
+	    });
+    }
+
+    public void glTexCoordPointer(final int size, final int type, final int stride, Buffer data, int position) {
+	final BufState ds = new BufState(data, position);
 	add(new Command() {
 		public void run(GL2 gl) {ds.restore(); gl.glTexCoordPointer(size, type, stride, ds.buf);}
 	    });
@@ -786,6 +814,13 @@ public class BGL {
 	    });
     }
 
+    public void glVertexAttribPointer(final ID location, final int size, final int type, final boolean normalized, final int stride, Buffer pointer, int position) {
+	final BufState ps = new BufState(pointer, position);
+	add(new Command() {
+		public void run(GL2 gl) {ps.restore(); gl.glVertexAttribPointer(location.glid(), size, type, normalized, stride, ps.buf);}
+	    });
+    }
+
     public void glVertexAttribPointer(final ID location, final int size, final int type, final boolean normalized, final int stride, final long pointer) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glVertexAttribPointer(location.glid(), size, type, normalized, stride, pointer);}
@@ -806,6 +841,13 @@ public class BGL {
 
     public void glVertexPointer(final int size, final int type, final int stride, Buffer data) {
 	final BufState ds = new BufState(data);
+	add(new Command() {
+		public void run(GL2 gl) {ds.restore(); gl.glVertexPointer(size, type, stride, ds.buf);}
+	    });
+    }
+
+    public void glVertexPointer(final int size, final int type, final int stride, Buffer data, int position) {
+	final BufState ds = new BufState(data, position);
 	add(new Command() {
 		public void run(GL2 gl) {ds.restore(); gl.glVertexPointer(size, type, stride, ds.buf);}
 	    });
