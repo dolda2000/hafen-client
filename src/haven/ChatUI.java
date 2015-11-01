@@ -49,7 +49,7 @@ public class ChatUI extends Widget {
     public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(14f), TextAttribute.FOREGROUND, Color.BLACK));
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = 78;
-    public static final int selh = 23;
+    public static final int selh = 24;
 	public static final Coord marg = new Coord(1, 1);
     public static final Color[] urgcols = new Color[] {
 	null,
@@ -948,6 +948,7 @@ public class ChatUI extends Widget {
 	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(255, 0, 0)),
 	};
 	private final List<DarkChannel> chls = new ArrayList<DarkChannel>();
+    private final HSpinner spinner;
 	private int s = 0;
 	
 	private class DarkChannel {
@@ -962,6 +963,11 @@ public class ChatUI extends Widget {
 	
 	public Selector(Coord sz) {
 	    super(sz);
+        spinner = add(new HSpinner() {
+            protected void change(int delta) {
+                s = Utils.clip(s + delta, 0,  chls.size() - (Selector.this.sz.x / selw));
+            }
+        });
 	}
 	
 	private void add(Channel chan) {
@@ -981,6 +987,10 @@ public class ChatUI extends Widget {
 	}
 	
 	public void draw(GOut g) {
+        super.draw(g);
+        spinner.visible = ((sz.x / selw) < chls.size() - 1);
+        if (spinner.visible)
+            g = g.reclip(Coord.z, new Coord(sz.x - spinner.sz.x, sz.y));
 	    int i = s;
 	    int y = 0;
         int x = 0;
@@ -990,8 +1000,11 @@ public class ChatUI extends Widget {
 		    if(ch.chan == sel)
 			g.aimage(chanseld, new Coord(x + selw / 2, selh / 2), 0.5, 0.5);
 		    g.chcolor(255, 255, 255, 255);
-		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency))
-			ch.rname = nf[ch.urgency = ch.chan.urgency].render(ch.chan.name());
+		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency)) {
+                // TODO: buttons with variable text size
+                String text = (ch.chan.name().length() > 12) ? ch.chan.name().substring(0, 10) + ".." : ch.chan.name();
+                ch.rname = nf[ch.urgency = ch.chan.urgency].render(text);
+            }
 		    g.aimage(ch.rname.tex(), new Coord(x + selw / 2, selh / 2), 0.5, 0.5);
             x += selw;
             if (x >= sz.x)
@@ -1034,6 +1047,8 @@ public class ChatUI extends Widget {
 	}
 	
 	private Channel bypos(Coord c) {
+        if (spinner.visible && c.x >= spinner.c.x)
+            return null;
 	    int i = (c.x / selw) + s;
 	    if((i >= 0) && (i < chls.size()))
 		return(chls.get(i).chan);
@@ -1041,6 +1056,8 @@ public class ChatUI extends Widget {
 	}
 
 	public boolean mousedown(Coord c, int button) {
+        if (super.mousedown(c, button))
+            return true;
 	    if(button == 1) {
 		Channel chan = bypos(c);
 		if(chan != null)
@@ -1066,6 +1083,12 @@ public class ChatUI extends Widget {
 	    }
 	    return(true);
 	}
+
+    @Override
+    public void resize(Coord sz) {
+        super.resize(sz);
+        spinner.move(sz.x - spinner.sz.x, (sz.y - spinner.sz.y) / 2);
+    }
 
     private void ensureVisible(int index) {
         if (s > index)
@@ -1184,7 +1207,7 @@ public class ChatUI extends Widget {
 
     public void resize(Coord sz) {
 	super.resize(sz);
-	chansel.resize(new Coord(this.sz.x - marg.x, selh));
+	chansel.resize(new Coord(this.sz.x - drag.getWidth() - 10 - marg.x, selh));
 	if(sel != null)
 	    sel.resize(new Coord(this.sz.x - marg.x, this.sz.y - marg.y - sel.c.y));
     }
