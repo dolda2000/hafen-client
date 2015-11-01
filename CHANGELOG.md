@@ -1,5 +1,11 @@
 ## Changelog
 
+### r70
+
+- Added hotkeys for equipment slots. They allow to put an item on cursor to the slot when it's empty, or to take the item from the slot otherwise
+- Chat messages in the format `hs:<secret>` now recognized as hearth secrets and can be clicked to kin the person
+- Merged latest vanilla client changes that might fix crashes with `IndexOutOfBoundsException`
+
 ### r69
 
 - Added option to disable weather effects
