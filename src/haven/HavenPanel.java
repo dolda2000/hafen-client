@@ -453,11 +453,11 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		try {
 		    display();
 		} catch(RuntimeException e) {
-		    if(e.getCause() instanceof InterruptedException) {
-			throw((InterruptedException)e.getCause());
-		    } else {
+		    InterruptedException ie = Utils.hascause(e, InterruptedException.class);
+		    if(ie != null)
+			throw(ie);
+		    else
 			throw(e);
-		    }
 		}
 	    }
 

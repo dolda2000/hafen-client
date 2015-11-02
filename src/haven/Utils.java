@@ -1154,6 +1154,15 @@ public class Utils {
 	}
     }
 
+    public static <C> C hascause(Throwable t, Class<C> c) {
+	while(t != null) {
+	    if(c.isInstance(t))
+		return(c.cast(t));
+	    t = t.getCause();
+	}
+	return(null);
+    }
+
     static {
 	Console.setscmd("die", new Console.Command() {
 		public void run(Console cons, String[] args) {
