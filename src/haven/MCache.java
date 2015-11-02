@@ -102,7 +102,7 @@ public class MCache {
 
 	private class Cut {
 	    MapMesh mesh;
-	    Defer.Future<MapMesh> dmesh;
+	    volatile Defer.Future<MapMesh> dmesh;
 	    Rendered[] ols;
 	    int deftag;
 	}
@@ -182,13 +182,24 @@ public class MCache {
 
 	public MapMesh getcut(Coord cc) {
 	    Cut cut = geticut(cc);
-	    if(cut.dmesh != null) {
-		if(cut.dmesh.done() || (cut.mesh == null)) {
+	    Defer.Future<MapMesh> dmesh;
+	    while((dmesh = cut.dmesh) != null) {
+		if(dmesh.done() || (cut.mesh == null)) {
 		    MapMesh old = cut.mesh;
-		    cut.mesh = cut.dmesh.get();
+		    try {
+			cut.mesh = dmesh.get();
+		    } catch(Defer.DeferredException e) {
+			if((Utils.hascause(e, Defer.CancelledException.class) != null) && (dmesh != cut.dmesh)) {
+			    System.err.println(dmesh + ", " + cut.dmesh);
+			    continue;
+			}
+			throw(e);
+		    }
 		    cut.dmesh = null;
 		    if(old != null)
 			old.dispose();
+		} else {
+		    break;
 		}
 	    }
 	    return(cut.mesh);
