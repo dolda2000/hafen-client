@@ -4,14 +4,16 @@ import java.awt.image.BufferedImage;
 
 public class HSpinner extends Widget {
     private static final BufferedImage left = Resource.loadimg("gfx/hud/hspin-left");
+    private static final BufferedImage lefth = Resource.loadimg("gfx/hud/hspin-left-h");
     private static final BufferedImage right = Resource.loadimg("gfx/hud/hspin-right");
+    private static final BufferedImage righth = Resource.loadimg("gfx/hud/hspin-right-h");
 
     private final IButton leftButton;
     private final IButton rightButton;
 
     public HSpinner() {
-        leftButton = add(new IButton(left, left, left));
-        rightButton = add(new IButton(right, right, right), leftButton.sz.x + 4, 0);
+        leftButton = add(new IButton(left, left, lefth));
+        rightButton = add(new IButton(right, right, righth), leftButton.sz.x + 2, 0);
         pack();
     }
 
