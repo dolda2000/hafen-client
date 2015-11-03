@@ -16,7 +16,7 @@ public class ItemQuality {
     public final Element vitality;
     public final Element average;
 
-    public ItemQuality(int essence, int substance, int vitality) {
+    public ItemQuality(double essence, double substance, double vitality) {
         this.essence = new Element(essence, COLOR_ESSENCE);
         this.substance = new Element(substance, COLOR_SUBSTANCE);
         this.vitality = new Element(vitality, COLOR_VITALITY);
@@ -32,14 +32,14 @@ public class ItemQuality {
     }
 
     public static ItemQuality fromItemInfo(List<ItemInfo> infos) {
-        int substance = 0;
-        int essence = 0;
-        int vitality = 0;
+        double substance = 0;
+        double essence = 0;
+        double vitality = 0;
         try {
             for (ItemInfo info : infos) {
                 if ("QBuff".equals(info.getClass().getSimpleName())) {
                     String name = (String)info.getClass().getDeclaredField("name").get(info);
-                    int value = (Integer)info.getClass().getDeclaredField("q").get(info);
+                    double value = (Double)info.getClass().getDeclaredField("q").get(info);
                     if ("Essence".equals(name))
                         essence = value;
                     else if ("Substance".equals(name))
