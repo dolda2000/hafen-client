@@ -101,9 +101,9 @@ public class KinInfo extends GAttrib {
 			int tm = (int)(now - seen);
 			Color show = null;
 			boolean auto = (type & 1) == 0;
-			if (gob.isPlayer()) {
+			if (gob.isPlayer() || !Config.hideKinInfoForNonPlayers.get()) {
 				show = Color.WHITE;
-			} else if(auto && (tm < 7500)) {
+			} else if (auto && (tm < 7500)) {
 			    show = Utils.clipcol(255, 255, 255, 255 - ((255 * tm) / 7500));
 			}
 			if(show != null) {
