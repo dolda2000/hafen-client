@@ -43,6 +43,11 @@ public class InventoryProxy extends Inventory {
     }
 
     @Override
+    public boolean mousewheel(Coord c, int amount) {
+        return !locked && inv.mousewheel(c, amount);
+    }
+
+    @Override
     public Object tooltip(Coord c, Widget prev) {
         WItem item = itemat(c);
         return (item != null) ? item.tooltip(c.sub(item.c), (prev == this) ? item : prev) : null;
