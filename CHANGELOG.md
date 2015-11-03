@@ -1,5 +1,10 @@
 ## Changelog
 
+### r71
+
+- Adjusted item quality display to the changes in the recent update
+- Added option to hide kin names over hearthfires and objects other than the player
+
 ### r70
 
 - Added hotkeys for equipment slots. They allow to put an item on cursor to the slot when it's empty, or to take the item from the slot otherwise
