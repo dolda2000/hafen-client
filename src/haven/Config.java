@@ -28,6 +28,8 @@ package haven;
 
 import java.net.URL;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import static haven.Utils.*;
 
@@ -245,6 +247,7 @@ public class Config {
     public static class Pref<T> {
         private final PrefProvider<T> provider;
         private final String name;
+        private final List<PrefListener<T>> listeners = new ArrayList<PrefListener<T>>();
         private T value;
 
         public Pref(String name, T defaultValue, PrefProvider<T> provider) {
@@ -258,9 +261,25 @@ public class Config {
         }
 
         public void set(T value) {
+            if (value == this.value)
+                return;
             this.value = value;
             provider.set(name, value);
+            for (PrefListener<T> listener : listeners)
+                listener.changed(value);
         }
+
+        public void addListener(PrefListener<T> listener) {
+            listeners.add(listener);
+        }
+
+        public void removeListener(PrefListener<T> listener) {
+            listeners.remove(listener);
+        }
+    }
+
+    public interface PrefListener<T> {
+        void changed(T value);
     }
 
     private interface PrefProvider<T> {

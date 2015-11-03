@@ -286,7 +286,7 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         }
     }
 
-    public static class PrefCheckBox extends CheckBox {
+    public static class PrefCheckBox extends CheckBox implements Config.PrefListener<Boolean> {
         private final Config.Pref<Boolean> pref;
         private final boolean invert;
 
@@ -295,6 +295,7 @@ public class CustomSettingsPanel extends OptWnd.Panel {
             this.pref = pref;
             this.a = pref.get() ^ invert;
             this.invert = invert;
+            pref.addListener(this);
         }
 
         public PrefCheckBox(String label, Config.Pref<Boolean> pref) {
@@ -302,9 +303,20 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         }
 
         @Override
+        public void destroy() {
+            super.destroy();
+            pref.removeListener(this);
+        }
+
+        @Override
         public void set(boolean val) {
             pref.set(val ^ invert);
             a = val;
+        }
+
+        @Override
+        public void changed(Boolean value) {
+            a = value;
         }
     }
 }

@@ -44,7 +44,9 @@ public class InventoryProxy extends Inventory {
 
     @Override
     public boolean mousewheel(Coord c, int amount) {
-        return !locked && inv.mousewheel(c, amount);
+        if (!locked)
+            inv.mousewheel(c, amount);
+        return true;
     }
 
     @Override
