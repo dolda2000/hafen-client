@@ -95,8 +95,6 @@ public class CustomSettingsPanel extends OptWnd.Panel {
             }
         }, new Coord(0, y));
         y += 20;
-        panel.add(new PrefCheckBox("Hide kin names on hearth fires", Config.hideKinInfoForNonPlayers), new Coord(0, y));
-        y += 20;
         panel.add(new Label("Nightvision brightness:"), new Coord(0, y));
         y += 15;
         panel.add(new HSlider(280, 0, 255, 0) {
