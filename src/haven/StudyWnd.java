@@ -19,8 +19,8 @@ public class StudyWnd extends Window {
         invp.setLocked(Config.lockStudy.get());
         add(new CustomSettingsPanel.PrefCheckBox("Lock", Config.lockStudy) {
             @Override
-            public void set(boolean val) {
-                super.set(val);
+            public void changed(boolean val) {
+                super.changed(val);
                 invp.setLocked(val);
             }
         }, new Coord(0, 0));
