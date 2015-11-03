@@ -1,5 +1,12 @@
 ## Changelog
 
+### r72
+
+- Replaced option to hide kin names for objects with the hotkey `Shift`+`I`
+- Fixed crash that could happen on clicks inside the chat window
+- Fixed crash on mouse wheel inside the study window
+- `Lock` and `Auto` check boxes now should properly synchronize state between the study window and the character screen to avoid confusing behaviour
+ 
 ### r71
 
 - Adjusted item quality display to the changes in the recent update
