@@ -1207,6 +1207,14 @@ public class Utils {
         return String.format("%02d:%02d", hours, minutes);
     }
 
+    public static boolean equals(double a, double b) {
+        return equals(a, b, 1e-10);
+    }
+
+    public static boolean equals(double a, double b, double eps) {
+        return a == b ? true : Math.abs(a - b) < eps;
+    }
+
     static {
 	Console.setscmd("die", new Console.Command() {
 		public void run(Console cons, String[] args) {

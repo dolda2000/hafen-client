@@ -243,7 +243,7 @@ public class WItem extends Widget implements DTarget {
 	if(ui.modshift) {
 	    if(ui.modmeta) {
 		if(inv) {
-		    wdgmsg("transfer-same", item, button == 3);
+		    wdgmsg("transfer-same", this, button == 3);
 		    return true;
 		}
 	    } else if(button == 1) {
@@ -253,7 +253,7 @@ public class WItem extends Widget implements DTarget {
 	} else if(ui.modctrl) {
 	    if(ui.modmeta) {
 		if(inv) {
-		    wdgmsg("drop-same", item, button == 3);
+		    wdgmsg("drop-same", this, button == 3);
 		    return true;
 		}
 	    } else if(button == 1) {
@@ -293,5 +293,23 @@ public class WItem extends Widget implements DTarget {
                 g.aimage(q.getMaxElement().tex(), c, 0, 0);
                 break;
         }
+    }
+
+    public boolean isSameKind(WItem other) {
+        if (other == null)
+            return false;
+        GSprite thisSpr = this.item.spr();
+        GSprite otherSpr = other.item.spr();
+        return item.resname().equals(other.item.resname()) && (thisSpr == otherSpr || (thisSpr != null && thisSpr.isSame(otherSpr)));
+    }
+
+    public boolean isSameQuality(WItem other) {
+        if (other == null)
+            return false;
+        ItemQuality aq = this.quality.get();
+        ItemQuality bq = other.quality.get();
+        if (aq != null)
+            return aq.equals(bq);
+        return (bq == null);
     }
 }

@@ -31,6 +31,15 @@ public class ItemQuality {
         return vitality;
     }
 
+    public boolean equals(ItemQuality other) {
+        if (other != null) {
+            return Utils.equals(essence.value, other.essence.value)
+                && Utils.equals(substance.value, other.substance.value)
+                && Utils.equals(vitality.value, other.vitality.value);
+        }
+        return false;
+    }
+
     public static ItemQuality fromItemInfo(List<ItemInfo> infos) {
         double substance = 0;
         double essence = 0;

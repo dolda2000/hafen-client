@@ -120,9 +120,9 @@ public class Inventory extends Widget implements DTarget {
     @Override
     public void wdgmsg(Widget sender, String msg, Object... args) {
 	if(msg.equals("transfer-same")){
-	    process(getSame((GItem) args[0],(Boolean)args[1]), "transfer");
+	    process(getSame((WItem) args[0],(Boolean)args[1]), "transfer");
 	} else if(msg.equals("drop-same")){
-	    process(getSame((GItem) args[0], (Boolean) args[1]), "drop");
+	    process(getSame((WItem) args[0], (Boolean) args[1]), "drop");
 	} else {
 	    super.wdgmsg(sender, msg, args);
 	}
@@ -134,16 +134,16 @@ public class Inventory extends Widget implements DTarget {
 	}
     }
 
-    @SuppressWarnings("UnusedParameters")
-    private List<WItem> getSame(GItem item, Boolean ascending) {
-	List<WItem> items = new ArrayList<WItem>();
-	for (Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if (wdg.visible && wdg instanceof WItem) {
-		if (((WItem) wdg).item.isSameKind(item))
-		    items.add((WItem) wdg);
-	    }
-	}
-	return items;
+    private List<WItem> getSame(WItem item, boolean checkQuality) {
+        List<WItem> items = new ArrayList<WItem>();
+        for (Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
+            if (wdg.visible && wdg instanceof WItem) {
+                WItem other = (WItem)wdg;
+                if (other.isSameKind(item) && (!checkQuality || other.isSameQuality(item)))
+                    items.add((WItem) wdg);
+                }
+        }
+        return items;
     }
 
     private static class AvgQualityComparator implements Comparator<WItem> {
