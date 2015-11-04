@@ -28,6 +28,7 @@ package haven;
 
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
+import haven.MCache.Grid;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -38,8 +39,8 @@ public class LocalMiniMap extends Widget {
     public final MapView mv;
     private Coord cc = null;
     private MapTile cur = null;
-    private final Map<Coord, Defer.Future<MapTile>> cache = new LinkedHashMap<Coord, Defer.Future<MapTile>>(5, 0.75f, true) {
-	protected boolean removeEldestEntry(Map.Entry<Coord, Defer.Future<MapTile>> eldest) {
+    private final Map<Pair<Grid, Integer>, Defer.Future<MapTile>> cache = new LinkedHashMap<Pair<Grid, Integer>, Defer.Future<MapTile>>(5, 0.75f, true) {
+	protected boolean removeEldestEntry(Map.Entry<Pair<Grid, Integer>, Defer.Future<MapTile>> eldest) {
 	    if(size() > 5) {
 		try {
 		    MapTile t = eldest.getValue().get();
@@ -54,12 +55,15 @@ public class LocalMiniMap extends Widget {
     
     public static class MapTile {
 	public final Tex img;
-	public final Coord ul, c;
+	public final Coord ul;
+	public final Grid grid;
+	public final int seq;
 	
-	public MapTile(Tex img, Coord ul, Coord c) {
+	public MapTile(Tex img, Coord ul, Grid grid, int seq) {
 	    this.img = img;
 	    this.ul = ul;
-	    this.c = c;
+	    this.grid = grid;
+	    this.seq = seq;
 	}
     }
 
@@ -182,23 +186,31 @@ public class LocalMiniMap extends Widget {
     public void draw(GOut g) {
 	if(cc == null)
 	    return;
-	final Coord plg = cc.div(cmaps);
-	if((cur == null) || !plg.equals(cur.c)) {
-	    Defer.Future<MapTile> f;
-	    synchronized(cache) {
-		f = cache.get(plg);
-		if(f == null) {
-		    f = Defer.later(new Defer.Callable<MapTile> () {
-			    public MapTile call() {
-				Coord ul = plg.mul(cmaps).sub(cmaps).add(1, 1);
-				return(new MapTile(new TexI(drawmap(ul, cmaps.mul(3).sub(2, 2))), ul, plg));
-			    }
-			});
-		    cache.put(plg, f);
-		}
+	map: {
+	    final Grid plg;
+	    try {
+		plg = ui.sess.glob.map.getgrid(cc.div(cmaps));
+	    } catch(Loading l) {
+		break map;
 	    }
-	    if(f.done())
-		cur = f.get();
+	    final int seq = plg.seq;
+	    if((cur == null) || (plg != cur.grid) || (seq != cur.seq)) {
+		Defer.Future<MapTile> f;
+		synchronized(cache) {
+		    f = cache.get(new Pair<Grid, Integer>(plg, seq));
+		    if(f == null) {
+			f = Defer.later(new Defer.Callable<MapTile> () {
+				public MapTile call() {
+				    Coord ul = plg.ul.sub(cmaps).add(1, 1);
+				    return(new MapTile(new TexI(drawmap(ul, cmaps.mul(3).sub(2, 2))), ul, plg, seq));
+				}
+			    });
+			cache.put(new Pair<Grid, Integer>(plg, seq), f);
+		    }
+		}
+		if(f.done())
+		    cur = f.get();
+	    }
 	}
 	if(cur != null) {
 	    g.image(MiniMap.bg, Coord.z);
