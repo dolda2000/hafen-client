@@ -431,15 +431,21 @@ public class MCache {
     }
     
     public MapMesh getcut(Coord cc) {
-	return(getgrid(cc.div(cutn)).getcut(cc.mod(cutn)));
+	synchronized(grids) {
+	    return(getgrid(cc.div(cutn)).getcut(cc.mod(cutn)));
+	}
     }
     
     public Collection<Gob> getfo(Coord cc) {
-	return(getgrid(cc.div(cutn)).getfo(cc.mod(cutn)));
+	synchronized(grids) {
+	    return(getgrid(cc.div(cutn)).getfo(cc.mod(cutn)));
+	}
     }
 
     public Rendered getolcut(int ol, Coord cc) {
-	return(getgrid(cc.div(cutn)).getolcut(ol, cc.mod(cutn)));
+	synchronized(grids) {
+	    return(getgrid(cc.div(cutn)).getolcut(ol, cc.mod(cutn)));
+	}
     }
 
     public void mapdata2(Message msg) {

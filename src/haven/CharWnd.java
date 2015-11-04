@@ -313,7 +313,12 @@ public class CharWnd extends Window {
 	    if(tip != lasttip) {
 		for(El el : els)
 		    el.hl = false;
-		FoodInfo finf = (tip == null)?null:ItemInfo.find(FoodInfo.class, tip.item().info());
+		FoodInfo finf;
+		try {
+		    finf = (tip == null)?null:ItemInfo.find(FoodInfo.class, tip.item().info());
+		} catch(Loading l) {
+		    finf = null;
+		}
 		if(finf != null) {
 		    for(int i = 0; i < els.size(); i++) {
 			El el = els.get(i);

@@ -53,6 +53,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     public static final GLState.Slot<GLState> global = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class);
     public static final GLState.Slot<GLState> proj2d = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class, global);
     private GLState gstate, rtstate, ostate;
+    private Throwable uncaught = null;
     private GLState.Applier state = null;
     private GLConfig glconf = null;
     
@@ -103,44 +104,49 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		}
 			
 		public void init(GLAutoDrawable d) {
-		    GL gl = d.getGL();
-		    glconf = GLConfig.fromgl(gl, d.getContext(), getChosenGLCapabilities());
-		    glconf.pref = GLSettings.load(glconf, true);
-		    ui.cons.add(glconf);
-		    if(h != null) {
-			h.lsetprop("gl.vendor", gl.glGetString(gl.GL_VENDOR));
-			h.lsetprop("gl.version", gl.glGetString(gl.GL_VERSION));
-			h.lsetprop("gl.renderer", gl.glGetString(gl.GL_RENDERER));
-			h.lsetprop("gl.exts", Arrays.asList(gl.glGetString(gl.GL_EXTENSIONS).split(" ")));
-			h.lsetprop("gl.caps", d.getChosenGLCapabilities().toString());
-			h.lsetprop("gl.conf", glconf);
-		    }
-		    gstate = new GLState() {
-			    public void apply(GOut g) {
-				BGL gl = g.gl;
-				gl.glColor3f(1, 1, 1);
-				gl.glPointSize(4);
-				gl.joglSetSwapInterval(1);
-				gl.glEnable(GL.GL_BLEND);
-				//gl.glEnable(GL.GL_LINE_SMOOTH);
-				gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-				if(g.gc.glmajver >= 2)
-				    gl.glBlendEquationSeparate(GL.GL_FUNC_ADD, GL2.GL_MAX);
-				if(g.gc.havefsaa()) {
-				    /* Apparently, having sample
-				     * buffers in the config enables
-				     * multisampling by default on
-				     * some systems. */
-				    g.gl.glDisable(GL.GL_MULTISAMPLE);
+		    try {
+			GL gl = d.getGL();
+			glconf = GLConfig.fromgl(gl, d.getContext(), getChosenGLCapabilities());
+			glconf.pref = GLSettings.load(glconf, true);
+			ui.cons.add(glconf);
+			if(h != null) {
+			    h.lsetprop("gl.vendor", gl.glGetString(gl.GL_VENDOR));
+			    h.lsetprop("gl.version", gl.glGetString(gl.GL_VERSION));
+			    h.lsetprop("gl.renderer", gl.glGetString(gl.GL_RENDERER));
+			    h.lsetprop("gl.exts", Arrays.asList(gl.glGetString(gl.GL_EXTENSIONS).split(" ")));
+			    h.lsetprop("gl.caps", d.getChosenGLCapabilities().toString());
+			    h.lsetprop("gl.conf", glconf);
+			}
+			gstate = new GLState() {
+				public void apply(GOut g) {
+				    BGL gl = g.gl;
+				    gl.glColor3f(1, 1, 1);
+				    gl.glPointSize(4);
+				    gl.joglSetSwapInterval(1);
+				    gl.glEnable(GL.GL_BLEND);
+				    //gl.glEnable(GL.GL_LINE_SMOOTH);
+				    gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+				    if(g.gc.glmajver >= 2)
+					gl.glBlendEquationSeparate(GL.GL_FUNC_ADD, GL2.GL_MAX);
+				    if(g.gc.havefsaa()) {
+					/* Apparently, having sample
+					 * buffers in the config enables
+					 * multisampling by default on
+					 * some systems. */
+					g.gl.glDisable(GL.GL_MULTISAMPLE);
+				    }
+				    GOut.checkerr(gl);
 				}
-				GOut.checkerr(gl);
-			    }
-			    public void unapply(GOut g) {
-			    }
-			    public void prep(Buffer buf) {
-				buf.put(global, this);
-			    }
-			};
+				public void unapply(GOut g) {
+				}
+				public void prep(Buffer buf) {
+				    buf.put(global, this);
+				}
+			    };
+		    } catch(RuntimeException e) {
+			uncaught = e;
+			throw(e);
+		    }
 		}
 
 		public void reshape(GLAutoDrawable d, final int x, final int y, final int w, final int h) {
@@ -382,6 +388,8 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 
     private Frame[] curdraw = {null};
     void redraw(GL2 gl) {
+	if(uncaught != null)
+	    throw(new RuntimeException("Exception occurred during init but was somehow discarded", uncaught));
 	if((state == null) || (state.cgl.gl != gl))
 	    state = new GLState.Applier(new CurrentGL(gl, glconf));
 
@@ -454,11 +462,11 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		try {
 		    display();
 		} catch(RuntimeException e) {
-		    if(e.getCause() instanceof InterruptedException) {
-			throw((InterruptedException)e.getCause());
-		    } else {
+		    InterruptedException ie = Utils.hascause(e, InterruptedException.class);
+		    if(ie != null)
+			throw(ie);
+		    else
 			throw(e);
-		    }
 		}
 	    }
 
