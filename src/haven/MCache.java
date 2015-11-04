@@ -102,7 +102,7 @@ public class MCache {
 
 	private class Cut {
 	    MapMesh mesh;
-	    volatile Defer.Future<MapMesh> dmesh;
+	    Defer.Future<MapMesh> dmesh;
 	    Rendered[] ols;
 	    int deftag;
 	}
@@ -182,24 +182,13 @@ public class MCache {
 
 	public MapMesh getcut(Coord cc) {
 	    Cut cut = geticut(cc);
-	    Defer.Future<MapMesh> dmesh;
-	    while((dmesh = cut.dmesh) != null) {
-		if(dmesh.done() || (cut.mesh == null)) {
+	    if(cut.dmesh != null) {
+		if(cut.dmesh.done() || (cut.mesh == null)) {
 		    MapMesh old = cut.mesh;
-		    try {
-			cut.mesh = dmesh.get();
-		    } catch(Defer.DeferredException e) {
-			if((Utils.hascause(e, Defer.CancelledException.class) != null) && (dmesh != cut.dmesh)) {
-			    System.err.println(dmesh + ", " + cut.dmesh);
-			    continue;
-			}
-			throw(e);
-		    }
+		    cut.mesh = cut.dmesh.get();
 		    cut.dmesh = null;
 		    if(old != null)
 			old.dispose();
-		} else {
-		    break;
 		}
 	    }
 	    return(cut.mesh);
@@ -442,15 +431,21 @@ public class MCache {
     }
     
     public MapMesh getcut(Coord cc) {
-	return(getgrid(cc.div(cutn)).getcut(cc.mod(cutn)));
+	synchronized(grids) {
+	    return(getgrid(cc.div(cutn)).getcut(cc.mod(cutn)));
+	}
     }
     
     public Collection<Gob> getfo(Coord cc) {
-	return(getgrid(cc.div(cutn)).getfo(cc.mod(cutn)));
+	synchronized(grids) {
+	    return(getgrid(cc.div(cutn)).getfo(cc.mod(cutn)));
+	}
     }
 
     public Rendered getolcut(int ol, Coord cc) {
-	return(getgrid(cc.div(cutn)).getolcut(ol, cc.mod(cutn)));
+	synchronized(grids) {
+	    return(getgrid(cc.div(cutn)).getolcut(ol, cc.mod(cutn)));
+	}
     }
 
     public void mapdata2(Message msg) {
