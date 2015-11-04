@@ -1,5 +1,10 @@
 ## Changelog
 
+### r73
+
+- Added option to change radius of the autopicker
+- `Shift`+`Alt`+`Right Click` now transfers items of the same type and quality
+
 ### r72
 
 - Replaced option to hide kin names for objects with the hotkey `Shift`+`I`
