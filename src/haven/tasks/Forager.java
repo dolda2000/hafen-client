@@ -2,11 +2,10 @@ package haven.tasks;
 
 import haven.*;
 
-public class Forager extends Task {
+public class Forager extends FsmTask {
     private final String[] objectNames;
     private final int radius;
     private final int maxItemCount;
-    private State state;
     private Gob obj;
     private Widget window;
     private int itemCount;
@@ -18,30 +17,17 @@ public class Forager extends Task {
     }
 
     @Override
-    protected void onStart() {
-        state = new FindObject();
-    }
-
-    @Override
     protected void onStop() {
         if (window != null)
             window.destroy();
     }
 
     @Override
-    protected void onTick(double dt) {
-        this.state.tick(dt);
+    protected State getInitialState() {
+        return new FindObject();
     }
 
-    private void setState(State value) {
-        this.state = value;
-    }
-
-    private interface State {
-        void tick(double dt);
-    }
-
-    private class FindObject implements State {
+    private class FindObject extends State {
         @Override
         public void tick(double dt) {
             obj = context().findObjectByNames(radius, objectNames);
@@ -49,7 +35,15 @@ public class Forager extends Task {
                 if (window == null && maxItemCount > 1)
                     window = context().gui().add(new StatusWindow(), 300, 200);
                 context().click(obj, 3, 0);
-                setState(new WaitMenu("Pick", 2));
+                waitMenu(2, "Pick", new Callback<Boolean>() {
+                    @Override
+                    public void done(Boolean success) {
+                        if (success)
+                            setState(new WaitGobRemoval(obj.id, 5));
+                        else
+                            stop("Couldn't pick anything in time");
+                    }
+                });
             } else {
                 if (window == null)
                     stop("Nothing to pick nearby");
@@ -59,38 +53,7 @@ public class Forager extends Task {
         }
     }
 
-    private class WaitMenu implements State {
-        private final String text;
-        private final double timeout;
-        private double t;
-
-        public WaitMenu(String text, double timeout) {
-            this.text = text;
-            this.timeout = timeout;
-        }
-
-        @Override
-        public void tick(double dt) {
-            FlowerMenu menu = context().getMenu();
-            if (menu != null) {
-                for (FlowerMenu.Petal opt : menu.opts) {
-                    if (opt.name.equals(text)) {
-                        menu.choose(opt);
-                        menu.destroy();
-                        setState(new WaitGobRemoval(obj.id, 5));
-                        return;
-                    }
-                }
-            } else {
-                t += dt;
-                if (t > timeout) {
-                    stop("Couldn't pick anything in time");
-                }
-            }
-        }
-    }
-
-    private class WaitGobRemoval implements State {
+    private class WaitGobRemoval extends State {
         private final long gobId;
         private final double timeout;
         private double t;
@@ -108,29 +71,13 @@ public class Forager extends Task {
                 if (itemCount == maxItemCount)
                     stop();
                 else
-                    setState(new Wait(0.5)); // wait for animation to complete
+                    waitTime(0.5, new FindObject()); // wait for animation to complete
             } else {
                 t += dt;
                 if (t > timeout) {
                     stop("Couldn't pick anything in time");
                 }
             }
-        }
-    }
-
-    private class Wait implements State {
-        private final double timeout;
-        private double t;
-
-        public Wait(double timeout) {
-            this.timeout = timeout;
-        }
-
-        @Override
-        public void tick(double dt) {
-            t += dt;
-            if (t > timeout)
-                setState(new FindObject());
         }
     }
 

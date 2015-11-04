@@ -25,7 +25,7 @@ public class Drunkard extends FsmTask {
             WItem item = findDrink(context().playerInventory());
             if (item != null) {
                 item.item.wdgmsg("iact", Coord.z, 3);
-                waitMenu("Drink", 1, new Callback<Boolean>() {
+                waitMenu(1, "Drink", new Callback<Boolean>() {
                     public void done(Boolean success) {
                         if (success)
                             stop();

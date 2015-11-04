@@ -33,8 +33,30 @@ public abstract class FsmTask extends Task {
         if (state != null) state.init();
     }
 
-    protected final void waitMenu(String text, double timeout, Callback<Boolean> callback) {
-        setState(new WaitMenu(text, timeout, callback));
+    protected final void waitTime(double timeout, State next) {
+        setState(new Wait(timeout, next));
+    }
+
+    protected final void waitMenu(double timeout, String text, Callback<Boolean> callback) {
+        setState(new WaitMenu(timeout, text, callback));
+    }
+
+    private class Wait extends State {
+        private final State next;
+        private final double timeout;
+        private double t;
+
+        public Wait(double timeout, State next) {
+            this.next = next;
+            this.timeout = timeout;
+        }
+
+        @Override
+        public void tick(double dt) {
+            t += dt;
+            if (t > timeout)
+                setState(next);
+        }
     }
 
     private class WaitMenu extends State {
@@ -43,7 +65,7 @@ public abstract class FsmTask extends Task {
         private final Callback<Boolean> callback;
         private double t;
 
-        public WaitMenu(String text, double timeout, Callback<Boolean> callback) {
+        public WaitMenu(double timeout, String text, Callback<Boolean> callback) {
             this.text = text;
             this.timeout = timeout;
             this.callback = callback;
