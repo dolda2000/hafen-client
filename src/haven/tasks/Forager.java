@@ -9,7 +9,6 @@ public class Forager extends Task {
     private State state;
     private Gob obj;
     private Widget window;
-    private String error;
     private int itemCount;
 
     public Forager(int radius, int itemCount, String... objectNames) {
@@ -27,8 +26,6 @@ public class Forager extends Task {
     protected void onStop() {
         if (window != null)
             window.destroy();
-        if (error != null && !error.isEmpty())
-            context().error(error);
     }
 
     @Override
@@ -55,8 +52,9 @@ public class Forager extends Task {
                 setState(new WaitMenu("Pick", 2));
             } else {
                 if (window == null)
-                    error = "Nothing to pick nearby";
-                stop();
+                    stop("Nothing to pick nearby");
+                else
+                    stop();
             }
         }
     }
@@ -86,8 +84,7 @@ public class Forager extends Task {
             } else {
                 t += dt;
                 if (t > timeout) {
-                    error = "Couldn't pick anything in time";
-                    stop();
+                    stop("Couldn't pick anything in time");
                 }
             }
         }
@@ -115,8 +112,7 @@ public class Forager extends Task {
             } else {
                 t += dt;
                 if (t > timeout) {
-                    error = "Couldn't pick anything in time";
-                    stop();
+                    stop("Couldn't pick anything in time");
                 }
             }
         }

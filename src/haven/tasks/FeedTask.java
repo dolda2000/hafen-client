@@ -7,7 +7,6 @@ public abstract class FeedTask extends Task {
     private final int maxItemCount;
     private State state;
     private Gob gob;
-    private String error;
     private int itemCount;
 
     public FeedTask(String objectName, int maxItemCount) {
@@ -27,21 +26,8 @@ public abstract class FeedTask extends Task {
         state.tick(dt);
     }
 
-    @Override
-    protected void onStop() {
-        if (error != null && !error.isEmpty())
-            context().error(error);
-        else
-            context().info("Done");
-    }
-
     private void setState(State value) {
         this.state = value;
-    }
-
-    private void stop(String error) {
-        this.error = error;
-        stop();
     }
 
     private interface State {
@@ -112,8 +98,9 @@ public abstract class FeedTask extends Task {
                 t += dt;
                 if (t > timeout) {
                     if ((maxItemCount != -1) && (maxItemCount != itemCount))
-                        error = String.format("Only %d out of %d items were put", itemCount, maxItemCount);
-                    stop();
+                        stop(String.format("Only %d out of %d items were put", itemCount, maxItemCount));
+                    else
+                        stop();
                 }
             }
         }

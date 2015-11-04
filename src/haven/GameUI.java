@@ -945,7 +945,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
                     break;
                 }
             }
-            ui.gui.tasks.add(new Forager(11 * Config.autopickRadius.get(), 1, names.toArray(new String[names.size()])));
+            tasks.add(new Forager(11 * Config.autopickRadius.get(), 1, names.toArray(new String[names.size()])));
+            return true;
+        } else if (keycode == KeyEvent.VK_W && ev.getModifiers() == 0) {
+            tasks.add(new Drunkard());
             return true;
         } else if (ev.isShiftDown() && keycode == KeyEvent.VK_I) {
             Config.hideKinInfoForNonPlayers.set(!Config.hideKinInfoForNonPlayers.get());
