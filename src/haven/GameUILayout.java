@@ -37,8 +37,8 @@ public class GameUILayout {
                     y = sz.y - (this.sz.y - y);
 
                 // clip
-                x = Math.min(sz.x - d.widget.sz.x, x);
-                y = Math.min(sz.y - d.widget.sz.y, y);
+                x = Utils.clip(x, 0, sz.x - d.widget.sz.x);
+                y = Utils.clip(y, 0, sz.y - d.widget.sz.y);
                 d.widget.move(x, y);
             }
             this.sz = sz;
