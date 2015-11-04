@@ -57,7 +57,7 @@ public class GobRadius {
     }
 
     private static class RadiusSprite extends Sprite {
-        static final GLState smat = new States.ColState(new Color(192, 0, 0, 32));
+        static final GLState smat = new States.ColState(new Color(192, 0, 0, 64));
         final VertexBuf.VertexArray posa;
         final VertexBuf.NormalArray nrma;
         final ShortBuffer sidx;
