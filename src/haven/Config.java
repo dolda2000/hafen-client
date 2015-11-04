@@ -117,6 +117,7 @@ public class Config {
     public static Pref<Integer> nightvisionBrightness = new Pref<Integer>("haven.nightvision.brightness", 220, TYPE_INT);
     public static Pref<Boolean> disableWeatherEffects = new Pref<Boolean>("weather.disabled", false, TYPE_BOOL);
     public static Pref<Boolean> hideKinInfoForNonPlayers = new Pref<Boolean>("hide.nonplayer.kininfo", true, TYPE_BOOL);
+    public static Pref<Integer> autopickRadius = new Pref<Integer>("autopick.radius", 3, TYPE_INT);
     public static boolean screenshotMode;
     public static boolean enableAutoloader;
 

@@ -18,8 +18,16 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         categoryList.add(new Category(0, "Display", null));
         categoryList.add(new Category(1, "Game", createGameDisplay()));
         categoryList.add(new Category(1, "UI", createGameUI()));
-        categoryList.add(new Category(0, "Tasks", null));
+        categoryList.add(new Category(0, "Tools", null));
+        categoryList.add(new Category(1, "Autopick", createAutopick()));
         categoryList.add(new Category(1, "Autostudy", createAutostudy()));
+
+        for (Category category : categoryList.categories) {
+            if (category.widget != null) {
+                category.widget.visible = false;
+                frame.add(category.widget);
+            }
+        }
         categoryList.change(0);
 
         add(opts.new PButton(80, "Back", 27, opts.main), frame.c.x + frame.sz.x - 80, frame.sz.y + 5);
@@ -202,6 +210,21 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         return panel;
     }
 
+    private static Widget createAutopick() {
+        Widget panel = new Widget();
+        panel.setfocusctl(true);
+        int y = 0;
+        Widget label = panel.add(new Label("Radius (in tiles):"), new Coord(0, 3));
+        panel.add(new NumEntry(30, Config.autopickRadius.get(), 2) {
+            protected void changed() {
+                super.changed();
+                Config.autopickRadius.set(getValue());
+            }
+        }, new Coord(label.sz.x + 5, y));
+        panel.pack();
+        return panel;
+    }
+
     private static class Frame extends Widget {
         private static final IBox box = new IBox("gfx/hud/tab", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb");
         private static final Coord margin = new Coord(10, 10);
@@ -222,12 +245,6 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         public Coord xlate(Coord c, boolean in) {
             return in ? c.add(margin) : c.sub(margin);
         }
-
-        public void setContent(Widget widget) {
-            if (content != null) content.destroy();
-            content = widget;
-            if (content != null) add(content);
-        }
     }
 
     private class CategoryList extends Listbox<Category> {
@@ -246,8 +263,11 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         public void change(int index) {
             if (index >= 0 && index < categories.size()) {
                 super.change(index);
-                Category selected = categories.get(index);
-                frame.setContent(selected.widget);
+                for (int i = 0; i < categories.size(); i++) {
+                    Category category = categories.get(i);
+                    if (category.widget != null)
+                        category.widget.visible = (i == index);
+                }
             }
         }
 
