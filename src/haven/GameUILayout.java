@@ -10,6 +10,8 @@ public class GameUILayout {
 
     public void addDraggable(Widget widget, RelativePosition defaultPosition, boolean keepHorzOffset, boolean keepVertOffset) {
         draggables.add(new Draggable(widget, defaultPosition, keepHorzOffset, keepVertOffset));
+        if (sz != null)
+            clip(widget, sz);
     }
 
     public void removeDraggable(Widget widget) {
@@ -36,10 +38,8 @@ public class GameUILayout {
                 if (d.keepVertOffset && (y > this.sz.y - (d.widget.sz.y + y)))
                     y = sz.y - (this.sz.y - y);
 
-                // clip
-                x = Utils.clip(x, 0, sz.x - d.widget.sz.x);
-                y = Utils.clip(y, 0, sz.y - d.widget.sz.y);
-                d.widget.move(x, y);
+                d.widget.c = new Coord(x, y);
+                clip(d.widget, sz);
             }
             this.sz = sz;
         } else {
@@ -49,6 +49,7 @@ public class GameUILayout {
                 if (d.widget.c.equals(Coord.z)) {
                     moveToPosition(d.widget, d.defaultPosition);
                 }
+                clip(d.widget, sz);
             }
         }
     }
@@ -60,6 +61,12 @@ public class GameUILayout {
         if (pos.vert == VAlign.Bottom)
             c.y = sz.y - widget.sz.y - c.y;
         widget.move(c);
+    }
+
+    private static void clip(Widget widget, Coord sz) {
+        int x = Utils.clip(widget.c.x, 0, sz.x - widget.sz.x);
+        int y = Utils.clip(widget.c.y, 0, sz.y - widget.sz.y);
+        widget.move(x, y);
     }
 
     private static class Draggable {
