@@ -1,5 +1,10 @@
 ## Changelog
 
+### r74
+
+- Added hotkey `W` for drinking from all flasks and teapots in the inventory
+- Draggable widgets now really shouldn't go off-screen (I hope), at least between client restarts
+
 ### r73
 
 - Added option to change radius of the autopicker
