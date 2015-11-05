@@ -592,7 +592,7 @@ public class MCache {
     public void request(Coord gc) {
 	synchronized(req) {
 	    if(!req.containsKey(gc))
-		req.put(gc, new Request());
+		req.put(new Coord(gc), new Request());
 	}
     }
 
