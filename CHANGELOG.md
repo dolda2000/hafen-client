@@ -1,5 +1,10 @@
 ## Changelog
 
+### r75
+
+- Merged latest vanilla changes fixing issues with minimap
+- Added radius display for troughs
+
 ### r74
 
 - Added hotkey `W` for drinking from all flasks and teapots in the inventory
