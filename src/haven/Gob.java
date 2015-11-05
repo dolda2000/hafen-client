@@ -155,7 +155,9 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     }
     
     public Coord3f getrc() {
-	return(new Coord3f(rc.x, rc.y, glob.map.getcz(rc)));
+		return (rc != Coord.z)
+			? new Coord3f(rc.x, rc.y, glob.map.getcz(rc))
+			: Coord3f.o;
     }
 	
     private Class<? extends GAttrib> attrclass(Class<? extends GAttrib> cl) {
