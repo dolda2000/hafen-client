@@ -93,12 +93,13 @@ public class MCache {
 	public final int tiles[] = new int[cmaps.x * cmaps.y];
 	public final int z[] = new int[cmaps.x * cmaps.y];
 	public final int ol[] = new int[cmaps.x * cmaps.y];
-	private final Cut cuts[];
-	int olseq = -1;
-	private Collection<Gob>[] fo = null;
 	public final Coord gc, ul;
 	public long id;
-	String mnm;
+	public int seq = -1;
+	public String mnm;
+	private int olseq = -1;
+	private final Cut cuts[];
+	private Collection<Gob>[] fo = null;
 
 	private class Cut {
 	    MapMesh mesh;
@@ -344,6 +345,7 @@ public class MCache {
 		}
 	    }
 	    invalidate();
+	    seq++;
 	}
     }
 
@@ -391,6 +393,17 @@ public class MCache {
 	    }
 	    return(cached);
 	}
+    }
+
+    public List<Pair<Coord, MCache.Grid>> getgrids(Coord ul, Coord br) {
+        List<Pair<Coord, MCache.Grid>> list = new ArrayList<Pair<Coord, MCache.Grid>>();
+        synchronized(grids) {
+            Coord cg = new Coord();
+            for (cg.y = ul.y; cg.y <= br.y; cg.y++)
+                for (cg.x = ul.x; cg.x <= br.x; cg.x++)
+                    list.add(new Pair<Coord, MCache.Grid>(new Coord(cg), grids.get(cg)));
+        }
+        return list;
     }
 
     public Grid getgridt(Coord tc) {

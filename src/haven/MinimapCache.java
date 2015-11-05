@@ -21,10 +21,10 @@ public class MinimapCache {
     private Coord sp;
     private Coord cgrid = null;
 
-    private final Map<Coord, Defer.Future<MinimapTile>> cache =
-            new LinkedHashMap<Coord, Defer.Future<MinimapTile>>(50, 0.75f, true) {
-                protected boolean removeEldestEntry(Map.Entry<Coord, Defer.Future<MinimapTile>> eldest) {
-                    if (size() > 900) {
+    private final Map<Pair<MCache.Grid, Integer>, Defer.Future<MinimapTile>> cache =
+            new LinkedHashMap<Pair<MCache.Grid, Integer>, Defer.Future<MinimapTile>>(50, 0.75f, true) {
+                protected boolean removeEldestEntry(Map.Entry<Pair<MCache.Grid, Integer>, Defer.Future<MinimapTile>> eldest) {
+                    if (size() > 20) {
                         try {
                             MinimapTile t = eldest.getValue().get();
                             t.img.dispose();
@@ -40,22 +40,21 @@ public class MinimapCache {
         this.renderer = renderer;
     }
 
-    public Defer.Future<MinimapTile> get(Coord gc) {
-        final Coord tgc = new Coord(gc);
-        Defer.Future<MinimapTile> f = cache.get(tgc);
+    public Defer.Future<MinimapTile> get(final MCache.Grid grid, final int seq) {
+        Defer.Future<MinimapTile> f = cache.get(new Pair<MCache.Grid, Integer>(grid, seq));
         if(f == null) {
             f = Defer.later(new Defer.Callable<MinimapTile>() {
                 @Override
                 public MinimapTile call() {
-                    Coord ul = tgc.mul(cmaps);
+                    Coord ul = grid.ul;
                     BufferedImage img = renderer.draw(ul, MCache.cmaps);
-                    MinimapTile mapTile = new MinimapTile(new TexI(img), ul, tgc);
+                    MinimapTile mapTile = new MinimapTile(new TexI(img), ul, grid, seq);
                     if (Config.minimapEnableSave.get())
-                        store(img, tgc);
+                        store(img, grid.gc);
                     return mapTile;
                 }
             });
-            cache.put(tgc, f);
+            cache.put(new Pair<MCache.Grid, Integer>(grid, seq), f);
         }
         return f;
     }

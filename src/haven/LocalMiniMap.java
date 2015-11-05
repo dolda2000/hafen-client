@@ -27,6 +27,7 @@
 package haven;
 
 import java.awt.*;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
@@ -141,32 +142,39 @@ public class LocalMiniMap extends Widget implements Console.Directory {
     }
 
     public void draw(GOut g) {
-    g = g.reclip(Coord.z, sz);
-	if(cc == null)
-	    return;
-	final Coord plg = cc.div(cmaps);
-	synchronized (cache) {
-		cache.checkSession(plg);
-	}
+        g = g.reclip(Coord.z, sz);
+        if(cc == null)
+            return;
 
-    Coord coff = cc.add(off);
-	Coord ulg = coff.sub(sz.div(2)).div(cmaps);
-	Coord blg = coff.add(sz.div(2)).div(cmaps);
-	Coord cg = new Coord();
+        Coord gc = cc.div(cmaps);
+        synchronized (cache) {
+            cache.checkSession(gc);
+        }
 
-    synchronized (cache) {
-        for (cg.y = ulg.y; cg.y <= blg.y; cg.y++) {
-            for (cg.x = ulg.x; cg.x <= blg.x; cg.x++) {
-                Defer.Future<MinimapTile> f = cache.get(cg);
-                Tex image = f.done() ? f.get().img : MiniMap.bg;
-                g.image(image, cg.mul(cmaps).sub(coff).add(sz.div(2)));
+        Coord coff = cc.add(off);
+        Coord ulg = coff.sub(sz.div(2)).div(cmaps);
+        Coord blg = coff.add(sz.div(2)).div(cmaps);
+
+        synchronized (cache) {
+            List<Pair<Coord, MCache.Grid>> grids = ui.sess.glob.map.getgrids(ulg, blg);
+            for (Pair<Coord, MCache.Grid> tuple : grids) {
+                Coord cg = tuple.a;
+                MCache.Grid plg = tuple.b;
+                if (plg != null) {
+                    int seq = plg.seq;
+                    Defer.Future<MinimapTile> f = cache.get(plg, seq);
+                    if (f.done()) {
+                        g.image(f.get().img, cg.mul(cmaps).sub(coff).add(sz.div(2)));
+                    }
+                } else {
+                    g.image(MiniMap.bg, cg.mul(cmaps).sub(coff).add(sz.div(2)));
+                }
                 if (showgrid) {
                     g.chcolor(Color.DARK_GRAY);
                     g.rect(cg.mul(cmaps).sub(coff).add(sz.div(2)), MCache.cmaps);
                     g.chcolor();
                 }
             }
-        }
     }
 
 	try {
