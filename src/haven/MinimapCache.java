@@ -21,9 +21,9 @@ public class MinimapCache {
     private Coord sp;
     private MCache.Grid cgrid = null;
 
-    private final Map<Pair<MCache.Grid, Integer>, Defer.Future<MinimapTile>> cache =
-            new LinkedHashMap<Pair<MCache.Grid, Integer>, Defer.Future<MinimapTile>>(50, 0.75f, true) {
-                protected boolean removeEldestEntry(Map.Entry<Pair<MCache.Grid, Integer>, Defer.Future<MinimapTile>> eldest) {
+    private final Map<Pair<Long, Integer>, Defer.Future<MinimapTile>> cache =
+            new LinkedHashMap<Pair<Long, Integer>, Defer.Future<MinimapTile>>(50, 0.75f, true) {
+                protected boolean removeEldestEntry(Map.Entry<Pair<Long, Integer>, Defer.Future<MinimapTile>> eldest) {
                     if (size() > 20) {
                         try {
                             MinimapTile t = eldest.getValue().get();
@@ -42,7 +42,7 @@ public class MinimapCache {
     }
 
     public Defer.Future<MinimapTile> get(final MCache.Grid grid, final int seq) {
-        Defer.Future<MinimapTile> f = cache.get(new Pair<MCache.Grid, Integer>(grid, seq));
+        Defer.Future<MinimapTile> f = cache.get(new Pair<Long, Integer>(grid.id, seq));
         if(f == null) {
             f = Defer.later(new Defer.Callable<MinimapTile>() {
                 @Override
@@ -54,7 +54,7 @@ public class MinimapCache {
                     return mapTile;
                 }
             });
-            cache.put(new Pair<MCache.Grid, Integer>(grid, seq), f);
+            cache.put(new Pair<Long, Integer>(grid.id, seq), f);
         }
         return f;
     }
