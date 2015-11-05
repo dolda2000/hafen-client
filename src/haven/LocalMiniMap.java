@@ -146,9 +146,12 @@ public class LocalMiniMap extends Widget implements Console.Directory {
         if(cc == null)
             return;
 
-        Coord gc = cc.div(cmaps);
-        synchronized (cache) {
-            cache.checkSession(gc);
+        try {
+            Coord gc = cc.div(cmaps);
+            synchronized (cache) {
+                cache.checkSession(ui.sess.glob.map.getgrid(gc));
+            }
+        } catch (Loading e) {
         }
 
         Coord coff = cc.add(off);

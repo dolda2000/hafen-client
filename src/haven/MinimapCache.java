@@ -19,12 +19,12 @@ public class MinimapCache {
     private final MinimapRenderer renderer;
     private String session;
     private Coord sp;
-    private Coord cgrid = null;
+    private MCache.Grid cgrid = null;
 
     private final Map<Pair<MCache.Grid, Integer>, Defer.Future<MinimapTile>> cache =
             new LinkedHashMap<Pair<MCache.Grid, Integer>, Defer.Future<MinimapTile>>(50, 0.75f, true) {
                 protected boolean removeEldestEntry(Map.Entry<Pair<MCache.Grid, Integer>, Defer.Future<MinimapTile>> eldest) {
-                    if (size() > 20) {
+                    if (size() > 100) {
                         try {
                             MinimapTile t = eldest.getValue().get();
                             t.img.dispose();
@@ -59,13 +59,14 @@ public class MinimapCache {
         return f;
     }
 
-    public void checkSession(Coord gc) {
+    public boolean checkSession(MCache.Grid grid) {
         if (!Config.minimapEnableSave.get()) {
             cgrid = null;
-            return;
+            return false;
         }
-        if(cgrid == null || cgrid.manhattan(gc) > 5){
-            sp = gc;
+        // might be wrong, but it seems that character position is always (0, 0) after transitions
+        if (cgrid == null || (grid.gc.x == 0 && grid.gc.y == 0 && cgrid.id != grid.id)) {
+            sp = grid.gc;
             synchronized (cache) {
                 for (Defer.Future<MinimapTile> v : cache.values()) {
                     if(v != null && v.done()) {
@@ -86,8 +87,10 @@ public class MinimapCache {
                     currentSessionFile.close();
                 } catch (IOException e) {}
             }
+            cgrid = grid;
+            return true;
         }
-        cgrid = gc;
+        return false;
     }
 
     private String mapfolder(){
