@@ -1,5 +1,9 @@
 ## Changelog
 
+### r76
+
+- Made some optimizations that hopefully fix short client freezes 
+
 ### r75
 
 - Merged latest vanilla changes fixing issues with minimap
