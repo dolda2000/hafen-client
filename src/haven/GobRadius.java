@@ -14,9 +14,10 @@ public class GobRadius {
     static {
         overlays = new HashMap<Gob, Gob.Overlay>();
         factories = new HashMap<String,RadiusSpriteFactory>();
-        factories.put("gfx/terobjs/minesupport", new RadiusSpriteFactory(100));
-        factories.put("gfx/terobjs/column", new RadiusSpriteFactory(125));
-        factories.put("gfx/terobjs/beehive", new RadiusSpriteFactory(150));
+        factories.put("gfx/terobjs/minesupport", new RadiusSpriteFactory(100, new Color(192, 0, 0, 64)));
+        factories.put("gfx/terobjs/column", new RadiusSpriteFactory(125, new Color(192, 0, 0, 64)));
+        factories.put("gfx/terobjs/beehive", new RadiusSpriteFactory(150, new Color(192, 0, 0, 64)));
+        factories.put("gfx/terobjs/trough", new RadiusSpriteFactory(200, new Color(0, 192, 0, 64)));
     }
 
     public static void toggle(final OCache objects, boolean show) {
@@ -46,26 +47,29 @@ public class GobRadius {
 
     private static class RadiusSpriteFactory {
         private final int radius;
+        private final Color color;
 
-        public RadiusSpriteFactory(int radius) {
+        public RadiusSpriteFactory(int radius, Color color) {
             this.radius = radius;
+            this.color = color;
         }
 
         public Sprite create(Sprite.Owner owner) {
-            return new RadiusSprite(owner, radius);
+            return new RadiusSprite(owner, radius, color);
         }
     }
 
     private static class RadiusSprite extends Sprite {
-        static final GLState smat = new States.ColState(new Color(192, 0, 0, 64));
+        final GLState smat;
         final VertexBuf.VertexArray posa;
         final VertexBuf.NormalArray nrma;
         final ShortBuffer sidx;
         private Coord lc;
         float[] barda;
 
-        protected RadiusSprite(Sprite.Owner owner, float r) {
+        protected RadiusSprite(Sprite.Owner owner, float r, Color color) {
             super(owner, null);
+            this.smat = new States.ColState(color);
             int i = Math.max(24, (int)(Math.PI * 2 * r / 11.0D));
             FloatBuffer posa = Utils.mkfbuf(i * 3 * 2);
             FloatBuffer nrma = Utils.mkfbuf(i * 3 * 2);
