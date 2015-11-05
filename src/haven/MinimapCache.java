@@ -24,10 +24,11 @@ public class MinimapCache {
     private final Map<Pair<MCache.Grid, Integer>, Defer.Future<MinimapTile>> cache =
             new LinkedHashMap<Pair<MCache.Grid, Integer>, Defer.Future<MinimapTile>>(50, 0.75f, true) {
                 protected boolean removeEldestEntry(Map.Entry<Pair<MCache.Grid, Integer>, Defer.Future<MinimapTile>> eldest) {
-                    if (size() > 100) {
+                    if (size() > 20) {
                         try {
                             MinimapTile t = eldest.getValue().get();
                             t.img.dispose();
+                            eldest.getValue().cancel();
                         } catch(RuntimeException e) {
                         }
                         return(true);
@@ -46,9 +47,8 @@ public class MinimapCache {
             f = Defer.later(new Defer.Callable<MinimapTile>() {
                 @Override
                 public MinimapTile call() {
-                    Coord ul = grid.ul;
-                    BufferedImage img = renderer.draw(ul, MCache.cmaps);
-                    MinimapTile mapTile = new MinimapTile(new TexI(img), ul, grid, seq);
+                    BufferedImage img = renderer.draw(grid);
+                    MinimapTile mapTile = new MinimapTile(new TexI(img), grid.ul, grid, seq);
                     if (Config.minimapEnableSave.get())
                         store(img, grid.gc);
                     return mapTile;
@@ -74,7 +74,8 @@ public class MinimapCache {
                         if(tile != null && tile.img != null) {
                             tile.img.dispose();
                         }
-                    }
+                    } else if (v != null)
+                        v.cancel();
                 }
                 cache.clear();
             }
