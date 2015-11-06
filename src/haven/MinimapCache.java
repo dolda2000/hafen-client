@@ -117,7 +117,7 @@ public class MinimapCache {
     }
 
     private void store(BufferedImage img, Coord cg) {
-        if (img == null) return;
+        if (img == null || sp == null) return;
         Coord c = cg.sub(sp);
         String fileName = mapsessfile(String.format("tile_%d_%d.png", c.x, c.y));
         File outputfile = new File(fileName);
