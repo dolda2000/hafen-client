@@ -163,15 +163,14 @@ public class LocalMiniMap extends Widget implements Console.Directory {
             for (Pair<Coord, MCache.Grid> tuple : grids) {
                 Coord cg = tuple.a;
                 MCache.Grid plg = tuple.b;
-                if (plg != null) {
-                    int seq = plg.seq;
-                    Defer.Future<MinimapTile> f = cache.get(plg, seq);
-                    if (f.done()) {
-                        g.image(f.get().img, cg.mul(cmaps).sub(coff).add(sz.div(2)));
-                    }
-                } else {
-                    g.image(MiniMap.bg, cg.mul(cmaps).sub(coff).add(sz.div(2)));
-                }
+                int seq = -1;
+                if (plg != null)
+                    seq = plg.seq;
+
+                MinimapTile tile = cache.get(cg, plg, seq);
+                Tex img = (tile != null) ? tile.img : MiniMap.bg;
+                g.image(img, cg.mul(cmaps).sub(coff).add(sz.div(2)));
+
                 if (showgrid) {
                     g.chcolor(Color.DARK_GRAY);
                     g.rect(cg.mul(cmaps).sub(coff).add(sz.div(2)), MCache.cmaps);

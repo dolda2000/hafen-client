@@ -11,8 +11,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static haven.MCache.cmaps;
-
 public class MinimapCache {
     private static final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss");
 
@@ -21,77 +19,84 @@ public class MinimapCache {
     private Coord sp;
     private MCache.Grid cgrid = null;
 
-    private final Map<Pair<Long, Integer>, Defer.Future<MinimapTile>> cache =
-            new LinkedHashMap<Pair<Long, Integer>, Defer.Future<MinimapTile>>(50, 0.75f, true) {
-                protected boolean removeEldestEntry(Map.Entry<Pair<Long, Integer>, Defer.Future<MinimapTile>> eldest) {
-                    if (size() > 20) {
-                        try {
-                            MinimapTile t = eldest.getValue().get();
-                            t.img.dispose();
-                            eldest.getValue().cancel();
-                        } catch(RuntimeException e) {
-                        }
-                        return(true);
-                    }
-                    return(false);
-                }
-            };
+    private final Map<Coord, Defer.Future<MinimapTile>> rendering = new LinkedHashMap<Coord, Defer.Future<MinimapTile>>();
+    private final Map<Coord, MinimapTile> tiles = new LinkedHashMap<Coord, MinimapTile>(100, 0.75f, true) {
+        protected boolean removeEldestEntry(Map.Entry<Coord, MinimapTile> eldest) {
+            if (size() > 200) {
+                eldest.getValue().img.dispose();
+                return(true);
+            }
+            return(false);
+        }
+    };
+
 
     public MinimapCache(MinimapRenderer renderer) {
         this.renderer = renderer;
     }
 
-    public Defer.Future<MinimapTile> get(final MCache.Grid grid, final int seq) {
-        Defer.Future<MinimapTile> f = cache.get(new Pair<Long, Integer>(grid.id, seq));
-        if(f == null) {
-            f = Defer.later(new Defer.Callable<MinimapTile>() {
-                @Override
-                public MinimapTile call() {
-                    BufferedImage img = renderer.draw(grid);
-                    MinimapTile mapTile = new MinimapTile(new TexI(img), grid.ul, grid, seq);
-                    if (Config.minimapEnableSave.get())
-                        store(img, grid.gc);
-                    return mapTile;
-                }
-            });
-            cache.put(new Pair<Long, Integer>(grid.id, seq), f);
+    public MinimapTile get(final Coord c, final MCache.Grid grid, final int seq) {
+        Coord key = new Coord(c);
+        MinimapTile tile = tiles.get(key);
+        if ((tile == null || tile.seq != seq) && (grid != null)) {
+            Defer.Future<MinimapTile> f = rendering.get(key);
+            if (f == null) {
+                f = Defer.later(new Defer.Callable<MinimapTile>() {
+                    @Override
+                    public MinimapTile call() {
+                        BufferedImage img = renderer.draw(grid);
+                        MinimapTile mapTile = new MinimapTile(new TexI(img), seq);
+                        if (Config.minimapEnableSave.get())
+                            store(img, grid.gc);
+                        return mapTile;
+                    }
+                });
+                rendering.put(key, f);
+            }
+            if (f.done()) {
+                tile = f.get();
+                rendering.remove(key);
+                tiles.put(key, tile);
+            }
         }
-        return f;
+        return tile;
     }
 
-    public boolean checkSession(MCache.Grid grid) {
-        if (!Config.minimapEnableSave.get()) {
-            cgrid = null;
-            return false;
-        }
+    public void checkSession(MCache.Grid grid) {
         // might be wrong, but it seems that character position is always (0, 0) after transitions
         if (cgrid == null || (grid.gc.x == 0 && grid.gc.y == 0 && cgrid.id != grid.id)) {
-            sp = grid.gc;
-            synchronized (cache) {
-                for (Defer.Future<MinimapTile> v : cache.values()) {
-                    if(v != null && v.done()) {
-                        MinimapTile tile = v.get();
-                        if(tile != null && tile.img != null) {
-                            tile.img.dispose();
-                        }
-                    } else if (v != null)
-                        v.cancel();
-                }
-                cache.clear();
-            }
-            session = datefmt.format(new Date(System.currentTimeMillis()));
-            if (true) {
-                (new File(mapsessfolder())).mkdirs();
-                try {
-                    Writer currentSessionFile = new FileWriter(mapfile("currentsession.js"));
-                    currentSessionFile.write("var currentSession = '" + session + "';\n");
-                    currentSessionFile.close();
-                } catch (IOException e) {}
-            }
+            // discard all cached tiles
+            clearCache();
             cgrid = grid;
-            return true;
+            if (Config.minimapEnableSave.get()) {
+                sp = grid.gc;
+                session = datefmt.format(new Date(System.currentTimeMillis()));
+                if (true) {
+                    (new File(mapsessfolder())).mkdirs();
+                    try {
+                        Writer currentSessionFile = new FileWriter(mapfile("currentsession.js"));
+                        currentSessionFile.write("var currentSession = '" + session + "';\n");
+                        currentSessionFile.close();
+                    } catch (IOException e) {}
+                }
+            }
         }
-        return false;
+    }
+
+    private void clearCache() {
+        for (MinimapTile tile : tiles.values())
+            tile.img.dispose();
+        tiles.clear();
+
+        for (Defer.Future<MinimapTile> v : rendering.values()) {
+            if (v != null && v.done()) {
+                MinimapTile t = v.get();
+                if (t != null && t.img != null) {
+                    t.img.dispose();
+                }
+            }
+        }
+        rendering.clear();
     }
 
     private String mapfolder(){
