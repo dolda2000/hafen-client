@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -19,10 +20,10 @@ public class MinimapCache {
     private Coord sp;
     private MCache.Grid cgrid = null;
 
-    private final Map<Coord, Defer.Future<MinimapTile>> rendering = new LinkedHashMap<Coord, Defer.Future<MinimapTile>>();
+    private final Map<Coord, Defer.Future<MinimapTile>> rendering = new HashMap<Coord, Defer.Future<MinimapTile>>();
     private final Map<Coord, MinimapTile> tiles = new LinkedHashMap<Coord, MinimapTile>(100, 0.75f, true) {
         protected boolean removeEldestEntry(Map.Entry<Coord, MinimapTile> eldest) {
-            if (size() > 200) {
+            if (size() > 100) {
                 eldest.getValue().img.dispose();
                 return(true);
             }
