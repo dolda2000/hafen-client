@@ -1,10 +1,8 @@
 package haven;
 
-import java.awt.image.BufferedImage;
-
 public class MinimapWnd extends Window {
 
-    static final BufferedImage grip = Resource.loadimg("gfx/hud/gripbr");
+    static final Tex grip = Resource.loadtex("gfx/hud/gripbr");
     static final Coord gzsz = new Coord(19, 18);
     static final Coord minsz = new Coord(150, 125);
 
