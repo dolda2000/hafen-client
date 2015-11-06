@@ -1,5 +1,9 @@
 ## Changelog
 
+### r77
+
+- Made another attempt to optimize excessive memory usage related to the minimap changes at `r75`
+
 ### r76
 
 - Made some optimizations that hopefully fix short client freezes 
