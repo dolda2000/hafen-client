@@ -45,7 +45,7 @@ public class MinimapCache {
                 f = Defer.later(new Defer.Callable<MinimapTile>() {
                     @Override
                     public MinimapTile call() {
-                        BufferedImage img = renderer.draw(grid);
+                        BufferedImage img = renderer.draw(grid.ul, MCache.cmaps);
                         MinimapTile mapTile = new MinimapTile(new TexI(img), seq);
                         if (Config.minimapEnableSave.get())
                             store(img, grid.gc);
