@@ -1,5 +1,12 @@
 ## Changelog
 
+### r78
+
+- Changed hotkeys for equipment slots to use `Shift` instead of `Ctrl`
+- Added option to always show extended tooltip
+- Fixed hotkeys not working on opened stockpiles
+- Hopefully fixed random crashes related to the radius display
+
 ### r77
 
 - Made another attempt to optimize excessive memory usage related to the minimap changes at `r75`
