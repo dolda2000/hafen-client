@@ -198,6 +198,8 @@ public class CustomSettingsPanel extends OptWnd.Panel {
                     ui.gui.fkeybelt.show(val);
             }
         }, new Coord(0, y));
+        y += 20;
+        panel.add(new PrefCheckBox("Always show extended tooltips", Config.alwaysShowExtendedTooltips), new Coord(0, y));
         panel.pack();
         return panel;
     }

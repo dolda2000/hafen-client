@@ -117,7 +117,7 @@ public class WItem extends Widget implements DTarget {
 		shorttip = longtip = null;
 		ttinfo = info;
 	    }
-	    if(now - hoverstart < 1000) {
+	    if(now - hoverstart < 1000 && !Config.alwaysShowExtendedTooltips.get()) {
 		if(shorttip == null)
 		    shorttip = new ShortTip(info);
 		return(shorttip);
