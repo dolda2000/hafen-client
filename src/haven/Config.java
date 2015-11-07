@@ -30,6 +30,7 @@ import java.net.URL;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.WeakHashMap;
 
 import static haven.Utils.*;
 
@@ -248,7 +249,7 @@ public class Config {
     public static class Pref<T> {
         private final PrefProvider<T> provider;
         private final String name;
-        private final List<PrefListener<T>> listeners = new ArrayList<PrefListener<T>>();
+        private final WeakHashMap<PrefListener<T>, Object> listeners = new WeakHashMap<PrefListener<T>, Object>();
         private T value;
 
         public Pref(String name, T defaultValue, PrefProvider<T> provider) {
@@ -266,12 +267,12 @@ public class Config {
                 return;
             this.value = value;
             provider.set(name, value);
-            for (PrefListener<T> listener : listeners)
+            for (PrefListener<T> listener : listeners.keySet())
                 listener.changed(value);
         }
 
         public void addListener(PrefListener<T> listener) {
-            listeners.add(listener);
+            listeners.put(listener, null);
         }
 
         public void removeListener(PrefListener<T> listener) {
