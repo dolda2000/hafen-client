@@ -6,7 +6,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.nio.ByteBuffer;
 
-public class TextureAtlas {
+public class TextureAtlas implements Disposable {
     private final static int PADDING = 1;
 
     private final TexGL tex;
@@ -52,6 +52,7 @@ public class TextureAtlas {
         return new Region(c, new Coord(width, height));
     }
 
+    @Override
     public void dispose() {
         tex.dispose();
     }

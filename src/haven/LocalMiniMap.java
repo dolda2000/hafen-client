@@ -43,7 +43,6 @@ public class LocalMiniMap extends Widget implements Console.Directory {
     public final MapView mv;
 	private final MinimapCache cache;
     private Coord cc = null;
-    private MinimapTile cur = null;
     private Coord off = Coord.z;
     private Coord doff;
     private UI.Grab grab;
@@ -57,6 +56,12 @@ public class LocalMiniMap extends Widget implements Console.Directory {
 	this.cache = new MinimapCache(new MinimapRenderer(mv.ui.sess.glob.map));
     this.showradius = Config.minimapShowRadius.get();
     this.showgrid = Config.minimapShowGrid.get();
+    }
+
+    @Override
+    public void destroy() {
+        cache.dispose();
+        super.destroy();
     }
     
     public Coord p2c(Coord pc) {
