@@ -200,14 +200,9 @@ public class ISBox extends Widget implements DTarget {
 
 	@Override
 	public boolean type(char c, KeyEvent ev) {
-	    int keyCode = ev.getKeyCode();
-	    if(keyCode == 0){
-		keyCode = ev.getKeyChar();
-	    }
-	    if (ALLOWED_KEYS.contains(keyCode)) {
+	    if (ALLOWED_KEYS.contains(ev.getKeyCode())) {
 		return super.type(c, ev);
 	    } else {
-		ui.root.globtype(c, ev);
 		return false;
 	    }
 	}
