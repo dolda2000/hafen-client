@@ -14,7 +14,7 @@ public class EquipBelt extends DraggableBelt {
         super(name, sq.sz());
         List<Slot> slot = new ArrayList<Slot>(slotIndexes.length);
         for (int i = 0; i < slotIndexes.length; i++)
-            slot.add(new EquipSlot(slotIndexes[i], keys[i], 2, "Ctrl " + (i + 1) % 10));
+            slot.add(new EquipSlot(slotIndexes[i], keys[i], 1, "Shift " + (i + 1) % 10));
         addSlots(slot);
     }
 
