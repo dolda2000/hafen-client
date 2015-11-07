@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public abstract class ActWnd extends Window {
+public abstract class ActWnd extends Window implements Disposable {
     private static final int WIDTH = 200;
 
     private final TextEntry entry;
@@ -80,23 +80,36 @@ public abstract class ActWnd extends Window {
     }
 
     @Override
-    public void tick(double dt) {
-        if (ui == null)
-            return;
+    public void attach(UI ui) {
+        super.attach(ui);
 
-        if (listener == null) {
-            // make initial list
-            all.clear();
-            synchronized (ui.sess.glob.paginae) {
-                for (Glob.Pagina pagina : ui.sess.glob.paginae) {
-                    if (isIncluded(pagina))
-                        all.add(pagina);
-                }
-                listener = new PaginaeListener();
-                ui.sess.glob.paginae.addListener(listener);
-                refilter();
+        // make initial list
+        all.clear();
+        synchronized (ui.sess.glob.paginae) {
+            for (Glob.Pagina pagina : ui.sess.glob.paginae) {
+                if (isIncluded(pagina))
+                    all.add(pagina);
             }
+            listener = new PaginaeListener();
+            ui.sess.glob.paginae.addListener(listener);
+            refilter();
         }
+
+        ui.disposables.add(this);
+    }
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        dispose();
+        if (ui != null)
+            ui.disposables.remove(this);
+    }
+
+    @Override
+    public void dispose() {
+        if (ui != null)
+            ui.sess.glob.paginae.removeListener(listener);
     }
 
     private void refilter() {
