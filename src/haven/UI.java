@@ -49,6 +49,7 @@ public class UI {
     public final ActAudio audio = new ActAudio();
     public GameUI gui = null;
     private int lastkeycode;
+    public final Set<Disposable> disposables = new HashSet<Disposable>();
     
     {
 	lastevent = lasttick = System.currentTimeMillis();
@@ -360,5 +361,7 @@ public class UI {
 
     public void destroy() {
 	audio.clear();
+    for (Disposable disposable : disposables)
+        disposable.dispose();
     }
 }

@@ -59,9 +59,17 @@ public class LocalMiniMap extends Widget implements Console.Directory {
     }
 
     @Override
+    public void attach(UI ui) {
+        super.attach(ui);
+        ui.disposables.add(cache);
+    }
+
+    @Override
     public void destroy() {
-        cache.dispose();
         super.destroy();
+        cache.dispose();
+        if (ui != null)
+            ui.disposables.remove(cache);
     }
     
     public Coord p2c(Coord pc) {
