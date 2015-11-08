@@ -42,6 +42,8 @@ public class WItem extends Widget implements DTarget {
     public final GItem item;
     private Resource cspr = null;
     private Message csdt = Message.nil;
+    private Tex meter;
+    private int meterValue;
     
     public WItem(GItem item) {
 	super(sqsz);
@@ -210,14 +212,15 @@ public class WItem extends Widget implements DTarget {
             int b = 0;
             g.chcolor(r, gr, b, 255);
             g.frect(new Coord(sz.x - 5, (int) ((1 - a) * sz.y)), new Coord(5, (int) (a * sz.y)));
+            g.chcolor();
             // draw percentage when quality is not shown
             if (!Config.showQuality.get() || quality.get() == null) {
-                g.chcolor(0, 0, 0, 255);
-                g.text(String.format("%d%%", item.meter), new Coord(0, -5));
-                g.chcolor(255, 255, 255, 255);
-                g.text(String.format("%d%%", item.meter), new Coord(1, -4));
+                if (meter == null || meterValue != item.meter) {
+                    meterValue = item.meter;
+                    meter = Text.std.renderstroked(String.format("%d%%", meterValue), Color.WHITE, Color.BLACK).tex();
+                }
+                g.image(meter, new Coord(0, -5));
             }
-            g.chcolor();
         }
         drawquality(g);
 	} else {
