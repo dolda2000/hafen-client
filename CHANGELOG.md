@@ -1,5 +1,9 @@
 ## Changelog
 
+### r79
+
+- Hopefully fixed client crashes happening during frequent map updates (e.g. on mining) 
+
 ### r78
 
 - Changed hotkeys for equipment slots to use `Shift` instead of `Ctrl`
