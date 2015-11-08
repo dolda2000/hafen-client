@@ -1,6 +1,7 @@
 package haven;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
@@ -135,11 +136,15 @@ public class MinimapCache implements Disposable {
 
     private void store(BufferedImage img, Coord cg) {
         if (img == null || sp == null) return;
-        Coord c = cg.sub(sp);
-        String fileName = mapsessfile(String.format("tile_%d_%d.png", c.x, c.y));
-        File outputfile = new File(fileName);
+        String fileName = "";
         try {
-            ImageIO.write(img, "png", outputfile);
-        } catch (IOException e) {}
+            Coord c = cg.sub(sp);
+            fileName = mapsessfile(String.format("tile_%d_%d.png", c.x, c.y));
+            File file = new File(fileName);
+            ImageIO.write(img, "png", file);
+        } catch (Exception e) {
+            System.out.println("Error saving tile: " + fileName);
+            e.printStackTrace();
+        }
     }
 }
