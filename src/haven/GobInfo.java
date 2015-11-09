@@ -98,6 +98,7 @@ public class GobInfo extends GAttrib {
             if (line != null)
                 return new GobInfo(gob, line.tex());
         } catch (Loading e) {
+            return null;
         } catch (Exception e) {
             e.printStackTrace();
         }
