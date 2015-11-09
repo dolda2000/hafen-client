@@ -105,7 +105,7 @@ public class GobInfo extends GAttrib {
         return new GobInfo(gob, null);
     }
 
-    private static Message getDrawableData(Gob gob) {
+    public static Message getDrawableData(Gob gob) {
         Drawable dr = gob.getattr(Drawable.class);
         ResDrawable d = (dr instanceof ResDrawable) ? (ResDrawable) dr : null;
         if (d != null)

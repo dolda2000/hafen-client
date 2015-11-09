@@ -189,6 +189,13 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 
     public boolean setup(RenderList rl) {
 	loc.tick();
+
+    CustomGobInfo info = getattr(CustomGobInfo.class);
+    if (info == null) {
+        info = new CustomGobInfo(this);
+        setattr(info);
+    }
+
 	for(Overlay ol : ols)
 	    rl.add(ol, null);
 	for(Overlay ol : ols) {
@@ -198,15 +205,20 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	GobHealth hlt = getattr(GobHealth.class);
 	if(hlt != null)
 	    rl.prepc(hlt.getfx());
-	Drawable d = getattr(Drawable.class);
-	if(d != null)
-	    d.setup(rl);
+
+    if (!info.isHidden()) {
+        Drawable d = getattr(Drawable.class);
+        if (d != null)
+            d.setup(rl);
+    }
+
 	Speaking sp = getattr(Speaking.class);
 	if(sp != null)
 	    rl.add(sp.fx, null);
 	KinInfo ki = getattr(KinInfo.class);
 	if(ki != null)
 	    rl.add(ki.fx, null);
+
 	if (Config.showGobInfo.get()) {
 		GobInfo gi = getattr(GobInfo.class);
 		if (gi == null) {
