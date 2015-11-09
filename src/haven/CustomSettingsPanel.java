@@ -14,7 +14,7 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         this.frame = add(new Frame(300, categoryList.sz.y), categoryList.sz.x + 5, 0);
 
         categoryList.add(new Category(0, "General", createGeneral()));
-        categoryList.add(new Category(0, "Audio", createAudio()));
+        categoryList.add(new Category(0, "Alarms", createAlarms()));
         categoryList.add(new Category(0, "Display", null));
         categoryList.add(new Category(1, "Game", createGameDisplay()));
         categoryList.add(new Category(1, "UI", createGameUI()));
@@ -47,8 +47,6 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         y += 20;
         panel.add(new PrefCheckBox("Enable kin status notifications", Config.showKinNotifications), new Coord(0, y));
         y += 20;
-        panel.add(new PrefCheckBox("Play alarm for unknown or RED players", Config.enableStrangerAlarm), new Coord(0, y));
-        y += 20;
         panel.add(new PrefCheckBox("Toggle tracking on startup", Config.toggleTracking), new Coord(0, y));
         y += 20;
         panel.add(new PrefCheckBox("Use CTRL instead of ALT for quality transfer", Config.useControlForSortTransfer), new Coord(0, y));
@@ -58,9 +56,11 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         return panel;
     }
 
-    private static Widget createAudio() {
+    private static Widget createAlarms() {
         Widget panel = new Widget();
         int y = 0;
+        panel.add(new PrefCheckBox("Play alarm for unknown or RED players", Config.enableStrangerAlarm), new Coord(0, y));
+        y += 20;
         panel.add(new Label("Alarm volume"), new Coord(0, y));
         y += 15;
         panel.add(new HSlider(280, 0, 1000, Config.alarmVolume.get()) {
