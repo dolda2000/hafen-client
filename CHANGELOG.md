@@ -1,8 +1,8 @@
 ## Changelog
 
-### r81
+### r82
 
-- Fixed crash caused by the driving a wagon with movement path on
+- Fixed crash caused by the driving of a wagon with movement paths on
 
 ### r81
 
