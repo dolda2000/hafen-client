@@ -1,5 +1,12 @@
 ## Changelog
 
+### r80
+
+- Added hotkey `Ctrl`+`H` which hides crops and displays all trees as stumps
+- Added hotkey `Alt`+`P` to toggle movement paths for players and some animals (based on Ender's client)
+- Added optional alarm which triggers when pony power goes below 10%
+- Added optional background for item quality text
+
 ### r79
 
 - Hopefully fixed client crashes happening during frequent map updates (e.g. on mining) 
