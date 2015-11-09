@@ -26,10 +26,9 @@
 
 package haven;
 
+
 import java.net.URL;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.WeakHashMap;
 
 import static haven.Utils.*;
@@ -101,6 +100,7 @@ public class Config {
     public static Pref<Boolean> showFlavor = new Pref<Boolean>("showflo", true, TYPE_BOOL);
     public static Pref<Boolean> showQuality = new Pref<Boolean>("haven.display.quality", false, TYPE_BOOL);
     public static Pref<Integer> showQualityMode = new Pref<Integer>("haven.display.quality.mode", 0, TYPE_INT);
+    public static Pref<Boolean> showQualityBackground = new Pref<Boolean>("haven.display.quality.back", true, TYPE_BOOL);
     public static Pref<Boolean> enableAutoStudy = new Pref<Boolean>("haven.autostudy", false, TYPE_BOOL);
     public static Pref<Boolean> useCupboardsForAutoStudy = new Pref<Boolean>("haven.autostudy.cupboards", true, TYPE_BOOL);
     public static Pref<Boolean> lockStudy = new Pref<Boolean>("studylock", false, TYPE_BOOL);

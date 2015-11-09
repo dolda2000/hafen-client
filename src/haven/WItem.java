@@ -280,21 +280,35 @@ public class WItem extends Widget implements DTarget {
         ItemQuality q = quality.get();
         if (q == null || !Config.showQuality.get())
             return;
-        Coord c = new Coord(0, -5);
+
+        List<ItemQuality.Element> elements = new ArrayList<ItemQuality.Element>();
         switch (Config.showQualityMode.get()) {
             case SHOW_QUALITY_ALL:
-                g.aimage(q.essence.tex(), c, 0, 0);
-                c.y += 10;
-                g.aimage(q.substance.tex(), c, 0, 0);
-                c.y += 10;
-                g.aimage(q.vitality.tex(), c, 0, 0);
+                elements.add(q.essence);
+                elements.add(q.substance);
+                elements.add(q.vitality);
                 break;
             case SHOW_QUALITY_AVG:
-                g.aimage(q.average.tex(), c, 0, 0);
-                break;
+                elements.add(q.average);
             case SHOW_QUALITY_MAX:
-                g.aimage(q.getMaxElement().tex(), c, 0, 0);
+                elements.add(q.getMaxElement());
                 break;
+        }
+
+        Coord c = new Coord(0, -4);
+        if (Config.showQualityBackground.get()) {
+            int w = 0;
+            int h = elements.size() > 0 ? elements.get(0).tex().sz().y : 0;
+            for (ItemQuality.Element el : elements) {
+                w = Math.max(w, el.tex().sz().x);
+            }
+            g.chcolor(0, 0, 0, 128);
+            g.frect(c, new Coord(w + 1, (h - 5) * elements.size() + 5));
+            g.chcolor();
+        }
+        for (ItemQuality.Element el : elements) {
+            g.image(el.tex(), c);
+            c.y += 10;
         }
     }
 

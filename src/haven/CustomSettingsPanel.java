@@ -149,6 +149,8 @@ public class CustomSettingsPanel extends OptWnd.Panel {
                 Config.showQualityMode.set(val);
             }
         }, new Coord(0, y));
+        y += 25;
+        panel.add(new PrefCheckBox("Use background for item quality text", Config.showQualityBackground), new Coord(0, y));
         panel.pack();
         return panel;
     }
