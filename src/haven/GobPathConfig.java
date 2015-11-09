@@ -45,7 +45,9 @@ public class GobPathConfig {
                     break;
                 }
             }
-            entries.put(resName, (entry != null) ? entry : DEFAULT);
+            if (entry == null)
+                entry = DEFAULT;
+            entries.put(resName, entry);
         }
         return entry;
     }

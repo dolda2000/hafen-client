@@ -2,6 +2,10 @@
 
 ### r81
 
+- Fixed crash caused by the driving a wagon with movement path on
+
+### r81
+
 - Fixed bug with item quality display
 
 ### r80
