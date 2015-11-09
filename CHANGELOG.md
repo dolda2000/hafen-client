@@ -1,5 +1,9 @@
 ## Changelog
 
+### r81
+
+- Fixed bug with item quality display
+
 ### r80
 
 - Added hotkey `Ctrl`+`H` which hides crops and displays all trees as stumps

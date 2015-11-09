@@ -290,6 +290,7 @@ public class WItem extends Widget implements DTarget {
                 break;
             case SHOW_QUALITY_AVG:
                 elements.add(q.average);
+                break;
             case SHOW_QUALITY_MAX:
                 elements.add(q.getMaxElement());
                 break;
