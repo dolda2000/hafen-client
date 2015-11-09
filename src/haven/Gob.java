@@ -207,7 +207,9 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    rl.prepc(hlt.getfx());
 
     if (!info.isHidden()) {
-        Drawable d = getattr(Drawable.class);
+        Drawable d = info.getReplacement();
+        if (d == null)
+            d = getattr(Drawable.class);
         if (d != null)
             d.setup(rl);
     }

@@ -34,6 +34,24 @@ public class CustomGobInfo extends GAttrib {
         }
     };
 
+    private final InfoCache<Drawable> replacement = new InfoCache<Drawable>() {
+        protected Drawable getValue() {
+            Resource res = gob.getres();
+            if (res != null) {
+                try {
+                    // is tree?
+                    if (res.name.startsWith("gfx/terobjs/trees") && !(res.name.endsWith("log") || res.name.endsWith("stump"))) {
+                        Resource stump = Resource.remote().loadwait(res.name + "stump");
+                        return new ResDrawable(gob, stump);
+                    }
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+            return null;
+        }
+    };
+
     public CustomGobInfo(Gob gob) {
         super(gob);
     }
@@ -45,6 +63,10 @@ public class CustomGobInfo extends GAttrib {
 
     public boolean isHidden() {
         return Config.hideModeEnabled.get() && isCrop();
+    }
+
+    public Drawable getReplacement() {
+        return Config.hideModeEnabled.get() ? replacement.get() : null;
     }
 
     public boolean hasSpriteKind(String kind) {
