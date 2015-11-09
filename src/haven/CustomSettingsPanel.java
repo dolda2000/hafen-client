@@ -61,6 +61,8 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         int y = 0;
         panel.add(new PrefCheckBox("Play alarm for unknown or RED players", Config.enableStrangerAlarm), new Coord(0, y));
         y += 20;
+        panel.add(new PrefCheckBox("Play alarm when pony power is less than 10%", Config.enableStrangerAlarm), new Coord(0, y));
+        y += 20;
         panel.add(new Label("Alarm volume"), new Coord(0, y));
         y += 15;
         panel.add(new HSlider(280, 0, 1000, Config.alarmVolume.get()) {

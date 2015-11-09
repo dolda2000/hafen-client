@@ -30,6 +30,8 @@ import java.awt.Color;
 import java.util.*;
 
 public class IMeter extends Widget {
+    private static final Resource ponysfx = Resource.local().loadwait("sfx/alarmpony");
+
     static Coord off = new Coord(22, 7);
     static Coord fsz = new Coord(101, 24);
     static Coord msz = new Coord(75, 10);
@@ -87,8 +89,22 @@ public class IMeter extends Widget {
 	    for(int i = 0; i < args.length; i += 2)
 		meters.add(new Meter((Color)args[i], (Integer)args[i + 1]));
 	    this.meters = meters;
+        if (Config.enablePonyAlarm.get() && isPonyMeter()) {
+            Meter m = meters.get(0);
+            if (m.a <= 10)
+                Audio.play(ponysfx, Config.alarmVolume.get() / 1000.0f);
+        }
 	} else {
 	    super.uimsg(msg, args);
 	}
+    }
+
+    private boolean isPonyMeter() {
+        try {
+            Resource res = bg.get();
+            return (res !=  null) && "gfx/hud/meter/mount".equals(res.name);
+        } catch (Loading e) {
+            return false;
+        }
     }
 }
