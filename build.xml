@@ -50,6 +50,7 @@
     <copy todir="build/classes/haven" file="etc/icon.png" />
 	<copy todir="build/classes/" file="etc/custom-icons.config" />
     <copy todir="build/classes/haven" file="etc/curio.config" />
+    <copy todir="build/classes/haven" file="etc/gob-paths.config" />
   </target>
   
   <target name="appletview" depends="build-env">

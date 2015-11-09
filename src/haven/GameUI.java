@@ -956,6 +956,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         } else if (ev.isControlDown() && keycode == KeyEvent.VK_H) {
             Config.hideModeEnabled.set(!Config.hideModeEnabled.get());
             return true;
+        } else if (alt && keycode == KeyEvent.VK_P) {
+            Config.showGobPaths.set(!Config.showGobPaths.get());
+            return true;
         }
     }
 	return(super.globtype(key, ev));

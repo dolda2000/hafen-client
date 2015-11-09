@@ -122,6 +122,7 @@ public class Config {
     public static Pref<Integer> autopickRadius = new Pref<Integer>("autopick.radius", 3, TYPE_INT);
     public static Pref<Boolean> alwaysShowExtendedTooltips = new Pref<Boolean>("tooltips.extended", false, TYPE_BOOL);
     public static Pref<Boolean> hideModeEnabled = new Pref<Boolean>("hide.mode", false, TYPE_BOOL);
+    public static Pref<Boolean> showGobPaths = new Pref<Boolean>("display.gob.paths", false, TYPE_BOOL);
     public static boolean screenshotMode;
     public static boolean enableAutoloader;
 
