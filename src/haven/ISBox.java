@@ -198,14 +198,19 @@ public class ISBox extends Widget implements DTarget {
 	    super(w, deftext);
 	}
 
+    @Override
+    public boolean keydown(KeyEvent ev) {
+        return isAllowed(ev) && super.keydown(ev);
+    }
+
 	@Override
 	public boolean type(char c, KeyEvent ev) {
-	    if (!ev.isShiftDown() && ALLOWED_KEYS.contains(ev.getKeyCode())) {
-		return super.type(c, ev);
-	    } else {
-		return false;
-	    }
-	}
+        return isAllowed(ev) && super.type(c, ev);
+    }
+
+    private static boolean isAllowed(KeyEvent e) {
+        return !e.isShiftDown() && ALLOWED_KEYS.contains(e.getKeyCode());
+    }
 
     }
 }
