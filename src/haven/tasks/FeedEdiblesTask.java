@@ -14,6 +14,7 @@ public class FeedEdiblesTask extends FeedTask {
             "gfx/invobjs/seed-tobacco",
             "gfx/invobjs/seed-pipeweed",
             "gfx/invobjs/seed-pumpkin",
+            "gfx/invobjs/pumpkin",
             "gfx/invobjs/pumpkinflesh",
             "gfx/invobjs/seed-carrot"
     };
