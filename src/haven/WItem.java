@@ -205,6 +205,12 @@ public class WItem extends Widget implements DTarget {
 	    } else if(itemnum.get() != null) {
 		g.aimage(itemnum.get(), sz, 1, 1);
 	    }
+
+        boolean drawQuality = Config.showQuality.get() && (quality.get() != null);
+        // toggle quality display when both ALT and CTRL are pressed
+        if (ui.modctrl && ui.modmeta)
+            drawQuality = !drawQuality;
+
         if (item.meter > 0) {
             double a = ((double) item.meter) / 100.0;
             int r = (int) ((1 - a) * 255);
@@ -214,7 +220,7 @@ public class WItem extends Widget implements DTarget {
             g.frect(new Coord(sz.x - 5, (int) ((1 - a) * sz.y)), new Coord(5, (int) (a * sz.y)));
             g.chcolor();
             // draw percentage when quality is not shown
-            if (!Config.showQuality.get() || quality.get() == null) {
+            if (!drawQuality) {
                 if (meter == null || meterValue != item.meter) {
                     meterValue = item.meter;
                     meter = Text.std.renderstroked(String.format("%d%%", meterValue), Color.WHITE, Color.BLACK).tex();
@@ -222,7 +228,8 @@ public class WItem extends Widget implements DTarget {
                 g.image(meter, new Coord(0, -5));
             }
         }
-        drawquality(g);
+        if (drawQuality)
+            drawquality(g, quality.get());
 	} else {
 	    g.image(missing.layer(Resource.imgc).tex(), Coord.z, sz);
 	}
@@ -276,11 +283,7 @@ public class WItem extends Widget implements DTarget {
 	return(true);
     }
 
-    private void drawquality(GOut g) {
-        ItemQuality q = quality.get();
-        if (q == null || !Config.showQuality.get())
-            return;
-
+    private void drawquality(GOut g, ItemQuality q) {
         List<ItemQuality.Element> elements = new ArrayList<ItemQuality.Element>();
         switch (Config.showQualityMode.get()) {
             case SHOW_QUALITY_ALL:
