@@ -33,7 +33,7 @@ public class CustomGobIcon extends GAttrib implements MinimapIcon {
                 Resource res = gob.getres();
                 if (res == null)
                     return false;
-                icon = icons.get(gob, res.name);
+                icon = icons.get(res.name);
                 if (icon == null)
                     icon = CustomIcon.defaultIcon(gob);
             }
