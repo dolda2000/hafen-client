@@ -52,36 +52,37 @@ public class ServerGridOverlay extends MapOverlay {
     }
 
     @Override
-    public void update(Coord cc) {
-        if (!mapPositionChanged(cc))
-            return;
-        try {
-            // TODO: coord conversion methods to make code like this readable?
-            this.ul = cc.div(tilesz).div(cutsz).sub(MapView.view, MapView.view).mul(cutsz).mul(tilesz).div(sgridsz);
-            this.location = Location.xlate(new Coord3f(this.ul.x * sgridsz.x, -this.ul.y * sgridsz.y, 0.0F));
+    protected void refresh(Coord cut) {
+        // TODO: coord conversion methods to make code like this readable?
+        this.ul = cut.sub(MapView.view, MapView.view).mul(cutsz).mul(tilesz).div(sgridsz);
+        this.location = Location.xlate(new Coord3f(this.ul.x * sgridsz.x, -this.ul.y * sgridsz.y, 0.0F));
 
-            swapBuffers();
-            Coord c = new Coord();
-            for (c.y = this.ul.y; c.y < this.ul.y + size.y; c.y++)
-                for (c.x = this.ul.x; c.x < this.ul.x + size.x; c.x++) {
-                    addLineStrip(mapToScreen(c), mapToScreen(c.add(1, 0)), mapToScreen(c.add(1, 1)));
-                }
 
-        } catch (Loading e) {}
+        Coord c = new Coord();
+        FloatBuffer vbuf = getBackBuffer();
+        vbuf.rewind();
+        for (c.y = this.ul.y; c.y < this.ul.y + size.y; c.y++)
+            for (c.x = this.ul.x; c.x < this.ul.x + size.x; c.x++) {
+                addLineStrip(vbuf, mapToScreen(c), mapToScreen(c.add(1, 0)), mapToScreen(c.add(1, 1)));
+            }
+        swapBuffers();
     }
 
     private Coord3f mapToScreen(Coord c) {
         return new Coord3f((c.x - ul.x) * sgridsz.x, -(c.y - ul.y) * sgridsz.y, map.getz(c.mul(sgridsz).div(tilesz)));
     }
 
-    private void addLineStrip(Coord3f... vertices) {
-        FloatBuffer vbuf = getCurrentBuffer();
+    private void addLineStrip(FloatBuffer vbuf, Coord3f... vertices) {
         for (int i = 0; i < vertices.length - 1; i++) {
             Coord3f a = vertices[i];
             Coord3f b = vertices[i + 1];
             vbuf.put(a.x).put(a.y).put(a.z);
             vbuf.put(b.x).put(b.y).put(b.z);
         }
+    }
+
+    private FloatBuffer getBackBuffer() {
+        return vertexBuffers[(curIndex + 1) % 2];
     }
 
     private FloatBuffer getCurrentBuffer() {

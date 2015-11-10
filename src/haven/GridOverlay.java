@@ -44,33 +44,28 @@ public class GridOverlay extends MapOverlay {
     @Override
     public boolean setup(RenderList rl) {
         rl.prepo(location);
-        //rl.prepo(States.ndepthtest);
-        //rl.prepo(last);
         rl.prepo(color);
         return true;
     }
 
     @Override
-    public void update(Coord cc) {
-        if (!mapPositionChanged(cc))
-            return;
-        try {
-            this.ul = cc.div(tilesz).div(cutsz).sub(MapView.view, MapView.view).mul(cutsz);
-            this.location = Location.xlate(new Coord3f(ul.x * tilesz.x, -ul.y * tilesz.y, 0.0F));
-            swapBuffers();
-            Coord c = new Coord();
-            for (c.y = ul.y; c.y < ul.y + size.y; c.y++)
-                for (c.x = ul.x; c.x < ul.x + size.x; c.x++)
-                   addLineStrip(mapToScreen(c), mapToScreen(c.add(1, 0)), mapToScreen(c.add(1, 1)));
-        } catch (Loading e) {}
+    protected void refresh(Coord cut) {
+        this.ul = cut.sub(MapView.view, MapView.view).mul(cutsz);
+        this.location = Location.xlate(new Coord3f(ul.x * tilesz.x, -ul.y * tilesz.y, 0.0F));
+        Coord c = new Coord();
+        FloatBuffer vbuf = getBackBuffer();
+        vbuf.rewind();
+        for (c.y = ul.y; c.y < ul.y + size.y; c.y++)
+            for (c.x = ul.x; c.x < ul.x + size.x; c.x++)
+               addLineStrip(vbuf, mapToScreen(c), mapToScreen(c.add(1, 0)), mapToScreen(c.add(1, 1)));
+        swapBuffers();
     }
 
     private Coord3f mapToScreen(Coord c) {
         return new Coord3f((c.x - ul.x) * tilesz.x, -(c.y - ul.y) * tilesz.y, map.getz(c));
     }
 
-    private void addLineStrip(Coord3f... vertices) {
-        FloatBuffer vbuf = getCurrentBuffer();
+    private void addLineStrip(FloatBuffer vbuf, Coord3f... vertices) {
         for (int i = 0; i < vertices.length - 1; i++) {
             Coord3f a = vertices[i];
             Coord3f b = vertices[i + 1];
@@ -81,6 +76,10 @@ public class GridOverlay extends MapOverlay {
 
     private FloatBuffer getCurrentBuffer() {
         return vertexBuffers[curIndex];
+    }
+
+    private FloatBuffer getBackBuffer() {
+        return vertexBuffers[(curIndex + 1) % 2];
     }
 
     private void swapBuffers() {
