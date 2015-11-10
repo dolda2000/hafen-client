@@ -7,7 +7,6 @@ import static haven.MCache.cutsz;
 import static haven.MCache.tilesz;
 
 public class GridOverlay extends MapOverlay {
-    private final MCache map;
     private final FloatBuffer[] vertexBuffers;
     private final int area;
     private final Coord size;
@@ -15,10 +14,9 @@ public class GridOverlay extends MapOverlay {
     private Location location;
     private Coord ul;
     private int curIndex;
-    private Coord cut;
 
     public GridOverlay(MCache map, Coord size) {
-        this.map = map;
+        super(map);
         this.size = size;
         this.area = (size.x + 1) * (size.y + 1);
         this.color = new States.ColState(255, 36, 0, 128);
@@ -54,12 +52,10 @@ public class GridOverlay extends MapOverlay {
 
     @Override
     public void update(Coord cc) {
-        Coord cut = cc.div(MCache.tilesz).div(cutsz);
-        if (cut.equals(this.cut))
+        if (!mapPositionChanged(cc))
             return;
-        this.cut = cut;
         try {
-            this.ul = cut.sub(MapView.view, MapView.view).mul(cutsz);
+            this.ul = cc.div(tilesz).div(cutsz).sub(MapView.view, MapView.view).mul(cutsz);
             this.location = Location.xlate(new Coord3f(ul.x * tilesz.x, -ul.y * tilesz.y, 0.0F));
             swapBuffers();
             Coord c = new Coord();

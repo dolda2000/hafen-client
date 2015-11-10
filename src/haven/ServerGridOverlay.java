@@ -8,7 +8,6 @@ import static haven.MCache.tilesz;
 import static haven.MCache.sgridsz;
 
 public class ServerGridOverlay extends MapOverlay {
-    private final MCache map;
     private final FloatBuffer[] vertexBuffers;
     private final int area;
     private final Coord size;
@@ -16,10 +15,9 @@ public class ServerGridOverlay extends MapOverlay {
     private Location location;
     private Coord ul;
     private int curIndex;
-    private Coord cut;
 
     public ServerGridOverlay(MCache map, Coord size) {
-        this.map = map;
+        super(map);
         this.size = size;
         this.area = (size.x + 1) * (size.y + 1);
         this.color = new States.ColState(36, 255, 0, 128);
@@ -55,13 +53,11 @@ public class ServerGridOverlay extends MapOverlay {
 
     @Override
     public void update(Coord cc) {
-        Coord cut = cc.div(MCache.tilesz).div(cutsz);
-        if (cut.equals(this.cut))
+        if (!mapPositionChanged(cc))
             return;
-        this.cut = cut;
         try {
             // TODO: coord conversion methods to make code like this readable?
-            this.ul = cut.sub(MapView.view, MapView.view).mul(cutsz).mul(tilesz).div(sgridsz);
+            this.ul = cc.div(tilesz).div(cutsz).sub(MapView.view, MapView.view).mul(cutsz).mul(tilesz).div(sgridsz);
             this.location = Location.xlate(new Coord3f(this.ul.x * sgridsz.x, -this.ul.y * sgridsz.y, 0.0F));
 
             swapBuffers();
@@ -75,7 +71,7 @@ public class ServerGridOverlay extends MapOverlay {
     }
 
     private Coord3f mapToScreen(Coord c) {
-        return new Coord3f((c.x - ul.x) * sgridsz.x, -(c.y - ul.y) * sgridsz.y, map.getz(c.mul(sgridsz).div(MCache.tilesz)));
+        return new Coord3f((c.x - ul.x) * sgridsz.x, -(c.y - ul.y) * sgridsz.y, map.getz(c.mul(sgridsz).div(tilesz)));
     }
 
     private void addLineStrip(Coord3f... vertices) {
