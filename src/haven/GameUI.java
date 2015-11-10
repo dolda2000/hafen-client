@@ -909,7 +909,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         } else if (alt && keycode == KeyEvent.VK_Q) {
             Config.showQuality.set(!Config.showQuality.get());
             return true;
-        } else if (alt && keycode == KeyEvent.VK_H) {
+        } else if (ui.modflags() == 0 && keycode == KeyEvent.VK_E) {
             swapHand();
             return true;
         } else if (alt && keycode == KeyEvent.VK_K) {
