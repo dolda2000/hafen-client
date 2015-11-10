@@ -200,7 +200,7 @@ public class ISBox extends Widget implements DTarget {
 
 	@Override
 	public boolean type(char c, KeyEvent ev) {
-	    if (ALLOWED_KEYS.contains(ev.getKeyCode())) {
+	    if (!ev.isShiftDown() && ALLOWED_KEYS.contains(ev.getKeyCode())) {
 		return super.type(c, ev);
 	    } else {
 		return false;
