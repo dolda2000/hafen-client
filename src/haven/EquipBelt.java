@@ -3,6 +3,7 @@ package haven;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class EquipBelt extends DraggableBelt {
     private static final Tex sq = Resource.loadtex("gfx/hud/belt/custom/eqsq");
@@ -12,10 +13,11 @@ public class EquipBelt extends DraggableBelt {
 
     public EquipBelt(String name, int... slotIndexes) {
         super(name, sq.sz());
-        List<Slot> slot = new ArrayList<Slot>(slotIndexes.length);
+        List<Slot> slots = new ArrayList<Slot>(slotIndexes.length);
         for (int i = 0; i < slotIndexes.length; i++)
-            slot.add(new EquipSlot(slotIndexes[i], keys[i], 1, "Shift " + (i + 1) % 10));
-        addSlots(slot);
+            slots.add(new EquipSlot(slotIndexes[i], keys[i], 1, "Shift " + (i + 1) % 10));
+        slots.add(new HandSlot(KeyEvent.VK_E, 0, "E"));
+        addSlots(slots);
     }
 
     private static Coord sqroff(Coord c){
@@ -113,6 +115,60 @@ public class EquipBelt extends DraggableBelt {
                     }
                 }
             }
+        }
+    }
+
+    private class HandSlot extends Slot {
+
+        public HandSlot(int key, int mods, String text) {
+            super(key, mods, text);
+        }
+
+        @Override
+        public boolean click(Coord c, int button) {
+            if (button == 1) {
+                ui.gui.swapHand();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void draw(GOut g) {
+            Equipory e = ui.gui.getEquipory();
+            if(e != null){
+                g.rimage(Window.bg, Coord.z, sz);
+                g.image(sq, Coord.z);
+                if (ui.gui.handSave.size() > 0) {
+                    for (GameUI.DraggedItem di : ui.gui.handSave) {
+                        GSprite spr = di.item.spr();
+                        if (spr != null) {
+                            int w = Math.min(spr.sz().x, sq.sz().x - 5);
+                            int h = Math.min(spr.sz().y, sq.sz().y - 5);
+                            spr.draw(g.reclipl(sq.sz().sub(w, h).div(2), g.sz.sub(5, 5)));
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public boolean drop() {
+            if (ui.gui.handSave.size() == 0) {
+                ui.gui.swapHand();
+            }
+            return true;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return ui.gui.handSave.size() == 0;
+        }
+
+        @Override
+        public void keyact() {
+            ui.gui.swapHand();
         }
     }
 }
