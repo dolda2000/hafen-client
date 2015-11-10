@@ -91,6 +91,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public TaskManager tasks;
     public ChatHidePanel chatHidePanel;
     private final GameUILayout layout;
+    private boolean ignoreTrackingSound;
 
     public abstract class Belt extends Widget {
 	public Belt(Coord sz) {
@@ -1029,6 +1030,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private static final Resource errsfx = Resource.local().loadwait("sfx/error");
     public void error(String msg) {
 	msg(msg, new Color(192, 0, 0), new Color(255, 0, 0));
+    // HACK: do not play annoying sound when game is starting
+    if (ignoreTrackingSound && "Tracking is now turned on.".equals(msg)) {
+        ignoreTrackingSound = false;
+        return;
+    }
 	Audio.play(errsfx);
     }
 
@@ -1302,8 +1308,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     @Override
     public void bound() {
-        if (Config.toggleTracking.get())
+        if (Config.toggleTracking.get()) {
             act("tracking");
+            ignoreTrackingSound = true;
+        }
     }
 
     public void actBelt(final int slot, boolean checkMapHit) {
