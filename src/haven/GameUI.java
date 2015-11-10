@@ -613,6 +613,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    updhand();
 		}
 	    }
+		for(Iterator<DraggedItem> i = handSave.iterator(); i.hasNext();) {
+			DraggedItem di = i.next();
+			if(di.item == w) {
+				i.remove();
+			}
+		}
 	} else if(w == polity) {
 	    polity = null;
 	    zerg.dtab(zerg.pol);
