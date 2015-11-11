@@ -78,7 +78,7 @@ public abstract class FeedTask extends FsmTask {
                 if (!isLastItem()) {
                     // click with shift
                     context().itemact(gob, 1);
-                    waitTime(0.2, new WaitForItem(2));
+                    waitTime(0.1, new WaitForItem(2));
                 } else {
                     context().itemact(gob, 0);
                     stop();
