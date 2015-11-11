@@ -3,7 +3,6 @@ package haven;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class EquipBelt extends DraggableBelt {
     private static final Tex sq = Resource.loadtex("gfx/hud/belt/custom/eqsq");
