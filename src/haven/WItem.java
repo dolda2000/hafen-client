@@ -317,11 +317,15 @@ public class WItem extends Widget implements DTarget {
     }
 
     public boolean isSameKind(WItem other) {
-        if (other == null)
+        try {
+            if (other == null)
+                return false;
+            GSprite thisSpr = this.item.spr();
+            GSprite otherSpr = other.item.spr();
+            return item.resname().equals(other.item.resname()) && (thisSpr == otherSpr || (thisSpr != null && thisSpr.isSame(otherSpr)));
+        } catch (Loading e) {
             return false;
-        GSprite thisSpr = this.item.spr();
-        GSprite otherSpr = other.item.spr();
-        return item.resname().equals(other.item.resname()) && (thisSpr == otherSpr || (thisSpr != null && thisSpr.isSame(otherSpr)));
+        }
     }
 
     public boolean isSameQuality(WItem other) {
