@@ -1,5 +1,13 @@
 ## Changelog
 
+### r83
+
+- Added slot to the equipment belt which shows the hidden on cursor item 
+- Changed hotkey to hide item on cursor from `Alt`+`H` to `E`
+- `Alt`+`Ctrl` allows to hide item quality text when it's shown and vice versa
+- Added whole pumpkins to the list of edibles that can be put to troughs and chicken coops
+- Enabled "toggle tracking on startup" option now shouldn't play annoying sound when game loads
+
 ### r82
 
 - Fixed crash caused by the driving of a wagon with movement paths on
