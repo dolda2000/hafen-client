@@ -1,5 +1,10 @@
 ## Changelog
 
+### r84
+
+- Sped up fill actions (for troughs, smelters, etc)
+- Fixed option for pony alarm that actually could disable alarm for unknown players
+
 ### r83
 
 - Added slot to the equipment belt which shows the hidden on cursor item 
