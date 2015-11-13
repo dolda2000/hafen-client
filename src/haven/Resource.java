@@ -193,6 +193,17 @@ public class Resource implements Serializable {
 	}
     }
 
+    // pseudo-remote jar source for custom resources
+    public static class RemoteJarSource extends JarSource {
+        public InputStream get(String name) throws FileNotFoundException {
+            return super.get("remote/" + name);
+        }
+
+        public String toString() {
+            return("'remote' jar res source");
+        }
+    }
+
     public static class HttpSource implements ResSource, Serializable {
 	private final transient SslHelper ssl;
 	public URL baseurl;
@@ -628,6 +639,7 @@ public class Resource implements Serializable {
 	    synchronized(Resource.class) {
 		if(_remote == null) {
 		    Pool remote = new Pool(local());
+            remote.add(new RemoteJarSource());
 		    if(prscache != null)
 			remote.add(new CacheSource(prscache));
 		    _remote = remote;;
