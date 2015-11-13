@@ -17,6 +17,7 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         categoryList.add(new Category(0, "Alarms", createAlarms()));
         categoryList.add(new Category(0, "Display", null));
         categoryList.add(new Category(1, "Game", createGameDisplay()));
+        categoryList.add(new Category(1, "Objects", createObjectsDisplay()));
         categoryList.add(new Category(1, "UI", createGameUI()));
         categoryList.add(new Category(0, "Tools", null));
         categoryList.add(new Category(1, "Autopick", createAutopick()));
@@ -117,25 +118,6 @@ public class CustomSettingsPanel extends OptWnd.Panel {
             }
         }, new Coord(0, y));
         y += 20;
-        panel.add(new Label("Cupboards scale (requires restart):"), new Coord(0, y));
-        y += 15;
-        final Label sc = panel.add(new Label(""), new Coord(260, y));
-        panel.add(new HSlider(255, 10, 100, Config.cupboardScale.get()) {
-            protected void added() {
-                dpy();
-                this.c.y = sc.c.y + ((sc.sz.y - this.sz.y) / 2);
-            }
-
-            void dpy() {
-                sc.settext(String.format("%d%%", val));
-            }
-
-            public void changed() {
-                dpy();
-                Config.cupboardScale.set(val);
-            }
-        }, new Coord(0, y));
-        y += 20;
         panel.add(new Label("Item quality display mode:"), new Coord(0, y));
         y += 15;
         panel.add(new Label("All"), new Coord(0, y));
@@ -153,6 +135,33 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         }, new Coord(0, y));
         y += 25;
         panel.add(new PrefCheckBox("Use background for item quality text", Config.showQualityBackground), new Coord(0, y));
+        panel.pack();
+        return panel;
+    }
+
+    private static Widget createObjectsDisplay() {
+        Widget panel = new Widget();
+        int y = 0;
+        panel.add(new PrefCheckBox("Enable minimized towers (requires restart)", Config.displayMiniTowers), new Coord(0, y));
+        y += 20;
+        panel.add(new Label("Cupboards' scale (requires restart):"), new Coord(0, y));
+        y += 15;
+        final Label sc = panel.add(new Label(""), new Coord(260, y));
+        panel.add(new HSlider(255, 10, 100, Config.cupboardScale.get()) {
+            protected void added() {
+                dpy();
+                this.c.y = sc.c.y + ((sc.sz.y - this.sz.y) / 2);
+            }
+
+            void dpy() {
+                sc.settext(String.format("%d%%", val));
+            }
+
+            public void changed() {
+                dpy();
+                Config.cupboardScale.set(val);
+            }
+        }, new Coord(0, y));
         panel.pack();
         return panel;
     }

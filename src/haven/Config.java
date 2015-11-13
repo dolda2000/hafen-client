@@ -26,7 +26,6 @@
 
 package haven;
 
-
 import java.net.URL;
 import java.io.PrintStream;
 import java.util.WeakHashMap;
@@ -123,6 +122,7 @@ public class Config {
     public static Pref<Boolean> alwaysShowExtendedTooltips = new Pref<Boolean>("tooltips.extended", false, TYPE_BOOL);
     public static Pref<Boolean> hideModeEnabled = new Pref<Boolean>("hide.mode", false, TYPE_BOOL);
     public static Pref<Boolean> showGobPaths = new Pref<Boolean>("display.gob.paths", false, TYPE_BOOL);
+    public static Pref<Boolean> displayMiniTowers = new Pref<Boolean>("display.minitowers", false, TYPE_BOOL);
     public static boolean screenshotMode;
     public static boolean enableAutoloader;
 

@@ -1,6 +1,8 @@
 package haven;
 
 public class CustomGobInfo extends GAttrib {
+    private static final Indir<Resource> minitower = Resource.remote().load("gfx/terobjs/arch/custom/stonetower");
+
     private final InfoCache<Class> spriteClass = new InfoCache<Class>() {
         protected Class getValue() {
             Resource res = gob.getres();
@@ -39,10 +41,15 @@ public class CustomGobInfo extends GAttrib {
             Resource res = gob.getres();
             if (res != null) {
                 try {
-                    // is tree?
-                    if (res.name.startsWith("gfx/terobjs/trees") && !(res.name.endsWith("log") || res.name.endsWith("stump"))) {
+                    boolean isHideMode = Config.hideModeEnabled.get();
+                    if (isHideMode && res.name.startsWith("gfx/terobjs/trees") && !(res.name.endsWith("log") || res.name.endsWith("stump"))) {
                         Resource stump = Resource.remote().loadwait(res.name + "stump");
                         return new ResDrawable(gob, stump);
+                    } else if (Config.displayMiniTowers.get() && res.name.equals("gfx/terobjs/arch/stonetower")) {
+                        ResDrawable d = gob.getattr(ResDrawable.class);
+                        MessageBuf buf = d.sdt.clone();
+                        buf.rewind();
+                        return new ResDrawable(gob, minitower, buf);
                     }
                 } catch (Exception e) {
                     return null;
@@ -66,7 +73,7 @@ public class CustomGobInfo extends GAttrib {
     }
 
     public Drawable getReplacement() {
-        return Config.hideModeEnabled.get() ? replacement.get() : null;
+        return replacement.get();
     }
 
     public boolean hasSpriteKind(String kind) {
