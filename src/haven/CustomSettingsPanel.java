@@ -106,6 +106,8 @@ public class CustomSettingsPanel extends OptWnd.Panel {
             }
         }, new Coord(0, y));
         y += 20;
+        panel.add(new PrefCheckBox("Display aim progress in percents", Config.showAimPercentage), new Coord(0, y));
+        y += 20;
         panel.add(new Label("Nightvision brightness:"), new Coord(0, y));
         y += 15;
         panel.add(new HSlider(280, 0, 255, 0) {

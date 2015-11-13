@@ -50,6 +50,8 @@ public class UI {
     public GameUI gui = null;
     private int lastkeycode;
     public final Set<Disposable> disposables = new HashSet<Disposable>();
+    private Widget aim;
+    private Widget aimProgress;
     
     {
 	lastevent = lasttick = System.currentTimeMillis();
@@ -157,6 +159,10 @@ public class UI {
 		throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
 	    Widget wdg = pwdg.makechild(f, pargs, cargs);
 	    bind(wdg, id);
+        if (Config.showAimPercentage.get() && type.startsWith("ui/aim")) {
+            aim = wdg;
+            aimProgress = pwdg.add(new AimProgress(wdg));
+        }
 	}
     }
 
@@ -211,6 +217,11 @@ public class UI {
 	}
 	removeid(wdg);
 	wdg.reqdestroy();
+    if (wdg == aim) {
+        aim = null;
+        aimProgress.destroy();
+        aimProgress = null;
+    }
     }
     
     public void destroy(int id) {
