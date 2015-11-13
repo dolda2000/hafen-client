@@ -1,5 +1,10 @@
 ## Changelog
 
+### r85
+
+- Added option to show percentage on the aim meter. See `Custom settings->Display->Game` tab
+- Added option to display minimized model for towers. See `Custom settings->Display->Objects` tab
+
 ### r84
 
 - Sped up fill actions (for troughs, smelters, etc)
