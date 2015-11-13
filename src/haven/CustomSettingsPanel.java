@@ -144,7 +144,7 @@ public class CustomSettingsPanel extends OptWnd.Panel {
     private static Widget createObjectsDisplay() {
         Widget panel = new Widget();
         int y = 0;
-        panel.add(new PrefCheckBox("Enable minimized towers (requires restart)", Config.displayMiniTowers), new Coord(0, y));
+        panel.add(new PrefCheckBox("Minimize towers", Config.displayMiniTowers), new Coord(0, y));
         y += 20;
         panel.add(new Label("Cupboards' scale (requires restart):"), new Coord(0, y));
         y += 15;

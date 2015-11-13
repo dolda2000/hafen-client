@@ -36,28 +36,21 @@ public class CustomGobInfo extends GAttrib {
         }
     };
 
-    private final InfoCache<Drawable> replacement = new InfoCache<Drawable>() {
-        protected Drawable getValue() {
+    private final InfoCache<Boolean> isTree = new InfoCache<Boolean>() {
+        protected Boolean getValue() {
             Resource res = gob.getres();
-            if (res != null) {
-                try {
-                    boolean isHideMode = Config.hideModeEnabled.get();
-                    if (isHideMode && res.name.startsWith("gfx/terobjs/trees") && !(res.name.endsWith("log") || res.name.endsWith("stump"))) {
-                        Resource stump = Resource.remote().loadwait(res.name + "stump");
-                        return new ResDrawable(gob, stump);
-                    } else if (Config.displayMiniTowers.get() && res.name.equals("gfx/terobjs/arch/stonetower")) {
-                        ResDrawable d = gob.getattr(ResDrawable.class);
-                        MessageBuf buf = d.sdt.clone();
-                        buf.rewind();
-                        return new ResDrawable(gob, minitower, buf);
-                    }
-                } catch (Exception e) {
-                    return null;
-                }
-            }
-            return null;
+            return (res != null) && res.name.startsWith("gfx/terobjs/trees") && !(res.name.endsWith("log") || res.name.endsWith("stump"));
         }
     };
+
+    private final InfoCache<Boolean> isTower = new InfoCache<Boolean>() {
+        protected Boolean getValue() {
+            Resource res = gob.getres();
+            return (res != null) && res.name.equals("gfx/terobjs/arch/stonetower");
+        }
+    };
+
+    private Drawable replacement;
 
     public CustomGobInfo(Gob gob) {
         super(gob);
@@ -73,7 +66,28 @@ public class CustomGobInfo extends GAttrib {
     }
 
     public Drawable getReplacement() {
-        return replacement.get();
+        if (Config.hideModeEnabled.get() && getValueOrDefault(isTree.get())) {
+            if (replacement == null) {
+                try {
+                    Resource stump = Resource.remote().loadwait(gob.getres().name + "stump");
+                    replacement = new ResDrawable(gob, stump);
+                } catch (Exception e) {
+                    // no stump -> replace with itself
+                    replacement = gob.getattr(ResDrawable.class);
+                }
+            }
+            return replacement;
+        }
+        if (Config.displayMiniTowers.get() && getValueOrDefault(isTower.get())) {
+            if (replacement == null) {
+                ResDrawable d = gob.getattr(ResDrawable.class);
+                MessageBuf buf = d.sdt.clone();
+                buf.rewind();
+                replacement = new ResDrawable(gob, minitower, buf);
+            }
+            return replacement;
+        }
+        return null;
     }
 
     public boolean hasSpriteKind(String kind) {
@@ -109,5 +123,9 @@ public class CustomGobInfo extends GAttrib {
             this.stage = stage;
             this.maxStage = maxStage;
         }
+    }
+
+    private static boolean getValueOrDefault(Boolean b) {
+        return (b != null) && b;
     }
 }
