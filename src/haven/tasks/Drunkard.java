@@ -2,16 +2,15 @@ package haven.tasks;
 
 import haven.*;
 
-import java.lang.reflect.Field;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 public class Drunkard extends FsmTask {
-    private static final Set<String> containers = new TreeSet<String>();
-    {
-        containers.add("gfx/invobjs/waterflask");
-        containers.add("gfx/invobjs/waterskin");
-        containers.add("gfx/invobjs/teapot-full");
+    private static final Pattern liquidPattern;
+
+    static {
+        String liquids =  haven.Utils.join("|", new String[] { "Water", "Piping Hot Tea", "Tea" });
+        String pattern = String.format("[0-9.]+ l of (%s)", liquids);
+        liquidPattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
     }
 
     @Override
@@ -40,38 +39,32 @@ public class Drunkard extends FsmTask {
 
     private static WItem findDrink(Inventory inv) {
         for (WItem item : inv.children(WItem.class)) {
-            if (isDrink(item) && !isEmpty(item))
+            if (canDrinkFrom(item))
                 return item;
         }
         return null;
     }
 
-    private static boolean isDrink(WItem item) {
-        if (Utils.isItemName(item.item, containers)) {
-            return true;
-        } else if (Utils.isItemName(item.item, "lib/layspr")) {
-            // sizzling teapot uses layered sprite defined in resources, so reflection is needed
-            try {
-                Class cl = item.item.spr().getClass();
-                Field fl = cl.getDeclaredField("name");
-                if (fl != null) {
-                    String name = (String)fl.get(item.item.spr());
-                    if ("Teapot".equals(name))
+    private static boolean canDrinkFrom(WItem item) {
+        ItemInfo.Contents contents = getContents(item);
+        if (contents != null) {
+            for (ItemInfo info : contents.sub) {
+                if (info instanceof ItemInfo.Name) {
+                    ItemInfo.Name name = (ItemInfo.Name) info;
+                    if (name.str != null && liquidPattern.matcher(name.str.text).matches())
                         return true;
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
         return false;
     }
 
-    private static boolean isEmpty(WItem item) {
+    private static ItemInfo.Contents getContents(WItem item) {
         try {
             for (ItemInfo info : item.item.info())
                 if (info instanceof ItemInfo.Contents)
-                    return false;
+                    return (ItemInfo.Contents)info;
         } catch (Loading ignored) {}
-        return true;
+        return null;
     }
 }
