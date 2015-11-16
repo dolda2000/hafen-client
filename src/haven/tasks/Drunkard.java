@@ -47,7 +47,7 @@ public class Drunkard extends FsmTask {
 
     private static boolean canDrinkFrom(WItem item) {
         ItemInfo.Contents contents = getContents(item);
-        if (contents != null) {
+        if (contents != null && contents.sub != null) {
             for (ItemInfo info : contents.sub) {
                 if (info instanceof ItemInfo.Name) {
                     ItemInfo.Name name = (ItemInfo.Name) info;
