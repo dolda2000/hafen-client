@@ -67,9 +67,11 @@ public class Drunkard extends FsmTask {
     }
 
     private static boolean isEmpty(WItem item) {
-        for (ItemInfo info : item.item.info())
-            if (info instanceof ItemInfo.Contents)
-                return false;
+        try {
+            for (ItemInfo info : item.item.info())
+                if (info instanceof ItemInfo.Contents)
+                    return false;
+        } catch (Loading ignored) {}
         return true;
     }
 }
