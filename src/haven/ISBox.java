@@ -169,16 +169,16 @@ public class ISBox extends Widget implements DTarget {
     public void wdgmsg(Widget sender, String msg, Object... args) {
 	if (sender == value || sender == take) {
 	    int amount = 0;
-	    try {
-		amount = Integer.parseInt(value.text);
-	    } catch (Exception ignored) {
-	    }
-	    if (amount > rem) {
-		amount = rem;
-	    }
-	    if (amount > 0) {
-		transfer(-1, amount);
-	    }
+        if (value.text != null && value.text.length() > 0) {
+            try {
+                amount = Integer.parseInt(value.text);
+            } catch (Exception ignored) {
+            }
+            amount = Utils.clip(amount, 0, rem);
+        } else {
+            amount = rem;
+        }
+	    transfer(-1, amount);
 	} else {
 	    super.wdgmsg(sender, msg, args);
 	}
