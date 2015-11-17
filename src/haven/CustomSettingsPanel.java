@@ -206,6 +206,8 @@ public class CustomSettingsPanel extends OptWnd.Panel {
         y += 20;
         panel.add(new PrefCheckBox("Disable flower menu animations", Config.enableMenuAnimation, true), new Coord(0, y));
         y += 20;
+        panel.add(new PrefCheckBox("Use alternative look for flower menus", Config.enableCustomFlowerMenu), new Coord(0, y));
+        y += 20;
         panel.add(new PrefCheckBox("Display additional belt for Fn keys", Config.showCustomFKeysBelt) {
             public void set(boolean val) {
                 super.set(val);

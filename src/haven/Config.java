@@ -107,6 +107,7 @@ public class Config {
     public static Pref<Boolean> toggleTracking = new Pref<Boolean>("toggle.tracking", true, TYPE_BOOL);
     public static Pref<Boolean> highlightParty = new Pref<Boolean>("highlight.party", true, TYPE_BOOL);
     public static Pref<Boolean> enableMenuAnimation = new Pref<Boolean>("menu.animation", false, TYPE_BOOL);
+    public static Pref<Boolean> enableCustomFlowerMenu = new Pref<Boolean>("menu.custom", false, TYPE_BOOL);
     public static Pref<Boolean> enableAccountStoring = new Pref<Boolean>("account.storing", false, TYPE_BOOL);
     public static Pref<Boolean> showGobInfo = new Pref<Boolean>("display.gobinfo", false, TYPE_BOOL);
     public static Pref<Boolean> showGobInfoForGrownTrees = new Pref<Boolean>("display.gobinfo.growntrees", false, TYPE_BOOL);
