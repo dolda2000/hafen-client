@@ -119,7 +119,7 @@ public class FlowerMenu extends Widget {
                 g.chcolor(new Color(255, 255, 255, (int)(255 * a)));
             }
             FastText.print(g, new Coord(5, 5), Integer.toString((num + 1) % 10));
-            g.image(text.tex(), sz.sub(text.sz()).div(2));
+            g.image(text.tex(), sz.sub(8, 0).sub(text.sz()).div(2).add(8, 0));
             g.chcolor();
         }
 
