@@ -1076,6 +1076,17 @@ public class Widget {
 	public abstract boolean tick(double dt);
     }
 
+	public Widget childat(Coord c) {
+		for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
+			if(!wdg.visible)
+				continue;
+			Coord cc = xlate(wdg.c, true);
+			if(c.isect(cc, wdg.sz))
+				return wdg;
+		}
+		return null;
+	}
+
     public abstract class NormAnim extends Anim {
 	private double a = 0.0;
 	private final double s;

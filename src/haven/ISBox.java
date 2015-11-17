@@ -105,6 +105,9 @@ public class ISBox extends Widget implements DTarget {
     }
     
     public Object tooltip(Coord c, Widget prev) {
+    Widget child = childat(c);
+    if (child != null)
+        return child.tooltip(c, prev);
 	try {
 	    if(res.get().layer(Resource.tooltip) != null)
 		return(res.get().layer(Resource.tooltip).t);
