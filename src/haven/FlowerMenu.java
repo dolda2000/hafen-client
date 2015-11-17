@@ -101,7 +101,7 @@ public class FlowerMenu extends Widget {
 
         public CustomPetal(String name) {
             super(name);
-            resize(text.sz().x + 20, 25);
+            resize(text.sz().x + 30, 25);
         }
 
         @Override
@@ -118,7 +118,8 @@ public class FlowerMenu extends Widget {
                 g.frect(Coord.z, sz);
                 g.chcolor(new Color(255, 255, 255, (int)(255 * a)));
             }
-            g.image(text.tex(), sz.div(2).sub(text.sz().div(2)));
+            FastText.print(g, new Coord(5, 5), Integer.toString((num + 1) % 10));
+            g.image(text.tex(), sz.sub(text.sz()).div(2));
             g.chcolor();
         }
 
