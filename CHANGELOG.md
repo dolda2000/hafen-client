@@ -1,5 +1,12 @@
 ## Changelog
 
+### r86
+
+- Changed hotkey for the hidden item slot from `E` to `R`
+- Implemented alternative look for the flower menus which can be enabled through the option on `Custom settings->Display->UI` tab
+- Added barley seeds and onions to the list of edibles that can be put to troughs and chicken coops
+- Fixed crashes that could occur on drinking using the hotkey
+
 ### r85
 
 - Added option to show percentage on the aim meter. See `Custom settings->Display->Game` tab
