@@ -223,7 +223,7 @@ public class FlowerMenu extends Widget {
     }
 
     private void organizeCustom(Petal[] opts) {
-        int width = 100;
+        int width = 80;
         for (Petal petal : opts)
             width = Math.max(width, petal.sz.x);
         Coord c = new Coord(customBoxPadding);
