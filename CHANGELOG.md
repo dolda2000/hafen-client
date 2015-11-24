@@ -1,5 +1,9 @@
 ## Changelog
 
+### r87
+
+- Merged latest vanilla changes
+
 ### r86
 
 - Changed hotkey for the hidden item slot from `E` to `R`
