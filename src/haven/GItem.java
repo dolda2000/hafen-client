@@ -57,11 +57,11 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	public int itemnum();
     }
 
-    public class Amount extends ItemInfo implements NumberInfo {
+    public static class Amount extends ItemInfo implements NumberInfo {
 	private final int num;
 	
-	public Amount(int num) {
-	    super(GItem.this);
+	public Amount(Owner owner, int num) {
+	    super(owner);
 	    this.num = num;
 	}
 	
