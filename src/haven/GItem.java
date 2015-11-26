@@ -27,8 +27,6 @@
 package haven;
 
 import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
 import java.util.*;
 
 public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owner {
@@ -39,6 +37,10 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     private GSprite spr;
     private Object[] rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
+    private boolean meterInitialized;
+    private Date initialMeterChangeTime;
+    private int initialMeterValue;
+    private String meterCompletionTime;
     
     @RName("item")
     public static class $_ implements Factory {
@@ -99,6 +101,14 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	return(spr);
     }
 
+    public String resname(){
+	Resource res = resource();
+	if(res != null){
+	    return res.name;
+	}
+	return "";
+    }
+
     public void tick(double dt) {
 	GSprite spr = spr();
 	if(spr != null)
@@ -106,8 +116,12 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     }
 
     public List<ItemInfo> info() {
-	if(info == null)
-	    info = ItemInfo.buildinfo(this, rawinfo);
+	if(info == null) {
+        ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(rawinfo));
+        if (meterCompletionTime != null)
+            list.add(meterCompletionTime);
+        info = ItemInfo.buildinfo(this, list.toArray());
+    }
 	return(info);
     }
     
@@ -134,7 +148,29 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    info = null;
 	    rawinfo = args;
 	} else if(name == "meter") {
-	    meter = (Integer)args[0];
+        int value = (Integer)args[0];
+        if (value == meter)
+            return;
+        if (!meterInitialized) {
+            meterInitialized = true;
+            meterCompletionTime ="Estimated completion time: calculating...";
+            info = null;
+        } else if (initialMeterChangeTime == null) {
+            initialMeterChangeTime = new Date();
+            initialMeterValue = value;
+        } else {
+            Date now = new Date();
+            int diff = value - initialMeterValue;
+            long millisPerTick = (long)((float)(now.getTime() - initialMeterChangeTime.getTime()) / diff);
+            long millisToComplete = millisPerTick * (100 - value);
+            int seconds = (int)(millisToComplete / 1000) % 60 ;
+            int minutes = (int)((millisToComplete / (1000*60)) % 60);
+            int hours = (int)((millisToComplete / (1000*60*60)));
+            meterCompletionTime = String.format("Estimated completion time: %02d:%02d:%02d", hours, minutes, seconds);
+            // reset tooltip
+            info = null;
+        }
+	    meter = value;
 	}
     }
 }

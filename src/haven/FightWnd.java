@@ -38,6 +38,8 @@ public class FightWnd extends Widget {
     public List<Action> acts = new ArrayList<Action>();
     public int usesave;
     private final Text[] saves;
+    private final String[] savenames;
+    private Config.Pref<String[]> savepref;
     private final CharWnd.LoadingTextBox info;
 
     public class Action {
@@ -213,6 +215,19 @@ public class FightWnd extends Widget {
 	    if(n == usesave)
 		g.aimage(CheckBox.smark, new Coord(itemh / 2, itemh / 2), 0.5, 0.5);
 	}
+
+    @Override
+    protected void itemactivate(final Integer idx) {
+        if (saves[idx] == unused)
+            return;
+        Window input = new SaveNameWnd(savenames[idx]) {
+            public void setname(String name) {
+                setsave(idx, name);
+                destroy();
+            }
+        };
+        FightWnd.this.add(input, FightWnd.this.sz.sub(input.sz).div(2));
+    }
     }
 
     @RName("fmg")
@@ -246,15 +261,15 @@ public class FightWnd extends Widget {
 	super(Coord.z);
 	this.nsave = nsave;
 	this.saves = new Text[nsave];
-	for(int i = 0; i < nsave; i++)
-	    saves[i] = unused;
-
-	info = add(new CharWnd.LoadingTextBox(new Coord(223, 220), "", CharWnd.ifnd), new Coord(5, 35).add(wbox.btloff()));
+    this.savenames = new String[nsave];
+    for(int i = 0; i < nsave; i++)
+        saves[i] = unused;
+    info = add(new CharWnd.LoadingTextBox(new Coord(223, 220), "", CharWnd.ifnd), new Coord(5, 35).add(wbox.btloff()));
 	info.bg = new Color(0, 0, 0, 128);
 	Frame.around(this, Collections.singletonList(info));
 
 	add(new Img(CharWnd.catf.render("Martial Arts & Combat Schools").tex()), 0, 0);
-	actlist = add(new Actions(250, 8), new Coord(245, 35).add(wbox.btloff()));
+	actlist = add(new Actions(250, 7), new Coord(245, 35).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(actlist));
 	savelist = add(new Savelist(250, 3), new Coord(245, 225).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(savelist));
@@ -267,10 +282,37 @@ public class FightWnd extends Widget {
 	    }, 5, 274);
 	add(new Button(110, "Save", false) {
 		public void click() {
-		    save(savelist.sel);
-		    use(savelist.sel);
+            final int idx = savelist.sel;
+            if (saves[idx] == unused) {
+                Window input = new SaveNameWnd(savenames[idx]) {
+                    public void setname(String name) {
+                        setsave(idx, name);
+                        save(idx);
+                        use(idx);
+                        destroy();
+                    }
+                };
+                FightWnd.this.add(input, FightWnd.this.sz.sub(input.sz).div(2));
+            } else {
+                save(savelist.sel);
+                use(savelist.sel);
+            }
 		}
 	    }, 127, 274);
+    add(new Button(110, "Rename", false) {
+        public void click() {
+            final int idx = savelist.sel;
+            if (saves[idx] != unused) {
+                Window input = new SaveNameWnd(savenames[idx]) {
+                    public void setname(String name) {
+                        setsave(idx, name);
+                        destroy();
+                    }
+                };
+                FightWnd.this.add(input, FightWnd.this.sz.sub(input.sz).div(2));
+            }
+        }
+    }, 5, 304);
 	/*
 	int y = actlist.sz.y;
 	for(int i = nsave - 1; i >= 0; i--) {
@@ -302,6 +344,15 @@ public class FightWnd extends Widget {
 	pack();
     }
 
+    @Override
+    public void attach(UI ui) {
+        super.attach(ui);
+        savepref = Config.getDeckNames(ui.sess.username, ui.sess.charname);
+        String[] saved = savepref.get();
+        for(int i = 0; i < nsave; i++)
+            savenames[i] = (i < saved.length) ? saved[i] : "";
+    }
+
     public void uimsg(String nm, Object... args) {
 	if(nm == "act") {
 	    List<Action> acts = new ArrayList<Action>();
@@ -319,15 +370,71 @@ public class FightWnd extends Widget {
 	} else if(nm == "saved") {
 	    int fl = (Integer)args[0];
 	    for(int i = 0; i < nsave; i++) {
-		if((fl & (1 << i)) != 0)
-		    saves[i] = attrf.render(String.format("Saved school %d", i + 1));
+		if((fl & (1 << i)) != 0) {
+            setsave(i, savenames[i]);
+        }
 		else
-		    saves[i] = unused;
+		    delsave(i);
 	    }
 	} else if(nm == "use") {
 	    usesave = (Integer)args[0];
 	} else {
 	    super.uimsg(nm, args);
 	}
+    }
+
+    private void delsave(int idx) {
+        saves[idx] = unused;
+        savenames[idx] = "";
+        savepref.set(savenames);
+    }
+
+    private void setsave(int idx, String text) {
+        if (text == null || text.isEmpty())
+            text = String.format("Saved school %d", idx + 1);
+        saves[idx] = attrf.render(text);
+        savenames[idx] = text;
+        savepref.set(savenames);
+    }
+
+    private static abstract class SaveNameWnd extends Window {
+        private final TextEntry entry;
+
+        public SaveNameWnd(String text) {
+            super(Coord.z, "Enter name...");
+            entry = add(new TextEntry(200, "") {
+                public void activate(String text) {
+                    setname(text);
+                }
+            });
+            entry.settext(text);
+            setcanfocus(true);
+            setfocusctl(true);
+            setfocus(entry);
+            pack();
+        }
+
+        public abstract void setname(String name);
+
+        @Override
+        public void show() {
+            super.show();
+            parent.setfocus(this);
+        }
+
+        @Override
+        public void lostfocus() {
+            super.lostfocus();
+            destroy();
+        }
+
+        @Override
+        public void wdgmsg(Widget sender, String msg, Object... args) {
+            if((sender == this) && (msg.equals("close"))) {
+                destroy();
+            } else {
+                super.wdgmsg(sender, msg, args);
+            }
+        }
     }
 }

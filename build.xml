@@ -1,6 +1,11 @@
 <?xml version="1.0" ?>
 
 <project name="hafen" default="deftgt">
+  <property environment="env" />
+  <condition property="buildversion" value="${env.TRAVIS_TAG}" else="dev">
+    <isset property="env.TRAVIS_TAG" />
+  </condition>
+
   <target name="build-env">
     <mkdir dir="build" />
     <mkdir dir="build/classes" />
@@ -28,6 +33,8 @@
 	<pathelement path="lib/jorbis.jar" />
 	<pathelement path="lib/jogg.jar" />
 	<pathelement path="lib/jglob.jar" />
+	<pathelement path="lib/commons-io-2.4.jar" />
+	<pathelement path="lib/gson-2.3.1.jar" />
       </classpath>
       <compilerarg value="-Xlint:unchecked" />
       <compilerarg value="-Xlint:-options" />
@@ -41,6 +48,9 @@
     <copy todir="build/classes/haven" file="etc/res-preload" />
     <copy todir="build/classes/haven" file="etc/res-bgload" />
     <copy todir="build/classes/haven" file="etc/icon.png" />
+	<copy todir="build/classes/" file="etc/custom-icons.config" />
+    <copy todir="build/classes/haven" file="etc/curio.config" />
+    <copy todir="build/classes/haven" file="etc/gob-paths.config" />
   </target>
   
   <target name="appletview" depends="build-env">
@@ -58,32 +68,65 @@
     <unjar src="lib/jglob.jar" dest="build/classes-lib">
       <patternset excludes="META-INF/**" />
     </unjar>
+    <unjar src="lib/gson-2.3.1.jar" dest="build/classes-lib">
+      <patternset excludes="META-INF/**" />
+    </unjar>
   </target>
 
   <target name="jar" depends="hafen-client,buildinfo,lib-classes">
     <jar destfile="build/hafen.jar" update="true">
       <fileset dir="build/classes" />
       <fileset dir="build/classes-lib" />
+	  <zipgroupfileset dir="lib" includes="commons-io-2.4.jar gson-2.3.1.jar"/>
       <manifest>
 	<attribute name="Main-Class" value="haven.MainFrame" />
-	<attribute name="Class-Path" value="jogl.jar gluegen-rt.jar builtin-res.jar hafen-res.jar" />
+	<attribute name="Class-Path" value="jogl-all.jar gluegen-rt.jar custom-res.jar builtin-res.jar hafen-res.jar" />
+        <attribute name="Implementation-Version" value="${buildversion}" />
       </manifest>
     </jar>
     <chmod file="build/hafen.jar" perm="a+x" />
   </target>
   
   <target name="res-jar" depends="build-env" unless="has-res-jar">
-    <!--
-    <get src="http://www.havenandhearth.com/java/haven-res.jar" dest="lib/haven-res.jar"
+
+    <get src="http://www.havenandhearth.com/java/hafen-res.jar" dest="lib/hafen-res.jar"
 	 usetimestamp="true" />
-    -->
+
+    <get src="http://www.havenandhearth.com/java/builtin-res.jar" dest="lib/builtin-res.jar"
+         usetimestamp="true" />
+
     <available property="lib-res-jar" file="lib/hafen-res.jar" />
     <fail unless="lib-res-jar" message="hafen-res.jar not available" />
     <available property="lib-builtin-jar" file="lib/builtin-res.jar" />
     <fail unless="lib-builtin-jar" message="builtin-res.jar not available" />
   </target>
-  
-  <target name="jars" depends="build-env, jar, res-jar">
+
+  <target name="custom-res">
+    <exec executable="tools/restool/restool.exe" osfamily="windows">
+      <arg value="pack" />
+      <arg value="res" />
+      <arg value="build/custom-res/res" />
+    </exec>
+    <exec executable="mono" osfamily="unix">
+      <arg value="tools/restool/restool.exe" />
+      <arg value="pack" />
+      <arg value="./res" />
+      <arg value="./build/custom-res/res" />
+    </exec>
+    <copy todir="build/custom-res/res">
+      <fileset dir="res">
+        <include name="**/*.res"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="custom-res-jar" depends="custom-res">
+    <jar destfile="build/custom-res.jar">
+      <fileset dir="build/custom-res" />
+    </jar>
+  </target>
+
+  <target name="jars" depends="build-env, jar, custom-res-jar">
     <copy todir="build">
       <fileset dir="lib">
 	<include name="jogl.jar" />
@@ -102,6 +145,10 @@
   
   <target name="clean">
     <delete dir="build" />
+  </target>
+
+  <target name="clean-res">
+    <delete dir="build/custom-res" />
   </target>
   
   <target name="profile" depends="jars">

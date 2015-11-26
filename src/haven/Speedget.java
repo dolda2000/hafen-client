@@ -117,10 +117,10 @@ public class Speedget extends Widget {
     }
 
     public boolean globtype(char key, KeyEvent ev) {
-	if(key == 18) {
+	if(ev.isShiftDown() && ev.getKeyCode() == KeyEvent.VK_R) {
 	    if(max >= 0) {
 		int n;
-		if((ev.getModifiersEx() & KeyEvent.SHIFT_DOWN_MASK) == 0) {
+		if(!ev.isControlDown()) {
 		    if(cur > max)
 			n = 0;
 		    else

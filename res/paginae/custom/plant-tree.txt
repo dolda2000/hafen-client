@@ -1,0 +1,1 @@
+Plants tree in center of the selected tile. To use this tool, take a treeplanter's pot and hide it using $b{$col[255,255,0]{R}}, then select this menu item.

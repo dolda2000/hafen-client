@@ -67,13 +67,24 @@ public class AudioSprite {
 
 	public ClipSprite(Owner owner, Resource res, Resource.Audio clip) {
 	    super(owner, res);
-	    this.clip = new ActAudio.PosClip(new Audio.Monitor(clip.stream()) {
+        Audio.CS stream = adjustVolume(res, clip.stream());
+	    this.clip = new ActAudio.PosClip(new Audio.Monitor(stream) {
 		    protected void eof() {
 			super.eof();
 			done = true;
 		    }
 		});
 	}
+
+    private static Audio.CS adjustVolume(Resource res, Audio.CS stream) {
+        if ("sfx/chip".equals(res.name))
+            return new Audio.VolAdjust(stream, 0.2);
+        if ("sfx/terobjs/quern".equals(res.name))
+            return new Audio.VolAdjust(stream, 0.2);
+        if ("sfx/fight/antspit".equals(res.name))
+            return new Audio.VolAdjust(stream, 0.2);
+        return stream;
+    }
 
 	public boolean setup(RenderList r) {
 	    r.add(clip, null);

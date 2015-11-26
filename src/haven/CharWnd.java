@@ -55,7 +55,7 @@ public class CharWnd extends Window {
     public Wound.Info wound;
     public int exp, enc;
     private int scost;
-    private final Tabs.Tab sattr, fgt;
+    public final Tabs.Tab sattr, fgt;
 
     public static class FoodMeter extends Widget {
 	public static final Tex frame = Resource.loadtex("gfx/hud/chr/foodm");
@@ -421,6 +421,12 @@ public class CharWnd extends Window {
 
 	public void tick(double dt) {
 	    if((attr.base != cbv) || (attr.comp != ccv)) {
+        if (cbv != 0 && attr.base != cbv) {
+            int diff = attr.base - cbv;
+            GameUI ui = getparent(GameUI.class);
+            if (ui != null)
+                ui.notification("You've %s %d %s!", (diff > 0) ? "gained" : "lost", diff, rnm.text);
+        }
 		cbv = attr.base; ccv = attr.comp;
 		Color c = Color.WHITE;
 		if(ccv > cbv) {
@@ -1071,7 +1077,7 @@ public class CharWnd extends Window {
 	{
 	    int x = 5, y = 0;
 
-	    sattr = tabs.add();
+            sattr = tabs.addStudy();
 	    sattr.add(new Img(catf.render("Abilities").tex()), new Coord(x - 5, y)); y += 35;
 	    skill = new ArrayList<SAttr>();
 	    SAttr aw;
@@ -1297,7 +1303,10 @@ public class CharWnd extends Window {
 	    sattr.add(child, new Coord(260, 35).add(wbox.btloff()));
 	    Frame.around(sattr, Collections.singletonList(child));
 	    Widget inf = sattr.add(new StudyInfo(new Coord(attrw - 150, child.sz.y), child), new Coord(260 + 150, child.c.y).add(wbox.btloff().x, 0));
+        sattr.add(new CustomSettingsPanel.PrefCheckBox("Lock", Config.lockStudy), new Coord(415, 10));
+        sattr.add(new CustomSettingsPanel.PrefCheckBox("Auto", Config.enableAutoStudy), new Coord(465, 10));
 	    Frame.around(sattr, Collections.singletonList(inf));
+        getparent(GameUI.class).studywnd.setStudy((Inventory)child);
 	} else if(place == "fmg") {
 	    fgt.add(child, 0, 0);
 	} else if(place == "wound") {

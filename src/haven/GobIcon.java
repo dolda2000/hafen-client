@@ -30,7 +30,7 @@ import java.util.*;
 import java.awt.Color;
 import java.awt.image.*;
 
-public class GobIcon extends GAttrib {
+public class GobIcon extends GAttrib implements MinimapIcon {
     public static final PUtils.Convolution filter = new PUtils.Hanning(1);
     private static final Map<Indir<Resource>, Tex> cache = new WeakHashMap<Indir<Resource>, Tex>();
     public final Indir<Resource> res;
@@ -41,6 +41,12 @@ public class GobIcon extends GAttrib {
 	this.res = res;
     }
 
+	@Override
+	public Color color() {
+		return Color.WHITE;
+	}
+
+	@Override
     public Tex tex() {
 	if(this.tex == null) {
 	    synchronized(cache) {
@@ -61,4 +67,9 @@ public class GobIcon extends GAttrib {
 	}
 	return(this.tex);
     }
+
+	@Override
+	public boolean visible() {
+		return true;
+	}
 }

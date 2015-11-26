@@ -83,7 +83,7 @@ public class Skeleton {
 	}
     }
     
-    private static float[] rotasq(float[] q, float[] axis, float angle) {
+    public static float[] rotasq(float[] q, float[] axis, float angle) {
 	float m = (float)Math.sin(angle / 2.0);
 	q[0] = (float)Math.cos(angle / 2.0);
 	q[1] = m * axis[0]; q[2] = m * axis[1]; q[3] = m * axis[2];
@@ -741,13 +741,21 @@ public class Skeleton {
 	    
 	public static class Frame {
 	    public final float time;
-	    public final float[] trans, rot;
+	    public float[] trans, rot;
+		public final float[] rax;
+		public final float rang;
 		
 	    public Frame(float time, float[] trans, float[] rot) {
-		this.time = time;
-		this.trans = trans;
-		this.rot = rot;
+			this(time, trans, rot, null, -1);
 	    }
+
+		public Frame(float time, float[] trans, float[] rot, float[] rax, float rang) {
+			this.time = time;
+			this.trans = trans;
+			this.rot = rot;
+			this.rax = rax;
+			this.rang = rang;
+		}
 	}
 	    
 	public Track(String bone, Frame[] frames) {
@@ -843,7 +851,7 @@ public class Skeleton {
 		float[] rax = new float[3];
 		for(int o = 0; o < 3; o++)
 		    rax[o] = (float)buf.cpfloat();
-		frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang));
+		frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang), rax, rang);
 	    }
 	    return(frames);
 	}

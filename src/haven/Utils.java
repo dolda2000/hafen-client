@@ -734,6 +734,10 @@ public class Utils {
     }
     
     public static BufferedImage outline(BufferedImage img, Color col) {
+	return outline(img, col, false);
+    }
+
+    public static BufferedImage outline(BufferedImage img, Color col, boolean thick) {
 	Coord sz = imgsz(img).add(2, 2);
 	BufferedImage ol = TexI.mkbuf(sz);
 	Object fcol = ol.getColorModel().getDataElements(col.getRGB(), null);
@@ -754,13 +758,24 @@ public class Utils {
 		   ((x < sz.x - 2) && (y > 0) && (y < sz.y - 1) && (src.getSample(x, y - 1, 3) >= 250)) ||
 		   ((x > 0) && (y < sz.y - 2) && (x < sz.x - 1) && (src.getSample(x - 1, y, 3) >= 250)))
 		    dst.setDataElements(x, y, fcol);
+		if(thick) {
+		    if(((x > 1) && (y > 1) && (src.getSample(x - 2, y - 2, 3)) >= 250) ||
+			((x < sz.x - 2) && (y < sz.y - 2) && (src.getSample(x, y, 3) >= 250)) ||
+			((x < sz.x - 2) && (y > 1) && (src.getSample(x, y - 2, 3) >= 250)) ||
+			((x > 1) && (y < sz.y - 2) && (src.getSample(x - 2, y, 3) >= 250)))
+			dst.setDataElements(x, y, fcol);
+		}
 	    }
 	}
 	return(ol);
     }
-    
+
     public static BufferedImage outline2(BufferedImage img, Color col) {
-	BufferedImage ol = outline(img, col);
+	return outline2(img, col, false);
+    }
+
+    public static BufferedImage outline2(BufferedImage img, Color col, boolean thick) {
+	BufferedImage ol = outline(img, col, thick);
 	Graphics g = ol.getGraphics();
 	g.drawImage(img, 1, 1, null);
 	g.dispose();
@@ -1152,6 +1167,64 @@ public class Utils {
 	} catch(java.net.MalformedURLException e) {
 	    throw(new RuntimeException(e));
 	}
+    }
+
+    public static String join(String separator, List<String> list) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < list.size() - 1; i++)
+            sb.append(list.get(i)).append(separator);
+        if (list.size() > 0)
+            sb.append(list.get(list.size() - 1));
+        return sb.toString();
+    }
+
+    public static String join(String separator, String[] array) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < array.length - 1; i++)
+            sb.append(array[i]).append(separator);
+        if (array.length > 0)
+            sb.append(array[array.length - 1]);
+        return sb.toString();
+    }
+
+    public static int indexOf(Object[] array, Object o) {
+        for (int i = 0; i < array.length; i++)
+            if ((o == null ? array[i] == null : o.equals(array[i])))
+                return i;
+        return -1;
+    }
+
+    public static <T> List<T> asSortedList(Collection<T> c, Comparator<T> cmp) {
+        List<T> list = new ArrayList<T>(c);
+        java.util.Collections.sort(list, cmp);
+        return list;
+    }
+
+    public static Color hex2color(String hex, Color def){
+        Color c = def;
+        if (hex != null) {
+            try {
+                int col = (int)Long.parseLong(hex, 16);
+                boolean hasAlpha = (0xff000000 & col) != 0;
+                c = new Color(col, hasAlpha);
+            } catch (Exception ignored) {}
+        }
+        return c;
+    }
+
+    public static String color2hex(Color col){
+        if(col != null){
+            return Integer.toHexString(col.getRGB());
+        }
+        return null;
+    }
+
+    public static boolean equals(double a, double b) {
+        return equals(a, b, 1e-10);
+    }
+
+    public static boolean equals(double a, double b, double eps) {
+        return a == b ? true : Math.abs(a - b) < eps;
     }
 
     public static <C> C hascause(Throwable t, Class<C> c) {

@@ -316,7 +316,8 @@ public class MapMesh implements Rendered, Disposable {
 		Coord gc = c.add(ul);
 		long ns = rnd.nextLong();
 		mc.tiler(mc.gettile(gc)).lay(m, rnd, c, gc);
-		dotrans(m, rnd, c, gc);
+		if (!Config.disableTileTransitions.get())
+			dotrans(m, rnd, c, gc);
 		rnd.setSeed(ns);
 	    }
 	}

@@ -26,110 +26,50 @@
 
 package haven;
 
+import java.awt.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeMap;
+
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
-import haven.MCache.Grid;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
-import java.util.*;
-import haven.resutil.Ridges;
 
-public class LocalMiniMap extends Widget {
+public class LocalMiniMap extends Widget implements Console.Directory {
+	private static final Resource plarrow = Resource.local().loadwait("gfx/hud/mmap/plarrow");
+    private static final Resource plalarm = Resource.local().loadwait("sfx/alarmplayer");
+
     public final MapView mv;
+	private final MinimapCache cache;
     private Coord cc = null;
-    private MapTile cur = null;
-    private final Map<Pair<Grid, Integer>, Defer.Future<MapTile>> cache = new LinkedHashMap<Pair<Grid, Integer>, Defer.Future<MapTile>>(5, 0.75f, true) {
-	protected boolean removeEldestEntry(Map.Entry<Pair<Grid, Integer>, Defer.Future<MapTile>> eldest) {
-	    if(size() > 5) {
-		try {
-		    MapTile t = eldest.getValue().get();
-		    t.img.dispose();
-		} catch(RuntimeException e) {
-		}
-		return(true);
-	    }
-	    return(false);
-	}
-    };
-    
-    public static class MapTile {
-	public final Tex img;
-	public final Coord ul;
-	public final Grid grid;
-	public final int seq;
-	
-	public MapTile(Tex img, Coord ul, Grid grid, int seq) {
-	    this.img = img;
-	    this.ul = ul;
-	    this.grid = grid;
-	    this.seq = seq;
-	}
-    }
-
-    private BufferedImage tileimg(int t, BufferedImage[] texes) {
-	BufferedImage img = texes[t];
-	if(img == null) {
-	    Resource r = ui.sess.glob.map.tilesetr(t);
-	    if(r == null)
-		return(null);
-	    Resource.Image ir = r.layer(Resource.imgc);
-	    if(ir == null)
-		return(null);
-	    img = ir.img;
-	    texes[t] = img;
-	}
-	return(img);
-    }
-    
-    public BufferedImage drawmap(Coord ul, Coord sz) {
-	BufferedImage[] texes = new BufferedImage[256];
-	MCache m = ui.sess.glob.map;
-	BufferedImage buf = TexI.mkbuf(sz);
-	Coord c = new Coord();
-	for(c.y = 0; c.y < sz.y; c.y++) {
-	    for(c.x = 0; c.x < sz.x; c.x++) {
-		int t = m.gettile(ul.add(c));
-		BufferedImage tex = tileimg(t, texes);
-		int rgb = 0;
-		if(tex != null)
-		    rgb = tex.getRGB(Utils.floormod(c.x + ul.x, tex.getWidth()),
-				     Utils.floormod(c.y + ul.y, tex.getHeight()));
-		buf.setRGB(c.x, c.y, rgb);
-	    }
-	}
-	for(c.y = 1; c.y < sz.y - 1; c.y++) {
-	    for(c.x = 1; c.x < sz.x - 1; c.x++) {
-		int t = m.gettile(ul.add(c));
-		Tiler tl = m.tiler(t);
-		if(tl instanceof Ridges.RidgeTile) {
-		    if(Ridges.brokenp(m, ul.add(c))) {
-			for(int y = c.y - 1; y <= c.y + 1; y++) {
-			    for(int x = c.x - 1; x <= c.x + 1; x++) {
-				Color cc = new Color(buf.getRGB(x, y));
-				buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y))?1:0.1).getRGB());
-			    }
-			}
-		    }
-		}
-	    }
-	}
-	for(c.y = 0; c.y < sz.y; c.y++) {
-	    for(c.x = 0; c.x < sz.x; c.x++) {
-		int t = m.gettile(ul.add(c));
-		if((m.gettile(ul.add(c).add(-1, 0)) > t) ||
-		   (m.gettile(ul.add(c).add( 1, 0)) > t) ||
-		   (m.gettile(ul.add(c).add(0, -1)) > t) ||
-		   (m.gettile(ul.add(c).add(0,  1)) > t))
-		    buf.setRGB(c.x, c.y, Color.BLACK.getRGB());
-	    }
-	}
-	return(buf);
-    }
+    private Coord off = Coord.z;
+    private Coord doff;
+    private UI.Grab grab;
+    private boolean showradius;
+    private boolean showgrid;
+    private final HashSet<Long> threats = new HashSet<Long>();
 
     public LocalMiniMap(Coord sz, MapView mv) {
 	super(sz);
 	this.mv = mv;
+	this.cache = new MinimapCache(new MinimapRenderer(mv.ui.sess.glob.map));
+    this.showradius = Config.minimapShowRadius.get();
+    this.showgrid = Config.minimapShowGrid.get();
+    }
+
+    @Override
+    public void attach(UI ui) {
+        super.attach(ui);
+        ui.disposables.add(cache);
+    }
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        cache.dispose();
+        if (ui != null)
+            ui.disposables.remove(cache);
     }
     
     public Coord p2c(Coord pc) {
@@ -142,27 +82,58 @@ public class LocalMiniMap extends Widget {
 
     public void drawicons(GOut g) {
 	OCache oc = ui.sess.glob.oc;
+    ArrayList<Gob> players = new ArrayList<Gob>();
 	synchronized(oc) {
 	    for(Gob gob : oc) {
-		try {
-		    GobIcon icon = gob.getattr(GobIcon.class);
-		    if(icon != null) {
-			Coord gc = p2c(gob.rc);
-			Tex tex = icon.tex();
-			g.image(tex, gc.sub(tex.sz().div(2)));
-		    }
+        try {
+            // don't display icons for party members
+            if (ui.sess.glob.party.memb.containsKey(gob.id))
+                continue;
+            if (gob.isPlayer()) {
+                players.add(gob);
+                continue;
+            }
+            MinimapIcon icon = gob.getMinimapIcon();
+            if (icon != null && icon.visible())
+                drawicon(g, icon, p2c(gob.rc).sub(off));
 		} catch(Loading l) {}
 	    }
+        boolean autohearth = Config.enableAutoHearth.get();
+        boolean alarm = Config.enableStrangerAlarm.get();
+        for (Gob gob : players) {
+            if (autohearth || alarm) {
+                if (gob.isThreat() && !threats.contains(gob.id)) {
+                    threats.add(gob.id);
+                    if (alarm)
+                        Audio.play(plalarm, Config.alarmVolume.get() / 1000.0f);
+                    if (autohearth)
+                        getparent(GameUI.class).menu.wdgmsg("act", "travel", "hearth");
+                }
+            }
+            MinimapIcon icon = gob.getMinimapIcon();
+            if (icon != null && icon.visible())
+                drawicon(g, icon, p2c(gob.rc).sub(off));
+        }
 	}
+    }
+
+    private static void drawicon(GOut g, MinimapIcon icon, Coord gc) {
+        Tex tex = icon.tex();
+        if (tex != null) {
+            g.chcolor(icon.color());
+            g.image(icon.tex(), gc.sub(tex.sz().div(2)));
+        }
     }
 
     public Gob findicongob(Coord c) {
 	OCache oc = ui.sess.glob.oc;
-	synchronized(oc) {
-	    for(Gob gob : oc) {
+	synchronized (oc) {
+        for(Gob gob : oc) {
 		try {
-		    GobIcon icon = gob.getattr(GobIcon.class);
-		    if(icon != null) {
+            if (gob.id == mv.plgob)
+                continue;
+            MinimapIcon icon = gob.getMinimapIcon();
+		    if (icon != null && icon.visible()) {
 			Coord gc = p2c(gob.rc);
 			Coord sz = icon.tex().sz();
 			if(c.isect(gc.sub(sz.div(2)), sz))
@@ -184,69 +155,164 @@ public class LocalMiniMap extends Widget {
     }
 
     public void draw(GOut g) {
-	if(cc == null)
-	    return;
-	map: {
-	    final Grid plg;
-	    try {
-		plg = ui.sess.glob.map.getgrid(cc.div(cmaps));
-	    } catch(Loading l) {
-		break map;
-	    }
-	    final int seq = plg.seq;
-	    if((cur == null) || (plg != cur.grid) || (seq != cur.seq)) {
-		Defer.Future<MapTile> f;
-		synchronized(cache) {
-		    f = cache.get(new Pair<Grid, Integer>(plg, seq));
-		    if(f == null) {
-			f = Defer.later(new Defer.Callable<MapTile> () {
-				public MapTile call() {
-				    Coord ul = plg.ul.sub(cmaps).add(1, 1);
-				    return(new MapTile(new TexI(drawmap(ul, cmaps.mul(3).sub(2, 2))), ul, plg, seq));
-				}
-			    });
-			cache.put(new Pair<Grid, Integer>(plg, seq), f);
-		    }
-		}
-		if(f.done())
-		    cur = f.get();
-	    }
-	}
-	if(cur != null) {
-	    g.image(MiniMap.bg, Coord.z);
-	    g.image(cur.img, cur.ul.sub(cc).add(sz.div(2)));
-	    try {
+        g = g.reclip(Coord.z, sz);
+        if(cc == null)
+            return;
+
+        try {
+            Coord gc = cc.div(cmaps);
+            synchronized (cache) {
+                cache.checkSession(ui.sess.glob.map.getgrid(gc));
+            }
+        } catch (Loading e) {
+        }
+
+        Coord coff = cc.add(off);
+        Coord ulg = coff.sub(sz.div(2)).div(cmaps);
+        Coord blg = coff.add(sz.div(2)).div(cmaps);
+
+        synchronized (cache) {
+            List<Pair<Coord, MCache.Grid>> grids = ui.sess.glob.map.getgrids(ulg, blg);
+            for (Pair<Coord, MCache.Grid> tuple : grids) {
+                Coord cg = tuple.a;
+                MCache.Grid plg = tuple.b;
+                int seq = -1;
+                if (plg != null)
+                    seq = plg.seq;
+
+                MinimapTile tile = cache.get(cg, plg, seq);
+                Tex img = (tile != null) ? tile.img : MiniMap.bg;
+                g.image(img, cg.mul(cmaps).sub(coff).add(sz.div(2)));
+
+                if (showgrid) {
+                    g.chcolor(Color.DARK_GRAY);
+                    g.rect(cg.mul(cmaps).sub(coff).add(sz.div(2)), MCache.cmaps);
+                    g.chcolor();
+                }
+            }
+    }
+
+	try {
 		synchronized(ui.sess.glob.party.memb) {
 		    for(Party.Member m : ui.sess.glob.party.memb.values()) {
-			Coord ptc;
+			Coord mc;
 			try {
-			    ptc = m.getc();
+                mc = m.getc();
 			} catch(MCache.LoadingMap e) {
-			    ptc = null;
+                mc = null;
 			}
-			if(ptc == null)
+			if(mc == null)
 			    continue;
-			ptc = p2c(ptc);
-			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 128);
-			g.image(MiniMap.plx.layer(Resource.imgc).tex(), ptc.add(MiniMap.plx.layer(Resource.negc).cc.inv()));
+			Coord ptc = p2c(mc).sub(off);
+			// do not display party members outside of window
+			// this should be replaced with the proper method of clipping rotated texture
+			if (!ptc.isect(c, sz))
+				continue;
+			double angle = m.getangle() + Math.PI / 2;
+			Coord origin = plarrow.layer(Resource.negc).cc;
+			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 180);
+			g.image(plarrow.layer(Resource.imgc).tex(), ptc.sub(origin), origin, angle);
 			g.chcolor();
+            if (showradius && m.gobid == mv.plgob) {
+                // view radius is 9x9 "server" grids
+                Coord rc = p2c(mc.div(MCache.sgridsz).sub(4, 4).mul(MCache.sgridsz)).sub(off);
+                Coord rs = MCache.sgridsz.mul(9).div(tilesz);
+                g.chcolor(255, 255, 255, 60);
+                g.frect(rc, rs);
+                g.chcolor(0, 0, 0, 128);
+                g.rect(rc, rs);
+                g.chcolor();
+            }
 		    }
 		}
-	    } catch(Loading l) {}
-	} else {
-	    g.image(MiniMap.nomap, Coord.z);
-	}
+	} catch(Loading l) {}
 	drawicons(g);
     }
 
     public boolean mousedown(Coord c, int button) {
 	if(cc == null)
 	    return(false);
-	Gob gob = findicongob(c);
+
+    // allow to drag minimap with middle button
+    if (button == 2) {
+        grab = this.ui.grabmouse(this);
+        doff = c;
+        return true;
+    }
+
+    Coord coff = c.add(off);
+	Gob gob = findicongob(coff);
 	if(gob == null)
-	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags());
-	else
-	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags(), 0, (int)gob.id, gob.rc, 0, -1);
+	    mv.wdgmsg("click", rootpos().add(c), c2p(coff), button, ui.modflags());
+	else {
+        if (ui.modmeta && button == 1)
+            tooltip = gob.getres().name;
+	    mv.wdgmsg("click", rootpos().add(c), c2p(coff), button, ui.modflags(), 0, (int)gob.id, gob.rc, 0, -1);
+    }
 	return(true);
+    }
+
+    @Override
+    public boolean mouseup(Coord c, int button) {
+        if (grab != null) {
+            grab.remove();
+            grab = null;
+            return true;
+        }
+        return super.mouseup(c, button);
+    }
+
+    @Override
+    public void mousemove(Coord c) {
+        if (grab != null) {
+            off = off.add(doff.sub(c));
+            doff = c;
+        } else {
+            super.mousemove(c);
+        }
+        // remove gob tooltip
+        if (!ui.modmeta)
+            tooltip = null;
+    }
+
+    @Override
+    public Map<String, Console.Command> findcmds() {
+        return(cmdmap);
+    }
+
+    public void setOffset(Coord value) {
+        off = value;
+    }
+
+    public void toggleRadius() {
+        showradius = !showradius;
+        Config.minimapShowRadius.set(showradius);
+    }
+
+    public void toggleCustomIcons() {
+        ui.sess.glob.icons.toggle();
+        getparent(GameUI.class).notification("Custom icons are %s", ui.sess.glob.icons.enabled() ? "enabled" : "disabled");
+    }
+
+    public void toggleGrid() {
+        showgrid = !showgrid;
+        Config.minimapShowGrid.set(showgrid);
+    }
+
+    private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>(); {
+        cmdmap.put("icons", new Console.Command() {
+            public void run(Console console, String[] args) throws Exception {
+                if (args.length == 2) {
+                    String arg = args[1];
+                    if (arg.equals("reload")) {
+                        ui.sess.glob.icons.config.reload();
+                        ui.sess.glob.icons.reset();
+                        getparent(GameUI.class).notification("Custom icons configuration is reloaded");
+                        return;
+                    }
+                }
+                throw new Exception("No such setting");
+            }
+        });
     }
 }

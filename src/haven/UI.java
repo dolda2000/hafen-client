@@ -47,6 +47,11 @@ public class UI {
     public Console cons = new WidgetConsole();
     private Collection<AfterDraw> afterdraws = new LinkedList<AfterDraw>();
     public final ActAudio audio = new ActAudio();
+    public GameUI gui = null;
+    private int lastkeycode;
+    public final Set<Disposable> disposables = new HashSet<Disposable>();
+    private Widget aim;
+    private Widget aimProgress;
     
     {
 	lastevent = lasttick = System.currentTimeMillis();
@@ -122,6 +127,7 @@ public class UI {
     public void bind(Widget w, int id) {
 	widgets.put(id, w);
 	rwidgets.put(w, id);
+	w.bound();
     }
     
     public void drawafter(AfterDraw ad) {
@@ -153,6 +159,10 @@ public class UI {
 		throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
 	    Widget wdg = pwdg.makechild(f, pargs, cargs);
 	    bind(wdg, id);
+        if (Config.showAimPercentage.get() && type.startsWith("ui/aim")) {
+            aim = wdg;
+            aimProgress = pwdg.add(new AimProgress(wdg));
+        }
 	}
     }
 
@@ -207,6 +217,11 @@ public class UI {
 	}
 	removeid(wdg);
 	wdg.reqdestroy();
+    if (wdg == aim) {
+        aim = null;
+        aimProgress.destroy();
+        aimProgress = null;
+    }
     }
     
     public void destroy(int id) {
@@ -253,6 +268,8 @@ public class UI {
 
     public void type(KeyEvent ev) {
 	setmods(ev);
+    // HACK: client sends pressed hotkeys during type event which doesn't have key code
+    ev.setKeyCode(lastkeycode);
 	for(Grab g : c(keygrab)) {
 	    if(g.wdg.type(ev.getKeyChar(), ev))
 		return;
@@ -263,6 +280,7 @@ public class UI {
 	
     public void keydown(KeyEvent ev) {
 	setmods(ev);
+    lastkeycode = ev.getKeyCode();
 	for(Grab g : c(keygrab)) {
 	    if(g.wdg.keydown(ev))
 		return;
@@ -334,6 +352,16 @@ public class UI {
 	}
 	root.mousewheel(c, amount);
     }
+
+    public void mouseclick(MouseEvent ev, Coord c, int button, int count) {
+        setmods(ev);
+        lcc = mc = c;
+        for(Grab g : c(mousegrab)) {
+            if(g.wdg.mouseclick(wdgxlate(c, g.wdg), button, count))
+                return;
+        }
+        root.mouseclick(c, button, count);
+    }
     
     public int modflags() {
 	return((modshift?1:0) |
@@ -344,5 +372,7 @@ public class UI {
 
     public void destroy() {
 	audio.clear();
+    for (Disposable disposable : disposables)
+        disposable.dispose();
     }
 }

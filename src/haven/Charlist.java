@@ -114,8 +114,10 @@ public class Charlist extends Widget {
 	if(sender instanceof Button) {
 	    synchronized(chars) {
 		for(Char c : chars) {
-		    if(sender == c.plb)
-			wdgmsg("play", c.name);
+		    if(sender == c.plb) {
+				wdgmsg("play", c.name);
+				ui.sess.charname = c.name;
+			}
 		}
 	    }
 	} else if(sender instanceof Avaview) {

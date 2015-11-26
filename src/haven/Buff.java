@@ -44,6 +44,7 @@ public class Buff extends Widget {
     Tex ntext = null;
     int a = 255;
     boolean dest = false;
+    private Resource.Image img;
 
     @RName("buff")
     public static class $_ implements Factory {
@@ -75,11 +76,16 @@ public class Buff extends Widget {
 	} else {
 	    g.image(frame, Coord.z);
 	}
-	try {
-	    Tex img = res.get().layer(Resource.imgc).tex();
-	    g.image(img, imgoff);
+    if (img == null) {
+        try {
+            img = res.get().layer(Resource.imgc);
+        } catch (Loading e) {}
+    }
+    if (img != null) {
+        Tex tex = img.tex();
+	    g.image(tex, imgoff);
 	    if(nmeter >= 0)
-		g.aimage(nmeter(), imgoff.add(img.sz()).sub(1, 1), 1, 1);
+		g.aimage(nmeter(), imgoff.add(tex.sz()).sub(1, 1), 1, 1);
 	    if(cmeter >= 0) {
 		double m = cmeter / 100.0;
 		if(cticks >= 0) {
@@ -89,11 +95,11 @@ public class Buff extends Widget {
 		}
 		m = Utils.clip(m, 0.0, 1.0);
 		g.chcolor(255, 255, 255, a / 2);
-		Coord ccc = img.sz().div(2);
-		g.prect(imgoff.add(ccc), ccc.inv(), img.sz().sub(ccc), Math.PI * 2 * m);
+		Coord ccc = tex.sz().div(2);
+		g.prect(imgoff.add(ccc), ccc.inv(), tex.sz().sub(ccc), Math.PI * 2 * m);
 		g.chcolor(255, 255, 255, a);
 	    }
-	} catch(Loading e) {}
+	}
     }
 
     private String shorttip() {
@@ -160,6 +166,7 @@ public class Buff extends Widget {
     public void uimsg(String msg, Object... args) {
 	if(msg == "ch") {
 	    this.res = ui.sess.getres((Integer)args[0]);
+        this.img = null;
 	} else if(msg == "tip") {
 	    String tt = (String)args[0];
 	    this.tt = tt.equals("")?null:tt;
@@ -181,5 +188,9 @@ public class Buff extends Widget {
     public boolean mousedown(Coord c, int btn) {
 	wdgmsg("cl", c.sub(imgoff), btn, ui.modflags());
 	return(true);
+    }
+
+    public Resource.Image getImage() {
+        return img;
     }
 }

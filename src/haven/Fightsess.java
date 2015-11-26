@@ -26,6 +26,9 @@
 
 package haven;
 
+import haven.combat.AttackType;
+import haven.combat.CombatHelper;
+
 import java.util.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
@@ -88,11 +91,24 @@ public class Fightsess extends Widget {
 	updatepos();
 	double now = System.currentTimeMillis() / 1000.0;
 
-	for(Buff buff : fv.buffs.children(Buff.class))
-	    buff.draw(g.reclip(pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
+    DefBar my = new DefBar(true);
+    for(Buff buff : fv.buffs.children(Buff.class)) {
+        Coord c = pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y);
+		buff.draw(g.reclip(c, buff.sz));
+        if (!buff.dest)
+            my.addBuff(buff);
+	}
+    if (Config.showCustomDefenseBars.get())
+        my.draw(g, pcc.add(-40, pho - Buff.cframe.sz().y));
 	if(fv.current != null) {
-	    for(Buff buff : fv.current.buffs.children(Buff.class))
-		buff.draw(g.reclip(pcc.add(buff.c.x + 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
+        DefBar opp = new DefBar(false);
+	    for(Buff buff : fv.current.buffs.children(Buff.class)) {
+            buff.draw(g.reclip(pcc.add(buff.c.x + 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
+            if (!buff.dest)
+                opp.addBuff(buff);
+        }
+        if (Config.showCustomDefenseBars.get())
+            opp.draw(g, pcc.add(20, pho - Buff.cframe.sz().y));
 
 	    g.aimage(ip.get().tex(), pcc.add(-75, 0), 1, 0.5);
 	    g.aimage(oip.get().tex(), pcc.add(75, 0), 0, 0.5);
@@ -196,5 +212,49 @@ public class Fightsess extends Widget {
 	    return(true);
 	}
 	return(super.globtype(key, ev));
+    }
+
+    private static class DefBar {
+        private static final Coord bsz = new Coord(20, 10);
+
+        private final Map<AttackType, List<Buff>> defs = new HashMap<AttackType, List<Buff>>();
+        private final boolean invert;
+
+        public DefBar(boolean invert) {
+            this.invert = invert;
+        }
+
+        public void addBuff(Buff buff) {
+            Resource.Image img = buff.getImage();
+            if (img != null) {
+                int attackType = CombatHelper.getAttackType(img.img);
+                for (AttackType type : AttackType.All) {
+                    if ((type.value & attackType) != 0) {
+                        List<Buff> buffs = defs.get(type);
+                        if (buffs == null) {
+                            buffs = new ArrayList<Buff>();
+                            defs.put(type, buffs);
+                        }
+                        buffs.add(buff);
+                    }
+                }
+            }
+        }
+
+        public void draw(GOut g, Coord c) {
+            int y = 15;
+            for (AttackType type : defs.keySet()) {
+                int x = 0;
+                for (Buff buff : defs.get(type)) {
+                    g.chcolor(type.color, 128);
+                    g.frect(c.add(x, -y), new Coord((buff.ameter * bsz.x) / 100, bsz.y));
+                    g.chcolor(Color.LIGHT_GRAY);
+                    g.rect(c.add(x, -y), bsz);
+                    g.chcolor();
+                    x += (bsz.x + 5) * (invert ? -1 : 1);
+                }
+                y += bsz.y + 5;
+            }
+        }
     }
 }

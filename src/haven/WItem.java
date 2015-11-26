@@ -34,10 +34,16 @@ import static haven.ItemInfo.find;
 import static haven.Inventory.sqsz;
 
 public class WItem extends Widget implements DTarget {
+    private static final int SHOW_QUALITY_ALL = 0;
+    private static final int SHOW_QUALITY_AVG = 1;
+    private static final int SHOW_QUALITY_MAX = 2;
+
     public static final Resource missing = Resource.local().loadwait("gfx/invobjs/missing");
     public final GItem item;
     private Resource cspr = null;
     private Message csdt = Message.nil;
+    private Tex meter;
+    private int meterValue;
     
     public WItem(GItem item) {
 	super(sqsz);
@@ -113,7 +119,7 @@ public class WItem extends Widget implements DTarget {
 		shorttip = longtip = null;
 		ttinfo = info;
 	    }
-	    if(now - hoverstart < 1000) {
+	    if(now - hoverstart < 1000 && !Config.alwaysShowExtendedTooltips.get()) {
 		if(shorttip == null)
 		    shorttip = new ShortTip(info);
 		return(shorttip);
@@ -162,6 +168,12 @@ public class WItem extends Widget implements DTarget {
 	}
     };
 
+    public final AttrCache<ItemQuality> quality = new AttrCache<ItemQuality>() {
+        protected ItemQuality find(List<ItemInfo> info) {
+            return ItemQuality.fromItemInfo(info);
+        }
+    };
+
     private GSprite lspr = null;
     public void tick(double dt) {
 	/* XXX: This is ugly and there should be a better way to
@@ -193,32 +205,73 @@ public class WItem extends Widget implements DTarget {
 	    } else if(itemnum.get() != null) {
 		g.aimage(itemnum.get(), sz, 1, 1);
 	    }
-	    if(item.meter > 0) {
-		double a = ((double)item.meter) / 100.0;
-		g.chcolor(255, 255, 255, 64);
-		Coord half = sz.div(2);
-		g.prect(half, half.inv(), half, a * Math.PI * 2);
-		g.chcolor();
-	    }
+
+        boolean drawQuality = Config.showQuality.get() && (quality.get() != null);
+        // toggle quality display when both ALT and CTRL are pressed
+        if (ui.modctrl && ui.modmeta)
+            drawQuality = !drawQuality;
+
+        if (item.meter > 0) {
+            double a = ((double) item.meter) / 100.0;
+            int r = (int) ((1 - a) * 255);
+            int gr = (int) (a * 255);
+            int b = 0;
+            g.chcolor(r, gr, b, 255);
+            g.frect(new Coord(sz.x - 5, (int) ((1 - a) * sz.y)), new Coord(5, (int) (a * sz.y)));
+            g.chcolor();
+            // draw percentage when quality is not shown
+            if (!drawQuality) {
+                if (meter == null || meterValue != item.meter) {
+                    meterValue = item.meter;
+                    meter = Text.std.renderstroked(String.format("%d%%", meterValue), Color.WHITE, Color.BLACK).tex();
+                }
+                g.image(meter, new Coord(0, -5));
+            }
+        }
+        if (drawQuality)
+            drawquality(g, quality.get());
 	} else {
 	    g.image(missing.layer(Resource.imgc).tex(), Coord.z, sz);
 	}
     }
     
     public boolean mousedown(Coord c, int btn) {
-	if(btn == 1) {
-	    if(ui.modshift)
-		item.wdgmsg("transfer", c);
-	    else if(ui.modctrl)
-		item.wdgmsg("drop", c);
-	    else
-		item.wdgmsg("take", c);
-	    return(true);
+	if(checkXfer(btn)) {
+	    return true;
+	} else if(btn == 1) {
+	    item.wdgmsg("take", c);
+	    return true;
 	} else if(btn == 3) {
 	    item.wdgmsg("iact", c, ui.modflags());
 	    return(true);
 	}
 	return(false);
+    }
+
+    private boolean checkXfer(int button) {
+	boolean inv = parent instanceof Inventory;
+	if(ui.modshift) {
+	    if(ui.modmeta) {
+		if(inv) {
+		    wdgmsg("transfer-same", this, button == 3);
+		    return true;
+		}
+	    } else if(button == 1) {
+		item.wdgmsg("transfer", c);
+		return true;
+	    }
+	} else if(ui.modctrl) {
+	    if(ui.modmeta) {
+		if(inv) {
+		    wdgmsg("drop-same", this, button == 3);
+		    return true;
+		}
+	    } else if(button == 1) {
+		item.wdgmsg("drop", c);
+		return true;
+	    }
+	}
+	return false;
     }
 
     public boolean drop(Coord cc, Coord ul) {
@@ -228,5 +281,60 @@ public class WItem extends Widget implements DTarget {
     public boolean iteminteract(Coord cc, Coord ul) {
 	item.wdgmsg("itemact", ui.modflags());
 	return(true);
+    }
+
+    private void drawquality(GOut g, ItemQuality q) {
+        List<ItemQuality.Element> elements = new ArrayList<ItemQuality.Element>();
+        switch (Config.showQualityMode.get()) {
+            case SHOW_QUALITY_ALL:
+                elements.add(q.essence);
+                elements.add(q.substance);
+                elements.add(q.vitality);
+                break;
+            case SHOW_QUALITY_AVG:
+                elements.add(q.average);
+                break;
+            case SHOW_QUALITY_MAX:
+                elements.add(q.getMaxElement());
+                break;
+        }
+
+        Coord c = new Coord(0, -4);
+        if (Config.showQualityBackground.get()) {
+            int w = 0;
+            int h = elements.size() > 0 ? elements.get(0).tex().sz().y : 0;
+            for (ItemQuality.Element el : elements) {
+                w = Math.max(w, el.tex().sz().x);
+            }
+            g.chcolor(0, 0, 0, 128);
+            g.frect(c, new Coord(w + 1, (h - 5) * elements.size() + 5));
+            g.chcolor();
+        }
+        for (ItemQuality.Element el : elements) {
+            g.image(el.tex(), c);
+            c.y += 10;
+        }
+    }
+
+    public boolean isSameKind(WItem other) {
+        try {
+            if (other == null)
+                return false;
+            GSprite thisSpr = this.item.spr();
+            GSprite otherSpr = other.item.spr();
+            return item.resname().equals(other.item.resname()) && (thisSpr == otherSpr || (thisSpr != null && thisSpr.isSame(otherSpr)));
+        } catch (Loading e) {
+            return false;
+        }
+    }
+
+    public boolean isSameQuality(WItem other) {
+        if (other == null)
+            return false;
+        ItemQuality aq = this.quality.get();
+        ItemQuality bq = other.quality.get();
+        if (aq != null)
+            return aq.equals(bq);
+        return (bq == null);
     }
 }

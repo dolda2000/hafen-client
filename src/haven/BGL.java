@@ -82,7 +82,8 @@ public class BGL {
     public void run(GL2 gl) {
 	for(int i = 0; i < n; i++) {
 	    try {
-		list[i].run(gl);
+        if (i < list.length) // FIMXE: dirty fix for ArrayIndexOutOfBoundsException
+            list[i].run(gl);
 	    } catch(Exception exc) {
 		throw(new BGLException(this, list[i], exc));
 	    }

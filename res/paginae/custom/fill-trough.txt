@@ -1,0 +1,1 @@
+Fills nearest trough using edible items from the inventory.

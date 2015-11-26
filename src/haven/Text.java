@@ -35,7 +35,7 @@ public class Text {
     public static final Font serif = new Font("Serif", Font.PLAIN, 10);
     public static final Font sans  = new Font("Sans", Font.PLAIN, 10);
     public static final Font mono  = new Font("Monospaced", Font.PLAIN, 10);
-    public static final Font fraktur = Resource.local().loadwait("ui/fraktur").layer(Resource.Font.class).font;
+    public static final Font fraktur = Resource.local().loadwait("ui/sourcesans").layer(Resource.Font.class).font;
     public static final Font dfont = sans;
     public static final Foundry std;
     public final BufferedImage img;
@@ -178,9 +178,15 @@ public class Text {
 	    g.dispose();
 	    return(new Line(text, img, m));
 	}
-		
+
 	public Line render(String text) {
 	    return(render(text, defcol));
+	}
+
+	public Line renderstroked(String text, Color c, Color s){
+	    Line line = render(text, c);
+	    BufferedImage img = Utils.outline2(line.img, s, true);
+	    return new Line(text, img, line.m);
 	}
     }
 
@@ -261,6 +267,30 @@ public class Text {
 	
     public static Line renderf(Color c, String text, Object... args) {
 	return(std.render(String.format(text, args), c));
+    }
+
+    public static Line renderstroked(String text, Color c, Color s, Text.Foundry fnd) {
+	return fnd.renderstroked(text, c, s);
+    }
+
+    public static Line renderstroked(String text, Color c, Color s) {
+	return renderstroked(text, c, s, std);
+    }
+
+    public static Line renderstroked(String text, Color c) {
+	return renderstroked(text, c, Utils.contrast(c));
+    }
+
+    public static Line renderstroked(String text, Color c, Text.Foundry fnd) {
+	return renderstroked(text, c, Utils.contrast(c), fnd);
+    }
+
+    public static Line renderstroked(String text) {
+	return renderstroked(text, Color.WHITE);
+    }
+
+    public static Line renderstroked(String text, Text.Foundry fnd) {
+	return renderstroked(text, Color.WHITE, fnd);
     }
 	
     public static Line render(String text) {

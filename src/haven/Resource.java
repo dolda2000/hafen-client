@@ -49,7 +49,7 @@ public class Resource implements Serializable {
     public static Class<AButton> action = AButton.class;
     public static Class<Audio> audio = Audio.class;
     public static Class<Tooltip> tooltip = Tooltip.class;
-    
+
     private Collection<Layer> layers = new LinkedList<Layer>();
     public final String name;
     public int ver;
@@ -95,7 +95,7 @@ public class Resource implements Serializable {
 	public Resource get(int prio) {
 	    return(pool.load(name, ver, prio).get());
 	}
-	
+
 	public Resource get() {
 	    return(get(0));
 	}
@@ -106,7 +106,7 @@ public class Resource implements Serializable {
 	this.name = name;
 	this.ver = ver;
     }
-	
+
     public static void setcache(ResCache cache) {
 	prscache = cache;
     }
@@ -121,39 +121,39 @@ public class Resource implements Serializable {
     public static interface ResSource {
 	public InputStream get(String name) throws IOException;
     }
-    
+
     public static abstract class TeeSource implements ResSource, Serializable {
 	public ResSource back;
-	
+
 	public TeeSource(ResSource back) {
 	    this.back = back;
 	}
-	
+
 	public InputStream get(String name) throws IOException {
 	    StreamTee tee = new StreamTee(back.get(name));
 	    tee.setncwe();
 	    tee.attach(fork(name));
 	    return(tee);
 	}
-	
+
 	public abstract OutputStream fork(String name) throws IOException;
-	
+
 	public String toString() {
 	    return("forking source backed by " + back);
 	}
     }
-    
+
     public static class CacheSource implements ResSource, Serializable {
 	public transient ResCache cache;
-	
+
 	public CacheSource(ResCache cache) {
 	    this.cache = cache;
 	}
-	
+
 	public InputStream get(String name) throws IOException {
 	    return(cache.fetch("res/" + name));
 	}
-	
+
 	public String toString() {
 	    return("cache source backed by " + cache);
 	}
@@ -161,11 +161,11 @@ public class Resource implements Serializable {
 
     public static class FileSource implements ResSource, Serializable {
 	File base;
-	
+
 	public FileSource(File base) {
 	    this.base = base;
 	}
-	
+
 	public InputStream get(String name) throws FileNotFoundException {
 	    File cur = base;
 	    String[] parts = name.split("/");
@@ -174,7 +174,7 @@ public class Resource implements Serializable {
 	    cur = new File(cur, parts[parts.length - 1] + ".res");
 	    return(new FileInputStream(cur));
 	}
-	
+
 	public String toString() {
 	    return("filesystem res source (" + base + ")");
 	}
@@ -187,16 +187,27 @@ public class Resource implements Serializable {
 		throw(new FileNotFoundException("Could not find resource locally: " + name));
 	    return(s);
 	}
-	
+
 	public String toString() {
 	    return("local res source");
 	}
     }
-    
+
+    // pseudo-remote jar source for custom resources
+    public static class RemoteJarSource extends JarSource {
+        public InputStream get(String name) throws FileNotFoundException {
+            return super.get("remote/" + name);
+        }
+
+        public String toString() {
+            return("'remote' jar res source");
+        }
+    }
+
     public static class HttpSource implements ResSource, Serializable {
 	private final transient SslHelper ssl;
 	public URL baseurl;
-	
+
 	{
 	    ssl = new SslHelper();
 	    try {
@@ -208,11 +219,11 @@ public class Resource implements Serializable {
 	    }
 	    ssl.ignoreName();
 	}
-	
+
 	public HttpSource(URL baseurl) {
 	    this.baseurl = baseurl;
 	}
-		
+
 	private URL encodeurl(URL raw) throws IOException {
 	    /* This is "kinda" ugly. It is, actually, how the Java
 	     * documentation recommend that it be done, though... */
@@ -609,7 +620,7 @@ public class Resource implements Serializable {
 			if(dir == null)
 			    dir = System.getenv("HAFEN_RESDIR");
 			if(dir != null)
-			    local.add(new FileSource(new File(dir)));
+                local.add(new FileSource(new File(dir)));
 		    } catch(Exception e) {
 			/* Ignore these. We don't want to be crashing the client
 			 * for users just because of errors in development
@@ -628,6 +639,7 @@ public class Resource implements Serializable {
 	    synchronized(Resource.class) {
 		if(_remote == null) {
 		    Pool remote = new Pool(local());
+            remote.add(new RemoteJarSource());
 		    if(prscache != null)
 			remote.add(new CacheSource(prscache));
 		    _remote = remote;;
@@ -636,6 +648,7 @@ public class Resource implements Serializable {
 	}
 	return(_remote);
     }
+
 
     public static void addurl(URL url) {
 	ResSource src = new HttpSource(url);
@@ -667,7 +680,7 @@ public class Resource implements Serializable {
 	public Resource res;
 	public ResSource src;
 	public LoadException prev;
-	    
+
 	public LoadException(String msg, Resource res) {
 	    super(msg);
 	    this.res = res;
@@ -677,20 +690,20 @@ public class Resource implements Serializable {
 	    super(msg, cause);
 	    this.res = res;
 	}
-	    
+
 	public LoadException(Throwable cause, Resource res) {
 	    super("Load error in resource " + res.toString() + ", from " + res.source, cause);
 	    this.res = res;
 	}
     }
-    
+
     public static Coord cdec(Message buf) {
 	return(new Coord(buf.int16(), buf.int16()));
     }
-	
+
     public abstract class Layer implements Serializable {
 	public abstract void init();
-	
+
 	public Resource getres() {
 	    return(Resource.this);
 	}
@@ -703,7 +716,7 @@ public class Resource implements Serializable {
     public static class LayerConstructor<T extends Layer> implements LayerFactory<T> {
 	public final Class<T> cl;
 	private final Constructor<T> cons;
-	
+
 	public LayerConstructor(Class<T> cl) {
 	    this.cl = cl;
 	    try {
@@ -712,7 +725,7 @@ public class Resource implements Serializable {
 		throw(new RuntimeException("No proper constructor found for layer type " + cl.getName(), e));
 	    }
 	}
-	
+
 	public T cons(Resource res, Message buf) {
 	    try {
 		return(cons.newInstance(res, buf));
@@ -733,11 +746,11 @@ public class Resource implements Serializable {
     public static void addltype(String name, LayerFactory<?> cons) {
 	ltypes.put(name, cons);
     }
-    
+
     public static <T extends Layer> void addltype(String name, Class<T> cl) {
 	addltype(name, new LayerConstructor<T>(cl));
     }
-    
+
     @dolda.jglob.Discoverable
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.RUNTIME)
@@ -778,7 +791,7 @@ public class Resource implements Serializable {
 	private int gay = -1;
 	public Coord sz;
 	public Coord o;
-		
+
 	public Image(Message buf) {
 	    z = buf.int16();
 	    subz = buf.int16();
@@ -796,7 +809,7 @@ public class Resource implements Serializable {
 		throw(new LoadException("Invalid image data in " + name, Resource.this));
 	    sz = Utils.imgsz(img);
 	}
-		
+
 	public synchronized Tex tex() {
 	    if(tex != null)
 		return(tex);
@@ -807,7 +820,7 @@ public class Resource implements Serializable {
 		};
 	    return(tex);
 	}
-		
+
 	private boolean detectgay() {
 	    for(int y = 0; y < sz.y; y++) {
 		for(int x = 0; x < sz.x; x++) {
@@ -817,7 +830,7 @@ public class Resource implements Serializable {
 	    }
 	    return(false);
 	}
-		
+
 	public boolean gayp() {
 	    if(gay == -1)
 		gay = detectgay()?1:0;
@@ -827,22 +840,22 @@ public class Resource implements Serializable {
 	public int compareTo(Image other) {
 	    return(z - other.z);
 	}
-	
+
 	public Integer layerid() {
 	    return(id);
 	}
-		
+
 	public void init() {}
     }
 
     @LayerName("tooltip")
     public class Tooltip extends Layer {
 	public final String t;
-                
+
 	public Tooltip(Message buf) {
 	    t = new String(buf.bytes(), Utils.utf8);
 	}
-                
+
 	public void init() {}
     }
 
@@ -853,7 +866,7 @@ public class Resource implements Serializable {
 	public final int id;
 	public final int w;
 	public final char t;
-		
+
 	public Tile(Message buf) {
 	    t = (char)buf.uint8();
 	    id = buf.uint8();
@@ -872,7 +885,7 @@ public class Resource implements Serializable {
 		tex = new TexI(img);
 	    return(tex);
 	}
-		
+
 	public void init() {}
     }
 
@@ -880,7 +893,7 @@ public class Resource implements Serializable {
     public class Neg extends Layer {
 	public Coord cc;
 	public Coord[][] ep;
-		
+
 	public Neg(Message buf) {
 	    cc = cdec(buf);
 	    buf.skip(12);
@@ -894,7 +907,7 @@ public class Resource implements Serializable {
 		    ep[epid][o] = cdec(buf);
 	    }
 	}
-		
+
 	public void init() {}
     }
 
@@ -903,7 +916,7 @@ public class Resource implements Serializable {
 	private int[] ids;
 	public int id, d;
 	public Image[][] f;
-		
+
 	public Anim(Message buf) {
 	    id = buf.int16();
 	    d = buf.uint16();
@@ -911,7 +924,7 @@ public class Resource implements Serializable {
 	    for(int i = 0; i < ids.length; i++)
 		ids[i] = buf.int16();
 	}
-		
+
 	public void init() {
 	    f = new Image[ids.length][];
 	    Image[] typeinfo = new Image[0];
@@ -1118,11 +1131,11 @@ public class Resource implements Serializable {
     @LayerName("pagina")
     public class Pagina extends Layer {
 	public final String text;
-		
+
 	public Pagina(Message buf) {
 	    text = new String(buf.bytes(), Utils.utf8);
 	}
-		
+
 	public void init() {}
     }
 
@@ -1132,7 +1145,7 @@ public class Resource implements Serializable {
 	public final Named parent;
 	public final char hk;
 	public final String[] ad;
-		
+
 	public AButton(Message buf) {
 	    String pr = buf.string();
 	    int pver = buf.uint16();
@@ -1152,10 +1165,10 @@ public class Resource implements Serializable {
 	    for(int i = 0; i < ad.length; i++)
 		ad[i] = buf.string();
 	}
-		
+
 	public void init() {}
     }
-    
+
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)
     public @interface PublishedCode {
@@ -1170,12 +1183,12 @@ public class Resource implements Serializable {
     public class Code extends Layer {
 	public final String name;
 	transient public final byte[] data;
-		
+
 	public Code(Message buf) {
 	    name = buf.string();
 	    data = buf.bytes();
 	}
-		
+
 	public void init() {}
     }
 
@@ -1183,11 +1196,11 @@ public class Resource implements Serializable {
 	public ResClassLoader(ClassLoader parent) {
 	    super(parent);
 	}
-	
+
 	public Resource getres() {
 	    return(Resource.this);
 	}
-	
+
 	public String toString() {
 	    return("cl:" + Resource.this.toString());
 	}
@@ -1216,12 +1229,12 @@ public class Resource implements Serializable {
 
     public static class LibClassLoader extends ClassLoader {
 	private final ClassLoader[] classpath;
-	
+
 	public LibClassLoader(ClassLoader parent, Collection<ClassLoader> classpath) {
 	    super(parent);
 	    this.classpath = classpath.toArray(new ClassLoader[0]);
 	}
-	
+
 	public Class<?> findClass(String name) throws ClassNotFoundException {
 	    for(ClassLoader lib : classpath) {
 		try {
@@ -1337,6 +1350,19 @@ public class Resource implements Serializable {
 	    }
 	    return(acl.asSubclass(cl));
 	}
+
+    public Class getClassByTag(String tag, boolean fail) {
+        load();
+        Class<?> acl;
+        synchronized(lpe) {
+            if((acl = lpe.get(tag)) == null) {
+                if(fail)
+                    throw(new RuntimeException("Tried to fetch non-present res-loaded class " + tag + " from " + Resource.this.name));
+                return(null);
+            }
+        }
+        return(acl);
+    }
 
 	public <T> Class<? extends T> getcl(Class<T> cl) {
 	    return(getcl(cl, true));
@@ -1497,12 +1523,12 @@ public class Resource implements Serializable {
 			s++;
 		    return(s);
 		}
-		
+
 		public Iterator<L> iterator() {
 		    return(new Iterator<L>() {
 			    Iterator<Layer> i = layers.iterator();
 			    L c = n();
-			    
+
 			    private L n() {
 				while(i.hasNext()) {
 				    Layer l = i.next();
@@ -1511,11 +1537,11 @@ public class Resource implements Serializable {
 				}
 				return(null);
 			    }
-			    
+
 			    public boolean hasNext() {
 				return(c != null);
 			    }
-			    
+
 			    public L next() {
 				L ret = c;
 				if(ret == null)
@@ -1523,7 +1549,7 @@ public class Resource implements Serializable {
 				c = n();
 				return(ret);
 			    }
-			    
+
 			    public void remove() {
 				throw(new UnsupportedOperationException());
 			    }
@@ -1583,6 +1609,7 @@ public class Resource implements Serializable {
 	    buf.skip();
 	}
 	this.layers = layers;
+	ResourceTransformer.transform(this);
 	for(Layer l : layers)
 	    l.init();
 	used = false;
@@ -1613,6 +1640,10 @@ public class Resource implements Serializable {
 
     public static Tex loadtex(String name) {
 	return(local().loadwait(name).layer(imgc).tex());
+    }
+
+    public static java.awt.Font loadfont(String name) {
+        return local().loadwait(name).layer(Font.class).font;
     }
 
     public String toString() {

@@ -2,3 +2,9 @@
 /.project
 /build
 *~
+
+*.ipr
+*.iws
+*.iml
+.idea/
+

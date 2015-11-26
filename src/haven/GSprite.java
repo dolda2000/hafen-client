@@ -31,6 +31,7 @@ import java.lang.reflect.Constructor;
 
 public abstract class GSprite implements Drawn {
     public final Owner owner;
+    public Message sdt;
     public static final List<Factory> factories;
     static {
 	factories = Arrays.asList(new Factory[] {
@@ -78,13 +79,18 @@ public abstract class GSprite implements Drawn {
     public static GSprite create(Owner owner, Resource res, Message sdt) {
 	{
 	    Factory f = res.getcode(Factory.class, false);
-	    if(f != null)
-		return(f.create(owner, res, sdt));
+	    if(f != null) {
+            GSprite ret = f.create(owner, res, sdt);
+            ret.sdt = sdt;
+            return (ret);
+        }
 	}
 	for(Factory f : factories) {
 	    GSprite ret = f.create(owner, res, sdt);
-	    if(ret != null)
-		return(ret);
+	    if(ret != null) {
+            ret.sdt = sdt;
+            return (ret);
+        }
 	}
 	throw(new Sprite.ResourceException("Does not know how to draw resource " + res.name, res));
     }
@@ -93,5 +99,16 @@ public abstract class GSprite implements Drawn {
     public abstract Coord sz();
 
     public void tick(double dt) {
+    }
+
+    public boolean isSame(GSprite spr) {
+        if (spr != null && this.getClass().equals(spr.getClass())) {
+            if (sdt != null && spr.sdt != null) {
+                return Arrays.equals(sdt.rbuf, spr.sdt.rbuf);
+            } else if (sdt == null && spr.sdt == null) {
+                return true;
+            }
+        }
+        return false;
     }
 }

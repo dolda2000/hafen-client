@@ -41,10 +41,16 @@ import java.io.IOException;
 import java.awt.datatransfer.*;
 
 public class ChatUI extends Widget {
-    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(10f), TextAttribute.FOREGROUND, Color.BLACK));
+    private static final int MIN_HEIGHT = 111;
+    private static final int MIN_WIDTH = 333;
+    private static final BufferedImage drag = Resource.loadimg("gfx/hud/chat-drag");
+    private static final BufferedImage dragh = Resource.loadimg("gfx/hud/chat-drag-h");
+
+    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(14f), TextAttribute.FOREGROUND, Color.BLACK));
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
-    public static final int selw = 130;
-    public static final Coord marg = new Coord(9, 9);
+    public static final int selw = 78;
+    public static final int selh = 24;
+	public static final Coord marg = new Coord(1, 1);
     public static final Color[] urgcols = new Color[] {
 	null,
 	new Color(0, 128, 255),
@@ -61,7 +67,16 @@ public class ChatUI extends Widget {
 
     public ChatUI(int w, int h) {
 	super(new Coord(w, h));
-	chansel = add(new Selector(new Coord(selw, sz.y - marg.y)), marg);
+    Widget dragButton = add(new IButton(drag, dragh, dragh, false) {
+        public boolean mousedown(Coord c, int button) {
+            if (button == 1) {
+                drag(this.c.add(c));
+                return true;
+            }
+            return false;
+        }
+    }, 2, (selh - drag.getHeight()) / 2);
+    chansel = add(new Selector(new Coord(selw, selh)), dragButton.sz.x + 4, 0);
 	setfocusctl(true);
 	setcanfocus(true);
 	if(h < 1)
@@ -79,6 +94,7 @@ public class ChatUI extends Widget {
 	}
 
 	public static final Attribute HYPERLINK = new ChatAttribute("hyperlink");
+	public static final Attribute HEARTH_SECRET = new ChatAttribute("hearth-secret");
     }
     
     public static class FuckMeGentlyWithAChainsaw {
@@ -98,7 +114,8 @@ public class ChatUI extends Widget {
 	public static final Pattern urlpat = Pattern.compile("\\b((https?://)|(www\\.[a-z0-9_.-]+\\.[a-z0-9_.-]+))[a-z0-9/_.~#%+?&:*=-]*", Pattern.CASE_INSENSITIVE);
 	public static final Map<? extends Attribute, ?> urlstyle = RichText.fillattrs(TextAttribute.FOREGROUND, new Color(64, 64, 255),
 										      TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-	
+    private static final Pattern hspat = Pattern.compile("\\bhs: ?([^ ]+)", Pattern.CASE_INSENSITIVE);
+
 	public ChatParser(Object... args) {
 	    super(args);
 	}
@@ -107,24 +124,36 @@ public class ChatUI extends Widget {
 	    RichText.Part ret = null;
 	    int p = 0;
 	    while(true) {
-		Matcher m = urlpat.matcher(text);
-		if(!m.find(p))
-		    break;
-		URL url;
-		try {
-		    String su = text.substring(m.start(), m.end());
-		    if(su.indexOf(':') < 0)
-			su = "http://" + su;
-		    url = new URL(su);
-		} catch(java.net.MalformedURLException e) {
-		    p = m.end();
-		    continue;
-		}
-		RichText.Part lead = new RichText.TextPart(text.substring(0, m.start()), attrs);
+        Map<Attribute, Object> na = null;
+
+        Matcher m = hspat.matcher(text);
+        if (m.find(p)) {
+            String hs = m.group(1);
+            na = new HashMap<Attribute, Object>(attrs);
+            na.putAll(urlstyle);
+            na.put(ChatAttribute.HEARTH_SECRET, hs);
+        } else {
+            m = urlpat.matcher(text);
+            if (m.find(p)) {
+                URL url;
+                try {
+                    String su = text.substring(m.start(), m.end());
+                    if(su.indexOf(':') < 0)
+                        su = "http://" + su;
+                    url = new URL(su);
+                } catch(java.net.MalformedURLException e) {
+                    p = m.end();
+                    continue;
+                }
+                na = new HashMap<Attribute, Object>(attrs);
+                na.putAll(urlstyle);
+                na.put(ChatAttribute.HYPERLINK, new FuckMeGentlyWithAChainsaw(url));
+            }
+        }
+        if (na == null)
+            break;
+		RichText.Part lead = new RichText.TextPart(text.substring(p, m.start()), attrs);
 		if(ret == null) ret = lead; else ret.append(lead);
-		Map<Attribute, Object> na = new HashMap<Attribute, Object>(attrs);
-		na.putAll(urlstyle);
-		na.put(ChatAttribute.HYPERLINK, new FuckMeGentlyWithAChainsaw(url));
 		ret.append(new RichText.TextPart(text.substring(m.start(), m.end()), na));
 		p = m.end();
 	    }
@@ -154,6 +183,8 @@ public class ChatUI extends Widget {
 	    private final Text t;
 	    
 	    public SimpleMessage(String text, Color col, int w) {
+        if (Config.showChatTimestamps.get())
+            text = addTimestamp(text);
 		if(col == null)
 		    this.t = fnd.render(RichText.Parser.quote(text), w);
 		else
@@ -251,9 +282,12 @@ public class ChatUI extends Widget {
 	
 	public void resize(Coord sz) {
 	    super.resize(sz);
+        if(cb != null) {
+            cb.c = new Coord(sz.x - cb.sz.x + 7, -marg.y - 3);
+        }
 	    if(sb != null) {
-		sb.move(new Coord(sz.x - (12 - marg.x), 34 - marg.y));
-		sb.resize(ih() - sb.c.y);
+        sb.move(new Coord(sz.x - marg.x - 4, (cb != null) ? 23 : 2));
+		sb.resize(ih() - sb.c.y - 2);
 		int y = 0;
 		for(Message m : msgs)
 		    y += m.sz().y;
@@ -261,9 +295,6 @@ public class ChatUI extends Widget {
 		sb.max = y - ih();
 		if(b)
 		    sb.val = sb.max;
-	    }
-	    if(cb != null) {
-		cb.c = new Coord(sz.x + marg.x - cb.sz.x, -marg.y);
 	    }
 	}
 	
@@ -480,7 +511,10 @@ public class ChatUI extends Widget {
 
 	protected void clicked(CharPos pos) {
 	    AttributedCharacterIterator inf = pos.part.ti();
-	    inf.setIndex(pos.ch.getCharIndex());
+        int index = pos.ch.getCharIndex();
+        if (index < inf.getBeginIndex() || index > inf.getEndIndex())
+            return;
+        inf.setIndex(index);
 	    FuckMeGentlyWithAChainsaw url = (FuckMeGentlyWithAChainsaw)inf.getAttribute(ChatAttribute.HYPERLINK);
 	    if((url != null) && (WebBrowser.self != null)) {
 		try {
@@ -489,6 +523,11 @@ public class ChatUI extends Widget {
 		    getparent(GameUI.class).error("Could not launch web browser.");
 		}
 	    }
+        String hs = (String)inf.getAttribute(ChatAttribute.HEARTH_SECRET);
+        if (hs != null && ui.gui != null && ui.gui.buddies != null) {
+            ui.gui.buddies.show();
+            ui.gui.buddies.wdgmsg("bypwd", hs);
+        }
 	}
 
 	public boolean mouseup(Coord c, int btn) {
@@ -695,7 +734,10 @@ public class ChatUI extends Widget {
 		BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(from);
 		String nm = (b == null)?"???":(b.name);
 		if((r == null) || !nm.equals(cn)) {
-		    r = fnd.render(RichText.Parser.quote(String.format("%s: %s", nm, text)), w, TextAttribute.FOREGROUND, col);
+            String line = String.format("%s: %s", nm, text);
+            if (Config.showChatTimestamps.get())
+                line = addTimestamp(line);
+		    r = fnd.render(RichText.Parser.quote(line), w, TextAttribute.FOREGROUND, col);
 		    cn = nm;
 		}
 		return(r);
@@ -744,7 +786,7 @@ public class ChatUI extends Widget {
 		Integer from = (Integer)args[0];
 		String line = (String)args[1];
 		if(from == null) {
-		    append(new MyMessage(line, iw()));
+		    append(new MyMessage("You: "+ line, iw()));
 		} else {
 		    Message cmsg = new NamedMessage(from, line, fromcolor(from), iw());
 		    append(cmsg);
@@ -877,11 +919,11 @@ public class ChatUI extends Widget {
     public <T extends Widget> T add(T w) {
 	if(w instanceof Channel) {
 	    Channel chan = (Channel)w;
-	    chan.c = chansel.c.add(chansel.sz.x, 0);
+	    chan.c = new Coord(marg.x, chansel.c.y + chansel.sz.y);
 	    chan.resize(sz.x - marg.x - chan.c.x, sz.y - chan.c.y);
 	    super.add(w);
+        chansel.add(chan);
 	    select(chan, false);
-	    chansel.add(chan);
 	    return(w);
 	} else {
 	    return(super.add(w));
@@ -909,6 +951,7 @@ public class ChatUI extends Widget {
 	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(255, 0, 0)),
 	};
 	private final List<DarkChannel> chls = new ArrayList<DarkChannel>();
+    private final HSpinner spinner;
 	private int s = 0;
 	
 	private class DarkChannel {
@@ -923,6 +966,11 @@ public class ChatUI extends Widget {
 	
 	public Selector(Coord sz) {
 	    super(sz);
+        spinner = add(new HSpinner() {
+            protected void change(int delta) {
+                s = Utils.clip(s + delta, 0,  chls.size() - (Selector.this.sz.x / selw));
+            }
+        });
 	}
 	
 	private void add(Channel chan) {
@@ -942,21 +990,28 @@ public class ChatUI extends Widget {
 	}
 	
 	public void draw(GOut g) {
+        super.draw(g);
+        spinner.visible = ((sz.x / selw) < chls.size() - 1);
+        if (spinner.visible)
+            g = g.reclip(Coord.z, new Coord(sz.x - spinner.sz.x, sz.y));
 	    int i = s;
 	    int y = 0;
+        int x = 0;
 	    synchronized(chls) {
 		while(i < chls.size()) {
 		    DarkChannel ch = chls.get(i);
 		    if(ch.chan == sel)
-			g.image(chanseld, new Coord(0, y));
+			g.aimage(chanseld, new Coord(x + selw / 2, selh / 2), 0.5, 0.5);
 		    g.chcolor(255, 255, 255, 255);
-		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency))
-			ch.rname = nf[ch.urgency = ch.chan.urgency].render(ch.chan.name());
-		    g.aimage(ch.rname.tex(), new Coord(sz.x / 2, y + 8), 0.5, 0.5);
-		    g.image(chandiv, new Coord(0, y + 18));
-		    y += 28;
-		    if(y >= sz.y)
-			break;
+		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency)) {
+                // TODO: buttons with variable text size
+                String text = (ch.chan.name().length() > 12) ? ch.chan.name().substring(0, 10) + ".." : ch.chan.name();
+                ch.rname = nf[ch.urgency = ch.chan.urgency].render(text);
+            }
+		    g.aimage(ch.rname.tex(), new Coord(x + selw / 2, selh / 2), 0.5, 0.5);
+            x += selw;
+            if (x >= sz.x)
+                break;
 		    i++;
 		}
 	    }
@@ -968,7 +1023,7 @@ public class ChatUI extends Widget {
 	    for(DarkChannel ch : chls) {
 		if(ch.chan == sel) {
 		    if(prev != null) {
-			select(prev);
+			ChatUI.this.select(prev);
 			return(true);
 		    } else {
 			return(false);
@@ -984,7 +1039,7 @@ public class ChatUI extends Widget {
 		DarkChannel ch = i.next();
 		if(ch.chan == sel) {
 		    if(i.hasNext()) {
-			select(i.next().chan);
+			ChatUI.this.select(i.next().chan);
 			return(true);
 		    } else {
 			return(false);
@@ -995,17 +1050,23 @@ public class ChatUI extends Widget {
 	}
 	
 	private Channel bypos(Coord c) {
-	    int i = (c.y / 28) + s;
+        if (spinner.visible && c.x >= spinner.c.x)
+            return null;
+	    int i = (c.x / selw) + s;
 	    if((i >= 0) && (i < chls.size()))
 		return(chls.get(i).chan);
 	    return(null);
 	}
 
 	public boolean mousedown(Coord c, int button) {
+        if (super.mousedown(c, button))
+            return true;
 	    if(button == 1) {
 		Channel chan = bypos(c);
 		if(chan != null)
-		    select(chan);
+		    ChatUI.this.select(chan);
+        else
+            drag(this.c.add(c));
 	    }
 	    return(true);
 	}
@@ -1013,8 +1074,8 @@ public class ChatUI extends Widget {
 	public boolean mousewheel(Coord c, int amount) {
 	    if(!ui.modshift) {
 		s += amount;
-		if(s >= chls.size() - (sz.y / 28))
-		    s = chls.size() - (sz.y / 28);
+		if(s >= chls.size() - (sz.x / selw))
+		    s = chls.size() - (sz.x / selw);
 		if(s < 0)
 		    s = 0;
 	    } else {
@@ -1025,6 +1086,30 @@ public class ChatUI extends Widget {
 	    }
 	    return(true);
 	}
+
+    @Override
+    public void resize(Coord sz) {
+        super.resize(sz);
+        spinner.move(sz.x - spinner.sz.x, (sz.y - spinner.sz.y) / 2);
+    }
+
+    private void ensureVisible(int index) {
+        if (s > index)
+            s = index;
+        else if (s + sz.x / selw < index)
+            s = index - sz.x / selw;
+    }
+
+    public void ensureVisible(Channel channel) {
+        int i = 0;
+        for (DarkChannel ch : chls) {
+            if (ch.chan == channel) {
+                ensureVisible(i);
+                return;
+            }
+            i++;
+        }
+    }
     }
     
     public void select(Channel chan, boolean focus) {
@@ -1036,6 +1121,7 @@ public class ChatUI extends Widget {
 	resize(sz);
 	if(focus || hasfocus)
 	    setfocus(chan);
+    chansel.ensureVisible(chan);
     }
 
     public void select(Channel chan) {
@@ -1088,24 +1174,13 @@ public class ChatUI extends Widget {
 	}
     }
 
-    private static final Tex bulc = Resource.loadtex("gfx/hud/chat-lc");
-    private static final Tex burc = Resource.loadtex("gfx/hud/chat-rc");
-    private static final Tex bhb = Resource.loadtex("gfx/hud/chat-hori");
-    private static final Tex bvlb = Resource.loadtex("gfx/hud/chat-verti");
-    private static final Tex bvrb = bvlb;
-    private static final Tex bmf = Resource.loadtex("gfx/hud/chat-mid");
-    private static final Tex bcbd = Resource.loadtex("gfx/hud/chat-close-g");
+    private static final Tex grip = Resource.loadtex("gfx/hud/griptr");
+    private static final IBox frame = new IBox("gfx/hud/tab", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb");
     public void draw(GOut g) {
 	g.rimage(Window.bg, marg, sz.sub(marg.x * 2, marg.y));
 	super.draw(g);
-	g.image(bulc, new Coord(0, 0));
-	g.image(burc, new Coord(sz.x - burc.sz().x, 0));
-	g.rimagev(bvlb, new Coord(0, bulc.sz().y), sz.y - bulc.sz().y);
-	g.rimagev(bvrb, new Coord(sz.x - bvrb.sz().x, burc.sz().y), sz.y - burc.sz().y);
-	g.rimageh(bhb, new Coord(bulc.sz().x, 0), sz.x - bulc.sz().x - burc.sz().x);
-	g.aimage(bmf, new Coord(sz.x / 2, 0), 0.5, 0);
-	if((sel == null) || (sel.cb == null))
-	    g.aimage(bcbd, new Coord(sz.x, 0), 1, 0);
+    frame.draw(g, Coord.z, sz);
+    g.aimage(grip, new Coord(sz.x, 0), 1, 0);
     }
 
     public void notify(Channel chan, Channel.Message msg) {
@@ -1114,6 +1189,7 @@ public class ChatUI extends Widget {
 	}
     }
 
+    /*
     private class Spring extends NormAnim {
 	final int oh = sz.y, nh;
 	Spring(int nh) {
@@ -1130,23 +1206,24 @@ public class ChatUI extends Widget {
 	    }
 	}
     }
+    */
 
     public void resize(Coord sz) {
 	super.resize(sz);
-	this.c = base.add(0, -this.sz.y);
-	chansel.resize(new Coord(selw, this.sz.y - marg.y));
+	chansel.resize(new Coord(this.sz.x - drag.getWidth() - 10 - marg.x, selh));
 	if(sel != null)
-	    sel.resize(new Coord(this.sz.x - marg.x - sel.c.x, this.sz.y - sel.c.y));
+	    sel.resize(new Coord(this.sz.x - marg.x, this.sz.y - marg.y - sel.c.y));
     }
 
     public int targeth = sz.y;
     public void sresize(int h) {
-	clearanims(Spring.class);
-	new Spring(targeth = h);
+	//clearanims(Spring.class);
+	//new Spring(targeth = h);
+    resize(sz.x, targeth = h);
     }
 
     public void hresize(int h) {
-	clearanims(Spring.class);
+	//clearanims(Spring.class);
 	resize(sz.x, targeth = h);
     }
 
@@ -1154,13 +1231,14 @@ public class ChatUI extends Widget {
 	resize(new Coord(w, sz.y));
     }
     
-    public void move(Coord base) {
-	this.c = (this.base = base).add(0, -sz.y);
+    public void move(Coord c) {
+        super.move(c);
+        Utils.setprefc("chatpos", this.c);
     }
 
     public void expand() {
 	if(!visible)
-	    sresize(savedh);
+	    resize(savedw, savedh);
     }
 
     private class QuickLine extends LineEdit {
@@ -1191,23 +1269,38 @@ public class ChatUI extends Widget {
 	}
     }
 
+    private UI.Grab dragGrab = null;
+    private void drag(Coord c) {
+        dragGrab = ui.grabmouse(this);
+        doff = c;
+    }
+
     private UI.Grab dm = null;
     private Coord doff;
-    public int savedh = Math.max(111, Utils.getprefi("chatsize", 111));
+    private int dwidth;
+    public int savedh = Math.max(MIN_HEIGHT, Utils.getprefi("chatsize", MIN_HEIGHT));
+    public int savedw = Math.max(MIN_WIDTH, Utils.getprefi("chatwidth", MIN_WIDTH));
+    public Coord savedpos = Utils.getprefc("chatpos", Coord.z);
     public boolean mousedown(Coord c, int button) {
-	int bmfx = (sz.x - bmf.sz().x) / 2;
-	if((button == 1) && (c.y < bmf.sz().y) && (c.x >= bmfx) && (c.x <= (bmfx + bmf.sz().x))) {
-	    dm = ui.grabmouse(this);
-	    doff = c;
-	    return(true);
-	} else {
-	    return(super.mousedown(c, button));
-	}
+		int gripx = sz.x - grip.sz().x;
+		if((button == 1) && (c.y < grip.sz().y) && (c.x >= gripx) && (c.x <= (gripx + grip.sz().x))) {
+			dm = ui.grabmouse(this);
+			doff = c;
+            dwidth = sz.x;
+			return(true);
+		} else {
+        return(super.mousedown(c, button));
+		}
     }
 
     public void mousemove(Coord c) {
 	if(dm != null) {
-	    resize(sz.x, savedh = Math.max(111, sz.y + doff.y - c.y));
+        savedw = Math.max(MIN_WIDTH, dwidth + c.x - doff.x);
+        savedh = Math.max(MIN_HEIGHT, sz.y + doff.y - c.y);
+        this.c = this.c.add(0, sz.y - savedh);
+        resize(savedw, savedh);
+    } else if (dragGrab != null) {
+        this.c = this.c.add(c.sub(doff));
 	} else {
 	    super.mousemove(c);
 	}
@@ -1215,10 +1308,17 @@ public class ChatUI extends Widget {
 
     public boolean mouseup(Coord c, int button) {
 	if(dm != null) {
-	    dm.remove();
-	    dm = null;
-	    Utils.setprefi("chatsize", savedh);
-	    return(true);
+        dm.remove();
+        dm = null;
+        Utils.setprefi("chatsize", savedh);
+        Utils.setprefi("chatwidth", savedw);
+        Utils.setprefc("chatpos", this.c);
+        return (true);
+    } else if (dragGrab != null) {
+        dragGrab.remove();
+        dragGrab = null;
+        Utils.setprefc("chatpos", this.c);
+        return true;
 	} else {
 	    return(super.mouseup(c, button));
 	}
@@ -1284,5 +1384,10 @@ public class ChatUI extends Widget {
 	    }
 	}
 	return(super.globtype(key, ev));
+    }
+
+    private static String addTimestamp(String text) {
+        String timestamp = new SimpleDateFormat("[HH:mm]").format(new Date());
+        return String.format("%s %s", timestamp, text);
     }
 }

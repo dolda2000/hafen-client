@@ -298,7 +298,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	super(new Coord(200, 380));
 	setfocustab(true);
 	int y = 0;
-	add(new Img(CharWnd.catf.render("Kin").tex()), new Coord(0, 0));
+	add(new Img(CharWnd.catf.render("Kin").tex()), new Coord(0, -5));
 	y += 35;
 
 	bl = add(new BuddyList(200 - Window.wbox.bisz().x, 7), new Coord(Window.wbox.btloff().x, y));
@@ -433,7 +433,12 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	} else if(msg == "chst") {
 	    int id = (Integer)args[0];
 	    int online = (Integer)args[1];
-	    find(id).online = online;
+        Buddy buddy = find(id);
+        if (buddy != null) {
+            buddy.online = online;
+            if (Config.showKinNotifications.get())
+                getparent(GameUI.class).notification("%s is %s now", buddy.name, buddy.online > 0 ? "online" : "offline");
+        }
 	} else if(msg == "upd") {
 	    int id = (Integer)args[0];
 	    String name = (String)args[1];

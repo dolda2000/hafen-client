@@ -1,0 +1,1 @@
+Puts $b{$col[255,255,0]{11}} coals to the nearest smelter.

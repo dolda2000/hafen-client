@@ -29,13 +29,13 @@ package haven;
 import java.util.*;
 import java.lang.ref.*;
 import haven.Resource.Tileset;
-import haven.Resource.Tile;
 
 public class MCache {
     public static final Coord tilesz = new Coord(11, 11);
     public static final Coord cmaps = new Coord(100, 100);
     public static final Coord cutsz = new Coord(25, 25);
     public static final Coord cutn = cmaps.div(cutsz);
+    public static final Coord sgridsz = new Coord(100, 100); // "server" grid size in points
     private final Resource.Spec[] nsets = new Resource.Spec[256];
     @SuppressWarnings("unchecked")
     private final Reference<Resource>[] sets = new Reference[256];
@@ -395,6 +395,17 @@ public class MCache {
 	}
     }
 
+    public List<Pair<Coord, MCache.Grid>> getgrids(Coord ul, Coord br) {
+        List<Pair<Coord, MCache.Grid>> list = new ArrayList<Pair<Coord, MCache.Grid>>();
+        synchronized(grids) {
+            Coord cg = new Coord();
+            for (cg.y = ul.y; cg.y <= br.y; cg.y++)
+                for (cg.x = ul.x; cg.x <= br.x; cg.x++)
+                    list.add(new Pair<Coord, MCache.Grid>(new Coord(cg), grids.get(cg)));
+        }
+        return list;
+    }
+
     public Grid getgridt(Coord tc) {
 	return(getgrid(tc.div(cmaps)));
     }
@@ -548,6 +559,13 @@ public class MCache {
 		req.clear();
 	    }
 	}
+    }
+
+    public void rebuild() {
+        synchronized(grids) {
+            for(Grid g : grids.values())
+                g.invalidate();
+        }
     }
 
     public void trim(Coord ul, Coord lr) {

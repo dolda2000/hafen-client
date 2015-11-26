@@ -66,4 +66,8 @@ public class Homing extends Moving {
 	double da = ((double)dt / 1000) / 0.06;
 	dist += (da * 0.9) * ((double)v / 100);
     }
+
+    public Gob tgt() {
+        return(gob.glob.oc.getgob(this.tgt));
+    }
 }

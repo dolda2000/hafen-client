@@ -31,7 +31,9 @@ import java.util.*;
 public class Inventory extends Widget implements DTarget {
     public static final Tex invsq = Resource.loadtex("gfx/hud/invsq");
     public static final Coord sqsz = new Coord(33, 33);
-    Coord isz;
+    private static final Comparator<WItem> qComparator = new AvgQualityComparator();
+    private static final Comparator<WItem> descQComparator = Collections.reverseOrder(qComparator);
+    public Coord isz;
     Map<GItem, WItem> wmap = new HashMap<GItem, WItem>();
 
     @RName("inv")
@@ -57,15 +59,25 @@ public class Inventory extends Widget implements DTarget {
     }
     
     public boolean mousewheel(Coord c, int amount) {
-	if(ui.modshift) {
-	    Inventory minv = getparent(GameUI.class).maininv;
-	    if(minv != this) {
-		if(amount < 0)
-		    wdgmsg("invxf", minv.wdgid(), 1);
-		else if(amount > 0)
-		    minv.wdgmsg("invxf", this.wdgid(), 1);
-	    }
-	}
+    if ((Config.useControlForSortTransfer.get() && ui.modctrl) || ui.modmeta) {
+        Inventory minv = getparent(GameUI.class).maininv;
+        if (minv != this) {
+            Comparator<WItem> comparator = ui.modshift ? qComparator : descQComparator;
+            Inventory src = (amount < 0) ? this : minv;
+            List<WItem> items = Utils.asSortedList(src.children(WItem.class), comparator);
+            for (int i = 0; i < Math.min(items.size(), Math.abs(amount)); i++) {
+                items.get(i).item.wdgmsg("transfer", c);
+            }
+        }
+    } else if(ui.modshift) {
+        Inventory minv = getparent(GameUI.class).maininv;
+        if (minv != this) {
+            if (amount < 0)
+                wdgmsg("invxf", minv.wdgid(), 1);
+            else if (amount > 0)
+                minv.wdgmsg("invxf", this.wdgid(), 1);
+        }
+    }
 	return(true);
     }
     
@@ -83,12 +95,15 @@ public class Inventory extends Widget implements DTarget {
 	if(w instanceof GItem) {
 	    GItem i = (GItem)w;
 	    ui.destroy(wmap.remove(i));
+        if (Config.enableAutoloader && this == ui.gui.maininv) {
+            Autoloader.replace(this, i);
+        }
 	}
     }
-    
+
     public boolean drop(Coord cc, Coord ul) {
 	wdgmsg("drop", ul.add(sqsz.div(2)).div(invsq.sz()));
-	return(true);
+        return(true);
     }
 	
     public boolean iteminteract(Coord cc, Coord ul) {
@@ -96,9 +111,51 @@ public class Inventory extends Widget implements DTarget {
     }
 	
     public void uimsg(String msg, Object... args) {
-	if(msg == "sz") {
+	if(msg.equals("sz")) {
 	    isz = (Coord)args[0];
 	    resize(invsq.sz().add(new Coord(-1, -1)).mul(isz).add(new Coord(1, 1)));
 	}
+    }
+
+    @Override
+    public void wdgmsg(Widget sender, String msg, Object... args) {
+	if(msg.equals("transfer-same")){
+	    process(getSame((WItem) args[0],(Boolean)args[1]), "transfer");
+	} else if(msg.equals("drop-same")){
+	    process(getSame((WItem) args[0], (Boolean) args[1]), "drop");
+	} else {
+	    super.wdgmsg(sender, msg, args);
+	}
+    }
+
+    private void process(List<WItem> items, String action) {
+	for (WItem item : items){
+	    item.item.wdgmsg(action, Coord.z);
+	}
+    }
+
+    private List<WItem> getSame(WItem item, boolean checkQuality) {
+        List<WItem> items = new ArrayList<WItem>();
+        for (Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
+            if (wdg.visible && wdg instanceof WItem) {
+                WItem other = (WItem)wdg;
+                if (other.isSameKind(item) && (!checkQuality || other.isSameQuality(item)))
+                    items.add((WItem) wdg);
+                }
+        }
+        return items;
+    }
+
+    private static class AvgQualityComparator implements Comparator<WItem> {
+        @Override
+        public int compare(WItem a, WItem b) {
+            ItemQuality aq = a.quality.get();
+            ItemQuality bq = b.quality.get();
+            if (aq != null && bq != null)
+                return (int)Math.signum(aq.average.value - bq.average.value);
+            if (aq == null)
+                return (bq == null) ? 0 : -1;
+            return 1;
+        }
     }
 }

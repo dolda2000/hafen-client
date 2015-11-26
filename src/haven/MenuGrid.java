@@ -31,6 +31,9 @@ import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import haven.Resource.AButton;
 import haven.Glob.Pagina;
+import haven.tasks.*;
+import haven.util.ObservableCollection;
+
 import java.util.*;
 
 public class MenuGrid extends Widget {
@@ -111,6 +114,20 @@ public class MenuGrid extends Widget {
     public MenuGrid() {
 	super(bgsz.mul(gsz).add(1, 1));
     }
+
+	@Override
+	protected void attach(UI ui) {
+		super.attach(ui);
+		Glob glob = ui.sess.glob;
+		ObservableCollection<Pagina> p = glob.paginae;
+        p.add(glob.paginafor(Resource.local().load("paginae/custom/plant-tree")));
+        p.add(glob.paginafor(Resource.local().load("paginae/custom/fill-trough")));
+        p.add(glob.paginafor(Resource.local().load("paginae/custom/fill-coop")));
+        p.add(glob.paginafor(Resource.local().load("paginae/custom/fill-tarkiln")));
+        p.add(glob.paginafor(Resource.local().load("paginae/custom/pick-mussels")));
+        p.add(glob.paginafor(Resource.local().load("paginae/custom/fill-smelter")));
+        p.add(glob.paginafor(Resource.local().load("paginae/custom/arrow-autoloader")));
+	}
 	
     private static Comparator<Pagina> sorter = new Comparator<Pagina>() {
 	public int compare(Pagina a, Pagina b) {
@@ -298,12 +315,46 @@ public class MenuGrid extends Widget {
 		curoff += 14;
 	} else {
 	    r.newp = 0;
-	    wdgmsg("act", (Object[])r.act().ad);
+	    use(r);
 	    if(reset)
 		this.cur = null;
 	    curoff = 0;
 	}
 	updlayout();
+    }
+
+    public boolean use(Pagina r) {
+        String [] ad = r.act().ad;
+        if((ad == null) || (ad.length < 1)){
+            return false;
+        }
+        if(ad[0].equals("@")) {
+            usecustom(ad);
+        } else {
+            wdgmsg("act", (Object[])ad);
+        }
+        return true;
+    }
+
+    private void usecustom(String[] ad) {
+        if(ad[1].equals("plant-tree")) {
+            if (ui != null && ui.gui != null) {
+                ui.gui.add(new TreePlantTool(ui.gui), 300, 200);
+            }
+        } else if (ad[1].equals("fill-trough")) {
+            ui.gui.tasks.add(new FeedEdiblesTask("trough"));
+        } else if (ad[1].equals("fill-coop")) {
+            ui.gui.tasks.add(new FeedEdiblesTask("chickencoop"));
+        } else if (ad[1].equals("fill-tarkiln")) {
+            ui.gui.tasks.add(new FeedBlocksTask("tarkiln"));
+        } else if (ad[1].equals("pick-mussels")) {
+            ui.gui.tasks.add(new Forager(200, Integer.MAX_VALUE, "mussels"));
+        } else if (ad[1].equals("fill-smelter")) {
+            ui.gui.tasks.add(new FeedCoalTask("smelter", 11));
+        } else if (ad[1].equals("arrow-autoloader")) {
+            Config.enableAutoloader = !Config.enableAutoloader;
+            ui.gui.msg(String.format("Autoloader is now turned %s", Config.enableAutoloader ? "on" : "off"));
+        }
     }
 
     public void tick(double dt) {

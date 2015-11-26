@@ -29,14 +29,19 @@ package haven;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.lang.reflect.*;
 
 public class MainFrame extends java.awt.Frame implements Runnable, Console.Directory {
+    private static final String LOG_DIR = "logs";
+    private static final SimpleDateFormat timestampf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     HavenPanel p;
     private final ThreadGroup g;
     public final Thread mt;
     DisplayMode fsmode = null, prefs = null;
+	private final String version;
 	
     static {
 	try {
@@ -170,6 +175,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 
     public MainFrame(Coord isz) {
 	super("Haven and Hearth");
+	version = getClass().getPackage().getImplementationVersion();
 	Coord sz;
 	if(isz == null) {
 	    sz = Utils.getprefc("wndsz", new Coord(800, 600));
@@ -195,7 +201,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	add(p);
 	pack();
 	setResizable(!Utils.getprefb("wndlock", false));
-	p.requestFocus();
+	p.requestFocusInWindow();
 	seticon();
 	setVisible(true);
 	p.init();
@@ -249,10 +255,10 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 			    Config.authck = null;
 			}
 			fun = bill;
-			setTitle("Haven and Hearth");
+			setTitle(String.format("Haven and Hearth (kt %s)", version));
 		    } else {
 			fun = new RemoteUI(sess);
-			setTitle("Haven and Hearth \u2013 " + sess.username);
+			setTitle(String.format("Haven and Hearth (kt %s) \u2013 %s", version, sess.username));
 		    }
 		    sess = fun.run(p.newui(sess));
 		}
@@ -404,6 +410,21 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
     }
     
     public static void main(final String[] args) {
+
+    File logdir = new File(LOG_DIR);
+    if (!logdir.exists())
+        logdir.mkdirs();
+    File log = new File(logdir, "client.log");
+    // redirect all console output to the file
+    try {
+        PrintStream out = new PrintStream(new FileOutputStream(log, true), true);
+        out.format("[%s] ===== Client started =====%n", timestampf.format(new Date()));
+        System.setOut(out);
+        System.setErr(out);
+    } catch (FileNotFoundException e) {
+        e.printStackTrace();
+    }
+
 	/* Set up the error handler as early as humanly possible. */
 	ThreadGroup g = new ThreadGroup("Haven main group");
 	String ed;

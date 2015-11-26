@@ -180,4 +180,10 @@ public class TextEntry extends SIWidget {
     public void resize(int w) {
 	resize(w, sz.y);
     }
+
+    public void resize(Coord sz) {
+        super.resize(sz);
+        if (sz.x > 0)
+            redraw();
+    }
 }

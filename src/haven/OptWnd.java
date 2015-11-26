@@ -30,7 +30,7 @@ import java.util.*;
 import java.awt.font.TextAttribute;
 
 public class OptWnd extends Window {
-    public final Panel main, video, audio;
+    public final Panel main, video, audio, custom;
     public Panel current;
 
     public void chpanel(Panel p) {
@@ -38,6 +38,8 @@ public class OptWnd extends Window {
 	    current.hide();
 	(current = p).show();
 	pack();
+    if (parent != null)
+        move(parent.sz.sub(sz).div(2));
     }
 
     public class PButton extends Button {
@@ -63,7 +65,7 @@ public class OptWnd extends Window {
 	}
     }
 
-    public class Panel extends Widget {
+    public static class Panel extends Widget {
 	public Panel() {
 	    visible = false;
 	    c = Coord.z;
@@ -192,10 +194,12 @@ public class OptWnd extends Window {
 	main = add(new Panel());
 	video = add(new VideoPanel(main));
 	audio = add(new Panel());
+	custom = add(new CustomSettingsPanel(this));
 	int y;
 
 	main.add(new PButton(200, "Video settings", 'v', video), new Coord(0, 0));
 	main.add(new PButton(200, "Audio settings", 'a', audio), new Coord(0, 30));
+	main.add(new PButton(200, "Custom settings", 'c', custom), new Coord(0, 60));
 	if(gopts) {
 	    main.add(new Button(200, "Switch character") {
 		    public void click() {

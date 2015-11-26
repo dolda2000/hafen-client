@@ -247,6 +247,12 @@ public class Makewindow extends Widget {
 	}
 	return(super.globtype(ch, ev));
     }
+
+    public void resize(Coord sz) {
+        super.resize(sz);
+        cbtn.c = sz.sub(cbtn.sz);
+        obtn.c = sz.sub(obtn.sz).sub(cbtn.sz.x + 10, 0);
+    }
     
     public static class MakePrep extends ItemInfo implements GItem.ColorInfo {
 	private final static Color olcol = new Color(0, 255, 0, 64);

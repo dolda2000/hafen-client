@@ -213,6 +213,19 @@ public class GOut {
 	checkerr();
     }
 
+	public void image(Tex tex, Coord c, Coord origin, double angle) {
+        if(tex == null)
+            return;
+        st.set(cur2d);
+        origin = c.add(origin);
+        Coord ul = c.rotate(origin, angle).add(tx);
+        Coord bl = c.add(0, tex.sz().y).rotate(origin, angle).add(tx);
+        Coord br = c.add(tex.sz()).rotate(origin, angle).add(tx);
+        Coord ur = new Coord(ul.x + (br.x - bl.x), br.y - (bl.y - ul.y));
+        tex.renderquad(this, ul, bl, br, ur);
+        checkerr();
+    }
+
     public void rimagev(Tex tex, Coord c, int h) {
 	Coord cc = new Coord(c);
 	Coord sz = new Coord(tex.sz().x, h);
@@ -287,7 +300,20 @@ public class GOut {
 	T.dispose();
 	checkerr();
     }
-    
+
+	public void textstroked(String text, Coord c, Color color, Color stroke) {
+		atextstroked(text, c, color, stroke, 0, 0);
+	}
+
+	public void atextstroked(String text, Coord c, Color color, Color stroke, double ax, double ay) {
+		Text t = Text.renderstroked(text, color, stroke);
+		Tex T = t.tex();
+		Coord sz = t.sz();
+		image(T, c.add((int)((double)sz.x * -ax), (int)((double)sz.y * -ay)));
+		T.dispose();
+		checkerr();
+	}
+
     public void poly(Coord... c) {
 	st.set(cur2d);
 	apply();
@@ -408,14 +434,22 @@ public class GOut {
     }
 
     public void rect(Coord ul, Coord sz) {
+	ul = tx.add(ul);
+	Coord br = ul.add(sz);
+	if(ul.x < this.ul.x) ul.x = this.ul.x;
+	if(ul.y < this.ul.y) ul.y = this.ul.y;
+	if(br.x > this.ul.x + this.sz.x) br.x = this.ul.x + this.sz.x;
+	if(br.y > this.ul.y + this.sz.y) br.y = this.ul.y + this.sz.y;
+	if((ul.x >= br.x) || (ul.y >= br.y))
+		return;
 	st.set(cur2d);
 	apply();
 	gl.glLineWidth(1);
 	gl.glBegin(GL.GL_LINE_LOOP);
-	vertex(ul.x + 0.5f, ul.y + 0.5f);
-	vertex(ul.x + sz.x - 0.5f, ul.y + 0.5f);
-	vertex(ul.x + sz.x - 0.5f, ul.y + sz.y - 0.5f);
-	vertex(ul.x + 0.5f, ul.y + sz.y - 0.5f);
+	gl.glVertex2i(ul.x, ul.y);
+	gl.glVertex2i(br.x, ul.y);
+	gl.glVertex2i(br.x, br.y);
+	gl.glVertex2i(ul.x, br.y);
 	gl.glEnd();
 	checkerr();
     }
@@ -497,6 +531,10 @@ public class GOut {
 
     public void chcolor() {
 	usestate(States.color);
+    }
+
+    public void chcolor(Color c, int a) {
+        chcolor(c.getRed(), c.getGreen(), c.getBlue(), a);
     }
 
     Color getcolor() {
