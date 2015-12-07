@@ -642,10 +642,21 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(new Coord3f(cc.x, cc.y, glob.map.getcz(cc)));
     }
 
+    private TexGL clickbuf = null;
+    private GLFrameBuffer clickfb = null;
     private final RenderContext clickctx = new RenderContext();
     private GLState.Buffer clickbasic(GOut g) {
 	GLState.Buffer ret = basic(g);
 	clickctx.prep(ret);
+	if((clickbuf == null) || !clickbuf.sz().equals(sz)) {
+	    if(clickbuf != null) {
+		clickfb.dispose(); clickfb = null;
+		clickbuf.dispose(); clickbuf = null;
+	    }
+	    clickbuf = new TexE(sz, GL.GL_RGB, GL.GL_RGB, GL.GL_UNSIGNED_BYTE);
+	    clickfb = new GLFrameBuffer(clickbuf, null);
+	}
+	clickfb.prep(ret);
 	return(ret);
     }
 
