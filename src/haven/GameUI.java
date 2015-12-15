@@ -49,6 +49,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private Window invwnd, equwnd, makewnd;
     public Inventory maininv;
     public CharWnd chrwdg;
+    private Widget qqview;
     public BuddyWnd buddies;
     private final Zergwnd zerg;
     public Polity polity;
@@ -536,6 +537,22 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    meters.add(child);
 	} else if(place == "buff") {
 	    buffs.addchild(child);
+	} else if(place == "qq") {
+	    if(qqview != null)
+		qqview.reqdestroy();
+	    final Widget cref = qqview = child;
+	    add(new AlignPanel() {
+		    {add(cref);}
+
+		    protected Coord getc() {
+			return(new Coord(10, GameUI.this.sz.y - blpanel.sz.y - this.sz.y - 10));
+		    }
+
+		    public void cdestroy(Widget ch) {
+			qqview = null;
+			destroy();
+		    }
+		});
 	} else if(place == "misc") {
 	    add(child, (Coord)args[1]);
 	} else {
