@@ -847,9 +847,9 @@ public class CharWnd extends Window {
 		    public void draw(GOut g) {
 			if(img != null) {
 			    if(a < 0.2)
-				g.chcolor(255, 255, 255, (int)(255 * (a / 0.2)));
+				g.chcolor(255, 255, 255, (int)(255 * Utils.smoothstep(a / 0.2)));
 			    else if(a > 0.8)
-				g.chcolor(255, 255, 255, (int)(255 * (1.0 - ((a - 0.8) / 0.2))));
+				g.chcolor(255, 255, 255, (int)(255 * Utils.smoothstep(1.0 - ((a - 0.8) / 0.2))));
 			    /*
 			    g.image(img, new Coord(0, (Math.max(img.sz().y, title.sz().y) - img.sz().y) / 2));
 			    g.image(title, new Coord(img.sz().x + 25, (Math.max(img.sz().y, title.sz().y) - title.sz().y) / 2));
