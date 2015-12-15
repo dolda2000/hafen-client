@@ -838,6 +838,60 @@ public class CharWnd extends Window {
 	    }
 	}
 
+	private static final Tex qcmp = catf.render("Quest completed").tex();
+	public void done(GameUI parent) {
+	    parent.add(new Widget() {
+		    double a = 0.0;
+		    Tex img, title;
+
+		    public void draw(GOut g) {
+			if(img != null) {
+			    if(a < 0.2)
+				g.chcolor(255, 255, 255, (int)(255 * (a / 0.2)));
+			    else if(a > 0.8)
+				g.chcolor(255, 255, 255, (int)(255 * (1.0 - ((a - 0.8) / 0.2))));
+			    /*
+			    g.image(img, new Coord(0, (Math.max(img.sz().y, title.sz().y) - img.sz().y) / 2));
+			    g.image(title, new Coord(img.sz().x + 25, (Math.max(img.sz().y, title.sz().y) - title.sz().y) / 2));
+			    g.image(qcmp, new Coord((sz.x - qcmp.sz().x) / 2, Math.max(img.sz().y, title.sz().y) + 25));
+			    */
+			    int y = 0;
+			    g.image(img, new Coord((sz.x - img.sz().x) / 2, y)); y += img.sz().y + 15;
+			    g.image(title, new Coord((sz.x - title.sz().x) / 2, y)); y += title.sz().y + 15;
+			    g.image(qcmp, new Coord((sz.x - qcmp.sz().x) / 2, y));
+			}
+		    }
+
+		    public void tick(double dt) {
+			if(img == null) {
+			    try {
+				title = catf.render(res.get().layer(Resource.tooltip).t).tex();
+				img = res.get().layer(Resource.imgc).tex();
+				/*
+				resize(new Coord(Math.max(img.sz().x + 25 + title.sz().x, qcmp.sz().x),
+						 Math.max(img.sz().y, title.sz().y) + 25 + qcmp.sz().y));
+				*/
+				resize(new Coord(Math.max(Math.max(img.sz().x, title.sz().x), qcmp.sz().x),
+						 img.sz().y + 15 + title.sz().y + 15 + qcmp.sz().y));
+				presize();
+			    } catch(Loading l) {
+				return;
+			    }
+			}
+			if((a += (dt * 0.2)) > 1.0)
+			    destroy();
+		    }
+
+		    public void presize() {
+			c = parent.sz.sub(sz).div(2);
+		    }
+
+		    protected void added() {
+			presize();
+		    }
+		});
+	}
+
 	public static class Box extends LoadingTextBox implements Info {
 	    public final int id;
 	    public final Indir<Resource> res;
@@ -1780,9 +1834,12 @@ public class CharWnd extends Window {
 			cl = null;
 			q = new Quest(id, res, done, mtime);
 		    } else {
+			boolean fdone = q.done;
 			q.res = res;
 			q.done = done;
 			q.mtime = mtime;
+			if(!fdone && done)
+			    q.done(getparent(GameUI.class));
 		    }
 		    QuestList nl = q.done?dqst:cqst;
 		    if(nl != cl) {
