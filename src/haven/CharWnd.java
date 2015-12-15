@@ -1223,6 +1223,10 @@ public class CharWnd extends Window {
 	    }
 	    return(null);
 	}
+
+	public void remove(Quest q) {
+	    quests.remove(q);
+	}
     }
 
     @RName("chr")
@@ -1451,9 +1455,7 @@ public class CharWnd extends Window {
 	{
 	    quests = tabs.add();
 	    quests.add(new Img(catf.render("Quest Log").tex()), new Coord(0, 0));
-	    this.cqst = quests.add(new QuestList(attrw, 12), new Coord(260, 35).add(wbox.btloff()));
-	    Frame.around(quests, Collections.singletonList(this.cqst));
-	    questbox = quests.add(new Widget(new Coord(attrw, this.cqst.sz.y)) {
+	    questbox = quests.add(new Widget(new Coord(attrw, 260)) {
 		    public void draw(GOut g) {
 			g.chcolor(0, 0, 0, 128);
 			g.frect(Coord.z, sz);
@@ -1467,7 +1469,23 @@ public class CharWnd extends Window {
 		    }
 		}, new Coord(5, 35).add(wbox.btloff()));
 	    Frame.around(quests, Collections.singletonList(questbox));
-	    dqst = null;
+	    Tabs lists = new Tabs(new Coord(260, 35), new Coord(attrw + wbox.bisz().x, 0), quests);
+	    Tabs.Tab cqst = lists.add();
+	    {
+		this.cqst = cqst.add(new QuestList(attrw, 11), new Coord(0, 0).add(wbox.btloff()));
+		Frame.around(cqst, Collections.singletonList(this.cqst));
+	    }
+	    Tabs.Tab dqst = lists.add();
+	    {
+		this.dqst = dqst.add(new QuestList(attrw, 11), new Coord(0, 0).add(wbox.btloff()));
+		Frame.around(dqst, Collections.singletonList(this.dqst));
+	    }
+	    lists.pack();
+	    int bw = (lists.sz.x + 5) / 2;
+	    int x = lists.c.x;
+	    int y = lists.c.y + lists.sz.y + 5;
+	    quests.add(lists.new TabButton(bw - 5, "Current", cqst), new Coord(x, y));
+	    quests.add(lists.new TabButton(bw - 5, "Completed", dqst), new Coord(x + bw, y));
 	}
 
 	{
@@ -1618,15 +1636,25 @@ public class CharWnd extends Window {
 		if(res != null) {
 		    boolean done = ((Integer)args[i + 2]) != 0;
 		    int mtime = (Integer)args[i + 3];
+		    QuestList cl = cqst;
 		    Quest q = cqst.get(id);
+		    if(q == null)
+			q = (cl = dqst).get(id);
 		    if(q == null) {
-			cqst.add(new Quest(id, res, done, mtime));
+			cl = null;
+			q = new Quest(id, res, done, mtime);
 		    } else {
 			q.res = res;
 			q.done = done;
 			q.mtime = mtime;
 		    }
-		    cqst.loading = true;
+		    QuestList nl = q.done?dqst:cqst;
+		    if(nl != cl) {
+			if(cl != null)
+			    cl.remove(q);
+			nl.add(q);
+		    }
+		    nl.loading = true;
 		} else {
 		    wounds.remove(id);
 		}
