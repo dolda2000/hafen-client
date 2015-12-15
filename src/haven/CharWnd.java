@@ -53,6 +53,9 @@ public class CharWnd extends Window {
     public final Widget woundbox;
     public final WoundList wounds;
     public Wound.Info wound;
+    public final Widget questbox;
+    public final QuestList cqst, dqst;
+    public Quest.Info quest;
     public int exp, enc;
     private int scost;
     private final Tabs.Tab sattr, fgt;
@@ -799,6 +802,129 @@ public class CharWnd extends Window {
 	}
     }
 
+    public static class Quest {
+	public final int id;
+	public Indir<Resource> res;
+	public boolean done;
+	public int mtime;
+	private Tex small;
+	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
+	    public String value() {
+		try {
+		    return(res.get().layer(Resource.tooltip).t);
+		} catch(Loading l) {
+		    return("...");
+		}
+	    }
+	};
+
+	private Quest(int id, Indir<Resource> res, boolean done, int mtime) {
+	    this.id = id;
+	    this.res = res;
+	    this.done = done;
+	    this.mtime = mtime;
+	}
+
+	public static class Condition {
+	    public final String desc;
+	    public boolean done;
+	    public String status;
+
+	    public Condition(String desc, boolean done, String status) {
+		this.desc = desc;
+		this.done = done;
+		this.status = status;
+	    }
+	}
+
+	public static class Box extends LoadingTextBox implements Info {
+	    public final int id;
+	    public final Indir<Resource> res;
+	    public Condition[] cond = {};
+
+	    public Box(int id, Indir<Resource> res) {
+		super(Coord.z, "", ifnd);
+		bg = null;
+		this.id = id;
+		this.res = res;
+		refresh();
+	    }
+
+	    protected void added() {
+		resize(parent.sz);
+	    }
+
+	    public void refresh() {
+		settext(new Indir<String>() {public String get() {return(rendertext());}});
+	    }
+
+	    public String rendertext() {
+		StringBuilder buf = new StringBuilder();
+		Resource res = this.res.get();
+		buf.append("$img[" + res.name + "]\n\n");
+		buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+		buf.append(res.layer(Resource.pagina).text);
+		buf.append("\n");
+		for(Condition cond : this.cond) {
+		    buf.append(cond.done?"$col[64,255,64]{":"$col[255,255,64]{");
+		    buf.append(" \u2022 ");
+		    buf.append(cond.desc);
+		    if(cond.status != null)
+			buf.append(cond.status);
+		    buf.append("}");
+		}
+		return(buf.toString());
+	    }
+
+	    public Condition findcond(String desc) {
+		for(Condition cond : this.cond) {
+		    if(cond.desc.equals(desc))
+			return(cond);
+		}
+		return(null);
+	    }
+
+	    public void uimsg(String msg, Object... args) {
+		if(msg == "conds") {
+		    int a = 0;
+		    List<Condition> ncond = new ArrayList<Condition>(args.length);
+		    while(a < args.length) {
+			String desc = (String)args[a++];
+			int st = (Integer)args[a++];
+			String status = (String)args[a++];
+			boolean done = (st != 0);
+			Condition cond = findcond(desc);
+			if(cond != null) {
+			    cond.done = done;
+			    cond.status = status;
+			} else {
+			    cond = new Condition(desc, done, status);
+			}
+			ncond.add(cond);
+		    }
+		    this.cond = ncond.toArray(new Condition[0]);
+		    refresh();
+		} else {
+		    super.uimsg(msg, args);
+		}
+	    }
+
+	    public int questid() {return(id);}
+	}
+
+	@RName("quest")
+	public static class $quest implements Factory {
+	    public Widget create(Widget parent, Object[] args) {
+		int id = (Integer)args[0];
+		Indir<Resource> res = parent.ui.sess.getres((Integer)args[1]);
+		return(new Box(id, res));
+	    }
+	}
+	public interface Info {
+	    public int questid();
+	}
+    }
+
     public class SkillList extends Listbox<Skill> {
 	public Skill[] skills = new Skill[0];
 	public boolean dav = false;
@@ -1027,6 +1153,78 @@ public class CharWnd extends Window {
 	}
     }
 
+    public class QuestList extends Listbox<Quest> {
+	public List<Quest> quests = new ArrayList<Quest>();
+	private boolean loading = false;
+	private final Comparator<Quest> comp = new Comparator<Quest>() {
+	    public int compare(Quest a, Quest b) {
+		return(b.mtime - a.mtime);
+	    }
+	};
+
+	private QuestList(int w, int h) {
+	    super(w, h, attrf.height() + 2);
+	}
+
+	public void tick(double dt) {
+	    if(loading) {
+		loading = false;
+		Collections.sort(quests, comp);
+	    }
+	}
+
+	protected Quest listitem(int idx) {return(quests.get(idx));}
+	protected int listitems() {return(quests.size());}
+
+	protected void drawbg(GOut g) {}
+
+	protected void drawitem(GOut g, Quest q, int idx) {
+	    if((quest != null) && (quest.questid() == q.id))
+		drawsel(g);
+	    g.chcolor((idx % 2 == 0)?every:other);
+	    g.frect(Coord.z, g.sz);
+	    g.chcolor();
+	    try {
+		if(q.small == null)
+		    q.small = new TexI(PUtils.convolvedown(q.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
+		g.image(q.small, Coord.z);
+	    } catch(Loading e) {
+		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
+	    }
+	    g.aimage(q.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
+	}
+
+	public void change(Quest q) {
+	    if(q == null)
+		CharWnd.this.wdgmsg("qsel", (Object)null);
+	    else
+		CharWnd.this.wdgmsg("qsel", q.id);
+	}
+
+	public Quest get(int id) {
+	    for(Quest q : quests) {
+		if(q.id == id)
+		    return(q);
+	    }
+	    return(null);
+	}
+
+	public void add(Quest q) {
+	    quests.add(q);
+	}
+
+	public Quest remove(int id) {
+	    for(Iterator<Quest> i = quests.iterator(); i.hasNext();) {
+		Quest q = i.next();
+		if(q.id == id) {
+		    i.remove();
+		    return(q);
+		}
+	    }
+	    return(null);
+	}
+    }
+
     @RName("chr")
     public static class $_ implements Factory {
 	public Widget create(Widget parent, Object[] args) {
@@ -1249,6 +1447,29 @@ public class CharWnd extends Window {
 	    Frame.around(wounds, Collections.singletonList(woundbox));
 	}
 
+	Tabs.Tab quests;
+	{
+	    quests = tabs.add();
+	    quests.add(new Img(catf.render("Quest Log").tex()), new Coord(0, 0));
+	    this.cqst = quests.add(new QuestList(attrw, 12), new Coord(260, 35).add(wbox.btloff()));
+	    Frame.around(quests, Collections.singletonList(this.cqst));
+	    questbox = quests.add(new Widget(new Coord(attrw, this.cqst.sz.y)) {
+		    public void draw(GOut g) {
+			g.chcolor(0, 0, 0, 128);
+			g.frect(Coord.z, sz);
+			g.chcolor();
+			super.draw(g);
+		    }
+
+		    public void cdestroy(Widget w) {
+			if(w == quest)
+			    quest = null;
+		    }
+		}, new Coord(5, 35).add(wbox.btloff()));
+	    Frame.around(quests, Collections.singletonList(questbox));
+	    dqst = null;
+	}
+
 	{
 	    Widget prev;
 
@@ -1278,14 +1499,16 @@ public class CharWnd extends Window {
 
 	    prev = add(new TB("battr", battr), new Coord(tabs.c.x + 5, tabs.c.y + tabs.sz.y + 10));
 	    prev.settip("Base Attributes");
-	    prev = add(new TB("sattr", sattr), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
+	    prev = add(new TB("sattr", sattr), new Coord(prev.c.x + prev.sz.x + 5, prev.c.y));
 	    prev.settip("Abilities");
-	    prev = add(new TB("skill", skills), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
+	    prev = add(new TB("skill", skills), new Coord(prev.c.x + prev.sz.x + 5, prev.c.y));
 	    prev.settip("Lore & Skills");
-	    prev = add(new TB("fgt", fgt), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
+	    prev = add(new TB("fgt", fgt), new Coord(prev.c.x + prev.sz.x + 5, prev.c.y));
 	    prev.settip("Martial Arts & Combat Schools");
-	    prev = add(new TB("wound", wounds), new Coord(prev.c.x + prev.sz.x + 10, prev.c.y));
+	    prev = add(new TB("wound", wounds), new Coord(prev.c.x + prev.sz.x + 5, prev.c.y));
 	    prev.settip("Health & Wounds");
+	    prev = add(new TB("quest", quests), new Coord(prev.c.x + prev.sz.x + 5, prev.c.y));
+	    prev.settip("Quest Log");
 	}
 
 	resize(contentsz().add(15, 10));
@@ -1303,6 +1526,9 @@ public class CharWnd extends Window {
 	} else if(place == "wound") {
 	    this.wound = (Wound.Info)child;
 	    woundbox.add(child, Coord.z);
+	} else if(place == "quest") {
+	    this.quest = (Quest.Info)child;
+	    questbox.add(child, Coord.z);
 	} else {
 	    super.addchild(child, args);
 	}
@@ -1381,6 +1607,26 @@ public class CharWnd extends Window {
 			w.qdata = qdata;
 		    }
 		    wounds.loading = true;
+		} else {
+		    wounds.remove(id);
+		}
+	    }
+	} else if(nm == "quests") {
+	    for(int i = 0; i < args.length; i += 4) {
+		int id = (Integer)args[i];
+		Indir<Resource> res = (args[i + 1] == null)?null:ui.sess.getres((Integer)args[i + 1]);
+		if(res != null) {
+		    boolean done = ((Integer)args[i + 2]) != 0;
+		    int mtime = (Integer)args[i + 3];
+		    Quest q = cqst.get(id);
+		    if(q == null) {
+			cqst.add(new Quest(id, res, done, mtime));
+		    } else {
+			q.res = res;
+			q.done = done;
+			q.mtime = mtime;
+		    }
+		    cqst.loading = true;
 		} else {
 		    wounds.remove(id);
 		}
