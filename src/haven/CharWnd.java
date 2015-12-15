@@ -875,7 +875,7 @@ public class CharWnd extends Window {
 			buf.append(' ');
 			buf.append(cond.status);
 		    }
-		    buf.append("}");
+		    buf.append("}\n");
 		}
 		return(buf.toString());
 	    }
@@ -899,9 +899,10 @@ public class CharWnd extends Window {
 			boolean done = (st != 0);
 			Condition cond = findcond(desc);
 			if(cond != null) {
-			    cond.done = done;
-			    cond.status = status;
-			    if(cqv != null)
+			    boolean ch = false;
+			    if(done != cond.done) {cond.done = done; ch = true;}
+			    if(!Utils.eq(status, cond.status)) {cond.status = status; ch = true;}
+			    if(ch && (cqv != null))
 				cqv.update(cond);
 			} else {
 			    cond = new Condition(desc, done, status);
@@ -963,6 +964,7 @@ public class CharWnd extends Window {
 			    double a = (1.0 - Math.pow(Math.cos(glowt * 2 * Math.PI), 2));
 			    g.chcolor(255, 255, 255, (int)(128 * a));
 			    g.image(glow, new Coord(0, y - 3));
+			    g.chcolor();
 			}
 			y += c.sz().y;
 		    }
