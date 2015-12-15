@@ -98,6 +98,41 @@ public class Widget {
 	}
     }
 
+    public static abstract class AlignPanel extends Widget {
+	protected abstract Coord getc();
+
+	public <T extends Widget> T add(T child) {
+	    super.add(child);
+	    pack();
+	    if(parent != null)
+		presize();
+	    return(child);
+	}
+
+	public void cresize(Widget ch) {
+	    pack();
+	    if(parent != null)
+		presize();
+	}
+
+	public void presize() {
+	    c = getc();
+	}
+
+	protected void added() {presize();}
+    }
+    @RName("acnt")
+    public static class $ACont implements Factory {
+	public Widget create(Widget parent, final Object[] args) {
+	    final String expr = (String)args[0];
+	    return(new AlignPanel() {
+		    protected Coord getc() {
+			return(relpos(expr, this, args, 1));
+		    }
+		});
+	}
+    }
+
     @Resource.PublishedCode(name = "wdg", instancer = FactMaker.class)
     public interface Factory {
 	public Widget create(Widget parent, Object[] par);
@@ -242,7 +277,7 @@ public class Widget {
 
     protected void added() {}
 
-    private Coord relpos(String spec, Object self, Object[] args, int off) {
+    public Coord relpos(String spec, Object self, Object[] args, int off) {
 	int i = 0;
 	Stack<Object> st = new Stack<Object>();
 	while(i < spec.length()) {

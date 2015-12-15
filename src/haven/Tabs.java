@@ -56,6 +56,10 @@ public class Tabs {
 	    super.destroy();
 	    tabs.remove(this);
 	}
+
+	public void showtab() {
+	    Tabs.this.showtab(this);
+	}
     }
 
     public Tab add() {
