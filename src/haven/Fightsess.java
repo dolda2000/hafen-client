@@ -74,6 +74,29 @@ public class Fightsess extends Widget {
 	pho = (int)(pl.sczu.mul(20f).y) - 20;
     }
 
+    private static final Resource tgtfx = Resource.local().loadwait("gfx/hud/combat/trgtarw");
+    private final Map<Pair<Long, Resource>, Sprite> cfx = new CacheMap<Pair<Long, Resource>, Sprite>();
+    private final Collection<Sprite> curfx = new ArrayList<Sprite>();
+
+    private void fxon(long gobid, Resource fx) {
+	MapView map = getparent(GameUI.class).map;
+	Gob gob = ui.sess.glob.oc.getgob(gobid);
+	if((map == null) || (gob == null))
+	    return;
+	Pair<Long, Resource> id = new Pair<Long, Resource>(gobid, fx);
+	Sprite spr = cfx.get(id);
+	if(spr == null)
+	    cfx.put(id, spr = Sprite.create(null, fx, Message.nil));
+	map.drawadd(gob.loc.apply(spr));
+	curfx.add(spr);
+    }
+
+    public void tick(double dt) {
+	for(Sprite spr : curfx)
+	    spr.tick((int)(dt * 1000));
+	curfx.clear();
+    }
+
     private static final Text.Furnace ipf = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 18, new Color(128, 128, 255)).aa(true), 1, 1, new Color(48, 48, 96));
     private final Text.UText<?> ip = new Text.UText<Integer>(ipf) {
 	public String text(Integer v) {return("IP: " + v);}
@@ -96,6 +119,9 @@ public class Fightsess extends Widget {
 
 	    g.aimage(ip.get().tex(), pcc.add(-75, 0), 1, 0.5);
 	    g.aimage(oip.get().tex(), pcc.add(75, 0), 0, 0.5);
+
+	    if(fv.lsrel.size() > 1)
+		fxon(fv.current.gobid, tgtfx);
 	}
 
 	if(now < fv.atkct) {
