@@ -407,6 +407,7 @@ public class Audio {
 	private final int nch;
 	private final Object queuemon = new Object();
 	private Collection<Runnable> queue = new LinkedList<Runnable>();
+	private volatile boolean reopen = false;
 	
 	Player(CS stream) {
 	    super("Haven audio player");
@@ -447,30 +448,40 @@ public class Audio {
 	public void run() {
 	    SourceDataLine line = null;
 	    try {
-		try {
-		    line = (SourceDataLine)AudioSystem.getLine(new DataLine.Info(SourceDataLine.class, fmt));
-		    line.open(fmt, bufsize);
-		    line.start();
-		} catch(Exception e) {
-		    e.printStackTrace();
-		    return;
-		}
-		byte[] buf = new byte[bufsize / 2];
 		while(true) {
-		    if(Thread.interrupted())
-			throw(new InterruptedException());
-		    synchronized(queuemon) {
-			Collection<Runnable> queue = this.queue;
-			if(queue.size() > 0) {
-			    this.queue = new LinkedList<Runnable>();
-			    for(Runnable r : queue)
-				r.run();
-			}
-		    }
-		    int ret = fillbuf(buf, 0, buf.length);
-		    if(ret < 0)
+		    try {
+			line = (SourceDataLine)AudioSystem.getLine(new DataLine.Info(SourceDataLine.class, fmt));
+			line.open(fmt, bufsize);
+			line.start();
+		    } catch(Exception e) {
+			e.printStackTrace();
 			return;
-		    for(int off = 0; off < ret; off += line.write(buf, off, ret - off));
+		    }
+		    synchronized(this) {
+			reopen = false;
+			this.notifyAll();
+		    }
+		    byte[] buf = new byte[bufsize / 2];
+		    while(true) {
+			if(Thread.interrupted())
+			    throw(new InterruptedException());
+			synchronized(queuemon) {
+			    Collection<Runnable> queue = this.queue;
+			    if(queue.size() > 0) {
+				this.queue = new LinkedList<Runnable>();
+				for(Runnable r : queue)
+				    r.run();
+			    }
+			}
+			int ret = fillbuf(buf, 0, buf.length);
+			if(ret < 0)
+			    return;
+			for(int off = 0; off < ret; off += line.write(buf, off, ret - off));
+			if(reopen)
+			    break;
+		    }
+		    line.close();
+		    line = null;
 		}
 	    } catch(InterruptedException e) {
 	    } finally {
@@ -479,6 +490,18 @@ public class Audio {
 		}
 		if(line != null)
 		    line.close();
+	    }
+	}
+
+	void reopen() {
+	    try {
+		synchronized(this) {
+		    reopen = true;
+		    while(reopen && isAlive())
+			this.wait();
+		}
+	    } catch(InterruptedException e) {
+		Thread.currentThread().interrupt();
 	    }
 	}
     }
@@ -584,6 +607,17 @@ public class Audio {
 	Console.setscmd("sfxvol", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    setvolume(Double.parseDouble(args[1]));
+		}
+	    });
+	Console.setscmd("audiobuf", new Console.Command() {
+		public void run(Console cons, String[] args) throws Exception {
+		    int nsz = Integer.parseInt(args[1]);
+		    if(nsz > 44100)
+			throw(new Exception("Rejecting buffer longer than 1 second"));
+		    bufsize = nsz * 4;
+		    Player pl = ckpl(false);
+		    if(pl != null)
+			pl.reopen();
 		}
 	    });
     }
