@@ -1,0 +1,63 @@
+#!/usr/bin/python3
+
+import sys, zipfile
+from classfile import file
+
+classpath=["build/jogl.jar"]
+roots = ["javax/media/opengl/GL4bc"]
+
+class notfound(LookupError):
+    pass
+
+def findclass(name):
+    mangled = name + ".class"
+    for jar in classpath:
+        with zipfile.ZipFile(open(jar, "rb")) as zf:
+            try:
+                fp = zf.open(mangled)
+            except KeyError:
+                raise notfound(name) from None
+            with fp:
+                return file.classfile.load(fp)
+
+loaded = {}
+def loadclass(name):
+    if name not in loaded:
+        cl = findclass(name)
+        tnm = cl.cp[cl.cp[cl.this].nm]
+        if tnm != name:
+            raise Exception("unexpected class name %r found, expected %r" % (tnm, name))
+        loaded[name] = cl
+    return loaded[name]
+
+def resolve(roots):
+    ret = []
+    def rec(cl):
+        if cl not in ret:
+            ret.append(cl)
+            try:
+                rec(loadclass(cl.cp[cl.cp[cl.super].nm]))
+            except notfound: pass
+            for iface in cl.ifaces:
+                try:
+                    rec(loadclass(cl.cp[cl.cp[iface].nm]))
+                except notfound: pass
+    for nm in roots:
+        rec(loadclass(nm))
+    return ret
+
+classes = resolve(roots)
+
+for func in sys.argv[1:]:
+    for cl in classes:
+        for mth in cl.methods:
+            if cl.cp[mth.nm] == func:
+                sys.stdout.write("%s %s\n" % (func, cl.cp[cl.cp[cl.this].nm]))
+        for fl in cl.fields:
+            val = None
+            if fl.const:
+                val = cl.cp[fl.const]
+            if isinstance(val, file.constint):
+                val = val.val
+            if (cl.cp[fl.nm] == func) or (val is not None and str(val) == func):
+                sys.stdout.write("%s %s %r\n" % (cl.cp[fl.nm], cl.cp[cl.cp[cl.this].nm], val))
