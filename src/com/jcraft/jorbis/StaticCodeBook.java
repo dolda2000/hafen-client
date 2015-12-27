@@ -502,4 +502,14 @@ class StaticCodeBook{
       return(interned.intern(this));
     }
   }
+
+  CodeBook cached=null;
+  public CodeBook decode() {
+    if(cached == null) {
+      CodeBook ret = new CodeBook();
+      ret.init_decode(this);
+      cached = ret;
+    }
+    return(cached);
+  }
 }

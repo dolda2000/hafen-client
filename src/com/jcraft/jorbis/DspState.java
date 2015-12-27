@@ -173,10 +173,8 @@ public class DspState{
     }
 
     fullbooks=new CodeBook[vi.books];
-    for(int i=0; i<vi.books; i++){
-      fullbooks[i]=new CodeBook();
-      fullbooks[i].init_decode(vi.book_param[i]);
-    }
+    for(int i=0; i<vi.books; i++)
+      fullbooks[i] = vi.book_param[i].decode();
 
     // initialize the storage vectors to a decent size greater than the
     // minimum
