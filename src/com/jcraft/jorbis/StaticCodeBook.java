@@ -495,4 +495,11 @@ class StaticCodeBook{
   static float ldexp(float foo, int e){
     return (float)(foo*Math.pow(2, e));
   }
+
+  static final InternSet<StaticCodeBook> interned=new InternSet<StaticCodeBook>();
+  public StaticCodeBook intern() {
+    synchronized(interned) {
+      return(interned.intern(this));
+    }
+  }
 }

@@ -188,11 +188,12 @@ public class Info{
     if(book_param==null||book_param.length!=books)
       book_param=new StaticCodeBook[books];
     for(int i=0; i<books; i++){
-      book_param[i]=new StaticCodeBook();
-      if(book_param[i].unpack(opb)!=0){
+      StaticCodeBook cb=new StaticCodeBook();
+      if(cb.unpack(opb)!=0){
         clear();
         return (-1);
       }
+      book_param[i]=cb.intern();
     }
 
     // time backend settings
