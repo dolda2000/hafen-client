@@ -4,7 +4,7 @@ import java.io.IOException;
 import com.jcraft.jogg.*;
 
 /**
- * The <code>Packet</code> class decodes Ogg packets from a page
+ * The <code>PacketStream</code> class decodes Ogg packets from a page
  * stream.
  *
  * @author Fredrik Tolf <code>&lt;fredrik@dolda2000.com&gt;</code>
