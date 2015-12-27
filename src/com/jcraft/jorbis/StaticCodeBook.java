@@ -57,6 +57,61 @@ class StaticCodeBook{
   StaticCodeBook(){
   }
 
+  int hashCode = 0;
+  public int hashCode() {
+    if(hashCode == 0) {
+      hashCode = dim;
+      hashCode = hashCode * 31 + entries;
+      hashCode = hashCode * 31 + maptype;
+      hashCode = hashCode * 31 + q_min;
+      hashCode = hashCode * 31 + q_delta;
+      hashCode = hashCode * 31 + q_quant;
+      hashCode = hashCode * 31 + q_sequencep;
+      for(int i = 0; i < entries; i++)
+        hashCode = hashCode * 31 + lengthlist[i];
+      if(quantlist != null) {
+        for(int i = 0; i < quantlist.length; i++)
+          hashCode = hashCode * 31 + quantlist[i];
+      }
+    }
+    return(hashCode);
+  }
+
+  public boolean equals(Object y) {
+    if(!(y instanceof StaticCodeBook))
+      return(false);
+    StaticCodeBook o = (StaticCodeBook)y;
+    if(dim != o.dim)
+      return(false);
+    if(entries != o.entries)
+      return(false);
+    if(maptype != o.maptype)
+      return(false);
+    if(q_min != o.q_min)
+      return(false);
+    if(q_delta != o.q_delta)
+      return(false);
+    if(q_quant != o.q_quant)
+      return(false);
+    if(q_sequencep != o.q_sequencep)
+      return(false);
+    for(int i = 0; i < entries; i++) {
+      if(lengthlist[i] != o.lengthlist[i])
+        return(false);
+    }
+    if((quantlist == null) != (o.quantlist == null))
+      return(false);
+    if(quantlist != null) {
+      if(quantlist.length != o.quantlist.length)
+        return(false);
+      for(int i = 0; i < quantlist.length; i++) {
+        if(quantlist[i] != o.quantlist[i])
+          return(false);
+      }
+    }
+    return(true);
+  }
+
   int pack(Buffer opb){
     int i;
     boolean ordered=false;
