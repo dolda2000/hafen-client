@@ -235,11 +235,18 @@ public class Composited implements Rendered {
 	
 	private Equ(ED ed) {
 	    this.desc = ed.clone();
-	    Skeleton.BoneOffset bo = ed.res.res.get().layer(Skeleton.BoneOffset.class, ed.at);
 	    GLState bt = null;
-	    if(bo != null) {
-		bt = bo.forpose(pose);
-	    } else {
+	    if(bt == null) {
+		Skeleton.BoneOffset bo = ed.res.res.get().layer(Skeleton.BoneOffset.class, ed.at);
+		if(bo != null)
+		    bt = bo.forpose(pose);
+	    }
+	    if((bt == null) && (skel instanceof Skeleton.ResourceSkeleton)) {
+		Skeleton.BoneOffset bo = ((Skeleton.ResourceSkeleton)skel).res.layer(Skeleton.BoneOffset.class, ed.at);
+		if(bo != null)
+		    bt = bo.forpose(pose);
+	    }
+	    if(bt == null) {
 		Skeleton.Bone bone = skel.bones.get(ed.at);
 		if(bone != null)
 		    bt = pose.bonetrans(bone.idx);
