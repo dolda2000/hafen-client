@@ -149,8 +149,14 @@ public class WItem extends Widget implements DTarget {
     
     public final AttrCache<Color> olcol = new AttrCache<Color>() {
 	protected Color find(List<ItemInfo> info) {
-	    GItem.ColorInfo cinf = ItemInfo.find(GItem.ColorInfo.class, info);
-	    return((cinf == null)?null:cinf.olcol());
+	    Color ret = null;
+	    for(ItemInfo inf : info) {
+		if(inf instanceof GItem.ColorInfo) {
+		    Color c = ((GItem.ColorInfo)inf).olcol();
+		    ret = (ret == null)?c:Utils.preblend(ret, c);
+		}
+	    }
+	    return(ret);
 	}
     };
     
