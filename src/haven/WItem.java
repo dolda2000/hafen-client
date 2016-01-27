@@ -153,7 +153,8 @@ public class WItem extends Widget implements DTarget {
 	    for(ItemInfo inf : info) {
 		if(inf instanceof GItem.ColorInfo) {
 		    Color c = ((GItem.ColorInfo)inf).olcol();
-		    ret = (ret == null)?c:Utils.preblend(ret, c);
+		    if(c != null)
+			ret = (ret == null)?c:Utils.preblend(ret, c);
 		}
 	    }
 	    return(ret);
