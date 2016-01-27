@@ -871,10 +871,10 @@ public class Utils {
 	/* I can't help but feel that this should be possible to
 	 * express in some simpler form, but I can't see how. */
 	double ac = a1 + a2 - (a1 * a2);
-	return(new Color(Math.round((((c2.getRed()   * a2) - (c1.getRed()   * a2)) / ac) + c1.getRed()),
-			 Math.round((((c2.getGreen() * a2) - (c1.getGreen() * a2)) / ac) + c1.getGreen()),
-			 Math.round((((c2.getBlue()  * a2) - (c1.getBlue()  * a2)) / ac) + c1.getBlue()),
-			 Math.round(ac * 255)));
+	return(new Color((int)Math.round((((c2.getRed()   * a2) - (c1.getRed()   * a2)) / ac) + c1.getRed()),
+			 (int)Math.round((((c2.getGreen() * a2) - (c1.getGreen() * a2)) / ac) + c1.getGreen()),
+			 (int)Math.round((((c2.getBlue()  * a2) - (c1.getBlue()  * a2)) / ac) + c1.getBlue()),
+			 (int)Math.round(ac * 255)));
     }
 
     public static void serialize(Object obj, OutputStream out) throws IOException {
