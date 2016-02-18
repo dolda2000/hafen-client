@@ -607,7 +607,12 @@ public class Ridges extends MapMesh.Hooks {
 	    modeldiag2(tc, d);
 	    return(true);
 	} else {
-	    modelcomplex(tc, b);
+	    try {
+		modelcomplex(tc, b);
+	    } catch(ArrayIndexOutOfBoundsException e) {
+		/* XXX: Just ignore for now, until I can find the
+		 * cause of this. */
+	    }
 	    return(true);
 	}
     }
