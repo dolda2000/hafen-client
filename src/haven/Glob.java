@@ -235,7 +235,8 @@ public class Glob {
 		double mp = ((Number)a[n++]).doubleValue();
 		double yt = ((Number)a[n++]).doubleValue();
 		boolean night = (Integer)a[n++] != 0;
-		ast = new Astronomy(dt, mp, yt, night);
+		Color mc = (Color)a[n++];
+		ast = new Astronomy(dt, mp, yt, night, mc);
 	    } else if(t == "light") {
 		synchronized(this) {
 		    tlightamb = (Color)a[n++];

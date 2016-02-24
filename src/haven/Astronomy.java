@@ -26,29 +26,18 @@
 
 package haven;
 
+import java.awt.Color;
+
 public class Astronomy {
-    double dt, mp, yt;
-    boolean night;
+    public final double dt, mp, yt;
+    public final boolean night;
+    public final Color mc;
 	
-    public boolean equals(Object o) {
-	if(!(o instanceof Astronomy))
-	    return(false);
-	Astronomy a = (Astronomy)o;
-	if(a.dt != dt)
-	    return(false);
-	if(a.mp != mp)
-	    return(false);
-	if(a.yt != yt)
-	    return(false);
-	if(a.night != night)
-	    return(false);
-	return(true);
-    }
-	
-    public Astronomy(double dt, double mp, double yt, boolean night) {
+    public Astronomy(double dt, double mp, double yt, boolean night, Color mc) {
 	this.dt = dt;
 	this.mp = mp;
 	this.yt = yt;
 	this.night = night;
+	this.mc = mc;
     }
 }
