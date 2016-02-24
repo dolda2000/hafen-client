@@ -31,6 +31,7 @@ import java.awt.Color;
 
 public class Glob {
     public long time, epoch = System.currentTimeMillis();
+    public Astronomy ast;
     public OCache oc = new OCache(this);
     public MCache map;
     public Session sess;
@@ -229,6 +230,12 @@ public class Glob {
 		epoch = System.currentTimeMillis();
 		if(!inc)
 		    lastrep = 0;
+	    } else if(t == "astro") {
+		double dt = ((Number)a[n++]).doubleValue();
+		double mp = ((Number)a[n++]).doubleValue();
+		double yt = ((Number)a[n++]).doubleValue();
+		boolean night = (Integer)a[n++] != 0;
+		ast = new Astronomy(dt, mp, yt, night);
 	    } else if(t == "light") {
 		synchronized(this) {
 		    tlightamb = (Color)a[n++];
