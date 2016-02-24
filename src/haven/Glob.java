@@ -30,12 +30,6 @@ import java.util.*;
 import java.awt.Color;
 
 public class Glob {
-    public static final int GMSG_TIME = 0;
-    public static final int GMSG_ASTRO = 1;
-    public static final int GMSG_LIGHT = 2;
-    public static final int GMSG_SKY = 3;
-    public static final int GMSG_WEATHER = 4;
-	
     public long time, epoch = System.currentTimeMillis();
     public OCache oc = new OCache(this);
     public MCache map;
@@ -227,21 +221,21 @@ public class Glob {
     public void blob(Message msg) {
 	boolean inc = msg.uint8() != 0;
 	while(!msg.eom()) {
-	    int t = msg.uint8();
-	    switch(t) {
-	    case GMSG_TIME:
-		time = msg.int32();
+	    String t = msg.string().intern();
+	    Object[] a = msg.list();
+	    int n = 0;
+	    if(t == "tm") {
+		time = ((Number)a[n++]).intValue();
 		epoch = System.currentTimeMillis();
 		if(!inc)
 		    lastrep = 0;
-		break;
-	    case GMSG_LIGHT:
+	    } else if(t == "light") {
 		synchronized(this) {
-		    tlightamb = msg.color();
-		    tlightdif = msg.color();
-		    tlightspc = msg.color();
-		    tlightang = (msg.int32() / 1000000.0) * Math.PI * 2.0;
-		    tlightelev = (msg.int32() / 1000000.0) * Math.PI * 2.0;
+		    tlightamb = (Color)a[n++];
+		    tlightdif = (Color)a[n++];
+		    tlightspc = (Color)a[n++];
+		    tlightang = ((Number)a[n++]).doubleValue();
+		    tlightelev = ((Number)a[n++]).doubleValue();
 		    if(inc) {
 			olightamb = lightamb;
 			olightdif = lightdif;
@@ -258,42 +252,30 @@ public class Glob {
 			lchange = -1;
 		    }
 		}
-		break;
-	    case GMSG_SKY:
-		int id1 = msg.uint16();
-		if(id1 == 65535) {
-		    synchronized(this) {
+	    } else if(t == "sky") {
+		synchronized(this) {
+		    if(a.length < 1) {
 			sky1 = sky2 = null;
 			skyblend = 0.0;
-		    }
-		} else {
-		    int id2 = msg.uint16();
-		    if(id2 == 65535) {
-			synchronized(this) {
-			    sky1 = sess.getres(id1);
+		    } else {
+			sky1 = sess.getres(((Number)a[n++]).intValue());
+			if(a.length < 2) {
 			    sky2 = null;
 			    skyblend = 0.0;
-			}
-		    } else {
-			synchronized(this) {
-			    sky1 = sess.getres(id1);
-			    sky2 = sess.getres(id2);
-			    skyblend = msg.int32() / 1000000.0;
+			} else {
+			    sky2 = sess.getres(((Number)a[n++]).intValue());
+			    skyblend = ((Number)a[n++]).doubleValue();
 			}
 		    }
 		}
-		break;
-	    case GMSG_WEATHER:
+	    } else if(t == "wth") {
 		synchronized(this) {
 		    if(!inc)
 			wmap.clear();
 		    Collection<Object> old = new LinkedList<Object>(wmap.keySet());
-		    while(true) {
-			int resid = msg.uint16();
-			if(resid == 65535)
-			    break;
-			Indir<Resource> res = sess.getres(resid);
-			Object[] args = msg.list();
+		    while(n < a.length) {
+			Indir<Resource> res = sess.getres(((Number)a[n++]).intValue());
+			Object[] args = (Object[])a[n++];
 			Object curv = wmap.get(res);
 			if(curv instanceof Weather) {
 			    Weather cur = (Weather)curv;
@@ -306,9 +288,8 @@ public class Glob {
 		    for(Object p : old)
 			wmap.remove(p);
 		}
-		break;
-	    default:
-		throw(new RuntimeException("Unknown globlob type: " + t));
+	    } else {
+		System.err.println("Unknown globlob type: " + t);
 	    }
 	}
     }
