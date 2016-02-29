@@ -880,8 +880,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	Audio.play(errsfx);
     }
 
+    private static final Resource msgsfx = Resource.local().loadwait("sfx/msg");
     public void msg(String msg) {
 	msg(msg, Color.WHITE, Color.WHITE);
+	Audio.play(msgsfx);
     }
     
     public void act(String... args) {
