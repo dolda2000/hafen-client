@@ -612,6 +612,7 @@ public class Ridges extends MapMesh.Hooks {
 	    } catch(ArrayIndexOutOfBoundsException e) {
 		/* XXX: Just ignore for now, until I can find the
 		 * cause of this. */
+	    } catch(NegativeArraySizeException e) {
 	    }
 	    return(true);
 	}
