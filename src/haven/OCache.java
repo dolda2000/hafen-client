@@ -145,7 +145,11 @@ public class OCache implements Iterable<Gob> {
 	
     public synchronized void linbeg(Gob g, Coord s, Coord t, int c) {
 	LinMove lm = new LinMove(g, s, t, c);
-	g.setattr(lm);
+	/* I'm not sure if this is ugly or not. One might argue that
+	 * individual ODAs should have their own associated frame
+	 * numbers. */
+	if(!lm.equals(g.getattr(Moving.class)))
+	    g.setattr(lm);
     }
 	
     public synchronized void linstep(Gob g, int l) {

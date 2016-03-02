@@ -29,14 +29,21 @@ package haven;
 public class LinMove extends Moving {
     public Coord s, t;
     public int c;
-    public double a;
+    public double a, ia;
     
     public LinMove(Gob gob, Coord s, Coord t, int c) {
 	super(gob);
 	this.s = s;
 	this.t = t;
 	this.c = c;
-	this.a = 0;
+	this.a = this.ia = 0;
+    }
+    
+    public boolean equals(Object o) {
+	if(!(o instanceof LinMove))
+	    return(false);
+	LinMove om = (LinMove)o;
+	return(om.s.equals(s) && om.t.equals(t) && (om.c == c));
     }
     
     public Coord3f getc() {
@@ -62,14 +69,16 @@ public class LinMove extends Moving {
     
     public void ctick(int dt) {
 	double da = ((double)dt / 1000) / (((double)c) * 0.06);
-	a += da * 0.9;
+	double sd = ia - a;
+	if(Debug.kf3)
+	    System.err.printf("%f %f %f %f\n", a, ia, sd, Math.pow(2.0, sd * c * 0.06));
+	ia += da;
+	a += da * Math.pow(2.0, sd * c * 0.06);
 	if(a > 1)
 	    a = 1;
     }
     
     public void setl(int l) {
-	double a = ((double)l) / ((double)c);
-	if(a > this.a)
-	    this.a = a;
+	this.ia = ((double)l) / ((double)c);
     }
 }
