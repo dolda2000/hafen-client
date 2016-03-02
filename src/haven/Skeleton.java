@@ -263,7 +263,7 @@ public class Skeleton {
 		    public Matrix4f fin(Matrix4f p) {
 			if(cseq != seq) {
 			    Matrix4f xf = Transform.makexlate(new Matrix4f(), new Coord3f(gpos[bone][0], gpos[bone][1], gpos[bone][2]));
-			    if(grot[bone][0] < 0.9999) {
+			    if(grot[bone][0] < 0.999999) {
 				float ang = (float)(Math.acos(grot[bone][0]) * 2.0);
 				xf = xf.mul1(Transform.makerot(new Matrix4f(), new Coord3f(grot[bone][1], grot[bone][2], grot[bone][3]).norm(), ang));
 			    }
