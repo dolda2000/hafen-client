@@ -49,6 +49,7 @@ public class Equipory extends Widget implements DTarget {
 	new Coord(rx, 198),
 	new Coord(0, 231),
 	new Coord(rx, 231),
+	new Coord(34, 0),
     };
     static Coord isz;
     static {
@@ -134,8 +135,8 @@ public class Equipory extends Widget implements DTarget {
     }
     
     public void draw(GOut g) {
-	for(Coord ec : ecoords)
-	    g.image(invsq, ec);
+	for(int i = 0; i < 16; i++)
+	    g.image(invsq, ecoords[i]);
 	super.draw(g);
     }
 	
