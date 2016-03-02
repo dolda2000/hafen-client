@@ -70,8 +70,6 @@ public class LinMove extends Moving {
     public void ctick(int dt) {
 	double da = ((double)dt / 1000) / (((double)c) * 0.06);
 	double sd = ia - a;
-	if(Debug.kf3)
-	    System.err.printf("%f %f %f %f\n", a, ia, sd, Math.pow(2.0, sd * c * 0.06));
 	ia += da;
 	a += da * Math.pow(2.0, sd * c * 0.06);
 	if(a > 1)
