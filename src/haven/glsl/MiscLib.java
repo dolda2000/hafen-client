@@ -144,4 +144,12 @@ public abstract class MiscLib {
 				     mul(pick(blend, "rgb"), pick(blend, "a"))),
 				 pick(base, "a"))));
     }};
+    public static final Function olblend = new Function.Def(VEC4) {{
+	Expression base = param(IN, VEC4).ref();
+	Expression blend = param(IN, VEC4).ref();
+	code.add(new Return(vec4(mix(mul(l(2.0), pick(base, "rgb"), pick(blend, "rgb")),
+				     sub(l(1.0), mul(l(2.0), sub(l(1.0), pick(base, "rgb")), sub(l(1.0), pick(blend, "rgb")))),
+				     clamp(sign(sub(pick(base, "rgb"), l(0.5))), l(0.0), l(1.0))),
+				 pick(base, "a"))));
+    }};
 }
