@@ -61,7 +61,7 @@ public class OverTex extends GLState {
 		color.force();
 		prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			public Expression expand(Expression in) {
-			    return(MiscLib.colblend.call(in, color.ref()));
+			    return(MiscLib.olblend.call(in, color.ref()));
 			}
 		    }, 10);
 	    }
