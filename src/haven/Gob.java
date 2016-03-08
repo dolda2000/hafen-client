@@ -39,36 +39,36 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     public Collection<Overlay> ols = new LinkedList<Overlay>();
-	
+
     public static class Overlay implements Rendered {
 	public Indir<Resource> res;
 	public MessageBuf sdt;
 	public Sprite spr;
 	public int id;
 	public boolean delign = false;
-	
+
 	public Overlay(int id, Indir<Resource> res, Message sdt) {
 	    this.id = id;
 	    this.res = res;
 	    this.sdt = new MessageBuf(sdt);
 	    spr = null;
 	}
-	
+
 	public Overlay(Sprite spr) {
 	    this.id = -1;
 	    this.res = null;
 	    this.sdt = null;
 	    this.spr = spr;
 	}
-	
+
 	public static interface CDel {
 	    public void delete();
 	}
-	
+
 	public static interface CUpd {
 	    public void update(Message sdt);
 	}
-	
+
 	public static interface SetupMod {
 	    public void setupgob(GLState.Buffer buf);
 	    public void setupmain(RenderList rl);
@@ -81,7 +81,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    return(false);
 	}
     }
-    
+
     public Gob(Glob glob, Coord c, long id, int frame) {
 	this.glob = glob;
 	this.rc = c;
@@ -89,15 +89,15 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	this.frame = frame;
 	loc.tick();
     }
-	
+
     public Gob(Glob glob, Coord c) {
 	this(glob, c, -1, 0);
     }
-	
+
     public static interface ANotif<T extends GAttrib> {
 	public void ch(T n);
     }
-	
+
     public void ctick(int dt) {
 	for(GAttrib a : attr.values())
 	    a.ctick(dt);
@@ -116,7 +116,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	if(virtual && ols.isEmpty())
 	    glob.oc.remove(id);
     }
-	
+
     public Overlay findol(int id) {
 	for(Overlay ol : ols) {
 	    if(ol.id == id)
@@ -129,12 +129,12 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	for(GAttrib a : attr.values())
 	    a.tick();
     }
-    
+
     public void dispose() {
 	for(GAttrib a : attr.values())
 	    a.dispose();
     }
-	
+
     public void move(Coord c, double a) {
 	Moving m = getattr(Moving.class);
 	if(m != null)
@@ -142,7 +142,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	this.rc = c;
 	this.a = a;
     }
-	
+
     public Coord3f getc() {
 	Moving m = getattr(Moving.class);
 	Coord3f ret = (m != null)?m.getc():getrc();
@@ -151,11 +151,11 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    ret = ret.add(df.off);
 	return(ret);
     }
-    
+
     public Coord3f getrc() {
 	return(new Coord3f(rc.x, rc.y, glob.map.getcz(rc)));
     }
-	
+
     private Class<? extends GAttrib> attrclass(Class<? extends GAttrib> cl) {
 	while(true) {
 	    Class<?> p = cl.getSuperclass();
@@ -169,18 +169,18 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	Class<? extends GAttrib> ac = attrclass(a.getClass());
 	attr.put(ac, a);
     }
-	
+
     public <C extends GAttrib> C getattr(Class<C> c) {
 	GAttrib attr = this.attr.get(attrclass(c));
 	if(!c.isInstance(attr))
 	    return(null);
 	return(c.cast(attr));
     }
-	
+
     public void delattr(Class<? extends GAttrib> c) {
 	attr.remove(attrclass(c));
     }
-	
+
     public void draw(GOut g) {}
 
     public boolean setup(RenderList rl) {
@@ -209,7 +209,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public Random mkrandoom() {
 	return(Utils.mkrandoom(id));
     }
-    
+
     public Resource getres() {
 	Drawable d = getattr(Drawable.class);
 	if(d != null)
@@ -228,7 +228,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    return(0);
 	return(m.getv());
     }
-    
+
     public final GLState olmod = new GLState() {
 	    public void apply(GOut g) {}
 	    public void unapply(GOut g) {}
@@ -246,7 +246,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    mv = new Matrix4f();
 	public Projection proj = null;
 	boolean debug = false;
-	
+
 	public void prep(Buffer buf) {
 	    mv.load(cam.load(buf.get(PView.cam).fin(Matrix4f.id))).mul1(wxf.load(buf.get(PView.loc).fin(Matrix4f.id)));
 	    Projection proj = buf.get(PView.proj);
@@ -257,7 +257,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    this.proj = proj;
 	}
     }
-    
+
     public final Save save = new Save();
     public class GobLocation extends GLState.Abstract {
 	private Coord3f c = null;
