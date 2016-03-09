@@ -39,6 +39,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     public Collection<Overlay> ols = new LinkedList<Overlay>();
+    private final Collection<ResAttr.Cell> rdata = new LinkedList<ResAttr.Cell>();
 
     public static class Overlay implements Rendered {
 	public Indir<Resource> res;
@@ -79,6 +80,53 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    if(spr != null)
 		rl.add(spr, null);
 	    return(false);
+	}
+    }
+
+    public static class ResAttr {
+	public boolean update(Message dat) {
+	    return(false);
+	}
+
+	public void dispose() {
+	}
+
+	private static class Cell {
+	    final Indir<Resource> resid;
+	    final MessageBuf dat;
+	    ResAttr attr = null;
+
+	    Cell(Indir<Resource> resid, Message dat) {
+		this.resid = resid;
+		this.dat = new MessageBuf(dat);
+	    }
+	}
+
+	@Resource.PublishedCode(name = "gattr", instancer = FactMaker.class)
+	public static interface Factory {
+	    public ResAttr mkattr(Gob gob, Message dat);
+	}
+
+	public static class FactMaker implements Resource.PublishedCode.Instancer {
+	    public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
+		if(Factory.class.isAssignableFrom(cl))
+		    return(cl.asSubclass(Factory.class).newInstance());
+		try {
+		    final java.lang.reflect.Constructor cons = cl.getConstructor(Gob.class, Message.class);
+		    return(new Factory() {
+			    public ResAttr mkattr(Gob gob, Message dat) {
+				try {
+				    return((ResAttr)cons.newInstance(gob, dat));
+				} catch(Exception e) {
+				    if(e instanceof RuntimeException) throw((RuntimeException)e);
+				    throw(new RuntimeException(e));
+				}
+			    }
+			});
+		} catch(NoSuchMethodException e) {
+		}
+		return(null);
+	    }
 	}
     }
 
@@ -133,6 +181,10 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public void dispose() {
 	for(GAttrib a : attr.values())
 	    a.dispose();
+	for(ResAttr.Cell rd : rdata) {
+	    if(rd.attr != null)
+		rd.attr.dispose();
+	}
     }
 
     public void move(Coord c, double a) {
@@ -179,6 +231,55 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 
     public void delattr(Class<? extends GAttrib> c) {
 	attr.remove(attrclass(c));
+    }
+
+    public <T> T getrattr(Class<T> c) {
+	Loading loading = null;
+	for(ResAttr.Cell rd : rdata) {
+	    if(rd.attr == null) {
+		try {
+		    rd.attr = rd.resid.get().getcode(ResAttr.Factory.class, true).mkattr(this, rd.dat.clone());
+		} catch(Loading l) {
+		    loading = l;
+		    continue;
+		}
+		if(rd.attr == null)
+		    throw(new NullPointerException());
+	    }
+	    if(c.isInstance(rd.attr))
+		return(c.cast(rd.attr));
+	}
+	if(loading != null)
+	    throw(new Loading(loading));
+	else
+	    return(null);
+    }
+
+    public void setrattr(Indir<Resource> resid, Message dat) {
+	for(Iterator<ResAttr.Cell> i = rdata.iterator(); i.hasNext();) {
+	    ResAttr.Cell rd = i.next();
+	    if(rd.resid == resid) {
+		if(dat.equals(rd.dat))
+		    return;
+		if((rd.attr != null) && rd.attr.update(dat))
+		    return;
+		i.remove();
+		rd.attr.dispose();
+		break;
+	    }
+	}
+	rdata.add(new ResAttr.Cell(resid, dat));
+    }
+
+    public void delrattr(Indir<Resource> resid) {
+	for(Iterator<ResAttr.Cell> i = rdata.iterator(); i.hasNext();) {
+	    ResAttr.Cell rd = i.next();
+	    if(rd.resid == resid) {
+		i.remove();
+		rd.attr.dispose();
+		return;
+	    }
+	}
     }
 
     public void draw(GOut g) {}

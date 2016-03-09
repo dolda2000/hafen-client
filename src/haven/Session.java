@@ -63,6 +63,7 @@ public class Session {
     public static final int OD_CMPMOD = 17;
     public static final int OD_CMPEQU = 18;
     public static final int OD_ICON = 19;
+    public static final int OD_RESATTR = 20;
     public static final int OD_END = 255;
     public static final int SESSERR_AUTH = 1;
     public static final int SESSERR_BUSY = 2;
@@ -468,6 +469,12 @@ public class Session {
 				if(gob != null)
 				    oc.icon(gob, getres(resid));
 			    }
+			} else if(type == OD_RESATTR) {
+			    Indir<Resource> resid = getres(msg.uint16());
+			    int len = msg.uint8();
+			    Message dat = (len > 0)?new MessageBuf(msg.bytes(len)):null;
+			    if(gob != null)
+				oc.resattr(gob, resid, dat);
 			} else if(type == OD_END) {
 			    break;
 			} else {

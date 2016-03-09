@@ -317,4 +317,11 @@ public class OCache implements Iterable<Gob> {
 	else
 	    g.setattr(new GobIcon(g, res));
     }
+
+    public synchronized void resattr(Gob g, Indir<Resource> resid, Message dat) {
+	if(dat != null)
+	    g.setrattr(resid, dat);
+	else
+	    g.delrattr(resid);
+    }
 }
