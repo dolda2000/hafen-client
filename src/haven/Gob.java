@@ -39,7 +39,8 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     public Collection<Overlay> ols = new LinkedList<Overlay>();
-    private final Collection<ResAttr.Cell> rdata = new LinkedList<ResAttr.Cell>();
+    private final Collection<ResAttr.Cell<?>> rdata = new LinkedList<ResAttr.Cell<?>>();
+    private final Collection<ResAttr.Load> lrdata = new LinkedList<ResAttr.Load>();
 
     public static class Overlay implements Rendered {
 	public Indir<Resource> res;
@@ -83,6 +84,11 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	}
     }
 
+    /* XXX: This whole thing didn't turn out quite as nice as I had
+     * hoped, but hopefully it can at least serve as a source of
+     * inspiration to redo attributes properly in the future. There
+     * have already long been arguments for remaking GAttribs as
+     * well. */
     public static class ResAttr {
 	public boolean update(Message dat) {
 	    return(false);
@@ -91,12 +97,28 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	public void dispose() {
 	}
 
-	private static class Cell {
+	public static class Cell<T extends ResAttr> {
+	    final Class<T> clsid;
+	    Indir<Resource> resid = null;
+	    MessageBuf odat;
+	    public T attr = null;
+
+	    public Cell(Class<T> clsid) {
+		this.clsid = clsid;
+	    }
+
+	    void set(ResAttr attr) {
+		if(this.attr != null)
+		    this.attr.dispose();
+		this.attr = clsid.cast(attr);
+	    }
+	}
+
+	private static class Load {
 	    final Indir<Resource> resid;
 	    final MessageBuf dat;
-	    ResAttr attr = null;
 
-	    Cell(Indir<Resource> resid, Message dat) {
+	    Load(Indir<Resource> resid, Message dat) {
 		this.resid = resid;
 		this.dat = new MessageBuf(dat);
 	    }
@@ -111,19 +133,16 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
 		if(Factory.class.isAssignableFrom(cl))
 		    return(cl.asSubclass(Factory.class).newInstance());
-		try {
-		    final java.lang.reflect.Constructor cons = cl.getConstructor(Gob.class, Message.class);
-		    return(new Factory() {
-			    public ResAttr mkattr(Gob gob, Message dat) {
-				try {
-				    return((ResAttr)cons.newInstance(gob, dat));
-				} catch(Exception e) {
-				    if(e instanceof RuntimeException) throw((RuntimeException)e);
-				    throw(new RuntimeException(e));
+		if(ResAttr.class.isAssignableFrom(cl)) {
+		    try {
+			final java.lang.reflect.Constructor<? extends ResAttr> cons = cl.asSubclass(ResAttr.class).getConstructor(Gob.class, Message.class);
+			return(new Factory() {
+				public ResAttr mkattr(Gob gob, Message dat) {
+				    return(Utils.construct(cons, gob, dat));
 				}
-			    }
-			});
-		} catch(NoSuchMethodException e) {
+			    });
+		    } catch(NoSuchMethodException e) {
+		    }
 		}
 		return(null);
 	    }
@@ -176,6 +195,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public void tick() {
 	for(GAttrib a : attr.values())
 	    a.tick();
+	loadrattr();
     }
 
     public void dispose() {
@@ -233,51 +253,88 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	attr.remove(attrclass(c));
     }
 
-    public <T> T getrattr(Class<T> c) {
-	Loading loading = null;
-	for(ResAttr.Cell rd : rdata) {
-	    if(rd.attr == null) {
-		try {
-		    rd.attr = rd.resid.get().getcode(ResAttr.Factory.class, true).mkattr(this, rd.dat.clone());
-		} catch(Loading l) {
-		    loading = l;
-		    continue;
-		}
-		if(rd.attr == null)
-		    throw(new NullPointerException());
-	    }
-	    if(c.isInstance(rd.attr))
-		return(c.cast(rd.attr));
+    private Class<? extends ResAttr> rattrclass(Class<? extends ResAttr> cl) {
+	while(true) {
+	    Class<?> p = cl.getSuperclass();
+	    if(p == ResAttr.class)
+		return(cl);
+	    cl = p.asSubclass(ResAttr.class);
 	}
-	if(loading != null)
-	    throw(new Loading(loading));
-	else
-	    return(null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends ResAttr> ResAttr.Cell<T> getrattr(Class<T> c) {
+	for(ResAttr.Cell<?> rd : rdata) {
+	    if(rd.clsid == c)
+		return((ResAttr.Cell<T>)rd);
+	}
+	ResAttr.Cell<T> rd = new ResAttr.Cell<T>(c);
+	rdata.add(rd);
+	return(rd);
+    }
+
+    public static <T extends ResAttr> ResAttr.Cell<T> getrattr(Object obj, Class<T> c) {
+	if(!(obj instanceof Gob))
+	    return(new ResAttr.Cell<T>(c));
+	return(((Gob)obj).getrattr(c));
+    }
+
+    private void loadrattr() {
+	for(Iterator<ResAttr.Load> i = lrdata.iterator(); i.hasNext();) {
+	    ResAttr.Load rd = i.next();
+	    ResAttr attr;
+	    try {
+		attr = rd.resid.get().getcode(ResAttr.Factory.class, true).mkattr(this, rd.dat.clone());
+	    } catch(Loading l) {
+		continue;
+	    }
+	    ResAttr.Cell<?> rc = getrattr(rattrclass(attr.getClass()));
+	    if(rc.resid == null)
+		rc.resid = rd.resid;
+	    else if(rc.resid != rd.resid)
+		throw(new RuntimeException("Conflicting resattr resource IDs on " + rc.clsid + ": " + rc.resid + " -> " + rd.resid));
+	    rc.odat = rd.dat;
+	    rc.set(attr);
+	    i.remove();
+	}
     }
 
     public void setrattr(Indir<Resource> resid, Message dat) {
-	for(Iterator<ResAttr.Cell> i = rdata.iterator(); i.hasNext();) {
-	    ResAttr.Cell rd = i.next();
+	for(Iterator<ResAttr.Cell<?>> i = rdata.iterator(); i.hasNext();) {
+	    ResAttr.Cell<?> rd = i.next();
 	    if(rd.resid == resid) {
-		if(dat.equals(rd.dat))
+		if(dat.equals(rd.odat))
 		    return;
 		if((rd.attr != null) && rd.attr.update(dat))
 		    return;
+		break;
+	    }
+	}
+	for(Iterator<ResAttr.Load> i = lrdata.iterator(); i.hasNext();) {
+	    ResAttr.Load rd = i.next();
+	    if(rd.resid == resid) {
+		i.remove();
+		break;
+	    }
+	}
+	lrdata.add(new ResAttr.Load(resid, dat));
+	loadrattr();
+    }
+
+    public void delrattr(Indir<Resource> resid) {
+	for(Iterator<ResAttr.Cell<?>> i = rdata.iterator(); i.hasNext();) {
+	    ResAttr.Cell<?> rd = i.next();
+	    if(rd.resid == resid) {
 		i.remove();
 		rd.attr.dispose();
 		break;
 	    }
 	}
-	rdata.add(new ResAttr.Cell(resid, dat));
-    }
-
-    public void delrattr(Indir<Resource> resid) {
-	for(Iterator<ResAttr.Cell> i = rdata.iterator(); i.hasNext();) {
-	    ResAttr.Cell rd = i.next();
+	for(Iterator<ResAttr.Load> i = lrdata.iterator(); i.hasNext();) {
+	    ResAttr.Load rd = i.next();
 	    if(rd.resid == resid) {
 		i.remove();
-		rd.attr.dispose();
-		return;
+		break;
 	    }
 	}
     }
