@@ -39,36 +39,38 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     public Collection<Overlay> ols = new LinkedList<Overlay>();
-	
+    private final Collection<ResAttr.Cell<?>> rdata = new LinkedList<ResAttr.Cell<?>>();
+    private final Collection<ResAttr.Load> lrdata = new LinkedList<ResAttr.Load>();
+
     public static class Overlay implements Rendered {
 	public Indir<Resource> res;
 	public MessageBuf sdt;
 	public Sprite spr;
 	public int id;
 	public boolean delign = false;
-	
+
 	public Overlay(int id, Indir<Resource> res, Message sdt) {
 	    this.id = id;
 	    this.res = res;
 	    this.sdt = new MessageBuf(sdt);
 	    spr = null;
 	}
-	
+
 	public Overlay(Sprite spr) {
 	    this.id = -1;
 	    this.res = null;
 	    this.sdt = null;
 	    this.spr = spr;
 	}
-	
+
 	public static interface CDel {
 	    public void delete();
 	}
-	
+
 	public static interface CUpd {
 	    public void update(Message sdt);
 	}
-	
+
 	public static interface SetupMod {
 	    public void setupgob(GLState.Buffer buf);
 	    public void setupmain(RenderList rl);
@@ -81,7 +83,72 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    return(false);
 	}
     }
-    
+
+    /* XXX: This whole thing didn't turn out quite as nice as I had
+     * hoped, but hopefully it can at least serve as a source of
+     * inspiration to redo attributes properly in the future. There
+     * have already long been arguments for remaking GAttribs as
+     * well. */
+    public static class ResAttr {
+	public boolean update(Message dat) {
+	    return(false);
+	}
+
+	public void dispose() {
+	}
+
+	public static class Cell<T extends ResAttr> {
+	    final Class<T> clsid;
+	    Indir<Resource> resid = null;
+	    MessageBuf odat;
+	    public T attr = null;
+
+	    public Cell(Class<T> clsid) {
+		this.clsid = clsid;
+	    }
+
+	    void set(ResAttr attr) {
+		if(this.attr != null)
+		    this.attr.dispose();
+		this.attr = clsid.cast(attr);
+	    }
+	}
+
+	private static class Load {
+	    final Indir<Resource> resid;
+	    final MessageBuf dat;
+
+	    Load(Indir<Resource> resid, Message dat) {
+		this.resid = resid;
+		this.dat = new MessageBuf(dat);
+	    }
+	}
+
+	@Resource.PublishedCode(name = "gattr", instancer = FactMaker.class)
+	public static interface Factory {
+	    public ResAttr mkattr(Gob gob, Message dat);
+	}
+
+	public static class FactMaker implements Resource.PublishedCode.Instancer {
+	    public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
+		if(Factory.class.isAssignableFrom(cl))
+		    return(cl.asSubclass(Factory.class).newInstance());
+		if(ResAttr.class.isAssignableFrom(cl)) {
+		    try {
+			final java.lang.reflect.Constructor<? extends ResAttr> cons = cl.asSubclass(ResAttr.class).getConstructor(Gob.class, Message.class);
+			return(new Factory() {
+				public ResAttr mkattr(Gob gob, Message dat) {
+				    return(Utils.construct(cons, gob, dat));
+				}
+			    });
+		    } catch(NoSuchMethodException e) {
+		    }
+		}
+		return(null);
+	    }
+	}
+    }
+
     public Gob(Glob glob, Coord c, long id, int frame) {
 	this.glob = glob;
 	this.rc = c;
@@ -89,15 +156,15 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	this.frame = frame;
 	loc.tick();
     }
-	
+
     public Gob(Glob glob, Coord c) {
 	this(glob, c, -1, 0);
     }
-	
+
     public static interface ANotif<T extends GAttrib> {
 	public void ch(T n);
     }
-	
+
     public void ctick(int dt) {
 	for(GAttrib a : attr.values())
 	    a.ctick(dt);
@@ -116,7 +183,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	if(virtual && ols.isEmpty())
 	    glob.oc.remove(id);
     }
-	
+
     public Overlay findol(int id) {
 	for(Overlay ol : ols) {
 	    if(ol.id == id)
@@ -128,13 +195,18 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public void tick() {
 	for(GAttrib a : attr.values())
 	    a.tick();
+	loadrattr();
     }
-    
+
     public void dispose() {
 	for(GAttrib a : attr.values())
 	    a.dispose();
+	for(ResAttr.Cell rd : rdata) {
+	    if(rd.attr != null)
+		rd.attr.dispose();
+	}
     }
-	
+
     public void move(Coord c, double a) {
 	Moving m = getattr(Moving.class);
 	if(m != null)
@@ -142,7 +214,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	this.rc = c;
 	this.a = a;
     }
-	
+
     public Coord3f getc() {
 	Moving m = getattr(Moving.class);
 	Coord3f ret = (m != null)?m.getc():getrc();
@@ -151,11 +223,11 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    ret = ret.add(df.off);
 	return(ret);
     }
-    
+
     public Coord3f getrc() {
 	return(new Coord3f(rc.x, rc.y, glob.map.getcz(rc)));
     }
-	
+
     private Class<? extends GAttrib> attrclass(Class<? extends GAttrib> cl) {
 	while(true) {
 	    Class<?> p = cl.getSuperclass();
@@ -169,18 +241,104 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	Class<? extends GAttrib> ac = attrclass(a.getClass());
 	attr.put(ac, a);
     }
-	
+
     public <C extends GAttrib> C getattr(Class<C> c) {
 	GAttrib attr = this.attr.get(attrclass(c));
 	if(!c.isInstance(attr))
 	    return(null);
 	return(c.cast(attr));
     }
-	
+
     public void delattr(Class<? extends GAttrib> c) {
 	attr.remove(attrclass(c));
     }
-	
+
+    private Class<? extends ResAttr> rattrclass(Class<? extends ResAttr> cl) {
+	while(true) {
+	    Class<?> p = cl.getSuperclass();
+	    if(p == ResAttr.class)
+		return(cl);
+	    cl = p.asSubclass(ResAttr.class);
+	}
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends ResAttr> ResAttr.Cell<T> getrattr(Class<T> c) {
+	for(ResAttr.Cell<?> rd : rdata) {
+	    if(rd.clsid == c)
+		return((ResAttr.Cell<T>)rd);
+	}
+	ResAttr.Cell<T> rd = new ResAttr.Cell<T>(c);
+	rdata.add(rd);
+	return(rd);
+    }
+
+    public static <T extends ResAttr> ResAttr.Cell<T> getrattr(Object obj, Class<T> c) {
+	if(!(obj instanceof Gob))
+	    return(new ResAttr.Cell<T>(c));
+	return(((Gob)obj).getrattr(c));
+    }
+
+    private void loadrattr() {
+	for(Iterator<ResAttr.Load> i = lrdata.iterator(); i.hasNext();) {
+	    ResAttr.Load rd = i.next();
+	    ResAttr attr;
+	    try {
+		attr = rd.resid.get().getcode(ResAttr.Factory.class, true).mkattr(this, rd.dat.clone());
+	    } catch(Loading l) {
+		continue;
+	    }
+	    ResAttr.Cell<?> rc = getrattr(rattrclass(attr.getClass()));
+	    if(rc.resid == null)
+		rc.resid = rd.resid;
+	    else if(rc.resid != rd.resid)
+		throw(new RuntimeException("Conflicting resattr resource IDs on " + rc.clsid + ": " + rc.resid + " -> " + rd.resid));
+	    rc.odat = rd.dat;
+	    rc.set(attr);
+	    i.remove();
+	}
+    }
+
+    public void setrattr(Indir<Resource> resid, Message dat) {
+	for(Iterator<ResAttr.Cell<?>> i = rdata.iterator(); i.hasNext();) {
+	    ResAttr.Cell<?> rd = i.next();
+	    if(rd.resid == resid) {
+		if(dat.equals(rd.odat))
+		    return;
+		if((rd.attr != null) && rd.attr.update(dat))
+		    return;
+		break;
+	    }
+	}
+	for(Iterator<ResAttr.Load> i = lrdata.iterator(); i.hasNext();) {
+	    ResAttr.Load rd = i.next();
+	    if(rd.resid == resid) {
+		i.remove();
+		break;
+	    }
+	}
+	lrdata.add(new ResAttr.Load(resid, dat));
+	loadrattr();
+    }
+
+    public void delrattr(Indir<Resource> resid) {
+	for(Iterator<ResAttr.Cell<?>> i = rdata.iterator(); i.hasNext();) {
+	    ResAttr.Cell<?> rd = i.next();
+	    if(rd.resid == resid) {
+		i.remove();
+		rd.attr.dispose();
+		break;
+	    }
+	}
+	for(Iterator<ResAttr.Load> i = lrdata.iterator(); i.hasNext();) {
+	    ResAttr.Load rd = i.next();
+	    if(rd.resid == resid) {
+		i.remove();
+		break;
+	    }
+	}
+    }
+
     public void draw(GOut g) {}
 
     public boolean setup(RenderList rl) {
@@ -209,7 +367,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public Random mkrandoom() {
 	return(Utils.mkrandoom(id));
     }
-    
+
     public Resource getres() {
 	Drawable d = getattr(Drawable.class);
 	if(d != null)
@@ -228,7 +386,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    return(0);
 	return(m.getv());
     }
-    
+
     public final GLState olmod = new GLState() {
 	    public void apply(GOut g) {}
 	    public void unapply(GOut g) {}
@@ -246,7 +404,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    mv = new Matrix4f();
 	public Projection proj = null;
 	boolean debug = false;
-	
+
 	public void prep(Buffer buf) {
 	    mv.load(cam.load(buf.get(PView.cam).fin(Matrix4f.id))).mul1(wxf.load(buf.get(PView.loc).fin(Matrix4f.id)));
 	    Projection proj = buf.get(PView.proj);
@@ -257,7 +415,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    this.proj = proj;
 	}
     }
-    
+
     public final Save save = new Save();
     public class GobLocation extends GLState.Abstract {
 	private Coord3f c = null;

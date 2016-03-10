@@ -32,7 +32,7 @@ import haven.Skeleton.PoseMod;
 import haven.MorphedMesh.Morpher;
 
 public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
-    private static final GLState
+    public static final GLState
 	rigid = new Material.Colors(java.awt.Color.GREEN),
 	morphed = new Material.Colors(java.awt.Color.RED),
 	unboned = new Material.Colors(java.awt.Color.YELLOW);
