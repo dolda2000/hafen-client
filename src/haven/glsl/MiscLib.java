@@ -147,9 +147,16 @@ public abstract class MiscLib {
     public static final Function olblend = new Function.Def(VEC4) {{
 	Expression base = param(IN, VEC4).ref();
 	Expression blend = param(IN, VEC4).ref();
+	/* XXX: It seems weird indeed that Haven would be the only
+	 * program having trouble with this, but on Intel GPUs, the
+	 * sign() function very much appears to be buggy somehow
+	 * (quite unclear just how; no explanation I can think of
+	 * seems to make sense). Thus, this uses (x * 1000) instead of
+	 * sign(x). Assuming color values mapped from uint8_t's, 1000
+	 * is enough to saturate the smallest deviations from 0.5. */
 	code.add(new Return(vec4(mix(mul(l(2.0), pick(base, "rgb"), pick(blend, "rgb")),
 				     sub(l(1.0), mul(l(2.0), sub(l(1.0), pick(base, "rgb")), sub(l(1.0), pick(blend, "rgb")))),
-				     clamp(sign(sub(pick(base, "rgb"), l(0.5))), l(0.0), l(1.0))),
+				     clamp(mul(sub(pick(base, "rgb"), l(0.5)), l(1000.0)), l(0.0), l(1.0))),
 				 pick(base, "a"))));
     }};
 }
