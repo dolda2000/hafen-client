@@ -1028,7 +1028,7 @@ public class CharWnd extends Window {
 		}
 
 		public boolean mousedown(Coord c, int btn) {
-		    if(c.isect(Coord.z, rtitle.sz())) {
+		    if((rtitle != null) && c.isect(Coord.z, rtitle.sz())) {
 			CharWnd cw = getparent(GameUI.class).chrwdg;
 			cw.show();
 			cw.raise();
