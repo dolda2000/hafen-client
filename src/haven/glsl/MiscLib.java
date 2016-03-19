@@ -156,6 +156,15 @@ public abstract class MiscLib {
 	 * is enough to saturate the smallest deviations from 0.5. */
 	code.add(new Return(vec4(mix(mul(l(2.0), pick(base, "rgb"), pick(blend, "rgb")),
 				     sub(l(1.0), mul(l(2.0), sub(l(1.0), pick(base, "rgb")), sub(l(1.0), pick(blend, "rgb")))),
+				     clamp(mul(sub(pick(blend, "rgb"), l(0.5)), l(1000.0)), l(0.0), l(1.0))),
+				 pick(base, "a"))));
+    }};
+    public static final Function cpblend = new Function.Def(VEC4) {{
+	Expression base = param(IN, VEC4).ref();
+	Expression blend = param(IN, VEC4).ref();
+	/* XXX: See olblend comment */
+	code.add(new Return(vec4(mix(mul(l(2.0), pick(base, "rgb"), pick(blend, "rgb")),
+				     sub(l(1.0), mul(l(2.0), sub(l(1.0), pick(base, "rgb")), sub(l(1.0), pick(blend, "rgb")))),
 				     clamp(mul(sub(pick(base, "rgb"), l(0.5)), l(1000.0)), l(0.0), l(1.0))),
 				 pick(base, "a"))));
     }};
