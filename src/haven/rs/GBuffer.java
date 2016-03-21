@@ -93,7 +93,7 @@ public class GBuffer {
 		    }
 
 		    public void dispose(GLAutoDrawable d) {
-			BGL buf = new BGL();
+			BufferBGL buf = new BufferBGL();
 			GLObject.disposeall(curgl, buf);
 			buf.run(d.getGL().getGL2());
 		    }
@@ -141,7 +141,7 @@ public class GBuffer {
     protected void redraw(GL2 gl) {
 	if((ctx.state == null) || (ctx.state.cgl.gl != gl))
 	    ctx.state = new GLState.Applier(ctx.curgl);
-	BGL glbuf = new BGL();
+	BufferBGL glbuf = new BufferBGL();
 
 	GLState.Buffer ibuf = new GLState.Buffer(ctx.state.cfg);
 	ctx.gstate.prep(ibuf);
