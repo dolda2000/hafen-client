@@ -95,7 +95,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 		try {
 		    int major = Integer.parseInt(m.group(1));
 		    int minor = Integer.parseInt(m.group(2));
-		    if((major > 0) || (major < 256) || (minor >= 0) || (minor < 256))
+		    if((major > 0) && (major < 256) && (minor >= 0) && (minor < 256))
 			c.glslver = (major << 8) | minor;
 		} catch(NumberFormatException e) {
 		}
