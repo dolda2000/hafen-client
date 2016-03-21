@@ -26,7 +26,7 @@
 
 package haven;
 
-public abstract class Drawable extends GAttrib {
+public abstract class Drawable extends GAttrib implements Skeleton.HasPose {
     public Drawable(Gob gob) {
 	super(gob);
     }
