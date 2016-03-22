@@ -46,6 +46,7 @@ public abstract class GLShader implements java.io.Serializable {
 	public ShaderOb(GOut g, int type) {
 	    super(g);
 	    this.type = type;
+	    g.gl.bglCreate(this);
 	}
 
 	public void create(GL2 gl) {

@@ -33,6 +33,7 @@ public class GLBuffer extends GLObject implements BGL.ID {
     
     public GLBuffer(GOut g) {
 	super(g);
+	g.gl.bglCreate(this);
     }
 
     public void create(GL2 gl) {
