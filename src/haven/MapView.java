@@ -1080,6 +1080,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    placing = null;
 	} else if(msg == "move") {
 	    cc = (Coord)args[0];
+	} else if(msg == "plob") {
+	    if(args[0] == null)
+		plgob = -1;
+	    else
+		plgob = (Integer)args[0];
 	} else if(msg == "flashol") {
 	    unflashol();
 	    olflash = (Integer)args[0];
