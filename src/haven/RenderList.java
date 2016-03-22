@@ -158,11 +158,12 @@ public class RenderList {
 	postsetup(s, t);
     }
 
-    private void add(Cached c) {
+    private void add(Cached c, GLState.Buffer ss) {
 	for(SavedSlot p : c.slots) {
 	    Slot s = getslot();
 	    s.r = p.r;
 	    p.st.copy(s.os);
+	    ss.copy(s.os, GLState.Slot.Type.SYS);
 	    s.o = p.o;
 	    s.p = curp;
 	    s.d = true;
@@ -177,7 +178,7 @@ public class RenderList {
 	if((seq != null) && ((c = prevcache.get(r)) != null) && (c.seq == seq)) {
 	    prevcache.remove(r);
 	    newcache.put(r, c);
-	    add(c);
+	    add(c, curp.cs);
 	    return;
 	}
 	Slot s = getslot();
