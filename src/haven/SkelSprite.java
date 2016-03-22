@@ -31,7 +31,7 @@ import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 import haven.MorphedMesh.Morpher;
 
-public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
+public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.HasPose {
     public static final GLState
 	rigid = new Material.Colors(java.awt.Color.GREEN),
 	morphed = new Material.Colors(java.awt.Color.RED),
@@ -199,6 +199,10 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd {
 	for(MeshAnim.Anim anim : manims)
 	    anim.tick(dt);
 	return(false);
+    }
+
+    public Pose getpose() {
+	return(pose);
     }
 
     static {

@@ -356,7 +356,7 @@ public abstract class Message {
 		addfloat32(((Float)o).floatValue());
 	    } else if(o instanceof Double) {
 		adduint8(T_FLOAT64);
-		addfloat64(((Float)o).floatValue());
+		addfloat64(((Double)o).floatValue());
 	    } else {
 		throw(new RuntimeException("Cannot encode a " + o.getClass() + " as TTO"));
 	    }

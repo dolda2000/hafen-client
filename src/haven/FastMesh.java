@@ -406,6 +406,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     public static class MeshRes extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public transient FastMesh m;
 	public transient Material.Res mat;
+	public final Map<String, String> rdat;
 	private transient short[] tmp;
 	public final int id, ref;
 	private int matid;
@@ -425,7 +426,17 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	    } else {
 		ref = -1;
 	    }
-	    if((fl & ~7) != 0)
+	    Map<String, String> rdat = new HashMap<String, String>();
+	    if((fl & 8) != 0) {
+		while(true) {
+		    String k = buf.string();
+		    if(k.equals(""))
+			break;
+		    rdat.put(k, buf.string());
+		}
+	    }
+	    this.rdat = Collections.unmodifiableMap(rdat);
+	    if((fl & ~15) != 0)
 		throw(new Resource.LoadException("Unsupported flags in fastmesh: " + fl, getres()));
 	    short[] ind = new short[num * 3];
 	    for(int i = 0; i < num * 3; i++)
