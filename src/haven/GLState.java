@@ -272,6 +272,19 @@ public abstract class GLState {
 	    return((T)states[slot.id]);
 	}
 	
+	private int hash = 0;
+	public int hashCode() {
+	    if(hash == 0) {
+		int h = 0;
+		for(int i = 0; i < states.length; i++) {
+		    if(states[i] != null)
+			h = (h * 31) + states[i].hashCode();
+		}
+		hash = h;
+	    }
+	    return(hash);
+	}
+
 	public boolean equals(Object o) {
 	    if(!(o instanceof Buffer))
 		return(false);
