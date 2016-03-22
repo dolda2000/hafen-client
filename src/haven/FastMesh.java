@@ -321,14 +321,14 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     }
 
     private GLSettings.MeshMode curmode = null;
-    private Compiler compiler(GOut g) {
+    private Compiler compiler(GLConfig gc) {
 	if(compile()) {
-	    if(curmode != g.gc.pref.meshmode.val) {
+	    if(curmode != gc.pref.meshmode.val) {
 		if(compiler != null) {
 		    compiler.dispose();
 		    compiler = null;
 		}
-		switch(g.gc.pref.meshmode.val) {
+		switch(gc.pref.meshmode.val) {
 		case VAO:
 		    compiler = new VAOCompiler();
 		    break;
@@ -336,7 +336,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 		    compiler = new DLCompiler();
 		    break;
 		}
-		curmode = g.gc.pref.meshmode.val;
+		curmode = gc.pref.meshmode.val;
 	    }
 	} else if(compiler != null) {
 	    compiler.dispose();
@@ -348,7 +348,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 
     public void draw(GOut g) {
 	BGL gl = g.gl;
-	Compiler compiler = compiler(g);
+	Compiler compiler = compiler(g.gc);
 	if(compiler != null) {
 	    compiler.get(g).draw(g);
 	} else {
@@ -362,12 +362,41 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     }
 
     public boolean drawinst(GOut g, List<GLState.Buffer> st) {
-	Compiler compiler = compiler(g);
+	Compiler compiler = compiler(g.gc);
 	if(!(compiler instanceof VAOCompiler))
 	    return(false);
 	if(!g.st.inststate(st))
 	    return(false);
 	return(((VAOCompiler.VAOCompiled)compiler.get(g)).drawinst(g, st));
+    }
+
+    private class Instanced implements Rendered, Disposable {
+	final List<GLState.Buffer> instances;
+	final VAOCompiler compiler;
+
+	Instanced(VAOCompiler compiler, List<GLState.Buffer> instances) {
+	    this.compiler = compiler;
+	    this.instances = instances;
+	}
+
+	public void draw(GOut g) {
+	    ((VAOCompiler.VAOCompiled)compiler.get(g)).drawinst(g, instances);
+	}
+
+	public boolean setup(RenderList r) {
+	    throw(new RuntimeException("Instanced meshes are transformed into, not set up"));
+	}
+
+	public void dispose() {
+	}
+    }
+
+    public Rendered instanced(GLConfig gc, List<GLState.Buffer> st) {
+	Compiler compiler = compiler(gc);
+	if(!(compiler instanceof VAOCompiler))
+	    return(null);
+	VAOCompiler vc = (VAOCompiler)compiler;
+	return(new Instanced((VAOCompiler)compiler, new ArrayList<GLState.Buffer>(st)));
     }
     
     public void dispose() {

@@ -35,8 +35,9 @@ public class RenderList {
     private int cur = 0;
     private Slot curp = null;
     private GLState.Global[] gstates = new GLState.Global[0];
+    private Map<Rendered, Cached> statcache = new IdentityHashMap<Rendered, Cached>();
     private static final ThreadLocal<RenderList> curref = new ThreadLocal<RenderList>();
-    
+
     public class Slot {
 	public Rendered r;
 	public GLState.Buffer os = new GLState.Buffer(cfg), cs = new GLState.Buffer(cfg);
@@ -44,8 +45,31 @@ public class RenderList {
 	public boolean d;
 	public Slot p;
 	public int ihash;
+	public Rendered statroot;
+	public Object statseq;
     }
-    
+
+    class SavedSlot {
+	final Rendered r;
+	final GLState.Buffer st;
+	final Rendered.Order o;
+
+	SavedSlot(Slot from) {
+	    this.r = from.r;
+	    this.st = from.os.copy();
+	    this.o = from.o;
+	}
+    }
+
+    class Cached {
+	final Object seq;
+	final List<SavedSlot> slots = new ArrayList<SavedSlot>();
+
+	Cached(Object seq) {
+	    this.seq = seq;
+	}
+    }
+
     public RenderList(GLConfig cfg) {
 	this.cfg = cfg;
     }
@@ -126,10 +150,27 @@ public class RenderList {
 	postsetup(s, t);
     }
 
+    private void add(Cached c) {
+	for(SavedSlot p : c.slots) {
+	    Slot s = getslot();
+	    s.r = p.r;
+	    p.st.copy(s.os);
+	    s.o = p.o;
+	    s.p = curp;
+	    s.d = true;
+	}
+    }
+
     public void add(Rendered r, GLState t) {
-	Slot s = getslot();
 	if(curp == null)
 	    throw(new RuntimeException("Tried to set up relative slot with no parent"));
+	Object seq = r.staticp();
+	Cached c;
+	if((seq != null) && ((c = statcache.get(seq)) != null)) {
+	    add(c);
+	    return;
+	}
+	Slot s = getslot();
 	curp.cs.copy(s.os);
 	if(t != null)
 	    t.prep(s.os);
@@ -257,7 +298,13 @@ public class RenderList {
 
     protected boolean renderinst(GOut g, Rendered.Instanced r, List<GLState.Buffer> instances) {
 	try {
-	    return(r.drawinst(g, instances));
+	    Rendered inst = r.instanced(g.gc, instances);
+	    if(inst == null)
+		return(false);
+	    if(!g.st.inststate(instances))
+		return(false);
+	    inst.draw(g);
+	    return(true);
 	} catch(RLoad l) {
 	    if(ignload)
 		return(true);
