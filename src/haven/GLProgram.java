@@ -89,7 +89,10 @@ public class GLProgram implements java.io.Serializable {
     public static class ProgOb extends GLObject implements BGL.ID {
 	private int id;
 	
-	public ProgOb(GOut g) {super(g);}
+	public ProgOb(GOut g) {
+	    super(g);
+	    g.gl.bglCreate(this);
+	}
 
 	public void create(GL2 gl) {
 	    id = gl.glCreateProgramObjectARB();

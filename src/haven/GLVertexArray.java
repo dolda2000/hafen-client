@@ -31,7 +31,10 @@ import javax.media.opengl.*;
 public class GLVertexArray extends GLObject implements BGL.ID {
     private int id;
     
-    public GLVertexArray(GOut g) {super(g);}
+    public GLVertexArray(GOut g) {
+	super(g);
+	g.gl.bglCreate(this);
+    }
 
     public void create(GL2 gl) {
 	int[] buf = new int[1];

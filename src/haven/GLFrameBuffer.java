@@ -39,7 +39,10 @@ public class GLFrameBuffer extends GLState {
     public static class FBO extends GLObject implements BGL.ID {
 	private int id;
 	
-	public FBO(GOut g) {super(g);}
+	public FBO(GOut g) {
+	    super(g);
+	    g.gl.bglCreate(this);
+	}
 	
 	public void create(GL2 gl) {
 	    int[] buf = new int[1];
@@ -101,7 +104,10 @@ public class GLFrameBuffer extends GLState {
 	public static class RBO extends GLObject implements BGL.ID {
 	    private int id;
 	    
-	    public RBO(GOut g) {super(g);}
+	    public RBO(GOut g) {
+		super(g);
+		g.gl.bglCreate(this);
+	    }
 
 	    public void create(GL2 gl) {
 		int[] buf = new int[1];
