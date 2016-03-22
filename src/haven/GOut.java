@@ -534,7 +534,7 @@ public class GOut {
 		public void run(GL2 gl) {
 		    byte[] buf = new byte[4];
 		    gl.glReadPixels(c.x + tx.x, root.sz.y - c.y - tx.y, 1, 1, GL.GL_RGBA, GL2.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
-		    checkerr();
+		    checkerr(gl);
 		    cb.done(new Color(((int)buf[0]) & 0xff, ((int)buf[1]) & 0xff, ((int)buf[2]) & 0xff));
 		}
 	    });
@@ -545,7 +545,7 @@ public class GOut {
 		public void run(GL2 gl) {
 		    byte[] buf = new byte[sz.x * sz.y * 4];
 		    gl.glReadPixels(ul.x + tx.x, root.sz.y - ul.y - sz.y - tx.y, sz.x, sz.y, GL.GL_RGBA, GL2.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
-		    checkerr();
+		    checkerr(gl);
 		    for(int y = 0; y < sz.y / 2; y++) {
 			int to = y * sz.x * 4, bo = (sz.y - y - 1) * sz.x * 4;
 			for(int o = 0; o < sz.x * 4; o++, to++, bo++) {
