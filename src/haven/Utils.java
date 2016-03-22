@@ -30,6 +30,7 @@ import java.awt.RenderingHints;
 import java.io.*;
 import java.nio.*;
 import java.net.URL;
+import java.lang.ref.*;
 import java.lang.reflect.*;
 import java.util.prefs.*;
 import java.util.*;
@@ -1174,6 +1175,73 @@ public class Utils {
 	}
 	return(null);
     }
+
+    public static final Comparator<Object> idcmd = new Comparator<Object>() {
+	int eid = 0;
+	final Map<Ref, Long> emerg = new HashMap<Ref, Long>();
+	final ReferenceQueue<Object> cleanq = new ReferenceQueue<Object>();
+
+	class Ref extends WeakReference<Object> {
+	    final int h;
+
+	    Ref(Object o, ReferenceQueue<Object> queue) {
+		super(o, queue);
+		this.h = System.identityHashCode(o);
+	    }
+
+	    public int hashCode() {
+		return(h);
+	    }
+
+	    public boolean equals(Object o) {
+		if(o == this)
+		    return(true);
+		if(!(o instanceof Ref))
+		    return(false);
+		Object or = ((Ref)o).get();
+		Object sr = get();
+		return((or != null) && (sr != null) && (or == sr));
+	    }
+	}
+
+	private void clean() {
+	    Reference<? extends Object> ref;
+	    while((ref = cleanq.poll()) != null)
+		emerg.remove(ref);
+	}
+
+	public int compare(Object a, Object b) {
+	    if(a == b)
+		return(0);
+	    if(a == null)
+		return(1);
+	    if(b == null)
+		return(-1);
+	    int ah = System.identityHashCode(a);
+	    int bh = System.identityHashCode(b);
+	    if(ah < bh)
+		return(-1);
+	    else if(ah > bh)
+		return(1);
+
+	    synchronized(emerg) {
+		if(eid == 0)
+		    System.err.println("could not impose ordering in idcmd, using slow-path");
+		clean();
+		Ref ar = new Ref(a, cleanq), br = new Ref(b, cleanq);
+		Long ai, bi;
+		if((ai = emerg.get(ar)) == null)
+		    emerg.put(ar, ai = ((long)ah << 32) | (((long)eid++) & 0xffffffffl));
+		if((bi = emerg.get(br)) == null)
+		    emerg.put(br, bi = ((long)ah << 32) | (((long)eid++) & 0xffffffffl));
+		if(ai < bi)
+		    return(-1);
+		else if(ai > bi)
+		    return(1);
+		throw(new RuntimeException("Comparison identity crisis"));
+	    }
+	}
+    };
 
     static {
 	Console.setscmd("die", new Console.Command() {
