@@ -35,7 +35,8 @@ public class RenderList {
     private int cur = 0;
     private Slot curp = null;
     private GLState.Global[] gstates = new GLState.Global[0];
-    private Map<Rendered, Cached> statcache = new IdentityHashMap<Rendered, Cached>();
+    private Map<Rendered, Cached> prevcache = new IdentityHashMap<Rendered, Cached>();
+    private Map<Rendered, Cached> newcache = new IdentityHashMap<Rendered, Cached>();
     private static final ThreadLocal<RenderList> curref = new ThreadLocal<RenderList>();
 
     public class Slot {
@@ -62,11 +63,16 @@ public class RenderList {
     }
 
     class Cached {
+	final Rendered root;
 	final Object seq;
 	final List<SavedSlot> slots = new ArrayList<SavedSlot>();
 
-	Cached(Object seq) {
+	Cached(Rendered root, Object seq) {
+	    this.root = root;
 	    this.seq = seq;
+	}
+
+	void dispose() {
 	}
     }
 
@@ -84,6 +90,8 @@ public class RenderList {
 	Slot s;
 	if((s = list[i]) == null)
 	    s = list[i] = new Slot();
+	s.statroot = null;
+	s.statseq = null;
 	return(s);
     }
 
@@ -166,7 +174,9 @@ public class RenderList {
 	    throw(new RuntimeException("Tried to set up relative slot with no parent"));
 	Object seq = r.staticp();
 	Cached c;
-	if((seq != null) && ((c = statcache.get(seq)) != null)) {
+	if((seq != null) && ((c = prevcache.get(r)) != null) && (c.seq == seq)) {
+	    prevcache.remove(r);
+	    newcache.put(r, c);
 	    add(c);
 	    return;
 	}
@@ -175,6 +185,13 @@ public class RenderList {
 	if(t != null)
 	    t.prep(s.os);
 	s.os.copy(s.cs);
+	if(curp.statroot != null) {
+	    s.statroot = curp.statroot;
+	    s.statseq = curp.statseq;
+	} else if(seq != null) {
+	    s.statroot = r;
+	    s.statseq = seq;
+	}
 	setup(s, r);
     }
     
@@ -250,6 +267,25 @@ public class RenderList {
 	return(gstates.keySet().toArray(new GLState.Global[0]));
     }
 
+    private void updcache() {
+	for(int i = 0; i < cur; i++) {
+	    if(!list[i].d || (list[i].statroot == null))
+		continue;
+	    Cached c = newcache.get(list[i].statroot);
+	    if(c == null) {
+		newcache.put(list[i].statroot, c = new Cached(list[i].statroot, list[i].statseq));
+	    } else {
+		if(c.seq != list[i].statseq)
+		    throw(new RuntimeException(String.format("statseq mismatch within one frame for root %s (was %s, is %s)", c.root, c.seq, list[i].statseq)));
+	    }
+	    c.slots.add(new SavedSlot(list[i]));
+	}
+	for(Cached old : prevcache.values())
+	    old.dispose();
+	prevcache = newcache;
+	newcache = new IdentityHashMap<Rendered, Cached>();
+    }
+
     public void fin() {
 	for(int i = 0; i < cur; i++) {
 	    Slot s = list[i];
@@ -276,6 +312,7 @@ public class RenderList {
 		s.ihash = s.os.ihash();
 	}
 	Arrays.sort(list, 0, nd, cmp);
+	updcache();
     }
 
     public static class RLoad extends Loading {

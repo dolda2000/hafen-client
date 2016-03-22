@@ -394,6 +394,44 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    visol[ol]--;
     }
 
+    private final Rendered flavobjs = new Rendered() {
+	    private Collection<Gob> fol;
+	    private Coord cc = null;
+	    private int mseq = 0;
+	    private boolean loading = false;
+
+	    public void draw(GOut g) {}
+
+	    public Object staticp() {
+		Coord cc = MapView.this.cc.div(tilesz).div(MCache.cutsz);
+		int mseq = glob.map.olseq;
+		if(loading || !Utils.eq(cc, this.cc) || (mseq != this.mseq)) {
+		    loading = false;
+		    Collection<Gob> fol = new ArrayList<Gob>();
+		    Coord o = new Coord();
+		    for(o.y = -view; o.y <= view; o.y++) {
+			for(o.x = -view; o.x <= view; o.x++) {
+			    try {
+				fol.addAll(glob.map.getfo(cc.add(o)));
+			    } catch(Loading e) {
+				loading = true;
+			    }
+			}
+		    }
+		    this.cc = cc;
+		    this.mseq = mseq;
+		    this.fol = fol;
+		}
+		return(fol);
+	    }
+
+	    public boolean setup(RenderList rl) {
+		for(Gob fo : fol)
+		    addgob(rl, fo);
+		return(false);
+	    }
+	};
+
     private final Rendered map = new Rendered() {
 	    public void draw(GOut g) {}
 	    
@@ -405,16 +443,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			Coord pc = cc.add(o).mul(MCache.cutsz).mul(tilesz);
 			MapMesh cut = glob.map.getcut(cc.add(o));
 			rl.add(cut, Location.xlate(new Coord3f(pc.x, -pc.y, 0)));
-			Collection<Gob> fol;
-			try {
-			    fol = glob.map.getfo(cc.add(o));
-			} catch(Loading e) {
-			    fol = Collections.emptyList();
-			}
-			for(Gob fo : fol)
-			    addgob(rl, fo);
 		    }
 		}
+		rl.add(flavobjs, null);
 		return(false);
 	    }
 	};
