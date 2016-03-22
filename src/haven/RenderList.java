@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.GLState.Buffer;
 import java.util.*;
 
 public class RenderList {
@@ -41,7 +42,7 @@ public class RenderList {
 
     public class Slot {
 	public Rendered r;
-	public GLState.Buffer os = new GLState.Buffer(cfg), cs = new GLState.Buffer(cfg);
+	public Buffer os = new Buffer(cfg), cs = new Buffer(cfg);
 	public Rendered.Order o;
 	public boolean d;
 	public Slot p;
@@ -52,7 +53,7 @@ public class RenderList {
 
     class SavedSlot {
 	final Rendered r;
-	final GLState.Buffer st;
+	final Buffer st;
 	final Rendered.Order o;
 
 	SavedSlot(Slot from) {
@@ -136,7 +137,7 @@ public class RenderList {
 	}
     }
     
-    protected void postsetup(Slot ps, GLState.Buffer t) {
+    protected void postsetup(Slot ps, Buffer t) {
 	gstates = getgstates();
 	Slot pp = curp;
 	try {
@@ -150,7 +151,7 @@ public class RenderList {
 	}
     }
 
-    public void setup(Rendered r, GLState.Buffer t) {
+    public void setup(Rendered r, Buffer t) {
 	rewind();
 	Slot s = getslot();
 	t.copy(s.os); t.copy(s.cs);
@@ -158,7 +159,7 @@ public class RenderList {
 	postsetup(s, t);
     }
 
-    private void add(Cached c, GLState.Buffer ss) {
+    private void add(Cached c, Buffer ss) {
 	for(SavedSlot p : c.slots) {
 	    Slot s = getslot();
 	    s.r = p.r;
@@ -196,7 +197,7 @@ public class RenderList {
 	setup(s, r);
     }
     
-    public void add2(Rendered r, GLState.Buffer t) {
+    public void add2(Rendered r, Buffer t) {
 	Slot s = getslot();
 	t.copy(s.os);
 	s.r = r;
@@ -204,11 +205,11 @@ public class RenderList {
 	s.d = true;
     }
     
-    public GLState.Buffer cstate() {
+    public Buffer cstate() {
 	return(curp.cs);
     }
 
-    public GLState.Buffer state() {
+    public Buffer state() {
 	return(curp.os);
     }
     
@@ -250,7 +251,7 @@ public class RenderList {
 	for(int i = 0; i < cur; i++) {
 	    if(!list[i].d)
 		continue;
-	    GLState.Buffer ctx = list[i].os;
+	    Buffer ctx = list[i].os;
 	    GLState[] sl = ctx.states();
 	    if(sl.length > dbc.length)
 		dbc = new GLState[sl.length];
@@ -334,7 +335,7 @@ public class RenderList {
 	}
     }
 
-    protected boolean renderinst(GOut g, Rendered.Instanced r, List<GLState.Buffer> instances) {
+    protected boolean renderinst(GOut g, Rendered.Instanced r, List<Buffer> instances) {
 	try {
 	    Rendered inst = r.instanced(g.gc, instances);
 	    if(inst == null)
@@ -352,7 +353,7 @@ public class RenderList {
     }
 
     public int drawn, instanced, instancified;
-    private final List<GLState.Buffer> instbuf = new ArrayList<GLState.Buffer>();
+    private final List<Buffer> instbuf = new ArrayList<Buffer>();
     public void render(GOut g) {
 	for(GLState.Global gs : gstates)
 	    gs.prerender(this, g);
