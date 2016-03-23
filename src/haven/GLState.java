@@ -203,6 +203,7 @@ public abstract class GLState {
 	public Buffer copy() {
 	    Buffer ret = new Buffer(cfg);
 	    System.arraycopy(states, 0, ret.states, 0, states.length);
+	    ret.hash = hash;
 	    return(ret);
 	}
 	
@@ -211,6 +212,7 @@ public abstract class GLState {
 	    System.arraycopy(states, 0, dest.states, 0, states.length);
 	    for(int i = states.length; i < dest.states.length; i++)
 		dest.states[i] = null;
+	    dest.hash = hash;
 	}
 
 	public void copy(Buffer dest, Slot.Type type) {
@@ -220,6 +222,7 @@ public abstract class GLState {
 		if(idlist[i].type == type)
 		    dest.states[i] = states[i];
 	    }
+	    dest.hash = 0;
 	}
 	
 	public int ihash() {
@@ -263,6 +266,7 @@ public abstract class GLState {
 	    if(states.length <= slot.id)
 		adjust();
 	    states[slot.id] = state;
+	    hash = 0;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -280,7 +284,7 @@ public abstract class GLState {
 		    if(states[i] != null)
 			h = (h * 31) + states[i].hashCode();
 		}
-		hash = h;
+		hash = (h == 0)?1:h;
 	    }
 	    return(hash);
 	}
