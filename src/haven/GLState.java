@@ -281,19 +281,29 @@ public abstract class GLState {
 	    return(h);
 	}
 
-	public boolean equals(Object o) {
-	    if(!(o instanceof Buffer))
+	public boolean equals(Object oo) {
+	    if(!(oo instanceof Buffer))
 		return(false);
-	    Buffer b = (Buffer)o;
-	    adjust();
-	    b.adjust();
-	    for(int i = 0; i < states.length; i++) {
-		if(!states[i].equals(b.states[i]))
+	    Buffer o = (Buffer)oo;
+	    GLState[] a, b;
+	    int i = 0;
+
+	    if(states.length > o.states.length) {
+		a = states; b = o.states;
+	    } else {
+		b = states; a = o.states;
+	    }
+	    for(; i < b.length; i++) {
+		if(!Utils.eq(a[i], b[i]))
+		    return(false);
+	    }
+	    for(; i < a.length; i++) {
+		if(a[i] != null)
 		    return(false);
 	    }
 	    return(true);
 	}
-	
+
 	public String toString() {
 	    StringBuilder buf = new StringBuilder();
 	    buf.append('[');
