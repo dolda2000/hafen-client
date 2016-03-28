@@ -203,7 +203,6 @@ public abstract class GLState {
 	public Buffer copy() {
 	    Buffer ret = new Buffer(cfg);
 	    System.arraycopy(states, 0, ret.states, 0, states.length);
-	    ret.hash = hash;
 	    return(ret);
 	}
 	
@@ -212,7 +211,6 @@ public abstract class GLState {
 	    System.arraycopy(states, 0, dest.states, 0, states.length);
 	    for(int i = states.length; i < dest.states.length; i++)
 		dest.states[i] = null;
-	    dest.hash = hash;
 	}
 
 	public void copy(Buffer dest, Slot.Type type) {
@@ -222,7 +220,6 @@ public abstract class GLState {
 		if(idlist[i].type == type)
 		    dest.states[i] = states[i];
 	    }
-	    dest.hash = 0;
 	}
 	
 	public int ihash() {
@@ -266,7 +263,6 @@ public abstract class GLState {
 	    if(states.length <= slot.id)
 		adjust();
 	    states[slot.id] = state;
-	    hash = 0;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -276,32 +272,38 @@ public abstract class GLState {
 	    return((T)states[slot.id]);
 	}
 	
-	private int hash = 0;
 	public int hashCode() {
-	    if(hash == 0) {
-		int h = 0;
-		for(int i = 0; i < states.length; i++) {
-		    if(states[i] != null)
-			h = (h * 31) + states[i].hashCode();
-		}
-		hash = (h == 0)?1:h;
+	    int h = 0;
+	    for(int i = 0; i < states.length; i++) {
+		if(states[i] != null)
+		    h = (h * 31) + states[i].hashCode();
 	    }
-	    return(hash);
+	    return(h);
 	}
 
-	public boolean equals(Object o) {
-	    if(!(o instanceof Buffer))
+	public boolean equals(Object oo) {
+	    if(!(oo instanceof Buffer))
 		return(false);
-	    Buffer b = (Buffer)o;
-	    adjust();
-	    b.adjust();
-	    for(int i = 0; i < states.length; i++) {
-		if(!states[i].equals(b.states[i]))
+	    Buffer o = (Buffer)oo;
+	    GLState[] a, b;
+	    int i = 0;
+
+	    if(states.length > o.states.length) {
+		a = states; b = o.states;
+	    } else {
+		b = states; a = o.states;
+	    }
+	    for(; i < b.length; i++) {
+		if(!Utils.eq(a[i], b[i]))
+		    return(false);
+	    }
+	    for(; i < a.length; i++) {
+		if(a[i] != null)
 		    return(false);
 	    }
 	    return(true);
 	}
-	
+
 	public String toString() {
 	    StringBuilder buf = new StringBuilder();
 	    buf.append('[');
