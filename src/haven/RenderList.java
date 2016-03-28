@@ -36,8 +36,8 @@ public class RenderList {
     private int cur = 0;
     private Slot curp = null;
     private GLState.Global[] gstates = new GLState.Global[0];
-    private Map<Rendered, Cached> prevcache = new IdentityHashMap<Rendered, Cached>();
-    private Map<Rendered, Cached> newcache = new IdentityHashMap<Rendered, Cached>();
+    private Map<Cached, Cached> prevcache = new HashMap<Cached, Cached>();
+    private Map<Cached, Cached> newcache = new HashMap<Cached, Cached>();
     private static final ThreadLocal<RenderList> curref = new ThreadLocal<RenderList>();
 
     public class Slot {
@@ -47,8 +47,7 @@ public class RenderList {
 	public boolean d;
 	public Slot p;
 	public int ihash;
-	public Rendered statroot;
-	public Object statseq;
+	public Cached statroot;
     }
 
     class SavedSlot {
@@ -63,17 +62,44 @@ public class RenderList {
 	}
     }
 
-    class Cached {
+    class Cached implements Disposable {
 	final Rendered root;
 	final Object seq;
+	final Buffer ostate;
 	final List<SavedSlot> slots = new ArrayList<SavedSlot>();
 
-	Cached(Rendered root, Object seq) {
+	Cached(Rendered root, Object seq, Buffer ostate, boolean copy) {
 	    this.root = root;
 	    this.seq = seq;
+	    if(copy)
+		ostate.copy(this.ostate = new Buffer(cfg));
+	    else
+		this.ostate = ostate;
 	}
 
-	void dispose() {
+	Cached(Rendered root, Object seq, Buffer ostate) {
+	    this(root, seq, ostate, true);
+	}
+
+	int hash = 0;
+	public int hashCode() {
+	    if(hash == 0) {
+		int ret = System.identityHashCode(root);
+		ret = (ret * 31) + System.identityHashCode(seq);
+		ret = (ret * 31) + ostate.hashCode();
+		hash = (ret == 0)?1:0;
+	    }
+	    return(hash);
+	}
+
+	public boolean equals(Object o) {
+	    if(!(o instanceof Cached))
+		return(false);
+	    Cached c = (Cached)o;
+	    return((root == c.root) && (seq == c.seq) && ostate.equals(c.ostate));
+	}
+
+	public void dispose() {
 	}
     }
 
@@ -92,7 +118,6 @@ public class RenderList {
 	if((s = list[i]) == null)
 	    s = list[i] = new Slot();
 	s.statroot = null;
-	s.statseq = null;
 	return(s);
     }
 
@@ -174,13 +199,18 @@ public class RenderList {
     public void add(Rendered r, GLState t) {
 	if(curp == null)
 	    throw(new RuntimeException("Tried to set up relative slot with no parent"));
-	Object seq = r.staticp();
-	Cached c;
-	if((seq != null) && ((c = prevcache.get(r)) != null) && (c.seq == seq)) {
-	    prevcache.remove(r);
-	    newcache.put(r, c);
-	    add(c, curp.cs);
-	    return;
+	Object seq = null;
+	Buffer cos = null;
+	if((t == null) && (curp.statroot == null)) {
+	    seq = r.staticp();
+	    curp.cs.copye(cos = new Buffer(cfg), GLState.Slot.Type.SYS);
+	    Cached c;
+	    if((seq != null) && ((c = prevcache.get(new Cached(r, seq, cos, false))) != null)) {
+		prevcache.remove(c);
+		newcache.put(c, c);
+		add(c, curp.cs);
+		return;
+	    }
 	}
 	Slot s = getslot();
 	curp.cs.copy(s.os);
@@ -189,10 +219,8 @@ public class RenderList {
 	s.os.copy(s.cs);
 	if(curp.statroot != null) {
 	    s.statroot = curp.statroot;
-	    s.statseq = curp.statseq;
 	} else if(seq != null) {
-	    s.statroot = r;
-	    s.statseq = seq;
+	    s.statroot = new Cached(r, seq, cos);
 	}
 	setup(s, r);
     }
@@ -271,21 +299,20 @@ public class RenderList {
 
     private void updcache() {
 	for(int i = 0; i < cur; i++) {
-	    if(!list[i].d || (list[i].statroot == null))
+	    Cached c;
+	    if(!list[i].d || ((c = list[i].statroot) == null))
 		continue;
-	    Cached c = newcache.get(list[i].statroot);
-	    if(c == null) {
-		newcache.put(list[i].statroot, c = new Cached(list[i].statroot, list[i].statseq));
-	    } else {
-		if(c.seq != list[i].statseq)
-		    throw(new RuntimeException(String.format("statseq mismatch within one frame for root %s (was %s, is %s)", c.root, c.seq, list[i].statseq)));
+	    if(c.slots.isEmpty()) {
+		if(newcache.get(c) != null)
+		    throw(new RuntimeException(String.format("statroot for %s already in new cache even though empty", c.root)));
+		newcache.put(c, c);
 	    }
 	    c.slots.add(new SavedSlot(list[i]));
 	}
 	for(Cached old : prevcache.values())
 	    old.dispose();
 	prevcache = newcache;
-	newcache = new IdentityHashMap<Rendered, Cached>();
+	newcache = new HashMap<Cached, Cached>();
     }
 
     public void fin() {
