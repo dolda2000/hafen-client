@@ -59,7 +59,7 @@ public class ResDrawable extends Drawable {
 	} catch(Loading e) {
 	    return;
 	}
-	spr.setup(rl);
+	rl.add(spr, null);
     }
 	
     public void ctick(int dt) {
