@@ -221,7 +221,16 @@ public abstract class GLState {
 		    dest.states[i] = states[i];
 	    }
 	}
-	
+
+	public void copye(Buffer dest, Slot.Type type) {
+	    dest.adjust();
+	    adjust();
+	    for(int i = 0; i < states.length; i++) {
+		if(idlist[i].type != type)
+		    dest.states[i] = states[i];
+	    }
+	}
+
 	public int ihash() {
 	    int ret = 0;
 	    for(int i = 0; i < states.length; i++) {
