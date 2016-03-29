@@ -407,6 +407,38 @@ public abstract class GLState {
 	}
     }
 
+    private static <S extends GLState> boolean inststate0(Buffer tgt, Slot<S> slot, List<Buffer> instances) {
+	S[] buf = Utils.mkarray(slot.scl, instances.size());
+	int n = 0;
+	boolean hnn = false;
+	for(Buffer st : instances) {
+	    if((buf[n++] = st.get(slot)) != null)
+		hnn = true;
+	}
+	if(!hnn) {
+	    tgt.put(slot, null);
+	    return(true);
+	}
+	S st = slot.instanced.inststate(buf);
+	if(st == null)
+	    return(false);
+	tgt.put(slot, st);
+	return(true);
+    }
+
+    public static Buffer inststate(GLConfig cfg, List<Buffer> instances) {
+	Buffer ret = new Buffer(cfg);
+	Buffer first = Utils.el(instances);
+	first.copy(ret);
+	for(int i = 0; i < ret.states.length; i++) {
+	    if(idlist[i].instanced != null) {
+		if(!inststate0(ret, idlist[i], instances))
+		    return(null);
+	    }
+	}
+	return(ret);
+    }
+
     public static class Applier {
 	public static boolean debug = false;
 	private Buffer old, cur, next;
@@ -602,35 +634,11 @@ public abstract class GLState {
 		time += System.nanoTime() - st;
 	}
 
-	private static <S extends GLState> boolean inststate0(Buffer tgt, Slot<S> slot, List<Buffer> instances) {
-	    S[] buf = Utils.mkarray(slot.scl, instances.size());
-	    int n = 0;
-	    boolean hnn = false;
-	    for(Buffer st : instances) {
-		if((buf[n++] = st.get(slot)) != null)
-		    hnn = true;
-	    }
-	    if(!hnn) {
-		tgt.put(slot, null);
-		return(true);
-	    }
-	    S st = slot.instanced.inststate(buf);
+	public boolean inststate(List<Buffer> instances) {
+	    Buffer st = GLState.inststate(cfg, instances);
 	    if(st == null)
 		return(false);
-	    tgt.put(slot, st);
-	    return(true);
-	}
-
-	public boolean inststate(List<Buffer> instances) {
-	    Buffer first = Utils.el(instances);
-	    set(first);
-	    next.adjust();
-	    for(int i = 0; i < next.states.length; i++) {
-		if(idlist[i].instanced != null) {
-		    if(!inststate0(next, idlist[i], instances))
-			return(false);
-		}
-	    }
+	    set(st);
 	    return(true);
 	}
 
