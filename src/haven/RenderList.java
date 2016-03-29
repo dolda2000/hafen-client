@@ -44,10 +44,11 @@ public class RenderList {
 	public Rendered r;
 	public Buffer os = new Buffer(cfg), cs = new Buffer(cfg);
 	public Rendered.Order o;
-	public boolean d;
+	public boolean d, skip;
 	public Slot p;
 	public int ihash;
 	public Cached statroot;
+	public Disposable disp;
     }
 
     class SavedSlot {
@@ -67,6 +68,7 @@ public class RenderList {
 	final Object seq;
 	final Buffer ostate;
 	final List<SavedSlot> slots = new ArrayList<SavedSlot>();
+	final List<Disposable> disp = new ArrayList<Disposable>();
 
 	Cached(Rendered root, Object seq, Buffer ostate, boolean copy) {
 	    this.root = root;
@@ -100,6 +102,8 @@ public class RenderList {
 	}
 
 	public void dispose() {
+	    for(Disposable d : disp)
+		d.dispose();
 	}
     }
 
@@ -118,6 +122,8 @@ public class RenderList {
 	if((s = list[i]) == null)
 	    s = list[i] = new Slot();
 	s.statroot = null;
+	s.skip = false;
+	s.disp = null;
 	return(s);
     }
 
@@ -131,6 +137,8 @@ public class RenderList {
 		    }
 
 		    public boolean hasNext() {
+			while((i < cur) && list[i].skip)
+			    i++;
 			return(i < cur);
 		    }
 
@@ -266,6 +274,8 @@ public class RenderList {
 		return(ret);
 	    if((ret = ((System.identityHashCode(a.r) & 0x7fffffff) - (System.identityHashCode(b.r) & 0x7fffffff))) != 0)
 		return(ret);
+	    if((ret = ((System.identityHashCode(a.statroot) & 0x7fffffff) - (System.identityHashCode(b.statroot) & 0x7fffffff))) != 0)
+		return(ret);
 	    return((a.ihash & 0x7fffffff) - (b.ihash & 0x7fffffff));
 	}
     };
@@ -298,9 +308,9 @@ public class RenderList {
     }
 
     private void updcache() {
-	for(int i = 0; i < cur; i++) {
+	for(int i = 0; (i < cur) && list[i].d; i++) {
 	    Cached c;
-	    if(!list[i].d || ((c = list[i].statroot) == null))
+	    if(list[i].skip || ((c = list[i].statroot) == null))
 		continue;
 	    if(c.slots.isEmpty()) {
 		if(newcache.get(c) != null)
@@ -308,6 +318,10 @@ public class RenderList {
 		newcache.put(c, c);
 	    }
 	    c.slots.add(new SavedSlot(list[i]));
+	    if(list[i].disp != null) {
+		c.disp.add(list[i].disp);
+		list[i].disp = null;
+	    }
 	}
 	for(Cached old : prevcache.values())
 	    old.dispose();
@@ -341,6 +355,7 @@ public class RenderList {
 		s.ihash = s.os.ihash();
 	}
 	Arrays.sort(list, 0, nd, cmp);
+	instancify();
 	updcache();
     }
 
@@ -379,6 +394,45 @@ public class RenderList {
 	}
     }
 
+    private void instancify() {
+	if(!cfg.pref.instancing.val)
+	    return;
+	List<Buffer> instbuf = new ArrayList<Buffer>();
+	int i = 0;
+	while((i < cur) && list[i].d) {
+	    Slot s = list[i];
+	    int o = i + 1;
+	    tryinst: {
+		if(!(s.r instanceof Rendered.Instanced))
+		    break tryinst;
+		boolean copy = (s.statroot != null);
+		instbuf.clear();
+		instbuf.add(copy?s.os.copy():s.os);
+		for(; (o < cur) && list[o].d; o++) {
+		    Slot t = list[o];
+		    if((t.r != s.r) || (t.statroot != s.statroot) || (t.ihash != s.ihash) || !s.os.iequals(t.os))
+			break;
+		    instbuf.add(copy?t.os.copy():t.os);
+		}
+		if(o - i < INSTANCE_THRESHOLD)
+		    break tryinst;
+		Rendered ir = ((Rendered.Instanced)s.r).instanced(cfg, instbuf);
+		if(ir == null)
+		    break tryinst;
+		Buffer ist = GLState.inststate(cfg, instbuf);
+		if(ist == null)
+		    break tryinst;
+		s.r = ir;
+		s.os = ist;
+		for(int u = i + 1; u < o; u++)
+		    list[u].skip = true;
+		if(ir instanceof Disposable)
+		    s.disp = (Disposable)ir;
+	    }
+	    i = o;
+	}
+    }
+
     public int drawn, instanced, instancified;
     private final List<Buffer> instbuf = new ArrayList<Buffer>();
     public void render(GOut g) {
@@ -389,6 +443,10 @@ public class RenderList {
 	int skipinst = 0, i = 0;
 	rloop: while((i < cur) && list[i].d) {
 	    Slot s = list[i];
+	    if(s.skip) {
+		i++;
+		continue;
+	    }
 	    tryinst: {
 		if(!doinst || (i < skipinst) || !(s.r instanceof Rendered.Instanced))
 		    break tryinst;
@@ -416,6 +474,8 @@ public class RenderList {
 	    }
 	    g.st.set(s.os);
 	    render(g, s.r);
+	    if(s.disp != null)
+		s.disp.dispose();
 	    drawn++;
 	    i++;
 	}

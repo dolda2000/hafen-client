@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.glsl.ShaderMacro.Program;
 import java.util.*;
 import java.nio.*;
 import javax.media.opengl.*;
@@ -370,9 +371,41 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	return(((VAOCompiler.VAOCompiled)compiler.get(g)).drawinst(g, st));
     }
 
+    /* XXX: One might start to question if it isn't about time to
+     * dispose of display-list drawing. */
     private class Instanced implements Rendered, Disposable {
 	final List<GLState.Buffer> instances;
 	final VAOCompiler compiler;
+	final Map<Program, Arrays> arrays = new HashMap<Program, Arrays>();
+
+	class Arrays {
+	    final Program prog;
+	    final GLBuffer[] data;
+
+	    Arrays(GOut g, Program prog) {
+		this.prog = prog;
+		this.data = new GLBuffer[prog.autoinst.length];
+		for(int i = 0; i < data.length; i++) {
+		    data[i] = new GLBuffer(g);
+		    prog.autoinst[i].filliarr(g, instances, data[i]);
+		}
+	    }
+
+	    void bind(GOut g) {
+		for(int i = 0; i < data.length; i++)
+		    prog.autoinst[i].bindiarr(g, data[i]);
+	    }
+
+	    void unbind(GOut g) {
+		for(int i = 0; i < data.length; i++)
+		    prog.autoinst[i].unbindiarr(g, data[i]);
+	    }
+
+	    void dispose() {
+		for(GLBuffer buf : data)
+		    buf.dispose();
+	    }
+	}
 
 	Instanced(VAOCompiler compiler, List<GLState.Buffer> instances) {
 	    this.compiler = compiler;
@@ -380,7 +413,17 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	}
 
 	public void draw(GOut g) {
-	    ((VAOCompiler.VAOCompiled)compiler.get(g)).drawinst(g, instances);
+	    BGL gl = g.gl;
+	    g.st.apply(g, vstate, ((VAOCompiler.VAOCompiled)compiler.get(g)).st);
+	    Arrays ar = arrays.get(g.st.prog);
+	    if(ar == null) {
+		arrays.put(g.st.prog, ar = new Arrays(g, g.st.prog));
+		if(arrays.size() > 10)
+		    System.err.println("warning: creating very many instance arrays for " + FastMesh.this);
+	    }
+	    ar.bind(g);
+	    gl.glDrawElementsInstanced(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, 0, instances.size());
+	    ar.unbind(g);
 	}
 
 	public boolean setup(RenderList r) {
@@ -388,6 +431,8 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	}
 
 	public void dispose() {
+	    for(Arrays ar : arrays.values())
+		ar.dispose();
 	}
     }
 
