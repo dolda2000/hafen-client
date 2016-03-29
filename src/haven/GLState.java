@@ -643,8 +643,12 @@ public abstract class GLState {
 	}
 
 	public void bindiarr(GOut g, List<Buffer> instances) {
-	    for(int i = 0; i < prog.autoinst.length; i++)
-		prog.curinst[i] = prog.autoinst[i].bindiarr(g, instances, prog.curinst[i]);
+	    for(int i = 0; i < prog.autoinst.length; i++) {
+		if(prog.curinst[i] == null)
+		    prog.curinst[i] = new GLBuffer(g);
+		prog.autoinst[i].filliarr(g, instances, prog.curinst[i]);
+		prog.autoinst[i].bindiarr(g, prog.curinst[i]);
+	    }
 	}
 
 	public void unbindiarr(GOut g) {
