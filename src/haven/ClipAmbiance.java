@@ -30,7 +30,7 @@ import java.util.*;
 import haven.Audio.CS;
 import haven.Audio.VolAdjust;
 
-public class ClipAmbiance implements Rendered {
+public class ClipAmbiance implements Rendered, Rendered.Instanced {
     public final Desc desc;
     public double bvol;
     private Glob glob = null;
@@ -211,6 +211,52 @@ public class ClipAmbiance implements Rendered {
 	glob.add(desc, svol * bvol);
     }
 
+    private class Instanced implements Rendered {
+	final float[] lb;
+
+	Instanced(float[] lb) {
+	    this.lb = lb;
+	}
+
+	public void draw(GOut g) {
+	    g.apply();
+	    if((glob == null) || glob.dead) {
+		ActAudio list = g.st.cur(ActAudio.slot);
+		if(list == null)
+		    return;
+		try {
+		    glob = list.intern(new Glob(desc.parent.get().layer(Desc.class)));
+		} catch(Loading l) {
+		    return;
+		}
+	    }
+	    Matrix4f cam = PView.camxf(g);
+	    double svol = 0.0;
+	    for(int i = 0; i < lb.length; i += 3) {
+		float[] pos = cam.mul4(new float[] {lb[i], lb[i + 1], lb[i + 2], 1.0f});
+		double pd = Math.sqrt((pos[0] * pos[0]) + (pos[1] * pos[1]));
+		svol += Math.min(1.0, 50.0 / pd);
+	    }
+	    glob.add(desc, svol * bvol);
+	}
+
+	public boolean setup(RenderList rl) {
+	    return(true);
+	}
+    }
+
+    public Rendered instanced(GLConfig gc, List<GLState.Buffer> instances) {
+	float[] compacted = new float[instances.size() * 3];
+	int i = 0;
+	for(GLState.Buffer st : instances) {
+	    Matrix4f wxf = PView.locxf(st);
+	    compacted[i++] = wxf.m[12];
+	    compacted[i++] = wxf.m[13];
+	    compacted[i++] = wxf.m[14];
+	}
+	return(new Instanced(compacted));
+    }
+
     public boolean setup(RenderList rl) {
 	return(true);
     }
@@ -222,6 +268,7 @@ public class ClipAmbiance implements Rendered {
 	public final double bvol;
 	public final String[] cnms;
 	public final double[] ieps;
+	public final ClipAmbiance spr;
 
 	public Desc(Resource res, Message buf) {
 	    res.super();
@@ -245,6 +292,7 @@ public class ClipAmbiance implements Rendered {
 		cnms[i] = buf.string().intern();
 		ieps[i] = 1.0 / buf.float32();
 	    }
+	    spr = new ClipAmbiance(this);
 	}
 
 	public void init() {}

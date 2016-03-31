@@ -136,7 +136,7 @@ public class AudioSprite {
 	    super(owner, res);
 	    ClipAmbiance.Desc clamb = res.layer(ClipAmbiance.Desc.class);
 	    if(clamb != null)
-		this.amb = new ClipAmbiance(clamb);
+		this.amb = clamb.spr;
 	    else
 		this.amb = new ActAudio.Ambience(res);
 	}
