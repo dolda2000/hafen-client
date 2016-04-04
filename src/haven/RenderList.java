@@ -89,7 +89,7 @@ public class RenderList {
 		int ret = System.identityHashCode(root);
 		ret = (ret * 31) + System.identityHashCode(seq);
 		ret = (ret * 31) + ostate.hashCode();
-		hash = (ret == 0)?1:0;
+		hash = (ret == 0)?1:ret;
 	    }
 	    return(hash);
 	}
