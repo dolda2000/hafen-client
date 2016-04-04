@@ -536,8 +536,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	{oc.callback(changed);}
 
 	class GobSet implements Rendered {
+	    private final String nm;
 	    final Collection<Gob> obs = new HashSet<Gob>();
 	    Object seq = this;
+
+	    GobSet(String nm) {
+		this.nm = nm;
+	    }
 
 	    void take(Gob ob) {
 		obs.add(ob);
@@ -567,10 +572,16 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    public int size() {
 		return(obs.size());
 	    }
+
+	    public String toString() {
+		return("GobSet(" + nm + ")");
+	    }
 	}
 
 	class Transitory extends GobSet {
 	    final Map<Gob, Integer> age = new HashMap<Gob, Integer>();
+
+	    Transitory(String nm) {super(nm);}
 
 	    void take(Gob ob) {
 		super.take(ob);
@@ -583,8 +594,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
 
-	final GobSet oldfags = new GobSet();
-	final GobSet semifags = new Transitory() {
+	final GobSet oldfags = new GobSet("old");
+	final GobSet semifags = new Transitory("semi") {
 		int cycle = 0;
 
 		void update() {
@@ -600,7 +611,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    }
 		}
 	    };
-	final GobSet newfags = new Transitory() {
+	final GobSet newfags = new Transitory("new") {
 		int cycle = 0;
 
 		void update() {
@@ -616,7 +627,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    }
 		}
 	    };
-	final GobSet dynamic = new GobSet() {
+	final GobSet dynamic = new GobSet("dyn") {
 		int cycle = 0;
 
 		void update() {

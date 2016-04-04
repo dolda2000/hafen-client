@@ -321,6 +321,35 @@ public class RenderList {
 	return(gstates.keySet().toArray(new GLState.Global[0]));
     }
 
+    public static boolean cachedb = false;
+    static {
+	Console.setscmd("cachedb", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    cachedb = Utils.parsebool(args[1], false);
+		}
+	    });
+    }
+    private static void dumprejects(Map<Cached, Cached> prev, Map<Cached, Cached> cur) {
+	Map<Rendered, Cached> croots = new IdentityHashMap<Rendered, Cached>();
+	for(Cached c : cur.keySet())
+	    croots.put(c.root, c);
+	System.err.println("---");
+	for(Cached c : prev.keySet()) {
+	    Cached cr = croots.get(c.root);
+	    if(cr == null) {
+		System.err.printf("%s: not present\n", c.root);
+	    } else if(c.seq != cr.seq) {
+		System.err.printf("%s: sequenced\n", c.root);
+	    } else if(!c.ostate.equals(cr.ostate)) {
+		System.err.printf("%s: incompatible state\n", c.root);
+	    } else if(!cur.containsKey(c)) {
+		System.err.printf("%s: mysteriously vanished\n", c.root);
+	    } else {
+		System.err.printf("%s: mysteriously lingering\n", c.root);
+	    }
+	}
+    }
+
     private void updcache() {
 	for(int i = 0; (i < cur) && list[i].d; i++) {
 	    Cached c;
@@ -337,6 +366,8 @@ public class RenderList {
 		list[i].disp = null;
 	    }
 	}
+	if(cachedb && Debug.kf3 && !prevcache.isEmpty())
+	    dumprejects(prevcache, newcache);
 	for(Cached old : prevcache.values())
 	    old.dispose();
 	prevcache = newcache;
