@@ -856,10 +856,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
 
-	protected boolean renderinst(GOut g, Rendered.Instanced r, List<GLState.Buffer> instances) {
-	    return(false);
-	}
-	
 	public void get(GOut g, Coord c, final Callback<T> cb) {
 	    g.getpixel(c, new Callback<Color>() {
 		    public void done(Color c) {

@@ -377,23 +377,6 @@ public class RenderList {
 	}
     }
 
-    protected boolean renderinst(GOut g, Rendered.Instanced r, List<Buffer> instances) {
-	try {
-	    Rendered inst = r.instanced(g.gc, instances);
-	    if(inst == null)
-		return(false);
-	    if(!g.st.inststate(instances))
-		return(false);
-	    inst.draw(g);
-	    return(true);
-	} catch(RLoad l) {
-	    if(ignload)
-		return(true);
-	    else
-		throw(l);
-	}
-    }
-
     private void instancify() {
 	if(!cfg.pref.instancing.val)
 	    return;
@@ -434,43 +417,16 @@ public class RenderList {
     }
 
     public int drawn, instanced, instancified;
-    private final List<Buffer> instbuf = new ArrayList<Buffer>();
     public void render(GOut g) {
 	for(GLState.Global gs : gstates)
 	    gs.prerender(this, g);
 	drawn = instanced = instancified = 0;
-	boolean doinst = g.gc.pref.instancing.val;
-	int skipinst = 0, i = 0;
-	rloop: while((i < cur) && list[i].d) {
+	int i = 0;
+	while((i < cur) && list[i].d) {
 	    Slot s = list[i];
 	    if(s.skip) {
 		i++;
 		continue;
-	    }
-	    tryinst: {
-		if(!doinst || (i < skipinst) || !(s.r instanceof Rendered.Instanced))
-		    break tryinst;
-		int o;
-		instbuf.clear();
-		instbuf.add(s.os);
-		for(o = i + 1; (o < cur) && list[o].d; o++) {
-		    if((list[o].r != s.r) || (list[o].ihash != s.ihash))
-			break;
-		    if(!s.os.iequals(list[o].os))
-			break;
-		    instbuf.add(list[o].os);
-		}
-		if(o - i < INSTANCE_THRESHOLD)
-		    break tryinst;
-		Rendered.Instanced ir = (Rendered.Instanced)s.r;
-		if(renderinst(g, ir, instbuf)) {
-		    instanced++;
-		    instancified += instbuf.size();
-		    i = o;
-		    continue rloop;
-		} else {
-		    skipinst = o;
-		}
 	    }
 	    g.st.set(s.os);
 	    render(g, s.r);
