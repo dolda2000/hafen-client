@@ -687,8 +687,16 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	    return(false);
 	}
+
+	public String toString() {
+	    return(String.format("%,dd %,dn %,ds %,do", dynamic.size(), newfags.size(), semifags.size(), oldfags.size()));
+	}
     }
     private final Rendered gobs;
+
+    public String toString() {
+	return(String.format("Camera[%s (%s)], Caches[%s]", getcc(), camera, gobs));
+    }
 
     public GLState camera()         {return(camera);}
     protected Projection makeproj() {return(null);}
