@@ -33,6 +33,7 @@ import javax.media.opengl.*;
 public interface Rendered extends Drawn {
     public boolean setup(RenderList r);
 
+    public static final Object CONSTANS = new Object();
     public default Object staticp() {return(null);}
 
     public static interface Instanced extends Rendered {

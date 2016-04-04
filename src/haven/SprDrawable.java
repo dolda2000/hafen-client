@@ -27,7 +27,7 @@
 package haven;
 
 public class SprDrawable extends Drawable {
-    Sprite spr = null;
+    final Sprite spr;
 	
     public SprDrawable(Gob gob, Sprite spr) {
 	super(gob);
@@ -44,5 +44,9 @@ public class SprDrawable extends Drawable {
     
     public Resource getres() {
 	return(null);
+    }
+
+    public Object staticp() {
+	return(spr.staticp());
     }
 }

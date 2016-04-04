@@ -74,4 +74,8 @@ public class StaticSprite extends Sprite {
 	    r.add(p, null);
 	return(false);
     }
+
+    public Object staticp() {
+	return(CONSTANS);
+    }
 }

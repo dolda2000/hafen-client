@@ -149,6 +149,8 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	}
     }
 
+    public static class Static {}
+
     public Gob(Glob glob, Coord c, long id, int frame) {
 	this.glob = glob;
 	this.rc = c;
@@ -364,7 +366,27 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	return(false);
     }
 
+    private static final Object DYNAMIC = new Object();
+    private Object seq = null;
+    public Object staticp() {
+	if(seq == null) {
+	    Object fs = new Static();
+	    for(GAttrib attr : attr.values()) {
+		Object as = attr.staticp();
+		if(as == Rendered.CONSTANS) {
+		} else if(as instanceof Static) {
+		} else {
+		    fs = null;
+		    break;
+		}
+	    }
+	    seq = fs;
+	}
+	return((seq == DYNAMIC)?null:seq);
+    }
+
     void changed() {
+	seq = null;
     }
 
     public Random mkrandoom() {

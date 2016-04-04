@@ -84,4 +84,8 @@ public class ResDrawable extends Drawable {
 	init();
 	return(Skeleton.getpose(spr));
     }
+
+    public Object staticp() {
+	return((spr != null)?spr.staticp():null);
+    }
 }

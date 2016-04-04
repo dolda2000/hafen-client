@@ -381,6 +381,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.glob = glob;
 	this.cc = cc;
 	this.plgob = plgob;
+	this.gobs = new Gobs();
 	setcanfocus(true);
     }
     
@@ -513,17 +514,106 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	rl.add(gob, GLState.compose(extra, xf, gob.olmod, gob.save));
     }
 
-    private final Rendered gobs = new Rendered() {
-	    public void draw(GOut g) {}
-	    
-	    public boolean setup(RenderList rl) {
-		synchronized(glob.oc) {
-		    for(Gob gob : glob.oc)
-			addgob(rl, gob);
+    public static class ChangeSet implements OCache.ChangeCallback {
+	public final Set<Gob> changed = new HashSet<Gob>();
+	public final Set<Gob> removed = new HashSet<Gob>();
+
+	public void changed(Gob ob) {
+	    changed.add(ob);
+	}
+
+	public void removed(Gob ob) {
+	    changed.remove(ob);
+	    removed.add(ob);
+	}
+    }
+
+    private class Gobs implements Rendered {
+	final OCache oc = glob.oc;
+	final ChangeSet changed = new ChangeSet();
+	final Map<Gob, GobSet> parts = new HashMap<Gob, GobSet>();
+	final GobSet cached = new GobSet();
+	final GobSet dynamic = new GobSet() {public Object staticp() {return(null);}};
+	Integer ticks = 0;
+	{oc.callback(changed);}
+
+	class GobSet implements Rendered {
+	    final Collection<Gob> obs = new HashSet<Gob>();
+	    Object seq = this;
+
+	    void take(Gob ob) {
+		GobSet p = parts.get(ob);
+		if(p != this) {
+		    if(p != null)
+			p.obs.remove(ob);
+		    parts.put(ob, this);
+		    obs.add(ob);
 		}
+		seq = ticks;
+	    }
+
+	    void remove(Gob ob) {
+		if(obs.remove(ob)) {
+		    parts.remove(ob);
+		    seq = ticks;
+		}
+	    }
+
+	    public void draw(GOut g) {}
+
+	    public boolean setup(RenderList rl) {
+		for(Gob gob : obs)
+		    addgob(rl, gob);
 		return(false);
 	    }
-	};
+
+	    public Object staticp() {
+		return(seq);
+	    }
+	}
+
+	Gobs() {
+	    synchronized(oc) {
+		for(Gob ob : oc)
+		    changed.changed(ob);
+	    }
+	}
+
+	void update() {
+	    for(Gob ob : changed.removed)
+		parts.get(ob).remove(ob);
+	    changed.removed.clear();
+
+	    Collection<Gob> cache = new ArrayList<Gob>();
+	    for(Gob ob : dynamic.obs) {
+		if(ob.staticp() instanceof Gob.Static)
+		    cache.add(ob);
+	    }
+	    for(Gob ob : cache)
+		cached.take(ob);
+
+	    for(Gob ob : changed.changed) {
+		if(ob.staticp() instanceof Gob.Static)
+		    cached.take(ob);
+		else
+		    dynamic.take(ob);
+	    }
+	    changed.changed.clear();
+	}
+
+	public void draw(GOut g) {}
+
+	public boolean setup(RenderList rl) {
+	    synchronized(oc) {
+		update();
+		rl.add(cached, null);
+		rl.add(dynamic, null);
+		ticks++;
+	    }
+	    return(false);
+	}
+    }
+    private final Rendered gobs;
 
     public GLState camera()         {return(camera);}
     protected Projection makeproj() {return(null);}
