@@ -431,7 +431,8 @@ public class RenderList {
 	    Slot s = list[i];
 	    int o = i + 1;
 	    tryinst: {
-		if(!(s.r instanceof Rendered.Instanced))
+		/* XXX: How to handle eyeorder and similar things is... tricky. This is an ugly hack. Please replace. */
+		if(!(s.r instanceof Rendered.Instanced) || (s.os.get(Rendered.order) instanceof Rendered.EyeOrder))
 		    break tryinst;
 		boolean copy = (s.statroot != null);
 		instbuf.clear();
