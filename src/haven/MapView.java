@@ -532,8 +532,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	final OCache oc = glob.oc;
 	final ChangeSet changed = new ChangeSet();
 	final Map<Gob, GobSet> parts = new HashMap<Gob, GobSet>();
-	final GobSet cached = new GobSet();
-	final GobSet dynamic = new GobSet() {public Object staticp() {return(null);}};
 	Integer ticks = 0;
 	{oc.callback(changed);}
 
@@ -542,21 +540,16 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Object seq = this;
 
 	    void take(Gob ob) {
-		GobSet p = parts.get(ob);
-		if(p != this) {
-		    if(p != null)
-			p.obs.remove(ob);
-		    parts.put(ob, this);
-		    obs.add(ob);
-		}
+		obs.add(ob);
 		seq = ticks;
 	    }
 
 	    void remove(Gob ob) {
-		if(obs.remove(ob)) {
-		    parts.remove(ob);
+		if(obs.remove(ob))
 		    seq = ticks;
-		}
+	    }
+
+	    void update() {
 	    }
 
 	    public void draw(GOut g) {}
@@ -570,6 +563,93 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    public Object staticp() {
 		return(seq);
 	    }
+
+	    public int size() {
+		return(obs.size());
+	    }
+	}
+
+	class Transitory extends GobSet {
+	    final Map<Gob, Integer> age = new HashMap<Gob, Integer>();
+
+	    void take(Gob ob) {
+		super.take(ob);
+		age.put(ob, ticks);
+	    }
+
+	    void remove(Gob ob) {
+		super.remove(ob);
+		age.remove(ob);
+	    }
+	}
+
+	final GobSet oldfags = new GobSet();
+	final GobSet semifags = new Transitory() {
+		int cycle = 0;
+
+		void update() {
+		    if(++cycle >= 300) {
+			Collection<Gob> cache = new ArrayList<Gob>();
+			for(Map.Entry<Gob, Integer> ob : age.entrySet()) {
+			    if(ticks - ob.getValue() > 450)
+				cache.add(ob.getKey());
+			}
+			for(Gob ob : cache)
+			    put(oldfags, ob);
+			cycle = 0;
+		    }
+		}
+	    };
+	final GobSet newfags = new Transitory() {
+		int cycle = 0;
+
+		void update() {
+		    if(++cycle >= 20) {
+			Collection<Gob> cache = new ArrayList<Gob>();
+			for(Map.Entry<Gob, Integer> ob : age.entrySet()) {
+			    if(ticks - ob.getValue() > 30)
+				cache.add(ob.getKey());
+			}
+			for(Gob ob : cache)
+			    put(semifags, ob);
+			cycle = 0;
+		    }
+		}
+	    };
+	final GobSet dynamic = new GobSet() {
+		int cycle = 0;
+
+		void update() {
+		    if(++cycle >= 5) {
+			Collection<Gob> cache = new ArrayList<Gob>();
+			for(Gob ob : obs) {
+			    if(ob.staticp() instanceof Gob.Static)
+				cache.add(ob);
+			}
+			for(Gob ob : cache)
+			    put(newfags, ob);
+			cycle = 0;
+		    }
+		}
+
+		public Object staticp() {return(null);}
+	    };
+	final GobSet[] all = {oldfags, semifags, newfags, dynamic};
+
+	void put(GobSet set, Gob ob) {
+	    GobSet p = parts.get(ob);
+	    if(p != set) {
+		if(p != null)
+		    p.remove(ob);
+		parts.put(ob, set);
+		set.take(ob);
+	    }
+	}
+
+	void remove(Gob ob) {
+	    GobSet p = parts.get(ob);
+	    parts.remove(ob);
+	    p.remove(ob);
 	}
 
 	Gobs() {
@@ -581,24 +661,19 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	void update() {
 	    for(Gob ob : changed.removed)
-		parts.get(ob).remove(ob);
+		remove(ob);
 	    changed.removed.clear();
-
-	    Collection<Gob> cache = new ArrayList<Gob>();
-	    for(Gob ob : dynamic.obs) {
-		if(ob.staticp() instanceof Gob.Static)
-		    cache.add(ob);
-	    }
-	    for(Gob ob : cache)
-		cached.take(ob);
 
 	    for(Gob ob : changed.changed) {
 		if(ob.staticp() instanceof Gob.Static)
-		    cached.take(ob);
+		    put(newfags, ob);
 		else
-		    dynamic.take(ob);
+		    put(dynamic, ob);
 	    }
 	    changed.changed.clear();
+
+	    for(GobSet set : all)
+		set.update();
 	}
 
 	public void draw(GOut g) {}
@@ -606,8 +681,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public boolean setup(RenderList rl) {
 	    synchronized(oc) {
 		update();
-		rl.add(cached, null);
-		rl.add(dynamic, null);
+		for(GobSet set : all)
+		    rl.add(set, null);
 		ticks++;
 	    }
 	    return(false);
