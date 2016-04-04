@@ -364,6 +364,9 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	return(false);
     }
 
+    void changed() {
+    }
+
     public Random mkrandoom() {
 	return(Utils.mkrandoom(id));
     }
