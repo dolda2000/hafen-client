@@ -659,8 +659,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	void remove(Gob ob) {
 	    GobSet p = parts.get(ob);
-	    parts.remove(ob);
-	    p.remove(ob);
+	    if(p != null) {
+		parts.remove(ob);
+		p.remove(ob);
+	    }
 	}
 
 	Gobs() {
