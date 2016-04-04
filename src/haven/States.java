@@ -33,9 +33,9 @@ import java.awt.Color;
 public abstract class States extends GLState {
     private States() {}
     
-    public static final Slot<ColState> color = new Slot<ColState>(Slot.Type.DRAW, ColState.class, HavenPanel.global);
+    public static final Slot<ColState> color = new Slot<ColState>(Slot.Type.DRAW, ColState.class, HavenPanel.global).instanced(ColState.instancer);
     public static class ColState extends GLState {
-	private static final ShaderMacro[] shaders = {new haven.glsl.GLColorVary()};
+	private static final ShaderMacro[] shaders = {new haven.glsl.BaseColor()};
 	public final Color c;
 	public final float[] ca;
 	
@@ -85,9 +85,43 @@ public abstract class States extends GLState {
 	public String toString() {
 	    return("ColState(" + c + ")");
 	}
+
+	private static final Instancer<ColState> instancer = new Instancer<ColState>() {
+	    final ColState instanced = new ColState(0, 0, 0, 0) {
+		    public String toString() {
+			return("instanced color");
+		    }
+
+		    final ShaderMacro[] shaders = {mkinstanced, new ShaderMacro() {
+			    public void modify(ProgramContext prog) {
+				prog.dump = true;
+			    }
+			}};
+		    public ShaderMacro[] shaders() {return(shaders);}
+		};
+
+	    public ColState inststate(ColState[] in) {
+		if(in[0] == vertexcolor) {
+		    for(int i = 1; i < in.length; i++) {
+			if(in[i] != vertexcolor)
+			    throw(new RuntimeException("cannot mix uniform and per-vertex coloring in instanced rendering"));
+		    }
+		    return(vertexcolor);
+		} else {
+		    for(int i = 1; i < in.length; i++) {
+			if(in[i] == vertexcolor)
+			    throw(new RuntimeException("cannot mix uniform and per-vertex coloring in instanced rendering"));
+		    }
+		    return(instanced);
+		}
+	    }
+	};
     }
     public static final ColState vertexcolor = new ColState(0, 0, 0, 0) {
+	    private final ShaderMacro[] shaders = {new haven.glsl.GLColorVary()};
 	    public void apply(GOut g) {}
+
+	    public ShaderMacro[] shaders() {return(shaders);}
 
 	    public boolean equals(Object o) {
 		return(o == this);
