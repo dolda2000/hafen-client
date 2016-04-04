@@ -49,17 +49,20 @@ public class RenderList {
 	public int ihash;
 	public Cached statroot;
 	public Disposable disp;
+	int instnum;
     }
 
     class SavedSlot {
 	final Rendered r;
 	final Buffer st;
 	final Rendered.Order o;
+	final int instnum;
 
 	SavedSlot(Slot from) {
 	    this.r = from.r;
 	    this.st = from.os.copy();
 	    this.o = from.o;
+	    this.instnum = from.instnum;
 	}
     }
 
@@ -124,6 +127,7 @@ public class RenderList {
 	s.statroot = null;
 	s.skip = false;
 	s.disp = null;
+	s.instnum = 0;
 	return(s);
     }
 
@@ -184,7 +188,9 @@ public class RenderList {
 	}
     }
 
+    public int cacheroots, cached, cacheinst, cacheinstn;
     public void setup(Rendered r, Buffer t) {
+	cacheroots = cached = cacheinst = cacheinstn = 0;
 	rewind();
 	Slot s = getslot();
 	t.copy(s.os); t.copy(s.cs);
@@ -201,7 +207,15 @@ public class RenderList {
 	    s.o = p.o;
 	    s.p = curp;
 	    s.d = true;
+	    s.instnum = p.instnum;
+	    if(p.instnum > 0) {
+		cacheinst++;
+		cacheinstn += p.instnum;
+	    } else {
+		cached++;
+	    }
 	}
+	cacheroots++;
     }
 
     public void add(Rendered r, GLState t) {
@@ -407,6 +421,7 @@ public class RenderList {
 		    break tryinst;
 		s.r = ir;
 		s.os = ist;
+		s.instnum = instbuf.size();
 		for(int u = i + 1; u < o; u++)
 		    list[u].skip = true;
 		if(ir instanceof Disposable)
@@ -432,7 +447,12 @@ public class RenderList {
 	    render(g, s.r);
 	    if(s.disp != null)
 		s.disp.dispose();
-	    drawn++;
+	    if(s.instnum > 0) {
+		instanced++;
+		instancified += s.instnum;
+	    } else {
+		drawn++;
+	    }
 	    i++;
 	}
 	for(GLState.Global gs : gstates)
