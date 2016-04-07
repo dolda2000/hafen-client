@@ -39,10 +39,16 @@ public class BaseColor implements ShaderMacro {
 	    }
 	};
 
+    public static final AutoVarying transfer = new AutoVarying(VEC4) {
+	    protected Expression root(VertexContext vctx) {
+		return(u_color.ref());
+	    }
+	};
+
     public void modify(ProgramContext prog) {
 	prog.fctx.fragcol.mod(new Macro1<Expression>() {
 		public Expression expand(Expression in) {
-		    return(mul(in, u_color.ref()));
+		    return(mul(in, transfer.ref()));
 		}
 	    }, 0);
     }
