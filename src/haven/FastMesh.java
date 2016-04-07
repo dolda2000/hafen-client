@@ -373,7 +373,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 
     /* XXX: One might start to question if it isn't about time to
      * dispose of display-list drawing. */
-    private class Instanced implements Rendered, Disposable {
+    private class Instanced implements Rendered, FRendered, Disposable {
 	final List<GLState.Buffer> instances;
 	final VAOCompiler compiler;
 	final Map<Program, Arrays> arrays = new HashMap<Program, Arrays>();
@@ -424,6 +424,10 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 	    ar.bind(g);
 	    gl.glDrawElementsInstanced(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, 0, instances.size());
 	    ar.unbind(g);
+	}
+
+	public void drawflat(GOut g) {
+	    draw(g);
 	}
 
 	public boolean setup(RenderList r) {
