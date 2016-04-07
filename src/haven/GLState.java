@@ -124,6 +124,8 @@ public abstract class GLState {
 	}
 
 	public Slot<T> instanced(Instancer<T> inst) {
+	    if(inst == null)
+		throw(new NullPointerException());
 	    this.instanced = inst;
 	    return(this);
 	}
