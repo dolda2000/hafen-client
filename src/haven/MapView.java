@@ -447,7 +447,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			rl.add(cut, Location.xlate(new Coord3f(pc.x, -pc.y, 0)));
 		    }
 		}
-		rl.add(flavobjs, null);
+		if(!(rl.state().get(PView.ctx) instanceof ClickContext))
+		    rl.add(flavobjs, null);
 		return(false);
 	    }
 	};
@@ -820,9 +821,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(new Coord3f(cc.x, cc.y, glob.map.getcz(cc)));
     }
 
+    public static class ClickContext extends RenderContext {
+    }
+
     private TexGL clickbuf = null;
     private GLFrameBuffer clickfb = null;
-    private final RenderContext clickctx = new RenderContext();
+    private final RenderContext clickctx = new ClickContext();
     private GLState.Buffer clickbasic(GOut g) {
 	GLState.Buffer ret = basic(g);
 	clickctx.prep(ret);
