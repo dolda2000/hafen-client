@@ -78,9 +78,13 @@ public abstract class States extends GLState {
 	}
 	
 	public boolean equals(Object o) {
-	    return((o instanceof ColState) && (((ColState)o).c == c));
+	    return((o instanceof ColState) && c.equals(((ColState)o).c));
 	}
-	
+
+	public int hashCode() {
+	    return(c.hashCode());
+	}
+
 	public String toString() {
 	    return("ColState(" + c + ")");
 	}
@@ -101,16 +105,26 @@ public abstract class States extends GLState {
 		return("ColState(vertex)");
 	    }
 	};
+    private static class InstColor extends ColState {
+	private final ColState[] parts;
+
+	InstColor(ColState[] parts) {
+	    super(0, 0, 0, 0);
+	    this.parts = parts;
+	}
+
+	public String toString() {
+	    return("instanced color");
+	}
+
+	public boolean equals(Object o) {
+	    return(o == this);
+	}
+
+	static final ShaderMacro[] shaders = {GLState.Instancer.mkinstanced, new BaseColor()};
+	public ShaderMacro[] shaders() {return(shaders);}
+    }
     static {color.instanced(new Instancer<ColState>() {
-	    final ColState instanced = new ColState(0, 0, 0, 0) {
-		    public String toString() {
-			return("instanced color");
-		    }
-
-		    final ShaderMacro[] shaders = {mkinstanced, new BaseColor()};
-		    public ShaderMacro[] shaders() {return(shaders);}
-		};
-
 	    public ColState inststate(ColState[] in) {
 		if(in[0] == vertexcolor) {
 		    for(int i = 1; i < in.length; i++) {
@@ -123,7 +137,7 @@ public abstract class States extends GLState {
 			if(in[i] == vertexcolor)
 			    throw(new RuntimeException("cannot mix uniform and per-vertex coloring in instanced rendering"));
 		    }
-		    return(instanced);
+		    return(new InstColor(in));
 		}
 	    }
 	});}
