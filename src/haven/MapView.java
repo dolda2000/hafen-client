@@ -32,6 +32,7 @@ import haven.Resource.Tile;
 import haven.GLProgram.VarID;
 import java.awt.Color;
 import java.util.*;
+import java.lang.ref.*;
 import java.lang.reflect.*;
 import javax.media.opengl.*;
 
@@ -838,7 +839,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     private abstract static class Clicklist<T> extends RenderList {
-	private Map<Color, T> rmap = new HashMap<Color, T>();
+	private Map<States.ColState, T> rmap = new WeakHashMap<States.ColState, T>();
+	private Map<T, Reference<States.ColState>> idmap = new WeakHashMap<T, Reference<States.ColState>>();
 	private int i = 1;
 	private GLState.Buffer plain, bk;
 	
@@ -850,14 +852,20 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    this.bk = new GLState.Buffer(plain.cfg);
 	}
 	
-	protected Color newcol(T t) {
+	protected States.ColState getcol(T t) {
+	    Reference<States.ColState> prevr = idmap.get(t);
+	    States.ColState prev = (prevr == null)?null:prevr.get();
+	    if(prev != null)
+		return(prev);
 	    int cr = ((i & 0x00000f) << 4) | ((i & 0x00f000) >> 12),
 		cg = ((i & 0x0000f0) << 0) | ((i & 0x0f0000) >> 16),
 		cb = ((i & 0x000f00) >> 4) | ((i & 0xf00000) >> 20);
 	    Color col = new Color(cr, cg, cb);
+	    States.ColState cst = new States.ColState(col);
 	    i++;
-	    rmap.put(col, t);
-	    return(col);
+	    rmap.put(cst, t);
+	    idmap.put(t, new WeakReference<States.ColState>(cst));
+	    return(cst);
 	}
 
 	protected void render(GOut g, Rendered r) {
@@ -872,7 +880,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void get(GOut g, Coord c, final Callback<T> cb) {
 	    g.getpixel(c, new Callback<Color>() {
 		    public void done(Color c) {
-			cb.done(rmap.get(c));
+			cb.done(rmap.get(new States.ColState(c)));
 		    }
 		});
 	}
@@ -883,10 +891,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    s.os.copy(bk);
 	    plain.copy(s.os);
 	    bk.copy(s.os, GLState.Slot.Type.GEOM);
-	    if(t != null) {
-		Color col = newcol(t);
-		new States.ColState(col).prep(s.os);
-	    }
+	    if(t != null)
+		getcol(t).prep(s.os);
+	}
+
+	public boolean aging() {
+	    return(i > (1 << 20));
 	}
     }
     
@@ -968,40 +978,59 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
     
     public static class ClickInfo {
-	Gob gob;
-	Gob.Overlay ol;
-	Rendered r;
+	public final Gob gob;
+	public final Gob.Overlay ol;
+	public final Rendered r;
 	
 	ClickInfo(Gob gob, Gob.Overlay ol, Rendered r) {
 	    this.gob = gob; this.ol = ol; this.r = r;
 	}
+
+	public boolean equals(Object obj) {
+	    if(!(obj instanceof ClickInfo))
+		return(false);
+	    ClickInfo o = (ClickInfo)obj;
+	    return((gob == o.gob) && (ol == o.ol) && (r == o.r));
+	}
+
+	public int hashCode() {
+	    return((((System.identityHashCode(gob) * 31) + System.identityHashCode(ol)) * 31) + System.identityHashCode(r));
+	}
     }
 
+    private static class Goblist extends Clicklist<ClickInfo> {
+	Gob curgob;
+	Gob.Overlay curol;
+	ClickInfo curinfo;
+
+	public Goblist(GLState.Buffer plain) {super(plain);}
+
+	public ClickInfo map(Rendered r) {
+	    return(curinfo);
+	}
+
+	public void add(Rendered r, GLState t) {
+	    Gob prevg = curgob;
+	    Gob.Overlay prevo = curol;
+	    if(r instanceof Gob)
+		curgob = (Gob)r;
+	    else if(r instanceof Gob.Overlay)
+		curol = (Gob.Overlay)r;
+	    if((curgob == null) || !(r instanceof FRendered))
+		curinfo = null;
+	    else
+		curinfo = new ClickInfo(curgob, curol, r);
+	    super.add(r, t);
+	    curgob = prevg;
+	    curol = prevo;
+	}
+    }
+
+    private Clicklist<ClickInfo> curgoblist = null;
     private void checkgobclick(GOut g, Coord c, Callback<ClickInfo> cb) {
-	Clicklist<ClickInfo> rl = new Clicklist<ClickInfo>(clickbasic(g)) {
-		Gob curgob;
-		Gob.Overlay curol;
-		ClickInfo curinfo;
-		public ClickInfo map(Rendered r) {
-		    return(curinfo);
-		}
-		
-		public void add(Rendered r, GLState t) {
-		    Gob prevg = curgob;
-		    Gob.Overlay prevo = curol;
-		    if(r instanceof Gob)
-			curgob = (Gob)r;
-		    else if(r instanceof Gob.Overlay)
-			curol = (Gob.Overlay)r;
-		    if((curgob == null) || !(r instanceof FRendered))
-			curinfo = null;
-		    else
-			curinfo = new ClickInfo(curgob, curol, r);
-		    super.add(r, t);
-		    curgob = prevg;
-		    curol = prevo;
-		}
-	    };
+	if((curgoblist == null) || (curgoblist.cfg != g.gc) || curgoblist.aging())
+	    curgoblist = new Goblist(clickbasic(g));
+	Clicklist<ClickInfo> rl = curgoblist;
 	rl.setup(gobs, clickbasic(g));
 	rl.fin();
 	rl.render(g);
