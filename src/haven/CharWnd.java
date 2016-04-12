@@ -276,7 +276,7 @@ public class CharWnd extends Window {
 	public static final Color hilit = new Color(255, 255, 0, 48);
 	public static final Text.Foundry elf = attrf;
 	public static final Convolution tflt = new Hanning(1);
-	public static final Color full = new Color(250, 230, 64), none = new Color(250, 19, 43);
+	public static final Color buffed = new Color(160, 255, 160), full = new Color(250, 230, 64), none = new Color(250, 19, 43);
 	public final List<El> els = new ArrayList<El>();
 	private Integer[] order = {};
 
@@ -306,8 +306,10 @@ public class CharWnd extends Window {
 	    }
 
 	    public Tex at() {
-		if(at == null)
-		    at = elf.render(String.format("%d%%", (int)Math.floor(a * 100)), Utils.blendcol(none, full, a)).tex();
+		if(at == null) {
+		    Color c= (a > 1.0)?buffed:Utils.blendcol(none, full, a);
+		    at = elf.render(String.format("%d%%", (int)Math.floor(a * 100)), c).tex();
+		}
 		return(at);
 	    }
 	}
