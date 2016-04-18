@@ -786,7 +786,7 @@ public class Utils {
      * will round downwards, but I don't actually expect that to be a
      * problem given how I use these, and it turns out that
      * java.lang.Math.floor is actually surprisingly slow (it
-     * delegates for StrictMath.float for some reason). */
+     * delegates to StrictMath.floor for some reason). */
     public static int floordiv(float a, float b) {
 	float q = a / b;
 	return((q < 0)?(((int)q) - 1):((int)q));
