@@ -32,9 +32,12 @@ import javax.media.opengl.*;
 
 public interface Rendered extends Drawn {
     public boolean setup(RenderList r);
-    
+
+    public static final Object CONSTANS = new Object();
+    public default Object staticp() {return(null);}
+
     public static interface Instanced extends Rendered {
-	public boolean drawinst(GOut g, List<GLState.Buffer> instances);
+	public Rendered instanced(GLConfig gc, List<GLState.Buffer> instances);
     }
 
     public static interface RComparator<T extends Rendered> {

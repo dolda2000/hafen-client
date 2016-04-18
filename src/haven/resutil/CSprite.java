@@ -58,4 +58,8 @@ public class CSprite extends Sprite {
 	    rl.add(p, null);
 	return(false);
     }
+
+    public Object staticp() {
+	return(CONSTANS);
+    }
 }

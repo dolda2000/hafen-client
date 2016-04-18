@@ -83,6 +83,10 @@ public class AudioSprite {
 	public boolean tick(int dt) {
 	    return(done);
 	}
+
+	public Object staticp() {
+	    return(CONSTANS);
+	}
     }
 
     public static class RepeatSprite extends Sprite implements Gob.Overlay.CDel {
@@ -127,6 +131,10 @@ public class AudioSprite {
 	    else
 		clip = null;
 	}
+
+	public Object staticp() {
+	    return(CONSTANS);
+	}
     }
 
     public static class Ambience extends Sprite {
@@ -136,7 +144,7 @@ public class AudioSprite {
 	    super(owner, res);
 	    ClipAmbiance.Desc clamb = res.layer(ClipAmbiance.Desc.class);
 	    if(clamb != null)
-		this.amb = new ClipAmbiance(clamb);
+		this.amb = clamb.spr;
 	    else
 		this.amb = new ActAudio.Ambience(res);
 	}
@@ -144,6 +152,10 @@ public class AudioSprite {
 	public boolean setup(RenderList r) {
 	    r.add(amb, null);
 	    return(false);
+	}
+
+	public Object staticp() {
+	    return(CONSTANS);
 	}
     }
 }

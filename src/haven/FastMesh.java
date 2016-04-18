@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.glsl.ShaderMacro.Program;
 import java.util.*;
 import java.nio.*;
 import javax.media.opengl.*;
@@ -321,14 +322,14 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     }
 
     private GLSettings.MeshMode curmode = null;
-    private Compiler compiler(GOut g) {
+    private Compiler compiler(GLConfig gc) {
 	if(compile()) {
-	    if(curmode != g.gc.pref.meshmode.val) {
+	    if(curmode != gc.pref.meshmode.val) {
 		if(compiler != null) {
 		    compiler.dispose();
 		    compiler = null;
 		}
-		switch(g.gc.pref.meshmode.val) {
+		switch(gc.pref.meshmode.val) {
 		case VAO:
 		    compiler = new VAOCompiler();
 		    break;
@@ -336,7 +337,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 		    compiler = new DLCompiler();
 		    break;
 		}
-		curmode = g.gc.pref.meshmode.val;
+		curmode = gc.pref.meshmode.val;
 	    }
 	} else if(compiler != null) {
 	    compiler.dispose();
@@ -348,7 +349,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 
     public void draw(GOut g) {
 	BGL gl = g.gl;
-	Compiler compiler = compiler(g);
+	Compiler compiler = compiler(g.gc);
 	if(compiler != null) {
 	    compiler.get(g).draw(g);
 	} else {
@@ -362,12 +363,89 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     }
 
     public boolean drawinst(GOut g, List<GLState.Buffer> st) {
-	Compiler compiler = compiler(g);
+	Compiler compiler = compiler(g.gc);
 	if(!(compiler instanceof VAOCompiler))
 	    return(false);
 	if(!g.st.inststate(st))
 	    return(false);
 	return(((VAOCompiler.VAOCompiled)compiler.get(g)).drawinst(g, st));
+    }
+
+    /* XXX: One might start to question if it isn't about time to
+     * dispose of display-list drawing. */
+    private class Instanced implements Rendered, FRendered, Disposable {
+	final List<GLState.Buffer> instances;
+	final VAOCompiler compiler;
+	final Map<Program, Arrays> arrays = new HashMap<Program, Arrays>();
+
+	class Arrays {
+	    final Program prog;
+	    final GLBuffer[] data;
+
+	    Arrays(GOut g, Program prog) {
+		this.prog = prog;
+		this.data = new GLBuffer[prog.autoinst.length];
+		for(int i = 0; i < data.length; i++) {
+		    data[i] = new GLBuffer(g);
+		    prog.autoinst[i].filliarr(g, instances, data[i]);
+		}
+	    }
+
+	    void bind(GOut g) {
+		for(int i = 0; i < data.length; i++)
+		    prog.autoinst[i].bindiarr(g, data[i]);
+	    }
+
+	    void unbind(GOut g) {
+		for(int i = 0; i < data.length; i++)
+		    prog.autoinst[i].unbindiarr(g, data[i]);
+	    }
+
+	    void dispose() {
+		for(GLBuffer buf : data)
+		    buf.dispose();
+	    }
+	}
+
+	Instanced(VAOCompiler compiler, List<GLState.Buffer> instances) {
+	    this.compiler = compiler;
+	    this.instances = instances;
+	}
+
+	public void draw(GOut g) {
+	    BGL gl = g.gl;
+	    g.st.apply(g, vstate, ((VAOCompiler.VAOCompiled)compiler.get(g)).st);
+	    Arrays ar = arrays.get(g.st.prog);
+	    if(ar == null) {
+		arrays.put(g.st.prog, ar = new Arrays(g, g.st.prog));
+		if(arrays.size() > 10)
+		    System.err.println("warning: creating very many instance arrays for " + FastMesh.this);
+	    }
+	    ar.bind(g);
+	    gl.glDrawElementsInstanced(GL.GL_TRIANGLES, num * 3, GL.GL_UNSIGNED_SHORT, 0, instances.size());
+	    ar.unbind(g);
+	}
+
+	public void drawflat(GOut g) {
+	    draw(g);
+	}
+
+	public boolean setup(RenderList r) {
+	    throw(new RuntimeException("Instanced meshes are transformed into, not set up"));
+	}
+
+	public void dispose() {
+	    for(Arrays ar : arrays.values())
+		ar.dispose();
+	}
+    }
+
+    public Rendered instanced(GLConfig gc, List<GLState.Buffer> st) {
+	Compiler compiler = compiler(gc);
+	if(!(compiler instanceof VAOCompiler))
+	    return(null);
+	VAOCompiler vc = (VAOCompiler)compiler;
+	return(new Instanced((VAOCompiler)compiler, new ArrayList<GLState.Buffer>(st)));
     }
     
     public void dispose() {

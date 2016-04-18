@@ -32,6 +32,7 @@ import haven.Resource.Tile;
 import haven.GLProgram.VarID;
 import java.awt.Color;
 import java.util.*;
+import java.lang.ref.*;
 import java.lang.reflect.*;
 import javax.media.opengl.*;
 
@@ -381,6 +382,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.glob = glob;
 	this.cc = cc;
 	this.plgob = plgob;
+	this.gobs = new Gobs();
 	setcanfocus(true);
     }
     
@@ -394,6 +396,44 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    visol[ol]--;
     }
 
+    private final Rendered flavobjs = new Rendered() {
+	    private Collection<Gob> fol;
+	    private Coord cc = null;
+	    private int mseq = 0;
+	    private boolean loading = false;
+
+	    public void draw(GOut g) {}
+
+	    public Object staticp() {
+		Coord cc = MapView.this.cc.div(tilesz).div(MCache.cutsz);
+		int mseq = glob.map.olseq;
+		if(loading || !Utils.eq(cc, this.cc) || (mseq != this.mseq)) {
+		    loading = false;
+		    Collection<Gob> fol = new ArrayList<Gob>();
+		    Coord o = new Coord();
+		    for(o.y = -view; o.y <= view; o.y++) {
+			for(o.x = -view; o.x <= view; o.x++) {
+			    try {
+				fol.addAll(glob.map.getfo(cc.add(o)));
+			    } catch(Loading e) {
+				loading = true;
+			    }
+			}
+		    }
+		    this.cc = cc;
+		    this.mseq = mseq;
+		    this.fol = fol;
+		}
+		return(fol);
+	    }
+
+	    public boolean setup(RenderList rl) {
+		for(Gob fo : fol)
+		    addgob(rl, fo);
+		return(false);
+	    }
+	};
+
     private final Rendered map = new Rendered() {
 	    public void draw(GOut g) {}
 	    
@@ -405,16 +445,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			Coord pc = cc.add(o).mul(MCache.cutsz).mul(tilesz);
 			MapMesh cut = glob.map.getcut(cc.add(o));
 			rl.add(cut, Location.xlate(new Coord3f(pc.x, -pc.y, 0)));
-			Collection<Gob> fol;
-			try {
-			    fol = glob.map.getfo(cc.add(o));
-			} catch(Loading e) {
-			    fol = Collections.emptyList();
-			}
-			for(Gob fo : fol)
-			    addgob(rl, fo);
 		    }
 		}
+		if(!(rl.state().get(PView.ctx) instanceof ClickContext))
+		    rl.add(flavobjs, null);
 		return(false);
 	    }
 	};
@@ -482,17 +516,202 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	rl.add(gob, GLState.compose(extra, xf, gob.olmod, gob.save));
     }
 
-    private final Rendered gobs = new Rendered() {
+    public static class ChangeSet implements OCache.ChangeCallback {
+	public final Set<Gob> changed = new HashSet<Gob>();
+	public final Set<Gob> removed = new HashSet<Gob>();
+
+	public void changed(Gob ob) {
+	    changed.add(ob);
+	}
+
+	public void removed(Gob ob) {
+	    changed.remove(ob);
+	    removed.add(ob);
+	}
+    }
+
+    private class Gobs implements Rendered {
+	final OCache oc = glob.oc;
+	final ChangeSet changed = new ChangeSet();
+	final Map<Gob, GobSet> parts = new HashMap<Gob, GobSet>();
+	Integer ticks = 0;
+	{oc.callback(changed);}
+
+	class GobSet implements Rendered {
+	    private final String nm;
+	    final Collection<Gob> obs = new HashSet<Gob>();
+	    Object seq = this;
+
+	    GobSet(String nm) {
+		this.nm = nm;
+	    }
+
+	    void take(Gob ob) {
+		obs.add(ob);
+		seq = ticks;
+	    }
+
+	    void remove(Gob ob) {
+		if(obs.remove(ob))
+		    seq = ticks;
+	    }
+
+	    void update() {
+	    }
+
 	    public void draw(GOut g) {}
-	    
+
 	    public boolean setup(RenderList rl) {
-		synchronized(glob.oc) {
-		    for(Gob gob : glob.oc)
-			addgob(rl, gob);
-		}
+		for(Gob gob : obs)
+		    addgob(rl, gob);
 		return(false);
 	    }
-	};
+
+	    public Object staticp() {
+		return(seq);
+	    }
+
+	    public int size() {
+		return(obs.size());
+	    }
+
+	    public String toString() {
+		return("GobSet(" + nm + ")");
+	    }
+	}
+
+	class Transitory extends GobSet {
+	    final Map<Gob, Integer> age = new HashMap<Gob, Integer>();
+
+	    Transitory(String nm) {super(nm);}
+
+	    void take(Gob ob) {
+		super.take(ob);
+		age.put(ob, ticks);
+	    }
+
+	    void remove(Gob ob) {
+		super.remove(ob);
+		age.remove(ob);
+	    }
+	}
+
+	final GobSet oldfags = new GobSet("old");
+	final GobSet semifags = new Transitory("semi") {
+		int cycle = 0;
+
+		void update() {
+		    if(++cycle >= 300) {
+			Collection<Gob> cache = new ArrayList<Gob>();
+			for(Map.Entry<Gob, Integer> ob : age.entrySet()) {
+			    if(ticks - ob.getValue() > 450)
+				cache.add(ob.getKey());
+			}
+			for(Gob ob : cache)
+			    put(oldfags, ob);
+			cycle = 0;
+		    }
+		}
+	    };
+	final GobSet newfags = new Transitory("new") {
+		int cycle = 0;
+
+		void update() {
+		    if(++cycle >= 20) {
+			Collection<Gob> cache = new ArrayList<Gob>();
+			for(Map.Entry<Gob, Integer> ob : age.entrySet()) {
+			    if(ticks - ob.getValue() > 30)
+				cache.add(ob.getKey());
+			}
+			for(Gob ob : cache)
+			    put(semifags, ob);
+			cycle = 0;
+		    }
+		}
+	    };
+	final GobSet dynamic = new GobSet("dyn") {
+		int cycle = 0;
+
+		void update() {
+		    if(++cycle >= 5) {
+			Collection<Gob> cache = new ArrayList<Gob>();
+			for(Gob ob : obs) {
+			    if(ob.staticp() instanceof Gob.Static)
+				cache.add(ob);
+			}
+			for(Gob ob : cache)
+			    put(newfags, ob);
+			cycle = 0;
+		    }
+		}
+
+		public Object staticp() {return(null);}
+	    };
+	final GobSet[] all = {oldfags, semifags, newfags, dynamic};
+
+	void put(GobSet set, Gob ob) {
+	    GobSet p = parts.get(ob);
+	    if(p != set) {
+		if(p != null)
+		    p.remove(ob);
+		parts.put(ob, set);
+		set.take(ob);
+	    }
+	}
+
+	void remove(Gob ob) {
+	    GobSet p = parts.get(ob);
+	    if(p != null) {
+		parts.remove(ob);
+		p.remove(ob);
+	    }
+	}
+
+	Gobs() {
+	    synchronized(oc) {
+		for(Gob ob : oc)
+		    changed.changed(ob);
+	    }
+	}
+
+	void update() {
+	    for(Gob ob : changed.removed)
+		remove(ob);
+	    changed.removed.clear();
+
+	    for(Gob ob : changed.changed) {
+		if(ob.staticp() instanceof Gob.Static)
+		    put(newfags, ob);
+		else
+		    put(dynamic, ob);
+	    }
+	    changed.changed.clear();
+
+	    for(GobSet set : all)
+		set.update();
+	}
+
+	public void draw(GOut g) {}
+
+	public boolean setup(RenderList rl) {
+	    synchronized(oc) {
+		update();
+		for(GobSet set : all)
+		    rl.add(set, null);
+		ticks++;
+	    }
+	    return(false);
+	}
+
+	public String toString() {
+	    return(String.format("%,dd %,dn %,ds %,do", dynamic.size(), newfags.size(), semifags.size(), oldfags.size()));
+	}
+    }
+    private final Rendered gobs;
+
+    public String toString() {
+	return(String.format("Camera[%s (%s)], Caches[%s]", getcc(), camera, gobs));
+    }
 
     public GLState camera()         {return(camera);}
     protected Projection makeproj() {return(null);}
@@ -602,9 +821,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(new Coord3f(cc.x, cc.y, glob.map.getcz(cc)));
     }
 
+    public static class ClickContext extends RenderContext {
+    }
+
     private TexGL clickbuf = null;
     private GLFrameBuffer clickfb = null;
-    private final RenderContext clickctx = new RenderContext();
+    private final RenderContext clickctx = new ClickContext();
     private GLState.Buffer clickbasic(GOut g) {
 	GLState.Buffer ret = basic(g);
 	clickctx.prep(ret);
@@ -621,7 +843,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     private abstract static class Clicklist<T> extends RenderList {
-	private Map<Color, T> rmap = new HashMap<Color, T>();
+	private Map<States.ColState, T> rmap = new WeakHashMap<States.ColState, T>();
+	private Map<T, Reference<States.ColState>> idmap = new WeakHashMap<T, Reference<States.ColState>>();
 	private int i = 1;
 	private GLState.Buffer plain, bk;
 	
@@ -633,14 +856,20 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    this.bk = new GLState.Buffer(plain.cfg);
 	}
 	
-	protected Color newcol(T t) {
+	protected States.ColState getcol(T t) {
+	    Reference<States.ColState> prevr = idmap.get(t);
+	    States.ColState prev = (prevr == null)?null:prevr.get();
+	    if(prev != null)
+		return(prev);
 	    int cr = ((i & 0x00000f) << 4) | ((i & 0x00f000) >> 12),
 		cg = ((i & 0x0000f0) << 0) | ((i & 0x0f0000) >> 16),
 		cb = ((i & 0x000f00) >> 4) | ((i & 0xf00000) >> 20);
 	    Color col = new Color(cr, cg, cb);
+	    States.ColState cst = new States.ColState(col);
 	    i++;
-	    rmap.put(col, t);
-	    return(col);
+	    rmap.put(cst, t);
+	    idmap.put(t, new WeakReference<States.ColState>(cst));
+	    return(cst);
 	}
 
 	protected void render(GOut g, Rendered r) {
@@ -652,14 +881,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
 
-	protected boolean renderinst(GOut g, Rendered.Instanced r, List<GLState.Buffer> instances) {
-	    return(false);
-	}
-	
 	public void get(GOut g, Coord c, final Callback<T> cb) {
 	    g.getpixel(c, new Callback<Color>() {
 		    public void done(Color c) {
-			cb.done(rmap.get(c));
+			cb.done(rmap.get(new States.ColState(c)));
 		    }
 		});
 	}
@@ -670,10 +895,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    s.os.copy(bk);
 	    plain.copy(s.os);
 	    bk.copy(s.os, GLState.Slot.Type.GEOM);
-	    if(t != null) {
-		Color col = newcol(t);
-		new States.ColState(col).prep(s.os);
-	    }
+	    if(t != null)
+		getcol(t).prep(s.os);
+	}
+
+	public boolean aging() {
+	    return(i > (1 << 20));
 	}
     }
     
@@ -755,40 +982,59 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
     
     public static class ClickInfo {
-	Gob gob;
-	Gob.Overlay ol;
-	Rendered r;
+	public final Gob gob;
+	public final Gob.Overlay ol;
+	public final Rendered r;
 	
 	ClickInfo(Gob gob, Gob.Overlay ol, Rendered r) {
 	    this.gob = gob; this.ol = ol; this.r = r;
 	}
+
+	public boolean equals(Object obj) {
+	    if(!(obj instanceof ClickInfo))
+		return(false);
+	    ClickInfo o = (ClickInfo)obj;
+	    return((gob == o.gob) && (ol == o.ol) && (r == o.r));
+	}
+
+	public int hashCode() {
+	    return((((System.identityHashCode(gob) * 31) + System.identityHashCode(ol)) * 31) + System.identityHashCode(r));
+	}
     }
 
+    private static class Goblist extends Clicklist<ClickInfo> {
+	Gob curgob;
+	Gob.Overlay curol;
+	ClickInfo curinfo;
+
+	public Goblist(GLState.Buffer plain) {super(plain);}
+
+	public ClickInfo map(Rendered r) {
+	    return(curinfo);
+	}
+
+	public void add(Rendered r, GLState t) {
+	    Gob prevg = curgob;
+	    Gob.Overlay prevo = curol;
+	    if(r instanceof Gob)
+		curgob = (Gob)r;
+	    else if(r instanceof Gob.Overlay)
+		curol = (Gob.Overlay)r;
+	    if((curgob == null) || !(r instanceof FRendered))
+		curinfo = null;
+	    else
+		curinfo = new ClickInfo(curgob, curol, r);
+	    super.add(r, t);
+	    curgob = prevg;
+	    curol = prevo;
+	}
+    }
+
+    private Clicklist<ClickInfo> curgoblist = null;
     private void checkgobclick(GOut g, Coord c, Callback<ClickInfo> cb) {
-	Clicklist<ClickInfo> rl = new Clicklist<ClickInfo>(clickbasic(g)) {
-		Gob curgob;
-		Gob.Overlay curol;
-		ClickInfo curinfo;
-		public ClickInfo map(Rendered r) {
-		    return(curinfo);
-		}
-		
-		public void add(Rendered r, GLState t) {
-		    Gob prevg = curgob;
-		    Gob.Overlay prevo = curol;
-		    if(r instanceof Gob)
-			curgob = (Gob)r;
-		    else if(r instanceof Gob.Overlay)
-			curol = (Gob.Overlay)r;
-		    if((curgob == null) || !(r instanceof FRendered))
-			curinfo = null;
-		    else
-			curinfo = new ClickInfo(curgob, curol, r);
-		    super.add(r, t);
-		    curgob = prevg;
-		    curol = prevo;
-		}
-	    };
+	if((curgoblist == null) || (curgoblist.cfg != g.gc) || curgoblist.aging())
+	    curgoblist = new Goblist(clickbasic(g));
+	Clicklist<ClickInfo> rl = curgoblist;
 	rl.setup(gobs, clickbasic(g));
 	rl.fin();
 	rl.render(g);

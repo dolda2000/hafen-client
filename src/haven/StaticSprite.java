@@ -35,7 +35,11 @@ public class StaticSprite extends Sprite {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
 		if((res.layer(FastMesh.MeshRes.class) != null) ||
 		   (res.layer(RenderLink.Res.class) != null))
-		    return(new StaticSprite(owner, res, sdt));
+		    return(new StaticSprite(owner, res, sdt) {
+			    public String toString() {
+				return("StaticSprite(" + res + ")");
+			    }
+			});
 		return(null);
 	    }
 	};
@@ -73,5 +77,9 @@ public class StaticSprite extends Sprite {
 	for(Rendered p : parts)
 	    r.add(p, null);
 	return(false);
+    }
+
+    public Object staticp() {
+	return(CONSTANS);
     }
 }
