@@ -41,7 +41,8 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public Collection<Overlay> ols = new LinkedList<Overlay>() {
 	public boolean add(Overlay item) {
 	    /* XXX: Remove me once local code is changed to use addol(). */
-	    glob.oc.changed(Gob.this);
+	    if(glob.oc.getgob(id) != null)
+		glob.oc.changed(Gob.this);
 	    return(super.add(item));
 	}
     };
