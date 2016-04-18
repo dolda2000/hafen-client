@@ -406,17 +406,29 @@ public class MCache {
 	return(g.getz(tc.sub(g.ul)));
     }
 
-    public float getcz(float px, float py) {
-	float tw = tilesz.x, th = tilesz.y;
+    public double getcz(double px, double py) {
+	double tw = tilesz.x, th = tilesz.y;
 	Coord ul = new Coord(Utils.floordiv(px, tw), Utils.floordiv(py, th));
-	float sx = Utils.floormod(px, tw) / tw;
-	float sy = Utils.floormod(py, th) / th;
+	double sx = Utils.floormod(px, tw) / tw;
+	double sy = Utils.floormod(py, th) / th;
 	return(((1.0f - sy) * (((1.0f - sx) * getz(ul)) + (sx * getz(ul.add(1, 0))))) +
 	       (sy * (((1.0f - sx) * getz(ul.add(0, 1))) + (sx * getz(ul.add(1, 1))))));
     }
 
+    public double getcz(Coord2d pc) {
+	return(getcz(pc.x, pc.y));
+    }
+
+    public float getcz(float px, float py) {
+	return((float)getcz((double)px, (double)py));
+    }
+
     public float getcz(Coord pc) {
 	return(getcz(pc.x, pc.y));
+    }
+
+    public Coord3f getzp(Coord2d pc) {
+	return(new Coord3f((float)pc.x, (float)pc.y, (float)getcz(pc)));
     }
 
     public int getol(Coord tc) {
