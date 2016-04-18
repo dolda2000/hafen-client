@@ -42,6 +42,7 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
 
     public static class Glob implements ActAudio.Global {
 	public final Desc desc;
+	public final ActAudio list;
 	private boolean dead = false;
 	private Desc[] chans = {null};
 	private VolAdjust[][] cur = {null};
@@ -50,8 +51,9 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
 	private double vacc, cvol;
 	private double lastupd = System.currentTimeMillis() / 1000.0;
 
-	public Glob(Desc desc) {
+	public Glob(Desc desc, ActAudio list) {
 	    this.desc = desc;
+	    this.list = list;
 	}
 
 	public int hashCode() {
@@ -194,13 +196,13 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
     }
 
     public void draw(GOut g) {
+	ActAudio list = g.st.get(ActAudio.slot);
+	if(list == null)
+	    return;
 	g.apply();
-	if((glob == null) || glob.dead) {
-	    ActAudio list = g.st.cur(ActAudio.slot);
-	    if(list == null)
-		return;
+	if((glob == null) || (glob.list != list) || glob.dead) {
 	    try {
-		glob = list.intern(new Glob(desc.parent.get().layer(Desc.class)));
+		glob = list.intern(new Glob(desc.parent.get().layer(Desc.class), list));
 	    } catch(Loading l) {
 		return;
 	    }
@@ -219,13 +221,13 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
 	}
 
 	public void draw(GOut g) {
+	    ActAudio list = g.st.get(ActAudio.slot);
+	    if(list == null)
+		return;
 	    g.apply();
-	    if((glob == null) || glob.dead) {
-		ActAudio list = g.st.cur(ActAudio.slot);
-		if(list == null)
-		    return;
+	    if((glob == null) || (glob.list != list) || glob.dead) {
 		try {
-		    glob = list.intern(new Glob(desc.parent.get().layer(Desc.class)));
+		    glob = list.intern(new Glob(desc.parent.get().layer(Desc.class), list));
 		} catch(Loading l) {
 		    return;
 		}
@@ -268,6 +270,9 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
 	public final double bvol;
 	public final String[] cnms;
 	public final double[] ieps;
+	/* XXX: Due to Glob handling, this identity is probably not a
+	 * good idea, but if removed, then instancing needs to be
+	 * handled some other way. */
 	public final ClipAmbiance spr;
 
 	public Desc(Resource res, Message buf) {
