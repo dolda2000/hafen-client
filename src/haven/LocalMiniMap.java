@@ -27,7 +27,8 @@
 package haven;
 
 import static haven.MCache.cmaps;
-import static haven.MCache.tilesz;
+import static haven.MCache.tilesz2;
+import static haven.OCache.posres;
 import haven.MCache.Grid;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -132,12 +133,12 @@ public class LocalMiniMap extends Widget {
 	this.mv = mv;
     }
     
-    public Coord p2c(Coord pc) {
-	return(pc.div(tilesz).sub(cc).add(sz.div(2)));
+    public Coord p2c(Coord2d pc) {
+	return(pc.floor(tilesz2).sub(cc).add(sz.div(2)));
     }
 
-    public Coord c2p(Coord c) {
-	return(c.sub(sz.div(2)).add(cc).mul(tilesz).add(tilesz.div(2)));
+    public Coord2d c2p(Coord c) {
+	return(c.sub(sz.div(2)).add(cc).mul(tilesz2).add(tilesz2.div(2)));
     }
 
     public void drawicons(GOut g) {
@@ -177,9 +178,9 @@ public class LocalMiniMap extends Widget {
     public void tick(double dt) {
 	Gob pl = ui.sess.glob.oc.getgob(mv.plgob);
 	if(pl == null)
-	    this.cc = mv.cc.div(tilesz);
+	    this.cc = mv.cc.floor(tilesz2);
 	else
-	    this.cc = pl.rc.div(tilesz);
+	    this.cc = pl.rc.floor(tilesz2);
     }
 
     public void draw(GOut g) {
@@ -217,15 +218,15 @@ public class LocalMiniMap extends Widget {
 	    try {
 		synchronized(ui.sess.glob.party.memb) {
 		    for(Party.Member m : ui.sess.glob.party.memb.values()) {
-			Coord ptc;
+			Coord2d ppc;
 			try {
-			    ptc = m.getc();
+			    ppc = m.getc();
 			} catch(MCache.LoadingMap e) {
-			    ptc = null;
+			    ppc = null;
 			}
-			if(ptc == null)
+			if(ppc == null)
 			    continue;
-			ptc = p2c(ptc);
+			Coord ptc = p2c(ppc);
 			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 128);
 			g.image(MiniMap.plx.layer(Resource.imgc).tex(), ptc.add(MiniMap.plx.layer(Resource.negc).cc.inv()));
 			g.chcolor();
@@ -243,9 +244,9 @@ public class LocalMiniMap extends Widget {
 	    return(false);
 	Gob gob = findicongob(c);
 	if(gob == null)
-	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags());
+	    mv.wdgmsg("click", rootpos().add(c), c2p(c).floor(posres), button, ui.modflags());
 	else
-	    mv.wdgmsg("click", rootpos().add(c), c2p(c), button, ui.modflags(), 0, (int)gob.id, gob.rc, 0, -1);
+	    mv.wdgmsg("click", rootpos().add(c), c2p(c).floor(posres), button, ui.modflags(), 0, (int)gob.id, gob.rc.floor(posres), 0, -1);
 	return(true);
     }
 }

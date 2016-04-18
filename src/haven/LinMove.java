@@ -27,11 +27,11 @@
 package haven;
 
 public class LinMove extends Moving {
-    public Coord s, t;
+    public Coord2d s, t;
     public int c;
     public double a;
     
-    public LinMove(Gob gob, Coord s, Coord t, int c) {
+    public LinMove(Gob gob, Coord2d s, Coord2d t, int c) {
 	super(gob);
 	this.s = s;
 	this.t = t;
@@ -40,11 +40,7 @@ public class LinMove extends Moving {
     }
     
     public Coord3f getc() {
-	float cx, cy;
-	cx = (float)(t.x - s.x) * (float)a;
-	cy = (float)(t.y - s.y) * (float)a;
-	cx += s.x; cy += s.y;
-	return(new Coord3f(cx, cy, gob.glob.map.getcz(cx, cy)));
+	return(gob.glob.map.getzp(s.add(t.sub(s).mul(a))));
     }
     
     public double getv() {

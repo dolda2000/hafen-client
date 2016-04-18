@@ -43,18 +43,18 @@ public class Party {
 	
     public class Member {
 	long gobid;
-	private Coord c = null;
+	private Coord2d c = null;
 	Color col = Color.BLACK;
 	
 	public Gob getgob() {
 	    return(glob.oc.getgob(gobid));
 	}
 	
-	public Coord getc() {
+	public Coord2d getc() {
 	    Gob gob;
 	    try {
 		if((gob = getgob()) != null)
-		    return(new Coord(gob.getc()));
+		    return(new Coord2d(gob.getc()));
 	    } catch(Loading e) {}
 	    return(c);
 	}
@@ -89,10 +89,10 @@ public class Party {
 		    leader = m;
 	    } else if(type == PD_MEMBER) {
 		Member m = memb.get((long)msg.int32());
-		Coord c = null;
+		Coord2d c = null;
 		boolean vis = msg.uint8() == 1;
 		if(vis)
-		    c = msg.coord();
+		    c = msg.coord().mul(OCache.posres);
 		Color col = msg.color();
 		if(m != null) {
 		    m.c = c;

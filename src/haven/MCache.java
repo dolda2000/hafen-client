@@ -32,7 +32,8 @@ import haven.Resource.Tileset;
 import haven.Resource.Tile;
 
 public class MCache {
-    public static final Coord tilesz = new Coord(11, 11);
+    public static final Coord2d tilesz2 = new Coord2d(11, 11);
+    public static final Coord tilesz = tilesz2.round();
     public static final Coord cmaps = new Coord(100, 100);
     public static final Coord cutsz = new Coord(25, 25);
     public static final Coord cutn = cmaps.div(cutsz);
@@ -107,15 +108,15 @@ public class MCache {
 	}
 
 	private class Flavobj extends Gob {
-	    private Flavobj(Coord c, double a) {
+	    private Flavobj(Coord2d c, double a) {
 		super(sess.glob, c);
 		this.a = a;
 	    }
 
 	    public Random mkrandoom() {
 		Random r = new Random(Grid.this.id);
-		r.setSeed(r.nextInt() ^ rc.x);
-		r.setSeed(r.nextInt() ^ rc.y);
+		r.setSeed(r.nextLong() ^ Double.doubleToLongBits(rc.x));
+		r.setSeed(r.nextLong() ^ Double.doubleToLongBits(rc.y));
 		return(r);
 	    }
 	}
@@ -158,7 +159,7 @@ public class MCache {
 		    if(set.flavobjs.size() > 0) {
 			if((fp % set.flavprob) == 0) {
 			    Indir<Resource> r = set.flavobjs.pick(rp % set.flavobjs.tw);
-			    Gob g = new Flavobj(c.add(tc).mul(tilesz).add(tilesz.div(2)), a * 2 * Math.PI);
+			    Gob g = new Flavobj(c.add(tc).mul(tilesz2).add(tilesz2.div(2)), a * 2 * Math.PI);
 			    g.setattr(new ResDrawable(g, r, Message.nil));
 			    Coord cc = c.div(cutsz);
 			    fo[cc.x + (cc.y * cutn.x)].add(g);
