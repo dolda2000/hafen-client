@@ -791,9 +791,17 @@ public class Utils {
 	float q = a / b;
 	return((q < 0)?(((int)q) - 1):((int)q));
     }
+    public static int floordiv(double a, double b) {
+	double q = a / b;
+	return((q < 0)?(((int)q) - 1):((int)q));
+    }
     
     public static float floormod(float a, float b) {
 	float r = a % b;
+	return((a < 0)?(r + b):r);
+    }
+    public static double floormod(double a, double b) {
+	double r = a % b;
 	return((a < 0)?(r + b):r);
     }
 
