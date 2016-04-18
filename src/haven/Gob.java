@@ -38,7 +38,13 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     public int frame;
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
-    public Collection<Overlay> ols = new LinkedList<Overlay>();
+    public Collection<Overlay> ols = new LinkedList<Overlay>() {
+	public boolean add(Overlay item) {
+	    /* XXX: Remove me once local code is changed to use addol(). */
+	    glob.oc.changed(Gob.this);
+	    return(super.add(item));
+	}
+    };
     private final Collection<ResAttr.Cell<?>> rdata = new LinkedList<ResAttr.Cell<?>>();
     private final Collection<ResAttr.Load> lrdata = new LinkedList<ResAttr.Load>();
 
@@ -188,6 +194,14 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	}
 	if(virtual && ols.isEmpty())
 	    glob.oc.remove(id);
+    }
+
+    /* Intended for local code. Server changes are handled via OCache. */
+    public void addol(Overlay ol) {
+	ols.add(ol);
+    }
+    public void addol(Sprite ol) {
+	addol(new Overlay(ol));
     }
 
     public Overlay findol(int id) {
