@@ -30,7 +30,7 @@ import java.util.*;
 import haven.Audio.CS;
 import haven.Audio.VolAdjust;
 
-public class ClipAmbiance implements Rendered {
+public class ClipAmbiance implements Rendered, Rendered.Instanced {
     public final Desc desc;
     public double bvol;
     private Glob glob = null;
@@ -42,6 +42,7 @@ public class ClipAmbiance implements Rendered {
 
     public static class Glob implements ActAudio.Global {
 	public final Desc desc;
+	public final ActAudio list;
 	private boolean dead = false;
 	private Desc[] chans = {null};
 	private VolAdjust[][] cur = {null};
@@ -50,8 +51,9 @@ public class ClipAmbiance implements Rendered {
 	private double vacc, cvol;
 	private double lastupd = System.currentTimeMillis() / 1000.0;
 
-	public Glob(Desc desc) {
+	public Glob(Desc desc, ActAudio list) {
 	    this.desc = desc;
+	    this.list = list;
 	}
 
 	public int hashCode() {
@@ -194,13 +196,13 @@ public class ClipAmbiance implements Rendered {
     }
 
     public void draw(GOut g) {
+	ActAudio list = g.st.get(ActAudio.slot);
+	if(list == null)
+	    return;
 	g.apply();
-	if((glob == null) || glob.dead) {
-	    ActAudio list = g.st.cur(ActAudio.slot);
-	    if(list == null)
-		return;
+	if((glob == null) || (glob.list != list) || glob.dead) {
 	    try {
-		glob = list.intern(new Glob(desc.parent.get().layer(Desc.class)));
+		glob = list.intern(new Glob(desc.parent.get().layer(Desc.class), list));
 	    } catch(Loading l) {
 		return;
 	    }
@@ -209,6 +211,52 @@ public class ClipAmbiance implements Rendered {
 	double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
 	double svol = Math.min(1.0, 50.0 / pd);
 	glob.add(desc, svol * bvol);
+    }
+
+    private class Instanced implements Rendered {
+	final float[] lb;
+
+	Instanced(float[] lb) {
+	    this.lb = lb;
+	}
+
+	public void draw(GOut g) {
+	    ActAudio list = g.st.get(ActAudio.slot);
+	    if(list == null)
+		return;
+	    g.apply();
+	    if((glob == null) || (glob.list != list) || glob.dead) {
+		try {
+		    glob = list.intern(new Glob(desc.parent.get().layer(Desc.class), list));
+		} catch(Loading l) {
+		    return;
+		}
+	    }
+	    Matrix4f cam = PView.camxf(g);
+	    double svol = 0.0;
+	    for(int i = 0; i < lb.length; i += 3) {
+		float[] pos = cam.mul4(new float[] {lb[i], lb[i + 1], lb[i + 2], 1.0f});
+		double pd = Math.sqrt((pos[0] * pos[0]) + (pos[1] * pos[1]));
+		svol += Math.min(1.0, 50.0 / pd);
+	    }
+	    glob.add(desc, svol * bvol);
+	}
+
+	public boolean setup(RenderList rl) {
+	    return(true);
+	}
+    }
+
+    public Rendered instanced(GLConfig gc, List<GLState.Buffer> instances) {
+	float[] compacted = new float[instances.size() * 3];
+	int i = 0;
+	for(GLState.Buffer st : instances) {
+	    Matrix4f wxf = PView.locxf(st);
+	    compacted[i++] = wxf.m[12];
+	    compacted[i++] = wxf.m[13];
+	    compacted[i++] = wxf.m[14];
+	}
+	return(new Instanced(compacted));
     }
 
     public boolean setup(RenderList rl) {
@@ -222,6 +270,10 @@ public class ClipAmbiance implements Rendered {
 	public final double bvol;
 	public final String[] cnms;
 	public final double[] ieps;
+	/* XXX: Due to Glob handling, this identity is probably not a
+	 * good idea, but if removed, then instancing needs to be
+	 * handled some other way. */
+	public final ClipAmbiance spr;
 
 	public Desc(Resource res, Message buf) {
 	    res.super();
@@ -245,6 +297,7 @@ public class ClipAmbiance implements Rendered {
 		cnms[i] = buf.string().intern();
 		ieps[i] = 1.0 / buf.float32();
 	    }
+	    spr = new ClipAmbiance(this);
 	}
 
 	public void init() {}

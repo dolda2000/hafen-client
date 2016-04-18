@@ -35,7 +35,6 @@ public abstract class States extends GLState {
     
     public static final Slot<ColState> color = new Slot<ColState>(Slot.Type.DRAW, ColState.class, HavenPanel.global);
     public static class ColState extends GLState {
-	private static final ShaderMacro[] shaders = {new haven.glsl.GLColorVary()};
 	public final Color c;
 	public final float[] ca;
 	
@@ -79,15 +78,24 @@ public abstract class States extends GLState {
 	}
 	
 	public boolean equals(Object o) {
-	    return((o instanceof ColState) && (((ColState)o).c == c));
+	    return((o instanceof ColState) && c.equals(((ColState)o).c));
 	}
-	
+
+	public int hashCode() {
+	    return(c.hashCode());
+	}
+
 	public String toString() {
 	    return("ColState(" + c + ")");
 	}
+
+	private static final ShaderMacro[] shaders = {new haven.glsl.BaseColor()};
     }
     public static final ColState vertexcolor = new ColState(0, 0, 0, 0) {
+	    private final ShaderMacro[] shaders = {new haven.glsl.GLColorVary()};
 	    public void apply(GOut g) {}
+
+	    public ShaderMacro[] shaders() {return(shaders);}
 
 	    public boolean equals(Object o) {
 		return(o == this);
@@ -97,6 +105,42 @@ public abstract class States extends GLState {
 		return("ColState(vertex)");
 	    }
 	};
+    private static class InstColor extends ColState {
+	private final ColState[] parts;
+
+	InstColor(ColState[] parts) {
+	    super(0, 0, 0, 0);
+	    this.parts = parts;
+	}
+
+	public String toString() {
+	    return("instanced color");
+	}
+
+	public boolean equals(Object o) {
+	    return(o == this);
+	}
+
+	static final ShaderMacro[] shaders = {GLState.Instancer.mkinstanced, new BaseColor()};
+	public ShaderMacro[] shaders() {return(shaders);}
+    }
+    static {color.instanced(new Instancer<ColState>() {
+	    public ColState inststate(ColState[] in) {
+		if(in[0] == vertexcolor) {
+		    for(int i = 1; i < in.length; i++) {
+			if(in[i] != vertexcolor)
+			    throw(new RuntimeException("cannot mix uniform and per-vertex coloring in instanced rendering"));
+		    }
+		    return(vertexcolor);
+		} else {
+		    for(int i = 1; i < in.length; i++) {
+			if(in[i] == vertexcolor)
+			    throw(new RuntimeException("cannot mix uniform and per-vertex coloring in instanced rendering"));
+		    }
+		    return(new InstColor(in));
+		}
+	    }
+	});}
     @Material.ResName("vcol")
     public static class $vcol implements Material.ResCons {
 	public GLState cons(Resource res, Object... args) {

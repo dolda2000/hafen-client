@@ -76,14 +76,14 @@ public class VertexContext extends ShaderContext {
 		return(PView.locxf(buf));
 	    }
 	};
-    private static final InstancedUniform u_mv = new InstancedUniform.Mat4("mv", PView.loc, PView.cam) {
-	    public Matrix4f forstate(GOut g, GLState.Buffer buf) {
-		return(PView.mvxf(g, buf));
+    private static final Uniform u_mv = new Uniform.AutoApply(Type.MAT4, "mv", PView.loc, PView.cam) {
+	    public void apply(GOut g, VarID loc) {
+		g.gl.glUniformMatrix4fv(loc, 1, false, PView.mvxf(g).m, 0);
 	    }
 	};
-    private static final InstancedUniform u_pmv = new InstancedUniform.Mat4("pmv", PView.loc, PView.cam, PView.proj) {
-	    public Matrix4f forstate(GOut g, GLState.Buffer buf) {
-		return(PView.pmvxf(g, buf));
+    private static final Uniform u_pmv = new Uniform.AutoApply(Type.MAT4, "pmv", PView.loc, PView.cam, PView.proj) {
+	    public void apply(GOut g, VarID loc) {
+		g.gl.glUniformMatrix4fv(loc, 1, false, PView.pmvxf(g).m, 0);
 	    }
 	};
 
@@ -133,6 +133,8 @@ public class VertexContext extends ShaderContext {
 		    e.walk(this);
 		}
 	    });
+	if(prog.instanced)
+	    h_wxf = true;
 	xfpinited = true;
     }
 
