@@ -890,10 +890,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	
 	abstract protected T map(Rendered r);
 	
-	private Clicklist(GLState.Buffer plain) {
-	    super(plain.cfg);
-	    this.plain = plain;
-	    this.bk = new GLState.Buffer(plain.cfg);
+	private Clicklist(GLConfig cfg) {
+	    super(cfg);
+	    this.bk = new GLState.Buffer(cfg);
 	}
 	
 	protected States.ColState getcol(T t) {
@@ -928,7 +927,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    }
 		});
 	}
-	
+
+	public void setup(Rendered r, GLState.Buffer t) {
+	    this.plain = t;
+	    super.setup(r, t);
+	}
+
 	protected void setup(Slot s, Rendered r) {
 	    T t = map(r);
 	    super.setup(s, r);
@@ -948,8 +952,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private int mode = 0;
 	private MapMesh limit = null;
 	
-	private Maplist(GLState.Buffer plain) {
-	    super(plain);
+	private Maplist(GLConfig cfg) {
+	    super(cfg);
 	}
 	
 	protected MapMesh map(Rendered r) {
@@ -976,7 +980,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    int dfl = 0;
 
 	    {
-		Maplist rl = new Maplist(clickbasic(g));
+		Maplist rl = new Maplist(g.gc);
 		rl.setup(map, clickbasic(g));
 		rl.fin();
 
@@ -1047,7 +1051,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	Gob.Overlay curol;
 	ClickInfo curinfo;
 
-	public Goblist(GLState.Buffer plain) {super(plain);}
+	public Goblist(GLConfig cfg) {super(cfg);}
 
 	public ClickInfo map(Rendered r) {
 	    return(curinfo);
@@ -1073,7 +1077,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Clicklist<ClickInfo> curgoblist = null;
     private void checkgobclick(GOut g, Coord c, Callback<ClickInfo> cb) {
 	if((curgoblist == null) || (curgoblist.cfg != g.gc) || curgoblist.aging())
-	    curgoblist = new Goblist(clickbasic(g));
+	    curgoblist = new Goblist(g.gc);
 	Clicklist<ClickInfo> rl = curgoblist;
 	rl.setup(gobs, clickbasic(g));
 	rl.fin();
