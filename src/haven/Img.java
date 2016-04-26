@@ -83,6 +83,8 @@ public class Img extends Widget {
 	    } else {
 		this.res = ui.sess.getres((Integer)args[0]);
 	    }
+	} else {
+	    super.uimsg(name, args);
 	}
     }
     
