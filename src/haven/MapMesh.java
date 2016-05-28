@@ -338,20 +338,20 @@ public class MapMesh implements Rendered, Disposable {
     private static States.DepthOffset gmoff = new States.DepthOffset(-1, -1);
     public static class GroundMod implements Rendered, Disposable {
 	private static final Order gmorder = new Order.Default(1001);
-	public final Coord cc;
+	public final Coord2d cc;
 	public final FastMesh mesh;
 	
-	public GroundMod(MCache map, final Coord cc, final Coord3f ul, final Coord3f br, double a) {
+	public GroundMod(MCache map, final Coord2d cc, final Coord3f ul, final Coord3f br, double a) {
 	    final float si = (float)Math.sin(a), co = (float)Math.cos(a);
 	    this.cc = cc;
 	    final MeshBuf buf = new MeshBuf();
-	    final float cz = map.getcz(cc);
+	    final float cz = (float)map.getcz(cc);
 	    final Coord ult, brt;
 	    {
 		Coord tult = null, tbrt = null;
 		for(Coord3f corn : new Coord3f[] {ul, new Coord3f(ul.x, br.y, 0), br, new Coord3f(br.x, ul.y, 0)}) {
-		    float cx = (cc.x + co * corn.x - si * corn.y) / tilesz.x;
-		    float cy = (cc.y + co * corn.y + si * corn.x) / tilesz.y;
+		    float cx = (float)(cc.x + co * corn.x - si * corn.y) / tilesz.x;
+		    float cy = (float)(cc.y + co * corn.y + si * corn.x) / tilesz.y;
 		    if(tult == null) {
 			tult = new Coord((int)Math.floor(cx), (int)Math.floor(cy));
 			tbrt = new Coord((int)Math.ceil(cx), (int)Math.ceil(cy));
@@ -372,8 +372,8 @@ public class MapMesh implements Rendered, Disposable {
 		    public void faces(MapMesh m, Tiler.MPart d) {
 			Coord3f[] texc = new Coord3f[d.v.length];
 			for(int i = 0; i < d.v.length; i++) {
-			    texc[i] = new Coord3f(((m.ul.x + d.lc.x + d.tcx[i]) * tilesz.x) - cc.x,
-						  ((m.ul.y + d.lc.y + d.tcy[i]) * tilesz.y) - cc.y,
+			    texc[i] = new Coord3f(((m.ul.x + d.lc.x + d.tcx[i]) * tilesz.x) - (float)cc.x,
+						  ((m.ul.y + d.lc.y + d.tcy[i]) * tilesz.y) - (float)cc.y,
 						  0);
 			    texc[i] = new Coord3f(co * texc[i].x + si * texc[i].y,
 						  co * texc[i].y - si * texc[i].x,
@@ -412,7 +412,7 @@ public class MapMesh implements Rendered, Disposable {
 				continue;
 			    if((mv[i] = cv.get(d.v[i])) == null) {
 				cv.put(d.v[i], mv[i] = new MeshVertex(buf, d.v[i]));
-				mv[i].pos = mv[i].pos.add((m.ul.x * tilesz.x) - cc.x, cc.y - (m.ul.y * tilesz.y), -cz);
+				mv[i].pos = mv[i].pos.add((m.ul.x * tilesz.x) - (float)cc.x, (float)cc.y - (m.ul.y * tilesz.y), -cz);
 				ta.set(mv[i], texc[i]);
 			    }
 			}
