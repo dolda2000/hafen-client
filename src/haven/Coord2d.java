@@ -28,7 +28,7 @@ package haven;
 
 import static java.lang.Math.PI;
 
-public class Coord2d {
+public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     public double x, y;
     public static final Coord2d z = new Coord2d(0, 0);
 
@@ -47,6 +47,31 @@ public class Coord2d {
 
     public Coord2d() {
 	this(0, 0);
+    }
+
+    public boolean equals(double X, double Y) {
+	return((x == X) && (y == Y));
+    }
+
+    public boolean equals(Object o) {
+	if(!(o instanceof Coord2d))
+	    return(false);
+	Coord2d c = (Coord2d)o;
+	return(equals(c.x, c.y));
+    }
+
+    public int hashCode() {
+	long X = Double.doubleToLongBits(x);
+	long Y = Double.doubleToLongBits(y);
+	return((((int)(X ^ (X >>> 32))) * 31) + ((int)(Y ^ (Y >>> 32))));
+    }
+
+    public int compareTo(Coord2d c) {
+	if(c.y < y) return(-1);
+	if(c.y > y) return(1);
+	if(c.x < x) return(-1);
+	if(c.y > y) return(1);
+	return(0);
     }
 
     public Coord2d add(double X, double Y) {
@@ -122,10 +147,14 @@ public class Coord2d {
     }
 
     public double angle(Coord2d o) {
-	return(Math.atan2(y - o.y, x - o.x));
+	return(Math.atan2(o.y - y, o.x - x));
     }
 
     public double dist(Coord2d o) {
 	return(Math.hypot(y - o.y, x - o.x));
+    }
+
+    public static Coord2d sc(double a, double r) {
+	return(new Coord2d(Math.cos(a) * r, Math.sin(a) * r));
     }
 }
