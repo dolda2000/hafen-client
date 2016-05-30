@@ -1454,7 +1454,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	} else if(placing != null) {
 	    if(placing.lastmc != null)
-		wdgmsg("place", placing.rc.floor(posres), (int)(placing.a * 180 / Math.PI), button, ui.modflags());
+		wdgmsg("place", placing.rc.floor(posres), (int)Math.round(placing.a * 32768 / Math.PI), button, ui.modflags());
 	} else if((grab != null) && grab.mmousedown(c, button)) {
 	} else {
 	    delay(new Click(c, button));
