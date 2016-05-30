@@ -31,11 +31,12 @@ import java.awt.Color;
 import java.awt.event.KeyEvent;
 
 public class Fightsess extends Widget {
+    public static final Tex meters = Resource.loadtex("gfx/hud/combat/cmbmeters");
     public static final Tex lframe = Resource.loadtex("gfx/hud/combat/lframe");
     public static final int actpitch = 50;
     public final Indir<Resource>[] actions;
     public final boolean[] dyn;
-    public int use = -1;
+    public int use = -1, useb = -1;
     public Coord pcc;
     public int pho;
     private final Fightview fv;
@@ -107,6 +108,12 @@ public class Fightsess extends Widget {
 	public Integer value() {return(fv.current.oip);}
     };
 
+    private static final Coord cmc = new Coord(150, 27);
+    private static final Coord msz = new Coord(92, 12);
+    private static final Coord o1c = new Coord(119, 9);
+    private static final Coord d1c = new Coord(119, 33);
+    private static final Coord o2c = new Coord(181, 9);
+    private static final Coord d2c = new Coord(181, 33);
     public void draw(GOut g) {
 	updatepos();
 	double now = System.currentTimeMillis() / 1000.0;
@@ -124,13 +131,26 @@ public class Fightsess extends Widget {
 		fxon(fv.current.gobid, tgtfx);
 	}
 
+	Coord mul = pcc.add(-meters.sz().x / 2, 40);
 	if(now < fv.atkct) {
-	    int w = (int)((fv.atkct - now) * 20);
-	    g.chcolor(255, 0, 128, 255);
-	    g.frect(pcc.add(-w, 20), new Coord(w * 2, 15));
+	    double a = (now - fv.atkcs) / (fv.atkct - fv.atkcs);
+	    g.chcolor(255, 0, 128, 224);
+	    g.fellipse(mul.add(cmc), new Coord(24, 24), Math.PI / 2 - (Math.PI * 2 * Math.min(1.0 - a, 1.0)), Math.PI / 2);
 	    g.chcolor();
 	}
-	Coord ca = pcc.add(-(actions.length * actpitch) / 2, 45);
+	g.chcolor(255, 0, 0, 224);
+	g.frect(mul.add(o1c).sub((int)Math.round(msz.x * fv.off), 0), new Coord((int)Math.round(msz.x * fv.off), msz.y));
+	g.chcolor(0, 0, 255, 224);
+	g.frect(mul.add(d1c).sub((int)Math.round(msz.x * fv.def), 0), new Coord((int)Math.round(msz.x * fv.def), msz.y));
+	if(fv.current != null) {
+	    g.chcolor(255, 0, 0, 224);
+	    g.frect(mul.add(o2c), new Coord((int)Math.round(msz.x * fv.current.off), msz.y));
+	    g.chcolor(0, 0, 255, 224);
+	    g.frect(mul.add(d2c), new Coord((int)Math.round(msz.x * fv.current.def), msz.y));
+	}
+	g.chcolor();
+	g.image(meters, mul);
+	Coord ca = pcc.add(-(actions.length * actpitch) / 2, 110);
 	for(int i = 0; i < actions.length; i++) {
 	    Indir<Resource> act = actions[i];
 	    try {
@@ -140,6 +160,11 @@ public class Fightsess extends Widget {
 		    g.image(dyn[i]?lframe:Buff.frame, ca.sub(Buff.imgoff));
 		    if(i == use) {
 			g.chcolor(255, 0, 128, 255);
+			Coord cc = ca.add(img.sz().x / 2, img.sz().y + 5);
+			g.frect(cc.sub(2, 2), new Coord(5, 5));
+			g.chcolor();
+		    } else if(i == useb) {
+			g.chcolor(128, 0, 255, 255);
 			Coord cc = ca.add(img.sz().x / 2, img.sz().y + 5);
 			g.frect(cc.sub(2, 2), new Coord(5, 5));
 			g.chcolor();
@@ -174,7 +199,7 @@ public class Fightsess extends Widget {
 		}
 	    }
 	}
-	Coord ca = pcc.add(-(actions.length * actpitch) / 2, 45);
+	Coord ca = pcc.add(-(actions.length * actpitch) / 2, 110);
 	for(int i = 0; i < actions.length; i++) {
 	    Indir<Resource> act = actions[i];
 	    try {
@@ -204,8 +229,8 @@ public class Fightsess extends Widget {
 	    }
 	} else if(msg == "use") {
 	    this.use = (Integer)args[0];
+	    this.useb = (Integer)args[1];
 	} else if(msg == "used") {
-	} else if(msg == "dropped") {
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -215,10 +240,7 @@ public class Fightsess extends Widget {
 	int c = ev.getKeyChar();
 	if((key == 0) && (c >= KeyEvent.VK_1) && (c < KeyEvent.VK_1 + actions.length)) {
 	    int n = c - KeyEvent.VK_1;
-	    if((ev.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0)
-		wdgmsg("drop", n);
-	    else
-		wdgmsg("use", n);
+	    wdgmsg("use", n);
 	    return(true);
 	}
 	return(super.globtype(key, ev));

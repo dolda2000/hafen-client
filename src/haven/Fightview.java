@@ -41,7 +41,7 @@ public class Fightview extends Widget {
     public Relation current = null;
     public Indir<Resource> blk, batk, iatk;
     public double atkcs, atkct;
-    public int off, def;
+    public double off, def;
     private GiveButton curgive;
     private Avaview curava;
     private Button curpurs;
@@ -53,6 +53,7 @@ public class Fightview extends Widget {
 	public final GiveButton give;
 	public final Button purs;
 	public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
+	public double off, def;
 	public int ip, oip;
         
         public Relation(long gobid) {
@@ -205,6 +206,8 @@ public class Fightview extends Widget {
 	    rel.give((Integer)args[1]);
 	    rel.ip = (Integer)args[2];
 	    rel.oip = (Integer)args[3];
+	    rel.off = ((Number)args[4]).doubleValue();
+	    rel.def = ((Number)args[5]).doubleValue();
             lsrel.addFirst(rel);
             return;
         } else if(msg == "del") {
@@ -219,6 +222,11 @@ public class Fightview extends Widget {
 	    rel.give((Integer)args[1]);
 	    rel.ip = (Integer)args[2];
 	    rel.oip = (Integer)args[3];
+            return;
+	} else if(msg == "updod") {
+            Relation rel = getrel((Integer)args[0]);
+	    rel.off = ((Number)args[1]).doubleValue();
+	    rel.def = ((Number)args[2]).doubleValue();
             return;
         } else if(msg == "cur") {
             try {
@@ -242,8 +250,8 @@ public class Fightview extends Widget {
 	    iatk = n2r((Integer)args[1]);
 	    return;
         } else if(msg == "offdef") {
-	    off = (Integer)args[0];
-	    def = (Integer)args[1];
+	    off = ((Number)args[0]).doubleValue();
+	    def = ((Number)args[1]).doubleValue();
 	    return;
 	}
         super.uimsg(msg, args);

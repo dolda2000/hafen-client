@@ -32,7 +32,7 @@ import static haven.CharWnd.attrf;
 import static haven.Window.wbox;
 
 public class FightWnd extends Widget {
-    public final int nsave;
+    public final int nsave, nact;
     public final Actions actlist;
     public final Savelist savelist;
     public List<Action> acts = new ArrayList<Action>();
@@ -58,6 +58,13 @@ public class FightWnd extends Widget {
 	    if(pag != null)
 		buf.append(pag.text);
 	    return(buf.toString());
+	}
+
+	private void u(int u) {
+	    if(this.u != u) {
+		this.u = u;
+		this.ru = null;
+	    }
 	}
     }
 
@@ -218,7 +225,7 @@ public class FightWnd extends Widget {
     @RName("fmg")
     public static class $_ implements Factory {
 	public Widget create(Widget parent, Object[] args) {
-	    return(new FightWnd((Integer)args[0]));
+	    return(new FightWnd((Integer)args[0], (Integer)args[1]));
 	}
     }
 
@@ -230,8 +237,10 @@ public class FightWnd extends Widget {
 	List<Object> args = new LinkedList<Object>();
 	args.add(n);
 	for(Action act : acts) {
-	    args.add(act.id);
-	    args.add(act.u);
+	    if(act.u > 0) {
+		args.add(act.id);
+		args.add(act.u);
+	    }
 	}
 	args.add(-1);
 	wdgmsg("save", args.toArray(new Object[0]));
@@ -242,9 +251,10 @@ public class FightWnd extends Widget {
     }
 
     private Text unused = new Text.Foundry(attrf.font.deriveFont(java.awt.Font.ITALIC)).aa(true).render("Unused save");
-    public FightWnd(int nsave) {
+    public FightWnd(int nsave, int nact) {
 	super(Coord.z);
 	this.nsave = nsave;
+	this.nact = nact;
 	this.saves = new Text[nsave];
 	for(int i = 0; i < nsave; i++)
 	    saves[i] = unused;
@@ -303,7 +313,7 @@ public class FightWnd extends Widget {
     }
 
     public void uimsg(String nm, Object... args) {
-	if(nm == "act") {
+	if(nm == "avail") {
 	    List<Action> acts = new ArrayList<Action>();
 	    int a = 0;
 	    while(true) {
@@ -311,11 +321,24 @@ public class FightWnd extends Widget {
 		if(resid < 0)
 		    break;
 		int av = (Integer)args[a++];
-		int us = (Integer)args[a++];
-		acts.add(new Action(ui.sess.getres(resid), resid, av, us));
+		acts.add(new Action(ui.sess.getres(resid), resid, av, 0));
 	    }
 	    this.acts = acts;
 	    actlist.loading = true;
+	} else if(nm == "used") {
+	    int a = 0;
+	    for(Action act : acts)
+		act.u(0);
+	    for(int i = 0; i < nact; i++) {
+		int resid = (Integer)args[a++];
+		if(resid < 0)
+		    continue;
+		int us = (Integer)args[a++];
+		for(Action act : acts) {
+		    if(act.id == resid)
+			act.u(us);
+		}
+	    }
 	} else if(nm == "saved") {
 	    int fl = (Integer)args[0];
 	    for(int i = 0; i < nsave; i++) {
