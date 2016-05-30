@@ -27,7 +27,7 @@
 package haven;
 
 import static haven.MCache.cmaps;
-import static haven.MCache.tilesz2;
+import static haven.MCache.tilesz;
 import java.security.*;
 import java.util.*;
 import java.net.*;
@@ -161,7 +161,7 @@ public class MiniMap extends Widget {
     }
 
     public void draw(GOut g) {
-	Coord tc = mv.cc.floor(tilesz2);
+	Coord tc = mv.cc.floor(tilesz);
 	Coord ulg = tc.div(cmaps);
 	while((ulg.x * cmaps.x) - tc.x + (sz.x / 2) > 0)
 	    ulg.x--;
@@ -206,7 +206,7 @@ public class MiniMap extends Widget {
 		    }
 		    if(ppc == null)
 			continue;
-		    Coord ptc = ppc.floor(tilesz2).add(tc.inv()).add(sz.div(2));
+		    Coord ptc = ppc.floor(tilesz).add(tc.inv()).add(sz.div(2));
 		    g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 128);
 		    g.image(plx.layer(Resource.imgc).tex(), ptc.add(plx.layer(Resource.negc).cc.inv()));
 		    g.chcolor();

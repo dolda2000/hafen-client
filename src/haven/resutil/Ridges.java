@@ -35,12 +35,12 @@ import haven.Tiler.MPart;
 import haven.Tiler.SModel;
 import haven.Tiler.VertFactory;
 import haven.Surface.MeshVertex;
-import static haven.MCache.tilesz;
 import static haven.Utils.clip;
 
 public class Ridges extends MapMesh.Hooks {
     public static final MapMesh.DataID<Ridges> id = MapMesh.makeid(Ridges.class);
     public static final int segh = 8;
+    private static final Coord tilesz = MCache.tilesz2;
     public final MapMesh m;
     private final MapMesh.MapSurface ms;
     private final boolean[] breaks;
