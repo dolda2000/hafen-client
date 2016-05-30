@@ -190,7 +190,7 @@ public class MenuGrid extends Widget {
 			    m += (1 - m) * (double)(now - btn.gettime) / (double)btn.dtime;
 			m = Utils.clip(m, 0, 1);
 			g.chcolor(255, 255, 255, 128);
-			g.fellipse(p.add(bgsz.div(2)), bgsz.div(2), 90, (int)(90 + (360 * m)));
+			g.fellipse(p.add(bgsz.div(2)), bgsz.div(2), Math.PI / 2, ((Math.PI / 2) + (Math.PI * 2 * m)));
 			g.chcolor();
 		    }
 		    if(btn.newp != 0) {
