@@ -32,7 +32,8 @@ import haven.Resource.Tileset;
 import haven.Resource.Tile;
 
 public class MCache {
-    public static final Coord tilesz = new Coord(11, 11);
+    public static final Coord2d tilesz = new Coord2d(11, 11);
+    public static final Coord tilesz2 = tilesz.round(); /* XXX: Remove me in due time. */
     public static final Coord cmaps = new Coord(100, 100);
     public static final Coord cutsz = new Coord(25, 25);
     public static final Coord cutn = cmaps.div(cutsz);
@@ -107,15 +108,15 @@ public class MCache {
 	}
 
 	private class Flavobj extends Gob {
-	    private Flavobj(Coord c, double a) {
+	    private Flavobj(Coord2d c, double a) {
 		super(sess.glob, c);
 		this.a = a;
 	    }
 
 	    public Random mkrandoom() {
 		Random r = new Random(Grid.this.id);
-		r.setSeed(r.nextInt() ^ rc.x);
-		r.setSeed(r.nextInt() ^ rc.y);
+		r.setSeed(r.nextLong() ^ Double.doubleToLongBits(rc.x));
+		r.setSeed(r.nextLong() ^ Double.doubleToLongBits(rc.y));
 		return(r);
 	    }
 	}
@@ -406,17 +407,29 @@ public class MCache {
 	return(g.getz(tc.sub(g.ul)));
     }
 
-    public float getcz(float px, float py) {
-	float tw = tilesz.x, th = tilesz.y;
+    public double getcz(double px, double py) {
+	double tw = tilesz.x, th = tilesz.y;
 	Coord ul = new Coord(Utils.floordiv(px, tw), Utils.floordiv(py, th));
-	float sx = Utils.floormod(px, tw) / tw;
-	float sy = Utils.floormod(py, th) / th;
+	double sx = Utils.floormod(px, tw) / tw;
+	double sy = Utils.floormod(py, th) / th;
 	return(((1.0f - sy) * (((1.0f - sx) * getz(ul)) + (sx * getz(ul.add(1, 0))))) +
 	       (sy * (((1.0f - sx) * getz(ul.add(0, 1))) + (sx * getz(ul.add(1, 1))))));
     }
 
+    public double getcz(Coord2d pc) {
+	return(getcz(pc.x, pc.y));
+    }
+
+    public float getcz(float px, float py) {
+	return((float)getcz((double)px, (double)py));
+    }
+
     public float getcz(Coord pc) {
 	return(getcz(pc.x, pc.y));
+    }
+
+    public Coord3f getzp(Coord2d pc) {
+	return(new Coord3f((float)pc.x, (float)pc.y, (float)getcz(pc)));
     }
 
     public int getol(Coord tc) {

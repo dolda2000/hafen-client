@@ -28,11 +28,11 @@ package haven;
 
 public class Homing extends Moving {
     long tgt;
-    Coord tc;
+    Coord2d tc;
     int v;
     double dist;
     
-    public Homing(Gob gob, long tgt, Coord tc, int v) {
+    public Homing(Gob gob, long tgt, Coord2d tc, int v) {
 	super(gob);
 	this.tgt = tgt;
 	this.tc = tc;
@@ -40,25 +40,23 @@ public class Homing extends Moving {
     }
     
     public Coord3f getc() {
-	Coord tc = this.tc;
+	Coord2d tc = this.tc;
 	Gob tgt = gob.glob.oc.getgob(this.tgt);
 	if(tgt != null)
 	    tc = tgt.rc;
-	Coord d = tc.add(gob.rc.inv());
+	Coord2d d = tc.sub(gob.rc);
 	double e = gob.rc.dist(tc);
-	float rx = gob.rc.x, ry = gob.rc.y;
-	if(e > 0.00001) {
-	    rx += (float)((d.x / e) * dist);
-	    ry += (float)((d.y / e) * dist);
-	}
-	return(new Coord3f(rx, ry, gob.glob.map.getcz(rx, ry)));
+	Coord2d rc = gob.rc;
+	if(e > 0.00001)
+	    rc = rc.add(d.div(e).mul(dist));
+	return(gob.glob.map.getzp(rc));
     }
     
     public double getv() {
 	return((v / 100.0) / 0.06);
     }
     
-    public void move(Coord c) {
+    public void move(Coord2d c) {
 	dist = 0;
     }
     

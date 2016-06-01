@@ -44,7 +44,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     public Coord(Coord3f c) {
 	this((int)c.x, (int)c.y);
     }
-    
+
     public Coord() {
 	this(0, 0);
     }
@@ -115,7 +115,11 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     public Coord mul(Coord f) {
 	return(new Coord(x * f.x, y * f.y));
     }
-	
+
+    public Coord2d mul(Coord2d f) {
+	return(new Coord2d(x * f.x, y * f.y));
+    }
+
     public Coord div(Coord d) {
 	return(new Coord(Utils.floordiv(x, d.x), Utils.floordiv(y, d.y)));
     }

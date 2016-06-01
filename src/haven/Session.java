@@ -30,6 +30,7 @@ import java.net.*;
 import java.util.*;
 import java.io.*;
 import java.lang.ref.*;
+import static haven.OCache.posres;
 
 public class Session {
     public static final int PVER = 5;
@@ -259,7 +260,7 @@ public class Session {
 			if(type == OD_REM) {
 			    oc.remove(id, frame);
 			} else if(type == OD_MOVE) {
-			    Coord c = msg.coord();
+			    Coord2d c = msg.coord().mul(posres);
 			    int ia = msg.uint16();
 			    if(gob != null)
 				oc.move(gob, c, (ia / 65536.0) * Math.PI * 2);
@@ -273,8 +274,8 @@ public class Session {
 			    if(gob != null)
 				oc.cres(gob, getres(resid), sdt);
 			} else if(type == OD_LINBEG) {
-			    Coord s = msg.coord();
-			    Coord t = msg.coord();
+			    Coord2d s = msg.coord().mul(posres);
+			    Coord2d t = msg.coord().mul(posres);
 			    int c = msg.int32();
 			    if(gob != null)
 				oc.linbeg(gob, s, t, c);
@@ -415,12 +416,12 @@ public class Session {
 				if(gob != null)
 				    oc.homostop(gob);
 			    } else if(oid == 0xfffffffel) {
-				Coord tgtc = msg.coord();
+				Coord2d tgtc = msg.coord().mul(posres);
 				int v = msg.uint16();
 				if(gob != null)
 				    oc.homocoord(gob, tgtc, v);
 			    } else {
-				Coord tgtc = msg.coord();
+				Coord2d tgtc = msg.coord().mul(posres);
 				int v = msg.uint16();
 				if(gob != null)
 				    oc.homing(gob, oid, tgtc, v);

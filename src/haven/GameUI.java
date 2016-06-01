@@ -77,11 +77,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		Coord mvc = map.rootxlate(ui.mc);
 		if(mvc.isect(Coord.z, map.sz)) {
 		    map.delay(map.new Hittest(mvc) {
-			    protected void hit(Coord pc, Coord mc, MapView.ClickInfo inf) {
+			    protected void hit(Coord pc, Coord2d mc, MapView.ClickInfo inf) {
 				if(inf == null)
-				    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags(), mc);
+				    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags(), mc.floor(OCache.posres));
 				else
-				    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags(), mc, (int)inf.gob.id, inf.gob.rc);
+				    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags(), mc.floor(OCache.posres), (int)inf.gob.id, inf.gob.rc.floor(OCache.posres));
 			    }
 			    
 			    protected void nohit(Coord pc) {
