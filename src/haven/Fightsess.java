@@ -238,10 +238,12 @@ public class Fightsess extends Widget {
 
     public boolean globtype(char key, KeyEvent ev) {
 	int c = ev.getKeyChar();
-	if((key == 0) && (c >= KeyEvent.VK_1) && (c < KeyEvent.VK_1 + actions.length)) {
-	    int n = c - KeyEvent.VK_1;
-	    wdgmsg("use", n);
-	    return(true);
+	if((key == 0) && (c >= KeyEvent.VK_0) && (c <= KeyEvent.VK_9)) {
+	    int n = Utils.floormod(c - KeyEvent.VK_0 - 1, 10);
+	    if(n < actions.length) {
+		wdgmsg("use", n);
+		return(true);
+	    }
 	}
 	return(super.globtype(key, ev));
     }
