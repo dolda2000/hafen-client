@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.awt.Color;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 public class Fightsess extends Widget {
@@ -244,6 +245,14 @@ public class Fightsess extends Widget {
 		wdgmsg("use", n);
 		return(true);
 	    }
+	} else if((key == 9) && ((ev.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)) {
+	    Fightview.Relation cur = fv.current;
+	    if(cur != null) {
+		fv.lsrel.remove(cur);
+		fv.lsrel.addLast(cur);
+	    }
+	    fv.wdgmsg("bump", (int)fv.lsrel.get(0).gobid);
+	    return(true);
 	}
 	return(super.globtype(key, ev));
     }
