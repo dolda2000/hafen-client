@@ -151,8 +151,9 @@ public class Fightsess extends Widget {
 	}
 	g.chcolor();
 	g.image(meters, mul);
-	Coord ca = pcc.add(-(actions.length * actpitch) / 2, 110);
+	final int rl = 5;
 	for(int i = 0; i < actions.length; i++) {
+	    Coord ca = pcc.add((actpitch * (i % rl)) - ((rl * actpitch) / 2), 110 + ((i / rl) * actpitch));
 	    Indir<Resource> act = actions[i];
 	    try {
 		if(act != null) {
@@ -200,8 +201,9 @@ public class Fightsess extends Widget {
 		}
 	    }
 	}
-	Coord ca = pcc.add(-(actions.length * actpitch) / 2, 110);
+	final int rl = 5;
 	for(int i = 0; i < actions.length; i++) {
+	    Coord ca = pcc.add((actpitch * (i % rl)) - ((rl * actpitch) / 2), 110 + ((i / rl) * actpitch));
 	    Indir<Resource> act = actions[i];
 	    try {
 		if(act != null) {
@@ -238,10 +240,21 @@ public class Fightsess extends Widget {
     }
 
     public boolean globtype(char key, KeyEvent ev) {
-	int c = ev.getKeyChar();
-	if((key == 0) && (c >= KeyEvent.VK_0) && (c <= KeyEvent.VK_9)) {
-	    int n = Utils.floormod(c - KeyEvent.VK_0 - 1, 10);
-	    if(n < actions.length) {
+	if((ev.getModifiersEx() & (InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK | KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) == 0) {
+	    int n = -1;
+	    switch(key) {
+	    case '1': n = 0; break;
+	    case '2': n = 1; break;
+	    case '3': n = 2; break;
+	    case '4': n = 3; break;
+	    case '5': n = 4; break;
+	    case 'q': n = 5; break;
+	    case 'w': n = 6; break;
+	    case 'e': n = 7; break;
+	    case 'r': n = 8; break;
+	    case 't': n = 9; break;
+	    }
+	    if((n >= 0) && (n < actions.length)) {
 		wdgmsg("use", n);
 		return(true);
 	    }

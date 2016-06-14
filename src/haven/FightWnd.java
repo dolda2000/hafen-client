@@ -290,6 +290,7 @@ public class FightWnd extends Widget {
 	    return(-1);
 	}
 
+	final char[] keys = {'1', '2', '3', '4', '5', 'Q', 'W', 'E', 'R', 'T'};
 	public void draw(GOut g) {
 	    for(int i = 0; i < order.length; i++) {
 		Coord c = itemc(i);
@@ -301,7 +302,7 @@ public class FightWnd extends Widget {
 		    }
 		} catch(Loading l) {}
 		g.chcolor(156, 180, 158, 255);
-		FastText.aprintf(g, c.add(invsq.sz().sub(2, 0)), 1, 1, "%d", (i + 1) % 10);
+		FastText.aprintf(g, c.add(invsq.sz().sub(2, 0)), 1, 1, "%c", keys[i]);
 		g.chcolor();
 	    }
 	}
@@ -320,7 +321,6 @@ public class FightWnd extends Widget {
 	}
 
 	public boolean dropthing(Coord c, Object thing) {
-	    System.err.println(thing);
 	    if(thing instanceof Action) {
 		Action act = (Action)thing;
 		int s = citem(c);
