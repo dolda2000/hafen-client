@@ -203,7 +203,7 @@ public class FightWnd extends Widget {
 		    }
 		}
 		super.mousedown(c, button);
-		if(sel != null) {
+		if((sel != null) && (c.x < sb.c.x)) {
 		    d = ui.grabmouse(this);
 		    drag = sel;
 		    dp = c;
@@ -214,6 +214,7 @@ public class FightWnd extends Widget {
 	}
 
 	public void mousemove(Coord c) {
+	    super.mousemove(c);
 	    if((drag != null) && (dp != null)) {
 		if(c.dist(dp) > 5)
 		    dp = null;
