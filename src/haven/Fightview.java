@@ -206,8 +206,10 @@ public class Fightview extends Widget {
 	    rel.give((Integer)args[1]);
 	    rel.ip = (Integer)args[2];
 	    rel.oip = (Integer)args[3];
+	    /*
 	    rel.off = ((Number)args[4]).doubleValue();
 	    rel.def = ((Number)args[5]).doubleValue();
+	    */
             lsrel.addFirst(rel);
             return;
         } else if(msg == "del") {

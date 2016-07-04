@@ -232,7 +232,9 @@ public class Fightsess extends Widget {
 	    }
 	} else if(msg == "use") {
 	    this.use = (Integer)args[0];
+	    /*
 	    this.useb = (Integer)args[1];
+	    */
 	} else if(msg == "used") {
 	} else {
 	    super.uimsg(msg, args);
