@@ -157,7 +157,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	
     public double abs() {
 	double x = this.x, y = this.y;
-	return(Math.sqrt(x * x) + (y * y));
+	return(Math.sqrt((x * x) + (y * y)));
     }
 
     public Coord norm(double n) {
