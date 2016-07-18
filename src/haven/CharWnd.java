@@ -816,24 +816,32 @@ public class CharWnd extends Window {
 	};
 	public final int id;
 	public Indir<Resource> res;
+	public String title;
 	public int done;
 	public int mtime;
 	private Tex small;
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
 	    public String value() {
 		try {
-		    return(res.get().layer(Resource.tooltip).t);
+		    return(title());
 		} catch(Loading l) {
 		    return("...");
 		}
 	    }
 	};
 
-	private Quest(int id, Indir<Resource> res, int done, int mtime) {
+	private Quest(int id, Indir<Resource> res, String title, int done, int mtime) {
 	    this.id = id;
 	    this.res = res;
+	    this.title = title;
 	    this.done = done;
 	    this.mtime = mtime;
+	}
+
+	public String title() {
+	    if(title != null)
+		return(title);
+	    return(res.get().layer(Resource.tooltip).t);
 	}
 
 	public static class Condition {
@@ -876,7 +884,7 @@ public class CharWnd extends Window {
 		    public void tick(double dt) {
 			if(img == null) {
 			    try {
-				title = (done == QST_DONE?catf:failf).render(res.get().layer(Resource.tooltip).t).tex();
+				title = (done == QST_DONE?catf:failf).render(title()).tex();
 				img = res.get().layer(Resource.imgc).tex();
 				msg = (done == QST_DONE)?qcmp:qfail;
 				/*
@@ -908,18 +916,26 @@ public class CharWnd extends Window {
 	    public final int id;
 	    public final Indir<Resource> res;
 	    public Condition[] cond = {};
+	    public String title;
 	    private QView cqv;
 
-	    public Box(int id, Indir<Resource> res) {
+	    public Box(int id, Indir<Resource> res, String title) {
 		super(Coord.z, "", ifnd);
 		bg = null;
 		this.id = id;
 		this.res = res;
+		this.title = title;
 		refresh();
 	    }
 
 	    protected void added() {
 		resize(parent.sz);
+	    }
+
+	    public String title() {
+		if(title != null)
+		    return(title);
+		return(res.get().layer(Resource.tooltip).t);
 	    }
 
 	    public void refresh() {
@@ -930,7 +946,7 @@ public class CharWnd extends Window {
 		StringBuilder buf = new StringBuilder();
 		Resource res = this.res.get();
 		buf.append("$img[" + res.name + "]\n\n");
-		buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+		buf.append("$b{$font[serif,16]{" + title() + "}}\n\n\n");
 		buf.append(res.layer(Resource.pagina).text);
 		buf.append("\n");
 		for(Condition cond : this.cond) {
@@ -1050,7 +1066,7 @@ public class CharWnd extends Window {
 		public void tick(double dt) {
 		    if(rtitle == null) {
 			try {
-			    rtitle = qtfnd.render(res.get().layer(Resource.tooltip).t).tex();
+			    rtitle = qtfnd.render(title()).tex();
 			    resize();
 			} catch(Loading l) {
 			}
@@ -1115,7 +1131,8 @@ public class CharWnd extends Window {
 	    public Widget create(Widget parent, Object[] args) {
 		int id = (Integer)args[0];
 		Indir<Resource> res = parent.ui.sess.getres((Integer)args[1]);
-		return(new Box(id, res));
+		String title = (args.length > 2)?(String)args[2]:null;
+		return(new Box(id, res, title));
 	    }
 	}
 	public interface Info {
@@ -1831,19 +1848,23 @@ public class CharWnd extends Window {
 		}
 	    }
 	} else if(nm == "quests") {
-	    for(int i = 0; i < args.length; i += 4) {
-		int id = (Integer)args[i];
-		Indir<Resource> res = (args[i + 1] == null)?null:ui.sess.getres((Integer)args[i + 1]);
+	    for(int i = 0; i < args.length;) {
+		int id = (Integer)args[i++];
+		Integer resid = (Integer)args[i++];
+		Indir<Resource> res = (resid == null)?null:ui.sess.getres(resid);
 		if(res != null) {
-		    int st = (Integer)args[i + 2];
-		    int mtime = (Integer)args[i + 3];
+		    int st = (Integer)args[i++];
+		    int mtime = (Integer)args[i++];
+		    String title = null;
+		    if((i < args.length) && (args[i] instanceof String))
+			title = (String)args[i++];
 		    QuestList cl = cqst;
 		    Quest q = cqst.get(id);
 		    if(q == null)
 			q = (cl = dqst).get(id);
 		    if(q == null) {
 			cl = null;
-			q = new Quest(id, res, st, mtime);
+			q = new Quest(id, res, title, st, mtime);
 		    } else {
 			int fst = q.done;
 			q.res = res;
@@ -1860,7 +1881,8 @@ public class CharWnd extends Window {
 		    }
 		    nl.loading = true;
 		} else {
-		    wounds.remove(id);
+		    cqst.remove(id);
+		    dqst.remove(id);
 		}
 	    }
 	} else {
