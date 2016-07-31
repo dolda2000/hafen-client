@@ -1158,14 +1158,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return(camera.proj.toscreen(camera.view.fin(Matrix4f.id).mul4(mloc), sz));
     }
 
-    public Coord3f screenxf(Coord mc) {
+    public Coord3f screenxf(Coord2d mc) {
 	Coord3f cc;
 	try {
 	    cc = getcc();
 	} catch(Loading e) {
 	    return(null);
 	}
-	return(screenxf(new Coord3f(mc.x, mc.y, cc.z)));
+	return(screenxf(new Coord3f((float)mc.x, (float)mc.y, cc.z)));
     }
 
     public double screenangle(Coord2d mc, boolean clip) {
