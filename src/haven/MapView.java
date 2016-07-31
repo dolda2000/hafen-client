@@ -1112,6 +1112,22 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	g.line(bc, bc.add(Coord.sc(a - Math.PI / 4, -10)), 2);
     }
 
+    public Coord3f screenxf(Coord3f mc) {
+	Coord3f mloc = new Coord3f(mc.x, -mc.y, mc.z);
+	/* XXX: Peeking into the camera really is doubtfully nice. */
+	return(camera.proj.toscreen(camera.view.fin(Matrix4f.id).mul4(mloc), sz));
+    }
+
+    public Coord3f screenxf(Coord mc) {
+	Coord3f cc;
+	try {
+	    cc = getcc();
+	} catch(Loading e) {
+	    return(null);
+	}
+	return(screenxf(new Coord3f(mc.x, mc.y, cc.z)));
+    }
+
     public double screenangle(Coord2d mc, boolean clip) {
 	Coord3f cc;
 	try {
