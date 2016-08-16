@@ -287,7 +287,7 @@ public class BuddyWnd extends Window implements Iterable<BuddyWnd.Buddy> {
     }
 
     public BuddyWnd() {
-	super(new Coord(200, 370), "Kin");
+	super(new Coord(width, 370), "Kin");
 	int y = 0;
 	bl = add(new BuddyList(width, 7), new Coord(0, y));
 	y += 195;
