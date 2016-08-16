@@ -150,7 +150,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     private void mapbuttons() {
-	blpanel.add(new IButton("gfx/hud/lbtn-vil", "", "-d", "-h") {
+	blpanel.add(new IButton("gfx/hud/lbtn-claim", "", "-d", "-h") {
 		{tooltip = Text.render("Display personal claims");}
 		public void click() {
 		    if((map != null) && !map.visol(0))
@@ -159,13 +159,22 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			map.disol(0, 1);
 		}
 	    }, 0, 0);
-	blpanel.add(new IButton("gfx/hud/lbtn-claim", "", "-d", "-h") {
+	blpanel.add(new IButton("gfx/hud/lbtn-vil", "", "-d", "-h") {
 		{tooltip = Text.render("Display village claims");}
 		public void click() {
 		    if((map != null) && !map.visol(2))
 			map.enol(2, 3);
 		    else
 			map.disol(2, 3);
+		}
+	    }, 0, 0);
+	blpanel.add(new IButton("gfx/hud/lbtn-rlm", "", "-d", "-h") {
+		{tooltip = Text.render("Display realms");}
+		public void click() {
+		    if((map != null) && !map.visol(4))
+			map.enol(4, 5);
+		    else
+			map.disol(4, 5);
 		}
 	    }, 0, 0);
     }
