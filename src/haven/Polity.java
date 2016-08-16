@@ -29,6 +29,7 @@ package haven;
 import java.awt.Color;
 import java.awt.Font;
 import java.util.*;
+import static haven.BuddyWnd.width;
 
 public class Polity extends Window {
     public final String name;
@@ -91,7 +92,7 @@ public class Polity extends Window {
     public static final Text.Foundry membf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
 
     public Polity(String cap, String name) {
-	super(new Coord(200, 200), cap);
+	super(new Coord(width, 200), cap);
 	this.name = name;
     }
 
@@ -105,7 +106,7 @@ public class Polity extends Window {
 	public void draw(GOut g) {
 	    synchronized(Polity.this) {
 		g.chcolor(0, 0, 0, 255);
-		g.frect(new Coord(0, 0), new Coord(200, 20));
+		g.frect(new Coord(0, 0), new Coord(sz.x, sz.y));
 		g.chcolor(128, 0, 0, 255);
 		g.frect(new Coord(1, 1), new Coord(((sz.x - 2) * auth) / acap, sz.y - 2));
 		g.chcolor();
