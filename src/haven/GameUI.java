@@ -45,7 +45,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private Window invwnd, equwnd, makewnd;
     public Inventory maininv;
     public BuddyWnd buddies;
-    public Polity polity;
+    public final Collection<Polity> polities = new ArrayList<Polity>();
     public HelpWnd help;
     public Collection<DraggedItem> hand = new LinkedList<DraggedItem>();
     private WItem vhand;
@@ -217,8 +217,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    buddies = add((BuddyWnd)child, 187, 50);
 	    buddies.hide();
 	} else if(place == "pol") {
-	    polity = add((Polity)child, 500, 50);
-	    polity.hide();
+	    Polity p = (Polity)child;
+	    polities.add(p);
+	    add(p, 500, 50);
+	    p.hide();
 	} else if(place == "chat") {
 	    chat.addchild(child);
 	} else if(place == "party") {
@@ -241,8 +243,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    updhand();
 		}
 	    }
-	} else if(w == polity) {
-	    polity = null;
+	} else if(polities.contains(w)) {
+	    polities.remove(w);
 	}
     }
     
@@ -310,11 +312,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		belt[slot] = ui.sess.getres((Integer)args[1]);
 	    }
 	} else if(msg == "polowner") {
-	    String o = (String)args[0];
-	    boolean n = ((Integer)args[1]) != 0;
-	    if(o.length() == 0)
-		o = null;
-	    else
+	    int id = (Integer)args[0];
+	    String o = (String)args[1];
+	    boolean n = ((Integer)args[2]) != 0;
+	    if(o != null)
 		o = o.intern();
 	    if(o != polowner) {
 		if(map != null) {
@@ -344,8 +345,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return;
 	} else if((sender == buddies) && (msg == "close")) {
 	    buddies.hide();
-	} else if((sender == polity) && (msg == "close")) {
-	    polity.hide();
+	} else if((polities.contains(sender)) && (msg == "close")) {
+	    sender.hide();
 	} else if((sender == help) && (msg == "close")) {
 	    ui.destroy(help);
 	    help = null;
@@ -386,13 +387,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		buddies.raise();
 		fitwdg(buddies);
 		setfocus(buddies);
-	    }
-	    return(true);
-	} else if(key == 16) {
-	    if((polity != null) && polity.show(!polity.visible)) {
-		polity.raise();
-		fitwdg(polity);
-		setfocus(polity);
 	    }
 	    return(true);
 	}
