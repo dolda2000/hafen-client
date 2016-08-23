@@ -912,20 +912,18 @@ public class CharWnd extends Window {
 		});
 	}
 
-	public static class Box extends LoadingTextBox implements Info {
+	public static class Box extends Widget implements Info {
 	    public final int id;
 	    public final Indir<Resource> res;
+	    public final String title;
 	    public Condition[] cond = {};
-	    public String title;
 	    private QView cqv;
 
 	    public Box(int id, Indir<Resource> res, String title) {
-		super(Coord.z, "", ifnd);
-		bg = null;
+		super(Coord.z);
 		this.id = id;
 		this.res = res;
 		this.title = title;
-		refresh();
 	    }
 
 	    protected void added() {
@@ -939,7 +937,6 @@ public class CharWnd extends Window {
 	    }
 
 	    public void refresh() {
-		settext(new Indir<String>() {public String get() {return(rendertext());}});
 	    }
 
 	    public String rendertext() {
@@ -1004,8 +1001,6 @@ public class CharWnd extends Window {
 		if(cqv != null)
 		    cqv.reqdestroy();
 	    }
-
-	    public int questid() {return(id);}
 
 	    static final Text.Furnace qtfnd = new BlurFurn(new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD, 16)).aa(true), 2, 1, Color.BLACK);
 	    static final Text.Foundry qcfnd = new Text.Foundry(Text.sans, 12).aa(true);
@@ -1121,8 +1116,65 @@ public class CharWnd extends Window {
 		}
 	    }
 
+	    public int questid() {return(id);}
+
 	    public Widget qview() {
 		return(cqv = new QView());
+	    }
+	}
+
+	public static class DefaultBox extends Box {
+	    private Widget current;
+	    private boolean refresh = true;
+	    public List<Pair<String, String>> options = Collections.emptyList();
+
+	    public DefaultBox(int id, Indir<Resource> res, String title) {
+		super(id, res, title);
+	    }
+
+	    public void draw(GOut g) {
+		refresh: if(refresh) {
+		    Scrollport newch = new Scrollport(sz);
+		    RichText text;
+		    try {
+			text = ifnd.render(rendertext(), newch.cont.sz.x - 20);
+		    } catch(Loading l) {
+			break refresh;
+		    }
+		    Widget prev;
+		    int y = 10;
+		    newch.addchild(prev = new Img(text.tex()), new Coord(10, y));
+		    y += prev.sz.y + 10;
+		    for(Pair<String, String> opt : options) {
+			newch.addchild(prev = new Button(newch.cont.sz.x - 20, opt.b, false) {
+				public void click() {
+				    DefaultBox.this.wdgmsg("opt", opt.a);
+				}
+			    }, new Coord(10, y));
+			y += prev.sz.y + 5;
+		    }
+		    if(current != null)
+			current.destroy();
+		    current = add(newch, Coord.z);
+		    refresh = false;
+		}
+		super.draw(g);
+	    }
+
+	    public void refresh() {
+		refresh = true;
+	    }
+
+	    public void uimsg(String msg, Object... args) {
+		if(msg == "opts") {
+		    List<Pair<String, String>> opts = new ArrayList<>();
+		    for(int i = 0; i < args.length; i += 2)
+			opts.add(new Pair<>((String)args[i], (String)args[i + 1]));
+		    this.options = opts;
+		    refresh();
+		} else {
+		    super.uimsg(msg, args);
+		}
 	    }
 	}
 
@@ -1132,7 +1184,7 @@ public class CharWnd extends Window {
 		int id = (Integer)args[0];
 		Indir<Resource> res = parent.ui.sess.getres((Integer)args[1]);
 		String title = (args.length > 2)?(String)args[2]:null;
-		return(new Box(id, res, title));
+		return(new DefaultBox(id, res, title));
 	    }
 	}
 	public interface Info {
