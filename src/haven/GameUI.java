@@ -56,7 +56,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     @SuppressWarnings("unchecked")
     public Indir<Resource>[] belt = new Indir[144];
     public Belt beltwdg;
-    public String polowner;
+    public final Map<Integer, String> polowners = new HashMap<Integer, String>();
     public Bufflist buffs;
 
     public abstract class Belt extends Widget {
@@ -317,17 +317,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    boolean n = ((Integer)args[2]) != 0;
 	    if(o != null)
 		o = o.intern();
-	    if(o != polowner) {
-		if(map != null) {
-		    if(o == null) {
-			if(polowner != null)
-			    map.setpoltext("Leaving " + polowner);
-		    } else {
-			map.setpoltext("Entering " + o);
-		    }
+	    String cur = polowners.get(id);
+	    if(map != null) {
+		if((o != null) && (cur == null)) {
+		    map.setpoltext(id, "Entering " + o);
+		} else if((o == null) && (cur != null)) {
+		    map.setpoltext(id, "Leaving " + cur);
 		}
-		polowner = o;
 	    }
+	    polowners.put(id, o);
 	} else if(msg == "showhelp") {
 	    Indir<Resource> res = ui.sess.getres((Integer)args[0]);
 	    if(help == null)
