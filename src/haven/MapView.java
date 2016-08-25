@@ -1109,29 +1109,45 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
-    private static final Text.Furnace polownertf = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 30).aa(true), 3, 1, Color.BLACK);
-    private Text polownert = null;
-    private long polchtm = 0;
+    static class PolText {
+	Text text; long tm;
+	PolText(Text text, long tm) {this.text = text; this.tm = tm;}
+    }
 
-    public void setpoltext(String text) {
-	polownert = polownertf.render(text);
-	polchtm = System.currentTimeMillis();
+    private static final Text.Furnace polownertf = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 30).aa(true), 3, 1, Color.BLACK);
+    private final Map<Integer, PolText> polowners = new HashMap<Integer, PolText>();
+
+    public void setpoltext(int id, String text) {
+	synchronized(polowners) {
+	    polowners.put(id, new PolText(polownertf.render(text), System.currentTimeMillis()));
+	}
     }
 
     private void poldraw(GOut g) {
+	if(polowners.isEmpty())
+	    return;
 	long now = System.currentTimeMillis();
-	long poldt = now - polchtm;
-	if((polownert != null) && (poldt < 6000)) {
-	    int a;
-	    if(poldt < 1000)
-		a = (int)((255 * poldt) / 1000);
-	    else if(poldt < 4000)
-		a = 255;
-	    else
-		a = (int)((255 * (2000 - (poldt - 4000))) / 2000);
-	    g.chcolor(255, 255, 255, a);
-	    g.aimage(polownert.tex(), sz.div(2), 0.5, 0.5);
-	    g.chcolor();
+	synchronized(polowners) {
+	    int y = (sz.y - polowners.values().stream().map(t -> t.text.sz().y).reduce(0, (a, b) -> a + b + 10)) / 2;
+	    for(Iterator<PolText> i = polowners.values().iterator(); i.hasNext();) {
+		PolText t = i.next();
+		long poldt = now - t.tm;
+		if(poldt < 6000) {
+		    int a;
+		    if(poldt < 1000)
+			a = (int)((255 * poldt) / 1000);
+		    else if(poldt < 4000)
+			a = 255;
+		    else
+			a = (int)((255 * (2000 - (poldt - 4000))) / 2000);
+		    g.chcolor(255, 255, 255, a);
+		    g.aimage(t.text.tex(), new Coord((sz.x - t.text.sz().x) / 2, y), 0.0, 0.0);
+		    y += t.text.sz().y + 10;
+		    g.chcolor();
+		} else {
+		    i.remove();
+		}
+	    }
 	}
     }
     
