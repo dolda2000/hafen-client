@@ -105,7 +105,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     }
 
     public Coord mul(double f) {
-	return(new Coord((int)(x * f), (int)(y * f)));
+	return(new Coord((int)Math.round(x * f), (int)Math.round(y * f)));
     }
 	
     public Coord inv() {
@@ -155,6 +155,15 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	}
     }
 	
+    public double abs() {
+	double x = this.x, y = this.y;
+	return(Math.sqrt((x * x) + (y * y)));
+    }
+
+    public Coord norm(double n) {
+	return(mul(n / abs()));
+    }
+
     public double dist(Coord o) {
 	long dx = o.x - x;
 	long dy = o.y - y;

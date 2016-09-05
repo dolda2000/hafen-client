@@ -538,6 +538,22 @@ public class RichText extends Text {
 	    }
 	    return(buf.toString());
 	}
+
+	public static String col2a(Color col) {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append("$col[");
+	    buf.append(col.getRed());
+	    buf.append(",");
+	    buf.append(col.getGreen());
+	    buf.append(",");
+	    buf.append(col.getBlue());
+	    if(col.getAlpha() != 255) {
+		buf.append(",");
+		buf.append(col.getAlpha());
+	    }
+	    buf.append("]");
+	    return(buf.toString());
+	}
     }
     
     public static class Foundry {
