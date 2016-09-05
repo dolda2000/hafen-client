@@ -46,7 +46,7 @@ public class Scrollport extends Widget {
 	    }, sz.x, 0, 1, 0);
 	cont = add(new Scrollcont(sz.sub(bar.sz.x, 0)) {
 		public void update() {
-		    bar.max = Math.max(0, csz().y - sz.y);
+		    bar.max = Math.max(0, csz().y + 10 - sz.y);
 		}
 	    }, Coord.z);
     }

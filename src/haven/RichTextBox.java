@@ -65,4 +65,10 @@ public class RichTextBox extends Widget {
 	sb.ch(amount * 20);
 	return(true);
     }
+
+    public void resize(Coord sz) {
+	super.resize(sz);
+	sb.c = new Coord(sz.x - sb.sz.x, 0);
+	sb.resize(sz.y);
+    }
 }
