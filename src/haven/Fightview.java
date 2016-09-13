@@ -55,6 +55,8 @@ public class Fightview extends Widget {
 	public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
 	public double off, def;
 	public int ip, oip;
+	public Indir<Resource> lastact = null;
+	public long lastuse = 0;
         
         public Relation(long gobid) {
             this.gobid = gobid;
@@ -79,6 +81,11 @@ public class Fightview extends Widget {
 	    ui.destroy(ava);
 	    ui.destroy(give);
 	    ui.destroy(purs);
+	}
+
+	public void use(Indir<Resource> act) {
+	    lastact = act;
+	    lastuse = System.currentTimeMillis();
 	}
     }
     
@@ -230,6 +237,10 @@ public class Fightview extends Widget {
 	    rel.off = ((Number)args[1]).doubleValue();
 	    rel.def = ((Number)args[2]).doubleValue();
             return;
+	} else if(msg == "ruse") {
+	    Relation rel = getrel((Integer)args[0]);
+	    rel.use(ui.sess.getres((Integer)args[1]));
+	    return;
         } else if(msg == "cur") {
             try {
                 Relation rel = getrel((Integer)args[0]);

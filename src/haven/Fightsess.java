@@ -115,6 +115,9 @@ public class Fightsess extends Widget {
     private static final Coord d1c = new Coord(119, 33);
     private static final Coord o2c = new Coord(181, 9);
     private static final Coord d2c = new Coord(181, 33);
+    private static final Coord usec = new Coord(300, 9);
+    private Indir<Resource> lastact = null;
+    private Text lastacttip = null;
     public void draw(GOut g) {
 	updatepos();
 	double now = System.currentTimeMillis() / 1000.0;
@@ -148,8 +151,29 @@ public class Fightsess extends Widget {
 	    g.frect(mul.add(o2c), new Coord((int)Math.round(msz.x * fv.current.off), msz.y));
 	    g.chcolor(0, 0, 255, 224);
 	    g.frect(mul.add(d2c), new Coord((int)Math.round(msz.x * fv.current.def), msz.y));
+	    g.chcolor();
+
+	    try {
+		Indir<Resource> lastact = fv.current.lastact;
+		if(lastact != this.lastact) {
+		    this.lastact = lastact;
+		    this.lastacttip = null;
+		}
+		long lastuse = fv.current.lastuse;
+		if(lastact != null) {
+		    Tex ut = lastact.get().layer(Resource.imgc).tex();
+		    g.image(ut, mul.add(usec));
+		    if(now - (lastuse / 1000.0) < 1) {
+			double a = now - (lastuse / 1000.0);
+			Coord off = new Coord((int)(a * ut.sz().x / 2), (int)(a * ut.sz().y / 2));
+			g.chcolor(255, 255, 255, (int)(255 * (1 - a)));
+			g.image(ut, mul.add(usec).sub(off), ut.sz().add(off.mul(2)));
+			g.chcolor();
+		    }
+		}
+	    } catch(Loading l) {
+	    }
 	}
-	g.chcolor();
 	g.image(meters, mul);
 	final int rl = 5;
 	for(int i = 0; i < actions.length; i++) {
@@ -217,6 +241,15 @@ public class Fightsess extends Widget {
 	    } catch(Loading l) {}
 	    ca.x += actpitch;
 	}
+	Coord lac = pcc.add(-meters.sz().x / 2, 40).add(usec);
+	try {
+	    Indir<Resource> lastact = this.lastact;
+	    if((lastact != null) && c.isect(lac, lastact.get().layer(Resource.imgc).sz)) {
+		if(lastacttip == null)
+		    lastacttip = Text.render(lastact.get().layer(Resource.tooltip).t);
+		return(lastacttip);
+	    }
+	} catch(Loading l) {}
 	return(null);
     }
 
