@@ -1085,9 +1085,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 
 	public boolean globtype(char key, KeyEvent ev) {
-	    if((key < '0') || (key > '9'))
+	    if(key != 0)
 		return(false);
-	    int i = Utils.floormod(key - '0' - 1, 10);
+	    int c = ev.getKeyCode();
+	    if((key < KeyEvent.VK_0) || (key > KeyEvent.VK_9))
+		return(false);
+	    int i = Utils.floormod(key - KeyEvent.VK_0 - 1, 10);
 	    boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
 	    if(M) {
 		curbelt = i;

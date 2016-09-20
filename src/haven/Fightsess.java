@@ -275,20 +275,17 @@ public class Fightsess extends Widget {
     }
 
     public boolean globtype(char key, KeyEvent ev) {
-	if((ev.getModifiersEx() & (InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK | KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) == 0) {
+	if((key == 0) && (ev.getModifiersEx() & (InputEvent.CTRL_DOWN_MASK | KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) == 0) {
 	    int n = -1;
-	    switch(key) {
-	    case '1': n = 0; break;
-	    case '2': n = 1; break;
-	    case '3': n = 2; break;
-	    case '4': n = 3; break;
-	    case '5': n = 4; break;
-	    case 'q': n = 5; break;
-	    case 'w': n = 6; break;
-	    case 'e': n = 7; break;
-	    case 'r': n = 8; break;
-	    case 't': n = 9; break;
+	    switch(ev.getKeyCode()) {
+	    case KeyEvent.VK_1: n = 0; break;
+	    case KeyEvent.VK_2: n = 1; break;
+	    case KeyEvent.VK_3: n = 2; break;
+	    case KeyEvent.VK_4: n = 3; break;
+	    case KeyEvent.VK_5: n = 4; break;
 	    }
+	    if((n >= 0) && ((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0))
+		n += 5;
 	    if((n >= 0) && (n < actions.length)) {
 		wdgmsg("use", n);
 		return(true);
