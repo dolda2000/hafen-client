@@ -41,7 +41,8 @@ public class Fightview extends Widget {
     public Relation current = null;
     public Indir<Resource> blk, batk, iatk;
     public double atkcs, atkct;
-    public double off, def;
+    public Indir<Resource> lastact = null;
+    public long lastuse = 0;
     private GiveButton curgive;
     private Avaview curava;
     private Button curpurs;
@@ -53,7 +54,6 @@ public class Fightview extends Widget {
 	public final GiveButton give;
 	public final Button purs;
 	public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
-	public double off, def;
 	public int ip, oip;
 	public Indir<Resource> lastact = null;
 	public long lastuse = 0;
@@ -87,6 +87,11 @@ public class Fightview extends Widget {
 	    lastact = act;
 	    lastuse = System.currentTimeMillis();
 	}
+    }
+
+    public void use(Indir<Resource> act) {
+	lastact = act;
+	lastuse = System.currentTimeMillis();
     }
     
     @RName("frv")
@@ -213,10 +218,6 @@ public class Fightview extends Widget {
 	    rel.give((Integer)args[1]);
 	    rel.ip = (Integer)args[2];
 	    rel.oip = (Integer)args[3];
-	    /*
-	    rel.off = ((Number)args[4]).doubleValue();
-	    rel.def = ((Number)args[5]).doubleValue();
-	    */
             lsrel.addFirst(rel);
             return;
         } else if(msg == "del") {
@@ -232,14 +233,12 @@ public class Fightview extends Widget {
 	    rel.ip = (Integer)args[2];
 	    rel.oip = (Integer)args[3];
             return;
-	} else if(msg == "updod") {
-            Relation rel = getrel((Integer)args[0]);
-	    rel.off = ((Number)args[1]).doubleValue();
-	    rel.def = ((Number)args[2]).doubleValue();
-            return;
+	} else if(msg == "used") {
+	    use((args[0] == null)?null:ui.sess.getres((Integer)args[0]));
+	    return;
 	} else if(msg == "ruse") {
 	    Relation rel = getrel((Integer)args[0]);
-	    rel.use(ui.sess.getres((Integer)args[1]));
+	    rel.use((args[1] == null)?null:ui.sess.getres((Integer)args[1]));
 	    return;
         } else if(msg == "cur") {
             try {
@@ -261,10 +260,6 @@ public class Fightview extends Widget {
 	} else if(msg == "atk") {
 	    batk = n2r((Integer)args[0]);
 	    iatk = n2r((Integer)args[1]);
-	    return;
-        } else if(msg == "offdef") {
-	    off = ((Number)args[0]).doubleValue();
-	    def = ((Number)args[1]).doubleValue();
 	    return;
 	}
         super.uimsg(msg, args);
