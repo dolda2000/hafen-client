@@ -32,8 +32,13 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 public class Fightsess extends Widget {
-    public static final Tex meters = Resource.loadtex("gfx/hud/combat/cmbmeters");
-    public static final Tex lframe = Resource.loadtex("gfx/hud/combat/lframe");
+    public static final Tex cdframe = Resource.loadtex("gfx/hud/combat/cool");
+    public static final Tex actframe = Buff.frame;
+    public static final Coord actframeo = Buff.imgoff;
+    public static final Tex indframe = Resource.loadtex("gfx/hud/combat/indframe");
+    public static final Coord indframeo = (indframe.sz().sub(32, 32)).div(2);
+    public static final Tex useframe = Resource.loadtex("gfx/hud/combat/lastframe");
+    public static final Coord useframeo = (useframe.sz().sub(32, 32)).div(2);
     public static final int actpitch = 50;
     public final Indir<Resource>[] actions;
     public final boolean[] dyn;
@@ -109,15 +114,16 @@ public class Fightsess extends Widget {
 	public Integer value() {return(fv.current.oip);}
     };
 
-    private static final Coord cmc = new Coord(150, 27);
-    private static final Coord msz = new Coord(92, 12);
-    private static final Coord o1c = new Coord(119, 9);
-    private static final Coord d1c = new Coord(119, 33);
-    private static final Coord o2c = new Coord(181, 9);
-    private static final Coord d2c = new Coord(181, 33);
-    private static final Coord usec = new Coord(300, 9);
-    private Indir<Resource> lastact = null;
-    private Text lastacttip = null;
+    private static Coord actc(int i) {
+	int rl = 5;
+	return(new Coord((actpitch * (i % rl)) - (((rl - 1) * actpitch) / 2), 125 + ((i / rl) * actpitch)));
+    }
+
+    private static final Coord cmc = new Coord(0, 67);
+    private static final Coord usec1 = new Coord(-65, 67);
+    private static final Coord usec2 = new Coord(65, 67);
+    private Indir<Resource> lastact1 = null, lastact2 = null;
+    private Text lastacttip1 = null, lastacttip2 = null;
     public void draw(GOut g) {
 	updatepos();
 	double now = System.currentTimeMillis() / 1000.0;
@@ -135,65 +141,74 @@ public class Fightsess extends Widget {
 		fxon(fv.current.gobid, tgtfx);
 	}
 
-	Coord mul = pcc.add(-meters.sz().x / 2, 40);
-	if(now < fv.atkct) {
-	    double a = (now - fv.atkcs) / (fv.atkct - fv.atkcs);
-	    g.chcolor(255, 0, 128, 224);
-	    g.fellipse(mul.add(cmc), new Coord(24, 24), Math.PI / 2 - (Math.PI * 2 * Math.min(1.0 - a, 1.0)), Math.PI / 2);
-	    g.chcolor();
+	{
+	    Coord cdc = pcc.add(cmc);
+	    if(now < fv.atkct) {
+		double a = (now - fv.atkcs) / (fv.atkct - fv.atkcs);
+		g.chcolor(255, 0, 128, 224);
+		g.fellipse(cdc, new Coord(24, 24), Math.PI / 2 - (Math.PI * 2 * Math.min(1.0 - a, 1.0)), Math.PI / 2);
+		g.chcolor();
+	    }
+	    g.image(cdframe, cdc.sub(cdframe.sz().div(2)));
 	}
-	g.chcolor(255, 0, 0, 224);
-	g.frect(mul.add(o1c).sub((int)Math.round(msz.x * fv.off), 0), new Coord((int)Math.round(msz.x * fv.off), msz.y));
-	g.chcolor(0, 0, 255, 224);
-	g.frect(mul.add(d1c).sub((int)Math.round(msz.x * fv.def), 0), new Coord((int)Math.round(msz.x * fv.def), msz.y));
+	try {
+	    Indir<Resource> lastact = fv.lastact;
+	    if(lastact != this.lastact1) {
+		this.lastact1 = lastact;
+		this.lastacttip1 = null;
+	    }
+	    long lastuse = fv.lastuse;
+	    if(lastact != null) {
+		Tex ut = lastact.get().layer(Resource.imgc).tex();
+		Coord useul = pcc.add(usec1).sub(ut.sz().div(2));
+		g.image(ut, useul);
+		g.image(useframe, useul.sub(useframeo));
+		double a = now - (lastuse / 1000.0);
+		if(a < 1) {
+		    Coord off = new Coord((int)(a * ut.sz().x / 2), (int)(a * ut.sz().y / 2));
+		    g.chcolor(255, 255, 255, (int)(255 * (1 - a)));
+		    g.image(ut, useul.sub(off), ut.sz().add(off.mul(2)));
+		    g.chcolor();
+		}
+	    }
+	} catch(Loading l) {
+	}
 	if(fv.current != null) {
-	    g.chcolor(255, 0, 0, 224);
-	    g.frect(mul.add(o2c), new Coord((int)Math.round(msz.x * fv.current.off), msz.y));
-	    g.chcolor(0, 0, 255, 224);
-	    g.frect(mul.add(d2c), new Coord((int)Math.round(msz.x * fv.current.def), msz.y));
-	    g.chcolor();
-
 	    try {
 		Indir<Resource> lastact = fv.current.lastact;
-		if(lastact != this.lastact) {
-		    this.lastact = lastact;
-		    this.lastacttip = null;
+		if(lastact != this.lastact2) {
+		    this.lastact2 = lastact;
+		    this.lastacttip2 = null;
 		}
 		long lastuse = fv.current.lastuse;
 		if(lastact != null) {
 		    Tex ut = lastact.get().layer(Resource.imgc).tex();
-		    g.image(ut, mul.add(usec));
-		    if(now - (lastuse / 1000.0) < 1) {
-			double a = now - (lastuse / 1000.0);
+		    Coord useul = pcc.add(usec2).sub(ut.sz().div(2));
+		    g.image(ut, useul);
+		    g.image(useframe, useul.sub(useframeo));
+		    double a = now - (lastuse / 1000.0);
+		    if(a < 1) {
 			Coord off = new Coord((int)(a * ut.sz().x / 2), (int)(a * ut.sz().y / 2));
 			g.chcolor(255, 255, 255, (int)(255 * (1 - a)));
-			g.image(ut, mul.add(usec).sub(off), ut.sz().add(off.mul(2)));
+			g.image(ut, useul.sub(off), ut.sz().add(off.mul(2)));
 			g.chcolor();
 		    }
 		}
 	    } catch(Loading l) {
 	    }
 	}
-	g.image(meters, mul);
-	final int rl = 5;
 	for(int i = 0; i < actions.length; i++) {
-	    Coord ca = pcc.add((actpitch * (i % rl)) - ((rl * actpitch) / 2), 110 + ((i / rl) * actpitch));
+	    Coord ca = pcc.add(actc(i));
 	    Indir<Resource> act = actions[i];
 	    try {
 		if(act != null) {
 		    Tex img = act.get().layer(Resource.imgc).tex();
+		    ca = ca.sub(img.sz().div(2));
 		    g.image(img, ca);
-		    g.image(dyn[i]?lframe:Buff.frame, ca.sub(Buff.imgoff));
 		    if(i == use) {
-			g.chcolor(255, 0, 128, 255);
-			Coord cc = ca.add(img.sz().x / 2, img.sz().y + 5);
-			g.frect(cc.sub(2, 2), new Coord(5, 5));
-			g.chcolor();
-		    } else if(i == useb) {
-			g.chcolor(128, 0, 255, 255);
-			Coord cc = ca.add(img.sz().x / 2, img.sz().y + 5);
-			g.frect(cc.sub(2, 2), new Coord(5, 5));
-			g.chcolor();
+			g.image(indframe, ca.sub(indframeo));
+		    } else {
+			g.image(actframe, ca.sub(actframeo));
 		    }
 		}
 	    } catch(Loading l) {}
@@ -202,6 +217,8 @@ public class Fightsess extends Widget {
     }
 
     private Widget prevtt = null;
+    private Text acttip = null;
+    public static final String[] keytips = {"1", "2", "3", "4", "5", "Shift+1", "Shift+2", "Shift+3", "Shift+4", "Shift+5"};
     public Object tooltip(Coord c, Widget prev) {
 	for(Buff buff : fv.buffs.children(Buff.class)) {
 	    Coord dc = pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y);
@@ -227,27 +244,46 @@ public class Fightsess extends Widget {
 	}
 	final int rl = 5;
 	for(int i = 0; i < actions.length; i++) {
-	    Coord ca = pcc.add((actpitch * (i % rl)) - ((rl * actpitch) / 2), 110 + ((i / rl) * actpitch));
+	    Coord ca = pcc.add(actc(i));
 	    Indir<Resource> act = actions[i];
 	    try {
 		if(act != null) {
 		    Tex img = act.get().layer(Resource.imgc).tex();
+		    ca = ca.sub(img.sz().div(2));
 		    if(c.isect(ca, img.sz())) {
 			if(dyn[i])
 			    return("Combat discovery");
-			return(act.get().layer(Resource.tooltip).t);
+			String tip = act.get().layer(Resource.tooltip).t + " ($b{$col[255,128,0]{" + keytips[i] + "}})";
+			if((acttip == null) || !acttip.text.equals(tip))
+			    acttip = RichText.render(tip, -1);
+			return(acttip);
 		    }
 		}
 	    } catch(Loading l) {}
 	    ca.x += actpitch;
 	}
-	Coord lac = pcc.add(-meters.sz().x / 2, 40).add(usec);
 	try {
-	    Indir<Resource> lastact = this.lastact;
-	    if((lastact != null) && c.isect(lac, lastact.get().layer(Resource.imgc).sz)) {
-		if(lastacttip == null)
-		    lastacttip = Text.render(lastact.get().layer(Resource.tooltip).t);
-		return(lastacttip);
+	    Indir<Resource> lastact = this.lastact1;
+	    if(lastact != null) {
+		Coord usesz = lastact.get().layer(Resource.imgc).sz;
+		Coord lac = pcc.add(usec1);
+		if(c.isect(lac.sub(usesz.div(2)), usesz)) {
+		    if(lastacttip1 == null)
+			lastacttip1 = Text.render(lastact.get().layer(Resource.tooltip).t);
+		    return(lastacttip1);
+		}
+	    }
+	} catch(Loading l) {}
+	try {
+	    Indir<Resource> lastact = this.lastact2;
+	    if(lastact != null) {
+		Coord usesz = lastact.get().layer(Resource.imgc).sz;
+		Coord lac = pcc.add(usec2);
+		if(c.isect(lac.sub(usesz.div(2)), usesz)) {
+		    if(lastacttip2 == null)
+			lastacttip2 = Text.render(lastact.get().layer(Resource.tooltip).t);
+		    return(lastacttip2);
+		}
 	    }
 	} catch(Loading l) {}
 	return(null);
