@@ -490,6 +490,7 @@ public class FightWnd extends Widget {
 	    }
 	} else if(nm == "use") {
 	    usesave = (Integer)args[0];
+	    savelist.change(Integer.valueOf(usesave));
 	} else if(nm == "max") {
 	    maxact = (Integer)args[0];
 	    recount();
