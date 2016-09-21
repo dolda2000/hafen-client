@@ -32,7 +32,7 @@ import java.io.*;
 import java.lang.ref.*;
 
 public class Session {
-    public static final int PVER = 6;
+    public static final int PVER = 7;
 
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
