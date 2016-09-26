@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.awt.Color;
+import java.awt.event.KeyEvent;
 import static haven.CharWnd.attrf;
 import static haven.Window.wbox;
 import static haven.Inventory.invsq;
@@ -447,8 +448,14 @@ public class FightWnd extends Widget {
     }
 
     public class Savelist extends Listbox<Integer> {
+	private int edit = -1;
+	private Text.Line redit = null;
+	private LineEdit nmed;
+	private long focusstart;
+
 	public Savelist(int w, int h) {
 	    super(w, h, attrf.height() + 2);
+	    setcanfocus(true);
 	    sel = Integer.valueOf(0);
 	}
 
@@ -461,9 +468,88 @@ public class FightWnd extends Widget {
 	    g.chcolor((n % 2 == 0)?CharWnd.every:CharWnd.other);
 	    g.frect(Coord.z, g.sz);
 	    g.chcolor();
-	    g.aimage(saves[n].tex(), new Coord(20, itemh / 2), 0.0, 0.5);
+	    if(n == edit) {
+		if(redit == null)
+		    redit = attrf.render(nmed.line);
+		g.aimage(redit.tex(), new Coord(20, itemh / 2), 0.0, 0.5);
+		if(hasfocus && (((System.currentTimeMillis() - focusstart) % 1000) < 500)) {
+		    int cx = redit.advance(nmed.point);
+		    g.chcolor(255, 255, 255, 255);
+		    Coord co = new Coord(20 + cx + 1, (g.sz.y - redit.sz().y) / 2);
+		    g.line(co, co.add(0, redit.sz().y), 1);
+		    g.chcolor();
+		}
+	    } else {
+		g.aimage(saves[n].tex(), new Coord(20, itemh / 2), 0.0, 0.5);
+	    }
 	    if(n == usesave)
 		g.aimage(CheckBox.smark, new Coord(itemh / 2, itemh / 2), 0.5, 0.5);
+	}
+
+	private Coord lc = null;
+	private long lt = 0;
+	public boolean mousedown(Coord c, int button) {
+	    boolean ret = super.mousedown(c, button);
+	    if(ret && (button == 1)) {
+		long now = System.currentTimeMillis();
+		if(((now - lt) < 500) && (c.dist(lc) < 10) && (sel != null) && (saves[sel] != unused)) {
+		    if(sel == usesave) {
+			edit = sel;
+			nmed = new LineEdit(saves[sel].text) {
+				protected void done(String line) {
+				    saves[edit] = attrf.render(line);
+				    edit = -1;
+				    nmed = null;
+				}
+
+				protected void changed() {
+				    redit = null;
+				}
+			    };
+			redit = null;
+			parent.setfocus(this);
+			focusstart = now;
+		    } else {
+			load(sel);
+			use(sel);
+		    }
+		} else {
+		    lt = now;
+		    lc = c;
+		}
+	    }
+	    return(ret);
+	}
+
+	public void change(Integer sel) {
+	    super.change(sel);
+	    if((edit != -1) && (edit != sel)) {
+		edit = -1;
+		redit = null;
+		nmed = null;
+	    }
+	}
+
+	public boolean type(char c, KeyEvent ev) {
+	    if(edit != -1) {
+		if(c == 27) {
+		    edit = -1;
+		    redit = null;
+		    nmed = null;
+		    return(true);
+		} else {
+		    return(nmed.key(ev));
+		}
+	    }
+	    return(super.type(c, ev));
+	}
+
+	public boolean keydown(KeyEvent ev) {
+	    if(edit != -1) {
+		nmed.key(ev);
+		return(true);
+	    }
+	    return(super.keydown(ev));
 	}
     }
 
@@ -481,6 +567,8 @@ public class FightWnd extends Widget {
     public void save(int n) {
 	List<Object> args = new LinkedList<Object>();
 	args.add(n);
+	if(saves[n] != unused)
+	    args.add(saves[n].text);
 	for(int i = 0; i < order.length; i++) {
 	    if(order[i] == null) {
 		args.add(null);
@@ -578,10 +666,14 @@ public class FightWnd extends Widget {
 	} else if(nm == "saved") {
 	    int fl = (Integer)args[0];
 	    for(int i = 0; i < nsave; i++) {
-		if((fl & (1 << i)) != 0)
-		    saves[i] = attrf.render(String.format("Saved school %d", i + 1));
-		else
+		if((fl & (1 << i)) != 0) {
+		    if(args[i + 1] instanceof String)
+			saves[i] = attrf.render((String)args[i + 1]);
+		    else
+			saves[i] = attrf.render(String.format("Saved school %d", i + 1));
+		} else {
 		    saves[i] = unused;
+		}
 	    }
 	} else if(nm == "use") {
 	    usesave = (Integer)args[0];
