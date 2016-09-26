@@ -188,6 +188,13 @@ public class FightWnd extends Widget {
 	    return(ic.isect(new Coord(sz.x - 25 - add[0].sz().x, by), add[0].sz()));
 	}
 
+	public void drag(Action act) {
+	    if(d == null)
+		d = ui.grabmouse(this);
+	    drag = act;
+	    dp = null;
+	}
+
 	public boolean mousedown(Coord c, int button) {
 	    if(button == 1) {
 		int idx = (c.y / itemh) + sb.val;
@@ -274,8 +281,23 @@ public class FightWnd extends Widget {
 	}
     }
 
+    public int findorder(Action a) {
+	for(int i = 0; i < order.length; i++) {
+	    if(order[i] == a)
+		return(i);
+	}
+	return(-1);
+    }
+
     public static final String[] keys = {"1", "2", "3", "4", "5", "\u21e71", "\u21e72", "\u21e73", "\u21e74", "\u21e75"};
     public class BView extends Widget implements DropTarget {
+	private UI.Grab grab;
+	private Action drag;
+	private Coord dp;
+	private final Coord[] animoff = new Coord[order.length];
+	private final double[] animpr = new double[order.length];
+	private boolean anim = false;
+
 	private BView() {
 	    super(new Coord(((invsq.sz().x + 2) * (order.length - 1)) + (10 * ((order.length - 1) / 5)), 0).add(invsq.sz()));
 	}
@@ -298,13 +320,28 @@ public class FightWnd extends Widget {
 		this.keys[i] = Text.render(FightWnd.keys[i]).tex();
 	}
 	public void draw(GOut g) {
-	    for(int i = 0; i < order.length; i++) {
+	    int[] reo = null;
+	    if(anim) {
+		reo = new int[order.length];
+		for(int i = 0, a = 0, b = order.length - 1; i < order.length; i++) {
+		    if(animoff[i] == null)
+			reo[a++] = i;
+		    else
+			reo[b--] = i;
+		}
+	    }
+	    for(int io = 0; io < order.length; io++) {
+		int i = (reo == null)?io:reo[io];
 		Coord c = itemc(i);
 		g.image(invsq, c);
 		Action act = order[i];
 		try {
 		    if(act != null) {
-			g.image(act.res.get().layer(Resource.imgc).tex(), c.add(1, 1));
+			Coord ic = c.add(1, 1);
+			if(animoff[i] != null) {
+			    ic = ic.add(animoff[i].mul(Math.pow(1.0 - animpr[i], 3)));
+			}
+			g.image(act.res.get().layer(Resource.imgc).tex(), ic);
 		    }
 		} catch(Loading l) {}
 		g.chcolor(156, 180, 158, 255);
@@ -314,7 +351,20 @@ public class FightWnd extends Widget {
 	}
 
 	public boolean mousedown(Coord c, int button) {
-	    if(button == 3) {
+	    if(button == 1) {
+		int s = citem(c);
+		if(s >= 0) {
+		    Action act = order[s];
+		    actlist.change(act);
+		    actlist.display();
+		    if(act != null) {
+			grab = ui.grabmouse(this);
+			drag = act;
+			dp = c;
+		    }
+		    return(true);
+		}
+	    } else if(button == 3) {
 		int s = citem(c);
 		if(s >= 0) {
 		    if(order[s] != null)
@@ -326,6 +376,35 @@ public class FightWnd extends Widget {
 	    return(super.mousedown(c, button));
 	}
 
+	public void mousemove(Coord c) {
+	    super.mousemove(c);
+	    if(dp != null) {
+		if(c.dist(dp) > 5) {
+		    grab.remove();
+		    actlist.drag(drag);
+		    grab = null;
+		    drag = null;
+		    dp = null;
+		}
+	    }
+	}
+
+	public boolean mouseup(Coord c, int button) {
+	    if(grab != null) {
+		grab.remove();
+		grab = null;
+		drag = null;
+		dp = null;
+	    }
+	    return(super.mouseup(c, button));
+	}
+
+	private void animate(int s, Coord off) {
+	    animoff[s] = off;
+	    animpr[s] = 0.0;
+	    anim = true;
+	}
+
 	public boolean dropthing(Coord c, Object thing) {
 	    if(thing instanceof Action) {
 		Action act = (Action)thing;
@@ -333,21 +412,37 @@ public class FightWnd extends Widget {
 		if(s < 0)
 		    return(false);
 		if(order[s] != act) {
-		    if(order[s] != null)
-			order[s].u(0);
-		    order[s] = act;
-		    for(int i = 0; i < order.length; i++) {
-			if(i == s)
-			    continue;
-			if(order[i] == act)
-			    order[i] = null;
+		    if(order[s] != null) {
+			int cp = findorder(act);
+			if(cp >= 0) {
+			    order[cp] = order[s];
+			    animate(cp, itemc(s).sub(itemc(cp)));
+			} else {
+			    order[s].u(0);
+			}
 		    }
+		    order[s] = act;
 		    if(act.u < 1)
 			act.u(1);
 		}
 		return(true);
 	    }
 	    return(false);
+	}
+
+	public void tick(double dt) {
+	    if(anim) {
+		boolean na = false;
+		for(int i = 0; i < order.length; i++) {
+		    if(animoff[i] != null) {
+			if((animpr[i] += (dt * 3)) > 1.0)
+			    animoff[i] = null;
+			else
+			    na = true;
+		    }
+		}
+		anim = na;
+	    }
 	}
     }
 
