@@ -95,4 +95,22 @@ public abstract class Listbox<T> extends ListWidget<T> {
 	    itemclick(item, button);
 	return(true);
     }
+
+    public void display(int idx) {
+	if(idx < sb.val) {
+	    sb.val = idx;
+	} else if(idx >= sb.val + h) {
+	    sb.val = Math.max(idx - (h - 1), 0);
+	}
+    }
+
+    public void display(T item) {
+	int p = find(item);
+	if(p >= 0)
+	    display(p);
+    }
+
+    public void display() {
+	display(sel);
+    }
 }
