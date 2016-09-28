@@ -1,0 +1,22 @@
+#!/bin/sh
+
+set -e
+
+if [ $# -lt 1 ]; then
+    echo "usage: unsignjar JAR-FILE..." >&2
+    exit 1
+fi
+
+while [ $# -gt 0 ]; do
+    jarfile="$1"; shift
+    dir="$(mktemp -d /tmp/unsignXXXXXX)"
+    newmf="$(mktemp /tmp/manifestXXXXXX)"
+    trap 'rm -r "$dir"; rm "$newmf"' EXIT
+
+    unzip -qd "$dir" "$jarfile"
+    sed -n '0,/^\r\?$/p' "$dir/META-INF/MANIFEST.MF" >"$newmf"
+    rm -r "$dir/META-INF"
+    newjar="$(mktemp /tmp/newjarXXXXXX)"
+    jar cfm "$newjar" "$newmf" -C "$dir" .
+    mv -f "$newjar" "$jarfile"
+done
