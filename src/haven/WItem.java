@@ -172,7 +172,7 @@ public class WItem extends Widget implements DTarget {
 
     public final AttrCache<Double> itemmeter = new AttrCache<Double>(info -> {
 	    GItem.MeterInfo minf = ItemInfo.find(GItem.MeterInfo.class, info);
-	    return((minf == null)?0.0:minf.meter());
+	    return((minf == null)?null:minf.meter());
 	});
 
     private GSprite lspr = null;
@@ -206,8 +206,8 @@ public class WItem extends Widget implements DTarget {
 	    } else if(itemnum.get() != null) {
 		g.aimage(itemnum.get(), sz, 1, 1);
 	    }
-	    double meter = (item.meter > 0)?(item.meter / 100.0):itemmeter.get();
-	    if(meter > 0) {
+	    Double meter = (item.meter > 0)?(item.meter / 100.0):itemmeter.get();
+	    if((meter != null) && (meter > 0)) {
 		g.chcolor(255, 255, 255, 64);
 		Coord half = sz.div(2);
 		g.prect(half, half.inv(), half, meter * Math.PI * 2);
