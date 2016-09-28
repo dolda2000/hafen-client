@@ -30,6 +30,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.*;
+import java.util.function.*;
 import static haven.ItemInfo.find;
 import static haven.Inventory.sqsz;
 
@@ -128,16 +129,19 @@ public class WItem extends Widget implements DTarget {
     }
 
     public volatile static int cacheseq = 0;
-    public abstract class AttrCache<T> {
+    public class AttrCache<T> {
+	private final Function<List<ItemInfo>, T> data;
 	private List<ItemInfo> forinfo = null;
 	private T save = null;
 	private int forseq = -1;
-	
+
+	public AttrCache(Function<List<ItemInfo>, T> data) {this.data = data;}
+
 	public T get() {
 	    try {
 		List<ItemInfo> info = item.info();
 		if((cacheseq != forseq) || (info != forinfo)) {
-		    save = find(info);
+		    save = data.apply(info);
 		    forinfo = info;
 		    forseq = cacheseq;
 		}
@@ -146,12 +150,9 @@ public class WItem extends Widget implements DTarget {
 	    }
 	    return(save);
 	}
-	
-	protected abstract T find(List<ItemInfo> info);
     }
     
-    public final AttrCache<Color> olcol = new AttrCache<Color>() {
-	protected Color find(List<ItemInfo> info) {
+    public final AttrCache<Color> olcol = new AttrCache<Color>(info -> {
 	    Color ret = null;
 	    for(ItemInfo inf : info) {
 		if(inf instanceof GItem.ColorInfo) {
@@ -161,16 +162,13 @@ public class WItem extends Widget implements DTarget {
 		}
 	    }
 	    return(ret);
-	}
-    };
+	});
     
-    public final AttrCache<Tex> itemnum = new AttrCache<Tex>() {
-	protected Tex find(List<ItemInfo> info) {
+    public final AttrCache<Tex> itemnum = new AttrCache<Tex>(info -> {
 	    GItem.NumberInfo ninf = ItemInfo.find(GItem.NumberInfo.class, info);
 	    if(ninf == null) return(null);
 	    return(new TexI(Utils.outline2(Text.render(Integer.toString(ninf.itemnum()), Color.WHITE).img, Utils.contrast(Color.WHITE))));
-	}
-    };
+	});
 
     private GSprite lspr = null;
     public void tick(double dt) {
