@@ -170,6 +170,11 @@ public class WItem extends Widget implements DTarget {
 	    return(new TexI(Utils.outline2(Text.render(Integer.toString(ninf.itemnum()), Color.WHITE).img, Utils.contrast(Color.WHITE))));
 	});
 
+    public final AttrCache<Double> itemmeter = new AttrCache<Double>(info -> {
+	    GItem.MeterInfo minf = ItemInfo.find(GItem.MeterInfo.class, info);
+	    return((minf == null)?0.0:minf.meter());
+	});
+
     private GSprite lspr = null;
     public void tick(double dt) {
 	/* XXX: This is ugly and there should be a better way to
@@ -201,10 +206,10 @@ public class WItem extends Widget implements DTarget {
 	    } else if(itemnum.get() != null) {
 		g.aimage(itemnum.get(), sz, 1, 1);
 	    }
-	    if(item.meter > 0) {
-		double a = ((double)item.meter) / 100.0;
+	    double meter = (item.meter > 0)?(item.meter / 100.0):itemmeter.get();
+	    if(meter > 0) {
 		g.chcolor(255, 255, 255, 64);
-		g.fellipse(this.sz.div(2), new Coord(15, 15), 90, (int)(90 + (360 * a)));
+		g.fellipse(this.sz.div(2), new Coord(15, 15), 90, (int)(90 + (360 * meter)));
 		g.chcolor();
 	    }
 	} else {

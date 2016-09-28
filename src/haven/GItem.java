@@ -57,6 +57,10 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	public int itemnum();
     }
 
+    public interface MeterInfo {
+	public double meter();
+    }
+
     public static class Amount extends ItemInfo implements NumberInfo {
 	private final int num;
 	
