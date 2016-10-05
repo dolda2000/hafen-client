@@ -47,6 +47,10 @@ public class Debug {
 	}
     }
 
+    public static void dumpimage(BufferedImage img) {
+	dumpimage(img, "/tmp/test.png");
+    }
+
     public static class DumpGL extends TraceGL4bc {
 	public final ByteArrayOutputStream buf;
 
