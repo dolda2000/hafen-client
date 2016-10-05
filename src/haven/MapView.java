@@ -975,52 +975,61 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	};
     }
     
+    public static interface ClickID {
+	public int clickid(ClickID inner);
+    }
+
     public static class ClickInfo {
+	public final ClickInfo from;
 	public final Gob gob;
 	public final Gob.Overlay ol;
-	public final Rendered r;
-	
-	ClickInfo(Gob gob, Gob.Overlay ol, Rendered r) {
-	    this.gob = gob; this.ol = ol; this.r = r;
+	public final ClickID id;
+
+	private ClickInfo(ClickInfo from, Gob gob, Gob.Overlay ol, ClickID id) {
+	    this.from = from; this.gob = gob; this.ol = ol; this.id = id;
+	}
+
+	public static ClickInfo from(ClickInfo prev, Rendered r) {
+	    if(r instanceof Gob)
+		return(new ClickInfo(prev, (Gob)r, null, null));
+	    if(r instanceof Gob.Overlay && (prev != null))
+		return(new ClickInfo(prev, prev.gob, (Gob.Overlay)r, null));
+	    return(null);
 	}
 
 	public boolean equals(Object obj) {
 	    if(!(obj instanceof ClickInfo))
 		return(false);
 	    ClickInfo o = (ClickInfo)obj;
-	    return((gob == o.gob) && (ol == o.ol) && (r == o.r));
+	    return((from == o.from) && (gob == o.gob) && (ol == o.ol) && (id == o.id));
 	}
 
 	public int hashCode() {
-	    return((((System.identityHashCode(gob) * 31) + System.identityHashCode(ol)) * 31) + System.identityHashCode(r));
+	    return((((System.identityHashCode(gob) * 31) + System.identityHashCode(ol)) * 31) + System.identityHashCode(id));
+	}
+
+	public int clickid() {
+	    return(-1);
 	}
     }
 
     private static class Goblist extends Clicklist<ClickInfo> {
-	Gob curgob;
-	Gob.Overlay curol;
-	ClickInfo curinfo;
+	private ClickInfo curinfo;
 
 	public Goblist(GLConfig cfg) {super(cfg);}
 
 	public ClickInfo map(Rendered r) {
-	    return(curinfo);
+	    if(r instanceof FRendered)
+		return(curinfo);
+	    else
+		return(null);
 	}
 
 	public void add(Rendered r, GLState t) {
-	    Gob prevg = curgob;
-	    Gob.Overlay prevo = curol;
-	    if(r instanceof Gob)
-		curgob = (Gob)r;
-	    else if(r instanceof Gob.Overlay)
-		curol = (Gob.Overlay)r;
-	    if((curgob == null) || !(r instanceof FRendered))
-		curinfo = null;
-	    else
-		curinfo = new ClickInfo(curgob, curol, r);
+	    ClickInfo previnfo = curinfo;
+	    curinfo = ClickInfo.from(curinfo, r);
 	    super.add(r, t);
-	    curgob = prevg;
-	    curol = prevo;
+	    curinfo = previnfo;
 	}
     }
 
@@ -1429,12 +1438,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	protected void nohit(Coord pc) {}
     }
 
-    private static int getid(Rendered tgt) {
-	if(tgt instanceof FastMesh.ResourceMesh)
-	    return(((FastMesh.ResourceMesh)tgt).id);
-	return(-1);
-    }
-
     private class Click extends Hittest {
 	int clickb;
 	
@@ -1448,9 +1451,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		wdgmsg("click", pc, mc, clickb, ui.modflags());
 	    } else {
 		if(inf.ol == null) {
-		    wdgmsg("click", pc, mc, clickb, ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc, 0, getid(inf.r));
+		    wdgmsg("click", pc, mc, clickb, ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc, 0, inf.clickid());
 		} else {
-		    wdgmsg("click", pc, mc, clickb, ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc, inf.ol.id, getid(inf.r));
+		    wdgmsg("click", pc, mc, clickb, ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc, inf.ol.id, inf.clickid());
 		}
 	    }
 	}
@@ -1530,9 +1533,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			wdgmsg("itemact", pc, mc, ui.modflags());
 		    } else {
 			if(inf.ol == null)
-			    wdgmsg("itemact", pc, mc, ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc, 0, getid(inf.r));
+			    wdgmsg("itemact", pc, mc, ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc, 0, inf.clickid());
 			else
-			    wdgmsg("itemact", pc, mc, ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc, inf.ol.id, getid(inf.r));
+			    wdgmsg("itemact", pc, mc, ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc, inf.ol.id, inf.clickid());
 		    }
 		}
 	    });
