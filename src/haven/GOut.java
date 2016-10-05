@@ -539,8 +539,9 @@ public class GOut {
 		public void run(GL2 gl) {
 		    byte[] buf = new byte[4];
 		    gl.glReadPixels(c.x + tx.x, root.sz.y - c.y - tx.y, 1, 1, GL.GL_RGBA, GL2.GL_UNSIGNED_BYTE, ByteBuffer.wrap(buf));
+		    Color result = new Color(((int)buf[0]) & 0xff, ((int)buf[1]) & 0xff, ((int)buf[2]) & 0xff, ((int)buf[3]) & 0xff);
 		    checkerr(gl);
-		    cb.done(new Color(((int)buf[0]) & 0xff, ((int)buf[1]) & 0xff, ((int)buf[2]) & 0xff));
+		    cb.done(result);
 		}
 	    });
     }
