@@ -226,7 +226,40 @@ public abstract class States extends GLState {
 	    return(prescolor);
 	}
     }
-    
+
+    public static final Slot<Blending> blend = new Slot<Blending>(Slot.Type.DRAW, Blending.class, HavenPanel.global);
+    public static class Blending extends GLState {
+	public final int src, dst;
+	public final int cfn, afn;
+
+	public Blending(int src, int dst, int cfn, int afn) {
+	    this.src = src;
+	    this.dst = dst;
+	    this.cfn = cfn;
+	    this.afn = afn;
+	}
+
+	public Blending(int src, int dst) {
+	    this(src, dst, GL.GL_FUNC_ADD, GL.GL_FUNC_ADD);
+	}
+
+	public void apply(GOut g) {
+	    BGL gl = g.gl;
+	    gl.glBlendFunc(src, dst);
+	    gl.glBlendEquationSeparate(cfn, afn);
+	}
+
+	public void unapply(GOut g) {
+	    BGL gl = g.gl;
+	    gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+	    gl.glBlendEquationSeparate(GL.GL_FUNC_ADD, GL2.GL_MAX);
+	}
+
+	public void prep(Buffer buf) {
+	    buf.put(blend, this);
+	}
+    }
+
     public static final Slot<Fog> fog = new Slot<Fog>(Slot.Type.DRAW, Fog.class, PView.proj);
     public static class Fog extends GLState {
 	public final Color c;

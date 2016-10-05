@@ -544,23 +544,20 @@ public class MapMesh implements Rendered, Disposable {
 	class Buf implements Tiler.MCons {
 	    int vn = 0, in = 0, vl = sz.x * sz.y * 4;
 	    float[] pos = new float[vl * 3];
-	    float[] col1 = new float[vl * 4];
-	    float[] col2 = new float[vl * 4];
+	    float[] col = new float[vl * 4];
 	    short[] ind = new short[sz.x * sz.y * 6];
 
 	    public void faces(MapMesh m, Tiler.MPart d) {
 		if(vn + d.v.length > vl) {
 		    vl *= 2;
 		    pos = Utils.extend(pos, vl * 12);
-		    col1 = Utils.extend(col1, vl * 16);
-		    col2 = Utils.extend(col2, vl * 16);
+		    col = Utils.extend(col, vl * 16);
 		}
 		float cx = (d.lc.x + 1) / 256.0f, cy = (d.lc.y + 1) / 256.0f;
 		for(int i = 0; i < d.v.length; i++) {
 		    int pb = (vn + i) * 3, cb = (vn + i) * 4;
 		    pos[pb + 0] = d.v[i].x; pos[pb + 1] = d.v[i].y; pos[pb + 2] = d.v[i].z;
-		    col1[cb + 0] = cx; col1[cb + 1] = cy; col1[cb + 2] = 0; col1[cb + 3] = 1;
-		    col2[cb + 0] = d.tcx[i]; col2[cb + 1] = d.tcy[i]; col2[cb + 2] = 0; col2[cb + 3] = 1;
+		    col[cb + 0] = cx; col[cb + 1] = cy; col[cb + 2] = d.tcx[i]; col[cb + 3] = d.tcy[i];
 		}
 		if(in + d.f.length > ind.length)
 		    ind = Utils.extend(ind, ind.length * 2);
@@ -577,20 +574,17 @@ public class MapMesh implements Rendered, Disposable {
 		map.tiler(map.gettile(gc)).lay(this, c, gc, buf, true);
 	    }
 	}
-	float[] pos = buf.pos, col1 = buf.col1, col2 = buf.col2;
+	float[] pos = buf.pos, col = buf.col;
 	short[] ind = buf.ind;
 	if(pos.length != buf.vn * 3) pos = Utils.extend(pos, buf.vn * 3);
-	if(col1.length != buf.vn * 4) col1 = Utils.extend(col1, buf.vn * 4);
-	if(col2.length != buf.vn * 4) col2 = Utils.extend(col2, buf.vn * 4);
+	if(col.length != buf.vn * 4) col = Utils.extend(col, buf.vn * 4);
 	if(ind.length != buf.in) ind = Utils.extend(ind, buf.in);
 	VertexBuf.VertexArray posa = new VertexBuf.VertexArray(FloatBuffer.wrap(pos));
-	VertexBuf.ColorArray cola1 = new VertexBuf.ColorArray(FloatBuffer.wrap(col1));
-	VertexBuf.ColorArray cola2 = new VertexBuf.ColorArray(FloatBuffer.wrap(col2));
+	VertexBuf.ColorArray cola = new VertexBuf.ColorArray(FloatBuffer.wrap(col));
 	ShortBuffer indb = ShortBuffer.wrap(ind);
 	flats = new FastMesh[] {
 	    new FastMesh(new VertexBuf(posa), indb),
-	    new FastMesh(new VertexBuf(posa, cola1), indb),
-	    new FastMesh(new VertexBuf(posa, cola2), indb),
+	    new FastMesh(new VertexBuf(posa, cola), indb),
 	};
     }
 
