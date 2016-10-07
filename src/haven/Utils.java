@@ -1184,6 +1184,27 @@ public class Utils {
 	return(null);
     }
 
+    public static class MapBuilder<K, V> {
+	private final Map<K, V> bk;
+
+	public MapBuilder(Map<K, V> bk) {
+	    this.bk = bk;
+	}
+
+	public MapBuilder<K, V> put(K k, V v) {
+	    bk.put(k, v);
+	    return(this);
+	}
+
+	public Map<K, V> map() {
+	    return(Collections.unmodifiableMap(bk));
+	}
+    }
+
+    public static <K, V> MapBuilder<K, V> map() {
+	return(new MapBuilder<K, V>(new HashMap<K, V>()));
+    }
+
     public static final Comparator<Object> idcmd = new Comparator<Object>() {
 	int eid = 0;
 	final Map<Ref, Long> emerg = new HashMap<Ref, Long>();
