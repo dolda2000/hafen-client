@@ -1078,6 +1078,12 @@ public class Utils {
 	return(ret);
     }
 
+    public static <T, E extends T> T[] extend(T[] src, E[] ne) {
+	T[] ret = extend(src, 0, src.length + ne.length);
+	System.arraycopy(ne, 0, ret, src.length, ne.length);
+	return(ret);
+    }
+
     public static int[] extend(int[] src, int nl) {
 	int[] dst = new int[nl];
 	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
