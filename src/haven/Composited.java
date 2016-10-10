@@ -29,8 +29,9 @@ package haven;
 import java.util.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
+import haven.MapView.ClickInfo;
 
-public class Composited implements Rendered {
+public class Composited implements Rendered, MapView.Clickable {
     public final Skeleton skel;
     public final Pose pose;
     private final PoseMorph morph;
@@ -421,6 +422,34 @@ public class Composited implements Rendered {
 
     public void changes() {
 	changes(false);
+    }
+
+    private static class CompositeClick extends ClickInfo {
+	CompositeClick(ClickInfo prev, Integer id) {
+	    super(prev, id);
+	}
+
+	public ClickInfo include(Rendered r) {
+	    int id = (this.id == null)?0:this.id;
+	    if(r instanceof Model) {
+		Model mod = (Model)r;
+		if(mod.id >= 0)
+		    return(new CompositeClick(this, 0x01000000 | ((mod.id & 0xff) << 8)));
+	    } else if(r instanceof Equ) {
+		Equ equ = (Equ)r;
+		if(equ.id >= 0)
+		    return(new CompositeClick(this, 0x02000000 | ((equ.id & 0xff) << 16)));
+	    } else if(r instanceof FastMesh.ResourceMesh) {
+		FastMesh.ResourceMesh rm = (FastMesh.ResourceMesh)r;
+		if((id & 0xff000000) == 2)
+		    return(new CompositeClick(this, id & 0xffff0000 | (rm.id & 0xffff)));
+	    }
+	    return(this);
+	}
+    }
+
+    public ClickInfo clickinfo(Rendered self, ClickInfo prev) {
+	return(new CompositeClick(prev, null));
     }
 
     public boolean setup(RenderList rl) {
