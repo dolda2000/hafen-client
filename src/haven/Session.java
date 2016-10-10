@@ -331,6 +331,7 @@ public class Session {
 				oc.cmppose(gob, seq, poses, tposes, interp, ttime);
 			} else if(type == OD_CMPMOD) {
 			    List<Composited.MD> mod = new LinkedList<Composited.MD>();
+			    int mseq = 0;
 			    while(true) {
 				int modid = msg.uint16();
 				if(modid == 65535)
@@ -348,12 +349,15 @@ public class Session {
 				    }
 				    tex.add(new ResData(getres(resid), sdt));
 				}
-				mod.add(new Composited.MD(modr, tex));
+				Composited.MD md = new Composited.MD(modr, tex);
+				md.id = mseq++;
+				mod.add(md);
 			    }
 			    if(gob != null)
 				oc.cmpmod(gob, mod);
 			} else if(type == OD_CMPEQU) {
 			    List<Composited.ED> equ = new LinkedList<Composited.ED>();
+			    int eseq = 0;
 			    while(true) {
 				int h = msg.uint8();
 				if(h == 255)
@@ -376,7 +380,9 @@ public class Session {
 				} else {
 				    off = Coord3f.o;
 				}
-				equ.add(new Composited.ED(et, at, new ResData(res, sdt), off));
+				Composited.ED ed = new Composited.ED(et, at, new ResData(res, sdt), off);
+				ed.id = eseq++;
+				equ.add(ed);
 			    }
 			    if(gob != null)
 				oc.cmpequ(gob, equ);

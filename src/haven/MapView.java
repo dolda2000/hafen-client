@@ -883,11 +883,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void get(GOut g, Coord c, final Callback<T> cb) {
-	    g.getpixel(c, new Callback<Color>() {
-		    public void done(Color c) {
-			cb.done(rmap.get(new States.ColState(c)));
-		    }
-		});
+	    g.getpixel(c, col -> cb.done(rmap.get(new States.ColState(col))));
 	}
 
 	public void setup(Rendered r, GLState.Buffer t) {
@@ -948,19 +944,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		rl.fin();
 
 		rl.render(g);
-		rl.get(g, c, new Callback<MapMesh>() {
-			public void done(MapMesh hit) {cut = hit; ckdone(1);}
-		    });
+		rl.get(g, c, hit -> {cut = hit; ckdone(1);});
 		// rl.limit = hit;
 
 		rl.mode = 1;
 		rl.render(g);
-		g.getpixel(c, new Callback<Color>() {
-			public void done(Color col) {
-			    tile = new Coord(col.getRed() - 1, col.getGreen() - 1);
-			    pixel = new Coord2d((col.getBlue() * tilesz.x) / 255.0, (col.getAlpha() * tilesz.y) / 255.0);
-			    ckdone(2);
-			}
+		g.getpixel(c, col -> {
+			tile = new Coord(col.getRed() - 1, col.getGreen() - 1);
+			pixel = new Coord2d((col.getBlue() * tilesz.x) / 255.0, (col.getAlpha() * tilesz.y) / 255.0);
+			ckdone(2);
 		    });
 	    }
 
@@ -977,52 +969,85 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	};
     }
     
+    public static interface Clickable {
+	public ClickInfo clickinfo(Rendered self, ClickInfo prev);
+    }
+    public static final GenFun<Clickable> clickinfo = new GenFun<>(Clickable.class);
+    static {
+	clickinfo.register(Object.class, (self, prev) -> prev);
+	clickinfo.register(FastMesh.ResourceMesh.class, (self, prev) -> new ClickInfo(prev, ((FastMesh.ResourceMesh)self).id));
+    }
+
     public static class ClickInfo {
+	public final ClickInfo from;
 	public final Gob gob;
 	public final Gob.Overlay ol;
-	public final Rendered r;
-	
-	ClickInfo(Gob gob, Gob.Overlay ol, Rendered r) {
-	    this.gob = gob; this.ol = ol; this.r = r;
+	public final Integer id;
+
+	private ClickInfo(ClickInfo from, Gob gob, Gob.Overlay ol, Integer id) {
+	    this.from = from; this.gob = gob; this.ol = ol; this.id = id;
+	}
+
+	public ClickInfo(ClickInfo prev, Integer id) {
+	    this(prev, prev.gob, prev.ol, id);
+	}
+
+	public ClickInfo() {
+	    this(null, null, null, null);
+	}
+
+	public ClickInfo include(Rendered r) {
+	    if(r instanceof Gob)
+		return(new ClickInfo(this, (Gob)r, null, null));
+	    if(r instanceof Gob.Overlay)
+		return(new ClickInfo(this, gob, (Gob.Overlay)r, null));
+	    ClickInfo ret = clickinfo.call.clickinfo(r, this);
+	    if(ret == null)
+		throw(new NullPointerException(r.toString()));
+	    return(ret);
 	}
 
 	public boolean equals(Object obj) {
 	    if(!(obj instanceof ClickInfo))
 		return(false);
 	    ClickInfo o = (ClickInfo)obj;
-	    return((gob == o.gob) && (ol == o.ol) && (r == o.r));
+	    return((gob == o.gob) && (ol == o.ol) && (id == o.id));
 	}
 
 	public int hashCode() {
-	    return((((System.identityHashCode(gob) * 31) + System.identityHashCode(ol)) * 31) + System.identityHashCode(r));
+	    return((((System.identityHashCode(gob) * 31) + System.identityHashCode(ol)) * 31) + System.identityHashCode(id));
+	}
+
+	public String toString() {
+	    return(String.format("<%s %s %s %x>", getClass(), gob, ol, (id == null)?-1:id));
+	}
+
+	public int clickid() {
+	    return((id == null)?-1:id);
 	}
     }
 
     private static class Goblist extends Clicklist<ClickInfo> {
-	Gob curgob;
-	Gob.Overlay curol;
-	ClickInfo curinfo;
+	private final ClickInfo root;
+	private ClickInfo curinfo;
 
-	public Goblist(GLConfig cfg) {super(cfg);}
+	public Goblist(GLConfig cfg) {
+	    super(cfg);
+	    curinfo = root = new ClickInfo();
+	}
 
 	public ClickInfo map(Rendered r) {
-	    return(curinfo);
+	    if(r instanceof FRendered)
+		return(curinfo);
+	    else
+		return(null);
 	}
 
 	public void add(Rendered r, GLState t) {
-	    Gob prevg = curgob;
-	    Gob.Overlay prevo = curol;
-	    if(r instanceof Gob)
-		curgob = (Gob)r;
-	    else if(r instanceof Gob.Overlay)
-		curol = (Gob.Overlay)r;
-	    if((curgob == null) || !(r instanceof FRendered))
-		curinfo = null;
-	    else
-		curinfo = new ClickInfo(curgob, curol, r);
+	    ClickInfo previnfo = curinfo;
+	    curinfo = curinfo.include(r);
 	    super.add(r, t);
-	    curgob = prevg;
-	    curol = prevo;
+	    curinfo = previnfo;
 	}
     }
 
@@ -1034,7 +1059,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	rl.setup(gobs, clickbasic(g));
 	rl.fin();
 	rl.render(g);
-	rl.get(g, c, cb);
+	g.getimage(Debug::dumpimage);
+	rl.get(g, c, inf -> cb.done(((inf == null) || (inf.gob == null))?null:inf));
     }
     
     public void delay(Delayed d) {
@@ -1353,20 +1379,17 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	public void run(GOut g) {
 	    GLState.Buffer bk = g.st.copy();
-	    Coord mc;
 	    try {
 		BGL gl = g.gl;
 		g.st.set(clickbasic(g));
 		g.apply();
 		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
-		checkmapclick(g, pc, new Callback<Coord2d>() {
-			public void done(Coord2d mc) {
-			    synchronized(ui) {
-				if(mc != null)
-				    hit(pc, mc);
-				else
-				    nohit(pc);
-			    }
+		checkmapclick(g, pc, mc -> {
+			synchronized(ui) {
+			    if(mc != null)
+				hit(pc, mc);
+			    else
+				nohit(pc);
 			}
 		    });
 	    } finally {
@@ -1395,16 +1418,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		g.st.set(clickbasic(g));
 		g.apply();
 		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
-		checkmapclick(g, clickc, new Callback<Coord2d>() {
-			public void done(Coord2d mc) {mapcl = mc; ckdone(1);}
-		    });
+		checkmapclick(g, clickc, mc -> {mapcl = mc; ckdone(1);});
 		g.st.set(bk);
 		g.st.set(clickbasic(g));
 		g.apply();
 		gl.glClear(GL.GL_COLOR_BUFFER_BIT);
-		checkgobclick(g, clickc, new Callback<ClickInfo>() {
-			public void done(ClickInfo cl) {gobcl = cl; ckdone(2);}
-		    });
+		checkgobclick(g, clickc, cl -> {gobcl = cl; ckdone(2);});
 	    } finally {
 		g.st.set(bk);
 	    }
@@ -1431,12 +1450,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	protected void nohit(Coord pc) {}
     }
 
-    private static int getid(Rendered tgt) {
-	if(tgt instanceof FastMesh.ResourceMesh)
-	    return(((FastMesh.ResourceMesh)tgt).id);
-	return(-1);
-    }
-
     private class Click extends Hittest {
 	int clickb;
 	
@@ -1450,9 +1463,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		wdgmsg("click", pc, mc.floor(posres), clickb, ui.modflags());
 	    } else {
 		if(inf.ol == null) {
-		    wdgmsg("click", pc, mc.floor(posres), clickb, ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc.floor(posres), 0, getid(inf.r));
+		    wdgmsg("click", pc, mc.floor(posres), clickb, ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc.floor(posres), 0, inf.clickid());
 		} else {
-		    wdgmsg("click", pc, mc.floor(posres), clickb, ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc.floor(posres), inf.ol.id, getid(inf.r));
+		    wdgmsg("click", pc, mc.floor(posres), clickb, ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc.floor(posres), inf.ol.id, inf.clickid());
 		}
 	    }
 	}
@@ -1532,9 +1545,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			wdgmsg("itemact", pc, mc.floor(posres), ui.modflags());
 		    } else {
 			if(inf.ol == null)
-			    wdgmsg("itemact", pc, mc.floor(posres), ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc.floor(posres), 0, getid(inf.r));
+			    wdgmsg("itemact", pc, mc.floor(posres), ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc.floor(posres), 0, inf.clickid());
 			else
-			    wdgmsg("itemact", pc, mc.floor(posres), ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc.floor(posres), inf.ol.id, getid(inf.r));
+			    wdgmsg("itemact", pc, mc.floor(posres), ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc.floor(posres), inf.ol.id, inf.clickid());
 		    }
 		}
 	    });
