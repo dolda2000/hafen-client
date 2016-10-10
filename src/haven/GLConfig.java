@@ -49,6 +49,14 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	return(buf[0]);
     }
 
+    private static int glcondi(GL gl, int param, int def) {
+	int[] buf = {0};
+	gl.glGetIntegerv(param, buf, 0);
+	if(gl.glGetError() != 0)
+	    return(-1);
+	return(buf[0]);
+    }
+
     private static float glgetf(GL gl, int param) {
 	float[] buf = {0};
 	gl.glGetFloatv(param, buf, 0);
@@ -85,7 +93,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	    c.glminver = 0;
 	}
 	c.maxlights = glgeti(gl, GL2.GL_MAX_LIGHTS);
-	c.maxtargets = glgeti(gl, GL2.GL_MAX_COLOR_ATTACHMENTS);
+	c.maxtargets = glcondi(gl, GL2.GL_MAX_COLOR_ATTACHMENTS, 1);
 	c.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	c.caps = caps;
 	c.pref = GLSettings.defconf(c);
