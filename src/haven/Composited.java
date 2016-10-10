@@ -139,6 +139,7 @@ public class Composited implements Rendered {
 
     public class Model implements Rendered {
 	public final MorphedMesh m;
+	public final int id;
 	int z = 0, lz = 0;
 	public class Layer implements FRendered {
 	    private final Material mat;
@@ -167,8 +168,9 @@ public class Composited implements Rendered {
 	}
 	public final List<Layer> lay = new ArrayList<Layer>();
 	
-	private Model(FastMesh m) {
+	private Model(FastMesh m, int id) {
 	    this.m = new MorphedMesh(m, morph);
+	    this.id = id;
 	}
 	
 	private void addlay(Material mat) {
@@ -227,10 +229,12 @@ public class Composited implements Rendered {
     public abstract class Equ implements Rendered {
 	private final GLState et;
 	public final ED desc;
+	public final int id;
 	private boolean matched;
 	
 	private Equ(ED ed) {
 	    this.desc = ed.clone();
+	    this.id = desc.id;
 	    GLState bt = null;
 	    if(bt == null) {
 		Skeleton.BoneOffset bo = ed.res.res.get().layer(Skeleton.BoneOffset.class, ed.at);
@@ -261,6 +265,7 @@ public class Composited implements Rendered {
     public static class MD implements Cloneable {
 	public Indir<Resource> mod;
 	public List<ResData> tex;
+	public int id = -1;
 	private Model real;
 	
 	public MD(Indir<Resource> mod, List<ResData> tex) {
@@ -292,7 +297,7 @@ public class Composited implements Rendered {
     }
     
     public static class ED implements Cloneable {
-	public int t;
+	public int t, id = -1;
 	public String at;
 	public ResData res;
 	public Coord3f off;
@@ -342,7 +347,7 @@ public class Composited implements Rendered {
 		    FastMesh.MeshRes mr = md.mod.get().layer(FastMesh.MeshRes.class);
 		    if(mr == null)
 			throw(new Sprite.ResourceException("Model resource contains no mesh", md.mod.get()));
-		    md.real = new Model(mr.m);
+		    md.real = new Model(mr.m, md.id);
 		    /* This is really ugly, but I can't really think of
 		     * anything less ugly right now. */
 		    if(md.mod.get().name.equals("gfx/borka/male") || md.mod.get().name.equals("gfx/borka/female"))
