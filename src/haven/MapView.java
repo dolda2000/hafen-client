@@ -1101,7 +1101,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	rl.setup(gobs, clickbasic(g));
 	rl.fin();
 	rl.render(g);
-	g.getimage(Debug::dumpimage);
 	rl.get(g, c, inf -> cb.done(((inf == null) || (inf.gob == null))?null:inf));
     }
     
