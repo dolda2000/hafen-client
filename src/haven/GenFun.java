@@ -87,7 +87,15 @@ public class GenFun<T> {
 		    throw(new MissingImplementationException(GenFun.this, args[0]));
 		cache.put(cl, impl);
 	    }
-	    return(null);
+	    try {
+		return(method.invoke(impl, args));
+	    } catch(IllegalAccessException e) {
+		throw(new RuntimeException(e));
+	    } catch(InvocationTargetException e) {
+		if(e.getCause() instanceof RuntimeException)
+		    throw((RuntimeException)e.getCause());
+		throw(new RuntimeException(e));
+	    }
 	}
     }
 }
