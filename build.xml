@@ -83,6 +83,7 @@
 	<include name="hafen-res.jar" />
 	<include name="builtin-res.jar" />
       </fileset>
+      <fileset dir="lib/jogl-natives" />
     </copy>
   </target>
   
