@@ -80,6 +80,7 @@
 	<include name="gluegen-rt.jar" />
 	<include name="haven-res.jar" />
       </fileset>
+      <fileset dir="lib/jogl-natives" />
     </copy>
   </target>
   
