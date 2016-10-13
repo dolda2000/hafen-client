@@ -53,7 +53,7 @@ public class GLConfig implements java.io.Serializable, Console.Directory {
 	int[] buf = {0};
 	gl.glGetIntegerv(param, buf, 0);
 	if(gl.glGetError() != 0)
-	    return(-1);
+	    return(def);
 	return(buf[0]);
     }
 
