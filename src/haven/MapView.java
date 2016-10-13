@@ -39,6 +39,7 @@ import java.lang.reflect.*;
 import javax.media.opengl.*;
 
 public class MapView extends PView implements DTarget, Console.Directory {
+    public static boolean clickdb = false;
     public long plgob = -1;
     public Coord2d cc;
     private final Glob glob;
@@ -986,11 +987,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		rl.fin();
 
 		rl.render(g);
+		if(clickdb) g.getimage(img -> Debug.dumpimage(img, Debug.somedir("click1.png")));
 		rl.get(g, c, hit -> {cut = hit; ckdone(1);});
 		// rl.limit = hit;
 
 		rl.mode = 1;
 		rl.render(g);
+		if(clickdb) g.getimage(img -> Debug.dumpimage(img, Debug.somedir("click2.png")));
 		g.getpixel(c, col -> {
 			tile = new Coord(col.getRed() - 1, col.getGreen() - 1);
 			pixel = new Coord2d((col.getBlue() * tilesz.x) / 255.0, (col.getAlpha() * tilesz.y) / 255.0);
@@ -1101,6 +1104,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	rl.setup(gobs, clickbasic(g));
 	rl.fin();
 	rl.render(g);
+	if(clickdb) g.getimage(img -> Debug.dumpimage(img, Debug.somedir("click3.png")));
 	rl.get(g, c, inf -> cb.done(((inf == null) || (inf.gob == null))?null:inf));
     }
     
@@ -1803,6 +1807,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    if(l == null)
 			throw(new Exception("Not loading"));
 		    l.printStackTrace(cons.out);
+		}
+	    });
+	Console.setscmd("clickdb", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    clickdb = Utils.parsebool(args[1], false);
 		}
 	    });
     }
