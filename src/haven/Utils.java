@@ -1123,6 +1123,10 @@ public class Utils {
 	return(true);
     }
 
+    public static <T> T or(T val, Supplier<T> els) {
+	return((val != null)?val:els.get());
+    }
+
     public static <T> T construct(Constructor<T> cons, Object... args) {
 	try {
 	    return(cons.newInstance(args));
