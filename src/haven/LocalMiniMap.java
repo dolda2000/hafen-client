@@ -37,6 +37,7 @@ import haven.resutil.Ridges;
 
 public class LocalMiniMap extends Widget {
     public final MapView mv;
+    public final MapFile save;
     private Coord cc = null;
     private MapTile cur = null;
     private final Map<Pair<Grid, Integer>, Defer.Future<MapTile>> cache = new LinkedHashMap<Pair<Grid, Integer>, Defer.Future<MapTile>>(5, 0.75f, true) {
@@ -67,30 +68,46 @@ public class LocalMiniMap extends Widget {
 	}
     }
 
-    private BufferedImage tileimg(int t, BufferedImage[] texes) {
-	BufferedImage img = texes[t];
-	if(img == null) {
-	    Resource r = ui.sess.glob.map.tilesetr(t);
-	    if(r == null)
-		return(null);
-	    Resource.Image ir = r.layer(Resource.imgc);
-	    if(ir == null)
-		return(null);
-	    img = ir.img;
-	    texes[t] = img;
-	}
-	return(img);
+    public interface PseudoMap {
+	public int gettile(Coord c);
+	public BufferedImage tiletex(int tn);
     }
-    
-    public BufferedImage drawmap(Coord ul, Coord sz) {
-	BufferedImage[] texes = new BufferedImage[256];
-	MCache m = ui.sess.glob.map;
+
+    public static class Imager implements PseudoMap {
+	public final MCache map;
+	private final BufferedImage[] texes = new BufferedImage[256];
+
+	public Imager(MCache map) {
+	    this.map = map;
+	}
+
+	public int gettile(Coord c) {
+	    return(this.map.gettile(c));
+	}
+
+	public BufferedImage tiletex(int tn) {
+	    BufferedImage img = texes[tn];
+	    if(img == null) {
+		Resource r = map.tilesetr(tn);
+		if(r == null)
+		    return(null);
+		Resource.Image ir = r.layer(Resource.imgc);
+		if(ir == null)
+		    return(null);
+		img = ir.img;
+		texes[tn] = img;
+	    }
+	    return(img);
+	}
+    }
+
+    public static BufferedImage drawmap(PseudoMap map, Coord ul, Coord sz) {
 	BufferedImage buf = TexI.mkbuf(sz);
 	Coord c = new Coord();
 	for(c.y = 0; c.y < sz.y; c.y++) {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
-		int t = m.gettile(ul.add(c));
-		BufferedImage tex = tileimg(t, texes);
+		int t = map.gettile(ul.add(c));
+		BufferedImage tex = map.tiletex(t);
 		int rgb = 0;
 		if(tex != null)
 		    rgb = tex.getRGB(Utils.floormod(c.x + ul.x, tex.getWidth()),
@@ -98,10 +115,11 @@ public class LocalMiniMap extends Widget {
 		buf.setRGB(c.x, c.y, rgb);
 	    }
 	}
+	/*
 	for(c.y = 1; c.y < sz.y - 1; c.y++) {
 	    for(c.x = 1; c.x < sz.x - 1; c.x++) {
-		int t = m.gettile(ul.add(c));
-		Tiler tl = m.tiler(t);
+		int t = map.gettile(ul.add(c));
+		Tiler tl = map.tiler(t);
 		if(tl instanceof Ridges.RidgeTile) {
 		    if(Ridges.brokenp(m, ul.add(c))) {
 			for(int y = c.y - 1; y <= c.y + 1; y++) {
@@ -114,13 +132,14 @@ public class LocalMiniMap extends Widget {
 		}
 	    }
 	}
+	*/
 	for(c.y = 0; c.y < sz.y; c.y++) {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
-		int t = m.gettile(ul.add(c));
-		if((m.gettile(ul.add(c).add(-1, 0)) > t) ||
-		   (m.gettile(ul.add(c).add( 1, 0)) > t) ||
-		   (m.gettile(ul.add(c).add(0, -1)) > t) ||
-		   (m.gettile(ul.add(c).add(0,  1)) > t))
+		int t = map.gettile(ul.add(c));
+		if((map.gettile(ul.add(c).add(-1, 0)) > t) ||
+		   (map.gettile(ul.add(c).add( 1, 0)) > t) ||
+		   (map.gettile(ul.add(c).add(0, -1)) > t) ||
+		   (map.gettile(ul.add(c).add(0,  1)) > t))
 		    buf.setRGB(c.x, c.y, Color.BLACK.getRGB());
 	    }
 	}
@@ -130,6 +149,11 @@ public class LocalMiniMap extends Widget {
     public LocalMiniMap(Coord sz, MapView mv) {
 	super(sz);
 	this.mv = mv;
+	if(ResCache.global != null) {
+	    save = MapFile.load(ResCache.global);
+	} else {
+	    save = null;
+	}
     }
     
     public Coord p2c(Coord pc) {
@@ -201,14 +225,17 @@ public class LocalMiniMap extends Widget {
 			f = Defer.later(new Defer.Callable<MapTile> () {
 				public MapTile call() {
 				    Coord ul = plg.ul.sub(cmaps).add(1, 1);
-				    return(new MapTile(new TexI(drawmap(ul, cmaps.mul(3).sub(2, 2))), ul, plg, seq));
+				    return(new MapTile(new TexI(drawmap(new Imager(ui.sess.glob.map), ul, cmaps.mul(3).sub(2, 2))), ul, plg, seq));
 				}
 			    });
 			cache.put(new Pair<Grid, Integer>(plg, seq), f);
 		    }
 		}
-		if(f.done())
+		if(f.done()) {
 		    cur = f.get();
+		    if(save != null)
+			save.update(ui.sess.glob.map, cur.grid.gc);
+		}
 	    }
 	}
 	if(cur != null) {
