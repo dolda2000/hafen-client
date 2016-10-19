@@ -26,8 +26,9 @@
 
 package haven;
 
+import java.util.*;
 import java.util.function.*;
-import java.awt.image.BufferedImage;
+import java.awt.event.KeyEvent;
 import haven.MapFile.Segment;
 import haven.MapFile.Grid;
 import haven.MapFile.GridInfo;
@@ -39,7 +40,11 @@ public class MapFileWidget extends Widget {
     private Locator setloc;
     private boolean follow;
     private Area dext;
-    private Indir<BufferedImage>[] display;
+    private Segment dseg;
+    private Indir<Grid>[] display;
+    private UI.Grab drag;
+    private boolean dragging;
+    private Coord dsc, dmc;
 
     public MapFileWidget(MapFile file, Coord sz) {
 	super();
@@ -52,6 +57,8 @@ public class MapFileWidget extends Widget {
 	public final Coord tc;
 
 	public Location(Segment seg, Coord tc) {
+	    Objects.requireNonNull(seg);
+	    Objects.requireNonNull(tc);
 	    this.seg = seg; this.tc = tc;
 	}
     }
@@ -73,7 +80,10 @@ public class MapFileWidget extends Widget {
 	    GridInfo info = file.gridinfo.get(plg.id);
 	    if(info == null)
 		throw(new Loading("No grid info, probably coming soon"));
-	    return(new Location(file.segments.get(info.seg), info.sc.mul(cmaps).add(mc.sub(plg.ul))));
+	    Segment seg = file.segments.get(info.seg);
+	    if(seg == null)
+		throw(new Loading("No segment info, probably coming soon"));
+	    return(new Location(seg, info.sc.mul(cmaps).add(mc.sub(plg.ul))));
 	}
     }
 
@@ -100,21 +110,21 @@ public class MapFileWidget extends Widget {
 	}
     }
 
-    public void resize(Coord sz) {
-	super.resize(sz);
+    private void redisplay(Location loc) {
 	Coord hsz = sz.div(2);
-	Area next = Area.sized((curloc == null)?Coord.z:curloc.tc.sub(hsz).div(cmaps),
-			       sz.add(cmaps).sub(1, 1).div(cmaps));
-	if((display == null) || !next.equals(dext)) {
+	Area next = Area.sized(loc.tc.sub(hsz).div(cmaps),
+			       sz.add(cmaps).sub(1, 1).div(cmaps).add(1, 1));
+	if((display == null) || (loc.seg != dseg) || !next.equals(dext)) {
 	    @SuppressWarnings("unchecked")
-	    Indir<BufferedImage>[] nd = new Indir[next.rsz()];
-	    if(display != null) {
+	    Indir<Grid>[] nd = new Indir[next.rsz()];
+	    if((display != null) && (loc.seg == dseg)) {
 		for(Coord c : dext) {
 		    if(next.contains(c))
 			nd[next.ri(c)] = display[dext.ri(c)];
 		}
 	    }
 	    display = nd;
+	    dseg = loc.seg;
 	    dext = next;
 	}
     }
@@ -123,6 +133,31 @@ public class MapFileWidget extends Widget {
 	Location loc = this.curloc;
 	if(loc == null)
 	    return;
+	Coord hsz = sz.div(2);
+	redisplay(loc);
+	file.lock.readLock().lock();
+	try {
+	    for(Coord c : dext) {
+		Tex img;
+		try {
+		    Indir<Grid> gr = display[dext.ri(c)];
+		    if(gr == null)
+			display[dext.ri(c)] = gr = loc.seg.grid(c);
+		    if(gr == null)
+			continue;
+		    Grid ggr = gr.get();
+		    if(ggr == null)
+			continue;
+		    img = ggr.img.get();
+		} catch(Loading l) {
+		    continue;
+		}
+		Coord ul = hsz.add(c.mul(cmaps)).sub(loc.tc);
+		g.image(img, ul);
+	    }
+	} finally {
+	    file.lock.readLock().unlock();
+	}
     }
 
     public void center(Locator loc) {
@@ -135,7 +170,42 @@ public class MapFileWidget extends Widget {
 	follow = true;
     }
 
-    public class MapWindow extends Window {
+    public boolean mousedown(Coord c, int button) {
+	if(button == 1) {
+	    Location loc = curloc;
+	    if((drag == null) && (loc != null)) {
+		drag = ui.grabmouse(this);
+		dsc = c;
+		dmc = loc.tc;
+		dragging = false;
+	    }
+	    return(true);
+	}
+	return(super.mousedown(c, button));
+    }
+
+    public void mousemove(Coord c) {
+	if(drag != null) {
+	    if(dragging) {
+		setloc = null;
+		follow = false;
+		curloc = new Location(curloc.seg, dmc.add(dsc.sub(c)));
+	    } else if(c.dist(dsc) > 5) {
+		dragging = true;
+	    }
+	}
+	super.mousemove(c);
+    }
+
+    public boolean mouseup(Coord c, int button) {
+	if((drag != null) && (button == 1)) {
+	    drag.remove();
+	    drag = null;
+	}
+	return(super.mouseup(c, button));
+    }
+
+    public static class MapWindow extends Window {
 	public final MapFileWidget view;
 
 	public MapWindow(MapFile file, Coord sz) {
@@ -146,6 +216,14 @@ public class MapFileWidget extends Widget {
 
 	public MapWindow(MapFile file) {
 	    this(file, new Coord(500, 500));
+	}
+
+	public boolean keydown(KeyEvent ev) {
+	    if(ev.getKeyCode() == KeyEvent.VK_HOME) {
+		view.follow(new MapFileWidget.MapLocator(getparent(GameUI.class).map));
+		return(true);
+	    }
+	    return(super.keydown(ev));
 	}
     }
 }

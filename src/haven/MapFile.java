@@ -29,6 +29,10 @@ package haven;
 import java.util.*;
 import java.util.concurrent.locks.*;
 import java.io.*;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
+import haven.Defer.Future;
 import static haven.MCache.cmaps;
 
 public class MapFile {
@@ -70,6 +74,22 @@ public class MapFile {
 	    return(null);
 	}
 	return(file);
+    }
+
+    private void save() {
+	checklock();
+	OutputStream fp;
+	try {
+	    fp = store.store("map/index");
+	} catch(IOException e) {
+	    throw(new StreamMessage.IOError(e));
+	}
+	try(StreamMessage out = new StreamMessage(fp)) {
+	    out.adduint8(1);
+	    out.addint32(knownsegs.size());
+	    for(Long seg : knownsegs)
+		out.addint64(seg);
+	}
     }
 
     public static class GridInfo {
@@ -221,13 +241,94 @@ public class MapFile {
 		return(null);
 	    }
 	}
+
+	private BufferedImage tiletex(int t, BufferedImage[] texes, boolean[] cached) {
+	    if(!cached[t]) {
+		Resource r = null;
+		try {
+		    r = tilesets[t].res.get();
+		} catch(Loading l) {
+		    throw(l);
+		} catch(Exception e) {
+		    try {
+			r = Resource.remote().load(tilesets[t].res.name).get();
+		    } catch(Loading l) {
+			throw(l);
+		    } catch(Exception e2) {
+			Debug.log.printf("mapfile warning: could not load tileset resource %s(v%d): %s\n", tilesets[t].res.name, tilesets[t].res.ver, e2);
+		    }
+		}
+		if(r != null) {
+		    Resource.Image ir = r.layer(Resource.imgc);
+		    if(ir != null) {
+			texes[t] = ir.img;
+		    }
+		}
+		cached[t] = true;
+	    }
+	    return(texes[t]);
+	}
+
+	private int gettile(Coord c) {
+	    return(tiles[c.x + (c.y * cmaps.x)] & 0xff);
+	}
+
+	public BufferedImage render() {
+	    BufferedImage[] texes = new BufferedImage[256];
+	    boolean[] cached = new boolean[256];
+	    WritableRaster buf = PUtils.imgraster(cmaps);
+	    Coord c = new Coord();
+	    for(c.y = 0; c.y < cmaps.y; c.y++) {
+		for(c.x = 0; c.x < cmaps.x; c.x++) {
+		    int t = gettile(c);
+		    BufferedImage tex = tiletex(t, texes, cached);
+		    int rgb = 0;
+		    if(tex != null)
+			rgb = tex.getRGB(Utils.floormod(c.x, tex.getWidth()),
+					 Utils.floormod(c.y, tex.getHeight()));
+		    buf.setSample(c.x, c.y, 2, (rgb & 0x000000ff) >>>  0);
+		    buf.setSample(c.x, c.y, 1, (rgb & 0x0000ff00) >>>  8);
+		    buf.setSample(c.x, c.y, 0, (rgb & 0x00ff0000) >>> 16);
+		    buf.setSample(c.x, c.y, 3, (rgb & 0xff000000) >>> 24);
+		}
+	    }
+	    for(c.y = 1; c.y < cmaps.y - 1; c.y++) {
+		for(c.x = 1; c.x < cmaps.x - 1; c.x++) {
+		    int p = tilesets[gettile(c)].prio;
+		    if((tilesets[gettile(c.add(-1, 0))].prio > p) ||
+		       (tilesets[gettile(c.add( 1, 0))].prio > p) ||
+		       (tilesets[gettile(c.add(0, -1))].prio > p) ||
+		       (tilesets[gettile(c.add(0,  1))].prio > p))
+		    {
+			buf.setSample(c.x, c.y, 0, 0);
+			buf.setSample(c.x, c.y, 1, 0);
+			buf.setSample(c.x, c.y, 2, 0);
+			buf.setSample(c.x, c.y, 3, 255);
+		    }
+		}
+	    }
+	    return(PUtils.rasterimg(buf));
+	}
+
+	public final Indir<Tex> img = new Indir<Tex>() {
+	    private Future<Tex> def = null;
+	    
+	    public Tex get() {
+		if(def == null) {
+		    def = Defer.later(() -> {
+			    return(new TexI(render()));
+			});
+		}
+		return(def.get());
+	    }
+	};
     }
 
     public class Segment {
 	public final long id;
 	private final BMap<Coord, Long> map = new HashBMap<>();
 	private final Map<Long, Grid> loaded = new HashMap<>();
-	private final Map<Long, Defer.Future<Grid>> loading = new HashMap<>();
+	private final Map<Long, Future<Grid>> loading = new HashMap<>();
 
 	public Segment(long id) {
 	    this.id = id;
@@ -243,7 +344,7 @@ public class MapFile {
 	    Grid g = loaded.get(id);
 	    if(g != null)
 		return(() -> g);
-	    Defer.Future<Grid> f = loading.get(id);
+	    Future<Grid> f = loading.get(id);
 	    if(f == null) {
 		f = Defer.later(() -> {
 			Grid lg = Grid.load(store, id);
@@ -258,7 +359,7 @@ public class MapFile {
 		    });
 		loading.put(id, f);
 	    }
-	    Defer.Future<Grid> F = f;
+	    Future<Grid> F = f;
 	    return(() -> F.get());
 	}
 
@@ -314,7 +415,73 @@ public class MapFile {
 		    z.addcoord(e.getKey()).addint64(e.getValue());
 		z.finish();
 	    }
+	    if(knownsegs.add(id))
+		save();
 	});
+
+    private static Runnable locked(Runnable r, Lock lock) {
+	return(() -> {
+		lock.lock();
+		try {
+		    r.run();
+		} finally {
+		    lock.unlock();
+		}
+	    });
+    }
+
+    private final Object procmon = new Object();
+    private Thread processor = null;
+    private final Collection<Pair<MCache, Collection<MCache.Grid>>> updqueue = new HashSet<>();
+    private final Collection<Segment> dirty = new HashSet<>();
+    private class Processor extends HackThread {
+	Processor() {
+	    super("Mapfile processor");
+	}
+
+	public void run() {
+	    try {
+		long last = System.currentTimeMillis();
+		while(true) {
+		    Runnable task;
+		    long now = System.currentTimeMillis();
+		    synchronized(procmon) {
+			if(!updqueue.isEmpty()) {
+			    Pair<MCache, Collection<MCache.Grid>> el = Utils.take(updqueue);
+			    task = () -> MapFile.this.update(el.a, el.b);
+			} else if(!dirty.isEmpty()) {
+			    Segment seg = Utils.take(dirty);
+			    task = locked(() -> segments.put(seg.id, seg), lock.writeLock());
+			} else {
+			    if(now - last > 10000) {
+				processor = null;
+				return;
+			    }
+			    procmon.wait(5000);
+			    continue;
+			}
+		    }
+		    task.run();
+		    last = now;
+		}
+	    } catch(InterruptedException e) {
+	    } finally {
+		synchronized(procmon) {
+		    processor = null;
+		}
+	    }
+	}
+    }
+    private void process() {
+	synchronized(procmon) {
+	    if(processor == null) {
+		Thread np = new Processor();
+		np.start();
+		processor = np;
+	    }
+	    procmon.notifyAll();
+	}
+    }
 
     public void update(MCache map, Collection<MCache.Grid> grids) {
 	lock.writeLock().lock();
@@ -322,7 +489,6 @@ public class MapFile {
 	    long mseg = -1;
 	    Coord moff = null;
 	    Collection<MCache.Grid> missing = new ArrayList<>(grids.size());
-	    Set<Segment> dirty = new HashSet<Segment>();
 	    for(MCache.Grid g : grids) {
 		GridInfo info = gridinfo.get(g.id);
 		if(info == null) {
@@ -360,25 +526,27 @@ public class MapFile {
 		Segment seg;
 		if(mseg == -1) {
 		    seg = new Segment(Utils.el(missing).id);
+		    moff = Coord.z;
 		    Debug.log.printf("mapfile: creating new segment %x\n", seg.id);
 		} else {
 		    seg = segments.get(mseg);
 		}
-		dirty.add(seg);
+		synchronized(procmon) {
+		    dirty.add(seg);
+		    process();
+		}
 		for(MCache.Grid g : missing) {
 		    Grid sg = Grid.from(map, g);
 		    Coord sc = g.gc.add(moff);
 		    sg.save(store);
-		    seg.include(sg, g.gc.add(moff));
+		    seg.include(sg, sc);
 		    gridinfo.put(g.id, new GridInfo(g.id, seg.id, sc));
 		}
-	    }
-	    for(Segment seg : dirty) {
-		segments.put(seg.id, seg);
 	    }
 	} finally {
 	    lock.writeLock().unlock();
 	}
+	Debug.log.printf("mapfile: update completed\n");
     }
 
     private static final Coord[] inout = new Coord[] {
@@ -396,7 +564,11 @@ public class MapFile {
 		continue;
 	    }
 	}
-	if(!grids.isEmpty())
-	    Utils.defer(() -> update(map, grids));
+	if(!grids.isEmpty()) {
+	    synchronized(procmon) {
+		updqueue.add(new Pair<>(map, grids));
+		process();
+	    }
+	}
     }
 }
