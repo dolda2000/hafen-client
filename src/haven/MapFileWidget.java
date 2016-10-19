@@ -33,6 +33,7 @@ import haven.MapFile.Segment;
 import haven.MapFile.Grid;
 import haven.MapFile.GridInfo;
 import static haven.MCache.cmaps;
+import static haven.Utils.or;
 
 public class MapFileWidget extends Widget {
     public final MapFile file;
@@ -41,7 +42,7 @@ public class MapFileWidget extends Widget {
     private boolean follow;
     private Area dext;
     private Segment dseg;
-    private Indir<Grid>[] display;
+    private DisplayGrid[] display;
     private UI.Grab drag;
     private boolean dragging;
     private Coord dsc, dmc;
@@ -115,8 +116,7 @@ public class MapFileWidget extends Widget {
 	Area next = Area.sized(loc.tc.sub(hsz).div(cmaps),
 			       sz.add(cmaps).sub(1, 1).div(cmaps).add(1, 1));
 	if((display == null) || (loc.seg != dseg) || !next.equals(dext)) {
-	    @SuppressWarnings("unchecked")
-	    Indir<Grid>[] nd = new Indir[next.rsz()];
+	    DisplayGrid[] nd = new DisplayGrid[next.rsz()];
 	    if((display != null) && (loc.seg == dseg)) {
 		for(Coord c : dext) {
 		    if(next.contains(c))
@@ -126,6 +126,34 @@ public class MapFileWidget extends Widget {
 	    display = nd;
 	    dseg = loc.seg;
 	    dext = next;
+	}
+    }
+
+    public static class DisplayGrid {
+	public final Segment seg;
+	public final Coord sc;
+	private Optional<Tex> img;
+
+	public DisplayGrid(Segment seg, Coord sc) {
+	    this.seg = seg;
+	    this.sc = sc;
+	}
+
+	public Tex img() {
+	    get: if(img == null) {
+		Indir<Grid> gr = seg.grid(sc);
+		if(gr == null) {
+		    img = Optional.empty();
+		    break get;
+		}
+		Grid ggr = gr.get();
+		if(ggr == null) {
+		    img = Optional.empty();
+		    break get;
+		}
+		img = Optional.of(new TexI(ggr.render(sc.mul(cmaps))));
+	    }
+	    return(img.orElse(null));
 	}
     }
 
@@ -140,15 +168,11 @@ public class MapFileWidget extends Widget {
 	    for(Coord c : dext) {
 		Tex img;
 		try {
-		    Indir<Grid> gr = display[dext.ri(c)];
-		    if(gr == null)
-			display[dext.ri(c)] = gr = loc.seg.grid(c);
-		    if(gr == null)
+		    DisplayGrid disp = display[dext.ri(c)];
+		    if(disp == null)
+			disp = display[dext.ri(c)] = new DisplayGrid(loc.seg, c);
+		    if((img = disp.img()) == null)
 			continue;
-		    Grid ggr = gr.get();
-		    if(ggr == null)
-			continue;
-		    img = ggr.img.get();
 		} catch(Loading l) {
 		    continue;
 		}

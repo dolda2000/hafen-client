@@ -273,7 +273,7 @@ public class MapFile {
 	    return(tiles[c.x + (c.y * cmaps.x)] & 0xff);
 	}
 
-	public BufferedImage render() {
+	public BufferedImage render(Coord off) {
 	    BufferedImage[] texes = new BufferedImage[256];
 	    boolean[] cached = new boolean[256];
 	    WritableRaster buf = PUtils.imgraster(cmaps);
@@ -284,11 +284,11 @@ public class MapFile {
 		    BufferedImage tex = tiletex(t, texes, cached);
 		    int rgb = 0;
 		    if(tex != null)
-			rgb = tex.getRGB(Utils.floormod(c.x, tex.getWidth()),
-					 Utils.floormod(c.y, tex.getHeight()));
-		    buf.setSample(c.x, c.y, 2, (rgb & 0x000000ff) >>>  0);
-		    buf.setSample(c.x, c.y, 1, (rgb & 0x0000ff00) >>>  8);
+			rgb = tex.getRGB(Utils.floormod(c.x + off.x, tex.getWidth()),
+					 Utils.floormod(c.y + off.y, tex.getHeight()));
 		    buf.setSample(c.x, c.y, 0, (rgb & 0x00ff0000) >>> 16);
+		    buf.setSample(c.x, c.y, 1, (rgb & 0x0000ff00) >>>  8);
+		    buf.setSample(c.x, c.y, 2, (rgb & 0x000000ff) >>>  0);
 		    buf.setSample(c.x, c.y, 3, (rgb & 0xff000000) >>> 24);
 		}
 	    }
@@ -309,19 +309,6 @@ public class MapFile {
 	    }
 	    return(PUtils.rasterimg(buf));
 	}
-
-	public final Indir<Tex> img = new Indir<Tex>() {
-	    private Future<Tex> def = null;
-	    
-	    public Tex get() {
-		if(def == null) {
-		    def = Defer.later(() -> {
-			    return(new TexI(render()));
-			});
-		}
-		return(def.get());
-	    }
-	};
     }
 
     public class Segment {

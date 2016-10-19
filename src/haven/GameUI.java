@@ -38,7 +38,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public final long plid;
     public MenuGrid menu;
     public MapView map;
-    public Widget mmap;
+    public LocalMiniMap mmap;
     public Fightview fv;
     private Text lastmsg;
     private long msgtime;
@@ -390,6 +390,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		buddies.raise();
 		fitwdg(buddies);
 		setfocus(buddies);
+	    }
+	    return(true);
+	} else if(key == 13) {
+	    if((mmap != null) && (mmap.save != null)) {
+		MapFileWidget.MapWindow mw = new MapFileWidget.MapWindow(mmap.save, new Coord(500, 500));
+		mw.view.follow(new MapFileWidget.MapLocator(map));
+		add(mw, 100, 100);
 	    }
 	    return(true);
 	}
