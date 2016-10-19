@@ -1115,6 +1115,14 @@ public class Utils {
 	return(i.next());
     }
 
+    public static <T> T take(Iterable<T> c) {
+	Iterator<T> i = c.iterator();
+	if(!i.hasNext()) return(null);
+	T ret = i.next();
+	i.remove();
+	return(ret);
+    }
+
     public static boolean strcheck(String str, IntPredicate p) {
 	for(int i = 0; i < str.length(); i++) {
 	    if(!p.test(str.charAt(i)))
