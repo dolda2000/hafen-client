@@ -69,6 +69,7 @@ public class ZMessage extends Message implements Closeable, Flushable {
 				throw(new EOF("Unterminated z-blob"));
 			}
 			zi.setInput(bk.rbuf, bk.rh, bk.rt - bk.rh);
+			bk.rh = bk.rt;
 		    }
 		} else {
 		    rt += rv;
@@ -76,7 +77,7 @@ public class ZMessage extends Message implements Closeable, Flushable {
 		}
 	    }
 	} catch(DataFormatException e) {
-	    throw(new RuntimeException("Malformed z-blob", e));
+	    throw(new FormatError("Malformed z-blob", e));
 	}
     }
 
@@ -86,7 +87,7 @@ public class ZMessage extends Message implements Closeable, Flushable {
 	zo.setInput(wbuf, 0, wh);
 	if(finish)
 	    zo.finish();
-	while(!zo.needsInput()) {
+	while(!zo.needsInput() || (finish && !zo.finished())) {
 	    if(bk.wt - bk.wh < 1)
 		bk.overflow(1024);
 	    int rv = zo.deflate(bk.wbuf, bk.wh, bk.wt - bk.wh, sync?Deflater.SYNC_FLUSH:Deflater.NO_FLUSH);
