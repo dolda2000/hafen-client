@@ -420,12 +420,21 @@ public class Resource implements Serializable {
 		synchronized(queue) {
 		    Queued cq = queued.get(name);
 		    if(cq != null) {
-			if((ver == -1) || (cq.ver == ver)) {
-			    cq.boostprio(prio);
-			    return(cq);
+			if(ver != -1) {
+			    if(ver < cq.ver) {
+				throw(new LoadException(String.format("Weird version number on %s (%d > %d)", cq.name, cq.ver, ver), null));
+			    } else if(ver == cq.ver) {
+				cq.boostprio(prio);
+				return(cq);
+			    }
+			} else {
+			    if(cq.done && (cq.error != null)) {
+				/* XXX: This is probably not the right way to handle this. */
+			    } else {
+				cq.boostprio(prio);
+				return(cq);
+			    }
 			}
-			if(ver < cq.ver)
-			    throw(new LoadException(String.format("Weird version number on %s (%d > %d)", cq.name, cq.ver, ver), null));
 			queued.remove(name);
 			queue.removeid(cq);
 		    }
