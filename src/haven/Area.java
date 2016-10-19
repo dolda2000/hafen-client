@@ -101,4 +101,8 @@ public class Area implements Iterable<Coord>, java.io.Serializable {
     public int rsz() {
 	return((br.x - ul.x) * (br.y - ul.y));
     }
+
+    public String toString() {
+	return(String.format("((%d, %d) - (%d, %d))", ul.x, ul.y, br.x, br.y));
+    }
 }
