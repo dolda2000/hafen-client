@@ -132,28 +132,25 @@ public class MapFileWidget extends Widget {
     public static class DisplayGrid {
 	public final Segment seg;
 	public final Coord sc;
-	private Optional<Tex> img;
+	public final Indir<Grid> gref;
+	private Grid cgrid = null;
+	private Defer.Future<Tex> img = null;
 
-	public DisplayGrid(Segment seg, Coord sc) {
+	public DisplayGrid(Segment seg, Coord sc, Indir<Grid> gref) {
 	    this.seg = seg;
 	    this.sc = sc;
+	    this.gref = gref;
 	}
 
 	public Tex img() {
-	    get: if(img == null) {
-		Indir<Grid> gr = seg.grid(sc);
-		if(gr == null) {
-		    img = Optional.empty();
-		    break get;
-		}
-		Grid ggr = gr.get();
-		if(ggr == null) {
-		    img = Optional.empty();
-		    break get;
-		}
-		img = Optional.of(new TexI(ggr.render(sc.mul(cmaps))));
+	    Grid grid = gref.get();
+	    if(grid != cgrid) {
+		if(img != null)
+		    img.cancel();
+		img = Defer.later(() -> new TexI(grid.render(sc.mul(cmaps))));
+		cgrid = grid;
 	    }
-	    return(img.orElse(null));
+	    return((img == null)?null:img.get());
 	}
     }
 
@@ -163,24 +160,27 @@ public class MapFileWidget extends Widget {
 	    return;
 	Coord hsz = sz.div(2);
 	redisplay(loc);
-	file.lock.readLock().lock();
-	try {
-	    for(Coord c : dext) {
-		Tex img;
-		try {
-		    DisplayGrid disp = display[dext.ri(c)];
-		    if(disp == null)
-			disp = display[dext.ri(c)] = new DisplayGrid(loc.seg, c);
-		    if((img = disp.img()) == null)
-			continue;
-		} catch(Loading l) {
-		    continue;
+	if(file.lock.readLock().tryLock()) {
+	    try {
+		for(Coord c : dext) {
+		    if(display[dext.ri(c)] == null)
+			display[dext.ri(c)] = new DisplayGrid(loc.seg, c, loc.seg.grid(c));
 		}
-		Coord ul = hsz.add(c.mul(cmaps)).sub(loc.tc);
-		g.image(img, ul);
+	    } finally {
+		file.lock.readLock().unlock();
 	    }
-	} finally {
-	    file.lock.readLock().unlock();
+	}
+	for(Coord c : dext) {
+	    Tex img;
+	    try {
+		DisplayGrid disp = display[dext.ri(c)];
+		if((disp == null) || ((img = disp.img()) == null))
+		    continue;
+	    } catch(Loading l) {
+		continue;
+	    }
+	    Coord ul = hsz.add(c.mul(cmaps)).sub(loc.tc);
+	    g.image(img, ul);
 	}
     }
 

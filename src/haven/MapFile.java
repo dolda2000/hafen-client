@@ -314,48 +314,90 @@ public class MapFile {
     public class Segment {
 	public final long id;
 	private final BMap<Coord, Long> map = new HashBMap<>();
-	private final Map<Long, Grid> loaded = new HashMap<>();
-	private final Map<Long, Future<Grid>> loading = new HashMap<>();
+	private final Map<Long, Cached> cache = new CacheMap<>(CacheMap.RefType.WEAK);
+	private final Map<Coord, ByCoord> ccache = new CacheMap<>(CacheMap.RefType.WEAK);
 
 	public Segment(long id) {
 	    this.id = id;
 	}
 
-	private void include(Grid grid, Coord sc) {
-	    map.put(sc, grid.id);
-	    loaded.put(grid.id, grid);
+	private class Cached implements Indir<Grid> {
+	    Grid loaded;
+	    Future<Grid> loading;
+
+	    Cached(Future<Grid> loading) {
+		this.loading = loading;
+	    }
+
+	    public Grid get() {
+		if(loaded == null)
+		    loaded = loading.get();
+		return(loaded);
+	    }
 	}
 
-	private Indir<Grid> grid(long id) {
+	private void include(Grid grid, Coord sc) {
 	    checklock();
-	    Grid g = loaded.get(id);
-	    if(g != null)
-		return(() -> g);
-	    Future<Grid> f = loading.get(id);
-	    if(f == null) {
-		f = Defer.later(() -> {
-			Grid lg = Grid.load(store, id);
-			lock.writeLock().lock();
-			try {
-			    loaded.put(id, lg);
-			    loading.remove(id);
-			} finally {
-			    lock.writeLock().unlock();
-			}
-			return(lg);
-		    });
-		loading.put(id, f);
+	    map.put(sc, grid.id);
+	    Cached cur;
+	    synchronized(cache) {
+		cur = cache.get(grid.id);
+		if(cur != null)
+		    cur.loaded = grid;
 	    }
-	    Future<Grid> F = f;
-	    return(() -> F.get());
+	    synchronized(ccache) {
+		ByCoord bc = ccache.get(sc);
+		if(bc != null)
+		    bc.cur = cur;
+	    }
+	}
+
+	private Grid loaded(long id) {
+	    checklock();
+	    synchronized(cache) {
+		Cached cur = cache.get(id);
+		if(cur != null)
+		    return(cur.loaded);
+	    }
+	    return(null);
+	}
+
+	private Future<Grid> loadgrid(long id) {
+	    return(Defer.later(() -> Grid.load(store, id)));
+	}
+
+	private Cached grid0(long id) {
+	    checklock();
+	    synchronized(cache) {
+		return(cache.computeIfAbsent(id, k -> new Cached(loadgrid(k))));
+	    }
+	}
+	public Indir<Grid> grid(long id) {return(grid0(id));}
+
+	private class ByCoord implements Indir<Grid> {
+	    final Coord sc;
+	    Cached cur;
+
+	    ByCoord(Coord sc, Cached cur) {
+		this.sc = sc;
+		this.cur = cur;
+	    }
+
+	    public Grid get() {
+		Cached cur = this.cur;
+		if(cur == null)
+		    return(null);
+		return(cur.get());
+	    }
 	}
 
 	public Indir<Grid> grid(Coord gc) {
 	    checklock();
 	    Long id = map.get(gc);
-	    if(id == null)
-		return(null);
-	    return(grid(id));
+	    Cached cur = (id == null)?null:grid0(id);
+	    synchronized(ccache) {
+		return(ccache.computeIfAbsent(gc, k -> new ByCoord(k, cur)));
+	    }
 	}
     }
 
@@ -502,7 +544,7 @@ public class MapFile {
 		    moff = info.sc.sub(g.gc);
 		}
 		if(seg.id == mseg) {
-		    Grid cur = seg.loaded.get(g.id);
+		    Grid cur = seg.loaded(g.id);
 		    if(!((cur != null) && (cur.useq == g.seq))) {
 			Grid sg = Grid.from(map, g);
 			sg.save(store);
