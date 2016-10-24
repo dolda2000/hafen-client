@@ -26,32 +26,47 @@
 
 package haven;
 
-import java.io.*;
+import java.util.*;
+import java.util.function.*;
 
-public interface ResCache {
-    public OutputStream store(String name) throws IOException;
-    public InputStream fetch(String name) throws IOException;
-    
-    public static ResCache global = StupidJavaCodeContainer.makeglobal();
-    
-    public static class StupidJavaCodeContainer {
-	private static ResCache makeglobal() {
-	    return(HashDirCache.create());
+public class CachedFunction<P, R> implements Function<P, R> {
+    public final Function<P, R> back;
+    public final Consumer<? super R> dispose;
+    private final Map<P, R> cache;
+
+    public CachedFunction(int size, Function<P, R> back, Consumer<? super R> dispose) {
+	this.back = back;
+	this.dispose = dispose;
+	this.cache = new Cache(size);
+    }
+
+    public CachedFunction(int size, Function<P, R> back) {
+	this(size, back, null);
+    }
+
+    private class Cache extends LinkedHashMap<P, R> {
+	private final int size;
+
+	public Cache(int size) {
+	    super(size, 0.75f, true);
+	    this.size = size;
+	}
+
+	protected boolean removeEldestEntry(Map.Entry<P, R> eldest) {
+	    if(size() > size) {
+		if(dispose != null)
+		    dispose.accept(eldest.getValue());
+		return(true);
+	    }
+	    return(false);
 	}
     }
 
-    public static class TestCache implements ResCache {
-	public OutputStream store(final String name) {
-	    return(new ByteArrayOutputStream() {
-		    public void close() {
-			byte[] res = toByteArray();
-			System.out.println(name + ": " + res.length);
-		    }
-		});
-	}
-	
-	public InputStream fetch(String name) throws IOException {
-	    throw(new FileNotFoundException());
-	}
+    public R apply(P param) {
+	if(cache.containsKey(param))
+	    return(cache.get(param));
+	R ret = back.apply(param);
+	cache.put(param, ret);
+	return(ret);
     }
 }
