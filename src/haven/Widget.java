@@ -846,12 +846,21 @@ public class Widget {
 	resize(contentsz());
     }
     
+    public void move(Coord c) {
+	this.c = c;
+    }
+
     public void resize(Coord sz) {
 	this.sz = sz;
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.presize();
 	if(parent != null)
 	    parent.cresize(this);
+    }
+
+    public void move(Area a) {
+	move(a.ul);
+	resize(a.sz());
     }
 
     public void resize(int x, int y) {
