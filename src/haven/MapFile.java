@@ -93,6 +93,13 @@ public class MapFile {
 	}
     }
 
+    public void defersave() {
+	synchronized(procmon) {
+	    gdirty = true;
+	    process();
+	}
+    }
+
     public static class GridInfo {
 	public final long id, seg;
 	public final Coord sc;
@@ -136,6 +143,74 @@ public class MapFile {
 		out.addcoord(info.sc);
 	    }
 	});
+
+    private static Runnable locked(Runnable r, Lock lock) {
+	return(() -> {
+		lock.lock();
+		try {
+		    r.run();
+		} finally {
+		    lock.unlock();
+		}
+	    });
+    }
+
+    private final Object procmon = new Object();
+    private Thread processor = null;
+    private final Collection<Pair<MCache, Collection<MCache.Grid>>> updqueue = new HashSet<>();
+    private final Collection<Segment> dirty = new HashSet<>();
+    private boolean gdirty = false;
+    private class Processor extends HackThread {
+	Processor() {
+	    super("Mapfile processor");
+	}
+
+	public void run() {
+	    try {
+		long last = System.currentTimeMillis();
+		while(true) {
+		    Runnable task;
+		    long now = System.currentTimeMillis();
+		    synchronized(procmon) {
+			if(!updqueue.isEmpty()) {
+			    Pair<MCache, Collection<MCache.Grid>> el = Utils.take(updqueue);
+			    task = () -> MapFile.this.update(el.a, el.b);
+			} else if(!dirty.isEmpty()) {
+			    Segment seg = Utils.take(dirty);
+			    task = locked(() -> segments.put(seg.id, seg), lock.writeLock());
+			} else if(gdirty) {
+			    task = locked(MapFile.this::save, lock.readLock());
+			    gdirty = false;
+			} else {
+			    if(now - last > 10000) {
+				processor = null;
+				return;
+			    }
+			    procmon.wait(5000);
+			    continue;
+			}
+		    }
+		    task.run();
+		    last = now;
+		}
+	    } catch(InterruptedException e) {
+	    } finally {
+		synchronized(procmon) {
+		    processor = null;
+		}
+	    }
+	}
+    }
+    private void process() {
+	synchronized(procmon) {
+	    if(processor == null) {
+		Thread np = new Processor();
+		np.start();
+		processor = np;
+	    }
+	    procmon.notifyAll();
+	}
+    }
 
     public static class TileInfo {
 	public final Resource.Spec res;
@@ -451,72 +526,8 @@ public class MapFile {
 		z.finish();
 	    }
 	    if(knownsegs.add(id))
-		save();
+		defersave();
 	});
-
-    private static Runnable locked(Runnable r, Lock lock) {
-	return(() -> {
-		lock.lock();
-		try {
-		    r.run();
-		} finally {
-		    lock.unlock();
-		}
-	    });
-    }
-
-    private final Object procmon = new Object();
-    private Thread processor = null;
-    private final Collection<Pair<MCache, Collection<MCache.Grid>>> updqueue = new HashSet<>();
-    private final Collection<Segment> dirty = new HashSet<>();
-    private class Processor extends HackThread {
-	Processor() {
-	    super("Mapfile processor");
-	}
-
-	public void run() {
-	    try {
-		long last = System.currentTimeMillis();
-		while(true) {
-		    Runnable task;
-		    long now = System.currentTimeMillis();
-		    synchronized(procmon) {
-			if(!updqueue.isEmpty()) {
-			    Pair<MCache, Collection<MCache.Grid>> el = Utils.take(updqueue);
-			    task = () -> MapFile.this.update(el.a, el.b);
-			} else if(!dirty.isEmpty()) {
-			    Segment seg = Utils.take(dirty);
-			    task = locked(() -> segments.put(seg.id, seg), lock.writeLock());
-			} else {
-			    if(now - last > 10000) {
-				processor = null;
-				return;
-			    }
-			    procmon.wait(5000);
-			    continue;
-			}
-		    }
-		    task.run();
-		    last = now;
-		}
-	    } catch(InterruptedException e) {
-	    } finally {
-		synchronized(procmon) {
-		    processor = null;
-		}
-	    }
-	}
-    }
-    private void process() {
-	synchronized(procmon) {
-	    if(processor == null) {
-		Thread np = new Processor();
-		np.start();
-		processor = np;
-	    }
-	    procmon.notifyAll();
-	}
-    }
 
     private void merge(Segment dst, Segment src, Coord soff) {
 	checklock();
@@ -528,7 +539,7 @@ public class MapFile {
 	    gridinfo.put(id, new GridInfo(id, dst.id, dc));
 	}
 	if(knownsegs.remove(src.id))
-	    save();
+	    defersave();
 	synchronized(procmon) {
 	    dirty.add(dst);
 	    process();
