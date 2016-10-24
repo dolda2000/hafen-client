@@ -327,6 +327,18 @@ public class MapFile {
 	}
     }
 
+    public void update(Marker mark) {
+	lock.readLock().lock();
+	try {
+	    if(markers.contains(mark)) {
+		defersave();
+		markerseq++;
+	    }
+	} finally {
+	    lock.readLock().unlock();
+	}
+    }
+
     public static class TileInfo {
 	public final Resource.Spec res;
 	public final int prio;
