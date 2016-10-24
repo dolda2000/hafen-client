@@ -396,17 +396,11 @@ public class MapFile {
 
 	private void include(Grid grid, Coord sc) {
 	    checklock();
-	    map.put(sc, grid.id);
-	    Cached cur;
+	    include(grid.id, sc);
 	    synchronized(cache) {
-		cur = cache.get(grid.id);
+		Cached cur = cache.get(grid.id);
 		if(cur != null)
 		    cur.loaded = grid;
-	    }
-	    synchronized(ccache) {
-		ByCoord bc = ccache.get(sc);
-		if(bc != null)
-		    bc.cur = cur;
 	    }
 	}
     }
