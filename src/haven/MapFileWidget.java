@@ -111,17 +111,20 @@ public class MapFileWidget extends Widget {
 	curloc = loc;
     }
 
+    public Location resolve(Locator loc) {
+	if(!file.lock.readLock().tryLock())
+	    throw(new Loading("Map file is busy"));
+	try {
+	    return(loc.locate(file));
+	} finally {
+	    file.lock.readLock().unlock();
+	}
+    }
+
     public void tick(double dt) {
 	if(setloc != null) {
 	    try {
-		Location loc;
-		if(!file.lock.readLock().tryLock())
-		    throw(new Loading("Map file is busy"));
-		try {
-		    loc = setloc.locate(file);
-		} finally {
-		    file.lock.readLock().unlock();
-		}
+		Location loc = resolve(setloc);
 		center(loc);
 		if(!follow)
 		    setloc = null;
@@ -222,6 +225,13 @@ public class MapFileWidget extends Widget {
 	    dext = next;
 	    markers = null;
 	}
+    }
+
+    public Coord xlate(Location loc) {
+	Location curloc = this.curloc;
+	if((curloc == null) || (curloc.seg != loc.seg))
+	    return(null);
+	return(loc.tc.add(sz.div(2)).sub(curloc.tc));
     }
 
     public void draw(GOut g) {
