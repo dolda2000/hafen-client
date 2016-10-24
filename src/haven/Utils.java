@@ -1123,6 +1123,14 @@ public class Utils {
 	return(ret);
     }
 
+    public static <T> int index(T[] arr, T el) {
+	for(int i = 0; i < arr.length; i++) {
+	    if(Objects.equals(arr[i], el))
+		return(i);
+	}
+	return(-1);
+    }
+
     public static boolean strcheck(String str, IntPredicate p) {
 	for(int i = 0; i < str.length(); i++) {
 	    if(!p.test(str.charAt(i)))

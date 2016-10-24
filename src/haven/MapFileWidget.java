@@ -156,22 +156,35 @@ public class MapFileWidget extends Widget {
     }
 
     public static class DisplayMarker {
+	public static final Resource.Image flagbg, flagfg;
+	public static final Coord flagcc;
 	public final Marker m;
 	public final Text tip;
 	public Area hit;
 	private Tex img;
 	private Coord cc;
 
+	static {
+	    Resource flag = Resource.local().loadwait("gfx/hud/mmap/flag");
+	    flagbg = flag.layer(Resource.imgc, 1);
+	    flagfg = flag.layer(Resource.imgc, 0);
+	    flagcc = flag.layer(Resource.negc).cc;
+	}
+
 	public DisplayMarker(Marker marker) {
 	    this.m = marker;
 	    this.tip = Text.render(m.nm);
-	    this.hit = new Area(new Coord(-5, -5), new Coord(5, 5));
+	    this.hit = Area.sized(flagcc.inv(), flagbg.sz);
 	}
 
 	public void draw(GOut g, Coord c) {
-	    g.chcolor(((PMarker)m).color);
-	    g.image(MiniMap.plx.layer(Resource.imgc).tex(), c.add(MiniMap.plx.layer(Resource.negc).cc.inv()));
-	    g.chcolor();
+	    if(m instanceof PMarker) {
+		Coord ul = c.sub(flagcc);
+		g.chcolor(((PMarker)m).color);
+		g.image(flagfg, ul);
+		g.chcolor();
+		g.image(flagbg, ul);
+	    }
 	}
     }
 
@@ -241,8 +254,10 @@ public class MapFileWidget extends Widget {
 	}
 	if((markers == null) || (file.markerseq != markerseq))
 	    remark(loc, dext);
-	for(DisplayMarker mark : markers)
-	    mark.draw(g, hsz.sub(loc.tc).add(mark.m.tc));
+	if(markers != null) {
+	    for(DisplayMarker mark : markers)
+		mark.draw(g, hsz.sub(loc.tc).add(mark.m.tc));
+	}
     }
 
     public void center(Locator loc) {
@@ -253,6 +268,10 @@ public class MapFileWidget extends Widget {
     public void follow(Locator loc) {
 	setloc = loc;
 	follow = true;
+    }
+
+    public boolean clickloc(Location loc, int button) {
+	return(false);
     }
 
     public boolean clickmarker(DisplayMarker mark, int button) {
@@ -269,44 +288,16 @@ public class MapFileWidget extends Widget {
 	return(null);
     }
 
-    private static final String[] names;
-    static {
-	try {
-	    try(java.io.BufferedReader r = new java.io.BufferedReader(new java.io.FileReader("/usr/share/dict/words"))) {
-		names = r.lines().collect(java.util.stream.Collectors.toList()).toArray(new String[0]);
-	    }
-	} catch(java.io.IOException e) {
-	    throw(new RuntimeException(e));
-	}
-    }
-    private static String randname() {
-	String ret = names[new Random().nextInt(names.length)];
-	ret = ret.substring(0, 1).toUpperCase() + ret.substring(1);
-	return(ret);
-    }
-
-    private static Color randcol() {
-	Random rnd = new Random();
-	int r = rnd.nextInt(256);
-	int g = rnd.nextInt(256);
-	int b = rnd.nextInt(256);
-	int m = Math.max(Math.max(r, g), b);
-	r = (r * 255) / m;
-	g = (g * 255) / m;
-	b = (b * 255) / m;
-	return(new Color(r, g, b));
-    }
-
     public boolean mousedown(Coord c, int button) {
 	Coord tc = null;
 	if(curloc != null)
 	    tc = c.sub(sz.div(2)).add(curloc.tc);
-	if((tc != null) && (markers != null)) {
-	    for(DisplayMarker mark : markers) {
-		if((mark.hit != null) && mark.hit.contains(tc.sub(mark.m.tc)) &&
-		   clickmarker(mark, button))
-		    return(true);
-	    }
+	if(tc != null) {
+	    DisplayMarker mark = markerat(tc);
+	    if((mark != null) && clickmarker(mark, button))
+		return(true);
+	    if(clickloc(new Location(curloc.seg, tc), button))
+		return(true);
 	}
 	if(button == 1) {
 	    Location loc = curloc;
@@ -315,11 +306,6 @@ public class MapFileWidget extends Widget {
 		dsc = c;
 		dmc = loc.tc;
 		dragging = false;
-	    }
-	    return(true);
-	} else if(button == 3) {
-	    if(tc != null) {
-		file.add(new PMarker(curloc.seg.id, tc, randname(), randcol()));
 	    }
 	    return(true);
 	}
