@@ -77,7 +77,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     }
 
     public int hashCode() {
-	return(((y & 0xffff) << 16) | (x & 0xffff));
+	return(((y & 0xffff) * 31) + (x & 0xffff));
     }
 	
     public Coord add(int ax, int ay) {
