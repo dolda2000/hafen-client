@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.awt.Color;
 
 public abstract class Message {
     public static final int T_END = 0;
@@ -183,8 +184,8 @@ public abstract class Message {
     public Coord coord() {
 	return(new Coord(int32(), int32()));
     }
-    public java.awt.Color color() {
-	return(new java.awt.Color(uint8(), uint8(), uint8(), uint8()));
+    public Color color() {
+	return(new Color(uint8(), uint8(), uint8(), uint8()));
     }
     public float float32() {
 	int off = rget(4);
@@ -320,6 +321,11 @@ public abstract class Message {
 	addint32(c.x); addint32(c.y);
 	return(this);
     }
+    public Message addcolor(Color color) {
+	adduint8(color.getRed()); adduint8(color.getGreen());
+	adduint8(color.getBlue()); adduint8(color.getAlpha());
+	return(this);
+    }
     public Message addfloat32(float num) {
 	int off = wget(4);
 	Utils.float32e(num, wbuf, off);
@@ -354,6 +360,9 @@ public abstract class Message {
 		    addint32(b.length);
 		}
 		addbytes(b);
+	    } else if(o instanceof Color) {
+		adduint8(T_COLOR);
+		addcolor((Color)o);
 	    } else if(o instanceof Float) {
 		adduint8(T_FLOAT32);
 		addfloat32(((Float)o).floatValue());

@@ -29,7 +29,7 @@ package haven;
 import java.awt.Color;
 
 public abstract class Listbox<T> extends ListWidget<T> {
-    public final int h;
+    public int h;
     public final Scrollbar sb;
 
     public Listbox(int w, int h, int itemh) {
@@ -112,5 +112,12 @@ public abstract class Listbox<T> extends ListWidget<T> {
 
     public void display() {
 	display(sel);
+    }
+
+    public void resize(Coord sz) {
+	super.resize(sz);
+	this.h = (sz.y + itemh - 1) / itemh;
+	sb.resize(sz.y);
+	sb.c = new Coord(sz.x - sb.sz.x, 0);
     }
 }
