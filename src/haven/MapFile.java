@@ -336,22 +336,6 @@ public class MapFile {
 	    }
 	}
 
-	private void include(Grid grid, Coord sc) {
-	    checklock();
-	    map.put(sc, grid.id);
-	    Cached cur;
-	    synchronized(cache) {
-		cur = cache.get(grid.id);
-		if(cur != null)
-		    cur.loaded = grid;
-	    }
-	    synchronized(ccache) {
-		ByCoord bc = ccache.get(sc);
-		if(bc != null)
-		    bc.cur = cur;
-	    }
-	}
-
 	private Grid loaded(long id) {
 	    checklock();
 	    synchronized(cache) {
@@ -397,6 +381,32 @@ public class MapFile {
 	    Cached cur = (id == null)?null:grid0(id);
 	    synchronized(ccache) {
 		return(ccache.computeIfAbsent(gc, k -> new ByCoord(k, cur)));
+	    }
+	}
+
+	private void include(long id, Coord sc) {
+	    map.put(sc, id);
+	    ByCoord bc;
+	    synchronized(ccache) {
+		bc = ccache.get(sc);
+	    }
+	    if((bc != null) && (bc.cur == null))
+		bc.cur = grid0(id);
+	}
+
+	private void include(Grid grid, Coord sc) {
+	    checklock();
+	    map.put(sc, grid.id);
+	    Cached cur;
+	    synchronized(cache) {
+		cur = cache.get(grid.id);
+		if(cur != null)
+		    cur.loaded = grid;
+	    }
+	    synchronized(ccache) {
+		ByCoord bc = ccache.get(sc);
+		if(bc != null)
+		    bc.cur = cur;
 	    }
 	}
     }
@@ -512,12 +522,28 @@ public class MapFile {
 	}
     }
 
+    private void merge(Segment dst, Segment src, Coord soff) {
+	checklock();
+	for(Map.Entry<Coord, Long> gi : src.map.entrySet()) {
+	    long id = gi.getValue();
+	    Coord sc = gi.getKey();
+	    Coord dc = sc.sub(soff);
+	    dst.include(id, dc);
+	    gridinfo.put(id, new GridInfo(id, dst.id, dc));
+	}
+	synchronized(procmon) {
+	    dirty.add(dst);
+	    process();
+	}
+    }
+
     public void update(MCache map, Collection<MCache.Grid> grids) {
 	lock.writeLock().lock();
 	try {
 	    long mseg = -1;
 	    Coord moff = null;
 	    Collection<MCache.Grid> missing = new ArrayList<>(grids.size());
+	    Collection<Pair<Long, Coord>> merge = null;
 	    for(MCache.Grid g : grids) {
 		GridInfo info = gridinfo.get(g.id);
 		if(info == null) {
@@ -543,12 +569,16 @@ public class MapFile {
 		    mseg = seg.id;
 		    moff = info.sc.sub(g.gc);
 		}
-		if(seg.id == mseg) {
-		    Grid cur = seg.loaded(g.id);
-		    if(!((cur != null) && (cur.useq == g.seq))) {
-			Grid sg = Grid.from(map, g);
-			sg.save(store);
-		    }
+		Grid cur = seg.loaded(g.id);
+		if(!((cur != null) && (cur.useq == g.seq))) {
+		    Grid sg = Grid.from(map, g);
+		    sg.save(store);
+		}
+		if(seg.id != mseg) {
+		    if(merge == null)
+			merge = new HashSet<>();
+		    Coord soff = info.sc.sub(g.gc.add(moff));
+		    merge.add(new Pair<>(seg.id, soff));
 		}
 	    }
 	    if(!missing.isEmpty()) {
@@ -570,6 +600,23 @@ public class MapFile {
 		    sg.save(store);
 		    seg.include(sg, sc);
 		    gridinfo.put(g.id, new GridInfo(g.id, seg.id, sc));
+		}
+	    }
+	    if(merge != null) {
+		for(Pair<Long, Coord> mel : merge) {
+		    Segment a = segments.get(mseg);
+		    Segment b = segments.get(mel.a);
+		    Coord ab = mel.b;
+		    Segment src, dst; Coord soff;
+		    if(a.map.size() > b.map.size()) {
+			src = b; dst = a;
+			soff = ab;
+		    } else {
+			src = a; dst = b;
+			soff = ab.inv();
+		    }
+		    Debug.log.printf("mapfile: merging segment %x (%d) into %x (%d) at %s\n", src.id, src.map.size(), dst.id, dst.map.size(), soff);
+		    merge(dst, src, soff);
 		}
 	    }
 	} finally {
