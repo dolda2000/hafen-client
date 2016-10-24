@@ -27,9 +27,12 @@
 package haven;
 
 import java.util.zip.*;
+import java.io.*;
 
-public class ZMessage extends Message {
-    private Inflater z = new Inflater();
+public class ZMessage extends Message implements Closeable, Flushable {
+    private Inflater zi = null;
+    private Deflater zo = null;
+    private boolean eof;
     private final Message bk;
 
     public ZMessage(Message from) {
@@ -37,8 +40,11 @@ public class ZMessage extends Message {
     }
 
     public boolean underflow(int hint) {
-	if(z == null)
-	    return(false);
+	if(zi == null) {
+	    if(eof)
+		return(false);
+	    zi = new Inflater();
+	}
 	boolean ret = false;
 	if(rbuf.length - rt < 1) {
 	    byte[] n = new byte[Math.max(1024, rt - rh) + rt - rh];
@@ -49,19 +55,21 @@ public class ZMessage extends Message {
 	}
 	try {
 	    while(true) {
-		int rv = z.inflate(rbuf, rt, rbuf.length - rt);
+		int rv = zi.inflate(rbuf, rt, rbuf.length - rt);
 		if(rv == 0) {
-		    if(z.finished()) {
-			z.end();
-			z = null;
+		    if(zi.finished()) {
+			zi.end();
+			zi = null;
+			eof = true;
 			return(ret);
 		    }
-		    if(z.needsInput()) {
+		    if(zi.needsInput()) {
 			if(bk.rt - bk.rh < 1) {
 			    if(!bk.underflow(128))
 				throw(new EOF("Unterminated z-blob"));
 			}
-			z.setInput(bk.rbuf, bk.rh, bk.rt - bk.rh);
+			zi.setInput(bk.rbuf, bk.rh, bk.rt - bk.rh);
+			bk.rh = bk.rt;
 		    }
 		} else {
 		    rt += rv;
@@ -69,11 +77,54 @@ public class ZMessage extends Message {
 		}
 	    }
 	} catch(DataFormatException e) {
-	    throw(new RuntimeException("Malformed z-blob", e));
+	    throw(new FormatError("Malformed z-blob", e));
 	}
     }
 
+    private void flush(boolean sync, boolean finish) {
+	if(zo == null)
+	    zo = new Deflater(9);
+	zo.setInput(wbuf, 0, wh);
+	if(finish)
+	    zo.finish();
+	while(!zo.needsInput() || (finish && !zo.finished())) {
+	    if(bk.wt - bk.wh < 1)
+		bk.overflow(1024);
+	    int rv = zo.deflate(bk.wbuf, bk.wh, bk.wt - bk.wh, sync?Deflater.SYNC_FLUSH:Deflater.NO_FLUSH);
+	    bk.wh += rv;
+	}
+	wh = 0;
+	if(finish) {
+	    zo.end();
+	    zo = null;
+	}
+    }
+
+    public void flush() {
+	flush(true, false);
+    }
+
     public void overflow(int min) {
-	throw(new RuntimeException("ZMessages are not writable yet"));
+	if(wh > 1024)
+	    flush(false, false);
+	if(wt - wh < min) {
+	    int l = (wbuf.length == 0)?1024:wbuf.length;
+	    while(l < wh + min)
+		l *= 2;
+	    byte[] n = new byte[l];
+	    System.arraycopy(wbuf, 0, n, 0, wh);
+	    wbuf = n;
+	    wt = wbuf.length;
+	}
+    }
+
+    public void finish() {
+	flush(false, true);
+    }
+
+    public void close() throws IOException {
+	finish();
+	if(bk instanceof Closeable)
+	    ((Closeable)bk).close();
     }
 }

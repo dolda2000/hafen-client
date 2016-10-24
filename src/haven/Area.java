@@ -26,12 +26,21 @@
 
 package haven;
 
-public class Area implements java.io.Serializable {
+import java.util.*;
+
+public class Area implements Iterable<Coord>, java.io.Serializable {
     public Coord ul, br;
 
     public Area(Coord ul, Coord br) {
 	this.ul = ul;
 	this.br = br;
+    }
+
+    public boolean equals(Object o) {
+	if(!(o instanceof Area))
+	    return(false);
+	Area a = (Area)o;
+	return(a.ul.equals(ul) && a.br.equals(br));
     }
 
     public static Area sized(Coord ul, Coord sz) {
@@ -40,6 +49,10 @@ public class Area implements java.io.Serializable {
 
     public Coord sz() {
 	return(br.sub(ul));
+    }
+
+    public boolean contains(Coord c) {
+	return((c.x >= ul.x) && (c.y >= ul.y) && (c.x < br.x) && (c.y < br.y));
     }
 
     public boolean isects(Area o) {
@@ -60,5 +73,36 @@ public class Area implements java.io.Serializable {
 
     public Area margin(int m) {
 	return(margin(new Coord(m, m)));
+    }
+
+    public Iterator<Coord> iterator() {
+	return(new Iterator<Coord>() {
+		int x = ul.x, y = ul.y;
+
+		public boolean hasNext() {
+		    return((y < br.y) && (x < br.x));
+		}
+
+		public Coord next() {
+		    Coord ret = new Coord(x, y);
+		    if(++x >= br.x) {
+			x = ul.x;
+			y++;
+		    }
+		    return(ret);
+		}
+	    });
+    }
+
+    public int ri(Coord c) {
+	return((c.x - ul.x) + ((c.y - ul.y) * (br.x - ul.x)));
+    }
+
+    public int rsz() {
+	return((br.x - ul.x) * (br.y - ul.y));
+    }
+
+    public String toString() {
+	return(String.format("((%d, %d) - (%d, %d))", ul.x, ul.y, br.x, br.y));
     }
 }
