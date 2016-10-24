@@ -527,6 +527,8 @@ public class MapFile {
 	    dst.include(id, dc);
 	    gridinfo.put(id, new GridInfo(id, dst.id, dc));
 	}
+	if(knownsegs.remove(src.id))
+	    save();
 	synchronized(procmon) {
 	    dirty.add(dst);
 	    process();
