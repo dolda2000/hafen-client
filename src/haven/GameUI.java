@@ -186,6 +186,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    if((mapfile != null) && mapfile.show(!mapfile.visible)) {
 			mapfile.raise();
 			fitwdg(mapfile);
+			setfocus(mapfile);
 		    }
 		}
 	    });
