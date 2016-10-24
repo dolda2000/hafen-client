@@ -36,6 +36,7 @@ import haven.Defer.Future;
 import static haven.MCache.cmaps;
 
 public class MapFile {
+    public static boolean debug = false;
     public final ResCache store;
     public ResCache store() {return(store);}
     public final Collection<Long> knownsegs = new HashSet<Long>();
@@ -219,6 +220,7 @@ public class MapFile {
 	    try {
 		fp = store.fetch(String.format("map/grid-%x", id));
 	    } catch(IOException e) {
+		Debug.log.printf("mapfile warning: error when locating grid %x: %s\n", id, e);
 		return(null);
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
@@ -580,7 +582,7 @@ public class MapFile {
 		if(mseg == -1) {
 		    seg = new Segment(Utils.el(missing).id);
 		    moff = Coord.z;
-		    Debug.log.printf("mapfile: creating new segment %x\n", seg.id);
+		    if(debug) Debug.log.printf("mapfile: creating new segment %x\n", seg.id);
 		} else {
 		    seg = segments.get(mseg);
 		}
@@ -609,14 +611,14 @@ public class MapFile {
 			src = a; dst = b;
 			soff = ab.inv();
 		    }
-		    Debug.log.printf("mapfile: merging segment %x (%d) into %x (%d) at %s\n", src.id, src.map.size(), dst.id, dst.map.size(), soff);
+		    if(debug) Debug.log.printf("mapfile: merging segment %x (%d) into %x (%d) at %s\n", src.id, src.map.size(), dst.id, dst.map.size(), soff);
 		    merge(dst, src, soff);
 		}
 	    }
 	} finally {
 	    lock.writeLock().unlock();
 	}
-	Debug.log.printf("mapfile: update completed\n");
+	if(debug) Debug.log.printf("mapfile: update completed\n");
     }
 
     private static final Coord[] inout = new Coord[] {
