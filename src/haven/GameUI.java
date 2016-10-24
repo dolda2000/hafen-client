@@ -49,6 +49,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private Window invwnd, equwnd, makewnd;
     public Inventory maininv;
     public CharWnd chrwdg;
+    public MapWnd mapfile;
     private Widget qqview;
     public BuddyWnd buddies;
     private final Zergwnd zerg;
@@ -102,6 +103,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
+    private final Coord minimapc;
     public GameUI(String chrid, long plid) {
 	this.chrid = chrid;
 	this.plid = plid;
@@ -128,8 +130,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			return(new Coord(GameUI.this.sz.x, Math.min(brpanel.c.y - 79, GameUI.this.sz.y - menupanel.sz.y)));
 		    }
 		}, new Coord(1, 0)));
-	blpanel.add(new Img(Resource.loadtex("gfx/hud/blframe")), 0, 9);
-	blpanel.add(new Img(Resource.loadtex("gfx/hud/lbtn-bg")), 0, 0);
+	Tex lbtnbg = Resource.loadtex("gfx/hud/lbtn-bg");
+	blpanel.add(new Img(Resource.loadtex("gfx/hud/blframe")), 0, lbtnbg.sz().y - 33);
+	blpanel.add(new Img(lbtnbg), 0, 0);
+	minimapc = new Coord(4, 34 + (lbtnbg.sz().y - 33));
 	menu = brpanel.add(new MenuGrid(), 20, 34);
 	brpanel.add(new Img(Resource.loadtex("gfx/hud/brframe")), 0, 0);
 	menupanel.add(new MainMenu(), 0, 0);
@@ -177,6 +181,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			map.disol(4, 5);
 		}
 	    }, 0, 0);
+	blpanel.add(new MenuButton("lbtn-map", 13, "Map ($col[255,255,0]{Ctrl+M})") {
+		public void click() {
+		    if((mapfile != null) && mapfile.show(!mapfile.visible)) {
+			mapfile.raise();
+			fitwdg(mapfile);
+		    }
+		}
+	    });
     }
 
     /* Ice cream */
@@ -496,8 +508,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    map.lower();
 	    if(mmap != null)
 		ui.destroy(mmap);
-	    mmap = blpanel.add(new LocalMiniMap(new Coord(133, 133), map), 4, 34 + 9);
+	    if(mapfile != null) {
+		ui.destroy(mapfile);
+		mapfile = null;
+	    }
+	    mmap = blpanel.add(new LocalMiniMap(new Coord(133, 133), map), minimapc);
 	    mmap.lower();
+	    if(mmap.save != null) {
+		mapfile = new MapWnd(mmap.save, map, new Coord(700, 500), "Map");
+		mapfile.hide();
+		add(mapfile, 50, 50);
+	    }
 	} else if(place == "fight") {
 	    fv = urpanel.add((Fightview)child, 0, 0);
 	} else if(place == "fsess") {
@@ -709,6 +730,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return;
 	} else if((sender == chrwdg) && (msg == "close")) {
 	    chrwdg.hide();
+	    return;
+	} else if((sender == mapfile) && (msg == "close")) {
+	    mapfile.hide();
+	    return;
 	} else if((sender == help) && (msg == "close")) {
 	    ui.destroy(help);
 	    help = null;
