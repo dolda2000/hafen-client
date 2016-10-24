@@ -36,12 +36,14 @@ import haven.MapFile.SMarker;
 import haven.MapFileWidget.*;
 import haven.MapFileWidget.Location;
 import haven.BuddyWnd.GroupSelector;
+import static haven.MiniMap.plx;
 
 public class MapWnd extends Window {
     public static final Resource markcurs = Resource.local().loadwait("gfx/hud/curs/flag");
     public final MapFileWidget view;
     public final MapView mv;
     public final MarkerList list;
+    private final Locator player;
     private final Widget toolbar;
     private final Frame viewf, listf;
     private TextEntry namesel;
@@ -60,6 +62,7 @@ public class MapWnd extends Window {
     public MapWnd(MapFile file, MapView mv, Coord sz, String title) {
 	super(sz, title, true);
 	this.mv = mv;
+	this.player = new MapLocator(mv);
 	viewf = add(new Frame(Coord.z, true));
 	view = viewf.add(new View(file));
 	recenter();
@@ -121,6 +124,15 @@ public class MapWnd extends Window {
 	    g.frect(Coord.z, sz);
 	    g.chcolor();
 	    super.draw(g);
+	    try {
+		Coord ploc = xlate(resolve(player));
+		if(ploc != null) {
+		    g.chcolor(255, 0, 0, 255);
+		    g.image(plx.layer(Resource.imgc), ploc.sub(plx.layer(Resource.negc).cc));
+		    g.chcolor();
+		}
+	    } catch(Loading l) {
+	    }
 	}
 
 	public Resource getcurs(Coord c) {
@@ -235,7 +247,7 @@ public class MapWnd extends Window {
     }
 
     public void recenter() {
-	view.follow(new MapLocator(mv));
+	view.follow(player);
     }
 
     public boolean keydown(KeyEvent ev) {
