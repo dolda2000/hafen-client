@@ -392,13 +392,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		setfocus(buddies);
 	    }
 	    return(true);
-	} else if(key == 13) {
-	    if((mmap != null) && (mmap.save != null)) {
-		MapFileWidget.MapWindow mw = new MapFileWidget.MapWindow(mmap.save, new Coord(500, 500));
-		mw.view.follow(new MapFileWidget.MapLocator(map));
-		add(mw, 100, 100);
-	    }
-	    return(true);
 	}
 	return(super.globtype(key, ev));
     }
