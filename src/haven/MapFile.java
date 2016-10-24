@@ -39,7 +39,9 @@ public class MapFile {
     public static boolean debug = false;
     public final ResCache store;
     public ResCache store() {return(store);}
-    public final Collection<Long> knownsegs = new HashSet<Long>();
+    public final Collection<Long> knownsegs = new HashSet<>();
+    public final Collection<Marker> markers = new ArrayList<>();
+    public int markerseq = 0;
     public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public MapFile(ResCache store) {
@@ -66,6 +68,8 @@ public class MapFile {
 	    if(ver == 1) {
 		for(int i = 0, no = data.int32(); i < no; i++)
 		    file.knownsegs.add(data.int64());
+		for(int i = 0, no = data.int32(); i < no; i++)
+		    file.markers.add(loadmarker(data));
 	    } else {
 		Debug.log.printf("mapfile warning: unknown mapfile index version: %i\n", ver);
 		return(null);
@@ -90,6 +94,9 @@ public class MapFile {
 	    out.addint32(knownsegs.size());
 	    for(Long seg : knownsegs)
 		out.addint64(seg);
+	    out.addint32(markers.size());
+	    for(Marker mark : markers)
+		savemarker(out, mark);
 	}
     }
 
@@ -212,6 +219,114 @@ public class MapFile {
 	}
     }
 
+    public static Resource loadsaved(Resource.Pool pool, Resource.Spec spec) {
+	try {
+	    return(spec.get());
+	} catch(Loading l) {
+	    throw(l);
+	} catch(Exception e) {
+	    return(pool.load(spec.name).get());
+	}
+    }
+
+    public abstract static class Marker {
+	public long seg;
+	public Coord tc;
+	public String nm;
+
+	public Marker(long seg, Coord tc, String nm) {
+	    this.seg = seg;
+	    this.tc = tc;
+	    this.nm = nm;
+	}
+    }
+
+    public static class PMarker extends Marker {
+	public Color color;
+
+	public PMarker(long seg, Coord tc, String nm, Color color) {
+	    super(seg, tc, nm);
+	    this.color = color;
+	}
+    }
+
+    public static class SMarker extends Marker {
+	public long oid;
+	public Resource.Spec res;
+
+	public SMarker(long seg, Coord tc, String nm, long oid, Resource.Spec res) {
+	    super(seg, tc, nm);
+	    this.oid = oid;
+	    this.res = res;
+	}
+    }
+
+    private static Marker loadmarker(Message fp) {
+	int ver = fp.uint8();
+	if(ver == 1) {
+	    long seg = fp.int64();
+	    Coord tc = fp.coord();
+	    String nm = fp.string();
+	    char type = (char)fp.uint8();
+	    switch(type) {
+	    case 'p':
+		Color color = fp.color();
+		return(new PMarker(seg, tc, nm, color));
+	    case 's':
+		long oid = fp.int64();
+		Resource.Spec res = new Resource.Spec(Resource.remote(), fp.string(), fp.uint16());
+		return(new SMarker(seg, tc, nm, oid, res));
+	    default:
+		throw(new Message.FormatError("Unknown marker type: " + (int)type));
+	    }
+	} else {
+	    throw(new Message.FormatError("Unknown marker version: " + ver));
+	}
+    }
+
+    private static void savemarker(Message fp, Marker mark) {
+	fp.adduint8(1);
+	fp.addint64(mark.seg);
+	fp.addcoord(mark.tc);
+	fp.addstring(mark.nm);
+	if(mark instanceof PMarker) {
+	    fp.adduint8('p');
+	    fp.addcolor(((PMarker)mark).color);
+	} else if(mark instanceof SMarker) {
+	    SMarker sm = (SMarker)mark;
+	    fp.adduint8('s');
+	    fp.addint64(sm.oid);
+	    fp.addstring(sm.res.name);
+	    fp.adduint16(sm.res.ver);
+	} else {
+	    throw(new ClassCastException("Can only save PMarkers and SMarkers"));
+	}
+    }
+
+    public void add(Marker mark) {
+	lock.writeLock().lock();
+	try {
+	    if(markers.add(mark)) {
+		defersave();
+		markerseq++;
+	    }
+	} finally {
+	    lock.writeLock().unlock();
+	}
+    }
+
+    public void remove(Marker mark) {
+	lock.writeLock().lock();
+	try {
+	    if(markers.remove(mark)) {
+		defersave();
+		markerseq++;
+	    }
+	} finally {
+	    lock.writeLock().unlock();
+	}
+    }
+
     public static class TileInfo {
 	public final Resource.Spec res;
 	public final int prio;
@@ -323,17 +438,11 @@ public class MapFile {
 	    if(!cached[t]) {
 		Resource r = null;
 		try {
-		    r = tilesets[t].res.get();
+		    r = loadsaved(Resource.remote(), tilesets[t].res);
 		} catch(Loading l) {
 		    throw(l);
 		} catch(Exception e) {
-		    try {
-			r = Resource.remote().load(tilesets[t].res.name).get();
-		    } catch(Loading l) {
-			throw(l);
-		    } catch(Exception e2) {
-			Debug.log.printf("mapfile warning: could not load tileset resource %s(v%d): %s\n", tilesets[t].res.name, tilesets[t].res.ver, e2);
-		    }
+		    Debug.log.printf("mapfile warning: could not load tileset resource %s(v%d): %s\n", tilesets[t].res.name, tilesets[t].res.ver, e);
 		}
 		if(r != null) {
 		    Resource.Image ir = r.layer(Resource.imgc);
