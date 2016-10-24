@@ -30,7 +30,7 @@ public class Frame extends Widget {
     private final IBox box;
 
     public Frame(Coord sz, boolean inner, IBox box) {
-	super(sz.add(inner?box.bisz():Coord.z));
+	super(inner?sz.add(box.bisz()):sz);
 	this.box = box;
     }
 
@@ -58,6 +58,10 @@ public class Frame extends Widget {
 	    if(wbr.y > br.y) br.y = wbr.y;
 	}
 	return(around(parent, new Area(tl, br)));
+    }
+
+    public Coord inner() {
+	return(sz.sub(box.bisz()));
     }
 
     public Coord xlate(Coord c, boolean in) {
