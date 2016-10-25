@@ -71,18 +71,19 @@ public class MapWnd extends Window {
 	view = viewf.add(new View(file));
 	recenter();
 	toolbar = add(new Widget(Coord.z));
+	toolbar.add(new Img(Resource.loadtex("gfx/hud/mmap/fgwdg")), Coord.z);
 	toolbar.add(new IButton("gfx/hud/mmap/home", "", "-d", "-h") {
 		{tooltip = RichText.render("Follow ($col[255,255,0]{Home})", 0);}
 		public void click() {
 		    recenter();
 		}
-	    }, 5, 5);
+	    }, Coord.z);
 	toolbar.add(new IButton("gfx/hud/mmap/mark", "", "-d", "-h") {
 		{tooltip = RichText.render("Add marker", 0);}
 		public void click() {
 		    domark = true;
 		}
-	    }, 36, 5);
+	    }, Coord.z);
 	toolbar.pack();
 	listf = add(new Frame(new Coord(200, 200), false));
 	list = listf.add(new MarkerList(listf.inner().x, 0));
@@ -236,7 +237,7 @@ public class MapWnd extends Window {
 				view.file.update(mark);
 				commit();
 			    }
-			}, listf.c.x, listf.c.y + listf.sz.y + 10);
+			});
 		}
 		namesel.settext(mark.nm);
 		namesel.buf.point = mark.nm.length();
@@ -249,7 +250,7 @@ public class MapWnd extends Window {
 				pm.color = BuddyWnd.gc[group];
 				view.file.update(mark);
 			    }
-			}, listf.c.x, namesel.c.y + namesel.sz.y + 10);
+			});
 		    if((colsel.group = Utils.index(BuddyWnd.gc, pm.color)) < 0)
 			colsel.group = 0;
 		    mremove = MapWnd.this.add(new Button(200, "Remove", false) {
@@ -257,26 +258,40 @@ public class MapWnd extends Window {
 				view.file.remove(mark);
 				change2(null);
 			    }
-			}, listf.c.x, colsel.c.y + colsel.sz.y + 10);
+			});
 		}
+		MapWnd.this.resize(asz);
 	    }
 	}
     }
 
     public void resize(Coord sz) {
 	super.resize(sz);
-	toolbar.c = new Coord(0, sz.y - toolbar.sz.y);
 	listf.resize(listf.sz.x, sz.y - 120);
 	listf.c = new Coord(sz.x - listf.sz.x, 0);
 	list.resize(listf.inner());
 	pmbtn.c = new Coord(sz.x - 200, sz.y - pmbtn.sz.y);
 	smbtn.c = new Coord(sz.x - 95, sz.y - smbtn.sz.y);
-	viewf.resize(new Coord(sz.x - listf.sz.x - 10, toolbar.c.y));
+	if(namesel != null) {
+	    namesel.c = listf.c.add(0, listf.sz.y + 10);
+	    if(colsel != null) {
+		colsel.c = namesel.c.add(0, namesel.sz.y + 10);
+		mremove.c = colsel.c.add(0, colsel.sz.y + 10);
+	    }
+	}
+	viewf.resize(new Coord(sz.x - listf.sz.x - 10, sz.y));
 	view.resize(viewf.inner());
+	toolbar.c = viewf.c.add(0, viewf.sz.y - toolbar.sz.y).add(2, -2);
     }
 
     public void recenter() {
 	view.follow(player);
+    }
+
+    private static final Tex sizer = Resource.loadtex("gfx/hud/wnd/sizer");
+    protected void drawframe(GOut g) {
+	g.image(sizer, ctl.add(csz).sub(sizer.sz()));
+	super.drawframe(g);
     }
 
     public boolean keydown(KeyEvent ev) {
@@ -285,6 +300,39 @@ public class MapWnd extends Window {
 	    return(true);
 	}
 	return(super.keydown(ev));
+    }
+
+    private UI.Grab drag;
+    private Coord dragc;
+    public boolean mousedown(Coord c, int button) {
+	Coord cc = c.sub(ctl);
+	if((button == 1) && (cc.x < csz.x) && (cc.y < csz.y) && (cc.y >= csz.y - 25 + (csz.x - cc.x))) {
+	    if(drag == null) {
+		drag = ui.grabmouse(this);
+		dragc = asz.sub(c);
+		return(true);
+	    }
+	}
+	return(super.mousedown(c, button));
+    }
+
+    public void mousemove(Coord c) {
+	if(drag != null) {
+	    Coord nsz = c.add(dragc);
+	    nsz.x = Math.max(nsz.x, 300);
+	    nsz.y = Math.max(nsz.y, 150);
+	    resize(nsz);
+	}
+	super.mousemove(c);
+    }
+
+    public boolean mouseup(Coord c, int button) {
+	if((button == 1) && (drag != null)) {
+	    drag.remove();
+	    drag = null;
+	    return(true);
+	}
+	return(super.mouseup(c, button));
     }
 
     public void markobj(long gobid, long oid, Indir<Resource> resid, String nm) {
