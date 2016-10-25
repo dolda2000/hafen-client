@@ -41,6 +41,7 @@ public class MapFile {
     public ResCache store() {return(store);}
     public final Collection<Long> knownsegs = new HashSet<>();
     public final Collection<Marker> markers = new ArrayList<>();
+    public final Map<Long, SMarker> smarkers = new HashMap<>();
     public int markerseq = 0;
     public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -68,8 +69,12 @@ public class MapFile {
 	    if(ver == 1) {
 		for(int i = 0, no = data.int32(); i < no; i++)
 		    file.knownsegs.add(data.int64());
-		for(int i = 0, no = data.int32(); i < no; i++)
-		    file.markers.add(loadmarker(data));
+		for(int i = 0, no = data.int32(); i < no; i++) {
+		    Marker mark = loadmarker(data);
+		    file.markers.add(mark);
+		    if(mark instanceof SMarker)
+			file.smarkers.put(((SMarker)mark).oid, (SMarker)mark);
+		}
 	    } else {
 		Debug.log.printf("mapfile warning: unknown mapfile index version: %i\n", ver);
 		return(null);
@@ -307,6 +312,8 @@ public class MapFile {
 	lock.writeLock().lock();
 	try {
 	    if(markers.add(mark)) {
+		if(mark instanceof SMarker)
+		    smarkers.put(((SMarker)mark).oid, (SMarker)mark);
 		defersave();
 		markerseq++;
 	    }
@@ -319,6 +326,8 @@ public class MapFile {
 	lock.writeLock().lock();
 	try {
 	    if(markers.remove(mark)) {
+		if(mark instanceof SMarker)
+		    smarkers.remove(((SMarker)mark).oid, (SMarker)mark);
 		defersave();
 		markerseq++;
 	    }
