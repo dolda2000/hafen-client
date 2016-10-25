@@ -118,7 +118,7 @@ public class Window extends Widget implements DTarget {
     public void cdraw(GOut g) {
     }
 
-    private void drawframe(GOut g) {
+    protected void drawframe(GOut g) {
 	Coord mdo, cbr;
 	g.image(cl, tlo);
 	mdo = tlo.add(cl.sz().x, 0);
