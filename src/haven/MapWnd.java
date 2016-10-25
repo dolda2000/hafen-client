@@ -48,6 +48,7 @@ public class MapWnd extends Window {
     private final Locator player;
     private final Widget toolbar;
     private final Frame viewf, listf;
+    private final Button pmbtn, smbtn;
     private TextEntry namesel;
     private GroupSelector colsel;
     private Button mremove;
@@ -85,6 +86,18 @@ public class MapWnd extends Window {
 	toolbar.pack();
 	listf = add(new Frame(new Coord(200, 200), false));
 	list = listf.add(new MarkerList(listf.inner().x, 0));
+	pmbtn = add(new Button(95, "Placed", false) {
+		public void click() {
+		    mflt = pmarkers;
+		    markerseq = -1;
+		}
+	    });
+	smbtn = add(new Button(95, "Natural", false) {
+		public void click() {
+		    mflt = smarkers;
+		    markerseq = -1;
+		}
+	    });
 	resize(sz);
     }
 
@@ -216,7 +229,7 @@ public class MapWnd extends Window {
 
 	    if(mark != null) {
 		if(namesel == null) {
-		    namesel = MapWnd.this.add(new TextEntry(190, "") {
+		    namesel = MapWnd.this.add(new TextEntry(200, "") {
 			    {dshow = true;}
 			    public void activate(String text) {
 				mark.nm = text;
@@ -239,7 +252,7 @@ public class MapWnd extends Window {
 			}, listf.c.x, namesel.c.y + namesel.sz.y + 10);
 		    if((colsel.group = Utils.index(BuddyWnd.gc, pm.color)) < 0)
 			colsel.group = 0;
-		    mremove = MapWnd.this.add(new Button(190, "Remove", false) {
+		    mremove = MapWnd.this.add(new Button(200, "Remove", false) {
 			    public void click() {
 				view.file.remove(mark);
 				change2(null);
@@ -253,9 +266,11 @@ public class MapWnd extends Window {
     public void resize(Coord sz) {
 	super.resize(sz);
 	toolbar.c = new Coord(0, sz.y - toolbar.sz.y);
-	listf.resize(listf.sz.x, sz.y - 90);
+	listf.resize(listf.sz.x, sz.y - 120);
 	listf.c = new Coord(sz.x - listf.sz.x, 0);
 	list.resize(listf.inner());
+	pmbtn.c = new Coord(sz.x - 200, sz.y - pmbtn.sz.y);
+	smbtn.c = new Coord(sz.x - 95, sz.y - smbtn.sz.y);
 	viewf.resize(new Coord(sz.x - listf.sz.x - 10, toolbar.c.y));
 	view.resize(viewf.inner());
     }
