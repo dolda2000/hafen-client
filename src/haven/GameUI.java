@@ -181,7 +181,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			map.disol(4, 5);
 		}
 	    }, 0, 0);
-	blpanel.add(new MenuButton("lbtn-map", 13, "Map ($col[255,255,0]{Ctrl+M})") {
+	blpanel.add(new MenuButton("lbtn-map", 1, "Map ($col[255,255,0]{Ctrl+A})") {
 		public void click() {
 		    if((mapfile != null) && mapfile.show(!mapfile.visible)) {
 			mapfile.raise();
