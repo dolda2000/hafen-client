@@ -898,9 +898,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     private static final Resource msgsfx = Resource.local().loadwait("sfx/msg");
+    private long lastmsgsfx = 0;
     public void msg(String msg) {
 	msg(msg, Color.WHITE, Color.WHITE);
-	Audio.play(msgsfx);
+	long now = System.currentTimeMillis();
+	if(now - lastmsgsfx > 100) {
+	    Audio.play(msgsfx);
+	    lastmsgsfx = now;
+	}
     }
     
     public void act(String... args) {
