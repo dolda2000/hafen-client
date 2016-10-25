@@ -659,8 +659,18 @@ public class MapFile {
 	    dst.include(id, dc);
 	    gridinfo.put(id, new GridInfo(id, dst.id, dc));
 	}
-	if(knownsegs.remove(src.id))
-	    defersave();
+	boolean mf = false;
+	for(Marker mark : markers) {
+	    if(mark.seg == src.id) {
+		mark.seg = dst.id;
+		mark.tc = mark.tc.sub(soff.mul(cmaps));
+		mf = true;
+	    }
+	}
+	if(mf)
+	    markerseq++;
+	knownsegs.remove(src.id);
+	defersave();
 	synchronized(procmon) {
 	    dirty.add(dst);
 	    process();
