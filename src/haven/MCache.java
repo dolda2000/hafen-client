@@ -37,7 +37,7 @@ public class MCache {
     public static final Coord cmaps = new Coord(100, 100);
     public static final Coord cutsz = new Coord(25, 25);
     public static final Coord cutn = cmaps.div(cutsz);
-    private final Resource.Spec[] nsets = new Resource.Spec[256];
+    public final Resource.Spec[] nsets = new Resource.Spec[256];
     @SuppressWarnings("unchecked")
     private final Reference<Resource>[] sets = new Reference[256];
     @SuppressWarnings("unchecked")

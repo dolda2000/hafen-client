@@ -273,12 +273,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		StringBuilder buf = new StringBuilder();
 		
 		public void write(char[] src, int off, int len) {
-		    buf.append(src, off, len);
-		    int p;
-		    while((p = buf.indexOf("\n")) >= 0) {
-			syslog.append(buf.substring(0, p), Color.WHITE);
-			buf.delete(0, p + 1);
+		    List<String> lines = new ArrayList<String>();
+		    synchronized(this) {
+			buf.append(src, off, len);
+			int p;
+			while((p = buf.indexOf("\n")) >= 0) {
+			    lines.add(buf.substring(0, p));
+			    buf.delete(0, p + 1);
+			}
 		    }
+		    for(String ln : lines)
+			syslog.append(ln, Color.WHITE);
 		}
 		
 		public void close() {}
