@@ -177,7 +177,8 @@ public class MapFileWidget extends Widget {
 	public DisplayMarker(Marker marker) {
 	    this.m = marker;
 	    this.tip = Text.render(m.nm);
-	    this.hit = Area.sized(flagcc.inv(), flagbg.sz);
+	    if(marker instanceof PMarker)
+		this.hit = Area.sized(flagcc.inv(), flagbg.sz);
 	}
 
 	public void draw(GOut g, Coord c) {
@@ -187,6 +188,18 @@ public class MapFileWidget extends Widget {
 		g.image(flagfg, ul);
 		g.chcolor();
 		g.image(flagbg, ul);
+	    } else if(m instanceof SMarker) {
+		SMarker sm = (SMarker)m;
+		try {
+		    Resource res = MapFile.loadsaved(Resource.remote(), sm.res);
+		    Resource.Image img = res.layer(Resource.imgc);
+		    Resource.Neg neg = res.layer(Resource.negc);
+		    Coord cc = (neg != null)?neg.cc:img.sz.div(2);
+		    if(hit == null)
+			hit = Area.sized(cc.inv(), img.sz);
+		    g.image(img, c.sub(cc));
+		} catch(Loading l) {
+		}
 	    }
 	}
     }
