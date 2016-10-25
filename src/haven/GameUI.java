@@ -720,6 +720,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		help = adda(new HelpWnd(res), 0.5, 0.5);
 	    else
 		help.res = res;
+	} else if(msg == "map-mark") {
+	    long gobid = ((Integer)args[0]) & 0xffffffff;
+	    long oid = (Long)args[1];
+	    Indir<Resource> res = ui.sess.getres((Integer)args[2]);
+	    String nm = (String)args[3];
+	    if(mapfile != null)
+		mapfile.markobj(gobid, oid, res, nm);
 	} else {
 	    super.uimsg(msg, args);
 	}

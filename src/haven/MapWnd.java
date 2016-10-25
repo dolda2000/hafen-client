@@ -37,6 +37,8 @@ import haven.MapFileWidget.*;
 import haven.MapFileWidget.Location;
 import haven.BuddyWnd.GroupSelector;
 import static haven.MiniMap.plx;
+import static haven.MCache.tilesz;
+import static haven.MCache.cmaps;
 
 public class MapWnd extends Window {
     public static final Resource markcurs = Resource.local().loadwait("gfx/hud/curs/flag");
@@ -54,6 +56,7 @@ public class MapWnd extends Window {
     private List<Marker> markers = Collections.emptyList();
     private int markerseq = -1;
     private boolean domark = false;
+    private final Collection<Runnable> deferred = new LinkedList<>();
 
     private final static Predicate<Marker> pmarkers = (m -> m instanceof PMarker);
     private final static Predicate<Marker> smarkers = (m -> m instanceof SMarker);
@@ -144,6 +147,17 @@ public class MapWnd extends Window {
 
     public void tick(double dt) {
 	super.tick(dt);
+	synchronized(deferred) {
+	    for(Iterator<Runnable> i = deferred.iterator(); i.hasNext();) {
+		Runnable task = i.next();
+		try {
+		    task.run();
+		} catch(Loading l) {
+		    continue;
+		}
+		i.remove();
+	    }
+	}
 	if(visible && (markerseq != view.file.markerseq)) {
 	    if(view.file.lock.readLock().tryLock()) {
 		try {
@@ -256,5 +270,54 @@ public class MapWnd extends Window {
 	    return(true);
 	}
 	return(super.keydown(ev));
+    }
+
+    public void markobj(long gobid, long oid, Indir<Resource> resid, String nm) {
+	synchronized(deferred) {
+	    deferred.add(new Runnable() {
+		    long f = 0;
+		    public void run() {
+			Resource res = resid.get();
+			String rnm = nm;
+			if(rnm == null) {
+			    Resource.Tooltip tt = res.layer(Resource.tooltip);
+			    if(tt == null)
+				return;
+			    rnm = tt.t;
+			}
+			long now = System.currentTimeMillis();
+			if(f == 0)
+			    f = now;
+			Gob gob = ui.sess.glob.oc.getgob(gobid);
+			if(gob == null) {
+			    if(now - f < 1000)
+				throw(new Loading());
+			    return;
+			}
+			Coord tc = gob.rc.div(tilesz);
+			MCache.Grid obg = ui.sess.glob.map.getgrid(tc.div(cmaps));
+			if(!view.file.lock.writeLock().tryLock())
+			    throw(new Loading());
+			try {
+			    MapFile.GridInfo info = view.file.gridinfo.get(obg.id);
+			    if(info == null)
+				throw(new Loading());
+			    Coord sc = tc.add(info.sc.sub(obg.gc).mul(cmaps));
+			    SMarker prev = view.file.smarkers.get(oid);
+			    if(prev == null) {
+				view.file.add(new SMarker(info.seg, sc, rnm, oid, new Resource.Spec(Resource.remote(), res.name, res.ver)));
+			    } else {
+				if((prev.seg != info.seg) || !prev.tc.equals(sc)) {
+				    prev.seg = info.seg;
+				    prev.tc = sc;
+				    view.file.update(prev);
+				}
+			    }
+			} finally {
+			    view.file.lock.writeLock().unlock();
+			}
+		    }
+		});
+	}
     }
 }
