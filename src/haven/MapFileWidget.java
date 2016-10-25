@@ -164,7 +164,7 @@ public class MapFileWidget extends Widget {
 	public final Marker m;
 	public final Text tip;
 	public Area hit;
-	private Tex img;
+	private Resource.Image img;
 	private Coord cc;
 
 	static {
@@ -191,15 +191,20 @@ public class MapFileWidget extends Widget {
 	    } else if(m instanceof SMarker) {
 		SMarker sm = (SMarker)m;
 		try {
-		    Resource res = MapFile.loadsaved(Resource.remote(), sm.res);
-		    Resource.Image img = res.layer(Resource.imgc);
-		    Resource.Neg neg = res.layer(Resource.negc);
-		    Coord cc = (neg != null)?neg.cc:img.sz.div(2);
-		    if(hit == null)
-			hit = Area.sized(cc.inv(), img.sz);
-		    g.image(img, c.sub(cc));
+		    if(cc == null) {
+			Resource res = MapFile.loadsaved(Resource.remote(), sm.res);
+			img = res.layer(Resource.imgc);
+			Resource.Neg neg = res.layer(Resource.negc);
+			cc = (neg != null)?neg.cc:img.sz.div(2);
+			if(hit == null)
+			    hit = Area.sized(cc.inv(), img.sz);
+		    }
 		} catch(Loading l) {
+		} catch(Exception e) {
+		    cc = Coord.z;
 		}
+		if(img != null)
+		    g.image(img, c.sub(cc));
 	    }
 	}
     }
