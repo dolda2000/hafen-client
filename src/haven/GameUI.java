@@ -913,15 +913,25 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     private static final Resource errsfx = Resource.local().loadwait("sfx/error");
+    private long lasterrsfx = 0;
     public void error(String msg) {
 	msg(msg, new Color(192, 0, 0), new Color(255, 0, 0));
-	Audio.play(errsfx);
+	long now = System.currentTimeMillis();
+	if(now - lasterrsfx > 100) {
+	    Audio.play(errsfx);
+	    lasterrsfx = now;
+	}
     }
 
     private static final Resource msgsfx = Resource.local().loadwait("sfx/msg");
+    private long lastmsgsfx = 0;
     public void msg(String msg) {
 	msg(msg, Color.WHITE, Color.WHITE);
-	Audio.play(msgsfx);
+	long now = System.currentTimeMillis();
+	if(now - lastmsgsfx > 100) {
+	    Audio.play(msgsfx);
+	    lastmsgsfx = now;
+	}
     }
     
     public void act(String... args) {
