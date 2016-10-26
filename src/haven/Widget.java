@@ -749,7 +749,7 @@ public class Widget {
 				f = ((n == null) || !n.hasparent(this))?child:n;
 			    } else {
 				Widget p = f.rprev();
-				f = ((p == null) || !p.hasparent(this))?lchild:p;
+				f = ((p == null) || (p == this) || !p.hasparent(this))?lchild:p;
 			    }
 			    if(f.canfocus)
 				break;
