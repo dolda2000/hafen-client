@@ -38,7 +38,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public final long plid;
     public MenuGrid menu;
     public MapView map;
-    public Widget mmap;
+    public LocalMiniMap mmap;
     public Fightview fv;
     private Text lastmsg;
     private long msgtime;
@@ -430,9 +430,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     private static final Resource errsfx = Resource.local().loadwait("sfx/error");
+    private long lasterrsfx = 0;
     public void error(String msg) {
 	msg(msg, new Color(192, 0, 0), new Color(255, 0, 0));
-	Audio.play(errsfx);
+	long now = System.currentTimeMillis();
+	if(now - lasterrsfx > 100) {
+	    Audio.play(errsfx);
+	    lasterrsfx = now;
+	}
     }
 
     public void msg(String msg) {
