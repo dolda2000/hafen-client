@@ -92,7 +92,7 @@ public class Window extends Widget implements DTarget {
 	this.mrgn = lg?dlmrgn:dsmrgn;
 	cbtn = add(new IButton(cbtni[0], cbtni[1], cbtni[2]));
 	chcap(cap);
-	resize(sz);
+	resize2(sz);
 	setfocustab(true);
     }
 
@@ -118,7 +118,7 @@ public class Window extends Widget implements DTarget {
     public void cdraw(GOut g) {
     }
 
-    private void drawframe(GOut g) {
+    protected void drawframe(GOut g) {
 	Coord mdo, cbr;
 	g.image(cl, tlo);
 	mdo = tlo.add(cl.sz().x, 0);
@@ -203,7 +203,7 @@ public class Window extends Widget implements DTarget {
 	cbtn.c = xlate(new Coord(ctl.x + csz.x - cbtn.sz.x, ctl.y).add(2, -2), false);
     }
 
-    public void resize(Coord sz) {
+    private void resize2(Coord sz) {
 	asz = sz;
 	csz = asz.add(mrgn.mul(2));
 	wsz = csz.add(tlm).add(brm);
@@ -218,6 +218,10 @@ public class Window extends Widget implements DTarget {
 	cbtn.c = xlate(tlo.add(wsz.x - cbtn.sz.x, 0), false);
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.presize();
+    }
+
+    public void resize(Coord sz) {
+	resize2(sz);
     }
 
     public void uimsg(String msg, Object... args) {
