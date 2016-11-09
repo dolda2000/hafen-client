@@ -38,7 +38,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public final long plid;
     public MenuGrid menu;
     public MapView map;
-    public LocalMiniMap mmap;
+    public Widget mmap;
     public Fightview fv;
     private Text lastmsg;
     private long msgtime;

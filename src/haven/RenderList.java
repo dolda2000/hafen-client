@@ -374,6 +374,7 @@ public class RenderList {
 	newcache = new HashMap<Cached, Cached>();
     }
 
+    private int trimseq = 0;
     public void fin() {
 	for(int i = 0; i < cur; i++) {
 	    Slot s = list[i];
@@ -402,6 +403,20 @@ public class RenderList {
 	Arrays.sort(list, 0, nd, cmp);
 	instancify();
 	updcache();
+	if(trimseq++ > 100) {
+	    /* XXX: Trimming the slot-list is fairly delicate business
+	     * due to how it interacts with the GC. Keeping a bloated
+	     * list forever is obviously detrimental, but trimming old
+	     * objects can also cause old-gen throughput and
+	     * consequential full GCs. Substantial performance
+	     * benefits have also been observed when discarding the
+	     * list and recreating it each cycle, but only for the
+	     * cost of more frequent GCs. More experimentation is
+	     * desired. */
+	    for(int i = cur; i < list.length; i++)
+		list[i] = null;
+	    trimseq = 0;
+	}
     }
 
     public static class RLoad extends Loading {
