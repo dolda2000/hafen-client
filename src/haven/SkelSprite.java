@@ -201,6 +201,12 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 	return(false);
     }
 
+    public Object staticp() {
+	if(!stat || (manims.length > 0) || (ipold > 0))
+	    return(null);
+	return(Gob.SemiStatic.class);
+    }
+
     public Pose getpose() {
 	return(pose);
     }
