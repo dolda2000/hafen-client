@@ -157,4 +157,8 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     public static Coord2d sc(double a, double r) {
 	return(new Coord2d(Math.cos(a) * r, Math.sin(a) * r));
     }
+
+    public String toString() {
+	return("(" + x + ", " + y + ")");
+    }
 }
