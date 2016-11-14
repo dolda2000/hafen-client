@@ -54,6 +54,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Selector selection;
     private Coord3f camoff = new Coord3f(Coord3f.o);
     public double shake = 0.0;
+    public static int plobgran = 8;
     private static final Map<String, Class<? extends Camera>> camtypes = new HashMap<String, Class<? extends Camera>>();
     
     public interface Delayed {
@@ -1307,10 +1308,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public static class StdPlace implements PlobAdjust {
 	boolean freerot = false;
+	Coord2d gran = (plobgran == 0)?null:new Coord2d(1.0 / plobgran, 1.0 / plobgran).mul(tilesz);
 
 	public void adjust(Plob plob, Coord pc, Coord2d mc, int modflags) {
 	    if((modflags & 2) == 0)
 		plob.rc = mc.floor(tilesz).mul(tilesz).add(tilesz.div(2));
+	    else if(gran != null)
+		plob.rc = mc.add(gran.div(2)).floor(gran).mul(gran);
 	    else
 		plob.rc = mc;
 	    Gob pl = plob.mv().player();
@@ -1809,6 +1813,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			    throw(new Exception("no such camera: " + args[1]));
 			}
 		    }
+		}
+	    });
+	Console.setscmd("placegrid", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    if((plobgran = Integer.parseInt(args[1])) < 0)
+			plobgran = 0;
 		}
 	    });
 	cmdmap.put("whyload", new Console.Command() {
