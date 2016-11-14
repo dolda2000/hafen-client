@@ -27,12 +27,11 @@
 package haven;
 
 public class Homing extends Moving {
-    long tgt;
-    Coord2d tc;
-    int v;
-    double dist;
+    public long tgt;
+    public Coord2d tc;
+    public double v, dist;
     
-    public Homing(Gob gob, long tgt, Coord2d tc, int v) {
+    public Homing(Gob gob, long tgt, Coord2d tc, double v) {
 	super(gob);
 	this.tgt = tgt;
 	this.tc = tc;
@@ -40,20 +39,22 @@ public class Homing extends Moving {
     }
     
     public Coord3f getc() {
+	Coord2d rc = gob.rc;
 	Coord2d tc = this.tc;
 	Gob tgt = gob.glob.oc.getgob(this.tgt);
 	if(tgt != null)
 	    tc = tgt.rc;
-	Coord2d d = tc.sub(gob.rc);
-	double e = gob.rc.dist(tc);
-	Coord2d rc = gob.rc;
-	if(e > 0.00001)
-	    rc = rc.add(d.div(e).mul(dist));
+	Coord2d d = tc.sub(rc);
+	double e = d.abs();
+	if(dist > e)
+	    rc = tc;
+	else if(e > 0.00001)
+	    rc = rc.add(d.mul(dist / e));
 	return(gob.glob.map.getzp(rc));
     }
     
     public double getv() {
-	return((v / 100.0) / 0.06);
+	return(v);
     }
     
     public void move(Coord2d c) {
@@ -61,7 +62,6 @@ public class Homing extends Moving {
     }
     
     public void ctick(int dt) {
-	double da = ((double)dt / 1000) / 0.06;
-	dist += (da * 0.9) * ((double)v / 100);
+	dist += v * ((dt / 1000.0) * 0.9);
     }
 }

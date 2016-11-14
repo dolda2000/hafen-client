@@ -275,14 +275,24 @@ public class Session {
 				oc.cres(gob, getres(resid), sdt);
 			} else if(type == OD_LINBEG) {
 			    Coord2d s = msg.coord().mul(posres);
-			    Coord2d t = msg.coord().mul(posres);
-			    int c = msg.int32();
+			    Coord2d v = msg.coord().mul(posres);
 			    if(gob != null)
-				oc.linbeg(gob, s, t, c);
+				oc.linbeg(gob, s, v);
 			} else if(type == OD_LINSTEP) {
-			    int l = msg.int32();
+			    double t, e;
+			    int w = msg.int32();
+			    if(w == -1) {
+				t = e = -1;
+			    } else if((w & 0x80000000) == 0) {
+				t = w * 0x1p-10;
+				e = -1;
+			    } else {
+				t = (w & ~0x80000000) * 0x1p-10;
+				w = msg.int32();
+				e = (w < 0)?-1:(w * 0x1p-10);
+			    }
 			    if(gob != null)
-				oc.linstep(gob, l);
+				oc.linstep(gob, t, e);
 			} else if(type == OD_SPEECH) {
 			    float zo = msg.int16() / 100.0f;
 			    String text = msg.string();
@@ -421,14 +431,9 @@ public class Session {
 			    if(oid == 0xffffffffl) {
 				if(gob != null)
 				    oc.homostop(gob);
-			    } else if(oid == 0xfffffffel) {
-				Coord2d tgtc = msg.coord().mul(posres);
-				int v = msg.uint16();
-				if(gob != null)
-				    oc.homocoord(gob, tgtc, v);
 			    } else {
 				Coord2d tgtc = msg.coord().mul(posres);
-				int v = msg.uint16();
+				double v = msg.int32() * 0x1p-10 * 11;
 				if(gob != null)
 				    oc.homing(gob, oid, tgtc, v);
 			    }
