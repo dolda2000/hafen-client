@@ -170,9 +170,11 @@ public class OCache implements Iterable<Gob> {
     }
 	
     public synchronized void linbeg(Gob g, Coord2d s, Coord2d v) {
-	LinMove lm = new LinMove(g, s, v);
-	g.setattr(lm);
-	changed(g);
+	LinMove lm = g.getattr(LinMove.class);
+	if((lm == null) || !lm.s.equals(s) || !lm.v.equals(v)) {
+	    g.setattr(new LinMove(g, s, v));
+	    changed(g);
+	}
     }
 	
     public synchronized void linstep(Gob g, double t, double e) {
