@@ -27,8 +27,10 @@
 package haven;
 
 public class LinMove extends Moving {
+    public static final double MAXOVER = 0.5;
     public Coord2d s, v;
-    public double t, e;
+    public double t, lt, e;
+    public boolean ts = false;
 
     public LinMove(Gob gob, Coord2d s, Coord2d v) {
 	super(gob);
@@ -47,13 +49,22 @@ public class LinMove extends Moving {
     }
 
     public void ctick(int dt) {
-	t += (dt / 1000.0) * 0.9;
-	if(!Double.isNaN(e) && (t > e))
-	    t = e;
+	if(!ts) {
+	    t += (dt / 1000.0) * 0.9;
+	    if(!Double.isNaN(e) && (t > e)) {
+		t = e;
+	    } else if(t > lt + MAXOVER) {
+		t = lt + MAXOVER;
+		ts = true;
+	    }
+	}
     }
 
     public void sett(double t) {
-	if(t > this.t)
+	lt = t;
+	if(t > this.t) {
 	    this.t = t;
+	    ts = false;
+	}
     }
 }
