@@ -33,7 +33,7 @@ import java.lang.ref.*;
 import static haven.OCache.posres;
 
 public class Session {
-    public static final int PVER = 7;
+    public static final int PVER = 8;
 
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
