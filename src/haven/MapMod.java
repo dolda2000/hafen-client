@@ -81,7 +81,7 @@ public class MapMod extends Window implements MapView.Grabber {
 	    return(false);
 	if(mgrab != null)
 	    mgrab.remove();
-        Coord tc = mc.div(MCache.tilesz);
+        Coord tc = mc.div(MCache.tilesz2);
         if(ol != null)
             ol.destroy();
         ol = map.new Overlay(tc, tc, 1 << 17);
@@ -105,7 +105,7 @@ public class MapMod extends Window implements MapView.Grabber {
     }
 	
     public void mmousemove(Coord mc) {
-        Coord tc = mc.div(MCache.tilesz);
+        Coord tc = mc.div(MCache.tilesz2);
         Coord c1 = new Coord(0, 0), c2 = new Coord(0, 0);
         if(tc.x < sc.x) {
             c1.x = tc.x;
