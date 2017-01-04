@@ -1523,9 +1523,10 @@ public class CharWnd extends Window {
 	    base.add(aw = battr.add(new Attr(glob, "prc", every), wbox.btloff().add(x, y))); y += aw.sz.y;
 	    base.add(aw = battr.add(new Attr(glob, "csm", other), wbox.btloff().add(x, y))); y += aw.sz.y;
 	    base.add(aw = battr.add(new Attr(glob, "dex", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    base.add(aw = battr.add(new Attr(glob, "psy", other), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    base.add(aw = battr.add(new Attr(glob, "wil", other), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    base.add(aw = battr.add(new Attr(glob, "psy", every), wbox.btloff().add(x, y))); y += aw.sz.y;
 	    Frame.around(battr, base);
-	    y += 24;
+	    y += 16;
 	    battr.add(new Img(catf.render("Food Event Points").tex()), new Coord(x - 5, y)); y += 35;
 	    feps = battr.add(new FoodMeter(), new Coord(x, y));
 
@@ -1533,7 +1534,7 @@ public class CharWnd extends Window {
 	    battr.add(new Img(catf.render("Food Satiations").tex()), new Coord(x - 5, y)); y += 35;
 	    cons = battr.add(new Constipations(attrw, base.size()), wbox.btloff().add(x, y)); y += cons.sz.y;
 	    Frame.around(battr, Collections.singletonList(cons));
-	    y += 24;
+	    y += 16;
 	    battr.add(new Img(catf.render("Hunger Level").tex()), new Coord(x - 5, y)); y += 35;
 	    glut = battr.add(new GlutMeter(), new Coord(x, y));
 	}
@@ -1552,17 +1553,19 @@ public class CharWnd extends Window {
 	    skill.add(aw = sattr.add(new SAttr(glob, "stealth", every), wbox.btloff().add(x, y))); y += aw.sz.y;
 	    skill.add(aw = sattr.add(new SAttr(glob, "sewing", other), wbox.btloff().add(x, y))); y += aw.sz.y;
 	    skill.add(aw = sattr.add(new SAttr(glob, "smithing", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "carpentry", other), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "cooking", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "farming", other), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "survive", every), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "masonry", other), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "carpentry", every), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "cooking", other), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "farming", every), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "survive", other), wbox.btloff().add(x, y))); y += aw.sz.y;
+	    skill.add(aw = sattr.add(new SAttr(glob, "lore", every), wbox.btloff().add(x, y))); y += aw.sz.y;
 	    Frame.around(sattr, skill);
 
 	    x = 260; y = 0;
 	    sattr.add(new Img(catf.render("Study Report").tex()), new Coord(x - 5, y)); y += 35;
 	    y += 151;
 	    int rx = x + attrw - 10;
-	    Frame.around(sattr, Area.sized(new Coord(x, y).add(wbox.btloff()), new Coord(attrw, 80)));
+	    Frame.around(sattr, Area.sized(new Coord(x, y).add(wbox.btloff()), new Coord(attrw, 96)));
 	    sattr.add(new Label("Experience points:"), new Coord(x + 15, y + 10));
 	    sattr.add(new EncLabel(new Coord(rx, y + 10)));
 	    sattr.add(new Label("Learning points:"), new Coord(x + 15, y + 25));
@@ -1590,13 +1593,13 @@ public class CharWnd extends Window {
 			}
 			CharWnd.this.wdgmsg("sattr", args.toArray(new Object[0]));
 		    }
-		}, new Coord(rx - 75, y + 55));
+		}, new Coord(rx - 75, y + 70));
 	    sattr.add(new Button(75, "Reset") {
 		    public void click() {
 			for(SAttr attr : skill)
 			    attr.reset();
 		    }
-		}, new Coord(rx - 160, y + 55));
+		}, new Coord(rx - 160, y + 70));
 	}
 
 	Tabs.Tab skills;
