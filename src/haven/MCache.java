@@ -471,8 +471,10 @@ public class MCache {
 	    synchronized(req) {
 		if(req.containsKey(c)) {
 		    Grid g = grids.get(c);
-		    if(g == null)
+		    if(g == null) {
 			grids.put(c, g = new Grid(c));
+			cached = null;
+		    }
 		    g.fill(msg);
 		    req.remove(c);
 		    olseq++;
@@ -561,6 +563,7 @@ public class MCache {
 		    g.dispose();
 		grids.clear();
 		req.clear();
+		cached = null;
 	    }
 	}
     }
@@ -582,6 +585,7 @@ public class MCache {
 		    if((gc.x < ul.x) || (gc.y < ul.y) || (gc.x > lr.x) || (gc.y > lr.y))
 			i.remove();
 		}
+		cached = null;
 	    }
 	}
     }
