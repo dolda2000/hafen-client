@@ -53,8 +53,7 @@ public class MCache {
 
     public static class LoadingMap extends Loading {
 	public final Coord gc;
-	public LoadingMap(Coord gc)
-	{
+	public LoadingMap(Coord gc) {
 	    super("Waiting for map data...");
 	    this.gc = gc;
 	}
