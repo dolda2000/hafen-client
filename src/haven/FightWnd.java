@@ -616,8 +616,12 @@ public class FightWnd extends Widget {
 	    }, 395, 238);
 	add(new Button(110, "Save", false) {
 		public void click() {
-		    save(savelist.sel);
-		    use(savelist.sel);
+		    if(savelist.sel < 0) {
+			getparent(GameUI.class).error("No save entry selected.");
+		    } else {
+			save(savelist.sel);
+			use(savelist.sel);
+		    }
 		}
 	    }, 395, 265);
 	pack();
