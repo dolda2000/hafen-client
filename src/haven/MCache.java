@@ -52,9 +52,15 @@ public class MCache {
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
 
     public static class LoadingMap extends Loading {
-	public LoadingMap() {super("Waiting for map data...");}
+	public final Coord gc;
+	public LoadingMap(Coord gc)
+	{
+	    super("Waiting for map data...");
+	    this.gc = gc;
+	}
 	public LoadingMap(Loading cause) {
 	    super(cause);
+	    this.gc = null;
 	}
     }
 
@@ -391,7 +397,7 @@ public class MCache {
 		cached = grids.get(gc);
 		if(cached == null) {
 		    request(gc);
-		    throw(new LoadingMap());
+		    throw(new LoadingMap(gc));
 		}
 	    }
 	    return(cached);
