@@ -162,7 +162,9 @@ public class HashDirCache implements ResCache {
 		    RandomAccessFile fp = (idx == 0)?lf:new RandomAccessFile(path, "rw");
 		    try {
 			Header head = readhead(fp);
-			if((head == null) && creat) {
+			if(head == null) {
+			    if(!creat)
+				return(null);
 			    fp.setLength(0);
 			    writehead(fp, name);
 			    return(path);
