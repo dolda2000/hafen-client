@@ -28,7 +28,7 @@ package haven;
 
 import java.util.*;
 import java.io.*;
-import java.nio.channels.FileLock;
+import java.nio.channels.*;
 import java.net.URI;
 
 public class HashDirCache implements ResCache {
@@ -117,6 +117,26 @@ public class HashDirCache implements ResCache {
 	fp.writeUTF(name);
     }
 
+    /* These locks should never have to be waited for long at all, so
+     * blocking interruptions until complete should be perfectly
+     * okay. */
+    private static FileLock lock2(FileChannel ch) throws IOException {
+	boolean intr = false;
+	try {
+	    while(true) {
+		try {
+		    return(ch.lock());
+		} catch(FileLockInterruptionException e) {
+		    Thread.currentThread().interrupted();
+		    intr = true;
+		}
+	    }
+	} finally {
+	    if(intr)
+		Thread.currentThread().interrupt();
+	}
+    }
+
     private static final Map<File, Object> monitors = new WeakHashMap<File, Object>();
     private File lookup(String name, boolean creat) throws IOException {
 	long h = namehash(idhash, name);
@@ -134,7 +154,7 @@ public class HashDirCache implements ResCache {
 	    RandomAccessFile lf = new RandomAccessFile(lfn, "rw");
 	    FileLock lk = null;
 	    try {
-		lk = lf.getChannel().lock();
+		lk = lock2(lf.getChannel());
 		for(int idx = 0; ; idx++) {
 		    File path = new File(base, String.format("%016x.%d", h, idx));
 		    if(!path.exists() && !creat)
