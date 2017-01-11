@@ -814,6 +814,7 @@ public class CharWnd extends Window {
 	public static final Color[] stcol = {
 	    new Color(255, 255, 64), new Color(64, 255, 64), new Color(255, 64, 64),
 	};
+	public static final char[] stsym = {'\u2022', '\u2713', '\u2717'};
 	public final int id;
 	public Indir<Resource> res;
 	public String title;
@@ -947,9 +948,7 @@ public class CharWnd extends Window {
 		buf.append(res.layer(Resource.pagina).text);
 		buf.append("\n");
 		for(Condition cond : this.cond) {
-		    buf.append(RichText.Parser.col2a(stcol[cond.done]));
-		    buf.append("{ \u2022 ");
-		    buf.append(cond.desc);
+		    buf.append(String.format("%s{ %c %s", RichText.Parser.col2a(stcol[cond.done]), stsym[cond.done], cond.desc));
 		    if(cond.status != null) {
 			buf.append(' ');
 			buf.append(cond.status);
@@ -1075,7 +1074,7 @@ public class CharWnd extends Window {
 		}
 
 		private Text ct(Condition c) {
-		    return(qcfnd.render(" \u2022 " + c.desc + ((c.status != null)?(" " + c.status):""), stcol[c.done]));
+		    return(qcfnd.render(" " + stsym[c.done] + " " + c.desc + ((c.status != null)?(" " + c.status):""), stcol[c.done]));
 		}
 
 		void update() {
