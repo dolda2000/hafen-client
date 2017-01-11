@@ -131,6 +131,7 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 		int i = lc.length;
 		lc = Utils.extend(lc, i + 1);
 		lc[i] = new Entry(prog, ret, id);
+		cache = lc;
 		return(last = ret);
 	    }
 	}
