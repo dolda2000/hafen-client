@@ -27,6 +27,7 @@
 package haven;
 
 import static java.lang.Math.PI;
+import java.util.Iterator;
 
 public class Coord implements Comparable<Coord>, java.io.Serializable {
     public int x, y;
@@ -192,5 +193,23 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	if(ret.y > ul.y + sz.y)
 	    ret = new Coord(ret.x, ul.y + sz.y);
 	return(ret);
+    }
+
+    public Iterable<Coord> offsets(Coord... list) {
+	return(new Iterable<Coord>() {
+		public Iterator<Coord> iterator() {
+		    return(new Iterator<Coord>() {
+			    int i = 0;
+
+			    public boolean hasNext() {
+				return(i < list.length);
+			    }
+
+			    public Coord next() {
+				return(add(list[i++]));
+			    }
+			});
+		}
+	    });
     }
 }
