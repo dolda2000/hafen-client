@@ -106,7 +106,7 @@ public abstract class Tiler {
 	public static final float[] ctcx = {0, 0, 1, 1}, ctcy = {0, 1, 1, 0};
 	public static final int[] rdiag = {0, 1, 2, 0, 2, 3}, ldiag = {0, 1, 3, 1, 2, 3};
 	public static MPart splitquad(Coord lc, Coord gc, Surface.Vertex[] corners, boolean diag) {
-	    return(new MPart(lc, gc, corners, ctcx, ctcy, diag?rdiag:ldiag));
+	    return(new MPart(lc, gc, corners, ctcx, ctcy, diag?ldiag:rdiag));
 	}
     }
 
