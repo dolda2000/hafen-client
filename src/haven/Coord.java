@@ -27,20 +27,28 @@
 package haven;
 
 import static java.lang.Math.PI;
+import java.util.Iterator;
 
 public class Coord implements Comparable<Coord>, java.io.Serializable {
     public int x, y;
     public static Coord z = new Coord(0, 0);
-	
+    public static Coord[] uecw = {new Coord(0, -1), new Coord(1, 0), new Coord(0, 1), new Coord(-1, 0)};
+    public static Coord[] uccw = {new Coord(0, 0), new Coord(1, 0), new Coord(1, 1), new Coord(0, 1)};
+    public static Coord[] upcw = {new Coord( 0, -1), new Coord( 1, -1), new Coord( 1,  0), new Coord( 1,  1),
+				  new Coord( 0,  1), new Coord(-1,  1), new Coord(-1,  0), new Coord(-1, -1)};
+    public static Coord[] usqc = {new Coord(-1, -1), new Coord( 0, -1), new Coord( 1, -1),
+				  new Coord(-1,  0), new Coord( 0,  0), new Coord( 1,  0),
+				  new Coord(-1,  1), new Coord( 0,  1), new Coord( 1,  1)};
+
     public Coord(int x, int y) {
 	this.x = x;
 	this.y = y;
     }
-	
+
     public Coord(Coord c) {
 	this(c.x, c.y);
     }
-    
+
     public Coord(Coord3f c) {
 	this((int)c.x, (int)c.y);
     }
@@ -48,15 +56,15 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     public Coord() {
 	this(0, 0);
     }
-	
+
     public Coord(java.awt.Dimension d) {
 	this(d.width, d.height);
     }
-	
+
     public static Coord sc(double a, double r) {
 	return(new Coord((int)Math.round(Math.cos(a) * r), -(int)Math.round(Math.sin(a) * r)));
     }
-	
+
     public boolean equals(Object o) {
 	if(!(o instanceof Coord))
 	    return(false);
@@ -67,7 +75,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     public boolean equals(int X, int Y) {
 	return((x == X) && (y == Y));
     }
-	
+
     public int compareTo(Coord c) {
 	if(c.y != y)
 	    return(c.y - y);
@@ -79,27 +87,27 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     public int hashCode() {
 	return(((y & 0xffff) * 31) + (x & 0xffff));
     }
-	
+
     public Coord add(int ax, int ay) {
 	return(new Coord(x + ax, y + ay));
     }
-	
+
     public Coord add(Coord b) {
 	return(add(b.x, b.y));
     }
-	
+
     public Coord sub(int ax, int ay) {
 	return(new Coord(x - ax, y - ay));
     }
-	
+
     public Coord sub(Coord b) {
 	return(sub(b.x, b.y));
     }
-	
+
     public Coord mul(int f) {
 	return(new Coord(x * f, y * f));
     }
-    
+
     public Coord mul(int fx, int fy) {
 	return(new Coord(x * fx, y * fy));
     }
@@ -107,11 +115,11 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     public Coord mul(double f) {
 	return(new Coord((int)Math.round(x * f), (int)Math.round(y * f)));
     }
-	
+
     public Coord inv() {
 	return(new Coord(-x, -y));
     }
-	
+
     public Coord mul(Coord f) {
 	return(new Coord(x * f.x, y * f.y));
     }
@@ -123,23 +131,23 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     public Coord div(Coord d) {
 	return(new Coord(Utils.floordiv(x, d.x), Utils.floordiv(y, d.y)));
     }
-	
+
     public Coord div(int d) {
 	return(div(new Coord(d, d)));
     }
-	
+
     public Coord mod(Coord d) {
 	return(new Coord(Utils.floormod(x, d.x), Utils.floormod(y, d.y)));
     }
-	
+
     public boolean isect(Coord c, Coord s) {
 	return((x >= c.x) && (y >= c.y) && (x < c.x + s.x) && (y < c.y + s.y));
     }
-	
+
     public String toString() {
 	return("(" + x + ", " + y + ")");
     }
-	
+
     public double angle(Coord o) {
 	Coord c = o.add(this.inv());
 	if(c.x == 0) {
@@ -158,7 +166,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	    }
 	}
     }
-	
+
     public double abs() {
 	double x = this.x, y = this.y;
 	return(Math.sqrt((x * x) + (y * y)));
@@ -173,7 +181,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	long dy = o.y - y;
 	return(Math.sqrt((dx * dx) + (dy * dy)));
     }
-    
+
     public Coord clip(Coord ul, Coord sz) {
 	Coord ret = this;
 	if(ret.x < ul.x)
@@ -185,5 +193,23 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	if(ret.y > ul.y + sz.y)
 	    ret = new Coord(ret.x, ul.y + sz.y);
 	return(ret);
+    }
+
+    public Iterable<Coord> offsets(Coord... list) {
+	return(new Iterable<Coord>() {
+		public Iterator<Coord> iterator() {
+		    return(new Iterator<Coord>() {
+			    int i = 0;
+
+			    public boolean hasNext() {
+				return(i < list.length);
+			    }
+
+			    public Coord next() {
+				return(add(list[i++]));
+			    }
+			});
+		}
+	    });
     }
 }

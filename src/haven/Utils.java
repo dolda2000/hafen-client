@@ -1061,6 +1061,15 @@ public class Utils {
 	return(splice(src, off, src.length - off));
     }
 
+    public static double[] splice(double[] src, int off, int len) {
+	double[] dst = new double[len];
+	System.arraycopy(src, off, dst, 0, len);
+	return(dst);
+    }
+    public static double[] splice(double[] src, int off) {
+	return(splice(src, off, src.length - off));
+    }
+
     public static int[] splice(int[] src, int off, int len) {
 	int[] dst = new int[len];
 	System.arraycopy(src, off, dst, 0, len);
