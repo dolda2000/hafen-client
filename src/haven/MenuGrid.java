@@ -30,21 +30,20 @@ import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import haven.Resource.AButton;
-import haven.Glob.Pagina;
 import java.util.*;
 
 public class MenuGrid extends Widget {
     public final static Tex bg = Resource.loadtex("gfx/hud/invsq");
     public final static Coord bgsz = bg.sz().add(-1, -1);
-    public final static Pagina next = new Glob.Pagina(Resource.local().loadwait("gfx/hud/sc-next").indir());
-    public final static Pagina bk = new Glob.Pagina(Resource.local().loadwait("gfx/hud/sc-back").indir());
+    public final static Pagina next = new Pagina(Resource.local().loadwait("gfx/hud/sc-next").indir());
+    public final static Pagina bk = new Pagina(Resource.local().loadwait("gfx/hud/sc-back").indir());
     public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 10);
+    public final Set<Pagina> paginae = new HashSet<Pagina>();
     private static Coord gsz = new Coord(4, 4);
     private Pagina cur, pressed, dragging, layout[][] = new Pagina[gsz.x][gsz.y];
     private UI.Grab grab;
     private int curoff = 0;
-    private int pagseq = 0;
-    private boolean loading = true;
+    private boolean recons = true;
     private Map<Character, Pagina> hotmap = new TreeMap<Character, Pagina>();
 	
     @RName("scm")
@@ -53,7 +52,67 @@ public class MenuGrid extends Widget {
 	    return(new MenuGrid());
 	}
     }
-	
+
+    public static class Pagina implements java.io.Serializable {
+	public final Indir<Resource> res;
+	public State st;
+	public int meter, dtime;
+	public long gettime;
+	public Image img;
+	public int newp;
+	public long fstart;
+
+	public interface Image {
+	    public Tex tex();
+	}
+
+	public static enum State {
+	    ENABLED, DISABLED {
+		public Image img(final Pagina pag) {
+		    return(new Image() {
+			    private Tex c = null;
+
+			    public Tex tex() {
+				if(pag.res() == null)
+				    return(null);
+				if(c == null)
+				    c = new TexI(PUtils.monochromize(pag.res().layer(Resource.imgc).img, Color.LIGHT_GRAY));
+				return(c);
+			    }
+			});
+		}
+	    };
+
+	    public Image img(final Pagina pag) {
+		return(new Image() {
+			public Tex tex() {
+			    if(pag.res() == null)
+				return(null);
+			    return(pag.res().layer(Resource.imgc).tex());
+			}
+		    });
+	    }
+	}
+
+	public Pagina(Indir<Resource> res) {
+	    this.res = res;
+	    state(State.ENABLED);
+	}
+
+	public Resource res() {
+	    return(res.get());
+	}
+
+	public Resource.AButton act() {
+	    return(res().layer(Resource.action));
+	}
+
+	public void state(State st) {
+	    this.st = st;
+	    this.img = st.img(this);
+	}
+    }
+
     public class PaginaException extends RuntimeException {
 	public Pagina pag;
 	
@@ -63,19 +122,31 @@ public class MenuGrid extends Widget {
 	}
     }
 
+    public Map<Indir<Resource>, Pagina> pmap = new WeakHashMap<Indir<Resource>, Pagina>();
+    public Pagina paginafor(Indir<Resource> res) {
+	if(res == null)
+	    return(null);
+	synchronized(pmap) {
+	    Pagina p = pmap.get(res);
+	    if(p == null)
+		pmap.put(res, p = new Pagina(res));
+	    return(p);
+	}
+    }
+
     private boolean cons(Pagina p, Collection<Pagina> buf) {
 	Pagina[] cp = new Pagina[0];
 	Collection<Pagina> open, close = new HashSet<Pagina>();
-	synchronized(ui.sess.glob.paginae) {
+	synchronized(paginae) {
 	    open = new LinkedList<Pagina>();
-	    for(Pagina pag : ui.sess.glob.paginae) {
+	    for(Pagina pag : paginae) {
 		if(pag.newp == 2) {
 		    pag.newp = 0;
 		    pag.fstart = 0;
 		}
 		open.add(pag);
 	    }
-	    for(Pagina pag : ui.sess.glob.pmap.values()) {
+	    for(Pagina pag : pmap.values()) {
 		if(pag.newp == 2) {
 		    pag.newp = 0;
 		    pag.fstart = 0;
@@ -107,11 +178,11 @@ public class MenuGrid extends Widget {
 	}
 	return(ret);
     }
-	
+
     public MenuGrid() {
 	super(bgsz.mul(gsz).add(1, 1));
     }
-	
+
     private static Comparator<Pagina> sorter = new Comparator<Pagina>() {
 	public int compare(Pagina a, Pagina b) {
 	    AButton aa = a.act(), ab = b.act();
@@ -124,9 +195,9 @@ public class MenuGrid extends Widget {
     };
 
     private void updlayout() {
-	synchronized(ui.sess.glob.paginae) {
+	synchronized(paginae) {
 	    List<Pagina> cur = new ArrayList<Pagina>();
-	    loading = !cons(this.cur, cur);
+	    recons = !cons(this.cur, cur);
 	    Collections.sort(cur, sorter);
 	    int i = curoff;
 	    hotmap.clear();
@@ -146,10 +217,9 @@ public class MenuGrid extends Widget {
 		    layout[x][y] = btn;
 		}
 	    }
-	    pagseq = ui.sess.glob.pagseq;
 	}
     }
-	
+
     private static Text rendertt(Resource res, boolean withpg) {
 	Resource.AButton ad = res.layer(Resource.action);
 	Resource.Pagina pg = res.layer(Resource.pagina);
@@ -227,7 +297,7 @@ public class MenuGrid extends Widget {
 		});
 	}
     }
-	
+
     private Pagina curttp = null;
     private boolean curttl = false;
     private Text curtt = null;
@@ -258,7 +328,7 @@ public class MenuGrid extends Widget {
 	else
 	    return(null);
     }
-	
+
     public boolean mousedown(Coord c, int button) {
 	Pagina h = bhit(c);
 	if((button == 1) && (h != null)) {
@@ -267,17 +337,13 @@ public class MenuGrid extends Widget {
 	}
 	return(true);
     }
-	
+
     public void mousemove(Coord c) {
 	if((dragging == null) && (pressed != null)) {
 	    Pagina h = bhit(c);
 	    if(h != pressed)
 		dragging = pressed;
 	}
-    }
-	
-    private Pagina paginafor(Resource.Named res) {
-	return(ui.sess.glob.paginafor(res));
     }
 
     private void use(Pagina r, boolean reset) {
@@ -307,7 +373,7 @@ public class MenuGrid extends Widget {
     }
 
     public void tick(double dt) {
-	if(loading || (pagseq != ui.sess.glob.pagseq))
+	if(recons)
 	    updlayout();
     }
 
@@ -327,21 +393,46 @@ public class MenuGrid extends Widget {
 	}
 	return(true);
     }
-	
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "goto") {
-	    String resnm = (String)args[0];
-	    if(resnm.equals("")) {
+	    if(args[0] == null)
 		cur = null;
-	    } else {
-		Resource.Named res = Resource.remote().load(resnm, (Integer)args[1]);
-		cur = paginafor(res);
-	    }
+	    else
+		cur = paginafor(ui.sess.getres((Integer)args[0]));
 	    curoff = 0;
 	    updlayout();
+	} else if(msg == "fill") {
+	    synchronized(paginae) {
+		int a = 0;
+		while(a < args.length) {
+		    int fl = (Integer)args[a++];
+		    Pagina pag = paginafor(ui.sess.getres((Integer)args[a++]));
+		    if((fl & 1) != 0) {
+			pag.state(Pagina.State.ENABLED);
+			pag.meter = 0;
+			if((fl & 2) != 0) {
+			    pag.state(Pagina.State.DISABLED);
+			}
+			if((fl & 4) != 0) {
+			    pag.meter = ((Number)args[a++]).intValue();
+			    pag.gettime = System.currentTimeMillis();
+			    pag.dtime = (Integer)args[a++];
+			}
+			if((fl & 8) != 0) {
+			    pag.newp = 1;
+			}
+			paginae.add(pag);
+		    } else {
+			paginae.remove(pag);
+		    }
+		}
+	    }
+	} else {
+	    super.uimsg(msg, args);
 	}
     }
-	
+
     public boolean globtype(char k, KeyEvent ev) {
 	if((k == 27) && (this.cur != null)) {
 	    this.cur = null;
