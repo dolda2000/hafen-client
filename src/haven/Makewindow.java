@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.Font;
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 
 public class Makewindow extends Widget {
     Widget obtn, cbtn;
@@ -47,19 +48,22 @@ public class Makewindow extends Widget {
 	}
     }
     
-    public class Spec implements GSprite.Owner {
+    public class Spec implements GSprite.Owner, ItemInfo.SpriteOwner {
 	public Indir<Resource> res;
 	public MessageBuf sdt;
 	public Tex num;
 	private GSprite spr;
+	private Object[] rawinfo;
+	private List<ItemInfo> info;
 
-	public Spec(Indir<Resource> res, Message sdt, int num) {
+	public Spec(Indir<Resource> res, Message sdt, int num, Object[] info) {
 	    this.res = res;
 	    this.sdt = new MessageBuf(sdt);
 	    if(num >= 0)
 		this.num = new TexI(Utils.outline2(Text.render(Integer.toString(num), Color.WHITE).img, Utils.contrast(Color.WHITE)));
 	    else
 		this.num = null;
+	    this.rawinfo = info;
 	}
 
 	public void draw(GOut g) {
@@ -72,6 +76,33 @@ public class Makewindow extends Widget {
 		g.aimage(num, Inventory.sqsz, 1.0, 1.0);
 	}
 
+	public BufferedImage shorttip() {
+	    List<ItemInfo> info = info();
+	    if(info.isEmpty()) {
+		Resource.Tooltip tt = res.get().layer(Resource.tooltip);
+		if(tt == null)
+		    return(null);
+		return(Text.render(tt.t).img);
+	    }
+	    return(ItemInfo.shorttip(info()));
+	}
+	public BufferedImage longtip() {
+	    List<ItemInfo> info = info();
+	    BufferedImage img;
+	    if(info.isEmpty()) {
+		Resource.Tooltip tt = res.get().layer(Resource.tooltip);
+		if(tt == null)
+		    return(null);
+		img = Text.render(tt.t).img;
+	    } else {
+		img = ItemInfo.longtip(info);
+	    }
+	    Resource.Pagina pg = res.get().layer(Resource.pagina);
+	    if(pg != null)
+		img = ItemInfo.catimgs(0, img, RichText.render("\n" + pg.text, 200).img);
+	    return(img);
+	}
+
 	private Random rnd = null;
 	public Random mkrandoom() {
 	    if(rnd == null)
@@ -80,6 +111,14 @@ public class Makewindow extends Widget {
 	}
 	public Resource getres() {return(res.get());}
 	public Glob glob() {return(ui.sess.glob);}
+
+	public List<ItemInfo> info() {
+	    if(info == null)
+		info = ItemInfo.buildinfo(this, rawinfo);
+	    return(info);
+	}
+	public Resource resource() {return(res.get());}
+	public GSprite sprite() {return(spr);}
     }
 	
     public void tick(double dt) {
@@ -109,7 +148,10 @@ public class Makewindow extends Widget {
 		int resid = (Integer)args[i++];
 		Message sdt = (args[i] instanceof byte[])?new MessageBuf((byte[])args[i++]):MessageBuf.nil;
 		int num = (Integer)args[i++];
-		inputs.add(new Spec(ui.sess.getres(resid), sdt, num));
+		Object[] info = {};
+		if((i < args.length) && (args[i] instanceof Object[]))
+		    info = (Object[])args[i++];
+		inputs.add(new Spec(ui.sess.getres(resid), sdt, num, info));
 	    }
 	    this.inputs = inputs;
 	} else if(msg == "opop") {
@@ -118,7 +160,10 @@ public class Makewindow extends Widget {
 		int resid = (Integer)args[i++];
 		Message sdt = (args[i] instanceof byte[])?new MessageBuf((byte[])args[i++]):MessageBuf.nil;
 		int num = (Integer)args[i++];
-		outputs.add(new Spec(ui.sess.getres(resid), sdt, num));
+		Object[] info = {};
+		if((i < args.length) && (args[i] instanceof Object[]))
+		    info = (Object[])args[i++];
+		outputs.add(new Spec(ui.sess.getres(resid), sdt, num, info));
 	    }
 	    this.outputs = outputs;
 	} else if(msg == "qmod") {
@@ -162,10 +207,10 @@ public class Makewindow extends Widget {
     }
     
     private long hoverstart;
-    private Resource lasttip;
+    private Spec lasttip;
     private Object stip, ltip;
     public Object tooltip(Coord mc, Widget prev) {
-	Resource tres = null;
+	Spec tspec = null;
 	Coord c;
 	if(qmod != null) {
 	    c = new Coord(xoff, qmy);
@@ -183,7 +228,7 @@ public class Makewindow extends Widget {
 	    c = new Coord(xoff, 0);
 	    for(Spec s : inputs) {
 		if(mc.isect(c, Inventory.invsq.sz())) {
-		    tres = s.res.get();
+		    tspec = s;
 		    break find;
 		}
 		c = c.add(31, 0);
@@ -191,19 +236,18 @@ public class Makewindow extends Widget {
 	    c = new Coord(xoff, outy);
 	    for(Spec s : outputs) {
 		if(mc.isect(c, Inventory.invsq.sz())) {
-		    tres = s.res.get();
+		    tspec = s;
 		    break find;
 		}
 		c = c.add(31, 0);
 	    }
 	}
-	Resource.Tooltip tt;
-	if((tres == null) || ((tt = tres.layer(Resource.tooltip)) == null))
-	    return(null);
-	if(lasttip != tres) {
-	    lasttip = tres;
+	if(lasttip != tspec) {
+	    lasttip = tspec;
 	    stip = ltip = null;
 	}
+	if(tspec == null)
+	    return(null);
 	long now = System.currentTimeMillis();
 	boolean sh = true;
 	if(prev != this)
@@ -212,16 +256,11 @@ public class Makewindow extends Widget {
 	    sh = false;
 	if(sh) {
 	    if(stip == null)
-		stip = Text.render(tt.t);
+		stip = new TexI(tspec.shorttip());
 	    return(stip);
 	} else {
-	    if(ltip == null) {
-		String t = tt.t;
-		Resource.Pagina p = tres.layer(Resource.pagina);
-		if(p != null)
-		    t += "\n\n" + tres.layer(Resource.pagina).text;
-		ltip = RichText.render(t, 300);
-	    }
+	    if(ltip == null)
+		ltip = new TexI(tspec.longtip());
 	    return(ltip);
 	}
     }
