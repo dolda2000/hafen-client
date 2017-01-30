@@ -440,7 +440,7 @@ public class Session {
 			} else if(type == OD_OVERLAY) {
 			    int olid = msg.int32();
 			    boolean prs = (olid & 1) != 0;
-			    olid >>= 1;
+			    olid >>>= 1;
 			    int resid = msg.uint16();
 			    Indir<Resource> res;
 			    Message sdt = Message.nil;
