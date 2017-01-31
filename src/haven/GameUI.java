@@ -99,7 +99,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	this.plid = plid;
 	setcanfocus(true);
 	setfocusctl(true);
-	menu = add(new MenuGrid());
 	add(new Avaview(Avaview.dasz, plid, "avacam"), new Coord(10, 10));
 	buffs = add(new Bufflist(), new Coord(95, 50));
 	chat = add(new ChatUI(0));
@@ -175,6 +174,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		ui.destroy(mmap);
 	    mmap = adda(new Frame(new Coord(125, 125), true), 0, sz.y, 0, 1);
 	    mmap.add(new LocalMiniMap(new Coord(125, 125), map));
+	} else if(place == "menu") {
+	    menu = (MenuGrid)add(child);
 	} else if(place == "fight") {
 	    fv = adda((Fightview)child, sz.x, 0, 1, 0);
 	} else if(place == "inv") {
@@ -343,10 +344,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public void wdgmsg(Widget sender, String msg, Object... args) {
-	if(sender == menu) {
-	    wdgmsg(msg, args);
-	    return;
-	} else if((sender == buddies) && (msg == "close")) {
+	if((sender == buddies) && (msg == "close")) {
 	    buddies.hide();
 	} else if((polities.contains(sender)) && (msg == "close")) {
 	    sender.hide();
@@ -402,7 +400,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     public void resize(Coord sz) {
 	this.sz = sz;
-	menu.c = sz.sub(menu.sz);
+	if(menu != null)
+	    menu.c = sz.sub(menu.sz);
 	chat.resize(sz.x - cnto - menu.sz.x);
 	chat.move(new Coord(cnto, sz.y));
 	if(map != null)
