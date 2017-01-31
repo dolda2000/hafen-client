@@ -29,10 +29,16 @@ package haven;
 public class LimitMessage extends Message {
     private final Message bk;
     private int left;
+    private final boolean eoferror;
 
-    public LimitMessage(Message bk, int left) {
+    public LimitMessage(Message bk, int left, boolean eoferror) {
 	this.bk = bk;
 	this.left = left;
+	this.eoferror = eoferror;
+    }
+
+    public LimitMessage(Message bk, int left) {
+	this(bk, left, true);
     }
 
     public boolean underflow(int hint) {
@@ -48,8 +54,11 @@ public class LimitMessage extends Message {
 	rt -= rh;
 	rh = 0;
 	if(bk.rt - bk.rh < 1) {
-	    if(!bk.underflow(hint))
+	    if(!bk.underflow(hint)) {
+		if(eoferror)
+		    throw(new EOF(String.format("Early EOF in sized message with %d bytes left", left)));
 		return(false);
+	    }
 	}
 	int len = Math.min(left, Math.min(bk.rt - bk.rh, rbuf.length - rt));
 	System.arraycopy(bk.rbuf, bk.rh, rbuf, rt, len);
