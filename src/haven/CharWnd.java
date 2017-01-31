@@ -34,6 +34,7 @@ import java.util.*;
 import static haven.Window.wbox;
 import static haven.PUtils.*;
 import haven.resutil.FoodInfo;
+import haven.resutil.Curiosity;
 
 public class CharWnd extends Window {
     public static final RichText.Foundry ifnd = new RichText.Foundry(Resource.remote(), java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, 9).aa(true);

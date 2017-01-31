@@ -24,8 +24,9 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.resutil;
 
+import haven.*;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
