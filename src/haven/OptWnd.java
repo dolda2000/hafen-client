@@ -70,6 +70,12 @@ public class OptWnd extends Window {
 	}
     }
 
+    private void error(String msg) {
+	GameUI gui = getparent(GameUI.class);
+	if(gui != null)
+	    gui.error(msg);
+    }
+
     public class VideoPanel extends Panel {
 	public VideoPanel(Panel back) {
 	    super();
@@ -91,7 +97,7 @@ public class OptWnd extends Window {
 				try {
 				    cf.flight.set(true);
 				} catch(GLSettings.SettingException e) {
-				    getparent(GameUI.class).error(e.getMessage());
+				    error(e.getMessage());
 				    return;
 				}
 			    } else {
@@ -110,7 +116,7 @@ public class OptWnd extends Window {
 				try {
 				    cf.lshadow.set(true);
 				} catch(GLSettings.SettingException e) {
-				    getparent(GameUI.class).error(e.getMessage());
+				    error(e.getMessage());
 				    return;
 				}
 			    } else {
@@ -128,7 +134,7 @@ public class OptWnd extends Window {
 			    try {
 				cf.fsaa.set(val);
 			    } catch(GLSettings.SettingException e) {
-				getparent(GameUI.class).error(e.getMessage());
+				error(e.getMessage());
 				return;
 			    }
 			    a = val;
@@ -156,7 +162,7 @@ public class OptWnd extends Window {
 				try {
 				    cf.anisotex.set(val / 2.0f);
 				} catch(GLSettings.SettingException e) {
-				    getparent(GameUI.class).error(e.getMessage());
+				    error(e.getMessage());
 				    return;
 				}
 				dpy();
