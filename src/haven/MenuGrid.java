@@ -29,14 +29,15 @@ package haven;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
+import java.awt.image.BufferedImage;
 import haven.Resource.AButton;
 import java.util.*;
 
 public class MenuGrid extends Widget {
     public final static Tex bg = Resource.loadtex("gfx/hud/invsq");
     public final static Coord bgsz = bg.sz().add(-1, -1);
-    public final static Pagina next = new Pagina(Resource.local().loadwait("gfx/hud/sc-next").indir());
-    public final static Pagina bk = new Pagina(Resource.local().loadwait("gfx/hud/sc-back").indir());
+    public final static Pagina next = new Pagina(null, Resource.local().loadwait("gfx/hud/sc-next").indir());
+    public final static Pagina bk = new Pagina(null, Resource.local().loadwait("gfx/hud/sc-back").indir());
     public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 10);
     public final Set<Pagina> paginae = new HashSet<Pagina>();
     private static Coord gsz = new Coord(4, 4);
@@ -53,7 +54,8 @@ public class MenuGrid extends Widget {
 	}
     }
 
-    public static class Pagina implements java.io.Serializable {
+    public static class Pagina implements java.io.Serializable, ItemInfo.Owner {
+	public final Glob glob;
 	public final Indir<Resource> res;
 	public State st;
 	public int meter, dtime;
@@ -61,6 +63,7 @@ public class MenuGrid extends Widget {
 	public Image img;
 	public int newp;
 	public long fstart;
+	public Object[] rawinfo = {};
 
 	public interface Image {
 	    public Tex tex();
@@ -94,7 +97,8 @@ public class MenuGrid extends Widget {
 	    }
 	}
 
-	public Pagina(Indir<Resource> res) {
+	public Pagina(Glob glob, Indir<Resource> res) {
+	    this.glob = glob;
 	    this.res = res;
 	    state(State.ENABLED);
 	}
@@ -110,6 +114,14 @@ public class MenuGrid extends Widget {
 	public void state(State st) {
 	    this.st = st;
 	    this.img = st.img(this);
+	}
+
+	private List<ItemInfo> info = null;
+	public Glob glob() {return(glob);}
+	public List<ItemInfo> info() {
+	    if(info == null)
+		info = ItemInfo.buildinfo(this, rawinfo);
+	    return(info);
 	}
     }
 
@@ -129,7 +141,7 @@ public class MenuGrid extends Widget {
 	synchronized(pmap) {
 	    Pagina p = pmap.get(res);
 	    if(p == null)
-		pmap.put(res, p = new Pagina(res));
+		pmap.put(res, p = new Pagina(ui.sess.glob, res));
 	    return(p);
 	}
     }
@@ -220,19 +232,25 @@ public class MenuGrid extends Widget {
 	}
     }
 
-    private static Text rendertt(Resource res, boolean withpg) {
-	Resource.AButton ad = res.layer(Resource.action);
-	Resource.Pagina pg = res.layer(Resource.pagina);
+    private static BufferedImage rendertt(Pagina pag, boolean withpg) {
+	Resource.AButton ad = pag.res.get().layer(Resource.action);
+	Resource.Pagina pg = pag.res.get().layer(Resource.pagina);
 	String tt = ad.name;
 	int pos = tt.toUpperCase().indexOf(Character.toUpperCase(ad.hk));
 	if(pos >= 0)
 	    tt = tt.substring(0, pos) + "$col[255,255,0]{" + tt.charAt(pos) + "}" + tt.substring(pos + 1);
 	else if(ad.hk != 0)
 	    tt += " [" + ad.hk + "]";
-	if(withpg && (pg != null)) {
-	    tt += "\n\n" + pg.text;
+	BufferedImage ret = ttfnd.render(tt, 300).img;
+	if(withpg) {
+	    List<ItemInfo> info = pag.info();
+	    info.removeIf(el -> el instanceof ItemInfo.Name);
+	    if(!info.isEmpty())
+		ret = ItemInfo.catimgs(0, ret, ItemInfo.longtip(info));
+	    if(pg != null)
+		ret = ItemInfo.catimgs(0, ret, ttfnd.render("\n" + pg.text, 200).img);
 	}
-	return(ttfnd.render(tt, 300));
+	return(ret);
     }
 
     private static Map<Pagina, Tex> glowmasks = new WeakHashMap<Pagina, Tex>();
@@ -300,7 +318,7 @@ public class MenuGrid extends Widget {
 
     private Pagina curttp = null;
     private boolean curttl = false;
-    private Text curtt = null;
+    private Tex curtt = null;
     private long hoverstart;
     public Object tooltip(Coord c, Widget prev) {
 	Pagina pag = bhit(c);
@@ -310,14 +328,18 @@ public class MenuGrid extends Widget {
 		hoverstart = now;
 	    boolean ttl = (now - hoverstart) > 500;
 	    if((pag != curttp) || (ttl != curttl)) {
-		curtt = rendertt(pag.res(), ttl);
+		try {
+		    curtt = new TexI(rendertt(pag, ttl));
+		} catch(Loading l) {
+		    return(null);
+		}
 		curttp = pag;
 		curttl = ttl;
 	    }
 	    return(curtt);
 	} else {
 	    hoverstart = now;
-	    return("");
+	    return(null);
 	}
     }
 
@@ -411,17 +433,19 @@ public class MenuGrid extends Widget {
 		    if((fl & 1) != 0) {
 			pag.state(Pagina.State.ENABLED);
 			pag.meter = 0;
-			if((fl & 2) != 0) {
+			if((fl & 2) != 0)
 			    pag.state(Pagina.State.DISABLED);
-			}
 			if((fl & 4) != 0) {
 			    pag.meter = ((Number)args[a++]).intValue();
 			    pag.gettime = System.currentTimeMillis();
 			    pag.dtime = (Integer)args[a++];
 			}
-			if((fl & 8) != 0) {
+			if((fl & 8) != 0)
 			    pag.newp = 1;
-			}
+			if((fl & 16) != 0)
+			    pag.rawinfo = (Object[])args[a++];
+			else
+			    pag.rawinfo = new Object[0];
 			paginae.add(pag);
 		    } else {
 			paginae.remove(pag);
