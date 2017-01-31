@@ -134,7 +134,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	blpanel.add(new Img(Resource.loadtex("gfx/hud/blframe")), 0, lbtnbg.sz().y - 33);
 	blpanel.add(new Img(lbtnbg), 0, 0);
 	minimapc = new Coord(4, 34 + (lbtnbg.sz().y - 33));
-	menu = brpanel.add(new MenuGrid(), 20, 34);
 	brpanel.add(new Img(Resource.loadtex("gfx/hud/brframe")), 0, 0);
 	menupanel.add(new MainMenu(), 0, 0);
 	mapbuttons();
@@ -520,6 +519,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		mapfile.hide();
 		add(mapfile, 50, 50);
 	    }
+	} else if(place == "menu") {
+	    menu = (MenuGrid)brpanel.add(child, 20, 34);
 	} else if(place == "fight") {
 	    fv = urpanel.add((Fightview)child, 0, 0);
 	} else if(place == "fsess") {
@@ -733,10 +734,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public void wdgmsg(Widget sender, String msg, Object... args) {
-	if(sender == menu) {
-	    wdgmsg(msg, args);
-	    return;
-	} else if((sender == chrwdg) && (msg == "close")) {
+	if((sender == chrwdg) && (msg == "close")) {
 	    chrwdg.hide();
 	    return;
 	} else if((sender == mapfile) && (msg == "close")) {

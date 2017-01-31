@@ -526,8 +526,6 @@ public class Session {
 		glob.map.invalblob(msg);
 	    } else if(msg.type == RMessage.RMSG_GLOBLOB) {
 		glob.blob(msg);
-	    } else if(msg.type == RMessage.RMSG_PAGINAE) {
-		glob.paginae(msg);
 	    } else if(msg.type == RMessage.RMSG_RESID) {
 		int resid = msg.uint16();
 		String resname = msg.string();
