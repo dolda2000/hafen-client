@@ -93,7 +93,7 @@ public class FightWnd extends Widget {
 			      Resource.loadtex("gfx/hud/buttons/addd")};
     private static final Tex[] sub = {Resource.loadtex("gfx/hud/buttons/subu"),
 			      Resource.loadtex("gfx/hud/buttons/subd")};
-    public class Actions extends Listbox<Action> {
+    public class Actions extends Listbox<Action> implements DTarget {
 	private boolean loading = false;
 	private int da = -1, ds = -1;
 	UI.Grab d = null;
@@ -279,6 +279,17 @@ public class FightWnd extends Widget {
 		return(true);
 	    }
 	    return(super.mouseup(c, button));
+	}
+
+	public boolean drop(Coord cc, Coord ul) {
+	    return(false);
+	}
+
+	public boolean iteminteract(Coord cc, Coord ul) {
+	    Action act = itemat(cc);
+	    if(act != null)
+		FightWnd.this.wdgmsg("itemact", act.id, ui.modflags());
+	    return(true);
 	}
     }
 
