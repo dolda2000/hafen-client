@@ -451,6 +451,7 @@ public class MenuGrid extends Widget {
 			paginae.remove(pag);
 		    }
 		}
+		updlayout();
 	    }
 	} else {
 	    super.uimsg(msg, args);
