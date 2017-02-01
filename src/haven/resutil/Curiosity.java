@@ -64,7 +64,12 @@ public class Curiosity extends ItemInfo.Tip {
 
     public BufferedImage tipimg() {
 	StringBuilder buf = new StringBuilder();
-	buf.append(String.format("Learning points: $col[192,192,255]{%s}\nStudy time: $col[192,255,192]{%s}\nMental weight: $col[255,192,255]{%d}\n", Utils.thformat(exp), timefmt(time), mw));
+	if(exp > 0)
+	    buf.append(String.format("Learning points: $col[192,192,255]{%s}\n", Utils.thformat(exp)));
+	if(time > 0)
+	    buf.append(String.format("Study time: $col[192,255,192]{%s}\n", timefmt(time)));
+	if(mw > 0)
+	    buf.append(String.format("Mental weight: $col[255,192,255]{%d}\n", mw));
 	if(enc > 0)
 	    buf.append(String.format("Experience cost: $col[255,255,192]{%d}\n", enc));
 	return(RichText.render(buf.toString(), 0).img);
