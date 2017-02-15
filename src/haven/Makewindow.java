@@ -208,7 +208,7 @@ public class Makewindow extends Widget {
     
     private long hoverstart;
     private Spec lasttip;
-    private Object stip, ltip;
+    private Indir<Object> stip, ltip;
     public Object tooltip(Coord mc, Widget prev) {
 	Spec tspec = null;
 	Coord c;
@@ -255,12 +255,26 @@ public class Makewindow extends Widget {
 	else if(now - hoverstart > 1000)
 	    sh = false;
 	if(sh) {
-	    if(stip == null)
-		stip = new TexI(tspec.shorttip());
+	    if(stip == null) {
+		BufferedImage tip = tspec.shorttip();
+		if(tip == null) {
+		    stip = () -> null;
+		} else {
+		    Tex tt = new TexI(tip);
+		    stip = () -> tt;
+		}
+	    }
 	    return(stip);
 	} else {
-	    if(ltip == null)
-		ltip = new TexI(tspec.longtip());
+	    if(ltip == null) {
+		BufferedImage tip = tspec.longtip();
+		if(tip == null) {
+		    ltip = () -> null;
+		} else {
+		    Tex tt = new TexI(tip);
+		    ltip = () -> tt;
+		}
+	    }
 	    return(ltip);
 	}
     }
