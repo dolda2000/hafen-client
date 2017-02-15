@@ -192,6 +192,7 @@ public class MCache {
 		    MapMesh old = cut.mesh;
 		    cut.mesh = cut.dmesh.get();
 		    cut.dmesh = null;
+		    cut.ols = null;
 		    if(old != null)
 			old.dispose();
 		}
