@@ -303,6 +303,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     }
 
     private void loadrattr() {
+	boolean upd = false;
 	for(Iterator<ResAttr.Load> i = lrdata.iterator(); i.hasNext();) {
 	    ResAttr.Load rd = i.next();
 	    ResAttr attr;
@@ -319,6 +320,11 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	    rc.odat = rd.dat;
 	    rc.set(attr);
 	    i.remove();
+	    upd = true;
+	}
+	if(upd) {
+	    if(glob.oc.getgob(id) != null)
+		glob.oc.changed(this);
 	}
     }
 
