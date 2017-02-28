@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.lang.reflect.*;
 import java.awt.image.BufferedImage;
 import java.awt.Graphics;
 
@@ -46,9 +47,34 @@ public abstract class ItemInfo {
 	public GSprite sprite();
     }
     
-    @Resource.PublishedCode(name = "tt")
+    @Resource.PublishedCode(name = "tt", instancer = FactMaker.class)
     public static interface InfoFactory {
 	public ItemInfo build(Owner owner, Object... args);
+    }
+
+    public static class FactMaker implements Resource.PublishedCode.Instancer {
+	public InfoFactory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
+	    if(InfoFactory.class.isAssignableFrom(cl))
+		return(cl.asSubclass(InfoFactory.class).newInstance());
+	    try {
+		final Method mkm = cl.getDeclaredMethod("mkinfo", Owner.class, Object[].class);
+		int mod = mkm.getModifiers();
+		if(ItemInfo.class.isAssignableFrom(mkm.getReturnType()) && ((mod & Modifier.STATIC) != 0) && ((mod & Modifier.PUBLIC) != 0)) {
+		    return(new InfoFactory() {
+			    public ItemInfo build(Owner owner, Object... args) {
+				try {
+				    return((ItemInfo)mkm.invoke(null, owner, args));
+				} catch(Exception e) {
+				    if(e instanceof RuntimeException) throw((RuntimeException)e);
+				    throw(new RuntimeException(e));
+				}
+			    }
+			});
+		}
+	    } catch(NoSuchMethodException e) {
+	    }
+	    return(null);
+	}
     }
     
     public ItemInfo(Owner owner) {
