@@ -850,6 +850,7 @@ public class CharWnd extends Window {
 	    public final String desc;
 	    public int done;
 	    public String status;
+	    public Object[] wdata = null;
 
 	    public Condition(String desc, int done, String status) {
 		this.desc = desc;
@@ -914,7 +915,40 @@ public class CharWnd extends Window {
 		});
 	}
 
-	public static class Box extends Widget implements Info {
+	public abstract static class CondWidget extends Widget {
+	    public final Condition cond;
+
+	    public CondWidget(Condition cond) {
+		this.cond = cond;
+	    }
+
+	    public boolean update() {
+		return(false);
+	    }
+	}
+
+	public static class DefaultCond extends CondWidget {
+	    public final Text text;
+
+	    public DefaultCond(Widget parent, Condition cond) {
+		super(cond);
+		StringBuilder buf = new StringBuilder();
+		buf.append(String.format("%s{%c %s", RichText.Parser.col2a(stcol[cond.done]), stsym[cond.done], cond.desc));
+		if(cond.status != null) {
+		    buf.append(' ');
+		    buf.append(cond.status);
+		}
+		buf.append("}");
+		text = ifnd.render(buf.toString(), parent.sz.x - 10);
+		resize(text.sz().add(5, 1));
+	    }
+
+	    public void draw(GOut g) {
+		g.image(text.tex(), new Coord(5, 0));
+	    }
+	}
+
+	public static class Box extends Widget implements Info, QView.QVInfo {
 	    public final int id;
 	    public final Indir<Resource> res;
 	    public final String title;
@@ -938,6 +972,10 @@ public class CharWnd extends Window {
 		return(res.get().layer(Resource.tooltip).t);
 	    }
 
+	    public Condition[] conds() {
+		return(cond);
+	    }
+
 	    public void refresh() {
 	    }
 
@@ -945,16 +983,12 @@ public class CharWnd extends Window {
 		StringBuilder buf = new StringBuilder();
 		Resource res = this.res.get();
 		buf.append("$img[" + res.name + "]\n\n");
-		buf.append("$b{$font[serif,16]{" + title() + "}}\n\n\n");
-		buf.append(res.layer(Resource.pagina).text);
-		buf.append("\n");
-		for(Condition cond : this.cond) {
-		    buf.append(String.format("%s{ %c %s", RichText.Parser.col2a(stcol[cond.done]), stsym[cond.done], cond.desc));
-		    if(cond.status != null) {
-			buf.append(' ');
-			buf.append(cond.status);
-		    }
-		    buf.append("}\n");
+		buf.append("$b{$font[serif,16]{" + title() + "}}\n\n");
+		Resource.Pagina pag = res.layer(Resource.pagina);
+		if((pag != null) && !pag.text.equals("")) {
+		    buf.append("\n");
+		    buf.append(pag.text);
+		    buf.append("\n");
 		}
 		return(buf.toString());
 	    }
@@ -975,15 +1009,20 @@ public class CharWnd extends Window {
 			String desc = (String)args[a++];
 			int st = (Integer)args[a++];
 			String status = (String)args[a++];
+			Object[] wdata = null;
+			if((a < args.length) && (args[a] instanceof Object[]))
+			    wdata = (Object[])args[a++];
 			Condition cond = findcond(desc);
 			if(cond != null) {
 			    boolean ch = false;
 			    if(st != cond.done) {cond.done = st; ch = true;}
 			    if(!Utils.eq(status, cond.status)) {cond.status = status; ch = true;}
+			    if(!Arrays.equals(wdata, cond.wdata)) {cond.wdata = wdata; ch = true;}
 			    if(ch && (cqv != null))
 				cqv.update(cond);
 			} else {
 			    cond = new Condition(desc, st, status);
+			    cond.wdata = wdata;
 			}
 			ncond.add(cond);
 		    }
@@ -1002,124 +1041,134 @@ public class CharWnd extends Window {
 		    cqv.reqdestroy();
 	    }
 
-	    static final Text.Furnace qtfnd = new BlurFurn(new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD, 16)).aa(true), 2, 1, Color.BLACK);
-	    static final Text.Foundry qcfnd = new Text.Foundry(Text.sans, 12).aa(true);
-	    class QView extends Widget {
-		private Condition[] ccond;
-		private Tex[] rcond = {};
-		private Tex rtitle = null;
-		private Tex glow, glowon;
-		private double glowt = -1;
-
-		private void resize() {
-		    Coord sz = new Coord(0, 0);
-		    if(rtitle != null) {
-			sz.y += rtitle.sz().y + 5;
-			sz.x = Math.max(sz.x, rtitle.sz().x);
-		    }
-		    for(Tex c : rcond) {
-			sz.y += c.sz().y;
-			sz.x = Math.max(sz.x, c.sz().x);
-		    }
-		    sz.x += 3;
-		    resize(sz);
-		}
-
-		public void draw(GOut g) {
-		    int y = 0;
-		    if(rtitle != null) {
-			if(rootxlate(ui.mc).isect(Coord.z, rtitle.sz()))
-			    g.chcolor(192, 192, 255, 255);
-			g.image(rtitle, new Coord(3, y));
-			g.chcolor();
-			y += rtitle.sz().y + 5;
-		    }
-		    for(Tex c : rcond) {
-			g.image(c, new Coord(3, y));
-			if(c == glowon) {
-			    double a = (1.0 - Math.pow(Math.cos(glowt * 2 * Math.PI), 2));
-			    g.chcolor(255, 255, 255, (int)(128 * a));
-			    g.image(glow, new Coord(0, y - 3));
-			    g.chcolor();
-			}
-			y += c.sz().y;
-		    }
-		}
-
-		public boolean mousedown(Coord c, int btn) {
-		    if((rtitle != null) && c.isect(Coord.z, rtitle.sz())) {
-			CharWnd cw = getparent(GameUI.class).chrwdg;
-			cw.show();
-			cw.raise();
-			cw.parent.setfocus(cw);
-			cw.questtab.showtab();
-			return(true);
-		    }
-		    return(super.mousedown(c, btn));
-		}
-
-		public void tick(double dt) {
-		    if(rtitle == null) {
-			try {
-			    rtitle = qtfnd.render(title()).tex();
-			    resize();
-			} catch(Loading l) {
-			}
-		    }
-		    if(glowt >= 0) {
-			if((glowt += (dt * 0.5)) > 1.0) {
-			    glowt = -1;
-			    glow = glowon = null;
-			}
-		    }
-		}
-
-		private Text ct(Condition c) {
-		    return(qcfnd.render(" " + stsym[c.done] + " " + c.desc + ((c.status != null)?(" " + c.status):""), stcol[c.done]));
-		}
-
-		void update() {
-		    Condition[] cond = Box.this.cond;
-		    Tex[] rcond = new Tex[cond.length];
-		    for(int i = 0; i < cond.length; i++) {
-			Condition c = cond[i];
-			BufferedImage text = ct(c).img;
-			rcond[i] = new TexI(rasterimg(blurmask2(text.getRaster(), 1, 1, Color.BLACK)));
-		    }
-		    if(glowon != null) {
-			for(int i = 0; i < this.rcond.length; i++) {
-			    if(this.rcond[i] == glowon) {
-				for(int o = 0; o < cond.length; o++) {
-				    if(cond[o] == this.ccond[i]) {
-					glowon = rcond[o];
-					break;
-				    }
-				}
-				break;
-			    }
-			}
-		    }
-		    this.ccond = cond;
-		    this.rcond = rcond;
-		    resize();
-		}
-
-		void update(Condition c) {
-		    glow = new TexI(rasterimg(blurmask2(ct(c).img.getRaster(), 3, 2, stcol[c.done])));
-		    for(int i = 0; i < ccond.length; i++) {
-			if(ccond[i] == c) {
-			    glowon = rcond[i];
-			    break;
-			}
-		    }
-		    glowt = 0.0;
-		}
-	    }
-
 	    public int questid() {return(id);}
 
 	    public Widget qview() {
-		return(cqv = new QView());
+		return(cqv = new QView(this));
+	    }
+	}
+
+	public static class QView extends Widget {
+	    public static final Text.Furnace qtfnd = new BlurFurn(new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD, 16)).aa(true), 2, 1, Color.BLACK);
+	    public static final Text.Foundry qcfnd = new Text.Foundry(Text.sans, 12).aa(true);
+	    public final QVInfo info;
+	    private Condition[] ccond;
+	    private Tex[] rcond = {};
+	    private Tex rtitle = null;
+	    private Tex glow, glowon;
+	    private double glowt = -1;
+
+	    public interface QVInfo {
+		public String title();
+		public Condition[] conds();
+	    }
+
+	    public QView(QVInfo info) {
+		this.info = info;
+	    }
+
+	    private void resize() {
+		Coord sz = new Coord(0, 0);
+		if(rtitle != null) {
+		    sz.y += rtitle.sz().y + 5;
+		    sz.x = Math.max(sz.x, rtitle.sz().x);
+		}
+		for(Tex c : rcond) {
+		    sz.y += c.sz().y;
+		    sz.x = Math.max(sz.x, c.sz().x);
+		}
+		sz.x += 3;
+		resize(sz);
+	    }
+
+	    public void draw(GOut g) {
+		int y = 0;
+		if(rtitle != null) {
+		    if(rootxlate(ui.mc).isect(Coord.z, rtitle.sz()))
+			g.chcolor(192, 192, 255, 255);
+		    g.image(rtitle, new Coord(3, y));
+		    g.chcolor();
+		    y += rtitle.sz().y + 5;
+		}
+		for(Tex c : rcond) {
+		    g.image(c, new Coord(3, y));
+		    if(c == glowon) {
+			double a = (1.0 - Math.pow(Math.cos(glowt * 2 * Math.PI), 2));
+			g.chcolor(255, 255, 255, (int)(128 * a));
+			g.image(glow, new Coord(0, y - 3));
+			g.chcolor();
+		    }
+		    y += c.sz().y;
+		}
+	    }
+
+	    public boolean mousedown(Coord c, int btn) {
+		if((rtitle != null) && c.isect(Coord.z, rtitle.sz())) {
+		    CharWnd cw = getparent(GameUI.class).chrwdg;
+		    cw.show();
+		    cw.raise();
+		    cw.parent.setfocus(cw);
+		    cw.questtab.showtab();
+		    return(true);
+		}
+		return(super.mousedown(c, btn));
+	    }
+
+	    public void tick(double dt) {
+		if(rtitle == null) {
+		    try {
+			rtitle = qtfnd.render(info.title()).tex();
+			resize();
+		    } catch(Loading l) {
+		    }
+		}
+		if(glowt >= 0) {
+		    if((glowt += (dt * 0.5)) > 1.0) {
+			glowt = -1;
+			glow = glowon = null;
+		    }
+		}
+	    }
+
+	    private Text ct(Condition c) {
+		return(qcfnd.render(" " + stsym[c.done] + " " + c.desc + ((c.status != null)?(" " + c.status):""), stcol[c.done]));
+	    }
+
+	    void update() {
+		Condition[] cond = info.conds();
+		Tex[] rcond = new Tex[cond.length];
+		for(int i = 0; i < cond.length; i++) {
+		    Condition c = cond[i];
+		    BufferedImage text = ct(c).img;
+		    rcond[i] = new TexI(rasterimg(blurmask2(text.getRaster(), 1, 1, Color.BLACK)));
+		}
+		if(glowon != null) {
+		    for(int i = 0; i < this.rcond.length; i++) {
+			if(this.rcond[i] == glowon) {
+			    for(int o = 0; o < cond.length; o++) {
+				if(cond[o] == this.ccond[i]) {
+				    glowon = rcond[o];
+				    break;
+				}
+			    }
+			    break;
+			}
+		    }
+		}
+		this.ccond = cond;
+		this.rcond = rcond;
+		resize();
+	    }
+
+	    void update(Condition c) {
+		glow = new TexI(rasterimg(blurmask2(ct(c).img.getRaster(), 3, 2, stcol[c.done])));
+		for(int i = 0; i < ccond.length; i++) {
+		    if(ccond[i] == c) {
+			glowon = rcond[i];
+			break;
+		    }
+		}
+		glowt = 0.0;
 	    }
 	}
 
@@ -1127,31 +1176,68 @@ public class CharWnd extends Window {
 	    private Widget current;
 	    private boolean refresh = true;
 	    public List<Pair<String, String>> options = Collections.emptyList();
+	    public CondWidget[] condw = {};
 
 	    public DefaultBox(int id, Indir<Resource> res, String title) {
 		super(id, res, title);
 	    }
 
+	    protected void layouth(Widget cont) {
+		RichText text = ifnd.render(rendertext(), cont.sz.x - 20);
+		cont.add(new Img(text.tex()), new Coord(10, 10));
+	    }
+
+	    protected void layoutc(Widget cont) {
+		int y = cont.contentsz().y + 10;
+		CondWidget[] nw = new CondWidget[cond.length];
+		CondWidget[] pw = condw;
+		cond: for(int i = 0; i < cond.length; i++) {
+		    for(int o = 0; o < pw.length; o++) {
+			if((pw[o] != null) && (pw[o].cond == cond[i])) {
+			    if(pw[o].update()) {
+				pw[o].unlink();
+				nw[i] = cont.add(pw[o], new Coord(10, y));
+				y += nw[i].sz.y;
+				pw[o] = null;
+				continue cond;
+			    }
+			}
+		    }
+		    if(cond[i].wdata != null) {
+			Indir<Resource> wres = ui.sess.getres((Integer)cond[i].wdata[0]);
+			nw[i] = (CondWidget)wres.get().getcode(Widget.Factory.class, true).create(cont, new Object[] {cond[i]});
+		    } else {
+			nw[i] = new DefaultCond(cont, cond[i]);
+		    }
+		    y += cont.add(nw[i], new Coord(10, y)).sz.y;
+		}
+		condw = nw;
+	    }
+
+	    protected void layouto(Widget cont) {
+		int y = cont.contentsz().y + 10;
+		for(Pair<String, String> opt : options) {
+		    y += cont.add(new Button(cont.sz.x - 20, opt.b, false) {
+			    public void click() {
+				DefaultBox.this.wdgmsg("opt", opt.a);
+			    }
+			}, new Coord(10, y)).sz.y + 5;
+		}
+	    }
+
+	    protected void layout(Widget cont) {
+		layouth(cont);
+		layoutc(cont);
+		layouto(cont);
+	    }
+
 	    public void draw(GOut g) {
 		refresh: if(refresh) {
 		    Scrollport newch = new Scrollport(sz);
-		    RichText text;
 		    try {
-			text = ifnd.render(rendertext(), newch.cont.sz.x - 20);
+			layout(newch.cont);
 		    } catch(Loading l) {
 			break refresh;
-		    }
-		    Widget prev;
-		    int y = 10;
-		    newch.addchild(prev = new Img(text.tex()), new Coord(10, y));
-		    y += prev.sz.y + 10;
-		    for(Pair<String, String> opt : options) {
-			newch.addchild(prev = new Button(newch.cont.sz.x - 20, opt.b, false) {
-				public void click() {
-				    DefaultBox.this.wdgmsg("opt", opt.a);
-				}
-			    }, new Coord(10, y));
-			y += prev.sz.y + 5;
 		    }
 		    if(current != null)
 			current.destroy();
