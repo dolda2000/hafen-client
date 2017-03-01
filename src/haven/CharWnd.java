@@ -939,12 +939,12 @@ public class CharWnd extends Window {
 		    buf.append(cond.status);
 		}
 		buf.append("}");
-		text = ifnd.render(buf.toString(), parent.sz.x - 10);
-		resize(text.sz().add(5, 1));
+		text = ifnd.render(buf.toString(), parent.sz.x - 20);
+		resize(text.sz().add(15, 1));
 	    }
 
 	    public void draw(GOut g) {
-		g.image(text.tex(), new Coord(5, 0));
+		g.image(text.tex(), new Coord(15, 0));
 	    }
 	}
 
@@ -1196,7 +1196,7 @@ public class CharWnd extends Window {
 			if((pw[o] != null) && (pw[o].cond == cond[i])) {
 			    if(pw[o].update()) {
 				pw[o].unlink();
-				nw[i] = cont.add(pw[o], new Coord(10, y));
+				nw[i] = cont.add(pw[o], new Coord(0, y));
 				y += nw[i].sz.y;
 				pw[o] = null;
 				continue cond;
@@ -1209,7 +1209,7 @@ public class CharWnd extends Window {
 		    } else {
 			nw[i] = new DefaultCond(cont, cond[i]);
 		    }
-		    y += cont.add(nw[i], new Coord(10, y)).sz.y;
+		    y += cont.add(nw[i], new Coord(0, y)).sz.y;
 		}
 		condw = nw;
 	    }
