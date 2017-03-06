@@ -54,7 +54,7 @@ public abstract class Listbox<T> extends ListWidget<T> {
 	sb.max = listitems() - h;
 	drawbg(g);
 	int n = listitems();
-	for(int i = 0; i < h; i++) {
+	for(int i = 0; (i * itemh) < sz.y; i++) {
 	    int idx = i + sb.val;
 	    if(idx >= n)
 		break;
@@ -116,7 +116,7 @@ public abstract class Listbox<T> extends ListWidget<T> {
 
     public void resize(Coord sz) {
 	super.resize(sz);
-	this.h = (sz.y + itemh - 1) / itemh;
+	this.h = Math.max(sz.y / itemh, 1);
 	sb.resize(sz.y);
 	sb.c = new Coord(sz.x - sb.sz.x, 0);
     }
