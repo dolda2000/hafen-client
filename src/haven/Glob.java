@@ -35,9 +35,6 @@ public class Glob {
     public MCache map;
     public Session sess;
     public Party party;
-    public Set<Pagina> paginae = new HashSet<Pagina>();
-    public int pagseq = 0;
-    public Map<Resource.Named, Pagina> pmap = new WeakHashMap<Resource.Named, Pagina>();
     public Map<String, CAttr> cattr = new HashMap<String, CAttr>();
     public Color lightamb = null, lightdif = null, lightspc = null;
     public Color olightamb = null, olightdif = null, olightspc = null;
@@ -83,66 +80,6 @@ public class Glob {
 	}
     }
     
-    public static class Pagina implements java.io.Serializable {
-	public final Indir<Resource> res;
-	public State st;
-	public int meter, dtime;
-	public long gettime;
-	public Image img;
-	public int newp;
-	public long fstart; /* XXX: ABUSAN!!! */
-	
-	public interface Image {
-	    public Tex tex();
-	}
-
-	public static enum State {
-	    ENABLED, DISABLED {
-		public Image img(final Pagina pag) {
-		    return(new Image() {
-			    private Tex c = null;
-			    
-			    public Tex tex() {
-				if(pag.res() == null)
-				    return(null);
-				if(c == null)
-				    c = new TexI(PUtils.monochromize(pag.res().layer(Resource.imgc).img, Color.LIGHT_GRAY));
-				return(c);
-			    }
-			});
-		}
-	    };
-	    
-	    public Image img(final Pagina pag) {
-		return(new Image() {
-			public Tex tex() {
-			    if(pag.res() == null)
-				return(null);
-			    return(pag.res().layer(Resource.imgc).tex());
-			}
-		    });
-	    }
-	}
-	
-	public Pagina(Indir<Resource> res) {
-	    this.res = res;
-	    state(State.ENABLED);
-	}
-	
-	public Resource res() {
-	    return(res.get());
-	}
-	
-	public Resource.AButton act() {
-	    return(res().layer(Resource.action));
-	}
-	
-	public void state(State st) {
-	    this.st = st;
-	    this.img = st.img(this);
-	}
-    }
-	
     private static Color colstep(Color o, Color t, double a) {
 	int or = o.getRed(), og = o.getGreen(), ob = o.getBlue(), oa = o.getAlpha();
 	int tr = t.getRed(), tg = t.getGreen(), tb = t.getBlue(), ta = t.getAlpha();
@@ -347,50 +284,6 @@ public class Glob {
 	return(((MapView)((PView.WidgetContext)rl.state().get(PView.ctx)).widget()).amb);
     }
 
-    public Pagina paginafor(Resource.Named res) {
-	if(res == null)
-	    return(null);
-	synchronized(pmap) {
-	    Pagina p = pmap.get(res);
-	    if(p == null)
-		pmap.put(res, p = new Pagina(res));
-	    return(p);
-	}
-    }
-
-    public void paginae(Message msg) {
-	synchronized(paginae) {
-	    while(!msg.eom()) {
-		int act = msg.uint8();
-		if(act == '+') {
-		    String nm = msg.string();
-		    int ver = msg.uint16();
-		    Pagina pag = paginafor(Resource.remote().load(nm, ver));
-		    paginae.add(pag);
-		    pag.state(Pagina.State.ENABLED);
-		    pag.meter = 0;
-		    int t;
-		    while((t = msg.uint8()) != 0) {
-			if(t == '!') {
-			    pag.state(Pagina.State.DISABLED);
-			} else if(t == '*') {
-			    pag.meter = msg.int32();
-			    pag.gettime = System.currentTimeMillis();
-			    pag.dtime = msg.int32();
-			} else if(t == '^') {
-			    pag.newp = 1;
-			}
-		    }
-		} else if(act == '-') {
-		    String nm = msg.string();
-		    int ver = msg.uint16();
-		    paginae.remove(paginafor(Resource.remote().load(nm, ver))); 
-		}
-	    }
-	    pagseq++;
-	}
-    }
-    
     public void cattr(Message msg) {
 	synchronized(cattr) {
 	    while(!msg.eom()) {

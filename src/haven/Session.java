@@ -30,6 +30,7 @@ import java.net.*;
 import java.util.*;
 import java.io.*;
 import java.lang.ref.*;
+import static haven.OCache.posres;
 
 public class Session {
     public static final int PVER = 1;
@@ -259,7 +260,7 @@ public class Session {
 			if(type == OD_REM) {
 			    oc.remove(id, frame);
 			} else if(type == OD_MOVE) {
-			    Coord c = msg.coord();
+			    Coord2d c = msg.coord().mul(posres);
 			    int ia = msg.uint16();
 			    if(gob != null)
 				oc.move(gob, c, (ia / 65536.0) * Math.PI * 2);
@@ -273,15 +274,25 @@ public class Session {
 			    if(gob != null)
 				oc.cres(gob, getres(resid), sdt);
 			} else if(type == OD_LINBEG) {
-			    Coord s = msg.coord();
-			    Coord t = msg.coord();
-			    int c = msg.int32();
+			    Coord2d s = msg.coord().mul(posres);
+			    Coord2d v = msg.coord().mul(posres);
 			    if(gob != null)
-				oc.linbeg(gob, s, t, c);
+				oc.linbeg(gob, s, v);
 			} else if(type == OD_LINSTEP) {
-			    int l = msg.int32();
+			    double t, e;
+			    int w = msg.int32();
+			    if(w == -1) {
+				t = e = -1;
+			    } else if((w & 0x80000000) == 0) {
+				t = w * 0x1p-10;
+				e = -1;
+			    } else {
+				t = (w & ~0x80000000) * 0x1p-10;
+				w = msg.int32();
+				e = (w < 0)?-1:(w * 0x1p-10);
+			    }
 			    if(gob != null)
-				oc.linstep(gob, l);
+				oc.linstep(gob, t, e);
 			} else if(type == OD_SPEECH) {
 			    float zo = msg.int16() / 100.0f;
 			    String text = msg.string();
@@ -420,21 +431,16 @@ public class Session {
 			    if(oid == 0xffffffffl) {
 				if(gob != null)
 				    oc.homostop(gob);
-			    } else if(oid == 0xfffffffel) {
-				Coord tgtc = msg.coord();
-				int v = msg.uint16();
-				if(gob != null)
-				    oc.homocoord(gob, tgtc, v);
 			    } else {
-				Coord tgtc = msg.coord();
-				int v = msg.uint16();
+				Coord2d tgtc = msg.coord().mul(posres);
+				double v = msg.int32() * 0x1p-10 * 11;
 				if(gob != null)
 				    oc.homing(gob, oid, tgtc, v);
 			    }
 			} else if(type == OD_OVERLAY) {
 			    int olid = msg.int32();
 			    boolean prs = (olid & 1) != 0;
-			    olid >>= 1;
+			    olid >>>= 1;
 			    int resid = msg.uint16();
 			    Indir<Resource> res;
 			    Message sdt = Message.nil;
@@ -520,8 +526,6 @@ public class Session {
 		glob.map.invalblob(msg);
 	    } else if(msg.type == RMessage.RMSG_GLOBLOB) {
 		glob.blob(msg);
-	    } else if(msg.type == RMessage.RMSG_PAGINAE) {
-		glob.paginae(msg);
 	    } else if(msg.type == RMessage.RMSG_RESID) {
 		int resid = msg.uint16();
 		String resname = msg.string();

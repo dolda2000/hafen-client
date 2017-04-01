@@ -81,6 +81,14 @@ public class AudioSprite {
 	}
 
 	public boolean tick(int dt) {
+	    /* XXX: This is slightly bad, because virtual sprites that
+	     * are stuck as loading (by getting outside the map, for
+	     * instance), never play and therefore never get done,
+	     * effectively leaking. For now, this is seldom a problem
+	     * because in practive most (all?) virtual audio-sprites
+	     * come from Skeleton.FxTrack which memoizes its origin
+	     * instead of asking the map for it, but also see comment
+	     * in glsl.MiscLib.maploc. Solve pl0x. */
 	    return(done);
 	}
 

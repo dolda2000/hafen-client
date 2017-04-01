@@ -77,9 +77,15 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     }
 
     public abstract class Compiler {
-	private GLProgram[] kcache = new GLProgram[0];
-	private Compiled[] vcache = new Compiled[0];
-	private Object[] ids = new Object[0];
+	private Entry[] cache = new Entry[0];
+
+	private class Entry {
+	    GLProgram prog;
+	    Compiled mesh;
+	    Object id;
+
+	    Entry(GLProgram prog, Compiled mesh, Object id) {this.prog = prog; this.mesh = mesh; this.id = id;}
+	}
 
 	private Object[] getid(GOut g) {
 	    ArrayList<Object> id = new ArrayList<Object>();
@@ -102,39 +108,40 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
 		last.prepare(g);
 	    g.apply();
 	    GLProgram prog = g.st.prog;
-	    int i;
-	    for(i = 0; i < kcache.length; i++) {
-		if(kcache[i] == prog)
-		    return(last = vcache[i]);
+	    {
+		Entry[] lc = cache;
+		for(int i = 0; i < lc.length; i++) {
+		    if(lc[i].prog == prog)
+			return(last = lc[i].mesh);
+		}
 	    }
 	    Object[] id = getid(g);
 	    Compiled ret;
-	    create: {
-		int o;
-		for(o = 0; o < kcache.length; o++) {
-		    if(ids[o] == id) {
-			ret = vcache[o];
-			break create;
+	    synchronized(this) {
+		Entry[] lc = cache;
+		create: {
+		    for(int i = 0; i < lc.length; i++) {
+			if(lc[i].id == id) {
+			    ret = cache[i].mesh;
+			    break create;
+			}
 		    }
+		    ret = create(g);
 		}
-		ret = create(g);
+		int i = lc.length;
+		lc = Utils.extend(lc, i + 1);
+		lc[i] = new Entry(prog, ret, id);
+		cache = lc;
+		return(last = ret);
 	    }
-	    kcache = Utils.extend(kcache, i + 1);
-	    vcache = Utils.extend(vcache, i + 1);
-	    ids = Utils.extend(ids, i + 1);
-	    kcache[i] = prog;
-	    vcache[i] = ret;
-	    ids[i] = id;
-	    return(last = ret);
 	}
 
 	public abstract Compiled create(GOut g);
 
 	public void dispose() {
-	    for(Compiled c : vcache)
-		c.dispose();
-	    kcache = new GLProgram[0];
-	    vcache = new Compiled[0];
+	    for(Entry ent : cache)
+		ent.mesh.dispose();
+	    cache = new Entry[0];
 	}
     }
 

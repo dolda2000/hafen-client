@@ -787,14 +787,22 @@ public class Utils {
      * will round downwards, but I don't actually expect that to be a
      * problem given how I use these, and it turns out that
      * java.lang.Math.floor is actually surprisingly slow (it
-     * delegates for StrictMath.float for some reason). */
+     * delegates to StrictMath.floor for some reason). */
     public static int floordiv(float a, float b) {
 	float q = a / b;
+	return((q < 0)?(((int)q) - 1):((int)q));
+    }
+    public static int floordiv(double a, double b) {
+	double q = a / b;
 	return((q < 0)?(((int)q) - 1):((int)q));
     }
     
     public static float floormod(float a, float b) {
 	float r = a % b;
+	return((a < 0)?(r + b):r);
+    }
+    public static double floormod(double a, double b) {
+	double r = a % b;
 	return((a < 0)?(r + b):r);
     }
 
@@ -1050,6 +1058,15 @@ public class Utils {
 	return(dst);
     }
     public static float[] splice(float[] src, int off) {
+	return(splice(src, off, src.length - off));
+    }
+
+    public static double[] splice(double[] src, int off, int len) {
+	double[] dst = new double[len];
+	System.arraycopy(src, off, dst, 0, len);
+	return(dst);
+    }
+    public static double[] splice(double[] src, int off) {
 	return(splice(src, off, src.length - off));
     }
 

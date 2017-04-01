@@ -79,7 +79,7 @@ public class MapFileWidget extends Widget {
 	public MapLocator(MapView mv) {this.mv = mv;}
 
 	public Location locate(MapFile file) {
-	    Coord mc = new Coord(mv.getcc()).div(MCache.tilesz);
+	    Coord mc = new Coord2d(mv.getcc()).floor(MCache.tilesz);
 	    if(mc == null)
 		throw(new Loading("Waiting for initial location"));
 	    MCache.Grid plg = mv.ui.sess.glob.map.getgrid(mc.div(cmaps));

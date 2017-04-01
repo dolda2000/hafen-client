@@ -107,9 +107,8 @@ public class Equipory extends Widget implements DTarget {
     }
     
     public boolean drop(Coord cc, Coord ul) {
-	ul = ul.add(invsq.sz().div(2));
 	for(int i = 0; i < ecoords.length; i++) {
-	    if(ul.isect(ecoords[i], invsq.sz())) {
+	    if(cc.isect(ecoords[i], invsq.sz())) {
 		wdgmsg("drop", i);
 		return(true);
 	    }

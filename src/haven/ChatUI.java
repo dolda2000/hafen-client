@@ -462,7 +462,7 @@ public class ChatUI extends Widget {
 
 	protected void clicked(CharPos pos) {
 	    AttributedCharacterIterator inf = pos.part.ti();
-	    inf.setIndex(pos.ch.getCharIndex());
+	    inf.setIndex(pos.ch.getCharIndex() + pos.part.start);
 	    FuckMeGentlyWithAChainsaw url = (FuckMeGentlyWithAChainsaw)inf.getAttribute(ChatAttribute.HYPERLINK);
 	    if((url != null) && (WebBrowser.self != null)) {
 		try {

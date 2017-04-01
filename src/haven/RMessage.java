@@ -32,14 +32,14 @@ public class RMessage extends PMessage {
     public static final int RMSG_DSTWDG = 2;
     public static final int RMSG_MAPIV = 3;
     public static final int RMSG_GLOBLOB = 4;
-    public static final int RMSG_PAGINAE = 5;
+    /* public static final int RMSG_PAGINAE = 5; -- Deprecated */
     public static final int RMSG_RESID = 6;
     public static final int RMSG_PARTY = 7;
     public static final int RMSG_SFX = 8;
     public static final int RMSG_CATTR = 9;
     public static final int RMSG_MUSIC = 10;
     public static final int RMSG_TILES = 11;
-    public static final int RMSG_BUFF = 12; /* Deprecated */
+    /* public static final int RMSG_BUFF = 12; -- Deprecated */
     public static final int RMSG_SESSKEY = 13;
 
     public long last = 0;

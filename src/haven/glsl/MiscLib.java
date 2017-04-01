@@ -100,7 +100,23 @@ public abstract class MiscLib {
     public static final Uniform maploc = new Uniform.AutoApply(VEC3, PView.loc) {
 	    public void apply(GOut g, VarID loc) {
 		Coord3f orig = PView.locxf(g).mul4(Coord3f.o);
-		orig.z = g.st.get(PView.ctx).glob().map.getcz(orig.x, -orig.y);
+		try {
+		    orig.z = g.st.get(PView.ctx).glob().map.getcz(orig.x, -orig.y);
+		} catch(Loading l) {
+		    /* XXX: WaterTile's obfog effect is the only thing
+		     * that uses maploc, in order to get the precise
+		     * water surface level. Arguably, maploc should be
+		     * eliminated entirely and the obfog should pass
+		     * the water level in a uniform instead. However,
+		     * this works better for now, because with such a
+		     * mechanic, Skeleton.FxTrack audio sprites would
+		     * never complete if they get outside the map and
+		     * stuck as constantly loading and never
+		     * playing. Either way, when loading, the likely
+		     * quite slight deviation between origin-Z and
+		     * map-Z level probably doesn't matter a whole
+		     * lot, but solve pl0x. */
+		}
 		g.gl.glUniform3f(loc, orig.x, orig.y, orig.z);
 	    }
 	};

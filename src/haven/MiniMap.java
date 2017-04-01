@@ -161,7 +161,7 @@ public class MiniMap extends Widget {
     }
 
     public void draw(GOut g) {
-	Coord tc = mv.cc.div(tilesz);
+	Coord tc = mv.cc.floor(tilesz);
 	Coord ulg = tc.div(cmaps);
 	while((ulg.x * cmaps.x) - tc.x + (sz.x / 2) > 0)
 	    ulg.x--;
@@ -198,15 +198,15 @@ public class MiniMap extends Widget {
 	} else {
 	    synchronized(ui.sess.glob.party.memb) {
 		for(Party.Member m : ui.sess.glob.party.memb.values()) {
-		    Coord ptc;
+		    Coord2d ppc;
 		    try {
-			ptc = m.getc();
+			ppc = m.getc();
 		    } catch(MCache.LoadingMap e) {
-			ptc = null;
+			ppc = null;
 		    }
-		    if(ptc == null)
+		    if(ppc == null)
 			continue;
-		    ptc = ptc.div(tilesz).add(tc.inv()).add(sz.div(2));
+		    Coord ptc = ppc.floor(tilesz).add(tc.inv()).add(sz.div(2));
 		    g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 128);
 		    g.image(plx.layer(Resource.imgc).tex(), ptc.add(plx.layer(Resource.negc).cc.inv()));
 		    g.chcolor();
