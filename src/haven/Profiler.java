@@ -281,4 +281,30 @@ public class Profiler {
 	    }
 	}
     }
+
+    public static class Sampler extends HackThread {
+	public final Thread th;
+
+	private Sampler(Thread th) {
+	    super("Sampler thread");
+	    this.th = th;
+	    setDaemon(true);
+	}
+
+	public void run() {
+	    try {
+		while(true) {
+		    Thread.sleep(1000 + (int)(Math.random() * 5000));
+		    for(StackTraceElement f : th.getStackTrace())
+			System.err.printf("%s.%s(%s:%d)\n", f.getClassName(), f.getMethodName(), f.getFileName(), f.getLineNumber());
+		    System.err.println();
+		}
+	    } catch(InterruptedException e) {
+	    }
+	}
+
+	public static void sample(Thread th) {
+	    new Sampler(th).start();
+	}
+    }
 }
