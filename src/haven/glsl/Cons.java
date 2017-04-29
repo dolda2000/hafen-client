@@ -129,7 +129,5 @@ public class Cons {
     public static Expression ivec4(int a, int b, int c, int d) {return(ivec4(l(a), l(b), l(c), l(d)));}
 
     public static <T> T id(T a) {return(a);}
-    public static final Macro1<Expression> idm = new Macro1<Expression>() {
-	public Expression expand(Expression in) {return(in);}
-    };
+    public static final Macro1<Expression> idm = in -> in;
 }

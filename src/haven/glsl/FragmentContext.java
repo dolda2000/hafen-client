@@ -36,16 +36,10 @@ public class FragmentContext extends ShaderContext {
     public final ValBlock uniform = new ValBlock();
     private final OrderList<CodeMacro> code = new OrderList<CodeMacro>();
     {
-	code.add(new CodeMacro() {
-		public void expand(Block blk) {
-		    mainvals.cons(blk);
-		}
-	    }, 0);
-	code.add(new CodeMacro() {
-		public void expand(Block blk) {
-		    uniform.cons(blk);
-		    main.code.add(new Placeholder("Uniform control up until here."));
-		}
+	code.add(mainvals::cons, 0);
+	code.add(blk -> {
+		uniform.cons(blk);
+		main.code.add(new Placeholder("Uniform control up until here."));
 	    }, -1000);
     }
 

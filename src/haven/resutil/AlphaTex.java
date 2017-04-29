@@ -70,34 +70,23 @@ public class AlphaTex extends GLState {
 		}
 	    }));
     }
-    private static final ShaderMacro main = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		final Value val = value(prog.fctx);
-		val.force();
-		prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			public Expression expand(Expression in) {
-			    return(mul(in, val.ref()));
-			}
-		    }, 100);
-	    }
-	};
-    private static final ShaderMacro clip = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		final Value val = value(prog.fctx);
-		val.force();
-		prog.fctx.mainmod(new CodeMacro() {
-			public void expand(Block blk) {
-			    blk.add(new If(lt(pick(val.ref(), "a"), cclip.ref()),
-					   new Discard()));
-			}
-		    }, -100);
-	    }
-	};
+    private static final ShaderMacro main = prog -> {
+	final Value val = value(prog.fctx);
+	val.force();
+	prog.fctx.fragcol.mod(in -> mul(in, val.ref()), 100);
+    };
+    private static final ShaderMacro clip = prog -> {
+	final Value val = value(prog.fctx);
+	val.force();
+	prog.fctx.mainmod(blk -> blk.add(new If(lt(pick(val.ref(), "a"), cclip.ref()),
+						new Discard())),
+			  -100);
+    };
 
-    private static final ShaderMacro[] shnc = {main};
-    private static final ShaderMacro[] shwc = {main, clip};
+    private static final ShaderMacro shnc = main;
+    private static final ShaderMacro shwc = ShaderMacro.compose(main, clip);
 
-    public ShaderMacro[] shaders() {return((cthr > 0)?shwc:shnc);}
+    public ShaderMacro shader() {return((cthr > 0)?shwc:shnc);}
     public boolean reqshader() {return(true);}
 
     public void reapply(GOut g) {

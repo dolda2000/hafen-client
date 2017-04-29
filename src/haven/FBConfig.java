@@ -33,6 +33,7 @@ import haven.GLProgram.VarID;
 import haven.GLFrameBuffer.Attachment;
 
 public class FBConfig {
+    private static Map<ShaderMacro[], ShaderMacro> rescache = new WeakHashMap<ShaderMacro[], ShaderMacro>();
     public final PView.ConfContext ctx;
     public Coord sz;
     public boolean hdr, tdepth;
@@ -64,7 +65,6 @@ public class FBConfig {
 	return(true);
     }
 
-    private static final ShaderMacro[] nosh = new ShaderMacro[0];
     private void create() {
 	Collection<Attachment> color = new LinkedList<Attachment>();
 	Attachment depth;
@@ -101,13 +101,9 @@ public class FBConfig {
 	/* XXX: Shaders should be canonized and cached to avoid
 	 * creation of unnecessary identical programs when
 	 * configurations change. */
-	final ShaderMacro[] shaders;
-	if(shb.size() < 1)
-	    shaders = nosh;
-	else
-	    shaders = shb.toArray(new ShaderMacro[0]);
+	final ShaderMacro shader = ShaderMacro.compose(shb);
 	this.fb = new GLFrameBuffer(this.color, this.depth) {
-		public ShaderMacro[] shaders() {return(shaders);}
+		public ShaderMacro shader() {return(shader);}
 	    };
 	this.wnd = new PView.RenderState() {
 		public Coord ul() {return(Coord.z);}
@@ -121,7 +117,12 @@ public class FBConfig {
 	    for(int i = 0; i < res.length; i++)
 		resp[i] = res[i].code(this);
 	    resp = ArrayIdentity.intern(resp);
-	    this.resp = new States.AdHoc(resp) {
+	    ShaderMacro iresp;
+	    synchronized(rescache) {
+		if((iresp = rescache.get(resp)) == null)
+		    rescache.put(resp, iresp = ShaderMacro.compose(resp));
+	    }
+	    this.resp = new States.AdHoc(iresp) {
 		    public void apply(GOut g) {
 			for(ResolveFilter f : res)
 			    f.apply(FBConfig.this, g);
@@ -263,15 +264,9 @@ public class FBConfig {
 	public boolean cleanp() {return(true);}
 
 	private static final Uniform ctex = new Uniform(Type.SAMPLER2D);
-	private static final ShaderMacro code = new ShaderMacro() {
-		public void modify(ProgramContext prog) {
-		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				return(Cons.texture2D(ctex.ref(), Tex2D.rtexcoord.ref()));
-			    }
-			}, 0);
-		}
-	    };
+	private static final ShaderMacro code = prog-> {
+	    prog.fctx.fragcol.mod(in -> Cons.texture2D(ctex.ref(), Tex2D.rtexcoord.ref()), 0);
+	};
 	public ShaderMacro code(FBConfig cfg) {return(code);}
 
 	private GLState.TexUnit csmp;
@@ -296,18 +291,16 @@ public class FBConfig {
 	public boolean cleanp() {return(true);}
 
 	private static final Uniform ctex = new Uniform(Type.SAMPLER2DMS);
-	private final ShaderMacro code = new ShaderMacro() {
-		public void modify(ProgramContext prog) {
-		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				Expression[] texels = new Expression[samples];
-				for(int i = 0; i < samples; i++)
-				    texels[i] = Cons.texelFetch(ctex.ref(), Cons.ivec2(Cons.floor(Cons.mul(Tex2D.rtexcoord.ref(), MiscLib.screensize.ref()))), Cons.l(i));
-				return(Cons.mul(Cons.add(texels), Cons.l(1.0 / samples)));
-			    }
-			}, 0);
-		}
-	    };
+	private final ShaderMacro code = prog -> {
+	    prog.fctx.fragcol.mod(new Macro1<Expression>() {
+		    public Expression expand(Expression in) {
+			Expression[] texels = new Expression[samples];
+			for(int i = 0; i < samples; i++)
+			    texels[i] = Cons.texelFetch(ctex.ref(), Cons.ivec2(Cons.floor(Cons.mul(Tex2D.rtexcoord.ref(), MiscLib.screensize.ref()))), Cons.l(i));
+			return(Cons.mul(Cons.add(texels), Cons.l(1.0 / samples)));
+		    }
+		}, 0);
+	};
 	public ShaderMacro code(FBConfig cfg) {return(code);}
 
 	private GLState.TexUnit csmp;

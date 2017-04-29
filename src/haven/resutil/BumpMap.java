@@ -47,8 +47,7 @@ public class BumpMap extends GLState {
 	this.tex = tex;
     }
 
-    private static final ShaderMacro[] shaders = {
-	new ShaderMacro() {
+    private static final ShaderMacro shader = new ShaderMacro() {
 	    final AutoVarying tanc = new AutoVarying(VEC3) {
 		    protected Expression root(VertexContext vctx) {
 			return(vctx.nxf(tan.ref()));
@@ -67,13 +66,11 @@ public class BumpMap extends GLState {
 			}
 		    };
 		nmod.force();
-		MiscLib.frageyen(prog.fctx).mod(new Macro1<Expression>() {
-			public Expression expand(Expression in) {
-			    Expression m = nmod.ref();
-			    return(add(mul(pick(m, "s"), tanc.ref()),
-				       mul(pick(m, "t"), bitc.ref()),
-				       mul(pick(m, "p"), in)));
-			}
+		MiscLib.frageyen(prog.fctx).mod(in -> {
+			Expression m = nmod.ref();
+			return(add(mul(pick(m, "s"), tanc.ref()),
+				   mul(pick(m, "t"), bitc.ref()),
+				   mul(pick(m, "p"), in)));
 		    }, -100);
 		/*
 		prog.fctx.fragcol.mod(new Macro1<Expression>() {
@@ -83,10 +80,9 @@ public class BumpMap extends GLState {
 		    }, 1000);
 		*/
 	    }
-	}
-    };
+	};
 
-    public ShaderMacro[] shaders() {return(shaders);}
+    public ShaderMacro shader() {return(shader);}
 
     public void reapply(GOut g) {
 	g.gl.glUniform1i(g.st.prog.uniform(ctex), sampler.id);
