@@ -35,13 +35,16 @@ import haven.GLShader.FragmentShader;
 public interface ShaderMacro {
     public void modify(ProgramContext prog);
 
-    public static ShaderMacro compose(final ShaderMacro... smacs) {
+    public static ShaderMacro compose(final Collection<ShaderMacro> smacs) {
 	return(new ShaderMacro() {
 		public void modify(ProgramContext prog) {
 		    for(ShaderMacro smac : smacs)
 			smac.modify(prog);
 		}
 	    });
+    }
+    public static ShaderMacro compose(final ShaderMacro... smacs) {
+	return(compose(Arrays.asList(smacs)));
     }
 
     public static class Program extends GLProgram {
