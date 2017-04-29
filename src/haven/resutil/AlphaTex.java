@@ -78,12 +78,9 @@ public class AlphaTex extends GLState {
     private static final ShaderMacro clip = prog -> {
 	final Value val = value(prog.fctx);
 	val.force();
-	prog.fctx.mainmod(new CodeMacro() {
-		public void expand(Block blk) {
-		    blk.add(new If(lt(pick(val.ref(), "a"), cclip.ref()),
-				   new Discard()));
-		}
-	    }, -100);
+	prog.fctx.mainmod(blk -> blk.add(new If(lt(pick(val.ref(), "a"), cclip.ref()),
+						new Discard())),
+			  -100);
     };
 
     private static final ShaderMacro shnc = main;
