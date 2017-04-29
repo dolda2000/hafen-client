@@ -44,8 +44,21 @@ public abstract class GLState {
     public void reapply(GOut g) {
     }
 
-    public ShaderMacro shader() {
+    @Deprecated
+    public ShaderMacro[] shaders() {
 	return(null);
+    }
+
+    private ShaderMacro legacy = null;
+    public ShaderMacro shader() {
+	ShaderMacro[] ret = shaders();
+	if(ret == null) {
+	    return(null);
+	} else {
+	    if(legacy == null)
+		legacy = (ret.length == 1) ? ret[0] : ShaderMacro.compose(ret);
+	    return(legacy);
+	}
     }
 
     public int capply() {
