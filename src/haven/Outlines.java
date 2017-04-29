@@ -42,7 +42,7 @@ public class Outlines implements Rendered {
     private final static Uniform sdep = new Uniform(SAMPLER2D);
     private final static Uniform msnrm = new Uniform(SAMPLER2DMS);
     private final static Uniform msdep = new Uniform(SAMPLER2DMS);
-    private final static ShaderMacro[][] shaders = new ShaderMacro[4][];
+    private final static ShaderMacro[] shaders = new ShaderMacro[4];
 
     private static ShaderMacro shader(final boolean symmetric, final boolean ms) {
 	return(new ShaderMacro() {
@@ -126,10 +126,10 @@ public class Outlines implements Rendered {
     static {
 	/* XXX: It would be good to have some kind of more convenient
 	 * shader internation. */
-	shaders[0] = new ShaderMacro[] {shader(false, false)};
-	shaders[1] = new ShaderMacro[] {shader(false, true)};
-	shaders[2] = new ShaderMacro[] {shader(true,  false)};
-	shaders[3] = new ShaderMacro[] {shader(true,  true)};
+	shaders[0] = shader(false, false);
+	shaders[1] = shader(false, true);
+	shaders[2] = shader(true,  false);
+	shaders[3] = shader(true,  true);
     }
 
     public Outlines(final boolean symmetric) {

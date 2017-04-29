@@ -33,6 +33,7 @@ import haven.GLProgram.VarID;
 import haven.GLFrameBuffer.Attachment;
 
 public class FBConfig {
+    private static Map<ShaderMacro[], ShaderMacro> rescache = new WeakHashMap<ShaderMacro[], ShaderMacro>();
     public final PView.ConfContext ctx;
     public Coord sz;
     public boolean hdr, tdepth;
@@ -116,7 +117,12 @@ public class FBConfig {
 	    for(int i = 0; i < res.length; i++)
 		resp[i] = res[i].code(this);
 	    resp = ArrayIdentity.intern(resp);
-	    this.resp = new States.AdHoc(resp) {
+	    ShaderMacro iresp;
+	    synchronized(rescache) {
+		if((iresp = rescache.get(resp)) == null)
+		    rescache.put(resp, iresp = ShaderMacro.compose(resp));
+	    }
+	    this.resp = new States.AdHoc(iresp) {
 		    public void apply(GOut g) {
 			for(ResolveFilter f : res)
 			    f.apply(FBConfig.this, g);
