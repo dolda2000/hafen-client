@@ -345,7 +345,7 @@ public abstract class States extends GLState {
     }
     
     public static final StandAlone nullprog = new StandAlone(Slot.Type.DRAW, PView.proj) {
-	    private final ShaderMacro sh = new ShaderMacro() {public void modify(ProgramContext prog) {}};
+	    private final ShaderMacro sh = prog -> {};
 	    
 	    public void apply(GOut g) {}
 	    public void unapply(GOut g) {}
@@ -433,23 +433,19 @@ public abstract class States extends GLState {
 	public final ShaderMacro sh;
 
 	public ProgPointSize(final ShaderMacro sh) {
-	    this.sh = new ShaderMacro() {
-		    public void modify(ProgramContext prog) {
-			prog.vctx.ptsz.force();
-			sh.modify(prog);
-		    }
-		};
+	    this.sh = prog -> {
+		prog.vctx.ptsz.force();
+		sh.modify(prog);
+	    };
 	}
 
 	public ProgPointSize(final Expression ptsz) {
-	    this(new ShaderMacro() {
-		    public void modify(ProgramContext prog) {
-			prog.vctx.ptsz.mod(new Macro1<Expression>() {
-				public Expression expand(Expression in) {
-				    return(ptsz);
-				}
-			    }, 0);
-		    }
+	    this(prog -> {
+		    prog.vctx.ptsz.mod(new Macro1<Expression>() {
+			    public Expression expand(Expression in) {
+				return(ptsz);
+			    }
+			}, 0);
 		});
 	}
 

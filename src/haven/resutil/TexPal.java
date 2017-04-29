@@ -43,15 +43,13 @@ public class TexPal extends GLState {
     }
 
     private static final Uniform ctex = new Uniform(SAMPLER2D);
-    private static final ShaderMacro shader = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		Tex2D.tex2d(prog.fctx).mod(new Macro1<Expression>() {
-			public Expression expand(Expression in) {
-			    return(texture2D(ctex.ref(), pick(in, "rg")));
-			}
-		    }, -100);
-	    }
-	};
+    private static final ShaderMacro shader = prog -> {
+	Tex2D.tex2d(prog.fctx).mod(new Macro1<Expression>() {
+		public Expression expand(Expression in) {
+		    return(texture2D(ctex.ref(), pick(in, "rg")));
+		}
+	    }, -100);
+    };
 
     public ShaderMacro shader() {return(shader);}
 

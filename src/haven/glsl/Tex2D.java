@@ -84,28 +84,24 @@ public class Tex2D {
 	return(t);
     }
 
-    public static final ShaderMacro mod = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		final Value tex2d = tex2d(prog.fctx);
-		tex2d.force();
-		prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			public Expression expand(Expression in) {
-			    return(mul(in, tex2d.ref()));
-			}
-		    }, 0);
-	    }
-	};
+    public static final ShaderMacro mod = prog -> {
+	final Value tex2d = tex2d(prog.fctx);
+	tex2d.force();
+	prog.fctx.fragcol.mod(new Macro1<Expression>() {
+		public Expression expand(Expression in) {
+		    return(mul(in, tex2d.ref()));
+		}
+	    }, 0);
+    };
 
-    public static final ShaderMacro clip = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		final Value tex2d = tex2d(prog.fctx);
-		tex2d.force();
-		prog.fctx.mainmod(new CodeMacro() {
-			public void expand(Block blk) {
-			    blk.add(new If(lt(pick(tex2d.ref(), "a"), l(0.5)),
-					   new Discard()));
-			}
-		    }, -100);
-	    }
-	};
+    public static final ShaderMacro clip = prog -> {
+	final Value tex2d = tex2d(prog.fctx);
+	tex2d.force();
+	prog.fctx.mainmod(new CodeMacro() {
+		public void expand(Block blk) {
+		    blk.add(new If(lt(pick(tex2d.ref(), "a"), l(0.5)),
+				   new Discard()));
+		}
+	    }, -100);
+    };
 }

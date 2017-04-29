@@ -335,15 +335,13 @@ public class WaterTile extends Tiler {
 		}
 	    };
 
-	private final ShaderMacro shader = new ShaderMacro() {
-		public void modify(ProgramContext prog) {
-		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				return(rgbmix.call(in, mfogcolor, min(div(fragd.ref(), l(maxdepth)), l(1.0))));
-			    }
-			}, 1000);
-		}
-	    };
+	private final ShaderMacro shader = prog -> {
+	    prog.fctx.fragcol.mod(new Macro1<Expression>() {
+		    public Expression expand(Expression in) {
+			return(rgbmix.call(in, mfogcolor, min(div(fragd.ref(), l(maxdepth)), l(1.0))));
+		    }
+		}, 1000);
+	};
 
 	private BottomFog() {
 	    super(Slot.Type.DRAW);
@@ -375,15 +373,13 @@ public class WaterTile extends Tiler {
 		}
 	    };
 
-	final ShaderMacro shader = new ShaderMacro() {
-		public void modify(ProgramContext prog) {
-		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				return(BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
-			    }
-			}, 1000);
-		}
-	    };
+	final ShaderMacro shader = prog -> {
+	    prog.fctx.fragcol.mod(new Macro1<Expression>() {
+		    public Expression expand(Expression in) {
+			return(BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
+		    }
+		}, 1000);
+	};
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}
 	public ShaderMacro shader() {return(shader);}

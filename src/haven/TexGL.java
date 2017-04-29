@@ -69,11 +69,9 @@ public abstract class TexGL extends Tex {
 	}
     }
     
-    public static final ShaderMacro mkcentroid = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		Tex2D.get(prog).ipol = Varying.Interpol.CENTROID;
-	    }
-	};
+    public static final ShaderMacro mkcentroid = prog -> {
+	Tex2D.get(prog).ipol = Varying.Interpol.CENTROID;
+    };
 
     public static GLState.TexUnit lbind(GOut g, TexGL tex) {
 	GLState.TexUnit sampler = g.st.texalloc();

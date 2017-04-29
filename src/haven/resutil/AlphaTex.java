@@ -70,29 +70,25 @@ public class AlphaTex extends GLState {
 		}
 	    }));
     }
-    private static final ShaderMacro main = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		final Value val = value(prog.fctx);
-		val.force();
-		prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			public Expression expand(Expression in) {
-			    return(mul(in, val.ref()));
-			}
-		    }, 100);
-	    }
-	};
-    private static final ShaderMacro clip = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		final Value val = value(prog.fctx);
-		val.force();
-		prog.fctx.mainmod(new CodeMacro() {
-			public void expand(Block blk) {
-			    blk.add(new If(lt(pick(val.ref(), "a"), cclip.ref()),
-					   new Discard()));
-			}
-		    }, -100);
-	    }
-	};
+    private static final ShaderMacro main = prog -> {
+	final Value val = value(prog.fctx);
+	val.force();
+	prog.fctx.fragcol.mod(new Macro1<Expression>() {
+		public Expression expand(Expression in) {
+		    return(mul(in, val.ref()));
+		}
+	    }, 100);
+    };
+    private static final ShaderMacro clip = prog -> {
+	final Value val = value(prog.fctx);
+	val.force();
+	prog.fctx.mainmod(new CodeMacro() {
+		public void expand(Block blk) {
+		    blk.add(new If(lt(pick(val.ref(), "a"), cclip.ref()),
+				   new Discard()));
+		}
+	    }, -100);
+    };
 
     private static final ShaderMacro shnc = main;
     private static final ShaderMacro shwc = ShaderMacro.compose(main, clip);

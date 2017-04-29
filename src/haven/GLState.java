@@ -76,11 +76,9 @@ public abstract class GLState {
 
     public interface Instancer<T extends GLState> {
 	public T inststate(T[] states);
-	public static final ShaderMacro mkinstanced = new ShaderMacro() {
-		public void modify(haven.glsl.ProgramContext ctx) {
-		    ctx.instanced = true;
-		}
-	    };
+	public static final ShaderMacro mkinstanced = ctx -> {
+	    ctx.instanced = true;
+	};
     }
 
     private static int slotnum = 0;

@@ -35,15 +35,13 @@ public class ColorMask extends GLState {
     public static final Uniform ccol = new Uniform(VEC4);
     private final float[] col;
 
-    private static final ShaderMacro sh = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			public Expression expand(Expression in) {
-			    return(MiscLib.colblend.call(in, ccol.ref()));
-			}
-		    }, 100);
-	    }
-	};
+    private static final ShaderMacro sh = prog -> {
+	prog.fctx.fragcol.mod(new Macro1<Expression>() {
+		public Expression expand(Expression in) {
+		    return(MiscLib.colblend.call(in, ccol.ref()));
+		}
+	    }, 100);
+    };
 
     public ColorMask(Color col) {
 	this.col = Utils.c2fa(col);

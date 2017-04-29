@@ -48,15 +48,13 @@ public class TexAnim extends GLState {
     }
 
     private static final Uniform cax = new Uniform(VEC2);
-    private static final ShaderMacro shader = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		Tex2D.rtexcoord.value(prog.vctx).mod(new Macro1<Expression>() {
-			public Expression expand(Expression in) {
-			    return(add(in, mul(cax.ref(), MiscLib.time.ref())));
-			}
-		    }, 0);
-	    }
-	};
+    private static final ShaderMacro shader = prog -> {
+	Tex2D.rtexcoord.value(prog.vctx).mod(new Macro1<Expression>() {
+		public Expression expand(Expression in) {
+		    return(add(in, mul(cax.ref(), MiscLib.time.ref())));
+		}
+	    }, 0);
+    };
     public ShaderMacro shader() {return(shader);}
 
     public void reapply(GOut g) {

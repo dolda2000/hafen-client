@@ -115,16 +115,12 @@ public class Light implements Rendered {
 	}
     }
 
-    private static final ShaderMacro vlight = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		new Phong(prog.vctx);
-	    }
-	};
-    private static final ShaderMacro plight = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		new Phong(prog.fctx);
-	    }
-	};
+    private static final ShaderMacro vlight = prog -> {
+	new Phong(prog.vctx);
+    };
+    private static final ShaderMacro plight = prog -> {
+	new Phong(prog.fctx);
+    };
 
     public static final GLState vlights = new BaseLights(vlight);
     public static final GLState plights = new BaseLights(plight);

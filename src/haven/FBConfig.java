@@ -264,15 +264,13 @@ public class FBConfig {
 	public boolean cleanp() {return(true);}
 
 	private static final Uniform ctex = new Uniform(Type.SAMPLER2D);
-	private static final ShaderMacro code = new ShaderMacro() {
-		public void modify(ProgramContext prog) {
-		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				return(Cons.texture2D(ctex.ref(), Tex2D.rtexcoord.ref()));
-			    }
-			}, 0);
-		}
-	    };
+	private static final ShaderMacro code = prog-> {
+	    prog.fctx.fragcol.mod(new Macro1<Expression>() {
+		    public Expression expand(Expression in) {
+			return(Cons.texture2D(ctex.ref(), Tex2D.rtexcoord.ref()));
+		    }
+		}, 0);
+	};
 	public ShaderMacro code(FBConfig cfg) {return(code);}
 
 	private GLState.TexUnit csmp;
@@ -297,18 +295,16 @@ public class FBConfig {
 	public boolean cleanp() {return(true);}
 
 	private static final Uniform ctex = new Uniform(Type.SAMPLER2DMS);
-	private final ShaderMacro code = new ShaderMacro() {
-		public void modify(ProgramContext prog) {
-		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				Expression[] texels = new Expression[samples];
-				for(int i = 0; i < samples; i++)
-				    texels[i] = Cons.texelFetch(ctex.ref(), Cons.ivec2(Cons.floor(Cons.mul(Tex2D.rtexcoord.ref(), MiscLib.screensize.ref()))), Cons.l(i));
-				return(Cons.mul(Cons.add(texels), Cons.l(1.0 / samples)));
-			    }
-			}, 0);
-		}
-	    };
+	private final ShaderMacro code = prog -> {
+	    prog.fctx.fragcol.mod(new Macro1<Expression>() {
+		    public Expression expand(Expression in) {
+			Expression[] texels = new Expression[samples];
+			for(int i = 0; i < samples; i++)
+			    texels[i] = Cons.texelFetch(ctex.ref(), Cons.ivec2(Cons.floor(Cons.mul(Tex2D.rtexcoord.ref(), MiscLib.screensize.ref()))), Cons.l(i));
+			return(Cons.mul(Cons.add(texels), Cons.l(1.0 / samples)));
+		    }
+		}, 0);
+	};
 	public ShaderMacro code(FBConfig cfg) {return(code);}
 
 	private GLState.TexUnit csmp;
