@@ -193,8 +193,7 @@ public class WaterTile extends Tiler {
 	private BetterSurface() {
 	}
 
-	private ShaderMacro[] shaders = {
-	    new ShaderMacro() {
+	private ShaderMacro shader = new ShaderMacro() {
 		final AutoVarying skyc = new AutoVarying(Type.VEC3) {
 			protected Expression root(VertexContext vctx) {
 			    return(mul(icam.ref(), reflect(MiscLib.vertedir(vctx).depref(), vctx.eyen.depref())));
@@ -269,8 +268,7 @@ public class WaterTile extends Tiler {
 			    }
 			}, 0);
 		}
-	    }
-	};
+	    };
 
 	public void reapply(GOut g) {
 	    BGL gl = g.gl;
@@ -279,7 +277,7 @@ public class WaterTile extends Tiler {
 	    gl.glUniformMatrix3fv(g.st.prog.uniform(icam), 1, false, PView.camxf(g).transpose().trim3(), 0);
 	}
 
-	public ShaderMacro[] shaders() {return(shaders);}
+	public ShaderMacro shader() {return(shader);}
 
 	public void apply(GOut g) {
 	    BGL gl = g.gl;
@@ -337,8 +335,7 @@ public class WaterTile extends Tiler {
 		}
 	    };
 
-	private final ShaderMacro shaders[] = {
-	    new ShaderMacro() {
+	private final ShaderMacro shader = new ShaderMacro() {
 		public void modify(ProgramContext prog) {
 		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			    public Expression expand(Expression in) {
@@ -346,8 +343,7 @@ public class WaterTile extends Tiler {
 			    }
 			}, 1000);
 		}
-	    }
-	};
+	    };
 
 	private BottomFog() {
 	    super(Slot.Type.DRAW);
@@ -355,7 +351,7 @@ public class WaterTile extends Tiler {
 
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}
-	public ShaderMacro[] shaders() {return(shaders);}
+	public ShaderMacro shader() {return(shader);}
 	public void prep(Buffer buf) {
 	    if(buf.cfg.pref.wsurf.val)
 		super.prep(buf);
@@ -379,8 +375,7 @@ public class WaterTile extends Tiler {
 		}
 	    };
 
-	final ShaderMacro[] shaders = {
-	    new ShaderMacro() {
+	final ShaderMacro shader = new ShaderMacro() {
 		public void modify(ProgramContext prog) {
 		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
 			    public Expression expand(Expression in) {
@@ -388,11 +383,10 @@ public class WaterTile extends Tiler {
 			    }
 			}, 1000);
 		}
-	    }
-	};
+	    };
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}
-	public ShaderMacro[] shaders() {return(shaders);}
+	public ShaderMacro shader() {return(shader);}
     };
 
     @ResName("water")

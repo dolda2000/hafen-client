@@ -47,8 +47,7 @@ public class BumpMap extends GLState {
 	this.tex = tex;
     }
 
-    private static final ShaderMacro[] shaders = {
-	new ShaderMacro() {
+    private static final ShaderMacro shader = new ShaderMacro() {
 	    final AutoVarying tanc = new AutoVarying(VEC3) {
 		    protected Expression root(VertexContext vctx) {
 			return(vctx.nxf(tan.ref()));
@@ -83,10 +82,9 @@ public class BumpMap extends GLState {
 		    }, 1000);
 		*/
 	    }
-	}
-    };
+	};
 
-    public ShaderMacro[] shaders() {return(shaders);}
+    public ShaderMacro shader() {return(shader);}
 
     public void reapply(GOut g) {
 	g.gl.glUniform1i(g.st.prog.uniform(ctex), sampler.id);

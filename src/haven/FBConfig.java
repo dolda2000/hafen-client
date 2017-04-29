@@ -64,7 +64,6 @@ public class FBConfig {
 	return(true);
     }
 
-    private static final ShaderMacro[] nosh = new ShaderMacro[0];
     private void create() {
 	Collection<Attachment> color = new LinkedList<Attachment>();
 	Attachment depth;
@@ -101,13 +100,9 @@ public class FBConfig {
 	/* XXX: Shaders should be canonized and cached to avoid
 	 * creation of unnecessary identical programs when
 	 * configurations change. */
-	final ShaderMacro[] shaders;
-	if(shb.size() < 1)
-	    shaders = nosh;
-	else
-	    shaders = shb.toArray(new ShaderMacro[0]);
+	final ShaderMacro shader = ShaderMacro.compose(shb);
 	this.fb = new GLFrameBuffer(this.color, this.depth) {
-		public ShaderMacro[] shaders() {return(shaders);}
+		public ShaderMacro shader() {return(shader);}
 	    };
 	this.wnd = new PView.RenderState() {
 		public Coord ul() {return(Coord.z);}

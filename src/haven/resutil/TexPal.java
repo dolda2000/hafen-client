@@ -43,7 +43,7 @@ public class TexPal extends GLState {
     }
 
     private static final Uniform ctex = new Uniform(SAMPLER2D);
-    private static final ShaderMacro[] shaders = {new ShaderMacro() {
+    private static final ShaderMacro shader = new ShaderMacro() {
 	    public void modify(ProgramContext prog) {
 		Tex2D.tex2d(prog.fctx).mod(new Macro1<Expression>() {
 			public Expression expand(Expression in) {
@@ -51,9 +51,9 @@ public class TexPal extends GLState {
 			}
 		    }, -100);
 	    }
-	}};
+	};
 
-    public ShaderMacro[] shaders() {return(shaders);}
+    public ShaderMacro shader() {return(shader);}
 
     private TexUnit sampler;
 

@@ -94,10 +94,10 @@ public class AlphaTex extends GLState {
 	    }
 	};
 
-    private static final ShaderMacro[] shnc = {main};
-    private static final ShaderMacro[] shwc = {main, clip};
+    private static final ShaderMacro shnc = main;
+    private static final ShaderMacro shwc = ShaderMacro.compose(main, clip);
 
-    public ShaderMacro[] shaders() {return((cthr > 0)?shwc:shnc);}
+    public ShaderMacro shader() {return((cthr > 0)?shwc:shnc);}
     public boolean reqshader() {return(true);}
 
     public void reapply(GOut g) {

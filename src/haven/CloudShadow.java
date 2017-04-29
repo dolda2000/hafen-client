@@ -54,8 +54,7 @@ public class CloudShadow extends GLState {
     public static final Uniform cvel = new Uniform(VEC2);
     public static final Uniform cscl = new Uniform(FLOAT);
     public static final Uniform cthr = new Uniform(VEC4);
-    private static final ShaderMacro[] shaders = {
-	new ShaderMacro() {
+    private static final ShaderMacro shader = new ShaderMacro() {
 	    public void modify(ProgramContext prog) {
 		final Phong ph = prog.getmod(Phong.class);
 		if((ph == null) || !ph.pfrag)
@@ -84,10 +83,9 @@ public class CloudShadow extends GLState {
 			}
 		    }, 0);
 	    }
-	}
-    };
+	};
 
-    public ShaderMacro[] shaders() {return(shaders);}
+    public ShaderMacro shader() {return(shader);}
 
     private TexUnit sampler;
 
