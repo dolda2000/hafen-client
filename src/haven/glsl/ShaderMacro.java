@@ -41,6 +41,10 @@ public interface ShaderMacro {
 		    for(ShaderMacro smac : smacs)
 			smac.modify(prog);
 		}
+
+		public String toString() {
+		    return(smacs.toString());
+		}
 	    });
     }
     public static ShaderMacro compose(final ShaderMacro... smacs) {
