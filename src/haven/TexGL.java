@@ -69,11 +69,9 @@ public abstract class TexGL extends Tex {
 	}
     }
     
-    public static final ShaderMacro mkcentroid = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		Tex2D.get(prog).ipol = Varying.Interpol.CENTROID;
-	    }
-	};
+    public static final ShaderMacro mkcentroid = prog -> {
+	Tex2D.get(prog).ipol = Varying.Interpol.CENTROID;
+    };
 
     public static GLState.TexUnit lbind(GOut g, TexGL tex) {
 	GLState.TexUnit sampler = g.st.texalloc();
@@ -89,8 +87,8 @@ public abstract class TexGL extends Tex {
 
     public static class TexDraw extends GLState {
 	public static final Slot<TexDraw> slot = new Slot<TexDraw>(Slot.Type.DRAW, TexDraw.class, HavenPanel.global);
-	private static final ShaderMacro[] nshaders = {Tex2D.mod};
-	private static final ShaderMacro[] cshaders = {Tex2D.mod, mkcentroid};
+	private static final ShaderMacro nshaders = Tex2D.mod;
+	private static final ShaderMacro cshaders = ShaderMacro.compose(Tex2D.mod, mkcentroid);
 	public final TexGL tex;
 	private TexUnit sampler;
 	
@@ -118,7 +116,7 @@ public abstract class TexGL extends Tex {
 	    sampler.ufree(g); sampler = null;
 	}
     
-	public ShaderMacro[] shaders() {
+	public ShaderMacro shader() {
 	    /* XXX: This combinatorial stuff does not seem quite right. */
 	    if(tex.centroid)
 		return(cshaders);
@@ -156,7 +154,7 @@ public abstract class TexGL extends Tex {
     
     public static class TexClip extends GLState {
 	public static final Slot<TexClip> slot = new Slot<TexClip>(Slot.Type.GEOM, TexClip.class, HavenPanel.global, TexDraw.slot);
-	private static final ShaderMacro[] shaders = {Tex2D.clip};
+	private static final ShaderMacro shader = Tex2D.clip;
 	public final TexGL tex;
 	private TexUnit sampler;
 	
@@ -190,8 +188,8 @@ public abstract class TexGL extends Tex {
 	    }
 	}
 	
-	public ShaderMacro[] shaders() {
-	    return(shaders);
+	public ShaderMacro shader() {
+	    return(shader);
 	}
 
 	public int capply() {

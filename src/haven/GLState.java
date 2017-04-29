@@ -35,7 +35,7 @@ public abstract class GLState {
     public abstract void apply(GOut g);
     public abstract void unapply(GOut g);
     public abstract void prep(Buffer buf);
-    
+
     public void applyfrom(GOut g, GLState from) {
 	throw(new RuntimeException("Called applyfrom on non-conformant GLState (" + from + " -> " + this + ")"));
     }
@@ -43,11 +43,24 @@ public abstract class GLState {
     }
     public void reapply(GOut g) {
     }
-    
+
+    @Deprecated
     public ShaderMacro[] shaders() {
 	return(null);
     }
-    
+
+    private ShaderMacro legacy = null;
+    public ShaderMacro shader() {
+	ShaderMacro[] ret = shaders();
+	if(ret == null) {
+	    return(null);
+	} else {
+	    if(legacy == null)
+		legacy = (ret.length == 1) ? ret[0] : ShaderMacro.compose(ret);
+	    return(legacy);
+	}
+    }
+
     public int capply() {
 	return(10);
     }
@@ -60,14 +73,12 @@ public abstract class GLState {
     public int capplyto(GLState to) {
 	return(0);
     }
-    
+
     public interface Instancer<T extends GLState> {
 	public T inststate(T[] states);
-	public static final ShaderMacro mkinstanced = new ShaderMacro() {
-		public void modify(haven.glsl.ProgramContext ctx) {
-		    ctx.instanced = true;
-		}
-	    };
+	public static final ShaderMacro mkinstanced = ctx -> {
+	    ctx.instanced = true;
+	};
     }
 
     private static int slotnum = 0;
@@ -457,7 +468,7 @@ public abstract class GLState {
 	public final CurrentGL cgl;
 	public final GLConfig cfg;
 	private boolean[] trans = new boolean[0], repl = new boolean[0], adirty = new boolean[0];
-	private ShaderMacro[][] shaders = new ShaderMacro[0][], nshaders = new ShaderMacro[0][];
+	private ShaderMacro[] shaders = new ShaderMacro[0], nshaders = new ShaderMacro[0];
 	private int proghash = 0, nproghash = 0;
 	public ShaderMacro.Program prog;
 	public boolean pdirty = false, sdirty = false;
@@ -527,12 +538,12 @@ public abstract class GLState {
 		old.unapply(g);
 		cur.states[id] = null;
 	    } else if((old == null) && (state != null)) {
-		if(state.shaders() != null)
+		if(state.shader() != null)
 		    throw(new RuntimeException("Cannot quick-apply states with shaders"));
 		state.apply(g);
 		cur.states[id] = state;
 	    } else if((old != null) && (state != null) && !old.equals(state)) {
-		if(state.shaders() != shaders[id])
+		if(state.shader() != shaders[id])
 		    throw(new RuntimeException("Cannot quick-apply states with shader replacement"));
 		if(state.capplyfrom(old) >= 0) {
 		    state.applyfrom(g, old);
@@ -565,7 +576,7 @@ public abstract class GLState {
 		nshaders[i] = shaders[i];
 		if(repl[i] || trans[i]) {
 		    GLState nst = next.states[i];
-		    ShaderMacro[] ns = (nst == null)?null:nst.shaders();
+		    ShaderMacro ns = (nst == null)?null:nst.shader();
 		    if(ns != nshaders[i]) {
 			nproghash ^= System.identityHashCode(nshaders[i]) ^ System.identityHashCode(ns);
 			nshaders[i] = ns;
@@ -738,11 +749,11 @@ public abstract class GLState {
 	public static class SavedProg {
 	    public final int hash;
 	    public final ShaderMacro.Program prog;
-	    public final ShaderMacro[][] shaders;
+	    public final ShaderMacro[] shaders;
 	    public SavedProg next;
 	    boolean used = true;
 	    
-	    public SavedProg(int hash, ShaderMacro.Program prog, ShaderMacro[][] shaders) {
+	    public SavedProg(int hash, ShaderMacro.Program prog, ShaderMacro[] shaders) {
 		this.hash = hash;
 		this.prog = prog;
 		this.shaders = Utils.splice(shaders, 0);
@@ -753,7 +764,7 @@ public abstract class GLState {
 	private int nprog = 0;
 	private long lastclean = System.currentTimeMillis();
 	
-	private ShaderMacro.Program findprog(int hash, ShaderMacro[][] shaders) {
+	private ShaderMacro.Program findprog(int hash, ShaderMacro[] shaders) {
 	    int idx = hash & (ptab.length - 1);
 	    outer: for(SavedProg s = ptab[idx]; s != null; s = s.next) {
 		if(s.hash != hash)
@@ -774,8 +785,7 @@ public abstract class GLState {
 	    for(int i = 0; i < shaders.length; i++) {
 		if(shaders[i] == null)
 		    continue;
-		for(int o = 0; o < shaders[i].length; o++)
-		    mods.add(shaders[i][o]);
+		mods.add(shaders[i]);
 	    }
 	    ShaderMacro.Program prog = ShaderMacro.Program.build(mods);
 	    SavedProg s = new SavedProg(hash, prog, shaders);

@@ -46,10 +46,6 @@ public class BaseColor implements ShaderMacro {
 	};
 
     public void modify(ProgramContext prog) {
-	prog.fctx.fragcol.mod(new Macro1<Expression>() {
-		public Expression expand(Expression in) {
-		    return(mul(in, transfer.ref()));
-		}
-	    }, 0);
+	prog.fctx.fragcol.mod(in -> mul(in, transfer.ref()), 0);
     }
 }

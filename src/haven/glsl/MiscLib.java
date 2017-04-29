@@ -47,11 +47,7 @@ public abstract class MiscLib {
 				return(frageyen.ref());
 			    }
 			};
-		    ret.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				return(normalize(in));
-			    }
-			}, 0);
+		    ret.mod(in -> normalize(in), 0);
 		    return(ret);
 		}
 	    }));

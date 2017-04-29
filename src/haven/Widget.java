@@ -900,10 +900,14 @@ public class Widget {
     }
     
     public Widget rprev() {
-	if(lchild != null)
-	    return(lchild);
-	if(prev != null)
+	if(prev != null) {
+	    Widget lc = prev.lchild;
+	    if(lc != null) {
+		for(; lc.lchild != null; lc = lc.lchild);
+		return(lc);
+	    }
 	    return(prev);
+	}
 	return(parent);
     }
 

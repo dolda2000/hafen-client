@@ -38,11 +38,7 @@ public class VertexContext extends ShaderContext {
     public final ValBlock mainvals = new ValBlock();
     private final OrderList<CodeMacro> code = new OrderList<CodeMacro>();
     {
-	code.add(new CodeMacro() {
-		public void expand(Block blk) {
-		    mainvals.cons(blk);
-		}
-	    }, 0);
+	code.add(mainvals::cons, 0);
     }
 
     public static final Variable gl_Vertex = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Vertex"));
