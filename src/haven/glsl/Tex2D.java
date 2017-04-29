@@ -87,11 +87,7 @@ public class Tex2D {
     public static final ShaderMacro mod = prog -> {
 	final Value tex2d = tex2d(prog.fctx);
 	tex2d.force();
-	prog.fctx.fragcol.mod(new Macro1<Expression>() {
-		public Expression expand(Expression in) {
-		    return(mul(in, tex2d.ref()));
-		}
-	    }, 0);
+	prog.fctx.fragcol.mod(in -> mul(in, tex2d.ref()), 0);
     };
 
     public static final ShaderMacro clip = prog -> {

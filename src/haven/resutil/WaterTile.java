@@ -253,20 +253,17 @@ public class WaterTile extends Tiler {
 			    }
 			};
 		    nmod.force();
-		    MiscLib.frageyen(prog.fctx).mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				Expression m = nmod.ref();
-				return(add(mul(pick(m, "x"), vec3(l(1.0), l(0.0), l(0.0))),
-					   mul(pick(m, "y"), vec3(l(0.0), l(1.0), l(0.0))),
-					   mul(pick(m, "z"), in)));
-			    }
+		    MiscLib.frageyen(prog.fctx).mod(in -> {
+			    Expression m = nmod.ref();
+			    return(add(mul(pick(m, "x"), vec3(l(1.0), l(0.0), l(0.0))),
+				       mul(pick(m, "y"), vec3(l(0.0), l(1.0), l(0.0))),
+				       mul(pick(m, "z"), in)));
 			}, -10);
-		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				return(mul(in, textureCube(ssky.ref(), neg(mul(icam.ref(), reflect(MiscLib.fragedir(prog.fctx).depref(), MiscLib.frageyen(prog.fctx).depref())))),
-					   l(0.4)));
-			    }
-			}, 0);
+		    prog.fctx.fragcol.mod(in -> mul(in, textureCube(ssky.ref(),
+								    neg(mul(icam.ref(), reflect(MiscLib.fragedir(prog.fctx).depref(),
+												MiscLib.frageyen(prog.fctx).depref())))),
+						    l(0.4))
+					  , 0);
 		}
 	    };
 
@@ -336,11 +333,7 @@ public class WaterTile extends Tiler {
 	    };
 
 	private final ShaderMacro shader = prog -> {
-	    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-		    public Expression expand(Expression in) {
-			return(rgbmix.call(in, mfogcolor, min(div(fragd.ref(), l(maxdepth)), l(1.0))));
-		    }
-		}, 1000);
+	    prog.fctx.fragcol.mod(in -> rgbmix.call(in, mfogcolor, min(div(fragd.ref(), l(maxdepth)), l(1.0))), 1000);
 	};
 
 	private BottomFog() {
@@ -374,11 +367,7 @@ public class WaterTile extends Tiler {
 	    };
 
 	final ShaderMacro shader = prog -> {
-	    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-		    public Expression expand(Expression in) {
-			return(BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
-		    }
-		}, 1000);
+	    prog.fctx.fragcol.mod(in -> BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))), 1000);
 	};
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}

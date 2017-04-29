@@ -66,13 +66,11 @@ public class BumpMap extends GLState {
 			}
 		    };
 		nmod.force();
-		MiscLib.frageyen(prog.fctx).mod(new Macro1<Expression>() {
-			public Expression expand(Expression in) {
-			    Expression m = nmod.ref();
-			    return(add(mul(pick(m, "s"), tanc.ref()),
-				       mul(pick(m, "t"), bitc.ref()),
-				       mul(pick(m, "p"), in)));
-			}
+		MiscLib.frageyen(prog.fctx).mod(in -> {
+			Expression m = nmod.ref();
+			return(add(mul(pick(m, "s"), tanc.ref()),
+				   mul(pick(m, "t"), bitc.ref()),
+				   mul(pick(m, "p"), in)));
 		    }, -100);
 		/*
 		prog.fctx.fragcol.mod(new Macro1<Expression>() {

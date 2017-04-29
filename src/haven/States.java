@@ -441,11 +441,7 @@ public abstract class States extends GLState {
 
 	public ProgPointSize(final Expression ptsz) {
 	    this(prog -> {
-		    prog.vctx.ptsz.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				return(ptsz);
-			    }
-			}, 0);
+		    prog.vctx.ptsz.mod(in -> ptsz, 0);
 		});
 	}
 

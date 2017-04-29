@@ -73,11 +73,7 @@ public class AlphaTex extends GLState {
     private static final ShaderMacro main = prog -> {
 	final Value val = value(prog.fctx);
 	val.force();
-	prog.fctx.fragcol.mod(new Macro1<Expression>() {
-		public Expression expand(Expression in) {
-		    return(mul(in, val.ref()));
-		}
-	    }, 100);
+	prog.fctx.fragcol.mod(in -> mul(in, val.ref()), 100);
     };
     private static final ShaderMacro clip = prog -> {
 	final Value val = value(prog.fctx);

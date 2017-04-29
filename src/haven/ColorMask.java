@@ -36,11 +36,7 @@ public class ColorMask extends GLState {
     private final float[] col;
 
     private static final ShaderMacro sh = prog -> {
-	prog.fctx.fragcol.mod(new Macro1<Expression>() {
-		public Expression expand(Expression in) {
-		    return(MiscLib.colblend.call(in, ccol.ref()));
-		}
-	    }, 100);
+	prog.fctx.fragcol.mod(in -> MiscLib.colblend.call(in, ccol.ref()), 100);
     };
 
     public ColorMask(Color col) {

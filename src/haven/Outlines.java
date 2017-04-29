@@ -113,11 +113,9 @@ public class Outlines implements Rendered {
 		}};
 
 		public void modify(ProgramContext prog) {
-		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				Expression of = (!ms)?ofac.call(l(-1)):msfac.call();
-				return(vec4(col3(color), mix(l(0.0), l(1.0), of)));
-			    }
+		    prog.fctx.fragcol.mod(in -> {
+			    Expression of = (!ms)?ofac.call(l(-1)):msfac.call();
+			    return(vec4(col3(color), mix(l(0.0), l(1.0), of)));
 			}, 0);
 		}
 	    });
