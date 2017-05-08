@@ -54,7 +54,6 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
 	lbuf.magfilter = GL.GL_LINEAR;
 	lbuf.wrapmode = GL2.GL_CLAMP;
 	shader = new Shader(1.0 / res.x, 1.0 / res.y, 4, dthr / depth);
-	shaders = new ShaderMacro[] {shader};
 	lproj = Projection.ortho(-size, size, -size, size, 1, depth);
 	lcam = new DirCam();
 	tgt = new FBView(new GLFrameBuffer((TexGL)null, lbuf), GLState.compose(lproj, lcam));
@@ -197,9 +196,8 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
     }
 
     public final Shader shader;
-    private final ShaderMacro[] shaders;
 
-    public ShaderMacro[] shaders() {return(shaders);}
+    public ShaderMacro shader() {return(shader);}
 
     private TexUnit sampler;
 

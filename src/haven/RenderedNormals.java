@@ -30,22 +30,18 @@ import haven.glsl.*;
 import static haven.glsl.Cons.*;
 
 public class RenderedNormals extends FBConfig.RenderTarget {
-    private static final IntMap<ShaderMacro[]> shcache = new IntMap<ShaderMacro[]>();
+    private static final IntMap<ShaderMacro> shcache = new IntMap<ShaderMacro>();
 
-    private static ShaderMacro[] code(final int id) {
-	ShaderMacro[] ret = shcache.get(id);
+    private static ShaderMacro code(final int id) {
+	ShaderMacro ret = shcache.get(id);
 	if(ret == null) {
-	    ret = new ShaderMacro[] {
-		new ShaderMacro() {
-		    public void modify(final ProgramContext prog) {
-			MiscLib.frageyen(prog.fctx);
-			prog.fctx.new FragData(id) {
-				public Expression root() {
-				    return(vec4(mul(add(MiscLib.frageyen(prog.fctx).depref(), l(1.0)), l(0.5)), l(1.0)));
-				}
-			    };
-		    }
-		}
+	    ret = prog -> {
+		MiscLib.frageyen(prog.fctx);
+		prog.fctx.new FragData(id) {
+			public Expression root() {
+			    return(vec4(mul(add(MiscLib.frageyen(prog.fctx).depref(), l(1.0)), l(0.5)), l(1.0)));
+			}
+		    };
 	    };
 	    shcache.put(id, ret);
 	}
@@ -55,9 +51,9 @@ public class RenderedNormals extends FBConfig.RenderTarget {
     public static final GLState.Slot<GLState> slot = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class, GLFrameBuffer.slot, States.presdepth.slot);
     public GLState state(final FBConfig cfg, final int id) {
 	return(new GLState() {
-		private final ShaderMacro[] shaders = code(id);
+		private final ShaderMacro shader = code(id);
 
-		public ShaderMacro[] shaders() {return(shaders);}
+		public ShaderMacro shader() {return(shader);}
 
 		public void apply(GOut g) {
 		    GLFrameBuffer fb = g.st.get(GLFrameBuffer.slot);

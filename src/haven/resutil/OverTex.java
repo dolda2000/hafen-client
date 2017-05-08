@@ -39,52 +39,46 @@ public class OverTex extends GLState {
     public static final Attribute otexc = new Attribute(VEC2);
     public static boolean otexdb = false;
     private static final Uniform ctex = new Uniform(SAMPLER2D);
-    private static final Map<Function, ShaderMacro[]> shcache = new HashMap<Function, ShaderMacro[]>();
-    private final ShaderMacro[] shaders;
+    private static final Map<Function, ShaderMacro> shcache = new HashMap<Function, ShaderMacro>();
+    private final ShaderMacro shader;
     public final TexGL tex;
     private TexUnit sampler;
 
-    private static ShaderMacro[] shfor(final Function blend) {
-	return(new ShaderMacro [] {
-		new ShaderMacro() {
-		    final AutoVarying otexcv = new AutoVarying(VEC2, "otexc") {
-			    protected Expression root(VertexContext vctx) {
-				return(otexc.ref());
+    private static ShaderMacro shfor(final Function blend) {
+	return(new ShaderMacro() {
+		final AutoVarying otexcv = new AutoVarying(VEC2, "otexc") {
+			protected Expression root(VertexContext vctx) {
+			    return(otexc.ref());
+			}
+		    };
+		public void modify(final ProgramContext prog) {
+		    final ValBlock.Value color = prog.fctx.uniform.new Value(VEC4) {
+			    public Expression root() {
+				return(texture2D(ctex.ref(), otexcv.ref()));
 			    }
 			};
-		    public void modify(final ProgramContext prog) {
-			final ValBlock.Value color = prog.fctx.uniform.new Value(VEC4) {
-				public Expression root() {
-				    return(texture2D(ctex.ref(), otexcv.ref()));
-				}
-			    };
-			color.force();
-			prog.fctx.fragcol.mod(new Macro1<Expression>() {
-				public Expression expand(Expression in) {
-				    return(blend.call(in, color.ref()));
-				}
-			    }, 10);
-		    }
+		    color.force();
+		    prog.fctx.fragcol.mod(in -> blend.call(in, color.ref()), 10);
 		}
 	    });
     }
 
     public OverTex(TexGL tex, Function blend) {
 	this.tex = tex;
-	ShaderMacro[] sh;
+	ShaderMacro sh;
 	synchronized(shcache) {
 	    sh = shcache.get(blend);
 	    if(sh == null)
 		shcache.put(blend, sh = shfor(blend));
 	}
-	shaders = sh;
+	shader = sh;
     }
 
     public OverTex(TexGL tex) {
 	this(tex, MiscLib.cpblend);
     }
 
-    public ShaderMacro[] shaders() {return(shaders);}
+    public ShaderMacro shader() {return(shader);}
 
     public void reapply(GOut g) {
 	g.gl.glUniform1i(g.st.prog.uniform(ctex), sampler.id);

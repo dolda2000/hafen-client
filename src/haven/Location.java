@@ -103,8 +103,8 @@ public class Location extends Transform {
 
 		    public String toString() {return("instanced location");}
 
-		    final haven.glsl.ShaderMacro[] shaders = {mkinstanced};
-		    public haven.glsl.ShaderMacro[] shaders() {return(shaders);}
+		    final haven.glsl.ShaderMacro shader = mkinstanced;
+		    public haven.glsl.ShaderMacro shader() {return(shader);}
 		};
 
 	    public Chain inststate(Chain[] in) {

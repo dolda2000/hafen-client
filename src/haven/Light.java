@@ -88,10 +88,10 @@ public class Light implements Rendered {
     public static final GLState.Slot<GLState> lighting = new GLState.Slot<GLState>(GLState.Slot.Type.DRAW, GLState.class, model, lights);
     
     public static class BaseLights extends GLState {
-	private final ShaderMacro[] shaders;
+	private final ShaderMacro shader;
 	
-	public BaseLights(ShaderMacro[] shaders) {
-	    this.shaders = shaders;
+	public BaseLights(ShaderMacro shader) {
+	    this.shader = shader;
 	}
 	    
 	public void reapply(GOut g) {
@@ -106,8 +106,8 @@ public class Light implements Rendered {
 	public void unapply(GOut g) {
 	}
 	    
-	public ShaderMacro[] shaders() {
-	    return(shaders);
+	public ShaderMacro shader() {
+	    return(shader);
 	}
 	
 	public void prep(Buffer buf) {
@@ -115,33 +115,29 @@ public class Light implements Rendered {
 	}
     }
 
-    private static final ShaderMacro vlight = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		new Phong(prog.vctx);
-	    }
-	};
-    private static final ShaderMacro plight = new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		new Phong(prog.fctx);
-	    }
-	};
+    private static final ShaderMacro vlight = prog -> {
+	new Phong(prog.vctx);
+    };
+    private static final ShaderMacro plight = prog -> {
+	new Phong(prog.fctx);
+    };
 
-    public static final GLState vlights = new BaseLights(new ShaderMacro[] {vlight});
-    public static final GLState plights = new BaseLights(new ShaderMacro[] {plight});
+    public static final GLState vlights = new BaseLights(vlight);
+    public static final GLState plights = new BaseLights(plight);
     
     public static class CelShade extends GLState {
 	public static final Slot<CelShade> slot = new Slot<CelShade>(Slot.Type.DRAW, CelShade.class, lighting);
 
 	public CelShade(boolean dif, boolean spc) {
-	    shaders = new ShaderMacro[] {new Phong.CelShade(dif, spc)};
+	    shader = new Phong.CelShade(dif, spc);
 	}
 
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}
 
-	private final ShaderMacro[] shaders;
-	public ShaderMacro[] shaders() {
-	    return(shaders);
+	private final ShaderMacro shader;
+	public ShaderMacro shader() {
+	    return(shader);
 	}
 	public void prep(Buffer buf) {buf.put(slot, this);}
     }

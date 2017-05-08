@@ -54,40 +54,36 @@ public class CloudShadow extends GLState {
     public static final Uniform cvel = new Uniform(VEC2);
     public static final Uniform cscl = new Uniform(FLOAT);
     public static final Uniform cthr = new Uniform(VEC4);
-    private static final ShaderMacro[] shaders = {
-	new ShaderMacro() {
-	    public void modify(ProgramContext prog) {
-		final Phong ph = prog.getmod(Phong.class);
-		if((ph == null) || !ph.pfrag)
-		    return;
-		final ValBlock.Value shval = prog.fctx.uniform.new Value(FLOAT) {
-			public Expression root() {
-			    Expression tc = add(mul(add(pick(MiscLib.fragmapv.ref(), "xy"),
-							mul(pick(MiscLib.fragmapv.ref(), "z"), cdir.ref())),
-						    cscl.ref()), mul(cvel.ref(), MiscLib.globtime.ref()));
-			    Expression cl = pick(texture2D(tsky.ref(), tc), "r");
-			    Expression th = cthr.ref();
-			    return(add(mul(smoothstep(pick(th, "x"), pick(th, "y"), cl), pick(th, "w")), pick(th, "z")));
-			}
+    private static final ShaderMacro shader = prog -> {
+	final Phong ph = prog.getmod(Phong.class);
+	if((ph == null) || !ph.pfrag)
+	    return;
+	final ValBlock.Value shval = prog.fctx.uniform.new Value(FLOAT) {
+		public Expression root() {
+		    Expression tc = add(mul(add(pick(MiscLib.fragmapv.ref(), "xy"),
+						mul(pick(MiscLib.fragmapv.ref(), "z"), cdir.ref())),
+					    cscl.ref()), mul(cvel.ref(), MiscLib.globtime.ref()));
+		    Expression cl = pick(texture2D(tsky.ref(), tc), "r");
+		    Expression th = cthr.ref();
+		    return(add(mul(smoothstep(pick(th, "x"), pick(th, "y"), cl), pick(th, "w")), pick(th, "z")));
+		}
 
-			protected void cons2(Block blk) {
-			    tgt = new Variable.Global(FLOAT).ref();
-			    blk.add(ass(tgt, init));
-			}
-		    };
-		shval.force();
-		ph.dolight.mod(new Runnable() {
-			public void run() {
-			    ph.dolight.dcalc.add(new If(eq(MapView.amblight.ref(), ph.dolight.i),
-							stmt(amul(ph.dolight.dl.tgt, shval.ref()))),
-						 ph.dolight.dcurs);
-			}
-		    }, 0);
-	    }
-	}
+		protected void cons2(Block blk) {
+		    tgt = new Variable.Global(FLOAT).ref();
+		    blk.add(ass(tgt, init));
+		}
+	    };
+	shval.force();
+	ph.dolight.mod(new Runnable() {
+		public void run() {
+		    ph.dolight.dcalc.add(new If(eq(MapView.amblight.ref(), ph.dolight.i),
+						stmt(amul(ph.dolight.dl.tgt, shval.ref()))),
+					 ph.dolight.dcurs);
+		}
+	    }, 0);
     };
 
-    public ShaderMacro[] shaders() {return(shaders);}
+    public ShaderMacro shader() {return(shader);}
 
     private TexUnit sampler;
 
