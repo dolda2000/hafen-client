@@ -188,6 +188,8 @@ public class OCache implements Iterable<Gob> {
 	    lm.sett(t);
 	if(e >= 0)
 	    lm.e = e;
+	else
+	    lm.e = Double.NaN;
     }
 	
     public synchronized void speak(Gob g, float zo, String text) {
