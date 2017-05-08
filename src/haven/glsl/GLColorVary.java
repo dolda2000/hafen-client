@@ -39,10 +39,6 @@ public class GLColorVary implements ShaderMacro {
 	};
 
     public void modify(ProgramContext prog) {
-	prog.fctx.fragcol.mod(new Macro1<Expression>() {
-		public Expression expand(Expression in) {
-		    return(mul(in, color.ref()));
-		}
-	    }, 0);
+	prog.fctx.fragcol.mod(in -> mul(in, color.ref()), 0);
     }
 }

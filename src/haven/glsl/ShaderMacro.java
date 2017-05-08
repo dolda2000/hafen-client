@@ -35,6 +35,28 @@ import haven.GLShader.FragmentShader;
 public interface ShaderMacro {
     public void modify(ProgramContext prog);
 
+    public static final ShaderMacro nil = new ShaderMacro() {
+	    public void modify(ProgramContext prog) {}
+	    public String toString() {return("nil");}
+	};
+    public static ShaderMacro compose(final Collection<ShaderMacro> smacs) {
+	if(smacs.isEmpty())
+	    return(nil);
+	return(new ShaderMacro() {
+		public void modify(ProgramContext prog) {
+		    for(ShaderMacro smac : smacs)
+			smac.modify(prog);
+		}
+
+		public String toString() {
+		    return(smacs.toString());
+		}
+	    });
+    }
+    public static ShaderMacro compose(final ShaderMacro... smacs) {
+	return(compose(Arrays.asList(smacs)));
+    }
+
     public static class Program extends GLProgram {
 	public static boolean dumpall = false;
 	public transient final ProgramContext built;

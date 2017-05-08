@@ -193,8 +193,7 @@ public class WaterTile extends Tiler {
 	private BetterSurface() {
 	}
 
-	private ShaderMacro[] shaders = {
-	    new ShaderMacro() {
+	private ShaderMacro shader = new ShaderMacro() {
 		final AutoVarying skyc = new AutoVarying(Type.VEC3) {
 			protected Expression root(VertexContext vctx) {
 			    return(mul(icam.ref(), reflect(MiscLib.vertedir(vctx).depref(), vctx.eyen.depref())));
@@ -254,23 +253,19 @@ public class WaterTile extends Tiler {
 			    }
 			};
 		    nmod.force();
-		    MiscLib.frageyen(prog.fctx).mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				Expression m = nmod.ref();
-				return(add(mul(pick(m, "x"), vec3(l(1.0), l(0.0), l(0.0))),
-					   mul(pick(m, "y"), vec3(l(0.0), l(1.0), l(0.0))),
-					   mul(pick(m, "z"), in)));
-			    }
+		    MiscLib.frageyen(prog.fctx).mod(in -> {
+			    Expression m = nmod.ref();
+			    return(add(mul(pick(m, "x"), vec3(l(1.0), l(0.0), l(0.0))),
+				       mul(pick(m, "y"), vec3(l(0.0), l(1.0), l(0.0))),
+				       mul(pick(m, "z"), in)));
 			}, -10);
-		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				return(mul(in, textureCube(ssky.ref(), neg(mul(icam.ref(), reflect(MiscLib.fragedir(prog.fctx).depref(), MiscLib.frageyen(prog.fctx).depref())))),
-					   l(0.4)));
-			    }
-			}, 0);
+		    prog.fctx.fragcol.mod(in -> mul(in, textureCube(ssky.ref(),
+								    neg(mul(icam.ref(), reflect(MiscLib.fragedir(prog.fctx).depref(),
+												MiscLib.frageyen(prog.fctx).depref())))),
+						    l(0.4))
+					  , 0);
 		}
-	    }
-	};
+	    };
 
 	public void reapply(GOut g) {
 	    BGL gl = g.gl;
@@ -279,7 +274,7 @@ public class WaterTile extends Tiler {
 	    gl.glUniformMatrix3fv(g.st.prog.uniform(icam), 1, false, PView.camxf(g).transpose().trim3(), 0);
 	}
 
-	public ShaderMacro[] shaders() {return(shaders);}
+	public ShaderMacro shader() {return(shader);}
 
 	public void apply(GOut g) {
 	    BGL gl = g.gl;
@@ -337,16 +332,8 @@ public class WaterTile extends Tiler {
 		}
 	    };
 
-	private final ShaderMacro shaders[] = {
-	    new ShaderMacro() {
-		public void modify(ProgramContext prog) {
-		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				return(rgbmix.call(in, mfogcolor, min(div(fragd.ref(), l(maxdepth)), l(1.0))));
-			    }
-			}, 1000);
-		}
-	    }
+	private final ShaderMacro shader = prog -> {
+	    prog.fctx.fragcol.mod(in -> rgbmix.call(in, mfogcolor, min(div(fragd.ref(), l(maxdepth)), l(1.0))), 1000);
 	};
 
 	private BottomFog() {
@@ -355,7 +342,7 @@ public class WaterTile extends Tiler {
 
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}
-	public ShaderMacro[] shaders() {return(shaders);}
+	public ShaderMacro shader() {return(shader);}
 	public void prep(Buffer buf) {
 	    if(buf.cfg.pref.wsurf.val)
 		super.prep(buf);
@@ -379,20 +366,12 @@ public class WaterTile extends Tiler {
 		}
 	    };
 
-	final ShaderMacro[] shaders = {
-	    new ShaderMacro() {
-		public void modify(ProgramContext prog) {
-		    prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			    public Expression expand(Expression in) {
-				return(BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))));
-			    }
-			}, 1000);
-		}
-	    }
+	final ShaderMacro shader = prog -> {
+	    prog.fctx.fragcol.mod(in -> BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))), 1000);
 	};
 	public void apply(GOut g) {}
 	public void unapply(GOut g) {}
-	public ShaderMacro[] shaders() {return(shaders);}
+	public ShaderMacro shader() {return(shader);}
     };
 
     @ResName("water")
