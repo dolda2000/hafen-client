@@ -1228,6 +1228,15 @@ public class Utils {
 	return(null);
     }
 
+    public static double ntime() {
+	return(System.currentTimeMillis() / 1e3);
+    }
+
+    private static final long rtimeoff = System.nanoTime();
+    public static double rtime() {
+	return((System.nanoTime() - rtimeoff) / 1e9);
+    }
+
     public static class MapBuilder<K, V> {
 	private final Map<K, V> bk;
 
