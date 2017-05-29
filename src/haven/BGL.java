@@ -714,6 +714,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void glUniform3fv(final ID location, final int count, final float[] val, final int n) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glUniform3fv(location.glid(), count, val, n);}
+	    });
+    }
+
     public void glUniform4f(final ID location, final float v0, final float v1, final float v2, final float v3) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glUniform4f(location.glid(), v0, v1, v2, v3);}
