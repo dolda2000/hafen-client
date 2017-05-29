@@ -55,6 +55,9 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     
     public interface NumberInfo {
 	public int itemnum();
+	public default Color numcolor() {
+	    return(Color.WHITE);
+	}
     }
 
     public interface MeterInfo {

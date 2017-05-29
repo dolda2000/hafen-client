@@ -167,7 +167,7 @@ public class WItem extends Widget implements DTarget {
     public final AttrCache<Tex> itemnum = new AttrCache<Tex>(info -> {
 	    GItem.NumberInfo ninf = ItemInfo.find(GItem.NumberInfo.class, info);
 	    if(ninf == null) return(null);
-	    return(new TexI(Utils.outline2(Text.render(Integer.toString(ninf.itemnum()), Color.WHITE).img, Utils.contrast(Color.WHITE))));
+	    return(new TexI(Utils.outline2(Text.render(Integer.toString(ninf.itemnum()), ninf.numcolor()).img, Utils.contrast(ninf.numcolor()))));
 	});
 
     public final AttrCache<Double> itemmeter = new AttrCache<Double>(info -> {
