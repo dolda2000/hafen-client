@@ -34,7 +34,7 @@ public class SessWidget extends AWidget {
 
     @RName("sess")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    String host = (String)args[0];
 	    int port = (Integer)args[1];
 	    byte[] cookie = Utils.hex2byte((String)args[2]);

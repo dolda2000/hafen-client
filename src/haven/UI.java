@@ -147,6 +147,8 @@ public class UI {
 	
     public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
 	Widget.Factory f = Widget.gettype2(type);
+	if(f == null)
+	    System.err.println(type);
 	synchronized(this) {
 	    Widget pwdg = widgets.get(parent);
 	    if(pwdg == null)

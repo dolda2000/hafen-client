@@ -812,14 +812,14 @@ public class ChatUI extends Widget {
     
     @RName("schan")
     public static class $SChan implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    String name = (String)args[0];
 	    return(new SimpleChat(name));
 	}
     }
     @RName("mchat")
     public static class $MChat implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    String name = (String)args[0];
 	    int urgency = (Integer)args[1];
 	    return(new MultiChat(name, urgency));
@@ -827,13 +827,13 @@ public class ChatUI extends Widget {
     }
     @RName("pchat")
     public static class $PChat implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new PartyChat());
 	}
     }
     @RName("pmchat")
     public static class $PMChat implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    int other = (Integer)args[0];
 	    return(new PrivChat(other));
 	}

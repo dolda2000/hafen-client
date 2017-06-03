@@ -46,13 +46,13 @@ public class Button extends SSWidget {
 	
     @RName("btn")
     public static class $Btn implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new Button((Integer)args[0], (String)args[1]));
 	}
     }
     @RName("ltbtn")
     public static class $LTBtn implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(wrapped((Integer)args[0], (String)args[1]));
 	}
     }

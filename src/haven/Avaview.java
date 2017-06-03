@@ -43,7 +43,7 @@ public class Avaview extends PView {
 
     @RName("av")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    long avagob = -1;
 	    Coord sz = dasz;
 	    String camnm = "avacam";

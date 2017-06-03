@@ -61,7 +61,7 @@ public class Window extends Widget implements DTarget {
 
     @RName("wnd")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    if(args.length < 2)
 		return(new Window((Coord)args[0], null));
 	    else
