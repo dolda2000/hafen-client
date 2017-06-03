@@ -45,31 +45,31 @@ public class Fightsess extends Widget {
     public int use = -1, useb = -1;
     public Coord pcc;
     public int pho;
-    private final Fightview fv;
+    private Fightview fv;
 
     @RName("fsess")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    int nact = (Integer)args[0];
-	    return(new Fightsess(nact, parent.getparent(GameUI.class).fv));
+	    return(new Fightsess(nact));
 	}
     }
 
     @SuppressWarnings("unchecked")
-    public Fightsess(int nact, Fightview fv) {
-	this.fv = fv;
+    public Fightsess(int nact) {
 	pho = -40;
 	this.actions = (Indir<Resource>[])new Indir[nact];
 	this.dyn = new boolean[nact];
     }
 
+    protected void added() {
+	fv = parent.getparent(GameUI.class).fv;
+	presize();
+    }
+
     public void presize() {
 	resize(parent.sz);
 	pcc = sz.div(2);
-    }
-
-    protected void added() {
-	presize();
     }
 
     private void updatepos() {

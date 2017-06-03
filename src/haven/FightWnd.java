@@ -566,7 +566,7 @@ public class FightWnd extends Widget {
 
     @RName("fmg")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new FightWnd((Integer)args[0], (Integer)args[1], (Integer)args[2]));
 	}
     }

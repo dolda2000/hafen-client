@@ -820,9 +820,9 @@ public class CharWnd extends Window {
 
 	@RName("wound")
 	public static class $wound implements Factory {
-	    public Widget create(Widget parent, Object[] args) {
+	    public Widget create(UI ui, Object[] args) {
 		int id = (Integer)args[0];
-		Indir<Resource> res = parent.ui.sess.getres((Integer)args[1]);
+		Indir<Resource> res = ui.sess.getres((Integer)args[1]);
 		return(new Box(id, res));
 	    }
 	}
@@ -1230,7 +1230,7 @@ public class CharWnd extends Window {
 		    }
 		    if(cond[i].wdata != null) {
 			Indir<Resource> wres = ui.sess.getres((Integer)cond[i].wdata[0]);
-			nw[i] = (CondWidget)wres.get().getcode(Widget.Factory.class, true).create(cont, new Object[] {cond[i]});
+			nw[i] = (CondWidget)wres.get().getcode(Widget.Factory.class, true).create(ui, new Object[] {cond[i]});
 		    } else {
 			nw[i] = new DefaultCond(cont, cond[i]);
 		    }
@@ -1291,9 +1291,9 @@ public class CharWnd extends Window {
 
 	@RName("quest")
 	public static class $quest implements Factory {
-	    public Widget create(Widget parent, Object[] args) {
+	    public Widget create(UI ui, Object[] args) {
 		int id = (Integer)args[0];
-		Indir<Resource> res = parent.ui.sess.getres((Integer)args[1]);
+		Indir<Resource> res = ui.sess.getres((Integer)args[1]);
 		String title = (args.length > 2)?(String)args[2]:null;
 		return(new DefaultBox(id, res, title));
 	    }
@@ -1566,8 +1566,8 @@ public class CharWnd extends Window {
 
     @RName("chr")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
-	    return(new CharWnd(parent.ui.sess.glob));
+	public Widget create(UI ui, Object[] args) {
+	    return(new CharWnd(ui.sess.glob));
 	}
     }
 
