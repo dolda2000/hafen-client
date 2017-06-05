@@ -34,10 +34,6 @@ public class ValBlock {
     private final Collection<Value> values = new LinkedList<Value>();
     private final Map<Object, Value> ext = new IdentityHashMap<Object, Value>();
 
-    public interface Factory {
-	public Value make(ValBlock vals);
-    }
-
     public abstract class Value {
 	public final Type type;
 	public final Symbol name;
@@ -238,10 +234,10 @@ public class ValBlock {
 	}
     }
 
-    public Value ext(Object id, Factory f) {
+    public Value ext(Object id, Supplier<Value> f) {
 	Value val = ext.get(id);
 	if(val == null)
-	    ext.put(id, val = f.make(this));
+	    ext.put(id, val = f.get());
 	return(val);
     }
 }

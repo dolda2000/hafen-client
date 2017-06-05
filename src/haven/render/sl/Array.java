@@ -26,37 +26,23 @@
 
 package haven.render.sl;
 
-import java.util.function.*;
+public class Array extends Type {
+    public final Type el;
+    public final int sz;
 
-public class FragmentContext extends ShaderContext {
-    public FragmentContext(ProgramContext prog) {
-	super(prog);
+    public Array(Type el, int sz) {
+	this.el = el;
+	this.sz = sz;
     }
 
-    public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
-    public final ValBlock mainvals = new ValBlock();
-    public final ValBlock uniform = new ValBlock();
-    private final OrderList<Consumer<Block>> code = new OrderList<>();
-    {
-	code.add(mainvals::cons, 0);
-	code.add(blk -> {
-		uniform.cons(blk);
-		main.code.add(new Placeholder("Uniform control up until here."));
-	    }, -1000);
+    public Array(Type el) {
+	this(el, 0);
     }
 
-    public static final Variable gl_FragColor = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragColor"));
-    public static final Variable gl_FragData = new Variable.Implicit(new Array(Type.VEC4), new Symbol.Fix("gl_FragData"));
-
-    public void mainmod(Consumer<Block> macro, int order) {
-	code.add(macro, order);
-    }
-
-    public void construct(java.io.Writer out) {
-	for(Consumer<Block> macro : code)
-	    macro.accept(main.code);
-	main.define(this);
-	PostProc.autoproc(this);
-	output(new Output(out, this));
+    public String name(Context ctx) {
+	if(sz > 0)
+	    return(el.name(ctx) + "[" + sz + "]");
+	else
+	    return(el.name(ctx) + "[]");
     }
 }

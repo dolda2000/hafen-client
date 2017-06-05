@@ -26,6 +26,8 @@
 
 package haven.render.sl;
 
+import java.util.*;
+
 public class FragData extends Variable.Global {
     public boolean primary = false;
 
@@ -46,13 +48,53 @@ public class FragData extends Variable.Global {
 	return(this);
     }
 
-    private class Def extends Definition {
+    private static final Object defid = new PostProc.AutoID("fragdata", 15000) {
+	    public void proc(Context ctx) {
+		FragmentContext fctx = (FragmentContext)ctx;
+		Collection<FragData> used = new HashSet<>();
+		for(Toplevel tl : fctx.vardefs) {
+		    if(tl instanceof Def)
+			used.add(((Def)tl).var());
+		}
+		FragData primary = null;
+		FragData[] slots = new FragData[used.size()];
+		int s = 0;
+		for(FragData f : used) {
+		    if(f.primary) {
+			if(primary == null) {
+			    slots[0] = primary = f;
+			    s = 1;
+			} else {
+			    throw(new RuntimeException("Several fragment data require primary slot: " + primary + " and " + f));
+			}
+		    }
+		}
+		for(FragData f : used) {
+		    if(f != primary)
+			slots[s++] = f;
+		}
+		if(s != slots.length)
+		    throw(new AssertionError());
+		if(slots.length > 1) {
+		    for(int i = 0; i < slots.length; i++)
+			fctx.main.code.add(new LBinOp.Assign(new Index(fctx.gl_FragData.ref(), new IntLiteral(i)), slots[i].ref()));
+		} else if(slots.length == 1) {
+		    fctx.main.code.add(new LBinOp.Assign(fctx.gl_FragColor.ref(), slots[0].ref()));
+		}
+		fctx.prog.fragdata.addAll(used);
+	    }
+	};
+    private class Def extends Definition implements PostProc.Processed {
 	public void output(Output out) {
 	    if(out.ctx instanceof ShaderContext) {
 		((ShaderContext)out.ctx).prog.fragdata.add(FragData.this);
 	    }
 	    super.output(out);
 	}
+
+	public void process(PostProc proc) {}
+	public Object ppid() {return(defid);}
+	private FragData var() {return(FragData.this);}
     }
 
     public void use(Context ctx) {

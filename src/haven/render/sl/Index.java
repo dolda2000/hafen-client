@@ -26,37 +26,27 @@
 
 package haven.render.sl;
 
-import java.util.function.*;
+import java.util.*;
 
-public class FragmentContext extends ShaderContext {
-    public FragmentContext(ProgramContext prog) {
-	super(prog);
+public class Index extends LValue {
+    public final Expression val;
+    public final Expression idx;
+
+    public Index(Expression val, Expression idx) {
+	this.val = val;
+	this.idx = idx;
     }
 
-    public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
-    public final ValBlock mainvals = new ValBlock();
-    public final ValBlock uniform = new ValBlock();
-    private final OrderList<Consumer<Block>> code = new OrderList<>();
-    {
-	code.add(mainvals::cons, 0);
-	code.add(blk -> {
-		uniform.cons(blk);
-		main.code.add(new Placeholder("Uniform control up until here."));
-	    }, -1000);
+    public void walk(Walker w) {
+	w.el(val);
+	w.el(idx);
     }
 
-    public static final Variable gl_FragColor = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragColor"));
-    public static final Variable gl_FragData = new Variable.Implicit(new Array(Type.VEC4), new Symbol.Fix("gl_FragData"));
-
-    public void mainmod(Consumer<Block> macro, int order) {
-	code.add(macro, order);
-    }
-
-    public void construct(java.io.Writer out) {
-	for(Consumer<Block> macro : code)
-	    macro.accept(main.code);
-	main.define(this);
-	PostProc.autoproc(this);
-	output(new Output(out, this));
+    public void output(Output out) {
+	out.write("(");
+	val.output(out);
+	out.write("[");
+	idx.output(out);
+	out.write("])");
     }
 }

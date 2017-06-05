@@ -26,37 +26,29 @@
 
 package haven.render.sl;
 
-import java.util.function.*;
+public class Vec4Cons extends Expression {
+    public static final Vec4Cons z = new Vec4Cons(FloatLiteral.z, FloatLiteral.z, FloatLiteral.z, FloatLiteral.z);
+    public static final Vec4Cons u = new Vec4Cons(FloatLiteral.u, FloatLiteral.u, FloatLiteral.u, FloatLiteral.u);
+    public final Expression[] els;
 
-public class FragmentContext extends ShaderContext {
-    public FragmentContext(ProgramContext prog) {
-	super(prog);
+    public Vec4Cons(Expression... els) {
+	if((els.length < 1) || (els.length > 4))
+	    throw(new RuntimeException("Invalid number of arguments for vec4: " + els.length));
+	this.els = els;
     }
 
-    public final Function.Def main = new Function.Def(Type.VOID, new Symbol.Fix("main"));
-    public final ValBlock mainvals = new ValBlock();
-    public final ValBlock uniform = new ValBlock();
-    private final OrderList<Consumer<Block>> code = new OrderList<>();
-    {
-	code.add(mainvals::cons, 0);
-	code.add(blk -> {
-		uniform.cons(blk);
-		main.code.add(new Placeholder("Uniform control up until here."));
-	    }, -1000);
+    public void walk(Walker w) {
+	for(Expression el : els)
+	    w.el(el);
     }
 
-    public static final Variable gl_FragColor = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragColor"));
-    public static final Variable gl_FragData = new Variable.Implicit(new Array(Type.VEC4), new Symbol.Fix("gl_FragData"));
-
-    public void mainmod(Consumer<Block> macro, int order) {
-	code.add(macro, order);
-    }
-
-    public void construct(java.io.Writer out) {
-	for(Consumer<Block> macro : code)
-	    macro.accept(main.code);
-	main.define(this);
-	PostProc.autoproc(this);
-	output(new Output(out, this));
+    public void output(Output out) {
+	out.write("vec4(");
+	els[0].output(out);
+	for(int i = 1; i < els.length; i++) {
+	    out.write(", ");
+	    els[i].output(out);
+	}
+	out.write(")");
     }
 }
