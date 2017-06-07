@@ -60,7 +60,7 @@ public class Fightview extends Widget {
         
         public Relation(long gobid) {
             this.gobid = gobid;
-            add(this.ava = new Avaview(avasz, gobid, "avacam"));
+            add(this.ava = new Avaview(avasz, gobid, "avacam")).canactivate = true;
 	    add(this.give = new GiveButton(0, new Coord(15, 15)));
 	    add(this.purs = new Button(70, "Pursue"));
         }
@@ -121,7 +121,7 @@ public class Fightview extends Widget {
     private void setcur(Relation rel) {
 	if((current == null) && (rel != null)) {
 	    add(curgive = new GiveButton(0), cgivec);
-	    add(curava = new Avaview(Avaview.dasz, rel.gobid, "avacam"), cavac);
+	    add(curava = new Avaview(Avaview.dasz, rel.gobid, "avacam"), cavac).canactivate = true;
 	    add(curpurs = new Button(70, "Pursue"), cpursc);
 	    curgive.state = rel.give.state;
 	} else if((current != null) && (rel == null)) {

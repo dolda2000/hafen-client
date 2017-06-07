@@ -290,15 +290,19 @@ public class Utils {
 	    return(def);
 	}
     }
-	
+
     public static int ub(byte b) {
 	return(((int)b) & 0xff);
     }
-	
+
     public static byte sb(int b) {
 	return((byte)b);
     }
-	
+
+    public static long uint32(int n) {
+	return(n & 0xffffffffl);
+    }
+
     public static int uint16d(byte[] buf, int off) {
 	return(ub(buf[off]) | (ub(buf[off + 1]) << 8));
     }

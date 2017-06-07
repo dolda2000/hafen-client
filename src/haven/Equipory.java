@@ -62,22 +62,25 @@ public class Equipory extends Widget implements DTarget {
 	}
     }
     Map<GItem, WItem[]> wmap = new HashMap<GItem, WItem[]>();
-	
+    private final Avaview ava;
+
     @RName("epry")
     public static class $_ implements Factory {
 	public Widget create(Widget parent, Object[] args) {
 	    long gobid;
 	    if(args.length < 1)
 		gobid = parent.getparent(GameUI.class).plid;
+	    else if(args[0] == null)
+		gobid = -1;
 	    else
-		gobid = (Integer)args[0];
+		gobid = Utils.uint32((Integer)args[0]);
 	    return(new Equipory(gobid));
 	}
     }
-	
+
     public Equipory(long gobid) {
 	super(isz);
-	Avaview ava = add(new Avaview(bg.sz(), gobid, "equcam") {
+	ava = add(new Avaview(bg.sz(), gobid, "equcam") {
 		public boolean mousedown(Coord c, int button) {
 		    return(false);
 		}
@@ -97,7 +100,7 @@ public class Equipory extends Widget implements DTarget {
 	    }, new Coord(34, 0));
 	ava.color = null;
     }
-	
+
     public void addchild(Widget child, Object... args) {
 	if(child instanceof GItem) {
 	    add(child);
@@ -112,7 +115,7 @@ public class Equipory extends Widget implements DTarget {
 	    super.addchild(child, args);
 	}
     }
-    
+
     public void cdestroy(Widget w) {
 	super.cdestroy(w);
 	if(w instanceof GItem) {
@@ -121,7 +124,15 @@ public class Equipory extends Widget implements DTarget {
 		ui.destroy(v);
 	}
     }
-    
+
+    public void uimsg(String msg, Object... args) {
+	if(msg == "pop") {
+	    ava.avadesc = Composited.Desc.decode(ui.sess, args);
+	} else {
+	    super.uimsg(msg, args);
+	}
+    }
+
     public boolean drop(Coord cc, Coord ul) {
 	for(int i = 0; i < ecoords.length; i++) {
 	    if(cc.isect(ecoords[i], invsq.sz())) {
@@ -132,13 +143,13 @@ public class Equipory extends Widget implements DTarget {
 	wdgmsg("drop", -1);
 	return(true);
     }
-    
+
     public void draw(GOut g) {
 	for(int i = 0; i < 16; i++)
 	    g.image(invsq, ecoords[i]);
 	super.draw(g);
     }
-	
+
     public boolean iteminteract(Coord cc, Coord ul) {
 	return(false);
     }

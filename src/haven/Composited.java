@@ -344,6 +344,56 @@ public class Composited implements Rendered, MapView.Clickable {
 	}
     }
     
+    public static class Desc {
+	public Indir<Resource> base;
+	public List<MD> mod = new ArrayList<>();
+	public List<ED> equ = new ArrayList<>();
+
+	public Desc() {
+	}
+
+	public Desc(Indir<Resource> base) {
+	    this.base = base;
+	}
+
+	public static Desc decode(Session sess, Object[] args) {
+	    Desc ret = new Desc();
+	    ret.base = sess.getres((Integer)args[0]);
+	    Object[] ma = (Object[])args[1];
+	    for(int i = 0; i < ma.length; i += 2) {
+		List<ResData> tex = new ArrayList<ResData>();
+		Indir<Resource> mod = sess.getres((Integer)ma[i]);
+		Object[] ta = (Object[])ma[i + 1];
+		for(int o = 0; o < ta.length; o++) {
+		    Indir<Resource> tr = sess.getres((Integer)ta[o]);
+		    Message sdt = Message.nil;
+		    if((ta.length > o + 1) && (ta[o + 1] instanceof byte[]))
+			sdt = new MessageBuf((byte[])ta[++o]);
+		    tex.add(new ResData(tr, sdt));
+		}
+		ret.mod.add(new MD(mod, tex));
+	    }
+	    Object[] ea = (Object[])args[2];
+	    for(int i = 0; i < ea.length; i++) {
+		Object[] qa = (Object[])ea[i];
+		int n = 0;
+		int t = (Integer)qa[n++];
+		String at = (String)qa[n++];
+		Indir<Resource> res = sess.getres((Integer)qa[n++]);
+		Message sdt = Message.nil;
+		if(qa[n] instanceof byte[])
+		    sdt = new MessageBuf((byte[])qa[n++]);
+		Coord3f off = new Coord3f(((Number)qa[n + 0]).floatValue(), ((Number)qa[n + 1]).floatValue(), ((Number)qa[n + 2]).floatValue());
+		ret.equ.add(new ED(t, at, new ResData(res, sdt), off));
+	    }
+	    return(ret);
+	}
+
+	public String toString() {
+	    return(String.format("desc(%s, %s, %s)", base, mod, equ));
+	}
+    }
+    
     private void nmod(boolean nocatch) {
 	for(Iterator<MD> i = nmod.iterator(); i.hasNext();) {
 	    MD md = i.next();
