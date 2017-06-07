@@ -30,7 +30,7 @@ import java.util.*;
 import static haven.Inventory.invsq;
 
 public class Equipory extends Widget implements DTarget {
-    static Coord ecoords[] = {
+    public static final Coord ecoords[] = {
 	new Coord(0, 0),
 	new Coord(299, 0),
 	new Coord(0, 33),
@@ -117,20 +117,26 @@ public class Equipory extends Widget implements DTarget {
 	}
     }
 
-    public boolean drop(Coord cc, Coord ul) {
+    public int epat(Coord c) {
 	for(int i = 0; i < ecoords.length; i++) {
-	    if(cc.isect(ecoords[i], invsq.sz())) {
-		wdgmsg("drop", i);
-		return(true);
-	    }
+	    if(c.isect(ecoords[i], invsq.sz()))
+		return(i);
 	}
-	wdgmsg("drop", -1);
+	return(-1);
+    }
+
+    public boolean drop(Coord cc, Coord ul) {
+	wdgmsg("drop", epat(cc));
 	return(true);
     }
 
+    public void drawslots(GOut g) {
+	for(int i = 0; i < 16; i++)
+	    g.image(invsq, ecoords[i]);
+    }
+
     public void draw(GOut g) {
-	for(Coord ec : ecoords)
-	    g.image(invsq, ec);
+	drawslots(g);
 	super.draw(g);
     }
 
