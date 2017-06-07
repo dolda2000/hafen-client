@@ -28,12 +28,14 @@ package haven;
 
 import java.awt.Color;
 import java.util.*;
+import haven.Composited.Desc;
 
 public class Avaview extends PView {
     public static final Tex missing = Resource.loadtex("gfx/hud/equip/missing");
     public static final Coord dasz = missing.sz();
     public Color color = Color.WHITE;
     public long avagob;
+    public Desc avadesc;
     private Composited comp;
     private List<Composited.MD> cmod = null;
     private List<Composited.ED> cequ = null;
@@ -67,8 +69,12 @@ public class Avaview extends PView {
 		this.avagob = -1;
 	    else
 		this.avagob = Utils.uint32((Integer)args[0]);
+	    this.avadesc = null;
 	} else if(msg == "col") {
 	    this.color = (Color)args[0];
+	} else if(msg == "pop") {
+	    this.avadesc = Desc.decode(ui.sess, args);
+	    this.avagob = -1;
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -136,6 +142,18 @@ public class Avaview extends PView {
 		comp.chmod(this.cmod = gc.comp.cmod);
 	    if(gc.comp.cequ != this.cequ)
 		comp.chequ(this.cequ = gc.comp.cequ);
+	} else if(avadesc != null) {
+	    Desc d = avadesc;
+	    if((d.base != lbase) || (cam == null) || (comp == null)) {
+		lbase = d.base;
+		comp = new Composited(d.base.get().layer(Skeleton.Res.class).s);
+		comp.eqowner = new AvaOwner();
+		cam = makecam(d.base.get(), comp, camnm);
+	    }
+	    if(d.mod != this.cmod)
+		comp.chmod(this.cmod = d.mod);
+	    if(d.equ != this.cequ)
+		comp.chequ(this.cequ = d.equ);
 	}
     }
 
