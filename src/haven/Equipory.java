@@ -32,6 +32,7 @@ import static haven.Inventory.invsq;
 public class Equipory extends Widget implements DTarget {
     private static final Tex bg = Resource.loadtex("gfx/hud/equip/bg");
     private static final int rx = 34 + bg.sz().x;
+    public static final Coord ecoords[] = {
 	new Coord(0, 0),
 	new Coord(rx, 0),
 	new Coord(0, 33),
