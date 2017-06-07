@@ -61,4 +61,8 @@ public class ResData {
 	    ret[i] = new ResData(in[i], Message.nil);
 	return(ret);
     }
+
+    public String toString() {
+	return(String.format("(%s, %s)", res, sdt));
+    }
 }
