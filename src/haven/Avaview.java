@@ -38,42 +38,40 @@ public class Avaview extends PView {
     private List<Composited.MD> cmod = null;
     private List<Composited.ED> cequ = null;
     private final String camnm;
-	
+
     @RName("av")
     public static class $_ implements Factory {
 	public Widget create(Widget parent, Object[] args) {
-	    return(new Avaview(dasz, (Integer)args[0], "avacam"));
+	    long avagob = -1;
+	    Coord sz = dasz;
+	    String camnm = "avacam";
+	    if(args[0] != null)
+		avagob = Utils.uint32((Integer)args[0]);
+	    if((args.length > 1) && (args[1] != null))
+		sz = (Coord)args[1];
+	    if((args.length > 2) && (args[2] != null))
+		camnm = (String)args[2];
+	    return(new Avaview(sz, avagob, camnm));
 	}
     }
-	
+
     public Avaview(Coord sz, long avagob, String camnm) {
 	super(sz);
 	this.camnm = camnm;
 	this.avagob = avagob;
     }
-    
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "upd") {
-	    this.avagob = (long)(Integer)args[0];
-	    return;
+	    if(args[0] == null)
+		this.avagob = -1;
+	    else
+		this.avagob = Utils.uint32((Integer)args[0]);
+	} else if(msg == "col") {
+	    this.color = (Color)args[0];
+	} else {
+	    super.uimsg(msg, args);
 	}
-	super.uimsg(msg, args);
-    }
-        
-    private boolean missed = false;
-    private Camera cam = null;
-
-    private Composite getgcomp() {
-	Gob gob = ui.sess.glob.oc.getgob(avagob);
-	if(gob == null)
-	    return(null);
-	Drawable d = gob.getattr(Drawable.class);
-	if(!(d instanceof Composite))
-	    return(null);
-	Composite gc = (Composite)d;
-	if(gc.comp == null)
-	    return(null);
-	return(gc);
     }
 
     private class AvaOwner implements Sprite.Owner {
@@ -89,10 +87,8 @@ public class Avaview extends PView {
 	}
     }
 
-    private Camera makecam(Composite gc, String camnm) {
-	if(comp == null)
-	    throw(new Loading());
-	Skeleton.BoneOffset bo = gc.base.get().layer(Skeleton.BoneOffset.class, camnm);
+    private static Camera makecam(Resource base, Composited comp, String camnm) {
+	Skeleton.BoneOffset bo = base.layer(Skeleton.BoneOffset.class, camnm);
 	if(bo == null)
 	    throw(new Loading());
 	GLState.Buffer buf = new GLState.Buffer(null);
@@ -100,59 +96,70 @@ public class Avaview extends PView {
 	return(new LocationCam(buf.get(PView.loc)));
     }
 
-    private Composite lgc = null;
+    private Camera cam = null;
     protected Camera camera() {
-	Composite gc = getgcomp();
-	if(gc == null)
+	if(cam == null)
 	    throw(new Loading());
-	initcomp(gc);
-	if((cam == null) || (gc != lgc))
-	    cam = makecam(lgc = gc, camnm);
 	return(cam);
     }
 
     protected void setup(RenderList rl) {
-	Composite gc = getgcomp();
-	if(gc == null) {
-	    missed = true;
-	    return;
-	}
-	initcomp(gc);
-	if(gc.comp.cmod != this.cmod)
-	    comp.chmod(this.cmod = gc.comp.cmod);
-	if(gc.comp.cequ != this.cequ)
-	    comp.chequ(this.cequ = gc.comp.cequ);
+	if(comp == null)
+	    throw(new Loading());
 	rl.add(comp, null);
 	rl.add(new DirLight(Color.WHITE, Color.WHITE, Color.WHITE, new Coord3f(1, 1, 1).norm()), null);
     }
-    
+
+    private Composite getgcomp() {
+	Gob gob = ui.sess.glob.oc.getgob(avagob);
+	if(gob == null)
+	    return(null);
+	Drawable d = gob.getattr(Drawable.class);
+	if(!(d instanceof Composite))
+	    return(null);
+	Composite gc = (Composite)d;
+	if(gc.comp == null)
+	    return(null);
+	return(gc);
+    }
+
+    private Indir<Resource> lbase = null;
+    public void updcomp() {
+	if(avagob != -1) {
+	    Composite gc = getgcomp();
+	    if(gc == null)
+		throw(new Loading());
+	    initcomp(gc);
+	    if((cam == null) || (gc.base != lbase))
+		cam = makecam((lbase = gc.base).get(), comp, camnm);
+	    if(gc.comp.cmod != this.cmod)
+		comp.chmod(this.cmod = gc.comp.cmod);
+	    if(gc.comp.cequ != this.cequ)
+		comp.chequ(this.cequ = gc.comp.cequ);
+	}
+    }
+
     public void tick(double dt) {
 	if(comp != null)
 	    comp.tick((int)(dt * 1000));
     }
 
     public void draw(GOut g) {
-	/*
-	g.chcolor(Color.BLACK);
-	g.frect(Coord.z, sz);
-	g.chcolor();
-	*/
-	missed = false;
 	try {
+	    updcomp();
 	    super.draw(g);
 	} catch(Loading e) {
-	    missed = true;
-	}
-	if(missed)
 	    g.image(missing, Coord.z, sz);
+	}
 	if(color != null) {
 	    g.chcolor(color);
 	    Window.wbox.draw(g, Coord.z, sz);
 	}
     }
-	
+
     public boolean mousedown(Coord c, int button) {
-	wdgmsg("click", button);
+	if(canactivate)
+	    wdgmsg("click", button);
 	return(true);
     }
 }
