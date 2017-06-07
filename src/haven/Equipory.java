@@ -32,7 +32,6 @@ import static haven.Inventory.invsq;
 public class Equipory extends Widget implements DTarget {
     private static final Tex bg = Resource.loadtex("gfx/hud/equip/bg");
     private static final int rx = 34 + bg.sz().x;
-    static Coord ecoords[] = {
 	new Coord(0, 0),
 	new Coord(rx, 0),
 	new Coord(0, 33),
@@ -133,20 +132,26 @@ public class Equipory extends Widget implements DTarget {
 	}
     }
 
-    public boolean drop(Coord cc, Coord ul) {
+    public int epat(Coord c) {
 	for(int i = 0; i < ecoords.length; i++) {
-	    if(cc.isect(ecoords[i], invsq.sz())) {
-		wdgmsg("drop", i);
-		return(true);
-	    }
+	    if(c.isect(ecoords[i], invsq.sz()))
+		return(i);
 	}
-	wdgmsg("drop", -1);
+	return(-1);
+    }
+
+    public boolean drop(Coord cc, Coord ul) {
+	wdgmsg("drop", epat(cc));
 	return(true);
     }
 
-    public void draw(GOut g) {
+    public void drawslots(GOut g) {
 	for(int i = 0; i < 16; i++)
 	    g.image(invsq, ecoords[i]);
+    }
+
+    public void draw(GOut g) {
+	drawslots(g);
 	super.draw(g);
     }
 
