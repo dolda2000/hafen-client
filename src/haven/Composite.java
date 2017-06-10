@@ -69,7 +69,7 @@ public class Composite extends Drawable {
     private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, boolean old) {
 	List<PoseMod> mods = new ArrayList<PoseMod>(rl.size());
 	for(ResData dat : rl) {
-	    PoseMod mod = skel.mkposemod(gob, dat.res.get(), dat.sdt);
+	    PoseMod mod = skel.mkposemod(gob, dat.res.get(), dat.sdt.clone());
 	    if(old)
 		mod.age();
 	    mods.add(mod);

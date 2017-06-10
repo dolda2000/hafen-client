@@ -294,6 +294,13 @@ public class HashDirCache implements ResCache {
 	    });
     }
 
+    public void remove(String name) throws IOException {
+	File path = lookup(name, false);
+	if(path == null)
+	    throw(new FileNotFoundException(name));
+	path.delete();
+    }
+
     public String toString() {
 	return("FileCache(" + id + ")");
     }
@@ -356,6 +363,25 @@ public class HashDirCache implements ResCache {
 		if(n < 0)
 		    break;
 		System.out.write(buf, 0, n);
+	    }
+	    break;
+	case "purge":
+	    for(Iterator<String> i = cache.list(); i.hasNext();) {
+		String nm = i.next();
+		try {
+		    cache.remove(nm);
+		} catch(FileNotFoundException e) {
+		    System.err.printf("%s: not found\n", nm);
+		}
+	    }
+	    break;
+	case "rm":
+	    for(int i = 2; i < args.length; i++) {
+		try {
+		    cache.remove(args[i]);
+		} catch(FileNotFoundException e) {
+		    System.err.printf("%s: not found\n", args[i]);
+		}
 	    }
 	    break;
 	default:
