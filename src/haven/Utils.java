@@ -938,8 +938,7 @@ public class Utils {
     }
 
     public static boolean eq(Object a, Object b) {
-	return(((a == null) && (b == null)) ||
-	       ((a != null) && (b != null) && a.equals(b)));
+	return((a == b) || ((a != null) && a.equals(b)));
     }
 
     public static boolean parsebool(String s, boolean def) {
