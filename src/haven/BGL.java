@@ -29,6 +29,7 @@ package haven;
 import javax.media.opengl.*;
 import java.nio.*;
 import java.util.*;
+import java.util.function.*;
 import java.io.*;
 import java.lang.reflect.*;
 
@@ -847,6 +848,48 @@ public abstract class BGL {
     public void joglSetSwapInterval(final int swap) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.setSwapInterval(swap);}
+	    });
+    }
+
+    public static class DebugMessage {
+	public final int source, type, severity, id;
+	public final String text;
+
+	public DebugMessage(int source, int type, int severity, int id, String text) {
+	    this.source = source; this.type = type; this.severity = severity; this.id = id;
+	    this.text = text;
+	}
+
+	public String toString() {
+	    return(String.format("[@d %d:%d:%d] %s", severity, source, type, id, text));
+	}
+    }
+
+    public void glDebugMessageControl(final int source, final int type, final int severity, final int[] ids, final boolean enabled) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDebugMessageControl(source, type, severity, (ids == null) ? 0 : ids.length, ids, 0, enabled);}
+	    });
+    }
+
+    public void bglGetDebugMessageLog(final Consumer<DebugMessage> cb) {
+	add(new Command() {
+		public void run(GL2 gl) {
+		    while(true) {
+			int n = 64;
+			int[] sources = new int[n], types = new int[n], severities = new int[n], ids = new int[n], lengths = new int[n];
+			byte[] textbuf = new byte[65536];
+			int ret = gl.glGetDebugMessageLog(n, textbuf.length, sources, 0, types, 0, ids, 0, severities, 0, lengths, 0, textbuf, 0);
+			for(int i = 0, off = 0; i < ret; i++) {
+			    if(textbuf[off + lengths[i] - 1] != 0)
+				throw(new AssertionError("Debug message not NUL-terminated"));
+			    String text = new String(textbuf, off, lengths[i] - 1);
+			    off += lengths[i];
+			    cb.accept(new DebugMessage(sources[i], types[i], severities[i], ids[i], text));
+			}
+			if(ret < n)
+			    break;
+		    }
+		}
 	    });
     }
 
