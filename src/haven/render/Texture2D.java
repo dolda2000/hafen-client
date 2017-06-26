@@ -24,32 +24,31 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render;
 
-import haven.render.*;
-import javax.media.opengl.*;
+import haven.*;
 
-public class GLRender implements Render {
-    public final GLEnvironment env;
-    private final BGL gl = new BufferBGL();
-    private Applier state = null, init = null;
+public class Texture2D implements Disposable {
+    protected final Coord dim;
+    protected Disposable ro;
 
-    GLRender(GLEnvironment env) {
-	this.env = env;
+    public Texture2D(Coord dim) {
+	this.dim = dim;
     }
 
-    public GLEnvironment env() {return(env);}
-
-    public void draw(Pipe pipe, Model data) {
-	if(init == null) {
-	    init = state = new Applier(env, pipe.copy());
-	} else {
-	    state.apply(gl, pipe);
-	}
+    public Coord sz() {
+	return(dim);
     }
 
-    public void execute(GL2 gl) {
-	synchronized(env.drawmon) {
+    public void dispose() {
+	if(this.ro != null) {
+	    Disposable ro;
+	    synchronized(this) {
+		ro = this.ro;
+		this.ro = null;
+	    }
+	    if(ro != null)
+		ro.dispose();
 	}
     }
 }

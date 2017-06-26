@@ -107,4 +107,8 @@ public class Pipe {
 	buf.append(']');
 	return(buf.toString());
     }
+
+    public State[] states() {
+	return(states);
+    }
 }

@@ -24,32 +24,16 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render;
 
-import haven.render.*;
-import javax.media.opengl.*;
+public class Model {
+    public final Mode mode;
 
-public class GLRender implements Render {
-    public final GLEnvironment env;
-    private final BGL gl = new BufferBGL();
-    private Applier state = null, init = null;
-
-    GLRender(GLEnvironment env) {
-	this.env = env;
+    public enum Mode {
+	POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_FAN
     }
 
-    public GLEnvironment env() {return(env);}
-
-    public void draw(Pipe pipe, Model data) {
-	if(init == null) {
-	    init = state = new Applier(env, pipe.copy());
-	} else {
-	    state.apply(gl, pipe);
-	}
-    }
-
-    public void execute(GL2 gl) {
-	synchronized(env.drawmon) {
-	}
+    public Model(Mode mode) {
+	this.mode = mode;
     }
 }

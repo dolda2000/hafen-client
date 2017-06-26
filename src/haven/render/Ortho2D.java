@@ -24,32 +24,25 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render;
 
-import haven.render.*;
-import javax.media.opengl.*;
+import haven.*;
+import haven.render.sl.*;
+import static haven.render.sl.Type.*;
+import static haven.render.sl.Cons.*;
 
-public class GLRender implements Render {
-    public final GLEnvironment env;
-    private final BGL gl = new BufferBGL();
-    private Applier state = null, init = null;
+public class Ortho2D extends State {
+    public final Area area;
+    public static final Attribute pos = new Attribute(VEC2, "opos2d");
+    private static final Uniform m = new Uniform(VEC2, "m2d");
+    private static final Uniform k = new Uniform(VEC2, "k2d");
 
-    GLRender(GLEnvironment env) {
-	this.env = env;
+    public Ortho2D(Area area) {
+	this.area = area;
     }
 
-    public GLEnvironment env() {return(env);}
-
-    public void draw(Pipe pipe, Model data) {
-	if(init == null) {
-	    init = state = new Applier(env, pipe.copy());
-	} else {
-	    state.apply(gl, pipe);
-	}
-    }
-
-    public void execute(GL2 gl) {
-	synchronized(env.drawmon) {
-	}
-    }
+    private static final ShaderMacro shader = prog -> {
+	prog.vctx.posv.mod(in -> add(m.ref(), mul(pos.ref(), k.ref())), 0);
+    };
+    public ShaderMacro shader() {return(shader);}
 }

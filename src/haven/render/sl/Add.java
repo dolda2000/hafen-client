@@ -24,32 +24,31 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render.sl;
 
-import haven.render.*;
-import javax.media.opengl.*;
+import java.util.*;
 
-public class GLRender implements Render {
-    public final GLEnvironment env;
-    private final BGL gl = new BufferBGL();
-    private Applier state = null, init = null;
+public class Add extends Expression {
+    public final Expression[] terms;
 
-    GLRender(GLEnvironment env) {
-	this.env = env;
+    public Add(Expression... terms) {
+	if(terms.length < 1)
+	    throw(new RuntimeException("Must have more than zero terms"));
+	this.terms = terms;
     }
 
-    public GLEnvironment env() {return(env);}
-
-    public void draw(Pipe pipe, Model data) {
-	if(init == null) {
-	    init = state = new Applier(env, pipe.copy());
-	} else {
-	    state.apply(gl, pipe);
-	}
+    public void walk(Walker w) {
+	for(Expression term : terms)
+	    w.el(term);
     }
 
-    public void execute(GL2 gl) {
-	synchronized(env.drawmon) {
+    public void output(Output out) {
+	out.write("(");
+	terms[0].output(out);
+	for(int i = 1; i < terms.length; i++) {
+	    out.write(" + ");
+	    terms[i].output(out);
 	}
+	out.write(")");
     }
 }

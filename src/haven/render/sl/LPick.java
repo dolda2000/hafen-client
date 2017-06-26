@@ -24,32 +24,38 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render.sl;
 
-import haven.render.*;
-import javax.media.opengl.*;
+import java.util.*;
 
-public class GLRender implements Render {
-    public final GLEnvironment env;
-    private final BGL gl = new BufferBGL();
-    private Applier state = null, init = null;
+public class LPick extends LValue {
+    public static final String valid = "xyzwrgbastpq";
+    public final LValue val;
+    public final char[] el;
 
-    GLRender(GLEnvironment env) {
-	this.env = env;
+    public LPick(LValue val, char[] el) {
+	for(char c : el) {
+	    if(valid.indexOf(c) < 0)
+		throw(new IllegalArgumentException("`" + c + "' is not a valid swizzling component"));
+	}
+	this.val = val;
+	this.el = el;
     }
 
-    public GLEnvironment env() {return(env);}
-
-    public void draw(Pipe pipe, Model data) {
-	if(init == null) {
-	    init = state = new Applier(env, pipe.copy());
-	} else {
-	    state.apply(gl, pipe);
-	}
+    public LPick(LValue val, String el) {
+	this(val, el.toCharArray());
     }
 
-    public void execute(GL2 gl) {
-	synchronized(env.drawmon) {
-	}
+    public void walk(Walker w) {
+	w.el(val);
+    }
+
+    public void output(Output out) {
+	out.write("(");
+	val.output(out);
+	out.write(".");
+	for(char c : el)
+	    out.write(c);
+	out.write(")");
     }
 }

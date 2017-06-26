@@ -26,30 +26,46 @@
 
 package haven.render.gl;
 
-import haven.render.*;
-import javax.media.opengl.*;
+import java.util.*;
+import java.io.*;
+import haven.Disposable;
+import haven.render.sl.*;
 
-public class GLRender implements Render {
-    public final GLEnvironment env;
-    private final BGL gl = new BufferBGL();
-    private Applier state = null, init = null;
+public class GLProgram implements Disposable {
+    public static boolean dumpall = true;
+    public final String vsrc, fsrc;
 
-    GLRender(GLEnvironment env) {
-	this.env = env;
-    }
-
-    public GLEnvironment env() {return(env);}
-
-    public void draw(Pipe pipe, Model data) {
-	if(init == null) {
-	    init = state = new Applier(env, pipe.copy());
-	} else {
-	    state.apply(gl, pipe);
+    public GLProgram(ProgramContext ctx) {
+	{
+	    StringWriter buf = new StringWriter();
+	    ctx.fctx.construct(buf);
+	    fsrc = buf.toString();
+	}
+	{
+	    StringWriter buf = new StringWriter();
+	    ctx.vctx.construct(buf);
+	    vsrc = buf.toString();
 	}
     }
 
-    public void execute(GL2 gl) {
-	synchronized(env.drawmon) {
+    public static GLProgram build(Collection<ShaderMacro> mods) {
+	ProgramContext prog = new ProgramContext();
+	for(ShaderMacro mod : mods)
+	    mod.modify(prog);
+	GLProgram ret = new GLProgram(prog);
+	if(dumpall || prog.dump) {
+	    System.err.println(mods + ":");
+	    System.err.println("---> Vertex shader:");
+	    System.err.print(ret.vsrc);
+	    System.err.println("---> Fragment shader:");
+	    System.err.print(ret.fsrc);
+	    System.err.println();
+	    System.err.println("-------- " + ret);
+	    System.err.println();
 	}
+	return(ret);
+    }
+
+    public void dispose() {
     }
 }

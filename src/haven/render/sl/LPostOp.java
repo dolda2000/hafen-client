@@ -24,32 +24,30 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render.sl;
 
-import haven.render.*;
-import javax.media.opengl.*;
+import java.util.*;
 
-public class GLRender implements Render {
-    public final GLEnvironment env;
-    private final BGL gl = new BufferBGL();
-    private Applier state = null, init = null;
+public abstract class LPostOp extends Expression {
+    public final LValue op;
 
-    GLRender(GLEnvironment env) {
-	this.env = env;
+    public LPostOp(LValue op) {
+	this.op = op;
     }
 
-    public GLEnvironment env() {return(env);}
-
-    public void draw(Pipe pipe, Model data) {
-	if(init == null) {
-	    init = state = new Applier(env, pipe.copy());
-	} else {
-	    state.apply(gl, pipe);
-	}
+    public void walk(Walker w) {
+	w.el(op);
     }
 
-    public void execute(GL2 gl) {
-	synchronized(env.drawmon) {
-	}
+    public abstract String form();
+
+    public void output(Output out) {
+	out.write("(");
+	op.output(out);
+	out.write(form());
+	out.write(")");
     }
+
+    public static class Inc extends LPostOp {public String form() {return("++");} public Inc(LValue op) {super(op);}}
+    public static class Dec extends LPostOp {public String form() {return("--");} public Dec(LValue op) {super(op);}}
 }

@@ -27,5 +27,6 @@
 package haven.render;
 
 public interface Render {
-    public void draw(Pipe pipe, Draw data);
+    public Environment env();
+    public void draw(Pipe pipe, Model data);
 }

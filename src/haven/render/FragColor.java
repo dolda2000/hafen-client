@@ -31,7 +31,7 @@ import haven.render.sl.ValBlock.Value;
 
 public class FragColor extends State {
     public static final Slot<FragColor> slot = new Slot<>(Slot.Type.SYS, FragColor.class);
-    public static final FragData fragcol = new FragData(Type.VEC4, "fragcol");
+    public static final FragData fragcol = new FragData(Type.VEC4, "fragcol").primary();
 
     public static Value fragcol(FragmentContext fctx) {
 	return(fctx.mainvals.ext(fragcol, () -> fctx.mainvals.new Value(Type.VEC4) {

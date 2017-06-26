@@ -26,40 +26,49 @@
 
 package haven.render;
 
-import java.util.*;
+import haven.*;
 import haven.render.sl.*;
+import haven.render.State.Slot;
 
-public abstract class State {
-    public static class Slot<T extends State> {
-	static Slots slots = new Slots(new Slot<?>[0]);
-	public final Type type;
-	public final int id;
-	public final Class<T> scl;
-	private int depid = -1;
+public abstract class States {
+    private States() {}
 
-	public enum Type {
-	    SYS, GEOM, DRAW
+    private static class Builtin extends State {
+	public ShaderMacro shader() {return(null);}
+    }
+
+    public static abstract class StandAlone extends Builtin {
+	public final Slot<? extends StandAlone> slot;
+
+	private static <T extends StandAlone> Slot<T> javaGenericsSuck(Slot.Type type, Class<T> cl) {
+	    return(new Slot<T>(type, cl));
 	}
 
-	public static class Slots {
-	    public final Slot<?>[] idlist;
-
-	    public Slots(Slot<?>[] idlist) {
-		this.idlist = idlist;
-	    }
-	}
-
-	public Slot(Type type, Class<T> scl) {
-	    this.type = type;
-	    this.scl = scl;
-	    synchronized(Slot.class) {
-		this.id = slots.idlist.length;
-		Slot<?>[] nlist = Arrays.copyOf(slots.idlist, this.id + 1);
-		nlist[this.id] = this;
-		slots = new Slots(nlist);
-	    }
+	StandAlone(Slot.Type type) {
+	    this.slot = javaGenericsSuck(type, this.getClass());
 	}
     }
 
-    public abstract ShaderMacro shader();
+    public static final Slot<State> vxf = new Slot<State>(Slot.Type.SYS, State.class);
+
+    public Slot<Viewport> viewport = new Slot<Viewport>(Slot.Type.SYS, Viewport.class);
+    public static class Viewport extends Builtin {
+	public final Area area;
+
+	public Viewport(Area area) {
+	    this.area = area;
+	}
+    }
+
+    public Slot<Scissor> scissor = new Slot<Scissor>(Slot.Type.SYS, Scissor.class);
+    public static class Scissor extends Builtin {
+	public final Area area;
+
+	public Scissor(Area area) {
+	    this.area = area;
+	}
+    }
+
+    public static final StandAlone depthtest = new StandAlone(Slot.Type.GEOM) {};
+    public static final StandAlone maskdepth = new StandAlone(Slot.Type.GEOM) {};
 }

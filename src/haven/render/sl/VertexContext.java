@@ -40,6 +40,32 @@ public class VertexContext extends ShaderContext {
 	code.add(mainvals::cons, 0);
     }
 
+    public static final Variable gl_Position = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Position"));
+    public static final Variable gl_PointSize = new Variable.Implicit(Type.FLOAT, new Symbol.Fix("gl_PointSize"));
+
+    public final ValBlock.Value posv = mainvals.new Value(Type.VEC4, new Symbol.Gen("posv")) {
+	    {force();}
+
+	    public Expression root() {
+		return(Vec4Cons.z);
+	    }
+
+	    public void cons2(Block blk) {
+		tgt = gl_Position.ref();
+		blk.add(new LBinOp.Assign(tgt, init));
+	    }
+	};
+    public final ValBlock.Value ptsz = mainvals.new Value(Type.FLOAT, new Symbol.Gen("ptsz")) {
+	    public Expression root() {
+		return(new FloatLiteral(1.0));
+	    }
+
+	    protected void cons2(Block blk) {
+		tgt = gl_PointSize.ref();
+		blk.add(new LBinOp.Assign(tgt, init));
+	    }
+	};
+
     public void mainmod(Consumer<Block> macro, int order) {
 	code.add(macro, order);
     }

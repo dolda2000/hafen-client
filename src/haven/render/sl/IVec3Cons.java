@@ -24,32 +24,31 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render.sl;
 
-import haven.render.*;
-import javax.media.opengl.*;
+public class IVec3Cons extends Expression {
+    public static final IVec3Cons z = new IVec3Cons(IntLiteral.z, IntLiteral.z, IntLiteral.z);
+    public static final IVec3Cons u = new IVec3Cons(IntLiteral.u, IntLiteral.u, IntLiteral.u);
+    public final Expression[] els;
 
-public class GLRender implements Render {
-    public final GLEnvironment env;
-    private final BGL gl = new BufferBGL();
-    private Applier state = null, init = null;
-
-    GLRender(GLEnvironment env) {
-	this.env = env;
+    public IVec3Cons(Expression... els) {
+	if((els.length < 1) || (els.length > 3))
+	    throw(new RuntimeException("Invalid number of arguments for ivec3: " + els.length));
+	this.els = els;
     }
 
-    public GLEnvironment env() {return(env);}
-
-    public void draw(Pipe pipe, Model data) {
-	if(init == null) {
-	    init = state = new Applier(env, pipe.copy());
-	} else {
-	    state.apply(gl, pipe);
-	}
+    public void walk(Walker w) {
+	for(Expression el : els)
+	    w.el(el);
     }
 
-    public void execute(GL2 gl) {
-	synchronized(env.drawmon) {
+    public void output(Output out) {
+	out.write("ivec3(");
+	els[0].output(out);
+	for(int i = 1; i < els.length; i++) {
+	    out.write(", ");
+	    els[i].output(out);
 	}
+	out.write(")");
     }
 }
