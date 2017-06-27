@@ -108,7 +108,7 @@ public class Polity extends Window {
 		g.chcolor(0, 0, 0, 255);
 		g.frect(new Coord(0, 0), new Coord(sz.x, sz.y));
 		g.chcolor(128, 0, 0, 255);
-		g.frect(new Coord(1, 1), new Coord(((sz.x - 2) * auth) / acap, sz.y - 2));
+		g.frect(new Coord(1, 1), new Coord(((sz.x - 2) * auth) / ((acap == 0) ? 1 : acap), sz.y - 2));
 		g.chcolor();
 		if((rauth != null) && (aseq != Polity.this.aseq)) {
 		    rauth.dispose();
