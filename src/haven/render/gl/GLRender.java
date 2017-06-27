@@ -42,7 +42,7 @@ public class GLRender implements Render {
 
     public void draw(Pipe pipe, Model data) {
 	if(init == null) {
-	    init = state = new Applier(env, pipe.copy());
+	    init = (state = new Applier(env, pipe.copy())).clone();
 	} else {
 	    state.apply(gl, pipe);
 	}

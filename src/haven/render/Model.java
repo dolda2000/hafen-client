@@ -26,14 +26,30 @@
 
 package haven.render;
 
+import java.util.function.*;
+
 public class Model {
     public final Mode mode;
+    public final VertexArray va;
+    public final Indices ind;
 
     public enum Mode {
 	POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_FAN
     }
 
-    public Model(Mode mode) {
+    public Model(Mode mode, VertexArray va, Indices ind) {
 	this.mode = mode;
+	this.va = va;
+	this.ind = ind;
+    }
+
+    public abstract static class Indices {
+	public final NumberFormat fmt;
+
+	public Indices(NumberFormat fmt) {
+	    this.fmt = fmt;
+	}
+
+	public abstract FillBuffer fill(Environment env);
     }
 }

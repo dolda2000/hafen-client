@@ -26,11 +26,37 @@
 
 package haven.render;
 
-import java.nio.*;
+import haven.render.sl.Attribute;
 
-public interface FillBuffer extends haven.Disposable {
-    public int size();
-    public boolean compatible(Environment env);
-    public ByteBuffer push();
-    public void pull(ByteBuffer buf, int off);
+public class VertexArray {
+    public final Buffer[] bufs;
+    public final int n;
+
+    public VertexArray(Buffer... bufs) {
+	Buffer[] na = new Buffer[bufs.length];
+	na[0] = bufs[0];
+	int num = na[0].n;
+	for(int i = 1; i < bufs.length; i++) {
+	    na[i] = bufs[i];
+	    if(na[i].n != num)
+		throw(new IllegalArgumentException("Buffer sizes do not match"));
+	}
+	this.bufs = na;
+	this.n = num;
+    }
+
+    public abstract static class Buffer {
+	public final int n, nc;
+	public final NumberFormat fmt;
+	public final Attribute tgt;
+
+	public Buffer(int n, int nc, NumberFormat fmt, Attribute tgt) {
+	    this.n = n;
+	    this.nc = nc;
+	    this.fmt = fmt;
+	    this.tgt = tgt;
+	}
+
+	public abstract FillBuffer fill(Environment env);
+    }
 }
