@@ -75,4 +75,10 @@ public class Frame extends Widget {
 	super.draw(g);
 	box.draw(g, Coord.z, sz);
     }
+
+    public <T extends Widget> T addin(T child) {
+	child.resize(inner());
+	parent.add(child, this.c.add(box.btloff()));
+	return(child);
+    }
 }
