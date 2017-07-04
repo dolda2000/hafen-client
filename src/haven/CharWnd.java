@@ -50,8 +50,8 @@ public class CharWnd extends Window {
     public final FoodMeter feps;
     public final GlutMeter glut;
     public final Constipations cons;
-    public final SkillList csk, nsk;
-    public final ExperienceList exps;
+    public final SkillGrid skg;
+    public final ExpGrid exps;
     public final Widget woundbox;
     public final WoundList wounds;
     public Wound.Info wound;
@@ -680,6 +680,7 @@ public class CharWnd extends Window {
 	public final String nm;
 	public final Indir<Resource> res;
 	public final int cost;
+	public boolean has = false;
 	private String sortkey;
 	private Tex small;
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
@@ -692,10 +693,11 @@ public class CharWnd extends Window {
 	    }
 	};
 
-	private Skill(String nm, Indir<Resource> res, int cost) {
+	private Skill(String nm, Indir<Resource> res, int cost, boolean has) {
 	    this.nm = nm;
 	    this.res = res;
 	    this.cost = cost;
+	    this.has = has;
 	    this.sortkey = nm;
 	}
 
@@ -707,6 +709,13 @@ public class CharWnd extends Window {
 	    buf.append("Cost: " + cost + "\n\n");
 	    buf.append(res.layer(Resource.pagina).text);
 	    return(buf.toString());
+	}
+
+	private Text tooltip = null;
+	public Text tooltip() {
+	    if(tooltip == null)
+		tooltip = Text.render(res.get().layer(Resource.tooltip).t);
+	    return(tooltip);
 	}
     }
 
@@ -740,6 +749,13 @@ public class CharWnd extends Window {
 		buf.append("Experience points: " + Utils.thformat(score) + "\n\n");
 	    buf.append(res.layer(Resource.pagina).text);
 	    return(buf.toString());
+	}
+
+	private Text tooltip = null;
+	public Text tooltip() {
+	    if(tooltip == null)
+		tooltip = Text.render(res.get().layer(Resource.tooltip).t);
+	    return(tooltip);
 	}
     }
 
@@ -1280,92 +1296,76 @@ public class CharWnd extends Window {
 	}
     }
 
-    public class SkillList extends Listbox<Skill> {
-	public Skill[] skills = new Skill[0];
-	public boolean dav = false;
+    public class SkillGrid extends GridList<Skill> {
+	public final Group nsk, csk;
 	private boolean loading = false;
-	private final Comparator<Skill> skcomp = new Comparator<Skill>() {
-	    public int compare(Skill a, Skill b) {
-		return(a.sortkey.compareTo(b.sortkey));
-	    }
-	};
 
-	public SkillList(int w, int h) {
-	    super(w, h, attrf.height() + 2);
+	public SkillGrid(Coord sz) {
+	    super(sz);
+	    nsk = new Group(new Coord(40, 40), new Coord(-1, 5), "Available Skills", Collections.emptyList());
+	    csk = new Group(new Coord(40, 40), new Coord(-1, 5), "Known Skills", Collections.emptyList());
+	    itemtooltip = Skill::tooltip;
+	}
+
+	protected void drawitem(GOut g, Skill sk) {
+	    if(sk.small == null)
+		sk.small = new TexI(convolvedown(sk.res.get().layer(Resource.imgc).img, new Coord(40, 40), iconfilter));
+	    g.image(sk.small, Coord.z);
+	}
+
+	protected void update() {
+	    super.update();
+	    loading = true;
+	}
+
+	private void sksort(List<Skill> skills) {
+	    for(Skill sk : skills) {
+		try {
+		    sk.sortkey = sk.res.get().layer(Resource.tooltip).t;
+		} catch(Loading l) {
+		    sk.sortkey = sk.nm;
+		    loading = true;
+		}
+	    }
+	    Collections.sort(skills, (a, b) -> a.sortkey.compareTo(b.sortkey));
 	}
 
 	public void tick(double dt) {
+	    super.tick(dt);
 	    if(loading) {
 		loading = false;
-		for(Skill sk : skills) {
-		    try {
-			sk.sortkey = sk.res.get().layer(Resource.tooltip).t;
-		    } catch(Loading l) {
-			sk.sortkey = sk.nm;
-			loading = true;
-		    }
-		}
-		Arrays.sort(skills, skcomp);
+		sksort(nsk.items);
+		sksort(csk.items);
 	    }
-	}
-
-	protected Skill listitem(int idx) {return(skills[idx]);}
-	protected int listitems() {return(skills.length);}
-
-	protected void drawbg(GOut g) {}
-
-	protected void drawitem(GOut g, Skill sk, int idx) {
-	    g.chcolor((idx % 2 == 0)?every:other);
-	    g.frect(Coord.z, g.sz);
-	    g.chcolor();
-	    try {
-		if(sk.small == null)
-		    sk.small = new TexI(PUtils.convolvedown(sk.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
-		g.image(sk.small, Coord.z);
-	    } catch(Loading e) {
-		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
-	    }
-	    if(dav && (sk.cost > exp))
-		g.chcolor(255, 192, 192, 255);
-	    g.aimage(sk.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
-	}
-
-	public void pop(Collection<Skill> nsk) {
-	    Skill[] skills = nsk.toArray(new Skill[0]);
-	    sb.val = 0;
-	    sb.max = skills.length - h;
-	    Skill psel = sel;
-	    sel = null;
-	    this.skills = skills;
-	    if(psel != null) {
-		for(Skill sk : skills) {
-		    if(sk.nm.equals(psel.nm)) {
-			sel = sk;
-			break;
-		    }
-		}
-	    }
-	    loading = true;
 	}
     }
 
-    public static class ExperienceList extends Listbox<Experience> {
-	public Experience[] exps = new Experience[0];
+    public class ExpGrid extends GridList<Experience> {
+	public final Group seen;
 	private boolean loading = false;
-	private final Comparator<Experience> comp = new Comparator<Experience>() {
-	    public int compare(Experience a, Experience b) {
-		return(a.sortkey.compareTo(b.sortkey));
-	    }
-	};
 
-	public ExperienceList(int w, int h) {
-	    super(w, h, attrf.height() + 2);
+	public ExpGrid(Coord sz) {
+	    super(sz);
+	    seen = new Group(new Coord(40, 40), new Coord(-1, 5), null, Collections.emptyList());
+	    itemtooltip = Experience::tooltip;
+	}
+
+	protected void drawitem(GOut g, Experience exp) {
+	    if(exp.small == null)
+		exp.small = new TexI(convolvedown(exp.res.get().layer(Resource.imgc).img, new Coord(40, 40), iconfilter));
+	    g.image(exp.small, Coord.z);
+	}
+
+	protected void update() {
+	    super.update();
+	    loading = true;
 	}
 
 	public void tick(double dt) {
+	    super.tick(dt);
 	    if(loading) {
 		loading = false;
-		for(Experience exp : exps) {
+		for(Experience exp : seen.items) {
 		    try {
 			exp.sortkey = exp.res.get().layer(Resource.tooltip).t;
 		    } catch(Loading l) {
@@ -1373,36 +1373,8 @@ public class CharWnd extends Window {
 			loading = true;
 		    }
 		}
-		Arrays.sort(exps, comp);
+		Collections.sort(seen.items, (a, b) -> a.sortkey.compareTo(b.sortkey));
 	    }
-	}
-
-	protected Experience listitem(int idx) {return(exps[idx]);}
-	protected int listitems() {return(exps.length);}
-
-	protected void drawbg(GOut g) {}
-
-	protected void drawitem(GOut g, Experience exp, int idx) {
-	    g.chcolor((idx % 2 == 0)?every:other);
-	    g.frect(Coord.z, g.sz);
-	    g.chcolor();
-	    try {
-		if(exp.small == null)
-		    exp.small = new TexI(PUtils.convolvedown(exp.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
-		g.image(exp.small, Coord.z);
-	    } catch(Loading e) {
-		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
-	    }
-	    g.aimage(exp.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
-	}
-
-	public void pop(Collection<Experience> nl) {
-	    Experience[] exps = nl.toArray(new Experience[0]);
-	    sb.val = 0;
-	    sb.max = exps.length - h;
-	    sel = null;
-	    this.exps = exps;
-	    loading = true;
 	}
     }
 
@@ -1702,88 +1674,69 @@ public class CharWnd extends Window {
 	    x = 260; y = 0;
 	    skills.add(new Img(catf.render("Entries").tex()), new Coord(x - 5, y)); y += 35;
 	    Tabs lists = new Tabs(new Coord(x, y), new Coord(attrw + wbox.bisz().x, 0), skills);
-	    Tabs.Tab nsk = lists.add();
+	    Tabs.Tab sktab = lists.add();
 	    {
-		this.nsk = nsk.add(new SkillList(lists.sz.x - wbox.bisz().x, 7) {
-			public void change(final Skill sk) {
+		Frame f = sktab.add(new Frame(new Coord(lists.sz.x, 150), false), 0, 0);
+		y = f.sz.y + 5;
+		skg = f.addin(new SkillGrid(Coord.z) {
+			public void change(Skill sk) {
 			    Skill p = sel;
 			    super.change(sk);
-			    CharWnd.this.csk.sel = null;
 			    CharWnd.this.exps.sel = null;
 			    if(sk != null)
-				info.settext(new Indir<String>() {public String get() {return(sk.rendertext());}});
+				info.settext(sk::rendertext);
 			    else if(p != null)
 				info.settext("");
 			}
-		    }, wbox.btloff());
-		this.nsk.dav = true;
-		y = Frame.around(nsk, Collections.singletonList(this.nsk)).sz.y + 5;
+		    });
 		int rx = attrw - 10;
-		Frame.around(nsk, Area.sized(new Coord(0, y).add(wbox.btloff()), new Coord(attrw, 69)));
-		nsk.add(new Label("Learning points:"), new Coord(15, y + 10));
-		nsk.add(new ExpLabel(new Coord(rx, y + 10)));
-		nsk.add(new Label("Cost:"), new Coord(15, y + 25));
-		nsk.add(new RLabel(new Coord(rx, y + 25), "N/A") {
+		Frame.around(sktab, Area.sized(new Coord(0, y).add(wbox.btloff()), new Coord(attrw, 69)));
+		sktab.add(new Label("Learning points:"), new Coord(15, y + 10));
+		sktab.add(new ExpLabel(new Coord(rx, y + 10)));
+		sktab.add(new Label("Cost:"), new Coord(15, y + 25));
+		sktab.add(new RLabel(new Coord(rx, y + 25), "N/A") {
 			Integer cc = null;
 
 			public void draw(GOut g) {
 			    if((cc != null) && (cc > exp))
 				g.chcolor(debuff);
 			    super.draw(g);
-			    Skill sel = CharWnd.this.nsk.sel;
-			    if((sel == null) && (cc != null)) {
+			    Skill sel = skg.sel;
+			    if(((sel == null) || sel.has) && (cc != null)) {
 				settext("N/A");
 				cc = null;
-			    } else if((sel != null) && ((cc == null) || (cc != sel.cost))) {
+			    } else if((sel != null) && !sel.has && ((cc == null) || (cc != sel.cost))) {
 				settext(Utils.thformat(cc = sel.cost));
 			    }
 			}
 		    });
-		nsk.add(new Button(75, "Buy") {
+		sktab.add(new Button(75, "Buy") {
 			public void click() {
-			    if(CharWnd.this.nsk.sel != null)
-				CharWnd.this.wdgmsg("buy", CharWnd.this.nsk.sel.nm);
+			    if(skg.sel != null)
+				CharWnd.this.wdgmsg("buy", skg.sel.nm);
 			}
 		    }, new Coord(rx - 75, y + 44));
 	    }
-	    Tabs.Tab csk = lists.add();
-	    {
-		this.csk = csk.add(new SkillList(lists.sz.x - wbox.bisz().x, 11) {
-			public void change(final Skill sk) {
-			    Skill p = sel;
-			    super.change(sk);
-			    CharWnd.this.nsk.sel = null;
-			    CharWnd.this.exps.sel = null;
-			    if(sk != null)
-				info.settext(new Indir<String>() {public String get() {return(sk.rendertext());}});
-			    else if(p != null)
-				info.settext("");
-			}
-		    }, wbox.btloff());
-		Frame.around(csk, Collections.singletonList(this.csk));
-	    }
 	    Tabs.Tab exps = lists.add();
 	    {
-		this.exps = exps.add(new ExperienceList(lists.sz.x - wbox.bisz().x, 11) {
-			public void change(final Experience exp) {
+		Frame f = exps.add(new Frame(new Coord(lists.sz.x, 241), false), 0, 0);
+		this.exps = f.addin(new ExpGrid(Coord.z) {
+			public void change(Experience exp) {
 			    Experience p = sel;
 			    super.change(exp);
-			    CharWnd.this.nsk.sel = null;
-			    CharWnd.this.csk.sel = null;
+			    skg.sel = null;
 			    if(exp != null)
-				info.settext(new Indir<String>() {public String get() {return(exp.rendertext());}});
+				info.settext(exp::rendertext);
 			    else if(p != null)
 				info.settext("");
 			}
-		    }, wbox.btloff());
-		Frame.around(exps, Collections.singletonList(this.exps));
+		    });
 	    }
 	    lists.pack();
 	    int bw = (lists.sz.x + 5) / 3;
 	    x = lists.c.x;
 	    y = lists.c.y + lists.sz.y + 5;
-	    skills.add(lists.new TabButton(bw - 5, "Available", nsk), new Coord(x, y));
-	    skills.add(lists.new TabButton(bw - 5, "Known", csk), new Coord(x + bw, y));
+	    skills.add(lists.new TabButton(bw - 5, "Skills", sktab), new Coord(x, y));
 	    skills.add(lists.new TabButton(bw - 5, "Lore", exps), new Coord(x + bw * 2, y));
 	}
 
@@ -1912,12 +1865,12 @@ public class CharWnd extends Window {
 	}
     }
 
-    private void decsklist(Collection<Skill> buf, Object[] args, int a) {
+    private void decsklist(Collection<Skill> buf, Object[] args, int a, boolean has) {
 	while(a < args.length) {
 	    String nm = (String)args[a++];
 	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
 	    int cost = ((Number)args[a++]).intValue();
-	    buf.add(new Skill(nm, res, cost));
+	    buf.add(new Skill(nm, res, cost, has));
 	}
     }
 
@@ -1958,19 +1911,19 @@ public class CharWnd extends Window {
 	    /* One *could* argue that rmessages should have some
 	     * built-in fragmentation scheme. ^^ */
 	    boolean rst = ((Integer)args[0]) != 0;
-	    Collection<Skill> buf = rst?new ArrayList<Skill>():new ArrayList<Skill>(Arrays.asList(csk.skills));
-	    decsklist(buf, args, 1);
-	    csk.pop(buf);
+	    List<Skill> buf = rst?new ArrayList<Skill>():new ArrayList<Skill>(skg.csk.items);
+	    decsklist(buf, args, 1, true);
+	    skg.csk.update(buf);
 	} else if(nm == "nsk") {
 	    boolean rst = ((Integer)args[0]) != 0;
-	    Collection<Skill> buf = rst?new ArrayList<Skill>():new ArrayList<Skill>(Arrays.asList(nsk.skills));
-	    decsklist(buf, args, 1);
-	    nsk.pop(buf);
+	    List<Skill> buf = rst?new ArrayList<Skill>():new ArrayList<Skill>(skg.nsk.items);
+	    decsklist(buf, args, 1, false);
+	    skg.nsk.update(buf);
 	} else if(nm == "exps") {
 	    boolean rst = ((Integer)args[0]) != 0;
-	    Collection<Experience> buf = rst?new ArrayList<Experience>():new ArrayList<Experience>(Arrays.asList(exps.exps));
+	    List<Experience> buf = rst?new ArrayList<Experience>():new ArrayList<Experience>(exps.seen.items);
 	    decexplist(buf, args, 1);
-	    exps.pop(buf);
+	    exps.seen.update(buf);
 	} else if(nm == "wounds") {
 	    for(int i = 0; i < args.length; i += 3) {
 		int id = (Integer)args[i];
