@@ -54,6 +54,7 @@ public class CharWnd extends Window {
     public final GlutMeter glut;
     public final Constipations cons;
     public final SkillGrid skg;
+    public final CredoGrid credos;
     public final ExpGrid exps;
     public final Widget woundbox;
     public final WoundList wounds;
@@ -723,6 +724,37 @@ public class CharWnd extends Window {
 	}
     }
 
+    public class Credo {
+	public final String nm;
+	public final Indir<Resource> res;
+	public boolean has = false;
+	private String sortkey;
+	private Tex small;
+
+	private Credo(String nm, Indir<Resource> res, boolean has) {
+	    this.nm = nm;
+	    this.res = res;
+	    this.has = has;
+	    this.sortkey = nm;
+	}
+
+	public String rendertext() {
+	    StringBuilder buf = new StringBuilder();
+	    Resource res = this.res.get();
+	    buf.append("$img[" + res.name + "]\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append(res.layer(Resource.pagina).text);
+	    return(buf.toString());
+	}
+
+	private Text tooltip = null;
+	public Text tooltip() {
+	    if(tooltip == null)
+		tooltip = Text.render(res.get().layer(Resource.tooltip).t);
+	    return(tooltip);
+	}
+    }
+
     public class Experience {
 	public final Indir<Resource> res;
 	public final int mtime, score;
@@ -1344,6 +1376,50 @@ public class CharWnd extends Window {
 	}
     }
 
+    public class CredoGrid extends GridList<Credo> {
+	public final Group ncr, ccr;
+	private boolean loading = false;
+
+	public CredoGrid(Coord sz) {
+	    super(sz);
+	    ncr = new Group(new Coord(75, 94), new Coord(-1, 5), "Available Credos", Collections.emptyList());
+	    ccr = new Group(new Coord(75, 94), new Coord(-1, 5), "Known Credos", Collections.emptyList());
+	    itemtooltip = Credo::tooltip;
+	}
+
+	protected void drawitem(GOut g, Credo sk) {
+	    if(sk.small == null)
+		sk.small = new TexI(convolvedown(sk.res.get().layer(Resource.imgc).img, new Coord(75, 94), iconfilter));
+	    g.image(sk.small, Coord.z);
+	}
+
+	protected void update() {
+	    super.update();
+	    loading = true;
+	}
+
+	private void crsort(List<Credo> credos) {
+	    for(Credo cr : credos) {
+		try {
+		    cr.sortkey = cr.res.get().layer(Resource.tooltip).t;
+		} catch(Loading l) {
+		    cr.sortkey = cr.nm;
+		    loading = true;
+		}
+	    }
+	    Collections.sort(credos, (a, b) -> a.sortkey.compareTo(b.sortkey));
+	}
+
+	public void tick(double dt) {
+	    super.tick(dt);
+	    if(loading) {
+		loading = false;
+		crsort(ncr.items);
+		crsort(ccr.items);
+	    }
+	}
+    }
+
     public class ExpGrid extends GridList<Experience> {
 	public final Group seen;
 	private boolean loading = false;
@@ -1687,6 +1763,7 @@ public class CharWnd extends Window {
 			    Skill p = sel;
 			    super.change(sk);
 			    CharWnd.this.exps.sel = null;
+			    CharWnd.this.credos.sel = null;
 			    if(sk != null)
 				info.settext(sk::rendertext);
 			    else if(p != null)
@@ -1727,6 +1804,24 @@ public class CharWnd extends Window {
 			}
 		    });
 	    }
+	    Tabs.Tab credos = lists.add();
+	    {
+		Frame f = credos.add(new Frame(new Coord(lists.sz.x, 241), false), 0, 0);
+		y = f.sz.y + 5;
+		this.credos = f.addin(new CredoGrid(Coord.z) {
+			public void change(Credo sk) {
+			    Credo p = sel;
+			    super.change(sk);
+			    CharWnd.this.skg.sel = null;
+			    CharWnd.this.exps.sel = null;
+			    if(sk != null)
+				info.settext(sk::rendertext);
+			    else if(p != null)
+				info.settext("");
+			}
+		    });
+		int rx = attrw + wbox.btloff().x - 10;
+	    }
 	    Tabs.Tab exps = lists.add();
 	    {
 		Frame f = exps.add(new Frame(new Coord(lists.sz.x, 241), false), 0, 0);
@@ -1734,7 +1829,8 @@ public class CharWnd extends Window {
 			public void change(Experience exp) {
 			    Experience p = sel;
 			    super.change(exp);
-			    skg.sel = null;
+			    CharWnd.this.skg.sel = null;
+			    CharWnd.this.credos.sel = null;
 			    if(exp != null)
 				info.settext(exp::rendertext);
 			    else if(p != null)
@@ -1743,11 +1839,12 @@ public class CharWnd extends Window {
 		    });
 	    }
 	    lists.pack();
-	    int bw = (lists.sz.x + 5) / 2;
+	    int bw = (lists.sz.x + 5) / 3;
 	    x = lists.c.x;
 	    y = lists.c.y + lists.sz.y + 5;
 	    skills.add(lists.new TabButton(bw - 5, "Skills", sktab), new Coord(x, y));
-	    skills.add(lists.new TabButton(bw - 5, "Lore", exps), new Coord(x + bw * 1, y));
+	    skills.add(lists.new TabButton(bw - 5, "Credos", credos), new Coord(x + bw * 1, y));
+	    skills.add(lists.new TabButton(bw - 5, "Lore", exps), new Coord(x + bw * 2, y));
 	}
 
 	Tabs.Tab wounds;
@@ -1884,6 +1981,14 @@ public class CharWnd extends Window {
 	}
     }
 
+    private void deccrlist(Collection<Credo> buf, Object[] args, int a, boolean has) {
+	while(a < args.length) {
+	    String nm = (String)args[a++];
+	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
+	    buf.add(new Credo(nm, res, has));
+	}
+    }
+
     private void decexplist(Collection<Experience> buf, Object[] args, int a) {
 	while(a < args.length) {
 	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
@@ -1918,8 +2023,6 @@ public class CharWnd extends Window {
 		cons.update(t, m);
 	    }
 	} else if(nm == "csk") {
-	    /* One *could* argue that rmessages should have some
-	     * built-in fragmentation scheme. ^^ */
 	    List<Skill> buf = new ArrayList<Skill>();
 	    decsklist(buf, args, 0, true);
 	    skg.csk.update(buf);
@@ -1927,6 +2030,14 @@ public class CharWnd extends Window {
 	    List<Skill> buf = new ArrayList<Skill>();
 	    decsklist(buf, args, 0, false);
 	    skg.nsk.update(buf);
+	} else if(nm == "ccr") {
+	    List<Credo> buf = new ArrayList<Credo>();
+	    deccrlist(buf, args, 0, true);
+	    credos.ccr.update(buf);
+	} else if(nm == "ncr") {
+	    List<Credo> buf = new ArrayList<Credo>();
+	    deccrlist(buf, args, 0, false);
+	    credos.ncr.update(buf);
 	} else if(nm == "exps") {
 	    List<Experience> buf = new ArrayList<Experience>();
 	    decexplist(buf, args, 0);
