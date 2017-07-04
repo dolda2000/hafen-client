@@ -1916,19 +1916,16 @@ public class CharWnd extends Window {
 	} else if(nm == "csk") {
 	    /* One *could* argue that rmessages should have some
 	     * built-in fragmentation scheme. ^^ */
-	    boolean rst = ((Integer)args[0]) != 0;
-	    List<Skill> buf = rst?new ArrayList<Skill>():new ArrayList<Skill>(skg.csk.items);
-	    decsklist(buf, args, 1, true);
+	    List<Skill> buf = new ArrayList<Skill>();
+	    decsklist(buf, args, 0, true);
 	    skg.csk.update(buf);
 	} else if(nm == "nsk") {
-	    boolean rst = ((Integer)args[0]) != 0;
-	    List<Skill> buf = rst?new ArrayList<Skill>():new ArrayList<Skill>(skg.nsk.items);
-	    decsklist(buf, args, 1, false);
+	    List<Skill> buf = new ArrayList<Skill>();
+	    decsklist(buf, args, 0, false);
 	    skg.nsk.update(buf);
 	} else if(nm == "exps") {
-	    boolean rst = ((Integer)args[0]) != 0;
-	    List<Experience> buf = rst?new ArrayList<Experience>():new ArrayList<Experience>(exps.seen.items);
-	    decexplist(buf, args, 1);
+	    List<Experience> buf = new ArrayList<Experience>();
+	    decexplist(buf, args, 0);
 	    exps.seen.update(buf);
 	} else if(nm == "wounds") {
 	    for(int i = 0; i < args.length; i += 3) {
