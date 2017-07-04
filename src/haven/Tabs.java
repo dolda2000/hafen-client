@@ -70,7 +70,7 @@ public class Tabs {
 	public final Tab tab;
 
 	public TabButton(int w, String text, Tab tab) {
-	    super(w, text);
+	    super(w, text, false);
 	    this.tab = tab;
 	}
 
