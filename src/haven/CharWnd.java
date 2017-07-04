@@ -36,6 +36,9 @@ import static haven.PUtils.*;
 import haven.resutil.FoodInfo;
 import haven.resutil.Curiosity;
 
+/* XXX: There starts to seem to be reason to split the while character
+ * sheet into some more modular structure, as it is growing quite
+ * large. */
 public class CharWnd extends Window {
     public static final RichText.Foundry ifnd = new RichText.Foundry(Resource.remote(), java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, 9).aa(true);
     public static final Text.Furnace catf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Window.ctex), 3, 2, new Color(96, 48, 0));
