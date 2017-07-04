@@ -706,7 +706,8 @@ public class CharWnd extends Window {
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
 	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
-	    buf.append("Cost: " + cost + "\n\n");
+	    if(cost > 0)
+		buf.append("Cost: " + cost + "\n\n");
 	    buf.append(res.layer(Resource.pagina).text);
 	    return(buf.toString());
 	}
