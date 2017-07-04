@@ -225,6 +225,8 @@ public class Session {
 
     private class RWorker extends HackThread {
 	boolean alive;
+	int fragtype = -1;
+	byte[] fragbuf = null;
 		
 	public RWorker() {
 	    super("Session reader");
@@ -508,9 +510,33 @@ public class Session {
 		sworker.notifyAll();
 	    }
 	}
-		
+
 	private void handlerel(PMessage msg) {
-	    if(msg.type == RMessage.RMSG_NEWWDG) {
+	    if(msg.type == RMessage.RMSG_FRAGMENT) {
+		int head = msg.uint8();
+		if((head & 0x80) == 0) {
+		    if(fragbuf != null)
+			throw(new MessageException("Got start fragment while still defragmenting", msg));
+		    fragbuf = msg.bytes();
+		    fragtype = head;
+		} else {
+		    if((head == 0x80) || (head == 0x81)) {
+			byte[] frag = msg.bytes();
+			byte[] curbuf = fragbuf;
+			byte[] newbuf = new byte[curbuf.length + frag.length];
+			System.arraycopy(curbuf, 0, newbuf, 0, curbuf.length);
+			System.arraycopy(frag, 0, newbuf, curbuf.length, frag.length);
+			fragbuf = newbuf;
+			if(head == 0x81) {
+			    PMessage nmsg = new PMessage(fragtype, fragbuf);
+			    fragbuf = null;
+			    handlerel(nmsg);
+			}
+		    } else {
+			throw(new MessageException("Got invalid fragment type: " + head, msg));
+		    }
+		}
+	    } else if(msg.type == RMessage.RMSG_NEWWDG) {
 		synchronized(uimsgs) {
 		    uimsgs.add(msg);
 		}
