@@ -1676,7 +1676,7 @@ public class CharWnd extends Window {
 	    Tabs lists = new Tabs(new Coord(x, y), new Coord(attrw + wbox.bisz().x, 0), skills);
 	    Tabs.Tab sktab = lists.add();
 	    {
-		Frame f = sktab.add(new Frame(new Coord(lists.sz.x, 150), false), 0, 0);
+		Frame f = sktab.add(new Frame(new Coord(lists.sz.x, 192), false), 0, 0);
 		y = f.sz.y + 5;
 		skg = f.addin(new SkillGrid(Coord.z) {
 			public void change(Skill sk) {
@@ -1689,33 +1689,39 @@ public class CharWnd extends Window {
 				info.settext("");
 			}
 		    });
-		int rx = attrw - 10;
-		Frame.around(sktab, Area.sized(new Coord(0, y).add(wbox.btloff()), new Coord(attrw, 69)));
+		int rx = attrw + wbox.btloff().x - 10;
+		Frame.around(sktab, Area.sized(new Coord(0, y).add(wbox.btloff()), new Coord(attrw, 34)));
+		/*
 		sktab.add(new Label("Learning points:"), new Coord(15, y + 10));
 		sktab.add(new ExpLabel(new Coord(rx, y + 10)));
-		sktab.add(new Label("Cost:"), new Coord(15, y + 25));
-		sktab.add(new RLabel(new Coord(rx, y + 25), "N/A") {
+		*/
+		Button bbtn = sktab.add(new Button(50, "Buy") {
+			public void click() {
+			    if(skg.sel != null)
+				CharWnd.this.wdgmsg("buy", skg.sel.nm);
+			}
+		    }, new Coord(rx - 50, y + 10));
+		Label clbl = sktab.adda(new Label("Cost:"), new Coord(15, bbtn.c.y + (bbtn.sz.y / 2)), 0, 0.5);
+		sktab.add(new RLabel(new Coord(bbtn.c.x - 10, clbl.c.y), "N/A") {
 			Integer cc = null;
+			int cexp;
 
 			public void draw(GOut g) {
 			    if((cc != null) && (cc > exp))
 				g.chcolor(debuff);
 			    super.draw(g);
-			    Skill sel = skg.sel;
-			    if(((sel == null) || sel.has) && (cc != null)) {
-				settext("N/A");
-				cc = null;
-			    } else if((sel != null) && !sel.has && ((cc == null) || (cc != sel.cost))) {
-				settext(Utils.thformat(cc = sel.cost));
+			    Integer cost = ((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost;
+			    if(!Utils.eq(cost, cc) || (cexp != exp)) {
+				if(cost == null) {
+				    settext("N/A");
+				} else {
+				    settext(String.format("%,d / %,d LP", cost, exp));
+				}
+				cc = cost;
+				cexp = exp;
 			    }
 			}
 		    });
-		sktab.add(new Button(75, "Buy") {
-			public void click() {
-			    if(skg.sel != null)
-				CharWnd.this.wdgmsg("buy", skg.sel.nm);
-			}
-		    }, new Coord(rx - 75, y + 44));
 	    }
 	    Tabs.Tab exps = lists.add();
 	    {
@@ -1733,11 +1739,11 @@ public class CharWnd extends Window {
 		    });
 	    }
 	    lists.pack();
-	    int bw = (lists.sz.x + 5) / 3;
+	    int bw = (lists.sz.x + 5) / 2;
 	    x = lists.c.x;
 	    y = lists.c.y + lists.sz.y + 5;
 	    skills.add(lists.new TabButton(bw - 5, "Skills", sktab), new Coord(x, y));
-	    skills.add(lists.new TabButton(bw - 5, "Lore", exps), new Coord(x + bw * 2, y));
+	    skills.add(lists.new TabButton(bw - 5, "Lore", exps), new Coord(x + bw * 1, y));
 	}
 
 	Tabs.Tab wounds;
