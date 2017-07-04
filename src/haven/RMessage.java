@@ -41,6 +41,7 @@ public class RMessage extends PMessage {
     public static final int RMSG_TILES = 11;
     /* public static final int RMSG_BUFF = 12; -- Deprecated */
     public static final int RMSG_SESSKEY = 13;
+    public static final int RMSG_FRAGMENT = 14;
 
     public long last = 0;
     public int retx = 0;
