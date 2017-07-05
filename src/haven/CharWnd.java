@@ -54,7 +54,7 @@ public class CharWnd extends Window {
     public final GlutMeter glut;
     public final Constipations cons;
     public final SkillGrid skg;
-    public final CredoGrid credos;
+    public final CredoGrid2 credos;
     public final ExpGrid exps;
     public final Widget woundbox;
     public final WoundList wounds;
@@ -1376,6 +1376,140 @@ public class CharWnd extends Window {
 	}
     }
 
+    public class CredoGrid2 extends Scrollport {
+	public final Coord crsz = new Coord(75, 94);
+	public final Button pbtn;
+	public Collection<Credo> ncr = Collections.emptyList(), ccr = Collections.emptyList();
+	public Credo pcr = null;
+	public Credo sel = null;
+	private final Img pcrc, ncrc, ccrc;
+	private Img pcrim = null;
+	private Collection<Img> ncrim = new ArrayList<Img>();
+	private Collection<Img> ccrim = new ArrayList<Img>();
+	private boolean loading = false;
+
+	public CredoGrid2(Coord sz) {
+	    super(sz);
+	    pcrc = add(new Img(GridList.dcatf.render("Pursuing").tex()));
+	    ncrc = add(new Img(GridList.dcatf.render("Available Credos").tex()));
+	    ccrc = add(new Img(GridList.dcatf.render("Known Credos").tex()));
+	    pbtn = add(new Button(100, "Pursue", false) {
+		    public void click() {
+			if(sel != null)
+			    CharWnd.this.wdgmsg("crpursue", sel.nm);
+		    }
+		});
+	}
+
+	private Tex crtex(Credo cr) {
+	    if(cr.small == null)
+		cr.small = new TexI(convolvedown(cr.res.get().layer(Resource.imgc).img, crsz, iconfilter));
+	    return(cr.small);
+	}
+
+	private class CredoImg extends Img {
+	    private final Credo cr;
+
+	    CredoImg(Credo cr) {
+		super(crtex(cr));
+		this.cr = cr;
+		this.tooltip = Text.render(cr.res.get().layer(Resource.tooltip).t);
+	    }
+
+	    public boolean mousedown(Coord c, int button) {
+		if(button == 1) {
+		    change(cr);
+		}
+		return(true);
+	    }
+	}
+
+	private int crgrid(int y, Collection<Credo> crs, Collection<Img> buf) {
+	    int col = 0;
+	    for(Credo cr : crs) {
+		if(col >= 3) {
+		    col = 0;
+		    y += crsz.y + 5;
+		}
+		buf.add(add(new CredoImg(cr), col * (crsz.x + 5), y));
+		col++;
+	    }
+	    return(y + crsz.y + 5);
+	}
+
+	private void update() {
+	    loading = false;
+	    try {
+		int y = 0;
+		if(pcrim != null)
+		    pcrim.destroy();
+		if(pcr == null) {
+		    pcrc.hide();
+		} else {
+		    pcrc.c = new Coord(0, y);
+		    pcrc.show();
+		    y += pcrc.sz.y + 5;
+		    pcrim = new CredoImg(pcr);
+		    y += pcrim.sz.y;
+		    y += 10;
+		}
+
+		Utils.clean(ncrim, Img::destroy);
+		if(ncr.size() < 1) {
+		    ncrc.hide();
+		    pbtn.hide();
+		} else {
+		    ncrc.c = new Coord(0, y);
+		    ncrc.show();
+		    y += ncrc.sz.y + 5;
+		    y = crgrid(y, ncr, ncrim);
+		    pbtn.c = new Coord(0, y);
+		    pbtn.show();
+		    y += pbtn.sz.y;
+		    y += 10;
+		}
+
+		Utils.clean(ccrim, Img::destroy);
+		if(ccr.size() < 1) {
+		    ccrc.hide();
+		} else {
+		    ccrc.c = new Coord(0, y);
+		    ccrc.show();
+		    y += ccrc.sz.y + 5;
+		    y = crgrid(y, ccr, ccrim);
+		    y += 10;
+		}
+		cont.update();
+	    } catch(Loading l) {
+		loading = true;
+	    }
+	}
+
+	public void tick(double dt) {
+	    if(loading)
+		update();
+	}
+
+	public void change(Credo cr) {
+	    sel = cr;
+	}
+
+	public void pcr(Credo cr) {
+	    this.pcr = cr;
+	    update();
+	}
+
+	public void ncr(Collection<Credo> cr) {
+	    this.ncr = cr;
+	    update();
+	}
+
+	public void ccr(Collection<Credo> cr) {
+	    this.ccr = cr;
+	    update();
+	}
+    }
+
     public class CredoGrid extends GridList<Credo> {
 	public final Group ncr, ccr;
 	private boolean loading = false;
@@ -1808,14 +1942,14 @@ public class CharWnd extends Window {
 	    {
 		Frame f = credos.add(new Frame(new Coord(lists.sz.x, 241), false), 0, 0);
 		y = f.sz.y + 5;
-		this.credos = f.addin(new CredoGrid(Coord.z) {
-			public void change(Credo sk) {
+		this.credos = f.addin(new CredoGrid2(Coord.z) {
+			public void change(Credo cr) {
 			    Credo p = sel;
-			    super.change(sk);
+			    super.change(cr);
 			    CharWnd.this.skg.sel = null;
 			    CharWnd.this.exps.sel = null;
-			    if(sk != null)
-				info.settext(sk::rendertext);
+			    if(cr != null)
+				info.settext(cr::rendertext);
 			    else if(p != null)
 				info.settext("");
 			}
@@ -2033,11 +2167,11 @@ public class CharWnd extends Window {
 	} else if(nm == "ccr") {
 	    List<Credo> buf = new ArrayList<Credo>();
 	    deccrlist(buf, args, 0, true);
-	    credos.ccr.update(buf);
+	    credos.ccr(buf);
 	} else if(nm == "ncr") {
 	    List<Credo> buf = new ArrayList<Credo>();
 	    deccrlist(buf, args, 0, false);
-	    credos.ncr.update(buf);
+	    credos.ncr(buf);
 	} else if(nm == "exps") {
 	    List<Experience> buf = new ArrayList<Experience>();
 	    decexplist(buf, args, 0);
