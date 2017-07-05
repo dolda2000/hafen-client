@@ -1169,6 +1169,12 @@ public class Utils {
 	return(null);
     }
 
+    public static <T> void clean(Collection<T> c, Consumer<? super T> clean) {
+	for(T item : c)
+	    clean.accept(item);
+	c.clear();
+    }
+
     public static <T> T construct(Constructor<T> cons, Object... args) {
 	try {
 	    return(cons.newInstance(args));
