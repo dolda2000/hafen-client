@@ -46,7 +46,7 @@ public class Scrollport extends Widget {
 	    }, sz.x, 0, 1, 0);
 	cont = add(new Scrollcont(sz.sub(bar.sz.x, 0)) {
 		public void update() {
-		    bar.max = Math.max(0, csz().y + 10 - sz.y);
+		    bar.max = Math.max(0, contentsz().y + 10 - sz.y);
 		}
 	    }, Coord.z);
     }
@@ -56,17 +56,6 @@ public class Scrollport extends Widget {
 
 	public Scrollcont(Coord sz) {
 	    super(sz);
-	}
-
-	public Coord csz() {
-	    Coord mx = new Coord();
-	    for(Widget ch = child; ch != null; ch = ch.next) {
-		if(ch.c.x + ch.sz.x > mx.x)
-		    mx.x = ch.c.x + ch.sz.x;
-		if(ch.c.y + ch.sz.y > mx.y)
-		    mx.y = ch.c.y + ch.sz.y;
-	    }
-	    return(mx);
 	}
 
 	public void update() {}
@@ -111,6 +100,7 @@ public class Scrollport extends Widget {
     public void resize(Coord nsz) {
 	super.resize(nsz);
 	bar.c = new Coord(sz.x - bar.sz.x, 0);
+	bar.resize(nsz.y);
 	cont.resize(sz.sub(bar.sz.x, 0));
     }
 
