@@ -54,7 +54,7 @@ public class CharWnd extends Window {
     public final GlutMeter glut;
     public final Constipations cons;
     public final SkillGrid skg;
-    public final CredoGrid2 credos;
+    public final CredoGrid credos;
     public final ExpGrid exps;
     public final Widget woundbox;
     public final WoundList wounds;
@@ -1376,7 +1376,7 @@ public class CharWnd extends Window {
 	}
     }
 
-    public class CredoGrid2 extends Scrollport {
+    public class CredoGrid extends Scrollport {
 	public final Coord crsz = new Coord(75, 94);
 	public final Button pbtn;
 	public Collection<Credo> ncr = Collections.emptyList(), ccr = Collections.emptyList();
@@ -1388,12 +1388,12 @@ public class CharWnd extends Window {
 	private Collection<Img> ccrim = new ArrayList<Img>();
 	private boolean loading = false;
 
-	public CredoGrid2(Coord sz) {
+	public CredoGrid(Coord sz) {
 	    super(sz);
-	    pcrc = add(new Img(GridList.dcatf.render("Pursuing").tex()));
-	    ncrc = add(new Img(GridList.dcatf.render("Available Credos").tex()));
-	    ccrc = add(new Img(GridList.dcatf.render("Known Credos").tex()));
-	    pbtn = add(new Button(100, "Pursue", false) {
+	    pcrc = cont.add(new Img(GridList.dcatf.render("Pursuing").tex()));
+	    ncrc = cont.add(new Img(GridList.dcatf.render("Available Credos").tex()));
+	    ccrc = cont.add(new Img(GridList.dcatf.render("Known Credos").tex()));
+	    pbtn = cont.add(new Button(100, "Pursue", false) {
 		    public void click() {
 			if(sel != null)
 			    CharWnd.this.wdgmsg("crpursue", sel.nm);
@@ -1431,63 +1431,68 @@ public class CharWnd extends Window {
 		    col = 0;
 		    y += crsz.y + 5;
 		}
-		buf.add(add(new CredoImg(cr), col * (crsz.x + 5), y));
+		buf.add(cont.add(new CredoImg(cr), col * (crsz.x + 5), y));
 		col++;
 	    }
 	    return(y + crsz.y + 5);
 	}
 
 	private void update() {
-	    loading = false;
-	    try {
-		int y = 0;
-		if(pcrim != null)
-		    pcrim.destroy();
-		if(pcr == null) {
-		    pcrc.hide();
-		} else {
-		    pcrc.c = new Coord(0, y);
-		    pcrc.show();
-		    y += pcrc.sz.y + 5;
-		    pcrim = new CredoImg(pcr);
-		    y += pcrim.sz.y;
-		    y += 10;
-		}
+	    int y = 0;
+	    if(pcrim != null)
+		pcrim.destroy();
+	    if(pcr == null) {
+		pcrc.hide();
+	    } else {
+		pcrc.c = new Coord(0, y);
+		pcrc.show();
+		y += pcrc.sz.y + 5;
+		pcrim = cont.add(new CredoImg(pcr), 0, y);
+		y += pcrim.sz.y;
+		y += 10;
+	    }
 
-		Utils.clean(ncrim, Img::destroy);
-		if(ncr.size() < 1) {
-		    ncrc.hide();
-		    pbtn.hide();
-		} else {
-		    ncrc.c = new Coord(0, y);
-		    ncrc.show();
-		    y += ncrc.sz.y + 5;
-		    y = crgrid(y, ncr, ncrim);
+	    Utils.clean(ncrim, Img::destroy);
+	    if(ncr.size() < 1) {
+		ncrc.hide();
+		pbtn.hide();
+	    } else {
+		ncrc.c = new Coord(0, y);
+		ncrc.show();
+		y += ncrc.sz.y + 5;
+		y = crgrid(y, ncr, ncrim);
+		if(pcr == null) {
 		    pbtn.c = new Coord(0, y);
 		    pbtn.show();
 		    y += pbtn.sz.y;
-		    y += 10;
-		}
-
-		Utils.clean(ccrim, Img::destroy);
-		if(ccr.size() < 1) {
-		    ccrc.hide();
 		} else {
-		    ccrc.c = new Coord(0, y);
-		    ccrc.show();
-		    y += ccrc.sz.y + 5;
-		    y = crgrid(y, ccr, ccrim);
-		    y += 10;
+		    pbtn.hide();
 		}
-		cont.update();
-	    } catch(Loading l) {
-		loading = true;
+		y += 10;
 	    }
+
+	    Utils.clean(ccrim, Img::destroy);
+	    if(ccr.size() < 1) {
+		ccrc.hide();
+	    } else {
+		ccrc.c = new Coord(0, y);
+		ccrc.show();
+		y += ccrc.sz.y + 5;
+		y = crgrid(y, ccr, ccrim);
+		y += 10;
+	    }
+	    cont.update();
 	}
 
 	public void tick(double dt) {
-	    if(loading)
-		update();
+	    if(loading) {
+		loading = false;
+		try {
+		    update();
+		} catch(Loading l) {
+		    loading = true;
+		}
+	    }
 	}
 
 	public void change(Credo cr) {
@@ -1496,61 +1501,24 @@ public class CharWnd extends Window {
 
 	public void pcr(Credo cr) {
 	    this.pcr = cr;
-	    update();
+	    loading = true;
 	}
 
 	public void ncr(Collection<Credo> cr) {
 	    this.ncr = cr;
-	    update();
+	    loading = true;
 	}
 
 	public void ccr(Collection<Credo> cr) {
 	    this.ccr = cr;
-	    update();
-	}
-    }
-
-    public class CredoGrid extends GridList<Credo> {
-	public final Group ncr, ccr;
-	private boolean loading = false;
-
-	public CredoGrid(Coord sz) {
-	    super(sz);
-	    ncr = new Group(new Coord(75, 94), new Coord(-1, 5), "Available Credos", Collections.emptyList());
-	    ccr = new Group(new Coord(75, 94), new Coord(-1, 5), "Known Credos", Collections.emptyList());
-	    itemtooltip = Credo::tooltip;
-	}
-
-	protected void drawitem(GOut g, Credo sk) {
-	    if(sk.small == null)
-		sk.small = new TexI(convolvedown(sk.res.get().layer(Resource.imgc).img, new Coord(75, 94), iconfilter));
-	    g.image(sk.small, Coord.z);
-	}
-
-	protected void update() {
-	    super.update();
 	    loading = true;
 	}
 
-	private void crsort(List<Credo> credos) {
-	    for(Credo cr : credos) {
-		try {
-		    cr.sortkey = cr.res.get().layer(Resource.tooltip).t;
-		} catch(Loading l) {
-		    cr.sortkey = cr.nm;
-		    loading = true;
-		}
-	    }
-	    Collections.sort(credos, (a, b) -> a.sortkey.compareTo(b.sortkey));
-	}
-
-	public void tick(double dt) {
-	    super.tick(dt);
-	    if(loading) {
-		loading = false;
-		crsort(ncr.items);
-		crsort(ccr.items);
-	    }
+	public boolean mousedown(Coord c, int button) {
+	    if(super.mousedown(c, button))
+		return(true);
+	    change(null);
+	    return(true);
 	}
     }
 
@@ -1942,7 +1910,7 @@ public class CharWnd extends Window {
 	    {
 		Frame f = credos.add(new Frame(new Coord(lists.sz.x, 241), false), 0, 0);
 		y = f.sz.y + 5;
-		this.credos = f.addin(new CredoGrid2(Coord.z) {
+		this.credos = f.addin(new CredoGrid(Coord.z) {
 			public void change(Credo cr) {
 			    Credo p = sel;
 			    super.change(cr);
@@ -2171,9 +2139,13 @@ public class CharWnd extends Window {
 	} else if(nm == "ncr") {
 	    credos.ncr(deccrlist(args, 0, false));
 	} else if(nm == "pcr") {
-	    String cnm = (String)args[0];
-	    Indir<Resource> res = ui.sess.getres((Integer)args[1]);
-	    credos.pcr(new Credo(cnm, res, false));
+	    if(args.length > 0) {
+		String cnm = (String)args[0];
+		Indir<Resource> res = ui.sess.getres((Integer)args[1]);
+		credos.pcr(new Credo(cnm, res, false));
+	    } else {
+		credos.pcr(null);
+	    }
 	} else if(nm == "exps") {
 	    exps.seen.update(decexplist(args, 0));
 	} else if(nm == "wounds") {
