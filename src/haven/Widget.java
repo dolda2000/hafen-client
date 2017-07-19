@@ -159,6 +159,23 @@ public class Widget {
 		}
 	    } catch(NoSuchMethodException e) {
 	    }
+	    try {
+		final Method mkm = cl.getDeclaredMethod("mkwidget", UI.class, Object[].class);
+		int mod = mkm.getModifiers();
+		if(Widget.class.isAssignableFrom(mkm.getReturnType()) && ((mod & Modifier.STATIC) != 0) && ((mod & Modifier.PUBLIC) != 0)) {
+		    return(new Factory() {
+			    public Widget create(Widget parent, Object[] args) {
+				try {
+				    return((Widget)mkm.invoke(null, parent.ui, args));
+				} catch(Exception e) {
+				    if(e instanceof RuntimeException) throw((RuntimeException)e);
+				    throw(new RuntimeException(e));
+				}
+			    }
+			});
+		}
+	    } catch(NoSuchMethodException e) {
+	    }
 	    return(null);
 	}
     }
