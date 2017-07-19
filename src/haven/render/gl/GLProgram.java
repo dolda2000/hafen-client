@@ -29,11 +29,14 @@ package haven.render.gl;
 import java.util.*;
 import java.io.*;
 import haven.Disposable;
+import haven.render.*;
 import haven.render.sl.*;
 
 public class GLProgram implements Disposable {
     public static boolean dumpall = true;
     public final String vsrc, fsrc;
+    public final Uniform[] uniforms;
+    public final int[][] umap;
 
     public GLProgram(ProgramContext ctx) {
 	{
@@ -46,6 +49,18 @@ public class GLProgram implements Disposable {
 	    ctx.vctx.construct(buf);
 	    vsrc = buf.toString();
 	}
+	Uniform[] uniforms = ctx.uniforms.toArray(new Uniform[0]);
+	int[][] umap = new int[0][];
+	for(int i = 0; i < uniforms.length; i++) {
+	    for(State.Slot slot : uniforms[i].deps) {
+		if(umap.length <= slot.id)
+		    umap = Arrays.copyOf(umap, slot.id + 1);
+		umap[slot.id] = (umap[slot.id] == null) ? new int[1] : Arrays.copyOf(umap[slot.id], umap[slot.id].length + 1);
+		umap[slot.id][umap[slot.id].length - 1] = i;
+	    }
+	}
+	this.uniforms = uniforms;
+	this.umap = umap;
     }
 
     public static GLProgram build(Collection<ShaderMacro> mods) {

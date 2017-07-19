@@ -34,8 +34,8 @@ import static haven.render.sl.Cons.*;
 public class Ortho2D extends State {
     public final Area area;
     public static final Attribute pos = new Attribute(VEC2, "opos2d");
-    private static final Uniform m = new Uniform(VEC2, "m2d");
-    private static final Uniform k = new Uniform(VEC2, "k2d");
+    private static final Uniform m = new Uniform(VEC2, null, "m2d", States.vxf);
+    private static final Uniform k = new Uniform(VEC2, null, "k2d", States.vxf);
 
     public Ortho2D(Area area) {
 	this.area = area;

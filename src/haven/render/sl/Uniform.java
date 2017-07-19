@@ -26,17 +26,30 @@
 
 package haven.render.sl;
 
+import java.util.*;
+import java.util.function.*;
+import haven.render.*;
+
 public class Uniform extends Variable.Global {
-    public Uniform(Type type, Symbol name) {
+    public final Supplier<Object> value;
+    public final Collection<State.Slot<?>> deps;
+
+    public Uniform(Type type, Supplier<Object> value, Symbol name, State.Slot<?>... deps) {
 	super(type, name);
+	this.value = value;
+	ArrayList<State.Slot<?>> depl = new ArrayList<>();
+	for(State.Slot<?> slot : deps)
+	    depl.add(slot);
+	depl.trimToSize();
+	this.deps = depl;
     }
 
-    public Uniform(Type type, String infix) {
-	this(type, new Symbol.Shared("s_" + infix));
+    public Uniform(Type type, Supplier<Object> value, String infix, State.Slot<?>... deps) {
+	this(type, value, new Symbol.Shared("s_" + infix), deps);
     }
 
-    public Uniform(Type type) {
-	this(type, new Symbol.Shared());
+    public Uniform(Type type, Supplier<Object> value, State.Slot<?>... deps) {
+	this(type, value, new Symbol.Shared(), deps);
     }
 
     private class Def extends Definition {

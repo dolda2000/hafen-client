@@ -37,6 +37,7 @@ public class Applier {
     private ShaderMacro[] shaders = new ShaderMacro[0];
     private int shash = 0;
     private GLProgram prog;
+    private Object[] uvals = new Object[0];
 
     private Applier(GLEnvironment env) {
 	this.env = env;
@@ -54,6 +55,11 @@ public class Applier {
 	ret.shash = this.shash;
 	ret.prog = this.prog;
 	return(ret);
+    }
+
+    private void setprog(GLProgram prog) {
+	this.prog = prog;
+	this.uvals = new Object[prog.uniforms.length];
     }
 
     private void assume(State[] ns) {
@@ -81,7 +87,15 @@ public class Applier {
 	    }
 	}
 	this.shash = hash;
-	this.prog = env.getprog(hash, shaders);
+	setprog(env.getprog(hash, shaders));
+    }
+
+    private <T> void uapply(BGL gl, int ui) {
+	GLProgram prog = this.prog;
+	Object val = prog.uniforms[ui].value.get();
+	if(val != uvals[ui]) {
+	    UniformApplier.TypeMapping.apply(gl, prog.uniforms[ui].type, val);
+	}
     }
 
     public void apply(BGL gl, Pipe to) {
@@ -117,7 +131,22 @@ public class Applier {
 		shash ^= System.identityHashCode(nm);
 	    }
 	}
-	this.shash = shash;
-	this.prog = env.getprog(shash, shaders);
+	if(shash == this.shash) {
+	    GLProgram prog = this.prog;
+	    boolean[] applied = new boolean[prog.uniforms.length];
+	    for(int i = 0; i < n; i++) {
+		if(prog.umap[ch[i]] == null)
+		    continue;
+		for(int ui : prog.umap[ch[i]]) {
+		    if(!applied[ui]) {
+			uapply(gl, ui);
+			applied[ui] = true;
+		    }
+		}
+	    }
+	} else {
+	    this.shash = shash;
+	    setprog(env.getprog(shash, shaders));
+	}
     }
 }
