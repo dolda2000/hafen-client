@@ -251,10 +251,10 @@ public class Widget {
     }
 
     private <T extends Widget> T add0(T child) {
-	if(this.ui != null)
-	    ((Widget)child).attach(this.ui);
 	child.parent = this;
 	child.link();
+	if(this.ui != null)
+	    ((Widget)child).attach(this.ui);
 	child.added();
 	if(((Widget)child).canfocus && child.visible)
 	    newfocusable(child);
