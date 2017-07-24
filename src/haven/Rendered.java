@@ -91,13 +91,13 @@ public interface Rendered extends Drawn {
 	    public int compare(Rendered a, Rendered b, GLState.Buffer sa, GLState.Buffer sb) {
 		/* It would be nice to be able to cache these
 		 * results somewhere. */
-		Camera ca = sa.get(PView.cam);
-		Location.Chain la = sa.get(PView.loc);
-		Matrix4f mva = ca.fin(Matrix4f.id).mul(la.fin(Matrix4f.id));
+		Matrix4f ca = PView.camxf(sa);
+		Matrix4f la = PView.locxf(sa);
+		Matrix4f mva = ca.mul(la);
 		float da = (float)Math.sqrt((mva.m[12] * mva.m[12]) + (mva.m[13] * mva.m[13]) + (mva.m[14] * mva.m[14]));
-		Camera cb = sb.get(PView.cam);
-		Location.Chain lb = sb.get(PView.loc);
-		Matrix4f mvb = cb.fin(Matrix4f.id).mul(lb.fin(Matrix4f.id));
+		Matrix4f cb = PView.camxf(sb);
+		Matrix4f lb = PView.locxf(sb);
+		Matrix4f mvb = cb.mul(lb);
 		float db = (float)Math.sqrt((mvb.m[12] * mvb.m[12]) + (mvb.m[13] * mvb.m[13]) + (mvb.m[14] * mvb.m[14]));
 		if(da < db)
 		    return(1);
