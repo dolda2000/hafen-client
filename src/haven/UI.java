@@ -153,7 +153,8 @@ public class UI {
 	    Widget pwdg = widgets.get(parent);
 	    if(pwdg == null)
 		throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
-	    Widget wdg = pwdg.makechild(f, pargs, cargs);
+	    Widget wdg = f.create(this, cargs);
+	    pwdg.addchild(wdg, pargs);
 	    bind(wdg, id);
 	}
     }
