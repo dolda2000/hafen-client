@@ -381,12 +381,6 @@ public class Widget {
 	}
     }
 
-    public Widget makechild(Factory type, Object[] pargs, Object[] cargs) {
-	Widget child = type.create(ui, cargs);
-	addchild(child, pargs);
-	return(child);
-    }
-	
     public void link() {
 	if(parent.lchild != null)
 	    parent.lchild.next = this;
