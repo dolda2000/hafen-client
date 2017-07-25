@@ -147,15 +147,27 @@ public class UI {
 	
     public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
 	Widget.Factory f = Widget.gettype2(type);
-	if(f == null)
-	    System.err.println(type);
 	synchronized(this) {
+	    Widget wdg = f.create(this, cargs);
+	    if(parent != 65535) {
+		Widget pwdg = widgets.get(parent);
+		if(pwdg == null)
+		    throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
+		pwdg.addchild(wdg, pargs);
+	    }
+	    bind(wdg, id);
+	}
+    }
+
+    public void addwidget(int id, int parent, Object[] pargs) {
+	synchronized(this) {
+	    Widget wdg = widgets.get(id);
+	    if(wdg == null)
+		throw(new UIException("Null child widget " + id + " added to " + parent, null, pargs));
 	    Widget pwdg = widgets.get(parent);
 	    if(pwdg == null)
-		throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
-	    Widget wdg = f.create(this, cargs);
+		throw(new UIException("Null parent widget " + parent + " for " + id, null, pargs));
 	    pwdg.addchild(wdg, pargs);
-	    bind(wdg, id);
 	}
     }
 
