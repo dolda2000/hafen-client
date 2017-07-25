@@ -36,7 +36,7 @@ public class GiveButton extends Widget {
     
     @RName("give")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new GiveButton((Integer)args[0]));
 	}
     }

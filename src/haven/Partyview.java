@@ -41,7 +41,7 @@ public class Partyview extends Widget {
 	
     @RName("pv")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new Partyview((Integer)args[0]));
 	}
     }

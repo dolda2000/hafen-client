@@ -42,10 +42,10 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     
     @RName("item")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    int res = (Integer)args[0];
 	    Message sdt = (args.length > 1)?new MessageBuf((byte[])args[1]):Message.nil;
-	    return(new GItem(parent.ui.sess.getres(res), sdt));
+	    return(new GItem(ui.sess.getres(res), sdt));
 	}
     }
     

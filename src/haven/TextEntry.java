@@ -50,7 +50,7 @@ public class TextEntry extends SIWidget {
 
     @RName("text")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    if(args[0] instanceof Coord)
 		return(new TextEntry((Coord)args[0], (String)args[1]));
 	    else

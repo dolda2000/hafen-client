@@ -53,7 +53,7 @@ public class Speedget extends Widget {
 
     @RName("speedget")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    int cur = (Integer)args[0];
 	    int max = (Integer)args[1];
 	    return(new Speedget(cur, max));

@@ -43,7 +43,7 @@ public class Makewindow extends Widget {
 
     @RName("make")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new Makewindow((String)args[0]));
 	}
     }

@@ -49,7 +49,7 @@ public class MenuGrid extends Widget {
 	
     @RName("scm")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new MenuGrid());
 	}
     }

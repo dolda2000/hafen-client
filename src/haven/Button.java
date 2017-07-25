@@ -53,7 +53,7 @@ public class Button extends SIWidget {
 	
     @RName("btn")
     public static class $Btn implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    if(args.length > 2)
 		return(new Button((Integer)args[0], (String)args[1], ((Integer)args[2]) != 0));
 	    else
@@ -62,7 +62,7 @@ public class Button extends SIWidget {
     }
     @RName("ltbtn")
     public static class $LTBtn implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(wrapped((Integer)args[0], (String)args[1]));
 	}
     }
