@@ -237,10 +237,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    Coord c;
 	    if(args[1] instanceof Coord) {
 		c = (Coord)args[1];
-	    } else if((args[1] instanceof Float) || (args[1] instanceof Double)) {
-		double x = ((Number)args[1]).doubleValue();
-		double y = ((Number)args[2]).doubleValue();
-		c = new Coord((int)Math.round((this.sz.x - child.sz.x) * x), (int)Math.round((this.sz.y - child.sz.y) * y));
+	    } else if(args[1] instanceof Coord2d) {
+		c = ((Coord2d)args[1]).mul(new Coord2d(this.sz.sub(child.sz))).round();
 	    } else {
 		throw(new UI.UIException("Illegal gameui child", place, args));
 	    }
