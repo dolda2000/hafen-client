@@ -45,6 +45,8 @@ public abstract class Message {
     public static final int T_BYTES = 14;
     public static final int T_FLOAT32 = 15;
     public static final int T_FLOAT64 = 16;
+    public static final int T_FCOORD32 = 18;
+    public static final int T_FCOORD64 = 19;
 
     private final static byte[] empty = new byte[0];
     public int rh = 0, rt = 0, wh = 0, wt = 0;
@@ -254,6 +256,12 @@ public abstract class Message {
 	    case T_FLOAT64:
 		ret.add(float64());
 		break;
+	    case T_FCOORD32:
+		ret.add(new Coord2d(float32(), float32()));
+		break;
+	    case T_FCOORD64:
+		ret.add(new Coord2d(float64(), float64()));
+		break;
 	    default:
 		throw(new FormatError("Encountered unknown type " + t + " in TTO list."));
 	    }
@@ -369,6 +377,10 @@ public abstract class Message {
 	    } else if(o instanceof Double) {
 		adduint8(T_FLOAT64);
 		addfloat64(((Double)o).floatValue());
+	    } else if(o instanceof Coord2d) {
+		adduint8(T_FCOORD64);
+		addfloat64(((Coord2d)o).x);
+		addfloat64(((Coord2d)o).y);
 	    } else {
 		throw(new RuntimeException("Cannot encode a " + o.getClass() + " as TTO"));
 	    }
