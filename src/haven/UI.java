@@ -149,6 +149,7 @@ public class UI {
 	Widget.Factory f = Widget.gettype2(type);
 	synchronized(this) {
 	    Widget wdg = f.create(this, cargs);
+	    wdg.attach(this);
 	    if(parent != 65535) {
 		Widget pwdg = widgets.get(parent);
 		if(pwdg == null)
