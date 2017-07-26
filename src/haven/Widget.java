@@ -37,6 +37,7 @@ public class Widget {
     public Coord c, sz;
     public Widget next, prev, child, lchild, parent;
     public boolean focustab = false, focusctl = false, hasfocus = false, visible = true;
+    private boolean attached = false;
     private boolean canfocus = false, autofocus = false;
     public boolean canactivate = false, cancancel = false;
     public Widget focused;
@@ -225,6 +226,7 @@ public class Widget {
 	this.ui = ui;
 	this.c = c;
 	this.sz = sz;
+	this.attached = true;
     }
 
     protected void attach(UI ui) {
@@ -233,12 +235,20 @@ public class Widget {
 	    ch.attach(ui);
     }
 
+    protected void attached() {
+	attached = true;
+	for(Widget ch = child; ch != null; ch = ch.next)
+	    ch.attached();
+    }
+
     private <T extends Widget> T add0(T child) {
+	if((child.ui == null) && (this.ui != null))
+	    ((Widget)child).attach(this.ui);
 	child.parent = this;
 	child.link();
-	if(this.ui != null)
-	    ((Widget)child).attach(this.ui);
 	child.added();
+	if(attached)
+	    child.attached();
 	if(((Widget)child).canfocus && child.visible)
 	    newfocusable(child);
 	return(child);
