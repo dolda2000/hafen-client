@@ -981,10 +981,14 @@ public class CharWnd extends Window {
 	}
 
 	public static class DefaultCond extends CondWidget {
-	    public final Text text;
+	    public Text text;
 
-	    public DefaultCond(Widget parent, Condition cond) {
-		super(cond);
+	    public DefaultCond(Condition cond) {super(cond);}
+	    @Deprecated
+	    public DefaultCond(Widget parent, Condition cond) {super(cond);}
+
+	    protected void added() {
+		super.added();
 		StringBuilder buf = new StringBuilder();
 		buf.append(String.format("%s{%c %s", RichText.Parser.col2a(stcol[cond.done]), stsym[cond.done], cond.desc));
 		if(cond.status != null) {
