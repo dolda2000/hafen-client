@@ -1382,14 +1382,11 @@ public class CharWnd extends Window {
 
     public class CredoGrid extends Scrollport {
 	public final Coord crsz = new Coord(75, 94);
-	public final Button pbtn;
 	public Collection<Credo> ncr = Collections.emptyList(), ccr = Collections.emptyList();
 	public Credo pcr = null;
 	public Credo sel = null;
 	private final Img pcrc, ncrc, ccrc;
-	private Img pcrim = null;
-	private Collection<Img> ncrim = new ArrayList<Img>();
-	private Collection<Img> ccrim = new ArrayList<Img>();
+	private final Button pbtn;
 	private boolean loading = false;
 
 	public CredoGrid(Coord sz) {
@@ -1428,61 +1425,46 @@ public class CharWnd extends Window {
 	    }
 	}
 
-	private int crgrid(int y, Collection<Credo> crs, Collection<Img> buf) {
+	private int crgrid(int y, Collection<Credo> crs) {
 	    int col = 0;
 	    for(Credo cr : crs) {
 		if(col >= 3) {
 		    col = 0;
 		    y += crsz.y + 5;
 		}
-		buf.add(cont.add(new CredoImg(cr), col * (crsz.x + 5), y));
+		cont.add(new CredoImg(cr), col * (crsz.x + 5), y);
 		col++;
 	    }
 	    return(y + crsz.y + 5);
 	}
 
 	private void update() {
+	    for(Widget ch = cont.child; ch != null; ch = cont.child)
+		ch.destroy();
 	    int y = 0;
-	    if(pcrim != null)
-		pcrim.destroy();
-	    if(pcr == null) {
-		pcrc.hide();
-	    } else {
-		pcrc.c = new Coord(0, y);
-		pcrc.show();
+	    if(pcr != null) {
+		cont.add(pcrc, 0, y);
 		y += pcrc.sz.y + 5;
-		pcrim = cont.add(new CredoImg(pcr), 0, y);
+		Widget pcrim = cont.add(new CredoImg(pcr), 0, y);
 		y += pcrim.sz.y;
 		y += 10;
 	    }
 
-	    Utils.clean(ncrim, Img::destroy);
-	    if(ncr.size() < 1) {
-		ncrc.hide();
-		pbtn.hide();
-	    } else {
-		ncrc.c = new Coord(0, y);
-		ncrc.show();
+	    if(ncr.size() > 0) {
+		cont.add(ncrc, 0, y);
 		y += ncrc.sz.y + 5;
-		y = crgrid(y, ncr, ncrim);
+		y = crgrid(y, ncr);
 		if(pcr == null) {
-		    pbtn.c = new Coord(0, y);
-		    pbtn.show();
+		    cont.add(pbtn, 0, y);
 		    y += pbtn.sz.y;
-		} else {
-		    pbtn.hide();
 		}
 		y += 10;
 	    }
 
-	    Utils.clean(ccrim, Img::destroy);
-	    if(ccr.size() < 1) {
-		ccrc.hide();
-	    } else {
-		ccrc.c = new Coord(0, y);
-		ccrc.show();
+	    if(ccr.size() > 0) {
+		cont.add(ccrc, 0, y);
 		y += ccrc.sz.y + 5;
-		y = crgrid(y, ccr, ccrim);
+		y = crgrid(y, ccr);
 		y += 10;
 	    }
 	    cont.update();
