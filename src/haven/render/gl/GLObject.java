@@ -30,5 +30,15 @@ import java.util.*;
 import javax.media.opengl.*;
 
 public abstract class GLObject {
+    public final GLEnvironment env;
+
+    public GLObject(GLEnvironment env) {
+	this.env = env;
+    }
+
     public abstract void create(GL2 gl);
+    protected abstract void delete(BGL gl);
+
+    public void dispose() {
+    }
 }

@@ -28,17 +28,21 @@ package haven.render.gl;
 
 import java.util.*;
 import java.io.*;
+import javax.media.opengl.GL2;
 import haven.Disposable;
 import haven.render.*;
 import haven.render.sl.*;
 
 public class GLProgram implements Disposable {
     public static boolean dumpall = true;
+    public final GLEnvironment env;
     public final String vsrc, fsrc;
     public final Uniform[] uniforms;
     public final int[][] umap;
+    private ProgOb glp;
 
-    public GLProgram(ProgramContext ctx) {
+    public GLProgram(GLEnvironment env, ProgramContext ctx) {
+	this.env = env;
 	{
 	    StringWriter buf = new StringWriter();
 	    ctx.fctx.construct(buf);
@@ -63,11 +67,11 @@ public class GLProgram implements Disposable {
 	this.umap = umap;
     }
 
-    public static GLProgram build(Collection<ShaderMacro> mods) {
+    public static GLProgram build(GLEnvironment env, Collection<ShaderMacro> mods) {
 	ProgramContext prog = new ProgramContext();
 	for(ShaderMacro mod : mods)
 	    mod.modify(prog);
-	GLProgram ret = new GLProgram(prog);
+	GLProgram ret = new GLProgram(env, prog);
 	if(dumpall || prog.dump) {
 	    System.err.println(mods + ":");
 	    System.err.println("---> Vertex shader:");
@@ -81,6 +85,162 @@ public class GLProgram implements Disposable {
 	return(ret);
     }
 
+    public static class ShaderException extends RuntimeException {
+	public final ShaderOb shader;
+	public final String info;
+	
+	public ShaderException(String msg, ShaderOb shader, String info) {
+	    super(msg);
+	    this.shader = shader;
+	    this.info = info;
+	}
+	
+	public String toString() {
+	    if(info == null)
+		return(super.toString());
+	    else
+		return(super.toString() + "\nLog:\n" + info);
+	}
+    }
+
+    public static class ShaderOb extends GLObject implements BGL.ID {
+	public final int type;
+	public final String text;
+	private int id;
+
+	public ShaderOb(GLEnvironment env, int type, String text) {
+	    super(env);
+	    this.type = type;
+	    this.text = text;
+	    env.prepare(this);
+	}
+
+	public void create(GL2 gl) {
+	    /* Does JOGL use the byte or char length or the supplied
+	     * String, and in case of the former, how does one know
+	     * the coding it encodes the String as so as to supply the
+	     * corrent length? It won't matter since all reasonable
+	     * programs will be ASCII, of course, but it would be
+	     * interesting to know, so to speak. */
+	    this.id = gl.glCreateShader(type);
+	    GLException.checkfor(gl);
+	    gl.glShaderSource(this.id, 1, new String[] {text}, new int[] {text.length()}, 0);
+	    gl.glCompileShader(this.id);
+	    int[] buf = {0};
+	    gl.glGetShaderiv(this.id, GL2.GL_COMPILE_STATUS, buf, 0);
+	    if(buf[0] != 1) {
+		String info = null;
+		gl.glGetShaderiv(this.id, GL2.GL_INFO_LOG_LENGTH, buf, 0);
+		if(buf[0] > 0) {
+		    byte[] logbuf = new byte[buf[0]];
+		    gl.glGetShaderInfoLog(this.id, logbuf.length, buf, 0, logbuf, 0);
+		    info = new String(logbuf, 0, buf[0]);
+		}
+		throw(new ShaderException("Failed to compile shader", this, info));
+	    }
+	}
+
+	protected void delete(BGL gl) {
+	    /* XXXDEL */
+	}
+
+	public int glid() {
+	    return(id);
+	}
+    }
+
+    public static class ProgramException extends RuntimeException {
+	public final GLProgram program;
+
+	public ProgramException(String msg, GLProgram program) {
+	    super(msg);
+	    this.program = program;
+	}
+    }
+
+    public static class UnknownExternException extends ProgramException {
+	public final String type, symbol;
+
+	public UnknownExternException(String msg, GLProgram program, String type, String symbol) {
+	    super(msg, program);
+	    this.type = type;
+	    this.symbol = symbol;
+	}
+    }
+
+    public static class LinkException extends ProgramException {
+	public final String info;
+
+	public LinkException(String msg, GLProgram program, String info) {
+	    super(msg, program);
+	    this.info = info;
+	}
+
+	public String toString() {
+	    if(info == null)
+		return(super.toString());
+	    else
+		return(super.toString() + "\nLog:\n" + info);
+	}
+    }
+
+    public class ProgOb extends GLObject implements BGL.ID {
+	public final ShaderOb[] shaders;
+	private int id;
+
+	public ProgOb(GLEnvironment env, ShaderOb... shaders) {
+	    super(env);
+	    this.shaders = shaders;
+	    env.prepare(this);
+	}
+
+	public void create(GL2 gl) {
+	    this.id = gl.glCreateProgram();
+	    for(ShaderOb sh : shaders)
+		gl.glAttachShader(this.id, sh.glid());
+	    gl.glLinkProgram(this.id);
+	    int[] buf = {0};
+	    gl.glGetProgramiv(this.id, GL2.GL_LINK_STATUS, buf, 0);
+	    if(buf[0] != 1) {
+		String info = null;
+		gl.glGetProgramiv(this.id, GL2.GL_INFO_LOG_LENGTH, buf, 0);
+		if(buf[0] > 0) {
+		    byte[] logbuf = new byte[buf[0]];
+		    gl.glGetProgramInfoLog(this.id, logbuf.length, buf, 0, logbuf, 0);
+		    info = new String(logbuf, 0, buf[0]);
+		}
+		throw(new LinkException("Failed to link GL program", GLProgram.this, info));
+	    }
+	}
+
+	protected void delete(BGL gl) {
+	    /* XXXDEL */
+	}
+
+	public int glid() {
+	    return(this.id);
+	}
+    }
+
+    public ProgOb glid() {
+	if(glp == null) {
+	    synchronized(this) {
+		if(glp == null)
+		    glp = new ProgOb(env,
+				     new ShaderOb(env, GL2.GL_VERTEX_SHADER, vsrc),
+				     new ShaderOb(env, GL2.GL_FRAGMENT_SHADER, fsrc));
+	    }
+	}
+	return(glp);
+    }
+
     public void dispose() {
+	synchronized(this) {
+	    if(glp != null) {
+		ProgOb cur = glp;
+		glp = null;
+		cur.dispose();
+	    }
+	}
     }
 }

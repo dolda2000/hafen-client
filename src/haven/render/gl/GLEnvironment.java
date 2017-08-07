@@ -34,7 +34,9 @@ import haven.render.sl.*;
 
 public class GLEnvironment implements Environment {
     public final GLContext ctx;
+    private BGL prep = null;
     final Object drawmon = new Object();
+    final Object prepmon = new Object();
     private final Pipe state = new Pipe();
 
     public GLEnvironment(GLContext ctx) {
@@ -43,6 +45,14 @@ public class GLEnvironment implements Environment {
 
     public GLRender render() {
 	return(new GLRender(this));
+    }
+
+    void prepare(GLObject obj) {
+	synchronized(prepmon) {
+	    if(prep == null)
+		prep = new BufferBGL();
+	    prep.bglCreate(obj);
+	}
     }
 
     static class SavedProg {
@@ -124,7 +134,7 @@ public class GLEnvironment implements Environment {
 	    if(shaders[i] != null)
 		mods.add(shaders[i]);
 	}
-	GLProgram prog = GLProgram.build(mods);
+	GLProgram prog = GLProgram.build(this, mods);
 	synchronized(pmon) {
 	    SavedProg s = findprog(hash, shaders);
 	    if(s != null) {
