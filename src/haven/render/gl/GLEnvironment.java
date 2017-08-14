@@ -47,6 +47,10 @@ public class GLEnvironment implements Environment {
 	return(new GLRender(this));
     }
 
+    public FillBuffer fillbuf(DataBuffer tgt) {
+	return(new FillBuffers.Array(tgt.size()));
+    }
+
     void prepare(GLObject obj) {
 	synchronized(prepmon) {
 	    if(prep == null)

@@ -30,7 +30,7 @@ import haven.*;
 
 public class Texture2D implements Disposable {
     protected final Coord dim;
-    protected Disposable ro;
+    public Disposable ro;
 
     public Texture2D(Coord dim) {
 	this.dim = dim;
@@ -41,14 +41,11 @@ public class Texture2D implements Disposable {
     }
 
     public void dispose() {
-	if(this.ro != null) {
-	    Disposable ro;
-	    synchronized(this) {
-		ro = this.ro;
-		this.ro = null;
-	    }
-	    if(ro != null)
+	synchronized(this) {
+	    if(ro != null) {
 		ro.dispose();
+		ro = null;
+	    }
 	}
     }
 }

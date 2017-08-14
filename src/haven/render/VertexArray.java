@@ -27,10 +27,13 @@
 package haven.render;
 
 import haven.render.sl.Attribute;
+import haven.Disposable;
 
-public class VertexArray {
+public class VertexArray implements Disposable {
     public final Buffer[] bufs;
     public final int n;
+    public boolean shared = false;
+    public Disposable ro;
 
     public VertexArray(Buffer... bufs) {
 	Buffer[] na = new Buffer[bufs.length];
@@ -45,18 +48,58 @@ public class VertexArray {
 	this.n = num;
     }
 
-    public abstract static class Buffer {
+    public static class Buffer implements DataBuffer, Disposable {
 	public final int n, nc;
 	public final NumberFormat fmt;
+	public final Usage usage;
 	public final Attribute tgt;
+	public final Filler<? super Buffer> init;
+	public boolean shared = false;
+	public Disposable ro;
 
-	public Buffer(int n, int nc, NumberFormat fmt, Attribute tgt) {
+	public Buffer(int n, int nc, NumberFormat fmt, Usage usage, Attribute tgt, Filler<? super Buffer> init) {
 	    this.n = n;
 	    this.nc = nc;
 	    this.fmt = fmt;
+	    this.usage = usage;
 	    this.tgt = tgt;
+	    this.init = init;
 	}
 
-	public abstract FillBuffer fill(Environment env);
+	public int size() {
+	    return(n * fmt.size);
+	}
+
+	public Buffer shared() {
+	    this.shared = true;
+	    return(this);
+	}
+
+	public void dispose() {
+	    synchronized(this) {
+		if(ro != null) {
+		    ro.dispose();
+		    ro = null;
+		}
+	    }
+	}
+    }
+
+    public VertexArray shared() {
+	this.shared = true;
+	return(this);
+    }
+
+    public void dispose() {
+	synchronized(this) {
+	    if(ro != null) {
+		ro.dispose();
+		ro = null;
+	    }
+	}
+	for(Buffer buf : bufs) {
+	    if(!buf.shared)
+		buf.dispose();
+	}
     }
 }
