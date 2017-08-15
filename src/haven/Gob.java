@@ -119,7 +119,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 		this.clsid = clsid;
 	    }
 
-	    void set(ResAttr attr) {
+	    public void set(ResAttr attr) {
 		if(this.attr != null)
 		    this.attr.dispose();
 		this.attr = clsid.cast(attr);
