@@ -452,7 +452,7 @@ public class Widget {
     public Coord parentpos(Widget in) {
 	if(in == this)
 	    return(new Coord(0, 0));
-	return(xlate(parent.parentpos(in).add(c), true));
+	return(parent.xlate(parent.parentpos(in).add(c), true));
     }
 
     public Coord rootpos() {
