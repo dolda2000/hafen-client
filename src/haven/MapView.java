@@ -980,71 +980,59 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	};
     }
     
-    public static interface Clickable {
-	public ClickInfo clickinfo(Rendered self, ClickInfo prev);
-    }
-    public static final GenFun<Clickable> clickinfo = new GenFun<>(Clickable.class);
-    static {
-	clickinfo.register(Object.class, (self, prev) -> prev);
-	clickinfo.register(FastMesh.ResourceMesh.class, (self, prev) -> new ClickInfo(prev, ((FastMesh.ResourceMesh)self).id));
-    }
-
     public static class ClickInfo {
 	public final ClickInfo from;
-	public final Gob gob;
-	public final Gob.Overlay ol;
-	public final Integer id;
+	public final Rendered r;
 
-	private ClickInfo(ClickInfo from, Gob gob, Gob.Overlay ol, Integer id) {
-	    this.from = from; this.gob = gob; this.ol = ol; this.id = id;
-	}
-
-	public ClickInfo(ClickInfo prev, Integer id) {
-	    this(prev, prev.gob, prev.ol, id);
+	public ClickInfo(ClickInfo from, Rendered r) {
+	    this.from = from;
+	    this.r = r;
 	}
 
 	public ClickInfo() {
-	    this(null, null, null, null);
-	}
-
-	public ClickInfo include(Rendered r) {
-	    if(r instanceof Gob)
-		return(new ClickInfo(this, (Gob)r, null, null));
-	    if(r instanceof Gob.Overlay)
-		return(new ClickInfo(this, gob, (Gob.Overlay)r, null));
-	    ClickInfo ret = clickinfo.call.clickinfo(r, this);
-	    if(ret == null)
-		throw(new NullPointerException(r.toString()));
-	    return(ret);
+	    this(null, null);
 	}
 
 	public boolean equals(Object obj) {
 	    if(!(obj instanceof ClickInfo))
 		return(false);
 	    ClickInfo o = (ClickInfo)obj;
-	    return((gob == o.gob) && (ol == o.ol) && (id == o.id));
+	    return(Utils.eq(from, o.from) && (r == o.r));
 	}
 
 	public int hashCode() {
-	    return((((System.identityHashCode(gob) * 31) + System.identityHashCode(ol)) * 31) + System.identityHashCode(id));
+	    return(((from != null) ? (from.hashCode() * 31) : 0) + System.identityHashCode(r));
 	}
 
 	public String toString() {
-	    return(String.format("<%s %s %s %x>", getClass(), gob, ol, (id == null)?-1:id));
+	    StringBuilder buf = new StringBuilder();
+	    buf.append("#<clickinfo");
+	    for(ClickInfo c = this; c != null; c = c.from) {
+		buf.append(' ');
+		buf.append(c.r);
+	    }
+	    buf.append(">");
+	    return(buf.toString());
 	}
 
-	public int clickid() {
-	    return((id == null)?-1:id);
+	public Rendered[] array() {
+	    int n = 0;
+	    for(ClickInfo c = this; c != null; c = c.from)
+		n++;
+	    Rendered[] buf = new Rendered[n];
+	    int i = 0;
+	    for(ClickInfo c = this; c != null; c = c.from)
+		buf[i++] = c.r;
+	    return(buf);
 	}
     }
 
     private static class Goblist extends Clicklist<ClickInfo> {
-	private final ClickInfo root;
 	private ClickInfo curinfo;
 
 	public Goblist(GLConfig cfg) {
 	    super(cfg);
-	    curinfo = root = new ClickInfo();
+	    curinfo = null;
 	}
 
 	public ClickInfo map(Rendered r) {
@@ -1056,7 +1044,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	public void add(Rendered r, GLState t) {
 	    ClickInfo previnfo = curinfo;
-	    curinfo = curinfo.include(r);
+	    curinfo = new ClickInfo(previnfo, r);
 	    super.add(r, t);
 	    curinfo = previnfo;
 	}
@@ -1070,7 +1058,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	rl.setup(gobs, clickbasic(g));
 	rl.fin();
 	rl.render(g);
-	rl.get(g, c, inf -> cb.done(((inf == null) || (inf.gob == null))?null:inf));
+	rl.get(g, c, cb);
     }
     
     public void delay(Delayed d) {
@@ -1463,6 +1451,36 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	protected void nohit(Coord pc) {}
     }
 
+    public static interface Clickable {
+	public Object[] clickargs(ClickInfo inf);
+    }
+
+    public static Object[] gobclickargs(ClickInfo inf) {
+	if(inf == null)
+	    return(new Object[0]);
+	for(ClickInfo c = inf; c != null; c = c.from) {
+	    if(c.r instanceof Clickable)
+		return(((Clickable)c.r).clickargs(inf));
+	}
+	Rendered[] st = inf.array();
+	for(int g = 0; g < st.length; g++) {
+	    if(st[g] instanceof Gob) {
+		Gob gob = (Gob)st[g];
+		Object[] ret = {0, (int)gob.id, gob.rc.floor(posres), 0, -1};
+		for(int i = g - 1; i >= 0; i--) {
+		    if(st[i] instanceof Gob.Overlay) {
+			ret[0] = 1;
+			ret[3] = ((Gob.Overlay)st[i]).id;
+		    }
+		    if(st[i] instanceof FastMesh.ResourceMesh)
+			ret[4] = ((FastMesh.ResourceMesh)st[i]).id;
+		}
+		return(ret);
+	    }
+	}
+	return(new Object[0]);
+    }
+
     private class Click extends Hittest {
 	int clickb;
 	
@@ -1472,15 +1490,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	
 	protected void hit(Coord pc, Coord2d mc, ClickInfo inf) {
-	    if(inf == null) {
-		wdgmsg("click", pc, mc.floor(posres), clickb, ui.modflags());
-	    } else {
-		if(inf.ol == null) {
-		    wdgmsg("click", pc, mc.floor(posres), clickb, ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc.floor(posres), 0, inf.clickid());
-		} else {
-		    wdgmsg("click", pc, mc.floor(posres), clickb, ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc.floor(posres), inf.ol.id, inf.clickid());
-		}
-	    }
+	    Object[] args = {pc, mc.floor(posres), clickb, ui.modflags()};
+	    args = Utils.extend(args, gobclickargs(inf));
+	    wdgmsg("click", args);
 	}
     }
     
@@ -1554,14 +1566,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public boolean iteminteract(Coord cc, Coord ul) {
 	delay(new Hittest(cc) {
 		public void hit(Coord pc, Coord2d mc, ClickInfo inf) {
-		    if(inf == null) {
-			wdgmsg("itemact", pc, mc.floor(posres), ui.modflags());
-		    } else {
-			if(inf.ol == null)
-			    wdgmsg("itemact", pc, mc.floor(posres), ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc.floor(posres), 0, inf.clickid());
-			else
-			    wdgmsg("itemact", pc, mc.floor(posres), ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc.floor(posres), inf.ol.id, inf.clickid());
-		    }
+		    Object[] args = {pc, mc.floor(posres), ui.modflags()};
+		    args = Utils.extend(args, gobclickargs(inf));
+		    wdgmsg("itemact", args);
 		}
 	    });
 	return(true);
