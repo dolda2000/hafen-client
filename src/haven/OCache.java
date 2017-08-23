@@ -50,7 +50,7 @@ public class OCache implements Iterable<Gob> {
 	cbs.add(cb);
     }
 
-    void changed(Gob ob) {
+    public void changed(Gob ob) {
 	ob.changed();
 	for(ChangeCallback cb : cbs)
 	    cb.changed(ob);
