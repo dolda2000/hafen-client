@@ -264,8 +264,9 @@ public class FBConfig {
 	public boolean cleanp() {return(true);}
 
 	private static final Uniform ctex = new Uniform(Type.SAMPLER2D);
-	private static final ShaderMacro code = prog-> {
-	    prog.fctx.fragcol.mod(in -> Cons.texture2D(ctex.ref(), Tex2D.rtexcoord.ref()), 0);
+	private static final ShaderMacro code = prog -> {
+	    Tex2D.texcoord(prog.fctx).force();
+	    prog.fctx.fragcol.mod(in -> Cons.texture2D(ctex.ref(), Tex2D.texcoord(prog.fctx).ref()), 0);
 	};
 	public ShaderMacro code(FBConfig cfg) {return(code);}
 
@@ -292,11 +293,12 @@ public class FBConfig {
 
 	private static final Uniform ctex = new Uniform(Type.SAMPLER2DMS);
 	private final ShaderMacro code = prog -> {
+	    Tex2D.texcoord(prog.fctx).force();
 	    prog.fctx.fragcol.mod(new Macro1<Expression>() {
 		    public Expression expand(Expression in) {
 			Expression[] texels = new Expression[samples];
 			for(int i = 0; i < samples; i++)
-			    texels[i] = Cons.texelFetch(ctex.ref(), Cons.ivec2(Cons.floor(Cons.mul(Tex2D.rtexcoord.ref(), MiscLib.screensize.ref()))), Cons.l(i));
+			    texels[i] = Cons.texelFetch(ctex.ref(), Cons.ivec2(Cons.floor(Cons.mul(Tex2D.texcoord(prog.fctx).ref(), MiscLib.screensize.ref()))), Cons.l(i));
 			return(Cons.mul(Cons.add(texels), Cons.l(1.0 / samples)));
 		    }
 		}, 0);
