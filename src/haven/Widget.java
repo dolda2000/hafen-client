@@ -964,24 +964,24 @@ public class Widget {
 			    T cur = n(Widget.this);
 			    
 			    private T n(Widget w) {
-				Widget n;
-				if(w == null) {
-				    return(null);
-				} else if(w.child != null) {
-				    n = w.child;
-				} else if(w == Widget.this) {
-				    return(null);
-				} else if(w.next != null) {
-				    n = w.next;
-				} else if(w.parent == Widget.this) {
-				    return(null);
-				} else {
-				    n = w.parent;
+				for(Widget n; true; w = n) {
+				    if(w == null) {
+					return(null);
+				    } else if(w.child != null) {
+					n = w.child;
+				    } else if(w == Widget.this) {
+					return(null);
+				    } else if(w.next != null) {
+					n = w.next;
+				    } else {
+					for(n = w.parent; (n != null) && (n.next == null) && (n != Widget.this); n = n.parent);
+					if((n == null) || (n == Widget.this))
+					    return(null);
+					n = n.next;
+				    }
+				    if((n == null) || cl.isInstance(n))
+					return(cl.cast(n));
 				}
-				if((n == null) || cl.isInstance(n))
-				    return(cl.cast(n));
-				else
-				    return(n(n));
 			    }
 			    
 			    public T next() {
@@ -994,10 +994,6 @@ public class Widget {
 			    
 			    public boolean hasNext() {
 				return(cur != null);
-			    }
-			    
-			    public void remove() {
-				throw(new UnsupportedOperationException());
 			    }
 			});
 		}
