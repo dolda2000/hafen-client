@@ -100,7 +100,7 @@ public class MessageBuf extends Message {
     }
 
     public MessageBuf clone() {
-	return(new MessageBuf(rbuf, oh, rt));
+	return(new MessageBuf(rbuf, oh, rt - oh));
     }
 
     public int size() {

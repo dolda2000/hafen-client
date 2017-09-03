@@ -169,6 +169,7 @@ public class Buff extends Widget {
 	    shorttip = longtip = null;
 	} else if(msg == "nm") {
 	    this.nmeter = (Integer)args[0];
+	    ntext = null;
 	} else if(msg == "cm") {
 	    this.cmeter = (Integer)args[0];
 	    this.cticks = (args.length > 1)?((Integer)args[1]):-1;
