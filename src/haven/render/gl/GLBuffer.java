@@ -26,56 +26,28 @@
 
 package haven.render.gl;
 
-import haven.render.*;
 import javax.media.opengl.*;
 
-public class GLRender implements Render {
-    public final GLEnvironment env;
-    private final BGL gl = new BufferBGL();
-    private Applier state = null, init = null;
-
-    GLRender(GLEnvironment env) {
-	this.env = env;
+public class GLBuffer extends GLObject implements BGL.ID {
+    private int id;
+    
+    public GLBuffer(GLEnvironment env) {
+	super(env);
+	env.prepare(this);
     }
 
-    public GLEnvironment env() {return(env);}
-
-    private void apply(Pipe pipe) {
-	if(init == null) {
-	    init = (state = new Applier(env, pipe.copy())).clone();
-	} else {
-	    state.apply(gl, pipe);
-	}
+    public void create(GL2 gl) {
+	int[] buf = new int[1];
+	gl.glGenBuffers(1, buf, 0);
+	this.id = buf[0];
+    }
+    
+    protected void delete(BGL gl) {
+	BGL.ID[] buf = {this};
+	gl.glDeleteBuffers(1, buf, 0);
     }
 
-    static boolean ephemeralp(Model m) {
-	if((m.ind != null) && (m.ind.usage == DataBuffer.Usage.EPHEMERAL))
-	    return(true);
-	for(VertexArray.Buffer b : m.va.bufs) {
-	    if(b.usage == DataBuffer.Usage.EPHEMERAL)
-		return(true);
-	}
-	return(false);
-    }
-
-    public void draw(Pipe pipe, Model data) {
-	apply(pipe);
-	if(ephemeralp(data)) {
-	    GLBuffer ind;
-	    if(data.ind.usage == DataBuffer.Usage.EPHEMERAL) {
-		ind = env.tempindex.get();
-		
-	    } else {
-		ind = null;
-	    }
-	    GLBuffer vbuf = env.tempvertex.get();
-	    
-	} else {
-	}
-    }
-
-    public void execute(GL2 gl) {
-	synchronized(env.drawmon) {
-	}
+    public int glid() {
+	return(id);
     }
 }

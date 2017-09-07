@@ -27,6 +27,7 @@
 package haven.render.gl;
 
 import java.util.*;
+import java.util.function.*;
 import javax.media.opengl.*;
 import haven.Utils;
 import haven.render.*;
@@ -37,7 +38,6 @@ public class GLEnvironment implements Environment {
     private BGL prep = null;
     final Object drawmon = new Object();
     final Object prepmon = new Object();
-    private final Pipe state = new Pipe();
 
     public GLEnvironment(GLContext ctx) {
 	this.ctx = ctx;
@@ -58,6 +58,34 @@ public class GLEnvironment implements Environment {
 	    prep.bglCreate(obj);
 	}
     }
+
+    void prepare(BGL.Request req) {
+	synchronized(prepmon) {
+	    if(prep == null)
+		prep = new BufferBGL();
+	    prep.bglSubmit(req);
+	}
+    }
+
+    public class TempData<T> implements Supplier<T> {
+	private final Supplier<T> bk;
+	private T d = null;
+
+	public TempData(Supplier<T> bk) {this.bk = bk;}
+
+	public T get() {
+	    if(d == null) {
+		synchronized(this) {
+		    if(d == null)
+			d = bk.get();
+		}
+	    }
+	    return(d);
+	}
+    }
+
+    public final Supplier<GLBuffer> tempvertex = new TempData<>(() -> new GLBuffer(this));
+    public final Supplier<GLBuffer> tempindex = new TempData<>(() -> new GLBuffer(this));
 
     static class SavedProg {
 	final int hash;

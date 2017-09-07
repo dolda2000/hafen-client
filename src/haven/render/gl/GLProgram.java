@@ -39,6 +39,8 @@ public class GLProgram implements Disposable {
     public final String vsrc, fsrc;
     public final Uniform[] uniforms;
     public final int[][] umap;
+    public final Attribute[] attribs;
+    private final Map<Attribute, String> attrnms;
     private ProgOb glp;
 
     public GLProgram(GLEnvironment env, ProgramContext ctx) {
@@ -53,18 +55,27 @@ public class GLProgram implements Disposable {
 	    ctx.vctx.construct(buf);
 	    vsrc = buf.toString();
 	}
-	Uniform[] uniforms = ctx.uniforms.toArray(new Uniform[0]);
-	int[][] umap = new int[0][];
-	for(int i = 0; i < uniforms.length; i++) {
-	    for(State.Slot slot : uniforms[i].deps) {
-		if(umap.length <= slot.id)
-		    umap = Arrays.copyOf(umap, slot.id + 1);
-		umap[slot.id] = (umap[slot.id] == null) ? new int[1] : Arrays.copyOf(umap[slot.id], umap[slot.id].length + 1);
-		umap[slot.id][umap[slot.id].length - 1] = i;
+	{
+	    Uniform[] uniforms = ctx.uniforms.toArray(new Uniform[0]);
+	    int[][] umap = new int[0][];
+	    for(int i = 0; i < uniforms.length; i++) {
+		for(State.Slot slot : uniforms[i].deps) {
+		    if(umap.length <= slot.id)
+			umap = Arrays.copyOf(umap, slot.id + 1);
+		    umap[slot.id] = (umap[slot.id] == null) ? new int[1] : Arrays.copyOf(umap[slot.id], umap[slot.id].length + 1);
+		    umap[slot.id][umap[slot.id].length - 1] = i;
+		}
 	    }
+	    this.uniforms = uniforms;
+	    this.umap = umap;
 	}
-	this.uniforms = uniforms;
-	this.umap = umap;
+	{
+	    Map<Attribute, String> attribs = new IdentityHashMap<>();
+	    for(Attribute attr : ctx.attribs)
+		attribs.put(attr, ctx.symtab.get(attr));
+	    this.attrnms = attribs;
+	    this.attribs = attribs.keySet().toArray(new Attribute[0]);
+	}
     }
 
     public static GLProgram build(GLEnvironment env, Collection<ShaderMacro> mods) {
@@ -184,6 +195,17 @@ public class GLProgram implements Disposable {
 	}
     }
 
+    public abstract static class VarID implements BGL.ID, BGL.Request {
+	public final String name;
+	protected int id = -1;
+
+	private VarID(String name) {
+	    this.name = name;
+	}
+
+	public int glid() {return(id);}
+    }
+
     public class ProgOb extends GLObject implements BGL.ID {
 	public final ShaderOb[] shaders;
 	private int id;
@@ -192,6 +214,11 @@ public class GLProgram implements Disposable {
 	    super(env);
 	    this.shaders = shaders;
 	    env.prepare(this);
+	    for(Map.Entry<Attribute, String> attr : GLProgram.this.attrnms.entrySet()) {
+		VarID id = new AttrID(attr.getValue());
+		amap.put(attr.getKey(), id);
+		env.prepare(id);
+	    }
 	}
 
 	public void create(GL2 gl) {
@@ -220,6 +247,20 @@ public class GLProgram implements Disposable {
 	public int glid() {
 	    return(this.id);
 	}
+
+	public class AttrID extends VarID {
+	    private AttrID(String name) {super(name);}
+
+	    public void run(GL2 gl) {
+		if((this.id = gl.glGetAttribLocation(ProgOb.this.id, name)) < 0)
+		    throw(new UnknownExternException("Attribute not resolvable in program: " + name, GLProgram.this, "attrib", name));
+	    }
+	}
+
+	private final transient Map<Attribute, VarID> amap = new IdentityHashMap<>();
+	public VarID cattrib(Attribute var) {
+	    return(amap.get(var));
+	}
     }
 
     public ProgOb glid() {
@@ -232,6 +273,17 @@ public class GLProgram implements Disposable {
 	    }
 	}
 	return(glp);
+    }
+
+    public VarID cattrib(Attribute var) {
+	return(glid().cattrib(var));
+    }
+
+    public VarID attrib(Attribute var) {
+	VarID r = cattrib(var);
+	if(r == null)
+	    throw(new UnknownExternException("Attribute not found in symtab: " + var, this, "attrib", var.toString()));
+	return(r);
     }
 
     public void dispose() {

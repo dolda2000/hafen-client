@@ -26,6 +26,7 @@
 
 package haven.render;
 
+import java.util.*;
 import haven.render.sl.Attribute;
 import haven.Disposable;
 
@@ -35,17 +36,22 @@ public class VertexArray implements Disposable {
     public boolean shared = false;
     public Disposable ro;
 
-    public VertexArray(Buffer... bufs) {
-	Buffer[] na = new Buffer[bufs.length];
-	na[0] = bufs[0];
+    public VertexArray(Collection<Buffer> bufs) {
+	Buffer[] na = new Buffer[bufs.size()];
+	Iterator<Buffer> bi = bufs.iterator();
+	na[0] = bi.next();
 	int num = na[0].n;
-	for(int i = 1; i < bufs.length; i++) {
-	    na[i] = bufs[i];
+	for(int i = 1; bi.hasNext(); i++) {
+	    na[i] = bi.next();
 	    if(na[i].n != num)
 		throw(new IllegalArgumentException("Buffer sizes do not match"));
 	}
 	this.bufs = na;
 	this.n = num;
+    }
+
+    public VertexArray(Buffer... bufs) {
+	this(Arrays.asList(bufs));
     }
 
     public static class Buffer implements DataBuffer, Disposable {

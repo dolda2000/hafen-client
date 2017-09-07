@@ -33,15 +33,13 @@ public class Model implements Disposable {
     public final Mode mode;
     public final VertexArray va;
     public final Indices ind;
-    public final DataBuffer.Usage usage;
     public Disposable ro;
 
     public enum Mode {
-	POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_FAN
+	POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_STRIP, TRIANGLE_FAN
     }
 
-    public Model(DataBuffer.Usage usage, Mode mode, VertexArray va, Indices ind) {
-	this.usage = usage;
+    public Model(Mode mode, VertexArray va, Indices ind) {
 	if((this.mode = mode) == null)
 	    throw(new NullPointerException());
 	if((this.va = va) == null)

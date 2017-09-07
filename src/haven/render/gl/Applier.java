@@ -33,11 +33,15 @@ import static haven.Utils.eq;
 
 public class Applier {
     public final GLEnvironment env;
+    /* Soft pipeline state */
     private State[] cur = new State[0];
+    /* Program state */
     private ShaderMacro[] shaders = new ShaderMacro[0];
     private int shash = 0;
     private GLProgram prog;
     private Object[] uvals = new Object[0];
+    /* VAO-0 state */
+    private GLProgram.VarID[] attren = new GLProgram.VarID[0];
 
     private Applier(GLEnvironment env) {
 	this.env = env;
@@ -54,12 +58,36 @@ public class Applier {
 	ret.shaders = Arrays.copyOf(this.shaders, this.shaders.length);
 	ret.shash = this.shash;
 	ret.prog = this.prog;
+	ret.attren = Arrays.copyOf(this.attren, this.attren.length);
 	return(ret);
     }
 
     private void setprog(GLProgram prog) {
 	this.prog = prog;
 	this.uvals = new Object[prog.uniforms.length];
+    }
+
+    public void attren(BGL gl, Attribute[] attrs) {
+	/* XXX: Assert that VAO-0 is bound */
+	GLProgram.VarID[] n = new GLProgram.VarID[attrs.length];
+	GLProgram.VarID[] p = this.attren;
+	for(int i = 0; i < attrs.length; i++)
+	    n[i] = prog.attrib(attrs[i]);
+	dis: for(int i = 0; i < p.length; i++) {
+	    for(int o = 0; o < n.length; o++) {
+		if(n[o] == p[i])
+		    continue dis;
+	    }
+	    gl.glDisableVertexAttribArray(p[i]);
+	}
+	en: for(int i = 0; i < n.length; i++) {
+	    for(int o = 0; o < p.length; o++) {
+		if(p[o] == n[i])
+		    continue en;
+	    }
+	    gl.glEnableVertexAttribArray(p[i]);
+	}
+	this.attren = n;
     }
 
     private void assume(State[] ns) {
