@@ -823,7 +823,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     public Gob player() {
-	return(glob.oc.getgob(plgob));
+	return((plgob < 0) ? null : glob.oc.getgob(plgob));
     }
     
     public Coord3f getcc() {
