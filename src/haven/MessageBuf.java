@@ -117,6 +117,10 @@ public class MessageBuf extends Message {
 	System.arraycopy(wbuf, 0, buf, off, Math.min(wh, buf.length - off));
     }
 
+    public void fin(java.nio.ByteBuffer buf) {
+	buf.put(wbuf, 0, wh);
+    }
+
     public String toString() {
 	StringBuilder buf = new StringBuilder();
 	buf.append("Message(");
