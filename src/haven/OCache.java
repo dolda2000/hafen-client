@@ -654,6 +654,9 @@ public class OCache implements Iterable<Gob> {
 	case OD_LINSTEP:
 	    linstep(gob, msg);
 	    break;
+	case OD_HOMING:
+	    homing(gob, msg);
+	    break;
 	case OD_SPEECH:
 	    speak(gob, msg);
 	    break;
