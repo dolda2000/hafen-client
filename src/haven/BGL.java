@@ -193,6 +193,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void glBlendFuncSeparate(final int csfac, final int cdfac, final int asfac, final int adfac) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glBlendFuncSeparate(csfac, cdfac, asfac, adfac);}
+	    });
+    }
+
     public void glBufferData(final int target, final long size, Buffer data, final int usage) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
