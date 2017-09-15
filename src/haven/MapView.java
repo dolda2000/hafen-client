@@ -370,13 +370,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     @RName("mapview")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    Coord sz = (Coord)args[0];
 	    Coord2d mc = ((Coord)args[1]).mul(posres);
 	    int pgob = -1;
 	    if(args.length > 2)
 		pgob = (Integer)args[2];
-	    return(new MapView(sz, parent.ui.sess.glob, mc, pgob));
+	    return(new MapView(sz, ui.sess.glob, mc, pgob));
 	}
     }
     

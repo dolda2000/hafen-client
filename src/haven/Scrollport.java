@@ -32,7 +32,7 @@ public class Scrollport extends Widget {
 
     @RName("scr")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new Scrollport((Coord)args[0]));
 	}
     }

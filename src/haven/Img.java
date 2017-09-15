@@ -33,7 +33,7 @@ public class Img extends Widget {
 	
     @RName("img")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    Indir<Resource> res;
 	    int a = 0;
 	    if(args[a] instanceof String) {
@@ -41,7 +41,7 @@ public class Img extends Widget {
 		int ver = (args.length > a)?((Integer)args[a++]):-1;
 		res = new Resource.Spec(Resource.remote(), nm, ver);
 	    } else {
-		res = parent.ui.sess.getres((Integer)args[a++]);
+		res = ui.sess.getres((Integer)args[a++]);
 	    }
 	    Img ret = new Img(res);
 	    if(args.length > a)

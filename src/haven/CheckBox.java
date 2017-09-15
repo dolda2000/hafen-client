@@ -33,7 +33,7 @@ public class CheckBox extends Widget {
 
     @RName("chk")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    CheckBox ret = new CheckBox((String)args[0]);
 	    ret.canactivate = true;
 	    return(ret);

@@ -63,16 +63,21 @@ public class Equipory extends Widget implements DTarget {
 
     @RName("epry")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    long gobid;
 	    if(args.length < 1)
-		gobid = parent.getparent(GameUI.class).plid;
+		gobid = -2;
 	    else if(args[0] == null)
 		gobid = -1;
 	    else
 		gobid = Utils.uint32((Integer)args[0]);
 	    return(new Equipory(gobid));
 	}
+    }
+
+    protected void added() {
+	if(ava.avagob == -2)
+	    ava.avagob = getparent(GameUI.class).plid;
     }
 
     public Equipory(long gobid) {
