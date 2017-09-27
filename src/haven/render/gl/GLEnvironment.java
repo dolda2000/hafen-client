@@ -30,8 +30,10 @@ import java.util.*;
 import java.util.function.*;
 import javax.media.opengl.*;
 import haven.Utils;
+import haven.Disposable;
 import haven.render.*;
 import haven.render.sl.*;
+import static haven.render.DataBuffer.Usage.*;
 
 public class GLEnvironment implements Environment {
     public final GLContext ctx;
@@ -58,12 +60,40 @@ public class GLEnvironment implements Environment {
 	    prep.bglCreate(obj);
 	}
     }
-
     void prepare(BGL.Request req) {
 	synchronized(prepmon) {
 	    if(prep == null)
 		prep = new BufferBGL();
 	    prep.bglSubmit(req);
+	}
+    }
+
+    Disposable prepare(Model.Indices buf) {
+	synchronized(buf) {
+	    if(buf.usage == EPHEMERAL) {
+		if(!(buf.ro instanceof HeapBuffer)) {
+		    if(buf.ro != null)
+			buf.ro.dispose();
+		    buf.ro = new HeapBuffer(this, buf, buf.init);
+		}
+		return(buf.ro);
+	    } else {
+		throw(new Error());
+	    }
+	}
+    }
+    Disposable prepare(VertexArray.Buffer buf) {
+	synchronized(buf) {
+	    if(buf.usage == EPHEMERAL) {
+		if(!(buf.ro instanceof HeapBuffer)) {
+		    if(buf.ro != null)
+			buf.ro.dispose();
+		    buf.ro = new HeapBuffer(this, buf, buf.init);
+		}
+		return(buf.ro);
+	    } else {
+		throw(new Error());
+	    }
 	}
     }
 

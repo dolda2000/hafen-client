@@ -73,7 +73,7 @@ public class VertexArray implements Disposable {
 	}
 
 	public int size() {
-	    return(n * fmt.size);
+	    return(n * nc * fmt.size);
 	}
 
 	public Buffer shared() {

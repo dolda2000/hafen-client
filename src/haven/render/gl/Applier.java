@@ -40,16 +40,11 @@ public class Applier {
     private int shash = 0;
     private GLProgram prog;
     private Object[] uvals = new Object[0];
-    /* VAO-0 state */
-    private GLProgram.VarID[] attren = new GLProgram.VarID[0];
+    /* GL states */
+    public GLState[] glstates = new GLState[GLState.slots.length];
 
-    private Applier(GLEnvironment env) {
+    public Applier(GLEnvironment env) {
 	this.env = env;
-    }
-
-    public Applier(GLEnvironment env, Pipe init) {
-	this.env = env;
-	assume(init.states());
     }
 
     public Applier clone() {
@@ -58,7 +53,7 @@ public class Applier {
 	ret.shaders = Arrays.copyOf(this.shaders, this.shaders.length);
 	ret.shash = this.shash;
 	ret.prog = this.prog;
-	ret.attren = Arrays.copyOf(this.attren, this.attren.length);
+	ret.glstates = Arrays.copyOf(this.glstates, this.glstates.length);
 	return(ret);
     }
 
@@ -67,27 +62,14 @@ public class Applier {
 	this.uvals = new Object[prog.uniforms.length];
     }
 
-    public void attren(BGL gl, Attribute[] attrs) {
-	/* XXX: Assert that VAO-0 is bound */
-	GLProgram.VarID[] n = new GLProgram.VarID[attrs.length];
-	GLProgram.VarID[] p = this.attren;
-	for(int i = 0; i < attrs.length; i++)
-	    n[i] = prog.attrib(attrs[i]);
-	dis: for(int i = 0; i < p.length; i++) {
-	    for(int o = 0; o < n.length; o++) {
-		if(n[o] == p[i])
-		    continue dis;
-	    }
-	    gl.glDisableVertexAttribArray(p[i]);
+    public GLProgram prog() {return(prog);}
+
+    private <T> void uapply(BGL gl, int ui) {
+	GLProgram prog = this.prog;
+	Object val = prog.uniforms[ui].value.get();
+	if(val != uvals[ui]) {
+	    UniformApplier.TypeMapping.apply(gl, prog.uniforms[ui].type, val);
 	}
-	en: for(int i = 0; i < n.length; i++) {
-	    for(int o = 0; o < p.length; o++) {
-		if(p[o] == n[i])
-		    continue en;
-	    }
-	    gl.glEnableVertexAttribArray(p[i]);
-	}
-	this.attren = n;
     }
 
     private void assume(State[] ns) {
@@ -118,16 +100,12 @@ public class Applier {
 	setprog(env.getprog(hash, shaders));
     }
 
-    private <T> void uapply(BGL gl, int ui) {
-	GLProgram prog = this.prog;
-	Object val = prog.uniforms[ui].value.get();
-	if(val != uvals[ui]) {
-	    UniformApplier.TypeMapping.apply(gl, prog.uniforms[ui].type, val);
-	}
-    }
-
     public void apply(BGL gl, Pipe to) {
 	State[] ns = to.states();
+	if(gl == null) {
+	    assume(ns);
+	    return;
+	}
 	if(this.cur.length < ns.length) {
 	    this.cur = Arrays.copyOf(this.cur, ns.length);
 	    this.shaders = Arrays.copyOf(this.shaders, this.cur.length);
@@ -175,6 +153,25 @@ public class Applier {
 	} else {
 	    this.shash = shash;
 	    setprog(env.getprog(shash, shaders));
+	}
+    }
+
+    public void apply(BGL gl, GLState st) {
+	int slot = st.slotidx();
+	if(gl == null) {
+	    glstates[slot] = st;
+	    return;
+	}
+	GLState cur = glstates[slot];
+	if((cur == null) && (st != null)) {
+	    st.apply(gl);
+	    glstates[slot] = st;
+	} else if((cur != null) && (st == null)) {
+	    cur.unapply(gl);
+	    glstates[slot] = null;
+	} else if ((cur != null) && (st != null)) {
+	    cur.applyto(gl, st);
+	    glstates[slot] = st;
 	}
     }
 }

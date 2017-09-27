@@ -24,50 +24,21 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
 import java.nio.*;
+import haven.Disposable;
+import haven.render.*;
 
-public interface DataBuffer {
-    public int size();
+public class HeapBuffer implements Disposable {
+    public byte[] buf;
 
-    public enum Usage {
-	EPHEMERAL, STREAM, STATIC;
+    public <T extends DataBuffer> HeapBuffer(GLEnvironment env, T obj, DataBuffer.Filler<? super T> init) {
+	if(init != null) {
+	    FillBuffers.Array buf = (FillBuffers.Array)init.fill(obj, env);
+	    this.buf = buf.data;
+	}
     }
 
-    public interface Filler<T extends DataBuffer> {
-	public FillBuffer fill(T buf, Environment env);
-
-	public static Filler<DataBuffer> of(ByteBuffer data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.pull(data);
-		    return(buf);
-		});
-	}
-	public static Filler<DataBuffer> of(byte[] data) {
-	    return(of(ByteBuffer.wrap(data)));
-	}
-	public static Filler<DataBuffer> of(short[] data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.push().asShortBuffer().put(data);
-		    return(buf);
-		});
-	};
-	public static Filler<DataBuffer> of(int[] data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.push().asIntBuffer().put(data);
-		    return(buf);
-		});
-	};
-	public static Filler<DataBuffer> of(float[] data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.push().asFloatBuffer().put(data);
-		    return(buf);
-		});
-	};
-    }
+    public void dispose() {}
 }

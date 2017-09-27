@@ -24,50 +24,31 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import java.nio.*;
+import java.util.*;
+import java.lang.reflect.*;
 
-public interface DataBuffer {
-    public int size();
+public abstract class GLState {
+    @SuppressWarnings("unchecked")
+    public static final Class<? extends GLState>[] slots = (Class<? extends GLState>[])new Class[] {
+	VaoState.class,
+    };
 
-    public enum Usage {
-	EPHEMERAL, STREAM, STATIC;
+    public static int slotidx(Class<? extends GLState> cl) {
+	for(int i = 0; i < slots.length; i++) {
+	    if(slots[i] == cl)
+		return(i);
+	}
+	throw(new RuntimeException("No slot for " + cl));
     }
 
-    public interface Filler<T extends DataBuffer> {
-	public FillBuffer fill(T buf, Environment env);
+    public abstract void apply(BGL gl);
+    public abstract void unapply(BGL gl);
+    public abstract int slotidx();
 
-	public static Filler<DataBuffer> of(ByteBuffer data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.pull(data);
-		    return(buf);
-		});
-	}
-	public static Filler<DataBuffer> of(byte[] data) {
-	    return(of(ByteBuffer.wrap(data)));
-	}
-	public static Filler<DataBuffer> of(short[] data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.push().asShortBuffer().put(data);
-		    return(buf);
-		});
-	};
-	public static Filler<DataBuffer> of(int[] data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.push().asIntBuffer().put(data);
-		    return(buf);
-		});
-	};
-	public static Filler<DataBuffer> of(float[] data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.push().asFloatBuffer().put(data);
-		    return(buf);
-		});
-	};
+    public void applyto(BGL gl, GLState to) {
+	unapply(gl);
+	to.apply(gl);
     }
 }

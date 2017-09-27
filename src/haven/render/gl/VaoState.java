@@ -24,50 +24,9 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import java.nio.*;
-
-public interface DataBuffer {
-    public int size();
-
-    public enum Usage {
-	EPHEMERAL, STREAM, STATIC;
-    }
-
-    public interface Filler<T extends DataBuffer> {
-	public FillBuffer fill(T buf, Environment env);
-
-	public static Filler<DataBuffer> of(ByteBuffer data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.pull(data);
-		    return(buf);
-		});
-	}
-	public static Filler<DataBuffer> of(byte[] data) {
-	    return(of(ByteBuffer.wrap(data)));
-	}
-	public static Filler<DataBuffer> of(short[] data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.push().asShortBuffer().put(data);
-		    return(buf);
-		});
-	};
-	public static Filler<DataBuffer> of(int[] data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.push().asIntBuffer().put(data);
-		    return(buf);
-		});
-	};
-	public static Filler<DataBuffer> of(float[] data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.push().asFloatBuffer().put(data);
-		    return(buf);
-		});
-	};
-    }
+public abstract class VaoState extends GLState {
+    public static int slot = slotidx(VAOState.class);
+    public int slotidx() {return(slot);}
 }

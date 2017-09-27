@@ -408,6 +408,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void glDrawElements(final int mode, final int count, final int type, final long indices) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDrawElements(mode, count, type, indices);}
+	    });
+    }
+
     public void glDrawRangeElements(final int mode, final int start, final int end, final int count, final int type, Buffer indices) {
 	final BufState is = new BufState(indices);
 	add(new Command() {

@@ -26,50 +26,104 @@
 
 package haven.render.gl;
 
-import haven.render.*;
+import java.nio.*;
 import javax.media.opengl.*;
+import haven.Disposable;
+import haven.render.*;
+import static haven.render.DataBuffer.Usage.*;
 
 public class GLRender implements Render {
     public final GLEnvironment env;
-    private final BGL gl = new BufferBGL();
-    private Applier state = null, init = null;
+    private BGL gl = null;
+    private final Applier state;
+    private Applier init = null;
 
     GLRender(GLEnvironment env) {
 	this.env = env;
+	this.state = new Applier(env);
     }
 
     public GLEnvironment env() {return(env);}
 
-    private void apply(Pipe pipe) {
-	if(init == null) {
-	    init = (state = new Applier(env, pipe.copy())).clone();
-	} else {
-	    state.apply(gl, pipe);
+    private BGL gl() {
+	if(this.gl == null) {
+	    this.gl = new BufferBGL();
+	    this.init = state.clone();
 	}
+	return(this.gl);
     }
 
     static boolean ephemeralp(Model m) {
-	if((m.ind != null) && (m.ind.usage == DataBuffer.Usage.EPHEMERAL))
+	if((m.ind != null) && (m.ind.usage == EPHEMERAL))
 	    return(true);
 	for(VertexArray.Buffer b : m.va.bufs) {
-	    if(b.usage == DataBuffer.Usage.EPHEMERAL)
+	    if(b.usage == EPHEMERAL)
 		return(true);
 	}
 	return(false);
     }
 
+    private static int glmode(Model.Mode mode) {
+	switch(mode) {
+	case POINTS:          return(GL.GL_POINTS);
+	case LINES:           return(GL.GL_LINES);
+	case LINE_STRIP:      return(GL.GL_LINE_STRIP);
+	case TRIANGLES:       return(GL.GL_TRIANGLES);
+	case TRIANGLE_STRIP:  return(GL.GL_TRIANGLE_STRIP);
+	case TRIANGLE_FAN:    return(GL.GL_TRIANGLE_FAN);
+	default:
+	    throw(new RuntimeException("unimplemented draw mode " + mode));
+	}
+    }
+
     public void draw(Pipe pipe, Model data) {
-	apply(pipe);
+	state.apply(this.gl, pipe);
 	if(ephemeralp(data)) {
-	    GLBuffer ind;
-	    if(data.ind.usage == DataBuffer.Usage.EPHEMERAL) {
-		ind = env.tempindex.get();
-		
-	    } else {
-		ind = null;
-	    }
+	    Disposable indo = null;
+	    if(data.ind != null)
+		indo = env.prepare(data.ind);
+	    Disposable[] bufs = new Disposable[data.va.bufs.length];
+	    for(int i = 0; i < data.va.bufs.length; i++)
+		bufs[i] = env.prepare(data.va.bufs[i]);
+
+	    GLProgram.VarID[] enable = new GLProgram.VarID[data.va.bufs.length];
+	    for(int i = 0, n = 0; i < enable.length; i++)
+		enable[i] = state.prog().cattrib(data.va.bufs[i].tgt);
+	    Vao0State.apply(this.gl, state, enable);
+
+	    BGL gl = gl();
 	    GLBuffer vbuf = env.tempvertex.get();
-	    
+	    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbuf);
+	    gl.bglSubmit(new BGL.Request() {
+		    public void run(GL2 gl) {
+			int sz = 0;
+			for(int i = 0; i < data.va.bufs.length; i++) {
+			    if(data.va.bufs[i].usage == EPHEMERAL)
+				sz += data.va.bufs[i].size();
+			}
+			ByteBuffer buf = ByteBuffer.wrap(new byte[sz]);
+			for(int i = 0; i < data.va.bufs.length; i++) {
+			    if(data.va.bufs[i].usage == EPHEMERAL)
+				buf.put(((HeapBuffer)bufs[i]).buf);
+			}
+			buf.flip();
+			gl.glBufferData(vbuf.glid(), sz, buf, GL2.GL_STREAM_DRAW);
+		    }
+		});
+	    if(data.ind == null) {
+		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, null);
+		gl.glDrawArrays(glmode(data.mode), 0, data.va.n);
+	    } else {
+		GLBuffer ind;
+		if(data.ind.usage == EPHEMERAL) {
+		    ind = env.tempindex.get();
+		    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ind);
+		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, data.ind.size(), ByteBuffer.wrap(((HeapBuffer)indo).buf), GL2.GL_STREAM_DRAW);
+		} else {
+		    throw(new Error());
+		}
+		gl.glDrawElements(glmode(data.mode), data.ind.n, GL.GL_UNSIGNED_SHORT, 0);
+	    }
 	} else {
 	}
     }
