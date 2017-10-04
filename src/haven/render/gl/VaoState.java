@@ -27,6 +27,6 @@
 package haven.render.gl;
 
 public abstract class VaoState extends GLState {
-    public static int slot = slotidx(VAOState.class);
+    public static int slot = slotidx(VaoState.class);
     public int slotidx() {return(slot);}
 }

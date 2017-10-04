@@ -40,6 +40,7 @@ public class GLProgram implements Disposable {
     public final Uniform[] uniforms;
     public final int[][] umap;
     public final Attribute[] attribs;
+    private final Map<Uniform, String> unifnms;
     private final Map<Attribute, String> attrnms;
     private ProgOb glp;
 
@@ -57,8 +58,10 @@ public class GLProgram implements Disposable {
 	}
 	{
 	    Uniform[] uniforms = ctx.uniforms.toArray(new Uniform[0]);
+	    Map<Uniform, String> unifnms = new IdentityHashMap<>();
 	    int[][] umap = new int[0][];
 	    for(int i = 0; i < uniforms.length; i++) {
+		unifnms.put(uniforms[i], ctx.symtab.get(uniforms[i]));
 		for(State.Slot slot : uniforms[i].deps) {
 		    if(umap.length <= slot.id)
 			umap = Arrays.copyOf(umap, slot.id + 1);
@@ -67,6 +70,7 @@ public class GLProgram implements Disposable {
 		}
 	    }
 	    this.uniforms = uniforms;
+	    this.unifnms = unifnms;
 	    this.umap = umap;
 	}
 	{
@@ -214,6 +218,11 @@ public class GLProgram implements Disposable {
 	    super(env);
 	    this.shaders = shaders;
 	    env.prepare(this);
+	    for(Map.Entry<Uniform, String> uni : GLProgram.this.unifnms.entrySet()) {
+		VarID id = new UniformID(uni.getValue());
+		umap.put(uni.getKey(), id);
+		env.prepare(id);
+	    }
 	    for(Map.Entry<Attribute, String> attr : GLProgram.this.attrnms.entrySet()) {
 		VarID id = new AttrID(attr.getValue());
 		amap.put(attr.getKey(), id);
@@ -257,9 +266,22 @@ public class GLProgram implements Disposable {
 	    }
 	}
 
+	public class UniformID extends VarID {
+	    private UniformID(String name) {super(name);}
+
+	    public void run(GL2 gl) {
+		if((this.id = gl.glGetUniformLocation(ProgOb.this.id, name)) < 0)
+		    throw(new UnknownExternException("Uniform not resolvable in program: " + name, GLProgram.this, "uniform", name));
+	    }
+	}
+
 	private final transient Map<Attribute, VarID> amap = new IdentityHashMap<>();
 	public VarID cattrib(Attribute var) {
 	    return(amap.get(var));
+	}
+	private final transient Map<Uniform, VarID> umap = new IdentityHashMap<>();
+	public VarID cuniform(Uniform var) {
+	    return(umap.get(var));
 	}
     }
 
@@ -275,14 +297,27 @@ public class GLProgram implements Disposable {
 	return(glp);
     }
 
+    public void apply(BGL gl) {
+	gl.glUseProgram(glid());
+    }
+
     public VarID cattrib(Attribute var) {
 	return(glid().cattrib(var));
     }
-
     public VarID attrib(Attribute var) {
 	VarID r = cattrib(var);
 	if(r == null)
 	    throw(new UnknownExternException("Attribute not found in symtab: " + var, this, "attrib", var.toString()));
+	return(r);
+    }
+
+    public VarID cuniform(Uniform var) {
+	return(glid().cuniform(var));
+    }
+    public VarID uniform(Uniform var) {
+	VarID r = cuniform(var);
+	if(r == null)
+	    throw(new UnknownExternException("Uniform not found in symtab: " + var, this, "uniform", var.toString()));
 	return(r);
     }
 

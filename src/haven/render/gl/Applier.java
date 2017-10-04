@@ -64,11 +64,13 @@ public class Applier {
 
     public GLProgram prog() {return(prog);}
 
-    private <T> void uapply(BGL gl, int ui) {
+    private <T> void uapply(BGL gl, int ui, Pipe pipe) {
 	GLProgram prog = this.prog;
-	Object val = prog.uniforms[ui].value.get();
+	Uniform var = prog.uniforms[ui];
+	Object val = var.value.apply(pipe);
 	if(val != uvals[ui]) {
-	    UniformApplier.TypeMapping.apply(gl, prog.uniforms[ui].type, val);
+	    UniformApplier.TypeMapping.apply(gl, var.type, prog.uniform(var), val);
+	    uvals[ui] = val;
 	}
     }
 
@@ -145,14 +147,18 @@ public class Applier {
 		    continue;
 		for(int ui : prog.umap[ch[i]]) {
 		    if(!applied[ui]) {
-			uapply(gl, ui);
+			uapply(gl, ui, to);
 			applied[ui] = true;
 		    }
 		}
 	    }
 	} else {
 	    this.shash = shash;
-	    setprog(env.getprog(shash, shaders));
+	    GLProgram prog = env.getprog(shash, shaders);
+	    setprog(prog);
+	    prog.apply(gl);
+	    for(int i = 0; i < prog.uniforms.length; i++)
+		uapply(gl, i, to);
 	}
     }
 

@@ -69,20 +69,50 @@ public interface UniformApplier<T> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T> void apply0(BGL gl, UniformApplier<T> fn, Object val) {
-	    fn.apply(gl, (T)val);
+	private static <T> void apply0(BGL gl, UniformApplier<T> fn, BGL.ID loc, Object val) {
+	    fn.apply(gl, loc, (T)val);
 	}
-	public static void apply(BGL gl, Type type, Object val) {
+	public static void apply(BGL gl, Type type, BGL.ID loc, Object val) {
 	    UniformApplier<?> fn = UniformApplier.TypeMapping.get(type, val.getClass());
-	    apply0(gl, fn, val);
+	    apply0(gl, fn, loc, val);
 	}
 
 	static {
-	    TypeMapping.register(Type.VEC2, Coord.class, (gl, c) -> {
-		    
+	    TypeMapping.register(Type.FLOAT, Float.class, (gl, loc, n) -> {
+		    gl.glUniform1f(loc, n);
+		});
+
+	    TypeMapping.register(Type.VEC2, float[].class, (gl, loc, a) -> {
+		    gl.glUniform2f(loc, a[0], a[1]);
+		});
+	    TypeMapping.register(Type.VEC2, Coord.class, (gl, loc, c) -> {
+		    gl.glUniform2f(loc, c.x, c.y);
+		});
+	    TypeMapping.register(Type.VEC2, Coord3f.class, (gl, loc, c) -> {
+		    gl.glUniform2f(loc, c.x, c.y);
+		});
+
+	    TypeMapping.register(Type.VEC3, float[].class, (gl, loc, a) -> {
+		    gl.glUniform3f(loc, a[0], a[1], a[2]);
+		});
+	    TypeMapping.register(Type.VEC3, Coord3f.class, (gl, loc, c) -> {
+		    gl.glUniform3f(loc, c.x, c.y, c.z);
+		});
+	    TypeMapping.register(Type.VEC3, java.awt.Color.class, (gl, loc, col) -> {
+		    gl.glUniform3f(loc, col.getRed() / 255f, col.getGreen() / 255f, col.getBlue() / 255f);
+		});
+
+	    TypeMapping.register(Type.VEC4, float[].class, (gl, loc, a) -> {
+		    gl.glUniform4f(loc, a[0], a[1], a[2], a[3]);
+		});
+	    TypeMapping.register(Type.VEC4, Coord3f.class, (gl, loc, c) -> {
+		    gl.glUniform4f(loc, c.x, c.y, c.z, 1);
+		});
+	    TypeMapping.register(Type.VEC4, java.awt.Color.class, (gl, loc, col) -> {
+		    gl.glUniform4f(loc, col.getRed() / 255f, col.getGreen() / 255f, col.getBlue() / 255f, col.getAlpha() / 255f);
 		});
 	}
     }
 
-    public void apply(BGL gl, T value);
+    public void apply(BGL gl, BGL.ID loc, T value);
 }

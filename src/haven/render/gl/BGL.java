@@ -763,6 +763,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void glUseProgram(final ID program) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glUseProgram(program.glid());}
+	    });
+    }
+
     public void glVertex2f(final float x, final float y) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glVertex2f(x, y);}
