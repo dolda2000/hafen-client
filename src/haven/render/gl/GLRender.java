@@ -203,6 +203,7 @@ public class GLRender implements Render {
 		gl.glDrawElements(glmode(data.mode), data.ind.n, GL.GL_UNSIGNED_SHORT, 0);
 	    }
 	} else {
+	    throw(new Error());
 	}
     }
 

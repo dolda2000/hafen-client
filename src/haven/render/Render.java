@@ -33,11 +33,11 @@ public interface Render {
     public Environment env();
     public void draw(Pipe pipe, Model data);
 
-    public default void draw(Pipe pipe, Model.Mode mode, short[] ind, VertexArray.Layout fmt, float[] data) {
+    public default void draw(Pipe pipe, Model.Mode mode, short[] ind, VertexArray.Layout fmt, int n, float[] data) {
 	Model.Indices indb = null;
 	if(ind != null)
 	    indb = new Model.Indices(ind.length, NumberFormat.UINT16, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(ind));
-	VertexArray vao = new VertexArray(fmt, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data)));
+	VertexArray vao = new VertexArray(fmt, n, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data)));
 	draw(pipe, new Model(mode, vao, indb));
     }
 }
