@@ -33,32 +33,11 @@ public interface Render {
     public Environment env();
     public void draw(Pipe pipe, Model data);
 
-    public default void draw(Pipe pipe, Model.Mode mode, short[] ind, Attribute tgt1, int nc1, float[] data1) {
+    public default void draw(Pipe pipe, Model.Mode mode, short[] ind, VertexArray.Layout fmt, float[] data) {
 	Model.Indices indb = null;
 	if(ind != null)
 	    indb = new Model.Indices(ind.length, NumberFormat.UINT16, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(ind));
-	VertexArray vao = new VertexArray(new VertexArray.Buffer(data1.length / nc1, nc1, NumberFormat.FLOAT32, DataBuffer.Usage.EPHEMERAL, tgt1, DataBuffer.Filler.of(data1)));
-	draw(pipe, new Model(mode, vao, indb));
-    }
-    public default void draw(Pipe pipe, Model.Mode mode, short[] ind, Attribute tgt1, int nc1, float[] data1, Attribute tgt2, int nc2, float[] data2) {
-	Model.Indices indb = null;
-	if(ind != null)
-	    indb = new Model.Indices(ind.length, NumberFormat.UINT16, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(ind));
-	VertexArray vao = new VertexArray(
-	    new VertexArray.Buffer(data1.length / nc1, nc1, NumberFormat.FLOAT32, DataBuffer.Usage.EPHEMERAL, tgt1, DataBuffer.Filler.of(data1)),
-	    new VertexArray.Buffer(data2.length / nc2, nc2, NumberFormat.FLOAT32, DataBuffer.Usage.EPHEMERAL, tgt2, DataBuffer.Filler.of(data2))
-	);
-	draw(pipe, new Model(mode, vao, indb));
-    }
-    public default void draw(Pipe pipe, Model.Mode mode, short[] ind, Attribute tgt1, int nc1, float[] data1, Attribute tgt2, int nc2, float[] data2, Attribute tgt3, int nc3, float[] data3) {
-	Model.Indices indb = null;
-	if(ind != null)
-	    indb = new Model.Indices(ind.length, NumberFormat.UINT16, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(ind));
-	VertexArray vao = new VertexArray(
-	    new VertexArray.Buffer(data1.length / nc1, nc1, NumberFormat.FLOAT32, DataBuffer.Usage.EPHEMERAL, tgt1, DataBuffer.Filler.of(data1)),
-	    new VertexArray.Buffer(data2.length / nc2, nc2, NumberFormat.FLOAT32, DataBuffer.Usage.EPHEMERAL, tgt2, DataBuffer.Filler.of(data2)),
-	    new VertexArray.Buffer(data3.length / nc3, nc3, NumberFormat.FLOAT32, DataBuffer.Usage.EPHEMERAL, tgt3, DataBuffer.Filler.of(data3))
-	);
+	VertexArray vao = new VertexArray(fmt, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data)));
 	draw(pipe, new Model(mode, vao, indb));
     }
 }

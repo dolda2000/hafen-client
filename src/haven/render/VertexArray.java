@@ -31,49 +31,71 @@ import haven.render.sl.Attribute;
 import haven.Disposable;
 
 public class VertexArray implements Disposable {
+    public final Layout fmt;
     public final Buffer[] bufs;
-    public final int n;
     public boolean shared = false;
     public Disposable ro;
 
-    public VertexArray(Collection<Buffer> bufs) {
-	Buffer[] na = new Buffer[bufs.size()];
-	Iterator<Buffer> bi = bufs.iterator();
-	na[0] = bi.next();
-	int num = na[0].n;
-	for(int i = 1; bi.hasNext(); i++) {
-	    na[i] = bi.next();
-	    if(na[i].n != num)
-		throw(new IllegalArgumentException("Buffer sizes do not match"));
-	}
-	this.bufs = na;
-	this.n = num;
+    public VertexArray(Layout fmt, Buffer... bufs) {
+	if(bufs.length != fmt.nbufs)
+	    throw(new IllegalArgumentException(String.format("Vertex layout requires %d buffers, only given %d", fmt.nbufs, bufs.length)));
+	this.fmt = fmt;
+	this.bufs = bufs;
     }
 
-    public VertexArray(Buffer... bufs) {
-	this(Arrays.asList(bufs));
+    public static class Layout {
+	public final Input[] inputs;
+	public final int nbufs;
+
+	public Layout(Input... inputs) {
+	    int mb = 0;
+	    for(Input in : inputs)
+		mb = Math.max(mb, in.buf);
+	    int nb = mb + 1;
+	    boolean[] used = new boolean[nb];
+	    for(Input in : inputs)
+		used[in.buf] = true;
+	    for(boolean u : used) {
+		if(!u)
+		    throw(new RuntimeException("Vertex buffers are not tightly packed"));
+	    }
+	    Arrays.sort(inputs, (a, b) -> a.buf - b.buf);
+	    this.inputs = inputs;
+	    this.nbufs = nb;
+	}
+
+	public static class Input {
+	    public final Attribute tgt;
+	    public final int nc;
+	    public final NumberFormat fmt;
+	    public final int buf, offset, stride;
+
+	    public Input(Attribute tgt, int nc, NumberFormat fmt, int buf, int offset, int stride) {
+		this.tgt = tgt;
+		this.nc = nc;
+		this.fmt = fmt;
+		this.buf = buf;
+		this.offset = offset;
+		this.stride = stride;
+	    }
+	}
     }
 
     public static class Buffer implements DataBuffer, Disposable {
-	public final int n, nc;
-	public final NumberFormat fmt;
+	public final int size;
 	public final Usage usage;
-	public final Attribute tgt;
 	public final Filler<? super Buffer> init;
 	public boolean shared = false;
 	public Disposable ro;
 
-	public Buffer(int n, int nc, NumberFormat fmt, Usage usage, Attribute tgt, Filler<? super Buffer> init) {
-	    this.n = n;
-	    this.nc = nc;
-	    this.fmt = fmt;
+	public Buffer(int size, Usage usage, Filler<? super Buffer> init) {
+	    this.size = size;
 	    this.usage = usage;
-	    this.tgt = tgt;
 	    this.init = init;
 	}
 
 	public int size() {
-	    return(n * nc * fmt.size);
+	    return(size);
 	}
 
 	public Buffer shared() {

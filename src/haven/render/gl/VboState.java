@@ -26,31 +26,43 @@
 
 package haven.render.gl;
 
-import java.util.*;
-import java.lang.reflect.*;
+import javax.media.opengl.GL;
 
-public abstract class GLState {
-    @SuppressWarnings("unchecked")
-    public static final Class<? extends GLState>[] slots = (Class<? extends GLState>[])new Class[] {
-	VaoState.class,
-	VboState.class,
-	EboState.class,
-    };
+public class VboState extends GLState {
+    public final GLBuffer buf;
 
-    public static int slotidx(Class<? extends GLState> cl) {
-	for(int i = 0; i < slots.length; i++) {
-	    if(slots[i] == cl)
-		return(i);
-	}
-	throw(new RuntimeException("No slot for " + cl));
+    public VboState(GLBuffer buf) {
+	this.buf = buf;
     }
 
-    public abstract void apply(BGL gl);
-    public abstract void unapply(BGL gl);
-    public abstract int slotidx();
+    public void apply(BGL gl) {
+	gl.glBindBuffer(GL.GL_ARRAY_BUFFER, buf);
+    }
+
+    public void unapply(BGL gl) {
+	gl.glBindBuffer(GL.GL_ARRAY_BUFFER, null);
+    }
 
     public void applyto(BGL gl, GLState to) {
-	unapply(gl);
-	to.apply(gl);
+	((VboState)to).apply(gl);
     }
+
+    public static void apply(BGL gl, Applier st, GLBuffer buf) {
+	if((st.glstates[slot] == null) || (((VboState)st.glstates[slot]).buf != buf))
+	    st.apply(gl, new VboState(buf));
+    }
+
+    public static void set(Applier st, GLBuffer buf) {
+	if((st.glstates[slot] == null) || (((VboState)st.glstates[slot]).buf != buf))
+	    st.glstates[slot] = new VboState(buf);
+    }
+
+    public static GLBuffer get(Applier st) {
+	if(st.glstates[slot] == null)
+	    return(null);
+	return(((VboState)st.glstates[slot]).buf);
+    }
+
+    public static int slot = slotidx(VboState.class);
+    public int slotidx() {return(slot);}
 }

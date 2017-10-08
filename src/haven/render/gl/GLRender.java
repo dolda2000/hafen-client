@@ -76,6 +76,41 @@ public class GLRender implements Render {
 	}
     }
 
+    private static int glattribfmt(NumberFormat fmt) {
+	switch(fmt) {
+	case UNORM8:    return(GL.GL_UNSIGNED_BYTE);
+	case SNORM8:    return(GL.GL_BYTE);
+	case UNORM16:   return(GL.GL_UNSIGNED_SHORT);
+	case SNORM16:   return(GL.GL_SHORT);
+	case UNORM32:   return(GL2.GL_UNSIGNED_INT);
+	case SNORM32:   return(GL2.GL_INT);
+	case FLOAT16:   return(GL.GL_HALF_FLOAT);
+	case FLOAT32:   return(GL.GL_FLOAT);
+	case UINT8:     return(GL.GL_UNSIGNED_BYTE);
+	case SINT8:     return(GL.GL_BYTE);
+	case UINT16:    return(GL.GL_UNSIGNED_SHORT);
+	case SINT16:    return(GL.GL_SHORT);
+	case UINT32:    return(GL2.GL_UNSIGNED_INT);
+	case SINT32:    return(GL2.GL_INT);
+	default:
+	    throw(new RuntimeException("unimplemented vertex attribute format " + fmt));
+	}
+    }
+
+    private static boolean glattribnorm(NumberFormat fmt) {
+	switch(fmt) {
+	case UNORM8:
+	case SNORM8:
+	case UNORM16:
+	case SNORM16:
+	case UNORM32:
+	case SNORM32:
+	    return(true);
+	default:
+	    return(false);
+	}
+    }
+
     public void draw(Pipe pipe, Model data) {
 	state.apply(this.gl, pipe);
 	if(ephemeralp(data)) {
@@ -83,41 +118,84 @@ public class GLRender implements Render {
 	    if(data.ind != null)
 		indo = env.prepare(data.ind);
 	    Disposable[] bufs = new Disposable[data.va.bufs.length];
-	    for(int i = 0; i < data.va.bufs.length; i++)
+	    int ne = 0;
+	    for(int i = 0; i < data.va.bufs.length; i++) {
 		bufs[i] = env.prepare(data.va.bufs[i]);
+		if(data.va.bufs[i].usage == EPHEMERAL)
+		    ne++;
+	    }
 
-	    GLProgram.VarID[] enable = new GLProgram.VarID[data.va.bufs.length];
-	    for(int i = 0, n = 0; i < enable.length; i++)
-		enable[i] = state.prog().cattrib(data.va.bufs[i].tgt);
+	    GLProgram.VarID[] enable = new GLProgram.VarID[data.va.fmt.inputs.length];
+	    for(int i = 0; i < enable.length; i++)
+		enable[i] = state.prog().cattrib(data.va.fmt.inputs[i].tgt);
 	    Vao0State.apply(this.gl, state, enable);
 
 	    BGL gl = gl();
-	    GLBuffer vbuf = env.tempvertex.get();
-	    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbuf);
-	    gl.bglSubmit(new BGL.Request() {
-		    public void run(GL2 gl) {
-			int sz = 0;
+	    int[] offsets = new int[data.va.bufs.length];
+	    GLBuffer cbuf = VboState.get(state);
+	    GLBuffer vbuf = null;
+	    if(ne > 0) {
+		vbuf = env.tempvertex.get();
+		if(vbuf != cbuf) {
+		    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbuf);
+		    cbuf = vbuf;
+		}
+		if(ne == 1) {
+		    int sbuf = -1;
+		    if(data.va.bufs.length == 1) {
+			sbuf = 0;
+		    } else {
 			for(int i = 0; i < data.va.bufs.length; i++) {
-			    if(data.va.bufs[i].usage == EPHEMERAL)
-				sz += data.va.bufs[i].size();
+			    if(data.va.bufs[i].usage == EPHEMERAL) {
+				sbuf = i;
+				break;
+			    }
 			}
-			ByteBuffer buf = ByteBuffer.wrap(new byte[sz]);
-			for(int i = 0; i < data.va.bufs.length; i++) {
-			    if(data.va.bufs[i].usage == EPHEMERAL)
-				buf.put(((HeapBuffer)bufs[i]).buf);
-			}
-			buf.flip();
-			gl.glBufferData(vbuf.glid(), sz, buf, GL2.GL_STREAM_DRAW);
 		    }
-		});
+		    gl.glBufferData(GL.GL_ARRAY_BUFFER, data.va.bufs[sbuf].size(), ByteBuffer.wrap(((HeapBuffer)bufs[sbuf]).buf), GL2.GL_STREAM_DRAW);
+		    offsets[sbuf] = 0;
+		} else {
+		    int sz = 0;
+		    for(int i = 0; i < data.va.bufs.length; i++) {
+			if(data.va.bufs[i].usage == EPHEMERAL) {
+			    sz += data.va.bufs[i].size();
+			    offsets[i] = sz;
+			}
+		    }
+		    int jdsz = sz; GLBuffer jdvbuf = vbuf;
+		    gl.bglSubmit(new BGL.Request() {
+			    public void run(GL2 gl) {
+				ByteBuffer buf = ByteBuffer.wrap(new byte[jdsz]);
+				for(int i = 0; i < data.va.bufs.length; i++) {
+				    if(data.va.bufs[i].usage == EPHEMERAL)
+					buf.put(((HeapBuffer)bufs[i]).buf);
+				}
+				buf.flip();
+				gl.glBufferData(jdvbuf.glid(), jdsz, buf, GL2.GL_STREAM_DRAW);
+			    }
+			});
+		}
+	    }
+	    for(int i = 0; i < data.va.fmt.inputs.length; i++) {
+		VertexArray.Layout.Input attr = data.va.fmt.inputs[i];
+		int off;
+		if(data.va.bufs[attr.buf].usage == EPHEMERAL) {
+		    if(vbuf != cbuf) {
+			gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbuf);
+			cbuf = vbuf;
+		    }
+		    off = offsets[data.va.fmt.inputs[i].buf];
+		} else {
+		    throw(new Error());
+		}
+		gl.glVertexAttribPointer(enable[i], attr.nc, glattribfmt(attr.fmt), glattribnorm(attr.fmt), attr.stride, attr.offset + off);
+	    }
+	    VboState.set(state, cbuf);
 	    if(data.ind == null) {
-		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, null);
 		gl.glDrawArrays(glmode(data.mode), 0, data.va.n);
 	    } else {
-		GLBuffer ind;
 		if(data.ind.usage == EPHEMERAL) {
-		    ind = env.tempindex.get();
-		    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ind);
+		    EboState.apply(gl, state, env.tempindex.get());
 		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, data.ind.size(), ByteBuffer.wrap(((HeapBuffer)indo).buf), GL2.GL_STREAM_DRAW);
 		} else {
 		    throw(new Error());
