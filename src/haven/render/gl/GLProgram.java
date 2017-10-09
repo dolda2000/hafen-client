@@ -61,7 +61,7 @@ public class GLProgram implements Disposable {
 	    Map<Uniform, String> unifnms = new IdentityHashMap<>();
 	    int[][] umap = new int[0][];
 	    for(int i = 0; i < uniforms.length; i++) {
-		unifnms.put(uniforms[i], ctx.symtab.get(uniforms[i]));
+		unifnms.put(uniforms[i], ctx.symtab.get(uniforms[i].name));
 		for(State.Slot slot : uniforms[i].deps) {
 		    if(umap.length <= slot.id)
 			umap = Arrays.copyOf(umap, slot.id + 1);
@@ -76,7 +76,7 @@ public class GLProgram implements Disposable {
 	{
 	    Map<Attribute, String> attribs = new IdentityHashMap<>();
 	    for(Attribute attr : ctx.attribs)
-		attribs.put(attr, ctx.symtab.get(attr));
+		attribs.put(attr, ctx.symtab.get(attr.name));
 	    this.attrnms = attribs;
 	    this.attribs = attribs.keySet().toArray(new Attribute[0]);
 	}
