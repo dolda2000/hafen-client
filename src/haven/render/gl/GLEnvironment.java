@@ -57,15 +57,17 @@ public class GLEnvironment implements Environment {
 		prep = this.prep;
 		this.prep = null;
 	    }
-	    if(prep != null) {
-		prep.run(gl);
+	    synchronized(drawmon) {
+		if(prep != null) {
+		    prep.run(gl);
+		}
+		BufferBGL xf = new BufferBGL(16);
+		this.curstate.apply(xf, cmd.init);
+		xf.run(gl);
+		cmd.gl.run(gl);
+		this.curstate = cmd.state;
+		GLException.checkfor(gl);
 	    }
-	    BufferBGL xf = new BufferBGL(16);
-	    this.curstate.apply(xf, cmd.init);
-	    xf.run(gl);
-	    cmd.gl.run(gl);
-	    this.curstate = cmd.state;
-	    GLException.checkfor(gl);
 	}
     }
 
