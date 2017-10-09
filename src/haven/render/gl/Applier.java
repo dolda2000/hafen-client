@@ -74,12 +74,59 @@ public class Applier {
 	}
     }
 
+    private abstract static class StateMap<S extends State> {
+	final int slot;
+
+	StateMap(State.Slot<? extends S> slot) {
+	    this.slot = slot.id;
+	}
+
+	abstract void apply(Applier st, BGL gl, S state);
+    }
+
+    private static final StateMap statemap[] = {
+	new StateMap<States.Viewport>(States.viewport) {
+	    void apply(Applier st, BGL gl, States.Viewport vp) {
+		if(vp != null)
+		    st.apply(gl, new Viewport(vp.area));
+		else
+		    st.apply(gl, Viewport.slot, null);
+	    }
+	},
+	new StateMap<States.Scissor>(States.scissor) {
+	    void apply(Applier st, BGL gl, States.Scissor sc) {
+		if(sc != null)
+		    st.apply(gl, new Scissor(sc.area));
+		else
+		    st.apply(gl, Scissor.slot, null);
+	    }
+	},
+	new StateMap<State>(States.depthtest.slot) {
+	    void apply(Applier st, BGL gl, State pst) {
+		if(pst != null)
+		    st.apply(gl, DepthTest.instance);
+		else
+		    st.apply(gl, DepthTest.slot, null);
+	    }
+	},
+    };
+
+    @SuppressWarnings("unchecked")
+    private <T extends State> void map0(StateMap<T> fn, BGL gl, State[] to) {
+	T ns = (fn.slot < to.length) ? (T)to[fn.slot] : null;
+	T os = (fn.slot < cur.length) ? (T)cur[fn.slot] : null;
+	if(!eq(ns, os))
+	    fn.apply(this, gl, ns);
+    }
+
     private void assume(State[] ns) {
 	int hash = 0, i;
 	if(this.cur.length < ns.length) {
 	    this.cur = Arrays.copyOf(this.cur, ns.length);
 	    this.shaders = Arrays.copyOf(this.shaders, this.cur.length);
 	}
+	for(StateMap<?> sm : statemap)
+	    map0(sm, null, ns);
 	State[] cur = this.cur;
 	ShaderMacro[] shaders = this.shaders;
 	for(i = 0; i < ns.length; i++) {
@@ -102,12 +149,7 @@ public class Applier {
 	setprog(env.getprog(hash, shaders));
     }
 
-    public void apply(BGL gl, Pipe to) {
-	State[] ns = to.states();
-	if(gl == null) {
-	    assume(ns);
-	    return;
-	}
+    private void apply2(BGL gl, State[] ns, Pipe to) {
 	if(this.cur.length < ns.length) {
 	    this.cur = Arrays.copyOf(this.cur, ns.length);
 	    this.shaders = Arrays.copyOf(this.shaders, this.cur.length);
@@ -162,8 +204,18 @@ public class Applier {
 	}
     }
 
-    public void apply(BGL gl, GLState st) {
-	int slot = st.slotidx();
+    public void apply(BGL gl, Pipe to) {
+	State[] ns = to.states();
+	if(gl == null) {
+	    assume(ns);
+	    return;
+	}
+	for(StateMap<?> sm : statemap)
+	    map0(sm, gl, ns);
+	apply2(gl, ns, to);
+    }
+
+    public void apply(BGL gl, int slot, GLState st) {
 	if(gl == null) {
 	    glstates[slot] = st;
 	    return;
@@ -179,5 +231,18 @@ public class Applier {
 	    cur.applyto(gl, st);
 	    glstates[slot] = st;
 	}
+    }
+
+    public void apply(BGL gl, GLState st) {
+	apply(gl, st.slotidx(), st);
+    }
+
+    public void apply(BGL gl, Applier that) {
+	if(gl == null)
+	    throw(new NullPointerException());
+	for(int i = 0; i < this.glstates.length; i++) {
+	    apply(gl, i, that.glstates[i]);
+	}
+	apply2(gl, that.cur, new Pipe(that.cur));
     }
 }

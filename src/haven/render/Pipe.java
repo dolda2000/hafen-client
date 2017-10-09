@@ -33,7 +33,8 @@ import static haven.Utils.eq;
 public class Pipe {
     private State[] states;
 
-    private Pipe(State[] states) {
+    /* Implementation-side only */
+    public Pipe(State[] states) {
 	this.states = states;
     }
 
@@ -89,6 +90,10 @@ public class Pipe {
 	return(true);
     }
 
+    public static interface Op {
+	public void apply(Pipe pipe);
+    }
+
     public String toString() {
 	StringBuilder buf = new StringBuilder();
 	buf.append('[');
@@ -108,6 +113,7 @@ public class Pipe {
 	return(buf.toString());
     }
 
+    /* Implementation-side only */
     public State[] states() {
 	return(states);
     }

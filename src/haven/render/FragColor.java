@@ -49,4 +49,6 @@ public class FragColor extends State {
     public ShaderMacro shader() {
 	return(shader);
     }
+
+    public void apply(Pipe p) {p.put(slot, this);}
 }

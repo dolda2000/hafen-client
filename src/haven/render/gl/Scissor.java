@@ -24,42 +24,35 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import java.util.*;
-import haven.render.sl.*;
+import javax.media.opengl.GL;
+import haven.Area;
 
-public abstract class State implements Pipe.Op {
-    public static class Slot<T extends State> {
-	static Slots slots = new Slots(new Slot<?>[0]);
-	public final Type type;
-	public final int id;
-	public final Class<T> scl;
-	private int depid = -1;
+public class Scissor extends GLState {
+    public final Area area;
 
-	public enum Type {
-	    SYS, GEOM, DRAW
-	}
-
-	public static class Slots {
-	    public final Slot<?>[] idlist;
-
-	    public Slots(Slot<?>[] idlist) {
-		this.idlist = idlist;
-	    }
-	}
-
-	public Slot(Type type, Class<T> scl) {
-	    this.type = type;
-	    this.scl = scl;
-	    synchronized(Slot.class) {
-		this.id = slots.idlist.length;
-		Slot<?>[] nlist = Arrays.copyOf(slots.idlist, this.id + 1);
-		nlist[this.id] = this;
-		slots = new Slots(nlist);
-	    }
-	}
+    public Scissor(Area area) {
+	this.area = area;
     }
 
-    public abstract ShaderMacro shader();
+    private void apply0(BGL gl) {
+	gl.glViewport(area.ul.x, area.ul.y, area.br.x - area.ul.x, area.br.y - area.ul.y);
+    }
+
+    public void apply(BGL gl) {
+	apply0(gl);
+	gl.glEnable(GL.GL_SCISSOR_TEST);
+    }
+
+    public void unapply(BGL gl) {
+	gl.glDisable(GL.GL_SCISSOR_TEST);
+    }
+
+    public void applyto(BGL gl, GLState to) {
+	((Scissor)to).apply0(gl);
+    }
+
+    public static int slot = slotidx(Scissor.class);
+    public int slotidx() {return(slot);}
 }

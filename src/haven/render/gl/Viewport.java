@@ -24,42 +24,30 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import java.util.*;
-import haven.render.sl.*;
+import javax.media.opengl.GL;
+import haven.Area;
 
-public abstract class State implements Pipe.Op {
-    public static class Slot<T extends State> {
-	static Slots slots = new Slots(new Slot<?>[0]);
-	public final Type type;
-	public final int id;
-	public final Class<T> scl;
-	private int depid = -1;
+public class Viewport extends GLState {
+    public final Area area;
 
-	public enum Type {
-	    SYS, GEOM, DRAW
-	}
-
-	public static class Slots {
-	    public final Slot<?>[] idlist;
-
-	    public Slots(Slot<?>[] idlist) {
-		this.idlist = idlist;
-	    }
-	}
-
-	public Slot(Type type, Class<T> scl) {
-	    this.type = type;
-	    this.scl = scl;
-	    synchronized(Slot.class) {
-		this.id = slots.idlist.length;
-		Slot<?>[] nlist = Arrays.copyOf(slots.idlist, this.id + 1);
-		nlist[this.id] = this;
-		slots = new Slots(nlist);
-	    }
-	}
+    public Viewport(Area area) {
+	this.area = area;
     }
 
-    public abstract ShaderMacro shader();
+    public void apply(BGL gl) {
+	gl.glViewport(area.ul.x, area.ul.y, area.br.x - area.ul.x, area.br.y - area.ul.y);
+    }
+
+    public void unapply(BGL gl) {
+	/* XXX? Is this even important? */
+    }
+
+    public void applyto(BGL gl, GLState to) {
+	((Viewport)to).apply(gl);
+    }
+
+    public static int slot = slotidx(Viewport.class);
+    public int slotidx() {return(slot);}
 }

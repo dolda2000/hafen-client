@@ -33,40 +33,50 @@ import haven.render.State.Slot;
 public abstract class States {
     private States() {}
 
-    private static class Builtin extends State {
+    private abstract static class Builtin extends State {
 	public ShaderMacro shader() {return(null);}
     }
 
     public static abstract class StandAlone extends Builtin {
-	public final Slot<? extends StandAlone> slot;
-
-	private static <T extends StandAlone> Slot<T> javaGenericsSuck(Slot.Type type, Class<T> cl) {
-	    return(new Slot<T>(type, cl));
-	}
+	public final Slot<StandAlone> slot;
 
 	StandAlone(Slot.Type type) {
-	    this.slot = javaGenericsSuck(type, this.getClass());
+	    this.slot = new Slot<StandAlone>(type, StandAlone.class);
 	}
+
+	public void apply(Pipe p) {p.put(slot, this);}
     }
 
     public static final Slot<State> vxf = new Slot<State>(Slot.Type.SYS, State.class);
 
-    public Slot<Viewport> viewport = new Slot<Viewport>(Slot.Type.SYS, Viewport.class);
+    public static Slot<Viewport> viewport = new Slot<Viewport>(Slot.Type.SYS, Viewport.class);
     public static class Viewport extends Builtin {
 	public final Area area;
 
 	public Viewport(Area area) {
 	    this.area = area;
 	}
+
+	public boolean equals(Object o) {
+	    return((o instanceof Viewport) && (((Viewport)o).area.equals(area)));
+	}
+
+	public void apply(Pipe p) {p.put(viewport, this);}
     }
 
-    public Slot<Scissor> scissor = new Slot<Scissor>(Slot.Type.SYS, Scissor.class);
+    public static Slot<Scissor> scissor = new Slot<Scissor>(Slot.Type.SYS, Scissor.class);
     public static class Scissor extends Builtin {
 	public final Area area;
 
 	public Scissor(Area area) {
 	    this.area = area;
 	}
+
+	public boolean equals(Object o) {
+	    return((o instanceof Scissor) && (((Scissor)o).area.equals(area)));
+	}
+
+	public void apply(Pipe p) {p.put(scissor, this);}
     }
 
     public static final StandAlone depthtest = new StandAlone(Slot.Type.GEOM) {};

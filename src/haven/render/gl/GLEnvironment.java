@@ -37,7 +37,8 @@ import static haven.render.DataBuffer.Usage.*;
 
 public class GLEnvironment implements Environment {
     public final GLContext ctx;
-    private BGL prep = null;
+    private BufferBGL prep = null;
+    private Applier curstate = new Applier(this);
     final Object drawmon = new Object();
     final Object prepmon = new Object();
 
@@ -47,6 +48,25 @@ public class GLEnvironment implements Environment {
 
     public GLRender render() {
 	return(new GLRender(this));
+    }
+
+    public void submit(GL2 gl, GLRender cmd) {
+	if(cmd.gl != null) {
+	    BufferBGL prep;
+	    synchronized(prepmon) {
+		prep = this.prep;
+		this.prep = null;
+	    }
+	    if(prep != null) {
+		prep.run(gl);
+	    }
+	    BufferBGL xf = new BufferBGL(16);
+	    this.curstate.apply(xf, cmd.init);
+	    xf.run(gl);
+	    cmd.gl.run(gl);
+	    this.curstate = cmd.state;
+	    GLException.checkfor(gl);
+	}
     }
 
     public FillBuffer fillbuf(DataBuffer tgt) {

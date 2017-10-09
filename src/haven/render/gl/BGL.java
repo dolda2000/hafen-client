@@ -1070,7 +1070,7 @@ public abstract class BGL {
 	}
 
 	public void dump() {
-	    dump(System.out);
+	    dump(System.err);
 	}
     }
 }

@@ -34,9 +34,9 @@ import static haven.render.DataBuffer.Usage.*;
 
 public class GLRender implements Render {
     public final GLEnvironment env;
-    private BGL gl = null;
-    private final Applier state;
-    private Applier init = null;
+    BufferBGL gl = null;
+    final Applier state;
+    Applier init = null;
 
     GLRender(GLEnvironment env) {
 	this.env = env;

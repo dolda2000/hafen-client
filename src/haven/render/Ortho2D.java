@@ -46,7 +46,8 @@ public class Ortho2D extends State {
     }
 
     private static final ShaderMacro shader = prog -> {
-	prog.vctx.posv.mod(in -> add(mv.ref(), mul(pos.ref(), kv.ref())), 0);
+	prog.vctx.posv.mod(in -> vec4(add(mv.ref(), mul(pos.ref(), kv.ref())), l(0.0), l(1.0)), 0);
     };
     public ShaderMacro shader() {return(shader);}
+    public void apply(Pipe p) {p.put(States.vxf, this);}
 }

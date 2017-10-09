@@ -24,42 +24,26 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import java.util.*;
-import haven.render.sl.*;
+import javax.media.opengl.GL;
 
-public abstract class State implements Pipe.Op {
-    public static class Slot<T extends State> {
-	static Slots slots = new Slots(new Slot<?>[0]);
-	public final Type type;
-	public final int id;
-	public final Class<T> scl;
-	private int depid = -1;
+public class DepthTest extends GLState {
+    public static final DepthTest instance = new DepthTest();
 
-	public enum Type {
-	    SYS, GEOM, DRAW
-	}
+    private DepthTest() {}
 
-	public static class Slots {
-	    public final Slot<?>[] idlist;
-
-	    public Slots(Slot<?>[] idlist) {
-		this.idlist = idlist;
-	    }
-	}
-
-	public Slot(Type type, Class<T> scl) {
-	    this.type = type;
-	    this.scl = scl;
-	    synchronized(Slot.class) {
-		this.id = slots.idlist.length;
-		Slot<?>[] nlist = Arrays.copyOf(slots.idlist, this.id + 1);
-		nlist[this.id] = this;
-		slots = new Slots(nlist);
-	    }
-	}
+    public void apply(BGL gl) {
+	gl.glEnable(GL.GL_DEPTH_TEST);
     }
 
-    public abstract ShaderMacro shader();
+    public void unapply(BGL gl) {
+	gl.glDisable(GL.GL_DEPTH_TEST);
+    }
+
+    public void applyto(BGL gl, GLState to) {
+    }
+
+    public static int slot = slotidx(DepthTest.class);
+    public int slotidx() {return(slot);}
 }
