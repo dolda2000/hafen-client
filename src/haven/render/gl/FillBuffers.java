@@ -43,7 +43,7 @@ public class FillBuffers {
 
 	public ByteBuffer push() {
 	    if(bv == null)
-		bv = ByteBuffer.wrap(data);
+		bv = ByteBuffer.wrap(data).order(ByteOrder.nativeOrder());
 	    return(bv);
 	}
 

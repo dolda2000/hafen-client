@@ -240,9 +240,8 @@ public class Applier {
     public void apply(BGL gl, Applier that) {
 	if(gl == null)
 	    throw(new NullPointerException());
-	for(int i = 0; i < this.glstates.length; i++) {
+	for(int i = 0; i < this.glstates.length; i++)
 	    apply(gl, i, that.glstates[i]);
-	}
 	apply2(gl, that.cur, new Pipe(that.cur));
     }
 }
