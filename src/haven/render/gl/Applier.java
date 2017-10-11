@@ -185,7 +185,7 @@ public class Applier {
 	    GLProgram prog = this.prog;
 	    boolean[] applied = new boolean[prog.uniforms.length];
 	    for(int i = 0; i < n; i++) {
-		if(prog.umap[ch[i]] == null)
+		if((prog.umap.length <= ch[i]) || prog.umap[ch[i]] == null)
 		    continue;
 		for(int ui : prog.umap[ch[i]]) {
 		    if(!applied[ui]) {
