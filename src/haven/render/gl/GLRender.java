@@ -188,7 +188,7 @@ public class GLRender implements Render {
 		} else {
 		    throw(new Error());
 		}
-		gl.glVertexAttribPointer(enable[i], attr.nc, glattribfmt(attr.fmt), glattribnorm(attr.fmt), attr.stride, attr.offset + off);
+		gl.glVertexAttribPointer(enable[i], attr.el.nc, glattribfmt(attr.el.cf), glattribnorm(attr.el.cf), attr.stride, attr.offset + off);
 	    }
 	    VboState.set(state, cbuf);
 	    if(data.ind == null) {

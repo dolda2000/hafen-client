@@ -68,14 +68,12 @@ public class VertexArray implements Disposable {
 
 	public static class Input {
 	    public final Attribute tgt;
-	    public final int nc;
-	    public final NumberFormat fmt;
+	    public final VectorFormat el;
 	    public final int buf, offset, stride;
 
-	    public Input(Attribute tgt, int nc, NumberFormat fmt, int buf, int offset, int stride) {
+	    public Input(Attribute tgt, VectorFormat el, int buf, int offset, int stride) {
 		this.tgt = tgt;
-		this.nc = nc;
-		this.fmt = fmt;
+		this.el = el;
 		this.buf = buf;
 		this.offset = offset;
 		this.stride = stride;
