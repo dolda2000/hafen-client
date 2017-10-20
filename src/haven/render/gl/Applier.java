@@ -64,10 +64,8 @@ public class Applier {
 
     public GLProgram prog() {return(prog);}
 
-    private <T> void uapply(BGL gl, int ui, Pipe pipe) {
-	GLProgram prog = this.prog;
+    private <T> void uapply(BGL gl, GLProgram prog, int ui, Object val) {
 	Uniform var = prog.uniforms[ui];
-	Object val = var.value.apply(pipe);
 	if(val != uvals[ui]) {
 	    UniformApplier.TypeMapping.apply(gl, var.type, prog.uniform(var), val);
 	    uvals[ui] = val;
@@ -149,6 +147,17 @@ public class Applier {
 	setprog(env.getprog(hash, shaders));
     }
 
+    private Object getuval(GLProgram prog, int ui, Pipe pipe) {
+	Object val = prog.uniforms[ui].value.apply(pipe);
+	if(val == null)
+	    throw(new NullPointerException(String.format("tried to set null for uniform %s on %s", prog.uniforms[ui], pipe)));
+	return(val);
+    }
+
+    private Object prepuval(Object val) {
+	return(val);
+    }
+
     private void apply2(BGL gl, State[] ns, Pipe to) {
 	if(this.cur.length < ns.length) {
 	    this.cur = Arrays.copyOf(this.cur, ns.length);
@@ -156,51 +165,78 @@ public class Applier {
 	}
 	State[] cur = this.cur;
 	ShaderMacro[] shaders = this.shaders;
-	int[] ch = new int[ns.length];
-	int n = 0;
+	int[] pdirty = new int[cur.length];
+	int pn = 0;
 	{
 	    int i = 0;
 	    for(; i < ns.length; i++) {
 		if(!eq(ns[i], cur[i]))
-		    ch[n++] = i;
+		    pdirty[pn++] = i;
 	    }
 	    for(; i < cur.length; i++) {
 		if(cur[i] != null)
-		    ch[n++] = i;
+		    pdirty[pn++] = i;
 	    }
 	}
-	if(n == 0)
+	if(pn == 0)
 	    return;
 	int shash = this.shash;
-	for(int i = 0; i < n; i++) {
-	    State s = (ch[i] < ns.length) ? ns[ch[i]] : null;
+	int[] sdirty = new int[cur.length];
+	ShaderMacro[] nshaders = new ShaderMacro[cur.length];
+	int sn = 0;
+	for(int i = 0; i < pn; i++) {
+	    int slot = pdirty[i];
+	    State s = (slot < ns.length) ? ns[slot] : null;
 	    ShaderMacro nm = ((s == null) ? null : s.shader());
-	    if(nm != shaders[ch[i]]) {
-		shash ^= System.identityHashCode(shaders[ch[i]]);
-		shaders[ch[i]] = nm;
-		shash ^= System.identityHashCode(nm);
+	    if(nm != shaders[slot]) {
+		shash ^= System.identityHashCode(shaders[slot]) ^ System.identityHashCode(nm);
+		sdirty[sn] = pdirty[i];
+		nshaders[sn] = nm;
+		sn++;
 	    }
 	}
-	if(shash == this.shash) {
-	    GLProgram prog = this.prog;
-	    boolean[] applied = new boolean[prog.uniforms.length];
-	    for(int i = 0; i < n; i++) {
-		if((prog.umap.length <= ch[i]) || prog.umap[ch[i]] == null)
+	GLProgram prog = this.prog;
+	if(sn > 0) {
+	    ShaderMacro[] gshaders = Arrays.copyOf(shaders, shaders.length);
+	    for(int i = 0; i < sn; i++)
+		gshaders[sdirty[i]] = nshaders[i];
+	    prog = env.getprog(shash, gshaders);
+	}
+	int[] udirty = new int[prog.uniforms.length];
+	int un = 0;
+	if(prog == this.prog) {
+	    boolean[] ch = new boolean[prog.uniforms.length];
+	    for(int i = 0; i < pn; i++) {
+		if((prog.umap.length <= pdirty[i]) || prog.umap[pdirty[i]] == null)
 		    continue;
-		for(int ui : prog.umap[ch[i]]) {
-		    if(!applied[ui]) {
-			uapply(gl, ui, to);
-			applied[ui] = true;
+		for(int ui : prog.umap[pdirty[i]]) {
+		    if(!ch[ui]) {
+			udirty[un++] = ui;
+			ch[ui] = true;
 		    }
 		}
 	    }
 	} else {
-	    this.shash = shash;
-	    GLProgram prog = env.getprog(shash, shaders);
+	    un = udirty.length;
+	    for(int i = 0; i < udirty.length; i++)
+		udirty[i] = i;
+	}
+	Object[] nuvals = new Object[un];
+	for(int i = 0; i < un; i++) {
+	    int ui = udirty[i];
+	    nuvals[i] = prepuval(getuval(prog, ui, to));
+	}
+
+	for(int i = 0; i < pn; i++)
+	    cur[pdirty[i]] = ns[pdirty[i]];
+	for(int i = 0; i < sn; i++)
+	    shaders[sdirty[i]] = nshaders[i];
+	if(prog != this.prog) {
 	    setprog(prog);
 	    prog.apply(gl);
-	    for(int i = 0; i < prog.uniforms.length; i++)
-		uapply(gl, i, to);
+	}
+	for(int i = 0; i < un; i++) {
+	    uapply(gl, prog, udirty[i], nuvals[i]);
 	}
     }
 

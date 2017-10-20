@@ -66,7 +66,7 @@ public class Uniform extends Variable.Global {
     public void use(Context ctx) {
 	if(!defined(ctx))
 	    ctx.vardefs.add(new Def());
-	if(type == Type.SAMPLER2DMS)
+	if((type == Type.SAMPLER2DMS) || (type == Type.SAMPLER2DMSARRAY))
 	    ctx.exts.add("GL_ARB_texture_multisample");
     }
 }

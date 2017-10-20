@@ -38,6 +38,8 @@ public interface Render {
 	if(ind != null)
 	    indb = new Model.Indices(ind.length, NumberFormat.UINT16, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(ind));
 	VertexArray vao = new VertexArray(fmt, n, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data)));
-	draw(pipe, new Model(mode, vao, indb));
+	Model model = new Model(mode, vao, indb);
+	draw(pipe, model);
+	model.dispose();
     }
 }

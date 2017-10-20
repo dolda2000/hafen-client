@@ -92,6 +92,56 @@ public class Pipe {
 
     public static interface Op {
 	public void apply(Pipe pipe);
+
+	public static class Composed implements Op {
+	    private final Op[] ops;
+
+	    public Composed(Op... ops) {
+		int i, n;
+		for(i = n = 0; i < ops.length; i++) {
+		    if(ops[i] != null)
+			n++;
+		}
+		if(n != i) {
+		    Op[] td = new Op[n];
+		    for(i = n = 0; i < ops.length; i++) {
+			if(ops[i] != null)
+			    td[n++] = ops[i];
+		    }
+		    this.ops = td;
+		} else {
+		    this.ops = ops;
+		}
+	    }
+
+	    public void apply(Pipe pipe) {
+		for(Op op : ops)
+		    op.apply(pipe);
+	    }
+
+	    public boolean equals(Object o) {
+		if(!(o instanceof Composed))
+		    return(false);
+		return(Arrays.equals(ops, ((Composed)o).ops));
+	    }
+
+	    public int hashCode() {
+		return(Arrays.hashCode(ops));
+	    }
+
+	    public String toString() {
+		return("#<composed " + Arrays.asList(ops) + ">");
+	    }
+	}
+
+	public static Op compose(Op... ops) {
+	    return(new Composed(ops));
+	}
+    }
+
+    public Pipe prep(Op op) {
+	op.apply(this);
+	return(this);
     }
 
     public String toString() {

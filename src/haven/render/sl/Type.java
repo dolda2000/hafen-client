@@ -49,10 +49,18 @@ public abstract class Type {
     public static final Type IVEC4 = new Simple("ivec4");
     public static final Type MAT3 = new Simple("mat3");
     public static final Type MAT4 = new Simple("mat4");
+    public static final Type SAMPLER1D = new Simple("sampler1D");
+    public static final Type SAMPLER1DARRAY = new Simple("sampler1DArray");
     public static final Type SAMPLER2D = new Simple("sampler2D");
+    public static final Type SAMPLER2DARRAY = new Simple("sampler2DArray");
+    public static final Type SAMPLER2DSHADOW = new Simple("sampler2DShadow");
     public static final Type SAMPLER2DMS = new Simple("sampler2DMS");
+    public static final Type SAMPLER2DMSARRAY = new Simple("sampler2DMSArray");
     public static final Type SAMPLER3D = new Simple("sampler3D");
     public static final Type SAMPLERCUBE = new Simple("samplerCube");
+    public static final Type SAMPLERCUBEARRAY = new Simple("samplerCubeArray");
+    public static final Type SAMPLERCUBESHADOW = new Simple("samplerCubeShadow");
+    public static final Type SAMPLERBUFFER = new Simple("samplerBuffer");
 
     public abstract String name(Context ctx);
 }

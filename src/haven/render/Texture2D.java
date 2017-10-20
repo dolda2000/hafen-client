@@ -28,24 +28,38 @@ package haven.render;
 
 import haven.*;
 
-public class Texture2D implements Disposable {
-    protected final Coord dim;
-    public Disposable ro;
+public class Texture2D extends Texture {
+    public final int w, h;
+    private final boolean pot;
 
-    public Texture2D(Coord dim) {
-	this.dim = dim;
+    public Texture2D(int w, int h, DataBuffer.Usage usage, VectorFormat ifmt, VectorFormat efmt, DataBuffer.Filler<? super Image> init) {
+	super(usage, ifmt, efmt, init);
+	if((w < 0) || (h < 0))
+	    throw(new IllegalArgumentException(String.format("Texture sizes must be non-negative, not (%d, %d)", w, h)));
+	this.w = w;
+	this.h = h;
+	this.pot = ((w & (w - 1)) == 0) && ((h & (h - 1)) == 0);
     }
 
-    public Coord sz() {
-	return(dim);
+    public Texture2D(Coord dim, DataBuffer.Usage usage, VectorFormat ifmt, VectorFormat efmt, DataBuffer.Filler<? super Image> init) {
+	this(dim.x, dim.y, usage, ifmt, efmt, init);
     }
 
-    public void dispose() {
-	synchronized(this) {
-	    if(ro != null) {
-		ro.dispose();
-		ro = null;
-	    }
+    public Image<Texture2D> image(int level) {
+	if((level < 0) || (level >= 32))
+	    throw(new IllegalArgumentException(Integer.toString(level)));
+	if(level > 0) {
+	    if(!pot)
+		throw(new IllegalArgumentException("Non-power-of-two textures cannot be mipmapped"));
+	    if(((w >> level) == 0) || ((h >> level) == 0))
+		throw(new IllegalArgumentException(String.format("Invalid mipmap level %d for (%d, %d) texture", level, w, h)));
+	}
+	return(new Image<>(this, Math.max(w >> level, 1), Math.max(h >> level, 1), 1, level));
+    }
+
+    public static class Sampler2D extends Sampler<Texture2D> {
+	public Sampler2D(Texture2D tex) {
+	    super(tex);
 	}
     }
 }
