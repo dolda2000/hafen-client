@@ -35,9 +35,6 @@ public abstract class GLState {
 	VaoState.class,
 	VboState.class,
 	EboState.class,
-	Viewport.class,
-	Scissor.class,
-	DepthTest.class,
     };
 
     public static int slotidx(Class<? extends GLState> cl) {

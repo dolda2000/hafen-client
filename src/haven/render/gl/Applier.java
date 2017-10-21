@@ -53,6 +53,7 @@ public class Applier {
 	ret.shaders = Arrays.copyOf(this.shaders, this.shaders.length);
 	ret.shash = this.shash;
 	ret.prog = this.prog;
+	ret.uvals = Arrays.copyOf(this.uvals, this.uvals.length);
 	ret.glstates = Arrays.copyOf(this.glstates, this.glstates.length);
 	return(ret);
     }
@@ -72,81 +73,6 @@ public class Applier {
 	}
     }
 
-    private abstract static class StateMap<S extends State> {
-	final int slot;
-
-	StateMap(State.Slot<? extends S> slot) {
-	    this.slot = slot.id;
-	}
-
-	abstract void apply(Applier st, BGL gl, S state);
-    }
-
-    private static final StateMap statemap[] = {
-	new StateMap<States.Viewport>(States.viewport) {
-	    void apply(Applier st, BGL gl, States.Viewport vp) {
-		if(vp != null)
-		    st.apply(gl, new Viewport(vp.area));
-		else
-		    st.apply(gl, Viewport.slot, null);
-	    }
-	},
-	new StateMap<States.Scissor>(States.scissor) {
-	    void apply(Applier st, BGL gl, States.Scissor sc) {
-		if(sc != null)
-		    st.apply(gl, new Scissor(sc.area));
-		else
-		    st.apply(gl, Scissor.slot, null);
-	    }
-	},
-	new StateMap<State>(States.depthtest.slot) {
-	    void apply(Applier st, BGL gl, State pst) {
-		if(pst != null)
-		    st.apply(gl, DepthTest.instance);
-		else
-		    st.apply(gl, DepthTest.slot, null);
-	    }
-	},
-    };
-
-    @SuppressWarnings("unchecked")
-    private <T extends State> void map0(StateMap<T> fn, BGL gl, State[] to) {
-	T ns = (fn.slot < to.length) ? (T)to[fn.slot] : null;
-	T os = (fn.slot < cur.length) ? (T)cur[fn.slot] : null;
-	if(!eq(ns, os))
-	    fn.apply(this, gl, ns);
-    }
-
-    private void assume(State[] ns) {
-	int hash = 0, i;
-	if(this.cur.length < ns.length) {
-	    this.cur = Arrays.copyOf(this.cur, ns.length);
-	    this.shaders = Arrays.copyOf(this.shaders, this.cur.length);
-	}
-	for(StateMap<?> sm : statemap)
-	    map0(sm, null, ns);
-	State[] cur = this.cur;
-	ShaderMacro[] shaders = this.shaders;
-	for(i = 0; i < ns.length; i++) {
-	    cur[i] = ns[i];
-	    ShaderMacro shader = (cur[i] == null) ? null : cur[i].shader();
-	    if(shader != shaders[i]) {
-		hash ^= System.identityHashCode(shaders[i]);
-		shaders[i] = shader;
-		hash ^= System.identityHashCode(shaders[i]);
-	    }
-	}
-	for(; i < cur.length; i++) {
-	    cur[i] = null;
-	    if(shaders[i] != null) {
-		hash ^= System.identityHashCode(shaders[i]);
-		shaders[i] = null;
-	    }
-	}
-	this.shash = hash;
-	setprog(env.getprog(hash, shaders));
-    }
-
     private Object getuval(GLProgram prog, int ui, Pipe pipe) {
 	Object val = prog.uniforms[ui].value.apply(pipe);
 	if(val == null)
@@ -156,6 +82,44 @@ public class Applier {
 
     private Object prepuval(Object val) {
 	return(val);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends State> void glpapply(BGL gl, GLPipeState<T> st, State from, State to) {
+	st.apply(gl, (T)from, (T)to);
+    }
+
+    private void assume(State[] ns) {
+	int shash = 0, i;
+	if(this.cur.length < ns.length) {
+	    this.cur = Arrays.copyOf(this.cur, ns.length);
+	    this.shaders = Arrays.copyOf(this.shaders, this.cur.length);
+	}
+	State[] cur = this.cur;
+	ShaderMacro[] shaders = this.shaders;
+	ShaderMacro[] nshaders = new ShaderMacro[shaders.length];
+	for(i = 0; i < ns.length; i++) {
+	    nshaders[i] = (ns[i] == null) ? null : ns[i].shader();
+	    shash ^= System.identityHashCode(nshaders[i]);
+	}
+	GLProgram prog = env.getprog(shash, nshaders);
+	Object[] nuvals = new Object[prog.uniforms.length];
+	Pipe tp = new Pipe(ns);
+	for(i = 0; i < prog.uniforms.length; i++)
+	    nuvals[i] = prepuval(getuval(prog, i, tp));
+
+	this.shash = shash;
+	setprog(prog);
+	for(i = 0; i < ns.length; i++) {
+	    cur[i] = ns[i];
+	    shaders[i] = nshaders[i];
+	}
+	for(; i < cur.length; i++) {
+	    cur[i] = null;
+	    shaders[i] = null;
+	}
+	for(i = 0; i < prog.uniforms.length; i++)
+	    uvals[i] = nuvals[i];
     }
 
     private void apply2(BGL gl, State[] ns, Pipe to) {
@@ -227,17 +191,21 @@ public class Applier {
 	    nuvals[i] = prepuval(getuval(prog, ui, to));
 	}
 
-	for(int i = 0; i < pn; i++)
-	    cur[pdirty[i]] = ns[pdirty[i]];
+	for(int i = 0; i < pn; i++) {
+	    int slot = pdirty[i];
+	    if((slot < GLPipeState.matching.length) && (GLPipeState.matching[slot] != null))
+		glpapply(gl, GLPipeState.matching[slot], cur[slot], ns[slot]);
+	    cur[slot] = ns[slot];
+	}
 	for(int i = 0; i < sn; i++)
 	    shaders[sdirty[i]] = nshaders[i];
+	this.shash = shash;
 	if(prog != this.prog) {
 	    setprog(prog);
 	    prog.apply(gl);
 	}
-	for(int i = 0; i < un; i++) {
+	for(int i = 0; i < un; i++)
 	    uapply(gl, prog, udirty[i], nuvals[i]);
-	}
     }
 
     public void apply(BGL gl, Pipe to) {
@@ -246,8 +214,6 @@ public class Applier {
 	    assume(ns);
 	    return;
 	}
-	for(StateMap<?> sm : statemap)
-	    map0(sm, gl, ns);
 	apply2(gl, ns, to);
     }
 
@@ -276,8 +242,34 @@ public class Applier {
     public void apply(BGL gl, Applier that) {
 	if(gl == null)
 	    throw(new NullPointerException());
-	for(int i = 0; i < this.glstates.length; i++)
+	if(this.cur.length < that.cur.length) {
+	    this.cur = Arrays.copyOf(this.cur, that.cur.length);
+	    this.shaders = Arrays.copyOf(this.shaders, this.cur.length);
+	}
+	int i;
+	for(i = 0; i < this.glstates.length; i++)
 	    apply(gl, i, that.glstates[i]);
-	apply2(gl, that.cur, new Pipe(that.cur));
+	for(GLPipeState<?> glp : GLPipeState.all) {
+	    if(!eq(this.cur[glp.slot.id], that.cur[glp.slot.id]))
+		glpapply(gl, glp, this.cur[glp.slot.id], that.cur[glp.slot.id]);
+	}
+	if(this.prog != that.prog) {
+	    this.shash = that.shash;
+	    setprog(that.prog);
+	    that.prog.apply(gl);
+	}
+	for(i = 0; i < that.cur.length; i++) {
+	    this.cur[i] = that.cur[i];
+	    this.shaders[i] = that.shaders[i];
+	}
+	for(; i < this.cur.length; i++) {
+	    this.cur[i] = null;
+	    this.shaders[i] = null;
+	}
+	for(i = 0; i < prog.uniforms.length; i++) {
+	    if(this.uvals[i] != that.uvals[i]) {
+		uapply(gl, prog, i, that.uvals[i]);
+	    }
+	}
     }
 }
