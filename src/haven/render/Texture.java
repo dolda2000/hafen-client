@@ -28,11 +28,13 @@ package haven.render;
 
 import haven.Disposable;
 import haven.FColor;
+import java.util.*;
 
-public class Texture implements Disposable {
+public abstract class Texture implements Disposable {
     public final VectorFormat ifmt, efmt;
     public final DataBuffer.Usage usage;
     public final DataBuffer.Filler<? super Image> init;
+    public boolean shared = false;
     public Disposable ro;
 
     public Texture(DataBuffer.Usage usage, VectorFormat ifmt, VectorFormat efmt, DataBuffer.Filler<? super Image> init) {
@@ -60,6 +62,13 @@ public class Texture implements Disposable {
 	}
     }
 
+    public abstract Collection<? extends Image<? extends Texture>> images();
+
+    public Texture shared() {
+	this.shared = true;
+	return(this);
+    }
+
     public void dispose() {
 	synchronized(this) {
 	    if(ro != null) {
@@ -80,8 +89,9 @@ public class Texture implements Disposable {
 
     public abstract static class Sampler<T extends Texture> implements Disposable {
 	public final T tex;
-	public Filter magfilter = Filter.LINEAR, minfilter = Filter.NEAREST, mipfilter = Filter.LINEAR;
+	public Filter magfilter = Filter.LINEAR, minfilter = Filter.NEAREST, mipfilter = null;
 	public Wrapping swrap = Wrapping.REPEAT, twrap = Wrapping.REPEAT, rwrap = Wrapping.REPEAT;
+	public float anisotropy = 0.0f;
 	public FColor border = FColor.BLACK;
 	public Disposable ro;
 
@@ -96,6 +106,8 @@ public class Texture implements Disposable {
 		    ro = null;
 		}
 	    }
+	    if(!tex.shared)
+		tex.dispose();
 	}
 
 	public Sampler<T> magfilter(Filter v) {magfilter = v; return(this);}
@@ -105,6 +117,7 @@ public class Texture implements Disposable {
 	public Sampler<T> twrap(Wrapping v) {twrap = v; return(this);}
 	public Sampler<T> rwrap(Wrapping v) {rwrap = v; return(this);}
 	public Sampler<T> wrapmode(Wrapping v) {return(swrap(v).twrap(v).rwrap(v));}
+	public Sampler<T> anisotropy(float v) {anisotropy = v; return(this);}
 	public Sampler<T> border(FColor v) {border = v; return(this);}
     }
 }

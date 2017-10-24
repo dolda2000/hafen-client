@@ -60,7 +60,7 @@ public class Applier {
 
     private void setprog(GLProgram prog) {
 	this.prog = prog;
-	this.uvals = new Object[prog.uniforms.length];
+	this.uvals = new Object[(prog == null) ? 0 : prog.uniforms.length];
     }
 
     public GLProgram prog() {return(prog);}
@@ -68,7 +68,7 @@ public class Applier {
     private <T> void uapply(BGL gl, GLProgram prog, int ui, Object val) {
 	Uniform var = prog.uniforms[ui];
 	if(val != uvals[ui]) {
-	    UniformApplier.TypeMapping.apply(gl, var.type, prog.uniform(var), val);
+	    UniformApplier.TypeMapping.apply(gl, this, var, val);
 	    uvals[ui] = val;
 	}
     }
@@ -81,6 +81,10 @@ public class Applier {
     }
 
     private Object prepuval(Object val) {
+	if(val instanceof Texture.Sampler) {
+	    if(val instanceof Texture2D.Sampler2D)
+		return(env.prepare((Texture2D.Sampler2D)val));
+	}
 	return(val);
     }
 
@@ -250,13 +254,18 @@ public class Applier {
 	for(i = 0; i < this.glstates.length; i++)
 	    apply(gl, i, that.glstates[i]);
 	for(GLPipeState<?> glp : GLPipeState.all) {
-	    if(!eq(this.cur[glp.slot.id], that.cur[glp.slot.id]))
-		glpapply(gl, glp, this.cur[glp.slot.id], that.cur[glp.slot.id]);
+	    State a = (glp.slot.id < this.cur.length) ? this.cur[glp.slot.id] : null;
+	    State b = (glp.slot.id < that.cur.length) ? that.cur[glp.slot.id] : null;
+	    if(!eq(a, b))
+		glpapply(gl, glp, a, b);
 	}
 	if(this.prog != that.prog) {
 	    this.shash = that.shash;
 	    setprog(that.prog);
-	    that.prog.apply(gl);
+	    if(this.prog == null)
+		gl.glUseProgram(null);
+	    else
+		this.prog.apply(gl);
 	}
 	for(i = 0; i < that.cur.length; i++) {
 	    this.cur[i] = that.cur[i];
@@ -266,9 +275,11 @@ public class Applier {
 	    this.cur[i] = null;
 	    this.shaders[i] = null;
 	}
-	for(i = 0; i < prog.uniforms.length; i++) {
-	    if(this.uvals[i] != that.uvals[i]) {
-		uapply(gl, prog, i, that.uvals[i]);
+	if(prog != null) {
+	    for(i = 0; i < prog.uniforms.length; i++) {
+		if(this.uvals[i] != that.uvals[i]) {
+		    uapply(gl, prog, i, that.uvals[i]);
+		}
 	    }
 	}
     }

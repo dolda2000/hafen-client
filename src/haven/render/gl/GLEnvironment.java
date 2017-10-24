@@ -37,7 +37,7 @@ import static haven.render.DataBuffer.Usage.*;
 
 public class GLEnvironment implements Environment {
     public final GLContext ctx;
-    private BufferBGL prep = null;
+    private GLRender prep = null;
     private Applier curstate = new Applier(this);
     final Object drawmon = new Object();
     final Object prepmon = new Object();
@@ -52,14 +52,17 @@ public class GLEnvironment implements Environment {
 
     public void submit(GL2 gl, GLRender cmd) {
 	if(cmd.gl != null) {
-	    BufferBGL prep;
+	    GLRender prep;
 	    synchronized(prepmon) {
 		prep = this.prep;
 		this.prep = null;
 	    }
 	    synchronized(drawmon) {
-		if(prep != null) {
-		    prep.run(gl);
+		if((prep != null) && (prep.gl != null)) {
+		    BufferBGL xf = new BufferBGL(16);
+		    this.curstate.apply(xf, prep.init);
+		    prep.gl.run(gl);
+		    this.curstate = prep.state;
 		}
 		BufferBGL xf = new BufferBGL(16);
 		this.curstate.apply(xf, cmd.init);
@@ -75,18 +78,24 @@ public class GLEnvironment implements Environment {
 	return(new FillBuffers.Array(tgt.size()));
     }
 
+    GLRender prepare() {
+	if(prep == null)
+	    prep = new GLRender(this);
+	return(prep);
+    }
     void prepare(GLObject obj) {
 	synchronized(prepmon) {
-	    if(prep == null)
-		prep = new BufferBGL();
-	    prep.bglCreate(obj);
+	    prepare().gl().bglCreate(obj);
 	}
     }
     void prepare(BGL.Request req) {
 	synchronized(prepmon) {
-	    if(prep == null)
-		prep = new BufferBGL();
-	    prep.bglSubmit(req);
+	    prepare().gl().bglSubmit(req);
+	}
+    }
+    void prepare(Consumer<GLRender> func) {
+	synchronized(prepmon) {
+	    func.accept(prepare());
 	}
     }
 
@@ -116,6 +125,20 @@ public class GLEnvironment implements Environment {
 	    } else {
 		throw(new Error());
 	    }
+	}
+    }
+    GLTexture.Tex2D prepare(Texture2D.Sampler2D smp) {
+	Texture2D tex = smp.tex;
+	synchronized(tex) {
+	    GLTexture.Tex2D ret;
+	    if(!(tex.ro instanceof GLTexture.Tex2D) || ((ret = (GLTexture.Tex2D)tex.ro).env != this)) {
+		if(tex.ro != null)
+		    tex.ro.dispose();
+		tex.ro = ret = GLTexture.Tex2D.create(this, smp);
+	    }
+	    if(ret.sampler != smp)
+		throw(new RuntimeException("OpenGL 2.0 does not support multiple samplers per texture"));
+	    return(ret);
 	}
     }
 

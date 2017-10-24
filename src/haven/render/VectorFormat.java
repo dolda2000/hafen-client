@@ -40,4 +40,8 @@ public class VectorFormat {
     public int size() {
 	return(nc * cf.size);
     }
+
+    public String toString() {
+	return("vector(" + nc + ", " + cf + ")");
+    }
 }

@@ -45,7 +45,7 @@ public class GLRender implements Render {
 
     public GLEnvironment env() {return(env);}
 
-    private BGL gl() {
+    BGL gl() {
 	if(this.gl == null) {
 	    this.gl = new BufferBGL();
 	    this.init = state.clone();

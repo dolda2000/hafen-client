@@ -27,6 +27,7 @@
 package haven.render;
 
 import haven.*;
+import java.util.*;
 
 public class Texture2D extends Texture {
     public final int w, h;
@@ -55,6 +56,30 @@ public class Texture2D extends Texture {
 		throw(new IllegalArgumentException(String.format("Invalid mipmap level %d for (%d, %d) texture", level, w, h)));
 	}
 	return(new Image<>(this, Math.max(w >> level, 1), Math.max(h >> level, 1), 1, level));
+    }
+
+    public Collection<Image<Texture2D>> images() {
+	return(new AbstractCollection<Image<Texture2D>>() {
+		public int size() {
+		    if((w == 0) || (h == 0)) {
+			return(0);
+		    } else if(pot) {
+			return(Math.max(Integer.numberOfTrailingZeros(w),
+					Integer.numberOfTrailingZeros(h)) +
+			       1);
+		    } else {
+			return(1);
+		    }
+		}
+
+		public Iterator<Image<Texture2D>> iterator() {
+		    return(new Iterator<Image<Texture2D>>() {
+			    int i = 0, n = size();
+			    public boolean hasNext() {return(i < n);}
+			    public Image<Texture2D> next() {return(image(i++));}
+			});
+		}
+	    });
     }
 
     public static class Sampler2D extends Sampler<Texture2D> {

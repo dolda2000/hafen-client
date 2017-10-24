@@ -40,6 +40,7 @@ public class GLProgram implements Disposable {
     public final Uniform[] uniforms;
     public final int[][] umap;
     public final Attribute[] attribs;
+    public final Map<Uniform, Integer> samplers;
     private final Map<Uniform, String> unifnms;
     private final Map<Attribute, String> attrnms;
     private ProgOb glp;
@@ -72,6 +73,15 @@ public class GLProgram implements Disposable {
 	    this.uniforms = uniforms;
 	    this.unifnms = unifnms;
 	    this.umap = umap;
+	}
+	{
+	    int sn = 0;
+	    Map<Uniform, Integer> samplers = new IdentityHashMap<>();
+	    for(Uniform var : uniforms) {
+		if(var.type instanceof Type.Sampler)
+		    samplers.put(var, sn++);
+	    }
+	    this.samplers = samplers;
 	}
 	{
 	    Map<Attribute, String> attribs = new IdentityHashMap<>();

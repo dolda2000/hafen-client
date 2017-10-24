@@ -697,6 +697,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void glTexParameterfv(final int target, final int pname, final float[] param, final int n) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glTexParameterfv(target, pname, param, n);}
+	    });
+    }
+
     public void glTexParameteri(final int target, final int pname, final int param) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glTexParameteri(target, pname, param);}
