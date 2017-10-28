@@ -386,15 +386,16 @@ public class Skeleton {
 	return(null);
     }
     
-    public interface ModOwner {
+    public interface ModOwner extends OwnerContext {
 	public double getv();
 	public Coord3f getc();
-	public Glob glob();
+	@Deprecated
+	public default Glob glob() {return(context(Glob.class));}
 
 	public static final ModOwner nil = new ModOwner() {
 		public double getv() {return(0);}
 		public Coord3f getc() {return(Coord3f.o);}
-		public Glob glob() {throw(new NullPointerException());}
+		public <T> T context(Class<T> cl) {throw(new NoContext(cl));}
 	    };
     }
 
