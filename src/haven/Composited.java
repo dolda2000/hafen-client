@@ -407,7 +407,7 @@ public class Composited implements Rendered, MapView.Clickable {
 		}
 		for(Iterator<ResData> o = md.tex.iterator(); o.hasNext();) {
 		    ResData res = o.next();
-		    md.real.addlay(Material.fromres((eqowner == null)?null:eqowner.glob(), res.res.get(), new MessageBuf(res.sdt)));
+		    md.real.addlay(Material.fromres((eqowner == null)?null:eqowner.context(Glob.class), res.res.get(), new MessageBuf(res.sdt)));
 		    o.remove();
 		}
 		i.remove();
