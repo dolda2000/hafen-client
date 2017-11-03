@@ -181,6 +181,18 @@ public abstract class BGL {
 	    });
     }
 
+    public void glBlendColor(final float red, final float green, final float blue, final float alpha) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glBlendColor(red, green, blue, alpha);}
+	    });
+    }
+
+    public void glBlendEquation(final int mode) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glBlendEquation(mode);}
+	    });
+    }
+
     public void glBlendEquationSeparate(final int cmode, final int amode) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glBlendEquationSeparate(cmode, amode);}
@@ -190,6 +202,12 @@ public abstract class BGL {
     public void glBlendFunc(final int sfac, final int dfac) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glBlendFunc(sfac, dfac);}
+	    });
+    }
+
+    public void glBlendFuncSeparate(final int csfac, final int cdfac, final int asfac, final int adfac) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glBlendFuncSeparate(csfac, cdfac, asfac, adfac);}
 	    });
     }
 

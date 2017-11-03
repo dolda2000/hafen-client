@@ -26,8 +26,10 @@
 
 package haven.render.gl;
 
+import static haven.Utils.eq;
 import haven.render.*;
-import javax.media.opengl.GL;
+import haven.render.States.*;
+import javax.media.opengl.*;
 
 public abstract class GLPipeState<T extends State> {
     public State.Slot<? extends T> slot;
@@ -37,8 +39,8 @@ public abstract class GLPipeState<T extends State> {
 	this.slot = slot;
     }
 
-    public static final GLPipeState<States.Viewport> viewport = new GLPipeState<States.Viewport>(States.viewport) {
-	    public void apply(BGL gl, States.Viewport from, States.Viewport to) {
+    public static final GLPipeState<Viewport> viewport = new GLPipeState<Viewport>(States.viewport) {
+	    public void apply(BGL gl, Viewport from, Viewport to) {
 		if(to != null) {
 		    gl.glViewport(to.area.ul.x, to.area.ul.y, to.area.br.x - to.area.ul.x, to.area.br.y - to.area.ul.y);
 		} else {
@@ -47,8 +49,8 @@ public abstract class GLPipeState<T extends State> {
 	    }
 	};
 
-    public static final GLPipeState<States.Scissor> scissor = new GLPipeState<States.Scissor>(States.scissor) {
-	    public void apply(BGL gl, States.Scissor from, States.Scissor to) {
+    public static final GLPipeState<Scissor> scissor = new GLPipeState<Scissor>(States.scissor) {
+	    public void apply(BGL gl, Scissor from, Scissor to) {
 		if(to != null) {
 		    gl.glScissor(to.area.ul.x, to.area.ul.y, to.area.br.x - to.area.ul.x, to.area.br.y - to.area.ul.y);
 		    if(from == null)
@@ -68,7 +70,69 @@ public abstract class GLPipeState<T extends State> {
 	    }
 	};
 
-    public static final GLPipeState<?>[] all = {viewport, scissor, depthtest};
+    public static final GLPipeState<State> maskdepth = new GLPipeState<State>(States.maskdepth.slot) {
+	    public void apply(BGL gl, State from, State to) {
+		if(to != null)
+		    gl.glDepthMask(false);
+		else
+		    gl.glDepthMask(true);
+	    }
+	};
+
+    public static final GLPipeState<Blending> blending = new GLPipeState<Blending>(States.blend) {
+	    private int func(Blending.Function fn) {
+		switch(fn) {
+		    case ADD: return(GL.GL_FUNC_ADD);
+		    case SUB: return(GL.GL_FUNC_SUBTRACT);
+		    case RSUB: return(GL.GL_FUNC_REVERSE_SUBTRACT);
+		    case MIN: return(GL2.GL_MIN);
+		    case MAX: return(GL2.GL_MAX);
+		    default: throw(new IllegalArgumentException(String.format("blend function: %s", fn)));
+		}
+	    }
+	    private int fac(Blending.Factor fac) {
+		switch(fac) {
+		    case ZERO: return(GL.GL_ZERO);
+		    case ONE: return(GL.GL_ONE);
+		    case SRC_COLOR: return(GL.GL_SRC_COLOR);
+		    case DST_COLOR: return(GL.GL_DST_COLOR);
+		    case INV_SRC_COLOR: return(GL.GL_ONE_MINUS_SRC_COLOR);
+		    case INV_DST_COLOR: return(GL.GL_ONE_MINUS_DST_COLOR);
+		    case SRC_ALPHA: return(GL.GL_SRC_ALPHA);
+		    case DST_ALPHA: return(GL.GL_DST_ALPHA);
+		    case INV_SRC_ALPHA: return(GL.GL_ONE_MINUS_SRC_ALPHA);
+		    case INV_DST_ALPHA: return(GL.GL_ONE_MINUS_DST_ALPHA);
+		    case CONST_COLOR: return(GL2.GL_CONSTANT_COLOR);
+		    case INV_CONST_COLOR: return(GL2.GL_ONE_MINUS_CONSTANT_COLOR);
+		    case CONST_ALPHA: return(GL2.GL_CONSTANT_ALPHA);
+		    case INV_CONST_ALPHA: return(GL2.GL_ONE_MINUS_CONSTANT_ALPHA);
+		    default: throw(new IllegalArgumentException(String.format("blend factor: %s", fac)));
+		}
+	    }
+
+	    public void apply(BGL gl, Blending from, Blending to) {
+		if(to != null) {
+		    if(!eq(from, to)) {
+			if(to.cfn == to.afn)
+			    gl.glBlendEquation(func(to.cfn));
+			else
+			    gl.glBlendEquationSeparate(func(to.cfn), func(to.afn));
+			if((to.csrc == to.asrc) && (to.cdst == to.adst))
+			    gl.glBlendFunc(fac(to.csrc), fac(to.cdst));
+			else
+			    gl.glBlendFuncSeparate(fac(to.csrc), fac(to.cdst), fac(to.asrc), fac(to.adst));
+			if(to.color != null)
+			    gl.glBlendColor(to.color.r, to.color.g, to.color.b, to.color.a);
+		    }
+		    if(from == null)
+			gl.glEnable(GL.GL_BLEND);
+		} else {
+		    gl.glDisable(GL.GL_BLEND);
+		}
+	    }
+	};
+
+    public static final GLPipeState<?>[] all = {viewport, scissor, depthtest, maskdepth, blending};
     public static final GLPipeState<?>[] matching;
     static {
 	int max = all[0].slot.id;
