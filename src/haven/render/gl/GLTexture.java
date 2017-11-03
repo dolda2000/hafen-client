@@ -175,7 +175,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	case SNORM32: return(GL2.GL_INT);
 	case FLOAT32: return(GL2.GL_FLOAT);
 	}
-	throw(new IllegalArgumentException(String.format("externalformat1: %s", efmt)));
+	throw(new IllegalArgumentException(String.format("externalformat2: %s", efmt)));
     }
 
     public static class Tex2D extends GLTexture {
