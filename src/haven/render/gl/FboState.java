@@ -26,6 +26,7 @@
 
 package haven.render.gl;
 
+import static haven.Utils.eq;
 import haven.render.*;
 import haven.render.gl.GLFrameBuffer.*;
 import java.util.*;
@@ -61,11 +62,11 @@ public class FboState extends GLState {
     }
 
     private static boolean compatiblep(GLFrameBuffer fbo, Attachment[] color, Attachment depth) {
-	if(depth != fbo.depth)
+	if(!eq(depth, fbo.depth))
 	    return(false);
 	search: for(Attachment s : color) {
 	    for(Attachment h : fbo.color) {
-		if(h == s)
+		if(eq(h, s))
 		    continue search;
 	    }
 	    return(false);
