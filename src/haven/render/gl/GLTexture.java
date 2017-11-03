@@ -31,10 +31,12 @@ import haven.render.Texture.Image;
 import haven.render.Texture.Sampler;
 import haven.render.Texture2D.Sampler2D;
 import java.nio.*;
+import java.util.*;
 import javax.media.opengl.*;
 
 public abstract class GLTexture extends GLObject implements BGL.ID {
     protected int id;
+    Collection<GLFrameBuffer> fbos = null;
 
     public GLTexture(GLEnvironment env) {
 	super(env);
@@ -44,6 +46,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
     public void create(GL2 gl) {
 	int[] buf = {0};
 	gl.glGenTextures(1, buf, 0);
+	GLException.checkfor(gl);
 	this.id = buf[0];
     }
 
@@ -54,6 +57,22 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 
     public int glid() {
 	return(id);
+    }
+
+    public void dispose() {
+	while(true) {
+	    GLFrameBuffer fbo, last = null;
+	    synchronized(this) {
+		if((fbos == null) || fbos.isEmpty())
+		    break;
+		fbo = fbos.iterator().next();
+	    }
+	    if(fbo == last)
+		throw(new RuntimeException(String.format("FBO %s somehow not unregistering from %s when disposing", fbo, this)));
+	    fbo.dispose();
+	    last = fbo;
+	}
+	super.dispose();
     }
 
     public abstract void bind(BGL gl);
@@ -107,6 +126,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	    case UNORM8: return(GL2.GL_R8);
 	    case SNORM8: return(GL2.GL_R8_SNORM);
 	    case FLOAT16: return(GL2.GL_R16F);
+	    case DEPTH: return(GL2.GL_DEPTH_COMPONENT);
 	    }
 	case 2:
 	    switch(fmt.cf) {
@@ -130,18 +150,23 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	throw(new IllegalArgumentException(String.format("internalformat: %s", fmt)));
     }
 
-    static int texefmt1(VectorFormat fmt) {
-	switch(fmt.nc) {
+    static int texefmt1(VectorFormat ifmt, VectorFormat efmt) {
+	if(ifmt.cf == NumberFormat.DEPTH) {
+	    if(efmt.nc != 1)
+		throw(new IllegalArgumentException(String.format("externalformat components != 1 for depth texture: %s", efmt)));
+	    return(GL2.GL_DEPTH_COMPONENT);
+	}
+	switch(efmt.nc) {
 	case 1: return(GL2.GL_RED);
 	case 2: return(GL2.GL_RG);
 	case 3: return(GL2.GL_RGB);
 	case 4: return(GL2.GL_RGBA);
 	}
-	throw(new IllegalArgumentException(String.format("externalformat1: %s", fmt)));
+	throw(new IllegalArgumentException(String.format("externalformat1: %s", efmt)));
     }
 
-    static int texefmt2(VectorFormat fmt) {
-	switch(fmt.cf) {
+    static int texefmt2(VectorFormat ifmt, VectorFormat efmt) {
+	switch(efmt.cf) {
 	case UNORM8: return(GL2.GL_UNSIGNED_BYTE);
 	case SNORM8: return(GL2.GL_BYTE);
 	case UNORM16: return(GL2.GL_UNSIGNED_SHORT);
@@ -150,20 +175,50 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	case SNORM32: return(GL2.GL_INT);
 	case FLOAT32: return(GL2.GL_FLOAT);
 	}
-	throw(new IllegalArgumentException(String.format("externalformat1: %s", fmt)));
+	throw(new IllegalArgumentException(String.format("externalformat1: %s", efmt)));
     }
 
     public static class Tex2D extends GLTexture {
-	public final Sampler2D data;
+	public final Texture2D data;
 	Sampler2D sampler;
 
-	public Tex2D(GLEnvironment env, Sampler2D data, FillBuffers.Array[] pixels) {
+	public Tex2D(GLEnvironment env, Texture2D data, FillBuffers.Array[] pixels) {
 	    super(env);
 	    this.data = data;
-	    this.sampler = data;
-	    int ifmt = texifmt(data.tex.ifmt);
-	    int pfmt = texefmt1(data.tex.efmt);
-	    int pnum = texefmt2(data.tex.efmt);
+	    int ifmt = texifmt(data.ifmt);
+	    int pfmt = texefmt1(data.ifmt, data.efmt);
+	    int pnum = texefmt2(data.ifmt, data.efmt);
+	    env.prepare((GLRender g) -> {
+		    g.state.apply(g.gl, new TexState(new GLTexture[] {Tex2D.this}, 0));
+		    BGL gl = g.gl();
+		    if(pixels[0] != null)
+			gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, data.w, data.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[0].data));
+		    else
+			gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, data.w, data.h, 0, pfmt, pnum, null);
+		    for(int i = 1; i < pixels.length; i++) {
+			if(pixels[i] != null) {
+			    Image<?> img = data.image(i);
+			    gl.glTexImage2D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
+			}
+		    }
+		    gl.bglCheckErr();
+		});
+	}
+
+	public static Tex2D create(GLEnvironment env, Texture2D data) {
+	    FillBuffers.Array[] pixels = new FillBuffers.Array[data.images().size()];
+	    if(data.init != null) {
+		for(int i = 0; i < pixels.length; i++)
+		    pixels[i] = (FillBuffers.Array)data.init.fill(data.image(i), env);
+	    }
+	    return(new Tex2D(env, data, pixels));
+	}
+
+	public void setsampler(Sampler2D data) {
+	    if(sampler == data)
+		return;
+	    if(sampler != null)
+		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple samplers per texture"));
 	    env.prepare((GLRender g) -> {
 		    g.state.apply(g.gl, new TexState(new GLTexture[] {Tex2D.this}, 0));
 		    BGL gl = g.gl();
@@ -174,21 +229,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
 		    gl.glTexParameterfv(GL.GL_TEXTURE_2D, GL2.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
-		    for(int i = 0; i < pixels.length; i++) {
-			if(pixels[i] != null) {
-			    Image<?> img = data.tex.image(i);
-			    gl.glTexImage2D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
-			}
-		    }
-		    gl.bglCheckErr();
 		});
-	}
-
-	public static Tex2D create(GLEnvironment env, Sampler2D data) {
-	    FillBuffers.Array[] pixels = new FillBuffers.Array[data.tex.images().size()];
-	    for(int i = 0; i < pixels.length; i++)
-		pixels[i] = (FillBuffers.Array)data.tex.init.fill(data.tex.image(i), env);
-	    return(new Tex2D(env, data, pixels));
+	    sampler = data;
 	}
 
 	public void bind(BGL gl) {

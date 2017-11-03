@@ -33,6 +33,8 @@ public class VectorFormat {
     public final NumberFormat cf;
 
     public VectorFormat(int nc, NumberFormat cf) {
+	if(nc < 0)
+	    throw(new IllegalArgumentException(String.format("%d", nc)));
 	this.nc = nc;
 	this.cf = cf;
     }

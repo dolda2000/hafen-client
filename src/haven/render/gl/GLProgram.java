@@ -38,7 +38,9 @@ public class GLProgram implements Disposable {
     public final GLEnvironment env;
     public final String vsrc, fsrc;
     public final Uniform[] uniforms;
+    public final FragData[] fragdata;
     public final int[][] umap;
+    public final boolean[] fmap;
     public final Attribute[] attribs;
     public final Map<Uniform, Integer> samplers;
     private final Map<Uniform, String> unifnms;
@@ -73,6 +75,20 @@ public class GLProgram implements Disposable {
 	    this.uniforms = uniforms;
 	    this.unifnms = unifnms;
 	    this.umap = umap;
+	}
+	{
+	    FragData[] fragdata = ctx.fragdata.toArray(new FragData[0]);
+	    boolean[] fmap = new boolean[DepthBuffer.slot.id + 1];
+	    fmap[DepthBuffer.slot.id] = true;
+	    for(int i = 0; i < fragdata.length; i++) {
+		for(State.Slot slot : fragdata[i].deps) {
+		    if(fmap.length <= slot.id)
+			fmap = Arrays.copyOf(fmap, slot.id + 1);
+		    fmap[slot.id] = true;
+		}
+	    }
+	    this.fragdata = fragdata;
+	    this.fmap = fmap;
 	}
 	{
 	    int sn = 0;

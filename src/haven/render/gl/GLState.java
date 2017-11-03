@@ -36,6 +36,7 @@ public abstract class GLState {
 	VboState.class,
 	EboState.class,
 	TexState.class,
+	FboState.class,
     };
 
     public static int slotidx(Class<? extends GLState> cl) {

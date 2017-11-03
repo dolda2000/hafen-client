@@ -26,16 +26,17 @@
 
 package haven.render;
 
-public enum NumberFormat {
-    UNORM8(1), SNORM8(1), UNORM16(2), SNORM16(2), UNORM32(4), SNORM32(4),
-    FLOAT16(2), FLOAT32(4), FLOAT64(8),
-    UINT8(1), SINT8(1), UINT16(2), SINT16(2), UINT32(4), SINT32(4),
+import haven.render.sl.*;
 
-    DEPTH(-1);
+public class DepthBuffer extends State {
+    public static final Slot<DepthBuffer> slot = new Slot<>(Slot.Type.SYS, DepthBuffer.class);
+    public static final Object defdepth = new Object();
+    public final Object image;
 
-    public final int size;
-
-    NumberFormat(int size) {
-	this.size = size;
+    public DepthBuffer(Object image) {
+	this.image = image;
     }
+
+    public ShaderMacro shader() {return(null);}
+    public void apply(Pipe p) {p.put(slot, this);}
 }

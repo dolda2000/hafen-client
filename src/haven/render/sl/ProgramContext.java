@@ -33,7 +33,7 @@ public class ProgramContext {
     public final FragmentContext fctx;
     public final Set<Uniform> uniforms = new HashSet<Uniform>();
     public final Set<Attribute> attribs = new HashSet<Attribute>();
-    public final Set<FragData> fragdata = new HashSet<FragData>();
+    public final List<FragData> fragdata = new ArrayList<FragData>();
     public final Map<Symbol, String> symtab = new HashMap<Symbol, String>();
     public final Map<String, Symbol> rsymtab = new HashMap<String, Symbol>();
     public int symgen = 1;

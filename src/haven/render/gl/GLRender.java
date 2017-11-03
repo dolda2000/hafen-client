@@ -186,7 +186,7 @@ public class GLRender implements Render {
 		    }
 		    off = offsets[data.va.fmt.inputs[i].buf];
 		} else {
-		    throw(new Error());
+		    throw(new NotImplemented("non-ephemeral vertex arrays"));
 		}
 		gl.glVertexAttribPointer(enable[i], attr.el.nc, glattribfmt(attr.el.cf), glattribnorm(attr.el.cf), attr.stride, attr.offset + off);
 	    }
@@ -198,12 +198,12 @@ public class GLRender implements Render {
 		    EboState.apply(gl, state, env.tempindex.get());
 		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, data.ind.size(), ByteBuffer.wrap(((HeapBuffer)indo).buf), GL2.GL_STREAM_DRAW);
 		} else {
-		    throw(new Error());
+		    throw(new NotImplemented("non-ephemeral index arrays"));
 		}
 		gl.glDrawElements(glmode(data.mode), data.ind.n, GL.GL_UNSIGNED_SHORT, 0);
 	    }
 	} else {
-	    throw(new Error());
+	    throw(new NotImplemented("non-ephemeral models"));
 	}
     }
 

@@ -27,20 +27,29 @@
 package haven.render.sl;
 
 import java.util.*;
+import java.util.function.*;
+import java.util.function.Function;
+import haven.render.*;
 
 public class FragData extends Variable.Global {
+    public final Function<Pipe, Object> value;
+    public final Collection<State.Slot<?>> deps;
     public boolean primary = false;
 
-    public FragData(Type type, Symbol name) {
+    public FragData(Type type, Symbol name, Function<Pipe, Object> value, State.Slot<?>... deps) {
 	super(type, name);
+	this.value = value;
+	ArrayList<State.Slot<?>> depl = new ArrayList<>(Arrays.asList(deps));
+	depl.trimToSize();
+	this.deps = depl;
     }
 
-    public FragData(Type type, String infix) {
-	this(type, new Symbol.Shared("s_" + infix));
+    public FragData(Type type, String infix, Function<Pipe, Object> value, State.Slot<?>... deps) {
+	this(type, new Symbol.Shared("s_" + infix), value, deps);
     }
 
-    public FragData(Type type) {
-	this(type, new Symbol.Shared());
+    public FragData(Type type, Function<Pipe, Object> value, State.Slot<?>... deps) {
+	this(type, new Symbol.Shared(), value, deps);
     }
 
     public FragData primary() {
@@ -81,17 +90,10 @@ public class FragData extends Variable.Global {
 		} else if(slots.length == 1) {
 		    fctx.main.code.add(new LBinOp.Assign(fctx.gl_FragColor.ref(), slots[0].ref()));
 		}
-		fctx.prog.fragdata.addAll(used);
+		fctx.prog.fragdata.addAll(Arrays.asList(slots));
 	    }
 	};
     private class Def extends Definition implements PostProc.Processed {
-	public void output(Output out) {
-	    if(out.ctx instanceof ShaderContext) {
-		((ShaderContext)out.ctx).prog.fragdata.add(FragData.this);
-	    }
-	    super.output(out);
-	}
-
 	public void process(PostProc proc) {}
 	public Object ppid() {return(defid);}
 	private FragData var() {return(FragData.this);}

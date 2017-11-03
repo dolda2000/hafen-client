@@ -88,6 +88,19 @@ public class Applier {
 	return(val);
     }
 
+    private Object getfval(GLProgram prog, int fi, Pipe pipe) {
+	Object val = prog.fragdata[fi].value.apply(pipe);
+	if(val == null)
+	    throw(new NullPointerException(String.format("tried to set null for fragdata %s on %s", prog.fragdata[fi], pipe)));
+	return(val);
+    }
+
+    private Object prepfval(Object val) {
+	if(val instanceof Texture.Image)
+	    return(GLFrameBuffer.prepimg(env, (Texture.Image)val));
+	return(val);
+    }
+
     @SuppressWarnings("unchecked")
     private static <T extends State> void glpapply(BGL gl, GLPipeState<T> st, State from, State to) {
 	st.apply(gl, (T)from, (T)to);
@@ -107,10 +120,14 @@ public class Applier {
 	    shash ^= System.identityHashCode(nshaders[i]);
 	}
 	GLProgram prog = env.getprog(shash, nshaders);
-	Object[] nuvals = new Object[prog.uniforms.length];
 	Pipe tp = new Pipe(ns);
+	Object[] nuvals = new Object[prog.uniforms.length];
 	for(i = 0; i < prog.uniforms.length; i++)
 	    nuvals[i] = prepuval(getuval(prog, i, tp));
+	Object[] nfvals = new Object[prog.fragdata.length];
+	for(i = 0; i < prog.fragdata.length; i++)
+	    nfvals[i] = prepfval(getfval(prog, i, tp));
+	Object ndbuf = prepfval((ns.length > DepthBuffer.slot.id) ? ((DepthBuffer)ns[DepthBuffer.slot.id]).image : null);
 
 	this.shash = shash;
 	setprog(prog);
@@ -124,6 +141,7 @@ public class Applier {
 	}
 	for(i = 0; i < prog.uniforms.length; i++)
 	    uvals[i] = nuvals[i];
+	FboState.set(null, this, ndbuf, nfvals);
     }
 
     private void apply2(BGL gl, State[] ns, Pipe to) {
@@ -172,6 +190,7 @@ public class Applier {
 	}
 	int[] udirty = new int[prog.uniforms.length];
 	int un = 0;
+	boolean fdirty = false;
 	if(prog == this.prog) {
 	    boolean[] ch = new boolean[prog.uniforms.length];
 	    for(int i = 0; i < pn; i++) {
@@ -183,16 +202,44 @@ public class Applier {
 			ch[ui] = true;
 		    }
 		}
+		if(prog.fmap[pdirty[i]])
+		    fdirty = true;
 	    }
 	} else {
 	    un = udirty.length;
 	    for(int i = 0; i < udirty.length; i++)
 		udirty[i] = i;
+	    if(prog.fragdata.length != this.prog.fragdata.length)
+		fdirty = true;
+	    if(!fdirty) {
+		for(int i = 0; i < prog.fragdata.length; i++) {
+		    if(prog.fragdata[i] != this.prog.fragdata[i]) {
+			fdirty = true;
+			break;
+		    }
+		}
+	    }
+	    if(!fdirty) {
+		for(int i = 0; i < pn; i++) {
+		    if((prog.fmap.length > pdirty[i]) && prog.fmap[pdirty[i]]) {
+			fdirty = true;
+			break;
+		    }
+		}
+	    }
 	}
 	Object[] nuvals = new Object[un];
 	for(int i = 0; i < un; i++) {
 	    int ui = udirty[i];
 	    nuvals[i] = prepuval(getuval(prog, ui, to));
+	}
+	Object[] nfvals = null;
+	Object ndbuf = null;
+	if(fdirty) {
+	    nfvals = new Object[prog.fragdata.length];
+	    for(int i = 0; i < prog.fragdata.length; i++)
+		nfvals[i] = prepfval(getfval(prog, i, to));
+	    ndbuf = prepfval(to.get(DepthBuffer.slot).image);
 	}
 
 	for(int i = 0; i < pn; i++) {
@@ -210,6 +257,8 @@ public class Applier {
 	}
 	for(int i = 0; i < un; i++)
 	    uapply(gl, prog, udirty[i], nuvals[i]);
+	if(fdirty)
+	    FboState.set(gl, this, ndbuf, nfvals);
     }
 
     public void apply(BGL gl, Pipe to) {

@@ -42,8 +42,14 @@ public class Texture2D extends Texture {
 	this.pot = ((w & (w - 1)) == 0) && ((h & (h - 1)) == 0);
     }
 
+    public Texture2D(int w, int h, DataBuffer.Usage usage, VectorFormat ifmt, DataBuffer.Filler<? super Image> init) {
+	this(w, h, usage, ifmt, ifmt, init);
+    }
     public Texture2D(Coord dim, DataBuffer.Usage usage, VectorFormat ifmt, VectorFormat efmt, DataBuffer.Filler<? super Image> init) {
 	this(dim.x, dim.y, usage, ifmt, efmt, init);
+    }
+    public Texture2D(Coord dim, DataBuffer.Usage usage, VectorFormat ifmt, DataBuffer.Filler<? super Image> init) {
+	this(dim, usage, ifmt, ifmt, init);
     }
 
     public Image<Texture2D> image(int level) {

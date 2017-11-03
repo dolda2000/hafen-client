@@ -24,18 +24,18 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-public enum NumberFormat {
-    UNORM8(1), SNORM8(1), UNORM16(2), SNORM16(2), UNORM32(4), SNORM32(4),
-    FLOAT16(2), FLOAT32(4), FLOAT64(8),
-    UINT8(1), SINT8(1), UINT16(2), SINT16(2), UINT32(4), SINT32(4),
+public class NotImplemented extends RuntimeException {
+    public NotImplemented(String message, Throwable cause) {
+	super(message, cause);
+    }
 
-    DEPTH(-1);
+    public NotImplemented(String message) {
+	super(message);
+    }
 
-    public final int size;
-
-    NumberFormat(int size) {
-	this.size = size;
+    public NotImplemented() {
+	super("not implemented");
     }
 }

@@ -127,17 +127,22 @@ public class GLEnvironment implements Environment {
 	    }
 	}
     }
-    GLTexture.Tex2D prepare(Texture2D.Sampler2D smp) {
-	Texture2D tex = smp.tex;
+    GLTexture.Tex2D prepare(Texture2D tex) {
 	synchronized(tex) {
 	    GLTexture.Tex2D ret;
 	    if(!(tex.ro instanceof GLTexture.Tex2D) || ((ret = (GLTexture.Tex2D)tex.ro).env != this)) {
 		if(tex.ro != null)
 		    tex.ro.dispose();
-		tex.ro = ret = GLTexture.Tex2D.create(this, smp);
+		tex.ro = ret = GLTexture.Tex2D.create(this, tex);
 	    }
-	    if(ret.sampler != smp)
-		throw(new RuntimeException("OpenGL 2.0 does not support multiple samplers per texture"));
+	    return(ret);
+	}
+    }
+    GLTexture.Tex2D prepare(Texture2D.Sampler2D smp) {
+	Texture2D tex = smp.tex;
+	synchronized(tex) {
+	    GLTexture.Tex2D ret = prepare(tex);
+	    ret.setsampler(smp);
 	    return(ret);
 	}
     }

@@ -31,6 +31,7 @@ import haven.FColor;
 import java.util.*;
 
 public abstract class Texture implements Disposable {
+    public static final VectorFormat DEPTH = new VectorFormat(1, NumberFormat.DEPTH);
     public final VectorFormat ifmt, efmt;
     public final DataBuffer.Usage usage;
     public final DataBuffer.Filler<? super Image> init;
