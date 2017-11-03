@@ -47,6 +47,8 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 		    throw(new IllegalArgumentException(String.format("Framebuffer attachments have differing sizes: color[0]=%s, color[i]=%s", sz, color[i].sz())));
 	    }
 	}
+	this.color = color;
+	this.depth = depth;
 	env.prepare(this);
 	env.prepare((GLRender r) -> {
 		r.state.apply(r.gl, new FboState(this, null));
@@ -61,8 +63,6 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 			    throw(new RuntimeException("FBO failed completeness test: " + GLException.constname(st)));
 		    });
 	    });
-	this.color = color;
-	this.depth = depth;
 	register();
     }
 	
@@ -90,7 +90,8 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	}
     }
     private void register() {
-	register(depth.tex);
+	if(depth != null)
+	    register(depth.tex);
 	for(Attachment c : color)
 	    register(c.tex);
     }
