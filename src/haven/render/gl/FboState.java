@@ -41,11 +41,15 @@ public class FboState extends GLState {
 	this.dbufs = dbufs;
     }
 
+    public void applydbufs(BGL gl) {
+	if(dbufs != null)
+	    gl.glDrawBuffers(dbufs.length, dbufs, 0);
+    }
+
     public void apply(BGL gl) {
 	if(fbo != null)
 	    gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo);
-	if(dbufs != null)
-	    gl.glDrawBuffers(dbufs.length, dbufs, 0);
+	applydbufs(gl);
     }
 
     public void unapply(BGL gl) {
@@ -57,8 +61,7 @@ public class FboState extends GLState {
 	FboState that = (FboState)to;
 	if(this.fbo != that.fbo)
 	    gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, that.fbo);
-	if(that.dbufs != null)
-	    gl.glDrawBuffers(that.dbufs.length, that.dbufs, 0);
+	that.applydbufs(gl);
     }
 
     private static boolean compatiblep(GLFrameBuffer fbo, Attachment[] color, Attachment depth) {

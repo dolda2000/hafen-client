@@ -27,11 +27,14 @@
 package haven.render;
 
 import java.nio.*;
-import haven.render.sl.Attribute;
+import haven.FColor;
+import haven.render.sl.*;
 
 public interface Render {
     public Environment env();
     public void draw(Pipe pipe, Model data);
+    public void clear(Pipe pipe, FragData buf, FColor val);
+    public void clear(Pipe pipe, double val);
 
     public default void draw(Pipe pipe, Model.Mode mode, short[] ind, VertexArray.Layout fmt, int n, float[] data) {
 	Model.Indices indb = null;

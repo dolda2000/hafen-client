@@ -29,7 +29,9 @@ package haven.render.gl;
 import java.nio.*;
 import javax.media.opengl.*;
 import haven.Disposable;
+import haven.FColor;
 import haven.render.*;
+import haven.render.sl.*;
 import static haven.render.DataBuffer.Usage.*;
 
 public class GLRender implements Render {
@@ -49,6 +51,8 @@ public class GLRender implements Render {
 	if(this.gl == null) {
 	    this.gl = new BufferBGL();
 	    this.init = state.clone();
+	    if(this.init.prog() != null)
+		this.init.prog().glid();
 	}
 	return(this.gl);
     }
@@ -205,6 +209,48 @@ public class GLRender implements Render {
 	} else {
 	    throw(new NotImplemented("non-ephemeral models"));
 	}
+    }
+
+    public void clear(Pipe pipe, FragData buf, FColor val) {
+	state.apply(this.gl, pipe);
+	GLProgram prog = state.prog();
+	FboState fc = (FboState)state.glstates[FboState.slot];
+	if(prog.fragdata.length == 1) {
+	    if(buf != prog.fragdata[0])
+		throw(new IllegalArgumentException(String.format("%s is not on current framebuffer", buf)));
+	    if((fc.dbufs != null) && (fc.dbufs[0] != GL.GL_NONE)) {
+		BGL gl = gl();
+		gl.glClearColor(val.r, val.g, val.b, val.a);
+		gl.glClear(GL.GL_COLOR_BUFFER_BIT);
+	    }
+	} else {
+	    int n = -1;
+	    for(int i = 0; i < prog.fragdata.length; i++) {
+		if(prog.fragdata[i] == buf) {
+		    n = i;
+		    break;
+		}
+	    }
+	    if(n < 0)
+		throw(new IllegalArgumentException(String.format("%s is not on current framebuffer", buf)));
+	    if((fc.dbufs != null) && (fc.dbufs[n] != GL.GL_NONE)) {
+		BGL gl = gl();
+		gl.glClearColor(val.r, val.g, val.b, val.a);
+		gl.glDrawBuffer(fc.dbufs[n]);
+		gl.glClear(GL.GL_COLOR_BUFFER_BIT);
+		fc.applydbufs(gl);
+	    }
+	}
+    }
+
+    public void clear(Pipe pipe, double val) {
+	state.apply(this.gl, pipe);
+	FboState fc = (FboState)state.glstates[FboState.slot];
+	if((fc.fbo != null) && (fc.fbo.depth == null))
+	    throw(new IllegalArgumentException("current framebuffer has no depthbuffer"));
+	BGL gl = gl();
+	gl.glClearDepth(val);
+	gl.glClear(GL.GL_DEPTH_BUFFER_BIT);
     }
 
     public void execute(GL2 gl) {
