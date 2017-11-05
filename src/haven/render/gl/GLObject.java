@@ -49,4 +49,8 @@ public abstract class GLObject implements Disposable {
 	    del = true;
 	}
     }
+
+    protected void finalize() {
+	dispose();
+    }
 }
