@@ -41,6 +41,7 @@ public class GLEnvironment implements Environment {
     private Applier curstate = new Applier(this);
     final Object drawmon = new Object();
     final Object prepmon = new Object();
+    final Collection<GLObject> disposed = new LinkedList<>();
 
     public GLEnvironment(GLContext ctx) {
 	this.ctx = ctx;
@@ -72,6 +73,19 @@ public class GLEnvironment implements Environment {
 		GLException.checkfor(gl);
 	    }
 	}
+    }
+
+    public void disposeall(GL2 gl) {
+	Collection<GLObject> copy;
+	synchronized(disposed) {
+	    copy = new ArrayList<>(disposed);
+	    disposed.clear();
+	}
+	BufferBGL buf = new BufferBGL(copy.size());
+	for(GLObject obj : copy)
+	    obj.delete(buf);
+	buf.bglCheckErr();
+	buf.run(gl);
     }
 
     public FillBuffer fillbuf(DataBuffer tgt) {

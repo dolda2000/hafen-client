@@ -182,7 +182,7 @@ public class GLProgram implements Disposable {
 	}
 
 	protected void delete(BGL gl) {
-	    /* XXXDEL */
+	    gl.glDeleteShader(this);
 	}
 
 	public int glid() {
@@ -276,7 +276,7 @@ public class GLProgram implements Disposable {
 	}
 
 	protected void delete(BGL gl) {
-	    /* XXXDEL */
+	    gl.glDeleteProgram(this);
 	}
 
 	public int glid() {

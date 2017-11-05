@@ -34,7 +34,7 @@ import haven.render.*;
 import haven.render.sl.*;
 import static haven.render.DataBuffer.Usage.*;
 
-public class GLRender implements Render {
+public class GLRender implements Render, Disposable {
     public final GLEnvironment env;
     BufferBGL gl = null;
     final Applier state;
@@ -256,5 +256,8 @@ public class GLRender implements Render {
     public void execute(GL2 gl) {
 	synchronized(env.drawmon) {
 	}
+    }
+
+    public void dispose() {
     }
 }

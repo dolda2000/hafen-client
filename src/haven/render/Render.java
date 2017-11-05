@@ -27,10 +27,11 @@
 package haven.render;
 
 import java.nio.*;
+import haven.Disposable;
 import haven.FColor;
 import haven.render.sl.*;
 
-public interface Render {
+public interface Render extends Disposable {
     public Environment env();
     public void draw(Pipe pipe, Model data);
     public void clear(Pipe pipe, FragData buf, FColor val);

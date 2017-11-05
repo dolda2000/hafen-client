@@ -326,6 +326,18 @@ public abstract class BGL {
 	    });
     }
 
+    public void glDeleteShader(final ID id) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDeleteShader(id.glid());}
+	    });
+    }
+
+    public void glDeleteProgram(final ID id) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDeleteProgram(id.glid());}
+	    });
+    }
+
     public void glDeleteRenderbuffers(final int count, final ID[] buffers, final int n) {
 	add(new Command() {
 		public void run(GL2 gl) {
