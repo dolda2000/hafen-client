@@ -34,7 +34,7 @@ public class BufferBGL extends BGL {
     private int n = 0;
 
     public BufferBGL(int c) {
-	list = new Command[c];
+	list = new Command[Math.max(c, 1)];
     }
     public BufferBGL() {this(128);}
 

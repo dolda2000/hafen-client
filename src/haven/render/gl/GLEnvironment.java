@@ -78,6 +78,8 @@ public class GLEnvironment implements Environment {
     public void disposeall(GL2 gl) {
 	Collection<GLObject> copy;
 	synchronized(disposed) {
+	    if(disposed.isEmpty())
+		return;
 	    copy = new ArrayList<>(disposed);
 	    disposed.clear();
 	}

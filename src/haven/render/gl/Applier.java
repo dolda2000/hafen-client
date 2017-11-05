@@ -194,15 +194,15 @@ public class Applier {
 	if(prog == this.prog) {
 	    boolean[] ch = new boolean[prog.uniforms.length];
 	    for(int i = 0; i < pn; i++) {
-		if((prog.umap.length <= pdirty[i]) || prog.umap[pdirty[i]] == null)
-		    continue;
-		for(int ui : prog.umap[pdirty[i]]) {
-		    if(!ch[ui]) {
-			udirty[un++] = ui;
-			ch[ui] = true;
+		if((prog.umap.length > pdirty[i]) && (prog.umap[pdirty[i]] != null)) {
+		    for(int ui : prog.umap[pdirty[i]]) {
+			if(!ch[ui]) {
+			    udirty[un++] = ui;
+			    ch[ui] = true;
+			}
 		    }
 		}
-		if(prog.fmap[pdirty[i]])
+		if((prog.fmap.length > pdirty[i]) && prog.fmap[pdirty[i]])
 		    fdirty = true;
 	    }
 	} else {
