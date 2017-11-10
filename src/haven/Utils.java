@@ -695,6 +695,21 @@ public class Utils {
 	if(term) out.println();
     }
 
+    public static void dumparr(int[] arr, PrintStream out, boolean term) {
+	if(arr == null) {
+	    out.print("null");
+	} else {
+	    out.print('[');
+	    boolean f = true;
+	    for(int i : arr) {
+		if(!f) out.print(", "); f = false;
+		out.print(i);
+	    }
+	    out.print(']');
+	}
+	if(term) out.println();
+    }
+
     public static Resource myres(Class<?> c) {
 	ClassLoader cl = c.getClassLoader();
 	if(cl instanceof Resource.ResClassLoader) {
