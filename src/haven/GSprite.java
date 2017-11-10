@@ -39,10 +39,11 @@ public abstract class GSprite implements Drawn {
 	    });
     }
 
-    public interface Owner {
+    public interface Owner extends OwnerContext {
 	public Random mkrandoom();
 	public Resource getres();
-	public Glob glob();
+	@Deprecated
+	public default Glob glob() {return(context(Glob.class));}
     }
 
     public interface ImageSprite {

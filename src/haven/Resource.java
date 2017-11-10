@@ -101,6 +101,10 @@ public class Resource implements Serializable {
 	}
     }
 
+    public static interface Resolver {
+	public Indir<Resource> getres(int id);
+    }
+
     private Resource(Pool pool, String name, int ver) {
 	this.pool = pool;
 	this.name = name;

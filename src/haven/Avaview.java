@@ -80,10 +80,13 @@ public class Avaview extends PView {
 	}
     }
 
+    private static final OwnerContext.ClassResolver<Avaview> ctxr = new OwnerContext.ClassResolver<Avaview>()
+	.add(Glob.class, v -> v.ui.sess.glob)
+	.add(Session.class, v -> v.ui.sess);
     private class AvaOwner implements Sprite.Owner {
 	public Random mkrandoom() {return(new Random());}
 	public Resource getres() {return(null);}
-	public Glob glob() {return(ui.sess.glob);}
+	public <T> T context(Class<T> cl) {return(ctxr.context(cl, Avaview.this));}
     }
 
     private void initcomp(Composite gc) {
