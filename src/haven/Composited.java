@@ -390,6 +390,13 @@ public class Composited implements Rendered, MapView.Clickable {
 	}
     }
     
+    private final Material.Owner matowner = new Material.Owner() {
+	    public <T> T context(Class<T> cl) {
+		if(eqowner == null)
+		    throw(new NoContext(cl));
+		return(eqowner.context(cl));
+	    }
+	};
     private void nmod(boolean nocatch) {
 	for(Iterator<MD> i = nmod.iterator(); i.hasNext();) {
 	    MD md = i.next();
@@ -407,7 +414,7 @@ public class Composited implements Rendered, MapView.Clickable {
 		}
 		for(Iterator<ResData> o = md.tex.iterator(); o.hasNext();) {
 		    ResData res = o.next();
-		    md.real.addlay(Material.fromres((eqowner == null)?null:eqowner.context(Glob.class), res.res.get(), new MessageBuf(res.sdt)));
+		    md.real.addlay(Material.fromres(matowner, res.res.get(), new MessageBuf(res.sdt)));
 		    o.remove();
 		}
 		i.remove();
