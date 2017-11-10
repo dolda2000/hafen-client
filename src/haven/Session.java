@@ -452,9 +452,12 @@ public class Session implements Resource.Resolver {
 				    return;
 				}
 			    }
+			    String protocol = "Haven";
+			    if(!Config.confid.equals(""))
+				protocol += "/" + Config.confid;
 			    PMessage msg = new PMessage(MSG_SESS);
 			    msg.adduint16(2);
-			    msg.addstring("Haven");
+			    msg.addstring(protocol);
 			    msg.adduint16(PVER);
 			    msg.addstring(username);
 			    msg.adduint16(cookie.length);
