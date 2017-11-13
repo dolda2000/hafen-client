@@ -34,7 +34,7 @@ import static haven.Inventory.invsq;
 public class GameUI extends ConsoleHost implements Console.Directory {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
     private static final int cnto = 135;
-    public final String chrid;
+    public final String chrid, genus;
     public final long plid;
     public MenuGrid menu;
     public MapView map;
@@ -90,13 +90,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	public Widget create(UI ui, Object[] args) {
 	    String chrid = (String)args[0];
 	    int plid = (Integer)args[1];
-	    return(new GameUI(chrid, plid));
+	    String genus = "";
+	    if(args.length > 2)
+		genus = (String)args[2];
+	    return(new GameUI(chrid, plid, genus));
 	}
     }
     
-    public GameUI(String chrid, long plid) {
+    public GameUI(String chrid, long plid, String genus) {
 	this.chrid = chrid;
 	this.plid = plid;
+	this.genus = genus;
 	setcanfocus(true);
 	setfocusctl(true);
 	add(new Avaview(Avaview.dasz, plid, "avacam"), new Coord(10, 10));
