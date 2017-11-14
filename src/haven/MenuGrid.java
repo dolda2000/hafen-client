@@ -49,7 +49,7 @@ public class MenuGrid extends Widget {
 	
     @RName("scm")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new MenuGrid());
 	}
     }
@@ -117,12 +117,15 @@ public class MenuGrid extends Widget {
 	}
 
 	private List<ItemInfo> info = null;
-	public Glob glob() {return(glob);}
 	public List<ItemInfo> info() {
 	    if(info == null)
 		info = ItemInfo.buildinfo(this, rawinfo);
 	    return(info);
 	}
+	private static final OwnerContext.ClassResolver<Pagina> ctxr = new OwnerContext.ClassResolver<Pagina>()
+	    .add(Glob.class, p -> p.glob)
+	    .add(Session.class, p -> p.glob.sess);
+	public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
     }
 
     public class PaginaException extends RuntimeException {

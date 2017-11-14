@@ -37,7 +37,7 @@ public class IButton extends SSWidget {
 
     @RName("ibtn")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new IButton(Resource.loadimg((String)args[0]), Resource.loadimg((String)args[1])));
 	}
     }

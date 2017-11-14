@@ -34,7 +34,7 @@ import static haven.Inventory.invsq;
 public class GameUI extends ConsoleHost implements Console.Directory {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
     private static final int cnto = 135;
-    public final String chrid;
+    public final String chrid, genus;
     public final long plid;
     public MenuGrid menu;
     public MapView map;
@@ -87,16 +87,20 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     
     @RName("gameui")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    String chrid = (String)args[0];
 	    int plid = (Integer)args[1];
-	    return(new GameUI(chrid, plid));
+	    String genus = "";
+	    if(args.length > 2)
+		genus = (String)args[2];
+	    return(new GameUI(chrid, plid, genus));
 	}
     }
     
-    public GameUI(String chrid, long plid) {
+    public GameUI(String chrid, long plid, String genus) {
 	this.chrid = chrid;
 	this.plid = plid;
+	this.genus = genus;
 	setcanfocus(true);
 	setfocusctl(true);
 	add(new Avaview(Avaview.dasz, plid, "avacam"), new Coord(10, 10));
@@ -234,7 +238,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(place == "buff") {
 	    buffs.addchild(child);
 	} else if(place == "misc") {
-	    add(child, (Coord)args[1]);
+	    Coord c;
+	    if(args[1] instanceof Coord) {
+		c = (Coord)args[1];
+	    } else if(args[1] instanceof Coord2d) {
+		c = ((Coord2d)args[1]).mul(new Coord2d(this.sz.sub(child.sz))).round();
+	    } else {
+		throw(new UI.UIException("Illegal gameui child", place, args));
+	    }
+	    add(child, c);
 	} else {
 	    throw(new UI.UIException("Illegal gameui child", place, args));
 	}
@@ -688,7 +700,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    });
 	cmdmap.put("tool", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    add(gettype(args[1]).create(GameUI.this, new Object[0]), 200, 200);
+		    add(gettype(args[1]).create(ui, new Object[0]), 200, 200);
 		}
 	    });
     }

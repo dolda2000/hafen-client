@@ -31,7 +31,7 @@ import java.util.*;
 import java.io.*;
 import java.lang.ref.*;
 
-public class Session {
+public class Session implements Resource.Resolver {
     public static final int PVER = 1;
 
     public static final int MSG_SESS = 0;
@@ -285,15 +285,8 @@ public class Session {
 			throw(new MessageException("Got invalid fragment type: " + head, msg));
 		    }
 		}
-	    } else if(msg.type == RMessage.RMSG_NEWWDG) {
-		synchronized(uimsgs) {
-		    uimsgs.add(msg);
-		}
-	    } else if(msg.type == RMessage.RMSG_WDGMSG) {
-		synchronized(uimsgs) {
-		    uimsgs.add(msg);
-		}
-	    } else if(msg.type == RMessage.RMSG_DSTWDG) {
+	    } else if((msg.type == RMessage.RMSG_NEWWDG) || (msg.type == RMessage.RMSG_WDGMSG) ||
+		      (msg.type == RMessage.RMSG_DSTWDG) || (msg.type == RMessage.RMSG_ADDWDG)) {
 		synchronized(uimsgs) {
 		    uimsgs.add(msg);
 		}
@@ -459,9 +452,12 @@ public class Session {
 				    return;
 				}
 			    }
+			    String protocol = "Haven";
+			    if(!Config.confid.equals(""))
+				protocol += "/" + Config.confid;
 			    PMessage msg = new PMessage(MSG_SESS);
 			    msg.adduint16(2);
-			    msg.addstring("Haven");
+			    msg.addstring(protocol);
 			    msg.adduint16(PVER);
 			    msg.addstring(username);
 			    msg.adduint16(cookie.length);

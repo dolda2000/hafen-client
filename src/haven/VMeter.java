@@ -36,7 +36,7 @@ public class VMeter extends Widget {
 	
     @RName("vm")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    Color cl;
 	    if(args.length > 4) {
 		cl = new Color((Integer)args[1],

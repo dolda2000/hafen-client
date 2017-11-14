@@ -42,7 +42,7 @@ public class FlowerMenu extends Widget {
 
     @RName("sm")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    String[] opts = new String[args.length];
 	    for(int i = 0; i < args.length; i++)
 		opts[i] = (String)args[i];
