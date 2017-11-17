@@ -39,14 +39,16 @@ public class MapFile {
     public static boolean debug = false;
     public final ResCache store;
     public ResCache store() {return(store);}
+    public final String filename;
     public final Collection<Long> knownsegs = new HashSet<>();
     public final Collection<Marker> markers = new ArrayList<>();
     public final Map<Long, SMarker> smarkers = new HashMap<>();
     public int markerseq = 0;
     public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public MapFile(ResCache store) {
+    public MapFile(ResCache store, String filename) {
 	this.store = store;
+	this.filename = filename;
     }
 
     private void checklock() {
@@ -54,11 +56,28 @@ public class MapFile {
 	    throw(new IllegalMonitorStateException());
     }
 
-    public static MapFile load(ResCache store) {
-	MapFile file = new MapFile(store);
+    private String mangle(String datum) {
+	StringBuilder buf = new StringBuilder();
+	buf.append("map/");
+	if(!filename.equals("")) {
+	    buf.append(filename);
+	    buf.append('/');
+	}
+	buf.append(datum);
+	return(buf.toString());
+    }
+    private InputStream sfetch(String ctl, Object... args) throws IOException {
+	return(store.fetch(mangle(String.format(ctl, args))));
+    }
+    private OutputStream sstore(String ctl, Object... args) throws IOException {
+	return(store.store(mangle(String.format(ctl, args))));
+    }
+
+    public static MapFile load(ResCache store, String filename) {
+	MapFile file = new MapFile(store, filename);
 	InputStream fp;
 	try {
-	    fp = store.fetch("map/index");
+	    fp = file.sfetch("index");
 	} catch(FileNotFoundException e) {
 	    return(file);
 	} catch(IOException e) {
@@ -90,7 +109,7 @@ public class MapFile {
 	checklock();
 	OutputStream fp;
 	try {
-	    fp = store.store("map/index");
+	    fp = sstore("index");
 	} catch(IOException e) {
 	    throw(new StreamMessage.IOError(e));
 	}
@@ -125,7 +144,7 @@ public class MapFile {
 	    checklock();
 	    InputStream fp;
 	    try {
-		fp = store().fetch(String.format("map/gi-%x", id));
+		fp = sfetch("gi-%x", id);
 	    } catch(IOException e) {
 		return(null);
 	    }
@@ -144,7 +163,7 @@ public class MapFile {
 	    checklock();
 	    OutputStream fp;
 	    try {
-		fp = store().store(String.format("map/gi-%x", info.id));
+		fp = sstore("gi-%x", info.id);
 	    } catch(IOException e) {
 		throw(new StreamMessage.IOError(e));
 	    }
@@ -414,10 +433,10 @@ public class MapFile {
 	    z.finish();
 	}
 
-	public void save(ResCache store) {
+	public void save(MapFile file) {
 	    OutputStream fp;
 	    try {
-		fp = store.store(String.format("map/grid-%x", id));
+		fp = file.sstore("grid-%x", id);
 	    } catch(IOException e) {
 		throw(new StreamMessage.IOError(e));
 	    }
@@ -426,10 +445,10 @@ public class MapFile {
 	    }
 	}
 
-	public static Grid load(ResCache store, long id) {
+	public static Grid load(MapFile file, long id) {
 	    InputStream fp;
 	    try {
-		fp = store.fetch(String.format("map/grid-%x", id));
+		fp = file.sfetch("grid-%x", id);
 	    } catch(IOException e) {
 		Debug.log.printf("mapfile warning: error when locating grid %x: %s\n", id, e);
 		return(null);
@@ -554,7 +573,7 @@ public class MapFile {
 	}
 
 	private Future<Grid> loadgrid(long id) {
-	    return(Defer.later(() -> Grid.load(store, id)));
+	    return(Defer.later(() -> Grid.load(MapFile.this, id)));
 	}
 
 	private Cached grid0(long id) {
@@ -616,7 +635,7 @@ public class MapFile {
 	    checklock();
 	    InputStream fp;
 	    try {
-		fp = store().fetch(String.format("map/seg-%x", id));
+		fp = sfetch("seg-%x", id);
 	    } catch(IOException e) {
 		return(null);
 	    }
@@ -642,7 +661,7 @@ public class MapFile {
 	    checklock();
 	    OutputStream fp;
 	    try {
-		fp = store().store(String.format("map/seg-%x", seg.id));
+		fp = sstore("seg-%x", seg.id);
 	    } catch(IOException e) {
 		throw(new StreamMessage.IOError(e));
 	    }
@@ -721,7 +740,7 @@ public class MapFile {
 		Grid cur = seg.loaded(g.id);
 		if(!((cur != null) && (cur.useq == g.seq))) {
 		    Grid sg = Grid.from(map, g);
-		    sg.save(store);
+		    sg.save(MapFile.this);
 		}
 		if(seg.id != mseg) {
 		    if(merge == null)
@@ -746,7 +765,7 @@ public class MapFile {
 		for(MCache.Grid g : missing) {
 		    Grid sg = Grid.from(map, g);
 		    Coord sc = g.gc.add(moff);
-		    sg.save(store);
+		    sg.save(MapFile.this);
 		    seg.include(sg, sc);
 		    gridinfo.put(g.id, new GridInfo(g.id, seg.id, sc));
 		}
