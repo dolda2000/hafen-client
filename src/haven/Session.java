@@ -31,7 +31,7 @@ import java.util.*;
 import java.io.*;
 import java.lang.ref.*;
 
-public class Session {
+public class Session implements Resource.Resolver {
     public static final int PVER = 1;
 
     public static final int MSG_SESS = 0;
@@ -452,9 +452,12 @@ public class Session {
 				    return;
 				}
 			    }
+			    String protocol = "Haven";
+			    if(!Config.confid.equals(""))
+				protocol += "/" + Config.confid;
 			    PMessage msg = new PMessage(MSG_SESS);
 			    msg.adduint16(2);
-			    msg.addstring("Haven");
+			    msg.addstring(protocol);
 			    msg.adduint16(PVER);
 			    msg.addstring(username);
 			    msg.adduint16(cookie.length);

@@ -444,9 +444,13 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	return(null);
     }
 
-    public Glob glob() {
-	return(glob);
-    }
+    private static final ClassResolver<Gob> ctxr = new ClassResolver<Gob>()
+	.add(Glob.class, g -> g.glob)
+	.add(Session.class, g -> g.glob.sess);
+    public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
+
+    @Deprecated
+    public Glob glob() {return(context(Glob.class));}
 
     /* Because generic functions are too nice a thing for Java. */
     public double getv() {

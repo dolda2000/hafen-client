@@ -216,16 +216,44 @@ public class Material extends GLState {
 	    st.prep(buf);
     }
     
-    @Resource.PublishedCode(name = "mat")
-    public static interface Factory {
-	public Material create(Glob glob, Resource res, Message sdt);
+    public interface Owner extends OwnerContext {
     }
 
-    public static Material fromres(Glob glob, Resource res, Message sdt) {
+    @Resource.PublishedCode(name = "mat")
+    public static interface Factory {
+	public default Material create(Owner owner, Resource res, Message sdt) {
+	    try {
+		return(create(owner.context(Glob.class), res, sdt));
+	    } catch(OwnerContext.NoContext e) {
+		return(create((Glob)null, res, sdt));
+	    }
+	}
+	@Deprecated
+	public default Material create(Glob glob, Resource res, Message sdt) {
+	    throw(new AbstractMethodError("material factory missing either create method"));
+	}
+    }
+
+    public static Material fromres(Owner owner, Resource res, Message sdt) {
 	Factory f = res.getcode(Factory.class, false);
-	if(f != null)
-	    return(f.create(glob, res, sdt));
+	if(f != null) {
+	    return(f.create(owner, res, sdt));
+	}
 	return(res.layer(Material.Res.class).get());
+    }
+
+    private static class LegacyOwner implements Owner {
+	final Glob glob;
+	LegacyOwner(Glob glob) {this.glob = glob;}
+
+	private static final ClassResolver<LegacyOwner> ctxr = new ClassResolver<LegacyOwner>()
+	    .add(Glob.class, o -> o.glob)
+	    .add(Session.class, o -> o.glob.sess);
+	public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
+    }
+    @Deprecated
+    public static Material fromres(Glob glob, Resource res, Message sdt) {
+	return(fromres(new LegacyOwner(glob), res, sdt));
     }
 
     public static class Res extends Resource.Layer implements Resource.IDLayer<Integer> {

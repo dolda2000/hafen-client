@@ -26,7 +26,9 @@
 
 package haven;
 
-public class StaticGSprite extends GSprite {
+import java.awt.image.BufferedImage;
+
+public class StaticGSprite extends GSprite implements GSprite.ImageSprite {
     public final Resource.Image img;
 
     public static final Factory fact = new Factory() {
@@ -49,5 +51,9 @@ public class StaticGSprite extends GSprite {
 
     public Coord sz() {
 	return(img.sz);
+    }
+
+    public BufferedImage image() {
+	return(img.img);
     }
 }
