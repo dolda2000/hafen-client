@@ -133,7 +133,7 @@ public class LocalMiniMap extends Widget {
 	super(sz);
 	this.mv = mv;
 	if(ResCache.global != null) {
-	    save = MapFile.load(ResCache.global);
+	    save = MapFile.load(ResCache.global, "");
 	} else {
 	    save = null;
 	}
