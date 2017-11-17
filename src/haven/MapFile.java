@@ -38,7 +38,6 @@ import static haven.MCache.cmaps;
 public class MapFile {
     public static boolean debug = false;
     public final ResCache store;
-    public ResCache store() {return(store);}
     public final String filename;
     public final Collection<Long> knownsegs = new HashSet<>();
     public final Collection<Marker> markers = new ArrayList<>();

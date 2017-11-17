@@ -504,6 +504,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
+    private String mapfilename() {
+	StringBuilder buf = new StringBuilder();
+	buf.append(genus);
+	String chrid = Utils.getpref("mapfile/" + this.chrid, "");
+	if(!chrid.equals("")) {
+	    if(buf.length() > 0) buf.append('/');
+	    buf.append(chrid);
+	}
+	return(buf.toString());
+    }
+
     public void addchild(Widget child, Object... args) {
 	String place = ((String)args[0]).intern();
 	if(place == "mapview") {
@@ -519,7 +530,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    mmap = blpanel.add(new LocalMiniMap(new Coord(133, 133), map), minimapc);
 	    mmap.lower();
 	    if(ResCache.global != null) {
-		MapFile file = new MapFile(ResCache.global, genus);
+		MapFile file = new MapFile(ResCache.global, mapfilename());
 		mmap.save(file);
 		mapfile = new MapWnd(mmap.save, map, new Coord(700, 500), "Map");
 		mapfile.hide();
@@ -1225,6 +1236,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			Utils.setpref("belttype", "n");
 			resize(sz);
 		    }
+		}
+	    });
+	cmdmap.put("chrmap", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    Utils.setpref("mapfile/" + chrid, args[1]);
 		}
 	    });
 	cmdmap.put("tool", new Console.Command() {
