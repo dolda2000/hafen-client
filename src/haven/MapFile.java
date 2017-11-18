@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.util.concurrent.locks.*;
+import java.util.function.Function;
 import java.io.*;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -179,6 +180,17 @@ public class MapFile {
 		lock.lock();
 		try {
 		    r.run();
+		} finally {
+		    lock.unlock();
+		}
+	    });
+    }
+
+    private static <A, R> Function<A, R> locked(Function<A, R> f, Lock lock) {
+	return(v -> {
+		lock.lock();
+		try {
+		    return(f.apply(v));
 		} finally {
 		    lock.unlock();
 		}
@@ -1153,6 +1165,100 @@ public class MapFile {
 	    lock.writeLock().unlock();
 	}
 	if(debug) Debug.log.printf("mapfile: update completed\n");
+    }
+
+    public static interface ExportFilter {
+	public boolean includeseg(long id);
+	public boolean includegrid(Segment seg, Coord sc, long id);
+	public boolean includemark(Marker mark);
+
+	public static final ExportFilter all = new ExportFilter() {
+		public boolean includeseg(long id) {return(true);}
+		public boolean includegrid(Segment seg, Coord sc, long id) {return(true);}
+		public boolean includemark(Marker mark) {return(true);}
+	    };
+
+	public static ExportFilter segment(long sid) {
+	    return(new ExportFilter() {
+		    public boolean includeseg(long id) {
+			return(id == sid);
+		    }
+		    public boolean includegrid(Segment seg, Coord sc, long id) {
+			return(seg.id == sid);
+		    }
+		    public boolean includemark(Marker mark) {
+			return(mark.seg == sid);
+		    }
+		});
+	}
+
+	public static ExportFilter around(Marker mark, double rad) {
+	    return(new ExportFilter() {
+		    public boolean includeseg(long id) {
+			return(id == mark.seg);
+		    }
+		    public boolean includegrid(Segment seg, Coord sc, long id) {
+			return((seg.id == mark.seg) && (sc.mul(cmaps).add(cmaps.div(2)).dist(mark.tc) <= rad));
+		    }
+		    public boolean includemark(Marker cmark) {
+			return(cmark == mark);
+		    }
+		});
+	}
+    }
+
+    public void export(Message out, ExportFilter filter) {
+	out.addstring("Haven Exported Map 1");
+	for(Long sid : locked((Collection<Long> c) -> new ArrayList<>(c), lock.readLock()).apply(knownsegs)) {
+	    if(!filter.includeseg(sid))
+		continue;
+	    Segment seg = segments.get(sid);
+	    Collection<Pair<Coord, Long>> gridbuf = new ArrayList<>();
+	    lock.readLock().lock();
+	    try {
+		for(Map.Entry<Coord, Long> gd : seg.map.entrySet()) {
+		    if(filter.includegrid(seg, gd.getKey(), gd.getValue()))
+			gridbuf.add(new Pair<>(gd.getKey(), gd.getValue()));
+		}
+	    } finally {
+		lock.readLock().unlock();
+	    }
+	    for(Pair<Coord, Long> gd : gridbuf) {
+		Grid grid = Grid.load(this, gd.b);
+		MessageBuf buf = new MessageBuf();
+		buf.addint64(gd.b);
+		buf.addint64(seg.id);
+		buf.addint64(grid.mtime);
+		buf.addcoord(gd.a);
+		buf.adduint8(grid.tilesets.length);
+		for(TileInfo tinf : grid.tilesets) {
+		    buf.addstring(tinf.res.name);
+		    buf.adduint16(tinf.res.ver);
+		    buf.adduint8(tinf.prio);
+		}
+		buf.addbytes(grid.tiles);
+		byte[] od = buf.fin();
+		out.addstring("grid");
+		out.addint32(od.length);
+		out.addbytes(od);
+	    }
+	}
+	for(Marker mark : locked((Collection<Marker> c) -> new ArrayList<>(c), lock.readLock()).apply(markers)) {
+	    if(!filter.includemark(mark))
+		continue;
+	    MessageBuf buf = new MessageBuf();
+	    savemarker(buf, mark);
+	    byte[] od = buf.fin();
+	    out.addstring("mark");
+	    out.addint32(od.length);
+	    out.addbytes(od);
+	}
+    }
+
+    public void export(OutputStream out, ExportFilter filter) {
+	StreamMessage msg = new StreamMessage(null, out);
+	export(msg, filter);
+	msg.flush();
     }
 
     private static final Coord[] inout = new Coord[] {

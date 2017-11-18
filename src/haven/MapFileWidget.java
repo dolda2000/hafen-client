@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.util.function.*;
+import java.io.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import haven.MapFile.Segment;
@@ -40,7 +41,7 @@ import haven.MapFile.SMarker;
 import static haven.MCache.cmaps;
 import static haven.Utils.or;
 
-public class MapFileWidget extends Widget {
+public class MapFileWidget extends Widget implements Console.Directory {
     public final MapFile file;
     public Location curloc;
     private Locator setloc;
@@ -415,5 +416,19 @@ public class MapFileWidget extends Widget {
 	    }
 	}
 	return(super.tooltip(c, prev));
+    }
+
+    private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
+    {
+	cmdmap.put("exportmap", new Console.Command() {
+		public void run(Console cons, String[] args) throws IOException {
+		    try(OutputStream out = new BufferedOutputStream(new FileOutputStream(args[1]))) {
+			file.export(out, MapFile.ExportFilter.all);
+		    }
+		}
+	    });
+    }
+    public Map<String, Console.Command> findcmds() {
+	return(cmdmap);
     }
 }
