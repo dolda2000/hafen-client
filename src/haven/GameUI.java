@@ -530,7 +530,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    mmap = blpanel.add(new LocalMiniMap(new Coord(133, 133), map), minimapc);
 	    mmap.lower();
 	    if(ResCache.global != null) {
-		MapFile file = new MapFile(ResCache.global, mapfilename());
+		MapFile file = MapFile.load(ResCache.global, mapfilename());
 		mmap.save(file);
 		mapfile = new MapWnd(mmap.save, map, new Coord(700, 500), "Map");
 		mapfile.hide();
