@@ -190,7 +190,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    mmap = adda(new Frame(new Coord(125, 125), true), 0, sz.y, 0, 1);
 	    LocalMiniMap mm = mmap.add(new LocalMiniMap(new Coord(125, 125), map));
 	    if(ResCache.global != null)
-		mm.save(new MapFile(ResCache.global, mapfilename()));
+		mm.save(MapFile.load(ResCache.global, mapfilename()));
 	} else if(place == "menu") {
 	    menu = (MenuGrid)add(child);
 	} else if(place == "fight") {
