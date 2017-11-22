@@ -81,5 +81,13 @@ public interface OwnerContext {
 		throw(new NoContext(cl));
 	    return(get(cl).apply(on));
 	}
+
+	public OwnerContext curry(T on) {
+	    return(new OwnerContext() {
+		    public <C> C context(Class<C> cl) {
+			return(ClassResolver.this.context(cl, on));
+		    }
+		});
+	}
     }
 }
