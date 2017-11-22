@@ -168,6 +168,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
+    private String mapfilename() {
+	StringBuilder buf = new StringBuilder();
+	buf.append(genus);
+	String chrid = Utils.getpref("mapfile/" + this.chrid, "");
+	if(!chrid.equals("")) {
+	    if(buf.length() > 0) buf.append('/');
+	    buf.append(chrid);
+	}
+	return(buf.toString());
+    }
+
     public void addchild(Widget child, Object... args) {
 	String place = ((String)args[0]).intern();
 	if(place == "mapview") {
@@ -177,7 +188,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if(mmap != null)
 		ui.destroy(mmap);
 	    mmap = adda(new Frame(new Coord(125, 125), true), 0, sz.y, 0, 1);
-	    mmap.add(new LocalMiniMap(new Coord(125, 125), map));
+	    LocalMiniMap mm = mmap.add(new LocalMiniMap(new Coord(125, 125), map));
+	    if(ResCache.global != null)
+		mm.save(MapFile.load(ResCache.global, mapfilename()));
 	} else if(place == "menu") {
 	    menu = (MenuGrid)add(child);
 	} else if(place == "fight") {
@@ -696,6 +709,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			Utils.setpref("belttype", "n");
 			resize(sz);
 		    }
+		}
+	    });
+	cmdmap.put("chrmap", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    Utils.setpref("mapfile/" + chrid, args[1]);
 		}
 	    });
 	cmdmap.put("tool", new Console.Command() {
