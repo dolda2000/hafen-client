@@ -32,6 +32,7 @@ import java.lang.annotation.*;
 import java.util.*;
 import java.net.*;
 import java.io.*;
+import java.security.*;
 import javax.imageio.*;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -487,7 +488,7 @@ public class Resource implements Serializable {
 	    synchronized(loaders) {
 		while(loaders.size() < Math.min(nloaders, qsz)) {
 		    final Loader n = new Loader();
-		    Thread th = java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<Thread>() {
+		    Thread th = AccessController.doPrivileged(new PrivilegedAction<Thread>() {
 			    public Thread run() {
 				return(new HackThread(loadergroup, n, "Haven resource loader"));
 			    }
@@ -1210,7 +1211,7 @@ public class Resource implements Serializable {
     };
 
     public static Resource classres(final Class<?> cl) {
-	return(java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<Resource>() {
+	return(AccessController.doPrivileged(new PrivilegedAction<Resource>() {
 		    public Resource run() {
 			ClassLoader l = cl.getClassLoader();
 			if(l instanceof ResClassLoader)
@@ -1291,7 +1292,7 @@ public class Resource implements Serializable {
 	public ClassLoader loader(final boolean wait) {
 	    synchronized(CodeEntry.this) {
 		if(this.loader == null) {
-		    this.loader = java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<ClassLoader>() {
+		    this.loader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
 			    public ClassLoader run() {
 				ClassLoader ret = Resource.class.getClassLoader();
 				if(classpath.size() > 0) {
@@ -1371,31 +1372,32 @@ public class Resource implements Serializable {
 		    return(null);
 		}
 	    }
-	    try {
-		synchronized(ipe) {
-		    Object pinst;
-		    if((pinst = ipe.get(acl)) != null) {
-			return(cl.cast(pinst));
-		    } else {
-			T inst;
-			Object rinst;
-			if(entry.instancer() != PublishedCode.Instancer.class)
-			    rinst = entry.instancer().newInstance().make(acl);
-			else
-			    rinst = acl.newInstance();
-			try {
-			    inst = cl.cast(rinst);
-			} catch(ClassCastException e) {
-			    throw(new ClassCastException("Published class in " + Resource.this.name + " is not of type " + cl));
-			}
-			ipe.put(acl, inst);
-			return(inst);
+	    synchronized(ipe) {
+		Object pinst;
+		if((pinst = ipe.get(acl)) != null) {
+		    return(cl.cast(pinst));
+		} else {
+		    T inst;
+		    Object rinst = AccessController.doPrivileged((PrivilegedAction<Object>)() -> {
+			    try {
+				if(entry.instancer() != PublishedCode.Instancer.class)
+				    return(entry.instancer().newInstance().make(acl));
+				else
+				    return(acl.newInstance());
+			    } catch(IllegalAccessException e) {
+				throw(new RuntimeException(e));
+			    } catch(InstantiationException e) {
+				throw(new RuntimeException(e));
+			    }
+			});
+		    try {
+			inst = cl.cast(rinst);
+		    } catch(ClassCastException e) {
+			throw(new ClassCastException("Published class in " + Resource.this.name + " is not of type " + cl));
 		    }
+		    ipe.put(acl, inst);
+		    return(inst);
 		}
-	    } catch(InstantiationException e) {
-		throw(new RuntimeException(e));
-	    } catch(IllegalAccessException e) {
-		throw(new RuntimeException(e));
 	    }
 	}
 
