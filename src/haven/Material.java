@@ -395,12 +395,12 @@ public class Material extends GLState {
 			if(id >= 0) {
 			    Res mat = lres.get().layer(Res.class, id);
 			    if(mat == null)
-				throw(new Resource.LoadException("No such material in " + lres + ": " + id, res));
+				throw(new Resource.LoadException("No such material in " + lres.get() + ": " + id, res));
 			    buf.add(mat.get());
 			} else {
 			    Res mat = lres.get().layer(Res.class);
 			    if(mat == null)
-				throw(new Resource.LoadException("No material in " + lres, res));
+				throw(new Resource.LoadException("No material in " + lres.get(), res));
 			    buf.add(mat.get());
 			}
 		    }
