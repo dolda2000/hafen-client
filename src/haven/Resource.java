@@ -372,6 +372,10 @@ public class Resource implements Serializable {
 		    done();
 		}
 	    }
+
+	    public String toString() {
+		return(String.format("<q:%s(v%d)>", name, ver));
+	    }
 	}
 
 	private void handle(Queued res) {
@@ -1618,7 +1622,7 @@ public class Resource implements Serializable {
 	    }
 
 	    public String toString() {
-		return(name);
+		return(String.format("<indir:%s(v%d)>", name, ver));
 	    }
 	}
 	indir = new Ret(name, ver);
