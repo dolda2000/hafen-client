@@ -47,6 +47,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private Text lastmsg;
     private long msgtime;
     private Window invwnd, equwnd, makewnd;
+    private Coord makewndc = Utils.getprefc("makewndc", new Coord(400, 200));
     public Inventory maininv;
     public CharWnd chrwdg;
     public MapWnd mapfile;
@@ -582,10 +583,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			    makewnd = null;
 			}
 		    }
+		    public void destroy() {
+			Utils.setprefc("makewndc", makewndc = this.c);
+			super.destroy();
+		    }
 		};
 	    makewnd.add(mkwdg, Coord.z);
 	    makewnd.pack();
-	    add(makewnd, new Coord(400, 200));
+	    fitwdg(add(makewnd, makewndc));
 	} else if(place == "buddy") {
 	    zerg.ntab(buddies = (BuddyWnd)child, zerg.kin);
 	} else if(place == "pol") {
@@ -625,6 +630,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		c = (Coord)args[1];
 	    } else if(args[1] instanceof Coord2d) {
 		c = ((Coord2d)args[1]).mul(new Coord2d(this.sz.sub(child.sz))).round();
+	    } else if(args[1] instanceof String) {
+		c = relpos((String)args[1], child, args, 2);
 	    } else {
 		throw(new UI.UIException("Illegal gameui child", place, args));
 	    }
