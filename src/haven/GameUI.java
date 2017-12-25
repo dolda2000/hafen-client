@@ -636,6 +636,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		throw(new UI.UIException("Illegal gameui child", place, args));
 	    }
 	    add(child, c);
+	} else if(place == "abt") {
+	    add(child, Coord.z);
 	} else {
 	    throw(new UI.UIException("Illegal gameui child", place, args));
 	}
