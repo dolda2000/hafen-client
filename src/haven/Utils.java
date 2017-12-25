@@ -1288,6 +1288,40 @@ public class Utils {
 	return(new MapBuilder<K, V>(new HashMap<K, V>()));
     }
 
+    public static <T, F> Iterator<T> filter(Iterator<F> from, Class<T> filter) {
+	return(new Iterator<T>() {
+		boolean h = false;
+		T n;
+
+		public boolean hasNext() {
+		    while(!h) {
+			if(!from.hasNext())
+			    return(false);
+			F g = from.next();
+			if(filter.isInstance(g)) {
+			    n = filter.cast(g);
+			    h = true;
+			    break;
+			}
+		    }
+		    return(true);
+		}
+
+		public T next() {
+		    if(!hasNext())
+			throw(new NoSuchElementException());
+		    T ret = n;
+		    h = false;
+		    n = null;
+		    return(ret);
+		}
+
+		public void remove() {
+		    from.remove();
+		}
+	    });
+    }
+
     public static final Comparator<Object> idcmd = new Comparator<Object>() {
 	int eid = 0;
 	final Map<Ref, Long> emerg = new HashMap<Ref, Long>();
