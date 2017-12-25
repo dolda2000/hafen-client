@@ -43,6 +43,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private Text lastmsg;
     private long msgtime;
     private Window invwnd, equwnd, makewnd;
+    private Coord makewndc = Utils.getprefc("makewndc", new Coord(400, 200));
     public Inventory maininv;
     public BuddyWnd buddies;
     public final Collection<Polity> polities = new ArrayList<Polity>();
@@ -232,10 +233,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			    makewnd = null;
 			}
 		    }
+		    public void destroy() {
+			Utils.setprefc("makewndc", makewndc = this.c);
+			super.destroy();
+		    }
 		};
 	    makewnd.add(mkwdg, Coord.z);
 	    makewnd.pack();
-	    add(makewnd, new Coord(400, 200));
+	    fitwdg(add(makewnd, makewndc));
 	} else if(place == "buddy") {
 	    buddies = add((BuddyWnd)child, 187, 50);
 	    buddies.hide();
