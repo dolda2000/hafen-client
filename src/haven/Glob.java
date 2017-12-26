@@ -31,7 +31,7 @@ import java.awt.Color;
 
 public class Glob {
     public double time, epoch = Utils.rtime();
-    public Astronomy ast; 
+    public Astronomy ast;
     public OCache oc = new OCache(this);
     public MCache map;
     public Session sess;
