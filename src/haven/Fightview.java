@@ -252,7 +252,7 @@ public class Fightview extends Widget {
             return;
 	} else if(msg == "atkc") {
 	    atkcs = Utils.rtime();
-	    atkct = atkcs + (((Integer)args[0]) * 0.06);
+	    atkct = atkcs + (((Number)args[0]).doubleValue() * 0.06);
 	    return;
 	} else if(msg == "blk") {
 	    blk = n2r((Integer)args[0]);
