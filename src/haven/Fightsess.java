@@ -126,7 +126,7 @@ public class Fightsess extends Widget {
     private Text lastacttip1 = null, lastacttip2 = null;
     public void draw(GOut g) {
 	updatepos();
-	double now = System.currentTimeMillis() / 1000.0;
+	double now = Utils.rtime();
 
 	for(Buff buff : fv.buffs.children(Buff.class))
 	    buff.draw(g.reclip(pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
@@ -157,13 +157,13 @@ public class Fightsess extends Widget {
 		this.lastact1 = lastact;
 		this.lastacttip1 = null;
 	    }
-	    long lastuse = fv.lastuse;
+	    double lastuse = fv.lastuse;
 	    if(lastact != null) {
 		Tex ut = lastact.get().layer(Resource.imgc).tex();
 		Coord useul = pcc.add(usec1).sub(ut.sz().div(2));
 		g.image(ut, useul);
 		g.image(useframe, useul.sub(useframeo));
-		double a = now - (lastuse / 1000.0);
+		double a = now - lastuse;
 		if(a < 1) {
 		    Coord off = new Coord((int)(a * ut.sz().x / 2), (int)(a * ut.sz().y / 2));
 		    g.chcolor(255, 255, 255, (int)(255 * (1 - a)));
@@ -180,13 +180,13 @@ public class Fightsess extends Widget {
 		    this.lastact2 = lastact;
 		    this.lastacttip2 = null;
 		}
-		long lastuse = fv.current.lastuse;
+		double lastuse = fv.current.lastuse;
 		if(lastact != null) {
 		    Tex ut = lastact.get().layer(Resource.imgc).tex();
 		    Coord useul = pcc.add(usec2).sub(ut.sz().div(2));
 		    g.image(ut, useul);
 		    g.image(useframe, useul.sub(useframeo));
-		    double a = now - (lastuse / 1000.0);
+		    double a = now - lastuse;
 		    if(a < 1) {
 			Coord off = new Coord((int)(a * ut.sz().x / 2), (int)(a * ut.sz().y / 2));
 			g.chcolor(255, 255, 255, (int)(255 * (1 - a)));
