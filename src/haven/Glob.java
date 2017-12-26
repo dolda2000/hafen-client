@@ -136,7 +136,7 @@ public class Glob {
 
     private final double timefac = 3.0;
     private double lastrep = 0, rgtime = 0;
-    public long globtime() {
+    public double globtime() {
 	double now = Utils.rtime();
 	double raw = ((now - epoch) * timefac) + time;
 	if(lastrep == 0) {
@@ -148,7 +148,7 @@ public class Glob {
 		rgtime = rgtime + ((raw - rgtime) * (1.0 - Math.pow(10.0, -(now - lastrep))));
 	}
 	lastrep = now;
-	return((long)(rgtime * 1000));
+	return(rgtime);
     }
 
     public void blob(Message msg) {
