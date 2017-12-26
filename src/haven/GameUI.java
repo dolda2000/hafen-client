@@ -45,7 +45,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Fightview fv;
     private List<Widget> meters = new LinkedList<Widget>();
     private Text lastmsg;
-    private long msgtime;
+    private double msgtime;
     private Window invwnd, equwnd, makewnd;
     private Coord makewndc = Utils.getprefc("makewndc", new Coord(400, 200));
     public Inventory maininv;
@@ -691,7 +691,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(cmdline != null) {
 	    drawcmd(g, new Coord(blpw + 10, by -= 20));
 	} else if(lastmsg != null) {
-	    if((System.currentTimeMillis() - msgtime) > 3000) {
+	    if((Utils.rtime() - msgtime) > 3.0) {
 		lastmsg = null;
 	    } else {
 		g.chcolor(0, 0, 0, 192);
@@ -707,10 +707,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     
     public void tick(double dt) {
 	super.tick(dt);
-	if(!afk && (System.currentTimeMillis() - ui.lastevent > 300000)) {
+	double idle = Utils.rtime() - ui.lastevent;
+	if(!afk && (idle > 300)) {
 	    afk = true;
 	    wdgmsg("afk");
-	} else if(afk && (System.currentTimeMillis() - ui.lastevent < 300000)) {
+	} else if(afk && (idle <= 300)) {
 	    afk = false;
 	}
     }
@@ -942,7 +943,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
     
     public void msg(String msg, Color color, Color logcol) {
-	msgtime = System.currentTimeMillis();
+	msgtime = Utils.rtime();
 	lastmsg = msgfoundry.render(msg, color);
 	syslog.append(msg, logcol);
     }
@@ -952,22 +953,22 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     private static final Resource errsfx = Resource.local().loadwait("sfx/error");
-    private long lasterrsfx = 0;
+    private double lasterrsfx = 0;
     public void error(String msg) {
 	msg(msg, new Color(192, 0, 0), new Color(255, 0, 0));
-	long now = System.currentTimeMillis();
-	if(now - lasterrsfx > 100) {
+	double now = Utils.rtime();
+	if(now - lasterrsfx > 0.1) {
 	    Audio.play(errsfx);
 	    lasterrsfx = now;
 	}
     }
 
     private static final Resource msgsfx = Resource.local().loadwait("sfx/msg");
-    private long lastmsgsfx = 0;
+    private double lastmsgsfx = 0;
     public void msg(String msg) {
 	msg(msg, Color.WHITE, Color.WHITE);
-	long now = System.currentTimeMillis();
-	if(now - lastmsgsfx > 100) {
+	double now = Utils.rtime();
+	if(now - lastmsgsfx > 0.1) {
 	    Audio.play(msgsfx);
 	    lastmsgsfx = now;
 	}

@@ -91,15 +91,15 @@ public class WItem extends Widget implements DTarget {
 	public LongTip(List<ItemInfo> info) {super(longtip(info));}
     }
 
-    private long hoverstart;
+    private double hoverstart;
     private ItemTip shorttip = null, longtip = null;
     private List<ItemInfo> ttinfo = null;
     public Object tooltip(Coord c, Widget prev) {
-	long now = System.currentTimeMillis();
+	double now = Utils.rtime();
 	if(prev == this) {
 	} else if(prev instanceof WItem) {
-	    long ps = ((WItem)prev).hoverstart;
-	    if(now - ps < 1000)
+	    double ps = ((WItem)prev).hoverstart;
+	    if(now - ps < 1.0)
 		hoverstart = now;
 	    else
 		hoverstart = ps;
@@ -114,7 +114,7 @@ public class WItem extends Widget implements DTarget {
 		shorttip = longtip = null;
 		ttinfo = info;
 	    }
-	    if(now - hoverstart < 1000) {
+	    if(now - hoverstart < 1.0) {
 		if(shorttip == null)
 		    shorttip = new ShortTip(info);
 		return(shorttip);

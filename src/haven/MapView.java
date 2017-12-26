@@ -773,7 +773,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     private Coord3f smapcc = null;
     private ShadowMap smap = null;
-    private long lsmch = 0;
+    private double lsmch = 0;
     private void updsmap(RenderList rl, DirLight light) {
 	if(rl.cfg.pref.lshadow.val) {
 	    if(smap == null)
@@ -783,12 +783,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
 	    boolean ch = false;
-	    long now = System.currentTimeMillis();
+	    double now = Utils.rtime();
 	    if((smapcc == null) || (smapcc.dist(cc) > 50)) {
 		smapcc = cc;
 		ch = true;
 	    } else {
-		if(now - lsmch > 100)
+		if(now - lsmch > 0.1)
 		    ch = true;
 	    }
 	    if(ch) {
@@ -1128,8 +1128,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     static class PolText {
-	Text text; long tm;
-	PolText(Text text, long tm) {this.text = text; this.tm = tm;}
+	Text text; double tm;
+	PolText(Text text, double tm) {this.text = text; this.tm = tm;}
     }
 
     private static final Text.Furnace polownertf = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 30).aa(true), 3, 1, Color.BLACK);
@@ -1137,27 +1137,27 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public void setpoltext(int id, String text) {
 	synchronized(polowners) {
-	    polowners.put(id, new PolText(polownertf.render(text), System.currentTimeMillis()));
+	    polowners.put(id, new PolText(polownertf.render(text), Utils.rtime()));
 	}
     }
 
     private void poldraw(GOut g) {
 	if(polowners.isEmpty())
 	    return;
-	long now = System.currentTimeMillis();
+	double now = Utils.rtime();
 	synchronized(polowners) {
 	    int y = (sz.y - polowners.values().stream().map(t -> t.text.sz().y).reduce(0, (a, b) -> a + b + 10)) / 2;
 	    for(Iterator<PolText> i = polowners.values().iterator(); i.hasNext();) {
 		PolText t = i.next();
-		long poldt = now - t.tm;
-		if(poldt < 6000) {
+		double poldt = now - t.tm;
+		if(poldt < 6.0) {
 		    int a;
-		    if(poldt < 1000)
-			a = (int)((255 * poldt) / 1000);
-		    else if(poldt < 4000)
+		    if(poldt < 1.0)
+			a = (int)(255 * poldt);
+		    else if(poldt < 4.0)
 			a = 255;
 		    else
-			a = (int)((255 * (2000 - (poldt - 4000))) / 2000);
+			a = (int)((255 * (2.0 - (poldt - 4.0))) / 2.0);
 		    g.chcolor(255, 255, 255, a);
 		    g.aimage(t.text.tex(), new Coord((sz.x - t.text.sz().x) / 2, y), 0.0, 0.0);
 		    y += t.text.sz().y + 10;
@@ -1241,7 +1241,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Loading camload = null, lastload = null;
     public void draw(GOut g) {
 	glob.map.sendreqs();
-	if((olftimer != 0) && (olftimer < System.currentTimeMillis()))
+	if((olftimer != 0) && (olftimer < Utils.rtime()))
 	    unflashol();
 	try {
 	    if(camload != null)
@@ -1353,7 +1353,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     private int olflash;
-    private long olftimer;
+    private double olftimer;
 
     private void unflashol() {
 	for(int i = 0; i < visol.length; i++) {
@@ -1399,7 +1399,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if((olflash & (1 << i)) != 0)
 		    visol[i]++;
 	    }
-	    olftimer = System.currentTimeMillis() + (Integer)args[1];
+	    olftimer = Utils.rtime() + (((Number)args[1]).doubleValue() / 1000.0);
 	} else if(msg == "sel") {
 	    boolean sel = ((Integer)args[0]) != 0;
 	    synchronized(this) {
