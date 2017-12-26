@@ -40,7 +40,7 @@ public class Buff extends Widget {
     int nmeter = -1;
     int cmeter = -1;
     int cticks = -1;
-    long gettime;
+    double gettime;
     Tex ntext = null;
     int a = 255;
     boolean dest = false;
@@ -84,7 +84,7 @@ public class Buff extends Widget {
 		double m = cmeter / 100.0;
 		if(cticks >= 0) {
 		    double ot = cticks * 0.06;
-		    double pt = (System.currentTimeMillis() - gettime) / 1000.0;
+		    double pt = Utils.rtime() - gettime;
 		    m *= (ot - pt) / ot;
 		}
 		m = Utils.clip(m, 0.0, 1.0);
@@ -105,14 +105,14 @@ public class Buff extends Widget {
 	return(ret);
     }
 
-    private long hoverstart;
+    private double hoverstart;
     private Text shorttip, longtip;
     public Object tooltip(Coord c, Widget prev) {
-	long now = System.currentTimeMillis();
+	double now = Utils.rtime();
 	if(prev != this)
 	    hoverstart = now;
 	try {
-	    if(now - hoverstart < 1000) {
+	    if(now - hoverstart < 1.0) {
 		if(shorttip == null)
 		    shorttip = Text.render(shorttip());
 		return(shorttip.tex());
@@ -173,7 +173,7 @@ public class Buff extends Widget {
 	} else if(msg == "cm") {
 	    this.cmeter = (Integer)args[0];
 	    this.cticks = (args.length > 1)?((Integer)args[1]):-1;
-	    gettime = System.currentTimeMillis();
+	    gettime = Utils.rtime();
 	} else {
 	    super.uimsg(msg, args);
 	}

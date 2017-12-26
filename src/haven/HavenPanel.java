@@ -453,7 +453,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			ui.type(ke);
 		    }
 		}
-		ui.lastevent = System.currentTimeMillis();
+		ui.lastevent = Utils.rtime();
 	    }
 	}
     }

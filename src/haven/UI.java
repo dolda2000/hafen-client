@@ -42,14 +42,14 @@ public class UI {
     public Session sess;
     public boolean modshift, modctrl, modmeta, modsuper;
     public Object lasttip;
-    long lastevent, lasttick;
+    double lastevent, lasttick;
     public Widget mouseon;
     public Console cons = new WidgetConsole();
     private Collection<AfterDraw> afterdraws = new LinkedList<AfterDraw>();
     public final ActAudio audio = new ActAudio();
     
     {
-	lastevent = lasttick = System.currentTimeMillis();
+	lastevent = lasttick = Utils.rtime();
     }
 	
     public interface Receiver {
@@ -131,8 +131,8 @@ public class UI {
     }
 
     public void tick() {
-	long now = System.currentTimeMillis();
-	root.tick((now - lasttick) / 1000.0);
+	double now = Utils.rtime();
+	root.tick(now - lasttick);
 	lasttick = now;
     }
 

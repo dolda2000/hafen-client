@@ -49,7 +49,7 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
 	private int curn, ns;
 	private int[] n = {0};
 	private double vacc, cvol;
-	private double lastupd = System.currentTimeMillis() / 1000.0;
+	private double lastupd = Utils.rtime();
 
 	public Glob(Desc desc, ActAudio list) {
 	    this.desc = desc;
@@ -144,7 +144,7 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
 	}
 
 	public boolean cycle(ActAudio list) {
-	    double now = System.currentTimeMillis() / 1000.0;
+	    double now = Utils.rtime();
 	    double td = Math.max(now - lastupd, 0.0);
 	    trim();
 	    addmin();

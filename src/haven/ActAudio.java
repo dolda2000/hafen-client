@@ -159,7 +159,7 @@ public class ActAudio extends GLState.Abstract {
 	    private final VolAdjust clip;
 	    private int n;
 	    private double vacc;
-	    private double lastupd = System.currentTimeMillis() / 1000.0;
+	    private double lastupd = Utils.rtime();
 	    
 	    public Glob(Resource res) {
 		this.res = res;
@@ -182,7 +182,7 @@ public class ActAudio extends GLState.Abstract {
 	    }
 
 	    public boolean cycle(ActAudio list) {
-		double now = System.currentTimeMillis() / 1000.0;
+		double now = Utils.rtime();
 		double td = Math.max(now - lastupd, 0.0);
 		if(vacc < clip.vol)
 		    clip.vol = Math.max(clip.vol - (td * 0.5), 0.0);
