@@ -29,6 +29,7 @@ package haven;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.*;
+import haven.ItemInfo.AttrCache;
 
 public class Buff extends Widget implements ItemInfo.ResOwner {
     public static final Text.Foundry nfnd = new Text.Foundry(Text.dfont, 10);
@@ -83,30 +84,60 @@ public class Buff extends Widget implements ItemInfo.ResOwner {
 	return(ntext);
     }
 
+    public interface AMeterInfo {
+	public double ameter();
+    }
+
+    public static abstract class AMeterTip extends ItemInfo.Tip implements AMeterInfo {
+	public AMeterTip(Owner owner) {
+	    super(owner);
+	}
+
+	public void layout(Layout l) {
+	    int n = (int)Math.floor(ameter() * 100);
+	    l.cmp.add(Text.render(" (" + n + "%)").img, new Coord(l.cmp.sz.x, 0));
+	}
+
+	public int order() {return(10);}
+	public Tip shortvar() {return(this);}
+    }
+
+    private final AttrCache<Double> ameteri = new AttrCache<>(this::info, AttrCache.map1(AMeterInfo.class, minf -> minf::ameter));
+    private final AttrCache<Tex> nmeteri = new AttrCache<>(this::info, AttrCache.map1s(GItem.NumberInfo.class, ninf -> new TexI(GItem.NumberInfo.numrender(ninf.itemnum(), ninf.numcolor()))));
+    private final AttrCache<Double> cmeteri = new AttrCache<>(this::info, AttrCache.map1(GItem.MeterInfo.class, minf -> minf::meter));
+
     public void draw(GOut g) {
 	g.chcolor(255, 255, 255, a);
-	if(ameter >= 0) {
+	Double ameter = (this.ameter >= 0) ? (this.ameter / 100.0) : ameteri.get();
+	if(ameter != null) {
 	    g.image(cframe, Coord.z);
 	    g.chcolor(0, 0, 0, a);
 	    g.frect(ameteroff, ametersz);
 	    g.chcolor(255, 255, 255, a);
-	    g.frect(ameteroff, new Coord((ameter * ametersz.x) / 100, ametersz.y));
+	    g.frect(ameteroff, new Coord((int)Math.floor(ameter * ametersz.x), ametersz.y));
 	} else {
 	    g.image(frame, Coord.z);
 	}
 	try {
 	    Tex img = res.get().layer(Resource.imgc).tex();
 	    g.image(img, imgoff);
-	    if(nmeter >= 0)
-		g.aimage(nmeter(), imgoff.add(img.sz()).sub(1, 1), 1, 1);
-	    if(cmeter >= 0) {
-		double m = cmeter / 100.0;
+	    Tex nmeter = (this.nmeter >= 0) ? nmeter() : nmeteri.get();
+	    if(nmeter != null)
+		g.aimage(nmeter, imgoff.add(img.sz()).sub(1, 1), 1, 1);
+	    Double cmeter;
+	    if(this.cmeter >= 0) {
+		double m = this.cmeter / 100.0;
 		if(cticks >= 0) {
 		    double ot = cticks * 0.06;
 		    double pt = Utils.rtime() - gettime;
 		    m *= (ot - pt) / ot;
 		}
-		m = Utils.clip(m, 0.0, 1.0);
+		cmeter = m;
+	    } else {
+		cmeter = cmeteri.get();
+	    }
+	    if(cmeter != null) {
+		double m = Utils.clip(cmeter, 0.0, 1.0);
 		g.chcolor(255, 255, 255, a / 2);
 		Coord ccc = img.sz().div(2);
 		g.prect(imgoff.add(ccc), ccc.inv(), img.sz().sub(ccc), Math.PI * 2 * m);
