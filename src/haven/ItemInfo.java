@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import java.lang.reflect.*;
 import java.awt.image.BufferedImage;
 import java.awt.Graphics;
@@ -324,6 +325,46 @@ public abstract class ItemInfo {
 	    return(buf.toString());
 	} else {
 	    return(arg.toString());
+	}
+    }
+
+    public static class AttrCache<R> implements Indir<R> {
+	private final Supplier<List<ItemInfo>> from;
+	private final Function<List<ItemInfo>, Supplier<R>> data;
+	private List<ItemInfo> forinfo = null;
+	private Supplier<R> save;
+
+	public AttrCache(Supplier<List<ItemInfo>> from, Function<List<ItemInfo>, Supplier<R>> data) {
+	    this.from = from;
+	    this.data = data;
+	}
+
+	public R get() {
+	    List<ItemInfo> info = from.get();
+	    if(info != forinfo) {
+		save = data.apply(info);
+		forinfo = info;
+	    }
+	    return(save.get());
+	}
+
+	public static <I, R> Function<List<ItemInfo>, Supplier<R>> map1(Class<I> icl, Function<I, Supplier<R>> data) {
+	    return(info -> {
+		    I inf = find(icl, info);
+		    if(inf == null)
+			return(() -> null);
+		    return(data.apply(inf));
+		});
+	}
+
+	public static <I, R> Function<List<ItemInfo>, Supplier<R>> map1s(Class<I> icl, Function<I, R> data) {
+	    return(info -> {
+		    I inf = find(icl, info);
+		    if(inf == null)
+			return(() -> null);
+		    R ret = data.apply(inf);
+		    return(() -> ret);
+		});
 	}
     }
 }
