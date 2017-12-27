@@ -27,23 +27,28 @@
 package haven;
 
 import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.util.*;
 
-public class Buff extends Widget {
+public class Buff extends Widget implements ItemInfo.ResOwner {
     public static final Text.Foundry nfnd = new Text.Foundry(Text.dfont, 10);
     public static final Tex frame = Resource.loadtex("gfx/hud/buffs/frame");
     public static final Tex cframe = Resource.loadtex("gfx/hud/buffs/cframe");
-    static final Coord imgoff = new Coord(3, 3);
-    static final Coord ameteroff = new Coord(3, 37), ametersz = new Coord(32, 3);
-    Indir<Resource> res;
+    public static final Coord imgoff = new Coord(3, 3);
+    public static final Coord ameteroff = new Coord(3, 37), ametersz = new Coord(32, 3);
+    public Indir<Resource> res;
+    public int cmeter = -1;
+    public int cticks = -1;
+    public double gettime;
+    protected int a = 255;
+    protected boolean dest = false;
+    private Object[] rawinfo = null;
+    private List<ItemInfo> info = Collections.emptyList();
+    /* Deprecated */
     String tt = null;
     int ameter = -1;
     int nmeter = -1;
-    int cmeter = -1;
-    int cticks = -1;
-    double gettime;
     Tex ntext = null;
-    int a = 255;
-    boolean dest = false;
 
     @RName("buff")
     public static class $_ implements Factory {
@@ -56,6 +61,20 @@ public class Buff extends Widget {
     public Buff(Indir<Resource> res) {
 	super(cframe.sz());
 	this.res = res;
+    }
+
+    public Resource resource() {
+	return(res.get());
+    }
+    private static final OwnerContext.ClassResolver<Buff> ctxr = new OwnerContext.ClassResolver<Buff>()
+	.add(Glob.class, wdg -> wdg.ui.sess.glob)
+	.add(Session.class, wdg -> wdg.ui.sess);
+    public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
+
+    public List<ItemInfo> info() {
+	if(info == null)
+	    info = ItemInfo.buildinfo(this, rawinfo);
+	return(info);
     }
 
     private Tex nmeter() {
@@ -96,35 +115,46 @@ public class Buff extends Widget {
 	} catch(Loading e) {}
     }
 
-    private String shorttip() {
+    private BufferedImage shorttip() {
+	if(rawinfo != null)
+	    return(ItemInfo.shorttip(info()));
 	if(tt != null)
-	    return(tt);
+	    return(Text.render(tt).img);
 	String ret = res.get().layer(Resource.tooltip).t;
 	if(ameter >= 0)
 	    ret = ret + " (" + ameter + "%)";
-	return(ret);
+	return(Text.render(ret).img);
+    }
+
+    private BufferedImage longtip() {
+	BufferedImage img;
+	if(rawinfo != null)
+	    img = ItemInfo.longtip(info());
+	else
+	    img = shorttip();
+	Resource.Pagina pag = res.get().layer(Resource.pagina);
+	if(pag != null)
+	    img = ItemInfo.catimgs(0, img, RichText.render("\n" + pag.text, 200).img);
+	return(img);
     }
 
     private double hoverstart;
-    private Text shorttip, longtip;
+    private Tex shorttip, longtip;
+    private List<ItemInfo> ttinfo = null;
     public Object tooltip(Coord c, Widget prev) {
 	double now = Utils.rtime();
 	if(prev != this)
 	    hoverstart = now;
 	try {
+	    List<ItemInfo> info = info();
 	    if(now - hoverstart < 1.0) {
 		if(shorttip == null)
-		    shorttip = Text.render(shorttip());
-		return(shorttip.tex());
+		    shorttip = new TexI(shorttip());
+		return(shorttip);
 	    } else {
-		if(longtip == null) {
-		    String text = RichText.Parser.quote(shorttip());
-		    Resource.Pagina pag = res.get().layer(Resource.pagina);
-		    if(pag != null)
-			text += "\n\n" + pag.text;
-		    longtip = RichText.render(text, 200);
-		}
-		return(longtip.tex());
+		if(longtip == null)
+		    longtip = new TexI(longtip());
+		return(longtip);
 	    }
 	} catch(Loading e) {
 	    return("...");
@@ -160,6 +190,9 @@ public class Buff extends Widget {
     public void uimsg(String msg, Object... args) {
 	if(msg == "ch") {
 	    this.res = ui.sess.getres((Integer)args[0]);
+	} else if(msg == "tt") {
+	    info = null;
+	    rawinfo = args;
 	} else if(msg == "tip") {
 	    String tt = (String)args[0];
 	    this.tt = tt.equals("")?null:tt;
