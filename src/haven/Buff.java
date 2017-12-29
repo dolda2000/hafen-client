@@ -199,23 +199,30 @@ public class Buff extends Widget implements ItemInfo.ResOwner {
 	new NormAnim(0.5) {
 	    public void ntick(double a) {
 		Buff.this.a = 255 - (int)(255 * a);
-		Buff.this.c = o.add(0, (int)(a * cframe.sz().y));
+		Buff.this.c = o.add(0, (int)(a * a * cframe.sz().y));
 		if(a == 1.0)
 		    destroy();
 	    }
 	};
     }
 
-    public void move(Coord c) {
+    public void move(Coord c, double off) {
 	if(dest)
 	    return;
+	double ival = 0.8;
+	double foff = off * (1.0 - 0.8);
 	final Coord o = this.c;
 	final Coord d = c.sub(o);
 	new NormAnim(0.5) {
 	    public void ntick(double a) {
+		a = Utils.clip((a - foff) * (1.0 / ival), 0, 1);
 		Buff.this.c = o.add(d.mul(Utils.smoothstep(a)));
 	    }
 	};
+    }
+
+    public void move(Coord c) {
+	move(c, 0);
     }
 
     public void uimsg(String msg, Object... args) {
