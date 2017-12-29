@@ -340,12 +340,16 @@ public abstract class ItemInfo {
 	}
 
 	public R get() {
-	    List<ItemInfo> info = from.get();
-	    if(info != forinfo) {
-		save = data.apply(info);
-		forinfo = info;
+	    try {
+		List<ItemInfo> info = from.get();
+		if(info != forinfo) {
+		    save = data.apply(info);
+		    forinfo = info;
+		}
+		return(save.get());
+	    } catch(Loading l) {
+		return(null);
 	    }
-	    return(save.get());
 	}
 
 	public static <I, R> Function<List<ItemInfo>, Supplier<R>> map1(Class<I> icl, Function<I, Supplier<R>> data) {
