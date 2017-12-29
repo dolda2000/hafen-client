@@ -37,7 +37,7 @@ public interface DefaultCollection<E> extends Collection<E> {
     }
 
     public default boolean isEmpty() {
-	return(iterator().hasNext());
+	return(!iterator().hasNext());
     }
 
     public default void clear() {
