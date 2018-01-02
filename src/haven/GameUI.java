@@ -41,8 +41,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Widget mmap;
     public Fightview fv;
     private Text lastmsg;
-    private long msgtime;
+    private double msgtime;
     private Window invwnd, equwnd, makewnd;
+    private Coord makewndc = Utils.getprefc("makewndc", new Coord(400, 200));
     public Inventory maininv;
     public BuddyWnd buddies;
     public final Collection<Polity> polities = new ArrayList<Polity>();
@@ -232,10 +233,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			    makewnd = null;
 			}
 		    }
+		    public void destroy() {
+			Utils.setprefc("makewndc", makewndc = this.c);
+			super.destroy();
+		    }
 		};
 	    makewnd.add(mkwdg, Coord.z);
 	    makewnd.pack();
-	    add(makewnd, new Coord(400, 200));
+	    fitwdg(add(makewnd, makewndc));
 	} else if(place == "buddy") {
 	    buddies = add((BuddyWnd)child, 187, 50);
 	    buddies.hide();
@@ -256,10 +261,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		c = (Coord)args[1];
 	    } else if(args[1] instanceof Coord2d) {
 		c = ((Coord2d)args[1]).mul(new Coord2d(this.sz.sub(child.sz))).round();
+	    } else if(args[1] instanceof String) {
+		c = relpos((String)args[1], child, (args.length > 2) ? ((Object[])args[2]) : new Object[] {}, 2);
 	    } else {
 		throw(new UI.UIException("Illegal gameui child", place, args));
 	    }
 	    add(child, c);
+	} else if(place == "abt") {
+	    add(child, Coord.z);
 	} else {
 	    throw(new UI.UIException("Illegal gameui child", place, args));
 	}
@@ -299,7 +308,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(cmdline != null) {
 	    drawcmd(g, new Coord(cnto + 10, by -= 20));
 	} else if(lastmsg != null) {
-	    if((System.currentTimeMillis() - msgtime) > 3000) {
+	    if((Utils.rtime() - msgtime) > 3.0) {
 		lastmsg = null;
 	    } else {
 		g.chcolor(0, 0, 0, 192);
@@ -315,10 +324,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     
     public void tick(double dt) {
 	super.tick(dt);
-	if(!afk && (System.currentTimeMillis() - ui.lastevent > 300000)) {
+	double idle = Utils.rtime() - ui.lastevent;
+	if(!afk && (idle > 300)) {
 	    afk = true;
 	    wdgmsg("afk");
-	} else if(afk && (System.currentTimeMillis() - ui.lastevent < 300000)) {
+	} else if(afk && (idle <= 300)) {
 	    afk = false;
 	}
     }
@@ -444,7 +454,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
     
     public void msg(String msg, Color color, Color logcol) {
-	msgtime = System.currentTimeMillis();
+	msgtime = Utils.rtime();
 	lastmsg = msgfoundry.render(msg, color);
 	syslog.append(msg, logcol);
     }
@@ -454,11 +464,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     private static final Resource errsfx = Resource.local().loadwait("sfx/error");
-    private long lasterrsfx = 0;
+    private double lasterrsfx = 0;
     public void error(String msg) {
 	msg(msg, new Color(192, 0, 0), new Color(255, 0, 0));
-	long now = System.currentTimeMillis();
-	if(now - lasterrsfx > 100) {
+	double now = Utils.rtime();
+	if(now - lasterrsfx > 0.1) {
 	    Audio.play(errsfx);
 	    lasterrsfx = now;
 	}

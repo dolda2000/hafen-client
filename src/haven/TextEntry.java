@@ -36,7 +36,7 @@ public class TextEntry extends Widget {
     public int sx;
     public boolean pw = false;
     public String text;
-    private long focusstart;
+    private double focusstart;
     private Text.Line tcache = null;
 
     @RName("text")
@@ -99,7 +99,7 @@ public class TextEntry extends Widget {
 	if(cx < sx) sx = cx;
 	if(cx > sx + (sz.x - 1)) sx = cx - (sz.x - 1);
 	g.image(tcache.tex(), new Coord(-sx, 0));
-	if(hasfocus && (((System.currentTimeMillis() - focusstart) % 1000) < 500)) {
+	if(hasfocus && (((Utils.rtime() - focusstart) % 1.0) < 0.5)) {
 	    int lx = cx - sx + 1;
 	    g.chcolor(0, 0, 0, 255);
 	    g.line(new Coord(lx, 1), new Coord(lx, tcache.sz().y - 1), 1);
@@ -143,7 +143,7 @@ public class TextEntry extends Widget {
     }
 
     public void gotfocus() {
-	focusstart = System.currentTimeMillis();
+	focusstart = Utils.rtime();
     }
 
     public void resize(int w) {

@@ -58,11 +58,10 @@ public class MenuGrid extends Widget {
 	public final Glob glob;
 	public final Indir<Resource> res;
 	public State st;
-	public int meter, dtime;
-	public long gettime;
+	public int meter;
+	public double gettime, dtime, fstart;
 	public Image img;
 	public int newp;
-	public long fstart;
 	public Object[] rawinfo = {};
 
 	public interface Image {
@@ -266,7 +265,7 @@ public class MenuGrid extends Widget {
 	return(ret);
     }
     public void draw(GOut g) {
-	long now = System.currentTimeMillis();
+	double now = Utils.rtime();
 	for(int y = 0; y < gsz.y; y++) {
 	    for(int x = 0; x < gsz.x; x++) {
 		Coord p = bgsz.mul(new Coord(x, y));
@@ -278,7 +277,7 @@ public class MenuGrid extends Widget {
 		    if(btn.meter > 0) {
 			double m = btn.meter / 1000.0;
 			if(btn.dtime > 0)
-			    m += (1 - m) * (double)(now - btn.gettime) / (double)btn.dtime;
+			    m += (1 - m) * (now - btn.gettime) / btn.dtime;
 			m = Utils.clip(m, 0, 1);
 			g.chcolor(255, 255, 255, 128);
 			g.fellipse(p.add(bgsz.div(2)), bgsz.div(2), Math.PI / 2, ((Math.PI / 2) + (Math.PI * 2 * m)));
@@ -288,7 +287,7 @@ public class MenuGrid extends Widget {
 			if(btn.fstart == 0) {
 			    btn.fstart = now;
 			} else {
-			    double ph = ((now - btn.fstart) / 1000.0) - (((x + (y * gsz.x)) * 0.15) % 1.0);
+			    double ph = (now - btn.fstart) - (((x + (y * gsz.x)) * 0.15) % 1.0);
 			    if(ph < 1.25) {
 				g.chcolor(255, 255, 255, (int)(255 * ((Math.cos(ph * Math.PI * 2) * -0.5) + 0.5)));
 				g.image(glowmask(btn), p.sub(4, 4));
@@ -322,14 +321,14 @@ public class MenuGrid extends Widget {
     private Pagina curttp = null;
     private boolean curttl = false;
     private Tex curtt = null;
-    private long hoverstart;
+    private double hoverstart;
     public Object tooltip(Coord c, Widget prev) {
 	Pagina pag = bhit(c);
-	long now = System.currentTimeMillis();
+	double now = Utils.rtime();
 	if((pag != null) && (pag.act() != null)) {
 	    if(prev != this)
 		hoverstart = now;
-	    boolean ttl = (now - hoverstart) > 500;
+	    boolean ttl = (now - hoverstart) > 0.5;
 	    if((pag != curttp) || (ttl != curttl)) {
 		try {
 		    curtt = new TexI(rendertt(pag, ttl));
@@ -440,8 +439,8 @@ public class MenuGrid extends Widget {
 			    pag.state(Pagina.State.DISABLED);
 			if((fl & 4) != 0) {
 			    pag.meter = ((Number)args[a++]).intValue();
-			    pag.gettime = System.currentTimeMillis();
-			    pag.dtime = (Integer)args[a++];
+			    pag.gettime = Utils.rtime();
+			    pag.dtime = (((Number)args[a++]).doubleValue()) / 1000.0;
 			}
 			if((fl & 8) != 0)
 			    pag.newp = 1;

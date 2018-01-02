@@ -372,6 +372,10 @@ public class Resource implements Serializable {
 		    done();
 		}
 	    }
+
+	    public String toString() {
+		return(String.format("<q:%s(v%d)>", name, ver));
+	    }
 	}
 
 	private void handle(Queued res) {
@@ -1508,44 +1512,9 @@ public class Resource implements Serializable {
 
     public <L extends Layer> Collection<L> layers(final Class<L> cl) {
 	used = true;
-	return(new AbstractCollection<L>() {
-		public int size() {
-		    int s = 0;
-		    for(L l : this)
-			s++;
-		    return(s);
-		}
-		
+	return(new DefaultCollection<L>() {
 		public Iterator<L> iterator() {
-		    return(new Iterator<L>() {
-			    Iterator<Layer> i = layers.iterator();
-			    L c = n();
-			    
-			    private L n() {
-				while(i.hasNext()) {
-				    Layer l = i.next();
-				    if(cl.isInstance(l))
-					return(cl.cast(l));
-				}
-				return(null);
-			    }
-			    
-			    public boolean hasNext() {
-				return(c != null);
-			    }
-			    
-			    public L next() {
-				L ret = c;
-				if(ret == null)
-				    throw(new NoSuchElementException());
-				c = n();
-				return(ret);
-			    }
-			    
-			    public void remove() {
-				throw(new UnsupportedOperationException());
-			    }
-			});
+		    return(Utils.filter(layers.iterator(), cl));
 		}
 	    });
     }
@@ -1618,7 +1587,7 @@ public class Resource implements Serializable {
 	    }
 
 	    public String toString() {
-		return(name);
+		return(String.format("<indir:%s(v%d)>", name, ver));
 	    }
 	}
 	indir = new Ret(name, ver);

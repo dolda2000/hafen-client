@@ -376,15 +376,16 @@ public class MapFile {
     }
 
     public static class Grid {
-	public final long id;
+	public final long id, mtime;
 	public final TileInfo[] tilesets;
 	public final byte[] tiles;
 	private int useq = -1;
 
-	public Grid(long id, TileInfo[] tilesets, byte[] tiles) {
+	public Grid(long id, TileInfo[] tilesets, byte[] tiles, long mtime) {
 	    this.id = id;
 	    this.tilesets = tilesets;
 	    this.tiles = tiles;
+	    this.mtime = mtime;
 	}
 
 	public static Grid from(MCache map, MCache.Grid cg) {
@@ -413,15 +414,16 @@ public class MapFile {
 	    byte[] tiles = new byte[cmaps.x * cmaps.y];
 	    for(int i = 0; i < cg.tiles.length; i++)
 		tiles[i] = (byte)(tmap[cg.tiles[i]]);
-	    Grid g = new Grid(cg.id, infos, tiles);
+	    Grid g = new Grid(cg.id, infos, tiles, System.currentTimeMillis());
 	    g.useq = oseq;
 	    return(g);
 	}
 
 	public void save(Message fp) {
-	    fp.adduint8(1);
+	    fp.adduint8(2);
 	    ZMessage z = new ZMessage(fp);
 	    z.addint64(id);
+	    z.addint64(mtime);
 	    z.adduint8(tilesets.length);
 	    for(int i = 0; i < tilesets.length; i++) {
 		z.addstring(tilesets[i].res.name);
@@ -454,16 +456,17 @@ public class MapFile {
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
 		int ver = data.uint8();
-		if(ver == 1) {
+		if((ver >= 1) && (ver <= 2)) {
 		    ZMessage z = new ZMessage(data);
 		    long storedid = z.int64();
 		    if(storedid != id)
 			throw(new Message.FormatError(String.format("Grid ID mismatch: expected %s, got %s", id, storedid)));
+		    long mtime = (ver >= 2) ? z.int64() : System.currentTimeMillis();
 		    List<TileInfo> tilesets = new ArrayList<TileInfo>();
 		    for(int i = 0, no = z.uint8(); i < no; i++)
 			tilesets.add(new TileInfo(new Resource.Spec(Resource.remote(), z.string(), z.uint16()), z.uint8()));
 		    byte[] tiles = z.bytes(cmaps.x * cmaps.y);
-		    return(new Grid(id, tilesets.toArray(new TileInfo[0]), tiles));
+		    return(new Grid(id, tilesets.toArray(new TileInfo[0]), tiles, mtime));
 		} else {
 		    throw(new Message.FormatError(String.format("Unknown grid data version for %x: %i", id, ver)));
 		}

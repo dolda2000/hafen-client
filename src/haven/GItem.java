@@ -58,6 +58,9 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	public default Color numcolor() {
 	    return(Color.WHITE);
 	}
+	public static BufferedImage numrender(int num, Color col) {
+	    return(Utils.outline2(Text.render(Integer.toString(num), col).img, Utils.contrast(col)));
+	}
     }
 
     public interface MeterInfo {
