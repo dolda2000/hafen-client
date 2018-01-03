@@ -322,8 +322,24 @@ public class Fightsess extends Widget {
 	    }
 	    if((n >= 0) && ((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0))
 		n += 5;
+	    int fn = n;
 	    if((n >= 0) && (n < actions.length)) {
-		wdgmsg("use", n);
+		MapView map = getparent(GameUI.class).map;
+		Coord mvc = map.rootxlate(ui.mc);
+		if(mvc.isect(Coord.z, map.sz)) {
+		    map.delay(map.new Hittest(mvc) {
+			    protected void hit(Coord pc, Coord2d mc, MapView.ClickInfo inf) {
+				Object[] args = {fn, 1, ui.modflags(), mc.floor(OCache.posres)};
+				if(inf != null)
+				    args = Utils.extend(args, MapView.gobclickargs(inf));
+				wdgmsg("use", args);
+			    }
+
+			    protected void nohit(Coord pc) {
+				wdgmsg("use", fn, 1, ui.modflags());
+			    }
+			});
+		}
 		return(true);
 	    }
 	} else if((key == 9) && ((ev.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)) {
