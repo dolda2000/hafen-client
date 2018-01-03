@@ -33,7 +33,6 @@ public class LoginScreen extends Widget {
     Text error;
     IButton btn;
     static Text.Foundry textf, textfs;
-    static Tex bg = Resource.loadtex("gfx/loginscr");
     Text progress = null;
 
     static {
@@ -42,9 +41,8 @@ public class LoginScreen extends Widget {
     }
 
     public LoginScreen() {
-	super(bg.sz());
+	super(new Coord(800, 600));
 	setfocustab(true);
-	add(new Img(bg), Coord.z);
     }
 
     private static abstract class Login extends Widget {
