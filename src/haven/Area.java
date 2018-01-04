@@ -63,6 +63,24 @@ public class Area implements Iterable<Coord>, java.io.Serializable {
 	return((o.ul.x >= ul.x) && (o.ul.y >= ul.y) && (o.br.x <= br.x) && (o.br.y <= br.y));
     }
 
+    public Area overlap(Area o) {
+	if(!isects(o))
+	    return(null);
+	return(new Area(new Coord(Math.max(ul.x, o.ul.x), Math.max(ul.y, o.ul.y)),
+			new Coord(Math.min(br.x, o.br.x), Math.min(br.y, o.br.y))));
+    }
+
+    public Coord closest(Coord p) {
+	if(contains(p))
+	    return(p);
+	return(new Coord(Utils.clip(p.x, ul.x, br.x),
+			 Utils.clip(p.y, ul.y, br.y)));
+    }
+
+    public int area() {
+	return((br.x - ul.x) * (br.y - ul.y));
+    }
+
     public Area xl(Coord off) {
 	return(new Area(ul.add(off), br.add(off)));
     }
