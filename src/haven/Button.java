@@ -32,12 +32,6 @@ import java.awt.Font;
 import java.awt.image.BufferedImage;
 
 public class Button extends SSWidget {
-    static BufferedImage bl = Resource.loadimg("gfx/hud/buttons/tbtn/left");
-    static BufferedImage br = Resource.loadimg("gfx/hud/buttons/tbtn/right");
-    static BufferedImage bt = Resource.loadimg("gfx/hud/buttons/tbtn/top");
-    static BufferedImage bb = Resource.loadimg("gfx/hud/buttons/tbtn/bottom");
-    static BufferedImage dt = Resource.loadimg("gfx/hud/buttons/tbtn/dtex");
-    static BufferedImage ut = Resource.loadimg("gfx/hud/buttons/tbtn/utex");
     public Text text;
     public BufferedImage cont;
     static Text.Foundry tf = new Text.Foundry(Text.serif, 12, Color.YELLOW);
@@ -85,11 +79,8 @@ public class Button extends SSWidget {
     public void render() {
 	synchronized(this) {
 	    Graphics g = graphics();
-	    g.drawImage(a?dt:ut, 3, 3, sz.x - 6, 13, null);
-	    g.drawImage(bl, 0, 0, null);
-	    g.drawImage(br, sz.x - br.getWidth(), 0, null);
-	    g.drawImage(bt, 3, 0, sz.x - 6, bt.getHeight(), null);
-	    g.drawImage(bb, 3, sz.y - bb.getHeight(), sz.x - 6, bb.getHeight(), null);
+	    g.setColor(new Color(64, 48, 32));
+	    g.fillRect(0, 0, sz.x, sz.y);
 	    Coord tc = sz.div(2).add(Utils.imgsz(cont).div(2).inv());
 	    if(a)
 		tc = tc.add(1, 1);
