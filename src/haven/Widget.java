@@ -301,6 +301,8 @@ public class Widget {
 		st.push(args[off++]);
 	    } else if(op == '$') {
 		st.push(self);
+	    } else if(op == '@') {
+		st.push(this);
 	    } else if(op == '_') {
 		st.push(st.peek());
 	    } else if(op == '.') {
@@ -319,6 +321,9 @@ public class Widget {
 		st.push(w.c.add(w.sz));
 	    } else if(op == 'p') {
 		st.push(((Widget)st.pop()).c);
+	    } else if(op == 'P') {
+		Widget parent = (Widget)st.pop();
+		st.push(((Widget)st.pop()).parentpos(parent));
 	    } else if(op == 's') {
 		st.push(((Widget)st.pop()).sz);
 	    } else if(op == 'w') {
