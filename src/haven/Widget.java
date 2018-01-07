@@ -389,10 +389,12 @@ public class Widget {
     public void addchild(Widget child, Object... args) {
 	if(args[0] instanceof Coord) {
 	    add(child, (Coord)args[0]);
+	} else if(args[0] instanceof Coord2d) {
+	    add(child, ((Coord2d)args[0]).mul(new Coord2d(this.sz.sub(child.sz))).round());
 	} else if(args[0] instanceof String) {
 	    add(child, relpos((String)args[0], child, args, 1));
 	} else {
-	    throw(new RuntimeException("Unknown child widget creation specification."));
+	    throw(new UI.UIException("Unknown child widget creation specification.", null, args));
 	}
     }
 
