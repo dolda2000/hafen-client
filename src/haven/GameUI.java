@@ -180,6 +180,72 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	return(buf.toString());
     }
 
+    public Coord optplacement(Widget child, Coord org) {
+	Set<Window> closed = new HashSet<>();
+	Set<Coord> open = new HashSet<>();
+	open.add(org);
+	Coord opt = null;
+	double optscore = Double.NEGATIVE_INFINITY;
+	Coord plc = null;
+	{
+	    Gob pl = map.player();
+	    if(pl != null)
+		plc = pl.sc;
+	}
+	Area parea = Area.sized(Coord.z, sz);
+	while(!open.isEmpty()) {
+	    Coord cur = Utils.take(open);
+	    double score = 0;
+	    Area tarea = Area.sized(cur, child.sz);
+	    if(parea.isects(tarea)) {
+		double outside = 1.0 - (((double)parea.overlap(tarea).area()) / ((double)tarea.area()));
+		if((outside > 0.75) && !cur.equals(org))
+		    continue;
+		score -= Math.pow(outside, 2) * 100;
+	    } else {
+		if(!cur.equals(org))
+		    continue;
+		score -= 100;
+	    }
+	    {
+		boolean any = false;
+		for(Widget wdg = this.child; wdg != null; wdg = wdg.next) {
+		    if(!(wdg instanceof Window))
+			continue;
+		    Window wnd = (Window)wdg;
+		    if(!wnd.visible)
+			continue;
+		    Area warea = wnd.parentarea(this);
+		    if(warea.isects(tarea)) {
+			any = true;
+			score -= ((double)warea.overlap(tarea).area()) / ((double)tarea.area());
+			if(!closed.contains(wnd)) {
+			    open.add(new Coord(wnd.c.x - child.sz.x, cur.y));
+			    open.add(new Coord(cur.x, wnd.c.y - child.sz.y));
+			    open.add(new Coord(wnd.c.x + wnd.sz.x, cur.y));
+			    open.add(new Coord(cur.x, wnd.c.y + wnd.sz.y));
+			    closed.add(wnd);
+			}
+		    }
+		}
+		if(!any)
+		    score += 10;
+	    }
+	    if(plc != null) {
+		if(tarea.contains(plc))
+		    score -= 100;
+		else
+		    score -= (1 - Math.pow(tarea.closest(plc).dist(plc) / sz.dist(Coord.z), 2)) * 1.5;
+	    }
+	    score -= (cur.dist(org) / sz.dist(Coord.z)) * 0.75;
+	    if(score > optscore) {
+		optscore = score;
+		opt = cur;
+	    }
+	}
+	return(opt);
+    }
+
     public void addchild(Widget child, Object... args) {
 	String place = ((String)args[0]).intern();
 	if(place == "mapview") {
@@ -261,8 +327,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		c = (Coord)args[1];
 	    } else if(args[1] instanceof Coord2d) {
 		c = ((Coord2d)args[1]).mul(new Coord2d(this.sz.sub(child.sz))).round();
+		c = optplacement(child, c);
 	    } else if(args[1] instanceof String) {
-		c = relpos((String)args[1], child, (args.length > 2) ? ((Object[])args[2]) : new Object[] {}, 2);
+		c = relpos((String)args[1], child, (args.length > 2) ? ((Object[])args[2]) : new Object[] {}, 0);
 	    } else {
 		throw(new UI.UIException("Illegal gameui child", place, args));
 	    }

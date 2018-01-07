@@ -31,9 +31,8 @@ import java.awt.event.KeyEvent;
 public class LoginScreen extends Widget {
     Login cur;
     Text error;
-    IButton btn;
+    Button btn;
     static Text.Foundry textf, textfs;
-    static Tex bg = Resource.loadtex("gfx/loginscr");
     Text progress = null;
 
     static {
@@ -42,9 +41,8 @@ public class LoginScreen extends Widget {
     }
 
     public LoginScreen() {
-	super(bg.sz());
+	super(new Coord(800, 600));
 	setfocustab(true);
-	add(new Img(bg), Coord.z);
     }
 
     private static abstract class Login extends Widget {
@@ -144,7 +142,7 @@ public class LoginScreen extends Widget {
 
     private void mklogin() {
 	synchronized(ui) {
-	    adda(btn = new IButton(Resource.loadimg("gfx/hud/buttons/loginu"), Resource.loadimg("gfx/hud/buttons/logind")), 419, 474, 0.5, 0.5);
+	    adda(btn = new Button(100, "Log in"), 419, 474, 0.5, 0.5);
 	    progress(null);
 	}
     }
