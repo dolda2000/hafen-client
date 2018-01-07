@@ -93,22 +93,13 @@ public class FlowerMenu extends Widget {
 	}
     }
 
-    private static double nxf(double a) {
-	return(-1.8633 * a * a + 2.8633 * a);
-    }
-
     public class Opening extends NormAnim {
 	Opening() {super(0.25);}
 	
 	public void ntick(double s) {
-	    double ival = 0.8;
-	    double off = (opts.length == 1) ? 0.0 : ((1.0 - ival) / (opts.length - 1));
-	    for(int i = 0; i < opts.length; i++) {
-		Petal p = opts[i];
-		double a = Utils.clip((s - (off * i)) * (1.0 / ival), 0, 1);
-		double b = nxf(a);
-		p.move(p.ta + ((1 - b) * PI), p.tr * b);
-		p.a = a;
+	    for(Petal p : opts) {
+		p.move(p.ta + ((1 - s) * PI), p.tr * s);
+		p.a = s;
 	    }
 	}
     }
@@ -122,25 +113,18 @@ public class FlowerMenu extends Widget {
 	}
 		
 	public void ntick(double s) {
-	    double ival = 0.8;
-	    double off = ((1.0 - ival) / (opts.length - 1));
-	    for(int i = 0; i < opts.length; i++) {
-		Petal p = opts[i];
+	    for(Petal p : opts) {
 		if(p == chosen) {
 		    if(s > 0.6) {
 			p.a = 1 - ((s - 0.6) / 0.4);
 		    } else if(s < 0.3) {
-			double a = nxf(s / 0.3);
-			p.move(p.ta, p.tr * (1 - a));
+			p.move(p.ta, p.tr * (1 - (s / 0.3)));
 		    }
 		} else {
-		    if(s > 0.3) {
+		    if(s > 0.3)
 			p.a = 0;
-		    } else {
-			double a = s / 0.3;
-			a = Utils.clip((a - (off * i)) * (1.0 / ival), 0, 1);
-			p.a = 1 - a;
-		    }
+		    else
+			p.a = 1 - (s / 0.3);
 		}
 	    }
 	    if(s == 1.0)
@@ -152,14 +136,9 @@ public class FlowerMenu extends Widget {
 	Cancel() {super(0.25);}
 
 	public void ntick(double s) {
-	    double ival = 0.8;
-	    double off = (opts.length == 1) ? 0.0 : ((1.0 - ival) / (opts.length - 1));
-	    for(int i = 0; i < opts.length; i++) {
-		Petal p = opts[i];
-		double a = Utils.clip((s - (off * i)) * (1.0 / ival), 0, 1);
-		double b = 1.0 - nxf(1.0 - a);
-		p.move(p.ta + (b * PI), p.tr * (1 - b));
-		p.a = 1 - a;
+	    for(Petal p : opts) {
+		p.move(p.ta + ((s) * PI), p.tr * (1 - s));
+		p.a = 1 - s;
 	    }
 	    if(s == 1.0)
 		ui.destroy(FlowerMenu.this);
