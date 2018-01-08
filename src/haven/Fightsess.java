@@ -40,12 +40,20 @@ public class Fightsess extends Widget {
     public static final Tex useframe = Resource.loadtex("gfx/hud/combat/lastframe");
     public static final Coord useframeo = (useframe.sz().sub(32, 32)).div(2);
     public static final int actpitch = 50;
-    public final Indir<Resource>[] actions;
-    public final boolean[] dyn;
-    public int use = -1, useb = -1;
+    public final Action[] actions;
+    public int use = -1;
     public Coord pcc;
     public int pho;
     private Fightview fv;
+
+    public static class Action {
+	public final Indir<Resource> res;
+	public double cs, ct;
+
+	public Action(Indir<Resource> res) {
+	    this.res = res;
+	}
+    }
 
     @RName("fsess")
     public static class $_ implements Factory {
@@ -58,8 +66,7 @@ public class Fightsess extends Widget {
     @SuppressWarnings("unchecked")
     public Fightsess(int nact) {
 	pho = -40;
-	this.actions = (Indir<Resource>[])new Indir[nact];
-	this.dyn = new boolean[nact];
+	this.actions = new Action[nact];
     }
 
     protected void added() {
@@ -199,20 +206,26 @@ public class Fightsess extends Widget {
 	}
 	for(int i = 0; i < actions.length; i++) {
 	    Coord ca = pcc.add(actc(i));
-	    Indir<Resource> act = actions[i];
+	    Action act = actions[i];
 	    try {
 		if(act != null) {
-		    Tex img = act.get().layer(Resource.imgc).tex();
-		    ca = ca.sub(img.sz().div(2));
-		    g.image(img, ca);
+		    Resource res = act.res.get();
+		    Tex img = res.layer(Resource.imgc).tex();
+		    Coord ic = ca.sub(img.sz().div(2));
+		    g.image(img, ic);
+		    if(now < act.ct) {
+			double a = (now - act.cs) / (act.ct - act.cs);
+			g.chcolor(0, 0, 0, 128);
+			g.prect(ca, ic.sub(ca), ic.add(img.sz()).sub(ca), (1.0 - a) * Math.PI * 2);
+			g.chcolor();
+		    }
 		    if(i == use) {
-			g.image(indframe, ca.sub(indframeo));
+			g.image(indframe, ic.sub(indframeo));
 		    } else {
-			g.image(actframe, ca.sub(actframeo));
+			g.image(actframe, ic.sub(actframeo));
 		    }
 		}
 	    } catch(Loading l) {}
-	    ca.x += actpitch;
 	}
     }
 
@@ -245,14 +258,12 @@ public class Fightsess extends Widget {
 	final int rl = 5;
 	for(int i = 0; i < actions.length; i++) {
 	    Coord ca = pcc.add(actc(i));
-	    Indir<Resource> act = actions[i];
+	    Indir<Resource> act = actions[i].res;
 	    try {
 		if(act != null) {
 		    Tex img = act.get().layer(Resource.imgc).tex();
 		    ca = ca.sub(img.sz().div(2));
 		    if(c.isect(ca, img.sz())) {
-			if(dyn[i])
-			    return("Combat discovery");
 			String tip = act.get().layer(Resource.tooltip).t + " ($b{$col[255,128,0]{" + keytips[i] + "}})";
 			if((acttip == null) || !acttip.text.equals(tip))
 			    acttip = RichText.render(tip, -1);
@@ -260,7 +271,6 @@ public class Fightsess extends Widget {
 		    }
 		}
 	    } catch(Loading l) {}
-	    ca.x += actpitch;
 	}
 	try {
 	    Indir<Resource> lastact = this.lastact1;
@@ -294,16 +304,17 @@ public class Fightsess extends Widget {
 	    int n = (Integer)args[0];
 	    if(args.length > 1) {
 		Indir<Resource> res = ui.sess.getres((Integer)args[1]);
-		actions[n] = res;
-		dyn[n] = ((Integer)args[2]) != 0;
+		actions[n] = new Action(res);
 	    } else {
 		actions[n] = null;
 	    }
+	} else if(msg == "acool") {
+	    int n = (Integer)args[0];
+	    double now = Utils.rtime();
+	    actions[n].cs = now;
+	    actions[n].ct = now + (((Number)args[1]).doubleValue() * 0.06);
 	} else if(msg == "use") {
 	    this.use = (Integer)args[0];
-	    /*
-	    this.useb = (Integer)args[1];
-	    */
 	} else if(msg == "used") {
 	} else {
 	    super.uimsg(msg, args);
