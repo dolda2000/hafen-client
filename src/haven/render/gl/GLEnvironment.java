@@ -75,19 +75,19 @@ public class GLEnvironment implements Environment {
 	}
     }
 
-    public void disposeall(GL2 gl) {
+    public BufferBGL disposeall() {
+	BufferBGL buf = new BufferBGL();
 	Collection<GLObject> copy;
 	synchronized(disposed) {
 	    if(disposed.isEmpty())
-		return;
+		return(buf);
 	    copy = new ArrayList<>(disposed);
 	    disposed.clear();
 	}
-	BufferBGL buf = new BufferBGL(copy.size());
 	for(GLObject obj : copy)
 	    obj.delete(buf);
 	buf.bglCheckErr();
-	buf.run(gl);
+	return(buf);
     }
 
     public FillBuffer fillbuf(DataBuffer tgt) {

@@ -197,7 +197,7 @@ public class Test implements GLEventListener, KeyListener {
 	    GLRender g = env.render();
 	    display(g);
 	    env.submit(gl, g);
-	    env.disposeall(gl);
+	    env.disposeall().run(gl);
 	} catch(BGL.BGLException e) {
 	    e.printStackTrace();
 	    e.dump.dump();
