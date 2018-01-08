@@ -35,7 +35,7 @@ public class KinInfo extends GAttrib {
     public static final Text.Foundry nfnd = new Text.Foundry(Text.dfont, 10);
     public String name;
     public int group, type;
-    public long seen = 0;
+    public double seen = 0;
     private Tex rnm = null;
     
     public KinInfo(Gob g, String name, int group, int type) {
@@ -95,14 +95,14 @@ public class KinInfo extends GAttrib {
 		if(gob.sc != null) {
 		    Coord sc = gob.sc.add(new Coord(gob.sczu.mul(15)));
 		    if(sc.isect(Coord.z, g.sz)) {
-			long now = System.currentTimeMillis();
+			double now = Utils.rtime();
 			if(seen == 0)
 			    seen = now;
-			int tm = (int)(now - seen);
+			double tm = now - seen;
 			Color show = null;
 			boolean auto = (type & 1) == 0;
-			if(auto && (tm < 7500)) {
-			    show = Utils.clipcol(255, 255, 255, 255 - ((255 * tm) / 7500));
+			if(auto && (tm < 7.5)) {
+			    show = Utils.clipcol(255, 255, 255, (int)(255 - ((255 * tm) / 7.5)));
 			}
 			if(show != null) {
 			    Tex t = rendered();

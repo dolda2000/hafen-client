@@ -27,9 +27,9 @@
 package haven;
 
 public class CheckBox extends Widget {
-    static Tex box, mark;
+    public static final Coord boxsz = new Coord(13, 13);
+    public final Text lbl;
     public boolean a = false;
-    Text lbl;
 
     @RName("chk")
     public static class $_ implements Factory {
@@ -40,14 +40,9 @@ public class CheckBox extends Widget {
 	}
     }
 
-    static {
-	box = Resource.loadtex("gfx/hud/chkbox");
-	mark = Resource.loadtex("gfx/hud/chkmark");
-    }
-	
     public CheckBox(String lbl) {
 	this.lbl = Text.std.render(lbl, java.awt.Color.WHITE);
-	sz = box.sz().add(this.lbl.sz());
+	sz = new Coord(boxsz.x + 5 + this.lbl.sz().x, Math.max(boxsz.y, this.lbl.sz().y));
     }
 	
     public boolean mousedown(Coord c, int button) {
@@ -63,10 +58,15 @@ public class CheckBox extends Widget {
     }
 
     public void draw(GOut g) {
-	g.image(lbl.tex(), new Coord(box.sz().x, box.sz().y - lbl.sz().y));
-	g.image(box, Coord.z);
-	if(a)
-	    g.image(mark, Coord.z);
+	g.image(lbl.tex(), new Coord(boxsz.x + 5, 0));
+	g.chcolor(255, 255, 255, 225);
+	g.frect(new Coord(0, sz.y - boxsz.y), boxsz);
+	if(a) {
+	    g.chcolor(0, 0, 0, 255);
+	    g.line(new Coord(1, sz.y - boxsz.y + 1), new Coord(boxsz.x - 1, sz.y - 1), 1);
+	    g.line(new Coord(1, sz.y - 1), new Coord(boxsz.x - 1, sz.y - boxsz.y + 1), 1);
+	}
+	g.chcolor();
 	super.draw(g);
     }
     
