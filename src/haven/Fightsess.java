@@ -258,7 +258,7 @@ public class Fightsess extends Widget {
 	final int rl = 5;
 	for(int i = 0; i < actions.length; i++) {
 	    Coord ca = pcc.add(actc(i));
-	    Indir<Resource> act = actions[i].res;
+	    Indir<Resource> act = (actions[i] == null) ? null : actions[i].res;
 	    try {
 		if(act != null) {
 		    Tex img = act.get().layer(Resource.imgc).tex();
