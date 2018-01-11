@@ -338,12 +338,9 @@ public class Fightsess extends Widget {
 		MapView map = getparent(GameUI.class).map;
 		Coord mvc = map.rootxlate(ui.mc);
 		if(mvc.isect(Coord.z, map.sz)) {
-		    map.delay(map.new Hittest(mvc) {
-			    protected void hit(Coord pc, Coord2d mc, MapView.ClickInfo inf) {
-				Object[] args = {fn, 1, ui.modflags(), mc.floor(OCache.posres)};
-				if(inf != null)
-				    args = Utils.extend(args, MapView.gobclickargs(inf));
-				wdgmsg("use", args);
+		    map.delay(map.new Maptest(mvc) {
+			    protected void hit(Coord pc, Coord2d mc) {
+				wdgmsg("use", fn, 1, ui.modflags(), mc.floor(OCache.posres));
 			    }
 
 			    protected void nohit(Coord pc) {
