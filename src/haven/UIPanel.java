@@ -26,6 +26,12 @@
 
 package haven;
 
-public interface UIPanel {
+public interface UIPanel extends Runnable {
     public UI newui(Session sess);
+    public void background(boolean bg);
+
+    /* Stuff that is inherited from AWT components, but that have to
+     * be declared since Java is stupid. */
+    public void setSize(int w, int h);
+    public java.awt.Dimension getSize();
 }

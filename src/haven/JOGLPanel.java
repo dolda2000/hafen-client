@@ -26,14 +26,16 @@
 
 package haven;
 
+import java.util.*;
 import javax.media.opengl.*;
 import javax.media.opengl.awt.*;
 import haven.render.gl.*;
+import haven.render.gl.BufferBGL; // XXX: Remove me
 
 public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     public final boolean vsync = true;
     private GLEnvironment env = null;
-    private Coord sz;
+    private UI ui;
 
     private static GLCapabilities mkcaps() {
 	GLProfile prof = GLProfile.getDefault();
@@ -48,7 +50,6 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 
     public JOGLPanel(Coord sz) {
 	super(mkcaps(), null, null, null);
-	this.sz = sz;
 	setSize(sz.x, sz.y);
 	addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
@@ -66,7 +67,55 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	    });
     }
 
+    private static class Frame {
+	GLRender buf;
+	GLEnvironment env;
+	BufferBGL dispose;
+
+	Frame(GLRender buf, GLEnvironment env, BufferBGL dispose) {
+	    this.buf = buf;
+	    this.env = env;
+	    this.dispose = dispose;
+	}
+    }
+
+    private final Frame[] curdraw = {null};
+
+    private void initgl(GL2 gl) {
+	Collection<String> exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
+	GLCapabilitiesImmutable caps = getChosenGLCapabilities();
+	gl.setSwapInterval(1);
+	if(exts.contains("GL_ARB_multisample") && caps.getSampleBuffers()) {
+	    /* Apparently, having sample buffers in the config enables
+	     * multisampling by default on some systems. */
+	    gl.glDisable(GL.GL_MULTISAMPLE);
+	}
+    }
+
     private void redraw(GL2 gl) {
+	GLContext ctx = gl.getContext();
+	GLEnvironment env;
+	synchronized(this) {
+	    if((this.env == null) || (this.env.ctx != ctx)) {
+		this.env = new GLEnvironment(ctx);
+		initgl(gl);
+	    }
+	    env = this.env;
+	}
+	Frame f;
+	synchronized(curdraw) {
+	    f = curdraw[0];
+	    curdraw[0] = null;
+	    curdraw.notifyAll();
+	}
+	if(f != null) {
+	    if(f.env == env) {
+		env.submit(gl, f.buf);
+		f.dispose.run(gl);
+	    } else {
+		f.buf.dispose();
+	    }
+	}
     }
 
     private void uglyjoglhack() throws InterruptedException {
@@ -83,10 +132,19 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     private void renderloop() {
 	try {
 	    uglyjoglhack();
-	    if(env == null)
-		throw(new RuntimeException("Did not get GL environment even after display"));
+	    synchronized(this) {
+		if(env == null)
+		    throw(new RuntimeException("Did not get GL environment even after display"));
+		notifyAll();
+	    }
+	    while(true) {
+		uglyjoglhack();
+	    }
 	} catch(InterruptedException e) {
 	}
+    }
+
+    private void display(GLRender buf) {
     }
 
     public void run() {
@@ -95,8 +153,24 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	try {
 	    try {
 		synchronized(this) {
-		    while(env == null)
+		    while(this.env == null)
 			this.wait();
+		}
+		while(true) {
+		    GLEnvironment env = this.env;
+		    GLRender buf = env.render();
+		    synchronized(curdraw) {
+			while(curdraw[0] != null)
+			    curdraw.wait();
+		    }
+		    display(buf);
+		    BufferBGL dispose = env.disposeall();
+		    synchronized(curdraw) {
+			if(curdraw[0] != null)
+			    throw(new AssertionError());
+			curdraw[0] = new Frame(buf, env, dispose);
+			curdraw.notifyAll();
+		    }
 		}
 	    } finally {
 		drawthread.interrupt();
@@ -107,6 +181,12 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     }
 
     public UI newui(Session sess) {
-	return(null);
+	if(ui != null)
+	    ui.destroy();
+	ui = new UI(new Coord(getSize()), sess);
+	return(ui);
+    }
+
+    public void background(boolean bg) {
     }
 }
