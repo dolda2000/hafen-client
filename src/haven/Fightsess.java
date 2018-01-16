@@ -37,11 +37,13 @@ public class Fightsess extends Widget {
     public static final Coord actframeo = Buff.imgoff;
     public static final Tex indframe = Resource.loadtex("gfx/hud/combat/indframe");
     public static final Coord indframeo = (indframe.sz().sub(32, 32)).div(2);
+    public static final Tex indbframe = Resource.loadtex("gfx/hud/combat/indbframe");
+    public static final Coord indbframeo = (indframe.sz().sub(32, 32)).div(2);
     public static final Tex useframe = Resource.loadtex("gfx/hud/combat/lastframe");
     public static final Coord useframeo = (useframe.sz().sub(32, 32)).div(2);
     public static final int actpitch = 50;
     public final Action[] actions;
-    public int use = -1;
+    public int use = -1, useb = -1;
     public Coord pcc;
     public int pho;
     private Fightview fv;
@@ -221,6 +223,8 @@ public class Fightsess extends Widget {
 		    }
 		    if(i == use) {
 			g.image(indframe, ic.sub(indframeo));
+		    } else if(i == useb) {
+			g.image(indbframe, ic.sub(indbframeo));
 		    } else {
 			g.image(actframe, ic.sub(actframeo));
 		    }
@@ -315,6 +319,7 @@ public class Fightsess extends Widget {
 	    actions[n].ct = now + (((Number)args[1]).doubleValue() * 0.06);
 	} else if(msg == "use") {
 	    this.use = (Integer)args[0];
+	    this.useb = (args.length > 1) ? ((Integer)args[1]) : -1;
 	} else if(msg == "used") {
 	} else {
 	    super.uimsg(msg, args);
