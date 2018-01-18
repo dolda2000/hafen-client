@@ -389,9 +389,10 @@ public class MenuGrid extends Widget {
 	} else {
 	    r.newp = 0;
 	    wdgmsg("act", (Object[])r.act().ad);
-	    if(reset)
+	    if(reset) {
 		this.cur = null;
-	    curoff = 0;
+		curoff = 0;
+	    }
 	}
 	updlayout();
     }
