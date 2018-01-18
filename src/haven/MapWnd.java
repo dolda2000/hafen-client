@@ -295,11 +295,13 @@ public class MapWnd extends Window {
     }
 
     public boolean keydown(KeyEvent ev) {
+	if(super.keydown(ev))
+	    return(true);
 	if(ev.getKeyCode() == KeyEvent.VK_HOME) {
 	    recenter();
 	    return(true);
 	}
-	return(super.keydown(ev));
+	return(false);
     }
 
     private UI.Grab drag;
