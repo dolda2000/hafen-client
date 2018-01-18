@@ -39,6 +39,7 @@ public class TextEntry extends SIWidget {
     public static final BufferedImage caret = Resource.loadimg("gfx/hud/text/caret");
     public static final Coord toff = new Coord(lcap.getWidth() - 1, 3);
     public static final Coord coff = new Coord(-3, -1);
+    public static final int wmarg = lcap.getWidth() + rcap.getWidth() + 1;
     public boolean dshow = false;
     public LineEdit buf;
     public int sx;
@@ -116,9 +117,6 @@ public class TextEntry extends SIWidget {
 	tcache = fnd.render(dtext, (dshow && dirty)?dirtycol:defcol);
 	g.drawImage(mext, 0, 0, sz.x, sz.y, null);
 
-	int cx = tcache.advance(buf.point);
-	if(cx < sx) sx = cx;
-	if(cx > sx + (sz.x - 1)) sx = cx - (sz.x - 1);
 	g.drawImage(tcache.img, toff.x - sx, toff.y, null);
 
 	g.drawImage(lcap, 0, 0, null);
@@ -129,10 +127,13 @@ public class TextEntry extends SIWidget {
 
     public void draw(GOut g) {
 	super.draw(g);
-	if(hasfocus && (((Utils.rtime() - focusstart) % 1.0) < 0.5)) {
+	if(hasfocus) {
 	    int cx = tcache.advance(buf.point);
 	    int lx = cx - sx + 1;
-	    g.image(caret, toff.add(coff).add(lx, 0));
+	    if(cx < sx) {sx = cx; redraw();}
+	    if(cx > sx + (sz.x - wmarg)) {sx = cx - (sz.x - wmarg); redraw();}
+	    if(((Utils.rtime() - focusstart) % 1.0) < 0.5)
+		g.image(caret, toff.add(coff).add(lx, 0));
 	}
     }
 
