@@ -153,7 +153,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	syslog = chat.add(new ChatUI.Log("System"));
 	opts = add(new OptWnd());
 	opts.hide();
-	zerg = add(new Zergwnd(), 187, 50);
+	zerg = add(new Zergwnd(), Utils.getprefc("wndc-zerg", new Coord(187, 50)));
 	zerg.hide();
     }
 
@@ -582,6 +582,21 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	return(opt);
     }
 
+    private void savewndpos() {
+	if(invwnd != null)
+	    Utils.setprefc("wndc-inv", invwnd.c);
+	if(equwnd != null)
+	    Utils.setprefc("wndc-equ", equwnd.c);
+	if(chrwdg != null)
+	    Utils.setprefc("wndc-chr", chrwdg.sz);
+	if(zerg != null)
+	    Utils.setprefc("wndc-zerg", zerg.c);
+	if(mapfile != null) {
+	    Utils.setprefc("wndc-map", mapfile.c);
+	    Utils.setprefc("wndsz-map", mapfile.asz);
+	}
+    }
+
     public void addchild(Widget child, Object... args) {
 	String place = ((String)args[0]).intern();
 	if(place == "mapview") {
@@ -599,9 +614,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if(ResCache.global != null) {
 		MapFile file = MapFile.load(ResCache.global, mapfilename());
 		mmap.save(file);
-		mapfile = new MapWnd(mmap.save, map, new Coord(700, 500), "Map");
+		mapfile = new MapWnd(mmap.save, map, Utils.getprefc("wndsz-map", new Coord(700, 500)), "Map");
 		mapfile.hide();
-		add(mapfile, 50, 50);
+		add(mapfile, Utils.getprefc("wndc-map", new Coord(50, 50)));
 	    }
 	} else if(place == "menu") {
 	    menu = (MenuGrid)brpanel.add(child, 20, 34);
@@ -618,20 +633,20 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    invwnd.add(maininv = (Inventory)child, Coord.z);
 	    invwnd.pack();
 	    invwnd.hide();
-	    add(invwnd, new Coord(100, 100));
+	    add(invwnd, Utils.getprefc("wndc-inv", new Coord(100, 100)));
 	} else if(place == "equ") {
 	    equwnd = new Hidewnd(Coord.z, "Equipment");
 	    equwnd.add(child, Coord.z);
 	    equwnd.pack();
 	    equwnd.hide();
-	    add(equwnd, new Coord(400, 10));
+	    add(equwnd, Utils.getprefc("wndc-equ", new Coord(400, 10)));
 	} else if(place == "hand") {
 	    GItem g = add((GItem)child);
 	    Coord lc = (Coord)args[1];
 	    hand.add(new DraggedItem(g, lc));
 	    updhand();
 	} else if(place == "chr") {
-	    chrwdg = add((CharWnd)child, new Coord(300, 50));
+	    chrwdg = add((CharWnd)child, Utils.getprefc("wndc-chr", new Coord(300, 50)));
 	    chrwdg.hide();
 	} else if(place == "craft") {
 	    final Widget mkwdg = child;
@@ -772,9 +787,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
+    private double lastwndsave = 0;
     public void tick(double dt) {
 	super.tick(dt);
-	double idle = Utils.rtime() - ui.lastevent;
+	double now = Utils.rtime();
+	if(now - lastwndsave > 60) {
+	    savewndpos();
+	    lastwndsave = now;
+	}
+	double idle = now - ui.lastevent;
 	if(!afk && (idle > 300)) {
 	    afk = true;
 	    wdgmsg("afk");
