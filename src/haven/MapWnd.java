@@ -236,6 +236,7 @@ public class MapWnd extends Window {
 				mark.nm = text;
 				view.file.update(mark);
 				commit();
+				change2(null);
 			    }
 			});
 		}
