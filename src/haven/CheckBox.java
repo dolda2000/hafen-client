@@ -28,7 +28,7 @@ package haven;
 
 public class CheckBox extends Widget {
     public static final Coord boxsz = new Coord(13, 13);
-    public final Text lbl;
+    public Text lbl;
     public boolean a = false;
 
     @RName("chk")
