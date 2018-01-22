@@ -59,6 +59,10 @@ public class Pipe {
 	return(new Pipe(Arrays.copyOf(states, states.length)));
     }
 
+    public void copy(Pipe from) {
+	states = Arrays.copyOf(from.states, from.states.length);
+    }
+
     public int hashCode() {
 	int h = 0x775e2d64;
 	for(int i = 0; i < states.length; i++) {
