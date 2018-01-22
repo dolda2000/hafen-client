@@ -102,6 +102,9 @@ public interface UniformApplier<T> {
 	    TypeMapping.register(Type.VEC3, java.awt.Color.class, (gl, st, var, col) -> {
 		    gl.glUniform3f(st.prog().uniform(var), col.getRed() / 255f, col.getGreen() / 255f, col.getBlue() / 255f);
 		});
+	    TypeMapping.register(Type.VEC3, FColor.class, (gl, st, var, col) -> {
+		    gl.glUniform3f(st.prog().uniform(var), col.r, col.g, col.b);
+		});
 
 	    TypeMapping.register(Type.VEC4, float[].class, (gl, st, var, a) -> {
 		    gl.glUniform4f(st.prog().uniform(var), a[0], a[1], a[2], a[3]);
@@ -111,6 +114,9 @@ public interface UniformApplier<T> {
 		});
 	    TypeMapping.register(Type.VEC4, java.awt.Color.class, (gl, st, var, col) -> {
 		    gl.glUniform4f(st.prog().uniform(var), col.getRed() / 255f, col.getGreen() / 255f, col.getBlue() / 255f, col.getAlpha() / 255f);
+		});
+	    TypeMapping.register(Type.VEC4, FColor.class, (gl, st, var, col) -> {
+		    gl.glUniform4f(st.prog().uniform(var), col.r, col.g, col.b, col.a);
 		});
 
 	    TypeMapping.register(Type.SAMPLER2D, GLTexture.Tex2D.class, (gl, st, var, smp) -> {
