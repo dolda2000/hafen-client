@@ -49,15 +49,15 @@ public class Vao0State extends VaoState {
 	    return;
 	}
 	Vao0State that = (Vao0State)sthat;
-	found: for(GLProgram.VarID a1 : that.enable) {
-	    for(GLProgram.VarID a2 : this.enable) {
+	found: for(GLProgram.VarID a1 : this.enable) {
+	    for(GLProgram.VarID a2 : that.enable) {
 		if(a2 == a1)
 		    continue found;
 	    }
 	    gl.glDisableVertexAttribArray(a1);
 	}
-	found: for(GLProgram.VarID a1 : this.enable) {
-	    for(GLProgram.VarID a2 : that.enable) {
+	found: for(GLProgram.VarID a1 : that.enable) {
+	    for(GLProgram.VarID a2 : this.enable) {
 		if(a2 == a1)
 		    continue found;
 	    }
