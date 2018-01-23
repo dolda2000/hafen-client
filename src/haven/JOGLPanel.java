@@ -102,6 +102,10 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     }
 
     private void redraw(GL2 gl) {
+	if(false) {
+	    System.err.print("\n-----\n\n");
+	    gl = new TraceGL2(gl, System.err);
+	}
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
 	synchronized(this) {
@@ -154,6 +158,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     }
 
     private void display(GLRender buf) {
+	buf.clear(wnd, FragColor.fragcol, FColor.BLACK);
 	GOut g = new GOut(buf, wnd.copy(), new Coord(getSize()));;
 	synchronized(ui) {
 	    ui.draw(g);
