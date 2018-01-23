@@ -33,7 +33,9 @@ import java.nio.*;
 import haven.render.*;
 
 public class GOut {
-    public static final VertexArray.Layout vf_pos = new VertexArray.Layout(new VertexArray.Layout.Input(Ortho2D.pos, new VectorFormat(2, NumberFormat.FLOAT32), 0, 0, 4));
+    public static final VertexArray.Layout vf_pos = new VertexArray.Layout(new VertexArray.Layout.Input(Ortho2D.pos, new VectorFormat(2, NumberFormat.FLOAT32), 0, 0, 8));
+    public static final VertexArray.Layout vf_tex = new VertexArray.Layout(new VertexArray.Layout.Input(Ortho2D.pos, new VectorFormat(2, NumberFormat.FLOAT32), 0, 0, 16),
+									   new VertexArray.Layout.Input(ColorTex.texc, new VectorFormat(2, NumberFormat.FLOAT32), 0, 8, 16));
     public final Render out;
     public Coord ul, br, tx;
     private final GOut root;
@@ -170,6 +172,14 @@ public class GOut {
 
     public void drawp(Model.Mode mode, float[] data) {
 	drawp(mode, data, data.length / 2);
+    }
+
+    public void drawt(Model.Mode mode, float[] data, int n) {
+	out.draw(cur2d, new Model(mode, new VertexArray(vf_tex, n, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null));
+    }
+
+    public void drawt(Model.Mode mode, float[] data) {
+	drawt(mode, data, data.length / 4);
     }
 
     public void line(Coord c1, Coord c2, double w) {
