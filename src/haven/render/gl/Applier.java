@@ -246,7 +246,7 @@ public class Applier {
 	    int slot = pdirty[i];
 	    if((slot < GLPipeState.matching.length) && (GLPipeState.matching[slot] != null))
 		glpapply(gl, GLPipeState.matching[slot], cur[slot], ns[slot]);
-	    cur[slot] = ns[slot];
+	    cur[slot] = (slot < ns.length) ? ns[slot] : null;
 	}
 	for(int i = 0; i < sn; i++)
 	    shaders[sdirty[i]] = nshaders[i];
