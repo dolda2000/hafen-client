@@ -58,7 +58,7 @@ public class Texture2D extends Texture {
 	if(level > 0) {
 	    if(!pot)
 		throw(new IllegalArgumentException("Non-power-of-two textures cannot be mipmapped"));
-	    if(((w >> level) == 0) || ((h >> level) == 0))
+	    if(((w >> level) == 0) && ((h >> level) == 0))
 		throw(new IllegalArgumentException(String.format("Invalid mipmap level %d for (%d, %d) texture", level, w, h)));
 	}
 	return(new Image<>(this, Math.max(w >> level, 1), Math.max(h >> level, 1), 1, level));
