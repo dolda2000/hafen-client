@@ -238,7 +238,7 @@ public class UI {
 	int id;
 	synchronized(this) {
 	    if(!rwidgets.containsKey(sender)) {
-		System.err.printf("Wdgmsg sender (%s) is not in rwidgets, message is %s", sender.getClass().getName(), msg);
+		System.err.printf("Wdgmsg sender (%s) is not in rwidgets, message is %s\n", sender.getClass().getName(), msg);
 		return;
 	    }
 	    id = rwidgets.get(sender);
