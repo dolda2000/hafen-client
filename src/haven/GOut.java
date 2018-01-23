@@ -188,7 +188,7 @@ public class GOut {
     }
 
     public void frect(Coord ul, Coord sz) {
-	frect(ul, ul.add(sz));
+	frect2(ul, ul.add(sz));
     }
 
     /* XXXRENDER
