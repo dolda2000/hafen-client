@@ -29,6 +29,8 @@ package haven;
 import java.util.*;
 import javax.media.opengl.*;
 import javax.media.opengl.awt.*;
+import haven.render.*;
+import haven.render.States;
 import haven.render.gl.*;
 import haven.render.gl.BufferBGL; // XXX: Remove me
 
@@ -36,6 +38,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     public final boolean vsync = true;
     private GLEnvironment env = null;
     private UI ui;
+    private Pipe base, wnd;
 
     private static GLCapabilities mkcaps() {
 	GLProfile prof = GLProfile.getDefault();
@@ -50,6 +53,9 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 
     public JOGLPanel(Coord sz) {
 	super(mkcaps(), null, null, null);
+	base = new Pipe();
+	base.prep(new FragColor(FragColor.defcolor)).prep(new DepthBuffer(DepthBuffer.defdepth));
+	base.prep(new States.Blending());
 	setSize(sz.x, sz.y);
 	addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
@@ -59,10 +65,13 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 		public void init(GLAutoDrawable d) {
 		}
 
-		public void reshape(GLAutoDrawable wnd, int x, int y, int w, int h) {
+		public void reshape(GLAutoDrawable wdg, int x, int y, int w, int h) {
+		    Area area = Area.sized(new Coord(x, y), new Coord(w, h));
+		    wnd = base.copy();
+		    wnd.prep(new States.Viewport(area)).prep(new Ortho2D(area));
 		}
 
-		public void dispose(GLAutoDrawable wnd) {
+		public void dispose(GLAutoDrawable wdg) {
 		}
 	    });
     }
@@ -145,6 +154,10 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     }
 
     private void display(GLRender buf) {
+	GOut g = new GOut(buf, wnd.copy(), new Coord(getSize()));;
+	synchronized(ui) {
+	    ui.draw(g);
+	}
     }
 
     public void run() {
