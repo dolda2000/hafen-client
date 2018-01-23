@@ -29,7 +29,7 @@ package haven;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
-public class IButton extends SSWidget {
+public class IButton extends SIWidget {
     BufferedImage up, down, hover;
     boolean h = false;
     boolean a = false;
@@ -47,7 +47,6 @@ public class IButton extends SSWidget {
 	this.up = up;
 	this.down = down;
 	this.hover = hover;
-	render();
     }
 
     public IButton(BufferedImage up, BufferedImage down) {
@@ -58,16 +57,15 @@ public class IButton extends SSWidget {
 	this(Resource.loadimg(base + up), Resource.loadimg(base + down), Resource.loadimg(base + (hover == null?up:hover)));
     }
 
-    public void render() {
-	clear();
-	Graphics g = graphics();
+    public void draw(BufferedImage buf) {
+	Graphics g = buf.getGraphics();
 	if(a)
 	    g.drawImage(down, 0, 0, null);
 	else if(h)
 	    g.drawImage(hover, 0, 0, null);
 	else
 	    g.drawImage(up, 0, 0, null);
-	update();
+	g.dispose();
     }
 
     public boolean checkhit(Coord c) {
@@ -89,7 +87,7 @@ public class IButton extends SSWidget {
 	    return(false);
 	a = true;
 	d = ui.grabmouse(this);
-	render();
+	redraw();
 	return(true);
     }
 
@@ -115,7 +113,7 @@ public class IButton extends SSWidget {
 	if((h != this.h) || (a != this.a)) {
 	    this.h = h;
 	    this.a = a;
-	    render();
+	    redraw();
 	}
     }
 

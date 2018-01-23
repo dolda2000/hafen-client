@@ -31,7 +31,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.image.BufferedImage;
 
-public class Button extends SSWidget {
+public class Button extends SIWidget {
     public Text text;
     public BufferedImage cont;
     static Text.Foundry tf = new Text.Foundry(Text.serif, 12, Color.YELLOW);
@@ -60,39 +60,34 @@ public class Button extends SSWidget {
 	super(new Coord(w, 19));
 	this.text = tf.render(text);
 	this.cont = this.text.img;
-	render();
     }
         
     public Button(int w, Text text) {
 	super(new Coord(w, 19));
 	this.text = text;
 	this.cont = text.img;
-	render();
     }
 	
     public Button(int w, BufferedImage cont) {
 	super(new Coord(w, 19));
 	this.cont = cont;
-	render();
     }
 	
-    public void render() {
-	synchronized(this) {
-	    Graphics g = graphics();
-	    g.setColor(new Color(64, 48, 32));
-	    g.fillRect(0, 0, sz.x, sz.y);
-	    Coord tc = sz.div(2).add(Utils.imgsz(cont).div(2).inv());
-	    if(a)
-		tc = tc.add(1, 1);
-	    g.drawImage(cont, tc.x, tc.y, null);
-	    update();
-	}
+    public void draw(BufferedImage buf) {
+	Graphics g = buf.getGraphics();
+	g.setColor(new Color(64, 48, 32));
+	g.fillRect(0, 0, sz.x, sz.y);
+	Coord tc = sz.div(2).add(Utils.imgsz(cont).div(2).inv());
+	if(a)
+	    tc = tc.add(1, 1);
+	g.drawImage(cont, tc.x, tc.y, null);
+	g.dispose();
     }
 	
     public void change(String text, Color col) {
 	this.text = tf.render(text, col);
 	this.cont = this.text.img;
-	render();
+	redraw();
     }
     
     public void change(String text) {
@@ -119,7 +114,7 @@ public class Button extends SSWidget {
 	    boolean a = c.isect(Coord.z, sz);
 	    if(a != this.a) {
 		this.a = a;
-		render();
+		redraw();
 	    }
 	}
     }
@@ -129,7 +124,7 @@ public class Button extends SSWidget {
 	    return(false);
 	a = true;
 	d = ui.grabmouse(this);
-	render();
+	redraw();
 	return(true);
     }
 	
@@ -138,7 +133,7 @@ public class Button extends SSWidget {
 	    d.remove();
 	    d = null;
 	    a = false;
-	    render();
+	    redraw();
 	    if(c.isect(new Coord(0, 0), sz))
 		click();
 	    return(true);
