@@ -28,8 +28,6 @@ package haven;
 
 import java.util.*;
 import java.lang.ref.*;
-import haven.Resource.Tileset;
-import haven.Resource.Tile;
 
 public class MCache {
     public static final Coord2d tilesz = new Coord2d(11, 11);
@@ -533,7 +531,7 @@ public class MCache {
 		if(res == null)
 		    return(null);
 		try {
-		    cset = res.layer(Resource.tileset);
+		    cset = res.layer(Tileset.class);
 		} catch(Loading e) {
 		    throw(new LoadingMap(e));
 		}
