@@ -44,7 +44,7 @@ public class Tileset extends Resource.Layer {
     public int flavprob;
 
     @Resource.LayerName("tile")
-    public class Tile extends Resource.Layer {
+    public static class Tile extends Resource.Layer {
 	transient BufferedImage img;
 	transient private Tex tex;
 	public final int id;
