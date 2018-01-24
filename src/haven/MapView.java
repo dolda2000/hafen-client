@@ -29,7 +29,6 @@ package haven;
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 import static haven.OCache.posres;
-import haven.Resource.Tile;
 import haven.GLProgram.VarID;
 import java.awt.Color;
 import java.util.*;
