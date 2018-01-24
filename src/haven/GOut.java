@@ -149,8 +149,9 @@ public class GOut {
     }
 
     /* Draw texture at c, with the extra state s applied. */
-    public void image(Tex tex, Coord c, GLState s) {
+    public void image(Tex tex, Coord c, State s) {
 	Pipe bk = cur2d.copy();
+	cur2d.prep(s);
 	tex.crender(this, c.add(tx), ul, br);
 	cur2d.copy(bk);
     }
