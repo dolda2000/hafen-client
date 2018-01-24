@@ -30,8 +30,7 @@ import haven.*;
 import java.util.*;
 import java.awt.Color;
 import haven.MapMesh.Scan;
-import haven.Resource.Tile;
-import haven.Resource.Tileset;
+import haven.Tileset.Tile;
 
 public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
     public final GLState base;
@@ -204,7 +203,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 
     @ResName("trn")
     public static class Factory implements Tiler.Factory {
-	public TerrainTile create(int id, Resource.Tileset set) {
+	public TerrainTile create(int id, Tileset set) {
 	    Resource res = set.getres();
 	    Tileset trans = null;
 	    Material base = null;
@@ -229,7 +228,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		    var.add(new Var(res.layer(Material.Res.class, mid).get(), thrl, thrh, nz));
 		} else if(p.equals("trans")) {
 		    Resource tres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
-		    trans = tres.layer(Resource.tileset);
+		    trans = tres.layer(Tileset.class);
 		}
 	    }
 	    return(new TerrainTile(id, new SNoise3(res.name.hashCode()), base, var.toArray(new Var[0]), trans));
@@ -342,7 +341,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 
 	@ResName("trn-r")
 	public static class RFactory implements Tiler.Factory {
-	    public Tiler create(int id, Resource.Tileset set) {
+	    public Tiler create(int id, Tileset set) {
 		TerrainTile base = new Factory().create(id, set);
 		int rth = 20;
 		GLState mat = null;
