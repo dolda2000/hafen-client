@@ -26,9 +26,31 @@
 
 package haven.render.gl;
 
+import haven.Disposable;
 import java.util.*;
 import javax.media.opengl.*;
 
-public abstract class GLObject {
+public abstract class GLObject implements Disposable {
+    public final GLEnvironment env;
+    private boolean del = false;
+
+    public GLObject(GLEnvironment env) {
+	this.env = env;
+    }
+
     public abstract void create(GL2 gl);
+    protected abstract void delete(BGL gl);
+
+    public void dispose() {
+	synchronized(env.disposed) {
+	    if(del)
+		return;
+	    env.disposed.add(this);
+	    del = true;
+	}
+    }
+
+    protected void finalize() {
+	dispose();
+    }
 }

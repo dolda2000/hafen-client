@@ -26,11 +26,24 @@
 
 package haven.render;
 
-import java.nio.*;
+import haven.*;
 
-public interface FillBuffer extends haven.Disposable {
-    public int size();
-    public boolean compatible(Environment env);
-    public ByteBuffer push();
-    public void pull(ByteBuffer buf);
+public class VectorFormat {
+    public final int nc;
+    public final NumberFormat cf;
+
+    public VectorFormat(int nc, NumberFormat cf) {
+	if(nc < 0)
+	    throw(new IllegalArgumentException(String.format("%d", nc)));
+	this.nc = nc;
+	this.cf = cf;
+    }
+
+    public int size() {
+	return(nc * cf.size);
+    }
+
+    public String toString() {
+	return("vector(" + nc + ", " + cf + ")");
+    }
 }

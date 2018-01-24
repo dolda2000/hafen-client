@@ -33,7 +33,8 @@ import static haven.Utils.eq;
 public class Pipe {
     private State[] states;
 
-    private Pipe(State[] states) {
+    /* Implementation-side only */
+    public Pipe(State[] states) {
 	this.states = states;
     }
 
@@ -56,6 +57,10 @@ public class Pipe {
 
     public Pipe copy() {
 	return(new Pipe(Arrays.copyOf(states, states.length)));
+    }
+
+    public void copy(Pipe from) {
+	states = Arrays.copyOf(from.states, from.states.length);
     }
 
     public int hashCode() {
@@ -89,6 +94,60 @@ public class Pipe {
 	return(true);
     }
 
+    public static interface Op {
+	public void apply(Pipe pipe);
+
+	public static class Composed implements Op {
+	    private final Op[] ops;
+
+	    public Composed(Op... ops) {
+		int i, n;
+		for(i = n = 0; i < ops.length; i++) {
+		    if(ops[i] != null)
+			n++;
+		}
+		if(n != i) {
+		    Op[] td = new Op[n];
+		    for(i = n = 0; i < ops.length; i++) {
+			if(ops[i] != null)
+			    td[n++] = ops[i];
+		    }
+		    this.ops = td;
+		} else {
+		    this.ops = ops;
+		}
+	    }
+
+	    public void apply(Pipe pipe) {
+		for(Op op : ops)
+		    op.apply(pipe);
+	    }
+
+	    public boolean equals(Object o) {
+		if(!(o instanceof Composed))
+		    return(false);
+		return(Arrays.equals(ops, ((Composed)o).ops));
+	    }
+
+	    public int hashCode() {
+		return(Arrays.hashCode(ops));
+	    }
+
+	    public String toString() {
+		return("#<composed " + Arrays.asList(ops) + ">");
+	    }
+	}
+
+	public static Op compose(Op... ops) {
+	    return(new Composed(ops));
+	}
+    }
+
+    public Pipe prep(Op op) {
+	op.apply(this);
+	return(this);
+    }
+
     public String toString() {
 	StringBuilder buf = new StringBuilder();
 	buf.append('[');
@@ -108,6 +167,7 @@ public class Pipe {
 	return(buf.toString());
     }
 
+    /* Implementation-side only */
     public State[] states() {
 	return(states);
     }

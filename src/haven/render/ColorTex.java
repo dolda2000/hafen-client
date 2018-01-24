@@ -26,11 +26,29 @@
 
 package haven.render;
 
-import java.nio.*;
+import haven.*;
+import haven.render.sl.*;
+import static haven.render.sl.Cons.*;
+import static haven.render.sl.Type.*;
 
-public interface FillBuffer extends haven.Disposable {
-    public int size();
-    public boolean compatible(Environment env);
-    public ByteBuffer push();
-    public void pull(ByteBuffer buf);
+public class ColorTex extends State {
+    public static final Slot<ColorTex> slot = new Slot<>(Slot.Type.DRAW, ColorTex.class);
+    public static final Attribute texc = new Attribute(VEC2, "ctexc");
+    private static final Uniform usmp = new Uniform(SAMPLER2D, "ctex", p -> p.get(slot).data, slot);
+    public final Texture2D.Sampler2D data;
+
+    public ColorTex(Texture2D.Sampler2D data) {
+	this.data = data;
+    }
+
+    static final AutoVarying ftexc = new AutoVarying(VEC2) {
+	    protected Expression root(VertexContext vctx) {
+		return(texc.ref());
+	    }
+	};
+    static final ShaderMacro shader = prog -> {
+	FragColor.fragcol(prog.fctx).mod(in -> mul(in, texture2D(usmp.ref(), ftexc.ref())), 0);
+    };
+    public ShaderMacro shader() {return(shader);}
+    public void apply(Pipe p) {p.put(slot, this);}
 }

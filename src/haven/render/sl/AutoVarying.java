@@ -26,39 +26,51 @@
 
 package haven.render.sl;
 
-import java.util.*;
-
-public class ProgramContext {
-    public final VertexContext vctx;
-    public final FragmentContext fctx;
-    public final Set<Uniform> uniforms = new HashSet<Uniform>();
-    public final Set<Attribute> attribs = new HashSet<Attribute>();
-    public final List<FragData> fragdata = new ArrayList<FragData>();
-    public final Map<Symbol, String> symtab = new HashMap<Symbol, String>();
-    public final Map<String, Symbol> rsymtab = new HashMap<String, Symbol>();
-    public int symgen = 1;
-    public boolean dump = false;
-    private final Collection<Object> mods = new LinkedList<Object>();
-
-    public ProgramContext() {
-	vctx = new VertexContext(this);
-	fctx = new FragmentContext(this);
+public abstract class AutoVarying extends Varying {
+    public AutoVarying(Type type, Symbol name) {
+	super(type, name);
     }
 
-    public void module(Object mod) {
-	mods.add(mod);
+    public AutoVarying(Type type, String prefix) {
+	this(type, new Symbol.Shared(prefix));
     }
 
-    public <T> T getmod(Class<T> cl) {
-	T ret = null;
-	for(Object mod : mods) {
-	    if(cl.isInstance(mod)) {
-		if(ret == null)
-		    ret = cl.cast(mod);
-		else
-		    throw(new RuntimeException("multiple modules of " + cl + " installed: " + ret + " and " + mod));
-	    }
+    public AutoVarying(Type type) {
+	this(type, new Symbol.Shared());
+    }
+
+    public abstract class Value extends ValBlock.Value {
+	public Value(ValBlock blk) {
+	    blk.super(AutoVarying.this.type, AutoVarying.this.name);
 	}
-	return(ret);
+
+	protected void cons2(Block blk) {
+	    tgt = AutoVarying.this.ref();
+	    blk.add(new LBinOp.Assign(tgt, init));
+	}
+    }
+
+    protected Expression root(VertexContext vctx) {
+	throw(new Error("Neither make() nor root() overridden"));
+    }
+
+    protected Value make(ValBlock vals, final VertexContext vctx) {
+	return(new Value(vals) {
+		public Expression root() {
+		    return(AutoVarying.this.root(vctx));
+		}
+	    });
+    }
+
+    public ValBlock.Value value(final VertexContext ctx) {
+	return(ctx.mainvals.ext(this, () -> AutoVarying.this.make(ctx.mainvals, ctx)));
+    }
+
+    public void use(Context ctx) {
+	if(ctx instanceof FragmentContext) {
+	    FragmentContext fctx = (FragmentContext)ctx;
+	    value(fctx.prog.vctx).force();
+	}
+	super.use(ctx);
     }
 }

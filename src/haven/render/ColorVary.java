@@ -26,11 +26,27 @@
 
 package haven.render;
 
-import java.nio.*;
+import haven.*;
+import haven.render.sl.*;
+import static haven.render.sl.Cons.*;
+import static haven.render.sl.Type.*;
 
-public interface FillBuffer extends haven.Disposable {
-    public int size();
-    public boolean compatible(Environment env);
-    public ByteBuffer push();
-    public void pull(ByteBuffer buf);
+public class ColorVary extends State {
+    public static final Slot<ColorVary> slot = new Slot<>(Slot.Type.DRAW, ColorVary.class);
+    public static final Attribute color = new Attribute(VEC4, "vcolor");
+    public static final ColorVary st = new ColorVary();
+
+    private ColorVary() {}
+
+    static final AutoVarying fcolor = new AutoVarying(VEC4) {
+	    protected Expression root(VertexContext vctx) {
+		return(color.ref());
+	    }
+	};
+
+    static final ShaderMacro shader = prog -> {
+	FragColor.fragcol(prog.fctx).mod(in -> mul(in, fcolor.ref()), 0);
+    };
+    public ShaderMacro shader() {return(shader);}
+    public void apply(Pipe p) {p.put(slot, this);}
 }

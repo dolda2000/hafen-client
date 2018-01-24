@@ -27,15 +27,21 @@
 package haven.render.gl;
 
 import java.util.*;
+import java.util.function.*;
 import javax.media.opengl.*;
 import haven.Utils;
+import haven.Disposable;
 import haven.render.*;
 import haven.render.sl.*;
+import static haven.render.DataBuffer.Usage.*;
 
 public class GLEnvironment implements Environment {
     public final GLContext ctx;
+    private GLRender prep = null;
+    private Applier curstate = new Applier(this);
     final Object drawmon = new Object();
-    private final Pipe state = new Pipe();
+    final Object prepmon = new Object();
+    final Collection<GLObject> disposed = new LinkedList<>();
 
     public GLEnvironment(GLContext ctx) {
 	this.ctx = ctx;
@@ -44,6 +50,138 @@ public class GLEnvironment implements Environment {
     public GLRender render() {
 	return(new GLRender(this));
     }
+
+    public void submit(GL2 gl, GLRender cmd) {
+	if(cmd.gl != null) {
+	    GLRender prep;
+	    synchronized(prepmon) {
+		prep = this.prep;
+		this.prep = null;
+	    }
+	    synchronized(drawmon) {
+		if((prep != null) && (prep.gl != null)) {
+		    BufferBGL xf = new BufferBGL(16);
+		    this.curstate.apply(xf, prep.init);
+		    prep.gl.run(gl);
+		    this.curstate = prep.state;
+		}
+		BufferBGL xf = new BufferBGL(16);
+		this.curstate.apply(xf, cmd.init);
+		xf.run(gl);
+		cmd.gl.run(gl);
+		this.curstate = cmd.state;
+		GLException.checkfor(gl);
+	    }
+	}
+    }
+
+    public BufferBGL disposeall() {
+	BufferBGL buf = new BufferBGL();
+	Collection<GLObject> copy;
+	synchronized(disposed) {
+	    if(disposed.isEmpty())
+		return(buf);
+	    copy = new ArrayList<>(disposed);
+	    disposed.clear();
+	}
+	for(GLObject obj : copy)
+	    obj.delete(buf);
+	buf.bglCheckErr();
+	return(buf);
+    }
+
+    public FillBuffer fillbuf(DataBuffer tgt) {
+	return(new FillBuffers.Array(tgt.size()));
+    }
+
+    GLRender prepare() {
+	if(prep == null)
+	    prep = new GLRender(this);
+	return(prep);
+    }
+    void prepare(GLObject obj) {
+	synchronized(prepmon) {
+	    prepare().gl().bglCreate(obj);
+	}
+    }
+    void prepare(BGL.Request req) {
+	synchronized(prepmon) {
+	    prepare().gl().bglSubmit(req);
+	}
+    }
+    void prepare(Consumer<GLRender> func) {
+	synchronized(prepmon) {
+	    func.accept(prepare());
+	}
+    }
+
+    Disposable prepare(Model.Indices buf) {
+	synchronized(buf) {
+	    if(buf.usage == EPHEMERAL) {
+		if(!(buf.ro instanceof HeapBuffer)) {
+		    if(buf.ro != null)
+			buf.ro.dispose();
+		    buf.ro = new HeapBuffer(this, buf, buf.init);
+		}
+		return(buf.ro);
+	    } else {
+		throw(new Error());
+	    }
+	}
+    }
+    Disposable prepare(VertexArray.Buffer buf) {
+	synchronized(buf) {
+	    if(buf.usage == EPHEMERAL) {
+		if(!(buf.ro instanceof HeapBuffer)) {
+		    if(buf.ro != null)
+			buf.ro.dispose();
+		    buf.ro = new HeapBuffer(this, buf, buf.init);
+		}
+		return(buf.ro);
+	    } else {
+		throw(new Error());
+	    }
+	}
+    }
+    GLTexture.Tex2D prepare(Texture2D tex) {
+	synchronized(tex) {
+	    GLTexture.Tex2D ret;
+	    if(!(tex.ro instanceof GLTexture.Tex2D) || ((ret = (GLTexture.Tex2D)tex.ro).env != this)) {
+		if(tex.ro != null)
+		    tex.ro.dispose();
+		tex.ro = ret = GLTexture.Tex2D.create(this, tex);
+	    }
+	    return(ret);
+	}
+    }
+    GLTexture.Tex2D prepare(Texture2D.Sampler2D smp) {
+	Texture2D tex = smp.tex;
+	synchronized(tex) {
+	    GLTexture.Tex2D ret = prepare(tex);
+	    ret.setsampler(smp);
+	    return(ret);
+	}
+    }
+
+    public class TempData<T> implements Supplier<T> {
+	private final Supplier<T> bk;
+	private T d = null;
+
+	public TempData(Supplier<T> bk) {this.bk = bk;}
+
+	public T get() {
+	    if(d == null) {
+		synchronized(this) {
+		    if(d == null)
+			d = bk.get();
+		}
+	    }
+	    return(d);
+	}
+    }
+
+    public final Supplier<GLBuffer> tempvertex = new TempData<>(() -> new GLBuffer(this));
+    public final Supplier<GLBuffer> tempindex = new TempData<>(() -> new GLBuffer(this));
 
     static class SavedProg {
 	final int hash;
@@ -124,7 +262,7 @@ public class GLEnvironment implements Environment {
 	    if(shaders[i] != null)
 		mods.add(shaders[i]);
 	}
-	GLProgram prog = GLProgram.build(mods);
+	GLProgram prog = GLProgram.build(this, mods);
 	synchronized(pmon) {
 	    SavedProg s = findprog(hash, shaders);
 	    if(s != null) {

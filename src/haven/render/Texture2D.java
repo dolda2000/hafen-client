@@ -27,28 +27,70 @@
 package haven.render;
 
 import haven.*;
+import java.util.*;
 
-public class Texture2D implements Disposable {
-    protected final Coord dim;
-    protected Disposable ro;
+public class Texture2D extends Texture {
+    public final int w, h;
+    private final boolean pot;
 
-    public Texture2D(Coord dim) {
-	this.dim = dim;
+    public Texture2D(int w, int h, DataBuffer.Usage usage, VectorFormat ifmt, VectorFormat efmt, DataBuffer.Filler<? super Image> init) {
+	super(usage, ifmt, efmt, init);
+	if((w < 0) || (h < 0))
+	    throw(new IllegalArgumentException(String.format("Texture sizes must be non-negative, not (%d, %d)", w, h)));
+	this.w = w;
+	this.h = h;
+	this.pot = ((w & (w - 1)) == 0) && ((h & (h - 1)) == 0);
     }
 
-    public Coord sz() {
-	return(dim);
+    public Texture2D(int w, int h, DataBuffer.Usage usage, VectorFormat ifmt, DataBuffer.Filler<? super Image> init) {
+	this(w, h, usage, ifmt, ifmt, init);
+    }
+    public Texture2D(Coord dim, DataBuffer.Usage usage, VectorFormat ifmt, VectorFormat efmt, DataBuffer.Filler<? super Image> init) {
+	this(dim.x, dim.y, usage, ifmt, efmt, init);
+    }
+    public Texture2D(Coord dim, DataBuffer.Usage usage, VectorFormat ifmt, DataBuffer.Filler<? super Image> init) {
+	this(dim, usage, ifmt, ifmt, init);
     }
 
-    public void dispose() {
-	if(this.ro != null) {
-	    Disposable ro;
-	    synchronized(this) {
-		ro = this.ro;
-		this.ro = null;
-	    }
-	    if(ro != null)
-		ro.dispose();
+    public Image<Texture2D> image(int level) {
+	if((level < 0) || (level >= 32))
+	    throw(new IllegalArgumentException(Integer.toString(level)));
+	if(level > 0) {
+	    if(!pot)
+		throw(new IllegalArgumentException("Non-power-of-two textures cannot be mipmapped"));
+	    if(((w >> level) == 0) && ((h >> level) == 0))
+		throw(new IllegalArgumentException(String.format("Invalid mipmap level %d for (%d, %d) texture", level, w, h)));
+	}
+	return(new Image<>(this, Math.max(w >> level, 1), Math.max(h >> level, 1), 1, level));
+    }
+
+    public Collection<Image<Texture2D>> images() {
+	return(new AbstractCollection<Image<Texture2D>>() {
+		public int size() {
+		    if((w == 0) || (h == 0)) {
+			return(0);
+		    } else if(pot) {
+			return(Math.max(Integer.numberOfTrailingZeros(w),
+					Integer.numberOfTrailingZeros(h)) +
+			       1);
+		    } else {
+			return(1);
+		    }
+		}
+
+		public Iterator<Image<Texture2D>> iterator() {
+		    return(new Iterator<Image<Texture2D>>() {
+			    int i = 0, n = size();
+			    public boolean hasNext() {return(i < n);}
+			    public Image<Texture2D> next() {return(image(i++));}
+			});
+		}
+	    });
+    }
+
+    public static class Sampler2D extends Sampler<Texture2D> {
+	public Sampler2D(Texture2D tex) {
+	    super(tex);
 	}
     }
 }

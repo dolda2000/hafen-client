@@ -181,6 +181,18 @@ public abstract class BGL {
 	    });
     }
 
+    public void glBlendColor(final float red, final float green, final float blue, final float alpha) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glBlendColor(red, green, blue, alpha);}
+	    });
+    }
+
+    public void glBlendEquation(final int mode) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glBlendEquation(mode);}
+	    });
+    }
+
     public void glBlendEquationSeparate(final int cmode, final int amode) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glBlendEquationSeparate(cmode, amode);}
@@ -190,6 +202,12 @@ public abstract class BGL {
     public void glBlendFunc(final int sfac, final int dfac) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glBlendFunc(sfac, dfac);}
+	    });
+    }
+
+    public void glBlendFuncSeparate(final int csfac, final int cdfac, final int asfac, final int adfac) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glBlendFuncSeparate(csfac, cdfac, asfac, adfac);}
 	    });
     }
 
@@ -308,6 +326,18 @@ public abstract class BGL {
 	    });
     }
 
+    public void glDeleteShader(final ID id) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDeleteShader(id.glid());}
+	    });
+    }
+
+    public void glDeleteProgram(final ID id) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDeleteProgram(id.glid());}
+	    });
+    }
+
     public void glDeleteRenderbuffers(final int count, final ID[] buffers, final int n) {
 	add(new Command() {
 		public void run(GL2 gl) {
@@ -405,6 +435,12 @@ public abstract class BGL {
 	final BufState is = new BufState(indices);
 	add(new Command() {
 		public void run(GL2 gl) {is.restore(); gl.glDrawElements(mode, count, type, is.buf);}
+	    });
+    }
+
+    public void glDrawElements(final int mode, final int count, final int type, final long indices) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDrawElements(mode, count, type, indices);}
 	    });
     }
 
@@ -691,6 +727,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void glTexParameterfv(final int target, final int pname, final float[] param, final int n) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glTexParameterfv(target, pname, param, n);}
+	    });
+    }
+
     public void glTexParameteri(final int target, final int pname, final int param) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glTexParameteri(target, pname, param);}
@@ -754,6 +796,12 @@ public abstract class BGL {
     public void glUseProgramObjectARB(final ID program) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glUseProgramObjectARB(program.glid());}
+	    });
+    }
+
+    public void glUseProgram(final ID program) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glUseProgram(program.glid());}
 	    });
     }
 
@@ -1058,7 +1106,7 @@ public abstract class BGL {
 	}
 
 	public void dump() {
-	    dump(System.out);
+	    dump(System.err);
 	}
     }
 }

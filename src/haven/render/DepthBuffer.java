@@ -26,11 +26,17 @@
 
 package haven.render;
 
-import java.nio.*;
+import haven.render.sl.*;
 
-public interface FillBuffer extends haven.Disposable {
-    public int size();
-    public boolean compatible(Environment env);
-    public ByteBuffer push();
-    public void pull(ByteBuffer buf);
+public class DepthBuffer extends State {
+    public static final Slot<DepthBuffer> slot = new Slot<>(Slot.Type.SYS, DepthBuffer.class);
+    public static final Object defdepth = new Object();
+    public final Object image;
+
+    public DepthBuffer(Object image) {
+	this.image = image;
+    }
+
+    public ShaderMacro shader() {return(null);}
+    public void apply(Pipe p) {p.put(slot, this);}
 }

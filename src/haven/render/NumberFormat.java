@@ -29,7 +29,9 @@ package haven.render;
 public enum NumberFormat {
     UNORM8(1), SNORM8(1), UNORM16(2), SNORM16(2), UNORM32(4), SNORM32(4),
     FLOAT16(2), FLOAT32(4), FLOAT64(8),
-    UINT8(1), SINT8(1), UINT16(2), SINT16(2), UINT32(4), SINT32(4);
+    UINT8(1), SINT8(1), UINT16(2), SINT16(2), UINT32(4), SINT32(4),
+
+    DEPTH(-1);
 
     public final int size;
 

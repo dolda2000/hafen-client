@@ -24,13 +24,35 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import java.nio.*;
+import java.util.*;
+import java.lang.reflect.*;
 
-public interface FillBuffer extends haven.Disposable {
-    public int size();
-    public boolean compatible(Environment env);
-    public ByteBuffer push();
-    public void pull(ByteBuffer buf);
+public abstract class GLState {
+    @SuppressWarnings("unchecked")
+    public static final Class<? extends GLState>[] slots = (Class<? extends GLState>[])new Class[] {
+	VaoState.class,
+	VboState.class,
+	EboState.class,
+	TexState.class,
+	FboState.class,
+    };
+
+    public static int slotidx(Class<? extends GLState> cl) {
+	for(int i = 0; i < slots.length; i++) {
+	    if(slots[i] == cl)
+		return(i);
+	}
+	throw(new RuntimeException("No slot for " + cl));
+    }
+
+    public abstract void apply(BGL gl);
+    public abstract void unapply(BGL gl);
+    public abstract int slotidx();
+
+    public void applyto(BGL gl, GLState to) {
+	unapply(gl);
+	to.apply(gl);
+    }
 }

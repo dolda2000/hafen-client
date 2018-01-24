@@ -24,13 +24,30 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import java.nio.*;
+import javax.media.opengl.*;
 
-public interface FillBuffer extends haven.Disposable {
-    public int size();
-    public boolean compatible(Environment env);
-    public ByteBuffer push();
-    public void pull(ByteBuffer buf);
+public class GLBuffer extends GLObject implements BGL.ID {
+    private int id;
+    
+    public GLBuffer(GLEnvironment env) {
+	super(env);
+	env.prepare(this);
+    }
+
+    public void create(GL2 gl) {
+	int[] buf = new int[1];
+	gl.glGenBuffers(1, buf, 0);
+	this.id = buf[0];
+    }
+    
+    protected void delete(BGL gl) {
+	BGL.ID[] buf = {this};
+	gl.glDeleteBuffers(1, buf, 0);
+    }
+
+    public int glid() {
+	return(id);
+    }
 }

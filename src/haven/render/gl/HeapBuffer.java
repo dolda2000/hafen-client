@@ -24,13 +24,21 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
 import java.nio.*;
+import haven.Disposable;
+import haven.render.*;
 
-public interface FillBuffer extends haven.Disposable {
-    public int size();
-    public boolean compatible(Environment env);
-    public ByteBuffer push();
-    public void pull(ByteBuffer buf);
+public class HeapBuffer implements Disposable {
+    public byte[] buf;
+
+    public <T extends DataBuffer> HeapBuffer(GLEnvironment env, T obj, DataBuffer.Filler<? super T> init) {
+	if(init != null) {
+	    FillBuffers.Array buf = (FillBuffers.Array)init.fill(obj, env);
+	    this.buf = buf.data;
+	}
+    }
+
+    public void dispose() {}
 }

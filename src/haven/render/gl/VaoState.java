@@ -24,13 +24,9 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import java.nio.*;
-
-public interface FillBuffer extends haven.Disposable {
-    public int size();
-    public boolean compatible(Environment env);
-    public ByteBuffer push();
-    public void pull(ByteBuffer buf);
+public abstract class VaoState extends GLState {
+    public static int slot = slotidx(VaoState.class);
+    public int slotidx() {return(slot);}
 }

@@ -24,13 +24,34 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import java.nio.*;
+import javax.media.opengl.GL;
 
-public interface FillBuffer extends haven.Disposable {
-    public int size();
-    public boolean compatible(Environment env);
-    public ByteBuffer push();
-    public void pull(ByteBuffer buf);
+public class EboState extends GLState {
+    public final GLBuffer buf;
+
+    public EboState(GLBuffer buf) {
+	this.buf = buf;
+    }
+
+    public void apply(BGL gl) {
+	gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, buf);
+    }
+
+    public void unapply(BGL gl) {
+	gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, null);
+    }
+
+    public void applyto(BGL gl, GLState to) {
+	((EboState)to).apply(gl);
+    }
+
+    public static void apply(BGL gl, Applier st, GLBuffer buf) {
+	if((st.glstates[slot] == null) || (((EboState)st.glstates[slot]).buf != buf))
+	    st.apply(gl, new EboState(buf));
+    }
+
+    public static int slot = slotidx(EboState.class);
+    public int slotidx() {return(slot);}
 }

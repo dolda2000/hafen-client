@@ -32,17 +32,26 @@ import static haven.render.sl.Type.*;
 import static haven.render.sl.Cons.*;
 
 public class Ortho2D extends State {
-    public final Area area;
+    public final float l, u, r, b;
+    private final float[] k, m;
     public static final Attribute pos = new Attribute(VEC2, "opos2d");
-    private static final Uniform m = new Uniform(VEC2, null, "m2d", States.vxf);
-    private static final Uniform k = new Uniform(VEC2, null, "k2d", States.vxf);
+    private static final Uniform kv = new Uniform(VEC2, "k2d", p -> ((Ortho2D)p.get(States.vxf)).k, States.vxf);
+    private static final Uniform mv = new Uniform(VEC2, "m2d", p -> ((Ortho2D)p.get(States.vxf)).m, States.vxf);
+
+    public Ortho2D(float l, float u, float r, float b) {
+	this.l = l; this.u = u; this.r = r; this.b = b;
+	float w = r - l; float h = b - u;
+	k = new float[] {2f / w, -2f / h};
+	m = new float[] {-1 - (l * k[0]), 1 + (u * k[1])};
+    }
 
     public Ortho2D(Area area) {
-	this.area = area;
+	this(area.ul.x, area.ul.y, area.br.x, area.br.y);
     }
 
     private static final ShaderMacro shader = prog -> {
-	prog.vctx.posv.mod(in -> add(m.ref(), mul(pos.ref(), k.ref())), 0);
+	prog.vctx.posv.mod(in -> vec4(add(mv.ref(), mul(pos.ref(), kv.ref())), l(0.0), l(1.0)), 0);
     };
     public ShaderMacro shader() {return(shader);}
+    public void apply(Pipe p) {p.put(States.vxf, this);}
 }

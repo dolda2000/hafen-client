@@ -29,7 +29,7 @@ package haven.render;
 import java.util.*;
 import haven.render.sl.*;
 
-public abstract class State {
+public abstract class State implements Pipe.Op {
     public static class Slot<T extends State> {
 	static Slots slots = new Slots(new Slot<?>[0]);
 	public final Type type;

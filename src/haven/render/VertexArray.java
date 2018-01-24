@@ -26,37 +26,108 @@
 
 package haven.render;
 
+import java.util.*;
 import haven.render.sl.Attribute;
+import haven.Disposable;
 
-public class VertexArray {
-    public final Buffer[] bufs;
+public class VertexArray implements Disposable {
+    public final Layout fmt;
     public final int n;
+    public final Buffer[] bufs;
+    public boolean shared = false;
+    public Disposable ro;
 
-    public VertexArray(Buffer... bufs) {
-	Buffer[] na = new Buffer[bufs.length];
-	na[0] = bufs[0];
-	int num = na[0].n;
-	for(int i = 1; i < bufs.length; i++) {
-	    na[i] = bufs[i];
-	    if(na[i].n != num)
-		throw(new IllegalArgumentException("Buffer sizes do not match"));
-	}
-	this.bufs = na;
-	this.n = num;
+    public VertexArray(Layout fmt, int n, Buffer... bufs) {
+	if(bufs.length != fmt.nbufs)
+	    throw(new IllegalArgumentException(String.format("Vertex layout requires %d buffers, only given %d", fmt.nbufs, bufs.length)));
+	this.fmt = fmt;
+	this.n = n;
+	this.bufs = bufs;
     }
 
-    public abstract static class Buffer {
-	public final int n, nc;
-	public final NumberFormat fmt;
-	public final Attribute tgt;
+    public static class Layout {
+	public final Input[] inputs;
+	public final int nbufs;
 
-	public Buffer(int n, int nc, NumberFormat fmt, Attribute tgt) {
-	    this.n = n;
-	    this.nc = nc;
-	    this.fmt = fmt;
-	    this.tgt = tgt;
+	public Layout(Input... inputs) {
+	    int mb = 0;
+	    for(Input in : inputs)
+		mb = Math.max(mb, in.buf);
+	    int nb = mb + 1;
+	    boolean[] used = new boolean[nb];
+	    for(Input in : inputs)
+		used[in.buf] = true;
+	    for(boolean u : used) {
+		if(!u)
+		    throw(new RuntimeException("Vertex buffers are not tightly packed"));
+	    }
+	    Arrays.sort(inputs, (a, b) -> a.buf - b.buf);
+	    this.inputs = inputs;
+	    this.nbufs = nb;
 	}
 
-	public abstract FillBuffer fill(Environment env);
+	public static class Input {
+	    public final Attribute tgt;
+	    public final VectorFormat el;
+	    public final int buf, offset, stride;
+
+	    public Input(Attribute tgt, VectorFormat el, int buf, int offset, int stride) {
+		this.tgt = tgt;
+		this.el = el;
+		this.buf = buf;
+		this.offset = offset;
+		this.stride = stride;
+	    }
+	}
+    }
+
+    public static class Buffer implements DataBuffer, Disposable {
+	public final int size;
+	public final Usage usage;
+	public final Filler<? super Buffer> init;
+	public boolean shared = false;
+	public Disposable ro;
+
+	public Buffer(int size, Usage usage, Filler<? super Buffer> init) {
+	    this.size = size;
+	    this.usage = usage;
+	    this.init = init;
+	}
+
+	public int size() {
+	    return(size);
+	}
+
+	public Buffer shared() {
+	    this.shared = true;
+	    return(this);
+	}
+
+	public void dispose() {
+	    synchronized(this) {
+		if(ro != null) {
+		    ro.dispose();
+		    ro = null;
+		}
+	    }
+	}
+    }
+
+    public VertexArray shared() {
+	this.shared = true;
+	return(this);
+    }
+
+    public void dispose() {
+	synchronized(this) {
+	    if(ro != null) {
+		ro.dispose();
+		ro = null;
+	    }
+	}
+	for(Buffer buf : bufs) {
+	    if(!buf.shared)
+		buf.dispose();
+	}
     }
 }

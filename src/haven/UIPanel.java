@@ -24,13 +24,14 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven;
 
-import java.nio.*;
+public interface UIPanel extends Runnable {
+    public UI newui(Session sess);
+    public void background(boolean bg);
 
-public interface FillBuffer extends haven.Disposable {
-    public int size();
-    public boolean compatible(Environment env);
-    public ByteBuffer push();
-    public void pull(ByteBuffer buf);
+    /* Stuff that is inherited from AWT components, but that have to
+     * be declared since Java is stupid. */
+    public void setSize(int w, int h);
+    public java.awt.Dimension getSize();
 }

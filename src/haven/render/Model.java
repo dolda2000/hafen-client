@@ -27,29 +27,70 @@
 package haven.render;
 
 import java.util.function.*;
+import haven.Disposable;
 
-public class Model {
+public class Model implements Disposable {
     public final Mode mode;
     public final VertexArray va;
     public final Indices ind;
+    public Disposable ro;
 
     public enum Mode {
-	POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_FAN
+	POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_STRIP, TRIANGLE_FAN
     }
 
     public Model(Mode mode, VertexArray va, Indices ind) {
-	this.mode = mode;
-	this.va = va;
+	if((this.mode = mode) == null)
+	    throw(new NullPointerException());
+	if((this.va = va) == null)
+	    throw(new NullPointerException());
 	this.ind = ind;
     }
 
-    public abstract static class Indices {
+    public static class Indices implements DataBuffer, Disposable {
 	public final NumberFormat fmt;
+	public final int n;
+	public final Usage usage;
+	public final Filler<? super Indices> init;
+	public boolean shared = false;
+	public Disposable ro;
 
-	public Indices(NumberFormat fmt) {
+	public Indices(int n, NumberFormat fmt, Usage usage, Filler<? super Indices> init) {
 	    this.fmt = fmt;
+	    this.n = n;
+	    this.usage = usage;
+	    this.init = init;
 	}
 
-	public abstract FillBuffer fill(Environment env);
+	public int size() {
+	    return(n * fmt.size);
+	}
+
+	public Indices shared() {
+	    this.shared = true;
+	    return(this);
+	}
+
+	public void dispose() {
+	    synchronized(this) {
+		if(ro != null) {
+		    ro.dispose();
+		    ro = null;
+		}
+	    }
+	}
+    }
+
+    public void dispose() {
+	synchronized(this) {
+	    if(ro != null) {
+		ro.dispose();
+		ro = null;
+	    }
+	}
+	if((ind != null) && !ind.shared)
+	    ind.dispose();
+	if(!va.shared)
+	    va.dispose();
     }
 }

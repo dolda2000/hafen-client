@@ -26,7 +26,24 @@
 
 package haven.render;
 
-public interface Render {
+import java.nio.*;
+import haven.Disposable;
+import haven.FColor;
+import haven.render.sl.*;
+
+public interface Render extends Disposable {
     public Environment env();
     public void draw(Pipe pipe, Model data);
+    public void clear(Pipe pipe, FragData buf, FColor val);
+    public void clear(Pipe pipe, double val);
+
+    public default void draw(Pipe pipe, Model.Mode mode, short[] ind, VertexArray.Layout fmt, int n, float[] data) {
+	Model.Indices indb = null;
+	if(ind != null)
+	    indb = new Model.Indices(ind.length, NumberFormat.UINT16, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(ind));
+	VertexArray vao = new VertexArray(fmt, n, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data)));
+	Model model = new Model(mode, vao, indb);
+	draw(pipe, model);
+	model.dispose();
+    }
 }

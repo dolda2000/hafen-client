@@ -33,19 +33,18 @@ import static haven.Utils.eq;
 
 public class Applier {
     public final GLEnvironment env;
+    /* Soft pipeline state */
     private State[] cur = new State[0];
+    /* Program state */
     private ShaderMacro[] shaders = new ShaderMacro[0];
     private int shash = 0;
     private GLProgram prog;
     private Object[] uvals = new Object[0];
+    /* GL states */
+    public GLState[] glstates = new GLState[GLState.slots.length];
 
-    private Applier(GLEnvironment env) {
+    public Applier(GLEnvironment env) {
 	this.env = env;
-    }
-
-    public Applier(GLEnvironment env, Pipe init) {
-	this.env = env;
-	assume(init.states());
     }
 
     public Applier clone() {
@@ -54,99 +53,283 @@ public class Applier {
 	ret.shaders = Arrays.copyOf(this.shaders, this.shaders.length);
 	ret.shash = this.shash;
 	ret.prog = this.prog;
+	ret.uvals = Arrays.copyOf(this.uvals, this.uvals.length);
+	ret.glstates = Arrays.copyOf(this.glstates, this.glstates.length);
 	return(ret);
     }
 
     private void setprog(GLProgram prog) {
 	this.prog = prog;
-	this.uvals = new Object[prog.uniforms.length];
+	this.uvals = new Object[(prog == null) ? 0 : prog.uniforms.length];
+    }
+
+    public GLProgram prog() {return(prog);}
+
+    private <T> void uapply(BGL gl, GLProgram prog, int ui, Object val) {
+	Uniform var = prog.uniforms[ui];
+	if(val != uvals[ui]) {
+	    UniformApplier.TypeMapping.apply(gl, this, var, val);
+	    uvals[ui] = val;
+	}
+    }
+
+    private Object getuval(GLProgram prog, int ui, Pipe pipe) {
+	Object val = prog.uniforms[ui].value.apply(pipe);
+	if(val == null)
+	    throw(new NullPointerException(String.format("tried to set null for uniform %s on %s", prog.uniforms[ui], pipe)));
+	return(val);
+    }
+
+    private Object prepuval(Object val) {
+	if(val instanceof Texture.Sampler) {
+	    if(val instanceof Texture2D.Sampler2D)
+		return(env.prepare((Texture2D.Sampler2D)val));
+	}
+	return(val);
+    }
+
+    private Object getfval(GLProgram prog, int fi, Pipe pipe) {
+	Object val = prog.fragdata[fi].value.apply(pipe);
+	if(val == null)
+	    throw(new NullPointerException(String.format("tried to set null for fragdata %s on %s", prog.fragdata[fi], pipe)));
+	return(val);
+    }
+
+    private Object prepfval(Object val) {
+	if(val instanceof Texture.Image)
+	    return(GLFrameBuffer.prepimg(env, (Texture.Image)val));
+	return(val);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends State> void glpapply(BGL gl, GLPipeState<T> st, State from, State to) {
+	st.apply(gl, (T)from, (T)to);
     }
 
     private void assume(State[] ns) {
-	int hash = 0, i;
+	int shash = 0, i;
 	if(this.cur.length < ns.length) {
 	    this.cur = Arrays.copyOf(this.cur, ns.length);
 	    this.shaders = Arrays.copyOf(this.shaders, this.cur.length);
 	}
 	State[] cur = this.cur;
 	ShaderMacro[] shaders = this.shaders;
+	ShaderMacro[] nshaders = new ShaderMacro[shaders.length];
+	for(i = 0; i < ns.length; i++) {
+	    nshaders[i] = (ns[i] == null) ? null : ns[i].shader();
+	    shash ^= System.identityHashCode(nshaders[i]);
+	}
+	GLProgram prog = env.getprog(shash, nshaders);
+	Pipe tp = new Pipe(ns);
+	Object[] nuvals = new Object[prog.uniforms.length];
+	for(i = 0; i < prog.uniforms.length; i++)
+	    nuvals[i] = prepuval(getuval(prog, i, tp));
+	Object[] nfvals = new Object[prog.fragdata.length];
+	for(i = 0; i < prog.fragdata.length; i++)
+	    nfvals[i] = prepfval(getfval(prog, i, tp));
+	Object ndbuf = prepfval((ns.length > DepthBuffer.slot.id) ? ((DepthBuffer)ns[DepthBuffer.slot.id]).image : null);
+
+	this.shash = shash;
+	setprog(prog);
 	for(i = 0; i < ns.length; i++) {
 	    cur[i] = ns[i];
-	    ShaderMacro shader = (cur[i] == null) ? null : cur[i].shader();
-	    if(shader != shaders[i]) {
-		hash ^= System.identityHashCode(shaders[i]);
-		shaders[i] = shader;
-		hash ^= System.identityHashCode(shaders[i]);
-	    }
+	    shaders[i] = nshaders[i];
 	}
 	for(; i < cur.length; i++) {
 	    cur[i] = null;
-	    if(shaders[i] != null) {
-		hash ^= System.identityHashCode(shaders[i]);
-		shaders[i] = null;
-	    }
+	    shaders[i] = null;
 	}
-	this.shash = hash;
-	setprog(env.getprog(hash, shaders));
+	for(i = 0; i < prog.uniforms.length; i++)
+	    uvals[i] = nuvals[i];
+	FboState.set(null, this, ndbuf, nfvals);
     }
 
-    private <T> void uapply(BGL gl, int ui) {
-	GLProgram prog = this.prog;
-	Object val = prog.uniforms[ui].value.get();
-	if(val != uvals[ui]) {
-	    UniformApplier.TypeMapping.apply(gl, prog.uniforms[ui].type, val);
-	}
-    }
-
-    public void apply(BGL gl, Pipe to) {
-	State[] ns = to.states();
+    private void apply2(BGL gl, State[] ns, Pipe to) {
 	if(this.cur.length < ns.length) {
 	    this.cur = Arrays.copyOf(this.cur, ns.length);
 	    this.shaders = Arrays.copyOf(this.shaders, this.cur.length);
 	}
 	State[] cur = this.cur;
 	ShaderMacro[] shaders = this.shaders;
-	int[] ch = new int[ns.length];
-	int n = 0;
+	int[] pdirty = new int[cur.length];
+	int pn = 0;
 	{
 	    int i = 0;
 	    for(; i < ns.length; i++) {
 		if(!eq(ns[i], cur[i]))
-		    ch[n++] = i;
+		    pdirty[pn++] = i;
 	    }
 	    for(; i < cur.length; i++) {
 		if(cur[i] != null)
-		    ch[n++] = i;
+		    pdirty[pn++] = i;
 	    }
 	}
-	if(n == 0)
+	if(pn == 0)
 	    return;
 	int shash = this.shash;
-	for(int i = 0; i < n; i++) {
-	    State s = (ch[i] < ns.length) ? ns[ch[i]] : null;
+	int[] sdirty = new int[cur.length];
+	ShaderMacro[] nshaders = new ShaderMacro[cur.length];
+	int sn = 0;
+	for(int i = 0; i < pn; i++) {
+	    int slot = pdirty[i];
+	    State s = (slot < ns.length) ? ns[slot] : null;
 	    ShaderMacro nm = ((s == null) ? null : s.shader());
-	    if(nm != shaders[ch[i]]) {
-		shash ^= System.identityHashCode(shaders[ch[i]]);
-		shaders[ch[i]] = nm;
-		shash ^= System.identityHashCode(nm);
+	    if(nm != shaders[slot]) {
+		shash ^= System.identityHashCode(shaders[slot]) ^ System.identityHashCode(nm);
+		sdirty[sn] = pdirty[i];
+		nshaders[sn] = nm;
+		sn++;
 	    }
 	}
-	if(shash == this.shash) {
-	    GLProgram prog = this.prog;
-	    boolean[] applied = new boolean[prog.uniforms.length];
-	    for(int i = 0; i < n; i++) {
-		if(prog.umap[ch[i]] == null)
-		    continue;
-		for(int ui : prog.umap[ch[i]]) {
-		    if(!applied[ui]) {
-			uapply(gl, ui);
-			applied[ui] = true;
+	GLProgram prog = this.prog;
+	if(sn > 0) {
+	    ShaderMacro[] gshaders = Arrays.copyOf(shaders, shaders.length);
+	    for(int i = 0; i < sn; i++)
+		gshaders[sdirty[i]] = nshaders[i];
+	    prog = env.getprog(shash, gshaders);
+	}
+	int[] udirty = new int[prog.uniforms.length];
+	int un = 0;
+	boolean fdirty = false;
+	if(prog == this.prog) {
+	    boolean[] ch = new boolean[prog.uniforms.length];
+	    for(int i = 0; i < pn; i++) {
+		if((prog.umap.length > pdirty[i]) && (prog.umap[pdirty[i]] != null)) {
+		    for(int ui : prog.umap[pdirty[i]]) {
+			if(!ch[ui]) {
+			    udirty[un++] = ui;
+			    ch[ui] = true;
+			}
+		    }
+		}
+		if((prog.fmap.length > pdirty[i]) && prog.fmap[pdirty[i]])
+		    fdirty = true;
+	    }
+	} else {
+	    un = udirty.length;
+	    for(int i = 0; i < udirty.length; i++)
+		udirty[i] = i;
+	    if(prog.fragdata.length != this.prog.fragdata.length)
+		fdirty = true;
+	    if(!fdirty) {
+		for(int i = 0; i < prog.fragdata.length; i++) {
+		    if(prog.fragdata[i] != this.prog.fragdata[i]) {
+			fdirty = true;
+			break;
 		    }
 		}
 	    }
-	} else {
-	    this.shash = shash;
-	    setprog(env.getprog(shash, shaders));
+	    if(!fdirty) {
+		for(int i = 0; i < pn; i++) {
+		    if((prog.fmap.length > pdirty[i]) && prog.fmap[pdirty[i]]) {
+			fdirty = true;
+			break;
+		    }
+		}
+	    }
+	}
+	Object[] nuvals = new Object[un];
+	for(int i = 0; i < un; i++) {
+	    int ui = udirty[i];
+	    nuvals[i] = prepuval(getuval(prog, ui, to));
+	}
+	Object[] nfvals = null;
+	Object ndbuf = null;
+	if(fdirty) {
+	    nfvals = new Object[prog.fragdata.length];
+	    for(int i = 0; i < prog.fragdata.length; i++)
+		nfvals[i] = prepfval(getfval(prog, i, to));
+	    ndbuf = prepfval(to.get(DepthBuffer.slot).image);
+	}
+
+	for(int i = 0; i < pn; i++) {
+	    int slot = pdirty[i];
+	    if((slot < GLPipeState.matching.length) && (GLPipeState.matching[slot] != null))
+		glpapply(gl, GLPipeState.matching[slot], cur[slot], ns[slot]);
+	    cur[slot] = (slot < ns.length) ? ns[slot] : null;
+	}
+	for(int i = 0; i < sn; i++)
+	    shaders[sdirty[i]] = nshaders[i];
+	this.shash = shash;
+	if(prog != this.prog) {
+	    setprog(prog);
+	    prog.apply(gl);
+	}
+	for(int i = 0; i < un; i++)
+	    uapply(gl, prog, udirty[i], nuvals[i]);
+	if(fdirty)
+	    FboState.set(gl, this, ndbuf, nfvals);
+    }
+
+    public void apply(BGL gl, Pipe to) {
+	State[] ns = to.states();
+	if(gl == null) {
+	    assume(ns);
+	    return;
+	}
+	apply2(gl, ns, to);
+    }
+
+    public void apply(BGL gl, int slot, GLState st) {
+	if(gl == null) {
+	    glstates[slot] = st;
+	    return;
+	}
+	GLState cur = glstates[slot];
+	if((cur == null) && (st != null)) {
+	    st.apply(gl);
+	    glstates[slot] = st;
+	} else if((cur != null) && (st == null)) {
+	    cur.unapply(gl);
+	    glstates[slot] = null;
+	} else if ((cur != null) && (st != null)) {
+	    cur.applyto(gl, st);
+	    glstates[slot] = st;
+	}
+    }
+
+    public void apply(BGL gl, GLState st) {
+	apply(gl, st.slotidx(), st);
+    }
+
+    public void apply(BGL gl, Applier that) {
+	if(gl == null)
+	    throw(new NullPointerException());
+	if(this.cur.length < that.cur.length) {
+	    this.cur = Arrays.copyOf(this.cur, that.cur.length);
+	    this.shaders = Arrays.copyOf(this.shaders, this.cur.length);
+	}
+	int i;
+	for(i = 0; i < this.glstates.length; i++)
+	    apply(gl, i, that.glstates[i]);
+	for(GLPipeState<?> glp : GLPipeState.all) {
+	    State a = (glp.slot.id < this.cur.length) ? this.cur[glp.slot.id] : null;
+	    State b = (glp.slot.id < that.cur.length) ? that.cur[glp.slot.id] : null;
+	    if(!eq(a, b))
+		glpapply(gl, glp, a, b);
+	}
+	if(this.prog != that.prog) {
+	    this.shash = that.shash;
+	    setprog(that.prog);
+	    if(this.prog == null)
+		gl.glUseProgram(null);
+	    else
+		this.prog.apply(gl);
+	}
+	for(i = 0; i < that.cur.length; i++) {
+	    this.cur[i] = that.cur[i];
+	    this.shaders[i] = that.shaders[i];
+	}
+	for(; i < this.cur.length; i++) {
+	    this.cur[i] = null;
+	    this.shaders[i] = null;
+	}
+	if(prog != null) {
+	    for(i = 0; i < prog.uniforms.length; i++) {
+		if(this.uvals[i] != that.uvals[i]) {
+		    uapply(gl, prog, i, that.uvals[i]);
+		}
+	    }
 	}
     }
 }

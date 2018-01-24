@@ -24,13 +24,45 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import java.nio.*;
+import javax.media.opengl.GL;
 
-public interface FillBuffer extends haven.Disposable {
-    public int size();
-    public boolean compatible(Environment env);
-    public ByteBuffer push();
-    public void pull(ByteBuffer buf);
+public class VboState extends GLState {
+    public final GLBuffer buf;
+
+    public VboState(GLBuffer buf) {
+	this.buf = buf;
+    }
+
+    public void apply(BGL gl) {
+	gl.glBindBuffer(GL.GL_ARRAY_BUFFER, buf);
+    }
+
+    public void unapply(BGL gl) {
+	gl.glBindBuffer(GL.GL_ARRAY_BUFFER, null);
+    }
+
+    public void applyto(BGL gl, GLState to) {
+	((VboState)to).apply(gl);
+    }
+
+    public static void apply(BGL gl, Applier st, GLBuffer buf) {
+	if((st.glstates[slot] == null) || (((VboState)st.glstates[slot]).buf != buf))
+	    st.apply(gl, new VboState(buf));
+    }
+
+    public static void set(Applier st, GLBuffer buf) {
+	if((st.glstates[slot] == null) || (((VboState)st.glstates[slot]).buf != buf))
+	    st.glstates[slot] = new VboState(buf);
+    }
+
+    public static GLBuffer get(Applier st) {
+	if(st.glstates[slot] == null)
+	    return(null);
+	return(((VboState)st.glstates[slot]).buf);
+    }
+
+    public static int slot = slotidx(VboState.class);
+    public int slotidx() {return(slot);}
 }
