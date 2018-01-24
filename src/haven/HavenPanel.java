@@ -57,6 +57,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     private GLState.Applier state = null;
     private GLConfig glconf = null;
     private final boolean gldebug = false;
+    private static final Cursor emptycurs = Toolkit.getDefaultToolkit().createCustomCursor(TexI.mkbuf(new Coord(1, 1)), new java.awt.Point(), "");
     
     private static GLCapabilities stdcaps() {
 	GLProfile prof = GLProfile.getDefault();
@@ -80,7 +81,6 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	initgl();
 	if(Toolkit.getDefaultToolkit().getMaximumCursorColors() >= 256)
 	    cursmode = "awt";
-	setCursor(Toolkit.getDefaultToolkit().createCustomCursor(TexI.mkbuf(new Coord(1, 1)), new java.awt.Point(), ""));
     }
     
     public HavenPanel(int w, int h) {
@@ -109,14 +109,6 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 		public void init(GLAutoDrawable d) {
 		    try {
 			GL gl = d.getGL();
-			glconf = GLConfig.fromgl(gl, d.getContext(), getChosenGLCapabilities());
-			if(gldebug) {
-			    if(!d.getContext().isGLDebugMessageEnabled())
-				System.err.println("GL debugging not actually enabled");
-			    ((GL2)gl).glDebugMessageControl(GL.GL_DONT_CARE, GL.GL_DONT_CARE, GL.GL_DONT_CARE, 0, null, true);
-			}
-			glconf.pref = GLSettings.load(glconf, true);
-			ui.cons.add(glconf);
 			if(h != null) {
 			    h.lsetprop("gl.vendor", gl.glGetString(gl.GL_VENDOR));
 			    h.lsetprop("gl.version", gl.glGetString(gl.GL_VERSION));
@@ -125,6 +117,14 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			    h.lsetprop("gl.caps", d.getChosenGLCapabilities().toString());
 			    h.lsetprop("gl.conf", glconf);
 			}
+			glconf = GLConfig.fromgl(gl, d.getContext(), getChosenGLCapabilities());
+			if(gldebug) {
+			    if(!d.getContext().isGLDebugMessageEnabled())
+				System.err.println("GL debugging not actually enabled");
+			    ((GL2)gl).glDebugMessageControl(GL.GL_DONT_CARE, GL.GL_DONT_CARE, GL.GL_DONT_CARE, 0, null, true);
+			}
+			glconf.pref = GLSettings.load(glconf, true);
+			ui.cons.add(glconf);
 			gstate = new GLState() {
 				public void apply(GOut g) {
 				    BGL gl = g.gl;
@@ -363,21 +363,29 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	}
 	ui.lasttip = tooltip;
 	Resource curs = ui.root.getcurs(mousepos);
-	if(curs != null) {
-	    if(cursmode == "awt") {
-		if(curs != lastcursor) {
-		    try {
+	if(cursmode == "awt") {
+	    if(curs != lastcursor) {
+		try {
+		    if(curs == null)
+			setCursor(null);
+		    else
 			setCursor(makeawtcurs(curs.layer(Resource.imgc).img, curs.layer(Resource.negc).cc));
-			lastcursor = curs;
-		    } catch(Exception e) {
-			cursmode = "tex";
-		    }
+		} catch(Exception e) {
+		    cursmode = "tex";
 		}
-	    } else if(cursmode == "tex") {
+	    }
+	} else if(cursmode == "tex") {
+	    if(curs == null) {
+		if(lastcursor != null)
+		    setCursor(null);
+	    } else {
+		if(lastcursor == null)
+		    setCursor(emptycurs);
 		Coord dc = mousepos.add(curs.layer(Resource.negc).cc.inv());
 		g.image(curs.layer(Resource.imgc), dc);
 	    }
 	}
+	lastcursor = curs;
 	state.clean();
 	GLObject.disposeall(state.cgl, gl);
 	if(gldebug)
@@ -453,7 +461,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 			ui.type(ke);
 		    }
 		}
-		ui.lastevent = System.currentTimeMillis();
+		ui.lastevent = Utils.rtime();
 	    }
 	}
     }

@@ -35,7 +35,7 @@ import static haven.Inventory.invsq;
 public class GameUI extends ConsoleHost implements Console.Directory {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
     private static final int blpw = 142, brpw = 142;
-    public final String chrid;
+    public final String chrid, genus;
     public final long plid;
     private final Hidepanel ulpanel, umpanel, urpanel, blpanel, brpanel, menupanel;
     public Avaview portrait;
@@ -45,8 +45,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Fightview fv;
     private List<Widget> meters = new LinkedList<Widget>();
     private Text lastmsg;
-    private long msgtime;
+    private double msgtime;
     private Window invwnd, equwnd, makewnd;
+    private Coord makewndc = Utils.getprefc("makewndc", new Coord(400, 200));
     public Inventory maininv;
     public CharWnd chrwdg;
     public MapWnd mapfile;
@@ -79,10 +80,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		if(mvc.isect(Coord.z, map.sz)) {
 		    map.delay(map.new Hittest(mvc) {
 			    protected void hit(Coord pc, Coord2d mc, MapView.ClickInfo inf) {
-				if(inf == null)
-				    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags(), mc.floor(OCache.posres));
-				else
-				    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags(), mc.floor(OCache.posres), (int)inf.gob.id, inf.gob.rc.floor(OCache.posres));
+				Object[] args = {slot, 1, ui.modflags(), mc.floor(OCache.posres)};
+				if(inf != null)
+				    args = Utils.extend(args, MapView.gobclickargs(inf));
+				GameUI.this.wdgmsg("belt", args);
 			    }
 			    
 			    protected void nohit(Coord pc) {
@@ -96,17 +97,21 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     
     @RName("gameui")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    String chrid = (String)args[0];
 	    int plid = (Integer)args[1];
-	    return(new GameUI(chrid, plid));
+	    String genus = "";
+	    if(args.length > 2)
+		genus = (String)args[2];
+	    return(new GameUI(chrid, plid, genus));
 	}
     }
     
     private final Coord minimapc;
-    public GameUI(String chrid, long plid) {
+    public GameUI(String chrid, long plid, String genus) {
 	this.chrid = chrid;
 	this.plid = plid;
+	this.genus = genus;
 	setcanfocus(true);
 	setfocusctl(true);
 	chat = add(new ChatUI(0, 0));
@@ -148,7 +153,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	syslog = chat.add(new ChatUI.Log("System"));
 	opts = add(new OptWnd());
 	opts.hide();
-	zerg = add(new Zergwnd(), 187, 50);
+	zerg = add(new Zergwnd(), Utils.getprefc("wndc-zerg", new Coord(187, 50)));
 	zerg.hide();
     }
 
@@ -500,6 +505,98 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
+    private String mapfilename() {
+	StringBuilder buf = new StringBuilder();
+	buf.append(genus);
+	String chrid = Utils.getpref("mapfile/" + this.chrid, "");
+	if(!chrid.equals("")) {
+	    if(buf.length() > 0) buf.append('/');
+	    buf.append(chrid);
+	}
+	return(buf.toString());
+    }
+
+    public Coord optplacement(Widget child, Coord org) {
+	Set<Window> closed = new HashSet<>();
+	Set<Coord> open = new HashSet<>();
+	open.add(org);
+	Coord opt = null;
+	double optscore = Double.NEGATIVE_INFINITY;
+	Coord plc = null;
+	{
+	    Gob pl = map.player();
+	    if(pl != null)
+		plc = pl.sc;
+	}
+	Area parea = Area.sized(Coord.z, sz);
+	while(!open.isEmpty()) {
+	    Coord cur = Utils.take(open);
+	    double score = 0;
+	    Area tarea = Area.sized(cur, child.sz);
+	    if(parea.isects(tarea)) {
+		double outside = 1.0 - (((double)parea.overlap(tarea).area()) / ((double)tarea.area()));
+		if((outside > 0.75) && !cur.equals(org))
+		    continue;
+		score -= Math.pow(outside, 2) * 100;
+	    } else {
+		if(!cur.equals(org))
+		    continue;
+		score -= 100;
+	    }
+	    {
+		boolean any = false;
+		for(Widget wdg = this.child; wdg != null; wdg = wdg.next) {
+		    if(!(wdg instanceof Window))
+			continue;
+		    Window wnd = (Window)wdg;
+		    if(!wnd.visible)
+			continue;
+		    Area warea = wnd.parentarea(this);
+		    if(warea.isects(tarea)) {
+			any = true;
+			score -= ((double)warea.overlap(tarea).area()) / ((double)tarea.area());
+			if(!closed.contains(wnd)) {
+			    open.add(new Coord(wnd.c.x - child.sz.x, cur.y));
+			    open.add(new Coord(cur.x, wnd.c.y - child.sz.y));
+			    open.add(new Coord(wnd.c.x + wnd.sz.x, cur.y));
+			    open.add(new Coord(cur.x, wnd.c.y + wnd.sz.y));
+			    closed.add(wnd);
+			}
+		    }
+		}
+		if(!any)
+		    score += 10;
+	    }
+	    if(plc != null) {
+		if(tarea.contains(plc))
+		    score -= 100;
+		else
+		    score -= (1 - Math.pow(tarea.closest(plc).dist(plc) / sz.dist(Coord.z), 2)) * 1.5;
+	    }
+	    score -= (cur.dist(org) / sz.dist(Coord.z)) * 0.75;
+	    if(score > optscore) {
+		optscore = score;
+		opt = cur;
+	    }
+	}
+	return(opt);
+    }
+
+    private void savewndpos() {
+	if(invwnd != null)
+	    Utils.setprefc("wndc-inv", invwnd.c);
+	if(equwnd != null)
+	    Utils.setprefc("wndc-equ", equwnd.c);
+	if(chrwdg != null)
+	    Utils.setprefc("wndc-chr", chrwdg.sz);
+	if(zerg != null)
+	    Utils.setprefc("wndc-zerg", zerg.c);
+	if(mapfile != null) {
+	    Utils.setprefc("wndc-map", mapfile.c);
+	    Utils.setprefc("wndsz-map", mapfile.asz);
+	}
+    }
+
     public void addchild(Widget child, Object... args) {
 	String place = ((String)args[0]).intern();
 	if(place == "mapview") {
@@ -514,10 +611,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    mmap = blpanel.add(new LocalMiniMap(new Coord(133, 133), map), minimapc);
 	    mmap.lower();
-	    if(mmap.save != null) {
-		mapfile = new MapWnd(mmap.save, map, new Coord(700, 500), "Map");
+	    if(ResCache.global != null) {
+		MapFile file = MapFile.load(ResCache.global, mapfilename());
+		mmap.save(file);
+		mapfile = new MapWnd(mmap.save, map, Utils.getprefc("wndsz-map", new Coord(700, 500)), "Map");
 		mapfile.hide();
-		add(mapfile, 50, 50);
+		add(mapfile, Utils.getprefc("wndc-map", new Coord(50, 50)));
 	    }
 	} else if(place == "menu") {
 	    menu = (MenuGrid)brpanel.add(child, 20, 34);
@@ -534,20 +633,20 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    invwnd.add(maininv = (Inventory)child, Coord.z);
 	    invwnd.pack();
 	    invwnd.hide();
-	    add(invwnd, new Coord(100, 100));
+	    add(invwnd, Utils.getprefc("wndc-inv", new Coord(100, 100)));
 	} else if(place == "equ") {
 	    equwnd = new Hidewnd(Coord.z, "Equipment");
 	    equwnd.add(child, Coord.z);
 	    equwnd.pack();
 	    equwnd.hide();
-	    add(equwnd, new Coord(400, 10));
+	    add(equwnd, Utils.getprefc("wndc-equ", new Coord(400, 10)));
 	} else if(place == "hand") {
 	    GItem g = add((GItem)child);
 	    Coord lc = (Coord)args[1];
 	    hand.add(new DraggedItem(g, lc));
 	    updhand();
 	} else if(place == "chr") {
-	    chrwdg = add((CharWnd)child, new Coord(300, 50));
+	    chrwdg = add((CharWnd)child, Utils.getprefc("wndc-chr", new Coord(300, 50)));
 	    chrwdg.hide();
 	} else if(place == "craft") {
 	    final Widget mkwdg = child;
@@ -565,10 +664,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			    makewnd = null;
 			}
 		    }
+		    public void destroy() {
+			Utils.setprefc("makewndc", makewndc = this.c);
+			super.destroy();
+		    }
 		};
 	    makewnd.add(mkwdg, Coord.z);
 	    makewnd.pack();
-	    add(makewnd, new Coord(400, 200));
+	    fitwdg(add(makewnd, makewndc));
 	} else if(place == "buddy") {
 	    zerg.ntab(buddies = (BuddyWnd)child, zerg.kin);
 	} else if(place == "pol") {
@@ -603,7 +706,20 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		});
 	} else if(place == "misc") {
-	    add(child, (Coord)args[1]);
+	    Coord c;
+	    if(args[1] instanceof Coord) {
+		c = (Coord)args[1];
+	    } else if(args[1] instanceof Coord2d) {
+		c = ((Coord2d)args[1]).mul(new Coord2d(this.sz.sub(child.sz))).round();
+		c = optplacement(child, c);
+	    } else if(args[1] instanceof String) {
+		c = relpos((String)args[1], child, (args.length > 2) ? ((Object[])args[2]) : new Object[] {}, 0);
+	    } else {
+		throw(new UI.UIException("Illegal gameui child", place, args));
+	    }
+	    add(child, c);
+	} else if(place == "abt") {
+	    add(child, Coord.z);
 	} else {
 	    throw(new UI.UIException("Illegal gameui child", place, args));
 	}
@@ -657,7 +773,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(cmdline != null) {
 	    drawcmd(g, new Coord(blpw + 10, by -= 20));
 	} else if(lastmsg != null) {
-	    if((System.currentTimeMillis() - msgtime) > 3000) {
+	    if((Utils.rtime() - msgtime) > 3.0) {
 		lastmsg = null;
 	    } else {
 		g.chcolor(0, 0, 0, 192);
@@ -671,12 +787,19 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
+    private double lastwndsave = 0;
     public void tick(double dt) {
 	super.tick(dt);
-	if(!afk && (System.currentTimeMillis() - ui.lastevent > 300000)) {
+	double now = Utils.rtime();
+	if(now - lastwndsave > 60) {
+	    savewndpos();
+	    lastwndsave = now;
+	}
+	double idle = now - ui.lastevent;
+	if(!afk && (idle > 300)) {
 	    afk = true;
 	    wdgmsg("afk");
-	} else if(afk && (System.currentTimeMillis() - ui.lastevent < 300000)) {
+	} else if(afk && (idle <= 300)) {
 	    afk = false;
 	}
     }
@@ -908,7 +1031,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
     
     public void msg(String msg, Color color, Color logcol) {
-	msgtime = System.currentTimeMillis();
+	msgtime = Utils.rtime();
 	lastmsg = msgfoundry.render(msg, color);
 	syslog.append(msg, logcol);
     }
@@ -918,22 +1041,22 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     private static final Resource errsfx = Resource.local().loadwait("sfx/error");
-    private long lasterrsfx = 0;
+    private double lasterrsfx = 0;
     public void error(String msg) {
 	msg(msg, new Color(192, 0, 0), new Color(255, 0, 0));
-	long now = System.currentTimeMillis();
-	if(now - lasterrsfx > 100) {
+	double now = Utils.rtime();
+	if(now - lasterrsfx > 0.1) {
 	    Audio.play(errsfx);
 	    lasterrsfx = now;
 	}
     }
 
     private static final Resource msgsfx = Resource.local().loadwait("sfx/msg");
-    private long lastmsgsfx = 0;
+    private double lastmsgsfx = 0;
     public void msg(String msg) {
 	msg(msg, Color.WHITE, Color.WHITE);
-	long now = System.currentTimeMillis();
-	if(now - lastmsgsfx > 100) {
+	double now = Utils.rtime();
+	if(now - lastmsgsfx > 0.1) {
 	    Audio.play(msgsfx);
 	    lastmsgsfx = now;
 	}
@@ -1213,9 +1336,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}
 	    });
+	cmdmap.put("chrmap", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    Utils.setpref("mapfile/" + chrid, args[1]);
+		}
+	    });
 	cmdmap.put("tool", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    add(gettype(args[1]).create(GameUI.this, new Object[0]), 200, 200);
+		    add(gettype(args[1]).create(ui, new Object[0]), 200, 200);
 		}
 	    });
     }

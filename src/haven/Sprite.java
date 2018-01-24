@@ -43,10 +43,11 @@ public abstract class Sprite implements Rendered {
 	factories.add(AudioSprite.fact);
     }
     
-    public interface Owner {
+    public interface Owner extends OwnerContext {
 	public Random mkrandoom();
 	public Resource getres();
-	public Glob glob();
+	@Deprecated
+	public default Glob glob() {return(context(Glob.class));}
     }
     
     public static class FactMaker implements Resource.PublishedCode.Instancer {

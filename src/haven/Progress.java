@@ -31,7 +31,7 @@ public class Progress extends Widget {
 
     @RName("prog")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new Progress((Integer)args[0]));
 	}
     }

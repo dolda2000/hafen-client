@@ -42,7 +42,7 @@ public class Textlog extends Widget {
 	
     @RName("log")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new Textlog((Coord)args[0]));
 	}
     }

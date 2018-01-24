@@ -125,7 +125,7 @@ public abstract class MiscLib {
     public static final Uniform globtime = new Uniform.AutoApply(FLOAT, "globtime") {
 	    public void apply(GOut g, VarID loc) {
 		Glob glob = g.st.cur(PView.ctx).glob();
-		g.gl.glUniform1f(loc, (glob.globtime() % 10000000L) / 1000f);
+		g.gl.glUniform1f(loc, (float)(glob.globtime() % 10000.0));
 	    }
 	};
 

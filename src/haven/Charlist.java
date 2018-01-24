@@ -49,7 +49,7 @@ public class Charlist extends Widget {
     
     @RName("charlist")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new Charlist((Integer)args[0]));
 	}
     }

@@ -441,10 +441,10 @@ public class Utils {
 	    m = 0;
 	} else if(e == 0xff) {
 	    ee = 0x1f;
-	} else if(e < 113) {
+	} else if(e < 127 - 14) {
 	    ee = 0;
-	    m = (m | 0x00800000) >> (113 - e);
-	} else if(e > 142) {
+	    m = (m | 0x00800000) >> ((127 - 14) - e);
+	} else if(e > 127 + 15) {
 	    return(((b & 0x80000000) == 0)?((short)0x7c00):((short)0xfc00));
 	} else {
 	    ee = e - 127 + 15;
@@ -453,6 +453,54 @@ public class Utils {
 	    (ee << 10) |
 	    (m >> 13);
 	return((short)f16);
+    }
+
+    public static float mfdec(byte bits) {
+	int b = ((int)bits) & 0xff;
+	int e = (b & 0x78) >> 3;
+	int m = b & 0x07;
+	int ee;
+	if(e == 0) {
+	    if(m == 0) {
+		ee = 0;
+	    } else {
+		int n = Integer.numberOfLeadingZeros(m) - 29;
+		ee = (-7 - n) + 127;
+		m = (m << (n + 1)) & 0x07;
+	    }
+	} else if(e == 0x0f) {
+	    ee = 0xff;
+	} else {
+	    ee = e - 7 + 127;
+	}
+	int f32 = ((b & 0x80) << 24) |
+	    (ee << 23) |
+	    (m << 20);
+	return(Float.intBitsToFloat(f32));
+    }
+
+    public static byte mfenc(float f) {
+	int b = Float.floatToIntBits(f);
+	int e = (b & 0x7f800000) >> 23;
+	int m = b & 0x007fffff;
+	int ee;
+	if(e == 0) {
+	    ee = 0;
+	    m = 0;
+	} else if(e == 0xff) {
+	    ee = 0x0f;
+	} else if(e < 127 - 6) {
+	    ee = 0;
+	    m = (m | 0x00800000) >> ((127 - 6) - e);
+	} else if(e > 127 + 7) {
+	    return(((b & 0x80000000) == 0)?((byte)0x78):((byte)0xf8));
+	} else {
+	    ee = e - 127 + 7;
+	}
+	int f8 = ((b >> 24) & 0x80) |
+	    (ee << 3) |
+	    (m >> 20);
+	return((byte)f8);
     }
 
     static char num2hex(int num) {
@@ -692,6 +740,21 @@ public class Utils {
 		out.print(o);
 	}
 	out.print(']');
+	if(term) out.println();
+    }
+
+    public static void dumparr(int[] arr, PrintStream out, boolean term) {
+	if(arr == null) {
+	    out.print("null");
+	} else {
+	    out.print('[');
+	    boolean f = true;
+	    for(int i : arr) {
+		if(!f) out.print(", "); f = false;
+		out.print(i);
+	    }
+	    out.print(']');
+	}
 	if(term) out.println();
     }
 
@@ -1271,6 +1334,40 @@ public class Utils {
 
     public static <K, V> MapBuilder<K, V> map() {
 	return(new MapBuilder<K, V>(new HashMap<K, V>()));
+    }
+
+    public static <T, F> Iterator<T> filter(Iterator<F> from, Class<T> filter) {
+	return(new Iterator<T>() {
+		boolean h = false;
+		T n;
+
+		public boolean hasNext() {
+		    while(!h) {
+			if(!from.hasNext())
+			    return(false);
+			F g = from.next();
+			if(filter.isInstance(g)) {
+			    n = filter.cast(g);
+			    h = true;
+			    break;
+			}
+		    }
+		    return(true);
+		}
+
+		public T next() {
+		    if(!hasNext())
+			throw(new NoSuchElementException());
+		    T ret = n;
+		    h = false;
+		    n = null;
+		    return(ret);
+		}
+
+		public void remove() {
+		    from.remove();
+		}
+	    });
     }
 
     public static final Comparator<Object> idcmd = new Comparator<Object>() {

@@ -36,7 +36,7 @@ public class Label extends Widget {
 	
     @RName("lbl")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    if(args.length > 1)
 		return(new Label((String)args[0], (Integer)args[1]));
 	    else

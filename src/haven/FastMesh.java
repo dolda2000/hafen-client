@@ -475,11 +475,13 @@ public class FastMesh implements FRendered, Rendered.Instanced, Disposable {
     public static class ResourceMesh extends FastMesh {
 	public final int id;
 	public final Resource res;
+	public final MeshRes info;
 	
 	public ResourceMesh(VertexBuf vert, short[] ind, MeshRes info) {
 	    super(vert, ind);
 	    this.id = info.id;
 	    this.res = info.getres();
+	    this.info = info;
 	}
 	
 	public String toString() {

@@ -54,6 +54,7 @@ public class CharWnd extends Window {
     public final GlutMeter glut;
     public final Constipations cons;
     public final SkillGrid skg;
+    public final CredoGrid credos;
     public final ExpGrid exps;
     public final Widget woundbox;
     public final WoundList wounds;
@@ -74,7 +75,7 @@ public class CharWnd extends Window {
 	private List<El> enew = null, etr = null;
 	private Indir<Resource> trev = null;
 	private Tex trol;
-	private long trtm = 0;
+	private double trtm = 0;
 
 	@Resource.LayerName("foodev")
 	public static class Event extends Resource.Layer {
@@ -172,24 +173,24 @@ public class CharWnd extends Window {
 		    if(gui != null)
 			gui.msg(String.format("You gained " + Loading.waitfor(trev).layer(Event.class).nm), Color.WHITE);
 		    trol = new TexI(mktrol(etr, trev));
-		    trtm = System.currentTimeMillis();
+		    trtm = Utils.rtime();
 		    trev = null;
 		} catch(Loading l) {}
 	    }
 	}
 
 	public void draw(GOut g) {
-	    int d = (trtm > 0)?((int)(System.currentTimeMillis() - trtm)):Integer.MAX_VALUE;
+	    double d = (trtm > 0)?(Utils.rtime() - trtm):Double.POSITIVE_INFINITY;
 	    g.chcolor(0, 0, 0, 255);
 	    g.frect(marg, sz.sub(marg.mul(2)));
 	    drawels(g, els, 255);
-	    if(d < 1000)
-		drawels(g, etr, 255 - ((d * 255) / 1000));
+	    if(d < 1.0)
+		drawels(g, etr, (int)(255 - (d * 255)));
 	    g.chcolor();
 	    g.image(frame, Coord.z);
-	    if(d < 2500) {
+	    if(d < 2.5) {
 		GOut g2 = g.reclipl(trmg.inv(), sz.add(trmg.mul(2)));
-		g2.chcolor(255, 255, 255, 255 - ((d * 255) / 2500));
+		g2.chcolor(255, 255, 255, (int)(255 - ((d * 255) * (1.0 / 2.5))));
 		g2.image(trol, Coord.z);
 	    } else {
 		trtm = 0;
@@ -723,6 +724,37 @@ public class CharWnd extends Window {
 	}
     }
 
+    public class Credo {
+	public final String nm;
+	public final Indir<Resource> res;
+	public boolean has = false;
+	private String sortkey;
+	private Tex small;
+
+	private Credo(String nm, Indir<Resource> res, boolean has) {
+	    this.nm = nm;
+	    this.res = res;
+	    this.has = has;
+	    this.sortkey = nm;
+	}
+
+	public String rendertext() {
+	    StringBuilder buf = new StringBuilder();
+	    Resource res = this.res.get();
+	    buf.append("$img[" + res.name + "]\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append(res.layer(Resource.pagina).text);
+	    return(buf.toString());
+	}
+
+	private Text tooltip = null;
+	public Text tooltip() {
+	    if(tooltip == null)
+		tooltip = Text.render(res.get().layer(Resource.tooltip).t);
+	    return(tooltip);
+	}
+    }
+
     public class Experience {
 	public final Indir<Resource> res;
 	public final int mtime, score;
@@ -820,9 +852,9 @@ public class CharWnd extends Window {
 
 	@RName("wound")
 	public static class $wound implements Factory {
-	    public Widget create(Widget parent, Object[] args) {
+	    public Widget create(UI ui, Object[] args) {
 		int id = (Integer)args[0];
-		Indir<Resource> res = parent.ui.sess.getres((Integer)args[1]);
+		Indir<Resource> res = ui.sess.getres((Integer)args[1]);
 		return(new Box(id, res));
 	    }
 	}
@@ -1230,7 +1262,7 @@ public class CharWnd extends Window {
 		    }
 		    if(cond[i].wdata != null) {
 			Indir<Resource> wres = ui.sess.getres((Integer)cond[i].wdata[0]);
-			nw[i] = (CondWidget)wres.get().getcode(Widget.Factory.class, true).create(cont, new Object[] {cond[i]});
+			nw[i] = (CondWidget)wres.get().getcode(Widget.Factory.class, true).create(ui, new Object[] {cond[i]});
 		    } else {
 			nw[i] = new DefaultCond(cont, cond[i]);
 		    }
@@ -1291,9 +1323,9 @@ public class CharWnd extends Window {
 
 	@RName("quest")
 	public static class $quest implements Factory {
-	    public Widget create(Widget parent, Object[] args) {
+	    public Widget create(UI ui, Object[] args) {
 		int id = (Integer)args[0];
-		Indir<Resource> res = parent.ui.sess.getres((Integer)args[1]);
+		Indir<Resource> res = ui.sess.getres((Integer)args[1]);
 		String title = (args.length > 2)?(String)args[2]:null;
 		return(new DefaultBox(id, res, title));
 	    }
@@ -1345,6 +1377,162 @@ public class CharWnd extends Window {
 		sksort(nsk.items);
 		sksort(csk.items);
 	    }
+	}
+    }
+
+    public class CredoGrid extends Scrollport {
+	public final Coord crsz = new Coord(70, 88);
+	public final Tex credoufr = new TexI(convolvedown(Resource.loadimg("gfx/hud/chr/yrkirframe"), crsz, iconfilter));
+	public final Tex credosfr = new TexI(convolvedown(Resource.loadimg("gfx/hud/chr/yrkirsframe"), crsz, iconfilter));
+	public final Text.Foundry prsf = new Text.Foundry(Text.fraktur, 15).aa(true);
+	public List<Credo> ncr = Collections.emptyList(), ccr = Collections.emptyList();
+	public Credo pcr = null;
+	public int pcl, pclt, pcql, pcqlt, pqid;
+	public Credo sel = null;
+	private final Img pcrc, ncrc, ccrc;
+	private final Button pbtn, qbtn;
+	private boolean loading = false;
+
+	public CredoGrid(Coord sz) {
+	    super(sz);
+	    pcrc = new Img(GridList.dcatf.render("Pursuing").tex());
+	    ncrc = new Img(GridList.dcatf.render("Credos Available").tex());
+	    ccrc = new Img(GridList.dcatf.render("Credos Acquired").tex());
+	    pbtn = new Button(100, "Pursue", false) {
+		    public void click() {
+			if(sel != null)
+			    CharWnd.this.wdgmsg("crpursue", sel.nm);
+		    }
+		};
+	    qbtn = new Button(100, "Show quest", false) {
+		    public void click() {
+			CharWnd.this.wdgmsg("qsel", pqid);
+			questtab.showtab();
+		    }
+		};
+	}
+
+	private Tex crtex(Credo cr) {
+	    if(cr.small == null)
+		cr.small = new TexI(convolvedown(cr.res.get().layer(Resource.imgc).img, crsz, iconfilter));
+	    return(cr.small);
+	}
+
+	private class CredoImg extends Img {
+	    private final Credo cr;
+
+	    CredoImg(Credo cr) {
+		super(crtex(cr));
+		this.cr = cr;
+		this.tooltip = Text.render(cr.res.get().layer(Resource.tooltip).t);
+	    }
+
+	    public void draw(GOut g) {
+		super.draw(g);
+		g.image((cr == sel) ? credosfr : credoufr, Coord.z);
+	    }
+
+	    public boolean mousedown(Coord c, int button) {
+		if(button == 1) {
+		    change(cr);
+		}
+		return(true);
+	    }
+	}
+
+	private int crgrid(int y, Collection<Credo> crs) {
+	    int col = 0;
+	    for(Credo cr : crs) {
+		if(col >= 3) {
+		    col = 0;
+		    y += crsz.y + 5;
+		}
+		cont.add(new CredoImg(cr), col * (crsz.x + 5) + 5, y);
+		col++;
+	    }
+	    return(y + crsz.y + 5);
+	}
+
+	private void sort(List<Credo> buf) {
+	    Collections.sort(buf, Comparator.comparing(cr -> cr.res.get().layer(Resource.tooltip).t));
+	}
+
+	private void update() {
+	    sort(ccr); sort(ncr);
+	    for(Widget ch = cont.child; ch != null; ch = cont.child)
+		ch.destroy();
+	    int y = 0;
+	    if(pcr != null) {
+		cont.add(pcrc, 5, y);
+		y += pcrc.sz.y + 5;
+		Widget pcrim = cont.add(new CredoImg(pcr), 5, y);
+		cont.add(new Label(String.format("Level: %d/%d", pcl, pclt), prsf), pcrim.c.x + pcrim.sz.x + 5, y);
+		cont.add(new Label(String.format("Quest: %d/%d", pcql, pcqlt), prsf), pcrim.c.x + pcrim.sz.x + 5, y + 20);
+		cont.adda(qbtn, pcrim.c.x + pcrim.sz.x + 5, y + pcrim.sz.y, 0, 1);
+		y += pcrim.sz.y;
+		y += 10;
+	    }
+
+	    if(ncr.size() > 0) {
+		cont.add(ncrc, 5, y);
+		y += ncrc.sz.y + 5;
+		y = crgrid(y, ncr);
+		if(pcr == null) {
+		    cont.add(pbtn, 5, y);
+		    y += pbtn.sz.y;
+		}
+		y += 10;
+	    }
+
+	    if(ccr.size() > 0) {
+		cont.add(ccrc, 5, y);
+		y += ccrc.sz.y + 5;
+		y = crgrid(y, ccr);
+		y += 10;
+	    }
+	    cont.update();
+	}
+
+	public void tick(double dt) {
+	    if(loading) {
+		loading = false;
+		try {
+		    update();
+		} catch(Loading l) {
+		    loading = true;
+		}
+	    }
+	}
+
+	public void change(Credo cr) {
+	    sel = cr;
+	}
+
+	public void pcr(Credo cr, int crl, int crlt, int crql, int crqlt, int qid) {
+	    this.pcr = cr;
+	    this.pcl = crl;
+	    this.pclt = crlt;
+	    this.pcql = crql;
+	    this.pcqlt = crqlt;
+	    this.pqid = qid;
+	    loading = true;
+	}
+
+	public void ncr(List<Credo> cr) {
+	    this.ncr = cr;
+	    loading = true;
+	}
+
+	public void ccr(List<Credo> cr) {
+	    this.ccr = cr;
+	    loading = true;
+	}
+
+	public boolean mousedown(Coord c, int button) {
+	    if(super.mousedown(c, button))
+		return(true);
+	    change(null);
+	    return(true);
 	}
     }
 
@@ -1566,8 +1754,8 @@ public class CharWnd extends Window {
 
     @RName("chr")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
-	    return(new CharWnd(parent.ui.sess.glob));
+	public Widget create(UI ui, Object[] args) {
+	    return(new CharWnd(ui.sess.glob));
 	}
     }
 
@@ -1691,6 +1879,7 @@ public class CharWnd extends Window {
 			    Skill p = sel;
 			    super.change(sk);
 			    CharWnd.this.exps.sel = null;
+			    CharWnd.this.credos.sel = null;
 			    if(sk != null)
 				info.settext(sk::rendertext);
 			    else if(p != null)
@@ -1731,6 +1920,24 @@ public class CharWnd extends Window {
 			}
 		    });
 	    }
+	    Tabs.Tab credos = lists.add();
+	    {
+		Frame f = credos.add(new Frame(new Coord(lists.sz.x, 241), false), 0, 0);
+		y = f.sz.y + 5;
+		this.credos = f.addin(new CredoGrid(Coord.z) {
+			public void change(Credo cr) {
+			    Credo p = sel;
+			    super.change(cr);
+			    CharWnd.this.skg.sel = null;
+			    CharWnd.this.exps.sel = null;
+			    if(cr != null)
+				info.settext(cr::rendertext);
+			    else if(p != null)
+				info.settext("");
+			}
+		    });
+		int rx = attrw + wbox.btloff().x - 10;
+	    }
 	    Tabs.Tab exps = lists.add();
 	    {
 		Frame f = exps.add(new Frame(new Coord(lists.sz.x, 241), false), 0, 0);
@@ -1738,7 +1945,8 @@ public class CharWnd extends Window {
 			public void change(Experience exp) {
 			    Experience p = sel;
 			    super.change(exp);
-			    skg.sel = null;
+			    CharWnd.this.skg.sel = null;
+			    CharWnd.this.credos.sel = null;
 			    if(exp != null)
 				info.settext(exp::rendertext);
 			    else if(p != null)
@@ -1747,11 +1955,12 @@ public class CharWnd extends Window {
 		    });
 	    }
 	    lists.pack();
-	    int bw = (lists.sz.x + 5) / 2;
+	    int bw = (lists.sz.x + 5) / 3;
 	    x = lists.c.x;
 	    y = lists.c.y + lists.sz.y + 5;
 	    skills.add(lists.new TabButton(bw - 5, "Skills", sktab), new Coord(x, y));
-	    skills.add(lists.new TabButton(bw - 5, "Lore", exps), new Coord(x + bw * 1, y));
+	    skills.add(lists.new TabButton(bw - 5, "Credos", credos), new Coord(x + bw * 1, y));
+	    skills.add(lists.new TabButton(bw - 5, "Lore", exps), new Coord(x + bw * 2, y));
 	}
 
 	Tabs.Tab wounds;
@@ -1879,22 +2088,36 @@ public class CharWnd extends Window {
 	}
     }
 
-    private void decsklist(Collection<Skill> buf, Object[] args, int a, boolean has) {
+    private List<Skill> decsklist(Object[] args, int a, boolean has) {
+	List<Skill> buf = new ArrayList<>();
 	while(a < args.length) {
 	    String nm = (String)args[a++];
 	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
 	    int cost = ((Number)args[a++]).intValue();
 	    buf.add(new Skill(nm, res, cost, has));
 	}
+	return(buf);
     }
 
-    private void decexplist(Collection<Experience> buf, Object[] args, int a) {
+    private List<Credo> deccrlist(Object[] args, int a, boolean has) {
+	List<Credo> buf = new ArrayList<>();
+	while(a < args.length) {
+	    String nm = (String)args[a++];
+	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
+	    buf.add(new Credo(nm, res, has));
+	}
+	return(buf);
+    }
+
+    private List<Experience> decexplist(Object[] args, int a) {
+	List<Experience> buf = new ArrayList<>();
 	while(a < args.length) {
 	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
 	    int mtime = ((Number)args[a++]).intValue();
 	    int score = ((Number)args[a++]).intValue();
 	    buf.add(new Experience(res, mtime, score));
 	}
+	return(buf);
     }
 
     public void uimsg(String nm, Object... args) {
@@ -1922,19 +2145,28 @@ public class CharWnd extends Window {
 		cons.update(t, m);
 	    }
 	} else if(nm == "csk") {
-	    /* One *could* argue that rmessages should have some
-	     * built-in fragmentation scheme. ^^ */
-	    List<Skill> buf = new ArrayList<Skill>();
-	    decsklist(buf, args, 0, true);
-	    skg.csk.update(buf);
+	    skg.csk.update(decsklist(args, 0, true));
 	} else if(nm == "nsk") {
-	    List<Skill> buf = new ArrayList<Skill>();
-	    decsklist(buf, args, 0, false);
-	    skg.nsk.update(buf);
+	    skg.nsk.update(decsklist(args, 0, false));
+	} else if(nm == "ccr") {
+	    credos.ccr(deccrlist(args, 0, true));
+	} else if(nm == "ncr") {
+	    credos.ncr(deccrlist(args, 0, false));
+	} else if(nm == "pcr") {
+	    if(args.length > 0) {
+		int a = 0;
+		String cnm = (String)args[a++];
+		Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
+		int crl = (Integer)args[a++], crlt = (Integer)args[a++];
+		int crql = (Integer)args[a++], crqlt = (Integer)args[a++];
+		int qid = (Integer)args[a++];
+		credos.pcr(new Credo(cnm, res, false),
+			   crl, crlt, crql, crqlt, qid);
+	    } else {
+		credos.pcr(null, 0, 0, 0, 0, 0);
+	    }
 	} else if(nm == "exps") {
-	    List<Experience> buf = new ArrayList<Experience>();
-	    decexplist(buf, args, 0);
-	    exps.seen.update(buf);
+	    exps.seen.update(decexplist(args, 0));
 	} else if(nm == "wounds") {
 	    for(int i = 0; i < args.length; i += 3) {
 		int id = (Integer)args[i];

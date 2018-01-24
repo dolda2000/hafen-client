@@ -100,7 +100,7 @@ public class MessageBuf extends Message {
     }
 
     public MessageBuf clone() {
-	return(new MessageBuf(rbuf, oh, rt));
+	return(new MessageBuf(rbuf, oh, rt - oh));
     }
 
     public int size() {
@@ -115,6 +115,10 @@ public class MessageBuf extends Message {
 
     public void fin(byte[] buf, int off) {
 	System.arraycopy(wbuf, 0, buf, off, Math.min(wh, buf.length - off));
+    }
+
+    public void fin(java.nio.ByteBuffer buf) {
+	buf.put(wbuf, 0, wh);
     }
 
     public String toString() {

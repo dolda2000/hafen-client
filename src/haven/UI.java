@@ -42,14 +42,14 @@ public class UI {
     public Session sess;
     public boolean modshift, modctrl, modmeta, modsuper;
     public Object lasttip;
-    long lastevent, lasttick;
+    double lastevent, lasttick;
     public Widget mouseon;
     public Console cons = new WidgetConsole();
     private Collection<AfterDraw> afterdraws = new LinkedList<AfterDraw>();
     public final ActAudio audio = new ActAudio();
     
     {
-	lastevent = lasttick = System.currentTimeMillis();
+	lastevent = lasttick = Utils.rtime();
     }
 	
     public interface Receiver {
@@ -131,8 +131,8 @@ public class UI {
     }
 
     public void tick() {
-	long now = System.currentTimeMillis();
-	root.tick((now - lasttick) / 1000.0);
+	double now = Utils.rtime();
+	root.tick(now - lasttick);
 	lasttick = now;
     }
 
@@ -148,11 +148,27 @@ public class UI {
     public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
 	Widget.Factory f = Widget.gettype2(type);
 	synchronized(this) {
+	    Widget wdg = f.create(this, cargs);
+	    wdg.attach(this);
+	    if(parent != 65535) {
+		Widget pwdg = widgets.get(parent);
+		if(pwdg == null)
+		    throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
+		pwdg.addchild(wdg, pargs);
+	    }
+	    bind(wdg, id);
+	}
+    }
+
+    public void addwidget(int id, int parent, Object[] pargs) {
+	synchronized(this) {
+	    Widget wdg = widgets.get(id);
+	    if(wdg == null)
+		throw(new UIException("Null child widget " + id + " added to " + parent, null, pargs));
 	    Widget pwdg = widgets.get(parent);
 	    if(pwdg == null)
-		throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
-	    Widget wdg = pwdg.makechild(f, pargs, cargs);
-	    bind(wdg, id);
+		throw(new UIException("Null parent widget " + parent + " for " + id, null, pargs));
+	    pwdg.addchild(wdg, pargs);
 	}
     }
 
@@ -221,8 +237,10 @@ public class UI {
     public void wdgmsg(Widget sender, String msg, Object... args) {
 	int id;
 	synchronized(this) {
-	    if(!rwidgets.containsKey(sender))
-		throw(new UIException("Wdgmsg sender (" + sender.getClass().getName() + ") is not in rwidgets", msg, args));
+	    if(!rwidgets.containsKey(sender)) {
+		System.err.printf("Wdgmsg sender (%s) is not in rwidgets, message is %s\n", sender.getClass().getName(), msg);
+		return;
+	    }
 	    id = rwidgets.get(sender);
 	}
 	if(rcvr != null)
@@ -281,7 +299,7 @@ public class UI {
     }
 	
     private Coord wdgxlate(Coord c, Widget wdg) {
-	return(c.add(wdg.c.inv()).add(wdg.parent.rootpos().inv()));
+	return(c.sub(wdg.rootpos()));
     }
 	
     public boolean dropthing(Widget w, Coord c, Object thing) {

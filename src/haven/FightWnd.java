@@ -462,7 +462,7 @@ public class FightWnd extends Widget {
 	private int edit = -1;
 	private Text.Line redit = null;
 	private LineEdit nmed;
-	private long focusstart;
+	private double focusstart;
 
 	public Savelist(int w, int h) {
 	    super(w, h, attrf.height() + 2);
@@ -483,7 +483,7 @@ public class FightWnd extends Widget {
 		if(redit == null)
 		    redit = attrf.render(nmed.line);
 		g.aimage(redit.tex(), new Coord(20, itemh / 2), 0.0, 0.5);
-		if(hasfocus && (((System.currentTimeMillis() - focusstart) % 1000) < 500)) {
+		if(hasfocus && (((Utils.rtime() - focusstart) % 1.0) < 0.5)) {
 		    int cx = redit.advance(nmed.point);
 		    g.chcolor(255, 255, 255, 255);
 		    Coord co = new Coord(20 + cx + 1, (g.sz.y - redit.sz().y) / 2);
@@ -498,12 +498,12 @@ public class FightWnd extends Widget {
 	}
 
 	private Coord lc = null;
-	private long lt = 0;
+	private double lt = 0;
 	public boolean mousedown(Coord c, int button) {
 	    boolean ret = super.mousedown(c, button);
 	    if(ret && (button == 1)) {
-		long now = System.currentTimeMillis();
-		if(((now - lt) < 500) && (c.dist(lc) < 10) && (sel != null) && (saves[sel] != unused)) {
+		double now = Utils.rtime();
+		if(((now - lt) < 0.5) && (c.dist(lc) < 10) && (sel != null) && (saves[sel] != unused)) {
 		    if(sel == usesave) {
 			edit = sel;
 			nmed = new LineEdit(saves[sel].text) {
@@ -566,7 +566,7 @@ public class FightWnd extends Widget {
 
     @RName("fmg")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new FightWnd((Integer)args[0], (Integer)args[1], (Integer)args[2]));
 	}
     }

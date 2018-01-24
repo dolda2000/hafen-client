@@ -406,13 +406,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     @RName("mapview")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    Coord sz = (Coord)args[0];
 	    Coord2d mc = ((Coord)args[1]).mul(posres);
 	    int pgob = -1;
 	    if(args.length > 2)
 		pgob = (Integer)args[2];
-	    return(new MapView(sz, parent.ui.sess.glob, mc, pgob));
+	    return(new MapView(sz, ui.sess.glob, mc, pgob));
 	}
     }
     
@@ -773,7 +773,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     private Coord3f smapcc = null;
     private ShadowMap smap = null;
-    private long lsmch = 0;
+    private double lsmch = 0;
     private void updsmap(RenderList rl, DirLight light) {
 	if(rl.cfg.pref.lshadow.val) {
 	    if(smap == null)
@@ -783,12 +783,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
 	    boolean ch = false;
-	    long now = System.currentTimeMillis();
+	    double now = Utils.rtime();
 	    if((smapcc == null) || (smapcc.dist(cc) > 50)) {
 		smapcc = cc;
 		ch = true;
 	    } else {
-		if(now - lsmch > 100)
+		if(now - lsmch > 0.1)
 		    ch = true;
 	    }
 	    if(ch) {
@@ -865,7 +865,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     public Gob player() {
-	return(glob.oc.getgob(plgob));
+	return((plgob < 0) ? null : glob.oc.getgob(plgob));
     }
     
     public Coord3f getcc() {
@@ -1025,71 +1025,59 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	};
     }
     
-    public static interface Clickable {
-	public ClickInfo clickinfo(Rendered self, ClickInfo prev);
-    }
-    public static final GenFun<Clickable> clickinfo = new GenFun<>(Clickable.class);
-    static {
-	clickinfo.register(Object.class, (self, prev) -> prev);
-	clickinfo.register(FastMesh.ResourceMesh.class, (self, prev) -> new ClickInfo(prev, ((FastMesh.ResourceMesh)self).id));
-    }
-
     public static class ClickInfo {
 	public final ClickInfo from;
-	public final Gob gob;
-	public final Gob.Overlay ol;
-	public final Integer id;
+	public final Rendered r;
 
-	private ClickInfo(ClickInfo from, Gob gob, Gob.Overlay ol, Integer id) {
-	    this.from = from; this.gob = gob; this.ol = ol; this.id = id;
-	}
-
-	public ClickInfo(ClickInfo prev, Integer id) {
-	    this(prev, prev.gob, prev.ol, id);
+	public ClickInfo(ClickInfo from, Rendered r) {
+	    this.from = from;
+	    this.r = r;
 	}
 
 	public ClickInfo() {
-	    this(null, null, null, null);
-	}
-
-	public ClickInfo include(Rendered r) {
-	    if(r instanceof Gob)
-		return(new ClickInfo(this, (Gob)r, null, null));
-	    if(r instanceof Gob.Overlay)
-		return(new ClickInfo(this, gob, (Gob.Overlay)r, null));
-	    ClickInfo ret = clickinfo.call.clickinfo(r, this);
-	    if(ret == null)
-		throw(new NullPointerException(r.toString()));
-	    return(ret);
+	    this(null, null);
 	}
 
 	public boolean equals(Object obj) {
 	    if(!(obj instanceof ClickInfo))
 		return(false);
 	    ClickInfo o = (ClickInfo)obj;
-	    return((gob == o.gob) && (ol == o.ol) && (id == o.id));
+	    return(Utils.eq(from, o.from) && (r == o.r));
 	}
 
 	public int hashCode() {
-	    return((((System.identityHashCode(gob) * 31) + System.identityHashCode(ol)) * 31) + System.identityHashCode(id));
+	    return(((from != null) ? (from.hashCode() * 31) : 0) + System.identityHashCode(r));
 	}
 
 	public String toString() {
-	    return(String.format("<%s %s %s %x>", getClass(), gob, ol, (id == null)?-1:id));
+	    StringBuilder buf = new StringBuilder();
+	    buf.append("#<clickinfo");
+	    for(ClickInfo c = this; c != null; c = c.from) {
+		buf.append(' ');
+		buf.append(c.r);
+	    }
+	    buf.append(">");
+	    return(buf.toString());
 	}
 
-	public int clickid() {
-	    return((id == null)?-1:id);
+	public Rendered[] array() {
+	    int n = 0;
+	    for(ClickInfo c = this; c != null; c = c.from)
+		n++;
+	    Rendered[] buf = new Rendered[n];
+	    int i = 0;
+	    for(ClickInfo c = this; c != null; c = c.from)
+		buf[i++] = c.r;
+	    return(buf);
 	}
     }
 
     private static class Goblist extends Clicklist<ClickInfo> {
-	private final ClickInfo root;
 	private ClickInfo curinfo;
 
 	public Goblist(GLConfig cfg) {
 	    super(cfg);
-	    curinfo = root = new ClickInfo();
+	    curinfo = null;
 	}
 
 	public ClickInfo map(Rendered r) {
@@ -1101,7 +1089,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	public void add(Rendered r, GLState t) {
 	    ClickInfo previnfo = curinfo;
-	    curinfo = curinfo.include(r);
+	    curinfo = new ClickInfo(previnfo, r);
 	    super.add(r, t);
 	    curinfo = previnfo;
 	}
@@ -1116,7 +1104,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	rl.fin();
 	rl.render(g);
 	if(clickdb) g.getimage(img -> Debug.dumpimage(img, Debug.somedir("click3.png")));
-	rl.get(g, c, inf -> cb.done(((inf == null) || (inf.gob == null))?null:inf));
+	rl.get(g, c, cb);
     }
     
     public void delay(Delayed d) {
@@ -1140,8 +1128,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     static class PolText {
-	Text text; long tm;
-	PolText(Text text, long tm) {this.text = text; this.tm = tm;}
+	Text text; double tm;
+	PolText(Text text, double tm) {this.text = text; this.tm = tm;}
     }
 
     private static final Text.Furnace polownertf = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 30).aa(true), 3, 1, Color.BLACK);
@@ -1149,27 +1137,27 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public void setpoltext(int id, String text) {
 	synchronized(polowners) {
-	    polowners.put(id, new PolText(polownertf.render(text), System.currentTimeMillis()));
+	    polowners.put(id, new PolText(polownertf.render(text), Utils.rtime()));
 	}
     }
 
     private void poldraw(GOut g) {
 	if(polowners.isEmpty())
 	    return;
-	long now = System.currentTimeMillis();
+	double now = Utils.rtime();
 	synchronized(polowners) {
 	    int y = (sz.y - polowners.values().stream().map(t -> t.text.sz().y).reduce(0, (a, b) -> a + b + 10)) / 2;
 	    for(Iterator<PolText> i = polowners.values().iterator(); i.hasNext();) {
 		PolText t = i.next();
-		long poldt = now - t.tm;
-		if(poldt < 6000) {
+		double poldt = now - t.tm;
+		if(poldt < 6.0) {
 		    int a;
-		    if(poldt < 1000)
-			a = (int)((255 * poldt) / 1000);
-		    else if(poldt < 4000)
+		    if(poldt < 1.0)
+			a = (int)(255 * poldt);
+		    else if(poldt < 4.0)
 			a = 255;
 		    else
-			a = (int)((255 * (2000 - (poldt - 4000))) / 2000);
+			a = (int)((255 * (2.0 - (poldt - 4.0))) / 2.0);
 		    g.chcolor(255, 255, 255, a);
 		    g.aimage(t.text.tex(), new Coord((sz.x - t.text.sz().x) / 2, y), 0.0, 0.0);
 		    y += t.text.sz().y + 10;
@@ -1253,7 +1241,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Loading camload = null, lastload = null;
     public void draw(GOut g) {
 	glob.map.sendreqs();
-	if((olftimer != 0) && (olftimer < System.currentTimeMillis()))
+	if((olftimer != 0) && (olftimer < Utils.rtime()))
 	    unflashol();
 	try {
 	    if(camload != null)
@@ -1365,7 +1353,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     private int olflash;
-    private long olftimer;
+    private double olftimer;
 
     private void unflashol() {
 	for(int i = 0; i < visol.length; i++) {
@@ -1411,7 +1399,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if((olflash & (1 << i)) != 0)
 		    visol[i]++;
 	    }
-	    olftimer = System.currentTimeMillis() + (Integer)args[1];
+	    olftimer = Utils.rtime() + (((Number)args[1]).doubleValue() / 1000.0);
 	} else if(msg == "sel") {
 	    boolean sel = ((Integer)args[0]) != 0;
 	    synchronized(this) {
@@ -1511,6 +1499,36 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	protected void nohit(Coord pc) {}
     }
 
+    public static interface Clickable {
+	public Object[] clickargs(ClickInfo inf);
+    }
+
+    public static Object[] gobclickargs(ClickInfo inf) {
+	if(inf == null)
+	    return(new Object[0]);
+	for(ClickInfo c = inf; c != null; c = c.from) {
+	    if(c.r instanceof Clickable)
+		return(((Clickable)c.r).clickargs(inf));
+	}
+	Rendered[] st = inf.array();
+	for(int g = 0; g < st.length; g++) {
+	    if(st[g] instanceof Gob) {
+		Gob gob = (Gob)st[g];
+		Object[] ret = {0, (int)gob.id, gob.rc.floor(posres), 0, -1};
+		for(int i = g - 1; i >= 0; i--) {
+		    if(st[i] instanceof Gob.Overlay) {
+			ret[0] = 1;
+			ret[3] = ((Gob.Overlay)st[i]).id;
+		    }
+		    if(st[i] instanceof FastMesh.ResourceMesh)
+			ret[4] = ((FastMesh.ResourceMesh)st[i]).id;
+		}
+		return(ret);
+	    }
+	}
+	return(new Object[0]);
+    }
+
     private class Click extends Hittest {
 	int clickb;
 	
@@ -1520,15 +1538,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	
 	protected void hit(Coord pc, Coord2d mc, ClickInfo inf) {
-	    if(inf == null) {
-		wdgmsg("click", pc, mc.floor(posres), clickb, ui.modflags());
-	    } else {
-		if(inf.ol == null) {
-		    wdgmsg("click", pc, mc.floor(posres), clickb, ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc.floor(posres), 0, inf.clickid());
-		} else {
-		    wdgmsg("click", pc, mc.floor(posres), clickb, ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc.floor(posres), inf.ol.id, inf.clickid());
-		}
-	    }
+	    Object[] args = {pc, mc.floor(posres), clickb, ui.modflags()};
+	    args = Utils.extend(args, gobclickargs(inf));
+	    wdgmsg("click", args);
 	}
     }
     
@@ -1602,14 +1614,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public boolean iteminteract(Coord cc, Coord ul) {
 	delay(new Hittest(cc) {
 		public void hit(Coord pc, Coord2d mc, ClickInfo inf) {
-		    if(inf == null) {
-			wdgmsg("itemact", pc, mc.floor(posres), ui.modflags());
-		    } else {
-			if(inf.ol == null)
-			    wdgmsg("itemact", pc, mc.floor(posres), ui.modflags(), 0, (int)inf.gob.id, inf.gob.rc.floor(posres), 0, inf.clickid());
-			else
-			    wdgmsg("itemact", pc, mc.floor(posres), ui.modflags(), 1, (int)inf.gob.id, inf.gob.rc.floor(posres), inf.ol.id, inf.clickid());
-		    }
+		    Object[] args = {pc, mc.floor(posres), ui.modflags()};
+		    args = Utils.extend(args, gobclickargs(inf));
+		    wdgmsg("itemact", args);
 		}
 	    });
 	return(true);

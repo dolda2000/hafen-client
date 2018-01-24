@@ -30,10 +30,9 @@ import java.net.*;
 import java.util.*;
 import java.io.*;
 import java.lang.ref.*;
-import static haven.OCache.posres;
 
-public class Session {
-    public static final int PVER = 10;
+public class Session implements Resource.Resolver {
+    public static final int PVER = 14;
 
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
@@ -44,28 +43,6 @@ public class Session {
     public static final int MSG_OBJDATA = 6;
     public static final int MSG_OBJACK = 7;
     public static final int MSG_CLOSE = 8;
-    public static final int OD_REM = 0;
-    public static final int OD_MOVE = 1;
-    public static final int OD_RES = 2;
-    public static final int OD_LINBEG = 3;
-    public static final int OD_LINSTEP = 4;
-    public static final int OD_SPEECH = 5;
-    public static final int OD_COMPOSE = 6;
-    public static final int OD_ZOFF = 7;
-    public static final int OD_LUMIN = 8;
-    public static final int OD_AVATAR = 9;
-    public static final int OD_FOLLOW = 10;
-    public static final int OD_HOMING = 11;
-    public static final int OD_OVERLAY = 12;
-    /* public static final int OD_AUTH = 13; -- Removed */
-    public static final int OD_HEALTH = 14;
-    public static final int OD_BUDDY = 15;
-    public static final int OD_CMPPOSE = 16;
-    public static final int OD_CMPMOD = 17;
-    public static final int OD_CMPEQU = 18;
-    public static final int OD_ICON = 19;
-    public static final int OD_RESATTR = 20;
-    public static final int OD_END = 255;
     public static final int SESSERR_AUTH = 1;
     public static final int SESSERR_BUSY = 2;
     public static final int SESSERR_CONN = 3;
@@ -94,14 +71,14 @@ public class Session {
     public byte[] sesskey;
 
     @SuppressWarnings("serial")
-	public class MessageException extends RuntimeException {
-	    public Message msg;
+    public static class MessageException extends RuntimeException {
+	public Message msg;
 		
-	    public MessageException(String text, Message msg) {
-		super(text);
-		this.msg = msg;
-	    }
+	public MessageException(String text, Message msg) {
+	    super(text);
+	    this.msg = msg;
 	}
+    }
 
     public static class LoadingIndir extends Loading {
 	public final int resid;
@@ -259,240 +236,12 @@ public class Session {
 		    }
 		    while(true) {
 			int type = msg.uint8();
-			if(type == OD_REM) {
+			if(type == OCache.OD_REM) {
 			    oc.remove(id, frame);
-			} else if(type == OD_MOVE) {
-			    Coord2d c = msg.coord().mul(posres);
-			    int ia = msg.uint16();
-			    if(gob != null)
-				oc.move(gob, c, (ia / 65536.0) * Math.PI * 2);
-			} else if(type == OD_RES) {
-			    int resid = msg.uint16();
-			    Message sdt = Message.nil;
-			    if((resid & 0x8000) != 0) {
-				resid &= ~0x8000;
-				sdt = new MessageBuf(msg.bytes(msg.uint8()));
-			    }
-			    if(gob != null)
-				oc.cres(gob, getres(resid), sdt);
-			} else if(type == OD_LINBEG) {
-			    Coord2d s = msg.coord().mul(posres);
-			    Coord2d v = msg.coord().mul(posres);
-			    if(gob != null)
-				oc.linbeg(gob, s, v);
-			} else if(type == OD_LINSTEP) {
-			    double t, e;
-			    int w = msg.int32();
-			    if(w == -1) {
-				t = e = -1;
-			    } else if((w & 0x80000000) == 0) {
-				t = w * 0x1p-10;
-				e = -1;
-			    } else {
-				t = (w & ~0x80000000) * 0x1p-10;
-				w = msg.int32();
-				e = (w < 0)?-1:(w * 0x1p-10);
-			    }
-			    if(gob != null)
-				oc.linstep(gob, t, e);
-			} else if(type == OD_SPEECH) {
-			    float zo = msg.int16() / 100.0f;
-			    String text = msg.string();
-			    if(gob != null)
-				oc.speak(gob, zo, text);
-			} else if(type == OD_COMPOSE) {
-			    Indir<Resource> base = getres(msg.uint16());
-			    if(gob != null)
-				oc.composite(gob, base);
-			} else if(type == OD_CMPPOSE) {
-			    List<ResData> poses = null, tposes = null;
-			    int pfl = msg.uint8();
-			    int seq = msg.uint8();
-			    boolean interp = (pfl & 1) != 0;
-			    if((pfl & 2) != 0) {
-				poses = new LinkedList<ResData>();
-				while(true) {
-				    int resid = msg.uint16();
-				    if(resid == 65535)
-					break;
-				    Message sdt = Message.nil;
-				    if((resid & 0x8000) != 0) {
-					resid &= ~0x8000;
-					sdt = new MessageBuf(msg.bytes(msg.uint8()));
-				    }
-				    poses.add(new ResData(getres(resid), sdt));
-				}
-			    }
-			    float ttime = 0;
-			    if((pfl & 4) != 0) {
-				tposes = new LinkedList<ResData>();
-				while(true) {
-				    int resid = msg.uint16();
-				    if(resid == 65535)
-					break;
-				    Message sdt = Message.nil;
-				    if((resid & 0x8000) != 0) {
-					resid &= ~0x8000;
-					sdt = new MessageBuf(msg.bytes(msg.uint8()));
-				    }
-				    tposes.add(new ResData(getres(resid), sdt));
-				}
-				ttime = (msg.uint8() / 10.0f);
-			    }
-			    if(gob != null)
-				oc.cmppose(gob, seq, poses, tposes, interp, ttime);
-			} else if(type == OD_CMPMOD) {
-			    List<Composited.MD> mod = new LinkedList<Composited.MD>();
-			    int mseq = 0;
-			    while(true) {
-				int modid = msg.uint16();
-				if(modid == 65535)
-				    break;
-				Indir<Resource> modr = getres(modid);
-				List<ResData> tex = new LinkedList<ResData>();
-				while(true) {
-				    int resid = msg.uint16();
-				    if(resid == 65535)
-					break;
-				    Message sdt = Message.nil;
-				    if((resid & 0x8000) != 0) {
-					resid &= ~0x8000;
-					sdt = new MessageBuf(msg.bytes(msg.uint8()));
-				    }
-				    tex.add(new ResData(getres(resid), sdt));
-				}
-				Composited.MD md = new Composited.MD(modr, tex);
-				md.id = mseq++;
-				mod.add(md);
-			    }
-			    if(gob != null)
-				oc.cmpmod(gob, mod);
-			} else if(type == OD_CMPEQU) {
-			    List<Composited.ED> equ = new LinkedList<Composited.ED>();
-			    int eseq = 0;
-			    while(true) {
-				int h = msg.uint8();
-				if(h == 255)
-				    break;
-				int ef = h & 0x80;
-				int et = h & 0x7f;
-				String at = msg.string();
-				Indir<Resource> res;
-				int resid = msg.uint16();
-				Message sdt = Message.nil;
-				if((resid & 0x8000) != 0) {
-				    resid &= ~0x8000;
-				    sdt = new MessageBuf(msg.bytes(msg.uint8()));
-				}
-				res = getres(resid);
-				Coord3f off;
-				if((ef & 128) != 0) {
-				    int x = msg.int16(), y = msg.int16(), z = msg.int16();
-				    off = new Coord3f(x / 1000.0f, y / 1000.0f, z / 1000.0f);
-				} else {
-				    off = Coord3f.o;
-				}
-				Composited.ED ed = new Composited.ED(et, at, new ResData(res, sdt), off);
-				ed.id = eseq++;
-				equ.add(ed);
-			    }
-			    if(gob != null)
-				oc.cmpequ(gob, equ);
-			} else if(type == OD_ZOFF) {
-			    float off = msg.int16() / 100.0f;
-			    if(gob != null)
-				oc.zoff(gob, off);
-			} else if(type == OD_LUMIN) {
-			    Coord off = msg.coord();
-			    int sz = msg.uint16();
-			    int str = msg.uint8();
-			    if(gob != null)
-				oc.lumin(gob, off, sz, str);
-			} else if(type == OD_AVATAR) {
-			    List<Indir<Resource>> layers = new LinkedList<Indir<Resource>>();
-			    while(true) {
-				int layer = msg.uint16();
-				if(layer == 65535)
-				    break;
-				layers.add(getres(layer));
-			    }
-			    if(gob != null)
-				oc.avatar(gob, layers);
-			} else if(type == OD_FOLLOW) {
-			    long oid = msg.uint32();
-			    Indir<Resource> xfres = null;
-			    String xfname = null;
-			    if(oid != 0xffffffffl) {
-				xfres = getres(msg.uint16());
-				xfname = msg.string();
-			    }
-			    if(gob != null)
-				oc.follow(gob, oid, xfres, xfname);
-			} else if(type == OD_HOMING) {
-			    long oid = msg.uint32();
-			    if(oid == 0xffffffffl) {
-				if(gob != null)
-				    oc.homostop(gob);
-			    } else {
-				Coord2d tgtc = msg.coord().mul(posres);
-				double v = msg.int32() * 0x1p-10 * 11;
-				if(gob != null)
-				    oc.homing(gob, oid, tgtc, v);
-			    }
-			} else if(type == OD_OVERLAY) {
-			    int olid = msg.int32();
-			    boolean prs = (olid & 1) != 0;
-			    olid >>>= 1;
-			    int resid = msg.uint16();
-			    Indir<Resource> res;
-			    Message sdt = Message.nil;
-			    if(resid == 65535) {
-				res = null;
-			    } else {
-				if((resid & 0x8000) != 0) {
-				    resid &= ~0x8000;
-				    sdt = new MessageBuf(msg.bytes(msg.uint8()));
-				}
-				res = getres(resid);
-			    }
-			    if(gob != null)
-				oc.overlay(gob, olid, prs, res, sdt);
-			} else if(type == OD_HEALTH) {
-			    int hp = msg.uint8();
-			    if(gob != null)
-				oc.health(gob, hp);
-			} else if(type == OD_BUDDY) {
-			    String name = msg.string();
-			    if(name.length() > 0) {
-				int group = msg.uint8();
-				int btype = msg.uint8();
-				if(gob != null)
-				    oc.buddy(gob, name, group, btype);
-			    } else {
-				if(gob != null)
-				    oc.buddy(gob, null, 0, 0);
-			    }
-			} else if(type == OD_ICON) {
-			    int resid = msg.uint16();
-			    Indir<Resource> res;
-			    if(resid == 65535) {
-				if(gob != null)
-				    oc.icon(gob, null);
-			    } else {
-				int ifl = msg.uint8();
-				if(gob != null)
-				    oc.icon(gob, getres(resid));
-			    }
-			} else if(type == OD_RESATTR) {
-			    Indir<Resource> resid = getres(msg.uint16());
-			    int len = msg.uint8();
-			    Message dat = (len > 0)?new MessageBuf(msg.bytes(len)):null;
-			    if(gob != null)
-				oc.resattr(gob, resid, dat);
-			} else if(type == OD_END) {
+			} else if(type == OCache.OD_END) {
 			    break;
 			} else {
-			    throw(new MessageException("Unknown objdelta type: " + type, msg));
+			    oc.receive(gob, type, msg);
 			}
 		    }
 		}
@@ -536,15 +285,8 @@ public class Session {
 			throw(new MessageException("Got invalid fragment type: " + head, msg));
 		    }
 		}
-	    } else if(msg.type == RMessage.RMSG_NEWWDG) {
-		synchronized(uimsgs) {
-		    uimsgs.add(msg);
-		}
-	    } else if(msg.type == RMessage.RMSG_WDGMSG) {
-		synchronized(uimsgs) {
-		    uimsgs.add(msg);
-		}
-	    } else if(msg.type == RMessage.RMSG_DSTWDG) {
+	    } else if((msg.type == RMessage.RMSG_NEWWDG) || (msg.type == RMessage.RMSG_WDGMSG) ||
+		      (msg.type == RMessage.RMSG_DSTWDG) || (msg.type == RMessage.RMSG_ADDWDG)) {
 		synchronized(uimsgs) {
 		    uimsgs.add(msg);
 		}
@@ -710,9 +452,12 @@ public class Session {
 				    return;
 				}
 			    }
+			    String protocol = "Hafen";
+			    if(!Config.confid.equals(""))
+				protocol += "/" + Config.confid;
 			    PMessage msg = new PMessage(MSG_SESS);
 			    msg.adduint16(2);
-			    msg.addstring("Hafen");
+			    msg.addstring(protocol);
 			    msg.adduint16(PVER);
 			    msg.addstring(username);
 			    msg.adduint16(cookie.length);

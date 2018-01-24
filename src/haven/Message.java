@@ -55,6 +55,7 @@ public abstract class Message {
     public static final Message nil = new Message() {
 	    public boolean underflow(int hint) {return(false);}
 	    public void overflow(int min) {throw(new RuntimeException("nil message is not writable"));}
+	    public String toString() {return("Message(nil)");}
 	};
 
     public static class BinError extends RuntimeException {

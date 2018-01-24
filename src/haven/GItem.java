@@ -42,10 +42,10 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     
     @RName("item")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    int res = (Integer)args[0];
 	    Message sdt = (args.length > 1)?new MessageBuf((byte[])args[1]):Message.nil;
-	    return(new GItem(parent.ui.sess.getres(res), sdt));
+	    return(new GItem(ui.sess.getres(res), sdt));
 	}
     }
     
@@ -57,6 +57,9 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	public int itemnum();
 	public default Color numcolor() {
 	    return(Color.WHITE);
+	}
+	public static BufferedImage numrender(int num, Color col) {
+	    return(Utils.outline2(Text.render(Integer.toString(num), col).img, Utils.contrast(col)));
 	}
     }
 
@@ -93,6 +96,11 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	return(rnd);
     }
     public Resource getres() {return(res.get());}
+    private static final OwnerContext.ClassResolver<GItem> ctxr = new OwnerContext.ClassResolver<GItem>()
+	.add(Glob.class, wdg -> wdg.ui.sess.glob)
+	.add(Session.class, wdg -> wdg.ui.sess);
+    public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
+    @Deprecated
     public Glob glob() {return(ui.sess.glob);}
 
     public GSprite spr() {

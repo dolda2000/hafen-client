@@ -56,11 +56,13 @@ public class IntMap<V> extends AbstractMap<Integer, V> {
     }
 
     public boolean containsKey(int k) {
-	return((vals.length > k) && (vals[k] != null));
+	return((k >= 0) && (vals.length > k) && (vals[k] != null));
     }
 
-    public boolean containsKey(Integer k) {
-	return(containsKey(k.intValue()));
+    public boolean containsKey(Object k) {
+	if(!(k instanceof Integer))
+	    return(false);
+	return(containsKey(((Integer)k).intValue()));
     }
 
     private class IteredEntry implements Entry<Integer, V> {

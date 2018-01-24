@@ -42,7 +42,7 @@ public class Fightview extends Widget {
     public Indir<Resource> blk, batk, iatk;
     public double atkcs, atkct;
     public Indir<Resource> lastact = null;
-    public long lastuse = 0;
+    public double lastuse = 0;
     private GiveButton curgive;
     private Avaview curava;
     private Button curpurs;
@@ -56,7 +56,7 @@ public class Fightview extends Widget {
 	public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
 	public int ip, oip;
 	public Indir<Resource> lastact = null;
-	public long lastuse = 0;
+	public double lastuse = 0;
         
         public Relation(long gobid) {
             this.gobid = gobid;
@@ -85,18 +85,18 @@ public class Fightview extends Widget {
 
 	public void use(Indir<Resource> act) {
 	    lastact = act;
-	    lastuse = System.currentTimeMillis();
+	    lastuse = Utils.rtime();
 	}
     }
 
     public void use(Indir<Resource> act) {
 	lastact = act;
-	lastuse = System.currentTimeMillis();
+	lastuse = Utils.rtime();
     }
     
     @RName("frv")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new Fightview());
 	}
     }
@@ -251,8 +251,8 @@ public class Fightview extends Widget {
 	    }
             return;
 	} else if(msg == "atkc") {
-	    atkcs = System.currentTimeMillis() / 1000.0;
-	    atkct = atkcs + (((Integer)args[0]) * 0.06);
+	    atkcs = Utils.rtime();
+	    atkct = atkcs + (((Number)args[0]).doubleValue() * 0.06);
 	    return;
 	} else if(msg == "blk") {
 	    blk = n2r((Integer)args[0]);

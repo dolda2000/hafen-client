@@ -55,13 +55,13 @@ public class Widget {
 
     @RName("cnt")
     public static class $Cont implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new Widget((Coord)args[0]));
 	}
     }
     @RName("ccnt")
     public static class $CCont implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    Widget ret = new Widget((Coord)args[0]) {
 		    public void presize() {
 			c = parent.sz.div(2).sub(sz.div(2));
@@ -76,8 +76,8 @@ public class Widget {
     }
     @RName("fcnt")
     public static class $FCont implements Factory {
-	public Widget create(Widget parent, Object[] args) {
-	    Widget ret = new Widget(parent.sz) {
+	public Widget create(UI ui, Object[] args) {
+	    Widget ret = new Widget(Coord.z) {
 		    Collection<Widget> fill = new ArrayList<Widget>();
 		    public void presize() {
 			resize(parent.sz);
@@ -124,7 +124,7 @@ public class Widget {
     }
     @RName("acnt")
     public static class $ACont implements Factory {
-	public Widget create(Widget parent, final Object[] args) {
+	public Widget create(UI ui, final Object[] args) {
 	    final String expr = (String)args[0];
 	    return(new AlignPanel() {
 		    protected Coord getc() {
@@ -136,7 +136,7 @@ public class Widget {
 
     @Resource.PublishedCode(name = "wdg", instancer = FactMaker.class)
     public interface Factory {
-	public Widget create(Widget parent, Object[] par);
+	public Widget create(UI ui, Object[] par);
     }
 
     public static class FactMaker implements Resource.PublishedCode.Instancer {
@@ -144,30 +144,13 @@ public class Widget {
 	    if(Factory.class.isAssignableFrom(cl))
 		return(cl.asSubclass(Factory.class).newInstance());
 	    try {
-		final Method mkm = cl.getDeclaredMethod("mkwidget", Widget.class, Object[].class);
-		int mod = mkm.getModifiers();
-		if(Widget.class.isAssignableFrom(mkm.getReturnType()) && ((mod & Modifier.STATIC) != 0) && ((mod & Modifier.PUBLIC) != 0)) {
-		    return(new Factory() {
-			    public Widget create(Widget parent, Object[] args) {
-				try {
-				    return((Widget)mkm.invoke(null, parent, args));
-				} catch(Exception e) {
-				    if(e instanceof RuntimeException) throw((RuntimeException)e);
-				    throw(new RuntimeException(e));
-				}
-			    }
-			});
-		}
-	    } catch(NoSuchMethodException e) {
-	    }
-	    try {
 		final Method mkm = cl.getDeclaredMethod("mkwidget", UI.class, Object[].class);
 		int mod = mkm.getModifiers();
 		if(Widget.class.isAssignableFrom(mkm.getReturnType()) && ((mod & Modifier.STATIC) != 0) && ((mod & Modifier.PUBLIC) != 0)) {
 		    return(new Factory() {
-			    public Widget create(Widget parent, Object[] args) {
+			    public Widget create(UI ui, Object[] args) {
 				try {
-				    return((Widget)mkm.invoke(null, parent.ui, args));
+				    return((Widget)mkm.invoke(null, ui, args));
 				} catch(Exception e) {
 				    if(e instanceof RuntimeException) throw((RuntimeException)e);
 				    throw(new RuntimeException(e));
@@ -318,6 +301,8 @@ public class Widget {
 		st.push(args[off++]);
 	    } else if(op == '$') {
 		st.push(self);
+	    } else if(op == '@') {
+		st.push(this);
 	    } else if(op == '_') {
 		st.push(st.peek());
 	    } else if(op == '.') {
@@ -336,6 +321,9 @@ public class Widget {
 		st.push(w.c.add(w.sz));
 	    } else if(op == 'p') {
 		st.push(((Widget)st.pop()).c);
+	    } else if(op == 'P') {
+		Widget parent = (Widget)st.pop();
+		st.push(((Widget)st.pop()).parentpos(parent));
 	    } else if(op == 's') {
 		st.push(((Widget)st.pop()).sz);
 	    } else if(op == 'w') {
@@ -401,19 +389,15 @@ public class Widget {
     public void addchild(Widget child, Object... args) {
 	if(args[0] instanceof Coord) {
 	    add(child, (Coord)args[0]);
+	} else if(args[0] instanceof Coord2d) {
+	    add(child, ((Coord2d)args[0]).mul(new Coord2d(this.sz.sub(child.sz))).round());
 	} else if(args[0] instanceof String) {
 	    add(child, relpos((String)args[0], child, args, 1));
 	} else {
-	    throw(new RuntimeException("Unknown child widget creation specification."));
+	    throw(new UI.UIException("Unknown child widget creation specification.", null, args));
 	}
     }
 
-    public Widget makechild(Factory type, Object[] pargs, Object[] cargs) {
-	Widget child = type.create(this, cargs);
-	addchild(child, pargs);
-	return(child);
-    }
-	
     public void link() {
 	if(parent.lchild != null)
 	    parent.lchild.next = this;
@@ -452,7 +436,7 @@ public class Widget {
     public Coord parentpos(Widget in) {
 	if(in == this)
 	    return(new Coord(0, 0));
-	return(xlate(parent.parentpos(in).add(c), true));
+	return(parent.xlate(parent.parentpos(in).add(c), true));
     }
 
     public Coord rootpos() {
@@ -964,24 +948,24 @@ public class Widget {
 			    T cur = n(Widget.this);
 			    
 			    private T n(Widget w) {
-				Widget n;
-				if(w == null) {
-				    return(null);
-				} else if(w.child != null) {
-				    n = w.child;
-				} else if(w == Widget.this) {
-				    return(null);
-				} else if(w.next != null) {
-				    n = w.next;
-				} else if(w.parent == Widget.this) {
-				    return(null);
-				} else {
-				    n = w.parent;
+				for(Widget n; true; w = n) {
+				    if(w == null) {
+					return(null);
+				    } else if(w.child != null) {
+					n = w.child;
+				    } else if(w == Widget.this) {
+					return(null);
+				    } else if(w.next != null) {
+					n = w.next;
+				    } else {
+					for(n = w.parent; (n != null) && (n.next == null) && (n != Widget.this); n = n.parent);
+					if((n == null) || (n == Widget.this))
+					    return(null);
+					n = n.next;
+				    }
+				    if((n == null) || cl.isInstance(n))
+					return(cl.cast(n));
 				}
-				if((n == null) || cl.isInstance(n))
-				    return(cl.cast(n));
-				else
-				    return(n(n));
 			    }
 			    
 			    public T next() {
@@ -994,10 +978,6 @@ public class Widget {
 			    
 			    public boolean hasNext() {
 				return(cur != null);
-			    }
-			    
-			    public void remove() {
-				throw(new UnsupportedOperationException());
 			    }
 			});
 		}

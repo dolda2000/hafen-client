@@ -39,18 +39,19 @@ public class TextEntry extends SIWidget {
     public static final BufferedImage caret = Resource.loadimg("gfx/hud/text/caret");
     public static final Coord toff = new Coord(lcap.getWidth() - 1, 3);
     public static final Coord coff = new Coord(-3, -1);
+    public static final int wmarg = lcap.getWidth() + rcap.getWidth() + 1;
     public boolean dshow = false;
     public LineEdit buf;
     public int sx;
     public boolean pw = false;
     public String text;
     private boolean dirty = false;
-    private long focusstart;
+    private double focusstart;
     private Text.Line tcache = null;
 
     @RName("text")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    if(args[0] instanceof Coord)
 		return(new TextEntry((Coord)args[0], (String)args[1]));
 	    else
@@ -116,9 +117,6 @@ public class TextEntry extends SIWidget {
 	tcache = fnd.render(dtext, (dshow && dirty)?dirtycol:defcol);
 	g.drawImage(mext, 0, 0, sz.x, sz.y, null);
 
-	int cx = tcache.advance(buf.point);
-	if(cx < sx) sx = cx;
-	if(cx > sx + (sz.x - 1)) sx = cx - (sz.x - 1);
 	g.drawImage(tcache.img, toff.x - sx, toff.y, null);
 
 	g.drawImage(lcap, 0, 0, null);
@@ -129,10 +127,13 @@ public class TextEntry extends SIWidget {
 
     public void draw(GOut g) {
 	super.draw(g);
-	if(hasfocus && (((System.currentTimeMillis() - focusstart) % 1000) < 500)) {
+	if(hasfocus) {
 	    int cx = tcache.advance(buf.point);
 	    int lx = cx - sx + 1;
-	    g.image(caret, toff.add(coff).add(lx, 0));
+	    if(cx < sx) {sx = cx; redraw();}
+	    if(cx > sx + (sz.x - wmarg)) {sx = cx - (sz.x - wmarg); redraw();}
+	    if(((Utils.rtime() - focusstart) % 1.0) < 0.5)
+		g.image(caret, toff.add(coff).add(lx, 0));
 	}
     }
 
@@ -174,7 +175,7 @@ public class TextEntry extends SIWidget {
     }
 
     public void gotfocus() {
-	focusstart = System.currentTimeMillis();
+	focusstart = Utils.rtime();
     }
 
     public void resize(int w) {

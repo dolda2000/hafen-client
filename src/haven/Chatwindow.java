@@ -32,7 +32,7 @@ public class Chatwindow extends Window {
 	
     @RName("chat")
     public static class $_ implements Factory {
-	public Widget create(Widget parent, Object[] args) {
+	public Widget create(UI ui, Object[] args) {
 	    return(new Chatwindow((Coord)args[0]));
 	}
     }

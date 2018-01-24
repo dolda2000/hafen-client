@@ -29,7 +29,12 @@ package haven;
 import java.awt.Color;
 
 public class FColor {
-    public float r, g, b, a;
+    public static final FColor BLACK = new FColor(0, 0, 0);
+    public static final FColor WHITE = new FColor(1, 1, 1);
+    public static final FColor RED = new FColor(1, 0, 0);
+    public static final FColor GREEN = new FColor(0, 1, 0);
+    public static final FColor BLUE = new FColor(0, 0, 1);
+    public final float r, g, b, a;
 
     public FColor(float r, float g, float b, float a) {
 	this.r = r;
@@ -67,6 +72,20 @@ public class FColor {
 
     public float[] to4a() {
 	return(new float[] {r, g, b, a});
+    }
+
+    public int hashCode() {
+	return(((((((Float.floatToIntBits(r)) * 31) +
+		   Float.floatToIntBits(g)) * 31) +
+		 Float.floatToIntBits(b)) * 31) +
+	       Float.floatToIntBits(a));
+    }
+
+    public boolean equals(Object o) {
+	if(!(o instanceof FColor))
+	    return(false);
+	FColor that = (FColor)o;
+	return((this.r == that.r) && (this.g == that.g) && (this.b == that.b) && (this.a == that.a));
     }
 
     public String toString() {
