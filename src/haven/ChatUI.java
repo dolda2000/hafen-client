@@ -1108,10 +1108,12 @@ public class ChatUI extends Widget {
 	    g.aimage(bcbd, new Coord(sz.x, 0), 1, 0);
     }
 
+    private static final Resource notifsfx = Resource.local().loadwait("sfx/hud/chat");
     public void notify(Channel chan, Channel.Message msg) {
 	synchronized(notifs) {
 	    notifs.addFirst(new Notification(chan, msg));
 	}
+	Audio.play(notifsfx);
     }
 
     private class Spring extends NormAnim {
