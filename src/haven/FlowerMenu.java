@@ -215,7 +215,7 @@ public class FlowerMenu extends Widget {
 	mg = ui.grabmouse(this);
 	kg = ui.grabkeys(this);
 	organize(opts);
-	new Opening();
+	new Opening().ntick(0);
     }
 
     public boolean mousedown(Coord c, int button) {
