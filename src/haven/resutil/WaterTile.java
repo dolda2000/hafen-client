@@ -30,7 +30,6 @@ import java.util.*;
 import haven.*;
 import haven.glsl.*;
 import static haven.glsl.Cons.*;
-import haven.Resource.Tile;
 import haven.MapMesh.Scan;
 import haven.Surface.Vertex;
 import haven.Surface.MeshVertex;
@@ -376,7 +375,7 @@ public class WaterTile extends Tiler {
 
     @ResName("water")
     public static class Fac implements Factory {
-	public Tiler create(int id, Resource.Tileset set) {
+	public Tiler create(int id, Tileset set) {
 	    int a = 0;
 	    int depth = (Integer)set.ta[a++];
 	    Tiler.MCons bottom = new GroundTile(id, set);
@@ -385,7 +384,7 @@ public class WaterTile extends Tiler {
 		String p = (String)desc[0];
 		if(p.equals("bottom") /* Backwards compatibility */ || p.equals("gnd") || p.equals("trn")) {
 		    Resource bres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
-		    Resource.Tileset ts = bres.layer(Resource.tileset);
+		    Tileset ts = bres.layer(Tileset.class);
 		    Tiler b = ts.tfac().create(id, ts);
 		    bottom = (Tiler.MCons)b;
 		}
@@ -401,7 +400,7 @@ public class WaterTile extends Tiler {
     }
 
     @Deprecated
-    public WaterTile(int id, Resource.Tileset set, int depth) {
+    public WaterTile(int id, Tileset set, int depth) {
 	this(id, new GroundTile(0, set), depth);
     }
 

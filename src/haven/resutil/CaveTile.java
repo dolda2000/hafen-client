@@ -28,7 +28,6 @@ package haven.resutil;
 
 import java.util.*;
 import haven.*;
-import haven.Resource.Tile;
 import haven.MapMesh.Scan;
 import haven.Surface.Vertex;
 
@@ -68,7 +67,7 @@ public class CaveTile extends Tiler {
 
     @ResName("cave")
     public static class Factory implements Tiler.Factory {
-	public Tiler create(int id, Resource.Tileset set) {
+	public Tiler create(int id, Tileset set) {
 	    Material wtex = null;
 	    for(Object rdesc : set.ta) {
 		Object[] desc = (Object[])rdesc;
@@ -81,7 +80,7 @@ public class CaveTile extends Tiler {
 	}
     }
 
-    public CaveTile(int id, Resource.Tileset set, Material wtex) {
+    public CaveTile(int id, Tileset set, Material wtex) {
 	super(id);
 	this.wtex = wtex;
     }
