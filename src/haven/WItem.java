@@ -40,12 +40,12 @@ public class WItem extends Widget implements DTarget {
     public final GItem item;
     private Resource cspr = null;
     private Message csdt = Message.nil;
-    
+
     public WItem(GItem item) {
 	super(sqsz);
 	this.item = item;
     }
-    
+
     public void drawmain(GOut g, GSprite spr) {
 	spr.draw(g);
     }
@@ -53,7 +53,7 @@ public class WItem extends Widget implements DTarget {
     public static BufferedImage shorttip(List<ItemInfo> info) {
 	return(ItemInfo.shorttip(info));
     }
-    
+
     public static BufferedImage longtip(GItem item, List<ItemInfo> info) {
 	BufferedImage img = ItemInfo.longtip(info);
 	Resource.Pagina pg = item.res.get().layer(Resource.pagina);
@@ -61,33 +61,33 @@ public class WItem extends Widget implements DTarget {
 	    img = ItemInfo.catimgs(0, img, RichText.render("\n" + pg.text, 200).img);
 	return(img);
     }
-    
+
     public BufferedImage longtip(List<ItemInfo> info) {
 	return(longtip(item, info));
     }
-    
+
     public class ItemTip implements Indir<Tex> {
 	private final TexI tex;
-	
+
 	public ItemTip(BufferedImage img) {
 	    if(img == null)
 		throw(new Loading());
 	    tex = new TexI(img);
 	}
-	
+
 	public GItem item() {
 	    return(item);
 	}
-	
+
 	public Tex get() {
 	    return(tex);
 	}
     }
-    
+
     public class ShortTip extends ItemTip {
 	public ShortTip(List<ItemInfo> info) {super(shorttip(info));}
     }
-    
+
     public class LongTip extends ItemTip {
 	public LongTip(List<ItemInfo> info) {super(longtip(info));}
     }
@@ -186,7 +186,7 @@ public class WItem extends Widget implements DTarget {
 	    g.image(missing.layer(Resource.imgc).tex(), Coord.z, sz);
 	}
     }
-    
+
     public boolean mousedown(Coord c, int btn) {
 	if(btn == 1) {
 	    if(ui.modshift) {
@@ -208,7 +208,7 @@ public class WItem extends Widget implements DTarget {
     public boolean drop(Coord cc, Coord ul) {
 	return(false);
     }
-	
+
     public boolean iteminteract(Coord cc, Coord ul) {
 	item.wdgmsg("itemact", ui.modflags());
 	return(true);
