@@ -142,7 +142,15 @@ public class WItem extends Widget implements DTarget {
 	    Color fret = ret;
 	    return(() -> fret);
 	});
-    public final AttrCache<Tex> itemnum = new AttrCache<>(this::info, AttrCache.map1s(GItem.NumberInfo.class, ninf -> new TexI(GItem.NumberInfo.numrender(ninf.itemnum(), ninf.numcolor()))));
+    public final AttrCache<GItem.InfoOverlay<?>[]> itemols = new AttrCache<>(this::info, info -> {
+	    ArrayList<GItem.InfoOverlay<?>> buf = new ArrayList<>();
+	    for(ItemInfo inf : info) {
+		if(inf instanceof GItem.OverlayInfo)
+		    buf.add(GItem.InfoOverlay.create((GItem.OverlayInfo<?>)inf));
+	    }
+	    GItem.InfoOverlay<?>[] ret = buf.toArray(new GItem.InfoOverlay<?>[0]);
+	    return(() -> ret);
+	});
     public final AttrCache<Double> itemmeter = new AttrCache<>(this::info, AttrCache.map1(GItem.MeterInfo.class, minf -> minf::meter));
 
     private GSprite lspr = null;
@@ -171,11 +179,8 @@ public class WItem extends Widget implements DTarget {
 		g.usestate(new ColorMask(olcol.get()));
 	    drawmain(g, spr);
 	    g.defstate();
-	    if(item.num >= 0) {
-		g.atext(Integer.toString(item.num), sz, 1, 1);
-	    } else if(itemnum.get() != null) {
-		g.aimage(itemnum.get(), sz, 1, 1);
-	    }
+	    for(GItem.InfoOverlay<?> ol : itemols.get())
+		ol.draw(g);
 	    Double meter = (item.meter > 0)?(item.meter / 100.0):itemmeter.get();
 	    if((meter != null) && (meter > 0)) {
 		g.chcolor(255, 255, 255, 64);
