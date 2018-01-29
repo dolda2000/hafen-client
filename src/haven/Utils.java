@@ -1332,6 +1332,21 @@ public class Utils {
 	}
     }
 
+    public static <T> Indir<T> cache(Indir<T> src) {
+	return(new Indir<T>() {
+		private T val;
+		private boolean has = false;
+
+		public T get() {
+		    if(!has) {
+			val = src.get();
+			has = true;
+		    }
+		    return(val);
+		}
+	    });
+    }
+
     public static <K, V> MapBuilder<K, V> map() {
 	return(new MapBuilder<K, V>(new HashMap<K, V>()));
     }
