@@ -39,7 +39,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     private GSprite spr;
     private Object[] rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
-    
+
     @RName("item")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
@@ -48,11 +48,11 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    return(new GItem(ui.sess.getres(res), sdt));
 	}
     }
-    
+
     public interface ColorInfo {
 	public Color olcol();
     }
-    
+
     public interface NumberInfo {
 	public int itemnum();
 	public default Color numcolor() {
@@ -69,17 +69,17 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 
     public static class Amount extends ItemInfo implements NumberInfo {
 	private final int num;
-	
+
 	public Amount(Owner owner, int num) {
 	    super(owner);
 	    this.num = num;
 	}
-	
+
 	public int itemnum() {
 	    return(num);
 	}
     }
-    
+
     public GItem(Indir<Resource> res, Message sdt) {
 	this.res = res;
 	this.sdt = new MessageBuf(sdt);
@@ -125,7 +125,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    info = ItemInfo.buildinfo(this, rawinfo);
 	return(info);
     }
-    
+
     public Resource resource() {
 	return(res.get());
     }
