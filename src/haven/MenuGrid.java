@@ -262,6 +262,11 @@ public class MenuGrid extends Widget {
 	    this.curbtns = cur;
 	    int i = curoff;
 	    hotmap.clear();
+	    for(PagButton btn : cur) {
+		char hk = btn.hotkey();
+		if(hk != 0)
+		    hotmap.put(Character.toUpperCase(hk), btn);
+	    }
 	    for(int y = 0; y < gsz.y; y++) {
 		for(int x = 0; x < gsz.x; x++) {
 		    PagButton btn = null;
@@ -271,9 +276,6 @@ public class MenuGrid extends Widget {
 			btn = next;
 		    } else if(i < cur.size()) {
 			btn = cur.get(i++);
-			char hk = btn.hotkey();
-			if(hk != 0)
-			    hotmap.put(Character.toUpperCase(hk), btn);
 		    }
 		    layout[x][y] = btn;
 		}
