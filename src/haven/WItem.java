@@ -179,9 +179,9 @@ public class WItem extends Widget implements DTarget {
 		g.usestate(new ColorMask(olcol.get()));
 	    drawmain(g, spr);
 	    g.defstate();
-	    GItem.InfoOverlay<?> ols = itemols.get();
+	    GItem.InfoOverlay<?>[] ols = itemols.get();
 	    if(ols != null) {
-		for(GItem.InfoOverlay<?> ol : itemols.get())
+		for(GItem.InfoOverlay<?> ol : ols)
 		    ol.draw(g);
 	    }
 	    Double meter = (item.meter > 0)?(item.meter / 100.0):itemmeter.get();
