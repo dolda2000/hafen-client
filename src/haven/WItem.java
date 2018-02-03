@@ -136,7 +136,7 @@ public class WItem extends Widget implements DTarget {
 		if(inf instanceof GItem.ColorInfo) {
 		    Color c = ((GItem.ColorInfo)inf).olcol();
 		    if(c != null)
-			ret = (ret == null)?c:Utils.preblend(ret, c);
+			ret = (ret == null) ? c : Utils.preblend(ret, c);
 		}
 	    }
 	    Color fret = ret;
@@ -176,7 +176,7 @@ public class WItem extends Widget implements DTarget {
 	    } else if(itemnum.get() != null) {
 		g.aimage(itemnum.get(), sz, 1, 1);
 	    }
-	    Double meter = (item.meter > 0)?(item.meter / 100.0):itemmeter.get();
+	    Double meter = (item.meter > 0) ? Double.valueOf(item.meter / 100.0) : itemmeter.get();
 	    if((meter != null) && (meter > 0)) {
 		g.chcolor(255, 255, 255, 64);
 		Coord half = sz.div(2);
