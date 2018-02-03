@@ -40,12 +40,12 @@ public class WItem extends Widget implements DTarget {
     public final GItem item;
     private Resource cspr = null;
     private Message csdt = Message.nil;
-    
+
     public WItem(GItem item) {
 	super(sqsz);
 	this.item = item;
     }
-    
+
     public void drawmain(GOut g, GSprite spr) {
 	spr.draw(g);
     }
@@ -53,7 +53,7 @@ public class WItem extends Widget implements DTarget {
     public static BufferedImage shorttip(List<ItemInfo> info) {
 	return(ItemInfo.shorttip(info));
     }
-    
+
     public static BufferedImage longtip(GItem item, List<ItemInfo> info) {
 	BufferedImage img = ItemInfo.longtip(info);
 	Resource.Pagina pg = item.res.get().layer(Resource.pagina);
@@ -61,33 +61,33 @@ public class WItem extends Widget implements DTarget {
 	    img = ItemInfo.catimgs(0, img, RichText.render("\n" + pg.text, 200).img);
 	return(img);
     }
-    
+
     public BufferedImage longtip(List<ItemInfo> info) {
 	return(longtip(item, info));
     }
-    
+
     public class ItemTip implements Indir<Tex> {
 	private final TexI tex;
-	
+
 	public ItemTip(BufferedImage img) {
 	    if(img == null)
 		throw(new Loading());
 	    tex = new TexI(img);
 	}
-	
+
 	public GItem item() {
 	    return(item);
 	}
-	
+
 	public Tex get() {
 	    return(tex);
 	}
     }
-    
+
     public class ShortTip extends ItemTip {
 	public ShortTip(List<ItemInfo> info) {super(shorttip(info));}
     }
-    
+
     public class LongTip extends ItemTip {
 	public LongTip(List<ItemInfo> info) {super(longtip(info));}
     }
@@ -142,7 +142,15 @@ public class WItem extends Widget implements DTarget {
 	    Color fret = ret;
 	    return(() -> fret);
 	});
-    public final AttrCache<Tex> itemnum = new AttrCache<>(this::info, AttrCache.map1s(GItem.NumberInfo.class, ninf -> new TexI(GItem.NumberInfo.numrender(ninf.itemnum(), ninf.numcolor()))));
+    public final AttrCache<GItem.InfoOverlay<?>[]> itemols = new AttrCache<>(this::info, info -> {
+	    ArrayList<GItem.InfoOverlay<?>> buf = new ArrayList<>();
+	    for(ItemInfo inf : info) {
+		if(inf instanceof GItem.OverlayInfo)
+		    buf.add(GItem.InfoOverlay.create((GItem.OverlayInfo<?>)inf));
+	    }
+	    GItem.InfoOverlay<?>[] ret = buf.toArray(new GItem.InfoOverlay<?>[0]);
+	    return(() -> ret);
+	});
     public final AttrCache<Double> itemmeter = new AttrCache<>(this::info, AttrCache.map1(GItem.MeterInfo.class, minf -> minf::meter));
 
     private GSprite lspr = null;
@@ -171,10 +179,10 @@ public class WItem extends Widget implements DTarget {
 		g.usestate(new ColorMask(olcol.get()));
 	    drawmain(g, spr);
 	    g.defstate();
-	    if(item.num >= 0) {
-		g.atext(Integer.toString(item.num), sz, 1, 1);
-	    } else if(itemnum.get() != null) {
-		g.aimage(itemnum.get(), sz, 1, 1);
+	    GItem.InfoOverlay<?>[] ols = itemols.get();
+	    if(ols != null) {
+		for(GItem.InfoOverlay<?> ol : ols)
+		    ol.draw(g);
 	    }
 	    Double meter = (item.meter > 0) ? Double.valueOf(item.meter / 100.0) : itemmeter.get();
 	    if((meter != null) && (meter > 0)) {
@@ -186,7 +194,7 @@ public class WItem extends Widget implements DTarget {
 	    g.image(missing.layer(Resource.imgc).tex(), Coord.z, sz);
 	}
     }
-    
+
     public boolean mousedown(Coord c, int btn) {
 	if(btn == 1) {
 	    if(ui.modshift) {
@@ -208,7 +216,7 @@ public class WItem extends Widget implements DTarget {
     public boolean drop(Coord cc, Coord ul) {
 	return(false);
     }
-	
+
     public boolean iteminteract(Coord cc, Coord ul) {
 	item.wdgmsg("itemact", ui.modflags());
 	return(true);
