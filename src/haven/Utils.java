@@ -399,12 +399,12 @@ public class Utils {
 	    yb = (word & 0x003fc000) >> 14, ys = ((word & 0x00400000) >> 22) & 1,
 	    zb = (word & 0x00001fd0) >>  5, zs = ((word & 0x00002000) >> 13) & 1;
 	int me = (word & 0x1f) - 15;
-	int xe = Integer.numberOfLeadingZeros(xb),
-	    ye = Integer.numberOfLeadingZeros(yb),
-	    ze = Integer.numberOfLeadingZeros(zb);
-	if(xe == 32) ret[0] = 0; else ret[0] = Float.intBitsToFloat((xs << 31) | ((me - (xe - 24) + 126) << 23) | ((xb << (xe - 8)) & 0x007fffff));
-	if(ye == 32) ret[1] = 0; else ret[1] = Float.intBitsToFloat((ys << 31) | ((me - (ye - 24) + 126) << 23) | ((yb << (ye - 8)) & 0x007fffff));
-	if(ze == 32) ret[2] = 0; else ret[2] = Float.intBitsToFloat((zs << 31) | ((me - (ze - 24) + 126) << 23) | ((zb << (ze - 8)) & 0x007fffff));
+	int xe = Integer.numberOfLeadingZeros(xb) - 24,
+	    ye = Integer.numberOfLeadingZeros(yb) - 24,
+	    ze = Integer.numberOfLeadingZeros(zb) - 24;
+	if(xe == 32) ret[0] = 0; else ret[0] = Float.intBitsToFloat((xs << 31) | ((me - xe + 127) << 23) | ((xb << (xe + 16)) & 0x007fffff));
+	if(ye == 32) ret[1] = 0; else ret[1] = Float.intBitsToFloat((ys << 31) | ((me - ye + 127) << 23) | ((yb << (ye + 16)) & 0x007fffff));
+	if(ze == 32) ret[2] = 0; else ret[2] = Float.intBitsToFloat((zs << 31) | ((me - ze + 127) << 23) | ((zb << (ze + 16)) & 0x007fffff));
     }
 
     public static float hfdec(short bits) {
