@@ -176,6 +176,27 @@ public abstract class ItemInfo {
 	}
     }
 
+    public static class Pagina extends Tip {
+	public final String str;
+
+	public Pagina(Owner owner, String str) {
+	    super(owner);
+	    this.str = str;
+	}
+
+	public BufferedImage tipimg(int w) {
+	    return(RichText.render(str, w).img);
+	}
+
+	public void layout(Layout l) {
+	    BufferedImage t = tipimg((l.width == 0) ? 200 : l.width);
+	    if(t != null)
+		l.cmp.add(t, new Coord(0, l.cmp.sz.y + 10));
+	}
+
+	public int order() {return(10000);}
+    }
+
     public static class Contents extends Tip {
 	public final List<ItemInfo> sub;
 	private static final Text.Line ch = Text.render("Contents:");
