@@ -1213,6 +1213,14 @@ public class Utils {
 	return(true);
     }
 
+    public static <T> T find(Iterable<? extends T> in, Predicate<? super T> p) {
+	for(T obj : in) {
+	    if(p.test(obj))
+		return(obj);
+	}
+	return(null);
+    }
+
     @SafeVarargs
     public static <T> T or(Supplier<T>... vals) {
 	for(Supplier<T> val : vals) {
