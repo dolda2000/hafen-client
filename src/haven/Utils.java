@@ -758,15 +758,6 @@ public class Utils {
 	if(term) out.println();
     }
 
-    public static Resource myres(Class<?> c) {
-	ClassLoader cl = c.getClassLoader();
-	if(cl instanceof Resource.ResClassLoader) {
-	    return(((Resource.ResClassLoader)cl).getres());
-	} else {
-	    return(null);
-	}
-    }
-    
     public static String titlecase(String str) {
 	return(Character.toTitleCase(str.charAt(0)) + str.substring(1));
     }
@@ -1220,6 +1211,14 @@ public class Utils {
 		return(false);
 	}
 	return(true);
+    }
+
+    public static <T> T find(Iterable<? extends T> in, Predicate<? super T> p) {
+	for(T obj : in) {
+	    if(p.test(obj))
+		return(obj);
+	}
+	return(null);
     }
 
     @SafeVarargs
