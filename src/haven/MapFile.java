@@ -723,6 +723,8 @@ public class MapFile {
 		return(null);
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
+		if(data.eom())
+		    return(null);
 		int ver = data.uint8();
 		if(ver == 1) {
 		    ZMessage z = new ZMessage(data);
@@ -748,6 +750,25 @@ public class MapFile {
 	    } catch(Message.BinError e) {
 		Debug.log.printf("Unknown zoomgrid data version for (%d, %d) in %x@%d: %s", sc.x, sc.y, seg, lvl, e);
 		return(null);
+	    }
+	}
+
+	public static int inval(MapFile file, long seg, Coord sc) {
+	    for(int lvl = 1; true; lvl++) {
+		sc = new Coord(sc.x & ~((1 << lvl) - 1), sc.y & ~((1 << lvl) - 1));
+		try {
+		    file.sfetch("zgrid-%x-%d-%d-%d", seg, lvl, sc.x, sc.y).close();
+		} catch(FileNotFoundException e) {
+		    return(lvl - 1);
+		} catch(IOException e) {
+		    Debug.log.printf("mapfile warning: error when invalidating zoomgrid (%d, %d) in %x@%d: %s\n", sc.x, sc.y, seg, lvl, e);
+		    return(lvl - 1);
+		}
+		try {
+		    file.sstore("zgrid-%x-%d-%d-%d", seg, lvl, sc.x, sc.y).close();
+		} catch(IOException e) {
+		    throw(new StreamMessage.IOError(e));
+		}
 	    }
 	}
     }
@@ -838,6 +859,10 @@ public class MapFile {
 	    }
 	}
 
+	private Future<ZoomGrid> loadzgrid(ZoomCoord zc) {
+	    return(Defer.later(() -> ZoomGrid.fetch(MapFile.this, Segment.this, zc.lvl, zc.c)));
+	}
+
 	private class ByZCoord implements Indir<ZoomGrid> {
 	    final ZoomCoord zc;
 	    ZoomGrid loaded;
@@ -873,12 +898,23 @@ public class MapFile {
 		return(grid(gc));
 	    synchronized(zcache) {
 		ZoomCoord zc = new ZoomCoord(lvl, gc);
-		return(zcache.computeIfAbsent(zc, k -> new ByZCoord(k, Defer.later(() -> ZoomGrid.fetch(MapFile.this, Segment.this, k.lvl, k.c)))));
+		return(zcache.computeIfAbsent(zc, k -> new ByZCoord(k, loadzgrid(k))));
 	    }
 	}
 
 	private void include(long id, Coord sc) {
 	    map.put(sc, id);
+	    int zl = ZoomGrid.inval(MapFile.this, this.id, sc);
+	    synchronized(zcache) {
+		for(int lvl = 1; lvl < zl; lvl++) {
+		    ZoomCoord zc = new ZoomCoord(lvl, new Coord(sc.x & ~((1 << lvl) - 1), sc.y & ~((1 << lvl) - 1)));
+		    ByZCoord zg = zcache.get(zc);
+		    if(zg != null) {
+			zg.loading = loadzgrid(zc);
+			zg.loaded = null;
+		    }
+		}
+	    }
 	    ByCoord bc;
 	    synchronized(ccache) {
 		bc = ccache.get(sc);
