@@ -31,6 +31,7 @@ import java.util.function.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import haven.MapFile.Segment;
+import haven.MapFile.DataGrid;
 import haven.MapFile.Grid;
 import haven.MapFile.GridInfo;
 import haven.MapFile.Marker;
@@ -46,6 +47,8 @@ public class MapFileWidget extends Widget {
     private boolean follow;
     private Area dext;
     private Segment dseg;
+    private int dlvl;
+    private int zoomlevel = 0;
     private DisplayGrid[] display;
     private Collection<DisplayMarker> markers = null;
     private int markerseq = -1;
@@ -136,18 +139,18 @@ public class MapFileWidget extends Widget {
     public static class DisplayGrid {
 	public final Segment seg;
 	public final Coord sc;
-	public final Indir<Grid> gref;
-	private Grid cgrid = null;
+	public final Indir<? extends DataGrid> gref;
+	private DataGrid cgrid = null;
 	private Defer.Future<Tex> img = null;
 
-	public DisplayGrid(Segment seg, Coord sc, Indir<Grid> gref) {
+	public DisplayGrid(Segment seg, Coord sc, Indir<? extends DataGrid> gref) {
 	    this.seg = seg;
 	    this.sc = sc;
 	    this.gref = gref;
 	}
 
 	public Tex img() {
-	    Grid grid = gref.get();
+	    DataGrid grid = gref.get();
 	    if(grid != cgrid) {
 		if(img != null)
 		    img.cancel();
@@ -230,9 +233,9 @@ public class MapFileWidget extends Widget {
 	Coord hsz = sz.div(2);
 	Area next = Area.sized(loc.tc.sub(hsz).div(cmaps),
 			       sz.add(cmaps).sub(1, 1).div(cmaps).add(1, 1));
-	if((display == null) || (loc.seg != dseg) || !next.equals(dext)) {
+	if((display == null) || (loc.seg != dseg) || (zoomlevel != dlvl) || !next.equals(dext)) {
 	    DisplayGrid[] nd = new DisplayGrid[next.rsz()];
-	    if((display != null) && (loc.seg == dseg)) {
+	    if((display != null) && (loc.seg == dseg) && (zoomlevel == dlvl)) {
 		for(Coord c : dext) {
 		    if(next.contains(c))
 			nd[next.ri(c)] = display[dext.ri(c)];
@@ -240,6 +243,7 @@ public class MapFileWidget extends Widget {
 	    }
 	    display = nd;
 	    dseg = loc.seg;
+	    dlvl = zoomlevel;
 	    dext = next;
 	    markers = null;
 	}
@@ -262,7 +266,7 @@ public class MapFileWidget extends Widget {
 	    try {
 		for(Coord c : dext) {
 		    if(display[dext.ri(c)] == null)
-			display[dext.ri(c)] = new DisplayGrid(loc.seg, c, loc.seg.grid(c));
+			display[dext.ri(c)] = new DisplayGrid(loc.seg, c, loc.seg.grid(zoomlevel, c.mul(1 << zoomlevel)));
 		}
 	    } finally {
 		file.lock.readLock().unlock();
@@ -359,6 +363,11 @@ public class MapFileWidget extends Widget {
 	    drag = null;
 	}
 	return(super.mouseup(c, button));
+    }
+
+    public boolean mousewheel(Coord c, int amount) {
+	zoomlevel = Math.max(zoomlevel + amount, 0);
+	return(true);
     }
 
     public Object tooltip(Coord c, Widget prev) {
