@@ -254,7 +254,7 @@ public class MapFileWidget extends Widget {
 	Location curloc = this.curloc;
 	if((curloc == null) || (curloc.seg != loc.seg))
 	    return(null);
-	return(loc.tc.sub(curloc.tc).div(1 << zoomlevel).add(sz.div(2)));
+	return(loc.tc.sub(curloc.tc).div(1 << dlvl).add(sz.div(2)));
     }
 
     public void draw(GOut g) {
@@ -291,7 +291,7 @@ public class MapFileWidget extends Widget {
 		remark(loc, dtext.margin(cmaps.mul(1 << dlvl)));
 	    if(markers != null) {
 		for(DisplayMarker mark : markers)
-		    mark.draw(g, mark.m.tc.sub(loc.tc).div(1 << zoomlevel).add(hsz));
+		    mark.draw(g, mark.m.tc.sub(loc.tc).div(1 << dlvl).add(hsz));
 	    }
 	}
     }
