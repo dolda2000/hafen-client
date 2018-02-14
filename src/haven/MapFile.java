@@ -734,7 +734,7 @@ public class MapFile {
 		    if(!sc.equals(storedsc))
 			throw(new Message.FormatError(String.format("Zoomgrid coord mismatch: expected %s, got %s", sc, storedsc)));
 
-		    long mtime = (ver >= 2) ? z.int64() : System.currentTimeMillis();
+		    long mtime = z.int64();
 		    List<TileInfo> tilesets = new ArrayList<TileInfo>();
 		    for(int i = 0, no = z.uint8(); i < no; i++)
 			tilesets.add(new TileInfo(new Resource.Spec(Resource.remote(), z.string(), z.uint16()), z.uint8()));
