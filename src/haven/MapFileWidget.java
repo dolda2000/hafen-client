@@ -45,7 +45,7 @@ public class MapFileWidget extends Widget {
     public Location curloc;
     private Locator setloc;
     private boolean follow;
-    private Area dext;
+    private Area dgext, dtext;
     private Segment dseg;
     private int dlvl;
     private int zoomlevel = 0;
@@ -216,9 +216,8 @@ public class MapFileWidget extends Widget {
 	if(file.lock.readLock().tryLock()) {
 	    try {
 		Collection<DisplayMarker> marks = new ArrayList<>();
-		Area mext = ext.margin(cmaps);
 		for(Marker mark : file.markers) {
-		    if((mark.seg == loc.seg.id) && mext.contains(mark.tc.div(cmaps)))
+		    if((mark.seg == loc.seg.id) && ext.contains(mark.tc))
 			marks.add(new DisplayMarker(mark));
 		}
 		markers = marks;
@@ -231,20 +230,22 @@ public class MapFileWidget extends Widget {
 
     private void redisplay(Location loc) {
 	Coord hsz = sz.div(2);
-	Area next = Area.sized(loc.tc.sub(hsz).div(cmaps),
+	Coord zmaps = cmaps.mul(1 << zoomlevel);
+	Area next = Area.sized(loc.tc.sub(hsz.mul(1 << zoomlevel)).div(zmaps),
 			       sz.add(cmaps).sub(1, 1).div(cmaps).add(1, 1));
-	if((display == null) || (loc.seg != dseg) || (zoomlevel != dlvl) || !next.equals(dext)) {
+	if((display == null) || (loc.seg != dseg) || (zoomlevel != dlvl) || !next.equals(dgext)) {
 	    DisplayGrid[] nd = new DisplayGrid[next.rsz()];
 	    if((display != null) && (loc.seg == dseg) && (zoomlevel == dlvl)) {
-		for(Coord c : dext) {
+		for(Coord c : dgext) {
 		    if(next.contains(c))
-			nd[next.ri(c)] = display[dext.ri(c)];
+			nd[next.ri(c)] = display[dgext.ri(c)];
 		}
 	    }
 	    display = nd;
 	    dseg = loc.seg;
 	    dlvl = zoomlevel;
-	    dext = next;
+	    dgext = next;
+	    dtext = Area.sized(next.ul.mul(zmaps), next.sz().mul(zmaps));
 	    markers = null;
 	}
     }
@@ -253,7 +254,7 @@ public class MapFileWidget extends Widget {
 	Location curloc = this.curloc;
 	if((curloc == null) || (curloc.seg != loc.seg))
 	    return(null);
-	return(loc.tc.add(sz.div(2)).sub(curloc.tc));
+	return(loc.tc.sub(curloc.tc).div(1 << zoomlevel).add(sz.div(2)));
     }
 
     public void draw(GOut g) {
@@ -264,31 +265,34 @@ public class MapFileWidget extends Widget {
 	redisplay(loc);
 	if(file.lock.readLock().tryLock()) {
 	    try {
-		for(Coord c : dext) {
-		    if(display[dext.ri(c)] == null)
-			display[dext.ri(c)] = new DisplayGrid(loc.seg, c, loc.seg.grid(zoomlevel, c.mul(1 << zoomlevel)));
+		for(Coord c : dgext) {
+		    if(display[dgext.ri(c)] == null)
+			display[dgext.ri(c)] = new DisplayGrid(loc.seg, c, loc.seg.grid(dlvl, c.mul(1 << dlvl)));
 		}
 	    } finally {
 		file.lock.readLock().unlock();
 	    }
 	}
-	for(Coord c : dext) {
+	Coord zmaps = cmaps.mul(1 << dlvl);
+	for(Coord c : dgext) {
 	    Tex img;
 	    try {
-		DisplayGrid disp = display[dext.ri(c)];
+		DisplayGrid disp = display[dgext.ri(c)];
 		if((disp == null) || ((img = disp.img()) == null))
 		    continue;
 	    } catch(Loading l) {
 		continue;
 	    }
-	    Coord ul = hsz.add(c.mul(cmaps)).sub(loc.tc);
+	    Coord ul = c.mul(cmaps).sub(loc.tc.div(1 << dlvl)).add(hsz);
 	    g.image(img, ul);
 	}
-	if((markers == null) || (file.markerseq != markerseq))
-	    remark(loc, dext);
-	if(markers != null) {
-	    for(DisplayMarker mark : markers)
-		mark.draw(g, hsz.sub(loc.tc).add(mark.m.tc));
+	if(true) {
+	    if((markers == null) || (file.markerseq != markerseq))
+		remark(loc, dtext.margin(cmaps.mul(1 << dlvl)));
+	    if(markers != null) {
+		for(DisplayMarker mark : markers)
+		    mark.draw(g, mark.m.tc.sub(loc.tc).div(1 << zoomlevel).add(hsz));
+	    }
 	}
     }
 
@@ -313,7 +317,7 @@ public class MapFileWidget extends Widget {
     private DisplayMarker markerat(Coord tc) {
 	if(markers != null) {
 	    for(DisplayMarker mark : markers) {
-		if((mark.hit != null) && mark.hit.contains(tc.sub(mark.m.tc)))
+		if((mark.hit != null) && mark.hit.contains(tc.sub(mark.m.tc).div(1 << dlvl)))
 		    return(mark);
 	    }
 	}
@@ -323,7 +327,7 @@ public class MapFileWidget extends Widget {
     public boolean mousedown(Coord c, int button) {
 	Coord tc = null;
 	if(curloc != null)
-	    tc = c.sub(sz.div(2)).add(curloc.tc);
+	    tc = c.sub(sz.div(2)).mul(1 << dlvl).add(curloc.tc);
 	if(tc != null) {
 	    DisplayMarker mark = markerat(tc);
 	    if((mark != null) && clickmarker(mark, button))
@@ -349,7 +353,7 @@ public class MapFileWidget extends Widget {
 	    if(dragging) {
 		setloc = null;
 		follow = false;
-		curloc = new Location(curloc.seg, dmc.add(dsc.sub(c)));
+		curloc = new Location(curloc.seg, dmc.add(dsc.sub(c).mul(1 << dlvl)));
 	    } else if(c.dist(dsc) > 5) {
 		dragging = true;
 	    }
@@ -372,7 +376,7 @@ public class MapFileWidget extends Widget {
 
     public Object tooltip(Coord c, Widget prev) {
 	if(curloc != null) {
-	    Coord tc = c.sub(sz.div(2)).add(curloc.tc);
+	    Coord tc = c.sub(sz.div(2)).mul(1 << dlvl).add(curloc.tc);
 	    DisplayMarker mark = markerat(tc);
 	    if(mark != null) {
 		return(mark.tip);
