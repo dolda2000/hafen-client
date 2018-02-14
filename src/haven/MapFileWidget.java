@@ -296,6 +296,33 @@ public class MapFileWidget extends Widget {
 	}
     }
 
+    private static boolean hascomplete(DisplayGrid[] disp, Area dext, Coord c) {
+	DisplayGrid dg = disp[dext.ri(c)];
+	if(dg == null)
+	    return(false);
+	return(dg.gref.get() != null);
+    }
+
+    private boolean allowzoomout() {
+	DisplayGrid[] disp = this.display;
+	Area dext = this.dgext;
+	try {
+	    for(int x = dext.ul.x; x < dext.br.x; x++) {
+		if(hascomplete(disp, dext, new Coord(x, dext.ul.y)) ||
+		   hascomplete(disp, dext, new Coord(x, dext.br.y - 1)))
+		    return(true);
+	    }
+	    for(int y = dext.ul.y; y < dext.br.y; y++) {
+		if(hascomplete(disp, dext, new Coord(dext.ul.x, y)) ||
+		   hascomplete(disp, dext, new Coord(dext.br.x - 1, y)))
+		    return(true);
+	    }
+	} catch(Loading l) {
+	    return(false);
+	}
+	return(false);
+    }
+
     public void center(Locator loc) {
 	setloc = loc;
 	follow = false;
@@ -370,7 +397,8 @@ public class MapFileWidget extends Widget {
     }
 
     public boolean mousewheel(Coord c, int amount) {
-	zoomlevel = Math.max(zoomlevel + amount, 0);
+	if((amount < 0) || allowzoomout())
+	    zoomlevel = Math.max(zoomlevel + amount, 0);
 	return(true);
     }
 
