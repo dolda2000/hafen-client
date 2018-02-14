@@ -397,8 +397,12 @@ public class MapFileWidget extends Widget {
     }
 
     public boolean mousewheel(Coord c, int amount) {
-	if((amount < 0) || allowzoomout())
-	    zoomlevel = Math.max(zoomlevel + amount, 0);
+	if(amount > 0) {
+	    if(allowzoomout())
+		zoomlevel = Math.min(zoomlevel + 1, dlvl + 1);
+	} else {
+	    zoomlevel = Math.max(zoomlevel - 1, 0);
+	}
 	return(true);
     }
 
