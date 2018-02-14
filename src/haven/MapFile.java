@@ -678,7 +678,9 @@ public class MapFile {
 		    }
 		}
 	    }
-	    return(new ZoomGrid(seg.id, lvl, sc, infos, tiles, maxmtime));
+	    ZoomGrid ret = new ZoomGrid(seg.id, lvl, sc, infos, tiles, maxmtime);
+	    ret.save(file);
+	    return(ret);
 	}
 
 	public void save(Message fp) {
