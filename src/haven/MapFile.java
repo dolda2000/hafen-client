@@ -447,6 +447,12 @@ public class MapFile {
 	    }
 	    return(PUtils.rasterimg(buf));
 	}
+
+	public static final Resource.Spec notile = new Resource.Spec(Resource.remote(), "gfx/tiles/notile", -1);
+	public static final DataGrid nogrid;
+	static {
+	    nogrid = new DataGrid(new TileInfo[] {new TileInfo(notile, 0)}, new byte[cmaps.x * cmaps.y], 0);
+	}
     }
 
     public static class Grid extends DataGrid {
@@ -589,6 +595,8 @@ public class MapFile {
 		if(lower[i] != null) {
 		    any = true;
 		    maxmtime = Math.max(maxmtime, lower[i].mtime);
+		} else {
+		    lower[i] = DataGrid.nogrid;
 		}
 	    }
 	    if(!any)
