@@ -815,7 +815,7 @@ public class MapFile {
 
 	    public Grid get() {
 		if(loaded == null)
-		    loaded = loading.get();
+		    loaded = loading.get(0);
 		return(loaded);
 	    }
 	}
@@ -875,7 +875,7 @@ public class MapFile {
 
 	    public ZoomGrid get() {
 		if(loaded == null)
-		    loaded = loading.get();
+		    loaded = loading.get(0);
 		return(loaded);
 	    }
 	}
