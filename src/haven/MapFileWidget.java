@@ -55,6 +55,7 @@ public class MapFileWidget extends Widget {
     private UI.Grab drag;
     private boolean dragging;
     private Coord dsc, dmc;
+    private boolean hmarkers = false;
 
     public MapFileWidget(MapFile file, Coord sz) {
 	super();
@@ -286,7 +287,7 @@ public class MapFileWidget extends Widget {
 	    Coord ul = c.mul(cmaps).sub(loc.tc.div(1 << dlvl)).add(hsz);
 	    g.image(img, ul);
 	}
-	if(true) {
+	if(!hmarkers) {
 	    if((markers == null) || (file.markerseq != markerseq))
 		remark(loc, dtext.margin(cmaps.mul(1 << dlvl)));
 	    if(markers != null) {
@@ -373,6 +374,14 @@ public class MapFileWidget extends Widget {
 	    return(true);
 	}
 	return(super.mousedown(c, button));
+    }
+
+    public boolean globtype(char key, java.awt.event.KeyEvent ev) {
+	if((key == 13) && tvisible()) {
+	    hmarkers = !hmarkers;
+	    return(true);
+	}
+	return(super.globtype(key, ev));
     }
 
     public void mousemove(Coord c) {
