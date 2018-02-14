@@ -94,7 +94,7 @@ public class MapFile {
 			file.smarkers.put(((SMarker)mark).oid, (SMarker)mark);
 		}
 	    } else {
-		Debug.log.printf("mapfile warning: unknown mapfile index version: %i\n", ver);
+		Debug.log.printf("mapfile warning: unknown mapfile index version: %d\n", ver);
 		return(null);
 	    }
 	} catch(Message.BinError e) {
@@ -375,17 +375,93 @@ public class MapFile {
 	}
     }
 
-    public static class Grid {
-	public final long id, mtime;
+    public static class DataGrid {
 	public final TileInfo[] tilesets;
 	public final byte[] tiles;
-	private int useq = -1;
+	public final long mtime;
 
-	public Grid(long id, TileInfo[] tilesets, byte[] tiles, long mtime) {
-	    this.id = id;
+	public DataGrid(TileInfo[] tilesets, byte[] tiles, long mtime) {
 	    this.tilesets = tilesets;
 	    this.tiles = tiles;
 	    this.mtime = mtime;
+	}
+
+	public int gettile(Coord c) {
+	    return(tiles[c.x + (c.y * cmaps.x)] & 0xff);
+	}
+
+	private BufferedImage tiletex(int t, BufferedImage[] texes, boolean[] cached) {
+	    if(!cached[t]) {
+		Resource r = null;
+		try {
+		    r = loadsaved(Resource.remote(), tilesets[t].res);
+		} catch(Loading l) {
+		    throw(l);
+		} catch(Exception e) {
+		    Debug.log.printf("mapfile warning: could not load tileset resource %s(v%d): %s\n", tilesets[t].res.name, tilesets[t].res.ver, e);
+		}
+		if(r != null) {
+		    Resource.Image ir = r.layer(Resource.imgc);
+		    if(ir != null) {
+			texes[t] = ir.img;
+		    }
+		}
+		cached[t] = true;
+	    }
+	    return(texes[t]);
+	}
+
+	public BufferedImage render(Coord off) {
+	    BufferedImage[] texes = new BufferedImage[256];
+	    boolean[] cached = new boolean[256];
+	    WritableRaster buf = PUtils.imgraster(cmaps);
+	    Coord c = new Coord();
+	    for(c.y = 0; c.y < cmaps.y; c.y++) {
+		for(c.x = 0; c.x < cmaps.x; c.x++) {
+		    int t = gettile(c);
+		    BufferedImage tex = tiletex(t, texes, cached);
+		    int rgb = 0;
+		    if(tex != null)
+			rgb = tex.getRGB(Utils.floormod(c.x + off.x, tex.getWidth()),
+					 Utils.floormod(c.y + off.y, tex.getHeight()));
+		    buf.setSample(c.x, c.y, 0, (rgb & 0x00ff0000) >>> 16);
+		    buf.setSample(c.x, c.y, 1, (rgb & 0x0000ff00) >>>  8);
+		    buf.setSample(c.x, c.y, 2, (rgb & 0x000000ff) >>>  0);
+		    buf.setSample(c.x, c.y, 3, (rgb & 0xff000000) >>> 24);
+		}
+	    }
+	    for(c.y = 1; c.y < cmaps.y - 1; c.y++) {
+		for(c.x = 1; c.x < cmaps.x - 1; c.x++) {
+		    int p = tilesets[gettile(c)].prio;
+		    if((tilesets[gettile(c.add(-1, 0))].prio > p) ||
+		       (tilesets[gettile(c.add( 1, 0))].prio > p) ||
+		       (tilesets[gettile(c.add(0, -1))].prio > p) ||
+		       (tilesets[gettile(c.add(0,  1))].prio > p))
+		    {
+			buf.setSample(c.x, c.y, 0, 0);
+			buf.setSample(c.x, c.y, 1, 0);
+			buf.setSample(c.x, c.y, 2, 0);
+			buf.setSample(c.x, c.y, 3, 255);
+		    }
+		}
+	    }
+	    return(PUtils.rasterimg(buf));
+	}
+
+	public static final Resource.Spec notile = new Resource.Spec(Resource.remote(), "gfx/tiles/notile", -1);
+	public static final DataGrid nogrid;
+	static {
+	    nogrid = new DataGrid(new TileInfo[] {new TileInfo(notile, 0)}, new byte[cmaps.x * cmaps.y], 0);
+	}
+    }
+
+    public static class Grid extends DataGrid {
+	public final long id;
+	private int useq = -1;
+
+	public Grid(long id, TileInfo[] tilesets, byte[] tiles, long mtime) {
+	    super(tilesets, tiles, mtime);
+	    this.id = id;
 	}
 
 	public static Grid from(MCache map, MCache.Grid cg) {
@@ -468,74 +544,253 @@ public class MapFile {
 		    byte[] tiles = z.bytes(cmaps.x * cmaps.y);
 		    return(new Grid(id, tilesets.toArray(new TileInfo[0]), tiles, mtime));
 		} else {
-		    throw(new Message.FormatError(String.format("Unknown grid data version for %x: %i", id, ver)));
+		    throw(new Message.FormatError(String.format("Unknown grid data version for %x: %d", id, ver)));
 		}
 	    } catch(Message.BinError e) {
 		Debug.log.printf("mapfile warning: error when loading grid %x: %s\n", id, e);
 		return(null);
 	    }
 	}
+    }
 
-	private BufferedImage tiletex(int t, BufferedImage[] texes, boolean[] cached) {
-	    if(!cached[t]) {
-		Resource r = null;
+    public static class ZoomGrid extends DataGrid {
+	public final long seg;
+	public final int lvl;
+	public final Coord sc;
+
+	public ZoomGrid(long seg, int lvl, Coord sc, TileInfo[] tilesets, byte[] tiles, long mtime) {
+	    super(tilesets, tiles, mtime);
+	    this.seg = seg;
+	    this.lvl = lvl;
+	    this.sc = sc;
+	}
+
+	public static ZoomGrid fetch(MapFile file, Segment seg, int lvl, Coord sc) {
+	    ZoomGrid loaded = load(file, seg.id, lvl, sc);
+	    if(loaded != null)
+		return(loaded);
+	    return(from(file, seg, lvl, sc));
+	}
+
+	private static DataGrid fetchg(MapFile file, Segment seg, int lvl, Coord sc) {
+	    if(lvl == 0) {
+		Long id = seg.map.get(sc);
+		if(id == null)
+		    return(null);
+		return(Grid.load(file, id));
+	    } else {
+		return(fetch(file, seg, lvl, sc));
+	    }
+	}
+
+	public static ZoomGrid from(MapFile file, Segment seg, int lvl, Coord sc) {
+	    if((lvl < 1) || ((sc.x & ((1 << lvl) - 1)) != 0) || ((sc.x & ((1 << lvl) - 1)) != 0))
+		throw(new IllegalArgumentException(String.format("%s %s", sc, lvl)));
+	    DataGrid[] lower = new DataGrid[4];
+	    boolean any = false;
+	    long maxmtime = 0;
+	    for(int i = 0; i < 4; i++) {
+		int x = i % 2, y = i / 2;
+		lower[i] = fetchg(file, seg, lvl - 1, sc.add(x << (lvl - 1), y << (lvl - 1)));
+		if(lower[i] != null) {
+		    any = true;
+		    maxmtime = Math.max(maxmtime, lower[i].mtime);
+		} else {
+		    lower[i] = DataGrid.nogrid;
+		}
+	    }
+	    if(!any)
+		return(null);
+
+	    /* XXX: This is hardly "correct", but the correct
+	     * implementation would require a topological sort, and
+	     * it's not like it really matters that much. */
+	    int nt = 0;
+	    TileInfo[] infos;
+	    Map<String, Integer> rinfos;
+	    {
+		Resource.Pool pool = null;
+		String[] sets = new String[256];
+		Set<String> hassets = new HashSet<>();
+		Map<String, Integer> vers = new HashMap<>();
+		for(int i = 0; i < 4; i++) {
+		    if(lower[i] == null)
+			continue;
+		    for(int tn = 0; tn < lower[i].tilesets.length; tn++) {
+			Resource.Spec set = lower[i].tilesets[tn].res;
+			if(pool == null)
+			    pool = set.pool;
+			vers.put(set.name, Math.max(vers.getOrDefault(set.name, 0), set.ver));
+			if(!hassets.contains(set.name)) {
+			    sets[nt++] = set.name;
+			    hassets.add(set.name);
+			}
+		    }
+		}
+		if(nt >= 256)
+		    throw(new IllegalArgumentException(Integer.toString(nt)));
+		infos = new TileInfo[nt];
+		rinfos = new HashMap<>();
+		for(int i = 0; i < nt; i++) {
+		    infos[i] = new TileInfo(new Resource.Spec(pool, sets[i], vers.get(sets[i])), i);
+		    rinfos.put(sets[i], i);
+		}
+	    }
+
+	    byte[] tiles = new byte[cmaps.x * cmaps.y];
+	    for(int gn = 0; gn < 4; gn++) {
+		int gx = gn % 2, gy = gn / 2;
+		DataGrid cg = lower[gn];
+		if(cg == null)
+		    continue;
+		byte[] tmap = new byte[256];
+		Arrays.fill(tmap, (byte)-1);
+		for(int i = 0; i < cg.tilesets.length; i++)
+		    tmap[i] = rinfos.get(cg.tilesets[i].res.name).byteValue();
+		Coord off = cmaps.div(2).mul(gx, gy);
+		byte[] tc = new byte[4];
+		byte[] tcn = new byte[4];
+		for(int y = 0; y < cmaps.y / 2; y++) {
+		    for(int x = 0; x < cmaps.x / 2; x++) {
+			int nd = 0;
+			for(int sy = 0; sy < 2; sy++) {
+			    for(int sx = 0; sx < 2; sx++) {
+				byte st = tmap[cg.gettile(new Coord(x * 2, y * 2))];
+				st: {
+				    for(int i = 0; i < nd; i++) {
+					if(tc[i] == st) {
+					    tcn[i]++;
+					    break st;
+					}
+				    }
+				    tc[nd] = st;
+				    tcn[nd] = 1;
+				    nd++;
+				}
+			    }
+			}
+			int mi = 0;
+			for(int i = 1; i < nd; i++) {
+			    if(tcn[i] > tcn[mi])
+				mi = i;
+			}
+			tiles[(x + off.x) + ((y + off.y) * cmaps.x)] = tc[mi];
+		    }
+		}
+	    }
+	    ZoomGrid ret = new ZoomGrid(seg.id, lvl, sc, infos, tiles, maxmtime);
+	    ret.save(file);
+	    return(ret);
+	}
+
+	public void save(Message fp) {
+	    fp.adduint8(1);
+	    ZMessage z = new ZMessage(fp);
+	    z.addint64(seg);
+	    z.addint32(lvl);
+	    z.addcoord(sc);
+	    z.addint64(mtime);
+	    z.adduint8(tilesets.length);
+	    for(int i = 0; i < tilesets.length; i++) {
+		z.addstring(tilesets[i].res.name);
+		z.adduint16(tilesets[i].res.ver);
+		z.adduint8(tilesets[i].prio);
+	    }
+	    z.addbytes(tiles);
+	    z.finish();
+	}
+
+	public void save(MapFile file) {
+	    OutputStream fp;
+	    try {
+		fp = file.sstore("zgrid-%x-%d-%d-%d", seg, lvl, sc.x, sc.y);
+	    } catch(IOException e) {
+		throw(new StreamMessage.IOError(e));
+	    }
+	    try(StreamMessage out = new StreamMessage(fp)) {
+		save(out);
+	    }
+	}
+
+	public static ZoomGrid load(MapFile file, long seg, int lvl, Coord sc) {
+	    InputStream fp;
+	    try {
+		fp = file.sfetch("zgrid-%x-%d-%d-%d", seg, lvl, sc.x, sc.y);
+	    } catch(FileNotFoundException e) {
+		return(null);
+	    } catch(IOException e) {
+		Debug.log.printf("mapfile warning: error when locating zoomgrid (%d, %d) in %x@%d: %s\n", sc.x, sc.y, seg, lvl, e);
+		return(null);
+	    }
+	    try(StreamMessage data = new StreamMessage(fp)) {
+		if(data.eom())
+		    return(null);
+		int ver = data.uint8();
+		if(ver == 1) {
+		    ZMessage z = new ZMessage(data);
+		    long storedseg = z.int64();
+		    if(storedseg != seg)
+			throw(new Message.FormatError(String.format("Zoomgrid segment mismatch: expected %s, got %s", seg, storedseg)));
+		    long storedlvl = z.int32();
+		    if(storedlvl != lvl)
+			throw(new Message.FormatError(String.format("Zoomgrid level mismatch: expected %s, got %s", lvl, storedlvl)));
+		    Coord storedsc = z.coord();
+		    if(!sc.equals(storedsc))
+			throw(new Message.FormatError(String.format("Zoomgrid coord mismatch: expected %s, got %s", sc, storedsc)));
+
+		    long mtime = z.int64();
+		    List<TileInfo> tilesets = new ArrayList<TileInfo>();
+		    for(int i = 0, no = z.uint8(); i < no; i++)
+			tilesets.add(new TileInfo(new Resource.Spec(Resource.remote(), z.string(), z.uint16()), z.uint8()));
+		    byte[] tiles = z.bytes(cmaps.x * cmaps.y);
+		    return(new ZoomGrid(seg, lvl, sc, tilesets.toArray(new TileInfo[0]), tiles, mtime));
+		} else {
+		    throw(new Message.FormatError(String.format("Unknown zoomgrid data version for (%d, %d) in %x@%d: %d", sc.x, sc.y, seg, lvl, ver)));
+		}
+	    } catch(Message.BinError e) {
+		Debug.log.printf("Unknown zoomgrid data version for (%d, %d) in %x@%d: %s", sc.x, sc.y, seg, lvl, e);
+		return(null);
+	    }
+	}
+
+	public static int inval(MapFile file, long seg, Coord sc) {
+	    for(int lvl = 1; true; lvl++) {
+		sc = new Coord(sc.x & ~((1 << lvl) - 1), sc.y & ~((1 << lvl) - 1));
 		try {
-		    r = loadsaved(Resource.remote(), tilesets[t].res);
-		} catch(Loading l) {
-		    throw(l);
-		} catch(Exception e) {
-		    Debug.log.printf("mapfile warning: could not load tileset resource %s(v%d): %s\n", tilesets[t].res.name, tilesets[t].res.ver, e);
+		    file.sfetch("zgrid-%x-%d-%d-%d", seg, lvl, sc.x, sc.y).close();
+		} catch(FileNotFoundException e) {
+		    return(lvl - 1);
+		} catch(IOException e) {
+		    Debug.log.printf("mapfile warning: error when invalidating zoomgrid (%d, %d) in %x@%d: %s\n", sc.x, sc.y, seg, lvl, e);
+		    return(lvl - 1);
 		}
-		if(r != null) {
-		    Resource.Image ir = r.layer(Resource.imgc);
-		    if(ir != null) {
-			texes[t] = ir.img;
-		    }
+		try {
+		    file.sstore("zgrid-%x-%d-%d-%d", seg, lvl, sc.x, sc.y).close();
+		} catch(IOException e) {
+		    throw(new StreamMessage.IOError(e));
 		}
-		cached[t] = true;
 	    }
-	    return(texes[t]);
+	}
+    }
+
+    public static class ZoomCoord {
+	public final int lvl;
+	public final Coord c;
+
+	public ZoomCoord(int lvl, Coord c) {
+	    this.lvl = lvl;
+	    this.c = c;
 	}
 
-	private int gettile(Coord c) {
-	    return(tiles[c.x + (c.y * cmaps.x)] & 0xff);
+	public int hashCode() {
+	    return((c.hashCode() * 31) + lvl);
 	}
 
-	public BufferedImage render(Coord off) {
-	    BufferedImage[] texes = new BufferedImage[256];
-	    boolean[] cached = new boolean[256];
-	    WritableRaster buf = PUtils.imgraster(cmaps);
-	    Coord c = new Coord();
-	    for(c.y = 0; c.y < cmaps.y; c.y++) {
-		for(c.x = 0; c.x < cmaps.x; c.x++) {
-		    int t = gettile(c);
-		    BufferedImage tex = tiletex(t, texes, cached);
-		    int rgb = 0;
-		    if(tex != null)
-			rgb = tex.getRGB(Utils.floormod(c.x + off.x, tex.getWidth()),
-					 Utils.floormod(c.y + off.y, tex.getHeight()));
-		    buf.setSample(c.x, c.y, 0, (rgb & 0x00ff0000) >>> 16);
-		    buf.setSample(c.x, c.y, 1, (rgb & 0x0000ff00) >>>  8);
-		    buf.setSample(c.x, c.y, 2, (rgb & 0x000000ff) >>>  0);
-		    buf.setSample(c.x, c.y, 3, (rgb & 0xff000000) >>> 24);
-		}
-	    }
-	    for(c.y = 1; c.y < cmaps.y - 1; c.y++) {
-		for(c.x = 1; c.x < cmaps.x - 1; c.x++) {
-		    int p = tilesets[gettile(c)].prio;
-		    if((tilesets[gettile(c.add(-1, 0))].prio > p) ||
-		       (tilesets[gettile(c.add( 1, 0))].prio > p) ||
-		       (tilesets[gettile(c.add(0, -1))].prio > p) ||
-		       (tilesets[gettile(c.add(0,  1))].prio > p))
-		    {
-			buf.setSample(c.x, c.y, 0, 0);
-			buf.setSample(c.x, c.y, 1, 0);
-			buf.setSample(c.x, c.y, 2, 0);
-			buf.setSample(c.x, c.y, 3, 255);
-		    }
-		}
-	    }
-	    return(PUtils.rasterimg(buf));
+	public boolean equals(Object o) {
+	    if(!(o instanceof ZoomCoord))
+		return(false);
+	    ZoomCoord that = (ZoomCoord)o;
+	    return((this.lvl == that.lvl) && this.c.equals(that.c));
 	}
     }
 
@@ -544,6 +799,7 @@ public class MapFile {
 	private final BMap<Coord, Long> map = new HashBMap<>();
 	private final Map<Long, Cached> cache = new CacheMap<>(CacheMap.RefType.WEAK);
 	private final Map<Coord, ByCoord> ccache = new CacheMap<>(CacheMap.RefType.WEAK);
+	private final Map<ZoomCoord, ByZCoord> zcache = new CacheMap<>(CacheMap.RefType.WEAK);
 
 	public Segment(long id) {
 	    this.id = id;
@@ -559,7 +815,7 @@ public class MapFile {
 
 	    public Grid get() {
 		if(loaded == null)
-		    loaded = loading.get();
+		    loaded = loading.get(0);
 		return(loaded);
 	    }
 	}
@@ -603,17 +859,62 @@ public class MapFile {
 	    }
 	}
 
+	private Future<ZoomGrid> loadzgrid(ZoomCoord zc) {
+	    return(Defer.later(() -> ZoomGrid.fetch(MapFile.this, Segment.this, zc.lvl, zc.c)));
+	}
+
+	private class ByZCoord implements Indir<ZoomGrid> {
+	    final ZoomCoord zc;
+	    ZoomGrid loaded;
+	    Future<ZoomGrid> loading;
+
+	    ByZCoord(ZoomCoord zc, Future<ZoomGrid> loading) {
+		this.zc = zc;
+		this.loading = loading;
+	    }
+
+	    public ZoomGrid get() {
+		if(loaded == null)
+		    loaded = loading.get(0);
+		return(loaded);
+	    }
+	}
+
 	public Indir<Grid> grid(Coord gc) {
 	    checklock();
-	    Long id = map.get(gc);
-	    Cached cur = (id == null)?null:grid0(id);
 	    synchronized(ccache) {
-		return(ccache.computeIfAbsent(gc, k -> new ByCoord(k, cur)));
+		return(ccache.computeIfAbsent(gc, k -> {
+			    Long id = map.get(k);
+			    Cached cur = (id == null)?null:grid0(id);
+			    return(new ByCoord(k, cur));
+			}));
+	    }
+	}
+
+	public Indir<? extends DataGrid> grid(int lvl, Coord gc) {
+	    if((lvl < 0) || ((gc.x & ((1 << lvl) - 1)) != 0) || ((gc.x & ((1 << lvl) - 1)) != 0))
+		throw(new IllegalArgumentException(String.format("%s %s", gc, lvl)));
+	    if(lvl == 0)
+		return(grid(gc));
+	    synchronized(zcache) {
+		ZoomCoord zc = new ZoomCoord(lvl, gc);
+		return(zcache.computeIfAbsent(zc, k -> new ByZCoord(k, loadzgrid(k))));
 	    }
 	}
 
 	private void include(long id, Coord sc) {
 	    map.put(sc, id);
+	    int zl = ZoomGrid.inval(MapFile.this, this.id, sc);
+	    synchronized(zcache) {
+		for(int lvl = 1; lvl < zl; lvl++) {
+		    ZoomCoord zc = new ZoomCoord(lvl, new Coord(sc.x & ~((1 << lvl) - 1), sc.y & ~((1 << lvl) - 1)));
+		    ByZCoord zg = zcache.get(zc);
+		    if(zg != null) {
+			zg.loading = loadzgrid(zc);
+			zg.loaded = null;
+		    }
+		}
+	    }
 	    ByCoord bc;
 	    synchronized(ccache) {
 		bc = ccache.get(sc);
