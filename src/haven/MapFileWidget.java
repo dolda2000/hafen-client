@@ -377,7 +377,7 @@ public class MapFileWidget extends Widget {
     }
 
     public boolean globtype(char key, java.awt.event.KeyEvent ev) {
-	if((key == 13) && tvisible()) {
+	if((key == 'm') && tvisible()) {
 	    hmarkers = !hmarkers;
 	    return(true);
 	}
