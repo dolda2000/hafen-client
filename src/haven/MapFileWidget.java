@@ -343,7 +343,7 @@ public class MapFileWidget extends Widget {
     }
 
     private DisplayMarker markerat(Coord tc) {
-	if(markers != null) {
+	if(!hmarkers && (markers != null)) {
 	    for(DisplayMarker mark : markers) {
 		if((mark.hit != null) && mark.hit.contains(tc.sub(mark.m.tc).div(1 << dlvl)))
 		    return(mark);
