@@ -64,6 +64,10 @@ public class GOut {
 	return(root);
     }
 
+    public Coord sz() {
+	return(br.sub(ul));
+    }
+
     public Pipe basicstate() {
 	return(def2d.copy());
     }
