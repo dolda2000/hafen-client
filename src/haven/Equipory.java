@@ -95,11 +95,13 @@ public class Equipory extends Widget implements DTarget {
 		    super.draw(g);
 		}
 
+		/* XXXRENDER
 		Outlines outlines = new Outlines(true);
 		protected void setup(RenderList rl) {
 		    super.setup(rl);
 		    rl.add(outlines, null);
 		}
+		*/
 
 		protected java.awt.Color clearcolor() {return(null);}
 	    }, new Coord(34, 0));

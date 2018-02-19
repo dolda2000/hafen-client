@@ -103,8 +103,8 @@ public class KinInfo extends GAttrib {
 			Color show = null;
 			boolean auto = (type & 1) == 0;
 			if(false) {
-			    /* XXX: QQ, RIP in peace until constant
-			     * mouse-over checks can be had. */
+			    -* XXX: QQ, RIP in peace until constant
+			     * mouse-over checks can be had. *-
 			    if(auto && (tm < 7.5)) {
 				show = Utils.clipcol(255, 255, 255, (int)(255 - ((255 * tm) / 7.5)));
 			    }

@@ -1208,7 +1208,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			super.draw(g);
 			Color urg = chat.urgcols[chat.urgency];
 			if(urg != null) {
-			    GOut g2 = g.reclipl(new Coord(-2, -2), g.sz.add(4, 4));
+			    GOut g2 = g.reclipl(new Coord(-2, -2), g.sz().add(4, 4));
 			    g2.chcolor(urg.getRed(), urg.getGreen(), urg.getBlue(), 128);
 			    g2.image(glow, Coord.z);
 			}

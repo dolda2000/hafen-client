@@ -173,9 +173,11 @@ public class OptWnd extends Window {
 		y += 35;
 		add(new Button(200, "Reset to defaults") {
 			public void click() {
+			    /* XXXRENDER
 			    cf.cfg.resetprefs();
 			    curcf.destroy();
 			    curcf = null;
+			    */
 			}
 		    }, new Coord(0, 150));
 		pack();
@@ -184,11 +186,13 @@ public class OptWnd extends Window {
 
 	private CPanel curcf = null;
 	public void draw(GOut g) {
+	    /* XXXRENDER
 	    if((curcf == null) || (g.gc.pref != curcf.cf)) {
 		if(curcf != null)
 		    curcf.destroy();
 		curcf = add(new CPanel(g.gc.pref), Coord.z);
 	    }
+	    */
 	    super.draw(g);
 	}
     }
@@ -235,10 +239,10 @@ public class OptWnd extends Window {
 	audio.add(new HSlider(200, 0, 1000, 0) {
 		protected void attach(UI ui) {
 		    super.attach(ui);
-		    val = (int)(ui.audio.pos.volume * 1000);
+		    // val = (int)(ui.audio.pos.volume * 1000); XXXRENDER
 		}
 		public void changed() {
-		    ui.audio.pos.setvolume(val / 1000.0);
+		    // ui.audio.pos.setvolume(val / 1000.0); XXXRENDER
 		}
 	    }, new Coord(0, y));
 	y += 20;
@@ -247,10 +251,10 @@ public class OptWnd extends Window {
 	audio.add(new HSlider(200, 0, 1000, 0) {
 		protected void attach(UI ui) {
 		    super.attach(ui);
-		    val = (int)(ui.audio.amb.volume * 1000);
+		    // val = (int)(ui.audio.amb.volume * 1000); XXXRENDER
 		}
 		public void changed() {
-		    ui.audio.amb.setvolume(val / 1000.0);
+		    // ui.audio.amb.setvolume(val / 1000.0); XXXRENDER
 		}
 	    }, new Coord(0, y));
 	y += 35;
