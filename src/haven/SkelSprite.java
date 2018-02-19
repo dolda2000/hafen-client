@@ -29,25 +29,29 @@ package haven;
 import java.util.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
-import haven.MorphedMesh.Morpher;
+// import haven.MorphedMesh.Morpher; XXXRENDER
 
 public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.HasPose {
+    /* XXXRENDER
     public static final GLState
 	rigid = new Material.Colors(java.awt.Color.GREEN),
 	morphed = new Material.Colors(java.awt.Color.RED),
 	unboned = new Material.Colors(java.awt.Color.YELLOW);
+    */
     public static boolean bonedb = false;
     public static final float ipollen = 0.3f;
     public final Skeleton skel;
     public final Pose pose;
     public PoseMod[] mods = new PoseMod[0];
     public MeshAnim.Anim[] manims = new MeshAnim.Anim[0];
+    /* XXXRENDER
     private Morpher.Factory mmorph;
     private final PoseMorph pmorph;
+    */
     private Pose oldpose;
     private float ipold;
     private boolean stat = true;
-    private Rendered[] parts;
+    // private Rendered[] parts; XXXRENDER
     
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
@@ -61,14 +65,15 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 	super(owner, res);
 	skel = res.layer(Skeleton.Res.class).s;
 	pose = skel.new Pose(skel.bindpose);
-	pmorph = new PoseMorph(pose);
+	// pmorph = new PoseMorph(pose); XXXRENDER
 	int fl = sdt.eom()?0xffff0000:decnum(sdt);
 	chposes(fl, true);
-	chparts(fl);
+	// chparts(fl); XXXRENDER
     }
 
     /* XXX: It's ugly to snoop inside a wrapping, but I can't think of
      * a better way to apply morphing to renderlinks right now. */
+    /* XXXRENDER
     private Rendered animwrap(GLState.Wrapping wrap) {
 	if(!(wrap.r instanceof FastMesh))
 	    return(wrap);
@@ -117,6 +122,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 	}
 	this.parts = rl.toArray(new Rendered[0]);
     }
+    */
     
     private void rebuild() {
 	pose.reset();
@@ -136,7 +142,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 		anims.add(ar.make());
 	}
 	this.manims = anims.toArray(new MeshAnim.Anim[0]);
-	this.mmorph = MorphedMesh.combine(this.manims);
+	// this.mmorph = MorphedMesh.combine(this.manims); XXXRENDER
     }
 
     private Map<Skeleton.ResPose, PoseMod> modids = new HashMap<Skeleton.ResPose, PoseMod>();
@@ -173,15 +179,17 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
     public void update(Message sdt) {
 	int fl = sdt.eom()?0xffff0000:decnum(sdt);
 	chposes(fl, false);
-	chparts(fl);
+	// chparts(fl); XXXRENDER
     }
     
+    /* XXXRENDER
     public boolean setup(RenderList rl) {
 	for(Rendered p : parts)
 	    rl.add(p, null);
-	/* rl.add(pose.debug, null); */
+	-* rl.add(pose.debug, null); *-
 	return(false);
     }
+    */
     
     public boolean tick(int idt) {
 	float dt = idt / 1000.0f;

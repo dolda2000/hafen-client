@@ -31,7 +31,7 @@ import java.awt.Graphics;
 import java.util.*;
 import java.lang.reflect.Constructor;
 
-public abstract class Sprite implements Rendered {
+public abstract class Sprite {
     public final Resource res;
     public final Owner owner;
     public static List<Factory> factories = new LinkedList<Factory>();
@@ -131,7 +131,9 @@ public abstract class Sprite implements Rendered {
 
     public void draw(GOut g) {}
 
+    /* XXXRENDER
     public abstract boolean setup(RenderList d);
+    */
 
     public boolean tick(int dt) {
 	return(false);

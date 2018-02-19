@@ -31,7 +31,7 @@ public class Following extends Moving {
     double lastv = 0.0;
     Indir<Resource> xfres;
     String xfname;
-    GLState xf = null, lpxf = null;
+    // GLState xf = null, lpxf = null; XXXRENDER
     Gob lxfb = null;
     Skeleton.Pose lpose = null;
     
@@ -71,6 +71,7 @@ public class Following extends Moving {
 	return(Skeleton.getpose(tgt.getattr(Drawable.class)));
     }
 
+    /* XXXRENDER
     public GLState xf() {
 	synchronized(this) {
 	    Gob tgt = tgt();
@@ -107,4 +108,5 @@ public class Following extends Moving {
 	    return(null);
 	return(flw.xf());
     }
+    */
 }

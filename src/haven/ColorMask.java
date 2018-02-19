@@ -27,22 +27,29 @@
 package haven;
 
 import java.awt.Color;
+/*
 import haven.glsl.*;
 import static haven.glsl.Type.*;
+*/
 
-public class ColorMask extends GLState {
+public class ColorMask /* extends GLState XXXRENDER */ {
+    /*
     public static final Slot<ColorMask> slot = new Slot<ColorMask>(Slot.Type.DRAW, ColorMask.class);
     public static final Uniform ccol = new Uniform(VEC4);
+    */
     private final float[] col;
 
+    /*
     private static final ShaderMacro sh = prog -> {
 	prog.fctx.fragcol.mod(in -> MiscLib.colblend.call(in, ccol.ref()), 100);
     };
+    */
 
     public ColorMask(Color col) {
 	this.col = Utils.c2fa(col);
     }
 
+    /*
     public ShaderMacro shader() {return(sh);}
 
     public void reapply(GOut g) {
@@ -59,4 +66,5 @@ public class ColorMask extends GLState {
     public void prep(Buffer buf) {
 	buf.put(slot, this);
     }
+    */
 }

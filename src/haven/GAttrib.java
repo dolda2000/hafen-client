@@ -42,7 +42,9 @@ public abstract class GAttrib {
     public void dispose() {
     }
 
+    /* XXXRENDER
     public Object staticp() {
 	return(Rendered.CONSTANS);
     }
+    */
 }

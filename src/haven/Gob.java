@@ -28,7 +28,7 @@ package haven;
 
 import java.util.*;
 
-public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
+public class Gob implements Sprite.Owner, Skeleton.ModOwner {
     public Coord2d rc;
     public Coord sc;
     public Coord3f sczu;
@@ -50,7 +50,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
     private final Collection<ResAttr.Cell<?>> rdata = new LinkedList<ResAttr.Cell<?>>();
     private final Collection<ResAttr.Load> lrdata = new LinkedList<ResAttr.Load>();
 
-    public static class Overlay implements Rendered {
+    public static class Overlay {
 	public Indir<Resource> res;
 	public MessageBuf sdt;
 	public Sprite spr;
@@ -80,10 +80,13 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	}
 
 	public static interface SetupMod {
+	    /* XXXRENDER
 	    public void setupgob(GLState.Buffer buf);
 	    public void setupmain(RenderList rl);
+	    */
 	}
 
+	/* XXXRENDER
 	public void draw(GOut g) {}
 	public boolean setup(RenderList rl) {
 	    if(spr != null)
@@ -94,6 +97,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	public Object staticp() {
 	    return((spr == null)?null:spr.staticp());
 	}
+	*/
     }
 
     /* XXX: This whole thing didn't turn out quite as nice as I had
@@ -169,7 +173,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	this.rc = c;
 	this.id = id;
 	this.frame = frame;
-	loc.tick();
+	// loc.tick(); XXXRENDER
     }
 
     public Gob(Glob glob, Coord2d c) {
@@ -370,6 +374,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 
     public void draw(GOut g) {}
 
+    /* XXXRENDER
     public boolean setup(RenderList rl) {
 	loc.tick();
 	for(Overlay ol : ols)
@@ -428,9 +433,10 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	}
 	return((seq == DYNAMIC)?null:seq);
     }
+    */
 
     void changed() {
-	seq = null;
+	// seq = null; XXXRENDER
     }
 
     public Random mkrandoom() {
@@ -460,6 +466,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	return(m.getv());
     }
 
+    /* XXXRENDER
     public final GLState olmod = new GLState() {
 	    public void apply(GOut g) {}
 	    public void unapply(GOut g) {}
@@ -471,7 +478,9 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 		}
 	    }
 	};
+    */
 
+    /*
     public class Save extends GLState.Abstract {
 	public Matrix4f cam = new Matrix4f(), wxf = new Matrix4f(),
 	    mv = new Matrix4f();
@@ -513,4 +522,5 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner, Rendered {
 	}
     }
     public final GobLocation loc = new GobLocation();
+    */
 }

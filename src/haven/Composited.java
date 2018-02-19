@@ -31,10 +31,10 @@ import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 import haven.MapView.ClickInfo;
 
-public class Composited implements Rendered, MapView.Clickable {
+public class Composited implements MapView.Clickable {
     public final Skeleton skel;
     public final Pose pose;
-    private final PoseMorph morph;
+    // private final PoseMorph morph; XXXRENDER
     public Collection<Model> mod = new LinkedList<Model>();
     public Collection<Equ> equ = new LinkedList<Equ>();
     public Poses poses = new Poses();
@@ -117,9 +117,10 @@ public class Composited implements Rendered, MapView.Clickable {
     public Composited(Skeleton skel) {
 	this.skel = skel;
 	this.pose = skel.new Pose(skel.bindpose);
-	this.morph = new PoseMorph(pose);
+	// this.morph = new PoseMorph(pose); XXXRENDER
     }
     
+    /* XXXRENDER
     private static final Rendered.Order modorder = new Rendered.Order<Model.Layer>() {
 	public int mainz() {
 	    return(1);
@@ -137,12 +138,13 @@ public class Composited implements Rendered, MapView.Clickable {
 	    return(cmp);
 	}
     };
+    */
 
-    public class Model implements Rendered {
-	public final MorphedMesh m;
-	public final int id;
+    public class Model {
+	// public final MorphedMesh m; XXXRENDER
+	public final int id = -1;
 	int z = 0, lz = 0;
-	public class Layer implements FRendered {
+	public class Layer {
 	    private final Material mat;
 	    private final int z1, z2;
 	    
@@ -153,26 +155,32 @@ public class Composited implements Rendered, MapView.Clickable {
 	    }
 	    
 	    public void draw(GOut g) {
-		m.draw(g);
+		// m.draw(g); XXXRENDER
 	    }
 	    
 	    public void drawflat(GOut g) {
+		/* XXXRENDER
 		if(z2 == 0)
 		    m.drawflat(g);
+		*/
 	    }
 	    
+	    /* XXXRENDER
 	    public boolean setup(RenderList r) {
 		r.prepo(modorder);
 		r.prepo(mat);
 		return(true);
 	    }
+	    */
 	}
 	public final List<Layer> lay = new ArrayList<Layer>();
 	
+	/* XXXRENDER
 	private Model(FastMesh m, int id) {
 	    this.m = new MorphedMesh(m, morph);
 	    this.id = id;
 	}
+	*/
 	
 	private void addlay(Material mat) {
 	    lay.add(new Layer(mat, z, lz++));
@@ -181,12 +189,14 @@ public class Composited implements Rendered, MapView.Clickable {
 	public void draw(GOut g) {
 	}
 	
+	/* XXXRENDER
 	public boolean setup(RenderList r) {
 	    m.setup(r);
 	    for(Layer lay : this.lay)
 		r.add(lay, null);
 	    return(false);
 	}
+	*/
     }
     
     public class SpriteEqu extends Equ {
@@ -200,10 +210,12 @@ public class Composited implements Rendered, MapView.Clickable {
 	public void draw(GOut g) {
 	}
 
+	/* XXXRENDER
 	public boolean setup(RenderList rl) {
 	    rl.add(spr, null);
 	    return(false);
 	}
+	*/
 	
 	public void tick(int dt) {
 	    spr.tick(dt);
@@ -221,14 +233,16 @@ public class Composited implements Rendered, MapView.Clickable {
 	public void draw(GOut g) {
 	}
 	
+	/* XXXRENDER
 	public boolean setup(RenderList rl) {
 	    rl.add(l, null);
 	    return(false);
 	}
+	*/
     }
 
-    public abstract class Equ implements Rendered {
-	private final GLState et;
+    public abstract class Equ {
+	// private final GLState et; XXXRENDER
 	public final ED desc;
 	public final int id;
 	private boolean matched;
@@ -236,6 +250,7 @@ public class Composited implements Rendered, MapView.Clickable {
 	private Equ(ED ed) {
 	    this.desc = ed.clone();
 	    this.id = desc.id;
+	    /* XXXRENDER
 	    GLState bt = null;
 	    if(bt == null) {
 		Skeleton.BoneOffset bo = ed.res.res.get().layer(Skeleton.BoneOffset.class, ed.at);
@@ -258,6 +273,7 @@ public class Composited implements Rendered, MapView.Clickable {
 		this.et = GLState.compose(bt, Location.xlate(ed.off));
 	    else
 		this.et = bt;
+	    */
 	}
 	
 	public void tick(int dt) {}
@@ -402,10 +418,12 @@ public class Composited implements Rendered, MapView.Clickable {
 	    MD md = i.next();
 	    try {
 		if(md.real == null) {
+		    /* XXXRENDER
 		    FastMesh.MeshRes mr = md.mod.get().layer(FastMesh.MeshRes.class);
 		    if(mr == null)
 			throw(new Sprite.ResourceException("Model resource contains no mesh", md.mod.get()));
 		    md.real = new Model(mr.m, md.id);
+		    */
 		    /* This is really ugly, but I can't really think of
 		     * anything less ugly right now. */
 		    if(md.mod.get().name.equals("gfx/borka/male") || md.mod.get().name.equals("gfx/borka/female"))
@@ -482,7 +500,7 @@ public class Composited implements Rendered, MapView.Clickable {
     }
 
     public Object[] clickargs(ClickInfo inf) {
-	Rendered[] st = inf.array();
+	/* Rendered XXXRENDER */ Object[] st = inf.array();
 	for(int g = 0; g < st.length; g++) {
 	    if(st[g] instanceof Gob) {
 		Gob gob = (Gob)st[g];
@@ -497,11 +515,13 @@ public class Composited implements Rendered, MapView.Clickable {
 			Equ equ = (Equ)st[i];
 			if(equ.id >= 0)
 			    id = 0x02000000 | ((equ.id & 0xff) << 16);
-		    } else if(st[i] instanceof FastMesh.ResourceMesh) {
+		    } /* XXXRENDER
+		      else if(st[i] instanceof FastMesh.ResourceMesh) {
 			FastMesh.ResourceMesh rm = (FastMesh.ResourceMesh)st[i];
 			if((id & 0xff000000) == 0x02000000)
 			    id = (id & 0xffff0000) | (rm.id & 0xffff);
 		    }
+		    */
 		}
 		ret[4] = id;
 		return(ret);
@@ -538,7 +558,6 @@ public class Composited implements Rendered, MapView.Clickable {
     public ClickInfo clickinfo(Rendered self, ClickInfo prev) {
 	return(new CompositeClick(prev, null, self));
     }
-    */
 
     public boolean setup(RenderList rl) {
 	changes();
@@ -548,6 +567,7 @@ public class Composited implements Rendered, MapView.Clickable {
 	    rl.add(equ, equ.et);
 	return(false);
     }
+    */
     
     public void draw(GOut g) {
     }

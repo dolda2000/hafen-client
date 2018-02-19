@@ -256,6 +256,7 @@ public class Skeleton {
 	    }
 	}
 	
+	/* XXXRENDER
 	public Location bonetrans(final int bone) {
 	    return(new Location(Matrix4f.identity()) {
 		    private int cseq = -1;
@@ -314,9 +315,9 @@ public class Skeleton {
 		    Coord3f cur = new Coord3f(gpos[tgt][0] - gpos[orig][0], gpos[tgt][1] - gpos[orig][1], gpos[tgt][2] - gpos[orig][2]).norm();
 		    Coord3f axis = cur.cmul(ref).norm();
 		    float ang = (float)Math.acos(cur.dmul(ref));
-		    /*
+		    /-
 		    System.err.println(cur + ", " + ref + ", " + axis + ", " + ang);
-		    */
+		    -/
 		    update(Transform.makexlate(new Matrix4f(), new Coord3f(gpos[orig][0], gpos[orig][1], gpos[orig][2]))
 			   .mul1(Transform.makerot(new Matrix4f(), axis, -ang)));
 		    cseq = seq;
@@ -324,6 +325,7 @@ public class Skeleton {
 		return(super.fin(p));
 	    }
 	}
+	*/
 
 	public void boneoff(int bone, float[] offtrans) {
 	    /* It would be nice if these "new float"s get
@@ -350,6 +352,7 @@ public class Skeleton {
 	    offtrans[ 9] = yz + xw;
 	}
 	
+	/* XXXRENDER
 	public final Rendered debug = new Rendered() {
 		public void draw(GOut g) {
 		    BGL gl = g.gl;
@@ -375,6 +378,7 @@ public class Skeleton {
 		    return(true);
 		}
 	    };
+	*/
     }
 
     public interface HasPose {
@@ -799,13 +803,13 @@ public class Skeleton {
 	public static class SpawnSprite extends Event {
 	    public final Indir<Resource> res;
 	    public final byte[] sdt;
-	    public final Location loc;
+	    // public final Location loc; XXXRENDER
 
-	    public SpawnSprite(float time, Indir<Resource> res, byte[] sdt, Location loc) {
+	    public SpawnSprite(float time, Indir<Resource> res, byte[] sdt /*, Location loc */) {
 		super(time);
 		this.res = res;
 		this.sdt = (sdt == null)?new byte[0]:sdt;
-		this.loc = loc;
+		// this.loc = loc;
 	    }
 
 	    public void trigger(Gob gob) {
@@ -820,11 +824,13 @@ public class Skeleton {
 			    return(new Coord3f(fc));
 			}
 
+			/* XXXRENDER
 			public boolean setup(RenderList rl) {
 			    if(SpawnSprite.this.loc != null)
 				rl.prepc(SpawnSprite.this.loc);
 			    return(super.setup(rl));
 			}
+			*/
 		    };
 		n.ols.add(new Gob.Overlay(-1, res, new MessageBuf(sdt)));
 	    }
@@ -878,7 +884,7 @@ public class Skeleton {
 		    int resver = buf.uint16();
 		    byte[] sdt = buf.bytes(buf.uint8());
 		    Indir<Resource> res = getres().pool.load(resnm, resver);
-		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, null);
+		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt /*, null */);
 		    break;
 		case 1:
 		    String id = buf.string();
@@ -987,9 +993,11 @@ public class Skeleton {
 			final float y = (float)buf.cpfloat();
 			final float z = (float)buf.cpfloat();
 			return(new Command() {
+				/*
 				public GLState make(Pose pose) {
 				    return(Location.xlate(new Coord3f(x, y, z)));
 				}
+				*/
 			    });
 		    }
 		};
@@ -1000,9 +1008,11 @@ public class Skeleton {
 			final float ay = (float)buf.cpfloat();
 			final float az = (float)buf.cpfloat();
 			return(new Command() {
+				/*
 				public GLState make(Pose pose) {
 				    return(Location.rot(new Coord3f(ax, ay, az), ang));
 				}
+				*/
 			    });
 		    }
 		};
@@ -1010,10 +1020,12 @@ public class Skeleton {
 		    public Command make(Message buf) {
 			final String bonenm = buf.string();
 			return(new Command() {
+				/*
 				public GLState make(Pose pose) {
 				    Bone bone = pose.skel().bones.get(bonenm);
 				    return(pose.bonetrans(bone.idx));
 				}
+				*/
 			    });
 		    }
 		};
@@ -1027,18 +1039,20 @@ public class Skeleton {
 			final String orignm = buf.string();
 			final String tgtnm = buf.string();
 			return(new Command() {
+				/*
 				public GLState make(Pose pose) {
 				    Bone orig = pose.skel().bones.get(orignm);
 				    Bone tgt = pose.skel().bones.get(tgtnm);
 				    return(pose.new BoneAlign(ref, orig, tgt));
 				}
+				*/
 			    });
 		    }
 		};
 	}
 	
 	public interface Command {
-	    public GLState make(Pose pose);
+	    // public GLState make(Pose pose); XXXRENDER
 	}
 
 	public interface HatingJava {
@@ -1061,11 +1075,13 @@ public class Skeleton {
 	public void init() {
 	}
 	
+	/* XXXRENDER
 	public GLState forpose(Pose pose) {
 	    GLState[] ls = new GLState[prog.length];
 	    for(int i = 0; i < prog.length; i++)
 		ls[i] = prog[i].make(pose);
 	    return(GLState.compose(ls));
 	}
+	*/
     }
 }

@@ -32,21 +32,23 @@ import java.nio.ByteBuffer;
 import javax.media.opengl.*;
 import haven.Defer.Future;
 
-public abstract class TexL extends TexGL {
+public abstract class TexL /* XXXRENDER extends TexGL */ {
     protected Mipmapper mipmap = null;
     private Future<Prepared> decode = null;
 
     public abstract BufferedImage fill();
 
     public TexL(Coord sz) {
+	/* XXXRENDER
 	super(sz);
 	if((sz.x != nextp2(sz.x)) || (sz.y != nextp2(sz.y)))
 	    throw(new RuntimeException("TexL does not support non-power-of-two textures"));
+	*/
     }
 
     public void mipmap(Mipmapper mipmap) {
 	this.mipmap = mipmap;
-	dispose();
+	// dispose(); XXXRENDER
     }
 
     private class Prepared {
@@ -56,6 +58,7 @@ public abstract class TexL extends TexGL {
 
 	private Prepared() {
 	    img = fill();
+	    /* XXXRENDER
 	    if(!Utils.imgsz(img).equals(dim))
 		throw(new RuntimeException("Generated TexL image from " + TexL.this + " does not match declared size"));
 	    ifmt = TexI.detectfmt(img);
@@ -95,6 +98,7 @@ public abstract class TexL extends TexGL {
 		}
 	    }
 	    this.data = data.toArray(new byte[0][]);
+	    */
 	}
     }
 
@@ -124,6 +128,7 @@ public abstract class TexL extends TexGL {
 	    decode = prepare();
 	Prepared prep = decode.get();
 	decode = null;
+	/* XXXRENDER
 	BGL gl = g.gl;
 	gl.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1);
 	Coord cdim = tdim;
@@ -131,5 +136,6 @@ public abstract class TexL extends TexGL {
 	    gl.glTexImage2D(GL.GL_TEXTURE_2D, i, GL.GL_RGBA, cdim.x, cdim.y, 0, prep.ifmt, GL.GL_UNSIGNED_BYTE, ByteBuffer.wrap(prep.data[i]));
 	    cdim = Mipmapper.nextsz(cdim);
 	}
+	*/
     }
 }

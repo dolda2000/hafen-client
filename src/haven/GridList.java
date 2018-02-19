@@ -103,7 +103,7 @@ public abstract class GridList<T> extends Widget {
 
     protected void drawsel(GOut g) {
 	g.chcolor(255, 255, 0, 128);
-	g.frect(Coord.z, g.sz);
+	g.frect(Coord.z, g.sz());
 	g.chcolor();
     }
 
@@ -142,7 +142,7 @@ public abstract class GridList<T> extends Widget {
 		try {
 		    drawitem(ig, item);
 		} catch(Loading l) {
-		    ig.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, g.sz);
+		    ig.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, g.sz());
 		}
 	    }
 	}

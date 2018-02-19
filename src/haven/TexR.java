@@ -89,8 +89,10 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	    magfilter = GL.GL_LINEAR;
 	if(minfilter == -1)
 	    minfilter = (tex.mipmap == null)?GL.GL_LINEAR:GL.GL_LINEAR_MIPMAP_LINEAR;
+	/* XXXRENDER
 	tex.magfilter(magfilter);
 	tex.minfilter(minfilter);
+	*/
     }
 
     private class Real extends TexL {
@@ -142,7 +144,7 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	    try {
 		super.fill(g);
 	    } catch(Loading l) {
-		throw(new RenderList.RLoad(l));
+		// throw(new RenderList.RLoad(l)); XXXRENDER
 	    }
 	}
 
@@ -155,9 +157,11 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	}
     }
 
+    /* XXXRENDER
     public TexGL tex() {
 	return(tex);
     }
+    */
 
     public Integer layerid() {
 	return(id);

@@ -29,7 +29,9 @@ package haven;
 import java.util.*;
 
 public class AnimSprite extends Sprite {
+    /* XXXRENDER
     private Rendered[] parts;
+    */
     private MeshAnim.Anim[] anims;
 
     public static final Factory fact = new Factory() {
@@ -49,6 +51,7 @@ public class AnimSprite extends Sprite {
 		anims.add(ar.make());
 	}
 	this.anims = anims.toArray(new MeshAnim.Anim[0]);
+	/* XXXRENDER
 	MorphedMesh.Morpher.Factory morph = MorphedMesh.combine(this.anims);
 	Collection<Rendered> rl = new LinkedList<Rendered>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
@@ -67,13 +70,16 @@ public class AnimSprite extends Sprite {
 	    }
 	}
 	parts = rl.toArray(new Rendered[0]);
+	*/
     }
 
+    /* XXXRENDER
     public boolean setup(RenderList rl) {
 	for(Rendered p : parts)
 	    rl.add(p, null);
 	return(false);
     }
+    */
 
     public boolean tick(int idt) {
 	boolean ret = false;
@@ -83,7 +89,9 @@ public class AnimSprite extends Sprite {
 	return(ret);
     }
 
+    /* XXXRENDER
     public Object staticp() {
 	return((anims.length == 0)?CONSTANS:null);
     }
+    */
 }

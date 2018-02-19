@@ -82,6 +82,7 @@ public abstract class Profile {
 	return(hist[i - 1]);
     }
     
+    /* XXXRENDER
     public void draw(TexIM tex, double scale) {
 	int h = tex.sz().y;
 	Graphics2D g = tex.graphics();
@@ -101,6 +102,7 @@ public abstract class Profile {
 	}
 	tex.update();
     }
+    */
 
     public void dump(java.io.PrintStream out) {
 	String[] parts = new String[0];

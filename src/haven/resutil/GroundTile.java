@@ -33,7 +33,7 @@ import haven.Tileset.Tile;
 import haven.Surface.MeshVertex;
 
 public class GroundTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
-    private static final Material.Colors gcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
+    // private static final Material.Colors gcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0)); XXXRENDER
     public final Tileset set;
 
     @ResName("gnd")
@@ -48,6 +48,7 @@ public class GroundTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	this.set = set;
     }
 
+    /* XXXRENDER
     private static GLState stfor(Tex tex, int z, boolean clip) {
 	TexGL gt;
 	if(tex instanceof TexGL)
@@ -63,21 +64,24 @@ public class GroundTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	    ret = GLState.compose(Light.deflight, gcol, gt.draw(), new MapMesh.MLOrder(z));
 	return(ret);
     }
+    */
 
     /* XXX: Some strange javac bug seems to make it resolve the
      * trans() references to the wrong signature, thus the name
      * distinction. */
     public void _faces(MapMesh m, Tile t, int z, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
 	Tex tex = t.tex();
+	/* XXXRENDER
 	float tl = tex.tcx(0), tt = tex.tcy(0), tw = tex.tcx(tex.sz().x) - tl, th = tex.tcy(tex.sz().y) - tt;
 	GLState st = stfor(tex, z, t.t != 'g');
-	MeshBuf buf = MapMesh.Model.get(m, st);
+	*/
+	MeshBuf buf = MapMesh.Model.get(m, null /*, st */);
 
 	MeshBuf.Tex btex = buf.layer(MeshBuf.tex);
 	MeshVertex[] mv = new MeshVertex[v.length];
 	for(int i = 0; i < v.length; i++) {
 	    mv[i] = new MeshVertex(buf, v[i]);
-	    btex.set(mv[i], new Coord3f(tl + (tw * tcx[i]), tt + (th * tcy[i]), 0));
+	    // btex.set(mv[i], new Coord3f(tl + (tw * tcx[i]), tt + (th * tcy[i]), 0)); XXXRENDER
 	}
 	for(int i = 0; i < f.length; i += 3)
 	    buf.new Face(mv[f[i]], mv[f[i + 1]], mv[f[i + 2]]);

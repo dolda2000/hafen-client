@@ -36,12 +36,12 @@ import javax.media.opengl.*;
  * place that changes a value.
  */
 public class GLSettings implements java.io.Serializable {
-    public final GLConfig cfg;
+    // public final GLConfig cfg; XXXRENDER
     public boolean dirty = false;
     private final List<Setting<?>> settings = new ArrayList<Setting<?>>();
 
-    private GLSettings(GLConfig cfg) {
-	this.cfg = cfg;
+    private GLSettings(/* GLConfig cfg */) {
+	// this.cfg = cfg;
     }
 
     public static class SettingException extends RuntimeException {
@@ -128,34 +128,42 @@ public class GLSettings implements java.io.Serializable {
     }
     public final EnumSetting<MeshMode> meshmode = new EnumSetting<MeshMode>("meshmode", MeshMode.class) {
 	public MeshMode defval() {
+	    /* XXXRENDER
 	    if(cfg.exts.contains("GL_ARB_vertex_array_object"))
 		return(MeshMode.VAO);
+	    */
 	    return(MeshMode.DLIST);
 	}
 
 	public void validate(MeshMode mode) {
 	    switch(mode) {
 	    case VAO:
+	    /* XXXRENDER
 		if(!cfg.exts.contains("GL_ARB_vertex_array_object"))
 		    throw(new SettingException("VAOs are not supported."));
+	    */
 		break;
 	    }
 	}
     };
 
     public final BoolSetting instancing = new BoolSetting("instance") {
-	    public Boolean defval() {return(cfg.exts.contains("GL_ARB_instanced_arrays"));}
+	    public Boolean defval() {return(true /* cfg.exts.contains("GL_ARB_instanced_arrays") XXXRENDER */);}
 	    public void validate(Boolean val) {
+		/* XXXRENDER
 		if(!cfg.exts.contains("GL_ARB_instanced_arrays"))
 		    throw(new SettingException("Video card does not support instancing."));
+		*/
 	    }
 	};
 
     public final BoolSetting fsaa = new BoolSetting("fsaa") {
 	    public Boolean defval() {return(false);}
 	    public void validate(Boolean val) {
+		/* XXXRENDER
 		if(val && !cfg.havefsaa())
 		    throw(new SettingException("FSAA is not supported."));
+		*/
 	    }
 	};
     public final BoolSetting alphacov = new BoolSetting("alphacov") {
@@ -186,7 +194,9 @@ public class GLSettings implements java.io.Serializable {
 	    public void validate(Boolean val) {
 		if(val) {
 		    if(!flight.val) throw(new SettingException("Shadowed lighting requires per-fragment lighting."));
+		    /* XXXRENDER
 		    if(!cfg.havefbo()) throw(new SettingException("Shadowed lighting requires a video card supporting framebuffers."));
+		    */
 		}
 	    }
 	};
@@ -194,30 +204,34 @@ public class GLSettings implements java.io.Serializable {
 	    public Boolean defval() {return(false);}
 	    public void validate(Boolean val) {
 		if(val) {
+		    /* XXXRENDER
 		    if(!cfg.havefbo()) throw(new SettingException("Outline rendering requires a video card supporting framebuffers."));
+		    */
 		}
 	    }
 	};
 
     public final BoolSetting wsurf = new BoolSetting("wsurf") {
-	    public Boolean defval() {return(cfg.glmajver >= 3);}
+	    public Boolean defval() {return(true /* XXXRENDER cfg.glmajver >= 3 */);}
 	    public void validate(Boolean val) {}
 	};
 
     public final FloatSetting anisotex = new FloatSetting("aniso") {
 	    public Float defval() {return(0f);}
 	    public float min() {return(0);}
-	    public float max() {return(cfg.anisotropy);}
+	    public float max() {return(1 /* XXXRENDER cfg.anisotropy */);}
 	    public void validate(Float val) {
 		if(val != 0) {
+		    /* XXXRENDER
 		    if(cfg.anisotropy <= 1) throw(new SettingException("Video card does not support anisotropic filtering."));
 		    if(val > cfg.anisotropy) throw(new SettingException("Video card only supports up to " + cfg.anisotropy + "x anistropic filtering."));
+		    */
 		    if(val < 0) throw(new SettingException("Anisostropy factor cannot be negative."));
 		}
 	    }
 	    public void set(Float val) {
 		super.set(val);
-		TexGL.setallparams();
+		// TexGL.setallparams(); XXXRENDER
 	    }
 	};
 
@@ -240,8 +254,8 @@ public class GLSettings implements java.io.Serializable {
 	s.val = s.defval();
     }
 
-    public static GLSettings defconf(GLConfig cfg) {
-	GLSettings gs = new GLSettings(cfg);
+    public static GLSettings defconf(/* XXXRENDER GLConfig cfg */) {
+	GLSettings gs = new GLSettings(/* cfg */);
 	for(Setting<?> s : gs.settings)
 	    iAmRunningOutOfNamesToInsultJavaWith(s);
 	return(gs);
@@ -252,8 +266,8 @@ public class GLSettings implements java.io.Serializable {
 	s.set((T)val);
     }
 
-    public static GLSettings load(Object data, GLConfig cfg, boolean failsafe) {
-	GLSettings gs = defconf(cfg);
+    public static GLSettings load(Object data, /* XXXRENDER GLConfig cfg, */ boolean failsafe) {
+	GLSettings gs = defconf(/* cfg */);
 	Map<?, ?> dat = (Map)data;
 	for(Setting<?> s : gs.settings) {
 	    if(dat.containsKey(s.nm)) {
@@ -268,10 +282,10 @@ public class GLSettings implements java.io.Serializable {
 	return(gs);
     }
 
-    public static GLSettings load(GLConfig cfg, boolean failsafe) {
+    public static GLSettings load(/* XXXRENDER GLConfig cfg, */ boolean failsafe) {
 	byte[] data = Utils.getprefb("glconf", null);
 	if(data == null) {
-	    return(defconf(cfg));
+	    return(defconf(/* cfg */));
 	} else {
 	    Object dat;
 	    try {
@@ -280,8 +294,8 @@ public class GLSettings implements java.io.Serializable {
 		dat = null;
 	    }
 	    if(dat == null)
-		return(defconf(cfg));
-	    return(load(dat, cfg, failsafe));
+		return(defconf(/* cfg */));
+	    return(load(dat, /* cfg, */ failsafe));
 	}
     }
 }

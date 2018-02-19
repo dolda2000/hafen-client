@@ -45,8 +45,10 @@ public class RootWidget extends ConsoleHost {
 		if(Config.profile) {
 		    add(new Profwnd(guprof, "UI profile"), new Coord(100, 100));
 		    add(new Profwnd(grprof, "GL profile"), new Coord(450, 100));
+		    /* XXXRENDER
 		    if((gi != null) && (gi.map != null))
 			add(new Profwnd(gi.map.prof, "Map profile"), new Coord(100, 250));
+		    */
 		}
 		if(Config.profilegpu) {
 		    add(new Profwnd(ggprof, "GPU profile"), new Coord(450, 250));

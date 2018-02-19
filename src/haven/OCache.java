@@ -480,7 +480,7 @@ public class OCache implements Iterable<Gob> {
 		    flw.xfres = xfres;
 		    flw.xfname = xfname;
 		    flw.lxfb = null;
-		    flw.xf = null;
+		    // flw.xf = null; XXXRENDER
 		}
 	    }
 	}

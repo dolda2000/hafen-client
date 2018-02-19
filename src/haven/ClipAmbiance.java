@@ -30,7 +30,7 @@ import java.util.*;
 import haven.Audio.CS;
 import haven.Audio.VolAdjust;
 
-public class ClipAmbiance implements Rendered, Rendered.Instanced {
+public class ClipAmbiance /* implements Rendered, Rendered.Instanced XXXRENDER */ {
     public final Desc desc;
     public double bvol;
     private Glob glob = null;
@@ -40,9 +40,9 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
 	this.bvol = desc.bvol;
     }
 
-    public static class Glob implements ActAudio.Global {
+    public static class Glob /* implements ActAudio.Global XXXRENDER */ {
 	public final Desc desc;
-	public final ActAudio list;
+	// public final ActAudio list; XXXRENDER
 	private boolean dead = false;
 	private Desc[] chans = {null};
 	private VolAdjust[][] cur = {null};
@@ -51,9 +51,9 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
 	private double vacc, cvol;
 	private double lastupd = Utils.rtime();
 
-	public Glob(Desc desc, ActAudio list) {
+	public Glob(Desc desc /*, ActAudio list XXXRENDER */) {
 	    this.desc = desc;
-	    this.list = list;
+	    // this.list = list;
 	}
 
 	public int hashCode() {
@@ -143,6 +143,7 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
 	    }
 	}
 
+	/* XXXRENDER
 	public boolean cycle(ActAudio list) {
 	    double now = Utils.rtime();
 	    double td = Math.max(now - lastupd, 0.0);
@@ -171,6 +172,7 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
 	    }
 	    return(false);
 	}
+	*/
 
 	public void add(Desc ch, double vol) {
 	    int i;
@@ -196,6 +198,7 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
     }
 
     public void draw(GOut g) {
+	/* XXXRENDER
 	ActAudio list = g.st.get(ActAudio.slot);
 	if(list == null)
 	    return;
@@ -211,8 +214,10 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
 	double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
 	double svol = Math.min(1.0, 50.0 / pd);
 	glob.add(desc, svol * bvol);
+	*/
     }
 
+    /* XXXRENDER
     private class Instanced implements Rendered {
 	final float[] lb;
 
@@ -262,6 +267,7 @@ public class ClipAmbiance implements Rendered, Rendered.Instanced {
     public boolean setup(RenderList rl) {
 	return(true);
     }
+    */
 
     @Resource.LayerName("clamb")
     public static class Desc extends Resource.Layer {

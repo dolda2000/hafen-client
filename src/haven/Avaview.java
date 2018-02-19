@@ -30,7 +30,7 @@ import java.awt.Color;
 import java.util.*;
 import haven.Composited.Desc;
 
-public class Avaview extends PView {
+public class Avaview extends Widget { // XXXRENDER
     public static final Tex missing = Resource.loadtex("gfx/hud/equip/missing");
     public static final Coord dasz = missing.sz();
     public Color color = Color.WHITE;
@@ -96,6 +96,7 @@ public class Avaview extends PView {
 	}
     }
 
+    /* XXXRENDER
     private static Camera makecam(Resource base, Composited comp, String camnm) {
 	Skeleton.BoneOffset bo = base.layer(Skeleton.BoneOffset.class, camnm);
 	if(bo == null)
@@ -118,6 +119,7 @@ public class Avaview extends PView {
 	rl.add(comp, null);
 	rl.add(new DirLight(Color.WHITE, Color.WHITE, Color.WHITE, new Coord3f(1, 1, 1).norm()), null);
     }
+    */
 
     private Composite getgcomp() {
 	Gob gob = ui.sess.glob.oc.getgob(avagob);
@@ -139,20 +141,24 @@ public class Avaview extends PView {
 	    if(gc == null)
 		throw(new Loading());
 	    initcomp(gc);
+	    /* XXXRENDER
 	    if((cam == null) || (gc.base != lbase))
 		cam = makecam((lbase = gc.base).get(), comp, camnm);
+	    */
 	    if(gc.comp.cmod != this.cmod)
 		comp.chmod(this.cmod = gc.comp.cmod);
 	    if(gc.comp.cequ != this.cequ)
 		comp.chequ(this.cequ = gc.comp.cequ);
 	} else if(avadesc != null) {
 	    Desc d = avadesc;
+	    /* XXXRENDER
 	    if((d.base != lbase) || (cam == null) || (comp == null)) {
 		lbase = d.base;
 		comp = new Composited(d.base.get().layer(Skeleton.Res.class).s);
 		comp.eqowner = new AvaOwner();
 		cam = makecam(d.base.get(), comp, camnm);
 	    }
+	    */
 	    if(d.mod != this.cmod)
 		comp.chmod(this.cmod = d.mod);
 	    if(d.equ != this.cequ)

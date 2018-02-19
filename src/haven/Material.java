@@ -33,9 +33,10 @@ import java.lang.reflect.*;
 import javax.media.opengl.*;
 import static haven.Utils.c2fa;
 
-public class Material extends GLState {
-    public final GLState[] states;
+public class Material {
+    // public final GLState[] states; XXXRENDER
     
+    /* XXXRENDER
     public static final GLState nofacecull = new GLState.StandAlone(Slot.Type.GEOM, PView.proj) {
 	    public void apply(GOut g) {
 		g.gl.glDisable(GL.GL_CULL_FACE);
@@ -49,12 +50,14 @@ public class Material extends GLState {
     public static class $nofacecull implements ResCons {
 	public GLState cons(Resource res, Object... args) {return(nofacecull);}
     }
+    */
     
     public static final float[] defamb = {0.2f, 0.2f, 0.2f, 1.0f};
     public static final float[] defdif = {0.8f, 0.8f, 0.8f, 1.0f};
     public static final float[] defspc = {0.0f, 0.0f, 0.0f, 1.0f};
     public static final float[] defemi = {0.0f, 0.0f, 0.0f, 1.0f};
     
+    /* XXXRENDER
     public static final GLState.Slot<Colors> colors = new GLState.Slot<Colors>(Slot.Type.DRAW, Colors.class);
     @ResName("col")
     public static class Colors extends GLState {
@@ -190,31 +193,39 @@ public class Material extends GLState {
     public Material(GLState... states) {
 	this.states = states;
     }
+    */
+    public Material(Object... states) {
+	// XXXRENDER
+    }
 
+    /* XXXRENDER
     public Material() {
 	this(Light.deflight, new Colors());
     }
+    */
     
     public Material(Color amb, Color dif, Color spc, Color emi, float shine) {
-	this(Light.deflight, new Colors(amb, dif, spc, emi, shine));
+	this(/* XXXRENDER Light.deflight, new Colors(amb, dif, spc, emi, shine) */);
     }
     
     public Material(Color col) {
-	this(Light.deflight, new Colors(col));
+	this(/* XXXRENDER Light.deflight, new Colors(col) */);
     }
     
     public Material(Tex tex) {
-	this(Light.deflight, new Colors(), tex.draw(), tex.clip());
+	this(/* XXXRENDER Light.deflight, new Colors(), tex.draw(), tex.clip() */);
     }
     
     public String toString() {
-	return(Arrays.asList(states).toString());
+	return(Arrays.asList(/* XXXRENDER states */).toString());
     }
     
+    /* XXXRENDER
     public void prep(Buffer buf) {
 	for(GLState st : states)
 	    st.prep(buf);
     }
+    */
     
     public interface Owner extends OwnerContext {
     }
@@ -258,13 +269,13 @@ public class Material extends GLState {
 
     public static class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
-	private transient List<GLState> states = new LinkedList<GLState>();
+	// private transient List<GLState> states = new LinkedList<GLState>(); XXXRENDER
 	private transient List<Resolver> left = new LinkedList<Resolver>();
 	private transient Material m;
 	private boolean mipmap = false, linear = false;
 	
 	public interface Resolver {
-	    public void resolve(Collection<GLState> buf);
+	    public void resolve(Collection<Object> buf); // XXXRENDER
 	}
 	
 	public Res(Resource res, int id) {
@@ -277,10 +288,10 @@ public class Material extends GLState {
 		if(m == null) {
 		    for(Iterator<Resolver> i = left.iterator(); i.hasNext();) {
 			Resolver r = i.next();
-			r.resolve(states);
+			// r.resolve(states); XXXRENDER
 			i.remove();
 		    }
-		    m = new Material(states.toArray(new GLState[0])) {
+		    m = new Material(/* XXXRENDER states.toArray(new GLState[0]) */) {
 			    public String toString() {
 				return(super.toString() + "@" + getres().name);
 			    }
@@ -292,11 +303,13 @@ public class Material extends GLState {
 
 	public void init() {
 	    for(Resource.Image img : getres().layers(Resource.imgc)) {
+		/* XXXRENDER
 		TexGL tex = (TexGL)img.tex();
 		if(mipmap)
 		    tex.mipmap();
 		if(linear)
 		    tex.magfilter(GL.GL_LINEAR);
+		*/
 	    }
 	}
 	
@@ -305,6 +318,7 @@ public class Material extends GLState {
 	}
     }
 
+    /* XXXRENDER
     @Resource.LayerName("mat")
     public static class OldMat implements Resource.LayerFactory<Res> {
 	private static Color col(Message buf) {
@@ -384,6 +398,7 @@ public class Material extends GLState {
 	    return(ret);
 	}
     }
+    */
 
     @ResName("mlink")
     public static class $mlink implements ResCons2 {
@@ -391,7 +406,7 @@ public class Material extends GLState {
 	    final Indir<Resource> lres = res.pool.load((String)args[0], (Integer)args[1]);
 	    final int id = (args.length > 2)?(Integer)args[2]:-1;
 	    return(new Res.Resolver() {
-		    public void resolve(Collection<GLState> buf) {
+		    public void resolve(Collection<Object> buf) {
 			if(id >= 0) {
 			    Res mat = lres.get().layer(Res.class, id);
 			    if(mat == null)
@@ -416,7 +431,7 @@ public class Material extends GLState {
     }
 
     public interface ResCons {
-	public GLState cons(Resource res, Object... args);
+	public /* XXXRENDER GLState */ Object cons(Resource res, Object... args);
     }
 
     public interface ResCons2 {
@@ -439,11 +454,13 @@ public class Material extends GLState {
 		}
 		rnames.put(nm, new ResCons2() {
 			public Res.Resolver cons(Resource res, Object... args) {
-			    final GLState ret = scons.cons(res, args);
+			    // final GLState ret = scons.cons(res, args); XXXRENDER
 			    return(new Res.Resolver() {
-				    public void resolve(Collection<GLState> buf) {
+				    public void resolve(Collection<Object> buf) {
+					/* XXXRENDER
 					if(ret != null)
 					    buf.add(ret);
+					*/
 				    }
 				});
 			}
@@ -456,7 +473,7 @@ public class Material extends GLState {
 		} catch(IllegalAccessException e) {
 		    throw(new Error(e));
 		}
-	    } else if(GLState.class.isAssignableFrom(cl)) {
+	    } /* else if(GLState.class.isAssignableFrom(cl)) { XXXRENDER
 		final Constructor<? extends GLState> cons;
 		try {
 		    cons = cl.asSubclass(GLState.class).getConstructor(Resource.class, Object[].class);
@@ -472,7 +489,7 @@ public class Material extends GLState {
 				});
 			}
 		    });
-	    } else {
+	    } */ else {
 		throw(new Error("Illegal material constructor class: " + cl));
 	    }
 	}
