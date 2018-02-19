@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 
 public interface RenderLink {
-    public Rendered make();
+    public /* XXXRENDER Rendered */ Object make();
     
     @Resource.LayerName("rlink")
     public class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
@@ -59,8 +59,9 @@ public interface RenderLink {
 		final Indir<Resource> mesh = meshnm.equals("")?res.indir():res.pool.load(meshnm, meshver);
 		final Indir<Resource> mat = matnm.equals("")?res.indir():res.pool.load(matnm, matver);
 		l = new RenderLink() {
-			Rendered res = null;
-			public Rendered make() {
+			// Rendered res = null; XXXRENDER
+			public Object make() {
+			    /* XXXRENDER
 			    if(res == null) {
 				FastMesh m = null;
 				for(FastMesh.MeshRes mr : mesh.get().layers(FastMesh.MeshRes.class)) {
@@ -83,6 +84,8 @@ public interface RenderLink {
 				res = M.apply(m);
 			    }
 			    return(res);
+			    */
+			    return(null);
 			}
 		    };
 	    } else if(t == 1) {
@@ -90,8 +93,9 @@ public interface RenderLink {
 		int ver = buf.uint16();
 		final Indir<Resource> amb = res.pool.load(nm, ver);
 		l = new RenderLink() {
-			public Rendered make() {
-			    return(new ActAudio.Ambience(amb.get()));
+			public Object make() {
+			    // return(new ActAudio.Ambience(amb.get())); XXXRENDER
+			    return(null);
 			}
 		    };
 	    } else if(t == 2) {
@@ -100,8 +104,9 @@ public interface RenderLink {
 		final Indir<Resource> lres = res.pool.load(nm, ver);
 		final int meshid = buf.int16();
 		l = new RenderLink() {
-			Rendered res = null;
-			public Rendered make() {
+			// Rendered res = null; XXXRENDER
+			public Object make() {
+			    /* XXXRENDER
 			    if(res == null) {
 				ArrayList<Rendered> cl = new ArrayList<Rendered>();
 				for(FastMesh.MeshRes mr : lres.get().layers(FastMesh.MeshRes.class)) {
@@ -119,6 +124,8 @@ public interface RenderLink {
 				    };
 			    }
 			    return(res);
+			    */
+			    return(null);
 			}
 		    };
 	    } else {

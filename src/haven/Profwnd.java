@@ -32,12 +32,12 @@ public class Profwnd extends Window {
     public final Profile prof;
     public double mt = 0.05;
     private static final int h = 80;
-    private final TexIM tex;
+    // private final TexIM tex; XXXRENDER
     
     public Profwnd(Profile prof, String title) {
 	super(new Coord(prof.hist.length, h), title);
 	this.prof = prof;
-	this.tex = new TexIM(new Coord(prof.hist.length, h));
+	// this.tex = new TexIM(new Coord(prof.hist.length, h)); XXXRENDER
     }
     
     public void cdraw(GOut g) {
@@ -58,8 +58,10 @@ public class Profwnd extends Window {
 	    mt = ttl[ti];
 	else
 	    mt = 0.05;
+	/* XXXRENDER
 	prof.draw(tex, mt / h);
 	g.image(tex, Coord.z);
+	*/
     }
 
     public boolean type(char k, java.awt.event.KeyEvent ev) {

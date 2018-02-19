@@ -26,7 +26,6 @@
 
 package haven;
 
-import haven.glsl.Attribute;
 import java.awt.Color;
 import java.util.*;
 import java.nio.*;
@@ -34,7 +33,7 @@ import java.nio.*;
 public class MeshBuf {
     public final Collection<Vertex> v = new ArrayList<Vertex>();
     public final Collection<Face> f = new ArrayList<Face>();
-    private VertexBuf vbuf = null;
+    // private VertexBuf vbuf = null; XXXRENDER
     private int nextid = 0;
     private Layer<?>[] layers = new Layer<?>[0];
     private LayerID<?>[] lids = new LayerID<?>[0];
@@ -60,9 +59,11 @@ public class MeshBuf {
 	    return((T)v.attrs[idx]);
 	}
 
+	/* XXXRENDER
 	public abstract VertexBuf.AttribArray build(Collection<T> in);
 
 	public void copy(VertexBuf src, Vertex[] vmap, int off) {}
+	*/
     }
 
     public static abstract class LayerID<L> {
@@ -88,6 +89,7 @@ public class MeshBuf {
     }
 
     public class Tex extends Layer<Coord3f> {
+	/*
 	public VertexBuf.TexelArray build(Collection<Coord3f> in) {
 	    FloatBuffer data = Utils.wfbuf(in.size() * 2);
 	    for(Coord3f c : in) {
@@ -105,10 +107,12 @@ public class MeshBuf {
 		    set(vmap[i], new Coord3f(src.data.get(o), src.data.get(o + 1), 0));
 	    }
 	}
+	*/
     }
     public static final LayerID<Tex> tex = new CLayerID<Tex>(Tex.class);
 
     public class Col extends Layer<Color> {
+	/*
 	public VertexBuf.ColorArray build(Collection<Color> in) {
 	    FloatBuffer data = Utils.wfbuf(in.size() * 4);
 	    for(Color c : in) {
@@ -117,9 +121,11 @@ public class MeshBuf {
 	    }
 	    return(new VertexBuf.ColorArray(data));
 	}
+	*/
     }
     public static final LayerID<Col> col = new CLayerID<Col>(Col.class);
 
+    /*
     public abstract class AttribLayer<T> extends Layer<T> {
 	public final Attribute attrib;
 
@@ -195,6 +201,7 @@ public class MeshBuf {
 	public V4LayerID(Attribute attrib) {super(attrib);}
 	public Vec4Layer cons(MeshBuf buf) {return(buf.new Vec4Layer(attrib));}
     }
+    */
 
     @SuppressWarnings("unchecked")
     public <L extends Layer> L layer(LayerID<L> id) {
@@ -234,6 +241,7 @@ public class MeshBuf {
 	}
     }
 
+    /* XXXRENDER
     public interface LayerMapper {
 	public Layer mapbuf(MeshBuf buf, VertexBuf.AttribArray src);
     }
@@ -293,7 +301,9 @@ public class MeshBuf {
     public Vertex[] copy(FastMesh src) {
 	return(copy(src, defmapper));
     }
+    */
 
+    /* XXXRENDER
     @SuppressWarnings("unchecked")
     private <T> VertexBuf.AttribArray mklayer(Layer<T> l, Object[] abuf) {
 	int i = 0;
@@ -346,11 +356,13 @@ public class MeshBuf {
 
 	this.vbuf = new VertexBuf(Utils.splice(arrays, 0, li));
     }
+    */
 
     public void clearfaces() {
 	this.f.clear();
     }
 
+    /* XXXRENDER
     public FastMesh mkmesh() {
 	if(f.isEmpty())
 	    throw(new RuntimeException("Tried to build empty mesh"));
@@ -366,6 +378,7 @@ public class MeshBuf {
 	}
 	return(new FastMesh(this.vbuf, idx));
     }
+    */
 
     public boolean emptyp() {
 	return(f.isEmpty());

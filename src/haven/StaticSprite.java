@@ -29,11 +29,11 @@ package haven;
 import java.util.*;
 
 public class StaticSprite extends Sprite {
-    public final Rendered[] parts;
+    // public final Rendered[] parts; XXXRENDER
     
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
-		if((res.layer(FastMesh.MeshRes.class) != null) ||
+		if(/* (res.layer(FastMesh.MeshRes.class) != null) || XXXRENDER */
 		   (res.layer(RenderLink.Res.class) != null))
 		    return(new StaticSprite(owner, res, sdt) {
 			    public String toString() {
@@ -44,6 +44,7 @@ public class StaticSprite extends Sprite {
 	    }
 	};
     
+    /*
     public StaticSprite(Owner owner, Resource res, Rendered[] parts) {
 	super(owner, res);
 	this.parts = parts;
@@ -52,11 +53,14 @@ public class StaticSprite extends Sprite {
     public StaticSprite(Owner owner, Resource res, Rendered part) {
 	this(owner, res, new Rendered[] {part});
     }
+    */
     
     public StaticSprite(Owner owner, Resource res, Message sdt) {
-	this(owner, res, lsparts(res, sdt));
+	super(owner, res);     // XXXRENDER
+	// this(owner, res, lsparts(res, sdt));
     }
     
+    /* XXXRENDER
     public static Rendered[] lsparts(Resource res, Message sdt) {
 	int fl = sdt.eom()?0xffff0000:decnum(sdt);
 	Collection<Rendered> rl = new LinkedList<Rendered>();
@@ -82,4 +86,5 @@ public class StaticSprite extends Sprite {
     public Object staticp() {
 	return(CONSTANS);
     }
+    */
 }

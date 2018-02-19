@@ -26,13 +26,12 @@
 
 package haven;
 
-import haven.glsl.*;
 import java.util.*;
 import java.awt.Color;
 import javax.media.opengl.*;
 import static haven.Utils.c2fa;
 
-public class Light implements Rendered {
+public class Light /* implements Rendered */ {
     public float[] amb, dif, spc;
     
     private static final float[] defamb = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -67,6 +66,7 @@ public class Light implements Rendered {
 	this.spc = c2fa(spc);
     }
 
+    /* XXXRENDER
     public void enable(GOut g, int idx) {
 	BGL gl = g.gl;
 	gl.glEnable(GL2.GL_LIGHT0 + idx);
@@ -286,6 +286,7 @@ public class Light implements Rendered {
 	}
 	return(false);
     }
+    */
     
     @Resource.LayerName("light")
     public static class Res extends Resource.Layer {

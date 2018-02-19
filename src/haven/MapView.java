@@ -29,7 +29,7 @@ package haven;
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 import static haven.OCache.posres;
-import haven.GLProgram.VarID;
+// import haven.GLProgram.VarID; XXXRENDER
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.util.*;
@@ -37,7 +37,7 @@ import java.lang.ref.*;
 import java.lang.reflect.*;
 import javax.media.opengl.*;
 
-public class MapView extends PView implements DTarget, Console.Directory {
+public class MapView extends Widget implements DTarget, Console.Directory {
     public static boolean clickdb = false;
     public long plgob = -1;
     public Coord2d cc;
@@ -45,7 +45,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private int view = 2;
     private Collection<Delayed> delayed = new LinkedList<Delayed>();
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
-    private Collection<Rendered> extradraw = new LinkedList<Rendered>();
+    /* XXXRENDER private Collection<Rendered> extradraw = new LinkedList<Rendered>(); */
     public Camera camera = restorecam();
     private Plob placing = null;
     private int[] visol = new int[32];
@@ -67,9 +67,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	void mmousemove(Coord mc);
     }
 
-    public abstract class Camera extends GLState.Abstract {
+    public abstract class Camera {
+	/* XXXRENDER
 	protected haven.Camera view = new haven.Camera(Matrix4f.identity());
 	protected Projection proj = new Projection(Matrix4f.identity());
+	*/
 	
 	public Camera() {
 	    resized();
@@ -91,13 +93,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void resized() {
 	    float field = 0.5f;
 	    float aspect = ((float)sz.y) / ((float)sz.x);
-	    proj.update(Projection.makefrustum(new Matrix4f(), -field, field, -aspect * field, aspect * field, 1, 5000));
+	    // proj.update(Projection.makefrustum(new Matrix4f(), -field, field, -aspect * field, aspect * field, 1, 5000)); XXRENDER
 	}
 
+	/* XXXRENDER
 	public void prep(Buffer buf) {
 	    proj.prep(buf);
 	    view.prep(buf);
 	}
+	*/
 	
 	public abstract float angle();
 	public abstract void tick(double dt);
@@ -181,8 +185,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	    
 	    float field = field(elev);
+	    /* XXXRENDER
 	    view.update(PointedCam.compute(curc.add(camoff).add(0.0f, 0.0f, h), dist(elev), elev, angl));
 	    proj.update(Projection.makefrustum(new Matrix4f(), -field, field, -ca * field, ca * field, 1, 5000));
+	    */
 	}
 
 	public float angle() {
@@ -217,7 +223,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void tick(double dt) {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
+	    /* XXXRENDER
 	    view.update(PointedCam.compute(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl));
+	    */
 	}
 	
 	public float angle() {
@@ -274,6 +282,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void tick(double dt) {
 	    tick2(dt);
 	    float aspect = ((float)sz.y) / ((float)sz.x);
+	    /* XXXRENDER
 	    Matrix4f vm = PointedCam.compute(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl);
 	    if(exact) {
 		if(jc == null)
@@ -287,6 +296,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	    view.update(vm);
 	    proj.update(Projection.makeortho(new Matrix4f(), -field, field, -field * aspect, field * aspect, 1, 5000));
+	    */
 	}
 
 	public float angle() {
@@ -420,7 +430,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.glob = glob;
 	this.cc = cc;
 	this.plgob = plgob;
-	this.gobs = new Gobs();
+	// this.gobs = new Gobs(); XXXRENDER
 	setcanfocus(true);
     }
     
@@ -438,6 +448,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    visol[ol]--;
     }
 
+    /* XXXRENDER
     private final Rendered flavobjs = new Rendered() {
 	    private Collection<Gob> fol;
 	    private Coord cc = null;
@@ -769,7 +780,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public GLState camera()         {return(camera);}
     protected Projection makeproj() {return(null);}
+    */
 
+    /* XXXRENDER
     private Coord3f smapcc = null;
     private ShadowMap smap = null;
     private double lsmch = 0;
@@ -802,8 +815,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    smapcc = null;
 	}
     }
+    */
 
     public DirLight amb = null;
+    /* XXXRENDER
     private Outlines outlines = new Outlines(false);
     public void setup(RenderList rl) {
 	Gob pl = player();
@@ -825,7 +840,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    rl.add((Rendered)w, null);
 	    }
 	}
-	/* XXX: MSAA level should be configurable. */
+	-* XXX: MSAA level should be configurable. *-
 	if(rl.cfg.pref.fsaa.val) {
 	    FBConfig cfg = ((PView.ConfContext)rl.state().get(PView.ctx)).cfg;
 	    cfg.ms = 4;
@@ -856,12 +871,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		g.gl.glUniform1i(loc, idx);
 	    }
 	};
+    */
 
+    /* XXXRENDER
     public void drawadd(Rendered extra) {
 	synchronized(extradraw) {
 	    extradraw.add(extra);
 	}
     }
+    */
 
     public Gob player() {
 	return((plgob < 0) ? null : glob.oc.getgob(plgob));
@@ -875,6 +893,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(glob.map.getzp(cc));
     }
 
+    /* XXXRENDER
     public static class ClickContext extends RenderContext {
     }
 
@@ -983,8 +1002,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
     }
+    */
 
     private void checkmapclick(final GOut g, final Coord c, final Callback<Coord2d> cb) {
+	/* XXXRENDER
 	new Object() {
 	    MapMesh cut;
 	    Coord tile;
@@ -1022,13 +1043,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		}
 	    }
 	};
+	*/
     }
     
     public static class ClickInfo {
 	public final ClickInfo from;
-	public final Rendered r;
+	public final Object r;	// XXXRENDER
 
-	public ClickInfo(ClickInfo from, Rendered r) {
+	public ClickInfo(ClickInfo from, Object r) {
 	    this.from = from;
 	    this.r = r;
 	}
@@ -1059,11 +1081,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(buf.toString());
 	}
 
-	public Rendered[] array() {
+	public Object[] array() { // XXXRENDER
 	    int n = 0;
 	    for(ClickInfo c = this; c != null; c = c.from)
 		n++;
-	    Rendered[] buf = new Rendered[n];
+	    Object[] buf = new Object[n];
 	    int i = 0;
 	    for(ClickInfo c = this; c != null; c = c.from)
 		buf[i++] = c.r;
@@ -1071,6 +1093,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
+    /* XXXRENDER
     private static class Goblist extends Clicklist<ClickInfo> {
 	private ClickInfo curinfo;
 
@@ -1093,9 +1116,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    curinfo = previnfo;
 	}
     }
+    */
 
-    private Clicklist<ClickInfo> curgoblist = null;
+    // private Clicklist<ClickInfo> curgoblist = null;
     private void checkgobclick(GOut g, Coord c, Callback<ClickInfo> cb) {
+	/* XXXRENDER
 	if((curgoblist == null) || (curgoblist.cfg != g.gc) || curgoblist.aging())
 	    curgoblist = new Goblist(g.gc);
 	Clicklist<ClickInfo> rl = curgoblist;
@@ -1104,6 +1129,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	rl.render(g);
 	if(clickdb) g.getimage(img -> Debug.dumpimage(img, Debug.somedir("click3.png")));
 	rl.get(g, c, cb);
+	*/
     }
     
     public void delay(Delayed d) {
@@ -1190,7 +1216,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public Coord3f screenxf(Coord3f mc) {
 	Coord3f mloc = new Coord3f(mc.x, -mc.y, mc.z);
 	/* XXX: Peeking into the camera really is doubtfully nice. */
-	return(camera.proj.toscreen(camera.view.fin(Matrix4f.id).mul4(mloc), sz));
+	return(null /* camera.proj.toscreen(camera.view.fin(Matrix4f.id).mul4(mloc), sz) XXXRENDER */);
     }
 
     public Coord3f screenxf(Coord2d mc) {
@@ -1211,6 +1237,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(Double.NaN);
 	}
 	Coord3f mloc = new Coord3f((float)mc.x, -(float)mc.y, cc.z);
+	return(0);
+	/* XXXRENDER
 	float[] sloc = camera.proj.toclip(camera.view.fin(Matrix4f.id).mul4(mloc));
 	if(clip) {
 	    float w = sloc[3];
@@ -1219,6 +1247,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	float a = ((float)sz.y) / ((float)sz.x);
 	return(Math.atan2(sloc[1] * a, sloc[0]));
+	*/
     }
 
     private void partydraw(GOut g) {
@@ -1426,6 +1455,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void run(GOut g) {
+	    /* XXXRENDER
 	    GLState.Buffer bk = g.st.copy();
 	    try {
 		BGL gl = g.gl;
@@ -1443,6 +1473,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    } finally {
 		g.st.set(bk);
 	    }
+	    */
 	}
 
 	protected abstract void hit(Coord pc, Coord2d mc);
@@ -1460,6 +1491,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	
 	public void run(GOut g) {
+	    /* XXXRENDER
 	    GLState.Buffer bk = g.st.copy();
 	    try {
 		BGL gl = g.gl;
@@ -1475,6 +1507,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    } finally {
 		g.st.set(bk);
 	    }
+	    */
 	}
 
 	private void ckdone(int fl) {
@@ -1509,7 +1542,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(c.r instanceof Clickable)
 		return(((Clickable)c.r).clickargs(inf));
 	}
-	Rendered[] st = inf.array();
+	/* Rendered XXXRENDER */ Object[] st = inf.array();
 	for(int g = 0; g < st.length; g++) {
 	    if(st[g] instanceof Gob) {
 		Gob gob = (Gob)st[g];
@@ -1519,8 +1552,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			ret[0] = 1;
 			ret[3] = ((Gob.Overlay)st[i]).id;
 		    }
+		    /* XXXRENDER
 		    if(st[i] instanceof FastMesh.ResourceMesh)
 			ret[4] = ((FastMesh.ResourceMesh)st[i]).id;
+		    */
 		}
 		return(ret);
 	    }

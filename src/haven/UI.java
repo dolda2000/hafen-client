@@ -46,7 +46,9 @@ public class UI {
     public Widget mouseon;
     public Console cons = new WidgetConsole();
     private Collection<AfterDraw> afterdraws = new LinkedList<AfterDraw>();
+    /* XXXRENDER
     public final ActAudio audio = new ActAudio();
+    */
     
     {
 	lastevent = lasttick = Utils.rtime();
@@ -361,6 +363,8 @@ public class UI {
     }
 
     public void destroy() {
+	/* XXXRENDER
 	audio.clear();
+	*/
     }
 }

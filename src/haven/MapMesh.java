@@ -35,14 +35,14 @@ import java.nio.ShortBuffer;
 import haven.Surface.Vertex;
 import haven.Surface.MeshVertex;
 
-public class MapMesh implements Rendered, Disposable {
+public class MapMesh implements Disposable {
     public final Coord ul, sz;
     public final MCache map;
     private final long rnd;
-    private Map<Tex, GLState[]> texmap = new HashMap<Tex, GLState[]>();
+    // private Map<Tex, GLState[]> texmap = new HashMap<Tex, GLState[]>(); XXXRENDER
     private Map<DataID, Object> data = new LinkedHashMap<DataID, Object>();
-    private List<Rendered> extras = new ArrayList<Rendered>();
-    private FastMesh[] flats;
+    // private List<Rendered> extras = new ArrayList<Rendered>(); XXXRENDER
+    // private FastMesh[] flats; XXXRENDER
     private List<Disposable> dparts = new ArrayList<Disposable>();
 
     public interface DataID<T> {
@@ -150,6 +150,7 @@ public class MapMesh implements Rendered, Disposable {
     }
     public static final DataID<MapSurface> gnd = makeid(MapSurface.class);
 
+    /* XXXRENDER
     public static class MLOrder extends Order<Rendered> {
 	public final int z;
 
@@ -183,6 +184,7 @@ public class MapMesh implements Rendered, Disposable {
     }
     public static Order premap = new Order.Default(990);
     public static Order postmap = new Order.Default(1010);
+    */
 
     private MapMesh(MCache map, Coord ul, Coord sz, Random rnd) {
 	this.map = map;
@@ -250,11 +252,11 @@ public class MapMesh implements Rendered, Disposable {
 
     public static class Model extends MeshBuf implements ConsHooks {
 	public final MapMesh m;
-	public final GLState mat;
+	// public final GLState mat; XXXRENDER
 
-	public Model(MapMesh m, GLState mat) {
+	public Model(MapMesh m /*, GLState mat */) {
 	    this.m = m;
-	    this.mat = mat;
+	    // this.mat = mat;
 	}
 
 	public void sfin() {}
@@ -262,18 +264,20 @@ public class MapMesh implements Rendered, Disposable {
 	public boolean clean() {return(false);}
 
 	public void postcalcnrm(Random rnd) {
+	    /* XXXRENDER
 	    FastMesh mesh = mkmesh();
 	    m.extras.add(mat.apply(mesh));
 	    m.dparts.add(mesh);
+	    */
 	}
 
 	public static class MatKey implements DataID<Model> {
-	    public final GLState mat;
+	    // public final GLState mat; XXXRENDER
 	    private final int hash;
 
-	    public MatKey(GLState mat) {
-		this.mat = mat;
-		this.hash = mat.hashCode() * 37;
+	    public MatKey(/* GLState mat */) {
+		// this.mat = mat;
+		this.hash = 0; //mat.hashCode() * 37;
 	    }
 
 	    public int hashCode() {
@@ -281,16 +285,16 @@ public class MapMesh implements Rendered, Disposable {
 	    }
 
 	    public boolean equals(Object x) {
-		return((x instanceof MatKey) && mat.equals(((MatKey)x).mat));
+		return((x instanceof MatKey) /* XXXRENDER && mat.equals(((MatKey)x).mat) */);
 	    }
 
 	    public Model make(MapMesh m) {
-		return(new Model(m, mat));
+		return(new Model(m /*, mat */));
 	    }
 	}
 
-	public static Model get(MapMesh m, GLState mat) {
-	    return(m.data(new MatKey(mat)));
+	public static Model get(MapMesh m, Object mat) { // XXXRENDER
+	    return(m.data(new MatKey(/* mat */)));
 	}
     }
 
@@ -335,6 +339,7 @@ public class MapMesh implements Rendered, Disposable {
 	return(m);
     }
 
+    /* XXXRENDER
     private static States.DepthOffset gmoff = new States.DepthOffset(-1, -1);
     public static class GroundMod implements Rendered, Disposable {
 	private static final Order gmorder = new Order.Default(1001);
@@ -450,7 +455,9 @@ public class MapMesh implements Rendered, Disposable {
 	    return(false);
 	}
     }
+    */
     
+    /* XXXRENDER
     private static class OLOrder extends MLOrder {
 	OLOrder(int z) {super(z);}
 
@@ -526,9 +533,10 @@ public class MapMesh implements Rendered, Disposable {
 	}
 	return(ret);
     }
+    */
 
     private void clean() {
-	texmap = null;
+	// texmap = null; XXXRENDER
 	int on = data.size();
 	for(Iterator<Map.Entry<DataID, Object>> i = data.entrySet().iterator(); i.hasNext();) {
 	    Object d = i.next().getValue();
@@ -579,6 +587,7 @@ public class MapMesh implements Rendered, Disposable {
 	if(pos.length != buf.vn * 3) pos = Utils.extend(pos, buf.vn * 3);
 	if(col.length != buf.vn * 4) col = Utils.extend(col, buf.vn * 4);
 	if(ind.length != buf.in) ind = Utils.extend(ind, buf.in);
+	/* XXXRENDER
 	VertexBuf.VertexArray posa = new VertexBuf.VertexArray(FloatBuffer.wrap(pos));
 	VertexBuf.ColorArray cola = new VertexBuf.ColorArray(FloatBuffer.wrap(col));
 	ShortBuffer indb = ShortBuffer.wrap(ind);
@@ -586,11 +595,14 @@ public class MapMesh implements Rendered, Disposable {
 	    new FastMesh(new VertexBuf(posa), indb),
 	    new FastMesh(new VertexBuf(posa, cola), indb),
 	};
+	*/
     }
 
     public void drawflat(GOut g, int mode) {
+	/* XXXRENDER
 	g.apply();
 	flats[mode].draw(g);
+	*/
     }
     
     public void dispose() {
@@ -598,9 +610,11 @@ public class MapMesh implements Rendered, Disposable {
 	    p.dispose();
     }
     
+    /* XXXRENDER
     public boolean setup(RenderList rl) {
 	for(Rendered e : extras)
 	    rl.add(e, null);
 	return(true);
     }
+    */
 }

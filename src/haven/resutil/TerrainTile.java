@@ -33,18 +33,18 @@ import haven.MapMesh.Scan;
 import haven.Tileset.Tile;
 
 public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
-    public final GLState base;
+    // public final GLState base; XXXRENDER
     public final SNoise3 noise;
     public final Var[] var;
     public final Tileset transset;
 
     public static class Var {
-	public GLState mat;
+	// public GLState mat; XXXRENDER
 	public double thrl, thrh;
 	public double nz;
 
-	public Var(GLState mat, double thrl, double thrh, double nz) {
-	    this.mat = mat; this.thrl = thrl; this.thrh = thrh; this.nz = nz;
+	public Var(/* GLState mat, */ double thrl, double thrh, double nz) {
+	    /* this.mat = mat; */ this.thrl = thrl; this.thrh = thrh; this.nz = nz;
 	}
     }
 
@@ -185,8 +185,10 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 			    Coord3f bit = ret.nrm.cmul(Coord3f.xu).norm();
 			    Coord3f tc = new Coord3f((d.lc.x + d.tcx[i]) / fac, (d.lc.y + d.tcy[i]) / fac, 0);
 			    int alpha = (int)(bv(d.lc, d.tcx[i], d.tcy[i]) * 255);
+			    /* XXXRENDER
 			    buf.layer(BumpMap.ltan).set(ret, tan);
 			    buf.layer(BumpMap.lbit).set(ret, bit);
+			    */
 			    buf.layer(MeshBuf.tex).set(ret, tc);
 			    buf.layer(MeshBuf.col).set(ret, new Color(255, 255, 255, alpha));
 			    return(ret);
@@ -225,23 +227,26 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 			thrh = Double.MAX_VALUE;
 		    }
 		    double nz = (res.name.hashCode() * mid * 8129) % 10000;
-		    var.add(new Var(res.layer(Material.Res.class, mid).get(), thrl, thrh, nz));
+		    var.add(new Var(/* XXXRENDER res.layer(Material.Res.class, mid).get(), */ thrl, thrh, nz));
 		} else if(p.equals("trans")) {
 		    Resource tres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
 		    trans = tres.layer(Tileset.class);
 		}
 	    }
-	    return(new TerrainTile(id, new SNoise3(res.name.hashCode()), base, var.toArray(new Var[0]), trans));
+	    return(new TerrainTile(id, new SNoise3(res.name.hashCode()), /* XXXRENDER base, */ var.toArray(new Var[0]), trans));
 	}
     }
 
-    public TerrainTile(int id, SNoise3 noise, GLState base, Var[] var, Tileset transset) {
+    public TerrainTile(int id, SNoise3 noise, /* XXXRENDER GLState base, */ Var[] var, Tileset transset) {
 	super(id);
 	this.noise = noise;
 	int z = 0;
+	/* XXXRENDER
 	this.base = GLState.compose(base, new MapMesh.MLOrder(0, z++), States.vertexcolor);
 	for(Var v : this.var = var)
 	    v.mat = GLState.compose(v.mat, new MapMesh.MLOrder(0, z++), States.vertexcolor);
+	*/
+	this.var = var;
 	this.transset = transset;
     }
 
@@ -254,8 +259,8 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	Surface.MeshVertex[] mv = new Surface.MeshVertex[d.v.length];
 	for(int i = 0; i < var.length + 1; i++) {
 	    if(b.en[i][b.es.o(d.lc)]) {
-		GLState mat = d.mcomb((i == 0)?base:(var[i - 1].mat));
-		SModel buf = SModel.get(m, mat, b.lvfac[i]);
+		// GLState mat = d.mcomb((i == 0)?base:(var[i - 1].mat)); XXXRENDER
+		SModel buf = SModel.get(m /*, mat */, b.lvfac[i]);
 		for(int o = 0; o < d.v.length; o++)
 		    mv[o] = buf.get(d, o);
 		for(int fi = 0; fi < d.f.length; fi += 3)
@@ -264,13 +269,14 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	}
     }
 
-    private final static Map<TexGL, AlphaTex> transtex = new WeakHashMap<TexGL, AlphaTex>();
+    // private final static Map<TexGL, AlphaTex> transtex = new WeakHashMap<TexGL, AlphaTex>(); XXXRENDER
 
     /* XXX: Some strange javac bug seems to make it resolve the
      * trans() references to the wrong signature, thus the name
      * distinction. */
     public void _faces(MapMesh m, int z, Tile trans, MPart d) {
 	Tex ttex = trans.tex();
+	/* XXXRENDER
 	float tl = ttex.tcx(0), tt = ttex.tcy(0), tw = ttex.tcx(ttex.sz().x) - tl, th = ttex.tcy(ttex.sz().y) - tt;
 	TexGL gt;
 	if(ttex instanceof TexGL)
@@ -279,15 +285,19 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	    gt = (TexGL)((TexSI)ttex).parent;
 	else
 	    throw(new RuntimeException("Cannot use texture for transitions: " + ttex));
+	*/
+	/* XXXRENDER
 	AlphaTex alpha;
 	synchronized(transtex) {
 	    if((alpha = transtex.get(gt)) == null)
 		transtex.put(gt, alpha = new AlphaTex(gt, 0.01f));
 	}
+	*/
 	Blend b = m.data(blend);
 	Surface.MeshVertex[] mv = new Surface.MeshVertex[d.v.length];
 	for(int i = 0; i < var.length + 1; i++) {
 	    if(b.en[i][b.es.o(d.lc)]) {
+		/* XXXRENDER
 		GLState mat = (i == 0)?base:(var[i - 1].mat);
 		mat = d.mcomb(GLState.compose(mat, new MapMesh.MLOrder(z, i), alpha));
 		MeshBuf buf = MapMesh.Model.get(m, mat);
@@ -298,6 +308,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		}
 		for(int fi = 0; fi < d.f.length; fi += 3)
 		    buf.new Face(mv[d.f[fi]], mv[d.f[fi + 1]], mv[d.f[fi + 2]]);
+		*/
 	    }
 	}
     }
@@ -344,30 +355,32 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	    public Tiler create(int id, Tileset set) {
 		TerrainTile base = new Factory().create(id, set);
 		int rth = 20;
-		GLState mat = null;
+		// GLState mat = null; XXXRENDER
 		float texh = 11f;
 		for(Object rdesc : set.ta) {
 		    Object[] desc = (Object[])rdesc;
 		    String p = (String)desc[0];
 		    if(p.equals("rmat")) {
 			Resource mres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
-			mat = mres.layer(Material.Res.class).get();
+			// mat = mres.layer(Material.Res.class).get();
 			if(desc.length > 3)
 			    texh = (Float)desc[3];
 		    } else if(p.equals("rthres")) {
 			rth = (Integer)desc[1];
 		    }
 		}
+		/*
 		if(mat == null)
 		    throw(new RuntimeException("Ridge-tiles must be given a ridge material, in " + set.getres().name));
-		return(new RidgeTile(base.id, base.noise, base.base, base.var, base.transset, rth, mat, texh));
+		*/
+		return(new RidgeTile(base.id, base.noise, /*base.base, */base.var, base.transset, rth, /*mat, */texh));
 	    }
 	}
 
-	public RidgeTile(int id, SNoise3 noise, GLState base, Var[] var, Tileset transset, int rth, GLState rmat, float texh) {
-	    super(id, noise, base, var, transset);
+	public RidgeTile(int id, SNoise3 noise /*, GLState base */, Var[] var, Tileset transset, int rth, /*GLState rmat, */float texh) {
+	    super(id, noise /*, base */, var, transset);
 	    this.rth = rth;
-	    this.rcons = new Ridges.TexCons(rmat, texh);
+	    this.rcons = new Ridges.TexCons(/*rmat, */texh);
 	}
 
 	public int breakz() {return(rth);}

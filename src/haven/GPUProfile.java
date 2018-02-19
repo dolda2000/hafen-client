@@ -50,7 +50,7 @@ public class GPUProfile extends Profile {
 	    int[] buf = new int[1];
 	    gl.glGenQueries(1, buf, 0);
 	    gl.glQueryCounter(buf[0], GL3.GL_TIMESTAMP);
-	    GOut.checkerr(gl);
+	    // GOut.checkerr(gl); XXXRENDER
 	    queries.add(buf[0]);
 	}
 

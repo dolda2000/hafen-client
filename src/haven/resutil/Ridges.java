@@ -619,10 +619,10 @@ public class Ridges extends MapMesh.Hooks {
     }
 
     static final Tiler.MCons testcons = new Tiler.MCons() {
-	    GLState mat = GLState.compose(new Material.Colors(new java.awt.Color(255, 255, 255)), States.vertexcolor, Light.deflight);
+	    // GLState mat = GLState.compose(new Material.Colors(new java.awt.Color(255, 255, 255)), States.vertexcolor, Light.deflight); XXXRENDER
 	    public void faces(MapMesh m, MPart mdesc) {
 		RPart desc = (RPart)mdesc;
-		Model mod = Model.get(m, mat);
+		Model mod = Model.get(m, null /*, mat */);
 		MeshBuf.Col col = mod.layer(MeshBuf.col);
 		MeshVertex[] v = new MeshVertex[desc.v.length];
 		for(int i = 0; i < desc.v.length; i++) {
@@ -636,17 +636,17 @@ public class Ridges extends MapMesh.Hooks {
 	};
 
     public static class TexCons implements Tiler.MCons {
-	public final GLState mat;
+	// public final GLState mat; XXXRENDER
 	public final float texh;
 
-	public TexCons(GLState mat, float texh) {
-	    this.mat = mat;
+	public TexCons(/*GLState mat, */float texh) {
+	    // this.mat = mat;
 	    this.texh = texh;
 	}
 
 	public void faces(MapMesh m, MPart mdesc) {
 	    RPart desc = (RPart)mdesc;
-	    Model mod = Model.get(m, mat);
+	    Model mod = Model.get(m, null /*, mat */);
 	    MeshBuf.Tex tex = mod.layer(MeshBuf.tex);
 	    int[] trn = new int[desc.rh.length];
 	    float zf = 1.0f / texh;

@@ -28,8 +28,10 @@ package haven;
 
 import java.util.*;
 import java.nio.*;
+/* XXXRENDER
 import haven.MorphedMesh.Morpher;
 import haven.MorphedMesh.MorphedBuf;
+*/
 
 public class MeshAnim {
     public final Frame[] frames;
@@ -53,6 +55,7 @@ public class MeshAnim {
 	}
     }
 
+    /* XXXRENDER
     public boolean animp(FastMesh mesh) {
 	int min = -1, max = -1;
 	for(int i = 0; i < mesh.num * 3; i++) {
@@ -82,14 +85,16 @@ public class MeshAnim {
 	}
 	return(false);
     }
+    */
 
-    public abstract class Anim implements Morpher.Factory {
+    public abstract class Anim /* implements Morpher.Factory */ {
 	protected Frame cf, nf;
 	protected float a;
 	protected int seq = 0;
 
 	public abstract boolean tick(float dt);
 
+	/* XXXRENDER
 	public Morpher create(final MorphedBuf vb) {
 	    return(new Morpher() {
 		    int lseq = -1;
@@ -159,10 +164,12 @@ public class MeshAnim {
 		    }
 		});
 	}
+	*/
 
 	public MeshAnim desc() {return(MeshAnim.this);}
     }
 
+    /* XXXRENDER
     public class SAnim extends Anim {
 	public float time = 0.0f;
 
@@ -241,6 +248,7 @@ public class MeshAnim {
 	    return(false);
 	}
     }
+    */
 
     @Resource.LayerName("manim")
     public static class Res extends Resource.Layer {
@@ -315,7 +323,8 @@ public class MeshAnim {
 	}
 
 	public Anim make() {
-	    return(rnd?a.new RAnim():a.new SAnim());
+	    return(null);	// XXXRENDER
+	    // return(rnd?a.new RAnim():a.new SAnim());
 	}
 
 	public void init() {

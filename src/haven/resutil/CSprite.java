@@ -31,7 +31,7 @@ import java.util.*;
 
 public class CSprite extends Sprite {
     private final Coord3f cc;
-    private final List<Rendered> parts = new ArrayList<Rendered>();
+    // private final List<Rendered> parts = new ArrayList<Rendered>(); XXXRENDER
     private final Random rnd;
     
     public CSprite(Owner owner, Resource res) {
@@ -41,6 +41,7 @@ public class CSprite extends Sprite {
 	cc = gob.getrc();
     }
 
+    /* XXXRENDER
     public void addpart(Location loc, GLState mat, Rendered part) {
 	parts.add(GLState.compose(loc, mat).apply(part));
     }
@@ -62,4 +63,5 @@ public class CSprite extends Sprite {
     public Object staticp() {
 	return(CONSTANS);
     }
+    */
 }

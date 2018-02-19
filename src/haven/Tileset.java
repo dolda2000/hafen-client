@@ -152,6 +152,7 @@ public class Tileset extends Resource.Layer {
 	}
 	final Tile[] order = new Tile[nt];
 	final Coord[] place = new Coord[nt];
+	/* XXXRENDER
 	Tex packbuf = new TexL(new Coord(minw, minh)) {
 		{
 		    mipmap(Mipmapper.avg);
@@ -189,6 +190,7 @@ public class Tileset extends Resource.Layer {
 		y += tsz.y;
 	    }
 	}
+	*/
     }
 
     @SuppressWarnings("unchecked")

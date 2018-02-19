@@ -52,9 +52,11 @@ public class DirLight extends Light {
 	this.dir = dir.norm().to4a(0.0f);
     }
 
+    /* XXXRENDER
     public void enable(GOut g, int idx) {
 	super.enable(g, idx);
 	BGL gl = g.gl;
 	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_POSITION, dir, 0);
     }
+    */
 }

@@ -57,6 +57,7 @@ public class Composite extends Drawable {
 	comp.eqowner = gob;
     }
     
+    /* XXXRENDER
     public void setup(RenderList rl) {
 	try {
 	    init();
@@ -65,6 +66,7 @@ public class Composite extends Drawable {
 	}
 	rl.add(comp, null);
     }
+    */
 	
     private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, boolean old) {
 	List<PoseMod> mods = new ArrayList<PoseMod>(rl.size());

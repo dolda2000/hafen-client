@@ -70,7 +70,7 @@ public class KinInfo extends GAttrib {
 		    h = vlg.getHeight();
 	    }
 	    if(w == 0) {
-		rnm = new TexIM(new Coord(1, 1));
+		rnm = null; // new TexIM(new Coord(1, 1)); XXXRENDER
 	    } else {
 		BufferedImage buf = TexI.mkbuf(new Coord(w, h));
 		Graphics g = buf.getGraphics();
@@ -90,6 +90,7 @@ public class KinInfo extends GAttrib {
 	return(rnm);
     }
     
+    /* XXXRENDER
     final PView.Draw2D fx = new PView.Draw2D() {
 	    public void draw2d(GOut g) {
 		if(gob.sc != null) {
@@ -122,4 +123,5 @@ public class KinInfo extends GAttrib {
 		}
 	    }
 	};
+    */
 }

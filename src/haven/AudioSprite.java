@@ -62,23 +62,27 @@ public class AudioSprite {
 	};
 
     public static class ClipSprite extends Sprite {
-	public final ActAudio.PosClip clip;
+	// public final ActAudio.PosClip clip; XXXRENDER
 	private boolean done = false;
 
 	public ClipSprite(Owner owner, Resource res, Resource.Audio clip) {
 	    super(owner, res);
+	    /* XXXRENDER
 	    this.clip = new ActAudio.PosClip(new Audio.Monitor(clip.stream()) {
 		    protected void eof() {
 			super.eof();
 			done = true;
 		    }
 		});
+		*/
 	}
 
+	/* XXXRENDER
 	public boolean setup(RenderList r) {
 	    r.add(clip, null);
 	    return(false);
 	}
+	*/
 
 	public boolean tick(int dt) {
 	    /* XXX: This is slightly bad, because virtual sprites that
@@ -92,13 +96,15 @@ public class AudioSprite {
 	    return(done);
 	}
 
+	/* XXXRENDER
 	public Object staticp() {
 	    return(CONSTANS);
 	}
+	*/
     }
 
     public static class RepeatSprite extends Sprite implements Gob.Overlay.CDel {
-	private ActAudio.PosClip clip;
+	// private ActAudio.PosClip clip; XXXRENDER
 	private final Resource.Audio end;
 
 	public RepeatSprite(Owner owner, Resource res, final Resource.Audio beg, final Resource.Audio clip, Resource.Audio end) {
@@ -115,20 +121,23 @@ public class AudioSprite {
 			return(clip.stream());
 		    }
 		};
-	    this.clip = new ActAudio.PosClip(rep);
+	    // this.clip = new ActAudio.PosClip(rep); XXXRENDER
 	}
 
+	/* XXXRENDER
 	public boolean setup(RenderList r) {
 	    if(clip != null)
 		r.add(clip, null);
 	    return(false);
 	}
+	*/
 
 	public boolean tick(int dt) {
-	    return(clip == null);
+	    return(/* clip == null XXXRENDER */ false);
 	}
 
 	public void delete() {
+	    /* XXXRENDER
 	    if(end != null)
 		clip = new ActAudio.PosClip(new Audio.Monitor(end.stream()) {
 			protected void eof() {
@@ -138,25 +147,31 @@ public class AudioSprite {
 		    });
 	    else
 		clip = null;
+	    */
 	}
 
+	/* XXXRENDER
 	public Object staticp() {
 	    return(CONSTANS);
 	}
+	*/
     }
 
     public static class Ambience extends Sprite {
-	public final Rendered amb;
+	// public final Rendered amb; XXXRENDER
 
 	public Ambience(Owner owner, Resource res) {
 	    super(owner, res);
 	    ClipAmbiance.Desc clamb = res.layer(ClipAmbiance.Desc.class);
+	    /* XXXRENDER
 	    if(clamb != null)
 		this.amb = clamb.spr;
 	    else
 		this.amb = new ActAudio.Ambience(res);
+	    */
 	}
 
+	/* XXXRENDER
 	public boolean setup(RenderList r) {
 	    r.add(amb, null);
 	    return(false);
@@ -165,5 +180,6 @@ public class AudioSprite {
 	public Object staticp() {
 	    return(CONSTANS);
 	}
+	*/
     }
 }

@@ -53,6 +53,7 @@ public class ResDrawable extends Drawable {
 	spr = Sprite.create(gob, res.get(), sdt.clone());
     }
 	
+    /* XXXRENDER
     public void setup(RenderList rl) {
 	try {
 	    init();
@@ -61,6 +62,7 @@ public class ResDrawable extends Drawable {
 	}
 	rl.add(spr, null);
     }
+    */
 	
     public void ctick(int dt) {
 	if(spr == null) {
@@ -85,7 +87,9 @@ public class ResDrawable extends Drawable {
 	return(Skeleton.getpose(spr));
     }
 
+    /* XXXRENDER
     public Object staticp() {
 	return((spr != null)?spr.staticp():null);
     }
+    */
 }

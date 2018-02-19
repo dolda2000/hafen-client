@@ -34,9 +34,11 @@ public class SprDrawable extends Drawable {
 	this.spr = spr;
     }
 	
+    /* XXXRENDER
     public void setup(RenderList rl) {
 	rl.add(spr, null);
     }
+    */
 	
     public void ctick(int dt) {
 	spr.tick(dt);
@@ -46,7 +48,9 @@ public class SprDrawable extends Drawable {
 	return(null);
     }
 
+    /* XXXRENDER
     public Object staticp() {
 	return(spr.staticp());
     }
+    */
 }
