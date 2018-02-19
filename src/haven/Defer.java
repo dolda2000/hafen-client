@@ -167,9 +167,9 @@ public class Defer extends ThreadGroup {
 	    }
 	}
 	
-	public T get() {
+	public T get(int prio) {
 	    synchronized(this) {
-		boostprio(5);
+		boostprio(prio);
 		if(state == "done") {
 		    if(exc != null)
 			throw(new DeferredException(exc));
@@ -183,15 +183,23 @@ public class Defer extends ThreadGroup {
 	    }
 	}
 	
-	public boolean done() {
+	public T get() {
+	    return(get(5));
+	}
+	
+	public boolean done(int prio) {
 	    synchronized(this) {
-		boostprio(5);
+		boostprio(prio);
 		if(state == "resched") {
 		    defer(this);
 		    state = "";
 		}
 		return(state == "done");
 	    }
+	}
+	
+	public boolean done() {
+	    return(done(5));
 	}
 	
 	public int priority() {

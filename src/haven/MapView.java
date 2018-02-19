@@ -1395,7 +1395,7 @@ public class MapView extends Widget implements DTarget, Console.Directory {
 		}
 	    }
 	} else if(msg == "shake") {
-	    shake = ((Number)args[0]).doubleValue();
+	    shake += ((Number)args[0]).doubleValue();
 	} else {
 	    super.uimsg(msg, args);
 	}
