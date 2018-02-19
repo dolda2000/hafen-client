@@ -29,7 +29,6 @@ package haven;
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 import static haven.OCache.posres;
-import haven.Resource.Tile;
 import haven.GLProgram.VarID;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
@@ -1411,7 +1410,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		}
 	    }
 	} else if(msg == "shake") {
-	    shake = ((Number)args[0]).doubleValue();
+	    shake += ((Number)args[0]).doubleValue();
 	} else {
 	    super.uimsg(msg, args);
 	}

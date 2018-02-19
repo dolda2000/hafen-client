@@ -29,21 +29,21 @@ package haven.resutil;
 import java.awt.Color;
 import java.util.*;
 import haven.*;
-import haven.Resource.Tile;
+import haven.Tileset.Tile;
 import haven.Surface.MeshVertex;
 
 public class GroundTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
     private static final Material.Colors gcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
-    public final Resource.Tileset set;
+    public final Tileset set;
 
     @ResName("gnd")
     public static class Fac implements Factory {
-	public Tiler create(int id, Resource.Tileset set) {
+	public Tiler create(int id, Tileset set) {
 	    return(new GroundTile(id, set));
 	}
     }
 
-    public GroundTile(int id, Resource.Tileset set) {
+    public GroundTile(int id, Tileset set) {
 	super(id);
 	this.set = set;
     }

@@ -87,6 +87,7 @@ public abstract class ItemInfo {
 	private final List<Tip> tips = new ArrayList<Tip>();
 	private final Map<ID, Tip> itab = new HashMap<ID, Tip>();
 	public final CompImage cmp = new CompImage();
+	public int width = 0;
 
 	public interface ID<T extends Tip> {
 	    public T make();
@@ -124,15 +125,14 @@ public abstract class ItemInfo {
 	    super(owner);
 	}
 
-	@Deprecated
-	public BufferedImage longtip() {return(null);}
-	public BufferedImage tipimg() {return(longtip());}
+	public BufferedImage tipimg() {return(null);}
+	public BufferedImage tipimg(int w) {return(tipimg());}
 	public Tip shortvar() {return(null);}
 	public void prepare(Layout l) {}
 	public void layout(Layout l) {
-	    BufferedImage t = tipimg();
+	    BufferedImage t = tipimg(l.width);
 	    if(t != null)
-		l.cmp.add(tipimg(), new Coord(0, l.cmp.sz.y));
+		l.cmp.add(t, new Coord(0, l.cmp.sz.y));
 	}
 	public int order() {return(100);}
     }
@@ -174,6 +174,27 @@ public abstract class ItemInfo {
 		    public int order() {return(0);}
 		});
 	}
+    }
+
+    public static class Pagina extends Tip {
+	public final String str;
+
+	public Pagina(Owner owner, String str) {
+	    super(owner);
+	    this.str = str;
+	}
+
+	public BufferedImage tipimg(int w) {
+	    return(RichText.render(str, w).img);
+	}
+
+	public void layout(Layout l) {
+	    BufferedImage t = tipimg((l.width == 0) ? 200 : l.width);
+	    if(t != null)
+		l.cmp.add(t, new Coord(0, l.cmp.sz.y + 10));
+	}
+
+	public int order() {return(10000);}
     }
 
     public static class Contents extends Tip {

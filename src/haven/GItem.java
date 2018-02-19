@@ -39,7 +39,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     private GSprite spr;
     private Object[] rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
-    
+
     @RName("item")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
@@ -48,16 +48,48 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    return(new GItem(ui.sess.getres(res), sdt));
 	}
     }
-    
+
     public interface ColorInfo {
 	public Color olcol();
     }
-    
-    public interface NumberInfo {
+
+    public interface OverlayInfo<T> {
+	public T overlay();
+	public void drawoverlay(GOut g, T data);
+    }
+
+    public static class InfoOverlay<T> {
+	public final OverlayInfo<T> inf;
+	public final T data;
+
+	public InfoOverlay(OverlayInfo<T> inf) {
+	    this.inf = inf;
+	    this.data = inf.overlay();
+	}
+
+	public void draw(GOut g) {
+	    inf.drawoverlay(g, data);
+	}
+
+	public static <S> InfoOverlay<S> create(OverlayInfo<S> inf) {
+	    return(new InfoOverlay<S>(inf));
+	}
+    }
+
+    public interface NumberInfo extends OverlayInfo<Tex> {
 	public int itemnum();
 	public default Color numcolor() {
 	    return(Color.WHITE);
 	}
+
+	public default Tex overlay() {
+	    return(new TexI(GItem.NumberInfo.numrender(itemnum(), numcolor())));
+	}
+
+	public default void drawoverlay(GOut g, Tex tex) {
+	    g.aimage(tex, g.sz, 1, 1);
+	}
+
 	public static BufferedImage numrender(int num, Color col) {
 	    return(Utils.outline2(Text.render(Integer.toString(num), col).img, Utils.contrast(col)));
 	}
@@ -69,17 +101,17 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 
     public static class Amount extends ItemInfo implements NumberInfo {
 	private final int num;
-	
+
 	public Amount(Owner owner, int num) {
 	    super(owner);
 	    this.num = num;
 	}
-	
+
 	public int itemnum() {
 	    return(num);
 	}
     }
-    
+
     public GItem(Indir<Resource> res, Message sdt) {
 	this.res = res;
 	this.sdt = new MessageBuf(sdt);
@@ -125,7 +157,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    info = ItemInfo.buildinfo(this, rawinfo);
 	return(info);
     }
-    
+
     public Resource resource() {
 	return(res.get());
     }
