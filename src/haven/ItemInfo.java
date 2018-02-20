@@ -66,6 +66,10 @@ public abstract class ItemInfo {
 			    public ItemInfo build(Owner owner, Object... args) {
 				try {
 				    return((ItemInfo)mkm.invoke(null, owner, args));
+				} catch(InvocationTargetException e) {
+				    if(e.getCause() instanceof RuntimeException)
+					throw((RuntimeException)e.getCause());
+				    throw(new RuntimeException(e));
 				} catch(Exception e) {
 				    if(e instanceof RuntimeException) throw((RuntimeException)e);
 				    throw(new RuntimeException(e));
