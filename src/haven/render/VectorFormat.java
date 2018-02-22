@@ -46,4 +46,15 @@ public class VectorFormat {
     public String toString() {
 	return("vector(" + nc + ", " + cf + ")");
     }
+
+    public boolean equals(Object o) {
+	if(!(o instanceof VectorFormat))
+	    return(false);
+	VectorFormat that = (VectorFormat)o;
+	return((this.nc == that.nc) && (this.cf == that.cf));
+    }
+
+    public int hashCode() {
+	return((cf.hashCode() * 31) + nc);
+    }
 }
