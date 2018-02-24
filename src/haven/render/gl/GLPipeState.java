@@ -132,7 +132,18 @@ public abstract class GLPipeState<T extends State> {
 	    }
 	};
 
-    public static final GLPipeState<?>[] all = {viewport, scissor, depthtest, maskdepth, blending};
+    public static final GLPipeState<LineWidth> linewidth = new GLPipeState<LineWidth>(States.linewidth) {
+	    public void apply(BGL gl, LineWidth from, LineWidth to) {
+		if(to != null) {
+		    if(!eq(from, to))
+			gl.glLineWidth(to.w);
+		} else {
+		    gl.glLineWidth(1);
+		}
+	    }
+	};
+
+    public static final GLPipeState<?>[] all = {viewport, scissor, depthtest, maskdepth, blending, linewidth};
     public static final GLPipeState<?>[] matching;
     static {
 	int max = all[0].slot.id;
