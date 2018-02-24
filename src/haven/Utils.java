@@ -758,6 +758,21 @@ public class Utils {
 	if(term) out.println();
     }
 
+    public static void dumparr(short[] arr, PrintStream out, boolean term) {
+	if(arr == null) {
+	    out.print("null");
+	} else {
+	    out.print('[');
+	    boolean f = true;
+	    for(int i : arr) {
+		if(!f) out.print(", "); f = false;
+		out.print(i);
+	    }
+	    out.print(']');
+	}
+	if(term) out.println();
+    }
+
     public static String titlecase(String str) {
 	return(Character.toTitleCase(str.charAt(0)) + str.substring(1));
     }
