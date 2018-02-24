@@ -178,6 +178,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 			this.wait();
 		}
 		while(true) {
+		    Debug.cycle();
+
 		    synchronized(ui) {
 			ed.dispatch(ui);
 			ui.tick();
