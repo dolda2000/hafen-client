@@ -54,7 +54,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 
     public JOGLPanel(Coord sz) {
 	super(mkcaps(), null, null, null);
-	base = new Pipe();
+	base = new BufPipe();
 	base.prep(new FragColor(FragColor.defcolor)).prep(new DepthBuffer(DepthBuffer.defdepth));
 	base.prep(new States.Blending());
 	setSize(sz.x, sz.y);
