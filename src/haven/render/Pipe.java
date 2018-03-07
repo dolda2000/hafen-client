@@ -30,68 +30,19 @@ import java.util.*;
 import haven.render.State.Slot;
 import static haven.Utils.eq;
 
-public class Pipe {
-    private State[] states;
+public interface Pipe {
+    public <T extends State> T get(Slot<T> slot);
+    public Pipe copy();
 
-    /* Implementation-side only */
-    public Pipe(State[] states) {
-	this.states = states;
+    /* Should be used sparingly, and the return-value is read-only. */
+    public State[] states();
+
+    public default <T extends State> void put(Slot<? super T> slot, T state) {
+	throw(new UnsupportedOperationException(this.getClass().toString() + "::put()"));
     }
 
-    public Pipe() {
-	this(new State[State.Slot.slots.idlist.length]);
-    }
-
-    public <T extends State> void put(Slot<? super T> slot, T state) {
-	if(states.length <= slot.id)
-	    states = Arrays.copyOf(states, slot.id + 1);
-	states[slot.id] = state;
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T extends State> T get(Slot<T> slot) {
-	if(states.length <= slot.id)
-	    return(null);
-	return((T)states[slot.id]);
-    }
-
-    public Pipe copy() {
-	return(new Pipe(Arrays.copyOf(states, states.length)));
-    }
-
-    public void copy(Pipe from) {
-	states = Arrays.copyOf(from.states, from.states.length);
-    }
-
-    public int hashCode() {
-	int h = 0x775e2d64;
-	for(int i = 0; i < states.length; i++) {
-	    if(states[i] != null)
-		h = (h * 31) + states[i].hashCode();
-	}
-	return(h);
-    }
-
-    public boolean equals(Object oo) {
-	if(!(oo instanceof Pipe))
-	    return(false);
-	Pipe o = (Pipe)oo;
-	State[] a, b;
-	if(states.length > o.states.length) {
-	    a = states; b = o.states;
-	} else {
-	    b = states; a = o.states;
-	}
-	int i = 0;
-	for(; i < b.length; i++) {
-	    if(!eq(a[i], b[i]))
-		return(false);
-	}
-	for(; i < a.length; i++) {
-	    if(a[i] != null)
-		return(false);
-	}
-	return(true);
+    public default void copy(Pipe from) {
+	throw(new UnsupportedOperationException(this.getClass().toString() + "::copy()"));
     }
 
     public static interface Op {
@@ -143,32 +94,36 @@ public class Pipe {
 	}
     }
 
-    public Pipe prep(Op op) {
+    public default Pipe prep(Op op) {
 	op.apply(this);
 	return(this);
     }
 
-    public String toString() {
-	StringBuilder buf = new StringBuilder();
-	buf.append('[');
+    public static int hashCode(State[] states) {
+	int h = 0x775e2d64;
 	for(int i = 0; i < states.length; i++) {
-	    if(i > 0)
-		buf.append(", ");
-	    if((i % 5) == 0) {
-		buf.append(i);
-		buf.append('=');
-	    }
-	    if(states[i] == null)
-		buf.append("null");
-	    else
-		buf.append(states[i].toString());
+	    if(states[i] != null)
+		h = (h * 31) + states[i].hashCode();
 	}
-	buf.append(']');
-	return(buf.toString());
+	return(h);
     }
 
-    /* Implementation-side only */
-    public State[] states() {
-	return(states);
+    public static boolean equals(State[] as, State[] bs) {
+	State[] a, b;
+	if(as.length > bs.length) {
+	    a = as; b = bs;
+	} else {
+	    b = as; a = bs;
+	}
+	int i = 0;
+	for(; i < b.length; i++) {
+	    if(!eq(a[i], b[i]))
+		return(false);
+	}
+	for(; i < a.length; i++) {
+	    if(a[i] != null)
+		return(false);
+	}
+	return(true);
     }
 }

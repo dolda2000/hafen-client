@@ -31,6 +31,7 @@ import java.awt.image.BufferedImage;
 import javax.media.opengl.*;
 import java.nio.*;
 import haven.render.*;
+import haven.render.States;
 
 public class GOut {
     public static final VertexArray.Layout vf_pos = new VertexArray.Layout(new VertexArray.Layout.Input(Ortho2D.pos, new VectorFormat(2, NumberFormat.FLOAT32), 0, 0, 8));
@@ -188,7 +189,7 @@ public class GOut {
     }
 
     public void line(Coord c1, Coord c2, double w) {
-	/* XXXRENDER: gl.glLineWidth((float)w); */
+	usestate(new States.LineWidth(w));
 	float[] data = {c1.x + tx.x, c1.y + tx.y, c2.x + tx.x, c2.y + tx.y};
 	drawp(Model.Mode.LINES, data);
     }

@@ -120,7 +120,7 @@ public class Applier {
 	    shash ^= System.identityHashCode(nshaders[i]);
 	}
 	GLProgram prog = env.getprog(shash, nshaders);
-	Pipe tp = new Pipe(ns);
+	Pipe tp = new BufPipe(ns);
 	Object[] nuvals = new Object[prog.uniforms.length];
 	for(i = 0; i < prog.uniforms.length; i++)
 	    nuvals[i] = prepuval(getuval(prog, i, tp));

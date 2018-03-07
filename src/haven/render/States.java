@@ -136,4 +136,21 @@ public abstract class States {
 
 	public void apply(Pipe p) {p.put(blend, this);}
     }
+
+    public static Slot<LineWidth> linewidth = new Slot<LineWidth>(Slot.Type.GEOM, LineWidth.class);
+    public static class LineWidth extends Builtin {
+	public final float w;
+
+	public LineWidth(float w) {
+	    this.w = w;
+	}
+	public LineWidth(double w) {this((float)w);}
+	public LineWidth(int w) {this((float)w);}
+
+	public boolean equals(Object o) {
+	    return((o instanceof LineWidth) && (((LineWidth)o).w == this.w));
+	}
+
+	public void apply(Pipe p) {p.put(linewidth, this);}
+    }
 }

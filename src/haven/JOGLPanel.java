@@ -39,6 +39,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     private GLEnvironment env = null;
     private UI ui;
     private Pipe base, wnd;
+    private final Dispatcher ed;
 
     private static GLCapabilities mkcaps() {
 	GLProfile prof = GLProfile.getDefault();
@@ -53,7 +54,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 
     public JOGLPanel(Coord sz) {
 	super(mkcaps(), null, null, null);
-	base = new Pipe();
+	base = new BufPipe();
 	base.prep(new FragColor(FragColor.defcolor)).prep(new DepthBuffer(DepthBuffer.defdepth));
 	base.prep(new States.Blending());
 	setSize(sz.x, sz.y);
@@ -74,6 +75,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 		public void dispose(GLAutoDrawable wdg) {
 		}
 	    });
+	ed = new Dispatcher();
+	ed.register(this);
     }
 
     private static class Frame {
@@ -175,6 +178,13 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 			this.wait();
 		}
 		while(true) {
+		    Debug.cycle();
+
+		    synchronized(ui) {
+			ed.dispatch(ui);
+			ui.tick();
+		    }
+
 		    GLEnvironment env = this.env;
 		    GLRender buf = env.render();
 		    synchronized(curdraw) {

@@ -216,7 +216,7 @@ public class Test implements GLEventListener, KeyListener {
 
     public void reshape(GLAutoDrawable wnd, int x, int y, int w, int h) {
 	GL2 gl = wnd.getGL().getGL2();
-	Pipe base = new Pipe();
+	Pipe base = new BufPipe();
 	Area area = Area.sized(new Coord(x, y), new Coord(w, h));
 	base.prep(new States.Viewport(area)).prep(new Ortho2D(area)).prep(new States.Blending());
 	base.prep(new FragColor(FragColor.defcolor)).prep(new DepthBuffer(DepthBuffer.defdepth));
