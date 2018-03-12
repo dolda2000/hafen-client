@@ -503,6 +503,31 @@ public class Utils {
 	return((byte)f8);
     }
 
+    public static void uvec2oct(float[] buf, float x, float y, float z) {
+	float m = 1.0f / (Math.abs(x) + Math.abs(y) + Math.abs(z));
+	float hx = x * m, hy = y * m;
+	if(z >= 0) {
+	    buf[0] = hx;
+	    buf[1] = hy;
+	} else {
+	    buf[0] = (1 - Math.abs(hy)) * Math.copySign(1, hx);
+	    buf[1] = (1 - Math.abs(hx)) * Math.copySign(1, hy);
+	}
+    }
+
+    public static void oct2uvec(float[] buf, float x, float y) {
+	float z = 1 - (Math.abs(x) + Math.abs(y));
+	if(z < 0) {
+	    float xc = x, yc = y;
+	    x = (1 - Math.abs(yc)) * Math.copySign(1, xc);
+	    y = (1 - Math.abs(xc)) * Math.copySign(1, yc);
+	}
+	float f = 1 / (float)Math.sqrt((x * x) + (y * y) + (z * z));
+	buf[0] = x * f;
+	buf[1] = y * f;
+	buf[2] = z * f;
+    }
+
     static char num2hex(int num) {
 	if(num < 10)
 	    return((char)('0' + num));
