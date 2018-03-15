@@ -42,8 +42,12 @@ public class FboState extends GLState {
     }
 
     public void applydbufs(BGL gl) {
-	if(dbufs != null)
-	    gl.glDrawBuffers(dbufs.length, dbufs, 0);
+	if(dbufs != null) {
+	    if(dbufs.length == 1)
+		gl.glDrawBuffer(dbufs[0]);
+	    else
+		gl.glDrawBuffers(dbufs.length, dbufs, 0);
+	}
     }
 
     public void apply(BGL gl) {
