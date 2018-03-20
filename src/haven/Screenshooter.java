@@ -84,7 +84,7 @@ public class Screenshooter extends Window {
     public static class Shot {
 	public final BufferedImage map, ui;
 	public final TexI mapt, uit;
-	public String comment;
+	public String comment, camera;
 	public boolean fsaa, fl, sdw;
 
 	public Shot(BufferedImage map, BufferedImage ui) {
@@ -128,6 +128,8 @@ public class Screenshooter extends Window {
 		Node tlist = new IIOMetadataNode("Text");
 		if(info.comment != null)
 		    cmt(tlist, "Comment", info.comment);
+		if(info.camera != null)
+		    cmt(tlist, "haven.cam", info.camera);
 		cmt(tlist, "haven.fsaa", info.fsaa?"y":"n");
 		cmt(tlist, "haven.flight", info.fl?"y":"n");
 		cmt(tlist, "haven.sdw", info.sdw?"y":"n");
@@ -163,6 +165,10 @@ public class Screenshooter extends Window {
 
 		MessageBuf hdat = new MessageBuf();
 		hdat.addstring2("HSSI1");
+		if(info.camera != null) {
+		    hdat.addstring("cam");
+		    hdat.addstring(info.camera);
+		}
 		hdat.addstring("fsaa");
 		hdat.addstring(info.fsaa?"y":"n");
 		hdat.addstring("flight");
@@ -313,11 +319,13 @@ public class Screenshooter extends Window {
 	    private void checkcomplete(GOut g) {
 		if((map != null) && (ui != null)) {
 		    GLSettings pref = g.gc.pref;
+		    String camera = gameui.map.camera.getClass().getName();
 		    Utils.defer(() -> {
 			    Shot shot = new Shot(map, ui);
 			    shot.fl = pref.flight.val;
 			    shot.sdw = pref.lshadow.val;
 			    shot.fsaa = pref.fsaa.val;
+			    shot.camera = camera;
 			    gameui.addchild(new Screenshooter(tgt, shot), "misc", new Coord2d(0.1, 0.1));
 			});
 		}
