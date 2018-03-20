@@ -46,10 +46,11 @@ public class Button extends SIWidget {
     public boolean lg;
     public Text text;
     public BufferedImage cont;
+    public Runnable action = null;
     static Text.Foundry tf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
     static Text.Furnace nf = new PUtils.BlurFurn(new PUtils.TexFurn(tf, Window.ctex), 1, 1, new Color(80, 40, 0));
-    boolean a = false;
-    UI.Grab d = null;
+    private boolean a = false;
+    private UI.Grab d = null;
 	
     @RName("btn")
     public static class $Btn implements Factory {
@@ -72,35 +73,43 @@ public class Button extends SIWidget {
 	return(ret);
     }
         
+    private static boolean largep(int w) {
+	return(w >= (bl.getWidth() + bm.getWidth() + br.getWidth()));
+    }
+
     private Button(int w, boolean lg) {
 	super(new Coord(w, lg?hl:hs));
 	this.lg = lg;
     }
 
-    private Button(int w) {
-	this(w, w >= (bl.getWidth() + bm.getWidth() + br.getWidth()));
-    }
-
-    public Button(int w, String text, boolean lg) {
+    public Button(int w, String text, boolean lg, Runnable action) {
 	this(w, lg);
 	this.text = nf.render(text);
 	this.cont = this.text.img;
+	this.action = action;
+    }
+
+    public Button(int w, String text, boolean lg) {
+	this(w, text, lg, null);
+	this.action = () -> wdgmsg("activate");
+    }
+
+    public Button(int w, String text, Runnable action) {
+	this(w, text, largep(w), action);
     }
 
     public Button(int w, String text) {
-	this(w);
-	this.text = nf.render(text);
-	this.cont = this.text.img;
+	this(w, text, largep(w));
     }
         
     public Button(int w, Text text) {
-	this(w);
+	this(w, largep(w));
 	this.text = text;
 	this.cont = text.img;
     }
 	
     public Button(int w, BufferedImage cont) {
-	this(w);
+	this(w, largep(w));
 	this.cont = cont;
     }
 	
@@ -135,7 +144,8 @@ public class Button extends SIWidget {
     }
 
     public void click() {
-	wdgmsg("activate");
+	if(action != null)
+	    action.run();
     }
     
     public void uimsg(String msg, Object... args) {
