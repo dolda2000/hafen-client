@@ -39,6 +39,7 @@ import java.net.*;
 
 public class Screenshooter extends Window {
     public static final ComponentColorModel outcm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), new int[] {8, 8, 8}, false, false, ComponentColorModel.OPAQUE, DataBuffer.TYPE_BYTE);
+    public static final PUtils.Convolution thumbflt = new PUtils.Lanczos(3);
     public final URL tgt;
     public final Shot shot;
     private final TextEntry comment;
@@ -51,17 +52,16 @@ public class Screenshooter extends Window {
 	super(Coord.z, "Screenshot");
 	this.tgt = tgt;
 	this.shot = shot;
-	int w = Math.min(200 * shot.sz().x / shot.sz().y, 150);
-	int h = w * shot.sz().y / shot.sz().x;
-	add(new Widget(new Coord(w, h)) {
+	Coord tsz = shot.tsz();
+	add(new Widget(tsz) {
 		public void draw(GOut g) {
-		    TexI tex = decobox.a?shot.ui:shot.map;
-		    g.image(tex, Coord.z, sz);
+		    TexI tex = decobox.a ? shot.uit : shot.mapt;
+		    g.image(tex, Coord.z);
 		}
 	    }, new Coord(0, 0));
-	this.decobox = adda(new CheckBox("Include interface"), new Coord(w, h / 2), 0, 0.5);
-	Label clbl = add(new Label("If you wish, leave a comment:"), new Coord(0, h + 5));
-	this.comment = add(new TextEntry(w + 130, "") {
+	this.decobox = adda(new CheckBox("Include interface"), new Coord(tsz.x, tsz.y / 2), 0, 0.5);
+	Label clbl = add(new Label("If you wish, leave a comment:"), new Coord(0, tsz.y + 5));
+	this.comment = add(new TextEntry(tsz.x + 130, "") {
 		public void activate(String text) {
 		    upload();
 		}
@@ -82,18 +82,24 @@ public class Screenshooter extends Window {
     }
 
     public static class Shot {
-	public final TexI map, ui;
+	public final BufferedImage map, ui;
+	public final TexI mapt, uit;
 	public String comment;
 	public boolean fsaa, fl, sdw;
 
-	public Shot(TexI map, TexI ui) {
+	public Shot(BufferedImage map, BufferedImage ui) {
 	    this.map = map;
 	    this.ui = ui;
+	    Coord sz = PUtils.imgsz(map);
+	    int w = Math.min(200 * sz.x / sz.y, 150);
+	    int h = w * sz.y / sz.x;
+	    Coord tsz = new Coord(w, h);
+	    this.mapt = new TexI(PUtils.convolvedown(map, tsz, thumbflt));
+	    this.uit = new TexI(PUtils.convolvedown(ui, tsz, thumbflt));
 	}
 
-	public Coord sz() {
-	    return(map.sz());
-	}
+	public Coord sz() {return(PUtils.imgsz(map));}
+	public Coord tsz() {return(mapt.sz());}
     }
 
     public static interface ImageFormat {
@@ -179,11 +185,11 @@ public class Screenshooter extends Window {
 	};
 
     public class Uploader extends HackThread {
-	private final TexI img;
+	private final BufferedImage img;
 	private final Shot info;
 	private final ImageFormat fmt;
 
-	public Uploader(TexI img, Shot info, ImageFormat fmt) {
+	public Uploader(BufferedImage img, Shot info, ImageFormat fmt) {
 	    super("Screenshot uploader");
 	    this.img = img;
 	    this.info = info;
@@ -225,11 +231,11 @@ public class Screenshooter extends Window {
 	    return(ret);
 	}
 
-	public void upload(TexI ss, Shot info, ImageFormat fmt) throws IOException {
+	public void upload(BufferedImage ss, Shot info, ImageFormat fmt) throws IOException {
 	    setstate("Preparing image...");
 	    ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
-	    fmt.write(buf, convert(ss.back), info);
+	    fmt.write(buf, convert(ss), info);
 
 	    byte[] data = buf.toByteArray();
 	    buf = null;
@@ -284,7 +290,7 @@ public class Screenshooter extends Window {
 
     public void upload() {
 	shot.comment = comment.text;
-	final Uploader th = new Uploader(decobox.a?shot.ui:shot.map, shot, png);
+	final Uploader th = new Uploader(decobox.a ? shot.ui : shot.map, shot, png);
 	th.start();
 	ui.destroy(btn);
 	btn = add(new Button(125, "Cancel", false, th::interrupt), btnc);
@@ -292,25 +298,28 @@ public class Screenshooter extends Window {
 
     public static void take(GameUI gameui, URL tgt) {
 	new Object() {
-	    TexI map = null, ui = null;
+	    BufferedImage map = null, ui = null;
 	    {
 		gameui.map.delay2(g -> g.getimage(Coord.z, g.sz, img -> {
-			    map = new TexI(img);
+			    map = img;
 			    checkcomplete(g);
 			}));
 		gameui.ui.drawafter(g -> g.getimage(Coord.z, g.sz, img -> {
-			    ui = new TexI(img);
+			    ui = img;
 			    checkcomplete(g);
 			}));
 	    }
 
 	    private void checkcomplete(GOut g) {
 		if((map != null) && (ui != null)) {
-		    Shot shot = new Shot(map, ui);
-		    shot.fl = g.gc.pref.flight.val;
-		    shot.sdw = g.gc.pref.lshadow.val;
-		    shot.fsaa = g.gc.pref.fsaa.val;
-		    gameui.addchild(new Screenshooter(tgt, shot), "misc", new Coord2d(0.1, 0.1));
+		    GLSettings pref = g.gc.pref;
+		    Utils.defer(() -> {
+			    Shot shot = new Shot(map, ui);
+			    shot.fl = pref.flight.val;
+			    shot.sdw = pref.lshadow.val;
+			    shot.fsaa = pref.fsaa.val;
+			    gameui.addchild(new Screenshooter(tgt, shot), "misc", new Coord2d(0.1, 0.1));
+			});
 		}
 	    }
 	};
