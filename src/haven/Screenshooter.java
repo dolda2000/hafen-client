@@ -59,7 +59,7 @@ public class Screenshooter extends Window {
 		    g.image(tex, Coord.z);
 		}
 	    }, new Coord(0, 0));
-	this.decobox = adda(new CheckBox("Include interface"), new Coord(tsz.x, tsz.y / 2), 0, 0.5);
+	this.decobox = adda(new CheckBox("Include interface", true), new Coord(tsz.x + 5, tsz.y / 2), 0, 0.5);
 	Label clbl = add(new Label("If you wish, leave a comment:"), new Coord(0, tsz.y + 5));
 	this.comment = add(new TextEntry(tsz.x + 130, "") {
 		public void activate(String text) {
