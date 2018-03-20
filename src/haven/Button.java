@@ -101,7 +101,7 @@ public class Button extends SIWidget {
     public Button(int w, String text) {
 	this(w, text, largep(w));
     }
-        
+
     public Button(int w, Text text) {
 	this(w, largep(w));
 	this.text = text;
