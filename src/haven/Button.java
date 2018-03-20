@@ -34,6 +34,7 @@ import java.awt.image.BufferedImage;
 public class Button extends SIWidget {
     public Text text;
     public BufferedImage cont;
+    public Runnable action = null;
     static Text.Foundry tf = new Text.Foundry(Text.serif, 12, Color.YELLOW);
     boolean a = false;
     UI.Grab d = null;
@@ -56,12 +57,18 @@ public class Button extends SIWidget {
 	return(ret);
     }
         
-    public Button(int w, String text) {
+    public Button(int w, String text, Runnable action) {
 	super(new Coord(w, 19));
 	this.text = tf.render(text);
 	this.cont = this.text.img;
+	this.action = action;
     }
-        
+
+    public Button(int w, String text) {
+	this(w, text, null);
+	this.action = () -> wdgmsg("activate");
+    }
+
     public Button(int w, Text text) {
 	super(new Coord(w, 19));
 	this.text = text;
@@ -95,7 +102,8 @@ public class Button extends SIWidget {
     }
 
     public void click() {
-	wdgmsg("activate");
+	if(action != null)
+	    action.run();
     }
     
     public void uimsg(String msg, Object... args) {
