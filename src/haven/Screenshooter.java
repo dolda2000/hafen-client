@@ -190,6 +190,12 @@ public class Screenshooter extends Window {
 	    }
 	};
 
+    public static class UploadError extends IOException {
+	public UploadError(String message) {
+	    super(message);
+	}
+    }
+
     public class Uploader extends HackThread {
 	private final BufferedImage img;
 	private final Shot info;
@@ -212,7 +218,10 @@ public class Screenshooter extends Window {
 		    btn = add(new Button(125, "Retry", false, Screenshooter.this::upload), btnc);
 		}
 	    } catch(IOException e) {
-		setstate("Could not upload image");
+		if(e instanceof UploadError)
+		    setstate("Error: " + e.getMessage());
+		else
+		    setstate("Could not upload image");
 		synchronized(ui) {
 		    ui.destroy(btn);
 		    btn = add(new Button(125, "Retry", false, Screenshooter.this::upload), btnc);
@@ -224,7 +233,7 @@ public class Screenshooter extends Window {
 	    synchronized(ui) {
 		if(prog != null)
 		    ui.destroy(prog);
-		prog = add(new Label(t), btnc.sub(0, 15));
+		prog = adda(new Label(t), btnc.add(62, -15), 0.5, 0.0);
 	    }
 	}
 
@@ -272,6 +281,8 @@ public class Screenshooter extends Window {
 	    InputStream in = conn.getInputStream();
 	    final URL result;
 	    try {
+		if(conn.getContentType().equals("text/x-error-response"))
+		    throw(new UploadError(new String(Utils.readall(in), "utf-8")));
 		if(!conn.getContentType().equals("text/x-target-url"))
 		    throw(new IOException("Unexpected type of reply from server"));
 		byte[] b = Utils.readall(in);
