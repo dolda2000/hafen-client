@@ -550,10 +550,12 @@ public class VertexBuf {
     @Resource.LayerName("vbuf2")
     public static class VertexRes extends Resource.Layer {
 	public transient final VertexBuf b;
+	public final int id;
 	
 	private VertexRes(Resource res, VertexBuf b) {
 	    res.super();
 	    this.b = b;
+	    this.id = 0;
 	}
 
 	public VertexRes(Resource res, Message buf) {
@@ -565,6 +567,10 @@ public class VertexBuf {
 		throw(new Resource.LoadException(String.format("Unknown vbuf version: %d", ver), res));
 	    if((fl & ~0xf) != 0)
 		throw(new Resource.LoadException(String.format("Unknown vbuf flags: %02x", fl), res));
+	    if(ver >= 1)
+		this.id = buf.int16();
+	    else
+		this.id = 0;
 	    int num = buf.uint16();
 	    while(!buf.eom()) {
 		String nm = buf.string();
