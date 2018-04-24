@@ -43,6 +43,7 @@ public class Widget {
     public Widget focused;
     public Indir<Resource> cursor = null;
     public Object tooltip = null;
+    public int gkey;
     private Widget prevtt;
     static Map<String, Factory> types = new TreeMap<String, Factory>();
 
@@ -625,6 +626,8 @@ public class Widget {
 		    }
 		};
 	    }
+	} else if(msg == "gk") {
+	    gkey = (Integer)args[0];
 	} else {
 	    System.err.println("Unhandled widget message: " + msg);
 	}
@@ -730,8 +733,28 @@ public class Widget {
 	    wdg.mousemove(c.add(cc.inv()));
 	}
     }
-	
+
+    private static final Map<Integer, Integer> gkeys = Utils.<Integer, Integer>map().
+	put((int)'0', KeyEvent.VK_0).put((int)'1', KeyEvent.VK_1).put((int)'2', KeyEvent.VK_2).put((int)'3', KeyEvent.VK_3).put((int)'4', KeyEvent.VK_4).
+	put((int)'5', KeyEvent.VK_5).put((int)'6', KeyEvent.VK_6).put((int)'7', KeyEvent.VK_7).put((int)'8', KeyEvent.VK_8).put((int)'9', KeyEvent.VK_9).
+	put((int)'`', KeyEvent.VK_BACK_QUOTE).put((int)'-', KeyEvent.VK_MINUS).put((int)'=', KeyEvent.VK_EQUALS).
+	put(8, KeyEvent.VK_BACK_SPACE).put(9, KeyEvent.VK_TAB).put(13, KeyEvent.VK_ENTER).put(27, KeyEvent.VK_ESCAPE).
+	put(128, KeyEvent.VK_UP).put(129, KeyEvent.VK_RIGHT).put(130, KeyEvent.VK_DOWN).put(131, KeyEvent.VK_LEFT).
+	put(132, KeyEvent.VK_INSERT).put(133, KeyEvent.VK_HOME).put(134, KeyEvent.VK_PAGE_UP).put(135, KeyEvent.VK_DELETE).put(136, KeyEvent.VK_END).put(137, KeyEvent.VK_PAGE_DOWN).map();
+    public static boolean matchgkey(KeyEvent ev, int gkey) {
+	if((gkey & 0xf000) != 0) {
+	    return(((UI.modflags(ev) & ((gkey & 0xf000) >> 12)) == ((gkey & 0x0f00) >> 8)) &&
+		   (ev.getKeyCode() == gkeys.get(gkey & 0xff)));
+	} else {
+	    return(ev.getKeyChar() == (gkey & 0xff));
+	}
+    }
+
     public boolean globtype(char key, KeyEvent ev) {
+	if((gkey != 0) && matchgkey(ev, gkey)) {
+	    wdgmsg("activate");
+	    return(true);
+	}
 	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
 	    if(wdg.globtype(key, ev))
 		return(true);
