@@ -587,10 +587,15 @@ public class Widget {
 	} else if(msg == "autofocus") {
 	    autofocus = (Integer)args[0] != 0;
 	} else if(msg == "focus") {
-	    Widget w = ui.widgets.get((Integer)args[0]); 
-	    if(w != null) {
-		if(w.canfocus)
-		    setfocus(w);
+	    int tid = (Integer)args[0];
+	    if(tid < 0) {
+		setfocus(null);
+	    } else {
+		Widget w = ui.widgets.get(tid);
+		if(w != null) {
+		    if(w.canfocus)
+			setfocus(w);
+		}
 	    }
 	} else if(msg == "curs") {
 	    if(args.length == 0)
