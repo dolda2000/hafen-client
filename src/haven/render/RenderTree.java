@@ -27,6 +27,7 @@
 package haven.render;
 
 import java.util.*;
+import static haven.Utils.eq;
 
 public class RenderTree {
     private final Slot root;
@@ -54,6 +55,7 @@ public class RenderTree {
 	private boolean[] deps = {};
 	private final Pipe parent;
 	private boolean lock = false;
+	private int ndef = 0;
 
 	public DepPipe(Pipe parent) {
 	    this.parent = parent;
@@ -100,7 +102,10 @@ public class RenderTree {
 		throw(new IllegalStateException("locked"));
 	    int idx = slot.id;
 	    alloc(idx);
-	    def[idx] = true;
+	    if(!def[idx]) {
+		def[idx] = true;
+		ndef++;
+	    }
 	    states[idx] = state;
 	}
 
@@ -122,6 +127,52 @@ public class RenderTree {
 	    }
 	    return(ret);
 	}
+
+	public int[] defdiff(DepPipe that) {
+	    if(that.def.length < this.def.length)
+		return(that.defdiff(this));
+	    int nch = 0;
+	    for(int i = 0; i < this.def.length; i++) {
+		if(this.def[i] != that.def[i])
+		    nch++;
+	    }
+	    for(int i = this.def.length; i < that.def.length; i++) {
+		if(that.def[i])
+		    nch++;
+	    }
+	    if(nch == 0)
+		return(null);
+	    int[] ch = new int[nch];
+	    nch = 0;
+	    for(int i = 0; i < this.def.length; i++) {
+		if(this.def[i] != that.def[i])
+		    ch[nch++] = i;
+	    }
+	    for(int i = this.def.length; i < that.def.length; i++) {
+		if(that.def[i])
+		    ch[nch++] = i;
+	    }
+	    return(ch);
+	}
+
+	/*
+	public boolean defequal(DepPipe that) {
+	    if(that.def.length < this.def.length)
+		return(that.defequal(this));
+	    if(this.ndef != that.ndef)
+		return(false);
+	    int i;
+	    for(i = 0; i < this.def.length; i++) {
+		if(this.def[i] != that.def[i])
+		    return(false);
+	    }
+	    for(; i < that.def.length; i++) {
+		if(that.def[i])
+		    return(false);
+	    }
+	    return(true);
+	}
+	*/
     }
 
     public static class SlotPipe implements Pipe {
@@ -152,6 +203,7 @@ public class RenderTree {
 	public final RenderTree tree;
 	public final Slot parent;
 	public final Node node;
+	private DepPipe dstate = null;
 	private Collection<Slot>[] rdeps = null;
 	private Slot[] deps = null;
 	private Pipe.Op cstate, ostate;
@@ -186,6 +238,14 @@ public class RenderTree {
 		throw(new RuntimeException());
 	    (children[idx] = children[--nchildren]).pidx = idx;
 	    ch.pidx = -1;
+	}
+
+	public Iterable<Slot> children() {
+	    return(() -> new Iterator<Slot>() {
+		    int i = 0;
+		    public boolean hasNext() {return(i < nchildren);}
+		    public Slot next() {return(children[i++]);}
+		});
 	}
 
 	public Slot add(Node n, Pipe.Op state) {
@@ -236,9 +296,13 @@ public class RenderTree {
 	    dep.addrdep(stidx, this);
 	}
 
-	private DepPipe dstate = null;
-	private void dstate(DepPipe nst) {
-	    if(this.dstate != null) {
+	private void rdepupd() {
+	    upddstate(mkdstate(cstate, ostate));
+	}
+
+	private DepPipe setdstate(DepPipe nst) {
+	    DepPipe pst = this.dstate;
+	    if(pst != null) {
 		if(deps != null) {
 		    for(int i = 0; i < deps.length; i++) {
 			if(deps[i] != null)
@@ -261,16 +325,57 @@ public class RenderTree {
 		}
 		this.dstate = nst;
 	    }
+	    return(pst);
+	}
+
+	private void upddstate(DepPipe nst) {
+	    DepPipe pst = setdstate(nst);
+	    int[] defch = nst.defdiff(pst);
+	    if(defch == null) {
+		int[] ch = new int[pst.ndef];
+		int maxi = Math.min(nst.states.length, pst.states.length), nch = 0;
+		ArrayList<Slot> cdeps = new ArrayList<Slot>();
+		for(int i = 0; i < maxi; i++) {
+		    if(pst.def[i] && !eq(pst.states[i], nst.states[i])) {
+			ch[nch++] = i;
+			if(rdeps[i] != null) {
+			    for(Slot rdep : rdeps[i]) {
+				if(!cdeps.contains(rdep))
+				    cdeps.add(rdep);
+			    }
+			}
+		    }
+		}
+		for(Slot rdep : cdeps)
+		    rdep.rdepupd();
+		/* Update client lists with dstate */
+	    } else {
+		/* XXX? Optimize specifically for non-defined slots being updated? */
+		for(Slot child : children())
+		    child.updtotal();
+	    }
+	}
+
+	private void updtotal() {
+	    pdstate = null;
+	    istate = null;
+	    setdstate(mkdstate(cstate, ostate));
+	    for(Slot child : children())
+		child.updtotal();
+	    /* Update client lists with istate */
 	}
 
 	private DepPipe dstate() {
 	    if(dstate == null)
-		dstate(mkdstate(this.cstate, this.ostate));
+		setdstate(mkdstate(this.cstate, this.ostate));
 	    return(dstate);
 	}
 
 	private void chstate(Pipe.Op cstate, Pipe.Op ostate) {
-	    
+	    if(this.dstate != null)
+		upddstate(mkdstate(cstate, ostate));
+	    this.cstate = cstate;
+	    this.ostate = ostate;
 	}
 
 	public void cstate(Pipe.Op state) {
@@ -281,6 +386,18 @@ public class RenderTree {
 	public void ostate(Pipe.Op state) {
 	    if(state != this.ostate)
 		chstate(this.cstate, state);
+	}
+
+	public class IPipe implements Pipe {
+	    public <T extends State> T get(State.Slot<T> slot) {return(dstate().get(slot));}
+	    public Pipe copy() {return(dstate().copy());}
+	    public State[] states() {return(dstate().states());}
+	}
+	private Pipe pdstate = null;
+	private Pipe pdstate() {
+	    if(this.pdstate == null)
+		this.pdstate = new IPipe();
+	    return(this.pdstate);
 	}
 
 	private Inheritance istate = null;
@@ -295,7 +412,7 @@ public class RenderTree {
 		    boolean f = false;
 		    for(int i = 0; i < istates.length; i++) {
 			if((i < ds.def.length) && ds.def[i]) {
-			    istates[i] = ds;
+			    istates[i] = pdstate();
 			    f = true;
 			} else if(i < pi.gstates.length) {
 			    istates[i] = pi.groups[pi.gstates[i]];
