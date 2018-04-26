@@ -733,7 +733,13 @@ public class MapView extends Widget implements DTarget, Console.Directory {
     private final Rendered gobs;
 
     public String toString() {
-	return(String.format("Camera[%s (%s)], Caches[%s]", getcc(), camera, gobs));
+	String cc;
+	try {
+	    cc = getcc().toString();
+	} catch(Loading l) {
+	    cc = "<nil>";
+	}
+	return(String.format("Camera[%s (%s)], Caches[%s]", cc, camera, gobs));
     }
 
     public GLState camera()         {return(camera);}

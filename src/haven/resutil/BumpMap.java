@@ -135,18 +135,30 @@ public class BumpMap extends GLState {
 	}
     }
 
-    @VertexBuf.ResName("tan")
+    @VertexBuf.ResName("tan2")
     public static class Tangents extends VertexBuf.Vec3Array implements MorphedMesh.MorphArray {
 	public Tangents(FloatBuffer data) {super(data, tan);}
-	public Tangents(Resource res, Message buf, int nv) {this(VertexBuf.loadbuf(Utils.wfbuf(nv * 3), buf));}
+	public Tangents(Resource res, Message buf, int nv) {this(VertexBuf.loadbuf2(Utils.wfbuf(nv * 3), buf));}
 	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
 	public Tangents dup() {return(new Tangents(Utils.bufcp(data)));}
     }
-    @VertexBuf.ResName("bit")
+    @VertexBuf.ResName("bit2")
     public static class BiTangents extends VertexBuf.Vec3Array implements MorphedMesh.MorphArray {
 	public BiTangents(FloatBuffer data) {super(data, bit);}
-	public BiTangents(Resource res, Message buf, int nv) {this(VertexBuf.loadbuf(Utils.wfbuf(nv * 3), buf));}
+	public BiTangents(Resource res, Message buf, int nv) {this(VertexBuf.loadbuf2(Utils.wfbuf(nv * 3), buf));}
 	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
 	public BiTangents dup() {return(new BiTangents(Utils.bufcp(data)));}
+    }
+    @VertexBuf.ResName("tan")
+    public static class TanDecode implements VertexBuf.ArrayCons {
+	public void cons(Collection<VertexBuf.AttribArray> dst, Resource res, Message buf, int nv) {
+	    dst.add(new Tangents(VertexBuf.loadbuf(Utils.wfbuf(nv * 3), buf)));
+	}
+    }
+    @VertexBuf.ResName("bit")
+    public static class BitDecode implements VertexBuf.ArrayCons {
+	public void cons(Collection<VertexBuf.AttribArray> dst, Resource res, Message buf, int nv) {
+	    dst.add(new BiTangents(VertexBuf.loadbuf(Utils.wfbuf(nv * 3), buf)));
+	}
     }
 }

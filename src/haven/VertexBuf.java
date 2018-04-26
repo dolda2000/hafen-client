@@ -194,14 +194,14 @@ public class VertexBuf {
 	public int elsize() {return(4);}
     }
     
-    @ResName("pos")
+    @ResName("pos2")
     public static class VertexArray extends FloatArray implements GLArray, MorphedMesh.MorphArray {
 	public VertexArray(FloatBuffer data) {
 	    super(3, data);
 	}
 	
 	public VertexArray(Resource res, Message buf, int nv) {
-	    this(loadbuf(Utils.wfbuf(nv * 3), buf));
+	    this(loadbuf2(Utils.wfbuf(nv * 3), buf));
 	}
 	
 	public VertexArray dup() {return(new VertexArray(Utils.bufcp(data)));}
@@ -229,15 +229,21 @@ public class VertexBuf {
 	 * alternative to this at this point. */
 	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.POS);}
     }
+    @ResName("pos")
+    public static class VertexDecode implements ArrayCons {
+	public void cons(Collection<AttribArray> dst, Resource res, Message buf, int nv) {
+	    dst.add(new VertexArray(loadbuf(Utils.wfbuf(nv * 3), buf)));
+	}
+    }
     
-    @ResName("nrm")
+    @ResName("nrm2")
     public static class NormalArray extends FloatArray implements GLArray, MorphedMesh.MorphArray {
 	public NormalArray(FloatBuffer data) {
 	    super(3, data);
 	}
 	
 	public NormalArray(Resource res, Message buf, int nv) {
-	    this(loadbuf(Utils.wfbuf(nv * 3), buf));
+	    this(loadbuf2(Utils.wfbuf(nv * 3), buf));
 	}
 	
 	public NormalArray dup() {return(new NormalArray(Utils.bufcp(data)));}
@@ -262,15 +268,21 @@ public class VertexBuf {
 
 	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
     }
+    @ResName("nrm")
+    public static class NormalDecode implements ArrayCons {
+	public void cons(Collection<AttribArray> dst, Resource res, Message buf, int nv) {
+	    dst.add(new NormalArray(loadbuf(Utils.wfbuf(nv * 3), buf)));
+	}
+    }
 
-    @ResName("col")
+    @ResName("col2")
     public static class ColorArray extends FloatArray implements GLArray {
 	public ColorArray(FloatBuffer data) {
 	    super(4, data);
 	}
 
 	public ColorArray(Resource res, Message buf, int nv) {
-	    this(loadbuf(Utils.wfbuf(nv * 4), buf));
+	    this(loadbuf2(Utils.wfbuf(nv * 4), buf));
 	}
 
 	public ColorArray dup() {return(new ColorArray(Utils.bufcp(data)));}
@@ -293,15 +305,21 @@ public class VertexBuf {
 
 	public Object progid(GOut g) {return(null);}
     }
+    @ResName("col")
+    public static class ColorDecode implements ArrayCons {
+	public void cons(Collection<AttribArray> dst, Resource res, Message buf, int nv) {
+	    dst.add(new ColorArray(loadbuf(Utils.wfbuf(nv * 4), buf)));
+	}
+    }
 
-    @ResName("tex")
+    @ResName("tex2")
     public static class TexelArray extends FloatArray implements GLArray {
 	public TexelArray(FloatBuffer data) {
 	    super(2, data);
 	}
 
 	public TexelArray(Resource res, Message buf, int nv) {
-	    this(loadbuf(Utils.wfbuf(nv * 2), buf));
+	    this(loadbuf2(Utils.wfbuf(nv * 2), buf));
 	}
 
 	public TexelArray dup() {return(new TexelArray(Utils.bufcp(data)));}
@@ -323,6 +341,12 @@ public class VertexBuf {
 	}
 
 	public Object progid(GOut g) {return(null);}
+    }
+    @ResName("tex")
+    public static class TexelDecode implements ArrayCons {
+	public void cons(Collection<AttribArray> dst, Resource res, Message buf, int nv) {
+	    dst.add(new TexelArray(loadbuf(Utils.wfbuf(nv * 2), buf)));
+	}
     }
 
     public static class NamedFloatArray extends FloatArray implements GLArray {
@@ -405,6 +429,93 @@ public class VertexBuf {
 	return(dst);
     }
 
+    public static FloatBuffer loadbuf2(FloatBuffer dst, Message buf) {
+	int ver = buf.uint8();
+	if(ver != 1)
+	    throw(new RuntimeException("Unknown vertex-data version: " + ver));
+	String fmt = buf.string();
+	switch(fmt) {
+	case "f4": {
+	    for(int i = 0; i < dst.capacity(); i++)
+		dst.put(i, buf.float32());
+	    break;
+	}
+	case "f2": {
+	    for(int i = 0; i < dst.capacity(); i++)
+		dst.put(i, Utils.hfdec((short)buf.int16()));
+	    break;
+	}
+	case "f1": {
+	    for(int i = 0; i < dst.capacity(); i++)
+		dst.put(i, Utils.mfdec((byte)buf.int8()));
+	    break;
+	}
+	case "sn4": {
+	    float F = buf.float32() / 2147483647.0f;
+	    for(int i = 0; i < dst.capacity(); i++)
+		dst.put(i, buf.int32() * F);
+	    break;
+	}
+	case "sn2": {
+	    float F = buf.float32() / 32767.0f;
+	    for(int i = 0; i < dst.capacity(); i++)
+		dst.put(i, buf.int16() * F);
+	    break;
+	}
+	case "sn1": {
+	    float F = buf.float32() / 127.0f;
+	    for(int i = 0; i < dst.capacity(); i++)
+		dst.put(i, buf.int8() * F);
+	    break;
+	}
+	case "un4": {
+	    float F = buf.float32() / 4294967295.0f;
+	    for(int i = 0; i < dst.capacity(); i++)
+		dst.put(i, buf.uint32() * F);
+	    break;
+	}
+	case "un2": {
+	    float F = buf.float32() / 65535.0f;
+	    for(int i = 0; i < dst.capacity(); i++)
+		dst.put(i, buf.uint16() * F);
+	    break;
+	}
+	case "un1": {
+	    float F = buf.float32() / 255.0f;
+	    for(int i = 0; i < dst.capacity(); i++)
+		dst.put(i, buf.uint8() * F);
+	    break;
+	}
+	case "uvec1": {
+	    int i = 0;
+	    float F = 1.0f / 127.0f;
+	    float[] vb = new float[3];
+	    while(i < dst.capacity()) {
+		Utils.oct2uvec(vb, buf.int8() * F, buf.int8() * F);
+		dst.put(i++, vb[0]);
+		dst.put(i++, vb[1]);
+		dst.put(i++, vb[2]);
+	    }
+	    break;
+	}
+	case "uvec2": {
+	    int i = 0;
+	    float F = 1.0f / 32767.0f;
+	    float[] vb = new float[3];
+	    while(i < dst.capacity()) {
+		Utils.oct2uvec(vb, buf.int16() * F, buf.int16() * F);
+		dst.put(i++, vb[0]);
+		dst.put(i++, vb[1]);
+		dst.put(i++, vb[2]);
+	    }
+	    break;
+	}
+	default:
+	    throw(new RuntimeException("Unknown vertex-data format: " + fmt));
+	}
+	return(dst);
+    }
+
     private static final Map<String, ArrayCons> rnames = new TreeMap<String, ArrayCons>();
 
     static {
@@ -439,23 +550,40 @@ public class VertexBuf {
     @Resource.LayerName("vbuf2")
     public static class VertexRes extends Resource.Layer {
 	public transient final VertexBuf b;
+	public final int id;
 	
 	private VertexRes(Resource res, VertexBuf b) {
 	    res.super();
 	    this.b = b;
+	    this.id = 0;
 	}
 
 	public VertexRes(Resource res, Message buf) {
 	    res.super();
 	    List<AttribArray> bufs = new LinkedList<AttribArray>();
 	    int fl = buf.uint8();
+	    int ver = (fl & 0xf);
+	    if(ver >= 2)
+		throw(new Resource.LoadException(String.format("Unknown vbuf version: %d", ver), res));
+	    if((fl & ~0xf) != 0)
+		throw(new Resource.LoadException(String.format("Unknown vbuf flags: %02x", fl), res));
+	    if(ver >= 1)
+		this.id = buf.int16();
+	    else
+		this.id = 0;
 	    int num = buf.uint16();
 	    while(!buf.eom()) {
 		String nm = buf.string();
 		ArrayCons cons = rnames.get(nm);
 		if(cons == null)
 		    throw(new Resource.LoadException("Unknown vertex-array name: " + nm, res));
-		cons.cons(bufs, res, buf, num);
+		if(ver >= 1) {
+		    Message sub = new LimitMessage(buf, buf.int32());
+		    cons.cons(bufs, res, sub, num);
+		    sub.skip();
+		} else {
+		    cons.cons(bufs, res, buf, num);
+		}
 	    }
 	    this.b = new VertexBuf(bufs.toArray(new AttribArray[0]));
 	}
