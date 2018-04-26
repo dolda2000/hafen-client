@@ -31,9 +31,42 @@ import static haven.Utils.eq;
 
 public class RenderTree {
     private final Slot root;
+    private final Collection<Client<?>> clients = new ArrayList<>();
 
     public RenderTree() {
 	root = new Slot(this, null, null);
+    }
+
+    private static class Client<R> {
+	final Class<R> type;
+	final RenderList<R> list;
+
+	Client(Class<R> type, RenderList<R> list) {
+	    this.type = type;
+	    this.list = list;
+	}
+
+	@SuppressWarnings("unchecked")
+	void added(Slot slot) {
+	    if(type.isInstance(slot.node))
+		list.add((RenderList.Slot<R>)slot);
+	}
+
+	@SuppressWarnings("unchecked")
+	void removed(Slot slot) {
+	    if(type.isInstance(slot.node))
+		list.remove((RenderList.Slot<R>)slot);
+	}
+
+	@SuppressWarnings("unchecked")
+	void updated(Slot slot) {
+	    if(type.isInstance(slot.node))
+		list.update((RenderList.Slot<R>)slot);
+	}
+
+	void updated(Pipe group) {
+	    list.update(group);
+	}
     }
 
     public static class Inheritance implements GroupPipe {
@@ -199,7 +232,7 @@ public class RenderTree {
 	}
     }
 
-    public static class Slot {
+    public static class Slot implements RenderList.Slot<Node> {
 	public final RenderTree tree;
 	public final Slot parent;
 	public final Node node;
@@ -253,11 +286,17 @@ public class RenderTree {
 	    ch.cstate = state;
 	    addch(ch);
 	    n.added(ch);
+	    synchronized(tree.clients) {
+		tree.clients.forEach(cl -> cl.added(this));
+	    }
 	    return(ch);
 	}
 
 	public void remove() {
 	    parent.removech(this);
+	    synchronized(tree.clients) {
+		tree.clients.forEach(cl -> cl.removed(this));
+	    }
 	}
 
 	private DepPipe mkdstate(Pipe.Op cstate, Pipe.Op ostate) {
@@ -348,7 +387,12 @@ public class RenderTree {
 		}
 		for(Slot rdep : cdeps)
 		    rdep.rdepupd();
-		/* Update client lists with dstate */
+		Pipe pdst = this.pdstate;
+		if(pdst != null) {
+		    synchronized(tree.clients) {
+			tree.clients.forEach(cl -> cl.updated(pdst));
+		    }
+		}
 	    } else {
 		/* XXX? Optimize specifically for non-defined slots being updated? */
 		for(Slot child : children())
@@ -357,11 +401,14 @@ public class RenderTree {
 	}
 
 	private void updtotal() {
-	    pdstate = null;
-	    istate = null;
+	    this.pdstate = null;
+	    this.istate = null;
 	    setdstate(mkdstate(cstate, ostate));
 	    for(Slot child : children())
 		child.updtotal();
+	    synchronized(tree.clients) {
+		tree.clients.forEach(cl -> cl.updated(this));
+	    }
 	    /* Update client lists with istate */
 	}
 
@@ -445,6 +492,10 @@ public class RenderTree {
 	    return(istate);
 	}
 
+	public Node obj() {
+	    return(node);
+	}
+
 	public GroupPipe state() {
 	    return(istate());
 	}
@@ -457,5 +508,17 @@ public class RenderTree {
 
     public Slot add(Node n, Pipe.Op state) {
 	return(root.add(n, state));
+    }
+
+    public <R> void add(RenderList<R> list, Class<R> type) {
+	synchronized(clients) {
+	    clients.add(new Client<R>(type, list));
+	}
+    }
+
+    public void remove(RenderList list) {
+	synchronized(clients) {
+	    clients.removeIf(cl -> cl.list == list);
+	}
     }
 }
