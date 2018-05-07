@@ -32,140 +32,183 @@ import haven.render.*;
 
 public class GLDrawList implements DrawList {
     public final GLEnvironment env;
-    private DrawSlot[] slots = new DrawSlot[0];
+    private DrawSlot root = null;
 
-    public static int parenti(int n) {
-	int l = n & -n;
-	return((n & ~((l << 2) - 1)) + (l << 1));
-    }
-    public static int lefti(int n) {
-	int l = n & -n;
-	if(l == 1)
-	    return(0);
-	return(n - (l >> 1));
-    }
-    public static int righti(int n) {
-	int l = n & -n;
-	if(l == 1)
-	    return(0);
-	return(n + (l >> 1));
+    private static int btheight(DrawSlot s) {
+	return((s == null) ? 0 : s.th);
     }
 
-    int rooti() {
-	return(slots.length << 1);
-    }
-    DrawSlot root() {
-	int n = rooti();
-	return((n == 0) ? null : slots[n]);
-    }
-
-    void resize(int nl) {
-	DrawSlot[] cs = this.slots, ns = new DrawSlot[nl];
-	for(int i = 1; i < cs.length; i++) {
-	    ns[i * 2] = cs[i];
-	    if(cs[i] != null)
-		cs[i].idx = i * 2;
+    DrawSlot first() {
+	if(root == null)
+	    return(null);
+	for(DrawSlot s = root; true; s = s.tl) {
+	    if(s.tl == null)
+		return(s);
 	}
-	this.slots = ns;
-    }
-
-    private static int btheight(int n) {
-	return(((n == 0) || (slots[n] == null)) ? 0 : slots[n].th);
-    }
-
-    private void bbtrr(int t) {
-	int l = lefti(t), ll = lefti(l), lr = righti(l);
-	if(btheight(lr) > btheight(ll))
-	    bbtrl(l);
-	
-    }
-    private void bbtrl(int t) {
     }
 
     private static final Comparator<DrawSlot> order = null;
     private static AtomicLong uniqid = new AtomicLong();
     private class DrawSlot {
 	final long sortid;
-	int idx = 0, th = 0;
+	DrawSlot tp, tl, tr;
+	int th = 0;
 
 	DrawSlot() {
 	    sortid = uniqid.getAndIncrement();
 	}
 
-	DrawSlot parent() {
-	    if(idx == 0) throw(new IllegalStateException());
-	    int n = parenti(idx);
-	    return((n == slots.length) ? null : slots[n]);
-	}
-	DrawSlot left() {
-	    if(idx == 0) throw(new IllegalStateException());
-	    int n = lefti(idx);
-	    return((n == 0) ? null : slots[n]);
-	}
-	DrawSlot right() {
-	    if(idx == 0) throw(new IllegalStateException());
-	    int n = righti(idx);
-	    return((n == 0) ? null : slots[n]);
-	}
 	DrawSlot prev() {
-	    for(int i = idx - 1; i > 0; i--) {
-		if(slots[i] != null)
-		    return(slots[i]);
+	    if(tl != null) {
+		for(DrawSlot s = tl; true; s = s.tr) {
+		    if(s.tr == null)
+			return(s);
+		}
+	    } else {
+		for(DrawSlot s = tp, ps = this; s != null; ps = s, s = s.tp) {
+		    if(s.tl != ps)
+			return(s);
+		}
+		return(null);
 	    }
-	    return(null);
 	}
 	DrawSlot next() {
-	    for(int i = idx + 1; i < slots.length; i++) {
-		if(slots[i] != null)
-		    return(slots[i]);
+	    if(tr != null) {
+		for(DrawSlot s = tr; true; s = s.tl) {
+		    if(s.tl == null)
+			return(s);
+		}
+	    } else {
+		for(DrawSlot s = tp, ps = this; s != null; ps = s, s = s.tp) {
+		    if(s.tr != ps)
+			return(s);
+		}
+		return(null);
 	    }
-	    return(null);
 	}
 
 	private int setheight() {
-	    DrawSlot l = left(), r = right();
-	    return(th = (Math.max((l == null) ? 0 : l.th, (r == null) ? 0 : r.th) + 1));
+	    return(th = (Math.max(btheight(tl), btheight(tr)) + 1));
 	}
 
-	private int insidx(DrawSlot child) {
-	    int c = order.compare(child, this);
-	    if(c < 0) {
-		return(lefti(idx));
-	    } else if(c > 0) {
-		return(righti(idx));
-	    } else {
-		throw(new AssertionError());
-	    }
+	private void bbtrl() {
+	    if(btheight(tr.tl) > btheight(tr.tr))
+		tr.bbtrr();
+	    DrawSlot p = tp, r = tr, rl = r.tl;
+	    (tr = rl).tp = this;
+	    setheight();
+	    (r.tl = this).tp = r;
+	    r.setheight();
+	    if(p == null)
+		(root = r).tp = null;
+	    else if(p.tl == this)
+		(p.tl = r).tp = p;
+	    else
+		(p.tr = r).tp = p;
+	}
+	private void bbtrr() {
+	    if(btheight(tl.tr) > btheight(tl.tl))
+		tl.bbtrl();
+	    DrawSlot p = tp, l = tl, lr = l.tr;
+	    (tl = lr).tp = this;
+	    setheight();
+	    (l.tr = this).tp = l;
+	    l.setheight();
+	    if(p == null)
+		(root = l).tp = null;
+	    else if(p.tl == this)
+		(p.tl = l).tp = p;
+	    else
+		(p.tr = l).tp = p;
 	}
 	private void insert(DrawSlot child) {
-	    int ci = insidx(child);
-	    if(ci == 0) {
-		resize(slots.length * 2);
-		ci = insidx(child);
-	    }
-	    if(slots[ci] == null) {
-		slots[ci] = child;
-		child.idx = ci;
-		child.th = 1;
+	    int c = order.compare(child, this);
+	    if(c < 0) {
+		if(tl == null)
+		    (tl = child).tp = this;
+		else
+		    tl.insert(child);
+	    } else if(c > 0) {
+		if(tr == null)
+		    (tr = child).tp = this;
+		else
+		    tr.insert(child);
 	    } else {
-		slots[ci].insert(child);
+		throw(new RuntimeException());
 	    }
-	    if(btheight(lefti(idx)) > btheight(righti(idx) + 1))
-		bbtrr(idx);
-	    if(btheight(righti(idx)) > btheight(lefti(idx) + 1))
-		bbtrl(idx);
+	    if(btheight(tl) > btheight(tr) + 1)
+		bbtrr();
+	    if(btheight(tr) > btheight(tl) + 1)
+		bbtrl();
 	    setheight();
 	}
 	void insert() {
-	    if(idx != 0) throw(new IllegalStateException());
-	    DrawSlot root = root();
+	    if((tp != null) || (root == this))
+		throw(new IllegalStateException());
+	    th = 1;
 	    if(root == null) {
-		slots = new DrawSlot[2];
-		slots[1] = this;
-		this.idx = 1;
+		root = this;
 	    } else {
 		root.insert(this);
 	    }
+	}
+	void remove() {
+	    if((tp == null) && (root != this))
+		throw(new IllegalStateException());
+	    DrawSlot rep;
+	    if((tl != null) && (tr != null)) {
+		for(rep = tr; rep.tl != null; rep = rep.tl);
+		if(rep.tr != null) {
+		    DrawSlot p = rep.tp;
+		    if(p.tl == rep)
+			(p.tl = rep.tr).tp = p;
+		    else
+			(p.tr = rep.tr).tp = p;
+		}
+		(rep.tl = tl).tp = rep;
+		(rep.tr = tr).tp = rep;
+	    } else if(tl != null) {
+		rep = tl;
+	    } else if(tr != null) {
+		rep = tr;
+	    } else {
+		rep = null;
+	    }
+	    if(tp != null) {
+		if(tp.tl == this)
+		    tp.tl = rep;
+		else
+		    tp.tr = rep;
+	    } else {
+		root = rep;
+	    }
+	    if(rep != null)
+		rep.tp = tp;
+	    tr = tl = tp = null;
+	}
+    }
+
+    private void verify(DrawSlot t) {
+	if(t.tl != null) {
+	    if(t.tl.tp != t)
+		throw(new AssertionError());
+	    if(order.compare(t.tl, t) >= 0)
+		throw(new AssertionError());
+	    verify(t.tl);
+	}
+	if(t.tr != null) {
+	    if(t.tr.tp != t)
+		throw(new AssertionError());
+	    if(order.compare(t.tr, t) <= 0)
+		throw(new AssertionError());
+	    verify(t.tr);
+	}
+    }
+    private void verify() {
+	if(root != null) {
+	    if(root.tp != null)
+		throw(new AssertionError());
+	    verify(root);
 	}
     }
 
