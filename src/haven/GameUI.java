@@ -978,6 +978,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		}
 	    }
 	    Utils.setprefb("chatvis", chat.targeth != 0);
+	    return(true);
 	} else if((key == 27) && (map != null) && !map.hasfocus) {
 	    setfocus(map);
 	    return(true);
