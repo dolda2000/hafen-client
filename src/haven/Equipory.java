@@ -106,6 +106,10 @@ public class Equipory extends Widget implements DTarget {
 	ava.color = null;
     }
 
+    public static interface SlotInfo {
+	public int slots();
+    }
+
     public void addchild(Widget child, Object... args) {
 	if(child instanceof GItem) {
 	    add(child);
@@ -152,8 +156,24 @@ public class Equipory extends Widget implements DTarget {
     }
 
     public void drawslots(GOut g) {
-	for(int i = 0; i < 16; i++)
+	int slots = 0;
+	GameUI gui = getparent(GameUI.class);
+	if((gui != null) && (gui.vhand != null)) {
+	    try {
+		SlotInfo si = ItemInfo.find(SlotInfo.class, gui.vhand.item.info());
+		if(si != null)
+		    slots = si.slots();
+	    } catch(Loading l) {
+	    }
+	}
+	for(int i = 0; i < 16; i++) {
+	    if((slots & (1 << i)) != 0) {
+		g.chcolor(255, 255, 0, 64);
+		g.frect(ecoords[i].add(1, 1), invsq.sz().sub(2, 2));
+		g.chcolor();
+	    }
 	    g.image(invsq, ecoords[i]);
+	}
     }
 
     public void draw(GOut g) {
