@@ -49,7 +49,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public final Collection<Polity> polities = new ArrayList<Polity>();
     public HelpWnd help;
     public Collection<DraggedItem> hand = new LinkedList<DraggedItem>();
-    private WItem vhand;
+    public WItem vhand;
     public ChatUI chat;
     public ChatUI.Channel syslog;
     public int prog = -1;
