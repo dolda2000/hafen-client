@@ -51,6 +51,8 @@ public class Equipory extends Widget implements DTarget {
 	new Coord(rx, 231),
 	new Coord(34, 0),
     };
+    public static final Tex[] ebgs = new Tex[ecoords.length];
+    public static final Text[] etts = new Text[ecoords.length];
     static Coord isz;
     static {
 	isz = new Coord();
@@ -59,6 +61,14 @@ public class Equipory extends Widget implements DTarget {
 		isz.x = ec.x + invsq.sz().x;
 	    if(ec.y + invsq.sz().y > isz.y)
 		isz.y = ec.y + invsq.sz().y;
+	}
+	for(int i = 0; i < ebgs.length; i++) {
+	    Resource bgres = Resource.local().loadwait("gfx/hud/equip/ep" + i);
+	    Resource.Image img = bgres.layer(Resource.imgc);
+	    if(img != null) {
+		ebgs[i] = bgres.layer(Resource.imgc).tex();
+		etts[i] = Text.render(bgres.layer(Resource.tooltip).t);
+	    }
 	}
     }
     Map<GItem, WItem[]> wmap = new HashMap<GItem, WItem[]>();
@@ -173,7 +183,19 @@ public class Equipory extends Widget implements DTarget {
 		g.chcolor();
 	    }
 	    g.image(invsq, ecoords[i]);
+	    if(ebgs[i] != null)
+		g.image(ebgs[i], ecoords[i]);
 	}
+    }
+
+    public Object tooltip(Coord c, Widget prev) {
+	Object tt = super.tooltip(c, prev);
+	if(tt != null)
+	    return(tt);
+	int sl = epat(c);
+	if(sl >= 0)
+	    return(etts[sl]);
+	return(null);
     }
 
     public void draw(GOut g) {
