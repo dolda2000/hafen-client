@@ -795,13 +795,13 @@ public abstract class BGL {
 
     public void glUseProgramObjectARB(final ID program) {
 	add(new Command() {
-		public void run(GL2 gl) {gl.glUseProgramObjectARB(program.glid());}
+		public void run(GL2 gl) {gl.glUseProgramObjectARB((program == null)?0:program.glid());}
 	    });
     }
 
     public void glUseProgram(final ID program) {
 	add(new Command() {
-		public void run(GL2 gl) {gl.glUseProgram(program.glid());}
+		public void run(GL2 gl) {gl.glUseProgram((program == null)?0:program.glid());}
 	    });
     }
 
