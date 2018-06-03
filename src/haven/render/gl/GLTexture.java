@@ -189,8 +189,11 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	    int pfmt = texefmt1(data.ifmt, data.efmt);
 	    int pnum = texefmt2(data.ifmt, data.efmt);
 	    env.prepare((GLRender g) -> {
-		    g.state.apply(g.gl, new TexState(new GLTexture[] {Tex2D.this}, 0));
+		    if(g.state.prog() != null)
+			throw(new RuntimeException("program unexpectedly used in prep context"));
 		    BGL gl = g.gl();
+		    gl.glActiveTexture(GL.GL_TEXTURE0);
+		    bind(gl);
 		    if(pixels[0] != null)
 			gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, data.w, data.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[0].data));
 		    else
@@ -201,6 +204,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 			    gl.glTexImage2D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
 			}
 		    }
+		    unbind(gl);
 		    gl.bglCheckErr();
 		});
 	}
@@ -220,8 +224,11 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	    if(sampler != null)
 		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple samplers per texture"));
 	    env.prepare((GLRender g) -> {
-		    g.state.apply(g.gl, new TexState(new GLTexture[] {Tex2D.this}, 0));
+		    if(g.state.prog() != null)
+			throw(new RuntimeException("program unexpectedly used in prep context"));
 		    BGL gl = g.gl();
+		    gl.glActiveTexture(GL.GL_TEXTURE0);
+		    bind(gl);
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, magfilter(data));
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, minfilter(data));
 		    if(data.anisotropy > 0)
@@ -229,6 +236,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
 		    gl.glTexParameterfv(GL.GL_TEXTURE_2D, GL2.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
+		    unbind(gl);
+		    gl.bglCheckErr();
 		});
 	    sampler = data;
 	}

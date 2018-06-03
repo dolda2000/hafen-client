@@ -35,7 +35,6 @@ public abstract class GLState {
 	VaoState.class,
 	VboState.class,
 	EboState.class,
-	TexState.class,
 	FboState.class,
     };
 

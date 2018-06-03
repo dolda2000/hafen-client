@@ -252,8 +252,8 @@ public class Applier {
 	    shaders[sdirty[i]] = nshaders[i];
 	this.shash = shash;
 	if(prog != this.prog) {
+	    GLProgram.apply(gl, this.prog, prog);
 	    setprog(prog);
-	    prog.apply(gl);
 	}
 	for(int i = 0; i < un; i++)
 	    uapply(gl, prog, udirty[i], nuvals[i]);
@@ -309,12 +309,9 @@ public class Applier {
 		glpapply(gl, glp, a, b);
 	}
 	if(this.prog != that.prog) {
+	    GLProgram.apply(gl, this.prog, that.prog);
 	    this.shash = that.shash;
 	    setprog(that.prog);
-	    if(this.prog == null)
-		gl.glUseProgram(null);
-	    else
-		this.prog.apply(gl);
 	}
 	for(i = 0; i < that.cur.length; i++) {
 	    this.cur[i] = that.cur[i];

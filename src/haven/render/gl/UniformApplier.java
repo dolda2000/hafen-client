@@ -27,6 +27,7 @@
 package haven.render.gl;
 
 import java.util.*;
+import javax.media.opengl.*;
 import haven.*;
 import haven.render.*;
 import haven.render.sl.*;
@@ -120,10 +121,8 @@ public interface UniformApplier<T> {
 		});
 
 	    TypeMapping.register(Type.SAMPLER2D, GLTexture.Tex2D.class, (gl, st, var, smp) -> {
-		    GLProgram prog = st.prog();
-		    int unit = prog.samplers.get(var);
-		    TexState.bind(gl, st, unit, smp);
-		    gl.glUniform1i(prog.uniform(var), prog.samplers.get(var));
+		    gl.glActiveTexture(GL.GL_TEXTURE0 + st.prog().samplerids.get(var));
+		    smp.bind(gl);
 		});
 	}
     }

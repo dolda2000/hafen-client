@@ -115,6 +115,33 @@ public class GLRender implements Render, Disposable {
 	}
     }
 
+    public static int glsamplertarget(Type type) {
+	if(type == Type.SAMPLER2D)
+	    return(GL.GL_TEXTURE_2D);
+	else if(type == Type.SAMPLER2DMS)
+	    return(GL3.GL_TEXTURE_2D_MULTISAMPLE);
+	else if(type == Type.SAMPLER2DMSARRAY)
+	    return(GL3.GL_TEXTURE_2D_MULTISAMPLE_ARRAY);
+	else if(type == Type.SAMPLER2DARRAY)
+	    return(GL.GL_TEXTURE_2D_ARRAY);
+	else if(type == Type.SAMPLER2DSHADOW)
+	    return(GL2.GL_TEXTURE_2D);
+	else if(type == Type.SAMPLERCUBE)
+	    return(GL2.GL_TEXTURE_CUBE_MAP);
+	else if(type == Type.SAMPLERCUBEARRAY)
+	    return(GL4.GL_TEXTURE_CUBE_MAP_ARRAY);
+	else if(type == Type.SAMPLERCUBESHADOW)
+	    return(GL2.GL_TEXTURE_CUBE_MAP);
+	else if(type == Type.SAMPLER3D)
+	    return(GL2.GL_TEXTURE_3D);
+	else if(type == Type.SAMPLER1D)
+	    return(GL2.GL_TEXTURE_1D);
+	else if(type == Type.SAMPLER1DARRAY)
+	    return(GL2.GL_TEXTURE_1D_ARRAY);
+	else
+	    throw(new RuntimeException("invalid sampler type: " + type));
+    }
+
     public void draw(Pipe pipe, Model data) {
 	state.apply(this.gl, pipe);
 	if(ephemeralp(data)) {

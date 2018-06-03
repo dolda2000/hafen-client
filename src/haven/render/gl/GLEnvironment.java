@@ -64,6 +64,7 @@ public class GLEnvironment implements Environment {
 		    this.curstate.apply(xf, prep.init);
 		    prep.gl.run(gl);
 		    this.curstate = prep.state;
+		    GLException.checkfor(gl);
 		}
 		BufferBGL xf = new BufferBGL(16);
 		this.curstate.apply(xf, cmd.init);
