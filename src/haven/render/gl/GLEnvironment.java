@@ -281,7 +281,7 @@ public class GLEnvironment implements Environment {
 	    for(int i = 0; i < ptab.length; i++) {
 		SavedProg c, p;
 		for(c = ptab[i], p = null; c != null; c = c.next) {
-		    if(c.used) {
+		    if(c.used || (c.prog.locked.get() > 0)) {
 			c.used = false;
 			p = c;
 		    } else {

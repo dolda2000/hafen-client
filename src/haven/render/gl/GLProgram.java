@@ -27,6 +27,7 @@
 package haven.render.gl;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.io.*;
 import javax.media.opengl.*;
 import haven.Disposable;
@@ -44,6 +45,7 @@ public class GLProgram implements Disposable {
     public final Attribute[] attribs;
     public final Map<Uniform, Integer> samplerids;
     public final Uniform[] samplers;
+    public final AtomicInteger locked = new AtomicInteger(0);
     private final Map<Uniform, String> unifnms;
     private final Map<Attribute, String> attrnms;
     private ProgOb glp;
@@ -387,5 +389,13 @@ public class GLProgram implements Disposable {
 		cur.dispose();
 	    }
 	}
+    }
+
+    public void lock() {
+	locked.incrementAndGet();
+    }
+
+    public void unlock() {
+	locked.decrementAndGet();
     }
 }
