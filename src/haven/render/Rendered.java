@@ -27,5 +27,5 @@
 package haven.render;
 
 public interface Rendered {
-    public void draw(Render out);
+    public void draw(Pipe context, Render out);
 }
