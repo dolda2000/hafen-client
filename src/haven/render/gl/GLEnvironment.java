@@ -164,6 +164,20 @@ public class GLEnvironment implements Environment {
 	}
     }
 
+    Object prepuval(Object val) {
+	if(val instanceof Texture.Sampler) {
+	    if(val instanceof Texture2D.Sampler2D)
+		return(prepare((Texture2D.Sampler2D)val));
+	}
+	return(val);
+    }
+
+    Object prepfval(Object val) {
+	if(val instanceof Texture.Image)
+	    return(GLFrameBuffer.prepimg(this, (Texture.Image)val));
+	return(val);
+    }
+
     public class TempData<T> implements Supplier<T> {
 	private final Supplier<T> bk;
 	private T d = null;
