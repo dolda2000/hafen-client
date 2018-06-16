@@ -147,8 +147,8 @@ public class Test implements GLEventListener, KeyListener {
 		(byte)175, 0, 86, 0, 0, 0, (byte)255, (byte)255,
 	    };
 	    g.draw(pipe, new Model(Model.Mode.TRIANGLES,
-				   new VertexArray(fmt, 3, new VertexArray.Buffer(data.length, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
-				   null));
+				   new VertexArray(fmt, new VertexArray.Buffer(data.length, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
+				   null, 0, 3));
 	}
 
 	{
@@ -163,8 +163,8 @@ public class Test implements GLEventListener, KeyListener {
 		(byte)225, 0, 100, 0, (byte)255, 0,
 	    };
 	    g.draw(pipe, new Model(Model.Mode.TRIANGLE_STRIP,
-				   new VertexArray(fmt, 4, new VertexArray.Buffer(data.length, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
-				   null));
+				   new VertexArray(fmt, new VertexArray.Buffer(data.length, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
+				   null, 0, 4));
 	}
 
 	{
@@ -179,8 +179,8 @@ public class Test implements GLEventListener, KeyListener {
 		612, 100, 1, 1,
 	    };
 	    g.draw(pipe, new Model(Model.Mode.TRIANGLE_STRIP,
-				   new VertexArray(fmt, 4, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
-				   null));
+				   new VertexArray(fmt, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
+				   null, 0, 4));
 	}
     }
 

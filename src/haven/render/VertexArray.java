@@ -32,17 +32,26 @@ import haven.Disposable;
 
 public class VertexArray implements Disposable {
     public final Layout fmt;
-    public final int n;
     public final Buffer[] bufs;
     public boolean shared = false;
     public Disposable ro;
 
-    public VertexArray(Layout fmt, int n, Buffer... bufs) {
+    public VertexArray(Layout fmt, Buffer... bufs) {
 	if(bufs.length != fmt.nbufs)
 	    throw(new IllegalArgumentException(String.format("Vertex layout requires %d buffers, only given %d", fmt.nbufs, bufs.length)));
 	this.fmt = fmt;
-	this.n = n;
 	this.bufs = bufs;
+    }
+
+    public int num() {
+	int ret = -1;
+	for(int i = 0; i < fmt.inputs.length; i++) {
+	    Layout.Input inp = fmt.inputs[i];
+	    int n = (bufs[inp.buf].size - inp.offset) / ((inp.stride != 0) ? inp.stride : inp.el.size());
+	    if((ret < 0) || (n < ret))
+		ret = n;
+	}
+	return(ret);
     }
 
     public static class Layout {

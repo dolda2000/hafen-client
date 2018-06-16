@@ -173,7 +173,7 @@ public class GOut {
     }
 
     public void drawp(Model.Mode mode, float[] data, int n) {
-	out.draw(cur2d, new Model(mode, new VertexArray(vf_pos, n, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null));
+	out.draw(cur2d, new Model(mode, new VertexArray(vf_pos, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null, 0, n));
     }
 
     public void drawp(Model.Mode mode, float[] data) {
@@ -181,7 +181,7 @@ public class GOut {
     }
 
     public void drawt(Model.Mode mode, float[] data, int n) {
-	out.draw(cur2d, new Model(mode, new VertexArray(vf_tex, n, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null));
+	out.draw(cur2d, new Model(mode, new VertexArray(vf_tex, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null, 0, n));
     }
 
     public void drawt(Model.Mode mode, float[] data) {
