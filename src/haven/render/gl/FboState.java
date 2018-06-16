@@ -130,7 +130,7 @@ public class FboState extends GLState {
 	return(new FboState(find(env, color, depth), dbufs));
     }
 
-    public static void set(BGL gl, Applier st, Object depth, Object[] fvals) {
+    public static FboState make(GLEnvironment env, Object depth, Object[] fvals) {
 	boolean any = false, img = true, def = true;
 	if(depth != null) {
 	    any = true;
@@ -151,7 +151,7 @@ public class FboState extends GLState {
 	if(!any) {
 	    throw(new NotImplemented("empty framebuffer"));
 	} else if(img) {
-	    st.apply(gl, forfvals(st.env, depth, fvals));
+	    return(forfvals(env, depth, fvals));
 	} else if(def) {
 	    if(depth == null)
 		throw(new IllegalArgumentException("The default OpenGL framebuffer cannot be depth-less"));
@@ -162,10 +162,14 @@ public class FboState extends GLState {
 		else
 		    dbufs[i] = GL.GL_BACK;
 	    }
-	    st.apply(gl, new FboState(null, dbufs));
+	    return(new FboState(null, dbufs));
 	} else {
 	    throw(new IllegalArgumentException(String.format("Illegal framebuffer configuration: depth=%s, colors=%s", depth, Arrays.asList(fvals))));
 	}
+    }
+
+    public static void set(BGL gl, Applier st, Object depth, Object[] fvals) {
+	st.apply(gl, make(st.env, depth, fvals));
     }
 
     public static int slot = slotidx(FboState.class);
