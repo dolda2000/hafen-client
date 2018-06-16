@@ -115,6 +115,16 @@ public class GLRender implements Render, Disposable {
 	}
     }
 
+    private static int glindexfmt(NumberFormat fmt) {
+	switch(fmt) {
+	case UINT8:     return(GL.GL_UNSIGNED_BYTE);
+	case UINT16:    return(GL.GL_UNSIGNED_SHORT);
+	case UINT32:    return(GL2.GL_UNSIGNED_INT);
+	default:
+	    throw(new RuntimeException("unimplemented vertex index format " + fmt));
+	}
+    }
+
     public static int glsamplertarget(Type type) {
 	if(type == Type.SAMPLER2D)
 	    return(GL.GL_TEXTURE_2D);
@@ -231,7 +241,7 @@ public class GLRender implements Render, Disposable {
 		} else {
 		    throw(new NotImplemented("non-ephemeral index arrays"));
 		}
-		gl.glDrawElements(glmode(data.mode), data.n, GL.GL_UNSIGNED_SHORT, data.f * data.ind.fmt.size);
+		gl.glDrawElements(glmode(data.mode), data.n, glindexfmt(data.ind.fmt), data.f * data.ind.fmt.size);
 	    }
 	} else {
 	    throw(new NotImplemented("non-ephemeral models"));
