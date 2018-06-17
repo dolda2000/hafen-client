@@ -28,6 +28,7 @@ package haven.render.gl;
 
 import java.util.*;
 import java.util.function.*;
+import java.nio.ByteBuffer;
 import javax.media.opengl.*;
 import haven.Utils;
 import haven.Disposable;
@@ -118,30 +119,81 @@ public class GLEnvironment implements Environment {
 
     Disposable prepare(Model.Indices buf) {
 	synchronized(buf) {
-	    if(buf.usage == EPHEMERAL) {
+	    switch(buf.usage) {
+	    case EPHEMERAL:
 		if(!(buf.ro instanceof HeapBuffer)) {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = new HeapBuffer(this, buf, buf.init);
 		}
 		return(buf.ro);
-	    } else {
+	    case STREAM:
+	    case STATIC:
+		GLBuffer ret;
+		if(!(buf.ro instanceof GLBuffer) || ((ret = ((GLBuffer)buf.ro)).env != this)) {
+		    if(buf.ro != null)
+			buf.ro.dispose();
+		    buf.ro = ret = new GLBuffer(this);
+		    if(buf.init != null) {
+			FillBuffers.Array data = (FillBuffers.Array)buf.init.fill(buf, this);
+			GLBuffer jdret = ret;
+			prepare((GLRender g) -> {
+				BGL gl = g.gl;
+				EboState.apply(gl, g.state, jdret);
+				int usage = (buf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
+				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), usage);
+			    });
+		    }
+		}
+		return(ret);
+	    default:
 		throw(new Error());
 	    }
 	}
     }
     Disposable prepare(VertexArray.Buffer buf) {
 	synchronized(buf) {
-	    if(buf.usage == EPHEMERAL) {
+	    switch(buf.usage) {
+	    case EPHEMERAL:
 		if(!(buf.ro instanceof HeapBuffer)) {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = new HeapBuffer(this, buf, buf.init);
 		}
 		return(buf.ro);
-	    } else {
+	    case STREAM:
+	    case STATIC:
+		GLBuffer ret;
+		if(!(buf.ro instanceof GLBuffer) || ((ret = ((GLBuffer)buf.ro)).env != this)) {
+		    if(buf.ro != null)
+			buf.ro.dispose();
+		    buf.ro = ret = new GLBuffer(this);
+		    if(buf.init != null) {
+			FillBuffers.Array data = (FillBuffers.Array)buf.init.fill(buf, this);
+			GLBuffer jdret = ret;
+			prepare((GLRender g) -> {
+				BGL gl = g.gl;
+				VboState.apply(gl, g.state, jdret);
+				int usage = (buf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
+				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), usage);
+			    });
+		    }
+		}
+		return(ret);
+	    default:
 		throw(new Error());
 	    }
+	}
+    }
+    GLVertexArray prepare(VertexArray va, GLProgram prog) {
+	synchronized(va) {
+	    GLVertexArray.ProgIndex idx;
+	    if(!(va.ro instanceof GLVertexArray.ProgIndex) || ((idx = ((GLVertexArray.ProgIndex)va.ro)).env != this)) {
+		if(va.ro != null)
+		    va.ro.dispose();
+		va.ro = idx = new GLVertexArray.ProgIndex(va, this);
+	    }
+	    return(idx.get(prog));
 	}
     }
     GLTexture.Tex2D prepare(Texture2D tex) {

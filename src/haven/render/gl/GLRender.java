@@ -57,16 +57,6 @@ public class GLRender implements Render, Disposable {
 	return(this.gl);
     }
 
-    static boolean ephemeralp(Model m) {
-	if((m.ind != null) && (m.ind.usage == EPHEMERAL))
-	    return(true);
-	for(VertexArray.Buffer b : m.va.bufs) {
-	    if(b.usage == EPHEMERAL)
-		return(true);
-	}
-	return(false);
-    }
-
     private static int glmode(Model.Mode mode) {
 	switch(mode) {
 	case POINTS:          return(GL.GL_POINTS);
@@ -80,7 +70,7 @@ public class GLRender implements Render, Disposable {
 	}
     }
 
-    private static int glattribfmt(NumberFormat fmt) {
+    public static int glattribfmt(NumberFormat fmt) {
 	switch(fmt) {
 	case UNORM8:    return(GL.GL_UNSIGNED_BYTE);
 	case SNORM8:    return(GL.GL_BYTE);
@@ -101,7 +91,7 @@ public class GLRender implements Render, Disposable {
 	}
     }
 
-    private static boolean glattribnorm(NumberFormat fmt) {
+    public static boolean glattribnorm(NumberFormat fmt) {
 	switch(fmt) {
 	case UNORM8:
 	case SNORM8:
@@ -154,7 +144,7 @@ public class GLRender implements Render, Disposable {
 
     public void draw(Pipe pipe, Model data) {
 	state.apply(this.gl, pipe);
-	if(ephemeralp(data)) {
+	if(GLVertexArray.ephemeralp(data)) {
 	    Disposable indo = null;
 	    if(data.ind != null)
 		indo = env.prepare(data.ind);
