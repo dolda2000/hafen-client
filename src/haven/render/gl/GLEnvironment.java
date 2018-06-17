@@ -185,13 +185,13 @@ public class GLEnvironment implements Environment {
 	    }
 	}
     }
-    GLVertexArray prepare(VertexArray va, GLProgram prog) {
-	synchronized(va) {
+    GLVertexArray prepare(Model mod, GLProgram prog) {
+	synchronized(mod) {
 	    GLVertexArray.ProgIndex idx;
-	    if(!(va.ro instanceof GLVertexArray.ProgIndex) || ((idx = ((GLVertexArray.ProgIndex)va.ro)).env != this)) {
-		if(va.ro != null)
-		    va.ro.dispose();
-		va.ro = idx = new GLVertexArray.ProgIndex(va, this);
+	    if(!(mod.ro instanceof GLVertexArray.ProgIndex) || ((idx = ((GLVertexArray.ProgIndex)mod.ro)).env != this)) {
+		if(mod.ro != null)
+		    mod.ro.dispose();
+		mod.ro = idx = new GLVertexArray.ProgIndex(mod, this);
 	    }
 	    return(idx.get(prog));
 	}

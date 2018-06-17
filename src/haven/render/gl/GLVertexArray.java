@@ -70,19 +70,25 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	return(false);
     }
 
-    public static GLVertexArray create(GLProgram prog, VertexArray va) {
-	if(ephemeralp(va))
-	    throw(new RuntimeException("got ephemeral vertex-array for VAO"));
+    public static GLVertexArray create(GLProgram prog, Model mod) {
+	if(ephemeralp(mod))
+	    throw(new RuntimeException("got ephemeral model for VAO"));
 	GLEnvironment env = prog.env;
-	GLBuffer bufs[] = new GLBuffer[va.bufs.length];
+	GLBuffer bufs[] = new GLBuffer[mod.va.bufs.length];
 	for(int i = 0; i < bufs.length; i++)
-	    bufs[i] = (GLBuffer)env.prepare(va.bufs[i]);
+	    bufs[i] = (GLBuffer)env.prepare(mod.va.bufs[i]);
+	GLBuffer ebo = (mod.ind == null) ? null : (GLBuffer)env.prepare(mod.ind);
 	GLVertexArray vao = new GLVertexArray(env);
 	env.prepare((GLRender g) -> {
 		BGL gl = g.gl;
-		VaoBindState.apply(gl, g.state, vao);
-		for(int i = 0; i < va.fmt.inputs.length; i++) {
-		    VertexArray.Layout.Input attr = va.fmt.inputs[i];
+		VaoBindState.apply(gl, g.state, vao, ebo);
+		if(ebo != null) {
+		    // Rendundant with BindBuffer in VaoBindState, but
+		    // only so long as DO_GL_EBO_FIXUP is true.
+		    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ebo);
+		}
+		for(int i = 0; i < mod.va.fmt.inputs.length; i++) {
+		    VertexArray.Layout.Input attr = mod.va.fmt.inputs[i];
 		    GLProgram.VarID var = prog.cattrib(attr.tgt);
 		    if(var != null) {
 			VboState.apply(gl, g.state, bufs[attr.buf]);
@@ -95,14 +101,14 @@ public class GLVertexArray extends GLObject implements BGL.ID {
     }
 
     static class ProgIndex implements Disposable {
-	final VertexArray va;
+	final Model mod;
 	final GLEnvironment env;
 	GLVertexArray[] vaos = new GLVertexArray[2];
 	GLProgram[] progs = new GLProgram[2];
 	int n = 0;
 
-	ProgIndex(VertexArray va, GLEnvironment env) {
-	    this.va = va;
+	ProgIndex(Model mod, GLEnvironment env) {
+	    this.mod = mod;
 	    this.env = env;
 	}
 
@@ -120,7 +126,7 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 		if(progs[i] == prog)
 		    return(vaos[i]);
 	    }
-	    GLVertexArray ret = create(prog, va);
+	    GLVertexArray ret = create(prog, mod);
 	    add(prog, ret);
 	    return(ret);
 	}
