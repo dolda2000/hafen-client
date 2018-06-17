@@ -26,21 +26,27 @@
 
 package haven.render.gl;
 
+import javax.media.opengl.*;
+
 public class Vao0State extends VaoState {
     public final GLProgram.VarID[] enable;
+    public final GLBuffer ebo;
 
-    public Vao0State(GLProgram.VarID[] enable) {
+    public Vao0State(GLProgram.VarID[] enable, GLBuffer ebo) {
 	this.enable = enable;
+	this.ebo = ebo;
     }
 
     public void apply(BGL gl) {
 	for(GLProgram.VarID attr : enable)
 	    gl.glEnableVertexAttribArray(attr);
+	gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ebo);
     }
 
     public void unapply(BGL gl) {
 	for(GLProgram.VarID attr : enable)
 	    gl.glDisableVertexAttribArray(attr);
+	gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, null);
     }
 
     public void applyto(BGL gl, GLState sthat) {
@@ -63,12 +69,16 @@ public class Vao0State extends VaoState {
 	    }
 	    gl.glEnableVertexAttribArray(a1);
 	}
+	if(that.ebo != this.ebo)
+	    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, that.ebo);
     }
 
     public static void apply(BGL gl, Applier st, GLProgram.VarID[] enable) {
 	GLState cur = st.glstates[slot];
+	GLBuffer ebo = null;
 	eq: if(cur instanceof Vao0State) {
 	    Vao0State that = (Vao0State)cur;
+	    ebo = that.ebo;
 	    if(that.enable.length == enable.length) {
 		for(int i = 0; i < enable.length; i++) {
 		    if(enable[i] != that.enable[i])
@@ -77,6 +87,18 @@ public class Vao0State extends VaoState {
 		return;
 	    }
 	}
-	st.apply(gl, new Vao0State(enable));
+	st.apply(gl, new Vao0State(enable, ebo));
+    }
+
+    public static void apply(BGL gl, Applier st, GLBuffer ebo) {
+	GLState cur = st.glstates[slot];
+	GLProgram.VarID[] enable = null;
+	if(cur instanceof Vao0State) {
+	    Vao0State that = (Vao0State)cur;
+	    if(that.ebo == ebo)
+		return;
+	    enable = that.enable;
+	}
+	st.apply(gl, new Vao0State((enable == null) ? new GLProgram.VarID[0] : enable, ebo));
     }
 }

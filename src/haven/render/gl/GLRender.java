@@ -226,7 +226,7 @@ public class GLRender implements Render, Disposable {
 		gl.glDrawArrays(glmode(data.mode), data.f, data.n);
 	    } else {
 		if(data.ind.usage == EPHEMERAL) {
-		    EboState.apply(gl, state, env.tempindex.get());
+		    Vao0State.apply(gl, state, env.tempindex.get());
 		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, data.ind.size(), ByteBuffer.wrap(((HeapBuffer)indo).buf), GL2.GL_STREAM_DRAW);
 		} else {
 		    throw(new NotImplemented("non-ephemeral index arrays"));

@@ -139,7 +139,7 @@ public class GLEnvironment implements Environment {
 			GLBuffer jdret = ret;
 			prepare((GLRender g) -> {
 				BGL gl = g.gl;
-				EboState.apply(gl, g.state, jdret);
+				Vao0State.apply(gl, g.state, jdret);
 				int usage = (buf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
 				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), usage);
 			    });

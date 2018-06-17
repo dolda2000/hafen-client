@@ -34,7 +34,6 @@ public abstract class GLState {
     public static final Class<? extends GLState>[] slots = (Class<? extends GLState>[])new Class[] {
 	VaoState.class,
 	VboState.class,
-	EboState.class,
 	FboState.class,
     };
 
