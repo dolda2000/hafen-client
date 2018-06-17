@@ -212,7 +212,7 @@ public class GLRender implements Render, Disposable {
 					buf.put(((HeapBuffer)bufs[i]).buf);
 				}
 				buf.flip();
-				gl.glBufferData(jdvbuf.glid(), jdsz, buf, GL2.GL_STREAM_DRAW);
+				gl.glBufferData(GL.GL_ARRAY_BUFFER, jdsz, buf, GL2.GL_STREAM_DRAW);
 			    }
 			});
 		}
