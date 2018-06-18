@@ -27,7 +27,6 @@
 package haven;
 
 import java.util.*;
-import java.awt.Color;
 
 public class Charlist extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/avakort");
