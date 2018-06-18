@@ -32,6 +32,7 @@ public class Charlist extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/avakort");
     public static final int margin = 6;
     public int height, y, sel = 0;
+    public IButton sau, sad;
     public List<Char> chars = new ArrayList<Char>();
     
     public static class Char {
@@ -55,10 +56,22 @@ public class Charlist extends Widget {
     }
 
     public Charlist(int height) {
-	super(new Coord(bg.sz().x, 40 + (bg.sz().y * height) + (margin * (height - 1))));
+	super(Coord.z);
 	this.height = height;
 	y = 0;
 	setcanfocus(true);
+	sau = adda(new IButton("gfx/hud/buttons/csau", "u", "d", "o") {
+		public void click() {
+		    scroll(-1);
+		}
+	    }, bg.sz().x / 2, 0, 0.5, 0);
+	sad = adda(new IButton("gfx/hud/buttons/csad", "u", "d", "o") {
+		public void click() {
+		    scroll(1);
+		}
+	    }, bg.sz().x / 2, sau.c.y + sau.sz.y + (bg.sz().y * height) + (margin * (height - 1)), 0.5, 0);
+	sau.hide(); sad.hide();
+	resize(new Coord(bg.sz().x, sad.c.y + sad.sz.y));
     }
 
     protected void added() {
@@ -76,7 +89,7 @@ public class Charlist extends Widget {
     }
     
     public void draw(GOut g) {
-	int y = 20;
+	int y = sau.c.y + sau.sz.y;
 	synchronized(chars) {
 	    for(Char c : chars) {
 		c.ava.hide();
@@ -137,6 +150,10 @@ public class Charlist extends Widget {
 	    c.plb.hide();
 	    synchronized(chars) {
 		chars.add(c);
+		if(chars.size() > height) {
+		    sau.show();
+		    sad.show();
+		}
 	    }
 	} else if(msg == "ava") {
 	    String cnm = (String)args[0];
