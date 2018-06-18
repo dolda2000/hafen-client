@@ -177,11 +177,32 @@ public class Avaview extends PView {
     }
 
     public void draw(GOut g) {
+	boolean drawn = false;
 	try {
-	    updcomp();
-	    super.draw(g);
+	    if(avagob != -1) {
+		Gob gob = ui.sess.glob.oc.getgob(avagob);
+		if(gob != null) {
+		    Avatar ava = gob.getattr(Avatar.class);
+		    if(ava != null) {
+			List<Resource.Image> imgs = ava.images();
+			if(imgs != null) {
+			    for(Resource.Image img : imgs) {
+				g.image(img.tex(), Coord.z, this.sz);
+			    }
+			    drawn = true;
+			}
+		    }
+		}
+	    }
 	} catch(Loading e) {
-	    g.image(missing, Coord.z, sz);
+	}
+	if(!drawn) {
+	    try {
+		updcomp();
+		super.draw(g);
+	    } catch(Loading e) {
+		g.image(missing, Coord.z, sz);
+	    }
 	}
 	if(color != null) {
 	    g.chcolor(color);
