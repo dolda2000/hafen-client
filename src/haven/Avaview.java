@@ -36,6 +36,7 @@ public class Avaview extends PView {
     public Color color = Color.WHITE;
     public long avagob;
     public Desc avadesc;
+    public Resource.Resolver resmap = null;
     private Composited comp;
     private List<Composited.MD> cmod = null;
     private List<Composited.ED> cequ = null;
@@ -73,16 +74,26 @@ public class Avaview extends PView {
 	} else if(msg == "col") {
 	    this.color = (Color)args[0];
 	} else if(msg == "pop") {
-	    this.avadesc = Desc.decode(ui.sess, args);
-	    this.avagob = -1;
+	    pop(Desc.decode(ui.sess, args));
 	} else {
 	    super.uimsg(msg, args);
 	}
     }
 
+    public void pop(Desc ava, Resource.Resolver resmap) {
+	this.avadesc = ava;
+	this.resmap = resmap;
+	this.avagob = -1;
+    }
+
+    public void pop(Desc ava) {
+	pop(ava, null);
+    }
+
     private static final OwnerContext.ClassResolver<Avaview> ctxr = new OwnerContext.ClassResolver<Avaview>()
 	.add(Glob.class, v -> v.ui.sess.glob)
-	.add(Session.class, v -> v.ui.sess);
+	.add(Session.class, v -> v.ui.sess)
+	.add(Resource.Resolver.class, v -> (v.resmap == null ? v.ui.sess : v.resmap));
     private class AvaOwner implements Sprite.Owner {
 	public Random mkrandoom() {return(new Random());}
 	public Resource getres() {return(null);}
