@@ -38,7 +38,7 @@ public class GLDrawList implements DrawList {
     public static final int idx_pst = 2;
     public static final int idx_uni = idx_pst + GLPipeState.all.length;
     public final GLEnvironment env;
-    private final Map<SettingKey, Setting> settings = new HashMap<>();
+    private final Map<SettingKey, DepSetting> settings = new HashMap<>();
     private DrawSlot root = null;
 
     private static int btheight(DrawSlot s) {
@@ -207,6 +207,7 @@ public class GLDrawList implements DrawList {
 	final Slot<Rendered> bk;
 	final GLProgram prog;
 	final Setting[] settings;
+	final BGL main;
 
 	private GLProgram progfor(Slot<Rendered> sl) {
 	    State[] st = sl.state().states();
@@ -234,6 +235,9 @@ public class GLDrawList implements DrawList {
 	    this.prog = progfor(bk);
 	    this.settings = new Setting[idx_uni + prog.uniforms.length];
 	    getsettings();
+	    SlotRender g = new SlotRender(this);
+	    bk.obj().draw(bk.state(), g);
+	    main = g.gl;
 	}
     }
 
@@ -313,14 +317,19 @@ public class GLDrawList implements DrawList {
     }
 
     abstract class Setting {
+	abstract void compile(BGL gl);
+
+	void put() {}
+    }
+
+    abstract class DepSetting extends Setting {
 	final SettingKey key;
 	int rc;
 
-	Setting(SettingKey key) {
+	DepSetting(SettingKey key) {
 	    this.key = key;
 	}
 
-	abstract void compile(BGL gl);
 	abstract State.Slot[] depslots();
 
 	Pipe compstate() {
@@ -343,6 +352,14 @@ public class GLDrawList implements DrawList {
 		    public State[] states() {throw(new NotImplemented());}
 		});
 	}
+
+	void put() {
+	    if(--rc <= 0) {
+		if(rc < 0)
+		    throw(new RuntimeException());
+		settings.remove(key);
+	    }
+	}
     }
 
     private static State.Slot[] progfslots(GLProgram prog) {
@@ -359,7 +376,7 @@ public class GLDrawList implements DrawList {
 	return(ret);
     }
 
-    class FrameSetting extends Setting {
+    class FrameSetting extends DepSetting {
 	final GLProgram prog;
 
 	FrameSetting(SettingKey key) {
@@ -381,9 +398,9 @@ public class GLDrawList implements DrawList {
 	}
     }
 
-    Setting getframe(GLProgram prog, GroupPipe state) {
+    DepSetting getframe(GLProgram prog, GroupPipe state) {
 	SettingKey key = new SettingKey(prog, FboState.class, makedepid(state, Arrays.asList(progfslots(prog))));
-	Setting ret = settings.get(key);
+	DepSetting ret = settings.get(key);
 	if(ret == null) {
 	    ret = new FrameSetting(key);
 	    settings.put(key, ret);
@@ -392,7 +409,7 @@ public class GLDrawList implements DrawList {
 	return(ret);
     }
 
-    class PipeSetting<T extends State> extends Setting {
+    class PipeSetting<T extends State> extends DepSetting {
 	final GLPipeState<T> setting;
 
 	PipeSetting(SettingKey key, GLPipeState<T> setting) {
@@ -410,9 +427,9 @@ public class GLDrawList implements DrawList {
 	}
     }
 
-    Setting getpipest(GLPipeState<?> pst, GroupPipe state) {
+    DepSetting getpipest(GLPipeState<?> pst, GroupPipe state) {
 	SettingKey key = new SettingKey(null, pst, makedepid(state, Arrays.asList(pst.slot)));
-	Setting ret = settings.get(key);
+	DepSetting ret = settings.get(key);
 	if(ret == null) {
 	    ret = new PipeSetting<>(key, pst);
 	    settings.put(key, ret);
@@ -421,7 +438,7 @@ public class GLDrawList implements DrawList {
 	return(ret);
     }
 
-    class UniformSetting extends Setting {
+    class UniformSetting extends DepSetting {
 	final GLProgram prog;
 	final Uniform var;
 
@@ -441,15 +458,67 @@ public class GLDrawList implements DrawList {
 	}
     }
 
-    Setting getuniform(GLProgram prog, Uniform var, GroupPipe state) {
+    DepSetting getuniform(GLProgram prog, Uniform var, GroupPipe state) {
 	SettingKey key = new SettingKey(prog, var, makedepid(state, var.deps));
-	Setting ret = settings.get(key);
+	DepSetting ret = settings.get(key);
 	if(ret == null) {
 	    ret = new UniformSetting(key);
 	    settings.put(key, ret);
 	}
 	ret.rc++;
 	return(ret);
+    }
+
+    class VaoSetting extends Setting {
+	final VaoBindState st;
+
+	VaoSetting(GLVertexArray vao, GLBuffer ebo) {
+	    this.st = new VaoBindState(vao, ebo);
+	}
+
+	void compile(BGL gl) {
+	    st.apply(gl);
+	}
+    }
+
+    class SlotRender implements Render {
+	final DrawSlot slot;
+	final BGL gl;
+	private boolean done;
+
+	SlotRender(DrawSlot slot) {
+	    this.slot = slot;
+	    this.gl = new BufferBGL();
+	}
+
+	public Environment env() {return(env);}
+	public void draw(Pipe st, Model mod) {
+	    if(done)
+		throw(new IllegalStateException("Can only render once in drawlist"));
+	    if(st != slot.bk.state())
+		throw(new IllegalArgumentException("Must render with state from rendertree"));
+
+	    if(GLVertexArray.ephemeralp(mod)) {
+		throw(new NotImplemented("ephemeral models in drawlist"));
+	    } else {
+		GLVertexArray vao = env.prepare(mod, slot.prog);
+		GLBuffer ebo = (mod.ind == null) ? null : (GLBuffer)env.prepare(mod.ind);
+		slot.settings[idx_vao] = new VaoSetting(vao, ebo);
+		if(mod.ind == null) {
+		    gl.glDrawArrays(GLRender.glmode(mod.mode), mod.f, mod.n);
+		} else {
+		    gl.glDrawElements(GLRender.glmode(mod.mode), mod.n, GLRender.glindexfmt(mod.ind.fmt), mod.f * mod.ind.fmt.size);
+		}
+	    }
+	    done = true;
+	}
+
+	/* Somewhat unclear whether DrawList should implement
+	 * clearing. Just implement it if and when it turns out to be
+	 * reasonable. */
+	public void clear(Pipe pipe, FragData buf, FColor val) {throw(new NotImplemented());}
+	public void clear(Pipe pipe, double val) {throw(new NotImplemented());}
+	public void dispose() {}
     }
 
     private void verify(DrawSlot t) {
@@ -474,33 +543,6 @@ public class GLDrawList implements DrawList {
 		throw(new AssertionError());
 	    verify(root);
 	}
-    }
-
-    class SlotRender implements Render {
-	final BGL gl;
-	private boolean done;
-
-	SlotRender(BGL gl) {
-	    this.gl = gl;
-	}
-
-	public Environment env() {return(env);}
-	public void draw(Pipe st, Model mod) {
-	    if(done)
-		throw(new IllegalStateException("Can only render once in drawlist"));
-	    if(GLVertexArray.ephemeralp(mod)) {
-		throw(new NotImplemented("ephemeral models in drawlist"));
-	    } else {
-	    }
-	    done = true;
-	}
-
-	/* Somewhat unclear whether DrawList should implement
-	 * clearing. Just implement it if and when it turns out to be
-	 * reasonable. */
-	public void clear(Pipe pipe, FragData buf, FColor val) {throw(new NotImplemented());}
-	public void clear(Pipe pipe, double val) {throw(new NotImplemented());}
-	public void dispose() {}
     }
 
     public GLDrawList(GLEnvironment env) {

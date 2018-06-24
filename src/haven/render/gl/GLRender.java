@@ -57,7 +57,7 @@ public class GLRender implements Render, Disposable {
 	return(this.gl);
     }
 
-    private static int glmode(Model.Mode mode) {
+    public static int glmode(Model.Mode mode) {
 	switch(mode) {
 	case POINTS:          return(GL.GL_POINTS);
 	case LINES:           return(GL.GL_LINES);
@@ -105,7 +105,7 @@ public class GLRender implements Render, Disposable {
 	}
     }
 
-    private static int glindexfmt(NumberFormat fmt) {
+    public static int glindexfmt(NumberFormat fmt) {
 	switch(fmt) {
 	case UINT8:     return(GL.GL_UNSIGNED_BYTE);
 	case UINT16:    return(GL.GL_UNSIGNED_SHORT);
