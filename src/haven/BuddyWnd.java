@@ -140,6 +140,21 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		rname = Text.render(name);
 	    return(rname);
 	}
+
+	public Map<String, Runnable> opts() {
+	    Map<String, Runnable> opts = new LinkedHashMap<>();
+	    if(online >= 0) {
+		opts.put("Chat", this::chat);
+		if(online == 1)
+		    opts.put("Invite", this::invite);
+		opts.put("End kinship", this::endkin);
+	    } else {
+		opts.put("Forget", this::forget);
+	    }
+	    if(seen)
+		opts.put("Describe", this::describe);
+	    return(opts);
+	}
     }
     
     public Iterator<Buddy> iterator() {
@@ -197,6 +212,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	private final GroupSelector grp;
 	private long atime, utime;
 	private Label atimel = null;
+	private Button[] opts = {};
 
 	private BuddyInfo(Coord sz, Buddy buddy) {
 	    super(sz);
@@ -214,6 +230,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 			buddy.chgrp(group);
 		    }
 		}, 15, nick.c.y + nick.sz.y + 10);
+	    setopts();
 	}
 
 	public void draw(GOut g) {
@@ -259,7 +276,20 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    if(atimel != null)
 		ui.destroy(atimel);
 	    atimel = add(new Label(text), 10, grp.c.y + grp.sz.y + 10);
+	}
 
+	private void setopts() {
+	    for(Button opt : this.opts)
+		ui.destroy(opt);
+	    Map<String, Runnable> bopts = buddy.opts();
+	    List<Button> opts = new ArrayList<>(bopts.size());
+	    int y = grp.c.y + grp.sz.y + 35;
+	    for(Map.Entry<String, Runnable> opt : bopts.entrySet()) {
+		Button btn = add(new Button(sz.x - 20, opt.getKey(), false, opt.getValue()), 10, y);
+		y = btn.c.y + btn.sz.y + 5;
+		opts.add(btn);
+	    }
+	    this.opts = opts.toArray(new Button[0]);
 	}
 
 	public void uimsg(String msg, Object... args) {
@@ -280,6 +310,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    nick.commit();
 	    grp.group = buddy.group;
 	    setatime();
+	    setopts();
 	}
     }
 
@@ -322,19 +353,9 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	}
 
 	public void opts(final Buddy b, Coord c) {
-	    List<String> opts = new ArrayList<String>();
-	    if(b.online >= 0) {
-		opts.add("Chat");
-		if(b.online == 1)
-		    opts.add("Invite");
-		opts.add("End kinship");
-	    } else {
-		opts.add("Forget");
-	    }
-	    if(b.seen)
-		opts.add("Describe");
 	    if(menu == null) {
-		menu = new FlowerMenu(opts.toArray(new String[0])) {
+		Map<String, Runnable> bopts = b.opts();
+		menu = new FlowerMenu(bopts.keySet().toArray(new String[0])) {
 			public void destroy() {
 			    menu = null;
 			    super.destroy();
@@ -342,17 +363,9 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 			
 			public void choose(Petal opt) {
 			    if(opt != null) {
-				if(opt.name.equals("End kinship")) {
-				    b.endkin();
-				} else if(opt.name.equals("Chat")) {
-				    b.chat();
-				} else if(opt.name.equals("Invite")) {
-				    b.invite();
-				} else if(opt.name.equals("Forget")) {
-				    b.forget();
-				} else if(opt.name.equals("Describe")) {
-				    b.describe();
-				}
+				Runnable act = bopts.get(opt.name);
+				if(act != null)
+				    act.run();
 				uimsg("act", opt.num);
 			    } else {
 				uimsg("cancel");
@@ -554,7 +567,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		    pack();
 		}
 		if(b != null) {
-		    info = add(new BuddyInfo(new Coord(200, sz.y - 35 - Window.wbox.bisz().y), b), width + 20, 35);
+		    info = add(new BuddyInfo(new Coord(225, sz.y - 35 - Window.wbox.bisz().y), b), width + 20, 35);
 		    infof = Frame.around(this, Collections.singletonList(info));
 		}
 		pack();
