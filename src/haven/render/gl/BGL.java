@@ -105,6 +105,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void bglCallList(final BufferBGL list) {
+	add(new Command() {
+		public void run(GL2 gl) {list.run(gl);}
+	    });
+    }
+
     public void bglCopyBufferf(final FloatBuffer dst, final int doff, final FloatBuffer src, final int soff, final int len) {
 	add(new Command() {
 		public void run(GL2 gl) {
