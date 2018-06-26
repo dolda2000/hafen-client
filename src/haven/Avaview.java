@@ -36,6 +36,7 @@ public class Avaview extends Widget { // XXXRENDER
     public Color color = Color.WHITE;
     public long avagob;
     public Desc avadesc;
+    public Resource.Resolver resmap = null;
     private Composited comp;
     private List<Composited.MD> cmod = null;
     private List<Composited.ED> cequ = null;
@@ -73,16 +74,26 @@ public class Avaview extends Widget { // XXXRENDER
 	} else if(msg == "col") {
 	    this.color = (Color)args[0];
 	} else if(msg == "pop") {
-	    this.avadesc = Desc.decode(ui.sess, args);
-	    this.avagob = -1;
+	    pop(Desc.decode(ui.sess, args));
 	} else {
 	    super.uimsg(msg, args);
 	}
     }
 
+    public void pop(Desc ava, Resource.Resolver resmap) {
+	this.avadesc = ava;
+	this.resmap = resmap;
+	this.avagob = -1;
+    }
+
+    public void pop(Desc ava) {
+	pop(ava, null);
+    }
+
     private static final OwnerContext.ClassResolver<Avaview> ctxr = new OwnerContext.ClassResolver<Avaview>()
 	.add(Glob.class, v -> v.ui.sess.glob)
-	.add(Session.class, v -> v.ui.sess);
+	.add(Session.class, v -> v.ui.sess)
+	.add(Resource.Resolver.class, v -> (v.resmap == null ? v.ui.sess : v.resmap));
     private class AvaOwner implements Sprite.Owner {
 	public Random mkrandoom() {return(new Random());}
 	public Resource getres() {return(null);}
@@ -172,11 +183,32 @@ public class Avaview extends Widget { // XXXRENDER
     }
 
     public void draw(GOut g) {
+	boolean drawn = false;
 	try {
-	    updcomp();
-	    super.draw(g);
+	    if(avagob != -1) {
+		Gob gob = ui.sess.glob.oc.getgob(avagob);
+		if(gob != null) {
+		    Avatar ava = gob.getattr(Avatar.class);
+		    if(ava != null) {
+			List<Resource.Image> imgs = ava.images();
+			if(imgs != null) {
+			    for(Resource.Image img : imgs) {
+				g.image(img.tex(), Coord.z, this.sz);
+			    }
+			    drawn = true;
+			}
+		    }
+		}
+	    }
 	} catch(Loading e) {
-	    g.image(missing, Coord.z, sz);
+	}
+	if(!drawn) {
+	    try {
+		updcomp();
+		super.draw(g);
+	    } catch(Loading e) {
+		g.image(missing, Coord.z, sz);
+	    }
 	}
 	if(color != null) {
 	    g.chcolor(color);
