@@ -317,6 +317,7 @@ public class Screenshooter extends Window {
 	new Object() {
 	    BufferedImage map = null, ui = null;
 	    {
+		/* XXXRENDER
 		gameui.map.delay2(g -> g.getimage(Coord.z, g.sz, img -> {
 			    map = img;
 			    checkcomplete(g);
@@ -325,11 +326,12 @@ public class Screenshooter extends Window {
 			    ui = img;
 			    checkcomplete(g);
 			}));
+		*/
 	    }
 
 	    private void checkcomplete(GOut g) {
 		if((map != null) && (ui != null)) {
-		    GLSettings pref = g.gc.pref;
+		    GLSettings pref = null /* XXXRENDER g.gc.pref */;
 		    String camera = gameui.map.camera.getClass().getName();
 		    Utils.defer(() -> {
 			    Shot shot = new Shot(map, ui);
