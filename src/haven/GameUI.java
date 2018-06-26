@@ -58,7 +58,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public HelpWnd help;
     public OptWnd opts;
     public Collection<DraggedItem> hand = new LinkedList<DraggedItem>();
-    private WItem vhand;
+    public WItem vhand;
     public ChatUI chat;
     public ChatUI.Channel syslog;
     public double prog = -1;
@@ -960,6 +960,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(key == ':') {
 	    entercmd();
 	    return(true);
+	} else if((Config.screenurl != null) && (Character.toUpperCase(key) == 'S') && ((ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0)) {
+	    Screenshooter.take(this, Config.screenurl);
+	    return(true);
 	} else if(key == ' ') {
 	    toggleui();
 	    return(true);
@@ -975,6 +978,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		}
 	    }
 	    Utils.setprefb("chatvis", chat.targeth != 0);
+	    return(true);
 	} else if((key == 27) && (map != null) && !map.hasfocus) {
 	    setfocus(map);
 	    return(true);
@@ -1351,7 +1355,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    });
 	cmdmap.put("tool", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    add(gettype(args[1]).create(ui, new Object[0]), 200, 200);
+		    try {
+			add(gettype(args[1]).create(ui, new Object[0]), 200, 200);
+		    } catch(RuntimeException e) {
+			e.printStackTrace(Debug.log);
+		    }
 		}
 	    });
     }

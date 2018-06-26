@@ -775,7 +775,13 @@ public class MapView extends Widget implements DTarget, Console.Directory {
     private final Rendered gobs;
 
     public String toString() {
-	return(String.format("Camera[%s (%s)], Caches[%s]", getcc(), camera, gobs));
+	String cc;
+	try {
+	    cc = getcc().toString();
+	} catch(Loading l) {
+	    cc = "<nil>";
+	}
+	return(String.format("Camera[%s (%s)], Caches[%s]", cc, camera, gobs));
     }
 
     public GLState camera()         {return(camera);}
@@ -1657,6 +1663,12 @@ public class MapView extends Widget implements DTarget, Console.Directory {
     }
 
     public boolean keydown(KeyEvent ev) {
+	if(placing != null) {
+	    if((ev.getKeyCode() == KeyEvent.VK_LEFT) && placing.adjust.rotate(placing, -1, ui.modflags()))
+		return(true);
+	    if((ev.getKeyCode() == KeyEvent.VK_RIGHT) && placing.adjust.rotate(placing, 1, ui.modflags()))
+		return(true);
+	}
 	if(camera.keydown(ev))
 	    return(true);
 	return(super.keydown(ev));

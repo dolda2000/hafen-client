@@ -57,17 +57,7 @@ public class GLRender implements Render, Disposable {
 	return(this.gl);
     }
 
-    static boolean ephemeralp(Model m) {
-	if((m.ind != null) && (m.ind.usage == EPHEMERAL))
-	    return(true);
-	for(VertexArray.Buffer b : m.va.bufs) {
-	    if(b.usage == EPHEMERAL)
-		return(true);
-	}
-	return(false);
-    }
-
-    private static int glmode(Model.Mode mode) {
+    public static int glmode(Model.Mode mode) {
 	switch(mode) {
 	case POINTS:          return(GL.GL_POINTS);
 	case LINES:           return(GL.GL_LINES);
@@ -80,7 +70,7 @@ public class GLRender implements Render, Disposable {
 	}
     }
 
-    private static int glattribfmt(NumberFormat fmt) {
+    public static int glattribfmt(NumberFormat fmt) {
 	switch(fmt) {
 	case UNORM8:    return(GL.GL_UNSIGNED_BYTE);
 	case SNORM8:    return(GL.GL_BYTE);
@@ -101,7 +91,7 @@ public class GLRender implements Render, Disposable {
 	}
     }
 
-    private static boolean glattribnorm(NumberFormat fmt) {
+    public static boolean glattribnorm(NumberFormat fmt) {
 	switch(fmt) {
 	case UNORM8:
 	case SNORM8:
@@ -115,9 +105,46 @@ public class GLRender implements Render, Disposable {
 	}
     }
 
+    public static int glindexfmt(NumberFormat fmt) {
+	switch(fmt) {
+	case UINT8:     return(GL.GL_UNSIGNED_BYTE);
+	case UINT16:    return(GL.GL_UNSIGNED_SHORT);
+	case UINT32:    return(GL2.GL_UNSIGNED_INT);
+	default:
+	    throw(new RuntimeException("unimplemented vertex index format " + fmt));
+	}
+    }
+
+    public static int glsamplertarget(Type type) {
+	if(type == Type.SAMPLER2D)
+	    return(GL.GL_TEXTURE_2D);
+	else if(type == Type.SAMPLER2DMS)
+	    return(GL3.GL_TEXTURE_2D_MULTISAMPLE);
+	else if(type == Type.SAMPLER2DMSARRAY)
+	    return(GL3.GL_TEXTURE_2D_MULTISAMPLE_ARRAY);
+	else if(type == Type.SAMPLER2DARRAY)
+	    return(GL.GL_TEXTURE_2D_ARRAY);
+	else if(type == Type.SAMPLER2DSHADOW)
+	    return(GL2.GL_TEXTURE_2D);
+	else if(type == Type.SAMPLERCUBE)
+	    return(GL2.GL_TEXTURE_CUBE_MAP);
+	else if(type == Type.SAMPLERCUBEARRAY)
+	    return(GL4.GL_TEXTURE_CUBE_MAP_ARRAY);
+	else if(type == Type.SAMPLERCUBESHADOW)
+	    return(GL2.GL_TEXTURE_CUBE_MAP);
+	else if(type == Type.SAMPLER3D)
+	    return(GL2.GL_TEXTURE_3D);
+	else if(type == Type.SAMPLER1D)
+	    return(GL2.GL_TEXTURE_1D);
+	else if(type == Type.SAMPLER1DARRAY)
+	    return(GL2.GL_TEXTURE_1D_ARRAY);
+	else
+	    throw(new RuntimeException("invalid sampler type: " + type));
+    }
+
     public void draw(Pipe pipe, Model data) {
 	state.apply(this.gl, pipe);
-	if(ephemeralp(data)) {
+	if(GLVertexArray.ephemeralp(data)) {
 	    Disposable indo = null;
 	    if(data.ind != null)
 		indo = env.prepare(data.ind);
@@ -175,7 +202,7 @@ public class GLRender implements Render, Disposable {
 					buf.put(((HeapBuffer)bufs[i]).buf);
 				}
 				buf.flip();
-				gl.glBufferData(jdvbuf.glid(), jdsz, buf, GL2.GL_STREAM_DRAW);
+				gl.glBufferData(GL.GL_ARRAY_BUFFER, jdsz, buf, GL2.GL_STREAM_DRAW);
 			    }
 			});
 		}
@@ -196,15 +223,15 @@ public class GLRender implements Render, Disposable {
 	    }
 	    VboState.set(state, cbuf);
 	    if(data.ind == null) {
-		gl.glDrawArrays(glmode(data.mode), 0, data.va.n);
+		gl.glDrawArrays(glmode(data.mode), data.f, data.n);
 	    } else {
 		if(data.ind.usage == EPHEMERAL) {
-		    EboState.apply(gl, state, env.tempindex.get());
+		    Vao0State.apply(gl, state, env.tempindex.get());
 		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, data.ind.size(), ByteBuffer.wrap(((HeapBuffer)indo).buf), GL2.GL_STREAM_DRAW);
 		} else {
 		    throw(new NotImplemented("non-ephemeral index arrays"));
 		}
-		gl.glDrawElements(glmode(data.mode), data.ind.n, GL.GL_UNSIGNED_SHORT, 0);
+		gl.glDrawElements(glmode(data.mode), data.n, glindexfmt(data.ind.fmt), data.f * data.ind.fmt.size);
 	    }
 	} else {
 	    throw(new NotImplemented("non-ephemeral models"));

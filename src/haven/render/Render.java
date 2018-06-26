@@ -41,8 +41,8 @@ public interface Render extends Disposable {
 	Model.Indices indb = null;
 	if(ind != null)
 	    indb = new Model.Indices(ind.length, NumberFormat.UINT16, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(ind));
-	VertexArray vao = new VertexArray(fmt, n, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data)));
-	Model model = new Model(mode, vao, indb);
+	VertexArray vao = new VertexArray(fmt, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data)));
+	Model model = new Model(mode, vao, indb, 0, n);
 	draw(pipe, model);
 	model.dispose();
     }

@@ -28,6 +28,7 @@ package haven.render.gl;
 
 import java.util.*;
 import java.util.function.*;
+import java.nio.ByteBuffer;
 import javax.media.opengl.*;
 import haven.Utils;
 import haven.Disposable;
@@ -64,6 +65,7 @@ public class GLEnvironment implements Environment {
 		    this.curstate.apply(xf, prep.init);
 		    prep.gl.run(gl);
 		    this.curstate = prep.state;
+		    GLException.checkfor(gl);
 		}
 		BufferBGL xf = new BufferBGL(16);
 		this.curstate.apply(xf, cmd.init);
@@ -117,30 +119,81 @@ public class GLEnvironment implements Environment {
 
     Disposable prepare(Model.Indices buf) {
 	synchronized(buf) {
-	    if(buf.usage == EPHEMERAL) {
+	    switch(buf.usage) {
+	    case EPHEMERAL:
 		if(!(buf.ro instanceof HeapBuffer)) {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = new HeapBuffer(this, buf, buf.init);
 		}
 		return(buf.ro);
-	    } else {
+	    case STREAM:
+	    case STATIC:
+		GLBuffer ret;
+		if(!(buf.ro instanceof GLBuffer) || ((ret = ((GLBuffer)buf.ro)).env != this)) {
+		    if(buf.ro != null)
+			buf.ro.dispose();
+		    buf.ro = ret = new GLBuffer(this);
+		    if(buf.init != null) {
+			FillBuffers.Array data = (FillBuffers.Array)buf.init.fill(buf, this);
+			GLBuffer jdret = ret;
+			prepare((GLRender g) -> {
+				BGL gl = g.gl;
+				Vao0State.apply(gl, g.state, jdret);
+				int usage = (buf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
+				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), usage);
+			    });
+		    }
+		}
+		return(ret);
+	    default:
 		throw(new Error());
 	    }
 	}
     }
     Disposable prepare(VertexArray.Buffer buf) {
 	synchronized(buf) {
-	    if(buf.usage == EPHEMERAL) {
+	    switch(buf.usage) {
+	    case EPHEMERAL:
 		if(!(buf.ro instanceof HeapBuffer)) {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = new HeapBuffer(this, buf, buf.init);
 		}
 		return(buf.ro);
-	    } else {
+	    case STREAM:
+	    case STATIC:
+		GLBuffer ret;
+		if(!(buf.ro instanceof GLBuffer) || ((ret = ((GLBuffer)buf.ro)).env != this)) {
+		    if(buf.ro != null)
+			buf.ro.dispose();
+		    buf.ro = ret = new GLBuffer(this);
+		    if(buf.init != null) {
+			FillBuffers.Array data = (FillBuffers.Array)buf.init.fill(buf, this);
+			GLBuffer jdret = ret;
+			prepare((GLRender g) -> {
+				BGL gl = g.gl;
+				VboState.apply(gl, g.state, jdret);
+				int usage = (buf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
+				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), usage);
+			    });
+		    }
+		}
+		return(ret);
+	    default:
 		throw(new Error());
 	    }
+	}
+    }
+    GLVertexArray prepare(Model mod, GLProgram prog) {
+	synchronized(mod) {
+	    GLVertexArray.ProgIndex idx;
+	    if(!(mod.ro instanceof GLVertexArray.ProgIndex) || ((idx = ((GLVertexArray.ProgIndex)mod.ro)).env != this)) {
+		if(mod.ro != null)
+		    mod.ro.dispose();
+		mod.ro = idx = new GLVertexArray.ProgIndex(mod, this);
+	    }
+	    return(idx.get(prog));
 	}
     }
     GLTexture.Tex2D prepare(Texture2D tex) {
@@ -161,6 +214,20 @@ public class GLEnvironment implements Environment {
 	    ret.setsampler(smp);
 	    return(ret);
 	}
+    }
+
+    Object prepuval(Object val) {
+	if(val instanceof Texture.Sampler) {
+	    if(val instanceof Texture2D.Sampler2D)
+		return(prepare((Texture2D.Sampler2D)val));
+	}
+	return(val);
+    }
+
+    Object prepfval(Object val) {
+	if(val instanceof Texture.Image)
+	    return(GLFrameBuffer.prepimg(this, (Texture.Image)val));
+	return(val);
     }
 
     public class TempData<T> implements Supplier<T> {
@@ -280,7 +347,7 @@ public class GLEnvironment implements Environment {
 	    for(int i = 0; i < ptab.length; i++) {
 		SavedProg c, p;
 		for(c = ptab[i], p = null; c != null; c = c.next) {
-		    if(c.used) {
+		    if(c.used || (c.prog.locked.get() > 0)) {
 			c.used = false;
 			p = c;
 		    } else {

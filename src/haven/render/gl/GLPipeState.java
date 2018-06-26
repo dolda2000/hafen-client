@@ -35,6 +35,10 @@ public abstract class GLPipeState<T extends State> {
     public State.Slot<? extends T> slot;
     public abstract void apply(BGL gl, T from, T to);
 
+    public void apply(BGL gl, T to) {
+	apply(gl, null, to);
+    }
+
     public GLPipeState(State.Slot<? extends T> slot) {
 	this.slot = slot;
     }

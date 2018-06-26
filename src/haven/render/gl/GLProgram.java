@@ -27,8 +27,9 @@
 package haven.render.gl;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.io.*;
-import javax.media.opengl.GL2;
+import javax.media.opengl.*;
 import haven.Disposable;
 import haven.render.*;
 import haven.render.sl.*;
@@ -42,7 +43,9 @@ public class GLProgram implements Disposable {
     public final int[][] umap;
     public final boolean[] fmap;
     public final Attribute[] attribs;
-    public final Map<Uniform, Integer> samplers;
+    public final Map<Uniform, Integer> samplerids;
+    public final Uniform[] samplers;
+    public final AtomicInteger locked = new AtomicInteger(0);
     private final Map<Uniform, String> unifnms;
     private final Map<Attribute, String> attrnms;
     private ProgOb glp;
@@ -92,12 +95,17 @@ public class GLProgram implements Disposable {
 	}
 	{
 	    int sn = 0;
-	    Map<Uniform, Integer> samplers = new IdentityHashMap<>();
+	    Map<Uniform, Integer> samplerids = new IdentityHashMap<>();
+	    Uniform[] samplers = new Uniform[uniforms.length];
 	    for(Uniform var : uniforms) {
-		if(var.type instanceof Type.Sampler)
-		    samplers.put(var, sn++);
+		if(var.type instanceof Type.Sampler) {
+		    samplers[sn] = var;
+		    samplerids.put(var, sn);
+		    sn++;
+		}
 	    }
-	    this.samplers = samplers;
+	    this.samplerids = samplerids;
+	    this.samplers = Arrays.copyOf(samplers, sn);
 	}
 	{
 	    Map<Attribute, String> attribs = new IdentityHashMap<>();
@@ -323,8 +331,34 @@ public class GLProgram implements Disposable {
 	return(glp);
     }
 
-    public void apply(BGL gl) {
-	gl.glUseProgram(glid());
+    public static void apply(BGL gl, GLProgram from, GLProgram to) {
+	if(to != null)
+	    gl.glUseProgram(to.glid());
+	else
+	    gl.glUseProgram(null);
+	if((from != null) && (to == null)) {
+	    for(int i = 0; i < from.samplers.length; i++) {
+		gl.glActiveTexture(GL.GL_TEXTURE0 + i);
+		gl.glBindTexture(GLRender.glsamplertarget(from.samplers[i].type), null);
+	    }
+	} else if((from != null) && (to != null)) {
+	    for(int i = 0; i < Math.min(to.samplers.length, from.samplers.length); i++) {
+		if(from.samplers[i].type != to.samplers[i].type) {
+		    gl.glActiveTexture(GL.GL_TEXTURE0 + i);
+		    gl.glBindTexture(GLRender.glsamplertarget(from.samplers[i].type), null);
+		}
+	    }
+	    if(from.samplers.length > to.samplers.length) {
+		for(int i = to.samplers.length; i < from.samplers.length; i++) {
+		    gl.glActiveTexture(GL.GL_TEXTURE0 + i);
+		    gl.glBindTexture(GLRender.glsamplertarget(from.samplers[i].type), null);
+		}
+	    }
+	}
+	if(to != null) {
+	    for(int i = 0; i < to.samplers.length; i++)
+		gl.glUniform1i(to.uniform(to.samplers[i]), i);
+	}
     }
 
     public VarID cattrib(Attribute var) {
@@ -355,5 +389,13 @@ public class GLProgram implements Disposable {
 		cur.dispose();
 	    }
 	}
+    }
+
+    public void lock() {
+	locked.incrementAndGet();
+    }
+
+    public void unlock() {
+	locked.decrementAndGet();
     }
 }

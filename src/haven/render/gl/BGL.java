@@ -105,6 +105,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void bglCallList(final BufferBGL list) {
+	add(new Command() {
+		public void run(GL2 gl) {list.run(gl);}
+	    });
+    }
+
     public void bglCopyBufferf(final FloatBuffer dst, final int doff, final FloatBuffer src, final int soff, final int len) {
 	add(new Command() {
 		public void run(GL2 gl) {
@@ -795,13 +801,13 @@ public abstract class BGL {
 
     public void glUseProgramObjectARB(final ID program) {
 	add(new Command() {
-		public void run(GL2 gl) {gl.glUseProgramObjectARB(program.glid());}
+		public void run(GL2 gl) {gl.glUseProgramObjectARB((program == null)?0:program.glid());}
 	    });
     }
 
     public void glUseProgram(final ID program) {
 	add(new Command() {
-		public void run(GL2 gl) {gl.glUseProgram(program.glid());}
+		public void run(GL2 gl) {gl.glUseProgram((program == null)?0:program.glid());}
 	    });
     }
 

@@ -32,13 +32,14 @@ public class Charlist extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/avakort");
     public static final int margin = 6;
     public int height, y, sel = 0;
+    public IButton sau, sad;
     public List<Char> chars = new ArrayList<Char>();
     
     public static class Char {
-	static Text.Foundry tf = new Text.Foundry(Text.serif, 20);
+	static Text.Foundry tf = new Text.Foundry(Text.serif, 20).aa(true);
 	public String name;
 	Text nt;
-	// Avaview ava;
+	Avaview ava;
 	Button plb;
 	
 	public Char(String name) {
@@ -55,10 +56,22 @@ public class Charlist extends Widget {
     }
 
     public Charlist(int height) {
-	super(new Coord(bg.sz().x, 40 + (bg.sz().y * height) + (margin * (height - 1))));
+	super(Coord.z);
 	this.height = height;
 	y = 0;
 	setcanfocus(true);
+	sau = adda(new IButton("gfx/hud/buttons/csau", "u", "d", "o") {
+		public void click() {
+		    scroll(-1);
+		}
+	    }, bg.sz().x / 2, 0, 0.5, 0);
+	sad = adda(new IButton("gfx/hud/buttons/csad", "u", "d", "o") {
+		public void click() {
+		    scroll(1);
+		}
+	    }, bg.sz().x / 2, sau.c.y + sau.sz.y + (bg.sz().y * height) + (margin * (height - 1)), 0.5, 0);
+	sau.hide(); sad.hide();
+	resize(new Coord(bg.sz().x, sad.c.y + sad.sz.y));
     }
 
     protected void added() {
@@ -76,10 +89,10 @@ public class Charlist extends Widget {
     }
     
     public void draw(GOut g) {
-	int y = 20;
+	int y = sau.c.y + sau.sz.y;
 	synchronized(chars) {
 	    for(Char c : chars) {
-		// c.ava.hide();
+		c.ava.hide();
 		c.plb.hide();
 	    }
 	    for(int i = 0; (i < height) && (i + this.y < chars.size()); i++) {
@@ -92,13 +105,12 @@ public class Charlist extends Widget {
 		} else {
 		    g.image(bg, new Coord(0, y));
 		}
-		// c.ava.show();
+		c.ava.show();
 		c.plb.show();
-		// int off = (bg.sz().y - c.ava.sz.y) / 2;
-		// c.ava.c = new Coord(off, off + y);
+		int off = (bg.sz().y - c.ava.sz.y) / 2;
+		c.ava.c = new Coord(off, off + y);
 		c.plb.c = bg.sz().add(-10, y - 2).sub(c.plb.sz);
-		// g.image(c.nt.tex(), new Coord(off + c.ava.sz.x + 5, off + y));
-		g.image(c.nt.tex(), new Coord(5, 5 + y));
+		g.image(c.nt.tex(), new Coord(off + c.ava.sz.x + 5, off + y));
 		y += bg.sz().y + margin;
 	    }
 	}
@@ -127,25 +139,52 @@ public class Charlist extends Widget {
     public void uimsg(String msg, Object... args) {
 	if(msg == "add") {
 	    Char c = new Char((String)args[0]);
-	    List<Indir<Resource>> resl = new LinkedList<Indir<Resource>>();
-	    for(int i = 1; i < args.length; i++)
-		resl.add(ui.sess.getres((Integer)args[i]));
-	    // c.ava = new Avaview(new Coord(0, 0), this, resl);
-	    // c.ava.hide();
+	    c.ava = add(new Avaview(Avaview.dasz, -1, "avacam"));
+	    c.ava.hide();
+	    if(args.length > 1) {
+		Composited.Desc desc = Composited.Desc.decode(ui.sess, (Object[])args[1]);
+		Resource.Resolver map = new Resource.Resolver.ResourceMap(ui.sess, (Object[])args[2]);
+		c.ava.pop(desc, map);
+	    }
 	    c.plb = add(new Button(100, "Play"));
 	    c.plb.hide();
 	    synchronized(chars) {
 		chars.add(c);
+		if(chars.size() > height) {
+		    sau.show();
+		    sad.show();
+		}
+	    }
+	} else if(msg == "ava") {
+	    String cnm = (String)args[0];
+	    Composited.Desc ava = Composited.Desc.decode(ui.sess, (Object[])args[1]);
+	    Resource.Resolver map = new Resource.Resolver.ResourceMap(ui.sess, (Object[])args[2]);
+	    synchronized(chars) {
+		for(Char c : chars) {
+		    if(c.name.equals(cnm)) {
+			c.ava.pop(ava);
+			break;
+		    }
+		}
 	    }
 	}
+    }
+
+    private void seladj() {
+	if(sel < y)
+	    y = sel;
+	else if(sel >= y + height)
+	    y = sel - height + 1;
     }
 
     public boolean keydown(java.awt.event.KeyEvent ev) {
 	if(ev.getKeyCode() == ev.VK_UP) {
 	    sel = Math.max(sel - 1, 0);
+	    seladj();
 	    return(true);
 	} else if(ev.getKeyCode() == ev.VK_DOWN) {
 	    sel = Math.min(sel + 1, chars.size() - 1);
+	    seladj();
 	    return(true);
 	} else if(ev.getKeyCode() == ev.VK_ENTER) {
 	    if((sel >= 0) && (sel < chars.size())) {

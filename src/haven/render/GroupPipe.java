@@ -24,34 +24,33 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render;
 
-import javax.media.opengl.GL;
+public interface GroupPipe extends Pipe {
+    public Pipe[] groups();
+    public int[] gstates();
 
-public class EboState extends GLState {
-    public final GLBuffer buf;
-
-    public EboState(GLBuffer buf) {
-	this.buf = buf;
+    public default <T extends State> T get(State.Slot<T> slot) {
+	int[] gstates = gstates();
+	if(slot.id >= gstates.length)
+	    return(null);
+	return(groups()[gstates[slot.id]].get(slot));
     }
 
-    public void apply(BGL gl) {
-	gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, buf);
+    public default Pipe copy() {
+	return(new BufPipe(states()));
     }
 
-    public void unapply(BGL gl) {
-	gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, null);
+    public default State[] states() {
+	Pipe[] groups = groups();
+	int[] gstates = gstates();
+	State[] ret = new State[gstates.length];
+	for(int i = 0; i < ret.length; i++) {
+	    if(gstates[i] < 0)
+		ret[i] = null;
+	    else
+		ret[i] = groups[gstates[i]].get(State.Slot.slots.idlist[i]);
+	}
+	return(ret);
     }
-
-    public void applyto(BGL gl, GLState to) {
-	((EboState)to).apply(gl);
-    }
-
-    public static void apply(BGL gl, Applier st, GLBuffer buf) {
-	if((st.glstates[slot] == null) || (((EboState)st.glstates[slot]).buf != buf))
-	    st.apply(gl, new EboState(buf));
-    }
-
-    public static int slot = slotidx(EboState.class);
-    public int slotidx() {return(slot);}
 }

@@ -89,6 +89,14 @@ public interface Pipe {
 	    }
 	}
 
+	public static class Nil implements Op {
+	    public void apply(Pipe pipe) {}
+	    public boolean equals(Object o) {return(o instanceof Nil);}
+	    public int hashCode() {return(0x5c7a83dc);}
+	    public String toString() {return("#<nil>");}
+	}
+	public static final Op nil = new Nil();
+
 	public static Op compose(Op... ops) {
 	    return(new Composed(ops));
 	}

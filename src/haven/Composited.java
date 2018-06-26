@@ -271,7 +271,7 @@ public class Composited implements MapView.Clickable {
 		if(bone != null)
 		    bt = pose.bonetrans(bone.idx);
 	    }
-	    if(bt == null)
+	    if((bt == null) && !ed.at.equals(""))
 		throw(new RuntimeException("Transformation " + ed.at + " for equipment " + ed.res + " on skeleton " + skel + " could not be resolved"));
 	    if((ed.off.x != 0.0f) || (ed.off.y != 0.0f) || (ed.off.z != 0.0f))
 		this.et = GLState.compose(bt, Location.xlate(ed.off));

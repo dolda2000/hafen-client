@@ -33,18 +33,28 @@ public class Model implements Disposable {
     public final Mode mode;
     public final VertexArray va;
     public final Indices ind;
+    public final int f, n;
     public Disposable ro;
 
     public enum Mode {
 	POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_STRIP, TRIANGLE_FAN
     }
 
-    public Model(Mode mode, VertexArray va, Indices ind) {
+    public Model(Mode mode, VertexArray va, Indices ind, int f, int n) {
 	if((this.mode = mode) == null)
 	    throw(new NullPointerException());
 	if((this.va = va) == null)
 	    throw(new NullPointerException());
 	this.ind = ind;
+	this.f = f;
+	if(n >= 0)
+	    this.n = n;
+	else
+	    this.n = (ind == null) ? va.num() : ind.n;
+    }
+
+    public Model(Mode mode, VertexArray va, Indices ind) {
+	this(mode, va, ind, 0, -1);
     }
 
     public static class Indices implements DataBuffer, Disposable {

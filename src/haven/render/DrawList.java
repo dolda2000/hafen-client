@@ -24,36 +24,10 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render;
 
-import java.util.*;
+import haven.Disposable;
 
-public class Avatar extends GAttrib {
-    public List<Indir<Resource>> layers = null;
-    private List<Resource.Image> images = null;
-
-    public Avatar(Gob gob) {
-	super(gob);
-    }
-	
-    void setlayers(List<Indir<Resource>> layers) {
-	synchronized(this) {
-	    this.layers = layers;
-	    this.images = null;
-	}
-    }
-
-    public List<Resource.Image> images() {
-	synchronized(this) {
-	    if((images == null) && (layers != null)) {
-		List<Resource.Image> nimg = new ArrayList<>(layers.size());
-		for(Indir<Resource> res : layers) {
-		    nimg.add(res.get().layer(Resource.imgc));
-		}
-		Collections.sort(nimg);
-		images = nimg;
-	    }
-	    return(images);
-	}
-    }
+public interface DrawList extends RenderList<Rendered>, Disposable {
+    public void draw(Render out);
 }

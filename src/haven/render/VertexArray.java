@@ -32,17 +32,26 @@ import haven.Disposable;
 
 public class VertexArray implements Disposable {
     public final Layout fmt;
-    public final int n;
     public final Buffer[] bufs;
     public boolean shared = false;
     public Disposable ro;
 
-    public VertexArray(Layout fmt, int n, Buffer... bufs) {
+    public VertexArray(Layout fmt, Buffer... bufs) {
 	if(bufs.length != fmt.nbufs)
 	    throw(new IllegalArgumentException(String.format("Vertex layout requires %d buffers, only given %d", fmt.nbufs, bufs.length)));
 	this.fmt = fmt;
-	this.n = n;
 	this.bufs = bufs;
+    }
+
+    public int num() {
+	int ret = -1;
+	for(int i = 0; i < fmt.inputs.length; i++) {
+	    Layout.Input inp = fmt.inputs[i];
+	    int n = (bufs[inp.buf].size - inp.offset) / ((inp.stride != 0) ? inp.stride : inp.el.size());
+	    if((ret < 0) || (n < ret))
+		ret = n;
+	}
+	return(ret);
     }
 
     public static class Layout {
@@ -61,7 +70,16 @@ public class VertexArray implements Disposable {
 		if(!u)
 		    throw(new RuntimeException("Vertex buffers are not tightly packed"));
 	    }
-	    Arrays.sort(inputs, (a, b) -> a.buf - b.buf);
+	    Arrays.sort(inputs, (a, b) -> {
+		    int c;
+		    if((c = a.buf - b.buf) != 0)
+			return(c);
+		    if((c = a.stride - b.stride) != 0)
+			return(c);
+		    if((c = a.offset - b.offset) != 0)
+			return(c);
+		    return(0);
+		});
 	    this.inputs = inputs;
 	    this.nbufs = nb;
 	}
@@ -78,6 +96,43 @@ public class VertexArray implements Disposable {
 		this.offset = offset;
 		this.stride = stride;
 	    }
+
+	    public int hashCode() {
+		int ret = System.identityHashCode(tgt);
+		ret = (ret * 31) + el.hashCode();
+		ret = (ret * 31) + buf;
+		ret = (ret * 31) + offset;
+		ret = (ret * 31) + stride;
+		return(ret);
+	    }
+
+	    public boolean equals(Object o) {
+		if(!(o instanceof Input))
+		    return(false);
+		Input that = (Input)o;
+		return((this.buf == that.buf) && (this.offset == that.offset) && (this.stride == that.stride) &&
+		       (this.tgt == that.tgt) && this.el.equals(that.el));
+	    }
+	}
+
+	public int hashCode() {
+	    int ret = 0;
+	    for(Input in : inputs)
+		ret = (ret * 31) + in.hashCode();
+	    return(ret);
+	}
+
+	public boolean equals(Object o) {
+	    if(!(o instanceof Layout))
+		return(false);
+	    Layout that = (Layout)o;
+	    if(this.inputs.length != that.inputs.length)
+		return(false);
+	    for(int i = 0; i < this.inputs.length; i++) {
+		if(!this.inputs[i].equals(that.inputs[i]))
+		    return(false);
+	    }
+	    return(true);
 	}
     }
 
