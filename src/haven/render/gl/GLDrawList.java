@@ -392,6 +392,40 @@ public class GLDrawList implements DrawList {
 
 	abstract State.Slot[] depslots();
 
+	private int depmask_1 = -1;
+	private int[] depmask_v = null;
+	void ckupdate(int[] mask) {
+	    if((depmask_v == null) && (depmask_1 < 0)) {
+		State.Slot[] slots = depslots();
+		if(slots.length == 1) {
+		    depmask_1 = slots[0].id;
+		} else {
+		    int[] depmask = new int[slots.length];
+		    for(int i = 0; i < slots.length; i++)
+			depmask[i] = slots[i].id;
+		    depmask_v = depmask;
+		}
+	    }
+	    if(depmask_v == null) {
+		for(int i = 0; i < mask.length; i++) {
+		    if(mask[i] == depmask_1) {
+			update();
+			break;
+		    }
+		}
+	    } else {
+		int[] dmask = this.depmask_v;
+		for(int i = 0; i < mask.length; i++) {
+		    for(int o = 0; o < dmask.length; o++) {
+			if(mask[i] == dmask[o]) {
+			    update();
+			    break;
+			}
+		    }
+		}
+	    }
+	}
+
 	Pipe compstate() {
 	    if(key.depid_1 != null)
 		return(key.depid_1);
@@ -739,7 +773,17 @@ public class GLDrawList implements DrawList {
 	add(slot);
     }
 
-    public void update(Pipe group) {
+    public void update(Pipe group, int[] mask) {
+        Object reg = psettings.get(group);
+	if(reg == null) {
+	} else if(reg instanceof DepSetting) {
+	    ((DepSetting)reg).ckupdate(mask);
+	} else if(reg instanceof DepSetting[]) {
+	    for(DepSetting set : (DepSetting[])reg)
+		set.ckupdate(mask);
+	} else {
+	    throw(new RuntimeException());
+	}
     }
 
     public void dispose() {

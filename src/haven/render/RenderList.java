@@ -35,5 +35,5 @@ public interface RenderList<R> {
     public void add(Slot<R> slot);
     public void remove(Slot<R> slot);
     public void update(Slot<R> slot);
-    public void update(Pipe group);
+    public void update(Pipe group, int[] statemask);
 }

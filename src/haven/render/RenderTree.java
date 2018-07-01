@@ -64,8 +64,8 @@ public class RenderTree {
 		list.update((RenderList.Slot<R>)slot);
 	}
 
-	void updated(Pipe group) {
-	    list.update(group);
+	void updated(Pipe group, int[] mask) {
+	    list.update(group, mask);
 	}
     }
 
@@ -385,12 +385,13 @@ public class RenderTree {
 			}
 		    }
 		}
+		int[] tch = Arrays.copyOf(ch, nch);
 		for(Slot rdep : cdeps)
 		    rdep.rdepupd();
 		Pipe pdst = this.pdstate;
 		if(pdst != null) {
 		    synchronized(tree.clients) {
-			tree.clients.forEach(cl -> cl.updated(pdst));
+			tree.clients.forEach(cl -> cl.updated(pdst, tch));
 		    }
 		}
 	    } else {
