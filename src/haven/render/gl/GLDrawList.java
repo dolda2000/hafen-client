@@ -63,6 +63,12 @@ public class GLDrawList implements DrawList {
 		int c;
 		if((c = Rendered.Order.cmp.compare(a.gorder, b.gorder)) != 0)
 		    return(c);
+		if((c = ((System.identityHashCode(a.prog) & 0x7fffffff) - (System.identityHashCode(b.prog) & 0x7fffffff))) != 0)
+		    return(c);
+		if((c = ((System.identityHashCode(a.settings[idx_fbo]) & 0x7fffffff) - (System.identityHashCode(b.settings[idx_fbo]) & 0x7fffffff))) != 0)
+		    return(c);
+		if((c = ((System.identityHashCode(((VaoSetting)a.settings[idx_vao]).st) & 0x7fffffff) - (System.identityHashCode(((VaoSetting)b.settings[idx_vao]).st) & 0x7fffffff))) != 0)
+		    return(c);
 		return((a.sortid < b.sortid) ? -1 : 1);
 	    }
 	};
