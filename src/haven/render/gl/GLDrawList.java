@@ -41,6 +41,7 @@ public class GLDrawList implements DrawList {
     private final Map<SettingKey, DepSetting> settings = new HashMap<>();
     private final Map<Slot<Rendered>, DrawSlot> slotmap = new IdentityHashMap<>();
     private final Map<Pipe, Object> psettings = new IdentityHashMap<>();
+    private final Map<Pipe, Object> orderidx = new IdentityHashMap<>();
     private final GLDoubleBuffer settingbuf = new GLDoubleBuffer();
     private DrawSlot root = null;
 
@@ -59,6 +60,9 @@ public class GLDrawList implements DrawList {
 
     private static final Comparator<DrawSlot> order = new Comparator<DrawSlot>() {
 	    public int compare(DrawSlot a, DrawSlot b) {
+		int c;
+		if((c = Rendered.Order.cmp.compare(a.gorder, b.gorder)) != 0)
+		    return(c);
 		return((a.sortid < b.sortid) ? -1 : 1);
 	    }
 	};
@@ -211,6 +215,8 @@ public class GLDrawList implements DrawList {
 	final GLProgram prog;
 	final Setting[] settings;
 	BufferBGL compiled, main;
+	Rendered.Order gorder;
+	final Pipe ordersrc;
 	private volatile boolean disposed = false;
 
 	private GLProgram progfor(Slot<Rendered> sl) {
@@ -255,15 +261,75 @@ public class GLDrawList implements DrawList {
 	    }
 	}
 
+	@SuppressWarnings("unchecked")
+	private void orderreg() {
+	    Object cur = orderidx.get(ordersrc);
+	    if(cur == null) {
+		orderidx.put(ordersrc, this);
+	    } else if(cur instanceof DrawSlot) {
+		List<DrawSlot> nl = new ArrayList<>(2);
+		nl.add((DrawSlot)cur);
+		nl.add(this);
+		orderidx.put(ordersrc, nl);
+	    } else if(cur instanceof List) {
+		List<DrawSlot> ls = (List<DrawSlot>)cur;
+		ls.add(this);
+	    } else {
+		throw(new RuntimeException());
+	    }
+	}
+
+	@SuppressWarnings("unchecked")
+	private void orderunreg() {
+	    Object cur = orderidx.get(ordersrc);
+	    if(cur == null) {
+		throw(new RuntimeException());
+	    } else if(cur == this) {
+		orderidx.remove(ordersrc);
+	    } else if(cur instanceof List) {
+		List<DrawSlot> ls = (List<DrawSlot>)cur;
+		ls.remove(this);
+		if(ls.size() < 2)
+		    orderidx.put(ordersrc, ls.get(0));
+	    } else {
+		throw(new RuntimeException());
+	    }
+	}
+
+	void orderupdate() {
+	    Rendered.Order norder = ordersrc.get(Rendered.order);
+	    boolean fixed = false;
+	    if(Rendered.Order.cmp.compare(gorder, norder) == 0) {
+		gorder = norder;
+	    } else {
+		tremove();
+		gorder = norder;
+		tinsert();
+	    }
+	}
+
 	DrawSlot(Slot<Rendered> bk) {
+	    GroupPipe bst = bk.state();
 	    this.sortid = uniqid.getAndIncrement();
 	    this.bk = bk;
 	    this.prog = progfor(bk);
 	    this.prog.lock();
 	    this.settings = new Setting[idx_uni + prog.uniforms.length];
 	    getsettings();
+	    gorder = Rendered.deflt;
+	    {
+		int[] gst = bst.gstates();
+		if((gst.length <= Rendered.order.id) ||
+		   (gst[Rendered.order.id] < 0)) {
+		    ordersrc = null;
+		} else {
+		    ordersrc = bst.groups()[gst[Rendered.order.id]];
+		    gorder = ordersrc.get(Rendered.order);
+		    orderreg();
+		}
+	    }
 	    SlotRender g = new SlotRender(this);
-	    bk.obj().draw(bk.state(), g);
+	    bk.obj().draw(bst, g);
 	}
 
 	void insert() {
@@ -285,6 +351,8 @@ public class GLDrawList implements DrawList {
 	    if(disposed)
 		throw(new IllegalStateException());
 	    this.disposed = true;
+	    if(ordersrc != null)
+		orderunreg();
 	    for(int i = 0; i < settings.length; i++) {
 		if(settings[i] != null)
 		    settings[i].put();
@@ -384,7 +452,7 @@ public class GLDrawList implements DrawList {
 
     abstract class DepSetting extends Setting {
 	final SettingKey key;
-	int rc;
+	int rc = 0;
 
 	DepSetting(SettingKey key) {
 	    this.key = key;
@@ -773,6 +841,21 @@ public class GLDrawList implements DrawList {
 	add(slot);
     }
 
+    @SuppressWarnings("unchecked")
+    private void orderupdate(Pipe group) {
+	Object reg = orderidx.get(group);
+	if(reg == null) {
+	} else if(reg instanceof DrawSlot) {
+	    ((DrawSlot)reg).orderupdate();
+	} else if(reg instanceof List) {
+	    List<DrawSlot> ls = (List<DrawSlot>)reg;
+	    for(DrawSlot slot : ls)
+		slot.orderupdate();
+	} else {
+	    throw(new RuntimeException());
+	}
+    }
+
     public void update(Pipe group, int[] mask) {
         Object reg = psettings.get(group);
 	if(reg == null) {
@@ -783,6 +866,11 @@ public class GLDrawList implements DrawList {
 		set.ckupdate(mask);
 	} else {
 	    throw(new RuntimeException());
+	}
+
+	for(int i = 0; i < mask.length; i++) {
+	    if(mask[i] == Rendered.order.id)
+		orderupdate(group);
 	}
     }
 
