@@ -505,8 +505,48 @@ public class RenderTree {
     }
 
     public static interface Node {
-	public void added(Slot slot);
-	public void removed(Slot slot);
+	public default void added(Slot slot) {}
+	public default void removed(Slot slot) {}
+    }
+
+    public Iterable<Slot> slots() {
+	return(new Iterable<Slot>() {
+		public Iterator<Slot> iterator() {
+		    return(new Iterator<Slot>() {
+			    int[] cs = {0, 0, 0, 0, 0, 0, 0, 0};
+			    Slot[] ss = {root, null, null, null, null, null, null, null};
+			    int sp = 0;
+			    Slot next = root;
+
+			    public boolean hasNext() {
+				if(next != null)
+				    return(true);
+				if(sp < 0)
+				    return(false);
+				while(cs[sp] >= ss[sp].nchildren) {
+				    if(--sp < 0)
+					return(false);
+				}
+				next = ss[sp].children[cs[sp]++];
+				if(++sp >= ss.length) {
+				    ss = Arrays.copyOf(ss, ss.length * 2);
+				    cs = Arrays.copyOf(cs, cs.length * 2);
+				}
+				cs[sp] = 0;
+				ss[sp] = next;
+				return(true);
+			    }
+
+			    public Slot next() {
+				if(!hasNext())
+				    throw(new NoSuchElementException());
+				Slot ret = next;
+				next = null;
+				return(ret);
+			    }
+			});
+		}
+	    });
     }
 
     public Slot add(Node n, Pipe.Op state) {
