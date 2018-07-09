@@ -255,12 +255,11 @@ public class RenderTree {
 		throw(new IllegalStateException());
 	    if(children == null)
 		children = new Slot[1];
-	    else if(children.length <= nchildren + 1) {
+	    else if(children.length <= nchildren + 1)
 		children = Arrays.copyOf(children, children.length * 2);
-		int nidx = nchildren++;
-		children[nidx] = ch;
-		ch.pidx = nidx;
-	    }
+	    int nidx = nchildren++;
+	    children[nidx] = ch;
+	    ch.pidx = nidx;
 	}
 
 	private void removech(Slot ch) {
