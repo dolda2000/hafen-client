@@ -34,6 +34,7 @@ import haven.Surface.Vertex;
 public class CaveTile extends Tiler {
     public static final float h = 16;
     public final Material wtex;
+    public final Tiler ground;
 
     public static class Walls {
 	public final MapMesh m;
@@ -69,20 +70,26 @@ public class CaveTile extends Tiler {
     public static class Factory implements Tiler.Factory {
 	public Tiler create(int id, Tileset set) {
 	    Material wtex = null;
+	    Tiler ground = null;
 	    for(Object rdesc : set.ta) {
 		Object[] desc = (Object[])rdesc;
 		String p = (String)desc[0];
 		if(p.equals("wmat")) {
 		    wtex = set.getres().layer(Material.Res.class, (Integer)desc[1]).get();
+		} else if(p.equals("gnd")) {
+		    Resource gres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
+		    Tileset ts = gres.layer(Tileset.class);
+		    ground = ts.tfac().create(id, ts);
 		}
 	    }
-	    return(new CaveTile(id, set, wtex));
+	    return(new CaveTile(id, set, wtex, ground));
 	}
     }
 
-    public CaveTile(int id, Tileset set, Material wtex) {
+    public CaveTile(int id, Tileset set, Material wtex, Tiler ground) {
 	super(id);
 	this.wtex = wtex;
+	this.ground = ground;
     }
 
     private static final Coord[] tces = {new Coord(0, -1), new Coord(1, 0), new Coord(0, 1), new Coord(-1, 0)};
@@ -135,6 +142,8 @@ public class CaveTile extends Tiler {
 	    if(w == null) w = m.data(walls);
 	    mkwall(m, w, lc.add(tccs[(i + 1) % 4]), lc.add(tccs[i]));
 	}
+	if(ground != null)
+	    ground.lay(m, rnd, lc, gc);
     }
 
     public void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask) {}
