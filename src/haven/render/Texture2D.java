@@ -52,6 +52,10 @@ public class Texture2D extends Texture {
 	this(dim, usage, ifmt, ifmt, init);
     }
 
+    public Coord sz() {
+	return(new Coord(w, h));
+    }
+
     public Image<Texture2D> image(int level) {
 	if((level < 0) || (level >= 32))
 	    throw(new IllegalArgumentException(Integer.toString(level)));
