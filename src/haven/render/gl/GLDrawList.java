@@ -809,7 +809,7 @@ public class GLDrawList implements DrawList {
 	if(!(r instanceof GLRender))
 	    throw(new IllegalArgumentException());
 	GLRender g = (GLRender)r;
-	if(g.env != this.env)
+	if(!compatible(g.env))
 	    throw(new IllegalArgumentException());
 	try {
 	    settingbuf.get();
@@ -878,6 +878,10 @@ public class GLDrawList implements DrawList {
 	    if(mask[i] == Rendered.order.id)
 		orderupdate(group);
 	}
+    }
+
+    public boolean compatible(Environment env) {
+	return(env == this.env);
     }
 
     public void dispose() {

@@ -29,4 +29,5 @@ package haven.render;
 public interface Environment {
     public Render render();
     public FillBuffer fillbuf(DataBuffer target);
+    public DrawList drawlist();
 }
