@@ -57,4 +57,13 @@ public class FragColor extends State {
     }
 
     public void apply(Pipe p) {p.put(slot, this);}
+
+    public int hashCode() {
+	return(System.identityHashCode(image));
+    }
+
+    public boolean equals(Object o) {
+	return((o instanceof FragColor) &&
+	       (((FragColor)o).image == this.image));
+    }
 }

@@ -39,4 +39,13 @@ public class DepthBuffer extends State {
 
     public ShaderMacro shader() {return(null);}
     public void apply(Pipe p) {p.put(slot, this);}
+
+    public int hashCode() {
+	return(System.identityHashCode(image));
+    }
+
+    public boolean equals(Object o) {
+	return((o instanceof DepthBuffer) &&
+	       (((DepthBuffer)o).image == this.image));
+    }
 }
