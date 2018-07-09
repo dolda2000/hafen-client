@@ -284,7 +284,8 @@ public class RenderTree {
 	    Slot ch = new Slot(tree, this, n);
 	    ch.cstate = state;
 	    addch(ch);
-	    n.added(ch);
+	    if(n != null)
+		n.added(ch);
 	    synchronized(tree.clients) {
 		tree.clients.forEach(cl -> cl.added(this));
 	    }
@@ -293,6 +294,8 @@ public class RenderTree {
 
 	public void remove() {
 	    parent.removech(this);
+	    if(node != null)
+		node.removed(this);
 	    synchronized(tree.clients) {
 		tree.clients.forEach(cl -> cl.removed(this));
 	    }
