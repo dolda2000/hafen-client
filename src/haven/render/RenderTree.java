@@ -465,7 +465,8 @@ public class RenderTree {
 			    istates[i] = pdstate();
 			    f = true;
 			} else if(i < pi.gstates.length) {
-			    istates[i] = pi.groups[pi.gstates[i]];
+			    if(pi.gstates[i] >= 0)
+				istates[i] = pi.groups[pi.gstates[i]];
 			}
 		    }
 		    if(f) {

@@ -418,6 +418,10 @@ public class GLDrawList implements DrawList {
 	}
     }
 
+    private static Pipe nidx(Pipe[] arr, int idx) {
+	return((idx < 0) ? Pipe.nil : arr[idx]);
+    }
+
     static Pipe[] makedepid(GroupPipe state, Collection<State.Slot<?>> deps) {
 	Iterator<State.Slot<?>> it = deps.iterator();
 	if(!it.hasNext())
@@ -431,15 +435,15 @@ public class GLDrawList implements DrawList {
 	    if(gids[cid] != one) {
 		Pipe[] ret = new Pipe[deps.size()];
 		for(int i = 0; i < ni; i++)
-		    ret[i] = grp[one];
-		ret[ni++] = grp[gids[cid]];
+		    ret[i] = nidx(grp, one);
+		ret[ni++] = nidx(grp, gids[cid]);
 		while(it.hasNext())
-		    ret[ni++] = grp[gids[it.next().id]];
+		    ret[ni++] = nidx(grp, gids[it.next().id]);
 		return(ret);
 	    }
 	    ni++;
 	}
-	return(new Pipe[] {grp[one]});
+	return(new Pipe[] {nidx(grp, one)});
     }
 
     abstract class Setting {
@@ -501,7 +505,7 @@ public class GLDrawList implements DrawList {
 	}
 
 	Pipe compstate() {
-	    if(key.depid_1 != null)
+	    if(key.depid_v == null)
 		return(key.depid_1);
 	    State.Slot[] depslots = depslots();
 	    return(new Pipe() {
@@ -570,7 +574,7 @@ public class GLDrawList implements DrawList {
 
     private void delsetting(DepSetting set) {
 	settings.remove(set.key);
-	if(set.key.depid_v == null) {
+	if(set.key.depid_v != null) {
 	    for(Pipe dp : set.key.depid_v)
 		delsettingp(set, dp);
 	} else if(set.key.depid_1 != null) {
@@ -611,7 +615,7 @@ public class GLDrawList implements DrawList {
 
     private void addsetting(DepSetting set) {
 	settings.put(set.key, set);
-	if(set.key.depid_v == null) {
+	if(set.key.depid_v != null) {
 	    for(Pipe dp : set.key.depid_v)
 		addsettingp(set, dp);
 	} else if(set.key.depid_1 != null) {
@@ -644,7 +648,8 @@ public class GLDrawList implements DrawList {
 
 	void compile(BGL gl) {
 	    Pipe pipe = compstate();
-	    Object depth = env.prepfval(pipe.get(DepthBuffer.slot));
+	    DepthBuffer dbuf = pipe.get(DepthBuffer.slot);
+	    Object depth = env.prepfval((dbuf != null) ? dbuf.image : null);
 	    Object[] fvals = new Object[prog.fragdata.length];
 	    for(int i = 0; i < fvals.length; i++)
 		fvals[i] = env.prepfval(prog.fragdata[i].value.apply(pipe));
