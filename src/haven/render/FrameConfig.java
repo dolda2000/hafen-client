@@ -24,40 +24,25 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render;
 
-import java.util.*;
-import haven.render.*;
-import haven.render.Rendered;
+import haven.*;
+import haven.render.sl.ShaderMacro;
 
-public class TestView extends PView {
-    public TestView(Coord sz) {
-	super(sz);
-	basic.add(new Quad(), null);
+public class FrameConfig extends State {
+    public static final Slot<FrameConfig> slot = new Slot<>(Slot.Type.SYS, FrameConfig.class);
+    public final Coord sz;
+    public final int samples;
+
+    public FrameConfig(Coord sz, int samples) {
+	this.sz = sz;
+	this.samples = samples;
     }
 
-    public static class Quad implements Rendered, RenderTree.Node {
-	public static final Model data;
-
-	static {
-	    float[] vert = {
-		75, 25, 1, 0, 0, 1,
-		75, 75, 0, 1, 0, 1,
-		25, 25, 0, 0, 1, 1,
-		25, 75, 1, 0, 0.5f, 1,
-	    };
-	    VertexArray.Layout fmt = new VertexArray.Layout(new VertexArray.Layout.Input(Ortho2D.pos, new VectorFormat(2, NumberFormat.FLOAT32), 0, 0, 24),
-							    new VertexArray.Layout.Input(VertexColor.color, new VectorFormat(4, NumberFormat.FLOAT32), 0, 8, 24));
-	    VertexArray vao = new VertexArray(fmt, new VertexArray.Buffer(vert.length * 4, DataBuffer.Usage.STATIC, DataBuffer.Filler.of(vert)));
-	    data = new Model(Model.Mode.TRIANGLE_STRIP, vao, null, 0, 4);
-	}
-
-	public void draw(Pipe state, Render out) {
-	    out.draw(state, data);
-	}
-
-	public void added(RenderTree.Slot slot) {
-	    slot.ostate(new VertexColor());
-	}
+    public FrameConfig(Coord sz) {
+	this(sz, 1);
     }
+
+    public ShaderMacro shader() {return(null);}
+    public void apply(Pipe p) {p.put(slot, this);}
 }

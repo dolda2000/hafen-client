@@ -13,7 +13,6 @@ haven/Rendered.java
 haven/FRendered.java
 haven/ShadowMap.java
 haven/Outlines.java
-haven/PView.java
 haven/Transform.java
 haven/Location.java
 haven/States.java
@@ -94,7 +93,6 @@ haven/glsl/Walker.java
 haven/glsl/MiscLib.java
 haven/PointedCam.java
 haven/RenderedNormals.java
-haven/TestView.java
 haven/resutil/AlphaTex.java
 haven/resutil/BumpMap.java
 haven/resutil/EnvMap.java

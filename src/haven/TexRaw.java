@@ -26,38 +26,37 @@
 
 package haven;
 
-import java.util.*;
 import haven.render.*;
-import haven.render.Rendered;
+import haven.render.Texture2D.Sampler2D;
 
-public class TestView extends PView {
-    public TestView(Coord sz) {
-	super(sz);
-	basic.add(new Quad(), null);
+public class TexRaw implements Tex {
+    public final Sampler2D back;
+    private final ColorTex st;
+
+    public TexRaw(Sampler2D back) {
+	this.back = back;
+	this.st = new ColorTex(back);
     }
 
-    public static class Quad implements Rendered, RenderTree.Node {
-	public static final Model data;
+    public Coord sz() {return(back.tex.sz());}
 
-	static {
-	    float[] vert = {
-		75, 25, 1, 0, 0, 1,
-		75, 75, 0, 1, 0, 1,
-		25, 25, 0, 0, 1, 1,
-		25, 75, 1, 0, 0.5f, 1,
-	    };
-	    VertexArray.Layout fmt = new VertexArray.Layout(new VertexArray.Layout.Input(Ortho2D.pos, new VectorFormat(2, NumberFormat.FLOAT32), 0, 0, 24),
-							    new VertexArray.Layout.Input(VertexColor.color, new VectorFormat(4, NumberFormat.FLOAT32), 0, 8, 24));
-	    VertexArray vao = new VertexArray(fmt, new VertexArray.Buffer(vert.length * 4, DataBuffer.Usage.STATIC, DataBuffer.Filler.of(vert)));
-	    data = new Model(Model.Mode.TRIANGLE_STRIP, vao, null, 0, 4);
-	}
+    public void render(GOut g, Coord dul, Coord dbr, Coord tul, Coord tbr) {
+	Coord tdim = sz();
+	float tl = (float)tul.x / (float)tdim.x;
+	float tu = (float)tul.y / (float)tdim.y;
+	float tr = (float)tbr.x / (float)tdim.x;
+	float tb = (float)tbr.y / (float)tdim.y;
+	float[] data = {
+	    dbr.x, dul.y, tr, tu,
+	    dbr.x, dbr.y, tr, tb,
+	    dul.x, dul.y, tl, tu,
+	    dul.x, dbr.y, tl, tb,
+	};
+	g.usestate(st);
+	g.drawt(Model.Mode.TRIANGLE_STRIP, data);
+	g.usestate(ColorTex.slot);
+    }
 
-	public void draw(Pipe state, Render out) {
-	    out.draw(state, data);
-	}
-
-	public void added(RenderTree.Slot slot) {
-	    slot.ostate(new VertexColor());
-	}
+    public void dispose() {
     }
 }
