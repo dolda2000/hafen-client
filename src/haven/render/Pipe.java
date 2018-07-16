@@ -134,4 +134,11 @@ public interface Pipe {
 	}
 	return(true);
     }
+
+    public static class Nil implements Pipe {
+	public <T extends State> T get(Slot<T> slot) {return(null);}
+	public Pipe copy() {return(this);}
+	public State[] states() {return(new State[0]);}
+    }
+    public static final Pipe nil = new Nil();
 }
