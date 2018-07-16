@@ -35,7 +35,7 @@ import haven.render.*;
 import haven.render.sl.*;
 
 public class GLProgram implements Disposable {
-    public static boolean dumpall = true;
+    public static boolean dumpall = false;
     public final GLEnvironment env;
     public final String vsrc, fsrc;
     public final Uniform[] uniforms;
