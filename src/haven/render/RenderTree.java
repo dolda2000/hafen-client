@@ -565,4 +565,14 @@ public class RenderTree {
 	    clients.removeIf(cl -> cl.list == list);
 	}
     }
+
+    private void dump(Slot slot, int ind) {
+	for(int i = 0; i < ind; i++)
+	    System.err.print("    ");
+	System.err.printf("%s(%d)\n", slot, slot.nchildren);
+	for(int i = 0; i < slot.nchildren; i++)
+	    dump(slot.children[i], ind + 1);
+    }
+
+    public void dump() {dump(root, 0);}
 }
