@@ -120,6 +120,13 @@ public interface UniformApplier<T> {
 		    gl.glUniform4f(prog.uniform(var), col.r, col.g, col.b, col.a);
 		});
 
+	    TypeMapping.register(Type.MAT4, float[].class, (gl, prog, var, mat) -> {
+		    gl.glUniformMatrix4fv(prog.uniform(var), 1, false, mat, 0);
+		});
+	    TypeMapping.register(Type.MAT4, Matrix4f.class, (gl, prog, var, mat) -> {
+		    gl.glUniformMatrix4fv(prog.uniform(var), 1, false, mat.m, 0);
+		});
+
 	    TypeMapping.register(Type.SAMPLER2D, GLTexture.Tex2D.class, (gl, prog, var, smp) -> {
 		    gl.glActiveTexture(GL.GL_TEXTURE0 + prog.samplerids.get(var));
 		    smp.bind(gl);
