@@ -379,7 +379,7 @@ public class RenderTree {
 		for(int i = 0; i < maxi; i++) {
 		    if(pst.def[i] && !eq(pst.states[i], nst.states[i])) {
 			ch[nch++] = i;
-			if(rdeps[i] != null) {
+			if((rdeps != null) && (rdeps[i] != null)) {
 			    for(Slot rdep : rdeps[i]) {
 				if(!cdeps.contains(rdep))
 				    cdeps.add(rdep);
