@@ -37,10 +37,23 @@ public class Homo3D {
     public static final Slot<Camera> cam = new Slot<>(Slot.Type.SYS, Camera.class);
     public static final Slot<Location.Chain> loc = new Slot<>(Slot.Type.GEOM, Location.Chain.class);
     public static final Attribute vertex = new Attribute(VEC3, "vertex");
-    private static final Uniform u_prj = new Uniform(MAT4, "proj", p -> p.get(prj).fin(Matrix4f.id));
-    private static final Uniform u_cam = new Uniform(MAT4, "cam", p -> p.get(cam).fin(Matrix4f.id));
-    private static final Uniform u_wxf = new Uniform(MAT4, "wxf", p -> p.get(loc).fin(Matrix4f.id));
+    private static final Uniform u_prj = new Uniform(MAT4, "proj", Homo3D::prjxf, prj);
+    private static final Uniform u_cam = new Uniform(MAT4, "cam", Homo3D::camxf, cam);
+    private static final Uniform u_wxf = new Uniform(MAT4, "wxf", Homo3D::locxf, loc);
     public final ValBlock.Value objv, mapv, eyev;
+
+    public static Matrix4f prjxf(Pipe p) {
+	Projection prj_s = p.get(prj);
+	return((prj_s == null) ? Matrix4f.id : prj_s.fin(Matrix4f.id));
+    }
+    public static Matrix4f camxf(Pipe p) {
+	Camera cam_s = p.get(cam);
+	return((cam_s == null) ? Matrix4f.id : cam_s.fin(Matrix4f.id));
+    }
+    public static Matrix4f locxf(Pipe p) {
+	Location.Chain loc_s = p.get(loc);
+	return((loc_s == null) ? Matrix4f.id : loc_s.fin(Matrix4f.id));
+    }
 
     public Homo3D(ProgramContext prog) {
 	prog.module(this);
