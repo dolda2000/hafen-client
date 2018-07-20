@@ -80,7 +80,37 @@ public abstract class States {
 	public void apply(Pipe p) {p.put(scissor, this);}
     }
 
-    public static final StandAlone depthtest = new StandAlone(Slot.Type.GEOM) {};
+    public static final Slot<Depthtest> depthtest = new Slot<Depthtest>(Slot.Type.GEOM, Depthtest.class);
+    public static class Depthtest extends Builtin {
+	public final Test test;
+
+	public enum Test {
+	    FALSE, TRUE, EQ, NEQ,
+	    LT, GT, LE, GE,
+	}
+
+	public Depthtest(Test test) {
+	    if((this.test = test) == null)
+		throw(new NullPointerException());
+	}
+
+	public Depthtest() {
+	    this(Test.LT);
+	}
+
+	public int hashCode() {
+	    return(test.hashCode());
+	}
+
+	public boolean equals(Object o) {
+	    if(!(o instanceof Depthtest))
+		return(false);
+	    return(this.test == ((Depthtest)o).test);
+	}
+
+	public void apply(Pipe p) {p.put(depthtest, this);}
+    }
+
     public static final StandAlone maskdepth = new StandAlone(Slot.Type.GEOM) {};
 
     public static final Slot<Blending> blend = new Slot<Blending>(Slot.Type.SYS, Blending.class);

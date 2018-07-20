@@ -65,12 +65,28 @@ public abstract class GLPipeState<T extends State> {
 	    }
 	};
 
-    public static final GLPipeState<State> depthtest = new GLPipeState<State>(States.depthtest.slot) {
-	    public void apply(BGL gl, State from, State to) {
-		if(to != null)
+    public static final GLPipeState<Depthtest> depthtest = new GLPipeState<Depthtest>(States.depthtest) {
+	    private int depthfunc(Depthtest.Test test) {
+		switch(test) {
+		    case FALSE: return(GL.GL_NEVER);
+		    case TRUE:  return(GL.GL_ALWAYS);
+		    case EQ:    return(GL.GL_EQUAL);
+		    case NEQ:   return(GL.GL_NOTEQUAL);
+		    case LT:    return(GL.GL_LESS);
+		    case LE:    return(GL.GL_LEQUAL);
+		    case GT:    return(GL.GL_GREATER);
+		    case GE:    return(GL.GL_GEQUAL);
+		    default:    throw(new IllegalArgumentException(String.format("depth test: %s", test)));
+		}
+	    }
+
+	    public void apply(BGL gl, Depthtest from, Depthtest to) {
+		if(to != null) {
 		    gl.glEnable(GL.GL_DEPTH_TEST);
-		else
+		    gl.glDepthFunc(depthfunc(to.test));
+		} else {
 		    gl.glDisable(GL.GL_DEPTH_TEST);
+		}
 	    }
 	};
 
