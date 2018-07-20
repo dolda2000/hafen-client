@@ -65,6 +65,26 @@ public abstract class GLPipeState<T extends State> {
 	    }
 	};
 
+    public static final GLPipeState<Facecull> facecull = new GLPipeState<Facecull>(States.facecull) {
+	    private int mode(Facecull.Mode mode) {
+		switch(mode) {
+		    case FRONT: return(GL.GL_FRONT);
+		    case BACK:  return(GL.GL_BACK);
+		    case BOTH:  return(GL.GL_FRONT_AND_BACK);
+		    default:    throw(new IllegalArgumentException(String.format("cull face: %s", mode)));
+		}
+	    }
+
+	    public void apply(BGL gl, Facecull from, Facecull to) {
+		if(to != null) {
+		    gl.glEnable(GL.GL_CULL_FACE);
+		    gl.glCullFace(mode(to.mode));
+		} else {
+		    gl.glDisable(GL.GL_CULL_FACE);
+		}
+	    }
+	};
+
     public static final GLPipeState<Depthtest> depthtest = new GLPipeState<Depthtest>(States.depthtest) {
 	    private int depthfunc(Depthtest.Test test) {
 		switch(test) {
@@ -163,7 +183,7 @@ public abstract class GLPipeState<T extends State> {
 	    }
 	};
 
-    public static final GLPipeState<?>[] all = {viewport, scissor, depthtest, maskdepth, blending, linewidth};
+    public static final GLPipeState<?>[] all = {viewport, scissor, facecull, depthtest, maskdepth, blending, linewidth};
     public static final GLPipeState<?>[] matching;
     static {
 	int max = all[0].slot.id;

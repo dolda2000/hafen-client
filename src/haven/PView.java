@@ -120,6 +120,8 @@ public abstract class PView extends Widget {
 		p.prep(new States.Viewport(area));
 		p.prep(Homo3D.state);
 	    });
-	basic(id_misc, Pipe.Op.compose(new States.Blending(), new States.Depthtest(States.Depthtest.Test.LE)));
+	basic(id_misc, Pipe.Op.compose(new States.Blending(),
+				       new States.Depthtest(States.Depthtest.Test.LE),
+				       new States.Facecull()));
     }
 }

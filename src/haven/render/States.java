@@ -80,6 +80,37 @@ public abstract class States {
 	public void apply(Pipe p) {p.put(scissor, this);}
     }
 
+    public static final Slot<Facecull> facecull = new Slot<Facecull>(Slot.Type.GEOM, Facecull.class);
+    public static class Facecull extends Builtin {
+	public final Mode mode;
+
+	public enum Mode {
+	    FRONT, BACK, BOTH,
+	}
+
+	public Facecull(Mode mode) {
+	    if((this.mode = mode) == null)
+		throw(new NullPointerException());
+	}
+
+	public Facecull() {
+	    this(Mode.BACK);
+	}
+
+	public int hashCode() {
+	    return(mode.hashCode());
+	}
+
+	public boolean equals(Object o) {
+	    if(!(o instanceof Facecull))
+		return(false);
+	    return(this.mode == ((Facecull)o).mode);
+	}
+
+	public void apply(Pipe p) {p.put(facecull, this);}
+    }
+
+
     public static final Slot<Depthtest> depthtest = new Slot<Depthtest>(Slot.Type.GEOM, Depthtest.class);
     public static class Depthtest extends Builtin {
 	public final Test test;
