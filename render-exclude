@@ -20,8 +20,6 @@ haven/MorphedMesh.java
 haven/PoseMorph.java
 haven/Camera.java
 haven/Projection.java
-haven/FastMesh.java
-haven/VertexBuf.java
 haven/CloudShadow.java
 haven/DirCam.java
 haven/FBView.java

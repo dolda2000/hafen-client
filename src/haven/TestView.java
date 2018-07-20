@@ -29,11 +29,19 @@ package haven;
 import java.util.*;
 import haven.render.*;
 import haven.render.Rendered;
+import haven.render.Transform;
+import haven.render.Projection;
+import haven.render.Camera;
+import haven.render.Location;
 
 public class TestView extends PView {
+    static final FastMesh barda = Resource.remote().loadwait("gfx/test/borka").layer(FastMesh.MeshRes.class).m;
+    float dist = 15, e = (float)Math.PI * 3 / 2, a = (float)Math.PI / 2;
+
     public TestView(Coord sz) {
 	super(sz);
-	basic.add(new Quad(), null);
+	setcam();
+	basic.add(barda, new Location(Matrix4f.id));
     }
 
     public static class Quad implements Rendered, RenderTree.Node {
@@ -60,4 +68,35 @@ public class TestView extends PView {
 	    slot.ostate(new VertexColor());
 	}
     }
+
+    private void setcam() {
+	Coord3f base = Coord3f.o;
+	Matrix4f cam = Transform.makexlate(new Matrix4f(), new Coord3f(0.0f, 0.0f, -dist))
+	    .mul1(Transform.makerot(new Matrix4f(), new Coord3f(-1.0f, 0.0f, 0.0f), ((float)Math.PI / 2.0f) - e))
+	    .mul1(Transform.makerot(new Matrix4f(), new Coord3f(0.0f, 0.0f, -1.0f), ((float)Math.PI / 2.0f) + a))
+	    .mul1(Transform.makexlate(new Matrix4f(), base.inv()));
+	float field = 0.5f;
+	float aspect = ((float)sz.y) / ((float)sz.x);
+	basic(Camera.class, Pipe.Op.compose(new Camera(cam),
+					    Projection.frustum(-field, field, -aspect * field, aspect * field, 1, 5000)));
+    }
+
+    public void mousemove(Coord c) {
+	if(c.x < 0 || c.x >= sz.x || c.y < 0 || c.y >= sz.y)
+	    return;
+	this.e = (float)Math.PI * 2 * ((float)c.y / (float)sz.y);
+	this.a = (float)Math.PI * 2 * ((float)c.x / (float)sz.x);
+	setcam();
+    }
+
+    public boolean mousewheel(Coord c, int amount) {
+	float d = this.dist + (amount * 5);
+	if(d < 5)
+	    d = 5;
+	this.dist = d;
+	setcam();
+	return(true);
+    }
+
+    protected FColor clearcolor() {return(FColor.RED);}
 }

@@ -118,7 +118,7 @@ public abstract class PView extends Widget {
 		FrameConfig fb = p.get(FrameConfig.slot);
 		Area area = Area.sized(Coord.z, fb.sz);
 		p.prep(new States.Viewport(area));
-		p.prep(new Ortho2D(0, 0, 100, 100));
+		p.prep(Homo3D.state);
 	    });
 	basic(id_misc, Pipe.Op.compose(new States.Blending()));
     }
