@@ -113,6 +113,10 @@ public class VertexArray implements Disposable {
 		return((this.buf == that.buf) && (this.offset == that.offset) && (this.stride == that.stride) &&
 		       (this.tgt == that.tgt) && this.el.equals(that.el));
 	    }
+
+	    public String toString() {
+		return(String.format("#<input %s(%s = %sx%s) %d(%d@%d)>", tgt.name, tgt.type, el.cf, el.nc, buf, stride, offset));
+	    }
 	}
 
 	public int hashCode() {
@@ -133,6 +137,10 @@ public class VertexArray implements Disposable {
 		    return(false);
 	    }
 	    return(true);
+	}
+
+	public String toString() {
+	    return(Arrays.asList(inputs).toString());
 	}
     }
 
