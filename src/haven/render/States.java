@@ -50,7 +50,7 @@ public abstract class States {
 
     public static final Slot<State> vxf = new Slot<State>(Slot.Type.SYS, State.class);
 
-    public static Slot<Viewport> viewport = new Slot<Viewport>(Slot.Type.SYS, Viewport.class);
+    public static final Slot<Viewport> viewport = new Slot<Viewport>(Slot.Type.SYS, Viewport.class);
     public static class Viewport extends Builtin {
 	public final Area area;
 
@@ -65,7 +65,7 @@ public abstract class States {
 	public void apply(Pipe p) {p.put(viewport, this);}
     }
 
-    public static Slot<Scissor> scissor = new Slot<Scissor>(Slot.Type.SYS, Scissor.class);
+    public static final Slot<Scissor> scissor = new Slot<Scissor>(Slot.Type.SYS, Scissor.class);
     public static class Scissor extends Builtin {
 	public final Area area;
 
@@ -83,7 +83,7 @@ public abstract class States {
     public static final StandAlone depthtest = new StandAlone(Slot.Type.GEOM) {};
     public static final StandAlone maskdepth = new StandAlone(Slot.Type.GEOM) {};
 
-    public static Slot<Blending> blend = new Slot<Blending>(Slot.Type.SYS, Blending.class);
+    public static final Slot<Blending> blend = new Slot<Blending>(Slot.Type.SYS, Blending.class);
     public static class Blending extends Builtin {
 	public final Function cfn, afn;
 	public final Factor csrc, cdst, asrc, adst;
@@ -137,7 +137,7 @@ public abstract class States {
 	public void apply(Pipe p) {p.put(blend, this);}
     }
 
-    public static Slot<LineWidth> linewidth = new Slot<LineWidth>(Slot.Type.GEOM, LineWidth.class);
+    public static final Slot<LineWidth> linewidth = new Slot<LineWidth>(Slot.Type.GEOM, LineWidth.class);
     public static class LineWidth extends Builtin {
 	public final float w;
 
