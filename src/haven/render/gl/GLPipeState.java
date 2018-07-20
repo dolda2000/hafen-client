@@ -183,7 +183,20 @@ public abstract class GLPipeState<T extends State> {
 	    }
 	};
 
-    public static final GLPipeState<?>[] all = {viewport, scissor, facecull, depthtest, maskdepth, blending, linewidth};
+    public static final GLPipeState<DepthBias> depthbias = new GLPipeState<DepthBias>(States.depthbias) {
+	    public void apply(BGL gl, DepthBias from, DepthBias to) {
+		if(to != null) {
+		    if(from == null)
+			gl.glEnable(GL.GL_POLYGON_OFFSET_FILL);
+		    if(!eq(from, to))
+			gl.glPolygonOffset(to.factor, to.units);
+		} else {
+		    gl.glDisable(GL.GL_POLYGON_OFFSET_FILL);
+		}
+	    }
+	};
+
+    public static final GLPipeState<?>[] all = {viewport, scissor, facecull, depthtest, maskdepth, blending, linewidth, depthbias};
     public static final GLPipeState<?>[] matching;
     static {
 	int max = all[0].slot.id;

@@ -214,4 +214,23 @@ public abstract class States {
 
 	public void apply(Pipe p) {p.put(linewidth, this);}
     }
+
+    public static final Slot<DepthBias> depthbias = new Slot<DepthBias>(Slot.Type.GEOM, DepthBias.class);
+    public static class DepthBias extends Builtin {
+	public final float factor, units;
+
+	public DepthBias(float factor, float units) {
+	    this.factor = factor;
+	    this.units = units;
+	}
+
+	public boolean equals(Object o) {
+	    if(!(o instanceof DepthBias))
+		return(false);
+	    DepthBias that = (DepthBias)o;
+	    return((this.factor == that.factor) && (this.units == that.units));
+	}
+
+	public void apply(Pipe p) {p.put(depthbias, this);}
+    }
 }
