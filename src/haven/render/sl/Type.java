@@ -69,4 +69,5 @@ public abstract class Type {
     public static final Type SAMPLERBUFFER = new Sampler("samplerBuffer");
 
     public abstract String name(Context ctx);
+    public void use(Context ctx) {}
 }
