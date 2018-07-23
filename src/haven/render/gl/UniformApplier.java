@@ -103,6 +103,10 @@ public interface UniformApplier<T> {
 		    gl.glUniform1f(var, n);
 		});
 
+	    TypeMapping.register(Type.INT, Integer.class, (gl, var, n) -> {
+		    gl.glUniform1i(var, n);
+		});
+
 	    TypeMapping.register(Type.VEC2, float[].class, (gl, var, a) -> {
 		    gl.glUniform2f(var, a[0], a[1]);
 		});
