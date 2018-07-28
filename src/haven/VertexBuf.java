@@ -208,7 +208,7 @@ public class VertexBuf {
     @ResName("nrm2")
     public static class NormalData extends FloatData /* XXXRENDER implements MorphedMesh.MorphArray */ {
 	public NormalData(FloatBuffer data) {
-	    super(dummy, 3, data);
+	    super(Homo3D.normal, 3, data);
 	}
 
 	public NormalData(Resource res, Message buf, int nv) {
