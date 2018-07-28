@@ -30,6 +30,14 @@ public interface RenderList<R> {
     public interface Slot<R> {
 	public GroupPipe state();
 	public R obj();
+
+	@SuppressWarnings("unchecked")
+	public default <T> Slot<T> cast(Class<T> cl) {
+	    Object obj = obj();
+	    if((obj != null) && !cl.isInstance(obj()))
+		throw(new ClassCastException(obj.getClass().toString() + " => " + cl.toString()));
+	    return((Slot<T>)this);
+	}
     }
 
     public void add(Slot<R> slot);
