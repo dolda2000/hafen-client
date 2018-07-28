@@ -34,6 +34,19 @@ import haven.render.sl.*;
 import haven.render.gl.GLProgram.ProgOb.UniformID;
 
 public interface UniformApplier<T> {
+    public static class NoMappingException extends RuntimeException {
+	public final String varnm;
+	public final Type vartype;
+	public final Class<?> valtype;
+
+	public NoMappingException(String varnm, Type vartype, Class<?> valtype) {
+	    super(String.format("no uniform type mapping for %s -> %s: %s", valtype, vartype, varnm));
+	    this.varnm = varnm;
+	    this.vartype = vartype;
+	    this.valtype = valtype;
+	}
+    }
+
     public static class TypeMapping {
 	private static final Map<Type, TypeMapping> mappings = new HashMap<>();
 	private final Map<Class<?>, UniformApplier<?>> reg = new HashMap<>();
@@ -79,18 +92,26 @@ public interface UniformApplier<T> {
 	    if(type instanceof Array) {
 		Object[] sval = (Object[])val;
 		Array ary = (Array)type;
-		for(int i = 0; i < ary.sz; i++)
-		    apply(gl, ary.el, var.sub[i], sval[i]);
+		/* XXX? Somewhat unclear if it should be considered
+		 * okay to leave previous values unchanged, especially
+		 * for samplers. */
+		for(int i = 0; (i < ary.sz) && (i < sval.length); i++) {
+		    if(sval[i] != null)
+			apply(gl, ary.el, var.sub[i], sval[i]);
+		}
 	    } else if(type instanceof Struct) {
 		Object[] sval = (Object[])val;
 		Struct struct = (Struct)type;
 		int i = 0;
 		for(Struct.Field f : struct.fields) {
-		    apply(gl, f.type, var.sub[i], sval[i]);
+		    if(sval[i] != null)
+			apply(gl, f.type, var.sub[i], sval[i]);
 		    i++;
 		}
 	    } else {
 		UniformApplier<?> fn = UniformApplier.TypeMapping.get(type, val.getClass());
+		if(fn == null)
+		    throw(new NoMappingException(var.name, type, val.getClass()));
 		apply0(gl, fn, var, val);
 	    }
 	}
