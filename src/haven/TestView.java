@@ -36,12 +36,16 @@ import haven.render.Location;
 
 public class TestView extends PView {
     static final FastMesh barda = Resource.remote().loadwait("gfx/test/borka").layer(FastMesh.MeshRes.class).m;
-    float dist = 15, e = (float)Math.PI * 3 / 2, a = (float)Math.PI / 2;
+    static final TexI bardtex = (TexI)Resource.remote().loadwait("gfx/test/borka").layer(Resource.imgc).tex();
+    float dist = 15, e = (float)Math.PI * 3 / 2, a = (float)Math.PI / 2, rot = 0;
+    final RenderTree.Slot borka;
+    final Light.PhongLight light = new Light.PhongLight(true, FColor.BLACK, FColor.WHITE, FColor.BLACK, FColor.BLACK, 0);
 
     public TestView(Coord sz) {
 	super(sz);
 	setcam();
-	basic.add(barda, new Location(Matrix4f.id));
+	borka = basic.add(barda, Pipe.Op.compose(bardtex.st(), light));
+	basic.add(new DirLight(FColor.BLACK, FColor.WHITE, FColor.BLACK, Coord3f.xu), null);
     }
 
     public static class Quad implements Rendered, RenderTree.Node {
@@ -96,6 +100,11 @@ public class TestView extends PView {
 	this.dist = d;
 	setcam();
 	return(true);
+    }
+
+    public void tick(double dt) {
+	rot += (float)dt;
+	borka.cstate(Pipe.Op.compose(bardtex.st(), light, Location.rot(Coord3f.zu, rot)));
     }
 
     protected FColor clearcolor() {return(FColor.RED);}
