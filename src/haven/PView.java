@@ -38,8 +38,9 @@ public abstract class PView extends Widget {
     public final RenderTree.Slot basic;
     public Texture2D fragcol = null;
     public Texture2D depth = null;
-    private Texture2D.Sampler2D fragsamp;
     private final Map<Object, Pipe.Op> basicstates = new IdentityHashMap<>();
+    private final Light.LightList lights = new Light.LightList();
+    private Texture2D.Sampler2D fragsamp;
     private DrawList back = null;
 
     public PView(Coord sz) {
@@ -89,6 +90,7 @@ public abstract class PView extends Widget {
 		    back.add(uglyJavaCWorkAround(slot));
 	    }
 	}
+	lights();
 	FColor cc = clearcolor();
 	if(cc != null)
 	    g.out.clear(basic.state(), FragColor.fragcol, cc);
@@ -123,5 +125,10 @@ public abstract class PView extends Widget {
 	basic(id_misc, Pipe.Op.compose(new States.Blending(),
 				       new States.Depthtest(States.Depthtest.Test.LE),
 				       new States.Facecull()));
+	lights();
+    }
+
+    protected void lights() {
+	basic(Light.class, Pipe.Op.compose(lights, lights.compile()));
     }
 }

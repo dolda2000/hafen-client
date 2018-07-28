@@ -27,7 +27,7 @@
 package haven;
 
 import java.awt.Color;
-import javax.media.opengl.*;
+import haven.render.*;
 
 public class PosLight extends Light {
     public float[] pos;
@@ -63,22 +63,8 @@ public class PosLight extends Light {
 	aq = q;
     }
 
-    /* XXXRENDER
-    public void enable(GOut g, int idx) {
-	super.enable(g, idx);
-	BGL gl = g.gl;
-	gl.glLightfv(GL2.GL_LIGHT0 + idx, GL2.GL_POSITION, pos, 0);
-	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_CONSTANT_ATTENUATION, ac);
-	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_LINEAR_ATTENUATION, al);
-	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_QUADRATIC_ATTENUATION, aq);
+    public Object[] params(GroupPipe state) {
+	float[] pos = Homo3D.camxf(state).mul(Homo3D.locxf(state)).mul4(this.pos);
+	return(new Object[] {amb, dif, spc, pos, ac, al, aq});
     }
-
-    public void disable(GOut g, int idx) {
-	BGL gl = g.gl;
-	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_CONSTANT_ATTENUATION, 1.0f);
-	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_LINEAR_ATTENUATION, 0.0f);
-	gl.glLightf(GL2.GL_LIGHT0 + idx, GL2.GL_QUADRATIC_ATTENUATION, 0.0f);
-	super.disable(g, idx);
-    }
-    */
 }
