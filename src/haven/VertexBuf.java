@@ -34,7 +34,6 @@ import haven.render.VertexArray.Layout;
 import haven.render.sl.Attribute;
 
 public class VertexBuf {
-    private static final Attribute dummy = new Attribute(haven.render.sl.Type.VEC4); /* XXXRENDER */
     public final AttribData[] bufs;
     public final int num;
     public final Layout fmt;
@@ -247,7 +246,7 @@ public class VertexBuf {
     @ResName("tex2")
     public static class TexelData extends FloatData {
 	public TexelData(FloatBuffer data) {
-	    super(dummy, 2, data);
+	    super(ColorTex.texc, 2, data);
 	}
 
 	public TexelData(Resource res, Message buf, int nv) {
