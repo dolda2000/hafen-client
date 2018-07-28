@@ -100,6 +100,30 @@ public interface Pipe {
 	public static Op compose(Op... ops) {
 	    return(new Composed(ops));
 	}
+
+	public static class Wrapping implements RenderTree.Node {
+	    public final RenderTree.Node r;
+	    public final Op op;
+
+	    private Wrapping(RenderTree.Node r, Op op) {
+		if((r == null) || (op == null))
+		    throw(new NullPointerException("Wrapping " + r + " in " + op));
+		this.r = r;
+		this.op = op;
+	    }
+
+	    public void added(RenderTree.Slot slot) {
+		slot.add(r, op);
+	    }
+
+	    public String toString() {
+		return(String.format("#<wrapped %s in %s>", r, op));
+	    }
+	}
+
+	public default Wrapping apply(RenderTree.Node r) {
+	    return(new Wrapping(r, this));
+	}
     }
 
     public default Pipe prep(Op op) {
