@@ -74,6 +74,10 @@ public class FColor {
 	return(new float[] {r, g, b, a});
     }
 
+    public FColor mul(FColor that) {
+	return(new FColor(this.r * that.r, this.g * that.g, this.b * that.b, this.a * that.a));
+    }
+
     public int hashCode() {
 	return(((((((Float.floatToIntBits(r)) * 31) +
 		   Float.floatToIntBits(g)) * 31) +
