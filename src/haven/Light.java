@@ -133,9 +133,22 @@ public abstract class Light implements RenderTree.Node {
 	private final ShaderMacro shader;
 	private final Object[] material;
 
+	public static final FColor defamb = new FColor(0.2f, 0.2f, 0.2f);
+	public static final FColor defdif = new FColor(0.8f, 0.8f, 0.8f);
+	public static final FColor defspc = new FColor(0.0f, 0.0f, 0.0f);
+	public static final FColor defemi = new FColor(0.0f, 0.0f, 0.0f);
+
 	public PhongLight(boolean frag, FColor amb, FColor dif, FColor spc, FColor emi, float shine) {
 	    this.shader = frag ? flight : vlight;
 	    this.material = new Object[] {emi, dif, dif, spc, shine};
+	}
+
+	public PhongLight(boolean frag, FColor col) {
+	    this(frag, col.mul(defamb), col.mul(defdif), FColor.BLACK, FColor.BLACK, 0.0f);
+	}
+
+	public PhongLight(boolean frag) {
+	    this(frag, defamb, defdif, defspc, defemi, 0.0f);
 	}
 
 	public ShaderMacro shader() {return(shader);}
