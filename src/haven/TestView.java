@@ -44,7 +44,7 @@ public class TestView extends PView {
     public TestView(Coord sz) {
 	super(sz);
 	setcam();
-	borka = basic.add(barda, Pipe.Op.compose(bardtex.st(), light));
+	borka = basic.add(Pipe.Op.compose(bardtex.st(), light).apply(barda), null);
 	basic.add(new DirLight(FColor.BLACK, FColor.WHITE, FColor.BLACK, Coord3f.xu), null);
     }
 
@@ -104,7 +104,7 @@ public class TestView extends PView {
 
     public void tick(double dt) {
 	rot += (float)dt;
-	borka.cstate(Pipe.Op.compose(bardtex.st(), light, Location.rot(Coord3f.zu, rot)));
+	borka.cstate(Location.rot(Coord3f.zu, rot));
     }
 
     protected FColor clearcolor() {return(FColor.RED);}
