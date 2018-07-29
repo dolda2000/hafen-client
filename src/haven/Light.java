@@ -123,6 +123,7 @@ public abstract class Light implements RenderTree.Node {
 
     public static final State.Slot<PhongLight> lighting = new State.Slot<>(State.Slot.Type.DRAW, PhongLight.class);
 
+    @Material.ResName("col")
     public static class PhongLight extends State {
 	public static final ShaderMacro vlight = prog -> new Phong(prog.vctx,
 								   new Uniform.Data<Object[]>(p -> p.get(clights).lights, clights),
@@ -143,12 +144,20 @@ public abstract class Light implements RenderTree.Node {
 	    this.material = new Object[] {emi, dif, dif, spc, shine};
 	}
 
+	public PhongLight(boolean frag, Color amb, Color dif, Color spc, Color emi, float shine) {
+	    this(frag, new FColor(amb), new FColor(dif), new FColor(spc), new FColor(emi), shine);
+	}
+
 	public PhongLight(boolean frag, FColor col) {
 	    this(frag, col.mul(defamb), col.mul(defdif), FColor.BLACK, FColor.BLACK, 0.0f);
 	}
 
 	public PhongLight(boolean frag) {
 	    this(frag, defamb, defdif, defspc, defemi, 0.0f);
+	}
+
+	public PhongLight(Resource res, Object... args) {
+	    this(true, (Color)args[0], (Color)args[1], (Color)args[2], (Color)args[3], (Float)args[4]);
 	}
 
 	public ShaderMacro shader() {return(shader);}
