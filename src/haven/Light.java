@@ -165,6 +165,15 @@ public abstract class Light implements RenderTree.Node {
 	public void apply(Pipe p) {p.put(lighting, this);}
     }
 
+    @Material.ResName("light")
+    public static class $light implements Material.ResCons {
+	public Pipe.Op cons(Resource res, Object... args) {
+	    if(!args[0].equals("def"))
+		throw(new RuntimeException(String.format("%s using non-default lighting", res.name)));
+	    return(null);
+	}
+    }
+
     /* XXXRENDER
     public static class CelShade extends GLState {
 	public static final Slot<CelShade> slot = new Slot<CelShade>(Slot.Type.DRAW, CelShade.class, lighting);
