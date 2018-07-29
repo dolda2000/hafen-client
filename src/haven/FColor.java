@@ -58,14 +58,6 @@ public class FColor {
 	this(c, 1);
     }
 
-    public FColor blend(FColor o, float f) {
-	float F = 1.0f - f;
-	return(new FColor((r * F) + (o.r * f),
-			  (g * F) + (o.g * f),
-			  (b * F) + (o.b * f),
-			  (a * F) + (o.a * f)));
-    }
-
     public float[] to3a() {
 	return(new float[] {r, g, b});
     }
