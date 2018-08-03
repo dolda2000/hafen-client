@@ -27,6 +27,7 @@
 package haven.render.sl;
 
 import java.util.*;
+import haven.*;
 
 public interface ShaderMacro {
     public void modify(ProgramContext prog);
@@ -36,19 +37,38 @@ public interface ShaderMacro {
 	    public String toString() {return("nil");}
 	};
 
-    public static ShaderMacro compose(final Collection<ShaderMacro> smacs) {
+    public static class Composed implements ShaderMacro {
+	private static final WeakHashedSet<ShaderMacro> composed = new WeakHashedSet<>(Hash.eq);
+	public final Collection<ShaderMacro> smacs;
+
+	public Composed(Collection<ShaderMacro> smacs) {
+	    this.smacs = smacs;
+	}
+
+	public void modify(ProgramContext prog) {
+	    for(ShaderMacro smac : smacs)
+		smac.modify(prog);
+	}
+
+	public String toString() {
+	    return(smacs.toString());
+	}
+
+	public boolean equals(Object that) {
+	    return((that instanceof Composed) && (((Composed)that).smacs.equals(this.smacs)));
+	}
+
+	public int hashCode() {
+	    return(smacs.hashCode());
+	}
+    }
+
+    public static ShaderMacro compose(Collection<ShaderMacro> smacs) {
 	if(smacs.isEmpty())
 	    return(nil);
-	return(new ShaderMacro() {
-		public void modify(ProgramContext prog) {
-		    for(ShaderMacro smac : smacs)
-			smac.modify(prog);
-		}
-
-		public String toString() {
-		    return(smacs.toString());
-		}
-	    });
+	synchronized(Composed.composed) {
+	    return(Composed.composed.intern(new Composed(smacs)));
+	}
     }
 
     public static ShaderMacro compose(ShaderMacro... smacs) {
