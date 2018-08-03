@@ -219,4 +219,11 @@ public class WeakHashedSet<E> extends AbstractSet<E> {
 	    return(null);
 	return(tab[idx].get());
     }
+
+    public E intern(E el) {
+	E ret = find(el);
+	if(ret == null)
+	    add(ret = el);
+	return(ret);
+    }
 }
