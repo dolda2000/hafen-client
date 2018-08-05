@@ -244,7 +244,7 @@ public class RenderTree {
 	private int nchildren = 0;
 	private int pidx = -1;
 
-	public Slot(RenderTree tree, Slot parent, Node node) {
+	private Slot(RenderTree tree, Slot parent, Node node) {
 	    this.tree = tree;
 	    this.parent = parent;
 	    this.node = node;
