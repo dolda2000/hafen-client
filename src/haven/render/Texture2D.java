@@ -97,4 +97,8 @@ public class Texture2D extends Texture {
 	    super(tex);
 	}
     }
+
+    public String toString() {
+	return(String.format("#<tex2d %sx%d %dx%d>", ifmt.cf, ifmt.nc, w, h));
+    }
 }
