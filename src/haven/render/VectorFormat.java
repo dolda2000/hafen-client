@@ -44,7 +44,7 @@ public class VectorFormat {
     }
 
     public String toString() {
-	return("vector(" + nc + ", " + cf + ")");
+	return("#<vector " + cf + "x" + nc + ">");
     }
 
     public boolean equals(Object o) {
