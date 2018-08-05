@@ -816,6 +816,9 @@ public class GLDrawList implements DrawList {
 	GLRender g = (GLRender)r;
 	if(!compatible(g.env))
 	    throw(new IllegalArgumentException());
+	DrawSlot first = first();
+	if(first == null)
+	    return;
 	try {
 	    settingbuf.get();
 	} catch(InterruptedException e) {
@@ -823,7 +826,6 @@ public class GLDrawList implements DrawList {
 	     * InterruptedExceptions shouldn't be checked. */
 	    throw(new RuntimeException(e));
 	}
-	DrawSlot first = first();
 	g.state.apply(g.gl, first.bk.state());
 	g.state.apply(g.gl, VaoState.slot, ((VaoSetting)first.settings[idx_vao]).st);
 	if(g.state.prog() != first.prog)
