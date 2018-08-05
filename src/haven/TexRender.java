@@ -146,7 +146,7 @@ public abstract class TexRender implements Disposable {
 			TexRender tex;
 			TexR rt = tres.get().layer(TexR.class, tid);
 			if(rt != null) {
-			    tex = null /* rt.tex() */;
+			    tex = rt.tex();
 			} else {
 			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
 			}
