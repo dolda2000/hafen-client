@@ -246,7 +246,7 @@ public class VertexBuf {
     @ResName("tex2")
     public static class TexelData extends FloatData {
 	public TexelData(FloatBuffer data) {
-	    super(ColorTex.texc, 2, data);
+	    super(Tex2D.texc, 2, data);
 	}
 
 	public TexelData(Resource res, Message buf, int nv) {
