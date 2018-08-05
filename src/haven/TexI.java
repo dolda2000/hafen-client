@@ -59,7 +59,11 @@ public class TexI implements Tex {
 						      if(img.level != 0)
 							  return(null);
 						      FillBuffer buf = env.fillbuf(img);
-						      buf.pull(ByteBuffer.wrap(convert(back, tdim)));
+						      if(Utils.eq(tdim, sz) && Utils.eq(detectfmt(back), img.tex.efmt)) {
+							  buf.pull(ByteBuffer.wrap(((DataBufferByte)back.getRaster().getDataBuffer()).getData()));
+						      } else {
+							  buf.pull(ByteBuffer.wrap(convert(back, tdim)));
+						      }
 						      return(buf);
 						  });
 		    Sampler2D data = new Sampler2D(tex);
@@ -96,6 +100,52 @@ public class TexI implements Tex {
 	}
     }
 
+    /* Java's image model is a wee bit complex, so these may not be
+     * entirely correct. */
+    public static VectorFormat detectfmt(BufferedImage img) {
+	ColorModel cm = img.getColorModel();
+	if(!(img.getSampleModel() instanceof PixelInterleavedSampleModel))
+	    return(null);
+	PixelInterleavedSampleModel sm = (PixelInterleavedSampleModel)img.getSampleModel();
+	int[] cs = cm.getComponentSize();
+	int[] off = sm.getBandOffsets();
+	/*
+	System.err.print(this + ": " + cm.getNumComponents() + ", (");
+	for(int i = 0; i < off.length; i++)
+	    System.err.print(((i > 0)?" ":"") + off[i]);
+	System.err.print("), (");
+	for(int i = 0; i < off.length; i++)
+	    System.err.print(((i > 0)?" ":"") + cs[i]);
+	System.err.print(")");
+	System.err.println();
+	*/
+	if((cm.getNumComponents() == 4) && (off.length == 4)) {
+	    if(((cs[0] == 8) && (cs[1] == 8) && (cs[2] == 8) && (cs[3] == 8)) &&
+	       (cm.getTransferType() == java.awt.image.DataBuffer.TYPE_BYTE) &&
+	       (cm.getTransparency() == java.awt.Transparency.TRANSLUCENT))
+	    {
+		if((off[0] == 0) && (off[1] == 1) && (off[2] == 2) && (off[3] == 3))
+		    return(new VectorFormat(4, NumberFormat.UNORM8));
+		/* XXXRENDER: Support component swizzling:
+		if((off[0] == 2) && (off[1] == 1) && (off[2] == 0) && (off[3] == 3))
+		    return(GL.GL_BGRA);
+		*/
+	    }
+	} else if((cm.getNumComponents() == 3) && (off.length == 3)) {
+	    if(((cs[0] == 8) && (cs[1] == 8) && (cs[2] == 8)) &&
+	       (cm.getTransferType() == java.awt.image.DataBuffer.TYPE_BYTE) &&
+	       (cm.getTransparency() == java.awt.Transparency.OPAQUE))
+	    {
+		if((off[0] == 0) && (off[1] == 1) && (off[2] == 2))
+		    return(new VectorFormat(3, NumberFormat.UNORM8));
+		/* XXXRENDER: Support component swizzling:
+		if((off[0] == 2) && (off[1] == 1) && (off[2] == 0))
+		    return(GL2.GL_BGR);
+		*/
+	    }
+	}
+	return(null);
+    }
     public static BufferedImage mkbuf(Coord sz) {
 	WritableRaster buf = Raster.createInterleavedRaster(java.awt.image.DataBuffer.TYPE_BYTE, sz.x, sz.y, 4, null);
 	BufferedImage tgt = new BufferedImage(glcm, buf, false, null);
