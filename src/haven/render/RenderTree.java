@@ -357,7 +357,7 @@ public class RenderTree {
 		for(int i = nst.states.length - 1; i >= 0; i--) {
 		    dep: if(nst.deps[i]) {
 			for(Slot sp = parent; sp != null; sp = sp.parent) {
-			    if((sp.dstate != null) && (sp.dstate.def.length < i) && sp.dstate.def[i]) {
+			    if((sp.dstate != null) && (sp.dstate.def.length > i) && sp.dstate.def[i]) {
 				adddep(i, sp);
 				break dep;
 			    }
