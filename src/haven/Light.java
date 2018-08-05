@@ -174,28 +174,24 @@ public abstract class Light implements RenderTree.Node {
 	}
     }
 
-    /* XXXRENDER
-    public static class CelShade extends GLState {
-	public static final Slot<CelShade> slot = new Slot<CelShade>(Slot.Type.DRAW, CelShade.class, lighting);
+    public static class CelShade extends State {
+	public static final Slot<CelShade> slot = new Slot<CelShade>(Slot.Type.DRAW, CelShade.class);
 
 	public CelShade(boolean dif, boolean spc) {
 	    shader = new Phong.CelShade(dif, spc);
 	}
 
-	public void apply(GOut g) {}
-	public void unapply(GOut g) {}
-
 	private final ShaderMacro shader;
 	public ShaderMacro shader() {
 	    return(shader);
 	}
-	public void prep(Buffer buf) {buf.put(slot, this);}
+	public void apply(Pipe p) {p.put(slot, this);}
     }
 
     public static final CelShade celshade = new CelShade(true, false);
     @Material.ResName("cel")
     public static class $cel implements Material.ResCons {
-	public GLState cons(Resource res, Object... args) {
+	public Pipe.Op cons(Resource res, Object... args) {
 	    if(args.length < 1)
 		return(celshade);
 	    String s = (String)args[0];
@@ -205,6 +201,7 @@ public abstract class Light implements RenderTree.Node {
 	}
     }
     
+    /* XXXRENDER
     public static final GLState deflight = new GLState() {
 	    public void apply(GOut g) {}
 	    public void unapply(GOut g) {}
