@@ -1,0 +1,102 @@
+/*
+ *  This file is part of the Haven & Hearth game client.
+ *  Copyright (C) 2009 Fredrik Tolf <fredrik@dolda2000.com>, and
+ *                     Björn Johannessen <johannessen.bjorn@gmail.com>
+ *
+ *  Redistribution and/or modification of this file is subject to the
+ *  terms of the GNU Lesser General Public License, version 3, as
+ *  published by the Free Software Foundation.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  Other parts of this source tree adhere to other copying
+ *  rights. Please see the file `COPYING' in the root directory of the
+ *  source tree for details.
+ *
+ *  A copy the GNU Lesser General Public License is distributed along
+ *  with the source tree of which this file is a part in the file
+ *  `doc/LPGL-3'. If it is missing for any reason, please see the Free
+ *  Software Foundation's website at <http://www.fsf.org/>, or write
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ *  Boston, MA 02111-1307 USA
+ */
+
+package haven.render;
+
+import haven.render.sl.*;
+import haven.render.sl.ValBlock.Value;
+import static haven.render.sl.Cons.*;
+import static haven.render.sl.Function.PDir.*;
+import static haven.render.sl.Type.*;
+
+public class Tex2D {
+    public static final Attribute texc = new Attribute(VEC2, "ctexc");
+    public final ProgramContext prog;
+    public Varying.Interpol ipol = Varying.Interpol.NORMAL;
+    public Uniform tex2d;
+
+    public static final AutoVarying rtexcoord = new AutoVarying(VEC2, "s_tex2d") {
+	    protected Expression root(VertexContext vctx) {
+		return(pick(texc.ref(), "st"));
+	    }
+
+	    protected Interpol ipol(Context ctx) {
+		Tex2D mod;
+		if((ctx instanceof ShaderContext) && ((mod = ((ShaderContext)ctx).prog.getmod(Tex2D.class)) != null))
+		    return(mod.ipol);
+		return(super.ipol(ctx));
+	    }
+	};
+
+    public Value texcoord() {
+	return(prog.fctx.uniform.ext(rtexcoord, () -> prog.fctx.uniform.new Value(VEC2) {
+		public Expression root() {
+		    return(rtexcoord.ref());
+		}
+	    }));
+    }
+
+    public Value color() {
+	return(prog.fctx.uniform.ext(Tex2D.class, () -> {
+		    texcoord();
+		    return(prog.fctx.uniform.new Value(VEC4) {
+			    public Expression root() {
+				return(texture2D(tex2d.ref(), texcoord().depref()));
+			    }
+			});
+		}));
+    }
+
+    public void tex2d(Uniform.Data<Object> data) {
+	this.tex2d = new Uniform(Type.SAMPLER2D, data.value, data.deps);
+    }
+
+    public Tex2D(ProgramContext prog) {
+	this.prog = prog;
+	prog.module(this);
+    }
+
+    public static Tex2D get(ProgramContext prog) {
+	Tex2D t = prog.getmod(Tex2D.class);
+	if(t == null)
+	    t = new Tex2D(prog);
+	return(t);
+    }
+
+    public static final ShaderMacro mod = prog -> {
+	final Value tex2d = get(prog).color();
+	tex2d.force();
+	FragColor.fragcol(prog.fctx).mod(in -> mul(in, tex2d.ref()), 0);
+    };
+
+    public static final ShaderMacro clip = prog -> {
+	final Value tex2d = get(prog).color();
+	tex2d.force();
+	prog.fctx.mainmod(blk -> blk.add(new If(lt(pick(tex2d.ref(), "a"), l(0.5)),
+						new Discard())),
+			  -100);
+    };
+}
