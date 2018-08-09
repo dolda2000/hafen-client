@@ -172,20 +172,23 @@ public class OCache implements Iterable<Gob> {
 	    }
 	}
     }
-    
+
     private Indir<Resource> getres(int id) {
 	return(glob.sess.getres(id));
+    }
+
+    public interface Delta {
+	public void apply(Gob gob);
     }
 
     public synchronized void move(Gob g, Coord2d c, double a) {
 	g.move(c, a);
 	changed(g);
     }
-    public void move(Gob gob, Message msg) {
+    public Delta move(Message msg) {
 	Coord2d c = msg.coord().mul(posres);
 	int ia = msg.uint16();
-	if(gob != null)
-	    move(gob, c, (ia / 65536.0) * Math.PI * 2);
+	return(gob -> move(gob, c, (ia / 65536.0) * Math.PI * 2));
     }
 	
     public synchronized void cres(Gob g, Indir<Resource> res, Message dat) {
@@ -200,15 +203,16 @@ public class OCache implements Iterable<Gob> {
 	}
 	changed(g);
     }
-    public void cres(Gob gob, Message msg) {
+    public Delta cres(Message msg) {
 	int resid = msg.uint16();
 	Message sdt = Message.nil;
 	if((resid & 0x8000) != 0) {
 	    resid &= ~0x8000;
 	    sdt = new MessageBuf(msg.bytes(msg.uint8()));
 	}
-	if(gob != null)
-	    cres(gob, getres(resid), sdt);
+	Indir<Resource> cres = getres(resid);
+	Message csdt = sdt;
+	return(gob -> cres(gob, cres, csdt));
     }
 	
     public synchronized void linbeg(Gob g, Coord2d s, Coord2d v) {
@@ -218,11 +222,10 @@ public class OCache implements Iterable<Gob> {
 	    changed(g);
 	}
     }
-    public void linbeg(Gob gob, Message msg) {
+    public Delta linbeg(Message msg) {
 	Coord2d s = msg.coord().mul(posres);
 	Coord2d v = msg.coord().mul(posres);
-	if(gob != null)
-	    linbeg(gob, s, v);
+	return(gob -> linbeg(gob, s, v));
     }
 	
     public synchronized void linstep(Gob g, double t, double e) {
@@ -239,7 +242,7 @@ public class OCache implements Iterable<Gob> {
 	else
 	    lm.e = Double.NaN;
     }
-    public void linstep(Gob gob, Message msg) {
+    public Delta linstep(Message msg) {
 	double t, e;
 	int w = msg.int32();
 	if(w == -1) {
@@ -252,8 +255,7 @@ public class OCache implements Iterable<Gob> {
 	    w = msg.int32();
 	    e = (w < 0)?-1:(w * 0x1p-10);
 	}
-	if(gob != null)
-	    linstep(gob, t, e);
+	return(gob -> linstep(gob, t, e));
     }
 
     public synchronized void speak(Gob g, float zo, String text) {
@@ -270,11 +272,10 @@ public class OCache implements Iterable<Gob> {
 	}
 	changed(g);
     }
-    public void speak(Gob gob, Message msg) {
+    public Delta speak(Message msg) {
 	float zo = msg.int16() / 100.0f;
 	String text = msg.string();
-	if(gob != null)
-	    speak(gob, zo, text);
+	return(gob -> speak(gob, zo, text));
     }
     
     public synchronized void composite(Gob g, Indir<Resource> base) {
@@ -286,10 +287,9 @@ public class OCache implements Iterable<Gob> {
 	}
 	changed(g);
     }
-    public void composite(Gob gob, Message msg) {
+    public Delta composite(Message msg) {
 	Indir<Resource> base = getres(msg.uint16());
-	if(gob != null)
-	    composite(gob, base);
+	return(gob -> composite(gob, base));
     }
     
     public synchronized void cmppose(Gob g, int pseq, List<ResData> poses, List<ResData> tposes, boolean interp, float ttime) {
@@ -303,7 +303,7 @@ public class OCache implements Iterable<Gob> {
 	}
 	changed(g);
     }
-    public void cmppose(Gob gob, Message msg) {
+    public Delta cmppose(Message msg) {
 	List<ResData> poses = null, tposes = null;
 	int pfl = msg.uint8();
 	int seq = msg.uint8();
@@ -338,8 +338,9 @@ public class OCache implements Iterable<Gob> {
 	    }
 	    ttime = (msg.uint8() / 10.0f);
 	}
-	if(gob != null)
-	    cmppose(gob, seq, poses, tposes, interp, ttime);
+	List<ResData> cposes = poses, ctposes = tposes;
+	float cttime = ttime;
+	return(gob -> cmppose(gob, seq, cposes, ctposes, interp, cttime));
     }
     
     public synchronized void cmpmod(Gob g, List<Composited.MD> mod) {
@@ -347,7 +348,7 @@ public class OCache implements Iterable<Gob> {
 	cmp.chmod(mod);
 	changed(g);
     }
-    public void cmpmod(Gob gob, Message msg) {
+    public Delta cmpmod(Message msg) {
 	List<Composited.MD> mod = new LinkedList<Composited.MD>();
 	int mseq = 0;
 	while(true) {
@@ -371,8 +372,7 @@ public class OCache implements Iterable<Gob> {
 	    md.id = mseq++;
 	    mod.add(md);
 	}
-	if(gob != null)
-	    cmpmod(gob, mod);
+	return(gob -> cmpmod(gob, mod));
     }
     
     public synchronized void cmpequ(Gob g, List<Composited.ED> equ) {
@@ -380,7 +380,7 @@ public class OCache implements Iterable<Gob> {
 	cmp.chequ(equ);
 	changed(g);
     }
-    public void cmpequ(Gob gob, Message msg) {
+    public Delta cmpequ(Message msg) {
 	List<Composited.ED> equ = new LinkedList<Composited.ED>();
 	int eseq = 0;
 	while(true) {
@@ -409,8 +409,7 @@ public class OCache implements Iterable<Gob> {
 	    ed.id = eseq++;
 	    equ.add(ed);
 	}
-	if(gob != null)
-	    cmpequ(gob, equ);
+	return(gob -> cmpequ(gob, equ));
     }
     
     public synchronized void avatar(Gob g, List<Indir<Resource>> layers) {
@@ -422,7 +421,7 @@ public class OCache implements Iterable<Gob> {
 	ava.setlayers(layers);
 	changed(g);
     }
-    public void avatar(Gob gob, Message msg) {
+    public Delta avatar(Message msg) {
 	List<Indir<Resource>> layers = new LinkedList<Indir<Resource>>();
 	while(true) {
 	    int layer = msg.uint16();
@@ -430,8 +429,7 @@ public class OCache implements Iterable<Gob> {
 		break;
 	    layers.add(getres(layer));
 	}
-	if(gob != null)
-	    avatar(gob, layers);
+	return(gob -> avatar(gob, layers));
     }
 	
     public synchronized void zoff(Gob g, float off) {
@@ -448,26 +446,24 @@ public class OCache implements Iterable<Gob> {
 	}
 	changed(g);
     }
-    public void zoff(Gob gob, Message msg) {
+    public Delta zoff(Message msg) {
 	float off = msg.int16() / 100.0f;
-	if(gob != null)
-	    zoff(gob, off);
+	return(gob -> zoff(gob, off));
     }
 	
     public synchronized void lumin(Gob g, Coord off, int sz, int str) {
 	g.setattr(new Lumin(g, off, sz, str));
 	changed(g);
     }
-    public void lumin(Gob gob, Message msg) {
+    public Delta lumin(Message msg) {
 	Coord off = msg.coord();
 	int sz = msg.uint16();
 	int str = msg.uint8();
-	if(gob != null)
-	    lumin(gob, off, sz, str);
+	return(gob -> lumin(gob, off, sz, str));
     }
 	
     public synchronized void follow(Gob g, long oid, Indir<Resource> xfres, String xfname) {
-	if(oid == 0xffffffffl) {
+	if(oid == -1) {
 	    g.delattr(Following.class);
 	} else {
 	    Following flw = g.getattr(Following.class);
@@ -486,16 +482,15 @@ public class OCache implements Iterable<Gob> {
 	}
 	changed(g);
     }
-    public void follow(Gob gob, Message msg) {
+    public Delta follow(Message msg) {
 	long oid = msg.uint32();
-	Indir<Resource> xfres = null;
-	String xfname = null;
 	if(oid != 0xffffffffl) {
-	    xfres = getres(msg.uint16());
-	    xfname = msg.string();
+	    Indir<Resource> xfres = getres(msg.uint16());
+	    String xfname = msg.string();
+	    return(gob -> follow(gob, oid, xfres, xfname));
+	} else {
+	    return(gob -> follow(gob, -1, null, null));
 	}
-	if(gob != null)
-	    follow(gob, oid, xfres, xfname);
     }
 
     public synchronized void homostop(Gob g) {
@@ -512,16 +507,14 @@ public class OCache implements Iterable<Gob> {
 	}
 	changed(g);
     }
-    public void homing(Gob gob, Message msg) {
+    public Delta homing(Message msg) {
 	long oid = msg.uint32();
 	if(oid == 0xffffffffl) {
-	    if(gob != null)
-		homostop(gob);
+	    return(gob -> homostop(gob));
 	} else {
 	    Coord2d tgtc = msg.coord().mul(posres);
 	    double v = msg.int32() * 0x1p-10 * 11;
-	    if(gob != null)
-		homing(gob, oid, tgtc, v);
+	    return(gob -> homing(gob, oid, tgtc, v));
 	}
     }
 	
@@ -549,34 +542,35 @@ public class OCache implements Iterable<Gob> {
 	}
 	changed(g);
     }
-    public void overlay(Gob gob, Message msg) {
-	int olid = msg.int32();
-	boolean prs = (olid & 1) != 0;
-	olid >>>= 1;
+    public Delta overlay(Message msg) {
+	int olidf = msg.int32();
+	boolean prs = (olidf & 1) != 0;
+	int olid = olidf >>> 1;
 	int resid = msg.uint16();
 	Indir<Resource> res;
-	Message sdt = Message.nil;
+	Message sdt;
 	if(resid == 65535) {
 	    res = null;
+	    sdt = Message.nil;
 	} else {
 	    if((resid & 0x8000) != 0) {
 		resid &= ~0x8000;
 		sdt = new MessageBuf(msg.bytes(msg.uint8()));
+	    } else {
+		sdt = Message.nil;
 	    }
 	    res = getres(resid);
 	}
-	if(gob != null)
-	    overlay(gob, olid, prs, res, sdt);
+	return(gob -> overlay(gob, olid, prs, res, sdt));
     }
 
     public synchronized void health(Gob g, int hp) {
 	g.setattr(new GobHealth(g, hp));
 	changed(g);
     }
-    public void health(Gob gob, Message msg) {
+    public Delta health(Message msg) {
 	int hp = msg.uint8();
-	if(gob != null)
-	    health(gob, hp);
+	return(gob -> health(gob, hp));
     }
 
     public synchronized void buddy(Gob g, String name, int group, int type) {
@@ -592,16 +586,14 @@ public class OCache implements Iterable<Gob> {
 	}
 	changed(g);
     }
-    public void buddy(Gob gob, Message msg) {
+    public Delta buddy(Message msg) {
 	String name = msg.string();
 	if(name.length() > 0) {
 	    int group = msg.uint8();
 	    int btype = msg.uint8();
-	    if(gob != null)
-		buddy(gob, name, group, btype);
+	    return(gob -> buddy(gob, name, group, btype));
 	} else {
-	    if(gob != null)
-		buddy(gob, null, 0, 0);
+	    return(gob -> buddy(gob, null, 0, 0));
 	}
     }
 
@@ -612,16 +604,14 @@ public class OCache implements Iterable<Gob> {
 	    g.setattr(new GobIcon(g, res));
 	changed(g);
     }
-    public void icon(Gob gob, Message msg) {
+    public Delta icon(Message msg) {
 	int resid = msg.uint16();
 	Indir<Resource> res;
 	if(resid == 65535) {
-	    if(gob != null)
-		icon(gob, (Indir<Resource>)null);
+	    return(gob -> icon(gob, (Indir<Resource>)null));
 	} else {
 	    int ifl = msg.uint8();
-	    if(gob != null)
-		icon(gob, getres(resid));
+	    return(gob -> icon(gob, getres(resid)));
 	}
     }
 
@@ -632,75 +622,61 @@ public class OCache implements Iterable<Gob> {
 	    g.delrattr(resid);
 	changed(g);
     }
-    public void resattr(Gob gob, Message msg) {
+    public Delta resattr(Message msg) {
 	Indir<Resource> resid = getres(msg.uint16());
 	int len = msg.uint8();
 	Message dat = (len > 0)?new MessageBuf(msg.bytes(len)):null;
-	if(gob != null)
-	    resattr(gob, resid, dat);
+	return(gob -> resattr(gob, resid, dat));
     }
 
-    public void receive(Gob gob, int type, Message msg) {
+    public Delta parse(int type, Message msg) {
 	switch(type) {
 	case OD_MOVE:
-	    move(gob, msg);
-	    break;
+	    return(move(msg));
 	case OD_RES:
-	    cres(gob, msg);
-	    break;
+	    return(cres(msg));
 	case OD_LINBEG:
-	    linbeg(gob, msg);
-	    break;
+	    return(linbeg(msg));
 	case OD_LINSTEP:
-	    linstep(gob, msg);
-	    break;
+	    return(linstep(msg));
 	case OD_HOMING:
-	    homing(gob, msg);
-	    break;
+	    return(homing(msg));
 	case OD_SPEECH:
-	    speak(gob, msg);
-	    break;
+	    return(speak(msg));
 	case OD_COMPOSE:
-	    composite(gob, msg);
-	    break;
+	    return(composite(msg));
 	case OD_CMPPOSE:
-	    cmppose(gob, msg);
-	    break;
+	    return(cmppose(msg));
 	case OD_CMPMOD:
-	    cmpmod(gob, msg);
-	    break;
+	    return(cmpmod(msg));
 	case OD_CMPEQU:
-	    cmpequ(gob, msg);
-	    break;
+	    return(cmpequ(msg));
 	case OD_ZOFF:
-	    zoff(gob, msg);
-	    break;
+	    return(zoff(msg));
 	case OD_LUMIN:
-	    lumin(gob, msg);
-	    break;
+	    return(lumin(msg));
 	case OD_AVATAR:
-	    avatar(gob, msg);
-	    break;
+	    return(avatar(msg));
 	case OD_FOLLOW:
-	    follow(gob, msg);
-	    break;
+	    return(follow(msg));
 	case OD_OVERLAY:
-	    overlay(gob, msg);
-	    break;
+	    return(overlay(msg));
 	case OD_HEALTH:
-	    health(gob, msg);
-	    break;
+	    return(health(msg));
 	case OD_BUDDY:
-	    buddy(gob, msg);
-	    break;
+	    return(buddy(msg));
 	case OD_ICON:
-	    icon(gob, msg);
-	    break;
+	    return(icon(msg));
 	case OD_RESATTR:
-	    resattr(gob, msg);
-	    break;
+	    return(resattr(msg));
 	default:
 	    throw(new Session.MessageException("Unknown objdelta type: " + type, msg));
 	}
+    }
+
+    public void receive(Gob gob, int type, Message msg) {
+	Delta d = parse(type, msg);
+	if(gob != null)
+	d.apply(gob);
     }
 }
