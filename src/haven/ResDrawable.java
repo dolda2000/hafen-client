@@ -32,7 +32,7 @@ public class ResDrawable extends Drawable {
     public final Indir<Resource> res;
     public Sprite spr = null;
     MessageBuf sdt;
-    private int delay = 0;
+    private double delay = 0;
 	
     public ResDrawable(Gob gob, Indir<Resource> res, Message sdt) {
 	super(gob);
@@ -64,7 +64,7 @@ public class ResDrawable extends Drawable {
     }
     */
 	
-    public void ctick(int dt) {
+    public void ctick(double dt) {
 	if(spr == null) {
 	    delay += dt;
 	} else {

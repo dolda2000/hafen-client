@@ -33,7 +33,7 @@ public abstract class GAttrib {
 	this.gob = gob;
     }
 	
-    public void ctick(int dt) {
+    public void ctick(double dt) {
     }
     
     public void dispose() {

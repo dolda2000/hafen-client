@@ -135,7 +135,7 @@ public abstract class Sprite {
     public abstract boolean setup(RenderList d);
     */
 
-    public boolean tick(int dt) {
+    public boolean tick(double dt) {
 	return(false);
     }
     

@@ -184,7 +184,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner {
 	public void ch(T n);
     }
 
-    public void ctick(int dt) {
+    public void ctick(double dt) {
 	for(GAttrib a : attr.values())
 	    a.ctick(dt);
 	loadrattr();

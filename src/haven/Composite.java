@@ -100,7 +100,7 @@ public class Composite extends Drawable {
 	}
     }
 
-    public void ctick(int dt) {
+    public void ctick(double dt) {
 	if(comp == null)
 	    return;
 	if(nposes != null) {

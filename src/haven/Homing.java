@@ -61,7 +61,7 @@ public class Homing extends Moving {
 	dist = 0;
     }
     
-    public void ctick(int dt) {
-	dist += v * ((dt / 1000.0) * 0.9);
+    public void ctick(double dt) {
+	dist += v * (dt * 0.9);
     }
 }

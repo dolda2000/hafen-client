@@ -98,7 +98,7 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 	
-    public void ctick(int dt) {
+    public void ctick(double dt) {
 	synchronized(this) {
 	    ArrayList<Gob> copy = new ArrayList<Gob>();
 	    for(Gob g : this)

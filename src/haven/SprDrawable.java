@@ -40,7 +40,7 @@ public class SprDrawable extends Drawable {
     }
     */
 	
-    public void ctick(int dt) {
+    public void ctick(double dt) {
 	spr.tick(dt);
     }
     

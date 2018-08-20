@@ -108,8 +108,6 @@ public class Composited implements MapView.Clickable {
 	    if(done)
 		done();
 	}
-	@Deprecated
-	public void tick(float dt, double v) {tick(dt);}
 	
 	protected void done() {}
     }
@@ -217,7 +215,7 @@ public class Composited implements MapView.Clickable {
 	}
 	*/
 	
-	public void tick(int dt) {
+	public void tick(double dt) {
 	    spr.tick(dt);
 	}
     }
@@ -276,7 +274,7 @@ public class Composited implements MapView.Clickable {
 	    */
 	}
 	
-	public void tick(int dt) {}
+	public void tick(double dt) {}
     }
 
     public static class MD implements Cloneable {
@@ -572,14 +570,12 @@ public class Composited implements MapView.Clickable {
     public void draw(GOut g) {
     }
     
-    public void tick(int dt) {
+    public void tick(double dt) {
 	if(poses != null)
-	    poses.tick(dt / 1000.0f);
+	    poses.tick((float)dt);
 	for(Equ equ : this.equ)
 	    equ.tick(dt);
     }
-    @Deprecated
-    public void tick(int dt, double v) {tick(dt);}
 
     public void chmod(List<MD> mod) {
 	if(mod.equals(cmod))
