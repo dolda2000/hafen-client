@@ -674,9 +674,180 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    public void receive(Gob gob, int type, Message msg) {
-	Delta d = parse(type, msg);
-	if(gob != null)
-	d.apply(gob);
+    public static class GobInfo {
+	public final long id;
+	public final LinkedList<Delta> pending = new LinkedList<>();
+	public int frame;
+	public boolean nremoved, added, gremoved, virtual;
+	public Gob gob;
+
+	public GobInfo(long id, int frame) {
+	    this.id = id;
+	    this.frame = frame;
+	}
+    }
+
+    private final Map<Long, GobInfo> netinfo = new HashMap<>();
+    private final Set<Long> netdirty = new HashSet<>();
+    private Thread applier = null;
+
+    private void apply1(GobInfo ng) throws InterruptedException {
+	main: {
+	    synchronized(ng) {
+		if(ng.nremoved && ng.added && !ng.gremoved) {
+		    // TODO
+		    ng.gremoved = true;
+		    break main;
+		}
+		if(ng.gob == null) {
+		    ng.gob = new Gob(glob, Coord2d.z, ng.id, 0);
+		    ng.gob.virtual = ng.virtual;
+		}
+	    }
+	    while(true) {
+		Delta d;
+		synchronized(ng) {
+		    if((d = ng.pending.peek()) == null)
+			break;
+		}
+		while(true) {
+		    try {
+			d.apply(ng.gob);
+			break;
+		    } catch(Loading l) {
+			/* XXX: Make nonblocking */
+			l.waitfor();
+		    }
+		}
+		synchronized(ng) {
+		    if((ng.pending.poll()) != d)
+			throw(new RuntimeException());
+		}
+	    }
+	    while(!ng.added) {
+		try {
+		    // TODO
+		    ng.added = true;
+		} catch(Loading l) {
+		    /* XXX: Make nonblocking */
+		    l.waitfor();
+		}
+	    }
+	}
+	synchronized(netinfo) {
+	    if(ng.nremoved ? (!ng.added || ng.gremoved) : ((ng.added && ng.pending.isEmpty()))) {
+		netdirty.remove(ng);
+	    }
+	}
+    }
+
+    private void applyloop() {
+	Thread self = Thread.currentThread();
+	try {
+	    while(true) {
+		GobInfo ng;
+		synchronized(netinfo) {
+		    double timeout = 5;
+		    double start = Utils.rtime(), now = start;
+		    Long id;
+		    while(true) {
+			id = Utils.el(netdirty);
+			if(id != null)
+			    break;
+			if((now - start) >= timeout)
+			    return;
+			netinfo.wait((long)((timeout - (now - start)) * 1000) + 100);
+			now = Utils.rtime();
+		    }
+		    ng = (id == null) ? null : netinfo.get(id);
+		}
+		apply1(ng);
+	    }
+	} catch(InterruptedException e) {
+	} finally {
+	    synchronized(netinfo) {
+		if(applier == self)
+		    applier = null;
+		ckapplier();
+	    }
+	}
+    }
+
+    private void ckapplier() {
+	if((applier == null) && !netdirty.isEmpty()) {
+	    applier = new HackThread(this::applyloop, "Objdelta applier");
+	    applier.setDaemon(true);
+	    applier.start();
+	}
+    }
+
+    private void markdirty(GobInfo ng) {
+	netdirty.add(ng.id);
+	netinfo.notify();
+	ckapplier();
+    }
+
+    private GobInfo netremove(long id, int frame) {
+	synchronized(netinfo) {
+	    GobInfo ng = netinfo.get(id);
+	    if((ng == null) || (ng.frame > frame))
+		return(null);
+	    synchronized(ng) {
+		ng.nremoved = true;
+	    }
+	    markdirty(ng);
+	    return(ng);
+	}
+    }
+
+    private GobInfo netget(long id, int frame) {
+	synchronized(netinfo) {
+	    GobInfo ng = netinfo.get(id);
+	    if((ng != null) && ng.nremoved) {
+		if(ng.frame >= frame)
+		    return(null);
+		netinfo.remove(id);
+		ng = null;
+	    }
+	    if(ng == null) {
+		ng = new GobInfo(id, frame);
+		netinfo.put(id, ng);
+	    } else {
+		if(ng.frame >= frame)
+		    return(null);
+	    }
+	    return(ng);
+	}
+    }
+
+    public GobInfo receive(Message msg) {
+	int fl = msg.uint8();
+	long id = msg.uint32();
+	int frame = msg.int32();
+	List<Delta> attrs = new ArrayList<>();
+	while(true) {
+	    int type = msg.uint8();
+	    if(type == OD_END) {
+		break;
+	    } else if(type == OD_REM) {
+		return(netremove(id, frame - 1));
+	    } else {
+		attrs.add(parse(type, msg));
+	    }
+	}
+	synchronized(netinfo) {
+	    if((fl & 1) != 0)
+		netremove(id, frame - 1);
+	    GobInfo ng = netget(id, frame);
+	    if(ng != null) {
+		synchronized(ng) {
+		    ng.frame = frame;
+		    ng.virtual = ((fl & 2) != 0);
+		    ng.pending.addAll(attrs);
+		}
+		markdirty(ng);
+	    }
+	    return(ng);
+	}
     }
 }
