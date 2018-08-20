@@ -98,12 +98,6 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 	
-    public synchronized void tick() {
-	for(Gob g : objs.values()) {
-	    g.tick();
-	}
-    }
-	
     public void ctick(int dt) {
 	synchronized(this) {
 	    ArrayList<Gob> copy = new ArrayList<Gob>();

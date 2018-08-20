@@ -33,9 +33,6 @@ public abstract class GAttrib {
 	this.gob = gob;
     }
 	
-    public void tick() {
-    }
-	
     public void ctick(int dt) {
     }
     

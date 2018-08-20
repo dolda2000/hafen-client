@@ -187,6 +187,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner {
     public void ctick(int dt) {
 	for(GAttrib a : attr.values())
 	    a.ctick(dt);
+	loadrattr();
 	for(Iterator<Overlay> i = ols.iterator(); i.hasNext();) {
 	    Overlay ol = i.next();
 	    if(ol.spr == null) {
@@ -217,12 +218,6 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner {
 		return(ol);
 	}
 	return(null);
-    }
-
-    public void tick() {
-	for(GAttrib a : attr.values())
-	    a.tick();
-	loadrattr();
     }
 
     public void dispose() {

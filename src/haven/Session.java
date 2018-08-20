@@ -53,7 +53,7 @@ public class Session implements Resource.Resolver {
 
     DatagramSocket sk;
     SocketAddress server;
-    Thread rworker, sworker, ticker;
+    Thread rworker, sworker;
     Object[] args;
     public int connfailed = 0;
     public String state = "conn";
@@ -177,26 +177,6 @@ public class Session implements Resource.Resolver {
 	    this.frame = frame;
 	    this.recv = recv;
 	    this.sent = 0;
-	}
-    }
-
-    private class Ticker extends HackThread {
-	public Ticker() {
-	    super("Server time ticker");
-	    setDaemon(true);
-	}
-		
-	public void run() {
-	    try {
-		while(true) {
-		    long now, then;
-		    then = System.currentTimeMillis();
-		    glob.oc.tick();
-		    now = System.currentTimeMillis();
-		    if(now - then < 70)
-			Thread.sleep(70 - (now - then));
-		}
-	    } catch(InterruptedException e) {}
 	}
     }
 
@@ -567,7 +547,6 @@ public class Session implements Resource.Resolver {
 		    }
 		}
 	    } finally {
-		ticker.interrupt();
 		rworker.interrupt();
 	    }
 	}
@@ -588,8 +567,6 @@ public class Session implements Resource.Resolver {
 	rworker.start();
 	sworker = new SWorker();
 	sworker.start();
-	ticker = new Ticker();
-	ticker.start();
     }
 
     private void sendack(int seq) {
