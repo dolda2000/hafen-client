@@ -29,10 +29,6 @@ package haven;
 import java.util.*;
 import haven.render.*;
 import haven.render.Rendered;
-import haven.render.Transform;
-import haven.render.Projection;
-import haven.render.Camera;
-import haven.render.Location;
 
 public class TestView extends PView {
     static final FastMesh barda = Resource.remote().loadwait("gfx/test/borka").layer(FastMesh.MeshRes.class).m;
