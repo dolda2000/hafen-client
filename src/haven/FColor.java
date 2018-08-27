@@ -58,20 +58,32 @@ public class FColor {
 	this(c, 1);
     }
 
-    public FColor blend(FColor o, float f) {
-	float F = 1.0f - f;
-	return(new FColor((r * F) + (o.r * f),
-			  (g * F) + (o.g * f),
-			  (b * F) + (o.b * f),
-			  (a * F) + (o.a * f)));
-    }
-
     public float[] to3a() {
 	return(new float[] {r, g, b});
     }
 
     public float[] to4a() {
 	return(new float[] {r, g, b, a});
+    }
+
+    public FColor mul(FColor that) {
+	return(new FColor(this.r * that.r, this.g * that.g, this.b * that.b, this.a * that.a));
+    }
+
+    public FColor blend(FColor that) {
+	float B = that.a, A = 1.0f - B;
+	return(new FColor((this.r * A) + (that.r * B),
+			  (this.g * A) + (that.g * B),
+			  (this.b * A) + (that.b * B),
+			  this.a));
+    }
+
+    public FColor blend(FColor that, float B) {
+	float A = 1.0f - B;
+	return(new FColor((this.r * A) + (that.r * B),
+			  (this.g * A) + (that.g * B),
+			  (this.b * A) + (that.b * B),
+			  (this.a * A) + (that.a * B)));
     }
 
     public int hashCode() {
