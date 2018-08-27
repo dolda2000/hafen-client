@@ -36,6 +36,10 @@ public class Area implements Iterable<Coord>, java.io.Serializable {
 	this.br = br;
     }
 
+    public int hashCode() {
+	return((ul.hashCode() * 31) + br.hashCode());
+    }
+
     public boolean equals(Object o) {
 	if(!(o instanceof Area))
 	    return(false);
