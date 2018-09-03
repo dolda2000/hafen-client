@@ -796,7 +796,7 @@ public class CharWnd extends Window {
     }
 
     public static class Wound {
-	public final int id;
+	public final int id, parentid;
 	public Indir<Resource> res;
 	public Object qdata;
 	private String sortkey = "\uffff";
@@ -816,10 +816,11 @@ public class CharWnd extends Window {
 	    }
 	};
 
-	private Wound(int id, Indir<Resource> res, Object qdata) {
+	private Wound(int id, Indir<Resource> res, Object qdata, int parentid) {
 	    this.id = id;
 	    this.res = res;
 	    this.qdata = qdata;
+	    this.parentid = parentid;
 	}
 
 	public static class Box extends LoadingTextBox implements Info {
@@ -2125,9 +2126,10 @@ public class CharWnd extends Window {
 	Indir<Resource> res = (args[a + 1] == null)?null:ui.sess.getres((Integer)args[a + 1]);
 	if(res != null) {
 	    Object qdata = args[a + 2];
+	    int parentid = (len > 3) ? ((args[a + 3] == null) ? -1 : (Integer)args[a + 3]) : -1;
 	    Wound w = wounds.get(id);
 	    if(w == null) {
-		wounds.add(new Wound(id, res, qdata));
+		wounds.add(new Wound(id, res, qdata, parentid));
 	    } else {
 		w.res = res;
 		w.qdata = qdata;
