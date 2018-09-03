@@ -2120,6 +2120,24 @@ public class CharWnd extends Window {
 	return(buf);
     }
 
+    private void decwound(Object[] args, int a, int len) {
+	int id = (Integer)args[a];
+	Indir<Resource> res = (args[a + 1] == null)?null:ui.sess.getres((Integer)args[a + 1]);
+	if(res != null) {
+	    Object qdata = args[a + 2];
+	    Wound w = wounds.get(id);
+	    if(w == null) {
+		wounds.add(new Wound(id, res, qdata));
+	    } else {
+		w.res = res;
+		w.qdata = qdata;
+	    }
+	    wounds.loading = true;
+	} else {
+	    wounds.remove(id);
+	}
+    }
+
     public void uimsg(String nm, Object... args) {
 	if(nm == "exp") {
 	    exp = ((Number)args[0]).intValue();
@@ -2168,21 +2186,13 @@ public class CharWnd extends Window {
 	} else if(nm == "exps") {
 	    exps.seen.update(decexplist(args, 0));
 	} else if(nm == "wounds") {
-	    for(int i = 0; i < args.length; i += 3) {
-		int id = (Integer)args[i];
-		Indir<Resource> res = (args[i + 1] == null)?null:ui.sess.getres((Integer)args[i + 1]);
-		Object qdata = args[i + 2];
-		if(res != null) {
-		    Wound w = wounds.get(id);
-		    if(w == null) {
-			wounds.add(new Wound(id, res, qdata));
-		    } else {
-			w.res = res;
-			w.qdata = qdata;
-		    }
-		    wounds.loading = true;
+	    if(args.length > 0) {
+		if(args[0] instanceof Object[]) {
+		    for(int i = 0; i < args.length; i++)
+			decwound((Object[])args[i], 0, ((Object[])args[i]).length);
 		} else {
-		    wounds.remove(id);
+		    for(int i = 0; i < args.length; i += 3)
+			decwound(args, i, 3);
 		}
 	    }
 	} else if(nm == "quests") {
