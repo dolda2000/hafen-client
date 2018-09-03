@@ -799,6 +799,7 @@ public class CharWnd extends Window {
 	public final int id, parentid;
 	public Indir<Resource> res;
 	public Object qdata;
+	public int level;
 	private String sortkey = "\uffff";
 	private Tex small;
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
@@ -1588,6 +1589,23 @@ public class CharWnd extends Window {
 	    super(w, h, attrf.height() + 2);
 	}
 
+	private List<Wound> treesort(List<Wound> from, int pid, int level) {
+	    List<Wound> direct = new ArrayList<>(from.size());
+	    for(Wound w : from) {
+		if(w.parentid == pid) {
+		    w.level = level;
+		    direct.add(w);
+		}
+	    }
+	    Collections.sort(direct, wcomp);
+	    List<Wound> ret = new ArrayList<>(from.size());
+	    for(Wound w : direct) {
+		ret.add(w);
+		ret.addAll(treesort(from, w.id, level + 1));
+	    }
+	    return(ret);
+	}
+
 	public void tick(double dt) {
 	    if(loading) {
 		loading = false;
@@ -1599,7 +1617,7 @@ public class CharWnd extends Window {
 			loading = true;
 		    }
 		}
-		Collections.sort(wounds, wcomp);
+		wounds = treesort(wounds, -1, 0);
 	    }
 	}
 
@@ -1614,14 +1632,17 @@ public class CharWnd extends Window {
 	    g.chcolor((idx % 2 == 0)?every:other);
 	    g.frect(Coord.z, g.sz);
 	    g.chcolor();
+	    int x = w.level * itemh;
 	    try {
 		if(w.small == null)
 		    w.small = new TexI(PUtils.convolvedown(w.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
-		g.image(w.small, Coord.z);
+		g.image(w.small, new Coord(x, 0));
+		x += itemh + 5;
 	    } catch(Loading e) {
-		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
+		g.image(WItem.missing.layer(Resource.imgc).tex(), new Coord(x, 0), new Coord(itemh, itemh));
+		x += itemh + 5;
 	    }
-	    g.aimage(w.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
+	    g.aimage(w.rnm.get().tex(), new Coord(x, itemh / 2), 0, 0.5);
 	    Text qd = w.rqd.get();
 	    if(qd != null)
 		g.aimage(qd.tex(), new Coord(sz.x - 15, itemh / 2), 1.0, 0.5);
