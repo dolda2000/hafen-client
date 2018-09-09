@@ -385,6 +385,10 @@ public class GLDrawList implements DrawList {
 	    }
 	}
 
+	public int ndeps() {
+	    return((depid_v == null) ? 1 : depid_v.length);
+	}
+
 	public int hashCode() {
 	    int rv = System.identityHashCode(prog);
 	    rv = (rv * 31) + System.identityHashCode(vid);
@@ -715,7 +719,7 @@ public class GLDrawList implements DrawList {
 	}
 
 	State.Slot[] depslots() {
-	    return(var.deps.toArray(new State.Slot[key.depid_v.length]));
+	    return(var.deps.toArray(new State.Slot[key.ndeps()]));
 	}
     }
 
