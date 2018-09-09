@@ -82,12 +82,15 @@ public abstract class PView extends Widget {
 
     public void draw(GOut g) {
 	if((back == null) || !back.compatible(g.out.env())) {
-	    if(back != null)
+	    if(back != null) {
 		back.dispose();
+		tree.remove(back);
+	    }
 	    back = g.out.env().drawlist();
 	    for(RenderTree.Slot slot : tree.slots()) {
 		if(slot.obj() instanceof Rendered)
 		    back.add(uglyJavaCWorkAround(slot));
+		tree.add(back, Rendered.class);
 	    }
 	}
 	lights();
