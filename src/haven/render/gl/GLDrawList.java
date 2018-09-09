@@ -256,14 +256,14 @@ public class GLDrawList implements DrawList {
 			gl.bglSubmit(this.settings[i].gl);
 		}
 		gl.bglCallList(main);
-		compiled = gl;
+		compiled = gl.trim();
 	    } else {
 		BufferBGL gl = new BufferBGL();
 		GLProgram.apply(gl, prev.prog, this.prog);
 		for(int i = 0; i < this.settings.length; i++)
 		    gl.bglSubmit(this.settings[i].gl);
 		gl.bglCallList(main);
-		compiled = gl;
+		compiled = gl.trim();
 	    }
 	}
 
@@ -458,7 +458,7 @@ public class GLDrawList implements DrawList {
 	void update() {
 	    BufferBGL buf = new BufferBGL();
 	    compile(buf);
-	    this.gl.update(buf);
+	    this.gl.update(buf.trim());
 	}
 
 	void put() {}
@@ -761,7 +761,7 @@ public class GLDrawList implements DrawList {
 	    if(st != slot.bk.state())
 		throw(new IllegalArgumentException("Must render with state from rendertree"));
 
-	    BufferBGL gl = new BufferBGL();
+	    BufferBGL gl = new BufferBGL(1);
 	    if(GLVertexArray.ephemeralp(mod)) {
 		throw(new NotImplemented("ephemeral models in drawlist"));
 	    } else {

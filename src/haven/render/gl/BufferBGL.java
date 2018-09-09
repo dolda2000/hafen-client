@@ -54,6 +54,11 @@ public class BufferBGL extends BGL {
 	list[n++] = cmd;
     }
 
+    public BufferBGL trim() {
+	list = Arrays.copyOf(list, n);
+	return(this);
+    }
+
     protected Iterable<Command> dump() {
 	return(new Iterable<Command>() {
 		public Iterator<Command> iterator() {
