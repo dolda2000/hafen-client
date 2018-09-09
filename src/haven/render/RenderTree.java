@@ -31,7 +31,7 @@ import static haven.Utils.eq;
 
 public class RenderTree {
     private final Slot root;
-    private final Collection<Client<?>> clients = new ArrayList<>();
+    private final List<Client<?>> clients = new ArrayList<>();
 
     public RenderTree() {
 	root = new Slot(this, null, null);
@@ -284,20 +284,49 @@ public class RenderTree {
 	    Slot ch = new Slot(tree, this, n);
 	    ch.cstate = state;
 	    addch(ch);
-	    if(n != null)
-		n.added(ch);
 	    synchronized(tree.clients) {
-		tree.clients.forEach(cl -> cl.added(this));
+		ListIterator<Client<?>> it = tree.clients.listIterator();
+		try {
+		    while(it.hasNext()) {
+			Client<?> cl = it.next();
+			cl.added(this);
+		    }
+		} catch(RuntimeException e) {
+		    try {
+			while(it.hasPrevious()) {
+			    Client<?> cl = it.previous();
+			    cl.removed(this);
+			}
+		    } catch(RuntimeException e2) {
+			Error err = new Error("Unexpected non-local exit", e2);
+			err.addSuppressed(e);
+			throw(err);
+		    }
+		    throw(e);
+		}
+	    }
+	    if(n != null) {
+		try {
+		    n.added(ch);
+		} catch(RuntimeException e) {
+		    remove();
+		}
 	    }
 	    return(ch);
 	}
 
 	public void remove() {
+	    while(nchildren > 0)
+		children[nchildren - 1].remove();
 	    parent.removech(this);
-	    if(node != null)
-		node.removed(this);
-	    synchronized(tree.clients) {
-		tree.clients.forEach(cl -> cl.removed(this));
+	    try {
+		if(node != null)
+		    node.removed(this);
+		synchronized(tree.clients) {
+		    tree.clients.forEach(cl -> cl.removed(this));
+		}
+	    } catch(RuntimeException e) {
+		throw(new Error("Unexpected non-local exit", e));
 	    }
 	}
 
@@ -422,8 +451,21 @@ public class RenderTree {
 	}
 
 	private void chstate(Pipe.Op cstate, Pipe.Op ostate) {
-	    if(this.dstate != null)
-		upddstate(mkdstate(cstate, ostate));
+	    if(this.dstate != null) {
+		DepPipe pst = this.dstate;
+		try {
+		    upddstate(mkdstate(cstate, ostate));
+		} catch(RuntimeException e) {
+		    try {
+			upddstate(pst);
+		    } catch(RuntimeException e2) {
+			Error err = new Error("Unexpected non-local exit", e2);
+			err.addSuppressed(e);
+			throw(err);
+		    }
+		    throw(e);
+		}
+	    }
 	    this.cstate = cstate;
 	    this.ostate = ostate;
 	}
