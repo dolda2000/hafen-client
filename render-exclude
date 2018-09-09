@@ -13,13 +13,9 @@ haven/Rendered.java
 haven/FRendered.java
 haven/ShadowMap.java
 haven/Outlines.java
-haven/Transform.java
-haven/Location.java
 haven/States.java
 haven/MorphedMesh.java
 haven/PoseMorph.java
-haven/Camera.java
-haven/Projection.java
 haven/CloudShadow.java
 haven/DirCam.java
 haven/FBView.java
