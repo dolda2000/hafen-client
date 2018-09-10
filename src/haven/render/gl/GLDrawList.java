@@ -48,6 +48,10 @@ public class GLDrawList implements DrawList {
     private static int btheight(DrawSlot s) {
 	return((s == null) ? 0 : s.th);
     }
+    private static void setp(DrawSlot s, DrawSlot p) {
+	if(s != null)
+	    s.tp = p;
+    }
 
     DrawSlot first() {
 	if(root == null)
@@ -116,31 +120,31 @@ public class GLDrawList implements DrawList {
 	    if(btheight(tr.tl) > btheight(tr.tr))
 		tr.bbtrr();
 	    DrawSlot p = tp, r = tr, rl = r.tl;
-	    (tr = rl).tp = this;
+	    setp(tr = rl, this);
 	    setheight();
-	    (r.tl = this).tp = r;
+	    setp(r.tl = this, r);
 	    r.setheight();
 	    if(p == null)
-		(root = r).tp = null;
+		setp(root = r, null);
 	    else if(p.tl == this)
-		(p.tl = r).tp = p;
+		setp(p.tl = r, p);
 	    else
-		(p.tr = r).tp = p;
+		setp(p.tr = r, p);
 	}
 	private void bbtrr() {
 	    if(btheight(tl.tr) > btheight(tl.tl))
 		tl.bbtrl();
 	    DrawSlot p = tp, l = tl, lr = l.tr;
-	    (tl = lr).tp = this;
+	    setp(tl = lr, this);
 	    setheight();
-	    (l.tr = this).tp = l;
+	    setp(l.tr = this, l);
 	    l.setheight();
 	    if(p == null)
-		(root = l).tp = null;
+		setp(root = l, null);
 	    else if(p.tl == this)
-		(p.tl = l).tp = p;
+		setp(p.tl = l, p);
 	    else
-		(p.tr = l).tp = p;
+		setp(p.tr = l, p);
 	}
 	private void insert(DrawSlot child) {
 	    int c = order.compare(child, this);
@@ -896,5 +900,27 @@ public class GLDrawList implements DrawList {
     }
 
     public void dispose() {
+    }
+
+    void treedump(java.io.PrintWriter out, DrawSlot slot) {
+	if(slot == null) {
+	    out.print("nil");
+	    return;
+	}
+	out.print("(");
+	out.print(slot.sortid);
+	out.print(" ");
+	treedump(out, slot.tl);
+	out.print(" ");
+	treedump(out, slot.tr);
+	out.print(")");
+    }
+    String treedump(DrawSlot root) {
+	java.io.StringWriter buf = new java.io.StringWriter();
+	treedump(new java.io.PrintWriter(buf), root);
+	return(buf.toString());
+    }
+    String treedump() {
+	return(treedump(root));
     }
 }
