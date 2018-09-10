@@ -796,9 +796,10 @@ public class CharWnd extends Window {
     }
 
     public static class Wound {
-	public final int id;
+	public final int id, parentid;
 	public Indir<Resource> res;
 	public Object qdata;
+	public int level;
 	private String sortkey = "\uffff";
 	private Tex small;
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
@@ -816,10 +817,11 @@ public class CharWnd extends Window {
 	    }
 	};
 
-	private Wound(int id, Indir<Resource> res, Object qdata) {
+	private Wound(int id, Indir<Resource> res, Object qdata, int parentid) {
 	    this.id = id;
 	    this.res = res;
 	    this.qdata = qdata;
+	    this.parentid = parentid;
 	}
 
 	public static class Box extends LoadingTextBox implements Info {
@@ -1587,6 +1589,23 @@ public class CharWnd extends Window {
 	    super(w, h, attrf.height() + 2);
 	}
 
+	private List<Wound> treesort(List<Wound> from, int pid, int level) {
+	    List<Wound> direct = new ArrayList<>(from.size());
+	    for(Wound w : from) {
+		if(w.parentid == pid) {
+		    w.level = level;
+		    direct.add(w);
+		}
+	    }
+	    Collections.sort(direct, wcomp);
+	    List<Wound> ret = new ArrayList<>(from.size());
+	    for(Wound w : direct) {
+		ret.add(w);
+		ret.addAll(treesort(from, w.id, level + 1));
+	    }
+	    return(ret);
+	}
+
 	public void tick(double dt) {
 	    if(loading) {
 		loading = false;
@@ -1598,7 +1617,7 @@ public class CharWnd extends Window {
 			loading = true;
 		    }
 		}
-		Collections.sort(wounds, wcomp);
+		wounds = treesort(wounds, -1, 0);
 	    }
 	}
 
@@ -1613,14 +1632,17 @@ public class CharWnd extends Window {
 	    g.chcolor((idx % 2 == 0)?every:other);
 	    g.frect(Coord.z, g.sz());
 	    g.chcolor();
+	    int x = w.level * itemh;
 	    try {
 		if(w.small == null)
 		    w.small = new TexI(PUtils.convolvedown(w.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
-		g.image(w.small, Coord.z);
+		g.image(w.small, new Coord(x, 0));
+		x += itemh + 5;
 	    } catch(Loading e) {
-		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
+		g.image(WItem.missing.layer(Resource.imgc).tex(), new Coord(x, 0), new Coord(itemh, itemh));
+		x += itemh + 5;
 	    }
-	    g.aimage(w.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
+	    g.aimage(w.rnm.get().tex(), new Coord(x, itemh / 2), 0, 0.5);
 	    Text qd = w.rqd.get();
 	    if(qd != null)
 		g.aimage(qd.tex(), new Coord(sz.x - 15, itemh / 2), 1.0, 0.5);
@@ -2120,6 +2142,25 @@ public class CharWnd extends Window {
 	return(buf);
     }
 
+    private void decwound(Object[] args, int a, int len) {
+	int id = (Integer)args[a];
+	Indir<Resource> res = (args[a + 1] == null)?null:ui.sess.getres((Integer)args[a + 1]);
+	if(res != null) {
+	    Object qdata = args[a + 2];
+	    int parentid = (len > 3) ? ((args[a + 3] == null) ? -1 : (Integer)args[a + 3]) : -1;
+	    Wound w = wounds.get(id);
+	    if(w == null) {
+		wounds.add(new Wound(id, res, qdata, parentid));
+	    } else {
+		w.res = res;
+		w.qdata = qdata;
+	    }
+	    wounds.loading = true;
+	} else {
+	    wounds.remove(id);
+	}
+    }
+
     public void uimsg(String nm, Object... args) {
 	if(nm == "exp") {
 	    exp = ((Number)args[0]).intValue();
@@ -2168,21 +2209,13 @@ public class CharWnd extends Window {
 	} else if(nm == "exps") {
 	    exps.seen.update(decexplist(args, 0));
 	} else if(nm == "wounds") {
-	    for(int i = 0; i < args.length; i += 3) {
-		int id = (Integer)args[i];
-		Indir<Resource> res = (args[i + 1] == null)?null:ui.sess.getres((Integer)args[i + 1]);
-		Object qdata = args[i + 2];
-		if(res != null) {
-		    Wound w = wounds.get(id);
-		    if(w == null) {
-			wounds.add(new Wound(id, res, qdata));
-		    } else {
-			w.res = res;
-			w.qdata = qdata;
-		    }
-		    wounds.loading = true;
+	    if(args.length > 0) {
+		if(args[0] instanceof Object[]) {
+		    for(int i = 0; i < args.length; i++)
+			decwound((Object[])args[i], 0, ((Object[])args[i]).length);
 		} else {
-		    wounds.remove(id);
+		    for(int i = 0; i < args.length; i += 3)
+			decwound(args, i, 3);
 		}
 	    }
 	} else if(nm == "quests") {
