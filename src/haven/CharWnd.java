@@ -802,6 +802,7 @@ public class CharWnd extends Window {
 	public int level;
 	private String sortkey = "\uffff";
 	private Tex small;
+	private int namew;
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
 	    public String value() {
 		try {
@@ -810,6 +811,31 @@ public class CharWnd extends Window {
 		    return("...");
 		}
 	    }
+
+	    public Text render(String text) {
+		Text.Foundry fnd = (Text.Foundry)this.fnd;
+		Text.Line full = fnd.render(text);
+		if(full.sz().x <= namew)
+		    return(full);
+		int ew = fnd.strsize("...").x;
+		for(int i = full.text.length() - 1; i > 0; i--) {
+		    if((full.advance(i) + ew) < namew)
+			return(fnd.render(text.substring(0, i) + "..."));
+		}
+		return(full);
+	    }
+
+	    /*
+	    public Text render(String text) {
+		Text.Foundry fnd = (Text.Foundry)this.fnd;
+		Text.Line ret = fnd.render(text);
+		while(ret.sz().x > namew) {
+		    fnd = new Text.Foundry(fnd.font, fnd.font.getSize() - 1, fnd.defcol).aa(true);
+		    ret = fnd.render(text);
+		}
+		return(ret);
+	    }
+	    */
 	};
 	private final Text.UText<?> rqd = new Text.UText<Object>(attrf) {
 	    public Object value() {
@@ -1642,10 +1668,14 @@ public class CharWnd extends Window {
 		g.image(WItem.missing.layer(Resource.imgc).tex(), new Coord(x, 0), new Coord(itemh, itemh));
 		x += itemh + 5;
 	    }
-	    g.aimage(w.rnm.get().tex(), new Coord(x, itemh / 2), 0, 0.5);
+	    w.namew = sz.x - x;
 	    Text qd = w.rqd.get();
-	    if(qd != null)
-		g.aimage(qd.tex(), new Coord(sz.x - 15, itemh / 2), 1.0, 0.5);
+	    if(qd != null) {
+		Tex tex = qd.tex();
+		g.aimage(tex, new Coord(sz.x - 15, itemh / 2), 1.0, 0.5);
+		w.namew -= tex.sz().x + 15 + 5;
+	    }
+	    g.aimage(w.rnm.get().tex(), new Coord(x, itemh / 2), 0, 0.5);
 	}
 
 	protected void itemclick(Wound item, int button) {
