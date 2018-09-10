@@ -30,17 +30,22 @@ import java.awt.image.BufferedImage;
 import java.awt.Graphics;
 import java.util.*;
 import java.lang.reflect.Constructor;
+import haven.render.*;
 
-public abstract class Sprite {
+public abstract class Sprite implements RenderTree.Node {
     public final Resource res;
     public final Owner owner;
     public static List<Factory> factories = new LinkedList<Factory>();
     static {
+	/* XXXRENDER
 	factories.add(SpriteLink.sfact);
 	factories.add(SkelSprite.fact);
 	factories.add(AnimSprite.fact);
+	*/
 	factories.add(StaticSprite.fact);
+	/* XXXRENDER
 	factories.add(AudioSprite.fact);
+	*/
     }
     
     public interface Owner extends OwnerContext {

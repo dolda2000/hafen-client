@@ -27,8 +27,9 @@
 package haven;
 
 import java.util.*;
+import haven.render.*;
 
-public class Gob implements Sprite.Owner, Skeleton.ModOwner {
+public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     public Coord2d rc;
     public Coord sc;
     public Coord3f sczu;
@@ -36,17 +37,10 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner {
     public boolean virtual = false;
     int clprio = 0;
     public long id;
-    public int frame;
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
-    public Collection<Overlay> ols = new LinkedList<Overlay>() {
-	public boolean add(Overlay item) {
-	    /* XXX: Remove me once local code is changed to use addol(). */
-	    if(glob.oc.getgob(id) != null)
-		glob.oc.changed(Gob.this);
-	    return(super.add(item));
-	}
-    };
+    public Collection<Overlay> ols = new LinkedList<Overlay>();
+    public final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
     private final Collection<ResAttr.Cell<?>> rdata = new LinkedList<ResAttr.Cell<?>>();
     private final Collection<ResAttr.Load> lrdata = new LinkedList<ResAttr.Load>();
 
@@ -168,16 +162,15 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner {
     public static class Static {}
     public static class SemiStatic {}
 
-    public Gob(Glob glob, Coord2d c, long id, int frame) {
+    public Gob(Glob glob, Coord2d c, long id) {
 	this.glob = glob;
 	this.rc = c;
 	this.id = id;
-	this.frame = frame;
-	// loc.tick(); XXXRENDER
+	placed.tick();
     }
 
     public Gob(Glob glob, Coord2d c) {
-	this(glob, c, -1, 0);
+	this(glob, c, -1);
     }
 
     public static interface ANotif<T extends GAttrib> {
@@ -188,6 +181,7 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner {
 	for(GAttrib a : attr.values())
 	    a.ctick(dt);
 	loadrattr();
+	placed.tick();
 	for(Iterator<Overlay> i = ols.iterator(); i.hasNext();) {
 	    Overlay ol = i.next();
 	    if(ol.spr == null) {
@@ -259,11 +253,6 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner {
 	}
     }
 
-    public void setattr(GAttrib a) {
-	Class<? extends GAttrib> ac = attrclass(a.getClass());
-	attr.put(ac, a);
-    }
-
     public <C extends GAttrib> C getattr(Class<C> c) {
 	GAttrib attr = this.attr.get(attrclass(c));
 	if(!c.isInstance(attr))
@@ -271,8 +260,25 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner {
 	return(c.cast(attr));
     }
 
+    private void setattr(Class<? extends GAttrib> ac, GAttrib a) {
+	GAttrib prev = (a != null) ? attr.put(ac, a) : attr.remove(ac);
+	if(prev != null) {
+	    if(ac == Drawable.class)
+		((Drawable)prev).drawremove();
+	    prev.dispose();
+	}
+	if(a != null) {
+	    if(ac == Drawable.class)
+		((Drawable)a).drawadd(slots);
+	}
+    }
+
+    public void setattr(GAttrib a) {
+	setattr(attrclass(a.getClass()), a);
+    }
+
     public void delattr(Class<? extends GAttrib> c) {
-	attr.remove(attrclass(c));
+	setattr(attrclass(c), null);
     }
 
     private Class<? extends ResAttr> rattrclass(Class<? extends ResAttr> cl) {
@@ -321,10 +327,6 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner {
 	    i.remove();
 	    upd = true;
 	}
-	if(upd) {
-	    if(glob.oc.getgob(id) != null)
-		glob.oc.changed(this);
-	}
     }
 
     public void setrattr(Indir<Resource> resid, Message dat) {
@@ -368,6 +370,21 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner {
     }
 
     public void draw(GOut g) {}
+
+    public void added(RenderTree.Slot slot) {
+	synchronized(this) {
+	    slots.add(slot);
+	}
+	Drawable d = getattr(Drawable.class);
+	if(d != null)
+	    d.drawadd(Collections.singletonList(slot));
+    }
+
+    public void removed(RenderTree.Slot slot) {
+	synchronized(this) {
+	    slots.remove(slot);
+	}
+    }
 
     /* XXXRENDER
     public boolean setup(RenderList rl) {
@@ -494,28 +511,53 @@ public class Gob implements Sprite.Owner, Skeleton.ModOwner {
     }
 
     public final Save save = new Save();
-    public class GobLocation extends GLState.Abstract {
+    */
+
+    public class Placed implements RenderTree.Node {
+	private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
 	private Coord3f c = null;
-	private double a = 0.0;
-	private Matrix4f update = null;
-	private final Location xl = new Location(Matrix4f.id, "gobx"), rot = new Location(Matrix4f.id, "gob");
+	private double a = Double.NaN;
+	private Location xl, rot;
+
+	private Placed() {}
 
 	public void tick() {
+	    boolean upd = false;
 	    try {
 		Coord3f c = getc();
 		c.y = -c.y;
-		if((this.c == null) || !c.equals(this.c))
-		    xl.update(Transform.makexlate(new Matrix4f(), this.c = c));
-		if(this.a != Gob.this.a)
-		    rot.update(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-(this.a = Gob.this.a)));
+		if(!Utils.eq(this.c, c)) {
+		    xl = new Location(Transform.makexlate(new Matrix4f(), this.c = c), "gobx");
+		    upd = true;
+		}
+		if(this.a != Gob.this.a) {
+		    rot = new Location(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-(this.a = Gob.this.a)), "gob");
+		    upd = true;
+		}
 	    } catch(Loading l) {}
+	    if(upd)
+		update();
 	}
 
-	public void prep(Buffer buf) {
-	    xl.prep(buf);
-	    rot.prep(buf);
+	private Pipe.Op state() {
+	    return(Pipe.Op.compose(xl, rot));
+	}
+
+	private void update() {
+	    Pipe.Op state = state();
+	    for(RenderTree.Slot slot : slots)
+		slot.ostate(state);
+	}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.ostate(state());
+	    slot.add(Gob.this, null);
+	    slots.add(slot);
+	}
+
+	public void removed(RenderTree.Slot slot) {
+	    slots.remove(slot);
 	}
     }
-    public final GobLocation loc = new GobLocation();
-    */
+    public final Placed placed = new Placed();
 }

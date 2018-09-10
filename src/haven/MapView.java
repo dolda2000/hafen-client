@@ -29,12 +29,11 @@ package haven;
 import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 import static haven.OCache.posres;
-// import haven.GLProgram.VarID; XXXRENDER
 import java.awt.Color;
 import java.util.*;
 import java.lang.ref.*;
 import java.lang.reflect.*;
-import javax.media.opengl.*;
+import haven.render.*;
 
 public class MapView extends Widget implements DTarget, Console.Directory {
     public static boolean clickdb = false;
@@ -406,6 +405,90 @@ public class MapView extends Widget implements DTarget, Console.Directory {
     public void disol(int... overlays) {
 	for(int ol : overlays)
 	    visol[ol]--;
+    }
+
+    private class Gobs implements RenderTree.Node, OCache.ChangeCallback {
+	final OCache oc = glob.oc;
+	final Collection<Gob> adding = new HashSet<>();
+	final Map<Gob, RenderTree.Slot> current = new HashMap<>();
+	final AsyncCheck<Gob> adder;
+	RenderTree.Slot slot;
+
+	Gobs() {
+	    adder = new AsyncCheck<>(this, "Mapview object adder", () -> Utils.el(adding), this::addgob);
+	}
+
+	void unregister() {
+	    oc.uncallback(this);
+	}
+
+	private void addgob(Gob ob) {
+	    while(true) {
+		try {
+		    RenderTree.Slot slot = this.slot;
+		    if(slot == null)
+			return;
+		    synchronized(ob) {
+			slot.add(ob.placed, null);
+		    }
+		    break;
+		} catch(Loading l) {
+		    /* XXX: Make nonblocking */
+		    try {
+			l.waitfor();
+		    } catch(InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return;
+		    }
+		}
+	    }
+	    synchronized(this) {
+		adding.remove(ob);
+	    }
+	}
+
+	public void added(RenderTree.Slot slot) {
+	    synchronized(this) {
+		if(this.slot != null)
+		    throw(new RuntimeException());
+		this.slot = slot;
+		synchronized(oc) {
+		    for(Gob ob : oc)
+			adding.add(ob);
+		    oc.callback(this);
+		}
+	    }
+	    adder.check();
+	}
+
+	public void removed(RenderTree.Slot slot) {
+	    synchronized(this) {
+		if(this.slot != slot)
+		    throw(new RuntimeException());
+		this.slot = null;
+		adding.clear();
+		current.clear();
+	    }
+	}
+
+	public void added(Gob ob) {
+	    synchronized(this) {
+		if(current.containsKey(ob))
+		    throw(new RuntimeException());
+		adding.add(ob);
+		adder.check();
+	    }
+	}
+
+	public void removed(Gob ob) {
+	    synchronized(this) {
+		RenderTree.Slot slot = current.remove(ob);
+		if(slot != null)
+		    slot.remove();
+		else
+		    adding.remove(ob);
+	    }
+	}
     }
 
     /* XXXRENDER

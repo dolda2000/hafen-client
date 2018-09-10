@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.lang.reflect.*;
+import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 import static haven.Composited.ED;
@@ -67,7 +68,13 @@ public class Composite extends Drawable {
 	rl.add(comp, null);
     }
     */
-	
+
+    public void drawadd(Iterable<RenderTree.Slot> slots) {
+    }
+
+    public void drawremove() {
+    }
+
     private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, boolean old) {
 	List<PoseMod> mods = new ArrayList<PoseMod>(rl.size());
 	for(ResData dat : rl) {
