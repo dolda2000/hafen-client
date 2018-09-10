@@ -204,13 +204,14 @@ public class Text {
 
 	public UText(Furnace fnd) {this.fnd = fnd;}
 
+	protected Text render(String text) {return(fnd.render(text));}
 	protected String text(T value) {return(String.valueOf(value));}
 	protected abstract T value();
 
 	public Text get() {
 	    T value = value();
 	    if(!Utils.eq(value, cv))
-		cur = fnd.render(text(cv = value));
+		cur = render(text(cv = value));
 	    return(cur);
 	}
 
