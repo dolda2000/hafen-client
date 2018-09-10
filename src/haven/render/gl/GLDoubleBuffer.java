@@ -24,48 +24,71 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render.gl;
 
 import java.util.*;
-import haven.render.*;
+import javax.media.opengl.*;
 
-public class SprDrawable extends Drawable {
-    public final Sprite spr;
-    private final ArrayList<RenderTree.Slot> slots = new ArrayList<>(1);
+public class GLDoubleBuffer {
+    private List<Buffered> changed = null;
+    private int prevsz = 16;
 
-    public SprDrawable(Gob gob, Sprite spr) {
-	super(gob);
-	this.spr = spr;
-    }
+    public class Buffered implements BGL.Request {
+	private BufferBGL cur, next;
 
-    public void drawadd(Iterable<RenderTree.Slot> slots) {
-	Collection<RenderTree.Slot> added = new ArrayList<>();
-	try {
-	    for(RenderTree.Slot slot : slots)
-		added.add(slot.add(spr, null));
-	} catch(RuntimeException e) {
-	    for(RenderTree.Slot slot : added)
-		slot.remove();
-	    throw(e);
+	public void run(GL2 gl) {
+	    if(cur != null)
+		cur.run(gl);
 	}
-	this.slots.addAll(added);
+
+	public void update(BufferBGL gl) {
+	    if(gl == null)
+		throw(new NullPointerException());
+	    if(this.cur == null) {
+		this.cur = gl;
+	    } else {
+		synchronized(GLDoubleBuffer.this) {
+		    if(changed == null) {
+			this.cur = gl;
+		    } else {
+			if(this.next == null)
+			    changed.add(this);
+			this.next = gl;
+		    }
+		}
+	    }
+	}
     }
 
-    public void drawremove() {
-	for(RenderTree.Slot slot : this.slots)
-	    slot.remove();
+    public void get() throws InterruptedException {
+	synchronized(this) {
+	    while(changed != null)
+		wait();
+	    changed = new ArrayList<Buffered>(prevsz * 2);
+	}
     }
 
-    public void dispose() {
-	if(spr != null)
-	    spr.dispose();
+    public void put() {
+	synchronized(this) {
+	    if(changed != null) {
+		for(Buffered req : changed) {
+		    if(req.next != null) {
+			req.cur = req.next;
+			req.next = null;
+		    }
+		}
+		prevsz = Math.max(changed.size(), 16);
+		changed = null;
+		notifyAll();
+	    }
+	}
     }
 
-    public void ctick(double dt) {
-	spr.tick(dt);
-    }
-
-    public Resource getres() {
-	return(null);
+    public void put(BGL gl) {
+	gl.bglSubmit(new BGL.Request() {
+		public void run(GL2 gl) {
+		    put();
+		}
+	    });
     }
 }

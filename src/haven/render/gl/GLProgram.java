@@ -35,7 +35,7 @@ import haven.render.*;
 import haven.render.sl.*;
 
 public class GLProgram implements Disposable {
-    public static boolean dumpall = true;
+    public static boolean dumpall = false;
     public final GLEnvironment env;
     public final String vsrc, fsrc;
     public final Uniform[] uniforms;
@@ -241,7 +241,7 @@ public class GLProgram implements Disposable {
 	    this.name = name;
 	}
 
-	public int glid() {return(id);}
+	public abstract int glid();
     }
 
     public class ProgOb extends GLObject implements BGL.ID {
@@ -253,15 +253,42 @@ public class GLProgram implements Disposable {
 	    this.shaders = shaders;
 	    env.prepare(this);
 	    for(Map.Entry<Uniform, String> uni : GLProgram.this.unifnms.entrySet()) {
-		VarID id = new UniformID(uni.getValue());
+		UniformID id = uniresolve(uni.getKey().type, uni.getValue());
+		/* XXX: This should work with samplers in compound
+		 * uniforms, but that requires support in preparing
+		 * them as well, so wait until actually used for
+		 * anything. */
+		if(samplerids.containsKey(uni.getKey()))
+		    id.sampler = samplerids.get(uni.getKey());
 		umap.put(uni.getKey(), id);
-		env.prepare(id);
 	    }
 	    for(Map.Entry<Attribute, String> attr : GLProgram.this.attrnms.entrySet()) {
-		VarID id = new AttrID(attr.getValue());
+		AttrID id = new AttrID(attr.getValue());
 		amap.put(attr.getKey(), id);
 		env.prepare(id);
 	    }
+	}
+
+	private UniformID uniresolve(Type type, String name) {
+	    UniformID ret = new UniformID(name);
+	    if(type instanceof Array) {
+		Array ary = (Array)type;
+		if(ary.sz > 0) {
+		    UniformID[] sub = new UniformID[ary.sz];
+		    for(int i = 0; i < ary.sz; i++)
+			sub[i] = uniresolve(ary.el, name + "[" + i + "]");
+		    ret.sub = sub;
+		}
+	    } else if(type instanceof Struct) {
+		Struct struct = (Struct)type;
+		UniformID[] sub = new UniformID[struct.fields.size()];
+		int n = 0;
+		for(Struct.Field f : struct.fields)
+		    sub[n++] = uniresolve(f.type, name + "." + f.name);
+		ret.sub = sub;
+	    }
+	    env.prepare(ret);
+	    return(ret);
 	}
 
 	public void create(GL2 gl) {
@@ -295,26 +322,39 @@ public class GLProgram implements Disposable {
 	    private AttrID(String name) {super(name);}
 
 	    public void run(GL2 gl) {
-		if((this.id = gl.glGetAttribLocation(ProgOb.this.id, name)) < 0)
-		    throw(new UnknownExternException("Attribute not resolvable in program: " + name, GLProgram.this, "attrib", name));
+		this.id = gl.glGetAttribLocation(ProgOb.this.id, name);
+	    }
+
+	    public int glid() {
+		if(id < 0)
+		    throw(new UnknownExternException("Attribute not resolvable in program: " + name, GLProgram.this, "attribute", name));
+		return(id);
 	    }
 	}
 
 	public class UniformID extends VarID {
+	    public UniformID[] sub = null;
+	    public int sampler = -1;
+
 	    private UniformID(String name) {super(name);}
 
 	    public void run(GL2 gl) {
-		if((this.id = gl.glGetUniformLocation(ProgOb.this.id, name)) < 0)
+		this.id = gl.glGetUniformLocation(ProgOb.this.id, name);
+	    }
+
+	    public int glid() {
+		if(id < 0)
 		    throw(new UnknownExternException("Uniform not resolvable in program: " + name, GLProgram.this, "uniform", name));
+		return(id);
 	    }
 	}
 
-	private final transient Map<Attribute, VarID> amap = new IdentityHashMap<>();
-	public VarID cattrib(Attribute var) {
+	private final transient Map<Attribute, AttrID> amap = new IdentityHashMap<>();
+	public AttrID cattrib(Attribute var) {
 	    return(amap.get(var));
 	}
-	private final transient Map<Uniform, VarID> umap = new IdentityHashMap<>();
-	public VarID cuniform(Uniform var) {
+	private final transient Map<Uniform, UniformID> umap = new IdentityHashMap<>();
+	public UniformID cuniform(Uniform var) {
 	    return(umap.get(var));
 	}
     }
@@ -361,21 +401,21 @@ public class GLProgram implements Disposable {
 	}
     }
 
-    public VarID cattrib(Attribute var) {
+    public ProgOb.AttrID cattrib(Attribute var) {
 	return(glid().cattrib(var));
     }
-    public VarID attrib(Attribute var) {
-	VarID r = cattrib(var);
+    public ProgOb.AttrID attrib(Attribute var) {
+	ProgOb.AttrID r = cattrib(var);
 	if(r == null)
 	    throw(new UnknownExternException("Attribute not found in symtab: " + var, this, "attrib", var.toString()));
 	return(r);
     }
 
-    public VarID cuniform(Uniform var) {
+    public ProgOb.UniformID cuniform(Uniform var) {
 	return(glid().cuniform(var));
     }
-    public VarID uniform(Uniform var) {
-	VarID r = cuniform(var);
+    public ProgOb.UniformID uniform(Uniform var) {
+	ProgOb.UniformID r = cuniform(var);
 	if(r == null)
 	    throw(new UnknownExternException("Uniform not found in symtab: " + var, this, "uniform", var.toString()));
 	return(r);

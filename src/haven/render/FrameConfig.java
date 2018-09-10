@@ -24,44 +24,25 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render;
 
-public class Homing extends Moving {
-    public long tgt;
-    public Coord2d tc;
-    public double v, dist;
-    
-    public Homing(Gob gob, long tgt, Coord2d tc, double v) {
-	super(gob);
-	this.tgt = tgt;
-	this.tc = tc;
-	this.v = v;
+import haven.*;
+import haven.render.sl.ShaderMacro;
+
+public class FrameConfig extends State {
+    public static final Slot<FrameConfig> slot = new Slot<>(Slot.Type.SYS, FrameConfig.class);
+    public final Coord sz;
+    public final int samples;
+
+    public FrameConfig(Coord sz, int samples) {
+	this.sz = sz;
+	this.samples = samples;
     }
-    
-    public Coord3f getc() {
-	Coord2d rc = gob.rc;
-	Coord2d tc = this.tc;
-	Gob tgt = gob.glob.oc.getgob(this.tgt);
-	if(tgt != null)
-	    tc = tgt.rc;
-	Coord2d d = tc.sub(rc);
-	double e = d.abs();
-	if(dist > e)
-	    rc = tc;
-	else if(e > 0.00001)
-	    rc = rc.add(d.mul(dist / e));
-	return(gob.glob.map.getzp(rc));
+
+    public FrameConfig(Coord sz) {
+	this(sz, 1);
     }
-    
-    public double getv() {
-	return(v);
-    }
-    
-    public void move(Coord2d c) {
-	dist = 0;
-    }
-    
-    public void ctick(double dt) {
-	dist += v * (dt * 0.9);
-    }
+
+    public ShaderMacro shader() {return(null);}
+    public void apply(Pipe p) {p.put(slot, this);}
 }

@@ -31,8 +31,22 @@ import javax.media.opengl.*;
 import haven.*;
 import haven.render.*;
 import haven.render.sl.*;
+import haven.render.gl.GLProgram.ProgOb.UniformID;
 
 public interface UniformApplier<T> {
+    public static class NoMappingException extends RuntimeException {
+	public final String varnm;
+	public final Type vartype;
+	public final Class<?> valtype;
+
+	public NoMappingException(String varnm, Type vartype, Class<?> valtype) {
+	    super(String.format("no uniform type mapping for %s -> %s: %s", valtype, vartype, varnm));
+	    this.varnm = varnm;
+	    this.vartype = vartype;
+	    this.valtype = valtype;
+	}
+    }
+
     public static class TypeMapping {
 	private static final Map<Type, TypeMapping> mappings = new HashMap<>();
 	private final Map<Class<?>, UniformApplier<?>> reg = new HashMap<>();
@@ -71,61 +85,99 @@ public interface UniformApplier<T> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <T> void apply0(BGL gl, UniformApplier<T> fn, GLProgram prog, Uniform var, Object val) {
-	    fn.apply(gl, prog, var, (T)val);
+	private static <T> void apply0(BGL gl, UniformApplier<T> fn, UniformID var, Object val) {
+	    fn.apply(gl, var, (T)val);
+	}
+	private static void apply(BGL gl, Type type, UniformID var, Object val) {
+	    if(type instanceof Array) {
+		Object[] sval = (Object[])val;
+		Array ary = (Array)type;
+		/* XXX? Somewhat unclear if it should be considered
+		 * okay to leave previous values unchanged, especially
+		 * for samplers. */
+		for(int i = 0; (i < ary.sz) && (i < sval.length); i++) {
+		    if(sval[i] != null)
+			apply(gl, ary.el, var.sub[i], sval[i]);
+		}
+	    } else if(type instanceof Struct) {
+		Object[] sval = (Object[])val;
+		Struct struct = (Struct)type;
+		int i = 0;
+		for(Struct.Field f : struct.fields) {
+		    if(sval[i] != null)
+			apply(gl, f.type, var.sub[i], sval[i]);
+		    i++;
+		}
+	    } else {
+		UniformApplier<?> fn = UniformApplier.TypeMapping.get(type, val.getClass());
+		if(fn == null)
+		    throw(new NoMappingException(var.name, type, val.getClass()));
+		apply0(gl, fn, var, val);
+	    }
 	}
 	public static void apply(BGL gl, GLProgram prog, Uniform var, Object val) {
-	    UniformApplier<?> fn = UniformApplier.TypeMapping.get(var.type, val.getClass());
-	    apply0(gl, fn, prog, var, val);
+	    apply(gl, var.type, prog.uniform(var), val);
 	}
 
 	static {
-	    TypeMapping.register(Type.FLOAT, Float.class, (gl, prog, var, n) -> {
-		    gl.glUniform1f(prog.uniform(var), n);
+	    TypeMapping.register(Type.FLOAT, Float.class, (gl, var, n) -> {
+		    gl.glUniform1f(var, n);
 		});
 
-	    TypeMapping.register(Type.VEC2, float[].class, (gl, prog, var, a) -> {
-		    gl.glUniform2f(prog.uniform(var), a[0], a[1]);
-		});
-	    TypeMapping.register(Type.VEC2, Coord.class, (gl, prog, var, c) -> {
-		    gl.glUniform2f(prog.uniform(var), c.x, c.y);
-		});
-	    TypeMapping.register(Type.VEC2, Coord3f.class, (gl, prog, var, c) -> {
-		    gl.glUniform2f(prog.uniform(var), c.x, c.y);
+	    TypeMapping.register(Type.INT, Integer.class, (gl, var, n) -> {
+		    gl.glUniform1i(var, n);
 		});
 
-	    TypeMapping.register(Type.VEC3, float[].class, (gl, prog, var, a) -> {
-		    gl.glUniform3f(prog.uniform(var), a[0], a[1], a[2]);
+	    TypeMapping.register(Type.VEC2, float[].class, (gl, var, a) -> {
+		    gl.glUniform2f(var, a[0], a[1]);
 		});
-	    TypeMapping.register(Type.VEC3, Coord3f.class, (gl, prog, var, c) -> {
-		    gl.glUniform3f(prog.uniform(var), c.x, c.y, c.z);
+	    TypeMapping.register(Type.VEC2, Coord.class, (gl, var, c) -> {
+		    gl.glUniform2f(var, c.x, c.y);
 		});
-	    TypeMapping.register(Type.VEC3, java.awt.Color.class, (gl, prog, var, col) -> {
-		    gl.glUniform3f(prog.uniform(var), col.getRed() / 255f, col.getGreen() / 255f, col.getBlue() / 255f);
-		});
-	    TypeMapping.register(Type.VEC3, FColor.class, (gl, prog, var, col) -> {
-		    gl.glUniform3f(prog.uniform(var), col.r, col.g, col.b);
+	    TypeMapping.register(Type.VEC2, Coord3f.class, (gl, var, c) -> {
+		    gl.glUniform2f(var, c.x, c.y);
 		});
 
-	    TypeMapping.register(Type.VEC4, float[].class, (gl, prog, var, a) -> {
-		    gl.glUniform4f(prog.uniform(var), a[0], a[1], a[2], a[3]);
+	    TypeMapping.register(Type.VEC3, float[].class, (gl, var, a) -> {
+		    gl.glUniform3f(var, a[0], a[1], a[2]);
 		});
-	    TypeMapping.register(Type.VEC4, Coord3f.class, (gl, prog, var, c) -> {
-		    gl.glUniform4f(prog.uniform(var), c.x, c.y, c.z, 1);
+	    TypeMapping.register(Type.VEC3, Coord3f.class, (gl, var, c) -> {
+		    gl.glUniform3f(var, c.x, c.y, c.z);
 		});
-	    TypeMapping.register(Type.VEC4, java.awt.Color.class, (gl, prog, var, col) -> {
-		    gl.glUniform4f(prog.uniform(var), col.getRed() / 255f, col.getGreen() / 255f, col.getBlue() / 255f, col.getAlpha() / 255f);
+	    TypeMapping.register(Type.VEC3, java.awt.Color.class, (gl, var, col) -> {
+		    gl.glUniform3f(var, col.getRed() / 255f, col.getGreen() / 255f, col.getBlue() / 255f);
 		});
-	    TypeMapping.register(Type.VEC4, FColor.class, (gl, prog, var, col) -> {
-		    gl.glUniform4f(prog.uniform(var), col.r, col.g, col.b, col.a);
+	    TypeMapping.register(Type.VEC3, FColor.class, (gl, var, col) -> {
+		    gl.glUniform3f(var, col.r, col.g, col.b);
 		});
 
-	    TypeMapping.register(Type.SAMPLER2D, GLTexture.Tex2D.class, (gl, prog, var, smp) -> {
-		    gl.glActiveTexture(GL.GL_TEXTURE0 + prog.samplerids.get(var));
+	    TypeMapping.register(Type.VEC4, float[].class, (gl, var, a) -> {
+		    gl.glUniform4f(var, a[0], a[1], a[2], a[3]);
+		});
+	    TypeMapping.register(Type.VEC4, Coord3f.class, (gl, var, c) -> {
+		    gl.glUniform4f(var, c.x, c.y, c.z, 1);
+		});
+	    TypeMapping.register(Type.VEC4, java.awt.Color.class, (gl, var, col) -> {
+		    gl.glUniform4f(var, col.getRed() / 255f, col.getGreen() / 255f, col.getBlue() / 255f, col.getAlpha() / 255f);
+		});
+	    TypeMapping.register(Type.VEC4, FColor.class, (gl, var, col) -> {
+		    gl.glUniform4f(var, col.r, col.g, col.b, col.a);
+		});
+
+	    TypeMapping.register(Type.MAT4, float[].class, (gl, var, mat) -> {
+		    gl.glUniformMatrix4fv(var, 1, false, mat, 0);
+		});
+	    TypeMapping.register(Type.MAT4, Matrix4f.class, (gl, var, mat) -> {
+		    gl.glUniformMatrix4fv(var, 1, false, mat.m, 0);
+		});
+
+	    TypeMapping.register(Type.SAMPLER2D, GLTexture.Tex2D.class, (gl, var, smp) -> {
+		    if(var.sampler < 0) throw(new RuntimeException());
+		    gl.glActiveTexture(GL.GL_TEXTURE0 + var.sampler);
 		    smp.bind(gl);
 		});
 	}
     }
 
-    public void apply(BGL gl, GLProgram prog, Uniform var, T value);
+    public void apply(BGL gl, UniformID var, T value);
 }

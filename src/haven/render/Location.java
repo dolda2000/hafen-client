@@ -24,9 +24,9 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render;
 
-import javax.media.opengl.*;
+import haven.*;
 
 public class Location extends Transform {
     public final String id;
@@ -40,7 +40,7 @@ public class Location extends Transform {
 	this(xf, null);
     }
 
-    public static class Chain extends GLState {
+    public static class Chain extends State {
 	public final Location loc;
 	public final Chain p;
 	private Matrix4f bk;
@@ -56,14 +56,10 @@ public class Location extends Transform {
 	    return(loc.fin(p.fin(o)));
 	}
 
-	public void apply(GOut g) {
-	}
+	public haven.render.sl.ShaderMacro shader() {return(null);}
 
-	public void unapply(GOut g) {
-	}
-
-	public void prep(Buffer b) {
-	    throw(new RuntimeException("Location chains should not be applied directly."));
+	public void apply(Pipe p) {
+	    p.put(Homo3D.loc, this);
 	}
 
 	public Chain back(String id) {
@@ -94,57 +90,28 @@ public class Location extends Transform {
 		ret += " -> " + p;
 	    return(ret);
 	}
-
-	public static final Instancer<Chain> instancer = new Instancer<Chain>() {
-	    final Chain instanced = new Chain(null, null) {
-		    public Matrix4f fin(Matrix4f o) {
-			throw(new RuntimeException("Current in instanced drawing; cannot finalize a single location"));
-		    }
-
-		    public String toString() {return("instanced location");}
-
-		    final haven.glsl.ShaderMacro shader = mkinstanced;
-		    public haven.glsl.ShaderMacro shader() {return(shader);}
-		};
-
-	    public Chain inststate(Chain[] in) {
-		return(instanced);
-	    }
-	};
     }
 
-    public void apply(GOut g) {
-	throw(new RuntimeException("Locations should not be applied directly."));
+    public void apply(Pipe p) {
+	Chain prev = p.get(Homo3D.loc);
+	p.put(Homo3D.loc, new Chain(this, prev));
     }
 
-    public void unapply(GOut g) {
-	throw(new RuntimeException("Locations should not be applied directly."));
-    }
-
-    public void prep(Buffer b) {
-	Chain p = b.get(PView.loc);
-	b.put(PView.loc, new Chain(this, p));
-    }
-
-    public static Chain back(Buffer b, String id) {
-	Chain s = b.get(PView.loc);
+    public static Chain back(Pipe p, String id) {
+	Chain s = p.get(Homo3D.loc);
 	return(s == null?s:s.back(id));
     }
 
-    public static Chain goback(Buffer b, String id) {
-	Chain s = back(b, id);
+    public static Chain goback(Pipe p, String id) {
+	Chain s = back(p, id);
 	if(s == null)
 	    throw(new IllegalStateException("No such back-link: " + id));
-	b.put(PView.loc, s);
+	p.put(Homo3D.loc, s);
 	return(s);
     }
 
-    public static GLState goback(final String id) {
-	return(new GLState.Abstract() {
-		public void prep(Buffer buf) {
-		    goback(buf, id);
-		}
-	    });
+    public static Pipe.Op goback(String id) {
+	return(p -> goback(p, id));
     }
 
     public static Location xlate(Coord3f c) {

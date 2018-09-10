@@ -43,7 +43,7 @@ public class Glob {
     public double lightang = 0.0, lightelev = 0.0;
     public double olightang = 0.0, olightelev = 0.0;
     public double tlightang = 0.0, tlightelev = 0.0;
-    public long lchange = -1;
+    public double lchange = -1;
     public Indir<Resource> sky1 = null, sky2 = null;
     public double skyblend = 0.0;
     private Map<Indir<Resource>, Object> wmap = new HashMap<Indir<Resource>, Object>();
@@ -58,7 +58,7 @@ public class Glob {
     public static interface Weather {
 	/* XXXRENDER public void gsetup(RenderList rl); */
 	public void update(Object... args);
-	public boolean tick(int dt);
+	public boolean tick(double dt);
     }
 
     public static class CAttr extends Observable {
@@ -90,10 +90,10 @@ public class Glob {
 			 oa + (int)((ta - oa) * a)));
     }
 
-    private void ticklight(int dt) {
+    private void ticklight(double dt) {
 	if(lchange >= 0) {
 	    lchange += dt;
-	    if(lchange > 2000) {
+	    if(lchange > 2.0) {
 		lchange = -1;
 		lightamb = tlightamb;
 		lightdif = tlightdif;
@@ -101,7 +101,7 @@ public class Glob {
 		lightang = tlightang;
 		lightelev = tlightelev;
 	    } else {
-		double a = lchange / 2000.0;
+		double a = lchange / 2.0;
 		lightamb = colstep(olightamb, tlightamb, a);
 		lightdif = colstep(olightdif, tlightdif, a);
 		lightspc = colstep(olightspc, tlightspc, a);
@@ -111,15 +111,14 @@ public class Glob {
 	}
     }
 
-    private long lastctick = 0;
+    private double lastctick = 0;
     public void ctick() {
-	long now = System.currentTimeMillis();
-	int dt;
+	double now = Utils.rtime();
+	double dt;
 	if(lastctick == 0)
 	    dt = 0;
 	else
-	    dt = (int)(now - lastctick);
-	dt = Math.max(dt, 0);
+	    dt = Math.max(now - lastctick, 0.0);
 
 	synchronized(this) {
 	    ticklight(dt);

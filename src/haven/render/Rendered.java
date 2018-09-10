@@ -26,6 +26,53 @@
 
 package haven.render;
 
+import java.util.*;
+import haven.render.sl.ShaderMacro;
+
 public interface Rendered {
     public void draw(Pipe context, Render out);
+
+    public static final State.Slot<Order> order = new State.Slot<>(State.Slot.Type.GEOM, Order.class);
+    public abstract static class Order<C extends Order> extends State {
+	public abstract int mainorder();
+	public abstract Comparator<? super C> comparator();
+
+	public ShaderMacro shader() {return(null);}
+	public void apply(Pipe p) {p.put(order, this);}
+
+	public static class Default extends Order<Order> {
+	    private final int z;
+
+	    public Default(int z) {
+		this.z = z;
+	    }
+
+	    public int mainorder() {
+		return(z);
+	    }
+
+	    private static final Comparator<Order> cmp = new Comparator<Order>() {
+		    public int compare(Order a, Order b) {
+			return(0);
+		    }
+		};
+	    public Comparator<Order> comparator() {return(cmp);}
+	}
+
+	public static final Comparator<Order> cmp = new Comparator<Order>() {
+		@SuppressWarnings("unchecked")
+		public int compare(Order a, Order b) {
+		    int c;
+		    if((c = (a.mainorder() - b.mainorder())) != 0)
+			return(c);
+		    return(a.comparator().compare(a, b));
+		}
+	    };
+    }
+
+    public final static Order deflt = new Order.Default(0);
+    public final static Order first = new Order.Default(Integer.MIN_VALUE);
+    public final static Order last = new Order.Default(Integer.MAX_VALUE);
+    public final static Order postfx = new Order.Default(5000);
+    public final static Order postpfx = new Order.Default(5500);
 }

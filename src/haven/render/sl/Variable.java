@@ -88,6 +88,7 @@ public abstract class Variable {
 	}
 
 	public void use(Context ctx) {
+	    type.use(ctx);
 	    if(!defined(ctx))
 		ctx.vardefs.add(new Definition());
 	}

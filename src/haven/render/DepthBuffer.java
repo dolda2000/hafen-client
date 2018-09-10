@@ -30,7 +30,9 @@ import haven.render.sl.*;
 
 public class DepthBuffer extends State {
     public static final Slot<DepthBuffer> slot = new Slot<>(Slot.Type.SYS, DepthBuffer.class);
-    public static final Object defdepth = new Object();
+    public static final Object defdepth = new Object() {
+	    public String toString() {return("#<default depth buffer>");}
+	};
     public final Object image;
 
     public DepthBuffer(Object image) {
@@ -39,4 +41,13 @@ public class DepthBuffer extends State {
 
     public ShaderMacro shader() {return(null);}
     public void apply(Pipe p) {p.put(slot, this);}
+
+    public int hashCode() {
+	return(System.identityHashCode(image));
+    }
+
+    public boolean equals(Object o) {
+	return((o instanceof DepthBuffer) &&
+	       (((DepthBuffer)o).image == this.image));
+    }
 }

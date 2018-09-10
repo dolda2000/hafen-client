@@ -64,9 +64,20 @@ public class Uniform extends Variable.Global {
     }
 
     public void use(Context ctx) {
+	type.use(ctx);
 	if(!defined(ctx))
 	    ctx.vardefs.add(new Def());
 	if((type == Type.SAMPLER2DMS) || (type == Type.SAMPLER2DMSARRAY))
 	    ctx.exts.add("GL_ARB_texture_multisample");
+    }
+
+    public static class Data<T> {
+	public final Function<Pipe, T> value;
+	public final State.Slot<?>[] deps;
+
+	public Data(Function<Pipe, T> value, State.Slot<?>... deps) {
+	    this.value = value;
+	    this.deps = deps;
+	}
     }
 }

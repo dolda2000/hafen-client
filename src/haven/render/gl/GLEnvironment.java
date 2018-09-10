@@ -52,6 +52,10 @@ public class GLEnvironment implements Environment {
 	return(new GLRender(this));
     }
 
+    public GLDrawList drawlist() {
+	return(new GLDrawList(this));
+    }
+
     public void submit(GL2 gl, GLRender cmd) {
 	if(cmd.gl != null) {
 	    GLRender prep;

@@ -24,44 +24,44 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render.sl;
 
-public class Homing extends Moving {
-    public long tgt;
-    public Coord2d tc;
-    public double v, dist;
-    
-    public Homing(Gob gob, long tgt, Coord2d tc, double v) {
-	super(gob);
-	this.tgt = tgt;
-	this.tc = tc;
-	this.v = v;
+public class For extends Statement {
+    public final Expression init, cond, step;
+    public final Statement body;
+
+    public For(Expression init, Expression cond, Expression step, Statement body) {
+	this.init = init;
+	this.cond = cond;
+	this.step = step;
+	this.body = body;
     }
-    
-    public Coord3f getc() {
-	Coord2d rc = gob.rc;
-	Coord2d tc = this.tc;
-	Gob tgt = gob.glob.oc.getgob(this.tgt);
-	if(tgt != null)
-	    tc = tgt.rc;
-	Coord2d d = tc.sub(rc);
-	double e = d.abs();
-	if(dist > e)
-	    rc = tc;
-	else if(e > 0.00001)
-	    rc = rc.add(d.mul(dist / e));
-	return(gob.glob.map.getzp(rc));
+
+    public void walk(Walker w) {
+	if(init != null) w.el(init);
+	if(cond != null) w.el(cond);
+	if(step != null) w.el(step);
+	w.el(body);
     }
-    
-    public double getv() {
-	return(v);
-    }
-    
-    public void move(Coord2d c) {
-	dist = 0;
-    }
-    
-    public void ctick(double dt) {
-	dist += v * (dt * 0.9);
+
+    public void output(Output out) {
+	out.write("for(");
+	if(init != null)
+	    init.output(out);
+	out.write("; ");
+	if(cond != null)
+	    cond.output(out);
+	out.write("; ");
+	if(step != null)
+	    step.output(out);
+	out.write(")");
+	if(body instanceof Block) {
+	    out.write(" ");
+	    ((Block)body).trail(out, false);
+	} else {
+	    out.write("\n"); out.indent++; out.indent();
+	    body.output(out);
+	    out.indent--;
+	}
     }
 }

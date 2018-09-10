@@ -377,6 +377,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void glCullFace(final int mode) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glCullFace(mode);}
+	    });
+    }
+
     public void glDepthFunc(final int func) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glDepthFunc(func);}

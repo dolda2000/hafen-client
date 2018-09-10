@@ -32,7 +32,7 @@ public interface GroupPipe extends Pipe {
 
     public default <T extends State> T get(State.Slot<T> slot) {
 	int[] gstates = gstates();
-	if(slot.id >= gstates.length)
+	if((slot.id >= gstates.length) || (gstates[slot.id] < 0))
 	    return(null);
 	return(groups()[gstates[slot.id]].get(slot));
     }

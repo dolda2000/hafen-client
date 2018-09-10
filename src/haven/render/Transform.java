@@ -24,11 +24,11 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render;
 
-import javax.media.opengl.*;
+import haven.*;
 
-public abstract class Transform extends GLState {
+public abstract class Transform extends State {
     private Matrix4f xf;
     private Matrix4f lp = null, fin;
     
@@ -36,6 +36,8 @@ public abstract class Transform extends GLState {
 	this.xf = xf;
     }
     
+    public haven.render.sl.ShaderMacro shader() {return(null);}
+
     public void update(Matrix4f xf) {
 	this.xf = xf;
 	this.lp = null;

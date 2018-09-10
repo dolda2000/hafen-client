@@ -32,7 +32,9 @@ import haven.render.sl.ValBlock.Value;
 public class FragColor extends State {
     public static final Slot<FragColor> slot = new Slot<>(Slot.Type.SYS, FragColor.class);
     public static final FragData fragcol = new FragData(Type.VEC4, "fragcol", p -> p.get(slot).image, slot).primary();
-    public static final Object defcolor = new Object();
+    public static final Object defcolor = new Object() {
+	    public String toString() {return("#<default color buffer>");}
+	};
     public final Object image;
 
     public FragColor(Object image) {
@@ -57,4 +59,13 @@ public class FragColor extends State {
     }
 
     public void apply(Pipe p) {p.put(slot, this);}
+
+    public int hashCode() {
+	return(System.identityHashCode(image));
+    }
+
+    public boolean equals(Object o) {
+	return((o instanceof FragColor) &&
+	       (((FragColor)o).image == this.image));
+    }
 }

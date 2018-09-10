@@ -26,70 +26,59 @@
 
 package haven;
 
-import java.awt.Color;
+import java.util.*;
+import haven.render.*;
 
 public class ResDrawable extends Drawable {
     public final Indir<Resource> res;
-    public Sprite spr = null;
+    public final Sprite spr;
     MessageBuf sdt;
-    private int delay = 0;
-	
+    // private double delay = 0; XXXRENDER
+    private final ArrayList<RenderTree.Slot> slots = new ArrayList<>(1);
+
     public ResDrawable(Gob gob, Indir<Resource> res, Message sdt) {
 	super(gob);
 	this.res = res;
 	this.sdt = new MessageBuf(sdt);
-	try {
-	    init();
-	} catch(Loading e) {}
+	spr = Sprite.create(gob, res.get(), this.sdt.clone());
     }
-	
+
     public ResDrawable(Gob gob, Resource res) {
 	this(gob, res.indir(), MessageBuf.nil);
     }
-	
-    public void init() {
-	if(spr != null)
-	    return;
-	spr = Sprite.create(gob, res.get(), sdt.clone());
+
+    public void ctick(double dt) {
+	spr.tick(dt);
     }
-	
-    /* XXXRENDER
-    public void setup(RenderList rl) {
+
+    public void drawadd(Iterable<RenderTree.Slot> slots) {
+	Collection<RenderTree.Slot> added = new ArrayList<>();
 	try {
-	    init();
-	} catch(Loading e) {
-	    return;
+	    for(RenderTree.Slot slot : slots)
+		added.add(slot.add(spr, null));
+	} catch(RuntimeException e) {
+	    for(RenderTree.Slot slot : added)
+		slot.remove();
+	    throw(e);
 	}
-	rl.add(spr, null);
+	this.slots.addAll(added);
     }
-    */
-	
-    public void ctick(int dt) {
-	if(spr == null) {
-	    delay += dt;
-	} else {
-	    spr.tick(delay + dt);
-	    delay = 0;
-	}
+
+    public void drawremove() {
+	for(RenderTree.Slot slot : this.slots)
+	    slot.remove();
     }
-    
+
     public void dispose() {
 	if(spr != null)
 	    spr.dispose();
     }
-    
+
     public Resource getres() {
 	return(res.get());
     }
-    
+
     public Skeleton.Pose getpose() {
-	init();
 	return(Skeleton.getpose(spr));
     }
-
-    /* XXXRENDER
-    public Object staticp() {
-	return((spr != null)?spr.staticp():null);
-    }
-    */
 }

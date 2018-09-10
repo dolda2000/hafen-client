@@ -13,16 +13,9 @@ haven/Rendered.java
 haven/FRendered.java
 haven/ShadowMap.java
 haven/Outlines.java
-haven/PView.java
-haven/Transform.java
-haven/Location.java
 haven/States.java
 haven/MorphedMesh.java
 haven/PoseMorph.java
-haven/Camera.java
-haven/Projection.java
-haven/FastMesh.java
-haven/VertexBuf.java
 haven/CloudShadow.java
 haven/DirCam.java
 haven/FBView.java
@@ -94,7 +87,6 @@ haven/glsl/Walker.java
 haven/glsl/MiscLib.java
 haven/PointedCam.java
 haven/RenderedNormals.java
-haven/TestView.java
 haven/resutil/AlphaTex.java
 haven/resutil/BumpMap.java
 haven/resutil/EnvMap.java

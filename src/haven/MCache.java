@@ -251,7 +251,7 @@ public class MCache {
 	    }
 	}
 	
-	public void tick(int dt) {
+	public void tick(double dt) {
 	    if(fo != null) {
 		for(Collection<Gob> fol : fo) {
 		    for(Gob fo : fol)
@@ -364,7 +364,7 @@ public class MCache {
 	this.sess = sess;
     }
 
-    public void ctick(int dt) {
+    public void ctick(double dt) {
 	synchronized(grids) {
 	    for(Grid g : grids.values()) {
 		g.tick(dt);

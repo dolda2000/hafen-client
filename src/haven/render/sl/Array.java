@@ -45,4 +45,8 @@ public class Array extends Type {
 	else
 	    return(el.name(ctx) + "[]");
     }
+
+    public void use(Context ctx) {
+	el.use(ctx);
+    }
 }

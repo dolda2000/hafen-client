@@ -32,6 +32,7 @@ public class Context {
     public final Map<Symbol, String> symtab = new HashMap<Symbol, String>();
     public final Map<String, Symbol> rsymtab = new HashMap<String, Symbol>();
     public int symgen = 1;
+    public List<Toplevel> typedefs = new LinkedList<Toplevel>();
     public List<Toplevel> vardefs = new LinkedList<Toplevel>();
     public List<Toplevel> fundefs = new LinkedList<Toplevel>();
     public Set<String> exts = new HashSet<String>();
@@ -47,6 +48,10 @@ public class Context {
 	out.write("#version 120\n\n");
 	for(String ext : exts)
 	    out.write("#extension " + ext + ": require\n");
+	for(Toplevel tl : typedefs)
+	    tl.output(out);
+	if(!typedefs.isEmpty())
+	    out.write("\n");
 	for(Toplevel tl : vardefs)
 	    tl.output(out);
 	if(!vardefs.isEmpty())

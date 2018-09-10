@@ -65,12 +65,48 @@ public abstract class GLPipeState<T extends State> {
 	    }
 	};
 
-    public static final GLPipeState<State> depthtest = new GLPipeState<State>(States.depthtest.slot) {
-	    public void apply(BGL gl, State from, State to) {
-		if(to != null)
+    public static final GLPipeState<Facecull> facecull = new GLPipeState<Facecull>(States.facecull) {
+	    private int mode(Facecull.Mode mode) {
+		switch(mode) {
+		    case FRONT: return(GL.GL_FRONT);
+		    case BACK:  return(GL.GL_BACK);
+		    case BOTH:  return(GL.GL_FRONT_AND_BACK);
+		    default:    throw(new IllegalArgumentException(String.format("cull face: %s", mode)));
+		}
+	    }
+
+	    public void apply(BGL gl, Facecull from, Facecull to) {
+		if(to != null) {
+		    gl.glEnable(GL.GL_CULL_FACE);
+		    gl.glCullFace(mode(to.mode));
+		} else {
+		    gl.glDisable(GL.GL_CULL_FACE);
+		}
+	    }
+	};
+
+    public static final GLPipeState<Depthtest> depthtest = new GLPipeState<Depthtest>(States.depthtest) {
+	    private int depthfunc(Depthtest.Test test) {
+		switch(test) {
+		    case FALSE: return(GL.GL_NEVER);
+		    case TRUE:  return(GL.GL_ALWAYS);
+		    case EQ:    return(GL.GL_EQUAL);
+		    case NEQ:   return(GL.GL_NOTEQUAL);
+		    case LT:    return(GL.GL_LESS);
+		    case LE:    return(GL.GL_LEQUAL);
+		    case GT:    return(GL.GL_GREATER);
+		    case GE:    return(GL.GL_GEQUAL);
+		    default:    throw(new IllegalArgumentException(String.format("depth test: %s", test)));
+		}
+	    }
+
+	    public void apply(BGL gl, Depthtest from, Depthtest to) {
+		if(to != null) {
 		    gl.glEnable(GL.GL_DEPTH_TEST);
-		else
+		    gl.glDepthFunc(depthfunc(to.test));
+		} else {
 		    gl.glDisable(GL.GL_DEPTH_TEST);
+		}
 	    }
 	};
 
@@ -147,7 +183,20 @@ public abstract class GLPipeState<T extends State> {
 	    }
 	};
 
-    public static final GLPipeState<?>[] all = {viewport, scissor, depthtest, maskdepth, blending, linewidth};
+    public static final GLPipeState<DepthBias> depthbias = new GLPipeState<DepthBias>(States.depthbias) {
+	    public void apply(BGL gl, DepthBias from, DepthBias to) {
+		if(to != null) {
+		    if(from == null)
+			gl.glEnable(GL.GL_POLYGON_OFFSET_FILL);
+		    if(!eq(from, to))
+			gl.glPolygonOffset(to.factor, to.units);
+		} else {
+		    gl.glDisable(GL.GL_POLYGON_OFFSET_FILL);
+		}
+	    }
+	};
+
+    public static final GLPipeState<?>[] all = {viewport, scissor, facecull, depthtest, maskdepth, blending, linewidth, depthbias};
     public static final GLPipeState<?>[] matching;
     static {
 	int max = all[0].slot.id;

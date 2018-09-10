@@ -24,44 +24,16 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render;
 
-public class Homing extends Moving {
-    public long tgt;
-    public Coord2d tc;
-    public double v, dist;
-    
-    public Homing(Gob gob, long tgt, Coord2d tc, double v) {
-	super(gob);
-	this.tgt = tgt;
-	this.tc = tc;
-	this.v = v;
+import haven.*;
+
+public class Camera extends Transform {
+    public Camera(Matrix4f xf) {
+	super(xf);
     }
-    
-    public Coord3f getc() {
-	Coord2d rc = gob.rc;
-	Coord2d tc = this.tc;
-	Gob tgt = gob.glob.oc.getgob(this.tgt);
-	if(tgt != null)
-	    tc = tgt.rc;
-	Coord2d d = tc.sub(rc);
-	double e = d.abs();
-	if(dist > e)
-	    rc = tc;
-	else if(e > 0.00001)
-	    rc = rc.add(d.mul(dist / e));
-	return(gob.glob.map.getzp(rc));
-    }
-    
-    public double getv() {
-	return(v);
-    }
-    
-    public void move(Coord2d c) {
-	dist = 0;
-    }
-    
-    public void ctick(double dt) {
-	dist += v * (dt * 0.9);
+
+    public void apply(Pipe p) {
+	p.put(Homo3D.cam, this);
     }
 }

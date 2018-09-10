@@ -27,9 +27,10 @@
 package haven;
 
 import java.util.*;
+import haven.render.*;
 
 public interface RenderLink {
-    public /* XXXRENDER Rendered */ Object make();
+    public RenderTree.Node make();
     
     @Resource.LayerName("rlink")
     public class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
@@ -59,9 +60,8 @@ public interface RenderLink {
 		final Indir<Resource> mesh = meshnm.equals("")?res.indir():res.pool.load(meshnm, meshver);
 		final Indir<Resource> mat = matnm.equals("")?res.indir():res.pool.load(matnm, matver);
 		l = new RenderLink() {
-			// Rendered res = null; XXXRENDER
-			public Object make() {
-			    /* XXXRENDER
+			RenderTree.Node res = null;
+			public RenderTree.Node make() {
 			    if(res == null) {
 				FastMesh m = null;
 				for(FastMesh.MeshRes mr : mesh.get().layers(FastMesh.MeshRes.class)) {
@@ -84,8 +84,6 @@ public interface RenderLink {
 				res = M.apply(m);
 			    }
 			    return(res);
-			    */
-			    return(null);
 			}
 		    };
 	    } else if(t == 1) {
@@ -93,7 +91,7 @@ public interface RenderLink {
 		int ver = buf.uint16();
 		final Indir<Resource> amb = res.pool.load(nm, ver);
 		l = new RenderLink() {
-			public Object make() {
+			public RenderTree.Node make() {
 			    // return(new ActAudio.Ambience(amb.get())); XXXRENDER
 			    return(null);
 			}
@@ -104,28 +102,23 @@ public interface RenderLink {
 		final Indir<Resource> lres = res.pool.load(nm, ver);
 		final int meshid = buf.int16();
 		l = new RenderLink() {
-			// Rendered res = null; XXXRENDER
-			public Object make() {
-			    /* XXXRENDER
+			RenderTree.Node res = null;
+			public RenderTree.Node make() {
 			    if(res == null) {
-				ArrayList<Rendered> cl = new ArrayList<Rendered>();
+				ArrayList<RenderTree.Node> cl = new ArrayList<>();
 				for(FastMesh.MeshRes mr : lres.get().layers(FastMesh.MeshRes.class)) {
 				    if(((meshid >= 0) && (mr.id < 0)) || (mr.id == meshid))
 					cl.add(mr.mat.get().apply(mr.m));
 				}
-				final Rendered[] ca = cl.toArray(new Rendered[0]);
-				res = new Rendered() {
-					public void draw(GOut g) {}
-					public boolean setup(RenderList ls) {
-					    for(Rendered r : ca)
-						ls.add(r, null);
-					    return(false);
+				final RenderTree.Node[] ca = cl.toArray(new RenderTree.Node[0]);
+				res = new RenderTree.Node() {
+					public void added(RenderTree.Slot slot) {
+					    for(RenderTree.Node r : ca)
+						slot.add(r, null);
 					}
 				    };
 			    }
 			    return(res);
-			    */
-			    return(null);
 			}
 		    };
 	    } else {

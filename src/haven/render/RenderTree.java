@@ -31,7 +31,7 @@ import static haven.Utils.eq;
 
 public class RenderTree {
     private final Slot root;
-    private final Collection<Client<?>> clients = new ArrayList<>();
+    private final List<Client<?>> clients = new ArrayList<>();
 
     public RenderTree() {
 	root = new Slot(this, null, null);
@@ -64,8 +64,8 @@ public class RenderTree {
 		list.update((RenderList.Slot<R>)slot);
 	}
 
-	void updated(Pipe group) {
-	    list.update(group);
+	void updated(Pipe group, int[] mask) {
+	    list.update(group, mask);
 	}
     }
 
@@ -123,7 +123,7 @@ public class RenderTree {
 	}
 
 	private void alloc(int idx) {
-	    if(states.length < idx) {
+	    if(states.length <= idx) {
 		states = Arrays.copyOf(states, idx + 1);
 		def = Arrays.copyOf(def, idx + 1);
 		deps = Arrays.copyOf(def, idx + 1);
@@ -244,7 +244,7 @@ public class RenderTree {
 	private int nchildren = 0;
 	private int pidx = -1;
 
-	public Slot(RenderTree tree, Slot parent, Node node) {
+	private Slot(RenderTree tree, Slot parent, Node node) {
 	    this.tree = tree;
 	    this.parent = parent;
 	    this.node = node;
@@ -255,12 +255,11 @@ public class RenderTree {
 		throw(new IllegalStateException());
 	    if(children == null)
 		children = new Slot[1];
-	    else if(children.length <= nchildren + 1) {
+	    else if(children.length <= nchildren + 1)
 		children = Arrays.copyOf(children, children.length * 2);
-		int nidx = nchildren++;
-		children[nidx] = ch;
-		ch.pidx = nidx;
-	    }
+	    int nidx = nchildren++;
+	    children[nidx] = ch;
+	    ch.pidx = nidx;
 	}
 
 	private void removech(Slot ch) {
@@ -285,17 +284,49 @@ public class RenderTree {
 	    Slot ch = new Slot(tree, this, n);
 	    ch.cstate = state;
 	    addch(ch);
-	    n.added(ch);
 	    synchronized(tree.clients) {
-		tree.clients.forEach(cl -> cl.added(this));
+		ListIterator<Client<?>> it = tree.clients.listIterator();
+		try {
+		    while(it.hasNext()) {
+			Client<?> cl = it.next();
+			cl.added(this);
+		    }
+		} catch(RuntimeException e) {
+		    try {
+			while(it.hasPrevious()) {
+			    Client<?> cl = it.previous();
+			    cl.removed(this);
+			}
+		    } catch(RuntimeException e2) {
+			Error err = new Error("Unexpected non-local exit", e2);
+			err.addSuppressed(e);
+			throw(err);
+		    }
+		    throw(e);
+		}
+	    }
+	    if(n != null) {
+		try {
+		    n.added(ch);
+		} catch(RuntimeException e) {
+		    remove();
+		}
 	    }
 	    return(ch);
 	}
 
 	public void remove() {
+	    while(nchildren > 0)
+		children[nchildren - 1].remove();
 	    parent.removech(this);
-	    synchronized(tree.clients) {
-		tree.clients.forEach(cl -> cl.removed(this));
+	    try {
+		if(node != null)
+		    node.removed(this);
+		synchronized(tree.clients) {
+		    tree.clients.forEach(cl -> cl.removed(this));
+		}
+	    } catch(RuntimeException e) {
+		throw(new Error("Unexpected non-local exit", e));
 	    }
 	}
 
@@ -355,7 +386,7 @@ public class RenderTree {
 		for(int i = nst.states.length - 1; i >= 0; i--) {
 		    dep: if(nst.deps[i]) {
 			for(Slot sp = parent; sp != null; sp = sp.parent) {
-			    if((sp.dstate != null) && sp.dstate.def[i]) {
+			    if((sp.dstate != null) && (sp.dstate.def.length > i) && sp.dstate.def[i]) {
 				adddep(i, sp);
 				break dep;
 			    }
@@ -377,7 +408,7 @@ public class RenderTree {
 		for(int i = 0; i < maxi; i++) {
 		    if(pst.def[i] && !eq(pst.states[i], nst.states[i])) {
 			ch[nch++] = i;
-			if(rdeps[i] != null) {
+			if((rdeps != null) && (rdeps[i] != null)) {
 			    for(Slot rdep : rdeps[i]) {
 				if(!cdeps.contains(rdep))
 				    cdeps.add(rdep);
@@ -385,12 +416,13 @@ public class RenderTree {
 			}
 		    }
 		}
+		int[] tch = Arrays.copyOf(ch, nch);
 		for(Slot rdep : cdeps)
 		    rdep.rdepupd();
 		Pipe pdst = this.pdstate;
 		if(pdst != null) {
 		    synchronized(tree.clients) {
-			tree.clients.forEach(cl -> cl.updated(pdst));
+			tree.clients.forEach(cl -> cl.updated(pdst, tch));
 		    }
 		}
 	    } else {
@@ -419,8 +451,21 @@ public class RenderTree {
 	}
 
 	private void chstate(Pipe.Op cstate, Pipe.Op ostate) {
-	    if(this.dstate != null)
-		upddstate(mkdstate(cstate, ostate));
+	    if(this.dstate != null) {
+		DepPipe pst = this.dstate;
+		try {
+		    upddstate(mkdstate(cstate, ostate));
+		} catch(RuntimeException e) {
+		    try {
+			upddstate(pst);
+		    } catch(RuntimeException e2) {
+			Error err = new Error("Unexpected non-local exit", e2);
+			err.addSuppressed(e);
+			throw(err);
+		    }
+		    throw(e);
+		}
+	    }
 	    this.cstate = cstate;
 	    this.ostate = ostate;
 	}
@@ -462,7 +507,8 @@ public class RenderTree {
 			    istates[i] = pdstate();
 			    f = true;
 			} else if(i < pi.gstates.length) {
-			    istates[i] = pi.groups[pi.gstates[i]];
+			    if(pi.gstates[i] >= 0)
+				istates[i] = pi.groups[pi.gstates[i]];
 			}
 		    }
 		    if(f) {
@@ -502,8 +548,48 @@ public class RenderTree {
     }
 
     public static interface Node {
-	public void added(Slot slot);
-	public void removed(Slot slot);
+	public default void added(Slot slot) {}
+	public default void removed(Slot slot) {}
+    }
+
+    public Iterable<Slot> slots() {
+	return(new Iterable<Slot>() {
+		public Iterator<Slot> iterator() {
+		    return(new Iterator<Slot>() {
+			    int[] cs = {0, 0, 0, 0, 0, 0, 0, 0};
+			    Slot[] ss = {root, null, null, null, null, null, null, null};
+			    int sp = 0;
+			    Slot next = root;
+
+			    public boolean hasNext() {
+				if(next != null)
+				    return(true);
+				if(sp < 0)
+				    return(false);
+				while(cs[sp] >= ss[sp].nchildren) {
+				    if(--sp < 0)
+					return(false);
+				}
+				next = ss[sp].children[cs[sp]++];
+				if(++sp >= ss.length) {
+				    ss = Arrays.copyOf(ss, ss.length * 2);
+				    cs = Arrays.copyOf(cs, cs.length * 2);
+				}
+				cs[sp] = 0;
+				ss[sp] = next;
+				return(true);
+			    }
+
+			    public Slot next() {
+				if(!hasNext())
+				    throw(new NoSuchElementException());
+				Slot ret = next;
+				next = null;
+				return(ret);
+			    }
+			});
+		}
+	    });
     }
 
     public Slot add(Node n, Pipe.Op state) {
@@ -521,4 +607,14 @@ public class RenderTree {
 	    clients.removeIf(cl -> cl.list == list);
 	}
     }
+
+    private void dump(Slot slot, int ind) {
+	for(int i = 0; i < ind; i++)
+	    System.err.print("    ");
+	System.err.printf("%s(%d)\n", slot, slot.nchildren);
+	for(int i = 0; i < slot.nchildren; i++)
+	    dump(slot.children[i], ind + 1);
+    }
+
+    public void dump() {dump(root, 0);}
 }

@@ -231,7 +231,7 @@ public class Applier {
 	for(int i = 0; i < pn; i++) {
 	    int slot = pdirty[i];
 	    if((slot < GLPipeState.matching.length) && (GLPipeState.matching[slot] != null))
-		glpapply(gl, GLPipeState.matching[slot], cur[slot], ns[slot]);
+		glpapply(gl, GLPipeState.matching[slot], (slot < cur.length) ? cur[slot] : null, (slot < ns.length) ? ns[slot] : null);
 	    cur[slot] = (slot < ns.length) ? ns[slot] : null;
 	}
 	for(int i = 0; i < sn; i++)

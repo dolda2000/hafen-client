@@ -39,6 +39,10 @@ public class GLDrawList implements DrawList {
     public static final int idx_uni = idx_pst + GLPipeState.all.length;
     public final GLEnvironment env;
     private final Map<SettingKey, DepSetting> settings = new HashMap<>();
+    private final Map<Slot<Rendered>, DrawSlot> slotmap = new IdentityHashMap<>();
+    private final Map<Pipe, Object> psettings = new IdentityHashMap<>();
+    private final Map<Pipe, Object> orderidx = new IdentityHashMap<>();
+    private final GLDoubleBuffer settingbuf = new GLDoubleBuffer();
     private DrawSlot root = null;
 
     private static int btheight(DrawSlot s) {
@@ -56,6 +60,15 @@ public class GLDrawList implements DrawList {
 
     private static final Comparator<DrawSlot> order = new Comparator<DrawSlot>() {
 	    public int compare(DrawSlot a, DrawSlot b) {
+		int c;
+		if((c = Rendered.Order.cmp.compare(a.gorder, b.gorder)) != 0)
+		    return(c);
+		if((c = ((System.identityHashCode(a.prog) & 0x7fffffff) - (System.identityHashCode(b.prog) & 0x7fffffff))) != 0)
+		    return(c);
+		if((c = ((System.identityHashCode(a.settings[idx_fbo]) & 0x7fffffff) - (System.identityHashCode(b.settings[idx_fbo]) & 0x7fffffff))) != 0)
+		    return(c);
+		if((c = ((System.identityHashCode(((VaoSetting)a.settings[idx_vao]).st) & 0x7fffffff) - (System.identityHashCode(((VaoSetting)b.settings[idx_vao]).st) & 0x7fffffff))) != 0)
+		    return(c);
 		return((a.sortid < b.sortid) ? -1 : 1);
 	    }
 	};
@@ -150,7 +163,7 @@ public class GLDrawList implements DrawList {
 		bbtrl();
 	    setheight();
 	}
-	void insert() {
+	private void tinsert() {
 	    if((tp != null) || (root == this))
 		throw(new IllegalStateException());
 	    th = 1;
@@ -160,7 +173,7 @@ public class GLDrawList implements DrawList {
 		root.insert(this);
 	    }
 	}
-	void remove() {
+	private void tremove() {
 	    if((tp == null) && (root != this))
 		throw(new IllegalStateException());
 	    DrawSlot rep;
@@ -207,7 +220,10 @@ public class GLDrawList implements DrawList {
 	final Slot<Rendered> bk;
 	final GLProgram prog;
 	final Setting[] settings;
-	final BGL main;
+	BufferBGL compiled, main;
+	Rendered.Order gorder;
+	final Pipe ordersrc;
+	private volatile boolean disposed = false;
 
 	private GLProgram progfor(Slot<Rendered> sl) {
 	    State[] st = sl.state().states();
@@ -222,6 +238,7 @@ public class GLDrawList implements DrawList {
 
 	private void getsettings() {
 	    GroupPipe bst = bk.state();
+	    settings[idx_vao] = vao_nil;
 	    settings[idx_fbo] = getframe(prog, bst);
 	    for(int i = 0; i < GLPipeState.all.length; i++)
 		settings[idx_pst + i] = getpipest(GLPipeState.all[i], bst);
@@ -229,15 +246,124 @@ public class GLDrawList implements DrawList {
 		settings[idx_uni + i] = getuniform(prog, prog.uniforms[i], bst);
 	}
 
+	private void glupdate(DrawSlot prev) {
+	    if(prev == null) {
+		compiled = main;
+	    } else if(prev.prog == this.prog) {
+		BufferBGL gl = new BufferBGL();
+		for(int i = 0; i < this.settings.length; i++) {
+		    if(this.settings[i] != prev.settings[i])
+			gl.bglSubmit(this.settings[i].gl);
+		}
+		gl.bglCallList(main);
+		compiled = gl.trim();
+	    } else {
+		BufferBGL gl = new BufferBGL();
+		GLProgram.apply(gl, prev.prog, this.prog);
+		for(int i = 0; i < this.settings.length; i++)
+		    gl.bglSubmit(this.settings[i].gl);
+		gl.bglCallList(main);
+		compiled = gl.trim();
+	    }
+	}
+
+	@SuppressWarnings("unchecked")
+	private void orderreg() {
+	    Object cur = orderidx.get(ordersrc);
+	    if(cur == null) {
+		orderidx.put(ordersrc, this);
+	    } else if(cur instanceof DrawSlot) {
+		List<DrawSlot> nl = new ArrayList<>(2);
+		nl.add((DrawSlot)cur);
+		nl.add(this);
+		orderidx.put(ordersrc, nl);
+	    } else if(cur instanceof List) {
+		List<DrawSlot> ls = (List<DrawSlot>)cur;
+		ls.add(this);
+	    } else {
+		throw(new RuntimeException());
+	    }
+	}
+
+	@SuppressWarnings("unchecked")
+	private void orderunreg() {
+	    Object cur = orderidx.get(ordersrc);
+	    if(cur == null) {
+		throw(new RuntimeException());
+	    } else if(cur == this) {
+		orderidx.remove(ordersrc);
+	    } else if(cur instanceof List) {
+		List<DrawSlot> ls = (List<DrawSlot>)cur;
+		ls.remove(this);
+		if(ls.size() < 2)
+		    orderidx.put(ordersrc, ls.get(0));
+	    } else {
+		throw(new RuntimeException());
+	    }
+	}
+
+	void orderupdate() {
+	    Rendered.Order norder = ordersrc.get(Rendered.order);
+	    boolean fixed = false;
+	    if(Rendered.Order.cmp.compare(gorder, norder) == 0) {
+		gorder = norder;
+	    } else {
+		tremove();
+		gorder = norder;
+		tinsert();
+	    }
+	}
+
 	DrawSlot(Slot<Rendered> bk) {
+	    GroupPipe bst = bk.state();
 	    this.sortid = uniqid.getAndIncrement();
 	    this.bk = bk;
 	    this.prog = progfor(bk);
+	    this.prog.lock();
 	    this.settings = new Setting[idx_uni + prog.uniforms.length];
 	    getsettings();
+	    gorder = Rendered.deflt;
+	    {
+		int[] gst = bst.gstates();
+		if((gst.length <= Rendered.order.id) ||
+		   (gst[Rendered.order.id] < 0)) {
+		    ordersrc = null;
+		} else {
+		    ordersrc = bst.groups()[gst[Rendered.order.id]];
+		    gorder = ordersrc.get(Rendered.order);
+		    orderreg();
+		}
+	    }
 	    SlotRender g = new SlotRender(this);
-	    bk.obj().draw(bk.state(), g);
-	    main = g.gl;
+	    bk.obj().draw(bst, g);
+	}
+
+	void insert() {
+	    tinsert();
+	    DrawSlot prev = prev(), next = next();
+	    this.glupdate(prev);
+	    if(next != null)
+		next.glupdate(this);
+	}
+
+	void remove() {
+	    DrawSlot prev = prev(), next = next();
+	    tremove();
+	    if(next != null)
+		next.glupdate(prev);
+	}
+
+	void dispose() {
+	    if(disposed)
+		throw(new IllegalStateException());
+	    this.disposed = true;
+	    if(ordersrc != null)
+		orderunreg();
+	    for(int i = 0; i < settings.length; i++) {
+		if(settings[i] != null)
+		    settings[i].put();
+	    }
+	    this.prog.unlock();
 	}
     }
 
@@ -259,7 +385,11 @@ public class GLDrawList implements DrawList {
 	    }
 	}
 
-	@Override public int hashCode() {
+	public int ndeps() {
+	    return((depid_v == null) ? 1 : depid_v.length);
+	}
+
+	public int hashCode() {
 	    int rv = System.identityHashCode(prog);
 	    rv = (rv * 31) + System.identityHashCode(vid);
 	    if(depid_v == null) {
@@ -271,7 +401,7 @@ public class GLDrawList implements DrawList {
 	    return(rv);
 	}
 
-	@Override public boolean equals(Object o) {
+	public boolean equals(Object o) {
 	    if(!(o instanceof SettingKey))
 		return(false);
 	    SettingKey that = (SettingKey)o;
@@ -292,6 +422,10 @@ public class GLDrawList implements DrawList {
 	}
     }
 
+    private static Pipe nidx(Pipe[] arr, int idx) {
+	return((idx < 0) ? Pipe.nil : arr[idx]);
+    }
+
     static Pipe[] makedepid(GroupPipe state, Collection<State.Slot<?>> deps) {
 	Iterator<State.Slot<?>> it = deps.iterator();
 	if(!it.hasNext())
@@ -305,26 +439,34 @@ public class GLDrawList implements DrawList {
 	    if(gids[cid] != one) {
 		Pipe[] ret = new Pipe[deps.size()];
 		for(int i = 0; i < ni; i++)
-		    ret[i] = grp[one];
-		ret[ni++] = grp[gids[cid]];
+		    ret[i] = nidx(grp, one);
+		ret[ni++] = nidx(grp, gids[cid]);
 		while(it.hasNext())
-		    ret[ni++] = grp[gids[it.next().id]];
+		    ret[ni++] = nidx(grp, gids[it.next().id]);
 		return(ret);
 	    }
 	    ni++;
 	}
-	return(new Pipe[] {grp[one]});
+	return(new Pipe[] {nidx(grp, one)});
     }
 
     abstract class Setting {
+	final GLDoubleBuffer.Buffered gl = settingbuf.new Buffered();
+
 	abstract void compile(BGL gl);
+
+	void update() {
+	    BufferBGL buf = new BufferBGL();
+	    compile(buf);
+	    this.gl.update(buf.trim());
+	}
 
 	void put() {}
     }
 
     abstract class DepSetting extends Setting {
 	final SettingKey key;
-	int rc;
+	int rc = 0;
 
 	DepSetting(SettingKey key) {
 	    this.key = key;
@@ -332,8 +474,42 @@ public class GLDrawList implements DrawList {
 
 	abstract State.Slot[] depslots();
 
+	private int depmask_1 = -1;
+	private int[] depmask_v = null;
+	void ckupdate(int[] mask) {
+	    if((depmask_v == null) && (depmask_1 < 0)) {
+		State.Slot[] slots = depslots();
+		if(slots.length == 1) {
+		    depmask_1 = slots[0].id;
+		} else {
+		    int[] depmask = new int[slots.length];
+		    for(int i = 0; i < slots.length; i++)
+			depmask[i] = slots[i].id;
+		    depmask_v = depmask;
+		}
+	    }
+	    if(depmask_v == null) {
+		for(int i = 0; i < mask.length; i++) {
+		    if(mask[i] == depmask_1) {
+			update();
+			break;
+		    }
+		}
+	    } else {
+		int[] dmask = this.depmask_v;
+		for(int i = 0; i < mask.length; i++) {
+		    for(int o = 0; o < dmask.length; o++) {
+			if(mask[i] == dmask[o]) {
+			    update();
+			    break;
+			}
+		    }
+		}
+	    }
+	}
+
 	Pipe compstate() {
-	    if(key.depid_1 != null)
+	    if(key.depid_v == null)
 		return(key.depid_1);
 	    State.Slot[] depslots = depslots();
 	    return(new Pipe() {
@@ -357,8 +533,97 @@ public class GLDrawList implements DrawList {
 	    if(--rc <= 0) {
 		if(rc < 0)
 		    throw(new RuntimeException());
-		settings.remove(key);
+		delsetting(this);
 	    }
+	}
+    }
+
+    private void delsettingp(DepSetting set, Pipe dp) {
+	Object cur = psettings.get(dp);
+	if(cur == null) {
+	} else if(cur == set) {
+	    psettings.remove(dp);
+	} else if(cur instanceof DepSetting[]) {
+	    DepSetting[] sl = (DepSetting[])cur;
+	    int n = -1;
+	    find: for(int i = 0; i < sl.length; i++) {
+		if(sl[i] == set) {
+		    if((i == sl.length - 1) || (sl[i + 1] == null)) {
+			sl[i] = null;
+			n = i;
+			break find;
+		    } else {
+			for(int o = sl.length - 1; o > i; o--) {
+			    if(sl[o] != null) {
+				sl[i] = sl[o];
+				sl[o] = null;
+				n = o;
+				break find;
+			    }
+			}
+			throw(new RuntimeException());
+		    }
+		}
+	    }
+	    if(n < 0) {
+	    } else if(n == 0) {
+		throw(new RuntimeException());
+	    } else if(n == 1) {
+		psettings.put(dp, sl[0]);
+	    }
+	} else {
+	    throw(new RuntimeException());
+	}
+    }
+
+    private void delsetting(DepSetting set) {
+	settings.remove(set.key);
+	if(set.key.depid_v != null) {
+	    for(Pipe dp : set.key.depid_v)
+		delsettingp(set, dp);
+	} else if(set.key.depid_1 != null) {
+	    delsettingp(set, set.key.depid_1);
+	}
+    }
+
+    private void addsettingp(DepSetting set, Pipe dp) {
+	Object cur = psettings.get(dp);
+	if(cur == null) {
+	    psettings.put(dp, set);
+	} else if(cur instanceof DepSetting) {
+	    if(cur != set)
+		psettings.put(dp, new DepSetting[] {(DepSetting)cur, set});
+	} else if(cur instanceof DepSetting[]) {
+	    DepSetting[] sl = (DepSetting[])cur;
+	    for(int i = 0; i < sl.length; i++) {
+		if(sl[i] == set)
+		    return;
+	    }
+	    if(sl[sl.length - 1] == null) {
+		for(int i = sl.length - 1; i > 0; i--) {
+		    if(sl[i - 1] != null) {
+			sl[i] = set;
+			return;
+		    }
+		}
+		throw(new RuntimeException());
+	    } else {
+		DepSetting[] nsl = Arrays.copyOf(sl, sl.length + 1);
+		nsl[sl.length] = set;
+		psettings.put(dp, nsl);
+	    }
+	} else {
+	    throw(new RuntimeException());
+	}
+    }
+
+    private void addsetting(DepSetting set) {
+	settings.put(set.key, set);
+	if(set.key.depid_v != null) {
+	    for(Pipe dp : set.key.depid_v)
+		addsettingp(set, dp);
+	} else if(set.key.depid_1 != null) {
+	    addsettingp(set, set.key.depid_1);
 	}
     }
 
@@ -382,11 +647,13 @@ public class GLDrawList implements DrawList {
 	FrameSetting(SettingKey key) {
 	    super(key);
 	    this.prog = key.prog;
+	    update();
 	}
 
 	void compile(BGL gl) {
 	    Pipe pipe = compstate();
-	    Object depth = env.prepfval(pipe.get(DepthBuffer.slot));
+	    DepthBuffer dbuf = pipe.get(DepthBuffer.slot);
+	    Object depth = env.prepfval((dbuf != null) ? dbuf.image : null);
 	    Object[] fvals = new Object[prog.fragdata.length];
 	    for(int i = 0; i < fvals.length; i++)
 		fvals[i] = env.prepfval(prog.fragdata[i].value.apply(pipe));
@@ -401,10 +668,8 @@ public class GLDrawList implements DrawList {
     DepSetting getframe(GLProgram prog, GroupPipe state) {
 	SettingKey key = new SettingKey(prog, FboState.class, makedepid(state, Arrays.asList(progfslots(prog))));
 	DepSetting ret = settings.get(key);
-	if(ret == null) {
-	    ret = new FrameSetting(key);
-	    settings.put(key, ret);
-	}
+	if(ret == null)
+	    addsetting(ret = new FrameSetting(key));
 	ret.rc++;
 	return(ret);
     }
@@ -415,6 +680,7 @@ public class GLDrawList implements DrawList {
 	PipeSetting(SettingKey key, GLPipeState<T> setting) {
 	    super(key);
 	    this.setting = setting;
+	    update();
 	}
 
 	void compile(BGL gl) {
@@ -430,10 +696,8 @@ public class GLDrawList implements DrawList {
     DepSetting getpipest(GLPipeState<?> pst, GroupPipe state) {
 	SettingKey key = new SettingKey(null, pst, makedepid(state, Arrays.asList(pst.slot)));
 	DepSetting ret = settings.get(key);
-	if(ret == null) {
-	    ret = new PipeSetting<>(key, pst);
-	    settings.put(key, ret);
-	}
+	if(ret == null)
+	    addsetting(ret = new PipeSetting<>(key, pst));
 	ret.rc++;
 	return(ret);
     }
@@ -446,6 +710,7 @@ public class GLDrawList implements DrawList {
 	    super(key);
 	    this.prog = key.prog;
 	    this.var = (Uniform)key.vid;
+	    update();
 	}
 
 	void compile(BGL gl) {
@@ -454,17 +719,15 @@ public class GLDrawList implements DrawList {
 	}
 
 	State.Slot[] depslots() {
-	    return(var.deps.toArray(new State.Slot[key.depid_v.length]));
+	    return(var.deps.toArray(new State.Slot[key.ndeps()]));
 	}
     }
 
     DepSetting getuniform(GLProgram prog, Uniform var, GroupPipe state) {
 	SettingKey key = new SettingKey(prog, var, makedepid(state, var.deps));
 	DepSetting ret = settings.get(key);
-	if(ret == null) {
-	    ret = new UniformSetting(key);
-	    settings.put(key, ret);
-	}
+	if(ret == null)
+	    addsetting(ret = new UniformSetting(key));
 	ret.rc++;
 	return(ret);
     }
@@ -474,21 +737,21 @@ public class GLDrawList implements DrawList {
 
 	VaoSetting(GLVertexArray vao, GLBuffer ebo) {
 	    this.st = new VaoBindState(vao, ebo);
+	    update();
 	}
 
 	void compile(BGL gl) {
 	    st.apply(gl);
 	}
     }
+    private final VaoSetting vao_nil = new VaoSetting(null, null);
 
     class SlotRender implements Render {
 	final DrawSlot slot;
-	final BGL gl;
 	private boolean done;
 
 	SlotRender(DrawSlot slot) {
 	    this.slot = slot;
-	    this.gl = new BufferBGL();
 	}
 
 	public Environment env() {return(env);}
@@ -498,6 +761,7 @@ public class GLDrawList implements DrawList {
 	    if(st != slot.bk.state())
 		throw(new IllegalArgumentException("Must render with state from rendertree"));
 
+	    BufferBGL gl = new BufferBGL(1);
 	    if(GLVertexArray.ephemeralp(mod)) {
 		throw(new NotImplemented("ephemeral models in drawlist"));
 	    } else {
@@ -509,6 +773,7 @@ public class GLDrawList implements DrawList {
 		} else {
 		    gl.glDrawElements(GLRender.glmode(mod.mode), mod.n, GLRender.glindexfmt(mod.ind.fmt), mod.f * mod.ind.fmt.size);
 		}
+		slot.main = gl;
 	    }
 	    done = true;
 	}
@@ -550,19 +815,84 @@ public class GLDrawList implements DrawList {
     }
 
     public void draw(Render r) {
+	if(!(r instanceof GLRender))
+	    throw(new IllegalArgumentException());
+	GLRender g = (GLRender)r;
+	if(!compatible(g.env))
+	    throw(new IllegalArgumentException());
+	DrawSlot first = first();
+	if(first == null)
+	    return;
+	try {
+	    settingbuf.get();
+	} catch(InterruptedException e) {
+	    /* XXX? Not sure what to do, honestly.
+	     * InterruptedExceptions shouldn't be checked. */
+	    throw(new RuntimeException(e));
+	}
+	g.state.apply(g.gl, first.bk.state());
+	g.state.apply(g.gl, VaoState.slot, ((VaoSetting)first.settings[idx_vao]).st);
+	if(g.state.prog() != first.prog)
+	    throw(new AssertionError());
+	BGL gl = g.gl();
+	for(DrawSlot cur = first; cur != null; cur = cur.next())
+	    gl.bglCallList(cur.compiled);
+	settingbuf.put(gl);
     }
 
     public void add(Slot<Rendered> slot) {
-	
+	DrawSlot dslot = new DrawSlot(slot);
+	dslot.insert();
+	if(slotmap.put(slot, dslot) != null)
+	    throw(new AssertionError());
     }
 
     public void remove(Slot<Rendered> slot) {
+	DrawSlot dslot = slotmap.get(slot);
+	dslot.remove();
+	dslot.dispose();
     }
 
     public void update(Slot<Rendered> slot) {
+	remove(slot);
+	add(slot);
     }
 
-    public void update(Pipe group) {
+    @SuppressWarnings("unchecked")
+    private void orderupdate(Pipe group) {
+	Object reg = orderidx.get(group);
+	if(reg == null) {
+	} else if(reg instanceof DrawSlot) {
+	    ((DrawSlot)reg).orderupdate();
+	} else if(reg instanceof List) {
+	    List<DrawSlot> ls = (List<DrawSlot>)reg;
+	    for(DrawSlot slot : ls)
+		slot.orderupdate();
+	} else {
+	    throw(new RuntimeException());
+	}
+    }
+
+    public void update(Pipe group, int[] mask) {
+        Object reg = psettings.get(group);
+	if(reg == null) {
+	} else if(reg instanceof DepSetting) {
+	    ((DepSetting)reg).ckupdate(mask);
+	} else if(reg instanceof DepSetting[]) {
+	    for(DepSetting set : (DepSetting[])reg)
+		set.ckupdate(mask);
+	} else {
+	    throw(new RuntimeException());
+	}
+
+	for(int i = 0; i < mask.length; i++) {
+	    if(mask[i] == Rendered.order.id)
+		orderupdate(group);
+	}
+    }
+
+    public boolean compatible(Environment env) {
+	return(env == this.env);
     }
 
     public void dispose() {

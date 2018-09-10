@@ -50,6 +50,7 @@ public class Attribute extends Variable.Global {
     }
 
     public void use(Context ctx) {
+	type.use(ctx);
 	if(!defined(ctx))
 	    ctx.vardefs.add(new Def());
     }

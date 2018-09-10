@@ -61,6 +61,10 @@ public abstract class Texture implements Disposable {
 	public int size() {
 	    return(w * h * d * tex.efmt.size());
 	}
+
+	public String toString() {
+	    return(String.format("#<tex.image %s %d %dx%dx%d>", tex, level, w, h, d));
+	}
     }
 
     public abstract Collection<? extends Image<? extends Texture>> images();
@@ -120,5 +124,9 @@ public abstract class Texture implements Disposable {
 	public Sampler<T> wrapmode(Wrapping v) {return(swrap(v).twrap(v).rwrap(v));}
 	public Sampler<T> anisotropy(float v) {anisotropy = v; return(this);}
 	public Sampler<T> border(FColor v) {border = v; return(this);}
+    }
+
+    public String toString() {
+	return(String.format("#<tex %s>", getClass().getName()));
     }
 }

@@ -24,24 +24,25 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render;
 
-import javax.media.opengl.*;
+import haven.render.sl.*;
+import static haven.render.sl.Cons.*;
+import static haven.render.sl.Type.*;
 
-public class Camera extends Transform {
-    private Matrix4f bk;
-    
-    public Camera(Matrix4f xf) {
-	super(xf);
-    }
-    
-    public void apply(GOut g) {
-    }
-    
-    public void unapply(GOut g) {
-    }
-    
-    public void prep(Buffer b) {
-	b.put(PView.cam, this);
-    }
+public class VertexColor extends State {
+    public static final Slot<VertexColor> slot = new Slot<>(Slot.Type.DRAW, VertexColor.class);
+    public static final Attribute color = new Attribute(VEC4, "color");
+
+    private static final AutoVarying fcolor = new AutoVarying(VEC4) {
+	    protected Expression root(VertexContext vctx) {
+		return(color.ref());
+	    }
+	};
+
+    private static final ShaderMacro shader = prog -> {
+	FragColor.fragcol(prog.fctx).mod(in -> mul(in, fcolor.ref()), 0);
+    };
+    public ShaderMacro shader() {return(shader);}
+    public void apply(Pipe p) {p.put(slot, this);}
 }

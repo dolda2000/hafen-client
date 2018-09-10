@@ -50,7 +50,7 @@ public abstract class States {
 
     public static final Slot<State> vxf = new Slot<State>(Slot.Type.SYS, State.class);
 
-    public static Slot<Viewport> viewport = new Slot<Viewport>(Slot.Type.SYS, Viewport.class);
+    public static final Slot<Viewport> viewport = new Slot<Viewport>(Slot.Type.SYS, Viewport.class);
     public static class Viewport extends Builtin {
 	public final Area area;
 
@@ -65,7 +65,7 @@ public abstract class States {
 	public void apply(Pipe p) {p.put(viewport, this);}
     }
 
-    public static Slot<Scissor> scissor = new Slot<Scissor>(Slot.Type.SYS, Scissor.class);
+    public static final Slot<Scissor> scissor = new Slot<Scissor>(Slot.Type.SYS, Scissor.class);
     public static class Scissor extends Builtin {
 	public final Area area;
 
@@ -80,10 +80,71 @@ public abstract class States {
 	public void apply(Pipe p) {p.put(scissor, this);}
     }
 
-    public static final StandAlone depthtest = new StandAlone(Slot.Type.GEOM) {};
+    public static final Slot<Facecull> facecull = new Slot<Facecull>(Slot.Type.GEOM, Facecull.class);
+    public static class Facecull extends Builtin {
+	public final Mode mode;
+
+	public enum Mode {
+	    FRONT, BACK, BOTH,
+	}
+
+	public Facecull(Mode mode) {
+	    if((this.mode = mode) == null)
+		throw(new NullPointerException());
+	}
+
+	public Facecull() {
+	    this(Mode.BACK);
+	}
+
+	public int hashCode() {
+	    return(mode.hashCode());
+	}
+
+	public boolean equals(Object o) {
+	    if(!(o instanceof Facecull))
+		return(false);
+	    return(this.mode == ((Facecull)o).mode);
+	}
+
+	public void apply(Pipe p) {p.put(facecull, this);}
+    }
+
+
+    public static final Slot<Depthtest> depthtest = new Slot<Depthtest>(Slot.Type.GEOM, Depthtest.class);
+    public static class Depthtest extends Builtin {
+	public final Test test;
+
+	public enum Test {
+	    FALSE, TRUE, EQ, NEQ,
+	    LT, GT, LE, GE,
+	}
+
+	public Depthtest(Test test) {
+	    if((this.test = test) == null)
+		throw(new NullPointerException());
+	}
+
+	public Depthtest() {
+	    this(Test.LT);
+	}
+
+	public int hashCode() {
+	    return(test.hashCode());
+	}
+
+	public boolean equals(Object o) {
+	    if(!(o instanceof Depthtest))
+		return(false);
+	    return(this.test == ((Depthtest)o).test);
+	}
+
+	public void apply(Pipe p) {p.put(depthtest, this);}
+    }
+
     public static final StandAlone maskdepth = new StandAlone(Slot.Type.GEOM) {};
 
-    public static Slot<Blending> blend = new Slot<Blending>(Slot.Type.SYS, Blending.class);
+    public static final Slot<Blending> blend = new Slot<Blending>(Slot.Type.SYS, Blending.class);
     public static class Blending extends Builtin {
 	public final Function cfn, afn;
 	public final Factor csrc, cdst, asrc, adst;
@@ -137,7 +198,7 @@ public abstract class States {
 	public void apply(Pipe p) {p.put(blend, this);}
     }
 
-    public static Slot<LineWidth> linewidth = new Slot<LineWidth>(Slot.Type.GEOM, LineWidth.class);
+    public static final Slot<LineWidth> linewidth = new Slot<LineWidth>(Slot.Type.GEOM, LineWidth.class);
     public static class LineWidth extends Builtin {
 	public final float w;
 
@@ -152,5 +213,24 @@ public abstract class States {
 	}
 
 	public void apply(Pipe p) {p.put(linewidth, this);}
+    }
+
+    public static final Slot<DepthBias> depthbias = new Slot<DepthBias>(Slot.Type.GEOM, DepthBias.class);
+    public static class DepthBias extends Builtin {
+	public final float factor, units;
+
+	public DepthBias(float factor, float units) {
+	    this.factor = factor;
+	    this.units = units;
+	}
+
+	public boolean equals(Object o) {
+	    if(!(o instanceof DepthBias))
+		return(false);
+	    DepthBias that = (DepthBias)o;
+	    return((this.factor == that.factor) && (this.units == that.units));
+	}
+
+	public void apply(Pipe p) {p.put(depthbias, this);}
     }
 }
