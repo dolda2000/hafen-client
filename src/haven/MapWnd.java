@@ -202,7 +202,7 @@ public class MapWnd extends Window {
 	public void drawitem(GOut g, Marker mark, int idx) {
 	    if(soughtitem(idx)) {
 		g.chcolor(found);
-		g.frect(Coord.z, g.sz);
+		g.frect(Coord.z, g.sz());
 	    }
 	    g.chcolor(((idx % 2) == 0)?every:other);
 	    g.frect(Coord.z, g.sz());

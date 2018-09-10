@@ -332,7 +332,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	public void drawitem(GOut g, Buddy b, int idx) {
 	    if(soughtitem(idx)) {
 		g.chcolor(255, 255, 0, 32);
-		g.frect(Coord.z, g.sz);
+		g.frect(Coord.z, g.sz());
 		g.chcolor();
 	    }
 	    if(b.online == 1)
