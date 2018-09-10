@@ -31,16 +31,17 @@ import haven.render.*;
 import haven.render.Rendered;
 
 public class TestView extends PView {
-    static final FastMesh barda = Resource.remote().loadwait("gfx/test/borka").layer(FastMesh.MeshRes.class).m;
-    static final TexI bardtex = (TexI)Resource.remote().loadwait("gfx/test/borka").layer(Resource.imgc).tex();
+    static final FastMesh borkamesh = Resource.remote().loadwait("gfx/test/borka").layer(FastMesh.MeshRes.class).m;
+    static final Material borkamat = Resource.remote().loadwait("gfx/test/borka").layer(Material.Res.class).get();
     float dist = 15, e = (float)Math.PI * 3 / 2, a = (float)Math.PI / 2, rot = 0;
-    final RenderTree.Slot borka;
+    final RenderTree.Slot[] borka = {null, null};
     final Light.PhongLight light = new Light.PhongLight(true, FColor.BLACK, FColor.WHITE, FColor.BLACK, FColor.BLACK, 0);
 
     public TestView(Coord sz) {
 	super(sz);
 	setcam();
-	borka = basic.add(Pipe.Op.compose(bardtex.st(), light).apply(barda), null);
+	borka[0] = basic.add(borkamat.apply(borkamesh), null);
+	borka[1] = basic.add(borkamat.apply(borkamesh), null);
 	basic.add(new DirLight(FColor.BLACK, FColor.WHITE, FColor.BLACK, Coord3f.xu), null);
     }
 
@@ -100,7 +101,10 @@ public class TestView extends PView {
 
     public void tick(double dt) {
 	rot += (float)dt;
-	borka.cstate(Location.rot(Coord3f.zu, rot));
+	borka[0].cstate(new Location(Transform.makexlate(new Matrix4f(), new Coord3f(0, 10, 0))
+				     .mul1(Transform.makerot(new Matrix4f(), Coord3f.zu, rot))));
+	borka[1].cstate(new Location(Transform.makexlate(new Matrix4f(), new Coord3f(0, -10, 0))
+				     .mul1(Transform.makerot(new Matrix4f(), Coord3f.zu, -rot))));
     }
 
     protected FColor clearcolor() {return(FColor.RED);}
