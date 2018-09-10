@@ -88,8 +88,21 @@ public abstract class PView extends Widget {
 	    }
 	    back = g.out.env().drawlist();
 	    for(RenderTree.Slot slot : tree.slots()) {
-		if(slot.obj() instanceof Rendered)
-		    back.add(uglyJavaCWorkAround(slot));
+		/* XXX: Make nonblocking */
+		if(slot.obj() instanceof Rendered) {
+		    while(true) {
+			try {
+			    back.add(uglyJavaCWorkAround(slot));
+			    break;
+			} catch(Loading l) {
+			    try {
+				l.waitfor();
+			    } catch(InterruptedException e) {
+				throw(new RuntimeException(e));
+			    }
+			}
+		    }
+		}
 		tree.add(back, Rendered.class);
 	    }
 	}
