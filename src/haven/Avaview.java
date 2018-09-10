@@ -169,11 +169,11 @@ public class Avaview extends Widget { // XXXRENDER
 		comp.eqowner = new AvaOwner();
 		cam = makecam(d.base.get(), comp, camnm);
 	    }
-	    */
 	    if(d.mod != this.cmod)
 		comp.chmod(this.cmod = d.mod);
 	    if(d.equ != this.cequ)
 		comp.chequ(this.cequ = d.equ);
+	    */
 	}
     }
 
