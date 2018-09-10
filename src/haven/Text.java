@@ -144,7 +144,7 @@ public class Text {
 	    return(m.getAscent() + m.getDescent());
 	}
 
-	private Coord strsize(String text) {
+	public Coord strsize(String text) {
 	    return(new Coord(m.stringWidth(text), height()));
 	}
                 
