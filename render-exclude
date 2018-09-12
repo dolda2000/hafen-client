@@ -85,7 +85,6 @@ haven/glsl/Vec4Cons.java
 haven/glsl/VertexContext.java
 haven/glsl/Walker.java
 haven/glsl/MiscLib.java
-haven/PointedCam.java
 haven/RenderedNormals.java
 haven/resutil/AlphaTex.java
 haven/resutil/BumpMap.java
