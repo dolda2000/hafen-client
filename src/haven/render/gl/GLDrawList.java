@@ -209,13 +209,12 @@ public class GLDrawList implements DrawList {
 	    }
 	    if(rep != null)
 		rep.tp = tp;
-	    if(tp != null) {
-		for(DrawSlot p = tp, pp = p.tp; p != null; pp = (p = pp).tp) {
-		    if(btheight(p.tl) > btheight(p.tr) + 1)
-			p.bbtrr();
-		    else if(btheight(p.tr) > btheight(p.tl) + 1)
-			p.bbtrl();
-		}
+	    for(DrawSlot p = tp, pp; p != null; p = pp) {
+		pp = p.tp;
+		if(btheight(p.tl) > btheight(p.tr) + 1)
+		    p.bbtrr();
+		else if(btheight(p.tr) > btheight(p.tl) + 1)
+		    p.bbtrl();
 	    }
 	    tr = tl = tp = null;
 	}
