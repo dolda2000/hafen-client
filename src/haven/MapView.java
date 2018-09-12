@@ -35,7 +35,7 @@ import java.lang.ref.*;
 import java.lang.reflect.*;
 import haven.render.*;
 
-public class MapView extends Widget implements DTarget, Console.Directory {
+public class MapView extends PView implements DTarget, Console.Directory {
     public static boolean clickdb = false;
     public long plgob = -1;
     public Coord2d cc;
@@ -65,11 +65,9 @@ public class MapView extends Widget implements DTarget, Console.Directory {
 	void mmousemove(Coord mc);
     }
 
-    public abstract class Camera {
-	/* XXXRENDER
-	protected haven.Camera view = new haven.Camera(Matrix4f.identity());
+    public abstract class Camera implements Pipe.Op {
+	protected haven.render.Camera view = new haven.render.Camera(Matrix4f.identity());
 	protected Projection proj = new Projection(Matrix4f.identity());
-	*/
 	
 	public Camera() {
 	    resized();
@@ -87,15 +85,13 @@ public class MapView extends Widget implements DTarget, Console.Directory {
 	public void resized() {
 	    float field = 0.5f;
 	    float aspect = ((float)sz.y) / ((float)sz.x);
-	    // proj.update(Projection.makefrustum(new Matrix4f(), -field, field, -aspect * field, aspect * field, 1, 5000)); XXRENDER
+	    proj = new Projection(Projection.makefrustum(new Matrix4f(), -field, field, -aspect * field, aspect * field, 1, 5000));
 	}
 
-	/* XXXRENDER
-	public void prep(Buffer buf) {
-	    proj.prep(buf);
-	    view.prep(buf);
+	public void apply(Pipe p) {
+	    proj.apply(p);
+	    view.apply(p);
 	}
-	*/
 	
 	public abstract float angle();
 	public abstract void tick(double dt);
@@ -179,10 +175,8 @@ public class MapView extends Widget implements DTarget, Console.Directory {
 	    }
 	    
 	    float field = field(elev);
-	    /* XXXRENDER
-	    view.update(PointedCam.compute(curc.add(camoff).add(0.0f, 0.0f, h), dist(elev), elev, angl));
-	    proj.update(Projection.makefrustum(new Matrix4f(), -field, field, -ca * field, ca * field, 1, 5000));
-	    */
+	    view = new haven.render.Camera(PointedCam.compute(curc.add(camoff).add(0.0f, 0.0f, h), dist(elev), elev, angl));
+	    proj = new Projection(Projection.makefrustum(new Matrix4f(), -field, field, -ca * field, ca * field, 1, 5000));
 	}
 
 	public float angle() {
@@ -217,9 +211,7 @@ public class MapView extends Widget implements DTarget, Console.Directory {
 	public void tick(double dt) {
 	    Coord3f cc = getcc();
 	    cc.y = -cc.y;
-	    /* XXXRENDER
-	    view.update(PointedCam.compute(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl));
-	    */
+	    view = new haven.render.Camera(PointedCam.compute(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl));
 	}
 	
 	public float angle() {
@@ -276,7 +268,6 @@ public class MapView extends Widget implements DTarget, Console.Directory {
 	public void tick(double dt) {
 	    tick2(dt);
 	    float aspect = ((float)sz.y) / ((float)sz.x);
-	    /* XXXRENDER
 	    Matrix4f vm = PointedCam.compute(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl);
 	    if(exact) {
 		if(jc == null)
@@ -288,9 +279,8 @@ public class MapView extends Widget implements DTarget, Console.Directory {
 		    jc = null;
 		vm = Location.makexlate(new Matrix4f(), corr).mul1(vm);
 	    }
-	    view.update(vm);
-	    proj.update(Projection.makeortho(new Matrix4f(), -field, field, -field * aspect, field * aspect, 1, 5000));
-	    */
+	    view = new haven.render.Camera(vm);
+	    proj = new Projection(Projection.makeortho(new Matrix4f(), -field, field, -field * aspect, field * aspect, 1, 5000));
 	}
 
 	public float angle() {
@@ -393,7 +383,7 @@ public class MapView extends Widget implements DTarget, Console.Directory {
 	this.glob = glob;
 	this.cc = cc;
 	this.plgob = plgob;
-	// this.gobs = new Gobs(); XXXRENDER
+	basic.add(new Gobs(), null);
 	setcanfocus(true);
     }
     
@@ -864,7 +854,22 @@ public class MapView extends Widget implements DTarget, Console.Directory {
     }
     */
 
-    public DirLight amb = null;
+    public DirLight amblight = null;
+    private RenderTree.Slot s_amblight = null;
+    private void amblight() {
+	synchronized(glob) {
+	    if(glob.lightamb != null)
+		amblight = new DirLight(glob.lightamb, glob.lightdif, glob.lightspc, Coord3f.o.sadd((float)glob.lightelev, (float)glob.lightang, 1f));
+	    else
+		amblight = null;
+	}
+	if(s_amblight != null) {
+	    s_amblight.remove();
+	    s_amblight = null;
+	}
+	if(amblight != null)
+	    s_amblight = basic.add(amblight, null);
+    }
     /* XXXRENDER
     private Outlines outlines = new Outlines(false);
     public void setup(RenderList rl) {
@@ -1353,6 +1358,8 @@ public class MapView extends Widget implements DTarget, Console.Directory {
 	} catch(Loading e) {
 	    camload = e;
 	}
+	basic(Camera.class, camera);
+	amblight();
 	if(placing != null)
 	    placing.ctick((int)(dt * 1000));
     }
