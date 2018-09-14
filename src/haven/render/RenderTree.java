@@ -27,14 +27,21 @@
 package haven.render;
 
 import java.util.*;
+import java.util.concurrent.locks.*;
+import haven.Locked;
 import static haven.Utils.eq;
 
 public class RenderTree {
+    private final Lock lock = new ReentrantLock();
     private final Slot root;
     private final List<Client<?>> clients = new ArrayList<>();
 
     public RenderTree() {
 	root = new Slot(this, null, null);
+    }
+
+    public Locked lock() {
+	return(new Locked(this.lock));
     }
 
     private static class Client<R> {
@@ -281,52 +288,56 @@ public class RenderTree {
 	}
 
 	public Slot add(Node n, Pipe.Op state) {
-	    Slot ch = new Slot(tree, this, n);
-	    ch.cstate = state;
-	    addch(ch);
-	    synchronized(tree.clients) {
-		ListIterator<Client<?>> it = tree.clients.listIterator();
-		try {
-		    while(it.hasNext()) {
-			Client<?> cl = it.next();
-			cl.added(this);
-		    }
-		} catch(RuntimeException e) {
+	    try(Locked lk = tree.lock()) {
+		Slot ch = new Slot(tree, this, n);
+		ch.cstate = state;
+		addch(ch);
+		synchronized(tree.clients) {
+		    ListIterator<Client<?>> it = tree.clients.listIterator();
 		    try {
-			while(it.hasPrevious()) {
-			    Client<?> cl = it.previous();
-			    cl.removed(this);
+			while(it.hasNext()) {
+			    Client<?> cl = it.next();
+			    cl.added(this);
 			}
-		    } catch(RuntimeException e2) {
-			Error err = new Error("Unexpected non-local exit", e2);
-			err.addSuppressed(e);
-			throw(err);
+		    } catch(RuntimeException e) {
+			try {
+			    while(it.hasPrevious()) {
+				Client<?> cl = it.previous();
+				cl.removed(this);
+			    }
+			} catch(RuntimeException e2) {
+			    Error err = new Error("Unexpected non-local exit", e2);
+			    err.addSuppressed(e);
+			    throw(err);
+			}
+			throw(e);
 		    }
-		    throw(e);
 		}
-	    }
-	    if(n != null) {
-		try {
-		    n.added(ch);
-		} catch(RuntimeException e) {
-		    remove();
+		if(n != null) {
+		    try {
+			n.added(ch);
+		    } catch(RuntimeException e) {
+			remove();
+		    }
 		}
+		return(ch);
 	    }
-	    return(ch);
 	}
 
 	public void remove() {
-	    while(nchildren > 0)
-		children[nchildren - 1].remove();
-	    parent.removech(this);
-	    try {
-		if(node != null)
-		    node.removed(this);
-		synchronized(tree.clients) {
-		    tree.clients.forEach(cl -> cl.removed(this));
+	    try(Locked lk = tree.lock()) {
+		while(nchildren > 0)
+		    children[nchildren - 1].remove();
+		parent.removech(this);
+		try {
+		    if(node != null)
+			node.removed(this);
+		    synchronized(tree.clients) {
+			tree.clients.forEach(cl -> cl.removed(this));
+		    }
+		} catch(RuntimeException e) {
+		    throw(new Error("Unexpected non-local exit", e));
 		}
-	    } catch(RuntimeException e) {
-		throw(new Error("Unexpected non-local exit", e));
 	    }
 	}
 
@@ -471,13 +482,17 @@ public class RenderTree {
 	}
 
 	public void cstate(Pipe.Op state) {
-	    if(state != this.cstate)
-		chstate(state, this.ostate);
+	    try(Locked lk = tree.lock()) {
+		if(state != this.cstate)
+		    chstate(state, this.ostate);
+	    }
 	}
 
 	public void ostate(Pipe.Op state) {
-	    if(state != this.ostate)
-		chstate(this.cstate, state);
+	    try(Locked lk = tree.lock()) {
+		if(state != this.ostate)
+		    chstate(this.cstate, state);
+	    }
 	}
 
 	public class IPipe implements Pipe {
