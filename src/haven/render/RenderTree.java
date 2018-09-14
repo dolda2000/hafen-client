@@ -126,7 +126,7 @@ public class RenderTree {
 	    if(states.length <= idx) {
 		states = Arrays.copyOf(states, idx + 1);
 		def = Arrays.copyOf(def, idx + 1);
-		deps = Arrays.copyOf(def, idx + 1);
+		deps = Arrays.copyOf(deps, idx + 1);
 	    }
 	}
 
