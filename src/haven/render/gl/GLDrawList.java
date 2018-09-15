@@ -183,15 +183,17 @@ public class GLDrawList implements DrawList {
 	    DrawSlot rep;
 	    if((tl != null) && (tr != null)) {
 		for(rep = tr; rep.tl != null; rep = rep.tl);
-		if(rep.tr != null) {
-		    DrawSlot p = rep.tp;
-		    if(p.tl == rep)
-			(p.tl = rep.tr).tp = p;
-		    else
-			(p.tr = rep.tr).tp = p;
-		}
-		(rep.tl = tl).tp = rep;
-		(rep.tr = tr).tp = rep;
+
+		DrawSlot p = rep.tp;
+		if(p.tl == rep)
+		    setp(p.tl = rep.tr, p);
+		else
+		    setp(p.tr = rep.tr, p);
+		p.setheight();
+
+		setp(rep.tl = tl, rep);
+		setp(rep.tr = tr, rep);
+		rep.setheight();
 	    } else if(tl != null) {
 		rep = tl;
 	    } else if(tr != null) {
@@ -210,6 +212,7 @@ public class GLDrawList implements DrawList {
 	    if(rep != null)
 		rep.tp = tp;
 	    for(DrawSlot p = tp, pp; p != null; p = pp) {
+		p.setheight();
 		pp = p.tp;
 		if(btheight(p.tl) > btheight(p.tr) + 1)
 		    p.bbtrr();
@@ -792,16 +795,16 @@ public class GLDrawList implements DrawList {
     private void verify(DrawSlot t) {
 	if(t.tl != null) {
 	    if(t.tl.tp != t)
-		throw(new AssertionError());
+		throw(new AssertionError(Long.toString(t.tl.sortid)));
 	    if(order.compare(t.tl, t) >= 0)
-		throw(new AssertionError());
+		throw(new AssertionError(Long.toString(t.tl.sortid)));
 	    verify(t.tl);
 	}
 	if(t.tr != null) {
 	    if(t.tr.tp != t)
-		throw(new AssertionError());
+		throw(new AssertionError(Long.toString(t.tr.sortid)));
 	    if(order.compare(t.tr, t) <= 0)
-		throw(new AssertionError());
+		throw(new AssertionError(Long.toString(t.tr.sortid)));
 	    verify(t.tr);
 	}
     }
@@ -851,7 +854,7 @@ public class GLDrawList implements DrawList {
     }
 
     public void remove(Slot<Rendered> slot) {
-	DrawSlot dslot = slotmap.get(slot);
+	DrawSlot dslot = slotmap.remove(slot);
 	dslot.remove();
 	dslot.dispose();
     }

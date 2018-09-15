@@ -141,7 +141,7 @@ public abstract class Light implements RenderTree.Node {
 
 	public PhongLight(boolean frag, FColor amb, FColor dif, FColor spc, FColor emi, float shine) {
 	    this.shader = frag ? flight : vlight;
-	    this.material = new Object[] {emi, dif, dif, spc, shine};
+	    this.material = new Object[] {emi, amb, dif, spc, shine};
 	}
 
 	public PhongLight(boolean frag, Color amb, Color dif, Color spc, Color emi, float shine) {
