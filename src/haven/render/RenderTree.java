@@ -438,21 +438,20 @@ public class RenderTree {
 		}
 	    } else {
 		/* XXX? Optimize specifically for non-defined slots being updated? */
-		for(Slot child : children())
-		    child.updtotal();
+		updtotal(false);
 	    }
 	}
 
-	private void updtotal() {
+	private void updtotal(boolean setds) {
 	    this.pdstate = null;
 	    this.istate = null;
-	    setdstate(mkdstate(cstate, ostate));
+	    if(setds)
+		setdstate(mkdstate(cstate, ostate));
 	    for(Slot child : children())
-		child.updtotal();
+		child.updtotal(true);
 	    synchronized(tree.clients) {
 		tree.clients.forEach(cl -> cl.updated(this));
 	    }
-	    /* Update client lists with istate */
 	}
 
 	private DepPipe dstate() {
