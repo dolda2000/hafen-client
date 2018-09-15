@@ -826,42 +826,52 @@ public class GLDrawList implements DrawList {
 	GLRender g = (GLRender)r;
 	if(!compatible(g.env))
 	    throw(new IllegalArgumentException());
-	DrawSlot first = first();
-	if(first == null)
-	    return;
-	try {
-	    settingbuf.get();
-	} catch(InterruptedException e) {
-	    /* XXX? Not sure what to do, honestly.
-	     * InterruptedExceptions shouldn't be checked. */
-	    throw(new RuntimeException(e));
+	synchronized(this) {
+	    DrawSlot first = first();
+	    if(first == null)
+		return;
+	    try {
+		settingbuf.get();
+	    } catch(InterruptedException e) {
+		/* XXX? Not sure what to do, honestly.
+		 * InterruptedExceptions shouldn't be checked. */
+		throw(new RuntimeException(e));
+	    }
+	    g.state.apply(g.gl, first.bk.state());
+	    g.state.apply(g.gl, VaoState.slot, ((VaoSetting)first.settings[idx_vao]).st);
+	    if(g.state.prog() != first.prog)
+		throw(new AssertionError());
+	    BGL gl = g.gl();
+	    for(DrawSlot cur = first; cur != null; cur = cur.next())
+		gl.bglCallList(cur.compiled);
+	    settingbuf.put(gl);
 	}
-	g.state.apply(g.gl, first.bk.state());
-	g.state.apply(g.gl, VaoState.slot, ((VaoSetting)first.settings[idx_vao]).st);
-	if(g.state.prog() != first.prog)
-	    throw(new AssertionError());
-	BGL gl = g.gl();
-	for(DrawSlot cur = first; cur != null; cur = cur.next())
-	    gl.bglCallList(cur.compiled);
-	settingbuf.put(gl);
     }
 
     public void add(Slot<Rendered> slot) {
-	DrawSlot dslot = new DrawSlot(slot);
-	dslot.insert();
-	if(slotmap.put(slot, dslot) != null)
-	    throw(new AssertionError());
+	synchronized(this) {
+	    DrawSlot dslot = new DrawSlot(slot);
+	    dslot.insert();
+	    if(slotmap.put(slot, dslot) != null)
+		throw(new AssertionError());
+	    verify();
+	}
     }
 
     public void remove(Slot<Rendered> slot) {
-	DrawSlot dslot = slotmap.remove(slot);
-	dslot.remove();
-	dslot.dispose();
+	synchronized(this) {
+	    DrawSlot dslot = slotmap.remove(slot);
+	    dslot.remove();
+	    dslot.dispose();
+	    verify();
+	}
     }
 
     public void update(Slot<Rendered> slot) {
-	remove(slot);
-	add(slot);
+	synchronized(this) {
+	    remove(slot);
+	    add(slot);
+	}
     }
 
     @SuppressWarnings("unchecked")
@@ -880,20 +890,22 @@ public class GLDrawList implements DrawList {
     }
 
     public void update(Pipe group, int[] mask) {
-        Object reg = psettings.get(group);
-	if(reg == null) {
-	} else if(reg instanceof DepSetting) {
-	    ((DepSetting)reg).ckupdate(mask);
-	} else if(reg instanceof DepSetting[]) {
-	    for(DepSetting set : (DepSetting[])reg)
-		set.ckupdate(mask);
-	} else {
-	    throw(new RuntimeException());
-	}
+	synchronized(this) {
+	    Object reg = psettings.get(group);
+	    if(reg == null) {
+	    } else if(reg instanceof DepSetting) {
+		((DepSetting)reg).ckupdate(mask);
+	    } else if(reg instanceof DepSetting[]) {
+		for(DepSetting set : (DepSetting[])reg)
+		    set.ckupdate(mask);
+	    } else {
+		throw(new RuntimeException());
+	    }
 
-	for(int i = 0; i < mask.length; i++) {
-	    if(mask[i] == Rendered.order.id)
-		orderupdate(group);
+	    for(int i = 0; i < mask.length; i++) {
+		if(mask[i] == Rendered.order.id)
+		    orderupdate(group);
+	    }
 	}
     }
 
