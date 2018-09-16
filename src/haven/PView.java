@@ -103,8 +103,8 @@ public abstract class PView extends Widget {
 			}
 		    }
 		}
-		tree.add(back, Rendered.class);
 	    }
+	    tree.add(back, Rendered.class);
 	}
 	lights();
 	FColor cc = clearcolor();
