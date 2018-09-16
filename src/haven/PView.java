@@ -112,7 +112,7 @@ public abstract class PView extends Widget {
 	    g.out.clear(basic.state(), FragColor.fragcol, cc);
 	g.out.clear(basic.state(), 1.0);
 	back.draw(g.out);
-	g.image(new TexRaw(fragsamp), Coord.z);
+	g.image(new TexRaw(fragsamp, true), Coord.z);
     }
 
     private static final Object id_fb = new Object(), id_view = new Object(), id_misc = new Object();
