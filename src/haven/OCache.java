@@ -683,7 +683,7 @@ public class OCache implements Iterable<Gob> {
 	}
 	synchronized(netinfo) {
 	    if(ng.nremoved ? (!ng.added || ng.gremoved) : ((ng.added && ng.pending.isEmpty()))) {
-		netdirty.remove(ng);
+		netdirty.remove(ng.id);
 	    }
 	}
     }

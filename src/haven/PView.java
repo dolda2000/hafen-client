@@ -87,18 +87,20 @@ public abstract class PView extends Widget {
 		tree.remove(back);
 	    }
 	    back = g.out.env().drawlist();
-	    for(RenderTree.Slot slot : tree.slots()) {
-		/* XXX: Make nonblocking */
-		if(slot.obj() instanceof Rendered) {
-		    while(true) {
-			try {
-			    back.add(uglyJavaCWorkAround(slot));
-			    break;
-			} catch(Loading l) {
+	    try(Locked lk = tree.lock()) {
+		for(RenderTree.Slot slot : tree.slots()) {
+		    /* XXX: Make nonblocking */
+		    if(slot.obj() instanceof Rendered) {
+			while(true) {
 			    try {
-				l.waitfor();
-			    } catch(InterruptedException e) {
-				throw(new RuntimeException(e));
+				back.add(uglyJavaCWorkAround(slot));
+				break;
+			    } catch(Loading l) {
+				try {
+				    l.waitfor();
+				} catch(InterruptedException e) {
+				    throw(new RuntimeException(e));
+				}
 			    }
 			}
 		    }
@@ -112,7 +114,7 @@ public abstract class PView extends Widget {
 	    g.out.clear(basic.state(), FragColor.fragcol, cc);
 	g.out.clear(basic.state(), 1.0);
 	back.draw(g.out);
-	g.image(new TexRaw(fragsamp), Coord.z);
+	g.image(new TexRaw(fragsamp, true), Coord.z);
     }
 
     private static final Object id_fb = new Object(), id_view = new Object(), id_misc = new Object();

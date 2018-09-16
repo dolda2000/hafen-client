@@ -31,11 +31,17 @@ import haven.render.Texture2D.Sampler2D;
 
 public class TexRaw implements Tex {
     public final Sampler2D back;
+    public final boolean invert;
     private final ColorTex st;
 
-    public TexRaw(Sampler2D back) {
+    public TexRaw(Sampler2D back, boolean invert) {
 	this.back = back;
+	this.invert = invert;
 	this.st = new ColorTex(back);
+    }
+
+    public TexRaw(Sampler2D back) {
+	this(back, false);
     }
 
     public Coord sz() {return(back.tex.sz());}
@@ -47,10 +53,10 @@ public class TexRaw implements Tex {
 	float tr = (float)tbr.x / (float)tdim.x;
 	float tb = (float)tbr.y / (float)tdim.y;
 	float[] data = {
-	    dbr.x, dul.y, tr, tu,
-	    dbr.x, dbr.y, tr, tb,
-	    dul.x, dul.y, tl, tu,
-	    dul.x, dbr.y, tl, tb,
+	    dbr.x, dul.y, tr, invert ? tb : tu,
+	    dbr.x, dbr.y, tr, invert ? tu : tb,
+	    dul.x, dul.y, tl, invert ? tb : tu,
+	    dul.x, dbr.y, tl, invert ? tu : tb,
 	};
 	g.usestate(st);
 	g.drawt(Model.Mode.TRIANGLE_STRIP, data);
