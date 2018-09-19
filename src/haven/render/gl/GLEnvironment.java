@@ -142,7 +142,7 @@ public class GLEnvironment implements Environment {
 			FillBuffers.Array data = (FillBuffers.Array)buf.init.fill(buf, this);
 			GLBuffer jdret = ret;
 			prepare((GLRender g) -> {
-				BGL gl = g.gl;
+				BGL gl = g.gl();
 				Vao0State.apply(gl, g.state, jdret);
 				int usage = (buf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
 				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), usage);
@@ -176,7 +176,7 @@ public class GLEnvironment implements Environment {
 			FillBuffers.Array data = (FillBuffers.Array)buf.init.fill(buf, this);
 			GLBuffer jdret = ret;
 			prepare((GLRender g) -> {
-				BGL gl = g.gl;
+				BGL gl = g.gl();
 				VboState.apply(gl, g.state, jdret);
 				int usage = (buf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
 				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), usage);
