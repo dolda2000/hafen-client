@@ -31,6 +31,7 @@ import java.io.*;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
+import haven.render.*;
 
 @Resource.LayerName("tileset2")
 public class Tileset extends Resource.Layer {
@@ -152,16 +153,15 @@ public class Tileset extends Resource.Layer {
 	}
 	final Tile[] order = new Tile[nt];
 	final Coord[] place = new Coord[nt];
-	/* XXXRENDER
 	Tex packbuf = new TexL(new Coord(minw, minh)) {
 		{
 		    mipmap(Mipmapper.avg);
-		    minfilter(javax.media.opengl.GL2.GL_NEAREST_MIPMAP_LINEAR);
+		    img.minfilter(Texture.Filter.NEAREST).mipfilter(Texture.Filter.LINEAR);
 		    centroid = true;
 		}
 
 		public BufferedImage fill() {
-		    BufferedImage buf = TexI.mkbuf(dim);
+		    BufferedImage buf = TexI.mkbuf(sz());
 		    Graphics g = buf.createGraphics();
 		    for(int i = 0; i < nt; i++)
 			g.drawImage(order[i].img, place[i].x, place[i].y, null);
@@ -190,7 +190,6 @@ public class Tileset extends Resource.Layer {
 		y += tsz.y;
 	    }
 	}
-	*/
     }
 
     @SuppressWarnings("unchecked")

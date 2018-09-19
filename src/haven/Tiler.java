@@ -31,6 +31,7 @@ import java.lang.reflect.*;
 import java.lang.annotation.*;
 import haven.Surface.Vertex;
 import haven.Surface.MeshVertex;
+import haven.render.*;
 
 public abstract class Tiler {
     public final int id;
@@ -44,7 +45,7 @@ public abstract class Tiler {
 	public Surface.Vertex[] v;
 	public float[] tcx, tcy;
 	public int[] f;
-	// public GLState mat = null; XXXRENDER
+	public Pipe.Op mat = null;
 
 	public MPart(Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
 	    this.lc = lc; this.gc = gc; this.v = v; this.tcx = tcx; this.tcy = tcy; this.f = f;
@@ -98,11 +99,9 @@ public abstract class Tiler {
 	    }
 	}
 
-	/* XXXRENDER
-	public GLState mcomb(GLState mat) {
-	    return((this.mat == null)?mat:(GLState.compose(mat, this.mat)));
+	public Pipe.Op mcomb(Pipe.Op mat) {
+	    return((this.mat == null)?mat:(Pipe.Op.compose(mat, this.mat)));
 	}
-	*/
 
 	public static final float[] ctcx = {0, 0, 1, 1}, ctcy = {0, 1, 1, 0};
 	public static final int[] rdiag = {0, 1, 2, 0, 2, 3}, ldiag = {0, 1, 3, 1, 2, 3};
@@ -135,8 +134,8 @@ public abstract class Tiler {
 	private final VertFactory f;
 	private final MeshVertex[] map;
 
-	public SModel(MapMesh m /* XXXRENDER, GLState mat */, VertFactory f) {
-	    super(m /*, mat */);
+	public SModel(MapMesh m, Pipe.Op mat, VertFactory f) {
+	    super(m, mat);
 	    this.f = f;
 	    this.map = new MeshVertex[m.data(MapMesh.gnd).vl.length];
 	}
@@ -156,14 +155,14 @@ public abstract class Tiler {
 	}
 
 	public static class Key implements MapMesh.DataID<SModel> {
-	    // public final GLState mat; XXXRENDER
+	    public final Pipe.Op mat;
 	    public final VertFactory f;
 	    private final int hash;
 
-	    public Key(/* GLState mat, */ VertFactory f) {
-		// this.mat = mat;
+	    public Key(Pipe.Op mat, VertFactory f) {
+		this.mat = mat;
 		this.f = f;
-		this.hash = /* (mat.hashCode() * 31) + XXXRENDER */ f.hashCode();
+		this.hash = (mat.hashCode() * 31) + f.hashCode();
 	    }
 
 	    public int hashCode() {
@@ -171,16 +170,16 @@ public abstract class Tiler {
 	    }
 
 	    public boolean equals(Object x) {
-		return((x instanceof Key) /* XXXRENDER && mat.equals(((Key)x).mat) && f.equals(((Key)x).f) */);
+		return((x instanceof Key) && mat.equals(((Key)x).mat) && f.equals(((Key)x).f));
 	    }
 
 	    public SModel make(MapMesh m) {
-		return(new SModel(m /*, mat */, f));
+		return(new SModel(m, mat, f));
 	    }
 	}
 
-	public static SModel get(MapMesh m /*, GLState mat */, VertFactory f) {
-	    return(m.data(new Key(/* mat, */ f)));
+	public static SModel get(MapMesh m, Pipe.Op mat, VertFactory f) {
+	    return(m.data(new Key(mat, f)));
 	}
     }
 
@@ -216,7 +215,7 @@ public abstract class Tiler {
     public abstract void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask);
     
     /* XXXRENDER
-    public GLState drawstate(Glob glob, GLConfig cfg, Coord3f c) {
+    public Pipe.Op drawstate(Glob glob, GLConfig cfg, Coord3f c) {
 	return(null);
     }
     */
