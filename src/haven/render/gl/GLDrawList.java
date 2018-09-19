@@ -48,6 +48,9 @@ public class GLDrawList implements DrawList {
     private static int btheight(DrawSlot s) {
 	return((s == null) ? 0 : s.th);
     }
+    private static int btsubsize(DrawSlot s) {
+	return((s == null) ? 0 : s.tsubsize);
+    }
     private static void setp(DrawSlot s, DrawSlot p) {
 	if(s != null)
 	    s.tp = p;
@@ -82,6 +85,7 @@ public class GLDrawList implements DrawList {
 	final long sortid;
 	DrawSlot tp, tl, tr;
 	int th = 0;
+	int tsubsize = 0;	/* Not critical, only used for debugging purposes. */
 
 	DrawSlot prev() {
 	    if(tl != null) {
@@ -113,6 +117,7 @@ public class GLDrawList implements DrawList {
 	}
 
 	private int setheight() {
+	    tsubsize = btsubsize(tl) + btsubsize(tr) + 1;
 	    return(th = (Math.max(btheight(tl), btheight(tr)) + 1));
 	}
 
@@ -171,6 +176,7 @@ public class GLDrawList implements DrawList {
 	    if((tp != null) || (root == this))
 		throw(new IllegalStateException());
 	    th = 1;
+	    tsubsize = 1;
 	    if(root == null) {
 		root = this;
 	    } else {
@@ -896,8 +902,11 @@ public class GLDrawList implements DrawList {
 	    } else if(reg instanceof DepSetting) {
 		((DepSetting)reg).ckupdate(mask);
 	    } else if(reg instanceof DepSetting[]) {
-		for(DepSetting set : (DepSetting[])reg)
+		for(DepSetting set : (DepSetting[])reg) {
+		    if(set == null)
+			break;
 		    set.ckupdate(mask);
+		}
 	    } else {
 		throw(new RuntimeException());
 	    }

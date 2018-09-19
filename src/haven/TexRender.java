@@ -31,7 +31,7 @@ import haven.render.*;
 import haven.render.sl.*;
 import haven.render.Texture2D.Sampler2D;
 
-public abstract class TexRender implements Disposable {
+public abstract class TexRender implements Tex, Disposable {
     public final Sampler2D img;
     public boolean centroid = false;
 
@@ -114,6 +114,23 @@ public abstract class TexRender implements Disposable {
 	}
     }
     public final TexClip clip = new TexClip(this);
+
+    public void render(GOut g, Coord dul, Coord dbr, Coord tul, Coord tbr) {
+	Coord tdim = sz();
+	float tl = (float)tul.x / (float)tdim.x;
+	float tu = (float)tul.y / (float)tdim.y;
+	float tr = (float)tbr.x / (float)tdim.x;
+	float tb = (float)tbr.y / (float)tdim.y;
+	float[] data = {
+	    dbr.x, dul.y, tr, tu,
+	    dbr.x, dbr.y, tr, tb,
+	    dul.x, dul.y, tl, tu,
+	    dul.x, dbr.y, tl, tb,
+	};
+	g.usestate(draw);
+	g.drawt(Model.Mode.TRIANGLE_STRIP, data);
+	g.usestate(ColorTex.slot);
+    }
 
     @Material.ResName("tex")
     public static class $tex implements Material.ResCons2 {

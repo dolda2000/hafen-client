@@ -297,13 +297,15 @@ public class RenderTree {
 		    try {
 			while(it.hasNext()) {
 			    Client<?> cl = it.next();
-			    cl.added(this);
+			    cl.added(ch);
 			}
 		    } catch(RuntimeException e) {
 			try {
+			    removech(ch);
+			    it.previous();
 			    while(it.hasPrevious()) {
 				Client<?> cl = it.previous();
-				cl.removed(this);
+				cl.removed(ch);
 			    }
 			} catch(RuntimeException e2) {
 			    Error err = new Error("Unexpected non-local exit", e2);
@@ -317,7 +319,8 @@ public class RenderTree {
 		    try {
 			n.added(ch);
 		    } catch(RuntimeException e) {
-			remove();
+			ch.remove();
+			throw(e);
 		    }
 		}
 		return(ch);
@@ -564,6 +567,26 @@ public class RenderTree {
     public static interface Node {
 	public default void added(Slot slot) {}
 	public default void removed(Slot slot) {}
+
+	public static class Track1 implements Node {
+	    protected Slot slot = null;
+
+	    public void added(RenderTree.Slot slot) {
+		synchronized(this) {
+		    if(this.slot != null)
+			throw(new RuntimeException());
+		    this.slot = slot;
+		}
+	    }
+
+	    public void removed(RenderTree.Slot slot) {
+		synchronized(this) {
+		    if(this.slot != slot)
+			throw(new RuntimeException());
+		    this.slot = null;
+		}
+	    }
+	}
     }
 
     public Iterable<Slot> slots() {

@@ -28,20 +28,20 @@ package haven;
 
 import static haven.MCache.tilesz;
 import java.util.*;
-import javax.media.opengl.*;
 import java.awt.Color;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import haven.render.*;
 import haven.Surface.Vertex;
 import haven.Surface.MeshVertex;
+import haven.render.Rendered.Order;
 
-public class MapMesh implements Disposable {
+public class MapMesh implements RenderTree.Node, Disposable {
     public final Coord ul, sz;
     public final MCache map;
     private final long rnd;
-    // private Map<Tex, GLState[]> texmap = new HashMap<Tex, GLState[]>(); XXXRENDER
     private Map<DataID, Object> data = new LinkedHashMap<DataID, Object>();
-    // private List<Rendered> extras = new ArrayList<Rendered>(); XXXRENDER
+    private List<RenderTree.Node> extras = new ArrayList<RenderTree.Node>();
     // private FastMesh[] flats; XXXRENDER
     private List<Disposable> dparts = new ArrayList<Disposable>();
 
@@ -150,8 +150,7 @@ public class MapMesh implements Disposable {
     }
     public static final DataID<MapSurface> gnd = makeid(MapSurface.class);
 
-    /* XXXRENDER
-    public static class MLOrder extends Order<Rendered> {
+    public static class MLOrder extends Order<MLOrder> {
 	public final int z;
 
 	public MLOrder(int z, int subz) {
@@ -162,7 +161,7 @@ public class MapMesh implements Disposable {
 	    this(z, 0);
 	}
 
-	public int mainz() {
+	public int mainorder() {
 	    return(1000);
 	}
 
@@ -174,17 +173,16 @@ public class MapMesh implements Disposable {
 	    return(z);
 	}
 
-	private final static RComparator<Rendered> cmp = new RComparator<Rendered>() {
-	    public int compare(Rendered a, Rendered b, GLState.Buffer sa, GLState.Buffer sb) {
-		return(((MLOrder)sa.get(order)).z - ((MLOrder)sb.get(order)).z);
+	private final static Comparator<MLOrder> cmp = new Comparator<MLOrder>() {
+	    public int compare(MLOrder a, MLOrder b) {
+		return(a.z - b.z);
 	    }
 	};
 
-	public RComparator<Rendered> cmp() {return(cmp);}
+	public Comparator<MLOrder> comparator() {return(cmp);}
     }
     public static Order premap = new Order.Default(990);
     public static Order postmap = new Order.Default(1010);
-    */
 
     private MapMesh(MCache map, Coord ul, Coord sz, Random rnd) {
 	this.map = map;
@@ -252,11 +250,11 @@ public class MapMesh implements Disposable {
 
     public static class Model extends MeshBuf implements ConsHooks {
 	public final MapMesh m;
-	// public final GLState mat; XXXRENDER
+	public final Pipe.Op mat;
 
-	public Model(MapMesh m /*, GLState mat */) {
+	public Model(MapMesh m, Pipe.Op mat) {
 	    this.m = m;
-	    // this.mat = mat;
+	    this.mat = mat;
 	}
 
 	public void sfin() {}
@@ -264,20 +262,18 @@ public class MapMesh implements Disposable {
 	public boolean clean() {return(false);}
 
 	public void postcalcnrm(Random rnd) {
-	    /* XXXRENDER
 	    FastMesh mesh = mkmesh();
 	    m.extras.add(mat.apply(mesh));
 	    m.dparts.add(mesh);
-	    */
 	}
 
 	public static class MatKey implements DataID<Model> {
-	    // public final GLState mat; XXXRENDER
+	    public final Pipe.Op mat;
 	    private final int hash;
 
-	    public MatKey(/* GLState mat */) {
-		// this.mat = mat;
-		this.hash = 0; //mat.hashCode() * 37;
+	    public MatKey(Pipe.Op mat) {
+		this.mat = mat;
+		this.hash = mat.hashCode() * 37;
 	    }
 
 	    public int hashCode() {
@@ -285,16 +281,16 @@ public class MapMesh implements Disposable {
 	    }
 
 	    public boolean equals(Object x) {
-		return((x instanceof MatKey) /* XXXRENDER && mat.equals(((MatKey)x).mat) */);
+		return((x instanceof MatKey) && mat.equals(((MatKey)x).mat));
 	    }
 
 	    public Model make(MapMesh m) {
-		return(new Model(m /*, mat */));
+		return(new Model(m, mat));
 	    }
 	}
 
-	public static Model get(MapMesh m, Object mat) { // XXXRENDER
-	    return(m.data(new MatKey(/* mat */)));
+	public static Model get(MapMesh m, Pipe.Op mat) {
+	    return(m.data(new MatKey(mat)));
 	}
     }
 
@@ -536,7 +532,6 @@ public class MapMesh implements Disposable {
     */
 
     private void clean() {
-	// texmap = null; XXXRENDER
 	int on = data.size();
 	for(Iterator<Map.Entry<DataID, Object>> i = data.entrySet().iterator(); i.hasNext();) {
 	    Object d = i.next().getValue();
@@ -610,11 +605,8 @@ public class MapMesh implements Disposable {
 	    p.dispose();
     }
     
-    /* XXXRENDER
-    public boolean setup(RenderList rl) {
-	for(Rendered e : extras)
-	    rl.add(e, null);
-	return(true);
+    public void added(RenderTree.Slot slot) {
+	for(RenderTree.Node e : extras)
+	    slot.add(e, null);
     }
-    */
 }

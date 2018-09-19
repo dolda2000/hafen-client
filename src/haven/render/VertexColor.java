@@ -33,6 +33,7 @@ import static haven.render.sl.Type.*;
 public class VertexColor extends State {
     public static final Slot<VertexColor> slot = new Slot<>(Slot.Type.DRAW, VertexColor.class);
     public static final Attribute color = new Attribute(VEC4, "color");
+    public static final VertexColor instance = new VertexColor();
 
     private static final AutoVarying fcolor = new AutoVarying(VEC4) {
 	    protected Expression root(VertexContext vctx) {
