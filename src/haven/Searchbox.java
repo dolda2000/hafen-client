@@ -141,7 +141,7 @@ public abstract class Searchbox<T> extends Listbox<T> {
     public void draw(GOut g) {
 	super.draw(g);
 	if(searching != null) {
-	    g.aimage(info.tex(), g.sz, 1, 1);
+	    g.aimage(info.tex(), g.sz(), 1, 1);
 	}
     }
 
