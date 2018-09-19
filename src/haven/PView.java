@@ -140,7 +140,8 @@ public abstract class PView extends Widget {
 		p.prep(new States.Viewport(area));
 		p.prep(Homo3D.state);
 	    });
-	basic(id_misc, Pipe.Op.compose(new States.Blending(),
+	basic(id_misc, Pipe.Op.compose(new States.Blending(States.Blending.Function.ADD, States.Blending.Factor.SRC_ALPHA, States.Blending.Factor.INV_SRC_ALPHA,
+							   States.Blending.Function.MAX, States.Blending.Factor.SRC_ALPHA, States.Blending.Factor.INV_SRC_ALPHA),
 				       new States.Depthtest(States.Depthtest.Test.LE),
 				       new States.Facecull()));
 	lights();
