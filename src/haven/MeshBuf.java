@@ -33,7 +33,7 @@ import java.nio.*;
 public class MeshBuf {
     public final Collection<Vertex> v = new ArrayList<Vertex>();
     public final Collection<Face> f = new ArrayList<Face>();
-    // private VertexBuf vbuf = null; XXXRENDER
+    private VertexBuf vbuf = null;
     private int nextid = 0;
     private Layer<?>[] layers = new Layer<?>[0];
     private LayerID<?>[] lids = new LayerID<?>[0];
@@ -59,11 +59,9 @@ public class MeshBuf {
 	    return((T)v.attrs[idx]);
 	}
 
-	/* XXXRENDER
-	public abstract VertexBuf.AttribArray build(Collection<T> in);
+	public abstract VertexBuf.AttribData build(Collection<T> in);
 
 	public void copy(VertexBuf src, Vertex[] vmap, int off) {}
-	*/
     }
 
     public static abstract class LayerID<L> {
@@ -89,17 +87,16 @@ public class MeshBuf {
     }
 
     public class Tex extends Layer<Coord3f> {
-	/*
-	public VertexBuf.TexelArray build(Collection<Coord3f> in) {
+	public VertexBuf.TexelData build(Collection<Coord3f> in) {
 	    FloatBuffer data = Utils.wfbuf(in.size() * 2);
 	    for(Coord3f c : in) {
 		data.put(c.x); data.put(c.y);
 	    }
-	    return(new VertexBuf.TexelArray(data));
+	    return(new VertexBuf.TexelData(data));
 	}
 
 	public void copy(VertexBuf buf, Vertex[] vmap, int off) {
-	    VertexBuf.TexelArray src = buf.buf(VertexBuf.TexelArray.class);
+	    VertexBuf.TexelData src = buf.buf(VertexBuf.TexelData.class);
 	    if(src == null)
 		return;
 	    for(int i = 0, o = off * 2; i < vmap.length; i++, o += 2) {
@@ -107,25 +104,22 @@ public class MeshBuf {
 		    set(vmap[i], new Coord3f(src.data.get(o), src.data.get(o + 1), 0));
 	    }
 	}
-	*/
     }
     public static final LayerID<Tex> tex = new CLayerID<Tex>(Tex.class);
 
     public class Col extends Layer<Color> {
-	/*
-	public VertexBuf.ColorArray build(Collection<Color> in) {
+	public VertexBuf.ColorData build(Collection<Color> in) {
 	    FloatBuffer data = Utils.wfbuf(in.size() * 4);
 	    for(Color c : in) {
 		data.put(c.getRed() / 255.0f);  data.put(c.getGreen() / 255.0f);
 		data.put(c.getBlue() / 255.0f); data.put(c.getAlpha() / 255.0f);
 	    }
-	    return(new VertexBuf.ColorArray(data));
+	    return(new VertexBuf.ColorData(data));
 	}
-	*/
     }
     public static final LayerID<Col> col = new CLayerID<Col>(Col.class);
 
-    /*
+    /* XXXRENDER
     public abstract class AttribLayer<T> extends Layer<T> {
 	public final Attribute attrib;
 
@@ -241,9 +235,8 @@ public class MeshBuf {
 	}
     }
 
-    /* XXXRENDER
     public interface LayerMapper {
-	public Layer mapbuf(MeshBuf buf, VertexBuf.AttribArray src);
+	public Layer mapbuf(MeshBuf buf, VertexBuf.AttribData src);
     }
 
     public Vertex[] copy(FastMesh src, LayerMapper mapper) {
@@ -256,21 +249,21 @@ public class MeshBuf {
 		max = idx;
 	}
 	int nv = 0;
-	VertexBuf.VertexArray posb = src.vert.buf(VertexBuf.VertexArray.class);
-	VertexBuf.NormalArray nrmb = src.vert.buf(VertexBuf.NormalArray.class);
+	VertexBuf.VertexData posb = src.vert.buf(VertexBuf.VertexData.class);
+	VertexBuf.NormalData nrmb = src.vert.buf(VertexBuf.NormalData.class);
 	Vertex[] vmap = new Vertex[max + 1 - min];
 	for(int i = 0; i < src.num * 3; i++) {
 	    int idx = src.indb.get(i);
 	    if(vmap[idx - min] == null) {
-		int o = idx * posb.n;
+		int o = idx * posb.elfmt.nc;
 		Coord3f pos = new Coord3f(posb.data.get(o), posb.data.get(o + 1), posb.data.get(o + 2));
-		o = idx * nrmb.n;
+		o = idx * nrmb.elfmt.nc;
 		Coord3f nrm = new Coord3f(nrmb.data.get(o), nrmb.data.get(o + 1), nrmb.data.get(o + 2));
 		vmap[idx - min] = new Vertex(pos, nrm);
 		nv++;
 	    }
 	}
-	for(VertexBuf.AttribArray data : src.vert.bufs) {
+	for(VertexBuf.AttribData data : src.vert.bufs) {
 	    Layer l = mapper.mapbuf(this, data);
 	    if(l != null)
 		l.copy(src.vert, vmap, min);
@@ -291,8 +284,8 @@ public class MeshBuf {
     }
 
     private static final LayerMapper defmapper = new LayerMapper() {
-	    public Layer mapbuf(MeshBuf buf, VertexBuf.AttribArray src) {
-		if(src instanceof VertexBuf.TexelArray)
+	    public Layer mapbuf(MeshBuf buf, VertexBuf.AttribData src) {
+		if(src instanceof VertexBuf.TexelData)
 		    return(buf.layer(tex));
 		return(null);
 	    }
@@ -301,11 +294,9 @@ public class MeshBuf {
     public Vertex[] copy(FastMesh src) {
 	return(copy(src, defmapper));
     }
-    */
 
-    /* XXXRENDER
     @SuppressWarnings("unchecked")
-    private <T> VertexBuf.AttribArray mklayer(Layer<T> l, Object[] abuf) {
+    private <T> VertexBuf.AttribData mklayer(Layer<T> l, Object[] abuf) {
 	int i = 0;
 	boolean f = false;
 	for(Vertex v : this.v) {
@@ -342,27 +333,25 @@ public class MeshBuf {
 	    }
 	}
 
-	VertexBuf.AttribArray[] arrays = new VertexBuf.AttribArray[layers.length + 2];
+	VertexBuf.AttribData[] arrays = new VertexBuf.AttribData[layers.length + 2];
 	int li = 0;
-	arrays[li++] = new VertexBuf.VertexArray(pos);
-	arrays[li++] = new VertexBuf.NormalArray(nrm);
+	arrays[li++] = new VertexBuf.VertexData(pos);
+	arrays[li++] = new VertexBuf.NormalData(nrm);
 
 	Object[] abuf = new Object[v.size()];
 	for(int i = 0; i < layers.length; i++) {
-	    VertexBuf.AttribArray l = mklayer(layers[i], abuf);
+	    VertexBuf.AttribData l = mklayer(layers[i], abuf);
 	    if(l != null)
 		arrays[li++] = l;
 	}
 
 	this.vbuf = new VertexBuf(Utils.splice(arrays, 0, li));
     }
-    */
 
     public void clearfaces() {
 	this.f.clear();
     }
 
-    /* XXXRENDER
     public FastMesh mkmesh() {
 	if(f.isEmpty())
 	    throw(new RuntimeException("Tried to build empty mesh"));
@@ -378,7 +367,6 @@ public class MeshBuf {
 	}
 	return(new FastMesh(this.vbuf, idx));
     }
-    */
 
     public boolean emptyp() {
 	return(f.isEmpty());
