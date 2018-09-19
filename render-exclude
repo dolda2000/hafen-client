@@ -12,7 +12,6 @@ haven/PoseMorph.java
 haven/CloudShadow.java
 haven/DirCam.java
 haven/GBuffer.java
-haven/HavenPanel.java
 haven/HavenApplet.java
 haven/LocationCam.java
 haven/glsl/Add.java
