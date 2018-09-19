@@ -16,7 +16,6 @@ haven/HavenApplet.java
 haven/LocationCam.java
 haven/RenderedNormals.java
 haven/resutil/EnvMap.java
-haven/resutil/OverTex.java
 haven/resutil/TexAnim.java
 haven/resutil/TexPal.java
 haven/resutil/WaterTile.java
