@@ -84,6 +84,17 @@ public class Homo3D {
 	prog.vctx.posv.mod(in -> mul(u_prj.ref(), eyev.depref()), 0);
     }
 
+    public Expression pmvxf(Expression v) {
+	return(mul(u_wxf.ref(), v));
+    }
+
+     /* If, at some unexpected point in an unexpected future, I were
+      * to use anisotropic transforms, this will have to get a matrix
+      * inverter implemented for it. */
+    public Expression nmvxf(Expression v) {
+	return(mul(mat3(u_wxf.ref()), v));
+    }
+
     public static Homo3D get(ProgramContext prog) {
 	Homo3D ret = prog.getmod(Homo3D.class);
 	if(ret == null)

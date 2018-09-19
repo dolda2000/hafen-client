@@ -27,46 +27,45 @@
 package haven.resutil;
 
 import haven.*;
-import haven.glsl.*;
-import static haven.glsl.Cons.*;
-import static haven.glsl.Type.*;
-import haven.MapMesh.Scan;
+import haven.render.*;
+import haven.render.sl.*;
 import java.util.*;
 import java.nio.FloatBuffer;
-import javax.media.opengl.*;
+import haven.render.Texture2D.Sampler2D;
+import static haven.render.sl.Cons.*;
+import static haven.render.sl.Type.*;
 
-public class BumpMap extends GLState {
+public class BumpMap extends State {
     public static final Slot<BumpMap> slot = new Slot<BumpMap>(Slot.Type.DRAW, BumpMap.class);
-    public static final Attribute tan = new Attribute(VEC3);
-    public static final Attribute bit = new Attribute(VEC3);
-    private static final Uniform ctex = new Uniform(SAMPLER2D);
-    public final TexGL tex;
-    private TexUnit sampler;
+    public static final Attribute tan = new Attribute(VEC3, "tab");
+    public static final Attribute bit = new Attribute(VEC3, "bit");
+    private static final Uniform ctex = new Uniform(SAMPLER2D, p -> p.get(slot).tex, slot);
+    public final Sampler2D tex;
 
-    public BumpMap(TexGL tex) {
+    public BumpMap(Sampler2D tex) {
 	this.tex = tex;
     }
 
     private static final ShaderMacro shader = new ShaderMacro() {
 	    final AutoVarying tanc = new AutoVarying(VEC3) {
 		    protected Expression root(VertexContext vctx) {
-			return(vctx.nxf(tan.ref()));
+			return(Homo3D.get(vctx.prog).nmvxf(tan.ref()));
 		    }
 		};
 	    final AutoVarying bitc = new AutoVarying(VEC3) {
 		    protected Expression root(VertexContext vctx) {
-			return(vctx.nxf(bit.ref()));
+			return(Homo3D.get(vctx.prog).nmvxf(bit.ref()));
 		    }
 		};
 	    public void modify(final ProgramContext prog) {
 		final ValBlock.Value nmod = prog.fctx.uniform.new Value(VEC3) {
 			public Expression root() {
-			    return(mul(sub(pick(texture2D(ctex.ref(), Tex2D.texcoord(prog.fctx).ref()), "rgb"),
+			    return(mul(sub(pick(texture2D(ctex.ref(), Tex2D.get(prog).texcoord().depref()), "rgb"),
 					   l(0.5)), l(2.0)));
 			}
 		    };
 		nmod.force();
-		MiscLib.frageyen(prog.fctx).mod(in -> {
+		Homo3D.frageyen(prog.fctx).mod(in -> {
 			Expression m = nmod.ref();
 			return(add(mul(pick(m, "s"), tanc.ref()),
 				   mul(pick(m, "t"), bitc.ref()),
@@ -84,25 +83,9 @@ public class BumpMap extends GLState {
 
     public ShaderMacro shader() {return(shader);}
 
-    public void reapply(GOut g) {
-	g.gl.glUniform1i(g.st.prog.uniform(ctex), sampler.id);
-    }
-
-    public void apply(GOut g) {
-	sampler = TexGL.lbind(g, tex);
-	reapply(g);
-    }
-
-    public void unapply(GOut g) {
-	BGL gl = g.gl;
-	sampler.act(g);
-	gl.glBindTexture(GL.GL_TEXTURE_2D, null);
-	sampler.free(); sampler = null;
-    }
-
-    public void prep(Buffer buf) {
-	if(buf.cfg.pref.flight.val)
-	    buf.put(slot, this);
+    public void apply(Pipe buf) {
+	// if(buf.cfg.pref.flight.val) XXXRENDER
+	buf.put(slot, this);
     }
 
     public static final MeshBuf.LayerID<MeshBuf.Vec3Layer> ltan = new MeshBuf.V3LayerID(tan);
@@ -124,40 +107,43 @@ public class BumpMap extends GLState {
 		a += 1;
 	    }
 	    return(new Material.Res.Resolver() {
-		    public void resolve(Collection<GLState> buf) {
+		    public void resolve(Collection<Pipe.Op> buf) {
 			TexR rt = tres.get().layer(TexR.class, tid);
 			if(rt == null)
 			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
-			/* XXX: It is somewhat doubtful that this cast is really quite reasonable. */
-			buf.add(new BumpMap((TexGL)rt.tex()));
+			buf.add(new BumpMap(rt.tex().img));
 		    }
 		});
 	}
     }
 
     @VertexBuf.ResName("tan2")
-    public static class Tangents extends VertexBuf.Vec3Array implements MorphedMesh.MorphArray {
-	public Tangents(FloatBuffer data) {super(data, tan);}
+    public static class Tangents extends VertexBuf.FloatData /* implements MorphedMesh.MorphArray XXXRENDER */ {
+	public Tangents(FloatBuffer data) {super(tan, 3, data);}
 	public Tangents(Resource res, Message buf, int nv) {this(VertexBuf.loadbuf2(Utils.wfbuf(nv * 3), buf));}
+	/* XXXRENDER
 	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
 	public Tangents dup() {return(new Tangents(Utils.bufcp(data)));}
+	*/
     }
     @VertexBuf.ResName("bit2")
-    public static class BiTangents extends VertexBuf.Vec3Array implements MorphedMesh.MorphArray {
-	public BiTangents(FloatBuffer data) {super(data, bit);}
+    public static class BiTangents extends VertexBuf.FloatData /* implements MorphedMesh.MorphArray XXXRENDER */ {
+	public BiTangents(FloatBuffer data) {super(bit, 3, data);}
 	public BiTangents(Resource res, Message buf, int nv) {this(VertexBuf.loadbuf2(Utils.wfbuf(nv * 3), buf));}
+	/* XXXRENDER
 	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
 	public BiTangents dup() {return(new BiTangents(Utils.bufcp(data)));}
+	*/
     }
     @VertexBuf.ResName("tan")
-    public static class TanDecode implements VertexBuf.ArrayCons {
-	public void cons(Collection<VertexBuf.AttribArray> dst, Resource res, Message buf, int nv) {
+    public static class TanDecode implements VertexBuf.DataCons {
+	public void cons(Collection<VertexBuf.AttribData> dst, Resource res, Message buf, int nv) {
 	    dst.add(new Tangents(VertexBuf.loadbuf(Utils.wfbuf(nv * 3), buf)));
 	}
     }
     @VertexBuf.ResName("bit")
-    public static class BitDecode implements VertexBuf.ArrayCons {
-	public void cons(Collection<VertexBuf.AttribArray> dst, Resource res, Message buf, int nv) {
+    public static class BitDecode implements VertexBuf.DataCons {
+	public void cons(Collection<VertexBuf.AttribData> dst, Resource res, Message buf, int nv) {
 	    dst.add(new BiTangents(VertexBuf.loadbuf(Utils.wfbuf(nv * 3), buf)));
 	}
     }

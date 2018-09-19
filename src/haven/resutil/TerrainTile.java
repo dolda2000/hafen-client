@@ -188,10 +188,8 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 			    Coord3f bit = ret.nrm.cmul(Coord3f.xu).norm();
 			    Coord3f tc = new Coord3f((d.lc.x + d.tcx[i]) / fac, (d.lc.y + d.tcy[i]) / fac, 0);
 			    int alpha = (int)(bv(d.lc, d.tcx[i], d.tcy[i]) * 255);
-			    /* XXXRENDER
 			    buf.layer(BumpMap.ltan).set(ret, tan);
 			    buf.layer(BumpMap.lbit).set(ret, bit);
-			    */
 			    buf.layer(MeshBuf.tex).set(ret, tc);
 			    buf.layer(MeshBuf.col).set(ret, new Color(255, 255, 255, alpha));
 			    return(ret);
