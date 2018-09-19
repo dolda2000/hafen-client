@@ -297,13 +297,15 @@ public class RenderTree {
 		    try {
 			while(it.hasNext()) {
 			    Client<?> cl = it.next();
-			    cl.added(this);
+			    cl.added(ch);
 			}
 		    } catch(RuntimeException e) {
 			try {
+			    removech(ch);
+			    it.previous();
 			    while(it.hasPrevious()) {
 				Client<?> cl = it.previous();
-				cl.removed(this);
+				cl.removed(ch);
 			    }
 			} catch(RuntimeException e2) {
 			    Error err = new Error("Unexpected non-local exit", e2);
@@ -317,7 +319,8 @@ public class RenderTree {
 		    try {
 			n.added(ch);
 		    } catch(RuntimeException e) {
-			remove();
+			ch.remove();
+			throw(e);
 		    }
 		}
 		return(ch);
