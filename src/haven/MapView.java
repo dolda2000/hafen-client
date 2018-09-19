@@ -384,6 +384,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.cc = cc;
 	this.plgob = plgob;
 	basic.add(new Gobs(), null);
+	basic.add(this.terrain = new Terrain(), null);
 	setcanfocus(true);
     }
     
@@ -478,6 +479,64 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		else
 		    adding.remove(ob);
 	    }
+	}
+    }
+
+    private final Terrain terrain;
+    private class Terrain extends RenderTree.Node.Track1 {
+	final MCache map = glob.map;
+	Area area;
+
+	abstract class Grid extends RenderTree.Node.Track1 {
+	    final Map<Coord, RenderTree.Slot> cuts = new HashMap<>();
+
+	    abstract RenderTree.Node getcut(Coord cc);
+
+	    void tick() {
+		for(Coord cc : area) {
+		    if(!cuts.containsKey(cc)) {
+			try {
+			    Coord2d pc = cc.mul(MCache.cutsz).mul(tilesz);
+			    RenderTree.Node cut = getcut(cc);
+			    cuts.put(cc, slot.add(cut, Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0))));
+			} catch(Loading l) {}
+		    }
+		}
+		for(Iterator<Map.Entry<Coord, RenderTree.Slot>> i = cuts.entrySet().iterator(); i.hasNext();) {
+		    Map.Entry<Coord, RenderTree.Slot> ent = i.next();
+		    if(!area.contains(ent.getKey())) {
+			ent.getValue().remove();
+			i.remove();
+		    }
+		}
+	    }
+	}
+
+	final Grid main = new Grid() {
+		RenderTree.Node getcut(Coord cc) {
+		    return(map.getcut(cc));
+		}
+	    };
+
+	void tick() {
+	    /* XXX: Should be taken out of the main rendering
+	     * loop. Probably not a big deal, but still. */
+	    try {
+		Coord cc = new Coord2d(getcc()).floor(tilesz).div(MCache.cutsz);
+		area = new Area(cc.sub(view, view), cc.add(view, view).add(1, 1));
+	    } catch(Loading l) {
+		return;
+	    }
+	    main.tick();
+	}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.add(main, null);
+	    super.added(slot);
+	}
+
+	public void removed(RenderTree.Slot slot) {
+	    super.removed(slot);
 	}
     }
 
@@ -1360,6 +1419,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	basic(Camera.class, camera);
 	amblight();
+	terrain.tick();
 	if(placing != null)
 	    placing.ctick((int)(dt * 1000));
     }
