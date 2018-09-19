@@ -15,7 +15,6 @@ haven/GBuffer.java
 haven/HavenApplet.java
 haven/LocationCam.java
 haven/RenderedNormals.java
-haven/resutil/AlphaTex.java
 haven/resutil/BumpMap.java
 haven/resutil/EnvMap.java
 haven/resutil/OverTex.java
