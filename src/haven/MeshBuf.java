@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.render.sl.Attribute;
 import java.awt.Color;
 import java.util.*;
 import java.nio.*;
@@ -119,7 +120,12 @@ public class MeshBuf {
     }
     public static final LayerID<Col> col = new CLayerID<Col>(Col.class);
 
-    /* XXXRENDER
+    public static class AttribData extends VertexBuf.FloatData {
+	public AttribData(Attribute attrib, int nc, FloatBuffer data) {
+	    super(attrib, nc, data);
+	}
+    }
+
     public abstract class AttribLayer<T> extends Layer<T> {
 	public final Attribute attrib;
 
@@ -131,44 +137,44 @@ public class MeshBuf {
     public class Vec1Layer extends AttribLayer<Float> {
 	public Vec1Layer(Attribute attrib) {super(attrib);}
 
-	public VertexBuf.Vec1Array build(Collection<Float> in) {
+	public AttribData build(Collection<Float> in) {
 	    FloatBuffer data = Utils.wfbuf(in.size());
 	    for(Float d : in)
 		data.put(d);
-	    return(new VertexBuf.Vec1Array(data, attrib));
+	    return(new AttribData(attrib, 1, data));
 	}
     }
     public class Vec2Layer extends AttribLayer<Coord3f> {
 	public Vec2Layer(Attribute attrib) {super(attrib);}
 
-	public VertexBuf.Vec2Array build(Collection<Coord3f> in) {
+	public AttribData build(Collection<Coord3f> in) {
 	    FloatBuffer data = Utils.wfbuf(in.size() * 2);
 	    for(Coord3f d : in) {
 		data.put(d.x); data.put(d.y);
 	    }
-	    return(new VertexBuf.Vec2Array(data, attrib));
+	    return(new AttribData(attrib, 2, data));
 	}
     }
     public class Vec3Layer extends AttribLayer<Coord3f> {
 	public Vec3Layer(Attribute attrib) {super(attrib);}
 
-	public VertexBuf.Vec3Array build(Collection<Coord3f> in) {
+	public AttribData build(Collection<Coord3f> in) {
 	    FloatBuffer data = Utils.wfbuf(in.size() * 3);
 	    for(Coord3f d : in) {
 		data.put(d.x); data.put(d.y); data.put(d.z);
 	    }
-	    return(new VertexBuf.Vec3Array(data, attrib));
+	    return(new AttribData(attrib, 3, data));
 	}
     }
     public class Vec4Layer extends AttribLayer<float[]> {
 	public Vec4Layer(Attribute attrib) {super(attrib);}
 
-	public VertexBuf.Vec4Array build(Collection<float[]> in) {
+	public AttribData build(Collection<float[]> in) {
 	    FloatBuffer data = Utils.wfbuf(in.size() * 4);
 	    for(float[] d : in) {
 		data.put(d[0]); data.put(d[1]); data.put(d[2]); data.put(d[3]);
 	    }
-	    return(new VertexBuf.Vec4Array(data, attrib));
+	    return(new AttribData(attrib, 4, data));
 	}
     }
 
@@ -195,7 +201,6 @@ public class MeshBuf {
 	public V4LayerID(Attribute attrib) {super(attrib);}
 	public Vec4Layer cons(MeshBuf buf) {return(buf.new Vec4Layer(attrib));}
     }
-    */
 
     @SuppressWarnings("unchecked")
     public <L extends Layer> L layer(LayerID<L> id) {
