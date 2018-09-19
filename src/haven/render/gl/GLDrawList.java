@@ -896,8 +896,11 @@ public class GLDrawList implements DrawList {
 	    } else if(reg instanceof DepSetting) {
 		((DepSetting)reg).ckupdate(mask);
 	    } else if(reg instanceof DepSetting[]) {
-		for(DepSetting set : (DepSetting[])reg)
+		for(DepSetting set : (DepSetting[])reg) {
+		    if(set == null)
+			break;
 		    set.ckupdate(mask);
+		}
 	    } else {
 		throw(new RuntimeException());
 	    }
