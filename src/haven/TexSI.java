@@ -28,7 +28,7 @@ package haven;
 
 public class TexSI implements Tex {
     public final Tex parent;
-    private final Coord ul, br;
+    public final Coord ul, br;
 
     public TexSI(Tex parent, Coord ul, Coord br) {
 	this.parent = parent;
