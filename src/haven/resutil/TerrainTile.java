@@ -32,6 +32,8 @@ import java.util.*;
 import java.awt.Color;
 import haven.MapMesh.Scan;
 import haven.Tileset.Tile;
+import static haven.resutil.GroundTile.tcx;
+import static haven.resutil.GroundTile.tcy;
 
 public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
     public final Pipe.Op base;
@@ -267,37 +269,32 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	}
     }
 
-    // private final static Map<TexGL, AlphaTex> transtex = new WeakHashMap<TexGL, AlphaTex>(); XXXRENDER
+    private final static Map<TexRender, AlphaTex> transtex = new WeakHashMap<TexRender, AlphaTex>();
 
     /* XXX: Some strange javac bug seems to make it resolve the
      * trans() references to the wrong signature, thus the name
      * distinction. */
     public void _faces(MapMesh m, int z, Tile trans, MPart d) {
 	Tex ttex = trans.tex();
-	/* XXXRENDER
-	float tl = ttex.tcx(0), tt = ttex.tcy(0), tw = ttex.tcx(ttex.sz().x) - tl, th = ttex.tcy(ttex.sz().y) - tt;
-	TexGL gt;
-	if(ttex instanceof TexGL)
-	    gt = (TexGL)ttex;
-	else if((ttex instanceof TexSI) && (((TexSI)ttex).parent instanceof TexGL))
-	    gt = (TexGL)((TexSI)ttex).parent;
+	float tl = tcx(ttex, 0), tt = tcy(ttex, 0), tw = tcx(ttex, ttex.sz().x) - tl, th = tcy(ttex, ttex.sz().y) - tt;
+	TexRender gt;
+	if(ttex instanceof TexRender)
+	    gt = (TexRender)ttex;
+	else if((ttex instanceof TexSI) && (((TexSI)ttex).parent instanceof TexRender))
+	    gt = (TexRender)((TexSI)ttex).parent;
 	else
 	    throw(new RuntimeException("Cannot use texture for transitions: " + ttex));
-	*/
-	/* XXXRENDER
 	AlphaTex alpha;
 	synchronized(transtex) {
 	    if((alpha = transtex.get(gt)) == null)
-		transtex.put(gt, alpha = new AlphaTex(gt, 0.01f));
+		transtex.put(gt, alpha = new AlphaTex(gt.img, 0.01f));
 	}
-	*/
 	Blend b = m.data(blend);
 	Surface.MeshVertex[] mv = new Surface.MeshVertex[d.v.length];
 	for(int i = 0; i < var.length + 1; i++) {
 	    if(b.en[i][b.es.o(d.lc)]) {
-		/* XXXRENDER
-		GLState mat = (i == 0)?base:(var[i - 1].mat);
-		mat = d.mcomb(GLState.compose(mat, new MapMesh.MLOrder(z, i), alpha));
+		Pipe.Op mat = (i == 0)?base:(var[i - 1].mat);
+		mat = d.mcomb(Pipe.Op.compose(mat, new MapMesh.MLOrder(z, i), alpha));
 		MeshBuf buf = MapMesh.Model.get(m, mat);
 		MeshBuf.Vec2Layer cc = buf.layer(AlphaTex.lclip);
 		for(int o = 0; o < d.v.length; o++) {
@@ -306,7 +303,6 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		}
 		for(int fi = 0; fi < d.f.length; fi += 3)
 		    buf.new Face(mv[d.f[fi]], mv[d.f[fi + 1]], mv[d.f[fi + 2]]);
-		*/
 	    }
 	}
     }

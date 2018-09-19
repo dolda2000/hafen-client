@@ -28,28 +28,29 @@ package haven.resutil;
 
 import java.util.*;
 import haven.*;
-import haven.glsl.*;
-import static haven.glsl.Cons.*;
-import static haven.glsl.Function.PDir.*;
-import static haven.glsl.Type.*;
-import haven.glsl.ValBlock.Value;
+import haven.render.*;
+import haven.render.sl.*;
+import haven.render.Texture2D.Sampler2D;
+import haven.render.sl.ValBlock.Value;
+import static haven.render.sl.Cons.*;
+import static haven.render.sl.Function.PDir.*;
+import static haven.render.sl.Type.*;
 
-public class AlphaTex extends GLState {
+public class AlphaTex extends State {
     public static final Slot<AlphaTex> slot = new Slot<AlphaTex>(Slot.Type.DRAW, AlphaTex.class);
-    public static final Attribute clipc = new Attribute(VEC2);
+    public static final Attribute clipc = new Attribute(VEC2, "clipc");
     public static final MeshBuf.LayerID<MeshBuf.Vec2Layer> lclip = new MeshBuf.V2LayerID(clipc);
-    private static final Uniform ctex = new Uniform(SAMPLER2D);
-    private static final Uniform cclip = new Uniform(FLOAT);
-    public final TexGL tex;
+    private static final Uniform ctex = new Uniform(SAMPLER2D, p -> p.get(slot).tex, slot);
+    private static final Uniform cclip = new Uniform(FLOAT, p -> p.get(slot).cthr, slot);
+    public final Sampler2D tex;
     public final float cthr;
-    private TexUnit sampler;
 
-    public AlphaTex(TexGL tex, float clip) {
+    public AlphaTex(Sampler2D tex, float clip) {
 	this.tex = tex;
 	this.cthr = clip;
     }
 
-    public AlphaTex(TexGL tex) {
+    public AlphaTex(Sampler2D tex) {
 	this(tex, 0);
     }
 
@@ -60,20 +61,16 @@ public class AlphaTex extends GLState {
 	    }
 	};
     private static Value value(FragmentContext fctx) {
-	return(fctx.uniform.ext(ctex, new ValBlock.Factory() {
-		public Value make(ValBlock vals) {
-		    return(vals.new Value(VEC4) {
-			    public Expression root() {
-				return(texture2D(ctex.ref(), fc.ref()));
-			    }
-			});
+	return(fctx.uniform.ext(ctex, () -> fctx.uniform.new Value(VEC4) {
+		public Expression root() {
+		    return(texture2D(ctex.ref(), fc.ref()));
 		}
 	    }));
     }
     private static final ShaderMacro main = prog -> {
 	final Value val = value(prog.fctx);
 	val.force();
-	prog.fctx.fragcol.mod(in -> mul(in, val.ref()), 100);
+	FragColor.fragcol(prog.fctx).mod(in -> mul(in, val.ref()), 100);
     };
     private static final ShaderMacro clip = prog -> {
 	final Value val = value(prog.fctx);
@@ -87,24 +84,8 @@ public class AlphaTex extends GLState {
     private static final ShaderMacro shwc = ShaderMacro.compose(main, clip);
 
     public ShaderMacro shader() {return((cthr > 0)?shwc:shnc);}
-    public boolean reqshader() {return(true);}
 
-    public void reapply(GOut g) {
-	g.gl.glUniform1i(g.st.prog.uniform(ctex), sampler.id);
-	if(cthr > 0)
-	    g.gl.glUniform1f(g.st.prog.uniform(cclip), cthr);
-    }
-
-    public void apply(GOut g) {
-	sampler = TexGL.lbind(g, tex);
-	reapply(g);
-    }
-
-    public void unapply(GOut g) {
-	sampler.ufree(g); sampler = null;
-    }
-
-    public void prep(Buffer buf) {
+    public void apply(Pipe buf) {
 	buf.put(slot, this);
     }
 }
