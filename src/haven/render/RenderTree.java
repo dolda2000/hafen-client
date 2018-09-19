@@ -567,6 +567,26 @@ public class RenderTree {
     public static interface Node {
 	public default void added(Slot slot) {}
 	public default void removed(Slot slot) {}
+
+	public static class Track1 implements Node {
+	    protected Slot slot = null;
+
+	    public void added(RenderTree.Slot slot) {
+		synchronized(this) {
+		    if(this.slot != null)
+			throw(new RuntimeException());
+		    this.slot = slot;
+		}
+	    }
+
+	    public void removed(RenderTree.Slot slot) {
+		synchronized(this) {
+		    if(this.slot != slot)
+			throw(new RuntimeException());
+		    this.slot = null;
+		}
+	    }
+	}
     }
 
     public Iterable<Slot> slots() {
