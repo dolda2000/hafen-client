@@ -28,7 +28,7 @@ package haven.render.gl;
 
 import java.util.*;
 import java.util.concurrent.atomic.*;
-import haven.FColor;
+import haven.*;
 import haven.render.*;
 import haven.render.sl.*;
 
@@ -756,7 +756,15 @@ public class GLDrawList implements DrawList {
 	    st.apply(gl);
 	}
     }
-    private final VaoSetting vao_nil = new VaoSetting(null, null);
+    private final Map<Pair<GLVertexArray, GLBuffer>, VaoSetting> vaos = new CacheMap<>(CacheMap.RefType.WEAK);
+    private VaoSetting getvao(GLVertexArray vao, GLBuffer ebo) {
+	Pair<GLVertexArray, GLBuffer> key = new Pair<>(vao, ebo);
+	VaoSetting ret = vaos.get(key);
+	if(ret == null)
+	    vaos.put(key, ret = new VaoSetting(vao, ebo));
+	return(ret);
+    }
+    private final VaoSetting vao_nil = getvao(null, null);
 
     class SlotRender implements Render {
 	final DrawSlot slot;
@@ -779,7 +787,7 @@ public class GLDrawList implements DrawList {
 	    } else {
 		GLVertexArray vao = env.prepare(mod, slot.prog);
 		GLBuffer ebo = (mod.ind == null) ? null : (GLBuffer)env.prepare(mod.ind);
-		slot.settings[idx_vao] = new VaoSetting(vao, ebo);
+		slot.settings[idx_vao] = getvao(vao, ebo);
 		if(mod.ind == null) {
 		    gl.glDrawArrays(GLRender.glmode(mod.mode), mod.f, mod.n);
 		} else {
