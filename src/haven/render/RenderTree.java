@@ -33,11 +33,11 @@ import static haven.Utils.eq;
 
 public class RenderTree {
     private final Lock lock = new ReentrantLock();
-    private final Slot root;
+    private final TreeSlot root;
     private final List<Client<?>> clients = new ArrayList<>();
 
     public RenderTree() {
-	root = new Slot(this, null, null);
+	root = new TreeSlot(this, null, null);
     }
 
     public Locked lock() {
@@ -54,19 +54,19 @@ public class RenderTree {
 	}
 
 	@SuppressWarnings("unchecked")
-	void added(Slot slot) {
+	void added(TreeSlot slot) {
 	    if(type.isInstance(slot.node))
 		list.add((RenderList.Slot<R>)slot);
 	}
 
 	@SuppressWarnings("unchecked")
-	void removed(Slot slot) {
+	void removed(TreeSlot slot) {
 	    if(type.isInstance(slot.node))
 		list.remove((RenderList.Slot<R>)slot);
 	}
 
 	@SuppressWarnings("unchecked")
-	void updated(Slot slot) {
+	void updated(TreeSlot slot) {
 	    if(type.isInstance(slot.node))
 		list.update((RenderList.Slot<R>)slot);
 	}
@@ -239,29 +239,36 @@ public class RenderTree {
 	}
     }
 
-    public static class Slot implements RenderList.Slot<Node> {
+    public static interface Slot extends RenderList.Slot<Node> {
+	public Slot add(Node n, Pipe.Op state);
+	public void remove();
+	public void cstate(Pipe.Op state);
+	public void ostate(Pipe.Op state);
+    }
+
+    public static class TreeSlot implements Slot {
 	public final RenderTree tree;
-	public final Slot parent;
+	public final TreeSlot parent;
 	public final Node node;
 	private DepPipe dstate = null;
-	private Collection<Slot>[] rdeps = null;
-	private Slot[] deps = null;
+	private Collection<TreeSlot>[] rdeps = null;
+	private TreeSlot[] deps = null;
 	private Pipe.Op cstate, ostate;
-	private Slot[] children = null;
+	private TreeSlot[] children = null;
 	private int nchildren = 0;
 	private int pidx = -1;
 
-	private Slot(RenderTree tree, Slot parent, Node node) {
+	private TreeSlot(RenderTree tree, TreeSlot parent, Node node) {
 	    this.tree = tree;
 	    this.parent = parent;
 	    this.node = node;
 	}
 
-	private void addch(Slot ch) {
+	private void addch(TreeSlot ch) {
 	    if(ch.pidx != -1)
 		throw(new IllegalStateException());
 	    if(children == null)
-		children = new Slot[1];
+		children = new TreeSlot[1];
 	    else if(children.length <= nchildren + 1)
 		children = Arrays.copyOf(children, children.length * 2);
 	    int nidx = nchildren++;
@@ -269,7 +276,7 @@ public class RenderTree {
 	    ch.pidx = nidx;
 	}
 
-	private void removech(Slot ch) {
+	private void removech(TreeSlot ch) {
 	    int idx = ch.pidx;
 	    if(idx < 0)
 		throw(new IllegalStateException());
@@ -279,17 +286,17 @@ public class RenderTree {
 	    ch.pidx = -1;
 	}
 
-	public Iterable<Slot> children() {
-	    return(() -> new Iterator<Slot>() {
+	public Iterable<TreeSlot> children() {
+	    return(() -> new Iterator<TreeSlot>() {
 		    int i = 0;
 		    public boolean hasNext() {return(i < nchildren);}
-		    public Slot next() {return(children[i++]);}
+		    public TreeSlot next() {return(children[i++]);}
 		});
 	}
 
-	public Slot add(Node n, Pipe.Op state) {
+	public TreeSlot add(Node n, Pipe.Op state) {
 	    try(Locked lk = tree.lock()) {
-		Slot ch = new Slot(tree, this, n);
+		TreeSlot ch = new TreeSlot(tree, this, n);
 		ch.cstate = state;
 		addch(ch);
 		synchronized(tree.clients) {
@@ -354,16 +361,16 @@ public class RenderTree {
 	    return(ret);
 	}
 
-	private void remrdep(int stidx, Slot rdep) {
+	private void remrdep(int stidx, TreeSlot rdep) {
 	    if((rdeps == null) || (rdeps.length <= stidx) ||
 	       (rdeps[stidx] == null) || !rdeps[stidx].remove(rdep))
 		throw(new RuntimeException("Reverse dependency did strangely not exist"));
 	}
 
 	@SuppressWarnings("unchecked")
-	private void addrdep(int stidx, Slot rdep) {
+	private void addrdep(int stidx, TreeSlot rdep) {
 	    if(rdeps == null)
-		rdeps = (Collection<Slot>[])new Collection[stidx + 1];
+		rdeps = (Collection<TreeSlot>[])new Collection[stidx + 1];
 	    else if(rdeps.length <= stidx)
 		rdeps = Arrays.copyOf(rdeps, stidx + 1);
 	    if(rdeps[stidx] == null)
@@ -371,9 +378,9 @@ public class RenderTree {
 	    rdeps[stidx].add(rdep);
 	}
 
-	private void adddep(int stidx, Slot dep) {
+	private void adddep(int stidx, TreeSlot dep) {
 	    if(deps == null)
-		deps = new Slot[stidx + 1];
+		deps = new TreeSlot[stidx + 1];
 	    else if(deps.length <= stidx)
 		deps = Arrays.copyOf(deps, stidx + 1);
 	    deps[stidx] = dep;
@@ -399,7 +406,7 @@ public class RenderTree {
 	    if(nst != null) {
 		for(int i = nst.states.length - 1; i >= 0; i--) {
 		    dep: if(nst.deps[i]) {
-			for(Slot sp = parent; sp != null; sp = sp.parent) {
+			for(TreeSlot sp = parent; sp != null; sp = sp.parent) {
 			    if((sp.dstate != null) && (sp.dstate.def.length > i) && sp.dstate.def[i]) {
 				adddep(i, sp);
 				break dep;
@@ -418,12 +425,12 @@ public class RenderTree {
 	    if(defch == null) {
 		int[] ch = new int[pst.ndef];
 		int maxi = Math.min(nst.states.length, pst.states.length), nch = 0;
-		ArrayList<Slot> cdeps = new ArrayList<Slot>();
+		ArrayList<TreeSlot> cdeps = new ArrayList<TreeSlot>();
 		for(int i = 0; i < maxi; i++) {
 		    if(pst.def[i] && !eq(pst.states[i], nst.states[i])) {
 			ch[nch++] = i;
 			if((rdeps != null) && (rdeps[i] != null)) {
-			    for(Slot rdep : rdeps[i]) {
+			    for(TreeSlot rdep : rdeps[i]) {
 				if(!cdeps.contains(rdep))
 				    cdeps.add(rdep);
 			    }
@@ -431,7 +438,7 @@ public class RenderTree {
 		    }
 		}
 		int[] tch = Arrays.copyOf(ch, nch);
-		for(Slot rdep : cdeps)
+		for(TreeSlot rdep : cdeps)
 		    rdep.rdepupd();
 		Pipe pdst = this.pdstate;
 		if(pdst != null) {
@@ -450,7 +457,7 @@ public class RenderTree {
 	    this.istate = null;
 	    if(setds)
 		setdstate(mkdstate(cstate, ostate));
-	    for(Slot child : children())
+	    for(TreeSlot child : children())
 		child.updtotal(true);
 	    synchronized(tree.clients) {
 		tree.clients.forEach(cl -> cl.updated(this));
@@ -594,9 +601,9 @@ public class RenderTree {
 		public Iterator<Slot> iterator() {
 		    return(new Iterator<Slot>() {
 			    int[] cs = {0, 0, 0, 0, 0, 0, 0, 0};
-			    Slot[] ss = {root, null, null, null, null, null, null, null};
+			    TreeSlot[] ss = {root, null, null, null, null, null, null, null};
 			    int sp = 0;
-			    Slot next = root;
+			    TreeSlot next = root;
 
 			    public boolean hasNext() {
 				if(next != null)
@@ -645,7 +652,7 @@ public class RenderTree {
 	}
     }
 
-    private void dump(Slot slot, int ind) {
+    private void dump(TreeSlot slot, int ind) {
 	for(int i = 0; i < ind; i++)
 	    System.err.print("    ");
 	System.err.printf("%s(%d)\n", slot, slot.nchildren);
