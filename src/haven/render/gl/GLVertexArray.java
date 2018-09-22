@@ -80,7 +80,7 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	GLBuffer ebo = (mod.ind == null) ? null : (GLBuffer)env.prepare(mod.ind);
 	GLVertexArray vao = new GLVertexArray(env);
 	env.prepare((GLRender g) -> {
-		BGL gl = g.gl;
+		BGL gl = g.gl();
 		VaoBindState.apply(gl, g.state, vao, ebo);
 		if(ebo != null) {
 		    // Rendundant with BindBuffer in VaoBindState, but
