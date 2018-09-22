@@ -551,7 +551,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 
 	public void added(RenderTree.Slot slot) {
 	    slot.ostate(state());
-	    slot.add(Gob.this, null);
+	    slot.add(Gob.this);
 	    slots.add(slot);
 	}
 

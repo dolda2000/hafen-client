@@ -114,7 +114,7 @@ public interface RenderLink {
 				res = new RenderTree.Node() {
 					public void added(RenderTree.Slot slot) {
 					    for(RenderTree.Node r : ca)
-						slot.add(r, null);
+						slot.add(r);
 					}
 				    };
 			    }

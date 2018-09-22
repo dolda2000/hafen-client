@@ -241,6 +241,7 @@ public class RenderTree {
 
     public static interface Slot extends RenderList.Slot<Node> {
 	public Slot add(Node n, Pipe.Op state);
+	public default Slot add(Node n) {return(add(n, null));}
 	public void remove();
 	public void cstate(Pipe.Op state);
 	public void ostate(Pipe.Op state);
@@ -638,6 +639,9 @@ public class RenderTree {
 
     public Slot add(Node n, Pipe.Op state) {
 	return(root.add(n, state));
+    }
+    public Slot add(Node n) {
+	return(root.add(n));
     }
 
     public <R> void add(RenderList<R> list, Class<R> type) {
