@@ -247,10 +247,10 @@ public class RenderTree {
 	public void ostate(Pipe.Op state);
     }
 
-    public static class TreeSlot implements Slot {
-	public final RenderTree tree;
-	public final TreeSlot parent;
-	public final Node node;
+    static class TreeSlot implements Slot {
+	final RenderTree tree;
+	final TreeSlot parent;
+	final Node node;
 	private DepPipe dstate = null;
 	private Collection<TreeSlot>[] rdeps = null;
 	private TreeSlot[] deps = null;
