@@ -40,8 +40,10 @@ public class TestView extends PView {
     public TestView(Coord sz) {
 	super(sz);
 	setcam();
-	borka[0] = basic.add(borkamat.apply(borkamesh), null);
-	borka[1] = basic.add(borkamat.apply(borkamesh), null);
+	borka[0] = basic.add(null);
+	borka[0].add(borkamat.apply(borkamesh));
+	borka[1] = basic.add(null);
+	borka[1].add(borkamat.apply(borkamesh));
 	basic.add(new DirLight(FColor.BLACK, FColor.WHITE, FColor.BLACK, Coord3f.xu));
     }
 
@@ -101,9 +103,9 @@ public class TestView extends PView {
 
     public void tick(double dt) {
 	rot += (float)dt;
-	borka[0].cstate(new Location(Transform.makexlate(new Matrix4f(), new Coord3f(0, 10, 0))
+	borka[0].ostate(new Location(Transform.makexlate(new Matrix4f(), new Coord3f(0, 10, 0))
 				     .mul1(Transform.makerot(new Matrix4f(), Coord3f.zu, rot))));
-	borka[1].cstate(new Location(Transform.makexlate(new Matrix4f(), new Coord3f(0, -10, 0))
+	borka[1].ostate(new Location(Transform.makexlate(new Matrix4f(), new Coord3f(0, -10, 0))
 				     .mul1(Transform.makerot(new Matrix4f(), Coord3f.zu, -rot))));
     }
 
