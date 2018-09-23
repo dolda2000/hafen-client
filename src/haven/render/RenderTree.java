@@ -200,12 +200,6 @@ public class RenderTree {
 	    this.parent = parent;
 	}
 
-	public DepPipe(Pipe parent, Pipe.Op st) {
-	    this(parent);
-	    prep(st);
-	    lock = true;
-	}
-
 	public DepPipe prep(Pipe.Op op) {
 	    if(op != null)
 		op.apply(this);
@@ -262,12 +256,47 @@ public class RenderTree {
 	}
     }
 
+    public static class StaticPipe implements Pipe {
+	private static final Map<DepInfo, StaticPipe> interned = new WeakHashMap<>();
+	public final DepInfo bk;
+
+	public StaticPipe(DepInfo bk) {
+	    this.bk = bk;
+	}
+
+	public static StaticPipe get(DepInfo bk) {
+	    synchronized(interned) {
+		StaticPipe ret = interned.get(bk);
+		if(ret == null)
+		    interned.put(bk, ret = new StaticPipe(bk));
+		return(ret);
+	    }
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T extends State> T get(State.Slot<T> slot) {
+	    int idx = slot.id;
+	    if((bk.states.length <= idx) || !bk.def[idx])
+		throw(new RuntimeException("Reading undefined slot " + slot + " from slot-pipe"));
+	    return((T)bk.states[idx]);
+	}
+
+	public Pipe copy() {
+	    return(new BufPipe(states()));
+	}
+
+	public State[] states() {
+	    throw(new UnsupportedOperationException("StaticPipe::states"));
+	}
+    }
+
     public static interface Slot extends RenderList.Slot<Node> {
 	public Slot add(Node n, Pipe.Op state);
 	public default Slot add(Node n) {return(add(n, null));}
 	public void remove();
 	public void cstate(Pipe.Op state);
 	public void ostate(Pipe.Op state);
+	public default void lockstate() {}
     }
 
     static class TreeSlot implements Slot {
@@ -278,6 +307,7 @@ public class RenderTree {
 	private Collection<TreeSlot>[] rdeps = null;
 	private TreeSlot[] deps = null;
 	private Pipe.Op cstate, ostate;
+	private boolean stlock = false;
 	private TreeSlot[] children = null;
 	private int nchildren = 0;
 	private int pidx = -1;
@@ -376,12 +406,7 @@ public class RenderTree {
 	}
 
 	private DepInfo mkdstate(Pipe.Op cstate, Pipe.Op ostate) {
-	    DepPipe buf = new DepPipe(parent.istate());
-	    if(cstate != null)
-		buf.prep(cstate);
-	    if(ostate != null)
-		buf.prep(ostate);
-	    return(buf.lock());
+	    return(new DepPipe(parent.istate()).prep(cstate).prep(ostate).lock().intern());
 	}
 
 	private void remrdep(int stidx, TreeSlot rdep) {
@@ -411,6 +436,8 @@ public class RenderTree {
 	}
 
 	private void rdepupd() {
+	    if(stlock)
+		throw(new AssertionError("reverse dependency update on locked slot"));
 	    upddstate(mkdstate(cstate, ostate));
 	}
 
@@ -493,7 +520,24 @@ public class RenderTree {
 	    return(dstate);
 	}
 
+	private void checklockdeps() {
+	    if(deps == null)
+		return;
+	    for(int i = 0; i < deps.length; i++) {
+		if((deps[i] != null) && !deps[i].stlock)
+		    throw(new RuntimeException("locked state depends on non-locked state"));
+	    }
+	}
+
+	public void lockstate() {
+	    if(pdstate != null)
+		throw(new IllegalStateException("slot lock requested after use of state"));
+	    stlock = true;
+	}
+
 	private void chstate(Pipe.Op cstate, Pipe.Op ostate) {
+	    if(stlock)
+		throw(new RuntimeException("attempted state change of locked slot"));
 	    if(this.dstate != null) {
 		DepInfo pst = this.dstate;
 		try {
@@ -548,8 +592,14 @@ public class RenderTree {
 
 	private Pipe pdstate = null;
 	private Pipe pdstate() {
-	    if(this.pdstate == null)
-		this.pdstate = new SlotPipe();
+	    if(this.pdstate == null) {
+		if(stlock) {
+		    this.pdstate = StaticPipe.get(dstate());
+		    checklockdeps();
+		} else {
+		    this.pdstate = new SlotPipe();
+		}
+	    }
 	    return(this.pdstate);
 	}
 
