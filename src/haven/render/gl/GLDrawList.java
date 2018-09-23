@@ -327,27 +327,32 @@ public class GLDrawList implements DrawList {
 	}
 
 	DrawSlot(Slot<Rendered> bk) {
-	    GroupPipe bst = bk.state();
-	    this.sortid = uniqid.getAndIncrement();
-	    this.bk = bk;
-	    this.prog = progfor(bk);
-	    this.prog.lock();
-	    this.settings = new Setting[idx_uni + prog.uniforms.length];
-	    getsettings();
-	    gorder = Rendered.deflt;
-	    {
-		int[] gst = bst.gstates();
-		if((gst.length <= Rendered.order.id) ||
-		   (gst[Rendered.order.id] < 0)) {
-		    ordersrc = null;
-		} else {
-		    ordersrc = bst.groups()[gst[Rendered.order.id]];
-		    gorder = ordersrc.get(Rendered.order);
-		    orderreg();
+	    try {
+		GroupPipe bst = bk.state();
+		this.sortid = uniqid.getAndIncrement();
+		this.bk = bk;
+		this.prog = progfor(bk);
+		this.prog.lock();
+		this.settings = new Setting[idx_uni + prog.uniforms.length];
+		getsettings();
+		gorder = Rendered.deflt;
+		{
+		    int[] gst = bst.gstates();
+		    if((gst.length <= Rendered.order.id) ||
+		       (gst[Rendered.order.id] < 0)) {
+			ordersrc = null;
+		    } else {
+			ordersrc = bst.groups()[gst[Rendered.order.id]];
+			gorder = ordersrc.get(Rendered.order);
+			orderreg();
+		    }
 		}
+		SlotRender g = new SlotRender(this);
+		bk.obj().draw(bst, g);
+	    } catch(RuntimeException exc) {
+		dispose();
+		throw(exc);
 	    }
-	    SlotRender g = new SlotRender(this);
-	    bk.obj().draw(bst, g);
 	}
 
 	void insert() {
@@ -371,11 +376,14 @@ public class GLDrawList implements DrawList {
 	    this.disposed = true;
 	    if(ordersrc != null)
 		orderunreg();
-	    for(int i = 0; i < settings.length; i++) {
-		if(settings[i] != null)
-		    settings[i].put();
+	    if(settings != null) {
+		for(int i = 0; i < settings.length; i++) {
+		    if(settings[i] != null)
+			settings[i].put();
+		}
 	    }
-	    this.prog.unlock();
+	    if(this.prog != null)
+		this.prog.unlock();
 	}
     }
 
