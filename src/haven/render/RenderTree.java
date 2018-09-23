@@ -166,7 +166,8 @@ public class RenderTree {
 	}
 
 	public DepPipe prep(Pipe.Op op) {
-	    op.apply(this);
+	    if(op != null)
+		op.apply(this);
 	    return(this);
 	}
 
