@@ -947,6 +947,10 @@ public class GLDrawList implements DrawList {
 	}
     }
 
+    protected void finalize() {
+	dispose();
+    }
+
     void treedump(java.io.PrintWriter out, DrawSlot slot) {
 	if(slot == null) {
 	    out.print("nil");
