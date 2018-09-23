@@ -52,7 +52,7 @@ public class WeakHashedSet<E> extends AbstractSet<E> {
     @SuppressWarnings("unchecked")
     public void clear() {
 	this.tab = (Ref<E>[])new Ref[32];
-	this.sz = sz;
+	this.sz = 0;
     }
 
     public int size() {
@@ -99,6 +99,7 @@ public class WeakHashedSet<E> extends AbstractSet<E> {
     }
 
     private void clean() {
+	int psz = sz;
 	Ref<E>[] tab = this.tab;
 	Reference<? extends E> ref;
 	while((ref = cleanq.poll()) != null) {
@@ -108,12 +109,13 @@ public class WeakHashedSet<E> extends AbstractSet<E> {
 		throw(new ConcurrentModificationException());
 	    remove(tab, idx);
 	}
+	ckshrink();
     }
 
     private void remove(Ref<E>[] tab, int idx) {
 	tab[idx] = null;
 	for(int nx = nextidx(tab, idx); tab[nx] != null; nx = nextidx(tab, nx)) {
-	    int oh = tab[nx].hash;
+	    int oh = (tab[nx].hash) & (tab.length - 1);
 	    if((idx < nx) ? ((oh <= idx) || (nx < oh)) : ((oh <= idx) && (nx < oh))) {
 		tab[idx] = tab[nx];
 		tab[nx] = null;
@@ -132,7 +134,16 @@ public class WeakHashedSet<E> extends AbstractSet<E> {
 	if(idx < 0)
 	    return(false);
 	remove(tab, idx);
+	ckshrink();
 	return(true);
+    }
+
+    private void ckshrink() {
+	int nsz = tab.length;
+	while((nsz > 32) && (sz < (nsz * 3) / 16))
+	    nsz >>= 1;
+	if(nsz < tab.length)
+	    resize(nsz);
     }
 
     @SuppressWarnings("unchecked")
