@@ -28,7 +28,7 @@ package haven.render;
 
 import java.util.*;
 import java.util.concurrent.locks.*;
-import haven.Locked;
+import haven.*;
 import static haven.Utils.eq;
 
 public class RenderTree {
@@ -90,6 +90,7 @@ public class RenderTree {
     }
 
     public static class DepInfo {
+	private static final WeakHashedSet<DepInfo> interned = new WeakHashedSet<>(Hash.eq);
 	public State[] states = {};
 	public boolean[] def = {};
 	public boolean[] deps = {};
@@ -100,6 +101,46 @@ public class RenderTree {
 		states = Arrays.copyOf(states, idx + 1);
 		def = Arrays.copyOf(def, idx + 1);
 		deps = Arrays.copyOf(deps, idx + 1);
+	    }
+	}
+
+	public boolean equals(Object o) {
+	    if(!(o instanceof DepInfo))
+		return(false);
+	    DepInfo that = (DepInfo)o;
+	    if(that.states.length < this.states.length)
+		return(that.equals(this));
+	    for(int i = this.states.length; i < that.states.length; i++) {
+		if(that.def[i] || that.deps[i])
+		    return(false);
+	    }
+	    for(int i = 0; i < this.states.length; i++) {
+		if((this.def[i] != that.def[i]) || (this.deps[i] != that.deps[i]))
+		    return(false);
+	    }
+	    for(int i = 0; i < this.states.length; i++) {
+		if(!eq(this.states[i], that.states[i]))
+		    return(false);
+	    }
+	    return(true);
+	}
+
+	public int hashCode() {
+	    int ret = 0xfb76bf91;
+	    for(int i = 0; i < states.length; i++) {
+		if(!def[i] && !deps[i])
+		    continue;
+		ret *= 31;
+		if(def[i]) ret += 15 * i;
+		if(deps[i]) ret += 7 * i;
+		if(states[i] != null) ret += states[i].hashCode();
+	    }
+	    return(ret);
+	}
+
+	public DepInfo intern() {
+	    synchronized(interned) {
+		return(interned.intern(this));
 	    }
 	}
 
