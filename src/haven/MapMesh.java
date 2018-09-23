@@ -607,6 +607,6 @@ public class MapMesh implements RenderTree.Node, Disposable {
     
     public void added(RenderTree.Slot slot) {
 	for(RenderTree.Node e : extras)
-	    slot.add(e, null);
+	    slot.add(e);
     }
 }

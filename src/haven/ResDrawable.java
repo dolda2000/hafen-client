@@ -55,7 +55,7 @@ public class ResDrawable extends Drawable {
 	Collection<RenderTree.Slot> added = new ArrayList<>();
 	try {
 	    for(RenderTree.Slot slot : slots)
-		added.add(slot.add(spr, null));
+		added.add(slot.add(spr));
 	} catch(RuntimeException e) {
 	    for(RenderTree.Slot slot : added)
 		slot.remove();

@@ -78,6 +78,6 @@ public class StaticSprite extends Sprite {
 
     public void added(RenderTree.Slot slot) {
 	for(RenderTree.Node p : parts)
-	    slot.add(p, null);
+	    slot.add(p);
     }
 }

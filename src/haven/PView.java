@@ -46,8 +46,9 @@ public abstract class PView extends Widget {
     public PView(Coord sz) {
 	super(sz);
 	tree = new RenderTree();
-	conf = tree.add((RenderTree.Node)null, conf());
-	basic = conf.add((RenderTree.Node)null, null);
+	conf = tree.add((RenderTree.Node)null);
+	conf.ostate(conf());
+	basic = conf.add((RenderTree.Node)null);
 	basic();
     }
 
@@ -57,7 +58,7 @@ public abstract class PView extends Widget {
 
     public void resize(Coord sz) {
 	super.resize(sz);
-	conf.cstate(conf());
+	conf.ostate(conf());
     }
 
     public void basic(Object id, Pipe.Op state) {

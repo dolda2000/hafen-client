@@ -419,8 +419,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.glob = glob;
 	this.cc = cc;
 	this.plgob = plgob;
-	basic.add(new Gobs(), null);
-	basic.add(this.terrain = new Terrain(), null);
+	basic.add(new Gobs());
+	basic.add(this.terrain = new Terrain());
 	setcanfocus(true);
     }
     
@@ -460,7 +460,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    if(slot == null)
 			return;
 		    synchronized(ob) {
-			slot.add(ob.placed, null);
+			slot.add(ob.placed);
 		    }
 		    break;
 		} catch(Loading l) {
@@ -571,7 +571,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void added(RenderTree.Slot slot) {
-	    slot.add(main, null);
+	    slot.add(main);
 	    super.added(slot);
 	}
 
@@ -969,7 +969,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    s_amblight = null;
 	}
 	if(amblight != null)
-	    s_amblight = basic.add(amblight, null);
+	    s_amblight = basic.add(amblight);
     }
     /* XXXRENDER
     private Outlines outlines = new Outlines(false);

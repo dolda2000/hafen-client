@@ -127,7 +127,8 @@ public interface Pipe {
     }
 
     public default Pipe prep(Op op) {
-	op.apply(this);
+	if(op != null)
+	    op.apply(this);
 	return(this);
     }
 

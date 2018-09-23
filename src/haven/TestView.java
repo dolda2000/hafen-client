@@ -42,7 +42,7 @@ public class TestView extends PView {
 	setcam();
 	borka[0] = basic.add(borkamat.apply(borkamesh), null);
 	borka[1] = basic.add(borkamat.apply(borkamesh), null);
-	basic.add(new DirLight(FColor.BLACK, FColor.WHITE, FColor.BLACK, Coord3f.xu), null);
+	basic.add(new DirLight(FColor.BLACK, FColor.WHITE, FColor.BLACK, Coord3f.xu));
     }
 
     public static class Quad implements Rendered, RenderTree.Node {
