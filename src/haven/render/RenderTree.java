@@ -89,45 +89,11 @@ public class RenderTree {
 	public int[] gstates() {return(gstates);}
     }
 
-    public static class DepPipe implements Pipe {
-	private State[] states = {};
-	private boolean[] def = {};
-	private boolean[] deps = {};
-	private final Pipe parent;
-	private boolean lock = false;
-	private int ndef = 0;
-
-	public DepPipe(Pipe parent) {
-	    this.parent = parent;
-	}
-
-	public DepPipe(Pipe parent, Pipe.Op st) {
-	    this(parent);
-	    prep(st);
-	    lock = true;
-	}
-
-	public DepPipe prep(Pipe.Op op) {
-	    op.apply(this);
-	    return(this);
-	}
-
-	public void lock() {
-	    lock = true;
-	}
-
-	@SuppressWarnings("unchecked")
-	public <T extends State> T get(State.Slot<T> slot) {
-	    int idx = slot.id;
-	    if(!lock) {
-		alloc(idx);
-		if(!def[idx])
-		    deps[idx] = true;
-	    }
-	    if((idx < states.length) && def[idx])
-		return((T)states[idx]);
-	    return((parent == null) ? null : parent.get(slot));
-	}
+    public static class DepInfo {
+	public State[] states = {};
+	public boolean[] def = {};
+	public boolean[] deps = {};
+	public int ndef = 0;
 
 	private void alloc(int idx) {
 	    if(states.length <= idx) {
@@ -137,38 +103,7 @@ public class RenderTree {
 	    }
 	}
 
-	public <T extends State> void put(State.Slot<? super T> slot, T state) {
-	    if(lock)
-		throw(new IllegalStateException("locked"));
-	    int idx = slot.id;
-	    alloc(idx);
-	    if(!def[idx]) {
-		def[idx] = true;
-		ndef++;
-	    }
-	    states[idx] = state;
-	}
-
-	public Pipe copy() {
-	    return(new BufPipe(states()));
-	}
-
-	public State[] states() {
-	    State[] ret;
-	    if(parent == null) {
-		ret = new State[states.length];
-	    } else {
-		State[] ps = parent.states();
-		ret = Arrays.copyOf(ps, Math.max(states.length, ps.length));
-	    }
-	    for(int i = 0; i < states.length; i++) {
-		if(def[i])
-		    ret[i] = states[i];
-	    }
-	    return(ret);
-	}
-
-	public int[] defdiff(DepPipe that) {
+	public int[] defdiff(DepInfo that) {
 	    if(that.def.length < this.def.length)
 		return(that.defdiff(this));
 	    int nch = 0;
@@ -196,7 +131,7 @@ public class RenderTree {
 	}
 
 	/*
-	public boolean defequal(DepPipe that) {
+	public boolean defequal(DepInfo that) {
 	    if(that.def.length < this.def.length)
 		return(that.defequal(this));
 	    if(this.ndef != that.ndef)
@@ -215,14 +150,54 @@ public class RenderTree {
 	*/
     }
 
-    public static class SlotPipe implements Pipe {
-	DepPipe bk = null;
+    public static class DepPipe implements Pipe {
+	public final DepInfo data = new DepInfo();
+	public final Pipe parent;
+	private boolean lock = false;
 
+	public DepPipe(Pipe parent) {
+	    this.parent = parent;
+	}
+
+	public DepPipe(Pipe parent, Pipe.Op st) {
+	    this(parent);
+	    prep(st);
+	    lock = true;
+	}
+
+	public DepPipe prep(Pipe.Op op) {
+	    op.apply(this);
+	    return(this);
+	}
+
+	public DepInfo lock() {
+	    lock = true;
+	    return(data);
+	}
+
+	@SuppressWarnings("unchecked")
 	public <T extends State> T get(State.Slot<T> slot) {
 	    int idx = slot.id;
-	    if((bk.states.length <= idx) || !bk.def[idx])
-		throw(new RuntimeException("Reading undefined slot " + slot + " from slot-pipe"));
-	    return(bk.get(slot));
+	    if(!lock) {
+		data.alloc(idx);
+		if(!data.def[idx])
+		    data.deps[idx] = true;
+	    }
+	    if((idx < data.states.length) && data.def[idx])
+		return((T)data.states[idx]);
+	    return((parent == null) ? null : parent.get(slot));
+	}
+
+	public <T extends State> void put(State.Slot<? super T> slot, T state) {
+	    if(lock)
+		throw(new IllegalStateException("locked"));
+	    int idx = slot.id;
+	    data.alloc(idx);
+	    if(!data.def[idx]) {
+		data.def[idx] = true;
+		data.ndef++;
+	    }
+	    data.states[idx] = state;
 	}
 
 	public Pipe copy() {
@@ -230,10 +205,16 @@ public class RenderTree {
 	}
 
 	public State[] states() {
-	    State[] ret = new State[bk.states.length];
-	    for(int i = 0; i < ret.length; i++) {
-		if(bk.def[i])
-		    ret[i] = bk.states[i];
+	    State[] ret;
+	    if(parent == null) {
+		ret = new State[data.states.length];
+	    } else {
+		State[] ps = parent.states();
+		ret = Arrays.copyOf(ps, Math.max(data.states.length, ps.length));
+	    }
+	    for(int i = 0; i < data.states.length; i++) {
+		if(data.def[i])
+		    ret[i] = data.states[i];
 	    }
 	    return(ret);
 	}
@@ -251,7 +232,7 @@ public class RenderTree {
 	final RenderTree tree;
 	final TreeSlot parent;
 	final Node node;
-	private DepPipe dstate = null;
+	private DepInfo dstate = null;
 	private Collection<TreeSlot>[] rdeps = null;
 	private TreeSlot[] deps = null;
 	private Pipe.Op cstate, ostate;
@@ -352,14 +333,13 @@ public class RenderTree {
 	    }
 	}
 
-	private DepPipe mkdstate(Pipe.Op cstate, Pipe.Op ostate) {
-	    DepPipe ret = new DepPipe(parent.istate());
+	private DepInfo mkdstate(Pipe.Op cstate, Pipe.Op ostate) {
+	    DepPipe buf = new DepPipe(parent.istate());
 	    if(cstate != null)
-		ret.prep(cstate);
+		buf.prep(cstate);
 	    if(ostate != null)
-		ret.prep(ostate);
-	    ret.lock();
-	    return(ret);
+		buf.prep(ostate);
+	    return(buf.lock());
 	}
 
 	private void remrdep(int stidx, TreeSlot rdep) {
@@ -392,8 +372,8 @@ public class RenderTree {
 	    upddstate(mkdstate(cstate, ostate));
 	}
 
-	private DepPipe setdstate(DepPipe nst) {
-	    DepPipe pst = this.dstate;
+	private DepInfo setdstate(DepInfo nst) {
+	    DepInfo pst = this.dstate;
 	    if(pst != null) {
 		if(deps != null) {
 		    for(int i = 0; i < deps.length; i++) {
@@ -420,8 +400,8 @@ public class RenderTree {
 	    return(pst);
 	}
 
-	private void upddstate(DepPipe nst) {
-	    DepPipe pst = setdstate(nst);
+	private void upddstate(DepInfo nst) {
+	    DepInfo pst = setdstate(nst);
 	    int[] defch = nst.defdiff(pst);
 	    if(defch == null) {
 		int[] ch = new int[pst.ndef];
@@ -465,7 +445,7 @@ public class RenderTree {
 	    }
 	}
 
-	private DepPipe dstate() {
+	private DepInfo dstate() {
 	    if(dstate == null)
 		setdstate(mkdstate(this.cstate, this.ostate));
 	    return(dstate);
@@ -473,7 +453,7 @@ public class RenderTree {
 
 	private void chstate(Pipe.Op cstate, Pipe.Op ostate) {
 	    if(this.dstate != null) {
-		DepPipe pst = this.dstate;
+		DepInfo pst = this.dstate;
 		try {
 		    upddstate(mkdstate(cstate, ostate));
 		} catch(RuntimeException e) {
@@ -505,15 +485,29 @@ public class RenderTree {
 	    }
 	}
 
-	public class IPipe implements Pipe {
-	    public <T extends State> T get(State.Slot<T> slot) {return(dstate().get(slot));}
-	    public Pipe copy() {return(dstate().copy());}
-	    public State[] states() {return(dstate().states());}
+	public class SlotPipe implements Pipe {
+	    @SuppressWarnings("unchecked")
+	    public <T extends State> T get(State.Slot<T> slot) {
+		DepInfo bk = dstate();
+		int idx = slot.id;
+		if((bk.states.length <= idx) || !bk.def[idx])
+		    throw(new RuntimeException("Reading undefined slot " + slot + " from slot-pipe"));
+		return((T)bk.states[idx]);
+	    }
+
+	    public Pipe copy() {
+		return(new BufPipe(states()));
+	    }
+
+	    public State[] states() {
+		throw(new UnsupportedOperationException("SlotPipe::states"));
+	    }
 	}
+
 	private Pipe pdstate = null;
 	private Pipe pdstate() {
 	    if(this.pdstate == null)
-		this.pdstate = new IPipe();
+		this.pdstate = new SlotPipe();
 	    return(this.pdstate);
 	}
 
@@ -524,7 +518,7 @@ public class RenderTree {
 		    istate = new Inheritance(new Pipe[0], new int[0]);
 		} else {
 		    Inheritance pi = parent.istate();
-		    DepPipe ds = dstate();
+		    DepInfo ds = dstate();
 		    Pipe[] istates = new Pipe[Math.max(pi.gstates.length, ds.def.length)];
 		    boolean f = false;
 		    for(int i = 0; i < istates.length; i++) {
