@@ -104,17 +104,20 @@ public interface Pipe {
 	public static class Wrapping implements RenderTree.Node {
 	    public final RenderTree.Node r;
 	    public final Op op;
+	    public final boolean locked;
 
-	    private Wrapping(RenderTree.Node r, Op op) {
+	    private Wrapping(RenderTree.Node r, Op op, boolean locked) {
 		if((r == null) || (op == null))
 		    throw(new NullPointerException("Wrapping " + r + " in " + op));
 		this.r = r;
 		this.op = op;
+		this.locked = locked;
 	    }
 
 	    public void added(RenderTree.Slot slot) {
 		slot.ostate(op);
-		slot.lockstate();
+		if(locked)
+		    slot.lockstate();
 		slot.add(r);
 	    }
 
@@ -123,8 +126,12 @@ public interface Pipe {
 	    }
 	}
 
+	public default Wrapping apply(RenderTree.Node r, boolean locked) {
+	    return(new Wrapping(r, this, locked));
+	}
+
 	public default Wrapping apply(RenderTree.Node r) {
-	    return(new Wrapping(r, this));
+	    return(apply(r, true));
 	}
     }
 
