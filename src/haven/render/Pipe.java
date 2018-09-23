@@ -113,7 +113,9 @@ public interface Pipe {
 	    }
 
 	    public void added(RenderTree.Slot slot) {
-		slot.add(r, op);
+		slot.ostate(op);
+		slot.lockstate();
+		slot.add(r);
 	    }
 
 	    public String toString() {
