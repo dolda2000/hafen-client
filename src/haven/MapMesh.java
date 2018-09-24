@@ -42,7 +42,7 @@ public class MapMesh implements RenderTree.Node, Disposable {
     private final long rnd;
     private Map<DataID, Object> data = new LinkedHashMap<DataID, Object>();
     private List<RenderTree.Node> extras = new ArrayList<RenderTree.Node>();
-    // private FastMesh[] flats; XXXRENDER
+    private FastMesh[] flats;
     private List<Disposable> dparts = new ArrayList<Disposable>();
 
     public interface DataID<T> {
@@ -582,15 +582,13 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	if(pos.length != buf.vn * 3) pos = Utils.extend(pos, buf.vn * 3);
 	if(col.length != buf.vn * 4) col = Utils.extend(col, buf.vn * 4);
 	if(ind.length != buf.in) ind = Utils.extend(ind, buf.in);
-	/* XXXRENDER
-	VertexBuf.VertexArray posa = new VertexBuf.VertexArray(FloatBuffer.wrap(pos));
-	VertexBuf.ColorArray cola = new VertexBuf.ColorArray(FloatBuffer.wrap(col));
+	VertexBuf.VertexData posa = new VertexBuf.VertexData(FloatBuffer.wrap(pos));
+	VertexBuf.ColorData cola = new VertexBuf.ColorData(FloatBuffer.wrap(col));
 	ShortBuffer indb = ShortBuffer.wrap(ind);
 	flats = new FastMesh[] {
 	    new FastMesh(new VertexBuf(posa), indb),
 	    new FastMesh(new VertexBuf(posa, cola), indb),
 	};
-	*/
     }
 
     public void drawflat(GOut g, int mode) {
