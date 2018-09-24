@@ -125,6 +125,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	    switch(fmt.cf) {
 	    case UNORM8: return(GL2.GL_R8);
 	    case SNORM8: return(GL2.GL_R8_SNORM);
+	    case UNORM16: return(GL2.GL_R16);
+	    case SNORM16: return(GL2.GL_R16_SNORM);
 	    case FLOAT16: return(GL2.GL_R16F);
 	    case DEPTH: return(GL2.GL_DEPTH_COMPONENT);
 	    }
@@ -132,18 +134,24 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	    switch(fmt.cf) {
 	    case UNORM8: return(GL2.GL_RG8);
 	    case SNORM8: return(GL2.GL_RG8_SNORM);
+	    case UNORM16: return(GL2.GL_RG16);
+	    case SNORM16: return(GL2.GL_RG16_SNORM);
 	    case FLOAT16: return(GL2.GL_RG16F);
 	    }
 	case 3:
 	    switch(fmt.cf) {
 	    case UNORM8: return(GL2.GL_RGB8);
 	    case SNORM8: return(GL2.GL_RGB8_SNORM);
+	    case UNORM16: return(GL2.GL_RGB16);
+	    case SNORM16: return(GL2.GL_RGB16_SNORM);
 	    case FLOAT16: return(GL2.GL_RGB16F);
 	    }
 	case 4:
 	    switch(fmt.cf) {
 	    case UNORM8: return(GL2.GL_RGBA8);
 	    case SNORM8: return(GL2.GL_RGBA8_SNORM);
+	    case UNORM16: return(GL2.GL_RGBA16);
+	    case SNORM16: return(GL2.GL_RGBA16_SNORM);
 	    case FLOAT16: return(GL2.GL_RGBA16F);
 	    }
 	}
