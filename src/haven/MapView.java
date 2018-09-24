@@ -529,6 +529,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	abstract class Grid extends RenderTree.Node.Track1 {
 	    final Map<Coord, RenderTree.Slot> cuts = new HashMap<>();
+	    final boolean position;
+
+	    Grid(boolean position) {
+		this.position = position;
+	    }
+
+	    Grid() {this(true);}
 
 	    abstract RenderTree.Node getcut(Coord cc);
 
@@ -538,7 +545,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			try {
 			    Coord2d pc = cc.mul(MCache.cutsz).mul(tilesz);
 			    RenderTree.Node cut = getcut(cc);
-			    cuts.put(cc, slot.add(cut, Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0))));
+			    Pipe.Op cs = null;
+			    if(position)
+				cs = Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0));
+			    cuts.put(cc, slot.add(cut, cs));
 			} catch(Loading l) {}
 		    }
 		}
@@ -557,6 +567,18 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    return(map.getcut(cc));
 		}
 	    };
+	final Grid flavobjs = new Grid(false) {
+		final Map<Collection<Gob>, RenderTree.Node> fos = new WeakHashMap<>();
+
+		RenderTree.Node getcut(Coord cc) {
+		    return(fos.computeIfAbsent(map.getfo(cc), fc -> new RenderTree.Node() {
+			    @Override public void added(RenderTree.Slot slot) {
+				for(Gob ob : fc)
+				    slot.add(ob.placed);
+			    }
+			}));
+		}
+	    };
 
 	void tick() {
 	    /* XXX: Should be taken out of the main rendering
@@ -568,10 +590,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		return;
 	    }
 	    main.tick();
+	    flavobjs.tick();
 	}
 
 	public void added(RenderTree.Slot slot) {
 	    slot.add(main);
+	    slot.add(flavobjs);
 	    super.added(slot);
 	}
 
@@ -581,63 +605,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     /* XXXRENDER
-    private final Rendered flavobjs = new Rendered() {
-	    private Collection<Gob> fol;
-	    private Coord cc = null;
-	    private int mseq = 0;
-	    private boolean loading = false;
-
-	    public void draw(GOut g) {}
-
-	    public Object staticp() {
-		Coord cc = MapView.this.cc.floor(tilesz).div(MCache.cutsz);
-		int mseq = glob.map.olseq;
-		if(loading || !Utils.eq(cc, this.cc) || (mseq != this.mseq)) {
-		    loading = false;
-		    Collection<Gob> fol = new ArrayList<Gob>();
-		    Coord o = new Coord();
-		    for(o.y = -view; o.y <= view; o.y++) {
-			for(o.x = -view; o.x <= view; o.x++) {
-			    try {
-				fol.addAll(glob.map.getfo(cc.add(o)));
-			    } catch(Loading e) {
-				loading = true;
-			    }
-			}
-		    }
-		    this.cc = cc;
-		    this.mseq = mseq;
-		    this.fol = fol;
-		}
-		return(fol);
-	    }
-
-	    public boolean setup(RenderList rl) {
-		for(Gob fo : fol)
-		    addgob(rl, fo);
-		return(false);
-	    }
-	};
-
-    private final Rendered map = new Rendered() {
-	    public void draw(GOut g) {}
-	    
-	    public boolean setup(RenderList rl) {
-		Coord cc = MapView.this.cc.floor(tilesz).div(MCache.cutsz);
-		Coord o = new Coord();
-		for(o.y = -view; o.y <= view; o.y++) {
-		    for(o.x = -view; o.x <= view; o.x++) {
-			Coord2d pc = cc.add(o).mul(MCache.cutsz).mul(tilesz);
-			MapMesh cut = glob.map.getcut(cc.add(o));
-			rl.add(cut, Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0)));
-		    }
-		}
-		if(!(rl.state().get(PView.ctx) instanceof ClickContext))
-		    rl.add(flavobjs, null);
-		return(false);
-	    }
-	};
-    
     private final Rendered mapol = new Rendered() {
 	    private final GLState[] mats;
 	    {
@@ -703,209 +670,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	rl.add(gob, GLState.compose(extra, xf, gob.olmod, gob.save));
     }
 
-    public static class ChangeSet implements OCache.ChangeCallback {
-	public final Set<Gob> changed = new HashSet<Gob>();
-	public final Set<Gob> removed = new HashSet<Gob>();
-
-	public void changed(Gob ob) {
-	    changed.add(ob);
-	}
-
-	public void removed(Gob ob) {
-	    changed.remove(ob);
-	    removed.add(ob);
-	}
-    }
-
-    private class Gobs implements Rendered {
-	final OCache oc = glob.oc;
-	final ChangeSet changed = new ChangeSet();
-	final Map<Gob, GobSet> parts = new HashMap<Gob, GobSet>();
-	Integer ticks = 0;
-	{oc.callback(changed);}
-
-	class GobSet implements Rendered {
-	    private final String nm;
-	    final Collection<Gob> obs = new HashSet<Gob>();
-	    Object seq = this;
-
-	    GobSet(String nm) {
-		this.nm = nm;
-	    }
-
-	    void take(Gob ob) {
-		obs.add(ob);
-		seq = ticks;
-	    }
-
-	    void remove(Gob ob) {
-		if(obs.remove(ob))
-		    seq = ticks;
-	    }
-
-	    void update() {
-	    }
-
-	    public void draw(GOut g) {}
-
-	    public boolean setup(RenderList rl) {
-		for(Gob gob : obs)
-		    addgob(rl, gob);
-		return(false);
-	    }
-
-	    public Object staticp() {
-		return(seq);
-	    }
-
-	    public int size() {
-		return(obs.size());
-	    }
-
-	    public String toString() {
-		return("GobSet(" + nm + ")");
-	    }
-	}
-
-	class Transitory extends GobSet {
-	    final Map<Gob, Integer> age = new HashMap<Gob, Integer>();
-
-	    Transitory(String nm) {super(nm);}
-
-	    void take(Gob ob) {
-		super.take(ob);
-		age.put(ob, ticks);
-	    }
-
-	    void remove(Gob ob) {
-		super.remove(ob);
-		age.remove(ob);
-	    }
-	}
-
-	final GobSet oldfags = new GobSet("old");
-	final GobSet semistat = new GobSet("semistat");
-	final GobSet semifags = new Transitory("semi") {
-		int cycle = 0;
-
-		void update() {
-		    if(++cycle >= 300) {
-			Collection<Gob> cache = new ArrayList<Gob>();
-			for(Map.Entry<Gob, Integer> ob : age.entrySet()) {
-			    if(ticks - ob.getValue() > 450)
-				cache.add(ob.getKey());
-			}
-			for(Gob ob : cache)
-			    put(oldfags, ob);
-			cycle = 0;
-		    }
-		}
-	    };
-	final GobSet newfags = new Transitory("new") {
-		int cycle = 0;
-
-		void update() {
-		    if(++cycle >= 20) {
-			Collection<Gob> cache = new ArrayList<Gob>();
-			Collection<Gob> scache = new ArrayList<Gob>();
-			for(Map.Entry<Gob, Integer> ob : age.entrySet()) {
-			    if(ticks - ob.getValue() > 30) {
-				Gob gob = ob.getKey();
-				if(gob.staticp() instanceof Gob.SemiStatic)
-				    scache.add(gob);
-				else
-				    cache.add(gob);
-			    }
-			}
-			for(Gob ob : cache)
-			    put(semifags, ob);
-			for(Gob ob : scache)
-			    put(semistat, ob);
-			cycle = 0;
-		    }
-		}
-	    };
-	final GobSet dynamic = new GobSet("dyn") {
-		int cycle = 0;
-
-		void update() {
-		    if(++cycle >= 5) {
-			Collection<Gob> cache = new ArrayList<Gob>();
-			for(Gob ob : obs) {
-			    Object seq = ob.staticp();
-			    if((seq instanceof Gob.Static) || (seq instanceof Gob.SemiStatic))
-				cache.add(ob);
-			}
-			for(Gob ob : cache)
-			    put(newfags, ob);
-			cycle = 0;
-		    }
-		}
-
-		public Object staticp() {return(null);}
-	    };
-	final GobSet[] all = {oldfags, semifags, semistat, newfags, dynamic};
-
-	void put(GobSet set, Gob ob) {
-	    GobSet p = parts.get(ob);
-	    if(p != set) {
-		if(p != null)
-		    p.remove(ob);
-		parts.put(ob, set);
-		set.take(ob);
-	    }
-	}
-
-	void remove(Gob ob) {
-	    GobSet p = parts.get(ob);
-	    if(p != null) {
-		parts.remove(ob);
-		p.remove(ob);
-	    }
-	}
-
-	Gobs() {
-	    synchronized(oc) {
-		for(Gob ob : oc)
-		    changed.changed(ob);
-	    }
-	}
-
-	void update() {
-	    for(Gob ob : changed.removed)
-		remove(ob);
-	    changed.removed.clear();
-
-	    for(Gob ob : changed.changed) {
-		if(ob.staticp() instanceof Gob.Static)
-		    put(newfags, ob);
-		else
-		    put(dynamic, ob);
-	    }
-	    changed.changed.clear();
-
-	    for(GobSet set : all)
-		set.update();
-	}
-
-	public void draw(GOut g) {}
-
-	public boolean setup(RenderList rl) {
-	    synchronized(oc) {
-		update();
-		for(GobSet set : all)
-		    rl.add(set, null);
-		ticks++;
-	    }
-	    return(false);
-	}
-
-	public String toString() {
-	    return(String.format("%,dd %,dn %,dS %,ds %,do", dynamic.size(), newfags.size(), semistat.size(), semifags.size(), oldfags.size()));
-	}
-    }
-    private final Rendered gobs;
-
     public String toString() {
 	String cc;
 	try {
@@ -915,9 +679,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	return(String.format("Camera[%s (%s)], Caches[%s]", cc, camera, gobs));
     }
-
-    public GLState camera()         {return(camera);}
-    protected Projection makeproj() {return(null);}
     */
 
     /* XXXRENDER
