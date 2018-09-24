@@ -489,6 +489,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	abstract class Grid extends RenderTree.Node.Track1 {
 	    final Map<Coord, RenderTree.Slot> cuts = new HashMap<>();
+	    final boolean position;
+
+	    Grid(boolean position) {
+		this.position = position;
+	    }
+
+	    Grid() {this(true);}
 
 	    abstract RenderTree.Node getcut(Coord cc);
 
@@ -498,7 +505,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			try {
 			    Coord2d pc = cc.mul(MCache.cutsz).mul(tilesz);
 			    RenderTree.Node cut = getcut(cc);
-			    cuts.put(cc, slot.add(cut, Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0))));
+			    Pipe.Op cs = null;
+			    if(position)
+				cs = Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0));
+			    cuts.put(cc, slot.add(cut, cs));
 			} catch(Loading l) {}
 		    }
 		}
@@ -517,6 +527,18 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    return(map.getcut(cc));
 		}
 	    };
+	final Grid flavobjs = new Grid(false) {
+		final Map<Collection<Gob>, RenderTree.Node> fos = new WeakHashMap<>();
+
+		RenderTree.Node getcut(Coord cc) {
+		    return(fos.computeIfAbsent(map.getfo(cc), fc -> new RenderTree.Node() {
+			    @Override public void added(RenderTree.Slot slot) {
+				for(Gob ob : fc)
+				    slot.add(ob.placed);
+			    }
+			}));
+		}
+	    };
 
 	void tick() {
 	    /* XXX: Should be taken out of the main rendering
@@ -528,10 +550,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		return;
 	    }
 	    main.tick();
+	    flavobjs.tick();
 	}
 
 	public void added(RenderTree.Slot slot) {
 	    slot.add(main);
+	    slot.add(flavobjs);
 	    super.added(slot);
 	}
 
