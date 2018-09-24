@@ -131,7 +131,10 @@ public abstract class Sprite implements RenderTree.Node {
 	    if(ret != null)
 		return(ret);
 	}
+	/* XXXRENDER
 	throw(new ResourceException("Does not know how to draw resource " + res.name, res));
+	*/
+	return(new Sprite(owner, res) {});
     }
 
     public void draw(GOut g) {}
