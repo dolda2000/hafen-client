@@ -632,7 +632,6 @@ public class OCache implements Iterable<Gob> {
 
     private final Map<Long, GobInfo> netinfo = new HashMap<>();
     private final Set<Long> netdirty = new HashSet<>();
-    private Thread applier = null;
 
     private void apply1(GobInfo ng) throws InterruptedException {
 	main: {
@@ -688,50 +687,22 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    private void applyloop() {
-	Thread self = Thread.currentThread();
-	try {
-	    while(true) {
-		GobInfo ng;
-		synchronized(netinfo) {
-		    double timeout = 5;
-		    double start = Utils.rtime(), now = start;
-		    Long id;
-		    while(true) {
-			id = Utils.el(netdirty);
-			if(id != null)
-			    break;
-			if((now - start) >= timeout)
-			    return;
-			netinfo.wait((long)((timeout - (now - start)) * 1000) + 100);
-			now = Utils.rtime();
-		    }
-		    ng = (id == null) ? null : netinfo.get(id);
-		}
-		apply1(ng);
-	    }
-	} catch(InterruptedException e) {
-	} finally {
-	    synchronized(netinfo) {
-		if(applier == self)
-		    applier = null;
-		ckapplier();
-	    }
-	}
+    private GobInfo checkdirty(boolean peek) {
+	Iterator<Long> i = netdirty.iterator();
+	if(!i.hasNext())
+	    return(null);
+	Long id = i.next();
+	if(!peek)
+	    i.remove();
+	return(netinfo.get(id));
     }
 
-    private void ckapplier() {
-	if((applier == null) && !netdirty.isEmpty()) {
-	    applier = new HackThread(this::applyloop, "Objdelta applier");
-	    applier.setDaemon(true);
-	    applier.start();
-	}
-    }
+    private final AsyncCheck<GobInfo> applier = new AsyncCheck<>(netdirty, "Objdelta applier", this::checkdirty, this::apply1);
 
     private void markdirty(GobInfo ng) {
 	netdirty.add(ng.id);
 	netinfo.notify();
-	ckapplier();
+	applier.check();
     }
 
     private GobInfo netremove(long id, int frame) {
