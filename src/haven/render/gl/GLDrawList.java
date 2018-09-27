@@ -44,6 +44,7 @@ public class GLDrawList implements DrawList {
     private final Map<Pipe, Object> orderidx = new IdentityHashMap<>();
     private final GLDoubleBuffer settingbuf = new GLDoubleBuffer();
     private DrawSlot root = null;
+    private boolean disposed = false;
 
     private static int btheight(DrawSlot s) {
 	return((s == null) ? 0 : s.th);
@@ -872,6 +873,8 @@ public class GLDrawList implements DrawList {
 
     public void add(Slot<? extends Rendered> slot) {
 	synchronized(this) {
+	    if(disposed)
+		throw(new IllegalStateException());
 	    DrawSlot dslot = new DrawSlot(slot);
 	    dslot.insert();
 	    if(slotmap.put(slot, dslot) != null)
@@ -944,6 +947,7 @@ public class GLDrawList implements DrawList {
 		slot.remove();
 		slot.dispose();
 	    }
+	    disposed = true;
 	}
     }
 
