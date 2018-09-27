@@ -40,8 +40,8 @@ public interface RenderList<R> {
 	}
     }
 
-    public void add(Slot<R> slot);
-    public void remove(Slot<R> slot);
-    public void update(Slot<R> slot);
+    public void add(Slot<? extends R> slot);
+    public void remove(Slot<? extends R> slot);
+    public void update(Slot<? extends R> slot);
     public void update(Pipe group, int[] statemask);
 }

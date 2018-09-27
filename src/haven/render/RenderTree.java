@@ -45,10 +45,10 @@ public class RenderTree {
     }
 
     private static class Client<R> {
-	final Class<R> type;
+	final Class<? extends R> type;
 	final RenderList<R> list;
 
-	Client(Class<R> type, RenderList<R> list) {
+	Client(Class<? extends R> type, RenderList<R> list) {
 	    this.type = type;
 	    this.list = list;
 	}
@@ -730,7 +730,7 @@ public class RenderTree {
 	return(root.add(n));
     }
 
-    public <R> void add(RenderList<R> list, Class<R> type) {
+    public <R> void add(RenderList<R> list, Class<? extends R> type) {
 	synchronized(clients) {
 	    clients.add(new Client<R>(type, list));
 	}
