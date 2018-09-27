@@ -406,14 +406,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	RenderTree.Slot slot;
 
 	Gobs() {
-	    adder = new AsyncCheck<>(this, "Mapview object adder", () -> Utils.el(adding), this::addgob);
+	    adder = new AsyncCheck<>(this, "Mapview object adder", AsyncCheck.src(adding), this::addgob);
 	}
 
 	void unregister() {
 	    oc.uncallback(this);
 	}
 
-	private void addgob(Gob ob) {
+	private void addgob(Gob ob) throws InterruptedException {
 	    while(true) {
 		try {
 		    RenderTree.Slot slot = this.slot;
@@ -425,16 +425,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    break;
 		} catch(Loading l) {
 		    /* XXX: Make nonblocking */
-		    try {
-			l.waitfor();
-		    } catch(InterruptedException e) {
-			Thread.currentThread().interrupt();
-			return;
-		    }
+		    l.waitfor();
 		}
-	    }
-	    synchronized(this) {
-		adding.remove(ob);
 	    }
 	}
 
