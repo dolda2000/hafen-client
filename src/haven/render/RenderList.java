@@ -26,6 +26,9 @@
 
 package haven.render;
 
+import haven.*;
+import java.util.*;
+
 public interface RenderList<R> {
     public interface Slot<R> {
 	public GroupPipe state();
@@ -40,8 +43,35 @@ public interface RenderList<R> {
 	}
     }
 
-    public void add(Slot<R> slot);
-    public void remove(Slot<R> slot);
-    public void update(Slot<R> slot);
+    public void add(Slot<? extends R> slot);
+    public void remove(Slot<? extends R> slot);
+    public void update(Slot<? extends R> slot);
     public void update(Pipe group, int[] statemask);
+
+    public default void asyncadd(RenderTree tree, Class<? extends R> type) {
+	Collection<RenderTree.Slot> initial;
+	try(Locked lk = tree.lock()) {
+	    initial = new ArrayList<>();
+	    tree.slots().forEach(initial::add);
+	    tree.add(this, type);
+	}
+	new HackThread(() -> {
+		try {
+		    for(RenderTree.Slot slot : initial) {
+			if(type.isInstance(slot.obj())) {
+			    while(true) {
+				try {
+				    this.add(slot.cast(type));
+				    break;
+				} catch(Loading l) {
+				    /* XXX: Make nonblocking */
+				    l.waitfor();
+				}
+			    }
+			}
+		    }
+		} catch(InterruptedException e) {
+		}
+	}, "Initial adder").start();
+    }
 }

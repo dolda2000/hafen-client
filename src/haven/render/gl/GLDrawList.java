@@ -39,11 +39,12 @@ public class GLDrawList implements DrawList {
     public static final int idx_uni = idx_pst + GLPipeState.all.length;
     public final GLEnvironment env;
     private final Map<SettingKey, DepSetting> settings = new HashMap<>();
-    private final Map<Slot<Rendered>, DrawSlot> slotmap = new IdentityHashMap<>();
+    private final Map<Slot<? extends Rendered>, DrawSlot> slotmap = new IdentityHashMap<>();
     private final Map<Pipe, Object> psettings = new IdentityHashMap<>();
     private final Map<Pipe, Object> orderidx = new IdentityHashMap<>();
     private final GLDoubleBuffer settingbuf = new GLDoubleBuffer();
     private DrawSlot root = null;
+    private boolean disposed = false;
 
     private static int btheight(DrawSlot s) {
 	return((s == null) ? 0 : s.th);
@@ -229,7 +230,7 @@ public class GLDrawList implements DrawList {
 	}
 
 	/* Render information */
-	final Slot<Rendered> bk;
+	final Slot<? extends Rendered> bk;
 	final GLProgram prog;
 	final Setting[] settings;
 	BufferBGL compiled, main;
@@ -237,7 +238,7 @@ public class GLDrawList implements DrawList {
 	final Pipe ordersrc;
 	private volatile boolean disposed = false;
 
-	private GLProgram progfor(Slot<Rendered> sl) {
+	private GLProgram progfor(Slot<? extends Rendered> sl) {
 	    State[] st = sl.state().states();
 	    ShaderMacro[] shaders = new ShaderMacro[st.length];
 	    int shash = 0;
@@ -326,7 +327,7 @@ public class GLDrawList implements DrawList {
 	    }
 	}
 
-	DrawSlot(Slot<Rendered> bk) {
+	DrawSlot(Slot<? extends Rendered> bk) {
 	    try {
 		GroupPipe bst = bk.state();
 		this.sortid = uniqid.getAndIncrement();
@@ -870,8 +871,10 @@ public class GLDrawList implements DrawList {
 	}
     }
 
-    public void add(Slot<Rendered> slot) {
+    public void add(Slot<? extends Rendered> slot) {
 	synchronized(this) {
+	    if(disposed)
+		throw(new IllegalStateException());
 	    DrawSlot dslot = new DrawSlot(slot);
 	    dslot.insert();
 	    if(slotmap.put(slot, dslot) != null)
@@ -880,7 +883,7 @@ public class GLDrawList implements DrawList {
 	}
     }
 
-    public void remove(Slot<Rendered> slot) {
+    public void remove(Slot<? extends Rendered> slot) {
 	synchronized(this) {
 	    DrawSlot dslot = slotmap.remove(slot);
 	    dslot.remove();
@@ -889,7 +892,7 @@ public class GLDrawList implements DrawList {
 	}
     }
 
-    public void update(Slot<Rendered> slot) {
+    public void update(Slot<? extends Rendered> slot) {
 	synchronized(this) {
 	    remove(slot);
 	    add(slot);
@@ -944,6 +947,7 @@ public class GLDrawList implements DrawList {
 		slot.remove();
 		slot.dispose();
 	    }
+	    disposed = true;
 	}
     }
 

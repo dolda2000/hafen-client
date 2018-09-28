@@ -446,14 +446,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	RenderTree.Slot slot;
 
 	Gobs() {
-	    adder = new AsyncCheck<>(this, "Mapview object adder", () -> Utils.el(adding), this::addgob);
+	    adder = new AsyncCheck<>(this, "Mapview object adder", AsyncCheck.src(adding), this::addgob);
 	}
 
 	void unregister() {
 	    oc.uncallback(this);
 	}
 
-	private void addgob(Gob ob) {
+	private void addgob(Gob ob) throws InterruptedException {
 	    while(true) {
 		try {
 		    RenderTree.Slot slot = this.slot;
@@ -465,16 +465,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    break;
 		} catch(Loading l) {
 		    /* XXX: Make nonblocking */
-		    try {
-			l.waitfor();
-		    } catch(InterruptedException e) {
-			Thread.currentThread().interrupt();
-			return;
-		    }
+		    l.waitfor();
 		}
-	    }
-	    synchronized(this) {
-		adding.remove(ob);
 	    }
 	}
 
@@ -522,13 +514,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
-    private final Terrain terrain;
-    private class Terrain extends RenderTree.Node.Track1 {
+    private class MapRaster extends RenderTree.Node.Track1 {
 	final MCache map = glob.map;
 	Area area;
 
-	abstract class Grid extends RenderTree.Node.Track1 {
-	    final Map<Coord, RenderTree.Slot> cuts = new HashMap<>();
+	abstract class Grid<T> extends RenderTree.Node.Track1 {
+	    final Map<Coord, Pair<T, RenderTree.Slot>> cuts = new HashMap<>();
 	    final boolean position;
 
 	    Grid(boolean position) {
@@ -537,48 +528,39 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	    Grid() {this(true);}
 
-	    abstract RenderTree.Node getcut(Coord cc);
+	    abstract T getcut(Coord cc);
+	    RenderTree.Node produce(T cut) {return((RenderTree.Node)cut);}
 
 	    void tick() {
+		if(slot == null)
+		    return;
 		for(Coord cc : area) {
 		    if(!cuts.containsKey(cc)) {
 			try {
 			    Coord2d pc = cc.mul(MCache.cutsz).mul(tilesz);
-			    RenderTree.Node cut = getcut(cc);
+			    T cut = getcut(cc);
+			    RenderTree.Node draw = produce(cut);
 			    Pipe.Op cs = null;
 			    if(position)
 				cs = Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0));
-			    cuts.put(cc, slot.add(cut, cs));
+			    cuts.put(cc, new Pair<>(cut, slot.add(draw, cs)));
 			} catch(Loading l) {}
 		    }
 		}
-		for(Iterator<Map.Entry<Coord, RenderTree.Slot>> i = cuts.entrySet().iterator(); i.hasNext();) {
-		    Map.Entry<Coord, RenderTree.Slot> ent = i.next();
+		for(Iterator<Map.Entry<Coord, Pair<T, RenderTree.Slot>>> i = cuts.entrySet().iterator(); i.hasNext();) {
+		    Map.Entry<Coord, Pair<T, RenderTree.Slot>> ent = i.next();
 		    if(!area.contains(ent.getKey())) {
-			ent.getValue().remove();
+			ent.getValue().b.remove();
 			i.remove();
 		    }
 		}
 	    }
+
+	    public void removed(RenderTree.Slot slot) {
+		super.removed(slot);
+		cuts.clear();
+	    }
 	}
-
-	final Grid main = new Grid() {
-		RenderTree.Node getcut(Coord cc) {
-		    return(map.getcut(cc));
-		}
-	    };
-	final Grid flavobjs = new Grid(false) {
-		final Map<Collection<Gob>, RenderTree.Node> fos = new WeakHashMap<>();
-
-		RenderTree.Node getcut(Coord cc) {
-		    return(fos.computeIfAbsent(map.getfo(cc), fc -> new RenderTree.Node() {
-			    @Override public void added(RenderTree.Slot slot) {
-				for(Gob ob : fc)
-				    slot.add(ob.placed);
-			    }
-			}));
-		}
-	    };
 
 	void tick() {
 	    /* XXX: Should be taken out of the main rendering
@@ -589,18 +571,42 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    } catch(Loading l) {
 		return;
 	    }
-	    main.tick();
-	    flavobjs.tick();
+	}
+    }
+
+    private final Terrain terrain;
+    private class Terrain extends MapRaster {
+	final Grid main = new Grid<MapMesh>() {
+		MapMesh getcut(Coord cc) {
+		    return(map.getcut(cc));
+		}
+	    };
+	final Grid flavobjs = new Grid<Collection<Gob>>(false) {
+		Collection<Gob> getcut(Coord cc) {
+		    return(map.getfo(cc));
+		}
+		RenderTree.Node produce(Collection<Gob> fos) {
+		    return(new RenderTree.Node() {
+			    public void added(RenderTree.Slot slot) {
+				for(Gob ob : fos)
+				    slot.add(ob.placed);
+			    }
+			});
+		}
+	    };
+
+	void tick() {
+	    super.tick();
+	    if(area != null) {
+		main.tick();
+		flavobjs.tick();
+	    }
 	}
 
 	public void added(RenderTree.Slot slot) {
 	    slot.add(main);
 	    slot.add(flavobjs);
 	    super.added(slot);
-	}
-
-	public void removed(RenderTree.Slot slot) {
-	    super.removed(slot);
 	}
     }
 

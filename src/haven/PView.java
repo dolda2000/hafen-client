@@ -88,26 +88,7 @@ public abstract class PView extends Widget {
 		tree.remove(back);
 	    }
 	    back = g.out.env().drawlist();
-	    try(Locked lk = tree.lock()) {
-		for(RenderTree.Slot slot : tree.slots()) {
-		    /* XXX: Make nonblocking */
-		    if(slot.obj() instanceof Rendered) {
-			while(true) {
-			    try {
-				back.add(uglyJavaCWorkAround(slot));
-				break;
-			    } catch(Loading l) {
-				try {
-				    l.waitfor();
-				} catch(InterruptedException e) {
-				    throw(new RuntimeException(e));
-				}
-			    }
-			}
-		    }
-		}
-		tree.add(back, Rendered.class);
-	    }
+	    back.asyncadd(tree, Rendered.class);
 	}
 	lights();
 	FColor cc = clearcolor();
