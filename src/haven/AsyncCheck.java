@@ -87,9 +87,9 @@ public class AsyncCheck<T> {
 	    synchronized(mon) {
 		if(th == Thread.currentThread())
 		    th = null;
-		check();
 	    }
 	}
+	check();
     }
 
     public void check() {
