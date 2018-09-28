@@ -31,7 +31,7 @@ import java.util.concurrent.locks.*;
 import haven.*;
 import static haven.Utils.eq;
 
-public class RenderTree {
+public class RenderTree implements RenderList.Adapter {
     private final Lock lock = new ReentrantLock();
     private final TreeSlot root;
     private final List<Client<?>> clients = new ArrayList<>();
@@ -736,7 +736,7 @@ public class RenderTree {
 	}
     }
 
-    public void remove(RenderList list) {
+    public void remove(RenderList<?> list) {
 	synchronized(clients) {
 	    clients.removeIf(cl -> cl.list == list);
 	}

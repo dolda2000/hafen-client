@@ -43,13 +43,46 @@ public interface RenderList<R> {
 	}
     }
 
+    public interface Adapter {
+	public Locked lock();
+	public Iterable<? extends Slot<?>> slots();
+	public <R> void add(RenderList<R> list, Class<? extends R> type);
+	public void remove(RenderList<?> list);
+    }
+
     public void add(Slot<? extends R> slot);
     public void remove(Slot<? extends R> slot);
     public void update(Slot<? extends R> slot);
     public void update(Pipe group, int[] statemask);
 
-    public default void asyncadd(RenderTree tree, Class<? extends R> type) {
-	Collection<RenderTree.Slot> initial;
+    public default void syncadd(Adapter tree, Class<? extends R> type) {
+	Collection<Slot<?>> initial;
+	try(Locked lk = tree.lock()) {
+	    for(Slot<?> slot : tree.slots()) {
+		if(type.isInstance(slot.obj())) {
+		    while(true) {
+			try {
+			    this.add(slot.cast(type));
+			    break;
+			} catch(Loading l) {
+			    try {
+				l.waitfor();
+			    } catch(InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return;
+			    }
+			}
+		    }
+		}
+	    }
+	    tree.add(this, type);
+	}
+    }
+
+    public default void asyncadd(Adapter tree, Class<? extends R> type) {
+	syncadd(tree, type);
+	/* XXX Does not preserve proper sequencing.
+	Collection<Slot<?>> initial;
 	try(Locked lk = tree.lock()) {
 	    initial = new ArrayList<>();
 	    tree.slots().forEach(initial::add);
@@ -57,14 +90,14 @@ public interface RenderList<R> {
 	}
 	new HackThread(() -> {
 		try {
-		    for(RenderTree.Slot slot : initial) {
+		    for(Slot<?> slot : initial) {
 			if(type.isInstance(slot.obj())) {
 			    while(true) {
 				try {
 				    this.add(slot.cast(type));
 				    break;
 				} catch(Loading l) {
-				    /* XXX: Make nonblocking */
+				    -* XXX: Make nonblocking *-
 				    l.waitfor();
 				}
 			    }
@@ -73,5 +106,6 @@ public interface RenderList<R> {
 		} catch(InterruptedException e) {
 		}
 	}, "Initial adder").start();
+	*/
     }
 }
