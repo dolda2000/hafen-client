@@ -24,28 +24,35 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
 import java.util.function.*;
-import java.nio.*;
-import haven.*;
-import haven.render.sl.*;
+import javax.media.opengl.*;
 
-public interface Render extends Disposable {
-    public Environment env();
-    public void draw(Pipe pipe, Model data);
-    public void clear(Pipe pipe, FragData buf, FColor val);
-    public void clear(Pipe pipe, double val);
+public class GLFence extends GLQuery {
+    public final Consumer<GL2> callback;
+    protected long id;
 
-    public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback);
+    public GLFence(GLEnvironment env, Consumer<GL2> callback) {
+	super(env);
+	this.callback = callback;
+    }
 
-    public default void draw(Pipe pipe, Model.Mode mode, short[] ind, VertexArray.Layout fmt, int n, float[] data) {
-	Model.Indices indb = null;
-	if(ind != null)
-	    indb = new Model.Indices(ind.length, NumberFormat.UINT16, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(ind));
-	VertexArray vao = new VertexArray(fmt, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data)));
-	Model model = new Model(mode, vao, indb, 0, n);
-	draw(pipe, model);
-	model.dispose();
+    public void create(GL2 gl) {
+	id = ((GL3)gl).glFenceSync(GL3.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	env.queries.add(this);
+    }
+
+    public boolean check(GL2 gl) {
+	int[] vbuf = {0};
+	gl.getGL3bc().glGetSynciv(id, GL3.GL_SYNC_STATUS, 1, null, 0, vbuf, 0);
+	if(vbuf[0] != GL3.GL_SIGNALED)
+	    return(false);
+	callback.accept(gl);
+	return(true);
+    }
+
+    public void delete(BGL gl) {
+	gl.glDeleteSync(id);
     }
 }

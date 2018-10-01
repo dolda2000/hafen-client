@@ -40,6 +40,7 @@ public class GLEnvironment implements Environment {
     final Object drawmon = new Object();
     final Object prepmon = new Object();
     final Collection<GLObject> disposed = new LinkedList<>();
+    final List<GLQuery> queries = new LinkedList<>(); // Synchronized on drawmon
     Area wnd;
     private GLRender prep = null;
     private Applier curstate = new Applier(this);
@@ -65,6 +66,16 @@ public class GLEnvironment implements Environment {
 	return(wnd);
     }
 
+    private void checkqueries(GL2 gl) {
+	for(Iterator<GLQuery> i = queries.iterator(); i.hasNext();) {
+	    GLQuery query = i.next();
+	    if(!query.check(gl))
+		continue;
+	    query.dispose();
+	    i.remove();
+	}
+    }
+
     public void submit(GL2 gl, GLRender cmd) {
 	if(cmd.gl != null) {
 	    GLRender prep;
@@ -73,6 +84,7 @@ public class GLEnvironment implements Environment {
 		this.prep = null;
 	    }
 	    synchronized(drawmon) {
+		checkqueries(gl);
 		if((prep != null) && (prep.gl != null)) {
 		    BufferBGL xf = new BufferBGL(16);
 		    this.curstate.apply(xf, prep.init);
@@ -86,6 +98,7 @@ public class GLEnvironment implements Environment {
 		cmd.gl.run(gl);
 		this.curstate = cmd.state;
 		GLException.checkfor(gl);
+		checkqueries(gl);
 	    }
 	}
     }

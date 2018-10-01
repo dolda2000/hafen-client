@@ -24,28 +24,14 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import java.util.function.*;
-import java.nio.*;
-import haven.*;
-import haven.render.sl.*;
+import javax.media.opengl.*;
 
-public interface Render extends Disposable {
-    public Environment env();
-    public void draw(Pipe pipe, Model data);
-    public void clear(Pipe pipe, FragData buf, FColor val);
-    public void clear(Pipe pipe, double val);
-
-    public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback);
-
-    public default void draw(Pipe pipe, Model.Mode mode, short[] ind, VertexArray.Layout fmt, int n, float[] data) {
-	Model.Indices indb = null;
-	if(ind != null)
-	    indb = new Model.Indices(ind.length, NumberFormat.UINT16, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(ind));
-	VertexArray vao = new VertexArray(fmt, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data)));
-	Model model = new Model(mode, vao, indb, 0, n);
-	draw(pipe, model);
-	model.dispose();
+public abstract class GLQuery extends GLObject {
+    public GLQuery(GLEnvironment env) {
+	super(env);
     }
+
+    public abstract boolean check(GL2 gl);
 }
