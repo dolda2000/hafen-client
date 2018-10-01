@@ -22,6 +22,7 @@ public class Test implements GLEventListener, KeyListener {
     GLEnvironment env;
     volatile boolean done;
     Pipe base;
+    Area shape;
 
     Test() {
 	GLCapabilities caps = new GLCapabilities(GLProfile.getDefault());
@@ -191,9 +192,11 @@ public class Test implements GLEventListener, KeyListener {
 	    if((env == null) || (wnd.getContext() != env.ctx)) {
 		if(env != null)
 		    System.err.println("switching contexts");
-		env = new GLEnvironment(wnd.getContext());
+		env = new GLEnvironment(wnd.getContext(), shape);
 		gl.setSwapInterval(1);
 	    }
+	    if(!env.shape().equals(shape))
+		env.reshape(shape);
 	    GLRender g = env.render();
 	    display(g);
 	    env.submit(gl, g);
@@ -222,6 +225,7 @@ public class Test implements GLEventListener, KeyListener {
 	base.prep(new FragColor(FragColor.defcolor)).prep(new DepthBuffer(DepthBuffer.defdepth));
 	// base.prep(new FragColor(new Texture2D(512, 512, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null).image(0)));
 	// base.prep(new DepthBuffer(new Texture2D(512, 512, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null).image(0)));
+	this.shape = area;
 	this.base = base;
     }
 

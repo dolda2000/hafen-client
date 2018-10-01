@@ -30,22 +30,23 @@ import java.util.*;
 import java.util.function.*;
 import java.nio.ByteBuffer;
 import javax.media.opengl.*;
-import haven.Utils;
-import haven.Disposable;
+import haven.*;
 import haven.render.*;
 import haven.render.sl.*;
 import static haven.render.DataBuffer.Usage.*;
 
 public class GLEnvironment implements Environment {
     public final GLContext ctx;
-    private GLRender prep = null;
-    private Applier curstate = new Applier(this);
     final Object drawmon = new Object();
     final Object prepmon = new Object();
     final Collection<GLObject> disposed = new LinkedList<>();
+    Area wnd;
+    private GLRender prep = null;
+    private Applier curstate = new Applier(this);
 
-    public GLEnvironment(GLContext ctx) {
+    public GLEnvironment(GLContext ctx, Area wnd) {
 	this.ctx = ctx;
+	this.wnd = wnd;
     }
 
     public GLRender render() {
@@ -54,6 +55,14 @@ public class GLEnvironment implements Environment {
 
     public GLDrawList drawlist() {
 	return(new GLDrawList(this));
+    }
+
+    public void reshape(Area wnd) {
+	this.wnd = wnd;
+    }
+
+    public Area shape() {
+	return(wnd);
     }
 
     public void submit(GL2 gl, GLRender cmd) {
