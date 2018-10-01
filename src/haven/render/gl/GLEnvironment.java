@@ -30,22 +30,24 @@ import java.util.*;
 import java.util.function.*;
 import java.nio.ByteBuffer;
 import javax.media.opengl.*;
-import haven.Utils;
-import haven.Disposable;
+import haven.*;
 import haven.render.*;
 import haven.render.sl.*;
 import static haven.render.DataBuffer.Usage.*;
 
 public class GLEnvironment implements Environment {
     public final GLContext ctx;
-    private GLRender prep = null;
-    private Applier curstate = new Applier(this);
     final Object drawmon = new Object();
     final Object prepmon = new Object();
     final Collection<GLObject> disposed = new LinkedList<>();
+    final List<GLQuery> queries = new LinkedList<>(); // Synchronized on drawmon
+    Area wnd;
+    private GLRender prep = null;
+    private Applier curstate = new Applier(this);
 
-    public GLEnvironment(GLContext ctx) {
+    public GLEnvironment(GLContext ctx, Area wnd) {
 	this.ctx = ctx;
+	this.wnd = wnd;
     }
 
     public GLRender render() {
@@ -56,6 +58,24 @@ public class GLEnvironment implements Environment {
 	return(new GLDrawList(this));
     }
 
+    public void reshape(Area wnd) {
+	this.wnd = wnd;
+    }
+
+    public Area shape() {
+	return(wnd);
+    }
+
+    private void checkqueries(GL2 gl) {
+	for(Iterator<GLQuery> i = queries.iterator(); i.hasNext();) {
+	    GLQuery query = i.next();
+	    if(!query.check(gl))
+		continue;
+	    query.dispose();
+	    i.remove();
+	}
+    }
+
     public void submit(GL2 gl, GLRender cmd) {
 	if(cmd.gl != null) {
 	    GLRender prep;
@@ -64,6 +84,7 @@ public class GLEnvironment implements Environment {
 		this.prep = null;
 	    }
 	    synchronized(drawmon) {
+		checkqueries(gl);
 		if((prep != null) && (prep.gl != null)) {
 		    BufferBGL xf = new BufferBGL(16);
 		    this.curstate.apply(xf, prep.init);
@@ -77,6 +98,7 @@ public class GLEnvironment implements Environment {
 		cmd.gl.run(gl);
 		this.curstate = cmd.state;
 		GLException.checkfor(gl);
+		checkqueries(gl);
 	    }
 	}
     }

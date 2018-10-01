@@ -505,6 +505,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void glDeleteSync(final long id) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.getGL3bc().glDeleteSync(id);}
+	    });
+    }
+
     public void glFogi(final int pname, final int param) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glFogi(pname, param);}
@@ -654,6 +660,18 @@ public abstract class BGL {
     public void glReadBuffer(final int buf) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glReadBuffer(buf);}
+	    });
+    }
+
+    public void glReadPixels(final int x, final int y, final int width, final int height, final int format, final int type, Buffer data) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glReadPixels(x, y, width, height, format, type, data);}
+	    });
+    }
+
+    public void glReadPixels(final int x, final int y, final int width, final int height, final int format, final int type, long offset) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glReadPixels(x, y, width, height, format, type, offset);}
 	    });
     }
 

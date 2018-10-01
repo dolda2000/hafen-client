@@ -24,46 +24,35 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import java.util.*;
-import haven.render.sl.*;
+import java.util.function.*;
+import javax.media.opengl.*;
 
-public abstract class State implements Pipe.Op {
-    public static class Slot<T extends State> {
-	static Slots slots = new Slots(new Slot<?>[0]);
-	public final Type type;
-	public final int id;
-	public final Class<T> scl;
-	private int depid = -1;
+public class GLFence extends GLQuery {
+    public final Consumer<GL2> callback;
+    protected long id;
 
-	public enum Type {
-	    SYS, GEOM, DRAW
-	}
-
-	public static class Slots {
-	    public final Slot<?>[] idlist;
-
-	    public Slots(Slot<?>[] idlist) {
-		this.idlist = idlist;
-	    }
-	}
-
-	public Slot(Type type, Class<T> scl) {
-	    this.type = type;
-	    this.scl = scl;
-	    synchronized(Slot.class) {
-		this.id = slots.idlist.length;
-		Slot<?>[] nlist = Arrays.copyOf(slots.idlist, this.id + 1);
-		nlist[this.id] = this;
-		slots = new Slots(nlist);
-	    }
-	}
-
-	public String toString() {
-	    return(String.format("#<slot %s/%s (%d)>", type, scl, id));
-	}
+    public GLFence(GLEnvironment env, Consumer<GL2> callback) {
+	super(env);
+	this.callback = callback;
     }
 
-    public abstract ShaderMacro shader();
+    public void create(GL2 gl) {
+	id = ((GL3)gl).glFenceSync(GL3.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	env.queries.add(this);
+    }
+
+    public boolean check(GL2 gl) {
+	int[] vbuf = {0};
+	gl.getGL3bc().glGetSynciv(id, GL3.GL_SYNC_STATUS, 1, null, 0, vbuf, 0);
+	if(vbuf[0] != GL3.GL_SIGNALED)
+	    return(false);
+	callback.accept(gl);
+	return(true);
+    }
+
+    public void delete(BGL gl) {
+	gl.glDeleteSync(id);
+    }
 }

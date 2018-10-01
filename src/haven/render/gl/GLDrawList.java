@@ -27,7 +27,9 @@
 package haven.render.gl;
 
 import java.util.*;
+import java.util.function.*;
 import java.util.concurrent.atomic.*;
+import java.nio.ByteBuffer;
 import haven.*;
 import haven.render.*;
 import haven.render.sl.*;
@@ -808,10 +810,11 @@ public class GLDrawList implements DrawList {
 	}
 
 	/* Somewhat unclear whether DrawList should implement
-	 * clearing. Just implement it if and when it turns out to be
+	 * these. Just implement it if and when it turns out to be
 	 * reasonable. */
 	public void clear(Pipe pipe, FragData buf, FColor val) {throw(new NotImplemented());}
 	public void clear(Pipe pipe, double val) {throw(new NotImplemented());}
+	public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback) {throw(new NotImplemented());}
 	public void dispose() {}
     }
 

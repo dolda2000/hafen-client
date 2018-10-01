@@ -27,9 +27,9 @@
 package haven.render.gl;
 
 import java.nio.*;
+import java.util.function.*;
 import javax.media.opengl.*;
-import haven.Disposable;
-import haven.FColor;
+import haven.*;
 import haven.render.*;
 import haven.render.sl.*;
 import static haven.render.DataBuffer.Usage.*;
@@ -280,9 +280,64 @@ public class GLRender implements Render, Disposable {
 	gl.glClear(GL.GL_DEPTH_BUFFER_BIT);
     }
 
-    public void execute(GL2 gl) {
-	synchronized(env.drawmon) {
+    public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback) {
+	state.apply(this.gl, pipe);
+	GLProgram prog = state.prog();
+	FboState fc = (FboState)state.glstates[FboState.slot];
+	int n = -1;
+	for(int i = 0; i < prog.fragdata.length; i++) {
+	    if(prog.fragdata[i] == buf) {
+		n = i;
+		break;
+	    }
 	}
+	if(n < 0)
+	    throw(new IllegalArgumentException(String.format("%s is not on current framebuffer", buf)));
+	BGL gl = gl();
+	int gly = env.wnd.br.y - area.br.y;
+	Coord sz = area.sz();
+	
+	/*
+	gl.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
+	gl.glReadBuffer(fc.dbufs[n]);
+	gl.bglSubmit(cgl -> {
+		ByteBuffer data = ByteBuffer.wrap(new byte[fmt.size() * area.area()]);
+		cgl.glReadPixels(area.ul.x, gly, sz.x, sz.y, GLTexture.texefmt1(fmt, fmt), GLTexture.texefmt2(fmt, fmt), data);
+		GLException.checkfor(cgl);
+		data.rewind();
+		callback.accept(data);
+	    });
+	*/
+	
+	GLBuffer pbo = new GLBuffer(env);
+	gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pbo);
+	gl.glBufferData(GL2.GL_PIXEL_PACK_BUFFER, fmt.size() * area.area(), null, GL2.GL_STREAM_READ);
+	gl.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
+	gl.glReadBuffer(fc.dbufs[n]);
+	gl.glReadPixels(area.ul.x, gly, sz.x, sz.y, GLTexture.texefmt1(fmt, fmt), GLTexture.texefmt2(fmt, fmt), 0);
+	gl.bglCreate(new GLFence(env, cgl -> {
+		    cgl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pbo.glid());
+		    ByteBuffer data = Utils.mkbbuf(fmt.size() * area.area());
+		    cgl.glGetBufferSubData(GL2.GL_PIXEL_PACK_BUFFER, 0, fmt.size() * area.area(), data);
+		    cgl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
+		    pbo.dispose();
+		    GLException.checkfor(cgl);
+		    data.rewind();
+		    /* XXX: It's not particularly nice to do the
+		     * flipping on the dispatch thread, but OpenGL
+		     * does not seem to offer any GPU-assisted
+		     * flipping. */
+		    for(int y = 0; y < sz.y / 2; y++) {
+			int to = y * sz.x * 4, bo = (sz.y - y - 1) * sz.x * 4;
+			for(int o = 0; o < sz.x * 4; o++, to++, bo++) {
+			    byte t = data.get(to);
+			    data.put(to, data.get(bo));
+			    data.put(bo, t);
+			}
+		    }
+		    callback.accept(data);
+	}));
+	gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, null);
     }
 
     public void dispose() {

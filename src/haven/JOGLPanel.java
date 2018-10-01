@@ -38,6 +38,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     public final boolean vsync = true;
     private GLEnvironment env = null;
     private UI ui;
+    private Area shape;
     private Pipe base, wnd;
     private final Dispatcher ed;
 
@@ -68,6 +69,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 
 		public void reshape(GLAutoDrawable wdg, int x, int y, int w, int h) {
 		    Area area = Area.sized(new Coord(x, y), new Coord(w, h));
+		    shape = area;
 		    wnd = base.copy();
 		    wnd.prep(new States.Viewport(area)).prep(new Ortho2D(area));
 		}
@@ -83,6 +85,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	GLRender buf;
 	GLEnvironment env;
 	BufferBGL dispose;
+	boolean debug;
 
 	Frame(GLRender buf, GLEnvironment env, BufferBGL dispose) {
 	    this.buf = buf;
@@ -105,18 +108,16 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     }
 
     private void redraw(GL2 gl) {
-	if(false) {
-	    System.err.print("\n-----\n\n");
-	    gl = new TraceGL2(gl, System.err);
-	}
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
 	synchronized(this) {
 	    if((this.env == null) || (this.env.ctx != ctx)) {
-		this.env = new GLEnvironment(ctx);
+		this.env = new GLEnvironment(ctx, shape);
 		initgl(gl);
 	    }
 	    env = this.env;
+	    if(!env.shape().equals(shape))
+		env.reshape(shape);
 	}
 	Frame f;
 	synchronized(curdraw) {
@@ -126,6 +127,10 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	}
 	if(f != null) {
 	    if(f.env == env) {
+		if(f.debug) {
+		    System.err.print("\n-----\n\n");
+		    gl = new TraceGL2(gl, System.err);
+		}
 		env.submit(gl, f.buf);
 		f.dispose.run(gl);
 	    } else {
@@ -205,6 +210,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 			if(curdraw[0] != null)
 			    throw(new AssertionError());
 			curdraw[0] = new Frame(buf, env, dispose);
+			if(false)
+			    curdraw[0].debug = true;
 			curdraw.notifyAll();
 		    }
 		}
