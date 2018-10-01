@@ -85,6 +85,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	GLRender buf;
 	GLEnvironment env;
 	BufferBGL dispose;
+	boolean debug;
 
 	Frame(GLRender buf, GLEnvironment env, BufferBGL dispose) {
 	    this.buf = buf;
@@ -107,10 +108,6 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     }
 
     private void redraw(GL2 gl) {
-	if(false) {
-	    System.err.print("\n-----\n\n");
-	    gl = new TraceGL2(gl, System.err);
-	}
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
 	synchronized(this) {
@@ -130,6 +127,10 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	}
 	if(f != null) {
 	    if(f.env == env) {
+		if(f.debug) {
+		    System.err.print("\n-----\n\n");
+		    gl = new TraceGL2(gl, System.err);
+		}
 		env.submit(gl, f.buf);
 		f.dispose.run(gl);
 	    } else {
@@ -209,6 +210,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 			if(curdraw[0] != null)
 			    throw(new AssertionError());
 			curdraw[0] = new Frame(buf, env, dispose);
+			if(false)
+			    curdraw[0].debug = true;
 			curdraw.notifyAll();
 		    }
 		}
