@@ -345,7 +345,7 @@ public class GLDrawList implements DrawList {
 		       (gst[Rendered.order.id] < 0)) {
 			ordersrc = null;
 		    } else {
-			ordersrc = bst.groups()[gst[Rendered.order.id]];
+			ordersrc = bst.group(gst[Rendered.order.id]);
 			gorder = ordersrc.get(Rendered.order);
 			orderreg();
 		    }
@@ -445,15 +445,14 @@ public class GLDrawList implements DrawList {
 	}
     }
 
-    private static Pipe nidx(Pipe[] arr, int idx) {
-	return((idx < 0) ? Pipe.nil : arr[idx]);
+    private static Pipe nidx(GroupPipe st, int idx) {
+	return((idx < 0) ? Pipe.nil : st.group(idx));
     }
 
     static Pipe[] makedepid(GroupPipe state, Collection<State.Slot<?>> deps) {
 	Iterator<State.Slot<?>> it = deps.iterator();
 	if(!it.hasNext())
 	    return(new Pipe[0]);
-	Pipe[] grp = state.groups();
 	int[] gids = state.gstates();
 	int one = gids[it.next().id];
 	int ni = 1;
@@ -462,15 +461,15 @@ public class GLDrawList implements DrawList {
 	    if(gids[cid] != one) {
 		Pipe[] ret = new Pipe[deps.size()];
 		for(int i = 0; i < ni; i++)
-		    ret[i] = nidx(grp, one);
-		ret[ni++] = nidx(grp, gids[cid]);
+		    ret[i] = nidx(state, one);
+		ret[ni++] = nidx(state, gids[cid]);
 		while(it.hasNext())
-		    ret[ni++] = nidx(grp, gids[it.next().id]);
+		    ret[ni++] = nidx(state, gids[it.next().id]);
 		return(ret);
 	    }
 	    ni++;
 	}
-	return(new Pipe[] {nidx(grp, one)});
+	return(new Pipe[] {nidx(state, one)});
     }
 
     abstract class Setting {

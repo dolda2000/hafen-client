@@ -85,7 +85,7 @@ public class RenderTree implements RenderList.Adapter {
 	    this.gstates = gstates;
 	}
 
-	public Pipe[] groups() {return(groups);}
+	public Pipe group(int g) {return(groups[g]);}
 	public int[] gstates() {return(gstates);}
     }
 
