@@ -49,9 +49,29 @@ public abstract class ItemInfo {
 	public GSprite sprite();
     }
     
+    public static class Raw {
+	public final Object[] data;
+	public final double time;
+
+	public Raw(Object[] data, double time) {
+	    this.data = data;
+	    this.time = time;
+	}
+
+	public Raw(Object[] data) {
+	    this(data, Utils.rtime());
+	}
+    }
+
     @Resource.PublishedCode(name = "tt", instancer = FactMaker.class)
     public static interface InfoFactory {
-	public ItemInfo build(Owner owner, Object... args);
+	public default ItemInfo build(Owner owner, Raw raw, Object... args) {
+	    return(build(owner, args));
+	}
+	@Deprecated
+	public default ItemInfo build(Owner owner, Object... args) {
+	    throw(new AbstractMethodError("info factory missing either build bmethod"));
+	}
     }
 
     public static class FactMaker implements Resource.PublishedCode.Instancer {
@@ -61,8 +81,16 @@ public abstract class ItemInfo {
 	    try {
 		Function<Object[], ItemInfo> make = Utils.smthfun(cl, "mkinfo", ItemInfo.class, Owner.class, Object[].class);
 		return(new InfoFactory() {
-			public ItemInfo build(Owner owner, Object... args) {
+			public ItemInfo build(Owner owner, Raw raw, Object... args) {
 			    return(make.apply(new Object[]{owner, args}));
+			}
+		    });
+	    } catch(NoSuchMethodException e) {}
+	    try {
+		Function<Object[], ItemInfo> make = Utils.smthfun(cl, "mkinfo", ItemInfo.class, Owner.class, Raw.class, Object[].class);
+		return(new InfoFactory() {
+			public ItemInfo build(Owner owner, Raw raw, Object... args) {
+			    return(make.apply(new Object[]{owner, raw, args}));
 			}
 		    });
 	    } catch(NoSuchMethodException e) {}
@@ -294,9 +322,9 @@ public abstract class ItemInfo {
 	return(null);
     }
 
-    public static List<ItemInfo> buildinfo(Owner owner, Object[] rawinfo) {
+    public static List<ItemInfo> buildinfo(Owner owner, Raw raw) {
 	List<ItemInfo> ret = new ArrayList<ItemInfo>();
-	for(Object o : rawinfo) {
+	for(Object o : raw.data) {
 	    if(o instanceof Object[]) {
 		Object[] a = (Object[])o;
 		Resource ttres;
@@ -310,7 +338,7 @@ public abstract class ItemInfo {
 		    throw(new ClassCastException("Unexpected info specification " + a[0].getClass()));
 		}
 		InfoFactory f = ttres.getcode(InfoFactory.class, true);
-		ItemInfo inf = f.build(owner, a);
+		ItemInfo inf = f.build(owner, raw, a);
 		if(inf != null)
 		    ret.add(inf);
 	    } else if(o instanceof String) {
@@ -320,6 +348,10 @@ public abstract class ItemInfo {
 	    }
 	}
 	return(ret);
+    }
+
+    public static List<ItemInfo> buildinfo(Owner owner, Object[] rawinfo) {
+	return(buildinfo(owner, new Raw(rawinfo)));
     }
     
     private static String dump(Object arg) {
