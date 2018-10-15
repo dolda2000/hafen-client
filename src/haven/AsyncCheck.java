@@ -26,21 +26,43 @@
 
 package haven;
 
-import java.util.function.*;
+import java.util.*;
 
 public class AsyncCheck<T> {
     public final Object mon;
-    public final Supplier<T> check;
-    public final Consumer<T> use;
+    public final Source<T> check;
+    public final Sink<T> use;
     public final String name;
     private double timeout = 5;
     private Thread th = null;
 
-    public AsyncCheck(Object mon, String name, Supplier<T> check, Consumer<T> use) {
+    public static interface Source<T> {
+	public T get(boolean peek);
+    }
+
+    public static interface Sink<T> {
+	public void accept(T item) throws InterruptedException;
+    }
+
+    public AsyncCheck(Object mon, String name, Source<T> check, Sink<T> use) {
 	this.mon = mon;
 	this.check = check;
 	this.use = use;
 	this.name = name;
+    }
+
+    public static <T> Source<T> src(Iterable<T> from) {
+	return(new Source<T>() {
+		public T get(boolean peek) {
+		    Iterator<T> i = from.iterator();
+		    if(!i.hasNext())
+			return(null);
+		    T ret = i.next();
+		    if(!peek)
+			i.remove();
+		    return(ret);
+		}
+	    });
     }
 
     private void checkloop() {
@@ -50,7 +72,7 @@ public class AsyncCheck<T> {
 		synchronized(mon) {
 		    double start = Utils.rtime(), now = start;
 		    while(true) {
-			if((item = check.get()) != null)
+			if((item = check.get(false)) != null)
 			    break;
 			if((now - start) >= timeout)
 			    return;
@@ -65,14 +87,14 @@ public class AsyncCheck<T> {
 	    synchronized(mon) {
 		if(th == Thread.currentThread())
 		    th = null;
-		check();
 	    }
 	}
+	check();
     }
 
     public void check() {
 	synchronized(mon) {
-	    if((check.get() != null) && (th == null)) {
+	    if((check.get(true) != null) && (th == null)) {
 		th = new HackThread(this::checkloop, name);
 		th.setDaemon(true);
 		th.start();
