@@ -43,7 +43,7 @@ public class Buff extends Widget implements ItemInfo.ResOwner {
     public double gettime;
     protected int a = 255;
     protected boolean dest = false;
-    private Object[] rawinfo = null;
+    private ItemInfo.Raw rawinfo = null;
     private List<ItemInfo> info = Collections.emptyList();
     /* Deprecated */
     String tt = null;
@@ -230,7 +230,7 @@ public class Buff extends Widget implements ItemInfo.ResOwner {
 	    this.res = ui.sess.getres((Integer)args[0]);
 	} else if(msg == "tt") {
 	    info = null;
-	    rawinfo = args;
+	    rawinfo = new ItemInfo.Raw(args);
 	} else if(msg == "tip") {
 	    String tt = (String)args[0];
 	    this.tt = tt.equals("") ? null : tt;
