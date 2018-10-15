@@ -38,8 +38,8 @@ public class Buff extends Widget implements ItemInfo.ResOwner {
     public static final Coord imgoff = new Coord(3, 3);
     public static final Coord ameteroff = new Coord(3, 37), ametersz = new Coord(32, 3);
     public Indir<Resource> res;
-    public int cmeter = -1;
-    public int cticks = -1;
+    public double cmeter = -1;
+    public double cmrem = -1;
     public double gettime;
     protected int a = 255;
     protected boolean dest = false;
@@ -126,9 +126,9 @@ public class Buff extends Widget implements ItemInfo.ResOwner {
 		g.aimage(nmeter, imgoff.add(img.sz()).sub(1, 1), 1, 1);
 	    Double cmeter;
 	    if(this.cmeter >= 0) {
-		double m = this.cmeter / 100.0;
-		if(cticks >= 0) {
-		    double ot = cticks * 0.06;
+		double m = this.cmeter;
+		if(cmrem >= 0) {
+		    double ot = cmrem;
 		    double pt = Utils.rtime() - gettime;
 		    m *= (ot - pt) / ot;
 		}
@@ -233,7 +233,7 @@ public class Buff extends Widget implements ItemInfo.ResOwner {
 	    rawinfo = args;
 	} else if(msg == "tip") {
 	    String tt = (String)args[0];
-	    this.tt = tt.equals("")?null:tt;
+	    this.tt = tt.equals("") ? null : tt;
 	    shorttip = longtip = null;
 	} else if(msg == "am") {
 	    this.ameter = (Integer)args[0];
@@ -242,8 +242,8 @@ public class Buff extends Widget implements ItemInfo.ResOwner {
 	    this.nmeter = (Integer)args[0];
 	    ntext = null;
 	} else if(msg == "cm") {
-	    this.cmeter = (Integer)args[0];
-	    this.cticks = (args.length > 1)?((Integer)args[1]):-1;
+	    this.cmeter = ((Number)args[0]).doubleValue() / 100.0;
+	    this.cmrem = (args.length > 1) ? (((Number)args[1]).doubleValue() * 0.06) : -1;
 	    gettime = Utils.rtime();
 	} else {
 	    super.uimsg(msg, args);
