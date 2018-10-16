@@ -60,6 +60,12 @@ public abstract class State implements Pipe.Op {
 	    }
 	}
 
+	public static Slot<?> byid(int id) {
+	    if((id < 0) || (id >= slots.idlist.length))
+		return(null);
+	    return(slots.idlist[id]);
+	}
+
 	public String toString() {
 	    return(String.format("#<slot %s/%s (%d)>", type, scl, id));
 	}
