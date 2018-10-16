@@ -340,12 +340,11 @@ public class GLDrawList implements DrawList {
 		getsettings();
 		gorder = Rendered.deflt;
 		{
-		    int[] gst = bst.gstates();
-		    if((gst.length <= Rendered.order.id) ||
-		       (gst[Rendered.order.id] < 0)) {
+		    int grp = bst.gstate(Rendered.order.id);
+		    if(grp < 0) {
 			ordersrc = null;
 		    } else {
-			ordersrc = bst.group(gst[Rendered.order.id]);
+			ordersrc = bst.group(grp);
 			gorder = ordersrc.get(Rendered.order);
 			orderreg();
 		    }
@@ -453,18 +452,18 @@ public class GLDrawList implements DrawList {
 	Iterator<State.Slot<?>> it = deps.iterator();
 	if(!it.hasNext())
 	    return(new Pipe[0]);
-	int[] gids = state.gstates();
-	int one = gids[it.next().id];
+	int one = state.gstate(it.next().id);
 	int ni = 1;
 	while(it.hasNext()) {
 	    int cid = it.next().id;
-	    if(gids[cid] != one) {
+	    int grp = state.gstate(cid);
+	    if(grp != one) {
 		Pipe[] ret = new Pipe[deps.size()];
 		for(int i = 0; i < ni; i++)
 		    ret[i] = nidx(state, one);
-		ret[ni++] = nidx(state, gids[cid]);
+		ret[ni++] = nidx(state, grp);
 		while(it.hasNext())
-		    ret[ni++] = nidx(state, gids[it.next().id]);
+		    ret[ni++] = nidx(state, state.gstate(it.next().id));
 		return(ret);
 	    }
 	    ni++;

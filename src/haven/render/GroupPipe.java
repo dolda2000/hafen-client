@@ -28,13 +28,14 @@ package haven.render;
 
 public interface GroupPipe extends Pipe {
     public Pipe group(int g);
-    public int[] gstates();
+    public int gstate(int id);
+    public int nstates();
 
     public default <T extends State> T get(State.Slot<T> slot) {
-	int[] gstates = gstates();
-	if((slot.id >= gstates.length) || (gstates[slot.id] < 0))
+	int grp = gstate(slot.id);
+	if(grp < 0)
 	    return(null);
-	return(group(gstates[slot.id]).get(slot));
+	return(group(grp).get(slot));
     }
 
     public default Pipe copy() {
@@ -42,13 +43,13 @@ public interface GroupPipe extends Pipe {
     }
 
     public default State[] states() {
-	int[] gstates = gstates();
-	State[] ret = new State[gstates.length];
+	State[] ret = new State[nstates()];
 	for(int i = 0; i < ret.length; i++) {
-	    if(gstates[i] < 0)
+	    int grp = gstate(i);
+	    if(grp < 0)
 		ret[i] = null;
 	    else
-		ret[i] = group(gstates[i]).get(State.Slot.slots.idlist[i]);
+		ret[i] = group(grp).get(State.Slot.slots.idlist[i]);
 	}
 	return(ret);
     }

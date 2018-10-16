@@ -86,7 +86,8 @@ public class RenderTree implements RenderList.Adapter {
 	}
 
 	public Pipe group(int g) {return(groups[g]);}
-	public int[] gstates() {return(gstates);}
+	public int gstate(int id) {return((id < gstates.length) ? gstates[id] : -1);}
+	public int nstates() {return(gstates.length);}
     }
 
     public static class DepInfo {
