@@ -121,7 +121,7 @@ public class Test implements GLEventListener, KeyListener {
 	Pipe fb = base.copy();
 	Area fbarea = new Area(Coord.z, new Coord(dbuf.w, dbuf.h));
 	fb.prep(new States.Viewport(fbarea)).prep(new Ortho2D(fbarea));
-	fb.prep(new FragColor(tbuf.tex.image(0))).prep(new DepthBuffer(dbuf.image(0)));
+	fb.prep(new FragColor<>(tbuf.tex.image(0))).prep(new DepthBuffer<>(dbuf.image(0)));
 	g.clear(fb, FragColor.fragcol, gay);
 	g.clear(fb, 1.0);
 	{
@@ -222,7 +222,7 @@ public class Test implements GLEventListener, KeyListener {
 	Pipe base = new BufPipe();
 	Area area = Area.sized(new Coord(x, y), new Coord(w, h));
 	base.prep(new States.Viewport(area)).prep(new Ortho2D(area)).prep(new States.Blending());
-	base.prep(new FragColor(FragColor.defcolor)).prep(new DepthBuffer(DepthBuffer.defdepth));
+	base.prep(new FragColor<>(FragColor.defcolor)).prep(new DepthBuffer<>(DepthBuffer.defdepth));
 	// base.prep(new FragColor(new Texture2D(512, 512, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null).image(0)));
 	// base.prep(new DepthBuffer(new Texture2D(512, 512, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null).image(0)));
 	this.shape = area;

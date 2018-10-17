@@ -28,14 +28,14 @@ package haven.render;
 
 import haven.render.sl.*;
 
-public class DepthBuffer extends State {
+public class DepthBuffer<T> extends State {
     public static final Slot<DepthBuffer> slot = new Slot<>(Slot.Type.SYS, DepthBuffer.class);
     public static final Object defdepth = new Object() {
 	    public String toString() {return("#<default depth buffer>");}
 	};
-    public final Object image;
+    public final T image;
 
-    public DepthBuffer(Object image) {
+    public DepthBuffer(T image) {
 	this.image = image;
     }
 

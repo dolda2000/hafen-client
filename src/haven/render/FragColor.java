@@ -29,15 +29,15 @@ package haven.render;
 import haven.render.sl.*;
 import haven.render.sl.ValBlock.Value;
 
-public class FragColor extends State {
+public class FragColor<T> extends State {
     public static final Slot<FragColor> slot = new Slot<>(Slot.Type.SYS, FragColor.class);
     public static final FragData fragcol = new FragData(Type.VEC4, "fragcol", p -> p.get(slot).image, slot).primary();
     public static final Object defcolor = new Object() {
 	    public String toString() {return("#<default color buffer>");}
 	};
-    public final Object image;
+    public final T image;
 
-    public FragColor(Object image) {
+    public FragColor(T image) {
 	this.image = image;
     }
 
