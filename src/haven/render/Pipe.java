@@ -98,6 +98,10 @@ public interface Pipe {
 	public static final Op nil = new Nil();
 
 	public static Op compose(Op... ops) {
+	    if(ops.length == 0)
+		return(nil);
+	    if(ops.length == 1)
+		return(ops[0]);
 	    return(new Composed(ops));
 	}
 
