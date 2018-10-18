@@ -39,10 +39,10 @@ import haven.render.Rendered.Order;
 public class MapMesh implements RenderTree.Node, Disposable {
     public final Coord ul, sz;
     public final MCache map;
+    public FastMesh[] flats;
     private final long rnd;
     private Map<DataID, Object> data = new LinkedHashMap<DataID, Object>();
     private List<RenderTree.Node> extras = new ArrayList<RenderTree.Node>();
-    private FastMesh[] flats;
     private List<Disposable> dparts = new ArrayList<Disposable>();
 
     public interface DataID<T> {
