@@ -31,6 +31,7 @@ import static haven.MCache.tilesz;
 import static haven.OCache.posres;
 import java.awt.Color;
 import java.util.*;
+import java.util.function.*;
 import java.lang.ref.*;
 import java.lang.reflect.*;
 import haven.render.*;
@@ -956,6 +957,22 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	    back.draw(g.out);
 	}
+
+	public void get(GOut g, Coord c, Consumer<ClickData> cb) {
+	    GOut.getpixel(g.out, basic, FragID.fragid, c, col -> {
+		    int id = col2id(col);
+		    if(id == 0) {
+			cb.accept(null);
+			return;
+		    }
+		    Clickslot cs = idmap.get(col2id(col));
+		    if(cs == null) {
+			cb.accept(null);
+			return;
+		    }
+		    cb.accept(cs.bk.state().get(ClickData.slot));
+		});
+	}
     }
 
     private final RenderTree clmaptree = new RenderTree();
@@ -1087,14 +1104,31 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
     */
 
-    private void checkmapclick(GOut g, Pipe.Op basic, Coord c, Callback<Coord2d> cb) {
+    private void checkmapclick(GOut g, Pipe.Op basic, Coord c, Consumer<Coord2d> cb) {
 	new Object() {
+	    MapMesh cut;
+	    Coord tile;
+	    Coord2d pixel;
+
 	    {
 		clmaplist.basic(basic);
 		clmaplist.draw(g);
 		if(clickdb) {
 		    GOut.getimage(g.out, new BufPipe().prep(basic), FragID.fragid, Area.sized(Coord.z, g.sz()),
 				  img -> Debug.dumpimage(img, Debug.somedir("click1.png")));
+		}
+		clmaplist.get(g, c, cd -> {cut = (MapMesh)cd.data; ckdone(1);});
+	    }
+
+	    int dfl = 0;
+	    void ckdone(int fl) {
+		synchronized(this) {
+		    if((dfl |= fl) == 3) {
+			if((cut == null) || !tile.isect(Coord.z, cut.sz))
+			    cb.accept(null);
+			else
+			    cb.accept(cut.ul.add(tile).mul(tilesz).add(pixel));
+		    }
 		}
 	    }
 	};
@@ -1123,17 +1157,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			pixel = new Coord2d((col.getBlue() * tilesz.x) / 255.0, (col.getAlpha() * tilesz.y) / 255.0);
 			ckdone(2);
 		    });
-	    }
-
-	    void ckdone(int fl) {
-		synchronized(this) {
-		    if((dfl |= fl) == 3) {
-			if((cut == null) || !tile.isect(Coord.z, cut.sz))
-			    cb.done(null);
-			else
-			    cb.done(cut.ul.add(tile).mul(tilesz).add(pixel));
-		    }
-		}
 	    }
 	};
 	*/
