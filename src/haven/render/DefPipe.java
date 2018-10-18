@@ -30,7 +30,7 @@ import java.util.*;
 import haven.render.State.Slot;
 
 public class DefPipe extends BufPipe {
-    public boolean[] mask;
+    public boolean[] mask = {};
 
     public <T extends State> void put(Slot<? super T> slot, T state) {
 	super.put(slot, state);
