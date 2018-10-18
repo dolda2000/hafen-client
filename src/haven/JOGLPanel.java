@@ -32,9 +32,9 @@ import javax.media.opengl.awt.*;
 import haven.render.*;
 import haven.render.States;
 import haven.render.gl.*;
-import haven.render.gl.BufferBGL; // XXX: Remove me
 
 public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
+    private static final boolean dumpbgl = false;
     public final boolean vsync = true;
     private GLEnvironment env = null;
     private UI ui;
@@ -125,17 +125,23 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	    curdraw[0] = null;
 	    curdraw.notifyAll();
 	}
-	if(f != null) {
-	    if(f.env == env) {
-		if(f.debug) {
-		    System.err.print("\n-----\n\n");
-		    gl = new TraceGL2(gl, System.err);
+	try {
+	    if(f != null) {
+		if(f.env == env) {
+		    if(f.debug) {
+			System.err.print("\n-----\n\n");
+			gl = new TraceGL2(gl, System.err);
+		    }
+		    env.submit(gl, f.buf);
+		    f.dispose.run(gl);
+		} else {
+		    f.buf.dispose();
 		}
-		env.submit(gl, f.buf);
-		f.dispose.run(gl);
-	    } else {
-		f.buf.dispose();
 	    }
+	} catch(BGL.BGLException e) {
+	    if(dumpbgl)
+		e.dump.dump();
+	    throw(e);
 	}
     }
 
