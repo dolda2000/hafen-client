@@ -39,7 +39,7 @@ import haven.render.Rendered.Order;
 public class MapMesh implements RenderTree.Node, Disposable {
     public final Coord ul, sz;
     public final MCache map;
-    public FastMesh[] flats;
+    public FastMesh flat;
     private final long rnd;
     private Map<DataID, Object> data = new LinkedHashMap<DataID, Object>();
     private List<RenderTree.Node> extras = new ArrayList<RenderTree.Node>();
@@ -208,7 +208,7 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	ret.setSeed(ret.nextInt() + c.y);
 	return(ret);
     }
-	
+
     private static void dotrans(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	Tiler ground = m.map.tiler(m.map.gettile(gc));
 	int tr[][] = new int[3][3];
@@ -539,10 +539,10 @@ public class MapMesh implements RenderTree.Node, Disposable {
 		i.remove();
 	}
     }
-    
+
     public void draw(GOut g) {
     }
-    
+
     private void consflat() {
 	class Buf implements Tiler.MCons {
 	    int vn = 0, in = 0, vl = sz.x * sz.y * 4;
@@ -583,26 +583,16 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	if(col.length != buf.vn * 4) col = Utils.extend(col, buf.vn * 4);
 	if(ind.length != buf.in) ind = Utils.extend(ind, buf.in);
 	VertexBuf.VertexData posa = new VertexBuf.VertexData(FloatBuffer.wrap(pos));
-	VertexBuf.ColorData cola = new VertexBuf.ColorData(FloatBuffer.wrap(col));
+	ClickLocation.LocData loca = new ClickLocation.LocData(FloatBuffer.wrap(col));
 	ShortBuffer indb = ShortBuffer.wrap(ind);
-	flats = new FastMesh[] {
-	    new FastMesh(new VertexBuf(posa), indb),
-	    new FastMesh(new VertexBuf(posa, cola), indb),
-	};
+	flat = new FastMesh(new VertexBuf(posa, loca), indb);
     }
 
-    public void drawflat(GOut g, int mode) {
-	/* XXXRENDER
-	g.apply();
-	flats[mode].draw(g);
-	*/
-    }
-    
     public void dispose() {
 	for(Disposable p : dparts)
 	    p.dispose();
     }
-    
+
     public void added(RenderTree.Slot slot) {
 	for(RenderTree.Node e : extras)
 	    slot.add(e);

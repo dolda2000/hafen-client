@@ -580,7 +580,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    return(map.getcut(cc));
 		}
 		RenderTree.Node produce(MapMesh cut) {
-		    return(new ClickData(null, cut).apply(cut.flats[0]));
+		    return(new ClickData(null, cut).apply(cut.flat));
 		}
 	    };
 
@@ -978,17 +978,20 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private final RenderTree clmaptree = new RenderTree();
     private final Clicklist clmaplist = new Clicklist(clmaptree);
     private FragID<Texture.Image<Texture2D>> clickid;
+    private ClickLocation<Texture.Image<Texture2D>> clickloc;
     private DepthBuffer<Texture.Image<Texture2D>> clickdepth;
     private Pipe.Op curclickbasic;
     private Pipe.Op clickbasic(Coord sz) {
 	if((curclickbasic == null) || !clickid.image.tex.sz().equals(sz)) {
 	    if(clickid != null) {
 		clickid.image.tex.dispose();
+		clickloc.image.tex.dispose();
 		clickdepth.image.tex.dispose();
 	    }
 	    clickid = new FragID<>(new Texture2D(sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null).image(0));
+	    clickloc = new ClickLocation<>(new Texture2D(sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null).image(0));
 	    clickdepth = new DepthBuffer<>(new Texture2D(sz, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null).image(0));
-	    curclickbasic = Pipe.Op.compose(Clicklist.clickbasic, clickid, clickdepth, new States.Viewport(Area.sized(Coord.z, sz)));
+	    curclickbasic = Pipe.Op.compose(Clicklist.clickbasic, clickid, clickloc, clickdepth, new States.Viewport(Area.sized(Coord.z, sz)));
 	}
 	return(Pipe.Op.compose(curclickbasic, camera));
     }
@@ -1114,10 +1117,17 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		clmaplist.basic(basic);
 		clmaplist.draw(g);
 		if(clickdb) {
-		    GOut.getimage(g.out, new BufPipe().prep(basic), FragID.fragid, Area.sized(Coord.z, g.sz()),
+		    GOut.getimage(g.out, clmaplist.basic, FragID.fragid, Area.sized(Coord.z, g.sz()),
 				  img -> Debug.dumpimage(img, Debug.somedir("click1.png")));
+		    GOut.getimage(g.out, clmaplist.basic, ClickLocation.fragloc, Area.sized(Coord.z, g.sz()),
+				  img -> Debug.dumpimage(img, Debug.somedir("click2.png")));
 		}
 		clmaplist.get(g, c, cd -> {cut = (MapMesh)cd.data; ckdone(1);});
+		GOut.getpixel(g.out, clmaplist.basic, ClickLocation.fragloc, c, col -> {
+			tile = new Coord(col.getRed() - 1, col.getGreen() - 1);
+			pixel = new Coord2d((col.getBlue() * tilesz.x) / 255.0, (col.getAlpha() * tilesz.y) / 255.0);
+			ckdone(2);
+		    });
 	    }
 
 	    int dfl = 0;
@@ -1132,34 +1142,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		}
 	    }
 	};
-	/* XXXRENDER
-	new Object() {
-	    MapMesh cut;
-	    Coord tile;
-	    Coord2d pixel;
-	    int dfl = 0;
-
-	    {
-		Maplist rl = new Maplist(g.gc);
-		rl.setup(map, clickbasic(g));
-		rl.fin();
-
-		rl.render(g);
-		if(clickdb) g.getimage(img -> Debug.dumpimage(img, Debug.somedir("click1.png")));
-		rl.get(g, c, hit -> {cut = hit; ckdone(1);});
-		// rl.limit = hit;
-
-		rl.mode = 1;
-		rl.render(g);
-		if(clickdb) g.getimage(img -> Debug.dumpimage(img, Debug.somedir("click2.png")));
-		g.getpixel(c, col -> {
-			tile = new Coord(col.getRed() - 1, col.getGreen() - 1);
-			pixel = new Coord2d((col.getBlue() * tilesz.x) / 255.0, (col.getAlpha() * tilesz.y) / 255.0);
-			ckdone(2);
-		    });
-	    }
-	};
-	*/
     }
     
     public static class ClickInfo {
