@@ -1560,7 +1560,17 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    g.out.clear(bstate, FragID.fragid, FColor.BLACK);
 	    g.out.clear(bstate, 1.0);
 	    checkmapclick(g, basic, pc, mc -> {
-		    System.err.println(mc);
+		    /* XXX: This is somewhat doubtfully nice, but running
+		     * it in the defer group would cause unnecessary
+		     * latency, and it shouldn't really be a problem. */
+		    new HackThread(() -> {
+			    synchronized(ui) {
+				if(mc != null)
+				    hit(pc, mc);
+				else
+				    nohit(pc);
+			    }
+		    }, "Hit-test callback").start();
 		});
 	}
 
@@ -1599,19 +1609,27 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	private void ckdone(int fl) {
+	    boolean done = false;
 	    synchronized(this) {
-		synchronized(ui) {
-		    if((dfl |= fl) == 3) {
-			if(mapcl != null) {
-			    if(gobcl == null)
-				hit(clickc, mapcl, null);
-			    else
-				hit(clickc, mapcl, gobcl);
-			} else {
-			    nohit(clickc);
+		    if((dfl |= fl) == 3)
+			done = true;
+	    }
+	    if(done) {
+		/* XXX: This is somewhat doubtfully nice, but running
+		 * it in the defer group would cause unnecessary
+		 * latency, and it shouldn't really be a problem. */
+		new HackThread(() -> {
+			synchronized(ui) {
+			    if(mapcl != null) {
+				if(gobcl == null)
+				    hit(clickc, mapcl, null);
+				else
+				    hit(clickc, mapcl, gobcl);
+			    } else {
+				nohit(clickc);
+			    }
 			}
-		    }
-		}
+		}, "Hit-test callback").start();
 	    }
 	}
 	
@@ -1686,11 +1704,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		wdgmsg("place", placing.rc.floor(posres), (int)Math.round(placing.a * 32768 / Math.PI), button, ui.modflags());
 	} else if((grab != null) && grab.mmousedown(c, button)) {
 	} else {
-	    delay(new Maptest(c) {
-		    public void hit(Coord pc, Coord2d mc) {
-			System.err.println(mc);
-		    }
-		});
 	    delay(new Click(c, button));
 	}
 	return(true);
