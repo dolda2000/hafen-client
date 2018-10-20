@@ -34,7 +34,7 @@ import haven.render.States;
 import haven.render.gl.*;
 
 public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
-    private static final boolean dumpbgl = false;
+    private static final boolean dumpbgl = true;
     public final boolean vsync = true;
     private GLEnvironment env = null;
     private UI ui;
