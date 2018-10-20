@@ -851,7 +851,7 @@ public class GLDrawList implements DrawList {
 	if(!compatible(g.env))
 	    throw(new IllegalArgumentException());
 	synchronized(this) {
-	    DrawSlot first = first();
+	    DrawSlot first = first(), last = null;
 	    if(first == null)
 		return;
 	    try {
@@ -866,9 +866,10 @@ public class GLDrawList implements DrawList {
 	    if(g.state.prog() != first.prog)
 		throw(new AssertionError());
 	    BGL gl = g.gl();
-	    for(DrawSlot cur = first; cur != null; cur = cur.next())
+	    for(DrawSlot cur = first; cur != null; last = cur, cur = cur.next())
 		gl.bglCallList(cur.compiled);
 	    settingbuf.put(gl);
+	    g.state.assume(last.bk.state());
 	}
     }
 

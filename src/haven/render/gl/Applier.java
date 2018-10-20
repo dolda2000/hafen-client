@@ -247,6 +247,10 @@ public class Applier {
 	    FboState.set(gl, this, ndbuf, nfvals);
     }
 
+    public void assume(Pipe to) {
+	assume(to.states());
+    }
+
     public void apply(BGL gl, Pipe to) {
 	State[] ns = to.states();
 	if(gl == null) {
