@@ -166,6 +166,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	this.glob = glob;
 	this.rc = c;
 	this.id = id;
+	if(id < 0)
+	    virtual = true;
 	placed.tick();
     }
 
