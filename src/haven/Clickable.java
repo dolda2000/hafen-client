@@ -27,28 +27,18 @@
 package haven;
 
 import haven.render.*;
-import haven.render.RenderTree.Slot;
+import haven.render.sl.ShaderMacro;
 
-public class ClickData {
-    public final Clickable ci;
-    public final Slot slot;
+public class Clickable extends State {
+    public static final Slot<Clickable> slot = new Slot<Clickable>(Slot.Type.DRAW, Clickable.class);
 
-    public ClickData(Clickable ci, Slot slot) {
-	this.ci = ci;
-	this.slot = slot;
+    public Object[] clickargs(ClickData cd) {
+	return(new Object[0]);
     }
 
-    public Object[] array() {
-	int n = 0;
-	for(Slot slot = this.slot; slot != null; slot = slot.parent())
-	    n++;
-	Object[] ret = new Object[n];
-	for(Slot slot = this.slot; slot != null; slot = slot.parent())
-	    ret[--n] = slot.obj();
-	return(ret);
-    }
+    public ShaderMacro shader() {return(null);}
 
-    public Object[] clickargs() {
-	return(ci.clickargs(this));
+    public void apply(Pipe p) {
+	p.put(slot, this);
     }
 }
