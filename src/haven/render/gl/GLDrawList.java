@@ -340,12 +340,11 @@ public class GLDrawList implements DrawList {
 		getsettings();
 		gorder = Rendered.deflt;
 		{
-		    int[] gst = bst.gstates();
-		    if((gst.length <= Rendered.order.id) ||
-		       (gst[Rendered.order.id] < 0)) {
+		    int grp = bst.gstate(Rendered.order.id);
+		    if(grp < 0) {
 			ordersrc = null;
 		    } else {
-			ordersrc = bst.groups()[gst[Rendered.order.id]];
+			ordersrc = bst.group(grp);
 			gorder = ordersrc.get(Rendered.order);
 			orderreg();
 		    }
@@ -445,32 +444,31 @@ public class GLDrawList implements DrawList {
 	}
     }
 
-    private static Pipe nidx(Pipe[] arr, int idx) {
-	return((idx < 0) ? Pipe.nil : arr[idx]);
+    private static Pipe nidx(GroupPipe st, int idx) {
+	return((idx < 0) ? Pipe.nil : st.group(idx));
     }
 
     static Pipe[] makedepid(GroupPipe state, Collection<State.Slot<?>> deps) {
 	Iterator<State.Slot<?>> it = deps.iterator();
 	if(!it.hasNext())
 	    return(new Pipe[0]);
-	Pipe[] grp = state.groups();
-	int[] gids = state.gstates();
-	int one = gids[it.next().id];
+	int one = state.gstate(it.next().id);
 	int ni = 1;
 	while(it.hasNext()) {
 	    int cid = it.next().id;
-	    if(gids[cid] != one) {
+	    int grp = state.gstate(cid);
+	    if(grp != one) {
 		Pipe[] ret = new Pipe[deps.size()];
 		for(int i = 0; i < ni; i++)
-		    ret[i] = nidx(grp, one);
-		ret[ni++] = nidx(grp, gids[cid]);
+		    ret[i] = nidx(state, one);
+		ret[ni++] = nidx(state, grp);
 		while(it.hasNext())
-		    ret[ni++] = nidx(grp, gids[it.next().id]);
+		    ret[ni++] = nidx(state, state.gstate(it.next().id));
 		return(ret);
 	    }
 	    ni++;
 	}
-	return(new Pipe[] {nidx(grp, one)});
+	return(new Pipe[] {nidx(state, one)});
     }
 
     abstract class Setting {
@@ -853,7 +851,7 @@ public class GLDrawList implements DrawList {
 	if(!compatible(g.env))
 	    throw(new IllegalArgumentException());
 	synchronized(this) {
-	    DrawSlot first = first();
+	    DrawSlot first = first(), last = null;
 	    if(first == null)
 		return;
 	    try {
@@ -868,9 +866,10 @@ public class GLDrawList implements DrawList {
 	    if(g.state.prog() != first.prog)
 		throw(new AssertionError());
 	    BGL gl = g.gl();
-	    for(DrawSlot cur = first; cur != null; cur = cur.next())
+	    for(DrawSlot cur = first; cur != null; last = cur, cur = cur.next())
 		gl.bglCallList(cur.compiled);
 	    settingbuf.put(gl);
+	    g.state.assume(last.bk.state());
 	}
     }
 

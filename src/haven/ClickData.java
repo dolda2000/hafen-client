@@ -24,33 +24,31 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven;
 
-public interface GroupPipe extends Pipe {
-    public Pipe group(int g);
-    public int gstate(int id);
-    public int nstates();
+import haven.render.*;
+import haven.render.RenderTree.Slot;
 
-    public default <T extends State> T get(State.Slot<T> slot) {
-	int grp = gstate(slot.id);
-	if(grp < 0)
-	    return(null);
-	return(group(grp).get(slot));
+public class ClickData {
+    public final Clickable ci;
+    public final Slot slot;
+
+    public ClickData(Clickable ci, Slot slot) {
+	this.ci = ci;
+	this.slot = slot;
     }
 
-    public default Pipe copy() {
-	return(new BufPipe(states()));
-    }
-
-    public default State[] states() {
-	State[] ret = new State[nstates()];
-	for(int i = 0; i < ret.length; i++) {
-	    int grp = gstate(i);
-	    if(grp < 0)
-		ret[i] = null;
-	    else
-		ret[i] = group(grp).get(State.Slot.slots.idlist[i]);
-	}
+    public Object[] array() {
+	int n = 0;
+	for(Slot slot = this.slot; slot != null; slot = slot.parent())
+	    n++;
+	Object[] ret = new Object[n];
+	for(Slot slot = this.slot; slot != null; slot = slot.parent())
+	    ret[--n] = slot.obj();
 	return(ret);
+    }
+
+    public Object[] clickargs() {
+	return(ci.clickargs(this));
     }
 }

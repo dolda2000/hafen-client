@@ -24,48 +24,52 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven;
 
+import java.nio.FloatBuffer;
+import haven.render.*;
 import haven.render.sl.*;
 import haven.render.sl.ValBlock.Value;
+import static haven.render.sl.Type.*;
 
-public class FragColor<T> extends State {
-    public static final Slot<FragColor> slot = new Slot<>(Slot.Type.SYS, FragColor.class);
-    public static final FragData fragcol = new FragData(Type.VEC4, "fragcol", p -> p.get(slot).image, slot).primary();
-    public static final Object defcolor = new Object() {
-	    public String toString() {return("#<default color buffer>");}
-	};
+public class ClickLocation<T extends Texture.Image> extends State {
+    public static final Slot<ClickLocation> tex = new Slot<>(Slot.Type.SYS, ClickLocation.class);
+    public static final FragData fragloc = new FragData(Type.VEC4, "fragloc", p -> p.get(tex).image, tex);
+    public static final Attribute vertex = new Attribute(VEC4, "location");
     public final T image;
 
-    public FragColor(T image) {
+    public ClickLocation(T image) {
 	this.image = image;
     }
 
-    public static Value fragcol(FragmentContext fctx) {
-	return(fctx.mainvals.ext(fragcol, () -> fctx.mainvals.new Value(Type.VEC4) {
+    public void apply(Pipe p) {p.put(tex, this);}
+
+    public static final AutoVarying vertloc = new AutoVarying(VEC4) {
+	    protected Expression root(VertexContext vctx) {
+		return(vertex.ref());
+	    }
+	};
+
+    public static Value fragloc(FragmentContext fctx) {
+	return(fctx.mainvals.ext(fragloc, () -> fctx.mainvals.new Value(Type.VEC4) {
 		public Expression root() {
-		    return(Vec4Cons.u);
+		    return(vertloc.ref());
 		}
 
 		protected void cons2(Block blk) {
-		    blk.add(new LBinOp.Assign(fragcol.ref(), init));
+		    blk.add(new LBinOp.Assign(fragloc.ref(), init));
 		}
 	    }));
     }
 
-    private static final ShaderMacro shader = prog -> fragcol(prog.fctx).force();
+    private static final ShaderMacro shader = prog -> fragloc(prog.fctx).force();
     public ShaderMacro shader() {
 	return(shader);
     }
 
-    public void apply(Pipe p) {p.put(slot, this);}
-
-    public int hashCode() {
-	return(System.identityHashCode(image));
-    }
-
-    public boolean equals(Object o) {
-	return((o instanceof FragColor) &&
-	       (((FragColor)o).image == this.image));
+    public static class LocData extends VertexBuf.FloatData {
+	public LocData(FloatBuffer data) {
+	    super(vertex, 4, data);
+	}
     }
 }

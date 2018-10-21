@@ -32,6 +32,7 @@ import static haven.OCache.posres;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.util.*;
+import java.util.function.*;
 import java.lang.ref.*;
 import java.lang.reflect.*;
 import haven.render.*;
@@ -421,6 +422,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.plgob = plgob;
 	basic.add(new Gobs());
 	basic.add(this.terrain = new Terrain());
+	this.clickmap = new ClickMap();
+	clmaptree.add(clickmap);
 	setcanfocus(true);
     }
     
@@ -606,6 +609,38 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void added(RenderTree.Slot slot) {
 	    slot.add(main);
 	    slot.add(flavobjs);
+	    super.added(slot);
+	}
+    }
+
+    static class MapClick extends Clickable {
+	final MapMesh cut;
+
+	MapClick(MapMesh cut) {
+	    this.cut = cut;
+	}
+    }
+
+    private final ClickMap clickmap;
+    private class ClickMap extends MapRaster {
+	final Grid grid = new Grid<MapMesh>() {
+		MapMesh getcut(Coord cc) {
+		    return(map.getcut(cc));
+		}
+		RenderTree.Node produce(MapMesh cut) {
+		    return(new MapClick(cut).apply(cut.flat));
+		}
+	    };
+
+	void tick() {
+	    super.tick();
+	    if(area != null) {
+		grid.tick();
+	    }
+	}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.add(grid);
 	    super.added(slot);
 	}
     }
@@ -813,6 +848,207 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(glob.map.getzp(cc));
     }
 
+    public static class Clicklist implements RenderList<Rendered>, RenderList.Adapter {
+	public static final Pipe.Op clickbasic = Pipe.Op.compose(new States.Depthtest(States.Depthtest.Test.LE),
+								 new States.Facecull(),
+								 Homo3D.state);
+	private static final int MAXID = 0xffffff;
+	private final ProxyPipe basic = new ProxyPipe();
+	private DefPipe curbasic = null;
+	private final Map<Slot<? extends Rendered>, Clickslot> slots = new HashMap<>();
+	private final Map<Integer, Clickslot> idmap = new HashMap<>();
+	private final RenderList.Adapter master;
+	private DrawList back = null;
+	private int nextid = 1;
+
+	public class Clickslot implements Slot<Rendered> {
+	    public final Slot<? extends Rendered> bk;
+	    public final int id;
+	    private GroupPipe state;
+
+	    public Clickslot(Slot<? extends Rendered> bk, int id) {
+		this.bk = bk;
+		this.id = id;
+	    }
+
+	    public Rendered obj() {
+		return(bk.obj());
+	    }
+
+	    public GroupPipe state() {
+		if(state == null)
+		    state = new IDState(bk.state());
+		return(state);
+	    }
+
+	    private class IDState implements GroupPipe {
+		static final int idx_bas = 0, idx_idp = 1, idx_back = 2;
+		final Pipe idp;
+		final GroupPipe back;
+
+		IDState(GroupPipe back) {
+		    this.back = back;
+		    this.idp = new SinglePipe<>(FragID.id, new FragID.ID(id2col(id)));
+		}
+
+		public Pipe group(int idx) {
+		    switch(idx) {
+		    case idx_bas: return(basic);
+		    case idx_idp: return(idp);
+		    default: return(back.group(idx - idx_back));
+		    }
+		}
+
+		public int gstate(int id) {
+		    if(id == FragID.id.id)
+			return(idx_idp);
+		    if(State.Slot.byid(id).type == State.Slot.Type.GEOM) {
+			int ret = back.gstate(id);
+			if(ret >= 0)
+			    return(ret + idx_back);
+		    }
+		    if(curbasic.mask[id])
+			return(idx_bas);
+		    return(-1);
+		}
+
+		public int nstates() {
+		    return(Math.max(Math.max(back.nstates(), curbasic.mask.length), FragID.id.id + 1));
+		}
+	    }
+	}
+
+	public Clicklist(RenderList.Adapter master) {
+	    asyncadd(this.master = master, Rendered.class);
+	}
+
+	public void add(Slot<? extends Rendered> slot) {
+	    if(slot.state().get(Clickable.slot) == null)
+		return;
+	    int id;
+	    while(idmap.get(id = nextid) != null) {
+		if(++nextid > MAXID)
+		    nextid = 1;
+	    }
+	    Clickslot ns = new Clickslot(slot, id);
+	    if(((slots.put(slot, ns)) != null) || (idmap.put(id, ns) != null))
+		throw(new AssertionError());
+	    if(back != null)
+		back.add(ns);
+	}
+
+	public void remove(Slot<? extends Rendered> slot) {
+	    Clickslot cs = slots.remove(slot);
+	    if(cs != null) {
+		if(idmap.remove(cs.id) != cs)
+		    throw(new AssertionError());
+		if(back != null)
+		    back.remove(cs);
+	    }
+	}
+
+	public void update(Slot<? extends Rendered> slot) {
+	    if(back != null) {
+		Clickslot cs = slots.get(slot);
+		if(cs != null)
+		    back.update(cs);
+	    }
+	}
+
+	public void update(Pipe group, int[] statemask) {
+	    if(back != null)
+		back.update(group, statemask);
+	}
+
+	public Locked lock() {
+	    return(master.lock());
+	}
+
+	public Iterable<? extends Slot<?>> slots() {
+	    return(slots.values());
+	}
+
+	/* Shouldn't have to care. */
+	public <R> void add(RenderList<R> list, Class<? extends R> type) {}
+	public void remove(RenderList<?> list) {}
+
+	public static Color id2col(int id) {
+	    return(new Color(((id & 0x00000f) << 4) | ((id & 0x00f000) >> 12),
+			     ((id & 0x0000f0) << 0) | ((id & 0x0f0000) >> 16),
+			     ((id & 0x000f00) >> 4) | ((id & 0xf00000) >> 20)));
+	}
+
+	public static int col2id(Color col) {
+	    int r = col.getRed(), g = col.getGreen(), b = col.getBlue();
+	    return(((r & 0xf0) >> 4) | ((r & 0x0f) << 12) |
+		   ((g & 0xf0) >> 0) | ((g & 0x0f) << 16) |
+		   ((b & 0xf0) << 4) | ((b & 0x0f) << 20));
+	}
+
+	public void basic(Pipe.Op st) {
+	    try(Locked lk = lock()) {
+		DefPipe buf = new DefPipe();
+		buf.prep(st);
+		if(curbasic != null) {
+		    if(curbasic.maskdiff(buf).length != 0)
+			throw(new RuntimeException("changing clickbasic definition mask is not supported"));
+		}
+		int[] mask = basic.dupdate(buf);
+		curbasic = buf;
+		if(back != null)
+		    back.update(basic, mask);
+	    }
+	}
+
+	public void draw(GOut g) {
+	    if((back == null) || !back.compatible(g.out.env())) {
+		if(back != null)
+		    back.dispose();
+		back = g.out.env().drawlist();
+		back.asyncadd(this, Rendered.class);
+	    }
+	    back.draw(g.out);
+	}
+
+	public void get(GOut g, Coord c, Consumer<ClickData> cb) {
+	    GOut.getpixel(g.out, basic, FragID.fragid, c, col -> {
+		    int id = col2id(col);
+		    if(id == 0) {
+			cb.accept(null);
+			return;
+		    }
+		    Clickslot cs = idmap.get(col2id(col));
+		    if(cs == null) {
+			cb.accept(null);
+			return;
+		    }
+		    cb.accept(new ClickData(cs.bk.state().get(Clickable.slot), (RenderTree.Slot)cs.bk.cast(RenderTree.Node.class)));
+		});
+	}
+    }
+
+    private final RenderTree clmaptree = new RenderTree();
+    private final Clicklist clmaplist = new Clicklist(clmaptree);
+    private final Clicklist clobjlist = new Clicklist(tree);
+    private FragID<Texture.Image<Texture2D>> clickid;
+    private ClickLocation<Texture.Image<Texture2D>> clickloc;
+    private DepthBuffer<Texture.Image<Texture2D>> clickdepth;
+    private Pipe.Op curclickbasic;
+    private Pipe.Op clickbasic(Coord sz) {
+	if((curclickbasic == null) || !clickid.image.tex.sz().equals(sz)) {
+	    if(clickid != null) {
+		clickid.image.tex.dispose();
+		clickloc.image.tex.dispose();
+		clickdepth.image.tex.dispose();
+	    }
+	    clickid = new FragID<>(new Texture2D(sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null).image(0));
+	    clickloc = new ClickLocation<>(new Texture2D(sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null).image(0));
+	    clickdepth = new DepthBuffer<>(new Texture2D(sz, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null).image(0));
+	    curclickbasic = Pipe.Op.compose(Clicklist.clickbasic, clickid, clickdepth, new States.Viewport(Area.sized(Coord.z, sz)));
+	}
+	return(Pipe.Op.compose(curclickbasic, camera));
+    }
+
     /* XXXRENDER
     public static class ClickContext extends RenderContext {
     }
@@ -924,132 +1160,51 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
     */
 
-    private void checkmapclick(final GOut g, final Coord c, final Callback<Coord2d> cb) {
-	/* XXXRENDER
+    private void checkmapclick(GOut g, Pipe.Op basic, Coord c, Consumer<Coord2d> cb) {
 	new Object() {
 	    MapMesh cut;
 	    Coord tile;
 	    Coord2d pixel;
-	    int dfl = 0;
 
 	    {
-		Maplist rl = new Maplist(g.gc);
-		rl.setup(map, clickbasic(g));
-		rl.fin();
-
-		rl.render(g);
-		if(clickdb) g.getimage(img -> Debug.dumpimage(img, Debug.somedir("click1.png")));
-		rl.get(g, c, hit -> {cut = hit; ckdone(1);});
-		// rl.limit = hit;
-
-		rl.mode = 1;
-		rl.render(g);
-		if(clickdb) g.getimage(img -> Debug.dumpimage(img, Debug.somedir("click2.png")));
-		g.getpixel(c, col -> {
+		clmaplist.basic(Pipe.Op.compose(basic, clickloc));
+		clmaplist.draw(g);
+		if(clickdb) {
+		    GOut.getimage(g.out, clmaplist.basic, FragID.fragid, Area.sized(Coord.z, g.sz()),
+				  img -> Debug.dumpimage(img, Debug.somedir("click1.png")));
+		    GOut.getimage(g.out, clmaplist.basic, ClickLocation.fragloc, Area.sized(Coord.z, g.sz()),
+				  img -> Debug.dumpimage(img, Debug.somedir("click2.png")));
+		}
+		clmaplist.get(g, c, cd -> {this.cut = ((MapClick)cd.ci).cut; ckdone(1);});
+		GOut.getpixel(g.out, clmaplist.basic, ClickLocation.fragloc, c, col -> {
 			tile = new Coord(col.getRed() - 1, col.getGreen() - 1);
 			pixel = new Coord2d((col.getBlue() * tilesz.x) / 255.0, (col.getAlpha() * tilesz.y) / 255.0);
 			ckdone(2);
 		    });
 	    }
 
+	    int dfl = 0;
 	    void ckdone(int fl) {
 		synchronized(this) {
 		    if((dfl |= fl) == 3) {
 			if((cut == null) || !tile.isect(Coord.z, cut.sz))
-			    cb.done(null);
+			    cb.accept(null);
 			else
-			    cb.done(cut.ul.add(tile).mul(tilesz).add(pixel));
+			    cb.accept(cut.ul.add(tile).mul(tilesz).add(pixel));
 		    }
 		}
 	    }
 	};
-	*/
     }
     
-    public static class ClickInfo {
-	public final ClickInfo from;
-	public final Object r;	// XXXRENDER
-
-	public ClickInfo(ClickInfo from, Object r) {
-	    this.from = from;
-	    this.r = r;
+    private void checkgobclick(GOut g, Pipe.Op basic, Coord c, Consumer<ClickData> cb) {
+	clobjlist.basic(basic);
+	clobjlist.draw(g);
+	if(clickdb) {
+	    GOut.getimage(g.out, clmaplist.basic, FragID.fragid, Area.sized(Coord.z, g.sz()),
+			  img -> Debug.dumpimage(img, Debug.somedir("click3.png")));
 	}
-
-	public ClickInfo() {
-	    this(null, null);
-	}
-
-	public boolean equals(Object obj) {
-	    if(!(obj instanceof ClickInfo))
-		return(false);
-	    ClickInfo o = (ClickInfo)obj;
-	    return(Utils.eq(from, o.from) && (r == o.r));
-	}
-
-	public int hashCode() {
-	    return(((from != null) ? (from.hashCode() * 31) : 0) + System.identityHashCode(r));
-	}
-
-	public String toString() {
-	    StringBuilder buf = new StringBuilder();
-	    buf.append("#<clickinfo");
-	    for(ClickInfo c = this; c != null; c = c.from) {
-		buf.append(' ');
-		buf.append(c.r);
-	    }
-	    buf.append(">");
-	    return(buf.toString());
-	}
-
-	public Object[] array() { // XXXRENDER
-	    int n = 0;
-	    for(ClickInfo c = this; c != null; c = c.from)
-		n++;
-	    Object[] buf = new Object[n];
-	    int i = 0;
-	    for(ClickInfo c = this; c != null; c = c.from)
-		buf[i++] = c.r;
-	    return(buf);
-	}
-    }
-
-    /* XXXRENDER
-    private static class Goblist extends Clicklist<ClickInfo> {
-	private ClickInfo curinfo;
-
-	public Goblist(GLConfig cfg) {
-	    super(cfg);
-	    curinfo = null;
-	}
-
-	public ClickInfo map(Rendered r) {
-	    if(r instanceof FRendered)
-		return(curinfo);
-	    else
-		return(null);
-	}
-
-	public void add(Rendered r, GLState t) {
-	    ClickInfo previnfo = curinfo;
-	    curinfo = new ClickInfo(previnfo, r);
-	    super.add(r, t);
-	    curinfo = previnfo;
-	}
-    }
-    */
-
-    // private Clicklist<ClickInfo> curgoblist = null;
-    private void checkgobclick(GOut g, Coord c, Callback<ClickInfo> cb) {
-	/* XXXRENDER
-	if((curgoblist == null) || (curgoblist.cfg != g.gc) || curgoblist.aging())
-	    curgoblist = new Goblist(g.gc);
-	Clicklist<ClickInfo> rl = curgoblist;
-	rl.setup(gobs, clickbasic(g));
-	rl.fin();
-	rl.render(g);
-	if(clickdb) g.getimage(img -> Debug.dumpimage(img, Debug.somedir("click3.png")));
-	rl.get(g, c, cb);
-	*/
+	clobjlist.get(g, c, cb);
     }
     
     public void delay(Delayed d) {
@@ -1231,6 +1386,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	basic(Camera.class, camera);
 	amblight();
 	terrain.tick();
+	clickmap.tick();
 	if(placing != null)
 	    placing.ctick((int)(dt * 1000));
     }
@@ -1378,25 +1534,23 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void run(GOut g) {
-	    /* XXXRENDER
-	    GLState.Buffer bk = g.st.copy();
-	    try {
-		BGL gl = g.gl;
-		g.st.set(clickbasic(g));
-		g.apply();
-		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
-		checkmapclick(g, pc, mc -> {
-			synchronized(ui) {
-			    if(mc != null)
-				hit(pc, mc);
-			    else
-				nohit(pc);
-			}
-		    });
-	    } finally {
-		g.st.set(bk);
-	    }
-	    */
+	    Pipe.Op basic = clickbasic(g.sz());
+	    Pipe bstate = new BufPipe().prep(basic);
+	    g.out.clear(bstate, FragID.fragid, FColor.BLACK);
+	    g.out.clear(bstate, 1.0);
+	    checkmapclick(g, basic, pc, mc -> {
+		    /* XXX: This is somewhat doubtfully nice, but running
+		     * it in the defer group would cause unnecessary
+		     * latency, and it shouldn't really be a problem. */
+		    new HackThread(() -> {
+			    synchronized(ui) {
+				if(mc != null)
+				    hit(pc, mc);
+				else
+				    nohit(pc);
+			    }
+		    }, "Hit-test callback").start();
+		});
 	}
 
 	protected abstract void hit(Coord pc, Coord2d mc);
@@ -1404,86 +1558,52 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     public abstract class Hittest implements Delayed {
-	private final Coord clickc;
+	private final Coord pc;
 	private Coord2d mapcl;
-	private ClickInfo gobcl;
+	private ClickData objcl;
 	private int dfl = 0;
 	
 	public Hittest(Coord c) {
-	    clickc = c;
+	    pc = c;
 	}
 	
 	public void run(GOut g) {
-	    /* XXXRENDER
-	    GLState.Buffer bk = g.st.copy();
-	    try {
-		BGL gl = g.gl;
-		g.st.set(clickbasic(g));
-		g.apply();
-		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
-		checkmapclick(g, clickc, mc -> {mapcl = mc; ckdone(1);});
-		g.st.set(bk);
-		g.st.set(clickbasic(g));
-		g.apply();
-		gl.glClear(GL.GL_COLOR_BUFFER_BIT);
-		checkgobclick(g, clickc, cl -> {gobcl = cl; ckdone(2);});
-	    } finally {
-		g.st.set(bk);
-	    }
-	    */
+	    Pipe.Op basic = clickbasic(g.sz());
+	    Pipe bstate = new BufPipe().prep(basic);
+	    g.out.clear(bstate, FragID.fragid, FColor.BLACK);
+	    g.out.clear(bstate, 1.0);
+	    checkmapclick(g, basic, pc, mc -> {mapcl = mc; ckdone(1);});
+	    g.out.clear(bstate, FragID.fragid, FColor.BLACK);
+	    checkgobclick(g, basic, pc, cl -> {objcl = cl; ckdone(2);});
 	}
 
 	private void ckdone(int fl) {
+	    boolean done = false;
 	    synchronized(this) {
-		synchronized(ui) {
-		    if((dfl |= fl) == 3) {
-			if(mapcl != null) {
-			    if(gobcl == null)
-				hit(clickc, mapcl, null);
-			    else
-				hit(clickc, mapcl, gobcl);
-			} else {
-			    nohit(clickc);
+		    if((dfl |= fl) == 3)
+			done = true;
+	    }
+	    if(done) {
+		/* XXX: This is somewhat doubtfully nice, but running
+		 * it in the defer group would cause unnecessary
+		 * latency, and it shouldn't really be a problem. */
+		new HackThread(() -> {
+			synchronized(ui) {
+			    if(mapcl != null) {
+				if(objcl == null)
+				    hit(pc, mapcl, null);
+				else
+				    hit(pc, mapcl, objcl);
+			    } else {
+				nohit(pc);
+			    }
 			}
-		    }
-		}
+		}, "Hit-test callback").start();
 	    }
 	}
 	
-	protected abstract void hit(Coord pc, Coord2d mc, ClickInfo inf);
+	protected abstract void hit(Coord pc, Coord2d mc, ClickData inf);
 	protected void nohit(Coord pc) {}
-    }
-
-    public static interface Clickable {
-	public Object[] clickargs(ClickInfo inf);
-    }
-
-    public static Object[] gobclickargs(ClickInfo inf) {
-	if(inf == null)
-	    return(new Object[0]);
-	for(ClickInfo c = inf; c != null; c = c.from) {
-	    if(c.r instanceof Clickable)
-		return(((Clickable)c.r).clickargs(inf));
-	}
-	/* Rendered XXXRENDER */ Object[] st = inf.array();
-	for(int g = 0; g < st.length; g++) {
-	    if(st[g] instanceof Gob) {
-		Gob gob = (Gob)st[g];
-		Object[] ret = {0, (int)gob.id, gob.rc.floor(posres), 0, -1};
-		for(int i = g - 1; i >= 0; i--) {
-		    if(st[i] instanceof Gob.Overlay) {
-			ret[0] = 1;
-			ret[3] = ((Gob.Overlay)st[i]).id;
-		    }
-		    /* XXXRENDER
-		    if(st[i] instanceof FastMesh.ResourceMesh)
-			ret[4] = ((FastMesh.ResourceMesh)st[i]).id;
-		    */
-		}
-		return(ret);
-	    }
-	}
-	return(new Object[0]);
     }
 
     private class Click extends Hittest {
@@ -1494,9 +1614,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    clickb = b;
 	}
 	
-	protected void hit(Coord pc, Coord2d mc, ClickInfo inf) {
+	protected void hit(Coord pc, Coord2d mc, ClickData inf) {
 	    Object[] args = {pc, mc.floor(posres), clickb, ui.modflags()};
-	    args = Utils.extend(args, gobclickargs(inf));
+	    if(inf != null)
+		args = Utils.extend(args, inf.clickargs());
 	    wdgmsg("click", args);
 	}
     }
@@ -1561,7 +1682,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     
     public boolean drop(final Coord cc, Coord ul) {
 	delay(new Hittest(cc) {
-		public void hit(Coord pc, Coord2d mc, ClickInfo inf) {
+		public void hit(Coord pc, Coord2d mc, ClickData inf) {
 		    wdgmsg("drop", pc, mc.floor(posres), ui.modflags());
 		}
 	    });
@@ -1570,9 +1691,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
     
     public boolean iteminteract(Coord cc, Coord ul) {
 	delay(new Hittest(cc) {
-		public void hit(Coord pc, Coord2d mc, ClickInfo inf) {
+		public void hit(Coord pc, Coord2d mc, ClickData inf) {
 		    Object[] args = {pc, mc.floor(posres), ui.modflags()};
-		    args = Utils.extend(args, gobclickargs(inf));
+		    args = Utils.extend(args, inf.clickargs());
 		    wdgmsg("itemact", args);
 		}
 	    });

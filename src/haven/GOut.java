@@ -33,6 +33,7 @@ import java.nio.*;
 import java.util.function.*;
 import haven.render.*;
 import haven.render.DataBuffer;
+import haven.render.sl.FragData;
 
 public class GOut {
     public static final VertexArray.Layout vf_pos = new VertexArray.Layout(new VertexArray.Layout.Input(Ortho2D.pos, new VectorFormat(2, NumberFormat.FLOAT32), 0, 0, 8));
@@ -402,20 +403,29 @@ public class GOut {
 	return(reclipl2(ul, ul.add(sz)));
     }
 
-    public void getpixel(Coord c, Consumer<Color> cb) {
-	out.pget(cur2d, FragColor.fragcol, Area.sized(c.add(tx), new Coord(1, 1)), new VectorFormat(4, NumberFormat.UNORM8), data -> {
+    public static void getpixel(Render g, Pipe state, FragData buf, Coord c, Consumer<Color> cb) {
+	g.pget(state, buf, Area.sized(c, new Coord(1, 1)), new VectorFormat(4, NumberFormat.UNORM8), data -> {
 		Color result = new Color(data.get(0) & 0xff, data.get(1) & 0xff, data.get(2) & 0xff, data.get(3) & 0xff);
 		cb.accept(result);
 	    });
     }
 
-    public void getimage(Coord ul, Coord sz, Consumer<BufferedImage> cb) {
-	out.pget(cur2d, FragColor.fragcol, Area.sized(ul.add(tx), sz), new VectorFormat(4, NumberFormat.UNORM8), data -> {
-		byte[] buf = new byte[sz.x * sz.y * 4];
-		data.get(buf);
-		WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(buf, buf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
+    public void getpixel(Coord c, Consumer<Color> cb) {
+	getpixel(out, cur2d, FragColor.fragcol, c.add(tx), cb);
+    }
+
+    public static void getimage(Render g, Pipe state, FragData buf, Area area, Consumer<BufferedImage> cb) {
+	g.pget(state, buf, area, new VectorFormat(4, NumberFormat.UNORM8), data -> {
+		Coord sz = area.sz();
+		byte[] pbuf = new byte[sz.x * sz.y * 4];
+		data.get(pbuf);
+		WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
 		cb.accept(new BufferedImage(TexI.glcm, raster, false, null));
 	    });
+    }
+
+    public void getimage(Coord ul, Coord sz, Consumer<BufferedImage> cb) {
+	getimage(out, cur2d, FragColor.fragcol, Area.sized(ul.add(tx), sz), cb);
     }
 
     public void getimage(Consumer<BufferedImage> cb) {

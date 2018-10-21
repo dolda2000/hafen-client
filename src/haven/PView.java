@@ -114,7 +114,7 @@ public abstract class PView extends Widget {
 			depth.dispose();
 		    depth = new Texture2D(fb.sz, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null);
 		}
-		p.prep(new FragColor(fragcol.image(0))).prep(new DepthBuffer(depth.image(0)));
+		p.prep(new FragColor<>(fragcol.image(0))).prep(new DepthBuffer<>(depth.image(0)));
 	    });
 	basic(id_view, p -> {
 		FrameConfig fb = p.get(FrameConfig.slot);

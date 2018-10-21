@@ -26,30 +26,47 @@
 
 package haven.render;
 
-public interface GroupPipe extends Pipe {
-    public Pipe group(int g);
-    public int gstate(int id);
-    public int nstates();
+import java.util.*;
+import haven.render.State.Slot;
 
-    public default <T extends State> T get(State.Slot<T> slot) {
-	int grp = gstate(slot.id);
-	if(grp < 0)
-	    return(null);
-	return(group(grp).get(slot));
+public class DefPipe extends BufPipe {
+    public boolean[] mask = {};
+
+    public <T extends State> void put(Slot<? super T> slot, T state) {
+	super.put(slot, state);
+	if(mask.length <= slot.id)
+	    mask = Arrays.copyOf(mask, slot.id + 1);
+	mask[slot.id] = true;
     }
 
-    public default Pipe copy() {
-	return(new BufPipe(states()));
-    }
-
-    public default State[] states() {
-	State[] ret = new State[nstates()];
-	for(int i = 0; i < ret.length; i++) {
-	    int grp = gstate(i);
-	    if(grp < 0)
-		ret[i] = null;
-	    else
-		ret[i] = group(grp).get(State.Slot.slots.idlist[i]);
+    private static int[] ret0 = new int[0];
+    public int[] maskdiff(DefPipe that) {
+	boolean[] a, b;
+	if(this.mask.length < that.mask.length) {
+	    a = this.mask; b = that.mask;
+	} else {
+	    a = that.mask; b = this.mask;
+	}
+	int n = 0;
+	for(int i = 0; i < a.length; i++) {
+	    if(a[i] != b[i])
+		n++;
+	}
+	for(int i = a.length; i < b.length; i++) {
+	    if(b[i])
+		n++;
+	}
+	if(n == 0)
+	    return(ret0);
+	int[] ret = new int[n];
+	n = 0;
+	for(int i = 0; i < a.length; i++) {
+	    if(a[i] != b[i])
+		ret[n++] = i;
+	}
+	for(int i = a.length; i < b.length; i++) {
+	    if(b[i])
+		ret[n++] = i;
 	}
 	return(ret);
     }

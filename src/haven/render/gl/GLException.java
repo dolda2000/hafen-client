@@ -91,9 +91,16 @@ public class GLException extends RuntimeException {
 	}
     }
 
-    public static void checkfor(GL gl) {
+    public static void checkfor(GL gl, Throwable cause) {
 	int err = gl.glGetError();
-	if(err != 0)
-	    throw(glexcfor(err));
+	if(err != 0) {
+	    RuntimeException exc = glexcfor(err);
+	    exc.initCause(cause);
+	    throw(exc);
+	}
+    }
+
+    public static void checkfor(GL gl) {
+	checkfor(gl, null);
     }
 }

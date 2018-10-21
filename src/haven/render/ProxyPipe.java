@@ -26,31 +26,46 @@
 
 package haven.render;
 
-public interface GroupPipe extends Pipe {
-    public Pipe group(int g);
-    public int gstate(int id);
-    public int nstates();
+import java.util.*;
+import haven.render.State.Slot;
+import static haven.Utils.eq;
 
-    public default <T extends State> T get(State.Slot<T> slot) {
-	int grp = gstate(slot.id);
-	if(grp < 0)
-	    return(null);
-	return(group(grp).get(slot));
+public class ProxyPipe implements Pipe {
+    private Pipe bk;
+
+    public ProxyPipe(Pipe bk) {
+	this.bk = bk;
     }
+    public ProxyPipe() {this(Pipe.nil);}
 
-    public default Pipe copy() {
-	return(new BufPipe(states()));
-    }
+    public <T extends State> T get(Slot<T> slot) {return(bk.get(slot));}
+    public State[] states() {return(bk.states());}
+    public Pipe copy() {return(bk.copy());}
 
-    public default State[] states() {
-	State[] ret = new State[nstates()];
-	for(int i = 0; i < ret.length; i++) {
-	    int grp = gstate(i);
-	    if(grp < 0)
-		ret[i] = null;
-	    else
-		ret[i] = group(grp).get(State.Slot.slots.idlist[i]);
-	}
+    public Pipe update(Pipe np) {
+	Pipe ret = this.bk;
+	this.bk = np;
 	return(ret);
+    }
+
+    public int[] dupdate(Pipe np) {
+	Pipe pp = update(np);
+	State[] ns = np.states(), ps = pp.states(), as, bs;
+	if(ns.length < ps.length) {
+	    as = ns; bs = ps;
+	} else {
+	    as = ps; bs = ns;
+	}
+	int[] ret = new int[bs.length];
+	int n = 0, i = 0;
+	for(; i < as.length; i++) {
+	    if(!eq(as[i], bs[i]))
+		ret[n++] = i;
+	}
+	for(; i < bs.length; i++) {
+	    if(bs[i] != null)
+		ret[n++] = i;
+	}
+	return(Arrays.copyOf(ret, n));
     }
 }

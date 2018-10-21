@@ -166,6 +166,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	this.glob = glob;
 	this.rc = c;
 	this.id = id;
+	if(id < 0)
+	    virtual = true;
 	placed.tick();
     }
 
@@ -371,7 +373,30 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 
     public void draw(GOut g) {}
 
+    public static class GobClick extends Clickable {
+	public final Gob gob;
+
+	public GobClick(Gob gob) {
+	    this.gob = gob;
+	}
+
+	public Object[] clickargs(ClickData cd) {
+	    Object[] ret = {0, (int)gob.id, gob.rc.floor(OCache.posres), 0, -1};
+	    for(Object node : cd.array()) {
+		if(node instanceof Gob.Overlay) {
+		    ret[0] = 1;
+		    ret[3] = ((Gob.Overlay)node).id;
+		}
+		if(node instanceof FastMesh.ResourceMesh)
+		    ret[4] = ((FastMesh.ResourceMesh)node).id;
+	    }
+	    return(ret);
+	}
+    }
+
     public void added(RenderTree.Slot slot) {
+	if(!virtual)
+	    slot.ostate(new GobClick(this));
 	synchronized(this) {
 	    slots.add(slot);
 	}

@@ -26,46 +26,69 @@
 
 package haven.render;
 
+import java.awt.Color;
 import haven.render.sl.*;
 import haven.render.sl.ValBlock.Value;
 
-public class FragColor<T> extends State {
-    public static final Slot<FragColor> slot = new Slot<>(Slot.Type.SYS, FragColor.class);
-    public static final FragData fragcol = new FragData(Type.VEC4, "fragcol", p -> p.get(slot).image, slot).primary();
-    public static final Object defcolor = new Object() {
-	    public String toString() {return("#<default color buffer>");}
-	};
+public class FragID<T extends Texture.Image> extends State {
+    public static final Slot<FragID> tex = new Slot<>(Slot.Type.SYS, FragID.class);
+    public static final Slot<ID> id = new Slot<>(Slot.Type.DRAW, ID.class);
+    public static final FragData fragid = new FragData(Type.VEC4, "fragid", p -> p.get(tex).image, tex);
+    private static final Uniform uid = new Uniform(Type.VEC4, "id", p -> {
+	    ID v = p.get(id);
+	    return((v == null) ? Color.BLACK : v.val);
+	}, id);
     public final T image;
 
-    public FragColor(T image) {
+    public FragID(T image) {
 	this.image = image;
     }
 
-    public static Value fragcol(FragmentContext fctx) {
-	return(fctx.mainvals.ext(fragcol, () -> fctx.mainvals.new Value(Type.VEC4) {
+    public static class ID extends State {
+	public final Color val;
+
+	public ID(Color val) {
+	    this.val = val;
+	}
+
+	public ShaderMacro shader() {return(null);}
+	public void apply(Pipe p) {p.put(id, this);}
+
+	public int hashCode() {
+	    return(val.hashCode());
+	}
+
+	public boolean equals(Object o) {
+	    return((o instanceof ID) &&
+		   (((ID)o).val.equals(this.val)));
+	}
+    }
+
+    public static Value fragid(FragmentContext fctx) {
+	return(fctx.mainvals.ext(fragid, () -> fctx.mainvals.new Value(Type.VEC4) {
 		public Expression root() {
-		    return(Vec4Cons.u);
+		    return(uid.ref());
 		}
 
 		protected void cons2(Block blk) {
-		    blk.add(new LBinOp.Assign(fragcol.ref(), init));
+		    blk.add(new LBinOp.Assign(fragid.ref(), init));
 		}
 	    }));
     }
 
-    private static final ShaderMacro shader = prog -> fragcol(prog.fctx).force();
+    private static final ShaderMacro shader = prog -> fragid(prog.fctx).force();
     public ShaderMacro shader() {
 	return(shader);
     }
 
-    public void apply(Pipe p) {p.put(slot, this);}
+    public void apply(Pipe p) {p.put(tex, this);}
 
     public int hashCode() {
 	return(System.identityHashCode(image));
     }
 
     public boolean equals(Object o) {
-	return((o instanceof FragColor) &&
-	       (((FragColor)o).image == this.image));
+	return((o instanceof FragID) &&
+	       (((FragID)o).image == this.image));
     }
 }

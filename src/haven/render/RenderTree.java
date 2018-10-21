@@ -85,8 +85,9 @@ public class RenderTree implements RenderList.Adapter {
 	    this.gstates = gstates;
 	}
 
-	public Pipe[] groups() {return(groups);}
-	public int[] gstates() {return(gstates);}
+	public Pipe group(int g) {return(groups[g]);}
+	public int gstate(int id) {return((id < gstates.length) ? gstates[id] : -1);}
+	public int nstates() {return(gstates.length);}
     }
 
     public static class DepInfo {
@@ -296,12 +297,13 @@ public class RenderTree implements RenderList.Adapter {
 	public void remove();
 	public void cstate(Pipe.Op state);
 	public void ostate(Pipe.Op state);
+	public Slot parent();
 	public default void lockstate() {}
     }
 
     static class TreeSlot implements Slot {
-	final RenderTree tree;
 	final TreeSlot parent;
+	final RenderTree tree;
 	final Node node;
 	private DepInfo dstate = null;
 	private Collection<TreeSlot>[] rdeps = null;
@@ -346,6 +348,10 @@ public class RenderTree implements RenderList.Adapter {
 		    public boolean hasNext() {return(i < nchildren);}
 		    public TreeSlot next() {return(children[i++]);}
 		});
+	}
+
+	public Slot parent() {
+	    return(parent);
 	}
 
 	public TreeSlot add(Node n, Pipe.Op state) {

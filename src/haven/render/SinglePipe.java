@@ -26,31 +26,31 @@
 
 package haven.render;
 
-public interface GroupPipe extends Pipe {
-    public Pipe group(int g);
-    public int gstate(int id);
-    public int nstates();
+import haven.render.State.Slot;
 
-    public default <T extends State> T get(State.Slot<T> slot) {
-	int grp = gstate(slot.id);
-	if(grp < 0)
-	    return(null);
-	return(group(grp).get(slot));
+public class SinglePipe<T extends State> implements Pipe {
+    public final Slot<T> slot;
+    public final T value;
+
+    public SinglePipe(Slot<T> slot, T value) {
+	this.slot = slot;
+	this.value = value;
     }
 
-    public default Pipe copy() {
-	return(new BufPipe(states()));
+    @SuppressWarnings("unchecked")
+    public <G extends State> G get(Slot<G> slot) {
+	if(slot == this.slot)
+	    return((G)value);
+	return(null);
     }
 
-    public default State[] states() {
-	State[] ret = new State[nstates()];
-	for(int i = 0; i < ret.length; i++) {
-	    int grp = gstate(i);
-	    if(grp < 0)
-		ret[i] = null;
-	    else
-		ret[i] = group(grp).get(State.Slot.slots.idlist[i]);
-	}
+    public Pipe copy() {
+	return(this);
+    }
+
+    public State[] states() {
+	State[] ret = new State[slot.id + 1];
+	ret[slot.id] = value;
 	return(ret);
     }
 }
