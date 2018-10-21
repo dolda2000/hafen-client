@@ -37,7 +37,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     public int meter = 0;
     public int num = -1;
     private GSprite spr;
-    private Object[] rawinfo;
+    private ItemInfo.Raw rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
 
     @RName("item")
@@ -179,7 +179,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    }
 	} else if(name == "tt") {
 	    info = null;
-	    rawinfo = args;
+	    rawinfo = new ItemInfo.Raw(args);
 	} else if(name == "meter") {
 	    meter = (int)((Number)args[0]).doubleValue();
 	}

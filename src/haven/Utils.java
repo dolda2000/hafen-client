@@ -1291,6 +1291,28 @@ public class Utils {
 	}
     }
 
+    public static Object invoke(Method mth, Object ob, Object... args) {
+	try {
+	    return(mth.invoke(ob, args));
+	} catch(IllegalAccessException e) {
+	    throw(new RuntimeException(e));
+	} catch(InvocationTargetException e) {
+	    if(e.getCause() instanceof RuntimeException)
+		throw((RuntimeException)e.getCause());
+	    throw(new RuntimeException(e.getCause()));
+	}
+    }
+
+    public static <R> Function<Object[], R> smthfun(Class<?> cl, String name, Class<R> rtype, Class<?>...args) throws NoSuchMethodException {
+	Method mth = cl.getDeclaredMethod(name, args);
+	if(!rtype.isAssignableFrom(mth.getReturnType()))
+	    throw(new NoSuchMethodException("unexpected return type: " + mth.getReturnType()));
+	int mod = mth.getModifiers();
+	if(((mod & Modifier.STATIC) == 0) || ((mod & Modifier.PUBLIC) == 0))
+	    throw(new NoSuchMethodException("expected public static method"));
+	return(iargs -> rtype.cast(invoke(mth, null, iargs)));
+    }
+
     public static String urlencode(String in) {
 	StringBuilder buf = new StringBuilder();
 	byte[] enc;
