@@ -36,7 +36,6 @@ import haven.render.sl.Attribute;
 public class VertexBuf {
     public final AttribData[] bufs;
     public final int num;
-    public final Layout fmt;
     public final VertexArray data;
 
     private static Layout fmtfor(AttribData[] allbufs) {
@@ -82,7 +81,7 @@ public class VertexBuf {
 	}
 	this.bufs = na;
 	this.num = num;
-	this.fmt = fmtfor(na);
+	Layout fmt = fmtfor(na);
 	this.data = new VertexArray(fmt, new VertexArray.Buffer(fmt.inputs[0].stride * num, DataBuffer.Usage.STATIC, this::fill)).shared();
     }
 
@@ -101,7 +100,7 @@ public class VertexBuf {
 	for(AttribData attr : bufs) {
 	    if(attr.attr == null)
 		continue;
-	    attr.data(buf, fmt.inputs[inp++].offset, fmt.inputs[0].stride);
+	    attr.data(buf, data.fmt.inputs[inp++].offset, data.fmt.inputs[0].stride);
 	}
 	return(dst);
     }
