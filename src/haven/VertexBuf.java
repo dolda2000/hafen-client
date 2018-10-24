@@ -38,6 +38,28 @@ public class VertexBuf {
     public final int num;
     public final VertexArray data;
 
+    public VertexBuf(AttribData... bufs) {
+	AttribData[] na = new AttribData[bufs.length];
+	na[0] = bufs[0];
+	int num = na[0].size();
+	for(int i = 1; i < bufs.length; i++) {
+	    na[i] = bufs[i];
+	    if(na[i].size() != num)
+		throw(new RuntimeException("Buffer sizes do not match"));
+	}
+	this.bufs = na;
+	this.num = num;
+	this.data = fmtdata();
+    }
+
+    public <T extends AttribData> T buf(Class<T> type) {
+	for(AttribData a : bufs) {
+	    if(type.isInstance(a))
+		return(type.cast(a));
+	}
+	return(null);
+    }
+
     private static Layout fmtfor(AttribData[] allbufs) {
 	int n = 0;
 	for(AttribData buf : allbufs) {
@@ -70,27 +92,9 @@ public class VertexBuf {
 	return(new Layout(inputs));
     }
 
-    public VertexBuf(AttribData... bufs) {
-	AttribData[] na = new AttribData[bufs.length];
-	na[0] = bufs[0];
-	int num = na[0].size();
-	for(int i = 1; i < bufs.length; i++) {
-	    na[i] = bufs[i];
-	    if(na[i].size() != num)
-		throw(new RuntimeException("Buffer sizes do not match"));
-	}
-	this.bufs = na;
-	this.num = num;
-	Layout fmt = fmtfor(na);
-	this.data = new VertexArray(fmt, new VertexArray.Buffer(fmt.inputs[0].stride * num, DataBuffer.Usage.STATIC, this::fill)).shared();
-    }
-
-    public <T extends AttribData> T buf(Class<T> type) {
-	for(AttribData a : bufs) {
-	    if(type.isInstance(a))
-		return(type.cast(a));
-	}
-	return(null);
+    protected VertexArray fmtdata() {
+	Layout fmt = fmtfor(bufs);
+	return(new VertexArray(fmt, new VertexArray.Buffer(fmt.inputs[0].stride * num, DataBuffer.Usage.STATIC, this::fill)).shared());
     }
 
     private FillBuffer fill(VertexArray.Buffer vbuf, Environment env) {
