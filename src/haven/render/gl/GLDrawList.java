@@ -810,6 +810,7 @@ public class GLDrawList implements DrawList {
 	/* Somewhat unclear whether DrawList should implement
 	 * these. Just implement it if and when it turns out to be
 	 * reasonable. */
+	public void submit(Render sub) {throw(new NotImplemented());}
 	public void clear(Pipe pipe, FragData buf, FColor val) {throw(new NotImplemented());}
 	public void clear(Pipe pipe, double val) {throw(new NotImplemented());}
 	public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback) {throw(new NotImplemented());}

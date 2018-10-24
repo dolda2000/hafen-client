@@ -142,6 +142,17 @@ public class GLRender implements Render, Disposable {
 	    throw(new RuntimeException("invalid sampler type: " + type));
     }
 
+    public void submit(Render gsub) {
+	if(!(gsub instanceof GLRender))
+	    throw(new IllegalArgumentException());
+	GLRender sub = (GLRender)gsub;
+	if(sub.env != this.env)
+	    throw(new IllegalArgumentException());
+	state.apply(this.gl, sub.init);
+	gl().bglCallList(sub.gl);
+	state.apply(null, sub.state);
+    }
+
     public void draw(Pipe pipe, Model data) {
 	state.apply(this.gl, pipe);
 	if(GLVertexArray.ephemeralp(data)) {

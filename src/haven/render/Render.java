@@ -33,6 +33,7 @@ import haven.render.sl.*;
 
 public interface Render extends Disposable {
     public Environment env();
+    public void submit(Render sub);
     public void draw(Pipe pipe, Model data);
     public void clear(Pipe pipe, FragData buf, FColor val);
     public void clear(Pipe pipe, double val);

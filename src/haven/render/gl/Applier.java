@@ -47,14 +47,18 @@ public class Applier {
 	this.env = env;
     }
 
+    private void assume(Applier that) {
+	this.cur = Arrays.copyOf(that.cur, that.cur.length);
+	this.shaders = Arrays.copyOf(that.shaders, that.shaders.length);
+	this.shash = that.shash;
+	this.prog = that.prog;
+	this.uvals = Arrays.copyOf(that.uvals, that.uvals.length);
+	this.glstates = Arrays.copyOf(that.glstates, that.glstates.length);
+    }
+
     public Applier clone() {
 	Applier ret = new Applier(env);
-	ret.cur = Arrays.copyOf(this.cur, this.cur.length);
-	ret.shaders = Arrays.copyOf(this.shaders, this.shaders.length);
-	ret.shash = this.shash;
-	ret.prog = this.prog;
-	ret.uvals = Arrays.copyOf(this.uvals, this.uvals.length);
-	ret.glstates = Arrays.copyOf(this.glstates, this.glstates.length);
+	ret.assume(this);
 	return(ret);
     }
 
@@ -283,8 +287,10 @@ public class Applier {
     }
 
     public void apply(BGL gl, Applier that) {
-	if(gl == null)
-	    throw(new NullPointerException());
+	if(gl == null) {
+	    assume(that);
+	    return;
+	}
 	if(this.cur.length < that.cur.length) {
 	    this.cur = Arrays.copyOf(this.cur, that.cur.length);
 	    this.shaders = Arrays.copyOf(this.shaders, this.cur.length);
