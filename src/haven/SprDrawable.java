@@ -65,6 +65,10 @@ public class SprDrawable extends Drawable {
 	spr.tick(dt);
     }
 
+    public void gtick(Render g) {
+	spr.gtick(g);
+    }
+
     public Resource getres() {
 	return(null);
     }

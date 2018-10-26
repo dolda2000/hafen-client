@@ -51,6 +51,10 @@ public class ResDrawable extends Drawable {
 	spr.tick(dt);
     }
 
+    public void gtick(Render g) {
+	spr.gtick(g);
+    }
+
     public void drawadd(Iterable<RenderTree.Slot> slots) {
 	Collection<RenderTree.Slot> added = new ArrayList<>();
 	try {

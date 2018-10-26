@@ -146,6 +146,9 @@ public abstract class Sprite implements RenderTree.Node {
     public boolean tick(double dt) {
 	return(false);
     }
+
+    public void gtick(Render g) {
+    }
     
     public void dispose() {
     }

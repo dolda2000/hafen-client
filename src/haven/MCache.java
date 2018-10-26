@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.lang.ref.*;
+import haven.render.Render;
 
 public class MCache {
     public static final Coord2d tilesz = new Coord2d(11, 11);
@@ -260,6 +261,15 @@ public class MCache {
 	    }
 	}
 	
+	public void gtick(Render g) {
+	    if(fo != null) {
+		for(Collection<Gob> fol : fo) {
+		    for(Gob fo : fol)
+			fo.gtick(g);
+		}
+	    }
+	}
+	
 	private void invalidate() {
 	    for(int y = 0; y < cutn.y; y++) {
 		for(int x = 0; x < cutn.x; x++)
@@ -363,6 +373,14 @@ public class MCache {
 	synchronized(grids) {
 	    for(Grid g : grids.values()) {
 		g.tick(dt);
+	    }
+	}
+    }
+
+    public void gtick(Render g) {
+	synchronized(grids) {
+	    for(Grid gr : grids.values()) {
+		gr.gtick(g);
 	    }
 	}
     }

@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.awt.Color;
+import haven.render.Render;
 
 public class Glob {
     public double time, epoch = Utils.rtime();
@@ -131,6 +132,11 @@ public class Glob {
 	map.ctick(dt);
 
 	lastctick = now;
+    }
+
+    public void gtick(Render g) {
+	oc.gtick(g);
+	map.gtick(g);
     }
 
     private final double timefac = 3.0;

@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import haven.render.Render;
 
 public class OCache implements Iterable<Gob> {
     public static final int OD_REM = 0;
@@ -99,6 +100,20 @@ public class OCache implements Iterable<Gob> {
 	    /* XXX: Parallelize */
 	    synchronized(g) {
 		g.ctick(dt);
+	    }
+	}
+    }
+
+    public void gtick(Render g) {
+	ArrayList<Gob> copy = new ArrayList<Gob>();
+	synchronized(this) {
+	    for(Gob ob : this)
+		copy.add(ob);
+	}
+	for(Gob ob : copy) {
+	    /* XXX: Parallelize */
+	    synchronized(g) {
+		ob.gtick(g);
 	    }
 	}
     }
