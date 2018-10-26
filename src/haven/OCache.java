@@ -697,7 +697,7 @@ public class OCache implements Iterable<Gob> {
 	return(netinfo.get(id));
     }
 
-    private final AsyncCheck<GobInfo> applier = new AsyncCheck<>(netdirty, "Objdelta applier", this::checkdirty, this::apply1);
+    private final AsyncCheck<GobInfo> applier = new AsyncCheck<>(netinfo, "Objdelta applier", this::checkdirty, this::apply1);
 
     private void markdirty(GobInfo ng) {
 	netdirty.add(ng.id);
