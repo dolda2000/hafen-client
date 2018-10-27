@@ -422,8 +422,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    RenderTree.Slot slot = this.slot;
 		    if(slot == null)
 			return;
+		    RenderTree.Slot nslot;
 		    synchronized(ob) {
-			slot.add(ob.placed);
+			nslot = slot.add(ob.placed);
+		    }
+		    synchronized(this) {
+			current.put(ob, nslot);
 		    }
 		    break;
 		} catch(Loading l) {
