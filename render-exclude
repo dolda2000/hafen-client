@@ -7,8 +7,6 @@ haven/FBConfig.java
 haven/ActAudio.java
 haven/ShadowMap.java
 haven/Outlines.java
-haven/MorphedMesh.java
-haven/PoseMorph.java
 haven/CloudShadow.java
 haven/DirCam.java
 haven/GBuffer.java

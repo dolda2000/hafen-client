@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import haven.render.Render;
 
 public class OCache implements Iterable<Gob> {
     public static final int OD_REM = 0;
@@ -99,6 +100,20 @@ public class OCache implements Iterable<Gob> {
 	    /* XXX: Parallelize */
 	    synchronized(g) {
 		g.ctick(dt);
+	    }
+	}
+    }
+
+    public void gtick(Render g) {
+	ArrayList<Gob> copy = new ArrayList<Gob>();
+	synchronized(this) {
+	    for(Gob ob : this)
+		copy.add(ob);
+	}
+	for(Gob ob : copy) {
+	    /* XXX: Parallelize */
+	    synchronized(g) {
+		ob.gtick(g);
 	    }
 	}
     }
@@ -697,7 +712,7 @@ public class OCache implements Iterable<Gob> {
 	return(netinfo.get(id));
     }
 
-    private final AsyncCheck<GobInfo> applier = new AsyncCheck<>(netdirty, "Objdelta applier", this::checkdirty, this::apply1);
+    private final AsyncCheck<GobInfo> applier = new AsyncCheck<>(netinfo, "Objdelta applier", this::checkdirty, this::apply1);
 
     private void markdirty(GobInfo ng) {
 	netdirty.add(ng.id);
@@ -744,16 +759,19 @@ public class OCache implements Iterable<Gob> {
 	long id = msg.uint32();
 	int frame = msg.int32();
 	List<Delta> attrs = new ArrayList<>();
+	GobInfo removed = null;
 	while(true) {
 	    int type = msg.uint8();
 	    if(type == OD_END) {
 		break;
 	    } else if(type == OD_REM) {
-		return(netremove(id, frame - 1));
+		removed = netremove(id, frame - 1);
 	    } else {
 		attrs.add(parse(type, msg));
 	    }
 	}
+	if(removed != null)
+	    return(removed);
 	synchronized(netinfo) {
 	    if((fl & 1) != 0)
 		netremove(id, frame - 1);

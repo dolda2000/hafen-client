@@ -462,8 +462,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    RenderTree.Slot slot = this.slot;
 		    if(slot == null)
 			return;
+		    RenderTree.Slot nslot;
 		    synchronized(ob) {
-			slot.add(ob.placed);
+			nslot = slot.add(ob.placed);
+		    }
+		    synchronized(this) {
+			current.put(ob, nslot);
 		    }
 		    break;
 		} catch(Loading l) {
@@ -1048,117 +1052,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	return(Pipe.Op.compose(curclickbasic, camera));
     }
-
-    /* XXXRENDER
-    public static class ClickContext extends RenderContext {
-    }
-
-    private TexGL clickbuf = null;
-    private GLFrameBuffer clickfb = null;
-    private final RenderContext clickctx = new ClickContext();
-    private GLState.Buffer clickbasic(GOut g) {
-	GLState.Buffer ret = basic(g);
-	clickctx.prep(ret);
-	if((clickbuf == null) || !clickbuf.sz().equals(sz)) {
-	    if(clickbuf != null) {
-		clickfb.dispose(); clickfb = null;
-		clickbuf.dispose(); clickbuf = null;
-	    }
-	    clickbuf = new TexE(sz, GL.GL_RGBA, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE);
-	    clickfb = new GLFrameBuffer(clickbuf, null);
-	}
-	clickfb.prep(ret);
-	new States.Blending(GL.GL_ONE, GL.GL_ZERO).prep(ret);
-	return(ret);
-    }
-
-    private abstract static class Clicklist<T> extends RenderList {
-	private Map<States.ColState, T> rmap = new WeakHashMap<States.ColState, T>();
-	private Map<T, Reference<States.ColState>> idmap = new WeakHashMap<T, Reference<States.ColState>>();
-	private int i = 1;
-	private GLState.Buffer plain, bk;
-	
-	abstract protected T map(Rendered r);
-	
-	private Clicklist(GLConfig cfg) {
-	    super(cfg);
-	    this.bk = new GLState.Buffer(cfg);
-	}
-	
-	protected States.ColState getcol(T t) {
-	    Reference<States.ColState> prevr = idmap.get(t);
-	    States.ColState prev = (prevr == null)?null:prevr.get();
-	    if(prev != null)
-		return(prev);
-	    int cr = ((i & 0x00000f) << 4) | ((i & 0x00f000) >> 12),
-		cg = ((i & 0x0000f0) << 0) | ((i & 0x0f0000) >> 16),
-		cb = ((i & 0x000f00) >> 4) | ((i & 0xf00000) >> 20);
-	    Color col = new Color(cr, cg, cb);
-	    States.ColState cst = new States.ColState(col);
-	    i++;
-	    rmap.put(cst, t);
-	    idmap.put(t, new WeakReference<States.ColState>(cst));
-	    return(cst);
-	}
-
-	protected void render(GOut g, Rendered r) {
-	    try {
-		if(r instanceof FRendered)
-		    ((FRendered)r).drawflat(g);
-	    } catch(RenderList.RLoad l) {
-		if(ignload) return; else throw(l);
-	    }
-	}
-
-	public void get(GOut g, Coord c, final Callback<T> cb) {
-	    g.getpixel(c, col -> cb.done(rmap.get(new States.ColState(col))));
-	}
-
-	public void setup(Rendered r, GLState.Buffer t) {
-	    this.plain = t;
-	    super.setup(r, t);
-	}
-
-	protected void setup(Slot s, Rendered r) {
-	    T t = map(r);
-	    super.setup(s, r);
-	    s.os.copy(bk);
-	    plain.copy(s.os);
-	    bk.copy(s.os, GLState.Slot.Type.GEOM);
-	    if(t != null)
-		getcol(t).prep(s.os);
-	}
-
-	public boolean aging() {
-	    return(i > (1 << 20));
-	}
-    }
-    
-    private static class Maplist extends Clicklist<MapMesh> {
-	private int mode = 0;
-	private MapMesh limit = null;
-	
-	private Maplist(GLConfig cfg) {
-	    super(cfg);
-	}
-	
-	protected MapMesh map(Rendered r) {
-	    if(r instanceof MapMesh)
-		return((MapMesh)r);
-	    return(null);
-	}
-	
-	protected void render(GOut g, Rendered r) {
-	    if(r instanceof MapMesh) {
-		MapMesh m = (MapMesh)r;
-		if(mode != 0)
-		    g.state(States.vertexcolor);
-		if((limit == null) || (limit == m))
-		    m.drawflat(g, mode);
-	    }
-	}
-    }
-    */
 
     private void checkmapclick(GOut g, Pipe.Op basic, Coord c, Consumer<Coord2d> cb) {
 	new Object() {

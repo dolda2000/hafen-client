@@ -200,6 +200,16 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    glob.oc.remove(id);
     }
 
+    public void gtick(Render g) {
+	Drawable d = getattr(Drawable.class);
+	if(d != null)
+	    d.gtick(g);
+	for(Overlay ol : ols) {
+	    if(ol.spr != null)
+		ol.spr.gtick(g);
+	}
+    }
+
     /* Intended for local code. Server changes are handled via OCache. */
     public void addol(Overlay ol) {
 	ols.add(ol);

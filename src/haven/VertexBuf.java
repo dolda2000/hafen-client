@@ -36,8 +36,29 @@ import haven.render.sl.Attribute;
 public class VertexBuf {
     public final AttribData[] bufs;
     public final int num;
-    public final Layout fmt;
     public final VertexArray data;
+
+    public VertexBuf(AttribData... bufs) {
+	AttribData[] na = new AttribData[bufs.length];
+	na[0] = bufs[0];
+	int num = na[0].size();
+	for(int i = 1; i < bufs.length; i++) {
+	    na[i] = bufs[i];
+	    if(na[i].size() != num)
+		throw(new RuntimeException("Buffer sizes do not match"));
+	}
+	this.bufs = na;
+	this.num = num;
+	this.data = fmtdata();
+    }
+
+    public <T extends AttribData> T buf(Class<T> type) {
+	for(AttribData a : bufs) {
+	    if(type.isInstance(a))
+		return(type.cast(a));
+	}
+	return(null);
+    }
 
     private static Layout fmtfor(AttribData[] allbufs) {
 	int n = 0;
@@ -71,27 +92,9 @@ public class VertexBuf {
 	return(new Layout(inputs));
     }
 
-    public VertexBuf(AttribData... bufs) {
-	AttribData[] na = new AttribData[bufs.length];
-	na[0] = bufs[0];
-	int num = na[0].size();
-	for(int i = 1; i < bufs.length; i++) {
-	    na[i] = bufs[i];
-	    if(na[i].size() != num)
-		throw(new RuntimeException("Buffer sizes do not match"));
-	}
-	this.bufs = na;
-	this.num = num;
-	this.fmt = fmtfor(na);
-	this.data = new VertexArray(fmt, new VertexArray.Buffer(fmt.inputs[0].stride * num, DataBuffer.Usage.STATIC, this::fill)).shared();
-    }
-
-    public <T extends AttribData> T buf(Class<T> type) {
-	for(AttribData a : bufs) {
-	    if(type.isInstance(a))
-		return(type.cast(a));
-	}
-	return(null);
+    protected VertexArray fmtdata() {
+	Layout fmt = fmtfor(bufs);
+	return(new VertexArray(fmt, new VertexArray.Buffer(fmt.inputs[0].stride * num, DataBuffer.Usage.STATIC, this::fill)).shared());
     }
 
     private FillBuffer fill(VertexArray.Buffer vbuf, Environment env) {
@@ -101,9 +104,14 @@ public class VertexBuf {
 	for(AttribData attr : bufs) {
 	    if(attr.attr == null)
 		continue;
-	    attr.data(buf, fmt.inputs[inp++].offset, fmt.inputs[0].stride);
+	    attr.data(buf, data.fmt.inputs[inp++].offset, data.fmt.inputs[0].stride);
 	}
 	return(dst);
+    }
+
+    public void update(Render g) {
+	if(data.bufs.length != 1) throw(new AssertionError());
+	g.update(data.bufs[0], this::fill);
     }
 
     public abstract static class AttribData {
@@ -180,7 +188,7 @@ public class VertexBuf {
     }
 
     @ResName("pos2")
-    public static class VertexData extends FloatData /* XXXRENDER implements MorphedMesh.MorphArray */ {
+    public static class VertexData extends FloatData implements MorphedMesh.MorphData {
 	public VertexData(FloatBuffer data) {
 	    super(Homo3D.vertex, 3, data);
 	}
@@ -192,10 +200,8 @@ public class VertexBuf {
 	/* XXX: It feels very much like morphing should be layered
 	 * strictly above VertexBuf, but I can't quite see an
 	 * alternative to this at this point. */
-	/*
 	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.POS);}
 	public VertexData dup() {return(new VertexData(Utils.bufcp(data)));}
-	*/
     }
     @ResName("pos")
     public static class VertexDecode implements DataCons {
@@ -205,7 +211,7 @@ public class VertexBuf {
     }
     
     @ResName("nrm2")
-    public static class NormalData extends FloatData /* XXXRENDER implements MorphedMesh.MorphArray */ {
+    public static class NormalData extends FloatData implements MorphedMesh.MorphData {
 	public NormalData(FloatBuffer data) {
 	    super(Homo3D.normal, 3, data);
 	}
@@ -214,10 +220,8 @@ public class VertexBuf {
 	    this(loadbuf2(Utils.wfbuf(nv * 3), buf));
 	}
 
-	/*
 	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
 	public NormalData dup() {return(new NormalData(Utils.bufcp(data)));}
-	*/
     }
     @ResName("nrm")
     public static class NormalDecode implements DataCons {

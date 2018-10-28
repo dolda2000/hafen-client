@@ -295,6 +295,7 @@ public class RenderTree implements RenderList.Adapter {
 	public Slot add(Node n, Pipe.Op state);
 	public default Slot add(Node n) {return(add(n, null));}
 	public void remove();
+	public void clear();
 	public void cstate(Pipe.Op state);
 	public void ostate(Pipe.Op state);
 	public Slot parent();
@@ -391,6 +392,13 @@ public class RenderTree implements RenderList.Adapter {
 		    }
 		}
 		return(ch);
+	    }
+	}
+
+	public void clear() {
+	    try(Locked lk = tree.lock()) {
+		while(nchildren > 0)
+		    children[nchildren - 1].remove();
 	    }
 	}
 

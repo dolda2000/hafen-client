@@ -33,9 +33,12 @@ import haven.render.sl.*;
 
 public interface Render extends Disposable {
     public Environment env();
+    public void submit(Render sub);
     public void draw(Pipe pipe, Model data);
     public void clear(Pipe pipe, FragData buf, FColor val);
     public void clear(Pipe pipe, double val);
+
+    public <T extends DataBuffer> void update(T buf, DataBuffer.Filler<? super T> data);
 
     public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback);
 

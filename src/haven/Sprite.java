@@ -39,7 +39,9 @@ public abstract class Sprite implements RenderTree.Node {
     static {
 	/* XXXRENDER
 	factories.add(SpriteLink.sfact);
+	*/
 	factories.add(SkelSprite.fact);
+	/* XXXRENDER
 	factories.add(AnimSprite.fact);
 	*/
 	factories.add(StaticSprite.fact);
@@ -145,6 +147,9 @@ public abstract class Sprite implements RenderTree.Node {
 
     public boolean tick(double dt) {
 	return(false);
+    }
+
+    public void gtick(Render g) {
     }
     
     public void dispose() {

@@ -195,17 +195,19 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 			this.wait();
 		}
 		while(true) {
+		    GLEnvironment env = this.env;
+		    GLRender buf = env.render();
 		    Debug.cycle();
 
 		    synchronized(ui) {
-			if(ui.sess != null)
-			    ui.sess.glob.ctick();
 			ed.dispatch(ui);
+			if(ui.sess != null) {
+			    ui.sess.glob.ctick();
+			    ui.sess.glob.gtick(buf);
+			}
 			ui.tick();
 		    }
 
-		    GLEnvironment env = this.env;
-		    GLRender buf = env.render();
 		    synchronized(curdraw) {
 			while(curdraw[0] != null)
 			    curdraw.wait();

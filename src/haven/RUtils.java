@@ -27,62 +27,33 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import haven.render.*;
+import haven.render.RenderTree.Node;
+import haven.render.RenderTree.Slot;
 
-public class ResDrawable extends Drawable {
-    public final Indir<Resource> res;
-    public final Sprite spr;
-    MessageBuf sdt;
-    // private double delay = 0; XXXRENDER
-    private final ArrayList<RenderTree.Slot> slots = new ArrayList<>(1);
-
-    public ResDrawable(Gob gob, Indir<Resource> res, Message sdt) {
-	super(gob);
-	this.res = res;
-	this.sdt = new MessageBuf(sdt);
-	spr = Sprite.create(gob, res.get(), this.sdt.clone());
-    }
-
-    public ResDrawable(Gob gob, Resource res) {
-	this(gob, res.indir(), MessageBuf.nil);
-    }
-
-    public void ctick(double dt) {
-	spr.tick(dt);
-    }
-
-    public void gtick(Render g) {
-	spr.gtick(g);
-    }
-
-    public void drawadd(Iterable<RenderTree.Slot> slots) {
-	Collection<RenderTree.Slot> added = new ArrayList<>();
+public class RUtils {
+    public static void readd(Collection<Slot> slots, Consumer<Slot> add, Runnable revert) {
+	Collection<Slot> ch = new ArrayList<>(slots.size());
 	try {
-	    for(RenderTree.Slot slot : slots)
-		added.add(slot.add(spr));
+	    for(Slot slot : slots) {
+		ch.add(slot);
+		slot.clear();
+		add.accept(slot);
+	    }
 	} catch(RuntimeException e) {
-	    for(RenderTree.Slot slot : added)
-		slot.remove();
+	    revert.run();
+	    try {
+		for(Slot slot : ch) {
+		    slot.clear();
+		    add.accept(slot);
+		}
+	    } catch(RuntimeException e2) {
+		Error err = new Error("Unexpected non-local exit", e2);
+		err.addSuppressed(e);
+		throw(err);
+	    }
 	    throw(e);
 	}
-	this.slots.addAll(added);
-    }
-
-    public void drawremove() {
-	for(RenderTree.Slot slot : this.slots)
-	    slot.remove();
-    }
-
-    public void dispose() {
-	if(spr != null)
-	    spr.dispose();
-    }
-
-    public Resource getres() {
-	return(res.get());
-    }
-
-    public Skeleton.Pose getpose() {
-	return(Skeleton.getpose(spr));
     }
 }

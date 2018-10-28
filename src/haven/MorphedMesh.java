@@ -29,16 +29,18 @@ package haven;
 import java.util.*;
 import java.nio.*;
 import java.lang.ref.*;
+import haven.render.*;
 
 public class MorphedMesh extends FastMesh {
     private static Map<Morpher.Factory, Collection<MorphedBuf>> bufs = new CacheMap<Morpher.Factory, Collection<MorphedBuf>>(CacheMap.RefType.WEAK);
+    public final FastMesh from;
     
     private static MorphedBuf buf(VertexBuf buf, Morpher.Factory morph) {
 	Collection<MorphedBuf> bl;
 	synchronized(bufs) {
 	    bl = bufs.get(morph);
 	    if(bl == null)
-		bufs.put(morph, bl = new LinkedList<MorphedBuf>());
+		bufs.put(morph, bl = new ArrayList<MorphedBuf>(1));
 	}
 	synchronized(bl) {
 	    for(MorphedBuf b : bl) {
@@ -52,23 +54,15 @@ public class MorphedMesh extends FastMesh {
     }
     
     public MorphedMesh(FastMesh mesh, Morpher.Factory pose) {
-        super(mesh, buf(mesh.vert, pose));
+	/* XXX: Would be nice to be able to reuse the index buffer as-is. */
+        super(buf(mesh.vert, pose), mesh.indb);
+	this.from = mesh;
     }
     
-    public boolean setup(RenderList rl) {
-	((MorphedBuf)vert).update();
-	return(super.setup(rl));
+    public void update(Render g) {
+	((MorphedBuf)vert).mupdate(g);
     }
 
-    public void cdraw(GOut g) {
-	((MorphedBuf)vert).update2(g);
-	super.cdraw(g);
-    }
-    
-    protected boolean compile() {
-	return(false);
-    }
-    
     public String toString() {
 	return("morphed(" + from + ")");
     }
@@ -87,9 +81,9 @@ public class MorphedMesh extends FastMesh {
 	NONE, DUP, POS, DIR
     }
 
-    public static interface MorphArray {
+    public static interface MorphData {
 	public MorphType morphtype();
-	public VertexBuf.AttribArray dup();
+	public VertexBuf.AttribData dup();
     }
 
     public static class MorphedBuf extends VertexBuf {
@@ -98,26 +92,25 @@ public class MorphedMesh extends FastMesh {
 	private final Pair[] parrays, darrays;
 
 	private static class Pair {
-	    final FloatArray o, n;
-	    private FloatBuffer upd;
-	    Pair(FloatArray o, FloatArray n) {this.o = o; this.n = n;}
+	    final FloatData o, n;
+	    Pair(FloatData o, FloatData n) {this.o = o; this.n = n;}
 	}
 
-	private static AttribArray[] ohBitterSweetJavaDays(VertexBuf from, Collection<Pair> pos, Collection<Pair> dir) {
-	    AttribArray[] ret = new AttribArray[from.bufs.length];
+	private static AttribData[] ohBitterSweetJavaDays(VertexBuf from, Collection<Pair> pos, Collection<Pair> dir) {
+	    AttribData[] ret = new AttribData[from.bufs.length];
 	    for(int i = 0; i < from.bufs.length; i++) {
-		MorphType type = (from.bufs[i] instanceof MorphArray)?((MorphArray)from.bufs[i]).morphtype():MorphType.NONE;
-		if(type != MorphType.NONE) {
-		    ret[i] = ((MorphArray)from.bufs[i]).dup();
-		    if(type == MorphType.POS) {
-			pos.add(new Pair((FloatArray)from.bufs[i], (FloatArray)ret[i]));
-			ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
-		    } else if(type == MorphType.DIR) {
-			dir.add(new Pair((FloatArray)from.bufs[i], (FloatArray)ret[i]));
-			ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
-		    }
-		} else {
+		MorphType type = (from.bufs[i] instanceof MorphData) ? ((MorphData)from.bufs[i]).morphtype() : MorphType.NONE;
+		if(type == MorphType.NONE) {
 		    ret[i] = from.bufs[i];
+		} else {
+		    ret[i] = ((MorphData)from.bufs[i]).dup();
+		    if(type == MorphType.POS) {
+			pos.add(new Pair((FloatData)from.bufs[i], (FloatData)ret[i]));
+			// XXXRENDER ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
+		    } else if(type == MorphType.DIR) {
+			dir.add(new Pair((FloatData)from.bufs[i], (FloatData)ret[i]));
+			// XXXRENDER ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
+		    }
 		}
 	    }
 	    return(ret);
@@ -135,34 +128,20 @@ public class MorphedMesh extends FastMesh {
 	    this(buf, morph, new LinkedList<Pair>(), new LinkedList<Pair>());
 	}
 
-	public void update() {
+	public void mupdate(Render g) {
 	    if(!morph.update())
 		return;
 	    for(Pair p : parrays)
-		morph.morphp(p.upd = Utils.wfbuf(p.n.data.capacity()), p.o.data);
+		morph.morphp(p.n.data, p.o.data);
 	    for(Pair p : darrays)
-		morph.morphd(p.upd = Utils.wfbuf(p.n.data.capacity()), p.o.data);
-	}
-
-	public void update2(GOut g) {
-	    for(Pair p : parrays) {
-		if(p.upd != null) {
-		    g.gl.bglCopyBufferf(p.n.data, 0, p.upd, 0, p.upd.capacity());
-		    p.n.update();
-		    p.upd = null;
-		}
-	    }
-	    for(Pair p : darrays) {
-		if(p.upd != null) {
-		    g.gl.bglCopyBufferf(p.n.data, 0, p.upd, 0, p.upd.capacity());
-		    p.n.update();
-		    p.upd = null;
-		}
-	    }
+		morph.morphd(p.n.data, p.o.data);
+	    update(g);
 	}
     }
 
     public static Morpher.Factory combine(final Morpher.Factory... parts) {
+	if(parts.length == 1)
+	    return(parts[0]);
 	return(new Morpher.Factory() {
 		public Morpher create(MorphedBuf vb) {
 		    final Morpher[] mparts = new Morpher[parts.length];
