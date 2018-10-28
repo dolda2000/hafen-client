@@ -43,23 +43,23 @@ public class PoseMorph implements Morpher.Factory {
     }
 
     public static boolean boned(FastMesh mesh) {
-	BoneArray ba = mesh.vert.buf(BoneArray.class);
+	BoneData ba = mesh.vert.buf(BoneData.class);
 	if(ba == null)
 	    return(false);
 	for(int i = 0; i < mesh.num * 3; i++) {
-	    if(ba.data.get(mesh.indb.get(i) * ba.n) != -1)
+	    if(ba.data.get(mesh.indb.get(i) * ba.elfmt.nc) != -1)
 		return(true);
 	}
 	return(false);
     }
 
     public static String boneidp(FastMesh mesh) {
-	BoneArray ba = mesh.vert.buf(BoneArray.class);
+	BoneData ba = mesh.vert.buf(BoneData.class);
 	if(ba == null)
 	    return(null);
 	int retb = -1;
 	for(int i = 0; i < mesh.num * 3; i++) {
-	    int vi = mesh.indb.get(i) * ba.n;
+	    int vi = mesh.indb.get(i) * ba.elfmt.nc;
 	    int curb = ba.data.get(vi);
 	    if(curb == -1)
 		return(null);
@@ -67,7 +67,7 @@ public class PoseMorph implements Morpher.Factory {
 		retb = curb;
 	    else if(retb != curb)
 		return(null);
-	    if((ba.n != 1) && (ba.data.get(vi + 1) != -1))
+	    if((ba.elfmt.nc != 1) && (ba.data.get(vi + 1) != -1))
 		return(null);
 	}
 	return(ba.names[retb]);
@@ -81,28 +81,28 @@ public class PoseMorph implements Morpher.Factory {
 	    pose.boneoff(i, offs[i]);
     }
 
-    public static class BoneArray extends VertexBuf.IntArray implements MorphedMesh.MorphArray {
+    public static class BoneData extends VertexBuf.IntData implements MorphedMesh.MorphData {
 	public final String[] names;
 	
-	public BoneArray(int apv, IntBuffer data, String[] names) {
-	    super(apv, data);
+	public BoneData(int apv, IntBuffer data, String[] names) {
+	    super(null, apv, data);
 	    this.names = names;
 	}
 	
-	public BoneArray dup() {return(new BoneArray(n, Utils.bufcp(data), Utils.splice(names, 0)));}
+	public BoneData dup() {return(new BoneData(elfmt.nc, Utils.wbufcp(data), Utils.splice(names, 0)));}
 
 	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DUP);}
     }
 
-    public static class WeightArray extends VertexBuf.FloatArray {
-	public WeightArray(int apv, FloatBuffer data) {
-	    super(apv, data);
+    public static class WeightData extends VertexBuf.FloatData {
+	public WeightData(int apv, FloatBuffer data) {
+	    super(null, apv, data);
 	}
     }
 
     @VertexBuf.ResName("bones")
-    public static class $Res implements VertexBuf.ArrayCons {
-	public void cons(Collection<VertexBuf.AttribArray> dst, Resource res, Message buf, int nv) {
+    public static class $Res implements VertexBuf.DataCons {
+	public void cons(Collection<VertexBuf.AttribData> dst, Resource res, Message buf, int nv) {
 	    int mba = buf.uint8();
 	    IntBuffer ba = Utils.wibuf(nv * mba);
 	    for(int i = 0; i < nv * mba; i++)
@@ -132,8 +132,8 @@ public class PoseMorph implements Morpher.Factory {
 		}
 	    }
 	    normweights(bw, ba, mba);
-	    dst.add(new BoneArray(mba, ba, bones.toArray(new String[0])));
-	    dst.add(new WeightArray(mba, bw));
+	    dst.add(new BoneData(mba, ba, bones.toArray(new String[0])));
+	    dst.add(new WeightData(mba, bw));
 	}
     }
 
@@ -157,8 +157,8 @@ public class PoseMorph implements Morpher.Factory {
     }
 
     public Morpher create(final MorphedBuf vb) {
-	BoneArray ob = vb.from.buf(BoneArray.class);
-	BoneArray nb = vb.buf(BoneArray.class);
+	BoneData ob = vb.from.buf(BoneData.class);
+	BoneData nb = vb.buf(BoneData.class);
 	int[] xl = new int[nb.names.length];
 	for(int i = 0; i < xl.length; i++) {
 	    Skeleton.Bone b = pose.skel().bones.get(nb.names[i]);
@@ -183,10 +183,10 @@ public class PoseMorph implements Morpher.Factory {
 		}
 
 		public void morphp(FloatBuffer dst, FloatBuffer src) {
-		    BoneArray ba = vb.buf(BoneArray.class);
-		    int apv = ba.n;
+		    BoneData ba = vb.buf(BoneData.class);
+		    int apv = ba.elfmt.nc;
 		    IntBuffer bl = ba.data;
-		    FloatBuffer wl = vb.buf(WeightArray.class).data;
+		    FloatBuffer wl = vb.buf(WeightData.class).data;
 		    int vo = 0, ao = 0;
 		    for(int i = 0; i < vb.num; i++) {
 			float opx = src.get(vo), opy = src.get(vo + 1), opz = src.get(vo + 2);
@@ -211,10 +211,10 @@ public class PoseMorph implements Morpher.Factory {
 		}
 
 		public void morphd(FloatBuffer dst, FloatBuffer src) {
-		    BoneArray ba = vb.buf(BoneArray.class);
-		    int apv = ba.n;
+		    BoneData ba = vb.buf(BoneData.class);
+		    int apv = ba.elfmt.nc;
 		    IntBuffer bl = ba.data;
-		    FloatBuffer wl = vb.buf(WeightArray.class).data;
+		    FloatBuffer wl = vb.buf(WeightData.class).data;
 		    int vo = 0, ao = 0;
 		    for(int i = 0; i < vb.num; i++) {
 			float onx = src.get(vo), ony = src.get(vo + 1), onz = src.get(vo + 2);
