@@ -39,7 +39,9 @@ public abstract class Sprite implements RenderTree.Node {
     static {
 	/* XXXRENDER
 	factories.add(SpriteLink.sfact);
+	*/
 	factories.add(SkelSprite.fact);
+	/* XXXRENDER
 	factories.add(AnimSprite.fact);
 	*/
 	factories.add(StaticSprite.fact);

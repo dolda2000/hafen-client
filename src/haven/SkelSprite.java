@@ -27,9 +27,10 @@
 package haven;
 
 import java.util.*;
+import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
-// import haven.MorphedMesh.Morpher; XXXRENDER
+import haven.MorphedMesh.Morpher;
 
 public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.HasPose {
     /* XXXRENDER
@@ -46,12 +47,13 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
     public MeshAnim.Anim[] manims = new MeshAnim.Anim[0];
     /* XXXRENDER
     private Morpher.Factory mmorph;
-    private final PoseMorph pmorph;
     */
+    private final PoseMorph pmorph;
     private Pose oldpose;
     private float ipold;
     private boolean stat = true;
-    // private Rendered[] parts; XXXRENDER
+    private RenderTree.Node[] parts;
+    private MorphedMesh[] morphparts = {};
     
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
@@ -65,19 +67,19 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 	super(owner, res);
 	skel = res.layer(Skeleton.Res.class).s;
 	pose = skel.new Pose(skel.bindpose);
-	// pmorph = new PoseMorph(pose); XXXRENDER
+	pmorph = new PoseMorph(pose);
 	int fl = sdt.eom()?0xffff0000:decnum(sdt);
 	chposes(fl, true);
-	// chparts(fl); XXXRENDER
+	chparts(fl);
     }
 
     /* XXX: It's ugly to snoop inside a wrapping, but I can't think of
      * a better way to apply morphing to renderlinks right now. */
-    /* XXXRENDER
-    private Rendered animwrap(GLState.Wrapping wrap) {
+    private RenderTree.Node animwrap(Pipe.Op.Wrapping wrap, Collection<MorphedMesh> mbuf) {
 	if(!(wrap.r instanceof FastMesh))
 	    return(wrap);
 	FastMesh m = (FastMesh)wrap.r;
+	/* XXXRENDER
 	for(MeshAnim.Anim anim : manims) {
 	    if(anim.desc().animp(m)) {
 		Rendered ret = wrap.st().apply(new MorphedMesh(m, mmorph));
@@ -86,43 +88,53 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 		return(ret);
 	    }
 	}
-	Rendered ret;
+	*/
+	RenderTree.Node ret;
 	if(PoseMorph.boned(m)) {
 	    String bnm = PoseMorph.boneidp(m);
-	    if(bnm == null) {
-		ret = wrap.st().apply(new MorphedMesh(m, pmorph));
+	    if(true /* XXXRENDER */ || bnm == null) {
+		MorphedMesh mpart = new MorphedMesh(m, pmorph);
+		ret = wrap.op.apply(mpart, wrap.locked);
+		mbuf.add(mpart);
+		/* XXXRENDER
 		if(bonedb)
 		    ret = morphed.apply(ret);
+		*/
+	    /* XXXRENDER
 	    } else {
 		ret = pose.bonetrans2(skel.bones.get(bnm).idx).apply(wrap);
 		if(bonedb)
 		    ret = rigid.apply(ret);
+	    */
 	    }
 	} else {
 	    ret = wrap;
+	    /* XXXRENDER
 	    if(bonedb)
 		ret = unboned.apply(ret);
+	    */
 	}
 	return(ret);
     }
 
     private void chparts(int mask) {
-	Collection<Rendered> rl = new LinkedList<Rendered>();
+	Collection<RenderTree.Node> rl = new LinkedList<RenderTree.Node>();
+	Collection<MorphedMesh> mbuf = new LinkedList<MorphedMesh>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0)))
-		rl.add(animwrap(mr.mat.get().apply(mr.m)));
+		rl.add(animwrap(mr.mat.get().apply(mr.m), mbuf));
 	}
 	for(RenderLink.Res lr : res.layers(RenderLink.Res.class)) {
 	    if((lr.id < 0) || (((1 << lr.id) & mask) != 0)) {
-		Rendered r = lr.l.make();
-		if(r instanceof GLState.Wrapping)
-		    r = animwrap((GLState.Wrapping)r);
+		RenderTree.Node r = lr.l.make();
+		if(r instanceof Pipe.Op.Wrapping)
+		    r = animwrap((Pipe.Op.Wrapping)r, mbuf);
 		rl.add(r);
 	    }
 	}
-	this.parts = rl.toArray(new Rendered[0]);
+	this.parts = rl.toArray(new RenderTree.Node[0]);
+	this.morphparts = mbuf.toArray(new MorphedMesh[0]);
     }
-    */
     
     private void rebuild() {
 	pose.reset();
@@ -179,20 +191,17 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
     public void update(Message sdt) {
 	int fl = sdt.eom()?0xffff0000:decnum(sdt);
 	chposes(fl, false);
-	// chparts(fl); XXXRENDER
+	chparts(fl);
     }
     
-    /* XXXRENDER
-    public boolean setup(RenderList rl) {
-	for(Rendered p : parts)
-	    rl.add(p, null);
-	-* rl.add(pose.debug, null); *-
-	return(false);
+    @Override public void added(RenderTree.Slot slot) {
+	for(RenderTree.Node p : parts)
+	    slot.add(p);
+	// slot.add(pose.debug); XXXRENDER
     }
-    */
     
-    public boolean tick(int idt) {
-	float dt = idt / 1000.0f;
+    public boolean tick(double ddt) {
+	float dt = (float)ddt;
 	if(!stat || (ipold > 0)) {
 	    boolean done = true;
 	    for(PoseMod m : mods) {
@@ -212,6 +221,11 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 	for(MeshAnim.Anim anim : manims)
 	    anim.tick(dt);
 	return(false);
+    }
+
+    public void gtick(Render g) {
+	for(MorphedMesh mesh : morphparts)
+	    mesh.update(g);
     }
 
     public Object staticp() {
