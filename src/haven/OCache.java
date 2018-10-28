@@ -759,16 +759,19 @@ public class OCache implements Iterable<Gob> {
 	long id = msg.uint32();
 	int frame = msg.int32();
 	List<Delta> attrs = new ArrayList<>();
+	GobInfo removed = null;
 	while(true) {
 	    int type = msg.uint8();
 	    if(type == OD_END) {
 		break;
 	    } else if(type == OD_REM) {
-		return(netremove(id, frame - 1));
+		removed = netremove(id, frame - 1);
 	    } else {
 		attrs.add(parse(type, msg));
 	    }
 	}
+	if(removed != null)
+	    return(removed);
 	synchronized(netinfo) {
 	    if((fl & 1) != 0)
 		netremove(id, frame - 1);
