@@ -122,7 +122,6 @@ public class MorphedMesh extends FastMesh {
 	    this.morph = morph.create(this);
 	    this.parrays = pos.toArray(new Pair[0]);
 	    this.darrays = dir.toArray(new Pair[0]);
-	    new Throwable().printStackTrace();
 	}
 
 	private MorphedBuf(VertexBuf buf, Morpher.Factory morph) {
