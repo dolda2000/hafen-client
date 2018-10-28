@@ -54,6 +54,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
     private boolean stat = true;
     private RenderTree.Node[] parts;
     private MorphedMesh[] morphparts = {};
+    private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
     
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
@@ -71,6 +72,12 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 	int fl = sdt.eom()?0xffff0000:decnum(sdt);
 	chposes(fl, true);
 	chparts(fl);
+    }
+
+    private void parts(RenderTree.Slot slot) {
+	for(RenderTree.Node p : parts)
+	    slot.add(p);
+	// slot.add(pose.debug); XXXRENDER
     }
 
     /* XXX: It's ugly to snoop inside a wrapping, but I can't think of
@@ -132,7 +139,11 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 		rl.add(r);
 	    }
 	}
+	/* XXX: Arguably, updating should be forgone if the parts
+	 * haven't actually changed. Somewhat ill-defined, however. */
+	RenderTree.Node[] pparts = this.parts;
 	this.parts = rl.toArray(new RenderTree.Node[0]);
+	RUtils.readd(slots, this::parts, () -> {this.parts = pparts;});
 	this.morphparts = mbuf.toArray(new MorphedMesh[0]);
     }
     
@@ -194,10 +205,13 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 	chparts(fl);
     }
     
-    @Override public void added(RenderTree.Slot slot) {
-	for(RenderTree.Node p : parts)
-	    slot.add(p);
-	// slot.add(pose.debug); XXXRENDER
+    public void added(RenderTree.Slot slot) {
+	parts(slot);
+	slots.add(slot);
+    }
+
+    public void removed(RenderTree.Slot slot) {
+	slots.remove(slot);
     }
     
     public boolean tick(double ddt) {
