@@ -1115,6 +1115,18 @@ public class Utils {
     public static ShortBuffer wsbuf(int n) {
 	return(ShortBuffer.wrap(new short[n]));
     }
+    public static FloatBuffer wbufcp(FloatBuffer a) {
+	a.rewind();
+	FloatBuffer ret = wfbuf(a.remaining());
+	ret.put(a).rewind();
+	return(ret);
+    }
+    public static IntBuffer wbufcp(IntBuffer a) {
+	a.rewind();
+	IntBuffer ret = wibuf(a.remaining());
+	ret.put(a).rewind();
+	return(ret);
+    }
 
     public static float[] c2fa(Color c) {
 	return(new float[] {
