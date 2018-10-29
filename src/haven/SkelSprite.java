@@ -33,12 +33,10 @@ import haven.Skeleton.PoseMod;
 import haven.MorphedMesh.Morpher;
 
 public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.HasPose {
-    /* XXXRENDER
-    public static final GLState
-	rigid = new Material.Colors(java.awt.Color.GREEN),
-	morphed = new Material.Colors(java.awt.Color.RED),
-	unboned = new Material.Colors(java.awt.Color.YELLOW);
-    */
+    public static final Pipe.Op
+	rigid = new BaseColor(FColor.GREEN),
+	morphed = new BaseColor(FColor.RED),
+	unboned = new BaseColor(FColor.YELLOW);
     public static boolean bonedb = false;
     public static final float ipollen = 0.3f;
     public final Skeleton skel;
@@ -53,6 +51,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
     private float ipold;
     private boolean stat = true;
     private RenderTree.Node[] parts;
+    private Runnable[] tickparts = {};
     private MorphedMesh[] morphparts = {};
     private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
     
@@ -82,7 +81,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 
     /* XXX: It's ugly to snoop inside a wrapping, but I can't think of
      * a better way to apply morphing to renderlinks right now. */
-    private RenderTree.Node animwrap(Pipe.Op.Wrapping wrap, Collection<MorphedMesh> mbuf) {
+    private RenderTree.Node animwrap(Pipe.Op.Wrapping wrap, Collection<Runnable> tbuf, Collection<MorphedMesh> mbuf) {
 	if(!(wrap.r instanceof FastMesh))
 	    return(wrap);
 	FastMesh m = (FastMesh)wrap.r;
@@ -99,43 +98,40 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 	RenderTree.Node ret;
 	if(PoseMorph.boned(m)) {
 	    String bnm = PoseMorph.boneidp(m);
-	    if(true /* XXXRENDER */ || bnm == null) {
+	    if(bnm == null) {
 		MorphedMesh mpart = new MorphedMesh(m, pmorph);
 		ret = wrap.op.apply(mpart, wrap.locked);
 		mbuf.add(mpart);
-		/* XXXRENDER
 		if(bonedb)
 		    ret = morphed.apply(ret);
-		*/
-	    /* XXXRENDER
 	    } else {
-		ret = pose.bonetrans2(skel.bones.get(bnm).idx).apply(wrap);
+		RUtils.StateNode tpart = pose.bonetrans2(wrap, skel.bones.get(bnm).idx);
+		tbuf.add(tpart::update);
+		ret = tpart;
 		if(bonedb)
 		    ret = rigid.apply(ret);
-	    */
 	    }
 	} else {
 	    ret = wrap;
-	    /* XXXRENDER
 	    if(bonedb)
 		ret = unboned.apply(ret);
-	    */
 	}
 	return(ret);
     }
 
     private void chparts(int mask) {
-	Collection<RenderTree.Node> rl = new LinkedList<RenderTree.Node>();
-	Collection<MorphedMesh> mbuf = new LinkedList<MorphedMesh>();
+	Collection<RenderTree.Node> rl = new LinkedList<>();
+	Collection<Runnable> tbuf = new LinkedList<>();
+	Collection<MorphedMesh> mbuf = new LinkedList<>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0)))
-		rl.add(animwrap(mr.mat.get().apply(mr.m), mbuf));
+		rl.add(animwrap(mr.mat.get().apply(mr.m), tbuf, mbuf));
 	}
 	for(RenderLink.Res lr : res.layers(RenderLink.Res.class)) {
 	    if((lr.id < 0) || (((1 << lr.id) & mask) != 0)) {
 		RenderTree.Node r = lr.l.make();
 		if(r instanceof Pipe.Op.Wrapping)
-		    r = animwrap((Pipe.Op.Wrapping)r, mbuf);
+		    r = animwrap((Pipe.Op.Wrapping)r, tbuf, mbuf);
 		rl.add(r);
 	    }
 	}
@@ -144,6 +140,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 	RenderTree.Node[] pparts = this.parts;
 	this.parts = rl.toArray(new RenderTree.Node[0]);
 	RUtils.readd(slots, this::parts, () -> {this.parts = pparts;});
+	this.tickparts = tbuf.toArray(new Runnable[0]);
 	this.morphparts = mbuf.toArray(new MorphedMesh[0]);
     }
     
@@ -234,6 +231,8 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 	}
 	for(MeshAnim.Anim anim : manims)
 	    anim.tick(dt);
+	for(Runnable tpart : tickparts)
+	    tpart.run();
 	return(false);
     }
 
