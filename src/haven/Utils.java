@@ -783,6 +783,21 @@ public class Utils {
 	if(term) out.println();
     }
 
+    public static void dumparr(short[] arr, PrintStream out, boolean term) {
+	if(arr == null) {
+	    out.print("null");
+	} else {
+	    out.print('[');
+	    boolean f = true;
+	    for(int i : arr) {
+		if(!f) out.print(", "); f = false;
+		out.print(i);
+	    }
+	    out.print(']');
+	}
+	if(term) out.println();
+    }
+
     public static String titlecase(String str) {
 	return(Character.toTitleCase(str.charAt(0)) + str.substring(1));
     }
@@ -1099,6 +1114,18 @@ public class Utils {
     }
     public static ShortBuffer wsbuf(int n) {
 	return(ShortBuffer.wrap(new short[n]));
+    }
+    public static FloatBuffer wbufcp(FloatBuffer a) {
+	a.rewind();
+	FloatBuffer ret = wfbuf(a.remaining());
+	ret.put(a).rewind();
+	return(ret);
+    }
+    public static IntBuffer wbufcp(IntBuffer a) {
+	a.rewind();
+	IntBuffer ret = wibuf(a.remaining());
+	ret.put(a).rewind();
+	return(ret);
     }
 
     public static float[] c2fa(Color c) {

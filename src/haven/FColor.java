@@ -29,11 +29,14 @@ package haven;
 import java.awt.Color;
 
 public class FColor {
-    public static final FColor BLACK = new FColor(0, 0, 0);
-    public static final FColor WHITE = new FColor(1, 1, 1);
-    public static final FColor RED = new FColor(1, 0, 0);
-    public static final FColor GREEN = new FColor(0, 1, 0);
-    public static final FColor BLUE = new FColor(0, 0, 1);
+    public static final FColor BLACK   = new FColor(0, 0, 0);
+    public static final FColor WHITE   = new FColor(1, 1, 1);
+    public static final FColor RED     = new FColor(1, 0, 0);
+    public static final FColor GREEN   = new FColor(0, 1, 0);
+    public static final FColor BLUE    = new FColor(0, 0, 1);
+    public static final FColor YELLOW  = new FColor(1, 1, 0);
+    public static final FColor MAGENTA = new FColor(1, 0, 1);
+    public static final FColor CYAN    = new FColor(0, 1, 1);
     public final float r, g, b, a;
 
     public FColor(float r, float g, float b, float a) {
