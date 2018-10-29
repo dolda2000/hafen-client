@@ -31,6 +31,7 @@ import java.util.function.*;
 import haven.render.*;
 import haven.render.RenderTree.Node;
 import haven.render.RenderTree.Slot;
+import haven.render.Pipe.Op;
 
 public class RUtils {
     public static void readd(Collection<Slot> slots, Consumer<Slot> add, Runnable revert) {
@@ -54,6 +55,43 @@ public class RUtils {
 		throw(err);
 	    }
 	    throw(e);
+	}
+    }
+
+    public abstract static class StateNode implements Node {
+	public final Node r;
+	private final Collection<Slot> slots = new ArrayList<>(1);
+	private Op cstate = null;
+
+	public StateNode(Node r) {
+	    this.r = r;
+	}
+
+	protected abstract Op state();
+
+	public void update() {
+	    Op nstate = state();
+	    if(nstate == null)
+		throw(new NullPointerException("state"));
+	    if(Utils.eq(cstate, nstate))
+		return;
+	    for(Slot slot : slots)
+		slot.ostate(nstate);
+	    this.cstate = nstate;
+	}
+
+	public void added(Slot slot) {
+	    if(cstate == null) {
+		if((cstate = state()) == null)
+		    throw(new NullPointerException("state"));
+	    }
+	    slot.ostate(cstate);
+	    slot.add(r);
+	    slots.add(slot);
+	}
+
+	public void removed(Slot slot) {
+	    slots.remove(slot);
 	}
     }
 }
