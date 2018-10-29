@@ -27,7 +27,7 @@
 package haven;
 
 import java.util.*;
-import javax.media.opengl.*;
+import haven.render.*;
 
 public class Skeleton {
     public final Map<String, Bone> bones = new HashMap<String, Bone>();
@@ -256,32 +256,34 @@ public class Skeleton {
 	    }
 	}
 	
-	/* XXXRENDER
-	public Location bonetrans(final int bone) {
-	    return(new Location(Matrix4f.identity()) {
-		    private int cseq = -1;
-		    
-		    public Matrix4f fin(Matrix4f p) {
+	/* XXX: It seems the return type of these should be something more generic. */
+	public RUtils.StateNode bonetrans(RenderTree.Node r, int bone) {
+	    return(new RUtils.StateNode(r) {
+		    int cseq = -1;
+		    Location cur;
+
+		    protected Pipe.Op state() {
 			if(cseq != seq) {
 			    Matrix4f xf = Transform.makexlate(new Matrix4f(), new Coord3f(gpos[bone][0], gpos[bone][1], gpos[bone][2]));
 			    if(grot[bone][0] < 0.999999) {
 				float ang = (float)(Math.acos(grot[bone][0]) * 2.0);
 				xf = xf.mul1(Transform.makerot(new Matrix4f(), new Coord3f(grot[bone][1], grot[bone][2], grot[bone][3]).norm(), ang));
 			    }
-			    update(xf);
+			    cur = new Location(xf);
 			    cseq = seq;
 			}
-			return(super.fin(p));
+			return(cur);
 		    }
 		});
 	}
-	
-	public Location bonetrans2(final int bone) {
-	    return(new Location(Matrix4f.identity()) {
-		    private int cseq = -1;
-		    private float[] pos = new float[3], rot = new float[4];
-		    
-		    public Matrix4f fin(Matrix4f p) {
+
+	public RUtils.StateNode bonetrans2(RenderTree.Node r, int bone) {
+	    return(new RUtils.StateNode(r) {
+		    int cseq = -1;
+		    Location cur;
+		    float[] pos = new float[3], rot = new float[4];
+
+		    protected Pipe.Op state() {
 			if(cseq != seq) {
 			    rot = qqmul(rot, grot[bone], qinv(rot, bindpose.grot[bone]));
 			    pos = vvadd(pos, gpos[bone], vqrot(pos, vinv(pos, bindpose.gpos[bone]), rot));
@@ -290,14 +292,15 @@ public class Skeleton {
 				float ang = (float)(Math.acos(rot[0]) * 2.0);
 				xf = xf.mul1(Transform.makerot(new Matrix4f(), new Coord3f(rot[1], rot[2], rot[3]).norm(), ang));
 			    }
-			    update(xf);
+			    cur = new Location(xf);
 			    cseq = seq;
 			}
-			return(super.fin(p));
+			return(cur);
 		    }
 		});
 	}
 
+	/* XXXRENDER
 	public class BoneAlign extends Location {
 	    private final Coord3f ref;
 	    private final int orig, tgt;
