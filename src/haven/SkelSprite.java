@@ -43,9 +43,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
     public final Pose pose;
     public PoseMod[] mods = new PoseMod[0];
     public MeshAnim.Anim[] manims = new MeshAnim.Anim[0];
-    /* XXXRENDER
     private Morpher.Factory mmorph;
-    */
     private final PoseMorph pmorph;
     private Pose oldpose;
     private float ipold;
@@ -85,16 +83,16 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 	if(!(wrap.r instanceof FastMesh))
 	    return(wrap);
 	FastMesh m = (FastMesh)wrap.r;
-	/* XXXRENDER
 	for(MeshAnim.Anim anim : manims) {
 	    if(anim.desc().animp(m)) {
-		Rendered ret = wrap.st().apply(new MorphedMesh(m, mmorph));
+		MorphedMesh mpart = new MorphedMesh(m, mmorph);
+		RenderTree.Node ret = wrap.op.apply(mpart, wrap.locked);
+		mbuf.add(mpart);
 		if(bonedb)
 		    ret = morphed.apply(ret);
 		return(ret);
 	    }
 	}
-	*/
 	RenderTree.Node ret;
 	if(PoseMorph.boned(m)) {
 	    String bnm = PoseMorph.boneidp(m);
@@ -162,7 +160,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 		anims.add(ar.make());
 	}
 	this.manims = anims.toArray(new MeshAnim.Anim[0]);
-	// this.mmorph = MorphedMesh.combine(this.manims); XXXRENDER
+	this.mmorph = MorphedMesh.combine(this.manims);
     }
 
     private Map<Skeleton.ResPose, PoseMod> modids = new HashMap<Skeleton.ResPose, PoseMod>();
