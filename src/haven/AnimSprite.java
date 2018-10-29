@@ -27,12 +27,12 @@
 package haven;
 
 import java.util.*;
+import haven.render.*;
 
 public class AnimSprite extends Sprite {
-    /* XXXRENDER
-    private Rendered[] parts;
-    */
-    private MeshAnim.Anim[] anims;
+    private final RenderTree.Node[] parts;
+    private final MorphedMesh[] mparts;
+    private final MeshAnim.Anim[] anims;
 
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
@@ -44,6 +44,7 @@ public class AnimSprite extends Sprite {
 
     private AnimSprite(Owner owner, Resource res, Message sdt) {
 	super(owner, res);
+	System.err.println(res);
 	int mask = sdt.eom()?0xffff0000:decnum(sdt);
 	Collection<MeshAnim.Anim> anims = new LinkedList<MeshAnim.Anim>();
 	for(MeshAnim.Res ar : res.layers(MeshAnim.Res.class)) {
@@ -51,9 +52,9 @@ public class AnimSprite extends Sprite {
 		anims.add(ar.make());
 	}
 	this.anims = anims.toArray(new MeshAnim.Anim[0]);
-	/* XXXRENDER
 	MorphedMesh.Morpher.Factory morph = MorphedMesh.combine(this.anims);
-	Collection<Rendered> rl = new LinkedList<Rendered>();
+	Collection<RenderTree.Node> rl = new LinkedList<>();
+	Collection<MorphedMesh> ml = new LinkedList<>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0))) {
 		boolean stat = true;
@@ -63,35 +64,34 @@ public class AnimSprite extends Sprite {
 			break;
 		    }
 		}
-		if(stat)
+		if(stat) {
 		    rl.add(mr.mat.get().apply(mr.m));
-		else
-		    rl.add(mr.mat.get().apply(new MorphedMesh(mr.m, morph)));
+		} else {
+		    MorphedMesh mesh = new MorphedMesh(mr.m, morph);
+		    ml.add(mesh);
+		    rl.add(mr.mat.get().apply(mesh));
+		}
 	    }
 	}
-	parts = rl.toArray(new Rendered[0]);
-	*/
+	parts = rl.toArray(new RenderTree.Node[0]);
+	mparts = ml.toArray(new MorphedMesh[0]);
     }
 
-    /* XXXRENDER
-    public boolean setup(RenderList rl) {
-	for(Rendered p : parts)
-	    rl.add(p, null);
-	return(false);
+    public void added(RenderTree.Slot slot) {
+	for(RenderTree.Node p : parts)
+	    slot.add(p);
     }
-    */
 
-    public boolean tick(int idt) {
+    public boolean tick(double ddt) {
+	float dt = (float)ddt;
 	boolean ret = false;
-	float dt = idt / 1000.0f;
 	for(MeshAnim.Anim anim : anims)
 	    ret = ret | anim.tick(dt);
 	return(ret);
     }
 
-    /* XXXRENDER
-    public Object staticp() {
-	return((anims.length == 0)?CONSTANS:null);
+    public void gtick(Render g) {
+	for(MorphedMesh mesh : mparts)
+	    mesh.update(g);
     }
-    */
 }
