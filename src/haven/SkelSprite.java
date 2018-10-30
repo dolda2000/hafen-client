@@ -103,7 +103,7 @@ public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.Has
 		if(bonedb)
 		    ret = morphed.apply(ret);
 	    } else {
-		RUtils.StateNode tpart = pose.bonetrans2(wrap, skel.bones.get(bnm).idx);
+		RUtils.StateNode tpart = RUtils.StateNode.from(wrap, pose.bonetrans2(skel.bones.get(bnm).idx));
 		tbuf.add(tpart::update);
 		ret = tpart;
 		if(bonedb)

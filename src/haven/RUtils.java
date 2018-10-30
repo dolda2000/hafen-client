@@ -93,5 +93,11 @@ public class RUtils {
 	public void removed(Slot slot) {
 	    slots.remove(slot);
 	}
+
+	public static StateNode from(Node r, Supplier<? extends Op> st) {
+	    return(new StateNode(r) {
+		    protected Op state() {return(st.get());}
+		});
+	}
     }
 }

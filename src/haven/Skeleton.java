@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import haven.render.*;
 
 public class Skeleton {
@@ -257,12 +258,12 @@ public class Skeleton {
 	}
 	
 	/* XXX: It seems the return type of these should be something more generic. */
-	public RUtils.StateNode bonetrans(RenderTree.Node r, int bone) {
-	    return(new RUtils.StateNode(r) {
+	public Supplier<Pipe.Op> bonetrans(int bone) {
+	    return(new Supplier<Pipe.Op>() {
 		    int cseq = -1;
 		    Location cur;
 
-		    protected Pipe.Op state() {
+		    public Pipe.Op get() {
 			if(cseq != seq) {
 			    Matrix4f xf = Transform.makexlate(new Matrix4f(), new Coord3f(gpos[bone][0], gpos[bone][1], gpos[bone][2]));
 			    if(grot[bone][0] < 0.999999) {
@@ -277,13 +278,13 @@ public class Skeleton {
 		});
 	}
 
-	public RUtils.StateNode bonetrans2(RenderTree.Node r, int bone) {
-	    return(new RUtils.StateNode(r) {
+	public Supplier<Pipe.Op> bonetrans2(int bone) {
+	    return(new Supplier<Pipe.Op>() {
 		    int cseq = -1;
 		    Location cur;
 		    float[] pos = new float[3], rot = new float[4];
 
-		    protected Pipe.Op state() {
+		    public Pipe.Op get() {
 			if(cseq != seq) {
 			    rot = qqmul(rot, grot[bone], qinv(rot, bindpose.grot[bone]));
 			    pos = vvadd(pos, gpos[bone], vqrot(pos, vinv(pos, bindpose.gpos[bone]), rot));
