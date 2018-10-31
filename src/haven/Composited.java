@@ -27,27 +27,30 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
+import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
-public class Composited /* XXXRENDER implements MapView.Clickable */ {
+public class Composited implements RenderTree.Node /* XXXRENDER implements MapView.Clickable */ {
     public final Skeleton skel;
     public final Pose pose;
-    // private final PoseMorph morph; XXXRENDER
-    public Collection<Model> mod = new LinkedList<Model>();
-    public Collection<Equ> equ = new LinkedList<Equ>();
+    private final PoseMorph morph;
+    public Collection<Model> mod = new ArrayList<Model>();
+    public Collection<Equ> equ = new ArrayList<Equ>();
     public Poses poses = new Poses();
-    public List<MD> nmod = null, cmod = new LinkedList<MD>();
-    public List<ED> nequ = null, cequ = new LinkedList<ED>();
+    public List<MD> cmod = new LinkedList<MD>();
+    public List<ED> cequ = new LinkedList<ED>();
     public Sprite.Owner eqowner = null;
-    
+    private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
+
     public class Poses {
 	public final PoseMod[] mods;
 	Pose old;
 	float ipold = 0.0f, ipol = 0.0f;
 	public float limit = -1.0f;
 	public boolean stat, ldone;
-	
+
 	public Poses() {
 	    this.mods = new PoseMod[0];
 	}
@@ -62,7 +65,7 @@ public class Composited /* XXXRENDER implements MapView.Clickable */ {
 		}
 	    }
 	}
-	
+
 	private void rebuild() {
 	    pose.reset();
 	    for(PoseMod m : mods)
@@ -71,7 +74,7 @@ public class Composited /* XXXRENDER implements MapView.Clickable */ {
 		pose.blend(old, ipold);
 	    pose.gbuild();
 	}
-	
+
 	public void set(float ipol) {
 	    if((this.ipol = ipol) > 0) {
 		this.old = skel.new Pose(pose);
@@ -107,148 +110,117 @@ public class Composited /* XXXRENDER implements MapView.Clickable */ {
 	    if(done)
 		done();
 	}
-	
+
 	protected void done() {}
     }
-    
+
     public Composited(Skeleton skel) {
 	this.skel = skel;
 	this.pose = skel.new Pose(skel.bindpose);
-	// this.morph = new PoseMorph(pose); XXXRENDER
+	this.morph = new PoseMorph(pose);
     }
-    
-    /* XXXRENDER
-    private static final Rendered.Order modorder = new Rendered.Order<Model.Layer>() {
-	public int mainz() {
+
+    public static class ModOrder extends Rendered.Order<ModOrder> {
+	public final int z1, z2;
+
+	public ModOrder(int z1, int z2) {
+	    this.z1 = z1;
+	    this.z2 = z2;
+	}
+
+	public int mainorder() {
 	    return(1);
 	}
-	
-	private final Rendered.RComparator<Model.Layer> cmp = new Rendered.RComparator<Model.Layer>() {
-	    public int compare(Model.Layer a, Model.Layer b, GLState.Buffer sa, GLState.Buffer sb) {
+
+	private static final Comparator<ModOrder> cmp = new Comparator<ModOrder>() {
+	    public int compare(ModOrder a, ModOrder b) {
 		if(a.z1 != b.z1)
 		    return(a.z1 - b.z1);
 		return(a.z2 - b.z2);
 	    }
 	};
-	
-	public Rendered.RComparator<Model.Layer> cmp() {
-	    return(cmp);
-	}
-    };
-    */
 
-    public class Model {
-	// public final MorphedMesh m; XXXRENDER
-	public final int id = -1;
+	public Comparator<ModOrder> comparator() {return(cmp);}
+    };
+
+    public class Model implements RenderTree.Node {
+	public final MorphedMesh m;
+	public final int id;
 	int z = 0, lz = 0;
-	public class Layer {
-	    private final Material mat;
-	    private final int z1, z2;
-	    
+
+	public class Layer implements RenderTree.Node {
+	    public final Material mat;
+	    public final ModOrder order;
+
 	    private Layer(Material mat, int z1, int z2) {
 		this.mat = mat;
-		this.z1 = z1;
-		this.z2 = z2;
+		this.order = new ModOrder(z1, z2);
 	    }
-	    
-	    public void draw(GOut g) {
-		// m.draw(g); XXXRENDER
-	    }
-	    
+
+	    /* XXXRENDER
 	    public void drawflat(GOut g) {
-		/* XXXRENDER
 		if(z2 == 0)
 		    m.drawflat(g);
-		*/
-	    }
-	    
-	    /* XXXRENDER
-	    public boolean setup(RenderList r) {
-		r.prepo(modorder);
-		r.prepo(mat);
-		return(true);
 	    }
 	    */
+
+	    public void added(RenderTree.Slot slot) {
+		slot.ostate(Pipe.Op.compose(mat, order));
+		slot.lockstate();
+		slot.add(m);
+	    }
 	}
 	public final List<Layer> lay = new ArrayList<Layer>();
-	
-	/* XXXRENDER
+
 	private Model(FastMesh m, int id) {
 	    this.m = new MorphedMesh(m, morph);
 	    this.id = id;
 	}
-	*/
 	
 	private void addlay(Material mat) {
 	    lay.add(new Layer(mat, z, lz++));
 	}
 
-	public void draw(GOut g) {
+	private void gtick(Render g) {
+	    m.update(g);
 	}
-	
-	/* XXXRENDER
-	public boolean setup(RenderList r) {
-	    m.setup(r);
+
+	public void added(RenderTree.Slot slot) {
 	    for(Layer lay : this.lay)
-		r.add(lay, null);
-	    return(false);
+		slot.add(lay);
 	}
-	*/
     }
-    
-    public class SpriteEqu extends Equ {
-	private final Sprite spr;
-	
+
+    public class SpriteEqu extends Equ<Sprite> {
 	private SpriteEqu(ED ed) {
-	    super(ed);
-	    this.spr = Sprite.create(eqowner, ed.res.res.get(), ed.res.sdt.clone());
-	}
-	
-	public void draw(GOut g) {
+	    super(Sprite.create(eqowner, ed.res.res.get(), ed.res.sdt.clone()), ed);
 	}
 
-	/* XXXRENDER
-	public boolean setup(RenderList rl) {
-	    rl.add(spr, null);
-	    return(false);
-	}
-	*/
-	
 	public void tick(double dt) {
-	    spr.tick(dt);
+	    r.tick(dt);
 	}
-    }
-    
-    public class LightEqu extends Equ {
-	private final Light l;
-	
-	private LightEqu(ED ed) {
-	    super(ed);
-	    this.l = ed.res.res.get().layer(Light.Res.class).make();
+
+	public void gtick(Render g) {
+	    r.gtick(g);
 	}
-	
-	public void draw(GOut g) {
-	}
-	
-	/* XXXRENDER
-	public boolean setup(RenderList rl) {
-	    rl.add(l, null);
-	    return(false);
-	}
-	*/
     }
 
-    public abstract class Equ {
-	// private final GLState et; XXXRENDER
+    public class LightEqu extends Equ<Light> {
+	private LightEqu(ED ed) {
+	    super(ed.res.res.get().layer(Light.Res.class).make(), ed);
+	}
+    }
+
+    public abstract class Equ<R extends RenderTree.Node> extends RUtils.StateNode<R> {
+	private final Supplier<Pipe.Op> et;
 	public final ED desc;
 	public final int id;
-	private boolean matched;
 	
-	private Equ(ED ed) {
+	private Equ(R r, ED ed) {
+	    super(r);
 	    this.desc = ed.clone();
 	    this.id = desc.id;
-	    /* XXXRENDER
-	    GLState bt = null;
+	    Supplier<Pipe.Op> bt = null;
 	    if(bt == null) {
 		Skeleton.BoneOffset bo = ed.res.res.get().layer(Skeleton.BoneOffset.class, ed.at);
 		if(bo != null)
@@ -266,14 +238,17 @@ public class Composited /* XXXRENDER implements MapView.Clickable */ {
 	    }
 	    if((bt == null) && !ed.at.equals(""))
 		throw(new RuntimeException("Transformation " + ed.at + " for equipment " + ed.res + " on skeleton " + skel + " could not be resolved"));
+	    Supplier<Pipe.Op> dbt = bt;
 	    if((ed.off.x != 0.0f) || (ed.off.y != 0.0f) || (ed.off.z != 0.0f))
-		this.et = GLState.compose(bt, Location.xlate(ed.off));
+		this.et = () -> Pipe.Op.compose(dbt.get(), Location.xlate(ed.off));
 	    else
 		this.et = bt;
-	    */
 	}
-	
+
 	public void tick(double dt) {}
+	public void gtick(Render g) {}
+
+	protected Pipe.Op state() {return(et.get());}
     }
 
     public static class MD implements Cloneable {
@@ -410,88 +385,60 @@ public class Composited /* XXXRENDER implements MapView.Clickable */ {
 		return(eqowner.context(cl));
 	    }
 	};
-    private void nmod(boolean nocatch) {
-	for(Iterator<MD> i = nmod.iterator(); i.hasNext();) {
-	    MD md = i.next();
-	    try {
-		if(md.real == null) {
-		    /* XXXRENDER
-		    FastMesh.MeshRes mr = md.mod.get().layer(FastMesh.MeshRes.class);
-		    if(mr == null)
-			throw(new Sprite.ResourceException("Model resource contains no mesh", md.mod.get()));
-		    md.real = new Model(mr.m, md.id);
-		    */
-		    /* This is really ugly, but I can't really think of
-		     * anything less ugly right now. */
-		    if(md.mod.get().name.equals("gfx/borka/male") || md.mod.get().name.equals("gfx/borka/female"))
-			md.real.z = -1;
-		    this.mod.add(md.real);
-		}
-		for(Iterator<ResData> o = md.tex.iterator(); o.hasNext();) {
-		    ResData res = o.next();
-		    md.real.addlay(Material.fromres(matowner, res.res.get(), new MessageBuf(res.sdt)));
-		    o.remove();
-		}
-		i.remove();
-	    } catch(Loading e) {
-		if(nocatch)
-		    throw(e);
-	    }
+    private Collection<Model> nmod(Collection<MD> nmod) {
+	Collection<Model> ret = new ArrayList<>(nmod.size());
+	for(MD md : nmod) {
+	    FastMesh.MeshRes mr = md.mod.get().layer(FastMesh.MeshRes.class);
+	    if(mr == null)
+		throw(new Sprite.ResourceException("Model resource contains no mesh", md.mod.get()));
+	    Model mod = new Model(mr.m, md.id);
+	    if(mr.rdat.containsKey("cz"))
+		mod.z = Integer.parseInt(mr.rdat.get("cz"));
+	    /* XXX: Actually set comp-z on borka meshes and remove me. */
+	    if(md.mod.get().name.equals("gfx/borka/male") || md.mod.get().name.equals("gfx/borka/female"))
+		mod.z = -1;
+	    for(ResData lres : md.tex)
+		mod.addlay(Material.fromres(matowner, lres.res.get(), new MessageBuf(lres.sdt)));
+	    ret.add(mod);
 	}
-	if(nmod.isEmpty())
-	    nmod = null;
+	return(ret);
     }
 
-    private void nequ(boolean nocatch) {
-	outer: for(Iterator<ED> i = nequ.iterator(); i.hasNext();) {
-	    ED ed = i.next();
-	    try {
-		Equ prev = null;
-		for(Equ equ : this.equ) {
-		    if(equ.desc.equals(ed)) {
-			equ.matched = true;
-			i.remove();
-			continue outer;
-		    } else if((equ instanceof SpriteEqu) && (((SpriteEqu)equ).spr instanceof Gob.Overlay.CUpd) && equ.desc.equals2(ed)) {
-			((Gob.Overlay.CUpd)((SpriteEqu)equ).spr).update(ed.res.sdt.clone());
+    private Collection<Equ> nequ(List<ED> nequ) {
+	Collection<Equ> ret = new ArrayList<>(nequ.size());
+	outer: for(ED ed : nequ) {
+	    for(Equ equ : this.equ) {
+		if(equ.desc.equals(ed)) {
+		    ret.add(equ);
+		    continue outer;
+		} else if((equ instanceof SpriteEqu) && (((SpriteEqu)equ).r instanceof Gob.Overlay.CUpd) && equ.desc.equals2(ed)) {
+		    /* XXX: This is impure and ugly, but fixing it
+		     * properly would seem to be significantly more
+		     * complex for what is probably little benefit. */
+		    if(!ed.res.sdt.equals(equ.desc.res.sdt)) {
+			((Gob.Overlay.CUpd)((SpriteEqu)equ).r).update(ed.res.sdt.clone());
 			equ.desc.res.sdt = ed.res.sdt;
-			equ.matched = true;
-			i.remove();
-			continue outer;
 		    }
+		    ret.add(equ);
+		    continue outer;
 		}
-		Equ ne;
-		if(ed.t == 0)
-		    ne = new SpriteEqu(ed);
-		else if(ed.t == 1)
-		    ne = new LightEqu(ed);
-		else
-		    throw(new RuntimeException("Invalid composite equ-type: " + ed.t));
-		ne.matched = true;
-		this.equ.add(ne);
-		i.remove();
-	    } catch(Loading e) {
-		if(nocatch)
-		    throw(e);
 	    }
-	}
-	if(nequ.isEmpty()) {
-	    nequ = null;
-	    for(Iterator<Equ> i = this.equ.iterator(); i.hasNext();) {
-		Equ equ = i.next();
-		if(!equ.matched)
-		    i.remove();
+	    Equ ne;
+	    switch(ed.t) {
+	    case 0: ne = new SpriteEqu(ed); break;
+	    case 1: ne = new LightEqu(ed); break;
+	    default: throw(new RuntimeException("Invalid composite equ-type: " + ed.t));
 	    }
+	    ret.add(ne);
 	}
+	return(ret);
     }
 
+    /* XXXRENDER: Remove me */
     public void changes(boolean nocatch) {
-	if(nmod != null)
-	    nmod(nocatch);
-	if(nequ != null)
-	    nequ(nocatch);
     }
 
+    /* XXXRENDER: Remove me */
     public void changes() {
 	changes(false);
     }
@@ -556,16 +503,23 @@ public class Composited /* XXXRENDER implements MapView.Clickable */ {
     public ClickInfo clickinfo(Rendered self, ClickInfo prev) {
 	return(new CompositeClick(prev, null, self));
     }
-
-    public boolean setup(RenderList rl) {
-	changes();
-	for(Model mod : this.mod)
-	    rl.add(mod, null);
-	for(Equ equ : this.equ)
-	    rl.add(equ, equ.et);
-	return(false);
-    }
     */
+
+    private void parts(RenderTree.Slot slot) {
+	for(Model mod : this.mod)
+	    slot.add(mod);
+	for(Equ equ : this.equ)
+	    slot.add(equ);
+    }
+
+    public void added(RenderTree.Slot slot) {
+	parts(slot);
+	slots.add(slot);
+    }
+
+    public void removed(RenderTree.Slot slot) {
+	slots.remove(slot);
+    }
     
     public void draw(GOut g) {
     }
@@ -577,24 +531,28 @@ public class Composited /* XXXRENDER implements MapView.Clickable */ {
 	    equ.tick(dt);
     }
 
+    public void gtick(Render g) {
+	for(Model mod : this.mod)
+	    mod.gtick(g);
+	for(Equ equ : this.equ)
+	    equ.gtick(g);
+    }
+
     public void chmod(List<MD> mod) {
 	if(mod.equals(cmod))
 	    return;
-	this.mod = new LinkedList<Model>();
-	nmod = new LinkedList<MD>();
-	for(MD md : mod)
-	    nmod.add(md.clone());
+	Collection<Model> pmod = this.mod;
+	this.mod = nmod(mod);
+	RUtils.readd(slots, this::parts, () -> {this.mod = pmod;});
 	cmod = new ArrayList<MD>(mod);
     }
     
     public void chequ(List<ED> equ) {
 	if(equ.equals(cequ))
 	    return;
-	for(Equ oequ : this.equ)
-	    oequ.matched = false;
-	nequ = new LinkedList<ED>();
-	for(ED ed : equ)
-	    nequ.add(ed.clone());
+	Collection<Equ> pequ = this.equ;
+	this.equ = nequ(equ);
+	RUtils.readd(slots, this::parts, () -> {this.equ = pequ;});
 	cequ = new ArrayList<ED>(equ);
     }
 }

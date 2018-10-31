@@ -37,42 +37,39 @@ import static haven.Composited.MD;
 public class Composite extends Drawable {
     public final static float ipollen = 0.2f;
     public final Indir<Resource> base;
-    public Composited comp;
+    public final Composited comp;
+    public int pseq;
+    private final ArrayList<RenderTree.Slot> slots = new ArrayList<>(1);
     private Collection<ResData> nposes = null, tposes = null;
     private boolean nposesold, retainequ = false;
     private float tptime;
     private WrapMode tpmode;
-    public int pseq;
     private List<MD> nmod;
     private List<ED> nequ;
     
     public Composite(Gob gob, Indir<Resource> base) {
 	super(gob);
 	this.base = base;
-    }
-    
-    private void init() {
-	if(comp != null)
-	    return;
 	comp = new Composited(base.get().layer(Skeleton.Res.class).s);
 	comp.eqowner = gob;
     }
     
-    /* XXXRENDER
-    public void setup(RenderList rl) {
-	try {
-	    init();
-	} catch(Loading e) {
-	    return;
-	}
-	rl.add(comp, null);
-    }
-    */
-
     public void drawadd(Iterable<RenderTree.Slot> slots) {
+	Collection<RenderTree.Slot> added = new ArrayList<>();
+	try {
+	    for(RenderTree.Slot slot : slots)
+		added.add(slot.add(comp));
+	} catch(RuntimeException e) {
+	    for(RenderTree.Slot slot : added)
+		slot.remove();
+	    throw(e);
+	}
+	this.slots.addAll(added);
     }
 
     public void drawremove() {
+	for(RenderTree.Slot slot : this.slots)
+	    slot.remove();
     }
 
     private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, boolean old) {
@@ -98,18 +95,22 @@ public class Composite extends Drawable {
     private void updequ() {
 	retainequ = false;
 	if(nmod != null) {
-	    comp.chmod(nmod);
-	    nmod = null;
+	    try {
+		comp.chmod(nmod);
+		nmod = null;
+	    } catch(Loading l) {
+	    }
 	}
 	if(nequ != null) {
-	    comp.chequ(nequ);
-	    nequ = null;
+	    try {
+		comp.chequ(nequ);
+		nequ = null;
+	    } catch(Loading l) {
+	    }
 	}
     }
 
     public void ctick(double dt) {
-	if(comp == null)
-	    return;
 	if(nposes != null) {
 	    try {
 		Composited.Poses np = comp.new Poses(loadposes(nposes, comp.skel, nposesold));
@@ -137,12 +138,15 @@ public class Composite extends Drawable {
 	comp.tick(dt);
     }
 
+    public void gtick(Render g) {
+	comp.gtick(g);
+    }
+
     public Resource getres() {
 	return(base.get());
     }
     
     public Pose getpose() {
-	init();
 	return(comp.pose);
     }
     
