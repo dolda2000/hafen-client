@@ -197,10 +197,12 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 	}
 
 	public void tick(double dt) {
+	    super.tick(dt);
 	    r.tick(dt);
 	}
 
 	public void gtick(Render g) {
+	    super.gtick(g);
 	    r.gtick(g);
 	}
     }
@@ -245,7 +247,9 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 		this.et = bt;
 	}
 
-	public void tick(double dt) {}
+	public void tick(double dt) {
+	    update();
+	}
 	public void gtick(Render g) {}
 
 	protected Pipe.Op state() {return(et.get());}
