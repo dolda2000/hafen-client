@@ -984,55 +984,38 @@ public class Skeleton {
 	
 	public void init() {}
     }
-    
+
     @Resource.LayerName("boneoff")
     public static class BoneOffset extends Resource.Layer implements Resource.IDLayer<String> {
 	public final String nm;
-	public final transient Command[] prog;
-	private static final HatingJava[] opcodes = new HatingJava[256];
+	public final transient Function<Pose, Supplier<Pipe.Op>>[] prog;
+
+	@SuppressWarnings("unchecked")
+	private static final Function<Message, Function<Pose, Supplier<Pipe.Op>>>[] opcodes = new Function[256];
 	static {
-	    opcodes[0] = new HatingJava() {
-		    public Command make(Message buf) {
-			final float x = (float)buf.cpfloat();
-			final float y = (float)buf.cpfloat();
-			final float z = (float)buf.cpfloat();
-			return(new Command() {
-				/*
-				public GLState make(Pose pose) {
-				    return(Location.xlate(new Coord3f(x, y, z)));
-				}
-				*/
-			    });
-		    }
-		};
-	    opcodes[1] = new HatingJava() {
-		    public Command make(Message buf) {
-			final float ang = (float)buf.cpfloat();
-			final float ax = (float)buf.cpfloat();
-			final float ay = (float)buf.cpfloat();
-			final float az = (float)buf.cpfloat();
-			return(new Command() {
-				/*
-				public GLState make(Pose pose) {
-				    return(Location.rot(new Coord3f(ax, ay, az), ang));
-				}
-				*/
-			    });
-		    }
-		};
-	    opcodes[2] = new HatingJava() {
-		    public Command make(Message buf) {
-			final String bonenm = buf.string();
-			return(new Command() {
-				/*
-				public GLState make(Pose pose) {
-				    Bone bone = pose.skel().bones.get(bonenm);
-				    return(pose.bonetrans(bone.idx));
-				}
-				*/
-			    });
-		    }
-		};
+	    opcodes[0] = buf -> {
+		float x = (float)buf.cpfloat();
+		float y = (float)buf.cpfloat();
+		float z = (float)buf.cpfloat();
+		Location loc = Location.xlate(new Coord3f(x, y, z));
+		return(pose -> () -> loc);
+	    };
+	    opcodes[1] = buf -> {
+		final float ang = (float)buf.cpfloat();
+		final float ax = (float)buf.cpfloat();
+		final float ay = (float)buf.cpfloat();
+		final float az = (float)buf.cpfloat();
+		Location loc = Location.rot(new Coord3f(ax, ay, az), ang);
+		return(pose -> () -> loc);
+	    };
+	    opcodes[2] = buf -> {
+		final String bonenm = buf.string();
+		return(pose -> {
+			Bone bone = pose.skel().bones.get(bonenm);
+			return(pose.bonetrans(bone.idx));
+		    });
+	    };
+	    /* XXXRENDER
 	    opcodes[3] = new HatingJava() {
 		    public Command make(Message buf) {
 			float rx1 = (float)buf.cpfloat();
@@ -1043,49 +1026,47 @@ public class Skeleton {
 			final String orignm = buf.string();
 			final String tgtnm = buf.string();
 			return(new Command() {
-				/*
 				public GLState make(Pose pose) {
 				    Bone orig = pose.skel().bones.get(orignm);
 				    Bone tgt = pose.skel().bones.get(tgtnm);
 				    return(pose.new BoneAlign(ref, orig, tgt));
 				}
-				*/
 			    });
 		    }
 		};
-	}
-	
-	public interface Command {
-	    // public GLState make(Pose pose); XXXRENDER
+	    */
 	}
 
-	public interface HatingJava {
-	    public Command make(Message buf);
-	}
-	
+	@SuppressWarnings("unchecked")
 	public BoneOffset(Resource res, Message buf) {
 	    res.super();
 	    this.nm = buf.string();
-	    List<Command> cbuf = new LinkedList<Command>();
+	    List<Function<Pose, Supplier<Pipe.Op>>> cbuf = new LinkedList<>();
 	    while(!buf.eom())
-		cbuf.add(opcodes[buf.uint8()].make(buf));
-	    this.prog = cbuf.toArray(new Command[0]);
+		cbuf.add(opcodes[buf.uint8()].apply(buf));
+	    this.prog = cbuf.toArray(new Function[0]);
 	}
-	
+
 	public String layerid() {
 	    return(nm);
 	}
-	
+
 	public void init() {
 	}
-	
-	/* XXXRENDER
-	public GLState forpose(Pose pose) {
-	    GLState[] ls = new GLState[prog.length];
+
+	@SuppressWarnings("unchecked")
+	public Supplier<Pipe.Op> forpose(Pose pose) {
+	    if(prog.length == 1)
+		return(prog[0].apply(pose));
+	    Supplier<Pipe.Op>[] ls = new Supplier[prog.length];
 	    for(int i = 0; i < prog.length; i++)
-		ls[i] = prog[i].make(pose);
-	    return(GLState.compose(ls));
+		ls[i] = prog[i].apply(pose);
+	    return(() -> {
+		    Pipe.Op[] buf = new Pipe.Op[ls.length];
+		    for(int i = 0; i < ls.length; i++)
+			buf[i] = ls[i].get();
+		    return(Pipe.Op.compose(buf));
+		});
 	}
-	*/
     }
 }
