@@ -159,6 +159,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	}
     }
 
+    /* XXXRENDER: Remove */
     public static class Static {}
     public static class SemiStatic {}
 

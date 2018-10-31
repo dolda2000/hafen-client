@@ -58,12 +58,12 @@ public class RUtils {
 	}
     }
 
-    public abstract static class StateNode implements Node {
-	public final Node r;
+    public abstract static class StateNode<R extends RenderTree.Node> implements Node {
+	public final R r;
 	private final Collection<Slot> slots = new ArrayList<>(1);
 	private Op cstate = null;
 
-	public StateNode(Node r) {
+	public StateNode(R r) {
 	    this.r = r;
 	}
 
@@ -92,6 +92,12 @@ public class RUtils {
 
 	public void removed(Slot slot) {
 	    slots.remove(slot);
+	}
+
+	public static <R extends RenderTree.Node> StateNode from(R r, Supplier<? extends Op> st) {
+	    return(new StateNode<R>(r) {
+		    protected Op state() {return(st.get());}
+		});
 	}
     }
 }
