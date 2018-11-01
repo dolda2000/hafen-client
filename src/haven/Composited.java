@@ -157,15 +157,8 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 		this.order = new ModOrder(z1, z2);
 	    }
 
-	    /* XXXRENDER
-	    public void drawflat(GOut g) {
-		if(z2 == 0)
-		    m.drawflat(g);
-	    }
-	    */
-
 	    public void added(RenderTree.Slot slot) {
-		slot.ostate(Pipe.Op.compose(mat, order));
+		slot.ostate(Pipe.Op.compose(mat, order, (order.z2 == 0) ? null : (p -> p.put(Clickable.slot, null))));
 		slot.lockstate();
 		slot.add(m);
 	    }
@@ -447,67 +440,41 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 	changes(false);
     }
 
-    /* XXXRENDER
-    public Object[] clickargs(ClickInfo inf) {
-	Rendered[] st = inf.array();
-	for(int g = 0; g < st.length; g++) {
-	    if(st[g] instanceof Gob) {
-		Gob gob = (Gob)st[g];
-		Object[] ret = {0, (int)gob.id, gob.rc.floor(OCache.posres), 0, 0};
-		int id = 0;
-		for(int i = g - 1; i >= 0; i--) {
-		    if(st[i] instanceof Model) {
-			Model mod = (Model)st[i];
-			if(mod.id >= 0)
-			    id = 0x01000000 | ((mod.id & 0xff) << 8);
-		    } else if(st[i] instanceof Equ) {
-			Equ equ = (Equ)st[i];
-			if(equ.id >= 0)
-			    id = 0x02000000 | ((equ.id & 0xff) << 16);
-		    }
-		      else if(st[i] instanceof FastMesh.ResourceMesh) {
-			FastMesh.ResourceMesh rm = (FastMesh.ResourceMesh)st[i];
-			if((id & 0xff000000) == 0x02000000)
-			    id = (id & 0xffff0000) | (rm.id & 0xffff);
-		    }
+    public static class CompositeClick extends Clickable {
+	public final Gob.GobClick gi;
+
+	public CompositeClick(Gob.GobClick gi) {
+	    this.gi = gi;
+	}
+
+	public Object[] clickargs(ClickData cd) {
+	    Object[] ret = {0, (int)gi.gob.id, gi.gob.rc.floor(OCache.posres), 0, -1};
+	    int id = 0;
+	    for(Object node : cd.array()) {
+		if(node instanceof Model) {
+		    Model mod = (Model)node;
+		    if(mod.id >= 0)
+			id = 0x01000000 | ((mod.id & 0xff) << 8);
+		} else if(node instanceof Equ) {
+		    Equ equ = (Equ)node;
+		    if(equ.id >= 0)
+			id = 0x02000000 | ((equ.id & 0xff) << 16);
+		} else if(node instanceof FastMesh.ResourceMesh) {
+		    FastMesh.ResourceMesh rm = (FastMesh.ResourceMesh)node;
+		    if((id & 0xff000000) == 0x02000000)
+			id = (id & 0xffff0000) | (rm.id & 0xffff);
 		}
-		ret[4] = id;
-		return(ret);
 	    }
-	}
-	return(new Object[0]);
-    }
-    */
-
-    /*
-    private static class CompositeClick extends ClickInfo {
-	CompositeClick(ClickInfo prev, Integer id, Rendered r) {
-	    super(prev, id, r);
+	    ret[4] = id;
+	    return(ret);
 	}
 
-	public ClickInfo include(Rendered r) {
-	    int id = (this.id == null)?0:this.id;
-	    if(r instanceof Model) {
-		Model mod = (Model)r;
-		if(mod.id >= 0)
-		    return(new CompositeClick(this, 0x01000000 | ((mod.id & 0xff) << 8), r));
-	    } else if(r instanceof Equ) {
-		Equ equ = (Equ)r;
-		if(equ.id >= 0)
-		    return(new CompositeClick(this, 0x02000000 | ((equ.id & 0xff) << 16), r));
-	    } else if(r instanceof FastMesh.ResourceMesh) {
-		FastMesh.ResourceMesh rm = (FastMesh.ResourceMesh)r;
-		if((id & 0xff000000) == 2)
-		    return(new CompositeClick(this, id & 0xffff0000 | (rm.id & 0xffff), r));
-	    }
-	    return(this);
-	}
+	public static final Pipe.Op prep = p -> {
+	    Clickable prev = p.get(Clickable.slot);
+	    if(prev instanceof Gob.GobClick)
+		new CompositeClick((Gob.GobClick)prev).apply(p);
+	};
     }
-
-    public ClickInfo clickinfo(Rendered self, ClickInfo prev) {
-	return(new CompositeClick(prev, null, self));
-    }
-    */
 
     private void parts(RenderTree.Slot slot) {
 	for(Model mod : this.mod)
@@ -517,6 +484,7 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
     }
 
     public void added(RenderTree.Slot slot) {
+	slot.ostate(CompositeClick.prep);
 	parts(slot);
 	slots.add(slot);
     }
