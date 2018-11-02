@@ -654,6 +654,7 @@ public class OCache implements Iterable<Gob> {
 		if(ng.nremoved && ng.added && !ng.gremoved) {
 		    remove(ng.id);
 		    ng.gremoved = true;
+		    ng.gob = null;
 		    break main;
 		}
 		if(ng.gob == null) {
