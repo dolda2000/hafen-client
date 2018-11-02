@@ -339,7 +339,9 @@ public class RenderTree implements RenderList.Adapter {
 		throw(new IllegalStateException());
 	    if(children[idx] != ch)
 		throw(new RuntimeException());
-	    (children[idx] = children[--nchildren]).pidx = idx;
+	    (children[idx] = children[nchildren - 1]).pidx = idx;
+	    children[nchildren - 1] = null;
+	    nchildren--;
 	    ch.pidx = -1;
 	}
 
