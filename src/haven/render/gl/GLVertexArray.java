@@ -119,6 +119,9 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	    }
 	    vaos[n] = vao;
 	    progs[n] = prog;
+	    n++;
+	    /* XXX: This does not clean up after forgotten
+	     * programs. Use weak refs for programs? */
 	}
 
 	GLVertexArray get(GLProgram prog) {
