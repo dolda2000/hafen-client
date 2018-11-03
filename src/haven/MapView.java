@@ -466,6 +466,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if(current.containsKey(ob))
 		    throw(new RuntimeException());
 		adding.add(ob);
+		this.notifyAll();
 		adder.check();
 	    }
 	}
