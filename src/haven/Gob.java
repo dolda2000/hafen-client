@@ -586,6 +586,9 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	}
 
 	public void added(RenderTree.Slot slot) {
+	    /* XXX: xl and rot have not been set yet, so state() is
+	     * undefined and will incur an unnecessary def-mask update
+	     * on the first tick. */
 	    slot.ostate(state());
 	    slot.add(Gob.this);
 	    slots.add(slot);
