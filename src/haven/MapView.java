@@ -893,10 +893,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    nextid = 1;
 	    }
 	    Clickslot ns = new Clickslot(slot, id);
-	    if(((slots.put(slot, ns)) != null) || (idmap.put(id, ns) != null))
-		throw(new AssertionError());
 	    if(back != null)
 		back.add(ns);
+	    if(((slots.put(slot, ns)) != null) || (idmap.put(id, ns) != null))
+		throw(new AssertionError());
 	}
 
 	public void remove(Slot<? extends Rendered> slot) {
