@@ -441,7 +441,11 @@ public class VertexBuf {
 		    cons.cons(bufs, res, buf, num);
 		}
 	    }
-	    this.b = new VertexBuf(bufs.toArray(new AttribData[0]));
+	    this.b = new VertexBuf(bufs.toArray(new AttribData[0])) {
+		    public String toString() {
+			return(String.format("#<vertexbuf %s>", res.name));
+		    }
+		};
 	}
 	
 	public void init() {}
