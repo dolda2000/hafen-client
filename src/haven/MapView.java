@@ -506,6 +506,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if(current.containsKey(ob))
 		    throw(new RuntimeException());
 		adding.add(ob);
+		this.notifyAll();
 		adder.check();
 	    }
 	}
@@ -868,11 +869,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public class Clickslot implements Slot<Rendered> {
 	    public final Slot<? extends Rendered> bk;
 	    public final int id;
+	    final Pipe idp;
 	    private GroupPipe state;
 
 	    public Clickslot(Slot<? extends Rendered> bk, int id) {
 		this.bk = bk;
 		this.id = id;
+		this.idp = new SinglePipe<>(FragID.id, new FragID.ID(id2col(id)));
 	    }
 
 	    public Rendered obj() {
@@ -887,12 +890,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	    private class IDState implements GroupPipe {
 		static final int idx_bas = 0, idx_idp = 1, idx_back = 2;
-		final Pipe idp;
 		final GroupPipe back;
 
 		IDState(GroupPipe back) {
 		    this.back = back;
-		    this.idp = new SinglePipe<>(FragID.id, new FragID.ID(id2col(id)));
 		}
 
 		public Pipe group(int idx) {
@@ -935,10 +936,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    nextid = 1;
 	    }
 	    Clickslot ns = new Clickslot(slot, id);
-	    if(((slots.put(slot, ns)) != null) || (idmap.put(id, ns) != null))
-		throw(new AssertionError());
 	    if(back != null)
 		back.add(ns);
+	    if(((slots.put(slot, ns)) != null) || (idmap.put(id, ns) != null))
+		throw(new AssertionError());
 	}
 
 	public void remove(Slot<? extends Rendered> slot) {
@@ -954,8 +955,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void update(Slot<? extends Rendered> slot) {
 	    if(back != null) {
 		Clickslot cs = slots.get(slot);
-		if(cs != null)
+		if(cs != null) {
+		    cs.state = null;
 		    back.update(cs);
+		}
 	    }
 	}
 

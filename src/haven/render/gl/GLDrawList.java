@@ -883,6 +883,7 @@ public class GLDrawList implements DrawList {
 	    dslot.insert();
 	    if(slotmap.put(slot, dslot) != null)
 		throw(new AssertionError());
+	    /* XXXRENDER: Remove */
 	    verify();
 	}
     }
@@ -892,6 +893,7 @@ public class GLDrawList implements DrawList {
 	    DrawSlot dslot = slotmap.remove(slot);
 	    dslot.remove();
 	    dslot.dispose();
+	    /* XXXRENDER: Remove */
 	    verify();
 	}
     }
