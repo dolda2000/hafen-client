@@ -168,9 +168,12 @@ public abstract class Light implements RenderTree.Node {
     @Material.ResName("light")
     public static class $light implements Material.ResCons {
 	public Pipe.Op cons(Resource res, Object... args) {
-	    if(!args[0].equals("def"))
+	    switch((String)args[0]) {
+	    case "def": case "n":
+		return(null);
+	    default:
 		throw(new RuntimeException(String.format("%s using non-default lighting", res.name)));
-	    return(null);
+	    }
 	}
     }
 
