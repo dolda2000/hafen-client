@@ -84,10 +84,13 @@ public class Fightsess extends Widget {
     private void updatepos() {
 	MapView map;
 	Gob pl;
-	if(((map = getparent(GameUI.class).map) == null) || ((pl = map.player()) == null) || (pl.sc == null))
+	if(((map = getparent(GameUI.class).map) == null) || ((pl = map.player()) == null))
 	    return;
-	pcc = pl.sc;
-	pho = (int)(pl.sczu.mul(20f).y) - 20;
+	Coord3f raw = pl.placed.getc();
+	if(raw == null)
+	    return;
+	pcc = map.screenxf(raw).round2();
+	pho = (int)(map.screenxf(raw.add(0, 0, 20)).round2().sub(pcc).y) - 20;
     }
 
     private static final Resource tgtfx = Resource.local().loadwait("gfx/hud/combat/trgtarw");
