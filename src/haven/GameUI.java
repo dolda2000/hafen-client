@@ -189,8 +189,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	Coord plc = null;
 	{
 	    Gob pl = map.player();
-	    if(pl != null)
-		plc = pl.sc;
+	    if(pl != null) {
+		Coord3f raw = pl.placed.getc();
+		if(raw != null)
+		    plc = map.screenxf(raw).round2();
+	    }
 	}
 	Area parea = Area.sized(Coord.z, sz);
 	while(!open.isEmpty()) {

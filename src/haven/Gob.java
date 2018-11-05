@@ -31,8 +31,6 @@ import haven.render.*;
 
 public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     public Coord2d rc;
-    public Coord sc;
-    public Coord3f sczu;
     public double a;
     public boolean virtual = false;
     int clprio = 0;
@@ -596,6 +594,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 
 	public void removed(RenderTree.Slot slot) {
 	    slots.remove(slot);
+	}
+
+	public Coord3f getc() {
+	    return(this.c);
 	}
     }
     public final Placed placed = new Placed();
