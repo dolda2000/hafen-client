@@ -166,10 +166,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	this(glob, c, -1);
     }
 
-    public static interface ANotif<T extends GAttrib> {
-	public void ch(T n);
-    }
-
     public void ctick(double dt) {
 	for(GAttrib a : attr.values())
 	    a.ctick(dt);
