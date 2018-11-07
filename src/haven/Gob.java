@@ -63,14 +63,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    this.spr = spr;
 	}
 
-	public static interface CDel {
-	    public void delete();
-	}
-
-	public static interface CUpd {
-	    public void update(Message sdt);
-	}
-
 	public static interface SetupMod {
 	    /* XXXRENDER
 	    public void setupgob(GLState.Buffer buf);
@@ -191,7 +183,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 		} catch(Loading e) {}
 	    } else {
 		boolean done = ol.spr.tick(dt);
-		if((!ol.delign || (ol.spr instanceof Overlay.CDel)) && done)
+		if((!ol.delign || (ol.spr instanceof Sprite.CDel)) && done)
 		    i.remove();
 	    }
 	}

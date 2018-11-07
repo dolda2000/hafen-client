@@ -32,7 +32,7 @@ import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 import haven.MorphedMesh.Morpher;
 
-public class SkelSprite extends Sprite implements Gob.Overlay.CUpd, Skeleton.HasPose {
+public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose {
     public static final Pipe.Op
 	rigid = new BaseColor(FColor.GREEN),
 	morphed = new BaseColor(FColor.RED),

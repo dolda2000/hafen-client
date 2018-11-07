@@ -171,8 +171,8 @@ public class OCache implements Iterable<Gob> {
 	MessageBuf sdt = new MessageBuf(dat);
 	Drawable dr = g.getattr(Drawable.class);
 	ResDrawable d = (dr instanceof ResDrawable)?(ResDrawable)dr:null;
-	if((d != null) && (d.res == res) && !d.sdt.equals(sdt) && (d.spr != null) && (d.spr instanceof Gob.Overlay.CUpd)) {
-	    ((Gob.Overlay.CUpd)d.spr).update(sdt);
+	if((d != null) && (d.res == res) && !d.sdt.equals(sdt) && (d.spr != null) && (d.spr instanceof Sprite.CUpd)) {
+	    ((Sprite.CUpd)d.spr).update(sdt);
 	    d.sdt = sdt;
 	} else if((d == null) || (d.res != res) || !d.sdt.equals(sdt)) {
 	    g.setattr(new ResDrawable(g, res, sdt));
@@ -488,9 +488,9 @@ public class OCache implements Iterable<Gob> {
 	    if(ol == null) {
 		g.ols.add(ol = new Gob.Overlay(olid, resid, sdt));
 	    } else if(!ol.sdt.equals(sdt)) {
-		if(ol.spr instanceof Gob.Overlay.CUpd) {
+		if(ol.spr instanceof Sprite.CUpd) {
 		    ol.sdt = new MessageBuf(sdt);
-		    ((Gob.Overlay.CUpd)ol.spr).update(ol.sdt);
+		    ((Sprite.CUpd)ol.spr).update(ol.sdt);
 		} else {
 		    g.ols.remove(ol);
 		    g.ols.add(ol = new Gob.Overlay(olid, resid, sdt));
@@ -498,8 +498,8 @@ public class OCache implements Iterable<Gob> {
 	    }
 	    ol.delign = prs;
 	} else {
-	    if((ol != null) && (ol.spr instanceof Gob.Overlay.CDel))
-		((Gob.Overlay.CDel)ol.spr).delete();
+	    if((ol != null) && (ol.spr instanceof Sprite.CDel))
+		((Sprite.CDel)ol.spr).delete();
 	    else
 		g.ols.remove(ol);
 	}

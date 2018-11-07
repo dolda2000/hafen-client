@@ -408,12 +408,12 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 		if(equ.desc.equals(ed)) {
 		    ret.add(equ);
 		    continue outer;
-		} else if((equ instanceof SpriteEqu) && (((SpriteEqu)equ).r instanceof Gob.Overlay.CUpd) && equ.desc.equals2(ed)) {
+		} else if((equ instanceof SpriteEqu) && (((SpriteEqu)equ).r instanceof Sprite.CUpd) && equ.desc.equals2(ed)) {
 		    /* XXX: This is impure and ugly, but fixing it
 		     * properly would seem to be significantly more
 		     * complex for what is probably little benefit. */
 		    if(!ed.res.sdt.equals(equ.desc.res.sdt)) {
-			((Gob.Overlay.CUpd)((SpriteEqu)equ).r).update(ed.res.sdt.clone());
+			((Sprite.CUpd)((SpriteEqu)equ).r).update(ed.res.sdt.clone());
 			equ.desc.res.sdt = ed.res.sdt;
 		    }
 		    ret.add(equ);
