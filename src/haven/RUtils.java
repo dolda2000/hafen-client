@@ -47,6 +47,11 @@ public class RUtils {
 	return(added);
     }
 
+    public static void multirem(Collection<Slot> slots) {
+	for(Slot slot : slots)
+	    slot.remove();
+    }
+
     public static void readd(Collection<Slot> slots, Consumer<Slot> add, Runnable revert) {
 	Collection<Slot> ch = new ArrayList<>(slots.size());
 	try {

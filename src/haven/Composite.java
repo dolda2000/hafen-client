@@ -59,8 +59,7 @@ public class Composite extends Drawable {
     }
 
     public void drawremove() {
-	for(RenderTree.Slot slot : this.slots)
-	    slot.remove();
+	RUtils.multirem(this.slots);
     }
 
     private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, boolean old) {

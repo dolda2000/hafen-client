@@ -60,8 +60,7 @@ public class ResDrawable extends Drawable {
     }
 
     public void drawremove() {
-	for(RenderTree.Slot slot : this.slots)
-	    slot.remove();
+	RUtils.multirem(this.slots);
     }
 
     public void dispose() {
