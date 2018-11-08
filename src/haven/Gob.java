@@ -556,7 +556,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	public void tick() {
 	    boolean upd = false;
 	    try {
-		Coord3f c = getc();
+		Coord3f c = Gob.this.getc();
 		c.y = -c.y;
 		if(!Utils.eq(this.c, c)) {
 		    xl = new Location(Transform.makexlate(new Matrix4f(), this.c = c), "gobx");
