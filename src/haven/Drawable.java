@@ -43,6 +43,6 @@ public abstract class Drawable extends GAttrib implements Skeleton.HasPose {
 	return(null);
     }
 
-    public abstract void drawadd(Iterable<RenderTree.Slot> slots);
+    public abstract void drawadd(java.util.Collection<RenderTree.Slot> slots);
     public abstract void drawremove();
 }

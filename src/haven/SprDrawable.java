@@ -38,17 +38,8 @@ public class SprDrawable extends Drawable {
 	this.spr = spr;
     }
 
-    public void drawadd(Iterable<RenderTree.Slot> slots) {
-	Collection<RenderTree.Slot> added = new ArrayList<>();
-	try {
-	    for(RenderTree.Slot slot : slots)
-		added.add(slot.add(spr));
-	} catch(RuntimeException e) {
-	    for(RenderTree.Slot slot : added)
-		slot.remove();
-	    throw(e);
-	}
-	this.slots.addAll(added);
+    public void drawadd(Collection<RenderTree.Slot> slots) {
+	this.slots.addAll(RUtils.multiadd(slots, spr));
     }
 
     public void drawremove() {
