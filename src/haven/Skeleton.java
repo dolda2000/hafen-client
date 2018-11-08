@@ -836,7 +836,7 @@ public class Skeleton {
 			}
 			*/
 		    };
-		n.ols.add(new Gob.Overlay(-1, res, new MessageBuf(sdt)));
+		n.addol(res, new MessageBuf(sdt));
 	    }
 	}
 

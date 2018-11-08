@@ -486,14 +486,14 @@ public class OCache implements Iterable<Gob> {
 	if(resid != null) {
 	    sdt = new MessageBuf(sdt);
 	    if(ol == null) {
-		g.ols.add(ol = new Gob.Overlay(olid, resid, sdt));
+		g.addol(ol = new Gob.Overlay(g, olid, resid, sdt));
 	    } else if(!ol.sdt.equals(sdt)) {
 		if(ol.spr instanceof Sprite.CUpd) {
 		    ol.sdt = new MessageBuf(sdt);
 		    ((Sprite.CUpd)ol.spr).update(ol.sdt);
 		} else {
-		    g.ols.remove(ol);
-		    g.ols.add(ol = new Gob.Overlay(olid, resid, sdt));
+		    g.addol(ol = new Gob.Overlay(g, olid, resid, sdt));
+		    ol.remove();
 		}
 	    }
 	    ol.delign = prs;
@@ -501,7 +501,7 @@ public class OCache implements Iterable<Gob> {
 	    if((ol != null) && (ol.spr instanceof Sprite.CDel))
 		((Sprite.CDel)ol.spr).delete();
 	    else
-		g.ols.remove(ol);
+		ol.remove();
 	}
     }
     public Delta overlay(Message msg) {

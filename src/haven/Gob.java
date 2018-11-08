@@ -37,26 +37,29 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     public long id;
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
-    public Collection<Overlay> ols = new LinkedList<Overlay>();
+    private Collection<Overlay> ols = new ArrayList<Overlay>();
     public final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
     private final Collection<ResAttr.Cell<?>> rdata = new LinkedList<ResAttr.Cell<?>>();
     private final Collection<ResAttr.Load> lrdata = new LinkedList<ResAttr.Load>();
 
     public static class Overlay {
-	public Indir<Resource> res;
+	public final Gob gob;
+	public final Indir<Resource> res;
 	public MessageBuf sdt;
 	public Sprite spr;
 	public int id;
 	public boolean delign = false;
 
-	public Overlay(int id, Indir<Resource> res, Message sdt) {
+	public Overlay(Gob gob, int id, Indir<Resource> res, Message sdt) {
+	    this.gob = gob;
 	    this.id = id;
 	    this.res = res;
 	    this.sdt = new MessageBuf(sdt);
-	    spr = null;
+	    this.spr = null;
 	}
 
 	public Overlay(Sprite spr) {
+	    this.gob = null;
 	    this.id = -1;
 	    this.res = null;
 	    this.sdt = null;
@@ -82,6 +85,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    return((spr == null)?null:spr.staticp());
 	}
 	*/
+
+	public void remove() {
+	    gob.ols.remove(this);
+	}
     }
 
     /* XXX: This whole thing didn't turn out quite as nice as I had
@@ -203,6 +210,9 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     }
     public void addol(Sprite ol) {
 	addol(new Overlay(ol));
+    }
+    public void addol(Indir<Resource> res, Message sdt) {
+	addol(new Overlay(this, -1, res, sdt));
     }
 
     public Overlay findol(int id) {
