@@ -109,7 +109,7 @@ public class AudioSprite {
 	*/
     }
 
-    public static class RepeatSprite extends Sprite implements Gob.Overlay.CDel {
+    public static class RepeatSprite extends Sprite implements Sprite.CDel {
 	// private ActAudio.PosClip clip; XXXRENDER
 	private final Resource.Audio end;
 

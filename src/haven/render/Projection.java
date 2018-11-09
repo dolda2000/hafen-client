@@ -47,10 +47,11 @@ public class Projection extends Transform {
 	return(new Coord3f(o[0] * d, o[1] * d, o[2] * d));
     }
 
-    public Coord3f toscreen(Coord3f ec, Coord sz) {
+    public Coord3f toscreen(Coord3f ec, Area area) {
 	Coord3f n = tonorm(ec);
-	return(new Coord3f(((n.x + 1) / 2) * sz.x,
-			   ((-n.y + 1) / 2) * sz.y,
+	Coord sz = area.sz();
+	return(new Coord3f(area.ul.x + ((( n.x + 1) / 2) * sz.x),
+			   area.ul.y + (((-n.y + 1) / 2) * sz.y),
 			   n.z));
     }
     

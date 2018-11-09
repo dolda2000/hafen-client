@@ -47,14 +47,22 @@ public abstract class Sprite implements RenderTree.Node {
 	factories.add(AudioSprite.fact);
 	*/
     }
-    
+
     public interface Owner extends OwnerContext {
 	public Random mkrandoom();
 	public Resource getres();
 	@Deprecated
 	public default Glob glob() {return(context(Glob.class));}
     }
-    
+
+    public static interface CDel {
+	public void delete();
+    }
+
+    public static interface CUpd {
+	public void update(Message sdt);
+    }
+
     public static class FactMaker implements Resource.PublishedCode.Instancer {
 	public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
 	    if(Factory.class.isAssignableFrom(cl))

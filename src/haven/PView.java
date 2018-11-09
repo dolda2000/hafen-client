@@ -40,12 +40,14 @@ public abstract class PView extends Widget {
     public Texture2D depth = null;
     private final Map<Object, Pipe.Op> basicstates = new IdentityHashMap<>();
     private final Light.LightList lights = new Light.LightList();
+    private final ScreenList list2d = new ScreenList();
     private Texture2D.Sampler2D fragsamp;
     private DrawList back = null;
 
     public PView(Coord sz) {
 	super(sz);
 	tree = new RenderTree();
+	tree.add(list2d, Render2D.class);
 	conf = tree.add((RenderTree.Node)null);
 	conf.ostate(conf());
 	basic = conf.add((RenderTree.Node)null);
@@ -97,6 +99,7 @@ public abstract class PView extends Widget {
 	g.out.clear(basic.state(), 1.0);
 	back.draw(g.out);
 	g.image(new TexRaw(fragsamp, true), Coord.z);
+	list2d.draw(g);
     }
 
     private static final Object id_fb = new Object(), id_view = new Object(), id_misc = new Object();
@@ -131,5 +134,30 @@ public abstract class PView extends Widget {
 
     protected void lights() {
 	basic(Light.class, Pipe.Op.compose(lights, lights.compile()));
+    }
+
+    public interface Render2D extends RenderTree.Node {
+	public void draw(GOut g, Pipe state);
+    }
+
+    public static class ScreenList implements RenderList<Render2D> {
+	private final Set<Slot<? extends Render2D>> cur = new HashSet<>();
+
+	public void draw(GOut g) {
+	    for(Slot<? extends Render2D> slot : cur) {
+		slot.obj().draw(g, slot.state());
+	    }
+	}
+
+	public void add(Slot<? extends Render2D> slot) {
+	    cur.add(slot);
+	}
+
+	public void remove(Slot<? extends Render2D> slot) {
+	    cur.remove(slot);
+	}
+
+	public void update(Slot<? extends Render2D> slot) {}
+	public void update(Pipe group, int[] statemask) {}
     }
 }

@@ -34,6 +34,24 @@ import haven.render.RenderTree.Slot;
 import haven.render.Pipe.Op;
 
 public class RUtils {
+    public static Collection<Slot> multiadd(Collection<Slot> slots, Node node) {
+	Collection<Slot> added = new ArrayList<>(slots.size());
+	try {
+	    for(Slot slot : slots)
+		added.add(slot.add(node));
+	} catch(RuntimeException e) {
+	    for(Slot slot : added)
+		slot.remove();
+	    throw(e);
+	}
+	return(added);
+    }
+
+    public static void multirem(Collection<Slot> slots) {
+	for(Slot slot : slots)
+	    slot.remove();
+    }
+
     public static void readd(Collection<Slot> slots, Consumer<Slot> add, Runnable revert) {
 	Collection<Slot> ch = new ArrayList<>(slots.size());
 	try {

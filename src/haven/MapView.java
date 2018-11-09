@@ -1384,7 +1384,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    odt = new MessageBuf((byte[])args[a++]);
 		else
 		    odt = Message.nil;
-		placing.ols.add(new Gob.Overlay(-1, ores, odt));
+		placing.addol(ores, odt);
 	    }
 	} else if(msg == "unplace") {
 	    placing = null;
