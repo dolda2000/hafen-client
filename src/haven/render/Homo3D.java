@@ -160,4 +160,19 @@ public class Homo3D {
 		    return(ret);
 		}));
     }
+
+    public static Coord3f obj2view(Coord3f objc, Pipe state, Area view) {
+	float[] mapc  = state.get(loc).fin(Matrix4f.id).mul4(objc.to4a(1));
+	float[] eyec  = state.get(cam).fin(Matrix4f.id).mul4(mapc);
+	float[] clipc = state.get(prj).fin(Matrix4f.id).mul4(eyec);
+	float d = 1 / clipc[3];
+	Coord sz = view.sz();
+	return(new Coord3f(view.ul.x + ((( clipc[0] + 1) / 2) * sz.x),
+			   view.ul.y + (((-clipc[1] + 1) / 2) * sz.y),
+			   clipc[2]));
+    }
+
+    public static Coord3f obj2view(Coord3f c, Pipe state) {
+	return(obj2view(c, state, state.get(States.viewport).area));
+    }
 }
