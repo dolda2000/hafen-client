@@ -870,7 +870,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			if(ret >= 0)
 			    return(ret + idx_back);
 		    }
-		    if(curbasic.mask[id])
+		    if((id < curbasic.mask.length) && curbasic.mask[id])
 			return(idx_bas);
 		    return(-1);
 		}
