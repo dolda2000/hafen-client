@@ -73,9 +73,8 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	this.id = buf[0];
     }
 	
-    protected void delete(BGL gl) {
-	BGL.ID[] buf = {this};
-	gl.glDeleteFramebuffers(1, buf, 0);
+    protected void delete(GL2 gl) {
+	gl.glDeleteFramebuffers(1, new int[] {id}, 0);
     }
 	
     public int glid() {

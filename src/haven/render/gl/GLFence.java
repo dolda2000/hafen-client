@@ -52,7 +52,7 @@ public class GLFence extends GLQuery {
 	return(true);
     }
 
-    public void delete(BGL gl) {
-	gl.glDeleteSync(id);
+    public void delete(GL2 gl) {
+	gl.getGL3bc().glDeleteSync(id);
     }
 }

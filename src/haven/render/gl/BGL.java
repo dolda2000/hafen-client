@@ -99,6 +99,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void bglDelete(final GLObject ob) {
+	add(new Command() {
+		public void run(GL2 gl) {ob.delete(gl);}
+	    });
+    }
+
     public void bglSubmit(final Request req) {
 	add(new Command() {
 		public void run(GL2 gl) {req.run(gl);}

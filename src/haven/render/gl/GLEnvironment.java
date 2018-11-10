@@ -113,7 +113,7 @@ public class GLEnvironment implements Environment {
 	    disposed.clear();
 	}
 	for(GLObject obj : copy)
-	    obj.delete(buf);
+	    buf.bglDelete(obj);
 	buf.bglCheckErr();
 	return(buf);
     }
