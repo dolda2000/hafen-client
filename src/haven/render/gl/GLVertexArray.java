@@ -33,7 +33,7 @@ import haven.render.*;
 import static haven.render.DataBuffer.Usage.*;
 
 public class GLVertexArray extends GLObject implements BGL.ID {
-    private int id;
+    private int id, state = 0;
     
     public GLVertexArray(GLEnvironment env) {
 	super(env);
@@ -41,17 +41,26 @@ public class GLVertexArray extends GLObject implements BGL.ID {
     }
 
     public void create(GL2 gl) {
+	ckstate(state, 0);
 	int[] buf = new int[1];
 	gl.glGenVertexArrays(1, buf, 0);
 	this.id = buf[0];
+	state = 1;
     }
 
     protected void delete(GL2 gl) {
+	ckstate(state, 1);
 	gl.glDeleteVertexArrays(1, new int[] {id}, 0);
+	state = 2;
     }
 
     public int glid() {
+	ckstate(state, 1);
 	return(id);
+    }
+
+    public String toString() {
+	return(String.format("#<gl.vao %d>", id));
     }
 
     static boolean ephemeralp(VertexArray va) {

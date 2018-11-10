@@ -53,4 +53,9 @@ public abstract class GLObject implements Disposable {
     protected void finalize() {
 	dispose();
     }
+
+    public void ckstate(int st, int ex) {
+	if(st != ex)
+	    throw(new IllegalStateException(String.format("unexpected state %d, expected %d, for %s", st, ex, this)));
+    }
 }
