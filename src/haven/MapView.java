@@ -503,17 +503,29 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if(slot == null)
 		    return;
 		for(Coord cc : area) {
-		    if(!cuts.containsKey(cc)) {
-			try {
+		    try {
+			T cut = getcut(cc);
+			Pair<T, RenderTree.Slot> cur = cuts.get(cc);
+			if((cur != null) && (cur.a != cut)) {
+			    /* XXX: It is currently important that invalidated
+			     * cuts are removed immediately (since they are
+			     * disposed in MCache in thus not drawable
+			     * anymore). This is not currently a problem, but
+			     * conflicts with the below stated goal of
+			     * asynchronizing mapraster ticking. */
+			    cur.b.remove();
+			    cuts.remove(cc);
+			    cur = null;
+			}
+			if(cur == null) {
 			    Coord2d pc = cc.mul(MCache.cutsz).mul(tilesz);
-			    T cut = getcut(cc);
 			    RenderTree.Node draw = produce(cut);
 			    Pipe.Op cs = null;
 			    if(position)
 				cs = Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0));
 			    cuts.put(cc, new Pair<>(cut, slot.add(draw, cs)));
-			} catch(Loading l) {}
-		    }
+			}
+		    } catch(Loading l) {}
 		}
 		for(Iterator<Map.Entry<Coord, Pair<T, RenderTree.Slot>>> i = cuts.entrySet().iterator(); i.hasNext();) {
 		    Map.Entry<Coord, Pair<T, RenderTree.Slot>> ent = i.next();
