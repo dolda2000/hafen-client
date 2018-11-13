@@ -110,7 +110,7 @@ public interface Pipe {
 	    public final Op op;
 	    public final boolean locked;
 
-	    private Wrapping(RenderTree.Node r, Op op, boolean locked) {
+	    public Wrapping(RenderTree.Node r, Op op, boolean locked) {
 		if((r == null) || (op == null))
 		    throw(new NullPointerException("Wrapping " + r + " in " + op));
 		this.r = r;
