@@ -70,7 +70,7 @@ public class FastText {
     }
     
     public static void aprint(GOut g, Coord c, double ax, double ay, String text) {
-	Coord lc = new Coord(c);
+	Coord lc = c.add(g.tx);
 	if(ax > 0)
 	    lc.x -= Math.round(textw(text) * ax);
 	int h = meter.getAscent() + meter.getDescent();
