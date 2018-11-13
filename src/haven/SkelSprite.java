@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.Consumer;
 import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
@@ -43,14 +44,15 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
     public final Pose pose;
     public PoseMod[] mods = new PoseMod[0];
     public MeshAnim.Anim[] manims = new MeshAnim.Anim[0];
+    public int curfl;
     private Morpher.Factory mmorph;
     private final PoseMorph pmorph;
     private Pose oldpose;
     private float ipold;
     private boolean stat = true;
     private RenderTree.Node[] parts;
-    private Runnable[] tickparts = {};
-    private MorphedMesh[] morphparts = {};
+    private Collection<Runnable> tickparts = Collections.emptyList();
+    private Collection<Consumer<Render>> gtickparts = Collections.emptyList();
     private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
     
     public static final Factory fact = new Factory() {
@@ -63,12 +65,18 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
     
     private SkelSprite(Owner owner, Resource res, Message sdt) {
 	super(owner, res);
-	skel = res.layer(Skeleton.Res.class).s;
-	pose = skel.new Pose(skel.bindpose);
-	pmorph = new PoseMorph(pose);
-	int fl = sdt.eom()?0xffff0000:decnum(sdt);
-	chposes(fl, true);
-	chparts(fl);
+	Skeleton.Res sr = res.layer(Skeleton.Res.class);
+	if(sr != null) {
+	    skel = sr.s;
+	    pose = skel.new Pose(skel.bindpose);
+	    pmorph = new PoseMorph(pose);
+	} else {
+	    skel = null;
+	    pose = null;
+	    pmorph = null;
+	}
+	int fl = sdt.eom() ? 0xffff0000 : decnum(sdt);
+	update(fl, true);
     }
 
     private void parts(RenderTree.Slot slot) {
@@ -79,7 +87,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 
     /* XXX: It's ugly to snoop inside a wrapping, but I can't think of
      * a better way to apply morphing to renderlinks right now. */
-    private RenderTree.Node animwrap(Pipe.Op.Wrapping wrap, Collection<Runnable> tbuf, Collection<MorphedMesh> mbuf) {
+    private RenderTree.Node animwrap(Pipe.Op.Wrapping wrap, Collection<Runnable> tbuf, Collection<Consumer<Render>> gbuf) {
 	if(!(wrap.r instanceof FastMesh))
 	    return(wrap);
 	FastMesh m = (FastMesh)wrap.r;
@@ -87,7 +95,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	    if(anim.desc().animp(m)) {
 		MorphedMesh mpart = new MorphedMesh(m, mmorph);
 		RenderTree.Node ret = wrap.op.apply(mpart, wrap.locked);
-		mbuf.add(mpart);
+		gbuf.add(mpart::update);
 		if(bonedb)
 		    ret = morphed.apply(ret);
 		return(ret);
@@ -99,7 +107,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	    if(bnm == null) {
 		MorphedMesh mpart = new MorphedMesh(m, pmorph);
 		ret = wrap.op.apply(mpart, wrap.locked);
-		mbuf.add(mpart);
+		gbuf.add(mpart::update);
 		if(bonedb)
 		    ret = morphed.apply(ret);
 	    } else {
@@ -117,29 +125,33 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	return(ret);
     }
 
-    private void chparts(int mask) {
-	Collection<RenderTree.Node> rl = new LinkedList<>();
-	Collection<Runnable> tbuf = new LinkedList<>();
-	Collection<MorphedMesh> mbuf = new LinkedList<>();
+    public void iparts(int mask, Collection<RenderTree.Node> rbuf, Collection<Runnable> tbuf, Collection<Consumer<Render>> gbuf) {
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0)))
-		rl.add(animwrap(mr.mat.get().apply(mr.m), tbuf, mbuf));
+		rbuf.add(animwrap(mr.mat.get().apply(mr.m), tbuf, gbuf));
 	}
 	for(RenderLink.Res lr : res.layers(RenderLink.Res.class)) {
 	    if((lr.id < 0) || (((1 << lr.id) & mask) != 0)) {
 		RenderTree.Node r = lr.l.make();
 		if(r instanceof Pipe.Op.Wrapping)
-		    r = animwrap((Pipe.Op.Wrapping)r, tbuf, mbuf);
-		rl.add(r);
+		    r = animwrap((Pipe.Op.Wrapping)r, tbuf, gbuf);
+		rbuf.add(r);
 	    }
 	}
+    }
+
+    private void chparts(int mask) {
+	Collection<RenderTree.Node> rl = new ArrayList<>();
+	Collection<Runnable> tbuf = new ArrayList<>();
+	Collection<Consumer<Render>> gbuf = new ArrayList<>();
+	iparts(mask, rl, tbuf, gbuf);
 	/* XXX: Arguably, updating should be forgone if the parts
 	 * haven't actually changed. Somewhat ill-defined, however. */
 	RenderTree.Node[] pparts = this.parts;
 	this.parts = rl.toArray(new RenderTree.Node[0]);
 	RUtils.readd(slots, this::parts, () -> {this.parts = pparts;});
-	this.tickparts = tbuf.toArray(new Runnable[0]);
-	this.morphparts = mbuf.toArray(new MorphedMesh[0]);
+	this.tickparts = tbuf;
+	this.gtickparts = gbuf;
     }
     
     private void rebuild() {
@@ -165,7 +177,6 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 
     private Map<Skeleton.ResPose, PoseMod> modids = new HashMap<Skeleton.ResPose, PoseMod>();
     private void chposes(int mask, boolean old) {
-	chmanims(mask);
 	if(!old) {
 	    this.oldpose = skel.new Pose(pose);
 	    this.ipold = 1.0f;
@@ -194,10 +205,25 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	rebuild();
     }
 
-    public void update(Message sdt) {
-	int fl = sdt.eom()?0xffff0000:decnum(sdt);
-	chposes(fl, false);
+    private void update(int fl, boolean old) {
+	chmanims(fl);
+	if(skel != null)
+	    chposes(fl, old);
 	chparts(fl);
+	this.curfl = fl;
+    }
+
+    public void update(int fl) {
+	update(fl, false);
+    }
+
+    public void update() {
+	update(curfl);
+    }
+
+    public void update(Message sdt) {
+	int fl = sdt.eom() ? 0xffff0000 : decnum(sdt);
+	update(fl);
     }
     
     public void added(RenderTree.Slot slot) {
@@ -235,14 +261,8 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
     }
 
     public void gtick(Render g) {
-	for(MorphedMesh mesh : morphparts)
-	    mesh.update(g);
-    }
-
-    public Object staticp() {
-	if(!stat || (manims.length > 0) || (ipold > 0))
-	    return(null);
-	return(Gob.SemiStatic.class);
+	for(Consumer<Render> gpart : gtickparts)
+	    gpart.accept(g);
     }
 
     public Pose getpose() {
