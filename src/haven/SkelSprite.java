@@ -63,7 +63,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	    }
 	};
     
-    private SkelSprite(Owner owner, Resource res, Message sdt) {
+    public SkelSprite(Owner owner, Resource res, int fl) {
 	super(owner, res);
 	Skeleton.Res sr = res.layer(Skeleton.Res.class);
 	if(sr != null) {
@@ -75,8 +75,15 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	    pose = null;
 	    pmorph = null;
 	}
-	int fl = sdt.eom() ? 0xffff0000 : decnum(sdt);
 	update(fl, true);
+    }
+
+    public SkelSprite(Owner owner, Resource res) {
+	this(owner, res, 0xffff0000);
+    }
+
+    public SkelSprite(Owner owner, Resource res, Message sdt) {
+	this(owner, res, sdt.eom() ? 0xffff0000 : decnum(sdt));
     }
 
     private void parts(RenderTree.Slot slot) {
@@ -87,7 +94,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 
     /* XXX: It's ugly to snoop inside a wrapping, but I can't think of
      * a better way to apply morphing to renderlinks right now. */
-    private RenderTree.Node animwrap(Pipe.Op.Wrapping wrap, Collection<Runnable> tbuf, Collection<Consumer<Render>> gbuf) {
+    protected RenderTree.Node animwrap(Pipe.Op.Wrapping wrap, Collection<Runnable> tbuf, Collection<Consumer<Render>> gbuf) {
 	if(!(wrap.r instanceof FastMesh))
 	    return(wrap);
 	FastMesh m = (FastMesh)wrap.r;
