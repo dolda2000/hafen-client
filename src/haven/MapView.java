@@ -46,6 +46,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
     /* XXXRENDER private Collection<Rendered> extradraw = new LinkedList<Rendered>(); */
     public Camera camera = restorecam();
+    private Supplier<Plob> placing_l = null;
     private Plob placing = null;
     private int[] visol = new int[32];
     private Grabber grab;
@@ -1251,8 +1252,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	amblight();
 	terrain.tick();
 	clickmap.tick();
+	if(placing_l != null) {
+	    try {
+		placing = placing_l.get();
+		placing_l = null;
+	    } catch(Loading l) {
+	    }
+	}
 	if(placing != null)
-	    placing.ctick((int)(dt * 1000));
+	    placing.ctick(dt * 1000);
     }
     
     public void resize(Coord sz) {
@@ -1297,12 +1305,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public class Plob extends Gob {
 	public PlobAdjust adjust = new StdPlace();
 	Coord lastmc = null;
+	RenderTree.Slot slot;
 
 	private Plob(Indir<Resource> res, Message sdt) {
 	    super(MapView.this.glob, Coord2d.z);
 	    setattr(new ResDrawable(this, res, sdt));
 	    if(ui.mc.isect(rootpos(), sz)) {
-		delay(new Adjust(ui.mc.sub(rootpos()), 0));
+		// delay(new Adjust(ui.mc.sub(rootpos()), 0)); XXXRENDER
 	    }
 	}
 
@@ -1337,6 +1346,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public void uimsg(String msg, Object... args) {
 	if(msg == "place") {
+	    if(placing != null) {
+		placing.slot.remove();
+		placing = null;
+	    }
 	    int a = 0;
 	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
 	    Message sdt;
@@ -1344,18 +1357,27 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		sdt = new MessageBuf((byte[])args[a++]);
 	    else
 		sdt = Message.nil;
-	    placing = new Plob(res, sdt);
-	    while(a < args.length) {
-		Indir<Resource> ores = ui.sess.getres((Integer)args[a++]);
-		Message odt;
-		if((args.length > a) && (args[a] instanceof byte[]))
-		    odt = new MessageBuf((byte[])args[a++]);
-		else
-		    odt = Message.nil;
-		placing.addol(ores, odt);
-	    }
+	    int oa = a;
+	    placing_l = () -> {
+		int a2 = oa;
+		Plob ret = new Plob(res, new MessageBuf(sdt));
+		while(a2 < args.length) {
+		    Indir<Resource> ores = ui.sess.getres((Integer)args[a2++]);
+		    Message odt;
+		    if((args.length > a2) && (args[a2] instanceof byte[]))
+			odt = new MessageBuf((byte[])args[a2++]);
+		    else
+			odt = Message.nil;
+		    ret.addol(ores, odt);
+		}
+		ret.slot = basic.add(ret.placed);
+		return(ret);
+	    };
 	} else if(msg == "unplace") {
-	    placing = null;
+	    if(placing != null) {
+		placing.slot.remove();
+		placing = null;
+	    }
 	} else if(msg == "move") {
 	    cc = ((Coord)args[0]).mul(posres);
 	} else if(msg == "plob") {
