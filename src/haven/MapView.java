@@ -1157,7 +1157,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public Coord3f screenxf(Coord3f mc) {
 	Coord3f mloc = new Coord3f(mc.x, -mc.y, mc.z);
 	/* XXX: Peeking into the camera really is doubtfully nice. */
-	return(null /* camera.proj.toscreen(camera.view.fin(Matrix4f.id).mul4(mloc), sz) XXXRENDER */);
+	return(Homo3D.obj2view(Coord3f.o, basic.state()));
     }
 
     public Coord3f screenxf(Coord2d mc) {
