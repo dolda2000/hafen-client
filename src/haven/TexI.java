@@ -75,6 +75,19 @@ public class TexI implements Tex {
 	return(st);
     }
 
+    public TexI magfilter(Texture.Filter filter) {
+	st().data.magfilter(filter);
+	return(this);
+    }
+    public TexI minfilter(Texture.Filter filter) {
+	st().data.minfilter(filter);
+	return(this);
+    }
+    public TexI wrapmode(Texture.Wrapping mode) {
+	st().data.wrapmode(mode);
+	return(this);
+    }
+
     public void render(GOut g, Coord dul, Coord dbr, Coord tul, Coord tbr) {
 	float tl = (float)tul.x / (float)tdim.x;
 	float tu = (float)tul.y / (float)tdim.y;
