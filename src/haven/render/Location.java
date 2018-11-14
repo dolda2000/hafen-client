@@ -99,13 +99,13 @@ public class Location extends Transform {
 
     public static Chain back(Pipe p, String id) {
 	Chain s = p.get(Homo3D.loc);
-	return(s == null?s:s.back(id));
+	return((s == null) ? s : s.back(id));
     }
 
     public static Chain goback(Pipe p, String id) {
 	Chain s = back(p, id);
 	if(s == null)
-	    throw(new IllegalStateException("No such back-link: " + id));
+	    return(null);
 	p.put(Homo3D.loc, s);
 	return(s);
     }
