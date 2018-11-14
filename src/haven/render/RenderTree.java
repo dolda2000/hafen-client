@@ -541,7 +541,7 @@ public class RenderTree implements RenderList.Adapter {
 		return;
 	    for(int i = 0; i < deps.length; i++) {
 		if((deps[i] != null) && !deps[i].stlock)
-		    throw(new RuntimeException("locked state depends on non-locked state"));
+		    throw(new RuntimeException(String.format("locked state depends on non-locked state (node: %s)", node)));
 	    }
 	}
 
