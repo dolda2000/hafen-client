@@ -162,14 +162,18 @@ public class Homo3D {
     }
 
     public static Coord3f obj2view(Coord3f objc, Pipe state, Area view) {
-	float[] mapc  = state.get(loc).fin(Matrix4f.id).mul4(objc.to4a(1));
-	float[] eyec  = state.get(cam).fin(Matrix4f.id).mul4(mapc);
-	float[] clipc = state.get(prj).fin(Matrix4f.id).mul4(eyec);
-	float d = 1 / clipc[3];
+	float[] c = objc.to4a(1);
+	Location.Chain s_loc = state.get(loc);
+	if(s_loc != null) c = s_loc.fin(Matrix4f.id).mul4(c);
+	Camera s_cam = state.get(cam);
+	if(s_cam != null) c = s_cam.fin(Matrix4f.id).mul4(c);
+	Projection s_prj = state.get(prj);
+	if(s_prj != null) c = s_prj.fin(Matrix4f.id).mul4(c);
+	float d = 1 / c[3];
 	Coord sz = view.sz();
-	return(new Coord3f(view.ul.x + ((( clipc[0] + 1) / 2) * sz.x),
-			   view.ul.y + (((-clipc[1] + 1) / 2) * sz.y),
-			   clipc[2]));
+	return(new Coord3f(view.ul.x + ((( c[0] + 1) / 2) * sz.x),
+			   view.ul.y + (((-c[1] + 1) / 2) * sz.y),
+			   c[2]));
     }
 
     public static Coord3f obj2view(Coord3f c, Pipe state) {

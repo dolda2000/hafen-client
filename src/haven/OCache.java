@@ -160,7 +160,7 @@ public class OCache implements Iterable<Gob> {
 	public void apply(Gob gob);
     }
 
-    public synchronized void move(Gob g, Coord2d c, double a) {
+    public static void move(Gob g, Coord2d c, double a) {
 	g.move(c, a);
     }
     public Delta move(Message msg) {
@@ -169,7 +169,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> move(gob, c, (ia / 65536.0) * Math.PI * 2));
     }
 
-    public synchronized void cres(Gob g, Indir<Resource> res, Message dat) {
+    public static void cres(Gob g, Indir<Resource> res, Message dat) {
 	MessageBuf sdt = new MessageBuf(dat);
 	Drawable dr = g.getattr(Drawable.class);
 	ResDrawable d = (dr instanceof ResDrawable)?(ResDrawable)dr:null;
@@ -192,7 +192,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> cres(gob, cres, csdt));
     }
 
-    public synchronized void linbeg(Gob g, Coord2d s, Coord2d v) {
+    public static void linbeg(Gob g, Coord2d s, Coord2d v) {
 	LinMove lm = g.getattr(LinMove.class);
 	if((lm == null) || !lm.s.equals(s) || !lm.v.equals(v)) {
 	    g.setattr(new LinMove(g, s, v));
@@ -204,7 +204,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> linbeg(gob, s, v));
     }
 
-    public synchronized void linstep(Gob g, double t, double e) {
+    public static void linstep(Gob g, double t, double e) {
 	Moving m = g.getattr(Moving.class);
 	if((m == null) || !(m instanceof LinMove))
 	    return;
@@ -234,7 +234,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> linstep(gob, t, e));
     }
 
-    public synchronized void speak(Gob g, float zo, String text) {
+    public static void speak(Gob g, float zo, String text) {
 	if(text.length() < 1) {
 	    g.delattr(Speaking.class);
 	} else {
@@ -253,7 +253,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> speak(gob, zo, text));
     }
 
-    public synchronized void composite(Gob g, Indir<Resource> base) {
+    public static void composite(Gob g, Indir<Resource> base) {
 	Drawable dr = g.getattr(Drawable.class);
 	Composite cmp = (dr instanceof Composite)?(Composite)dr:null;
 	if((cmp == null) || !cmp.base.equals(base)) {
@@ -266,7 +266,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> composite(gob, base));
     }
 
-    public synchronized void cmppose(Gob g, int pseq, List<ResData> poses, List<ResData> tposes, boolean interp, float ttime) {
+    public static void cmppose(Gob g, int pseq, List<ResData> poses, List<ResData> tposes, boolean interp, float ttime) {
 	Composite cmp = (Composite)g.getattr(Drawable.class);
 	if(cmp.pseq != pseq) {
 	    cmp.pseq = pseq;
@@ -316,7 +316,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> cmppose(gob, seq, cposes, ctposes, interp, cttime));
     }
 
-    public synchronized void cmpmod(Gob g, List<Composited.MD> mod) {
+    public static void cmpmod(Gob g, List<Composited.MD> mod) {
 	Composite cmp = (Composite)g.getattr(Drawable.class);
 	cmp.chmod(mod);
     }
@@ -347,7 +347,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> cmpmod(gob, mod));
     }
 
-    public synchronized void cmpequ(Gob g, List<Composited.ED> equ) {
+    public static void cmpequ(Gob g, List<Composited.ED> equ) {
 	Composite cmp = (Composite)g.getattr(Drawable.class);
 	cmp.chequ(equ);
     }
@@ -383,7 +383,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> cmpequ(gob, equ));
     }
 
-    public synchronized void avatar(Gob g, List<Indir<Resource>> layers) {
+    public static void avatar(Gob g, List<Indir<Resource>> layers) {
 	Avatar ava = g.getattr(Avatar.class);
 	if(ava == null) {
 	    ava = new Avatar(g);
@@ -402,7 +402,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> avatar(gob, layers));
     }
 
-    public synchronized void zoff(Gob g, float off) {
+    public static void zoff(Gob g, float off) {
 	if(off == 0) {
 	    g.delattr(DrawOffset.class);
 	} else {
@@ -420,7 +420,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> zoff(gob, off));
     }
 
-    public synchronized void lumin(Gob g, Coord off, int sz, int str) {
+    public static void lumin(Gob g, Coord off, int sz, int str) {
 	g.setattr(new Lumin(g, off, sz, str));
     }
     public Delta lumin(Message msg) {
@@ -430,7 +430,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> lumin(gob, off, sz, str));
     }
 
-    public synchronized void follow(Gob g, long oid, Indir<Resource> xfres, String xfname) {
+    public static void follow(Gob g, long oid, Indir<Resource> xfres, String xfname) {
 	if(oid == -1) {
 	    g.delattr(Following.class);
 	} else {
@@ -460,10 +460,10 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    public synchronized void homostop(Gob g) {
+    public static void homostop(Gob g) {
 	g.delattr(Homing.class);
     }
-    public synchronized void homing(Gob g, long oid, Coord2d tc, double v) {
+    public static void homing(Gob g, long oid, Coord2d tc, double v) {
 	Homing homo = g.getattr(Homing.class);
 	if((homo == null) || (homo.tgt != oid)) {
 	    g.setattr(new Homing(g, oid, tc, v));
@@ -483,7 +483,7 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    public synchronized void overlay(Gob g, int olid, boolean prs, Indir<Resource> resid, Message sdt) {
+    public static void overlay(Gob g, int olid, boolean prs, Indir<Resource> resid, Message sdt) {
 	Gob.Overlay ol = g.findol(olid);
 	if(resid != null) {
 	    sdt = new MessageBuf(sdt);
@@ -528,7 +528,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> overlay(gob, olid, prs, res, sdt));
     }
 
-    public synchronized void health(Gob g, int hp) {
+    public static void health(Gob g, int hp) {
 	g.setattr(new GobHealth(g, hp));
     }
     public Delta health(Message msg) {
@@ -536,7 +536,7 @@ public class OCache implements Iterable<Gob> {
 	return(gob -> health(gob, hp));
     }
 
-    public synchronized void buddy(Gob g, String name, int group, int type) {
+    public static void buddy(Gob g, String name, int group, int type) {
 	if(name == null) {
 	    g.delattr(KinInfo.class);
 	} else {
@@ -559,7 +559,7 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    public synchronized void icon(Gob g, Indir<Resource> res) {
+    public static void icon(Gob g, Indir<Resource> res) {
 	if(res == null)
 	    g.delattr(GobIcon.class);
 	else
@@ -576,7 +576,7 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    public synchronized void resattr(Gob g, Indir<Resource> resid, Message dat) {
+    public static void resattr(Gob g, Indir<Resource> resid, Message dat) {
 	if(dat != null)
 	    g.setrattr(resid, dat);
 	else

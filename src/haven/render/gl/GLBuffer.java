@@ -29,7 +29,7 @@ package haven.render.gl;
 import javax.media.opengl.*;
 
 public class GLBuffer extends GLObject implements BGL.ID {
-    private int id;
+    private int id, state = 0;
     
     public GLBuffer(GLEnvironment env) {
 	super(env);
@@ -37,17 +37,25 @@ public class GLBuffer extends GLObject implements BGL.ID {
     }
 
     public void create(GL2 gl) {
+	ckstate(state, 0);
 	int[] buf = new int[1];
 	gl.glGenBuffers(1, buf, 0);
 	this.id = buf[0];
+	state = 1;
     }
     
-    protected void delete(BGL gl) {
-	BGL.ID[] buf = {this};
-	gl.glDeleteBuffers(1, buf, 0);
+    protected void delete(GL2 gl) {
+	ckstate(state, 1);
+	gl.glDeleteBuffers(1, new int[] {id}, 0);
+	state = 2;
     }
 
     public int glid() {
+	ckstate(state, 1);
 	return(id);
+    }
+
+    public String toString() {
+	return(String.format("#<gl.buf %d>", id));
     }
 }

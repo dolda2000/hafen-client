@@ -35,7 +35,7 @@ import java.util.*;
 import javax.media.opengl.*;
 
 public abstract class GLTexture extends GLObject implements BGL.ID {
-    protected int id;
+    protected int id, state = 0;
     Collection<GLFrameBuffer> fbos = null;
 
     public GLTexture(GLEnvironment env) {
@@ -44,19 +44,27 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
     }
 
     public void create(GL2 gl) {
+	ckstate(state, 0);
 	int[] buf = {0};
 	gl.glGenTextures(1, buf, 0);
 	GLException.checkfor(gl);
 	this.id = buf[0];
+	state = 1;
     }
 
-    protected void delete(BGL gl) {
-	BGL.ID[] buf = {this};
-	gl.glDeleteTextures(1, buf, 0);
+    protected void delete(GL2 gl) {
+	ckstate(state, 1);
+	gl.glDeleteTextures(1, new int[] {id}, 0);
+	state = 2;
     }
 
     public int glid() {
+	ckstate(state, 1);
 	return(id);
+    }
+
+    public String toString() {
+	return(String.format("#<gl.tex %d>", id));
     }
 
     public void dispose() {

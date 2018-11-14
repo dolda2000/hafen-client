@@ -39,7 +39,7 @@ public abstract class GLObject implements Disposable {
     }
 
     public abstract void create(GL2 gl);
-    protected abstract void delete(BGL gl);
+    protected abstract void delete(GL2 gl);
 
     public void dispose() {
 	synchronized(env.disposed) {
@@ -52,5 +52,10 @@ public abstract class GLObject implements Disposable {
 
     protected void finalize() {
 	dispose();
+    }
+
+    public void ckstate(int st, int ex) {
+	if(st != ex)
+	    throw(new IllegalStateException(String.format("unexpected state %d, expected %d, for %s", st, ex, this)));
     }
 }

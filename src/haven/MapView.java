@@ -47,6 +47,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
     /* XXXRENDER private Collection<Rendered> extradraw = new LinkedList<Rendered>(); */
     public Camera camera = restorecam();
+    private Supplier<Plob> placing_l = null;
     private Plob placing = null;
     private int[] visol = new int[32];
     private Grabber grab;
@@ -543,17 +544,29 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if(slot == null)
 		    return;
 		for(Coord cc : area) {
-		    if(!cuts.containsKey(cc)) {
-			try {
+		    try {
+			T cut = getcut(cc);
+			Pair<T, RenderTree.Slot> cur = cuts.get(cc);
+			if((cur != null) && (cur.a != cut)) {
+			    /* XXX: It is currently important that invalidated
+			     * cuts are removed immediately (since they are
+			     * disposed in MCache in thus not drawable
+			     * anymore). This is not currently a problem, but
+			     * conflicts with the below stated goal of
+			     * asynchronizing mapraster ticking. */
+			    cur.b.remove();
+			    cuts.remove(cc);
+			    cur = null;
+			}
+			if(cur == null) {
 			    Coord2d pc = cc.mul(MCache.cutsz).mul(tilesz);
-			    T cut = getcut(cc);
 			    RenderTree.Node draw = produce(cut);
 			    Pipe.Op cs = null;
 			    if(position)
 				cs = Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0));
 			    cuts.put(cc, new Pair<>(cut, slot.add(draw, cs)));
-			} catch(Loading l) {}
-		    }
+			}
+		    } catch(Loading l) {}
 		}
 		for(Iterator<Map.Entry<Coord, Pair<T, RenderTree.Slot>>> i = cuts.entrySet().iterator(); i.hasNext();) {
 		    Map.Entry<Coord, Pair<T, RenderTree.Slot>> ent = i.next();
@@ -912,7 +925,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			if(ret >= 0)
 			    return(ret + idx_back);
 		    }
-		    if(curbasic.mask[id])
+		    if((id < curbasic.mask.length) && curbasic.mask[id])
 			return(idx_bas);
 		    return(-1);
 		}
@@ -1187,7 +1200,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public Coord3f screenxf(Coord3f mc) {
 	Coord3f mloc = new Coord3f(mc.x, -mc.y, mc.z);
 	/* XXX: Peeking into the camera really is doubtfully nice. */
-	return(null /* camera.proj.toscreen(camera.view.fin(Matrix4f.id).mul4(mloc), sz) XXXRENDER */);
+	return(Homo3D.obj2view(Coord3f.o, basic.state()));
     }
 
     public Coord3f screenxf(Coord2d mc) {
@@ -1283,8 +1296,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	amblight();
 	terrain.tick();
 	clickmap.tick();
+	if(placing_l != null) {
+	    try {
+		placing = placing_l.get();
+		placing_l = null;
+	    } catch(Loading l) {
+	    }
+	}
 	if(placing != null)
-	    placing.ctick((int)(dt * 1000));
+	    placing.ctick(dt * 1000);
     }
     
     public void resize(Coord sz) {
@@ -1329,12 +1349,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public class Plob extends Gob {
 	public PlobAdjust adjust = new StdPlace();
 	Coord lastmc = null;
+	RenderTree.Slot slot;
 
 	private Plob(Indir<Resource> res, Message sdt) {
 	    super(MapView.this.glob, Coord2d.z);
 	    setattr(new ResDrawable(this, res, sdt));
 	    if(ui.mc.isect(rootpos(), sz)) {
-		delay(new Adjust(ui.mc.sub(rootpos()), 0));
+		// delay(new Adjust(ui.mc.sub(rootpos()), 0)); XXXRENDER
 	    }
 	}
 
@@ -1369,6 +1390,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public void uimsg(String msg, Object... args) {
 	if(msg == "place") {
+	    if(placing != null) {
+		placing.slot.remove();
+		placing = null;
+	    }
 	    int a = 0;
 	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
 	    Message sdt;
@@ -1376,18 +1401,27 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		sdt = new MessageBuf((byte[])args[a++]);
 	    else
 		sdt = Message.nil;
-	    placing = new Plob(res, sdt);
-	    while(a < args.length) {
-		Indir<Resource> ores = ui.sess.getres((Integer)args[a++]);
-		Message odt;
-		if((args.length > a) && (args[a] instanceof byte[]))
-		    odt = new MessageBuf((byte[])args[a++]);
-		else
-		    odt = Message.nil;
-		placing.addol(ores, odt);
-	    }
+	    int oa = a;
+	    placing_l = () -> {
+		int a2 = oa;
+		Plob ret = new Plob(res, new MessageBuf(sdt));
+		while(a2 < args.length) {
+		    Indir<Resource> ores = ui.sess.getres((Integer)args[a2++]);
+		    Message odt;
+		    if((args.length > a2) && (args[a2] instanceof byte[]))
+			odt = new MessageBuf((byte[])args[a2++]);
+		    else
+			odt = Message.nil;
+		    ret.addol(ores, odt);
+		}
+		ret.slot = basic.add(ret.placed);
+		return(ret);
+	    };
 	} else if(msg == "unplace") {
-	    placing = null;
+	    if(placing != null) {
+		placing.slot.remove();
+		placing = null;
+	    }
 	} else if(msg == "move") {
 	    cc = ((Coord)args[0]).mul(posres);
 	} else if(msg == "plob") {
