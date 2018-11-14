@@ -187,7 +187,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 		    i.remove();
 	    }
 	}
-	if(virtual && ols.isEmpty())
+	if(virtual && ols.isEmpty() && (getattr(Drawable.class) == null))
 	    glob.oc.remove(id);
     }
 
