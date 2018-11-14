@@ -52,14 +52,23 @@ public class MCache {
 
     public static class LoadingMap extends Loading {
 	public final Coord gc;
-	public LoadingMap(Coord gc) {
+	private transient final MCache map;
+
+	public LoadingMap(MCache map, Coord gc) {
 	    super("Waiting for map data...");
 	    this.gc = gc;
+	    this.map = map;
 	}
-	public LoadingMap(Loading cause) {
-	    super(cause);
-	    this.gc = null;
+
+	public void waitfor() throws InterruptedException {
+	    synchronized(map.grids) {
+		while(map.grids.get(gc) == null) {
+		    map.request(gc);
+		    map.grids.wait();
+		}
+	    }
 	}
+	public boolean canwait() {return(true);}
     }
 
     private static class Request {
@@ -412,7 +421,7 @@ public class MCache {
 		cached = grids.get(gc);
 		if(cached == null) {
 		    request(gc);
-		    throw(new LoadingMap(gc));
+		    throw(new LoadingMap(this, gc));
 		}
 	    }
 	    return(cached);
@@ -501,6 +510,7 @@ public class MCache {
 		    g.fill(msg);
 		    req.remove(c);
 		    olseq++;
+		    grids.notifyAll();
 		}
 	    }
 	}
@@ -554,12 +564,7 @@ public class MCache {
 		Resource res = tilesetr(i);
 		if(res == null)
 		    return(null);
-		try {
-		    cset = res.layer(Tileset.class);
-		} catch(Loading e) {
-		    throw(new LoadingMap(e));
-		}
-		csets[i] = new SoftReference<Tileset>(cset);
+		csets[i] = new SoftReference<Tileset>(cset = res.layer(Tileset.class));
 	    }
 	    return(cset);
 	}
