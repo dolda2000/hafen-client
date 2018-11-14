@@ -43,7 +43,9 @@ public class CSprite extends Sprite {
     }
 
     public void addpart(Location loc, Pipe.Op mat, RenderTree.Node part) {
-	parts.add(Pipe.Op.compose(loc, mat).apply(part));
+	/* XXX: Using unnecessarily many slots? Could potentially
+	 * intern base slots on material for memory savings. */
+	parts.add(loc.apply(mat.apply(part), false));
     }
 
     public void addpart(float xo, float yo, Pipe.Op mat, RenderTree.Node part) {
