@@ -378,10 +378,10 @@ public class GOut {
 	float r = tl + ((tr - tl) * ((float)brt.x) / ((float)sz.x));
 	float b = tt + ((tb - tt) * ((float)brt.y) / ((float)sz.y));
 	gl.glBegin(GL2.GL_QUADS);
-	gl.glTexCoord2f(l, b); gl.glVertex2i(ul.x, ul.y);
-	gl.glTexCoord2f(r, b); gl.glVertex2i(br.x, ul.y);
-	gl.glTexCoord2f(r, t); gl.glVertex2i(br.x, br.y);
-	gl.glTexCoord2f(l, t); gl.glVertex2i(ul.x, br.y);
+	gl.glTexCoord2f(l, 1 - t); gl.glVertex2i(ul.x, ul.y);
+	gl.glTexCoord2f(r, 1 - t); gl.glVertex2i(br.x, ul.y);
+	gl.glTexCoord2f(r, 1 - b); gl.glVertex2i(br.x, br.y);
+	gl.glTexCoord2f(l, 1 - b); gl.glVertex2i(ul.x, br.y);
 	gl.glEnd();
 	checkerr();
     }
