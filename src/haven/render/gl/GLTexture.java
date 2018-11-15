@@ -230,6 +230,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	    if(data.init != null) {
 		for(int i = 0; i < pixels.length; i++)
 		    pixels[i] = (FillBuffers.Array)data.init.fill(data.image(i), env);
+		data.init.done();
 	    }
 	    return(new Tex2D(env, data, pixels));
 	}

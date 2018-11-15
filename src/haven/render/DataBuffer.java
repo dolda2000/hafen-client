@@ -37,6 +37,7 @@ public interface DataBuffer {
 
     public interface Filler<T extends DataBuffer> {
 	public FillBuffer fill(T buf, Environment env);
+	public default void done() {}
 
 	public static Filler<DataBuffer> of(ByteBuffer data) {
 	    return((tgt, env) -> {

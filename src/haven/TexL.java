@@ -47,6 +47,10 @@ public abstract class TexL extends TexRender {
 	public FillBuffer fill(Image img, Environment env) {
 	    return(tex.fill(img, env));
 	}
+
+	public void done() {
+	    tex.decode = null;
+	}
     }
 
     private static Sampler2D mkimg(Coord sz) {
@@ -68,7 +72,6 @@ public abstract class TexL extends TexRender {
     private class Prepared {
 	final Environment env;
 	FillBuffer[] data;
-	boolean[] used;
 
 	private FillBuffer filldata(DataBuffer tgt, byte[] pixels) {
 	    FillBuffer buf = env.fillbuf(tgt);
@@ -122,7 +125,6 @@ public abstract class TexL extends TexRender {
 		}
 	    }
 	    this.data = data;
-	    this.used = new boolean[data.length];
 	}
 
 	void dispose() {
@@ -167,15 +169,6 @@ public abstract class TexL extends TexRender {
     }
 
     private FillBuffer fill(Image img, Environment env) {
-	Prepared prep = prepare(env);
-	prep.used[img.level] = true;
-	done: {
-	    for(int i = 0; i < prep.used.length; i++) {
-		if(!prep.used[i])
-		    break done;
-	    }
-	    this.decode = null;
-	}
-	return(prep.data[img.level]);
+	return(prepare(env).data[img.level]);
     }
 }
