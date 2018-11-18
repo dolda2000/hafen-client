@@ -2,7 +2,6 @@ haven/TexE.java
 haven/Tex3D.java
 haven/TexMS.java
 haven/TexMSE.java
-haven/TexCube.java
 haven/FBConfig.java
 haven/ActAudio.java
 haven/ShadowMap.java

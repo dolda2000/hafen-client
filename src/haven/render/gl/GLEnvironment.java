@@ -241,11 +241,32 @@ public class GLEnvironment implements Environment {
 	    return(ret);
 	}
     }
+    GLTexture.TexCube prepare(TextureCube tex) {
+	synchronized(tex) {
+	    GLTexture.TexCube ret;
+	    if(!(tex.ro instanceof GLTexture.TexCube) || ((ret = (GLTexture.TexCube)tex.ro).env != this)) {
+		if(tex.ro != null)
+		    tex.ro.dispose();
+		tex.ro = ret = GLTexture.TexCube.create(this, tex);
+	    }
+	    return(ret);
+	}
+    }
+    GLTexture.TexCube prepare(TextureCube.SamplerCube smp) {
+	TextureCube tex = smp.tex;
+	synchronized(tex) {
+	    GLTexture.TexCube ret = prepare(tex);
+	    ret.setsampler(smp);
+	    return(ret);
+	}
+    }
 
     Object prepuval(Object val) {
 	if(val instanceof Texture.Sampler) {
 	    if(val instanceof Texture2D.Sampler2D)
 		return(prepare((Texture2D.Sampler2D)val));
+	    else if(val instanceof TextureCube.SamplerCube)
+		return(prepare((TextureCube.SamplerCube)val));
 	}
 	return(val);
     }
