@@ -28,10 +28,14 @@ package haven;
 
 import java.util.*;
 import java.util.function.*;
+import java.nio.ByteBuffer;
+import java.awt.image.BufferedImage;
 import haven.render.*;
 import haven.render.RenderTree.Node;
 import haven.render.RenderTree.Slot;
 import haven.render.Pipe.Op;
+import haven.render.Texture.Image;
+import haven.render.TextureCube.CubeImage;
 
 public class RUtils {
     public static Collection<Slot> multiadd(Collection<Slot> slots, Node node) {
@@ -116,6 +120,67 @@ public class RUtils {
 	    return(new StateNode<R>(r) {
 		    protected Op state() {return(st.get());}
 		});
+	}
+    }
+
+    public static class CubeFill implements DataBuffer.Filler<Image> {
+	public final Supplier<BufferedImage> src;
+	public final int[][] order;
+	private BufferedImage data;
+
+	private static final int[][] deforder = {
+	    {3, 1},			// +X
+	    {1, 1},			// -X
+	    {2, 0},			// +Y
+	    {2, 2},			// -Y
+	    {2, 1},			// +Z
+	    {0, 1},			// -Z
+	};
+
+	public CubeFill(Supplier<BufferedImage> src) {
+	    this.src = src;
+	    this.order = deforder;
+	}
+
+	private Coord osz() {
+	    int mx = 0, my = 0;
+	    for(int i = 0; i < order.length; i++) {
+		mx = Math.max(mx, order[i][0] + 1);
+		my = Math.max(my, order[i][1] + 1);
+	    }
+	    return(new Coord(mx, my));
+	}
+
+	private BufferedImage getsrc(TextureCube tex) {
+	    Coord on = osz();
+	    int ex = tex.w * on.x, ey = tex.h * on.y;
+	    BufferedImage ret = src.get();
+	    if((ret.getWidth() != ex) || (ret.getHeight() != ey))
+		throw(new IllegalArgumentException(String.format("cube-texture source size should be (%d, %d), not (%d, %d)", ex, ey, ret.getWidth(), ret.getHeight())));
+	    return(ret);
+	}
+
+	public FillBuffer fill(Image gimg, Environment env) {
+	    CubeImage img = (CubeImage)gimg;
+	    if(data == null)
+		data = getsrc(img.tex);
+	    if(img.level == 0) {
+		FillBuffer buf = env.fillbuf(img);
+		int[] fc = order[img.face.ordinal()];
+		buf.pull(ByteBuffer.wrap(TexI.convert(data, new Coord(img.w, img.h), new Coord(fc[0] * img.tex.w, fc[1] * img.tex.h), new Coord(img.w, img.h))));
+		return(buf);
+	    }
+	    return(null);
+	}
+
+	public void done() {
+	    data = null;
+	}
+
+	public TextureCube mktex() {
+	    BufferedImage img = Loading.waitfor(src::get);
+	    Coord on = osz();
+	    return(new TextureCube(img.getWidth() / on.x, img.getHeight() / on.y, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), this));
 	}
     }
 }

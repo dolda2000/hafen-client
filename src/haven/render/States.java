@@ -38,16 +38,6 @@ public abstract class States {
 	public ShaderMacro shader() {return(null);}
     }
 
-    public static abstract class StandAlone extends Builtin {
-	public final Slot<StandAlone> slot;
-
-	StandAlone(Slot.Type type) {
-	    this.slot = new Slot<StandAlone>(type, StandAlone.class);
-	}
-
-	public void apply(Pipe p) {p.put(slot, this);}
-    }
-
     public static final Slot<State> vxf = new Slot<State>(Slot.Type.SYS, State.class);
 
     public static final Slot<Viewport> viewport = new Slot<Viewport>(Slot.Type.SYS, Viewport.class);
@@ -142,7 +132,9 @@ public abstract class States {
 	public void apply(Pipe p) {p.put(depthtest, this);}
     }
 
-    public static final StandAlone maskdepth = new StandAlone(Slot.Type.GEOM) {};
+    public static final State.StandAlone maskdepth = new State.StandAlone(Slot.Type.GEOM) {
+	    public ShaderMacro shader() {return(null);}
+	};
 
     public static final Slot<Blending> blend = new Slot<Blending>(Slot.Type.SYS, Blending.class);
     public static class Blending extends Builtin {

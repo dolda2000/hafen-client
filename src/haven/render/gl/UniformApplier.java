@@ -164,6 +164,13 @@ public interface UniformApplier<T> {
 		    gl.glUniform4f(var, col.r, col.g, col.b, col.a);
 		});
 
+	    TypeMapping.register(Type.MAT3, float[].class, (gl, var, mat) -> {
+		    gl.glUniformMatrix3fv(var, 1, false, mat, 0);
+		});
+	    TypeMapping.register(Type.MAT3, Matrix4f.class, (gl, var, mat) -> {
+		    gl.glUniformMatrix3fv(var, 1, false, mat.trim3(), 0);
+		});
+
 	    TypeMapping.register(Type.MAT4, float[].class, (gl, var, mat) -> {
 		    gl.glUniformMatrix4fv(var, 1, false, mat, 0);
 		});
@@ -172,6 +179,11 @@ public interface UniformApplier<T> {
 		});
 
 	    TypeMapping.register(Type.SAMPLER2D, GLTexture.Tex2D.class, (gl, var, smp) -> {
+		    if(var.sampler < 0) throw(new RuntimeException());
+		    gl.glActiveTexture(GL.GL_TEXTURE0 + var.sampler);
+		    smp.bind(gl);
+		});
+	    TypeMapping.register(Type.SAMPLERCUBE, GLTexture.TexCube.class, (gl, var, smp) -> {
 		    if(var.sampler < 0) throw(new RuntimeException());
 		    gl.glActiveTexture(GL.GL_TEXTURE0 + var.sampler);
 		    smp.bind(gl);

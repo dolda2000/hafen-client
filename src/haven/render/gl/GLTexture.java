@@ -30,6 +30,8 @@ import haven.render.*;
 import haven.render.Texture.Image;
 import haven.render.Texture.Sampler;
 import haven.render.Texture2D.Sampler2D;
+import haven.render.TextureCube.CubeImage;
+import haven.render.TextureCube.SamplerCube;
 import java.nio.*;
 import java.util.*;
 import javax.media.opengl.*;
@@ -194,6 +196,18 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	throw(new IllegalArgumentException(String.format("externalformat2: %s", efmt)));
     }
 
+    static int texface(TextureCube.Face face) {
+	switch(face) {
+	    case XP: return(GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+	    case XN: return(GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
+	    case YP: return(GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
+	    case YN: return(GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
+	    case ZP: return(GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+	    case ZN: return(GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+	}
+	throw(new IllegalArgumentException(String.format("texface: %s", face)));
+    }
+
     public static class Tex2D extends GLTexture {
 	public final Texture2D data;
 	Sampler2D sampler;
@@ -230,6 +244,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	    if(data.init != null) {
 		for(int i = 0; i < pixels.length; i++)
 		    pixels[i] = (FillBuffers.Array)data.init.fill(data.image(i), env);
+		data.init.done();
 	    }
 	    return(new Tex2D(env, data, pixels));
 	}
@@ -263,6 +278,83 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 	public void unbind(BGL gl) {
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, null);
+	}
+    }
+
+    public static class TexCube extends GLTexture {
+	public final TextureCube data;
+	SamplerCube sampler;
+
+	public TexCube(GLEnvironment env, TextureCube data, CubeImage[] images, FillBuffers.Array[] pixels) {
+	    super(env);
+	    this.data = data;
+	    int ifmt = texifmt(data.ifmt);
+	    int pfmt = texefmt1(data.ifmt, data.efmt);
+	    int pnum = texefmt2(data.ifmt, data.efmt);
+	    env.prepare((GLRender g) -> {
+		    if(g.state.prog() != null)
+			throw(new RuntimeException("program unexpectedly used in prep context"));
+		    BGL gl = g.gl();
+		    gl.glActiveTexture(GL.GL_TEXTURE0);
+		    bind(gl);
+		    for(int i = 0; i < pixels.length; i++) {
+			CubeImage img = images[i];
+			int tgt = texface(img.face);
+			if(pixels[i] != null) {
+			    gl.glTexImage2D(tgt, img.level, ifmt, img.w, img.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
+			} else if(img.level == 0) {
+			    gl.glTexImage2D(tgt, 0, ifmt, data.w, data.h, 0, pfmt, pnum, null);
+			}
+		    }
+		    unbind(gl);
+		    gl.bglCheckErr();
+		});
+	}
+
+	public static TexCube create(GLEnvironment env, TextureCube data) {
+	    CubeImage[] images = new CubeImage[data.images().size()];
+	    FillBuffers.Array[] pixels = new FillBuffers.Array[data.images().size()];
+	    int i = 0;
+	    for(CubeImage img : data.images()) {
+		images[i] = img;
+		if(data.init != null)
+		    pixels[i] = (FillBuffers.Array)data.init.fill(img, env);
+		i++;
+	    }
+	    if(data.init != null)
+		data.init.done();
+	    return(new TexCube(env, data, images, pixels));
+	}
+
+	public void setsampler(SamplerCube data) {
+	    if(sampler == data)
+		return;
+	    if(sampler != null)
+		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple samplers per texture"));
+	    env.prepare((GLRender g) -> {
+		    if(g.state.prog() != null)
+			throw(new RuntimeException("program unexpectedly used in prep context"));
+		    BGL gl = g.gl();
+		    gl.glActiveTexture(GL.GL_TEXTURE0);
+		    bind(gl);
+		    gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_MAG_FILTER, magfilter(data));
+		    gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_MIN_FILTER, minfilter(data));
+		    if(data.anisotropy > 0)
+			gl.glTexParameterf(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_MAX_ANISOTROPY_EXT, data.anisotropy);
+		    gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
+		    gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
+		    gl.glTexParameterfv(GL.GL_TEXTURE_CUBE_MAP, GL2.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
+		    unbind(gl);
+		    gl.bglCheckErr();
+		});
+	    sampler = data;
+	}
+
+	public void bind(BGL gl) {
+	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, this);
+	}
+	public void unbind(BGL gl) {
+	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, null);
 	}
     }
 }

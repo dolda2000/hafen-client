@@ -2,7 +2,6 @@ haven/TexE.java
 haven/Tex3D.java
 haven/TexMS.java
 haven/TexMSE.java
-haven/TexCube.java
 haven/FBConfig.java
 haven/ActAudio.java
 haven/ShadowMap.java
@@ -16,7 +15,6 @@ haven/RenderedNormals.java
 haven/resutil/EnvMap.java
 haven/resutil/TexAnim.java
 haven/resutil/TexPal.java
-haven/resutil/WaterTile.java
 haven/rs/AvaRender.java
 haven/rs/BufView.java
 haven/rs/GBuffer.java

@@ -26,49 +26,29 @@
 
 package haven.render;
 
-import java.nio.*;
+import haven.*;
+import haven.render.sl.*;
 
-public interface DataBuffer {
-    public int size();
+public class FrameInfo extends State {
+    public static final Slot<FrameInfo> slot = new Slot<>(Slot.Type.SYS, FrameInfo.class);
+    public static final Uniform u_time = new Uniform(Type.FLOAT, "time", p -> {
+	    FrameInfo inf = p.get(slot);
+	    return((inf == null) ? 0.0f : (float)inf.time);
+	}, slot);
+    public final double time;
 
-    public enum Usage {
-	EPHEMERAL, STREAM, STATIC;
+    public FrameInfo(double time) {
+	this.time = time;
     }
 
-    public interface Filler<T extends DataBuffer> {
-	public FillBuffer fill(T buf, Environment env);
-	public default void done() {}
+    public FrameInfo() {
+	this(Utils.rtime());
+    }
 
-	public static Filler<DataBuffer> of(ByteBuffer data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.pull(data);
-		    return(buf);
-		});
-	}
-	public static Filler<DataBuffer> of(byte[] data) {
-	    return(of(ByteBuffer.wrap(data)));
-	}
-	public static Filler<DataBuffer> of(short[] data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.push().asShortBuffer().put(data);
-		    return(buf);
-		});
-	};
-	public static Filler<DataBuffer> of(int[] data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.push().asIntBuffer().put(data);
-		    return(buf);
-		});
-	};
-	public static Filler<DataBuffer> of(float[] data) {
-	    return((tgt, env) -> {
-		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.push().asFloatBuffer().put(data);
-		    return(buf);
-		});
-	};
+    public ShaderMacro shader() {return(null);}
+    public void apply(Pipe p) {p.put(slot, this);}
+
+    public static Expression time() {
+	return(u_time.ref());
     }
 }
