@@ -164,6 +164,13 @@ public interface UniformApplier<T> {
 		    gl.glUniform4f(var, col.r, col.g, col.b, col.a);
 		});
 
+	    TypeMapping.register(Type.MAT3, float[].class, (gl, var, mat) -> {
+		    gl.glUniformMatrix3fv(var, 1, false, mat, 0);
+		});
+	    TypeMapping.register(Type.MAT3, Matrix4f.class, (gl, var, mat) -> {
+		    gl.glUniformMatrix3fv(var, 1, false, mat.trim3(), 0);
+		});
+
 	    TypeMapping.register(Type.MAT4, float[].class, (gl, var, mat) -> {
 		    gl.glUniformMatrix4fv(var, 1, false, mat, 0);
 		});
