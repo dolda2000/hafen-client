@@ -72,4 +72,14 @@ public abstract class State implements Pipe.Op {
     }
 
     public abstract ShaderMacro shader();
+
+    public static abstract class StandAlone extends State {
+	public final Slot<StandAlone> slot;
+
+	public StandAlone(Slot.Type type) {
+	    this.slot = new Slot<StandAlone>(type, StandAlone.class);
+	}
+
+	public void apply(Pipe p) {p.put(slot, this);}
+    }
 }
