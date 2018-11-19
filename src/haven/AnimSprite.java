@@ -31,7 +31,6 @@ import haven.render.*;
 
 public class AnimSprite extends Sprite {
     private final RenderTree.Node[] parts;
-    private final MorphedMesh[] mparts;
     private final MeshAnim.Anim[] anims;
 
     public static final Factory fact = new Factory() {
@@ -53,7 +52,6 @@ public class AnimSprite extends Sprite {
 	this.anims = anims.toArray(new MeshAnim.Anim[0]);
 	MorphedMesh.Morpher.Factory morph = MorphedMesh.combine(this.anims);
 	Collection<RenderTree.Node> rl = new LinkedList<>();
-	Collection<MorphedMesh> ml = new LinkedList<>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0))) {
 		boolean stat = true;
@@ -66,14 +64,11 @@ public class AnimSprite extends Sprite {
 		if(stat) {
 		    rl.add(mr.mat.get().apply(mr.m));
 		} else {
-		    MorphedMesh mesh = new MorphedMesh(mr.m, morph);
-		    ml.add(mesh);
-		    rl.add(mr.mat.get().apply(mesh));
+		    rl.add(mr.mat.get().apply(new MorphedMesh(mr.m, morph)));
 		}
 	    }
 	}
 	parts = rl.toArray(new RenderTree.Node[0]);
-	mparts = ml.toArray(new MorphedMesh[0]);
     }
 
     public void added(RenderTree.Slot slot) {
@@ -87,10 +82,5 @@ public class AnimSprite extends Sprite {
 	for(MeshAnim.Anim anim : anims)
 	    ret = ret | anim.tick(dt);
 	return(ret);
-    }
-
-    public void gtick(Render g) {
-	for(MorphedMesh mesh : mparts)
-	    mesh.update(g);
     }
 }

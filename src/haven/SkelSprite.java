@@ -100,9 +100,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	FastMesh m = (FastMesh)wrap.r;
 	for(MeshAnim.Anim anim : manims) {
 	    if(anim.desc().animp(m)) {
-		MorphedMesh mpart = new MorphedMesh(m, mmorph);
-		RenderTree.Node ret = wrap.op.apply(mpart, wrap.locked);
-		gbuf.add(mpart::update);
+		RenderTree.Node ret = wrap.op.apply(new MorphedMesh(m, mmorph), wrap.locked);
 		if(bonedb)
 		    ret = morphed.apply(ret);
 		return(ret);
@@ -112,9 +110,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	if(PoseMorph.boned(m)) {
 	    String bnm = PoseMorph.boneidp(m);
 	    if(bnm == null) {
-		MorphedMesh mpart = new MorphedMesh(m, pmorph);
-		ret = wrap.op.apply(mpart, wrap.locked);
-		gbuf.add(mpart::update);
+		ret = wrap.op.apply(new MorphedMesh(m, pmorph), wrap.locked);
 		if(bonedb)
 		    ret = morphed.apply(ret);
 	    } else {

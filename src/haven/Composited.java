@@ -174,10 +174,6 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 	    lay.add(new Layer(mat, z, lz++));
 	}
 
-	private void gtick(Render g) {
-	    m.update(g);
-	}
-
 	public void added(RenderTree.Slot slot) {
 	    for(Layer lay : this.lay)
 		slot.add(lay);
@@ -504,8 +500,6 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
     }
 
     public void gtick(Render g) {
-	for(Model mod : this.mod)
-	    mod.gtick(g);
 	for(Equ equ : this.equ)
 	    equ.gtick(g);
     }
