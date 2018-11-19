@@ -121,6 +121,10 @@ public class RUtils {
 		    protected Op state() {return(st.get());}
 		});
 	}
+
+	public String toString() {
+	    return(String.format("#<statenode %s>", r));
+	}
     }
 
     public static abstract class StateTickNode<R extends RenderTree.Node> extends StateNode<R> implements TickList.TickNode, TickList.Ticking {
