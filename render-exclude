@@ -13,7 +13,6 @@ haven/HavenApplet.java
 haven/LocationCam.java
 haven/RenderedNormals.java
 haven/resutil/EnvMap.java
-haven/resutil/TexAnim.java
 haven/rs/AvaRender.java
 haven/rs/BufView.java
 haven/rs/GBuffer.java
