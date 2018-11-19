@@ -343,6 +343,7 @@ public class RenderTree implements RenderList.Adapter {
 	    children[nchildren - 1] = null;
 	    nchildren--;
 	    ch.pidx = -1;
+	    ch.setdstate(null);
 	}
 
 	public Iterable<TreeSlot> children() {
