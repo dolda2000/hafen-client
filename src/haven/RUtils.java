@@ -133,7 +133,7 @@ public class RUtils {
 	}
 
 	public TickList.Ticking ticker() {return(this);}
-	public void tick(double dt) {
+	public void autotick(double dt) {
 	    update();
 	}
 

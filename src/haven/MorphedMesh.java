@@ -63,7 +63,7 @@ public class MorphedMesh extends FastMesh implements TickList.TickNode, TickList
 	((MorphedBuf)vert).mupdate(g);
     }
 
-    public void gtick(Render g) {
+    public void autogtick(Render g) {
 	update(g);
     }
 

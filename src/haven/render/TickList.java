@@ -84,8 +84,8 @@ public class TickList implements RenderList<TickList.TickNode> {
     }
 
     public static interface Ticking {
-	public default void tick(double dt) {}
-	public default void gtick(Render g) {}
+	public default void autotick(double dt) {}
+	public default void autogtick(Render g) {}
     }
 
     public static interface TickNode {
@@ -128,10 +128,10 @@ public class TickList implements RenderList<TickList.TickNode> {
 	for(Entry ent : copy) {
 	    /* XXX: Parallelize */
 	    if(ent.mon == null) {
-		ent.tick.tick(dt);
+		ent.tick.autotick(dt);
 	    } else {
 		synchronized(ent.mon) {
-		    ent.tick.tick(dt);
+		    ent.tick.autotick(dt);
 		}
 	    }
 	}
@@ -145,10 +145,10 @@ public class TickList implements RenderList<TickList.TickNode> {
 	for(Entry ent : copy) {
 	    /* XXX: Parallelize */
 	    if(ent.mon == null) {
-		ent.tick.gtick(g);
+		ent.tick.autogtick(g);
 	    } else {
 		synchronized(ent.mon) {
-		    ent.tick.gtick(g);
+		    ent.tick.autogtick(g);
 		}
 	    }
 	}
