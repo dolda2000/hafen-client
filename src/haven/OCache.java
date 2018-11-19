@@ -500,10 +500,12 @@ public class OCache implements Iterable<Gob> {
 	    }
 	    ol.delign = prs;
 	} else {
-	    if((ol != null) && (ol.spr instanceof Sprite.CDel))
-		((Sprite.CDel)ol.spr).delete();
-	    else
-		ol.remove();
+	    if(ol != null) {
+		if(ol.spr instanceof Sprite.CDel)
+		    ((Sprite.CDel)ol.spr).delete();
+		else
+		    ol.remove();
+	    }
 	}
     }
     public Delta overlay(Message msg) {

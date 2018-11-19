@@ -31,7 +31,7 @@ import java.nio.*;
 import java.lang.ref.*;
 import haven.render.*;
 
-public class MorphedMesh extends FastMesh {
+public class MorphedMesh extends FastMesh implements TickList.TickNode, TickList.Ticking {
     private static Map<Morpher.Factory, Collection<MorphedBuf>> bufs = new CacheMap<Morpher.Factory, Collection<MorphedBuf>>(CacheMap.RefType.WEAK);
     public final FastMesh from;
     
@@ -59,9 +59,15 @@ public class MorphedMesh extends FastMesh {
 	this.from = mesh;
     }
     
-    public void update(Render g) {
+    private void update(Render g) {
 	((MorphedBuf)vert).mupdate(g);
     }
+
+    public void gtick(Render g) {
+	update(g);
+    }
+
+    public TickList.Ticking ticker() {return(this);}
 
     public String toString() {
 	return("morphed(" + from + ")");

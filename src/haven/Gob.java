@@ -81,9 +81,13 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 		slots = RUtils.multiadd(gob.slots, spr);
 	}
 
-	public void remove() {
+	public void remove0() {
 	    if(slots != null)
 		RUtils.multirem(slots);
+	}
+
+	public void remove() {
+	    remove0();
 	    gob.ols.remove(this);
 	}
     }
@@ -183,8 +187,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 		} catch(Loading e) {}
 	    } else {
 		boolean done = ol.spr.tick(dt);
-		if((!ol.delign || (ol.spr instanceof Sprite.CDel)) && done)
+		if((!ol.delign || (ol.spr instanceof Sprite.CDel)) && done) {
+		    ol.remove0();
 		    i.remove();
+		}
 	    }
 	}
 	if(virtual && ols.isEmpty() && (getattr(Drawable.class) == null))
@@ -404,7 +410,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 
     public void added(RenderTree.Slot slot) {
 	if(!virtual)
-	    slot.ostate(new GobClick(this));
+	    slot.ostate(Pipe.Op.compose(new GobClick(this), new TickList.Monitor(this)));
 	Collection<Runnable> rev = new ArrayList<>();
 	try {
 	    for(Overlay ol : ols) {
