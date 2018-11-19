@@ -51,7 +51,7 @@ public abstract class PView extends Widget {
 	tree.add(list2d, Render2D.class);
 	tree.add(ticklist, TickList.TickNode.class);
 	conf = tree.add((RenderTree.Node)null);
-	conf.ostate(conf());
+	conf.ostate(frame());
 	basic = conf.add((RenderTree.Node)null);
 	basic();
     }
@@ -60,9 +60,25 @@ public abstract class PView extends Widget {
 	return(new FrameConfig(this.sz));
     }
 
+    private Pipe.Op curconf = null;
+    private Pipe.Op curconf() {
+	if(curconf == null)
+	    curconf = conf();
+	return(curconf);
+    }
+
+    private Pipe.Op frame() {
+	return(Pipe.Op.compose(curconf(), new FrameInfo()));
+    }
+
+    private void reconf() {
+	curconf = null;
+	conf.ostate(frame());
+    }
+
     public void resize(Coord sz) {
 	super.resize(sz);
-	conf.ostate(conf());
+	reconf();
     }
 
     public void basic(Object id, Pipe.Op state) {
@@ -87,6 +103,7 @@ public abstract class PView extends Widget {
 
     public void tick(double dt) {
 	super.tick(dt);
+	conf.ostate(frame());
 	ticklist.tick(dt);
     }
 
