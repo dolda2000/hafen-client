@@ -53,6 +53,10 @@ public class Coord3f {
 	return((o.x == x) && (o.y == y) && (o.z == z));
     }
 
+    public boolean equals(Object o) {
+	return((o instanceof Coord3f) && equals((Coord3f)o));
+    }
+
     public Coord3f add(float ax, float ay, float az) {
 	return(new Coord3f(x + ax, y + ay, z + az));
     }
