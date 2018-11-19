@@ -123,6 +123,23 @@ public class RUtils {
 	}
     }
 
+    public static abstract class StateTickNode<R extends RenderTree.Node> extends StateNode<R> implements TickList.TickNode, TickList.Ticking {
+	public StateTickNode(R r) {
+	    super(r);
+	}
+
+	public TickList.Ticking ticker() {return(this);}
+	public void tick(double dt) {
+	    update();
+	}
+
+	public static <R extends RenderTree.Node> StateTickNode from(R r, Supplier<? extends Op> st) {
+	    return(new StateTickNode<R>(r) {
+		    protected Op state() {return(st.get());}
+		});
+	}
+    }
+
     public static class CubeFill implements DataBuffer.Filler<Image> {
 	public final Supplier<BufferedImage> src;
 	public final int[][] order;
