@@ -242,6 +242,10 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 	public void gtick(Render g) {}
 
 	protected Pipe.Op state() {return(et.get());}
+
+	public String toString() {
+	    return(String.format("#<equ %s>", r));
+	}
     }
 
     public static class MD implements Cloneable {

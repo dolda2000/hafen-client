@@ -672,6 +672,10 @@ public class RenderTree implements RenderList.Adapter {
 	public GroupPipe state() {
 	    return(istate());
 	}
+
+	public String toString() {
+	    return(String.format("#<rendertree.slot %s>", node));
+	}
     }
 
     public static interface Node {
