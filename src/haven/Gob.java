@@ -404,7 +404,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 
     public void added(RenderTree.Slot slot) {
 	if(!virtual)
-	    slot.ostate(new GobClick(this));
+	    slot.ostate(Pipe.Op.compose(new GobClick(this), new TickList.Monitor(this)));
 	Collection<Runnable> rev = new ArrayList<>();
 	try {
 	    for(Overlay ol : ols) {

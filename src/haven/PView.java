@@ -41,6 +41,7 @@ public abstract class PView extends Widget {
     private final Map<Object, Pipe.Op> basicstates = new IdentityHashMap<>();
     private final Light.LightList lights = new Light.LightList();
     private final ScreenList list2d = new ScreenList();
+    private final TickList ticklist = new TickList();
     private Texture2D.Sampler2D fragsamp;
     private DrawList back = null;
 
@@ -48,6 +49,7 @@ public abstract class PView extends Widget {
 	super(sz);
 	tree = new RenderTree();
 	tree.add(list2d, Render2D.class);
+	tree.add(ticklist, TickList.TickNode.class);
 	conf = tree.add((RenderTree.Node)null);
 	conf.ostate(conf());
 	basic = conf.add((RenderTree.Node)null);
@@ -83,7 +85,13 @@ public abstract class PView extends Widget {
 	return((RenderList.Slot<Rendered>)slot);
     }
 
+    public void tick(double dt) {
+	super.tick(dt);
+	ticklist.tick(dt);
+    }
+
     public void draw(GOut g) {
+	ticklist.gtick(g.out);
 	if((back == null) || !back.compatible(g.out.env())) {
 	    if(back != null) {
 		back.dispose();
