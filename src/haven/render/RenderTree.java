@@ -495,7 +495,7 @@ public class RenderTree implements RenderList.Adapter {
 		for(int i = 0; i < maxi; i++) {
 		    if(pst.def[i] && !eq(pst.states[i], nst.states[i])) {
 			ch[nch++] = i;
-			if((rdeps != null) && (rdeps[i] != null)) {
+			if((rdeps != null) && (rdeps.length > i) && (rdeps[i] != null)) {
 			    for(TreeSlot rdep : rdeps[i]) {
 				if(!cdeps.contains(rdep))
 				    cdeps.add(rdep);
