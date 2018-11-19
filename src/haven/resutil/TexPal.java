@@ -28,43 +28,29 @@ package haven.resutil;
 
 import java.util.*;
 import haven.*;
-import haven.glsl.*;
-import static haven.glsl.Cons.*;
-import static haven.glsl.Function.PDir.*;
-import static haven.glsl.Type.*;
-import haven.glsl.ValBlock.Value;
+import haven.render.*;
+import haven.render.sl.*;
+import haven.render.sl.ValBlock.Value;
+import static haven.render.sl.Cons.*;
+import static haven.render.sl.Function.PDir.*;
+import static haven.render.sl.Type.*;
 
-public class TexPal extends GLState {
+public class TexPal extends State {
     public static final Slot<TexPal> slot = new Slot<TexPal>(Slot.Type.DRAW, TexPal.class);
-    public final TexGL tex;
+    public final TexRender tex;
 
-    public TexPal(TexGL tex) {
+    public TexPal(TexRender tex) {
 	this.tex = tex;
     }
 
-    private static final Uniform ctex = new Uniform(SAMPLER2D);
+    private static final Uniform ctex = new Uniform(SAMPLER2D, p -> p.get(slot).tex.img, slot);
     private static final ShaderMacro shader = prog -> {
-	Tex2D.tex2d(prog.fctx).mod(in -> texture2D(ctex.ref(), pick(in, "rg")), -100);
+	Tex2D.get(prog).color().mod(in -> texture2D(ctex.ref(), pick(in, "rg")), -100);
     };
 
     public ShaderMacro shader() {return(shader);}
 
-    private TexUnit sampler;
-
-    public void reapply(GOut g) {
-	g.gl.glUniform1i(g.st.prog.uniform(ctex), sampler.id);
-    }
-
-    public void apply(GOut g) {
-	sampler = TexGL.lbind(g, tex);
-	reapply(g);
-    }
-
-    public void unapply(GOut g) {
-	sampler.ufree(g); sampler = null;
-    }
-
-    public void prep(Buffer buf) {
+    public void apply(Pipe buf) {
 	buf.put(slot, this);
     }
 
@@ -84,11 +70,11 @@ public class TexPal extends GLState {
 		a += 1;
 	    }
 	    return(new Material.Res.Resolver() {
-		    public void resolve(Collection<GLState> buf) {
+		    public void resolve(Collection<Pipe.Op> buf) {
 			TexR rt = tres.get().layer(TexR.class, tid);
 			if(rt == null)
 			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
-			buf.add(new TexPal((TexGL)rt.tex()));
+			buf.add(new TexPal(rt.tex()));
 		    }
 		});
 	}
