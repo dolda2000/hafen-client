@@ -349,6 +349,7 @@ public class GLDrawList implements DrawList {
 			orderreg();
 		    }
 		}
+		main = BufferBGL.empty;
 		SlotRender g = new SlotRender(this);
 		bk.obj().draw(bst, g);
 	    } catch(RuntimeException exc) {
