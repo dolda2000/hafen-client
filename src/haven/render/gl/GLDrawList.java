@@ -900,8 +900,15 @@ public class GLDrawList implements DrawList {
 
     public void update(Slot<? extends Rendered> slot) {
 	synchronized(this) {
+	    /* Handle exceptions from DrawSlot construction before
+	     * removing previous slot. */
+	    DrawSlot dslot = new DrawSlot(slot);
 	    remove(slot);
-	    add(slot);
+	    dslot.insert();
+	    if(slotmap.put(slot, dslot) != null)
+		throw(new AssertionError());
+	    /* XXXRENDER: Remove */
+	    verify();
 	}
     }
 
