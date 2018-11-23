@@ -299,6 +299,7 @@ public class RenderTree implements RenderList.Adapter {
 	public void cstate(Pipe.Op state);
 	public void ostate(Pipe.Op state);
 	public Slot parent();
+	public void update();
 	public default void lockstate() {}
     }
 
@@ -585,6 +586,12 @@ public class RenderTree implements RenderList.Adapter {
 	    try(Locked lk = tree.lock()) {
 		if(state != this.ostate)
 		    chstate(this.cstate, state);
+	    }
+	}
+
+	public void update() {
+	    synchronized(tree.clients) {
+		tree.clients.forEach(cl -> cl.updated(this));
 	    }
 	}
 

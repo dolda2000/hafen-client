@@ -526,10 +526,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private class MapRaster extends RenderTree.Node.Track1 {
 	final MCache map = glob.map;
 	Area area;
+	Loading lastload = new Loading("Initializing map...");
 
 	abstract class Grid<T> extends RenderTree.Node.Track1 {
 	    final Map<Coord, Pair<T, RenderTree.Slot>> cuts = new HashMap<>();
 	    final boolean position;
+	    Loading lastload = new Loading("Initializing map...");
 
 	    Grid(boolean position) {
 		this.position = position;
@@ -543,6 +545,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    void tick() {
 		if(slot == null)
 		    return;
+		Loading curload = null;
 		for(Coord cc : area) {
 		    try {
 			T cut = getcut(cc);
@@ -566,8 +569,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 				cs = Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0));
 			    cuts.put(cc, new Pair<>(cut, slot.add(draw, cs)));
 			}
-		    } catch(Loading l) {}
+		    } catch(Loading l) {
+			curload = l;
+		    }
 		}
+		this.lastload = curload;
 		for(Iterator<Map.Entry<Coord, Pair<T, RenderTree.Slot>>> i = cuts.entrySet().iterator(); i.hasNext();) {
 		    Map.Entry<Coord, Pair<T, RenderTree.Slot>> ent = i.next();
 		    if(!area.contains(ent.getKey())) {
@@ -589,14 +595,21 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    try {
 		Coord cc = new Coord2d(getcc()).floor(tilesz).div(MCache.cutsz);
 		area = new Area(cc.sub(view, view), cc.add(view, view).add(1, 1));
+		lastload = null;
 	    } catch(Loading l) {
-		return;
+		lastload = l;
 	    }
+	}
+
+	public Loading loading() {
+	    if(this.lastload != null)
+		return(this.lastload);
+	    return(null);
 	}
     }
 
-    private final Terrain terrain;
-    private class Terrain extends MapRaster {
+    public final Terrain terrain;
+    public class Terrain extends MapRaster {
 	final Grid main = new Grid<MapMesh>() {
 		MapMesh getcut(Coord cc) {
 		    return(map.getcut(cc));
@@ -629,6 +642,17 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    slot.add(flavobjs);
 	    super.added(slot);
 	}
+
+	public Loading loading() {
+	    Loading ret = super.loading();
+	    if(ret != null)
+		return(ret);
+	    if((ret = main.lastload) != null)
+		return(ret);
+	    if((ret = flavobjs.lastload) != null)
+		return(ret);
+	    return(null);
+	}
     }
 
     static class MapClick extends Clickable {
@@ -650,6 +674,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		}
 	    };
 
+	private Terrain() {
+	}
+
 	void tick() {
 	    super.tick();
 	    if(area != null) {
@@ -660,6 +687,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void added(RenderTree.Slot slot) {
 	    slot.add(grid);
 	    super.added(slot);
+	}
+
+	public Loading loading() {
+	    Loading ret = super.loading();
+	    if(ret != null)
+		return(ret);
+	    if((ret = grid.lastload) != null)
+		return(ret);
+	    return(null);
 	}
     }
 

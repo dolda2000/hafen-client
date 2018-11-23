@@ -349,6 +349,7 @@ public class GLDrawList implements DrawList {
 			orderreg();
 		    }
 		}
+		main = BufferBGL.empty;
 		SlotRender g = new SlotRender(this);
 		bk.obj().draw(bst, g);
 	    } catch(RuntimeException exc) {
@@ -883,8 +884,6 @@ public class GLDrawList implements DrawList {
 	    dslot.insert();
 	    if(slotmap.put(slot, dslot) != null)
 		throw(new AssertionError());
-	    /* XXXRENDER: Remove */
-	    verify();
 	}
     }
 
@@ -893,15 +892,18 @@ public class GLDrawList implements DrawList {
 	    DrawSlot dslot = slotmap.remove(slot);
 	    dslot.remove();
 	    dslot.dispose();
-	    /* XXXRENDER: Remove */
-	    verify();
 	}
     }
 
     public void update(Slot<? extends Rendered> slot) {
 	synchronized(this) {
+	    /* Handle exceptions from DrawSlot construction before
+	     * removing previous slot. */
+	    DrawSlot dslot = new DrawSlot(slot);
 	    remove(slot);
-	    add(slot);
+	    dslot.insert();
+	    if(slotmap.put(slot, dslot) != null)
+		throw(new AssertionError());
 	}
     }
 

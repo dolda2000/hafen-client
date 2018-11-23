@@ -36,6 +36,7 @@ import haven.render.RenderTree.Slot;
 import haven.render.Pipe.Op;
 import haven.render.Texture.Image;
 import haven.render.TextureCube.CubeImage;
+import haven.render.sl.ShaderMacro;
 
 public class RUtils {
     public static Collection<Slot> multiadd(Collection<Slot> slots, Node node) {
@@ -133,7 +134,7 @@ public class RUtils {
 	}
 
 	public TickList.Ticking ticker() {return(this);}
-	public void tick(double dt) {
+	public void autotick(double dt) {
 	    update();
 	}
 
@@ -202,6 +203,36 @@ public class RUtils {
 	    BufferedImage img = Loading.waitfor(src::get);
 	    Coord on = osz();
 	    return(new TextureCube(img.getWidth() / on.x, img.getHeight() / on.y, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), this));
+	}
+    }
+
+    public static final State.Slot<State> adhoc = new State.Slot<>(State.Slot.Type.DRAW, State.class);
+    public static class AdHoc extends State {
+	private final ShaderMacro sh;
+
+	public AdHoc(ShaderMacro sh) {
+	    this.sh = sh;
+	}
+
+	public ShaderMacro shader() {return(sh);}
+
+	public void apply(Pipe buf) {
+	    buf.put(adhoc, this);
+	}
+    }
+
+    public static final State.Slot<State> adhocg = new State.Slot<State>(State.Slot.Type.GEOM, State.class);
+    public static class GeomAdHoc extends State {
+	private final ShaderMacro sh;
+
+	public GeomAdHoc(ShaderMacro sh) {
+	    this.sh = sh;
+	}
+
+	public ShaderMacro shader() {return(sh);}
+
+	public void apply(Pipe buf) {
+	    buf.put(adhocg, this);
 	}
     }
 }

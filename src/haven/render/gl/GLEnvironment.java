@@ -45,9 +45,15 @@ public class GLEnvironment implements Environment {
     private GLRender prep = null;
     private Applier curstate = new Applier(this);
 
-    public GLEnvironment(GLContext ctx, Area wnd) {
+    public GLEnvironment(GL2 initgl, GLContext ctx, Area wnd) {
 	this.ctx = ctx;
 	this.wnd = wnd;
+	initialize(initgl);
+    }
+
+    private void initialize(GL2 gl) {
+	gl.glEnable(GL3.GL_PROGRAM_POINT_SIZE);
+	gl.glEnable(GL2.GL_POINT_SPRITE);
     }
 
     public GLRender render() {

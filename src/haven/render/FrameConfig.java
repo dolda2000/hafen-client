@@ -27,10 +27,15 @@
 package haven.render;
 
 import haven.*;
-import haven.render.sl.ShaderMacro;
+import haven.render.sl.*;
 
 public class FrameConfig extends State {
     public static final Slot<FrameConfig> slot = new Slot<>(Slot.Type.SYS, FrameConfig.class);
+    public static final Uniform u_screensize = new Uniform(Type.VEC2, "screensize", p -> p.get(slot).sz, slot);
+    public static final Uniform u_pixelpitch = new Uniform(Type.VEC2, "pixelpitch", p -> {
+	    Coord sz = p.get(slot).sz;
+	    return(new float[] {1.0f / sz.x, 1.0f / sz.y});
+	}, slot);
     public final Coord sz;
     public final int samples;
 

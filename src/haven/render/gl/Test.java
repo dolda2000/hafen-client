@@ -192,7 +192,7 @@ public class Test implements GLEventListener, KeyListener {
 	    if((env == null) || (wnd.getContext() != env.ctx)) {
 		if(env != null)
 		    System.err.println("switching contexts");
-		env = new GLEnvironment(wnd.getContext(), shape);
+		env = new GLEnvironment(gl, wnd.getContext(), shape);
 		gl.setSwapInterval(1);
 	    }
 	    if(!env.shape().equals(shape))

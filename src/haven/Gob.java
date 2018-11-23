@@ -167,7 +167,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	this.id = id;
 	if(id < 0)
 	    virtual = true;
-	placed.tick();
     }
 
     public Gob(Glob glob, Coord2d c) {
@@ -178,7 +177,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	for(GAttrib a : attr.values())
 	    a.ctick(dt);
 	loadrattr();
-	placed.tick();
 	for(Iterator<Overlay> i = ols.iterator(); i.hasNext();) {
 	    Overlay ol = i.next();
 	    if(ol.spr == null) {
@@ -562,47 +560,61 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     public final Save save = new Save();
     */
 
-    public class Placed implements RenderTree.Node {
+    public class Placed implements RenderTree.Node, TickList.Ticking, TickList.TickNode {
 	private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
-	private Coord3f c = null;
-	private double a = Double.NaN;
-	private Location xl, rot;
+	private Placement cur;
 
 	private Placed() {}
 
-	public void tick() {
-	    boolean upd = false;
-	    try {
+	private class Placement implements Pipe.Op {
+	    final Coord3f c;
+	    final double a;
+
+	    Placement() {
 		Coord3f c = Gob.this.getc();
 		c.y = -c.y;
-		if(!Utils.eq(this.c, c)) {
-		    xl = new Location(Transform.makexlate(new Matrix4f(), this.c = c), "gobx");
-		    upd = true;
-		}
-		if(this.a != Gob.this.a) {
-		    rot = new Location(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-(this.a = Gob.this.a)), "gob");
-		    upd = true;
-		}
-	    } catch(Loading l) {}
-	    if(upd)
-		update();
+		this.c = c;
+		this.a = Gob.this.a;
+	    }
+
+	    public boolean equals(Placement that) {
+		return(that.c.equals(this.c) && (that.a == this.a));
+	    }
+
+	    public boolean equals(Object o) {
+		return((o instanceof Placement) && equals((Placement)o));
+	    }
+
+	    Pipe.Op st = null;
+	    public void apply(Pipe buf) {
+		if(st == null)
+		    st = Pipe.Op.compose(new Location(Transform.makexlate(new Matrix4f(), this.c), "gobx"),
+					 new Location(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-this.a), "gob"));
+		st.apply(buf);
+	    }
 	}
 
-	private Pipe.Op state() {
-	    return(Pipe.Op.compose(xl, rot));
+	public void autotick(double dt) {
+	    Placement np;
+	    try {
+		np = new Placement();
+	    } catch(Loading l) {
+		return;
+	    }
+	    if(!Utils.eq(this.cur, np))
+		update(np);
 	}
 
-	private void update() {
-	    Pipe.Op state = state();
+	private void update(Placement np) {
 	    for(RenderTree.Slot slot : slots)
-		slot.ostate(state);
+		slot.ostate(np);
+	    this.cur = np;
 	}
 
 	public void added(RenderTree.Slot slot) {
-	    /* XXX: xl and rot have not been set yet, so state() is
-	     * undefined and will incur an unnecessary def-mask update
-	     * on the first tick. */
-	    slot.ostate(state());
+	    if(cur == null)
+		cur = new Placement();
+	    slot.ostate(cur);
 	    slot.add(Gob.this);
 	    slots.add(slot);
 	}
@@ -612,8 +624,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	}
 
 	public Coord3f getc() {
-	    return(this.c);
+	    return((this.cur == null) ? this.cur.c : null);
 	}
+
+	public TickList.Ticking ticker() {return(this);}
     }
     public final Placed placed = new Placed();
 }

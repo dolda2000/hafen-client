@@ -759,10 +759,7 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    public GobInfo receive(Message msg) {
-	int fl = msg.uint8();
-	long id = msg.uint32();
-	int frame = msg.int32();
+    public GobInfo receive(int fl, long id, int frame, Message msg) {
 	List<Delta> attrs = new ArrayList<>();
 	GobInfo removed = null;
 	while(true) {

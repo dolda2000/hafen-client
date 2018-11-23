@@ -87,6 +87,12 @@ public class Homo3D {
     public Expression pmvxf(Expression v) {
 	return(mul(u_wxf.ref(), v));
     }
+    public Expression pcamxf(Expression v) {
+	return(mul(u_cam.ref(), v));
+    }
+    public Expression pprjxf(Expression v) {
+	return(mul(u_prj.ref(), v));
+    }
 
      /* If, at some unexpected point in an unexpected future, I were
       * to use anisotropic transforms, this will have to get a matrix
