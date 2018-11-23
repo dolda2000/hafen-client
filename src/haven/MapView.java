@@ -629,6 +629,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		}
 	    };
 
+	private Terrain() {
+	}
+
 	void tick() {
 	    super.tick();
 	    if(area != null) {
@@ -673,9 +676,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    return(new MapClick(cut).apply(cut.flat));
 		}
 	    };
-
-	private Terrain() {
-	}
 
 	void tick() {
 	    super.tick();
