@@ -30,6 +30,8 @@ import java.util.*;
 import java.lang.ref.*;
 import haven.render.Render;
 
+/* XXX: This whole file is a bit of a mess and could use a bit of a
+ * rewrite some rainy day. Synchronization especially is quite hairy. */
 public class MCache {
     public static final Coord2d tilesz = new Coord2d(11, 11);
     public static final Coord tilesz2 = tilesz.round(); /* XXX: Remove me in due time. */
@@ -379,19 +381,21 @@ public class MCache {
     }
 
     public void ctick(double dt) {
+	Collection<Grid> copy;
 	synchronized(grids) {
-	    for(Grid g : grids.values()) {
-		g.tick(dt);
-	    }
+	    copy = new ArrayList<>(grids.values());
 	}
+	for(Grid g : copy)
+	    g.tick(dt);
     }
 
     public void gtick(Render g) {
+	Collection<Grid> copy;
 	synchronized(grids) {
-	    for(Grid gr : grids.values()) {
-		gr.gtick(g);
-	    }
+	    copy = new ArrayList<>(grids.values());
 	}
+	for(Grid gr : grids.values())
+	    gr.gtick(g);
     }
 
     public void invalidate(Coord cc) {
