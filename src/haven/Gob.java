@@ -167,7 +167,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	this.id = id;
 	if(id < 0)
 	    virtual = true;
-	placed.tick();
     }
 
     public Gob(Glob glob, Coord2d c) {
@@ -178,7 +177,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	for(GAttrib a : attr.values())
 	    a.ctick(dt);
 	loadrattr();
-	placed.tick();
 	for(Iterator<Overlay> i = ols.iterator(); i.hasNext();) {
 	    Overlay ol = i.next();
 	    if(ol.spr == null) {
@@ -562,7 +560,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     public final Save save = new Save();
     */
 
-    public class Placed implements RenderTree.Node {
+    public class Placed implements RenderTree.Node, TickList.Ticking, TickList.TickNode {
 	private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
 	private Placement cur;
 
@@ -596,7 +594,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    }
 	}
 
-	public void tick() {
+	public void autotick(double dt) {
 	    Placement np;
 	    try {
 		np = new Placement();
@@ -628,6 +626,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	public Coord3f getc() {
 	    return((this.cur == null) ? this.cur.c : null);
 	}
+
+	public TickList.Ticking ticker() {return(this);}
     }
     public final Placed placed = new Placed();
 }
