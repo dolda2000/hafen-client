@@ -203,16 +203,18 @@ public class Session implements Resource.Resolver {
 	private void getobjdata(Message msg) {
 	    OCache oc = glob.oc;
 	    while(!msg.eom()) {
-		OCache.GobInfo ng = oc.receive(msg);
-		if(ng != null) {
-		    synchronized(objacks) {
-			if(objacks.containsKey(ng.id)) {
-			    ObjAck a = objacks.get(ng.id);
-			    a.frame = ng.frame;
-			    a.recv = System.currentTimeMillis();
-			} else {
-			    objacks.put(ng.id, new ObjAck(ng.id, ng.frame, System.currentTimeMillis()));
-			}
+		int fl = msg.uint8();
+		long id = msg.uint32();
+		int frame = msg.int32();
+		oc.receive(fl, id, frame, msg);
+		synchronized(objacks) {
+		    if(objacks.containsKey(id)) {
+			ObjAck a = objacks.get(id);
+			if(frame > a.frame)
+			    a.frame = frame;
+			a.recv = System.currentTimeMillis();
+		    } else {
+			objacks.put(id, new ObjAck(id, frame, System.currentTimeMillis()));
 		    }
 		}
 	    }
