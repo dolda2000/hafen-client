@@ -394,7 +394,7 @@ public class MCache {
 	synchronized(grids) {
 	    copy = new ArrayList<>(grids.values());
 	}
-	for(Grid gr : grids.values())
+	for(Grid gr : copy)
 	    gr.gtick(g);
     }
 
