@@ -26,6 +26,5 @@
 
 package haven;
 
-public interface Indir<T> {
-    public T get();
+public interface Indir<T> extends java.util.function.Supplier<T> {
 }
