@@ -43,6 +43,6 @@ public class Pair<A, B> {
 	if(!(O instanceof Pair))
 	    return(false);
 	Pair o = (Pair<?, ?>)O;
-	return(a.equals(o.a) && b.equals(o.b));
+	return(Utils.eq(a, o.a) && Utils.eq(b, o.b));
     }
 }
