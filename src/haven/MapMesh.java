@@ -335,124 +335,102 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	return(m);
     }
 
-    /* XXXRENDER
-    private static States.DepthOffset gmoff = new States.DepthOffset(-1, -1);
-    public static class GroundMod implements Rendered, Disposable {
-	private static final Order gmorder = new Order.Default(1001);
-	public final Coord2d cc;
-	public final FastMesh mesh;
-	
-	public GroundMod(MCache map, final Coord2d cc, final Coord3f ul, final Coord3f br, double a) {
-	    final float si = (float)Math.sin(a), co = (float)Math.cos(a);
-	    this.cc = cc;
-	    final MeshBuf buf = new MeshBuf();
-	    final float cz = (float)map.getcz(cc);
-	    final Coord ult, brt;
-	    {
-		Coord tult = null, tbrt = null;
-		for(Coord3f corn : new Coord3f[] {ul, new Coord3f(ul.x, br.y, 0), br, new Coord3f(br.x, ul.y, 0)}) {
-		    float cx = (float)((cc.x + co * corn.x - si * corn.y) / tilesz.x);
-		    float cy = (float)((cc.y + co * corn.y + si * corn.x) / tilesz.y);
-		    if(tult == null) {
-			tult = new Coord((int)Math.floor(cx), (int)Math.floor(cy));
-			tbrt = new Coord((int)Math.ceil(cx), (int)Math.ceil(cy));
-		    } else {
-			tult.x = Math.min(tult.x, (int)Math.floor(cx));
-			tult.y = Math.min(tult.y, (int)Math.floor(cy));
-			tbrt.x = Math.max(tbrt.x, (int)Math.ceil(cx));
-			tbrt.y = Math.max(tbrt.y, (int)Math.ceil(cy));
-		    }
-		}
-		ult = tult; brt = tbrt;
-	    }
-
-	    Tiler.MCons cons = new Tiler.MCons() {
-		    final MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
-		    final Map<Vertex, MeshVertex> cv = new HashMap<Vertex, MeshVertex>();
-
-		    public void faces(MapMesh m, Tiler.MPart d) {
-			Coord3f[] texc = new Coord3f[d.v.length];
-			for(int i = 0; i < d.v.length; i++) {
-			    texc[i] = new Coord3f((float)(((m.ul.x + d.lc.x + d.tcx[i]) * tilesz.x) - cc.x),
-						  (float)(((m.ul.y + d.lc.y + d.tcy[i]) * tilesz.y) - cc.y),
-						  0);
-			    texc[i] = new Coord3f(co * texc[i].x + si * texc[i].y,
-						  co * texc[i].y - si * texc[i].x,
-						  0);
-			    texc[i].x = (texc[i].x - ul.x) / (br.x - ul.x);
-			    texc[i].y = (texc[i].y - ul.y) / (br.y - ul.y);
-			}
-
-			boolean[] vf = new boolean[d.f.length / 3];
-			boolean[] vv = new boolean[d.v.length];
-			for(int i = 0, o = 0; i < vf.length; i++, o += 3) {
-			    boolean f = true;
-			    int vs = 0, hs = 0;
-			    for(int u = 0; u < 3; u++) {
-				int vi = d.f[o + u];
-				int ch = (texc[vi].x < 0)?-1:((texc[vi].x > 1)?1:0);
-				int cv = (texc[vi].y < 0)?-1:((texc[vi].y > 1)?1:0);
-				boolean diff = false;
-				if(f) {
-				    hs = ch; vs = cv; f = false;
-				} else {
-				    diff = (hs != ch) || (vs != cv);
-				}
-				if(diff || ((ch == 0) && (cv == 0))) {
-				    vf[i] = true;
-				    for(int p = 0; p < 3; p++)
-					vv[d.f[o + p]] = true;
-				    break;
-				}
-			    }
-			}
-
-			MeshVertex[] mv = new MeshVertex[d.v.length];
-			for(int i = 0; i < d.v.length; i++) {
-			    if(!vv[i])
-				continue;
-			    if((mv[i] = cv.get(d.v[i])) == null) {
-				cv.put(d.v[i], mv[i] = new MeshVertex(buf, d.v[i]));
-				mv[i].pos = mv[i].pos.add((float)((m.ul.x * tilesz.x) - cc.x), (float)(cc.y - (m.ul.y * tilesz.y)), -cz);
-				ta.set(mv[i], texc[i]);
-			    }
-			}
-
-			for(int i = 0, o = 0; i < vf.length; i++, o += 3) {
-			    if(!vf[i])
-				continue;
-			    buf.new Face(mv[d.f[o]], mv[d.f[o + 1]], mv[d.f[o + 2]]);
-			}
-		    }
-		};
-
-	    Coord t = new Coord();
-	    for(t.y = ult.y; t.y < brt.y; t.y++) {
-		for(t.x = ult.x; t.x < brt.x; t.x++) {
-		    MapMesh cut = map.getcut(t.div(MCache.cutsz));
-		    Tiler tile = map.tiler(map.gettile(t));
-		    tile.lay(cut, t.sub(cut.ul), t, cons, false);
+    private static Pipe.Op gmmat = Pipe.Op.compose(new States.DepthBias(-1, -1),
+						   new Order.Default(1001));
+    public static RenderTree.Node groundmod(MCache map, Coord2d cc, Coord2d ul, Coord2d br, double a) {
+	double si = Math.sin(a), co = Math.cos(a);
+	MeshBuf buf = new MeshBuf();
+	float cz = (float)map.getcz(cc);
+	Coord ult, brt;
+	{
+	    Coord tult = null, tbrt = null;
+	    for(Coord2d corn : new Coord2d[] {ul, new Coord2d(ul.x, br.y), br, new Coord2d(br.x, ul.y)}) {
+		float cx = (float)((cc.x + co * corn.x - si * corn.y) / tilesz.x);
+		float cy = (float)((cc.y + co * corn.y + si * corn.x) / tilesz.y);
+		if(tult == null) {
+		    tult = new Coord((int)Math.floor(cx), (int)Math.floor(cy));
+		    tbrt = new Coord((int)Math.ceil(cx), (int)Math.ceil(cy));
+		} else {
+		    tult.x = Math.min(tult.x, (int)Math.floor(cx));
+		    tult.y = Math.min(tult.y, (int)Math.floor(cy));
+		    tbrt.x = Math.max(tbrt.x, (int)Math.ceil(cx));
+		    tbrt.y = Math.max(tbrt.y, (int)Math.ceil(cy));
 		}
 	    }
-	    mesh = buf.mkmesh();
+	    ult = tult; brt = tbrt;
 	}
 
-	public void dispose() {
-	    mesh.dispose();
-	}
+	Tiler.MCons cons = new Tiler.MCons() {
+		final MeshBuf.Tex ta = buf.layer(MeshBuf.tex);
+		final Map<Vertex, MeshVertex> cv = new HashMap<>();
 
-	public void draw(GOut g) {
+		public void faces(MapMesh m, Tiler.MPart d) {
+		    Coord3f[] texc = new Coord3f[d.v.length];
+		    for(int i = 0; i < d.v.length; i++) {
+			texc[i] = new Coord3f((float)(((m.ul.x + d.lc.x + d.tcx[i]) * tilesz.x) - cc.x),
+					      (float)(((m.ul.y + d.lc.y + d.tcy[i]) * tilesz.y) - cc.y),
+					      0);
+			texc[i] = new Coord3f((float)(co * texc[i].x + si * texc[i].y),
+					      (float)(co * texc[i].y - si * texc[i].x),
+					      0);
+			texc[i].x = (float)((texc[i].x - ul.x) / (br.x - ul.x));
+			texc[i].y = (float)((texc[i].y - ul.y) / (br.y - ul.y));
+		    }
+
+		    boolean[] vf = new boolean[d.f.length / 3];
+		    boolean[] vv = new boolean[d.v.length];
+		    for(int i = 0, o = 0; i < vf.length; i++, o += 3) {
+			boolean f = true;
+			int vs = 0, hs = 0;
+			for(int u = 0; u < 3; u++) {
+			    int vi = d.f[o + u];
+			    int ch = (texc[vi].x < 0)?-1:((texc[vi].x > 1)?1:0);
+			    int cv = (texc[vi].y < 0)?-1:((texc[vi].y > 1)?1:0);
+			    boolean diff = false;
+			    if(f) {
+				hs = ch; vs = cv; f = false;
+			    } else {
+				diff = (hs != ch) || (vs != cv);
+			    }
+			    if(diff || ((ch == 0) && (cv == 0))) {
+				vf[i] = true;
+				for(int p = 0; p < 3; p++)
+				    vv[d.f[o + p]] = true;
+				break;
+			    }
+			}
+		    }
+
+		    MeshVertex[] mv = new MeshVertex[d.v.length];
+		    for(int i = 0; i < d.v.length; i++) {
+			if(!vv[i])
+			    continue;
+			if((mv[i] = cv.get(d.v[i])) == null) {
+			    cv.put(d.v[i], mv[i] = new MeshVertex(buf, d.v[i]));
+			    mv[i].pos = mv[i].pos.add((float)((m.ul.x * tilesz.x) - cc.x), (float)(cc.y - (m.ul.y * tilesz.y)), -cz);
+			    ta.set(mv[i], texc[i]);
+			}
+		    }
+
+		    for(int i = 0, o = 0; i < vf.length; i++, o += 3) {
+			if(!vf[i])
+			    continue;
+			buf.new Face(mv[d.f[o]], mv[d.f[o + 1]], mv[d.f[o + 2]]);
+		    }
+		}
+	    };
+
+	Coord t = new Coord();
+	for(t.y = ult.y; t.y < brt.y; t.y++) {
+	    for(t.x = ult.x; t.x < brt.x; t.x++) {
+		MapMesh cut = map.getcut(t.div(MCache.cutsz));
+		Tiler tile = map.tiler(map.gettile(t));
+		tile.lay(cut, t.sub(cut.ul), t, cons, false);
+	    }
 	}
-		
-	public boolean setup(RenderList rl) {
-	    rl.prepc(gmorder);
-	    rl.prepc(gmoff);
-	    rl.add(mesh, null);
-	    return(false);
-	}
+	return(gmmat.apply(buf.mkmesh()));
     }
-    */
-    
+
     /* XXXRENDER
     private static class OLOrder extends MLOrder {
 	OLOrder(int z) {super(z);}

@@ -1288,6 +1288,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     private Loading camload = null, lastload = null;
     public void draw(GOut g) {
+	if(placing != null)
+	    placing.gtick(g.out);
 	glob.map.sendreqs();
 	if((olftimer != 0) && (olftimer < Utils.rtime()))
 	    unflashol();
@@ -1389,7 +1391,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	RenderTree.Slot slot;
 
 	private Plob(Indir<Resource> res, Message sdt) {
-	    super(MapView.this.glob, Coord2d.z);
+	    super(MapView.this.glob, MapView.this.cc);
 	    setattr(new ResDrawable(this, res, sdt));
 	    if(ui.mc.isect(rootpos(), sz)) {
 		// delay(new Adjust(ui.mc.sub(rootpos()), 0)); XXXRENDER

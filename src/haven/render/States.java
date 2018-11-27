@@ -75,7 +75,7 @@ public abstract class States {
 	public final Mode mode;
 
 	public enum Mode {
-	    FRONT, BACK, BOTH,
+	    NONE, FRONT, BACK, BOTH,
 	}
 
 	public Facecull(Mode mode) {
@@ -97,7 +97,7 @@ public abstract class States {
 	    return(this.mode == ((Facecull)o).mode);
 	}
 
-	public void apply(Pipe p) {p.put(facecull, this);}
+	public void apply(Pipe p) {p.put(facecull, (mode == Mode.NONE) ? null : this);}
     }
 
 
