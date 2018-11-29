@@ -37,7 +37,11 @@ public class AnimSprite extends Sprite {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
 		if(res.layer(MeshAnim.Res.class) == null)
 		    return(null);
-		return(new AnimSprite(owner, res, sdt));
+		return(new AnimSprite(owner, res, sdt) {
+			public String toString() {
+			    return(String.format("#<anim-sprite %s>", res.name));
+			}
+		    });
 	    }
 	};
 

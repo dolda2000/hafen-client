@@ -59,7 +59,11 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
 		if(res.layer(Skeleton.Res.class) == null)
 		    return(null);
-		return(new SkelSprite(owner, res, sdt));
+		return(new SkelSprite(owner, res, sdt) {
+			public String toString() {
+			    return(String.format("#<skel-sprite %s>", res.name));
+			}
+		    });
 	    }
 	};
     
