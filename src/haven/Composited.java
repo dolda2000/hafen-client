@@ -270,6 +270,7 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 	    try {
 		MD ret = (MD)super.clone();
 		ret.tex = new ArrayList<ResData>(tex);
+		ret.real = null;
 		return(ret);
 	    } catch(CloneNotSupportedException e) {
 		/* This is ridiculous. */
@@ -287,6 +288,7 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 	public String at;
 	public ResData res;
 	public Coord3f off;
+	private Equ real;
 	
 	public ED(int t, String at, ResData res, Coord3f off) {
 	    this.t = t;
@@ -313,6 +315,7 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 	    try {
 		ED ret = (ED)super.clone();
 		ret.res = res.clone();
+		ret.real = null;
 		return(ret);
 	    } catch(CloneNotSupportedException e) {
 		/* This is ridiculous. */
@@ -385,17 +388,21 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
     private Collection<Model> nmod(Collection<MD> nmod) {
 	Collection<Model> ret = new ArrayList<>(nmod.size());
 	for(MD md : nmod) {
-	    FastMesh.MeshRes mr = md.mod.get().layer(FastMesh.MeshRes.class);
-	    if(mr == null)
-		throw(new Sprite.ResourceException("Model resource contains no mesh", md.mod.get()));
-	    Model mod = new Model(mr.m, md.id);
-	    if(mr.rdat.containsKey("cz"))
-		mod.z = Integer.parseInt(mr.rdat.get("cz"));
-	    /* XXX: Actually set comp-z on borka meshes and remove me. */
-	    if(md.mod.get().name.equals("gfx/borka/male") || md.mod.get().name.equals("gfx/borka/female"))
-		mod.z = -1;
-	    for(ResData lres : md.tex)
-		mod.addlay(Material.fromres(matowner, lres.res.get(), new MessageBuf(lres.sdt)));
+	    Model mod = md.real;
+	    if(mod == null) {
+		FastMesh.MeshRes mr = md.mod.get().layer(FastMesh.MeshRes.class);
+		if(mr == null)
+		    throw(new Sprite.ResourceException("Model resource contains no mesh", md.mod.get()));
+		mod = new Model(mr.m, md.id);
+		if(mr.rdat.containsKey("cz"))
+		    mod.z = Integer.parseInt(mr.rdat.get("cz"));
+		/* XXX: Actually set comp-z on borka meshes and remove me. */
+		if(md.mod.get().name.equals("gfx/borka/male") || md.mod.get().name.equals("gfx/borka/female"))
+		    mod.z = -1;
+		for(ResData lres : md.tex)
+		    mod.addlay(Material.fromres(matowner, lres.res.get(), new MessageBuf(lres.sdt)));
+		md.real = mod;
+	    }
 	    ret.add(mod);
 	}
 	return(ret);
@@ -404,27 +411,32 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
     private Collection<Equ> nequ(List<ED> nequ) {
 	Collection<Equ> ret = new ArrayList<>(nequ.size());
 	outer: for(ED ed : nequ) {
-	    for(Equ equ : this.equ) {
-		if(equ.desc.equals(ed)) {
-		    ret.add(equ);
-		    continue outer;
-		} else if((equ instanceof SpriteEqu) && (((SpriteEqu)equ).r instanceof Sprite.CUpd) && equ.desc.equals2(ed)) {
-		    /* XXX: This is impure and ugly, but fixing it
-		     * properly would seem to be significantly more
-		     * complex for what is probably little benefit. */
-		    if(!ed.res.sdt.equals(equ.desc.res.sdt)) {
-			((Sprite.CUpd)((SpriteEqu)equ).r).update(ed.res.sdt.clone());
-			equ.desc.res.sdt = ed.res.sdt;
+	    Equ ne = ed.real;
+	    if(ne == null) {
+		creat: {
+		    for(Equ equ : this.equ) {
+			if(equ.desc.equals(ed)) {
+			    ne = equ;
+			    break creat;
+			} else if((equ instanceof SpriteEqu) && (((SpriteEqu)equ).r instanceof Sprite.CUpd) && equ.desc.equals2(ed)) {
+			    /* XXX: This is impure and ugly, but fixing it
+			     * properly would seem to be significantly more
+			     * complex for what is probably little benefit. */
+			    if(!ed.res.sdt.equals(equ.desc.res.sdt)) {
+				((Sprite.CUpd)((SpriteEqu)equ).r).update(ed.res.sdt.clone());
+				equ.desc.res.sdt = ed.res.sdt;
+			    }
+			    ne = equ;
+			    break creat;
+			}
 		    }
-		    ret.add(equ);
-		    continue outer;
+		    switch(ed.t) {
+		    case 0: ne = new SpriteEqu(ed); break;
+		    case 1: ne = new LightEqu(ed); break;
+		    default: throw(new RuntimeException("Invalid composite equ-type: " + ed.t));
+		    }
 		}
-	    }
-	    Equ ne;
-	    switch(ed.t) {
-	    case 0: ne = new SpriteEqu(ed); break;
-	    case 1: ne = new LightEqu(ed); break;
-	    default: throw(new RuntimeException("Invalid composite equ-type: " + ed.t));
+		ed.real = ne;
 	    }
 	    ret.add(ne);
 	}
