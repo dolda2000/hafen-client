@@ -645,92 +645,72 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    public static class GobInfo {
+    public class GobInfo {
 	public final long id;
 	public final LinkedList<Delta> pending = new LinkedList<>();
 	public int frame;
 	public boolean nremoved, added, gremoved, virtual;
 	public Gob gob;
+	public Loader.Future<?> applier;
 
 	public GobInfo(long id, int frame) {
 	    this.id = id;
 	    this.frame = frame;
 	}
+
+	private void apply() {
+	    main: {
+		synchronized(this) {
+		    if(nremoved && (!added || gremoved))
+			break main;
+		    if(nremoved && added && !gremoved) {
+			remove(id);
+			gremoved = true;
+			gob = null;
+			break main;
+		    }
+		    if(gob == null) {
+			gob = new Gob(glob, Coord2d.z, id);
+			gob.virtual = virtual;
+		    }
+		}
+		while(true) {
+		    Delta d;
+		    synchronized(this) {
+			if((d = pending.peek()) == null)
+			    break;
+		    }
+		    synchronized(gob) {
+			d.apply(gob);
+		    }
+		    synchronized(this) {
+			if((pending.poll()) != d)
+			    throw(new RuntimeException());
+		    }
+		}
+		if(!added) {
+		    add(gob);
+		    added = true;
+		}
+	    }
+	    synchronized(this) {
+		applier = null;
+		checkdirty();
+	    }
+	}
+
+	public void checkdirty() {
+	    synchronized(this) {
+		if(applier == null) {
+		    if(nremoved ? (added && !gremoved) : (!added || !pending.isEmpty())) {
+			applier = glob.loader.defer(this::apply, null);
+		    }
+		}
+	    }
+	}
     }
 
     private final Map<Long, GobInfo> netinfo = new HashMap<>();
-    private final Set<Long> netdirty = new HashSet<>();
-
-    private void apply1(GobInfo ng) throws InterruptedException {
-	main: {
-	    synchronized(ng) {
-		if(ng.nremoved && ng.added && !ng.gremoved) {
-		    remove(ng.id);
-		    ng.gremoved = true;
-		    ng.gob = null;
-		    break main;
-		}
-		if(ng.gob == null) {
-		    ng.gob = new Gob(glob, Coord2d.z, ng.id);
-		    ng.gob.virtual = ng.virtual;
-		}
-	    }
-	    while(true) {
-		Delta d;
-		synchronized(ng) {
-		    if((d = ng.pending.peek()) == null)
-			break;
-		}
-		while(true) {
-		    try {
-			synchronized(ng.gob) {
-			    d.apply(ng.gob);
-			}
-			break;
-		    } catch(Loading l) {
-			/* XXX: Make nonblocking */
-			l.waitfor();
-		    }
-		}
-		synchronized(ng) {
-		    if((ng.pending.poll()) != d)
-			throw(new RuntimeException());
-		}
-	    }
-	    while(!ng.added) {
-		try {
-		    add(ng.gob);
-		    ng.added = true;
-		} catch(Loading l) {
-		    /* XXX: Make nonblocking */
-		    l.waitfor();
-		}
-	    }
-	}
-	synchronized(netinfo) {
-	    if(ng.nremoved ? (!ng.added || ng.gremoved) : ((ng.added && ng.pending.isEmpty()))) {
-		netdirty.remove(ng.id);
-	    }
-	}
-    }
-
-    private GobInfo checkdirty(boolean peek) {
-	Iterator<Long> i = netdirty.iterator();
-	if(!i.hasNext())
-	    return(null);
-	Long id = i.next();
-	if(!peek)
-	    i.remove();
-	return(netinfo.get(id));
-    }
-
-    private final AsyncCheck<GobInfo> applier = new AsyncCheck<>(netinfo, "Objdelta applier", this::checkdirty, this::apply1);
-
-    private void markdirty(GobInfo ng) {
-	netdirty.add(ng.id);
-	netinfo.notify();
-	applier.check();
-    }
 
     private GobInfo netremove(long id, int frame) {
 	synchronized(netinfo) {
@@ -740,8 +720,8 @@ public class OCache implements Iterable<Gob> {
 	    synchronized(ng) {
 		/* XXX: Clean up removed objects */
 		ng.nremoved = true;
+		ng.checkdirty();
 	    }
-	    markdirty(ng);
 	    return(ng);
 	}
     }
@@ -790,8 +770,8 @@ public class OCache implements Iterable<Gob> {
 		    ng.frame = frame;
 		    ng.virtual = ((fl & 2) != 0);
 		    ng.pending.addAll(attrs);
+		    ng.checkdirty();
 		}
-		markdirty(ng);
 	    }
 	    return(ng);
 	}
