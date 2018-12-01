@@ -76,18 +76,27 @@ public class OCache implements Iterable<Gob> {
 	cbs.remove(cb);
     }
 
-    public synchronized void add(Gob ob) {
-	objs.put(ob.id, ob);
-	for(ChangeCallback cb : cbs)
-	    cb.added(ob);
+    public void add(Gob ob) {
+	synchronized(ob) {
+	    synchronized(this) {
+		objs.put(ob.id, ob);
+		for(ChangeCallback cb : cbs)
+		    cb.added(ob);
+	    }
+	}
     }
 
-    public synchronized void remove(long id) {
-	Gob old = objs.remove(id);
+    public void remove(long id) {
+	Gob old;
+	synchronized(this) {
+	    old = objs.remove(id);
+	}
 	if(old != null) {
 	    synchronized(old) {
-		for(ChangeCallback cb : cbs)
-		    cb.removed(old);
+		synchronized(this) {
+		    for(ChangeCallback cb : cbs)
+			cb.removed(old);
+		}
 	    }
 	}
     }
@@ -690,9 +699,7 @@ public class OCache implements Iterable<Gob> {
 	    }
 	    while(!ng.added) {
 		try {
-		    synchronized(ng.gob) {
-			add(ng.gob);
-		    }
+		    add(ng.gob);
 		    ng.added = true;
 		} catch(Loading l) {
 		    /* XXX: Make nonblocking */
