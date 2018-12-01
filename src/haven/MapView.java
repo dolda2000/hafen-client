@@ -404,36 +404,27 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     private class Gobs implements RenderTree.Node, OCache.ChangeCallback {
 	final OCache oc = glob.oc;
-	final Collection<Gob> adding = new HashSet<>();
+	final Map<Gob, Loader.Future<?>> adding = new HashMap<>();
 	final Map<Gob, RenderTree.Slot> current = new HashMap<>();
-	final AsyncCheck<Gob> adder;
 	RenderTree.Slot slot;
-
-	Gobs() {
-	    adder = new AsyncCheck<>(this, "Mapview object adder", AsyncCheck.src(adding), this::addgob);
-	}
 
 	void unregister() {
 	    oc.uncallback(this);
 	}
 
-	private void addgob(Gob ob) throws InterruptedException {
-	    while(true) {
-		try {
-		    RenderTree.Slot slot = this.slot;
-		    if(slot == null)
+	private void addgob(Gob ob) {
+	    RenderTree.Slot slot = this.slot;
+	    if(slot == null)
+		return;
+	    synchronized(ob) {
+		synchronized(this) {
+		    if(!adding.containsKey(ob))
 			return;
-		    RenderTree.Slot nslot;
-		    synchronized(ob) {
-			nslot = slot.add(ob.placed);
-		    }
-		    synchronized(this) {
-			current.put(ob, nslot);
-		    }
-		    break;
-		} catch(Loading l) {
-		    /* XXX: Make nonblocking */
-		    l.waitfor();
+		}
+		RenderTree.Slot nslot = slot.add(ob.placed);
+		synchronized(this) {
+		    adding.remove(ob);
+		    current.put(ob, nslot);
 		}
 	    }
 	}
@@ -445,11 +436,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		this.slot = slot;
 		synchronized(oc) {
 		    for(Gob ob : oc)
-			adding.add(ob);
+			adding.put(ob, glob.loader.defer(() -> addgob(ob), null));
 		    oc.callback(this);
 		}
 	    }
-	    adder.check();
 	}
 
 	public void removed(RenderTree.Slot slot) {
@@ -466,9 +456,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    synchronized(this) {
 		if(current.containsKey(ob))
 		    throw(new RuntimeException());
-		adding.add(ob);
-		this.notifyAll();
-		adder.check();
+		adding.put(ob, glob.loader.defer(() -> addgob(ob), null));
 	    }
 	}
 
