@@ -31,10 +31,11 @@ import java.awt.Color;
 import haven.render.Render;
 
 public class Glob {
+    public final OCache oc = new OCache(this);
+    public final MCache map;
+    public final Session sess;
+    public final Loader loader = new Loader();
     public double time, epoch = Utils.rtime();
-    public OCache oc = new OCache(this);
-    public MCache map;
-    public Session sess;
     public Party party;
     public Map<String, CAttr> cattr = new HashMap<String, CAttr>();
     public Color lightamb = null, lightdif = null, lightspc = null;
