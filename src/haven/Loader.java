@@ -134,7 +134,7 @@ public class Loader {
 	    }
 	} catch(InterruptedException e) {
 	} finally {
-	    synchronized(this) {
+	    synchronized(queue) {
 		if(th == Thread.currentThread())
 		    th = null;
 	    }
@@ -143,7 +143,7 @@ public class Loader {
     }
 
     private void check() {
-	synchronized(this) {
+	synchronized(queue) {
 	    if(!queue.isEmpty() && (th == null)) {
 		th = new HackThread(this::loop, "Loader thread");
 		th.setDaemon(true);
