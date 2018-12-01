@@ -30,9 +30,10 @@ import java.util.*;
 import java.util.function.*;
 
 public class Loader {
-    private final Queue<Future<?>> queue = new LinkedList<>();
     private final double timeout = 5.0;
-    private Thread th;
+    private final int maxthreads = 4;
+    private final Queue<Future<?>> queue = new LinkedList<>();
+    private final Collection<Thread> pool = new ArrayList<>();
 
     public class Future<T> {
 	public final Supplier<T> task;
@@ -135,8 +136,7 @@ public class Loader {
 	} catch(InterruptedException e) {
 	} finally {
 	    synchronized(queue) {
-		if(th == Thread.currentThread())
-		    th = null;
+		pool.remove(Thread.currentThread());
 	    }
 	}
 	check();
@@ -144,10 +144,11 @@ public class Loader {
 
     private void check() {
 	synchronized(queue) {
-	    if(!queue.isEmpty() && (th == null)) {
-		th = new HackThread(this::loop, "Loader thread");
+	    if((queue.size() > pool.size()) && (pool.size() < maxthreads)) {
+		Thread th = new HackThread(this::loop, "Loader thread");
 		th.setDaemon(true);
 		th.start();
+		pool.add(th);
 	    }
 	}
     }
