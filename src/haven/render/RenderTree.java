@@ -26,6 +26,7 @@
 
 package haven.render;
 
+import java.lang.ref.*;
 import java.util.*;
 import java.util.concurrent.locks.*;
 import haven.*;
@@ -258,7 +259,7 @@ public class RenderTree implements RenderList.Adapter {
     }
 
     public static class StaticPipe implements Pipe {
-	private static final Map<DepInfo, StaticPipe> interned = new WeakHashMap<>();
+	private static final Map<DepInfo, Reference<StaticPipe>> interned = new WeakHashMap<>();
 	public final DepInfo bk;
 
 	public StaticPipe(DepInfo bk) {
@@ -267,9 +268,10 @@ public class RenderTree implements RenderList.Adapter {
 
 	public static StaticPipe get(DepInfo bk) {
 	    synchronized(interned) {
-		StaticPipe ret = interned.get(bk);
+		Reference<StaticPipe> ref = interned.get(bk);
+		StaticPipe ret = (ref == null) ? null : ref.get();
 		if(ret == null)
-		    interned.put(bk, ret = new StaticPipe(bk));
+		    interned.put(bk, new WeakReference<>(ret = new StaticPipe(bk)));
 		return(ret);
 	    }
 	}
