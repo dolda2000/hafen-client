@@ -384,13 +384,18 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	this.glob = glob;
 	this.cc = cc;
 	this.plgob = plgob;
-	basic.add(new Gobs());
+	basic.add(this.gobs = new Gobs());
 	basic.add(this.terrain = new Terrain());
 	this.clickmap = new ClickMap();
 	clmaptree.add(clickmap);
 	setcanfocus(true);
     }
     
+    public void destroy() {
+	super.destroy();
+	gobs.slot.remove();
+    }
+
     public void enol(int... overlays) {
 	for(int ol : overlays)
 	    visol[ol]++;
@@ -401,15 +406,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    visol[ol]--;
     }
 
+    private final Gobs gobs;
     private class Gobs implements RenderTree.Node, OCache.ChangeCallback {
 	final OCache oc = glob.oc;
 	final Map<Gob, Loader.Future<?>> adding = new HashMap<>();
 	final Map<Gob, RenderTree.Slot> current = new HashMap<>();
 	RenderTree.Slot slot;
-
-	void unregister() {
-	    oc.uncallback(this);
-	}
 
 	private void addgob(Gob ob) {
 	    RenderTree.Slot slot = this.slot;
@@ -446,6 +448,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if(this.slot != slot)
 		    throw(new RuntimeException());
 		this.slot = null;
+		oc.uncallback(this);
 		adding.clear();
 		current.clear();
 	    }
