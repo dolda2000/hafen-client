@@ -179,7 +179,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	loadrattr();
 	for(Iterator<Overlay> i = ols.iterator(); i.hasNext();) {
 	    Overlay ol = i.next();
-	    if(ol.spr == null) {
+	    if(ol.slots == null) {
 		try {
 		    ol.init();
 		} catch(Loading e) {}
