@@ -39,13 +39,13 @@ public class Composite extends Drawable {
     public final Indir<Resource> base;
     public final Composited comp;
     public int pseq;
+    public List<MD> nmod;
+    public List<ED> nequ;
     private final ArrayList<RenderTree.Slot> slots = new ArrayList<>(1);
     private Collection<ResData> nposes = null, tposes = null;
     private boolean nposesold, retainequ = false;
     private float tptime;
     private WrapMode tpmode;
-    private List<MD> nmod;
-    private List<ED> nequ;
     
     public Composite(Gob gob, Indir<Resource> base) {
 	super(gob);
