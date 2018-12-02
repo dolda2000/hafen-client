@@ -149,15 +149,12 @@ public class OCache implements Iterable<Gob> {
 	return(objs.get(id));
     }
 
-    private long nextvirt = -1;
+    private java.util.concurrent.atomic.AtomicLong nextvirt = new java.util.concurrent.atomic.AtomicLong(-1);
     public class Virtual extends Gob {
 	public Virtual(Coord2d c, double a) {
-	    super(OCache.this.glob, c, nextvirt--);
+	    super(OCache.this.glob, c, nextvirt.getAndDecrement());
 	    this.a = a;
 	    virtual = true;
-	    synchronized(OCache.this) {
-		objs.put(id, this);
-	    }
 	}
     }
 
