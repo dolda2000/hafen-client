@@ -59,8 +59,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    this.spr = null;
 	}
 
-	public Overlay(Sprite spr) {
-	    this.gob = null;
+	public Overlay(Gob gob, Sprite spr) {
+	    this.gob = gob;
 	    this.id = -1;
 	    this.res = null;
 	    this.sdt = null;
@@ -216,7 +216,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	addol(ol, true);
     }
     public void addol(Sprite ol) {
-	addol(new Overlay(ol));
+	addol(new Overlay(this, ol));
     }
     public void addol(Indir<Resource> res, Message sdt) {
 	addol(new Overlay(this, -1, res, sdt));
