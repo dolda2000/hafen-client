@@ -1664,7 +1664,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     public boolean keydown(KeyEvent ev) {
-	if(placing != null) {
+	Loader.Future<Plob> placing_l = this.placing;
+	if((placing_l != null) && placing_l.done()) {
+	    Plob placing = placing_l.get();
 	    if((ev.getKeyCode() == KeyEvent.VK_LEFT) && placing.adjust.rotate(placing, -1, ui.modflags()))
 		return(true);
 	    if((ev.getKeyCode() == KeyEvent.VK_RIGHT) && placing.adjust.rotate(placing, 1, ui.modflags()))
