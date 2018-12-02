@@ -163,11 +163,11 @@ public class Window extends Widget implements DTarget {
 		g.image(bg, bgc, ctl, cbr);
 	}
 	bgc.x = ctl.x;
-	for(bgc.y = ctl.y; bgc.y < ctl.y + csz.y; bgc.y += bgl.sz().y)
-	    g.image(bgl, bgc, ctl, csz);
-	bgc.x = ctl.x + csz.x - bgr.sz().x;
-	for(bgc.y = ctl.y; bgc.y < ctl.y + csz.y; bgc.y += bgr.sz().y)
-	    g.image(bgr, bgc, ctl, csz);
+	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgl.sz().y)
+	    g.image(bgl, bgc, ctl, cbr);
+	bgc.x = cbr.x - bgr.sz().x;
+	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgr.sz().y)
+	    g.image(bgr, bgc, ctl, cbr);
 	cdraw(g.reclip(atl, asz));
 	drawframe(g);
 	/*
