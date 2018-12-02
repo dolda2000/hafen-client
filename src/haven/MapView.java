@@ -47,8 +47,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
     /* XXXRENDER private Collection<Rendered> extradraw = new LinkedList<Rendered>(); */
     public Camera camera = restorecam();
-    private Supplier<Plob> placing_l = null;
-    private Plob placing = null;
+    private Loader.Future<Plob> placing = null;
     private int[] visol = new int[32];
     private Grabber grab;
     private Selector selection;
@@ -444,36 +443,27 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     private class Gobs implements RenderTree.Node, OCache.ChangeCallback {
 	final OCache oc = glob.oc;
-	final Collection<Gob> adding = new HashSet<>();
+	final Map<Gob, Loader.Future<?>> adding = new HashMap<>();
 	final Map<Gob, RenderTree.Slot> current = new HashMap<>();
-	final AsyncCheck<Gob> adder;
 	RenderTree.Slot slot;
-
-	Gobs() {
-	    adder = new AsyncCheck<>(this, "Mapview object adder", AsyncCheck.src(adding), this::addgob);
-	}
 
 	void unregister() {
 	    oc.uncallback(this);
 	}
 
-	private void addgob(Gob ob) throws InterruptedException {
-	    while(true) {
-		try {
-		    RenderTree.Slot slot = this.slot;
-		    if(slot == null)
+	private void addgob(Gob ob) {
+	    RenderTree.Slot slot = this.slot;
+	    if(slot == null)
+		return;
+	    synchronized(ob) {
+		synchronized(this) {
+		    if(!adding.containsKey(ob))
 			return;
-		    RenderTree.Slot nslot;
-		    synchronized(ob) {
-			nslot = slot.add(ob.placed);
-		    }
-		    synchronized(this) {
-			current.put(ob, nslot);
-		    }
-		    break;
-		} catch(Loading l) {
-		    /* XXX: Make nonblocking */
-		    l.waitfor();
+		}
+		RenderTree.Slot nslot = slot.add(ob.placed);
+		synchronized(this) {
+		    adding.remove(ob);
+		    current.put(ob, nslot);
 		}
 	    }
 	}
@@ -485,11 +475,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		this.slot = slot;
 		synchronized(oc) {
 		    for(Gob ob : oc)
-			adding.add(ob);
+			adding.put(ob, glob.loader.defer(() -> addgob(ob), null));
 		    oc.callback(this);
 		}
 	    }
-	    adder.check();
 	}
 
 	public void removed(RenderTree.Slot slot) {
@@ -506,9 +495,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    synchronized(this) {
 		if(current.containsKey(ob))
 		    throw(new RuntimeException());
-		adding.add(ob);
-		this.notifyAll();
-		adder.check();
+		adding.put(ob, glob.loader.defer(() -> addgob(ob), null));
 	    }
 	}
 
@@ -1288,8 +1275,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     private Loading camload = null, lastload = null;
     public void draw(GOut g) {
-	if(placing != null)
-	    placing.gtick(g.out);
+	Loader.Future<Plob> placing = this.placing;
+	if((placing != null) && placing.done())
+	    placing.get().gtick(g.out);
 	glob.map.sendreqs();
 	if((olftimer != 0) && (olftimer < Utils.rtime()))
 	    unflashol();
@@ -1335,15 +1323,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	amblight();
 	terrain.tick();
 	clickmap.tick();
-	if(placing_l != null) {
-	    try {
-		placing = placing_l.get();
-		placing_l = null;
-	    } catch(Loading l) {
-	    }
-	}
-	if(placing != null)
-	    placing.ctick(dt * 1000);
+	Loader.Future<Plob> placing = this.placing;
+	if((placing != null) && placing.done())
+	    placing.get().ctick(dt);
     }
     
     public void resize(Coord sz) {
@@ -1429,9 +1411,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public void uimsg(String msg, Object... args) {
 	if(msg == "place") {
+	    Loader.Future<Plob> placing = this.placing;
 	    if(placing != null) {
-		placing.slot.remove();
-		placing = null;
+		if(!placing.cancel())
+		    placing.get().slot.remove();
+		this.placing = null;
 	    }
 	    int a = 0;
 	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
@@ -1441,25 +1425,27 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    else
 		sdt = Message.nil;
 	    int oa = a;
-	    placing_l = () -> {
-		int a2 = oa;
-		Plob ret = new Plob(res, new MessageBuf(sdt));
-		while(a2 < args.length) {
-		    Indir<Resource> ores = ui.sess.getres((Integer)args[a2++]);
-		    Message odt;
-		    if((args.length > a2) && (args[a2] instanceof byte[]))
-			odt = new MessageBuf((byte[])args[a2++]);
-		    else
-			odt = Message.nil;
-		    ret.addol(ores, odt);
-		}
-		ret.slot = basic.add(ret.placed);
-		return(ret);
-	    };
+	    this.placing = glob.loader.defer(() -> {
+		    int a2 = oa;
+		    Plob ret = new Plob(res, new MessageBuf(sdt));
+		    while(a2 < args.length) {
+			Indir<Resource> ores = ui.sess.getres((Integer)args[a2++]);
+			Message odt;
+			if((args.length > a2) && (args[a2] instanceof byte[]))
+			    odt = new MessageBuf((byte[])args[a2++]);
+			else
+			    odt = Message.nil;
+			ret.addol(ores, odt);
+		    }
+		    ret.slot = basic.add(ret.placed);
+		    return(ret);
+		});
 	} else if(msg == "unplace") {
+	    Loader.Future<Plob> placing = this.placing;
 	    if(placing != null) {
-		placing.slot.remove();
-		placing = null;
+		if(!placing.cancel())
+		    placing.get().slot.remove();
+		this.placing = null;
 	    }
 	} else if(msg == "move") {
 	    cc = ((Coord)args[0]).mul(posres);
@@ -1602,11 +1588,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
     
     public boolean mousedown(Coord c, int button) {
 	parent.setfocus(this);
+	Loader.Future<Plob> placing_l = this.placing;
 	if(button == 2) {
 	    if(((Camera)camera).click(c)) {
 		camdrag = ui.grabmouse(this);
 	    }
-	} else if(placing != null) {
+	} else if((placing_l != null) && placing_l.done()) {
+	    Plob placing = placing_l.get();
 	    if(placing.lastmc != null)
 		wdgmsg("place", placing.rc.floor(posres), (int)Math.round(placing.a * 32768 / Math.PI), button, ui.modflags());
 	} else if((grab != null) && grab.mmousedown(c, button)) {
@@ -1619,9 +1607,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public void mousemove(Coord c) {
 	if(grab != null)
 	    grab.mmousemove(c);
+	Loader.Future<Plob> placing_l = this.placing;
 	if(camdrag != null) {
 	    ((Camera)camera).drag(c);
-	} else if(placing != null) {
+	} else if((placing_l != null) && placing_l.done()) {
+	    Plob placing = placing_l.get();
 	    if((placing.lastmc == null) || !placing.lastmc.equals(c)) {
 		delay(placing.new Adjust(c, ui.modflags()));
 	    }
@@ -1642,10 +1632,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     public boolean mousewheel(Coord c, int amount) {
+	Loader.Future<Plob> placing_l = this.placing;
 	if((grab != null) && grab.mmousewheel(c, amount))
 	    return(true);
-	if((placing != null) && placing.adjust.rotate(placing, amount, ui.modflags()))
-	    return(true);
+	if((placing_l != null) && placing_l.done()) {
+	    Plob placing = placing_l.get();
+	    if(placing.adjust.rotate(placing, amount, ui.modflags()))
+		return(true);
+	}
 	return(((Camera)camera).wheel(c, amount));
     }
     

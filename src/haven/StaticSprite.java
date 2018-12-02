@@ -38,7 +38,7 @@ public class StaticSprite extends Sprite {
 		   (res.layer(RenderLink.Res.class) != null))
 		    return(new StaticSprite(owner, res, sdt) {
 			    public String toString() {
-				return("StaticSprite(" + res + ")");
+				return(String.format("#<static-sprite %s>", res.name));
 			    }
 			});
 		return(null);
