@@ -82,8 +82,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	}
 
 	public void remove0() {
-	    if(slots != null)
+	    if(slots != null) {
 		RUtils.multirem(slots);
+		slots = null;
+	    }
 	}
 
 	public void remove() {
