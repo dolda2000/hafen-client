@@ -807,13 +807,13 @@ public class Skeleton {
 	public static class SpawnSprite extends Event {
 	    public final Indir<Resource> res;
 	    public final byte[] sdt;
-	    // public final Location loc; XXXRENDER
+	    public final Location loc;
 
-	    public SpawnSprite(float time, Indir<Resource> res, byte[] sdt /*, Location loc */) {
+	    public SpawnSprite(float time, Indir<Resource> res, byte[] sdt, Location loc) {
 		super(time);
 		this.res = res;
 		this.sdt = (sdt == null)?new byte[0]:sdt;
-		// this.loc = loc;
+		this.loc = loc;
 	    }
 
 	    public void trigger(Gob gob) {
@@ -823,20 +823,23 @@ public class Skeleton {
 		} catch(Loading e) {
 		    return;
 		}
-		Gob n = gob.glob.oc.new Virtual(gob.rc, gob.a) {
-			public Coord3f getc() {
-			    return(new Coord3f(fc));
-			}
+		gob.glob.loader.defer(() -> {
+			Gob n = gob.glob.oc.new Virtual(gob.rc, gob.a) {
+				public Coord3f getc() {
+				    return(new Coord3f(fc));
+				}
 
-			/* XXXRENDER
-			public boolean setup(RenderList rl) {
-			    if(SpawnSprite.this.loc != null)
-				rl.prepc(SpawnSprite.this.loc);
-			    return(super.setup(rl));
-			}
-			*/
-		    };
-		n.addol(res, new MessageBuf(sdt));
+				/* XXXRENDER
+				   public boolean setup(RenderList rl) {
+				   if(SpawnSprite.this.loc != null)
+				   rl.prepc(SpawnSprite.this.loc);
+				   return(super.setup(rl));
+				   }
+				*/
+			    };
+			n.addol(new Gob.Overlay(n, -1, res, new MessageBuf(sdt)), false);
+			gob.glob.oc.add(n);
+		    }, null);
 	    }
 	}
 
@@ -888,7 +891,7 @@ public class Skeleton {
 		    int resver = buf.uint16();
 		    byte[] sdt = buf.bytes(buf.uint8());
 		    Indir<Resource> res = getres().pool.load(resnm, resver);
-		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt /*, null */);
+		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, null);
 		    break;
 		case 1:
 		    String id = buf.string();
