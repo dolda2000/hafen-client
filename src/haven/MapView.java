@@ -1615,7 +1615,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	delay(new Hittest(cc) {
 		public void hit(Coord pc, Coord2d mc, ClickData inf) {
 		    Object[] args = {pc, mc.floor(posres), ui.modflags()};
-		    args = Utils.extend(args, inf.clickargs());
+		    if(inf != null)
+			args = Utils.extend(args, inf.clickargs());
 		    wdgmsg("itemact", args);
 		}
 	    });
