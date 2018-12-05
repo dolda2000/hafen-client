@@ -440,19 +440,7 @@ public class OCache implements Iterable<Gob> {
 	if(oid == -1) {
 	    g.delattr(Following.class);
 	} else {
-	    Following flw = g.getattr(Following.class);
-	    if(flw == null) {
-		flw = new Following(g, oid, xfres, xfname);
-		g.setattr(flw);
-	    } else {
-		synchronized(flw) {
-		    flw.tgt = oid;
-		    flw.xfres = xfres;
-		    flw.xfname = xfname;
-		    flw.lxfb = null;
-		    // flw.xf = null; XXXRENDER
-		}
-	    }
+	    g.setattr(new Following(g, oid, xfres, xfname));
 	}
     }
     public Delta follow(Message msg) {

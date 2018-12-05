@@ -569,18 +569,31 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	private Placed() {}
 
 	private class Placement implements Pipe.Op {
+	    final Pipe.Op flw;
 	    final Coord3f c;
 	    final double a;
 
 	    Placement() {
-		Coord3f c = Gob.this.getc();
-		c.y = -c.y;
-		this.c = c;
-		this.a = Gob.this.a;
+		Following flw = Gob.this.getattr(Following.class);
+		Pipe.Op flwxf = (flw == null) ? null : flw.xf();
+		if(flwxf == null) {
+		    Coord3f c = Gob.this.getc();
+		    c.y = -c.y;
+		    this.flw = null;
+		    this.c = c;
+		    this.a = Gob.this.a;
+		} else {
+		    this.flw = flwxf;
+		    this.c = null;
+		    this.a = Double.NaN;
+		}
 	    }
 
 	    public boolean equals(Placement that) {
-		return(that.c.equals(this.c) && (that.a == this.a));
+		if(this.flw != null)
+		    return(Utils.eq(this.flw, that.flw));
+		else
+		    return(Utils.eq(this.c, that.c) && (this.a == that.a));
 	    }
 
 	    public boolean equals(Object o) {
@@ -589,9 +602,13 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 
 	    Pipe.Op st = null;
 	    public void apply(Pipe buf) {
-		if(st == null)
-		    st = Pipe.Op.compose(new Location(Transform.makexlate(new Matrix4f(), this.c), "gobx"),
-					 new Location(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-this.a), "gob"));
+		if(st == null) {
+		    if(this.flw != null)
+			st = this.flw;
+		    else
+			st = Pipe.Op.compose(new Location(Transform.makexlate(new Matrix4f(), this.c), "gobx"),
+					     new Location(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-this.a), "gob"));
+		}
 		st.apply(buf);
 	    }
 	}
@@ -614,15 +631,19 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	}
 
 	public void added(RenderTree.Slot slot) {
-	    if(cur == null)
-		cur = new Placement();
-	    slot.ostate(cur);
+	    slot.ostate(curplace());
 	    slot.add(Gob.this);
 	    slots.add(slot);
 	}
 
 	public void removed(RenderTree.Slot slot) {
 	    slots.remove(slot);
+	}
+
+	public Pipe.Op curplace() {
+	    if(cur == null)
+		cur = new Placement();
+	    return(cur);
 	}
 
 	public Coord3f getc() {
