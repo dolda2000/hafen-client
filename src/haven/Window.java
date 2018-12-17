@@ -157,9 +157,10 @@ public class Window extends Widget implements DTarget {
 
     public void draw(GOut g) {
 	Coord bgc = new Coord();
-	for(bgc.y = ctl.y; bgc.y < ctl.y + csz.y; bgc.y += bg.sz().y) {
-	    for(bgc.x = ctl.x; bgc.x < ctl.x + csz.x; bgc.x += bg.sz().x)
-		g.image(bg, bgc, ctl, csz);
+	Coord cbr = ctl.add(csz);
+	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bg.sz().y) {
+	    for(bgc.x = ctl.x; bgc.x < cbr.x; bgc.x += bg.sz().x)
+		g.image(bg, bgc, ctl, cbr);
 	}
 	bgc.x = ctl.x;
 	for(bgc.y = ctl.y; bgc.y < ctl.y + csz.y; bgc.y += bgl.sz().y)

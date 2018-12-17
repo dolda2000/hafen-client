@@ -48,6 +48,14 @@ public abstract class Transform extends State {
 	    fin = (lp = p).mul(xf);
 	return(fin);
     }
+
+    public boolean equals(Object o) {
+	return((o instanceof Transform) && ((Transform)o).xf.equals(this.xf));
+    }
+
+    public int hashCode() {
+	return(xf.hashCode());
+    }
     
     public static Matrix4f makexlate(Matrix4f d, Coord3f c) {
 	d.m[ 0] = d.m[ 5] = d.m[10] = d.m[15] = 1.0f;

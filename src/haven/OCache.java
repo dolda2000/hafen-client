@@ -149,15 +149,12 @@ public class OCache implements Iterable<Gob> {
 	return(objs.get(id));
     }
 
-    private long nextvirt = -1;
+    private java.util.concurrent.atomic.AtomicLong nextvirt = new java.util.concurrent.atomic.AtomicLong(-1);
     public class Virtual extends Gob {
 	public Virtual(Coord2d c, double a) {
-	    super(OCache.this.glob, c, nextvirt--);
+	    super(OCache.this.glob, c, nextvirt.getAndDecrement());
 	    this.a = a;
 	    virtual = true;
-	    synchronized(OCache.this) {
-		objs.put(id, this);
-	    }
 	}
     }
 
@@ -443,19 +440,7 @@ public class OCache implements Iterable<Gob> {
 	if(oid == -1) {
 	    g.delattr(Following.class);
 	} else {
-	    Following flw = g.getattr(Following.class);
-	    if(flw == null) {
-		flw = new Following(g, oid, xfres, xfname);
-		g.setattr(flw);
-	    } else {
-		synchronized(flw) {
-		    flw.tgt = oid;
-		    flw.xfres = xfres;
-		    flw.xfname = xfname;
-		    flw.lxfb = null;
-		    // flw.xf = null; XXXRENDER
-		}
-	    }
+	    g.setattr(new Following(g, oid, xfres, xfname));
 	}
     }
     public Delta follow(Message msg) {

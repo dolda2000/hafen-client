@@ -74,6 +74,25 @@ public class Matrix4f {
 	m[y + (x * 4)] = v;
     }
 
+    public boolean equals(Matrix4f that) {
+	for(int i = 0; i < 16; i++) {
+	    if(this.m[i] != that.m[i])
+		return(false);
+	}
+	return(true);
+    }
+
+    public boolean equals(Object o) {
+	return((o instanceof Matrix4f) && equals((Matrix4f)o));
+    }
+
+    public int hashCode() {
+	int ret = 0;
+	for(int i = 0; i < 16; i++)
+	    ret += Float.floatToIntBits(m[i]);
+	return(ret);
+    }
+
     public Matrix4f add(Matrix4f b) {
 	Matrix4f n = new Matrix4f();
 	for(int i = 0; i < 16; i++)

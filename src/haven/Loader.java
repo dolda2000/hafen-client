@@ -37,13 +37,15 @@ public class Loader {
 
     public class Future<T> {
 	public final Supplier<T> task;
+	private final boolean capex;
 	private T val;
 	private Throwable exc;
 	private Thread running = null;
 	private boolean done = false, cancelled = false;
 
-	private Future(Supplier<T> task) {
+	private Future(Supplier<T> task, boolean capex) {
 	    this.task = task;
+	    this.capex = capex;
 	}
 
 	private void run() {
@@ -80,6 +82,8 @@ public class Loader {
 			this.exc = exc;
 			done = true;
 		    }
+		    if(!capex)
+			throw(exc);
 		}
 	    } finally {
 		synchronized(this) {
@@ -153,8 +157,8 @@ public class Loader {
 	}
     }
 
-    public <T> Future<T> defer(Supplier<T> task) {
-	Future<T> ret = new Future<T>(task);
+    public <T> Future<T> defer(Supplier<T> task, boolean capex) {
+	Future<T> ret = new Future<T>(task, capex);
 	synchronized(queue) {
 	    queue.add(ret);
 	    queue.notify();
@@ -163,10 +167,14 @@ public class Loader {
 	return(ret);
     }
 
+    public <T> Future<T> defer(Supplier<T> task) {
+	return(defer(task, true));
+    }
+
     public <T> Future<T> defer(Runnable task, T result) {
 	return(defer(() -> {
 		    task.run();
 		    return(result);
-		}));
+		}, false));
     }
 }
