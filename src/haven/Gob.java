@@ -42,7 +42,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     private final Collection<ResAttr.Cell<?>> rdata = new LinkedList<ResAttr.Cell<?>>();
     private final Collection<ResAttr.Load> lrdata = new LinkedList<ResAttr.Load>();
 
-    public static class Overlay {
+    public static class Overlay implements RenderTree.Node {
 	public final int id;
 	public final Gob gob;
 	public final Indir<Resource> res;
@@ -78,12 +78,12 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    if(spr == null)
 		spr = Sprite.create(gob, res.get(), sdt);
 	    if(slots == null)
-		slots = RUtils.multiadd(gob.slots, spr);
+		RUtils.multiadd(gob.slots, this);
 	}
 
 	public void remove0() {
 	    if(slots != null) {
-		RUtils.multirem(slots);
+		RUtils.multirem(new ArrayList<>(slots));
 		slots = null;
 	    }
 	}
@@ -91,6 +91,18 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	public void remove() {
 	    remove0();
 	    gob.ols.remove(this);
+	}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.add(spr);
+	    if(slots == null)
+		slots = new ArrayList<>(1);
+	    slots.add(slot);
+	}
+
+	public void removed(RenderTree.Slot slot) {
+	    if(slots != null)
+		slots.remove(slot);
 	}
     }
 
@@ -277,16 +289,27 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     }
 
     private void setattr(Class<? extends GAttrib> ac, GAttrib a) {
-	GAttrib prev = (a != null) ? attr.put(ac, a) : attr.remove(ac);
+	GAttrib prev = attr.remove(ac);
 	if(prev != null) {
-	    if(ac == Drawable.class)
-		((Drawable)prev).drawremove();
-	    prev.dispose();
+	    if((prev instanceof RenderTree.Node) && (prev.slots != null))
+		RUtils.multirem(new ArrayList<>(prev.slots));
 	}
 	if(a != null) {
-	    if(ac == Drawable.class)
-		((Drawable)a).drawadd(slots);
+	    if(a instanceof RenderTree.Node) {
+		try {
+		    RUtils.multiadd(this.slots, (RenderTree.Node)a);
+		} catch(Loading l) {
+		    if(prev instanceof RenderTree.Node) {
+			RUtils.multiadd(this.slots, (RenderTree.Node)prev);
+			attr.put(ac, prev);
+		    }
+		    throw(l);
+		}
+	    }
+	    attr.put(ac, a);
 	}
+	if(prev != null)
+	    prev.dispose();
     }
 
     public void setattr(GAttrib a) {
@@ -411,24 +434,15 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     public void added(RenderTree.Slot slot) {
 	if(!virtual)
 	    slot.ostate(Pipe.Op.compose(new GobClick(this), new TickList.Monitor(this)));
-	Collection<Runnable> rev = new ArrayList<>();
-	try {
-	    for(Overlay ol : ols) {
-		if(ol.slots != null) {
-		    RenderTree.Slot os = slot.add(ol.spr);
-		    ol.slots.add(os);
-		    rev.add(() -> ol.slots.remove(os));
-		}
-	    }
-	    Drawable d = getattr(Drawable.class);
-	    if(d != null)
-		d.drawadd(Collections.singletonList(slot));
-	    slots.add(slot);
-	} catch(RuntimeException e) {
-	    for(Runnable r : rev)
-		r.run();
-	    throw(e);
+	for(Overlay ol : ols) {
+	    if(ol.slots != null)
+		slot.add(ol);
 	}
+	for(GAttrib a : attr.values()) {
+	    if(a instanceof RenderTree.Node)
+		slot.add((RenderTree.Node)a);
+	}
+	slots.add(slot);
     }
 
     public void removed(RenderTree.Slot slot) {

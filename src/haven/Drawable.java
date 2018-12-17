@@ -28,7 +28,7 @@ package haven;
 
 import haven.render.*;
 
-public abstract class Drawable extends GAttrib implements Skeleton.HasPose {
+public abstract class Drawable extends GAttrib implements Skeleton.HasPose, RenderTree.Node {
     public Drawable(Gob gob) {
 	super(gob);
     }
@@ -42,7 +42,4 @@ public abstract class Drawable extends GAttrib implements Skeleton.HasPose {
     public Skeleton.Pose getpose() {
 	return(null);
     }
-
-    public abstract void drawadd(java.util.Collection<RenderTree.Slot> slots);
-    public abstract void drawremove();
 }

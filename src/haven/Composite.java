@@ -41,7 +41,6 @@ public class Composite extends Drawable {
     public int pseq;
     public List<MD> nmod;
     public List<ED> nequ;
-    private final ArrayList<RenderTree.Slot> slots = new ArrayList<>(1);
     private Collection<ResData> nposes = null, tposes = null;
     private boolean nposesold, retainequ = false;
     private float tptime;
@@ -54,12 +53,9 @@ public class Composite extends Drawable {
 	comp.eqowner = gob;
     }
     
-    public void drawadd(Collection<RenderTree.Slot> slots) {
-	this.slots.addAll(RUtils.multiadd(slots, comp));
-    }
-
-    public void drawremove() {
-	RUtils.multirem(this.slots);
+    public void added(RenderTree.Slot slot) {
+	slot.add(comp);
+	super.added(slot);
     }
 
     private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, boolean old) {

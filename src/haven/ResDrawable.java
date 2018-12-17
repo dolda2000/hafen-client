@@ -34,7 +34,6 @@ public class ResDrawable extends Drawable {
     public final Sprite spr;
     MessageBuf sdt;
     // private double delay = 0; XXXRENDER
-    private final ArrayList<RenderTree.Slot> slots = new ArrayList<>(1);
 
     public ResDrawable(Gob gob, Indir<Resource> res, Message sdt) {
 	super(gob);
@@ -55,12 +54,9 @@ public class ResDrawable extends Drawable {
 	spr.gtick(g);
     }
 
-    public void drawadd(Collection<RenderTree.Slot> slots) {
-	this.slots.addAll(RUtils.multiadd(slots, spr));
-    }
-
-    public void drawremove() {
-	RUtils.multirem(this.slots);
+    public void added(RenderTree.Slot slot) {
+	slot.add(spr);
+	super.added(slot);
     }
 
     public void dispose() {
