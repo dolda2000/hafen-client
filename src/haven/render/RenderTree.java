@@ -363,6 +363,8 @@ public class RenderTree implements RenderList.Adapter {
 
 	public TreeSlot add(Node n, Pipe.Op state) {
 	    try(Locked lk = tree.lock()) {
+		if((parent != null) && (pidx < 0))
+		    throw(new IllegalStateException());
 		TreeSlot ch = new TreeSlot(tree, this, n);
 		ch.cstate = state;
 		addch(ch);
@@ -556,6 +558,8 @@ public class RenderTree implements RenderList.Adapter {
 	}
 
 	private void chstate(Pipe.Op cstate, Pipe.Op ostate) {
+	    if((parent != null) && (pidx < 0))
+		throw(new IllegalStateException());
 	    if(stlock)
 		throw(new RuntimeException("attempted state change of locked slot"));
 	    if(this.dstate != null) {
