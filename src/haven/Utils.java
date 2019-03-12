@@ -705,7 +705,7 @@ public class Utils {
         }
     }
     
-    static byte[] readall(InputStream in) throws IOException {
+    public static byte[] readall(InputStream in) throws IOException {
 	byte[] buf = new byte[4096];
 	int off = 0;
 	while(true) {
