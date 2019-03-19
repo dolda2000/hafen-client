@@ -505,6 +505,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		mats[3] = olmat(128, 0, 255, 32);
 		mats[4] = olmat(255, 255, 255, 32);
 		mats[5] = olmat(0, 255, 128, 32);
+		mats[6] = olmat(0, 0, 0, 64);
 		mats[16] = olmat(0, 255, 0, 32);
 		mats[17] = olmat(255, 255, 0, 32);
 	    }
