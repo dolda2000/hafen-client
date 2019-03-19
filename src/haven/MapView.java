@@ -495,6 +495,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	};
     
+    {
+	visol[6] = 1;
+    }
     private final Rendered mapol = new Rendered() {
 	    private final GLState[] mats;
 	    {
