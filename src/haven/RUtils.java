@@ -53,6 +53,8 @@ public class RUtils {
     }
 
     public static void multirem(Collection<Slot> slots) {
+	if(slots == null)
+	    return;
 	for(Slot slot : slots)
 	    slot.remove();
     }
