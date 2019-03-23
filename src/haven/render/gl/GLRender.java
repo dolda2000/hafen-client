@@ -168,8 +168,10 @@ public class GLRender implements Render, Disposable {
 	    }
 
 	    GLProgram.VarID[] enable = new GLProgram.VarID[data.va.fmt.inputs.length];
-	    for(int i = 0; i < enable.length; i++)
+	    for(int i = 0; i < enable.length; i++) {
+		/* XXX: Properly handle input attributes not present in the program. */
 		enable[i] = state.prog().cattrib(data.va.fmt.inputs[i].tgt);
+	    }
 	    Vao0State.apply(this.gl, state, enable);
 
 	    BGL gl = gl();
