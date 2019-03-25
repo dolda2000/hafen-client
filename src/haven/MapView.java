@@ -775,6 +775,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	if(amblight != null)
 	    s_amblight = basic.add(amblight);
     }
+
+    public static final haven.render.sl.Uniform amblight_idx = new haven.render.sl.Uniform(haven.render.sl.Type.INT, p -> {
+	    DirLight light = ((MapView)((WidgetConfig)p.get(FrameConfig.slot)).wdg).amblight;
+	    int idx = -1;
+	    if(light != null)
+		idx = p.get(Light.lights).index(light);
+	    return(idx);
+	}, FrameConfig.slot, Light.lights);
     /* XXXRENDER
     private Outlines outlines = new Outlines(false);
     public void setup(RenderList rl) {

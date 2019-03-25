@@ -56,8 +56,22 @@ public abstract class PView extends Widget {
 	basic();
     }
 
+    public static class WidgetConfig extends FrameConfig {
+	public final Widget wdg;
+
+	public WidgetConfig(Widget wdg, Coord sz, int samples) {
+	    super(sz, samples);
+	    this.wdg = wdg;
+	}
+
+	public WidgetConfig(Widget wdg, Coord sz) {
+	    super(sz);
+	    this.wdg = wdg;
+	}
+    }
+
     private Pipe.Op conf() {
-	return(new FrameConfig(this.sz));
+	return(new WidgetConfig(this, this.sz));
     }
 
     private Pipe.Op curconf = null;
