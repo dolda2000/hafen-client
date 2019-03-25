@@ -596,6 +596,8 @@ public class RenderTree implements RenderList.Adapter {
 	}
 
 	public void update() {
+	    if((parent != null) && (pidx < 0))
+		throw(new IllegalStateException());
 	    synchronized(tree.clients) {
 		tree.clients.forEach(cl -> cl.updated(this));
 	    }
