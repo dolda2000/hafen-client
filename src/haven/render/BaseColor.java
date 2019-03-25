@@ -41,8 +41,16 @@ public class BaseColor extends State {
 	this.color = color;
     }
 
+    public BaseColor(float r, float g, float b, float a) {
+	this(new FColor(r, g, b, a));
+    }
+
     public BaseColor(Color color) {
 	this(new FColor(color));
+    }
+
+    public BaseColor(int r, int g, int b, int a) {
+	this(new Color(r, g, b, a));
     }
 
     public Color color() {
