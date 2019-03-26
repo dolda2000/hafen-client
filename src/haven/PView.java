@@ -96,11 +96,13 @@ public abstract class PView extends Widget {
     }
 
     public void basic(Object id, Pipe.Op state) {
-	basicstates.put(id, state);
-	basic.ostate(p -> {
-		for(Pipe.Op op : basicstates.values())
-		    op.apply(p);
-	    });
+	Pipe.Op prev = basicstates.put(id, state);
+	if(!Utils.eq(prev, state)) {
+	    basic.ostate(p -> {
+		    for(Pipe.Op op : basicstates.values())
+			op.apply(p);
+		});
+	}
     }
 
     /* XXX? Remove standard clearing and assume implementations to add
