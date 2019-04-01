@@ -28,7 +28,7 @@ package haven;
 
 import java.util.*;
 import java.awt.Color;
-import haven.render.Render;
+import haven.render.*;
 
 public class Glob {
     public final OCache oc = new OCache(this);
@@ -58,7 +58,7 @@ public class Glob {
 
     @Resource.PublishedCode(name = "wtr")
     public static interface Weather {
-	/* XXXRENDER public void gsetup(RenderList rl); */
+	public Pipe.Op state();
 	public void update(Object... args);
 	public boolean tick(double dt);
     }
@@ -241,50 +241,36 @@ public class Glob {
 	}
     }
 
-    public final Iterable<Weather> weather = new Iterable<Weather>() {
-	public Iterator<Weather> iterator() {
-	    return(new Iterator<Weather>() {
-		    Iterator<Map.Entry<Indir<Resource>, Object>> bk = wmap.entrySet().iterator();
-		    Weather n = null;
-
-		    public boolean hasNext() {
-			if(n == null) {
-			    while(true) {
-				if(!bk.hasNext())
-				    return(false);
-				Map.Entry<Indir<Resource>, Object> cur = bk.next();
-				Object v = cur.getValue();
-				if(v instanceof Weather) {
-				    n = (Weather)v;
-				    break;
-				}
-				Class<? extends Weather> cl = cur.getKey().get().layer(Resource.CodeEntry.class).getcl(Weather.class);
-				Weather w;
-				try {
-				    w = Utils.construct(cl.getConstructor(Object[].class), new Object[] {v});
-				} catch(NoSuchMethodException e) {
-				    throw(new RuntimeException(e));
-				}
-				cur.setValue(n = w);
-			    }
-			}
-			return(true);
+    public Collection<Weather> weather() {
+	synchronized(this) {
+	    ArrayList<Weather> ret = new ArrayList<>(wmap.size());
+	    for(Map.Entry<Indir<Resource>, Object> cur : wmap.entrySet()) {
+		Object val = cur.getValue();
+		if(val instanceof Weather) {
+		    ret.add((Weather)val);
+		} else {
+		    try {
+			Class<? extends Weather> cl = cur.getKey().get().layer(Resource.CodeEntry.class).getcl(Weather.class);
+			Weather w = Utils.construct(cl.getConstructor(Object[].class), new Object[] {val});
+			cur.setValue(w);
+			ret.add(w);
+		    } catch(Loading l) {
+		    } catch(NoSuchMethodException e) {
+			throw(new RuntimeException(e));
 		    }
-
-		    public Weather next() {
-			if(!hasNext())
-			    throw(new NoSuchElementException());
-			Weather ret = n;
-			n = null;
-			return(ret);
-		    }
-
-		    public void remove() {
-			throw(new UnsupportedOperationException());
-		    }
-		});
+		}
+	    }
+	    return(ret);
 	}
-    };
+    }
+
+    /* XXX: This is actually quite ugly and there should be a better
+     * way, but until I can think of such a way, have this as a known
+     * entry-point to be forwards-compatible with compiled
+     * resources. */
+    public static DirLight amblight(Pipe st) {
+	return(((MapView)((PView.WidgetConfig)st.get(FrameConfig.slot)).widget()).amblight);
+    }
 
     public void cattr(Message msg) {
 	synchronized(cattr) {

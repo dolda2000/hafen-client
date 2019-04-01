@@ -31,7 +31,7 @@ import javax.media.opengl.*;
 
 public class BufferBGL extends BGL {
     public static final BufferBGL empty = new BufferBGL(0) {
-	    @Override protected void add(Command cmd) {
+	    protected void add(Command cmd) {
 		throw(new RuntimeException());
 	    }
 	};

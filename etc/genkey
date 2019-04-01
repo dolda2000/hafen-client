@@ -1,5 +1,5 @@
 #!/bin/sh
 
 keytool -genkey -alias haven -validity 3650 -keypass autosign \
-    -keystore keys -storepass autosign \
+    -keystore keys -storetype pkcs12 -storepass autosign \
     -dname "CN=Seatribe, OU=N/A, O=Seatribe, L=Stockholm, ST=N/A, C=SE"

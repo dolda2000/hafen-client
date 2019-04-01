@@ -32,6 +32,8 @@ import haven.render.sl.*;
 import haven.render.Texture2D.Sampler2D;
 
 public abstract class TexRender implements Tex, Disposable {
+    public static final VertexArray.Layout vf_tex2d = new VertexArray.Layout(new VertexArray.Layout.Input(Ortho2D.pos, new VectorFormat(2, NumberFormat.FLOAT32), 0, 0, 16),
+									     new VertexArray.Layout.Input(Tex2D.texc, new VectorFormat(2, NumberFormat.FLOAT32), 0, 8, 16));
     public final Sampler2D img;
     public boolean centroid = false;
 
@@ -128,7 +130,7 @@ public abstract class TexRender implements Tex, Disposable {
 	    dul.x, dbr.y, tl, tb,
 	};
 	g.usestate(draw);
-	g.drawt(Model.Mode.TRIANGLE_STRIP, data);
+	g.out.draw(g.state(), new Model(Model.Mode.TRIANGLE_STRIP, new VertexArray(vf_tex2d, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null, 0, 4));
 	g.usestate(ColorTex.slot);
     }
 

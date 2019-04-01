@@ -39,10 +39,11 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     public final Collection<Overlay> ols = new ArrayList<Overlay>();
     public final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
+    private final Collection<SetupMod> setupmods = new ArrayList<>();
     private final Collection<ResAttr.Cell<?>> rdata = new LinkedList<ResAttr.Cell<?>>();
     private final Collection<ResAttr.Load> lrdata = new LinkedList<ResAttr.Load>();
 
-    public static class Overlay {
+    public static class Overlay implements RenderTree.Node {
 	public final int id;
 	public final Gob gob;
 	public final Indir<Resource> res;
@@ -50,6 +51,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	public Sprite spr;
 	public boolean delign = false;
 	private Collection<RenderTree.Slot> slots = null;
+	private boolean added = false;
 
 	public Overlay(Gob gob, int id, Indir<Resource> res, Message sdt) {
 	    this.gob = gob;
@@ -67,31 +69,57 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    this.spr = spr;
 	}
 
-	public static interface SetupMod {
-	    /* XXXRENDER
-	    public void setupgob(GLState.Buffer buf);
-	    public void setupmain(RenderList rl);
-	    */
-	}
-
 	private void init() {
-	    if(spr == null)
+	    if(spr == null) {
 		spr = Sprite.create(gob, res.get(), sdt);
+		if(added && (spr instanceof SetupMod))
+		    gob.setupmods.add((SetupMod)spr);
+	    }
 	    if(slots == null)
-		slots = RUtils.multiadd(gob.slots, spr);
+		RUtils.multiadd(gob.slots, this);
 	}
 
-	public void remove0() {
+	private void add0() {
+	    if(added)
+		throw(new IllegalStateException());
+	    if(spr instanceof SetupMod)
+		gob.setupmods.add((SetupMod)spr);
+	    added = true;
+	}
+
+	private void remove0() {
+	    if(!added)
+		throw(new IllegalStateException());
 	    if(slots != null) {
-		RUtils.multirem(slots);
+		RUtils.multirem(new ArrayList<>(slots));
 		slots = null;
 	    }
+	    if(spr instanceof SetupMod)
+		gob.setupmods.remove(spr);
+	    added = false;
 	}
 
 	public void remove() {
 	    remove0();
 	    gob.ols.remove(this);
 	}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.add(spr);
+	    if(slots == null)
+		slots = new ArrayList<>(1);
+	    slots.add(slot);
+	}
+
+	public void removed(RenderTree.Slot slot) {
+	    if(slots != null)
+		slots.remove(slot);
+	}
+    }
+
+    public static interface SetupMod {
+	public default Pipe.Op gobstate() {return(null);}
+	public default Pipe.Op placestate() {return(null);}
     }
 
     /* XXX: This whole thing didn't turn out quite as nice as I had
@@ -193,6 +221,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 		}
 	    }
 	}
+	updstate();
 	if(virtual && ols.isEmpty() && (getattr(Drawable.class) == null))
 	    glob.oc.remove(id);
     }
@@ -210,6 +239,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     public void addol(Overlay ol, boolean async) {
 	if(!async)
 	    ol.init();
+	ol.add0();
 	ols.add(ol);
     }
     public void addol(Overlay ol) {
@@ -277,16 +307,33 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     }
 
     private void setattr(Class<? extends GAttrib> ac, GAttrib a) {
-	GAttrib prev = (a != null) ? attr.put(ac, a) : attr.remove(ac);
+	GAttrib prev = attr.remove(ac);
 	if(prev != null) {
-	    if(ac == Drawable.class)
-		((Drawable)prev).drawremove();
-	    prev.dispose();
+	    if((prev instanceof RenderTree.Node) && (prev.slots != null))
+		RUtils.multirem(new ArrayList<>(prev.slots));
+	    if(prev instanceof SetupMod)
+		setupmods.remove(prev);
 	}
 	if(a != null) {
-	    if(ac == Drawable.class)
-		((Drawable)a).drawadd(slots);
+	    if(a instanceof RenderTree.Node) {
+		try {
+		    RUtils.multiadd(this.slots, (RenderTree.Node)a);
+		} catch(Loading l) {
+		    if(prev instanceof RenderTree.Node) {
+			RUtils.multiadd(this.slots, (RenderTree.Node)prev);
+			attr.put(ac, prev);
+		    }
+		    if(prev instanceof SetupMod)
+			setupmods.add((SetupMod)prev);
+		    throw(l);
+		}
+	    }
+	    if(a instanceof SetupMod)
+		setupmods.add((SetupMod)a);
+	    attr.put(ac, a);
 	}
+	if(prev != null)
+	    prev.dispose();
     }
 
     public void setattr(GAttrib a) {
@@ -408,27 +455,71 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	}
     }
 
+    private class GobState implements Pipe.Op {
+	final Pipe.Op mods;
+
+	private GobState() {
+	    if(setupmods.isEmpty()) {
+		this.mods = null;
+	    } else {
+		Pipe.Op[] mods = new Pipe.Op[setupmods.size()];
+		int n = 0;
+		for(SetupMod mod : setupmods) {
+		    if((mods[n] = mod.gobstate()) != null)
+			n++;
+		}
+		this.mods = (n > 0) ? Pipe.Op.compose(mods) : null;
+	    }
+	}
+
+	public void apply(Pipe buf) {
+	    if(!virtual)
+		buf.prep(new GobClick(Gob.this));
+	    buf.prep(new TickList.Monitor(this));
+	    if(mods != null)
+		buf.prep(mods);
+	}
+
+	public boolean equals(GobState that) {
+	    return(Utils.eq(this.mods, that.mods));
+	}
+	public boolean equals(Object o) {
+	    return((o instanceof GobState) && equals((GobState)o));
+	}
+    }
+    private GobState curstate = null;
+    private GobState curstate() {
+	if(curstate == null)
+	    curstate = new GobState();
+	return(curstate);
+    }
+
+    private void updstate() {
+	GobState nst;
+	try {
+	    nst = new GobState();
+	} catch(Loading l) {
+	    return;
+	}
+	if(!Utils.eq(nst, curstate)) {
+	    for(RenderTree.Slot slot : slots)
+		slot.ostate(nst);
+	    this.curstate = nst;
+	}
+    }
+
     public void added(RenderTree.Slot slot) {
 	if(!virtual)
-	    slot.ostate(Pipe.Op.compose(new GobClick(this), new TickList.Monitor(this)));
-	Collection<Runnable> rev = new ArrayList<>();
-	try {
-	    for(Overlay ol : ols) {
-		if(ol.slots != null) {
-		    RenderTree.Slot os = slot.add(ol.spr);
-		    ol.slots.add(os);
-		    rev.add(() -> ol.slots.remove(os));
-		}
-	    }
-	    Drawable d = getattr(Drawable.class);
-	    if(d != null)
-		d.drawadd(Collections.singletonList(slot));
-	    slots.add(slot);
-	} catch(RuntimeException e) {
-	    for(Runnable r : rev)
-		r.run();
-	    throw(e);
+	    slot.ostate(curstate());
+	for(Overlay ol : ols) {
+	    if(ol.slots != null)
+		slot.add(ol);
 	}
+	for(GAttrib a : attr.values()) {
+	    if(a instanceof RenderTree.Node)
+		slot.add((RenderTree.Node)a);
+	}
+	slots.add(slot);
     }
 
     public void removed(RenderTree.Slot slot) {
@@ -569,7 +660,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	private Placed() {}
 
 	private class Placement implements Pipe.Op {
-	    final Pipe.Op flw;
+	    final Pipe.Op flw, mods;
 	    final Coord3f c;
 	    final double a;
 
@@ -587,13 +678,30 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 		    this.c = null;
 		    this.a = Double.NaN;
 		}
+		if(setupmods.isEmpty()) {
+		    this.mods = null;
+		} else {
+		    Pipe.Op[] mods = new Pipe.Op[setupmods.size()];
+		    int n = 0;
+		    for(SetupMod mod : setupmods) {
+			if((mods[n] = mod.placestate()) != null)
+			    n++;
+		    }
+		    this.mods = (n > 0) ? Pipe.Op.compose(mods) : null;
+		}
 	    }
 
 	    public boolean equals(Placement that) {
-		if(this.flw != null)
-		    return(Utils.eq(this.flw, that.flw));
-		else
-		    return(Utils.eq(this.c, that.c) && (this.a == that.a));
+		if(this.flw != null) {
+		    if(!Utils.eq(this.flw, that.flw))
+			return(false);
+		} else {
+		    if(!(Utils.eq(this.c, that.c) && (this.a == that.a)))
+			return(false);
+		}
+		if(!Utils.eq(this.mods, that.mods))
+		    return(false);
+		return(true);
 	    }
 
 	    public boolean equals(Object o) {
@@ -608,6 +716,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 		    else
 			st = Pipe.Op.compose(new Location(Transform.makexlate(new Matrix4f(), this.c), "gobx"),
 					     new Location(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-this.a), "gob"));
+		    if(mods != null)
+			st = Pipe.Op.compose(st, mods);
 		}
 		st.apply(buf);
 	    }

@@ -584,7 +584,7 @@ public class MapFile {
 	}
 
 	public static ZoomGrid from(MapFile file, Segment seg, int lvl, Coord sc) {
-	    if((lvl < 1) || ((sc.x & ((1 << lvl) - 1)) != 0) || ((sc.x & ((1 << lvl) - 1)) != 0))
+	    if((lvl < 1) || ((sc.x & ((1 << lvl) - 1)) != 0) || ((sc.y & ((1 << lvl) - 1)) != 0))
 		throw(new IllegalArgumentException(String.format("%s %s", sc, lvl)));
 	    DataGrid[] lower = new DataGrid[4];
 	    boolean any = false;

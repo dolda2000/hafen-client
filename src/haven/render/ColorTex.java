@@ -33,7 +33,7 @@ import static haven.render.sl.Type.*;
 
 public class ColorTex extends State {
     public static final Slot<ColorTex> slot = new Slot<>(Slot.Type.DRAW, ColorTex.class);
-    public static final Attribute texc = new Attribute(VEC2, "ctexc");
+    public static final Attribute texc = new Attribute(VEC2, "coltexc");
     private static final Uniform usmp = new Uniform(SAMPLER2D, "ctex", p -> p.get(slot).data, slot);
     public final Texture2D.Sampler2D data;
 

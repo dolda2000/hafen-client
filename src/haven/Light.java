@@ -107,6 +107,14 @@ public abstract class Light implements RenderTree.Node {
 	public ShaderMacro shader() {return(null);}
 
 	public void apply(Pipe p) {p.put(lights, this);}
+
+	public int index(Light l) {
+	    for(int i = 0; i < ll.size(); i++) {
+		if(ll.get(i).obj() == l)
+		    return(i);
+	    }
+	    return(-1);
+	}
     }
 
     public void added(RenderTree.Slot slot) {

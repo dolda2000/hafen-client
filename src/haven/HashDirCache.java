@@ -323,6 +323,8 @@ public class HashDirCache implements ResCache {
 	try {
 	    if((ret = forjnlp()) != null)
 		return(ret);
+	    if(Config.cachebase != null)
+		return(new HashDirCache(Config.cachebase.toURI()));
 	    if(Config.resurl != null)
 		return(new HashDirCache(Config.resurl.toURI()));
 	    return(new HashDirCache("default"));

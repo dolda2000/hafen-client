@@ -31,19 +31,15 @@ import haven.render.*;
 
 public class SprDrawable extends Drawable {
     public final Sprite spr;
-    private final ArrayList<RenderTree.Slot> slots = new ArrayList<>(1);
 
     public SprDrawable(Gob gob, Sprite spr) {
 	super(gob);
 	this.spr = spr;
     }
 
-    public void drawadd(Collection<RenderTree.Slot> slots) {
-	this.slots.addAll(RUtils.multiadd(slots, spr));
-    }
-
-    public void drawremove() {
-	RUtils.multirem(this.slots);
+    public void added(RenderTree.Slot slot) {
+	slot.add(spr);
+	super.added(slot);
     }
 
     public void dispose() {

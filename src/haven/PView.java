@@ -56,8 +56,26 @@ public abstract class PView extends Widget {
 	basic();
     }
 
+    public static class WidgetConfig extends FrameConfig {
+	private final Widget wdg;
+
+	public WidgetConfig(Widget wdg, Coord sz, int samples) {
+	    super(sz, samples);
+	    this.wdg = wdg;
+	}
+
+	public WidgetConfig(Widget wdg, Coord sz) {
+	    super(sz);
+	    this.wdg = wdg;
+	}
+
+	public Widget widget() {
+	    return(wdg);
+	}
+    }
+
     private Pipe.Op conf() {
-	return(new FrameConfig(this.sz));
+	return(new WidgetConfig(this, this.sz));
     }
 
     private Pipe.Op curconf = null;
@@ -82,11 +100,13 @@ public abstract class PView extends Widget {
     }
 
     public void basic(Object id, Pipe.Op state) {
-	basicstates.put(id, state);
-	basic.ostate(p -> {
-		for(Pipe.Op op : basicstates.values())
-		    op.apply(p);
-	    });
+	Pipe.Op prev = basicstates.put(id, state);
+	if(!Utils.eq(prev, state)) {
+	    basic.ostate(p -> {
+		    for(Pipe.Op op : basicstates.values())
+			op.apply(p);
+		});
+	}
     }
 
     /* XXX? Remove standard clearing and assume implementations to add

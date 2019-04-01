@@ -45,15 +45,15 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
     public PoseMod[] mods = new PoseMod[0];
     public MeshAnim.Anim[] manims = new MeshAnim.Anim[0];
     public int curfl;
-    private Morpher.Factory mmorph;
+    protected final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
     private final PoseMorph pmorph;
+    private Morpher.Factory mmorph;
     private Pose oldpose;
     private float ipold;
     private boolean stat = true;
     private RenderTree.Node[] parts;
     private Collection<Runnable> tickparts = Collections.emptyList();
     private Collection<Consumer<Render>> gtickparts = Collections.emptyList();
-    private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
     
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
