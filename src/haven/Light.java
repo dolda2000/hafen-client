@@ -109,7 +109,11 @@ public abstract class Light implements RenderTree.Node {
 	public void apply(Pipe p) {p.put(lights, this);}
 
 	public int index(Light l) {
-	    return(ll.indexOf(l));
+	    for(int i = 0; i < ll.size(); i++) {
+		if(ll.get(i).obj() == l)
+		    return(i);
+	    }
+	    return(-1);
 	}
     }
 
