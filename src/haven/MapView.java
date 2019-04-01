@@ -777,7 +777,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     public static final haven.render.sl.Uniform amblight_idx = new haven.render.sl.Uniform(haven.render.sl.Type.INT, p -> {
-	    DirLight light = ((MapView)((WidgetConfig)p.get(FrameConfig.slot)).wdg).amblight;
+	    DirLight light = ((MapView)((WidgetConfig)p.get(FrameConfig.slot)).widget()).amblight;
 	    int idx = -1;
 	    if(light != null)
 		idx = p.get(Light.lights).index(light);
@@ -837,6 +837,33 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	};
     */
+
+    private final Map<RenderTree.Node, RenderTree.Slot> rweather = new HashMap<>();
+    private void updweather() {
+	Glob.Weather[] wls = glob.weather().toArray(new Glob.Weather[0]);
+	Pipe.Op[] wst = new Pipe.Op[wls.length];
+	for(int i = 0; i < wls.length; i++)
+	    wst[i] = wls[i].state();
+	try {
+	    basic(Glob.Weather.class, Pipe.Op.compose(wst));
+	} catch(Loading l) {
+	}
+	Collection<RenderTree.Node> old =new ArrayList<>(rweather.keySet());
+	for(Glob.Weather w : wls) {
+	    if(w instanceof RenderTree.Node) {
+		RenderTree.Node n = (RenderTree.Node)w;
+		old.remove(n);
+		if(rweather.get(n) == null) {
+		    try {
+			rweather.put(n, basic.add(n));
+		    } catch(Loading l) {
+		    }
+		}
+	    }
+	}
+	for(RenderTree.Node rem : old)
+	    rweather.remove(rem).remove();
+    }
 
     /* XXXRENDER
     public void drawadd(Rendered extra) {
@@ -1288,6 +1315,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	basic(Camera.class, camera);
 	amblight();
+	updweather();
 	terrain.tick();
 	clickmap.tick();
 	Loader.Future<Plob> placing = this.placing;

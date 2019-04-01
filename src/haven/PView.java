@@ -57,7 +57,7 @@ public abstract class PView extends Widget {
     }
 
     public static class WidgetConfig extends FrameConfig {
-	public final Widget wdg;
+	private final Widget wdg;
 
 	public WidgetConfig(Widget wdg, Coord sz, int samples) {
 	    super(sz, samples);
@@ -67,6 +67,10 @@ public abstract class PView extends Widget {
 	public WidgetConfig(Widget wdg, Coord sz) {
 	    super(sz);
 	    this.wdg = wdg;
+	}
+
+	public Widget widget() {
+	    return(wdg);
 	}
     }
 
