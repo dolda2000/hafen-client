@@ -27,42 +27,48 @@
 package haven;
 
 import java.util.*;
-import javax.media.opengl.*;
-import haven.glsl.*;
-import haven.GLProgram.VarID;
-import static haven.glsl.Cons.*;
-import static haven.glsl.Function.PDir.*;
-import static haven.glsl.Type.*;
+import haven.render.*;
+import haven.render.sl.*;
+import static haven.render.sl.Cons.*;
+import static haven.render.sl.Function.PDir.*;
+import static haven.render.sl.Type.*;
 
-public class CloudShadow extends GLState {
-    public static final Slot<CloudShadow> slot = new Slot<CloudShadow>(Slot.Type.DRAW, CloudShadow.class, Light.lighting);
-    public final TexGL tex;
-    public DirLight light;
-    public Coord3f vel;
+public class CloudShadow extends State {
+    public static final Slot<CloudShadow> slot = new Slot<CloudShadow>(Slot.Type.DRAW, CloudShadow.class);
+    public final TexRender tex;
+    public Coord3f dir, vel;
     public float scale;
     public float cmin = 0.5f, cmax = 1.0f, rmin = 0.4f, rmax = 1.0f;
 
-    public CloudShadow(TexGL tex, DirLight light, Coord3f vel, float scale) {
+    public CloudShadow(TexRender tex, DirLight light, Coord3f vel, float scale) {
 	this.tex = tex;
-	this.light = light;
+	this.dir = new Coord3f(light.dir[0], light.dir[1], light.dir[2]);
 	this.vel = vel;
 	this.scale = scale;
     }
 
-    public static final Uniform tsky = new Uniform(SAMPLER2D);
-    public static final Uniform cdir = new Uniform(VEC2);
-    public static final Uniform cvel = new Uniform(VEC2);
-    public static final Uniform cscl = new Uniform(FLOAT);
-    public static final Uniform cthr = new Uniform(VEC4);
+    public static final Uniform tsky = new Uniform(SAMPLER2D, p -> p.get(slot).tex.img, slot);
+    public static final Uniform cdir = new Uniform(VEC2, p -> {
+	    Coord3f dir = p.get(slot).dir;
+	    float zf = 1.0f / (dir.z + 1.1f);
+	    float xd = -dir.x * zf, yd = -dir.y * zf;
+	    return(new float[] {xd, yd});
+	}, slot);
+    public static final Uniform cvel = new Uniform(VEC2, p -> p.get(slot).vel, slot);
+    public static final Uniform cscl = new Uniform(FLOAT, p -> p.get(slot).scale, slot);
+    public static final Uniform cthr = new Uniform(VEC4, p -> {
+	    CloudShadow sdw = p.get(slot);
+	    return(new float[] {sdw.cmin, sdw.cmax, sdw.rmin, sdw.rmax - sdw.rmin});
+	}, slot);
     private static final ShaderMacro shader = prog -> {
 	final Phong ph = prog.getmod(Phong.class);
 	if((ph == null) || !ph.pfrag)
 	    return;
 	final ValBlock.Value shval = prog.fctx.uniform.new Value(FLOAT) {
 		public Expression root() {
-		    Expression tc = add(mul(add(pick(MiscLib.fragmapv.ref(), "xy"),
-						mul(pick(MiscLib.fragmapv.ref(), "z"), cdir.ref())),
-					    cscl.ref()), mul(cvel.ref(), MiscLib.globtime.ref()));
+		    Expression tc = add(mul(add(pick(Homo3D.fragmapv.ref(), "xy"),
+						mul(pick(Homo3D.fragmapv.ref(), "z"), cdir.ref())),
+					    cscl.ref()), mul(cvel.ref(), FrameInfo.time())); // XXXRENDER: Use globtime.
 		    Expression cl = pick(texture2D(tsky.ref(), tc), "r");
 		    Expression th = cthr.ref();
 		    return(add(mul(smoothstep(pick(th, "x"), pick(th, "y"), cl), pick(th, "w")), pick(th, "z")));
@@ -76,7 +82,7 @@ public class CloudShadow extends GLState {
 	shval.force();
 	ph.dolight.mod(new Runnable() {
 		public void run() {
-		    ph.dolight.dcalc.add(new If(eq(MapView.amblight.ref(), ph.dolight.i),
+		    ph.dolight.dcalc.add(new If(eq(MapView.amblight_idx.ref(), ph.dolight.i),
 						stmt(amul(ph.dolight.dl.tgt, shval.ref()))),
 					 ph.dolight.dcurs);
 		}
@@ -85,33 +91,17 @@ public class CloudShadow extends GLState {
 
     public ShaderMacro shader() {return(shader);}
 
-    private TexUnit sampler;
-
-    public void reapply(GOut g) {
-	VarID u = g.st.prog.cuniform(tsky);
-	if(u != null) {
-	    g.gl.glUniform1i(u, sampler.id);
-	    float zf = 1.0f / (light.dir[2] + 1.1f);
-	    float xd = -light.dir[0] * zf, yd = -light.dir[1] * zf;
-	    g.gl.glUniform2f(g.st.prog.uniform(cdir), xd, yd);
-	    g.gl.glUniform2f(g.st.prog.uniform(cvel), vel.x, vel.y);
-	    g.gl.glUniform1f(g.st.prog.uniform(cscl), scale);
-	    g.gl.glUniform4f(g.st.prog.uniform(cthr), cmin, cmax, rmin, rmax - rmin);
-	}
-    }
-
-    public void apply(GOut g) {
-	sampler = TexGL.lbind(g, tex);
-	reapply(g);
-    }
-
-    public void unapply(GOut g) {
-	sampler.act(g);
-	g.gl.glBindTexture(GL.GL_TEXTURE_2D, null);
-	sampler.free(); sampler = null;
-    }
-
-    public void prep(Buffer buf) {
+    public void apply(Pipe buf) {
 	buf.put(slot, this);
+    }
+
+    public boolean equals(CloudShadow that) {
+	return((this.tex == that.tex) && Utils.eq(this.dir, that.dir) &&
+	       Utils.eq(this.vel, that.vel) && (this.scale == that.scale) &&
+	       (this.cmin == that.cmin) && (this.cmax == that.cmax) && (this.rmin == that.rmin) && (this.rmax == that.rmax));
+    }
+
+    public boolean equals(Object o) {
+	return((o instanceof CloudShadow) && equals((CloudShadow)o));
     }
 }
