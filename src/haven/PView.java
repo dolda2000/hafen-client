@@ -28,9 +28,6 @@ package haven;
 
 import java.util.*;
 import haven.render.*;
-import haven.render.States; /* XXXRENDRM */
-import haven.render.Rendered; /* XXXRENDRM */
-import haven.render.RenderList; /* XXXRENDRM */
 
 public abstract class PView extends Widget {
     public final RenderTree tree;
@@ -56,16 +53,10 @@ public abstract class PView extends Widget {
 	basic();
     }
 
-    public static class WidgetConfig extends FrameConfig {
+    public static class WidgetContext extends RenderContext {
 	private final Widget wdg;
 
-	public WidgetConfig(Widget wdg, Coord sz, int samples) {
-	    super(sz, samples);
-	    this.wdg = wdg;
-	}
-
-	public WidgetConfig(Widget wdg, Coord sz) {
-	    super(sz);
+	public WidgetContext(Widget wdg) {
 	    this.wdg = wdg;
 	}
 
@@ -75,7 +66,7 @@ public abstract class PView extends Widget {
     }
 
     private Pipe.Op conf() {
-	return(new WidgetConfig(this, this.sz));
+	return(Pipe.Op.compose(new FrameConfig(this.sz), new WidgetContext(this)));
     }
 
     private Pipe.Op curconf = null;

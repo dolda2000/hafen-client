@@ -777,13 +777,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     public static final haven.render.sl.Uniform amblight_idx = new haven.render.sl.Uniform(haven.render.sl.Type.INT, p -> {
-	    DirLight light = ((MapView)((WidgetConfig)p.get(FrameConfig.slot)).widget()).amblight;
+	    DirLight light = ((MapView)((WidgetContext)p.get(RenderContext.slot)).widget()).amblight;
 	    Light.LightList lights = p.get(Light.lights);
 	    int idx = -1;
 	    if(light != null)
 		idx = lights.index(light);
 	    return(idx);
-	}, FrameConfig.slot, Light.lights);
+	}, RenderContext.slot, Light.lights);
     /* XXXRENDER
     private Outlines outlines = new Outlines(false);
     public void setup(RenderList rl) {
