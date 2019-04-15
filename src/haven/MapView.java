@@ -44,7 +44,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private int view = 2;
     private Collection<Delayed> delayed = new LinkedList<Delayed>();
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
-    /* XXXRENDER private Collection<Rendered> extradraw = new LinkedList<Rendered>(); */
     public Camera camera = restorecam();
     private Loader.Future<Plob> placing = null;
     private int[] visol = new int[32];
@@ -864,6 +863,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	for(RenderTree.Node rem : old)
 	    rweather.remove(rem).remove();
+    }
+
+    public RenderTree.Slot drawadd(RenderTree.Node extra) {
+	return(basic.add(extra));
     }
 
     /* XXXRENDER
