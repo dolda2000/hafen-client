@@ -65,8 +65,9 @@ public abstract class PView extends Widget {
 	}
     }
 
+    private final WidgetContext ctx = new WidgetContext(this);
     private Pipe.Op conf() {
-	return(Pipe.Op.compose(new FrameConfig(this.sz), new WidgetContext(this)));
+	return(Pipe.Op.compose(new FrameConfig(this.sz), ctx));
     }
 
     private Pipe.Op curconf = null;
