@@ -46,9 +46,9 @@ public class RenderContext extends State {
 	}
     }
 
-    public Iterable<PostProcessor> postproc() {
-	return(post);
-    }
+    public Iterable<PostProcessor> postproc() {return(post);}
+    public void add(PostProcessor post) {this.post.add(post);}
+    public void remove(PostProcessor post) {this.post.remove(post);}
 
     public ShaderMacro shader() {return(null);}
     public void apply(Pipe p) {p.put(slot, this);}
