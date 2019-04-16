@@ -41,12 +41,12 @@ public class ColorTex extends State {
 	this.data = data;
     }
 
-    static final AutoVarying ftexc = new AutoVarying(VEC2) {
+    public static final AutoVarying ftexc = new AutoVarying(VEC2) {
 	    protected Expression root(VertexContext vctx) {
 		return(texc.ref());
 	    }
 	};
-    static final ShaderMacro shader = prog -> {
+    private static final ShaderMacro shader = prog -> {
 	FragColor.fragcol(prog.fctx).mod(in -> mul(in, texture2D(usmp.ref(), ftexc.ref())), 0);
     };
     public ShaderMacro shader() {return(shader);}
