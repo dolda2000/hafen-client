@@ -1492,6 +1492,37 @@ public class Utils {
 	return(map(filter(from, filter::isInstance), filter::cast));
     }
 
+    public static <E, T extends Collection<E>> T merge(T dst, Iterable<? extends E> a, Iterable<? extends E> b, Comparator<? super E> cmp) {
+	Iterator<? extends E> i = a.iterator(), o = b.iterator();
+	if(i.hasNext() && o.hasNext()) {
+	    E e = i.next(), f = o.next();
+	    while(true) {
+		if(cmp.compare(e, f) <= 0) {
+		    dst.add(e);
+		    if(i.hasNext()) {
+			e = i.next();
+		    } else {
+			dst.add(f);
+			break;
+		    }
+		} else {
+		    dst.add(f);
+		    if(o.hasNext()) {
+			f = o.next();
+		    } else {
+			dst.add(e);
+			break;
+		    }
+		}
+	    }
+	}
+	while(i.hasNext())
+	    dst.add(i.next());
+	while(o.hasNext())
+	    dst.add(o.next());
+	return(dst);
+    }
+
     public static final Comparator<Object> idcmd = new Comparator<Object>() {
 	int eid = 0;
 	final Map<Ref, Long> emerg = new HashMap<Ref, Long>();
