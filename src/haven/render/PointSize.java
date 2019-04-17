@@ -28,26 +28,19 @@ package haven.render;
 
 import haven.*;
 import haven.render.sl.*;
-import static haven.render.sl.Cons.*;
-import static haven.render.sl.Type.*;
 
-public class ColorTex extends State {
-    public static final Slot<ColorTex> slot = new Slot<>(Slot.Type.DRAW, ColorTex.class);
-    public static final Attribute texc = new Attribute(VEC2, "coltexc");
-    private static final Uniform usmp = new Uniform(SAMPLER2D, "ctex", p -> p.get(slot).data, slot);
-    public final Texture2D.Sampler2D data;
+public class PointSize extends State {
+    public static final Slot<State> slot = new Slot<>(Slot.Type.GEOM, State.class);
+    public static final Uniform u_ptsz = new Uniform(Type.FLOAT, "pointsize", p -> ((PointSize)p.get(slot)).sz, slot);
+    public final float sz;
 
-    public ColorTex(Texture2D.Sampler2D data) {
-	this.data = data;
+    public PointSize(float sz) {
+	this.sz = sz;
     }
 
-    public static final AutoVarying ftexc = new AutoVarying(VEC2) {
-	    protected Expression root(VertexContext vctx) {
-		return(texc.ref());
-	    }
-	};
     private static final ShaderMacro shader = prog -> {
-	FragColor.fragcol(prog.fctx).mod(in -> mul(in, texture2D(usmp.ref(), ftexc.ref())), 0);
+	prog.vctx.ptsz.mod(in -> u_ptsz.ref(), 0);
+	prog.vctx.ptsz.force();
     };
     public ShaderMacro shader() {return(shader);}
     public void apply(Pipe p) {p.put(slot, this);}

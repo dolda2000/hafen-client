@@ -28,9 +28,8 @@ package haven;
 
 import java.util.*;
 import haven.render.*;
-import haven.render.States; /* XXXRENDRM */
-import haven.render.Rendered; /* XXXRENDRM */
-import haven.render.RenderList; /* XXXRENDRM */
+import haven.RenderContext.PostProcessor;
+import haven.render.Texture2D.Sampler2D;
 
 public abstract class PView extends Widget {
     public final RenderTree tree;
@@ -42,7 +41,7 @@ public abstract class PView extends Widget {
     private final Light.LightList lights = new Light.LightList();
     private final ScreenList list2d = new ScreenList();
     private final TickList ticklist = new TickList();
-    private Texture2D.Sampler2D fragsamp;
+    private Sampler2D fragsamp;
     private DrawList back = null;
 
     public PView(Coord sz) {
@@ -56,16 +55,10 @@ public abstract class PView extends Widget {
 	basic();
     }
 
-    public static class WidgetConfig extends FrameConfig {
+    public static class WidgetContext extends RenderContext {
 	private final Widget wdg;
 
-	public WidgetConfig(Widget wdg, Coord sz, int samples) {
-	    super(sz, samples);
-	    this.wdg = wdg;
-	}
-
-	public WidgetConfig(Widget wdg, Coord sz) {
-	    super(sz);
+	public WidgetContext(Widget wdg) {
 	    this.wdg = wdg;
 	}
 
@@ -74,8 +67,9 @@ public abstract class PView extends Widget {
 	}
     }
 
+    private final WidgetContext ctx = new WidgetContext(this);
     private Pipe.Op conf() {
-	return(new WidgetConfig(this, this.sz));
+	return(Pipe.Op.compose(new FrameConfig(this.sz), ctx));
     }
 
     private Pipe.Op curconf = null;
@@ -127,6 +121,38 @@ public abstract class PView extends Widget {
 	ticklist.tick(dt);
     }
 
+    private GOut resolveout(GOut def, PostProcessor next) {
+	if(next == null)
+	    return(def);
+	if((next.buf != null) && !next.buf.tex.sz().equals(fragcol.sz())) {
+	    next.buf.dispose();
+	    next.buf = null;
+	}
+	if(next.buf == null) {
+	    Texture2D tex = new Texture2D(fragcol.sz(), DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null);
+	    next.buf = new Sampler2D(tex);
+	}
+	Pipe st = new BufPipe();
+	Area area = Area.sized(Coord.z, next.buf.tex.sz());
+	st.prep(new FrameInfo()).prep(new States.Viewport(area)).prep(new Ortho2D(area));
+	st.prep(new FragColor<>(next.buf.tex.image(0)));
+	return(new GOut(def.out, st, new Coord(area.sz())));
+    }
+
+    protected void resolve(GOut g) {
+	Iterator<PostProcessor> post = ctx.postproc().iterator();
+	PostProcessor next = post.hasNext() ? post.next() : null;
+	resolveout(g, next).image(new TexRaw(fragsamp, true), Coord.z);
+	while(next != null) {
+	    PostProcessor cur = next;
+	    next = post.hasNext() ? post.next() : null;
+	    cur.run(resolveout(g, next), cur.buf);
+	}
+    }
+
+    public void add(PostProcessor post) {ctx.add(post);}
+    public void remove(PostProcessor post) {ctx.remove(post);}
+
     public void draw(GOut g) {
 	ticklist.gtick(g.out);
 	if((back == null) || !back.compatible(g.out.env())) {
@@ -143,7 +169,7 @@ public abstract class PView extends Widget {
 	    g.out.clear(basic.state(), FragColor.fragcol, cc);
 	g.out.clear(basic.state(), 1.0);
 	back.draw(g.out);
-	g.image(new TexRaw(fragsamp, true), Coord.z);
+	resolve(g);
 	list2d.draw(g);
     }
 
@@ -155,7 +181,7 @@ public abstract class PView extends Widget {
 		    if(fragcol != null)
 			fragcol.dispose();
 		    fragcol = new Texture2D(fb.sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null);
-		    fragsamp = new Texture2D.Sampler2D(fragcol);
+		    fragsamp = new Sampler2D(fragcol);
 		}
 		if((depth == null) || !depth.sz().equals(fb.sz)) {
 		    if(depth != null)

@@ -102,7 +102,8 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	}
     }
     public void dispose() {
-	unregister(depth.tex);
+	if(depth != null)
+	    unregister(depth.tex);
 	for(Attachment c : color)
 	    unregister(c.tex);
 	super.dispose();

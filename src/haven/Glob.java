@@ -269,7 +269,7 @@ public class Glob {
      * entry-point to be forwards-compatible with compiled
      * resources. */
     public static DirLight amblight(Pipe st) {
-	return(((MapView)((PView.WidgetConfig)st.get(FrameConfig.slot)).widget()).amblight);
+	return(((MapView)((PView.WidgetContext)st.get(RenderContext.slot)).widget()).amblight);
     }
 
     public void cattr(Message msg) {

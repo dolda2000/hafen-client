@@ -117,7 +117,8 @@ public class Applier {
 	Object[] nfvals = new Object[prog.fragdata.length];
 	for(i = 0; i < prog.fragdata.length; i++)
 	    nfvals[i] = env.prepfval(getfval(prog, i, tp));
-	Object ndbuf = env.prepfval((ns.length > DepthBuffer.slot.id) ? ((DepthBuffer)ns[DepthBuffer.slot.id]).image : null);
+	DepthBuffer sdbuf = (ns.length > DepthBuffer.slot.id) ? ((DepthBuffer)ns[DepthBuffer.slot.id]) : null;
+	Object ndbuf = env.prepfval((sdbuf != null) ? sdbuf.image : null);
 
 	this.shash = shash;
 	setprog(prog);
@@ -230,7 +231,8 @@ public class Applier {
 	    nfvals = new Object[fn];
 	    for(int i = 0; i < fn; i++)
 		nfvals[i] = env.prepfval(getfval(prog, i, to));
-	    ndbuf = env.prepfval(to.get(DepthBuffer.slot).image);
+	    DepthBuffer sdbuf = to.get(DepthBuffer.slot);
+	    ndbuf = env.prepfval((sdbuf == null) ? null : sdbuf.image);
 	}
 
 	for(int i = 0; i < pn; i++) {

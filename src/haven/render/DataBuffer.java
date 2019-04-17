@@ -70,5 +70,15 @@ public interface DataBuffer {
 		    return(buf);
 		});
 	};
+
+	public static Filler<DataBuffer> zero() {
+	    return((tgt, env) -> {
+		    FillBuffer buf = env.fillbuf(tgt);
+		    ByteBuffer data = buf.push();
+		    for(int i = 0; i < buf.size(); i++)
+			data.put(i, (byte)0);
+		    return(buf);
+		});
+	}
     }
 }

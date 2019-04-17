@@ -24,31 +24,32 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven;
 
-import haven.*;
-import haven.render.sl.*;
-import static haven.render.sl.Cons.*;
-import static haven.render.sl.Type.*;
+import java.util.*;
+import haven.render.*;
+import haven.render.sl.ShaderMacro;
+import haven.render.Texture2D.Sampler2D;
 
-public class ColorTex extends State {
-    public static final Slot<ColorTex> slot = new Slot<>(Slot.Type.DRAW, ColorTex.class);
-    public static final Attribute texc = new Attribute(VEC2, "coltexc");
-    private static final Uniform usmp = new Uniform(SAMPLER2D, "ctex", p -> p.get(slot).data, slot);
-    public final Texture2D.Sampler2D data;
+public class RenderContext extends State {
+    public static final Slot<RenderContext> slot = new Slot<>(Slot.Type.SYS, RenderContext.class);
+    private final Collection<PostProcessor> post = new ArrayList<>();
 
-    public ColorTex(Texture2D.Sampler2D data) {
-	this.data = data;
+    public static abstract class PostProcessor implements Disposable {
+	public Sampler2D buf = null;
+
+	public abstract void run(GOut g, Sampler2D in);
+
+	public void dispose() {
+	    if(buf != null)
+		buf.dispose();
+	}
     }
 
-    public static final AutoVarying ftexc = new AutoVarying(VEC2) {
-	    protected Expression root(VertexContext vctx) {
-		return(texc.ref());
-	    }
-	};
-    private static final ShaderMacro shader = prog -> {
-	FragColor.fragcol(prog.fctx).mod(in -> mul(in, texture2D(usmp.ref(), ftexc.ref())), 0);
-    };
-    public ShaderMacro shader() {return(shader);}
+    public Iterable<PostProcessor> postproc() {return(post);}
+    public void add(PostProcessor post) {this.post.add(post);}
+    public void remove(PostProcessor post) {this.post.remove(post);}
+
+    public ShaderMacro shader() {return(null);}
     public void apply(Pipe p) {p.put(slot, this);}
 }
