@@ -33,21 +33,16 @@ import static haven.render.sl.Type.*;
 
 public class ColorTex extends State {
     public static final Slot<ColorTex> slot = new Slot<>(Slot.Type.DRAW, ColorTex.class);
-    public static final Attribute texc = new Attribute(VEC2, "coltexc");
-    private static final Uniform usmp = new Uniform(SAMPLER2D, "ctex", p -> p.get(slot).data, slot);
+    public static final Attribute texc = Tex2D.texc;
     public final Texture2D.Sampler2D data;
 
     public ColorTex(Texture2D.Sampler2D data) {
 	this.data = data;
     }
 
-    public static final AutoVarying ftexc = new AutoVarying(VEC2) {
-	    protected Expression root(VertexContext vctx) {
-		return(texc.ref());
-	    }
-	};
     private static final ShaderMacro shader = prog -> {
-	FragColor.fragcol(prog.fctx).mod(in -> mul(in, texture2D(usmp.ref(), ftexc.ref())), 0);
+	Tex2D.get(prog).tex2d(new Uniform.Data<Object>(p -> p.get(slot).data, slot));
+	Tex2D.mod.modify(prog);
     };
     public ShaderMacro shader() {return(shader);}
     public void apply(Pipe p) {p.put(slot, this);}
