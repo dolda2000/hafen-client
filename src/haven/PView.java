@@ -94,7 +94,11 @@ public abstract class PView extends Widget {
     }
 
     public void basic(Object id, Pipe.Op state) {
-	Pipe.Op prev = basicstates.put(id, state);
+	Pipe.Op prev;
+	if(state == null)
+	    prev = basicstates.remove(id);
+	else
+	    prev = basicstates.put(id, state);
 	if(!Utils.eq(prev, state)) {
 	    basic.ostate(p -> {
 		    for(Pipe.Op op : basicstates.values())
