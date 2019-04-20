@@ -135,6 +135,7 @@ public abstract class PView extends Widget {
 	if(next.buf == null) {
 	    Texture2D tex = new Texture2D(fragcol.sz(), DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null);
 	    next.buf = new Sampler2D(tex);
+	    next.buf.swrap(Texture.Wrapping.CLAMP).twrap(Texture.Wrapping.CLAMP);
 	}
 	Pipe st = new BufPipe();
 	Area area = Area.sized(Coord.z, next.buf.tex.sz());
