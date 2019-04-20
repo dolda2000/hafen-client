@@ -173,7 +173,9 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 
     private void display(GLRender buf) {
 	buf.clear(wnd, FragColor.fragcol, FColor.BLACK);
-	GOut g = new GOut(buf, wnd.copy(), new Coord(getSize()));;
+	Pipe state = wnd.copy();
+	state.prep(new FrameInfo());
+	GOut g = new GOut(buf, state, new Coord(getSize()));;
 	synchronized(ui) {
 	    ui.draw(g);
 	}
