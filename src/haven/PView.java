@@ -56,15 +56,18 @@ public abstract class PView extends Widget {
     }
 
     public static class WidgetContext extends RenderContext {
-	private final Widget wdg;
+	private final PView wdg;
 
-	public WidgetContext(Widget wdg) {
+	public WidgetContext(PView wdg) {
 	    this.wdg = wdg;
 	}
 
-	public Widget widget() {
+	public PView widget() {
 	    return(wdg);
 	}
+
+	public Pipe.Op basic(Object id) {return(wdg.basic(id));}
+	public void basic(Object id, Pipe.Op state) {wdg.basic(id, state);}
     }
 
     private final WidgetContext ctx = new WidgetContext(this);
@@ -91,6 +94,10 @@ public abstract class PView extends Widget {
     public void resize(Coord sz) {
 	super.resize(sz);
 	reconf();
+    }
+
+    public Pipe.Op basic(Object id) {
+	return(basicstates.get(id));
     }
 
     public void basic(Object id, Pipe.Op state) {
