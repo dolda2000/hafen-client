@@ -337,7 +337,7 @@ public class GLRender implements Render, Disposable {
 	BGL gl = gl();
 	int gly = env.wnd.br.y - area.br.y;
 	Coord sz = area.sz();
-	
+
 	/*
 	gl.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
 	gl.glReadBuffer(fc.dbufs[n]);
@@ -349,7 +349,7 @@ public class GLRender implements Render, Disposable {
 		callback.accept(data);
 	    });
 	*/
-	
+
 	GLBuffer pbo = new GLBuffer(env);
 	gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pbo);
 	gl.glBufferData(GL2.GL_PIXEL_PACK_BUFFER, fmt.size() * area.area(), null, GL2.GL_STREAM_READ);
@@ -374,6 +374,51 @@ public class GLRender implements Render, Disposable {
 			    byte t = data.get(to);
 			    data.put(to, data.get(bo));
 			    data.put(bo, t);
+			}
+		    }
+		    callback.accept(data);
+	}));
+	gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, null);
+    }
+
+    public void pget(Texture.Image img, VectorFormat fmt, Consumer<ByteBuffer> callback) {
+	BGL gl = gl();
+
+	state.apply(gl, new Applier(env));
+	GLBuffer pbo = new GLBuffer(env);
+	final int dsz = fmt.size() * img.w * img.h * img.d;
+	gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pbo);
+	gl.glBufferData(GL2.GL_PIXEL_PACK_BUFFER, dsz, null, GL2.GL_STREAM_READ);
+	gl.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
+	if(img.tex instanceof Texture2D) {
+	    GLTexture.Tex2D tex = env.prepare((Texture2D)img.tex);
+	    gl.glActiveTexture(GL.GL_TEXTURE0);
+	    tex.bind(gl);
+	    gl.glGetTexImage(GL2.GL_TEXTURE_2D, img.level, GLTexture.texefmt1(fmt, fmt), GLTexture.texefmt2(fmt, fmt), 0);
+	    tex.unbind(gl);
+	} else {
+	    throw(new NotImplemented("texture-get for " + img.tex.getClass()));
+	}
+	gl.bglCreate(new GLFence(env, cgl -> {
+		    cgl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pbo.glid());
+		    ByteBuffer data = Utils.mkbbuf(dsz);
+		    cgl.glGetBufferSubData(GL2.GL_PIXEL_PACK_BUFFER, 0, dsz, data);
+		    cgl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
+		    pbo.dispose();
+		    GLException.checkfor(cgl);
+		    data.rewind();
+		    /* XXX: It's not particularly nice to do the
+		     * flipping on the dispatch thread, but OpenGL
+		     * does not seem to offer any GPU-assisted
+		     * flipping. */
+		    if(img.d == 1) {
+			for(int y = 0; y < img.h / 2; y++) {
+			    int to = y * img.w * 4, bo = (img.h - y - 1) * img.w * 4;
+			    for(int o = 0; o < img.w * 4; o++, to++, bo++) {
+				byte t = data.get(to);
+				data.put(to, data.get(bo));
+				data.put(bo, t);
+			    }
 			}
 		    }
 		    callback.accept(data);

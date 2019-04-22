@@ -815,6 +815,7 @@ public class GLDrawList implements DrawList {
 	public void clear(Pipe pipe, FragData buf, FColor val) {throw(new NotImplemented());}
 	public void clear(Pipe pipe, double val) {throw(new NotImplemented());}
 	public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback) {throw(new NotImplemented());}
+	public void pget(Texture.Image img, VectorFormat fmt, Consumer<ByteBuffer> callback) {throw(new NotImplemented());}
 	public <T extends DataBuffer> void update(T buf, DataBuffer.Filler<? super T> data) {throw(new NotImplemented());}
 	public void dispose() {}
     }

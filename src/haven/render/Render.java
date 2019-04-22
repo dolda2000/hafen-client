@@ -41,6 +41,7 @@ public interface Render extends Disposable {
     public <T extends DataBuffer> void update(T buf, DataBuffer.Filler<? super T> data);
 
     public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback);
+    public void pget(Texture.Image img, VectorFormat fmt, Consumer<ByteBuffer> callback);
 
     public default void draw(Pipe pipe, Model.Mode mode, short[] ind, VertexArray.Layout fmt, int n, float[] data) {
 	Model.Indices indb = null;

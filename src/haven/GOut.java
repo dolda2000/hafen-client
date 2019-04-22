@@ -431,4 +431,18 @@ public class GOut {
     public void getimage(Consumer<BufferedImage> cb) {
 	getimage(Coord.z, sz(), cb);
     }
+
+    public static void getimage(Render g, Texture.Image<?> img, Consumer<BufferedImage> cb) {
+	g.pget(img, new VectorFormat(4, NumberFormat.UNORM8), data -> {
+		Coord sz = new Coord(img.w, img.h);
+		byte[] pbuf = new byte[sz.x * sz.y * 4];
+		data.get(pbuf);
+		WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
+		cb.accept(new BufferedImage(TexI.glcm, raster, false, null));
+	    });
+    }
+
+    public void getimage(Texture.Image<?> img, Consumer<BufferedImage> cb) {
+	getimage(out, img, cb);
+    }
 }
