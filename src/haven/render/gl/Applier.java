@@ -85,10 +85,7 @@ public class Applier {
     }
 
     private Object getfval(GLProgram prog, int fi, Pipe pipe) {
-	Object val = prog.fragdata[fi].value.apply(pipe);
-	if(val == null)
-	    throw(new NullPointerException(String.format("tried to set null for fragdata %s on %s", prog.fragdata[fi], pipe)));
-	return(val);
+	return(prog.fragdata[fi].value.apply(pipe));
     }
 
     @SuppressWarnings("unchecked")
