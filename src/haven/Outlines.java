@@ -28,21 +28,29 @@ package haven;
 
 import java.awt.Color;
 import java.util.*;
-import haven.glsl.*;
-import static haven.glsl.Cons.*;
-import static haven.glsl.Type.*;
-import javax.media.opengl.*;
+import haven.render.*;
+import haven.render.sl.*;
+import static haven.render.sl.Cons.*;
+import static haven.render.sl.Type.*;
 
-public class Outlines implements Rendered {
+public class Outlines implements RenderTree.Node {
     private boolean symmetric;
 
-    public void draw(GOut g) {}
-
-    private final static Uniform snrm = new Uniform(SAMPLER2D);
-    private final static Uniform sdep = new Uniform(SAMPLER2D);
-    private final static Uniform msnrm = new Uniform(SAMPLER2DMS);
-    private final static Uniform msdep = new Uniform(SAMPLER2DMS);
+    private final static Uniform snrm = new Uniform(SAMPLER2D, p -> ((Draw)p.get(RUtils.adhoc)).nrm, RUtils.adhoc);
+    private final static Uniform sdep = new Uniform(SAMPLER2D, p -> ((Draw)p.get(RUtils.adhoc)).depth, RUtils.adhoc);
+    private final static Uniform msnrm = new Uniform(SAMPLER2DMS, p -> ((Draw)p.get(RUtils.adhoc)).nrm, RUtils.adhoc);
+    private final static Uniform msdep = new Uniform(SAMPLER2DMS, p -> ((Draw)p.get(RUtils.adhoc)).depth, RUtils.adhoc);
     private final static ShaderMacro[] shaders = new ShaderMacro[4];
+
+    private static class Draw extends RUtils.AdHoc {
+	final Texture2D.Sampler2D nrm, depth;
+
+	Draw(ShaderMacro code, Texture2D.Sampler2D nrm, Texture2D.Sampler2D depth) {
+	    super(code);
+	    this.nrm = nrm;
+	    this.depth = depth;
+	}
+    }
 
     private static ShaderMacro shader(final boolean symmetric, final boolean ms) {
 	return(new ShaderMacro() {
@@ -56,14 +64,14 @@ public class Outlines implements Rendered {
 
 		Expression sample(boolean nrm, Expression c, Expression s, Coord o) {
 		    if(ms) {
-			Expression ctc = ivec2(floor(mul(c, MiscLib.screensize.ref())));
+			Expression ctc = ivec2(floor(mul(c, FrameConfig.u_screensize.ref())));
 			if(!o.equals(Coord.z))
 			    ctc = add(ctc, ivec2(o));
 			return(texelFetch((nrm?msnrm:msdep).ref(), ctc, s));
 		    } else {
 			Expression ctc = c;
 			if(!o.equals(Coord.z))
-			    ctc = add(c, mul(vec2(o), MiscLib.pixelpitch.ref()));
+			    ctc = add(c, mul(vec2(o), FrameConfig.u_pixelpitch.ref()));
 			return(texture2D((nrm?snrm:sdep).ref(), ctc));
 		    }
 		}
@@ -107,13 +115,13 @@ public class Outlines implements Rendered {
 		Function msfac = new Function.Def(FLOAT) {{
 		    LValue ret = code.local(FLOAT, l(0.0)).ref();
 		    LValue i = code.local(INT, null).ref();
-		    code.add(new For(ass(i, l(0)), lt(i, FBConfig.numsamples.ref()), linc(i),
+		    code.add(new For(ass(i, l(0)), lt(i, FrameConfig.u_numsamples.ref()), linc(i),
 				     stmt(aadd(ret, ofac.call(i)))));
-		    code.add(new Return(div(ret, FBConfig.numsamples.ref())));
+		    code.add(new Return(div(ret, FrameConfig.u_numsamples.ref())));
 		}};
 
 		public void modify(ProgramContext prog) {
-		    prog.fctx.fragcol.mod(in -> {
+		    FragColor.fragcol(prog.fctx).mod(in -> {
 			    Expression of = (!ms)?ofac.call(l(-1)):msfac.call();
 			    return(vec4(col3(color), mix(l(0.0), l(1.0), of)));
 			}, 0);
@@ -130,43 +138,27 @@ public class Outlines implements Rendered {
 	shaders[3] = shader(true,  true);
     }
 
-    public Outlines(final boolean symmetric) {
+    public Outlines(boolean symmetric) {
 	this.symmetric = symmetric;
     }
 
-    public boolean setup(RenderList rl) {
-	final PView.ConfContext ctx = (PView.ConfContext)rl.state().get(PView.ctx);
-	final RenderedNormals nrm = ctx.data(RenderedNormals.id);
-	final boolean ms = ctx.cfg.ms > 1;
-	ctx.cfg.tdepth = true;
-	ctx.cfg.add(nrm);
-	rl.prepc(Rendered.postfx);
-	rl.add(new Rendered.ScreenQuad(), new States.AdHoc(shaders[(symmetric?2:0) | (ms?1:0)]) {
-		private TexUnit tnrm;
-		private TexUnit tdep;
-
-		public void reapply(GOut g) {
-		    BGL gl = g.gl;
-		    gl.glUniform1i(g.st.prog.uniform(!ms?snrm:msnrm), tnrm.id);
-		    gl.glUniform1i(g.st.prog.uniform(!ms?sdep:msdep), tdep.id);
-		}
-
-		public void apply(GOut g) {
-		    if(!ms) {
-			tnrm = g.st.texalloc(g, ((GLFrameBuffer.Attach2D)nrm.tex).tex);
-			tdep = g.st.texalloc(g, ((GLFrameBuffer.Attach2D)ctx.cur.depth).tex);
-		    } else {
-			tnrm = g.st.texalloc(g, ((GLFrameBuffer.AttachMS)nrm.tex).tex);
-			tdep = g.st.texalloc(g, ((GLFrameBuffer.AttachMS)ctx.cur.depth).tex);
-		    }
-		    reapply(g);
-		}
-
-		public void unapply(GOut g) {
-		    tnrm.ufree(g); tnrm = null;
-		    tdep.ufree(g); tdep = null;
-		}
+    public void added(RenderTree.Slot slot) {
+	RenderedNormals.get(slot.state());
+	slot.add(new Rendered.ScreenQuad(false), p -> {
+		FrameConfig fb = p.get(FrameConfig.slot);
+		DepthBuffer<?> dbuf = p.get(DepthBuffer.slot);
+		RenderedNormals nbuf = p.get(RenderedNormals.slot);
+		boolean ms = fb.samples > 1;
+		p.prep(Rendered.postfx);
+		p.put(RenderedNormals.slot, null);
+		p.put(DepthBuffer.slot, null);
+		p.prep(new Draw(shaders[(symmetric?2:0) | (ms?1:0)],
+				new Texture2D.Sampler2D((Texture2D)nbuf.img.tex),
+				new Texture2D.Sampler2D((Texture2D)((Texture.Image)dbuf.image).tex)));
 	    });
-	return(false);
+    }
+
+    public void removed(RenderTree.Slot slot) {
+	RenderedNormals.put(slot.state());
     }
 }

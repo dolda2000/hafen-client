@@ -77,4 +77,37 @@ public interface Rendered {
     public final static Order last = new Order.Default(Integer.MAX_VALUE);
     public final static Order postfx = new Order.Default(5000);
     public final static Order postpfx = new Order.Default(5500);
+
+    public static class ScreenQuad implements Rendered, RenderTree.Node {
+	public static final Model data =
+	    new Model(Model.Mode.TRIANGLE_STRIP,
+		      new VertexArray(new VertexArray.Layout(new VertexArray.Layout.Input(Ortho2D.pos, new VectorFormat(2, NumberFormat.SNORM8), 0, 0, 4),
+							     new VertexArray.Layout.Input(Tex2D.texc, new VectorFormat(2, NumberFormat.SNORM8), 0, 2, 4)),
+				      new VertexArray.Buffer(16, DataBuffer.Usage.STATIC, DataBuffer.Filler.of(new byte[] {
+						  -127, -127,   0,   0,
+						   127, -127, 127,   0,
+						  -127,  127,   0, 127,
+						   127,  127, 127, 127,
+					      }))),
+		      null, 0, 4);
+	public final Pipe.Op state;
+
+	public ScreenQuad(boolean invert) {
+	    Pipe.Op vxf;
+	    if(invert)
+		vxf = new Ortho2D(-1, -1,  1,  1);
+	    else
+		vxf = new Ortho2D(-1,  1,  1, -1);
+	    state = Pipe.Op.compose(States.maskdepth, States.Depthtest.none, new States.Facecull(States.Facecull.Mode.NONE),
+				    vxf);
+	}
+
+	public void draw(Pipe state, Render out) {
+	    out.draw(state, data);
+	}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.ostate(state);
+	}
+    }
 }
