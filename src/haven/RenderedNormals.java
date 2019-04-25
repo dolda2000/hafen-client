@@ -60,7 +60,6 @@ public class RenderedNormals extends State {
 
     public static class Canon implements Pipe.Op, Disposable {
 	public Texture2D tex = null;
-	public Texture2D.Sampler2D data;
 	private int refcount = 0;
 
 	public void apply(Pipe p) {
@@ -69,9 +68,6 @@ public class RenderedNormals extends State {
 		if(tex != null)
 		    tex.dispose();
 		tex = new Texture2D(fb.sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null);
-		data = new Texture2D.Sampler2D(tex);
-		data.minfilter(Texture.Filter.LINEAR).magfilter(Texture.Filter.LINEAR);
-		data.swrap(Texture.Wrapping.CLAMP).twrap(Texture.Wrapping.CLAMP);
 	    }
 	    p.prep(new RenderedNormals(tex.image(0)));
 	}
