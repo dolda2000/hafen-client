@@ -54,4 +54,8 @@ public class Ortho2D extends State {
     };
     public ShaderMacro shader() {return(shader);}
     public void apply(Pipe p) {p.put(States.vxf, this);}
+
+    public String toString() {
+	return(String.format("#<ortho2d (%s, %s)-(%s, %s)>", l, u, r, b));
+    }
 }

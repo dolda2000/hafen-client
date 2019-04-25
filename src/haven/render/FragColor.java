@@ -68,4 +68,6 @@ public class FragColor<T> extends State {
 	return((o instanceof FragColor) &&
 	       (((FragColor)o).image == this.image));
     }
+
+    public String toString() {return(String.format("#<fragcolor %s>", image));}
 }

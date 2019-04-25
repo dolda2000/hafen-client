@@ -57,6 +57,8 @@ public interface Rendered {
 		    }
 		};
 	    public Comparator<Order> comparator() {return(cmp);}
+
+	    public String toString() {return(String.format("#<order flat %s>", z));}
 	}
 
 	public static final Comparator<Order> cmp = new Comparator<Order>() {

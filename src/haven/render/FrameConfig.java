@@ -50,4 +50,6 @@ public class FrameConfig extends State {
 
     public ShaderMacro shader() {return(null);}
     public void apply(Pipe p) {p.put(slot, this);}
+
+    public String toString() {return(String.format("#<framecfg %sx%s %s>", sz.x, sz.y, samples));}
 }

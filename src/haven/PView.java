@@ -68,6 +68,8 @@ public abstract class PView extends Widget {
 
 	public Pipe.Op basic(Object id) {return(wdg.basic(id));}
 	public void basic(Object id, Pipe.Op state) {wdg.basic(id, state);}
+
+	public String toString() {return(String.format("#<widgetctx %s>", wdg.getClass()));}
     }
 
     private final WidgetContext ctx = new WidgetContext(this);
