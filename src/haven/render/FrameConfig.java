@@ -31,6 +31,7 @@ import haven.render.sl.*;
 
 public class FrameConfig extends State {
     public static final Slot<FrameConfig> slot = new Slot<>(Slot.Type.SYS, FrameConfig.class);
+    public static final Uniform u_numsamples = new Uniform(Type.INT, "numsamples", p -> p.get(slot).samples, slot);
     public static final Uniform u_screensize = new Uniform(Type.VEC2, "screensize", p -> p.get(slot).sz, slot);
     public static final Uniform u_pixelpitch = new Uniform(Type.VEC2, "pixelpitch", p -> {
 	    Coord sz = p.get(slot).sz;
