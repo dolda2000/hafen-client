@@ -42,10 +42,9 @@ public class Material implements Pipe.Op {
 	public Pipe.Op cons(Resource res, Object... args) {return(nofacecull);}
     }
 
-    /* XXXRENDER
     @ResName("order")
     public static class $order implements ResCons {
-	public GLState cons(Resource res, Object... args) {
+	public Pipe.Op cons(Resource res, Object... args) {
 	    String nm = (String)args[0];
 	    if(nm.equals("first")) {
 		return(Rendered.first);
@@ -53,20 +52,24 @@ public class Material implements Pipe.Op {
 		return(Rendered.last);
 	    } else if(nm.equals("pfx")) {
 		return(Rendered.postpfx);
+	    /* XXXRENDER
 	    } else if(nm.equals("eye")) {
 		return(Rendered.eyesort);
 	    } else if(nm.equals("earlyeye")) {
 		return(Rendered.eeyesort);
+	    */
 	    } else if(nm.equals("premap")) {
 		return(MapMesh.premap);
 	    } else if(nm.equals("postmap")) {
 		return(MapMesh.postmap);
 	    } else {
+		/* XXXRENDER
 		throw(new Resource.LoadException("Unknown draw order: " + nm, res));
+		*/
+		return(null);
 	    }
 	}
     }
-    */
 
     public Material(Pipe.Op... states) {
 	this.states = states;
