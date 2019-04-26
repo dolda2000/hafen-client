@@ -64,4 +64,6 @@ public class BaseColor extends State {
     public ShaderMacro shader() {return(shader);}
 
     public void apply(Pipe p) {p.put(slot, this);}
+
+    public String toString() {return(String.format("#<basecolor %s %s %s %s>", color.r, color.g, color.b, color.a));}
 }

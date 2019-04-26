@@ -53,6 +53,8 @@ public abstract class States {
 	}
 
 	public void apply(Pipe p) {p.put(viewport, this);}
+
+	public String toString() {return(String.format("#<viewport %sx%s+%s+%s>", area.br.x - area.ul.x, area.br.y - area.ul.y, area.ul.x, area.ul.y));}
     }
 
     public static final Slot<Scissor> scissor = new Slot<Scissor>(Slot.Type.SYS, Scissor.class);
@@ -68,6 +70,8 @@ public abstract class States {
 	}
 
 	public void apply(Pipe p) {p.put(scissor, this);}
+
+	public String toString() {return(String.format("#<scissor %sx%s+%s+%s>", area.br.x - area.ul.x, area.br.y - area.ul.y, area.ul.x, area.ul.y));}
     }
 
     public static final Slot<Facecull> facecull = new Slot<Facecull>(Slot.Type.GEOM, Facecull.class);
@@ -98,6 +102,8 @@ public abstract class States {
 	}
 
 	public void apply(Pipe p) {p.put(facecull, (mode == Mode.NONE) ? null : this);}
+
+	public String toString() {return(String.format("#<facecull %s>", mode));}
     }
 
 
@@ -130,10 +136,16 @@ public abstract class States {
 	}
 
 	public void apply(Pipe p) {p.put(depthtest, this);}
+
+	public static final Pipe.Op none = p -> {p.put(depthtest, null);};
+
+	public String toString() {return(String.format("#<depthtest %s>", test));}
     }
 
     public static final State.StandAlone maskdepth = new State.StandAlone(Slot.Type.GEOM) {
 	    public ShaderMacro shader() {return(null);}
+
+	    public String toString() {return(String.format("#<maskdepth>"));}
 	};
 
     public static final Slot<Blending> blend = new Slot<Blending>(Slot.Type.SYS, Blending.class);
@@ -188,6 +200,8 @@ public abstract class States {
 	}
 
 	public void apply(Pipe p) {p.put(blend, this);}
+
+	public String toString() {return(String.format("#<blending %s(%s, %s) %s(%s %s)>", cfn, csrc, cdst, afn, asrc, adst));}
     }
 
     public static final Slot<LineWidth> linewidth = new Slot<LineWidth>(Slot.Type.GEOM, LineWidth.class);
@@ -205,6 +219,8 @@ public abstract class States {
 	}
 
 	public void apply(Pipe p) {p.put(linewidth, this);}
+
+	public String toString() {return(String.format("#<linewidth %s>", w));}
     }
 
     public static final Slot<DepthBias> depthbias = new Slot<DepthBias>(Slot.Type.GEOM, DepthBias.class);
@@ -224,5 +240,7 @@ public abstract class States {
 	}
 
 	public void apply(Pipe p) {p.put(depthbias, this);}
+
+	public String toString() {return(String.format("#<depthbias %s %s>", factor, units));}
     }
 }

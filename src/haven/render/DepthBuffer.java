@@ -50,4 +50,6 @@ public class DepthBuffer<T> extends State {
 	return((o instanceof DepthBuffer) &&
 	       (((DepthBuffer)o).image == this.image));
     }
+
+    public String toString() {return(String.format("#<depthbuf %s>", image));}
 }

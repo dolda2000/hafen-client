@@ -124,6 +124,17 @@ public abstract class Texture implements Disposable {
 	public Sampler<T> wrapmode(Wrapping v) {return(swrap(v).twrap(v).rwrap(v));}
 	public Sampler<T> anisotropy(float v) {anisotropy = v; return(this);}
 	public Sampler<T> border(FColor v) {border = v; return(this);}
+
+	private boolean equals(Sampler<?> that) {
+	    return((this.tex == that.tex) &&
+		   (this.magfilter == that.magfilter) && (this.minfilter == that.minfilter) && (this.mipfilter == that.mipfilter) &&
+		   (this.swrap == that.swrap) && (this.twrap == that.twrap) && (this.rwrap == that.rwrap) &&
+		   (this.anisotropy == that.anisotropy) && this.border.equals(that.border));
+	}
+
+	public boolean equals(Object o) {
+	    return((o instanceof Sampler) && equals((Sampler<?>)o));
+	}
     }
 
     public String toString() {

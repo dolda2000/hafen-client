@@ -51,4 +51,6 @@ public class FrameInfo extends State {
     public static Expression time() {
 	return(u_time.ref());
     }
+
+    public String toString() {return(String.format("#<frameinfo @%fs>", time));}
 }

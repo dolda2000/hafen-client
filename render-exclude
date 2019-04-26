@@ -5,12 +5,10 @@ haven/TexMSE.java
 haven/FBConfig.java
 haven/ActAudio.java
 haven/ShadowMap.java
-haven/Outlines.java
 haven/DirCam.java
 haven/GBuffer.java
 haven/HavenApplet.java
 haven/LocationCam.java
-haven/RenderedNormals.java
 haven/resutil/EnvMap.java
 haven/rs/AvaRender.java
 haven/rs/BufView.java

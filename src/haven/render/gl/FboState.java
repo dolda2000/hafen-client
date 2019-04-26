@@ -105,6 +105,8 @@ public class FboState extends GLState {
 	Attachment[] color = new Attachment[fvalsp.length];
 	int nc = 0;
 	intern: for(int i = 0; i < fvalsp.length; i++) {
+	    if(fvalsp[i] == null)
+		continue;
 	    Attachment c = (Attachment)fvalsp[i];
 	    for(int o = 0; (o < color.length) && (color[o] != null); o++) {
 		if(color[o] == c)

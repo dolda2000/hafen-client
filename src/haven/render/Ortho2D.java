@@ -42,7 +42,7 @@ public class Ortho2D extends State {
 	this.l = l; this.u = u; this.r = r; this.b = b;
 	float w = r - l; float h = b - u;
 	k = new float[] {2f / w, -2f / h};
-	m = new float[] {-1 - (l * k[0]), 1 + (u * k[1])};
+	m = new float[] {-1 - (l * k[0]), 1 - (u * k[1])};
     }
 
     public Ortho2D(Area area) {
@@ -54,4 +54,8 @@ public class Ortho2D extends State {
     };
     public ShaderMacro shader() {return(shader);}
     public void apply(Pipe p) {p.put(States.vxf, this);}
+
+    public String toString() {
+	return(String.format("#<ortho2d (%s, %s)-(%s, %s)>", l, u, r, b));
+    }
 }

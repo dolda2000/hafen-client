@@ -252,8 +252,11 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	public void setsampler(Sampler2D data) {
 	    if(sampler == data)
 		return;
-	    if(sampler != null)
-		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple samplers per texture"));
+	    if(sampler != null) {
+		if(sampler.equals(data))
+		    return;
+		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple (different) samplers per texture"));
+	    }
 	    env.prepare((GLRender g) -> {
 		    if(g.state.prog() != null)
 			throw(new RuntimeException("program unexpectedly used in prep context"));

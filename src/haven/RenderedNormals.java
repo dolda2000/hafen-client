@@ -26,56 +26,86 @@
 
 package haven;
 
-import haven.glsl.*;
-import static haven.glsl.Cons.*;
+import haven.render.*;
+import haven.render.sl.*;
+import static haven.render.sl.Cons.*;
 
-public class RenderedNormals extends FBConfig.RenderTarget {
-    private static final IntMap<ShaderMacro> shcache = new IntMap<ShaderMacro>();
+public class RenderedNormals extends State {
+    public static final Slot<RenderedNormals> slot = new Slot<>(Slot.Type.SYS, RenderedNormals.class);
+    public static final FragData fragnorm = new FragData(Type.VEC4, "fragnorm", p -> ((p.get(States.maskdepth.slot) == null) ? p.get(slot).img : null), slot, States.maskdepth.slot);
+    public final Texture.Image<?> img;
 
-    private static ShaderMacro code(final int id) {
-	ShaderMacro ret = shcache.get(id);
-	if(ret == null) {
-	    ret = prog -> {
-		MiscLib.frageyen(prog.fctx);
-		prog.fctx.new FragData(id) {
-			public Expression root() {
-			    return(vec4(mul(add(MiscLib.frageyen(prog.fctx).depref(), l(1.0)), l(0.5)), l(1.0)));
-			}
-		    };
-	    };
-	    shcache.put(id, ret);
+    public RenderedNormals(Texture.Image<?> img) {
+	this.img = img;
+    }
+
+    private static final ShaderMacro shader = prog -> {
+	Homo3D.frageyen(prog.fctx);
+	ValBlock.Value val = prog.fctx.mainvals.ext(fragnorm, () -> prog.fctx.mainvals.new Value(Type.VEC4) {
+		public Expression root() {
+		    return(vec4(mul(add(Homo3D.frageyen(prog.fctx).depref(), l(1.0)), l(0.5)), l(1.0)));
+		}
+
+		protected void cons2(Block blk) {
+		    blk.add(new LBinOp.Assign(fragnorm.ref(), init));
+		}
+	    });
+	val.force();
+    };
+    public ShaderMacro shader() {
+	return(shader);
+    }
+
+    public void apply(Pipe p) {p.put(slot, this);}
+
+    public static class Canon implements Pipe.Op, Disposable {
+	public Texture2D tex = null;
+	private int refcount = 0;
+
+	public void apply(Pipe p) {
+	    FrameConfig fb = p.get(FrameConfig.slot);
+	    if((tex == null) || !tex.sz().equals(fb.sz)) {
+		if(tex != null)
+		    tex.dispose();
+		tex = new Texture2D(fb.sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null);
+	    }
+	    p.prep(new RenderedNormals(tex.image(0)));
+	}
+
+	public void dispose() {
+	    if(tex != null)
+		tex.dispose();
+	}
+    }
+
+    public static Canon get(Pipe state) {
+	RenderContext ctx = state.get(RenderContext.slot);
+	if(ctx == null)
+	    return(null);
+	Canon ret;
+	synchronized(ctx) {
+	    ret = (Canon)ctx.basic(Canon.class);
+	    if(ret == null) {
+		ret = new Canon();
+		ctx.basic(Canon.class, ret);
+	    }
+	    ret.refcount++;
 	}
 	return(ret);
     }
 
-    public static final GLState.Slot<GLState> slot = new GLState.Slot<GLState>(GLState.Slot.Type.SYS, GLState.class, GLFrameBuffer.slot, States.presdepth.slot);
-    public GLState state(final FBConfig cfg, final int id) {
-	return(new GLState() {
-		private final ShaderMacro shader = code(id);
-
-		public ShaderMacro shader() {return(shader);}
-
-		public void apply(GOut g) {
-		    GLFrameBuffer fb = g.st.get(GLFrameBuffer.slot);
-		    if(fb != cfg.fb)
-			throw(new RuntimeException("Applying normal rendering in illegal framebuffer context"));
-		    if(g.st.get(States.presdepth.slot) != null)
-			fb.mask(g, id, false);
-		}
-
-		public void unapply(GOut g) {
-		    g.st.cur(GLFrameBuffer.slot).mask(g, id, true);
-		}
-
-		public void prep(Buffer buf) {
-		    buf.put(slot, this);
-		}
-	    });
-    }
-
-    public static final PView.RenderContext.DataID<RenderedNormals> id = new PView.RenderContext.DataID<RenderedNormals>() {
-	public RenderedNormals make(PView.RenderContext ctx) {
-	    return(new RenderedNormals());
+    public static void put(Pipe state) {
+	RenderContext ctx = state.get(RenderContext.slot);
+	if(ctx == null)
+	    return;
+	synchronized(ctx) {
+	    Canon cur = (Canon)ctx.basic(Canon.class);
+	    if(cur == null)
+		throw(new IllegalStateException());
+	    if(--cur.refcount <= 0) {
+		ctx.basic(Canon.class, null);
+		cur.dispose();
+	    }
 	}
-    };
+    }
 }

@@ -56,15 +56,20 @@ public abstract class PView extends Widget {
     }
 
     public static class WidgetContext extends RenderContext {
-	private final Widget wdg;
+	private final PView wdg;
 
-	public WidgetContext(Widget wdg) {
+	public WidgetContext(PView wdg) {
 	    this.wdg = wdg;
 	}
 
-	public Widget widget() {
+	public PView widget() {
 	    return(wdg);
 	}
+
+	public Pipe.Op basic(Object id) {return(wdg.basic(id));}
+	public void basic(Object id, Pipe.Op state) {wdg.basic(id, state);}
+
+	public String toString() {return(String.format("#<widgetctx %s>", wdg.getClass()));}
     }
 
     private final WidgetContext ctx = new WidgetContext(this);
@@ -93,8 +98,16 @@ public abstract class PView extends Widget {
 	reconf();
     }
 
+    public Pipe.Op basic(Object id) {
+	return(basicstates.get(id));
+    }
+
     public void basic(Object id, Pipe.Op state) {
-	Pipe.Op prev = basicstates.put(id, state);
+	Pipe.Op prev;
+	if(state == null)
+	    prev = basicstates.remove(id);
+	else
+	    prev = basicstates.put(id, state);
 	if(!Utils.eq(prev, state)) {
 	    basic.ostate(p -> {
 		    for(Pipe.Op op : basicstates.values())
@@ -131,6 +144,8 @@ public abstract class PView extends Widget {
 	if(next.buf == null) {
 	    Texture2D tex = new Texture2D(fragcol.sz(), DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null);
 	    next.buf = new Sampler2D(tex);
+	    next.buf.minfilter(Texture.Filter.LINEAR).magfilter(Texture.Filter.LINEAR);
+	    next.buf.swrap(Texture.Wrapping.CLAMP).twrap(Texture.Wrapping.CLAMP);
 	}
 	Pipe st = new BufPipe();
 	Area area = Area.sized(Coord.z, next.buf.tex.sz());

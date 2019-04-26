@@ -547,6 +547,18 @@ public abstract class BGL {
 	    });
     }
 
+    public void glGetTexImage(final int target, final int level, final int format, final int type, Buffer pixels) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glGetTexImage(target, level, format, type, pixels);}
+	    });
+    }
+
+    public void glGetTexImage(final int target, final int level, final int format, final int type, long offset) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glGetTexImage(target, level, format, type, offset);}
+	    });
+    }
+
     public void glLightf(final int light, final int pname, final float param) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glLightf(light, pname, param);}

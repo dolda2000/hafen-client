@@ -31,7 +31,7 @@ import haven.render.*;
 import haven.render.sl.ShaderMacro;
 import haven.render.Texture2D.Sampler2D;
 
-public class RenderContext extends State {
+public abstract class RenderContext extends State {
     public static final Slot<RenderContext> slot = new Slot<>(Slot.Type.SYS, RenderContext.class);
     private final Collection<PostProcessor> post = new ArrayList<>();
 
@@ -49,6 +49,9 @@ public class RenderContext extends State {
     public Iterable<PostProcessor> postproc() {return(post);}
     public void add(PostProcessor post) {this.post.add(post);}
     public void remove(PostProcessor post) {this.post.remove(post);}
+
+    public abstract Pipe.Op basic(Object id);
+    public abstract void basic(Object id, Pipe.Op state);
 
     public ShaderMacro shader() {return(null);}
     public void apply(Pipe p) {p.put(slot, this);}
