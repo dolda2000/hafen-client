@@ -74,15 +74,17 @@ public class Following extends Moving {
     private Pipe.Op xf = null, lpxf = null, lbxf = null;
     private Supplier<? extends Pipe.Op> bxf = () -> null;
     private Skeleton.Pose lpose = null;
+    private boolean hlpose = false;
     public Pipe.Op xf() {
 	synchronized(this) {
 	    Gob tgt = tgt();
 	    Skeleton.Pose cpose = getpose(tgt);
-	    if(cpose != lpose) {
+	    if(!hlpose || (cpose != lpose)) {
 		Skeleton.BoneOffset bo = xfres.get().layer(Skeleton.BoneOffset.class, xfname);
 		if(bo == null)
 		    throw(new RuntimeException("No such boneoffset in " + xfres.get() + ": " + xfname));
 		bxf = bo.forpose(lpose = cpose);
+		hlpose = true;
 	    }
 	    Pipe.Op cpxf = (tgt == null) ? null : tgt.placed.curplace();
 	    Pipe.Op cbxf = bxf.get();
