@@ -1153,6 +1153,15 @@ public class Utils {
 	return(ret);
     }
 
+    public static ByteBuffer growbuf(ByteBuffer buf, int req) {
+	if(buf.remaining() >= req)
+	    return(buf);
+	int sz = buf.capacity();
+	while(sz - buf.position() < req)
+	    sz <<= 1;
+	return(ByteBuffer.allocate(sz).order(buf.order()).put((ByteBuffer)buf.flip()));
+    }
+
     public static float[] c2fa(Color c) {
 	return(new float[] {
 		((float)c.getRed() / 255.0f),
