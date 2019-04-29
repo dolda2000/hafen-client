@@ -29,7 +29,7 @@ package haven.render;
 import java.util.function.*;
 import haven.Disposable;
 
-public class Model implements Disposable {
+public class Model implements Rendered, RenderTree.Node, Disposable {
     public final Mode mode;
     public final VertexArray va;
     public final Indices ind;
@@ -102,5 +102,9 @@ public class Model implements Disposable {
 	    ind.dispose();
 	if(!va.shared)
 	    va.dispose();
+    }
+
+    public void draw(Pipe state, Render out) {
+	out.draw(state, this);
     }
 }
