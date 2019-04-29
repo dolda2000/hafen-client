@@ -299,6 +299,14 @@ public class Utils {
 	return((byte)b);
     }
 
+    public static byte f2s8(float v) {
+	return((byte)Math.max(Math.min(Math.round(v * 127f), 127), -127));
+    }
+
+    public static byte f2u8(float v) {
+	return((byte)Math.max(Math.min(Math.round(v * 255f), 255), 0));
+    }
+
     public static long uint32(int n) {
 	return(n & 0xffffffffl);
     }
