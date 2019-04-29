@@ -299,6 +299,14 @@ public class Utils {
 	return((byte)b);
     }
 
+    public static byte f2s8(float v) {
+	return((byte)Math.max(Math.min(Math.round(v * 127f), 127), -127));
+    }
+
+    public static byte f2u8(float v) {
+	return((byte)Math.max(Math.min(Math.round(v * 255f), 255), 0));
+    }
+
     public static long uint32(int n) {
 	return(n & 0xffffffffl);
     }
@@ -798,6 +806,23 @@ public class Utils {
 	if(term) out.println();
     }
 
+    public static void hexdump(byte[] arr, PrintStream out, int width) {
+	if(arr == null) {
+	    out.println("null");
+	    return;
+	}
+	if(width <= 0)
+	    width = 16;
+	for(int i = 0; i < arr.length; i += width) {
+	    out.printf("%08x:\t", i);
+	    for(int o = 0; (o < width) && (i + o < arr.length); o++) {
+		if(o > 0) out.print(' ');
+		out.printf("%02x", arr[i + o]);
+	    }
+	    out.print('\n');
+	}
+    }
+
     public static String titlecase(String str) {
 	return(Character.toTitleCase(str.charAt(0)) + str.substring(1));
     }
@@ -1126,6 +1151,15 @@ public class Utils {
 	IntBuffer ret = wibuf(a.remaining());
 	ret.put(a).rewind();
 	return(ret);
+    }
+
+    public static ByteBuffer growbuf(ByteBuffer buf, int req) {
+	if(buf.remaining() >= req)
+	    return(buf);
+	int sz = buf.capacity();
+	while(sz - buf.position() < req)
+	    sz <<= 1;
+	return(ByteBuffer.allocate(sz).order(buf.order()).put((ByteBuffer)buf.flip()));
     }
 
     public static float[] c2fa(Color c) {

@@ -27,6 +27,7 @@
 package haven.render;
 
 import java.util.*;
+import java.nio.ByteBuffer;
 import haven.render.sl.Attribute;
 import haven.Disposable;
 
@@ -47,7 +48,9 @@ public class VertexArray implements Disposable {
 	int ret = -1;
 	for(int i = 0; i < fmt.inputs.length; i++) {
 	    Layout.Input inp = fmt.inputs[i];
-	    int n = (bufs[inp.buf].size - inp.offset) / ((inp.stride != 0) ? inp.stride : inp.el.size());
+	    if(bufs[inp.buf].size < (inp.offset + inp.el.size()))
+		return(0);
+	    int n = 1 + ((bufs[inp.buf].size - (inp.offset + inp.el.size())) / ((inp.stride != 0) ? inp.stride : inp.el.size()));
 	    if((ret < 0) || (n < ret))
 		ret = n;
 	}
@@ -155,6 +158,10 @@ public class VertexArray implements Disposable {
 	    this.size = size;
 	    this.usage = usage;
 	    this.init = init;
+	}
+
+	public Buffer(ByteBuffer data, Usage usage) {
+	    this(data.remaining(), usage, Filler.of(data));
 	}
 
 	public int size() {
