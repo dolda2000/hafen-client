@@ -47,7 +47,9 @@ public class VertexArray implements Disposable {
 	int ret = -1;
 	for(int i = 0; i < fmt.inputs.length; i++) {
 	    Layout.Input inp = fmt.inputs[i];
-	    int n = (bufs[inp.buf].size - inp.offset) / ((inp.stride != 0) ? inp.stride : inp.el.size());
+	    if(bufs[inp.buf].size < (inp.offset + inp.el.size()))
+		return(0);
+	    int n = 1 + ((bufs[inp.buf].size - (inp.offset + inp.el.size())) / ((inp.stride != 0) ? inp.stride : inp.el.size()));
 	    if((ret < 0) || (n < ret))
 		ret = n;
 	}
