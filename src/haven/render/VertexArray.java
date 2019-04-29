@@ -27,6 +27,7 @@
 package haven.render;
 
 import java.util.*;
+import java.nio.ByteBuffer;
 import haven.render.sl.Attribute;
 import haven.Disposable;
 
@@ -157,6 +158,10 @@ public class VertexArray implements Disposable {
 	    this.size = size;
 	    this.usage = usage;
 	    this.init = init;
+	}
+
+	public Buffer(ByteBuffer data, Usage usage) {
+	    this(data.remaining(), usage, Filler.of(data));
 	}
 
 	public int size() {
