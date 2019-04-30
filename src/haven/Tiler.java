@@ -214,11 +214,9 @@ public abstract class Tiler {
     public abstract void lay(MapMesh m, Random rnd, Coord lc, Coord gc);
     public abstract void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask);
     
-    /* XXXRENDER
-    public Pipe.Op drawstate(Glob glob, GLConfig cfg, Coord3f c) {
+    public Pipe.Op drawstate(Glob glob, Coord3f c) {
 	return(null);
     }
-    */
     
     public static class FactMaker implements Resource.PublishedCode.Instancer {
 	public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
