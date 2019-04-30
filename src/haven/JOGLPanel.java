@@ -77,6 +77,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 		public void dispose(GLAutoDrawable wdg) {
 		}
 	    });
+	setFocusTraversalKeysEnabled(false);
 	ed = new Dispatcher();
 	ed.register(this);
     }
