@@ -31,7 +31,7 @@ import haven.render.*;
 import haven.render.sl.ShaderMacro;
 import haven.render.Texture2D.Sampler2D;
 
-public abstract class RenderContext extends State {
+public abstract class RenderContext extends State implements OwnerContext {
     public static final Slot<RenderContext> slot = new Slot<>(Slot.Type.SYS, RenderContext.class);
     private final Collection<PostProcessor> post = new ArrayList<>();
 
