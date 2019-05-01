@@ -93,7 +93,7 @@ public class FastText {
 	    idx[io + 3] = (short)(vo + 1); idx[io + 4] = (short)(vo + 3); idx[io + 5] = (short)(vo + 2);
 	    lc.x += w;
 	}
-	g.out.draw(g.state().prep(ct.st()),
+	g.out.draw(g.state().copy().prep(ct.st()),
 		   new Model(Model.Mode.TRIANGLES,
 			     new VertexArray(vf, new VertexArray.Buffer(data.length * 2, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
 			     new Model.Indices(idx.length, NumberFormat.UINT16, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(idx))));
