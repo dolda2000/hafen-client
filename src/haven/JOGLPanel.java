@@ -37,6 +37,7 @@ import haven.render.gl.*;
 public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     private static final boolean dumpbgl = true;
     public final boolean vsync = true;
+    public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
     private final Dispatcher ed;
     private GLEnvironment env = null;
     private UI ui;
@@ -278,21 +279,28 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 		    GLEnvironment env = this.env;
 		    GLRender buf = env.render();
 		    Debug.cycle();
+		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
 
 		    synchronized(ui) {
 			ed.dispatch(ui);
+			if(curf != null) curf.tick("dsp");
+
 			if(ui.sess != null) {
 			    ui.sess.glob.ctick();
 			    ui.sess.glob.gtick(buf);
 			}
+			if(curf != null) curf.tick("stick");
 			ui.tick();
+			if(curf != null) curf.tick("tick");
 		    }
 
 		    synchronized(curdraw) {
 			while(curdraw[0] != null)
 			    curdraw.wait();
 		    }
+		    if(curf != null) curf.tick("wait");
 		    display(buf);
+		    if(curf != null) curf.tick("draw");
 		    BufferBGL dispose = env.disposeall();
 		    synchronized(curdraw) {
 			if(curdraw[0] != null)
@@ -302,6 +310,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 			    curdraw[0].debug = true;
 			curdraw.notifyAll();
 		    }
+		    if(curf != null) curf.tick("aux");
+		    if(curf != null) curf.fin();
 		}
 	    } finally {
 		drawthread.interrupt();
@@ -315,6 +325,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	if(ui != null)
 	    ui.destroy();
 	ui = new UI(new Coord(getSize()), sess);
+	ui.root.guprof = uprof;
 	return(ui);
     }
 
