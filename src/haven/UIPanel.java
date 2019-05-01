@@ -29,9 +29,14 @@ package haven;
 import java.util.*;
 import java.awt.Dimension;
 import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 import java.awt.event.*;
 
 public interface UIPanel extends Runnable {
+    public static final Cursor emptycurs = Toolkit.getDefaultToolkit().createCustomCursor(TexI.mkbuf(new Coord(1, 1)), new java.awt.Point(), "");
+
     public UI newui(Session sess);
     public void background(boolean bg);
 
@@ -133,5 +138,14 @@ public interface UIPanel extends Runnable {
 		mousemv = e;
 	    }
 	}
+    }
+
+    public static Cursor makeawtcurs(BufferedImage img, Coord hs) {
+	java.awt.Dimension cd = Toolkit.getDefaultToolkit().getBestCursorSize(img.getWidth(), img.getHeight());
+	BufferedImage buf = TexI.mkbuf(new Coord((int)cd.getWidth(), (int)cd.getHeight()));
+	java.awt.Graphics g = buf.getGraphics();
+	g.drawImage(img, 0, 0, null);
+	g.dispose();
+	return(Toolkit.getDefaultToolkit().createCustomCursor(buf, new java.awt.Point(hs.x, hs.y), ""));
     }
 }

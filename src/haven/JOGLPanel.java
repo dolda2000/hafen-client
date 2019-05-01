@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.awt.Toolkit;
 import javax.media.opengl.*;
 import javax.media.opengl.awt.*;
 import haven.render.*;
@@ -36,11 +37,11 @@ import haven.render.gl.*;
 public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     private static final boolean dumpbgl = true;
     public final boolean vsync = true;
+    private final Dispatcher ed;
     private GLEnvironment env = null;
     private UI ui;
     private Area shape;
     private Pipe base, wnd;
-    private final Dispatcher ed;
 
     private static GLCapabilities mkcaps() {
 	GLProfile prof = GLProfile.getDefault();
@@ -80,6 +81,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	setFocusTraversalKeysEnabled(false);
 	ed = new Dispatcher();
 	ed.register(this);
+	if(Toolkit.getDefaultToolkit().getMaximumCursorColors() >= 256)
+	    cursmode = "awt";
     }
 
     private static class Frame {
@@ -172,6 +175,35 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	}
     }
 
+    private String cursmode = "tex";
+    private Resource lastcursor = null;
+    private void drawcursor(GOut g) {
+	Resource curs = ui.root.getcurs(ui.mc);
+	if(cursmode == "awt") {
+	    if(curs != lastcursor) {
+		try {
+		    if(curs == null)
+			setCursor(null);
+		    else
+			setCursor(UIPanel.makeawtcurs(curs.layer(Resource.imgc).img, curs.layer(Resource.negc).cc));
+		} catch(Exception e) {
+		    cursmode = "tex";
+		}
+	    }
+	} else if(cursmode == "tex") {
+	    if(curs == null) {
+		if(lastcursor != null)
+		    setCursor(null);
+	    } else {
+		if(lastcursor == null)
+		    setCursor(emptycurs);
+		Coord dc = ui.mc.add(curs.layer(Resource.negc).cc.inv());
+		g.image(curs.layer(Resource.imgc), dc);
+	    }
+	}
+	lastcursor = curs;
+    }
+
     private void display(GLRender buf) {
 	buf.clear(wnd, FragColor.fragcol, FColor.BLACK);
 	Pipe state = wnd.copy();
@@ -186,6 +218,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	    long free = rt.freeMemory(), total = rt.totalMemory();
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
 	}
+	drawcursor(g);
     }
 
     public void run() {
