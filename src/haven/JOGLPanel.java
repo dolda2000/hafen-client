@@ -81,6 +81,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	setFocusTraversalKeysEnabled(false);
 	ed = new Dispatcher();
 	ed.register(this);
+	newui(null);
 	if(Toolkit.getDefaultToolkit().getMaximumCursorColors() >= 256)
 	    cursmode = "awt";
     }
