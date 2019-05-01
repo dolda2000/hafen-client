@@ -90,7 +90,7 @@ public abstract class PView extends Widget {
     }
 
     private Pipe.Op frame() {
-	return(Pipe.Op.compose(curconf(), new FrameInfo()));
+	return(Pipe.Op.compose(curconf(), new FrameInfo(), ((ui == null) || (ui.sess == null)) ? null : new Glob.FrameInfo(ui.sess.glob)));
     }
 
     private void reconf() {
