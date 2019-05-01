@@ -68,7 +68,7 @@ public class CloudShadow extends State {
 		public Expression root() {
 		    Expression tc = add(mul(add(pick(Homo3D.fragmapv.ref(), "xy"),
 						mul(pick(Homo3D.fragmapv.ref(), "z"), cdir.ref())),
-					    cscl.ref()), mul(cvel.ref(), FrameInfo.time())); // XXXRENDER: Use globtime.
+					    cscl.ref()), mul(cvel.ref(), Glob.FrameInfo.globtime()));
 		    Expression cl = pick(texture2D(tsky.ref(), tc), "r");
 		    Expression th = cthr.ref();
 		    return(add(mul(smoothstep(pick(th, "x"), pick(th, "y"), cl), pick(th, "w")), pick(th, "z")));
