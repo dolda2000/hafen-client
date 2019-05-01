@@ -285,12 +285,12 @@ public class GOut {
 			br.x + h, ul.y + h,
 			br.x + h, br.y + h,
 			ul.x + h, br.y + h,
-			ul.x + h, br.y + h};
+			ul.x + h, ul.y + h};
 	drawp(Model.Mode.LINE_STRIP, data);
     }
 
     public void rect(Coord ul, Coord sz) {
-	rect(ul, ul.add(sz).sub(1, 1));
+	rect2(ul, ul.add(sz).sub(1, 1));
     }
 
     public void prect(Coord c, Coord ul, Coord br, double a) {
