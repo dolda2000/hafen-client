@@ -175,6 +175,48 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	}
     }
 
+    private void drawtooltip(GOut g) {
+	Object tooltip;
+        try {
+	    synchronized(ui) {
+		tooltip = ui.root.tooltip(ui.mc, ui.root);
+	    }
+	} catch(Loading e) {
+	    tooltip = "...";
+	}
+	Tex tt = null;
+	if(tooltip != null) {
+	    if(tooltip instanceof Text) {
+		tt = ((Text)tooltip).tex();
+	    } else if(tooltip instanceof Tex) {
+		tt = (Tex)tooltip;
+	    } else if(tooltip instanceof Indir<?>) {
+		Indir<?> t = (Indir<?>)tooltip;
+		Object o = t.get();
+		if(o instanceof Tex)
+		    tt = (Tex)o;
+	    } else if(tooltip instanceof String) {
+		if(((String)tooltip).length() > 0)
+		    tt = (Text.render((String)tooltip)).tex();
+	    }
+	}
+	if(tt != null) {
+	    Coord sz = tt.sz();
+	    Coord pos = ui.mc.add(sz.inv());
+	    if(pos.x < 0)
+		pos.x = 0;
+	    if(pos.y < 0)
+		pos.y = 0;
+	    g.chcolor(244, 247, 21, 192);
+	    g.rect(pos.add(-3, -3), sz.add(6, 6));
+	    g.chcolor(35, 35, 35, 192);
+	    g.frect(pos.add(-2, -2), sz.add(4, 4));
+	    g.chcolor();
+	    g.image(tt, pos);
+	}
+	ui.lasttip = tooltip;
+    }
+
     private String cursmode = "tex";
     private Resource lastcursor = null;
     private void drawcursor(GOut g) {
@@ -218,6 +260,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	    long free = rt.freeMemory(), total = rt.totalMemory();
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
 	}
+	drawtooltip(g);
 	drawcursor(g);
     }
 
