@@ -44,8 +44,8 @@ public class RootWidget extends ConsoleHost {
 		GameUI gi = findchild(GameUI.class);
 		if(Config.profile) {
 		    add(new Profwnd(guprof, "UI profile"), new Coord(100, 100));
-		    /* XXXRENDER
 		    add(new Profwnd(grprof, "GL profile"), new Coord(450, 100));
+		    /* XXXRENDER
 		    if((gi != null) && (gi.map != null))
 			add(new Profwnd(gi.map.prof, "Map profile"), new Coord(100, 250));
 		    */

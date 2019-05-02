@@ -117,6 +117,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     }
 
     private void redraw(GL2 gl) {
+	CPUProfile.Frame curf = Config.profile ? rprof.new Frame() : null;
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
 	synchronized(this) {
@@ -134,6 +135,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	    curdraw[0] = null;
 	    curdraw.notifyAll();
 	}
+	if(curf != null) curf.tick("init");
 	try {
 	    if(f != null) {
 		if(f.env == env) {
@@ -142,11 +144,14 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 			gl = new TraceGL2(gl, System.err);
 		    }
 		    env.submit(gl, f.buf);
+		    if(curf != null) curf.tick("gl");
 		    f.dispose.run(gl);
 		} else {
 		    f.buf.dispose();
 		}
 	    }
+	    if(curf != null) curf.tick("dispose");
+	    if(curf != null) curf.fin();
 	} catch(BGL.BGLException e) {
 	    if(dumpbgl)
 		e.dump.dump();
@@ -365,6 +370,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	    ui.destroy();
 	ui = new UI(new Coord(getSize()), sess);
 	ui.root.guprof = uprof;
+	ui.root.grprof = rprof;
 	return(ui);
     }
 
