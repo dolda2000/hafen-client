@@ -38,6 +38,9 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     private static final boolean dumpbgl = true;
     public final boolean vsync = true;
     public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
+    private double framedur = 0.0;
+    private int fps;
+    private double uidle = 0.0, ridle = 0.0;
     private final Dispatcher ed;
     private GLEnvironment env = null;
     private UI ui;
@@ -258,6 +261,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	}
 	if(Config.dbtext) {
 	    int y = g.sz().y;
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0));
 	    Runtime rt = Runtime.getRuntime();
 	    long free = rt.freeMemory(), total = rt.totalMemory();
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
@@ -275,7 +279,11 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 		    while(this.env == null)
 			this.wait();
 		}
+		double then = Utils.rtime();
+		double[] frames = new double[128], waited = new double[frames.length];
+		int framep = 0;
 		while(true) {
+		    double fwaited = 0;
 		    GLEnvironment env = this.env;
 		    GLRender buf = env.render();
 		    Debug.cycle();
@@ -295,10 +303,12 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 		    }
 
 		    synchronized(curdraw) {
+			double now = Utils.rtime();
 			while(curdraw[0] != null)
 			    curdraw.wait();
+			fwaited += Utils.rtime() - now;
 		    }
-		    if(curf != null) curf.tick("wait");
+		    if(curf != null) curf.tick("dwait");
 		    display(buf);
 		    if(curf != null) curf.tick("draw");
 		    BufferBGL dispose = env.disposeall();
@@ -311,6 +321,35 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 			curdraw.notifyAll();
 		    }
 		    if(curf != null) curf.tick("aux");
+
+		    double now = Utils.rtime();
+		    double fd = this.framedur;
+		    if(then + fd > now) {
+			then += fd;
+			synchronized(ed) {
+			    long nanos = (long)((then - now) * 1e9);
+			    ed.wait(nanos / 1000000, (int)(nanos % 1000000));
+			}
+		    } else {
+			then = now;
+		    }
+		    fwaited += Utils.rtime() - now;
+		    frames[framep] = now;
+		    waited[framep] = fwaited;
+		    double twait = 0;
+		    for(int i = 0, ckf = framep; i < frames.length; i++) {
+			ckf = (ckf - 1 + frames.length) % frames.length;
+			twait += waited[ckf];
+			if(now - frames[ckf] > 1) {
+			    if(now > frames[ckf])
+				fps = (int)Math.round((i + 1) / (now - frames[ckf]));
+			    uidle = twait / (now - frames[ckf]);
+			    break;
+			}
+		    }
+		    framep = (framep + 1) % frames.length;
+		    if(curf != null) curf.tick("wait");
+
 		    if(curf != null) curf.fin();
 		}
 	    } finally {
