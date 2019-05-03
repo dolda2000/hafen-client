@@ -1061,6 +1061,20 @@ public class CharWnd extends Window {
 		return(cond);
 	    }
 
+	    private CharWnd cw = null;
+	    public int done() {
+		if(cw == null)
+		    cw = getparent(CharWnd.class);
+		if(cw == null)
+		    return(Quest.QST_PEND);
+		Quest qst;
+		if((qst = cw.cqst.get(id)) != null)
+		    return(qst.done);
+		if((qst = cw.dqst.get(id)) != null)
+		    return(qst.done);
+		return(Quest.QST_PEND);
+	    }
+
 	    public void refresh() {
 	    }
 
@@ -1146,6 +1160,7 @@ public class CharWnd extends Window {
 	    public interface QVInfo {
 		public String title();
 		public Condition[] conds();
+		public int done();
 	    }
 
 	    public QView(QVInfo info) {
@@ -1171,6 +1186,8 @@ public class CharWnd extends Window {
 		if(rtitle != null) {
 		    if(rootxlate(ui.mc).isect(Coord.z, rtitle.sz()))
 			g.chcolor(192, 192, 255, 255);
+		    else if(info.done() == QST_DISABLED)
+			g.chcolor(255, 128, 0, 255);
 		    g.image(rtitle, new Coord(3, y));
 		    g.chcolor();
 		    y += rtitle.sz().y + 5;
