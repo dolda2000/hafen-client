@@ -33,7 +33,7 @@ public class FrameInfo extends State {
     public static final Slot<FrameInfo> slot = new Slot<>(Slot.Type.SYS, FrameInfo.class);
     public static final Uniform u_time = new Uniform(Type.FLOAT, "time", p -> {
 	    FrameInfo inf = p.get(slot);
-	    return((inf == null) ? 0.0f : (float)inf.time);
+	    return((inf == null) ? 0.0f : (float)(inf.time % 3000.0));
 	}, slot);
     public final double time;
 

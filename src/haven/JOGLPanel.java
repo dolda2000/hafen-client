@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.awt.Toolkit;
 import javax.media.opengl.*;
 import javax.media.opengl.awt.*;
 import haven.render.*;
@@ -36,11 +37,15 @@ import haven.render.gl.*;
 public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     private static final boolean dumpbgl = true;
     public final boolean vsync = true;
+    public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
+    private double framedur = 0.0;
+    private int fps;
+    private double uidle = 0.0, ridle = 0.0;
+    private final Dispatcher ed;
     private GLEnvironment env = null;
     private UI ui;
     private Area shape;
     private Pipe base, wnd;
-    private final Dispatcher ed;
 
     private static GLCapabilities mkcaps() {
 	GLProfile prof = GLProfile.getDefault();
@@ -77,8 +82,12 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 		public void dispose(GLAutoDrawable wdg) {
 		}
 	    });
+	setFocusTraversalKeysEnabled(false);
 	ed = new Dispatcher();
 	ed.register(this);
+	newui(null);
+	if(Toolkit.getDefaultToolkit().getMaximumCursorColors() >= 256)
+	    cursmode = "awt";
     }
 
     private static class Frame {
@@ -108,6 +117,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
     }
 
     private void redraw(GL2 gl) {
+	CPUProfile.Frame curf = Config.profile ? rprof.new Frame() : null;
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
 	synchronized(this) {
@@ -125,6 +135,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	    curdraw[0] = null;
 	    curdraw.notifyAll();
 	}
+	if(curf != null) curf.tick("init");
 	try {
 	    if(f != null) {
 		if(f.env == env) {
@@ -133,11 +144,14 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 			gl = new TraceGL2(gl, System.err);
 		    }
 		    env.submit(gl, f.buf);
+		    if(curf != null) curf.tick("gl");
 		    f.dispose.run(gl);
 		} else {
 		    f.buf.dispose();
 		}
 	    }
+	    if(curf != null) curf.tick("dispose");
+	    if(curf != null) curf.fin();
 	} catch(BGL.BGLException e) {
 	    if(dumpbgl)
 		e.dump.dump();
@@ -171,6 +185,77 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	}
     }
 
+    private void drawtooltip(GOut g) {
+	Object tooltip;
+        try {
+	    synchronized(ui) {
+		tooltip = ui.root.tooltip(ui.mc, ui.root);
+	    }
+	} catch(Loading e) {
+	    tooltip = "...";
+	}
+	Tex tt = null;
+	if(tooltip != null) {
+	    if(tooltip instanceof Text) {
+		tt = ((Text)tooltip).tex();
+	    } else if(tooltip instanceof Tex) {
+		tt = (Tex)tooltip;
+	    } else if(tooltip instanceof Indir<?>) {
+		Indir<?> t = (Indir<?>)tooltip;
+		Object o = t.get();
+		if(o instanceof Tex)
+		    tt = (Tex)o;
+	    } else if(tooltip instanceof String) {
+		if(((String)tooltip).length() > 0)
+		    tt = (Text.render((String)tooltip)).tex();
+	    }
+	}
+	if(tt != null) {
+	    Coord sz = tt.sz();
+	    Coord pos = ui.mc.add(sz.inv());
+	    if(pos.x < 0)
+		pos.x = 0;
+	    if(pos.y < 0)
+		pos.y = 0;
+	    g.chcolor(244, 247, 21, 192);
+	    g.rect(pos.add(-3, -3), sz.add(6, 6));
+	    g.chcolor(35, 35, 35, 192);
+	    g.frect(pos.add(-2, -2), sz.add(4, 4));
+	    g.chcolor();
+	    g.image(tt, pos);
+	}
+	ui.lasttip = tooltip;
+    }
+
+    private String cursmode = "tex";
+    private Resource lastcursor = null;
+    private void drawcursor(GOut g) {
+	Resource curs = ui.root.getcurs(ui.mc);
+	if(cursmode == "awt") {
+	    if(curs != lastcursor) {
+		try {
+		    if(curs == null)
+			setCursor(null);
+		    else
+			setCursor(UIPanel.makeawtcurs(curs.layer(Resource.imgc).img, curs.layer(Resource.negc).cc));
+		} catch(Exception e) {
+		    cursmode = "tex";
+		}
+	    }
+	} else if(cursmode == "tex") {
+	    if(curs == null) {
+		if(lastcursor != null)
+		    setCursor(null);
+	    } else {
+		if(lastcursor == null)
+		    setCursor(emptycurs);
+		Coord dc = ui.mc.add(curs.layer(Resource.negc).cc.inv());
+		g.image(curs.layer(Resource.imgc), dc);
+	    }
+	}
+	lastcursor = curs;
+    }
+
     private void display(GLRender buf) {
 	buf.clear(wnd, FragColor.fragcol, FColor.BLACK);
 	Pipe state = wnd.copy();
@@ -181,10 +266,13 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	}
 	if(Config.dbtext) {
 	    int y = g.sz().y;
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0));
 	    Runtime rt = Runtime.getRuntime();
 	    long free = rt.freeMemory(), total = rt.totalMemory();
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
 	}
+	drawtooltip(g);
+	drawcursor(g);
     }
 
     public void run() {
@@ -196,25 +284,38 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 		    while(this.env == null)
 			this.wait();
 		}
+		double then = Utils.rtime();
+		double[] frames = new double[128], waited = new double[frames.length];
+		int framep = 0;
 		while(true) {
+		    double fwaited = 0;
 		    GLEnvironment env = this.env;
 		    GLRender buf = env.render();
 		    Debug.cycle();
+		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
 
 		    synchronized(ui) {
 			ed.dispatch(ui);
+			if(curf != null) curf.tick("dsp");
+
 			if(ui.sess != null) {
 			    ui.sess.glob.ctick();
 			    ui.sess.glob.gtick(buf);
 			}
+			if(curf != null) curf.tick("stick");
 			ui.tick();
+			if(curf != null) curf.tick("tick");
 		    }
 
 		    synchronized(curdraw) {
+			double now = Utils.rtime();
 			while(curdraw[0] != null)
 			    curdraw.wait();
+			fwaited += Utils.rtime() - now;
 		    }
+		    if(curf != null) curf.tick("dwait");
 		    display(buf);
+		    if(curf != null) curf.tick("draw");
 		    BufferBGL dispose = env.disposeall();
 		    synchronized(curdraw) {
 			if(curdraw[0] != null)
@@ -224,6 +325,37 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 			    curdraw[0].debug = true;
 			curdraw.notifyAll();
 		    }
+		    if(curf != null) curf.tick("aux");
+
+		    double now = Utils.rtime();
+		    double fd = this.framedur;
+		    if(then + fd > now) {
+			then += fd;
+			synchronized(ed) {
+			    long nanos = (long)((then - now) * 1e9);
+			    ed.wait(nanos / 1000000, (int)(nanos % 1000000));
+			}
+		    } else {
+			then = now;
+		    }
+		    fwaited += Utils.rtime() - now;
+		    frames[framep] = now;
+		    waited[framep] = fwaited;
+		    double twait = 0;
+		    for(int i = 0, ckf = framep; i < frames.length; i++) {
+			ckf = (ckf - 1 + frames.length) % frames.length;
+			twait += waited[ckf];
+			if(now - frames[ckf] > 1) {
+			    if(now > frames[ckf])
+				fps = (int)Math.round((i + 1) / (now - frames[ckf]));
+			    uidle = twait / (now - frames[ckf]);
+			    break;
+			}
+		    }
+		    framep = (framep + 1) % frames.length;
+		    if(curf != null) curf.tick("wait");
+
+		    if(curf != null) curf.fin();
 		}
 	    } finally {
 		drawthread.interrupt();
@@ -237,6 +369,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	if(ui != null)
 	    ui.destroy();
 	ui = new UI(new Coord(getSize()), sess);
+	ui.root.guprof = uprof;
+	ui.root.grprof = rprof;
 	return(ui);
     }
 

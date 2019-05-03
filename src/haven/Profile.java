@@ -28,6 +28,7 @@ package haven;
 
 import java.awt.Graphics2D;
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.util.*;
 
 public abstract class Profile {
@@ -82,12 +83,11 @@ public abstract class Profile {
 	return(hist[i - 1]);
     }
     
-    /* XXXRENDER
-    public void draw(TexIM tex, double scale) {
-	int h = tex.sz().y;
-	Graphics2D g = tex.graphics();
+    public Tex draw(int h, double scale) {
+	BufferedImage buf = TexI.mkbuf(new Coord(hist.length, h));
+	Graphics2D g = buf.createGraphics();
 	g.setBackground(new Color(0, 0, 0, 0));
-	g.clearRect(0, 0, tex.sz().x, h);
+	g.clearRect(0, 0, hist.length, h);
 	for(int i = 0; i < hist.length; i++) {
 	    Frame f = hist[i];
 	    if(f == null)
@@ -100,9 +100,9 @@ public abstract class Profile {
 		a = c;
 	    }
 	}
-	tex.update();
+	g.dispose();
+	return(new TexI(buf));
     }
-    */
 
     public void dump(java.io.PrintStream out) {
 	String[] parts = new String[0];

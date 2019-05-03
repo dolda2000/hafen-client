@@ -66,6 +66,11 @@ public abstract class PView extends Widget {
 	    return(wdg);
 	}
 
+	private static final ClassResolver<PView> ctxr = new ClassResolver<PView>()
+	    .add(Glob.class, wdg -> wdg.ui.sess.glob)
+	    .add(Session.class, wdg -> wdg.ui.sess);
+	public <T> T context(Class<T> cl) {return(ctxr.context(cl, wdg));}
+
 	public Pipe.Op basic(Object id) {return(wdg.basic(id));}
 	public void basic(Object id, Pipe.Op state) {wdg.basic(id, state);}
 
@@ -85,7 +90,7 @@ public abstract class PView extends Widget {
     }
 
     private Pipe.Op frame() {
-	return(Pipe.Op.compose(curconf(), new FrameInfo()));
+	return(Pipe.Op.compose(curconf(), new FrameInfo(), ((ui == null) || (ui.sess == null)) ? null : new Glob.FrameInfo(ui.sess.glob)));
     }
 
     private void reconf() {

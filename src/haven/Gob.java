@@ -660,24 +660,29 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	private Placed() {}
 
 	private class Placement implements Pipe.Op {
-	    final Pipe.Op flw, mods;
+	    final Pipe.Op flw, tilestate, mods;
 	    final Coord3f c;
 	    final double a;
 
 	    Placement() {
 		Following flw = Gob.this.getattr(Following.class);
 		Pipe.Op flwxf = (flw == null) ? null : flw.xf();
+		Pipe.Op tilestate = null;
 		if(flwxf == null) {
-		    Coord3f c = Gob.this.getc();
+		    Coord3f oc = Gob.this.getc();
+		    Coord3f c = new Coord3f(oc);
 		    c.y = -c.y;
 		    this.flw = null;
 		    this.c = c;
 		    this.a = Gob.this.a;
+		    Tiler tile = glob.map.tiler(glob.map.gettile(new Coord2d(oc).floor(MCache.tilesz)));
+		    tilestate = tile.drawstate(glob, c);
 		} else {
 		    this.flw = flwxf;
 		    this.c = null;
 		    this.a = Double.NaN;
 		}
+		this.tilestate = tilestate;
 		if(setupmods.isEmpty()) {
 		    this.mods = null;
 		} else {
@@ -699,6 +704,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 		    if(!(Utils.eq(this.c, that.c) && (this.a == that.a)))
 			return(false);
 		}
+		if(!Utils.eq(this.tilestate, that.tilestate))
+		    return(false);
 		if(!Utils.eq(this.mods, that.mods))
 		    return(false);
 		return(true);
@@ -708,18 +715,20 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 		return((o instanceof Placement) && equals((Placement)o));
 	    }
 
-	    Pipe.Op st = null;
+	    Pipe.Op gndst = null;
 	    public void apply(Pipe buf) {
-		if(st == null) {
-		    if(this.flw != null)
-			st = this.flw;
-		    else
-			st = Pipe.Op.compose(new Location(Transform.makexlate(new Matrix4f(), this.c), "gobx"),
-					     new Location(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-this.a), "gob"));
-		    if(mods != null)
-			st = Pipe.Op.compose(st, mods);
+		if(this.flw != null) {
+		    this.flw.apply(buf);
+		} else {
+		    if(gndst == null)
+			gndst = Pipe.Op.compose(new Location(Transform.makexlate(new Matrix4f(), this.c), "gobx"),
+						new Location(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-this.a), "gob"));
+		    gndst.apply(buf);
 		}
-		st.apply(buf);
+		if(tilestate != null)
+		    tilestate.apply(buf);
+		if(mods != null)
+		    mods.apply(buf);
 	    }
 	}
 

@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.Color;
 import haven.render.*;
+import haven.render.sl.*;
 
 public class Glob {
     public final OCache oc = new OCache(this);
@@ -287,5 +288,27 @@ public class Glob {
 		}
 	    }
 	}
+    }
+
+    public static class FrameInfo extends State {
+	public static final Slot<FrameInfo> slot = new Slot<>(Slot.Type.SYS, FrameInfo.class);
+	public static final Uniform u_globtime = new Uniform(Type.FLOAT, "globtime", p -> {
+		FrameInfo inf = p.get(slot);
+		return((inf == null) ? 0.0f : (float)(inf.globtime % 10000.0));
+	    }, slot);
+	public final double globtime;
+
+	public FrameInfo(Glob glob) {
+	    this.globtime = glob.globtime();
+	}
+
+	public ShaderMacro shader() {return(null);}
+	public void apply(Pipe p) {p.put(slot, this);}
+
+	public static Expression globtime() {
+	    return(u_globtime.ref());
+	}
+
+	public String toString() {return(String.format("#<globinfo @%fs>", globtime));}
     }
 }

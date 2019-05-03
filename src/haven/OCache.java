@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.Consumer;
 import haven.render.Render;
 
 public class OCache implements Iterable<Gob> {
@@ -107,12 +108,15 @@ public class OCache implements Iterable<Gob> {
 	    for(Gob g : this)
 		copy.add(g);
 	}
-	for(Gob g : copy) {
-	    /* XXX: Parallelize */
+	Consumer<Gob> task = g -> {
 	    synchronized(g) {
 		g.ctick(dt);
 	    }
-	}
+	};
+	if(!Config.par)
+	    copy.forEach(task);
+	else
+	    copy.parallelStream().forEach(task);
     }
 
     public void gtick(Render g) {
@@ -121,12 +125,15 @@ public class OCache implements Iterable<Gob> {
 	    for(Gob ob : this)
 		copy.add(ob);
 	}
-	for(Gob ob : copy) {
-	    /* XXX: Parallelize */
-	    synchronized(g) {
+	Consumer<Gob> task = ob -> {
+	    synchronized(ob) {
 		ob.gtick(g);
 	    }
-	}
+	};
+	if(!Config.par)
+	    copy.forEach(task);
+	else
+	    copy.parallelStream().forEach(task);
     }
 
     @SuppressWarnings("unchecked")

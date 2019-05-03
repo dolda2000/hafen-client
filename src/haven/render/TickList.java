@@ -27,6 +27,8 @@
 package haven.render;
 
 import java.util.*;
+import java.util.function.Consumer;
+import haven.Config;
 
 public class TickList implements RenderList<TickList.TickNode> {
     private final Map<Ticking, Entry> cur = new HashMap<>();
@@ -125,8 +127,7 @@ public class TickList implements RenderList<TickList.TickNode> {
 	synchronized(cur) {
 	    copy = new ArrayList<>(cur.values());
 	}
-	for(Entry ent : copy) {
-	    /* XXX: Parallelize */
+	Consumer<Entry> task = ent -> {
 	    if(ent.mon == null) {
 		ent.tick.autotick(dt);
 	    } else {
@@ -134,7 +135,11 @@ public class TickList implements RenderList<TickList.TickNode> {
 		    ent.tick.autotick(dt);
 		}
 	    }
-	}
+	};
+	if(!Config.par)
+	    copy.forEach(task);
+	else
+	    copy.parallelStream().forEach(task);
     }
 
     public void gtick(Render g) {
@@ -142,8 +147,7 @@ public class TickList implements RenderList<TickList.TickNode> {
 	synchronized(cur) {
 	    copy = new ArrayList<>(cur.values());
 	}
-	for(Entry ent : copy) {
-	    /* XXX: Parallelize */
+	Consumer<Entry> task = ent -> {
 	    if(ent.mon == null) {
 		ent.tick.autogtick(g);
 	    } else {
@@ -151,7 +155,11 @@ public class TickList implements RenderList<TickList.TickNode> {
 		    ent.tick.autogtick(g);
 		}
 	    }
-	}
+	};
+	if(Config.par)
+	    copy.forEach(task);
+	else
+	    copy.parallelStream().forEach(task);
     }
 
     public static class Monitor extends State {

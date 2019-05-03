@@ -317,8 +317,8 @@ public class WaterTile extends Tiler {
     public static final BottomFog waterfog = new BottomFog();
     private static final Pipe.Op botmat = Pipe.Op.compose(waterfog, new States.DepthBias(4, 4));
 
-    /* XXXRENDER
     public static final Pipe.Op obfog = new State.StandAlone(State.Slot.Type.DRAW) {
+	    /* XXXRENDER
 	    {
 		slot.instanced = new GLState.Instancer<StandAlone>() {
 			public StandAlone inststate(StandAlone[] states) {
@@ -326,20 +326,18 @@ public class WaterTile extends Tiler {
 			}
 		    };
 	    }
+	    */
 	final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
 		protected Expression root(VertexContext vctx) {
-		    return(sub(pick(MiscLib.maploc.ref(), "z"), pick(vctx.mapv.depref(), "z")));
+		    return(sub(pick(MapView.maploc.ref(), "z"), pick(Homo3D.get(vctx.prog).mapv.depref(), "z")));
 		}
 	    };
 
 	final ShaderMacro shader = prog -> {
 	    FragColor.fragcol(prog.fctx).mod(in -> BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))), 1000);
 	};
-	public void apply(GOut g) {}
-	public void unapply(GOut g) {}
 	public ShaderMacro shader() {return(shader);}
     };
-    */
 
     @ResName("water")
     public static class Fac implements Factory {
@@ -402,11 +400,12 @@ public class WaterTile extends Tiler {
 	}
     }
 
-    /* XXXRENDER
-    public GLState drawstate(Glob glob, GLConfig cfg, Coord3f c) {
+    public Pipe.Op drawstate(Glob glob, Coord3f c) {
+	/* XXXRENDER
 	if(cfg.pref.wsurf.val)
 	    return(obfog);
 	return(null);
+	*/
+	return(obfog);
     }
-    */
 }

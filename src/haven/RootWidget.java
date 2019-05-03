@@ -52,9 +52,11 @@ public class RootWidget extends ConsoleHost {
 			add(new Profwnd(gi.map.prof, "Map profile"), new Coord(100, 250));
 		    */
 		}
+		/* XXXRENDER
 		if(Config.profilegpu) {
 		    add(new Profwnd(ggprof, "GPU profile"), new Coord(450, 250));
 		}
+		*/
 	    } else if(key == ':') {
 		entercmd();
 	    } else if(key != 0) {
