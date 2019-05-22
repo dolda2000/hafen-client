@@ -228,12 +228,15 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 			gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, data.w, data.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[0].data));
 		    else
 			gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, data.w, data.h, 0, pfmt, pnum, null);
+		    long mem = data.ifmt.size() * data.w * data.h;
 		    for(int i = 1; i < pixels.length; i++) {
 			if(pixels[i] != null) {
 			    Image<?> img = data.image(i);
 			    gl.glTexImage2D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
+			    mem += data.ifmt.size() * img.w * img.h;
 			}
 		    }
+		    setmem(GLEnvironment.MemStats.TEXTURES, mem);
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
@@ -300,15 +303,19 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    BGL gl = g.gl();
 		    gl.glActiveTexture(GL.GL_TEXTURE0);
 		    bind(gl);
+		    long mem = 0;
 		    for(int i = 0; i < pixels.length; i++) {
 			CubeImage img = images[i];
 			int tgt = texface(img.face);
 			if(pixels[i] != null) {
 			    gl.glTexImage2D(tgt, img.level, ifmt, img.w, img.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
+			    mem += data.ifmt.size() * img.w * img.h;
 			} else if(img.level == 0) {
 			    gl.glTexImage2D(tgt, 0, ifmt, data.w, data.h, 0, pfmt, pnum, null);
+			    mem += data.ifmt.size() * data.w * data.h;
 			}
 		    }
+		    setmem(GLEnvironment.MemStats.TEXTURES, mem);
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});

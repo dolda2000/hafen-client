@@ -33,6 +33,8 @@ import javax.media.opengl.*;
 public abstract class GLObject implements Disposable {
     public final GLEnvironment env;
     private boolean del = false;
+    private GLEnvironment.MemStats pool = null;
+    private long mem;
 
     public GLObject(GLEnvironment env) {
 	this.env = env;
@@ -47,6 +49,7 @@ public abstract class GLObject implements Disposable {
 		return;
 	    env.disposed.add(this);
 	    del = true;
+	    setmem(null, 0);
 	}
     }
 
@@ -54,8 +57,25 @@ public abstract class GLObject implements Disposable {
 	dispose();
     }
 
-    public void ckstate(int st, int ex) {
+    protected void ckstate(int st, int ex) {
 	if(st != ex)
 	    throw(new IllegalStateException(String.format("unexpected state %d, expected %d, for %s", st, ex, this)));
+    }
+
+    protected void setmem(GLEnvironment.MemStats pool, long mem) {
+	synchronized(env.stats_obj) {
+	    if(this.pool != null) {
+		env.stats_obj[this.pool.ordinal()]--;
+		env.stats_mem[this.pool.ordinal()] -= this.mem;
+		this.pool = null;
+		this.mem = 0;
+	    }
+	    if(pool != null) {
+		env.stats_obj[pool.ordinal()]++;
+		env.stats_mem[pool.ordinal()] += mem;
+		this.pool = pool;
+		this.mem = mem;
+	    }
+	}
     }
 }

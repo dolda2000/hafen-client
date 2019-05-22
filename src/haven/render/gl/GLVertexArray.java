@@ -46,6 +46,7 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	gl.glGenVertexArrays(1, buf, 0);
 	this.id = buf[0];
 	state = 1;
+	setmem(GLEnvironment.MemStats.VAOS, 0);
     }
 
     protected void delete(GL2 gl) {
