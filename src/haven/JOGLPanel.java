@@ -38,7 +38,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private static final boolean dumpbgl = true;
     public final boolean vsync = true;
     public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
-    private double framedur = 0.0;
+    private double framedur_fg = 0.0, framedur_bg = 0.2;
+    private boolean bgmode = false;
     private int fps;
     private double uidle = 0.0, ridle = 0.0;
     private final Dispatcher ed;
@@ -339,7 +340,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    if(curf != null) curf.tick("aux");
 
 		    double now = Utils.rtime();
-		    double fd = this.framedur;
+		    double fd = bgmode ? this.framedur_bg : this.framedur_fg;
 		    if(then + fd > now) {
 			then += fd;
 			synchronized(ed) {
@@ -389,10 +390,29 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     }
 
     public void background(boolean bg) {
+	bgmode = bg;
     }
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
+	cmdmap.put("hz", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    int hz = Integer.parseInt(args[1]);
+		    if(hz > 0)
+			framedur_fg = 1.0 / hz;
+		    else
+			framedur_fg = 0.0;
+		}
+	    });
+	cmdmap.put("bghz", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    int hz = Integer.parseInt(args[1]);
+		    if(hz > 0)
+			framedur_bg = 1.0 / hz;
+		    else
+			framedur_bg = 0.0;
+		}
+	    });
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);
