@@ -31,4 +31,6 @@ import haven.Disposable;
 public interface DrawList extends RenderList<Rendered>, Disposable {
     public void draw(Render out);
     public boolean compatible(Environment env);
+
+    public default String stats() {return("");}
 }

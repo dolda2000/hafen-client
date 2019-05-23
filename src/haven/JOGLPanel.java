@@ -256,6 +256,22 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	lastcursor = curs;
     }
 
+    @SuppressWarnings("deprecation")
+    private void drawstats(GOut g, GLRender buf) {
+	int y = g.sz().y;
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0));
+	Runtime rt = Runtime.getRuntime();
+	long free = rt.freeMemory(), total = rt.totalMemory();
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "State slots: %d", State.Slot.numslots());
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "GL progs: %d", buf.env.numprogs());
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "V-Mem: %s", buf.env.memstats());
+	MapView map = ui.root.findchild(MapView.class);
+	if(map != null) {
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mapview: Tree %s, Draw %s", map.tree.stats(), map.back.stats());
+	}
+    }
+
     private void display(GLRender buf) {
 	buf.clear(wnd, FragColor.fragcol, FColor.BLACK);
 	Pipe state = wnd.copy();
@@ -264,16 +280,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	synchronized(ui) {
 	    ui.draw(g);
 	}
-	if(Config.dbtext) {
-	    int y = g.sz().y;
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0));
-	    Runtime rt = Runtime.getRuntime();
-	    long free = rt.freeMemory(), total = rt.totalMemory();
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "State slots: %d", State.Slot.numslots());
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "GL progs: %d", buf.env.numprogs());
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "V-Mem: %s", buf.env.memstats());
-	}
+	if(Config.dbtext)
+	    drawstats(g, buf);
 	drawtooltip(g);
 	drawcursor(g);
     }

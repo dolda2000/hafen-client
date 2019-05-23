@@ -985,4 +985,8 @@ public class GLDrawList implements DrawList {
     String treedump() {
 	return(treedump(root));
     }
+
+    public String stats() {
+	return(String.format("%,d", btsubsize(root)));
+    }
 }

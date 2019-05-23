@@ -41,8 +41,8 @@ public abstract class PView extends Widget {
     private final Light.LightList lights = new Light.LightList();
     private final ScreenList list2d = new ScreenList();
     private final TickList ticklist = new TickList();
+    protected DrawList back = null;
     private Sampler2D fragsamp;
-    private DrawList back = null;
 
     public PView(Coord sz) {
 	super(sz);

@@ -36,9 +36,11 @@ public class RenderTree implements RenderList.Adapter {
     private final Lock lock = new ReentrantLock();
     private final TreeSlot root;
     private final List<Client<?>> clients = new ArrayList<>();
+    private int nslots, nleaves;
 
     public RenderTree() {
 	root = new TreeSlot(this, null, null);
+	nslots = nleaves = 1;
     }
 
     public Locked lock() {
@@ -334,6 +336,10 @@ public class RenderTree implements RenderList.Adapter {
 	    int nidx = nchildren++;
 	    children[nidx] = ch;
 	    ch.pidx = nidx;
+
+	    tree.nslots++;
+	    if(nchildren > 1)
+		tree.nleaves++;
 	}
 
 	private void removech(TreeSlot ch) {
@@ -347,6 +353,10 @@ public class RenderTree implements RenderList.Adapter {
 	    nchildren--;
 	    ch.pidx = -1;
 	    ch.setdstate(null);
+
+	    tree.nslots--;
+	    if(nchildren > 0)
+		tree.nleaves--;
 	}
 
 	public Iterable<TreeSlot> children() {
@@ -787,4 +797,8 @@ public class RenderTree implements RenderList.Adapter {
     }
 
     public void dump() {dump(root, 0);}
+
+    public String stats() {
+	return(String.format("%,d L / %,d N", nleaves, nslots));
+    }
 }
