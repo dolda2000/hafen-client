@@ -34,7 +34,7 @@ import haven.render.*;
 import haven.render.States;
 import haven.render.gl.*;
 
-public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
+public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Directory {
     private static final boolean dumpbgl = true;
     public final boolean vsync = true;
     public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
@@ -382,9 +382,19 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	ui = new UI(new Coord(getSize()), sess);
 	ui.root.guprof = uprof;
 	ui.root.grprof = rprof;
+	if(getParent() instanceof Console.Directory)
+	    ui.cons.add((Console.Directory)getParent());
+	ui.cons.add(this);
 	return(ui);
     }
 
     public void background(boolean bg) {
+    }
+
+    private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
+    {
+    }
+    public Map<String, Console.Command> findcmds() {
+	return(cmdmap);
     }
 }
