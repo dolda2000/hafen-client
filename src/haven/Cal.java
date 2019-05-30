@@ -32,13 +32,20 @@ import java.awt.image.BufferedImage;
 
 public class Cal extends Widget {
     public static final double hbr = 20;
-    static Tex bg = Resource.loadtex("gfx/hud/calendar/glass");
-    static Tex dlnd = Resource.loadtex("gfx/hud/calendar/dayscape");
-    static Tex dsky = Resource.loadtex("gfx/hud/calendar/daysky");
-    static Tex nlnd = Resource.loadtex("gfx/hud/calendar/nightscape");
-    static Tex nsky = Resource.loadtex("gfx/hud/calendar/nightsky");
-    static Resource.Anim sun = Resource.local().loadwait("gfx/hud/calendar/sun").layer(Resource.animc);
-    static Resource.Anim moon = Resource.local().loadwait("gfx/hud/calendar/moon").layer(Resource.animc);
+    static final Tex bg = Resource.loadtex("gfx/hud/calendar/glass");
+    static final Tex[] dlnd = new Tex[4];
+    static final Tex[] nlnd = new Tex[4];
+    static final Tex dsky = Resource.loadtex("gfx/hud/calendar/daysky");
+    static final Tex nsky = Resource.loadtex("gfx/hud/calendar/nightsky");
+    static final Resource.Anim sun = Resource.local().loadwait("gfx/hud/calendar/sun").layer(Resource.animc);
+    static final Resource.Anim moon = Resource.local().loadwait("gfx/hud/calendar/moon").layer(Resource.animc);
+
+    static {
+	for(int i = 0; i < dlnd.length; i++) {
+	    dlnd[i] = Resource.loadtex(String.format("gfx/hud/calendar/dayscape-%d", i));
+	    nlnd[i] = Resource.loadtex(String.format("gfx/hud/calendar/nightscape-%d", i));
+	}
+    }
 
     public Cal() {
 	super(bg.sz());
@@ -57,7 +64,7 @@ public class Cal extends Widget {
 	g.image(moon, mc);
 	g.chcolor();
 	g.image(sun, sc);
-	g.image(a.night?nlnd:dlnd, Coord.z);
+	g.image((a.night ? nlnd : dlnd)[a.is], Coord.z);
 	g.image(bg, Coord.z);
     }
 }
