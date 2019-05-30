@@ -69,6 +69,10 @@ public abstract class State implements Pipe.Op {
 	public String toString() {
 	    return(String.format("#<slot %s/%s (%d)>", type, scl, id));
 	}
+
+	public static int numslots() {
+	    return(slots.idlist.length);
+	}
     }
 
     public abstract ShaderMacro shader();

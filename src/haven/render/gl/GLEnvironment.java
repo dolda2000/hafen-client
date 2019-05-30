@@ -45,6 +45,12 @@ public class GLEnvironment implements Environment {
     private GLRender prep = null;
     private Applier curstate = new Applier(this);
 
+    static enum MemStats {
+	INDICES, VERTICES, TEXTURES, VAOS, FBOS
+    }
+    final int[] stats_obj = new int[MemStats.values().length];
+    final long[] stats_mem = new long[MemStats.values().length];
+
     public GLEnvironment(GL2 initgl, GLContext ctx, Area wnd) {
 	this.ctx = ctx;
 	this.wnd = wnd;
@@ -174,6 +180,7 @@ public class GLEnvironment implements Environment {
 				Vao0State.apply(gl, g.state, jdret);
 				int usage = (buf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
 				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), usage);
+				jdret.setmem(MemStats.INDICES, buf.size());
 			    });
 		    }
 		}
@@ -208,6 +215,7 @@ public class GLEnvironment implements Environment {
 				VboState.apply(gl, g.state, jdret);
 				int usage = (buf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
 				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), usage);
+				jdret.setmem(MemStats.VERTICES, buf.size());
 			    });
 		    }
 		}
@@ -429,4 +437,14 @@ public class GLEnvironment implements Environment {
     }
 
     public int numprogs() {return(nprog);}
+
+    public String memstats() {
+	StringBuilder buf = new StringBuilder();
+	for(int i = 0; i < MemStats.values().length; i++) {
+	    if(i > 0)
+		buf.append(" / ");
+	    buf.append(String.format("%,d (%,d)", stats_mem[i], stats_obj[i]));
+	}
+	return(buf.toString());
+    }
 }

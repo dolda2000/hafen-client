@@ -34,11 +34,12 @@ import haven.render.*;
 import haven.render.States;
 import haven.render.gl.*;
 
-public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
+public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Directory {
     private static final boolean dumpbgl = true;
     public final boolean vsync = true;
     public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
-    private double framedur = 0.0;
+    private double framedur_fg = 0.0, framedur_bg = 0.2;
+    private boolean bgmode = false;
     private int fps;
     private double uidle = 0.0, ridle = 0.0;
     private final Dispatcher ed;
@@ -256,6 +257,22 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	lastcursor = curs;
     }
 
+    @SuppressWarnings("deprecation")
+    private void drawstats(GOut g, GLRender buf) {
+	int y = g.sz().y;
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0));
+	Runtime rt = Runtime.getRuntime();
+	long free = rt.freeMemory(), total = rt.totalMemory();
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "State slots: %d", State.Slot.numslots());
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "GL progs: %d", buf.env.numprogs());
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "V-Mem: %s", buf.env.memstats());
+	MapView map = ui.root.findchild(MapView.class);
+	if(map != null) {
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mapview: Tree %s, Draw %s", map.tree.stats(), map.back.stats());
+	}
+    }
+
     private void display(GLRender buf) {
 	buf.clear(wnd, FragColor.fragcol, FColor.BLACK);
 	Pipe state = wnd.copy();
@@ -264,13 +281,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	synchronized(ui) {
 	    ui.draw(g);
 	}
-	if(Config.dbtext) {
-	    int y = g.sz().y;
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0));
-	    Runtime rt = Runtime.getRuntime();
-	    long free = rt.freeMemory(), total = rt.totalMemory();
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
-	}
+	if(Config.dbtext)
+	    drawstats(g, buf);
 	drawtooltip(g);
 	drawcursor(g);
     }
@@ -328,7 +340,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 		    if(curf != null) curf.tick("aux");
 
 		    double now = Utils.rtime();
-		    double fd = this.framedur;
+		    double fd = bgmode ? this.framedur_bg : this.framedur_fg;
 		    if(then + fd > now) {
 			then += fd;
 			synchronized(ed) {
@@ -371,9 +383,38 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel {
 	ui = new UI(new Coord(getSize()), sess);
 	ui.root.guprof = uprof;
 	ui.root.grprof = rprof;
+	if(getParent() instanceof Console.Directory)
+	    ui.cons.add((Console.Directory)getParent());
+	ui.cons.add(this);
 	return(ui);
     }
 
     public void background(boolean bg) {
+	bgmode = bg;
+    }
+
+    private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
+    {
+	cmdmap.put("hz", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    int hz = Integer.parseInt(args[1]);
+		    if(hz > 0)
+			framedur_fg = 1.0 / hz;
+		    else
+			framedur_fg = 0.0;
+		}
+	    });
+	cmdmap.put("bghz", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    int hz = Integer.parseInt(args[1]);
+		    if(hz > 0)
+			framedur_bg = 1.0 / hz;
+		    else
+			framedur_bg = 0.0;
+		}
+	    });
+    }
+    public Map<String, Console.Command> findcmds() {
+	return(cmdmap);
     }
 }

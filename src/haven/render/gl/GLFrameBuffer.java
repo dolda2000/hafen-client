@@ -71,6 +71,7 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	gl.glGenFramebuffers(1, buf, 0);
 	GLException.checkfor(gl);
 	this.id = buf[0];
+	setmem(GLEnvironment.MemStats.FBOS, 0);
     }
 	
     protected void delete(GL2 gl) {
