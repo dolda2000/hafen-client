@@ -1557,7 +1557,7 @@ public class Utils {
 	return(dst);
     }
 
-    public static final Comparator<Object> idcmd = new Comparator<Object>() {
+    public static final Comparator<Object> idcmp = new Comparator<Object>() {
 	int eid = 0;
 	final Map<Ref, Long> emerg = new HashMap<Ref, Long>();
 	final ReferenceQueue<Object> cleanq = new ReferenceQueue<Object>();
