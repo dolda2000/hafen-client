@@ -440,10 +440,11 @@ public class GLEnvironment implements Environment {
 
     public String memstats() {
 	StringBuilder buf = new StringBuilder();
-	for(int i = 0; i < MemStats.values().length; i++) {
+	MemStats[] sta = MemStats.values();
+	for(int i = 0; i < sta.length; i++) {
 	    if(i > 0)
 		buf.append(" / ");
-	    buf.append(String.format("%,d (%,d)", stats_mem[i], stats_obj[i]));
+	    buf.append(String.format("%c %,d (%,d)", sta[i].name().charAt(0), stats_mem[i], stats_obj[i]));
 	}
 	return(buf.toString());
     }

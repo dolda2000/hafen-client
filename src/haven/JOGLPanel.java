@@ -259,7 +259,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     @SuppressWarnings("deprecation")
     private void drawstats(GOut g, GLRender buf) {
-	int y = g.sz().y;
+	int y = g.sz().y - 190;
 	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0));
 	Runtime rt = Runtime.getRuntime();
 	long free = rt.freeMemory(), total = rt.totalMemory();
@@ -268,7 +268,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "GL progs: %d", buf.env.numprogs());
 	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "V-Mem: %s", buf.env.memstats());
 	MapView map = ui.root.findchild(MapView.class);
-	if(map != null) {
+	if((map != null) && (map.back != null)) {
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mapview: Tree %s, Draw %s", map.tree.stats(), map.back.stats());
 	}
     }
