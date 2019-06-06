@@ -99,6 +99,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	BufferBGL dispose;
 	boolean debug;
 	long prestart;
+	CPUProfile.Frame pf = null;
 
 	Frame(GLRender buf, GLEnvironment env, BufferBGL dispose) {
 	    this.buf = buf;
@@ -122,7 +123,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private void redraw(GL2 gl) {
 	long dst = System.nanoTime();
-	CPUProfile.Frame curf = Config.profile ? rprof.new Frame() : null;
+	CPUProfile.Frame curf = null;
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
 	synchronized(this) {
@@ -140,10 +141,10 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    curdraw[0] = null;
 	    curdraw.notifyAll();
 	}
-	if(curf != null) curf.tick("init");
 	try {
 	    if(f != null) {
-		curf.add("waited", dst - f.prestart);
+		curf = f.pf;
+		if(curf != null) curf.tick("init");
 		if(f.env == env) {
 		    if(f.debug) {
 			System.err.print("\n-----\n\n");
@@ -197,10 +198,13 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		notifyAll();
 	    }
 	    while(true) {
+		CPUProfile.Frame curf = Config.profile ? rprof.new Frame() : null;
 		long wst = System.nanoTime();
 		synchronized(curdraw) {
 		    while(curdraw[0] == null)
 			curdraw.wait();
+		    if(curf != null) curf.tick("waited");
+		    curdraw[0].pf = curf;
 		    curdraw[0].prestart = wst;
 		}
 		uglyjoglhack();
