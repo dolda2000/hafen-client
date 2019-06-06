@@ -156,7 +156,7 @@ public class TickList implements RenderList<TickList.TickNode> {
 		}
 	    }
 	};
-	if(Config.par)
+	if(!Config.par)
 	    copy.forEach(task);
 	else
 	    copy.parallelStream().forEach(task);
