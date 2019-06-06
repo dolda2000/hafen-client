@@ -98,6 +98,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	GLEnvironment env;
 	BufferBGL dispose;
 	boolean debug;
+	long prestart;
 
 	Frame(GLRender buf, GLEnvironment env, BufferBGL dispose) {
 	    this.buf = buf;
@@ -120,6 +121,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     }
 
     private void redraw(GL2 gl) {
+	long dst = System.nanoTime();
 	CPUProfile.Frame curf = Config.profile ? rprof.new Frame() : null;
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
@@ -141,6 +143,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	if(curf != null) curf.tick("init");
 	try {
 	    if(f != null) {
+		curf.add("waited", dst - f.prestart);
 		if(f.env == env) {
 		    if(f.debug) {
 			System.err.print("\n-----\n\n");
@@ -154,10 +157,18 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		}
 	    }
 	    if(curf != null) curf.tick("dispose");
-	    if(iswap != aswap)
-		gl.setSwapInterval((aswap = iswap) ? 1 : 0);
-	    swapBuffers();
-	    if(curf != null) curf.tick("swap");
+	    {
+		long swst = System.nanoTime();
+		if(iswap != aswap)
+		    gl.setSwapInterval((aswap = iswap) ? 1 : 0);
+		swapBuffers();
+		if(curf != null) curf.tick("swap");
+		long end = System.nanoTime();
+		if(f != null) {
+		    double fridle = ((double)((dst - f.prestart) + (end - swst)) / (double)(end - f.prestart));
+		    ridle = (ridle * 0.95) + (fridle * 0.05);
+		}
+	    }
 	    if(curf != null) curf.fin();
 	} catch(BGL.BGLException e) {
 	    if(dumpbgl)
@@ -186,9 +197,11 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		notifyAll();
 	    }
 	    while(true) {
+		long wst = System.nanoTime();
 		synchronized(curdraw) {
 		    while(curdraw[0] == null)
 			curdraw.wait();
+		    curdraw[0].prestart = wst;
 		}
 		uglyjoglhack();
 	    }
