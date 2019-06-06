@@ -101,7 +101,7 @@ public abstract class Profile {
 	    }
 	}
 	g.dispose();
-	return(new TexI(buf));
+	return(new TexI(buf, false));
     }
 
     public void dump(java.io.PrintStream out) {
