@@ -180,6 +180,10 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		notifyAll();
 	    }
 	    while(true) {
+		synchronized(curdraw) {
+		    while(curdraw[0] == null)
+			curdraw.wait();
+		}
 		uglyjoglhack();
 	    }
 	} catch(InterruptedException e) {
