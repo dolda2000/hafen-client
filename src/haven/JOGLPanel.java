@@ -40,6 +40,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
     private double framedur_fg = 0.0, framedur_bg = 0.2;
     private boolean bgmode = false;
+    private boolean iswap = true, aswap;
     private int fps;
     private double uidle = 0.0, ridle = 0.0;
     private final Dispatcher ed;
@@ -110,7 +111,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private void initgl(GL2 gl) {
 	Collection<String> exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	GLCapabilitiesImmutable caps = getChosenGLCapabilities();
-	gl.setSwapInterval(1);
+	gl.setSwapInterval((aswap = iswap) ? 1 : 0);
 	if(exts.contains("GL_ARB_multisample") && caps.getSampleBuffers()) {
 	    /* Apparently, having sample buffers in the config enables
 	     * multisampling by default on some systems. */
@@ -153,6 +154,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		}
 	    }
 	    if(curf != null) curf.tick("dispose");
+	    if(iswap != aswap)
+		gl.setSwapInterval((aswap = iswap) ? 1 : 0);
 	    swapBuffers();
 	    if(curf != null) curf.tick("swap");
 	    if(curf != null) curf.fin();
@@ -405,23 +408,22 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
-	cmdmap.put("hz", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    int hz = Integer.parseInt(args[1]);
-		    if(hz > 0)
-			framedur_fg = 1.0 / hz;
-		    else
-			framedur_fg = 0.0;
-		}
+	cmdmap.put("hz", (cons, args) -> {
+		int hz = Integer.parseInt(args[1]);
+		if(hz > 0)
+		    framedur_fg = 1.0 / hz;
+		else
+		    framedur_fg = 0.0;
 	    });
-	cmdmap.put("bghz", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    int hz = Integer.parseInt(args[1]);
-		    if(hz > 0)
-			framedur_bg = 1.0 / hz;
-		    else
-			framedur_bg = 0.0;
-		}
+	cmdmap.put("bghz", (cons, args) -> {
+		int hz = Integer.parseInt(args[1]);
+		if(hz > 0)
+		    framedur_bg = 1.0 / hz;
+		else
+		    framedur_bg = 0.0;
+	    });
+	cmdmap.put("vsync", (cons, args) -> {
+		iswap = Utils.parsebool(args[1]);
 	    });
     }
     public Map<String, Console.Command> findcmds() {
