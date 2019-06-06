@@ -65,6 +65,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	base.prep(new FragColor<>(FragColor.defcolor)).prep(new DepthBuffer<>(DepthBuffer.defdepth));
 	base.prep(new States.Blending());
 	setSize(sz.x, sz.y);
+	setAutoSwapBufferMode(false);
 	addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
 		    redraw(d.getGL().getGL2());
@@ -152,6 +153,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		}
 	    }
 	    if(curf != null) curf.tick("dispose");
+	    swapBuffers();
+	    if(curf != null) curf.tick("swap");
 	    if(curf != null) curf.fin();
 	} catch(BGL.BGLException e) {
 	    if(dumpbgl)
