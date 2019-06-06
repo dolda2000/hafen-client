@@ -357,15 +357,18 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    fwaited += Utils.rtime() - now;
 		    frames[framep] = now;
 		    waited[framep] = fwaited;
-		    double twait = 0;
-		    for(int i = 0, ckf = framep; i < frames.length; i++) {
-			ckf = (ckf - 1 + frames.length) % frames.length;
-			twait += waited[ckf];
-			if(now - frames[ckf] > 1) {
-			    if(now > frames[ckf])
-				fps = (int)Math.round((i + 1) / (now - frames[ckf]));
+		    {
+			double twait = 0;
+			int i = 0, ckf = framep;
+			for(; i < frames.length - 1; i++) {
+			    ckf = (ckf - 1 + frames.length) % frames.length;
+			    twait += waited[ckf];
+			    if(now - frames[ckf] > 1)
+				break;
+			}
+			if(now > frames[ckf]) {
+			    fps = (int)Math.round((i + 1) / (now - frames[ckf]));
 			    uidle = twait / (now - frames[ckf]);
-			    break;
 			}
 		    }
 		    framep = (framep + 1) % frames.length;
