@@ -30,6 +30,7 @@ import java.util.*;
 import java.nio.*;
 import java.lang.ref.*;
 import haven.render.*;
+import haven.render.VertexArray.Layout;
 
 public class MorphedMesh extends FastMesh implements TickList.TickNode, TickList.Ticking {
     private static Map<Morpher.Factory, Collection<MorphedBuf>> bufs = new CacheMap<Morpher.Factory, Collection<MorphedBuf>>(CacheMap.RefType.WEAK);
@@ -95,14 +96,16 @@ public class MorphedMesh extends FastMesh implements TickList.TickNode, TickList
     public static class MorphedBuf extends VertexBuf {
 	public final VertexBuf from;
 	private final Morpher morph;
-	private final Pair[] parrays, darrays;
+	private final Pair[] parrays, darrays, map;
 
 	private static class Pair {
 	    final FloatData o, n;
-	    Pair(FloatData o, FloatData n) {this.o = o; this.n = n;}
+	    final MorphType type;
+	    VertexArray.Buffer buf;
+	    Pair(FloatData o, FloatData n, MorphType type) {this.o = o; this.n = n; this.type = type;}
 	}
 
-	private static AttribData[] ohBitterSweetJavaDays(VertexBuf from, Collection<Pair> pos, Collection<Pair> dir) {
+	private static AttribData[] ohBitterSweetJavaDays(VertexBuf from, Collection<Pair> pos, Collection<Pair> dir, Pair[] map) {
 	    AttribData[] ret = new AttribData[from.bufs.length];
 	    for(int i = 0; i < from.bufs.length; i++) {
 		MorphType type = (from.bufs[i] instanceof MorphData) ? ((MorphData)from.bufs[i]).morphtype() : MorphType.NONE;
@@ -111,27 +114,78 @@ public class MorphedMesh extends FastMesh implements TickList.TickNode, TickList
 		} else {
 		    ret[i] = ((MorphData)from.bufs[i]).dup();
 		    if(type == MorphType.POS) {
-			pos.add(new Pair((FloatData)from.bufs[i], (FloatData)ret[i]));
-			// XXXRENDER ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
+			pos.add(map[i] = new Pair((FloatData)from.bufs[i], (FloatData)ret[i], type));
 		    } else if(type == MorphType.DIR) {
-			dir.add(new Pair((FloatData)from.bufs[i], (FloatData)ret[i]));
-			// XXXRENDER ret[i].vbomode(javax.media.opengl.GL.GL_DYNAMIC_DRAW);
+			dir.add(map[i] = new Pair((FloatData)from.bufs[i], (FloatData)ret[i], type));
 		    }
 		}
 	    }
 	    return(ret);
 	}
 
-	private MorphedBuf(VertexBuf buf, Morpher.Factory morph, Collection<Pair> pos, Collection<Pair> dir) {
-	    super(ohBitterSweetJavaDays(buf, pos, dir));
+	private MorphedBuf(VertexBuf buf, Morpher.Factory morph, Collection<Pair> pos, Collection<Pair> dir, Pair[] map) {
+	    super(ohBitterSweetJavaDays(buf, pos, dir, map));
 	    this.from = buf;
 	    this.morph = morph.create(this);
 	    this.parrays = pos.toArray(new Pair[0]);
 	    this.darrays = dir.toArray(new Pair[0]);
+	    this.map = map;
 	}
 
 	private MorphedBuf(VertexBuf buf, Morpher.Factory morph) {
-	    this(buf, morph, new LinkedList<Pair>(), new LinkedList<Pair>());
+	    this(buf, morph, new LinkedList<Pair>(), new LinkedList<Pair>(), new Pair[buf.bufs.length]);
+	}
+
+	protected VertexArray fmtdata() {
+	    VertexArray pdata = from.data();
+	    Layout pfmt = pdata.fmt;
+	    Layout.Input[] fi = pfmt.inputs;
+	    Layout.Input[] ni = new Layout.Input[fi.length];
+	    VertexArray.Buffer[] bufs = new VertexArray.Buffer[pdata.bufs.length + parrays.length + darrays.length];
+	    int an = pdata.bufs.length;
+	    for(int i = 0; i < an; i++)
+		bufs[i] = pdata.bufs[i];
+	    for(int i = 0; i < fi.length; i++) {
+		int bufn;
+		for(bufn = 0; this.bufs[bufn].attr != fi[i].tgt; bufn++);
+		if(map[bufn] != null) {
+		    ni[i] = new Layout.Input(fi[i].tgt, fi[i].el, an, 0, fi[i].el.size());
+		    final int fidx = bufn;
+		    bufs[an] = new VertexArray.Buffer(ni[i].stride * num, DataBuffer.Usage.STREAM, (buf, env) -> this.fill(fidx, buf, env));
+		    map[bufn].buf = bufs[an];
+		    an++;
+		} else {
+		    ni[i] = fi[i];
+		}
+	    }
+	    Layout fmt = new Layout(ni);
+	    return(new VertexArray(fmt, bufs).shared());
+	}
+
+	private FillBuffer fill(int bi, VertexArray.Buffer vbuf, Environment env) {
+	    FillBuffer buf = env.fillbuf(vbuf);
+	    map[bi].n.data.rewind();
+	    buf.push().asFloatBuffer().put(map[bi].n.data);
+	    /*
+	    FloatBuffer dst = buf.push().asFloatBuffer();
+	    if(map[bi].type == MorphType.POS)
+		morph.morphp(dst, map[bi].o.data);
+	    else if(map[bi].type == MorphType.DIR)
+		morph.morphd(dst, map[bi].o.data);
+	    else
+		throw(new AssertionError());
+	    */
+	    return(buf);
+	}
+
+	public void update(Render g) {
+	    data();
+	    for(int i = 0; i < map.length; i++) {
+		if(map[i] == null)
+		    continue;
+		final int fidx = i;
+		g.update(map[i].buf, (buf, env) -> this.fill(fidx, buf, env));
+	    }
 	}
 
 	public void mupdate(Render g) {
