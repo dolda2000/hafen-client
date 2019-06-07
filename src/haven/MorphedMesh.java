@@ -99,10 +99,10 @@ public class MorphedMesh extends FastMesh implements TickList.TickNode, TickList
 	private final Pair[] parrays, darrays, map;
 
 	private static class Pair {
-	    final FloatData o, n;
+	    final FloatData o;
 	    final MorphType type;
 	    VertexArray.Buffer buf;
-	    Pair(FloatData o, FloatData n, MorphType type) {this.o = o; this.n = n; this.type = type;}
+	    Pair(FloatData o, MorphType type) {this.o = o; this.type = type;}
 	}
 
 	private static AttribData[] ohBitterSweetJavaDays(VertexBuf from, Collection<Pair> pos, Collection<Pair> dir, Pair[] map) {
@@ -111,12 +111,14 @@ public class MorphedMesh extends FastMesh implements TickList.TickNode, TickList
 		MorphType type = (from.bufs[i] instanceof MorphData) ? ((MorphData)from.bufs[i]).morphtype() : MorphType.NONE;
 		if(type == MorphType.NONE) {
 		    ret[i] = from.bufs[i];
-		} else {
+		} else if(type == MorphType.DUP) {
 		    ret[i] = ((MorphData)from.bufs[i]).dup();
+		} else {
+		    ret[i] = from.bufs[i];
 		    if(type == MorphType.POS) {
-			pos.add(map[i] = new Pair((FloatData)from.bufs[i], (FloatData)ret[i], type));
+			pos.add(map[i] = new Pair((FloatData)from.bufs[i], type));
 		    } else if(type == MorphType.DIR) {
-			dir.add(map[i] = new Pair((FloatData)from.bufs[i], (FloatData)ret[i], type));
+			dir.add(map[i] = new Pair((FloatData)from.bufs[i], type));
 		    }
 		}
 	    }
@@ -164,9 +166,6 @@ public class MorphedMesh extends FastMesh implements TickList.TickNode, TickList
 
 	private FillBuffer fill(int bi, VertexArray.Buffer vbuf, Environment env) {
 	    FillBuffer buf = env.fillbuf(vbuf);
-	    map[bi].n.data.rewind();
-	    buf.push().asFloatBuffer().put(map[bi].n.data);
-	    /*
 	    FloatBuffer dst = buf.push().asFloatBuffer();
 	    if(map[bi].type == MorphType.POS)
 		morph.morphp(dst, map[bi].o.data);
@@ -174,7 +173,6 @@ public class MorphedMesh extends FastMesh implements TickList.TickNode, TickList
 		morph.morphd(dst, map[bi].o.data);
 	    else
 		throw(new AssertionError());
-	    */
 	    return(buf);
 	}
 
@@ -191,10 +189,6 @@ public class MorphedMesh extends FastMesh implements TickList.TickNode, TickList
 	public void mupdate(Render g) {
 	    if(!morph.update())
 		return;
-	    for(Pair p : parrays)
-		morph.morphp(p.n.data, p.o.data);
-	    for(Pair p : darrays)
-		morph.morphd(p.n.data, p.o.data);
 	    update(g);
 	}
     }
