@@ -337,6 +337,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    Debug.cycle();
 		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
 
+		    UI ui = this.ui;
 		    synchronized(ui) {
 			ed.dispatch(ui);
 			if(curf != null) curf.tick("dsp");
