@@ -63,6 +63,7 @@ public class StreamBuffer implements haven.Disposable {
 		if(!used[i]) {
 		    if(xfbufs[i] == null)
 			xfbufs[i] = mkbuf();
+		    xfbufs[i].rewind();
 		    used[i] = true;
 		    return(xfbufs[i]);
 		}
@@ -120,6 +121,7 @@ public class StreamBuffer implements haven.Disposable {
 	    synchronized(this) {
 		ByteBuffer ret = this.data;
 		this.data = null;
+		ret.rewind();
 		return(ret);
 	    }
 	}
