@@ -91,7 +91,16 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	    else
 		bufs[i] = (GLBuffer)ro;
 	}
-	GLBuffer ebo = (mod.ind == null) ? null : (GLBuffer)env.prepare(mod.ind);
+	GLBuffer ebo;
+	if(mod.ind == null) {
+	    ebo = null;
+	} else {
+	    Disposable ro = env.prepare(mod.ind);
+	    if(ro instanceof StreamBuffer)
+		ebo = ((StreamBuffer)ro).rbuf;
+	    else
+		ebo = (GLBuffer)ro;
+	}
 	GLVertexArray vao = new GLVertexArray(env);
 	env.prepare((GLRender g) -> {
 		BGL gl = g.gl();

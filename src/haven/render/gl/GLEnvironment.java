@@ -133,6 +133,8 @@ public class GLEnvironment implements Environment {
     public FillBuffer fillbuf(DataBuffer tgt) {
 	if((tgt instanceof VertexArray.Buffer) && (((VertexArray.Buffer)tgt).ro instanceof StreamBuffer))
 	    return(((StreamBuffer)(((VertexArray.Buffer)tgt).ro)).new Fill());
+	if((tgt instanceof Model.Indices) && (((Model.Indices)tgt).ro instanceof StreamBuffer))
+	    return(((StreamBuffer)(((Model.Indices)tgt).ro)).new Fill());
 	return(new FillBuffers.Array(tgt.size()));
     }
 
@@ -160,15 +162,37 @@ public class GLEnvironment implements Environment {
     Disposable prepare(Model.Indices buf) {
 	synchronized(buf) {
 	    switch(buf.usage) {
-	    case EPHEMERAL:
+	    case EPHEMERAL: {
 		if(!(buf.ro instanceof HeapBuffer)) {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = new HeapBuffer(this, buf, buf.init);
 		}
 		return(buf.ro);
-	    case STREAM:
-	    case STATIC:
+	    }
+	    case STREAM: {
+		StreamBuffer ret;
+		if(!(buf.ro instanceof StreamBuffer) || ((ret = ((StreamBuffer)buf.ro)).rbuf.env != this)) {
+		    if(buf.ro != null)
+			buf.ro.dispose();
+		    buf.ro = ret = new StreamBuffer(this, buf.size());
+		    if(buf.init != null) {
+			StreamBuffer.Fill data = (StreamBuffer.Fill)buf.init.fill(buf, this);
+			StreamBuffer jdret = ret;
+			GLBuffer rbuf = ret.rbuf;
+			prepare((GLRender g) -> {
+				BGL gl = g.gl();
+				Vao0State.apply(gl, g.state, rbuf);
+				ByteBuffer xfbuf = data.get();
+				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), xfbuf, GL.GL_DYNAMIC_DRAW);
+				jdret.put(gl, xfbuf);
+				rbuf.setmem(MemStats.INDICES, buf.size());
+			    });
+		    }
+		}
+		return(ret);
+	    }
+	    case STATIC: {
 		GLBuffer ret;
 		if(!(buf.ro instanceof GLBuffer) || ((ret = ((GLBuffer)buf.ro)).env != this)) {
 		    if(buf.ro != null)
@@ -180,13 +204,13 @@ public class GLEnvironment implements Environment {
 			prepare((GLRender g) -> {
 				BGL gl = g.gl();
 				Vao0State.apply(gl, g.state, jdret);
-				int usage = (buf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
-				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), usage);
+				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
 				jdret.setmem(MemStats.INDICES, buf.size());
 			    });
 		    }
 		}
 		return(ret);
+	    }
 	    default:
 		throw(new Error());
 	    }
@@ -216,9 +240,8 @@ public class GLEnvironment implements Environment {
 			prepare((GLRender g) -> {
 				BGL gl = g.gl();
 				VboState.apply(gl, g.state, rbuf);
-				int usage = (buf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
 				ByteBuffer xfbuf = data.get();
-				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), xfbuf, usage);
+				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), xfbuf, GL.GL_DYNAMIC_DRAW);
 				jdret.put(gl, xfbuf);
 				rbuf.setmem(MemStats.VERTICES, buf.size());
 			    });
@@ -238,8 +261,7 @@ public class GLEnvironment implements Environment {
 			prepare((GLRender g) -> {
 				BGL gl = g.gl();
 				VboState.apply(gl, g.state, jdret);
-				int usage = (buf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
-				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), usage);
+				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
 				jdret.setmem(MemStats.VERTICES, buf.size());
 			    });
 		    }

@@ -796,7 +796,16 @@ public class GLDrawList implements DrawList {
 		throw(new NotImplemented("ephemeral models in drawlist"));
 	    } else {
 		GLVertexArray vao = env.prepare(mod, slot.prog);
-		GLBuffer ebo = (mod.ind == null) ? null : (GLBuffer)env.prepare(mod.ind);
+		GLBuffer ebo;
+		if(mod.ind == null) {
+		    ebo = null;
+		} else {
+		    Disposable ro = env.prepare(mod.ind);
+		    if(ro instanceof StreamBuffer)
+			ebo = ((StreamBuffer)ro).rbuf;
+		    else
+			ebo = (GLBuffer)ro;
+		}
 		slot.settings[idx_vao] = getvao(vao, ebo);
 		if(mod.ind == null) {
 		    gl.glDrawArrays(GLRender.glmode(mod.mode), mod.f, mod.n);
