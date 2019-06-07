@@ -40,10 +40,17 @@ public class TexI implements Tex {
     protected final Coord sz;
     protected final Coord tdim;
 
-    public TexI(BufferedImage back) {
+    public TexI(BufferedImage back, boolean round) {
 	this.back = back;
 	this.sz = Utils.imgsz(back);
-	this.tdim = new Coord(Tex.nextp2(sz.x), Tex.nextp2(sz.y));
+	if(round)
+	    this.tdim = new Coord(Tex.nextp2(sz.x), Tex.nextp2(sz.y));
+	else
+	    this.tdim = sz;
+    }
+
+    public TexI(BufferedImage back) {
+	this(back, true);
     }
 
     public Coord sz() {return(sz);}

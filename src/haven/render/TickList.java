@@ -27,7 +27,7 @@
 package haven.render;
 
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.function.*;
 import haven.Config;
 
 public class TickList implements RenderList<TickList.TickNode> {
@@ -147,19 +147,34 @@ public class TickList implements RenderList<TickList.TickNode> {
 	synchronized(cur) {
 	    copy = new ArrayList<>(cur.values());
 	}
-	Consumer<Entry> task = ent -> {
+	BiConsumer<Entry, Render> task = (ent, out) -> {
 	    if(ent.mon == null) {
-		ent.tick.autogtick(g);
+		ent.tick.autogtick(out);
 	    } else {
 		synchronized(ent.mon) {
-		    ent.tick.autogtick(g);
+		    ent.tick.autogtick(out);
 		}
 	    }
 	};
-	if(Config.par)
-	    copy.forEach(task);
-	else
-	    copy.parallelStream().forEach(task);
+	if(!Config.par) {
+	    copy.forEach(ent -> task.accept(ent, g));
+	} else {
+	    Collection<Render> subs = new ArrayList<>();
+	    ThreadLocal<Render> subv = new ThreadLocal<>();
+	    copy.parallelStream().forEach(ent -> {
+		    Render sub = subv.get();
+		    if(sub == null) {
+			sub = g.env().render();
+			synchronized(subs) {
+			    subs.add(sub);
+			}
+			subv.set(sub);
+		    }
+		    task.accept(ent, sub);
+		});
+	    for(Render sub : subs)
+		g.submit(sub);
+	}
     }
 
     public static class Monitor extends State {

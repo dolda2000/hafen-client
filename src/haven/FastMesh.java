@@ -44,7 +44,7 @@ public class FastMesh implements Rendered, RenderTree.Node, Disposable {
 	if(ind.capacity() != num * 3)
 	    throw(new RuntimeException("Invalid index array length"));
 	this.indb = ind;
-	this.model = new Model(Model.Mode.TRIANGLES, vert.data,
+	this.model = new Model(Model.Mode.TRIANGLES, vert.data(),
 			       new Indices(num * 3, NumberFormat.UINT16, DataBuffer.Usage.STATIC, this::indfill),
 			       0, num * 3);
     }

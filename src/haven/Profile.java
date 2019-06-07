@@ -29,6 +29,7 @@ package haven;
 import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 import java.util.*;
 
 public abstract class Profile {
@@ -84,24 +85,26 @@ public abstract class Profile {
     }
     
     public Tex draw(int h, double scale) {
-	BufferedImage buf = TexI.mkbuf(new Coord(hist.length, h));
-	Graphics2D g = buf.createGraphics();
-	g.setBackground(new Color(0, 0, 0, 0));
-	g.clearRect(0, 0, hist.length, h);
+	WritableRaster buf = PUtils.imgraster(new Coord(hist.length, h));
 	for(int i = 0; i < hist.length; i++) {
 	    Frame f = hist[i];
 	    if(f == null)
 		continue;
+	    int y = h - 1;
 	    double a = 0;
 	    for(int o = 0; o < f.prt.length; o++) {
-		double c = a + f.prt[o];
-		g.setColor(cols[o + 1]);
-		g.drawLine(i, (int)(h - (a / scale)), i, (int)(h - (c / scale)));
-		a = c;
+		a += f.prt[o];
+		Color col = cols[o + 1];
+		int r = col.getRed(), g = col.getGreen(), b = col.getBlue();
+		for(int th = h - 1 - (int)(a / scale); (y >= 0) && (y >= th); y--) {
+		    buf.setSample(i, y, 0, r);
+		    buf.setSample(i, y, 1, g);
+		    buf.setSample(i, y, 2, b);
+		    buf.setSample(i, y, 3, 255);
+		}
 	    }
 	}
-	g.dispose();
-	return(new TexI(buf));
+	return(new TexI(PUtils.rasterimg(buf), false));
     }
 
     public void dump(java.io.PrintStream out) {

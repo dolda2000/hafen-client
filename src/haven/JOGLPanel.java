@@ -40,6 +40,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
     private double framedur_fg = 0.0, framedur_bg = 0.2;
     private boolean bgmode = false;
+    private boolean iswap = true, aswap;
     private int fps;
     private double uidle = 0.0, ridle = 0.0;
     private final Dispatcher ed;
@@ -60,11 +61,12 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     }
 
     public JOGLPanel(Coord sz) {
-	super(mkcaps(), null, null, null);
+	super(mkcaps(), null, null);
 	base = new BufPipe();
 	base.prep(new FragColor<>(FragColor.defcolor)).prep(new DepthBuffer<>(DepthBuffer.defdepth));
 	base.prep(new States.Blending());
 	setSize(sz.x, sz.y);
+	setAutoSwapBufferMode(false);
 	addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
 		    redraw(d.getGL().getGL2());
@@ -96,6 +98,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	GLEnvironment env;
 	BufferBGL dispose;
 	boolean debug;
+	long prestart;
+	CPUProfile.Frame pf = null;
 
 	Frame(GLRender buf, GLEnvironment env, BufferBGL dispose) {
 	    this.buf = buf;
@@ -109,7 +113,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private void initgl(GL2 gl) {
 	Collection<String> exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	GLCapabilitiesImmutable caps = getChosenGLCapabilities();
-	gl.setSwapInterval(1);
+	gl.setSwapInterval((aswap = iswap) ? 1 : 0);
 	if(exts.contains("GL_ARB_multisample") && caps.getSampleBuffers()) {
 	    /* Apparently, having sample buffers in the config enables
 	     * multisampling by default on some systems. */
@@ -118,7 +122,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     }
 
     private void redraw(GL2 gl) {
-	CPUProfile.Frame curf = Config.profile ? rprof.new Frame() : null;
+	long dst = System.nanoTime();
+	CPUProfile.Frame curf = null;
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
 	synchronized(this) {
@@ -136,9 +141,10 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    curdraw[0] = null;
 	    curdraw.notifyAll();
 	}
-	if(curf != null) curf.tick("init");
 	try {
 	    if(f != null) {
+		curf = f.pf;
+		if(curf != null) curf.tick("init");
 		if(f.env == env) {
 		    if(f.debug) {
 			System.err.print("\n-----\n\n");
@@ -152,6 +158,18 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		}
 	    }
 	    if(curf != null) curf.tick("dispose");
+	    {
+		long swst = System.nanoTime();
+		if(iswap != aswap)
+		    gl.setSwapInterval((aswap = iswap) ? 1 : 0);
+		swapBuffers();
+		if(curf != null) curf.tick("swap");
+		long end = System.nanoTime();
+		if(f != null) {
+		    double fridle = ((double)((dst - f.prestart) + (end - swst)) / (double)(end - f.prestart));
+		    ridle = (ridle * 0.95) + (fridle * 0.05);
+		}
+	    }
 	    if(curf != null) curf.fin();
 	} catch(BGL.BGLException e) {
 	    if(dumpbgl)
@@ -180,6 +198,15 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		notifyAll();
 	    }
 	    while(true) {
+		CPUProfile.Frame curf = Config.profile ? rprof.new Frame() : null;
+		long wst = System.nanoTime();
+		synchronized(curdraw) {
+		    while(curdraw[0] == null)
+			curdraw.wait();
+		    if(curf != null) curf.tick("waited");
+		    curdraw[0].pf = curf;
+		    curdraw[0].prestart = wst;
+		}
 		uglyjoglhack();
 	    }
 	} catch(InterruptedException e) {
@@ -259,7 +286,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     @SuppressWarnings("deprecation")
     private void drawstats(GOut g, GLRender buf) {
-	int y = g.sz().y;
+	int y = g.sz().y - 190;
 	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0));
 	Runtime rt = Runtime.getRuntime();
 	long free = rt.freeMemory(), total = rt.totalMemory();
@@ -268,7 +295,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "GL progs: %d", buf.env.numprogs());
 	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "V-Mem: %s", buf.env.memstats());
 	MapView map = ui.root.findchild(MapView.class);
-	if(map != null) {
+	if((map != null) && (map.back != null)) {
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mapview: Tree %s, Draw %s", map.tree.stats(), map.back.stats());
 	}
     }
@@ -353,15 +380,18 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    fwaited += Utils.rtime() - now;
 		    frames[framep] = now;
 		    waited[framep] = fwaited;
-		    double twait = 0;
-		    for(int i = 0, ckf = framep; i < frames.length; i++) {
-			ckf = (ckf - 1 + frames.length) % frames.length;
-			twait += waited[ckf];
-			if(now - frames[ckf] > 1) {
-			    if(now > frames[ckf])
-				fps = (int)Math.round((i + 1) / (now - frames[ckf]));
+		    {
+			double twait = 0;
+			int i = 0, ckf = framep;
+			for(; i < frames.length - 1; i++) {
+			    ckf = (ckf - 1 + frames.length) % frames.length;
+			    twait += waited[ckf];
+			    if(now - frames[ckf] > 1)
+				break;
+			}
+			if(now > frames[ckf]) {
+			    fps = (int)Math.round((i + 1) / (now - frames[ckf]));
 			    uidle = twait / (now - frames[ckf]);
-			    break;
 			}
 		    }
 		    framep = (framep + 1) % frames.length;
@@ -395,23 +425,22 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
-	cmdmap.put("hz", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    int hz = Integer.parseInt(args[1]);
-		    if(hz > 0)
-			framedur_fg = 1.0 / hz;
-		    else
-			framedur_fg = 0.0;
-		}
+	cmdmap.put("hz", (cons, args) -> {
+		int hz = Integer.parseInt(args[1]);
+		if(hz > 0)
+		    framedur_fg = 1.0 / hz;
+		else
+		    framedur_fg = 0.0;
 	    });
-	cmdmap.put("bghz", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    int hz = Integer.parseInt(args[1]);
-		    if(hz > 0)
-			framedur_bg = 1.0 / hz;
-		    else
-			framedur_bg = 0.0;
-		}
+	cmdmap.put("bghz", (cons, args) -> {
+		int hz = Integer.parseInt(args[1]);
+		if(hz > 0)
+		    framedur_bg = 1.0 / hz;
+		else
+		    framedur_bg = 0.0;
+	    });
+	cmdmap.put("vsync", (cons, args) -> {
+		iswap = Utils.parsebool(args[1]);
 	    });
     }
     public Map<String, Console.Command> findcmds() {

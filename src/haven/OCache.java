@@ -125,15 +125,31 @@ public class OCache implements Iterable<Gob> {
 	    for(Gob ob : this)
 		copy.add(ob);
 	}
-	Consumer<Gob> task = ob -> {
-	    synchronized(ob) {
-		ob.gtick(g);
-	    }
-	};
-	if(!Config.par)
-	    copy.forEach(task);
-	else
-	    copy.parallelStream().forEach(task);
+	if(!Config.par) {
+	    copy.forEach(ob -> {
+		    synchronized(ob) {
+			ob.gtick(g);
+		    }
+		});
+	} else {
+	    Collection<Render> subs = new ArrayList<>();
+	    ThreadLocal<Render> subv = new ThreadLocal<>();
+	    copy.parallelStream().forEach(ob -> {
+		    Render sub = subv.get();
+		    if(sub == null) {
+			sub = g.env().render();
+			synchronized(subs) {
+			    subs.add(sub);
+			}
+			subv.set(sub);
+		    }
+		    synchronized(ob) {
+			ob.gtick(sub);
+		    }
+		});
+	    for(Render sub : subs)
+		g.submit(sub);
+	}
     }
 
     @SuppressWarnings("unchecked")

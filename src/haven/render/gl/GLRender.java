@@ -148,6 +148,8 @@ public class GLRender implements Render, Disposable {
 	GLRender sub = (GLRender)gsub;
 	if(sub.env != this.env)
 	    throw(new IllegalArgumentException());
+	if(sub.gl == null)
+	    return;
 	state.apply(this.gl, sub.init);
 	gl().bglCallList(sub.gl);
 	state.apply(null, sub.state);

@@ -36,7 +36,7 @@ import haven.render.sl.Attribute;
 public class VertexBuf {
     public final AttribData[] bufs;
     public final int num;
-    public final VertexArray data;
+    private VertexArray data = null;
 
     public VertexBuf(AttribData... bufs) {
 	AttribData[] na = new AttribData[bufs.length];
@@ -49,7 +49,6 @@ public class VertexBuf {
 	}
 	this.bufs = na;
 	this.num = num;
-	this.data = fmtdata();
     }
 
     public <T extends AttribData> T buf(Class<T> type) {
@@ -97,21 +96,34 @@ public class VertexBuf {
 	return(new VertexArray(fmt, new VertexArray.Buffer(fmt.inputs[0].stride * num, DataBuffer.Usage.STATIC, this::fill)).shared());
     }
 
+    public VertexArray data() {
+	if(data == null) {
+	    synchronized(this) {
+		if(data == null)
+		    data = fmtdata();
+	    }
+	}
+	return(data);
+    }
+
     private FillBuffer fill(VertexArray.Buffer vbuf, Environment env) {
+	VertexArray.Layout fmt = data().fmt;
 	FillBuffer dst = env.fillbuf(vbuf);
 	ByteBuffer buf = dst.push();
 	int inp = 0;
 	for(AttribData attr : bufs) {
 	    if(attr.attr == null)
 		continue;
-	    attr.data(buf, data.fmt.inputs[inp++].offset, data.fmt.inputs[0].stride);
+	    attr.data(buf, fmt.inputs[inp++].offset, fmt.inputs[0].stride);
 	}
 	return(dst);
     }
 
     public void update(Render g) {
-	if(data.bufs.length != 1) throw(new AssertionError());
-	g.update(data.bufs[0], this::fill);
+	if(data != null) {
+	    if(data.bufs.length != 1) throw(new AssertionError());
+	    g.update(data().bufs[0], this::fill);
+	}
     }
 
     public abstract static class AttribData {
@@ -265,7 +277,12 @@ public class VertexBuf {
     }
 
     public void dispose() {
-	data.dispose();
+	synchronized(this) {
+	    if(data != null) {
+		data.dispose();
+		data = null;
+	    }
+	}
     }
 
     @dolda.jglob.Discoverable
