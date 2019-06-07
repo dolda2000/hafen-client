@@ -309,14 +309,26 @@ public class GLRender implements Render, Disposable {
 	    }
 	} else if(buf instanceof VertexArray.Buffer) {
 	    VertexArray.Buffer vbuf = (VertexArray.Buffer)buf;
-	    if(vbuf.usage == EPHEMERAL) {
-		throw(new NotImplemented("update ephemeral vertex buffer"));
-	    } else {
+	    switch(vbuf.usage) {
+	    case STATIC: {
 		FillBuffers.Array data = (FillBuffers.Array)fill.fill(buf, env);
 		VboState.apply(this.gl, state, (GLBuffer)env.prepare(vbuf));
 		BGL gl = gl();
-		int usage = (vbuf.usage == STREAM) ? GL.GL_DYNAMIC_DRAW : GL.GL_STATIC_DRAW;
-		gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), usage);
+		gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
+		break;
+	    }
+	    case STREAM: {
+		StreamBuffer ro = (StreamBuffer)env.prepare(vbuf);
+		StreamBuffer.Fill data = (StreamBuffer.Fill)fill.fill(buf, env);
+		VboState.apply(this.gl, state, ro.rbuf);
+		BGL gl = gl();
+		ByteBuffer xfbuf = data.get();
+		gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), xfbuf, GL.GL_DYNAMIC_DRAW);
+		ro.put(gl, xfbuf);
+		break;
+	    }
+	    default:
+		throw(new NotImplemented("update " + vbuf.usage + " vertex buffer"));
 	    }
 	} else {
 	    throw(new NotImplemented("updating buffer of type: " + buf.getClass().getName()));

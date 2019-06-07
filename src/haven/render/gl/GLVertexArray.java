@@ -84,8 +84,13 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	    throw(new RuntimeException("got ephemeral model for VAO"));
 	GLEnvironment env = prog.env;
 	GLBuffer bufs[] = new GLBuffer[mod.va.bufs.length];
-	for(int i = 0; i < bufs.length; i++)
-	    bufs[i] = (GLBuffer)env.prepare(mod.va.bufs[i]);
+	for(int i = 0; i < bufs.length; i++) {
+	    Disposable ro = env.prepare(mod.va.bufs[i]);
+	    if(ro instanceof StreamBuffer)
+		bufs[i] = ((StreamBuffer)ro).rbuf;
+	    else
+		bufs[i] = (GLBuffer)ro;
+	}
 	GLBuffer ebo = (mod.ind == null) ? null : (GLBuffer)env.prepare(mod.ind);
 	GLVertexArray vao = new GLVertexArray(env);
 	env.prepare((GLRender g) -> {
