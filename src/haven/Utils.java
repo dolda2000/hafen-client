@@ -1143,13 +1143,13 @@ public class Utils {
     public static FloatBuffer wbufcp(FloatBuffer a) {
 	a.rewind();
 	FloatBuffer ret = wfbuf(a.remaining());
-	ret.put(a).rewind();
+	ret.put(a.slice()).rewind();
 	return(ret);
     }
     public static IntBuffer wbufcp(IntBuffer a) {
 	a.rewind();
 	IntBuffer ret = wibuf(a.remaining());
-	ret.put(a).rewind();
+	ret.put(a.slice()).rewind();
 	return(ret);
     }
 

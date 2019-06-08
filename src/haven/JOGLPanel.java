@@ -223,6 +223,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    tooltip = "...";
 	}
 	Tex tt = null;
+	Disposable free = null;
 	if(tooltip != null) {
 	    if(tooltip instanceof Text) {
 		tt = ((Text)tooltip).tex();
@@ -234,8 +235,9 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		if(o instanceof Tex)
 		    tt = (Tex)o;
 	    } else if(tooltip instanceof String) {
-		if(((String)tooltip).length() > 0)
-		    tt = (Text.render((String)tooltip)).tex();
+		if(((String)tooltip).length() > 0) {
+		    free = tt = (Text.render((String)tooltip)).tex();
+		}
 	    }
 	}
 	if(tt != null) {
@@ -252,6 +254,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    g.chcolor();
 	    g.image(tt, pos);
 	}
+	if(free != null)
+	    free.dispose();
 	ui.lasttip = tooltip;
     }
 
@@ -333,6 +337,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    Debug.cycle();
 		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
 
+		    UI ui = this.ui;
 		    synchronized(ui) {
 			ed.dispatch(ui);
 			if(curf != null) curf.tick("dsp");

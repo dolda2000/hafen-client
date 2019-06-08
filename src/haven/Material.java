@@ -42,6 +42,14 @@ public class Material implements Pipe.Op {
 	public Pipe.Op cons(Resource res, Object... args) {return(nofacecull);}
     }
 
+    @ResName("maskcol")
+    public static class $maskcol implements ResCons {
+	final Pipe.Op mask = p -> p.put(FragColor.slot, null);
+	public Pipe.Op cons(Resource res, Object... args) {
+	    return(mask);
+	}
+    }
+
     @ResName("order")
     public static class $order implements ResCons {
 	public Pipe.Op cons(Resource res, Object... args) {
