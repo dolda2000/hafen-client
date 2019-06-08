@@ -116,12 +116,13 @@ public class FboState extends GLState {
 	}
 	color = Arrays.copyOf(color, nc);
 	int[] dbufs = new int[fvalsp.length];
+	GLFrameBuffer fbo = find(env, color, depth);
 	search: for(int i = 0; i < fvalsp.length; i++) {
 	    if(fvalsp[i] == null) {
 		dbufs[i] = GL.GL_NONE;
 	    } else {
-		for(int o = 0; o < color.length; o++) {
-		    if(color[o] == fvalsp[i]) {
+		for(int o = 0; o < fbo.color.length; o++) {
+		    if(eq(fbo.color[o], fvalsp[i])) {
 			dbufs[i] = GL.GL_COLOR_ATTACHMENT0 + o;
 			continue search;
 		    }
@@ -129,7 +130,7 @@ public class FboState extends GLState {
 		throw(new RuntimeException());
 	    }
 	}
-	return(new FboState(find(env, color, depth), dbufs));
+	return(new FboState(fbo, dbufs));
     }
 
     public static FboState make(GLEnvironment env, Object depth, Object[] fvals) {
