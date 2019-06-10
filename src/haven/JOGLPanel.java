@@ -289,7 +289,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     }
 
     @SuppressWarnings("deprecation")
-    private void drawstats(GOut g, GLRender buf) {
+    private void drawstats(UI ui, GOut g, GLRender buf) {
 	int y = g.sz().y - 190;
 	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0));
 	Runtime rt = Runtime.getRuntime();
@@ -302,6 +302,13 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	if((map != null) && (map.back != null)) {
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mapview: Tree %s, Draw %s", map.tree.stats(), map.back.stats());
 	}
+	if(ui.sess != null)
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Async: L %s, D %s", ui.sess.glob.loader.stats(), Defer.gstats());
+	else
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Async: D %s", Defer.gstats());
+	int rqd = Resource.local().qdepth() + Resource.remote().qdepth();
+	if(rqd > 0)
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "RQ depth: %d (%d)", rqd, Resource.local().numloaded() + Resource.remote().numloaded());
     }
 
     private void display(UI ui, GLRender buf) {
@@ -313,7 +320,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    ui.draw(g);
 	}
 	if(Config.dbtext)
-	    drawstats(g, buf);
+	    drawstats(ui, g, buf);
 	drawtooltip(g);
 	drawcursor(g);
     }

@@ -28,12 +28,14 @@ package haven;
 
 import java.util.*;
 import java.util.function.*;
+import java.util.concurrent.atomic.*;
 
 public class Loader {
     private final double timeout = 5.0;
     private final int maxthreads = 4;
     private final Queue<Future<?>> queue = new LinkedList<>();
     private final Collection<Thread> pool = new ArrayList<>();
+    private final AtomicInteger busy = new AtomicInteger(0);
 
     public class Future<T> {
 	public final Supplier<T> task;
@@ -54,6 +56,7 @@ public class Loader {
 		running = Thread.currentThread();
 	    }
 	    try {
+		busy.getAndIncrement();
 		try {
 		    while(true) {
 			try {
@@ -89,6 +92,7 @@ public class Loader {
 		synchronized(this) {
 		    running = null;
 		}
+		busy.getAndDecrement();
 	    }
 	}
 
@@ -176,5 +180,11 @@ public class Loader {
 		    task.run();
 		    return(result);
 		}, false));
+    }
+
+    public String stats() {
+	synchronized(queue) {
+	    return(String.format("%d %d/%d", queue.size(), busy.get(), pool.size()));
+	}
     }
 }
