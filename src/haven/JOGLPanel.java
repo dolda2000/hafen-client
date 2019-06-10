@@ -304,7 +304,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
-    private void display(GLRender buf) {
+    private void display(UI ui, GLRender buf) {
 	buf.clear(wnd, FragColor.fragcol, FColor.BLACK);
 	Pipe state = wnd.copy();
 	state.prep(new FrameInfo());
@@ -358,7 +358,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 			fwaited += Utils.rtime() - now;
 		    }
 		    if(curf != null) curf.tick("dwait");
-		    display(buf);
+		    display(ui, buf);
 		    if(curf != null) curf.tick("draw");
 		    BufferBGL dispose = env.disposeall();
 		    synchronized(curdraw) {
