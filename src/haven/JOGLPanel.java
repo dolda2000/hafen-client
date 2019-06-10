@@ -41,7 +41,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private double framedur_fg = 0.0, framedur_bg = 0.2;
     private boolean bgmode = false;
     private boolean iswap = true, aswap;
-    private int fps;
+    private int fps, framelag;
+    private volatile int frameno;
     private double uidle = 0.0, ridle = 0.0;
     private final Dispatcher ed;
     private GLEnvironment env = null;
@@ -99,12 +100,14 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	BufferBGL dispose;
 	boolean debug;
 	long prestart;
+	int frameno;
 	CPUProfile.Frame pf = null;
 
-	Frame(GLRender buf, GLEnvironment env, BufferBGL dispose) {
+	Frame(GLRender buf, GLEnvironment env, BufferBGL dispose, int frameno) {
 	    this.buf = buf;
 	    this.env = env;
 	    this.dispose = dispose;
+	    this.frameno = frameno;
 	}
     }
 
@@ -168,6 +171,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		if(f != null) {
 		    double fridle = ((double)((dst - f.prestart) + (end - swst)) / (double)(end - f.prestart));
 		    ridle = (ridle * 0.95) + (fridle * 0.05);
+		    framelag = this.frameno - f.frameno;
 		}
 	    }
 	    if(curf != null) curf.fin();
@@ -291,7 +295,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     @SuppressWarnings("deprecation")
     private void drawstats(UI ui, GOut g, GLRender buf) {
 	int y = g.sz().y - 190;
-	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0));
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle, latency %d)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0), framelag);
 	Runtime rt = Runtime.getRuntime();
 	long free = rt.freeMemory(), total = rt.totalMemory();
 	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
@@ -345,6 +349,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
 
 		    UI ui = this.ui;
+
+		    int cfno = frameno++;
 		    synchronized(ui) {
 			ed.dispatch(ui);
 			if(curf != null) curf.tick("dsp");
@@ -364,6 +370,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 			    curdraw.wait();
 			fwaited += Utils.rtime() - now;
 		    }
+
 		    if(curf != null) curf.tick("dwait");
 		    display(ui, buf);
 		    if(curf != null) curf.tick("draw");
@@ -371,7 +378,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    synchronized(curdraw) {
 			if(curdraw[0] != null)
 			    throw(new AssertionError());
-			curdraw[0] = new Frame(buf, env, dispose);
+			curdraw[0] = new Frame(buf, env, dispose, cfno);
 			if(false)
 			    curdraw[0].debug = true;
 			curdraw.notifyAll();
