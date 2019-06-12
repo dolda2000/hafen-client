@@ -65,7 +65,7 @@ public class Struct extends Type {
     }
 
     public String name(Context ctx) {
-	return("struct " + name.name(ctx));
+	return(name.name(ctx));
     }
 
     public class Definition extends Toplevel {

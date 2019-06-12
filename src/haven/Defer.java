@@ -28,12 +28,14 @@ package haven;
 
 import java.util.*;
 import java.security.*;
+import java.util.concurrent.atomic.*;
 
 public class Defer extends ThreadGroup {
     private static final Map<ThreadGroup, Defer> groups = new WeakHashMap<ThreadGroup, Defer>();
     private final Queue<Future<?>> queue = new PrioQueue<Future<?>>();
     private final Collection<Thread> pool = new LinkedList<Thread>();
     private final int maxthreads = 2;
+    private final AtomicInteger busy = new AtomicInteger(0);
     
     public interface Callable<T> {
 	public T call() throws InterruptedException;
@@ -134,6 +136,7 @@ public class Defer extends ThreadGroup {
 		running = Thread.currentThread();
 	    }
 	    try {
+		busy.getAndIncrement();
 		try {
 		    val = AccessController.doPrivileged(new PrivilegedExceptionAction<T>() {
 			    public T run() throws InterruptedException {return(task.call());}
@@ -157,6 +160,7 @@ public class Defer extends ThreadGroup {
 		if(state != "done")
 		    chstate("resched");
 		running = null;
+		busy.getAndDecrement();
 		/* XXX: This is a race; a cancelling thread could have
 		 * gotten the thread reference via running and then
 		 * interrupt this thread after interrupted()
@@ -299,5 +303,15 @@ public class Defer extends ThreadGroup {
     public static <T> Future<T> later(Callable<T> task) {
 	Defer d = getgroup();
 	return(d.defer(task));
+    }
+
+    public String stats() {
+	synchronized(queue) {
+	    return(String.format("%d %d/%d", queue.size(), busy.get(), pool.size()));
+	}
+    }
+
+    public static String gstats() {
+	return(getgroup().stats());
     }
 }
