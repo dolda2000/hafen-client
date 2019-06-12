@@ -45,7 +45,7 @@ public class GLFence extends GLQuery {
 
     public boolean check(GL2 gl) {
 	int[] vbuf = {0};
-	gl.getGL3bc().glGetSynciv(id, GL3.GL_SYNC_STATUS, 1, null, 0, vbuf, 0);
+	((GL3)gl).glGetSynciv(id, GL3.GL_SYNC_STATUS, 1, null, 0, vbuf, 0);
 	if(vbuf[0] != GL3.GL_SIGNALED)
 	    return(false);
 	callback.accept(gl);
@@ -53,6 +53,6 @@ public class GLFence extends GLQuery {
     }
 
     public void delete(GL2 gl) {
-	gl.getGL3bc().glDeleteSync(id);
+	((GL3)gl).glDeleteSync(id);
     }
 }

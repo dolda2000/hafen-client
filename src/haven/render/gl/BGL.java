@@ -513,7 +513,7 @@ public abstract class BGL {
 
     public void glDeleteSync(final long id) {
 	add(new Command() {
-		public void run(GL2 gl) {gl.getGL3bc().glDeleteSync(id);}
+		public void run(GL2 gl) {((GL3)gl).glDeleteSync(id);}
 	    });
     }
 
@@ -765,7 +765,7 @@ public abstract class BGL {
 
     public void glTexImage2DMultisample(final int target, final int samples, final int internalformat, final int width, final int height, final boolean fixedsamplelocations) {
 	add(new Command() {
-		public void run(GL2 gl) {gl.getGL3bc().glTexImage2DMultisample(target, samples, internalformat, width, height, fixedsamplelocations);}
+		public void run(GL2 gl) {((GL3)gl).glTexImage2DMultisample(target, samples, internalformat, width, height, fixedsamplelocations);}
 	    });
     }
 
