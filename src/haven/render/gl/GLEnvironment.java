@@ -63,7 +63,9 @@ public class GLEnvironment implements Environment {
     }
 
     public GLRender render() {
-	return(new GLRender(this));
+	GLRender ret = new GLRender(this);
+	seqreg(ret);
+	return(ret);
     }
 
     public GLDrawList drawlist() {
@@ -112,17 +114,32 @@ public class GLEnvironment implements Environment {
 		GLException.checkfor(gl);
 		checkqueries(gl);
 	    }
+	    sequnreg(cmd);
 	}
     }
 
     public BufferBGL disposeall() {
+	int tail;
+	synchronized(seqmon) {
+	    tail = seqtail;
+	}
 	BufferBGL buf = new BufferBGL();
 	Collection<GLObject> copy;
 	synchronized(disposed) {
 	    if(disposed.isEmpty())
 		return(buf);
-	    copy = new ArrayList<>(disposed);
-	    disposed.clear();
+	    copy = new ArrayList<>(disposed.size());
+	    int lseq = 0;	// XXX: This assertion should be safe to remove once initially verified.
+	    for(Iterator<GLObject> i = disposed.iterator(); i.hasNext();) {
+		GLObject obj = i.next();
+		if(obj.dispseq - lseq < 0)
+		    throw(new AssertionError());
+		if(obj.dispseq - tail > 0)
+		    break;
+		lseq = obj.dispseq;
+		copy.add(obj);
+		i.remove();
+	    }
 	}
 	for(GLObject obj : copy)
 	    buf.bglDelete(obj);
@@ -481,6 +498,56 @@ public class GLEnvironment implements Environment {
 	if(now - lastpclean > 60) {
 	    cleanprogs();
 	    lastpclean = now;
+	}
+    }
+
+    private final Object seqmon = new Object();
+    private boolean[] sequse = new boolean[16];
+    private int seqhead = 1, seqtail = 1;
+
+    private void seqresize(int nsz) {
+	boolean[] cseq = sequse, nseq = new boolean[nsz];
+	int csz = cseq.length;
+	for(int i = 0; i < csz; i++)
+	    nseq[(seqtail + i) & (nsz - 1)] = cseq[(seqtail + i) & (csz - 1)];
+	sequse = nseq;
+	if(nsz >= 0x4000)
+	    System.err.println("warning: dispose queue size increased to " + nsz);
+    }
+
+    void seqreg(GLRender r) {
+	synchronized(seqmon) {
+	    if(r.dispseq != 0)
+		throw(new IllegalStateException());
+	    int seq = r.dispseq = seqhead;
+	    if(++seqhead == 0)
+		seqhead = 1;
+	    if(seqhead - seqtail == sequse.length - 1)
+		seqresize(sequse.length << 1);
+	    sequse[seq & (sequse.length - 1)] = true;
+	}
+    }
+
+    void sequnreg(GLRender r) {
+	synchronized(seqmon) {
+	    if(r.dispseq == 0)
+		return;
+	    int seq = r.dispseq, m = sequse.length - 1;
+	    int si = seq & m;
+	    if(!sequse[si])
+		throw(new AssertionError());
+	    sequse[si] = false;
+	    if(seq == seqtail) {
+		while((seqtail < seqhead) && !sequse[seqtail & m])
+		    seqtail++;
+	    }
+	    r.dispseq = 0;
+	}
+    }
+
+    int dispseq() {
+	synchronized(seqmon) {
+	    return(seqhead - 1);
 	}
     }
 

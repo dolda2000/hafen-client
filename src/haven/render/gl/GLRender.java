@@ -39,6 +39,7 @@ public class GLRender implements Render, Disposable {
     BufferBGL gl = null;
     final Applier state;
     Applier init = null;
+    int dispseq = 0;
 
     GLRender(GLEnvironment env) {
 	this.env = env;
@@ -148,10 +149,14 @@ public class GLRender implements Render, Disposable {
 	GLRender sub = (GLRender)gsub;
 	if(sub.env != this.env)
 	    throw(new IllegalArgumentException());
-	if(sub.gl == null)
+	if(sub.gl == null) {
+	    sub.env.sequnreg(sub);
 	    return;
+	}
 	state.apply(this.gl, sub.init);
-	gl().bglCallList(sub.gl);
+	BGL gl = gl();
+	gl.bglCallList(sub.gl);
+	gl.bglSubmit(rgl -> sub.env.sequnreg(sub));
 	state.apply(null, sub.state);
     }
 
@@ -453,5 +458,13 @@ public class GLRender implements Render, Disposable {
     }
 
     public void dispose() {
+	env.sequnreg(this);
+    }
+
+    protected void finalize() {
+	if(dispseq != 0) {
+	    System.err.println("warning: gl-render was leaked without being disposed");
+	    dispose();
+	}
     }
 }
