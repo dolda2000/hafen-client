@@ -131,6 +131,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	GLEnvironment env;
 	synchronized(this) {
 	    if((this.env == null) || (this.env.ctx != ctx)) {
+		if(this.env != null)
+		    this.env.dispose();
 		this.env = new GLEnvironment(gl, ctx, shape);
 		initgl(gl);
 	    }

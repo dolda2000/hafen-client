@@ -563,4 +563,9 @@ public class GLEnvironment implements Environment {
 	}
 	return(buf.toString());
     }
+
+    public void dispose() {
+	/* XXX: Go through unprocessed BGLs and queries and notify
+	 * their listeners. */
+    }
 }
