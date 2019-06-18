@@ -41,6 +41,7 @@ public class GLEnvironment implements Environment {
     final Object prepmon = new Object();
     final Collection<GLObject> disposed = new LinkedList<>();
     final List<GLQuery> queries = new LinkedList<>(); // Synchronized on drawmon
+    final Queue<GLRender> submitted = new LinkedList<>();
     Area wnd;
     private GLRender prep = null;
     private Applier curstate = new Applier(this);
@@ -90,35 +91,62 @@ public class GLEnvironment implements Environment {
 	}
     }
 
-    public void submit(GL2 gl, GLRender cmd) {
-	if(cmd.gl != null) {
-	    GLRender prep;
-	    synchronized(prepmon) {
-		prep = this.prep;
-		this.prep = null;
+    public void process(GL2 gl) {
+	GLRender prep;
+	synchronized(prepmon) {
+	    prep = this.prep;
+	    this.prep = null;
+	}
+	synchronized(drawmon) {
+	    checkqueries(gl);
+	    if((prep != null) && (prep.gl != null)) {
+		BufferBGL xf = new BufferBGL(16);
+		this.curstate.apply(xf, prep.init);
+		prep.gl.run(gl);
+		this.curstate = prep.state;
+		GLException.checkfor(gl);
 	    }
-	    synchronized(drawmon) {
-		checkqueries(gl);
-		if((prep != null) && (prep.gl != null)) {
-		    BufferBGL xf = new BufferBGL(16);
-		    this.curstate.apply(xf, prep.init);
-		    prep.gl.run(gl);
-		    this.curstate = prep.state;
-		    GLException.checkfor(gl);
-		}
+	    Collection<GLRender> copy;
+	    synchronized(submitted) {
+		copy = new ArrayList<>(submitted);
+		submitted.clear();
+	    }
+	    for(GLRender cmd : copy) {
 		BufferBGL xf = new BufferBGL(16);
 		this.curstate.apply(xf, cmd.init);
 		xf.run(gl);
 		cmd.gl.run(gl);
 		this.curstate = cmd.state;
 		GLException.checkfor(gl);
-		checkqueries(gl);
+		sequnreg(cmd);
 	    }
-	    sequnreg(cmd);
+	    checkqueries(gl);
+	    disposeall().run(gl);
 	}
     }
 
-    public BufferBGL disposeall() {
+    public void submit(Render cmd) {
+	if(!(cmd instanceof GLRender))
+	    throw(new IllegalArgumentException("environment mismatch"));
+	GLRender gcmd = (GLRender)cmd;
+	if(gcmd.env != this)
+	    throw(new IllegalArgumentException("environment mismatch"));
+	if(gcmd.gl != null) {
+	    synchronized(submitted) {
+		submitted.add(gcmd);
+		submitted.notifyAll();
+	    }
+	}
+    }
+
+    public void submitwait() throws InterruptedException {
+	synchronized(submitted) {
+	    while(submitted.peek() == null)
+		submitted.wait();
+	}
+    }
+
+    private BufferBGL disposeall() {
 	int tail;
 	synchronized(seqmon) {
 	    tail = seqtail;
