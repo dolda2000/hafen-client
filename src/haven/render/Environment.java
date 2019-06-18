@@ -30,4 +30,5 @@ public interface Environment extends haven.Disposable {
     public Render render();
     public FillBuffer fillbuf(DataBuffer target);
     public DrawList drawlist();
+    public void submit(Render cmd);
 }
