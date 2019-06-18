@@ -457,6 +457,10 @@ public class GLRender implements Render, Disposable {
 	gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, null);
     }
 
+    public void submit(BGL.Request req) {
+	gl().bglSubmit(req);
+    }
+
     public void dispose() {
 	env.sequnreg(this);
     }
