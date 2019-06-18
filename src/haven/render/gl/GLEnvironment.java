@@ -547,7 +547,7 @@ public class GLEnvironment implements Environment {
 
     int dispseq() {
 	synchronized(seqmon) {
-	    return(seqhead - 1);
+	    return(seqhead);
 	}
     }
 
