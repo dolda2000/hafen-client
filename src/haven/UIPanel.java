@@ -50,35 +50,39 @@ public interface UIPanel extends Runnable {
 	public MouseEvent mousemv = null;
 
 	public void dispatch(UI ui) {
+	    Collection<InputEvent> copy;
+	    MouseEvent mousemv;
 	    synchronized(this) {
-		if(mousemv != null) {
-		    Coord pos = new Coord(mousemv.getX(), mousemv.getY());
-		    ui.mousemove(mousemv, pos);
-		    mousemv = null;
-		}
-		InputEvent e;
-		while((e = events.poll()) != null) {
-		    if(e instanceof MouseEvent) {
-			MouseEvent me = (MouseEvent)e;
-			if(me.getID() == MouseEvent.MOUSE_PRESSED) {
-			    ui.mousedown(me, new Coord(me.getX(), me.getY()), me.getButton());
-			} else if(me.getID() == MouseEvent.MOUSE_RELEASED) {
-			    ui.mouseup(me, new Coord(me.getX(), me.getY()), me.getButton());
-			} else if(me instanceof MouseWheelEvent) {
-			    ui.mousewheel(me, new Coord(me.getX(), me.getY()), ((MouseWheelEvent)me).getWheelRotation());
-			}
-		    } else if(e instanceof KeyEvent) {
-			KeyEvent ke = (KeyEvent)e;
-			if(ke.getID() == KeyEvent.KEY_PRESSED) {
-			    ui.keydown(ke);
-			} else if(ke.getID() == KeyEvent.KEY_RELEASED) {
-			    ui.keyup(ke);
-			} else if(ke.getID() == KeyEvent.KEY_TYPED) {
-			    ui.type(ke);
-			}
+		mousemv = this.mousemv;
+		this.mousemv = null;
+		copy = new ArrayList<>(events);
+		events.clear();
+	    }
+	    if(mousemv != null) {
+		Coord pos = new Coord(mousemv.getX(), mousemv.getY());
+		ui.mousemove(mousemv, pos);
+	    }
+	    for(InputEvent e : copy) {
+		if(e instanceof MouseEvent) {
+		    MouseEvent me = (MouseEvent)e;
+		    if(me.getID() == MouseEvent.MOUSE_PRESSED) {
+			ui.mousedown(me, new Coord(me.getX(), me.getY()), me.getButton());
+		    } else if(me.getID() == MouseEvent.MOUSE_RELEASED) {
+			ui.mouseup(me, new Coord(me.getX(), me.getY()), me.getButton());
+		    } else if(me instanceof MouseWheelEvent) {
+			ui.mousewheel(me, new Coord(me.getX(), me.getY()), ((MouseWheelEvent)me).getWheelRotation());
 		    }
-		    ui.lastevent = Utils.rtime();
+		} else if(e instanceof KeyEvent) {
+		    KeyEvent ke = (KeyEvent)e;
+		    if(ke.getID() == KeyEvent.KEY_PRESSED) {
+			ui.keydown(ke);
+		    } else if(ke.getID() == KeyEvent.KEY_RELEASED) {
+			ui.keyup(ke);
+		    } else if(ke.getID() == KeyEvent.KEY_TYPED) {
+			ui.type(ke);
+		    }
 		}
+		ui.lastevent = Utils.rtime();
 	    }
 	}
 
