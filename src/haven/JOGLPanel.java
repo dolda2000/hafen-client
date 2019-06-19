@@ -105,6 +105,14 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
+    private void setenv(GLEnvironment env) {
+	if(this.env != null)
+	    this.env.dispose();
+	this.env = env;
+	if(this.ui != null)
+	    this.ui.env = env;
+    }
+
     private volatile CPUProfile.Frame rcurf = null;
     private long swaptime = 0, gltime = 0, waittime = 0, prevswap = System.nanoTime();
     private void redraw(GL2 gl) {
@@ -112,9 +120,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	GLEnvironment env;
 	synchronized(this) {
 	    if((this.env == null) || (this.env.ctx != ctx)) {
-		if(this.env != null)
-		    this.env.dispose();
-		this.env = new GLEnvironment(gl, ctx, shape);
+		setenv(new GLEnvironment(gl, ctx, shape));
 		initgl(gl);
 	    }
 	    env = this.env;
@@ -413,6 +419,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	if(ui != null)
 	    ui.destroy();
 	ui = new UI(new Coord(getSize()), sess);
+	ui.env = this.env;
 	ui.root.guprof = uprof;
 	ui.root.grprof = rprof;
 	if(getParent() instanceof Console.Directory)
