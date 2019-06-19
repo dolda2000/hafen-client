@@ -53,8 +53,7 @@ public class FboState extends GLState {
     }
 
     public void apply(BGL gl) {
-	if(fbo != null)
-	    gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo);
+	gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo);
 	applydbufs(gl);
     }
 
