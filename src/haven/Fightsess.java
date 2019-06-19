@@ -346,7 +346,7 @@ public class Fightsess extends Widget {
 		MapView map = getparent(GameUI.class).map;
 		Coord mvc = map.rootxlate(ui.mc);
 		if(mvc.isect(Coord.z, map.sz)) {
-		    map.delay(map.new Maptest(mvc) {
+		    map.new Maptest(mvc) {
 			    protected void hit(Coord pc, Coord2d mc) {
 				wdgmsg("use", fn, 1, ui.modflags(), mc.floor(OCache.posres));
 			    }
@@ -354,7 +354,7 @@ public class Fightsess extends Widget {
 			    protected void nohit(Coord pc) {
 				wdgmsg("use", fn, 1, ui.modflags());
 			    }
-			});
+			}.run();
 		}
 		return(true);
 	    }
