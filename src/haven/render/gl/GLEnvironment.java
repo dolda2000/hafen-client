@@ -93,6 +93,14 @@ public class GLEnvironment implements Environment {
 
     public void process(GL2 gl) {
 	GLRender prep;
+	Collection<GLRender> copy;
+	synchronized(submitted) {
+	    /* It is important to fethc the submitted renders before
+	     * prep, so that additional once aren't submitted during
+	     * processing that haven't been prepared. */
+	    copy = new ArrayList<>(submitted);
+	    submitted.clear();
+	}
 	synchronized(prepmon) {
 	    prep = this.prep;
 	    this.prep = null;
@@ -105,11 +113,6 @@ public class GLEnvironment implements Environment {
 		prep.gl.run(gl);
 		this.curstate = prep.state;
 		GLException.checkfor(gl);
-	    }
-	    Collection<GLRender> copy;
-	    synchronized(submitted) {
-		copy = new ArrayList<>(submitted);
-		submitted.clear();
 	    }
 	    for(GLRender cmd : copy) {
 		BufferBGL xf = new BufferBGL(16);
