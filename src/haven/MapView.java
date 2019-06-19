@@ -1404,7 +1404,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    super(MapView.this.glob, MapView.this.cc);
 	    setattr(new ResDrawable(this, res, sdt));
 	    if(ui.mc.isect(rootpos(), sz)) {
-		// delay(new Adjust(ui.mc.sub(rootpos()), 0)); XXXRENDER
+		new Adjust(ui.mc.sub(rootpos()), 0).run();
 	    }
 	}
 
@@ -1509,19 +1509,21 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     private UI.Grab camdrag = null;
     
-    public abstract class Maptest implements Delayed {
+    public abstract class Maptest {
 	private final Coord pc;
 
 	public Maptest(Coord c) {
 	    this.pc = c;
 	}
 
-	public void run(GOut g) {
-	    Pipe.Op basic = clickbasic(g.sz());
+	public void run() {
+	    Environment env = ui.env;
+	    Render out = env.render();
+	    Pipe.Op basic = clickbasic(MapView.this.sz);
 	    Pipe bstate = new BufPipe().prep(basic);
-	    g.out.clear(bstate, FragID.fragid, FColor.BLACK);
-	    g.out.clear(bstate, 1.0);
-	    checkmapclick(g.out, basic, pc, mc -> {
+	    out.clear(bstate, FragID.fragid, FColor.BLACK);
+	    out.clear(bstate, 1.0);
+	    checkmapclick(out, basic, pc, mc -> {
 		    /* XXX: This is somewhat doubtfully nice, but running
 		     * it in the defer group would cause unnecessary
 		     * latency, and it shouldn't really be a problem. */
@@ -1534,13 +1536,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			    }
 		    }, "Hit-test callback").start();
 		});
+	    env.submit(out);
 	}
 
 	protected abstract void hit(Coord pc, Coord2d mc);
 	protected void nohit(Coord pc) {}
     }
 
-    public abstract class Hittest implements Delayed {
+    public abstract class Hittest {
 	private final Coord pc;
 	private Coord2d mapcl;
 	private ClickData objcl;
@@ -1550,14 +1553,17 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    pc = c;
 	}
 	
-	public void run(GOut g) {
-	    Pipe.Op basic = clickbasic(g.sz());
+	public void run() {
+	    Environment env = ui.env;
+	    Render out = env.render();
+	    Pipe.Op basic = clickbasic(MapView.this.sz);
 	    Pipe bstate = new BufPipe().prep(basic);
-	    g.out.clear(bstate, FragID.fragid, FColor.BLACK);
-	    g.out.clear(bstate, 1.0);
-	    checkmapclick(g.out, basic, pc, mc -> {mapcl = mc; ckdone(1);});
-	    g.out.clear(bstate, FragID.fragid, FColor.BLACK);
-	    checkgobclick(g.out, basic, pc, cl -> {objcl = cl; ckdone(2);});
+	    out.clear(bstate, FragID.fragid, FColor.BLACK);
+	    out.clear(bstate, 1.0);
+	    checkmapclick(out, basic, pc, mc -> {mapcl = mc; ckdone(1);});
+	    out.clear(bstate, FragID.fragid, FColor.BLACK);
+	    checkgobclick(out, basic, pc, cl -> {objcl = cl; ckdone(2);});
+	    env.submit(out);
 	}
 
 	private void ckdone(int fl) {
@@ -1627,7 +1633,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		wdgmsg("place", placing.rc.floor(posres), (int)Math.round(placing.a * 32768 / Math.PI), button, ui.modflags());
 	} else if((grab != null) && grab.mmousedown(c, button)) {
 	} else {
-	    delay(new Click(c, button));
+	    new Click(c, button).run();
 	}
 	return(true);
     }
@@ -1641,7 +1647,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	} else if((placing_l != null) && placing_l.done()) {
 	    Plob placing = placing_l.get();
 	    if((placing.lastmc == null) || !placing.lastmc.equals(c)) {
-		delay(placing.new Adjust(c, ui.modflags()));
+		placing.new Adjust(c, ui.modflags()).run();
 	    }
 	}
     }
@@ -1672,23 +1678,23 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
     
     public boolean drop(final Coord cc, Coord ul) {
-	delay(new Hittest(cc) {
-		public void hit(Coord pc, Coord2d mc, ClickData inf) {
-		    wdgmsg("drop", pc, mc.floor(posres), ui.modflags());
-		}
-	    });
+	new Hittest(cc) {
+	    public void hit(Coord pc, Coord2d mc, ClickData inf) {
+		wdgmsg("drop", pc, mc.floor(posres), ui.modflags());
+	    }
+	}.run();
 	return(true);
     }
     
     public boolean iteminteract(Coord cc, Coord ul) {
-	delay(new Hittest(cc) {
-		public void hit(Coord pc, Coord2d mc, ClickData inf) {
-		    Object[] args = {pc, mc.floor(posres), ui.modflags()};
-		    if(inf != null)
-			args = Utils.extend(args, inf.clickargs());
-		    wdgmsg("itemact", args);
-		}
-	    });
+	new Hittest(cc) {
+	    public void hit(Coord pc, Coord2d mc, ClickData inf) {
+		Object[] args = {pc, mc.floor(posres), ui.modflags()};
+		if(inf != null)
+		    args = Utils.extend(args, inf.clickargs());
+		wdgmsg("itemact", args);
+	    }
+	}.run();
 	return(true);
     }
 
@@ -1713,39 +1719,39 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public boolean mmousedown(Coord cc, final int button) {
-	    delay(new Maptest(cc) {
-		    public void hit(Coord pc, Coord2d mc) {
-			bk.mmousedown(mc.round(), button);
-		    }
-		});
+	    new Maptest(cc) {
+		public void hit(Coord pc, Coord2d mc) {
+		    bk.mmousedown(mc.round(), button);
+		}
+	    }.run();
 	    return(true);
 	}
 
 	public boolean mmouseup(Coord cc, final int button) {
-	    delay(new Maptest(cc) {
-		    public void hit(Coord pc, Coord2d mc) {
-			bk.mmouseup(mc.round(), button);
-		    }
-		});
+	    new Maptest(cc) {
+		public void hit(Coord pc, Coord2d mc) {
+		    bk.mmouseup(mc.round(), button);
+		}
+	    }.run();
 	    return(true);
 	}
 
 	public boolean mmousewheel(Coord cc, final int amount) {
-	    delay(new Maptest(cc) {
-		    public void hit(Coord pc, Coord2d mc) {
-			bk.mmousewheel(mc.round(), amount);
-		    }
-		});
+	    new Maptest(cc) {
+		public void hit(Coord pc, Coord2d mc) {
+		    bk.mmousewheel(mc.round(), amount);
+		}
+	    }.run();
 	    return(true);
 	}
 
 	public void mmousemove(Coord cc) {
 	    if(mv) {
-		delay(new Maptest(cc) {
-			public void hit(Coord pc, Coord2d mc) {
-			    bk.mmousemove(mc.round());
-			}
-		    });
+		new Maptest(cc) {
+		    public void hit(Coord pc, Coord2d mc) {
+			bk.mmousemove(mc.round());
+		    }
+		}.run();
 	    }
 	}
     }
