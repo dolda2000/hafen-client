@@ -1068,18 +1068,22 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
 
-	public void draw(GOut g) {
-	    if((back == null) || !back.compatible(g.out.env())) {
-		if(back != null)
-		    back.dispose();
-		back = g.out.env().drawlist();
-		back.asyncadd(this, Rendered.class);
-	    }
-	    back.draw(g.out);
+	public Coord sz() {
+	    return(basic.get(States.viewport).area.sz());
 	}
 
-	public void get(GOut g, Coord c, Consumer<ClickData> cb) {
-	    GOut.getpixel(g.out, basic, FragID.fragid, c, col -> {
+	public void draw(Render out) {
+	    if((back == null) || !back.compatible(out.env())) {
+		if(back != null)
+		    back.dispose();
+		back = out.env().drawlist();
+		back.asyncadd(this, Rendered.class);
+	    }
+	    back.draw(out);
+	}
+
+	public void get(Render out, Coord c, Consumer<ClickData> cb) {
+	    GOut.getpixel(out, basic, FragID.fragid, c, col -> {
 		    int id = col2id(col);
 		    if(id == 0) {
 			cb.accept(null);
@@ -1117,7 +1121,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return(Pipe.Op.compose(curclickbasic, camera));
     }
 
-    private void checkmapclick(GOut g, Pipe.Op basic, Coord c, Consumer<Coord2d> cb) {
+    private void checkmapclick(Render out, Pipe.Op basic, Coord c, Consumer<Coord2d> cb) {
 	new Object() {
 	    MapMesh cut;
 	    Coord tile;
@@ -1125,15 +1129,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	    {
 		clmaplist.basic(Pipe.Op.compose(basic, clickloc));
-		clmaplist.draw(g);
+		clmaplist.draw(out);
 		if(clickdb) {
-		    GOut.getimage(g.out, clmaplist.basic, FragID.fragid, Area.sized(Coord.z, g.sz()),
+		    GOut.getimage(out, clmaplist.basic, FragID.fragid, Area.sized(Coord.z, clmaplist.sz()),
 				  img -> Debug.dumpimage(img, Debug.somedir("click1.png")));
-		    GOut.getimage(g.out, clmaplist.basic, ClickLocation.fragloc, Area.sized(Coord.z, g.sz()),
+		    GOut.getimage(out, clmaplist.basic, ClickLocation.fragloc, Area.sized(Coord.z, clmaplist.sz()),
 				  img -> Debug.dumpimage(img, Debug.somedir("click2.png")));
 		}
-		clmaplist.get(g, c, cd -> {this.cut = ((MapClick)cd.ci).cut; ckdone(1);});
-		GOut.getpixel(g.out, clmaplist.basic, ClickLocation.fragloc, c, col -> {
+		clmaplist.get(out, c, cd -> {this.cut = ((MapClick)cd.ci).cut; ckdone(1);});
+		GOut.getpixel(out, clmaplist.basic, ClickLocation.fragloc, c, col -> {
 			tile = new Coord(col.getRed() - 1, col.getGreen() - 1);
 			pixel = new Coord2d((col.getBlue() * tilesz.x) / 255.0, (col.getAlpha() * tilesz.y) / 255.0);
 			ckdone(2);
@@ -1154,14 +1158,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	};
     }
     
-    private void checkgobclick(GOut g, Pipe.Op basic, Coord c, Consumer<ClickData> cb) {
+    private void checkgobclick(Render out, Pipe.Op basic, Coord c, Consumer<ClickData> cb) {
 	clobjlist.basic(basic);
-	clobjlist.draw(g);
+	clobjlist.draw(out);
 	if(clickdb) {
-	    GOut.getimage(g.out, clmaplist.basic, FragID.fragid, Area.sized(Coord.z, g.sz()),
+	    GOut.getimage(out, clobjlist.basic, FragID.fragid, Area.sized(Coord.z, clobjlist.sz()),
 			  img -> Debug.dumpimage(img, Debug.somedir("click3.png")));
 	}
-	clobjlist.get(g, c, cb);
+	clobjlist.get(out, c, cb);
     }
     
     public void delay(Delayed d) {
@@ -1517,7 +1521,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Pipe bstate = new BufPipe().prep(basic);
 	    g.out.clear(bstate, FragID.fragid, FColor.BLACK);
 	    g.out.clear(bstate, 1.0);
-	    checkmapclick(g, basic, pc, mc -> {
+	    checkmapclick(g.out, basic, pc, mc -> {
 		    /* XXX: This is somewhat doubtfully nice, but running
 		     * it in the defer group would cause unnecessary
 		     * latency, and it shouldn't really be a problem. */
@@ -1551,9 +1555,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Pipe bstate = new BufPipe().prep(basic);
 	    g.out.clear(bstate, FragID.fragid, FColor.BLACK);
 	    g.out.clear(bstate, 1.0);
-	    checkmapclick(g, basic, pc, mc -> {mapcl = mc; ckdone(1);});
+	    checkmapclick(g.out, basic, pc, mc -> {mapcl = mc; ckdone(1);});
 	    g.out.clear(bstate, FragID.fragid, FColor.BLACK);
-	    checkgobclick(g, basic, pc, cl -> {objcl = cl; ckdone(2);});
+	    checkgobclick(g.out, basic, pc, cl -> {objcl = cl; ckdone(2);});
 	}
 
 	private void ckdone(int fl) {
