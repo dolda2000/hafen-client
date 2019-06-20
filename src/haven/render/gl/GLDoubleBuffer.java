@@ -41,6 +41,10 @@ public class GLDoubleBuffer {
 		cur.run(gl);
 	}
 
+	public void abort() {
+	    cur.abort();
+	}
+
 	public void update(BufferBGL gl) {
 	    if(gl == null)
 		throw(new NullPointerException());
@@ -86,9 +90,8 @@ public class GLDoubleBuffer {
 
     public void put(BGL gl) {
 	gl.bglSubmit(new BGL.Request() {
-		public void run(GL2 gl) {
-		    put();
-		}
+		public void run(GL2 gl) {put();}
+		public void abort() {put();}
 	    });
     }
 }

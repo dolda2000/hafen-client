@@ -45,6 +45,7 @@ public class GLEnvironment implements Environment {
     Area wnd;
     private GLRender prep = null;
     private Applier curstate = new Applier(this);
+    private boolean invalid = false;
 
     static enum MemStats {
 	INDICES, VERTICES, TEXTURES, VAOS, FBOS
@@ -136,8 +137,12 @@ public class GLEnvironment implements Environment {
 	    throw(new IllegalArgumentException("environment mismatch"));
 	if(gcmd.gl != null) {
 	    synchronized(submitted) {
-		submitted.add(gcmd);
-		submitted.notifyAll();
+		if(!invalid) {
+		    submitted.add(gcmd);
+		    submitted.notifyAll();
+		} else {
+		    gcmd.gl.abort();
+		}
 	    }
 	}
     }
@@ -596,7 +601,16 @@ public class GLEnvironment implements Environment {
     }
 
     public void dispose() {
-	/* XXX: Go through unprocessed BGLs and queries and notify
-	 * their listeners. */
+	Collection<GLRender> copy;
+	synchronized(submitted) {
+	    copy = new ArrayList<>(submitted);
+	    submitted.clear();
+	    invalid = true;
+	}
+	for(GLRender cmd : copy) {
+	    cmd.gl.abort();
+	    sequnreg(cmd);
+	}
+	/* XXX: Provide a way to abort pending queries? */
     }
 }

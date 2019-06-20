@@ -29,22 +29,30 @@ package haven.render.gl;
 import javax.media.opengl.*;
 
 public class Fence implements BGL.Request {
-    private boolean done;
+    private int state;
 
     public Fence() {
     }
 
     public void run(GL2 gl) {
 	synchronized(this) {
-	    done = true;
+	    state = 1;
 	    notifyAll();
 	}
     }
 
-    public void waitfor() throws InterruptedException {
+    public void abort() {
 	synchronized(this) {
-	    while(!done)
+	    state = 2;
+	    notifyAll();
+	}
+    }
+
+    public boolean waitfor() throws InterruptedException {
+	synchronized(this) {
+	    while(state == 0)
 		wait();
+	    return(state == 1);
 	}
     }
 
