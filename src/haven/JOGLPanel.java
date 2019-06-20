@@ -356,6 +356,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 			}
 			if(curf != null) curf.tick("stick");
 			ui.tick();
+			if((ui.root.sz.x != (shape.br.x - shape.ul.x)) || (ui.root.sz.y != (shape.br.y - shape.ul.y)))
+			    ui.root.resize(new Coord(shape.br.x - shape.ul.x, shape.br.y - shape.ul.y));
 			if(curf != null) curf.tick("tick");
 		    }
 
