@@ -42,7 +42,7 @@ public interface DataBuffer {
 	public static Filler<DataBuffer> of(ByteBuffer data) {
 	    return((tgt, env) -> {
 		    FillBuffer buf = env.fillbuf(tgt);
-		    buf.pull(data);
+		    buf.pull(data.slice());
 		    return(buf);
 		});
 	}
