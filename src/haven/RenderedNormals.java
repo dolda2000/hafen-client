@@ -29,6 +29,7 @@ package haven;
 import haven.render.*;
 import haven.render.sl.*;
 import static haven.render.sl.Cons.*;
+import static haven.Utils.eq;
 
 public class RenderedNormals extends State {
     public static final Slot<RenderedNormals> slot = new Slot<>(Slot.Type.SYS, RenderedNormals.class);
@@ -37,6 +38,11 @@ public class RenderedNormals extends State {
 
     public RenderedNormals(Texture.Image<?> img) {
 	this.img = img;
+    }
+
+    public boolean equals(Object o) {
+	return((o instanceof RenderedNormals) &&
+	       eq(((RenderedNormals)o).img, this.img));
     }
 
     private static final ShaderMacro shader = prog -> {
