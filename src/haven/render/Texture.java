@@ -62,6 +62,16 @@ public abstract class Texture implements Disposable {
 	    return(w * h * d * tex.efmt.size());
 	}
 
+	public boolean equals(Image that) {
+	    return((this.tex == that.tex) &&
+		   (this.w == that.w) && (this.h == that.h) && (this.d == that.d) &&
+		   (this.level == that.level));
+	}
+
+	public boolean equals(Object that) {
+	    return((that.getClass() == Image.class) ? equals((Image)that) : false);
+	}
+
 	public String toString() {
 	    return(String.format("#<tex.image %s %d %dx%dx%d>", tex, level, w, h, d));
 	}
