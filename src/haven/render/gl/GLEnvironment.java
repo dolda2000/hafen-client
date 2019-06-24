@@ -41,9 +41,11 @@ public class GLEnvironment implements Environment {
     final Object prepmon = new Object();
     final Collection<GLObject> disposed = new LinkedList<>();
     final List<GLQuery> queries = new LinkedList<>(); // Synchronized on drawmon
+    final Queue<GLRender> submitted = new LinkedList<>();
     Area wnd;
     private GLRender prep = null;
     private Applier curstate = new Applier(this);
+    private boolean invalid = false;
 
     static enum MemStats {
 	INDICES, VERTICES, TEXTURES, VAOS, FBOS
@@ -63,7 +65,9 @@ public class GLEnvironment implements Environment {
     }
 
     public GLRender render() {
-	return(new GLRender(this));
+	GLRender ret = new GLRender(this);
+	seqreg(ret);
+	return(ret);
     }
 
     public GLDrawList drawlist() {
@@ -88,41 +92,90 @@ public class GLEnvironment implements Environment {
 	}
     }
 
-    public void submit(GL2 gl, GLRender cmd) {
-	if(cmd.gl != null) {
-	    GLRender prep;
-	    synchronized(prepmon) {
-		prep = this.prep;
-		this.prep = null;
+    public void process(GL2 gl) {
+	GLRender prep;
+	Collection<GLRender> copy;
+	synchronized(submitted) {
+	    /* It is important to fethc the submitted renders before
+	     * prep, so that additional once aren't submitted during
+	     * processing that haven't been prepared. */
+	    copy = new ArrayList<>(submitted);
+	    submitted.clear();
+	}
+	synchronized(prepmon) {
+	    prep = this.prep;
+	    this.prep = null;
+	}
+	synchronized(drawmon) {
+	    checkqueries(gl);
+	    if((prep != null) && (prep.gl != null)) {
+		BufferBGL xf = new BufferBGL(16);
+		this.curstate.apply(xf, prep.init);
+		prep.gl.run(gl);
+		this.curstate = prep.state;
+		GLException.checkfor(gl);
 	    }
-	    synchronized(drawmon) {
-		checkqueries(gl);
-		if((prep != null) && (prep.gl != null)) {
-		    BufferBGL xf = new BufferBGL(16);
-		    this.curstate.apply(xf, prep.init);
-		    prep.gl.run(gl);
-		    this.curstate = prep.state;
-		    GLException.checkfor(gl);
-		}
+	    for(GLRender cmd : copy) {
 		BufferBGL xf = new BufferBGL(16);
 		this.curstate.apply(xf, cmd.init);
 		xf.run(gl);
 		cmd.gl.run(gl);
 		this.curstate = cmd.state;
 		GLException.checkfor(gl);
-		checkqueries(gl);
+		sequnreg(cmd);
+	    }
+	    checkqueries(gl);
+	    disposeall().run(gl);
+	}
+    }
+
+    public void submit(Render cmd) {
+	if(!(cmd instanceof GLRender))
+	    throw(new IllegalArgumentException("environment mismatch"));
+	GLRender gcmd = (GLRender)cmd;
+	if(gcmd.env != this)
+	    throw(new IllegalArgumentException("environment mismatch"));
+	if(gcmd.gl != null) {
+	    synchronized(submitted) {
+		if(!invalid) {
+		    submitted.add(gcmd);
+		    submitted.notifyAll();
+		} else {
+		    gcmd.gl.abort();
+		}
 	    }
 	}
     }
 
-    public BufferBGL disposeall() {
+    public void submitwait() throws InterruptedException {
+	synchronized(submitted) {
+	    while(submitted.peek() == null)
+		submitted.wait();
+	}
+    }
+
+    private BufferBGL disposeall() {
+	int tail;
+	synchronized(seqmon) {
+	    tail = seqtail;
+	}
 	BufferBGL buf = new BufferBGL();
 	Collection<GLObject> copy;
 	synchronized(disposed) {
 	    if(disposed.isEmpty())
 		return(buf);
-	    copy = new ArrayList<>(disposed);
-	    disposed.clear();
+	    copy = new ArrayList<>(disposed.size());
+	    int lseq = 0;	// XXX: This assertion should be safe to remove once initially verified.
+	    for(Iterator<GLObject> i = disposed.iterator(); i.hasNext();) {
+		GLObject obj = i.next();
+		if(obj.dispseq - lseq < 0)
+		    throw(new AssertionError());
+		if(obj.dispseq - tail > 0)
+		    break;
+		lseq = obj.dispseq;
+		copy.add(obj);
+		i.remove();
+	    }
 	}
 	for(GLObject obj : copy)
 	    buf.bglDelete(obj);
@@ -484,6 +537,56 @@ public class GLEnvironment implements Environment {
 	}
     }
 
+    private final Object seqmon = new Object();
+    private boolean[] sequse = new boolean[16];
+    private int seqhead = 1, seqtail = 1;
+
+    private void seqresize(int nsz) {
+	boolean[] cseq = sequse, nseq = new boolean[nsz];
+	int csz = cseq.length;
+	for(int i = 0; i < csz; i++)
+	    nseq[(seqtail + i) & (nsz - 1)] = cseq[(seqtail + i) & (csz - 1)];
+	sequse = nseq;
+	if(nsz >= 0x4000)
+	    System.err.println("warning: dispose queue size increased to " + nsz);
+    }
+
+    void seqreg(GLRender r) {
+	synchronized(seqmon) {
+	    if(r.dispseq != 0)
+		throw(new IllegalStateException());
+	    int seq = r.dispseq = seqhead;
+	    if(++seqhead == 0)
+		seqhead = 1;
+	    if(seqhead - seqtail == sequse.length - 1)
+		seqresize(sequse.length << 1);
+	    sequse[seq & (sequse.length - 1)] = true;
+	}
+    }
+
+    void sequnreg(GLRender r) {
+	synchronized(seqmon) {
+	    if(r.dispseq == 0)
+		return;
+	    int seq = r.dispseq, m = sequse.length - 1;
+	    int si = seq & m;
+	    if(!sequse[si])
+		throw(new AssertionError());
+	    sequse[si] = false;
+	    if(seq == seqtail) {
+		while((seqtail < seqhead) && !sequse[seqtail & m])
+		    seqtail++;
+	    }
+	    r.dispseq = 0;
+	}
+    }
+
+    int dispseq() {
+	synchronized(seqmon) {
+	    return(seqhead);
+	}
+    }
+
     public int numprogs() {return(nprog);}
 
     public String memstats() {
@@ -495,5 +598,19 @@ public class GLEnvironment implements Environment {
 	    buf.append(String.format("%c %,d (%,d)", sta[i].name().charAt(0), stats_mem[i], stats_obj[i]));
 	}
 	return(buf.toString());
+    }
+
+    public void dispose() {
+	Collection<GLRender> copy;
+	synchronized(submitted) {
+	    copy = new ArrayList<>(submitted);
+	    submitted.clear();
+	    invalid = true;
+	}
+	for(GLRender cmd : copy) {
+	    cmd.gl.abort();
+	    sequnreg(cmd);
+	}
+	/* XXX: Provide a way to abort pending queries? */
     }
 }

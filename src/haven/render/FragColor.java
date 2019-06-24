@@ -28,6 +28,7 @@ package haven.render;
 
 import haven.render.sl.*;
 import haven.render.sl.ValBlock.Value;
+import static haven.Utils.eq;
 
 public class FragColor<T> extends State {
     public static final Slot<FragColor> slot = new Slot<>(Slot.Type.SYS, FragColor.class);
@@ -66,7 +67,7 @@ public class FragColor<T> extends State {
 
     public boolean equals(Object o) {
 	return((o instanceof FragColor) &&
-	       (((FragColor)o).image == this.image));
+	       eq(((FragColor)o).image, this.image));
     }
 
     public String toString() {return(String.format("#<fragcolor %s>", image));}

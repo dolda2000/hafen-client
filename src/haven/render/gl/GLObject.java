@@ -35,6 +35,7 @@ public abstract class GLObject implements Disposable {
     private boolean del = false;
     private GLEnvironment.MemStats pool = null;
     private long mem;
+    int dispseq;
 
     public GLObject(GLEnvironment env) {
 	this.env = env;
@@ -44,6 +45,7 @@ public abstract class GLObject implements Disposable {
     protected abstract void delete(GL2 gl);
 
     public void dispose() {
+	dispseq = env.dispseq();
 	synchronized(env.disposed) {
 	    if(del)
 		return;

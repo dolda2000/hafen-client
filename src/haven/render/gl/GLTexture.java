@@ -66,7 +66,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
     }
 
     public String toString() {
-	return(String.format("#<gl.tex %d>", id));
+	return(String.format("#<gl.tex %d @ %08x>", id, System.identityHashCode(this)));
     }
 
     public void dispose() {
@@ -285,6 +285,10 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	public void unbind(BGL gl) {
 	    gl.glBindTexture(GL.GL_TEXTURE_2D, null);
 	}
+
+	public String toString() {
+	    return(String.format("#<gl.tex2d %d @ %08x %s>", id, System.identityHashCode(this), data));
+	}
     }
 
     public static class TexCube extends GLTexture {
@@ -365,6 +369,10 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 	public void unbind(BGL gl) {
 	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, null);
+	}
+
+	public String toString() {
+	    return(String.format("#<gl.texcube %d @ %08x %s>", id, System.identityHashCode(this), data));
 	}
     }
 }

@@ -27,6 +27,7 @@
 package haven.render;
 
 import haven.render.sl.*;
+import static haven.Utils.eq;
 
 public class DepthBuffer<T> extends State {
     public static final Slot<DepthBuffer> slot = new Slot<>(Slot.Type.SYS, DepthBuffer.class);
@@ -48,7 +49,7 @@ public class DepthBuffer<T> extends State {
 
     public boolean equals(Object o) {
 	return((o instanceof DepthBuffer) &&
-	       (((DepthBuffer)o).image == this.image));
+	       eq(((DepthBuffer)o).image, this.image));
     }
 
     public String toString() {return(String.format("#<depthbuf %s>", image));}

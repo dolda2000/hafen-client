@@ -53,6 +53,11 @@ public class BufferBGL extends BGL {
 	}
     }
 
+    public void abort() {
+	for(int i = 0; i < n; i++)
+	    list[i].abort();
+    }
+
     protected void add(Command cmd) {
 	if(n >= list.length)
 	    list = Arrays.copyOf(list, list.length * 2);

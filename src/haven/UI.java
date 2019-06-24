@@ -31,6 +31,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.InputEvent;
 import static haven.Utils.el;
+import haven.render.Environment;
 
 public class UI {
     public static int MOD_SHIFT = 1, MOD_CTRL = 2, MOD_META = 4, MOD_SUPER = 8;
@@ -38,6 +39,7 @@ public class UI {
     final private LinkedList<Grab> keygrab = new LinkedList<Grab>(), mousegrab = new LinkedList<Grab>();
     public Map<Integer, Widget> widgets = new TreeMap<Integer, Widget>();
     public Map<Widget, Integer> rwidgets = new HashMap<Widget, Integer>();
+    Environment env;
     Receiver rcvr;
     public Coord mc = Coord.z, lcc = Coord.z;
     public Session sess;
@@ -369,6 +371,10 @@ public class UI {
 	       (modctrl  ? MOD_CTRL  : 0) |
 	       (modmeta  ? MOD_META  : 0) |
 	       (modsuper ? MOD_SUPER : 0));
+    }
+
+    public Environment getenv() {
+	return(env);
     }
 
     public void destroy() {

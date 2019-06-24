@@ -36,6 +36,7 @@ import java.lang.reflect.*;
 public abstract class BGL {
     protected static abstract class Command {
 	public abstract void run(GL2 gl);
+	public void abort() {};
     }
 
     private static class BufState {
@@ -70,6 +71,7 @@ public abstract class BGL {
 
     public interface Request {
 	public void run(GL2 gl);
+	public default void abort() {};
     }
 
     protected abstract void add(Command cmd);
@@ -108,6 +110,7 @@ public abstract class BGL {
     public void bglSubmit(final Request req) {
 	add(new Command() {
 		public void run(GL2 gl) {req.run(gl);}
+		public void abort() {req.abort();}
 	    });
     }
 

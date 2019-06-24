@@ -68,6 +68,14 @@ public class TextureCube extends Texture {
 	    this.face = face;
 	}
 
+	public boolean equals(CubeImage that) {
+	    return(equals((Image)that) && (this.face == that.face));
+	}
+
+	public boolean equals(Object that) {
+	    return((that.getClass() == CubeImage.class) ? equals((CubeImage)that) : false);
+	}
+
 	public String toString() {
 	    return(String.format("#<texcube.image %s %d %dx%dx%d, %s>", tex, level, w, h, d, face));
 	}

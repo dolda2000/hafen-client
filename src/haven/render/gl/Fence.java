@@ -26,72 +26,39 @@
 
 package haven.render.gl;
 
-import java.util.*;
 import javax.media.opengl.*;
 
-public class GLDoubleBuffer {
-    private List<Buffered> changed = null;
-    private int prevsz = 16;
+public class Fence implements BGL.Request {
+    private int state;
 
-    public class Buffered implements BGL.Request {
-	private BufferBGL cur, next;
+    public Fence() {
+    }
 
-	public void run(GL2 gl) {
-	    if(cur != null)
-		cur.run(gl);
-	}
-
-	public void abort() {
-	    cur.abort();
-	}
-
-	public void update(BufferBGL gl) {
-	    if(gl == null)
-		throw(new NullPointerException());
-	    if(this.cur == null) {
-		this.cur = gl;
-	    } else {
-		synchronized(GLDoubleBuffer.this) {
-		    if(changed == null) {
-			this.cur = gl;
-		    } else {
-			if(this.next == null)
-			    changed.add(this);
-			this.next = gl;
-		    }
-		}
-	    }
+    public void run(GL2 gl) {
+	synchronized(this) {
+	    state = 1;
+	    notifyAll();
 	}
     }
 
-    public void get() throws InterruptedException {
+    public void abort() {
 	synchronized(this) {
-	    while(changed != null)
+	    state = 2;
+	    notifyAll();
+	}
+    }
+
+    public boolean waitfor() throws InterruptedException {
+	synchronized(this) {
+	    while(state == 0)
 		wait();
-	    changed = new ArrayList<Buffered>(prevsz * 2);
+	    return(state == 1);
 	}
     }
 
-    public void put() {
-	synchronized(this) {
-	    if(changed != null) {
-		for(Buffered req : changed) {
-		    if(req.next != null) {
-			req.cur = req.next;
-			req.next = null;
-		    }
-		}
-		prevsz = Math.max(changed.size(), 16);
-		changed = null;
-		notifyAll();
-	    }
-	}
-    }
-
-    public void put(BGL gl) {
-	gl.bglSubmit(new BGL.Request() {
-		public void run(GL2 gl) {put();}
-		public void abort() {put();}
-	    });
+    public static Fence make(BGL gl) {
+	Fence ret = new Fence();
+	gl.bglSubmit(ret);
+	return(ret);
     }
 }

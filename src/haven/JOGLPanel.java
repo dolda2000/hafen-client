@@ -94,25 +94,6 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    cursmode = "awt";
     }
 
-    private static class Frame {
-	GLRender buf;
-	GLEnvironment env;
-	BufferBGL dispose;
-	boolean debug;
-	long prestart;
-	int frameno;
-	CPUProfile.Frame pf = null;
-
-	Frame(GLRender buf, GLEnvironment env, BufferBGL dispose, int frameno) {
-	    this.buf = buf;
-	    this.env = env;
-	    this.dispose = dispose;
-	    this.frameno = frameno;
-	}
-    }
-
-    private final Frame[] curdraw = {null};
-
     private void initgl(GL2 gl) {
 	Collection<String> exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	GLCapabilitiesImmutable caps = getChosenGLCapabilities();
@@ -124,61 +105,78 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
+    private void setenv(GLEnvironment env) {
+	if(this.env != null)
+	    this.env.dispose();
+	this.env = env;
+	if(this.ui != null)
+	    this.ui.env = env;
+    }
+
+    private volatile CPUProfile.Frame rcurf = null;
+    private long swaptime = 0, gltime = 0, waittime = 0, prevswap = System.nanoTime();
     private void redraw(GL2 gl) {
-	long dst = System.nanoTime();
-	CPUProfile.Frame curf = null;
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
 	synchronized(this) {
 	    if((this.env == null) || (this.env.ctx != ctx)) {
-		this.env = new GLEnvironment(gl, ctx, shape);
+		setenv(new GLEnvironment(gl, ctx, shape));
 		initgl(gl);
 	    }
 	    env = this.env;
 	    if(!env.shape().equals(shape))
 		env.reshape(shape);
 	}
-	Frame f;
-	synchronized(curdraw) {
-	    f = curdraw[0];
-	    curdraw[0] = null;
-	    curdraw.notifyAll();
-	}
 	try {
-	    if(f != null) {
-		curf = f.pf;
-		if(curf != null) curf.tick("init");
-		if(f.env == env) {
-		    if(f.debug) {
-			System.err.print("\n-----\n\n");
-			gl = new TraceGL2(gl, System.err);
-		    }
-		    env.submit(gl, f.buf);
-		    if(curf != null) curf.tick("gl");
-		    f.dispose.run(gl);
-		} else {
-		    f.buf.dispose();
-		}
+	    long pst = Config.profile ? System.nanoTime() : 0;
+	    if(false) {
+		System.err.println("\n-----\n\n");
+		gl = new TraceGL2(gl, System.err);
 	    }
-	    if(curf != null) curf.tick("dispose");
-	    {
-		long swst = System.nanoTime();
-		if(iswap != aswap)
-		    gl.setSwapInterval((aswap = iswap) ? 1 : 0);
-		swapBuffers();
-		if(curf != null) curf.tick("swap");
-		long end = System.nanoTime();
-		if(f != null) {
-		    double fridle = ((double)((dst - f.prestart) + (end - swst)) / (double)(end - f.prestart));
-		    ridle = (ridle * 0.95) + (fridle * 0.05);
-		    framelag = this.frameno - f.frameno;
+	    env.process(gl);
+	    long end = System.nanoTime();
+	    if(Config.profile)
+		gltime += end - pst;
+	    if(swaptime != 0) {
+		CPUProfile.Frame curf = this.rcurf; this.rcurf = null;
+		if(curf != null) {
+		    curf.add("wait", waittime);
+		    curf.add("gl", gltime - swaptime);
+		    curf.add("swap", swaptime);
+		    curf.tick("awt");
+		    curf.fin();
 		}
+
+		double fridle = (double)(swaptime + waittime) / (double)(end - prevswap);
+		ridle = (ridle * 0.95) + (fridle * 0.05);
+
+		gltime = 0;
+		prevswap = end;
+		if(Config.profile)
+		    rcurf = rprof.new Frame();
 	    }
-	    if(curf != null) curf.fin();
 	} catch(BGL.BGLException e) {
 	    if(dumpbgl)
 		e.dump.dump();
 	    throw(e);
+	}
+    }
+
+    private class BufferSwap implements BGL.Request {
+	final int frameno;
+
+	BufferSwap(int frameno) {
+	    this.frameno = frameno;
+	}
+
+	public void run(GL2 gl) {
+	    long swst = System.nanoTime();
+	    if(iswap != aswap)
+		gl.setSwapInterval((aswap = iswap) ? 1 : 0);
+	    JOGLPanel.this.swapBuffers();
+	    long end = System.nanoTime();
+	    swaptime = end - swst;
+	    framelag = JOGLPanel.this.frameno - frameno;
 	}
     }
 
@@ -202,15 +200,9 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		notifyAll();
 	    }
 	    while(true) {
-		CPUProfile.Frame curf = Config.profile ? rprof.new Frame() : null;
 		long wst = System.nanoTime();
-		synchronized(curdraw) {
-		    while(curdraw[0] == null)
-			curdraw.wait();
-		    if(curf != null) curf.tick("waited");
-		    curdraw[0].pf = curf;
-		    curdraw[0].prestart = wst;
-		}
+		env.submitwait();
+		waittime = System.nanoTime() - wst;
 		uglyjoglhack();
 	    }
 	} catch(InterruptedException e) {
@@ -340,6 +332,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		}
 		double then = Utils.rtime();
 		double[] frames = new double[128], waited = new double[frames.length];
+		Fence prevframe = null;
 		int framep = 0;
 		while(true) {
 		    double fwaited = 0;
@@ -347,6 +340,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    GLRender buf = env.render();
 		    Debug.cycle();
 		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
+		    Fence curframe = new Fence();
+		    buf.submit(curframe);
 
 		    UI ui = this.ui;
 
@@ -361,28 +356,24 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 			}
 			if(curf != null) curf.tick("stick");
 			ui.tick();
+			if((ui.root.sz.x != (shape.br.x - shape.ul.x)) || (ui.root.sz.y != (shape.br.y - shape.ul.y)))
+			    ui.root.resize(new Coord(shape.br.x - shape.ul.x, shape.br.y - shape.ul.y));
 			if(curf != null) curf.tick("tick");
 		    }
 
-		    synchronized(curdraw) {
+		    if(prevframe != null) {
 			double now = Utils.rtime();
-			while(curdraw[0] != null)
-			    curdraw.wait();
+			prevframe.waitfor();
+			prevframe = null;
 			fwaited += Utils.rtime() - now;
 		    }
+		    prevframe = curframe;
 
 		    if(curf != null) curf.tick("dwait");
 		    display(ui, buf);
 		    if(curf != null) curf.tick("draw");
-		    BufferBGL dispose = env.disposeall();
-		    synchronized(curdraw) {
-			if(curdraw[0] != null)
-			    throw(new AssertionError());
-			curdraw[0] = new Frame(buf, env, dispose, cfno);
-			if(false)
-			    curdraw[0].debug = true;
-			curdraw.notifyAll();
-		    }
+		    buf.submit(new BufferSwap(cfno));
+		    env.submit(buf);
 		    if(curf != null) curf.tick("aux");
 
 		    double now = Utils.rtime();
@@ -430,6 +421,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	if(ui != null)
 	    ui.destroy();
 	ui = new UI(new Coord(getSize()), sess);
+	ui.env = this.env;
 	ui.root.guprof = uprof;
 	ui.root.grprof = rprof;
 	if(getParent() instanceof Console.Directory)
