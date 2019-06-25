@@ -465,12 +465,19 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void removed(Gob ob) {
+	    RenderTree.Slot slot;
 	    synchronized(this) {
-		RenderTree.Slot slot = current.remove(ob);
-		if(slot != null)
-		    slot.remove();
-		else
+		slot = current.remove(ob);
+		if(slot == null)
 		    adding.remove(ob);
+	    }
+	    if(slot != null) {
+		try {
+		    slot.remove();
+		} catch(RenderTree.SlotRemoved e) {
+		    /* Ignore here as there is a harmless remove-race
+		     * on disposal. */
+		}
 	    }
 	}
     }
