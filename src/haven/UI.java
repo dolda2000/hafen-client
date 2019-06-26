@@ -215,7 +215,7 @@ public class UI {
 	    removeid(child);
     }
 	
-    public void destroy(Widget wdg) {
+    public void removed(Widget wdg) {
 	for(Iterator<Grab> i = mousegrab.iterator(); i.hasNext();) {
 	    Grab g = i.next();
 	    if(g.wdg.hasparent(wdg))
@@ -226,6 +226,9 @@ public class UI {
 	    if(g.wdg.hasparent(wdg))
 		i.remove();
 	}
+    }
+
+    public void destroy(Widget wdg) {
 	removeid(wdg);
 	wdg.reqdestroy();
     }
@@ -378,6 +381,7 @@ public class UI {
     }
 
     public void destroy() {
+	root.destroy();
 	/* XXXRENDER
 	audio.clear();
 	*/
