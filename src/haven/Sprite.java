@@ -29,6 +29,7 @@ package haven;
 import java.awt.image.BufferedImage;
 import java.awt.Graphics;
 import java.util.*;
+import java.util.function.*;
 import java.lang.reflect.Constructor;
 
 public abstract class Sprite implements Rendered {
@@ -54,6 +55,14 @@ public abstract class Sprite implements Rendered {
 	public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
 	    if(Factory.class.isAssignableFrom(cl))
 		return(cl.asSubclass(Factory.class).newInstance());
+	    try {
+		Function<Object[], Sprite> make = Utils.smthfun(cl, "mksprite", Sprite.class, Owner.class, Resource.class, Message.class);
+		return(new Factory() {
+			public Sprite create(Owner owner, Resource res, Message sdt) {
+			    return(make.apply(new Object[] {owner, res, sdt}));
+			}
+		    });
+	    } catch(NoSuchMethodException e) {}
 	    if(Sprite.class.isAssignableFrom(cl))
 		return(mkdynfact(cl.asSubclass(Sprite.class)));
 	    return(null);
