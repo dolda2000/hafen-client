@@ -45,4 +45,8 @@ public class Pair<A, B> {
 	Pair o = (Pair<?, ?>)O;
 	return(Utils.eq(a, o.a) && Utils.eq(b, o.b));
     }
+
+    public String toString() {
+	return(String.format("(%s . %s)", a, b));
+    }
 }

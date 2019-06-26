@@ -388,8 +388,15 @@ public class Material extends GLState {
     @ResName("mlink")
     public static class $mlink implements ResCons2 {
 	public Res.Resolver cons(final Resource res, Object... args) {
-	    final Indir<Resource> lres = res.pool.load((String)args[0], (Integer)args[1]);
-	    final int id = (args.length > 2)?(Integer)args[2]:-1;
+	    final Indir<Resource> lres;
+	    final int id;
+	    if(args[0] instanceof String) {
+		lres = res.pool.load((String)args[0], (Integer)args[1]);
+		id = (args.length > 2)?(Integer)args[2]:-1;
+	    } else {
+		lres = res.indir();
+		id = (Integer)args[0];
+	    }
 	    return(new Res.Resolver() {
 		    public void resolve(Collection<GLState> buf) {
 			if(id >= 0) {
