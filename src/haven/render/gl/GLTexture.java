@@ -69,7 +69,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	return(String.format("#<gl.tex %d @ %08x>", id, System.identityHashCode(this)));
     }
 
-    public void dispose() {
+    protected void dispose0() {
 	while(true) {
 	    GLFrameBuffer fbo, last = null;
 	    synchronized(this) {
@@ -82,7 +82,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	    fbo.dispose();
 	    last = fbo;
 	}
-	super.dispose();
+	super.dispose0();
     }
 
     public abstract void bind(BGL gl);

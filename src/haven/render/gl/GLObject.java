@@ -32,9 +32,10 @@ import javax.media.opengl.*;
 
 public abstract class GLObject implements Disposable {
     public final GLEnvironment env;
-    private boolean del = false;
+    private boolean del = false, disp = false;
     private GLEnvironment.MemStats pool = null;
     private long mem;
+    private int rc = 0;
     int dispseq;
 
     public GLObject(GLEnvironment env) {
@@ -44,7 +45,7 @@ public abstract class GLObject implements Disposable {
     public abstract void create(GL2 gl);
     protected abstract void delete(GL2 gl);
 
-    public void dispose() {
+    protected void dispose0() {
 	dispseq = env.dispseq();
 	synchronized(env.disposed) {
 	    if(del)
@@ -56,7 +57,38 @@ public abstract class GLObject implements Disposable {
     }
 
     protected void finalize() {
-	dispose();
+	dispose0();
+    }
+
+    public void dispose() {
+	synchronized(this) {
+	    disp = true;
+	    if(rc == 0)
+		dispose0();
+	}
+    }
+
+    private static final java.util.concurrent.atomic.AtomicInteger ar = new java.util.concurrent.atomic.AtomicInteger(0);
+    void get() {
+	synchronized(this) {
+	    if(disp)
+		throw(new AssertionError("already disposed"));
+	    rc++;
+	    int na = ar.incrementAndGet();
+	    // System.err.printf("%d ", na);
+	}
+    }
+
+    void put() {
+	synchronized(this) {
+	    rc--;
+	    if(rc < 0)
+		throw(new AssertionError("rc < 0"));
+	    else if((rc == 0) && disp)
+		dispose0();
+	    int na = ar.decrementAndGet();
+	    // System.err.printf("%d ", na);
+	}
     }
 
     protected void ckstate(int st, int ex) {
