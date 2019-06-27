@@ -101,13 +101,14 @@ public interface RenderLink {
 		int ver = buf.uint16();
 		final Indir<Resource> lres = res.pool.load(nm, ver);
 		final int meshid = buf.int16();
+		final int meshmask = buf.eom() ? -1 : buf.int16();
 		l = new RenderLink() {
 			RenderTree.Node res = null;
 			public RenderTree.Node make() {
 			    if(res == null) {
 				ArrayList<RenderTree.Node> cl = new ArrayList<>();
 				for(FastMesh.MeshRes mr : lres.get().layers(FastMesh.MeshRes.class)) {
-				    if(((meshid >= 0) && (mr.id < 0)) || (mr.id == meshid))
+				    if(((meshid >= 0) && (mr.id < 0)) || ((mr.id & meshmask) == meshid))
 					cl.add(mr.mat.get().apply(mr.m));
 				}
 				final RenderTree.Node[] ca = cl.toArray(new RenderTree.Node[0]);
