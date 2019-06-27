@@ -33,12 +33,15 @@ public class Profwnd extends Window {
     public final Profile prof;
     public double mt = 0.05;
     private Tex tex = null;
+    private double dscale = 0;
+    private Tex sscl = null;
     
     public Profwnd(Profile prof, String title) {
-	super(new Coord(prof.hist.length, h), title);
+	super(new Coord(prof.hist.length + 50, h), title);
 	this.prof = prof;
     }
     
+    private static final String[] units = {"s", "ms", "\u00b5s", "ns"};
     public void cdraw(GOut g) {
 	double[] ttl = new double[prof.hist.length];
 	for(int i = 0; i < prof.hist.length; i++) {
@@ -57,10 +60,25 @@ public class Profwnd extends Window {
 	    mt = ttl[ti];
 	else
 	    mt = 0.05;
+	mt *= 1.1;
 	if(tex != null)
 	    tex.dispose();
+	if((sscl == null) || (dscale < mt * 0.70) || (dscale > mt)) {
+	    int p = (int)Math.floor(Math.log10(mt));
+	    double b = Math.pow(10.0, p) * 0.5;
+	    dscale = Math.floor(mt / b) * b;
+	    int u = Utils.clip(-Utils.floordiv(p, 3), 0, units.length - 1);
+	    if(sscl != null)
+		sscl.dispose();
+	    sscl = Text.render(String.format("%.1f %s", dscale * Math.pow(10.0, u * 3), units[u])).tex();
+	}
 	tex = prof.draw(h, mt / h);
 	g.image(tex, Coord.z);
+	int sy = (int)Math.round((1 - (dscale / mt)) * h);
+	g.chcolor(192, 192, 192, 128);
+	g.line(new Coord(0, sy), new Coord(prof.hist.length, sy), 1);
+	g.chcolor();
+	g.image(sscl, new Coord(prof.hist.length + 2, sy - (sscl.sz().y / 2)));
     }
 
     public boolean type(char k, java.awt.event.KeyEvent ev) {
