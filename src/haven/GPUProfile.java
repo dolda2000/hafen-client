@@ -27,7 +27,7 @@
 package haven;
 
 import java.util.*;
-import javax.media.opengl.*;
+import haven.render.*;
 
 public class GPUProfile extends Profile {
     private Collection<Frame> waiting = new LinkedList<Frame>();
@@ -37,44 +37,34 @@ public class GPUProfile extends Profile {
     }
 
     public class Frame extends Profile.Frame {
-	private List<String> nw = new LinkedList<String>();
-	private List<Integer> queries = new LinkedList<Integer>();
-	private GL3 gl;
+	private List<String> nw = new ArrayList<>(16);
+	private List<Long> queries = new ArrayList<>(16);
 
-	public Frame(GL3 gl) {
-	    this.gl = gl;
-	    query();
+	public Frame(Render out) {
+	    query(out);
 	}
 
-	private void query() {
-	    int[] buf = new int[1];
-	    gl.glGenQueries(1, buf, 0);
-	    gl.glQueryCounter(buf[0], GL3.GL_TIMESTAMP);
-	    // GOut.checkerr(gl); XXXRENDER
-	    queries.add(buf[0]);
+	private void query(Render out) {
+	    queries.add(0l);
+	    int idx = queries.size() - 1;
+	    out.timestamp(val -> queries.set(idx, val));
 	}
 
-	public void tick(String nm) {
-	    query();
+	public void tick(Render out, String nm) {
+	    query(out);
 	    nw.add(nm);
 	}
 
-	public void fin() {
-	    query();
+	public void fin(Render out) {
+	    query(out);
 	    waiting.add(this);
 	    check();
 	}
 
 	public void fin2() {
 	    long[] tms = new long[queries.size()];
-	    {
-		int i = 0;
-		for(Iterator<Integer> qi = queries.iterator(); qi.hasNext(); i++) {
-		    int[] qo = {qi.next()};
-		    gl.glGetQueryObjecti64v(qo[0], GL2.GL_QUERY_RESULT, tms, i);
-		    gl.glDeleteQueries(1, qo, 0);
-		}
-	    }
+	    for(int i = 0; i < tms.length; i++)
+		tms[i] = queries.get(i);
 	    int np = tms.length - 2;
 	    double total = (tms[tms.length - 1] - tms[0]) / 1000000000.0;
 	    String[] nm = new String[np];
@@ -90,13 +80,10 @@ public class GPUProfile extends Profile {
     }
 
     public void check() {
-	int[] buf = new int[1];
-	int[] rb = new int[1];
 	for(Iterator<Frame> i = waiting.iterator(); i.hasNext();) {
 	    Frame f = i.next();
-	    for(int qo : f.queries) {
-		f.gl.glGetQueryObjectiv(qo, GL2.GL_QUERY_RESULT_AVAILABLE, rb, 0);
-		if(rb[0] == 0)
+	    for(long qo : f.queries) {
+		if(qo == 0)
 		    return;
 	    }
 	    f.fin2();

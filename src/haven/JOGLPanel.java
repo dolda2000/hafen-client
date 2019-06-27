@@ -38,6 +38,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private static final boolean dumpbgl = true;
     public final boolean vsync = true;
     public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
+    public final GPUProfile gprof = new GPUProfile(300);
     private double framedur_fg = 0.0, framedur_bg = 0.2;
     private boolean bgmode = false;
     private boolean iswap = true, aswap;
@@ -340,6 +341,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    GLRender buf = env.render();
 		    Debug.cycle();
 		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
+		    GPUProfile.Frame curgf = Config.profilegpu ? gprof.new Frame(buf) : null;
 		    Fence curframe = new Fence();
 		    buf.submit(curframe);
 
@@ -359,6 +361,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 			if((ui.root.sz.x != (shape.br.x - shape.ul.x)) || (ui.root.sz.y != (shape.br.y - shape.ul.y)))
 			    ui.root.resize(new Coord(shape.br.x - shape.ul.x, shape.br.y - shape.ul.y));
 			if(curf != null) curf.tick("tick");
+			if(curgf != null) curgf.tick(buf, "tick");
 		    }
 
 		    if(prevframe != null) {
@@ -372,7 +375,10 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    if(curf != null) curf.tick("dwait");
 		    display(ui, buf);
 		    if(curf != null) curf.tick("draw");
+		    if(curgf != null) curgf.tick(buf, "draw");
 		    buf.submit(new BufferSwap(cfno));
+		    if(curgf != null) curgf.tick(buf, "swap");
+		    if(curgf != null) curgf.fin(buf);
 		    env.submit(buf);
 		    if(curf != null) curf.tick("aux");
 
@@ -424,6 +430,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	ui.env = this.env;
 	ui.root.guprof = uprof;
 	ui.root.grprof = rprof;
+	ui.root.ggprof = gprof;
 	if(getParent() instanceof Console.Directory)
 	    ui.cons.add((Console.Directory)getParent());
 	ui.cons.add(this);

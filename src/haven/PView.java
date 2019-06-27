@@ -193,6 +193,12 @@ public abstract class PView extends Widget {
 	list2d.draw(g);
     }
 
+    public void dispose() {
+	if(back != null)
+	    back.dispose();
+	super.dispose();
+    }
+
     private static final Object id_fb = new Object(), id_view = new Object(), id_misc = new Object();
     protected void basic() {
 	basic(id_fb, p -> {

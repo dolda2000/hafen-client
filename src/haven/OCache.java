@@ -79,25 +79,27 @@ public class OCache implements Iterable<Gob> {
 
     public void add(Gob ob) {
 	synchronized(ob) {
+	    Collection<ChangeCallback> cbs;
 	    synchronized(this) {
+		cbs = new ArrayList<>(this.cbs);
 		objs.put(ob.id, ob);
-		for(ChangeCallback cb : cbs)
-		    cb.added(ob);
 	    }
+	    for(ChangeCallback cb : cbs)
+		cb.added(ob);
 	}
     }
 
     public void remove(long id) {
 	Gob old;
+	Collection<ChangeCallback> cbs;
 	synchronized(this) {
 	    old = objs.remove(id);
+	    cbs = new ArrayList<>(this.cbs);
 	}
 	if(old != null) {
 	    synchronized(old) {
-		synchronized(this) {
-		    for(ChangeCallback cb : cbs)
-			cb.removed(old);
-		}
+		for(ChangeCallback cb : cbs)
+		    cb.removed(old);
 	    }
 	}
     }

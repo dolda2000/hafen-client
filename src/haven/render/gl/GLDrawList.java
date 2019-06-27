@@ -555,8 +555,12 @@ public class GLDrawList implements DrawList {
 	    if(--rc <= 0) {
 		if(rc < 0)
 		    throw(new RuntimeException());
-		delsetting(this);
+		del();
 	    }
+	}
+
+	void del() {
+	    delsetting(this);
 	}
     }
 
@@ -727,6 +731,7 @@ public class GLDrawList implements DrawList {
     class UniformSetting extends DepSetting {
 	final GLProgram prog;
 	final Uniform var;
+	GLObject vref;
 
 	UniformSetting(SettingKey key) {
 	    super(key);
@@ -738,10 +743,25 @@ public class GLDrawList implements DrawList {
 	void compile(BGL gl) {
 	    Object val = env.prepuval(var.value.apply(compstate()));
 	    UniformApplier.TypeMapping.apply(gl, prog, var, val);
+	    GLObject pref = this.vref;
+	    if(val instanceof GLObject)
+		(this.vref = (GLObject)val).get();
+	    else
+		this.vref = null;
+	    if(pref != null)
+		pref.put();
 	}
 
 	State.Slot[] depslots() {
 	    return(var.deps.toArray(new State.Slot[key.ndeps()]));
+	}
+
+	void del() {
+	    if(vref != null) {
+		vref.put();
+		this.vref = null;
+	    }
+	    super.del();
 	}
     }
 
@@ -765,6 +785,14 @@ public class GLDrawList implements DrawList {
 	void compile(BGL gl) {
 	    st.apply(gl);
 	}
+
+	void put() {
+	    if(st.vao != null)
+		st.vao.put();
+	    if(st.ebo != null)
+		st.ebo.put();
+	    super.put();
+	}
     }
     private final Map<Pair<GLVertexArray, GLBuffer>, VaoSetting> vaos = new CacheMap<>(CacheMap.RefType.WEAK);
     private VaoSetting getvao(GLVertexArray vao, GLBuffer ebo) {
@@ -772,6 +800,10 @@ public class GLDrawList implements DrawList {
 	VaoSetting ret = vaos.get(key);
 	if(ret == null)
 	    vaos.put(key, ret = new VaoSetting(vao, ebo));
+	if(vao != null)
+	    vao.get();
+	if(ebo != null)
+	    ebo.get();
 	return(ret);
     }
     private final VaoSetting vao_nil = getvao(null, null);
@@ -825,6 +857,7 @@ public class GLDrawList implements DrawList {
 	public void clear(Pipe pipe, double val) {throw(new NotImplemented());}
 	public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback) {throw(new NotImplemented());}
 	public void pget(Texture.Image img, VectorFormat fmt, Consumer<ByteBuffer> callback) {throw(new NotImplemented());}
+	public void timestamp(Consumer<Long> callback) {throw(new NotImplemented());}
 	public <T extends DataBuffer> void update(T buf, DataBuffer.Filler<? super T> data) {throw(new NotImplemented());}
 	public void dispose() {}
     }

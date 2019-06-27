@@ -429,9 +429,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	setcanfocus(true);
     }
     
-    public void destroy() {
-	super.destroy();
+    public void dispose() {
 	gobs.slot.remove();
+	clmaplist.dispose();
+	clobjlist.dispose();
+	super.dispose();
     }
 
     public boolean visol(int ol) {
@@ -505,12 +507,19 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void removed(Gob ob) {
+	    RenderTree.Slot slot;
 	    synchronized(this) {
-		RenderTree.Slot slot = current.remove(ob);
-		if(slot != null)
-		    slot.remove();
-		else
+		slot = current.remove(ob);
+		if(slot == null)
 		    adding.remove(ob);
+	    }
+	    if(slot != null) {
+		try {
+		    slot.remove();
+		} catch(RenderTree.SlotRemoved e) {
+		    /* Ignore here as there is a harmless remove-race
+		     * on disposal. */
+		}
 	    }
 	}
     }
@@ -1142,6 +1151,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    }
 		    cb.accept(new ClickData(cs.bk.state().get(Clickable.slot), (RenderTree.Slot)cs.bk.cast(RenderTree.Node.class)));
 		});
+	}
+
+	public void dispose() {
+	    if(back != null)
+		back.dispose();
 	}
     }
 

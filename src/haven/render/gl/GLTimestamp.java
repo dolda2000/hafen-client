@@ -24,33 +24,40 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
 import java.util.function.*;
-import java.nio.*;
-import haven.*;
-import haven.render.sl.*;
+import javax.media.opengl.*;
 
-public interface Render extends Disposable {
-    public Environment env();
-    public void submit(Render sub);
-    public void draw(Pipe pipe, Model data);
-    public void clear(Pipe pipe, FragData buf, FColor val);
-    public void clear(Pipe pipe, double val);
+public class GLTimestamp extends GLQuery {
+    public final Consumer<Long> callback;
+    private int id;
 
-    public <T extends DataBuffer> void update(T buf, DataBuffer.Filler<? super T> data);
+    public GLTimestamp(GLEnvironment env, Consumer<Long> callback) {
+	super(env);
+	this.callback = callback;
+    }
 
-    public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback);
-    public void pget(Texture.Image img, VectorFormat fmt, Consumer<ByteBuffer> callback);
-    public void timestamp(Consumer<Long> callback);
+    public void create(GL2 gl) {
+	int[] buf = {0};
+	gl.glGenQueries(1, buf, 0);
+	((GL3)gl).glQueryCounter(buf[0], GL3.GL_TIMESTAMP);
+	id = buf[0];
+	env.queries.add(this);
+    }
 
-    public default void draw(Pipe pipe, Model.Mode mode, short[] ind, VertexArray.Layout fmt, int n, float[] data) {
-	Model.Indices indb = null;
-	if(ind != null)
-	    indb = new Model.Indices(ind.length, NumberFormat.UINT16, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(ind));
-	VertexArray vao = new VertexArray(fmt, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data)));
-	Model model = new Model(mode, vao, indb, 0, n);
-	draw(pipe, model);
-	model.dispose();
+    public boolean check(GL2 gl) {
+	int[] rbuf = {0};
+	gl.glGetQueryObjectiv(id, GL2.GL_QUERY_RESULT_AVAILABLE, rbuf, 0);
+	if(rbuf[0] == 0)
+	    return(false);
+	long[] tbuf = {0};
+	((GL3)gl).glGetQueryObjecti64v(id, GL2.GL_QUERY_RESULT, tbuf, 0);
+	callback.accept(tbuf[0]);
+	return(true);
+    }
+
+    public void delete(GL2 gl) {
+	gl.glDeleteQueries(1, new int[] {id}, 0);
     }
 }

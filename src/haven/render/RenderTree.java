@@ -307,6 +307,9 @@ public class RenderTree implements RenderList.Adapter {
 	public default void lockstate() {}
     }
 
+    public static class SlotRemoved extends IllegalStateException {
+    }
+
     static class TreeSlot implements Slot {
 	final TreeSlot parent;
 	final RenderTree tree;
@@ -374,7 +377,7 @@ public class RenderTree implements RenderList.Adapter {
 	public TreeSlot add(Node n, Pipe.Op state) {
 	    try(Locked lk = tree.lock()) {
 		if((parent != null) && (pidx < 0))
-		    throw(new IllegalStateException());
+		    throw(new SlotRemoved());
 		TreeSlot ch = new TreeSlot(tree, this, n);
 		ch.cstate = state;
 		addch(ch);
@@ -422,6 +425,8 @@ public class RenderTree implements RenderList.Adapter {
 
 	public void remove() {
 	    try(Locked lk = tree.lock()) {
+		if((parent != null) && (pidx < 0))
+		    throw(new SlotRemoved());
 		while(nchildren > 0)
 		    children[nchildren - 1].remove();
 		parent.removech(this);
@@ -569,7 +574,7 @@ public class RenderTree implements RenderList.Adapter {
 
 	private void chstate(Pipe.Op cstate, Pipe.Op ostate) {
 	    if((parent != null) && (pidx < 0))
-		throw(new IllegalStateException());
+		throw(new SlotRemoved());
 	    if(stlock)
 		throw(new RuntimeException("attempted state change of locked slot"));
 	    if(this.dstate != null) {
@@ -607,7 +612,7 @@ public class RenderTree implements RenderList.Adapter {
 
 	public void update() {
 	    if((parent != null) && (pidx < 0))
-		throw(new IllegalStateException());
+		throw(new SlotRemoved());
 	    synchronized(tree.clients) {
 		tree.clients.forEach(cl -> cl.updated(this));
 	    }
