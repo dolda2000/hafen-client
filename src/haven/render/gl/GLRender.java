@@ -457,6 +457,10 @@ public class GLRender implements Render, Disposable {
 	gl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, null);
     }
 
+    public void timestamp(Consumer<Long> callback) {
+	gl().bglCreate(new GLTimestamp(env, callback));
+    }
+
     public void submit(BGL.Request req) {
 	gl().bglSubmit(req);
     }
