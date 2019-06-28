@@ -733,14 +733,16 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	}
 
 	public void autotick(double dt) {
-	    Placement np;
-	    try {
-		np = new Placement();
-	    } catch(Loading l) {
-		return;
+	    synchronized(Gob.this) {
+		Placement np;
+		try {
+		    np = new Placement();
+		} catch(Loading l) {
+		    return;
+		}
+		if(!Utils.eq(this.cur, np))
+		    update(np);
 	    }
-	    if(!Utils.eq(this.cur, np))
-		update(np);
 	}
 
 	private void update(Placement np) {
