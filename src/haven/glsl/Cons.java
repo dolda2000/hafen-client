@@ -97,6 +97,7 @@ public class Cons {
     public static Expression cross(Expression x, Expression y) {return(Function.Builtin.cross.call(x, y));}
     public static Expression reflect(Expression x, Expression y) {return(Function.Builtin.reflect.call(x, y));}
     public static Expression texture2D(Expression s, Expression c) {return(Function.Builtin.texture2D.call(s, c));}
+    public static Expression shadow2D(Expression s, Expression c) {return(Function.Builtin.shadow2D.call(s, c));}
     public static Expression texture3D(Expression s, Expression c) {return(Function.Builtin.texture3D.call(s, c));}
     public static Expression textureCube(Expression s, Expression c) {return(Function.Builtin.textureCube.call(s, c));}
     public static Expression texelFetch(Expression s, Expression c, Expression l) {return(Function.Builtin.texelFetch.call(s, c, l));}
