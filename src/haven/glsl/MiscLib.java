@@ -180,4 +180,25 @@ public abstract class MiscLib {
 				     clamp(mul(sub(pick(base, "rgb"), l(0.5)), l(1000.0)), l(0.0), l(1.0))),
 				 pick(base, "a"))));
     }};
+
+    public static final Function rgb2hsv = new Function.Def(VEC3) {{
+	Expression c = param(IN, VEC3).ref();
+	Expression p = code.local(VEC4, mix(vec4(pick(c, "bg"), l(-1.0), l( 2.0 / 3.0)),
+					    vec4(pick(c, "gb"), l( 0.0), l(-1.0 / 3.0)),
+					    step(pick(c, "b"), pick(c, "g")))).ref();
+	Expression q = code.local(VEC4, mix(vec4(pick(p, "xyw"), pick(c, "r")),
+					    vec4(pick(c, "r"), pick(p, "yzx")),
+					    step(pick(p, "x"), pick(c, "r")))).ref();
+	Expression d = code.local(FLOAT, sub(pick(q, "x"), min(pick(q, "w"), pick(q, "y")))).ref();
+	Expression e = l(1.0e-10);
+	code.add(new Return(vec3(abs(add(pick(q, "z"), div(sub(pick(q, "w"), pick(q, "y")), add(mul(l(6.0), d), e)))),
+				 div(d, add(pick(q, "x"), e)),
+				 pick(q, "x"))));
+    }};
+
+    public static final Function hsv2rgb = new Function.Def(VEC3) {{
+	Expression c = param(IN, VEC3).ref();
+	Expression p = code.local(VEC3, abs(sub(mul(fract(add(pick(c, "xxx"), vec3(1.0, 2.0 / 3.0, 1.0 / 3.0))), l(6.0)), l(3.0)))).ref();
+	code.add(new Return(mul(pick(c, "z"), mix(vec3(l(1.0)), clamp(sub(p, l(1.0)), l(0.0), l(1.0)), pick(c, "y")))));
+    }};
 }
