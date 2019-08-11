@@ -30,6 +30,7 @@ import java.util.*;
 import javax.media.opengl.*;
 import haven.Disposable;
 import haven.render.*;
+import haven.render.sl.Type;
 import static haven.render.DataBuffer.Usage.*;
 
 public class GLVertexArray extends GLObject implements BGL.ID {
@@ -116,6 +117,20 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 		    if(var != null) {
 			VboState.apply(gl, g.state, bufs[attr.buf]);
 			gl.glVertexAttribPointer(var, attr.el.nc, GLRender.glattribfmt(attr.el.cf), GLRender.glattribnorm(attr.el.cf), attr.stride, attr.offset);
+			if(attr.instanced) {
+			    if(attr.tgt.type == Type.MAT4) {
+				gl.glVertexAttribDivisor(var, 0, 1);
+				gl.glVertexAttribDivisor(var, 1, 1);
+				gl.glVertexAttribDivisor(var, 2, 1);
+				gl.glVertexAttribDivisor(var, 3, 1);
+			    } else if(attr.tgt.type == Type.MAT3) {
+				gl.glVertexAttribDivisor(var, 0, 1);
+				gl.glVertexAttribDivisor(var, 1, 1);
+				gl.glVertexAttribDivisor(var, 2, 1);
+			    } else {
+				gl.glVertexAttribDivisor(var, 1);
+			    }
+			}
 			gl.glEnableVertexAttribArray(var);
 		    }
 		}

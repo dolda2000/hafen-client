@@ -91,13 +91,19 @@ public class VertexArray implements Disposable {
 	    public final Attribute tgt;
 	    public final VectorFormat el;
 	    public final int buf, offset, stride;
+	    public final boolean instanced;
 
-	    public Input(Attribute tgt, VectorFormat el, int buf, int offset, int stride) {
+	    public Input(Attribute tgt, VectorFormat el, int buf, int offset, int stride, boolean instanced) {
 		this.tgt = tgt;
 		this.el = el;
 		this.buf = buf;
 		this.offset = offset;
 		this.stride = stride;
+		this.instanced = instanced;
+	    }
+
+	    public Input(Attribute tgt, VectorFormat el, int buf, int offset, int stride) {
+		this(tgt, el, buf, offset, stride, false);
 	    }
 
 	    public int hashCode() {

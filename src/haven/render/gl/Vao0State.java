@@ -30,22 +30,30 @@ import javax.media.opengl.*;
 
 public class Vao0State extends VaoState {
     public final GLProgram.VarID[] enable;
+    public final boolean[] instanced;
     public final GLBuffer ebo;
 
-    public Vao0State(GLProgram.VarID[] enable, GLBuffer ebo) {
+    public Vao0State(GLProgram.VarID[] enable, boolean[] instanced, GLBuffer ebo) {
 	this.enable = enable;
+	this.instanced = instanced;
 	this.ebo = ebo;
     }
 
     public void apply(BGL gl) {
-	for(GLProgram.VarID attr : enable)
-	    gl.glEnableVertexAttribArray(attr);
+	for(int i = 0; i < enable.length; i++) {
+	    gl.glEnableVertexAttribArray(enable[i]);
+	    if(instanced[i])
+		gl.glVertexAttribDivisor(enable[i], 1);
+	}
 	gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ebo);
     }
 
     public void unapply(BGL gl) {
-	for(GLProgram.VarID attr : enable)
-	    gl.glDisableVertexAttribArray(attr);
+	for(int i = 0; i < enable.length; i++) {
+	    gl.glDisableVertexAttribArray(enable[i]);
+	    if(instanced[i])
+		gl.glVertexAttribDivisor(enable[i], 0);
+	}
 	gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, null);
     }
 
@@ -55,25 +63,39 @@ public class Vao0State extends VaoState {
 	    return;
 	}
 	Vao0State that = (Vao0State)sthat;
-	found: for(GLProgram.VarID a1 : this.enable) {
-	    for(GLProgram.VarID a2 : that.enable) {
-		if(a2 == a1)
+	found: for(int i1 = 0; i1 < this.enable.length; i1++) {
+	    for(int i2 = 0; i2 < that.enable.length; i2++) {
+		if(that.enable[i2] == this.enable[i1]) {
+		    if(that.instanced[i2] && !this.instanced[i1])
+			gl.glVertexAttribDivisor(this.enable[i1], 1);
+		    else if(!that.instanced[i2] && this.instanced[i1])
+			gl.glVertexAttribDivisor(this.enable[i1], 0);
 		    continue found;
+		}
 	    }
-	    gl.glDisableVertexAttribArray(a1);
+	    gl.glDisableVertexAttribArray(this.enable[i1]);
+	    if(this.instanced[i1])
+		gl.glVertexAttribDivisor(this.enable[i1], 0);
 	}
-	found: for(GLProgram.VarID a1 : that.enable) {
-	    for(GLProgram.VarID a2 : this.enable) {
-		if(a2 == a1)
+	found: for(int i1 = 0; i1 < that.enable.length; i1++) {
+	    for(int i2 = 0; i2 < this.enable.length; i2++) {
+		if(this.enable[i2] == that.enable[i1]) {
+		    if(that.instanced[i1] && !this.instanced[i2])
+			gl.glVertexAttribDivisor(that.enable[i1], 1);
+		    else if(!that.instanced[i1] && this.instanced[i2])
+			gl.glVertexAttribDivisor(that.enable[i1], 0);
 		    continue found;
+		}
 	    }
-	    gl.glEnableVertexAttribArray(a1);
+	    gl.glEnableVertexAttribArray(that.enable[i1]);
+	    if(that.instanced[i1])
+		gl.glVertexAttribDivisor(that.enable[i1], 0);
 	}
 	if(that.ebo != this.ebo)
 	    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, that.ebo);
     }
 
-    public static void apply(BGL gl, Applier st, GLProgram.VarID[] enable) {
+    public static void apply(BGL gl, Applier st, GLProgram.VarID[] enable, boolean[] instanced) {
 	GLState cur = st.glstates[slot];
 	GLBuffer ebo = null;
 	eq: if(cur instanceof Vao0State) {
@@ -81,24 +103,28 @@ public class Vao0State extends VaoState {
 	    ebo = that.ebo;
 	    if(that.enable.length == enable.length) {
 		for(int i = 0; i < enable.length; i++) {
-		    if(enable[i] != that.enable[i])
+		    if((enable[i] != that.enable[i]) || (instanced[i] != that.instanced[i]))
 			break eq;
 		}
 		return;
 	    }
 	}
-	st.apply(gl, new Vao0State(enable, ebo));
+	st.apply(gl, new Vao0State(enable, instanced, ebo));
     }
 
+    private static final GLProgram.VarID[] nilen = {};
+    private static final boolean[] nilinst = {};
     public static void apply(BGL gl, Applier st, GLBuffer ebo) {
 	GLState cur = st.glstates[slot];
-	GLProgram.VarID[] enable = null;
+	GLProgram.VarID[] enable = nilen;
+	boolean[] instanced = nilinst;
 	if(cur instanceof Vao0State) {
 	    Vao0State that = (Vao0State)cur;
 	    if(that.ebo == ebo)
 		return;
 	    enable = that.enable;
+	    instanced = that.instanced;
 	}
-	st.apply(gl, new Vao0State((enable == null) ? new GLProgram.VarID[0] : enable, ebo));
+	st.apply(gl, new Vao0State(enable, instanced, ebo));
     }
 }
