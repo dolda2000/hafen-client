@@ -581,14 +581,16 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 
 		    frames[framep] = now;
 		    waited[framep] = fwaited;
-		    for(int i = 0, ckf = framep, twait = 0; i < frames.length; i++) {
-			ckf = (ckf - 1 + frames.length) % frames.length;
-			twait += waited[ckf];
-			if(now - frames[ckf] > 1000) {
-			    fps = i;
-			    uidle = ((double)twait) / ((double)(now - frames[ckf]));
-			    break;
+		    {
+			int i = 0, ckf = framep, twait = 0;
+			for(; i < frames.length - 1; i++) {
+			    ckf = (ckf - 1 + frames.length) % frames.length;
+			    twait += waited[ckf];
+			    if(now - frames[ckf] > 1000)
+				break;
 			}
+			fps = (i * 1000) / (now - frames[ckf]);
+			uidle = ((double)twait) / ((double)(now - frames[ckf]));
 		    }
 		    framep = (framep + 1) % frames.length;
 
