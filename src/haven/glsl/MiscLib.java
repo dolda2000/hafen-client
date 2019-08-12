@@ -181,7 +181,7 @@ public abstract class MiscLib {
 				 pick(base, "a"))));
     }};
 
-    public static final Function rgb2hsv = new Function.Def(VEC3) {{
+    public static final Function rgb2hsv = new Function.Def(VEC3, "rgb2hsv") {{
 	Expression c = param(IN, VEC3).ref();
 	Expression p = code.local(VEC4, mix(vec4(pick(c, "bg"), l(-1.0), l( 2.0 / 3.0)),
 					    vec4(pick(c, "gb"), l( 0.0), l(-1.0 / 3.0)),
@@ -196,7 +196,7 @@ public abstract class MiscLib {
 				 pick(q, "x"))));
     }};
 
-    public static final Function hsv2rgb = new Function.Def(VEC3) {{
+    public static final Function hsv2rgb = new Function.Def(VEC3, "hsv2rgb") {{
 	Expression c = param(IN, VEC3).ref();
 	Expression p = code.local(VEC3, abs(sub(mul(fract(add(pick(c, "xxx"), vec3(1.0, 2.0 / 3.0, 1.0 / 3.0))), l(6.0)), l(3.0)))).ref();
 	code.add(new Return(mul(pick(c, "z"), mix(vec3(l(1.0)), clamp(sub(p, l(1.0)), l(0.0), l(1.0)), pick(c, "y")))));
