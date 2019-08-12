@@ -27,10 +27,20 @@
 package haven.render;
 
 import java.util.*;
+import haven.*;
 import haven.render.sl.ShaderMacro;
 
 public interface Rendered {
     public void draw(Pipe context, Render out);
+
+    public static interface Instancable extends Rendered {
+	public default Object instanceid() {return(this);}
+	public Instanced instancify(InstanceBatch batch);
+    }
+
+    public static interface Instanced extends Rendered {
+	
+    }
 
     public static final State.Slot<Order> order = new State.Slot<>(State.Slot.Type.GEOM, Order.class);
     public abstract static class Order<C extends Order> extends State {

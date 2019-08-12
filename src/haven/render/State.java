@@ -36,6 +36,7 @@ public abstract class State implements Pipe.Op {
 	public final int id;
 	public final Class<T> scl;
 	private int depid = -1;
+	public Instancer<T> instanced;
 
 	public enum Type {
 	    SYS, GEOM, DRAW
@@ -60,6 +61,13 @@ public abstract class State implements Pipe.Op {
 	    }
 	}
 
+	public Slot<T> instanced(Instancer<T> inst) {
+	    if(inst == null)
+		throw(new NullPointerException());
+	    this.instanced = inst;
+	    return(this);
+	}
+
 	public static Slot<?> byid(int id) {
 	    if((id < 0) || (id >= slots.idlist.length))
 		return(null);
@@ -73,6 +81,10 @@ public abstract class State implements Pipe.Op {
 	public static int numslots() {
 	    return(slots.idlist.length);
 	}
+    }
+
+    public interface Instancer<T extends State> {
+	public T inststate(T uinst, InstanceBatch batch);
     }
 
     public abstract ShaderMacro shader();
