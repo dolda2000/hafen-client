@@ -108,17 +108,17 @@ public class InstanceList implements RenderList<Rendered> {
     private static class InstanceState extends BufPipe {
 	final int[] mask;
 
-	private <T extends State> void inststate0(State.Slot<T> slot, GroupPipe from) {
-	    this.put(slot, slot.instanced.inststate(from.get(slot)));
+	private <T extends State> void inststate0(State.Slot<T> slot, GroupPipe from, InstancedSlot batch) {
+	    this.put(slot, slot.instanced.inststate(from.get(slot), batch));
 	}
 
-	InstanceState(GroupPipe from) {
+	InstanceState(GroupPipe from, InstancedSlot batch) {
 	    int ns = 0, fn = from.nstates();;
 	    int[] mask = new int[fn];
 	    for(int i = 0; i < fn; i++) {
 		State.Slot<?> slot = State.Slot.byid(i);
 		if(slot.instanced != null) {
-		    inststate0(slot, from);
+		    inststate0(slot, from, batch);
 		    mask[ns++] = i;
 		}
 	    }
@@ -140,7 +140,7 @@ public class InstanceList implements RenderList<Rendered> {
 	}
     }
 
-    private class InstancedSlot implements RenderList.Slot<Rendered> {
+    private class InstancedSlot implements RenderList.Slot<Rendered>, InstanceBatch {
 	final Instanced rend;
 	final InstanceState ist;
 	final GroupPipe ust;
@@ -213,14 +213,14 @@ public class InstanceList implements RenderList<Rendered> {
 	}
 
 	InstancedSlot(Slot<? extends Rendered>[] slots) {
-	    this.rend = ((Instancable)slots[0].obj()).instancify();
+	    this.rend = ((Instancable)slots[0].obj()).instancify(this);
 	    this.ust = slots[0].state();
-	    this.ist = new InstanceState(ust);
+	    this.ist = new InstanceState(ust, this);
 	    Instance[] insts = new Instance[slots.length];
 	    for(int i = 0; i < slots.length; i++) {
 		insts[i] = new Instance(slots[i]);
 		insts[i].idx = i;
-		if((i > 0) && (InstanceState.compare(this.ist, new InstanceState(slots[i].state())) != 0))
+		if((i > 0) && (InstanceState.compare(this.ist, new InstanceState(slots[i].state(), this)) != 0))
 		    throw(new RuntimeException("instantiation-IDs not yet implemented"));
 	    }
 	    this.insts = insts;
@@ -295,6 +295,36 @@ public class InstanceList implements RenderList<Rendered> {
 	    if(state == null)
 		state = new StateSum();
 	    return(state);
+	}
+
+	public State.Slot<?>[] batchstates() {
+	    State.Slot<?>[] ret = new State.Slot<?>[ist.mask.length];
+	    for(int i = 0; i < ist.mask.length; i++)
+		ret[i] = State.Slot.byid(ist.mask[i]);
+	    return(ret);
+	}
+
+	public <T extends State> T batchstate(State.Slot<T> slot) {
+	    return(ist.get(slot));
+	}
+
+	public int instances() {
+	    return(ni);
+	}
+
+	public Pipe inststate(int idx) {
+	    if(idx >= ni)
+		throw(new ArrayIndexOutOfBoundsException(idx));
+	    return(insts[idx].slot.state());
+	}
+
+	public void instupdate() {
+	    back.update(this);
+	}
+
+	public <T extends State> void update(State.Slot<? super T> slot, T state) {
+	    ist.put(slot, state);
+	    back.update(this);
 	}
     }
 

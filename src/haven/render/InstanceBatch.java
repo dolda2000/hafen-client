@@ -31,6 +31,6 @@ public interface InstanceBatch {
     public <T extends State> T batchstate(State.Slot<T> slot);
     public int instances();
     public Pipe inststate(int inst);
-    public void update(Rendered.Instanced obj);
+    public void instupdate();
     public <T extends State> void update(State.Slot<? super T> slot, T state);
 }
