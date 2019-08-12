@@ -82,6 +82,10 @@ public abstract class Function {
 	    this.code = new Block();
 	}
 
+	public Def(Type type, String prefix) {
+	    this(type, new Symbol.Gen(prefix));
+	}
+
 	public Def(Type type) {
 	    this(type, new Symbol.Gen());
 	}
