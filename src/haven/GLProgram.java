@@ -131,17 +131,11 @@ public class GLProgram implements java.io.Serializable {
 	}
 	
 	public int uniform(GL2 gl, String name) {
-	    int r = gl.glGetUniformLocationARB(id, name);
-	    if(r < 0)
-		throw(new NoSuchElementException(name));
-	    return(r);
+	    return(gl.glGetUniformLocationARB(id, name));
 	}
 	
 	public int attrib(GL2 gl, String name) {
-	    int r = gl.glGetAttribLocation(id, name);
-	    if(r < 0)
-		throw(new NoSuchElementException(name));
-	    return(r);
+	    return(gl.glGetAttribLocation(id, name));
 	}
     }
     
