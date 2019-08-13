@@ -209,9 +209,9 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	public TerrainTile create(int id, Tileset set) {
 	    Resource res = set.getres();
 	    Tileset trans = null;
-	    GLState base = null;
+	    Pipe.Op base = null;
 	    Collection<Var> var = new LinkedList<Var>();
-	    GLState commat = null;
+	    Pipe.Op commat = null;
 	    for(Object rdesc : set.ta) {
 		Object[] desc = (Object[])rdesc;
 		String p = (String)desc[0];
@@ -235,7 +235,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		String p = (String)desc[0];
 		if(p.equals("base")) {
 		    int mid = (Integer)desc[1];
-		    base = GLState.compose(commat, res.layer(Material.Res.class, mid).get());
+		    base = Pipe.Op.compose(commat, res.layer(Material.Res.class, mid).get());
 		} else if(p.equals("var")) {
 		    int mid = (Integer)desc[1];
 		    double thrl, thrh;
@@ -247,7 +247,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 			thrh = Double.MAX_VALUE;
 		    }
 		    double nz = (res.name.hashCode() * mid * 8129) % 10000;
-		    GLState mat = GLState.compose(commat, res.layer(Material.Res.class, mid).get());
+		    Pipe.Op mat = Pipe.Op.compose(commat, res.layer(Material.Res.class, mid).get());
 		    var.add(new Var(mat, thrl, thrh, nz));
 		} else if(p.equals("trans")) {
 		    Resource tres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();

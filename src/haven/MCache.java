@@ -28,7 +28,7 @@ package haven;
 
 import java.util.*;
 import java.lang.ref.*;
-import haven.render.Render;
+import haven.render.*;
 
 /* XXX: This whole file is a bit of a mess and could use a bit of a
  * rewrite some rainy day. Synchronization especially is quite hairy. */
@@ -137,20 +137,17 @@ public class MCache {
 	}
 
 	private class Flavdraw extends ResDrawable {
-	    final GLState extra;
+	    final Pipe.Op extra;
 
-	    Flavdraw(Gob gob, Indir<Resource> res, Message sdt, GLState extra) {
+	    Flavdraw(Gob gob, Indir<Resource> res, Message sdt, Pipe.Op extra) {
 		super(gob, res, sdt);
 		this.extra = extra;
 	    }
 
-	    public void setup(RenderList rl) {
-		try {
-		    init();
-		} catch(Loading e) {
-		    return;
-		}
-		rl.add(spr, extra);
+	    @Override public void added(RenderTree.Slot slot) {
+		if(extra != null)
+		    slot.ostate(extra);
+		super.added(slot);
 	    }
 	}
 
