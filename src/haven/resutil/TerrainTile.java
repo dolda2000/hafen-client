@@ -209,14 +209,33 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	public TerrainTile create(int id, Tileset set) {
 	    Resource res = set.getres();
 	    Tileset trans = null;
-	    Material base = null;
+	    Pipe.Op base = null;
 	    Collection<Var> var = new LinkedList<Var>();
+	    Pipe.Op commat = null;
+	    for(Object rdesc : set.ta) {
+		Object[] desc = (Object[])rdesc;
+		String p = (String)desc[0];
+		if(p.equals("common-mat")) {
+		    if(desc[1] instanceof Integer) {
+			int mid = (Integer)desc[1];
+			commat = res.layer(Material.Res.class, mid).get();
+		    } else if(desc[1] instanceof String) {
+			String mnm = (String)desc[1];
+			int mver = (Integer)desc[2];
+			if(desc.length > 3) {
+			    commat = res.pool.load(mnm, mver).get().layer(Material.Res.class, (Integer)desc[3]).get();
+			} else {
+			    commat = Material.fromres((Material.Owner)null, res.pool.load(mnm, mver).get(), Message.nil);
+			}
+		    }
+		}
+	    }
 	    for(Object rdesc : set.ta) {
 		Object[] desc = (Object[])rdesc;
 		String p = (String)desc[0];
 		if(p.equals("base")) {
 		    int mid = (Integer)desc[1];
-		    base = res.layer(Material.Res.class, mid).get();
+		    base = Pipe.Op.compose(commat, res.layer(Material.Res.class, mid).get());
 		} else if(p.equals("var")) {
 		    int mid = (Integer)desc[1];
 		    double thrl, thrh;
@@ -228,12 +247,17 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 			thrh = Double.MAX_VALUE;
 		    }
 		    double nz = (res.name.hashCode() * mid * 8129) % 10000;
-		    var.add(new Var(res.layer(Material.Res.class, mid).get(), thrl, thrh, nz));
+		    Pipe.Op mat = Pipe.Op.compose(commat, res.layer(Material.Res.class, mid).get());
+		    var.add(new Var(mat, thrl, thrh, nz));
 		} else if(p.equals("trans")) {
 		    Resource tres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
 		    trans = tres.layer(Tileset.class);
 		}
 	    }
+	    /* XXX? Arguably ugly, but tell the base tileset format
+	     * that. Also arguably nice to be able to set terrain and
+	     * flavobj materials in one go. */
+	    set.flavobjmat = commat;
 	    return(new TerrainTile(id, new SNoise3(res.name.hashCode()), base, var.toArray(new Var[0]), trans));
 	}
     }

@@ -24,45 +24,45 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.resutil;
 
-import java.awt.*;
+import haven.*;
 import haven.render.*;
+import haven.render.sl.ShaderMacro;
 
-public class Speaking extends GAttrib implements RenderTree.Node, PView.Render2D {
-    public static final IBox sb = new IBox("gfx/hud/emote", "tl", "tr", "bl", "br", "el", "er", "et", "eb");
-    public static final Tex svans = Resource.loadtex("gfx/hud/emote/svans");
-    public static final int sx = 3;
-    public float zo;
-    public Text text;
-	
-    public Speaking(Gob gob, float zo, String text) {
-	super(gob);
-	this.zo = zo;
-	this.text = Text.render(text, Color.BLACK);
-    }
-	
-    public void update(String text) {
-	this.text = Text.render(text, Color.BLACK);
-    }
-	
-    public void draw(GOut g, Coord c) {
-	Coord sz = text.sz();
-	if(sz.x < 10)
-	    sz.x = 10;
-	Coord tl = c.add(new Coord(sx, sb.cisz().y + sz.y + svans.sz().y - 1).inv());
-	Coord ftl = tl.add(sb.btloff());
-	g.chcolor(Color.WHITE);
-	g.frect(ftl, sz);
-	sb.draw(g, tl, sz.add(sb.cisz()));
-	g.chcolor(Color.BLACK);
-	g.image(text.tex(), ftl);
-	g.chcolor(Color.WHITE);
-	g.image(svans, c.add(0, -svans.sz().y));
+public class LatentMat extends State {
+    public static final Slot<LatentMat> slot = new Slot<>(Slot.Type.DRAW, LatentMat.class);
+    public final Pipe.Op mat;
+    public final String id, act;
+
+    public LatentMat(Pipe.Op mat, String id) {
+	this.mat = mat;
+	this.id = id;
+	this.act = null;
     }
 
-    public void draw(GOut g, Pipe state) {
-	Coord sc = Homo3D.obj2view(new Coord3f(0, 0, zo), state).round2();
-	draw(g, sc.add(3, 0));
+    public LatentMat(String act) {
+	this.mat = null;
+	this.id = null;
+	this.act = act;
+    }
+
+    public ShaderMacro shader() {return(null);}
+
+    public void apply(Pipe buf) {
+	if((mat != null) && (id != null))
+	    buf.put(slot, this);
+	if(act != null) {
+	    LatentMat cur = buf.get(slot);
+	    if((cur != null) && (cur.id == act))
+		cur.mat.apply(buf);
+	}
+    }
+
+    @Material.ResName("latent")
+    public static class $latent implements Material.ResCons {
+	public Pipe.Op cons(Resource res, Object... args) {
+	    return(new LatentMat(((String)args[0]).intern()));
+	}
     }
 }

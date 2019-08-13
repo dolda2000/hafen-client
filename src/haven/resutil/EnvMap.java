@@ -56,23 +56,17 @@ public class EnvMap extends GLState {
 	this((Color)args[0]);
     }
 
-    private static final ShaderMacro[] shaders = {
-	new ShaderMacro() {
-	    public void modify(final ProgramContext prog) {
-		prog.dump = true;
-		prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			public Expression expand(Expression in) {
-			    return(add(in, mul(textureCube(csky.ref(), neg(mul(icam.ref(),
-									       reflect(MiscLib.fragedir(prog.fctx).depref(),
-										       MiscLib.frageyen(prog.fctx).depref())))),
-					       vec4(ccol.ref(), l(0.0)))));
-			}
-		    }, 90);
-	    };
-	}
+    private static final ShaderMacro shader = prog -> {
+	prog.dump = true;
+	prog.fctx.fragcol.mod(in -> {
+		return(add(in, mul(textureCube(csky.ref(), neg(mul(icam.ref(),
+								   reflect(MiscLib.fragedir(prog.fctx).depref(),
+									   MiscLib.frageyen(prog.fctx).depref())))),
+				   vec4(ccol.ref(), l(0.0)))));
+	    }, 90);
     };
 
-    public ShaderMacro[] shaders() {return(shaders);}
+    public ShaderMacro shader() {return(shader);}
     public boolean reqshader() {return(true);}
 
     public void reapply(GOut g) {

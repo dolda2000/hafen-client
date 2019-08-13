@@ -82,6 +82,10 @@ public abstract class Function {
 	    this.code = new Block();
 	}
 
+	public Def(Type type, String prefix) {
+	    this(type, new Symbol.Gen(prefix));
+	}
+
 	public Def(Type type) {
 	    this(type, new Symbol.Gen());
 	}
@@ -220,6 +224,7 @@ public abstract class Function {
 	public static final Builtin transpose = new Builtin(null, new Symbol.Fix("transpose"), 1);
 
 	public static final Builtin texture2D = new Builtin(Type.VEC4, new Symbol.Fix("texture2D"), 2);
+	public static final Builtin shadow2D = new Builtin(Type.VEC4, new Symbol.Fix("shadow2D"), 2);
 	public static final Builtin texture3D = new Builtin(Type.VEC4, new Symbol.Fix("texture3D"), 2);
 	public static final Builtin textureCube = new Builtin(Type.VEC4, new Symbol.Fix("textureCube"), 2);
 	public static final Builtin texelFetch = new Builtin(Type.VEC4, new Symbol.Fix("texelFetch"), 3);
