@@ -104,7 +104,7 @@ public class Phong extends ValBlock.Group {
 	public Statement dcurs, scurs;
 
 	private DoLight() {
-	    super(VOID, new Symbol.Gen("dolight"));
+	    super(VOID, "dolight");
 
 	    ValBlock.Group tdep = dvals.new Group() {
 		    public void cons1() {

@@ -28,65 +28,43 @@ package haven.resutil;
 
 import haven.*;
 import haven.glsl.*;
-import java.awt.Color;
-import javax.media.opengl.*;
 import static haven.glsl.Cons.*;
-import static haven.glsl.Function.PDir.*;
 import static haven.glsl.Type.*;
 
-@Material.ResName("envref")
-public class EnvMap extends GLState {
-    public static final Slot<EnvMap> slot = new Slot<EnvMap>(Slot.Type.DRAW, EnvMap.class);
-    private static final Uniform csky = new Uniform(SAMPLERCUBE);
-    private static final Uniform ccol = new Uniform(VEC3);
-    private static final Uniform icam = new Uniform(MAT3);
-    private static final TexCube sky = WaterTile.sky;
-    public final float[] col;
-    private TexUnit tsky;
-    
-    public EnvMap(Color col) {
-	this.col = new float[] {
-	    col.getRed() / 255.0f,
-	    col.getGreen() / 255.0f,
-	    col.getBlue() / 255.0f,
-	};
+public class HueMod extends GLState {
+    public static final Slot<HueMod> slot = new Slot<>(Slot.Type.DRAW, HueMod.class);
+    final float tgthue, huemod, satmod;
+
+    public HueMod(float tgthue, float huemod, float satmod) {
+	this.tgthue = tgthue;
+	this.huemod = huemod;
+	this.satmod = satmod;
     }
 
-    public EnvMap(Resource res, Object... args) {
-	this((Color)args[0]);
-    }
-
+    private static final Uniform cxf = new Uniform(VEC3);
+    private static final Function apply = new Function.Def(VEC4) {{
+	Expression c = param(PDir.IN, Type.VEC4).ref();
+	LValue t = code.local(VEC3, MiscLib.rgb2hsv.call(pick(c, "rgb"))).ref();
+	Expression th = pick(cxf.ref(), "x");
+	Expression hm = pick(cxf.ref(), "y");
+	Expression hue = fract(add(mul(sub(fract(add(pick(t, "r"), sub(l(1.0 + 0.5), th))), l(0.5)), hm), add(l(1.0), th)));
+	code.add(ass(t, vec3(hue, mul(pick(t, "g"), pick(cxf.ref(), "z")), pick(t, "b"))));
+	code.add(new Return(vec4(MiscLib.hsv2rgb.call(t), pick(c, "a"))));
+    }};
     private static final ShaderMacro shader = prog -> {
-	prog.dump = true;
-	prog.fctx.fragcol.mod(in -> {
-		return(add(in, mul(textureCube(csky.ref(), neg(mul(icam.ref(),
-								   reflect(MiscLib.fragedir(prog.fctx).depref(),
-									   MiscLib.frageyen(prog.fctx).depref())))),
-				   vec4(ccol.ref(), l(0.0)))));
-	    }, 90);
+	prog.fctx.fragcol.mod(apply::call, 1000);
     };
-
     public ShaderMacro shader() {return(shader);}
-    public boolean reqshader() {return(true);}
 
     public void reapply(GOut g) {
-	g.gl.glUniform1i(g.st.prog.uniform(csky), tsky.id);
-	g.gl.glUniform3fv(g.st.prog.uniform(ccol), 1, col, 0);
-	g.gl.glUniformMatrix3fv(g.st.prog.uniform(icam), 1, false, PView.camxf(g).transpose().trim3(), 0);
+	g.gl.glUniform3f(g.st.prog.uniform(cxf), tgthue, 1.0f - huemod, satmod);
     }
 
     public void apply(GOut g) {
-	BGL gl = g.gl;
-	(tsky = g.st.texalloc()).act(g);
-	gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
 	reapply(g);
     }
 
-    public void unapply(GOut g) {
-	tsky.act(g);
-	g.gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, null);
-	tsky.free(); tsky = null;
-    }
+    public void unapply(GOut g) {}
 
     public void prep(Buffer buf) {
 	buf.put(slot, this);

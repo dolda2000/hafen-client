@@ -136,6 +136,24 @@ public class MCache {
 	    }
 	}
 
+	private class Flavdraw extends ResDrawable {
+	    final GLState extra;
+
+	    Flavdraw(Gob gob, Indir<Resource> res, Message sdt, GLState extra) {
+		super(gob, res, sdt);
+		this.extra = extra;
+	    }
+
+	    public void setup(RenderList rl) {
+		try {
+		    init();
+		} catch(Loading e) {
+		    return;
+		}
+		rl.add(spr, extra);
+	    }
+	}
+
 	public Grid(Coord gc) {
 	    this.gc = gc;
 	    this.ul = gc.mul(cmaps);
@@ -175,7 +193,7 @@ public class MCache {
 			if((fp % set.flavprob) == 0) {
 			    Indir<Resource> r = set.flavobjs.pick(rp % set.flavobjs.tw);
 			    Gob g = new Flavobj(c.add(tc).mul(tilesz).add(tilesz.div(2)), a * 2 * Math.PI);
-			    g.setattr(new ResDrawable(g, r, Message.nil));
+			    g.setattr(new Flavdraw(g, r, Message.nil, set.flavobjmat));
 			    Coord cc = c.div(cutsz);
 			    fo[cc.x + (cc.y * cutn.x)].add(g);
 			}

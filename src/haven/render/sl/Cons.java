@@ -99,11 +99,13 @@ public class Cons {
     public static Expression cross(Expression x, Expression y) {return(Function.Builtin.cross.call(x, y));}
     public static Expression reflect(Expression x, Expression y) {return(Function.Builtin.reflect.call(x, y));}
     public static Expression texture2D(Expression s, Expression c) {return(Function.Builtin.texture2D.call(s, c));}
+    public static Expression shadow2D(Expression s, Expression c) {return(Function.Builtin.shadow2D.call(s, c));}
     public static Expression texture3D(Expression s, Expression c) {return(Function.Builtin.texture3D.call(s, c));}
     public static Expression textureCube(Expression s, Expression c) {return(Function.Builtin.textureCube.call(s, c));}
     public static Expression texelFetch(Expression s, Expression c, Expression l) {return(Function.Builtin.texelFetch.call(s, c, l));}
     public static Expression mix(Expression x, Expression y, Expression a) {return(Function.Builtin.mix.call(x, y, a));}
     public static Expression clamp(Expression x, Expression a, Expression b) {return(Function.Builtin.clamp.call(x, a, b));}
+    public static Expression step(Expression edge, Expression x) {return(Function.Builtin.step.call(edge, x));}
     public static Expression smoothstep(Expression a, Expression b, Expression x) {return(Function.Builtin.smoothstep.call(a, b, x));}
 
     public static Expression reduce(Function fun, Expression... es) {
