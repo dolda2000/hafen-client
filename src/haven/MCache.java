@@ -114,7 +114,8 @@ public class MCache {
 	public String mnm;
 	private int olseq = -1;
 	private final Cut cuts[];
-	private Collection<Gob>[] fo = null;
+	@SuppressWarnings("unchecked")
+	private Collection<Gob>[] fo = new Collection[cutn.x * cutn.y];
 
 	private class Cut {
 	    MapMesh mesh;
@@ -156,17 +157,15 @@ public class MCache {
 	    return(ol[tc.x + (tc.y * cmaps.x)]);
 	}
 
-	private void makeflavor() {
-	    @SuppressWarnings("unchecked")
-	    Collection<Gob>[] fo = (Collection<Gob>[])new Collection[cutn.x * cutn.y];
-	    for(int i = 0; i < fo.length; i++)
-		fo[i] = new LinkedList<Gob>();
-	    Coord c = new Coord(0, 0);
-	    Coord tc = gc.mul(cmaps);
-	    int i = 0;
-	    Random rnd = new Random(id);
-	    for(c.y = 0; c.y < cmaps.x; c.y++) {
-		for(c.x = 0; c.x < cmaps.y; c.x++, i++) {
+	private Collection<Gob> makeflavor(Coord cutc) {
+	    Collection<Gob> ret = new ArrayList<>();
+	    Coord o = new Coord(0, 0);
+	    Coord ul = cutc.mul(cutsz);
+	    Coord gul = ul.add(gc.mul(cmaps));
+	    int i = ul.x + (ul.y * cmaps.x);
+	    Random rnd = new Random(id + cutc.x + (cutc.y * cutn.x));
+	    for(o.y = 0; o.y < cutsz.x; o.y++, i += (cmaps.x - cutsz.x)) {
+		for(o.x = 0; o.x < cutsz.y; o.x++, i++) {
 		    Tileset set = tileset(tiles[i]);
 		    int fp = rnd.nextInt();
 		    int rp = rnd.nextInt();
@@ -174,21 +173,21 @@ public class MCache {
 		    if(set.flavobjs.size() > 0) {
 			if((fp % set.flavprob) == 0) {
 			    Indir<Resource> r = set.flavobjs.pick(rp % set.flavobjs.tw);
-			    Gob g = new Flavobj(c.add(tc).mul(tilesz).add(tilesz.div(2)), a * 2 * Math.PI);
+			    Gob g = new Flavobj(o.add(gul).mul(tilesz).add(tilesz.div(2)), a * 2 * Math.PI);
 			    g.setattr(new ResDrawable(g, r, Message.nil));
-			    Coord cc = c.div(cutsz);
-			    fo[cc.x + (cc.y * cutn.x)].add(g);
+			    ret.add(g);
 			}
 		    }
 		}
 	    }
-	    this.fo = fo;
+	    return(ret);
 	}
 
 	public Collection<Gob> getfo(Coord cc) {
-	    if(fo == null)
-		makeflavor();
-	    return(fo[cc.x + (cc.y * cutn.x)]);
+	    int foo = cc.x + (cc.y * cutn.x);
+	    if(fo[foo] == null)
+		fo[foo] = makeflavor(cc);
+	    return(fo[foo]);
 	}
 	
 	private Cut geticut(Coord cc) {
@@ -264,8 +263,8 @@ public class MCache {
 	}
 	
 	public void tick(double dt) {
-	    if(fo != null) {
-		for(Collection<Gob> fol : fo) {
+	    for(Collection<Gob> fol : fo) {
+		if(fol != null) {
 		    for(Gob fo : fol)
 			fo.ctick(dt);
 		}
@@ -273,20 +272,21 @@ public class MCache {
 	}
 	
 	public void gtick(Render g) {
-	    if(fo != null) {
-		for(Collection<Gob> fol : fo) {
+	    for(Collection<Gob> fol : fo) {
+		if(fol != null) {
 		    for(Gob fo : fol)
 			fo.gtick(g);
 		}
 	    }
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void invalidate() {
 	    for(int y = 0; y < cutn.y; y++) {
 		for(int x = 0; x < cutn.x; x++)
 		    buildcut(new Coord(x, y));
 	    }
-	    fo = null;
+	    fo = new Collection[cutn.x * cutn.y];
 	    for(Coord ic : new Coord[] {
 		    new Coord(-1, -1), new Coord( 0, -1), new Coord( 1, -1),
 		    new Coord(-1,  0),                    new Coord( 1,  0),
