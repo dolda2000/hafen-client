@@ -125,10 +125,11 @@ public class MCache {
 	}
 
 	private class Flavdraw extends ResDrawable {
-	    GLState extra;
+	    final GLState extra;
 
 	    Flavdraw(Gob gob, Indir<Resource> res, Message sdt, GLState extra) {
 		super(gob, res, sdt);
+		this.extra = extra;
 	    }
 
 	    public void setup(RenderList rl) {
