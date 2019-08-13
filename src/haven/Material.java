@@ -239,7 +239,10 @@ public class Material extends GLState {
 	if(f != null) {
 	    return(f.create(owner, res, sdt));
 	}
-	return(res.layer(Material.Res.class).get());
+	Res mat = res.layer(Material.Res.class);
+	if(mat == null)
+	    return(null);
+	return(mat.get());
     }
 
     private static class LegacyOwner implements Owner {
@@ -405,10 +408,10 @@ public class Material extends GLState {
 				throw(new Resource.LoadException("No such material in " + lres.get() + ": " + id, res));
 			    buf.add(mat.get());
 			} else {
-			    Res mat = lres.get().layer(Res.class);
+			    Material mat = fromres((Owner)null, lres.get(), Message.nil);
 			    if(mat == null)
 				throw(new Resource.LoadException("No material in " + lres.get(), res));
-			    buf.add(mat.get());
+			    buf.add(mat);
 			}
 		    }
 		});

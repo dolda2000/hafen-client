@@ -39,6 +39,7 @@ public class Tileset extends Resource.Layer {
     public Object[] ta = new Object[0];
     private transient Tiler.Factory tfac;
     public WeightList<Indir<Resource>> flavobjs = new WeightList<Indir<Resource>>();
+    public GLState flavobjmat = null;
     public WeightList<Tile> ground;
     public WeightList<Tile>[] ctrans, btrans;
     public int flavprob;

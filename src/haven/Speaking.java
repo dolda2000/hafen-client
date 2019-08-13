@@ -52,11 +52,11 @@ public class Speaking extends GAttrib {
 	Coord sz = text.sz();
 	if(sz.x < 10)
 	    sz.x = 10;
-	Coord tl = c.add(new Coord(sx, sb.bsz().y + sz.y + svans.sz().y - 1).inv());
-	Coord ftl = tl.add(sb.tloff());
+	Coord tl = c.add(new Coord(sx, sb.cisz().y + sz.y + svans.sz().y - 1).inv());
+	Coord ftl = tl.add(sb.btloff());
 	g.chcolor(Color.WHITE);
 	g.frect(ftl, sz);
-	sb.draw(g, tl, sz.add(sb.bsz()));
+	sb.draw(g, tl, sz.add(sb.cisz()));
 	g.chcolor(Color.BLACK);
 	g.image(text.tex(), ftl);
 	g.chcolor(Color.WHITE);
