@@ -320,7 +320,10 @@ public class GLDrawList implements DrawList {
 	void orderupdate() {
 	    Rendered.Order norder = ordersrc.get(Rendered.order);
 	    boolean fixed = false;
-	    if(Rendered.Order.cmp.compare(gorder, norder) == 0) {
+	    if((Rendered.Order.cmp.compare(gorder, norder) == 0) ||
+	       ((Rendered.Order.cmp.compare(prev().gorder, norder) >= 0) &&
+		(Rendered.Order.cmp.compare(next().gorder, norder) <= 0)))
+	    {
 		gorder = norder;
 	    } else {
 		tremove();

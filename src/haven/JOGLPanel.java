@@ -383,7 +383,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    if(curf != null) curf.tick("aux");
 
 		    double now = Utils.rtime();
-		    double fd = bgmode ? this.framedur_bg : this.framedur_fg;
+		    double fd = (bgmode && (this.framedur_bg > 0.0)) ? this.framedur_bg : this.framedur_fg;
 		    if(then + fd > now) {
 			then += fd;
 			synchronized(ed) {

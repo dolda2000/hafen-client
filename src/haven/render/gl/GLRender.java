@@ -175,11 +175,13 @@ public class GLRender implements Render, Disposable {
 	    }
 
 	    GLProgram.VarID[] enable = new GLProgram.VarID[data.va.fmt.inputs.length];
+	    boolean[] instanced = new boolean[enable.length];
 	    for(int i = 0; i < enable.length; i++) {
 		/* XXX: Properly handle input attributes not present in the program. */
 		enable[i] = state.prog().cattrib(data.va.fmt.inputs[i].tgt);
+		instanced[i] = data.va.fmt.inputs[i].instanced;
 	    }
-	    Vao0State.apply(this.gl, state, enable);
+	    Vao0State.apply(this.gl, state, enable, instanced);
 
 	    BGL gl = gl();
 	    int[] offsets = new int[data.va.bufs.length];

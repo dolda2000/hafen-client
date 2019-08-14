@@ -1196,7 +1196,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    GOut.getimage(out, clmaplist.basic, ClickLocation.fragloc, Area.sized(Coord.z, clmaplist.sz()),
 				  img -> Debug.dumpimage(img, Debug.somedir("click2.png")));
 		}
-		clmaplist.get(out, c, cd -> {this.cut = ((MapClick)cd.ci).cut; ckdone(1);});
+		clmaplist.get(out, c, cd -> {
+			if(cd != null)
+			    this.cut = ((MapClick)cd.ci).cut;
+			ckdone(1);
+		    });
 		GOut.getpixel(out, clmaplist.basic, ClickLocation.fragloc, c, col -> {
 			tile = new Coord(col.getRed() - 1, col.getGreen() - 1);
 			pixel = new Coord2d((col.getBlue() * tilesz.x) / 255.0, (col.getAlpha() * tilesz.y) / 255.0);
