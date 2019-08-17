@@ -334,8 +334,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
 	public Coord base() {
 	    if(base != null) return(base.get());
-	    return(new Coord((g.x > 0)?parent.sz.x:(g.x < 0)?0:(parent.sz.x / 2),
-			     (g.y > 0)?parent.sz.y:(g.y < 0)?0:(parent.sz.y / 2)));
+	    return(new Coord((g.x > 0)?parent.sz.x:(g.x < 0)?0:((parent.sz.x - this.sz.x) / 2),
+			     (g.y > 0)?parent.sz.y:(g.y < 0)?0:((parent.sz.y - this.sz.y) / 2)));
 	}
 
 	public void move(double a) {
