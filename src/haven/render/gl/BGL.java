@@ -440,6 +440,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void glDrawArraysInstanced(final int mode, final int first, final int count, final int primcount) {
+	add(new Command() {
+		public void run(GL2 gl) {gl.glDrawArraysInstanced(mode, first, count, primcount);}
+	    });
+    }
+
     public void glDrawArrays(final int mode, final int first, final int count) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glDrawArrays(mode, first, count);}
