@@ -202,7 +202,8 @@ public class WItem extends Widget implements DTarget {
 		int n = ui.modctrl ? -1 : 1;
 		item.wdgmsg("transfer", c, n);
 	    } else if(ui.modctrl) {
-		item.wdgmsg("drop", c);
+		int n = ui.modmeta ? -1 : 1;
+		item.wdgmsg("drop", c, n);
 	    } else {
 		item.wdgmsg("take", c);
 	    }
