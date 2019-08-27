@@ -224,6 +224,7 @@ public class LocalMiniMap extends Widget {
 	if(cur != null) {
 	    g.image(MiniMap.bg, Coord.z);
 	    g.image(cur.img, cur.ul.sub(cc).add(sz.div(2)));
+	    drawicons(g);
 	    try {
 		synchronized(ui.sess.glob.party.memb) {
 		    for(Party.Member m : ui.sess.glob.party.memb.values()) {
@@ -236,7 +237,7 @@ public class LocalMiniMap extends Widget {
 			if(ppc == null)
 			    continue;
 			Coord ptc = p2c(ppc);
-			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 128);
+			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 255);
 			g.image(MiniMap.plx.layer(Resource.imgc).tex(), ptc.add(MiniMap.plx.layer(Resource.negc).cc.inv()));
 			g.chcolor();
 		    }
@@ -245,7 +246,6 @@ public class LocalMiniMap extends Widget {
 	} else {
 	    g.image(MiniMap.nomap, Coord.z);
 	}
-	drawicons(g);
     }
 
     public boolean mousedown(Coord c, int button) {
