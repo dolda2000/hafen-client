@@ -32,7 +32,7 @@ import haven.*;
 import haven.render.Rendered.Instancable;
 import haven.render.Rendered.Instanced;
 
-public class InstanceList implements RenderList<Rendered> {
+public class InstanceList implements RenderList<Rendered>, Disposable {
     private final RenderList<Rendered> back;
     private final Map<InstKey, Object> instreg = new HashMap<>();
     private final Map<Slot<? extends Rendered>, InstancedSlot.Instance> slotmap = new IdentityHashMap<>();
@@ -462,5 +462,9 @@ public class InstanceList implements RenderList<Rendered> {
 		    inst.update(group, mask);
 	    }
 	}
+    }
+
+    public void dispose() {
+	/* XXXRENDER */
     }
 }
