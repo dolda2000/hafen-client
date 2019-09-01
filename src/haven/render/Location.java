@@ -27,6 +27,7 @@
 package haven.render;
 
 import haven.*;
+import haven.render.sl.ShaderMacro;
 
 public class Location extends Transform {
     public final String id;
@@ -56,7 +57,7 @@ public class Location extends Transform {
 	    return(loc.fin(p.fin(o)));
 	}
 
-	public haven.render.sl.ShaderMacro shader() {return(null);}
+	public ShaderMacro shader() {return(null);}
 
 	public void apply(Pipe p) {
 	    p.put(Homo3D.loc, this);
@@ -90,6 +91,22 @@ public class Location extends Transform {
 		ret += " -> " + p;
 	    return(ret);
 	}
+
+	public static final Instancer<Chain> instancer = new Instancer<Chain>() {
+	    final Chain instanced = new Chain(null, null) {
+		    public Matrix4f fin(Matrix4f o) {
+			throw(new RuntimeException("Current in instanced drawing; cannot finalize a single location"));
+		    }
+
+		    public String toString() {return("instanced location");}
+
+		    public ShaderMacro shader() {return(mkinstanced);}
+		};
+
+	    public Chain inststate(Chain uinst, InstanceBatch bat) {
+		return(instanced);
+	    }
+	};
     }
 
     public void apply(Pipe p) {

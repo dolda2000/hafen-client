@@ -36,12 +36,13 @@ import static haven.render.sl.Cons.*;
 public class Homo3D {
     public static final Slot<Projection> prj = new Slot<>(Slot.Type.SYS, Projection.class);
     public static final Slot<Camera> cam = new Slot<>(Slot.Type.SYS, Camera.class);
-    public static final Slot<Location.Chain> loc = new Slot<>(Slot.Type.GEOM, Location.Chain.class);
+    public static final Slot<Location.Chain> loc = new Slot<>(Slot.Type.GEOM, Location.Chain.class)
+	.instanced(Location.Chain.instancer);
     public static final Attribute vertex = new Attribute(VEC3, "vertex");
     public static final Attribute normal = new Attribute(VEC3, "normal");
     private static final Uniform u_prj = new Uniform(MAT4, "proj", Homo3D::prjxf, prj);
     private static final Uniform u_cam = new Uniform(MAT4, "cam", Homo3D::camxf, cam);
-    private static final Uniform u_wxf = new Uniform(MAT4, "wxf", Homo3D::locxf, loc);
+    private static final InstancedUniform u_wxf = new InstancedUniform.Mat4("wxf", Homo3D::locxf, loc);
     public final Value objv, mapv, eyev, eyen;
 
     public static Matrix4f prjxf(Pipe p) {
