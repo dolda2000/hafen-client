@@ -106,6 +106,10 @@ public interface InstanceBatch {
 	    return(0);
 	}
 
+	public VertexArray.Buffer buf() {
+	    return(buf);
+	}
+
 	public boolean iupdate(int idx) {
 	    if(stride() == 0)
 		return(false);
@@ -123,6 +127,10 @@ public interface InstanceBatch {
 		}
 		return(false);
 	    }
+	}
+
+	public boolean itrim(int idx) {
+	    return(false);
 	}
 
 	public void dispose() {
