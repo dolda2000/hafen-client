@@ -42,7 +42,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
     private static int[] uinstidlist() {
 	State.Slot.Slots si = State.Slot.slots;
 	int[] ret = _uinstidlist;
-	if((ret != null) || (ret.length == (si.idlist.length + 1)))
+	if((ret != null) && (ret.length == (si.idlist.length + 1)))
 	    return(ret);
 	ret = new int[si.idlist.length];
 	for(int i = 0, n = 0; i < ret.length; i++) {
@@ -213,9 +213,9 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	}
 
 	InstancedSlot(Slot<? extends Rendered>[] slots) {
-	    this.rend = ((Instancable)slots[0].obj()).instancify(this);
 	    this.ust = slots[0].state();
 	    this.ist = new InstanceState(ust, this);
+	    this.rend = ((Instancable)slots[0].obj()).instancify(this);
 	    Instance[] insts = new Instance[slots.length];
 	    for(int i = 0; i < slots.length; i++) {
 		insts[i] = new Instance(slots[i]);
