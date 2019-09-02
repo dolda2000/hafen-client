@@ -85,6 +85,10 @@ public abstract class State implements Pipe.Op {
 
     public interface Instancer<T extends State> {
 	public T inststate(T uinst, InstanceBatch batch);
+
+	public static final ShaderMacro mkinstanced = prog -> {
+	    prog.instanced = true;
+	};
     }
 
     public abstract ShaderMacro shader();

@@ -34,13 +34,14 @@ public class Model implements Rendered, RenderTree.Node, Disposable {
     public final VertexArray va;
     public final Indices ind;
     public final int f, n;
+    public final int ninst;
     public Disposable ro;
 
     public enum Mode {
 	POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_STRIP, TRIANGLE_FAN
     }
 
-    public Model(Mode mode, VertexArray va, Indices ind, int f, int n) {
+    public Model(Mode mode, VertexArray va, Indices ind, int f, int n, int ninst) {
 	if((this.mode = mode) == null)
 	    throw(new NullPointerException());
 	if((this.va = va) == null)
@@ -51,6 +52,11 @@ public class Model implements Rendered, RenderTree.Node, Disposable {
 	    this.n = n;
 	else
 	    this.n = (ind == null) ? va.num() : ind.n;
+	this.ninst = ninst;
+    }
+
+    public Model(Mode mode, VertexArray va, Indices ind, int f, int n) {
+	this(mode, va, ind, f, n, 1);
     }
 
     public Model(Mode mode, VertexArray va, Indices ind) {

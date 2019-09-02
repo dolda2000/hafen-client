@@ -29,10 +29,11 @@ package haven;
 import java.util.*;
 import java.nio.*;
 import haven.render.*;
+import haven.render.VertexArray.Layout;
 import haven.render.Model.Indices;
 import haven.render.Rendered;
 
-public class FastMesh implements Rendered, RenderTree.Node, Disposable {
+public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposable {
     public final VertexBuf vert;
     public final ShortBuffer indb;
     public final int num;
@@ -45,7 +46,7 @@ public class FastMesh implements Rendered, RenderTree.Node, Disposable {
 	    throw(new RuntimeException("Invalid index array length"));
 	this.indb = ind;
 	this.model = new Model(Model.Mode.TRIANGLES, vert.data(),
-			       new Indices(num * 3, NumberFormat.UINT16, DataBuffer.Usage.STATIC, this::indfill),
+			       new Indices(num * 3, NumberFormat.UINT16, DataBuffer.Usage.STATIC, this::indfill).shared(),
 			       0, num * 3);
     }
 
@@ -102,8 +103,100 @@ public class FastMesh implements Rendered, RenderTree.Node, Disposable {
     }
 
     public void dispose() {
+	model.ind.dispose();
 	model.dispose();
 	vert.dispose();
+    }
+
+    public class Instanced implements Rendered.Instanced {
+	public final InstanceBatch bat;
+	private final InstanceBatch.AttributeData attr;
+	private final Layout fmt;
+	private VertexArray data;
+	private Model model;
+	private int ninst;
+
+	private Layout mkfmt(Layout.Input[] ifmt) {
+	    VertexArray sdat = vert.data();
+	    Layout.Input[] inputs = new Layout.Input[sdat.fmt.inputs.length + ifmt.length];
+	    for(int i = 0; i < sdat.fmt.inputs.length; i++)
+		inputs[i] = sdat.fmt.inputs[i];
+	    for(int i = 0; i < ifmt.length; i++) {
+		Layout.Input si = ifmt[i];
+		inputs[i + sdat.fmt.inputs.length] = new Layout.Input(si.tgt, si.el, sdat.fmt.nbufs, si.offset, si.stride, true);
+	    }
+	    return(new Layout(inputs));
+	}
+
+	private VertexArray mkdata(Layout.Input[] ifmt, VertexArray.Buffer ibuf) {
+	    if(ibuf == null)
+		return(null);
+	    VertexArray sdat = vert.data();
+	    Layout.Input[] inputs = new Layout.Input[sdat.fmt.inputs.length + 1];
+	    for(int i = 0; i < sdat.fmt.inputs.length; i++)
+		inputs[i] = sdat.fmt.inputs[i];
+	    VertexArray.Buffer[] bufs = new VertexArray.Buffer[sdat.bufs.length + 1];
+	    for(int i = 0; i < sdat.bufs.length; i++)
+		bufs[i] = sdat.bufs[i];
+	    bufs[sdat.bufs.length] = ibuf;
+	    return(new VertexArray(new Layout(inputs), bufs));
+	}
+
+	private Instanced(InstanceBatch bat) {
+	    this.bat = bat;
+	    this.attr = new InstanceBatch.AttributeData(bat);
+	    this.fmt = mkfmt(attr.fmt);
+	    vertupdate();
+	    modupdate(false);
+	}
+
+	public void draw(Pipe context, Render out) {
+	    out.draw(context, model);
+	}
+
+	private void modupdate(boolean batupd) {
+	    if(model != null)
+		model.dispose();
+	    Model smod = FastMesh.this.model;
+	    model = new Model(smod.mode, (data != null) ? data : vert.data(),
+			      smod.ind, smod.f, smod.n,
+			      ninst);
+	    if(batupd)
+		bat.instupdate();
+	}
+
+	private void vertupdate() {
+	    if(data != null)
+		data.dispose();
+	    data = mkdata(this.attr.fmt, attr.buf());
+	}
+
+	public void iupdate(int idx) {
+	    boolean vu = attr.iupdate(idx);
+	    ninst = Math.max(ninst, idx + 1);
+	    if(vu)
+		vertupdate();
+	    if(vu || ((model != null) && (model.ninst != ninst)))
+		modupdate(true);
+	}
+
+	public void itrim(int idx) {
+	    boolean vu = attr.iupdate(idx);
+	    ninst = Math.min(ninst, idx);
+	    if(vu)
+		vertupdate();
+	    if(vu || ((model != null) && (model.ninst != ninst)))
+		modupdate(true);
+	}
+
+	public void dispose() {
+	    if(model != null)
+		model.dispose();
+	}
+    }
+
+    public Rendered.Instanced instancify(InstanceBatch bat) {
+	return(new Instanced(bat));
     }
 
     public static class ResourceMesh extends FastMesh {

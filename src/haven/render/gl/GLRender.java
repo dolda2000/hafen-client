@@ -245,7 +245,10 @@ public class GLRender implements Render, Disposable {
 	    }
 	    VboState.set(state, cbuf);
 	    if(data.ind == null) {
-		gl.glDrawArrays(glmode(data.mode), data.f, data.n);
+		if(data.ninst == 1)
+		    gl.glDrawArrays(glmode(data.mode), data.f, data.n);
+		else
+		    gl.glDrawArraysInstanced(glmode(data.mode), data.f, data.n, data.ninst);
 	    } else {
 		if(data.ind.usage == EPHEMERAL) {
 		    Vao0State.apply(gl, state, env.tempindex.get());
@@ -253,7 +256,10 @@ public class GLRender implements Render, Disposable {
 		} else {
 		    throw(new NotImplemented("non-ephemeral index arrays"));
 		}
-		gl.glDrawElements(glmode(data.mode), data.n, glindexfmt(data.ind.fmt), data.f * data.ind.fmt.size);
+		if(data.ninst == 1)
+		    gl.glDrawElements(glmode(data.mode), data.n, glindexfmt(data.ind.fmt), data.f * data.ind.fmt.size);
+		else
+		    gl.glDrawElementsInstanced(glmode(data.mode), data.n, glindexfmt(data.ind.fmt), data.f * data.ind.fmt.size, data.ninst);
 	    }
 	} else {
 	    throw(new NotImplemented("non-ephemeral models"));

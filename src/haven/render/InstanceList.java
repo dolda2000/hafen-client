@@ -32,7 +32,7 @@ import haven.*;
 import haven.render.Rendered.Instancable;
 import haven.render.Rendered.Instanced;
 
-public class InstanceList implements RenderList<Rendered> {
+public class InstanceList implements RenderList<Rendered>, Disposable {
     private final RenderList<Rendered> back;
     private final Map<InstKey, Object> instreg = new HashMap<>();
     private final Map<Slot<? extends Rendered>, InstancedSlot.Instance> slotmap = new IdentityHashMap<>();
@@ -42,7 +42,7 @@ public class InstanceList implements RenderList<Rendered> {
     private static int[] uinstidlist() {
 	State.Slot.Slots si = State.Slot.slots;
 	int[] ret = _uinstidlist;
-	if((ret != null) || (ret.length == (si.idlist.length + 1)))
+	if((ret != null) && (ret.length == (si.idlist.length + 1)))
 	    return(ret);
 	ret = new int[si.idlist.length];
 	for(int i = 0, n = 0; i < ret.length; i++) {
@@ -157,7 +157,7 @@ public class InstanceList implements RenderList<Rendered> {
 
 	    @SuppressWarnings("unchecked")
 	    void register() {
-		if(slotmap.put(slot,this) != null)
+		if(slotmap.put(slot, this) != null)
 		    throw(new AssertionError());
 		GroupPipe st = slot.state();
 		for(int i = 0; i < ist.mask.length; i++) {
@@ -209,13 +209,16 @@ public class InstanceList implements RenderList<Rendered> {
 	    }
 
 	    void update(Pipe group, int[] mask) {
+		/* XXX: There should be a way to only update the
+		 * relevant states, by mask. */
+		iupdate(idx);
 	    }
 	}
 
 	InstancedSlot(Slot<? extends Rendered>[] slots) {
-	    this.rend = ((Instancable)slots[0].obj()).instancify(this);
 	    this.ust = slots[0].state();
 	    this.ist = new InstanceState(ust, this);
+	    this.rend = ((Instancable)slots[0].obj()).instancify(this);
 	    Instance[] insts = new Instance[slots.length];
 	    for(int i = 0; i < slots.length; i++) {
 		insts[i] = new Instance(slots[i]);
@@ -228,8 +231,10 @@ public class InstanceList implements RenderList<Rendered> {
 	}
 
 	void register() {
-	    for(int i = 0; i < ni; i++)
+	    for(int i = 0; i < ni; i++) {
 		insts[i].register();
+		iupdate(i);
+	    }
 	}
 
 	void unregister() {
@@ -237,29 +242,55 @@ public class InstanceList implements RenderList<Rendered> {
 		insts[i].unregister();
 	}
 
+	private void iupdate(int idx) {
+	    rend.iupdate(idx);
+	    for(int i = 0; i < ist.mask.length; i++) {
+		State st = ist.get(State.Slot.byid(ist.mask[i]));
+		if(st instanceof InstanceBatch.Client)
+		    ((InstanceBatch.Client)st).iupdate(idx);
+	    }
+	}
+
+	private void itrim(int idx) {
+	    rend.itrim(idx);
+	    for(int i = 0; i < ist.mask.length; i++) {
+		State st = ist.get(State.Slot.byid(ist.mask[i]));
+		if(st instanceof InstanceBatch.Client)
+		    ((InstanceBatch.Client)st).itrim(idx);
+	    }
+	}
+
 	void add(Slot<? extends Rendered> ns) {
 	    Instance inst = new Instance(ns);
+	    inst.register();
 	    if(insts.length == ni)
 		insts = Arrays.copyOf(insts, insts.length * 2);
 	    insts[inst.idx = ni++] = inst;
+	    iupdate(inst.idx);
 	}
 
 	void remove(Slot<? extends Rendered> ns) {
 	    Instance inst = slotmap.get(ns);
-	    if(insts[inst.idx] != inst)
+	    int ri = inst.idx;
+	    if(insts[ri] != inst)
 		throw(new AssertionError());
 	    /* De-instancify when ni goes from 2 to 1? It's not
 	     * *obviously* better to do so, and if the slot has once
 	     * been instancified, it's probably not unreasonable to
 	     * expect it to become so again in the future, in which
 	     * case the updating overhead can be avoided. */
-	    if(ni > 1) {
-		(insts[inst.idx] = insts[--ni]).idx = inst.idx;
-		inst.idx = -1;
-		inst.unregister();
-	    } else {
-		
-	    }
+	    inst.unregister();
+	    (insts[ri] = insts[--ni]).idx = inst.idx;
+	    inst.idx = -1;
+	    if(ni < 0)
+		throw(new AssertionError());
+	    if(ri < ni)
+		iupdate(ri);
+	    itrim(ni);
+	}
+
+	void dispose() {
+	    rend.dispose();
 	}
 
 	void update(Slot<? extends Rendered> ns) {
@@ -386,7 +417,14 @@ public class InstanceList implements RenderList<Rendered> {
 		    throw(new IllegalStateException("removing non-present slot"));
 		back.remove(slot);
 	    } else if(cur instanceof InstancedSlot) {
-		((InstancedSlot)cur).remove(slot);
+		InstancedSlot b = (InstancedSlot)cur;
+		b.remove(slot);
+		if(b.ni < 1) {
+		    b.unregister();
+		    b.dispose();
+		    if(instreg.remove(key) != b)
+			throw(new AssertionError());
+		}
 	    } else {
 		throw(new AssertionError());
 	    }
@@ -427,5 +465,9 @@ public class InstanceList implements RenderList<Rendered> {
 		    inst.update(group, mask);
 	    }
 	}
+    }
+
+    public void dispose() {
+	/* XXXRENDER */
     }
 }

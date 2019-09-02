@@ -843,9 +843,15 @@ public class GLDrawList implements DrawList {
 		}
 		slot.settings[idx_vao] = getvao(vao, ebo);
 		if(mod.ind == null) {
-		    gl.glDrawArrays(GLRender.glmode(mod.mode), mod.f, mod.n);
+		    if(mod.ninst == 1)
+			gl.glDrawArrays(GLRender.glmode(mod.mode), mod.f, mod.n);
+		    else
+			gl.glDrawArraysInstanced(GLRender.glmode(mod.mode), mod.f, mod.n, mod.ninst);
 		} else {
-		    gl.glDrawElements(GLRender.glmode(mod.mode), mod.n, GLRender.glindexfmt(mod.ind.fmt), mod.f * mod.ind.fmt.size);
+		    if(mod.ninst == 1)
+			gl.glDrawElements(GLRender.glmode(mod.mode), mod.n, GLRender.glindexfmt(mod.ind.fmt), mod.f * mod.ind.fmt.size);
+		    else
+			gl.glDrawElementsInstanced(GLRender.glmode(mod.mode), mod.n, GLRender.glindexfmt(mod.ind.fmt), mod.f * mod.ind.fmt.size, mod.ninst);
 		}
 		slot.main = gl;
 	    }

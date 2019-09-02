@@ -38,8 +38,7 @@ public interface Rendered {
 	public Instanced instancify(InstanceBatch batch);
     }
 
-    public static interface Instanced extends Rendered {
-	
+    public static interface Instanced extends Rendered, InstanceBatch.Client, Disposable {
     }
 
     public static final State.Slot<Order> order = new State.Slot<>(State.Slot.Type.GEOM, Order.class);
