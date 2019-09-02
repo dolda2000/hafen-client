@@ -137,7 +137,7 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 			    if(attr.instanced)
 				gl.glVertexAttribDivisor(var, 1);
 			} else {
-			    for(int v = 0; i < na; i++) {
+			    for(int v = 0; v < na; v++) {
 				gl.glVertexAttribPointer(var, v, vfmt.nc, GLRender.glattribfmt(vfmt.cf), GLRender.glattribnorm(vfmt.cf), attr.stride, attr.offset + (v * vo));
 				gl.glEnableVertexAttribArray(var, v);
 				if(attr.instanced)
