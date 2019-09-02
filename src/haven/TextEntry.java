@@ -36,7 +36,7 @@ public class TextEntry extends SIWidget {
     public static final BufferedImage lcap = Resource.loadimg("gfx/hud/text/l");
     public static final BufferedImage rcap = Resource.loadimg("gfx/hud/text/r");
     public static final BufferedImage mext = Resource.loadimg("gfx/hud/text/m");
-    public static final BufferedImage caret = Resource.loadimg("gfx/hud/text/caret");
+    public static final Tex caret = Resource.loadtex("gfx/hud/text/caret");
     public static final Coord toff = new Coord(lcap.getWidth() - 1, 3);
     public static final Coord coff = new Coord(-3, -1);
     public static final int wmarg = lcap.getWidth() + rcap.getWidth() + 1;
