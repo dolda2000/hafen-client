@@ -164,10 +164,18 @@ public class OCache implements Iterable<Gob> {
 
     public synchronized void ladd(Collection<Gob> gob) {
 	local.add(gob);
+	for(Gob g : gob) {
+	    for(ChangeCallback cb : cbs)
+		cb.changed(g);
+	}
     }
 
     public synchronized void lrem(Collection<Gob> gob) {
 	local.remove(gob);
+	for(Gob g : gob) {
+	    for(ChangeCallback cb : cbs)
+		cb.removed(g);
+	}
     }
 
     public synchronized Gob getgob(long id) {

@@ -207,7 +207,7 @@ public class MiniMap extends Widget {
 		    if(ppc == null)
 			continue;
 		    Coord ptc = ppc.floor(tilesz).add(tc.inv()).add(sz.div(2));
-		    g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 128);
+		    g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 255);
 		    g.image(plx.layer(Resource.imgc).tex(), ptc.add(plx.layer(Resource.negc).cc.inv()));
 		    g.chcolor();
 		}
