@@ -209,6 +209,9 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    }
 
 	    void update(Pipe group, int[] mask) {
+		/* XXX: There should be a way to only update the
+		 * relevant states, by mask. */
+		iupdate(idx);
 	    }
 	}
 
