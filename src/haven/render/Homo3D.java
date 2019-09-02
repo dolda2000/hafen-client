@@ -40,9 +40,9 @@ public class Homo3D {
 	.instanced(Location.Chain.instancer);
     public static final Attribute vertex = new Attribute(VEC3, "vertex");
     public static final Attribute normal = new Attribute(VEC3, "normal");
-    private static final Uniform u_prj = new Uniform(MAT4, "proj", Homo3D::prjxf, prj);
-    private static final Uniform u_cam = new Uniform(MAT4, "cam", Homo3D::camxf, cam);
-    private static final InstancedUniform u_wxf = new InstancedUniform.Mat4("wxf", Homo3D::locxf, loc);
+    static final Uniform u_prj = new Uniform(MAT4, "proj", Homo3D::prjxf, prj);
+    static final Uniform u_cam = new Uniform(MAT4, "cam", Homo3D::camxf, cam);
+    static final InstancedUniform u_wxf = new InstancedUniform.Mat4("wxf", Homo3D::locxf, loc);
     public final Value objv, mapv, eyev, eyen;
 
     public static Matrix4f prjxf(Pipe p) {

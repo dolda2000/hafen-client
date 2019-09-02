@@ -28,6 +28,7 @@ package haven.render;
 
 import haven.*;
 import haven.render.sl.ShaderMacro;
+import haven.render.sl.InstancedAttribute;
 
 public class Location extends Transform {
     public final String id;
@@ -41,7 +42,7 @@ public class Location extends Transform {
 	this(xf, null);
     }
 
-    public static class Chain extends State {
+    public static class Chain extends State implements InstanceBatch.AttribState {
 	public final Location loc;
 	public final Chain p;
 	private Matrix4f bk;
@@ -85,13 +86,6 @@ public class Location extends Transform {
 	    return((c.loc == loc) && Utils.eq(c.p, p));
 	}
 
-	public String toString() {
-	    String ret = loc.toString();
-	    if(p != null)
-		ret += " -> " + p;
-	    return(ret);
-	}
-
 	public static final Instancer<Chain> instancer = new Instancer<Chain>() {
 	    final Chain instanced = new Chain(null, null) {
 		    public Matrix4f fin(Matrix4f o) {
@@ -107,6 +101,17 @@ public class Location extends Transform {
 		return(instanced);
 	    }
 	};
+
+	public InstancedAttribute[] attribs() {
+	    return(new InstancedAttribute[] {Homo3D.u_wxf.attrib});
+	}
+
+	public String toString() {
+	    String ret = loc.toString();
+	    if(p != null)
+		ret += " -> " + p;
+	    return(ret);
+	}
     }
 
     public void apply(Pipe p) {
