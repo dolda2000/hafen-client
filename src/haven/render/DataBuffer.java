@@ -81,4 +81,12 @@ public interface DataBuffer {
 		});
 	}
     }
+
+    public interface PartFiller<T extends DataBuffer> extends Filler<T> {
+	public FillBuffer fill(T buf, Environment env, int from, int to);
+
+	public default FillBuffer fill(T buf, Environment env) {
+	    return(fill(buf, env, 0, buf.size()));
+	}
+    }
 }

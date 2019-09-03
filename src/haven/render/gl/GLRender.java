@@ -360,6 +360,35 @@ public class GLRender implements Render, Disposable {
 	}
     }
 
+    public <T extends DataBuffer> void update(T buf, DataBuffer.PartFiller<? super T> fill, int from, int to) {
+	if((from == 0) && (to == buf.size())) {
+	    update(buf, fill);
+	    return;
+	}
+	/* XXX: There is some case to be made that this whole
+	 * implementation should be able to interact better with
+	 * stream-buffers, but I'm not totally sure how. */
+	if(buf instanceof Model.Indices) {
+	    Model.Indices ibuf = (Model.Indices)buf;
+	    FillBuffers.Array data = (FillBuffers.Array)fill.fill(buf, env, from, to);
+	    Object ro = env.prepare(ibuf);
+	    GLBuffer glbuf = (ro instanceof StreamBuffer) ? ((StreamBuffer)ro).rbuf : (GLBuffer) ro;
+	    Vao0State.apply(this.gl, state, glbuf);
+	    BGL gl = gl();
+	    gl.glBufferSubData(GL.GL_ELEMENT_ARRAY_BUFFER, from, to - from, ByteBuffer.wrap(data.data));
+	} else if(buf instanceof VertexArray.Buffer) {
+	    VertexArray.Buffer vbuf = (VertexArray.Buffer)buf;
+	    FillBuffers.Array data = (FillBuffers.Array)fill.fill(buf, env, from, to);
+	    Object ro = env.prepare(vbuf);
+	    GLBuffer glbuf = (ro instanceof StreamBuffer) ? ((StreamBuffer)ro).rbuf : (GLBuffer) ro;
+	    VboState.apply(this.gl, state, glbuf);
+	    BGL gl = gl();
+	    gl.glBufferSubData(GL.GL_ARRAY_BUFFER, from, to - from, ByteBuffer.wrap(data.data));
+	} else {
+	    throw(new NotImplemented("updating buffer of type: " + buf.getClass().getName()));
+	}
+    }
+
     public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback) {
 	state.apply(this.gl, pipe);
 	GLProgram prog = state.prog();

@@ -183,12 +183,14 @@ public class GLEnvironment implements Environment {
 	return(buf);
     }
 
-    public FillBuffer fillbuf(DataBuffer tgt) {
-	if((tgt instanceof VertexArray.Buffer) && (((VertexArray.Buffer)tgt).ro instanceof StreamBuffer))
-	    return(((StreamBuffer)(((VertexArray.Buffer)tgt).ro)).new Fill());
-	if((tgt instanceof Model.Indices) && (((Model.Indices)tgt).ro instanceof StreamBuffer))
-	    return(((StreamBuffer)(((Model.Indices)tgt).ro)).new Fill());
-	return(new FillBuffers.Array(tgt.size()));
+    public FillBuffer fillbuf(DataBuffer tgt, int from, int to) {
+	if((from == 0) && (to == tgt.size())) {
+	    if((tgt instanceof VertexArray.Buffer) && (((VertexArray.Buffer)tgt).ro instanceof StreamBuffer))
+		return(((StreamBuffer)(((VertexArray.Buffer)tgt).ro)).new Fill());
+	    if((tgt instanceof Model.Indices) && (((Model.Indices)tgt).ro instanceof StreamBuffer))
+		return(((StreamBuffer)(((Model.Indices)tgt).ro)).new Fill());
+	}
+	return(new FillBuffers.Array(to - from));
     }
 
     GLRender prepare() {
