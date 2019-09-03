@@ -48,7 +48,7 @@ public interface InstanceBatch {
 	public InstancedAttribute[] attribs();
     }
 
-    public static class AttributeData implements haven.Disposable {
+    public static class AttributeData implements DataBuffer.PartFiller<VertexArray.Buffer>, haven.Disposable {
 	public final InstanceBatch bat;
 	public final Input[] fmt;
 	private int bufsz;
@@ -82,19 +82,21 @@ public interface InstanceBatch {
 
 	    this.bufsz = Math.max(16, bat.instances() * 2);
 	    if(stride() > 0)
-		this.buf = new VertexArray.Buffer(this.bufsz * stride(), DataBuffer.Usage.STREAM, this::refill);
+		this.buf = new VertexArray.Buffer(this.bufsz * stride(), DataBuffer.Usage.STREAM, this);
 	}
 
-	private FillBuffer refill(DataBuffer dst, Environment env) {
-	    FillBuffer ret = env.fillbuf(dst);
+	public FillBuffer fill(VertexArray.Buffer dst, Environment env, int from, int to) {
+	    FillBuffer ret = env.fillbuf(dst, from, to);
 	    ByteBuffer buf = ret.push();
 	    int st = stride();
-	    int f = 0;
-	    int t = Math.min(bat.instances(), dst.size() / st);
+	    if(((from % st) != 0) || ((to % st) != 0))
+		throw(new RuntimeException(String.format("misaligned instance-buffer fill for %d-%d on %s", from, to, this)));
+	    int f = from / st;
+	    int t = Math.min(bat.instances(), f + ((to - from) / st));
 	    for(int i = f; i < t; i++) {
 		Pipe ist = bat.inststate(i);
 		for(int o = 0; o < fmt.length; o++)
-		    ((InstancedAttribute)fmt[o].tgt).attrfill(buf, i * st + fmt[o].offset, ist);
+		    ((InstancedAttribute)fmt[o].tgt).attrfill(buf, i * st + fmt[o].offset - from, ist);
 	    }
 	    this.curenv = env;
 	    return(ret);
@@ -110,19 +112,23 @@ public interface InstanceBatch {
 	    return(buf);
 	}
 
+	/* XXX: It would be terribly nice if multiple updates could be
+	 * batched in some reasonable way. Not sure how much it
+	 * actaully matters in practice, but it would be nice. */
 	public boolean iupdate(int idx) {
-	    if(stride() == 0)
+	    int st = stride();
+	    if(st == 0)
 		return(false);
 	    if(idx >= this.bufsz) {
 		this.bufsz = idx * 2;
 		this.buf.dispose();
-		this.buf = new VertexArray.Buffer(this.bufsz * stride(), DataBuffer.Usage.STREAM, this::refill);
+		this.buf = new VertexArray.Buffer(this.bufsz * stride(), DataBuffer.Usage.STREAM, this);
 		return(true);
 	    } else {
 		Environment env = this.curenv;
 		if(env != null) {
 		    Render r = env.render();
-		    r.update(this.buf, this::refill);
+		    r.update(this.buf, this, idx * st, (idx + 1) * st);
 		    env.submit(r);
 		}
 		return(false);
