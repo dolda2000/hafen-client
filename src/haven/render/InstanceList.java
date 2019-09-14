@@ -375,6 +375,8 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    if(cur == null) {
 		back.add(slot);
 		instreg.put(key, slot);
+	    } else if(cur instanceof InstancedSlot) {
+		((InstancedSlot)cur).add(slot);
 	    } else if(cur instanceof Slot) {
 		Slot<? extends Rendered> cs = (Slot<? extends Rendered>)cur;
 		InstancedSlot ni = new InstancedSlot(new Slot[] {cs, slot});
@@ -393,8 +395,6 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		}
 		instreg.put(key, ni);
 		ni.register();
-	    } else if(cur instanceof InstancedSlot) {
-		((InstancedSlot)cur).add(slot);
 	    } else {
 		throw(new AssertionError());
 	    }
@@ -412,10 +412,6 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    Object cur = instreg.get(key);
 	    if(cur == null) {
 		throw(new IllegalStateException("removing non-present slot"));
-	    } else if(cur instanceof Slot) {
-		if(cur != slot)
-		    throw(new IllegalStateException("removing non-present slot"));
-		back.remove(slot);
 	    } else if(cur instanceof InstancedSlot) {
 		InstancedSlot b = (InstancedSlot)cur;
 		b.remove(slot);
@@ -425,6 +421,10 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		    if(instreg.remove(key) != b)
 			throw(new AssertionError());
 		}
+	    } else if(cur instanceof Slot) {
+		if(cur != slot)
+		    throw(new IllegalStateException("removing non-present slot"));
+		back.remove(slot);
 	    } else {
 		throw(new AssertionError());
 	    }
@@ -441,12 +441,12 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    Object cur = instreg.get(key);
 	    if(cur == null) {
 		throw(new IllegalStateException("updating non-present slot"));
+	    } else if(cur instanceof InstancedSlot) {
+		((InstancedSlot)cur).update(slot);
 	    } else if(cur instanceof Slot) {
 		if(cur != slot)
 		    throw(new IllegalStateException("updating non-present slot"));
 		back.update(slot);
-	    } else if(cur instanceof InstancedSlot) {
-		((InstancedSlot)cur).update(slot);
 	    } else {
 		throw(new AssertionError());
 	    }
