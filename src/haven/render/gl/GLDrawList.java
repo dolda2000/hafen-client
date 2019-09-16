@@ -943,6 +943,8 @@ public class GLDrawList implements DrawList {
     public void remove(Slot<? extends Rendered> slot) {
 	synchronized(this) {
 	    DrawSlot dslot = slotmap.remove(slot);
+	    if(dslot == null)
+		throw(new IllegalStateException("removing non-present slot"));
 	    dslot.remove();
 	    dslot.dispose();
 	}
@@ -953,6 +955,8 @@ public class GLDrawList implements DrawList {
 	    /* Handle exceptions from DrawSlot construction before
 	     * removing previous slot. */
 	    DrawSlot dslot = new DrawSlot(slot);
+	    if(dslot == null)
+		throw(new IllegalStateException("removing non-present slot"));
 	    remove(slot);
 	    dslot.insert();
 	    if(slotmap.put(slot, dslot) != null)
