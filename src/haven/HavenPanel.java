@@ -29,6 +29,8 @@ package haven;
 import java.awt.GraphicsConfiguration;
 import java.awt.Cursor;
 import java.awt.Toolkit;
+import java.awt.Robot;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.event.*;
 import java.util.*;
@@ -36,7 +38,7 @@ import javax.media.opengl.*;
 import javax.media.opengl.awt.*;
 import javax.media.opengl.glu.GLU;
 
-public class HavenPanel extends GLCanvas implements Runnable, Console.Directory {
+public class HavenPanel extends GLCanvas implements Runnable, Console.Directory, UI.Context {
     UI ui;
     boolean inited = false;
     int w, h;
@@ -268,7 +270,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
     UI newui(Session sess) {
 	if(ui != null)
 	    ui.destroy();
-	ui = new UI(new Coord(w, h), sess);
+	ui = new UI(this, new Coord(w, h), sess);
 	ui.root.guprof = uprof;
 	ui.root.grprof = rprof;
 	ui.root.ggprof = gprof;
@@ -616,6 +618,21 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
 	
     public GraphicsConfiguration getconf() {
 	return(getGraphicsConfiguration());
+    }
+
+    private Robot awtrobot;
+    public void setmousepos(Coord c) {
+	java.awt.EventQueue.invokeLater(() -> {
+		if(awtrobot == null) {
+		    try {
+			awtrobot = new Robot(getGraphicsConfiguration().getDevice());
+		    } catch(java.awt.AWTException e) {
+			return;
+		    }
+		}
+		Point rp = getLocationOnScreen();
+		awtrobot.mouseMove(rp.x + c.x, rp.y + c.y);
+	    });
     }
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
