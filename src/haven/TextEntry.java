@@ -125,13 +125,8 @@ public class TextEntry extends Widget {
 	    wdgmsg("activate", text);
     }
 
-    public boolean type(char c, KeyEvent ev) {
-	return(buf.key(ev));
-    }
-
     public boolean keydown(KeyEvent e) {
-	buf.key(e);
-	return(true);
+	return(buf.key(e));
     }
 
     public boolean mousedown(Coord c, int button) {

@@ -136,7 +136,8 @@ public class TestView extends PView {
 	return(true);
     }
     
-    public boolean type(char key, java.awt.event.KeyEvent ev) {
+    public boolean keydown(java.awt.event.KeyEvent ev) {
+	char key = ev.getKeyChar();
 	if(key == ' ') {
 	    sel = -1;
 	    return(true);
