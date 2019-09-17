@@ -620,8 +620,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 
 	public boolean globtype(char key, KeyEvent ev) {
-	    if(key != 0)
-		return(false);
 	    boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
 	    for(int i = 0; i < beltkeys.length; i++) {
 		if(ev.getKeyCode() == beltkeys[i]) {
@@ -714,8 +712,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 
 	public boolean globtype(char key, KeyEvent ev) {
-	    if(key != 0)
-		return(false);
 	    int c = ev.getKeyChar();
 	    if((c < KeyEvent.VK_0) || (c > KeyEvent.VK_9))
 		return(false);
