@@ -438,6 +438,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory,
 	    gl.setSwapInterval((aswap = iswap) ? 1 : 0);
     }
 	
+    private KeyEvent lastpress = null;
     void dispatch() {
 	synchronized(events) {
 	    if(mousemv != null) {
@@ -460,10 +461,20 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory,
 		    KeyEvent ke = (KeyEvent)e;
 		    if(ke.getID() == KeyEvent.KEY_PRESSED) {
 			ui.keydown(ke);
+			ui.type(ke);
+			lastpress = ke;
 		    } else if(ke.getID() == KeyEvent.KEY_RELEASED) {
 			ui.keyup(ke);
 		    } else if(ke.getID() == KeyEvent.KEY_TYPED) {
-			ui.type(ke);
+			KeyEvent lp = lastpress;
+			if((lp != null) && (lp.getKeyChar() == ke.getKeyChar()) && (lp.getWhen() == ke.getWhen())) {
+			    /* Squelch this event. It certainly is an
+			     * ugly hack, but I just haven't found any
+			     * other way to disambiguate these
+			     * duplicate events. */
+			} else {
+			    ui.type(ke);
+			}
 		    }
 		}
 		ui.lastevent = Utils.rtime();
