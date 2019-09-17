@@ -119,15 +119,6 @@ public abstract class ConsoleHost extends Widget {
 	cmdline = new CommandLine();
     }
 
-    public boolean type(char ch, KeyEvent ev) {
-	if(cmdline == null) {
-	    return(super.type(ch, ev));
-	} else {
-	    cmdline.key(ev);
-	    return(true);
-	}
-    }
-    
     public boolean keydown(KeyEvent ev) {
 	if(cmdline != null) {
 	    cmdline.key(ev);

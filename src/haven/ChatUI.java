@@ -1228,6 +1228,7 @@ public class ChatUI extends Widget {
 
     public boolean keydown(KeyEvent ev) {
 	boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
+	char key = ev.getKeyChar();
 	if(qline != null) {
 	    if(M && (ev.getKeyCode() == KeyEvent.VK_UP)) {
 		Channel prev = this.sel;
@@ -1265,15 +1266,6 @@ public class ChatUI extends Widget {
 		return(true);
 	    }
 	    return(super.keydown(ev));
-	}
-    }
-
-    public boolean type(char key, KeyEvent ev) {
-	if(qline != null) {
-	    qline.key(ev);
-	    return(true);
-	} else {
-	    return(super.type(key, ev));
 	}
     }
 
