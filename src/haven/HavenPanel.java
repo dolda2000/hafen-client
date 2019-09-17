@@ -461,7 +461,6 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory,
 		    KeyEvent ke = (KeyEvent)e;
 		    if(ke.getID() == KeyEvent.KEY_PRESSED) {
 			ui.keydown(ke);
-			ui.type(ke);
 			lastpress = ke;
 		    } else if(ke.getID() == KeyEvent.KEY_RELEASED) {
 			ui.keyup(ke);
@@ -473,7 +472,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory,
 			     * other way to disambiguate these
 			     * duplicate events. */
 			} else {
-			    ui.type(ke);
+			    ui.keydown(ke);
 			}
 		    }
 		}
