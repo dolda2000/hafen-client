@@ -1228,7 +1228,6 @@ public class ChatUI extends Widget {
 
     public boolean keydown(KeyEvent ev) {
 	boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
-	char key = ev.getKeyChar();
 	if(qline != null) {
 	    if(M && (ev.getKeyCode() == KeyEvent.VK_UP)) {
 		Channel prev = this.sel;
