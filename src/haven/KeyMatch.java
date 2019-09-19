@@ -126,6 +126,57 @@ public class KeyMatch {
 	return(null);
     }
 
+    public String reduce() {
+	StringBuilder buf = new StringBuilder();
+	if((modmask & S) != 0)
+	    buf.append(((modmatch & S) != 0) ? 'S' : 's');
+	if((modmask & C) != 0)
+	    buf.append(((modmatch & C) != 0) ? 'C' : 'c');
+	if((modmask & M) != 0)
+	    buf.append(((modmatch & M) != 0) ? 'M' : 'm');
+	if(chr != 0)
+	    buf.append(String.format("g%x:%s", (int)chr, keyname));
+	else if(code != VK_UNDEFINED)
+	    buf.append(String.format("k%x:%s", (int)code, keyname));
+	else
+	    buf.append(String.format("n"));
+	return(buf.toString());
+    }
+
+    public static String reduce(KeyMatch key) {
+	if(key == null)
+	    return("");
+	return(key.reduce());
+    }
+
+    public static KeyMatch restore(String desc) {
+	int modmask = 0, modmatch = 0;
+	for(int p = 0; p < desc.length(); p++) {
+	    switch(desc.charAt(p)) {
+	    case 'S': modmatch |= S; case 's': modmask |= S; break;
+	    case 'C': modmatch |= C; case 'c': modmask |= C; break;
+	    case 'M': modmatch |= M; case 'm': modmask |= M; break;
+	    case 'g': {
+		int p2 = desc.indexOf(':', p);
+		char chr = (char)Integer.parseInt(desc.substring(p + 1, p2), 16);
+		String nm = desc.substring(p2 + 1);
+		return(new KeyMatch(chr, VK_UNDEFINED, nm, modmask, modmatch));
+	    }
+	    case 'k': {
+		int p2 = desc.indexOf(':', p);
+		int code = (char)Integer.parseInt(desc.substring(p + 1, p2), 16);
+		String nm = desc.substring(p2 + 1);
+		return(new KeyMatch('\0', code, nm, modmask, modmatch));
+	    }
+	    case 'n':
+		return(nil);
+	    default:
+		return(null);
+	    }
+	}
+	return(null);
+    }
+
     public static class Capture extends Button {
 	public KeyMatch key;
 	private UI.Grab grab = null;
