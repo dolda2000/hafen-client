@@ -26,11 +26,12 @@
 
 package haven;
 
+import java.awt.event.KeyEvent;
 import java.util.*;
 import java.awt.font.TextAttribute;
 
 public class OptWnd extends Window {
-    public final Panel main, video, audio;
+    public final Panel main, video, audio, keybind;
     public Panel current;
 
     public void chpanel(Panel p) {
@@ -193,15 +194,82 @@ public class OptWnd extends Window {
 	}
     }
 
+    private static final Text kbtt = RichText.render("$col[255,255,0]{Escape}: Cancel input\n" +
+						     "$col[255,255,0]{Backspace}: Revert to default\n" +
+						     "$col[255,255,0]{Delete}: Disable keybinding", 0);
+    public class BindingPanel extends Panel {
+	public BindingPanel(Panel back) {
+	    super();
+	    add(new PButton(200, "Back", 27, back), new Coord(0, 250));
+	    Widget cont = add(new Scrollport(new Coord(200, 240))).cont;
+	    int y = 0;
+	    cont.adda(new Label("Main menu"), 100, y, 0.5, 0); y += 20;
+	    cont.add(new Label("Inventory"), 0, y); y += 15;
+	    cont.add(new SetButton(175, GameUI.kb_inv), 0, y); y += 30;
+	    cont.add(new Label("Equipment"), 0, y); y += 15;
+	    cont.add(new SetButton(175, GameUI.kb_equ), 0, y); y += 30;
+	    cont.add(new Label("Character sheet"), 0, y); y += 15;
+	    cont.add(new SetButton(175, GameUI.kb_chr), 0, y); y += 30;
+	    cont.add(new Label("Map window"), 0, y); y += 15;
+	    cont.add(new SetButton(175, GameUI.kb_map), 0, y); y += 30;
+	    cont.add(new Label("Kith & Kin"), 0, y); y += 15;
+	    cont.add(new SetButton(175, GameUI.kb_bud), 0, y); y += 30;
+	    cont.add(new Label("Options"), 0, y); y += 15;
+	    cont.add(new SetButton(175, GameUI.kb_opt), 0, y); y += 30;
+	    cont.add(new Label("Toggle chat"), 0, y); y += 15;
+	    cont.add(new SetButton(175, GameUI.kb_chat), 0, y); y += 30;
+	    cont.add(new Label("Quick chat"), 0, y); y += 15;
+	    cont.add(new SetButton(175, ChatUI.kb_quick), 0, y); y += 30;
+	    cont.add(new Label("Display claims"), 0, y); y += 15;
+	    cont.add(new SetButton(175, GameUI.kb_claim), 0, y); y += 30;
+	    cont.add(new Label("Display village claims"), 0, y); y += 15;
+	    cont.add(new SetButton(175, GameUI.kb_vil), 0, y); y += 30;
+	    cont.add(new Label("Display realms"), 0, y); y += 15;
+	    cont.add(new SetButton(175, GameUI.kb_rlm), 0, y); y += 30;
+	    cont.add(new Label("Take screenshot"), 0, y); y += 15;
+	    cont.add(new SetButton(175, GameUI.kb_shoot), 0, y); y += 30;
+	    pack();
+	}
+
+	public class SetButton extends KeyMatch.Capture {
+	    public final KeyBinding cmd;
+
+	    public SetButton(int w, KeyBinding cmd) {
+		super(w, cmd.key());
+		this.cmd = cmd;
+	    }
+
+	    public void set(KeyMatch key) {
+		super.set(key);
+		cmd.set(key);
+	    }
+
+	    protected boolean handle(KeyEvent ev) {
+		if(ev.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+		    cmd.set(null);
+		    super.set(cmd.key());
+		    return(true);
+		}
+		return(super.handle(ev));
+	    }
+
+	    public Object tooltip(Coord c, Widget prev) {
+		return(kbtt.tex());
+	    }
+	}
+    }
+
     public OptWnd(boolean gopts) {
 	super(Coord.z, "Options", true);
 	main = add(new Panel());
 	video = add(new VideoPanel(main));
 	audio = add(new Panel());
+	keybind = add(new BindingPanel(main));
 	int y;
 
 	main.add(new PButton(200, "Video settings", 'v', video), new Coord(0, 0));
 	main.add(new PButton(200, "Audio settings", 'a', audio), new Coord(0, 30));
+	main.add(new PButton(200, "Keybindings", 'k', keybind), new Coord(0, 60));
 	if(gopts) {
 	    main.add(new Button(200, "Switch character") {
 		    public void click() {
