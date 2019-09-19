@@ -31,6 +31,7 @@ import static java.awt.event.KeyEvent.VK_UNDEFINED;
 
 public class KeyMatch {
     public static final int S = 1, C = 2, M = 4;
+    public static final KeyMatch nil = new KeyMatch('\0', VK_UNDEFINED, "None", 0, 0);
     public char chr;
     public int code;
     public String keyname;
@@ -56,11 +57,26 @@ public class KeyMatch {
 	if((mod & modmask) != modmatch)
 	    return(false);
 	if(chr != 0) {
-	    return(ev.getKeyChar() == chr);
+	    char evc = Character.toUpperCase(ev.getKeyChar());
+	    if(((mod & C) != 0) && (evc < 32)) {
+		/* Undo Java's TTY Control-code mangling */
+		switch(ev.getKeyCode()) {
+		case KeyEvent.VK_BACK_SPACE:
+		case KeyEvent.VK_ENTER:
+		case KeyEvent.VK_TAB:
+		case KeyEvent.VK_ESCAPE:
+		    break;
+		default:
+		    evc = (char)(evc + 'A' - 1);
+		    break;
+		}
+	    }
+	    return(evc == chr);
 	} else if(code != VK_UNDEFINED) {
 	    return(ev.getExtendedKeyCode() == code);
+	} else {
+	    return(false);
 	}
-	return(false);
     }
 
     public String name() {
@@ -75,13 +91,25 @@ public class KeyMatch {
 	return(buf.toString());
     }
 
+    private boolean equals(KeyMatch that) {
+	return((this.chr == that.chr) && (this.code == that.code) && (this.modmask == that.modmask) && (this.modmatch == that.modmatch));
+    }
+
+    public boolean equals(Object o) {
+	return((o instanceof KeyMatch) && equals((KeyMatch)o));
+    }
+
     public static KeyMatch forchar(char chr, int mods) {
 	return(new KeyMatch(chr, VK_UNDEFINED, Character.toString(chr), C | M, mods));
     }
 
+    public static KeyMatch forcode(int code, int mods) {
+	return(new KeyMatch('\0', code, KeyEvent.getKeyText(code), C | M, mods));
+    }
+
     public static KeyMatch forevent(KeyEvent ev, int modmask) {
 	int mod = mods(ev) & modmask;
-	char key = ev.getKeyChar();
+	char key = Character.toUpperCase(ev.getKeyChar());
 	int code = ev.getExtendedKeyCode();
 	if(key == KeyEvent.CHAR_UNDEFINED)
 	    key = 0;
@@ -137,13 +165,14 @@ public class KeyMatch {
 	    case KeyEvent.VK_META: case KeyEvent.VK_WINDOWS:
 		return(true);
 	    }
-	    if(ev.getKeyChar() == 27) {
+	    char chr = Character.toUpperCase(ev.getKeyChar());
+	    if(chr == 27) {
 		grab.remove();
 		grab = null;
 		change(namefor(this.key));
 		return(true);
 	    }
-	    if(ev.getKeyChar() == 8) {
+	    if(chr == 8) {
 		grab.remove();
 		grab = null;
 		set(null);
