@@ -268,7 +268,9 @@ public class Fightsess extends Widget {
 		    Tex img = act.get().layer(Resource.imgc).tex();
 		    ca = ca.sub(img.sz().div(2));
 		    if(c.isect(ca, img.sz())) {
-			String tip = act.get().layer(Resource.tooltip).t + " ($b{$col[255,128,0]{" + keytips[i] + "}})";
+			String tip = act.get().layer(Resource.tooltip).t;
+			if(kb_acts[i].key() != KeyMatch.nil)
+			    tip += " ($b{$col[255,128,0]{" + kb_acts[i].key().name() + "}})";
 			if((acttip == null) || !acttip.text.equals(tip))
 			    acttip = RichText.render(tip, -1);
 			return(acttip);
@@ -326,18 +328,28 @@ public class Fightsess extends Widget {
 	}
     }
 
+    public static final KeyBinding[] kb_acts = {
+	KeyBinding.get("fgt/0", KeyMatch.forcode(KeyEvent.VK_1, 0)),
+	KeyBinding.get("fgt/1", KeyMatch.forcode(KeyEvent.VK_2, 0)),
+	KeyBinding.get("fgt/2", KeyMatch.forcode(KeyEvent.VK_3, 0)),
+	KeyBinding.get("fgt/3", KeyMatch.forcode(KeyEvent.VK_4, 0)),
+	KeyBinding.get("fgt/4", KeyMatch.forcode(KeyEvent.VK_5, 0)),
+	KeyBinding.get("fgt/5", KeyMatch.forcode(KeyEvent.VK_1, KeyMatch.S)),
+	KeyBinding.get("fgt/6", KeyMatch.forcode(KeyEvent.VK_2, KeyMatch.S)),
+	KeyBinding.get("fgt/7", KeyMatch.forcode(KeyEvent.VK_3, KeyMatch.S)),
+	KeyBinding.get("fgt/8", KeyMatch.forcode(KeyEvent.VK_4, KeyMatch.S)),
+	KeyBinding.get("fgt/9", KeyMatch.forcode(KeyEvent.VK_5, KeyMatch.S)),
+    };
+
     public boolean globtype(char key, KeyEvent ev) {
 	if((ev.getModifiersEx() & (InputEvent.CTRL_DOWN_MASK | KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) == 0) {
 	    int n = -1;
-	    switch(ev.getKeyCode()) {
-	    case KeyEvent.VK_1: n = 0; break;
-	    case KeyEvent.VK_2: n = 1; break;
-	    case KeyEvent.VK_3: n = 2; break;
-	    case KeyEvent.VK_4: n = 3; break;
-	    case KeyEvent.VK_5: n = 4; break;
+	    for(int i = 0; i < kb_acts.length; i++) {
+		if(kb_acts[i].key().match(ev)) {
+		    n = i;
+		    break;
+		}
 	    }
-	    if((n >= 0) && ((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0))
-		n += 5;
 	    int fn = n;
 	    if((n >= 0) && (n < actions.length)) {
 		MapView map = getparent(GameUI.class).map;
