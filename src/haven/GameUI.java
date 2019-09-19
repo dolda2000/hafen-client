@@ -157,9 +157,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	zerg.hide();
     }
 
+    public static final KeyBinding kb_map = KeyBinding.get("map", KeyMatch.forchar('A', KeyMatch.C));
+    public static final KeyBinding kb_claim = KeyBinding.get("ol-claim", KeyMatch.nil);
+    public static final KeyBinding kb_vil = KeyBinding.get("ol-vil", KeyMatch.nil);
+    public static final KeyBinding kb_rlm = KeyBinding.get("ol-rlm", KeyMatch.nil);
     private void mapbuttons() {
-	blpanel.add(new IButton("gfx/hud/lbtn-claim", "", "-d", "-h") {
-		{tooltip = Text.render("Display personal claims");}
+	blpanel.add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims") {
 		public void click() {
 		    if((map != null) && !map.visol(0))
 			map.enol(0, 1);
@@ -167,8 +170,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			map.disol(0, 1);
 		}
 	    }, 0, 0);
-	blpanel.add(new IButton("gfx/hud/lbtn-vil", "", "-d", "-h") {
-		{tooltip = Text.render("Display village claims");}
+	blpanel.add(new MenuButton("lbtn-vil", kb_vil, "Display village claims") {
 		public void click() {
 		    if((map != null) && !map.visol(2))
 			map.enol(2, 3);
@@ -176,8 +178,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			map.disol(2, 3);
 		}
 	    }, 0, 0);
-	blpanel.add(new IButton("gfx/hud/lbtn-rlm", "", "-d", "-h") {
-		{tooltip = Text.render("Display realms");}
+	blpanel.add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms") {
 		public void click() {
 		    if((map != null) && !map.visol(4))
 			map.enol(4, 5);
@@ -185,7 +186,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			map.disol(4, 5);
 		}
 	    }, 0, 0);
-	blpanel.add(new MenuButton("lbtn-map", 1, "Map ($col[255,255,0]{Ctrl+A})") {
+	blpanel.add(new MenuButton("lbtn-map", kb_map, "Map") {
 		public void click() {
 		    if((mapfile != null) && mapfile.show(!mapfile.visible)) {
 			mapfile.raise();
@@ -883,30 +884,50 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public static class MenuButton extends IButton {
-	private final int gkey;
+	private final KeyBinding gkey;
+	private final String tt;
 
-	MenuButton(String base, int gkey, String tooltip) {
+	MenuButton(String base, KeyBinding gkey, String tooltip) {
 	    super("gfx/hud/" + base, "", "-d", "-h");
-	    this.gkey = (char)gkey;
-	    this.tooltip = RichText.render(tooltip, 0);
+	    this.gkey = gkey;
+	    this.tt = tooltip;
 	}
 
 	public void click() {}
 
 	public boolean globtype(char key, KeyEvent ev) {
-	    if((gkey != -1) && (key == gkey)) {
+	    if(gkey.key().match(ev)) {
 		click();
 		return(true);
 	    }
 	    return(super.globtype(key, ev));
 	}
+
+	private RichText rtt = null;
+	public Object tooltip(Coord c, Widget prev) {
+	    if(!checkhit(c))
+		return(null);
+	    if((prev != this) || (rtt == null)) {
+		String tt = this.tt;
+		if(gkey.key() != KeyMatch.nil)
+		    tt += String.format(" ($col[255,255,0]{%s})", RichText.Parser.quote(gkey.key().name()));
+		if((rtt == null) || !rtt.text.equals(tt))
+		    rtt = RichText.render(tt, 0);
+	    }
+	    return(rtt.tex());
+	}
     }
 
+    public static final KeyBinding kb_inv = KeyBinding.get("inv", KeyMatch.forcode(KeyEvent.VK_TAB, 0));
+    public static final KeyBinding kb_equ = KeyBinding.get("equ", KeyMatch.forchar('E', KeyMatch.C));
+    public static final KeyBinding kb_chr = KeyBinding.get("chr", KeyMatch.forchar('T', KeyMatch.C));
+    public static final KeyBinding kb_bud = KeyBinding.get("bud", KeyMatch.forchar('B', KeyMatch.C));
+    public static final KeyBinding kb_opt = KeyBinding.get("opt", KeyMatch.forchar('O', KeyMatch.C));
     private static final Tex menubg = Resource.loadtex("gfx/hud/rbtn-bg");
     public class MainMenu extends Widget {
 	public MainMenu() {
 	    super(menubg.sz());
-	    add(new MenuButton("rbtn-inv", 9, "Inventory ($col[255,255,0]{Tab})") {
+	    add(new MenuButton("rbtn-inv", kb_inv, "Inventory") {
 		    public void click() {
 			if((invwnd != null) && invwnd.show(!invwnd.visible)) {
 			    invwnd.raise();
@@ -914,7 +935,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			}
 		    }
 		}, 0, 0);
-	    add(new MenuButton("rbtn-equ", 5, "Equipment ($col[255,255,0]{Ctrl+E})") {
+	    add(new MenuButton("rbtn-equ", kb_equ, "Equipment") {
 		    public void click() {
 			if((equwnd != null) && equwnd.show(!equwnd.visible)) {
 			    equwnd.raise();
@@ -922,7 +943,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			}
 		    }
 		}, 0, 0);
-	    add(new MenuButton("rbtn-chr", 20, "Character Sheet ($col[255,255,0]{Ctrl+T})") {
+	    add(new MenuButton("rbtn-chr", kb_chr, "Character Sheet") {
 		    public void click() {
 			if((chrwdg != null) && chrwdg.show(!chrwdg.visible)) {
 			    chrwdg.raise();
@@ -930,7 +951,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			}
 		    }
 		}, 0, 0);
-	    add(new MenuButton("rbtn-bud", 2, "Kith & Kin ($col[255,255,0]{Ctrl+B})") {
+	    add(new MenuButton("rbtn-bud", kb_bud, "Kith & Kin") {
 		    public void click() {
 			if(zerg.show(!zerg.visible)) {
 			    zerg.raise();
@@ -939,7 +960,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			}
 		    }
 		}, 0, 0);
-	    add(new MenuButton("rbtn-opt", 15, "Options ($col[255,255,0]{Ctrl+O})") {
+	    add(new MenuButton("rbtn-opt", kb_opt, "Options") {
 		    public void click() {
 			if(opts.show(!opts.visible)) {
 			    opts.raise();
