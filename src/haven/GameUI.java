@@ -469,23 +469,26 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    wdg.c.y = sz.y - wdg.sz.y;
     }
 
+    public static final KeyBinding kb_inv = KeyBinding.get("inv", KeyMatch.forcode(KeyEvent.VK_TAB, 0));
+    public static final KeyBinding kb_equ = KeyBinding.get("equ", KeyMatch.forchar('E', KeyMatch.C));
+    public static final KeyBinding kb_bud = KeyBinding.get("bud", KeyMatch.forchar('B', KeyMatch.C));
     public boolean globtype(char key, KeyEvent ev) {
 	if(key == ':') {
 	    entercmd();
 	    return(true);
-	} else if(key == 9) {
+	} else if(kb_inv.key().match(ev)) {
 	    if((invwnd != null) && invwnd.show(!invwnd.visible)) {
 		invwnd.raise();
 		fitwdg(invwnd);
 	    }
 	    return(true);
-	} else if(key == 5) {
+	} else if(kb_equ.key().match(ev)) {
 	    if((equwnd != null) && equwnd.show(!equwnd.visible)) {
 		equwnd.raise();
 		fitwdg(equwnd);
 	    }
 	    return(true);
-	} else if(key == 2) {
+	} else if(kb_bud.key().match(ev)) {
 	    if((buddies != null) && buddies.show(!buddies.visible)) {
 		buddies.raise();
 		fitwdg(buddies);
