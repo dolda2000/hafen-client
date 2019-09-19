@@ -47,6 +47,7 @@ public class KeyMatch {
 
     private static int mods(KeyEvent ev) {
 	int ret = 0;
+	if((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0) ret |= S;
 	if((ev.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0) ret |= C;
 	if((ev.getModifiersEx() & (InputEvent.META_DOWN_MASK | InputEvent.ALT_DOWN_MASK)) != 0) ret |= M;
 	return(ret);
@@ -104,7 +105,7 @@ public class KeyMatch {
     }
 
     public static KeyMatch forcode(int code, int mods) {
-	return(new KeyMatch('\0', code, KeyEvent.getKeyText(code), C | M, mods));
+	return(new KeyMatch('\0', code, KeyEvent.getKeyText(code), S | C | M, mods));
     }
 
     public static KeyMatch forevent(KeyEvent ev, int modmask) {
@@ -208,32 +209,35 @@ public class KeyMatch {
 	    }
 	}
 
-	public boolean keydown(KeyEvent ev) {
-	    if(grab == null)
-		return(super.keydown(ev));
+	protected boolean handle(KeyEvent ev) {
 	    switch(ev.getKeyCode()) {
 	    case KeyEvent.VK_SHIFT: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
 	    case KeyEvent.VK_META: case KeyEvent.VK_WINDOWS:
-		return(true);
+		return(false);
 	    }
-	    char chr = Character.toUpperCase(ev.getKeyChar());
-	    if(chr == 27) {
-		grab.remove();
-		grab = null;
+	    int code = ev.getKeyCode();
+	    if(code == KeyEvent.VK_ESCAPE) {
 		change(namefor(this.key));
 		return(true);
 	    }
-	    if(chr == 8) {
-		grab.remove();
-		grab = null;
-		set(null);
+	    if(code == KeyEvent.VK_DELETE) {
+		set(nil);
 		return(true);
 	    }
 	    KeyMatch key = forevent(ev, C | M);
-	    if(key != null) {
+	    if(key != null)
+		set(key);
+	    else
+		change(namefor(this.key));
+	    return(true);
+	}
+
+	public boolean keydown(KeyEvent ev) {
+	    if(grab == null)
+		return(super.keydown(ev));
+	    if(handle(ev)) {
 		grab.remove();
 		grab = null;
-		set(key);
 	    }
 	    return(true);
 	}
