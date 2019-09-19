@@ -189,7 +189,7 @@ public class KeyMatch {
 	}
 
 	public Capture(int w, KeyMatch key) {
-	    super(w, namefor(key));
+	    super(w, namefor(key), false);
 	    this.key = key;
 	}
 
