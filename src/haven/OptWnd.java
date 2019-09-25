@@ -35,10 +35,12 @@ public class OptWnd extends Window {
     public Panel current;
 
     public void chpanel(Panel p) {
+	Coord cc = this.c.add(this.sz.div(2));
 	if(current != null)
 	    current.hide();
 	(current = p).show();
 	pack();
+	move(cc.sub(this.sz.div(2)));
     }
 
     public class PButton extends Button {
@@ -198,55 +200,42 @@ public class OptWnd extends Window {
 						     "$col[255,255,0]{Backspace}: Revert to default\n" +
 						     "$col[255,255,0]{Delete}: Disable keybinding", 0);
     public class BindingPanel extends Panel {
+	private int addbtn(Widget cont, String nm, KeyBinding cmd, int y) {
+	    Widget btn = cont.add(new SetButton(175, cmd), 100, y);
+	    cont.adda(new Label(nm), 0, y + (btn.sz.y / 2), 0, 0.5);
+	    return(y + 30);
+	}
+
 	public BindingPanel(Panel back) {
 	    super();
-	    add(new PButton(200, "Back", 27, back), new Coord(0, 250));
-	    Widget cont = add(new Scrollport(new Coord(200, 240))).cont;
+	    Widget cont = add(new Scrollport(new Coord(300, 300))).cont;
 	    int y = 0;
-	    cont.adda(new Label("Main menu"), 100, y, 0.5, 0); y += 20;
-	    cont.add(new Label("Inventory"), 0, y); y += 15;
-	    cont.add(new SetButton(175, GameUI.kb_inv), 0, y); y += 30;
-	    cont.add(new Label("Equipment"), 0, y); y += 15;
-	    cont.add(new SetButton(175, GameUI.kb_equ), 0, y); y += 30;
-	    cont.add(new Label("Character sheet"), 0, y); y += 15;
-	    cont.add(new SetButton(175, GameUI.kb_chr), 0, y); y += 30;
-	    cont.add(new Label("Map window"), 0, y); y += 15;
-	    cont.add(new SetButton(175, GameUI.kb_map), 0, y); y += 30;
-	    cont.add(new Label("Kith & Kin"), 0, y); y += 15;
-	    cont.add(new SetButton(175, GameUI.kb_bud), 0, y); y += 30;
-	    cont.add(new Label("Options"), 0, y); y += 15;
-	    cont.add(new SetButton(175, GameUI.kb_opt), 0, y); y += 30;
-	    cont.add(new Label("Toggle chat"), 0, y); y += 15;
-	    cont.add(new SetButton(175, GameUI.kb_chat), 0, y); y += 30;
-	    cont.add(new Label("Quick chat"), 0, y); y += 15;
-	    cont.add(new SetButton(175, ChatUI.kb_quick), 0, y); y += 30;
-	    cont.add(new Label("Display claims"), 0, y); y += 15;
-	    cont.add(new SetButton(175, GameUI.kb_claim), 0, y); y += 30;
-	    cont.add(new Label("Display village claims"), 0, y); y += 15;
-	    cont.add(new SetButton(175, GameUI.kb_vil), 0, y); y += 30;
-	    cont.add(new Label("Display realms"), 0, y); y += 15;
-	    cont.add(new SetButton(175, GameUI.kb_rlm), 0, y); y += 30;
-	    cont.add(new Label("Take screenshot"), 0, y); y += 15;
-	    cont.add(new SetButton(175, GameUI.kb_shoot), 0, y); y += 30;
+	    cont.adda(new Label("Main menu"), cont.sz.x / 2, y, 0.5, 0); y += 20;
+	    y = addbtn(cont, "Inventory", GameUI.kb_inv, y);
+	    y = addbtn(cont, "Equipment", GameUI.kb_equ, y);
+	    y = addbtn(cont, "Character sheet", GameUI.kb_chr, y);
+	    y = addbtn(cont, "Map window", GameUI.kb_map, y);
+	    y = addbtn(cont, "Kith & Kin", GameUI.kb_bud, y);
+	    y = addbtn(cont, "Options", GameUI.kb_opt, y);
+	    y = addbtn(cont, "Toggle chat", GameUI.kb_chat, y);
+	    y = addbtn(cont, "Quick chat", ChatUI.kb_quick, y);
+	    y = addbtn(cont, "Display claims", GameUI.kb_claim, y);
+	    y = addbtn(cont, "Display villages", GameUI.kb_vil, y);
+	    y = addbtn(cont, "Display realms", GameUI.kb_rlm, y);
+	    y = addbtn(cont, "Take screenshot", GameUI.kb_shoot, y);
 	    y += 10;
-	    cont.adda(new Label("Walking speed"), 100, y, 0.5, 0); y += 20;
-	    cont.add(new Label("Increase speed"), 0, y); y += 15;
-	    cont.add(new SetButton(175, Speedget.kb_speedup), 0, y); y += 30;
-	    cont.add(new Label("Decrease speed"), 0, y); y += 15;
-	    cont.add(new SetButton(175, Speedget.kb_speeddn), 0, y); y += 30;
-	    cont.add(new Label("Set speed 1"), 0, y); y += 15;
-	    cont.add(new SetButton(175, Speedget.kb_speeds[0]), 0, y); y += 30;
-	    cont.add(new Label("Set speed 2"), 0, y); y += 15;
-	    cont.add(new SetButton(175, Speedget.kb_speeds[1]), 0, y); y += 30;
-	    cont.add(new Label("Set speed 3"), 0, y); y += 15;
-	    cont.add(new SetButton(175, Speedget.kb_speeds[2]), 0, y); y += 30;
-	    cont.add(new Label("Set speed 4"), 0, y); y += 15;
-	    cont.add(new SetButton(175, Speedget.kb_speeds[3]), 0, y); y += 30;
+	    cont.adda(new Label("Walking speed"), cont.sz.x / 2, y, 0.5, 0); y += 20;
+	    y = addbtn(cont, "Increase speed", Speedget.kb_speedup, y);
+	    y = addbtn(cont, "Decrease speed", Speedget.kb_speeddn, y);
+	    for(int i = 0; i < 4; i++)
+		y = addbtn(cont, String.format("Set speed %d", i + 1), Speedget.kb_speeds[i], y);
 	    y += 10;
-	    cont.adda(new Label("Combat actions"), 100, y, 0.5, 0); y += 20;
-	    for(int i = 0; i < Fightsess.kb_acts.length; i++) {
-		cont.add(new SetButton(175, Fightsess.kb_acts[i]), 0, y); y += 30;
-	    }
+	    cont.adda(new Label("Combat actions"), cont.sz.x / 2, y, 0.5, 0); y += 20;
+	    for(int i = 0; i < Fightsess.kb_acts.length; i++)
+		y = addbtn(cont, String.format("Combat action %d", i + 1), Fightsess.kb_acts[i], y);
+	    y += 10;
+	    y = cont.sz.y + 10;
+	    adda(new PButton(200, "Back", 27, back), cont.sz.x / 2, y, 0.5, 0); y += 30;
 	    pack();
 	}
 
