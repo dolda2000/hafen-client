@@ -235,6 +235,7 @@ public class OptWnd extends Window {
 		y = addbtn(cont, String.format("Combat action %d", i + 1), Fightsess.kb_acts[i], y);
 	    y += 10;
 	    y = cont.sz.y + 10;
+	    adda(new PointBind(200), cont.sz.x / 2, y, 0.5, 0); y += 30;
 	    adda(new PButton(200, "Back", 27, back), cont.sz.x / 2, y, 0.5, 0); y += 30;
 	    pack();
 	}
@@ -264,6 +265,113 @@ public class OptWnd extends Window {
 	    public Object tooltip(Coord c, Widget prev) {
 		return(kbtt.tex());
 	    }
+	}
+    }
+
+
+    public static class PointBind extends Button {
+	public static final String msg = "Bind other elements...";
+	public static final Resource curs = Resource.local().loadwait("gfx/hud/curs/wrench");
+	private UI.Grab mg, kg;
+	private KeyBinding cmd;
+
+	public PointBind(int w) {
+	    super(w, msg, false);
+	    tooltip = RichText.render("Bind a key to an element not listed above, such as an action-menu " +
+				      "button. Click the element to bind, and then press the key to bind to it. " +
+				      "Right-click to stop rebinding.",
+				      300);
+	}
+
+	public void click() {
+	    if(mg == null) {
+		change("Click element...");
+		mg = ui.grabmouse(this);
+	    } else if(kg != null) {
+		kg.remove();
+		kg = null;
+		change(msg);
+	    }
+	}
+
+	private boolean handle(KeyEvent ev) {
+	    switch(ev.getKeyCode()) {
+	    case KeyEvent.VK_SHIFT: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
+	    case KeyEvent.VK_META: case KeyEvent.VK_WINDOWS:
+		return(false);
+	    }
+	    int code = ev.getKeyCode();
+	    if(code == KeyEvent.VK_ESCAPE) {
+		return(true);
+	    }
+	    if(code == KeyEvent.VK_BACK_SPACE) {
+		cmd.set(null);
+		return(true);
+	    }
+	    if(code == KeyEvent.VK_DELETE) {
+		cmd.set(KeyMatch.nil);
+		return(true);
+	    }
+	    KeyMatch key = KeyMatch.forevent(ev, KeyMatch.S | KeyMatch.C | KeyMatch.M);
+	    if(key != null)
+		cmd.set(key);
+	    return(true);
+	}
+
+	public boolean mousedown(Coord c, int btn) {
+	    if(mg == null)
+		return(super.mousedown(c, btn));
+	    Coord gc = ui.mc;
+	    if(btn == 1) {
+		this.cmd = KeyBinding.Bindable.getbinding(ui.root, gc);
+		return(true);
+	    }
+	    if(btn == 3) {
+		mg.remove();
+		mg = null;
+		change(msg);
+		return(true);
+	    }
+	    return(false);
+	}
+
+	public boolean mouseup(Coord c, int btn) {
+	    if(mg == null)
+		return(super.mouseup(c, btn));
+	    Coord gc = ui.mc;
+	    if(btn == 1) {
+		if((this.cmd != null) && (KeyBinding.Bindable.getbinding(ui.root, gc) == this.cmd)) {
+		    mg.remove();
+		    mg = null;
+		    kg = ui.grabkeys(this);
+		    change("Press key...");
+		} else {
+		    this.cmd = null;
+		}
+		return(true);
+	    }
+	    if(btn == 3)
+		return(true);
+	    return(false);
+	}
+
+	public Resource getcurs(Coord c) {
+	    if(mg == null)
+		return(null);
+	    return(curs);
+	}
+
+	public boolean keydown(KeyEvent ev) {
+	    if(kg == null)
+		return(super.keydown(ev));
+	    if(handle(ev)) {
+		kg.remove();
+		kg = null;
+		cmd = null;
+		change("Click another element...");
+		mg = ui.grabmouse(this);
+	    }
+	    return(true);
 	}
     }
 
