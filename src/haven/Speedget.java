@@ -116,8 +116,8 @@ public class Speedget extends Widget {
 	return(null);
     }
 
-    public static final KeyBinding kb_speedup = KeyBinding.get("speed-up", new KeyMatch('R', KeyEvent.VK_UNDEFINED, "R", KeyMatch.S | KeyMatch.C | KeyMatch.M, KeyMatch.C));
-    public static final KeyBinding kb_speeddn = KeyBinding.get("speed-down", new KeyMatch('R', KeyEvent.VK_UNDEFINED, "R", KeyMatch.S | KeyMatch.C | KeyMatch.M, KeyMatch.S | KeyMatch.C));
+    public static final KeyBinding kb_speedup = KeyBinding.get("speed-up", new KeyMatch('R', false, KeyEvent.VK_UNDEFINED, "R", KeyMatch.S | KeyMatch.C | KeyMatch.M, KeyMatch.C));
+    public static final KeyBinding kb_speeddn = KeyBinding.get("speed-down", new KeyMatch('R', false, KeyEvent.VK_UNDEFINED, "R", KeyMatch.S | KeyMatch.C | KeyMatch.M, KeyMatch.S | KeyMatch.C));
     public static final KeyBinding[] kb_speeds = {
 	KeyBinding.get("speed-set/0", KeyMatch.nil),
 	KeyBinding.get("speed-set/1", KeyMatch.nil),
