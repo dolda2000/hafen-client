@@ -44,6 +44,10 @@ public class KeyBinding {
 	this.key = key;
     }
 
+    public boolean set() {
+	return(key != null);
+    }
+
     public KeyMatch key() {
 	return((key != null) ? key : defkey);
     }
@@ -65,6 +69,29 @@ public class KeyBinding {
     public static KeyBinding get(String id) {
 	synchronized(bindings) {
 	    return(bindings.get(id));
+	}
+    }
+
+    public static interface Bindable {
+	public KeyBinding getbinding(Coord cc);
+
+	public static KeyBinding getbinding(Widget wdg, Coord c) {
+	    if(wdg instanceof Bindable) {
+		KeyBinding ret = ((Bindable)wdg).getbinding(c);
+		if(ret != null)
+		    return(ret);
+	    }
+	    for(Widget w = wdg.lchild; w != null; w = w.prev) {
+		if(!w.visible)
+		    continue;
+		Coord cc = w.xlate(w.c, true);
+		if(c.isect(cc, w.sz)) {
+		    KeyBinding ret = getbinding(w, c.add(cc.inv()));
+		    if(ret != null)
+			return(ret);
+		}
+	    }
+	    return(null);
 	}
     }
 }
