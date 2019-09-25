@@ -979,6 +979,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     public static final KeyBinding kb_shoot = KeyBinding.get("screenshot", KeyMatch.forchar('S', KeyMatch.M));
     public static final KeyBinding kb_chat = KeyBinding.get("chat-toggle", KeyMatch.forchar('C', KeyMatch.C));
+    public static final KeyBinding kb_hide = KeyBinding.get("ui-toggle", KeyMatch.nil);
     public boolean globtype(char key, KeyEvent ev) {
 	if(key == ':') {
 	    entercmd();
@@ -986,7 +987,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if((Config.screenurl != null) && kb_shoot.key().match(ev)) {
 	    Screenshooter.take(this, Config.screenurl);
 	    return(true);
-	} else if(key == ' ') {
+	} else if(kb_hide.key().match(ev)) {
 	    toggleui();
 	    return(true);
 	} else if(kb_chat.key().match(ev)) {

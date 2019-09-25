@@ -223,6 +223,7 @@ public class OptWnd extends Window {
 	    y = addbtn(cont, "Display villages", GameUI.kb_vil, y);
 	    y = addbtn(cont, "Display realms", GameUI.kb_rlm, y);
 	    y = addbtn(cont, "Take screenshot", GameUI.kb_shoot, y);
+	    y = addbtn(cont, "Toggle UI", GameUI.kb_hide, y);
 	    y += 10;
 	    cont.adda(new Label("Walking speed"), cont.sz.x / 2, y, 0.5, 0); y += 20;
 	    y = addbtn(cont, "Increase speed", Speedget.kb_speedup, y);
