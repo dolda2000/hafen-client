@@ -106,7 +106,7 @@ public class Speedget extends Widget {
 
     public boolean mousewheel(Coord c, int amount) {
 	if(max >= 0)
-	    set((cur + max + 1 + amount) % (max + 1));
+	    set(Utils.clip(cur + amount, 0, max));
 	return(true);
     }
 
@@ -132,19 +132,7 @@ public class Speedget extends Widget {
 	    dir = -1;
 	if(dir != 0) {
 	    if(max >= 0) {
-		int n;
-		if(dir > 0) {
-		    if(cur > max)
-			n = 0;
-		    else
-			n = (cur + 1) % (max + 1);
-		} else {
-		    if(cur > max)
-			n = max;
-		    else
-			n = (cur + max) % (max + 1);
-		}
-		set(n);
+		set(Utils.clip(cur + dir, 0, max));
 	    }
 	    return(true);
 	}
