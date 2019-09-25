@@ -118,8 +118,6 @@ public class KeyMatch {
 	int code = ev.getExtendedKeyCode();
 	if(key == KeyEvent.CHAR_UNDEFINED)
 	    key = 0;
-	if(key > 32)
-	    return(new KeyMatch(key, false, VK_UNDEFINED, Character.toString(key), modmask, mod));
 	if(code != VK_UNDEFINED) {
 	    String nm;
 	    if(ev.getKeyCode() != VK_UNDEFINED)
@@ -128,6 +126,8 @@ public class KeyMatch {
 		nm = String.format("%X", code);
 	    return(new KeyMatch('\0', false, code, nm, modmask, mod));
 	}
+	if(key > 32)
+	    return(new KeyMatch(key, false, VK_UNDEFINED, Character.toString(key), modmask, mod));
 	return(null);
     }
 
@@ -233,7 +233,7 @@ public class KeyMatch {
 		set(nil);
 		return(true);
 	    }
-	    KeyMatch key = forevent(ev, C | M);
+	    KeyMatch key = forevent(ev, S | C | M);
 	    if(key != null)
 		set(key);
 	    else
