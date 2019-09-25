@@ -122,11 +122,13 @@ public class KeyMatch {
 	    String nm;
 	    if(ev.getKeyCode() != VK_UNDEFINED)
 		nm = KeyEvent.getKeyText(ev.getKeyCode());
+	    else if(!Character.isISOControl(key))
+		nm = Character.toString(key);
 	    else
 		nm = String.format("%X", code);
 	    return(new KeyMatch('\0', false, code, nm, modmask, mod));
 	}
-	if(key > 32)
+	if(!Character.isISOControl(key))
 	    return(new KeyMatch(key, false, VK_UNDEFINED, Character.toString(key), modmask, mod));
 	return(null);
     }

@@ -102,8 +102,11 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    String tt = name();
 	    KeyMatch key = bind.key();
 	    int pos = -1;
-	    if((key.chr != 0) && (key.modmatch == 0))
-		pos = tt.toUpperCase().indexOf(Character.toUpperCase(key.chr));
+	    char vkey = key.chr;
+	    if((vkey == 0) && (key.keyname.length() == 1))
+		vkey = key.keyname.charAt(0);
+	    if((vkey != 0) && (key.modmatch == 0))
+		pos = tt.toUpperCase().indexOf(Character.toUpperCase(vkey));
 	    if(pos >= 0)
 		tt = tt.substring(0, pos) + "$b{$col[255,128,0]{" + tt.charAt(pos) + "}}" + tt.substring(pos + 1);
 	    else if(key != KeyMatch.nil)
