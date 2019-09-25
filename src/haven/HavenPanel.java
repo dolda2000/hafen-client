@@ -365,7 +365,7 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory,
 	    g.image(tt, pos);
 	}
 	ui.lasttip = tooltip;
-	Resource curs = ui.root.getcurs(mousepos);
+	Resource curs = ui.getcurs(mousepos);
 	if(cursmode == "awt") {
 	    if(curs != lastcursor) {
 		try {
