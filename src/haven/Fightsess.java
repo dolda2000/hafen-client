@@ -340,7 +340,7 @@ public class Fightsess extends Widget {
 	KeyBinding.get("fgt/8", KeyMatch.forcode(KeyEvent.VK_4, KeyMatch.S)),
 	KeyBinding.get("fgt/9", KeyMatch.forcode(KeyEvent.VK_5, KeyMatch.S)),
     };
-    public static final KeyBinding kb_relcycle =  KeyBinding.get("fgt-cycle", KeyMatch.forcode(KeyEvent.VK_TAB, KeyMatch.C));
+    public static final KeyBinding kb_relcycle =  KeyBinding.get("fgt-cycle", KeyMatch.forcode(KeyEvent.VK_TAB, KeyMatch.C), KeyMatch.S);
 
     public boolean globtype(char key, KeyEvent ev) {
 	{
@@ -369,11 +369,19 @@ public class Fightsess extends Widget {
 		return(true);
 	    }
 	}
-	if(kb_relcycle.key().match(ev)) {
-	    Fightview.Relation cur = fv.current;
-	    if(cur != null) {
-		fv.lsrel.remove(cur);
-		fv.lsrel.addLast(cur);
+	if(kb_relcycle.key().match(ev, KeyMatch.S)) {
+	    if((ev.getModifiersEx() & KeyEvent.SHIFT_DOWN_MASK) == 0) {
+		Fightview.Relation cur = fv.current;
+		if(cur != null) {
+		    fv.lsrel.remove(cur);
+		    fv.lsrel.addLast(cur);
+		}
+	    } else {
+		Fightview.Relation last = fv.lsrel.getLast();
+		if(last != null) {
+		    fv.lsrel.remove(last);
+		    fv.lsrel.addFirst(last);
+		}
 	    }
 	    fv.wdgmsg("bump", (int)fv.lsrel.get(0).gobid);
 	    return(true);
