@@ -30,7 +30,7 @@ import java.awt.event.*;
 import static java.awt.event.KeyEvent.VK_UNDEFINED;
 
 public class KeyMatch {
-    public static final int S = 1, C = 2, M = 4;
+    public static final int S = 1, C = 2, M = 4, MODS = S | C | M;
     public static final KeyMatch nil = new KeyMatch('\0', false, VK_UNDEFINED, "None", 0, 0);
     public char chr;
     public boolean casematch;
@@ -43,8 +43,8 @@ public class KeyMatch {
 	this.casematch = casematch;
 	this.code = code;
 	this.keyname = keyname;
-	this.modmask = modmask;
-	this.modmatch = modmatch;
+	this.modmask = modmask & MODS;
+	this.modmatch = modmatch & MODS;
     }
 
     private static int mods(KeyEvent ev) {
@@ -55,9 +55,9 @@ public class KeyMatch {
 	return(ret);
     }
 
-    public boolean match(KeyEvent ev) {
+    public boolean match(KeyEvent ev, int modign) {
 	int mod = mods(ev);
-	if((mod & modmask) != modmatch)
+	if((mod & modmask & ~modign) != (modmatch & ~modign))
 	    return(false);
 	if(chr != 0) {
 	    char evc = ev.getKeyChar();
@@ -82,6 +82,10 @@ public class KeyMatch {
 	} else {
 	    return(false);
 	}
+    }
+
+    public boolean match(KeyEvent ev) {
+	return(match(ev, 0));
     }
 
     public String name() {
@@ -220,6 +224,10 @@ public class KeyMatch {
 	    }
 	}
 
+	protected KeyMatch mkmatch(KeyEvent ev) {
+	    return(forevent(ev, MODS));
+	}
+
 	protected boolean handle(KeyEvent ev) {
 	    switch(ev.getKeyCode()) {
 	    case KeyEvent.VK_SHIFT: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
@@ -235,7 +243,7 @@ public class KeyMatch {
 		set(nil);
 		return(true);
 	    }
-	    KeyMatch key = forevent(ev, S | C | M);
+	    KeyMatch key = mkmatch(ev);
 	    if(key != null)
 		set(key);
 	    else
