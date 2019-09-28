@@ -255,6 +255,10 @@ public class OptWnd extends Window {
 		cmd.set(key);
 	    }
 
+	    protected KeyMatch mkmatch(KeyEvent ev) {
+		return(KeyMatch.forevent(ev, ~cmd.modign));
+	    }
+
 	    protected boolean handle(KeyEvent ev) {
 		if(ev.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
 		    cmd.set(null);
@@ -314,7 +318,7 @@ public class OptWnd extends Window {
 		cmd.set(KeyMatch.nil);
 		return(true);
 	    }
-	    KeyMatch key = KeyMatch.forevent(ev, KeyMatch.S | KeyMatch.C | KeyMatch.M);
+	    KeyMatch key = KeyMatch.forevent(ev, ~cmd.modign);
 	    if(key != null)
 		cmd.set(key);
 	    return(true);
