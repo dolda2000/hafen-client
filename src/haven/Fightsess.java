@@ -340,6 +340,7 @@ public class Fightsess extends Widget {
 	KeyBinding.get("fgt/8", KeyMatch.forcode(KeyEvent.VK_4, KeyMatch.S)),
 	KeyBinding.get("fgt/9", KeyMatch.forcode(KeyEvent.VK_5, KeyMatch.S)),
     };
+    public static final KeyBinding kb_relcycle =  KeyBinding.get("fgt-cycle", KeyMatch.forcode(KeyEvent.VK_TAB, KeyMatch.C));
 
     public boolean globtype(char key, KeyEvent ev) {
 	if((ev.getModifiersEx() & (InputEvent.CTRL_DOWN_MASK | KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) == 0) {
@@ -367,7 +368,8 @@ public class Fightsess extends Widget {
 		}
 		return(true);
 	    }
-	} else if((key == 9) && ((ev.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)) {
+	}
+	if(kb_relcycle.key().match(ev)) {
 	    Fightview.Relation cur = fv.current;
 	    if(cur != null) {
 		fv.lsrel.remove(cur);

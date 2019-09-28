@@ -234,6 +234,7 @@ public class OptWnd extends Window {
 	    cont.adda(new Label("Combat actions"), cont.sz.x / 2, y, 0.5, 0); y += 20;
 	    for(int i = 0; i < Fightsess.kb_acts.length; i++)
 		y = addbtn(cont, String.format("Combat action %d", i + 1), Fightsess.kb_acts[i], y);
+	    y = addbtn(cont, "Switch targets", Fightsess.kb_relcycle, y);
 	    y += 10;
 	    y = cont.sz.y + 10;
 	    adda(new PointBind(200), cont.sz.x / 2, y, 0.5, 0); y += 30;
