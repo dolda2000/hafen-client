@@ -32,11 +32,13 @@ public class KeyBinding {
     private static final Map<String, KeyBinding> bindings = new HashMap<>();
     public final String id;
     public final KeyMatch defkey;
+    public final int modign;
     public KeyMatch key;
 
-    private KeyBinding(String id, KeyMatch defkey) {
+    private KeyBinding(String id, KeyMatch defkey, int modign) {
 	this.id = id;
 	this.defkey = defkey;
+	this.modign = modign;
     }
 
     public void set(KeyMatch key) {
@@ -52,18 +54,22 @@ public class KeyBinding {
 	return((key != null) ? key : defkey);
     }
 
-    public static KeyBinding get(String id, KeyMatch defkey) {
+    public static KeyBinding get(String id, KeyMatch defkey, int modign) {
 	if(defkey == null)
 	    throw(new NullPointerException());
 	synchronized(bindings) {
 	    KeyBinding ret = bindings.get(id);
 	    if(ret == null) {
 		KeyMatch set = KeyMatch.restore(Utils.getpref("keybind/" + id, ""));
-		bindings.put(id, ret = new KeyBinding(id, defkey));
+		bindings.put(id, ret = new KeyBinding(id, defkey, modign));
 		ret.key = set;
 	    }
 	    return(ret);
 	}
+    }
+
+    public static KeyBinding get(String id, KeyMatch defkey) {
+	return(get(id, defkey,0));
     }
 
     public static KeyBinding get(String id) {
