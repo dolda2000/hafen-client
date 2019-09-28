@@ -343,7 +343,7 @@ public class Fightsess extends Widget {
     public static final KeyBinding kb_relcycle =  KeyBinding.get("fgt-cycle", KeyMatch.forcode(KeyEvent.VK_TAB, KeyMatch.C));
 
     public boolean globtype(char key, KeyEvent ev) {
-	if((ev.getModifiersEx() & (InputEvent.CTRL_DOWN_MASK | KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) == 0) {
+	{
 	    int n = -1;
 	    for(int i = 0; i < kb_acts.length; i++) {
 		if(kb_acts[i].key().match(ev)) {
