@@ -774,7 +774,7 @@ public class Widget {
 
     public static KeyMatch gkeymatch(int gkey) {
 	if(gkey == 0)
-	    return(null);
+	    return(KeyMatch.nil);
 	int key = gkey & 0xff, modmask = (gkey & 0xf000) >> 12, modmatch = (gkey & 0x0f00) >> 8;
 	if(modmask == 0)
 	    modmask = KeyMatch.MODS;
