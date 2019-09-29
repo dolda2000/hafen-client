@@ -97,7 +97,7 @@ public class KeyBinding {
 			return(ret);
 		}
 	    }
-	    return(null);
+	    return(wdg.kb_gkey);
 	}
     }
 }
