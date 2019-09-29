@@ -108,12 +108,18 @@ public class KeyMatch {
 	return((o instanceof KeyMatch) && equals((KeyMatch)o));
     }
 
+    public static KeyMatch forchar(char chr, int modmask, int modmatch) {
+	return(new KeyMatch(chr, false, VK_UNDEFINED, Character.toString(chr), modmask, modmatch));
+    }
     public static KeyMatch forchar(char chr, int mods) {
-	return(new KeyMatch(chr, false, VK_UNDEFINED, Character.toString(chr), C | M, mods));
+	return(forchar(chr, C | M, mods));
     }
 
+    public static KeyMatch forcode(int code, int modmask, int modmatch) {
+	return(new KeyMatch('\0', false, code, KeyEvent.getKeyText(code), modmask, modmatch));
+    }
     public static KeyMatch forcode(int code, int mods) {
-	return(new KeyMatch('\0', false, code, KeyEvent.getKeyText(code), S | C | M, mods));
+	return(forcode(code, S | C | M, mods));
     }
 
     public static KeyMatch forevent(KeyEvent ev, int modmask) {
