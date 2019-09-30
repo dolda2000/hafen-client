@@ -867,6 +867,7 @@ public class GLDrawList implements DrawList {
 	public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback) {throw(new NotImplemented());}
 	public void pget(Texture.Image img, VectorFormat fmt, Consumer<ByteBuffer> callback) {throw(new NotImplemented());}
 	public void timestamp(Consumer<Long> callback) {throw(new NotImplemented());}
+	public <T extends DataBuffer> void update(T buf, DataBuffer.PartFiller<? super T> data, int from, int to) {throw(new NotImplemented());}
 	public <T extends DataBuffer> void update(T buf, DataBuffer.Filler<? super T> data) {throw(new NotImplemented());}
 	public void dispose() {}
     }
@@ -942,6 +943,8 @@ public class GLDrawList implements DrawList {
     public void remove(Slot<? extends Rendered> slot) {
 	synchronized(this) {
 	    DrawSlot dslot = slotmap.remove(slot);
+	    if(dslot == null)
+		throw(new IllegalStateException("removing non-present slot"));
 	    dslot.remove();
 	    dslot.dispose();
 	}
@@ -952,6 +955,8 @@ public class GLDrawList implements DrawList {
 	    /* Handle exceptions from DrawSlot construction before
 	     * removing previous slot. */
 	    DrawSlot dslot = new DrawSlot(slot);
+	    if(dslot == null)
+		throw(new IllegalStateException("removing non-present slot"));
 	    remove(slot);
 	    dslot.insert();
 	    if(slotmap.put(slot, dslot) != null)

@@ -38,9 +38,7 @@ public abstract class Sprite implements RenderTree.Node {
     public final Owner owner;
     public static List<Factory> factories = new LinkedList<Factory>();
     static {
-	/* XXXRENDER
 	factories.add(SpriteLink.sfact);
-	*/
 	factories.add(SkelSprite.fact);
 	factories.add(AnimSprite.fact);
 	factories.add(StaticSprite.fact);

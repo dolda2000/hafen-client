@@ -28,7 +28,8 @@ package haven.render;
 
 public interface Environment extends haven.Disposable {
     public Render render();
-    public FillBuffer fillbuf(DataBuffer target);
+    public FillBuffer fillbuf(DataBuffer target, int from, int to);
+    public default FillBuffer fillbuf(DataBuffer target) {return(fillbuf(target, 0, target.size()));}
     public DrawList drawlist();
     public void submit(Render cmd);
 }

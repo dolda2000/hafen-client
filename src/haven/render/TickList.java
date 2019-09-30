@@ -178,7 +178,8 @@ public class TickList implements RenderList<TickList.TickNode> {
     }
 
     public static class Monitor extends State {
-	public static final Slot<Monitor> slot = new Slot<>(Slot.Type.SYS, Monitor.class);
+	public static final Slot<Monitor> slot = new Slot<>(Slot.Type.SYS, Monitor.class)
+	    .instanced(Instancer.dummy());
 	public final Object mon;
 
 	public Monitor(Object mon) {

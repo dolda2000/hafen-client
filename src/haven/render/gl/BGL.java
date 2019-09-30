@@ -233,6 +233,13 @@ public abstract class BGL {
 	    });
     }
 
+    public void glBufferSubData(final int target, final long offset, final long size, Buffer data) {
+	final BufState ds = new BufState(data);
+	add(new Command() {
+		public void run(GL2 gl) {ds.restore(); gl.glBufferSubData(target, offset, size, ds.buf);}
+	    });
+    }
+
     public void glCallList(final ID list) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glCallList(list.glid());}
