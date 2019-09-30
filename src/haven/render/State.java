@@ -89,6 +89,13 @@ public abstract class State implements Pipe.Op {
 	public static final ShaderMacro mkinstanced = prog -> {
 	    prog.instanced = true;
 	};
+
+	/* XXX? States like TickList.Monitor need to be instancable to
+	 * not ruin every chance of instantiation, but it also seems
+	 * that they really just shouldn't have to care. */
+	public static <S extends State> Instancer<S> dummy() {
+	    return((uinst, bat) -> null);
+	}
     }
 
     public abstract ShaderMacro shader();
