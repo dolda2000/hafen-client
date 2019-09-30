@@ -35,7 +35,8 @@ import haven.render.Rendered.Instanced;
 public class InstanceList implements RenderList<Rendered>, Disposable {
     private final RenderList<Rendered> back;
     private final Map<InstKey, Object> instreg = new HashMap<>();
-    private final Map<Slot<? extends Rendered>, InstancedSlot.Instance> slotmap = new IdentityHashMap<>();
+    private final Map<Slot<? extends Rendered>, InstKey> uslotmap = new IdentityHashMap<>();
+    private final Map<Slot<? extends Rendered>, InstancedSlot.Instance> islotmap = new IdentityHashMap<>();
     private final Map<Pipe, Object> pipemap = new IdentityHashMap<>();
 
     private static int[] _uinstidlist = null;
@@ -103,6 +104,16 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	public boolean equals(Object x) {
 	    return((x instanceof InstKey) ? equals((InstKey)x) : false);
 	}
+
+	public String toString() {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append("#<instkey ");
+	    buf.append(instid);
+	    for(int i = 0; i < ust.length; i++)
+		buf.append(String.format(" %x", System.identityHashCode(ust[i])));
+	    buf.append(">");
+	    return(buf.toString());
+	}
     }
 
     private static class InstanceState extends BufPipe {
@@ -141,6 +152,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
     }
 
     private class InstancedSlot implements RenderList.Slot<Rendered>, InstanceBatch {
+	final InstKey key;
 	final Instanced rend;
 	final InstanceState ist;
 	final GroupPipe ust;
@@ -149,15 +161,17 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 
 	class Instance {
 	    final Slot<? extends Rendered> slot;
+	    final Pipe[] rpipes;
 	    int idx;
 
 	    Instance(Slot<? extends Rendered> slot) {
 		this.slot = slot;
+		this.rpipes = new Pipe[ist.mask.length];
 	    }
 
 	    @SuppressWarnings("unchecked")
 	    void register() {
-		if(slotmap.put(slot, this) != null)
+		if(islotmap.put(slot, this) != null)
 		    throw(new AssertionError());
 		GroupPipe st = slot.state();
 		for(int i = 0; i < ist.mask.length; i++) {
@@ -179,19 +193,19 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		    } else {
 			throw(new AssertionError());
 		    }
+		    rpipes[i] = p;
 		}
 	    }
 
 	    @SuppressWarnings("unchecked")
 	    void unregister() {
-		if(slotmap.remove(slot) != this)
+		if(islotmap.remove(slot) != this)
 		    throw(new AssertionError());
 		GroupPipe st = slot.state();
 		for(int i = 0; i < ist.mask.length; i++) {
-		    int gn = st.gstate(ist.mask[i]);
-		    if(gn < 0)
+		    Pipe p = rpipes[i];
+		    if(p == null)
 			continue;
-		    Pipe p = st.group(gn);
 		    Object cur = pipemap.get(p);
 		    if(cur == null) {
 			throw(new AssertionError());
@@ -215,7 +229,8 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    }
 	}
 
-	InstancedSlot(Slot<? extends Rendered>[] slots) {
+	InstancedSlot(InstKey key, Slot<? extends Rendered>[] slots) {
+	    this.key = key;
 	    this.ust = slots[0].state();
 	    this.ist = new InstanceState(ust, this);
 	    this.rend = ((Instancable)slots[0].obj()).instancify(this);
@@ -270,7 +285,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	}
 
 	void remove(Slot<? extends Rendered> ns) {
-	    Instance inst = slotmap.get(ns);
+	    Instance inst = islotmap.get(ns);
 	    int ri = inst.idx;
 	    if(insts[ri] != inst)
 		throw(new AssertionError());
@@ -375,12 +390,22 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    if(cur == null) {
 		back.add(slot);
 		instreg.put(key, slot);
+		uslotmap.put(slot, key);
 	    } else if(cur instanceof InstancedSlot) {
-		((InstancedSlot)cur).add(slot);
+		InstancedSlot curbat = (InstancedSlot)cur;
+		curbat.add(slot);
+		uslotmap.put(slot, curbat.key);
 	    } else if(cur instanceof Slot) {
 		Slot<? extends Rendered> cs = (Slot<? extends Rendered>)cur;
-		InstancedSlot ni = new InstancedSlot(new Slot[] {cs, slot});
-		back.remove(cs);
+		InstKey curkey = uslotmap.get(cs);
+		if(!curkey.equals(key))
+		    throw(new AssertionError());
+		InstancedSlot ni = new InstancedSlot(curkey, new Slot[] {cs, slot});
+		try {
+		    back.remove(cs);
+		} catch(RuntimeException e) {
+		    throw(e);
+		}
 		try {
 		    back.add(ni);
 		} catch(RuntimeException e) {
@@ -393,7 +418,8 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		    }
 		    throw(e);
 		}
-		instreg.put(key, ni);
+		instreg.put(curkey, ni);
+		uslotmap.put(slot, curkey);
 		ni.register();
 	    } else {
 		throw(new AssertionError());
@@ -407,8 +433,10 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    back.remove(slot);
 	    return;
 	}
-	InstKey key = new InstKey(slot);
 	synchronized(this) {
+	    InstKey key = uslotmap.get(slot);
+	    if(key == null)
+		throw(new IllegalStateException("removing non-present slot"));
 	    Object cur = instreg.get(key);
 	    if(cur == null) {
 		throw(new IllegalStateException("removing non-present slot"));
@@ -425,9 +453,11 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		if(cur != slot)
 		    throw(new IllegalStateException("removing non-present slot"));
 		back.remove(slot);
+		instreg.remove(key);
 	    } else {
 		throw(new AssertionError());
 	    }
+	    uslotmap.remove(slot);
 	}
     }
 
@@ -438,15 +468,28 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	}
 	InstKey key = new InstKey(slot);
 	synchronized(this) {
-	    Object cur = instreg.get(key);
+	    InstKey curkey = uslotmap.get(slot);
+	    if(curkey == null)
+		throw(new IllegalStateException("updating non-present slot"));
+	    Object cur = instreg.get(curkey);
 	    if(cur == null) {
 		throw(new IllegalStateException("updating non-present slot"));
 	    } else if(cur instanceof InstancedSlot) {
-		((InstancedSlot)cur).update(slot);
+		if(key.equals(curkey)) {
+		    ((InstancedSlot)cur).update(slot);
+		} else {
+		    remove(slot);
+		    add(slot);
+		}
 	    } else if(cur instanceof Slot) {
 		if(cur != slot)
 		    throw(new IllegalStateException("updating non-present slot"));
-		back.update(slot);
+		if(key.equals(curkey)) {
+		    back.update(slot);
+		} else {
+		    remove(slot);
+		    add(slot);
+		}
 	    } else {
 		throw(new AssertionError());
 	    }
