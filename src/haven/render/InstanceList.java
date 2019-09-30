@@ -187,7 +187,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 			List<Instance> nl = new ArrayList<>(2);
 			nl.add((Instance)cur);
 			nl.add(this);
-			pipemap.put(p, this);
+			pipemap.put(p, nl);
 		    } else if(cur instanceof List) {
 			List<Instance> ls = (List<Instance>)cur;
 			ls.add(this);
