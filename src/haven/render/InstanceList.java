@@ -38,6 +38,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
     private final Map<Slot<? extends Rendered>, InstKey> uslotmap = new IdentityHashMap<>();
     private final Map<Slot<? extends Rendered>, InstancedSlot.Instance> islotmap = new IdentityHashMap<>();
     private final Map<Pipe, Object> pipemap = new IdentityHashMap<>();
+    private int nbypass, nuinst, nbatches, ninst;
 
     private static int[] _uinstidlist = null;
     private static int[] uinstidlist() {
@@ -382,6 +383,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
     public void add(Slot<? extends Rendered> slot) {
 	if(!(slot.obj() instanceof Instancable)) {
 	    back.add(slot);
+	    nbypass++;
 	    return;
 	}
 	InstKey key = new InstKey(slot);
@@ -391,10 +393,12 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		back.add(slot);
 		instreg.put(key, slot);
 		uslotmap.put(slot, key);
+		nuinst++;
 	    } else if(cur instanceof InstancedSlot) {
 		InstancedSlot curbat = (InstancedSlot)cur;
 		curbat.add(slot);
 		uslotmap.put(slot, curbat.key);
+		ninst++;
 	    } else if(cur instanceof Slot) {
 		Slot<? extends Rendered> cs = (Slot<? extends Rendered>)cur;
 		InstKey curkey = uslotmap.get(cs);
@@ -421,6 +425,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		instreg.put(curkey, ni);
 		uslotmap.put(slot, curkey);
 		ni.register();
+		nuinst--; nbatches++; ninst++;
 	    } else {
 		throw(new AssertionError());
 	    }
@@ -431,6 +436,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
     public void remove(Slot<? extends Rendered> slot) {
 	if(!(slot.obj() instanceof Instancable)) {
 	    back.remove(slot);
+	    nbypass--;
 	    return;
 	}
 	synchronized(this) {
@@ -448,12 +454,15 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		    b.dispose();
 		    if(instreg.remove(key) != b)
 			throw(new AssertionError());
+		    nbatches--;
 		}
+		ninst--;
 	    } else if(cur instanceof Slot) {
 		if(cur != slot)
 		    throw(new IllegalStateException("removing non-present slot"));
 		back.remove(slot);
 		instreg.remove(key);
+		nuinst--;
 	    } else {
 		throw(new AssertionError());
 	    }
@@ -512,5 +521,9 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 
     public void dispose() {
 	/* XXXRENDER */
+    }
+
+    public String stats() {
+	return(String.format("%,d+%,d(%,d) %d", nuinst, nbatches, ninst, nbypass));
     }
 }
