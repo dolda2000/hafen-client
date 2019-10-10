@@ -31,7 +31,7 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 import haven.ItemInfo.AttrCache;
 
-public class Buff extends Widget implements ItemInfo.ResOwner {
+public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed {
     public static final Text.Foundry nfnd = new Text.Foundry(Text.dfont, 10);
     public static final Tex frame = Resource.loadtex("gfx/hud/buffs/frame");
     public static final Tex cframe = Resource.loadtex("gfx/hud/buffs/cframe");
