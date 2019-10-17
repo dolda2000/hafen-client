@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.render.*;
 import java.util.*;
 import java.awt.Color;
 import java.awt.event.InputEvent;
@@ -347,20 +348,21 @@ public class Fightsess extends Widget {
 
     /* XXX: This is a bit ugly, but release message do need to be
      * properly sequenced with use messages in some way. */
-    private class Release implements MapView.Delayed /* XXXRENDER, BGL.Request */ {
+    private class Release implements Runnable {
 	final int n;
 
-	Release(int n) {this.n = n;}
-
-	public void run(GOut g) {
-	    /* g.gl.bglSubmit(this); */
+	Release(int n) {
+	    this.n = n;
+	    Environment env = ui.getenv();
+	    Render out = env.render();
+	    out.fence(this);
+	    env.submit(out);
 	}
 
-	/*
-	public void run(javax.media.opengl.GL2 gl) {
+
+	public void run() {
 	    wdgmsg("rel", n);
 	}
-	*/
     }
 
     private UI.Grab holdgrab = null;
@@ -380,7 +382,7 @@ public class Fightsess extends Widget {
 		MapView map = getparent(GameUI.class).map;
 		Coord mvc = map.rootxlate(ui.mc);
 		if(held >= 0) {
-		    map.delay(new Release(held));
+		    new Release(held);
 		    held = -1;
 		}
 		if(mvc.isect(Coord.z, map.sz)) {
@@ -427,7 +429,7 @@ public class Fightsess extends Widget {
     public boolean keyup(KeyEvent ev) {
 	if((holdgrab != null) && (kb_acts[held].key().match(ev, KeyMatch.MODS))) {
 	    MapView map = getparent(GameUI.class).map;
-	    map.delay(new Release(held));
+	    new Release(held);
 	    holdgrab.remove();
 	    holdgrab = null;
 	    held = -1;
