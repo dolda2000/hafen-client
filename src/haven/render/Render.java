@@ -44,6 +44,7 @@ public interface Render extends Disposable {
     public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback);
     public void pget(Texture.Image img, VectorFormat fmt, Consumer<ByteBuffer> callback);
     public void timestamp(Consumer<Long> callback);
+    public void fence(Runnable callback);
 
     public default void draw(Pipe pipe, Model.Mode mode, short[] ind, VertexArray.Layout fmt, int n, float[] data) {
 	Model.Indices indb = null;

@@ -498,6 +498,10 @@ public class GLRender implements Render, Disposable {
 	gl().bglCreate(new GLTimestamp(env, callback));
     }
 
+    public void fence(Runnable callback) {
+	gl().bglSubmit(g -> callback.run());
+    }
+
     public void submit(BGL.Request req) {
 	gl().bglSubmit(req);
     }
