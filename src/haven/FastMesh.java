@@ -131,14 +131,11 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	    if(ibuf == null)
 		return(null);
 	    VertexArray sdat = vert.data();
-	    Layout.Input[] inputs = new Layout.Input[sdat.fmt.inputs.length + 1];
-	    for(int i = 0; i < sdat.fmt.inputs.length; i++)
-		inputs[i] = sdat.fmt.inputs[i];
 	    VertexArray.Buffer[] bufs = new VertexArray.Buffer[sdat.bufs.length + 1];
 	    for(int i = 0; i < sdat.bufs.length; i++)
 		bufs[i] = sdat.bufs[i];
 	    bufs[sdat.bufs.length] = ibuf;
-	    return(new VertexArray(new Layout(inputs), bufs));
+	    return(new VertexArray(this.fmt, bufs));
 	}
 
 	private Instanced(InstanceBatch bat) {
