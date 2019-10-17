@@ -28,13 +28,15 @@ package haven;
 
 import java.util.*;
 import java.awt.Toolkit;
+import java.awt.Robot;
+import java.awt.Point;
 import javax.media.opengl.*;
 import javax.media.opengl.awt.*;
 import haven.render.*;
 import haven.render.States;
 import haven.render.gl.*;
 
-public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Directory {
+public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Directory, UI.Context {
     private static final boolean dumpbgl = true;
     public final boolean vsync = true;
     public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
@@ -259,7 +261,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private String cursmode = "tex";
     private Resource lastcursor = null;
     private void drawcursor(GOut g) {
-	Resource curs = ui.root.getcurs(ui.mc);
+	Resource curs = ui.getcurs(ui.mc);
 	if(cursmode == "awt") {
 	    if(curs != lastcursor) {
 		try {
@@ -426,7 +428,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     public UI newui(Session sess) {
 	if(ui != null)
 	    ui.destroy();
-	ui = new UI(new Coord(getSize()), sess);
+	ui = new UI(this, new Coord(getSize()), sess);
 	ui.env = this.env;
 	ui.root.guprof = uprof;
 	ui.root.grprof = rprof;
@@ -439,6 +441,21 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     public void background(boolean bg) {
 	bgmode = bg;
+    }
+
+    private Robot awtrobot;
+    public void setmousepos(Coord c) {
+	java.awt.EventQueue.invokeLater(() -> {
+		if(awtrobot == null) {
+		    try {
+			awtrobot = new Robot(getGraphicsConfiguration().getDevice());
+		    } catch(java.awt.AWTException e) {
+			return;
+		    }
+		}
+		Point rp = getLocationOnScreen();
+		awtrobot.mouseMove(rp.x + c.x, rp.y + c.y);
+	    });
     }
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();

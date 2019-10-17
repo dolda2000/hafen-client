@@ -1268,17 +1268,9 @@ public class ChatUI extends Widget {
 	}
     }
 
-    public boolean type(char key, KeyEvent ev) {
-	if(qline != null) {
-	    qline.key(ev);
-	    return(true);
-	} else {
-	    return(super.type(key, ev));
-	}
-    }
-
+    public static final KeyBinding kb_quick = KeyBinding.get("chat-quick", KeyMatch.forcode(KeyEvent.VK_ENTER, 0));
     public boolean globtype(char key, KeyEvent ev) {
-	if(key == 10) {
+	if(kb_quick.key().match(ev)) {
 	    if(!visible && (sel instanceof EntryChannel)) {
 		qgrab = ui.grabkeys(this);
 		qline = new QuickLine((EntryChannel)sel);

@@ -31,7 +31,7 @@ import java.util.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-public class TestClient implements Runnable {
+public class TestClient implements Runnable, UI.Context {
     public Session sess;
     public InetSocketAddress addr;
     public String user;
@@ -85,9 +85,12 @@ public class TestClient implements Runnable {
 	}
     }
     
+    public void setmousepos(Coord c) {
+    }
+
     public class TestUI extends UI {
 	public TestUI(Coord sz, Session sess) {
-	    super(sz, sess);
+	    super(TestClient.this, sz, sess);
 	}
 	
 	public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {

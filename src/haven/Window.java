@@ -290,10 +290,10 @@ public class Window extends Widget implements DTarget {
 	}
     }
 
-    public boolean type(char key, java.awt.event.KeyEvent ev) {
-	if(super.type(key, ev))
+    public boolean keydown(java.awt.event.KeyEvent ev) {
+	if(super.keydown(ev))
 	    return(true);
-	if(key == 27) {
+	if(ev.getKeyChar() == 27) {
 	    wdgmsg("close");
 	    return(true);
 	}

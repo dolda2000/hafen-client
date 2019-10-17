@@ -243,10 +243,7 @@ public class FlowerMenu extends Widget {
     }
 
     public boolean keydown(java.awt.event.KeyEvent ev) {
-	return(true);
-    }
-
-    public boolean type(char key, java.awt.event.KeyEvent ev) {
+	char key = ev.getKeyChar();
 	if((key >= '0') && (key <= '9')) {
 	    int opt = (key == '0')?10:(key - '1');
 	    if(opt < opts.length) {

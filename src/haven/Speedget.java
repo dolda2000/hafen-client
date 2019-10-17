@@ -106,7 +106,7 @@ public class Speedget extends Widget {
 
     public boolean mousewheel(Coord c, int amount) {
 	if(max >= 0)
-	    set((cur + max + 1 + amount) % (max + 1));
+	    set(Utils.clip(cur + amount, 0, max));
 	return(true);
     }
 
@@ -116,24 +116,31 @@ public class Speedget extends Widget {
 	return(null);
     }
 
+    public static final KeyBinding kb_speedup = KeyBinding.get("speed-up", new KeyMatch('R', false, KeyEvent.VK_UNDEFINED, "R", KeyMatch.S | KeyMatch.C | KeyMatch.M, KeyMatch.C));
+    public static final KeyBinding kb_speeddn = KeyBinding.get("speed-down", new KeyMatch('R', false, KeyEvent.VK_UNDEFINED, "R", KeyMatch.S | KeyMatch.C | KeyMatch.M, KeyMatch.S | KeyMatch.C));
+    public static final KeyBinding[] kb_speeds = {
+	KeyBinding.get("speed-set/0", KeyMatch.nil),
+	KeyBinding.get("speed-set/1", KeyMatch.nil),
+	KeyBinding.get("speed-set/2", KeyMatch.nil),
+	KeyBinding.get("speed-set/3", KeyMatch.nil),
+    };
     public boolean globtype(char key, KeyEvent ev) {
-	if(key == 18) {
+	int dir = 0;
+	if(kb_speedup.key().match(ev))
+	    dir = 1;
+	else if(kb_speeddn.key().match(ev))
+	    dir = -1;
+	if(dir != 0) {
 	    if(max >= 0) {
-		int n;
-		if((ev.getModifiersEx() & KeyEvent.SHIFT_DOWN_MASK) == 0) {
-		    if(cur > max)
-			n = 0;
-		    else
-			n = (cur + 1) % (max + 1);
-		} else {
-		    if(cur > max)
-			n = max;
-		    else
-			n = (cur + max) % (max + 1);
-		}
-		set(n);
+		set(Utils.clip(cur + dir, 0, max));
 	    }
 	    return(true);
+	}
+	for(int i = 0; i < kb_speeds.length; i++) {
+	    if(kb_speeds[i].key().match(ev)) {
+		set(i);
+		return(true);
+	    }
 	}
 	return(super.globtype(key, ev));
     }
