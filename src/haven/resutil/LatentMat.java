@@ -60,9 +60,9 @@ public class LatentMat extends State {
     }
 
     @Material.ResName("latent")
-    public static class $latent implements Material.ResCons {
-	public Pipe.Op cons(Resource res, Object... args) {
-	    return(new LatentMat(((String)args[0]).intern()));
+    public static class $latent implements Material.ResCons2 {
+	public Material.Res.Resolver cons(Resource res, Object... args) {
+	    return((buf, dynbuf) -> dynbuf.add(new LatentMat(((String)args[0]).intern())));
 	}
     }
 }

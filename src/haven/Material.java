@@ -31,10 +31,9 @@ import java.util.*;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import haven.render.*;
-import haven.render.States;	// XXXRENDRM
 
 public class Material implements Pipe.Op {
-    public final Pipe.Op[] states;
+    public final Pipe.Op states, dynstates;
 
     public static final Pipe.Op nofacecull = (p -> p.put(States.facecull, null));
     @ResName("nofacecull")
@@ -79,17 +78,31 @@ public class Material implements Pipe.Op {
 	}
     }
 
+    public Material(Pipe.Op[] states, Pipe.Op[] dynstates) {
+	this.states = Pipe.Op.compose(states);
+	this.dynstates = Pipe.Op.compose(dynstates);
+    }
+
     public Material(Pipe.Op... states) {
-	this.states = states;
+	this(states, new Pipe.Op[0]);
     }
 
     public String toString() {
-	return(Arrays.asList(states).toString());
+	return(Arrays.asList(states, dynstates).toString());
     }
 
     public void apply(Pipe p) {
-	for(Pipe.Op op : states)
-	    op.apply(p);
+	states.apply(p);
+	dynstates.apply(p);
+    }
+
+    public Wrapping apply(RenderTree.Node r) {
+	if(dynstates != Pipe.Op.nil) {
+	    if(states == Pipe.Op.nil)
+		return(dynstates.apply(r, false));
+	    r = dynstates.apply(r, false);
+	}
+	return(states.apply(r, true));
     }
 
     public interface Owner extends OwnerContext {
@@ -137,12 +150,12 @@ public class Material implements Pipe.Op {
 
     public static class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
-	private transient List<Pipe.Op> states = new LinkedList<>();
+	private transient List<Pipe.Op> states = new LinkedList<>(), dynstates = new LinkedList<>();
 	private transient List<Resolver> left = new LinkedList<>();
 	private transient Material m;
 
 	public interface Resolver {
-	    public void resolve(Collection<Pipe.Op> buf);
+	    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf);
 	}
 
 	public Res(Resource res, int id) {
@@ -155,10 +168,10 @@ public class Material implements Pipe.Op {
 		if(m == null) {
 		    for(Iterator<Resolver> i = left.iterator(); i.hasNext();) {
 			Resolver r = i.next();
-			r.resolve(states);
+			r.resolve(states, dynstates);
 			i.remove();
 		    }
-		    m = new Material(states.toArray(new Pipe.Op[0])) {
+		    m = new Material(states.toArray(new Pipe.Op[0]), dynstates.toArray(new Pipe.Op[0])) {
 			    public String toString() {
 				return(super.toString() + "@" + getres().name);
 			    }
@@ -188,17 +201,24 @@ public class Material implements Pipe.Op {
 		id = (Integer)args[0];
 	    }
 	    return(new Res.Resolver() {
-		    public void resolve(Collection<Pipe.Op> buf) {
+		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
 			if(id >= 0) {
 			    Res mat = lres.get().layer(Res.class, id);
 			    if(mat == null)
 				throw(new Resource.LoadException("No such material in " + lres.get() + ": " + id, res));
-			    buf.add(mat.get());
+			    Material m = mat.get();
+			    if(m.states != Pipe.Op.nil)
+				buf.add(m.states);
+			    if(m.dynstates != Pipe.Op.nil)
+				dynbuf.add(m.dynstates);
 			} else {
 			    Material mat = fromres((Owner)null, lres.get(), Message.nil);
 			    if(mat == null)
 				throw(new Resource.LoadException("No material in " + lres.get(), res));
-			    buf.add(mat);
+			    if(mat.states != Pipe.Op.nil)
+				buf.add(mat.states);
+			    if(mat.dynstates != Pipe.Op.nil)
+				dynbuf.add(mat.dynstates);
 			}
 		    }
 		});
@@ -238,7 +258,7 @@ public class Material implements Pipe.Op {
 			public Res.Resolver cons(Resource res, Object... args) {
 			    final Pipe.Op ret = scons.cons(res, args);
 			    return(new Res.Resolver() {
-				    public void resolve(Collection<Pipe.Op> buf) {
+				    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
 					if(ret != null)
 					    buf.add(ret);
 				    }
@@ -263,7 +283,7 @@ public class Material implements Pipe.Op {
 		rnames.put(nm, new ResCons2() {
 			public Res.Resolver cons(Resource res, Object... args) {
 			    return(new Res.Resolver() {
-				    public void resolve(Collection<Pipe.Op> buf) {
+				    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
 					buf.add(Utils.construct(cons, res, args));
 				    }
 				});

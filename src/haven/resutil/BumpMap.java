@@ -107,7 +107,7 @@ public class BumpMap extends State {
 		a += 1;
 	    }
 	    return(new Material.Res.Resolver() {
-		    public void resolve(Collection<Pipe.Op> buf) {
+		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
 			TexR rt = tres.get().layer(TexR.class, tid);
 			if(rt == null)
 			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
