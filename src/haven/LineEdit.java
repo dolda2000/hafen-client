@@ -340,27 +340,24 @@ public class LineEdit {
 	int mod = 0;
 	if((ev.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0) mod |= C;
 	if((ev.getModifiersEx() & (InputEvent.META_DOWN_MASK | InputEvent.ALT_DOWN_MASK)) != 0) mod |= M;
-	if(ev.getID() == KeyEvent.KEY_TYPED) {
-	    char c = ev.getKeyChar();
-	    if(((mod & C) != 0) && (c < 32)) {
-		/* Undo Java's TTY Control-code mangling */
-		if(ev.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
-		} else if(ev.getKeyCode() == KeyEvent.VK_ENTER) {
-		} else if(ev.getKeyCode() == KeyEvent.VK_TAB) {
-		} else if(ev.getKeyCode() == KeyEvent.VK_ESCAPE) {
-		} else {
-		    if((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0)
-			c = (char)(c + 'A' - 1);
-		    else
-			c = (char)(c + 'a' - 1);
-		}
+
+	char c = ev.getKeyChar();
+	if(c == KeyEvent.CHAR_UNDEFINED)
+	    c = '\0';
+	if(((mod & C) != 0) && (c < 32)) {
+	    /* Undo Java's TTY Control-code mangling */
+	    if(ev.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+	    } else if(ev.getKeyCode() == KeyEvent.VK_ENTER) {
+	    } else if(ev.getKeyCode() == KeyEvent.VK_TAB) {
+	    } else if(ev.getKeyCode() == KeyEvent.VK_ESCAPE) {
+	    } else {
+		if((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0)
+		    c = (char)(c + 'A' - 1);
+		else
+		    c = (char)(c + 'a' - 1);
 	    }
-	    return(key(c, ev.getKeyCode(), mod));
-	} else if(ev.getID() == KeyEvent.KEY_PRESSED) {
-	    if(ev.getKeyChar() == KeyEvent.CHAR_UNDEFINED)
-		return(key('\0', ev.getKeyCode(), mod));
 	}
-	return(false);
+	return(key(c, ev.getKeyCode(), mod));
     }
     
     private static boolean wordchar(char c) {

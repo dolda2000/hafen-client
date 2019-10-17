@@ -48,6 +48,7 @@ public interface UIPanel extends Runnable {
     public static class Dispatcher implements KeyListener, MouseListener, MouseWheelListener, MouseMotionListener {
 	public final Queue<InputEvent> events = new LinkedList<>();
 	public MouseEvent mousemv = null;
+	private KeyEvent lastpress = null;
 
 	public void dispatch(UI ui) {
 	    Collection<InputEvent> copy;
@@ -75,11 +76,37 @@ public interface UIPanel extends Runnable {
 		} else if(e instanceof KeyEvent) {
 		    KeyEvent ke = (KeyEvent)e;
 		    if(ke.getID() == KeyEvent.KEY_PRESSED) {
+			InputEvent ne = events.peek();
+			if(ne instanceof KeyEvent) {
+			    /* This is an extension of the below hack
+			     * to handle dead keys (on Windows). It's
+			     * extremely ugly and error-prone and
+			     * should be dealt with, but I've no idea
+			     * what the alternative would be.*/
+			    KeyEvent nke = (KeyEvent)ne;
+			    if((nke.getID() == KeyEvent.KEY_TYPED) && (nke.getWhen() == ke.getWhen())) {
+				ke.setKeyChar(nke.getKeyChar());
+				events.remove();
+			    }
+			}
 			ui.keydown(ke);
+			lastpress = ke;
 		    } else if(ke.getID() == KeyEvent.KEY_RELEASED) {
 			ui.keyup(ke);
 		    } else if(ke.getID() == KeyEvent.KEY_TYPED) {
-			ui.type(ke);
+			KeyEvent lp = lastpress;
+			if((lp != null) && (lp.getKeyChar() == ke.getKeyChar())) {
+			    /* Squelch this event. It certainly is an
+			     * ugly hack, but I just haven't found any
+			     * other way to disambiguate these
+			     * duplicate events. Also, apparently
+			     * getWhen() cannot be completely trusted
+			     * to have the same value for a
+			     * KEY_PRESSED and corresponding KEY_TYPED
+			     * event.*/
+			} else {
+			    ui.keydown(ke);
+			}
 		    }
 		}
 		ui.lastevent = Utils.rtime();

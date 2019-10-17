@@ -81,12 +81,12 @@ public class Profwnd extends Window {
 	g.image(sscl, new Coord(prof.hist.length + 2, sy - (sscl.sz().y / 2)));
     }
 
-    public boolean type(char k, java.awt.event.KeyEvent ev) {
-	if(k == 'd') {
+    public boolean keydown(java.awt.event.KeyEvent ev) {
+	if(ev.getKeyChar() == 'd') {
 	    prof.dump(System.err);
 	    return(true);
 	}
-	return(super.type(k, ev));
+	return(super.keydown(ev));
     }
 
     public String tooltip(Coord c, Widget prev) {

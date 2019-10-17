@@ -221,12 +221,12 @@ public class LoginScreen extends Widget {
 	    g.image(progress.tex(), new Coord(420 - (progress.sz().x / 2), 350));
     }
 
-    public boolean type(char k, KeyEvent ev) {
-	if(k == 10) {
+    public boolean keydown(KeyEvent ev) {
+	if(ev.getKeyChar() == 10) {
 	    if((cur != null) && cur.enter())
 		wdgmsg("login", cur.data());
 	    return(true);
 	}
-	return(super.type(k, ev));
+	return(super.keydown(ev));
     }
 }
