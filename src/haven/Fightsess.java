@@ -347,18 +347,20 @@ public class Fightsess extends Widget {
 
     /* XXX: This is a bit ugly, but release message do need to be
      * properly sequenced with use messages in some way. */
-    private class Release implements MapView.Delayed, BGL.Request {
+    private class Release implements MapView.Delayed /* XXXRENDER, BGL.Request */ {
 	final int n;
 
 	Release(int n) {this.n = n;}
 
 	public void run(GOut g) {
-	    g.gl.bglSubmit(this);
+	    /* g.gl.bglSubmit(this); */
 	}
 
+	/*
 	public void run(javax.media.opengl.GL2 gl) {
 	    wdgmsg("rel", n);
 	}
+	*/
     }
 
     private UI.Grab holdgrab = null;
