@@ -89,7 +89,7 @@ public class Location extends Transform {
 	public static final Instancer<Chain> instancer = new Instancer<Chain>() {
 	    final Chain instanced = new Chain(null, null) {
 		    public Matrix4f fin(Matrix4f o) {
-			throw(new RuntimeException("Current in instanced drawing; cannot finalize a single location"));
+			throw(new RuntimeException("Currently in instanced drawing; cannot finalize a single location"));
 		    }
 
 		    public String toString() {return("instanced location");}
