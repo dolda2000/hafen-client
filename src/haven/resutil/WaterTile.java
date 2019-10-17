@@ -318,15 +318,16 @@ public class WaterTile extends Tiler {
     private static final Pipe.Op botmat = Pipe.Op.compose(waterfog, new States.DepthBias(4, 4));
 
     public static final Pipe.Op obfog = new State.StandAlone(State.Slot.Type.DRAW) {
-	    /* XXXRENDER
 	    {
-		slot.instanced = new GLState.Instancer<StandAlone>() {
-			public StandAlone inststate(StandAlone[] states) {
+		slot.instanced = new Instancable<StandAlone>() {
+			Instancer<StandAlone> dummy = Instancer.dummy();
+			public Instancer<StandAlone> instid(StandAlone st) {
+			    if(st == null)
+				return(dummy);
 			    return(null);
 			}
 		    };
 	    }
-	    */
 	final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
 		protected Expression root(VertexContext vctx) {
 		    return(sub(pick(MapView.maploc.ref(), "z"), pick(Homo3D.get(vctx.prog).mapv.depref(), "z")));

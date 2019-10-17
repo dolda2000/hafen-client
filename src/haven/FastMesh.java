@@ -38,6 +38,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
     public final ShortBuffer indb;
     public final int num;
     public final Model model;
+    private Coord3f nb, pb;
 
     public FastMesh(VertexBuf vert, ShortBuffer ind) {
 	this.vert = vert;
@@ -62,13 +63,12 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	return(dst);
     }
 
-    /* XXXRENDER
     private void cbounds() {
 	Coord3f nb = null, pb = null;
-	VertexBuf.VertexArray vbuf = null;
-	for(VertexBuf.AttribArray buf : vert.bufs) {
-	    if(buf instanceof VertexBuf.VertexArray) {
-		vbuf = (VertexBuf.VertexArray)buf;
+	VertexBuf.VertexData vbuf = null;
+	for(VertexBuf.AttribData buf : vert.bufs) {
+	    if(buf instanceof VertexBuf.VertexData) {
+		vbuf = (VertexBuf.VertexData)buf;
 		break;
 	    }
 	}
@@ -96,7 +96,6 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	if(pb == null) cbounds();
 	return(pb);
     }
-    */
 
     public void draw(Pipe context, Render out) {
 	out.draw(context, model);
@@ -132,14 +131,11 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	    if(ibuf == null)
 		return(null);
 	    VertexArray sdat = vert.data();
-	    Layout.Input[] inputs = new Layout.Input[sdat.fmt.inputs.length + 1];
-	    for(int i = 0; i < sdat.fmt.inputs.length; i++)
-		inputs[i] = sdat.fmt.inputs[i];
 	    VertexArray.Buffer[] bufs = new VertexArray.Buffer[sdat.bufs.length + 1];
 	    for(int i = 0; i < sdat.bufs.length; i++)
 		bufs[i] = sdat.bufs[i];
 	    bufs[sdat.bufs.length] = ibuf;
-	    return(new VertexArray(new Layout(inputs), bufs));
+	    return(new VertexArray(this.fmt, bufs));
 	}
 
 	private Instanced(InstanceBatch bat) {

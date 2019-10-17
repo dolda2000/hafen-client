@@ -36,7 +36,7 @@ public abstract class State implements Pipe.Op {
 	public final int id;
 	public final Class<T> scl;
 	private int depid = -1;
-	public Instancer<T> instanced;
+	public Instancable<T> instanced;
 
 	public enum Type {
 	    SYS, GEOM, DRAW
@@ -61,7 +61,7 @@ public abstract class State implements Pipe.Op {
 	    }
 	}
 
-	public Slot<T> instanced(Instancer<T> inst) {
+	public Slot<T> instanced(Instancable<T> inst) {
 	    if(inst == null)
 		throw(new NullPointerException());
 	    this.instanced = inst;
@@ -95,6 +95,15 @@ public abstract class State implements Pipe.Op {
 	 * that they really just shouldn't have to care. */
 	public static <S extends State> Instancer<S> dummy() {
 	    return((uinst, bat) -> null);
+	}
+    }
+
+    public interface Instancable<T extends State> {
+	public Instancer<T> instid(T uinst);
+
+	public static <S extends State> Instancable<S> dummy() {
+	    Instancer<S> ret = Instancer.dummy();
+	    return(st -> ret);
 	}
     }
 

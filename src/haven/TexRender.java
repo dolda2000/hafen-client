@@ -161,7 +161,7 @@ public abstract class TexRender implements Tex, Disposable {
 	    }
 	    final boolean clip = tclip; /* ¦] */
 	    return(new Material.Res.Resolver() {
-		    public void resolve(Collection<Pipe.Op> buf) {
+		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
 			TexRender tex;
 			TexR rt = tres.get().layer(TexR.class, tid);
 			if(rt != null) {

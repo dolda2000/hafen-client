@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.*;
 import haven.*;
 import haven.render.Rendered.Instancable;
 import haven.render.Rendered.Instanced;
+import haven.render.State.Instancer;
 
 public class InstanceList implements RenderList<Rendered>, Disposable {
     private final RenderList<Rendered> back;
@@ -38,38 +39,56 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
     private final Map<Slot<? extends Rendered>, InstKey> uslotmap = new IdentityHashMap<>();
     private final Map<Slot<? extends Rendered>, InstancedSlot.Instance> islotmap = new IdentityHashMap<>();
     private final Map<Pipe, Object> pipemap = new IdentityHashMap<>();
-    private int nbypass, nuinst, nbatches, ninst;
+    private int nbypass, ninvalid, nuinst, nbatches, ninst;
 
-    private static int[] _uinstidlist = null;
-    private static int[] uinstidlist() {
-	State.Slot.Slots si = State.Slot.slots;
-	int[] ret = _uinstidlist;
-	if((ret != null) && (ret.length == (si.idlist.length + 1)))
-	    return(ret);
-	ret = new int[si.idlist.length];
-	for(int i = 0, n = 0; i < ret.length; i++) {
-	    if(si.idlist[i].instanced == null)
-		ret[i] = n++;
-	    else
-		ret[i] = -n - 1;
+    private static int[][][] _stcounts = {};
+    private static int[][] stcounts(int n) {
+	int[][][] c = _stcounts;
+	if((c != null) && (c.length > n) && (c[n] != null))
+	    return(c[n]);
+	synchronized(InstanceList.class) {
+	    if((c == null) || (c.length <= n))
+		_stcounts = c = Arrays.copyOf(_stcounts, n + 1);
+	    int[][] ret = new int[2][n];
+	    State.Slot.Slots si = State.Slot.slots;
+	    int un = 0, in = 0;
+	    for(int i = 0; i < n; i++) {
+		if(si.idlist[i].instanced == null)
+		    ret[0][un++] = i;
+		else
+		    ret[1][in++] = i;
+	    }
+	    ret[0] = Arrays.copyOf(ret[0], un);
+	    ret[1] = Arrays.copyOf(ret[1], in);
+	    return(c[n] = ret);
 	}
-	return(_uinstidlist = ret);
     }
 
-    private static Pipe[] uinststate(GroupPipe st) {
-	int[] us = uinstidlist();
-	int ls;
-	for(ls = st.nstates() - 1; (ls >= 0) && (st.gstate(ls) < 0); ls--);
-	if(ls < 0)
-	    return(new Pipe[0]);
-	int c = us[ls];
-	Pipe[] ret = new Pipe[(c >= 0) ? (c + 1) : (-c - 1)];
-	for(int i = 0; i <= ls; i++) {
-	    if(us[i] >= 0) {
-		int gn = st.gstate(i);
-		if(gn >= 0)
-		    ret[us[i]] = st.group(gn);
-	    }
+    private static Pipe[] uinststate(GroupPipe st, int ls) {
+	int[] us = stcounts(ls + 1)[0];
+	Pipe[] ret = new Pipe[us.length];
+	for(int i = 0; i < ret.length; i++) {
+	    int gn = st.gstate(us[i]);
+	    if(gn >= 0)
+		ret[i] = st.group(gn);
+	}
+	return(ret);
+    }
+
+    private static <T extends State> Instancer<T> instid0(Pipe buf, State.Slot<T> slot) {
+	return(slot.instanced.instid(buf.get(slot)));
+    }
+
+    private static Instancer[] instids(GroupPipe st, int ls) {
+	int[] is = stcounts(ls + 1)[1];
+	Instancer[] ret = new Instancer[is.length];
+	for(int i = 0; i < ret.length; i++) {
+	    int gn = st.gstate(is[i]);
+	    State.Slot<?> slot = State.Slot.byid(is[i]);
+	    if(gn >= 0)
+		ret[i] = instid0(st.group(gn), slot);
+	    else
+		ret[i] = slot.instanced.instid(null);
 	}
 	return(ret);
     }
@@ -77,16 +96,43 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
     private static class InstKey {
 	final Object instid;
 	final Pipe[] ust;
+	/* It may be argued that instids should be compared by equals
+	 * rather than by identity, if need be. */
+	final Instancer[] instids;
+	final int[] instidmap;
 
 	InstKey(Slot<? extends Rendered> slot) {
 	    this.instid = ((Instancable)slot.obj()).instanceid();
-	    this.ust = uinststate(slot.state());
+	    GroupPipe st = slot.state();
+	    int ls;
+	    for(ls = st.nstates() - 1; (ls >= 0) && (st.gstate(ls) < 0); ls--);
+	    if(ls < 0) {
+		this.ust = new Pipe[0];
+		this.instids = new Instancer[0];
+		this.instidmap = new int[0];
+	    } else {
+		this.ust = uinststate(st, ls);
+		this.instids = instids(st, ls);
+		this.instidmap = stcounts(ls + 1)[1];
+	    }
+	}
+
+	boolean valid() {
+	    if(instid == null)
+		return(false);
+	    for(int i = 0; i < instids.length; i++) {
+		if(instids[i] == null)
+		    return(false);
+	    }
+	    return(true);
 	}
 
 	public int hashCode() {
 	    int ret = System.identityHashCode(instid);
 	    for(int i = 0; i < ust.length; i++)
 		ret = (ret * 31) + System.identityHashCode(ust[i]);
+	    for(int i = 0; i < instids.length; i++)
+		ret = (ret * 31) + System.identityHashCode(instids[i]);
 	    return(ret);
 	}
 
@@ -95,8 +141,14 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		return(false);
 	    if(this.ust.length != that.ust.length)
 		return(false);
+	    if(this.instids.length != that.instids.length)
+		return(false);
 	    for(int i = 0; i < ust.length; i++) {
 		if(this.ust[i] != that.ust[i])
+		    return(false);
+	    }
+	    for(int i = 0; i < instids.length; i++) {
+		if(this.instids[i] != that.instids[i])
 		    return(false);
 	    }
 	    return(true);
@@ -121,11 +173,11 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	final int[] mask;
 
 	private <T extends State> void inststate0(State.Slot<T> slot, GroupPipe from, InstancedSlot batch) {
-	    this.put(slot, slot.instanced.inststate(from.get(slot), batch));
+	    this.put(slot, slot.instanced.instid(from.get(slot)).inststate(from.get(slot), batch));
 	}
 
 	InstanceState(GroupPipe from, InstancedSlot batch) {
-	    int ns = 0, fn = from.nstates();;
+	    int ns = 0, fn = from.nstates();
 	    int[] mask = new int[fn];
 	    for(int i = 0; i < fn; i++) {
 		State.Slot<?> slot = State.Slot.byid(i);
@@ -224,6 +276,17 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    }
 
 	    void update(Pipe group, int[] mask) {
+		for(int i = 0; i < key.instids.length; i++) {
+		    for(int o = 0; o < mask.length; o++) {
+			if(mask[o] == key.instidmap[i]) {
+			    if(instid0(group, State.Slot.byid(key.instidmap[i])) != key.instids[i]) {
+				InstanceList.this.remove(slot);
+				InstanceList.this.add(slot);
+				return;
+			    }
+			}
+		    }
+		}
 		/* XXX: There should be a way to only update the
 		 * relevant states, by mask. */
 		iupdate(idx);
@@ -387,6 +450,19 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    return;
 	}
 	InstKey key = new InstKey(slot);
+	if(!key.valid()) {
+	    /* XXX: Slots excluded in this manner aren't registered
+	     * for in-pipe updates which might bring them back into
+	     * instantiation. I don't really foresee that happening,
+	     * but it is also perhaps not so purely theoretical as to
+	     * be of purely academic interest. It shouldn't
+	     * technically break anything, however; it should just
+	     * mean that they can't be re-instantiated if their instid
+	     * only changes in-pipe. */
+	    back.add(slot);
+	    ninvalid++;
+	    return;
+	}
 	synchronized(this) {
 	    Object cur = instreg.get(key);
 	    if(cur == null) {
@@ -441,8 +517,16 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	}
 	synchronized(this) {
 	    InstKey key = uslotmap.get(slot);
-	    if(key == null)
-		throw(new IllegalStateException("removing non-present slot"));
+	    if(key == null) {
+		/* throw(new IllegalStateException("removing non-present slot")); */
+		/* XXX: Register a marker object in uslotmap and bring
+		 * back the above assertion? */
+		ninvalid--;
+		back.remove(slot);
+		if(new InstKey(slot).valid())
+		    System.err.println("warning: removing non-present slot with valid inst-key");
+		return;
+	    }
 	    Object cur = instreg.get(key);
 	    if(cur == null) {
 		throw(new IllegalStateException("removing non-present slot"));
@@ -478,8 +562,17 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	InstKey key = new InstKey(slot);
 	synchronized(this) {
 	    InstKey curkey = uslotmap.get(slot);
-	    if(curkey == null)
-		throw(new IllegalStateException("updating non-present slot"));
+	    if(curkey == null) {
+		/* throw(new IllegalStateException("updating non-present slot")); */
+		if(key.valid()) {
+		    ninvalid--;
+		    back.remove(slot);
+		    add(slot);
+		} else {
+		    back.update(slot);
+		}
+		return;
+	    }
 	    Object cur = instreg.get(curkey);
 	    if(cur == null) {
 		throw(new IllegalStateException("updating non-present slot"));
@@ -513,7 +606,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    if(insts instanceof InstancedSlot.Instance) {
 		((InstancedSlot.Instance)insts).update(group, mask);
 	    } else if(insts instanceof List) {
-		for(InstancedSlot.Instance inst : (List<InstancedSlot.Instance>)insts)
+		for(InstancedSlot.Instance inst : new ArrayList<>((List<InstancedSlot.Instance>)insts))
 		    inst.update(group, mask);
 	    }
 	}
@@ -524,6 +617,6 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
     }
 
     public String stats() {
-	return(String.format("%,d+%,d(%,d) %d", nuinst, nbatches, ninst, nbypass));
+	return(String.format("%,d+%,d(%,d) %d %d", nuinst, nbatches, ninst, ninvalid, nbypass));
     }
 }
