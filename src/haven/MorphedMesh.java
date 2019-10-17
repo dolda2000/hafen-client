@@ -68,6 +68,8 @@ public class MorphedMesh extends FastMesh implements TickList.TickNode, TickList
 	update(g);
     }
 
+    public Object instanceid() {return(null);}
+
     public TickList.Ticking ticker() {return(this);}
 
     public String toString() {
