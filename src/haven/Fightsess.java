@@ -271,7 +271,9 @@ public class Fightsess extends Widget {
 		    Tex img = act.get().layer(Resource.imgc).tex();
 		    ca = ca.sub(img.sz().div(2));
 		    if(c.isect(ca, img.sz())) {
-			String tip = act.get().layer(Resource.tooltip).t + " ($b{$col[255,128,0]{" + keytips[i] + "}})";
+			String tip = act.get().layer(Resource.tooltip).t;
+			if(kb_acts[i].key() != KeyMatch.nil)
+			    tip += " ($b{$col[255,128,0]{" + kb_acts[i].key().name() + "}})";
 			if((acttip == null) || !acttip.text.equals(tip))
 			    acttip = RichText.render(tip, -1);
 			return(acttip);
@@ -329,22 +331,56 @@ public class Fightsess extends Widget {
 	}
     }
 
+    public static final KeyBinding[] kb_acts = {
+	KeyBinding.get("fgt/0", KeyMatch.forcode(KeyEvent.VK_1, 0)),
+	KeyBinding.get("fgt/1", KeyMatch.forcode(KeyEvent.VK_2, 0)),
+	KeyBinding.get("fgt/2", KeyMatch.forcode(KeyEvent.VK_3, 0)),
+	KeyBinding.get("fgt/3", KeyMatch.forcode(KeyEvent.VK_4, 0)),
+	KeyBinding.get("fgt/4", KeyMatch.forcode(KeyEvent.VK_5, 0)),
+	KeyBinding.get("fgt/5", KeyMatch.forcode(KeyEvent.VK_1, KeyMatch.S)),
+	KeyBinding.get("fgt/6", KeyMatch.forcode(KeyEvent.VK_2, KeyMatch.S)),
+	KeyBinding.get("fgt/7", KeyMatch.forcode(KeyEvent.VK_3, KeyMatch.S)),
+	KeyBinding.get("fgt/8", KeyMatch.forcode(KeyEvent.VK_4, KeyMatch.S)),
+	KeyBinding.get("fgt/9", KeyMatch.forcode(KeyEvent.VK_5, KeyMatch.S)),
+    };
+    public static final KeyBinding kb_relcycle =  KeyBinding.get("fgt-cycle", KeyMatch.forcode(KeyEvent.VK_TAB, KeyMatch.C), KeyMatch.S);
+
+    /* XXX: This is a bit ugly, but release message do need to be
+     * properly sequenced with use messages in some way. */
+    private class Release implements MapView.Delayed, BGL.Request {
+	final int n;
+
+	Release(int n) {this.n = n;}
+
+	public void run(GOut g) {
+	    g.gl.bglSubmit(this);
+	}
+
+	public void run(javax.media.opengl.GL2 gl) {
+	    wdgmsg("rel", n);
+	}
+    }
+
+    private UI.Grab holdgrab = null;
+    private int held = -1;
     public boolean globtype(char key, KeyEvent ev) {
-	if((key == 0) && (ev.getModifiersEx() & (InputEvent.CTRL_DOWN_MASK | KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) == 0) {
+	// ev = new KeyEvent((java.awt.Component)ev.getSource(), ev.getID(), ev.getWhen(), ev.getModifiersEx(), ev.getKeyCode(), ev.getKeyChar(), ev.getKeyLocation());
+	{
 	    int n = -1;
-	    switch(ev.getKeyCode()) {
-	    case KeyEvent.VK_1: n = 0; break;
-	    case KeyEvent.VK_2: n = 1; break;
-	    case KeyEvent.VK_3: n = 2; break;
-	    case KeyEvent.VK_4: n = 3; break;
-	    case KeyEvent.VK_5: n = 4; break;
+	    for(int i = 0; i < kb_acts.length; i++) {
+		if(kb_acts[i].key().match(ev)) {
+		    n = i;
+		    break;
+		}
 	    }
-	    if((n >= 0) && ((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0))
-		n += 5;
 	    int fn = n;
 	    if((n >= 0) && (n < actions.length)) {
 		MapView map = getparent(GameUI.class).map;
 		Coord mvc = map.rootxlate(ui.mc);
+		if(held >= 0) {
+		    map.delay(new Release(held));
+		    held = -1;
+		}
 		if(mvc.isect(Coord.z, map.sz)) {
 		    map.new Maptest(mvc) {
 			    protected void hit(Coord pc, Coord2d mc) {
@@ -356,17 +392,45 @@ public class Fightsess extends Widget {
 			    }
 			}.run();
 		}
+		if(holdgrab == null)
+		    holdgrab = ui.grabkeys(this);
+		held = n;
 		return(true);
 	    }
-	} else if((key == 9) && ((ev.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)) {
-	    Fightview.Relation cur = fv.current;
-	    if(cur != null) {
-		fv.lsrel.remove(cur);
-		fv.lsrel.addLast(cur);
+	}
+	if(kb_relcycle.key().match(ev, KeyMatch.S)) {
+	    if((ev.getModifiersEx() & KeyEvent.SHIFT_DOWN_MASK) == 0) {
+		Fightview.Relation cur = fv.current;
+		if(cur != null) {
+		    fv.lsrel.remove(cur);
+		    fv.lsrel.addLast(cur);
+		}
+	    } else {
+		Fightview.Relation last = fv.lsrel.getLast();
+		if(last != null) {
+		    fv.lsrel.remove(last);
+		    fv.lsrel.addFirst(last);
+		}
 	    }
 	    fv.wdgmsg("bump", (int)fv.lsrel.get(0).gobid);
 	    return(true);
 	}
 	return(super.globtype(key, ev));
+    }
+
+    public boolean keydown(KeyEvent ev) {
+	return(false);
+    }
+
+    public boolean keyup(KeyEvent ev) {
+	if((holdgrab != null) && (kb_acts[held].key().match(ev, KeyMatch.MODS))) {
+	    MapView map = getparent(GameUI.class).map;
+	    map.delay(new Release(held));
+	    holdgrab.remove();
+	    holdgrab = null;
+	    held = -1;
+	    return(true);
+	}
+	return(false);
     }
 }
