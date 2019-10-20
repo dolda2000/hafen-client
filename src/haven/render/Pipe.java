@@ -45,7 +45,7 @@ public interface Pipe {
 	throw(new UnsupportedOperationException(this.getClass().toString() + "::copy()"));
     }
 
-    public static interface Op {
+    public static interface Op extends NodeWrap {
 	public void apply(Pipe pipe);
 
 	public static class Composed implements Op {
