@@ -269,8 +269,8 @@ public class GOut {
 	apply();
 	gl.glLineWidth((float)w);
 	gl.glBegin(GL.GL_LINES);
-	vertex(c1);
-	vertex(c2);
+	vertex(c1.x + 0.5f, c1.y + 0.5f);
+	vertex(c2.x + 0.5f, c2.y + 0.5f);
 	gl.glEnd();
 	checkerr();
     }
