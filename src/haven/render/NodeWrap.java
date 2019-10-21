@@ -31,6 +31,11 @@ import java.util.*;
 public interface NodeWrap {
     public RenderTree.Node apply(RenderTree.Node node);
 
+    public static interface Wrapping {
+	public NodeWrap wrap();
+	public RenderTree.Node wrapped();
+    }
+
     public static class Composed implements NodeWrap {
 	private final NodeWrap[] wraps;
 

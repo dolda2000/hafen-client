@@ -105,7 +105,7 @@ public interface Pipe {
 	    return(new Composed(ops));
 	}
 
-	public static class Wrapping implements RenderTree.Node {
+	public static class Wrapping implements RenderTree.Node, NodeWrap.Wrapping {
 	    public final RenderTree.Node r;
 	    public final Op op;
 	    public final boolean locked;
@@ -128,6 +128,9 @@ public interface Pipe {
 	    public String toString() {
 		return(String.format("#<wrapped %s in %s>", r, op));
 	    }
+
+	    public NodeWrap wrap() {return(op);}
+	    public RenderTree.Node wrapped() {return(r);}
 	}
 
 	public default Wrapping apply(RenderTree.Node r, boolean locked) {
