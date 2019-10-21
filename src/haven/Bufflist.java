@@ -80,6 +80,11 @@ public class Bufflist extends Widget {
     }
 
     public void draw(GOut g) {
-	draw(g, false);
+	for(Widget wdg = child, next; wdg != null; wdg = next) {
+	    next = wdg.next;
+	    if(!wdg.visible || !(wdg instanceof Managed))
+		continue;
+	    wdg.draw(g.reclipl(xlate(wdg.c, true), wdg.sz));
+	}
     }
 }
