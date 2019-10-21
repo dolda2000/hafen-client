@@ -946,6 +946,14 @@ public class Widget {
 	}
     }
     
+    public <T> T getchild(Class<T> cl) {
+	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
+	    if(cl.isInstance(wdg))
+		return(cl.cast(wdg));
+	}
+	return(null);
+    }
+
     @Deprecated
     public <T extends Widget> T findchild(Class<T> cl) {
 	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
