@@ -54,6 +54,7 @@ public class Fightview extends Widget {
 	public final GiveButton give;
 	public final Button purs;
 	public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
+	public final Bufflist relbuffs = add(new Bufflist()); {relbuffs.hide();}
 	public int ip, oip;
 	public Indir<Resource> lastact = null;
 	public double lastuse = 0;
@@ -113,6 +114,8 @@ public class Fightview extends Widget {
 	    else
 		p = getrel((Integer)args[1]).buffs;
 	    p.addchild(child);
+	} else if(args[0].equals("relbuff")) {
+	    getrel((Integer)args[1]).relbuffs.addchild(child);
 	} else {
 	    super.addchild(child, args);
 	}
