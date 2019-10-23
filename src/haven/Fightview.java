@@ -58,6 +58,7 @@ public class Fightview extends Widget {
 	public int ip, oip;
 	public Indir<Resource> lastact = null;
 	public double lastuse = 0;
+	public boolean invalid = false;
         
         public Relation(long gobid) {
             this.gobid = gobid;
@@ -82,6 +83,9 @@ public class Fightview extends Widget {
 	    ui.destroy(ava);
 	    ui.destroy(give);
 	    ui.destroy(purs);
+	    ui.destroy(buffs);
+	    ui.destroy(relbuffs);
+	    invalid = true;
 	}
 
 	public void use(Indir<Resource> act) {
