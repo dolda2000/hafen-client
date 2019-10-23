@@ -39,6 +39,7 @@ public class Fightview extends Widget {
     public static final Coord cpursc = new Coord(cavac.x - 75, cgivec.y + 35);
     public final LinkedList<Relation> lsrel = new LinkedList<Relation>();
     public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
+    public final Map<Long, Widget> obinfo = new HashMap<>();
     public Relation current = null;
     public Indir<Resource> blk, batk, iatk;
     public double atkcs, atkct;
@@ -125,6 +126,39 @@ public class Fightview extends Widget {
 	}
     }
 
+    /* XXX? It's a bit ugly that there's no trimming of obinfo, but
+     * it's not obvious that one really ever wants it trimmed, and
+     * it's really not like it uses a lot of memory. */
+    public Widget obinfo(long gobid, boolean creat) {
+	synchronized(obinfo) {
+	    Widget ret = obinfo.get(gobid);
+	    if((ret == null) && creat)
+		obinfo.put(gobid, ret = new AWidget());
+	    return(ret);
+	}
+    }
+
+    public <T extends Widget> T obinfo(long gobid, Class<T> cl, boolean creat) {
+	Widget cnt = obinfo(gobid, creat);
+	if(cnt == null)
+	    return(null);
+	T ret = cnt.getchild(cl);
+	if((ret == null) && creat) {
+	    try {
+		ret = Utils.construct(cl.getConstructor());
+	    } catch(NoSuchMethodException e) {
+		throw(new RuntimeException(e));
+	    }
+	    cnt.add(ret);
+	}
+	return(ret);
+    }
+
+    public static interface ObInfo {
+	public default int prio() {return(1000);}
+	public default Coord2d grav() {return(new Coord2d(0, 1));}
+    }
+
     private void setcur(Relation rel) {
 	if((current == null) && (rel != null)) {
 	    add(curgive = new GiveButton(0), cgivec);
@@ -150,6 +184,15 @@ public class Fightview extends Widget {
 	super.destroy();
     }
     
+    public void tick(double dt) {
+	super.tick(dt);
+	for(Relation rel : lsrel) {
+	    Widget inf = obinfo(rel.gobid, false);
+	    if(inf != null)
+		inf.tick(dt);
+	}
+    }
+
     public void draw(GOut g) {
         int y = 10;
 	if(curava != null)
