@@ -114,8 +114,7 @@ public class MCache {
 	public String mnm;
 	private int olseq = -1;
 	private final Cut cuts[];
-	@SuppressWarnings("unchecked")
-	private Collection<Gob>[] fo = new Collection[cutn.x * cutn.y];
+	private Flavobjs[] fo = new Flavobjs[cutn.x * cutn.y];
 
 	private class Cut {
 	    MapMesh mesh;
@@ -134,21 +133,6 @@ public class MCache {
 		r.setSeed(r.nextLong() ^ Double.doubleToLongBits(rc.x));
 		r.setSeed(r.nextLong() ^ Double.doubleToLongBits(rc.y));
 		return(r);
-	    }
-	}
-
-	private class Flavdraw extends ResDrawable {
-	    final Pipe.Op extra;
-
-	    Flavdraw(Gob gob, Indir<Resource> res, Message sdt, Pipe.Op extra) {
-		super(gob, res, sdt);
-		this.extra = extra;
-	    }
-
-	    @Override public void added(RenderTree.Slot slot) {
-		if(extra != null)
-		    slot.ostate(extra);
-		super.added(slot);
 	    }
 	}
 
@@ -172,8 +156,51 @@ public class MCache {
 	    return(ol[tc.x + (tc.y * cmaps.x)]);
 	}
 
-	private Collection<Gob> makeflavor(Coord cutc) {
-	    Collection<Gob> ret = new ArrayList<>();
+	private class Flavobjs implements RenderTree.Node {
+	    final RenderTree.Node[] mats;
+	    final Gob[] all;
+
+	    Flavobjs(Map<NodeWrap, Collection<Gob>> flavobjs) {
+		Collection<Gob> all = new ArrayList<>();
+		RenderTree.Node[] mats = new RenderTree.Node[flavobjs.size()];
+		int i = 0;
+		for(Map.Entry<NodeWrap, Collection<Gob>> matent : flavobjs.entrySet()) {
+		    final NodeWrap mat = matent.getKey();
+		    Collection<Gob> fos = matent.getValue();
+		    final Gob[] fol = fos.toArray(new Gob[0]);
+		    all.addAll(fos);
+		    mats[i] = new RenderTree.Node() {
+			    public void added(RenderTree.Slot slot) {
+				for(Gob fo : fol)
+				    slot.add(fo.placed);
+			    }
+			};
+		    if(mat != null)
+			mats[i] = mat.apply(mats[i]);
+		    i++;
+		}
+		this.mats = mats;
+		this.all = all.toArray(new Gob[0]);
+	    }
+
+	    public void added(RenderTree.Slot slot) {
+		for(RenderTree.Node mat : mats)
+		    slot.add(mat);
+	    }
+
+	    void tick(double dt) {
+		for(Gob fo : all)
+		    fo.ctick(dt);
+	    }
+
+	    void gtick(Render g) {
+		for(Gob fo : all)
+		    fo.gtick(g);
+	    }
+	}
+
+	private Flavobjs makeflavor(Coord cutc) {
+	    Map<NodeWrap, Collection<Gob>> buf = new HashMap<>();
 	    Coord o = new Coord(0, 0);
 	    Coord ul = cutc.mul(cutsz);
 	    Coord gul = ul.add(gc.mul(cmaps));
@@ -182,6 +209,9 @@ public class MCache {
 	    for(o.y = 0; o.y < cutsz.x; o.y++, i += (cmaps.x - cutsz.x)) {
 		for(o.x = 0; o.x < cutsz.y; o.x++, i++) {
 		    Tileset set = tileset(tiles[i]);
+		    Collection<Gob> mbuf = buf.get(set.flavobjmat);
+		    if(mbuf == null)
+			buf.put(set.flavobjmat, mbuf = new ArrayList<>());
 		    int fp = rnd.nextInt();
 		    int rp = rnd.nextInt();
 		    double a = rnd.nextDouble();
@@ -189,16 +219,16 @@ public class MCache {
 			if((fp % set.flavprob) == 0) {
 			    Indir<Resource> r = set.flavobjs.pick(rp % set.flavobjs.tw);
 			    Gob g = new Flavobj(o.add(gul).mul(tilesz).add(tilesz.div(2)), a * 2 * Math.PI);
-			    g.setattr(new Flavdraw(g, r, Message.nil, set.flavobjmat));
-			    ret.add(g);
+			    g.setattr(new ResDrawable(g, r, Message.nil));
+			    mbuf.add(g);
 			}
 		    }
 		}
 	    }
-	    return(ret);
+	    return(new Flavobjs(buf));
 	}
 
-	public Collection<Gob> getfo(Coord cc) {
+	public RenderTree.Node getfo(Coord cc) {
 	    int foo = cc.x + (cc.y * cutn.x);
 	    if(fo[foo] == null)
 		fo[foo] = makeflavor(cc);
@@ -278,30 +308,25 @@ public class MCache {
 	}
 	
 	public void tick(double dt) {
-	    for(Collection<Gob> fol : fo) {
-		if(fol != null) {
-		    for(Gob fo : fol)
-			fo.ctick(dt);
-		}
+	    for(Flavobjs fol : fo) {
+		if(fol != null)
+		    fol.tick(dt);
 	    }
 	}
 	
 	public void gtick(Render g) {
-	    for(Collection<Gob> fol : fo) {
-		if(fol != null) {
-		    for(Gob fo : fol)
-			fo.gtick(g);
-		}
+	    for(Flavobjs fol : fo) {
+		if(fol != null)
+		    fol.gtick(g);
 	    }
 	}
 	
-	@SuppressWarnings("unchecked")
 	private void invalidate() {
 	    for(int y = 0; y < cutn.y; y++) {
 		for(int x = 0; x < cutn.x; x++)
 		    buildcut(new Coord(x, y));
 	    }
-	    fo = new Collection[cutn.x * cutn.y];
+	    fo = new Flavobjs[cutn.x * cutn.y];
 	    for(Coord ic : new Coord[] {
 		    new Coord(-1, -1), new Coord( 0, -1), new Coord( 1, -1),
 		    new Coord(-1,  0),                    new Coord( 1,  0),
@@ -509,7 +534,7 @@ public class MCache {
 	}
     }
     
-    public Collection<Gob> getfo(Coord cc) {
+    public RenderTree.Node getfo(Coord cc) {
 	synchronized(grids) {
 	    return(getgrid(cc.div(cutn)).getfo(cc.mod(cutn)));
 	}

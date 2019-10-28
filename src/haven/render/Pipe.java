@@ -45,28 +45,14 @@ public interface Pipe {
 	throw(new UnsupportedOperationException(this.getClass().toString() + "::copy()"));
     }
 
-    public static interface Op {
+    public static interface Op extends NodeWrap {
 	public void apply(Pipe pipe);
 
 	public static class Composed implements Op {
 	    private final Op[] ops;
 
 	    public Composed(Op... ops) {
-		int i, n;
-		for(i = n = 0; i < ops.length; i++) {
-		    if(ops[i] != null)
-			n++;
-		}
-		if(n != i) {
-		    Op[] td = new Op[n];
-		    for(i = n = 0; i < ops.length; i++) {
-			if(ops[i] != null)
-			    td[n++] = ops[i];
-		    }
-		    this.ops = td;
-		} else {
-		    this.ops = ops;
-		}
+		this.ops = ops;
 	    }
 
 	    public void apply(Pipe pipe) {
@@ -98,14 +84,30 @@ public interface Pipe {
 	public static final Op nil = new Nil();
 
 	public static Op compose(Op... ops) {
-	    if(ops.length == 0)
+	    int n = 0;
+	    Op last = null;
+	    for(int i = 0; i < ops.length; i++) {
+		if(ops[i] != null) {
+		    last = ops[i];
+		    n++;
+		}
+	    }
+	    if(n == 0)
 		return(nil);
-	    if(ops.length == 1)
-		return(ops[0]);
+	    if(n == 1)
+		return(last);
+	    if(n != ops.length) {
+		Op[] buf = new Op[n];
+		for(int i = 0, o = 0; i < ops.length; i++) {
+		    if(ops[i] != null)
+			buf[o++] = ops[i];
+		}
+		ops = buf;
+	    }
 	    return(new Composed(ops));
 	}
 
-	public static class Wrapping implements RenderTree.Node {
+	public static class Wrapping implements RenderTree.Node, NodeWrap.Wrapping {
 	    public final RenderTree.Node r;
 	    public final Op op;
 	    public final boolean locked;
@@ -128,6 +130,9 @@ public interface Pipe {
 	    public String toString() {
 		return(String.format("#<wrapped %s in %s>", r, op));
 	    }
+
+	    public NodeWrap wrap() {return(op);}
+	    public RenderTree.Node wrapped() {return(r);}
 	}
 
 	public default Wrapping apply(RenderTree.Node r, boolean locked) {

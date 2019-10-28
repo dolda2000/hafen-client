@@ -134,7 +134,7 @@ public abstract class Tiler {
 	private final VertFactory f;
 	private final MeshVertex[] map;
 
-	public SModel(MapMesh m, Pipe.Op mat, VertFactory f) {
+	public SModel(MapMesh m, NodeWrap mat, VertFactory f) {
 	    super(m, mat);
 	    this.f = f;
 	    this.map = new MeshVertex[m.data(MapMesh.gnd).vl.length];
@@ -155,11 +155,11 @@ public abstract class Tiler {
 	}
 
 	public static class Key implements MapMesh.DataID<SModel> {
-	    public final Pipe.Op mat;
+	    public final NodeWrap mat;
 	    public final VertFactory f;
 	    private final int hash;
 
-	    public Key(Pipe.Op mat, VertFactory f) {
+	    public Key(NodeWrap mat, VertFactory f) {
 		this.mat = mat;
 		this.f = f;
 		this.hash = (mat.hashCode() * 31) + f.hashCode();
@@ -178,7 +178,7 @@ public abstract class Tiler {
 	    }
 	}
 
-	public static SModel get(MapMesh m, Pipe.Op mat, VertFactory f) {
+	public static SModel get(MapMesh m, NodeWrap mat, VertFactory f) {
 	    return(m.data(new Key(mat, f)));
 	}
     }

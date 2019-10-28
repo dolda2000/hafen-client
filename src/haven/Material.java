@@ -96,6 +96,15 @@ public class Material implements Pipe.Op {
 	dynstates.apply(p);
     }
 
+    /* This is actually an interesting inflection point. Right now,
+     * Material overriding apply() seems more like an ugly hack to
+     * support dynamic vs. static states. However, allowing materials
+     * to more truly own their own wrapping slots opens up such
+     * possibilities as them adding their children multiple times for
+     * more complex rendering techniques, which might be quite useful,
+     * and is well worth considering converting more fully to. In that
+     * case, materials probably shouldn't even be pipe-ops at all, but
+     * rather having apply() as their main and only interface. */
     public Wrapping apply(RenderTree.Node r) {
 	if(dynstates != Pipe.Op.nil) {
 	    if(states == Pipe.Op.nil)
