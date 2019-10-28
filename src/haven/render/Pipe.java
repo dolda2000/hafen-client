@@ -52,21 +52,7 @@ public interface Pipe {
 	    private final Op[] ops;
 
 	    public Composed(Op... ops) {
-		int i, n;
-		for(i = n = 0; i < ops.length; i++) {
-		    if(ops[i] != null)
-			n++;
-		}
-		if(n != i) {
-		    Op[] td = new Op[n];
-		    for(i = n = 0; i < ops.length; i++) {
-			if(ops[i] != null)
-			    td[n++] = ops[i];
-		    }
-		    this.ops = td;
-		} else {
-		    this.ops = ops;
-		}
+		this.ops = ops;
 	    }
 
 	    public void apply(Pipe pipe) {
@@ -98,10 +84,26 @@ public interface Pipe {
 	public static final Op nil = new Nil();
 
 	public static Op compose(Op... ops) {
-	    if(ops.length == 0)
+	    int n = 0;
+	    Op last = null;
+	    for(int i = 0; i < ops.length; i++) {
+		if(ops[i] != null) {
+		    last = ops[i];
+		    n++;
+		}
+	    }
+	    if(n == 0)
 		return(nil);
-	    if(ops.length == 1)
-		return(ops[0]);
+	    if(n == 1)
+		return(last);
+	    if(n != ops.length) {
+		Op[] buf = new Op[n];
+		for(int i = 0, o = 0; i < ops.length; i++) {
+		    if(ops[i] != null)
+			buf[o++] = ops[i];
+		}
+		ops = buf;
+	    }
 	    return(new Composed(ops));
 	}
 
