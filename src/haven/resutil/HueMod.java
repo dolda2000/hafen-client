@@ -45,7 +45,7 @@ public class HueMod extends State {
     private static final Uniform cxf = new Uniform(VEC3, p -> {
 	    HueMod st = p.get(slot);
 	    return(new float[] {st.tgthue, 1.0f - st.huemod, st.satmod});
-	});
+	}, slot);
     private static final Function apply = new Function.Def(VEC4) {{
 	Expression c = param(PDir.IN, Type.VEC4).ref();
 	LValue t = code.local(VEC3, MiscLib.rgb2hsv.call(pick(c, "rgb"))).ref();
