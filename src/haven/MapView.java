@@ -576,17 +576,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    return(map.getcut(cc));
 		}
 	    };
-	final Grid flavobjs = new Grid<Collection<Gob>>(false) {
-		Collection<Gob> getcut(Coord cc) {
+	final Grid flavobjs = new Grid<RenderTree.Node>(false) {
+		RenderTree.Node getcut(Coord cc) {
 		    return(map.getfo(cc));
-		}
-		RenderTree.Node produce(Collection<Gob> fos) {
-		    return(new RenderTree.Node() {
-			    public void added(RenderTree.Slot slot) {
-				for(Gob ob : fos)
-				    slot.add(ob.placed);
-			    }
-			});
 		}
 	    };
 

@@ -36,17 +36,19 @@ import static haven.resutil.GroundTile.tcx;
 import static haven.resutil.GroundTile.tcy;
 
 public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
-    public final Pipe.Op base;
+    public final NodeWrap base;
     public final SNoise3 noise;
     public final Var[] var;
     public final Tileset transset;
+    public final Pipe.Op draw;
 
     public static class Var {
-	public Pipe.Op mat;
+	public NodeWrap mat;
 	public double thrl, thrh;
 	public double nz;
+	public Pipe.Op draw;
 
-	public Var(Pipe.Op mat, double thrl, double thrh, double nz) {
+	public Var(NodeWrap mat, double thrl, double thrh, double nz) {
 	    this.mat = mat; this.thrl = thrl; this.thrh = thrh; this.nz = nz;
 	}
     }
@@ -209,9 +211,9 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	public TerrainTile create(int id, Tileset set) {
 	    Resource res = set.getres();
 	    Tileset trans = null;
-	    Pipe.Op base = null;
+	    NodeWrap base = null;
 	    Collection<Var> var = new LinkedList<Var>();
-	    Pipe.Op commat = null;
+	    NodeWrap commat = null;
 	    for(Object rdesc : set.ta) {
 		Object[] desc = (Object[])rdesc;
 		String p = (String)desc[0];
@@ -235,7 +237,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		String p = (String)desc[0];
 		if(p.equals("base")) {
 		    int mid = (Integer)desc[1];
-		    base = Pipe.Op.compose(commat, res.layer(Material.Res.class, mid).get());
+		    base = NodeWrap.compose(commat, res.layer(Material.Res.class, mid).get());
 		} else if(p.equals("var")) {
 		    int mid = (Integer)desc[1];
 		    double thrl, thrh;
@@ -247,7 +249,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 			thrh = Double.MAX_VALUE;
 		    }
 		    double nz = (res.name.hashCode() * mid * 8129) % 10000;
-		    Pipe.Op mat = Pipe.Op.compose(commat, res.layer(Material.Res.class, mid).get());
+		    NodeWrap mat = NodeWrap.compose(commat, res.layer(Material.Res.class, mid).get());
 		    var.add(new Var(mat, thrl, thrh, nz));
 		} else if(p.equals("trans")) {
 		    Resource tres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
@@ -262,13 +264,14 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	}
     }
 
-    public TerrainTile(int id, SNoise3 noise, Pipe.Op base, Var[] var, Tileset transset) {
+    public TerrainTile(int id, SNoise3 noise, NodeWrap base, Var[] var, Tileset transset) {
 	super(id);
 	this.noise = noise;
 	int z = 0;
-	this.base = Pipe.Op.compose(base, new MapMesh.MLOrder(0, z++), VertexColor.instance);
+	this.base = base;
+	this.draw = Pipe.Op.compose(new MapMesh.MLOrder(0, z++), VertexColor.instance);
 	for(Var v : this.var = var)
-	    v.mat = Pipe.Op.compose(v.mat, new MapMesh.MLOrder(0, z++), VertexColor.instance);
+	    v.draw = Pipe.Op.compose(new MapMesh.MLOrder(0, z++), VertexColor.instance);
 	this.transset = transset;
     }
 
@@ -281,8 +284,9 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	Surface.MeshVertex[] mv = new Surface.MeshVertex[d.v.length];
 	for(int i = 0; i < var.length + 1; i++) {
 	    if(b.en[i][b.es.o(d.lc)]) {
-		Pipe.Op mat = d.mcomb((i == 0)?base:(var[i - 1].mat));
-		SModel buf = SModel.get(m, mat, b.lvfac[i]);
+		NodeWrap mat = (i == 0) ? this.base : (var[i - 1].mat);
+		Pipe.Op draw = d.mcomb((i == 0) ? this.draw : (var[i - 1].draw));
+		SModel buf = SModel.get(m, NodeWrap.compose(mat, draw), b.lvfac[i]);
 		for(int o = 0; o < d.v.length; o++)
 		    mv[o] = buf.get(d, o);
 		for(int fi = 0; fi < d.f.length; fi += 3)
@@ -315,9 +319,10 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	Surface.MeshVertex[] mv = new Surface.MeshVertex[d.v.length];
 	for(int i = 0; i < var.length + 1; i++) {
 	    if(b.en[i][b.es.o(d.lc)]) {
-		Pipe.Op mat = (i == 0)?base:(var[i - 1].mat);
-		mat = d.mcomb(Pipe.Op.compose(mat, new MapMesh.MLOrder(z, i), alpha));
-		MeshBuf buf = MapMesh.Model.get(m, mat);
+		NodeWrap mat = (i == 0) ? this.base : (var[i - 1].mat);
+		Pipe.Op draw = (i == 0) ? this.draw : (var[i - 1].draw);
+		draw = d.mcomb(Pipe.Op.compose(draw, new MapMesh.MLOrder(z, i), alpha));
+		MeshBuf buf = MapMesh.Model.get(m, NodeWrap.compose(mat, draw));
 		MeshBuf.Vec2Layer cc = buf.layer(AlphaTex.lclip);
 		for(int o = 0; o < d.v.length; o++) {
 		    mv[o] = b.lvfac[i].make(buf, d, o);
@@ -391,7 +396,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	    }
 	}
 
-	public RidgeTile(int id, SNoise3 noise, Pipe.Op base, Var[] var, Tileset transset, int rth, Pipe.Op rmat, float texh) {
+	public RidgeTile(int id, SNoise3 noise, NodeWrap base, Var[] var, Tileset transset, int rth, Pipe.Op rmat, float texh) {
 	    super(id, noise, base, var, transset);
 	    this.rth = rth;
 	    this.rcons = new Ridges.TexCons(rmat, texh);

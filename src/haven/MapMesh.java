@@ -250,9 +250,9 @@ public class MapMesh implements RenderTree.Node, Disposable {
 
     public static class Model extends MeshBuf implements ConsHooks {
 	public final MapMesh m;
-	public final Pipe.Op mat;
+	public final NodeWrap mat;
 
-	public Model(MapMesh m, Pipe.Op mat) {
+	public Model(MapMesh m, NodeWrap mat) {
 	    this.m = m;
 	    this.mat = mat;
 	}
@@ -268,10 +268,10 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	}
 
 	public static class MatKey implements DataID<Model> {
-	    public final Pipe.Op mat;
+	    public final NodeWrap mat;
 	    private final int hash;
 
-	    public MatKey(Pipe.Op mat) {
+	    public MatKey(NodeWrap mat) {
 		this.mat = mat;
 		this.hash = mat.hashCode() * 37;
 	    }
@@ -289,7 +289,7 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	    }
 	}
 
-	public static Model get(MapMesh m, Pipe.Op mat) {
+	public static Model get(MapMesh m, NodeWrap mat) {
 	    return(m.data(new MatKey(mat)));
 	}
     }
