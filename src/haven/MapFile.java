@@ -457,6 +457,7 @@ public class MapFile {
 
     public static class Grid extends DataGrid {
 	public final long id;
+	private boolean[] norepl;
 	private int useq = -1;
 
 	public Grid(long id, TileInfo[] tilesets, byte[] tiles, long mtime) {
@@ -470,12 +471,20 @@ public class MapFile {
 	    Resource.Spec[] sets = new Resource.Spec[256];
 	    int[] tmap = new int[256];
 	    int[] rmap = new int[256];
+	    boolean[] norepl = new boolean[256];
 	    Arrays.fill(tmap, -1);
 	    for(int tn : cg.tiles) {
 		if(tmap[tn] == -1) {
 		    tmap[tn] = nt;
 		    rmap[nt] = tn;
 		    sets[nt] = map.nsets[tn];
+		    try {
+			for(String tag : map.tileset(tn).tags) {
+			    if(tag.equals("norepl"))
+				norepl[nt] = true;
+			}
+		    } catch(Loading l) {
+		    }
 		    nt++;
 		}
 	    }
@@ -491,7 +500,51 @@ public class MapFile {
 	    for(int i = 0; i < cg.tiles.length; i++)
 		tiles[i] = (byte)(tmap[cg.tiles[i]]);
 	    Grid g = new Grid(cg.id, infos, tiles, System.currentTimeMillis());
+	    g.norepl = norepl;
 	    g.useq = oseq;
+	    return(g);
+	}
+
+	public Grid mergeprev(Grid prev) {
+	    if((norepl == null) || (prev.tiles.length != this.tiles.length))
+		return(this);
+	    boolean[] used = new boolean[prev.tilesets.length];
+	    boolean any = false;
+	    int[] tmap = new int[prev.tilesets.length];
+	    for(int i = 0; i < tmap.length; i++)
+		tmap[i] = -1;
+	    for(int i = 0; i < this.tiles.length; i++) {
+		if(norepl[this.tiles[i]]) {
+		    used[prev.tiles[i]] = true;
+		    any = true;
+		}
+	    }
+	    if(!any)
+		return(this);
+	    TileInfo[] ntilesets = this.tilesets;
+	    for(int i = 0; i < used.length; i++) {
+		if(used[i] && (tmap[i] < 0)) {
+		    dedup: {
+			for(int o = 0; o < this.tilesets.length; o++) {
+			    if(this.tilesets[o].res.name.equals(prev.tilesets[i].res.name)) {
+				tmap[i] = o;
+				break dedup;
+			    }
+			}
+			tmap[i] = ntilesets.length;
+			ntilesets = Utils.extend(ntilesets, prev.tilesets[i]);
+		    }
+		}
+	    }
+	    byte[] ntiles = new byte[this.tiles.length];
+	    for(int i = 0; i < this.tiles.length; i++) {
+		if(norepl[this.tiles[i]])
+		    ntiles[i] = (byte)tmap[prev.tiles[i]];
+		else
+		    ntiles[i] = this.tiles[i];
+	    }
+	    Grid g = new Grid(this.id, ntilesets, ntiles, this.mtime);
+	    g.useq = this.useq;
 	    return(g);
 	}
 
@@ -1043,6 +1096,11 @@ public class MapFile {
 		Grid cur = seg.loaded(g.id);
 		if(!((cur != null) && (cur.useq == g.seq))) {
 		    Grid sg = Grid.from(map, g);
+		    Grid prev = cur;
+		    if(prev == null)
+			prev = Grid.load(MapFile.this, sg.id);
+		    if(prev != null)
+			sg = sg.mergeprev(prev);
 		    sg.save(MapFile.this);
 		}
 		if(seg.id != mseg) {
