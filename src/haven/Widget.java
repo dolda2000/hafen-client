@@ -655,7 +655,7 @@ public class Widget {
 		    int modign = 0;
 		    if(args.length > 2)
 			modign = (Integer)args[2];
-		    kb_gkey = KeyBinding.get("wgk/" + (String)args[0], key, modign);
+		    kb_gkey = KeyBinding.get("wgk/" + (String)args[1], key, modign);
 		} else {
 		    gkey = key;
 		}
