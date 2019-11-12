@@ -39,6 +39,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
     private final Map<Slot<? extends Rendered>, InstKey> uslotmap = new IdentityHashMap<>();
     private final Map<Slot<? extends Rendered>, InstancedSlot.Instance> islotmap = new IdentityHashMap<>();
     private final Map<Pipe, Object> pipemap = new IdentityHashMap<>();
+    private final Set<InstancedSlot> dirty = new HashSet<>();
     private int nbypass, ninvalid, nuinst, nbatches, ninst;
 
     private static int[][][] _stcounts = {};
@@ -211,6 +212,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	final GroupPipe ust;
 	Instance[] insts;
 	int ni;
+	boolean backdirty, selfdirty;
 
 	class Instance {
 	    final Slot<? extends Rendered> slot;
@@ -328,6 +330,8 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		if(st instanceof InstanceBatch.Client)
 		    ((InstanceBatch.Client)st).iupdate(idx);
 	    }
+	    selfdirty = true;
+	    dirty.add(this);
 	}
 
 	private void itrim(int idx) {
@@ -337,6 +341,8 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		if(st instanceof InstanceBatch.Client)
 		    ((InstanceBatch.Client)st).itrim(idx);
 	    }
+	    selfdirty = true;
+	    dirty.add(this);
 	}
 
 	void add(Slot<? extends Rendered> ns) {
@@ -429,12 +435,25 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	}
 
 	public void instupdate() {
-	    back.update(this);
+	    backdirty = true;
+	    dirty.add(this);
 	}
 
 	public <T extends State> void update(State.Slot<? super T> slot, T state) {
 	    ist.put(slot, state);
-	    back.update(this);
+	    backdirty = true;
+	    dirty.add(this);
+	}
+
+	private void commit(Render g) {
+	    if(backdirty) {
+		back.update(this);
+		backdirty = false;
+	    }
+	    if(selfdirty) {
+		rend.commit(g);
+		selfdirty = false;
+	    }
 	}
     }
 
@@ -534,6 +553,8 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		InstancedSlot b = (InstancedSlot)cur;
 		b.remove(slot);
 		if(b.ni < 1) {
+		    dirty.remove(b);
+		    back.remove(b);
 		    b.unregister();
 		    b.dispose();
 		    if(instreg.remove(key) != b)
@@ -608,6 +629,16 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    } else if(insts instanceof List) {
 		for(InstancedSlot.Instance inst : new ArrayList<>((List<InstancedSlot.Instance>)insts))
 		    inst.update(group, mask);
+	    }
+	}
+    }
+
+    public void commit(Render g) {
+	synchronized(this) {
+	    for(Iterator<InstancedSlot> i = dirty.iterator(); i.hasNext();) {
+		InstancedSlot slot = i.next();
+		slot.commit(g);
+		i.remove();
 	    }
 	}
     }

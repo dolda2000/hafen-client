@@ -42,6 +42,7 @@ public interface InstanceBatch {
     public static interface Client {
 	public void iupdate(int idx);
 	public void itrim(int max);
+	public void commit(Render g);
     }
 
     public static interface AttribState {
@@ -51,7 +52,7 @@ public interface InstanceBatch {
     public static class AttributeData implements DataBuffer.PartFiller<VertexArray.Buffer>, haven.Disposable {
 	public final InstanceBatch bat;
 	public final Input[] fmt;
-	private int bufsz;
+	private int bufsz, minupd = -1, maxupd = -1;
 	private VertexArray.Buffer buf = null;
 	private Environment curenv;
 
@@ -112,9 +113,13 @@ public interface InstanceBatch {
 	    return(buf);
 	}
 
-	/* XXX: It would be terribly nice if multiple updates could be
-	 * batched in some reasonable way. Not sure how much it
-	 * actaully matters in practice, but it would be nice. */
+	public void commit(Render g) {
+	    if(minupd >= 0) {
+		int st = stride();
+		g.update(this.buf, this, minupd * st, (maxupd + 1) * st);
+	    }
+	}
+
 	public boolean iupdate(int idx) {
 	    int st = stride();
 	    if(st == 0)
@@ -122,14 +127,14 @@ public interface InstanceBatch {
 	    if(idx >= this.bufsz) {
 		this.bufsz = idx * 2;
 		this.buf.dispose();
-		this.buf = new VertexArray.Buffer(this.bufsz * stride(), DataBuffer.Usage.STREAM, this);
+		this.buf = new VertexArray.Buffer(this.bufsz * st, DataBuffer.Usage.STREAM, this);
 		return(true);
 	    } else {
-		Environment env = this.curenv;
-		if(env != null) {
-		    Render r = env.render();
-		    r.update(this.buf, this, idx * st, (idx + 1) * st);
-		    env.submit(r);
+		if(minupd < 0) {
+		    minupd = maxupd = idx;
+		} else {
+		    minupd = Math.min(minupd, idx);
+		    maxupd = Math.max(maxupd, idx);
 		}
 		return(false);
 	    }
