@@ -31,17 +31,18 @@ import static java.awt.event.KeyEvent.VK_UNDEFINED;
 
 public class KeyMatch {
     public static final int S = 1, C = 2, M = 4, MODS = S | C | M;
-    public static final KeyMatch nil = new KeyMatch('\0', false, VK_UNDEFINED, "None", 0, 0);
+    public static final KeyMatch nil = new KeyMatch('\0', false, VK_UNDEFINED, false, "None", 0, 0);
     public char chr;
-    public boolean casematch;
+    public boolean casematch, extmatch;
     public int code;
     public String keyname;
     public int modmask, modmatch;
 
-    public KeyMatch(char chr, boolean casematch, int code, String keyname, int modmask, int modmatch) {
+    public KeyMatch(char chr, boolean casematch, int code, boolean extmatch, String keyname, int modmask, int modmatch) {
 	this.chr = casematch ? chr : Character.toUpperCase(chr);
 	this.casematch = casematch;
 	this.code = code;
+	this.extmatch = extmatch;
 	this.keyname = keyname;
 	this.modmask = modmask & MODS;
 	this.modmatch = modmatch & MODS;
@@ -78,7 +79,10 @@ public class KeyMatch {
 		evc = Character.toUpperCase(evc);
 	    return(evc == chr);
 	} else if(code != VK_UNDEFINED) {
-	    return(ev.getExtendedKeyCode() == code);
+	    if(extmatch)
+		return(ev.getExtendedKeyCode() == code);
+	    else
+		return(ev.getKeyCode() == code);
 	} else {
 	    return(false);
 	}
@@ -101,7 +105,9 @@ public class KeyMatch {
     }
 
     private boolean equals(KeyMatch that) {
-	return((this.chr == that.chr) && (this.casematch == that.casematch) && (this.code == that.code) && (this.modmask == that.modmask) && (this.modmatch == that.modmatch));
+	return((this.chr == that.chr) && (this.casematch == that.casematch) &&
+	       (this.code == that.code) && (this.extmatch == that.extmatch) &&
+	       (this.modmask == that.modmask) && (this.modmatch == that.modmatch));
     }
 
     public boolean equals(Object o) {
@@ -109,14 +115,14 @@ public class KeyMatch {
     }
 
     public static KeyMatch forchar(char chr, int modmask, int modmatch) {
-	return(new KeyMatch(chr, false, VK_UNDEFINED, Character.toString(chr), modmask, modmatch));
+	return(new KeyMatch(chr, false, VK_UNDEFINED, false, Character.toString(chr), modmask, modmatch));
     }
     public static KeyMatch forchar(char chr, int mods) {
 	return(forchar(chr, C | M, mods));
     }
 
     public static KeyMatch forcode(int code, int modmask, int modmatch) {
-	return(new KeyMatch('\0', false, code, KeyEvent.getKeyText(code), modmask, modmatch));
+	return(new KeyMatch('\0', false, code, false, KeyEvent.getKeyText(code), modmask, modmatch));
     }
     public static KeyMatch forcode(int code, int mods) {
 	return(forcode(code, S | C | M, mods));
@@ -136,10 +142,10 @@ public class KeyMatch {
 		nm = Character.toString(key);
 	    else
 		nm = String.format("%X", code);
-	    return(new KeyMatch('\0', false, code, nm, modmask, mod));
+	    return(new KeyMatch('\0', false, code, true, nm, modmask, mod));
 	}
 	if(!Character.isISOControl(key))
-	    return(new KeyMatch(key, false, VK_UNDEFINED, Character.toString(key), modmask, mod));
+	    return(new KeyMatch(key, false, VK_UNDEFINED, false, Character.toString(key), modmask, mod));
 	return(null);
     }
 
@@ -151,12 +157,13 @@ public class KeyMatch {
 	    buf.append(((modmatch & C) != 0) ? 'C' : 'c');
 	if((modmask & M) != 0)
 	    buf.append(((modmatch & M) != 0) ? 'M' : 'm');
-	if(chr != 0)
+	if(chr != 0) {
 	    buf.append(String.format("g%s%x:%s", casematch ? "=" : "", (int)chr, keyname));
-	else if(code != VK_UNDEFINED)
-	    buf.append(String.format("k%x:%s", (int)code, keyname));
-	else
+	} else if(code != VK_UNDEFINED) {
+	    buf.append(String.format("%c%x:%s", extmatch ? "k" : "K", (int)code, keyname));
+	} else {
 	    buf.append(String.format("n"));
+	}
 	return(buf.toString());
     }
 
@@ -169,7 +176,8 @@ public class KeyMatch {
     public static KeyMatch restore(String desc) {
 	int modmask = 0, modmatch = 0, p = 0;
 	while(p < desc.length()) {
-	    switch(desc.charAt(p++)) {
+	    char c = desc.charAt(p++);
+	    switch(c) {
 	    case 'S': modmatch |= S; case 's': modmask |= S; break;
 	    case 'C': modmatch |= C; case 'c': modmask |= C; break;
 	    case 'M': modmatch |= M; case 'm': modmask |= M; break;
@@ -182,13 +190,13 @@ public class KeyMatch {
 		int p2 = desc.indexOf(':', p);
 		char chr = (char)Integer.parseInt(desc.substring(p, p2), 16);
 		String nm = desc.substring(p2 + 1);
-		return(new KeyMatch(chr, casematch, VK_UNDEFINED, nm, modmask, modmatch));
+		return(new KeyMatch(chr, casematch, VK_UNDEFINED, false, nm, modmask, modmatch));
 	    }
-	    case 'k': {
+	    case 'k': case 'K': {
 		int p2 = desc.indexOf(':', p);
 		int code = (char)Integer.parseInt(desc.substring(p, p2), 16);
 		String nm = desc.substring(p2 + 1);
-		return(new KeyMatch('\0', false, code, nm, modmask, modmatch));
+		return(new KeyMatch('\0', false, code, c == 'k', nm, modmask, modmatch));
 	    }
 	    case 'n':
 		return(nil);
