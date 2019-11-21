@@ -194,7 +194,7 @@ public class KeyMatch {
 	    }
 	    case 'k': case 'K': {
 		int p2 = desc.indexOf(':', p);
-		int code = (char)Integer.parseInt(desc.substring(p, p2), 16);
+		int code = Integer.parseInt(desc.substring(p, p2), 16);
 		String nm = desc.substring(p2 + 1);
 		return(new KeyMatch('\0', false, code, c == 'k', nm, modmask, modmatch));
 	    }
