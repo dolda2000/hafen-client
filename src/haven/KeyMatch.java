@@ -160,7 +160,7 @@ public class KeyMatch {
 	if(chr != 0) {
 	    buf.append(String.format("g%s%x:%s", casematch ? "=" : "", (int)chr, keyname));
 	} else if(code != VK_UNDEFINED) {
-	    buf.append(String.format("%c%x:%s", extmatch ? "k" : "K", (int)code, keyname));
+	    buf.append(String.format("%c%x:%s", extmatch ? 'k' : 'K', (int)code, keyname));
 	} else {
 	    buf.append(String.format("n"));
 	}
