@@ -309,6 +309,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
+    public static KeyBinding kb_camleft  = KeyBinding.get("cam-left",  KeyMatch.forcode(KeyEvent.VK_LEFT, 0));
+    public static KeyBinding kb_camright = KeyBinding.get("cam-right", KeyMatch.forcode(KeyEvent.VK_RIGHT, 0));
+    public static KeyBinding kb_camin    = KeyBinding.get("cam-in",    KeyMatch.forcode(KeyEvent.VK_UP, 0));
+    public static KeyBinding kb_camout   = KeyBinding.get("cam-out",   KeyMatch.forcode(KeyEvent.VK_DOWN, 0));
+    public static KeyBinding kb_camreset = KeyBinding.get("cam-reset", KeyMatch.forcode(KeyEvent.VK_HOME, 0));
     public class SOrthoCam extends OrthoCam {
 	private Coord dragorig = null;
 	private float anglorig;
@@ -382,19 +387,19 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public boolean keydown(KeyEvent ev) {
-	    if(ev.getKeyCode() == KeyEvent.VK_LEFT) {
+	    if(kb_camleft.key().match(ev)) {
 		tangl = (float)(Math.PI * 0.5 * (Math.floor((tangl / (Math.PI * 0.5)) - 0.51) + 0.5));
 		return(true);
-	    } else if(ev.getKeyCode() == KeyEvent.VK_RIGHT) {
+	    } else if(kb_camright.key().match(ev)) {
 		tangl = (float)(Math.PI * 0.5 * (Math.floor((tangl / (Math.PI * 0.5)) + 0.51) + 0.5));
 		return(true);
-	    } else if(ev.getKeyCode() == KeyEvent.VK_UP) {
+	    } else if(kb_camin.key().match(ev)) {
 		chfield(tfield - 50);
 		return(true);
-	    } else if(ev.getKeyCode() == KeyEvent.VK_DOWN) {
+	    } else if(kb_camout.key().match(ev)) {
 		chfield(tfield + 50);
 		return(true);
-	    } else if(ev.getKeyCode() == KeyEvent.VK_HOME) {
+	    } else if(kb_camreset.key().match(ev)) {
 		tangl = angl + (float)Utils.cangle(-(float)Math.PI * 0.25f - angl);
 		chfield((float)(100 * Math.sqrt(2)));
 	    }
