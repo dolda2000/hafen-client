@@ -275,4 +275,103 @@ public class KeyMatch {
 	    return(true);
 	}
     }
+
+    public static String modname(int mods) {
+	if(mods == 0)
+	    return("None");
+	StringBuilder buf = new StringBuilder();
+	if((mods & S) != 0) {
+	    if(buf.length() > 0)
+		buf.append('+');
+	    buf.append("Shift");
+	}
+	if((mods & C) != 0) {
+	    if(buf.length() > 0)
+		buf.append('+');
+	    buf.append("Ctrl");
+	}
+	if((mods & M) != 0) {
+	    if(buf.length() > 0)
+		buf.append('+');
+	    buf.append("Alt");
+	}
+	if(buf.length() == 0)
+	    return("???");
+	return(buf.toString());
+    }
+
+    public static class ModCapture extends Button {
+	public final int mask;
+	public int match, nmatch;
+	private UI.Grab grab = null;
+
+	public ModCapture(int w, int mask, int match) {
+	    super(w, modname(match), false);
+	    this.mask = mask;
+	    this.match = match;
+	}
+
+	public ModCapture(int w, int match) {
+	    this(w, MODS, match);
+	}
+
+	public void set(int match) {
+	    change(modname(match));
+	    this.match = match;
+	}
+
+	public void click() {
+	    if(grab == null) {
+		change("...");
+		grab = ui.grabkeys(this);
+		nmatch = 0;
+	    } else {
+		grab.remove();
+		grab = null;
+		change(modname(match));
+	    }
+	}
+
+	protected boolean handle(KeyEvent ev) {
+	    switch(ev.getKeyCode()) {
+	    case KeyEvent.VK_ESCAPE:
+		change(modname(match));
+		return(true);
+	    case KeyEvent.VK_DELETE:
+		set(0);
+		return(true);
+	    }
+	    return(false);
+	}
+
+	public boolean keyup(KeyEvent ev) {
+	    if(grab == null)
+		return(super.keyup(ev));
+	    switch(ev.getKeyCode()) {
+	    case KeyEvent.VK_SHIFT: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
+	    case KeyEvent.VK_META: case KeyEvent.VK_WINDOWS:
+		grab.remove();
+		grab = null;
+		set(nmatch);
+		return(true);
+	    }
+	    return(true);
+	}
+
+	public boolean keydown(KeyEvent ev) {
+	    if(grab == null)
+		return(super.keydown(ev));
+	    switch(ev.getKeyCode()) {
+	    case KeyEvent.VK_SHIFT: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
+	    case KeyEvent.VK_META: case KeyEvent.VK_WINDOWS:
+		nmatch |= (mods(ev) & mask);
+		return(true);
+	    }
+	    if(handle(ev)) {
+		grab.remove();
+		grab = null;
+	    }
+	    return(true);
+	}
+    }
 }
