@@ -91,6 +91,25 @@ public class RenderTree implements RenderList.Adapter {
 	public Pipe group(int g) {return(groups[g]);}
 	public int gstate(int id) {return((id < gstates.length) ? gstates[id] : -1);}
 	public int nstates() {return(gstates.length);}
+
+	public String toString() {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append("#<tree-state (");
+	    for(int i = 0; i < gstates.length; i++) {
+		if(i > 0)
+		    buf.append(' ');
+		buf.append(gstates[i]);
+	    }
+	    buf.append(")");
+	    for(int i = 0; i < groups.length; i++) {
+		buf.append(' ');
+		buf.append(i);
+		buf.append('=');
+		buf.append(groups[i]);
+	    }
+	    buf.append(">");
+	    return(buf.toString());
+	}
     }
 
     public static class DepInfo {
@@ -193,6 +212,30 @@ public class RenderTree implements RenderList.Adapter {
 	    return(true);
 	}
 	*/
+
+	public String toString() {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append("#<depinfo");
+	    for(int i = 0; i < states.length; i++) {
+		if(def[i]) {
+		    buf.append(' ');
+		    buf.append(i);
+		    buf.append('=');
+		    buf.append(states[i]);
+		}
+	    }
+	    buf.append(" deps=(");
+	    for(int i = 0, n = 0; i < states.length; i++) {
+		if(deps[i]) {
+		    if(n == 0)
+			buf.append(' ');
+		    buf.append(i);
+		    n++;
+		}
+	    }
+	    buf.append(")>");
+	    return(buf.toString());
+	}
     }
 
     public static class DepPipe implements Pipe {
@@ -634,6 +677,10 @@ public class RenderTree implements RenderList.Adapter {
 
 	    public State[] states() {
 		throw(new UnsupportedOperationException("SlotPipe::states"));
+	    }
+
+	    public String toString() {
+		return(String.valueOf(dstate()));
 	    }
 	}
 
