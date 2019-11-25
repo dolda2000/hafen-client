@@ -29,14 +29,14 @@ package haven;
 import java.util.*;
 
 public class Fightview extends Widget {
-    static Tex bg = Resource.loadtex("gfx/hud/bosq");
-    static int height = 5;
-    static int ymarg = 5;
-    static int width = 165;
-    static Coord avasz = new Coord(27, 27);
-    static Coord cavac = new Coord(width - Avaview.dasz.x - 10, 10);
-    static Coord cgivec = new Coord(cavac.x - 35, cavac.y);
-    public LinkedList<Relation> lsrel = new LinkedList<Relation>();
+    public static final Tex bg = Resource.loadtex("gfx/hud/bosq");
+    public static final int height = 5;
+    public static final int ymarg = 5;
+    public static final int width = 165;
+    public static final Coord avasz = new Coord(27, 27);
+    public static final Coord cavac = new Coord(width - Avaview.dasz.x - 10, 10);
+    public static final Coord cgivec = new Coord(cavac.x - 35, cavac.y);
+    public final LinkedList<Relation> lsrel = new LinkedList<Relation>();
     public Relation current = null;
     public Indir<Resource> blk, batk, iatk;
     public double atkc = -1;

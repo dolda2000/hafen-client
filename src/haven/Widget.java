@@ -668,13 +668,15 @@ public class Widget {
 	    }
 	} else if(msg == "gk") {
 	    if(args[0] instanceof Integer) {
-		gkey = gkeymatch((Integer)args[0]);
-	    } else if(args[0] instanceof String) {
-		KeyMatch key = gkeymatch((Integer)args[1]);
-		int modign = 0;
-		if(args.length > 2)
-		    modign = (Integer)args[2];
-		kb_gkey = KeyBinding.get("wgk/" + (String)args[0], key, modign);
+		KeyMatch key = gkeymatch((Integer)args[0]);
+		if(args.length > 1) {
+		    int modign = 0;
+		    if(args.length > 2)
+			modign = (Integer)args[2];
+		    kb_gkey = KeyBinding.get("wgk/" + (String)args[1], key, modign);
+		} else {
+		    gkey = key;
+		}
 	    }
 	} else {
 	    System.err.println("Unhandled widget message: " + msg);
@@ -964,6 +966,14 @@ public class Widget {
 	}
     }
     
+    public <T> T getchild(Class<T> cl) {
+	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
+	    if(cl.isInstance(wdg))
+		return(cl.cast(wdg));
+	}
+	return(null);
+    }
+
     @Deprecated
     public <T extends Widget> T findchild(Class<T> cl) {
 	for(Widget wdg = child; wdg != null; wdg = wdg.next) {

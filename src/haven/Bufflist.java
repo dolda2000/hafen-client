@@ -30,29 +30,41 @@ import java.util.*;
 import java.awt.Color;
 
 public class Bufflist extends Widget {
-    static final int margin = 2;
-    static final int num = 5;
+    public static final int margin = 2;
+    public static final int num = 5;
+
+    public interface Managed {
+	public void move(Coord c, double off);
+    }
 
     private void arrange(Widget imm) {
-	int i = 0;
+	int i = 0, rn = 0, x = 0, y = 0, maxh = 0;
 	Coord br = new Coord();
-	Collection<Pair<Buff, Coord>> mv = new ArrayList<>();
+	Collection<Pair<Managed, Coord>> mv = new ArrayList<>();
 	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
-	    if(!(wdg instanceof Buff))
+	    if(!(wdg instanceof Managed))
 		continue;
-	    Buff ch = (Buff)wdg;
-	    Coord c = new Coord((Buff.cframe.sz().x + margin) * (i % num), (Buff.cframe.sz().y + margin) * (i / num));
+	    Managed ch = (Managed)wdg;
+	    Coord c = new Coord(x, y);
 	    if(ch == imm)
-		ch.c = c;
+		wdg.c = c;
 	    else
 		mv.add(new Pair<>(ch, c));
 	    i++;
-	    if(c.x > br.x) br.x = c.x;
-	    if(c.y > br.y) br.y = c.y;
+	    x += wdg.sz.x + margin;
+	    maxh = Math.max(maxh, wdg.sz.y);
+	    if(++rn >= num) {
+		x = 0;
+		y += maxh + margin;
+		maxh = 0;
+		rn = 0;
+	    }
+	    if(c.x + wdg.sz.x > br.x) br.x = c.x + wdg.sz.x;
+	    if(c.y + wdg.sz.y > br.y) br.y = c.y + wdg.sz.y;
 	}
-	resize(br.add(Buff.cframe.sz()));
+	resize(br);
 	double off = 1.0 / mv.size(), coff = 0.0;
-	for(Pair<Buff, Coord> p : mv) {
+	for(Pair<Managed, Coord> p : mv) {
 	    p.a.move(p.b, coff);
 	    coff += off;
 	}
@@ -68,6 +80,11 @@ public class Bufflist extends Widget {
     }
 
     public void draw(GOut g) {
-	draw(g, false);
+	for(Widget wdg = child, next; wdg != null; wdg = next) {
+	    next = wdg.next;
+	    if(!wdg.visible || !(wdg instanceof Managed))
+		continue;
+	    wdg.draw(g.reclipl(xlate(wdg.c, true), wdg.sz));
+	}
     }
 }

@@ -192,7 +192,8 @@ public class GOut {
 
     public void line(Coord c1, Coord c2, double w) {
 	usestate(new States.LineWidth(w));
-	float[] data = {c1.x + tx.x, c1.y + tx.y, c2.x + tx.x, c2.y + tx.y};
+	float[] data = {c1.x + tx.x + 0.5f, c1.y + tx.y + 0.5f,
+			c2.x + tx.x + 0.5f, c2.y + tx.y + 0.5f};
 	drawp(Model.Mode.LINES, data);
     }
 
