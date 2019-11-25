@@ -177,12 +177,16 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	}
 
 	public void itrim(int idx) {
-	    boolean vu = attr.iupdate(idx);
+	    boolean vu = attr.itrim(idx);
 	    ninst = Math.min(ninst, idx);
 	    if(vu)
 		vertupdate();
 	    if(vu || ((model != null) && (model.ninst != ninst)))
 		modupdate(true);
+	}
+
+	public void commit(Render g) {
+	    attr.commit(g);
 	}
 
 	public void dispose() {

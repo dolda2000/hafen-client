@@ -37,7 +37,9 @@ public class Fightview extends Widget {
     static Coord cavac = new Coord(width - Avaview.dasz.x - 10, 10);
     static Coord cgivec = new Coord(cavac.x - 35, cavac.y);
     static Coord cpursc = new Coord(cavac.x - 75, cgivec.y + 35);
-    public LinkedList<Relation> lsrel = new LinkedList<Relation>();
+    public final LinkedList<Relation> lsrel = new LinkedList<Relation>();
+    public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
+    public final Map<Long, Widget> obinfo = new HashMap<>();
     public Relation current = null;
     public Indir<Resource> blk, batk, iatk;
     public double atkcs, atkct;
@@ -46,7 +48,6 @@ public class Fightview extends Widget {
     private GiveButton curgive;
     private Avaview curava;
     private Button curpurs;
-    public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
     
     public class Relation {
         public final long gobid;
