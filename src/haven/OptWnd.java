@@ -229,6 +229,13 @@ public class OptWnd extends Window {
 	    y = addbtn(cont, "Take screenshot", GameUI.kb_shoot, y);
 	    y = addbtn(cont, "Toggle UI", GameUI.kb_hide, y);
 	    y += 10;
+	    cont.adda(new Label("Camera control"), cont.sz.x / 2, y, 0.5, 0); y += 20;
+	    y = addbtn(cont, "Rotate left", MapView.kb_camleft, y);
+	    y = addbtn(cont, "Rotate right", MapView.kb_camright, y);
+	    y = addbtn(cont, "Zoom in", MapView.kb_camin, y);
+	    y = addbtn(cont, "Zoom out", MapView.kb_camout, y);
+	    y = addbtn(cont, "Reset", MapView.kb_camreset, y);
+	    y += 10;
 	    cont.adda(new Label("Walking speed"), cont.sz.x / 2, y, 0.5, 0); y += 20;
 	    y = addbtn(cont, "Increase speed", Speedget.kb_speedup, y);
 	    y = addbtn(cont, "Decrease speed", Speedget.kb_speeddn, y);

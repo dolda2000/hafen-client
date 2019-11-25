@@ -306,7 +306,7 @@ public class KeyMatch {
 	private UI.Grab grab = null;
 
 	public ModCapture(int w, int mask, int match) {
-	    super(w, modname(match));
+	    super(w, modname(match), false);
 	    this.mask = mask;
 	    this.match = match;
 	}

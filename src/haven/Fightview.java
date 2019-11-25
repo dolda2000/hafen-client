@@ -29,14 +29,14 @@ package haven;
 import java.util.*;
 
 public class Fightview extends Widget {
-    static Tex bg = Resource.loadtex("gfx/hud/bosq");
-    static int height = 5;
-    static int ymarg = 5;
-    static int width = 165;
-    static Coord avasz = new Coord(27, 27);
-    static Coord cavac = new Coord(width - Avaview.dasz.x - 10, 10);
-    static Coord cgivec = new Coord(cavac.x - 35, cavac.y);
-    static Coord cpursc = new Coord(cavac.x - 75, cgivec.y + 35);
+    public static final Tex bg = Resource.loadtex("gfx/hud/bosq");
+    public static final int height = 5;
+    public static final int ymarg = 5;
+    public static final int width = 165;
+    public static final Coord avasz = new Coord(27, 27);
+    public static final Coord cavac = new Coord(width - Avaview.dasz.x - 10, 10);
+    public static final Coord cgivec = new Coord(cavac.x - 35, cavac.y);
+    public static final Coord cpursc = new Coord(cavac.x - 75, cgivec.y + 35);
     public final LinkedList<Relation> lsrel = new LinkedList<Relation>();
     public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
     public final Map<Long, Widget> obinfo = new HashMap<>();
@@ -55,9 +55,11 @@ public class Fightview extends Widget {
 	public final GiveButton give;
 	public final Button purs;
 	public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
+	public final Bufflist relbuffs = add(new Bufflist()); {relbuffs.hide();}
 	public int ip, oip;
 	public Indir<Resource> lastact = null;
 	public double lastuse = 0;
+	public boolean invalid = false;
         
         public Relation(long gobid) {
             this.gobid = gobid;
@@ -82,6 +84,9 @@ public class Fightview extends Widget {
 	    ui.destroy(ava);
 	    ui.destroy(give);
 	    ui.destroy(purs);
+	    ui.destroy(buffs);
+	    ui.destroy(relbuffs);
+	    invalid = true;
 	}
 
 	public void use(Indir<Resource> act) {
@@ -114,9 +119,44 @@ public class Fightview extends Widget {
 	    else
 		p = getrel((Integer)args[1]).buffs;
 	    p.addchild(child);
+	} else if(args[0].equals("relbuff")) {
+	    getrel((Integer)args[1]).relbuffs.addchild(child);
 	} else {
 	    super.addchild(child, args);
 	}
+    }
+
+    /* XXX? It's a bit ugly that there's no trimming of obinfo, but
+     * it's not obvious that one really ever wants it trimmed, and
+     * it's really not like it uses a lot of memory. */
+    public Widget obinfo(long gobid, boolean creat) {
+	synchronized(obinfo) {
+	    Widget ret = obinfo.get(gobid);
+	    if((ret == null) && creat)
+		obinfo.put(gobid, ret = new AWidget());
+	    return(ret);
+	}
+    }
+
+    public <T extends Widget> T obinfo(long gobid, Class<T> cl, boolean creat) {
+	Widget cnt = obinfo(gobid, creat);
+	if(cnt == null)
+	    return(null);
+	T ret = cnt.getchild(cl);
+	if((ret == null) && creat) {
+	    try {
+		ret = Utils.construct(cl.getConstructor());
+	    } catch(NoSuchMethodException e) {
+		throw(new RuntimeException(e));
+	    }
+	    cnt.add(ret);
+	}
+	return(ret);
+    }
+
+    public static interface ObInfo {
+	public default int prio() {return(1000);}
+	public default Coord2d grav() {return(new Coord2d(0, 1));}
     }
 
     private void setcur(Relation rel) {
@@ -144,6 +184,15 @@ public class Fightview extends Widget {
 	super.destroy();
     }
     
+    public void tick(double dt) {
+	super.tick(dt);
+	for(Relation rel : lsrel) {
+	    Widget inf = obinfo(rel.gobid, false);
+	    if(inf != null)
+		inf.tick(dt);
+	}
+    }
+
     public void draw(GOut g) {
         int y = 10;
 	if(curava != null)
