@@ -273,6 +273,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	return(opt);
     }
 
+    private final BMap<String, Window> wndids = new HashBMap<String, Window>();
+
     public void addchild(Widget child, Object... args) {
 	String place = ((String)args[0]).intern();
 	if(place == "mapview") {
@@ -350,15 +352,36 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    buffs.addchild(child);
 	} else if(place == "misc") {
 	    Coord c;
-	    if(args[1] instanceof Coord) {
-		c = (Coord)args[1];
-	    } else if(args[1] instanceof Coord2d) {
-		c = ((Coord2d)args[1]).mul(new Coord2d(this.sz.sub(child.sz))).round();
+	    int a = 1;
+	    if(args[a] instanceof Coord) {
+		c = (Coord)args[a++];
+	    } else if(args[a] instanceof Coord2d) {
+		c = ((Coord2d)args[a++]).mul(new Coord2d(this.sz.sub(child.sz))).round();
 		c = optplacement(child, c);
-	    } else if(args[1] instanceof String) {
-		c = relpos((String)args[1], child, (args.length > 2) ? ((Object[])args[2]) : new Object[] {}, 0);
+	    } else if(args[a] instanceof String) {
+		c = relpos((String)args[a++], child, (args.length > a) ? ((Object[])args[a++]) : new Object[] {}, 0);
 	    } else {
 		throw(new UI.UIException("Illegal gameui child", place, args));
+	    }
+	    while(a < args.length) {
+		Object opt = args[a++];
+		if(opt instanceof Object[]) {
+		    Object[] opta = (Object[])opt;
+		    switch((String)opta[0]) {
+		    case "id":
+			String wndid = (String)opta[1];
+			if(child instanceof Window) {
+			    c = Utils.getprefc(String.format("wndc-misc/%s", (String)opta[1]), c);
+			    if(!wndids.containsKey(wndid)) {
+				c = fitwdg(child, c);
+				wndids.put(wndid, (Window)child);
+			    } else {
+				c = optplacement(child, c);
+			    }
+			}
+			break;
+		    }
+		}
 	    }
 	    add(child, c);
 	} else if(place == "abt") {
@@ -367,8 +390,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    throw(new UI.UIException("Illegal gameui child", place, args));
 	}
     }
-    
+
     public void cdestroy(Widget w) {
+	if(w instanceof Window) {
+	    String wndid = wndids.reverse().get((Window)w);
+	    if(wndid != null) {
+		wndids.remove(wndid);
+		Utils.setprefc(String.format("wndc-misc/%s", wndid), w.c);
+	    }
+	}
 	if(w instanceof GItem) {
 	    for(Iterator<DraggedItem> i = hand.iterator(); i.hasNext();) {
 		DraggedItem di = i.next();
@@ -489,15 +519,21 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	super.wdgmsg(sender, msg, args);
     }
 
+    private Coord fitwdg(Widget wdg, Coord c) {
+	Coord ret = new Coord(c);
+	if(ret.x < 0)
+	    ret.x = 0;
+	if(ret.y < 0)
+	    ret.y = 0;
+	if(ret.x + wdg.sz.x > sz.x)
+	    ret.x = sz.x - wdg.sz.x;
+	if(ret.y + wdg.sz.y > sz.y)
+	    ret.y = sz.y - wdg.sz.y;
+	return(ret);
+    }
+
     private void fitwdg(Widget wdg) {
-	if(wdg.c.x < 0)
-	    wdg.c.x = 0;
-	if(wdg.c.y < 0)
-	    wdg.c.y = 0;
-	if(wdg.c.x + wdg.sz.x > sz.x)
-	    wdg.c.x = sz.x - wdg.sz.x;
-	if(wdg.c.y + wdg.sz.y > sz.y)
-	    wdg.c.y = sz.y - wdg.sz.y;
+	wdg.c = fitwdg(wdg, wdg.c);
     }
 
     public static final KeyBinding kb_inv = KeyBinding.get("inv", KeyMatch.forcode(KeyEvent.VK_TAB, 0));
