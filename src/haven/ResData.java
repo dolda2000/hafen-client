@@ -41,6 +41,10 @@ public class ResData {
 	return(new ResData(res, sdt));
     }
 
+    public int hashCode() {
+	return(Objects.hash(res, sdt));
+    }
+
     public boolean equals(Object other) {
 	if(!(other instanceof ResData))
 	    return(false);
