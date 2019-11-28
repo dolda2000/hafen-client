@@ -281,30 +281,31 @@ public class CharWnd extends Window {
     public static class Constipations extends Listbox<Constipations.El> {
 	public static final Color hilit = new Color(255, 255, 0, 48);
 	public static final Text.Foundry elf = attrf;
+	public static final int elh = elf.height() + 2;
 	public static final Convolution tflt = new Hanning(1);
 	public static final Color buffed = new Color(160, 255, 160), full = new Color(250, 230, 64), none = new Color(250, 19, 43);
 	public final List<El> els = new ArrayList<El>();
 	private Integer[] order = {};
 
-	public static class El {
-	    public static final int h = elf.height() + 2;
-	    public final Indir<Resource> t;
+	public class El {
+	    public final ResData t;
 	    public double a;
 	    private Tex tt, at;
 	    private boolean hl;
 
-	    public El(Indir<Resource> t, double a) {this.t = t; this.a = a;}
+	    public El(ResData t, double a) {this.t = t; this.a = a;}
 	    public void update(double a) {this.a = a; at = null;}
 
 	    public Tex tt() {
 		if(tt == null) {
-		    BufferedImage img = t.get().layer(Resource.imgc).img;
-		    String nm = t.get().layer(Resource.tooltip).t;
+		    ItemSpec spec = new ItemSpec(OwnerContext.uictx.curry(ui), t, null);
+		    BufferedImage img = spec.image();
+		    String nm = spec.name();
 		    Text rnm = elf.render(nm);
-		    BufferedImage buf = TexI.mkbuf(new Coord(El.h + 5 + rnm.sz().x, h));
+		    BufferedImage buf = TexI.mkbuf(new Coord(elh + 5 + rnm.sz().x, elh));
 		    Graphics g = buf.getGraphics();
-		    g.drawImage(convolvedown(img, new Coord(h, h), tflt), 0, 0, null);
-		    g.drawImage(rnm.img, h + 5, ((h - rnm.sz().y) / 2) + 1, null);
+		    g.drawImage(convolvedown(img, new Coord(elh, elh), tflt), 0, 0, null);
+		    g.drawImage(rnm.img, elh + 5, ((elh - rnm.sz().y) / 2) + 1, null);
 		    g.dispose();
 		    tt = new TexI(buf);
 		}
@@ -361,7 +362,7 @@ public class CharWnd extends Window {
 	};
 
 	public Constipations(int w, int h) {
-	    super(w, h, El.h);
+	    super(w, h, elh);
 	}
 
 	protected void drawbg(GOut g) {}
@@ -376,7 +377,7 @@ public class CharWnd extends Window {
 		g.image(el.tt(), Coord.z);
 	    } catch(Loading e) {}
 	    Tex at = el.at();
-	    g.image(at, new Coord(sz.x - at.sz().x - sb.sz.x, (El.h - at.sz().y) / 2));
+	    g.image(at, new Coord(sz.x - at.sz().x - sb.sz.x, (elh - at.sz().y) / 2));
 	}
 
 	private void order() {
@@ -391,11 +392,11 @@ public class CharWnd extends Window {
 		});
 	}
 
-	public void update(Indir<Resource> t, double a) {
+	public void update(ResData t, double a) {
 	    prev: {
 		for(Iterator<El> i = els.iterator(); i.hasNext();) {
 		    El el = i.next();
-		    if(el.t != t)
+		    if(!Utils.eq(el.t, t))
 			continue;
 		    if(a == 1.0)
 			i.remove();
@@ -2233,7 +2234,9 @@ public class CharWnd extends Window {
 	} else if(nm == "const") {
 	    int a = 0;
 	    while(a < args.length) {
-		Indir<Resource> t = ui.sess.getres((Integer)args[a++]);
+		ResData t = new ResData(ui.sess.getres((Integer)args[a++]), MessageBuf.nil);
+		if(args[a] instanceof byte[])
+		    t.sdt = new MessageBuf((byte[])args[a++]);
 		double m = ((Number)args[a++]).doubleValue();
 		cons.update(t, m);
 	    }
