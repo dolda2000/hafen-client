@@ -5,7 +5,6 @@ haven/TexMSE.java
 haven/FBConfig.java
 haven/ActAudio.java
 haven/ShadowMap.java
-haven/DirCam.java
 haven/GBuffer.java
 haven/HavenApplet.java
 haven/LocationCam.java
