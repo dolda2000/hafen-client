@@ -32,18 +32,23 @@ import java.awt.Color;
 import java.awt.image.*;
 
 public class FoodInfo extends ItemInfo.Tip {
-    public final double end, glut;
+    public final double end, glut, cons;
     public final Event[] evs;
     public final Effect[] efs;
     public final int[] types;
 
-    public FoodInfo(Owner owner, double end, double glut, Event[] evs, Effect[] efs, int[] types) {
+    public FoodInfo(Owner owner, double end, double glut, double cons, Event[] evs, Effect[] efs, int[] types) {
 	super(owner);
 	this.end = end;
 	this.glut = glut;
+	this.cons = cons;
 	this.evs = evs;
 	this.efs = efs;
 	this.types = types;
+    }
+
+    public FoodInfo(Owner owner, double end, double glut, Event[] evs, Effect[] efs, int[] types) {
+	this(owner, end, glut, 0, evs, efs, types);
     }
 
     public static class Event {
@@ -66,7 +71,10 @@ public class FoodInfo extends ItemInfo.Tip {
     }
 
     public BufferedImage tipimg() {
-	BufferedImage base = RichText.render(String.format("Energy: $col[128,128,255]{%s%%}, Hunger: $col[255,192,128]{%s%%}", Utils.odformat2(end * 100, 2), Utils.odformat2(glut * 100, 2)), 0).img;
+	String head = String.format("Energy: $col[128,128,255]{%s%%}, Hunger: $col[255,192,128]{%s%%}", Utils.odformat2(end * 100, 2), Utils.odformat2(glut * 100, 2));
+	if(cons != 0)
+	    head += String.format(", Satiation: $col[192,192,128]{%s%%}", Utils.odformat2(cons * 100, 2));
+	BufferedImage base = RichText.render(head, 0).img;
 	Collection<BufferedImage> imgs = new LinkedList<BufferedImage>();
 	imgs.add(base);
 	for(int i = 0; i < evs.length; i++) {
