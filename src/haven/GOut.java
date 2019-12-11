@@ -434,13 +434,32 @@ public class GOut {
     }
 
     public static void getimage(Render g, Texture.Image<?> img, Consumer<BufferedImage> cb) {
-	g.pget(img, new VectorFormat(4, NumberFormat.UNORM8), data -> {
-		Coord sz = new Coord(img.w, img.h);
-		byte[] pbuf = new byte[sz.x * sz.y * 4];
-		data.get(pbuf);
-		WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
-		cb.accept(new BufferedImage(TexI.glcm, raster, false, null));
-	    });
+	if(img.tex.ifmt.cf == NumberFormat.DEPTH) {
+	    g.pget(img, new VectorFormat(1, NumberFormat.FLOAT32), data -> {
+		    FloatBuffer fdat = data.asFloatBuffer();
+		    Coord sz = new Coord(img.w, img.h);
+		    byte[] pbuf = new byte[sz.x * sz.y * 4];
+		    for(int y = 0, soff = 0, doff = 0; y < sz.y; y++) {
+			for(int x = 0; x < sz.x; x++, soff++, doff += 4) {
+			    Color rgb = Color.getHSBColor(fdat.get(soff), 1, 1);
+			    pbuf[doff + 0] = (byte)rgb.getRed();
+			    pbuf[doff + 1] = (byte)rgb.getGreen();
+			    pbuf[doff + 2] = (byte)rgb.getBlue();
+			    pbuf[doff + 3] = (byte)255;
+			}
+		    }
+		    WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
+		    cb.accept(new BufferedImage(TexI.glcm, raster, false, null));
+		});
+	} else {
+	    g.pget(img, new VectorFormat(4, NumberFormat.UNORM8), data -> {
+		    Coord sz = new Coord(img.w, img.h);
+		    byte[] pbuf = new byte[sz.x * sz.y * 4];
+		    data.get(pbuf);
+		    WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
+		    cb.accept(new BufferedImage(TexI.glcm, raster, false, null));
+		});
+	}
     }
 
     public void getimage(Texture.Image<?> img, Consumer<BufferedImage> cb) {
