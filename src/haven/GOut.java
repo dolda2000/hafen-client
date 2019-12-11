@@ -441,7 +441,12 @@ public class GOut {
 		    byte[] pbuf = new byte[sz.x * sz.y * 4];
 		    for(int y = 0, soff = 0, doff = 0; y < sz.y; y++) {
 			for(int x = 0; x < sz.x; x++, soff++, doff += 4) {
-			    Color rgb = Color.getHSBColor(fdat.get(soff), 1, 1);
+			    float raw = fdat.get(soff);
+			    Color rgb;
+			    if(raw < 0.5)
+				rgb = Color.getHSBColor(raw * 2, 1, 1);
+			    else
+				rgb = Color.getHSBColor((raw * 2) - 1, 0.5f, 1);
 			    pbuf[doff + 0] = (byte)rgb.getRed();
 			    pbuf[doff + 1] = (byte)rgb.getGreen();
 			    pbuf[doff + 2] = (byte)rgb.getBlue();
