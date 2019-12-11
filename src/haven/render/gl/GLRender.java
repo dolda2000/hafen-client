@@ -426,7 +426,7 @@ public class GLRender implements Render, Disposable {
 	gl.glReadPixels(area.ul.x, gly, sz.x, sz.y, GLTexture.texefmt1(fmt, fmt), GLTexture.texefmt2(fmt, fmt), 0);
 	gl.bglCreate(new GLFence(env, cgl -> {
 		    cgl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pbo.glid());
-		    ByteBuffer data = Utils.mkbbuf(fmt.size() * area.area());
+		    ByteBuffer data = Utils.mkbbuf(fmt.size() * area.area()).order(ByteOrder.nativeOrder());
 		    cgl.glGetBufferSubData(GL2.GL_PIXEL_PACK_BUFFER, 0, fmt.size() * area.area(), data);
 		    cgl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
 		    pbo.dispose();
@@ -436,9 +436,10 @@ public class GLRender implements Render, Disposable {
 		     * flipping on the dispatch thread, but OpenGL
 		     * does not seem to offer any GPU-assisted
 		     * flipping. */
+		    int el = fmt.size();
 		    for(int y = 0; y < sz.y / 2; y++) {
-			int to = y * sz.x * 4, bo = (sz.y - y - 1) * sz.x * 4;
-			for(int o = 0; o < sz.x * 4; o++, to++, bo++) {
+			int to = y * sz.x * el, bo = (sz.y - y - 1) * sz.x * el;
+			for(int o = 0; o < sz.x * el; o++, to++, bo++) {
 			    byte t = data.get(to);
 			    data.put(to, data.get(bo));
 			    data.put(bo, t);
@@ -462,14 +463,20 @@ public class GLRender implements Render, Disposable {
 	    GLTexture.Tex2D tex = env.prepare((Texture2D)img.tex);
 	    gl.glActiveTexture(GL.GL_TEXTURE0);
 	    tex.bind(gl);
-	    gl.glGetTexImage(GL2.GL_TEXTURE_2D, img.level, GLTexture.texefmt1(fmt, fmt), GLTexture.texefmt2(fmt, fmt), 0);
+	    if(img.tex.ifmt.cf == NumberFormat.DEPTH) {
+		if(fmt.nc != 1)
+		    throw(new IllegalArgumentException(String.format("externalformat components != 1 for depth texture: %s", fmt)));
+		gl.glGetTexImage(GL2.GL_TEXTURE_2D, img.level, GL2.GL_DEPTH_COMPONENT, GLTexture.texefmt2(fmt, fmt), 0);
+	    } else {
+		gl.glGetTexImage(GL2.GL_TEXTURE_2D, img.level, GLTexture.texefmt1(fmt, fmt), GLTexture.texefmt2(fmt, fmt), 0);
+	    }
 	    tex.unbind(gl);
 	} else {
 	    throw(new NotImplemented("texture-get for " + img.tex.getClass()));
 	}
 	gl.bglCreate(new GLFence(env, cgl -> {
 		    cgl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, pbo.glid());
-		    ByteBuffer data = Utils.mkbbuf(dsz);
+		    ByteBuffer data = Utils.mkbbuf(dsz).order(ByteOrder.nativeOrder());
 		    cgl.glGetBufferSubData(GL2.GL_PIXEL_PACK_BUFFER, 0, dsz, data);
 		    cgl.glBindBuffer(GL2.GL_PIXEL_PACK_BUFFER, 0);
 		    pbo.dispose();
@@ -480,9 +487,10 @@ public class GLRender implements Render, Disposable {
 		     * does not seem to offer any GPU-assisted
 		     * flipping. */
 		    if(img.d == 1) {
+			int el = fmt.size();
 			for(int y = 0; y < img.h / 2; y++) {
-			    int to = y * img.w * 4, bo = (img.h - y - 1) * img.w * 4;
-			    for(int o = 0; o < img.w * 4; o++, to++, bo++) {
+			    int to = y * img.w * el, bo = (img.h - y - 1) * img.w * el;
+			    for(int o = 0; o < img.w * el; o++, to++, bo++) {
 				byte t = data.get(to);
 				data.put(to, data.get(bo));
 				data.put(bo, t);
