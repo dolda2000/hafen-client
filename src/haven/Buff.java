@@ -231,6 +231,7 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
 	} else if(msg == "tt") {
 	    info = null;
 	    rawinfo = new ItemInfo.Raw(args);
+	    shorttip = longtip = null;
 	} else if(msg == "tip") {
 	    String tt = (String)args[0];
 	    this.tt = tt.equals("") ? null : tt;
