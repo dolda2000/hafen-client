@@ -41,6 +41,7 @@ public abstract class PView extends Widget {
     private final Light.LightList lights = new Light.LightList();
     private final ScreenList list2d = new ScreenList();
     private final TickList ticklist = new TickList();
+    protected InstanceList instancer;
     protected DrawList back = null;
     private Sampler2D fragsamp;
 
@@ -177,25 +178,32 @@ public abstract class PView extends Widget {
 	ticklist.gtick(g.out);
 	if((back == null) || !back.compatible(g.out.env())) {
 	    if(back != null) {
+		tree.remove(instancer);
 		back.dispose();
-		tree.remove(back);
+		instancer.dispose();
 	    }
 	    back = g.out.env().drawlist();
-	    back.asyncadd(tree, Rendered.class);
+	    instancer = new InstanceList(back);
+	    instancer.asyncadd(tree, Rendered.class);
 	}
 	lights();
 	FColor cc = clearcolor();
 	if(cc != null)
 	    g.out.clear(basic.state(), FragColor.fragcol, cc);
 	g.out.clear(basic.state(), 1.0);
-	back.draw(g.out);
+	try(Locked lk = tree.lock()) {
+	    instancer.commit(g.out);
+	    back.draw(g.out);
+	}
 	resolve(g);
 	list2d.draw(g);
     }
 
     public void dispose() {
-	if(back != null)
+	if(back != null) {
 	    back.dispose();
+	    instancer.dispose();
+	}
 	super.dispose();
     }
 
