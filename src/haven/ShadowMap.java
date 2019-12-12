@@ -28,127 +28,210 @@ package haven;
 
 import java.util.*;
 import javax.media.opengl.*;
-import haven.glsl.*;
-import haven.GLProgram.VarID;
-import static haven.glsl.Cons.*;
-import static haven.glsl.Function.PDir.*;
-import static haven.glsl.Type.*;
+import haven.render.*;
+import haven.render.sl.*;
+import java.awt.image.*;
+import haven.render.DataBuffer;
+import static haven.render.sl.Cons.*;
+import static haven.render.sl.Function.PDir.*;
+import static haven.render.sl.Type.*;
 
-public class ShadowMap extends GLState implements GLState.GlobalState, GLState.Global {
-    public final static Slot<ShadowMap> smap = new Slot<ShadowMap>(Slot.Type.DRAW, ShadowMap.class, Light.lighting);
-    public DirLight light;
-    public final TexE lbuf;
+public class ShadowMap extends State {
+    public final static Slot<ShadowMap> smap = new Slot<ShadowMap>(Slot.Type.DRAW, ShadowMap.class);
+    public final Texture2D lbuf;
+    public final Texture2D.Sampler2D lsamp;
     private final Projection lproj;
-    private final DirCam lcam;
-    private final FBView tgt;
+    private final Pipe.Op basic;
+    private DirLight light;
+    private Camera lcam;
+    private Pipe.Op curbasic;
     private final static Matrix4f texbias = new Matrix4f(0.5f, 0.0f, 0.0f, 0.5f,
 							 0.0f, 0.5f, 0.0f, 0.5f,
 							 0.0f, 0.0f, 0.5f, 0.5f,
 							 0.0f, 0.0f, 0.0f, 1.0f);
     private final List<RenderList.Slot> parts = new ArrayList<RenderList.Slot>();
-    private int slidx;
-    private Matrix4f txf;
 
     public ShadowMap(Coord res, float size, float depth, float dthr) {
-	lbuf = new TexE(res, GL2.GL_DEPTH_COMPONENT, GL2.GL_DEPTH_COMPONENT, GL.GL_UNSIGNED_INT);
-	lbuf.magfilter = GL.GL_LINEAR;
-	lbuf.wrapmode = GL2.GL_CLAMP;
+	lbuf = new Texture2D(res, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null);
+	(lsamp = new Texture2D.Sampler2D(lbuf)).magfilter(Texture.Filter.LINEAR).wrapmode(Texture.Wrapping.CLAMP);
 	shader = new Shader(1.0 / res.x, 1.0 / res.y, 4, dthr / depth);
 	lproj = Projection.ortho(-size, size, -size, size, 1, depth);
-	lcam = new DirCam();
-	tgt = new FBView(new GLFrameBuffer((TexGL)null, lbuf), GLState.compose(lproj, lcam));
+	basic = Pipe.Op.compose(new DepthBuffer<>(lbuf.image(0)),
+				new States.Viewport(Area.sized(Coord.z, res)),
+				lproj);
     }
 
-    private final Rendered scene = new Rendered() {
-	    public void draw(GOut g) {}
-
-	    public boolean setup(RenderList rl) {
-		GLState.Buffer buf = new GLState.Buffer(rl.cfg);
-		for(RenderList.Slot s : parts) {
-		    rl.state().copy(buf);
-		    s.os.copy(buf, GLState.Slot.Type.GEOM);
-		    rl.add2(s.r, buf);
-		}
-		return(false);
-	    }
-	};
-
     public void setpos(Coord3f base, Coord3f dir) {
+	DirCam lcam = new DirCam();
 	lcam.update(base, dir);
+	this.lcam = lcam;
+	curbasic = Pipe.Op.compose(ShadowList.shadowbasic, basic, lcam);
     }
 
     public void dispose() {
 	lbuf.dispose();
-	tgt.dispose();
     }
 
-    public void prerender(RenderList rl, GOut g) {
-	parts.clear();
-	Light.LightList ll = null;
-	Camera cam = null;
-	for(RenderList.Slot s : rl.slots()) {
-	    if(!s.d)
-		continue;
-	    if((s.os.get(smap) != this) || (s.os.get(Light.lighting) == null))
-		continue;
-	    if(ll == null) {
-		PView.RenderState rs = s.os.get(PView.wnd);
-		cam = s.os.get(PView.cam);
-		ll = s.os.get(Light.lights);
-	    }
-	    parts.add(s);
+    public static class ShadowList implements RenderList<Rendered>, RenderList.Adapter, Disposable {
+	public static final Pipe.Op shadowbasic = Pipe.Op.compose(new States.Depthtest(States.Depthtest.Test.LE),
+								  new States.Facecull(),
+								  Homo3D.state);
+	private final RenderList.Adapter master;
+	private final ProxyPipe basic = new ProxyPipe();
+	private final Map<Slot<? extends Rendered>, Shadowslot> slots = new HashMap<>();
+	private DrawList back = null;
+	private DefPipe curbasic = null;
+
+	public ShadowList(RenderList.Adapter master) {
+	    asyncadd(this.master = master, Rendered.class);
 	}
 
-	slidx = -1;
-	if((ll != null) && (cam != null)) {
-	    for(int i = 0; i < ll.ll.size(); i++) {
-		if(ll.ll.get(i) == light) {
-		    slidx = i;
-		    break;
+	public class Shadowslot implements Slot<Rendered>, GroupPipe {
+	    static final int idx_bas = 0, idx_back = 1;
+	    public final Slot<? extends Rendered> bk;
+
+	    public Shadowslot(Slot<? extends Rendered> bk) {
+		this.bk = bk;
+	    }
+
+	    public Rendered obj() {
+		return(bk.obj());
+	    }
+
+	    public GroupPipe state() {
+		return(this);
+	    }
+
+	    public Pipe group(int idx) {
+		switch(idx) {
+		case idx_bas: return(basic);
+		default: return(bk.state().group(idx - idx_back));
 		}
 	    }
-	    Matrix4f cm = Transform.rxinvert(cam.fin(Matrix4f.id));
-	    /*
-	      txf = cm;
-	      barda(txf);
-	      txf = lcam.fin(Matrix4f.id).mul(txf);
-	      barda(txf);
-	      txf = lproj.fin(Matrix4f.id).mul(txf);
-	      barda(txf);
-	      txf = texbias.mul(txf);
-	      barda(txf);
-	    */
-	    txf = texbias
-		.mul(lproj.fin(Matrix4f.id))
-		.mul(lcam.fin(Matrix4f.id))
-		.mul(cm);
-	    tgt.render(scene, g);
+
+	    public int gstate(int id) {
+		if(State.Slot.byid(id).type == State.Slot.Type.GEOM) {
+		    int ret = bk.state().gstate(id);
+		    if(ret >= 0)
+			return(ret + idx_back);
+		}
+		if((id < curbasic.mask.length) && curbasic.mask[id])
+		    return(idx_bas);
+		return(-1);
+	    }
+
+	    public int nstates() {
+		return(Math.max(bk.state().nstates(), curbasic.mask.length));
+	    }
+	}
+
+	public void add(Slot<? extends Rendered> slot) {
+	    Shadowslot ns = new Shadowslot(slot);
+	    if(back != null)
+		back.add(ns);
+	    if((slots.put(slot, ns)) != null)
+		throw(new AssertionError());
+	}
+
+	public void remove(Slot<? extends Rendered> slot) {
+	    Shadowslot cs = slots.remove(slot);
+	    if(cs != null) {
+		if(back != null)
+		    back.remove(cs);
+	    }
+	}
+
+	public void update(Slot<? extends Rendered> slot) {
+	    if(back != null) {
+		Shadowslot cs = slots.get(slot);
+		if(cs != null) {
+		    back.update(cs);
+		}
+	    }
+	}
+
+	public void update(Pipe group, int[] statemask) {
+	    if(back != null)
+		back.update(group, statemask);
+	}
+
+	public Locked lock() {
+	    return(master.lock());
+	}
+
+	public Iterable<? extends Slot<?>> slots() {
+	    return(slots.values());
+	}
+
+	/* Shouldn't have to care. */
+	public <R> void add(RenderList<R> list, Class<? extends R> type) {}
+	public void remove(RenderList<?> list) {}
+
+	public void basic(Pipe.Op st) {
+	    try(Locked lk = lock()) {
+		DefPipe buf = new DefPipe();
+		buf.prep(st);
+		if(curbasic != null) {
+		    if(curbasic.maskdiff(buf).length != 0)
+			throw(new RuntimeException("changing shadowlist basic definition mask is not supported"));
+		}
+		int[] mask = basic.dupdate(buf);
+		curbasic = buf;
+		if(back != null)
+		    back.update(basic, mask);
+	    }
+	}
+
+	public void draw(Render out) {
+	    if((back == null) || !back.compatible(out.env())) {
+		if(back != null)
+		    back.dispose();
+		back = out.env().drawlist();
+		back.asyncadd(this, Rendered.class);
+	    }
+	    back.draw(out);
+	}
+
+	public void dispose() {
+	    if(back != null)
+		back.dispose();
 	}
     }
 
-    /*
-      static void barda(Matrix4f m) {
-      float[] a = m.mul4(new float[] {0, 0, 0, 1});
-      System.err.println(String.format("(%f, %f, %f, %f)", a[0], a[1], a[2], a[3]));
-      }
-    */
-
-    public Global global(RenderList rl, Buffer ctx) {return(this);}
-
-    public void postsetup(RenderList rl) {}
-    public void postrender(RenderList rl, GOut g) {
-	/* g.image(lbuf, Coord.z, g.sz); */
+    public void light(DirLight light) {
+	this.light = light;
     }
 
-    public void prep(Buffer buf) {
+    public void update(Render out, ShadowList data) {
+	Pipe bstate = new BufPipe().prep(curbasic);
+	out.clear(bstate, 1.0);
+	data.basic(curbasic);
+	data.draw(out);
+    }
+
+    public void apply(Pipe buf) {
 	buf.put(smap, this);
     }
 
     public static class Shader implements ShaderMacro {
-	public static final Uniform txf = new Uniform(MAT4), sl = new Uniform(INT), map = new Uniform(SAMPLER2D);
+	public static final Uniform txf = new Uniform(MAT4, p -> {
+		ShadowMap sm = p.get(smap);
+		Matrix4f cm = Transform.rxinvert(p.get(Homo3D.cam).fin(Matrix4f.id));
+		Matrix4f txf = texbias.mul(sm.lproj.fin(Matrix4f.id)).mul(sm.lcam.fin(Matrix4f.id)).mul(cm);
+		return(txf);
+	    }, smap, Homo3D.cam);
+	public static final Uniform sl = new Uniform(INT, p -> {
+		DirLight light = p.get(smap).light;
+		Light.LightList lights = p.get(Light.lights);
+		int idx = -1;
+		if(light != null)
+		    idx = lights.index(light);
+		return(idx);
+	    }, smap, Light.lights);
+	public static final Uniform map = new Uniform(SAMPLER2D, p -> p.get(smap).lsamp, smap);
 	public static final AutoVarying stc = new AutoVarying(VEC4) {
 		public Expression root(VertexContext vctx) {
-		    return(mul(txf.ref(), vctx.eyev.depref()));
+		    return(mul(txf.ref(), Homo3D.get(vctx.prog).eyev.depref()));
 		}
 	    };
 
@@ -198,31 +281,4 @@ public class ShadowMap extends GLState implements GLState.GlobalState, GLState.G
     public final Shader shader;
 
     public ShaderMacro shader() {return(shader);}
-
-    private TexUnit sampler;
-
-    public void apply(GOut g) {
-	sampler = g.st.texalloc();
-	BGL gl = g.gl;
-	sampler.act(g);
-	gl.glBindTexture(GL.GL_TEXTURE_2D, lbuf.glid(g));
-	reapply(g);
-    }
-
-    public void reapply(GOut g) {
-	BGL gl = g.gl;
-	VarID mapu = g.st.prog.cuniform(Shader.map);
-	if(mapu != null) {
-	    gl.glUniform1i(mapu, sampler.id);
-	    gl.glUniformMatrix4fv(g.st.prog.uniform(Shader.txf), 1, false, txf.m, 0);
-	    gl.glUniform1i(g.st.prog.uniform(Shader.sl), slidx);
-	}
-    }
-
-    public void unapply(GOut g) {
-	BGL gl = g.gl;
-	sampler.act(g);
-	gl.glBindTexture(GL.GL_TEXTURE_2D, null);
-	sampler.free(); sampler = null;
-    }
 }
