@@ -474,6 +474,57 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
     }
 
     @SuppressWarnings("unchecked")
+    private void add0(Slot<? extends Rendered> slot, InstKey key, boolean prevsole, InstancedSlot previnst) {
+	Object cur = instreg.get(key);
+	if(cur == null) {
+	    if(prevsole)
+		back.update(slot);
+	    else
+		back.add(slot);
+	    if(previnst != null)
+		remove0(previnst, islotmap.get(slot), true);
+	    instreg.put(key, slot);
+	    uslotmap.put(slot, key);
+	    nuinst++;
+	} else if(cur instanceof InstancedSlot) {
+	    InstancedSlot curbat = (InstancedSlot)cur;
+	    InstancedSlot.Instance prev = null;
+	    if(previnst != null)
+		prev = islotmap.get(slot);
+	    curbat.add(slot, previnst);
+	    if(prevsole)
+		back.remove(slot);
+	    if(previnst != null)
+		remove0(previnst, prev, false);
+	    uslotmap.put(slot, curbat.key);
+	    ninst++;
+	} else if(cur instanceof Slot) {
+	    Slot<? extends Rendered> cs = (Slot<? extends Rendered>)cur;
+	    InstKey curkey = uslotmap.get(cs);
+	    if(!curkey.equals(key))
+		throw(new AssertionError());
+	    InstancedSlot ni = new InstancedSlot(curkey, new Slot[] {cs, slot});
+	    try {
+		back.add(ni);
+	    } catch(RuntimeException e) {
+		ni.dispose();
+		throw(e);
+	    }
+	    back.remove(cs);
+	    if(prevsole)
+		back.remove(slot);
+	    if(previnst != null)
+		remove0(previnst, islotmap.get(slot), true);
+	    instreg.put(curkey, ni);
+	    uslotmap.put(slot, curkey);
+	    ni.register();
+	    nuinst--; nbatches++; ninst++;
+	} else {
+	    throw(new AssertionError());
+	}
+    }
+
+    @SuppressWarnings("unchecked")
     public void add(Slot<? extends Rendered> slot) {
 	if(!(slot.obj() instanceof Instancable)) {
 	    back.add(slot);
@@ -495,44 +546,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    return;
 	}
 	synchronized(this) {
-	    Object cur = instreg.get(key);
-	    if(cur == null) {
-		back.add(slot);
-		instreg.put(key, slot);
-		uslotmap.put(slot, key);
-		nuinst++;
-	    } else if(cur instanceof InstancedSlot) {
-		InstancedSlot curbat = (InstancedSlot)cur;
-		curbat.add(slot, null);
-		uslotmap.put(slot, curbat.key);
-		ninst++;
-	    } else if(cur instanceof Slot) {
-		Slot<? extends Rendered> cs = (Slot<? extends Rendered>)cur;
-		InstKey curkey = uslotmap.get(cs);
-		if(!curkey.equals(key))
-		    throw(new AssertionError());
-		InstancedSlot ni = new InstancedSlot(curkey, new Slot[] {cs, slot});
-		back.remove(cs);
-		try {
-		    back.add(ni);
-		} catch(RuntimeException e) {
-		    ni.dispose();
-		    try {
-			back.add(cs);
-		    } catch(RuntimeException e2) {
-			Error err = new Error("Unexpected non-local exit", e2);
-			err.addSuppressed(e);
-			throw(err);
-		    }
-		    throw(e);
-		}
-		instreg.put(curkey, ni);
-		uslotmap.put(slot, curkey);
-		ni.register();
-		nuinst--; nbatches++; ninst++;
-	    } else {
-		throw(new AssertionError());
-	    }
+	    add0(slot, key, false, null);
 	}
     }
 
@@ -590,57 +604,6 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	}
     }
 
-    @SuppressWarnings("unchecked")
-    private void update0(Slot<? extends Rendered> slot, InstKey key, boolean prevsole, InstancedSlot previnst) {
-	Object cur = instreg.get(key);
-	if(cur == null) {
-	    if(prevsole)
-		back.update(slot);
-	    else
-		back.add(slot);
-	    if(previnst != null)
-		remove0(previnst, islotmap.get(slot), true);
-	    instreg.put(key, slot);
-	    uslotmap.put(slot, key);
-	    nuinst++;
-	} else if(cur instanceof InstancedSlot) {
-	    InstancedSlot curbat = (InstancedSlot)cur;
-	    InstancedSlot.Instance prev = null;
-	    if(previnst != null)
-		prev = islotmap.get(slot);
-	    curbat.add(slot, previnst);
-	    if(prevsole)
-		back.remove(slot);
-	    if(previnst != null)
-		remove0(previnst, prev, false);
-	    uslotmap.put(slot, curbat.key);
-	    ninst++;
-	} else if(cur instanceof Slot) {
-	    Slot<? extends Rendered> cs = (Slot<? extends Rendered>)cur;
-	    InstKey curkey = uslotmap.get(cs);
-	    if(!curkey.equals(key))
-		throw(new AssertionError());
-	    InstancedSlot ni = new InstancedSlot(curkey, new Slot[] {cs, slot});
-	    try {
-		back.add(ni);
-	    } catch(RuntimeException e) {
-		ni.dispose();
-		throw(e);
-	    }
-	    back.remove(cs);
-	    if(prevsole)
-		back.remove(slot);
-	    if(previnst != null)
-		remove0(previnst, islotmap.get(slot), true);
-	    instreg.put(curkey, ni);
-	    uslotmap.put(slot, curkey);
-	    ni.register();
-	    nuinst--; nbatches++; ninst++;
-	} else {
-	    throw(new AssertionError());
-	}
-    }
-
     public void update(Slot<? extends Rendered> slot) {
 	if(!(slot.obj() instanceof Instancable)) {
 	    back.update(slot);
@@ -652,7 +615,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    if(prevkey == null) {
 		/* throw(new IllegalStateException("updating non-present slot")); */
 		if(key.valid()) {
-		    update0(slot, key, true, null);
+		    add0(slot, key, true, null);
 		    ninvalid--;
 		} else {
 		    back.update(slot);
@@ -667,7 +630,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		if(key.equals(prevkey)) {
 		    b.update(slot);
 		} else {
-		    update0(slot, key, false, b);
+		    add0(slot, key, false, b);
 		}
 	    } else if(prev instanceof Slot) {
 		if(prev != slot)
@@ -675,7 +638,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		if(key.equals(prevkey)) {
 		    back.update(slot);
 		} else {
-		    update0(slot, key, true, null);
+		    add0(slot, key, true, null);
 		    instreg.remove(prevkey);
 		    nuinst--;
 		}

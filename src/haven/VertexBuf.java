@@ -37,6 +37,7 @@ public class VertexBuf {
     public final AttribData[] bufs;
     public final int num;
     private VertexArray data = null;
+    private VertexArray.Buffer dbuf = null;
 
     public VertexBuf(AttribData... bufs) {
 	AttribData[] na = new AttribData[bufs.length];
@@ -93,7 +94,8 @@ public class VertexBuf {
 
     protected VertexArray fmtdata() {
 	Layout fmt = fmtfor(bufs);
-	return(new VertexArray(fmt, new VertexArray.Buffer(fmt.inputs[0].stride * num, DataBuffer.Usage.STATIC, this::fill)).shared());
+	this.dbuf = new VertexArray.Buffer(fmt.inputs[0].stride * num, DataBuffer.Usage.STATIC, this::fill).shared();
+	return(new VertexArray(fmt, dbuf).shared());
     }
 
     public VertexArray data() {
@@ -280,7 +282,9 @@ public class VertexBuf {
 	synchronized(this) {
 	    if(data != null) {
 		data.dispose();
+		dbuf.dispose();
 		data = null;
+		dbuf = null;
 	    }
 	}
     }

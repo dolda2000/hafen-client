@@ -438,6 +438,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	gobs.slot.remove();
 	clmaplist.dispose();
 	clobjlist.dispose();
+	if(smap != null) {
+	    smap.dispose();
+	    slist.dispose();
+	}
 	super.dispose();
     }
 
@@ -778,17 +782,27 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
     */
 
-    /* XXXRENDER
     private Coord3f smapcc = null;
+    private ShadowMap.ShadowList slist = null;
     private ShadowMap smap = null;
     private double lsmch = 0;
-    private void updsmap(RenderList rl, DirLight light) {
-	if(rl.cfg.pref.lshadow.val) {
-	    if(smap == null)
+    private void updsmap(DirLight light) {
+	boolean usesdw = true; // XXXRENDER
+	if(usesdw) {
+	    Coord3f dir, cc;
+	    try {
+		dir = new Coord3f(-light.dir[0], -light.dir[1], -light.dir[2]);
+		cc = getcc();
+	    } catch(Loading l) {
+		return;
+	    }
+	    boolean insert = false;
+	    if(smap == null) {
+		slist = new ShadowMap.ShadowList(tree);
 		smap = new ShadowMap(new Coord(2048, 2048), 750, 5000, 1);
-	    smap.light = light;
-	    Coord3f dir = new Coord3f(-light.dir[0], -light.dir[1], -light.dir[2]);
-	    Coord3f cc = getcc();
+		insert = true;
+	    }
+	    smap.light(light);
 	    cc.y = -cc.y;
 	    boolean ch = false;
 	    double now = Utils.rtime();
@@ -803,15 +817,22 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		smap.setpos(smapcc.add(dir.neg().mul(1000f)), dir);
 		lsmch = now;
 	    }
-	    rl.prepc(smap);
+	    if(insert)
+		basic(ShadowMap.class, smap);
 	} else {
-	    if(smap != null)
-		smap.dispose();
-	    smap = null;
+	    if(smap != null) {
+		smap.dispose(); smap = null;
+		slist.dispose(); slist = null;
+		basic(ShadowMap.class, null);
+	    }
 	    smapcc = null;
 	}
     }
-    */
+
+    private void drawsmap(Render out) {
+	if(smap != null)
+	    smap.update(out, slist);
+    }
 
     public DirLight amblight = null;
     private RenderTree.Slot s_amblight = null;
@@ -1375,6 +1396,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(camload != null)
 		throw(new Loading(camload));
 	    undelay(delayed, g);
+	    drawsmap(g.out);
 	    super.draw(g);
 	    undelay(delayed2, g);
 	    poldraw(g);
@@ -1411,6 +1433,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	basic(Camera.class, camera);
 	amblight();
+	updsmap(amblight);
 	updweather();
 	terrain.tick();
 	clickmap.tick();

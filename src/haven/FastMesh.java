@@ -135,7 +135,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	    for(int i = 0; i < sdat.bufs.length; i++)
 		bufs[i] = sdat.bufs[i];
 	    bufs[sdat.bufs.length] = ibuf;
-	    return(new VertexArray(this.fmt, bufs));
+	    return(new VertexArray(this.fmt, bufs).shared());
 	}
 
 	private Instanced(InstanceBatch bat) {
