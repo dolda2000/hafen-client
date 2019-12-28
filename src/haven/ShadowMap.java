@@ -49,7 +49,6 @@ public class ShadowMap extends State {
 							 0.0f, 0.5f, 0.0f, 0.5f,
 							 0.0f, 0.0f, 0.5f, 0.5f,
 							 0.0f, 0.0f, 0.0f, 1.0f);
-    private final List<RenderList.Slot> parts = new ArrayList<RenderList.Slot>();
 
     public ShadowMap(Coord res, float size, float depth, float dthr) {
 	lbuf = new Texture2D(res, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null);
@@ -61,11 +60,15 @@ public class ShadowMap extends State {
 				lproj);
     }
 
-    public void setpos(Coord3f base, Coord3f dir) {
-	DirCam lcam = new DirCam();
-	lcam.update(base, dir);
-	this.lcam = lcam;
-	curbasic = Pipe.Op.compose(ShadowList.shadowbasic, basic, lcam);
+    private ShadowMap(ShadowMap that) {
+	this.lbuf     = that.lbuf;
+	this.lsamp    = that.lsamp;
+	this.shader   = that.shader;
+	this.lproj    = that.lproj;
+	this.basic    = that.basic;
+	this.light    = that.light;
+	this.lcam     = that.lcam;
+	this.curbasic = that.curbasic;
     }
 
     public void dispose() {
@@ -172,8 +175,12 @@ public class ShadowMap extends State {
 		DefPipe buf = new DefPipe();
 		buf.prep(st);
 		if(curbasic != null) {
-		    if(curbasic.maskdiff(buf).length != 0)
+		    int[] mask = curbasic.maskdiff(buf);
+		    if(mask.length != 0) {
+			for(int id : mask)
+			    System.err.println(State.Slot.byid(id));
 			throw(new RuntimeException("changing shadowlist basic definition mask is not supported"));
+		    }
 		}
 		int[] mask = basic.dupdate(buf);
 		curbasic = buf;
@@ -198,8 +205,23 @@ public class ShadowMap extends State {
 	}
     }
 
-    public void light(DirLight light) {
-	this.light = light;
+    public ShadowMap light(DirLight light) {
+	if(light == this.light)
+	    return(this);
+	ShadowMap ret = new ShadowMap(this);
+	ret.light = light;
+	return(ret);
+    }
+
+    public ShadowMap setpos(Coord3f base, Coord3f dir) {
+	DirCam lcam = new DirCam();
+	lcam.update(base, dir);
+	if(Utils.eq(this.lcam, lcam))
+	    return(this);
+	ShadowMap ret = new ShadowMap(this);
+	ret.lcam = lcam;
+	ret.curbasic = Pipe.Op.compose(ShadowList.shadowbasic, ret.basic, lcam);
+	return(ret);
     }
 
     public void update(Render out, ShadowList data) {
