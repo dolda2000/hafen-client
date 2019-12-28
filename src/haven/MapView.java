@@ -393,14 +393,18 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	setcanfocus(true);
     }
     
+    protected void envdispose() {
+	if(smap != null) {
+	    smap.dispose(); smap = null;
+	    slist.dispose(); slist = null;
+	}
+	super.envdispose();
+    }
+
     public void dispose() {
 	gobs.slot.remove();
 	clmaplist.dispose();
 	clobjlist.dispose();
-	if(smap != null) {
-	    smap.dispose();
-	    slist.dispose();
-	}
 	super.dispose();
     }
 
@@ -747,7 +751,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	    boolean insert = false;
 	    if(smap == null) {
-		slist = new ShadowMap.ShadowList(tree);
+		slist = new ShadowMap.ShadowList(instancer);
 		smap = new ShadowMap(new Coord(2048, 2048), 750, 5000, 1);
 		insert = true;
 	    }
