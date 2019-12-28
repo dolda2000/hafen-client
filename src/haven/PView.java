@@ -41,6 +41,7 @@ public abstract class PView extends Widget {
     private final Light.LightList lights = new Light.LightList();
     private final ScreenList list2d = new ScreenList();
     private final TickList ticklist = new TickList();
+    protected Environment env = null;
     protected InstanceList instancer;
     protected DrawList back = null;
     private Sampler2D fragsamp;
@@ -174,17 +175,28 @@ public abstract class PView extends Widget {
     public void add(PostProcessor post) {ctx.add(post);}
     public void remove(PostProcessor post) {ctx.remove(post);}
 
+    protected void envsetup() {
+	back = env.drawlist();
+	instancer = new InstanceList(tree);
+	instancer.add(back, Rendered.class);
+	instancer.asyncadd(tree, Rendered.class);
+    }
+
+    protected void envdispose() {
+	tree.remove(instancer);
+	back.dispose(); back = null;
+	instancer.dispose(); instancer = null;
+    }
+
     public void draw(GOut g) {
 	ticklist.gtick(g.out);
 	if((back == null) || !back.compatible(g.out.env())) {
-	    if(back != null) {
-		tree.remove(instancer);
-		back.dispose();
-		instancer.dispose();
+	    if(env != null) {
+		envdispose();
+		env = null;
 	    }
-	    back = g.out.env().drawlist();
-	    instancer = new InstanceList(back);
-	    instancer.asyncadd(tree, Rendered.class);
+	    env = g.out.env();
+	    envsetup();
 	}
 	lights();
 	FColor cc = clearcolor();
@@ -200,9 +212,9 @@ public abstract class PView extends Widget {
     }
 
     public void dispose() {
-	if(back != null) {
-	    back.dispose();
-	    instancer.dispose();
+	if(env != null) {
+	    envdispose();
+	    env = null;
 	}
 	super.dispose();
     }
