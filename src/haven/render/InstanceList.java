@@ -543,7 +543,7 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 	    instreg.put(curkey, ni);
 	    uslotmap.put(slot, curkey);
 	    ni.register();
-	    nuinst--; nbatches++; ninst++;
+	    nuinst--; nbatches++; ninst += 2;
 	} else {
 	    throw(new AssertionError());
 	}
