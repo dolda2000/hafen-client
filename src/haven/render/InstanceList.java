@@ -704,16 +704,15 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
     public Iterable<Slot<?>> slots() {
 	return(new Iterable<Slot<?>>() {
 		public Iterator<Slot<?>> iterator() {
-		    return(new Iterator<Slot<?>>() {
-			    public boolean hasNext() {
-				/* XXX */
-				return(false);
-			    }
-
-			    public Slot<?> next() {
-				throw(new NoSuchElementException());
-			    }
-			});
+		    Collection<Slot<?>> ret = new ArrayList<>();
+		    for(Object slot : instreg.values()) {
+			ret.add((Slot<?>)slot);
+		    }
+		    for(Slot<?> slot : master.slots()) {
+			if(!uslotmap.containsKey(slot))
+			    ret.add(slot);
+		    }
+		    return(ret.iterator());
 		}
 	    });
     }
