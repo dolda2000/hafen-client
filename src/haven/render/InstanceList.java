@@ -33,8 +33,9 @@ import haven.render.Rendered.Instancable;
 import haven.render.Rendered.Instanced;
 import haven.render.State.Instancer;
 
-public class InstanceList implements RenderList<Rendered>, Disposable {
-    private final RenderList<Rendered> back;
+public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, Disposable {
+    private final List<RenderList<Rendered>> clients = new ArrayList<>();
+    private final Adapter master;
     private final Map<InstKey, Object> instreg = new HashMap<>();
     private final Map<Slot<? extends Rendered>, InstKey> uslotmap = new IdentityHashMap<>();
     private final Map<Slot<? extends Rendered>, InstancedSlot.Instance> islotmap = new IdentityHashMap<>();
@@ -459,7 +460,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 
 	private void commit(Render g) {
 	    if(backdirty) {
-		back.update(this);
+		clupdate(this);
 		backdirty = false;
 	    }
 	    if(selfdirty) {
@@ -469,8 +470,32 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	}
     }
 
-    public InstanceList(RenderList<Rendered> back) {
-	this.back = back;
+    private void cladd(Slot<? extends Rendered> slot) {
+	synchronized(clients) {
+	    clients.forEach(cl -> cl.add(slot));
+	}
+    }
+
+    private void clremove(Slot<? extends Rendered> slot) {
+	synchronized(clients) {
+	    clients.forEach(cl -> cl.remove(slot));
+	}
+    }
+
+    private void clupdate(Slot<? extends Rendered> slot) {
+	synchronized(clients) {
+	    clients.forEach(cl -> cl.update(slot));
+	}
+    }
+
+    private void clupdate(Pipe group, int[] mask) {
+	synchronized(clients) {
+	    clients.forEach(cl -> cl.update(group, mask));
+	}
+    }
+
+    public InstanceList(Adapter master) {
+	this.master = master;
     }
 
     @SuppressWarnings("unchecked")
@@ -478,9 +503,9 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	Object cur = instreg.get(key);
 	if(cur == null) {
 	    if(prevsole)
-		back.update(slot);
+		clupdate(slot);
 	    else
-		back.add(slot);
+		cladd(slot);
 	    if(previnst != null)
 		remove0(previnst, islotmap.get(slot), true);
 	    instreg.put(key, slot);
@@ -493,7 +518,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		prev = islotmap.get(slot);
 	    curbat.add(slot, previnst);
 	    if(prevsole)
-		back.remove(slot);
+		clremove(slot);
 	    if(previnst != null)
 		remove0(previnst, prev, false);
 	    uslotmap.put(slot, curbat.key);
@@ -505,20 +530,20 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		throw(new AssertionError());
 	    InstancedSlot ni = new InstancedSlot(curkey, new Slot[] {cs, slot});
 	    try {
-		back.add(ni);
+		cladd(ni);
 	    } catch(RuntimeException e) {
 		ni.dispose();
 		throw(e);
 	    }
-	    back.remove(cs);
+	    clremove(cs);
 	    if(prevsole)
-		back.remove(slot);
+		clremove(slot);
 	    if(previnst != null)
 		remove0(previnst, islotmap.get(slot), true);
 	    instreg.put(curkey, ni);
 	    uslotmap.put(slot, curkey);
 	    ni.register();
-	    nuinst--; nbatches++; ninst++;
+	    nuinst--; nbatches++; ninst += 2;
 	} else {
 	    throw(new AssertionError());
 	}
@@ -527,7 +552,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
     @SuppressWarnings("unchecked")
     public void add(Slot<? extends Rendered> slot) {
 	if(!(slot.obj() instanceof Instancable)) {
-	    back.add(slot);
+	    cladd(slot);
 	    nbypass++;
 	    return;
 	}
@@ -541,7 +566,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	     * technically break anything, however; it should just
 	     * mean that they can't be re-instantiated if their instid
 	     * only changes in-pipe. */
-	    back.add(slot);
+	    cladd(slot);
 	    ninvalid++;
 	    return;
 	}
@@ -554,7 +579,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	b.remove(inst);
 	if(b.ni < 1) {
 	    dirty.remove(b);
-	    back.remove(b);
+	    clremove(b);
 	    b.unregister();
 	    b.dispose();
 	    if(instreg.remove(b.key) != b)
@@ -569,7 +594,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
     @SuppressWarnings("unchecked")
     public void remove(Slot<? extends Rendered> slot) {
 	if(!(slot.obj() instanceof Instancable)) {
-	    back.remove(slot);
+	    clremove(slot);
 	    nbypass--;
 	    return;
 	}
@@ -580,7 +605,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		/* XXX: Register a marker object in uslotmap and bring
 		 * back the above assertion? */
 		ninvalid--;
-		back.remove(slot);
+		clremove(slot);
 		if(new InstKey(slot).valid())
 		    System.err.println("warning: removing non-present slot with valid inst-key");
 		return;
@@ -594,7 +619,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 	    } else if(cur instanceof Slot) {
 		if(cur != slot)
 		    throw(new IllegalStateException("removing non-present slot"));
-		back.remove(slot);
+		clremove(slot);
 		instreg.remove(key);
 		nuinst--;
 	    } else {
@@ -606,7 +631,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 
     public void update(Slot<? extends Rendered> slot) {
 	if(!(slot.obj() instanceof Instancable)) {
-	    back.update(slot);
+	    clupdate(slot);
 	    return;
 	}
 	InstKey key = new InstKey(slot);
@@ -618,7 +643,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		    add0(slot, key, true, null);
 		    ninvalid--;
 		} else {
-		    back.update(slot);
+		    clupdate(slot);
 		}
 		return;
 	    }
@@ -636,7 +661,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		if(prev != slot)
 		    throw(new IllegalStateException("updating non-present slot"));
 		if(key.equals(prevkey)) {
-		    back.update(slot);
+		    clupdate(slot);
 		} else {
 		    add0(slot, key, true, null);
 		    instreg.remove(prevkey);
@@ -650,7 +675,7 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 
     @SuppressWarnings("unchecked")
     public void update(Pipe group, int[] mask) {
-	back.update(group, mask);
+	clupdate(group, mask);
 	synchronized(this) {
 	    Object insts = pipemap.get(group);
 	    if(insts instanceof InstancedSlot.Instance) {
@@ -669,6 +694,41 @@ public class InstanceList implements RenderList<Rendered>, Disposable {
 		slot.commit(g);
 		i.remove();
 	    }
+	}
+    }
+
+    public Locked lock() {
+	return(master.lock());
+    }
+
+    public Iterable<Slot<?>> slots() {
+	return(new Iterable<Slot<?>>() {
+		public Iterator<Slot<?>> iterator() {
+		    Collection<Slot<?>> ret = new ArrayList<>();
+		    for(Object slot : instreg.values()) {
+			ret.add((Slot<?>)slot);
+		    }
+		    for(Slot<?> slot : master.slots()) {
+			if(!uslotmap.containsKey(slot))
+			    ret.add(slot);
+		    }
+		    return(ret.iterator());
+		}
+	    });
+    }
+
+    @SuppressWarnings("unchecked")
+    public <R> void add(RenderList<R> list, Class<? extends R> type) {
+	if(type != Rendered.class)
+	    throw(new IllegalArgumentException("instance-list can only reasonably handle rendering clients"));
+	synchronized(clients) {
+	    clients.add((RenderList<Rendered>)list);
+	}
+    }
+
+    public void remove(RenderList<?> list) {
+	synchronized(clients) {
+	    clients.remove(list);
 	}
     }
 
