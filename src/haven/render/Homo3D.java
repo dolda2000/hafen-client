@@ -178,9 +178,9 @@ public class Homo3D {
 	if(s_prj != null) c = s_prj.fin(Matrix4f.id).mul4(c);
 	float d = 1 / c[3];
 	Coord sz = view.sz();
-	return(new Coord3f(view.ul.x + ((( c[0] + 1) / 2) * sz.x),
-			   view.ul.y + (((-c[1] + 1) / 2) * sz.y),
-			   c[2]));
+	return(new Coord3f(view.ul.x + ((( (c[0] * d) + 1) / 2) * sz.x),
+			   view.ul.y + (((-(c[1] * d) + 1) / 2) * sz.y),
+			   c[2] * d));
     }
 
     public static Coord3f obj2view(Coord3f c, Pipe state) {
