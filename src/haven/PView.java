@@ -249,6 +249,10 @@ public abstract class PView extends Widget {
 	lights();
     }
 
+    protected void attached() {
+	basic(ActAudio.class, ui.audio);
+    }
+
     protected void lights() {
 	basic(Light.class, Pipe.Op.compose(lights, lights.compile()));
     }

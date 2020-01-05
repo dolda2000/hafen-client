@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import haven.render.*;
 import haven.Audio.CS;
 
 public class AudioSprite {
@@ -68,49 +69,38 @@ public class AudioSprite {
 	};
 
     public static class ClipSprite extends Sprite {
-	// public final ActAudio.PosClip clip; XXXRENDER
+	public final ActAudio.PosClip clip;
 	private boolean done = false;
 
 	public ClipSprite(Owner owner, Resource res, Resource.Audio clip) {
 	    super(owner, res);
-	    /* XXXRENDER
 	    this.clip = new ActAudio.PosClip(new Audio.Monitor(clip.stream()) {
 		    protected void eof() {
 			super.eof();
 			done = true;
 		    }
 		});
-		*/
 	}
 
-	/* XXXRENDER
-	public boolean setup(RenderList r) {
-	    r.add(clip, null);
-	    return(false);
+	public void added(RenderTree.Slot slot) {
+	    slot.add(clip);
 	}
-	*/
 
-	public boolean tick(int dt) {
+	public boolean tick(double dt) {
 	    /* XXX: This is slightly bad, because virtual sprites that
 	     * are stuck as loading (by getting outside the map, for
 	     * instance), never play and therefore never get done,
 	     * effectively leaking. For now, this is seldom a problem
-	     * because in practive most (all?) virtual audio-sprites
+	     * because in practice most (all?) virtual audio-sprites
 	     * come from Skeleton.FxTrack which memoizes its origin
 	     * instead of asking the map for it, but also see comment
 	     * in glsl.MiscLib.maploc. Solve pl0x. */
 	    return(done);
 	}
-
-	/* XXXRENDER
-	public Object staticp() {
-	    return(CONSTANS);
-	}
-	*/
     }
 
     public static class RepeatSprite extends Sprite implements Sprite.CDel {
-	// private ActAudio.PosClip clip; XXXRENDER
+	private ActAudio.PosClip clip;
 	private final Resource.Audio end;
 
 	public RepeatSprite(Owner owner, Resource res, final Resource.Audio beg, final List<Resource.Audio> clips, Resource.Audio end) {
@@ -127,65 +117,47 @@ public class AudioSprite {
 			return(clips.get((int)(Math.random() * clips.size())).stream());
 		    }
 		};
-	    // this.clip = new ActAudio.PosClip(rep); XXXRENDER
+	    this.clip = new ActAudio.PosClip(rep);
 	}
 
-	/* XXXRENDER
-	public boolean setup(RenderList r) {
+	public void added(RenderTree.Slot slot) {
 	    if(clip != null)
-		r.add(clip, null);
-	    return(false);
+		slot.add(clip);
 	}
-	*/
 
-	public boolean tick(int dt) {
-	    return(/* clip == null XXXRENDER */ false);
+	public boolean tick(double dt) {
+	    return(clip == null);
 	}
 
 	public void delete() {
-	    /* XXXRENDER
-	    if(end != null)
+	    if(end != null) {
 		clip = new ActAudio.PosClip(new Audio.Monitor(end.stream()) {
 			protected void eof() {
 			    super.eof();
 			    RepeatSprite.this.clip = null;
 			}
 		    });
-	    else
+	    } else {
 		clip = null;
-	    */
+	    }
 	}
-
-	/* XXXRENDER
-	public Object staticp() {
-	    return(CONSTANS);
-	}
-	*/
     }
 
     public static class Ambience extends Sprite {
-	// public final Rendered amb; XXXRENDER
+	public final RenderTree.Node amb;
 
 	public Ambience(Owner owner, Resource res) {
 	    super(owner, res);
 	    ClipAmbiance.Desc clamb = res.layer(ClipAmbiance.Desc.class);
-	    /* XXXRENDER
 	    if(clamb != null)
 		this.amb = clamb.spr;
 	    else
 		this.amb = new ActAudio.Ambience(res);
-	    */
 	}
 
-	/* XXXRENDER
-	public boolean setup(RenderList r) {
-	    r.add(amb, null);
-	    return(false);
+	public void added(RenderTree.Slot slot) {
+	    if(amb != null)
+		slot.add(amb);
 	}
-
-	public Object staticp() {
-	    return(CONSTANS);
-	}
-	*/
     }
 }

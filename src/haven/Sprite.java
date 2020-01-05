@@ -42,9 +42,7 @@ public abstract class Sprite implements RenderTree.Node {
 	factories.add(SkelSprite.fact);
 	factories.add(AnimSprite.fact);
 	factories.add(StaticSprite.fact);
-	/* XXXRENDER
 	factories.add(AudioSprite.fact);
-	*/
     }
 
     public interface Owner extends OwnerContext {

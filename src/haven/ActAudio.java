@@ -29,65 +29,62 @@ package haven;
 import java.util.*;
 import java.io.*;
 import java.lang.ref.WeakReference;
+import haven.render.*;
 import haven.Audio.CS;
 import haven.Audio.VolAdjust;
 
-public class ActAudio extends GLState.Abstract {
-    public static final GLState.Slot<ActAudio> slot = new GLState.Slot<ActAudio>(GLState.Slot.Type.SYS, ActAudio.class);
+public class ActAudio extends State {
+    public static final Slot<ActAudio> audio = new State.Slot<>(Slot.Type.SYS, ActAudio.class);
     public final Channel pos = new Channel("pos");
     public final Channel amb = new Channel("amb");
     private final Map<Global, Global> global = new HashMap<Global, Global>();
 
-    public void prep(Buffer st) {
-	st.put(slot, this);
+    public haven.render.sl.ShaderMacro shader() {return(null);}
+
+    public void apply(Pipe st) {
+	st.put(audio, this);
     }
 
     public class Channel {
 	public final String name;
 	public double volume;
+	private final Collection<CS> clips = new ArrayList<CS>();
 	private Audio.VolAdjust volc = null;
 	private Audio.Mixer mixer = null;
-	private final Collection<CS> clips = new ArrayList<CS>();
 
 	private Channel(String name) {
 	    this.name = name;
 	    this.volume = Double.parseDouble(Utils.getpref("sfxvol-" + name, "1.0"));
 	}
 
-	public void setvolume(double volume) {
-	    this.volume = volume;
-	    Utils.setpref("sfxvol-" + name, Double.toString(volume));
+	public Audio.Mixer mixer() {
+	    Audio.Mixer ret = this.mixer;
+	    if(ret == null) {
+		synchronized(clips) {
+		    if((ret = this.mixer) == null) {
+			this.volc = new Audio.VolAdjust(ret = this.mixer = new Audio.Mixer(true));
+			this.volc.vol = volume;
+			Audio.play(this.volc);
+		    }
+		}
+	    }
+	    return(ret);
 	}
 
-	private void cycle() {
-	    synchronized(clips) {
-		if(mixer != null) {
-		    for(CS clip : mixer.current()) {
-			if(!clips.contains(clip))
-			    mixer.stop(clip);
-		    }
-		}
-		for(CS clip : clips) {
-		    if(mixer == null) {
-			volc = new Audio.VolAdjust(mixer = new Audio.Mixer(true));
-			volc.vol = volume;
-			Audio.play(volc);
-		    }
-		    if(!mixer.playing(clip))
-			mixer.add(clip);
-		}
-		if(volc != null)
-		    volc.vol = volume;
-		clips.clear();
-	    }
+	public void setvolume(double volume) {
+	    if(volc != null)
+		volc.vol = volume;
+	    this.volume = volume;
+	    Utils.setpref("sfxvol-" + name, Double.toString(volume));
 	}
 
 	public void clear() {
 	    synchronized(clips) {
 		if(mixer != null) {
 		    Audio.stop(volc);
-		    /* XXX: More likely, cycling should be fixed so as
-		     * to not go on cycling a discarded actaudio.
+		    /* XXX? clear() should only be called once, so
+		     * ensure mixer isn't later mistakenly re-added
+		     * due to racy code still using this channel.
 		    mixer = null;
 		    volc = null;
 		    */
@@ -98,6 +95,15 @@ public class ActAudio extends GLState.Abstract {
 	public void add(CS clip) {
 	    synchronized(clips) {
 		clips.add(clip);
+		mixer().add(clip);
+	    }
+	}
+
+	public void remove(CS clip) {
+	    synchronized(clips) {
+		clips.remove(clip);
+		if(mixer != null)
+		    mixer.stop(clip);
 	    }
 	}
     }
@@ -106,9 +112,17 @@ public class ActAudio extends GLState.Abstract {
 	public boolean cycle(ActAudio list);
     }
 
-    public static class PosClip implements Rendered {
+    public static Coord3f spos(Pipe st) {
+	Coord3f pos = Coord3f.o;
+	pos = st.get(Homo3D.loc).fin(Matrix4f.id).mul4(pos);
+	pos = st.get(Homo3D.cam).fin(Matrix4f.id).mul4(pos);
+	return(pos);
+    }
+
+    public static class PosClip implements RenderTree.Node, TickList.TickNode, TickList.Ticking {
 	private final VolAdjust clip;
-	
+	private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
+
 	public PosClip(VolAdjust clip) {
 	    this.clip = clip;
 	}
@@ -116,36 +130,42 @@ public class ActAudio extends GLState.Abstract {
 	public PosClip(CS clip) {
 	    this(new VolAdjust(clip));
 	}
-	
-	public void draw(GOut g) {
-	    g.apply();
-	    ActAudio list = g.st.cur(slot);
-	    if(list != null) {
-		Coord3f pos = PView.mvxf(g).mul4(Coord3f.o);
-		double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
-		this.clip.vol = Math.min(1.0, 50.0 / pd);
-		this.clip.bal = Utils.clip(Math.atan2(pos.x, -pos.z) / (Math.PI / 8.0), -1, 1);
-		list.pos.add(clip);
-	    }
+
+	public void added(RenderTree.Slot slot) {
+	    ActAudio list = slot.state().get(audio);
+	    if(list == null)
+		return;
+	    slots.add(slot);
+	    autotick(0);
+	    list.pos.add(clip);
 	}
 
-	public boolean setup(RenderList rl) {
-	    return(true);
+	public void removed(RenderTree.Slot slot) {
+	    ActAudio list = slot.state().get(audio);
+	    if(list == null)
+		return;
+	    slots.remove(slot);
+	    list.pos.remove(clip);
+	}
+
+	public TickList.Ticking ticker() {return(this);}
+	public void autotick(double dt) {
+	    for(RenderTree.Slot slot : slots) {
+		Coord3f pos = spos(slot.state());
+		this.clip.vol = Math.min(1.0, 50.0 / Math.hypot(pos.x, pos.y));
+		this.clip.bal = Utils.clip(Math.atan2(pos.x, -pos.z) / (Math.PI / 8.0), -1, 1);
+		break;
+	    }
 	}
     }
 
-    public static class Ambience implements Rendered {
+    public static class Ambience implements RenderTree.Node {
 	public final Resource res;
 	public final double bvol;
-	private Glob glob = null;
 
 	public Ambience(Resource res, double bvol) {
-	    if(res.layer(Resource.audio, "amb") == null) {
-		/* This check is mostly just to make sure the resource
-		 * is loaded and doesn't throw Loading exception in
-		 * the setup routine. */
+	    if(res.layer(Resource.audio, "amb") == null)
 		throw(new RuntimeException("No ambient clip found in " + res));
-	    }
 	    this.res = res;
 	    this.bvol = bvol;
 	}
@@ -157,9 +177,9 @@ public class ActAudio extends GLState.Abstract {
 	public static class Glob implements Global {
 	    public final Resource res;
 	    private final VolAdjust clip;
-	    private int n;
-	    private double vacc;
+	    private final Collection<RenderList.Slot<Ambience>> active = new ArrayList<>();
 	    private double lastupd = Utils.rtime();
+	    private boolean added = false;
 	    
 	    public Glob(Resource res) {
 		this.res = res;
@@ -181,44 +201,64 @@ public class ActAudio extends GLState.Abstract {
 		return((other instanceof Glob) && (((Glob)other).res == this.res));
 	    }
 
+	    private double curvol() {
+		double acc = 0;
+		for(RenderList.Slot<Ambience> slot : active) {
+		    Coord3f pos = spos(slot.state());
+		    double bvol = slot.obj().bvol;
+		    double svol = Math.min(1.0, 50.0 / Math.hypot(pos.x, pos.y));
+		    acc += svol * bvol;
+		}
+		return(acc);
+	    }
+
 	    public boolean cycle(ActAudio list) {
 		double now = Utils.rtime();
 		double td = Math.max(now - lastupd, 0.0);
-		if(vacc < clip.vol)
-		    clip.vol = Math.max(clip.vol - (td * 0.5), 0.0);
-		else if(vacc > clip.vol)
-		    clip.vol = Math.min(clip.vol + (td * 0.5), 1.0);
-		if((n == 0) && (clip.vol < 0.005))
-		    return(true);
-		vacc = 0.0;
-		n = 0;
+		synchronized(active) {
+		    double vacc = curvol();
+		    if(vacc < clip.vol)
+			clip.vol = Math.max(clip.vol - (td * 0.5), 0.0);
+		    else if(vacc > clip.vol)
+			clip.vol = Math.min(clip.vol + (td * 0.5), 1.0);
+		    if(active.isEmpty() && (clip.vol < 0.005)) {
+			list.amb.remove(clip);
+			return(true);
+		    }
+		}
 		lastupd = now;
-		list.amb.add(clip);
+		if(!added) {
+		    list.amb.add(clip);
+		    added = true;
+		}
 		return(false);
 	    }
 
-	    public void add(double vol) {
-		vacc += vol;
-		n++;
+	    public void add(RenderList.Slot<Ambience> slot) {
+		synchronized(active) {
+		    active.add(slot);
+		}
+	    }
+
+	    public void remove(RenderList.Slot<Ambience> slot) {
+		synchronized(active) {
+		    active.remove(slot);
+		}
 	    }
 	}
 
-	public void draw(GOut g) {
-	    g.apply();
-	    if(glob == null) {
-		ActAudio list = g.st.cur(slot);
-		if(list == null)
-		    return;
-		glob = list.intern(new Glob(res));
-	    }
-	    Coord3f pos = PView.mvxf(g).mul4(Coord3f.o);
-	    double pd = Math.sqrt((pos.x * pos.x) + (pos.y * pos.y));
-	    double svol = Math.min(1.0, 50.0 / pd);
-	    glob.add(svol * bvol);
+	public void added(RenderTree.Slot slot) {
+	    ActAudio list = slot.state().get(audio);
+	    if(list == null)
+		return;
+	    list.intern(new Glob(res)).add(slot.cast(Ambience.class));
 	}
 
-	public boolean setup(RenderList rl) {
-	    return(true);
+	public void removed(RenderTree.Slot slot) {
+	    ActAudio list = slot.state().get(audio);
+	    if(list == null)
+		return;
+	    list.intern(new Glob(res)).remove(slot.cast(Ambience.class));
 	}
     }
 
@@ -236,8 +276,6 @@ public class ActAudio extends GLState.Abstract {
 	    if(glob.cycle(this))
 		i.remove();
 	}
-	pos.cycle();
-	amb.cycle();
     }
     
     public void clear() {
