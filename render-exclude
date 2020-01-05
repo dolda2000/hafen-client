@@ -3,7 +3,6 @@ haven/Tex3D.java
 haven/TexMS.java
 haven/TexMSE.java
 haven/FBConfig.java
-haven/ActAudio.java
 haven/GBuffer.java
 haven/HavenApplet.java
 haven/LocationCam.java
