@@ -728,7 +728,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			    States.maskdepth));
     }
 
-    /* XXXRENDER
     public String toString() {
 	String cc;
 	try {
@@ -736,9 +735,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	} catch(Loading l) {
 	    cc = "<nil>";
 	}
-	return(String.format("Camera[%s (%s)], Caches[%s]", cc, camera, gobs));
+	return(String.format("Camera[%s (%s)]", cc, camera));
     }
-    */
 
     private Coord3f smapcc = null;
     private ShadowMap.ShadowList slist = null;
