@@ -26,6 +26,8 @@
 
 package haven;
 
+import haven.render.*;
+
 public class LocationCam extends Camera {
     private final static Matrix4f base = makerot(new Matrix4f(), new Coord3f(0.0f, 0.0f, 1.0f), (float)(Math.PI / 2))
 	.mul1(makerot(new Matrix4f(), new Coord3f(0.0f, 1.0f, 0.0f), (float)(Math.PI / 2)));

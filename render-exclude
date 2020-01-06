@@ -5,7 +5,6 @@ haven/TexMSE.java
 haven/FBConfig.java
 haven/GBuffer.java
 haven/HavenApplet.java
-haven/LocationCam.java
 haven/resutil/EnvMap.java
 haven/rs/AvaRender.java
 haven/rs/BufView.java
