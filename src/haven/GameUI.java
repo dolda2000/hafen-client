@@ -191,26 +191,29 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private void mapbuttons() {
 	blpanel.add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims") {
 		public void click() {
-		    if((map != null) && !map.visol(0))
-			map.enol(0, 1);
-		    else
-			map.disol(0, 1);
+		    if((map != null) && !map.visol(0)) {
+			map.enol(0); map.enol(1);
+		    } else {
+			map.disol(0); map.disol(1);
+		    }
 		}
 	    }, 0, 0);
 	blpanel.add(new MenuButton("lbtn-vil", kb_vil, "Display village claims") {
 		public void click() {
-		    if((map != null) && !map.visol(2))
-			map.enol(2, 3);
-		    else
-			map.disol(2, 3);
+		    if((map != null) && !map.visol(2)) {
+			map.enol(2); map.enol(3);
+		    } else {
+			map.disol(2); map.disol(3);
+		    }
 		}
 	    }, 0, 0);
 	blpanel.add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms") {
 		public void click() {
-		    if((map != null) && !map.visol(4))
-			map.enol(4, 5);
-		    else
-			map.disol(4, 5);
+		    if((map != null) && !map.visol(4)) {
+			map.enol(4); map.enol(5);
+		    } else {
+			map.disol(4); map.disol(5);
+		    }
 		}
 	    }, 0, 0);
 	blpanel.add(new MenuButton("lbtn-map", kb_map, "Map") {
