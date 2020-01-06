@@ -119,7 +119,7 @@ public class MCache {
 	private class Cut {
 	    MapMesh mesh;
 	    Defer.Future<MapMesh> dmesh;
-	    // Rendered[] ols; XXXRENDER
+	    RenderTree.Node[] ols;
 	}
 
 	private class Flavobj extends Gob {
@@ -246,7 +246,7 @@ public class MCache {
 		    MapMesh old = cut.mesh;
 		    cut.mesh = cut.dmesh.get();
 		    cut.dmesh = null;
-		    // cut.ols = null; XXXRENDER
+		    cut.ols = null;
 		    if(old != null)
 			old.dispose();
 		}
@@ -254,13 +254,12 @@ public class MCache {
 	    return(cut.mesh);
 	}
 	
-	/* XXXRENDER
-	public Rendered getolcut(int ol, Coord cc) {
+	public RenderTree.Node getolcut(int ol, Coord cc) {
 	    int nseq = MCache.this.olseq;
 	    if(this.olseq != nseq) {
 		for(int i = 0; i < cutn.x * cutn.y; i++) {
 		    if(cuts[i].ols != null) {
-			for(Rendered r : cuts[i].ols) {
+			for(RenderTree.Node r : cuts[i].ols) {
 			    if(r instanceof Disposable)
 				((Disposable)r).dispose();
 			}
@@ -274,7 +273,6 @@ public class MCache {
 		cut.ols = getcut(cc).makeols();
 	    return(cut.ols[ol]);
 	}
-	*/
 	
 	private void buildcut(final Coord cc) {
 	    final Cut cut = geticut(cc);
@@ -343,14 +341,12 @@ public class MCache {
 		    cut.dmesh.cancel();
 		if(cut.mesh != null)
 		    cut.mesh.dispose();
-		/* XXXRENDER
 		if(cut.ols != null) {
-		    for(Rendered r : cut.ols) {
+		    for(RenderTree.Node r : cut.ols) {
 			if(r instanceof Disposable)
 			    ((Disposable)r).dispose();
 		    }
 		}
-		*/
 	    }
 	}
 
@@ -540,13 +536,11 @@ public class MCache {
 	}
     }
 
-    /* XXXRENDER
-    public Rendered getolcut(int ol, Coord cc) {
+    public RenderTree.Node getolcut(int ol, Coord cc) {
 	synchronized(grids) {
 	    return(getgrid(cc.div(cutn)).getolcut(ol, cc.mod(cutn)));
 	}
     }
-    */
 
     public void mapdata2(Message msg) {
 	Coord c = msg.coord();

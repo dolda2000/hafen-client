@@ -49,7 +49,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Collection<Delayed> delayed2 = new LinkedList<Delayed>();
     public Camera camera = restorecam();
     private Loader.Future<Plob> placing = null;
-    private int[] visol = new int[32];
+    private final Overlay[] ols = new Overlay[32];
     private Grabber grab;
     private Selector selection;
     private Coord3f camoff = new Coord3f(Coord3f.o);
@@ -450,17 +450,24 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     public boolean visol(int ol) {
-	return(visol[ol] > 0);
+	return(ols[ol] != null);
     }
 
-    public void enol(int... overlays) {
-	for(int ol : overlays)
-	    visol[ol]++;
+    public void enol(int ol) {
+	synchronized(ols) {
+	    if(ols[ol] == null)
+		basic.add(ols[ol] = new Overlay(ol));
+	    ols[ol].rc++;
+	}
     }
 	
-    public void disol(int... overlays) {
-	for(int ol : overlays)
-	    visol[ol]--;
+    public void disol(int ol) {
+	synchronized(ols) {
+	    if((ols[ol] != null) && (--ols[ol].rc <= 0)) {
+		ols[ol].remove();
+		ols[ol] = null;
+	    }
+	}
     }
 
     private final Gobs gobs;
@@ -664,6 +671,47 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
+    public class Overlay extends MapRaster {
+	final int id;
+	int rc = 0;
+
+	final Grid grid = new Grid<RenderTree.Node>() {
+		RenderTree.Node getcut(Coord cc) {
+		    return(map.getolcut(id, cc));
+		}
+	    };
+
+	private Overlay(int id) {
+	    this.id = id;
+	}
+
+	void tick() {
+	    super.tick();
+	    if(area != null) {
+		grid.tick();
+	    }
+	}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.ostate(olmats[id]);
+	    slot.add(grid);
+	    super.added(slot);
+	}
+
+	public Loading loading() {
+	    Loading ret = super.loading();
+	    if(ret != null)
+		return(ret);
+	    if((ret = grid.lastload) != null)
+		return(ret);
+	    return(null);
+	}
+
+	public void remove() {
+	    slot.remove();
+	}
+    }
+
     static class MapClick extends Clickable {
 	final MapMesh cut;
 
@@ -705,74 +753,23 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
-    /* XXXRENDER
+    private final Material[] olmats;
     {
-	visol[6] = 1;
+	olmats = new Material[32];
+	olmats[0] = olmat(255, 0, 128, 32);
+	olmats[1] = olmat(0, 0, 255, 32);
+	olmats[2] = olmat(255, 0, 0, 32);
+	olmats[3] = olmat(128, 0, 255, 32);
+	olmats[4] = olmat(255, 255, 255, 32);
+	olmats[5] = olmat(0, 255, 128, 32);
+	olmats[6] = olmat(0, 0, 0, 64);
+	olmats[16] = olmat(0, 255, 0, 32);
+	olmats[17] = olmat(255, 255, 0, 32);
     }
-    private final Rendered mapol = new Rendered() {
-	    private final GLState[] mats;
-	    {
-		mats = new GLState[32];
-		mats[0] = olmat(255, 0, 128, 32);
-		mats[1] = olmat(0, 0, 255, 32);
-		mats[2] = olmat(255, 0, 0, 32);
-		mats[3] = olmat(128, 0, 255, 32);
-		mats[4] = olmat(255, 255, 255, 32);
-		mats[5] = olmat(0, 255, 128, 32);
-		mats[6] = olmat(0, 0, 0, 64);
-		mats[16] = olmat(0, 255, 0, 32);
-		mats[17] = olmat(255, 255, 0, 32);
-	    }
 
-	    private GLState olmat(int r, int g, int b, int a) {
-		return(new Material(Light.deflight,
-				    new Material.Colors(Color.BLACK, new Color(0, 0, 0, a), Color.BLACK, new Color(r, g, b, 255), 0),
-				    States.presdepth));
-	    }
-
-	    public void draw(GOut g) {}
-
-	    public boolean setup(RenderList rl) {
-		Coord cc = MapView.this.cc.floor(tilesz).div(MCache.cutsz);
-		Coord o = new Coord();
-		for(o.y = -view; o.y <= view; o.y++) {
-		    for(o.x = -view; o.x <= view; o.x++) {
-			Coord2d pc = cc.add(o).mul(MCache.cutsz).mul(tilesz);
-			for(int i = 0; i < visol.length; i++) {
-			    if(mats[i] == null)
-				continue;
-			    if(visol[i] > 0) {
-				Rendered olcut;
-				olcut = glob.map.getolcut(i, cc.add(o));
-				if(olcut != null)
-				    rl.add(olcut, GLState.compose(Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0)), mats[i]));
-			    }
-			}
-		    }
-		}
-		return(false);
-	    }
-	};
-    
-    void addgob(RenderList rl, final Gob gob) {
-	GLState xf;
-	try {
-	    xf = Following.xf(gob);
-	} catch(Loading e) {
-	    xf = null;
-	}
-	GLState extra = null;
-	if(xf == null) {
-	    xf = gob.loc;
-	    try {
-		Coord3f c = gob.getc();
-		Tiler tile = glob.map.tiler(glob.map.gettile(new Coord2d(c).floor(tilesz)));
-		extra = tile.drawstate(glob, rl.cfg, c);
-	    } catch(Loading e) {
-		extra = null;
-	    }
-	}
-	rl.add(gob, GLState.compose(extra, xf, gob.olmod, gob.save));
+    private Material olmat(int r, int g, int b, int a) {
+	return(new Material(new BaseColor(r, g, b, a),
+			    States.maskdepth));
     }
 
     public String toString() {
@@ -782,9 +779,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	} catch(Loading l) {
 	    cc = "<nil>";
 	}
-	return(String.format("Camera[%s (%s)], Caches[%s]", cc, camera, gobs));
+	return(String.format("Camera[%s (%s)]", cc, camera));
     }
-    */
 
     private Coord3f smapcc = null;
     private ShadowMap.ShadowList slist = null;
@@ -1437,6 +1433,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	updsmap(amblight);
 	updweather();
 	terrain.tick();
+	for(int i = 0; i < ols.length; i++) {
+	    if(ols[i] != null)
+		ols[i].tick();
+	}
 	clickmap.tick();
 	Loader.Future<Plob> placing = this.placing;
 	if((placing != null) && placing.done())
@@ -1516,9 +1516,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private double olftimer;
 
     private void unflashol() {
-	for(int i = 0; i < visol.length; i++) {
+	for(int i = 0; i < ols.length; i++) {
 	    if((olflash & (1 << i)) != 0)
-		visol[i]--;
+		disol(i);
 	}
 	olflash = 0;
 	olftimer = 0;
@@ -1572,9 +1572,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	} else if(msg == "flashol") {
 	    unflashol();
 	    olflash = (Integer)args[0];
-	    for(int i = 0; i < visol.length; i++) {
+	    for(int i = 0; i < ols.length; i++) {
 		if((olflash & (1 << i)) != 0)
-		    visol[i]++;
+		    enol(i);
 	    }
 	    olftimer = Utils.rtime() + (((Number)args[1]).doubleValue() / 1000.0);
 	} else if(msg == "sel") {

@@ -431,7 +431,6 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	return(gmmat.apply(buf.mkmesh()));
     }
 
-    /* XXXRENDER
     private static class OLOrder extends MLOrder {
 	OLOrder(int z) {super(z);}
 
@@ -439,7 +438,7 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	    return(1002);
 	}
     }
-    public Rendered[] makeols() {
+    public RenderTree.Node[] makeols() {
 	final MeshBuf buf = new MeshBuf();
 	final MapSurface ms = data(gnd);
 	final MeshBuf.Vertex[] vl = new MeshBuf.Vertex[ms.vl.length];
@@ -478,7 +477,7 @@ public class MapMesh implements RenderTree.Node, Disposable {
 		}
 	    }
 	}
-	Rendered[] ret = new Rendered[32];
+	RenderTree.Node[] ret = new RenderTree.Node[32];
 	for(int i = 0; i < bufs.length; i++) {
 	    if(bufs[i].fn > 0) {
 		int[] fl = bufs[i].fl;
@@ -488,18 +487,14 @@ public class MapMesh implements RenderTree.Node, Disposable {
 		    buf.new Face(vl[fl[o]], vl[fl[o + 1]], vl[fl[o + 2]]);
 		final FastMesh mesh = buf.mkmesh();
 		final int z = i;
-		class OL implements Rendered, Disposable {
-		    public void draw(GOut g) {
-			mesh.draw(g);
+		class OL implements RenderTree.Node, Disposable {
+		    public void added(RenderTree.Slot slot) {
+			slot.ostate(new OLOrder(z));
+			slot.add(mesh);
 		    }
 
 		    public void dispose() {
 			mesh.dispose();
-		    }
-
-		    public boolean setup(RenderList rl) {
-			rl.prepo(new OLOrder(z));
-			return(true);
 		    }
 		}
 		ret[i] = new OL();
@@ -507,7 +502,6 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	}
 	return(ret);
     }
-    */
 
     private void clean() {
 	int on = data.size();
