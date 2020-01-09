@@ -351,12 +351,16 @@ public class Utils {
     public static void int32e(int num, byte[] buf, int off) {
 	uint32e(((long)num) & 0xffffffff, buf, off);
     }
-	
+
     public static void uint16e(int num, byte[] buf, int off) {
 	buf[off] = sb(num & 0xff);
 	buf[off + 1] = sb((num & 0xff00) >> 8);
     }
-	
+
+    public static void int16e(short num, byte[] buf, int off) {
+	uint16e(((int)num) & 0xffff, buf, off);
+    }
+
     public static String strd(byte[] buf, int[] off) {
 	int i;
 	for(i = off[0]; buf[i] != 0; i++);
