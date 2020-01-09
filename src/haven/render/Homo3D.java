@@ -91,6 +91,9 @@ public class Homo3D {
     public Expression pcamxf(Expression v) {
 	return(mul(u_cam.ref(), v));
     }
+    public Expression pmvxf(Expression v) {
+	return(pcamxf(plocxf(v)));
+    }
     public Expression pprjxf(Expression v) {
 	return(mul(u_prj.ref(), v));
     }
@@ -100,6 +103,12 @@ public class Homo3D {
       * inverter implemented for it. */
     public Expression nlocxf(Expression v) {
 	return(mul(mat3(u_wxf.ref()), v));
+    }
+    public Expression ncamxf(Expression v) {
+	return(mul(mat3(u_cam.ref()), v));
+    }
+    public Expression nmvxf(Expression v) {
+	return(ncamxf(nlocxf(v)));
     }
 
     public static Homo3D get(ProgramContext prog) {
