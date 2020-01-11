@@ -175,10 +175,8 @@ public class WItem extends Widget implements DTarget {
 	if(spr != null) {
 	    Coord sz = spr.sz();
 	    g.defstate();
-	    /* XXXRENDER
 	    if(olcol.get() != null)
 		g.usestate(new ColorMask(olcol.get()));
-	    */
 	    drawmain(g, spr);
 	    g.defstate();
 	    GItem.InfoOverlay<?>[] ols = itemols.get();
