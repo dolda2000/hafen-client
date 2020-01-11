@@ -265,7 +265,7 @@ public abstract class PView extends Widget {
 	private final Set<Slot<? extends Render2D>> cur = new HashSet<>();
 
 	public void draw(GOut g) {
-	    List<Slot<? extends Render2D> slot> copy;
+	    List<Slot<? extends Render2D>> copy;
 	    synchronized(cur) {
 		copy = new ArrayList<>(cur);
 	    }
