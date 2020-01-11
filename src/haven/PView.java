@@ -265,17 +265,25 @@ public abstract class PView extends Widget {
 	private final Set<Slot<? extends Render2D>> cur = new HashSet<>();
 
 	public void draw(GOut g) {
-	    for(Slot<? extends Render2D> slot : cur) {
+	    List<Slot<? extends Render2D> slot> copy;
+	    synchronized(cur) {
+		copy = new ArrayList<>(cur);
+	    }
+	    for(Slot<? extends Render2D> slot : copy) {
 		slot.obj().draw(g, slot.state());
 	    }
 	}
 
 	public void add(Slot<? extends Render2D> slot) {
-	    cur.add(slot);
+	    synchronized(cur) {
+		cur.add(slot);
+	    }
 	}
 
 	public void remove(Slot<? extends Render2D> slot) {
-	    cur.remove(slot);
+	    synchronized(cur) {
+		cur.remove(slot);
+	    }
 	}
 
 	public void update(Slot<? extends Render2D> slot) {}
