@@ -49,12 +49,12 @@ public class BumpMap extends State {
     private static final ShaderMacro shader = new ShaderMacro() {
 	    final AutoVarying tanc = new AutoVarying(VEC3) {
 		    protected Expression root(VertexContext vctx) {
-			return(Homo3D.get(vctx.prog).nmvxf(tan.ref()));
+			return(Homo3D.get(vctx.prog).nlocxf(tan.ref()));
 		    }
 		};
 	    final AutoVarying bitc = new AutoVarying(VEC3) {
 		    protected Expression root(VertexContext vctx) {
-			return(Homo3D.get(vctx.prog).nmvxf(bit.ref()));
+			return(Homo3D.get(vctx.prog).nlocxf(bit.ref()));
 		    }
 		};
 	    public void modify(final ProgramContext prog) {

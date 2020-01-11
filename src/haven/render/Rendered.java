@@ -87,6 +87,9 @@ public interface Rendered {
     public final static Order postfx = new Order.Default(5000);
     public final static Order postpfx = new Order.Default(5500);
 
+    public final static Pipe.Op eyesort = new Order.Default(10000); // XXXRENDER
+    public final static Pipe.Op eeyesort = new Order.Default(4500); // XXXRENDER
+
     public static class ScreenQuad implements Rendered, RenderTree.Node {
 	public static final Model data =
 	    new Model(Model.Mode.TRIANGLE_STRIP,

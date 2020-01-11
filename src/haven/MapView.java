@@ -797,6 +797,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		return;
 	    }
 	    if(smap == null) {
+		if(instancer == null)
+		    return;
 		slist = new ShadowMap.ShadowList(instancer);
 		smap = new ShadowMap(new Coord(2048, 2048), 750, 5000, 1);
 	    }
