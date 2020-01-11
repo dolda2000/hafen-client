@@ -59,21 +59,16 @@ public class Material implements Pipe.Op {
 		return(Rendered.last);
 	    } else if(nm.equals("pfx")) {
 		return(Rendered.postpfx);
-	    /* XXXRENDER
 	    } else if(nm.equals("eye")) {
 		return(Rendered.eyesort);
 	    } else if(nm.equals("earlyeye")) {
 		return(Rendered.eeyesort);
-	    */
 	    } else if(nm.equals("premap")) {
 		return(MapMesh.premap);
 	    } else if(nm.equals("postmap")) {
 		return(MapMesh.postmap);
 	    } else {
-		/* XXXRENDER
 		throw(new Resource.LoadException("Unknown draw order: " + nm, res));
-		*/
-		return(null);
 	    }
 	}
     }
