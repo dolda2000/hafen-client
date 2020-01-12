@@ -661,7 +661,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 
 	private class Placement implements Pipe.Op {
 	    final Pipe.Op flw, tilestate, mods;
-	    final Coord3f c;
+	    final Coord3f oc, rc;
 	    final double a;
 
 	    Placement() {
@@ -670,16 +670,17 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 		Pipe.Op tilestate = null;
 		if(flwxf == null) {
 		    Coord3f oc = Gob.this.getc();
-		    Coord3f c = new Coord3f(oc);
-		    c.y = -c.y;
+		    Coord3f rc = new Coord3f(oc);
+		    rc.y = -rc.y;
 		    this.flw = null;
-		    this.c = c;
+		    this.oc = oc;
+		    this.rc = rc;
 		    this.a = Gob.this.a;
 		    Tiler tile = glob.map.tiler(glob.map.gettile(new Coord2d(oc).floor(MCache.tilesz)));
-		    tilestate = tile.drawstate(glob, c);
+		    tilestate = tile.drawstate(glob, oc);
 		} else {
 		    this.flw = flwxf;
-		    this.c = null;
+		    this.oc = this.rc = null;
 		    this.a = Double.NaN;
 		}
 		this.tilestate = tilestate;
@@ -701,7 +702,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 		    if(!Utils.eq(this.flw, that.flw))
 			return(false);
 		} else {
-		    if(!(Utils.eq(this.c, that.c) && (this.a == that.a)))
+		    if(!(Utils.eq(this.oc, that.oc) && (this.a == that.a)))
 			return(false);
 		}
 		if(!Utils.eq(this.tilestate, that.tilestate))
@@ -721,7 +722,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 		    this.flw.apply(buf);
 		} else {
 		    if(gndst == null)
-			gndst = Pipe.Op.compose(new Location(Transform.makexlate(new Matrix4f(), this.c), "gobx"),
+			gndst = Pipe.Op.compose(new Location(Transform.makexlate(new Matrix4f(), this.rc), "gobx"),
 						new Location(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-this.a), "gob"));
 		    gndst.apply(buf);
 		}
@@ -768,7 +769,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	}
 
 	public Coord3f getc() {
-	    return((this.cur == null) ? this.cur.c : null);
+	    return((this.cur != null) ? this.cur.oc : null);
 	}
 
 	public TickList.Ticking ticker() {return(this);}
