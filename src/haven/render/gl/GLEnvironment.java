@@ -111,6 +111,7 @@ public class GLEnvironment implements Environment {
 	    if((prep != null) && (prep.gl != null)) {
 		BufferBGL xf = new BufferBGL(16);
 		this.curstate.apply(xf, prep.init);
+		xf.run(gl);
 		prep.gl.run(gl);
 		this.curstate = prep.state;
 		GLException.checkfor(gl);
