@@ -96,7 +96,7 @@ public class GLEnvironment implements Environment {
 	GLRender prep;
 	Collection<GLRender> copy;
 	synchronized(submitted) {
-	    /* It is important to fethc the submitted renders before
+	    /* It is important to fetch the submitted renders before
 	     * prep, so that additional once aren't submitted during
 	     * processing that haven't been prepared. */
 	    copy = new ArrayList<>(submitted);
