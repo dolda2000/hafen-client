@@ -720,12 +720,16 @@ public class OCache implements Iterable<Gob> {
 	    }
 	    synchronized(this) {
 		applier = null;
-		checkdirty();
+		checkdirty(false);
 	    }
 	}
 
-	public void checkdirty() {
+	public void checkdirty(boolean interrupt) {
 	    synchronized(this) {
+		if(interrupt && (applier != null)) {
+		    applier.cancel();
+		    applier = null;
+		}
 		if(applier == null) {
 		    if(nremoved ? (added && !gremoved) : (!added || !pending.isEmpty())) {
 			applier = glob.loader.defer(this::apply, null);
@@ -745,7 +749,7 @@ public class OCache implements Iterable<Gob> {
 	    synchronized(ng) {
 		/* XXX: Clean up removed objects */
 		ng.nremoved = true;
-		ng.checkdirty();
+		ng.checkdirty(true);
 	    }
 	    return(ng);
 	}
@@ -795,7 +799,7 @@ public class OCache implements Iterable<Gob> {
 		    ng.frame = frame;
 		    ng.virtual = ((fl & 2) != 0);
 		    ng.pending.addAll(attrs);
-		    ng.checkdirty();
+		    ng.checkdirty(false);
 		}
 	    }
 	    return(ng);

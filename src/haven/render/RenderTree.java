@@ -451,7 +451,12 @@ public class RenderTree implements RenderList.Adapter {
 		    try {
 			n.added(ch);
 		    } catch(RuntimeException e) {
-			ch.remove();
+			try {
+			    ch.remove();
+			} catch(Error e2) {
+			    e2.addSuppressed(e);
+			    throw(e2);
+			}
 			throw(e);
 		    }
 		}
