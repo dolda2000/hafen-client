@@ -123,7 +123,7 @@ public class Loader {
 
 	public boolean done() {
 	    synchronized(this) {
-		return(done || cancelled);
+		return(done || (cancelled && (running != null)));
 	    }
 	}
     }
