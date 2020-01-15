@@ -110,13 +110,14 @@ public class Loader {
 
 	public T get() {
 	    synchronized(this) {
+		if(done) {
+		    if(exc != null)
+			throw(new RuntimeException("Deferred error in loader task", exc));
+		    return(val);
+		}
 		if(cancelled)
 		    throw(new IllegalStateException("cancelled future"));
-		if(!done)
-		    throw(new IllegalStateException("not done"));
-		if(exc != null)
-		    throw(new RuntimeException("Deferred error in loader task", exc));
-		return(val);
+		throw(new IllegalStateException("not done"));
 	    }
 	}
 
