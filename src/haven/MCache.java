@@ -631,6 +631,7 @@ public class MCache {
 		req.clear();
 		cached = null;
 	    }
+	    grids.notifyAll();
 	}
     }
 
@@ -653,6 +654,7 @@ public class MCache {
 		}
 		cached = null;
 	    }
+	    grids.notifyAll();
 	}
     }
 
@@ -677,6 +679,7 @@ public class MCache {
 
     public void sendreqs() {
 	long now = System.currentTimeMillis();
+	boolean updated = false;
 	synchronized(req) {
 	    for(Iterator<Map.Entry<Coord, Request>> i = req.entrySet().iterator(); i.hasNext();) {
 		Map.Entry<Coord, Request> e = i.next();
@@ -686,12 +689,18 @@ public class MCache {
 		    r.lastreq = now;
 		    if(++r.reqs >= 5) {
 			i.remove();
+			updated = true;
 		    } else {
 			PMessage msg = new PMessage(Session.MSG_MAPREQ);
 			msg.addcoord(c);
 			sess.sendmsg(msg);
 		    }
 		}
+	    }
+	}
+	if(updated) {
+	    synchronized(grids) {
+		grids.notifyAll();
 	    }
 	}
     }
