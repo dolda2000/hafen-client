@@ -61,11 +61,14 @@ public class Loader {
 		    while(true) {
 			try {
 			    synchronized(this) {
-				if(!cancelled) {
-				    this.val = task.get();
-				    done = true;
+				if(cancelled)
 				    break;
-				}
+			    }
+			    T val = task.get();
+			    synchronized(this) {
+				this.val = val;
+				done = true;
+				break;
 			    }
 			} catch(Loading l) {
 			    /* XXX: Make nonblocking */
@@ -107,8 +110,10 @@ public class Loader {
 
 	public T get() {
 	    synchronized(this) {
+		if(cancelled)
+		    throw(new IllegalStateException("cancelled future"));
 		if(!done)
-		    throw(new IllegalStateException());
+		    throw(new IllegalStateException("not done"));
 		if(exc != null)
 		    throw(new RuntimeException("Deferred error in loader task", exc));
 		return(val);
@@ -117,7 +122,7 @@ public class Loader {
 
 	public boolean done() {
 	    synchronized(this) {
-		return(done);
+		return(done || cancelled);
 	    }
 	}
     }
