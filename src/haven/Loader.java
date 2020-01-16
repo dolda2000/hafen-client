@@ -45,7 +45,7 @@ public class Loader {
 	private Throwable exc;
 	private Loading loading = null;
 	private Thread running = null;
-	private boolean done = false, cancelled = false;
+	private boolean done = false, cancelled = false, restarted = false;
 
 	private Future(Supplier<T> task, boolean capex) {
 	    this.task = task;
@@ -63,6 +63,7 @@ public class Loader {
 		    while(true) {
 			try {
 			    synchronized(runmon) {
+				restarted = false;
 				synchronized(this) {
 				    if(cancelled)
 					break;
@@ -90,7 +91,8 @@ public class Loader {
 			    queue.add(this);
 			    queue.notify();
 			}
-			Thread.currentThread().interrupt();
+			if(!restarted)
+			    Thread.currentThread().interrupt();
 		    }
 		} catch(Throwable exc) {
 		    synchronized(this) {
@@ -116,6 +118,14 @@ public class Loader {
 			running.interrupt();
 		    return(!done);
 		}
+	    }
+	}
+
+	public void restart() {
+	    synchronized(this) {
+		restarted = true;
+		if(running != null)
+		    running.interrupt();
 	    }
 	}
 
