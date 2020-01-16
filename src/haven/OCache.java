@@ -726,14 +726,12 @@ public class OCache implements Iterable<Gob> {
 
 	public void checkdirty(boolean interrupt) {
 	    synchronized(this) {
-		if(interrupt && (applier != null)) {
-		    applier.cancel();
-		    applier = null;
-		}
 		if(applier == null) {
 		    if(nremoved ? (added && !gremoved) : (!added || !pending.isEmpty())) {
 			applier = glob.loader.defer(this::apply, null);
 		    }
+		} else if(interrupt) {
+		    applier.restart();
 		}
 	    }
 	}

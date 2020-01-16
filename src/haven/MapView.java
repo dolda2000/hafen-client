@@ -488,8 +488,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		}
 		RenderTree.Slot nslot = slot.add(ob.placed);
 		synchronized(this) {
-		    adding.remove(ob);
-		    current.put(ob, nslot);
+		    if(adding.remove(ob) != null)
+			current.put(ob, nslot);
+		    else
+			nslot.remove();
 		}
 	    }
 	}
@@ -530,8 +532,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    RenderTree.Slot slot;
 	    synchronized(this) {
 		slot = current.remove(ob);
-		if(slot == null)
-		    adding.remove(ob);
+		if(slot == null) {
+		    Loader.Future<?> t = adding.remove(ob);
+		    if(t != null)
+			t.restart();
+		}
 	    }
 	    if(slot != null) {
 		try {

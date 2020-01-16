@@ -40,10 +40,12 @@ public class Loader {
     public class Future<T> {
 	public final Supplier<T> task;
 	private final boolean capex;
+	private final Object runmon = new Object();
 	private T val;
 	private Throwable exc;
+	private Loading loading = null;
 	private Thread running = null;
-	private boolean done = false, cancelled = false;
+	private boolean done = false, cancelled = false, restarted = false;
 
 	private Future(Supplier<T> task, boolean capex) {
 	    this.task = task;
@@ -60,19 +62,27 @@ public class Loader {
 		try {
 		    while(true) {
 			try {
-			    synchronized(this) {
-				if(cancelled)
-				    break;
-			    }
-			    T val = task.get();
-			    synchronized(this) {
-				this.val = val;
-				done = true;
+			    synchronized(runmon) {
+				restarted = false;
+				synchronized(this) {
+				    if(cancelled)
+					break;
+				}
+				T val = task.get();
+				synchronized(this) {
+				    this.val = val;
+				    done = true;
+				}
 				break;
 			    }
 			} catch(Loading l) {
 			    /* XXX: Make nonblocking */
-			    l.waitfor();
+			    this.loading = l;
+			    try {
+				l.waitfor();
+			    } finally {
+				this.loading = l;
+			    }
 			}
 		    }
 		} catch(InterruptedException e) {
@@ -81,7 +91,8 @@ public class Loader {
 			    queue.add(this);
 			    queue.notify();
 			}
-			Thread.currentThread().interrupt();
+			if(!restarted)
+			    Thread.currentThread().interrupt();
 		    }
 		} catch(Throwable exc) {
 		    synchronized(this) {
@@ -100,11 +111,21 @@ public class Loader {
 	}
 
 	public boolean cancel() {
+	    synchronized(runmon) {
+		synchronized(this) {
+		    cancelled = true;
+		    if(running != null)
+			running.interrupt();
+		    return(!done);
+		}
+	    }
+	}
+
+	public void restart() {
 	    synchronized(this) {
-		cancelled = true;
+		restarted = true;
 		if(running != null)
 		    running.interrupt();
-		return(!done);
 	    }
 	}
 
