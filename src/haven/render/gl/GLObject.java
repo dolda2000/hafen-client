@@ -46,10 +46,10 @@ public abstract class GLObject implements Disposable {
     protected abstract void delete(GL2 gl);
 
     protected void dispose0() {
-	dispseq = env.dispseq();
 	synchronized(env.disposed) {
 	    if(del)
 		return;
+	    dispseq = env.dispseq();
 	    env.disposed.add(this);
 	    del = true;
 	    setmem(null, 0);
