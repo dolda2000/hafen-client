@@ -115,6 +115,7 @@ public class GLEnvironment implements Environment {
 		prep.gl.run(gl);
 		this.curstate = prep.state;
 		GLException.checkfor(gl);
+		sequnreg(prep);
 	    }
 	    for(GLRender cmd : copy) {
 		BufferBGL xf = new BufferBGL(16);
@@ -195,8 +196,10 @@ public class GLEnvironment implements Environment {
     }
 
     GLRender prepare() {
-	if(prep == null)
+	if(prep == null) {
 	    prep = new GLRender(this);
+	    seqreg(prep);
+	}
 	return(prep);
     }
     void prepare(GLObject obj) {
