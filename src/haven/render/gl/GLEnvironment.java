@@ -128,6 +128,7 @@ public class GLEnvironment implements Environment {
 	    }
 	    checkqueries(gl);
 	    disposeall().run(gl);
+	    clean();
 	}
     }
 
@@ -515,8 +516,10 @@ public class GLEnvironment implements Environment {
 	    for(int i = 0; i < ptab.length; i++) {
 		SavedProg c, p;
 		for(c = ptab[i], p = null; c != null; c = c.next) {
-		    if(c.used || (c.prog.locked.get() > 0)) {
-			c.used = false;
+		    int rc = c.prog.locked.get();
+		    if(c.used || (rc > 0)) {
+			if(rc < 1)
+			    c.used = false;
 			p = c;
 		    } else {
 			if(p == null)
