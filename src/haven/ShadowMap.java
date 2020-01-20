@@ -53,6 +53,7 @@ public class ShadowMap extends State {
     public ShadowMap(Coord res, float size, float depth, float dthr) {
 	lbuf = new Texture2D(res, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null);
 	(lsamp = new Texture2D.Sampler2D(lbuf)).magfilter(Texture.Filter.LINEAR).wrapmode(Texture.Wrapping.CLAMP);
+	/* XXX: It would arguably be nice to intern the shader. */
 	shader = new Shader(1.0 / res.x, 1.0 / res.y, 4, dthr / depth);
 	lproj = Projection.ortho(-size, size, -size, size, 1, depth);
 	basic = Pipe.Op.compose(new DepthBuffer<>(lbuf.image(0)),
