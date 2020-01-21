@@ -135,23 +135,24 @@ public class GOut {
 
     public void rimagev(Tex tex, Coord c, int h) {
 	Coord cc = new Coord(c);
-	Coord sz = new Coord(tex.sz().x, h);
+	Coord br = c.add(tex.sz().x, h);
 	for(; cc.y < c.y + h; cc.y += tex.sz().y)
-	    image(tex, cc, c, sz);
+	    image(tex, cc, c, br);
     }
 
     public void rimageh(Tex tex, Coord c, int w) {
 	Coord cc = new Coord(c);
-	Coord sz = new Coord(w, tex.sz().y);
+	Coord br = c.add(w, tex.sz().y);
 	for(; cc.x < c.x + w; cc.x += tex.sz().x)
-	    image(tex, cc, c, sz);
+	    image(tex, cc, c, br);
     }
 
     public void rimage(Tex tex, Coord c, Coord sz) {
 	Coord cc = new Coord();
+	Coord br = c.add(sz);
 	for(cc.y = c.y; cc.y < c.y + sz.y; cc.y += tex.sz().y) {
 	    for(cc.x = c.x; cc.x < c.x + sz.x; cc.x += tex.sz().x)
-		image(tex, cc, c, sz);
+		image(tex, cc, c, br);
 	}
     }
 
