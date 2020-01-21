@@ -78,13 +78,24 @@ public class Following extends Moving {
     public Pipe.Op xf() {
 	synchronized(this) {
 	    Gob tgt = tgt();
-	    Skeleton.Pose cpose = getpose(tgt);
-	    if(!hlpose || (cpose != lpose)) {
-		Skeleton.BoneOffset bo = xfres.get().layer(Skeleton.BoneOffset.class, xfname);
-		if(bo == null)
-		    throw(new RuntimeException("No such boneoffset in " + xfres.get() + ": " + xfname));
-		bxf = bo.forpose(lpose = cpose);
-		hlpose = true;
+	    if(tgt != null) {
+		Skeleton.Pose cpose = getpose(tgt);
+		if(!hlpose || (cpose != lpose)) {
+		    Skeleton.BoneOffset bo = xfres.get().layer(Skeleton.BoneOffset.class, xfname);
+		    if(bo == null)
+			throw(new RuntimeException("No such boneoffset in " + xfres.get() + ": " + xfname));
+		    try {
+			bxf = bo.forpose(lpose = cpose);
+		    } catch(NullPointerException e) {
+			System.err.println(tgt);
+			throw(e);
+		    }
+		    hlpose = true;
+		}
+	    } else {
+		bxf = () -> null;
+		lpose = null;
+		hlpose = false;
 	    }
 	    Pipe.Op cpxf = (tgt == null) ? null : tgt.placed.curplace();
 	    Pipe.Op cbxf = bxf.get();
