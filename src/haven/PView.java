@@ -106,20 +106,38 @@ public abstract class PView extends Widget {
     }
 
     public Pipe.Op basic(Object id) {
-	return(basicstates.get(id));
+	synchronized(basicstates) {
+	    return(basicstates.get(id));
+	}
     }
 
     public void basic(Object id, Pipe.Op state) {
 	Pipe.Op prev;
-	if(state == null)
-	    prev = basicstates.remove(id);
-	else
-	    prev = basicstates.put(id, state);
-	if(!Utils.eq(prev, state)) {
-	    basic.ostate(p -> {
-		    for(Pipe.Op op : basicstates.values())
-			op.apply(p);
-		});
+	Collection<Pipe.Op> comb = null;
+	synchronized(basicstates) {
+	    if(state == null)
+		prev = basicstates.remove(id);
+	    else
+		prev = basicstates.put(id, state);
+	    if(!Utils.eq(prev, state))
+		comb = new ArrayList<>(basicstates.values());
+	}
+	if(comb != null) {
+	    try {
+		Collection<Pipe.Op> dcomb = comb;
+		basic.ostate(p -> {
+			for(Pipe.Op op : dcomb)
+			    op.apply(p);
+		    });
+	    } catch(RuntimeException e) {
+		synchronized(basicstates) {
+		    if(prev == null)
+			basicstates.remove(id);
+		    else
+			basicstates.put(id, prev);
+		}
+		throw(e);
+	    }
 	}
     }
 
