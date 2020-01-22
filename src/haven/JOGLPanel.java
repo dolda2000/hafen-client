@@ -235,7 +235,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    tt = (Tex)o;
 	    } else if(tooltip instanceof String) {
 		if(((String)tooltip).length() > 0) {
-		    free = tt = new TexI(Text.render((String)tooltip).img);
+		    free = tt = new TexI(Text.render((String)tooltip).img, false);
 		}
 	    }
 	}
