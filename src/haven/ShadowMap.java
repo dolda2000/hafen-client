@@ -130,6 +130,8 @@ public class ShadowMap extends State {
 	}
 
 	public void add(Slot<? extends Rendered> slot) {
+	    if(slot.state().get(Light.lighting) == null)
+		return;
 	    Shadowslot ns = new Shadowslot(slot);
 	    if(back != null)
 		back.add(ns);
