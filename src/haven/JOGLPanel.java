@@ -212,7 +212,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
-    private void drawtooltip(GOut g) {
+    private void drawtooltip(UI ui, GOut g) {
 	Object tooltip;
         try {
 	    synchronized(ui) {
@@ -260,8 +260,11 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private String cursmode = "tex";
     private Resource lastcursor = null;
-    private void drawcursor(GOut g) {
-	Resource curs = ui.getcurs(ui.mc);
+    private void drawcursor(UI ui, GOut g) {
+	Resource curs;
+	synchronized(ui) {
+	    curs = ui.getcurs(ui.mc);
+	}
 	if(cursmode == "awt") {
 	    if(curs != lastcursor) {
 		try {
@@ -320,8 +323,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
 	if(Config.dbtext)
 	    drawstats(ui, g, buf);
-	drawtooltip(g);
-	drawcursor(g);
+	drawtooltip(ui, g);
+	drawcursor(ui, g);
     }
 
     public void run() {

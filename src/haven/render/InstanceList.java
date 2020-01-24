@@ -654,6 +654,11 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 		InstancedSlot b = (InstancedSlot)prev;
 		if(key.equals(prevkey)) {
 		    b.update(slot);
+		} else if(!key.valid()) {
+		    cladd(slot);
+		    remove0(b, islotmap.get(slot), true);
+		    uslotmap.remove(slot);
+		    ninvalid++;
 		} else {
 		    add0(slot, key, false, b);
 		}
@@ -662,6 +667,12 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 		    throw(new IllegalStateException("updating non-present slot"));
 		if(key.equals(prevkey)) {
 		    clupdate(slot);
+		} else if(!key.valid()) {
+		    clupdate(slot);
+		    instreg.remove(prevkey);
+		    uslotmap.remove(slot);
+		    nuinst--;
+		    ninvalid++;
 		} else {
 		    add0(slot, key, true, null);
 		    instreg.remove(prevkey);
