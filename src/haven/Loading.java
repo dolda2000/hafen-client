@@ -65,12 +65,25 @@ public class Loading extends RuntimeException {
 	return(super.getMessage());
     }
 
+    public static class UnwaitableEvent extends RuntimeException {
+	public final Loading event;
+
+	public UnwaitableEvent(String message, Loading event) {
+	    super(message);
+	    this.event = event;
+	}
+
+	public UnwaitableEvent(Loading event) {
+	    this("Tried to wait for unwaitable event", event);
+	}
+    }
+
     public void waitfor() throws InterruptedException {
 	if(rec != null) {
 	    rec.waitfor();
 	    return;
 	} else {
-	    throw(new RuntimeException("Tried to wait for unwaitable event", this));
+	    throw(new UnwaitableEvent(this));
 	}
     }
 
