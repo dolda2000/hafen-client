@@ -78,12 +78,36 @@ public class Loading extends RuntimeException {
 	}
     }
 
+    public WaitQueue.Waiting waitfor(Runnable callback) {
+	throw(new UnwaitableEvent(this));
+    }
+
+    private void queuewait() throws InterruptedException {
+	boolean[] buf = {false};
+	WaitQueue.Waiting wait = waitfor(() -> {
+		synchronized(buf) {
+		    buf[0] = true;
+		    buf.notifyAll();
+		}
+	    });
+	if(wait == null)
+	    return;
+	try {
+	    synchronized(buf) {
+		while(!buf[0])
+		    buf.wait();
+	    }
+	} finally {
+	    wait.cancel();
+	}
+    }
+
     public void waitfor() throws InterruptedException {
 	if(rec != null) {
 	    rec.waitfor();
 	    return;
 	} else {
-	    throw(new UnwaitableEvent(this));
+	    queuewait();
 	}
     }
 

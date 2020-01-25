@@ -90,15 +90,17 @@ public class Session implements Resource.Resolver {
 	    this.resid = res.resid;
 	}
 
-	public void waitfor() throws InterruptedException {
+	public WaitQueue.Waiting waitfor(Runnable callback) {
 	    synchronized(res) {
-		while(res.resnm == null)
-		    res.wait();
+		if(res.resnm != null)
+		    return(null);
+		return(res.wq.add(callback));
 	    }
 	}
     }
 
     private static class CachedRes {
+	private final WaitQueue wq = new WaitQueue();
 	private final int resid;
 	private String resnm = null;
 	private int resver;
@@ -145,7 +147,7 @@ public class Session implements Resource.Resolver {
 		this.resnm = nm;
 		this.resver = ver;
 		get().reset();
-		notifyAll();
+		wq.wnotify();
 	    }
 	}
     }

@@ -87,10 +87,15 @@ public class Defer extends ThreadGroup {
 	    return(msg);
 	}
 
-	public void waitfor() throws InterruptedException {
+	public WaitQueue.Waiting waitfor(Runnable callback) {
 	    synchronized(future) {
-		while(!future.done())
-		    future.wait();
+		if(future.done())
+		    return(null);
+		return(new WaitQueue.Checker(callback) {
+			protected Object monitor() {return(future);}
+			protected boolean check() {return(future.done());}
+			protected WaitQueue.Waiting add() {return(future.wq.add(this));}
+		    }.addi());
 	    }
 	}
     }
@@ -98,6 +103,7 @@ public class Defer extends ThreadGroup {
     public class Future<T> implements Runnable, Prioritized {
 	public final Callable<T> task;
 	private final AccessControlContext secctx;
+	private final WaitQueue wq = new WaitQueue();
 	private int prio = 0;
 	private T val;
 	private volatile String state = "";
@@ -124,7 +130,7 @@ public class Defer extends ThreadGroup {
 	private void chstate(String nst) {
 	    synchronized(this) {
 		this.state = nst;
-		notifyAll();
+		wq.wnotify();
 	    }
 	}
 

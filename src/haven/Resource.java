@@ -315,11 +315,11 @@ public class Resource implements Serializable {
 	    return("#<Resource " + res.name + ">");
 	}
 
-	public void waitfor() throws InterruptedException {
+	public WaitQueue.Waiting waitfor(Runnable callback) {
 	    synchronized(res) {
-		while(!res.done) {
-		    res.wait();
-		}
+		if(res.done)
+		    return(null);
+		return(res.wq.add(callback));
 	    }
 	}
 
@@ -352,8 +352,9 @@ public class Resource implements Serializable {
 	}
 
 	private class Queued extends Named implements Prioritized, Serializable {
-	    volatile int prio;
 	    transient final Collection<Queued> rdep = new LinkedList<Queued>();
+	    final WaitQueue wq = new WaitQueue();
+	    volatile int prio;
 	    Queued awaiting;
 	    volatile boolean done = false;
 	    Resource res;
@@ -394,7 +395,7 @@ public class Resource implements Serializable {
 			i.remove();
 			dq.prior(this);
 		    }
-		    this.notifyAll();
+		    wq.wnotify();
 		}
 		if(res != null) {
 		    synchronized(cache) {
