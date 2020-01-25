@@ -65,13 +65,6 @@ public class Loading extends RuntimeException {
 	return(super.getMessage());
     }
 
-    public boolean canwait() {
-	if(rec != null)
-	    return(rec.canwait());
-	else
-	    return(false);
-    }
-
     public void waitfor() throws InterruptedException {
 	if(rec != null) {
 	    rec.waitfor();

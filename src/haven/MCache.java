@@ -70,7 +70,6 @@ public class MCache {
 		}
 	    }
 	}
-	public boolean canwait() {return(true);}
     }
 
     private static class Request {

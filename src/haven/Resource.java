@@ -315,7 +315,6 @@ public class Resource implements Serializable {
 	    return("#<Resource " + res.name + ">");
 	}
 
-	public boolean canwait() {return(true);}
 	public void waitfor() throws InterruptedException {
 	    synchronized(res) {
 		while(!res.done) {

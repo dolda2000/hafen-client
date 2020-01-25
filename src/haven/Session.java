@@ -96,7 +96,6 @@ public class Session implements Resource.Resolver {
 		    res.wait();
 	    }
 	}
-	public boolean canwait() {return(true);}
     }
 
     private static class CachedRes {

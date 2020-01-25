@@ -87,7 +87,6 @@ public class Defer extends ThreadGroup {
 	    return(msg);
 	}
 
-	public boolean canwait() {return(true);}
 	public void waitfor() throws InterruptedException {
 	    synchronized(future) {
 		while(!future.done())
