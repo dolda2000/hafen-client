@@ -66,13 +66,16 @@ public class MCache {
 
 	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
 	    synchronized(map.grids) {
-		reg.accept(new WaitQueue.Checker(callback) {
-			protected Object monitor() {return(map.grids);}
-			protected boolean check() {return(map.grids.containsKey(gc));}
-			protected WaitQueue.Waiting add() {return(map.gridwait.add(this));}
-		    }.addi());
-		if(map.grids.containsKey(gc))
+		if(map.grids.containsKey(gc)) {
+		    reg.accept(WaitQueue.Waiting.dummy);
 		    callback.run();
+		} else {
+		    reg.accept(new WaitQueue.Checker(callback) {
+			    protected Object monitor() {return(map.grids);}
+			    protected boolean check() {return(map.grids.containsKey(gc));}
+			    protected WaitQueue.Waiting add() {return(map.gridwait.add(this));}
+			}.addi());
+		}
 	    }
 	}
     }

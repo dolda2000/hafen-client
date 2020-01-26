@@ -93,9 +93,12 @@ public class Session implements Resource.Resolver {
 
 	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
 	    synchronized(res) {
-		reg.accept(res.wq.add(callback));
-		if(res.resnm != null)
+		if(res.resnm != null) {
+		    reg.accept(WaitQueue.Waiting.dummy);
 		    callback.run();
+		} else {
+		    reg.accept(res.wq.add(callback));
+		}
 	    }
 	}
     }

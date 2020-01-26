@@ -318,9 +318,12 @@ public class Resource implements Serializable {
 
 	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
 	    synchronized(res) {
-		reg.accept(res.wq.add(callback));
-		if(res.done)
+		if(res.done) {
+		    reg.accept(WaitQueue.Waiting.dummy);
 		    callback.run();
+		} else {
+		    reg.accept(res.wq.add(callback));
+		}
 	    }
 	}
 

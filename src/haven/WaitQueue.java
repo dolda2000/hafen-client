@@ -33,6 +33,10 @@ public class WaitQueue {
 
     public static interface Waiting {
 	public void cancel();
+
+	public static Waiting dummy = new Waiting() {
+		public void cancel() {}
+	    };
     }
 
     private class Waiter implements Waiting {
