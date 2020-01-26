@@ -249,7 +249,7 @@ public class ClipAmbiance implements RenderTree.Node {
 
     public void removed(RenderTree.Slot slot) {
 	ActAudio list = slot.state().get(ActAudio.audio);
-	if(list == null)
+	if((list == null) || (parent == null))
 	    return;
 	list.intern(new Glob(parent, list)).remove(desc, slot.cast(ClipAmbiance.class));
     }
