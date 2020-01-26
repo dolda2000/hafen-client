@@ -114,8 +114,12 @@ public class ActAudio extends State {
 
     public static Coord3f spos(Pipe st) {
 	Coord3f pos = Coord3f.o;
-	pos = st.get(Homo3D.loc).fin(Matrix4f.id).mul4(pos);
-	pos = st.get(Homo3D.cam).fin(Matrix4f.id).mul4(pos);
+	Location.Chain loc = st.get(Homo3D.loc);
+	if(loc != null)
+	    pos = loc.fin(Matrix4f.id).mul4(pos);
+	Camera cam = st.get(Homo3D.cam);
+	if(cam != null)
+	    pos = cam.fin(Matrix4f.id).mul4(pos);
 	return(pos);
     }
 
