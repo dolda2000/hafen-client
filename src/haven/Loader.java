@@ -29,11 +29,13 @@ package haven;
 import java.util.*;
 import java.util.function.*;
 import java.util.concurrent.atomic.*;
+import haven.WaitQueue.Waiting;
 
 public class Loader {
     private final double timeout = 5.0;
     private final int maxthreads = 4;
     private final Queue<Future<?>> queue = new LinkedList<>();
+    private final Map<Future<?>, Waiting> loading = new IdentityHashMap<>();
     private final Collection<Thread> pool = new ArrayList<>();
     private final AtomicInteger busy = new AtomicInteger(0);
 
@@ -43,9 +45,9 @@ public class Loader {
 	private final Object runmon = new Object();
 	private T val;
 	private Throwable exc;
-	private Loading loading = null;
+	private Loading curload = null;
 	private Thread running = null;
-	private boolean done = false, cancelled = false, restarted = false;
+	private boolean done = false, cancelled = false;
 
 	private Future(Supplier<T> task, boolean capex) {
 	    this.task = task;
@@ -60,39 +62,36 @@ public class Loader {
 	    try {
 		busy.getAndIncrement();
 		try {
-		    while(true) {
-			try {
-			    synchronized(runmon) {
-				restarted = false;
-				synchronized(this) {
-				    if(cancelled)
-					break;
-				}
-				T val = task.get();
-				synchronized(this) {
-				    this.val = val;
-				    done = true;
-				}
-				break;
+		    try {
+			synchronized(runmon) {
+			    synchronized(this) {
+				if(cancelled)
+				    return;
 			    }
-			} catch(Loading l) {
-			    /* XXX: Make nonblocking */
-			    this.loading = l;
-			    try {
-				l.waitfor();
-			    } finally {
-				this.loading = l;
+			    T val = task.get();
+			    synchronized(this) {
+				this.val = val;
+				done = true;
 			    }
 			}
-		    }
-		} catch(InterruptedException e) {
-		    if(!cancelled) {
-			synchronized(queue) {
-			    queue.add(this);
-			    queue.notify();
-			}
-			if(!restarted)
-			    Thread.currentThread().interrupt();
+		    } catch(Loading l) {
+			curload = l;
+			l.waitfor(() -> {
+				synchronized(queue) {
+				    if(loading.remove(this) != null) {
+					curload = null;
+					queue.add(this);
+					queue.notify();
+				    }
+				}
+				check();
+			    },
+			    wait -> {
+				synchronized(queue) {
+				    if(loading.put(this, wait) != null)
+					throw(new AssertionError());
+				}
+			    });
 		    }
 		} catch(Throwable exc) {
 		    synchronized(this) {
@@ -111,22 +110,35 @@ public class Loader {
 	}
 
 	public boolean cancel() {
+	    synchronized(queue) {
+		Waiting wait = loading.remove(this);
+		if(wait != null) {
+		    wait.cancel();
+		    curload = null;
+		}
+	    }
 	    synchronized(runmon) {
 		synchronized(this) {
 		    cancelled = true;
-		    if(running != null)
-			running.interrupt();
 		    return(!done);
 		}
 	    }
 	}
 
 	public void restart() {
-	    synchronized(this) {
-		restarted = true;
-		if(running != null)
-		    running.interrupt();
+	    boolean ck = false;
+	    synchronized(queue) {
+		Waiting wait = loading.remove(this);
+		if(wait != null) {
+		    wait.cancel();
+		    curload = null;
+		    queue.add(this);
+		    queue.notify();
+		    ck = true;
+		}
 	    }
+	    if(ck)
+		check();
 	}
 
 	public T get() {
@@ -211,7 +223,7 @@ public class Loader {
 
     public String stats() {
 	synchronized(queue) {
-	    return(String.format("%d %d/%d", queue.size(), busy.get(), pool.size()));
+	    return(String.format("%d+%d %d/%d", queue.size(), loading.size(), busy.get(), pool.size()));
 	}
     }
 }
