@@ -55,15 +55,15 @@ public class Loader {
 	}
 
 	private void run() {
-	    synchronized(this) {
-		if(running != null) throw(new AssertionError());
-		running = Thread.currentThread();
-	    }
-	    try {
-		busy.getAndIncrement();
+	    synchronized(runmon) {
+		synchronized(this) {
+		    if(running != null) throw(new AssertionError());
+		    running = Thread.currentThread();
+		}
 		try {
+		    busy.getAndIncrement();
 		    try {
-			synchronized(runmon) {
+			try {
 			    synchronized(this) {
 				if(cancelled)
 				    return;
@@ -73,39 +73,39 @@ public class Loader {
 				this.val = val;
 				done = true;
 			    }
-			}
-		    } catch(Loading l) {
-			curload = l;
-			l.waitfor(() -> {
-				synchronized(queue) {
-				    if(loading.remove(this) != null) {
-					curload = null;
-					queue.add(this);
-					queue.notify();
+			} catch(Loading l) {
+			    curload = l;
+			    l.waitfor(() -> {
+				    synchronized(queue) {
+					if(loading.remove(this) != null) {
+					    curload = null;
+					    queue.add(this);
+					    queue.notify();
+					}
 				    }
-				}
-				check();
-			    },
-			    wait -> {
-				synchronized(queue) {
-				    if(loading.put(this, wait) != null)
-					throw(new AssertionError());
-				}
-			    });
+				    check();
+				},
+				wait -> {
+				    synchronized(queue) {
+					if(loading.put(this, wait) != null)
+					    throw(new AssertionError());
+				    }
+				});
+			}
+		    } catch(Throwable exc) {
+			synchronized(this) {
+			    this.exc = exc;
+			    done = true;
+			}
+			if(!capex)
+			    throw(exc);
 		    }
-		} catch(Throwable exc) {
+		} finally {
 		    synchronized(this) {
-			this.exc = exc;
-			done = true;
+			running = null;
 		    }
-		    if(!capex)
-			throw(exc);
+		    busy.getAndDecrement();
 		}
-	    } finally {
-		synchronized(this) {
-		    running = null;
-		}
-		busy.getAndDecrement();
 	    }
 	}
 
