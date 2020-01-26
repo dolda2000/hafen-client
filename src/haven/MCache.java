@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import java.lang.ref.*;
 import haven.render.*;
 
@@ -63,15 +64,15 @@ public class MCache {
 	    this.map = map;
 	}
 
-	public WaitQueue.Waiting waitfor(Runnable callback) {
+	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
 	    synchronized(map.grids) {
-		if(map.grids.containsKey(gc))
-		    return(null);
-		return(new WaitQueue.Checker(callback) {
+		reg.accept(new WaitQueue.Checker(callback) {
 			protected Object monitor() {return(map.grids);}
 			protected boolean check() {return(map.grids.containsKey(gc));}
 			protected WaitQueue.Waiting add() {return(map.gridwait.add(this));}
 		    }.addi());
+		if(map.grids.containsKey(gc))
+		    callback.run();
 	    }
 	}
     }

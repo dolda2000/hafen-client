@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import java.security.*;
 import java.util.concurrent.atomic.*;
 
@@ -87,15 +88,15 @@ public class Defer extends ThreadGroup {
 	    return(msg);
 	}
 
-	public WaitQueue.Waiting waitfor(Runnable callback) {
+	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
 	    synchronized(future) {
-		if(future.done())
-		    return(null);
-		return(new WaitQueue.Checker(callback) {
+		reg.accept(new WaitQueue.Checker(callback) {
 			protected Object monitor() {return(future);}
 			protected boolean check() {return(future.done());}
 			protected WaitQueue.Waiting add() {return(future.wq.add(this));}
 		    }.addi());
+		if(future.done())
+		    callback.run();
 	    }
 	}
     }

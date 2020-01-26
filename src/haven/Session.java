@@ -28,6 +28,7 @@ package haven;
 
 import java.net.*;
 import java.util.*;
+import java.util.function.*;
 import java.io.*;
 import java.lang.ref.*;
 
@@ -90,11 +91,11 @@ public class Session implements Resource.Resolver {
 	    this.resid = res.resid;
 	}
 
-	public WaitQueue.Waiting waitfor(Runnable callback) {
+	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
 	    synchronized(res) {
+		reg.accept(res.wq.add(callback));
 		if(res.resnm != null)
-		    return(null);
-		return(res.wq.add(callback));
+		    callback.run();
 	    }
 	}
     }

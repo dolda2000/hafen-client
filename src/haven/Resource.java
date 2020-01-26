@@ -30,6 +30,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.annotation.*;
 import java.util.*;
+import java.util.function.*;
 import java.net.*;
 import java.io.*;
 import java.security.*;
@@ -315,11 +316,11 @@ public class Resource implements Serializable {
 	    return("#<Resource " + res.name + ">");
 	}
 
-	public WaitQueue.Waiting waitfor(Runnable callback) {
+	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
 	    synchronized(res) {
+		reg.accept(res.wq.add(callback));
 		if(res.done)
-		    return(null);
-		return(res.wq.add(callback));
+		    callback.run();
 	    }
 	}
 

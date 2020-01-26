@@ -26,6 +26,8 @@
 
 package haven;
 
+import java.util.function.Consumer;
+
 public class Loading extends RuntimeException {
     public final Loading rec;
 
@@ -78,27 +80,27 @@ public class Loading extends RuntimeException {
 	}
     }
 
-    public WaitQueue.Waiting waitfor(Runnable callback) {
+    public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
 	throw(new UnwaitableEvent(this));
     }
 
     private void queuewait() throws InterruptedException {
 	boolean[] buf = {false};
-	WaitQueue.Waiting wait = waitfor(() -> {
+	WaitQueue.Waiting[] wbuf = {null};
+	waitfor(() -> {
 		synchronized(buf) {
 		    buf[0] = true;
 		    buf.notifyAll();
 		}
-	    });
-	if(wait == null)
-	    return;
+	    },
+	    wait -> wbuf[0] = wait);
 	try {
 	    synchronized(buf) {
 		while(!buf[0])
 		    buf.wait();
 	    }
 	} finally {
-	    wait.cancel();
+	    wbuf[0].cancel();
 	}
     }
 
