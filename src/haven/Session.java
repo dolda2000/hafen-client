@@ -28,6 +28,7 @@ package haven;
 
 import java.net.*;
 import java.util.*;
+import java.util.function.*;
 import java.io.*;
 import java.lang.ref.*;
 
@@ -90,16 +91,20 @@ public class Session implements Resource.Resolver {
 	    this.resid = res.resid;
 	}
 
-	public void waitfor() throws InterruptedException {
+	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
 	    synchronized(res) {
-		while(res.resnm == null)
-		    res.wait();
+		if(res.resnm != null) {
+		    reg.accept(WaitQueue.Waiting.dummy);
+		    callback.run();
+		} else {
+		    reg.accept(res.wq.add(callback));
+		}
 	    }
 	}
-	public boolean canwait() {return(true);}
     }
 
     private static class CachedRes {
+	private final WaitQueue wq = new WaitQueue();
 	private final int resid;
 	private String resnm = null;
 	private int resver;
@@ -146,7 +151,7 @@ public class Session implements Resource.Resolver {
 		this.resnm = nm;
 		this.resver = ver;
 		get().reset();
-		notifyAll();
+		wq.wnotify();
 	    }
 	}
     }

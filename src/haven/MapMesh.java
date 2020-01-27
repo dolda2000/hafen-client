@@ -434,7 +434,7 @@ public class MapMesh implements RenderTree.Node, Disposable {
     private static class OLOrder extends MLOrder {
 	OLOrder(int z) {super(z);}
 
-	public int mainz() {
+	public int mainorder() {
 	    return(1002);
 	}
     }

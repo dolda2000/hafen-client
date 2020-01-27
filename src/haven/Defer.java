@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import java.security.*;
 import java.util.concurrent.atomic.*;
 
@@ -87,11 +88,18 @@ public class Defer extends ThreadGroup {
 	    return(msg);
 	}
 
-	public boolean canwait() {return(true);}
-	public void waitfor() throws InterruptedException {
+	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
 	    synchronized(future) {
-		while(!future.done())
-		    future.wait();
+		if(future.done()) {
+		    reg.accept(WaitQueue.Waiting.dummy);
+		    callback.run();
+		} else {
+		    reg.accept(new WaitQueue.Checker(callback) {
+			    protected Object monitor() {return(future);}
+			    protected boolean check() {return(future.done());}
+			    protected WaitQueue.Waiting add() {return(future.wq.add(this));}
+			}.addi());
+		}
 	    }
 	}
     }
@@ -99,6 +107,7 @@ public class Defer extends ThreadGroup {
     public class Future<T> implements Runnable, Prioritized {
 	public final Callable<T> task;
 	private final AccessControlContext secctx;
+	private final WaitQueue wq = new WaitQueue();
 	private int prio = 0;
 	private T val;
 	private volatile String state = "";
@@ -125,7 +134,7 @@ public class Defer extends ThreadGroup {
 	private void chstate(String nst) {
 	    synchronized(this) {
 		this.state = nst;
-		notifyAll();
+		wq.wnotify();
 	    }
 	}
 
