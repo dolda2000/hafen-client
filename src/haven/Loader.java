@@ -47,7 +47,7 @@ public class Loader {
 	private Throwable exc;
 	private Loading curload = null;
 	private Thread running = null;
-	private boolean done = false, cancelled = false;
+	private boolean done = false, cancelled = false, restarted = false;
 
 	private Future(Supplier<T> task, boolean capex) {
 	    this.task = task;
@@ -86,10 +86,21 @@ public class Loader {
 				    check();
 				},
 				wait -> {
+				    boolean ck = false;
 				    synchronized(queue) {
-					if(loading.put(this, wait) != null)
-					    throw(new AssertionError());
+					if(restarted) {
+					    curload = null;
+					    queue.add(this);
+					    queue.notify();
+					    ck = true;
+					    restarted = false;
+					} else {
+					    if(loading.put(this, wait) != null)
+						throw(new AssertionError());
+					}
 				    }
+				    if(ck)
+					check();
 				});
 			}
 		    } catch(Throwable exc) {
@@ -135,6 +146,8 @@ public class Loader {
 		    queue.add(this);
 		    queue.notify();
 		    ck = true;
+		} else {
+		    restarted = true;
 		}
 	    }
 	    if(ck)
