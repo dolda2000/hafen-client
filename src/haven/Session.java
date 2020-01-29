@@ -91,10 +91,10 @@ public class Session implements Resource.Resolver {
 	    this.resid = res.resid;
 	}
 
-	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
+	public void waitfor(Runnable callback, Consumer<Waitable.Waiting> reg) {
 	    synchronized(res) {
 		if(res.resnm != null) {
-		    reg.accept(WaitQueue.Waiting.dummy);
+		    reg.accept(Waitable.Waiting.dummy);
 		    callback.run();
 		} else {
 		    reg.accept(res.wq.add(callback));
@@ -104,7 +104,7 @@ public class Session implements Resource.Resolver {
     }
 
     private static class CachedRes {
-	private final WaitQueue wq = new WaitQueue();
+	private final Waitable.Queue wq = new Waitable.Queue();
 	private final int resid;
 	private String resnm = null;
 	private int resver;

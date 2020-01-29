@@ -46,7 +46,7 @@ public class MCache {
     private final Reference<Tileset>[] csets = new Reference[256];
     @SuppressWarnings("unchecked")
     private final Reference<Tiler>[] tiles = new Reference[256];
-    private final WaitQueue gridwait = new WaitQueue();
+    private final Waitable.Queue gridwait = new Waitable.Queue();
     Map<Coord, Request> req = new HashMap<Coord, Request>();
     Map<Coord, Grid> grids = new HashMap<Coord, Grid>();
     Session sess;
@@ -64,16 +64,16 @@ public class MCache {
 	    this.map = map;
 	}
 
-	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
+	public void waitfor(Runnable callback, Consumer<Waitable.Waiting> reg) {
 	    synchronized(map.grids) {
 		if(map.grids.containsKey(gc)) {
-		    reg.accept(WaitQueue.Waiting.dummy);
+		    reg.accept(Waitable.Waiting.dummy);
 		    callback.run();
 		} else {
-		    reg.accept(new WaitQueue.Checker(callback) {
+		    reg.accept(new Waitable.Checker(callback) {
 			    protected Object monitor() {return(map.grids);}
 			    protected boolean check() {return(map.grids.containsKey(gc));}
-			    protected WaitQueue.Waiting add() {return(map.gridwait.add(this));}
+			    protected Waitable.Waiting add() {return(map.gridwait.add(this));}
 			}.addi());
 		}
 	    }

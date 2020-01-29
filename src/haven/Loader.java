@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.util.function.*;
 import java.util.concurrent.atomic.*;
-import haven.WaitQueue.Waiting;
+import haven.Waitable.Waiting;
 
 public class Loader {
     private final double timeout = 5.0;
