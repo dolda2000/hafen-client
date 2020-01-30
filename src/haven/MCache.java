@@ -72,7 +72,16 @@ public class MCache {
 		} else {
 		    reg.accept(new Waitable.Checker(callback) {
 			    protected Object monitor() {return(map.grids);}
-			    protected boolean check() {return(map.grids.containsKey(gc));}
+			    double st = Utils.rtime();
+			    protected boolean check() {
+				if((Utils.rtime() - st > 5)) {
+				    System.err.println("waited for map data for more than 5 seconds");
+				    printStackTrace();
+				    st = Utils.rtime();
+				    return(true);
+				}
+				return(map.grids.containsKey(gc));
+			    }
 			    protected Waitable.Waiting add() {return(map.gridwait.add(this));}
 			}.addi());
 		}
