@@ -86,7 +86,7 @@ public interface Waitable {
     public static class Disjunction implements Waiting, Runnable {
 	private final Waiting[] ops;
 	private final Runnable callback;
-	private boolean done = false;
+	private boolean done = false, ready = false;
 
 	public Disjunction(Runnable callback, Waitable... ops) {
 	    this.callback = callback;
@@ -98,27 +98,40 @@ public interface Waitable {
 	}
 
 	public void run() {
-	    boolean r = false;
+	    boolean c = false, r = false;
 	    synchronized(this) {
 		if(!done) {
-		    r = true;
+		    c = true;
 		    done = true;
 		}
+		r = ready;
 	    }
-	    if(r) {
+	    if(c) {
 		cancel();
-		callback.run();
+		if(r)
+		    callback.run();
 	    }
 	}
 
 	public void cancel() {
-	    for(Waiting wait : ops)
-		wait.cancel();
+	    for(Waiting wait : ops) {
+		if(wait != null)
+		    wait.cancel();
+	    }
 	}
     }
 
-    public static Waiting or(Runnable callback, Waitable... ops) {
-	return(new Disjunction(callback, ops));
+    public static void or(Runnable callback, Consumer<Waiting> reg, Waitable... ops) {
+	Disjunction ret = new Disjunction(callback, ops);
+	synchronized(ret) {
+	    if(ret.done) {
+		reg.accept(Waiting.dummy);
+		callback.run();
+	    } else {
+		reg.accept(ret);
+		ret.ready = true;
+	    }
+	}
     }
 
     public abstract static class Checker implements Waiting, Runnable {
