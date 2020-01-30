@@ -121,37 +121,40 @@ public class Loader {
 	}
 
 	public boolean cancel() {
-	    synchronized(queue) {
-		Waiting wait = loading.remove(this);
-		if(wait != null) {
-		    wait.cancel();
-		    curload = null;
-		}
-	    }
+	    boolean ret;
 	    synchronized(runmon) {
 		synchronized(this) {
 		    cancelled = true;
-		    return(!done);
+		    ret = !done;
 		}
 	    }
+	    Waiting wait;
+	    synchronized(queue) {
+		if((wait = loading.remove(this)) != null)
+		    curload = null;
+	    }
+	    if(wait != null)
+		wait.cancel();
+	    return(ret);
 	}
 
 	public void restart() {
-	    boolean ck = false;
+	    Waiting wait;
 	    synchronized(queue) {
-		Waiting wait = loading.remove(this);
-		if(wait != null) {
-		    wait.cancel();
+		wait = loading.remove(this);
+		if(wait != null)
 		    curload = null;
+		else
+		    restarted = true;
+	    }
+	    if(wait != null) {
+		wait.cancel();
+		synchronized(queue) {
 		    queue.add(this);
 		    queue.notify();
-		    ck = true;
-		} else {
-		    restarted = true;
 		}
-	    }
-	    if(ck)
 		check();
+	    }
 	}
 
 	public T get() {
