@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import haven.render.*;
 
 public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
@@ -591,6 +592,24 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	// seq = null; XXXRENDER
     }
 
+    private Waitable.Queue updwait = null;
+    void updated() {
+	synchronized(this) {
+	    if(updwait != null)
+		updwait.wnotify();
+	}
+    }
+
+    public void updwait(Runnable callback, Consumer<Waitable.Waiting> reg) {
+	/* Caller should probably synchronize on this already for a
+	 * call like this to even be meaningful, but just in case. */
+	synchronized(this) {
+	    if(updwait == null)
+		updwait = new Waitable.Queue();
+	    reg.accept(updwait.add(callback));
+	}
+    }
+
     public Random mkrandoom() {
 	return(Utils.mkrandoom(id));
     }
@@ -665,35 +684,45 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    final double a;
 
 	    Placement() {
-		Following flw = Gob.this.getattr(Following.class);
-		Pipe.Op flwxf = (flw == null) ? null : flw.xf();
-		Pipe.Op tilestate = null;
-		if(flwxf == null) {
-		    Coord3f oc = Gob.this.getc();
-		    Coord3f rc = new Coord3f(oc);
-		    rc.y = -rc.y;
-		    this.flw = null;
-		    this.oc = oc;
-		    this.rc = rc;
-		    this.a = Gob.this.a;
-		    Tiler tile = glob.map.tiler(glob.map.gettile(new Coord2d(oc).floor(MCache.tilesz)));
-		    tilestate = tile.drawstate(glob, oc);
-		} else {
-		    this.flw = flwxf;
-		    this.oc = this.rc = null;
-		    this.a = Double.NaN;
-		}
-		this.tilestate = tilestate;
-		if(setupmods.isEmpty()) {
-		    this.mods = null;
-		} else {
-		    Pipe.Op[] mods = new Pipe.Op[setupmods.size()];
-		    int n = 0;
-		    for(SetupMod mod : setupmods) {
-			if((mods[n] = mod.placestate()) != null)
-			    n++;
+		try {
+		    Following flw = Gob.this.getattr(Following.class);
+		    Pipe.Op flwxf = (flw == null) ? null : flw.xf();
+		    Pipe.Op tilestate = null;
+		    if(flwxf == null) {
+			Coord3f oc = Gob.this.getc();
+			Coord3f rc = new Coord3f(oc);
+			rc.y = -rc.y;
+			this.flw = null;
+			this.oc = oc;
+			this.rc = rc;
+			this.a = Gob.this.a;
+			Tiler tile = glob.map.tiler(glob.map.gettile(new Coord2d(oc).floor(MCache.tilesz)));
+			tilestate = tile.drawstate(glob, oc);
+		    } else {
+			this.flw = flwxf;
+			this.oc = this.rc = null;
+			this.a = Double.NaN;
 		    }
-		    this.mods = (n > 0) ? Pipe.Op.compose(mods) : null;
+		    this.tilestate = tilestate;
+		    if(setupmods.isEmpty()) {
+			this.mods = null;
+		    } else {
+			Pipe.Op[] mods = new Pipe.Op[setupmods.size()];
+			int n = 0;
+			for(SetupMod mod : setupmods) {
+			    if((mods[n] = mod.placestate()) != null)
+				n++;
+			}
+			this.mods = (n > 0) ? Pipe.Op.compose(mods) : null;
+		    }
+		} catch(MCache.LoadingMap ml) {
+		    throw(new Loading(ml) {
+			    public String getMessage() {return(ml.getMessage());}
+
+			    public void waitfor(Runnable callback, Consumer<Waitable.Waiting> reg) {
+				Waitable.or(callback, reg, ml, Gob.this::updwait);
+			    }
+			});
 		}
 	    }
 

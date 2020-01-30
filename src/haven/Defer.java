@@ -88,16 +88,16 @@ public class Defer extends ThreadGroup {
 	    return(msg);
 	}
 
-	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
+	public void waitfor(Runnable callback, Consumer<Waitable.Waiting> reg) {
 	    synchronized(future) {
 		if(future.done()) {
-		    reg.accept(WaitQueue.Waiting.dummy);
+		    reg.accept(Waitable.Waiting.dummy);
 		    callback.run();
 		} else {
-		    reg.accept(new WaitQueue.Checker(callback) {
+		    reg.accept(new Waitable.Checker(callback) {
 			    protected Object monitor() {return(future);}
 			    protected boolean check() {return(future.done());}
-			    protected WaitQueue.Waiting add() {return(future.wq.add(this));}
+			    protected Waitable.Waiting add() {return(future.wq.add(this));}
 			}.addi());
 		}
 	    }
@@ -107,7 +107,7 @@ public class Defer extends ThreadGroup {
     public class Future<T> implements Runnable, Prioritized {
 	public final Callable<T> task;
 	private final AccessControlContext secctx;
-	private final WaitQueue wq = new WaitQueue();
+	private final Waitable.Queue wq = new Waitable.Queue();
 	private int prio = 0;
 	private T val;
 	private volatile String state = "";

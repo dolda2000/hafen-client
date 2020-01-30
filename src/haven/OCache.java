@@ -717,6 +717,7 @@ public class OCache implements Iterable<Gob> {
 		    add(gob);
 		    added = true;
 		}
+		gob.updated();
 	    }
 	    synchronized(this) {
 		applier = null;

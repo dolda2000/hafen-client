@@ -316,10 +316,10 @@ public class Resource implements Serializable {
 	    return("#<Resource " + res.name + ">");
 	}
 
-	public void waitfor(Runnable callback, Consumer<WaitQueue.Waiting> reg) {
+	public void waitfor(Runnable callback, Consumer<Waitable.Waiting> reg) {
 	    synchronized(res) {
 		if(res.done) {
-		    reg.accept(WaitQueue.Waiting.dummy);
+		    reg.accept(Waitable.Waiting.dummy);
 		    callback.run();
 		} else {
 		    reg.accept(res.wq.add(callback));
@@ -357,7 +357,7 @@ public class Resource implements Serializable {
 
 	private class Queued extends Named implements Prioritized, Serializable {
 	    transient final Collection<Queued> rdep = new LinkedList<Queued>();
-	    final WaitQueue wq = new WaitQueue();
+	    final Waitable.Queue wq = new Waitable.Queue();
 	    volatile int prio;
 	    Queued awaiting;
 	    volatile boolean done = false;

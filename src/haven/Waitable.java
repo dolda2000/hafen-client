@@ -26,10 +26,11 @@
 
 package haven;
 
-import java.util.*;
+import java.util.*; 
+import java.util.function.*;
 
-public class WaitQueue {
-    private Collection<Waiter> waiters = null;
+public interface Waitable {
+    public void waitfor(Runnable callback, Consumer<Waiting> reg);
 
     public static interface Waiting {
 	public void cancel();
@@ -39,17 +40,96 @@ public class WaitQueue {
 	    };
     }
 
-    private class Waiter implements Waiting {
-	final Runnable callback;
+    public static class Queue {
+	private Collection<Waiter> waiters = null;
 
-	Waiter(Runnable callback) {
+	private class Waiter implements Waiting {
+	    final Runnable callback;
+
+	    Waiter(Runnable callback) {
+		this.callback = callback;
+	    }
+
+	    public void cancel() {
+		synchronized(Queue.this) {
+		    if(waiters != null)
+			waiters.remove(this);
+		}
+	    }
+	}
+
+	public void wnotify() {
+	    synchronized(this) {
+		Collection<Waiter> list = waiters;
+		if(list != null) {
+		    waiters = null;
+		    for(Waiter w : list)
+			w.callback.run();
+		}
+	    }
+	}
+
+	private Waiter add(Waiter w) {
+	    synchronized(this) {
+		if(waiters == null)
+		    waiters = new HashSet<>();
+		waiters.add(w);
+		return(w);
+	    }
+	}
+
+	public Waiter add(Runnable callback) {
+	    return(add(new Waiter(callback)));
+	}
+    }
+
+    public static class Disjunction implements Waiting, Runnable {
+	private final Waiting[] ops;
+	private final Runnable callback;
+	private boolean done = false, ready = false;
+
+	public Disjunction(Runnable callback, Waitable... ops) {
 	    this.callback = callback;
+	    this.ops = new Waiting[ops.length];
+	    for(int i = 0; i < ops.length; i++) {
+		int I = i;
+		ops[i].waitfor(this, wait -> this.ops[I] = wait);
+	    }
+	}
+
+	public void run() {
+	    boolean c = false, r = false;
+	    synchronized(this) {
+		if(!done) {
+		    c = true;
+		    done = true;
+		}
+		r = ready;
+	    }
+	    if(c) {
+		cancel();
+		if(r)
+		    callback.run();
+	    }
 	}
 
 	public void cancel() {
-	    synchronized(WaitQueue.this) {
-		if(waiters != null)
-		    waiters.remove(this);
+	    for(Waiting wait : ops) {
+		if(wait != null)
+		    wait.cancel();
+	    }
+	}
+    }
+
+    public static void or(Runnable callback, Consumer<Waiting> reg, Waitable... ops) {
+	Disjunction ret = new Disjunction(callback, ops);
+	synchronized(ret) {
+	    if(ret.done) {
+		reg.accept(Waiting.dummy);
+		callback.run();
+	    } else {
+		reg.accept(ret);
+		ret.ready = true;
 	    }
 	}
     }
@@ -90,29 +170,5 @@ public class WaitQueue {
 		}
 	    }
 	}
-    }
-
-    public void wnotify() {
-	synchronized(this) {
-	    Collection<Waiter> list = waiters;
-	    if(list != null) {
-		waiters = null;
-		for(Waiter w : list)
-		    w.callback.run();
-	    }
-	}
-    }
-
-    private Waiter add(Waiter w) {
-	synchronized(this) {
-	    if(waiters == null)
-		waiters = new HashSet<>();
-	    waiters.add(w);
-	    return(w);
-	}
-    }
-
-    public Waiter add(Runnable callback) {
-	return(add(new Waiter(callback)));
     }
 }

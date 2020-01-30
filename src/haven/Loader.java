@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.util.function.*;
 import java.util.concurrent.atomic.*;
-import haven.WaitQueue.Waiting;
+import haven.Waitable.Waiting;
 
 public class Loader {
     private final double timeout = 5.0;
@@ -47,7 +47,7 @@ public class Loader {
 	private Throwable exc;
 	private Loading curload = null;
 	private Thread running = null;
-	private boolean done = false, cancelled = false;
+	private boolean done = false, cancelled = false, restarted = false;
 
 	private Future(Supplier<T> task, boolean capex) {
 	    this.task = task;
@@ -86,10 +86,21 @@ public class Loader {
 				    check();
 				},
 				wait -> {
+				    boolean ck = false;
 				    synchronized(queue) {
-					if(loading.put(this, wait) != null)
-					    throw(new AssertionError());
+					if(restarted) {
+					    curload = null;
+					    queue.add(this);
+					    queue.notify();
+					    ck = true;
+					    restarted = false;
+					} else {
+					    if(loading.put(this, wait) != null)
+						throw(new AssertionError());
+					}
 				    }
+				    if(ck)
+					check();
 				});
 			}
 		    } catch(Throwable exc) {
@@ -110,35 +121,40 @@ public class Loader {
 	}
 
 	public boolean cancel() {
-	    synchronized(queue) {
-		Waiting wait = loading.remove(this);
-		if(wait != null) {
-		    wait.cancel();
-		    curload = null;
-		}
-	    }
+	    boolean ret;
 	    synchronized(runmon) {
 		synchronized(this) {
 		    cancelled = true;
-		    return(!done);
+		    ret = !done;
 		}
 	    }
+	    Waiting wait;
+	    synchronized(queue) {
+		if((wait = loading.remove(this)) != null)
+		    curload = null;
+	    }
+	    if(wait != null)
+		wait.cancel();
+	    return(ret);
 	}
 
 	public void restart() {
-	    boolean ck = false;
+	    Waiting wait;
 	    synchronized(queue) {
-		Waiting wait = loading.remove(this);
-		if(wait != null) {
-		    wait.cancel();
+		wait = loading.remove(this);
+		if(wait != null)
 		    curload = null;
+		else
+		    restarted = true;
+	    }
+	    if(wait != null) {
+		wait.cancel();
+		synchronized(queue) {
 		    queue.add(this);
 		    queue.notify();
-		    ck = true;
 		}
-	    }
-	    if(ck)
 		check();
+	    }
 	}
 
 	public T get() {
