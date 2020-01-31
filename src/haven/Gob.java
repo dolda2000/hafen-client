@@ -762,6 +762,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    }
 	}
 
+	public Pipe.Op placement() {
+	    return(new Placement());
+	}
+
 	public void autotick(double dt) {
 	    synchronized(Gob.this) {
 		Placement np;

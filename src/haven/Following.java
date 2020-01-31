@@ -92,7 +92,7 @@ public class Following extends Moving {
 		lpose = null;
 		hlpose = false;
 	    }
-	    Pipe.Op cpxf = (tgt == null) ? null : tgt.placed.curplace();
+	    Pipe.Op cpxf = (tgt == null) ? null : tgt.placed.placement();
 	    Pipe.Op cbxf = bxf.get();
 	    if((xf == null) || !Utils.eq(cbxf, lbxf) || !Utils.eq(cpxf, lpxf)) {
 		xf = Pipe.Op.compose(cpxf, cbxf);
