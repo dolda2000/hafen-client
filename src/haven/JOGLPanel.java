@@ -136,6 +136,9 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		System.err.println("\n-----\n\n");
 		gl = new TraceGL2(gl, System.err);
 	    }
+	    if(false) {
+		gl = new DebugGL2(gl);
+	    }
 	    env.process(gl);
 	    long end = System.nanoTime();
 	    if(Config.profile)
