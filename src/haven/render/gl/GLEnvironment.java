@@ -114,7 +114,11 @@ public class GLEnvironment implements Environment {
 		xf.run(gl);
 		prep.gl.run(gl);
 		this.curstate = prep.state;
-		GLException.checkfor(gl);
+		try {
+		    GLException.checkfor(gl);
+		} catch(Exception exc) {
+		    throw(new BGL.BGLException(prep.gl, null, exc));
+		}
 		sequnreg(prep);
 	    }
 	    for(GLRender cmd : copy) {
@@ -123,7 +127,11 @@ public class GLEnvironment implements Environment {
 		xf.run(gl);
 		cmd.gl.run(gl);
 		this.curstate = cmd.state;
-		GLException.checkfor(gl);
+		try {
+		    GLException.checkfor(gl);
+		} catch(Exception exc) {
+		    throw(new BGL.BGLException(cmd.gl, null, exc));
+		}
 		sequnreg(cmd);
 	    }
 	    checkqueries(gl);
