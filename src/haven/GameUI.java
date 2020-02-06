@@ -161,6 +161,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    });
 	Debug.log = ui.cons.out;
     }
+
+    public void dispose() {
+	Debug.log = new java.io.PrintWriter(System.err);
+	super.dispose();
+    }
     
     static class Hidewnd extends Window {
 	Hidewnd(Coord sz, String cap) {
