@@ -36,6 +36,7 @@ import static haven.Utils.c2fa;
 
 public abstract class Light implements RenderTree.Node {
     public float[] amb, dif, spc;
+    public int prio;
     
     private static final float[] defamb = {0.0f, 0.0f, 0.0f, 1.0f};
     private static final float[] defdif = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -69,6 +70,11 @@ public abstract class Light implements RenderTree.Node {
 	this.spc = c2fa(spc);
     }
 
+    public Light prio(int prio) {
+	this.prio = prio;
+	return(this);
+    }
+
     public abstract Object[] params(GroupPipe state);
 
     public static final State.Slot<Lights> clights = new State.Slot<>(State.Slot.Type.SYS, Lights.class);
@@ -97,7 +103,12 @@ public abstract class Light implements RenderTree.Node {
 	}
 
 	public void add(RenderList.Slot<Light> light) {
-	    ll.add(light);
+	    int i, p = light.obj().prio;
+	    for(i = 0; i < ll.size(); i++) {
+		if(ll.get(i).obj().prio <= p)
+		    break;
+	    }
+	    ll.add(i, light);
 	}
 
 	public void remove(RenderList.Slot<Light> light) {
