@@ -776,6 +776,7 @@ public class OCache implements Iterable<Gob> {
 
     public GobInfo receive(int fl, long id, int frame, Message msg) {
 	List<Delta> attrs = new ArrayList<>();
+	boolean hasrem = false;
 	GobInfo removed = null;
 	while(true) {
 	    int type = msg.uint8();
@@ -783,11 +784,12 @@ public class OCache implements Iterable<Gob> {
 		break;
 	    } else if(type == OD_REM) {
 		removed = netremove(id, frame - 1);
+		hasrem = true;
 	    } else {
 		attrs.add(parse(type, msg));
 	    }
 	}
-	if(removed != null)
+	if(hasrem)
 	    return(removed);
 	synchronized(netinfo) {
 	    if((fl & 1) != 0)

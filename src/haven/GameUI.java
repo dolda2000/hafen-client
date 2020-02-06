@@ -340,6 +340,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	Debug.log = ui.cons.out;
 	opts.c = sz.sub(opts.sz).div(2);
     }
+
+    public void dispose() {
+	Debug.log = new java.io.PrintWriter(System.err);
+	super.dispose();
+    }
     
     public class Hidepanel extends Widget {
 	public final String id;
