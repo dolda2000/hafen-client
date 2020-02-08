@@ -35,24 +35,72 @@ import haven.Audio.VolAdjust;
 
 public class ActAudio extends State {
     public static final Slot<ActAudio> audio = new State.Slot<>(Slot.Type.SYS, ActAudio.class);
-    public final Channel pos = new Channel("pos");
-    public final Channel amb = new Channel("amb");
+    public final Channel pos;
+    public final Channel amb;
     private final Map<Global, Global> global = new HashMap<Global, Global>();
 
     public haven.render.sl.ShaderMacro shader() {return(null);}
+
+    public ActAudio(Root root) {
+	this.pos = new Adapter(root.pos);
+	this.amb = new Adapter(root.amb);
+    }
 
     public void apply(Pipe st) {
 	st.put(audio, this);
     }
 
-    public class Channel {
+    public static interface Channel {
+	public void add(CS clip);
+	public void remove(CS clip);
+	public void clear();
+    }
+
+    public static class Adapter implements Channel {
+	public final Channel parent;
+	private Collection<CS> clips = new HashSet<CS>();
+
+	public Adapter(Channel parent) {
+	    this.parent = parent;
+	}
+
+	public void add(CS clip) {
+	    synchronized(this) {
+		if(clips != null) {
+		    clips.add(clip);
+		    parent.add(clip);
+		}
+	    }
+	}
+
+	public void remove(CS clip) {
+	    synchronized(this) {
+		if(clips != null) {
+		    clips.remove(clip);
+		    parent.remove(clip);
+		}
+	    }
+	}
+
+	public void clear() {
+	    synchronized(this) {
+		Collection<CS> clips = this.clips;
+		this.clips = null;
+		for(Iterator<CS> i = clips.iterator(); i.hasNext();) {
+		    parent.remove(i.next());
+		    i.remove();
+		}
+	    }
+	}
+    }
+
+    public static class RootChannel implements Channel {
 	public final String name;
 	public double volume;
-	private final Collection<CS> clips = new ArrayList<CS>();
 	private Audio.VolAdjust volc = null;
 	private Audio.Mixer mixer = null;
 
-	private Channel(String name) {
+	private RootChannel(String name) {
 	    this.name = name;
 	    this.volume = Double.parseDouble(Utils.getpref("sfxvol-" + name, "1.0"));
 	}
@@ -60,7 +108,7 @@ public class ActAudio extends State {
 	public Audio.Mixer mixer() {
 	    Audio.Mixer ret = this.mixer;
 	    if(ret == null) {
-		synchronized(clips) {
+		synchronized(this) {
 		    if((ret = this.mixer) == null) {
 			this.volc = new Audio.VolAdjust(ret = this.mixer = new Audio.Mixer(true));
 			this.volc.vol = volume;
@@ -79,7 +127,7 @@ public class ActAudio extends State {
 	}
 
 	public void clear() {
-	    synchronized(clips) {
+	    synchronized(this) {
 		if(mixer != null) {
 		    Audio.stop(volc);
 		    /* XXX? clear() should only be called once, so
@@ -93,18 +141,26 @@ public class ActAudio extends State {
 	}
 
 	public void add(CS clip) {
-	    synchronized(clips) {
-		clips.add(clip);
+	    synchronized(this) {
 		mixer().add(clip);
 	    }
 	}
 
 	public void remove(CS clip) {
-	    synchronized(clips) {
-		clips.remove(clip);
+	    synchronized(this) {
 		if(mixer != null)
 		    mixer.stop(clip);
 	    }
+	}
+    }
+
+    public static class Root {
+	public final RootChannel pos = new RootChannel("pos");
+	public final RootChannel amb = new RootChannel("amb");
+
+	public void clear() {
+	    pos.clear();
+	    amb.clear();
 	}
     }
 

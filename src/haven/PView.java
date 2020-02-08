@@ -39,6 +39,7 @@ public abstract class PView extends Widget {
     public Texture2D depth = null;
     private final Map<Object, Pipe.Op> basicstates = new IdentityHashMap<>();
     private final Light.LightList lights = new Light.LightList();
+    private ActAudio audio;
     private final ScreenList list2d = new ScreenList();
     private final TickList ticklist = new TickList();
     protected Environment env = null;
@@ -154,6 +155,8 @@ public abstract class PView extends Widget {
 	super.tick(dt);
 	conf.ostate(frame());
 	ticklist.tick(dt);
+	if(audio != null)
+	    audio.cycle();
     }
 
     private GOut resolveout(GOut def, PostProcessor next) {
@@ -227,6 +230,9 @@ public abstract class PView extends Widget {
     }
 
     public void dispose() {
+	if(audio != null) {
+	    audio.clear();
+	}
 	if(env != null) {
 	    envdispose();
 	    env = null;
@@ -265,7 +271,7 @@ public abstract class PView extends Widget {
     }
 
     protected void attached() {
-	basic(ActAudio.class, ui.audio);
+	basic(ActAudio.class, this.audio = new ActAudio(ui.audio));
     }
 
     protected void lights() {
