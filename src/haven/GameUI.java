@@ -164,6 +164,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     public void dispose() {
 	Debug.log = new java.io.PrintWriter(System.err);
+	ui.cons.clearout();
 	super.dispose();
     }
     
