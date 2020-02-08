@@ -2000,12 +2000,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    }
 		}
 	    });
-	Console.setscmd("placegrid", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    if((plobgran = Integer.parseInt(args[1])) < 0)
-			plobgran = 0;
-		}
-	    });
 	cmdmap.put("whyload", new Console.Command() {
 		public void run(Console cons, String[] args) throws Exception {
 		    Loading l = lastload;
@@ -2014,13 +2008,22 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    l.printStackTrace(cons.out);
 		}
 	    });
+    }
+    public Map<String, Console.Command> findcmds() {
+	return(cmdmap);
+    }
+
+    static {
+	Console.setscmd("placegrid", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    if((plobgran = Integer.parseInt(args[1])) < 0)
+			plobgran = 0;
+		}
+	    });
 	Console.setscmd("clickdb", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    clickdb = Utils.parsebool(args[1], false);
 		}
 	    });
-    }
-    public Map<String, Console.Command> findcmds() {
-	return(cmdmap);
     }
 }
