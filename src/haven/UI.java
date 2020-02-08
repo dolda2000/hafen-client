@@ -50,7 +50,7 @@ public class UI {
     public Console cons = new WidgetConsole();
     private Collection<AfterDraw> afterdraws = new LinkedList<AfterDraw>();
     private final Context uictx;
-    public final ActAudio audio = new ActAudio();
+    public final ActAudio.Root audio = new ActAudio.Root();
     
     {
 	lastevent = lasttick = Utils.rtime();
@@ -140,7 +140,6 @@ public class UI {
     }
 
     public void tick() {
-	audio.cycle();
 	double now = Utils.rtime();
 	root.tick(now - lasttick);
 	lasttick = now;
