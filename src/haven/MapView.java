@@ -477,7 +477,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		Collection<Loader.Future<?>> tasks = new ArrayList<>(adding.values());
 		adding.clear();
 		for(Loader.Future<?> task : tasks)
-		    task.cancel();
+		    task.restart();
 		current.clear();
 	    }
 	}
