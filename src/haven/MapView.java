@@ -515,7 +515,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    throw(new RuntimeException());
 		this.slot = null;
 		oc.uncallback(this);
+		Collection<Loader.Future<?>> tasks = new ArrayList<>(adding.values());
 		adding.clear();
+		for(Loader.Future<?> task : tasks)
+		    task.cancel();
 		current.clear();
 	    }
 	}
