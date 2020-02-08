@@ -40,7 +40,7 @@ public interface Waitable {
 	    };
     }
 
-    public static class Queue {
+    public static class Queue implements Waitable {
 	private Collection<Waiter> waiters = null;
 
 	private class Waiter implements Waiting {
@@ -80,6 +80,12 @@ public interface Waitable {
 
 	public Waiter add(Runnable callback) {
 	    return(add(new Waiter(callback)));
+	}
+
+	public void waitfor(Runnable callback, Consumer<Waiting> reg) {
+	    synchronized(this) {
+		reg.accept(add(callback));
+	    }
 	}
     }
 
