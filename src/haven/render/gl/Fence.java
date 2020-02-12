@@ -34,7 +34,7 @@ public class Fence implements BGL.Request {
     public Fence() {
     }
 
-    public void run(GL2 gl) {
+    public void run(GL2GL3 gl) {
 	synchronized(this) {
 	    state = 1;
 	    notifyAll();

@@ -38,7 +38,7 @@ public class GLTimestamp extends GLQuery {
 	this.callback = callback;
     }
 
-    public void create(GL2 gl) {
+    public void create(GL2GL3 gl) {
 	int[] buf = {0};
 	gl.glGenQueries(1, buf, 0);
 	((GL3)gl).glQueryCounter(buf[0], GL3.GL_TIMESTAMP);
@@ -46,7 +46,7 @@ public class GLTimestamp extends GLQuery {
 	env.queries.add(this);
     }
 
-    public boolean check(GL2 gl) {
+    public boolean check(GL2GL3 gl) {
 	int[] rbuf = {0};
 	gl.glGetQueryObjectiv(id, GL2.GL_QUERY_RESULT_AVAILABLE, rbuf, 0);
 	if(rbuf[0] == 0)
@@ -57,7 +57,7 @@ public class GLTimestamp extends GLQuery {
 	return(true);
     }
 
-    public void delete(GL2 gl) {
+    public void delete(GL2GL3 gl) {
 	gl.glDeleteQueries(1, new int[] {id}, 0);
     }
 }

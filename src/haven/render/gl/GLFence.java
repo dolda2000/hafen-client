@@ -30,20 +30,20 @@ import java.util.function.*;
 import javax.media.opengl.*;
 
 public class GLFence extends GLQuery {
-    public final Consumer<GL2> callback;
+    public final Consumer<GL2GL3> callback;
     protected long id;
 
-    public GLFence(GLEnvironment env, Consumer<GL2> callback) {
+    public GLFence(GLEnvironment env, Consumer<GL2GL3> callback) {
 	super(env);
 	this.callback = callback;
     }
 
-    public void create(GL2 gl) {
+    public void create(GL2GL3 gl) {
 	id = ((GL3)gl).glFenceSync(GL3.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 	env.queries.add(this);
     }
 
-    public boolean check(GL2 gl) {
+    public boolean check(GL2GL3 gl) {
 	int[] vbuf = {0};
 	((GL3)gl).glGetSynciv(id, GL3.GL_SYNC_STATUS, 1, null, 0, vbuf, 0);
 	if(vbuf[0] != GL3.GL_SIGNALED)
@@ -52,7 +52,7 @@ public class GLFence extends GLQuery {
 	return(true);
     }
 
-    public void delete(GL2 gl) {
+    public void delete(GL2GL3 gl) {
 	((GL3)gl).glDeleteSync(id);
     }
 }

@@ -217,7 +217,7 @@ public class GLRender implements Render, Disposable {
 		    }
 		    int jdsz = sz; GLBuffer jdvbuf = vbuf;
 		    gl.bglSubmit(new BGL.Request() {
-			    public void run(GL2 gl) {
+			    public void run(GL2GL3 gl) {
 				ByteBuffer buf = ByteBuffer.wrap(new byte[jdsz]);
 				for(int i = 0; i < data.va.bufs.length; i++) {
 				    if(data.va.bufs[i].usage == EPHEMERAL)

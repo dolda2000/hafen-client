@@ -45,7 +45,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	env.prepare(this);
     }
 
-    public void create(GL2 gl) {
+    public void create(GL2GL3 gl) {
 	ckstate(state, 0);
 	int[] buf = {0};
 	gl.glGenTextures(1, buf, 0);
@@ -54,7 +54,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	state = 1;
     }
 
-    protected void delete(GL2 gl) {
+    protected void delete(GL2GL3 gl) {
 	ckstate(state, 1);
 	gl.glDeleteTextures(1, new int[] {id}, 0);
 	state = 2;

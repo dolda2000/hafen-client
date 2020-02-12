@@ -164,7 +164,7 @@ public class GLProgram implements Disposable {
 	    env.prepare(this);
 	}
 
-	public void create(GL2 gl) {
+	public void create(GL2GL3 gl) {
 	    /* Does JOGL use the byte or char length or the supplied
 	     * String, and in case of the former, how does one know
 	     * the coding it encodes the String as so as to supply the
@@ -189,7 +189,7 @@ public class GLProgram implements Disposable {
 	    }
 	}
 
-	protected void delete(GL2 gl) {
+	protected void delete(GL2GL3 gl) {
 	    gl.glDeleteShader(id);
 	}
 
@@ -291,7 +291,7 @@ public class GLProgram implements Disposable {
 	    return(ret);
 	}
 
-	public void create(GL2 gl) {
+	public void create(GL2GL3 gl) {
 	    this.id = gl.glCreateProgram();
 	    for(ShaderOb sh : shaders)
 		gl.glAttachShader(this.id, sh.glid());
@@ -310,7 +310,7 @@ public class GLProgram implements Disposable {
 	    }
 	}
 
-	protected void delete(GL2 gl) {
+	protected void delete(GL2GL3 gl) {
 	    gl.glDeleteProgram(id);
 	}
 
@@ -321,7 +321,7 @@ public class GLProgram implements Disposable {
 	public class AttrID extends VarID {
 	    private AttrID(String name) {super(name);}
 
-	    public void run(GL2 gl) {
+	    public void run(GL2GL3 gl) {
 		this.id = gl.glGetAttribLocation(ProgOb.this.id, name);
 	    }
 
@@ -338,7 +338,7 @@ public class GLProgram implements Disposable {
 
 	    private UniformID(String name) {super(name);}
 
-	    public void run(GL2 gl) {
+	    public void run(GL2GL3 gl) {
 		this.id = gl.glGetUniformLocation(ProgOb.this.id, name);
 	    }
 

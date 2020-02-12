@@ -157,7 +157,7 @@ public class GLEnvironment implements Environment {
     final int[] stats_obj = new int[MemStats.values().length];
     final long[] stats_mem = new long[MemStats.values().length];
 
-    public GLEnvironment(GL2 initgl, GLContext ctx, Area wnd) {
+    public GLEnvironment(GL2GL3 initgl, GLContext ctx, Area wnd) {
 	if(debuglog)
 	    ctx.enableGLDebugMessage(true);
 	this.ctx = ctx;
@@ -168,7 +168,7 @@ public class GLEnvironment implements Environment {
 	this.nilfbo_db = ctx.getDefaultReadBuffer();
     }
 
-    private void initialize(GL2 gl) {
+    private void initialize(GL2GL3 gl) {
 	if(debuglog) {
 	    gl.glEnable(GL2.GL_DEBUG_OUTPUT);
 	    /* gl.glDebugMessageControl(GL.GL_DONT_CARE, GL.GL_DONT_CARE, GL2.GL_DEBUG_SEVERITY_NOTIFICATION, 0, null, 0, false); */
@@ -196,7 +196,7 @@ public class GLEnvironment implements Environment {
 	return(wnd);
     }
 
-    private void checkqueries(GL2 gl) {
+    private void checkqueries(GL2GL3 gl) {
 	for(Iterator<GLQuery> i = queries.iterator(); i.hasNext();) {
 	    GLQuery query = i.next();
 	    if(!query.check(gl))
@@ -219,7 +219,7 @@ public class GLEnvironment implements Environment {
 	}
     }
 
-    private List<DebugMessage> getdebuglog(GL2 gl) {
+    private List<DebugMessage> getdebuglog(GL2GL3 gl) {
 	List<DebugMessage> ret = new ArrayList<>();
 	int n = 16;
 	int[] src = new int[n], type = new int[n], id = new int[n], sev = new int[n], len = new int[n];
@@ -235,7 +235,7 @@ public class GLEnvironment implements Environment {
 	return(ret);
     }
 
-    private void checkdebuglog(GL2 gl) {
+    private void checkdebuglog(GL2GL3 gl) {
 	boolean f = false;
 	for(DebugMessage msg : getdebuglog(gl)) {
 	    System.err.printf("%d %d %d %d -- %s\n", msg.src, msg.type, msg.id, msg.sev, msg.msg);
@@ -245,7 +245,7 @@ public class GLEnvironment implements Environment {
 	    System.err.println();
     }
 
-    public void process(GL2 gl) {
+    public void process(GL2GL3 gl) {
 	GLRender prep;
 	Collection<GLRender> copy;
 	synchronized(submitted) {
