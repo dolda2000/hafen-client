@@ -148,21 +148,9 @@ public abstract class BGL {
 	    });
     }
 
-    public void glAlphaFunc(final int func, final float val) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glAlphaFunc(func, val);}
-	    });
-    }
-
     public void glAttachShader(final ID program, final ID shader) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glAttachShader(program.glid(), shader.glid());}
-	    });
-    }
-
-    public void glBegin(final int mode) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glBegin(mode);}
 	    });
     }
 
@@ -240,12 +228,6 @@ public abstract class BGL {
 	    });
     }
 
-    public void glCallList(final ID list) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glCallList(list.glid());}
-	    });
-    }
-
     public void glClear(final int mask) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glClear(mask);}
@@ -264,53 +246,9 @@ public abstract class BGL {
 	    });
     }
 
-    public void glColor3f(final float r, final float g, final float b) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glColor3f(r, g, b);}
-	    });
-    }
-
-    public void glColor4f(final float r, final float g, final float b, final float a) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glColor4f(r, g, b, a);}
-	    });
-    }
-
-    public void glColor4fv(final float[] v, final int n) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glColor4fv(v, n);}
-	    });
-    }
-
     public void glColorMask(final boolean r, final boolean g, final boolean b, final boolean a) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glColorMask(r, g, b, a);}
-	    });
-    }
-
-    public void glColorPointer(final int size, final int type, final int stride, final long pointer) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glColorPointer(size, type, stride, pointer);}
-	    });
-    }
-
-    public void glColorPointer(final int size, final int type, final int stride, Buffer data) {
-	final BufState ds = new BufState(data);
-	add(new Command() {
-		public void run(GL2 gl) {ds.restore(); gl.glColorPointer(size, type, stride, ds.buf);}
-	    });
-    }
-
-    public void glColorPointer(final int size, final int type, final int stride, Buffer data, int position) {
-	final BufState ds = new BufState(data, position);
-	add(new Command() {
-		public void run(GL2 gl) {ds.restore(); gl.glColorPointer(size, type, stride, ds.buf);}
-	    });
-    }
-
-    public void glCompileShaderARB(final ID shader) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glCompileShaderARB(shader.glid());}
 	    });
     }
 
@@ -333,18 +271,6 @@ public abstract class BGL {
 			buf[i] = buffers[i].glid();
 		    gl.glDeleteFramebuffers(count, buf, n);
 		}
-	    });
-    }
-
-    public void glDeleteLists(final ID list, final int range) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glDeleteLists(list.glid(), range);}
-	    });
-    }
-
-    public void glDeleteObjectARB(final ID id) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glDeleteObjectARB(id.glid());}
 	    });
     }
 
@@ -465,23 +391,9 @@ public abstract class BGL {
 	    });
     }
 
-    public void glDrawElements(final int mode, final int count, final int type, Buffer indices) {
-	final BufState is = new BufState(indices);
-	add(new Command() {
-		public void run(GL2 gl) {is.restore(); gl.glDrawElements(mode, count, type, is.buf);}
-	    });
-    }
-
     public void glDrawElements(final int mode, final int count, final int type, final long indices) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glDrawElements(mode, count, type, indices);}
-	    });
-    }
-
-    public void glDrawRangeElements(final int mode, final int start, final int end, final int count, final int type, Buffer indices) {
-	final BufState is = new BufState(indices);
-	add(new Command() {
-		public void run(GL2 gl) {is.restore(); gl.glDrawRangeElements(mode, start, end, count, type, is.buf);}
 	    });
     }
 
@@ -515,39 +427,9 @@ public abstract class BGL {
 	    });
     }
 
-    public void glEnd() {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glEnd();}
-	    });
-    }
-
-    public void glEndList() {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glEndList();}
-	    });
-    }
-
     public void glDeleteSync(final long id) {
 	add(new Command() {
 		public void run(GL2 gl) {((GL3)gl).glDeleteSync(id);}
-	    });
-    }
-
-    public void glFogi(final int pname, final int param) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glFogi(pname, param);}
-	    });
-    }
-
-    public void glFogf(final int pname, final float param) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glFogf(pname, param);}
-	    });
-    }
-
-    public void glFogfv(final int pname, final float[] param, final int n) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glFogfv(pname, param, n);}
 	    });
     }
 
@@ -575,30 +457,6 @@ public abstract class BGL {
 	    });
     }
 
-    public void glLightf(final int light, final int pname, final float param) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glLightf(light, pname, param);}
-	    });
-    }
-
-    public void glLightfv(final int light, final int pname, final float[] param, final int n) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glLightfv(light, pname, param, n);}
-	    });
-    }
-
-    public void glLightModelfv(final int pname, final float[] param, final int n) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glLightModelfv(pname, param, n);}
-	    });
-    }
-
-    public void glLightModeli(final int pname, final int param) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glLightModeli(pname, param);}
-	    });
-    }
-
     public void glLineWidth(final float w) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glLineWidth(w);}
@@ -608,62 +466,6 @@ public abstract class BGL {
     public void glLinkProgram(final ID program) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glLinkProgram(program.glid());}
-	    });
-    }
-
-    public void glLoadMatrixf(final float[] m, final int i) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glLoadMatrixf(m, i);}
-	    });
-    }
-
-    public void glMaterialf(final int face, final int pname, final float param) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glMaterialf(face, pname, param);}
-	    });
-    }
-
-    public void glMaterialfv(final int face, final int pname, final float[] param, final int n) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glMaterialfv(face, pname, param, n);}
-	    });
-    }
-
-    public void glMatrixMode(final int mode) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glMatrixMode(mode);}
-	    });
-    }
-
-    public void glNewList(final ID list, final int mode) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glNewList(list.glid(), mode);}
-	    });
-    }
-
-    public void glNormal3f(final float x, final float y, final float z) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glNormal3f(x, y, z);}
-	    });
-    }
-
-    public void glNormalPointer(final int type, final int stride, final long pointer) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glNormalPointer(type, stride, pointer);}
-	    });
-    }
-
-    public void glNormalPointer(final int type, final int stride, Buffer data) {
-	final BufState ds = new BufState(data);
-	add(new Command() {
-		public void run(GL2 gl) {ds.restore(); gl.glNormalPointer(type, stride, ds.buf);}
-	    });
-    }
-
-    public void glNormalPointer(final int type, final int stride, Buffer data, int position) {
-	final BufState ds = new BufState(data, position);
-	add(new Command() {
-		public void run(GL2 gl) {ds.restore(); gl.glNormalPointer(type, stride, ds.buf);}
 	    });
     }
 
@@ -730,38 +532,6 @@ public abstract class BGL {
     public void glScissor(final int x, final int y, final int w, final int h) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glScissor(x, y, w, h);}
-	    });
-    }
-
-    public void glShaderSourceARB(final ID shader, final int count, final String[] string, final int[] length, final int n) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glShaderSourceARB(shader.glid(), count, string, length, n);}
-	    });
-    }
-
-    public void glTexCoord2f(final float s, final float t) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glTexCoord2f(s, t);}
-	    });
-    }
-
-    public void glTexCoordPointer(final int size, final int type, final int stride, final long pointer) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glTexCoordPointer(size, type, stride, pointer);}
-	    });
-    }
-
-    public void glTexCoordPointer(final int size, final int type, final int stride, Buffer data) {
-	final BufState ds = new BufState(data);
-	add(new Command() {
-		public void run(GL2 gl) {ds.restore(); gl.glTexCoordPointer(size, type, stride, ds.buf);}
-	    });
-    }
-
-    public void glTexCoordPointer(final int size, final int type, final int stride, Buffer data, int position) {
-	final BufState ds = new BufState(data, position);
-	add(new Command() {
-		public void run(GL2 gl) {ds.restore(); gl.glTexCoordPointer(size, type, stride, ds.buf);}
 	    });
     }
 
@@ -857,39 +627,9 @@ public abstract class BGL {
 	    });
     }
 
-    public void glUseProgramObjectARB(final ID program) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glUseProgramObjectARB((program == null)?0:program.glid());}
-	    });
-    }
-
     public void glUseProgram(final ID program) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glUseProgram((program == null)?0:program.glid());}
-	    });
-    }
-
-    public void glVertex2f(final float x, final float y) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glVertex2f(x, y);}
-	    });
-    }
-
-    public void glVertex2i(final int x, final int y) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glVertex2i(x, y);}
-	    });
-    }
-
-    public void glVertex3f(final float x, final float y, final float z) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glVertex3f(x, y, z);}
-	    });
-    }
-
-    public void glVertex3i(final int x, final int y, final int z) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glVertex3i(x, y, z);}
 	    });
     }
 
@@ -905,20 +645,6 @@ public abstract class BGL {
 	    });
     }
 
-    public void glVertexAttribPointer(final ID location, final int size, final int type, final boolean normalized, final int stride, Buffer pointer) {
-	final BufState ps = new BufState(pointer);
-	add(new Command() {
-		public void run(GL2 gl) {ps.restore(); gl.glVertexAttribPointer(location.glid(), size, type, normalized, stride, ps.buf);}
-	    });
-    }
-
-    public void glVertexAttribPointer(final ID location, final int size, final int type, final boolean normalized, final int stride, Buffer pointer, int position) {
-	final BufState ps = new BufState(pointer, position);
-	add(new Command() {
-		public void run(GL2 gl) {ps.restore(); gl.glVertexAttribPointer(location.glid(), size, type, normalized, stride, ps.buf);}
-	    });
-    }
-
     public void glVertexAttribPointer(final ID location, final int size, final int type, final boolean normalized, final int stride, final long pointer) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glVertexAttribPointer(location.glid(), size, type, normalized, stride, pointer);}
@@ -928,26 +654,6 @@ public abstract class BGL {
     public void glVertexAttribPointer(final ID location, final int offset, final int size, final int type, final boolean normalized, final int stride, final long pointer) {
 	add(new Command() {
 		public void run(GL2 gl) {gl.glVertexAttribPointer(location.glid() + offset, size, type, normalized, stride, pointer);}
-	    });
-    }
-
-    public void glVertexPointer(final int size, final int type, final int stride, final long pointer) {
-	add(new Command() {
-		public void run(GL2 gl) {gl.glVertexPointer(size, type, stride, pointer);}
-	    });
-    }
-
-    public void glVertexPointer(final int size, final int type, final int stride, Buffer data) {
-	final BufState ds = new BufState(data);
-	add(new Command() {
-		public void run(GL2 gl) {ds.restore(); gl.glVertexPointer(size, type, stride, ds.buf);}
-	    });
-    }
-
-    public void glVertexPointer(final int size, final int type, final int stride, Buffer data, int position) {
-	final BufState ds = new BufState(data, position);
-	add(new Command() {
-		public void run(GL2 gl) {ds.restore(); gl.glVertexPointer(size, type, stride, ds.buf);}
 	    });
     }
 
