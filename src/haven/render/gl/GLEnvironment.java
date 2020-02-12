@@ -405,7 +405,7 @@ public class GLEnvironment implements Environment {
 			GLBuffer rbuf = ret.rbuf;
 			prepare((GLRender g) -> {
 				BGL gl = g.gl();
-				Vao0State.apply(gl, g.state, rbuf);
+				Vao0State.apply(this, gl, g.state, rbuf);
 				ByteBuffer xfbuf = data.get();
 				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), xfbuf, GL.GL_DYNAMIC_DRAW);
 				jdret.put(gl, xfbuf);
@@ -426,7 +426,7 @@ public class GLEnvironment implements Environment {
 			GLBuffer jdret = ret;
 			prepare((GLRender g) -> {
 				BGL gl = g.gl();
-				Vao0State.apply(gl, g.state, jdret);
+				Vao0State.apply(this, gl, g.state, jdret);
 				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
 				jdret.setmem(MemStats.INDICES, buf.size());
 			    });
@@ -579,6 +579,7 @@ public class GLEnvironment implements Environment {
 	}
     }
 
+    public final Supplier<GLVertexArray> tempvao = new TempData<>(() -> new GLVertexArray(this));
     public final Supplier<GLBuffer> tempvertex = new TempData<>(() -> new GLBuffer(this));
     public final Supplier<GLBuffer> tempindex = new TempData<>(() -> new GLBuffer(this));
 

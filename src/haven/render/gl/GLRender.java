@@ -181,7 +181,7 @@ public class GLRender implements Render, Disposable {
 		enable[i] = state.prog().cattrib(data.va.fmt.inputs[i].tgt);
 		instanced[i] = data.va.fmt.inputs[i].instanced;
 	    }
-	    Vao0State.apply(this.gl, state, enable, instanced);
+	    Vao0State.apply(this.env, this.gl, state, enable, instanced);
 
 	    BGL gl = gl();
 	    int[] offsets = new int[data.va.bufs.length];
@@ -251,7 +251,7 @@ public class GLRender implements Render, Disposable {
 		    gl.glDrawArraysInstanced(glmode(data.mode), data.f, data.n, data.ninst);
 	    } else {
 		if(data.ind.usage == EPHEMERAL) {
-		    Vao0State.apply(gl, state, env.tempindex.get());
+		    Vao0State.apply(this.env, gl, state, env.tempindex.get());
 		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, data.ind.size(), ByteBuffer.wrap(((HeapBuffer)indo).buf), GL2.GL_STREAM_DRAW);
 		} else {
 		    throw(new NotImplemented("non-ephemeral index arrays"));
@@ -314,7 +314,7 @@ public class GLRender implements Render, Disposable {
 	    switch(ibuf.usage) {
 	    case STATIC: {
 		FillBuffers.Array data = (FillBuffers.Array)fill.fill(buf, env);
-		Vao0State.apply(this.gl, state, (GLBuffer)env.prepare(ibuf));
+		Vao0State.apply(this.env, this.gl, state, (GLBuffer)env.prepare(ibuf));
 		BGL gl = gl();
 		gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
 		break;
@@ -322,7 +322,7 @@ public class GLRender implements Render, Disposable {
 	    case STREAM: {
 		StreamBuffer ro = (StreamBuffer)env.prepare(ibuf);
 		StreamBuffer.Fill data = (StreamBuffer.Fill)fill.fill(buf, env);
-		Vao0State.apply(this.gl, state, ro.rbuf);
+		Vao0State.apply(this.env, this.gl, state, ro.rbuf);
 		BGL gl = gl();
 		ByteBuffer xfbuf = data.get();
 		gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), xfbuf, GL.GL_DYNAMIC_DRAW);
@@ -373,7 +373,7 @@ public class GLRender implements Render, Disposable {
 	    FillBuffers.Array data = (FillBuffers.Array)fill.fill(buf, env, from, to);
 	    Object ro = env.prepare(ibuf);
 	    GLBuffer glbuf = (ro instanceof StreamBuffer) ? ((StreamBuffer)ro).rbuf : (GLBuffer) ro;
-	    Vao0State.apply(this.gl, state, glbuf);
+	    Vao0State.apply(this.env, this.gl, state, glbuf);
 	    BGL gl = gl();
 	    gl.glBufferSubData(GL.GL_ELEMENT_ARRAY_BUFFER, from, to - from, ByteBuffer.wrap(data.data));
 	} else if(buf instanceof VertexArray.Buffer) {
