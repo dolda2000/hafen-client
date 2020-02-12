@@ -33,10 +33,12 @@ import java.util.*;
 import javax.media.opengl.GL;
 
 public class FboState extends GLState {
+    public final GLEnvironment env;
     public final GLFrameBuffer fbo;
     public final int[] dbufs;
 
-    public FboState(GLFrameBuffer fbo, int[] dbufs) {
+    public FboState(GLEnvironment env, GLFrameBuffer fbo, int[] dbufs) {
+	this.env = env;
 	this.fbo = fbo;
 	this.dbufs = dbufs;
     }
@@ -59,7 +61,10 @@ public class FboState extends GLState {
 
     public void unapply(BGL gl) {
 	gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, null);
-	gl.glDrawBuffer(GL.GL_BACK);
+	if(env.nilfbo_id == 0)
+	    gl.glDrawBuffer(GL.GL_BACK);
+	else
+	    gl.glDrawBuffer(env.nilfbo_db);
     }
 
     public void applyto(BGL gl, GLState to) {
@@ -131,7 +136,7 @@ public class FboState extends GLState {
 		throw(new RuntimeException());
 	    }
 	}
-	return(new FboState(fbo, dbufs));
+	return(new FboState(env, fbo, dbufs));
     }
 
     public static FboState make(GLEnvironment env, Object depth, Object[] fvals) {
@@ -161,12 +166,16 @@ public class FboState extends GLState {
 		throw(new IllegalArgumentException("The default OpenGL framebuffer cannot be depth-less"));
 	    int[] dbufs = new int[fvals.length];
 	    for(int i = 0; i < fvals.length; i++) {
-		if(fvals[i] == null)
+		if(fvals[i] == null) {
 		    dbufs[i] = GL.GL_NONE;
-		else
-		    dbufs[i] = GL.GL_BACK;
+		} else {
+		    if(env.nilfbo_id == 0)
+			dbufs[i] = GL.GL_BACK;
+		    else
+			dbufs[i] = env.nilfbo_db;
+		}
 	    }
-	    return(new FboState(null, dbufs));
+	    return(new FboState(env, null, dbufs));
 	} else {
 	    throw(new IllegalArgumentException(String.format("Illegal framebuffer configuration: depth=%s, colors=%s", depth, Arrays.asList(fvals))));
 	}

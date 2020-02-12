@@ -42,6 +42,7 @@ public class GLEnvironment implements Environment {
     final Collection<GLObject> disposed = new LinkedList<>();
     final List<GLQuery> queries = new LinkedList<>(); // Synchronized on drawmon
     final Queue<GLRender> submitted = new LinkedList<>();
+    final int nilfbo_id, nilfbo_db;
     Area wnd;
     private GLRender prep = null;
     private Applier curstate = new Applier(this);
@@ -57,6 +58,8 @@ public class GLEnvironment implements Environment {
 	this.ctx = ctx;
 	this.wnd = wnd;
 	initialize(initgl);
+	this.nilfbo_id = ctx.getDefaultDrawFramebuffer();
+	this.nilfbo_db = ctx.getDefaultReadBuffer();
     }
 
     private void initialize(GL2 gl) {
