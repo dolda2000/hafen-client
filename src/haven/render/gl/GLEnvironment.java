@@ -175,7 +175,6 @@ public class GLEnvironment implements Environment {
 	    /* gl.glDebugMessageControl(GL2.GL_DEBUG_SOURCE_API, GL2.GL_DEBUG_TYPE_OTHER, GL2.GL_DONT_CARE, 1, new int[] {131185}, 0, false); */
 	}
 	gl.glEnable(GL3.GL_PROGRAM_POINT_SIZE);
-	gl.glEnable(GL2.GL_POINT_SPRITE);
     }
 
     public GLRender render() {
