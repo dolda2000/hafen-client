@@ -41,10 +41,13 @@ public class Attribute extends Variable.Global {
 
     private class Def extends Definition {
 	public void output(Output out) {
-	    if(out.ctx instanceof ShaderContext) {
-		((ShaderContext)out.ctx).prog.attribs.add(Attribute.this);
+	    if(out.ctx instanceof VertexContext) {
+		VertexContext vctx = (VertexContext)out.ctx;
+		vctx.prog.attribs.add(Attribute.this);
+		out.write("in ");
+	    } else {
+		throw(new RuntimeException("use of attribute variable outside vertex context: " + Attribute.this));
 	    }
-	    out.write("in ");
 	    super.output(out);
 	}
     }
