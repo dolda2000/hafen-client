@@ -677,11 +677,8 @@ public class Resource implements Serializable {
 		if(_local == null) {
 		    Pool local = new Pool(new JarSource());
 		    try {
-			String dir = Config.resdir;
-			if(dir == null)
-			    dir = System.getenv("HAVEN_RESDIR");
-			if(dir != null)
-			    local.add(new FileSource(new File(dir)));
+			if(Config.resdir != null)
+			    local.add(new FileSource(new File(Config.resdir)));
 		    } catch(Exception e) {
 			/* Ignore these. We don't want to be crashing the client
 			 * for users just because of errors in development
