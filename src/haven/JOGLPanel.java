@@ -54,7 +54,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private Pipe base, wnd;
 
     private static GLCapabilities mkcaps() {
-	GLProfile prof = GLProfile.getDefault();
+	GLProfile prof = GLProfile.getMaxProgrammableCore(true);
+	// GLProfile prof = GLProfile.getDefault();
 	GLCapabilities caps = new GLCapabilities(prof);
 	caps.setDoubleBuffered(true);
 	caps.setAlphaBits(8);
@@ -134,10 +135,10 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    long pst = Config.profile ? System.nanoTime() : 0;
 	    if(false) {
 		System.err.println("\n-----\n\n");
-		gl = new TraceGL2(gl.getGL2(), System.err);
+		gl = new TraceGL3(gl.getGL3(), System.err);
 	    }
-	    if(true) {
-		gl = new DebugGL2(gl.getGL2());
+	    if(false) {
+		gl = new DebugGL3(gl.getGL3());
 	    }
 	    env.process(gl);
 	    long end = System.nanoTime();
