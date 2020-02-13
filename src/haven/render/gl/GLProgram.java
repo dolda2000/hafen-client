@@ -48,6 +48,7 @@ public class GLProgram implements Disposable {
     public final AtomicInteger locked = new AtomicInteger(0);
     private final Map<Uniform, String> unifnms;
     private final Map<Attribute, String> attrnms;
+    private final String[] fragnms;
     private ProgOb glp;
 
     public GLProgram(GLEnvironment env, ProgramContext ctx) {
@@ -81,9 +82,11 @@ public class GLProgram implements Disposable {
 	}
 	{
 	    FragData[] fragdata = ctx.fragdata.toArray(new FragData[0]);
+	    String[] fragnms = new String[fragdata.length];
 	    boolean[] fmap = new boolean[DepthBuffer.slot.id + 1];
 	    fmap[DepthBuffer.slot.id] = true;
 	    for(int i = 0; i < fragdata.length; i++) {
+		fragnms[i] = ctx.symtab.get(fragdata[i].name);
 		for(State.Slot slot : fragdata[i].deps) {
 		    if(fmap.length <= slot.id)
 			fmap = Arrays.copyOf(fmap, slot.id + 1);
@@ -92,6 +95,7 @@ public class GLProgram implements Disposable {
 	    }
 	    this.fragdata = fragdata;
 	    this.fmap = fmap;
+	    this.fragnms = fragnms;
 	}
 	{
 	    int sn = 0;
@@ -308,6 +312,8 @@ public class GLProgram implements Disposable {
 		}
 		throw(new LinkException("Failed to link GL program", GLProgram.this, info));
 	    }
+	    for(int i = 0; i < fragdata.length; i++)
+		gl.glBindFragDataLocation(this.id, i, fragnms[i]);
 	}
 
 	protected void delete(GL2GL3 gl) {
