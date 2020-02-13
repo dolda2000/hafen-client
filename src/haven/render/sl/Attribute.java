@@ -44,7 +44,7 @@ public class Attribute extends Variable.Global {
 	    if(out.ctx instanceof ShaderContext) {
 		((ShaderContext)out.ctx).prog.attribs.add(Attribute.this);
 	    }
-	    out.write("attribute ");
+	    out.write("in ");
 	    super.output(out);
 	}
     }

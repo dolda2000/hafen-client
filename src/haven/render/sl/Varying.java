@@ -44,7 +44,12 @@ public class Varying extends Variable.Global {
 	    case NOPERSPECTIVE: {out.write("noperspective "); break;}
 	    case CENTROID:      {out.write("centroid "); break;}
 	    }
-	    out.write("varying ");
+	    if(out.ctx instanceof VertexContext)
+		out.write("out ");
+	    else if(out.ctx instanceof FragmentContext)
+		out.write("in ");
+	    else
+		throw(new RuntimeException("use of varying variable outside vertex/fragment context: " + Varying.this));
 	    super.output(out);
 	}
     }
