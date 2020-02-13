@@ -44,7 +44,7 @@ public class Config {
     public static boolean profilegpu = getprop("haven.profilegpu", "off").equals("on");
     public static boolean par = false;
     public static boolean fscache = getprop("haven.fscache", "on").equals("on");
-    public static String resdir = getprop("haven.resdir", null);
+    public static String resdir = getprop("haven.resdir", System.getenv("HAFEN_RESDIR"));
     public static boolean nopreload = getprop("haven.nopreload", "no").equals("yes");
     public static String loadwaited = getprop("haven.loadwaited", null);
     public static String allused = getprop("haven.allused", null);
