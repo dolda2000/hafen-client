@@ -299,6 +299,8 @@ public class GLProgram implements Disposable {
 	    this.id = gl.glCreateProgram();
 	    for(ShaderOb sh : shaders)
 		gl.glAttachShader(this.id, sh.glid());
+	    for(int i = 0; i < fragdata.length; i++)
+		gl.glBindFragDataLocation(this.id, i, fragnms[i]);
 	    gl.glLinkProgram(this.id);
 	    int[] buf = {0};
 	    gl.glGetProgramiv(this.id, GL2.GL_LINK_STATUS, buf, 0);
@@ -312,8 +314,6 @@ public class GLProgram implements Disposable {
 		}
 		throw(new LinkException("Failed to link GL program", GLProgram.this, info));
 	    }
-	    for(int i = 0; i < fragdata.length; i++)
-		gl.glBindFragDataLocation(this.id, i, fragnms[i]);
 	}
 
 	protected void delete(GL2GL3 gl) {
