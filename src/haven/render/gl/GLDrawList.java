@@ -956,8 +956,6 @@ public class GLDrawList implements DrawList {
 	    /* Handle exceptions from DrawSlot construction before
 	     * removing previous slot. */
 	    DrawSlot dslot = new DrawSlot(slot);
-	    if(dslot == null)
-		throw(new IllegalStateException("removing non-present slot"));
 	    remove(slot);
 	    dslot.insert();
 	    if(slotmap.put(slot, dslot) != null)
