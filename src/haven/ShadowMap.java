@@ -275,12 +275,12 @@ public class ShadowMap extends State {
 			    LValue yo = code.local(FLOAT, null).ref();
 			    code.add(new For(ass(yo, l(-yr / 2)), lt(yo, l((yr / 2) + (yd / 2))), aadd(yo, l(yd)),
 					     new For(ass(xo, l(-xr / 2)), lt(xo, l((xr / 2) + (xd / 2))), aadd(xo, l(xd)),
-						     new If(gt(add(pick(texture2D(map.ref(), add(pick(mapc, "xy"), vec2(xo, yo))), "z"), l(thr)), pick(mapc, "z")),
+						     new If(gt(add(pick(texture2D(map.ref(), add(pick(mapc, "xy"), vec2(xo, yo))), "r"), l(thr)), pick(mapc, "z")),
 							    stmt(aadd(sdw, l(1.0 / (res * res))))))));
 			} else {
 			    for(double yo = -yr / 2; yo < (yr / 2) + (yd / 2); yo += yd) {
 				for(double xo = -xr / 2; xo < (xr / 2) + (xd / 2); xo += xd) {
-				    code.add(new If(gt(add(pick(texture2D(map.ref(), add(pick(mapc, "xy"), vec2(l(xo), l(yo)))), "z"), l(thr)), pick(mapc, "z")),
+				    code.add(new If(gt(add(pick(texture2D(map.ref(), add(pick(mapc, "xy"), vec2(l(xo), l(yo)))), "r"), l(thr)), pick(mapc, "z")),
 						    stmt(aadd(sdw, l(1.0 / (res * res))))));
 				}
 			    }
