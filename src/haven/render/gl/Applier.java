@@ -89,8 +89,8 @@ public class Applier {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T extends State> void glpapply(BGL gl, GLPipeState<T> st, State from, State to) {
-	st.apply(gl, (T)from, (T)to);
+    private static <T extends State> void glpapply(GLEnvironment env, BGL gl, GLPipeState<T> st, State from, State to) {
+	st.apply(env, gl, (T)from, (T)to);
     }
 
     private void assume(State[] ns) {
@@ -235,7 +235,7 @@ public class Applier {
 	for(int i = 0; i < pn; i++) {
 	    int slot = pdirty[i];
 	    if((slot < GLPipeState.matching.length) && (GLPipeState.matching[slot] != null))
-		glpapply(gl, GLPipeState.matching[slot], (slot < cur.length) ? cur[slot] : null, (slot < ns.length) ? ns[slot] : null);
+		glpapply(env, gl, GLPipeState.matching[slot], (slot < cur.length) ? cur[slot] : null, (slot < ns.length) ? ns[slot] : null);
 	    cur[slot] = (slot < ns.length) ? ns[slot] : null;
 	}
 	for(int i = 0; i < sn; i++)
@@ -302,7 +302,7 @@ public class Applier {
 	    State a = (glp.slot.id < this.cur.length) ? this.cur[glp.slot.id] : null;
 	    State b = (glp.slot.id < that.cur.length) ? that.cur[glp.slot.id] : null;
 	    if(!eq(a, b))
-		glpapply(gl, glp, a, b);
+		glpapply(env, gl, glp, a, b);
 	}
 	if(this.prog != that.prog) {
 	    GLProgram.apply(gl, this.prog, that.prog);

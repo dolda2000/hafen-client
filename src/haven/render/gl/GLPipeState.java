@@ -33,10 +33,10 @@ import javax.media.opengl.*;
 
 public abstract class GLPipeState<T extends State> {
     public State.Slot<? extends T> slot;
-    public abstract void apply(BGL gl, T from, T to);
+    public abstract void apply(GLEnvironment env, BGL gl, T from, T to);
 
-    public void apply(BGL gl, T to) {
-	apply(gl, null, to);
+    public void apply(GLEnvironment env, BGL gl, T to) {
+	apply(env, gl, null, to);
     }
 
     public GLPipeState(State.Slot<? extends T> slot) {
@@ -44,7 +44,7 @@ public abstract class GLPipeState<T extends State> {
     }
 
     public static final GLPipeState<Viewport> viewport = new GLPipeState<Viewport>(States.viewport) {
-	    public void apply(BGL gl, Viewport from, Viewport to) {
+	    public void apply(GLEnvironment env, BGL gl, Viewport from, Viewport to) {
 		if(to != null) {
 		    gl.glViewport(to.area.ul.x, to.area.ul.y, to.area.br.x - to.area.ul.x, to.area.br.y - to.area.ul.y);
 		} else {
@@ -54,7 +54,7 @@ public abstract class GLPipeState<T extends State> {
 	};
 
     public static final GLPipeState<Scissor> scissor = new GLPipeState<Scissor>(States.scissor) {
-	    public void apply(BGL gl, Scissor from, Scissor to) {
+	    public void apply(GLEnvironment env, BGL gl, Scissor from, Scissor to) {
 		if(to != null) {
 		    gl.glScissor(to.area.ul.x, to.area.ul.y, to.area.br.x - to.area.ul.x, to.area.br.y - to.area.ul.y);
 		    if(from == null)
@@ -75,7 +75,7 @@ public abstract class GLPipeState<T extends State> {
 		}
 	    }
 
-	    public void apply(BGL gl, Facecull from, Facecull to) {
+	    public void apply(GLEnvironment env, BGL gl, Facecull from, Facecull to) {
 		if(to != null) {
 		    gl.glEnable(GL.GL_CULL_FACE);
 		    gl.glCullFace(mode(to.mode));
@@ -100,7 +100,7 @@ public abstract class GLPipeState<T extends State> {
 		}
 	    }
 
-	    public void apply(BGL gl, Depthtest from, Depthtest to) {
+	    public void apply(GLEnvironment env, BGL gl, Depthtest from, Depthtest to) {
 		if(to != null) {
 		    gl.glEnable(GL.GL_DEPTH_TEST);
 		    gl.glDepthFunc(depthfunc(to.test));
@@ -111,7 +111,7 @@ public abstract class GLPipeState<T extends State> {
 	};
 
     public static final GLPipeState<State> maskdepth = new GLPipeState<State>(States.maskdepth.slot) {
-	    public void apply(BGL gl, State from, State to) {
+	    public void apply(GLEnvironment env, BGL gl, State from, State to) {
 		if(to != null)
 		    gl.glDepthMask(false);
 		else
@@ -150,7 +150,7 @@ public abstract class GLPipeState<T extends State> {
 		}
 	    }
 
-	    public void apply(BGL gl, Blending from, Blending to) {
+	    public void apply(GLEnvironment env, BGL gl, Blending from, Blending to) {
 		if(to != null) {
 		    if(!eq(from, to)) {
 			if(to.cfn == to.afn)
@@ -173,7 +173,7 @@ public abstract class GLPipeState<T extends State> {
 	};
 
     public static final GLPipeState<LineWidth> linewidth = new GLPipeState<LineWidth>(States.linewidth) {
-	    public void apply(BGL gl, LineWidth from, LineWidth to) {
+	    public void apply(GLEnvironment env, BGL gl, LineWidth from, LineWidth to) {
 		if(to != null) {
 		    if(!eq(from, to))
 			gl.glLineWidth(to.w);
@@ -184,7 +184,7 @@ public abstract class GLPipeState<T extends State> {
 	};
 
     public static final GLPipeState<DepthBias> depthbias = new GLPipeState<DepthBias>(States.depthbias) {
-	    public void apply(BGL gl, DepthBias from, DepthBias to) {
+	    public void apply(GLEnvironment env, BGL gl, DepthBias from, DepthBias to) {
 		if(to != null) {
 		    if(from == null)
 			gl.glEnable(GL.GL_POLYGON_OFFSET_FILL);
