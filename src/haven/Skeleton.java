@@ -864,26 +864,39 @@ public class Skeleton {
 	public final double nspeed;
 	public final WrapMode defmode;
 	
-	private static Track.Frame[] parseframes(Message buf) {
+	private Track.Frame[] parseframes(int fmt, Message buf) {
 	    Track.Frame[] frames = new Track.Frame[buf.uint16()];
-	    for(int i = 0; i < frames.length; i++) {
-		float tm = (float)buf.cpfloat();
-		float[] trans = new float[3];
-		for(int o = 0; o < 3; o++)
-		    trans[o] = (float)buf.cpfloat();
-		float rang = (float)buf.cpfloat();
-		float[] rax = new float[3];
-		for(int o = 0; o < 3; o++)
-		    rax[o] = (float)buf.cpfloat();
-		frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang));
+	    if(fmt == 0) {
+		for(int i = 0; i < frames.length; i++) {
+		    float tm = (float)buf.cpfloat();
+		    float[] trans = new float[3];
+		    for(int o = 0; o < 3; o++)
+			trans[o] = (float)buf.cpfloat();
+		    float rang = (float)buf.cpfloat();
+		    float[] rax = new float[3];
+		    for(int o = 0; o < 3; o++)
+			rax[o] = (float)buf.cpfloat();
+		    frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang));
+		}
+	    } else if(fmt == 1) {
+		for(int i = 0; i < frames.length; i++) {
+		    float tm = (buf.uint16() / 65535.0f) * len;
+		    float[] trans = new float[3];
+		    for(int o = 0; o < 3; o++)
+			trans[o] = Utils.hfdec((short)buf.int16());
+		    float rang = (buf.uint16() / 65535.0f) * 2 * (float)Math.PI;
+		    float[] rax = new float[3];
+		    Utils.oct2uvec(rax, buf.int16() / 32767.0f, buf.int16() / 32767.0f);
+		    frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang));
+		}
 	    }
 	    return(frames);
 	}
 
-	private FxTrack parsefx(Message buf) {
+	private FxTrack parsefx(int fmt, Message buf) {
 	    FxTrack.Event[] events = new FxTrack.Event[buf.uint16()];
 	    for(int i = 0; i < events.length; i++) {
-		float tm = (float)buf.cpfloat();
+		float tm = (fmt == 0) ? (float)buf.cpfloat() : ((buf.uint16() / 65535.0f) * len);
 		int t = buf.uint8();
 		switch(t) {
 		case 0:
@@ -908,6 +921,7 @@ public class Skeleton {
 	    res.super();
 	    this.id = buf.int16();
 	    int fl = buf.uint8();
+	    int fmt = (fl & 6) >> 1;
 	    int mode = buf.uint8();
 	    if(mode == 0)
 		defmode = WrapMode.ONCE;
@@ -919,19 +933,26 @@ public class Skeleton {
 		defmode = WrapMode.PONGLOOP;
 	    else
 		throw(new Resource.LoadException("Illegal animation mode: " + mode, getres()));
-	    this.len = (float)buf.cpfloat();
-	    if((fl & 1) != 0)
-		nspeed = buf.cpfloat();
+	    if(fmt == 0)
+		this.len = (float)buf.cpfloat();
 	    else
+		this.len = buf.float32();
+	    if((fl & 1) != 0) {
+		if(fmt == 0)
+		    nspeed = buf.cpfloat();
+		else
+		    nspeed = buf.float32();
+	    } else {
 		nspeed = -1;
+	    }
 	    Collection<Track> tracks = new LinkedList<Track>();
 	    Collection<FxTrack> fx = new LinkedList<FxTrack>();
 	    while(!buf.eom()) {
 		String bnm = buf.string();
 		if(bnm.equals("{ctl}")) {
-		    fx.add(parsefx(buf));
+		    fx.add(parsefx(fmt, buf));
 		} else {
-		    tracks.add(new Track(bnm, parseframes(buf)));
+		    tracks.add(new Track(bnm, parseframes(fmt, buf)));
 		}
 	    }
 	    this.tracks = tracks.toArray(new Track[0]);
