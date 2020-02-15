@@ -37,6 +37,7 @@ import static haven.render.DataBuffer.Usage.*;
 
 public class GLEnvironment implements Environment {
     public final GLContext ctx;
+    public final Caps caps;
     final Object drawmon = new Object();
     final Object prepmon = new Object();
     final Collection<GLObject> disposed = new LinkedList<>();
@@ -48,6 +49,107 @@ public class GLEnvironment implements Environment {
     private Applier curstate = new Applier(this);
     private boolean invalid = false;
 
+    public static class HardwareException extends RuntimeException {
+	public HardwareException(String msg) {
+	    super(msg);
+	}
+    }
+
+    public static class Caps implements java.io.Serializable {
+	private static final java.util.regex.Pattern slvp = java.util.regex.Pattern.compile("^(\\d+)\\.(\\d+)");
+	public final int major, minor, glslver;
+	public final Collection<String> exts;
+	public final int maxtargets;
+	public final float anisotropy;
+	public final float linemin, linemax;
+
+	private static int glgeti(GL gl, int param) {
+	    int[] buf = {0};
+	    gl.glGetIntegerv(param, buf, 0);
+	    GLException.checkfor(gl);
+	    return(buf[0]);
+	}
+
+	private static int glcondi(GL gl, int param, int def) {
+	    GLException.checkfor(gl);
+	    int[] buf = {0};
+	    gl.glGetIntegerv(param, buf, 0);
+	    if(gl.glGetError() != 0)
+		return(def);
+	    return(buf[0]);
+	}
+
+	private static float glgetf(GL gl, int param) {
+	    float[] buf = {0};
+	    gl.glGetFloatv(param, buf, 0);
+	    GLException.checkfor(gl);
+	    return(buf[0]);
+	}
+
+	public static String glconds(GL gl, int param) {
+	    GLException.checkfor(gl);
+	    String ret = gl.glGetString(param);
+	    if(gl.glGetError() != 0)
+		return(null);
+	    return(ret);
+	}
+
+	public Caps(GL gl) {
+	    {
+		int major, minor;
+		try {
+		    major = glgeti(gl, GL2.GL_MAJOR_VERSION);
+		    minor = glgeti(gl, GL2.GL_MINOR_VERSION);
+		} catch(GLException e) {
+		    major = 1;
+		    minor = 0;
+		}
+		this.major = major; this.minor = minor;
+	    }
+	    this.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
+	    this.maxtargets = glcondi(gl, GL2.GL_MAX_COLOR_ATTACHMENTS, 1);
+	    {
+		int glslver = 0;
+		String slv = glconds(gl, GL2.GL_SHADING_LANGUAGE_VERSION);
+		if(slv != null) {
+		    java.util.regex.Matcher m = slvp.matcher(slv);
+		    if(m.find()) {
+			try {
+			    int major = Integer.parseInt(m.group(1));
+			    int minor = Integer.parseInt(m.group(2));
+			    if((major > 0) && (major < 256) && (minor >= 0) && (minor < 256))
+				glslver = (major << 8) | minor;
+			} catch(NumberFormatException e) {
+			}
+		    }
+		}
+		this.glslver = glslver;
+	    }
+	    if(exts.contains("GL_EXT_texture_filter_anisotropic"))
+		anisotropy = glgetf(gl, GL.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+	    else
+		anisotropy = 0;
+	    {
+		float[] buf = {0, 0};
+		gl.glGetFloatv(GL2.GL_ALIASED_LINE_WIDTH_RANGE, buf, 0);
+		this.linemin = buf[0];
+		this.linemax = buf[1];
+	    }
+	    GLException.checkfor(gl);
+	}
+
+	public void checkreq() {
+	    if(major < 2)
+		throw(new HardwareException("Graphics context does not support OpenGL 2.0."));
+	    if(glslver < 0x114)
+		throw(new HardwareException("Graphics context does not support GLSL 1.20."));
+	    if((major < 3) && !exts.contains("GL_EXT_framebuffer_object"))
+		throw(new HardwareException("Graphics context does not support frame-buffer objects."));
+	    if((major < 3) && !exts.contains("GL_ARB_vertex_array_object"))
+		throw(new HardwareException("Graphics context does not support vertex-array objects."));
+	}
+    }
+
     static enum MemStats {
 	INDICES, VERTICES, TEXTURES, VAOS, FBOS
     }
@@ -57,6 +159,7 @@ public class GLEnvironment implements Environment {
     public GLEnvironment(GL2 initgl, GLContext ctx, Area wnd) {
 	this.ctx = ctx;
 	this.wnd = wnd;
+	this.caps = new Caps(initgl);
 	initialize(initgl);
 	this.nilfbo_id = ctx.getDefaultDrawFramebuffer();
 	this.nilfbo_db = ctx.getDefaultReadBuffer();
