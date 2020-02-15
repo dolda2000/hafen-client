@@ -26,6 +26,7 @@
 
 package haven.render.gl;
 
+import haven.*;
 import static haven.Utils.eq;
 import haven.render.*;
 import haven.render.States.*;
@@ -175,8 +176,12 @@ public abstract class GLPipeState<T extends State> {
     public static final GLPipeState<LineWidth> linewidth = new GLPipeState<LineWidth>(States.linewidth) {
 	    public void apply(GLEnvironment env, BGL gl, LineWidth from, LineWidth to) {
 		if(to != null) {
-		    if(!eq(from, to))
-			gl.glLineWidth(to.w);
+		    if(!eq(from, to)) {
+			/* Apparently, OS X violates the specification
+			 * by producing errors instead of implicitly
+			 * clamping the linewidth value. */
+			gl.glLineWidth(Utils.clip(to.w, env.caps.linemin, env.caps.linemax));
+		    }
 		} else {
 		    gl.glLineWidth(1);
 		}
