@@ -11,6 +11,9 @@ GTX 750
    * Crop-heavy scene
      * 25.4 -> 15.6 ms (9.8 ms, 63%)
        * Same scene sees only 10% improvement from 37% resolution, so vertex-bound?
+ * Add more vertex-shader work (multiply pos/nrm with dummy ID uniform matrix)
+   * Crop-heavy scene
+     * Null
  * Disable outlines
    * Tree-heavy wilderness scene
      * 8.5 -> 7.7 ms (0.8 ms, 10%)
