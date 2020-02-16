@@ -1,0 +1,4 @@
+ * Order (resource-loaded) fastmesh faces after min vertex ID per face
+   * Improvement: 25.2 ms -> 23.8 ms (5.9%)
+ * Use FLOAT16 instead of FLOAT32 for vertex data
+   * No measurable difference
