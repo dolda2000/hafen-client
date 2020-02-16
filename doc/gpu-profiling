@@ -1,4 +1,29 @@
- * Order (resource-loaded) fastmesh faces after min vertex ID per face
-   * Improvement: 25.2 ms -> 23.8 ms (5.9%)
+GTX 750
+ * Order fastmesh faces after min vertex ID per face
+   * Resource-loaded meshes on crop-heavy scene
+     * 25.2 ms -> 23.8 ms (1.4 ms, 5.9%)
+   * For mesh-bufs affecting probably only map-meshes
+     * Null (probably)
  * Use FLOAT16 instead of FLOAT32 for vertex data
-   * No measurable difference
+   * Crop-heavy scene
+     * Null
+ * Brutally remove second half of all (resource-loaded) fastmesh faces
+   * Crop-heavy scene
+     * 25.4 -> 15.6 ms (9.8 ms, 63%)
+       * Same scene sees only 10% improvement from 37% resolution, so vertex-bound?
+ * Disable outlines
+   * Tree-heavy wilderness scene
+     * 8.5 -> 7.7 ms (0.8 ms, 10%)
+   * Crop-heavy scene
+     * 25.2 -> 24.7 ms (0.5 ms, 2%)
+ * Disable all terrain (incl. flavobjs)
+   * Tree-heavy wilderness scene
+     * 8.3 -> 4.2 ms (4.1 ms, 98%)
+ * Disable all gobs (not flavobjs)
+   * Tree-heavy wilderness scene
+     * 8.3 -> 5.2 ms (3.1 ms, 60%)
+ * Disable all alpha-testing (from materials)
+   * Tree-heavy wilderness scene
+     * 8.3 -> 6.9 ms (1.4 ms, 20%)
+  * Crop-heavy scene
+    * 25.2 -> 24.2 ms (1.0 ms, 4%)
