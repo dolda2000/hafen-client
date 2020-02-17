@@ -28,5 +28,7 @@ GTX 750
  * Disable all alpha-testing (from materials)
    * Tree-heavy wilderness scene
      * 8.3 -> 6.9 ms (1.4 ms, 20%)
-  * Crop-heavy scene
-    * 25.2 -> 24.2 ms (1.0 ms, 4%)
+   * Crop-heavy scene
+     * 25.2 -> 24.2 ms (1.0 ms, 4%)
+ * Disable color blending in all materials
+   * Null
