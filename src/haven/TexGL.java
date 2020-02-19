@@ -393,6 +393,8 @@ public abstract class TexGL extends Tex {
 
     @Material.ResName("tex")
     public static class $tex implements Material.ResCons2 {
+	public static final boolean defclip = true;
+
 	public Material.Res.Resolver cons(final Resource res, Object... args) {
 	    final Indir<Resource> tres;
 	    final int tid;
@@ -406,11 +408,13 @@ public abstract class TexGL extends Tex {
 		tid = (Integer)args[a];
 		a += 1;
 	    }
-	    boolean tclip = true;
+	    boolean tclip = defclip;
 	    while(a < args.length) {
 		String f = (String)args[a++];
 		if(f.equals("a"))
 		    tclip = false;
+		else if(f.equals("c"))
+		    tclip = true;
 	    }
 	    final boolean clip = tclip; /* ¦] */
 	    return(new Material.Res.Resolver() {
