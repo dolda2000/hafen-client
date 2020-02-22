@@ -49,6 +49,20 @@ public class Material implements Pipe.Op {
 	}
     }
 
+    @ResName("maskdepth")
+    public static class $maskdepth implements ResCons {
+	public Pipe.Op cons(Resource res, Object... args) {
+	    return(States.maskdepth);
+	}
+    }
+
+    @Material.ResName("vcol")
+    public static class $vcol implements Material.ResCons {
+	public Pipe.Op cons(Resource res, Object... args) {
+	    return(new BaseColor((Color)args[0]));
+	}
+    }
+
     @ResName("blend")
     public static class $blend implements ResCons {
 	private static States.Blending.Function fn(Resource res, char desc) {
