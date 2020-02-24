@@ -196,7 +196,7 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
 	anims.clear();
 	final Coord o = this.c;
 	dest = true;
-	new NormAnim(0.5) {
+	new NormAnim(0.35) {
 	    public void ntick(double a) {
 		Buff.this.a = 255 - (int)(255 * a);
 		Buff.this.c = o.add(0, (int)(a * a * cframe.sz().y));
