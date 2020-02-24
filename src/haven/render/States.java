@@ -201,6 +201,8 @@ public abstract class States {
 
 	public void apply(Pipe p) {p.put(blend, this);}
 
+	public static final Pipe.Op none = p -> {p.put(blend, null);};
+
 	public String toString() {return(String.format("#<blending %s(%s, %s) %s(%s %s)>", cfn, csrc, cdst, afn, asrc, adst));}
     }
 

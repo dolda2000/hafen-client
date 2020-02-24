@@ -291,6 +291,11 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	return(glob.map.getzp(rc));
     }
 
+    protected Pipe.Op getmapstate(Coord3f pc) {
+	Tiler tile = glob.map.tiler(glob.map.gettile(new Coord2d(pc).floor(MCache.tilesz)));
+	return(tile.drawstate(glob, pc));
+    }
+
     private Class<? extends GAttrib> attrclass(Class<? extends GAttrib> cl) {
 	while(true) {
 	    Class<?> p = cl.getSuperclass();
@@ -696,8 +701,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 			this.oc = oc;
 			this.rc = rc;
 			this.a = Gob.this.a;
-			Tiler tile = glob.map.tiler(glob.map.gettile(new Coord2d(oc).floor(MCache.tilesz)));
-			tilestate = tile.drawstate(glob, oc);
+			tilestate = Gob.this.getmapstate(oc);
 		    } else {
 			this.flw = flwxf;
 			this.oc = this.rc = null;
