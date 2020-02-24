@@ -649,6 +649,8 @@ public class Ridges extends MapMesh.Hooks {
 	    RPart desc = (RPart)mdesc;
 	    Model mod = Model.get(m, mat);
 	    MeshBuf.Tex tex = mod.layer(MeshBuf.tex);
+	    MeshBuf.Vec3Layer tan = mod.layer(BumpMap.ltan);
+	    MeshBuf.Vec3Layer bit = mod.layer(BumpMap.lbit);
 	    int[] trn = new int[desc.rh.length];
 	    float zf = 1.0f / texh;
 	    for(int i = 0; i < trn.length; i++)
@@ -658,6 +660,8 @@ public class Ridges extends MapMesh.Hooks {
 		v[i] = new MeshVertex(mod, desc.v[i]);
 		tex.set(v[i], new Coord3f(desc.rcx[i], desc.v[i].z * zf, 0));
 		tex.set(v[i], new Coord3f(desc.rcx[i], desc.rcy[i] * trn[desc.rn[i]], 0));
+		tan.set(v[i], Coord3f.zu.cmul(v[i].nrm).norm());
+		bit.set(v[i], Coord3f.zu);
 	    }
 	    int[] f = desc.f;
 	    for(int i = 0; i < f.length; i += 3)
