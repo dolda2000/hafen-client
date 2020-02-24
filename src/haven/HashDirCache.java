@@ -368,14 +368,17 @@ public class HashDirCache implements ResCache {
 	    }
 	    break;
 	case "purge":
+	    int n = 0;
 	    for(Iterator<String> i = cache.list(); i.hasNext();) {
 		String nm = i.next();
 		try {
 		    cache.remove(nm);
+		    n++;
 		} catch(FileNotFoundException e) {
 		    System.err.printf("%s: not found\n", nm);
 		}
 	    }
+	    System.err.printf("%s: %d files purged\n", cache.id, n);
 	    break;
 	case "rm":
 	    for(int i = 2; i < args.length; i++) {
