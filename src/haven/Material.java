@@ -373,6 +373,8 @@ public class Material implements Pipe.Op {
 		*/
 		if(cons != null)
 		    ret.left.add(cons.cons(res, args));
+		else
+		    System.err.printf("Uknown material part name: %s\n", nm);
 	    }
 	    return(ret);
 	}
