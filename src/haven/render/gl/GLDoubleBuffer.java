@@ -36,7 +36,7 @@ public class GLDoubleBuffer {
     public class Buffered implements BGL.Request {
 	private BufferBGL cur, next;
 
-	public void run(GL2GL3 gl) {
+	public void run(GL3 gl) {
 	    if(cur != null)
 		cur.run(gl);
 	}
@@ -90,7 +90,7 @@ public class GLDoubleBuffer {
 
     public void put(BGL gl) {
 	gl.bglSubmit(new BGL.Request() {
-		public void run(GL2GL3 gl) {put();}
+		public void run(GL3 gl) {put();}
 		public void abort() {put();}
 	    });
     }

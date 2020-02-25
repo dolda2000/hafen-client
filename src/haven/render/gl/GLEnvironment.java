@@ -99,8 +99,8 @@ public class GLEnvironment implements Environment {
 	    {
 		int major, minor;
 		try {
-		    major = glgeti(gl, GL2.GL_MAJOR_VERSION);
-		    minor = glgeti(gl, GL2.GL_MINOR_VERSION);
+		    major = glgeti(gl, GL3.GL_MAJOR_VERSION);
+		    minor = glgeti(gl, GL3.GL_MINOR_VERSION);
 		} catch(GLException e) {
 		    major = 1;
 		    minor = 0;
@@ -108,10 +108,10 @@ public class GLEnvironment implements Environment {
 		this.major = major; this.minor = minor;
 	    }
 	    this.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
-	    this.maxtargets = glcondi(gl, GL2.GL_MAX_COLOR_ATTACHMENTS, 1);
+	    this.maxtargets = glcondi(gl, GL3.GL_MAX_COLOR_ATTACHMENTS, 1);
 	    {
 		int glslver = 0;
-		String slv = glconds(gl, GL2.GL_SHADING_LANGUAGE_VERSION);
+		String slv = glconds(gl, GL3.GL_SHADING_LANGUAGE_VERSION);
 		if(slv != null) {
 		    java.util.regex.Matcher m = slvp.matcher(slv);
 		    if(m.find()) {
@@ -132,7 +132,7 @@ public class GLEnvironment implements Environment {
 		anisotropy = 0;
 	    {
 		float[] buf = {0, 0};
-		gl.glGetFloatv(GL2.GL_ALIASED_LINE_WIDTH_RANGE, buf, 0);
+		gl.glGetFloatv(GL3.GL_ALIASED_LINE_WIDTH_RANGE, buf, 0);
 		this.linemin = buf[0];
 		this.linemax = buf[1];
 	    }
@@ -157,7 +157,7 @@ public class GLEnvironment implements Environment {
     final int[] stats_obj = new int[MemStats.values().length];
     final long[] stats_mem = new long[MemStats.values().length];
 
-    public GLEnvironment(GL2GL3 initgl, GLContext ctx, Area wnd) {
+    public GLEnvironment(GL3 initgl, GLContext ctx, Area wnd) {
 	if(debuglog)
 	    ctx.enableGLDebugMessage(true);
 	this.ctx = ctx;
@@ -168,11 +168,11 @@ public class GLEnvironment implements Environment {
 	this.nilfbo_db = ctx.getDefaultReadBuffer();
     }
 
-    private void initialize(GL2GL3 gl) {
+    private void initialize(GL3 gl) {
 	if(debuglog) {
-	    gl.glEnable(GL2.GL_DEBUG_OUTPUT);
-	    /* gl.glDebugMessageControl(GL.GL_DONT_CARE, GL.GL_DONT_CARE, GL2.GL_DEBUG_SEVERITY_NOTIFICATION, 0, null, 0, false); */
-	    /* gl.glDebugMessageControl(GL2.GL_DEBUG_SOURCE_API, GL2.GL_DEBUG_TYPE_OTHER, GL2.GL_DONT_CARE, 1, new int[] {131185}, 0, false); */
+	    gl.glEnable(GL3.GL_DEBUG_OUTPUT);
+	    /* gl.glDebugMessageControl(GL.GL_DONT_CARE, GL.GL_DONT_CARE, GL3.GL_DEBUG_SEVERITY_NOTIFICATION, 0, null, 0, false); */
+	    /* gl.glDebugMessageControl(GL3.GL_DEBUG_SOURCE_API, GL3.GL_DEBUG_TYPE_OTHER, GL3.GL_DONT_CARE, 1, new int[] {131185}, 0, false); */
 	}
 	gl.glEnable(GL3.GL_PROGRAM_POINT_SIZE);
     }
@@ -195,7 +195,7 @@ public class GLEnvironment implements Environment {
 	return(wnd);
     }
 
-    private void checkqueries(GL2GL3 gl) {
+    private void checkqueries(GL3 gl) {
 	for(Iterator<GLQuery> i = queries.iterator(); i.hasNext();) {
 	    GLQuery query = i.next();
 	    if(!query.check(gl))
@@ -218,12 +218,12 @@ public class GLEnvironment implements Environment {
 	}
     }
 
-    private List<DebugMessage> getdebuglog(GL2GL3 gl) {
+    private List<DebugMessage> getdebuglog(GL3 gl) {
 	List<DebugMessage> ret = new ArrayList<>();
 	int n = 16;
 	int[] src = new int[n], type = new int[n], id = new int[n], sev = new int[n], len = new int[n];
 	while(true) {
-	    int nlen = Caps.glgeti(gl, GL2.GL_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH);
+	    int nlen = Caps.glgeti(gl, GL3.GL_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH);
 	    byte[] buf = new byte[Math.max(nlen, 128) * n];
 	    int rv = gl.glGetDebugMessageLog(n, buf.length, src, 0, type, 0, id, 0, sev, 0, len, 0, buf, 0);
 	    if(rv == 0)
@@ -234,7 +234,7 @@ public class GLEnvironment implements Environment {
 	return(ret);
     }
 
-    private void checkdebuglog(GL2GL3 gl) {
+    private void checkdebuglog(GL3 gl) {
 	boolean f = false;
 	for(DebugMessage msg : getdebuglog(gl)) {
 	    System.err.printf("%d %d %d %d -- %s\n", msg.src, msg.type, msg.id, msg.sev, msg.msg);
@@ -244,7 +244,7 @@ public class GLEnvironment implements Environment {
 	    System.err.println();
     }
 
-    public void process(GL2GL3 gl) {
+    public void process(GL3 gl) {
 	GLRender prep;
 	Collection<GLRender> copy;
 	synchronized(submitted) {

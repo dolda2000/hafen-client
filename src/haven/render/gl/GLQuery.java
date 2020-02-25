@@ -33,5 +33,5 @@ public abstract class GLQuery extends GLObject {
 	super(env);
     }
 
-    public abstract boolean check(GL2GL3 gl);
+    public abstract boolean check(GL3 gl);
 }

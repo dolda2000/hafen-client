@@ -66,7 +66,7 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	register();
     }
 	
-    public void create(GL2GL3 gl) {
+    public void create(GL3 gl) {
 	int[] buf = new int[1];
 	gl.glGenFramebuffers(1, buf, 0);
 	GLException.checkfor(gl);
@@ -74,7 +74,7 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	setmem(GLEnvironment.MemStats.FBOS, 0);
     }
 	
-    protected void delete(GL2GL3 gl) {
+    protected void delete(GL3 gl) {
 	gl.glDeleteFramebuffers(1, new int[] {id}, 0);
     }
 	

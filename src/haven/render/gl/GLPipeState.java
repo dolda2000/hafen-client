@@ -126,8 +126,8 @@ public abstract class GLPipeState<T extends State> {
 		    case ADD: return(GL.GL_FUNC_ADD);
 		    case SUB: return(GL.GL_FUNC_SUBTRACT);
 		    case RSUB: return(GL.GL_FUNC_REVERSE_SUBTRACT);
-		    case MIN: return(GL2.GL_MIN);
-		    case MAX: return(GL2.GL_MAX);
+		    case MIN: return(GL3.GL_MIN);
+		    case MAX: return(GL3.GL_MAX);
 		    default: throw(new IllegalArgumentException(String.format("blend function: %s", fn)));
 		}
 	    }
@@ -143,10 +143,10 @@ public abstract class GLPipeState<T extends State> {
 		    case DST_ALPHA: return(GL.GL_DST_ALPHA);
 		    case INV_SRC_ALPHA: return(GL.GL_ONE_MINUS_SRC_ALPHA);
 		    case INV_DST_ALPHA: return(GL.GL_ONE_MINUS_DST_ALPHA);
-		    case CONST_COLOR: return(GL2.GL_CONSTANT_COLOR);
-		    case INV_CONST_COLOR: return(GL2.GL_ONE_MINUS_CONSTANT_COLOR);
-		    case CONST_ALPHA: return(GL2.GL_CONSTANT_ALPHA);
-		    case INV_CONST_ALPHA: return(GL2.GL_ONE_MINUS_CONSTANT_ALPHA);
+		    case CONST_COLOR: return(GL3.GL_CONSTANT_COLOR);
+		    case INV_CONST_COLOR: return(GL3.GL_ONE_MINUS_CONSTANT_COLOR);
+		    case CONST_ALPHA: return(GL3.GL_CONSTANT_ALPHA);
+		    case INV_CONST_ALPHA: return(GL3.GL_ONE_MINUS_CONSTANT_ALPHA);
 		    default: throw(new IllegalArgumentException(String.format("blend factor: %s", fac)));
 		}
 	    }

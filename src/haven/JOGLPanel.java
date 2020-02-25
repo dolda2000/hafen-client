@@ -74,7 +74,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	setAutoSwapBufferMode(false);
 	addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
-		    redraw(d.getGL().getGL2GL3());
+		    redraw(d.getGL().getGL3());
 		}
 
 		public void init(GLAutoDrawable d) {
@@ -98,7 +98,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    cursmode = "awt";
     }
 
-    private void initgl(GL2GL3 gl) {
+    private void initgl(GL3 gl) {
 	Collection<String> exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	GLCapabilitiesImmutable caps = getChosenGLCapabilities();
 	gl.setSwapInterval((aswap = iswap) ? 1 : 0);
@@ -119,7 +119,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private volatile CPUProfile.Frame rcurf = null;
     private long swaptime = 0, gltime = 0, waittime = 0, prevswap = System.nanoTime();
-    private void redraw(GL2GL3 gl) {
+    private void redraw(GL3 gl) {
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
 	synchronized(this) {
@@ -135,10 +135,10 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    long pst = Config.profile ? System.nanoTime() : 0;
 	    if(false) {
 		System.err.println("\n-----\n\n");
-		gl = new TraceGL3(gl.getGL3(), System.err);
+		gl = new TraceGL3(gl, System.err);
 	    }
 	    if(false) {
-		gl = new DebugGL3(gl.getGL3());
+		gl = new DebugGL3(gl);
 	    }
 	    env.process(gl);
 	    long end = System.nanoTime();
@@ -176,7 +176,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    this.frameno = frameno;
 	}
 
-	public void run(GL2GL3 gl) {
+	public void run(GL3 gl) {
 	    long swst = System.nanoTime();
 	    if(iswap != aswap)
 		gl.setSwapInterval((aswap = iswap) ? 1 : 0);

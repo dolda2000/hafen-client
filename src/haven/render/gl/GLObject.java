@@ -42,8 +42,8 @@ public abstract class GLObject implements Disposable {
 	this.env = env;
     }
 
-    public abstract void create(GL2GL3 gl);
-    protected abstract void delete(GL2GL3 gl);
+    public abstract void create(GL3 gl);
+    protected abstract void delete(GL3 gl);
 
     protected void dispose0() {
 	synchronized(env.disposed) {

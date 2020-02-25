@@ -43,7 +43,7 @@ public class BufferBGL extends BGL {
     }
     public BufferBGL() {this(128);}
 
-    public void run(GL2GL3 gl) {
+    public void run(GL3 gl) {
 	for(int i = 0; i < n; i++) {
 	    try {
 		list[i].run(gl);

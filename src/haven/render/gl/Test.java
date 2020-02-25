@@ -187,8 +187,8 @@ public class Test implements GLEventListener, KeyListener {
 
     public void display(GLAutoDrawable wnd) {
 	try {
-	    GL2 gl = wnd.getGL().getGL2();
-	    // gl = new TraceGL2(gl, System.err);
+	    GL3 gl = wnd.getGL().getGL3();
+	    // gl = new TraceGL3(gl, System.err);
 	    if((env == null) || (wnd.getContext() != env.ctx)) {
 		if(env != null)
 		    System.err.println("switching contexts");
@@ -218,7 +218,6 @@ public class Test implements GLEventListener, KeyListener {
     }
 
     public void reshape(GLAutoDrawable wnd, int x, int y, int w, int h) {
-	GL2 gl = wnd.getGL().getGL2();
 	Pipe base = new BufPipe();
 	Area area = Area.sized(new Coord(x, y), new Coord(w, h));
 	base.prep(new States.Viewport(area)).prep(new Ortho2D(area)).prep(new States.Blending());
