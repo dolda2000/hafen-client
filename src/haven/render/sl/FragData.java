@@ -84,12 +84,14 @@ public class FragData extends Variable.Global {
 		}
 		if(s != slots.length)
 		    throw(new AssertionError());
+		/*
 		if(slots.length > 1) {
 		    for(int i = 0; i < slots.length; i++)
 			fctx.main.code.add(new LBinOp.Assign(new Index(fctx.gl_FragData.ref(), new IntLiteral(i)), slots[i].ref()));
 		} else if(slots.length == 1) {
 		    fctx.main.code.add(new LBinOp.Assign(fctx.gl_FragColor.ref(), slots[0].ref()));
 		}
+		*/
 		fctx.prog.fragdata.addAll(Arrays.asList(slots));
 	    }
 	};
@@ -97,6 +99,14 @@ public class FragData extends Variable.Global {
 	public void process(PostProc proc) {}
 	public Object ppid() {return(defid);}
 	private FragData var() {return(FragData.this);}
+
+	public void output(Output out) {
+	    if(out.ctx instanceof FragmentContext)
+		out.write("out ");
+	    else
+		throw(new RuntimeException("use of fragdata variable outside fragment context: " + FragData.this));
+	    super.output(out);
+	}
     }
 
     public void use(Context ctx) {

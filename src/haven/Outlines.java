@@ -81,7 +81,7 @@ public class Outlines implements RenderTree.Node {
 		    Expression tc = Tex2D.rtexcoord.ref();
 		    LValue ret = code.local(FLOAT, l(0.0)).ref();
 		    Expression lnrm = code.local(VEC3, mul(sub(pick(sample(true, tc, sample, Coord.z), "rgb"), l(0.5)), l(2.0))).ref();
-		    Expression ldep = code.local(FLOAT, pick(sample(false, tc, sample, Coord.z), "z")).ref();
+		    Expression ldep = code.local(FLOAT, pick(sample(false, tc, sample, Coord.z), "r")).ref();
 		    /* XXX: Current depth detection doesn't work well
 		     * with frustum projections, perhaps because of
 		     * the lack of precision in the depth buffer
@@ -89,7 +89,7 @@ public class Outlines implements RenderTree.Node {
 		     * yet). */
 		    LValue dh = code.local(FLOAT, l(0.0002)).ref(), dl = code.local(FLOAT, l(-0.0002)).ref();
 		    for(int i = 0; i < points.length; i++) {
-			Expression cdep = pick(sample(false, tc, sample, points[i]), "z");
+			Expression cdep = pick(sample(false, tc, sample, points[i]), "r");
 			cdep = sub(ldep, cdep);
 			cdep = code.local(FLOAT, cdep).ref();
 			code.add(stmt(ass(dh, max(dh, cdep))));

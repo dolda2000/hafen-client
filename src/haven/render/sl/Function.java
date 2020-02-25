@@ -223,10 +223,11 @@ public abstract class Function {
 
 	public static final Builtin transpose = new Builtin(null, new Symbol.Fix("transpose"), 1);
 
-	public static final Builtin texture2D = new Builtin(Type.VEC4, new Symbol.Fix("texture2D"), 2);
-	public static final Builtin shadow2D = new Builtin(Type.VEC4, new Symbol.Fix("shadow2D"), 2);
-	public static final Builtin texture3D = new Builtin(Type.VEC4, new Symbol.Fix("texture3D"), 2);
-	public static final Builtin textureCube = new Builtin(Type.VEC4, new Symbol.Fix("textureCube"), 2);
+	public static final Builtin texture = new Builtin(Type.VEC4, new Symbol.Fix("texture"), 2);
+	public static final Builtin texture2D = texture;
+	public static final Builtin shadow2D = texture;
+	public static final Builtin texture3D = texture;
+	public static final Builtin textureCube = texture;
 	public static final Builtin texelFetch = new Builtin(Type.VEC4, new Symbol.Fix("texelFetch"), 3);
     }
 

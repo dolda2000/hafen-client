@@ -93,7 +93,7 @@ public class StreamBuffer implements haven.Disposable {
     public void put(BGL gl, ByteBuffer buf) {
 	if(buf == null) throw(new NullPointerException());
 	gl.bglSubmit(new BGL.Request() {
-		public void run(GL2 gl) {put(buf);}
+		public void run(GL3 gl) {put(buf);}
 		public void abort() {put(buf);}
 	    });
     }

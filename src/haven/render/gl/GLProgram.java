@@ -48,6 +48,7 @@ public class GLProgram implements Disposable {
     public final AtomicInteger locked = new AtomicInteger(0);
     private final Map<Uniform, String> unifnms;
     private final Map<Attribute, String> attrnms;
+    private final String[] fragnms;
     private ProgOb glp;
 
     public GLProgram(GLEnvironment env, ProgramContext ctx) {
@@ -81,9 +82,11 @@ public class GLProgram implements Disposable {
 	}
 	{
 	    FragData[] fragdata = ctx.fragdata.toArray(new FragData[0]);
+	    String[] fragnms = new String[fragdata.length];
 	    boolean[] fmap = new boolean[DepthBuffer.slot.id + 1];
 	    fmap[DepthBuffer.slot.id] = true;
 	    for(int i = 0; i < fragdata.length; i++) {
+		fragnms[i] = ctx.symtab.get(fragdata[i].name);
 		for(State.Slot slot : fragdata[i].deps) {
 		    if(fmap.length <= slot.id)
 			fmap = Arrays.copyOf(fmap, slot.id + 1);
@@ -92,6 +95,7 @@ public class GLProgram implements Disposable {
 	    }
 	    this.fragdata = fragdata;
 	    this.fmap = fmap;
+	    this.fragnms = fragnms;
 	}
 	{
 	    int sn = 0;
@@ -164,7 +168,7 @@ public class GLProgram implements Disposable {
 	    env.prepare(this);
 	}
 
-	public void create(GL2 gl) {
+	public void create(GL3 gl) {
 	    /* Does JOGL use the byte or char length or the supplied
 	     * String, and in case of the former, how does one know
 	     * the coding it encodes the String as so as to supply the
@@ -176,10 +180,10 @@ public class GLProgram implements Disposable {
 	    gl.glShaderSource(this.id, 1, new String[] {text}, new int[] {text.length()}, 0);
 	    gl.glCompileShader(this.id);
 	    int[] buf = {0};
-	    gl.glGetShaderiv(this.id, GL2.GL_COMPILE_STATUS, buf, 0);
+	    gl.glGetShaderiv(this.id, GL3.GL_COMPILE_STATUS, buf, 0);
 	    if(buf[0] != 1) {
 		String info = null;
-		gl.glGetShaderiv(this.id, GL2.GL_INFO_LOG_LENGTH, buf, 0);
+		gl.glGetShaderiv(this.id, GL3.GL_INFO_LOG_LENGTH, buf, 0);
 		if(buf[0] > 0) {
 		    byte[] logbuf = new byte[buf[0]];
 		    gl.glGetShaderInfoLog(this.id, logbuf.length, buf, 0, logbuf, 0);
@@ -189,7 +193,7 @@ public class GLProgram implements Disposable {
 	    }
 	}
 
-	protected void delete(GL2 gl) {
+	protected void delete(GL3 gl) {
 	    gl.glDeleteShader(id);
 	}
 
@@ -291,16 +295,18 @@ public class GLProgram implements Disposable {
 	    return(ret);
 	}
 
-	public void create(GL2 gl) {
+	public void create(GL3 gl) {
 	    this.id = gl.glCreateProgram();
 	    for(ShaderOb sh : shaders)
 		gl.glAttachShader(this.id, sh.glid());
+	    for(int i = 0; i < fragdata.length; i++)
+		gl.glBindFragDataLocation(this.id, i, fragnms[i]);
 	    gl.glLinkProgram(this.id);
 	    int[] buf = {0};
-	    gl.glGetProgramiv(this.id, GL2.GL_LINK_STATUS, buf, 0);
+	    gl.glGetProgramiv(this.id, GL3.GL_LINK_STATUS, buf, 0);
 	    if(buf[0] != 1) {
 		String info = null;
-		gl.glGetProgramiv(this.id, GL2.GL_INFO_LOG_LENGTH, buf, 0);
+		gl.glGetProgramiv(this.id, GL3.GL_INFO_LOG_LENGTH, buf, 0);
 		if(buf[0] > 0) {
 		    byte[] logbuf = new byte[buf[0]];
 		    gl.glGetProgramInfoLog(this.id, logbuf.length, buf, 0, logbuf, 0);
@@ -310,7 +316,7 @@ public class GLProgram implements Disposable {
 	    }
 	}
 
-	protected void delete(GL2 gl) {
+	protected void delete(GL3 gl) {
 	    gl.glDeleteProgram(id);
 	}
 
@@ -321,7 +327,7 @@ public class GLProgram implements Disposable {
 	public class AttrID extends VarID {
 	    private AttrID(String name) {super(name);}
 
-	    public void run(GL2 gl) {
+	    public void run(GL3 gl) {
 		this.id = gl.glGetAttribLocation(ProgOb.this.id, name);
 	    }
 
@@ -338,7 +344,7 @@ public class GLProgram implements Disposable {
 
 	    private UniformID(String name) {super(name);}
 
-	    public void run(GL2 gl) {
+	    public void run(GL3 gl) {
 		this.id = gl.glGetUniformLocation(ProgOb.this.id, name);
 	    }
 
@@ -364,8 +370,8 @@ public class GLProgram implements Disposable {
 	    synchronized(this) {
 		if(glp == null)
 		    glp = new ProgOb(env,
-				     new ShaderOb(env, GL2.GL_VERTEX_SHADER, vsrc),
-				     new ShaderOb(env, GL2.GL_FRAGMENT_SHADER, fsrc));
+				     new ShaderOb(env, GL3.GL_VERTEX_SHADER, vsrc),
+				     new ShaderOb(env, GL3.GL_FRAGMENT_SHADER, fsrc));
 	    }
 	}
 	return(glp);

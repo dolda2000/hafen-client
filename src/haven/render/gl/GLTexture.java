@@ -45,7 +45,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	env.prepare(this);
     }
 
-    public void create(GL2 gl) {
+    public void create(GL3 gl) {
 	ckstate(state, 0);
 	int[] buf = {0};
 	gl.glGenTextures(1, buf, 0);
@@ -54,7 +54,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	state = 1;
     }
 
-    protected void delete(GL2 gl) {
+    protected void delete(GL3 gl) {
 	ckstate(state, 1);
 	gl.glDeleteTextures(1, new int[] {id}, 0);
 	state = 2;
@@ -124,7 +124,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	case REPEAT: return(GL.GL_REPEAT);
 	case REPEAT_MIRROR: return(GL.GL_MIRRORED_REPEAT);
 	case CLAMP: return(GL.GL_CLAMP_TO_EDGE);
-	case CLAMP_BORDER: return(GL2.GL_CLAMP_TO_BORDER);
+	case CLAMP_BORDER: return(GL3.GL_CLAMP_TO_BORDER);
 	default: throw(new IllegalArgumentException(String.format("wrapmode: %s", w)));
 	}
     }
@@ -133,36 +133,36 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	switch(fmt.nc) {
 	case 1:
 	    switch(fmt.cf) {
-	    case UNORM8: return(GL2.GL_R8);
-	    case SNORM8: return(GL2.GL_R8_SNORM);
-	    case UNORM16: return(GL2.GL_R16);
-	    case SNORM16: return(GL2.GL_R16_SNORM);
-	    case FLOAT16: return(GL2.GL_R16F);
-	    case DEPTH: return(GL2.GL_DEPTH_COMPONENT);
+	    case UNORM8: return(GL3.GL_R8);
+	    case SNORM8: return(GL3.GL_R8_SNORM);
+	    case UNORM16: return(GL3.GL_R16);
+	    case SNORM16: return(GL3.GL_R16_SNORM);
+	    case FLOAT16: return(GL3.GL_R16F);
+	    case DEPTH: return(GL3.GL_DEPTH_COMPONENT);
 	    }
 	case 2:
 	    switch(fmt.cf) {
-	    case UNORM8: return(GL2.GL_RG8);
-	    case SNORM8: return(GL2.GL_RG8_SNORM);
-	    case UNORM16: return(GL2.GL_RG16);
-	    case SNORM16: return(GL2.GL_RG16_SNORM);
-	    case FLOAT16: return(GL2.GL_RG16F);
+	    case UNORM8: return(GL3.GL_RG8);
+	    case SNORM8: return(GL3.GL_RG8_SNORM);
+	    case UNORM16: return(GL3.GL_RG16);
+	    case SNORM16: return(GL3.GL_RG16_SNORM);
+	    case FLOAT16: return(GL3.GL_RG16F);
 	    }
 	case 3:
 	    switch(fmt.cf) {
-	    case UNORM8: return(GL2.GL_RGB8);
-	    case SNORM8: return(GL2.GL_RGB8_SNORM);
-	    case UNORM16: return(GL2.GL_RGB16);
-	    case SNORM16: return(GL2.GL_RGB16_SNORM);
-	    case FLOAT16: return(GL2.GL_RGB16F);
+	    case UNORM8: return(GL.GL_RGB8);
+	    case SNORM8: return(GL3.GL_RGB8_SNORM);
+	    case UNORM16: return(GL3.GL_RGB16);
+	    case SNORM16: return(GL3.GL_RGB16_SNORM);
+	    case FLOAT16: return(GL3.GL_RGB16F);
 	    }
 	case 4:
 	    switch(fmt.cf) {
-	    case UNORM8: return(GL2.GL_RGBA8);
-	    case SNORM8: return(GL2.GL_RGBA8_SNORM);
-	    case UNORM16: return(GL2.GL_RGBA16);
-	    case SNORM16: return(GL2.GL_RGBA16_SNORM);
-	    case FLOAT16: return(GL2.GL_RGBA16F);
+	    case UNORM8: return(GL.GL_RGBA8);
+	    case SNORM8: return(GL3.GL_RGBA8_SNORM);
+	    case UNORM16: return(GL3.GL_RGBA16);
+	    case SNORM16: return(GL3.GL_RGBA16_SNORM);
+	    case FLOAT16: return(GL3.GL_RGBA16F);
 	    }
 	}
 	throw(new IllegalArgumentException(String.format("internalformat: %s", fmt)));
@@ -172,38 +172,38 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	if(ifmt.cf == NumberFormat.DEPTH) {
 	    if(efmt.nc != 1)
 		throw(new IllegalArgumentException(String.format("externalformat components != 1 for depth texture: %s", efmt)));
-	    return(GL2.GL_DEPTH_COMPONENT);
+	    return(GL3.GL_DEPTH_COMPONENT);
 	}
 	switch(efmt.nc) {
-	case 1: return(GL2.GL_RED);
-	case 2: return(GL2.GL_RG);
-	case 3: return(GL2.GL_RGB);
-	case 4: return(GL2.GL_RGBA);
+	case 1: return(GL3.GL_RED);
+	case 2: return(GL3.GL_RG);
+	case 3: return(GL.GL_RGB);
+	case 4: return(GL.GL_RGBA);
 	}
 	throw(new IllegalArgumentException(String.format("externalformat1: %s", efmt)));
     }
 
     static int texefmt2(VectorFormat ifmt, VectorFormat efmt) {
 	switch(efmt.cf) {
-	case UNORM8: return(GL2.GL_UNSIGNED_BYTE);
-	case SNORM8: return(GL2.GL_BYTE);
-	case UNORM16: return(GL2.GL_UNSIGNED_SHORT);
-	case SNORM16: return(GL2.GL_SHORT);
-	case UNORM32: return(GL2.GL_UNSIGNED_INT);
-	case SNORM32: return(GL2.GL_INT);
-	case FLOAT32: return(GL2.GL_FLOAT);
+	case UNORM8: return(GL.GL_UNSIGNED_BYTE);
+	case SNORM8: return(GL.GL_BYTE);
+	case UNORM16: return(GL.GL_UNSIGNED_SHORT);
+	case SNORM16: return(GL.GL_SHORT);
+	case UNORM32: return(GL.GL_UNSIGNED_INT);
+	case SNORM32: return(GL3.GL_INT);
+	case FLOAT32: return(GL.GL_FLOAT);
 	}
 	throw(new IllegalArgumentException(String.format("externalformat2: %s", efmt)));
     }
 
     static int texface(TextureCube.Face face) {
 	switch(face) {
-	    case XP: return(GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_X);
-	    case XN: return(GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
-	    case YP: return(GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
-	    case YN: return(GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
-	    case ZP: return(GL2.GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
-	    case ZN: return(GL2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+	    case XP: return(GL.GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+	    case XN: return(GL.GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
+	    case YP: return(GL.GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
+	    case YN: return(GL.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
+	    case ZP: return(GL.GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+	    case ZN: return(GL.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
 	}
 	throw(new IllegalArgumentException(String.format("texface: %s", face)));
     }
@@ -272,7 +272,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 			gl.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAX_ANISOTROPY_EXT, data.anisotropy);
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
-		    gl.glTexParameterfv(GL.GL_TEXTURE_2D, GL2.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
+		    gl.glTexParameterfv(GL.GL_TEXTURE_2D, GL3.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
@@ -357,7 +357,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 			gl.glTexParameterf(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_MAX_ANISOTROPY_EXT, data.anisotropy);
 		    gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
 		    gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
-		    gl.glTexParameterfv(GL.GL_TEXTURE_CUBE_MAP, GL2.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
+		    gl.glTexParameterfv(GL.GL_TEXTURE_CUBE_MAP, GL3.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
