@@ -45,8 +45,6 @@ public class FragmentContext extends ShaderContext {
 	    }, -1000);
     }
 
-    public static final Variable gl_FragColor = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_FragColor"));
-    public static final Variable gl_FragData = new Variable.Implicit(new Array(Type.VEC4), new Symbol.Fix("gl_FragData"));
     public static final Variable gl_PointCoord = new Variable.Implicit(new Array(Type.VEC4), new Symbol.Fix("gl_PointCoord"));
 
     public static final Expression ptc = gl_PointCoord.ref();

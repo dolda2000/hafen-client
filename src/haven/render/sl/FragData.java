@@ -84,14 +84,6 @@ public class FragData extends Variable.Global {
 		}
 		if(s != slots.length)
 		    throw(new AssertionError());
-		/*
-		if(slots.length > 1) {
-		    for(int i = 0; i < slots.length; i++)
-			fctx.main.code.add(new LBinOp.Assign(new Index(fctx.gl_FragData.ref(), new IntLiteral(i)), slots[i].ref()));
-		} else if(slots.length == 1) {
-		    fctx.main.code.add(new LBinOp.Assign(fctx.gl_FragColor.ref(), slots[0].ref()));
-		}
-		*/
 		fctx.prog.fragdata.addAll(Arrays.asList(slots));
 	    }
 	};
