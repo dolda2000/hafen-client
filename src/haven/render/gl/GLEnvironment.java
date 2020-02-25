@@ -140,14 +140,8 @@ public class GLEnvironment implements Environment {
 	}
 
 	public void checkreq() {
-	    if(major < 2)
-		throw(new HardwareException("Graphics context does not support OpenGL 2.0."));
-	    if(glslver < 0x114)
-		throw(new HardwareException("Graphics context does not support GLSL 1.20."));
-	    if((major < 3) && !exts.contains("GL_EXT_framebuffer_object"))
-		throw(new HardwareException("Graphics context does not support frame-buffer objects."));
-	    if((major < 3) && !exts.contains("GL_ARB_vertex_array_object"))
-		throw(new HardwareException("Graphics context does not support vertex-array objects."));
+	    if(major < 3)
+		throw(new HardwareException("Graphics context does not support OpenGL 3.0."));
 	}
     }
 
