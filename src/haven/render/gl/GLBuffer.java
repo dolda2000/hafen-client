@@ -36,7 +36,7 @@ public class GLBuffer extends GLObject implements BGL.ID {
 	env.prepare(this);
     }
 
-    public void create(GL2 gl) {
+    public void create(GL3 gl) {
 	ckstate(state, 0);
 	int[] buf = new int[1];
 	gl.glGenBuffers(1, buf, 0);
@@ -44,7 +44,7 @@ public class GLBuffer extends GLObject implements BGL.ID {
 	state = 1;
     }
     
-    protected void delete(GL2 gl) {
+    protected void delete(GL3 gl) {
 	ckstate(state, 1);
 	gl.glDeleteBuffers(1, new int[] {id}, 0);
 	state = 2;

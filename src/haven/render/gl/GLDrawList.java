@@ -714,7 +714,7 @@ public class GLDrawList implements DrawList {
 
 	void compile(BGL gl) {
 	    T st = compstate().get(setting.slot);
-	    setting.apply(gl, st);
+	    setting.apply(env, gl, st);
 	}
 
 	State.Slot[] depslots() {

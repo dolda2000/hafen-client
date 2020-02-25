@@ -65,7 +65,7 @@ public class GLException extends RuntimeException {
     }
 
     public static String constname(int val) {
-	return(constname(GL2.class, val));
+	return(constname(GL3.class, val));
     }
 
     public static class GLInvalidEnumException extends GLException {

@@ -45,7 +45,7 @@ public class Context {
     }
 
     public void output(Output out) {
-	out.write("#version 120\n\n");
+	out.write("#version 140\n\n");
 	for(String ext : exts)
 	    out.write("#extension " + ext + ": require\n");
 	for(Toplevel tl : typedefs)
