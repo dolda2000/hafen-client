@@ -36,6 +36,7 @@ import haven.render.sl.*;
 import static haven.render.DataBuffer.Usage.*;
 
 public class GLEnvironment implements Environment {
+    public static final boolean debuglog = false;
     public final GLContext ctx;
     public final Caps caps;
     final Object drawmon = new Object();
@@ -157,6 +158,8 @@ public class GLEnvironment implements Environment {
     final long[] stats_mem = new long[MemStats.values().length];
 
     public GLEnvironment(GL2 initgl, GLContext ctx, Area wnd) {
+	if(debuglog)
+	    ctx.enableGLDebugMessage(true);
 	this.ctx = ctx;
 	this.wnd = wnd;
 	this.caps = new Caps(initgl);
@@ -166,6 +169,11 @@ public class GLEnvironment implements Environment {
     }
 
     private void initialize(GL2 gl) {
+	if(debuglog) {
+	    gl.glEnable(GL2.GL_DEBUG_OUTPUT);
+	    /* gl.glDebugMessageControl(GL.GL_DONT_CARE, GL.GL_DONT_CARE, GL2.GL_DEBUG_SEVERITY_NOTIFICATION, 0, null, 0, false); */
+	    /* gl.glDebugMessageControl(GL2.GL_DEBUG_SOURCE_API, GL2.GL_DEBUG_TYPE_OTHER, GL2.GL_DONT_CARE, 1, new int[] {131185}, 0, false); */
+	}
 	gl.glEnable(GL3.GL_PROGRAM_POINT_SIZE);
 	gl.glEnable(GL2.GL_POINT_SPRITE);
     }
@@ -196,6 +204,45 @@ public class GLEnvironment implements Environment {
 	    query.dispose();
 	    i.remove();
 	}
+    }
+
+    public static class DebugMessage {
+	public final int src, type, id, sev;
+	public final String msg;
+
+	public DebugMessage(int src, int type, int id, int sev, String msg) {
+	    this.src = src;
+	    this.type = type;
+	    this.id = id;
+	    this.sev = sev;
+	    this.msg = msg;
+	}
+    }
+
+    private List<DebugMessage> getdebuglog(GL2 gl) {
+	List<DebugMessage> ret = new ArrayList<>();
+	int n = 16;
+	int[] src = new int[n], type = new int[n], id = new int[n], sev = new int[n], len = new int[n];
+	while(true) {
+	    int nlen = Caps.glgeti(gl, GL2.GL_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH);
+	    byte[] buf = new byte[Math.max(nlen, 128) * n];
+	    int rv = gl.glGetDebugMessageLog(n, buf.length, src, 0, type, 0, id, 0, sev, 0, len, 0, buf, 0);
+	    if(rv == 0)
+		break;
+	    for(int i = 0, p = 0; i < rv; p += len[i++])
+		ret.add(new DebugMessage(src[i], type[i], id[i], sev[i], new String(buf, p, len[i] - 1)));
+	}
+	return(ret);
+    }
+
+    private void checkdebuglog(GL2 gl) {
+	boolean f = false;
+	for(DebugMessage msg : getdebuglog(gl)) {
+	    System.err.printf("%d %d %d %d -- %s\n", msg.src, msg.type, msg.id, msg.sev, msg.msg);
+	    f = true;
+	}
+	if(f)
+	    System.err.println();
     }
 
     public void process(GL2 gl) {
@@ -243,6 +290,8 @@ public class GLEnvironment implements Environment {
 	    checkqueries(gl);
 	    disposeall().run(gl);
 	    clean();
+	    if(debuglog)
+		checkdebuglog(gl);
 	}
     }
 
