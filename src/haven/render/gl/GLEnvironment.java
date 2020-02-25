@@ -157,6 +157,7 @@ public class GLEnvironment implements Environment {
 	this.ctx = ctx;
 	this.wnd = wnd;
 	this.caps = new Caps(initgl);
+	this.caps.checkreq();
 	initialize(initgl);
 	this.nilfbo_id = ctx.getDefaultDrawFramebuffer();
 	this.nilfbo_db = ctx.getDefaultReadBuffer();
