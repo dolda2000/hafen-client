@@ -37,14 +37,15 @@ public abstract class PView extends Widget {
     public final RenderTree.Slot basic;
     public Texture2D fragcol = null;
     public Texture2D depth = null;
+    protected Environment env = null;
+    protected InstanceList instancer;
+    protected DrawList back = null;
+    protected Coord rsz;
     private final Map<Object, Pipe.Op> basicstates = new IdentityHashMap<>();
     private final Light.LightList lights = new Light.LightList();
     private ActAudio audio;
     private final ScreenList list2d = new ScreenList();
     private final TickList ticklist = new TickList();
-    protected Environment env = null;
-    protected InstanceList instancer;
-    protected DrawList back = null;
     private Sampler2D fragsamp;
 
     public PView(Coord sz) {
@@ -80,9 +81,14 @@ public abstract class PView extends Widget {
 	public String toString() {return(String.format("#<widgetctx %s>", wdg.getClass()));}
     }
 
+    protected Coord rendersz() {
+	return(this.sz);
+    }
+
     private final WidgetContext ctx = new WidgetContext(this);
     private Pipe.Op conf() {
-	return(Pipe.Op.compose(new FrameConfig(this.sz), ctx));
+	rsz = rendersz();
+	return(Pipe.Op.compose(new FrameConfig(rsz), ctx));
     }
 
     private Pipe.Op curconf = null;
@@ -96,7 +102,7 @@ public abstract class PView extends Widget {
 	return(Pipe.Op.compose(curconf(), new FrameInfo(), ((ui == null) || (ui.sess == null)) ? null : new Glob.FrameInfo(ui.sess.glob)));
     }
 
-    private void reconf() {
+    protected void reconf() {
 	curconf = null;
 	conf.ostate(frame());
     }
@@ -159,6 +165,12 @@ public abstract class PView extends Widget {
 	    audio.cycle();
     }
 
+    private class Resampler extends PostProcessor {
+	public void run(GOut g, Texture2D.Sampler2D in) {
+	    g.image(new TexRaw(in, true), Coord.z, g.sz());
+	}
+    }
+
     private GOut resolveout(GOut def, PostProcessor next) {
 	if(next == null)
 	    return(def);
@@ -179,8 +191,20 @@ public abstract class PView extends Widget {
 	return(new GOut(def.out, st, new Coord(area.sz())));
     }
 
+    private PostProcessor pp_resamp = null;
     protected void resolve(GOut g) {
-	Iterator<PostProcessor> post = ctx.postproc().iterator();
+	List<PostProcessor> copy = new ArrayList<PostProcessor>(ctx.postproc());
+	if(!rsz.equals(g.sz())) {
+	    if(pp_resamp == null)
+		pp_resamp = new Resampler();
+	    copy.add(pp_resamp);
+	} else {
+	    if(pp_resamp != null) {
+		pp_resamp.dispose();
+		pp_resamp = null;
+	    }
+	}
+	Iterator<PostProcessor> post = copy.iterator();
 	PostProcessor next = post.hasNext() ? post.next() : null;
 	resolveout(g, next).image(new TexRaw(fragsamp, true), Coord.z);
 	while(next != null) {
