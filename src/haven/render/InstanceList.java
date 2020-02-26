@@ -732,6 +732,8 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
     public <R> void add(RenderList<R> list, Class<? extends R> type) {
 	if(type != Rendered.class)
 	    throw(new IllegalArgumentException("instance-list can only reasonably handle rendering clients"));
+	if(list == null)
+	    throw(new NullPointerException());
 	synchronized(clients) {
 	    clients.add((RenderList<Rendered>)list);
 	}
