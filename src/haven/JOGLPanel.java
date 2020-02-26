@@ -306,7 +306,9 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "V-Mem: %s", buf.env.memstats());
 	MapView map = ui.root.findchild(MapView.class);
 	if((map != null) && (map.back != null)) {
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mapview: Tree %s, Inst %s, Draw %s", map.tree.stats(), map.instancer.stats(), map.back.stats());
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Camera: %s", map.camstats());
+	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mapview: %s", map.stats());
+	    // FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Click: Map: %s, Obj: %s", map.clmaplist.stats(), map.clobjlist.stats());
 	}
 	if(ui.sess != null)
 	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Async: L %s, D %s", ui.sess.glob.loader.stats(), Defer.gstats());

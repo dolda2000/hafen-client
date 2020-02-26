@@ -46,7 +46,7 @@ public abstract class RenderContext extends State implements OwnerContext {
 	}
     }
 
-    public Iterable<PostProcessor> postproc() {return(post);}
+    public Collection<PostProcessor> postproc() {return(post);}
     public void add(PostProcessor post) {this.post.add(post);}
     public void remove(PostProcessor post) {this.post.remove(post);}
 

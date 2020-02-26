@@ -102,6 +102,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	
 	public abstract float angle();
 	public abstract void tick(double dt);
+
+	public String stats() {return("N/A");}
     }
     
     public class FollowCam extends Camera {
@@ -202,7 +204,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(true);
 	}
 
-	public String toString() {
+	public String stats() {
 	    return(String.format("%f %f %f", elev, dist(elev), field(elev)));
 	}
     }
@@ -279,7 +281,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(exact) {
 		if(jc == null)
 		    jc = cc;
-		float pfac = sz.x / (field * 2);
+		float pfac = rsz.x / (field * 2);
 		Coord3f vjc = vm.mul4(jc).mul(pfac);
 		Coord3f corr = new Coord3f(Math.round(vjc.x) - vjc.x, Math.round(vjc.y) - vjc.y, 0).div(pfac);
 		if((Math.abs(vjc.x) > 500) || (Math.abs(vjc.y) > 500))
@@ -305,8 +307,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    angl = angl % ((float)Math.PI * 2.0f);
 	}
 
-	public String toString() {
-	    return(String.format("%f %f %f %f", dist, elev / Math.PI, angl / Math.PI, field));
+	public String stats() {
+	    return(String.format("%.1f %.2f %.2f %.1f", dist, elev / Math.PI, angl / Math.PI, field));
 	}
     }
 
@@ -780,14 +782,22 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			    States.maskdepth));
     }
 
-    public String toString() {
+    public String camstats() {
 	String cc;
 	try {
-	    cc = getcc().toString();
+	    Coord3f c = getcc();
+	    cc = String.format("(%.1f %.1f %.1f)", c.x, c.y, c.z);
 	} catch(Loading l) {
 	    cc = "<nil>";
 	}
-	return(String.format("Camera[%s (%s)]", cc, camera));
+	return(String.format("C: %s, Cam: %s", cc, camera.stats()));
+    }
+
+    public String stats() {
+	String ret = String.format("Tree %s", tree.stats());
+	if(back != null)
+	    ret = String.format("%s, Inst %s, Draw %s", ret, instancer.stats(), back.stats());
+	return(ret);
     }
 
     private Coord3f smapcc = null;
@@ -1001,12 +1011,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 								 new States.Facecull(),
 								 Homo3D.state);
 	private static final int MAXID = 0xffffff;
+	private final RenderList.Adapter master;
+	private final boolean doinst;
 	private final ProxyPipe basic = new ProxyPipe();
-	private DefPipe curbasic = null;
 	private final Map<Slot<? extends Rendered>, Clickslot> slots = new HashMap<>();
 	private final Map<Integer, Clickslot> idmap = new HashMap<>();
-	private final RenderList.Adapter master;
-	private DrawList back = null;
+	private DefPipe curbasic = null;
+	private RenderList<Rendered> back;
+	private DrawList draw;
+	private InstanceList instancer;
 	private int nextid = 1;
 
 	public class Clickslot implements Slot<Rendered> {
@@ -1066,8 +1079,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
 
-	public Clicklist(RenderList.Adapter master) {
-	    asyncadd(this.master = master, Rendered.class);
+	public Clicklist(RenderList.Adapter master, boolean doinst) {
+	    this.master = master;
+	    this.doinst = doinst;
+	    asyncadd(this.master, Rendered.class);
 	}
 
 	public void add(Slot<? extends Rendered> slot) {
@@ -1155,13 +1170,25 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void draw(Render out) {
-	    if((back == null) || !back.compatible(out.env())) {
-		if(back != null)
-		    back.dispose();
-		back = out.env().drawlist();
-		back.asyncadd(this, Rendered.class);
+	    if((draw == null) || !draw.compatible(out.env())) {
+		if(draw != null)
+		    dispose();
+		draw = out.env().drawlist();
+		if(doinst) {
+		    instancer = new InstanceList(this);
+		    instancer.add(draw, Rendered.class);
+		    instancer.asyncadd(this, Rendered.class);
+		    back = instancer;
+		} else {
+		    draw.asyncadd(this, Rendered.class);
+		    back = draw;
+		}
 	    }
-	    back.draw(out);
+	    try(Locked lk = lock()) {
+		if(instancer != null)
+		    instancer.commit(out);
+		draw.draw(out);
+	    }
 	}
 
 	public void get(Render out, Coord c, Consumer<ClickData> cb) {
@@ -1181,14 +1208,29 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void dispose() {
-	    if(back != null)
-		back.dispose();
+	    if(instancer != null) {
+		instancer = null;
+		instancer = null;
+	    }
+	    if(draw != null) {
+		draw.dispose();
+		draw = null;
+	    }
+	    back = null;
+	}
+
+	public String stats() {
+	    if(back == null)
+		return("");
+	    if(instancer != null)
+	    return(String.format("Tree %s, Inst %s, Draw %s", master.stats(), instancer.stats(), draw.stats()));
+	    return(String.format("Tree %s, Draw %s", master.stats(), draw.stats()));
 	}
     }
 
     private final RenderTree clmaptree = new RenderTree();
-    private final Clicklist clmaplist = new Clicklist(clmaptree);
-    private final Clicklist clobjlist = new Clicklist(tree);
+    private final Clicklist clmaplist = new Clicklist(clmaptree, false);
+    private final Clicklist clobjlist = new Clicklist(tree, true);
     private FragID<Texture.Image<Texture2D>> clickid;
     private ClickLocation<Texture.Image<Texture2D>> clickloc;
     private DepthBuffer<Texture.Image<Texture2D>> clickdepth;
@@ -1389,6 +1431,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    drawarrow(g, a);
 	}
 	g.chcolor();
+    }
+
+    private double rscale = 1.0;
+    protected Coord rendersz() {
+	return(new Coord((int)Math.round(sz.x * rscale), (int)Math.round(sz.y * rscale)));
     }
 
     private Loading camload = null, lastload = null;
@@ -2009,6 +2056,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    if(l == null)
 			throw(new Exception("Not loading"));
 		    l.printStackTrace(cons.out);
+		}
+	    });
+	cmdmap.put("rscale", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    MapView.this.rscale = Double.parseDouble(args[1]);
+		    reconf();
 		}
 	    });
     }
