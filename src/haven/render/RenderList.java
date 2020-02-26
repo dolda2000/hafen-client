@@ -48,6 +48,8 @@ public interface RenderList<R> {
 	public Iterable<? extends Slot<?>> slots();
 	public <R> void add(RenderList<R> list, Class<? extends R> type);
 	public void remove(RenderList<?> list);
+
+	public default String stats() {return("N/A");}
     }
 
     public void add(Slot<? extends R> slot);
