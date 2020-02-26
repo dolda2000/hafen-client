@@ -957,12 +957,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 								 new States.Facecull(),
 								 Homo3D.state);
 	private static final int MAXID = 0xffffff;
+	private final RenderList.Adapter master;
+	private final boolean doinst;
 	private final ProxyPipe basic = new ProxyPipe();
-	private DefPipe curbasic = null;
 	private final Map<Slot<? extends Rendered>, Clickslot> slots = new HashMap<>();
 	private final Map<Integer, Clickslot> idmap = new HashMap<>();
-	private final RenderList.Adapter master;
-	private DrawList back = null;
+	private DefPipe curbasic = null;
+	private RenderList<Rendered> back;
+	private DrawList draw;
+	private InstanceList instancer;
 	private int nextid = 1;
 
 	public class Clickslot implements Slot<Rendered> {
@@ -1022,8 +1025,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
 
-	public Clicklist(RenderList.Adapter master) {
-	    asyncadd(this.master = master, Rendered.class);
+	public Clicklist(RenderList.Adapter master, boolean doinst) {
+	    this.master = master;
+	    this.doinst = doinst;
+	    asyncadd(this.master, Rendered.class);
 	}
 
 	public void add(Slot<? extends Rendered> slot) {
@@ -1111,13 +1116,25 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void draw(Render out) {
-	    if((back == null) || !back.compatible(out.env())) {
-		if(back != null)
-		    back.dispose();
-		back = out.env().drawlist();
-		back.asyncadd(this, Rendered.class);
+	    if((draw == null) || !draw.compatible(out.env())) {
+		if(draw != null)
+		    dispose();
+		draw = out.env().drawlist();
+		if(doinst) {
+		    instancer = new InstanceList(this);
+		    instancer.add(draw, Rendered.class);
+		    instancer.asyncadd(this, Rendered.class);
+		    back = instancer;
+		} else {
+		    draw.asyncadd(this, Rendered.class);
+		    back = draw;
+		}
 	    }
-	    back.draw(out);
+	    try(Locked lk = lock()) {
+		if(instancer != null)
+		    instancer.commit(out);
+		draw.draw(out);
+	    }
 	}
 
 	public void get(Render out, Coord c, Consumer<ClickData> cb) {
@@ -1137,14 +1154,29 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void dispose() {
-	    if(back != null)
-		back.dispose();
+	    if(instancer != null) {
+		instancer = null;
+		instancer = null;
+	    }
+	    if(draw != null) {
+		draw.dispose();
+		draw = null;
+	    }
+	    back = null;
+	}
+
+	public String stats() {
+	    if(back == null)
+		return("");
+	    if(instancer != null)
+	    return(String.format("Tree %s, Inst %s, Draw %s", master.stats(), instancer.stats(), draw.stats()));
+	    return(String.format("Tree %s, Draw %s", master.stats(), draw.stats()));
 	}
     }
 
     private final RenderTree clmaptree = new RenderTree();
-    private final Clicklist clmaplist = new Clicklist(clmaptree);
-    private final Clicklist clobjlist = new Clicklist(tree);
+    private final Clicklist clmaplist = new Clicklist(clmaptree, false);
+    private final Clicklist clobjlist = new Clicklist(tree, true);
     private FragID<Texture.Image<Texture2D>> clickid;
     private ClickLocation<Texture.Image<Texture2D>> clickloc;
     private DepthBuffer<Texture.Image<Texture2D>> clickdepth;
