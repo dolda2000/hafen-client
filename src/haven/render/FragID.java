@@ -32,11 +32,13 @@ import haven.render.sl.ValBlock.Value;
 
 public class FragID<T extends Texture.Image> extends State {
     public static final Slot<FragID> tex = new Slot<>(Slot.Type.SYS, FragID.class);
-    public static final Slot<ID> id = new Slot<>(Slot.Type.DRAW, ID.class);
+    public static final Slot<ID> id = new Slot<>(Slot.Type.DRAW, ID.class)
+	.instanced(st -> ID.instancer);
     public static final FragData fragid = new FragData(Type.VEC4, "fragid", p -> p.get(tex).image, tex);
-    private static final Uniform uid = new Uniform(Type.VEC4, "id", p -> {
+    private static final InstancedUniform uid = new InstancedUniform.Vec4("id", p -> {
 	    ID v = p.get(id);
-	    return((v == null) ? Color.BLACK : v.val);
+	    Color ret = (v == null) ? Color.BLACK : v.val;
+	    return(new float[] {ret.getRed() / 255f, ret.getGreen() / 255f, ret.getBlue() / 255f, ret.getAlpha() / 255f});
 	}, id);
     public final T image;
 
@@ -44,7 +46,7 @@ public class FragID<T extends Texture.Image> extends State {
 	this.image = image;
     }
 
-    public static class ID extends State {
+    public static class ID extends State implements InstanceBatch.AttribState {
 	public final Color val;
 
 	public ID(Color val) {
@@ -62,12 +64,33 @@ public class FragID<T extends Texture.Image> extends State {
 	    return((o instanceof ID) &&
 		   (((ID)o).val.equals(this.val)));
 	}
+
+	static final Instancer<ID> instancer = new Instancer<ID>() {
+		final ID instanced = new ID(Color.BLACK) {
+		    public ShaderMacro shader() {return(mkinstanced);}
+		};
+
+		public ID inststate(ID uinst, InstanceBatch bat) {
+		    return(instanced);
+		}
+	};
+
+	public InstancedAttribute[] attribs() {
+	    return(new InstancedAttribute[] {uid.attrib});
+	}
     }
+
+    public static final AutoVarying transfer = new AutoVarying(Type.VEC4) {
+	    protected Interpol ipol(Context ctx) {return(Interpol.FLAT);}
+	    protected Expression root(VertexContext vctx) {
+		return(uid.ref());
+	    }
+	};
 
     public static Value fragid(FragmentContext fctx) {
 	return(fctx.mainvals.ext(fragid, () -> fctx.mainvals.new Value(Type.VEC4) {
 		public Expression root() {
-		    return(uid.ref());
+		    return(transfer.ref());
 		}
 
 		protected void cons2(Block blk) {
