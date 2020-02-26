@@ -97,6 +97,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	
 	public abstract float angle();
 	public abstract void tick(double dt);
+
+	public String stats() {return("N/A");}
     }
     
     public class FollowCam extends Camera {
@@ -197,7 +199,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(true);
 	}
 
-	public String toString() {
+	public String stats() {
 	    return(String.format("%f %f %f", elev, dist(elev), field(elev)));
 	}
     }
@@ -300,8 +302,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    angl = angl % ((float)Math.PI * 2.0f);
 	}
 
-	public String toString() {
-	    return(String.format("%f %f %f %f", dist, elev / Math.PI, angl / Math.PI, field));
+	public String stats() {
+	    return(String.format("%.1f %.2f %.2f %.1f", dist, elev / Math.PI, angl / Math.PI, field));
 	}
     }
 
@@ -736,14 +738,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			    States.maskdepth));
     }
 
-    public String toString() {
+    public String camstats() {
 	String cc;
 	try {
-	    cc = getcc().toString();
+	    Coord3f c = getcc();
+	    cc = String.format("(%.1f %.1f %.1f)", c.x, c.y, c.z);
 	} catch(Loading l) {
 	    cc = "<nil>";
 	}
-	return(String.format("Camera[%s (%s)]", cc, camera));
+	return(String.format("C: %s, Cam: %s", cc, camera.stats()));
     }
 
     public String stats() {
