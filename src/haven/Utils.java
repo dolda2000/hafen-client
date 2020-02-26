@@ -827,6 +827,23 @@ public class Utils {
 	}
     }
 
+    public static void hexdump(ByteBuffer arr, PrintStream out, int width) {
+	if(arr == null) {
+	    out.println("null");
+	    return;
+	}
+	if(width <= 0)
+	    width = 16;
+	for(int i = 0; i < arr.capacity(); i += width) {
+	    out.printf("%08x:\t", i);
+	    for(int o = 0; (o < width) && (i + o < arr.capacity()); o++) {
+		if(o > 0) out.print(' ');
+		out.printf("%02x", arr.get(i + o) & 0xff);
+	    }
+	    out.print('\n');
+	}
+    }
+
     public static String titlecase(String str) {
 	return(Character.toTitleCase(str.charAt(0)) + str.substring(1));
     }
