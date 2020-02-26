@@ -746,6 +746,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return(String.format("Camera[%s (%s)]", cc, camera));
     }
 
+    public String stats() {
+	String ret = String.format("Tree %s", tree.stats());
+	if(back != null)
+	    ret = String.format("%s, Inst %s, Draw %s", ret, instancer.stats(), back.stats());
+	return(ret);
+    }
+
     private Coord3f smapcc = null;
     private ShadowMap.ShadowList slist = null;
     private ShadowMap smap = null;
