@@ -161,6 +161,8 @@ public class Avaview extends PView {
 
     private Indir<Resource> lbase = null;
     public void updcomp() {
+	/* XXX: This "retry mechanism" is quite ugly and should
+	 * probably be rewritten to use the Loader instead. */
 	if(avagob != -1) {
 	    Composite gc = getgcomp();
 	    if(gc == null)
@@ -180,10 +182,14 @@ public class Avaview extends PView {
 		comp.eqowner = new AvaOwner();
 		basic(Camera.class, makecam(d.base.get(), comp, camnm));
 	    }
-	    if(d.mod != this.cmod)
-		comp.chmod(this.cmod = d.mod);
-	    if(d.equ != this.cequ)
-		comp.chequ(this.cequ = d.equ);
+	    if(d.mod != this.cmod) {
+		comp.chmod(d.mod);
+		this.cmod = d.mod;
+	    }
+	    if(d.equ != this.cequ) {
+		comp.chequ(d.equ);
+		this.cequ = d.equ;
+	    }
 	}
 	if(compslot == null) {
 	    compslot = basic.add(comp);
