@@ -1438,6 +1438,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return(new Coord((int)Math.round(sz.x * rscale), (int)Math.round(sz.y * rscale)));
     }
 
+    @Override protected void maindraw(Render out) {
+	drawsmap(out);
+	super.maindraw(out);
+    }
+
     private Loading camload = null, lastload = null;
     public void draw(GOut g) {
 	Loader.Future<Plob> placing = this.placing;
@@ -1450,7 +1455,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(camload != null)
 		throw(new Loading(camload));
 	    undelay(delayed, g);
-	    drawsmap(g.out);
 	    super.draw(g);
 	    undelay(delayed2, g);
 	    poldraw(g);

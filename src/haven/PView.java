@@ -230,6 +230,10 @@ public abstract class PView extends Widget {
 	instancer.dispose(); instancer = null;
     }
 
+    protected void maindraw(Render out) {
+	back.draw(out);
+    }
+
     public void draw(GOut g) {
 	ticklist.gtick(g.out);
 	if((back == null) || !back.compatible(g.out.env())) {
@@ -247,7 +251,7 @@ public abstract class PView extends Widget {
 	g.out.clear(basic.state(), 1.0);
 	try(Locked lk = tree.lock()) {
 	    instancer.commit(g.out);
-	    back.draw(g.out);
+	    maindraw(g.out);
 	}
 	resolve(g);
 	list2d.draw(g);
