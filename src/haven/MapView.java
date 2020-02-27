@@ -1394,7 +1394,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return(new Coord((int)Math.round(sz.x * rscale), (int)Math.round(sz.y * rscale)));
     }
 
-    @Override protected void maindraw(Render out) {
+    protected void maindraw(Render out) {
 	drawsmap(out);
 	super.maindraw(out);
     }
