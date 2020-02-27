@@ -259,7 +259,7 @@ public class GOut {
     */
 
     public void fellipse(Coord c, Coord r, double a1, double a2) {
-	if(a2 >= a1)
+	if(a1 >= a2)
 	    return;
 	c = c.add(tx);
 	double d = 0.1;
