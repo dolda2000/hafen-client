@@ -1049,12 +1049,26 @@ public class Skeleton {
 		Location loc = Location.xlate(new Coord3f(x, y, z));
 		return(pose -> () -> loc);
 	    };
+	    opcodes[16] = buf -> {
+		float x = buf.float32();
+		float y = buf.float32();
+		float z = buf.float32();
+		Location loc = Location.xlate(new Coord3f(x, y, z));
+		return(pose -> () -> loc);
+	    };
 	    opcodes[1] = buf -> {
 		final float ang = (float)buf.cpfloat();
 		final float ax = (float)buf.cpfloat();
 		final float ay = (float)buf.cpfloat();
 		final float az = (float)buf.cpfloat();
 		Location loc = Location.rot(new Coord3f(ax, ay, az), ang);
+		return(pose -> () -> loc);
+	    };
+	    opcodes[17] = buf -> {
+		final float ang = buf.unorm16() * 2 * (float)Math.PI;
+		float[] ax = new float[3];
+		Utils.oct2uvec(ax, buf.snorm16(), buf.snorm16());
+		Location loc = Location.rot(new Coord3f(ax[0], ax[1], ax[2]), ang);
 		return(pose -> () -> loc);
 	    };
 	    opcodes[2] = buf -> {
