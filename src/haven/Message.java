@@ -190,6 +190,12 @@ public abstract class Message {
     public Color color() {
 	return(new Color(uint8(), uint8(), uint8(), uint8()));
     }
+    public float float8() {
+	return(Utils.mfdec((byte)int8()));
+    }
+    public float float16() {
+	return(Utils.hfdec((short)int16()));
+    }
     public float float32() {
 	int off = rget(4);
 	return(Utils.float32d(rbuf, off));
@@ -293,9 +299,19 @@ public abstract class Message {
 	addbytes(src, 0, src.length);
 	return(this);
     }
+    public Message addint8(byte num) {
+	wensure(1);
+	wbuf[wh++] = num;
+	return(this);
+    }
     public Message adduint8(int num) {
 	wensure(1);
 	wbuf[wh++] = (byte)num;
+	return(this);
+    }
+    public Message addint16(short num) {
+	int off = wget(2);
+	Utils.int16e(num, wbuf, off);
 	return(this);
     }
     public Message adduint16(int num) {
@@ -334,6 +350,12 @@ public abstract class Message {
 	adduint8(color.getRed()); adduint8(color.getGreen());
 	adduint8(color.getBlue()); adduint8(color.getAlpha());
 	return(this);
+    }
+    public Message addfloat8(float num) {
+	return(addint8(Utils.mfenc(num)));
+    }
+    public Message addfloat16(float num) {
+	return(addint16(Utils.hfenc(num)));
     }
     public Message addfloat32(float num) {
 	int off = wget(4);
