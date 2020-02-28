@@ -905,13 +905,13 @@ public class Skeleton {
 		}
 	    } else if(fmt == 1) {
 		for(int i = 0; i < frames.length; i++) {
-		    float tm = (buf.uint16() / 65535.0f) * len;
+		    float tm = buf.unorm16() * len;
 		    float[] trans = new float[3];
 		    for(int o = 0; o < 3; o++)
 			trans[o] = Utils.hfdec((short)buf.int16());
-		    float rang = (buf.uint16() / 65535.0f) * 2 * (float)Math.PI;
+		    float rang = buf.unorm16() * 2 * (float)Math.PI;
 		    float[] rax = new float[3];
-		    Utils.oct2uvec(rax, buf.int16() / 32767.0f, buf.int16() / 32767.0f);
+		    Utils.oct2uvec(rax, buf.snorm16(), buf.snorm16());
 		    frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang));
 		}
 	    }
@@ -921,7 +921,7 @@ public class Skeleton {
 	private FxTrack parsefx(int fmt, Message buf) {
 	    FxTrack.Event[] events = new FxTrack.Event[buf.uint16()];
 	    for(int i = 0; i < events.length; i++) {
-		float tm = (fmt == 0) ? (float)buf.cpfloat() : ((buf.uint16() / 65535.0f) * len);
+		float tm = (fmt == 0) ? (float)buf.cpfloat() : (buf.unorm16() * len);
 		int t = buf.uint8();
 		switch(t) {
 		case 0:
