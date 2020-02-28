@@ -209,6 +209,25 @@ public abstract class Message {
 	return(Utils.floatd(rbuf, off));
     }
 
+    public float snorm8() {
+	return(Utils.clip(int8(), -0x7f, 0x7f) / 0x7fp0f);
+    }
+    public float unorm8() {
+	return(uint8() / 0xffp0f);
+    }
+    public float snorm16() {
+	return(Utils.clip(int16(), -0x7fff, 0x7fff) / 0x7fffp0f);
+    }
+    public float unorm16() {
+	return(uint16() / 0xffffp0f);
+    }
+    public double snorm32() {
+	return(Utils.clip(int32(), -0x7fffffff, 0x7fffffff) / 0x7fffffffp0);
+    }
+    public double unorm32() {
+	return(uint32() / 0xffffffffp0);
+    }
+
     public Object[] list() {
 	ArrayList<Object> ret = new ArrayList<Object>();
 	list: while(true) {
