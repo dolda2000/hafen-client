@@ -794,6 +794,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    basic(ShadowMap.class, smap);
 	} else {
 	    if(smap != null) {
+		instancer.remove(slist);
 		smap.dispose(); smap = null;
 		slist.dispose(); slist = null;
 		basic(ShadowMap.class, null);
