@@ -553,21 +553,46 @@ public class Skeleton {
     public static class Res extends Resource.Layer {
 	public final transient Skeleton s;
 	
+	private void read(Map<String, Bone> bones, Map<Bone, String> pm, Message buf, int ver) {
+	    if(ver == 0) {
+		while(!buf.eom()) {
+		    String bnm = buf.string();
+		    if((bnm.length() == 1) && (((int)bnm.charAt(0)) < 32)) {
+			read(bones, pm, buf, (int)bnm.charAt(0));
+			return;
+		    }
+		    Coord3f pos = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat());
+		    Coord3f rax = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
+		    float rang = (float)buf.cpfloat();
+		    String bp = buf.string();
+		    Bone b = new Bone(bnm, pos, rax, rang);
+		    if(bones.put(bnm, b) != null)
+			throw(new RuntimeException("Duplicate bone name: " + b.name));
+		    pm.put(b, bp);
+		}
+	    } else if(ver == 1) {
+		while(!buf.eom()) {
+		    String bnm = buf.string();
+		    String bp = buf.string();
+		    Coord3f pos = new Coord3f(buf.float32(), buf.float32(), buf.float32());
+		    float rang = buf.unorm16() * 2 * (float)Math.PI;
+		    float[] rax = new float[3];
+		    Utils.oct2uvec(rax, buf.snorm16(), buf.snorm16());
+		    Bone b = new Bone(bnm, pos, new Coord3f(rax[0], rax[1], rax[2]), rang);
+		    if(bones.put(bnm, b) != null)
+			throw(new RuntimeException("Duplicate bone name: " + b.name));
+		    pm.put(b, bp);
+		}
+	    } else {
+		throw(new AssertionError());
+	    }
+	}
+
 	public Res(Resource res, Message buf) {
 	    res.super();
 	    Map<String, Bone> bones = new HashMap<String, Bone>();
 	    Map<Bone, String> pm = new HashMap<Bone, String>();
-	    while(!buf.eom()) {
-		String bnm = buf.string();
-		Coord3f pos = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat());
-		Coord3f rax = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
-		float rang = (float)buf.cpfloat();
-		String bp = buf.string();
-		Bone b = new Bone(bnm, pos, rax, rang);
-		if(bones.put(bnm, b) != null)
-		    throw(new RuntimeException("Duplicate bone name: " + b.name));
-		pm.put(b, bp);
-	    }
+	    read(bones, pm, buf, 0);
 	    for(Bone b : bones.values()) {
 		String bp = pm.get(b);
 		if(bp.length() == 0) {
