@@ -73,14 +73,8 @@ public class MCache {
 		    reg.accept(new Waitable.Checker(callback) {
 			    protected Object monitor() {return(map.grids);}
 			    double st = Utils.rtime();
-			    boolean w = false;
 			    protected boolean check() {
 				if((Utils.rtime() - st > 5)) {
-				    if(!w) {
-					System.err.println("waited for map data for more than 5 seconds");
-					printStackTrace();
-					w = true;
-				    }
 				    st = Utils.rtime();
 				    return(true);
 				}
