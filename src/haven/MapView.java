@@ -1474,26 +1474,31 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	Coord2d gran = (plobgran == 0)?null:new Coord2d(1.0 / plobgran, 1.0 / plobgran).mul(tilesz);
 
 	public void adjust(Plob plob, Coord pc, Coord2d mc, int modflags) {
+	    Coord2d nc;
 	    if((modflags & 2) == 0)
-		plob.rc = mc.floor(tilesz).mul(tilesz).add(tilesz.div(2));
+		nc = mc.floor(tilesz).mul(tilesz).add(tilesz.div(2));
 	    else if(gran != null)
-		plob.rc = mc.add(gran.div(2)).floor(gran).mul(gran);
+		nc = mc.add(gran.div(2)).floor(gran).mul(gran);
 	    else
-		plob.rc = mc;
+		nc = mc;
 	    Gob pl = plob.mv().player();
 	    if((pl != null) && !freerot)
-		plob.a = Math.round(plob.rc.angle(pl.rc) / (Math.PI / 2)) * (Math.PI / 2);
+		plob.move(nc, Math.round(plob.rc.angle(pl.rc) / (Math.PI / 2)) * (Math.PI / 2));
+	    else
+		plob.move(nc);
 	}
 
 	public boolean rotate(Plob plob, int amount, int modflags) {
 	    if((modflags & 1) == 0)
 		return(false);
 	    freerot = true;
+	    double na;
 	    if((modflags & 2) == 0)
-		plob.a = (Math.PI / 4) * Math.round((plob.a + (amount * Math.PI / 4)) / (Math.PI / 4));
+		na = (Math.PI / 4) * Math.round((plob.a + (amount * Math.PI / 4)) / (Math.PI / 4));
 	    else
-		plob.a += amount * Math.PI / 16;
-	    plob.a = Utils.cangle(plob.a);
+		na = plob.a + amount * Math.PI / 16;
+	    na = Utils.cangle(na);
+	    plob.move(na);
 	    return(true);
 	}
     }
@@ -1506,12 +1511,28 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private Plob(Indir<Resource> res, Message sdt) {
 	    super(MapView.this.glob, MapView.this.cc);
 	    setattr(new ResDrawable(this, res, sdt));
-	    if(ui.mc.isect(rootpos(), sz)) {
-		new Adjust(ui.mc.sub(rootpos()), 0).run();
-	    }
 	}
 
 	public MapView mv() {return(MapView.this);}
+
+	public void move(Coord2d c, double a) {
+	    super.move(c, a);
+	    updated();
+	}
+
+	public void move(Coord2d c) {
+	    move(c, this.a);
+	}
+
+	public void move(double a) {
+	    move(this.rc, a);
+	}
+
+	void place() {
+	    if(ui.mc.isect(rootpos(), sz))
+		new Adjust(ui.mc.sub(rootpos()), 0).run();
+	    this.slot = basic.add(this.placed);
+	}
 
 	private class Adjust extends Maptest {
 	    int modflags;
@@ -1556,20 +1577,26 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    else
 		sdt = Message.nil;
 	    int oa = a;
-	    this.placing = glob.loader.defer(() -> {
-		    int a2 = oa;
-		    Plob ret = new Plob(res, new MessageBuf(sdt));
-		    while(a2 < args.length) {
-			Indir<Resource> ores = ui.sess.getres((Integer)args[a2++]);
-			Message odt;
-			if((args.length > a2) && (args[a2] instanceof byte[]))
-			    odt = new MessageBuf((byte[])args[a2++]);
-			else
-			    odt = Message.nil;
-			ret.addol(ores, odt);
+	    this.placing = glob.loader.defer(new Supplier<Plob>() {
+		    int a = oa;
+		    Plob ret = null;
+		    public Plob get() {
+			if(ret == null)
+			    ret = new Plob(res, new MessageBuf(sdt));
+			while(a < args.length) {
+			    int a2 = a;
+			    Indir<Resource> ores = ui.sess.getres((Integer)args[a2++]);
+			    Message odt;
+			    if((args.length > a2) && (args[a2] instanceof byte[]))
+				odt = new MessageBuf((byte[])args[a2++]);
+			    else
+				odt = Message.nil;
+			    ret.addol(ores, odt);
+			    a = a2;
+			}
+			ret.place();
+			return(ret);
 		    }
-		    ret.slot = basic.add(ret.placed);
-		    return(ret);
 		});
 	} else if(msg == "unplace") {
 	    Loader.Future<Plob> placing = this.placing;
