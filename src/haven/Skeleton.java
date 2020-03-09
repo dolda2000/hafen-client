@@ -553,21 +553,46 @@ public class Skeleton {
     public static class Res extends Resource.Layer {
 	public final transient Skeleton s;
 	
+	private void read(Map<String, Bone> bones, Map<Bone, String> pm, Message buf, int ver) {
+	    if(ver == 0) {
+		while(!buf.eom()) {
+		    String bnm = buf.string();
+		    if((bnm.length() == 1) && (((int)bnm.charAt(0)) < 32)) {
+			read(bones, pm, buf, (int)bnm.charAt(0));
+			return;
+		    }
+		    Coord3f pos = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat());
+		    Coord3f rax = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
+		    float rang = (float)buf.cpfloat();
+		    String bp = buf.string();
+		    Bone b = new Bone(bnm, pos, rax, rang);
+		    if(bones.put(bnm, b) != null)
+			throw(new RuntimeException("Duplicate bone name: " + b.name));
+		    pm.put(b, bp);
+		}
+	    } else if(ver == 1) {
+		while(!buf.eom()) {
+		    String bnm = buf.string();
+		    String bp = buf.string();
+		    Coord3f pos = new Coord3f(buf.float32(), buf.float32(), buf.float32());
+		    float rang = buf.unorm16() * 2 * (float)Math.PI;
+		    float[] rax = new float[3];
+		    Utils.oct2uvec(rax, buf.snorm16(), buf.snorm16());
+		    Bone b = new Bone(bnm, pos, new Coord3f(rax[0], rax[1], rax[2]), rang);
+		    if(bones.put(bnm, b) != null)
+			throw(new RuntimeException("Duplicate bone name: " + b.name));
+		    pm.put(b, bp);
+		}
+	    } else {
+		throw(new AssertionError());
+	    }
+	}
+
 	public Res(Resource res, Message buf) {
 	    res.super();
 	    Map<String, Bone> bones = new HashMap<String, Bone>();
 	    Map<Bone, String> pm = new HashMap<Bone, String>();
-	    while(!buf.eom()) {
-		String bnm = buf.string();
-		Coord3f pos = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat());
-		Coord3f rax = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
-		float rang = (float)buf.cpfloat();
-		String bp = buf.string();
-		Bone b = new Bone(bnm, pos, rax, rang);
-		if(bones.put(bnm, b) != null)
-		    throw(new RuntimeException("Duplicate bone name: " + b.name));
-		pm.put(b, bp);
-	    }
+	    read(bones, pm, buf, 0);
 	    for(Bone b : bones.values()) {
 		String bp = pm.get(b);
 		if(bp.length() == 0) {
@@ -880,13 +905,13 @@ public class Skeleton {
 		}
 	    } else if(fmt == 1) {
 		for(int i = 0; i < frames.length; i++) {
-		    float tm = (buf.uint16() / 65535.0f) * len;
+		    float tm = buf.unorm16() * len;
 		    float[] trans = new float[3];
 		    for(int o = 0; o < 3; o++)
 			trans[o] = Utils.hfdec((short)buf.int16());
-		    float rang = (buf.uint16() / 65535.0f) * 2 * (float)Math.PI;
+		    float rang = buf.unorm16() * 2 * (float)Math.PI;
 		    float[] rax = new float[3];
-		    Utils.oct2uvec(rax, buf.int16() / 32767.0f, buf.int16() / 32767.0f);
+		    Utils.oct2uvec(rax, buf.snorm16(), buf.snorm16());
 		    frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang));
 		}
 	    }
@@ -896,7 +921,7 @@ public class Skeleton {
 	private FxTrack parsefx(int fmt, Message buf) {
 	    FxTrack.Event[] events = new FxTrack.Event[buf.uint16()];
 	    for(int i = 0; i < events.length; i++) {
-		float tm = (fmt == 0) ? (float)buf.cpfloat() : ((buf.uint16() / 65535.0f) * len);
+		float tm = (fmt == 0) ? (float)buf.cpfloat() : (buf.unorm16() * len);
 		int t = buf.uint8();
 		switch(t) {
 		case 0:
@@ -1024,12 +1049,26 @@ public class Skeleton {
 		Location loc = Location.xlate(new Coord3f(x, y, z));
 		return(pose -> () -> loc);
 	    };
+	    opcodes[16] = buf -> {
+		float x = buf.float32();
+		float y = buf.float32();
+		float z = buf.float32();
+		Location loc = Location.xlate(new Coord3f(x, y, z));
+		return(pose -> () -> loc);
+	    };
 	    opcodes[1] = buf -> {
 		final float ang = (float)buf.cpfloat();
 		final float ax = (float)buf.cpfloat();
 		final float ay = (float)buf.cpfloat();
 		final float az = (float)buf.cpfloat();
 		Location loc = Location.rot(new Coord3f(ax, ay, az), ang);
+		return(pose -> () -> loc);
+	    };
+	    opcodes[17] = buf -> {
+		final float ang = buf.unorm16() * 2 * (float)Math.PI;
+		float[] ax = new float[3];
+		Utils.oct2uvec(ax, buf.snorm16(), buf.snorm16());
+		Location loc = Location.rot(new Coord3f(ax[0], ax[1], ax[2]), ang);
 		return(pose -> () -> loc);
 	    };
 	    opcodes[2] = buf -> {
