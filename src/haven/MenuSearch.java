@@ -37,7 +37,7 @@ public class MenuSearch extends Window {
 
 	protected void drawitem(GOut g, Result el, int idx) {
 	    g.chcolor((((idx % 2) == 0) ? CharWnd.every : CharWnd.other));
-	    g.frect(Coord.z, g.sz);
+	    g.frect(Coord.z, g.sz());
 	    g.chcolor();
 	    if(el.rname == null)
 		el.rname = elf.render(el.btn.name());
