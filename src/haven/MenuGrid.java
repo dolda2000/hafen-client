@@ -37,9 +37,10 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     public final static Tex bg = Resource.loadtex("gfx/hud/invsq");
     public final static Coord bgsz = bg.sz().add(-1, -1);
     public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 10);
-    public final Set<Pagina> paginae = new HashSet<Pagina>();
     private static Coord gsz = new Coord(4, 4);
-    private Pagina cur, dragging;
+    public final Set<Pagina> paginae = new HashSet<Pagina>();
+    public Pagina cur;
+    private Pagina dragging;
     private Collection<PagButton> curbtns = null;
     private PagButton pressed, layout[][] = new PagButton[gsz.x][gsz.y];
     private UI.Grab grab;
@@ -419,7 +420,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
     }
 
-    private void use(PagButton r, boolean reset) {
+    public void use(PagButton r, boolean reset) {
 	Collection<PagButton> sub = new ArrayList<>();
 	cons(r.pag, sub);
 	if(sub.size() > 0) {
