@@ -351,12 +351,16 @@ public class Utils {
     public static void int32e(int num, byte[] buf, int off) {
 	uint32e(((long)num) & 0xffffffff, buf, off);
     }
-	
+
     public static void uint16e(int num, byte[] buf, int off) {
 	buf[off] = sb(num & 0xff);
 	buf[off + 1] = sb((num & 0xff00) >> 8);
     }
-	
+
+    public static void int16e(short num, byte[] buf, int off) {
+	uint16e(((int)num) & 0xffff, buf, off);
+    }
+
     public static String strd(byte[] buf, int[] off) {
 	int i;
 	for(i = off[0]; buf[i] != 0; i++);
@@ -405,14 +409,14 @@ public class Utils {
     public static void float9995d(int word, float[] ret) {
 	int xb = (word & 0x7f800000) >> 23, xs = ((word & 0x80000000) >> 31) & 1,
 	    yb = (word & 0x003fc000) >> 14, ys = ((word & 0x00400000) >> 22) & 1,
-	    zb = (word & 0x00001fd0) >>  5, zs = ((word & 0x00002000) >> 13) & 1;
+	    zb = (word & 0x00001fe0) >>  5, zs = ((word & 0x00002000) >> 13) & 1;
 	int me = (word & 0x1f) - 15;
 	int xe = Integer.numberOfLeadingZeros(xb) - 24,
 	    ye = Integer.numberOfLeadingZeros(yb) - 24,
 	    ze = Integer.numberOfLeadingZeros(zb) - 24;
-	if(xe == 32) ret[0] = 0; else ret[0] = Float.intBitsToFloat((xs << 31) | ((me - xe + 127) << 23) | ((xb << (xe + 16)) & 0x007fffff));
-	if(ye == 32) ret[1] = 0; else ret[1] = Float.intBitsToFloat((ys << 31) | ((me - ye + 127) << 23) | ((yb << (ye + 16)) & 0x007fffff));
-	if(ze == 32) ret[2] = 0; else ret[2] = Float.intBitsToFloat((zs << 31) | ((me - ze + 127) << 23) | ((zb << (ze + 16)) & 0x007fffff));
+	if(xe == 8) ret[0] = 0; else ret[0] = Float.intBitsToFloat((xs << 31) | ((me - xe + 127) << 23) | ((xb << (xe + 16)) & 0x007fffff));
+	if(ye == 8) ret[1] = 0; else ret[1] = Float.intBitsToFloat((ys << 31) | ((me - ye + 127) << 23) | ((yb << (ye + 16)) & 0x007fffff));
+	if(ze == 8) ret[2] = 0; else ret[2] = Float.intBitsToFloat((zs << 31) | ((me - ze + 127) << 23) | ((zb << (ze + 16)) & 0x007fffff));
     }
 
     public static float hfdec(short bits) {
@@ -818,6 +822,23 @@ public class Utils {
 	    for(int o = 0; (o < width) && (i + o < arr.length); o++) {
 		if(o > 0) out.print(' ');
 		out.printf("%02x", arr[i + o]);
+	    }
+	    out.print('\n');
+	}
+    }
+
+    public static void hexdump(ByteBuffer arr, PrintStream out, int width) {
+	if(arr == null) {
+	    out.println("null");
+	    return;
+	}
+	if(width <= 0)
+	    width = 16;
+	for(int i = 0; i < arr.capacity(); i += width) {
+	    out.printf("%08x:\t", i);
+	    for(int o = 0; (o < width) && (i + o < arr.capacity()); o++) {
+		if(o > 0) out.print(' ');
+		out.printf("%02x", arr.get(i + o) & 0xff);
 	    }
 	    out.print('\n');
 	}
