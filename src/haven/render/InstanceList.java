@@ -204,6 +204,19 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 	    }
 	    return(0);
 	}
+
+	public String toString() {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append("[");
+	    for(int i = 0; i < mask.length; i++) {
+		int id = mask[i];
+		if(i > 0)
+		    buf.append(", ");
+		buf.append(String.format("%d(%s)=%s", id, State.Slot.byid(id).scl.getSimpleName(), get(State.Slot.byid(id))));
+	    }
+	    buf.append("]");
+	    return(buf.toString());
+	}
     }
 
     private class InstancedSlot implements RenderList.Slot<Rendered>, InstanceBatch {
@@ -300,8 +313,11 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 	    for(int i = 0; i < slots.length; i++) {
 		insts[i] = new Instance(slots[i]);
 		insts[i].idx = i;
-		if((i > 0) && (InstanceState.compare(this.ist, new InstanceState(slots[i].state(), this)) != 0))
-		    throw(new RuntimeException("instantiation-IDs not yet implemented"));
+		if(i > 0) {
+		    InstanceState test = new InstanceState(slots[i].state(), this);
+		    if(InstanceState.compare(this.ist, test) != 0)
+			throw(new RuntimeException(String.format("instantiation-IDs not yet implemented (states=%s vs %s)", this.ist, test)));
+		}
 	    }
 	    this.insts = insts;
 	    this.ni = slots.length;
