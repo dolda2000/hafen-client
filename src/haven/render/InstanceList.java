@@ -181,6 +181,7 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 	InstanceState(GroupPipe from, InstancedSlot batch) {
 	    int ns = 0, fn;
 	    for(fn = from.nstates() - 1; (fn >= 0) && (from.gstate(fn) < 0); fn--);
+	    fn++;
 	    int[] mask = new int[fn];
 	    for(int i = 0; i < fn; i++) {
 		State.Slot<?> slot = State.Slot.byid(i);
