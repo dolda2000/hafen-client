@@ -187,6 +187,17 @@ public class Utils {
 	return(new Random(seed));
     }
 
+    public static double fgrandoom(Random rnd) {
+	long raw = rnd.nextLong();
+	// 0000 bbbb baaa aabb bbba aaaa bbbb baaa aabb bbba aaaa bbbb baaa aabb bbba aaaa
+	raw = (raw & 0x007c1f07c1f07c1fl) + ((raw & 0x0f83d0f83d0f83f0l) >> 5);
+	// 0000 0000 bbbb bb00 00aa aaaa 0000 bbbb bb00 00aa aaaa 0000 bbbb bb00 00aa aaaa
+	raw = (raw & 0x00003f0003f0003fl) + ((raw & 0x00fc000fc000fc00l) >> 10);
+	// 0000 0000 0000 0000 0aaa aaaa 0000 0000 0000 0bbb bbbb 0000 0000 0000 0ccc cccc
+	raw = ((raw & 0x00007f0000000000l) >> 40) + ((raw & 0x0000000007f00000l) >> 20) + (raw & 0x000000000000007fl);
+	return((raw - 186) * (1.0 / 31.0));
+    }
+
     static synchronized Preferences prefs() {
 	if(prefs == null) {
 	    Preferences node = Preferences.userNodeForPackage(Utils.class);
