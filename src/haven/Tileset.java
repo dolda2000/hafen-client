@@ -158,6 +158,7 @@ public class Tileset extends Resource.Layer {
 		{
 		    mipmap(Mipmapper.avg);
 		    img.minfilter(Texture.Filter.NEAREST).mipfilter(Texture.Filter.LINEAR);
+		    img.magfilter(Texture.Filter.NEAREST);
 		    centroid = true;
 		}
 
