@@ -95,24 +95,31 @@ public abstract class Light implements RenderTree.Node {
 	public final List<RenderList.Slot<Light>> ll = new ArrayList<>();
 
 	public Lights compile() {
-	    Object[][] cl = new Object[ll.size()][];
-	    for(int i = 0; i < cl.length; i++) {
-		cl[i] = ll.get(i).obj().params(ll.get(i).state());
+	    Object[][] cl;
+	    synchronized(ll) {
+		cl = new Object[ll.size()][];
+		for(int i = 0; i < cl.length; i++) {
+		    cl[i] = ll.get(i).obj().params(ll.get(i).state());
+		}
 	    }
 	    return(new Lights(cl));
 	}
 
 	public void add(RenderList.Slot<Light> light) {
-	    int i, p = light.obj().prio;
-	    for(i = 0; i < ll.size(); i++) {
-		if(ll.get(i).obj().prio <= p)
-		    break;
+	    synchronized(ll) {
+		int i, p = light.obj().prio;
+		for(i = 0; i < ll.size(); i++) {
+		    if(ll.get(i).obj().prio <= p)
+			break;
+		}
+		ll.add(i, light);
 	    }
-	    ll.add(i, light);
 	}
 
 	public void remove(RenderList.Slot<Light> light) {
-	    ll.remove(light);
+	    synchronized(ll) {
+		ll.remove(light);
+	    }
 	}
 
 	public ShaderMacro shader() {return(null);}
@@ -120,11 +127,13 @@ public abstract class Light implements RenderTree.Node {
 	public void apply(Pipe p) {p.put(lights, this);}
 
 	public int index(Light l) {
-	    for(int i = 0; i < ll.size(); i++) {
-		if(ll.get(i).obj() == l)
-		    return(i);
+	    synchronized(ll) {
+		for(int i = 0; i < ll.size(); i++) {
+		    if(ll.get(i).obj() == l)
+			return(i);
+		}
+		return(-1);
 	    }
-	    return(-1);
 	}
     }
 

@@ -488,7 +488,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    if(!adding.containsKey(ob))
 			return;
 		}
-		RenderTree.Slot nslot = slot.add(ob.placed);
+		RenderTree.Slot nslot;
+		try {
+		    nslot = slot.add(ob.placed);
+		} catch(RenderTree.SlotRemoved e) {
+		    /* Ignore here as there is a harmless remove-race
+		     * on disposal. */
+		    return;
+		}
 		synchronized(this) {
 		    if(adding.remove(ob) != null)
 			current.put(ob, nslot);
