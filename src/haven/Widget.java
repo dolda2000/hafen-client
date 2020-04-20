@@ -348,7 +348,7 @@ public class Widget {
 		    st.push(((Widget)st.pop()).sz);
 		} else if(op == 'w') {
 		    synchronized(ui) {
-			st.push(ui.widgets.get((Integer)st.pop()));
+			st.push(ui.getwidget((Integer)st.pop()));
 		    }
 		} else if(op == 'x') {
 		    st.push(((Coord)st.pop()).x);
@@ -518,10 +518,7 @@ public class Widget {
     }
 
     public int wdgid() {
-	Integer id = ui.rwidgets.get(this);
-	if(id == null)
-	    return(-1);
-	return(id);
+	return(ui.widgetid(this));
     }
 
     public void lostfocus() {
@@ -548,8 +545,11 @@ public class Widget {
 		    last.hasfocus = false;
 		    last.lostfocus();
 		}
-		if((ui != null) && ui.rwidgets.containsKey(w) && ui.rwidgets.containsKey(this))
-		    wdgmsg("focus", ui.rwidgets.get(w));
+		if((ui != null) && (wdgid() >= 0)) {
+		    int id = w.wdgid();
+		    if(id >= 0)
+			wdgmsg("focus", id);
+		}
 	    }
 	    if((parent != null) && visible && canfocus)
 		parent.setfocus(this);
@@ -632,7 +632,7 @@ public class Widget {
 	    if(tid < 0) {
 		setfocus(null);
 	    } else {
-		Widget w = ui.widgets.get(tid);
+		Widget w = ui.getwidget(tid);
 		if(w != null) {
 		    if(w.canfocus)
 			setfocus(w);

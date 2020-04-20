@@ -36,9 +36,9 @@ import haven.render.Environment;
 public class UI {
     public static int MOD_SHIFT = 1, MOD_CTRL = 2, MOD_META = 4, MOD_SUPER = 8;
     public RootWidget root;
-    final private LinkedList<Grab> keygrab = new LinkedList<Grab>(), mousegrab = new LinkedList<Grab>();
-    public Map<Integer, Widget> widgets = new TreeMap<Integer, Widget>();
-    public Map<Widget, Integer> rwidgets = new HashMap<Widget, Integer>();
+    private final LinkedList<Grab> keygrab = new LinkedList<Grab>(), mousegrab = new LinkedList<Grab>();
+    private final Map<Integer, Widget> widgets = new TreeMap<Integer, Widget>();
+    private final Map<Widget, Integer> rwidgets = new HashMap<Widget, Integer>();
     Environment env;
     Receiver rcvr;
     public Coord mc = Coord.z, lcc = Coord.z;
@@ -132,7 +132,18 @@ public class UI {
 	widgets.put(id, w);
 	rwidgets.put(w, id);
     }
-    
+
+    public Widget getwidget(int id) {
+	return(widgets.get(id));
+    }
+
+    public int widgetid(Widget wdg) {
+	Integer id = rwidgets.get(wdg);
+	if(id == null)
+	    return(-1);
+	return(id);
+    }
+
     public void drawafter(AfterDraw ad) {
 	synchronized(afterdraws) {
 	    afterdraws.add(ad);
