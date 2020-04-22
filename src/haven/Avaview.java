@@ -197,8 +197,9 @@ public class Avaview extends PView {
     }
 
     public void tick(double dt) {
+	super.tick(dt);
 	if(comp != null)
-	    comp.tick((int)(dt * 1000));
+	    comp.tick(dt);
     }
 
     public void draw(GOut g) {
