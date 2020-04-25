@@ -119,7 +119,7 @@ public class OptWnd extends Window {
 			public void set(boolean val) {
 			    try {
 				GSettings np = prefs.update(null, prefs.lshadow, val);
-				ui.gprefs = prefs = np;
+				ui.setgprefs(prefs = np);
 			    } catch(GLSettings.SettingException e) {
 				error(e.getMessage());
 				return;
