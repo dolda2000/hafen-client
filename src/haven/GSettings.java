@@ -212,6 +212,66 @@ public class GSettings extends State implements Serializable {
 	return(ret);
     }
 
+    private Object savedata() {
+	try {
+	    Map<String, Object> ret = new HashMap<String, Object>();
+	    for(Field f : settings) {
+		Setting<?> s = (Setting<?>)f.get(this);
+		ret.put(s.nm, s.val);
+	    }
+	    return(ret);
+	} catch(IllegalAccessException e) {
+	    throw(new AssertionError(e));
+	}
+    }
+
+    public void save() {
+	Utils.setprefb("gconf", Utils.serialize(savedata()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Setting<T> iExistOnlyToIntroduceATypeVariableSinceJavaSucks(Setting<T> s, Object val) {
+	return(update(s, (T)val));
+    }
+
+    public static GSettings load(Object data, boolean failsafe) {
+	GSettings gs = defaults();
+	Map<?, ?> dat = (Map)data;
+	try {
+	    for(Field f : settings) {
+		Setting<?> s = (Setting<?>)f.get(gs);
+		if(dat.containsKey(s.nm)) {
+		    try {
+			f.set(gs, gs.iExistOnlyToIntroduceATypeVariableSinceJavaSucks(s, dat.get(s.nm)));
+		    } catch(SettingException | ClassCastException e) {
+			if(!failsafe)
+			    throw(e);
+		    }
+		}
+	    }
+	} catch(IllegalAccessException e) {
+	    throw(new AssertionError(e));
+	}
+	return(gs);
+    }
+
+    public static GSettings load(boolean failsafe) {
+	byte[] data = Utils.getprefb("gconf", null);
+	if(data == null) {
+	    return(defaults());
+	} else {
+	    Object dat;
+	    try {
+		dat = Utils.deserialize(data);
+	    } catch(Exception e) {
+		dat = null;
+	    }
+	    if(dat == null)
+		return(defaults());
+	    return(load(dat, failsafe));
+	}
+    }
+
     public haven.render.sl.ShaderMacro shader() {return(null);}
     public void apply(Pipe p) {p.put(slot, this);}
 }

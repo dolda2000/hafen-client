@@ -50,7 +50,8 @@ public class UI {
     public Console cons = new WidgetConsole();
     private Collection<AfterDraw> afterdraws = new LinkedList<AfterDraw>();
     private final Context uictx;
-    public GSettings gprefs = GSettings.defaults();
+    public GSettings gprefs = GSettings.load(true);
+    private boolean gprefsdirty = false;
     public final ActAudio.Root audio = new ActAudio.Root();
     
     {
@@ -73,6 +74,15 @@ public class UI {
 	public void draw(GOut g);
     }
 
+    public void setgprefs(GSettings prefs) {
+	synchronized(this) {
+	    if(!Utils.eq(prefs, this.gprefs)) {
+		this.gprefs = prefs;
+		gprefsdirty = true;
+	    }
+	}
+    }
+
     private class WidgetConsole extends Console {
 	{
 	    setcmd("q", new Command() {
@@ -87,7 +97,7 @@ public class UI {
 		});
 	    setcmd("gl", new Command() {
 		    <T> void merd(GSettings.Setting<T> var, String val) {
-			gprefs = gprefs.update(null, var, var.parse(val));
+			setgprefs(gprefs.update(null, var, var.parse(val)));
 		    }
 
 		    public void run(Console cons, String[] args) throws Exception {
@@ -175,6 +185,10 @@ public class UI {
 	double now = Utils.rtime();
 	root.tick(now - lasttick);
 	lasttick = now;
+	if(gprefsdirty) {
+	    gprefs.save();
+	    gprefsdirty = false;
+	}
     }
 
     public void draw(GOut g) {
