@@ -98,8 +98,17 @@ public abstract class PView extends Widget {
 	return(curconf);
     }
 
+    protected GSettings gprefs() {
+	if(ui == null)
+	    return(null);
+	return(ui.gprefs);
+    }
+
     private Pipe.Op frame() {
-	return(Pipe.Op.compose(curconf(), new FrameInfo(), ((ui == null) || (ui.sess == null)) ? null : new Glob.FrameInfo(ui.sess.glob)));
+	return(Pipe.Op.compose(curconf(),
+			       gprefs(),
+			       new FrameInfo(),
+			       ((ui == null) || (ui.sess == null)) ? null : new Glob.FrameInfo(ui.sess.glob)));
     }
 
     protected void reconf() {
