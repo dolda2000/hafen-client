@@ -768,7 +768,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private ShadowMap smap = null;
     private double lsmch = 0;
     private void updsmap(DirLight light) {
-	boolean usesdw = true; // XXXRENDER
+	boolean usesdw = ui.gprefs.lshadow.val;
 	if(usesdw) {
 	    Coord3f dir, cc;
 	    try {
