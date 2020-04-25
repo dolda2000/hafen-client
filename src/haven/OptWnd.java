@@ -87,11 +87,12 @@ public class OptWnd extends Window {
 	}
 
 	public class CPanel extends Widget {
-	    public final GLSettings cf;
+	    public GSettings prefs;
 
-	    public CPanel(GLSettings gcf) {
-		this.cf = gcf;
+	    public CPanel(GSettings gprefs) {
+		this.prefs = gprefs;
 		int y = 0;
+		/* XXXRENDER
 		add(new CheckBox("Per-fragment lighting") {
 			{a = cf.flight.val;}
 
@@ -111,24 +112,22 @@ public class OptWnd extends Window {
 			}
 		    }, new Coord(0, y));
 		y += 25;
+		*/
 		add(new CheckBox("Render shadows") {
-			{a = cf.lshadow.val;}
+			{a = prefs.lshadow.val;}
 
 			public void set(boolean val) {
-			    if(val) {
-				try {
-				    cf.lshadow.set(true);
-				} catch(GLSettings.SettingException e) {
-				    error(e.getMessage());
-				    return;
-				}
-			    } else {
-				cf.lshadow.set(false);
+			    try {
+				GSettings np = prefs.update(null, prefs.lshadow, val);
+				ui.gprefs = prefs = np;
+			    } catch(GLSettings.SettingException e) {
+				error(e.getMessage());
+				return;
 			    }
 			    a = val;
-			    cf.dirty = true;
 			}
 		    }, new Coord(0, y));
+		/* XXXRENDER
 		y += 25;
 		add(new CheckBox("Antialiasing") {
 			{a = cf.fsaa.val;}
@@ -173,14 +172,13 @@ public class OptWnd extends Window {
 			    }
 			}, new Coord(0, y + 15));
 		}
+		*/
 		y += 35;
 		add(new Button(200, "Reset to defaults") {
 			public void click() {
-			    /* XXXRENDER
-			    cf.cfg.resetprefs();
+			    ui.gprefs = GSettings.defaults();
 			    curcf.destroy();
 			    curcf = null;
-			    */
 			}
 		    }, new Coord(0, 150));
 		pack();
@@ -189,13 +187,11 @@ public class OptWnd extends Window {
 
 	private CPanel curcf = null;
 	public void draw(GOut g) {
-	    /* XXXRENDER
-	    if((curcf == null) || (g.gc.pref != curcf.cf)) {
+	    if((curcf == null) || (ui.gprefs != curcf.prefs)) {
 		if(curcf != null)
 		    curcf.destroy();
-		curcf = add(new CPanel(g.gc.pref), Coord.z);
+		curcf = add(new CPanel(ui.gprefs), Coord.z);
 	    }
-	    */
 	    super.draw(g);
 	}
     }
