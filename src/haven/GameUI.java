@@ -665,8 +665,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    mmap = blpanel.add(new LocalMiniMap(new Coord(133, 133), map), minimapc);
 	    mmap.lower();
-	    if(ResCache.global != null) {
-		MapFile file = MapFile.load(ResCache.global, mapfilename());
+	    ResCache mapstore = ResCache.global;
+	    if(Config.mapbase != null) {
+		try {
+		    mapstore = HashDirCache.get(Config.mapbase.toURI());
+		} catch(java.net.URISyntaxException e) {
+		}
+	    }
+	    if(mapstore != null) {
+		MapFile file = MapFile.load(mapstore, mapfilename());
 		mmap.save(file);
 		mapfile = new MapWnd(mmap.save, map, Utils.getprefc("wndsz-map", new Coord(700, 500)), "Map");
 		mapfile.hide();
