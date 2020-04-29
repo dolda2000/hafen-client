@@ -37,6 +37,7 @@ public class Config {
     public static URL resurl = geturl("haven.resurl", "");
     public static URL mapurl = geturl("haven.mapurl", "");
     public static URL cachebase = geturl("haven.cachebase", "");
+    public static URL mapbase = geturl("haven.mapbase", "");
     public static boolean dbtext = getprop("haven.dbtext", "off").equals("on");
     public static boolean bounddb = getprop("haven.bounddb", "off").equals("on");
     public static boolean profile = getprop("haven.profile", "off").equals("on");
