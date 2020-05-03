@@ -127,8 +127,33 @@ public class OptWnd extends Window {
 			    a = val;
 			}
 		    }, new Coord(0, y));
-		/* XXXRENDER
 		y += 25;
+		add(new Label("Render scale"), new Coord(0, y));
+		{
+		    Label dpy = add(new Label(""), new Coord(165, y + 15));
+		    final int steps = 4;
+		    add(new HSlider(160, -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
+			    protected void added() {
+				dpy();
+				this.c.y = dpy.c.y + ((dpy.sz.y - this.sz.y) / 2);
+			    }
+			    void dpy() {
+				dpy.settext(String.format("%.2f\u00d7", Math.pow(2, this.val / (double)steps)));
+			    }
+			    public void changed() {
+				try {
+				    float val = (float)Math.pow(2, this.val / (double)steps);
+				    ui.setgprefs(prefs = prefs.update(null, prefs.rscale, val));
+				} catch(GLSettings.SettingException e) {
+				    error(e.getMessage());
+				    return;
+				}
+				dpy();
+			    }
+			}, new Coord(0, y + 15));
+		}
+		y += 25;
+		/* XXXRENDER
 		add(new CheckBox("Antialiasing") {
 			{a = cf.fsaa.val;}
 
