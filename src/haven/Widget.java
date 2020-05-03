@@ -545,7 +545,7 @@ public class Widget {
 		    last.hasfocus = false;
 		    last.lostfocus();
 		}
-		if((ui != null) && (wdgid() >= 0)) {
+		if((ui != null) && (w != null) && (wdgid() >= 0)) {
 		    int id = w.wdgid();
 		    if(id >= 0)
 			wdgmsg("focus", id);
