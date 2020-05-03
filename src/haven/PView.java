@@ -82,6 +82,11 @@ public abstract class PView extends Widget {
     }
 
     protected Coord rendersz() {
+	GSettings prefs = curprefs;
+	if(prefs != null) {
+	    float rscale = prefs.rscale.val;
+	    return(new Coord((int)Math.round(sz.x * rscale), (int)Math.round(sz.y * rscale)));
+	}
 	return(this.sz);
     }
 

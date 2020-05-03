@@ -1397,11 +1397,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	g.chcolor();
     }
 
-    private double rscale = 1.0;
-    protected Coord rendersz() {
-	return(new Coord((int)Math.round(sz.x * rscale), (int)Math.round(sz.y * rscale)));
-    }
-
     protected void maindraw(Render out) {
 	drawsmap(out);
 	super.maindraw(out);
@@ -2035,12 +2030,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    if(l == null)
 			throw(new Exception("Not loading"));
 		    l.printStackTrace(cons.out);
-		}
-	    });
-	cmdmap.put("rscale", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    MapView.this.rscale = Double.parseDouble(args[1]);
-		    reconf();
 		}
 	    });
     }
