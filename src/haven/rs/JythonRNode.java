@@ -24,22 +24,18 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.rs;
 
-public interface Environment extends haven.Disposable {
-    public Render render();
-    public FillBuffer fillbuf(DataBuffer target, int from, int to);
-    public default FillBuffer fillbuf(DataBuffer target) {return(fillbuf(target, 0, target.size()));}
-    public DrawList drawlist();
-    public void submit(Render cmd);
+import haven.render.*;
 
-    public abstract static class Proxy implements Environment {
-	public abstract Environment back();
-
-	public Render render() {return(back().render());}
-	public FillBuffer fillbuf(DataBuffer target, int from, int to) {return(back().fillbuf(target, from, to));}
-	public DrawList drawlist() {return(back().drawlist());}
-	public void submit(Render cmd) {back().submit(cmd);}
-	public void dispose() {back().dispose();}
-    }
+/* 
+ * Apparently, Jython generates invalid bytecode when trying to
+ * override interface default methods, as in the case of rendertree
+ * nodes. Proxying through a class solves that issue.
+ * 
+ * Jython 3 cannot come soon enough.
+ */
+public class JythonRNode implements RenderTree.Node {
+    public void added(RenderTree.Slot slot) {}
+    public void removed(RenderTree.Slot slot) {}
 }

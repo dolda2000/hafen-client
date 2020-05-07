@@ -34,18 +34,23 @@ import javax.media.opengl.*;
 public class GLFrameBuffer extends GLObject implements BGL.ID {
     public final Attachment[] color;
     public final Attachment depth;
+    public final Coord sz;
     private int id;
 	
     public GLFrameBuffer(GLEnvironment env, Attachment[] color, Attachment depth) {
 	super(env);
 	if(color.length > 0) {
-	    Coord sz = color[0].sz();
+	    sz = color[0].sz();
 	    if((depth != null) && !sz.equals(depth.sz()))
 		throw(new IllegalArgumentException(String.format("Framebuffer attachments have differing sizes: color[0]=%s, depth=%s", sz, depth.sz())));
 	    for(int i = 1; i < color.length; i++) {
 		if(!sz.equals(color[i].sz()))
 		    throw(new IllegalArgumentException(String.format("Framebuffer attachments have differing sizes: color[0]=%s, color[i]=%s", sz, color[i].sz())));
 	    }
+	} else if(depth != null) {
+	    this.sz = depth.sz();
+	} else {
+	    this.sz = null;
 	}
 	this.color = color;
 	this.depth = depth;

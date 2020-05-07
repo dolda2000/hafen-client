@@ -6,8 +6,4 @@ haven/FBConfig.java
 haven/GBuffer.java
 haven/HavenApplet.java
 haven/resutil/EnvMap.java
-haven/rs/AvaRender.java
-haven/rs/BufView.java
-haven/rs/GBuffer.java
-haven/rs/Server.java
 haven/TexIM.java

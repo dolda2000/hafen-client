@@ -138,6 +138,11 @@ public class GSettings extends State implements Serializable {
     public BoolSetting lshadow = new BoolSetting("sdw") {
 	    public Boolean defval() {return(true);}
 	};
+    public FloatSetting rscale = new FloatSetting("rscale") {
+	    public Float defval() {return(1.0f);}
+	    public float min(Environment env) {return(0.25f);}
+	    public float max(Environment env) {return(4.0f);}
+	};
 
     public Setting<?> find(String name) {
 	try {

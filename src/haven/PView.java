@@ -82,13 +82,18 @@ public abstract class PView extends Widget {
     }
 
     protected Coord rendersz() {
+	GSettings prefs = curprefs;
+	if(prefs != null) {
+	    float rscale = prefs.rscale.val;
+	    return(new Coord((int)Math.round(sz.x * rscale), (int)Math.round(sz.y * rscale)));
+	}
 	return(this.sz);
     }
 
     private final WidgetContext ctx = new WidgetContext(this);
     private Pipe.Op conf() {
 	rsz = rendersz();
-	return(Pipe.Op.compose(new FrameConfig(rsz), ctx));
+	return(Pipe.Op.compose(new FrameConfig(rsz), ctx, curprefs));
     }
 
     private Pipe.Op curconf = null;
@@ -98,6 +103,7 @@ public abstract class PView extends Widget {
 	return(curconf);
     }
 
+    private GSettings curprefs = null;
     protected GSettings gprefs() {
 	if(ui == null)
 	    return(null);
@@ -106,7 +112,6 @@ public abstract class PView extends Widget {
 
     private Pipe.Op frame() {
 	return(Pipe.Op.compose(curconf(),
-			       gprefs(),
 			       new FrameInfo(),
 			       ((ui == null) || (ui.sess == null)) ? null : new Glob.FrameInfo(ui.sess.glob)));
     }
@@ -168,6 +173,11 @@ public abstract class PView extends Widget {
 
     public void tick(double dt) {
 	super.tick(dt);
+	GSettings gprefs = gprefs();
+	if(gprefs != this.curprefs) {
+	    this.curprefs = gprefs;
+	    reconf();
+	}
 	conf.ostate(frame());
 	ticklist.tick(dt);
 	if(audio != null)
