@@ -32,4 +32,14 @@ public interface Environment extends haven.Disposable {
     public default FillBuffer fillbuf(DataBuffer target) {return(fillbuf(target, 0, target.size()));}
     public DrawList drawlist();
     public void submit(Render cmd);
+
+    public abstract static class Proxy implements Environment {
+	public abstract Environment back();
+
+	public Render render() {return(back().render());}
+	public FillBuffer fillbuf(DataBuffer target, int from, int to) {return(back().fillbuf(target, from, to));}
+	public DrawList drawlist() {return(back().drawlist());}
+	public void submit(Render cmd) {back().submit(cmd);}
+	public void dispose() {back().dispose();}
+    }
 }
