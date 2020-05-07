@@ -403,7 +403,12 @@ public class GLRender implements Render, Disposable {
 	if(n < 0)
 	    throw(new IllegalArgumentException(String.format("%s is not on current framebuffer", buf)));
 	BGL gl = gl();
-	int gly = env.wnd.br.y - area.br.y;
+	Area wnd;
+	if(fc.fbo == null)
+	    wnd = env.wnd;
+	else
+	    wnd = Area.sized(Coord.z, fc.fbo.sz);
+	int gly = wnd.br.y - area.br.y;
 	Coord sz = area.sz();
 
 	/*
