@@ -289,6 +289,15 @@ public class GLEnvironment implements Environment {
 	}
     }
 
+    public void finish(GL3 gl) {
+	synchronized(drawmon) {
+	    gl.glFinish();
+	    checkqueries(gl);
+	    if(!queries.isEmpty())
+		throw(new AssertionError("active queries left after glFinish"));
+	}
+    }
+
     public void submit(Render cmd) {
 	if(!(cmd instanceof GLRender))
 	    throw(new IllegalArgumentException("environment mismatch"));
