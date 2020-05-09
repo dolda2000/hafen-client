@@ -598,8 +598,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     }
 
     private Waitable.Queue updwait = null;
+    private int updateseq = 0;
     void updated() {
 	synchronized(this) {
+	    updateseq++;
 	    if(updwait != null)
 		updwait.wnotify();
 	}
@@ -612,6 +614,33 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    if(updwait == null)
 		updwait = new Waitable.Queue();
 	    reg.accept(updwait.add(callback));
+	}
+    }
+
+    public static class DataLoading extends Loading {
+	public final transient Gob gob;
+	public final int updseq;
+
+	/* It would be assumed that the caller has synchronized on gob
+	 * while creating this exception. */
+	public DataLoading(Gob gob, String message) {
+	    super(message);
+	    this.gob = gob;
+	    this.updseq = gob.updateseq;
+	    System.err.printf("%s %d\n", gob, gob.updateseq);
+	    if(Debug.kf3 && !Debug.pk3)
+		printStackTrace();
+	}
+
+	public void waitfor(Runnable callback, Consumer<Waitable.Waiting> reg) {
+	    synchronized(gob) {
+		if(gob.updateseq != this.updseq) {
+		    reg.accept(Waitable.Waiting.dummy);
+		    callback.run();
+		} else {
+		    gob.updwait(callback, reg);
+		}
+	    }
 	}
     }
 
