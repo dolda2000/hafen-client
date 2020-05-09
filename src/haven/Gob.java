@@ -627,9 +627,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    super(message);
 	    this.gob = gob;
 	    this.updseq = gob.updateseq;
-	    System.err.printf("%s %d\n", gob, gob.updateseq);
-	    if(Debug.kf3 && !Debug.pk3)
-		printStackTrace();
 	}
 
 	public void waitfor(Runnable callback, Consumer<Waitable.Waiting> reg) {
