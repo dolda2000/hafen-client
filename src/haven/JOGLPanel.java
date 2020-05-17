@@ -41,9 +41,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     public final boolean vsync = true;
     public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
     public final GPUProfile gprof = new GPUProfile(300);
-    private double framedur_fg = 0.0, framedur_bg = 0.2;
     private boolean bgmode = false;
-    private boolean iswap = true, aswap;
+    private boolean aswap;
     private int fps, framelag;
     private volatile int frameno;
     private double uidle = 0.0, ridle = 0.0;
@@ -98,10 +97,26 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    cursmode = "awt";
     }
 
+    private boolean iswap() {
+	return(this.ui.gprefs.vsync.val);
+    }
+
+    private double framedur() {
+	GSettings gp = this.ui.gprefs;
+	double hz = gp.hz.val, bghz = gp.bghz.val;
+	if(bgmode) {
+	    if(bghz != Double.POSITIVE_INFINITY)
+		return(1.0 / bghz);
+	}
+	if(hz == Double.POSITIVE_INFINITY)
+	    return(0.0);
+	return(1.0 / hz);
+    }
+
     private void initgl(GL3 gl) {
 	Collection<String> exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	GLCapabilitiesImmutable caps = getChosenGLCapabilities();
-	gl.setSwapInterval((aswap = iswap) ? 1 : 0);
+	gl.setSwapInterval((aswap = iswap()) ? 1 : 0);
 	if(exts.contains("GL_ARB_multisample") && caps.getSampleBuffers()) {
 	    /* Apparently, having sample buffers in the config enables
 	     * multisampling by default on some systems. */
@@ -178,6 +193,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
 	public void run(GL3 gl) {
 	    long swst = System.nanoTime();
+	    boolean iswap = iswap();
 	    if(iswap != aswap)
 		gl.setSwapInterval((aswap = iswap) ? 1 : 0);
 	    JOGLPanel.this.swapBuffers();
@@ -394,7 +410,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    if(curf != null) curf.tick("aux");
 
 		    double now = Utils.rtime();
-		    double fd = (bgmode && (this.framedur_bg > 0.0)) ? this.framedur_bg : this.framedur_fg;
+		    double fd = framedur();
 		    if(then + fd > now) {
 			then += fd;
 			synchronized(ed) {
@@ -472,23 +488,6 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
-	cmdmap.put("hz", (cons, args) -> {
-		int hz = Integer.parseInt(args[1]);
-		if(hz > 0)
-		    framedur_fg = 1.0 / hz;
-		else
-		    framedur_fg = 0.0;
-	    });
-	cmdmap.put("bghz", (cons, args) -> {
-		int hz = Integer.parseInt(args[1]);
-		if(hz > 0)
-		    framedur_bg = 1.0 / hz;
-		else
-		    framedur_bg = 0.0;
-	    });
-	cmdmap.put("vsync", (cons, args) -> {
-		iswap = Utils.parsebool(args[1]);
-	    });
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);

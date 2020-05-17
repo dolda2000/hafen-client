@@ -130,18 +130,45 @@ public class GSettings extends State implements Serializable {
 		throw(new SettingException("Not a floating-point value: " + val));
 	    }
 	}
-
-	public abstract float min(Environment env);
-	public abstract float max(Environment env);
     }
 
     public BoolSetting lshadow = new BoolSetting("sdw") {
 	    public Boolean defval() {return(true);}
 	};
+    public BoolSetting vsync = new BoolSetting("vsync") {
+	    public Boolean defval() {return(true);}
+	};
+    public abstract class HertzSetting extends FloatSetting {
+	public HertzSetting(String nm) {super(nm);}
+
+	public Float parse(String val) {
+	    Float ret = super.parse(val);
+	    if(ret == 0f)
+		return(Float.POSITIVE_INFINITY);
+	    return(ret);
+	}
+
+	public void validate(Environment env, Float val) {
+	    if(!Float.isFinite(val) && (val != Float.POSITIVE_INFINITY))
+		throw(new SettingException("Not a numeric framerate"));
+	    if(val <= 0)
+		throw(new SettingException("Not a positive framerate"));
+	}
+    }
+    public FloatSetting hz = new HertzSetting("hz") {
+	    public Float defval() {return(Float.POSITIVE_INFINITY);}
+	};
+    public FloatSetting bghz = new HertzSetting("bghz") {
+	    public Float defval() {return(5f);}
+	};
     public FloatSetting rscale = new FloatSetting("rscale") {
 	    public Float defval() {return(1.0f);}
-	    public float min(Environment env) {return(0.25f);}
-	    public float max(Environment env) {return(4.0f);}
+	    public void validate(Environment env, Float val) {
+		if(!Float.isFinite(val))
+		    throw(new SettingException("Not a finite render-scale"));
+		if(val <= 0)
+		    throw(new SettingException("Not a positive render-scale"));
+	    }
 	};
 
     public Setting<?> find(String name) {
@@ -197,8 +224,7 @@ public class GSettings extends State implements Serializable {
 
     public <T> GSettings update(Environment env, Setting<T> set, T val) {
 	GSettings ret = supdate(set, val);
-	if(env != null)
-	    ret.validate(env);
+	ret.validate(env);
 	return(ret);
     }
 
