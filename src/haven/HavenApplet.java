@@ -36,7 +36,7 @@ import java.io.*;
 public class HavenApplet extends Applet {
     public static Map<ThreadGroup, HavenApplet> applets = new HashMap<ThreadGroup, HavenApplet>();
     ThreadGroup p;
-    HavenPanel h;
+    JOGLPanel h;
     boolean running = false;
     static boolean initedonce = false;
     
@@ -134,9 +134,8 @@ public class HavenApplet extends Applet {
     public void startgame() {
 	if(running)
 	    return;
-	h = new HavenPanel(800, 600);
+	h = new JOGLPanel(new Coord(800, 600));
 	add(h);
-	h.init();
 	try {
 	    p = new haven.error.ErrorHandler(new ErrorPanel(), new URL("http", getCodeBase().getHost(), 80, "/java/error"));
 	} catch(java.net.MalformedURLException e) {
