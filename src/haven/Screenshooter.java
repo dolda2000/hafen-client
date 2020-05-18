@@ -351,13 +351,12 @@ public class Screenshooter extends Window {
 
 	    private void checkcomplete(GOut g) {
 		if((map != null) && (ui != null)) {
-		    GLSettings pref = null /* XXXRENDER g.gc.pref */;
+		    GSettings pref = gameui.ui.gprefs;
 		    String camera = gameui.map.camera.getClass().getName();
 		    Utils.defer(() -> {
 			    Shot shot = new Shot(map, ui);
-			    shot.fl = pref.flight.val;
 			    shot.sdw = pref.lshadow.val;
-			    shot.fsaa = pref.fsaa.val;
+			    // shot.fsaa = pref.fsaa.val; XXXRENDER
 			    shot.camera = camera;
 			    gameui.addchild(new Screenshooter(tgt, shot), "misc", new Coord2d(0.1, 0.1));
 			});
