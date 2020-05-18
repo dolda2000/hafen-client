@@ -120,7 +120,7 @@ public class OptWnd extends Window {
 			    try {
 				GSettings np = prefs.update(null, prefs.vsync, val);
 				ui.setgprefs(prefs = np);
-			    } catch(GLSettings.SettingException e) {
+			    } catch(GSettings.SettingException e) {
 				error(e.getMessage());
 				return;
 			    }
@@ -149,7 +149,7 @@ public class OptWnd extends Window {
 					this.val = (this.val / 2) * 2;
 				    float val = (this.val == max) ? Float.POSITIVE_INFINITY : this.val;
 				    ui.setgprefs(prefs = prefs.update(null, prefs.hz, val));
-				} catch(GLSettings.SettingException e) {
+				} catch(GSettings.SettingException e) {
 				    error(e.getMessage());
 				    return;
 				}
@@ -179,7 +179,7 @@ public class OptWnd extends Window {
 					this.val = (this.val / 2) * 2;
 				    float val = (this.val == max) ? Float.POSITIVE_INFINITY : this.val;
 				    ui.setgprefs(prefs = prefs.update(null, prefs.bghz, val));
-				} catch(GLSettings.SettingException e) {
+				} catch(GSettings.SettingException e) {
 				    error(e.getMessage());
 				    return;
 				}
@@ -195,7 +195,7 @@ public class OptWnd extends Window {
 			    try {
 				GSettings np = prefs.update(null, prefs.lshadow, val);
 				ui.setgprefs(prefs = np);
-			    } catch(GLSettings.SettingException e) {
+			    } catch(GSettings.SettingException e) {
 				error(e.getMessage());
 				return;
 			    }
@@ -219,7 +219,7 @@ public class OptWnd extends Window {
 				try {
 				    float val = (float)Math.pow(2, this.val / (double)steps);
 				    ui.setgprefs(prefs = prefs.update(null, prefs.rscale, val));
-				} catch(GLSettings.SettingException e) {
+				} catch(GSettings.SettingException e) {
 				    error(e.getMessage());
 				    return;
 				}
