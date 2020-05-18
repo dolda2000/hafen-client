@@ -29,7 +29,7 @@ package haven.rs;
 import haven.*;
 import haven.render.*;
 import haven.render.gl.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class GLOffscreen implements Context {
     public final GLProfile prof;
@@ -42,7 +42,7 @@ public class GLOffscreen implements Context {
     public GLOffscreen() {
 	prof = GLProfile.getMaxProgrammableCore(true);
 	GLDrawableFactory df = GLDrawableFactory.getFactory(prof);
-	this.buf = df.createOffscreenAutoDrawable(null, caps(prof), null, 1, 1, null);
+	this.buf = df.createOffscreenAutoDrawable(null, caps(prof), null, 1, 1);
 	this.ctx = buf.getContext();
 	buf.addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {

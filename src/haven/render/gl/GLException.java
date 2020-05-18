@@ -26,12 +26,12 @@
 
 package haven.render.gl;
 
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class GLException extends RuntimeException {
     public int code;
     public String str;
-    private static javax.media.opengl.glu.GLU glu = new javax.media.opengl.glu.GLU();
+    private static com.jogamp.opengl.glu.GLU glu = new com.jogamp.opengl.glu.GLU();
 
     public GLException(int code) {
 	super("GL Error: " + code + " (" + glu.gluErrorString(code) + ")");

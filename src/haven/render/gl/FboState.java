@@ -30,7 +30,7 @@ import static haven.Utils.eq;
 import haven.render.*;
 import haven.render.gl.GLFrameBuffer.*;
 import java.util.*;
-import javax.media.opengl.GL;
+import com.jogamp.opengl.GL;
 
 public class FboState extends GLState {
     public final GLEnvironment env;
