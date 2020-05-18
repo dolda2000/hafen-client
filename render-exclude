@@ -1,8 +1,1 @@
-haven/TexE.java
-haven/Tex3D.java
-haven/TexMS.java
-haven/TexMSE.java
-haven/FBConfig.java
-haven/GBuffer.java
 haven/resutil/EnvMap.java
-haven/TexIM.java
