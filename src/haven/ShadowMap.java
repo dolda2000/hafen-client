@@ -27,7 +27,6 @@
 package haven;
 
 import java.util.*;
-import javax.media.opengl.*;
 import haven.render.*;
 import haven.render.sl.*;
 import java.awt.image.*;
