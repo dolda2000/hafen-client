@@ -337,16 +337,14 @@ public class Screenshooter extends Window {
 	new Object() {
 	    BufferedImage map = null, ui = null;
 	    {
-		/* XXXRENDER
-		gameui.map.delay2(g -> g.getimage(Coord.z, g.sz, img -> {
+		gameui.map.delay2(g -> g.getimage(Coord.z, g.sz(), img -> {
 			    map = img;
 			    checkcomplete(g);
 			}));
-		gameui.ui.drawafter(g -> g.getimage(Coord.z, g.sz, img -> {
+		gameui.ui.drawafter(g -> g.getimage(Coord.z, g.sz(), img -> {
 			    ui = img;
 			    checkcomplete(g);
 			}));
-		*/
 	    }
 
 	    private void checkcomplete(GOut g) {
