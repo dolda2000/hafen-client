@@ -28,7 +28,6 @@ package haven;
 
 import java.awt.Color;
 import java.awt.image.*;
-import javax.media.opengl.*;
 import java.nio.*;
 import java.util.function.*;
 import haven.render.*;
