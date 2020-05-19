@@ -58,8 +58,9 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
     private FillBuffer indfill(Indices ibuf, Environment env) {
 	FillBuffer dst = env.fillbuf(ibuf);
 	ShortBuffer buf = dst.push().asShortBuffer();
-	indb.rewind();
-	buf.put(indb);
+	ShortBuffer tx = indb.duplicate();
+	tx.rewind();
+	buf.put(tx);
 	return(dst);
     }
 
