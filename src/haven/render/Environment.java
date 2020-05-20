@@ -33,6 +33,14 @@ public interface Environment extends haven.Disposable {
     public DrawList drawlist();
     public void submit(Render cmd);
 
+    public static interface Caps {
+	public String vendor();
+	public String driver();
+	public String device();
+    }
+
+    public Caps caps();
+
     public abstract static class Proxy implements Environment {
 	public abstract Environment back();
 
