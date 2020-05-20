@@ -130,6 +130,15 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	this.env = env;
 	if(this.ui != null)
 	    this.ui.env = env;
+
+	haven.error.ErrorHandler errh = haven.error.ErrorHandler.find();
+	if(errh != null) {
+	    GLEnvironment.Caps caps = env.caps();
+	    errh.lsetprop("gl.vendor", caps.vendor);
+	    errh.lsetprop("gl.version", caps.version);
+	    errh.lsetprop("gl.renderer", caps.renderer);
+	    errh.lsetprop("render.caps", caps);
+	}
     }
 
     private volatile CPUProfile.Frame rcurf = null;
