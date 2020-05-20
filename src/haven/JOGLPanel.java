@@ -124,6 +124,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
+    private final haven.error.ErrorHandler errh = haven.error.ErrorHandler.find();
     private void setenv(GLEnvironment env) {
 	if(this.env != null)
 	    this.env.dispose();
@@ -131,7 +132,6 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	if(this.ui != null)
 	    this.ui.env = env;
 
-	haven.error.ErrorHandler errh = haven.error.ErrorHandler.find();
 	if(errh != null) {
 	    GLEnvironment.Caps caps = env.caps();
 	    errh.lsetprop("gl.vendor", caps.vendor);
