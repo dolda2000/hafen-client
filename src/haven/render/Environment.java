@@ -49,5 +49,6 @@ public interface Environment extends haven.Disposable {
 	public DrawList drawlist() {return(back().drawlist());}
 	public void submit(Render cmd) {back().submit(cmd);}
 	public void dispose() {back().dispose();}
+	public Caps caps() {return(back().caps());}
     }
 }
