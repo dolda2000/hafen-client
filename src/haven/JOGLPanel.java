@@ -45,7 +45,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private boolean aswap;
     private int fps, framelag;
     private volatile int frameno;
-    private double uidle = 0.0;
+    private double uidle = 0.0, ridle = 0.0;
     private final Dispatcher ed;
     private GLEnvironment env = null;
     private UI ui;
@@ -141,6 +141,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
+    private long lastrcycle = 0, ridletime = 0;
     private void redraw(GL3 gl) {
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
@@ -182,17 +183,34 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
 
 	public void run(GL3 gl) {
+	    long start = System.nanoTime();
 	    boolean iswap = iswap();
 	    if(iswap != aswap)
 		gl.setSwapInterval((aswap = iswap) ? 1 : 0);
 	    JOGLPanel.this.swapBuffers();
+	    ridletime += System.nanoTime() - start;
 	    framelag = JOGLPanel.this.frameno - frameno;
 	}
     }
 
-    private static class GLFinish implements BGL.Request {
+    private class GLFinish implements BGL.Request {
 	public void run(GL3 gl) {
+	    long start = System.nanoTime();
 	    gl.glFinish();
+	    /* Should this count towards idle time? Who knows. */
+	    ridletime += System.nanoTime() - start;
+	}
+    }
+
+    private class FrameCycle implements BGL.Request {
+	public void run(GL3 gl) {
+	    long now = System.nanoTime();
+	    if(lastrcycle != 0) {
+		double fridle = (double)ridletime / (double)(now - lastrcycle);
+		ridle = (ridle * 0.95) + (fridle * 0.05);
+	    }
+	    lastrcycle = now;
+	    ridletime = 0;
 	}
     }
 
@@ -253,7 +271,9 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		notifyAll();
 	    }
 	    while(true) {
+		long wst = System.nanoTime();
 		env.submitwait();
+		ridletime += System.nanoTime() - wst;
 		uglyjoglhack();
 	    }
 	} catch(InterruptedException e) {
@@ -341,7 +361,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     @SuppressWarnings("deprecation")
     private void drawstats(UI ui, GOut g, GLRender buf) {
 	int y = g.sz().y - 190;
-	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, latency %d)", fps, (int)(uidle * 100.0), framelag);
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle, latency %d)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0), framelag);
 	Runtime rt = Runtime.getRuntime();
 	long free = rt.freeMemory(), total = rt.totalMemory();
 	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
@@ -462,6 +482,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 			buf.submit(rprofc = new ProfileCycle(rprof, rprofc, "aux"));
 		    else
 			rprofc = null;
+		    buf.submit(new FrameCycle());
 		    env.submit(buf);
 		    if(curf != null) curf.tick("aux");
 
