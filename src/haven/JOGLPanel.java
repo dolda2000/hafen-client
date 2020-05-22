@@ -45,7 +45,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private boolean aswap;
     private int fps, framelag;
     private volatile int frameno;
-    private double uidle = 0.0, ridle = 0.0;
+    private double uidle = 0.0;
     private final Dispatcher ed;
     private GLEnvironment env = null;
     private UI ui;
@@ -141,8 +141,6 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
-    private volatile CPUProfile.Frame rcurf = null;
-    private long swaptime = 0, gltime = 0, waittime = 0, prevswap = System.nanoTime();
     private void redraw(GL3 gl) {
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
@@ -156,7 +154,6 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		env.reshape(shape);
 	}
 	try {
-	    long pst = Config.profile ? System.nanoTime() : 0;
 	    if(false) {
 		System.err.println("\n-----\n\n");
 		gl = new TraceGL3(gl, System.err);
@@ -166,26 +163,6 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    }
 	    env.process(gl);
 	    long end = System.nanoTime();
-	    if(Config.profile)
-		gltime += end - pst;
-	    if(swaptime != 0) {
-		CPUProfile.Frame curf = this.rcurf; this.rcurf = null;
-		if(curf != null) {
-		    curf.add("wait", waittime);
-		    curf.add("gl", gltime - swaptime);
-		    curf.add("swap", swaptime);
-		    curf.tick("awt");
-		    curf.fin();
-		}
-
-		double fridle = (double)(swaptime + waittime) / (double)(end - prevswap);
-		ridle = (ridle * 0.95) + (fridle * 0.05);
-
-		gltime = 0;
-		prevswap = end;
-		if(Config.profile)
-		    rcurf = rprof.new Frame();
-	    }
 	} catch(BGL.BGLException e) {
 	    if(dumpbgl)
 		e.dump.dump();
@@ -199,24 +176,60 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private class BufferSwap implements BGL.Request {
 	final int frameno;
-	final boolean finish;
 
-	BufferSwap(int frameno, boolean finish) {
+	BufferSwap(int frameno) {
 	    this.frameno = frameno;
-	    this.finish = finish;
 	}
 
 	public void run(GL3 gl) {
-	    long swst = System.nanoTime();
 	    boolean iswap = iswap();
 	    if(iswap != aswap)
 		gl.setSwapInterval((aswap = iswap) ? 1 : 0);
 	    JOGLPanel.this.swapBuffers();
-	    if(finish)
-		gl.glFinish();
-	    long end = System.nanoTime();
-	    swaptime = end - swst;
 	    framelag = JOGLPanel.this.frameno - frameno;
+	}
+    }
+
+    private static class GLFinish implements BGL.Request {
+	public void run(GL3 gl) {
+	    gl.glFinish();
+	}
+    }
+
+    private static class ProfileCycle implements BGL.Request {
+	final CPUProfile prof;
+	final ProfileCycle prev;
+	final String label;
+	CPUProfile.Frame frame;
+
+	ProfileCycle(CPUProfile prof, ProfileCycle prev, String label) {
+	    this.prof = prof;
+	    this.prev = prev;
+	    this.label = label;
+	}
+
+	public void run(GL3 gl) {
+	    if(prev != null) {
+		if(label != null)
+		    prev.frame.tick(label);
+		prev.frame.fin();
+	    }
+	    frame = prof.new Frame();
+	}
+    }
+
+    private static class ProfileTick implements BGL.Request {
+	final ProfileCycle prof;
+	final String label;
+
+	ProfileTick(ProfileCycle prof, String label) {
+	    this.prof = prof;
+	    this.label = label;
+	}
+
+	public void run(GL3 gl) {
+	    if(prof != null)
+		prof.frame.tick(label);
 	}
     }
 
@@ -240,9 +253,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		notifyAll();
 	    }
 	    while(true) {
-		long wst = System.nanoTime();
 		env.submitwait();
-		waittime = System.nanoTime() - wst;
 		uglyjoglhack();
 	    }
 	} catch(InterruptedException e) {
@@ -330,7 +341,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     @SuppressWarnings("deprecation")
     private void drawstats(UI ui, GOut g, GLRender buf) {
 	int y = g.sz().y - 190;
-	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle, latency %d)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0), framelag);
+	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, latency %d)", fps, (int)(uidle * 100.0), framelag);
 	Runtime rt = Runtime.getRuntime();
 	long free = rt.freeMemory(), total = rt.totalMemory();
 	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d", free, total - free, total, rt.maxMemory());
@@ -378,6 +389,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		double then = Utils.rtime();
 		double[] frames = new double[128], waited = new double[frames.length];
 		Fence prevframe = null;
+		ProfileCycle rprofc = null;
 		int framep = 0;
 		while(true) {
 		    double fwaited = 0;
@@ -389,6 +401,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    SyncMode syncmode = prefs.syncmode.val;
 		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
 		    GPUProfile.Frame curgf = Config.profilegpu ? gprof.new Frame(buf) : null;
+		    buf.submit(new ProfileTick(rprofc, "wait"));
 		    Fence curframe = new Fence();
 		    if(syncmode == SyncMode.FRAME)
 			buf.submit(curframe);
@@ -434,11 +447,21 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    display(ui, buf);
 		    if(curf != null) curf.tick("draw");
 		    if(curgf != null) curgf.tick(buf, "draw");
-		    buf.submit(new BufferSwap(cfno, syncmode == SyncMode.FINISH));
+		    buf.submit(new ProfileTick(rprofc, "gl"));
+		    buf.submit(new BufferSwap(cfno));
 		    if(curgf != null) curgf.tick(buf, "swap");
+		    buf.submit(new ProfileTick(rprofc, "swap"));
 		    if(curgf != null) curgf.fin(buf);
+		    if(syncmode == SyncMode.FINISH) {
+			buf.submit(new GLFinish());
+			buf.submit(new ProfileTick(rprofc, "finish"));
+		    }
 		    if(syncmode != SyncMode.FRAME)
 			buf.submit(curframe);
+		    if(Config.profile)
+			buf.submit(rprofc = new ProfileCycle(rprof, rprofc, "aux"));
+		    else
+			rprofc = null;
 		    env.submit(buf);
 		    if(curf != null) curf.tick("aux");
 
