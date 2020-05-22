@@ -171,6 +171,12 @@ public class GSettings extends State implements Serializable {
 	    }
 	};
 
+    public EnumSetting<JOGLPanel.SyncMode> syncmode = new EnumSetting<JOGLPanel.SyncMode>("syncmode", JOGLPanel.SyncMode.class) {
+	public JOGLPanel.SyncMode defval() {
+	    return(JOGLPanel.SyncMode.FRAME);
+	}
+    };
+
     public Setting<?> find(String name) {
 	try {
 	    for(Field f : settings) {
