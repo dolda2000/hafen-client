@@ -82,7 +82,7 @@ public class OptWnd extends Window {
     public class VideoPanel extends Panel {
 	public VideoPanel(Panel back) {
 	    super();
-	    add(new PButton(200, "Back", 27, back), new Coord(0, 180));
+	    add(new PButton(200, "Back", 27, back), new Coord(0, 310));
 	    pack();
 	}
 
@@ -92,27 +92,46 @@ public class OptWnd extends Window {
 	    public CPanel(GSettings gprefs) {
 		this.prefs = gprefs;
 		int y = 0;
-		/* XXXRENDER
-		add(new CheckBox("Per-fragment lighting") {
-			{a = cf.flight.val;}
+		add(new CheckBox("Render shadows") {
+			{a = prefs.lshadow.val;}
 
 			public void set(boolean val) {
-			    if(val) {
+			    try {
+				GSettings np = prefs.update(null, prefs.lshadow, val);
+				ui.setgprefs(prefs = np);
+			    } catch(GSettings.SettingException e) {
+				error(e.getMessage());
+				return;
+			    }
+			    a = val;
+			}
+		    }, new Coord(0, y));
+		y += 20;
+		add(new Label("Render scale"), new Coord(0, y));
+		{
+		    Label dpy = add(new Label(""), new Coord(165, y + 15));
+		    final int steps = 4;
+		    add(new HSlider(160, -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
+			    protected void added() {
+				dpy();
+				this.c.y = dpy.c.y + ((dpy.sz.y - this.sz.y) / 2);
+			    }
+			    void dpy() {
+				dpy.settext(String.format("%.2f\u00d7", Math.pow(2, this.val / (double)steps)));
+			    }
+			    public void changed() {
 				try {
-				    cf.flight.set(true);
-				} catch(GLSettings.SettingException e) {
+				    float val = (float)Math.pow(2, this.val / (double)steps);
+				    ui.setgprefs(prefs = prefs.update(null, prefs.rscale, val));
+				} catch(GSettings.SettingException e) {
 				    error(e.getMessage());
 				    return;
 				}
-			    } else {
-				cf.flight.set(false);
+				dpy();
 			    }
-			    a = val;
-			    cf.dirty = true;
-			}
-		    }, new Coord(0, y));
-		y += 25;
-		*/
+			}, new Coord(0, y + 15));
+		}
+		y += 45;
 		add(new CheckBox("Vertical sync") {
 			{a = prefs.vsync.val;}
 
@@ -127,7 +146,7 @@ public class OptWnd extends Window {
 			    a = val;
 			}
 		    }, new Coord(0, y));
-		y += 25;
+		y += 20;
 		add(new Label("Framerate limit (active window)"), new Coord(0, y));
 		{
 		    Label dpy = add(new Label(""), new Coord(165, y + 15));
@@ -188,46 +207,38 @@ public class OptWnd extends Window {
 			}, new Coord(0, y + 15));
 		}
 		y += 35;
-		add(new CheckBox("Render shadows") {
-			{a = prefs.lshadow.val;}
-
-			public void set(boolean val) {
-			    try {
-				GSettings np = prefs.update(null, prefs.lshadow, val);
-				ui.setgprefs(prefs = np);
-			    } catch(GSettings.SettingException e) {
-				error(e.getMessage());
-				return;
-			    }
-			    a = val;
-			}
-		    }, new Coord(0, y));
-		y += 25;
-		add(new Label("Render scale"), new Coord(0, y));
+		add(new Label("Frame sync mode"), new Coord(0, y));
+		y += 15;
 		{
-		    Label dpy = add(new Label(""), new Coord(165, y + 15));
-		    final int steps = 4;
-		    add(new HSlider(160, -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
-			    protected void added() {
-				dpy();
-				this.c.y = dpy.c.y + ((dpy.sz.y - this.sz.y) / 2);
-			    }
-			    void dpy() {
-				dpy.settext(String.format("%.2f\u00d7", Math.pow(2, this.val / (double)steps)));
-			    }
-			    public void changed() {
+		    boolean[] done = {false};
+		    RadioGroup grp = new RadioGroup(this) {
+			    public void changed(int btn, String lbl) {
+				if(!done[0])
+				    return;
 				try {
-				    float val = (float)Math.pow(2, this.val / (double)steps);
-				    ui.setgprefs(prefs = prefs.update(null, prefs.rscale, val));
+				    ui.setgprefs(prefs = prefs.update(null, prefs.syncmode, JOGLPanel.SyncMode.values()[btn]));
 				} catch(GSettings.SettingException e) {
 				    error(e.getMessage());
 				    return;
 				}
-				dpy();
 			    }
-			}, new Coord(0, y + 15));
+			};
+		    Widget prev;
+		    prev = add(new Label("\u2191 Better performance, worse latency"), new Coord(5, y));
+		    y += prev.sz.y + 2;
+		    prev = grp.add("One-frame overlay", new Coord(5, y));
+		    y += prev.sz.y + 2;
+		    prev = grp.add("Tick overlay", new Coord(5, y));
+		    y += prev.sz.y + 2;
+		    prev = grp.add("CPU-sequential", new Coord(5, y));
+		    y += prev.sz.y + 2;
+		    prev = grp.add("GPU-sequential", new Coord(5, y));
+		    y += prev.sz.y + 2;
+		    prev = add(new Label("\u2193 Worse performance, better latency"), new Coord(5, y));
+		    y += prev.sz.y + 2;
+		    grp.check(prefs.syncmode.val.ordinal());
+		    done[0] = true;
 		}
-		y += 35;
 		/* XXXRENDER
 		add(new CheckBox("Antialiasing") {
 			{a = cf.fsaa.val;}
@@ -273,14 +284,13 @@ public class OptWnd extends Window {
 			}, new Coord(0, y + 15));
 		}
 		*/
-		y += 35;
 		add(new Button(200, "Reset to defaults") {
 			public void click() {
 			    ui.setgprefs(GSettings.defaults());
 			    curcf.destroy();
 			    curcf = null;
 			}
-		    }, new Coord(0, 150));
+		    }, new Coord(0, 280));
 		pack();
 	    }
 	}
