@@ -193,11 +193,17 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
+    public static enum SyncMode {
+	FRAME, TICK, SEQ, FINISH
+    }
+
     private class BufferSwap implements BGL.Request {
 	final int frameno;
+	final boolean finish;
 
-	BufferSwap(int frameno) {
+	BufferSwap(int frameno, boolean finish) {
 	    this.frameno = frameno;
+	    this.finish = finish;
 	}
 
 	public void run(GL3 gl) {
@@ -206,6 +212,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    if(iswap != aswap)
 		gl.setSwapInterval((aswap = iswap) ? 1 : 0);
 	    JOGLPanel.this.swapBuffers();
+	    if(finish)
+		gl.glFinish();
 	    long end = System.nanoTime();
 	    swaptime = end - swst;
 	    framelag = JOGLPanel.this.frameno - frameno;
@@ -376,12 +384,25 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    GLEnvironment env = this.env;
 		    GLRender buf = env.render();
 		    Debug.cycle();
+		    UI ui = this.ui;
+		    GSettings prefs = ui.gprefs;
+		    SyncMode syncmode = prefs.syncmode.val;
 		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
 		    GPUProfile.Frame curgf = Config.profilegpu ? gprof.new Frame(buf) : null;
 		    Fence curframe = new Fence();
-		    buf.submit(curframe);
+		    if(syncmode == SyncMode.FRAME)
+			buf.submit(curframe);
 
-		    UI ui = this.ui;
+		    boolean tickwait = (syncmode == SyncMode.FRAME) || (syncmode == SyncMode.TICK);
+		    if(!tickwait) {
+			if(prevframe != null) {
+			    double now = Utils.rtime();
+			    prevframe.waitfor();
+			    prevframe = null;
+			    fwaited += Utils.rtime() - now;
+			}
+			if(curf != null) curf.tick("dwait");
+		    }
 
 		    int cfno = frameno++;
 		    synchronized(ui) {
@@ -400,21 +421,24 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 			if(curgf != null) curgf.tick(buf, "tick");
 		    }
 
-		    if(prevframe != null) {
-			double now = Utils.rtime();
-			prevframe.waitfor();
-			prevframe = null;
-			fwaited += Utils.rtime() - now;
+		    if(tickwait) {
+			if(prevframe != null) {
+			    double now = Utils.rtime();
+			    prevframe.waitfor();
+			    prevframe = null;
+			    fwaited += Utils.rtime() - now;
+			}
+			if(curf != null) curf.tick("dwait");
 		    }
-		    prevframe = curframe;
 
-		    if(curf != null) curf.tick("dwait");
 		    display(ui, buf);
 		    if(curf != null) curf.tick("draw");
 		    if(curgf != null) curgf.tick(buf, "draw");
-		    buf.submit(new BufferSwap(cfno));
+		    buf.submit(new BufferSwap(cfno, syncmode == SyncMode.FINISH));
 		    if(curgf != null) curgf.tick(buf, "swap");
 		    if(curgf != null) curgf.fin(buf);
+		    if(syncmode != SyncMode.FRAME)
+			buf.submit(curframe);
 		    env.submit(buf);
 		    if(curf != null) curf.tick("aux");
 
@@ -450,6 +474,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    if(curf != null) curf.tick("wait");
 
 		    if(curf != null) curf.fin();
+		    prevframe = curframe;
 		}
 	    } finally {
 		drawthread.interrupt();
