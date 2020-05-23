@@ -37,6 +37,7 @@ public class Avaview extends PView {
     public static final Tex missing = Resource.loadtex("gfx/hud/equip/missing");
     public static final Coord dasz = missing.sz();
     public Color color = Color.WHITE;
+    public FColor clearcolor = FColor.BLACK;
     public long avagob;
     public Desc avadesc;
     public Resource.Resolver resmap = null;
@@ -87,6 +88,8 @@ public class Avaview extends PView {
 	    this.color = (Color)args[0];
 	} else if(msg == "pop") {
 	    pop(Desc.decode(ui.sess, args));
+	} else if(msg == "bg") {
+	    clearcolor = new FColor((Color)args[0]);
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -229,6 +232,10 @@ public class Avaview extends PView {
 		} catch(Loading e) {}
 	    }
 	}
+    }
+
+    protected FColor clearcolor() {
+	return(clearcolor);
     }
 
     public void draw(GOut g) {
