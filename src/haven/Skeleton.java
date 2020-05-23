@@ -719,7 +719,10 @@ public class Skeleton {
 	    float nt = time + (back?-dt:dt);
 	    switch(mode) {
 	    case LOOP:
-		nt %= len;
+		if(len == 0)
+		    nt = 0;
+		else
+		    nt %= len;
 		break;
 	    case ONCE:
 		if(nt > len) {
