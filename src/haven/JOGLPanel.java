@@ -280,6 +280,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
+    Disposable prevtooltip = null;
     private void drawtooltip(UI ui, GOut g) {
 	Object tooltip;
         try {
@@ -290,6 +291,15 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    tooltip = "...";
 	}
 	Tex tt = null;
+	if(prevtooltip != null) {
+	    /* Tooltip disposal the same frame seems to have a
+	     * tendency to cause some kind of weird CPU/GPU sync
+	     * point. Arguably this should be handled by the rendering
+	     * system somehow, but it's unclear what the actual root
+	     * cause is, and this is a cheap fix. */
+	    prevtooltip.dispose();
+	    prevtooltip = null;
+	}
 	Disposable free = null;
 	if(tooltip != null) {
 	    if(tooltip instanceof Text) {
@@ -321,8 +331,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    g.chcolor();
 	    g.image(tt, pos);
 	}
-	if(free != null)
-	    free.dispose();
+	prevtooltip = free;
 	ui.lasttip = tooltip;
     }
 
