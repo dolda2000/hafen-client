@@ -37,6 +37,7 @@ public class Avaview extends PView {
     public static final Tex missing = Resource.loadtex("gfx/hud/equip/missing");
     public static final Coord dasz = missing.sz();
     public Color color = Color.WHITE;
+    public FColor clearcolor = FColor.BLACK;
     public long avagob;
     public Desc avadesc;
     public Resource.Resolver resmap = null;
@@ -87,6 +88,8 @@ public class Avaview extends PView {
 	    this.color = (Color)args[0];
 	} else if(msg == "pop") {
 	    pop(Desc.decode(ui.sess, args));
+	} else if(msg == "bg") {
+	    clearcolor = new FColor((Color)args[0]);
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -102,24 +105,43 @@ public class Avaview extends PView {
 	pop(ava, null);
     }
 
+    private Collection<ResData> nposes = null, lposes = null;
+    private boolean nposesold;
+    public void chposes(Collection<ResData> poses, boolean interp) {
+	nposes = poses;
+	nposesold = !interp;
+    }
+    private void updposes() {
+	if(nposes == null) {
+	    nposes = lposes;
+	    nposesold = true;
+	}
+    }
+
     private static final OwnerContext.ClassResolver<Avaview> ctxr = new OwnerContext.ClassResolver<Avaview>()
 	.add(Glob.class, v -> v.ui.sess.glob)
 	.add(Session.class, v -> v.ui.sess)
 	.add(Resource.Resolver.class, v -> (v.resmap == null ? v.ui.sess : v.resmap));
-    private class AvaOwner implements Sprite.Owner {
+    private class AvaOwner implements Sprite.Owner, Skeleton.ModOwner {
 	public Random mkrandoom() {return(new Random());}
 	public Resource getres() {return(null);}
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, Avaview.this));}
+	@Deprecated public Glob glob() {return(context(Glob.class));}
+
+	public Coord3f getc() {return(Coord3f.o);}
+	public double getv() {return(0);}
     }
+    private final AvaOwner avaowner = new AvaOwner();
 
     private void initcomp(Composite gc) {
 	if((comp == null) || (comp.skel != gc.comp.skel)) {
 	    comp = new Composited(gc.comp.skel);
-	    comp.eqowner = new AvaOwner();
+	    comp.eqowner = avaowner;
 	    if(compslot != null) {
 		compslot.remove();
 		compslot = null;
 	    }
+	    updposes();
 	}
     }
 
@@ -179,8 +201,9 @@ public class Avaview extends PView {
 	    if((d.base != lbase) || (comp == null)) {
 		lbase = d.base;
 		comp = new Composited(d.base.get().layer(Skeleton.Res.class).s);
-		comp.eqowner = new AvaOwner();
+		comp.eqowner = avaowner;
 		basic(Camera.class, makecam(d.base.get(), comp, camnm));
+		updposes();
 	    }
 	    if(d.mod != this.cmod) {
 		comp.chmod(d.mod);
@@ -198,8 +221,21 @@ public class Avaview extends PView {
 
     public void tick(double dt) {
 	super.tick(dt);
-	if(comp != null)
+	if(comp != null) {
 	    comp.tick(dt);
+	    if(nposes != null) {
+		try {
+		    Composited.Poses np = comp.new Poses(Composite.loadposes(nposes, avaowner, comp.skel, nposesold));
+		    np.set(nposesold ? 0 : 0.2f);
+		    lposes = nposes;
+		    nposes = null;
+		} catch(Loading e) {}
+	    }
+	}
+    }
+
+    protected FColor clearcolor() {
+	return(clearcolor);
     }
 
     public void draw(GOut g) {

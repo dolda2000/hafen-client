@@ -32,6 +32,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.InputEvent;
 import static haven.Utils.el;
 import haven.render.Environment;
+import haven.render.Render;
 
 public class UI {
     public static int MOD_SHIFT = 1, MOD_CTRL = 2, MOD_META = 4, MOD_SUPER = 8;
@@ -189,6 +190,10 @@ public class UI {
 	    gprefs.save();
 	    gprefsdirty = false;
 	}
+    }
+
+    public void gtick(Render out) {
+	root.gtick(out);
     }
 
     public void draw(GOut g) {

@@ -253,8 +253,11 @@ public abstract class PView extends Widget {
 	back.draw(out);
     }
 
+    public void gtick(Render out) {
+	ticklist.gtick(out);
+    }
+
     public void draw(GOut g) {
-	ticklist.gtick(g.out);
 	if((back == null) || !back.compatible(g.out.env())) {
 	    if(env != null) {
 		envdispose();

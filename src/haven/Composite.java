@@ -58,15 +58,19 @@ public class Composite extends Drawable {
 	super.added(slot);
     }
 
-    private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, boolean old) {
+    public static List<PoseMod> loadposes(Collection<ResData> rl, Skeleton.ModOwner owner, Skeleton skel, boolean old) {
 	List<PoseMod> mods = new ArrayList<PoseMod>(rl.size());
 	for(ResData dat : rl) {
-	    PoseMod mod = skel.mkposemod(gob, dat.res.get(), dat.sdt.clone());
+	    PoseMod mod = skel.mkposemod(owner, dat.res.get(), dat.sdt.clone());
 	    if(old)
 		mod.age();
 	    mods.add(mod);
 	}
 	return(mods);
+    }
+
+    private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, boolean old) {
+	return(loadposes(rl, gob, skel, old));
     }
 
     private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, WrapMode mode) {

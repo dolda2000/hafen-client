@@ -332,7 +332,7 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 	}
     }
     
-    public static class Desc {
+    public static class Desc implements Cloneable {
 	public Indir<Resource> base;
 	public List<MD> mod = new ArrayList<>();
 	public List<ED> equ = new ArrayList<>();
@@ -374,6 +374,15 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 		Coord3f off = new Coord3f(((Number)qa[n + 0]).floatValue(), ((Number)qa[n + 1]).floatValue(), ((Number)qa[n + 2]).floatValue());
 		ret.equ.add(new ED(t, at, new ResData(res, sdt), off));
 	    }
+	    return(ret);
+	}
+
+	public Desc clone() {
+	    Desc ret = new Desc(base);
+	    for(MD mod : this.mod)
+		ret.mod.add(mod.clone());
+	    for(ED equ : this.equ)
+		ret.equ.add(equ.clone());
 	    return(ret);
 	}
 

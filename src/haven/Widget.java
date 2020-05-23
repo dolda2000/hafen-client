@@ -712,6 +712,12 @@ public class Widget {
 	}
     }
 
+    public void gtick(haven.render.Render out) {
+	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
+	    wdg.gtick(out);
+	}
+    }
+
     public void draw(GOut g, boolean strict) {
 	Widget next;
 		
