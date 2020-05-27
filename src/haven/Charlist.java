@@ -129,18 +129,22 @@ public class Charlist extends Widget {
     }
     
     public boolean mousedown(Coord c, int button) {
+	boolean hit = false;
 	if(button == 1) {
 	    synchronized(chars) {
 		for(int i = 0, y = sau.c.y + sau.sz.y; (i < height) && (i + this.y < chars.size()); i++, y += bg.sz().y + margin) {
 		    if(c.isect(new Coord(0, y), bg.sz())) {
 			if(i + this.y != sel)
 			    chsel(i + this.y);
-			return(true);
+			hit = true;
+			break;
 		    }
 		}
 	    }
 	}
-	return(super.mousedown(c, button));
+	if(super.mousedown(c, button))
+	    return(true);
+	return(hit);
     }
 
     public boolean mousewheel(Coord c, int amount) {
