@@ -238,8 +238,10 @@ public class Charlist extends Widget {
 	seladj();
 	if(avalink != null) {
 	    Char chr = chars.get(idx);
-	    avalink.pop(chr.avadesc.clone(), chr.avamap);
-	    avalink.chposes(chr.avaposes, false);
+	    if(chr.avadesc != null) {
+		avalink.pop(chr.avadesc.clone(), chr.avamap);
+		avalink.chposes(chr.avaposes, false);
+	    }
 	}
     }
 
