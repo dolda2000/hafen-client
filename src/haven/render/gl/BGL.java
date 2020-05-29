@@ -555,6 +555,13 @@ public abstract class BGL {
 	    });
     }
 
+    public void glTexImage3D(final int target, final int level, final int internalformat, final int width, final int height, final int depth, final int border, final int format, final int type, Buffer data) {
+	final BufState ds = new BufState(data);
+	add(new Command() {
+		public void run(GL3 gl) {ds.restore(); gl.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, ds.buf);}
+	    });
+    }
+
     public void glTexParameterf(final int target, final int pname, final float param) {
 	add(new Command() {
 		public void run(GL3 gl) {gl.glTexParameterf(target, pname, param);}
