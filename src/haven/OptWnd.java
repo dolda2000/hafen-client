@@ -226,9 +226,9 @@ public class OptWnd extends Window {
 		    Widget prev;
 		    prev = add(new Label("\u2191 Better performance, worse latency"), new Coord(5, y));
 		    y += prev.sz.y + 2;
-		    prev = grp.add("One-frame overlay", new Coord(5, y));
+		    prev = grp.add("One-frame overlap", new Coord(5, y));
 		    y += prev.sz.y + 2;
-		    prev = grp.add("Tick overlay", new Coord(5, y));
+		    prev = grp.add("Tick overlap", new Coord(5, y));
 		    y += prev.sz.y + 2;
 		    prev = grp.add("CPU-sequential", new Coord(5, y));
 		    y += prev.sz.y + 2;
