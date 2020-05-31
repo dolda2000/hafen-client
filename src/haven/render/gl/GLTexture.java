@@ -183,19 +183,26 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	throw(new IllegalArgumentException(String.format("internalformat: %s%s", fmt, data.srgb ? " (sRGB)" : "")));
     }
 
-    static int texefmt1(VectorFormat ifmt, VectorFormat efmt) {
+    static int texefmt1(VectorFormat ifmt, VectorFormat efmt, Swizzle perm) {
 	if(ifmt.cf == NumberFormat.DEPTH) {
 	    if(efmt.nc != 1)
 		throw(new IllegalArgumentException(String.format("externalformat components != 1 for depth texture: %s", efmt)));
 	    return(GL3.GL_DEPTH_COMPONENT);
 	}
-	switch(efmt.nc) {
-	case 1: return(GL3.GL_RED);
-	case 2: return(GL3.GL_RG);
-	case 3: return(GL.GL_RGB);
-	case 4: return(GL.GL_RGBA);
+	if((perm == null) || perm.idp()) {
+	    switch(efmt.nc) {
+	    case 1: return(GL3.GL_RED);
+	    case 2: return(GL3.GL_RG);
+	    case 3: return(GL.GL_RGB);
+	    case 4: return(GL.GL_RGBA);
+	    }
+	} else {
+	    if((efmt.nc == 3) && perm.equals(Swizzle.BGR))
+		return(GL3.GL_BGR);
+	    if((efmt.nc == 4) && perm.equals(Swizzle.BGRA))
+		return(GL3.GL_BGRA);
 	}
-	throw(new IllegalArgumentException(String.format("externalformat1: %s", efmt)));
+	throw(new IllegalArgumentException(String.format("externalformat1: %s (%s)", efmt, perm)));
     }
 
     static int texefmt2(VectorFormat ifmt, VectorFormat efmt) {
@@ -231,7 +238,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	    super(env);
 	    this.data = data;
 	    int ifmt = texifmt(data);
-	    int pfmt = texefmt1(data.ifmt, data.efmt);
+	    int pfmt = texefmt1(data.ifmt, data.efmt, data.eperm);
 	    int pnum = texefmt2(data.ifmt, data.efmt);
 	    env.prepare((GLRender g) -> {
 		    if(g.state.prog() != null)
@@ -314,7 +321,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	    super(env);
 	    this.data = data;
 	    int ifmt = texifmt(data);
-	    int pfmt = texefmt1(data.ifmt, data.efmt);
+	    int pfmt = texefmt1(data.ifmt, data.efmt, data.eperm);
 	    int pnum = texefmt2(data.ifmt, data.efmt);
 	    env.prepare((GLRender g) -> {
 		    if(g.state.prog() != null)
@@ -398,7 +405,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	    super(env);
 	    this.data = data;
 	    int ifmt = texifmt(data);
-	    int pfmt = texefmt1(data.ifmt, data.efmt);
+	    int pfmt = texefmt1(data.ifmt, data.efmt, data.eperm);
 	    int pnum = texefmt2(data.ifmt, data.efmt);
 	    env.prepare((GLRender g) -> {
 		    if(g.state.prog() != null)

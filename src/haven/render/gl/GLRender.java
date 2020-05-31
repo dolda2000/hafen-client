@@ -428,7 +428,7 @@ public class GLRender implements Render, Disposable {
 	gl.glBufferData(GL3.GL_PIXEL_PACK_BUFFER, fmt.size() * area.area(), null, GL3.GL_STREAM_READ);
 	gl.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
 	gl.glReadBuffer(fc.dbufs[n]);
-	gl.glReadPixels(area.ul.x, gly, sz.x, sz.y, GLTexture.texefmt1(fmt, fmt), GLTexture.texefmt2(fmt, fmt), 0);
+	gl.glReadPixels(area.ul.x, gly, sz.x, sz.y, GLTexture.texefmt1(fmt, fmt, null), GLTexture.texefmt2(fmt, fmt), 0);
 	gl.bglCreate(new GLFence(env, cgl -> {
 		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, pbo.glid());
 		    ByteBuffer data = Utils.mkbbuf(fmt.size() * area.area()).order(ByteOrder.nativeOrder());
@@ -473,7 +473,7 @@ public class GLRender implements Render, Disposable {
 		    throw(new IllegalArgumentException(String.format("externalformat components != 1 for depth texture: %s", fmt)));
 		gl.glGetTexImage(GL.GL_TEXTURE_2D, img.level, GL3.GL_DEPTH_COMPONENT, GLTexture.texefmt2(fmt, fmt), 0);
 	    } else {
-		gl.glGetTexImage(GL.GL_TEXTURE_2D, img.level, GLTexture.texefmt1(fmt, fmt), GLTexture.texefmt2(fmt, fmt), 0);
+		gl.glGetTexImage(GL.GL_TEXTURE_2D, img.level, GLTexture.texefmt1(fmt, fmt, null), GLTexture.texefmt2(fmt, fmt), 0);
 	    }
 	    tex.unbind(gl);
 	} else {

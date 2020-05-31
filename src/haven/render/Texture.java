@@ -36,6 +36,7 @@ public abstract class Texture implements Disposable {
     public final DataBuffer.Usage usage;
     public final DataBuffer.Filler<? super Image> init;
     public boolean srgb = false;
+    public Swizzle eperm;
     public boolean shared = false;
     public Disposable ro;
 
@@ -44,6 +45,7 @@ public abstract class Texture implements Disposable {
 	this.ifmt = ifmt;
 	this.efmt = efmt;
 	this.init = init;
+	eperm = Swizzle.id(efmt.nc);
     }
 
     public static class Image<T extends Texture> implements DataBuffer {
@@ -82,6 +84,13 @@ public abstract class Texture implements Disposable {
 
     public Texture srgb() {
 	this.srgb = true;
+	return(this);
+    }
+
+    public Texture eperm(Swizzle eperm) {
+	if(eperm.perm.length != efmt.nc)
+	    throw(new IllegalArgumentException(String.valueOf(eperm)));
+	this.eperm = eperm;
 	return(this);
     }
 
