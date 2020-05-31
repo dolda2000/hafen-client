@@ -37,26 +37,48 @@ public class FragColor<T> extends State {
 	    public String toString() {return("#<default color buffer>");}
 	};
     public final T image;
+    public final boolean srgb;
+
+    public FragColor(T image, boolean srgb) {
+	this.image = image;
+	this.srgb = srgb;
+    }
 
     public FragColor(T image) {
-	this.image = image;
+	this(image, false);
     }
 
+    private static class ColorValue extends ValBlock.Value {
+	boolean srgb = false;
+
+	ColorValue(ValBlock vals) {
+	    vals.super(Type.VEC4);
+	}
+
+	public Expression root() {
+	    return(Vec4Cons.u);
+	}
+
+	protected void cons2(Block blk) {
+	    Expression val = init;
+	    if(srgb)
+		val = MiscLib.lin2srgb.call(val);
+	    blk.add(new LBinOp.Assign(fragcol.ref(), val));
+	}
+    }
+
+    private static ColorValue fragcol0(FragmentContext fctx) {
+	return(fctx.mainvals.ext(fragcol, () -> new ColorValue(fctx.mainvals)));
+    }
     public static Value fragcol(FragmentContext fctx) {
-	return(fctx.mainvals.ext(fragcol, () -> fctx.mainvals.new Value(Type.VEC4) {
-		public Expression root() {
-		    return(Vec4Cons.u);
-		}
-
-		protected void cons2(Block blk) {
-		    blk.add(new LBinOp.Assign(fragcol.ref(), init));
-		}
-	    }));
+	return(fragcol0(fctx));
     }
 
-    private static final ShaderMacro shader = prog -> fragcol(prog.fctx).force();
+    private static final ShaderMacro value = prog -> fragcol0(prog.fctx).force();
+    private static final ShaderMacro mksrgb = prog -> fragcol0(prog.fctx).srgb = true;
+    private static final ShaderMacro[] shaders = {value, ShaderMacro.compose(value, mksrgb)};
     public ShaderMacro shader() {
-	return(shader);
+	return(shaders[srgb ? 1 : 0]);
     }
 
     public void apply(Pipe p) {p.put(slot, this);}
