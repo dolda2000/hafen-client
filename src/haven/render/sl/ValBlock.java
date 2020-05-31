@@ -234,8 +234,9 @@ public class ValBlock {
 	}
     }
 
-    public Value ext(Object id, Supplier<Value> f) {
-	Value val = ext.get(id);
+    @SuppressWarnings("unchecked")
+    public <T extends Value> T ext(Object id, Supplier<T> f) {
+	T val = (T)ext.get(id);
 	if(val == null)
 	    ext.put(id, val = f.get());
 	return(val);
