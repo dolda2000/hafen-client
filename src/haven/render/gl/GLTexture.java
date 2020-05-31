@@ -130,43 +130,57 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
     }
 
-    static int texifmt(VectorFormat fmt) {
-	switch(fmt.nc) {
-	case 1:
-	    switch(fmt.cf) {
-	    case UNORM8: return(GL3.GL_R8);
-	    case SNORM8: return(GL3.GL_R8_SNORM);
-	    case UNORM16: return(GL3.GL_R16);
-	    case SNORM16: return(GL3.GL_R16_SNORM);
-	    case FLOAT16: return(GL3.GL_R16F);
-	    case DEPTH: return(GL3.GL_DEPTH_COMPONENT);
+    static int texifmt(Texture data) {
+	VectorFormat fmt = data.ifmt;
+	if(!data.srgb) {
+	    switch(fmt.nc) {
+	    case 1:
+		switch(fmt.cf) {
+		case UNORM8: return(GL3.GL_R8);
+		case SNORM8: return(GL3.GL_R8_SNORM);
+		case UNORM16: return(GL3.GL_R16);
+		case SNORM16: return(GL3.GL_R16_SNORM);
+		case FLOAT16: return(GL3.GL_R16F);
+		case DEPTH: return(GL3.GL_DEPTH_COMPONENT);
+		}
+	    case 2:
+		switch(fmt.cf) {
+		case UNORM8: return(GL3.GL_RG8);
+		case SNORM8: return(GL3.GL_RG8_SNORM);
+		case UNORM16: return(GL3.GL_RG16);
+		case SNORM16: return(GL3.GL_RG16_SNORM);
+		case FLOAT16: return(GL3.GL_RG16F);
+		}
+	    case 3:
+		switch(fmt.cf) {
+		case UNORM8: return(GL.GL_RGB8);
+		case SNORM8: return(GL3.GL_RGB8_SNORM);
+		case UNORM16: return(GL3.GL_RGB16);
+		case SNORM16: return(GL3.GL_RGB16_SNORM);
+		case FLOAT16: return(GL3.GL_RGB16F);
+		}
+	    case 4:
+		switch(fmt.cf) {
+		case UNORM8: return(GL.GL_RGBA8);
+		case SNORM8: return(GL3.GL_RGBA8_SNORM);
+		case UNORM16: return(GL3.GL_RGBA16);
+		case SNORM16: return(GL3.GL_RGBA16_SNORM);
+		case FLOAT16: return(GL3.GL_RGBA16F);
+		}
 	    }
-	case 2:
-	    switch(fmt.cf) {
-	    case UNORM8: return(GL3.GL_RG8);
-	    case SNORM8: return(GL3.GL_RG8_SNORM);
-	    case UNORM16: return(GL3.GL_RG16);
-	    case SNORM16: return(GL3.GL_RG16_SNORM);
-	    case FLOAT16: return(GL3.GL_RG16F);
-	    }
-	case 3:
-	    switch(fmt.cf) {
-	    case UNORM8: return(GL.GL_RGB8);
-	    case SNORM8: return(GL3.GL_RGB8_SNORM);
-	    case UNORM16: return(GL3.GL_RGB16);
-	    case SNORM16: return(GL3.GL_RGB16_SNORM);
-	    case FLOAT16: return(GL3.GL_RGB16F);
-	    }
-	case 4:
-	    switch(fmt.cf) {
-	    case UNORM8: return(GL.GL_RGBA8);
-	    case SNORM8: return(GL3.GL_RGBA8_SNORM);
-	    case UNORM16: return(GL3.GL_RGBA16);
-	    case SNORM16: return(GL3.GL_RGBA16_SNORM);
-	    case FLOAT16: return(GL3.GL_RGBA16F);
+	} else {
+	    switch(fmt.nc) {
+	    case 3:
+		switch(fmt.cf) {
+		case UNORM8: return(GL3.GL_SRGB8);
+		}
+	    case 4:
+		switch(fmt.cf) {
+		case UNORM8: return(GL3.GL_SRGB8_ALPHA8);
+		}
 	    }
 	}
-	throw(new IllegalArgumentException(String.format("internalformat: %s", fmt)));
+	throw(new IllegalArgumentException(String.format("internalformat: %s%s", fmt, data.srgb ? " (sRGB)" : "")));
     }
 
     static int texefmt1(VectorFormat ifmt, VectorFormat efmt) {
@@ -216,7 +230,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	public Tex2D(GLEnvironment env, Texture2D data, FillBuffers.Array[] pixels) {
 	    super(env);
 	    this.data = data;
-	    int ifmt = texifmt(data.ifmt);
+	    int ifmt = texifmt(data);
 	    int pfmt = texefmt1(data.ifmt, data.efmt);
 	    int pnum = texefmt2(data.ifmt, data.efmt);
 	    env.prepare((GLRender g) -> {
@@ -299,7 +313,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	public Tex3D(GLEnvironment env, Texture3D data, FillBuffers.Array[] pixels) {
 	    super(env);
 	    this.data = data;
-	    int ifmt = texifmt(data.ifmt);
+	    int ifmt = texifmt(data);
 	    int pfmt = texefmt1(data.ifmt, data.efmt);
 	    int pnum = texefmt2(data.ifmt, data.efmt);
 	    env.prepare((GLRender g) -> {
@@ -383,7 +397,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	public TexCube(GLEnvironment env, TextureCube data, CubeImage[] images, FillBuffers.Array[] pixels) {
 	    super(env);
 	    this.data = data;
-	    int ifmt = texifmt(data.ifmt);
+	    int ifmt = texifmt(data);
 	    int pfmt = texefmt1(data.ifmt, data.efmt);
 	    int pnum = texefmt2(data.ifmt, data.efmt);
 	    env.prepare((GLRender g) -> {

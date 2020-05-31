@@ -35,6 +35,7 @@ public abstract class Texture implements Disposable {
     public final VectorFormat ifmt, efmt;
     public final DataBuffer.Usage usage;
     public final DataBuffer.Filler<? super Image> init;
+    public boolean srgb = false;
     public boolean shared = false;
     public Disposable ro;
 
@@ -78,6 +79,11 @@ public abstract class Texture implements Disposable {
     }
 
     public abstract Collection<? extends Image<? extends Texture>> images();
+
+    public Texture srgb() {
+	this.srgb = true;
+	return(this);
+    }
 
     public Texture shared() {
 	this.shared = true;
