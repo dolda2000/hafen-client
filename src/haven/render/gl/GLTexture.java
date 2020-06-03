@@ -30,6 +30,7 @@ import haven.render.*;
 import haven.render.Texture.Image;
 import haven.render.Texture.Sampler;
 import haven.render.Texture2D.Sampler2D;
+import haven.render.Texture3D.Sampler3D;
 import haven.render.TextureCube.CubeImage;
 import haven.render.TextureCube.SamplerCube;
 import java.nio.*;
@@ -129,58 +130,79 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
     }
 
-    static int texifmt(VectorFormat fmt) {
-	switch(fmt.nc) {
-	case 1:
-	    switch(fmt.cf) {
-	    case UNORM8: return(GL3.GL_R8);
-	    case SNORM8: return(GL3.GL_R8_SNORM);
-	    case UNORM16: return(GL3.GL_R16);
-	    case SNORM16: return(GL3.GL_R16_SNORM);
-	    case FLOAT16: return(GL3.GL_R16F);
-	    case DEPTH: return(GL3.GL_DEPTH_COMPONENT);
+    static int texifmt(Texture data) {
+	VectorFormat fmt = data.ifmt;
+	if(!data.srgb) {
+	    switch(fmt.nc) {
+	    case 1:
+		switch(fmt.cf) {
+		case UNORM8: return(GL3.GL_R8);
+		case SNORM8: return(GL3.GL_R8_SNORM);
+		case UNORM16: return(GL3.GL_R16);
+		case SNORM16: return(GL3.GL_R16_SNORM);
+		case FLOAT16: return(GL3.GL_R16F);
+		case DEPTH: return(GL3.GL_DEPTH_COMPONENT);
+		}
+	    case 2:
+		switch(fmt.cf) {
+		case UNORM8: return(GL3.GL_RG8);
+		case SNORM8: return(GL3.GL_RG8_SNORM);
+		case UNORM16: return(GL3.GL_RG16);
+		case SNORM16: return(GL3.GL_RG16_SNORM);
+		case FLOAT16: return(GL3.GL_RG16F);
+		}
+	    case 3:
+		switch(fmt.cf) {
+		case UNORM8: return(GL.GL_RGB8);
+		case SNORM8: return(GL3.GL_RGB8_SNORM);
+		case UNORM16: return(GL3.GL_RGB16);
+		case SNORM16: return(GL3.GL_RGB16_SNORM);
+		case FLOAT16: return(GL3.GL_RGB16F);
+		}
+	    case 4:
+		switch(fmt.cf) {
+		case UNORM8: return(GL.GL_RGBA8);
+		case SNORM8: return(GL3.GL_RGBA8_SNORM);
+		case UNORM16: return(GL3.GL_RGBA16);
+		case SNORM16: return(GL3.GL_RGBA16_SNORM);
+		case FLOAT16: return(GL3.GL_RGBA16F);
+		}
 	    }
-	case 2:
-	    switch(fmt.cf) {
-	    case UNORM8: return(GL3.GL_RG8);
-	    case SNORM8: return(GL3.GL_RG8_SNORM);
-	    case UNORM16: return(GL3.GL_RG16);
-	    case SNORM16: return(GL3.GL_RG16_SNORM);
-	    case FLOAT16: return(GL3.GL_RG16F);
-	    }
-	case 3:
-	    switch(fmt.cf) {
-	    case UNORM8: return(GL.GL_RGB8);
-	    case SNORM8: return(GL3.GL_RGB8_SNORM);
-	    case UNORM16: return(GL3.GL_RGB16);
-	    case SNORM16: return(GL3.GL_RGB16_SNORM);
-	    case FLOAT16: return(GL3.GL_RGB16F);
-	    }
-	case 4:
-	    switch(fmt.cf) {
-	    case UNORM8: return(GL.GL_RGBA8);
-	    case SNORM8: return(GL3.GL_RGBA8_SNORM);
-	    case UNORM16: return(GL3.GL_RGBA16);
-	    case SNORM16: return(GL3.GL_RGBA16_SNORM);
-	    case FLOAT16: return(GL3.GL_RGBA16F);
+	} else {
+	    switch(fmt.nc) {
+	    case 3:
+		switch(fmt.cf) {
+		case UNORM8: return(GL3.GL_SRGB8);
+		}
+	    case 4:
+		switch(fmt.cf) {
+		case UNORM8: return(GL3.GL_SRGB8_ALPHA8);
+		}
 	    }
 	}
-	throw(new IllegalArgumentException(String.format("internalformat: %s", fmt)));
+	throw(new IllegalArgumentException(String.format("internalformat: %s%s", fmt, data.srgb ? " (sRGB)" : "")));
     }
 
-    static int texefmt1(VectorFormat ifmt, VectorFormat efmt) {
+    static int texefmt1(VectorFormat ifmt, VectorFormat efmt, Swizzle perm) {
 	if(ifmt.cf == NumberFormat.DEPTH) {
 	    if(efmt.nc != 1)
 		throw(new IllegalArgumentException(String.format("externalformat components != 1 for depth texture: %s", efmt)));
 	    return(GL3.GL_DEPTH_COMPONENT);
 	}
-	switch(efmt.nc) {
-	case 1: return(GL3.GL_RED);
-	case 2: return(GL3.GL_RG);
-	case 3: return(GL.GL_RGB);
-	case 4: return(GL.GL_RGBA);
+	if((perm == null) || perm.idp()) {
+	    switch(efmt.nc) {
+	    case 1: return(GL3.GL_RED);
+	    case 2: return(GL3.GL_RG);
+	    case 3: return(GL.GL_RGB);
+	    case 4: return(GL.GL_RGBA);
+	    }
+	} else {
+	    if((efmt.nc == 3) && perm.equals(Swizzle.BGR))
+		return(GL3.GL_BGR);
+	    if((efmt.nc == 4) && perm.equals(Swizzle.BGRA))
+		return(GL3.GL_BGRA);
 	}
-	throw(new IllegalArgumentException(String.format("externalformat1: %s", efmt)));
+	throw(new IllegalArgumentException(String.format("externalformat1: %s (%s)", efmt, perm)));
     }
 
     static int texefmt2(VectorFormat ifmt, VectorFormat efmt) {
@@ -215,8 +237,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	public Tex2D(GLEnvironment env, Texture2D data, FillBuffers.Array[] pixels) {
 	    super(env);
 	    this.data = data;
-	    int ifmt = texifmt(data.ifmt);
-	    int pfmt = texefmt1(data.ifmt, data.efmt);
+	    int ifmt = texifmt(data);
+	    int pfmt = texefmt1(data.ifmt, data.efmt, data.eperm);
 	    int pnum = texefmt2(data.ifmt, data.efmt);
 	    env.prepare((GLRender g) -> {
 		    if(g.state.prog() != null)
@@ -291,6 +313,90 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
     }
 
+    public static class Tex3D extends GLTexture {
+	public final Texture3D data;
+	Sampler3D sampler;
+
+	public Tex3D(GLEnvironment env, Texture3D data, FillBuffers.Array[] pixels) {
+	    super(env);
+	    this.data = data;
+	    int ifmt = texifmt(data);
+	    int pfmt = texefmt1(data.ifmt, data.efmt, data.eperm);
+	    int pnum = texefmt2(data.ifmt, data.efmt);
+	    env.prepare((GLRender g) -> {
+		    if(g.state.prog() != null)
+			throw(new RuntimeException("program unexpectedly used in prep context"));
+		    BGL gl = g.gl();
+		    gl.glActiveTexture(GL.GL_TEXTURE0);
+		    bind(gl);
+		    if(pixels[0] != null)
+			gl.glTexImage3D(GL3.GL_TEXTURE_3D, 0, ifmt, data.w, data.h, data.d, 0, pfmt, pnum, ByteBuffer.wrap(pixels[0].data));
+		    else
+			gl.glTexImage3D(GL3.GL_TEXTURE_3D, 0, ifmt, data.w, data.h, data.d, 0, pfmt, pnum, null);
+		    long mem = data.ifmt.size() * data.w * data.h * data.d;
+		    for(int i = 1; i < pixels.length; i++) {
+			if(pixels[i] != null) {
+			    Image<?> img = data.image(i);
+			    gl.glTexImage3D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, img.d, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
+			    mem += data.ifmt.size() * img.w * img.h * img.d;
+			}
+		    }
+		    setmem(GLEnvironment.MemStats.TEXTURES, mem);
+		    unbind(gl);
+		    gl.bglCheckErr();
+		});
+	}
+
+	public static Tex3D create(GLEnvironment env, Texture3D data) {
+	    FillBuffers.Array[] pixels = new FillBuffers.Array[data.images().size()];
+	    if(data.init != null) {
+		for(int i = 0; i < pixels.length; i++)
+		    pixels[i] = (FillBuffers.Array)data.init.fill(data.image(i), env);
+		data.init.done();
+	    }
+	    return(new Tex3D(env, data, pixels));
+	}
+
+	public void setsampler(Sampler3D data) {
+	    if(sampler == data)
+		return;
+	    if(sampler != null) {
+		if(sampler.equals(data))
+		    return;
+		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple (different) samplers per texture"));
+	    }
+	    env.prepare((GLRender g) -> {
+		    if(g.state.prog() != null)
+			throw(new RuntimeException("program unexpectedly used in prep context"));
+		    BGL gl = g.gl();
+		    gl.glActiveTexture(GL.GL_TEXTURE0);
+		    bind(gl);
+		    gl.glTexParameteri(GL3.GL_TEXTURE_3D, GL.GL_TEXTURE_MAG_FILTER, magfilter(data));
+		    gl.glTexParameteri(GL3.GL_TEXTURE_3D, GL.GL_TEXTURE_MIN_FILTER, minfilter(data));
+		    if(data.anisotropy > 0)
+			gl.glTexParameterf(GL3.GL_TEXTURE_3D, GL.GL_TEXTURE_MAX_ANISOTROPY_EXT, data.anisotropy);
+		    gl.glTexParameteri(GL3.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
+		    gl.glTexParameteri(GL3.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
+		    gl.glTexParameteri(GL3.GL_TEXTURE_3D, GL3.GL_TEXTURE_WRAP_R, wrapmode(data.rwrap));
+		    gl.glTexParameterfv(GL3.GL_TEXTURE_3D, GL3.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
+		    unbind(gl);
+		    gl.bglCheckErr();
+		});
+	    sampler = data;
+	}
+
+	public void bind(BGL gl) {
+	    gl.glBindTexture(GL3.GL_TEXTURE_3D, this);
+	}
+	public void unbind(BGL gl) {
+	    gl.glBindTexture(GL3.GL_TEXTURE_3D, null);
+	}
+
+	public String toString() {
+	    return(String.format("#<gl.tex3d %d @ %08x %s>", id, System.identityHashCode(this), data));
+	}
+    }
+
     public static class TexCube extends GLTexture {
 	public final TextureCube data;
 	SamplerCube sampler;
@@ -298,8 +404,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	public TexCube(GLEnvironment env, TextureCube data, CubeImage[] images, FillBuffers.Array[] pixels) {
 	    super(env);
 	    this.data = data;
-	    int ifmt = texifmt(data.ifmt);
-	    int pfmt = texefmt1(data.ifmt, data.efmt);
+	    int ifmt = texifmt(data);
+	    int pfmt = texefmt1(data.ifmt, data.efmt, data.eperm);
 	    int pnum = texefmt2(data.ifmt, data.efmt);
 	    env.prepare((GLRender g) -> {
 		    if(g.state.prog() != null)
