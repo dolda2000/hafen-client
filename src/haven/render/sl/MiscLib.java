@@ -89,4 +89,9 @@ public abstract class MiscLib {
 	Expression c = param(IN, VEC4).ref();
 	code.add(new Return(vec4(pow(pick(c, "rgb"), vec3(l(1.0 / 2.2))), pick(c, "a"))));
     }};
+
+    public static final Function srgb2lin = new Function.Def(VEC4, "srgb2lin") {{
+	Expression c = param(IN, VEC4).ref();
+	code.add(new Return(vec4(pow(pick(c, "rgb"), vec3(l(2.2))), pick(c, "a"))));
+    }};
 }

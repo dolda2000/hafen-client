@@ -318,11 +318,11 @@ public class UI {
 	
     private void setmods(InputEvent ev) {
 	int mod = ev.getModifiersEx();
-	Debug.kf1 = modshift = (mod & InputEvent.SHIFT_DOWN_MASK) != 0;
-	Debug.kf2 = modctrl = (mod & InputEvent.CTRL_DOWN_MASK) != 0;
-	Debug.kf3 = modmeta = (mod & (InputEvent.META_DOWN_MASK | InputEvent.ALT_DOWN_MASK)) != 0;
+	modshift = (mod & InputEvent.SHIFT_DOWN_MASK) != 0;
+	modctrl = (mod & InputEvent.CTRL_DOWN_MASK) != 0;
+	modmeta = (mod & (InputEvent.META_DOWN_MASK | InputEvent.ALT_DOWN_MASK)) != 0;
 	/*
-	Debug.kf4 = modsuper = (mod & InputEvent.SUPER_DOWN_MASK) != 0;
+	modsuper = (mod & InputEvent.SUPER_DOWN_MASK) != 0;
 	*/
     }
 
