@@ -424,8 +424,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    double fwaited = 0;
 		    GLEnvironment env = this.env;
 		    GLRender buf = env.render();
-		    Debug.cycle();
 		    UI ui = this.ui;
+		    Debug.cycle(ui.modflags());
 		    GSettings prefs = ui.gprefs;
 		    SyncMode syncmode = prefs.syncmode.val;
 		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
