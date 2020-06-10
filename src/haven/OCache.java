@@ -164,24 +164,32 @@ public class OCache implements Iterable<Gob> {
 	return(new I2<Gob>(objs.values().iterator(), new I2<Gob>(is)));
     }
 
-    public synchronized void ladd(Collection<Gob> gob) {
-	local.add(gob);
-	/* XXXRENDER
-	for(Gob g : gob) {
-	    for(ChangeCallback cb : cbs)
-		cb.changed(g);
+    public void ladd(Collection<Gob> gob) {
+	Collection<ChangeCallback> cbs;
+	synchronized(this) {
+	    cbs = new ArrayList<>(this.cbs);
+	    local.add(gob);
 	}
-	*/
+	for(Gob g : gob) {
+	    synchronized(g) {
+		for(ChangeCallback cb : cbs)
+		    cb.added(g);
+	    }
+	}
     }
 
-    public synchronized void lrem(Collection<Gob> gob) {
-	local.remove(gob);
-	/* XXXRENDER
-	for(Gob g : gob) {
-	    for(ChangeCallback cb : cbs)
-		cb.removed(g);
+    public void lrem(Collection<Gob> gob) {
+	Collection<ChangeCallback> cbs;
+	synchronized(this) {
+	    cbs = new ArrayList<>(this.cbs);
+	    local.remove(gob);
 	}
-	*/
+	for(Gob g : gob) {
+	    synchronized(g) {
+		for(ChangeCallback cb : cbs)
+		    cb.removed(g);
+	    }
+	}
     }
 
     public synchronized Gob getgob(long id) {
