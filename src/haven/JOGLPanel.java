@@ -216,8 +216,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private static class ProfileCycle implements BGL.Request {
 	final CPUProfile prof;
-	final ProfileCycle prev;
 	final String label;
+	ProfileCycle prev;
 	CPUProfile.Frame frame;
 
 	ProfileCycle(CPUProfile prof, ProfileCycle prev, String label) {
@@ -231,6 +231,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		if(label != null)
 		    prev.frame.tick(label);
 		prev.frame.fin();
+		prev = null;
 	    }
 	    frame = prof.new Frame();
 	}
