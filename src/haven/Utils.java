@@ -1589,6 +1589,16 @@ public class Utils {
 	return(dst);
     }
 
+    public static int sidcmp(Object a, Object b) {
+	int ah = System.identityHashCode(a);
+	int bh = System.identityHashCode(b);
+	if(ah < bh)
+	    return(-1);
+	else if(ah > bh)
+	    return(1);
+	return(0);
+    }
+
     public static final Comparator<Object> idcmp = new Comparator<Object>() {
 	int eid = 0;
 	final Map<Ref, Long> emerg = new HashMap<Ref, Long>();
