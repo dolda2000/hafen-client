@@ -52,9 +52,28 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private Area shape;
     private Pipe base, wnd;
 
+    public static class ProfileException extends Environment.UnavailableException {
+	public final String availability;
+
+	public ProfileException(Throwable cause) {
+	    super("No OpenGL suitable profile is available", cause);
+	    String a;
+	    try {
+		a = GLProfile.glAvailabilityToString();
+	    } catch(Throwable t) {
+		a = String.valueOf(t);
+	    }
+	    this.availability = a;
+	}
+    }
+
     private static GLCapabilities mkcaps() {
-	GLProfile prof = GLProfile.getMaxProgrammableCore(true);
-	// GLProfile prof = GLProfile.getDefault();
+	GLProfile prof;
+	try {
+	    prof = GLProfile.getMaxProgrammableCore(true);
+	} catch(javax.media.opengl.GLException e) {
+	    throw(new ProfileException(e));
+	}
 	GLCapabilities caps = new GLCapabilities(prof);
 	caps.setDoubleBuffered(true);
 	caps.setAlphaBits(8);

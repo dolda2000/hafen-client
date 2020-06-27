@@ -745,12 +745,12 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 			}
 			this.mods = (n > 0) ? Pipe.Op.compose(mods) : null;
 		    }
-		} catch(MCache.LoadingMap ml) {
-		    throw(new Loading(ml) {
-			    public String getMessage() {return(ml.getMessage());}
+		} catch(Loading bl) {
+		    throw(new Loading(bl) {
+			    public String getMessage() {return(bl.getMessage());}
 
 			    public void waitfor(Runnable callback, Consumer<Waitable.Waiting> reg) {
-				Waitable.or(callback, reg, ml, Gob.this::updwait);
+				Waitable.or(callback, reg, bl, Gob.this::updwait);
 			    }
 			});
 		}

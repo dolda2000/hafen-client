@@ -50,7 +50,7 @@ public class GLEnvironment implements Environment {
     private Applier curstate = new Applier(this);
     private boolean invalid = false;
 
-    public static class HardwareException extends RuntimeException {
+    public static class HardwareException extends UnavailableException {
 	public HardwareException(String msg) {
 	    super(msg);
 	}

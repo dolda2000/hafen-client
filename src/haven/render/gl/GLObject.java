@@ -60,11 +60,20 @@ public abstract class GLObject implements Disposable {
 	dispose0();
     }
 
+    public Throwable disptrace = null;
     public void dispose() {
 	synchronized(this) {
 	    disp = true;
+	    if(disptrace == null)
+		disptrace = new Throwable();
 	    if(rc == 0)
 		dispose0();
+	}
+    }
+
+    public static class UseAfterFreeException extends RuntimeException {
+	public UseAfterFreeException(Throwable cause) {
+	    super("already disposed", cause);
 	}
     }
 
@@ -72,7 +81,7 @@ public abstract class GLObject implements Disposable {
     void get() {
 	synchronized(this) {
 	    if(disp)
-		throw(new AssertionError("already disposed"));
+		throw(new UseAfterFreeException(disptrace));
 	    rc++;
 	    int na = ar.incrementAndGet();
 	    // System.err.printf("%d ", na);

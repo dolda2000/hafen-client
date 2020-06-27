@@ -33,6 +33,16 @@ public interface Environment extends haven.Disposable {
     public DrawList drawlist();
     public void submit(Render cmd);
 
+    public static class UnavailableException extends RuntimeException {
+	public UnavailableException(String msg) {
+	    super(msg);
+	}
+
+	public UnavailableException(String msg, Throwable cause) {
+	    super(msg, cause);
+	}
+    }
+
     public static interface Caps {
 	public String vendor();
 	public String driver();

@@ -700,6 +700,7 @@ public class OCache implements Iterable<Gob> {
 			break main;
 		    if(nremoved && added && !gremoved) {
 			remove(gob);
+			gob.updated();
 			gremoved = true;
 			gob = null;
 			break main;
