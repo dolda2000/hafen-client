@@ -33,7 +33,8 @@ public class HelpWnd extends Window {
     private final RichTextBox text;
     
     static {
-	fnd = new RichText.Foundry();
+	/* XXX: This should use the shown resource's respool. */
+	fnd = new RichText.Foundry(Resource.remote());
 	fnd.aa = true;
     }
     
