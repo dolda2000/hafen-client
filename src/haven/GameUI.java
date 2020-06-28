@@ -514,7 +514,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(msg == "showhelp") {
 	    Indir<Resource> res = ui.sess.getres((Integer)args[0]);
 	    if(help == null)
-		help = adda(new HelpWnd(res), sz.div(2), 0.5, 0.5);
+		help = adda(new HelpWnd(res), 0.5, 0.25);
 	    else
 		help.res = res;
 	} else {
