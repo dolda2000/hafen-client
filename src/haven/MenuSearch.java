@@ -53,7 +53,7 @@ public class MenuSearch extends Window {
 	    super.mousedown(c, button);
 	    double now = Utils.rtime();
 	    if(prevsel == sel) {
-		if(now - lastcl < 0.5)
+		if((sel != null) && (now - lastcl < 0.5))
 		    menu.use(sel.btn, false);
 	    } else {
 		prevsel = sel;
