@@ -462,9 +462,13 @@ public class MCache {
 	} else if(type == 1) {
 	    Coord ul = msg.coord();
 	    Coord lr = msg.coord();
-	    trim(ul, lr);
+	    synchronized(this) {
+		trim(ul, lr);
+	    }
 	} else if(type == 2) {
-	    trimall();
+	    synchronized(this) {
+		trimall();
+	    }
 	}
     }
 
