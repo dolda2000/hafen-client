@@ -955,7 +955,7 @@ public class GLDrawList implements DrawList {
 	synchronized(this) {
 	    DrawSlot dslot = slotmap.remove(slot);
 	    if(dslot == null)
-		throw(new IllegalStateException("removing non-present slot"));
+		throw(new IllegalStateException(String.format("removing non-present slot (%s)", slot.obj())));
 	    dslot.remove();
 	    dslot.dispose();
 	}
