@@ -324,17 +324,21 @@ public class ActAudio extends State {
 
     @SuppressWarnings("unchecked")
     public <T extends Global> T intern(T glob) {
-	T ret = (T)global.get(glob);
-	if(ret == null)
-	    global.put(glob, ret = glob);
-	return(ret);
+	synchronized(global) {
+	    T ret = (T)global.get(glob);
+	    if(ret == null)
+		global.put(glob, ret = glob);
+	    return(ret);
+	}
     }
 
     public void cycle() {
-	for(Iterator<Global> i = global.keySet().iterator(); i.hasNext();) {
-	    Global glob = i.next();
-	    if(glob.cycle(this))
-		i.remove();
+	synchronized(global) {
+	    for(Iterator<Global> i = global.keySet().iterator(); i.hasNext();) {
+		Global glob = i.next();
+		if(glob.cycle(this))
+		    i.remove();
+	    }
 	}
     }
     
