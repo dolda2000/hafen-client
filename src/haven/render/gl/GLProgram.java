@@ -444,4 +444,17 @@ public class GLProgram implements Disposable {
     public void unlock() {
 	locked.decrementAndGet();
     }
+
+    public static class Dump implements Serializable {
+	public final String vsrc, fsrc;
+
+	public Dump(GLProgram prog) {
+	    this.vsrc = prog.vsrc;
+	    this.fsrc = prog.fsrc;
+	}
+    }
+
+    public Dump dump() {
+	return(new Dump(this));
+    }
 }

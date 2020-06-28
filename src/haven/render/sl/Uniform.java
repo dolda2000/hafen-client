@@ -71,6 +71,10 @@ public class Uniform extends Variable.Global {
 	    ctx.exts.add("GL_ARB_texture_multisample");
     }
 
+    public String toString() {
+	return(String.format("#<uniform %s %s %s>", type, name, deps));
+    }
+
     public static class Data<T> {
 	public final Function<Pipe, T> value;
 	public final State.Slot<?>[] deps;

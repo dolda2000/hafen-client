@@ -47,6 +47,10 @@ public abstract class Variable {
 	return(new Ref());
     }
 
+    public String toString() {
+	return(String.format("#<%s %s %s>", this.getClass().getSimpleName(), type, name));
+    }
+
     public static class Implicit extends Variable {
 	public Implicit(Type type, Symbol name) {
 	    super(type, name);

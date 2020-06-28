@@ -75,7 +75,7 @@ public abstract class State implements Pipe.Op {
 	}
 
 	public String toString() {
-	    return(String.format("#<slot %s/%s (%d)>", type, scl, id));
+	    return(String.format("#<slot %s/%s (%d)>", type, scl.getName(), id));
 	}
 
 	public static int numslots() {

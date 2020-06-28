@@ -57,6 +57,10 @@ public class FragData extends Variable.Global {
 	return(this);
     }
 
+    public String toString() {
+	return(String.format("#<fragdata %s %s %s>", type, name, deps));
+    }
+
     private static final Object defid = new PostProc.AutoID("fragdata", 15000) {
 	    public void proc(Context ctx) {
 		FragmentContext fctx = (FragmentContext)ctx;

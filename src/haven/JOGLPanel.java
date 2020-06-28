@@ -525,10 +525,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    double fd = framedur();
 		    if(then + fd > now) {
 			then += fd;
-			synchronized(ed) {
-			    long nanos = (long)((then - now) * 1e9);
-			    ed.wait(nanos / 1000000, (int)(nanos % 1000000));
-			}
+			long nanos = (long)((then - now) * 1e9);
+			Thread.sleep(nanos / 1000000, (int)(nanos % 1000000));
 		    } else {
 			then = now;
 		    }

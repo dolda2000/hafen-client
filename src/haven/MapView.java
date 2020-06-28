@@ -1496,12 +1496,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	amblight();
 	updsmap(amblight);
 	updweather();
-	terrain.tick();
-	for(int i = 0; i < ols.length; i++) {
-	    if(ols[i] != null)
-		ols[i].tick();
+	synchronized(glob.map) {
+	    terrain.tick();
+	    for(int i = 0; i < ols.length; i++) {
+		if(ols[i] != null)
+		    ols[i].tick();
+	    }
+	    clickmap.tick();
 	}
-	clickmap.tick();
 	Loader.Future<Plob> placing = this.placing;
 	if((placing != null) && placing.done())
 	    placing.get().ctick(dt);

@@ -901,6 +901,16 @@ public class GLDrawList implements DrawList {
 	this.env = env;
     }
 
+    public static class ProgramMismatchException extends RuntimeException {
+	public final GLProgram.Dump got, expected;
+
+	public ProgramMismatchException(GLProgram got, GLProgram expected) {
+	    super("unepexceted program after immediate application");
+	    this.got = got.dump();
+	    this.expected = expected.dump();
+	}
+    }
+
     public void draw(Render r) {
 	if(!(r instanceof GLRender))
 	    throw(new IllegalArgumentException());
@@ -921,7 +931,7 @@ public class GLDrawList implements DrawList {
 	    g.state.apply(g.gl, first.bk.state());
 	    g.state.apply(g.gl, VaoState.slot, ((VaoSetting)first.settings[idx_vao]).st);
 	    if(g.state.prog() != first.prog)
-		throw(new AssertionError());
+		throw(new ProgramMismatchException(g.state.prog(), first.prog));
 	    BGL gl = g.gl();
 	    for(DrawSlot cur = first; cur != null; last = cur, cur = cur.next())
 		gl.bglCallList(cur.compiled);
