@@ -414,6 +414,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 			}
 		    });
 		g = hg;
+		new DeadlockWatchdog(hg).start();
 	    } catch(java.net.MalformedURLException e) {
 	    }
 	}
