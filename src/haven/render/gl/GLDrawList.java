@@ -903,11 +903,13 @@ public class GLDrawList implements DrawList {
 
     public static class ProgramMismatchException extends RuntimeException {
 	public final GLProgram.Dump got, expected;
+	public final Object pdump;
 
 	public ProgramMismatchException(GLProgram got, GLProgram expected) {
-	    super("unepexceted program after immediate application");
+	    super("unexpected program after immediate application");
 	    this.got = got.dump();
 	    this.expected = expected.dump();
+	    this.pdump = expected.env.progdump();
 	}
     }
 

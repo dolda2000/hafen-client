@@ -733,6 +733,31 @@ public class GLEnvironment implements Environment {
 	}
     }
 
+    public Object progdump() {
+	HashMap<String, Object> ret = new HashMap<>();
+	synchronized(pmon) {
+	    int seq = 0;
+	    for(int i = 0; i < ptab.length; i++) {
+		for(SavedProg p = ptab[i]; p != null; p = p.next) {
+		    ret.put(String.format("p%d-idx", seq), i);
+		    ret.put(String.format("p%d-hash", seq), p.hash);
+		    ret.put(String.format("p%d-rc", seq), p.prog.locked.get());
+		    ret.put(String.format("p%d-id", seq), System.identityHashCode(p.prog));
+		    List<String> macros = new ArrayList<>();
+		    List<Integer> macroi = new ArrayList<>();
+		    for(int o = 0; o < p.shaders.length; o++) {
+			macros.add(String.valueOf(p.shaders[o]));
+			macroi.add(System.identityHashCode(p.shaders[o]));
+		    }
+		    ret.put(String.format("p%d-mac", seq), macros);
+		    ret.put(String.format("p%d-macid", seq), macroi);
+		    seq++;
+		}
+	    }
+	}
+	return(ret);
+    }
+
     private double lastpclean = Utils.rtime();
     public void clean() {
 	double now = Utils.rtime();
