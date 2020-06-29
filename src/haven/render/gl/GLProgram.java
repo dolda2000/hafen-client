@@ -447,10 +447,12 @@ public class GLProgram implements Disposable {
 
     public static class Dump implements Serializable {
 	public final String vsrc, fsrc;
+	public final int id;
 
 	public Dump(GLProgram prog) {
 	    this.vsrc = prog.vsrc;
 	    this.fsrc = prog.fsrc;
+	    this.id = System.identityHashCode(prog);
 	}
     }
 
