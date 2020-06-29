@@ -905,7 +905,7 @@ public class GLDrawList implements DrawList {
 	public final GLProgram.Dump got, expected;
 
 	public ProgramMismatchException(GLProgram got, GLProgram expected) {
-	    super("unepexceted program after immediate application");
+	    super("unexpected program after immediate application");
 	    this.got = got.dump();
 	    this.expected = expected.dump();
 	}
