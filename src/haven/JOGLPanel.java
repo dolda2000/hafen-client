@@ -72,7 +72,13 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	try {
 	    prof = GLProfile.getMaxProgrammableCore(true);
 	} catch(javax.media.opengl.GLException e) {
-	    throw(new ProfileException(e));
+	    try {
+		/* If not core, let GLEnvironment handle that. */
+		prof = GLProfile.getDefault();
+	    } catch(javax.media.opengl.GLException e2) {
+		e2.addSuppressed(e);
+		throw(new ProfileException(e2));
+	    }
 	}
 	GLCapabilities caps = new GLCapabilities(prof);
 	caps.setDoubleBuffered(true);
