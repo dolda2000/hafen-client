@@ -435,7 +435,7 @@ public class GLRender implements Render, Disposable {
 		    cgl.glGetBufferSubData(GL3.GL_PIXEL_PACK_BUFFER, 0, fmt.size() * area.area(), data);
 		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, 0);
 		    pbo.dispose();
-		    GLException.checkfor(cgl);
+		    GLException.checkfor(cgl, env);
 		    data.rewind();
 		    /* XXX: It's not particularly nice to do the
 		     * flipping on the dispatch thread, but OpenGL
@@ -485,7 +485,7 @@ public class GLRender implements Render, Disposable {
 		    cgl.glGetBufferSubData(GL3.GL_PIXEL_PACK_BUFFER, 0, dsz, data);
 		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, 0);
 		    pbo.dispose();
-		    GLException.checkfor(cgl);
+		    GLException.checkfor(cgl, env);
 		    data.rewind();
 		    /* XXX: It's not particularly nice to do the
 		     * flipping on the dispatch thread, but OpenGL

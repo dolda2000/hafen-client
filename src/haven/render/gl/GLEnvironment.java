@@ -71,12 +71,12 @@ public class GLEnvironment implements Environment {
 	private static int glgeti(GL gl, int param) {
 	    int[] buf = {0};
 	    gl.glGetIntegerv(param, buf, 0);
-	    GLException.checkfor(gl);
+	    GLException.checkfor(gl, null);
 	    return(buf[0]);
 	}
 
 	private static int glcondi(GL gl, int param, int def) {
-	    GLException.checkfor(gl);
+	    GLException.checkfor(gl, null);
 	    int[] buf = {0};
 	    gl.glGetIntegerv(param, buf, 0);
 	    if(gl.glGetError() != 0)
@@ -87,12 +87,12 @@ public class GLEnvironment implements Environment {
 	private static float glgetf(GL gl, int param) {
 	    float[] buf = {0};
 	    gl.glGetFloatv(param, buf, 0);
-	    GLException.checkfor(gl);
+	    GLException.checkfor(gl, null);
 	    return(buf[0]);
 	}
 
 	public static String glconds(GL gl, int param) {
-	    GLException.checkfor(gl);
+	    GLException.checkfor(gl, null);
 	    String ret = gl.glGetString(param);
 	    if(gl.glGetError() != 0)
 		return(null);
@@ -143,7 +143,7 @@ public class GLEnvironment implements Environment {
 		this.linemin = buf[0];
 		this.linemax = buf[1];
 	    }
-	    GLException.checkfor(gl);
+	    GLException.checkfor(gl, null);
 	}
 
 	public void checkreq() {
@@ -266,39 +266,47 @@ public class GLEnvironment implements Environment {
 	    prep = this.prep;
 	    this.prep = null;
 	}
-	synchronized(drawmon) {
-	    checkqueries(gl);
-	    if((prep != null) && (prep.gl != null)) {
-		BufferBGL xf = new BufferBGL(16);
-		this.curstate.apply(xf, prep.init);
-		xf.run(gl);
-		prep.gl.run(gl);
-		this.curstate = prep.state;
-		try {
-		    GLException.checkfor(gl);
-		} catch(Exception exc) {
-		    throw(new BGL.BGLException(prep.gl, null, exc));
+	try {
+	    synchronized(drawmon) {
+		checkqueries(gl);
+		if((prep != null) && (prep.gl != null)) {
+		    BufferBGL xf = new BufferBGL(16);
+		    this.curstate.apply(xf, prep.init);
+		    xf.run(gl);
+		    prep.gl.run(gl);
+		    this.curstate = prep.state;
+		    try {
+			GLException.checkfor(gl, this);
+		    } catch(Exception exc) {
+			throw(new BGL.BGLException(prep.gl, null, exc));
+		    }
+		    sequnreg(prep);
 		}
-		sequnreg(prep);
-	    }
-	    for(GLRender cmd : copy) {
-		BufferBGL xf = new BufferBGL(16);
-		this.curstate.apply(xf, cmd.init);
-		xf.run(gl);
-		cmd.gl.run(gl);
-		this.curstate = cmd.state;
-		try {
-		    GLException.checkfor(gl);
-		} catch(Exception exc) {
-		    throw(new BGL.BGLException(cmd.gl, null, exc));
+		for(GLRender cmd : copy) {
+		    BufferBGL xf = new BufferBGL(16);
+		    this.curstate.apply(xf, cmd.init);
+		    xf.run(gl);
+		    cmd.gl.run(gl);
+		    this.curstate = cmd.state;
+		    try {
+			GLException.checkfor(gl, this);
+		    } catch(Exception exc) {
+			throw(new BGL.BGLException(cmd.gl, null, exc));
+		    }
+		    sequnreg(cmd);
 		}
-		sequnreg(cmd);
+		checkqueries(gl);
+		disposeall().run(gl);
+		clean();
+		if(debuglog)
+		    checkdebuglog(gl);
 	    }
-	    checkqueries(gl);
-	    disposeall().run(gl);
-	    clean();
-	    if(debuglog)
-		checkdebuglog(gl);
+	} catch(Exception e) {
+	    for(Throwable c = e; c != null; c = c.getCause()) {
+		if(c instanceof GLException)
+		    ((GLException)c).initenv(this);
+	    }
+	    throw(e);
 	}
     }
 

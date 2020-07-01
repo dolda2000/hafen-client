@@ -176,7 +176,7 @@ public class GLProgram implements Disposable {
 	     * programs will be ASCII, of course, but it would be
 	     * interesting to know, so to speak. */
 	    this.id = gl.glCreateShader(type);
-	    GLException.checkfor(gl);
+	    GLException.checkfor(gl, env);
 	    gl.glShaderSource(this.id, 1, new String[] {text}, new int[] {text.length()}, 0);
 	    gl.glCompileShader(this.id);
 	    int[] buf = {0};

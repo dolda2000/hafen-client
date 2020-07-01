@@ -78,7 +78,14 @@ public class GLException extends RuntimeException {
 	public GLInvalidOperationException() {super(GL.GL_INVALID_OPERATION);}
     }
     public static class GLOutOfMemoryException extends GLException {
+	public String memstats = null;
+
 	public GLOutOfMemoryException() {super(GL.GL_OUT_OF_MEMORY);}
+
+	public void initenv(GLEnvironment env) {
+	    super.initenv(env);
+	    memstats = env.memstats();
+	}
     }
 
     public static GLException glexcfor(int code) {
@@ -91,16 +98,21 @@ public class GLException extends RuntimeException {
 	}
     }
 
-    public static void checkfor(GL gl, Throwable cause) {
+    public static void checkfor(GL gl, Throwable cause, GLEnvironment env) {
 	int err = gl.glGetError();
 	if(err != 0) {
-	    RuntimeException exc = glexcfor(err);
+	    GLException exc = glexcfor(err);
 	    exc.initCause(cause);
+	    if(env != null)
+		exc.initenv(env);
 	    throw(exc);
 	}
     }
 
-    public static void checkfor(GL gl) {
-	checkfor(gl, null);
+    public static void checkfor(GL gl, GLEnvironment env) {
+	checkfor(gl, null, env);
+    }
+
+    public void initenv(GLEnvironment env) {
     }
 }
