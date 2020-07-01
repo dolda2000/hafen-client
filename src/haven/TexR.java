@@ -112,7 +112,7 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 			try {
 			    BufferedImage ret = ImageIO.read(new ByteArrayInputStream(data));
 			    if(ret == null)
-				throw(new RuntimeException("Could not decode image data in " + getres().name));
+				throw(new Resource.LoadException("Could not decode image data in " + getres().name, getres()));
 			    return(ret);
 			} catch(IOException e) {
 			    throw(new RuntimeException("Invalid image data in " + getres().name, e));
