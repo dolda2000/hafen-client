@@ -164,14 +164,14 @@ public class GLEnvironment implements Environment {
     final int[] stats_obj = new int[MemStats.values().length];
     final long[] stats_mem = new long[MemStats.values().length];
 
-    public GLEnvironment(GL3 initgl, GLContext ctx, Area wnd) {
+    public GLEnvironment(GL initgl, GLContext ctx, Area wnd) {
 	if(debuglog)
 	    ctx.enableGLDebugMessage(true);
 	this.ctx = ctx;
 	this.wnd = wnd;
 	this.caps = new Caps(initgl);
 	this.caps.checkreq();
-	initialize(initgl);
+	initialize(initgl.getGL3());
 	this.nilfbo_id = ctx.getDefaultDrawFramebuffer();
 	this.nilfbo_db = ctx.getDefaultReadBuffer();
     }
