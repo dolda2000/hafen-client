@@ -30,7 +30,6 @@ import java.util.*;
 import java.io.*;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
 import haven.render.*;
 
 @Resource.LayerName("tileset2")
@@ -59,12 +58,10 @@ public class Tileset extends Resource.Layer {
 	    id = buf.uint8();
 	    w = buf.uint16();
 	    try {
-		img = ImageIO.read(new MessageInputStream(buf));
+		img = Resource.readimage(new MessageInputStream(buf));
 	    } catch(IOException e) {
 		throw(new Resource.LoadException(e, res));
 	    }
-	    if(img == null)
-		throw(new Resource.LoadException("Invalid image data in " + res.name, res));
 	}
 
 	public synchronized Tex tex() {
