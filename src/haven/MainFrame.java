@@ -201,7 +201,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	setVisible(true);
 	addWindowListener(new WindowAdapter() {
 		public void windowClosing(WindowEvent e) {
-		    g.interrupt();
+		    mt.interrupt();
 		}
 
 		public void windowActivated(WindowEvent e) {
@@ -238,8 +238,8 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	Thread ui = new HackThread(p, "Haven UI thread");
 	ui.start();
 	try {
+	    Session sess = null;
 	    try {
-		Session sess = null;
 		while(true) {
 		    UI.Runner fun;
 		    if(sess == null) {
@@ -254,10 +254,20 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 		    }
 		    sess = fun.run(p.newui(sess));
 		}
-	    } catch(InterruptedException e) {}
+	    } catch(InterruptedException e) {
+	    } finally {
+		p.newui(null);
+		if(sess != null)
+		    sess.close();
+	    }
 	    savewndstate();
 	} finally {
 	    ui.interrupt();
+	    try {
+		ui.join(5000);
+	    } catch(InterruptedException e) {}
+	    if(ui.isAlive())
+		System.err.println("warning: ui thread failed to terminate");
 	    dispose();
 	}
     }
@@ -383,7 +393,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	try {
 	    f.mt.join();
 	} catch(InterruptedException e) {
-	    f.g.interrupt();
+	    f.mt.interrupt();
 	    return;
 	}
 	dumplist(Resource.remote().loadwaited(), Config.loadwaited);
