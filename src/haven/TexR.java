@@ -110,7 +110,10 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 		     * that this is a bug in ImageIO. */
 		    public BufferedImage run() {
 			try {
-			    return(ImageIO.read(new ByteArrayInputStream(data)));
+			    BufferedImage ret = ImageIO.read(new ByteArrayInputStream(data));
+			    if(ret == null)
+				throw(new Resource.LoadException("Could not decode image data in " + getres().name, getres()));
+			    return(ret);
 			} catch(IOException e) {
 			    throw(new RuntimeException("Invalid image data in " + getres().name, e));
 			}

@@ -64,12 +64,23 @@ public class GLDoubleBuffer {
 	}
     }
 
-    public void get() throws InterruptedException {
+    public boolean get(long timeout) throws InterruptedException {
 	synchronized(this) {
-	    while(changed != null)
-		wait();
+	    if(timeout == 0) {
+		while(changed != null)
+		    wait();
+	    } else {
+		long now = System.currentTimeMillis(), start = now;
+		while(changed != null) {
+		    if(now > start + timeout)
+			return(false);
+		    wait(start + timeout - now);
+		    now = System.currentTimeMillis();
+		}
+	    }
 	    changed = new ArrayList<Buffered>(prevsz * 2);
 	}
+	return(true);
     }
 
     public void put() {

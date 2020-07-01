@@ -114,9 +114,9 @@ public class ErrorHandler extends ThreadGroup {
 		buf.write(dbuf, 0, len);
 	    }
 	    i.close();
-	    if(ctype.equals("text/x-report-info")) {
+	    if(Objects.equals(ctype, "text/x-report-info")) {
 		status.done("text/x-report-info", buf.toString());
-	    } else if(ctype.equals("text/x-report-error")) {
+	    } else if(Objects.equals(ctype, "text/x-report-error")) {
 		throw(new ReportException(buf.toString()));
 	    } else {
 		status.done(null, null);

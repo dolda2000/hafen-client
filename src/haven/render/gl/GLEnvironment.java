@@ -51,8 +51,11 @@ public class GLEnvironment implements Environment {
     private boolean invalid = false;
 
     public static class HardwareException extends UnavailableException {
-	public HardwareException(String msg) {
+	public final Caps caps;
+
+	public HardwareException(String msg, Caps caps) {
 	    super(msg);
+	    this.caps = caps;
 	}
     }
 
@@ -145,7 +148,9 @@ public class GLEnvironment implements Environment {
 
 	public void checkreq() {
 	    if(major < 3)
-		throw(new HardwareException("Graphics context does not support OpenGL 3.0."));
+		throw(new HardwareException("Graphics context does not support OpenGL 3.0.", this));
+	    if(exts.contains("GL_ARB_compatibility"))
+		throw(new HardwareException("Graphics context is not a core OpenGL profile.", this));
 	}
 
 	public String vendor() {return(vendor);}

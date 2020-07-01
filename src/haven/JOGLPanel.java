@@ -72,7 +72,13 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	try {
 	    prof = GLProfile.getMaxProgrammableCore(true);
 	} catch(javax.media.opengl.GLException e) {
-	    throw(new ProfileException(e));
+	    try {
+		/* If not core, let GLEnvironment handle that. */
+		prof = GLProfile.getDefault();
+	    } catch(javax.media.opengl.GLException e2) {
+		e2.addSuppressed(e);
+		throw(new ProfileException(e2));
+	    }
 	}
 	GLCapabilities caps = new GLCapabilities(prof);
 	caps.setDoubleBuffered(true);
@@ -434,6 +440,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	Thread drawthread = new HackThread(this::renderloop, "Render thread");
 	drawthread.start();
 	try {
+	    GLRender buf = null;
 	    try {
 		synchronized(this) {
 		    while(this.env == null)
@@ -447,7 +454,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		while(true) {
 		    double fwaited = 0;
 		    GLEnvironment env = this.env;
-		    GLRender buf = env.render();
+		    buf = env.render();
 		    UI ui = this.ui;
 		    Debug.cycle(ui.modflags());
 		    GSettings prefs = ui.gprefs;
@@ -519,6 +526,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 			rprofc = null;
 		    buf.submit(new FrameCycle());
 		    env.submit(buf);
+		    buf = null;
 		    if(curf != null) curf.tick("aux");
 
 		    double now = Utils.rtime();
@@ -554,6 +562,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    prevframe = curframe;
 		}
 	    } finally {
+		if(buf != null)
+		    buf.dispose();
 		drawthread.interrupt();
 		drawthread.join();
 	    }
