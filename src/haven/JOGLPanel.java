@@ -166,6 +166,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
+    private boolean debuggl = false;
     private long lastrcycle = 0, ridletime = 0;
     private void redraw(GL gl) {
 	GLContext ctx = gl.getContext();
@@ -185,7 +186,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		System.err.println("\n-----\n\n");
 		gl3 = new TraceGL3(gl3, System.err);
 	    }
-	    if(false) {
+	    if(debuggl) {
 		gl3 = new DebugGL3(gl3);
 	    }
 	    env.process(gl3);
@@ -610,6 +611,9 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
+	cmdmap.put("gldebug", (cons, args) -> {
+		debuggl = Utils.parsebool(args[1]);
+	    });
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);
