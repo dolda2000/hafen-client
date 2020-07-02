@@ -837,6 +837,37 @@ public class Resource implements Serializable {
 	public T layerid();
     }
 
+    public static class ImageReadException extends IOException {
+	public final String[] supported = ImageIO.getReaderMIMETypes();
+
+	public ImageReadException() {
+	    super("Could not decode image data");
+	}
+    }
+
+    public static BufferedImage readimage(InputStream fp) throws IOException {
+	try {
+	    /* This can crash if not privileged due to ImageIO
+	     * creating tempfiles without doing that privileged
+	     * itself. It can very much be argued that this is a bug
+	     * in ImageIO. */
+	    return(AccessController.doPrivileged(new PrivilegedExceptionAction<BufferedImage>() {
+		    public BufferedImage run() throws IOException {
+			BufferedImage ret;
+			ret = ImageIO.read(fp);
+			if(ret == null)
+			    throw(new ImageReadException());
+			return(ret);
+		    }
+		}));
+	} catch(PrivilegedActionException e) {
+	    Throwable c = e.getCause();
+	    if(c instanceof IOException)
+		throw((IOException)c);
+	    throw(new AssertionError(c));
+	}
+    }
+
     @LayerName("image")
     public class Image extends Layer implements Comparable<Image>, IDLayer<Integer> {
 	public transient BufferedImage img;
@@ -857,12 +888,10 @@ public class Resource implements Serializable {
 	    id = buf.int16();
 	    o = cdec(buf);
 	    try {
-		img = ImageIO.read(new MessageInputStream(buf));
+		img = readimage(new MessageInputStream(buf));
 	    } catch(IOException e) {
 		throw(new LoadException(e, Resource.this));
 	    }
-	    if(img == null)
-		throw(new LoadException("Invalid image data in " + name, Resource.this));
 	    sz = Utils.imgsz(img);
 	}
 		

@@ -90,7 +90,7 @@ public abstract class BGL {
 	final Throwable place = null;
 	add(new Command() {
 		public void run(GL3 gl) {
-		    GLException.checkfor(gl, place);
+		    GLException.checkfor(gl, place, null);
 		}
 	    });
     }
