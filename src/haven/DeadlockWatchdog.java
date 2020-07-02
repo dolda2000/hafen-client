@@ -90,7 +90,7 @@ public class DeadlockWatchdog extends HackThread {
 	    }
 	    long[] locked = tm.findDeadlockedThreads();
 	    if(locked != null) {
-		ThreadInfo[] threads = tm.getThreadInfo(locked);
+		ThreadInfo[] threads = tm.getThreadInfo(locked, true, true);
 		report(threads);
 	    }
 	}
