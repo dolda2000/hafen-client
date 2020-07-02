@@ -63,6 +63,7 @@ public class GLEnvironment implements Environment {
 	private static final java.util.regex.Pattern slvp = java.util.regex.Pattern.compile("^(\\d+)\\.(\\d+)");
 	public final String vendor, version, renderer;
 	public final int major, minor, glslver;
+	public final boolean coreprof;
 	public final Collection<String> exts;
 	public final int maxtargets;
 	public final float anisotropy;
@@ -111,6 +112,7 @@ public class GLEnvironment implements Environment {
 		}
 		this.major = major; this.minor = minor;
 	    }
+	    this.coreprof = gl.getContext().isGLCoreProfile();
 	    this.vendor = gl.glGetString(GL.GL_VENDOR);
 	    this.version = gl.glGetString(GL.GL_VERSION);
 	    this.renderer = gl.glGetString(GL.GL_RENDERER);
@@ -149,7 +151,7 @@ public class GLEnvironment implements Environment {
 	public void checkreq() {
 	    if(major < 3)
 		throw(new HardwareException("Graphics context does not support OpenGL 3.0.", this));
-	    if(exts.contains("GL_ARB_compatibility"))
+	    if(!coreprof)
 		throw(new HardwareException("Graphics context is not a core OpenGL profile.", this));
 	}
 
