@@ -47,6 +47,8 @@ public abstract class RetryingInputStream extends InputStream {
     }
 
     protected void retry(int retries, IOException lasterr) throws IOException {
+	if(lasterr instanceof FileNotFoundException)
+	    throw(lasterr);
 	if(retries > 5)
 	    throw(new IOException("already retried 5 times", lasterr));
     }
