@@ -29,8 +29,9 @@ package haven.render;
 import haven.*;
 
 public abstract class Transform extends State {
+    private static final Pair<Matrix4f, Matrix4f> NONE = new Pair<>(null, null);
     private Matrix4f xf;
-    private Matrix4f lp = null, fin;
+    private Pair<Matrix4f, Matrix4f> last = NONE;
     
     public Transform(Matrix4f xf) {
 	this.xf = xf;
@@ -40,13 +41,15 @@ public abstract class Transform extends State {
 
     public void update(Matrix4f xf) {
 	this.xf = xf;
-	this.lp = null;
     }
     
     public Matrix4f fin(Matrix4f p) {
-	if(p != lp)
-	    fin = (lp = p).mul(xf);
-	return(fin);
+	if(p == Matrix4f.id)
+	    return(xf);
+	Pair<Matrix4f, Matrix4f> last = this.last;
+	if(p != last.a)
+	    this.last = last = new Pair<>(p, p.mul(xf));
+	return(last.b);
     }
 
     public boolean equals(Object o) {

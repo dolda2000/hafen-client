@@ -278,25 +278,21 @@ public class Resource implements Serializable {
 
 	public InputStream get(String name) throws IOException {
 	    URL resurl = encodeurl(new URL(baseurl, name + ".res"));
-	    URLConnection c;
-	    int tries = 0;
-	    while(true) {
-		try {
-		    if(resurl.getProtocol().equals("https"))
-			c = ssl.connect(resurl);
-		    else
-			c = resurl.openConnection();
-		    /* Apparently, some versions of Java Web Start has
-		     * a bug in its internal cache where it refuses to
-		     * reload a URL even when it has changed. */
-		    c.setUseCaches(false);
-		    c.addRequestProperty("User-Agent", "Haven/1.0");
-		    return(c.getInputStream());
-		} catch(ConnectException e) {
-		    if(++tries >= 5)
-			throw(new IOException("Connection failed five times", e));
-		}
-	    }
+	    return(new RetryingInputStream() {
+		    protected InputStream create() throws IOException {
+			URLConnection c;
+			if(resurl.getProtocol().equals("https"))
+			    c = ssl.connect(resurl);
+			else
+			    c = resurl.openConnection();
+			/* Apparently, some versions of Java Web Start has
+			 * a bug in its internal cache where it refuses to
+			 * reload a URL even when it has changed. */
+			c.setUseCaches(false);
+			c.addRequestProperty("User-Agent", "Haven/1.0");
+			return(c.getInputStream());
+		    }
+		});
 	}
 
 	public String toString() {
