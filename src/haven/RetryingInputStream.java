@@ -31,7 +31,7 @@ import java.io.*;
 
 public abstract class RetryingInputStream extends InputStream {
     private InputStream cur;
-    private boolean eof;
+    private boolean eof, fatal;
     private long pos;
     private int retries;
     private IOException lasterr;
@@ -53,20 +53,30 @@ public abstract class RetryingInputStream extends InputStream {
 
     private InputStream get() throws IOException {
 	if(cur == null) {
-	    if(retries > 0)
-		retry(retries, lasterr);
-	    retries++;
+	    int count = retries++;
+	    if(count > 0) {
+		try {
+		    retry(count, lasterr);
+		} catch(Throwable e) {
+		    fatal = true;
+		    throw(e);
+		}
+	    }
 	    cur = create(pos);
 	}
 	return(cur);
     }
 
-    private void failed(IOException err) {
+    private void failed(IOException err) throws IOException {
+	if(fatal)
+	    throw(err);
 	lasterr = err;
-	try {
-	    cur.close();
-	} catch(IOException e) {}
-	cur = null;
+	if(cur != null) {
+	    try {
+		cur.close();
+	    } catch(IOException e) {}
+	    cur = null;
+	}
     }
 
     public long skip(long len) throws IOException {
