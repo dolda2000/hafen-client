@@ -52,6 +52,19 @@ public class FboState extends GLState {
 	    else
 		gl.glDrawBuffers(dbufs.length, dbufs, 0);
 	}
+	/* Just set any valid read-buffer for completeness
+	 * checking. GLRender switches to the correct read-buffer
+	 * when needed. */
+	if(fbo == null) {
+	    if(env.nilfbo_id == 0)
+		gl.glReadBuffer(GL.GL_BACK);
+	    else
+		gl.glReadBuffer(env.nilfbo_db);
+	} else if(fbo.color.length == 0) {
+	    gl.glReadBuffer(GL.GL_NONE);
+	} else {
+	    gl.glReadBuffer(GL.GL_COLOR_ATTACHMENT0);
+	}
     }
 
     public void apply(BGL gl) {
