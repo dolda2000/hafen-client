@@ -142,10 +142,13 @@ public class GLEnvironment implements Environment {
 	    {
 		float[] buf = {0, 0};
 		gl.glGetFloatv(GL3.GL_ALIASED_LINE_WIDTH_RANGE, buf, 0);
-		this.linemin = buf[0];
-		this.linemax = buf[1];
+		if(gl.glGetError() == 0) {
+		    this.linemin = buf[0];
+		    this.linemax = buf[1];
+		} else {
+		    this.linemin = this.linemax = 1;
+		}
 	    }
-	    GLException.checkfor(gl, null);
 	}
 
 	public void checkreq() {
