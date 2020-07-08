@@ -1412,8 +1412,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(Double.NaN);
 	}
 	Coord3f mloc = new Coord3f((float)mc.x, -(float)mc.y, cc.z);
-	return(0);
-	/* XXXRENDER
 	float[] sloc = camera.proj.toclip(camera.view.fin(Matrix4f.id).mul4(mloc));
 	if(clip) {
 	    float w = sloc[3];
@@ -1422,7 +1420,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	float a = ((float)sz.y) / ((float)sz.x);
 	return(Math.atan2(sloc[1] * a, sloc[0]));
-	*/
     }
 
     private void partydraw(GOut g) {
