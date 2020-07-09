@@ -170,47 +170,17 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	    vaos[n] = vao;
 	    progs[n] = prog;
 	    n++;
-	}
-
-	void clean() {
-	    int o = 0;
-	    for(int i = 0; i < n; i++) {
-		if(!progs[i].disposed) {
-		    progs[o] = progs[i];
-		    vaos[o] = vaos[i];
-		    o++;
-		} else {
-		    vaos[o].dispose();
-		}
-	    }
-	    for(int i = o; i < n; i++) {
-		progs[i] = null;
-		vaos[i] = null;
-	    }
-	    n = o;
+	    /* XXX: This does not clean up after forgotten
+	     * programs. Use weak refs for programs? */
 	}
 
 	GLVertexArray get(GLProgram prog) {
-	    GLVertexArray ret = null;
-	    boolean clean = false;
-	    for(int i = 0; i < n; i++) {
-		if(progs[i].disposed)
-		    clean = true;
-		if(progs[i] == prog) {
-		    ret = vaos[i];
-		    break;
-		}
+	    for(int i = 0; (i < progs.length) && (progs[i] != null); i++) {
+		if(progs[i] == prog)
+		    return(vaos[i]);
 	    }
-	    if(ret == null) {
-		ret = create(prog, mod);
-		add(prog, ret);
-	    }
-	    if(clean) {
-		/* XXX? It would be nice if VAOs could be cleaned out
-		 * when programs actually go away rather than when
-		 * being re-requested. */
-		clean();
-	    }
+	    GLVertexArray ret = create(prog, mod);
+	    add(prog, ret);
 	    return(ret);
 	}
 
