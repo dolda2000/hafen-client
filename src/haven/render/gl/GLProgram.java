@@ -50,7 +50,6 @@ public class GLProgram implements Disposable {
     private final Map<Attribute, String> attrnms;
     private final String[] fragnms;
     private ProgOb glp;
-    boolean disposed = false;
 
     public GLProgram(GLEnvironment env, ProgramContext ctx) {
 	this.env = env;
@@ -367,17 +366,12 @@ public class GLProgram implements Disposable {
     }
 
     public ProgOb glid() {
-	ProgOb glp;
-	if((glp = this.glp) == null) {
+	if(glp == null) {
 	    synchronized(this) {
-		if(disposed)
-		    throw(new RuntimeException("reusing disposed program"));
-		if((glp = this.glp) == null) {
+		if(glp == null)
 		    glp = new ProgOb(env,
 				     new ShaderOb(env, GL3.GL_VERTEX_SHADER, vsrc),
 				     new ShaderOb(env, GL3.GL_FRAGMENT_SHADER, fsrc));
-		    this.glp = glp;
-		}
 	    }
 	}
 	return(glp);
@@ -439,7 +433,6 @@ public class GLProgram implements Disposable {
 		ProgOb cur = glp;
 		glp = null;
 		cur.dispose();
-		disposed = true;
 	    }
 	}
     }
