@@ -180,7 +180,7 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 		    vaos[o] = vaos[i];
 		    o++;
 		} else {
-		    vaos[o].dispose();
+		    vaos[i].dispose();
 		}
 	    }
 	    for(int i = o; i < n; i++) {
