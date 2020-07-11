@@ -53,7 +53,7 @@ public class ShadowMap extends State {
 	lbuf = new Texture2D(res, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null);
 	(lsamp = new Texture2D.Sampler2D(lbuf)).magfilter(Texture.Filter.LINEAR).wrapmode(Texture.Wrapping.CLAMP);
 	/* XXX: It would arguably be nice to intern the shader. */
-	shader = new Shader(1.0 / res.x, 1.0 / res.y, 4, dthr / depth);
+	shader = Shader.get(1.0 / res.x, 1.0 / res.y, 4, dthr / depth);
 	lproj = Projection.ortho(-size, size, -size, size, 1, depth);
 	basic = Pipe.Op.compose(new DepthBuffer<>(lbuf.image(0)),
 				new States.Viewport(Area.sized(Coord.z, res)),
@@ -262,8 +262,11 @@ public class ShadowMap extends State {
 	    };
 
 	public final Function.Def shcalc;
-	public Shader(final double xd, final double yd, final int res, final double thr) {
-	    shcalc = new Function.Def(FLOAT) {
+	private final Object id;
+
+	private Shader(double xd, double yd, int res, double thr) {
+	    this.id = Arrays.asList(xd, yd, res, thr);
+	    this.shcalc = new Function.Def(FLOAT) {
 		    {
 			LValue sdw = code.local(FLOAT, l(0.0)).ref();
 			Expression mapc = code.local(VEC3, div(pick(stc.ref(), "xyz"), pick(stc.ref(), "w"))).ref();
@@ -301,6 +304,19 @@ public class ShadowMap extends State {
 					     ph.dolight.dcurs);
 		    }
 		}, 0);
+	}
+
+	public int hashCode() {
+	    return(id.hashCode());
+	}
+
+	public boolean equals(Object that) {
+	    return((that instanceof Shader) && Utils.eq(this.id, ((Shader)that).id));
+	}
+
+	private static final WeakHashedSet<Shader> interned = new WeakHashedSet<>(Hash.eq);
+	public static Shader get(double xd, double yd, int res, double thr) {
+	    return(interned.intern(new Shader(xd, yd, res, thr)));
 	}
     }
 
