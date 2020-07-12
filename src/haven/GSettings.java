@@ -120,6 +120,18 @@ public class GSettings extends State implements Serializable {
 	}
     }
 
+    public abstract class IntSetting extends Setting<Integer> {
+	public IntSetting(String nm) {super(nm);}
+
+	public Integer parse(String val) {
+	    try {
+		return(Integer.parseInt(val));
+	    } catch(NumberFormatException e) {
+		throw(new SettingException("Not an integer value: " + val));
+	    }
+	}
+    }
+
     public abstract class FloatSetting extends Setting<Float> {
 	public FloatSetting(String nm) {super(nm);}
 
@@ -134,6 +146,9 @@ public class GSettings extends State implements Serializable {
 
     public BoolSetting lshadow = new BoolSetting("sdw") {
 	    public Boolean defval() {return(true);}
+	};
+    public IntSetting shadowres = new IntSetting("sres") {
+	    public Integer defval() {return(0);}
 	};
     public BoolSetting vsync = new BoolSetting("vsync") {
 	    public Boolean defval() {return(true);}

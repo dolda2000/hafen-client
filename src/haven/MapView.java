@@ -769,6 +769,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private double lsmch = 0;
     private void updsmap(DirLight light) {
 	boolean usesdw = ui.gprefs.lshadow.val;
+	int sdwres = ui.gprefs.shadowres.val;
+	sdwres = (sdwres < 0) ? (2048 >> -sdwres) : (2048 << sdwres);
 	if(usesdw) {
 	    Coord3f dir, cc;
 	    try {
@@ -781,7 +783,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if(instancer == null)
 		    return;
 		slist = new ShadowMap.ShadowList(instancer);
-		smap = new ShadowMap(new Coord(2048, 2048), 750, 5000, 1);
+		smap = new ShadowMap(new Coord(sdwres, sdwres), 750, 5000, 1);
+	    } else if(smap.lbuf.w != sdwres) {
+		smap.dispose();
+		smap = new ShadowMap(new Coord(sdwres, sdwres), 750, 5000, 1);
+		smapcc = null;
+		basic(ShadowMap.class, null);
 	    }
 	    smap = smap.light(light);
 	    cc.y = -cc.y;
