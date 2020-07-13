@@ -113,7 +113,7 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 		}
 		for(int i = 0; i < mod.va.fmt.inputs.length; i++) {
 		    VertexArray.Layout.Input attr = mod.va.fmt.inputs[i];
-		    GLProgram.VarID var = prog.cattrib(attr.tgt);
+		    BGL.ID var = prog.cattrib(attr.tgt);
 		    if(var != null) {
 			VboState.apply(gl, g.state, bufs[attr.buf]);
 			int na = 1, vo = 0;

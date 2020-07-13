@@ -30,11 +30,11 @@ import javax.media.opengl.*;
 
 public class Vao0State extends VaoState {
     public final GLEnvironment env;
-    public final GLProgram.VarID[] enable;
+    public final BGL.ID[] enable;
     public final boolean[] instanced;
     public final GLBuffer ebo;
 
-    public Vao0State(GLEnvironment env, GLProgram.VarID[] enable, boolean[] instanced, GLBuffer ebo) {
+    public Vao0State(GLEnvironment env, BGL.ID[] enable, boolean[] instanced, GLBuffer ebo) {
 	this.env = env;
 	this.enable = enable;
 	this.instanced = instanced;
@@ -99,7 +99,7 @@ public class Vao0State extends VaoState {
 	    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, that.ebo);
     }
 
-    public static void apply(GLEnvironment env, BGL gl, Applier st, GLProgram.VarID[] enable, boolean[] instanced) {
+    public static void apply(GLEnvironment env, BGL gl, Applier st, BGL.ID[] enable, boolean[] instanced) {
 	GLState cur = st.glstates[slot];
 	GLBuffer ebo = null;
 	eq: if(cur instanceof Vao0State) {
@@ -116,11 +116,11 @@ public class Vao0State extends VaoState {
 	st.apply(gl, new Vao0State(env, enable, instanced, ebo));
     }
 
-    private static final GLProgram.VarID[] nilen = {};
+    private static final BGL.ID[] nilen = {};
     private static final boolean[] nilinst = {};
     public static void apply(GLEnvironment env, BGL gl, Applier st, GLBuffer ebo) {
 	GLState cur = st.glstates[slot];
-	GLProgram.VarID[] enable = nilen;
+	BGL.ID[] enable = nilen;
 	boolean[] instanced = nilinst;
 	if(cur instanceof Vao0State) {
 	    Vao0State that = (Vao0State)cur;
