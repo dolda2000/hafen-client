@@ -80,7 +80,9 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	return(false);
     }
 
-    public static GLVertexArray create(GLProgram prog, Model mod) {
+    public void init(GLProgram prog, Model mod) {
+	if(prog.env != this.env)
+	    throw(new AssertionError());
 	if(ephemeralp(mod))
 	    throw(new RuntimeException("got ephemeral model for VAO"));
 	GLEnvironment env = prog.env;
@@ -102,10 +104,9 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	    else
 		ebo = (GLBuffer)ro;
 	}
-	GLVertexArray vao = new GLVertexArray(env);
 	env.prepare((GLRender g) -> {
 		BGL gl = g.gl();
-		VaoBindState.apply(gl, g.state, vao, ebo);
+		VaoBindState.apply(gl, g.state, this, ebo);
 		if(ebo != null) {
 		    // Rendundant with BindBuffer in VaoBindState, but
 		    // only so long as DO_GL_EBO_FIXUP is true.
@@ -147,7 +148,6 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 		    }
 		}
 	    });
-	return(vao);
     }
 
     static class ProgIndex implements Disposable {
@@ -202,7 +202,8 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 		}
 	    }
 	    if(ret == null) {
-		ret = create(prog, mod);
+		ret = new GLVertexArray(prog.env);
+		ret.init(prog, mod);
 		add(prog, ret);
 	    }
 	    if(clean) {
