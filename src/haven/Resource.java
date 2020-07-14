@@ -35,7 +35,6 @@ import java.net.*;
 import java.io.*;
 import java.security.*;
 import javax.imageio.*;
-import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class Resource implements Serializable {
@@ -922,11 +921,11 @@ public class Resource implements Serializable {
 	public synchronized Tex tex() {
 	    if(tex != null)
 		return(tex);
-	    tex = new TexI(img) {
+	    tex = UI.scale(new TexI(img) {
 		    public String toString() {
 			return("TexI(" + Resource.this.name + ", " + id + ")");
 		    }
-		};
+		});
 	    return(tex);
 	}
 		

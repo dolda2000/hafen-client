@@ -45,6 +45,7 @@ public class Widget {
     public Object tooltip = null;
     public KeyMatch gkey;
     public KeyBinding kb_gkey;
+    public boolean temp = false;
     private Widget prevtt;
     static Map<String, Factory> types = new TreeMap<String, Factory>();
 
@@ -58,13 +59,13 @@ public class Widget {
     @RName("cnt")
     public static class $Cont implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new Widget((Coord)args[0]));
+	    return(new Widget(UI.scale((Coord)args[0])));
 	}
     }
     @RName("ccnt")
     public static class $CCont implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    Widget ret = new Widget((Coord)args[0]) {
+	    Widget ret = new Widget(UI.scale((Coord)args[0])) {
 		    public void presize() {
 			c = parent.sz.div(2).sub(sz.div(2));
 		    }
@@ -215,6 +216,12 @@ public class Widget {
 	return(f);
     }
 
+    public static Widget temporary() {
+        Widget result = new Widget();
+        result.temp = true;
+        return result;
+    }
+
     public Widget(Coord sz) {
 	this.c = Coord.z;
 	this.sz = sz;
@@ -315,7 +322,8 @@ public class Widget {
 		if(Character.isDigit(op)) {
 		    int e;
 		    for(e = i; (e < spec.length()) && Character.isDigit(spec.charAt(e)); e++);
-		    st.push(Integer.parseInt(spec.substring(i - 1, e)));
+		    int v = Integer.parseInt(spec.substring(i - 1, e));
+		    st.push(st.empty() ? UI.scale(v) : v);
 		    i = e;
 		} else if(op == '!') {
 		    st.push(args[off++]);
@@ -413,7 +421,11 @@ public class Widget {
 
     public void addchild(Widget child, Object... args) {
 	if(args[0] instanceof Coord) {
-	    add(child, (Coord)args[0]);
+	    Coord c = (Coord) args[0];
+	    if (!(child instanceof FlowerMenu)) {
+		c = UI.scale(c);
+	    }
+	    add(child, c);
 	} else if(args[0] instanceof Coord2d) {
 	    add(child, ((Coord2d)args[0]).mul(new Coord2d(this.sz.sub(child.sz))).round());
 	} else if(args[0] instanceof String) {
@@ -503,7 +515,8 @@ public class Widget {
 	    unlink();
 	    parent.cdestroy(this);
 	}
-	ui.removed(this);
+	if(ui != null)
+	    ui.removed(this);
     }
 
     public void reqdestroy() {
@@ -1208,5 +1221,29 @@ public class Widget {
 	}
 
 	public abstract void ntick(double a);
+    }
+
+    public void optimize() {
+	for(Widget w = child; w != null; w = w.next) {
+	    if (w.temp) {
+		w.give(this);
+		w.destroy();
+	    } else {
+		w.optimize();
+	    }
+	}
+    }
+
+    public void give(Widget parent) {
+	Widget last = parent.lchild;
+	last.next = child;
+	child.prev = last;
+	for(Widget w = child; w != null; w = w.next) {
+	    w.parent = parent;
+	    w.c = w.c.add(c);
+	}
+	parent.lchild = lchild;
+	child = null;
+	lchild = null;
     }
 }

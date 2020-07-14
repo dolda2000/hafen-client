@@ -27,8 +27,6 @@
 package haven;
 
 import java.awt.event.KeyEvent;
-import java.util.*;
-import java.awt.font.TextAttribute;
 
 public class OptWnd extends Window {
     public final Panel main, video, audio, keybind;
@@ -80,10 +78,11 @@ public class OptWnd extends Window {
     }
 
     public class VideoPanel extends Panel {
-	public VideoPanel(Panel back) {
+	Panel prev;
+
+	public VideoPanel(Panel prev) {
 	    super();
-	    add(new PButton(200, "Back", 27, back), new Coord(0, 310));
-	    pack();
+	    this.prev = prev;
 	}
 
 	public class CPanel extends Widget {
@@ -91,8 +90,10 @@ public class OptWnd extends Window {
 
 	    public CPanel(GSettings gprefs) {
 		this.prefs = gprefs;
-		int y = 0;
-		add(new CheckBox("Render shadows") {
+		Composer composer = new Composer(this)
+		    .vmrgn(UI.scale(5))
+		    .hmrgn(UI.scale(5));
+		composer.add(new CheckBox("Render shadows") {
 			{a = prefs.lshadow.val;}
 
 			public void set(boolean val) {
@@ -105,16 +106,15 @@ public class OptWnd extends Window {
 			    }
 			    a = val;
 			}
-		    }, new Coord(0, y));
-		y += 20;
-		add(new Label("Render scale"), new Coord(0, y));
+		    });
+		composer.add(new Label("Render scale"));
 		{
-		    Label dpy = add(new Label(""), new Coord(165, y + 15));
+		    Label dpy = new Label("");
 		    final int steps = 4;
-		    add(new HSlider(160, -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
+		    composer.addr(
+			new HSlider(UI.scale(160), -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
 			    protected void added() {
 				dpy();
-				this.c.y = dpy.c.y + ((dpy.sz.y - this.sz.y) / 2);
 			    }
 			    void dpy() {
 				dpy.settext(String.format("%.2f\u00d7", Math.pow(2, this.val / (double)steps)));
@@ -129,10 +129,11 @@ public class OptWnd extends Window {
 				}
 				dpy();
 			    }
-			}, new Coord(0, y + 15));
+			},
+			dpy
+		    );
 		}
-		y += 45;
-		add(new CheckBox("Vertical sync") {
+		composer.add(new CheckBox("Vertical sync") {
 			{a = prefs.vsync.val;}
 
 			public void set(boolean val) {
@@ -145,16 +146,15 @@ public class OptWnd extends Window {
 			    }
 			    a = val;
 			}
-		    }, new Coord(0, y));
-		y += 20;
-		add(new Label("Framerate limit (active window)"), new Coord(0, y));
+		    });
+		composer.add(new Label("Framerate limit (active window)"));
 		{
-		    Label dpy = add(new Label(""), new Coord(165, y + 15));
+		    Label dpy = new Label("");
 		    final int max = 250;
-		    add(new HSlider(160, 1, max, (prefs.hz.val == Float.POSITIVE_INFINITY) ? max : prefs.hz.val.intValue()) {
+		    composer.addr(
+			    new HSlider(UI.scale(160), 1, max, (prefs.hz.val == Float.POSITIVE_INFINITY) ? max : prefs.hz.val.intValue()) {
 			    protected void added() {
 				dpy();
-				this.c.y = dpy.c.y + ((dpy.sz.y - this.sz.y) / 2);
 			    }
 			    void dpy() {
 				if(this.val == max)
@@ -174,17 +174,18 @@ public class OptWnd extends Window {
 				}
 				dpy();
 			    }
-			}, new Coord(0, y + 15));
+			},
+			dpy
+		    );
 		}
-		y += 35;
-		add(new Label("Framerate limit (background window)"), new Coord(0, y));
+		composer.add(new Label("Framerate limit (background window)"));
 		{
-		    Label dpy = add(new Label(""), new Coord(165, y + 15));
+		    Label dpy = new Label("");
 		    final int max = 250;
-		    add(new HSlider(160, 1, max, (prefs.bghz.val == Float.POSITIVE_INFINITY) ? max : prefs.bghz.val.intValue()) {
+		    composer.addr(
+			    new HSlider(UI.scale(160), 1, max, (prefs.bghz.val == Float.POSITIVE_INFINITY) ? max : prefs.bghz.val.intValue()) {
 			    protected void added() {
 				dpy();
-				this.c.y = dpy.c.y + ((dpy.sz.y - this.sz.y) / 2);
 			    }
 			    void dpy() {
 				if(this.val == max)
@@ -204,14 +205,14 @@ public class OptWnd extends Window {
 				}
 				dpy();
 			    }
-			}, new Coord(0, y + 15));
+			},
+			dpy
+		    );
 		}
-		y += 35;
-		add(new Label("Frame sync mode"), new Coord(0, y));
-		y += 15;
+		composer.add(new Label("Frame sync mode"));
 		{
 		    boolean[] done = {false};
-		    RadioGroup grp = new RadioGroup(this) {
+		    RadioGroup grp = new RadioGroup(this, composer) {
 			    public void changed(int btn, String lbl) {
 				if(!done[0])
 				    return;
@@ -223,24 +224,18 @@ public class OptWnd extends Window {
 				}
 			    }
 			};
-		    Widget prev;
-		    prev = add(new Label("\u2191 Better performance, worse latency"), new Coord(5, y));
-		    y += prev.sz.y + 2;
-		    prev = grp.add("One-frame overlap", new Coord(5, y));
-		    y += prev.sz.y + 2;
-		    prev = grp.add("Tick overlap", new Coord(5, y));
-		    y += prev.sz.y + 2;
-		    prev = grp.add("CPU-sequential", new Coord(5, y));
-		    y += prev.sz.y + 2;
-		    prev = grp.add("GPU-sequential", new Coord(5, y));
-		    y += prev.sz.y + 2;
-		    prev = add(new Label("\u2193 Worse performance, better latency"), new Coord(5, y));
-		    y += prev.sz.y + 2;
+		    composer.hmrgn(UI.scale(5));
+		    composer.add(new Label("\u2191 Better performance, worse latency"));
+		    grp.add("One-frame overlap");
+		    grp.add("Tick overlap");
+		    grp.add("CPU-sequential");
+		    grp.add("GPU-sequential");
+		    composer.add(new Label("\u2193 Worse performance, better latency"));
 		    grp.check(prefs.syncmode.val.ordinal());
 		    done[0] = true;
 		}
 		/* XXXRENDER
-		add(new CheckBox("Antialiasing") {
+		composer.add(new CheckBox("Antialiasing") {
 			{a = cf.fsaa.val;}
 
 			public void set(boolean val) {
@@ -253,17 +248,16 @@ public class OptWnd extends Window {
 			    a = val;
 			    cf.dirty = true;
 			}
-		    }, new Coord(0, y));
-		y += 25;
-		add(new Label("Anisotropic filtering"), new Coord(0, y));
+		    });
+		composer.add(new Label("Anisotropic filtering"));
 		if(cf.anisotex.max() <= 1) {
-		    add(new Label("(Not supported)"), new Coord(15, y + 15));
+		    composer.add(new Label("(Not supported)"));
 		} else {
-		    final Label dpy = add(new Label(""), new Coord(165, y + 15));
-		    add(new HSlider(160, (int)(cf.anisotex.min() * 2), (int)(cf.anisotex.max() * 2), (int)(cf.anisotex.val * 2)) {
+		    final Label dpy = new Label("");
+		    composer.addRow(
+			    new HSlider(UI.scale(160), (int)(cf.anisotex.min() * 2), (int)(cf.anisotex.max() * 2), (int)(cf.anisotex.val * 2)) {
 			    protected void added() {
 				dpy();
-				this.c.y = dpy.c.y + ((dpy.sz.y - this.sz.y) / 2);
 			    }
 			    void dpy() {
 				if(val < 2)
@@ -281,26 +275,58 @@ public class OptWnd extends Window {
 				dpy();
 				cf.dirty = true;
 			    }
-			}, new Coord(0, y + 15));
+			},
+			dpy
+		    );
 		}
 		*/
-		add(new Button(200, "Reset to defaults") {
+		composer.add(new Button(UI.scale(200), "Reset to defaults") {
 			public void click() {
 			    ui.setgprefs(GSettings.defaults());
 			    curcf.destroy();
 			    curcf = null;
+			    back.destroy();
+			    back = null;
 			}
-		    }, new Coord(0, 280));
+		    });
 		pack();
 	    }
 	}
 
 	private CPanel curcf = null;
+	private PButton back = null;
+
+	public void attach(UI ui) {
+	    super.attach(ui);
+	    if (curcf != null && back != null) {
+		return;
+	    }
+	    if (curcf != null) {
+		curcf.destroy();
+	    }
+	    curcf = new CPanel(ui.gprefs);
+	    if (back != null) {
+		back.destroy();
+	    }
+	    back = new PButton(UI.scale(200), "Back", 27, prev);
+	    Composer composer = new Composer(this);
+	    composer.add(curcf);
+	    composer.add(back);
+	    pack();
+	}
+
 	public void draw(GOut g) {
 	    if((curcf == null) || (ui.gprefs != curcf.prefs)) {
 		if(curcf != null)
 		    curcf.destroy();
-		curcf = add(new CPanel(ui.gprefs), Coord.z);
+		if(back != null)
+		    back.destroy();
+		curcf = new CPanel(ui.gprefs);
+		back = new PButton(UI.scale(200), "Back", 27, prev);
+		Composer composer = new Composer(this).vmrgn(UI.scale(5));
+		composer.add(curcf);
+		composer.add(back);
+		pack();
 	    }
 	    super.draw(g);
 	}
@@ -310,53 +336,52 @@ public class OptWnd extends Window {
 						     "$col[255,255,0]{Backspace}: Revert to default\n" +
 						     "$col[255,255,0]{Delete}: Disable keybinding", 0);
     public class BindingPanel extends Panel {
-	private int addbtn(Widget cont, String nm, KeyBinding cmd, int y) {
-	    Widget btn = cont.add(new SetButton(175, cmd), 100, y);
-	    cont.adda(new Label(nm), 0, y + (btn.sz.y / 2), 0, 0.5);
-	    return(y + 30);
+	private void addbtn(Composer cont, int width, String nm, KeyBinding cmd) {
+	    cont.addrf(width / 2, new Label(nm), new SetButton(width / 2, cmd));
 	}
 
 	public BindingPanel(Panel back) {
 	    super();
-	    Widget cont = add(new Scrollport(new Coord(300, 300))).cont;
-	    int y = 0;
-	    cont.adda(new Label("Main menu"), cont.sz.x / 2, y, 0.5, 0); y += 20;
-	    y = addbtn(cont, "Inventory", GameUI.kb_inv, y);
-	    y = addbtn(cont, "Equipment", GameUI.kb_equ, y);
-	    y = addbtn(cont, "Character sheet", GameUI.kb_chr, y);
-	    y = addbtn(cont, "Map window", GameUI.kb_map, y);
-	    y = addbtn(cont, "Kith & Kin", GameUI.kb_bud, y);
-	    y = addbtn(cont, "Options", GameUI.kb_opt, y);
-	    y = addbtn(cont, "Search actions", GameUI.kb_srch, y);
-	    y = addbtn(cont, "Toggle chat", GameUI.kb_chat, y);
-	    y = addbtn(cont, "Quick chat", ChatUI.kb_quick, y);
-	    y = addbtn(cont, "Display claims", GameUI.kb_claim, y);
-	    y = addbtn(cont, "Display villages", GameUI.kb_vil, y);
-	    y = addbtn(cont, "Display realms", GameUI.kb_rlm, y);
-	    y = addbtn(cont, "Take screenshot", GameUI.kb_shoot, y);
-	    y = addbtn(cont, "Toggle UI", GameUI.kb_hide, y);
-	    y += 10;
-	    cont.adda(new Label("Camera control"), cont.sz.x / 2, y, 0.5, 0); y += 20;
-	    y = addbtn(cont, "Rotate left", MapView.kb_camleft, y);
-	    y = addbtn(cont, "Rotate right", MapView.kb_camright, y);
-	    y = addbtn(cont, "Zoom in", MapView.kb_camin, y);
-	    y = addbtn(cont, "Zoom out", MapView.kb_camout, y);
-	    y = addbtn(cont, "Reset", MapView.kb_camreset, y);
-	    y += 10;
-	    cont.adda(new Label("Walking speed"), cont.sz.x / 2, y, 0.5, 0); y += 20;
-	    y = addbtn(cont, "Increase speed", Speedget.kb_speedup, y);
-	    y = addbtn(cont, "Decrease speed", Speedget.kb_speeddn, y);
+	    Scrollport scrollport = new Scrollport(UI.scale(new Coord(300, 300)));
+	    Composer scroll = new Composer(scrollport.cont)
+		.vmrgn(UI.scale(5))
+		.hpad(UI.scale(5));
+	    int width = scrollport.cont.sz.x - UI.scale(5);
+	    scroll.adda(new Label("Main menu"), width / 2, 0.5);
+	    addbtn(scroll, width, "Inventory", GameUI.kb_inv);
+	    addbtn(scroll, width, "Equipment", GameUI.kb_equ);
+	    addbtn(scroll, width, "Character sheet", GameUI.kb_chr);
+	    addbtn(scroll, width, "Map window", GameUI.kb_map);
+	    addbtn(scroll, width, "Kith & Kin", GameUI.kb_bud);
+	    addbtn(scroll, width, "Options", GameUI.kb_opt);
+	    addbtn(scroll, width, "Search actions", GameUI.kb_srch);
+	    addbtn(scroll, width, "Toggle chat", GameUI.kb_chat);
+	    addbtn(scroll, width, "Quick chat", ChatUI.kb_quick);
+	    addbtn(scroll, width, "Display claims", GameUI.kb_claim);
+	    addbtn(scroll, width, "Display villages", GameUI.kb_vil);
+	    addbtn(scroll, width, "Display realms", GameUI.kb_rlm);
+	    addbtn(scroll, width, "Take screenshot", GameUI.kb_shoot);
+	    addbtn(scroll, width, "Toggle UI", GameUI.kb_hide);
+	    scroll.adda(new Label("Camera control"), width / 2, 0.5);
+	    addbtn(scroll, width, "Rotate left", MapView.kb_camleft);
+	    addbtn(scroll, width, "Rotate right", MapView.kb_camright);
+	    addbtn(scroll, width, "Zoom in", MapView.kb_camin);
+	    addbtn(scroll, width, "Zoom out", MapView.kb_camout);
+	    addbtn(scroll, width, "Reset", MapView.kb_camreset);
+	    scroll.adda(new Label("Walking speed"), width / 2, 0.5);
+	    addbtn(scroll, width, "Increase speed", Speedget.kb_speedup);
+	    addbtn(scroll, width, "Decrease speed", Speedget.kb_speeddn);
 	    for(int i = 0; i < 4; i++)
-		y = addbtn(cont, String.format("Set speed %d", i + 1), Speedget.kb_speeds[i], y);
-	    y += 10;
-	    cont.adda(new Label("Combat actions"), cont.sz.x / 2, y, 0.5, 0); y += 20;
+		addbtn(scroll, width, String.format("Set speed %d", i + 1), Speedget.kb_speeds[i]);
+	    scroll.adda(new Label("Combat actions"), width / 2, 0.5);
 	    for(int i = 0; i < Fightsess.kb_acts.length; i++)
-		y = addbtn(cont, String.format("Combat action %d", i + 1), Fightsess.kb_acts[i], y);
-	    y = addbtn(cont, "Switch targets", Fightsess.kb_relcycle, y);
-	    y += 10;
-	    y = cont.sz.y + 10;
-	    adda(new PointBind(200), cont.sz.x / 2, y, 0.5, 0); y += 30;
-	    adda(new PButton(200, "Back", 27, back), cont.sz.x / 2, y, 0.5, 0); y += 30;
+		addbtn(scroll, width, String.format("Combat action %d", i + 1), Fightsess.kb_acts[i]);
+	    addbtn(scroll, width, "Switch targets", Fightsess.kb_relcycle);
+	    Composer composer = new Composer(this).vmrgn(UI.scale(5));
+	    composer.adda(scrollport, scrollport.cont.sz.x / 2, 0.5);
+	    composer.vmrgn(0);
+	    composer.adda(new PointBind(UI.scale(200)), scrollport.cont.sz.x / 2, 0.5);
+	    composer.adda(new PButton(UI.scale(200), "Back", 27, back), scrollport.cont.sz.x / 2, 0.5);
 	    pack();
 	}
 
@@ -505,42 +530,39 @@ public class OptWnd extends Window {
 	video = add(new VideoPanel(main));
 	audio = add(new Panel());
 	keybind = add(new BindingPanel(main));
-	int y;
 
-	main.add(new PButton(200, "Video settings", 'v', video), new Coord(0, 0));
-	main.add(new PButton(200, "Audio settings", 'a', audio), new Coord(0, 30));
-	main.add(new PButton(200, "Keybindings", 'k', keybind), new Coord(0, 60));
+	Composer main = new Composer(this.main).vmrgn(UI.scale(-6));
+	main.add(new PButton(UI.scale(200), "Video settings", 'v', video));
+	main.add(new PButton(UI.scale(200), "Audio settings", 'a', audio));
+	main.add(new PButton(UI.scale(200), "Keybindings", 'k', keybind));
 	if(gopts) {
-	    main.add(new Button(200, "Switch character") {
+	    main.add(new Button(UI.scale(200), "Switch character") {
 		    public void click() {
 			getparent(GameUI.class).act("lo", "cs");
 		    }
-		}, new Coord(0, 120));
-	    main.add(new Button(200, "Log out") {
+		});
+	    main.add(new Button(UI.scale(200), "Log out") {
 		    public void click() {
 			getparent(GameUI.class).act("lo");
 		    }
-		}, new Coord(0, 150));
+		});
 	}
-	main.add(new Button(200, "Close") {
+	main.add(new Button(UI.scale(200), "Close") {
 		public void click() {
 		    OptWnd.this.hide();
 		}
-	    }, new Coord(0, 180));
-	main.pack();
+	    });
+	this.main.pack();
 
-	y = 0;
-	audio.add(new Label("Master audio volume"), new Coord(0, y));
-	y += 15;
-	audio.add(new HSlider(200, 0, 1000, (int)(Audio.volume * 1000)) {
+	Composer audio = new Composer(this.audio).vmrgn(UI.scale(5));
+	audio.add(new Label("Master audio volume"));
+	audio.add(new HSlider(UI.scale(200), 0, 1000, (int)(Audio.volume * 1000)) {
 		public void changed() {
 		    Audio.setvolume(val / 1000.0);
 		}
-	    }, new Coord(0, y));
-	y += 30;
-	audio.add(new Label("In-game event volume"), new Coord(0, y));
-	y += 15;
-	audio.add(new HSlider(200, 0, 1000, 0) {
+	    });
+	audio.add(new Label("In-game event volume"));
+	audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
 		protected void attach(UI ui) {
 		    super.attach(ui);
 		    val = (int)(ui.audio.pos.volume * 1000);
@@ -548,11 +570,9 @@ public class OptWnd extends Window {
 		public void changed() {
 		    ui.audio.pos.setvolume(val / 1000.0);
 		}
-	    }, new Coord(0, y));
-	y += 20;
-	audio.add(new Label("Ambient volume"), new Coord(0, y));
-	y += 15;
-	audio.add(new HSlider(200, 0, 1000, 0) {
+	    });
+	audio.add(new Label("Ambient volume"));
+	audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
 		protected void attach(UI ui) {
 		    super.attach(ui);
 		    val = (int)(ui.audio.amb.volume * 1000);
@@ -560,12 +580,11 @@ public class OptWnd extends Window {
 		public void changed() {
 		    ui.audio.amb.setvolume(val / 1000.0);
 		}
-	    }, new Coord(0, y));
-	y += 35;
-	audio.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
-	audio.pack();
+	    });
+	audio.add(new PButton(UI.scale(200), "Back", 27, this.main));
+	this.audio.pack();
 
-	chpanel(main);
+	chpanel(this.main);
     }
 
     public OptWnd() {

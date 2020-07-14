@@ -29,6 +29,8 @@ package haven;
 import java.awt.Color;
 
 public class RichTextBox extends Widget {
+    private static final int margin1 = UI.scale(20);
+    private static final int margin2 = 2 * margin1;
     public Color bg = Color.BLACK;
     private final RichText.Foundry fnd;
     private RichText text;
@@ -37,8 +39,8 @@ public class RichTextBox extends Widget {
     public RichTextBox(Coord sz, String text, RichText.Foundry fnd) {
 	super(sz);
 	this.fnd = fnd;
-	this.text = fnd.render(text, sz.x - 20);
-	this.sb = adda(new Scrollbar(sz.y, 0, this.text.sz().y + 20 - sz.y), sz.x, 0, 1, 0);
+	this.text = fnd.render(text, sz.x - margin2);
+	this.sb = adda(new Scrollbar(sz.y, 0, this.text.sz().y + margin2 - sz.y), sz.x, 0, 1, 0);
     }
     
     public RichTextBox(Coord sz, String text, Object... attrs) {
@@ -51,18 +53,18 @@ public class RichTextBox extends Widget {
 	    g.frect(Coord.z, sz);
 	    g.chcolor();
 	}
-	g.image(text.tex(), new Coord(10, 10 - sb.val));
+	g.image(text.tex(), new Coord(margin1, margin1 - sb.val));
 	super.draw(g);
     }
     
     public void settext(String text) {
-	this.text = fnd.render(text, sz.x - 20);
-	sb.max = this.text.sz().y + 20 - sz.y;
+	this.text = fnd.render(text, sz.x - margin2);
+	sb.max = this.text.sz().y + margin2 - sz.y;
 	sb.val = 0;
     }
     
     public boolean mousewheel(Coord c, int amount) {
-	sb.ch(amount * 20);
+	sb.ch(amount * margin2);
 	return(true);
     }
 

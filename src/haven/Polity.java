@@ -52,7 +52,7 @@ public class Polity extends Widget {
 	final Text self = Text.render("You", new Color(192, 192, 255));
 
 	public MemberList(int w, int h) {
-	    super(w, h, 20);
+	    super(w, h, UI.scale(20));
 	}
 
 	public Member listitem(int idx) {return(memb.get(idx));}
@@ -107,11 +107,11 @@ public class Polity extends Widget {
 	}
     }
 
-    public static final Text.Foundry nmf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 14)).aa(true);
-    public static final Text.Foundry membf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
+    public static final Text.Foundry nmf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, UI.scale(14))).aa(true);
+    public static final Text.Foundry membf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, UI.scale(12))).aa(true);
 
     public Polity(String cap, String name) {
-	super(new Coord(width, 200));
+	super(new Coord(width, UI.scale(200)));
 	this.cap = cap;
 	this.name = name;
     }
@@ -129,7 +129,7 @@ public class Polity extends Widget {
 		g.frect(new Coord(0, 0), new Coord(sz.x, sz.y));
 		g.chcolor(128, 0, 0, 255);
 		int mw = (int)((sz.x - 2) * (long)auth) / ((acap == 0) ? 1 : acap);
-		g.frect(new Coord(1, 1), new Coord(mw, sz.y - 2));
+		g.frect(new Coord(1, 1), new Coord(mw, sz.y - UI.scale(2)));
 		g.chcolor();
 		if((rauth != null) && (aseq != Polity.this.aseq)) {
 		    rauth.dispose();
@@ -184,7 +184,7 @@ public class Polity extends Widget {
 	    String p = (String)args[0];
 	    if(p.equals("m")) {
 		mw = child;
-		add(child, 0, 210);
+		add(child, 0, UI.scale(210));
 		pack();
 		return;
 	    }

@@ -56,7 +56,7 @@ public class Avaview extends PView {
 	    if(args[0] != null)
 		avagob = Utils.uint32((Integer)args[0]);
 	    if((args.length > 1) && (args[1] != null))
-		sz = (Coord)args[1];
+		sz = UI.scale((Coord)args[1]);
 	    if((args.length > 2) && (args[2] != null))
 		camnm = (String)args[2];
 	    return(new Avaview(sz, avagob, camnm));

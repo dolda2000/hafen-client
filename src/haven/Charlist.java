@@ -30,7 +30,8 @@ import java.util.*;
 
 public class Charlist extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/avakort");
-    public static final int margin = 6;
+    public static final int margin = UI.scale(6);
+    public static final int btnw = UI.scale(100);
     public int height, y, sel = 0;
     public IButton sau, sad;
     public List<Char> chars = new ArrayList<Char>();
@@ -120,8 +121,8 @@ public class Charlist extends Widget {
 		c.plb.show();
 		int off = (bg.sz().y - c.ava.sz.y) / 2;
 		c.ava.c = new Coord(off, off + y);
-		c.plb.c = bg.sz().add(-10, y - 2).sub(c.plb.sz);
-		g.image(c.nt.tex(), new Coord(off + c.ava.sz.x + 5, off + y));
+		c.plb.c = UI.scale(new Coord(-10, - 2)).add(bg.sz()).add(0, y).sub(c.plb.sz);
+		g.image(c.nt.tex(), UI.scale(new Coord(5, 0)).add(off + c.ava.sz.x, off + y));
 		y += bg.sz().y + margin;
 	    }
 	}
@@ -183,7 +184,7 @@ public class Charlist extends Widget {
 		}
 		c.ava(desc, map, poses);
 	    }
-	    c.plb = add(new Button(100, "Play"));
+	    c.plb = add(new Button(btnw, "Play"));
 	    c.plb.hide();
 	    synchronized(chars) {
 		int idx = chars.size();

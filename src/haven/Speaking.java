@@ -48,9 +48,9 @@ public class Speaking extends GAttrib implements RenderTree.Node, PView.Render2D
 	
     public void draw(GOut g, Coord c) {
 	Coord sz = text.sz();
-	if(sz.x < 10)
-	    sz.x = 10;
-	Coord tl = c.add(new Coord(sx, sb.cisz().y + sz.y + svans.sz().y - 1).inv());
+	if(sz.x < UI.scale(10))
+	    sz.x = UI.scale(10);
+	Coord tl = c.add(new Coord(sx, sb.cisz().y + sz.y + svans.sz().y - UI.scale(1)).inv());
 	Coord ftl = tl.add(sb.btloff());
 	g.chcolor(Color.WHITE);
 	g.frect(ftl, sz);
@@ -63,6 +63,6 @@ public class Speaking extends GAttrib implements RenderTree.Node, PView.Render2D
 
     public void draw(GOut g, Pipe state) {
 	Coord sc = Homo3D.obj2view(new Coord3f(0, 0, zo), state, Area.sized(g.sz())).round2();
-	draw(g, sc.add(3, 0));
+	draw(g, sc.add(UI.scale(3), 0));
     }
 }

@@ -36,6 +36,7 @@ import static haven.Window.wbox;
 import static haven.Inventory.invsq;
 
 public class FightWnd extends Widget {
+    private static final int fontsize = UI.scale(16);
     public final int nsave;
     public int maxact;
     public final Actions actlist;
@@ -55,7 +56,7 @@ public class FightWnd extends Widget {
     private static final OwnerContext.ClassResolver<FightWnd> actxr = new OwnerContext.ClassResolver<FightWnd>()
 	.add(Glob.class, wdg -> wdg.ui.sess.glob)
 	.add(Session.class, wdg -> wdg.ui.sess);
-    public static final Text.Foundry namef = new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD, 16f)).aa(true);
+    public static final Text.Foundry namef = new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD, fontsize)).aa(true);
     public class Action implements ItemInfo.ResOwner {
 	public final Indir<Resource> res;
 	private final int id;
@@ -69,7 +70,7 @@ public class FightWnd extends Widget {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n");
+	    buf.append("$b{$font[serif," + fontsize + "]{" + res.layer(Resource.tooltip).t + "}}\n\n");
 	    Resource.Pagina pag = res.layer(Resource.pagina);
 	    if(pag != null)
 		buf.append(pag.text);
@@ -137,8 +138,8 @@ public class FightWnd extends Widget {
 	    List<ItemInfo> info = info();
 	    l.cmp.add(rendericon(), Coord.z);
 	    ItemInfo.Name nm = ItemInfo.find(ItemInfo.Name.class, info);
-	    l.cmp.add(namef.render(nm.str.text).img, new Coord(0, l.cmp.sz.y + 10));
-	    l.cmp.sz = l.cmp.sz.add(0, 10);
+	    l.cmp.add(namef.render(nm.str.text).img, new Coord(0, l.cmp.sz.y + UI.scale(10)));
+	    l.cmp.sz = l.cmp.sz.add(0, UI.scale(10));
 	    for(ItemInfo inf : info) {
 		if((inf != nm) && (inf instanceof ItemInfo.Tip)) {
 		    l.add((ItemInfo.Tip)inf);
@@ -233,7 +234,7 @@ public class FightWnd extends Widget {
 	Coord dp;
 
 	public Actions(int w, int h) {
-	    super(w, h, attrf.height() + 2);
+	    super(w, h, attrf.height() + UI.scale(2));
 	}
 
 	protected Action listitem(int n) {return(acts.get(n));}
@@ -254,10 +255,12 @@ public class FightWnd extends Widget {
 		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
 	    }
 	    int ty = (itemh - act.rnm.sz().y) / 2;
-	    g.image(act.rnm.tex(), new Coord(itemh + 2, ty));
-	    g.aimage(act.ru.tex(), new Coord(sz.x - 45, ty), 1.0, 0.0);
-	    g.aimage(add[da == idx?1:0], new Coord(sz.x - 10, itemh / 2), 1.0, 0.5);
-	    g.aimage(sub[ds == idx?1:0], new Coord(sz.x - 25, itemh / 2), 1.0, 0.5);
+	    g.image(act.rnm.tex(), new Coord(itemh + UI.scale(2), ty));
+	    g.aimage(act.ru.tex(), new Coord(sz.x - UI.scale(45), ty), 1.0, 0.0);
+	    Tex addtex = add[da == idx?1:0];
+	    g.aimage(addtex, new Coord(sz.x - UI.scale(5), itemh / 2), 1.0, 0.5);
+	    Tex subtex = sub[ds == idx?1:0];
+	    g.aimage(subtex, new Coord(sz.x - UI.scale(20), itemh / 2), 1.0, 0.5);
 	}
 
 	public void change(final Action act) {
@@ -318,7 +321,7 @@ public class FightWnd extends Widget {
 	private boolean onsub(Coord c, int idx) {
 	    Coord ic = c.sub(0, (idx - sb.val) * itemh);
 	    int by = (itemh - sub[0].sz().y) / 2;
-	    return(ic.isect(new Coord(sz.x - 25 - add[0].sz().x, by), add[0].sz()));
+	    return(ic.isect(new Coord(sz.x - UI.scale(25) - add[0].sz().x, by), add[0].sz()));
 	}
 
 	public void drag(Action act) {
@@ -443,11 +446,11 @@ public class FightWnd extends Widget {
 	private boolean anim = false;
 
 	private BView() {
-	    super(new Coord(((invsq.sz().x + 2) * (order.length - 1)) + (10 * ((order.length - 1) / 5)), 0).add(invsq.sz()));
+	    super(new Coord(((invsq.sz().x + UI.scale(2)) * (order.length - 1)) + (UI.scale(10) * ((order.length - 1) / 5)), 0).add(invsq.sz()));
 	}
 
 	private Coord itemc(int i) {
-	    return(new Coord(((invsq.sz().x + 2) * i) + (10 * (i / 5)), 0));
+	    return(new Coord(((invsq.sz().x + UI.scale(2)) * i) + (UI.scale(10) * (i / 5)), 0));
 	}
 
 	private int citem(Coord c) {
@@ -481,15 +484,16 @@ public class FightWnd extends Widget {
 		Action act = order[i];
 		try {
 		    if(act != null) {
-			Coord ic = c.add(1, 1);
+			Coord ic = c.add(UI.scale(1), UI.scale(1));
 			if(animoff[i] != null) {
 			    ic = ic.add(animoff[i].mul(Math.pow(1.0 - animpr[i], 3)));
 			}
-			g.image(act.res.get().layer(Resource.imgc).tex(), ic);
+			Tex tex = act.res.get().layer(Resource.imgc).tex();
+			g.image(tex, ic);
 		    }
 		} catch(Loading l) {}
 		g.chcolor(156, 180, 158, 255);
-		g.aimage(keys[i], c.add(invsq.sz().sub(2, 0)), 1, 1);
+		g.aimage(keys[i], c.add(invsq.sz().sub(UI.scale(2), 0)), 1, 1);
 		g.chcolor();
 	    }
 	}
@@ -615,16 +619,16 @@ public class FightWnd extends Widget {
 	    if(n == edit) {
 		if(redit == null)
 		    redit = attrf.render(nmed.line);
-		g.aimage(redit.tex(), new Coord(20, itemh / 2), 0.0, 0.5);
+		g.aimage(redit.tex(), new Coord(UI.scale(20), itemh / 2), 0.0, 0.5);
 		if(hasfocus && (((Utils.rtime() - focusstart) % 1.0) < 0.5)) {
 		    int cx = redit.advance(nmed.point);
 		    g.chcolor(255, 255, 255, 255);
-		    Coord co = new Coord(20 + cx + 1, (g.sz().y - redit.sz().y) / 2);
+		    Coord co = new Coord(UI.scale(20) + cx + UI.scale(1), (g.sz().y - redit.sz().y) / 2);
 		    g.line(co, co.add(0, redit.sz().y), 1);
 		    g.chcolor();
 		}
 	    } else {
-		g.aimage(saves[n].tex(), new Coord(20, itemh / 2), 0.0, 0.5);
+		g.aimage(saves[n].tex(), new Coord(UI.scale(20), itemh / 2), 0.0, 0.5);
 	    }
 	    if(n == usesave)
 		g.aimage(CheckBox.smark, new Coord(itemh / 2, itemh / 2), 0.5, 0.5);
@@ -731,25 +735,25 @@ public class FightWnd extends Widget {
 	    saves[i] = unused;
 
 	Widget p;
-	info = add(new ImageInfoBox(new Coord(223, 152)), new Coord(5, 35).add(wbox.btloff()));
+	info = add(new ImageInfoBox(UI.scale(new Coord(223, 152))), UI.scale(new Coord(5, 35)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(info));
 
 	add(new Img(CharWnd.catf.render("Martial Arts & Combat Schools").tex()), 0, 0);
-	actlist = add(new Actions(250, 8), new Coord(245, 35).add(wbox.btloff()));
+	actlist = add(new Actions(UI.scale(255), 8), UI.scale(new Coord(245, 35)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(actlist));
 
-	p = add(new BView(), 5, 200);
-	count = add(new Label(""), p.c.add(p.sz.x + 10, 0));
+	p = add(new BView(), UI.scale(5), UI.scale(200));
+	count = add(new Label(""), p.c.add(p.sz.x + UI.scale(10), 0));
 
-	savelist = add(new Savelist(370, 3), new Coord(5, 238).add(wbox.btloff()));
+	savelist = add(new Savelist(UI.scale(370), 3), UI.scale(new Coord(5, 238)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(savelist));
-	add(new Button(110, "Load", false) {
+	add(new Button(UI.scale(110), "Load", false) {
 		public void click() {
 		    load(savelist.sel);
 		    use(savelist.sel);
 		}
-	    }, 395, 238);
-	add(new Button(110, "Save", false) {
+	    }, UI.scale(395), UI.scale(238));
+	add(new Button(UI.scale(110), "Save", false) {
 		public void click() {
 		    if(savelist.sel < 0) {
 			getparent(GameUI.class).error("No save entry selected.");
@@ -758,7 +762,7 @@ public class FightWnd extends Widget {
 			use(savelist.sel);
 		    }
 		}
-	    }, 395, 265);
+	    }, UI.scale(395), UI.scale(265));
 	pack();
     }
 

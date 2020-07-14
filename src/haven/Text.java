@@ -27,14 +27,15 @@
 package haven;
 
 import java.awt.*;
+import java.awt.Graphics;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
 public class Text {
-    public static final Font serif = new Font("Serif", Font.PLAIN, 10);
-    public static final Font sans  = new Font("Sans", Font.PLAIN, 10);
-    public static final Font mono  = new Font("Monospaced", Font.PLAIN, 10);
+    public static final Font serif = new Font("Serif", Font.PLAIN, UI.scale(10));
+    public static final Font sans  = new Font("Sans", Font.PLAIN, UI.scale(10));
+    public static final Font mono  = new Font("Monospaced", Font.PLAIN, UI.scale(10));
     public static final Font fraktur = Resource.local().loadwait("ui/fraktur").layer(Resource.Font.class).font;
     public static final Font dfont = sans;
     public static final Foundry std;
@@ -112,7 +113,7 @@ public class Text {
 	    font = f;
 	    this.defcol = defcol;
 	    BufferedImage junk = TexI.mkbuf(new Coord(10, 10));
-	    Graphics tmpl = junk.getGraphics();
+	    java.awt.Graphics tmpl = junk.getGraphics();
 	    tmpl.setFont(f);
 	    m = tmpl.getFontMetrics();
 	}
@@ -122,11 +123,11 @@ public class Text {
 	}
 	
 	public Foundry(Font font, int psz, Color defcol) {
-	    this(font.deriveFont((float)psz), defcol);
+	    this(font.deriveFont(UI.scale((float)psz)), defcol);
 	}
 
 	public Foundry(Font font, int psz) {
-	    this(font.deriveFont((float)psz));
+	    this(font.deriveFont(UI.scale((float)psz)));
 	}
 
 	@Deprecated

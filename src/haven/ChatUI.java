@@ -41,10 +41,11 @@ import java.io.IOException;
 import java.awt.datatransfer.*;
 
 public class ChatUI extends Widget {
-    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(10f), TextAttribute.FOREGROUND, Color.BLACK));
+    public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(UI.scale(10f)), TextAttribute.FOREGROUND, Color.BLACK));
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
-    public static final int selw = 130;
-    public static final Coord marg = new Coord(9, 9);
+    public static final int selw = UI.scale(130);
+    public static final Coord marg = UI.scale(new Coord(9, 9));
+    public static final int offset = UI.scale(28);
     public static final Color[] urgcols = new Color[] {
 	null,
 	new Color(0, 128, 255),
@@ -252,7 +253,7 @@ public class ChatUI extends Widget {
 	public void resize(Coord sz) {
 	    super.resize(sz);
 	    if(sb != null) {
-		sb.move(new Coord(sz.x - (12 - marg.x), 34 - marg.y));
+		sb.move(new Coord(sz.x - (UI.scale(12) - marg.x), UI.scale(34) - marg.y));
 		sb.resize(ih() - sb.c.y);
 		int y = 0;
 		for(Message m : msgs)
@@ -901,7 +902,7 @@ public class ChatUI extends Widget {
     private static final Tex chanseld = Resource.loadtex("gfx/hud/chat-csel");
     private class Selector extends Widget {
 	public final BufferedImage ctex = Resource.loadimg("gfx/hud/chantex");
-	public final Text.Foundry tf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
+	public final Text.Foundry tf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, UI.scale(12))).aa(true);
 	public final Text.Furnace[] nf = {
 	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(80, 40, 0)),
 	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(0, 128, 255)),
@@ -952,9 +953,9 @@ public class ChatUI extends Widget {
 		    g.chcolor(255, 255, 255, 255);
 		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency))
 			ch.rname = nf[ch.urgency = ch.chan.urgency].render(ch.chan.name());
-		    g.aimage(ch.rname.tex(), new Coord(sz.x / 2, y + 8), 0.5, 0.5);
-		    g.image(chandiv, new Coord(0, y + 18));
-		    y += 28;
+		    g.aimage(ch.rname.tex(), new Coord(sz.x / 2, y + UI.scale(8)), 0.5, 0.5);
+		    g.image(chandiv, new Coord(0, y + UI.scale(18)));
+		    y += offset;
 		    if(y >= sz.y)
 			break;
 		    i++;
@@ -995,7 +996,7 @@ public class ChatUI extends Widget {
 	}
 	
 	private Channel bypos(Coord c) {
-	    int i = (c.y / 28) + s;
+	    int i = (c.y / offset) + s;
 	    if((i >= 0) && (i < chls.size()))
 		return(chls.get(i).chan);
 	    return(null);
@@ -1013,8 +1014,8 @@ public class ChatUI extends Widget {
 	public boolean mousewheel(Coord c, int amount) {
 	    if(!ui.modshift) {
 		s += amount;
-		if(s >= chls.size() - (sz.y / 28))
-		    s = chls.size() - (sz.y / 28);
+		if(s >= chls.size() - (sz.y / offset))
+		    s = chls.size() - (sz.y / offset);
 		if(s < 0)
 		    s = 0;
 	    } else {
@@ -1082,7 +1083,7 @@ public class ChatUI extends Widget {
 		}
 		if((c.y -= n.msg.sz().y) < br.y - h)
 		    break;
-		g.image(n.chnm.tex(), c, br.sub(0, h), br.add(selw - 10, 0));
+		g.image(n.chnm.tex(), c, br.sub(0, h), br.add(selw - UI.scale(10), 0));
 		g.image(n.msg.tex(), c.add(selw, 0));
 	    }
 	}
@@ -1195,7 +1196,8 @@ public class ChatUI extends Widget {
 
     private UI.Grab dm = null;
     private Coord doff;
-    public int savedh = Math.max(111, Utils.getprefi("chatsize", 111));
+    private static final int minh = 111;
+    public int savedh = UI.scale(Math.max(minh, Utils.getprefi("chatsize", minh)));
     public boolean mousedown(Coord c, int button) {
 	int bmfx = (sz.x - bmf.sz().x) / 2;
 	if((button == 1) && (c.y < bmf.sz().y) && (c.x >= bmfx) && (c.x <= (bmfx + bmf.sz().x))) {
@@ -1209,7 +1211,7 @@ public class ChatUI extends Widget {
 
     public void mousemove(Coord c) {
 	if(dm != null) {
-	    resize(sz.x, savedh = Math.max(111, sz.y + doff.y - c.y));
+	    resize(sz.x, savedh = Math.max(UI.scale(minh), sz.y + doff.y - c.y));
 	} else {
 	    super.mousemove(c);
 	}
@@ -1219,7 +1221,7 @@ public class ChatUI extends Widget {
 	if(dm != null) {
 	    dm.remove();
 	    dm = null;
-	    Utils.setprefi("chatsize", savedh);
+	    Utils.setprefi("chatsize", UI.unscale(savedh));
 	    return(true);
 	} else {
 	    return(super.mouseup(c, button));

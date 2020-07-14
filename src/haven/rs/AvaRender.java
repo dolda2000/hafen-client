@@ -82,7 +82,7 @@ public class AvaRender {
 
     public static final Server.Command call = new Server.Command() {
 	    public Object[] run(Server.Client cl, Object... args) throws InterruptedException {
-		Coord sz = (Coord)args[0];
+		Coord sz = UI.scale((Coord)args[0]);
 		Indir<Resource> base = Resource.local().load((String)args[1]);
 		String camnm = (String)args[2];
 		Object[] amod = (Object[])args[3];

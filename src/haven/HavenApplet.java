@@ -27,6 +27,7 @@
 package haven;
 
 import java.applet.*;
+import java.awt.Graphics;
 import java.net.URL;
 import java.util.*;
 import java.awt.*;
