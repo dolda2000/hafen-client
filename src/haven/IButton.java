@@ -26,11 +26,10 @@
 
 package haven;
 
-import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class IButton extends SIWidget {
-    BufferedImage up, down, hover;
+    ScaledBufferedImage up, down, hover;
     boolean h = false;
     boolean a = false;
     UI.Grab d = null;
@@ -43,10 +42,10 @@ public class IButton extends SIWidget {
     }
 
     public IButton(BufferedImage up, BufferedImage down, BufferedImage hover) {
-	super(Utils.imgsz(up));
-	this.up = up;
-	this.down = down;
-	this.hover = hover;
+	super(UI.scale(Utils.imgsz(up)));
+	this.up = UI.scale(up);
+	this.down = UI.scale(down);
+	this.hover = UI.scale(hover);
     }
 
     public IButton(BufferedImage up, BufferedImage down) {
@@ -58,13 +57,15 @@ public class IButton extends SIWidget {
     }
 
     public void draw(BufferedImage buf) {
-	Graphics g = buf.getGraphics();
+	GraphicsWrapper g = new GraphicsWrapper(buf.getGraphics());
+	ScaledBufferedImage img;
 	if(a)
-	    g.drawImage(down, 0, 0, null);
+	    img = down;
 	else if(h)
-	    g.drawImage(hover, 0, 0, null);
+	    img = hover;
 	else
-	    g.drawImage(up, 0, 0, null);
+	    img = up;
+	g.drawImage(img, 0, 0, null);
 	g.dispose();
     }
 

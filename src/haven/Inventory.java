@@ -30,7 +30,7 @@ import java.util.*;
 
 public class Inventory extends Widget implements DTarget {
     public static final Tex invsq = Resource.loadtex("gfx/hud/invsq");
-    public static final Coord sqsz = new Coord(33, 33);
+    public static final Coord sqsz = UI.scale(new Coord(33, 33));
     public boolean dropul = true;
     public Coord isz;
     Map<GItem, WItem> wmap = new HashMap<GItem, WItem>();
@@ -53,7 +53,7 @@ public class Inventory extends Widget implements DTarget {
     }
 	
     public Inventory(Coord sz) {
-	super(invsq.sz().add(new Coord(-1, -1)).mul(sz).add(new Coord(1, 1)));
+	super(invsq.sz().add(UI.scale(new Coord(-1, -1))).mul(sz).add(UI.scale(new Coord(1, 1))));
 	isz = sz;
     }
     
@@ -104,7 +104,7 @@ public class Inventory extends Widget implements DTarget {
     public void uimsg(String msg, Object... args) {
 	if(msg == "sz") {
 	    isz = (Coord)args[0];
-	    resize(invsq.sz().add(new Coord(-1, -1)).mul(isz).add(new Coord(1, 1)));
+	    resize(invsq.sz().add(UI.scale(new Coord(-1, -1))).mul(isz).add(UI.scale(new Coord(1, 1))));
 	} else if(msg == "mode") {
 	    dropul = (((Integer)args[0]) == 0);
 	} else {

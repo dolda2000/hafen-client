@@ -207,11 +207,16 @@ public class MiniMap extends Widget {
 			continue;
 		    Coord ptc = ppc.floor(tilesz).add(tc.inv()).add(sz.div(2));
 		    g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 255);
-		    g.image(plx.layer(Resource.imgc).tex(), ptc.add(plx.layer(Resource.negc).cc.inv()));
+		    drawplx(g, ptc);
 		    g.chcolor();
 		}
 	    }
 	}
 	super.draw(g);
+    }
+
+    public static void drawplx(GOut g, Coord ptc) {
+	Tex tex = plx.layer(Resource.imgc).tex();
+	g.image(tex, ptc.sub(UI.scale(plx.layer(Resource.negc).cc)));
     }
 }

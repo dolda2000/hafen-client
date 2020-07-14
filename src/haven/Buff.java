@@ -35,8 +35,10 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
     public static final Text.Foundry nfnd = new Text.Foundry(Text.dfont, 10);
     public static final Tex frame = Resource.loadtex("gfx/hud/buffs/frame");
     public static final Tex cframe = Resource.loadtex("gfx/hud/buffs/cframe");
-    public static final Coord imgoff = new Coord(3, 3);
-    public static final Coord ameteroff = new Coord(3, 37), ametersz = new Coord(32, 3);
+    public static final Coord imgoff = UI.scale(new Coord(3, 3));
+    public static final Coord ameteroff = UI.scale(new Coord(3, 37));
+    public static final Coord ametersz = UI.scale(new Coord(32, 3));
+    public static final int textw = UI.scale(200);
     public Indir<Resource> res;
     public double cmeter = -1;
     public double cmrem = -1;
@@ -123,7 +125,7 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
 	    g.image(img, imgoff);
 	    Tex nmeter = (this.nmeter >= 0) ? nmeter() : nmeteri.get();
 	    if(nmeter != null)
-		g.aimage(nmeter, imgoff.add(img.sz()).sub(1, 1), 1, 1);
+		g.aimage(nmeter, imgoff.add(img.sz()).sub(1, 1), 1, 1, UI.scale(nmeter.sz()));
 	    Double cmeter;
 	    if(this.cmeter >= 0) {
 		double m = this.cmeter;
@@ -165,7 +167,7 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
 	    img = shorttip();
 	Resource.Pagina pag = res.get().layer(Resource.pagina);
 	if(pag != null)
-	    img = ItemInfo.catimgs(0, img, RichText.render("\n" + pag.text, 200).img);
+	    img = ItemInfo.catimgs(0, img, RichText.render("\n" + pag.text, textw).img);
 	return(img);
     }
 

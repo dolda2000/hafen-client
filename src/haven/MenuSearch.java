@@ -25,7 +25,7 @@ public class MenuSearch extends Window {
     }
 
     private static final Text.Foundry elf = CharWnd.attrf;
-    private static final int elh = elf.height() + 2;
+    private static final int elh = elf.height() + UI.scale(2);
     public class Results extends Listbox<Result> {
 	private Results(int w, int h) {
 	    super(w, h, elh);
@@ -44,7 +44,7 @@ public class MenuSearch extends Window {
 	    if(el.rimg == null)
 		el.rimg = new TexI(PUtils.convolvedown(el.btn.img(), new Coord(elh, elh), CharWnd.iconfilter));
 	    g.image(el.rimg, Coord.z);
-	    g.image(el.rname.tex(), new Coord(elh + 5, 0));
+	    g.image(el.rname.tex(), new Coord(elh + UI.scale(5), 0));
 	}
 
 	private Result prevsel = null;
@@ -66,8 +66,8 @@ public class MenuSearch extends Window {
     public MenuSearch(MenuGrid menu) {
 	super(Coord.z, "Action search");
 	this.menu = menu;
-	rls = add(new Results(250, 25), Coord.z);
-	sbox = add(new TextEntry(250, "") {
+	rls = add(new Results(UI.scale(250), 25), Coord.z);
+	sbox = add(new TextEntry(UI.scale(250), "") {
 		protected void changed() {
 		    refilter();
 		}

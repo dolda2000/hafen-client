@@ -36,7 +36,6 @@ import haven.MapFile.SMarker;
 import haven.MapFileWidget.*;
 import haven.MapFileWidget.Location;
 import haven.BuddyWnd.GroupSelector;
-import static haven.MiniMap.plx;
 import static haven.MCache.tilesz;
 import static haven.MCache.cmaps;
 
@@ -62,6 +61,7 @@ public class MapWnd extends Window {
     private final static Predicate<Marker> pmarkers = (m -> m instanceof PMarker);
     private final static Predicate<Marker> smarkers = (m -> m instanceof SMarker);
     private final static Comparator<Marker> namecmp = ((a, b) -> a.nm.compareTo(b.nm));
+    private final static int btnw = UI.scale(95);
 
     public MapWnd(MapFile file, MapView mv, Coord sz, String title) {
 	super(sz, title, true);
@@ -85,26 +85,26 @@ public class MapWnd extends Window {
 		}
 	    }, Coord.z);
 	toolbar.pack();
-	listf = add(new Frame(new Coord(200, 200), false));
+	listf = add(new Frame(UI.scale(new Coord(200, 200)), false));
 	list = listf.add(new MarkerList(listf.inner().x, 0));
-	pmbtn = add(new Button(95, "Placed", false) {
+	pmbtn = add(new Button(btnw, "Placed", false) {
 		public void click() {
 		    mflt = pmarkers;
 		    markerseq = -1;
 		}
 	    });
-	smbtn = add(new Button(95, "Natural", false) {
+	smbtn = add(new Button(btnw, "Natural", false) {
 		public void click() {
 		    mflt = smarkers;
 		    markerseq = -1;
 		}
 	    });
-	mebtn = add(new Button(95, "Export...", false) {
+	mebtn = add(new Button(btnw, "Export...", false) {
 		public void click() {
 		    view.exportmap();
 		}
 	    });
-	mibtn = add(new Button(95, "Import...", false) {
+	mibtn = add(new Button(btnw, "Import...", false) {
 		public void click() {
 		    view.importmap();
 		}
@@ -114,7 +114,7 @@ public class MapWnd extends Window {
 
     private class View extends MapFileWidget {
 	View(MapFile file) {
-	    super(file, Coord.z);
+	    super(file);
 	}
 
 	public boolean clickmarker(DisplayMarker mark, int button) {
@@ -155,7 +155,7 @@ public class MapWnd extends Window {
 		Coord ploc = xlate(resolve(player));
 		if(ploc != null) {
 		    g.chcolor(255, 0, 0, 255);
-		    g.image(plx.layer(Resource.imgc), ploc.sub(plx.layer(Resource.negc).cc));
+		    MiniMap.drawplx(g, ploc);
 		    g.chcolor();
 		}
 	    } catch(Loading l) {
@@ -204,7 +204,7 @@ public class MapWnd extends Window {
 	public boolean searchmatch(int idx, String txt) {return(markers.get(idx).nm.toLowerCase().indexOf(txt.toLowerCase()) >= 0);}
 
 	public MarkerList(int w, int n) {
-	    super(w, n, 20);
+	    super(w, n, UI.scale(20));
 	}
 
 	private Function<String, Text> names = new CachedFunction<>(500, nm -> fnd.render(nm));
@@ -220,7 +220,7 @@ public class MapWnd extends Window {
 		g.chcolor(((PMarker)mark).color);
 	    else
 		g.chcolor();
-	    g.aimage(names.apply(mark.nm).tex(), new Coord(5, itemh / 2), 0, 0.5);
+	    g.aimage(names.apply(mark.nm).tex(), new Coord(UI.scale(5), itemh / 2), 0, 0.5);
 	}
 
 	public void change(Marker mark) {
@@ -245,7 +245,7 @@ public class MapWnd extends Window {
 
 	    if(mark != null) {
 		if(namesel == null) {
-		    namesel = MapWnd.this.add(new TextEntry(200, "") {
+		    namesel = MapWnd.this.add(new TextEntry(UI.scale(200), "") {
 			    {dshow = true;}
 			    public void activate(String text) {
 				mark.nm = text;
@@ -260,16 +260,13 @@ public class MapWnd extends Window {
 		namesel.commit();
 		if(mark instanceof PMarker) {
 		    PMarker pm = (PMarker)mark;
-		    colsel = MapWnd.this.add(new GroupSelector(0) {
+		    colsel = MapWnd.this.add(new GroupSelector(Math.max(0, Utils.index(BuddyWnd.gc, pm.color))) {
 			    public void changed(int group) {
-				this.group = group;
 				pm.color = BuddyWnd.gc[group];
 				view.file.update(mark);
 			    }
 			});
-		    if((colsel.group = Utils.index(BuddyWnd.gc, pm.color)) < 0)
-			colsel.group = 0;
-		    mremove = MapWnd.this.add(new Button(200, "Remove", false) {
+		    mremove = MapWnd.this.add(new Button(UI.scale(200), "Remove", false) {
 			    public void click() {
 				view.file.remove(mark);
 				change2(null);
@@ -283,23 +280,23 @@ public class MapWnd extends Window {
 
     public void resize(Coord sz) {
 	super.resize(sz);
-	listf.resize(listf.sz.x, sz.y - 180);
+	listf.resize(listf.sz.x, sz.y - UI.scale(180));
 	listf.c = new Coord(sz.x - listf.sz.x, 0);
 	list.resize(listf.inner());
-	mebtn.c = new Coord(sz.x - 200, sz.y - mebtn.sz.y);
-	mibtn.c = new Coord(sz.x - 95, sz.y - mibtn.sz.y);
-	pmbtn.c = new Coord(sz.x - 200, mebtn.c.y - 30 - pmbtn.sz.y);
-	smbtn.c = new Coord(sz.x - 95, mibtn.c.y - 30 - smbtn.sz.y);
+	mebtn.c = new Coord(sz.x - UI.scale(200), sz.y - mebtn.sz.y);
+	mibtn.c = new Coord(sz.x - btnw, sz.y - mibtn.sz.y);
+	pmbtn.c = new Coord(sz.x - UI.scale(200), mebtn.c.y - UI.scale(30) - pmbtn.sz.y);
+	smbtn.c = new Coord(sz.x - btnw, mibtn.c.y - UI.scale(30) - smbtn.sz.y);
 	if(namesel != null) {
-	    namesel.c = listf.c.add(0, listf.sz.y + 10);
+	    namesel.c = listf.c.add(0, listf.sz.y + UI.scale(10));
 	    if(colsel != null) {
-		colsel.c = namesel.c.add(0, namesel.sz.y + 10);
-		mremove.c = colsel.c.add(0, colsel.sz.y + 10);
+		colsel.c = namesel.c.add(0, namesel.sz.y + UI.scale(10));
+		mremove.c = colsel.c.add(0, colsel.sz.y + UI.scale(10));
 	    }
 	}
-	viewf.resize(new Coord(sz.x - listf.sz.x - 10, sz.y));
+	viewf.resize(new Coord(sz.x - listf.sz.x - UI.scale(10), sz.y));
 	view.resize(viewf.inner());
-	toolbar.c = viewf.c.add(0, viewf.sz.y - toolbar.sz.y).add(2, -2);
+	toolbar.c = viewf.c.add(0, viewf.sz.y - toolbar.sz.y).add(UI.scale(2), UI.scale(-2));
     }
 
     public void recenter() {
@@ -326,7 +323,7 @@ public class MapWnd extends Window {
     private Coord dragc;
     public boolean mousedown(Coord c, int button) {
 	Coord cc = c.sub(ctl);
-	if((button == 1) && (cc.x < csz.x) && (cc.y < csz.y) && (cc.y >= csz.y - 25 + (csz.x - cc.x))) {
+	if((button == 1) && (cc.x < csz.x) && (cc.y < csz.y) && (cc.y >= csz.y - UI.scale(25) + (csz.x - cc.x))) {
 	    if(drag == null) {
 		drag = ui.grabmouse(this);
 		dragc = asz.sub(c);

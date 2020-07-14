@@ -93,6 +93,12 @@ public class GOut {
 	image(img.tex(), c.add(img.o));
     }
 
+    public void image(Resource.Image img, Coord c, Coord sz) {
+	if(img == null)
+	    return;
+	image(img.tex(), c.add(img.o), sz);
+    }
+
     /* Draw texture at c, quite simply. */
     public void image(Tex tex, Coord c) {
 	if(tex == null)
@@ -107,6 +113,10 @@ public class GOut {
     public void aimage(Tex tex, Coord c, double ax, double ay) {
 	Coord sz = tex.sz();
 	image(tex, c.add((int)((double)sz.x * -ax), (int)((double)sz.y * -ay)));
+    }
+
+    public void aimage(Tex tex, Coord c, double ax, double ay, Coord sz) {
+	image(tex, c.add((int)((double)sz.x * -ax), (int)((double)sz.y * -ay)), sz);
     }
 
     /* Draw texture at c, scaling it to sz. */
@@ -131,6 +141,22 @@ public class GOut {
 	if(br.y > this.br.y)
 	    br.y = this.br.y;
 	tex.crender(this, c.add(this.tx), ul, br);
+    }
+
+    public void image(Tex tex, Coord c, Coord ul, Coord br, Coord sz) {
+	if(tex == null)
+	    return;
+	ul = ul.add(this.tx);
+	br = br.add(this.tx);
+	if(ul.x < this.ul.x)
+	    ul.x = this.ul.x;
+	if(ul.y < this.ul.y)
+	    ul.y = this.ul.y;
+	if(br.x > this.br.x)
+	    br.x = this.br.x;
+	if(br.y > this.br.y)
+	    br.y = this.br.y;
+	tex.crender(this, c.add(this.tx), sz, ul, br);
     }
 
     public void rimagev(Tex tex, Coord c, int h) {

@@ -41,7 +41,7 @@ public class HSlider extends Widget {
 	    for(int x = 0; x < vc.getWidth(); x++)
 		hc.setRGB(y, x, vc.getRGB(x, y));
 	}
-	schain = new TexI(hc);
+	schain = UI.scale(new TexI(hc));
     }
 
     public HSlider(int w, int min, int max, int val) {

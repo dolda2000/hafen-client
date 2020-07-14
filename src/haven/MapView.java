@@ -414,7 +414,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     @RName("mapview")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    Coord sz = (Coord)args[0];
+	    Coord sz = UI.scale((Coord)args[0]);
 	    Coord2d mc = ((Coord)args[1]).mul(posres);
 	    int pgob = -1;
 	    if(args.length > 2)

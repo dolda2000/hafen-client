@@ -33,13 +33,13 @@ import java.awt.image.BufferedImage;
 public class TextEntry extends SIWidget {
     public static final Color defcol = new Color(255, 205, 109), dirtycol = new Color(255, 232, 209);
     public static final Text.Foundry fnd = new Text.Foundry(Text.serif, 12).aa(true);
-    public static final BufferedImage lcap = Resource.loadimg("gfx/hud/text/l");
-    public static final BufferedImage rcap = Resource.loadimg("gfx/hud/text/r");
+    public static final ScaledBufferedImage lcap = UI.scale(Resource.loadimg("gfx/hud/text/l"));
+    public static final ScaledBufferedImage rcap = UI.scale(Resource.loadimg("gfx/hud/text/r"));
     public static final BufferedImage mext = Resource.loadimg("gfx/hud/text/m");
     public static final Tex caret = Resource.loadtex("gfx/hud/text/caret");
-    public static final Coord toff = new Coord(lcap.getWidth() - 1, 3);
-    public static final Coord coff = new Coord(-3, -1);
-    public static final int wmarg = lcap.getWidth() + rcap.getWidth() + 1;
+    public static final int toffx = lcap.getWidth();
+    public static final Coord coff = UI.scale(new Coord(-3, 0));
+    public static final int wmarg = lcap.getWidth() + rcap.getWidth() + UI.scale(1);
     public boolean dshow = false;
     public LineEdit buf;
     public int sx;
@@ -53,9 +53,9 @@ public class TextEntry extends SIWidget {
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    if(args[0] instanceof Coord)
-		return(new TextEntry((Coord)args[0], (String)args[1]));
+		return(new TextEntry(UI.scale((Coord)args[0]), (String)args[1]));
 	    else
-		return(new TextEntry((Integer)args[0], (String)args[1]));
+		return(new TextEntry(UI.scale((Integer)args[0]), (String)args[1]));
 	}
     }
 
@@ -112,12 +112,12 @@ public class TextEntry extends SIWidget {
     }
 
     public void draw(BufferedImage img) {
-	Graphics g = img.getGraphics();
+	GraphicsWrapper g = new GraphicsWrapper(img.getGraphics());
 	String dtext = dtext();
 	tcache = fnd.render(dtext, (dshow && dirty)?dirtycol:defcol);
 	g.drawImage(mext, 0, 0, sz.x, sz.y, null);
 
-	g.drawImage(tcache.img, toff.x - sx, toff.y, null);
+	g.drawImage(tcache.img, toffx - sx, (sz.y - tcache.img.getHeight()) / 2, null);
 
 	g.drawImage(lcap, 0, 0, null);
 	g.drawImage(rcap, sz.x - rcap.getWidth(), 0, null);
@@ -133,12 +133,12 @@ public class TextEntry extends SIWidget {
 	    if(cx < sx) {sx = cx; redraw();}
 	    if(cx > sx + (sz.x - wmarg)) {sx = cx - (sz.x - wmarg); redraw();}
 	    if(((Utils.rtime() - focusstart) % 1.0) < 0.5)
-		g.image(caret, toff.add(coff).add(lx, 0));
+		g.image(caret, coff.add(toffx + lx, (sz.y - tcache.img.getHeight()) / 2));
 	}
     }
 
     public TextEntry(int w, String deftext) {
-	super(new Coord(w, mext.getHeight()));
+	super(new Coord(w, UI.scale(mext.getHeight())));
 	rsettext(deftext);
 	setcanfocus(true);
     }

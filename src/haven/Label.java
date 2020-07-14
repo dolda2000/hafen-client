@@ -38,7 +38,7 @@ public class Label extends Widget {
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    if(args.length > 1)
-		return(new Label((String)args[0], (Integer)args[1]));
+		return(new Label((String)args[0], UI.scale((Integer)args[1])));
 	    else
 		return(new Label((String)args[0]));
 	}

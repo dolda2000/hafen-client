@@ -27,7 +27,6 @@
 package haven;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.image.BufferedImage;
 import static haven.PUtils.*;
 
@@ -36,7 +35,7 @@ public class Window extends Widget implements DTarget {
     public static final Tex bgl = Resource.loadtex("gfx/hud/wnd/lg/bgl");
     public static final Tex bgr = Resource.loadtex("gfx/hud/wnd/lg/bgr");
     public static final Tex cl = Resource.loadtex("gfx/hud/wnd/lg/cl");
-    public static final TexI cm = new TexI(Resource.loadimg("gfx/hud/wnd/lg/cm"));
+    public static final ScaledTex<TexI> cm = UI.scale(new TexI(Resource.loadimg("gfx/hud/wnd/lg/cm")));
     public static final Tex cr = Resource.loadtex("gfx/hud/wnd/lg/cr");
     public static final Tex tm = Resource.loadtex("gfx/hud/wnd/lg/tm");
     public static final Tex tr = Resource.loadtex("gfx/hud/wnd/lg/tr");
@@ -46,9 +45,12 @@ public class Window extends Widget implements DTarget {
     public static final Tex bl = Resource.loadtex("gfx/hud/wnd/lg/bl");
     public static final Tex bm = Resource.loadtex("gfx/hud/wnd/lg/bm");
     public static final Tex br = Resource.loadtex("gfx/hud/wnd/lg/br");
-    public static final Coord tlm = new Coord(18, 30), brm = new Coord(13, 22), cpo = new Coord(36, 17);
+    public static final Coord tlm = UI.scale(new Coord(18, 30));
+    public static final Coord brm = UI.scale(new Coord(13, 22));
+    public static final Coord cpo = UI.scale(new Coord(36, 17));
     public static final int capo = 7, capio = 2;
-    public static final Coord dlmrgn = new Coord(23, 14), dsmrgn = new Coord(9, 9);
+    public static final Coord dlmrgn = UI.scale(new Coord(23, 14));
+    public static final Coord dsmrgn = UI.scale(new Coord(9, 9));
     public static final BufferedImage ctex = Resource.loadimg("gfx/hud/fonttex");
     public static final Text.Furnace cf = new Text.Imager(new PUtils.TexFurn(new Text.Foundry(Text.fraktur, 15).aa(true), ctex)) {
 	    protected BufferedImage proc(Text text) {
@@ -79,7 +81,7 @@ public class Window extends Widget implements DTarget {
     @RName("wnd")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    Coord sz = (Coord)args[0];
+	    Coord sz = UI.scale((Coord)args[0]);
 	    String cap = (args.length > 1)?(String)args[1]:null;
 	    boolean lg = (args.length > 2)?((Integer)args[2] != 0):false;
 	    return(new Window(sz, cap, lg, Coord.z, Coord.z));
@@ -215,7 +217,7 @@ public class Window extends Widget implements DTarget {
 	cmw = Math.max(cmw, wsz.x / 4);
 	cptl = new Coord(ctl.x, tlo.y);
 	cpsz = tlo.add(cpo.x + cmw, cm.sz().y).sub(cptl);
-	cmw = cmw - (cl.sz().x - cpo.x) - 5;
+	cmw = cmw - (cl.sz().x - cpo.x) - UI.scale(5);
 	cbtn.c = xlate(tlo.add(wsz.x - cbtn.sz.x, 0), false);
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.presize();
@@ -251,8 +253,7 @@ public class Window extends Widget implements DTarget {
 	    raise();
 	    return(true);
 	}
-	Coord cpc = c.sub(cptl);
-	if(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128))) {
+	if(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && isect(c))) {
 	    if(button == 1) {
 		dm = ui.grabmouse(this);
 		doff = c;
@@ -262,6 +263,12 @@ public class Window extends Widget implements DTarget {
 	    return(true);
 	}
 	return(false);
+    }
+
+    private boolean isect(Coord c) {
+        Coord cpc = UI.unscale(c.sub(cptl));
+        int y = Math.min(cm.impl().back.getRaster().getHeight() - 1, cpc.y);
+        return(cm.impl().back.getRaster().getSample(cpc.x % cm.impl().back.getWidth(), y, 3) >= 128);
     }
 
     public boolean mouseup(Coord c, int button) {

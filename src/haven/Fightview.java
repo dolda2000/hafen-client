@@ -31,12 +31,12 @@ import java.util.*;
 public class Fightview extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/bosq");
     public static final int height = 5;
-    public static final int ymarg = 5;
-    public static final int width = 165;
-    public static final Coord avasz = new Coord(27, 27);
-    public static final Coord cavac = new Coord(width - Avaview.dasz.x - 10, 10);
-    public static final Coord cgivec = new Coord(cavac.x - 35, cavac.y);
-    public static final Coord cpursc = new Coord(cavac.x - 75, cgivec.y + 35);
+    public static final int ymarg = UI.scale(5);
+    public static final int width = UI.scale(165);
+    public static final Coord avasz = UI.scale(new Coord(27, 27));
+    public static final Coord cavac = new Coord(width - Avaview.dasz.x - UI.scale(10), UI.scale(10));
+    public static final Coord cgivec = new Coord(cavac.x - UI.scale(35), cavac.y);
+    public static final Coord cpursc = new Coord(cavac.x - UI.scale(75), cgivec.y + UI.scale(35));
     public final LinkedList<Relation> lsrel = new LinkedList<Relation>();
     public final Bufflist buffs = add(new Bufflist()); {buffs.hide();}
     public final Map<Long, Widget> obinfo = new HashMap<>();
@@ -64,7 +64,7 @@ public class Fightview extends Widget {
         public Relation(long gobid) {
             this.gobid = gobid;
             add(this.ava = new Avaview(avasz, gobid, "avacam")).canactivate = true;
-	    add(this.give = new GiveButton(0, new Coord(15, 15)));
+	    add(this.give = new GiveButton(0, UI.scale(new Coord(15, 15))));
 	    add(this.purs = new Button(70, "Pursue"));
         }
 	
@@ -163,7 +163,7 @@ public class Fightview extends Widget {
 	if((current == null) && (rel != null)) {
 	    add(curgive = new GiveButton(0), cgivec);
 	    add(curava = new Avaview(Avaview.dasz, rel.gobid, "avacam"), cavac).canactivate = true;
-	    add(curpurs = new Button(70, "Pursue"), cpursc);
+	    add(curpurs = new Button(UI.scale(70), "Pursue"), cpursc);
 	    curgive.state = rel.give.state;
 	} else if((current != null) && (rel == null)) {
 	    ui.destroy(curgive);
@@ -194,19 +194,19 @@ public class Fightview extends Widget {
     }
 
     public void draw(GOut g) {
-        int y = 10;
+        int y = UI.scale(10);
 	if(curava != null)
-	    y = curava.c.y + curava.sz.y + 10;
-	int x = width - bg.sz().x - 10;
+	    y = curava.c.y + curava.sz.y + UI.scale(10);
+	int x = width - bg.sz().x - UI.scale(10);
         for(Relation rel : lsrel) {
             if(rel == current) {
 		rel.show(false);
                 continue;
 	    }
             g.image(bg, new Coord(x, y));
-            rel.ava.c = new Coord(x + 25, ((bg.sz().y - rel.ava.sz.y) / 2) + y);
-	    rel.give.c = new Coord(x + 5, 4 + y);
-	    rel.purs.c = new Coord(rel.ava.c.x + rel.ava.sz.x + 5, 4 + y);
+            rel.ava.c = new Coord(x + UI.scale(25), ((bg.sz().y - rel.ava.sz.y) / 2) + y);
+	    rel.give.c = new Coord(x + UI.scale(5), UI.scale(4) + y);
+	    rel.purs.c = new Coord(rel.ava.c.x + rel.ava.sz.x + UI.scale(5), UI.scale(4) + y);
 	    rel.show(true);
             y += bg.sz().y + ymarg;
         }

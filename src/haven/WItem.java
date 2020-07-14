@@ -58,7 +58,7 @@ public class WItem extends Widget implements DTarget {
 	BufferedImage img = ItemInfo.longtip(info);
 	Resource.Pagina pg = item.res.get().layer(Resource.pagina);
 	if(pg != null)
-	    img = ItemInfo.catimgs(0, img, RichText.render("\n" + pg.text, 200).img);
+	    img = ItemInfo.catimgs(0, img, RichText.render("\n" + pg.text, UI.scale(200)).img);
 	return(img);
     }
 
@@ -160,7 +160,7 @@ public class WItem extends Widget implements DTarget {
 	 * of one yet. */
 	GSprite spr = item.spr();
 	if((spr != null) && (spr != lspr)) {
-	    Coord sz = new Coord(spr.sz());
+	    Coord sz = UI.scale(spr.sz());
 	    if((sz.x % sqsz.x) != 0)
 		sz.x = sqsz.x * ((sz.x / sqsz.x) + 1);
 	    if((sz.y % sqsz.y) != 0)
@@ -173,7 +173,7 @@ public class WItem extends Widget implements DTarget {
     public void draw(GOut g) {
 	GSprite spr = item.spr();
 	if(spr != null) {
-	    Coord sz = spr.sz();
+	    Coord sz = UI.scale(spr.sz());
 	    g.defstate();
 	    if(olcol.get() != null)
 		g.usestate(new ColorMask(olcol.get()));

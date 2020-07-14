@@ -42,7 +42,12 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     private BuddyInfo info = null;
     private Widget infof;
     public int serial = 0;
-    public static final int width = 263;
+    public static final int width = UI.scale(263);
+    public static final int height = UI.scale(380);
+    public static final int margin1 = UI.scale(5);
+    public static final int margin2 = 2 * margin1;
+    public static final int margin3 = 2 * margin2;
+    public static final int offset = UI.scale(35);
     public static final Tex online = Resource.loadtex("gfx/hud/online");
     public static final Tex offline = Resource.loadtex("gfx/hud/offline");
     public static final Color[] gc = new Color[] {
@@ -169,39 +174,66 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	}
     }
 
-    public static class GroupSelector extends Widget {
-	public int group;
-	
-	public GroupSelector(int group) {
-	    super(new Coord((gc.length * 20) + 20, 20));
+    public static class GroupRect extends Widget {
+	final private static Coord offset = UI.scale(new Coord(2, 2));
+	final private static Coord selsz = UI.scale(new Coord(19, 19));
+	final private static Coord colsz = selsz.sub(offset.mul(2));
+	final private GroupSelector selector;
+	final private int group;
+	private boolean selected;
+
+	public GroupRect(GroupSelector selector, int group, boolean selected) {
+	    super(new Coord(margin3, margin3));
+	    this.selector = selector;
 	    this.group = group;
+	    this.selected = selected;
 	}
-	
+
 	public void draw(GOut g) {
-	    for(int i = 0; i < gc.length; i++) {
-		if(i == group) {
-		    g.chcolor();
-		    g.frect(new Coord(i * 20, 0), new Coord(19, 19));
-		}
-		g.chcolor(gc[i]);
-		g.frect(new Coord(2 + (i * 20), 2), new Coord(15, 15));
+	    if (selected) {
+		g.chcolor(Color.LIGHT_GRAY);
+		g.frect(Coord.z, selsz);
 	    }
+	    g.chcolor(gc[group]);
+	    g.frect(offset, colsz);
 	    g.chcolor();
 	}
-	
+
 	public boolean mousedown(Coord c, int button) {
-	    if((c.y >= 2) && (c.y < 17)) {
-		int g = (c.x - 2) / 20;
-		if((g >= 0) && (g < gc.length) && (c.x >= 2 + (g * 20)) && (c.x < 17 + (g * 20))) {
-		    changed(g);
-		    return(true);
-		}
-	    }
-	    return(super.mousedown(c, button));
+	    selector.select(group);
+	    return (true);
 	}
-	
-	protected void changed(int group) {
+
+	public void select() {
+	    selected = true;
+	}
+
+	public void unselect() {
+	    selected = false;
+	}
+    }
+
+    public static class GroupSelector extends Widget {
+	public int group;
+	public GroupRect[] groups = new GroupRect[gc.length];
+
+	public GroupSelector(int group) {
+	    super(new Coord(gc.length * margin3, margin3));
 	    this.group = group;
+	    for (int i = 0; i < gc.length; ++i) {
+		groups[i] = new GroupRect(this, i, group == i);
+		add(groups[i], new Coord(i * margin3, 0));
+	    }
+	}
+
+	protected void changed(int group) {
+	}
+
+	public void select(int group) {
+	    groups[this.group].unselect();
+	    this.group = group;
+	    groups[group].select();
+	    changed(group);
 	}
     }
 
@@ -217,19 +249,19 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	private BuddyInfo(Coord sz, Buddy buddy) {
 	    super(sz);
 	    this.buddy = buddy;
-	    this.ava = adda(new Avaview(Avaview.dasz, -1, "avacam"), sz.x / 2, 10, 0.5, 0);
-	    this.nick = add(new TextEntry(sz.x - 20, buddy.name) {
+	    this.ava = adda(new Avaview(Avaview.dasz, -1, "avacam"), sz.x / 2, margin2, 0.5, 0);
+	    this.nick = add(new TextEntry(sz.x - margin3, buddy.name) {
 		    {dshow = true;}
 		    public void activate(String text) {
 			buddy.chname(text);
 			commit();
 		    }
-		}, 10, ava.c.y + ava.sz.y + 10);
+		}, margin2, ava.c.y + ava.sz.y + margin2);
 	    this.grp = add(new GroupSelector(buddy.group) {
 		    public void changed(int group) {
 			buddy.chgrp(group);
 		    }
-		}, 15, nick.c.y + nick.sz.y + 10);
+		}, margin2, nick.c.y + nick.sz.y + margin2);
 	    setopts();
 	}
 
@@ -275,7 +307,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    }
 	    if(atimel != null)
 		ui.destroy(atimel);
-	    atimel = add(new Label(text), 10, grp.c.y + grp.sz.y + 10);
+	    atimel = add(new Label(text), margin2, grp.c.y + grp.sz.y + margin2);
 	}
 
 	private void setopts() {
@@ -283,10 +315,10 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		ui.destroy(opt);
 	    Map<String, Runnable> bopts = buddy.opts();
 	    List<Button> opts = new ArrayList<>(bopts.size());
-	    int y = grp.c.y + grp.sz.y + 35;
+	    int y = grp.c.y + grp.sz.y + offset;
 	    for(Map.Entry<String, Runnable> opt : bopts.entrySet()) {
-		Button btn = add(new Button(sz.x - 20, opt.getKey(), false, opt.getValue()), 10, y);
-		y = btn.c.y + btn.sz.y + 5;
+		Button btn = add(new Button(sz.x - margin3, opt.getKey(), false, opt.getValue()), margin2, y);
+		y = btn.c.y + btn.sz.y + margin1;
 		opts.add(btn);
 	    }
 	    this.opts = opts.toArray(new Button[0]);
@@ -316,7 +348,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 
     private class BuddyList extends Searchbox<Buddy> {
 	public BuddyList(int w, int h) {
-	    super(w, h, 20);
+	    super(w, h, margin3);
 	}
 
 	public Buddy listitem(int idx) {return(buddies.get(idx));}
@@ -340,7 +372,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    else if(b.online == 0)
 		g.image(offline, Coord.z);
 	    g.chcolor(gc[b.group]);
-	    g.aimage(b.rname().tex(), new Coord(25, 10), 0, 0.5);
+	    g.aimage(b.rname().tex(), UI.scale(new Coord(25, 10)), 0, 0.5);
 	    g.chcolor();
 	}
 
@@ -392,22 +424,21 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     }
 
     public BuddyWnd() {
-	super(new Coord(width, 380));
+	super(new Coord(width, height));
 	setfocustab(true);
-	int y = 0;
-	add(new Img(CharWnd.catf.render("Kin").tex()), new Coord(0, 0));
-	y += 35;
+	Composer composer = new Composer(this).vmrgn(margin1).hmrgn(margin1);
+        composer.add(new Img(CharWnd.catf.render("Kin").tex()));
 
-	bl = add(new BuddyList(width - Window.wbox.bisz().x, 7), new Coord(Window.wbox.btloff().x, y));
+	bl = new BuddyList(sz.x - Window.wbox.bisz().x, 7);
+        composer.add(bl, Window.wbox.btloff().x);
 	Frame.around(this, Collections.singletonList(bl));
-	y += 150;
 
-	add(new Label("Sort by:"), new Coord(0, y));
-	y += 15;
-	int sbw = (width - 20) / 3;
-	sbstatus = add(new Button(sbw, "Status")      { public void click() { setcmp(statuscmp); } }, new Coord(0, y));
-	sbgroup  = add(new Button(sbw, "Group")       { public void click() { setcmp(groupcmp); } },  new Coord(sbw + 10, y));
-	sbalpha  = add(new Button(sbw, "Name")        { public void click() { setcmp(alphacmp); } },  new Coord(width - sbw, y));
+	composer.add(new Label("Sort by:"));
+	int sbw = (sz.x - 20) / 3;
+	sbstatus = new Button(sbw, "Status")      { public void click() { setcmp(statuscmp); } };
+	sbgroup  = new Button(sbw, "Group")       { public void click() { setcmp(groupcmp); } };
+	sbalpha  = new Button(sbw, "Name")        { public void click() { setcmp(alphacmp); } };
+	composer.addr(sbstatus, sbgroup, sbalpha);
 	String sort = Utils.getpref("buddysort", "");
 	if(sort.equals("")) {
 	    bcmp = statuscmp;
@@ -416,56 +447,52 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    if(sort.equals("group"))  bcmp = groupcmp;
 	    if(sort.equals("status")) bcmp = statuscmp;
 	}
-	y += 35;
 
-	add(new Label("Presentation name:"), new Coord(0, y));
-	y += 15;
-	pname = add(new TextEntry(width, "") {
+	composer.add(new Label("Presentation name:"));
+	pname = new TextEntry(sz.x, "") {
 		{dshow = true;}
 		public void activate(String text) {
 		    setpname(text);
 		}
-	    }, new Coord(0, y));
-	y += 25;
-	add(new Button(75, "Set") {
+	    };
+	composer.add(pname);
+	composer.add(new Button(sbw, "Set") {
 		public void click() {
 		    setpname(pname.text);
 		}
-	    }, new Coord(0, y));
-	y += 35;
+	    });
 
-	add(new Label("My hearth secret:"), new Coord(0, y));
-	y += 15;
-	charpass = add(new TextEntry(width, "") {
+	composer.add(new Label("My hearth secret:"));
+	charpass = new TextEntry(sz.x, "") {
 		{dshow = true;}
 		public void activate(String text) {
 		    setpwd(text);
 		}
-	    }, new Coord(0, y));
-	y += 25;
-	add(new Button(45, "Set")    { public void click() {setpwd(charpass.text);} }, new Coord(  0, y));
-	add(new Button(60, "Clear")  { public void click() {setpwd("");} },            new Coord( 55, y));
-	add(new Button(75, "Random") { public void click() {setpwd(randpwd());} },     new Coord(125, y));
-	y += 35;
+	    };
+	composer.add(charpass);
+        composer.addr(
+	    new Button(sbw, "Set")    { public void click() {setpwd(charpass.text);} },
+	    new Button(sbw, "Clear")  { public void click() {setpwd("");} },
+	    new Button(sbw, "Random") { public void click() {setpwd(randpwd());} }
+        );
 
-	add(new Label("Make kin by hearth secret:"), new Coord(0, y));
-	y += 15;
-	opass = add(new TextEntry(width, "") {
+	composer.add(new Label("Make kin by hearth secret:"));
+	opass = new TextEntry(sz.x, "") {
 		public void activate(String text) {
 		    BuddyWnd.this.wdgmsg("bypwd", text);
 		    settext("");
 		}
-	    }, new Coord(0, y));
-	y += 25;
-	add(new Button(75, "Add kin") {
+	    };
+	composer.add(opass);
+	composer.add(new Button(sbw, "Add kin") {
 		public void click() {
 		    BuddyWnd.this.wdgmsg("bypwd", opass.text);
 		    opass.settext("");
 		}
-	    }, new Coord(0, y));
+	    });
 	pack();
     }
-    
+
     private String randpwd() {
 	String charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 	StringBuilder buf = new StringBuilder();
@@ -573,7 +600,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		    pack();
 		}
 		if(b != null) {
-		    info = add(new BuddyInfo(new Coord(225, sz.y - 35 - Window.wbox.bisz().y), b), width + 20, 35);
+		    info = add(new BuddyInfo(new Coord(UI.scale(225), sz.y - offset - Window.wbox.bisz().y), b), width + margin3, offset);
 		    infof = Frame.around(this, Collections.singletonList(info));
 		}
 		pack();
