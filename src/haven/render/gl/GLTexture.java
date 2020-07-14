@@ -59,6 +59,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	ckstate(state, 1);
 	gl.glDeleteTextures(1, new int[] {id}, 0);
 	state = 2;
+	setmem(null, 0);
     }
 
     public int glid() {

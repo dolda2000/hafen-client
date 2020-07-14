@@ -55,6 +55,7 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	ckstate(state, 1);
 	gl.glDeleteVertexArrays(1, new int[] {id}, 0);
 	state = 2;
+	setmem(null, 0);
     }
 
     public int glid() {
