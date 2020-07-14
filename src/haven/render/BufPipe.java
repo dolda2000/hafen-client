@@ -65,7 +65,7 @@ public class BufPipe implements Pipe {
 
     public void copy(Pipe from) {
 	State[] states = from.states();
-	states = Arrays.copyOf(states, states.length);
+	this.states = Arrays.copyOf(states, states.length);
     }
 
     public int hashCode() {
