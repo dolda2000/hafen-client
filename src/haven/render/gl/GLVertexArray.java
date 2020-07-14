@@ -31,6 +31,7 @@ import javax.media.opengl.*;
 import haven.Disposable;
 import haven.render.*;
 import haven.render.sl.Type;
+import haven.render.sl.Attribute;
 import static haven.render.DataBuffer.Usage.*;
 
 public class GLVertexArray extends GLObject implements BGL.ID {
@@ -153,8 +154,7 @@ public class GLVertexArray extends GLObject implements BGL.ID {
     static class ProgIndex implements Disposable {
 	final Model mod;
 	final GLEnvironment env;
-	GLVertexArray[] vaos = new GLVertexArray[2];
-	GLProgram[] progs = new GLProgram[2];
+	Indexed[] vaos = new Indexed[2];
 	int n = 0;
 
 	ProgIndex(Model mod, GLEnvironment env) {
@@ -162,56 +162,68 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	    this.env = env;
 	}
 
-	void add(GLProgram prog, GLVertexArray vao) {
-	    if(vaos.length <= n) {
-		vaos = Arrays.copyOf(vaos, vaos.length * 2);
-		progs = Arrays.copyOf(progs, progs.length * 2);
+	class Indexed extends GLVertexArray {
+	    final Collection<GLProgram> progs = new HashSet<>();
+	    final Attribute[] attribs;
+
+	    Indexed(GLEnvironment env, Attribute[] attribs) {
+		super(env);
+		this.attribs = attribs;
 	    }
-	    vaos[n] = vao;
-	    progs[n] = prog;
-	    n++;
+
+	    boolean cleanprogs() {
+		for(Iterator<GLProgram> i = progs.iterator(); i.hasNext();) {
+		    GLProgram prog = i.next();
+		    if(prog.disposed)
+			i.remove();
+		}
+		return(progs.isEmpty());
+	    }
+
+	    void useprog(GLProgram prog) {
+		progs.add(prog);
+	    }
 	}
 
 	void clean() {
 	    int o = 0;
 	    for(int i = 0; i < n; i++) {
-		if(!progs[i].disposed) {
-		    progs[o] = progs[i];
+		if(!vaos[i].cleanprogs()) {
 		    vaos[o] = vaos[i];
 		    o++;
 		} else {
 		    vaos[i].dispose();
 		}
 	    }
-	    for(int i = o; i < n; i++) {
-		progs[i] = null;
+	    for(int i = o; i < n; i++)
 		vaos[i] = null;
-	    }
 	    n = o;
 	}
 
+	void add(Indexed vao) {
+	    if(vaos.length <= n)
+		vaos = Arrays.copyOf(vaos, vaos.length * 2);
+	    vaos[n] = vao;
+	    n++;
+
+	    /* XXX? It would be nice if VAOs could be cleaned out when
+	     * programs actually go away rather than when being
+	     * re-requested. */
+	    clean();
+	}
+
 	GLVertexArray get(GLProgram prog) {
-	    GLVertexArray ret = null;
-	    boolean clean = false;
+	    Attribute[] attr = prog.attribs;
 	    for(int i = 0; i < n; i++) {
-		if(progs[i].disposed)
-		    clean = true;
-		if(progs[i] == prog) {
-		    ret = vaos[i];
-		    break;
+		if(Arrays.equals(attr, vaos[i].attribs)) {
+		    vaos[i].useprog(prog);
+		    return(vaos[i]);
 		}
 	    }
-	    if(ret == null) {
-		ret = new GLVertexArray(prog.env);
-		ret.init(prog, mod);
-		add(prog, ret);
-	    }
-	    if(clean) {
-		/* XXX? It would be nice if VAOs could be cleaned out
-		 * when programs actually go away rather than when
-		 * being re-requested. */
-		clean();
-	    }
+	    Indexed ret = new Indexed(prog.env, attr);
+	    ret.init(prog, mod);
+	    ret.useprog(prog);
+	    add(ret);
 	    return(ret);
 	}
 
