@@ -78,6 +78,9 @@ public class BumpMap extends State {
 			}
 		    }, 1000);
 		*/
+
+		MeshMorph.get(prog.vctx).add(tanc.value(prog.vctx), MeshMorph.MorphType.DIR);
+		MeshMorph.get(prog.vctx).add(bitc.value(prog.vctx), MeshMorph.MorphType.DIR);
 	    }
 	};
 
