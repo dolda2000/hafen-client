@@ -152,10 +152,6 @@ public abstract class Sprite implements RenderTree.Node {
 
     public void draw(GOut g) {}
 
-    /* XXXRENDER
-    public abstract boolean setup(RenderList d);
-    */
-
     public boolean tick(double dt) {
 	return(false);
     }

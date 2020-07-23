@@ -272,10 +272,6 @@ public class WaterTile extends Tiler {
 
 	public void apply(Pipe buf) {
 	    buf.put(surfslot, this);
-	    /* XXXRENDER? Would these have been necessary at all, even to begin with?
-	    buf.put(States.color, null);
-	    buf.put(Light.lighting, null);
-	    */
 	    surfextra.apply(buf);
 	}
     }

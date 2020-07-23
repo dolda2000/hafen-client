@@ -42,12 +42,6 @@ public abstract class GAttrib {
     public void dispose() {
     }
 
-    /* XXXRENDER
-    public Object staticp() {
-	return(Rendered.CONSTANS);
-    }
-    */
-
     /* Private to Gob.java */
     Collection<RenderTree.Slot> slots;
     public void added(RenderTree.Slot slot) {

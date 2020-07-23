@@ -32,7 +32,7 @@ import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
-public class Composited implements RenderTree.Node /* XXXRENDER implements MapView.Clickable */ {
+public class Composited implements RenderTree.Node {
     public final Skeleton skel;
     public final Pose pose;
     private final PoseMorph morph;
@@ -450,15 +450,6 @@ public class Composited implements RenderTree.Node /* XXXRENDER implements MapVi
 	    ret.add(ne);
 	}
 	return(ret);
-    }
-
-    /* XXXRENDER: Remove me */
-    public void changes(boolean nocatch) {
-    }
-
-    /* XXXRENDER: Remove me */
-    public void changes() {
-	changes(false);
     }
 
     public static class CompositeClick extends Clickable {

@@ -188,10 +188,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	}
     }
 
-    /* XXXRENDER: Remove */
-    public static class Static {}
-    public static class SemiStatic {}
-
     public Gob(Glob glob, Coord2d c, long id) {
 	this.glob = glob;
 	this.rc = c;
@@ -532,71 +528,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	slots.remove(slot);
     }
 
-    /* XXXRENDER
-    public boolean setup(RenderList rl) {
-	loc.tick();
-	for(Overlay ol : ols)
-	    rl.add(ol, null);
-	for(Overlay ol : ols) {
-	    if(ol.spr instanceof Overlay.SetupMod)
-		((Overlay.SetupMod)ol.spr).setupmain(rl);
-	}
-	GobHealth hlt = getattr(GobHealth.class);
-	if(hlt != null)
-	    rl.prepc(hlt.getfx());
-	Drawable d = getattr(Drawable.class);
-	if(d != null)
-	    d.setup(rl);
-	Speaking sp = getattr(Speaking.class);
-	if(sp != null)
-	    rl.add(sp.fx, null);
-	KinInfo ki = getattr(KinInfo.class);
-	if(ki != null)
-	    rl.add(ki.fx, null);
-	return(false);
-    }
-
-    private static final Object DYNAMIC = new Object();
-    private Object seq = null;
-    public Object staticp() {
-	if(seq == null) {
-	    int rs = 0;
-	    for(GAttrib attr : attr.values()) {
-		Object as = attr.staticp();
-		if(as == Rendered.CONSTANS) {
-		} else if(as instanceof Static) {
-		} else if(as == SemiStatic.class) {
-		    rs = Math.max(rs, 1);
-		} else {
-		    rs = 2;
-		    break;
-		}
-	    }
-	    for(Overlay ol : ols) {
-		Object os = ol.staticp();
-		if(os == Rendered.CONSTANS) {
-		} else if(os instanceof Static) {
-		} else if(os == SemiStatic.class) {
-		    rs = Math.max(rs, 1);
-		} else {
-		    rs = 2;
-		    break;
-		}
-	    }
-	    switch(rs) {
-	    case 0: seq = new Static(); break;
-	    case 1: seq = new SemiStatic(); break;
-	    default: seq = null; break;
-	    }
-	}
-	return((seq == DYNAMIC)?null:seq);
-    }
-    */
-
-    void changed() {
-	// seq = null; XXXRENDER
-    }
-
     private Waitable.Queue updwait = null;
     private int updateseq = 0;
     void updated() {
@@ -667,41 +598,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    return(0);
 	return(m.getv());
     }
-
-    /* XXXRENDER
-    public final GLState olmod = new GLState() {
-	    public void apply(GOut g) {}
-	    public void unapply(GOut g) {}
-	    public void prep(Buffer buf) {
-		for(Overlay ol : ols) {
-		    if(ol.spr instanceof Overlay.SetupMod) {
-			((Overlay.SetupMod)ol.spr).setupgob(buf);
-		    }
-		}
-	    }
-	};
-    */
-
-    /*
-    public class Save extends GLState.Abstract {
-	public Matrix4f cam = new Matrix4f(), wxf = new Matrix4f(),
-	    mv = new Matrix4f();
-	public Projection proj = null;
-	boolean debug = false;
-
-	public void prep(Buffer buf) {
-	    mv.load(cam.load(buf.get(PView.cam).fin(Matrix4f.id))).mul1(wxf.load(buf.get(PView.loc).fin(Matrix4f.id)));
-	    Projection proj = buf.get(PView.proj);
-	    PView.RenderState wnd = buf.get(PView.wnd);
-	    Coord3f s = proj.toscreen(mv.mul4(Coord3f.o), wnd.sz());
-	    Gob.this.sc = new Coord(s);
-	    Gob.this.sczu = proj.toscreen(mv.mul4(Coord3f.zu), wnd.sz()).sub(s);
-	    this.proj = proj;
-	}
-    }
-
-    public final Save save = new Save();
-    */
 
     public class Placed implements RenderTree.Node, TickList.Ticking, TickList.TickNode {
 	private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
