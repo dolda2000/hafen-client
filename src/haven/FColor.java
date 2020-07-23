@@ -37,6 +37,8 @@ public class FColor {
     public static final FColor YELLOW  = new FColor(1, 1, 0);
     public static final FColor MAGENTA = new FColor(1, 0, 1);
     public static final FColor CYAN    = new FColor(0, 1, 1);
+    public static final FColor BLACK_T = new FColor(0, 0, 0, 0);
+    public static final FColor WHITE_T = new FColor(1, 1, 1, 0);
     public final float r, g, b, a;
 
     public FColor(float r, float g, float b, float a) {
