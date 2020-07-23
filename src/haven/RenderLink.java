@@ -92,8 +92,7 @@ public interface RenderLink {
 		final Indir<Resource> amb = res.pool.load(nm, ver);
 		l = new RenderLink() {
 			public RenderTree.Node make() {
-			    // return(new ActAudio.Ambience(amb.get())); XXXRENDER
-			    return(null);
+			    return(new ActAudio.Ambience(amb.get()));
 			}
 		    };
 	    } else if(t == 2) {
