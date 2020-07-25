@@ -1654,7 +1654,7 @@ public class Utils {
 
 	    synchronized(emerg) {
 		if(eid == 0)
-		    System.err.println("could not impose ordering in idcmd, using slow-path");
+		    new Warning("could not impose ordering in idcmd, using slow-path").issue();
 		clean();
 		Ref ar = new Ref(a, cleanq), br = new Ref(b, cleanq);
 		Long ai, bi;

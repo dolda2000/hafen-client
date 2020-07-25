@@ -748,6 +748,19 @@ public class Resource implements Serializable {
 	    this.res = res;
 	}
     }
+
+    public static class LoadWarning extends Warning {
+	public final Resource res;
+
+	public LoadWarning(Resource res, String msg) {
+	    super(msg);
+	    this.res = res;
+	}
+
+	public LoadWarning(Resource res, String msg, Object... args) {
+	    this(res, String.format(msg, args));
+	}
+    }
     
     public static Coord cdec(Message buf) {
 	return(new Coord(buf.int16(), buf.int16()));
