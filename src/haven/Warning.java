@@ -63,4 +63,8 @@ public class Warning extends Throwable {
 	    }
 	}
     }
+
+    public static void warn(String fmt, Object... args) {
+	new Warning(fmt, args).issue();
+    }
 }
