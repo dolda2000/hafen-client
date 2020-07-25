@@ -154,6 +154,12 @@ public abstract class BGL {
 	    });
     }
 
+    public void glBindAttribLocation(final ID program, final ID index, final String name) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glBindAttribLocation(program.glid(), index.glid(), name);}
+	    });
+    }
+
     public void glBindBuffer(final int target, final ID buffer) {
 	add(new Command() {
 		public void run(GL3 gl) {gl.glBindBuffer(target, (buffer == null)?0:buffer.glid());}

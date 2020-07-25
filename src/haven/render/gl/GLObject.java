@@ -52,7 +52,6 @@ public abstract class GLObject implements Disposable {
 	    dispseq = env.dispseq();
 	    env.disposed.add(this);
 	    del = true;
-	    setmem(null, 0);
 	}
     }
 

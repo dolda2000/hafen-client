@@ -72,9 +72,18 @@ public abstract class Sprite implements RenderTree.Node {
 			}
 		    });
 	    } catch(NoSuchMethodException e) {}
-	    if(Sprite.class.isAssignableFrom(cl))
-		return(mkdynfact(cl.asSubclass(Sprite.class)));
-	    return(null);
+	    if(Sprite.class.isAssignableFrom(cl)) {
+		Class<? extends Sprite> scl = cl.asSubclass(Sprite.class);
+		try {
+		    Function<Object[], ? extends Sprite> make = Utils.consfun(scl, Owner.class, Resource.class);
+		    return((owner, res, sdt) -> make.apply(new Object[]{owner, res}));
+		} catch(NoSuchMethodException e) {}
+		try {
+		    Function<Object[], ? extends Sprite> make = Utils.consfun(scl, Owner.class, Resource.class, Message.class);
+		    return((owner, res, sdt) -> make.apply(new Object[]{owner, res, sdt}));
+		} catch(NoSuchMethodException e) {}
+	    }
+	    throw(new RuntimeException("Could not find any suitable constructor for dynamic sprite"));
 	}
     }
 
@@ -83,26 +92,6 @@ public abstract class Sprite implements RenderTree.Node {
 	public Sprite create(Owner owner, Resource res, Message sdt);
     }
     
-    public static Factory mkdynfact(Class<? extends Sprite> cl) {
-	try {
-	    final Constructor<? extends Sprite> cons = cl.getConstructor(Owner.class, Resource.class);
-	    return(new Factory() {
-		    public Sprite create(Owner owner, Resource res, Message sdt) {
-			return(Utils.construct(cons, owner, res));
-		    }
-		});
-	} catch(NoSuchMethodException e) {}
-	try {
-	    final Constructor<? extends Sprite> cons = cl.getConstructor(Owner.class, Resource.class, Message.class);
-	    return(new Factory() {
-		    public Sprite create(Owner owner, Resource res, Message sdt) {
-			return(Utils.construct(cons, owner, res, sdt));
-		    }
-		});
-	} catch(NoSuchMethodException e) {}
-	throw(new RuntimeException("Could not find any suitable constructor for dynamic sprite"));
-    }
-	
     public static class ResourceException extends RuntimeException {
 	public Resource res;
 		
@@ -151,10 +140,6 @@ public abstract class Sprite implements RenderTree.Node {
     }
 
     public void draw(GOut g) {}
-
-    /* XXXRENDER
-    public abstract boolean setup(RenderList d);
-    */
 
     public boolean tick(double dt) {
 	return(false);

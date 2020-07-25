@@ -908,61 +908,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(orig);
 	}, Homo3D.loc, RenderContext.slot);
 
-    /* XXXRENDER
-    private Outlines outlines = new Outlines(false);
-    public void setup(RenderList rl) {
-	Gob pl = player();
-	if(pl != null)
-	    this.cc = new Coord2d(pl.getc());
-	synchronized(glob) {
-	    if(glob.lightamb != null) {
-		DirLight light = new DirLight(glob.lightamb, glob.lightdif, glob.lightspc, Coord3f.o.sadd((float)glob.lightelev, (float)glob.lightang, 1f));
-		rl.add(light, null);
-		updsmap(rl, light);
-		amb = light;
-	    } else {
-		amb = null;
-	    }
-	    for(Glob.Weather w : glob.weather)
-		w.gsetup(rl);
-	    for(Glob.Weather w : glob.weather) {
-		if(w instanceof Rendered)
-		    rl.add((Rendered)w, null);
-	    }
-	}
-	-* XXX: MSAA level should be configurable. *-
-	if(rl.cfg.pref.fsaa.val) {
-	    FBConfig cfg = ((PView.ConfContext)rl.state().get(PView.ctx)).cfg;
-	    cfg.ms = 4;
-	}
-	if(rl.cfg.pref.outline.val)
-	    rl.add(outlines, null);
-	rl.add(map, null);
-	rl.add(mapol, null);
-	rl.add(gobs, null);
-	if(placing != null)
-	    addgob(rl, placing);
-	synchronized(extradraw) {
-	    for(Rendered extra : extradraw)
-		rl.add(extra, null);
-	    extradraw.clear();
-	}
-    }
-
-    public static final haven.glsl.Uniform amblight = new haven.glsl.Uniform.AutoApply(haven.glsl.Type.INT) {
-	    public void apply(GOut g, VarID loc) {
-		int idx = -1;
-		RenderContext ctx = g.st.get(PView.ctx);
-		if(ctx instanceof WidgetContext) {
-		    Widget wdg = ((WidgetContext)ctx).widget();
-		    if(wdg instanceof MapView)
-			idx = g.st.get(Light.lights).index(((MapView)wdg).amb);
-		}
-		g.gl.glUniform1i(loc, idx);
-	    }
-	};
-    */
-
     private final Map<RenderTree.Node, RenderTree.Slot> rweather = new HashMap<>();
     private void updweather() {
 	Glob.Weather[] wls = glob.weather().toArray(new Glob.Weather[0]);
@@ -993,14 +938,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
     public RenderTree.Slot drawadd(RenderTree.Node extra) {
 	return(basic.add(extra));
     }
-
-    /* XXXRENDER
-    public void drawadd(Rendered extra) {
-	synchronized(extradraw) {
-	    extradraw.add(extra);
-	}
-    }
-    */
 
     public Gob player() {
 	return((plgob < 0) ? null : glob.oc.getgob(plgob));

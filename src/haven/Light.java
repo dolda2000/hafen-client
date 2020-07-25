@@ -234,40 +234,6 @@ public abstract class Light implements RenderTree.Node {
 	}
     }
     
-    /* XXXRENDER
-    public static final GLState deflight = new GLState() {
-	    public void apply(GOut g) {}
-	    public void unapply(GOut g) {}
-	    
-	    public void prep(Buffer buf) {
-		if(buf.cfg.pref.flight.val)
-		    plights.prep(buf);
-		else
-		    vlights.prep(buf);
-		if(buf.cfg.pref.cel.val)
-		    celshade.prep(buf);
-	    }
-	};
-
-    @Material.ResName("light")
-    public static class $light implements Material.ResCons {
-	public GLState cons(Resource res, Object... args) {
-	    String nm = (String)args[0];
-	    if(nm.equals("def")) {
-		return(deflight);
-	    } else if(nm.equals("pv")) {
-		return(vlights);
-	    } else if(nm.equals("pp")) {
-		return(plights);
-	    } else if(nm.equals("n")) {
-		return(null);
-	    } else {
-		throw(new Resource.LoadException("Unknown lighting type: " + nm, res));
-	    }
-	}
-    }
-    */
-    
     @Resource.LayerName("light")
     public static class Res extends Resource.Layer {
 	public final int id;

@@ -1381,6 +1381,11 @@ public class Utils {
 	}
     }
 
+    public static <R> Function<Object[], R> consfun(Class<R> cl, Class<?>... args) throws NoSuchMethodException {
+	Constructor<R> cons = cl.getConstructor(args);
+	return(iargs -> construct(cons, iargs));
+    }
+
     public static <R> Function<Object[], R> smthfun(Class<?> cl, String name, Class<R> rtype, Class<?>...args) throws NoSuchMethodException {
 	Method mth = cl.getDeclaredMethod(name, args);
 	if(!rtype.isAssignableFrom(mth.getReturnType()))
@@ -1649,7 +1654,7 @@ public class Utils {
 
 	    synchronized(emerg) {
 		if(eid == 0)
-		    System.err.println("could not impose ordering in idcmd, using slow-path");
+		    Warning.warn("could not impose ordering in idcmd, using slow-path");
 		clean();
 		Ref ar = new Ref(a, cleanq), br = new Ref(b, cleanq);
 		Long ai, bi;

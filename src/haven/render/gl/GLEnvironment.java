@@ -796,7 +796,7 @@ public class GLEnvironment implements Environment {
 	    nseq[(seqtail + i) & (nsz - 1)] = cseq[(seqtail + i) & (csz - 1)];
 	sequse = nseq;
 	if(nsz >= 0x4000)
-	    System.err.println("warning: dispose queue size increased to " + nsz);
+	    Warning.warn("warning: dispose queue size increased to " + nsz);
     }
 
     void seqreg(GLRender r) {

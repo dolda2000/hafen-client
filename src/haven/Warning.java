@@ -27,30 +27,44 @@
 package haven;
 
 import java.util.*;
-import haven.render.*;
+import haven.error.ErrorHandler;
 
-public abstract class GAttrib {
-    public final Gob gob;
-	
-    public GAttrib(Gob gob) {
-	this.gob = gob;
-    }
-	
-    public void ctick(double dt) {
-    }
-    
-    public void dispose() {
+public class Warning extends Throwable {
+    public Warning(Throwable cause, String message) {
+	super(message, cause);
     }
 
-    /* Private to Gob.java */
-    Collection<RenderTree.Slot> slots;
-    public void added(RenderTree.Slot slot) {
-	if(slots == null)
-	    slots = new ArrayList<>(1);
-	slots.add(slot);
+    public Warning(String message) {
+	super(message);
     }
-    public void removed(RenderTree.Slot slot) {
-	if(slots != null)
-	    slots.remove(slot);
+
+    public Warning(String message, Object... args) {
+	this(String.format(message, args));
+    }
+
+    public Warning(Throwable cause) {
+	super(cause);
+    }
+
+    private static final int LOGSIZE = 10;
+    private static LinkedList<Warning> log = null;
+    public void issue() {
+	System.err.printf("hafen: warning: %s\n", this);
+	synchronized(Warning.class) {
+	    if(log == null) {
+		ErrorHandler errh = ErrorHandler.find();
+		if(errh != null)
+		    errh.lsetprop("warnings", log = new LinkedList<>());
+	    }
+	    if(log != null) {
+		log.add(this);
+		while(log.size() > LOGSIZE)
+		    log.removeFirst();
+	    }
+	}
+    }
+
+    public static void warn(String fmt, Object... args) {
+	new Warning(fmt, args).issue();
     }
 }

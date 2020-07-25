@@ -174,7 +174,7 @@ public class GLRender implements Render, Disposable {
 		    ne++;
 	    }
 
-	    GLProgram.VarID[] enable = new GLProgram.VarID[data.va.fmt.inputs.length];
+	    BGL.ID[] enable = new BGL.ID[data.va.fmt.inputs.length];
 	    boolean[] instanced = new boolean[enable.length];
 	    for(int i = 0; i < enable.length; i++) {
 		/* XXX: Properly handle input attributes not present in the program. */
@@ -525,7 +525,7 @@ public class GLRender implements Render, Disposable {
 
     protected void finalize() {
 	if(dispseq != 0) {
-	    System.err.println("warning: gl-render was leaked without being disposed");
+	    Warning.warn("warning: gl-render was leaked without being disposed");
 	    dispose();
 	}
     }

@@ -374,7 +374,7 @@ public class Material implements Pipe.Op {
 		if(cons != null)
 		    ret.left.add(cons.cons(res, args));
 		else
-		    System.err.printf("Uknown material part name: %s\n", nm);
+		    new Resource.LoadWarning(res, "unknown material part name in %s: %s", res.name, nm).issue();
 	    }
 	    return(ret);
 	}

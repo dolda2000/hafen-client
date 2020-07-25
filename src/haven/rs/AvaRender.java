@@ -40,7 +40,6 @@ public class AvaRender {
 	Composited comp = new Composited(base.layer(Skeleton.Res.class).s);
 	comp.chmod(mod);
 	comp.chequ(equ);
-	comp.changes(true);
 	return(comp);
     }
 
