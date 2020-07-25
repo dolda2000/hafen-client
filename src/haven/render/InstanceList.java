@@ -625,7 +625,7 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 		ninvalid--;
 		clremove(slot);
 		if(new InstKey(slot).valid())
-		    new Warning("removing non-present slot with valid inst-key").issue();
+		    Warning.warn("removing non-present slot with valid inst-key");
 		return;
 	    }
 	    Object cur = instreg.get(key);

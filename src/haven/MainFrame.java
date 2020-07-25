@@ -267,7 +267,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 		ui.join(5000);
 	    } catch(InterruptedException e) {}
 	    if(ui.isAlive())
-		new Warning("ui thread failed to terminate").issue();
+		Warning.warn("ui thread failed to terminate");
 	    dispose();
 	}
     }

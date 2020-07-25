@@ -525,7 +525,7 @@ public class GLRender implements Render, Disposable {
 
     protected void finalize() {
 	if(dispseq != 0) {
-	    new Warning("warning: gl-render was leaked without being disposed").issue();
+	    Warning.warn("warning: gl-render was leaked without being disposed");
 	    dispose();
 	}
     }

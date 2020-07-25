@@ -47,7 +47,7 @@ public class Locked implements AutoCloseable {
 
     protected void finalize() {
 	if(held) {
-	    new Warning("held lock finalized").issue();
+	    Warning.warn("held lock finalized");
 	    lk.unlock();
 	}
     }
