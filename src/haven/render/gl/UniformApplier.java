@@ -128,6 +128,21 @@ public interface UniformApplier<T> {
 		    gl.glUniform1i(var, n);
 		});
 
+	    TypeMapping.register(Type.IVEC2, int[].class, (gl, var, n) -> {
+		    gl.glUniform2i(var, n[0], n[1]);
+		});
+	    TypeMapping.register(Type.IVEC2, Coord.class, (gl, var, c) -> {
+		    gl.glUniform2i(var, c.x, c.y);
+		});
+
+	    TypeMapping.register(Type.IVEC3, int[].class, (gl, var, n) -> {
+		    gl.glUniform3i(var, n[0], n[1], n[2]);
+		});
+
+	    TypeMapping.register(Type.IVEC4, int[].class, (gl, var, n) -> {
+		    gl.glUniform4i(var, n[0], n[1], n[2], n[3]);
+		});
+
 	    TypeMapping.register(Type.VEC2, float[].class, (gl, var, a) -> {
 		    gl.glUniform2f(var, a[0], a[1]);
 		});
