@@ -37,6 +37,10 @@ public class Bufflist extends Widget {
 	public void move(Coord c, double off);
     }
 
+    public Bufflist() {
+        super(Buff.cframe.sz());
+    }
+
     private void arrange(Widget imm) {
 	int i = 0, rn = 0, x = 0, y = 0, maxh = 0;
 	Coord br = new Coord();
