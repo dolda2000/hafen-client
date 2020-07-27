@@ -28,28 +28,288 @@ package haven;
 
 import java.util.*;
 import java.nio.*;
+import haven.render.*;
+import haven.render.sl.*;
 import haven.MorphedMesh.Morpher;
 import haven.MorphedMesh.MorphedBuf;
+import static haven.render.sl.Cons.*;
+import static haven.render.sl.Type.*;
 
-public class MeshAnim {
+public class MeshAnim extends State {
     public final Frame[] frames;
     public final float len;
+    public final int minv, maxv;
 
     public MeshAnim(Frame[] frames, float len) {
 	this.frames = frames;
 	this.len = len;
+	int min = -1, max = -1;
+	for(int i = 0; i < frames.length; i++) {
+	    if(frames[i].minv < 0)
+		continue;
+	    if((min < 0) || (frames[i].minv < min))
+		min = frames[i].minv;
+	    if((max < 0) || (frames[i].maxv > max))
+		max = frames[i].maxv;
+	}
+	if(min < 0)
+	    throw(new RuntimeException("No animated vertex in meshanim"));
+	this.minv = min;
+	this.maxv = max;
     }
 
     public static class Frame {
 	public final float time;
 	public final int[] idx;
 	public final float[] pos, nrm;
+	public final int minv, maxv;
 
 	public Frame(float time, int[] idx, float[] pos, float[] nrm) {
 	    this.time = time;
 	    this.idx = idx;
 	    this.pos = pos;
 	    this.nrm = nrm;
+	    if(idx.length > 0) {
+		int min = idx[0], max = idx[0];
+		for(int i = 1; i < idx.length; i++) {
+		    min = Math.min(min, idx[i]);
+		    max = Math.max(max, idx[i]);
+		}
+		this.minv = min;
+		this.maxv = max;
+	    } else {
+		this.minv = -1;
+		this.maxv = -1;
+	    }
+	}
+    }
+
+    public boolean hasnrm() {
+	return(frames[0].nrm != null);
+    }
+
+    private Texture2D dtex(boolean pos) {
+	int nv = maxv + 1 - minv;
+	int nt = nv * frames.length;
+	int w = Tex.nextp2((int)Math.ceil(Math.sqrt(nt)));
+	int h = (nt + w - 1) / w;
+	DataBuffer.Filler<Texture2D.Image> init = (img, env) -> {
+	    if(img.level != 0)
+		return(null);
+	    FillBuffer ret = env.fillbuf(img);
+	    ShortBuffer buf = ret.push().asShortBuffer();
+	    for(int i = 0; i < buf.limit(); i++)
+		buf.put(i, (short)0);
+	    for(int fn = 0; fn < frames.length; fn++) {
+		Frame f = frames[fn];
+		float[] data = pos ? f.pos : f.nrm;
+		for(int i = 0; i < f.idx.length; i++) {
+		    int tn = (f.idx[i] - minv) + (nv * fn);
+		    buf.put((tn * 3) + 0, Utils.hfenc(data[(i * 3) + 0]));
+		    buf.put((tn * 3) + 1, Utils.hfenc(data[(i * 3) + 1]));
+		    buf.put((tn * 3) + 2, Utils.hfenc(data[(i * 3) + 2]));
+		}
+	    }
+	    return(ret);
+	};
+	return(new Texture2D(w, h, DataBuffer.Usage.STATIC, new VectorFormat(3, NumberFormat.FLOAT16), init));
+    }
+
+    private Texture2D.Sampler2D ptex = null, ntex = null;
+    public Texture2D.Sampler2D ptex() {
+	if(ptex == null) {
+	    synchronized(this) {
+		if(ptex == null)
+		    ptex = new Texture2D.Sampler2D(dtex(true));
+	    }
+	}
+	return(ptex);
+    }
+    public Texture2D.Sampler2D ntex() {
+	if(ntex == null) {
+	    synchronized(this) {
+		if(ntex == null)
+		    ntex = new Texture2D.Sampler2D(dtex(false));
+	    }
+	}
+	return(ntex);
+    }
+
+    public ShaderMacro shader() {return(null);}
+    public void apply(Pipe p) {p.put(anim, this);}
+
+    public static final State.Slot<MeshAnim> anim = new State.Slot<>(State.Slot.Type.GEOM, MeshAnim.class);
+    private static class Shader implements ShaderMacro {
+	static final Uniform pdata = new Uniform(SAMPLER2D, "panim", p -> p.get(anim).ptex(), anim);
+	static final Uniform ndata = new Uniform(SAMPLER2D, "nanim", p -> {
+		MeshAnim an = p.get(anim);
+		return(an.hasnrm() ? an.ntex() : null);
+	}, anim);
+	static final Uniform voff = new Uniform(IVEC2, "voff", p -> {
+		MeshAnim an = p.get(anim);
+		return(new int[] {an.minv, an.maxv + 1 - an.minv});
+	}, anim);
+	static final Uniform ff = new Uniform(INT, "foff", p -> p.get(frame).foff(), frame);
+	static final Uniform tf = new Uniform(INT, "toff", p -> p.get(frame).toff(), frame);
+	static final Uniform ipol = new Uniform(FLOAT, "ipol", p -> p.get(frame).a, frame);
+	final boolean nrm;
+	final Object id;
+
+	Shader(boolean nrm) {
+	    this.nrm = nrm;
+	    this.id = nrm;
+	}
+
+	Function off(VertexContext vctx, boolean pos) {
+	    Function.Def fun = new Function.Def(VEC3, pos ? "poff" : "doff");
+	    Block code = fun.code;
+	    Expression snum = code.local(INT, sub(vctx.vertid(), pick(voff.ref(), "x"))).ref();
+	    code.add(new If(or(lt(snum, l(0)), ge(snum, pick(voff.ref(), "y"))),
+			    new Return(vec3(0, 0, 0))));
+	    Expression data = (pos ? pdata : ndata).ref();
+	    Expression ts = code.local(IVEC2, textureSize(data, l(0))).ref();
+	    Expression snf = code.local(INT, add(ff.ref(), snum)).ref();
+	    Expression snt = code.local(INT, add(tf.ref(), snum)).ref();
+	    LValue scf = code.local(IVEC2, null).ref();
+	    code.add(ass(pick(scf, "y"), div(snf, pick(ts, "x"))));
+	    code.add(ass(pick(scf, "x"), sub(snf, mul(pick(scf, "y"), pick(ts, "x")))));
+	    LValue sct = code.local(IVEC2, null).ref();
+	    code.add(ass(pick(sct, "y"), div(snt, pick(ts, "x"))));
+	    code.add(ass(pick(sct, "x"), sub(snt, mul(pick(sct, "y"), pick(ts, "x")))));
+	    code.add(new Return(mix(pick(texelFetch(data, scf, l(0)), "rgb"),
+				    pick(texelFetch(data, sct, l(0)), "rgb"),
+				    ipol.ref())));
+	    return(fun);
+	}
+
+	public void modify(ProgramContext prog) {
+	    MeshMorph.get(prog.vctx).add(new MeshMorph.Morpher() {
+		    Function poff = off(prog.vctx, true);
+		    Function noff = off(prog.vctx, false);
+
+		    public void morph(ValBlock.Value val, MeshMorph.MorphType type, VertexContext vctx) {
+			switch(type) {
+			case POS:
+			    val.mod(in -> add(in, vec4(poff.call(), l(0.0))), -260);
+			    break;
+			case DIR:
+			    if(nrm)
+				val.mod(in -> add(in, noff.call()), -260);
+			    break;
+			}
+		    }
+		});
+	}
+
+	public int hashCode() {
+	    return(id.hashCode());
+	}
+
+	public boolean equals(Object that) {
+	    return((that instanceof Shader) && Utils.eq(((Shader)that).id, this.id));
+	}
+
+	private static final WeakHashedSet<Shader> interned = new WeakHashedSet<>(Hash.eq);
+	public static Shader get(boolean nrm) {
+	    return(interned.intern(new Shader(nrm)));
+	}
+    }
+
+    public static final State.Slot<Animated> frame = new State.Slot<>(State.Slot.Type.GEOM, Animated.class);
+    public class Animated extends State {
+	public final int ff, tf;
+	public final float a;
+	private final ShaderMacro shader;
+
+	public Animated(int ff, int tf, float a) {
+	    this.ff = ff;
+	    this.tf = tf;
+	    this.a = a;
+	    this.shader = Shader.get(hasnrm());
+	}
+
+	int foff() {return(ff * (maxv + 1 - minv));}
+	int toff() {return(tf * (maxv + 1 - minv));}
+
+	public ShaderMacro shader() {return(shader);}
+
+	public void apply(Pipe p) {
+	    MeshAnim.this.apply(p);
+	    p.put(frame, this);
+	}
+    }
+
+    public abstract class Animation {
+	public abstract Animated state();
+	public abstract boolean tick(float dt);
+	public MeshAnim desc() {return(MeshAnim.this);}
+    }
+
+    public class SeqAnimation extends Animation {
+	private int cf;
+	private float flen, ftm;
+
+	public SeqAnimation() {
+	    cf = -1;
+	    flen = ftm = 0;
+	    tick(0);
+	}
+
+	public boolean tick(float dt) {
+	    boolean rv = false;
+	    ftm += dt;
+	    while(true) {
+		if(ftm < flen)
+		    break;
+		ftm -= flen;
+		cf = (cf + 1) % frames.length;
+		if(cf == (frames.length - 1))
+		    flen = len - frames[cf].time;
+		else
+		    flen = frames[cf + 1].time - frames[cf].time;
+		if(cf == 0)
+		    rv = true;
+	    }
+	    return(true);
+	}
+
+	public Animated state() {
+	    return(new Animated(cf, (cf + 1) % frames.length, ftm / flen));
+	}
+    }
+
+    public class RandAnimation extends Animation {
+	private float fl, fp;
+	private int cfi, nfi;
+	private final Random rnd = new Random();
+
+	public RandAnimation() {
+	    fp = 0;
+	    setfr(rnd.nextInt(frames.length));
+	}
+
+	private void setfr(int fi) {
+	    cfi = fi;
+	    nfi = rnd.nextInt(frames.length - 1);
+	    if(nfi >= fi) nfi++;
+	    fl = ((fi < frames.length - 1) ? (frames[fi + 1].time) : len) - frames[fi].time;
+	}
+
+	public boolean tick(float dt) {
+	    fp += dt;
+	    if(fp >= fl) {
+		fp -= fl;
+		setfr(nfi);
+		if(fp >= fl) {
+		    fp = 0;
+		    setfr(rnd.nextInt(frames.length));
+		}
+	    }
+	    return(false);
+	}
+
+	public Animated state() {
+	    return(new Animated(cfi, nfi, fp / fl));
 	}
     }
 
@@ -316,6 +576,10 @@ public class MeshAnim {
 
 	public Anim make() {
 	    return(rnd?a.new RAnim():a.new SAnim());
+	}
+
+	public Animation create() {
+	    return(rnd ? a.new RandAnimation() : a.new SeqAnimation());
 	}
 
 	public void init() {
