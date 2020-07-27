@@ -214,6 +214,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	case SNORM16: return(GL.GL_SHORT);
 	case UNORM32: return(GL.GL_UNSIGNED_INT);
 	case SNORM32: return(GL3.GL_INT);
+	case FLOAT16: return(GL.GL_HALF_FLOAT);
 	case FLOAT32: return(GL.GL_FLOAT);
 	}
 	throw(new IllegalArgumentException(String.format("externalformat2: %s", efmt)));
