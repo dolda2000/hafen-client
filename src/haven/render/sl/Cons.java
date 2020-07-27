@@ -103,6 +103,7 @@ public class Cons {
     public static Expression texture3D(Expression s, Expression c) {return(Function.Builtin.texture3D.call(s, c));}
     public static Expression textureCube(Expression s, Expression c) {return(Function.Builtin.textureCube.call(s, c));}
     public static Expression texelFetch(Expression s, Expression c, Expression l) {return(Function.Builtin.texelFetch.call(s, c, l));}
+    public static Expression textureSize(Expression s, Expression lod) {return(Function.Builtin.textureSize.call(s, lod));}
     public static Expression mix(Expression x, Expression y, Expression a) {return(Function.Builtin.mix.call(x, y, a));}
     public static Expression clamp(Expression x, Expression a, Expression b) {return(Function.Builtin.clamp.call(x, a, b));}
     public static Expression step(Expression edge, Expression x) {return(Function.Builtin.step.call(edge, x));}
