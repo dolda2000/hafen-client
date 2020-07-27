@@ -114,7 +114,8 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	if(PoseMorph.boned(m)) {
 	    String bnm = PoseMorph.boneidp(m);
 	    if(bnm == null) {
-		ret = wrap.op.apply(new MorphedMesh(m, pmorph), wrap.locked);
+		PoseMorph2 st = new PoseMorph2(pose, m);
+		ret = RUtils.StateTickNode.from(wrap, st::state);
 		if(bonedb)
 		    ret = morphed.apply(ret);
 	    } else {
