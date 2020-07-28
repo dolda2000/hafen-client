@@ -147,8 +147,10 @@ public class MeshAnim extends State {
 		MeshAnim an = p.get(anim);
 		return(new int[] {an.minv, an.maxv + 1 - an.minv});
 	}, anim);
-	static final Uniform ff = new Uniform(INT, "foff", p -> p.get(frame).foff(), frame);
-	static final Uniform tf = new Uniform(INT, "toff", p -> p.get(frame).toff(), frame);
+	static final Uniform frames = new Uniform(IVEC2, "frames", p -> {
+		Animated fs = p.get(frame);
+		return(new int[] {fs.foff(), fs.toff()});
+	    }, frame);
 	static final Uniform ipol = new Uniform(FLOAT, "ipol", p -> p.get(frame).a, frame);
 	final boolean nrm;
 	final Object id;
@@ -166,8 +168,8 @@ public class MeshAnim extends State {
 			    new Return(vec3(0, 0, 0))));
 	    Expression data = (pos ? pdata : ndata).ref();
 	    Expression ts = code.local(IVEC2, textureSize(data, l(0))).ref();
-	    Expression snf = code.local(INT, add(ff.ref(), snum)).ref();
-	    Expression snt = code.local(INT, add(tf.ref(), snum)).ref();
+	    Expression snf = code.local(INT, add(pick(frames.ref(), "x"), snum)).ref();
+	    Expression snt = code.local(INT, add(pick(frames.ref(), "y"), snum)).ref();
 	    LValue scf = code.local(IVEC2, null).ref();
 	    code.add(ass(pick(scf, "y"), div(snf, pick(ts, "x"))));
 	    code.add(ass(pick(scf, "x"), sub(snf, mul(pick(scf, "y"), pick(ts, "x")))));
