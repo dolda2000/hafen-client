@@ -143,7 +143,7 @@ public class Composited implements RenderTree.Node {
 
     public class Model implements RenderTree.Node, TickList.TickNode, TickList.Ticking {
 	public final FastMesh m;
-	public final PoseMorph2 morph;
+	public final PoseMorph morph;
 	public final int id;
 	private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
 	private int z = 0, lz = 0;
@@ -167,7 +167,7 @@ public class Composited implements RenderTree.Node {
 
 	private Model(FastMesh m, int id) {
 	    this.m = m;
-	    this.morph = new PoseMorph2(pose, m);
+	    this.morph = new PoseMorph(pose, m);
 	    this.id = id;
 	}
 	
