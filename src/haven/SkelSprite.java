@@ -100,6 +100,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	ArrayList<Supplier<Pipe.Op>> states = new ArrayList<>();
 	for(MeshAnim.Animation anim : manims) {
 	    if(anim.desc().animp(m)) {
+		wrap = anim.desc().apply(wrap);
 		states.add(anim::state);
 		break;
 	    }

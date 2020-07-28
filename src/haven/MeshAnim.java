@@ -35,7 +35,13 @@ import static haven.render.sl.Type.*;
 
 public class MeshAnim extends State {
     public static final State.Slot<MeshAnim> anim = new State.Slot<>(State.Slot.Type.GEOM, MeshAnim.class);
-    public static final State.Slot<Animated> frame = new State.Slot<>(State.Slot.Type.GEOM, Animated.class);
+    public static final State.Slot<Animated> frame = new State.Slot<>(State.Slot.Type.GEOM, Animated.class)
+	.instanced(new Instancable<Animated>() {
+		final Instancer<Animated> nil = Instancer.dummy();
+		public Instancer<Animated> instid(Animated st) {
+		    return((st == null) ? nil : st.anim.instancer);
+		}
+	    });
     public final Frame[] frames;
     public final float len;
     public final int minv, maxv;
@@ -145,11 +151,11 @@ public class MeshAnim extends State {
 		MeshAnim an = p.get(anim);
 		return(new int[] {an.minv, an.maxv + 1 - an.minv});
 	}, anim);
-	static final Uniform frames = new Uniform(IVEC2, "frames", p -> {
+	static final InstancedUniform frames = new InstancedUniform.IVec2("frames", p -> {
 		Animated fs = p.get(frame);
 		return(new int[] {fs.foff(), fs.toff()});
 	    }, frame);
-	static final Uniform ipol = new Uniform(FLOAT, "ipol", p -> p.get(frame).a, frame);
+	static final InstancedUniform ipol = new InstancedUniform.Float1("ipol", p -> p.get(frame).a, frame);
 	final boolean nrm;
 	final Object id;
 
@@ -213,31 +219,57 @@ public class MeshAnim extends State {
 	}
     }
 
-    public class Animated extends State {
+    public static class Animated extends State implements InstanceBatch.AttribState {
+	public final MeshAnim anim;
 	public final int ff, tf;
 	public final float a;
-	private final ShaderMacro shader;
 
-	public Animated(int ff, int tf, float a) {
+	public Animated(MeshAnim anim, int ff, int tf, float a) {
+	    this.anim = anim;
 	    this.ff = ff;
 	    this.tf = tf;
 	    this.a = a;
-	    this.shader = Shader.get(hasnrm());
 	}
 
-	int foff() {return(ff * (maxv + 1 - minv));}
-	int toff() {return(tf * (maxv + 1 - minv));}
+	int foff() {return(ff * (anim.maxv + 1 - anim.minv));}
+	int toff() {return(tf * (anim.maxv + 1 - anim.minv));}
 
-	public ShaderMacro shader() {return(shader);}
+	public ShaderMacro shader() {return(null);}
 
 	public void apply(Pipe p) {
-	    MeshAnim.this.apply(p);
 	    p.put(frame, this);
+	}
+
+	public InstancedAttribute[] attribs() {
+	    return(new InstancedAttribute[] {Shader.frames.attrib, Shader.ipol.attrib});
 	}
     }
 
-    public ShaderMacro shader() {return(null);}
-    public void apply(Pipe p) {p.put(anim, this);}
+    static class Instanced extends Animated {
+	Instanced(MeshAnim anim) {
+	    super(anim, 0, 0, 0);
+	}
+
+	public ShaderMacro shader() {return(Instancer.mkinstanced);}
+    }
+    private Instanced ianim = null;
+    private final Instancer<Animated> instancer = (ast, bat) -> {
+	synchronized(this) {
+	    if(this.ianim == null)
+		this.ianim = new Instanced(this);
+	    return(this.ianim);
+	}
+    };
+
+    private ShaderMacro shader = null;
+    public ShaderMacro shader() {
+	if(shader == null)
+	    shader = Shader.get(hasnrm());
+	return(shader);
+    }
+    public void apply(Pipe p) {
+	p.put(anim, this);
+    }
 
     public abstract class Animation {
 	public abstract Animated state();
@@ -274,7 +306,7 @@ public class MeshAnim extends State {
 	}
 
 	public Animated state() {
-	    return(new Animated(cf, (cf + 1) % frames.length, ftm / flen));
+	    return(new Animated(MeshAnim.this, cf, (cf + 1) % frames.length, ftm / flen));
 	}
     }
 
@@ -309,7 +341,7 @@ public class MeshAnim extends State {
 	}
 
 	public Animated state() {
-	    return(new Animated(cfi, nfi, fp / fl));
+	    return(new Animated(MeshAnim.this, cfi, nfi, fp / fl));
 	}
     }
 
