@@ -27,11 +27,10 @@
 package haven;
 
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.function.*;
 import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
-import haven.MorphedMesh.Morpher;
 
 public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose {
     public static final Pipe.Op
@@ -43,11 +42,9 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
     public final Skeleton skel;
     public final Pose pose;
     public PoseMod[] mods = new PoseMod[0];
-    public MeshAnim.Anim[] manims = new MeshAnim.Anim[0];
+    public MeshAnim.Animation[] manims = new MeshAnim.Animation[0];
     public int curfl;
     protected final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
-    private final PoseMorph pmorph;
-    private Morpher.Factory mmorph;
     private Pose oldpose;
     private float ipold;
     private boolean stat = true;
@@ -73,11 +70,9 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	if(sr != null) {
 	    skel = sr.s;
 	    pose = skel.new Pose(skel.bindpose);
-	    pmorph = new PoseMorph(pose);
 	} else {
 	    skel = null;
 	    pose = null;
-	    pmorph = null;
 	}
 	update(fl, true);
     }
@@ -102,33 +97,44 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	if(!(wrap.r instanceof FastMesh))
 	    return(wrap);
 	FastMesh m = (FastMesh)wrap.r;
-	for(MeshAnim.Anim anim : manims) {
+	ArrayList<Supplier<Pipe.Op>> states = new ArrayList<>();
+	for(MeshAnim.Animation anim : manims) {
 	    if(anim.desc().animp(m)) {
-		RenderTree.Node ret = wrap.op.apply(new MorphedMesh(m, mmorph), wrap.locked);
-		if(bonedb)
-		    ret = morphed.apply(ret);
-		return(ret);
+		states.add(anim::state);
+		break;
 	    }
 	}
-	RenderTree.Node ret;
 	if(PoseMorph.boned(m)) {
 	    String bnm = PoseMorph.boneidp(m);
 	    if(bnm == null) {
 		PoseMorph2 st = new PoseMorph2(pose, m);
-		ret = RUtils.StateTickNode.from(wrap, st::state);
+		states.add(st::state);
 		if(bonedb)
-		    ret = morphed.apply(ret);
+		    states.add(() -> morphed);
 	    } else {
-		ret = RUtils.StateTickNode.from(wrap, pose.bonetrans2(skel.bones.get(bnm).idx));
+		states.add(pose.bonetrans2(skel.bones.get(bnm).idx));
 		if(bonedb)
-		    ret = rigid.apply(ret);
+		    states.add(() -> rigid);
 	    }
 	} else {
-	    ret = wrap;
 	    if(bonedb)
-		ret = unboned.apply(ret);
+		states.add(() -> unboned);
 	}
-	return(ret);
+	Supplier<Pipe.Op> rst;
+	if(states.size() == 0) {
+	    return(wrap);
+	} else if(states.size() == 1) {
+	    rst = states.get(0);
+	} else {
+	    states.trimToSize();
+	    rst = () -> {
+		Pipe.Op[] ops = new Pipe.Op[states.size()];
+		for(int i = 0; i < ops.length; i++)
+		    ops[i] = states.get(i).get();
+		return(Pipe.Op.compose(ops));
+	    };
+	}
+	return(RUtils.StateTickNode.from(wrap, rst));
     }
 
     public void iparts(int mask, Collection<RenderTree.Node> rbuf, Collection<Runnable> tbuf, Collection<Consumer<Render>> gbuf) {
@@ -172,13 +178,12 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
     }
 
     private void chmanims(int mask) {
-	Collection<MeshAnim.Anim> anims = new LinkedList<MeshAnim.Anim>();
+	Collection<MeshAnim.Animation> anims = new LinkedList<>();
 	for(MeshAnim.Res ar : res.layers(MeshAnim.Res.class)) {
 	    if((ar.id < 0) || (((1 << ar.id) & mask) != 0))
 		anims.add(ar.make());
 	}
-	this.manims = anims.toArray(new MeshAnim.Anim[0]);
-	this.mmorph = MorphedMesh.combine(this.manims);
+	this.manims = anims.toArray(new MeshAnim.Animation[0]);
     }
 
     private Map<Skeleton.ResPose, PoseMod> modids = new HashMap<Skeleton.ResPose, PoseMod>();
@@ -259,7 +264,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	    }
 	    rebuild();
 	}
-	for(MeshAnim.Anim anim : manims)
+	for(MeshAnim.Animation anim : manims)
 	    anim.tick(dt);
 	for(Runnable tpart : tickparts)
 	    tpart.run();

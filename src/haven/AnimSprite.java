@@ -51,7 +51,7 @@ public class AnimSprite extends Sprite {
 	Collection<MeshAnim.Animation> anims = new LinkedList<>();
 	for(MeshAnim.Res ar : res.layers(MeshAnim.Res.class)) {
 	    if((ar.id < 0) || (((1 << ar.id) & mask) != 0))
-		anims.add(ar.create());
+		anims.add(ar.make());
 	}
 	this.anims = anims.toArray(new MeshAnim.Animation[0]);
 	Collection<RenderTree.Node> rl = new LinkedList<>();

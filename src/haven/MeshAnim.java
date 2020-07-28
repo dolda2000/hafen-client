@@ -574,11 +574,7 @@ public class MeshAnim extends State {
 	    }
 	}
 
-	public Anim make() {
-	    return(rnd?a.new RAnim():a.new SAnim());
-	}
-
-	public Animation create() {
+	public Animation make() {
 	    return(rnd ? a.new RandAnimation() : a.new SeqAnimation());
 	}
 
