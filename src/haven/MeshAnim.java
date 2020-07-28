@@ -34,6 +34,8 @@ import static haven.render.sl.Cons.*;
 import static haven.render.sl.Type.*;
 
 public class MeshAnim extends State {
+    public static final State.Slot<MeshAnim> anim = new State.Slot<>(State.Slot.Type.GEOM, MeshAnim.class);
+    public static final State.Slot<Animated> frame = new State.Slot<>(State.Slot.Type.GEOM, Animated.class);
     public final Frame[] frames;
     public final float len;
     public final int minv, maxv;
@@ -133,10 +135,6 @@ public class MeshAnim extends State {
 	return(ntex);
     }
 
-    public ShaderMacro shader() {return(null);}
-    public void apply(Pipe p) {p.put(anim, this);}
-
-    public static final State.Slot<MeshAnim> anim = new State.Slot<>(State.Slot.Type.GEOM, MeshAnim.class);
     private static class Shader implements ShaderMacro {
 	static final Uniform pdata = new Uniform(SAMPLER2D, "panim", p -> p.get(anim).ptex(), anim);
 	static final Uniform ndata = new Uniform(SAMPLER2D, "nanim", p -> {
@@ -215,7 +213,6 @@ public class MeshAnim extends State {
 	}
     }
 
-    public static final State.Slot<Animated> frame = new State.Slot<>(State.Slot.Type.GEOM, Animated.class);
     public class Animated extends State {
 	public final int ff, tf;
 	public final float a;
@@ -238,6 +235,9 @@ public class MeshAnim extends State {
 	    p.put(frame, this);
 	}
     }
+
+    public ShaderMacro shader() {return(null);}
+    public void apply(Pipe p) {p.put(anim, this);}
 
     public abstract class Animation {
 	public abstract Animated state();
