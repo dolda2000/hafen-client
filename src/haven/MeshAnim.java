@@ -268,7 +268,7 @@ public class MeshAnim extends State {
 		if(cf == 0)
 		    rv = true;
 	    }
-	    return(true);
+	    return(rv);
 	}
 
 	public Animated state() {
