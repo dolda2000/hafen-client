@@ -30,6 +30,7 @@ import java.util.*;
 import java.lang.ref.*;
 
 public class WeakHashedSet<E> extends AbstractSet<E> {
+    private static final double loadfac = 0.75;
     private final ReferenceQueue<E> cleanq = new ReferenceQueue<>();
     public final Hash<? super E> hash;
     private Ref<E>[] tab;
@@ -140,7 +141,7 @@ public class WeakHashedSet<E> extends AbstractSet<E> {
 
     private void ckshrink() {
 	int nsz = tab.length;
-	while((nsz > 32) && (sz < (nsz * 3) / 16))
+	while((nsz > 32) && (sz < (loadfac * 0.25)))
 	    nsz >>= 1;
 	if(nsz < tab.length)
 	    resize(nsz);
@@ -177,7 +178,7 @@ public class WeakHashedSet<E> extends AbstractSet<E> {
 	    idx = nextidx(tab, idx);
 	}
 	tab[idx] = new Ref<>(el, cleanq);
-	if(++sz >= ((tab.length * 3) / 4))
+	if(++sz >= (tab.length * loadfac))
 	    resize(tab.length * 2);
 	return(true);
     }
