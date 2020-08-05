@@ -30,7 +30,7 @@ import java.util.*;
 import java.lang.ref.*;
 
 public class WeakHashedSet<E> extends AbstractSet<E> {
-    private static final double loadfac = 0.75;
+    private static final double loadfac = 0.5;
     private final ReferenceQueue<E> cleanq = new ReferenceQueue<>();
     public final Hash<? super E> hash;
     private Ref<E>[] tab;
