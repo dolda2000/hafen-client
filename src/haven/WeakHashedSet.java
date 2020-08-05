@@ -237,4 +237,27 @@ public class WeakHashedSet<E> extends AbstractSet<E> {
 	    add(ret = el);
 	return(ret);
     }
+
+    public String stats() {
+	Map<Integer, Integer> lens = new HashMap<>();
+	Ref[] tab = this.tab;
+	int i;
+	for(i = 0; tab[i] != null; i = nextidx(tab, i));
+	for(int n = 0, c = 0; n <= tab.length; n++, i = nextidx(tab, i)) {
+	    if(tab[i] == null) {
+		if(c > 0) {
+		    lens.compute(c, (k, v) -> (v == null) ? 1 : (v + 1));
+		    c = 0;
+		}
+	    } else {
+		c++;
+	    }
+	}
+	List<Integer> keys = new ArrayList<>(lens.keySet());
+	Collections.sort(keys);
+	StringBuilder buf = new StringBuilder();
+	for(Integer k : keys)
+	    buf.append(String.format("%d: %d\n", k, lens.get(k)));
+	return(buf.toString());
+    }
 }
