@@ -253,7 +253,7 @@ public class Resource implements Serializable {
 	{
 	    ssl = new SslHelper();
 	    try {
-		ssl.trust(ssl.loadX509(Resource.class.getResourceAsStream("ressrv.crt")));
+		ssl.trust(Resource.class.getResourceAsStream("ressrv.crt"));
 	    } catch(java.security.cert.CertificateException e) {
 		throw(new Error("Invalid built-in certificate", e));
 	    } catch(IOException e) {

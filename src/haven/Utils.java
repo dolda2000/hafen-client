@@ -1654,7 +1654,7 @@ public class Utils {
 
 	    synchronized(emerg) {
 		if(eid == 0)
-		    Warning.warn("could not impose ordering in idcmd, using slow-path");
+		    Warning.warn("could not impose ordering in idcmp, using slow-path");
 		clean();
 		Ref ar = new Ref(a, cleanq), br = new Ref(b, cleanq);
 		Long ai, bi;
