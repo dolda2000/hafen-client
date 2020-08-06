@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.util.*;
 import java.io.*;
 import java.net.*;
 import java.security.*;
@@ -42,7 +43,7 @@ public class SslHelper {
     private int tserial = 0;
     private char[] pw;
     private HostnameVerifier ver = null;
-    
+
     public SslHelper() {
 	creds = null;
 	try {
@@ -52,7 +53,7 @@ public class SslHelper {
 	    throw(new Error(e));
 	}
     }
-    
+
     private synchronized SSLContext ctx() {
 	if(ctx == null) {
 	    TrustManagerFactory tmf;
@@ -88,7 +89,7 @@ public class SslHelper {
 	    sfac = ctx().getSocketFactory();
 	return(sfac);
     }
-    
+
     private void clear() {
 	ctx = null;
 	sfac = null;
@@ -105,12 +106,22 @@ public class SslHelper {
 	    throw(new RuntimeException(e));
 	}
     }
-    
+
     public static Certificate loadX509(InputStream in) throws IOException, CertificateException {
 	CertificateFactory fac = CertificateFactory.getInstance("X.509");
 	return(fac.generateCertificate(in));
     }
-    
+
+    public static Collection<? extends Certificate> loadX509s(InputStream in) throws IOException, CertificateException {
+	CertificateFactory fac = CertificateFactory.getInstance("X.509");
+	return(fac.generateCertificates(in));
+    }
+
+    public void trust(InputStream in) throws IOException, CertificateException {
+	for(Certificate cert : loadX509s(in))
+	    trust(cert);
+    }
+
     public synchronized void loadCredsPkcs12(InputStream in, char[] pw) throws IOException, CertificateException {
 	clear();
 	try {
@@ -123,7 +134,7 @@ public class SslHelper {
 	    throw(new Error(e));
 	}
     }
-    
+
     public HttpsURLConnection connect(URL url) throws IOException {
 	if(!url.getProtocol().equals("https"))
 	    throw(new MalformedURLException("Can only be used to connect to HTTPS servers"));
@@ -133,11 +144,11 @@ public class SslHelper {
 	    conn.setHostnameVerifier(ver);
 	return(conn);
     }
-    
+
     public HttpsURLConnection connect(String url) throws IOException {
 	return(connect(new URL(url)));
     }
-    
+
     public void ignoreName() {
 	ver = new HostnameVerifier() {
 		public boolean verify(String hostname, SSLSession sess) {
@@ -145,17 +156,17 @@ public class SslHelper {
 		}
 	    };
     }
-    
+
     public SSLSocket connect(Socket sk, String host, int port, boolean autoclose) throws IOException {
 	return((SSLSocket)sfac().createSocket(sk, host, port, autoclose));
     }
-    
+
     public SSLSocket connect(String host, int port) throws IOException {
 	Socket sk = new HackSocket();
 	sk.connect(new InetSocketAddress(host, port));
 	return(connect(sk, host, port, true));
     }
-    
+
     public boolean hasCreds() {
 	return(creds != null);
     }
