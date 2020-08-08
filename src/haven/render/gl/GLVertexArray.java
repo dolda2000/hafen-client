@@ -121,6 +121,7 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 			VboState.apply(gl, g.state, bufs[attr.buf]);
 			int na = 1, vo = 0;
 			VectorFormat vfmt = attr.el;
+			boolean iattr = false;
 			if(attr.tgt.type == Type.MAT4) {
 			    if((attr.el.nc != 16) || (attr.el.cf != NumberFormat.FLOAT32))
 				throw(new RuntimeException("unexpected mat4 vertex format: " + attr.el));
@@ -133,9 +134,15 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 			    na = 3;
 			    vo = 12;
 			    vfmt = new VectorFormat(3, NumberFormat.FLOAT32);
+			} else if((attr.tgt.type == Type.INT) || (attr.tgt.type == Type.IVEC2) ||
+				  (attr.tgt.type == Type.IVEC3) || (attr.tgt.type == Type.IVEC4)) {
+			    iattr = true;
 			}
 			if(na == 1) {
-			    gl.glVertexAttribPointer(var, attr.el.nc, GLRender.glattribfmt(attr.el.cf), GLRender.glattribnorm(attr.el.cf), attr.stride, attr.offset);
+			    if(!iattr)
+				gl.glVertexAttribPointer(var, attr.el.nc, GLRender.glattribfmt(attr.el.cf), GLRender.glattribnorm(attr.el.cf), attr.stride, attr.offset);
+			    else
+				gl.glVertexAttribIPointer(var, attr.el.nc, GLRender.glattribfmt(attr.el.cf), attr.stride, attr.offset);
 			    gl.glEnableVertexAttribArray(var);
 			    if(attr.instanced)
 				gl.glVertexAttribDivisor(var, 1);

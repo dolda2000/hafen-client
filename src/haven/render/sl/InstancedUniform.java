@@ -68,6 +68,24 @@ public abstract class InstancedUniform {
     protected abstract VectorFormat attrfmt();
     protected abstract void attrfill(ByteBuffer buf, int offset, Pipe state);
 
+    public static class Float1 extends InstancedUniform {
+	public static final VectorFormat fmt = new VectorFormat(1, NumberFormat.FLOAT32);
+	public final Function<Pipe, Float> value;
+
+	public Float1(String infix, Function<Pipe, Float> value, Slot... deps) {
+	    super(Type.FLOAT, infix, deps);
+	    this.value = value;
+	}
+
+	protected Object uniformval(Pipe state) {return(value.apply(state));}
+
+	protected VectorFormat attrfmt() {return(fmt);}
+
+	protected void attrfill(ByteBuffer buf, int offset, Pipe state) {
+	    buf.putFloat(offset, value.apply(state));
+	}
+    }
+
     public static class Vec4 extends InstancedUniform {
 	public static final VectorFormat fmt = new VectorFormat(4, NumberFormat.FLOAT32);
 	public final Function<Pipe, float[]> value;
@@ -85,6 +103,26 @@ public abstract class InstancedUniform {
 	    float[] val = value.apply(state);
 	    for(int i = 0, o = 0; i < 4; i++, o += 4)
 		buf.putFloat(offset + o, val[i]);
+	}
+    }
+
+    public static class IVec2 extends InstancedUniform {
+	public static final VectorFormat fmt = new VectorFormat(2, NumberFormat.SINT32);
+	public final Function<Pipe, int[]> value;
+
+	public IVec2(String infix, Function<Pipe, int[]> value, Slot... deps) {
+	    super(Type.IVEC2, infix, deps);
+	    this.value = value;
+	}
+
+	protected Object uniformval(Pipe state) {return(value.apply(state));}
+
+	protected VectorFormat attrfmt() {return(fmt);}
+
+	protected void attrfill(ByteBuffer buf, int offset, Pipe state) {
+	    int[] val = value.apply(state);
+	    for(int i = 0, o = 0; i < 2; i++, o += 4)
+		buf.putInt(offset + o, val[i]);
 	}
     }
 

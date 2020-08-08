@@ -28,18 +28,34 @@ package haven;
 
 import java.util.*;
 import java.nio.*;
-import haven.MorphedMesh.Morpher;
-import haven.MorphedMesh.MorphedBuf;
+import haven.render.*;
+import haven.render.sl.*;
 import haven.Skeleton.Pose;
+import static haven.render.sl.Cons.*;
+import static haven.render.sl.Type.*;
 
-public class PoseMorph implements Morpher.Factory {
+public class PoseMorph {
+    public static final State.Slot<Morphed> slot = new State.Slot<>(State.Slot.Type.GEOM, Morphed.class);
     public final Pose pose;
-    private float[][] offs;
-    private int seq = -1;
+    private final int[] bperm;
 
-    public PoseMorph(Pose pose) {
+    private static int[] mkperm(Skeleton skel, BoneData bd) {
+	int[] ret = new int[bd.names.length];
+	for(int i = 0; i < ret.length; i++) {
+	    Skeleton.Bone bone = skel.bones.get(bd.names[i]);
+	    if(bone == null)
+		throw(new RuntimeException("Bone " + bd.names[i] + " not found in sksleton " + skel));
+	    ret[i] = bone.idx;
+	}
+	return(ret);
+    }
+
+    public PoseMorph(Pose pose, FastMesh mesh) {
+	BoneData bd = mesh.vert.buf(BoneData.class);
+	if(bd == null)
+	    throw(new RuntimeException("No bonedata in " + mesh));
 	this.pose = pose;
-	offs = new float[pose.skel().blist.length][16];
+	this.bperm = mkperm(pose.skel(), bd);
     }
 
     public static boolean boned(FastMesh mesh) {
@@ -72,31 +88,122 @@ public class PoseMorph implements Morpher.Factory {
 	}
 	return(ba.names[retb]);
     }
-    
-    private void update() {
-	if(seq == pose.seq)
-	    return;
-	seq = pose.seq;
-	for(int i = 0; i < offs.length; i++)
-	    pose.boneoff(i, offs[i]);
+
+    private Morphed last;
+    private int lastseq;
+    public Morphed state() {
+	if((last == null) || (lastseq != pose.seq)) {
+	    float[][] offs = new float[bperm.length][16];
+	    for(int i = 0; i < bperm.length; i++)
+		pose.boneoff(bperm[i], offs[i]);
+	    last = new Morphed(offs);
+	    lastseq = pose.seq;
+	}
+	return(last);
     }
 
-    public static class BoneData extends VertexBuf.IntData implements MorphedMesh.MorphData {
+    public static final Attribute vba = new Attribute(IVEC4, "vba");
+    public static final Attribute vbw = new Attribute(VEC4, "vbw");
+    private static class Shader implements ShaderMacro, MeshMorph.Morpher {
+	final int nb;
+	final Uniform bo;
+	final Function skanp, skand;
+
+	Shader(int nb) {
+	    this.nb = nb;
+	    this.bo = new Uniform(new Array(MAT4, nb), "bo", p -> p.get(slot).offs, slot);
+	    this.skanp = skan(true);
+	    this.skand = skan(false);
+	}
+
+	Function skan(boolean pos) {
+	    Function.Def fun;
+	    if(pos)
+		fun = new Function.Def(VEC4, "skanp");
+	    else
+		fun = new Function.Def(VEC3, "skand");
+	    Block code = fun.code;
+	    Expression c; LValue r;
+	    if(pos) {
+		c = fun.param(Function.PDir.IN, VEC4).ref();
+		r = code.local(VEC4, vec4(0, 0, 0, 0)).ref();
+	    } else {
+		c = fun.param(Function.PDir.IN, VEC3).ref();
+		r = code.local(VEC3, vec3(0, 0, 0)).ref();
+	    }
+	    String[] els = {"x", "y", "z", "w"};
+	    for(int i = 0; i < els.length; i++) {
+		Expression ba = pick(vba.ref(), els[i]);
+		Expression mat = idx(bo.ref(), ba);
+		if(!pos)
+		    mat = mat3(mat);
+		code.add(new If(ge(ba, l(0)),
+				stmt(aadd(r, mul(mul(mat, c),
+						 pick(vbw.ref(), els[i]))))));
+	    }
+	    code.add(new Return(r));
+	    return(fun);
+	}
+
+	public void morph(ValBlock.Value val, MeshMorph.MorphType type, VertexContext vctx) {
+	    switch(type) {
+	    case POS:
+		val.mod(in -> skanp.call(in), -250);
+		break;
+	    case DIR:
+		val.mod(in -> skand.call(in), -250);
+		break;
+	    }
+	}
+
+	public void modify(ProgramContext prog) {
+	    MeshMorph.get(prog.vctx).add(this);
+	}
+
+	public int hashCode() {
+	    return(nb);
+	}
+
+	public boolean equals(Object that) {
+	    return((that instanceof Shader) && (this.nb == ((Shader)that).nb));
+	}
+
+	private static final WeakHashedSet<Shader> interned = new WeakHashedSet<>(Hash.eq);
+	public static Shader get(int nb) {
+	    return(interned.intern(new Shader(nb)));
+	}
+    }
+
+    public static class Morphed extends State {
+	public final float[][] offs;
+	private final ShaderMacro shader;
+
+	public Morphed(float[][] offs) {
+	    this.offs = offs;
+	    int nb = Integer.highestOneBit(offs.length);
+	    nb = Math.max(4, (nb == offs.length) ? nb : nb << 1);
+	    this.shader = Shader.get(nb);
+	}
+
+	public ShaderMacro shader() {return(shader);}
+
+	public void apply(Pipe p) {
+	    p.put(slot, this);
+	}
+    }
+
+    public static class BoneData extends VertexBuf.IntData {
 	public final String[] names;
 	
 	public BoneData(int apv, IntBuffer data, String[] names) {
-	    super(null, apv, data);
+	    super(vba, apv, data);
 	    this.names = names;
 	}
-	
-	public BoneData dup() {return(new BoneData(elfmt.nc, Utils.wbufcp(data), Utils.splice(names, 0)));}
-
-	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DUP);}
     }
 
     public static class WeightData extends VertexBuf.FloatData {
 	public WeightData(int apv, FloatBuffer data) {
-	    super(null, apv, data);
+	    super(vbw, apv, data);
 	}
     }
 
@@ -131,9 +238,65 @@ public class PoseMorph implements Morpher.Factory {
 		    }
 		}
 	    }
+	    int tbn = 4;
+	    if(mba > tbn) {
+		sortweights(bw, ba, mba);
+		IntBuffer tba = Utils.wibuf(nv * tbn);
+		FloatBuffer tbw = Utils.wfbuf(nv * tbn);
+		for(int i = 0, off = 0, toff = 0; i < nv; i++, off += mba, toff += tbn) {
+		    for(int o = 0; o < tbn; o++) {
+			tbw.put(toff + o, bw.get(off + o));
+			tba.put(toff + o, ba.get(off + o));
+		    }
+		}
+		ba = tba; bw = tbw; mba = tbn;
+	    } else if(mba < tbn) {
+		IntBuffer tba = Utils.wibuf(nv * tbn);
+		FloatBuffer tbw = Utils.wfbuf(nv * tbn);
+		for(int i = 0, off = 0, toff = 0; i < nv; i++, off += mba, toff += tbn) {
+		    for(int o = 0; o < mba; o++) {
+			tbw.put(toff + o, bw.get(off + o));
+			tba.put(toff + o, ba.get(off + o));
+		    }
+		    for(int o = mba; o < tbn; o++)
+			tba.put(toff + o, -1);
+		}
+		ba = tba; bw = tbw; mba = tbn;
+	    }
 	    normweights(bw, ba, mba);
 	    dst.add(new BoneData(mba, ba, bones.toArray(new String[0])));
 	    dst.add(new WeightData(mba, bw));
+	}
+    }
+
+    public static void sortweights(FloatBuffer bw, IntBuffer ba, int mba) {
+	Integer[] p = new Integer[mba];
+	float[] cw = new float[mba];
+	int[] ca = new int[mba];
+	for(int i = 0; i < bw.capacity(); i += mba) {
+	    int n = 0;
+	    for(int o = 0; o < mba; o++) {
+		if(ba.get(i + o) < 0)
+		    break;
+		p[n++] = Integer.valueOf(o);
+	    }
+	    int ci = i;
+	    Arrays.sort(p, 0, n, (a, b) -> {
+		    float wa = bw.get(ci + a), wb = bw.get(ci + b);
+		    if(wa < wb)
+			return(1);
+		    else if(wa > wb)
+			return(-1);
+		    return(0);
+		});
+	    for(int o = 0; o < n; o++) {
+		cw[o] = bw.get(i + o);
+		ca[o] = ba.get(i + o);
+	    }
+	    for(int o = 0; o < n; o++) {
+		bw.put(i + o, cw[p[o]]);
+		ba.put(i + o, ca[p[o]]);
+	    }
 	}
     }
 
@@ -154,89 +317,5 @@ public class PoseMorph implements Morpher.Factory {
 	    }
 	    i += mba;
 	}
-    }
-
-    public Morpher create(final MorphedBuf vb) {
-	BoneData ob = vb.from.buf(BoneData.class);
-	BoneData nb = vb.buf(BoneData.class);
-	int[] xl = new int[nb.names.length];
-	for(int i = 0; i < xl.length; i++) {
-	    Skeleton.Bone b = pose.skel().bones.get(nb.names[i]);
-	    if(b == null)
-		throw(new RuntimeException("Bone \"" + nb.names[i] + "\" in vertex-buf reference does not exist in skeleton " + pose.skel()));
-	    xl[i] = b.idx;
-	}
-	for(int i = 0; i < ob.data.capacity(); i++) {
-	    if(ob.data.get(i) == -1)
-		nb.data.put(i, -1);
-	    else
-		nb.data.put(i, xl[ob.data.get(i)]);
-	}
-	return(new Morpher() {
-		private int pseq = -1;
-		public boolean update() {
-		    if(pseq == pose.seq)
-			return(false);
-		    PoseMorph.this.update();
-		    pseq = pose.seq;
-		    return(true);
-		}
-
-		public void morphp(FloatBuffer dst, FloatBuffer src) {
-		    BoneData ba = vb.buf(BoneData.class);
-		    int apv = ba.elfmt.nc;
-		    IntBuffer bl = ba.data;
-		    FloatBuffer wl = vb.buf(WeightData.class).data;
-		    int vo = 0, ao = 0;
-		    for(int i = 0; i < vb.num; i++) {
-			float opx = src.get(vo), opy = src.get(vo + 1), opz = src.get(vo + 2);
-			float npx = 0, npy = 0, npz = 0;
-			float rw = 1;
-			for(int o = 0; o < apv; o++) {
-			    int bi = bl.get(ao + o);
-			    if(bi < 0)
-				break;
-			    float bw = wl.get(ao + o);
-			    float[] xf = offs[bi];
-			    npx += ((xf[ 0] * opx) + (xf[ 4] * opy) + (xf[ 8] * opz) + xf[12]) * bw;
-			    npy += ((xf[ 1] * opx) + (xf[ 5] * opy) + (xf[ 9] * opz) + xf[13]) * bw;
-			    npz += ((xf[ 2] * opx) + (xf[ 6] * opy) + (xf[10] * opz) + xf[14]) * bw;
-			    rw -= bw;
-			}
-			npx += opx * rw; npy += opy * rw; npz += opz * rw;
-			dst.put(vo, npx); dst.put(vo + 1, npy); dst.put(vo + 2, npz);
-			vo += 3;
-			ao += apv;
-		    }
-		}
-
-		public void morphd(FloatBuffer dst, FloatBuffer src) {
-		    BoneData ba = vb.buf(BoneData.class);
-		    int apv = ba.elfmt.nc;
-		    IntBuffer bl = ba.data;
-		    FloatBuffer wl = vb.buf(WeightData.class).data;
-		    int vo = 0, ao = 0;
-		    for(int i = 0; i < vb.num; i++) {
-			float onx = src.get(vo), ony = src.get(vo + 1), onz = src.get(vo + 2);
-			float nnx = 0, nny = 0, nnz = 0;
-			float rw = 1;
-			for(int o = 0; o < apv; o++) {
-			    int bi = bl.get(ao + o);
-			    if(bi < 0)
-				break;
-			    float bw = wl.get(ao + o);
-			    float[] xf = offs[bi];
-			    nnx += ((xf[ 0] * onx) + (xf[ 4] * ony) + (xf[ 8] * onz)) * bw;
-			    nny += ((xf[ 1] * onx) + (xf[ 5] * ony) + (xf[ 9] * onz)) * bw;
-			    nnz += ((xf[ 2] * onx) + (xf[ 6] * ony) + (xf[10] * onz)) * bw;
-			    rw -= bw;
-			}
-			nnx += onx * rw; nny += ony * rw; nnz += onz * rw;
-			dst.put(vo, nnx); dst.put(vo + 1, nny); dst.put(vo + 2, nnz);
-			vo += 3;
-			ao += apv;
-		    }
-		}
-	    });
     }
 }

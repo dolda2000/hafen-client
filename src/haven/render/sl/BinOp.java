@@ -59,6 +59,8 @@ public abstract class BinOp extends Expression {
     public static class Ge extends BinOp {public String form() {return(">=");} public Ge(Expression l, Expression r) {super(l, r);}}
     public static class Or extends BinOp {public String form() {return("||");} public Or(Expression l, Expression r) {super(l, r);}}
     public static class And extends BinOp {public String form() {return("&&");} public And(Expression l, Expression r) {super(l, r);}}
+    public static class BitOr extends BinOp {public String form() {return("|");} public BitOr(Expression l, Expression r) {super(l, r);}}
+    public static class BitAnd extends BinOp {public String form() {return("&");} public BitAnd(Expression l, Expression r) {super(l, r);}}
     public static class Sub extends BinOp {public String form() {return("-");} public Sub(Expression l, Expression r) {super(l, r);}}
     public static class Div extends BinOp {public String form() {return("/");} public Div(Expression l, Expression r) {super(l, r);}}
 }

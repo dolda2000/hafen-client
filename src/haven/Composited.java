@@ -35,7 +35,6 @@ import haven.Skeleton.PoseMod;
 public class Composited implements RenderTree.Node {
     public final Skeleton skel;
     public final Pose pose;
-    private final PoseMorph morph;
     public Collection<Model> mod = new ArrayList<Model>();
     public Collection<Equ> equ = new ArrayList<Equ>();
     public Poses poses = new Poses();
@@ -121,7 +120,6 @@ public class Composited implements RenderTree.Node {
     public Composited(Skeleton skel) {
 	this.skel = skel;
 	this.pose = skel.new Pose(skel.bindpose);
-	this.morph = new PoseMorph(pose);
     }
 
     public static class ModOrder extends Rendered.Order<ModOrder> {
@@ -147,10 +145,12 @@ public class Composited implements RenderTree.Node {
 	public Comparator<ModOrder> comparator() {return(cmp);}
     };
 
-    public class Model implements RenderTree.Node {
-	public final MorphedMesh m;
+    public class Model implements RenderTree.Node, TickList.TickNode, TickList.Ticking {
+	public final FastMesh m;
+	public final PoseMorph morph;
 	public final int id;
-	int z = 0, lz = 0;
+	private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
+	private int z = 0, lz = 0;
 
 	public class Layer implements RenderTree.Node {
 	    public final Material mat;
@@ -170,7 +170,8 @@ public class Composited implements RenderTree.Node {
 	public final List<Layer> lay = new ArrayList<Layer>();
 
 	private Model(FastMesh m, int id) {
-	    this.m = new MorphedMesh(m, morph);
+	    this.m = m;
+	    this.morph = new PoseMorph(pose, m);
 	    this.id = id;
 	}
 	
@@ -179,8 +180,21 @@ public class Composited implements RenderTree.Node {
 	}
 
 	public void added(RenderTree.Slot slot) {
+	    slot.ostate(morph.state());
 	    for(Layer lay : this.lay)
 		slot.add(lay);
+	    slots.add(slot);
+	}
+
+	@Override public void removed(RenderTree.Slot slot) {
+	    slots.remove(slot);
+	}
+
+	public TickList.Ticking ticker() {return(this);}
+	public void autotick(double dt) {
+	    Pipe.Op nst = morph.state();
+	    for(RenderTree.Slot slot : slots)
+		slot.ostate(nst);
 	}
     }
 

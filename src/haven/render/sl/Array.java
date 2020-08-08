@@ -49,4 +49,15 @@ public class Array extends Type {
     public void use(Context ctx) {
 	el.use(ctx);
     }
+
+    public int hashCode() {
+	return(el.hashCode() + sz);
+    }
+
+    public boolean equals(Object o) {
+	if(!(o instanceof Array))
+	    return(false);
+	Array that = (Array)o;
+	return(this.el.equals(that.el) && (this.sz == that.sz));
+    }
 }

@@ -628,6 +628,24 @@ public abstract class BGL {
 	    });
     }
 
+    public void glUniform2i(final ID location, final int v0, final int v1) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glUniform2i(location.glid(), v0, v1);}
+	    });
+    }
+
+    public void glUniform3i(final ID location, final int v0, final int v1, final int v2) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glUniform3i(location.glid(), v0, v1, v2);}
+	    });
+    }
+
+    public void glUniform4i(final ID location, final int v0, final int v1, final int v2, final int v3) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glUniform4i(location.glid(), v0, v1, v2, v3);}
+	    });
+    }
+
     public void glUniformMatrix3fv(final ID location, final int count, final boolean transpose, final float[] value, final int n) {
 	add(new Command() {
 		public void run(GL3 gl) {gl.glUniformMatrix3fv(location.glid(), count, transpose, value, n);}
@@ -667,6 +685,18 @@ public abstract class BGL {
     public void glVertexAttribPointer(final ID location, final int offset, final int size, final int type, final boolean normalized, final int stride, final long pointer) {
 	add(new Command() {
 		public void run(GL3 gl) {gl.glVertexAttribPointer(location.glid() + offset, size, type, normalized, stride, pointer);}
+	    });
+    }
+
+    public void glVertexAttribIPointer(final ID location, final int size, final int type, final int stride, final long pointer) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glVertexAttribIPointer(location.glid(), size, type, stride, pointer);}
+	    });
+    }
+
+    public void glVertexAttribIPointer(final ID location, final int offset, final int size, final int type, final int stride, final long pointer) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glVertexAttribIPointer(location.glid() + offset, size, type, stride, pointer);}
 	    });
     }
 
