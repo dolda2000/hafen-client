@@ -182,7 +182,7 @@ public class Composited implements RenderTree.Node {
 	    slots.add(slot);
 	}
 
-	@Override public void removed(RenderTree.Slot slot) {
+	public void removed(RenderTree.Slot slot) {
 	    slots.remove(slot);
 	}
 
