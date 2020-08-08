@@ -95,7 +95,7 @@ public class TestClient implements Runnable, UI.Context {
 	
 	public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
 	    super.newwidget(id, type, parent, pargs, cargs);
-	    Widget w = widgets.get(id);
+	    Widget w = getwidget(id);
 	    synchronized(robots) {
 		for(Robot r : robots)
 		    r.newwdg(id, w, cargs);
@@ -103,11 +103,7 @@ public class TestClient implements Runnable, UI.Context {
 	}
 	
 	public void destroy(Widget w) {
-	    int id;
-	    if(!rwidgets.containsKey(w))
-		id = -1;
-	    else
-		id = rwidgets.get(w);
+	    int id = widgetid(w);
 	    synchronized(robots) {
 		for(Robot r : robots)
 		    r.dstwdg(id, w);
@@ -116,7 +112,7 @@ public class TestClient implements Runnable, UI.Context {
 	}
 	
 	public void uimsg(int id, String msg, Object... args) {
-	    Widget w = widgets.get(id);
+	    Widget w = getwidget(id);
 	    synchronized(robots) {
 		for(Robot r : robots)
 		    r.uimsg(id, w, msg, args);

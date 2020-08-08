@@ -41,7 +41,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     public final Set<Pagina> paginae = new HashSet<Pagina>();
     public Pagina cur;
     private Pagina dragging;
-    private Collection<PagButton> curbtns = null;
+    private Collection<PagButton> curbtns = Collections.emptyList();
     private PagButton pressed, layout[][] = new PagButton[gsz.x][gsz.y];
     private UI.Grab grab;
     private int curoff = 0;

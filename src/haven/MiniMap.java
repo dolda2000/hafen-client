@@ -33,7 +33,6 @@ import java.util.*;
 import java.net.*;
 import java.io.*;
 import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
 
 public class MiniMap extends Widget {
     static Map<String, Tex> grids = new WeakHashMap<String, Tex>();
@@ -96,7 +95,7 @@ public class MiniMap extends Widget {
 			}
 			BufferedImage img;
 			try {
-			    img = ImageIO.read(in);
+			    img = Resource.readimage(in);
 			} finally {
                             Utils.readtileof(in);
 			    in.close();

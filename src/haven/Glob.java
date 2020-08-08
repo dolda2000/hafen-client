@@ -28,12 +28,15 @@ package haven;
 
 import java.util.*;
 import java.awt.Color;
+import haven.render.*;
+import haven.render.sl.*;
 
 public class Glob {
+    public final OCache oc = new OCache(this);
+    public final MCache map;
+    public final Session sess;
+    public final Loader loader = new Loader();
     public double time, epoch = Utils.rtime();
-    public OCache oc = new OCache(this);
-    public MCache map;
-    public Session sess;
     public Party party;
     public Map<String, CAttr> cattr = new HashMap<String, CAttr>();
     public Color lightamb = null, lightdif = null, lightspc = null;
@@ -42,7 +45,7 @@ public class Glob {
     public double lightang = 0.0, lightelev = 0.0;
     public double olightang = 0.0, olightelev = 0.0;
     public double tlightang = 0.0, tlightelev = 0.0;
-    public long lchange = -1;
+    public double lchange = -1;
     public Indir<Resource> sky1 = null, sky2 = null;
     public double skyblend = 0.0;
     private Map<Indir<Resource>, Object> wmap = new HashMap<Indir<Resource>, Object>();
@@ -55,9 +58,9 @@ public class Glob {
 
     @Resource.PublishedCode(name = "wtr")
     public static interface Weather {
-	public void gsetup(RenderList rl);
+	public Pipe.Op state();
 	public void update(Object... args);
-	public boolean tick(int dt);
+	public boolean tick(double dt);
     }
 
     public static class CAttr extends Observable {
@@ -89,10 +92,10 @@ public class Glob {
 			 oa + (int)((ta - oa) * a)));
     }
 
-    private void ticklight(int dt) {
+    private void ticklight(double dt) {
 	if(lchange >= 0) {
 	    lchange += dt;
-	    if(lchange > 2000) {
+	    if(lchange > 2.0) {
 		lchange = -1;
 		lightamb = tlightamb;
 		lightdif = tlightdif;
@@ -100,7 +103,7 @@ public class Glob {
 		lightang = tlightang;
 		lightelev = tlightelev;
 	    } else {
-		double a = lchange / 2000.0;
+		double a = lchange / 2.0;
 		lightamb = colstep(olightamb, tlightamb, a);
 		lightdif = colstep(olightdif, tlightdif, a);
 		lightspc = colstep(olightspc, tlightspc, a);
@@ -110,15 +113,14 @@ public class Glob {
 	}
     }
 
-    private long lastctick = 0;
+    private double lastctick = 0;
     public void ctick() {
-	long now = System.currentTimeMillis();
-	int dt;
+	double now = Utils.rtime();
+	double dt;
 	if(lastctick == 0)
 	    dt = 0;
 	else
-	    dt = (int)(now - lastctick);
-	dt = Math.max(dt, 0);
+	    dt = Math.max(now - lastctick, 0.0);
 
 	synchronized(this) {
 	    ticklight(dt);
@@ -132,6 +134,11 @@ public class Glob {
 	map.ctick(dt);
 
 	lastctick = now;
+    }
+
+    public void gtick(Render g) {
+	oc.gtick(g);
+	map.gtick(g);
     }
 
     private final double timefac = 3.0;
@@ -227,57 +234,35 @@ public class Glob {
 	}
     }
 
-    public final Iterable<Weather> weather = new Iterable<Weather>() {
-	public Iterator<Weather> iterator() {
-	    return(new Iterator<Weather>() {
-		    Iterator<Map.Entry<Indir<Resource>, Object>> bk = wmap.entrySet().iterator();
-		    Weather n = null;
-
-		    public boolean hasNext() {
-			if(n == null) {
-			    while(true) {
-				if(!bk.hasNext())
-				    return(false);
-				Map.Entry<Indir<Resource>, Object> cur = bk.next();
-				Object v = cur.getValue();
-				if(v instanceof Weather) {
-				    n = (Weather)v;
-				    break;
-				}
-				Class<? extends Weather> cl = cur.getKey().get().layer(Resource.CodeEntry.class).getcl(Weather.class);
-				Weather w;
-				try {
-				    w = Utils.construct(cl.getConstructor(Object[].class), new Object[] {v});
-				} catch(NoSuchMethodException e) {
-				    throw(new RuntimeException(e));
-				}
-				cur.setValue(n = w);
-			    }
-			}
-			return(true);
+    public Collection<Weather> weather() {
+	synchronized(this) {
+	    ArrayList<Weather> ret = new ArrayList<>(wmap.size());
+	    for(Map.Entry<Indir<Resource>, Object> cur : wmap.entrySet()) {
+		Object val = cur.getValue();
+		if(val instanceof Weather) {
+		    ret.add((Weather)val);
+		} else {
+		    try {
+			Class<? extends Weather> cl = cur.getKey().get().layer(Resource.CodeEntry.class).getcl(Weather.class);
+			Weather w = Utils.construct(cl.getConstructor(Object[].class), new Object[] {val});
+			cur.setValue(w);
+			ret.add(w);
+		    } catch(Loading l) {
+		    } catch(NoSuchMethodException e) {
+			throw(new RuntimeException(e));
 		    }
-
-		    public Weather next() {
-			if(!hasNext())
-			    throw(new NoSuchElementException());
-			Weather ret = n;
-			n = null;
-			return(ret);
-		    }
-
-		    public void remove() {
-			throw(new UnsupportedOperationException());
-		    }
-		});
+		}
+	    }
+	    return(ret);
 	}
-    };
+    }
 
     /* XXX: This is actually quite ugly and there should be a better
      * way, but until I can think of such a way, have this as a known
      * entry-point to be forwards-compatible with compiled
      * resources. */
-    public static DirLight amblight(RenderList rl) {
-	return(((MapView)((PView.WidgetContext)rl.state().get(PView.ctx)).widget()).amb);
+    public static DirLight amblight(Pipe st) {
+	return(((MapView)((PView.WidgetContext)st.get(RenderContext.slot)).widget()).amblight);
     }
 
     public void cattr(Message msg) {
@@ -295,5 +280,27 @@ public class Glob {
 		}
 	    }
 	}
+    }
+
+    public static class FrameInfo extends State {
+	public static final Slot<FrameInfo> slot = new Slot<>(Slot.Type.SYS, FrameInfo.class);
+	public static final Uniform u_globtime = new Uniform(Type.FLOAT, "globtime", p -> {
+		FrameInfo inf = p.get(slot);
+		return((inf == null) ? 0.0f : (float)(inf.globtime % 10000.0));
+	    }, slot);
+	public final double globtime;
+
+	public FrameInfo(Glob glob) {
+	    this.globtime = glob.globtime();
+	}
+
+	public ShaderMacro shader() {return(null);}
+	public void apply(Pipe p) {p.put(slot, this);}
+
+	public static Expression globtime() {
+	    return(u_globtime.ref());
+	}
+
+	public String toString() {return(String.format("#<globinfo @%fs>", globtime));}
     }
 }

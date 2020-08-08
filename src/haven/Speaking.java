@@ -27,19 +27,17 @@
 package haven;
 
 import java.awt.*;
+import haven.render.*;
 
-public class Speaking extends GAttrib {
-    float zo;
-    Text text;
-    static IBox sb = null;
-    Tex svans;
-    static final int sx = 3;
+public class Speaking extends GAttrib implements RenderTree.Node, PView.Render2D {
+    public static final IBox sb = new IBox("gfx/hud/emote", "tl", "tr", "bl", "br", "el", "er", "et", "eb");
+    public static final Tex svans = Resource.loadtex("gfx/hud/emote/svans");
+    public static final int sx = 3;
+    public float zo;
+    public Text text;
 	
     public Speaking(Gob gob, float zo, String text) {
 	super(gob);
-	if(sb == null)
-	    sb = new IBox("gfx/hud/emote", "tl", "tr", "bl", "br", "el", "er", "et", "eb");
-	svans = Resource.loadtex("gfx/hud/emote/svans");
 	this.zo = zo;
 	this.text = Text.render(text, Color.BLACK);
     }
@@ -63,10 +61,8 @@ public class Speaking extends GAttrib {
 	g.image(svans, c.add(0, -svans.sz().y));
     }
 
-    final PView.Draw2D fx = new PView.Draw2D() {
-	    public void draw2d(GOut g) {
-		if(gob.sc != null)
-		    Speaking.this.draw(g, gob.sc.add(new Coord(gob.sczu.mul(zo))));
-	    }
-	};
+    public void draw(GOut g, Pipe state) {
+	Coord sc = Homo3D.obj2view(new Coord3f(0, 0, zo), state).round2();
+	draw(g, sc);
+    }
 }

@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.lang.reflect.*;
+import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 import static haven.Composited.ED;
@@ -36,45 +37,40 @@ import static haven.Composited.MD;
 public class Composite extends Drawable {
     public final static float ipollen = 0.2f;
     public final Indir<Resource> base;
-    public Composited comp;
+    public final Composited comp;
+    public int pseq;
+    public List<MD> nmod;
+    public List<ED> nequ;
     private Collection<ResData> nposes = null, tposes = null;
     private boolean nposesold, retainequ = false;
     private float tptime;
     private WrapMode tpmode;
-    public int pseq;
-    private List<MD> nmod;
-    private List<ED> nequ;
     
     public Composite(Gob gob, Indir<Resource> base) {
 	super(gob);
 	this.base = base;
-    }
-    
-    private void init() {
-	if(comp != null)
-	    return;
 	comp = new Composited(base.get().layer(Skeleton.Res.class).s);
 	comp.eqowner = gob;
     }
     
-    public void setup(RenderList rl) {
-	try {
-	    init();
-	} catch(Loading e) {
-	    return;
-	}
-	rl.add(comp, null);
+    public void added(RenderTree.Slot slot) {
+	slot.add(comp);
+	super.added(slot);
     }
-	
-    private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, boolean old) {
+
+    public static List<PoseMod> loadposes(Collection<ResData> rl, Skeleton.ModOwner owner, Skeleton skel, boolean old) {
 	List<PoseMod> mods = new ArrayList<PoseMod>(rl.size());
 	for(ResData dat : rl) {
-	    PoseMod mod = skel.mkposemod(gob, dat.res.get(), dat.sdt.clone());
+	    PoseMod mod = skel.mkposemod(owner, dat.res.get(), dat.sdt.clone());
 	    if(old)
 		mod.age();
 	    mods.add(mod);
 	}
 	return(mods);
+    }
+
+    private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, boolean old) {
+	return(loadposes(rl, gob, skel, old));
     }
 
     private List<PoseMod> loadposes(Collection<ResData> rl, Skeleton skel, WrapMode mode) {
@@ -89,18 +85,22 @@ public class Composite extends Drawable {
     private void updequ() {
 	retainequ = false;
 	if(nmod != null) {
-	    comp.chmod(nmod);
-	    nmod = null;
+	    try {
+		comp.chmod(nmod);
+		nmod = null;
+	    } catch(Loading l) {
+	    }
 	}
 	if(nequ != null) {
-	    comp.chequ(nequ);
-	    nequ = null;
+	    try {
+		comp.chequ(nequ);
+		nequ = null;
+	    } catch(Loading l) {
+	    }
 	}
     }
 
-    public void ctick(int dt) {
-	if(comp == null)
-	    return;
+    public void ctick(double dt) {
 	if(nposes != null) {
 	    try {
 		Composited.Poses np = comp.new Poses(loadposes(nposes, comp.skel, nposesold));
@@ -128,12 +128,15 @@ public class Composite extends Drawable {
 	comp.tick(dt);
     }
 
+    public void gtick(Render g) {
+	comp.gtick(g);
+    }
+
     public Resource getres() {
 	return(base.get());
     }
     
     public Pose getpose() {
-	init();
 	return(comp.pose);
     }
     

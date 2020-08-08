@@ -87,7 +87,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	}
 
 	public default void drawoverlay(GOut g, Tex tex) {
-	    g.aimage(tex, g.sz, 1, 1);
+	    g.aimage(tex, g.sz(), 1, 1);
 	}
 
 	public static BufferedImage numrender(int num, Color col) {

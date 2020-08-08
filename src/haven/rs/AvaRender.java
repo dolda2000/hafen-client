@@ -27,6 +27,7 @@
 package haven.rs;
 
 import haven.*;
+import haven.render.*;
 import java.util.*;
 import java.io.*;
 import java.awt.Color;
@@ -39,7 +40,6 @@ public class AvaRender {
 	Composited comp = new Composited(base.layer(Skeleton.Res.class).s);
 	comp.chmod(mod);
 	comp.chequ(equ);
-	comp.changes(true);
 	return(comp);
     }
 
@@ -56,9 +56,9 @@ public class AvaRender {
 	    try {
 		Skeleton.BoneOffset camoff = base.get().layer(Skeleton.BoneOffset.class, camnm);
 		tcomp = compose(base.get(), mod, equ);
-		GLState.Buffer buf = new GLState.Buffer(null);
-		camoff.forpose(tcomp.pose).prep(buf);
-		tcam = new LocationCam(buf.get(PView.loc));
+		Pipe buf = new BufPipe();
+		buf.prep(camoff.forpose(tcomp.pose).get());
+		tcam = new LocationCam(buf.get(Homo3D.loc));
 		break;
 	    } catch(Loading ev) {
 		ev.waitfor();
@@ -66,50 +66,18 @@ public class AvaRender {
 	}
 	final Composited comp = tcomp; /* ¦] */
 	final Camera cam = tcam;
-	final GBuffer buf = new GBuffer(sz);
-	final BufferedImage[] ret = {null};
-	try {
-	buf.render(new Drawn() {
-		public void draw(GOut g) {
-		    float field = 0.5f;
-		    float aspect = ((float)buf.sz.y) / ((float)buf.sz.x);
-		    Projection proj = Projection.frustum(-field, field, -aspect * field, aspect * field, 1, 5000);
+	final DrawBuffer buf = new DrawBuffer(Context.getdefault().env(), sz);
 
-		    Light.Model lmod = new Light.Model();
-		    lmod.cc = javax.media.opengl.GL2.GL_SEPARATE_SPECULAR_COLOR;
-
-		    BufView view = new BufView(buf, GLState.compose(proj, cam, lmod, new Light.LightList()));
-		    while(true) {
-			try {
-			    view.render(new Rendered() {
-				    public void draw(GOut g) {}
-
-				    public boolean setup(RenderList rl) {
-					rl.add(comp, null);
-					rl.add(new DirLight(Color.WHITE, Color.WHITE, Color.WHITE, new Coord3f(1, 1, 1).norm()), null);
-					return(false);
-				    }
-				}, g);
-			    break;
-			} catch(Loading l) {
-			    try {
-				l.waitfor();
-			    } catch(InterruptedException e) {
-				throw(new IntException(e));
-			    }
-			}
-		    }
-		    g.getimage(new Callback<BufferedImage>() {
-			    public void done(BufferedImage res) {ret[0] = res;}
-			});
+	float field = 0.5f;
+	float aspect = ((float)buf.sz.y) / ((float)buf.sz.x);
+	Projection proj = Projection.frustum(-field, field, -aspect * field, aspect * field, 1, 5000);
+	BufferedImage ret = buf.draw(Pipe.Op.compose(proj, cam), new RenderTree.Node() {
+		@Override public void added(RenderTree.Slot slot) {
+		    slot.add(comp);
+		    slot.add(new DirLight(Color.WHITE, Color.WHITE, Color.WHITE, new Coord3f(1, 1, 1).norm()));
 		}
 	    });
-	} catch(IntException e) {
-	    throw((InterruptedException)e.getCause());
-	} finally {
-	    buf.dispose();
-	}
-	return(ret[0]);
+	return(ret);
     }
 
     public static final Server.Command call = new Server.Command() {

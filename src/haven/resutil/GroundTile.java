@@ -29,11 +29,12 @@ package haven.resutil;
 import java.awt.Color;
 import java.util.*;
 import haven.*;
+import haven.render.*;
 import haven.Tileset.Tile;
 import haven.Surface.MeshVertex;
 
 public class GroundTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
-    private static final Material.Colors gcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
+    private static final Pipe.Op gcol = new Light.PhongLight(true, new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0), 0);
     public final Tileset set;
 
     @ResName("gnd")
@@ -48,19 +49,38 @@ public class GroundTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	this.set = set;
     }
 
-    private static GLState stfor(Tex tex, int z, boolean clip) {
-	TexGL gt;
-	if(tex instanceof TexGL)
-	    gt = (TexGL)tex;
-	else if((tex instanceof TexSI) && (((TexSI)tex).parent instanceof TexGL))
-	    gt = (TexGL)((TexSI)tex).parent;
+    public static float tcx(Tex t, int x) {
+	if(t instanceof TexRender)
+	    return((float)x / (float)((TexRender)t).img.tex.w);
+	if(t instanceof TexSI) {
+	    TexSI si = (TexSI)t;
+	    return(tcx(si.parent, si.ul.x + x));
+	}
+	throw(new RuntimeException("Cannot use texture for ground-tile rendering: " + t));
+    }
+    public static float tcy(Tex t, int y) {
+	if(t instanceof TexRender)
+	    return((float)y / (float)((TexRender)t).img.tex.h);
+	if(t instanceof TexSI) {
+	    TexSI si = (TexSI)t;
+	    return(tcy(si.parent, si.ul.y + y));
+	}
+	throw(new RuntimeException("Cannot use texture for ground-tile rendering: " + t));
+    }
+
+    private static Pipe.Op stfor(Tex tex, int z, boolean clip) {
+	TexRender gt;
+	if(tex instanceof TexRender)
+	    gt = (TexRender)tex;
+	else if((tex instanceof TexSI) && (((TexSI)tex).parent instanceof TexRender))
+	    gt = (TexRender)((TexSI)tex).parent;
 	else
 	    throw(new RuntimeException("Cannot use texture for ground-tile rendering: " + tex));
-	GLState ret;
+	Pipe.Op ret;
 	if(clip)
-	    ret = GLState.compose(Light.deflight, gcol, gt.draw(), gt.clip(), new MapMesh.MLOrder(z));
+	    ret = Pipe.Op.compose(gcol, gt.draw, gt.clip, new MapMesh.MLOrder(z));
 	else
-	    ret = GLState.compose(Light.deflight, gcol, gt.draw(), new MapMesh.MLOrder(z));
+	    ret = Pipe.Op.compose(gcol, gt.draw, new MapMesh.MLOrder(z));
 	return(ret);
     }
 
@@ -69,8 +89,8 @@ public class GroundTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
      * distinction. */
     public void _faces(MapMesh m, Tile t, int z, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f) {
 	Tex tex = t.tex();
-	float tl = tex.tcx(0), tt = tex.tcy(0), tw = tex.tcx(tex.sz().x) - tl, th = tex.tcy(tex.sz().y) - tt;
-	GLState st = stfor(tex, z, t.t != 'g');
+	float tl = tcx(tex, 0), tt = tcy(tex, 0), tw = tcx(tex, tex.sz().x) - tl, th = tcy(tex, tex.sz().y) - tt;
+	Pipe.Op st = stfor(tex, z, t.t != 'g');
 	MeshBuf buf = MapMesh.Model.get(m, st);
 
 	MeshBuf.Tex btex = buf.layer(MeshBuf.tex);

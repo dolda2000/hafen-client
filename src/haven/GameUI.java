@@ -96,18 +96,18 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if(map != null) {
 		Coord mvc = map.rootxlate(ui.mc);
 		if(mvc.isect(Coord.z, map.sz)) {
-		    map.delay(map.new Hittest(mvc) {
-			    protected void hit(Coord pc, Coord2d mc, MapView.ClickInfo inf) {
+		    map.new Hittest(mvc) {
+			    protected void hit(Coord pc, Coord2d mc, ClickData inf) {
 				Object[] args = {slot, 1, ui.modflags(), mc.floor(OCache.posres)};
 				if(inf != null)
-				    args = Utils.extend(args, MapView.gobclickargs(inf));
+				    args = Utils.extend(args, inf.clickargs());
 				GameUI.this.wdgmsg("belt", args);
 			    }
 			    
 			    protected void nohit(Coord pc) {
 				GameUI.this.wdgmsg("belt", slot, 1, ui.modflags());
 			    }
-			});
+			}.run();
 		}
 	    }
 	}
@@ -160,6 +160,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		public void flush() {}
 	    });
 	Debug.log = ui.cons.out;
+    }
+
+    public void dispose() {
+	Debug.log = new java.io.PrintWriter(System.err);
+	ui.cons.clearout();
+	super.dispose();
     }
     
     static class Hidewnd extends Window {
@@ -216,8 +222,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	Coord plc = null;
 	{
 	    Gob pl = map.player();
-	    if(pl != null)
-		plc = pl.sc;
+	    if(pl != null) {
+		Coord3f raw = pl.placed.getc();
+		if(raw != null)
+		    plc = map.screenxf(raw).round2();
+	    }
 	}
 	Area parea = Area.sized(Coord.z, sz);
 	while(!open.isEmpty()) {

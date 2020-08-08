@@ -26,7 +26,9 @@
 
 package haven;
 
-public class Loading extends RuntimeException {
+import java.util.function.Consumer;
+
+public class Loading extends RuntimeException implements Waitable {
     public final Loading rec;
 
     public Loading() {
@@ -65,11 +67,41 @@ public class Loading extends RuntimeException {
 	return(super.getMessage());
     }
 
-    public boolean canwait() {
-	if(rec != null)
-	    return(rec.canwait());
-	else
-	    return(false);
+    public static class UnwaitableEvent extends RuntimeException {
+	public final Loading event;
+
+	public UnwaitableEvent(String message, Loading event) {
+	    super(message);
+	    this.event = event;
+	}
+
+	public UnwaitableEvent(Loading event) {
+	    this("Tried to wait for unwaitable event", event);
+	}
+    }
+
+    public void waitfor(Runnable callback, Consumer<Waitable.Waiting> reg) {
+	throw(new UnwaitableEvent(this));
+    }
+
+    private void queuewait() throws InterruptedException {
+	boolean[] buf = {false};
+	Waitable.Waiting[] wbuf = {null};
+	waitfor(() -> {
+		synchronized(buf) {
+		    buf[0] = true;
+		    buf.notifyAll();
+		}
+	    },
+	    wait -> wbuf[0] = wait);
+	try {
+	    synchronized(buf) {
+		while(!buf[0])
+		    buf.wait();
+	    }
+	} finally {
+	    wbuf[0].cancel();
+	}
     }
 
     public void waitfor() throws InterruptedException {
@@ -77,7 +109,7 @@ public class Loading extends RuntimeException {
 	    rec.waitfor();
 	    return;
 	} else {
-	    throw(new RuntimeException("Tried to wait for unwaitable event", this));
+	    queuewait();
 	}
     }
 
