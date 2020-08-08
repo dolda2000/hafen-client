@@ -176,6 +176,10 @@ public class Coord3f {
 	return(new float[] {x, y, z, w});
     }
     
+    public Coord round2() {
+	return(new Coord((int)Math.round(x), (int)Math.round(y)));
+    }
+
     public String toString() {
 	return(String.format("(%f, %f, %f)", x, y, z));
     }

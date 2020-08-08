@@ -28,6 +28,7 @@ package haven.resutil;
 
 import java.util.*;
 import haven.*;
+import haven.render.*;
 import haven.MapMesh.Scan;
 import haven.MapMesh.Model;
 import haven.Surface.Vertex;
@@ -619,7 +620,7 @@ public class Ridges extends MapMesh.Hooks {
     }
 
     static final Tiler.MCons testcons = new Tiler.MCons() {
-	    GLState mat = GLState.compose(new Material.Colors(new java.awt.Color(255, 255, 255)), States.vertexcolor, Light.deflight);
+	    Pipe.Op mat = Pipe.Op.compose(new Light.PhongLight(true, FColor.WHITE), VertexColor.instance);
 	    public void faces(MapMesh m, MPart mdesc) {
 		RPart desc = (RPart)mdesc;
 		Model mod = Model.get(m, mat);
@@ -636,10 +637,10 @@ public class Ridges extends MapMesh.Hooks {
 	};
 
     public static class TexCons implements Tiler.MCons {
-	public final GLState mat;
+	public final Pipe.Op mat;
 	public final float texh;
 
-	public TexCons(GLState mat, float texh) {
+	public TexCons(Pipe.Op mat, float texh) {
 	    this.mat = mat;
 	    this.texh = texh;
 	}
@@ -657,7 +658,7 @@ public class Ridges extends MapMesh.Hooks {
 	    MeshVertex[] v = new MeshVertex[desc.v.length];
 	    for(int i = 0; i < desc.v.length; i++) {
 		v[i] = new MeshVertex(mod, desc.v[i]);
-		/* tex.set(v[i], new Coord3f(desc.rcx[i], desc.v[i].z * zf, 0)); */
+		tex.set(v[i], new Coord3f(desc.rcx[i], desc.v[i].z * zf, 0));
 		tex.set(v[i], new Coord3f(desc.rcx[i], desc.rcy[i] * trn[desc.rn[i]], 0));
 		tan.set(v[i], Coord3f.zu.cmul(v[i].nrm).norm());
 		bit.set(v[i], Coord3f.zu);

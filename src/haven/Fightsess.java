@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.render.*;
 import java.util.*;
 import java.awt.Color;
 import java.awt.event.InputEvent;
@@ -84,10 +85,13 @@ public class Fightsess extends Widget {
     private void updatepos() {
 	MapView map;
 	Gob pl;
-	if(((map = getparent(GameUI.class).map) == null) || ((pl = map.player()) == null) || (pl.sc == null))
+	if(((map = getparent(GameUI.class).map) == null) || ((pl = map.player()) == null))
 	    return;
-	pcc = pl.sc;
-	pho = (int)(pl.sczu.mul(20f).y) - 20;
+	Coord3f raw = pl.placed.getc();
+	if(raw == null)
+	    return;
+	pcc = map.screenxf(raw).round2();
+	pho = (int)(map.screenxf(raw.add(0, 0, 20)).round2().sub(pcc).y) - 20;
     }
 
     private static final Resource tgtfx = Resource.local().loadwait("gfx/hud/combat/trgtarw");
@@ -103,7 +107,7 @@ public class Fightsess extends Widget {
 	Sprite spr = cfx.get(id);
 	if(spr == null)
 	    cfx.put(id, spr = Sprite.create(null, fx, Message.nil));
-	map.drawadd(gob.loc.apply(spr));
+	// map.drawadd(gob.loc.apply(spr)); XXXRENDER
 	curfx.add(spr);
     }
 
@@ -344,16 +348,19 @@ public class Fightsess extends Widget {
 
     /* XXX: This is a bit ugly, but release message do need to be
      * properly sequenced with use messages in some way. */
-    private class Release implements MapView.Delayed, BGL.Request {
+    private class Release implements Runnable {
 	final int n;
 
-	Release(int n) {this.n = n;}
-
-	public void run(GOut g) {
-	    g.gl.bglSubmit(this);
+	Release(int n) {
+	    this.n = n;
+	    Environment env = ui.getenv();
+	    Render out = env.render();
+	    out.fence(this);
+	    env.submit(out);
 	}
 
-	public void run(javax.media.opengl.GL2 gl) {
+
+	public void run() {
 	    wdgmsg("rel", n);
 	}
     }
@@ -375,11 +382,11 @@ public class Fightsess extends Widget {
 		MapView map = getparent(GameUI.class).map;
 		Coord mvc = map.rootxlate(ui.mc);
 		if(held >= 0) {
-		    map.delay(new Release(held));
+		    new Release(held);
 		    held = -1;
 		}
 		if(mvc.isect(Coord.z, map.sz)) {
-		    map.delay(map.new Maptest(mvc) {
+		    map.new Maptest(mvc) {
 			    protected void hit(Coord pc, Coord2d mc) {
 				wdgmsg("use", fn, 1, ui.modflags(), mc.floor(OCache.posres));
 			    }
@@ -387,7 +394,7 @@ public class Fightsess extends Widget {
 			    protected void nohit(Coord pc) {
 				wdgmsg("use", fn, 1, ui.modflags());
 			    }
-			});
+			}.run();
 		}
 		if(holdgrab == null)
 		    holdgrab = ui.grabkeys(this);
@@ -422,7 +429,7 @@ public class Fightsess extends Widget {
     public boolean keyup(KeyEvent ev) {
 	if((holdgrab != null) && (kb_acts[held].key().match(ev, KeyMatch.MODS))) {
 	    MapView map = getparent(GameUI.class).map;
-	    map.delay(new Release(held));
+	    new Release(held);
 	    holdgrab.remove();
 	    holdgrab = null;
 	    held = -1;

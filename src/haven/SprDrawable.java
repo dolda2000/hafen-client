@@ -26,27 +26,36 @@
 
 package haven;
 
+import java.util.*;
+import haven.render.*;
+
 public class SprDrawable extends Drawable {
-    final Sprite spr;
-	
+    public final Sprite spr;
+
     public SprDrawable(Gob gob, Sprite spr) {
 	super(gob);
 	this.spr = spr;
     }
-	
-    public void setup(RenderList rl) {
-	rl.add(spr, null);
-    }
-	
-    public void ctick(int dt) {
-	spr.tick(dt);
-    }
-    
-    public Resource getres() {
-	return(null);
+
+    public void added(RenderTree.Slot slot) {
+	slot.add(spr);
+	super.added(slot);
     }
 
-    public Object staticp() {
-	return(spr.staticp());
+    public void dispose() {
+	if(spr != null)
+	    spr.dispose();
+    }
+
+    public void ctick(double dt) {
+	spr.tick(dt);
+    }
+
+    public void gtick(Render g) {
+	spr.gtick(g);
+    }
+
+    public Resource getres() {
+	return(null);
     }
 }

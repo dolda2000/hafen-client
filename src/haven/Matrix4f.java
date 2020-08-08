@@ -26,8 +26,6 @@
 
 package haven;
 
-import javax.media.opengl.*;
-
 public class Matrix4f {
     public final float[] m;
     public static final Matrix4f id = identity();
@@ -72,6 +70,25 @@ public class Matrix4f {
 
     public void set(int x, int y, float v) {
 	m[y + (x * 4)] = v;
+    }
+
+    public boolean equals(Matrix4f that) {
+	for(int i = 0; i < 16; i++) {
+	    if(this.m[i] != that.m[i])
+		return(false);
+	}
+	return(true);
+    }
+
+    public boolean equals(Object o) {
+	return((o instanceof Matrix4f) && equals((Matrix4f)o));
+    }
+
+    public int hashCode() {
+	int ret = 0;
+	for(int i = 0; i < 16; i++)
+	    ret += Float.floatToIntBits(m[i]);
+	return(ret);
     }
 
     public Matrix4f add(Matrix4f b) {
@@ -269,20 +286,6 @@ public class Matrix4f {
 	for (int i = 0; i < 16; i++)
 	    r[i] *= det;
 	return(new Matrix4f(r));
-    }
-    
-    public void getgl(GL gl, int matrix) {
-	gl.glGetFloatv(matrix, m, 0);
-    }
-    
-    public void loadgl(GL2 gl) {
-	gl.glLoadMatrixf(m, 0);
-    }
-    
-    public static Matrix4f fromgl(GL gl, int matrix) {
-	Matrix4f m = new Matrix4f();
-	m.getgl(gl, matrix);
-	return(m);
     }
     
     public String toString() {

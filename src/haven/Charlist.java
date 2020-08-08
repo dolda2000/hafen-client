@@ -34,10 +34,14 @@ public class Charlist extends Widget {
     public int height, y, sel = 0;
     public IButton sau, sad;
     public List<Char> chars = new ArrayList<Char>();
+    Avaview avalink;
     
     public static class Char {
-	static Text.Foundry tf = new Text.Foundry(Text.serif, 20).aa(true);
-	public String name;
+	public static final Text.Foundry tf = new Text.Foundry(Text.serif, 20).aa(true);
+	public final String name;
+	public Composited.Desc avadesc;
+	public Resource.Resolver avamap;
+	public Collection<ResData> avaposes;
 	Text nt;
 	Avaview ava;
 	Button plb;
@@ -45,6 +49,13 @@ public class Charlist extends Widget {
 	public Char(String name) {
 	    this.name = name;
 	    nt = tf.render(name);
+	}
+
+	public void ava(Composited.Desc desc, Resource.Resolver resmap, Collection<ResData> poses) {
+	    this.avadesc = desc;
+	    this.avamap = resmap;
+	    this.avaposes = poses;
+	    ava.pop(desc, resmap);
 	}
     }
     
@@ -117,6 +128,25 @@ public class Charlist extends Widget {
 	super.draw(g);
     }
     
+    public boolean mousedown(Coord c, int button) {
+	boolean hit = false;
+	if(button == 1) {
+	    synchronized(chars) {
+		for(int i = 0, y = sau.c.y + sau.sz.y; (i < height) && (i + this.y < chars.size()); i++, y += bg.sz().y + margin) {
+		    if(c.isect(new Coord(0, y), bg.sz())) {
+			if(i + this.y != sel)
+			    chsel(i + this.y);
+			hit = true;
+			break;
+		    }
+		}
+	    }
+	}
+	if(super.mousedown(c, button))
+	    return(true);
+	return(hit);
+    }
+
     public boolean mousewheel(Coord c, int amount) {
 	scroll(amount);
 	return(true);
@@ -142,31 +172,57 @@ public class Charlist extends Widget {
 	    c.ava = add(new Avaview(Avaview.dasz, -1, "avacam"));
 	    c.ava.hide();
 	    if(args.length > 1) {
-		Composited.Desc desc = Composited.Desc.decode(ui.sess, (Object[])args[1]);
+		Object[] rawdesc = (Object[])args[1];
+		Collection<ResData> poses = new ArrayList<>();
+		Composited.Desc desc = Composited.Desc.decode(ui.sess, rawdesc);
 		Resource.Resolver map = new Resource.Resolver.ResourceMap(ui.sess, (Object[])args[2]);
-		c.ava.pop(desc, map);
+		if(rawdesc.length > 3) {
+		    Object[] rawposes = (Object[])rawdesc[3];
+		    for(int i = 0; i < rawposes.length; i += 2)
+			poses.add(new ResData(ui.sess.getres((Integer)rawposes[i]), new MessageBuf((byte[])rawposes[i + 1])));
+		}
+		c.ava(desc, map, poses);
 	    }
 	    c.plb = add(new Button(100, "Play"));
 	    c.plb.hide();
 	    synchronized(chars) {
+		int idx = chars.size();
 		chars.add(c);
 		if(chars.size() > height) {
 		    sau.show();
 		    sad.show();
 		}
+		if(idx == sel) {
+		    chsel(sel);
+		}
 	    }
 	} else if(msg == "ava") {
 	    String cnm = (String)args[0];
-	    Composited.Desc ava = Composited.Desc.decode(ui.sess, (Object[])args[1]);
+	    Object[] rawdesc = (Object[])args[1];
+	    Collection<ResData> poses = new ArrayList<>();
+	    Composited.Desc ava = Composited.Desc.decode(ui.sess, rawdesc);
 	    Resource.Resolver map = new Resource.Resolver.ResourceMap(ui.sess, (Object[])args[2]);
+	    if(rawdesc.length > 3) {
+		Object[] rawposes = (Object[])rawdesc[3];
+		for(int i = 0; i < rawposes.length; i += 2)
+		    poses.add(new ResData(ui.sess.getres((Integer)rawposes[i]), new MessageBuf((byte[])rawposes[i + 1])));
+	    }
 	    synchronized(chars) {
 		for(Char c : chars) {
 		    if(c.name.equals(cnm)) {
-			c.ava.pop(ava);
+			c.ava(ava, map, poses);
 			break;
 		    }
 		}
 	    }
+	} else if(msg == "biggu") {
+	    int id = (Integer)args[0];
+	    if(id < 0)
+		avalink = null;
+	    else
+		avalink = (Avaview)ui.getwidget(id);
+	} else {
+	    super.uimsg(msg, args);
 	}
     }
 
@@ -177,14 +233,24 @@ public class Charlist extends Widget {
 	    y = sel - height + 1;
     }
 
+    private void chsel(int idx) {
+	sel = idx;
+	seladj();
+	if(avalink != null) {
+	    Char chr = chars.get(idx);
+	    if(chr.avadesc != null) {
+		avalink.pop(chr.avadesc.clone(), chr.avamap);
+		avalink.chposes(chr.avaposes, false);
+	    }
+	}
+    }
+
     public boolean keydown(java.awt.event.KeyEvent ev) {
 	if(ev.getKeyCode() == ev.VK_UP) {
-	    sel = Math.max(sel - 1, 0);
-	    seladj();
+	    chsel(Math.max(sel - 1, 0));
 	    return(true);
 	} else if(ev.getKeyCode() == ev.VK_DOWN) {
-	    sel = Math.min(sel + 1, chars.size() - 1);
-	    seladj();
+	    chsel(Math.min(sel + 1, chars.size() - 1));
 	    return(true);
 	} else if(ev.getKeyCode() == ev.VK_ENTER) {
 	    if((sel >= 0) && (sel < chars.size())) {

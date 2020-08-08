@@ -27,18 +27,20 @@
 package haven.resutil;
 
 import java.util.*;
+import java.awt.image.BufferedImage;
+import java.awt.Color;
 import haven.*;
-import haven.glsl.*;
-import static haven.glsl.Cons.*;
+import haven.render.*;
+import haven.render.sl.*;
 import haven.MapMesh.Scan;
 import haven.Surface.Vertex;
 import haven.Surface.MeshVertex;
-import javax.media.opengl.*;
-import java.awt.Color;
+import haven.render.TextureCube.SamplerCube;
+import static haven.render.sl.Cons.*;
 
 public class WaterTile extends Tiler {
     public final int depth;
-    private static final Material.Colors bcol = new Material.Colors(new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0));
+    private static final Pipe.Op bcol = new Light.PhongLight(true, new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0), 0);
     public final Tiler.MCons bottom;
     
     public static class Bottom extends MapMesh.Hooks {
@@ -174,20 +176,19 @@ public class WaterTile extends Tiler {
 	}
     }
 
-    static final TexCube sky = new TexCube(Resource.loadimg("gfx/tiles/skycube"));
-    static final TexI nrm = (TexI)Resource.loadtex("gfx/tiles/wn");
+    static final SamplerCube sky;
+    static final TexRender nrm;
     static {
-	nrm.mipmap();
-	nrm.magfilter(GL.GL_LINEAR);
+	sky = new SamplerCube(new RUtils.CubeFill(() -> Resource.local().load("gfx/tiles/skycube").get().layer(Resource.imgc).img).mktex());
+	nrm = Resource.local().loadwait("gfx/tiles/wnrm").layer(TexR.class).tex();
     }
 
-    private static final GLState.Slot<GLState> surfslot = new GLState.Slot<GLState>(GLState.Slot.Type.DRAW, GLState.class, PView.cam, HavenPanel.global);
-    private static final States.DepthOffset surfoff = new States.DepthOffset(2, 2);
-    public static class BetterSurface extends GLState {
-	private TexUnit tsky, tnrm;
-	private final Uniform ssky = new Uniform(Type.SAMPLERCUBE);
-	private final Uniform snrm = new Uniform(Type.SAMPLER2D);
-	private final Uniform icam = new Uniform(Type.MAT3);
+    private static final State.Slot<State> surfslot = new State.Slot<>(State.Slot.Type.DRAW, State.class);
+    private static final Pipe.Op surfextra = Pipe.Op.compose(new States.DepthBias(2, 2), new States.Blending(States.Blending.Factor.ONE, States.Blending.Factor.ONE));
+    public static class BetterSurface extends State {
+	private final Uniform ssky = new Uniform(Type.SAMPLERCUBE, p -> sky);
+	private final Uniform snrm = new Uniform(Type.SAMPLER2D, p -> nrm.img);
+	private final Uniform icam = new Uniform(Type.MAT3, p -> Homo3D.camxf(p).transpose(), Homo3D.cam);
 
 	private BetterSurface() {
 	}
@@ -195,11 +196,11 @@ public class WaterTile extends Tiler {
 	private ShaderMacro shader = new ShaderMacro() {
 		final AutoVarying skyc = new AutoVarying(Type.VEC3) {
 			protected Expression root(VertexContext vctx) {
-			    return(mul(icam.ref(), reflect(MiscLib.vertedir(vctx).depref(), vctx.eyen.depref())));
+			    return(mul(icam.ref(), reflect(Homo3D.vertedir(vctx).depref(), Homo3D.get(vctx.prog).eyen.depref())));
 			}
 		    };
 		public void modify(final ProgramContext prog) {
-		    MiscLib.fragedir(prog.fctx);
+		    Homo3D.fragedir(prog.fctx);
 		    final ValBlock.Value nmod = prog.fctx.uniform.new Value(Type.VEC3) {
 			    public Expression root() {
 				/*
@@ -215,22 +216,22 @@ public class WaterTile extends Tiler {
 					       l(0.5)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
 				*/
 				return(mul(sub(mix(add(pick(texture2D(snrm.ref(),
-								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
-									  mul(MiscLib.time.ref(), vec2(l(0.025), l(0.035))))),
+								      add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
+									  mul(FrameInfo.time(), vec2(l(0.025), l(0.035))))),
 							    "rgb"),
 						       pick(texture2D(snrm.ref(),
-								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
-									  mul(MiscLib.time.ref(), vec2(l(-0.035), l(-0.025))))),
+								      add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
+									  mul(FrameInfo.time(), vec2(l(-0.035), l(-0.025))))),
 							    "rgb")),
 						   add(pick(texture2D(snrm.ref(),
-								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
-									  add(mul(MiscLib.time.ref(), vec2(l(0.025), l(0.035))), vec2(l(0.5), l(0.5))))),
+								      add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
+									  add(mul(FrameInfo.time(), vec2(l(0.025), l(0.035))), vec2(l(0.5), l(0.5))))),
 							    "rgb"),
 						       pick(texture2D(snrm.ref(),
-								      add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
-									  add(mul(MiscLib.time.ref(), vec2(l(-0.035), l(-0.025))), vec2(l(0.5), l(0.5))))),
+								      add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
+									  add(mul(FrameInfo.time(), vec2(l(-0.035), l(-0.025))), vec2(l(0.5), l(0.5))))),
 							    "rgb")),
-						   abs(sub(Cons.mod(MiscLib.time.ref(), l(2.0)), l(1.0)))),
+						   abs(sub(Cons.mod(FrameInfo.time(), l(2.0)), l(1.0)))),
 					       l(0.5 * 2)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
 				/*
 				return(mul(sub(add(pick(texture2D(snrm.ref(),
@@ -252,72 +253,40 @@ public class WaterTile extends Tiler {
 			    }
 			};
 		    nmod.force();
-		    MiscLib.frageyen(prog.fctx).mod(in -> {
+		    Homo3D.frageyen(prog.fctx).mod(in -> {
 			    Expression m = nmod.ref();
 			    return(add(mul(pick(m, "x"), vec3(l(1.0), l(0.0), l(0.0))),
 				       mul(pick(m, "y"), vec3(l(0.0), l(1.0), l(0.0))),
 				       mul(pick(m, "z"), in)));
 			}, -10);
-		    prog.fctx.fragcol.mod(in -> mul(in, textureCube(ssky.ref(),
-								    neg(mul(icam.ref(), reflect(MiscLib.fragedir(prog.fctx).depref(),
-												MiscLib.frageyen(prog.fctx).depref())))),
-						    l(0.4))
-					  , 0);
+		    FragColor.fragcol(prog.fctx).
+			mod(in -> mul(in, textureCube(ssky.ref(),
+						      neg(mul(icam.ref(), reflect(Homo3D.fragedir(prog.fctx).depref(),
+										  Homo3D.frageyen(prog.fctx).depref())))),
+				      l(0.4))
+			    , 0);
 		}
 	    };
 
-	public void reapply(GOut g) {
-	    BGL gl = g.gl;
-	    gl.glUniform1i(g.st.prog.uniform(ssky), tsky.id);
-	    gl.glUniform1i(g.st.prog.uniform(snrm), tnrm.id);
-	    gl.glUniformMatrix3fv(g.st.prog.uniform(icam), 1, false, PView.camxf(g).transpose().trim3(), 0);
-	}
-
 	public ShaderMacro shader() {return(shader);}
 
-	public void apply(GOut g) {
-	    BGL gl = g.gl;
-	    gl.glBlendFunc(GL.GL_ONE, GL.GL_ONE);
-	    (tsky = g.st.texalloc()).act(g);
-	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, sky.glid(g));
-	    (tnrm = g.st.texalloc()).act(g);
-	    gl.glBindTexture(GL.GL_TEXTURE_2D, nrm.glid(g));
-	    reapply(g);
-	}
-
-	public void unapply(GOut g) {
-	    BGL gl = g.gl;
-	    tsky.act(g);
-	    gl.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, null);
-	    tnrm.act(g);
-	    gl.glBindTexture(GL.GL_TEXTURE_2D, null);
-	    tsky.free(); tsky = null;
-	    tnrm.free(); tnrm = null;
-	    gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-	}
-
-	public void prep(Buffer buf) {
+	public void apply(Pipe buf) {
 	    buf.put(surfslot, this);
-	    buf.put(States.color, null);
-	    buf.put(Light.lighting, null);
-	    surfoff.prep(buf);
+	    surfextra.apply(buf);
 	}
     }
 
-    public static final GLState surfmat = new GLState.Abstract() {
-	    final GLState s = new BetterSurface();
-	    public void prep(Buffer buf) {
-		s.prep(buf);
-	    }
-	};
-    public static final GLState surfmatc = GLState.compose(surfmat, new Rendered.Order.Default(6000));
+    public static final Pipe.Op surfmat = Pipe.Op.compose(new BetterSurface(), new Rendered.Order.Default(6000));
 
     public static final MeshBuf.LayerID<MeshBuf.Vec1Layer> depthlayer = new MeshBuf.V1LayerID(BottomFog.depth);
 
-    public static class BottomFog extends GLState.StandAlone {
+    public static class BottomFog extends State.StandAlone {
 	public static final double maxdepth = 8; /* XXX: These should be parameterized. */
 	public static final Color fogcolor = new Color(0, 16, 48);
+	/* XXXRENDER
 	public static final Expression mfogcolor = mul(col3(fogcolor), pick(fref(idx(ProgramContext.gl_LightSource.ref(), MapView.amblight.ref()), "diffuse"), "rgb"));
+	*/
+	public static final Expression mfogcolor = col3(fogcolor);
 	public static Function rgbmix = new Function.Def(Type.VEC4) {{
 	    Expression a = param(PDir.IN, Type.VEC4).ref();
 	    Expression b = param(PDir.IN, Type.VEC3).ref();
@@ -332,44 +301,38 @@ public class WaterTile extends Tiler {
 	    };
 
 	private final ShaderMacro shader = prog -> {
-	    prog.fctx.fragcol.mod(in -> rgbmix.call(in, mfogcolor, min(div(fragd.ref(), l(maxdepth)), l(1.0))), 1000);
+	    FragColor.fragcol(prog.fctx).mod(in -> rgbmix.call(in, mfogcolor, min(div(fragd.ref(), l(maxdepth)), l(1.0))), 1000);
 	};
 
 	private BottomFog() {
 	    super(Slot.Type.DRAW);
 	}
 
-	public void apply(GOut g) {}
-	public void unapply(GOut g) {}
 	public ShaderMacro shader() {return(shader);}
-	public void prep(Buffer buf) {
-	    if(buf.cfg.pref.wsurf.val)
-		super.prep(buf);
-	}
     }
     public static final BottomFog waterfog = new BottomFog();
-    private static final GLState boff = new States.DepthOffset(4, 4);
-    private static final GLState botmat = GLState.compose(waterfog, boff);
+    private static final Pipe.Op botmat = Pipe.Op.compose(waterfog, new States.DepthBias(4, 4));
 
-    public static final GLState obfog = new GLState.StandAlone(GLState.Slot.Type.DRAW) {
+    public static final Pipe.Op obfog = new State.StandAlone(State.Slot.Type.DRAW) {
 	    {
-		slot.instanced = new GLState.Instancer<StandAlone>() {
-			public StandAlone inststate(StandAlone[] states) {
+		slot.instanced = new Instancable<StandAlone>() {
+			Instancer<StandAlone> dummy = Instancer.dummy();
+			public Instancer<StandAlone> instid(StandAlone st) {
+			    if(st == null)
+				return(dummy);
 			    return(null);
 			}
 		    };
 	    }
 	final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
 		protected Expression root(VertexContext vctx) {
-		    return(sub(pick(MiscLib.maploc.ref(), "z"), pick(vctx.mapv.depref(), "z")));
+		    return(sub(pick(MapView.maploc.ref(), "z"), pick(Homo3D.get(vctx.prog).mapv.depref(), "z")));
 		}
 	    };
 
 	final ShaderMacro shader = prog -> {
-	    prog.fctx.fragcol.mod(in -> BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))), 1000);
+	    FragColor.fragcol(prog.fctx).mod(in -> BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))), 1000);
 	};
-	public void apply(GOut g) {}
-	public void unapply(GOut g) {}
 	public ShaderMacro shader() {return(shader);}
     };
 
@@ -406,7 +369,7 @@ public class WaterTile extends Tiler {
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	MapMesh.MapSurface ms = m.data(MapMesh.gnd);
-	SModel smod = SModel.get(m, surfmatc, VertFactory.id);
+	SModel smod = SModel.get(m, surfmat, VertFactory.id);
 	MPart d = MPart.splitquad(lc, gc, ms.fortilea(lc), ms.split[ms.ts.o(lc)]);
 	MeshVertex[] v = smod.get(d);
 	smod.new Face(v[d.f[0]], v[d.f[1]], v[d.f[2]]);
@@ -434,9 +397,12 @@ public class WaterTile extends Tiler {
 	}
     }
 
-    public GLState drawstate(Glob glob, GLConfig cfg, Coord3f c) {
+    public Pipe.Op drawstate(Glob glob, Coord3f c) {
+	/* XXXRENDER
 	if(cfg.pref.wsurf.val)
 	    return(obfog);
 	return(null);
+	*/
+	return(obfog);
     }
 }

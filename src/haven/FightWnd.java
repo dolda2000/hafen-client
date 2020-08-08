@@ -243,7 +243,7 @@ public class FightWnd extends Widget {
 
 	protected void drawitem(GOut g, Action act, int idx) {
 	    g.chcolor((idx % 2 == 0)?CharWnd.every:CharWnd.other);
-	    g.frect(Coord.z, g.sz);
+	    g.frect(Coord.z, g.sz());
 	    g.chcolor();
 	    if(act.ru == null) act.ru = attrf.render(String.format("%d/%d", act.u, act.a));
 	    try {
@@ -610,7 +610,7 @@ public class FightWnd extends Widget {
 
 	protected void drawitem(GOut g, Integer save, int n) {
 	    g.chcolor((n % 2 == 0)?CharWnd.every:CharWnd.other);
-	    g.frect(Coord.z, g.sz);
+	    g.frect(Coord.z, g.sz());
 	    g.chcolor();
 	    if(n == edit) {
 		if(redit == null)
@@ -619,7 +619,7 @@ public class FightWnd extends Widget {
 		if(hasfocus && (((Utils.rtime() - focusstart) % 1.0) < 0.5)) {
 		    int cx = redit.advance(nmed.point);
 		    g.chcolor(255, 255, 255, 255);
-		    Coord co = new Coord(20 + cx + 1, (g.sz.y - redit.sz().y) / 2);
+		    Coord co = new Coord(20 + cx + 1, (g.sz().y - redit.sz().y) / 2);
 		    g.line(co, co.add(0, redit.sz().y), 1);
 		    g.chcolor();
 		}

@@ -43,6 +43,7 @@ public class Config {
     public static boolean bounddb = getprop("haven.bounddb", "off").equals("on");
     public static boolean profile = getprop("haven.profile", "off").equals("on");
     public static boolean profilegpu = getprop("haven.profilegpu", "off").equals("on");
+    public static boolean par = true;
     public static boolean fscache = getprop("haven.fscache", "on").equals("on");
     public static String resdir = getprop("haven.resdir", System.getenv("HAFEN_RESDIR"));
     public static boolean nopreload = getprop("haven.nopreload", "no").equals("yes");
@@ -157,6 +158,11 @@ public class Config {
 	Console.setscmd("stats", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    dbtext = Utils.parsebool(args[1]);
+		}
+	    });
+	Console.setscmd("par", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    par = Utils.parsebool(args[1]);
 		}
 	    });
 	Console.setscmd("profile", new Console.Command() {

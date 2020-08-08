@@ -371,7 +371,7 @@ public class CharWnd extends Window {
 
 	protected void drawitem(GOut g, El el, int idx) {
 	    g.chcolor(el.hl?hilit:(((idx % 2) == 0)?every:other));
-	    g.frect(Coord.z, g.sz);
+	    g.frect(Coord.z, g.sz());
 	    g.chcolor();
 	    try {
 		g.image(el.tt(), Coord.z);
@@ -1676,7 +1676,7 @@ public class CharWnd extends Window {
 	    if((wound != null) && (wound.woundid() == w.id))
 		drawsel(g);
 	    g.chcolor((idx % 2 == 0)?every:other);
-	    g.frect(Coord.z, g.sz);
+	    g.frect(Coord.z, g.sz());
 	    g.chcolor();
 	    int x = w.level * itemh;
 	    try {
@@ -1777,7 +1777,7 @@ public class CharWnd extends Window {
 	    if((quest != null) && (quest.questid() == q.id))
 		drawsel(g);
 	    g.chcolor((idx % 2 == 0)?every:other);
-	    g.frect(Coord.z, g.sz);
+	    g.frect(Coord.z, g.sz());
 	    g.chcolor();
 	    try {
 		if(q.small == null)

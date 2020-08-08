@@ -27,9 +27,10 @@
 package haven;
 
 import java.util.*;
+import haven.render.*;
 
 public class StaticSprite extends Sprite {
-    public final Rendered[] parts;
+    public final RenderTree.Node[] parts;
     
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
@@ -37,29 +38,29 @@ public class StaticSprite extends Sprite {
 		   (res.layer(RenderLink.Res.class) != null))
 		    return(new StaticSprite(owner, res, sdt) {
 			    public String toString() {
-				return("StaticSprite(" + res + ")");
+				return(String.format("#<static-sprite %s>", res.name));
 			    }
 			});
 		return(null);
 	    }
 	};
     
-    public StaticSprite(Owner owner, Resource res, Rendered[] parts) {
+    public StaticSprite(Owner owner, Resource res, RenderTree.Node[] parts) {
 	super(owner, res);
 	this.parts = parts;
     }
 
-    public StaticSprite(Owner owner, Resource res, Rendered part) {
-	this(owner, res, new Rendered[] {part});
+    public StaticSprite(Owner owner, Resource res, RenderTree.Node part) {
+	this(owner, res, new RenderTree.Node[] {part});
     }
     
     public StaticSprite(Owner owner, Resource res, Message sdt) {
 	this(owner, res, lsparts(res, sdt));
     }
     
-    public static Rendered[] lsparts(Resource res, Message sdt) {
+    public static RenderTree.Node[] lsparts(Resource res, Message sdt) {
 	int fl = sdt.eom()?0xffff0000:decnum(sdt);
-	Collection<Rendered> rl = new LinkedList<Rendered>();
+	Collection<RenderTree.Node> rl = new LinkedList<>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & fl) != 0)))
 		rl.add(mr.mat.get().apply(mr.m));
@@ -70,16 +71,11 @@ public class StaticSprite extends Sprite {
 	}
 	if(res.layer(Resource.audio, "amb") != null)
 	    rl.add(new ActAudio.Ambience(res));
-	return(rl.toArray(new Rendered[0]));
+	return(rl.toArray(new RenderTree.Node[0]));
     }
 
-    public boolean setup(RenderList r) {
-	for(Rendered p : parts)
-	    r.add(p, null);
-	return(false);
-    }
-
-    public Object staticp() {
-	return(CONSTANS);
+    public void added(RenderTree.Slot slot) {
+	for(RenderTree.Node p : parts)
+	    slot.add(p);
     }
 }

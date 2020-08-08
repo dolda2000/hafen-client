@@ -26,293 +26,338 @@
 
 package haven;
 
-import java.awt.Color;
 import java.util.*;
-import static haven.GOut.checkerr;
-import javax.media.opengl.*;
+import haven.render.*;
+import haven.RenderContext.PostProcessor;
+import haven.render.Texture2D.Sampler2D;
 
 public abstract class PView extends Widget {
-    public RenderList rls;
-    public static final GLState.Slot<RenderContext> ctx = new GLState.Slot<RenderContext>(GLState.Slot.Type.SYS, RenderContext.class);
-    public static final GLState.Slot<RenderState> wnd = new GLState.Slot<RenderState>(GLState.Slot.Type.SYS, RenderState.class, HavenPanel.proj2d, GLFrameBuffer.slot);
-    public static final GLState.Slot<Projection> proj = new GLState.Slot<Projection>(GLState.Slot.Type.SYS, Projection.class, wnd);
-    public static final GLState.Slot<Camera> cam = new GLState.Slot<Camera>(GLState.Slot.Type.SYS, Camera.class, proj);
-    public static final GLState.Slot<Location.Chain> loc = new GLState.Slot<Location.Chain>(GLState.Slot.Type.GEOM, Location.Chain.class, cam).instanced(Location.Chain.instancer);
-    public CPUProfile prof = new CPUProfile(300);
-    protected Light.Model lm;
-    private final WidgetContext cstate = new WidgetContext();
-    private final WidgetRenderState rstate = new WidgetRenderState();
-    private GLState pstate;
-    
-    public static class RenderContext extends GLState.Abstract {
-	private Map<DataID, Object> data = new CacheMap<DataID, Object>(CacheMap.RefType.WEAK);
+    public final RenderTree tree;
+    public final RenderTree.Slot conf;
+    public final RenderTree.Slot basic;
+    public Texture2D fragcol = null;
+    public Texture2D depth = null;
+    protected Environment env = null;
+    protected InstanceList instancer;
+    protected DrawList back = null;
+    protected Coord rsz;
+    private final Map<Object, Pipe.Op> basicstates = new IdentityHashMap<>();
+    private final Light.LightList lights = new Light.LightList();
+    private ActAudio audio;
+    private final ScreenList list2d = new ScreenList();
+    private final TickList ticklist = new TickList();
+    private Sampler2D fragsamp;
 
-	public interface DataID<T> {
-	    public T make(RenderContext c);
-	}
-
-	@SuppressWarnings("unchecked")
-	public <T> T data(DataID<T> id) {
-	    T ret = (T)data.get(id);
-	    if(ret == null)
-		data.put(id, ret = id.make(this));
-	    return(ret);
-	}
-
-	public void prep(Buffer b) {
-	    b.put(ctx, this);
-	}
-
-	public Glob glob() {
-	    return(null);
-	}
+    public PView(Coord sz) {
+	super(sz);
+	tree = new RenderTree();
+	tree.add(list2d, Render2D.class);
+	tree.add(ticklist, TickList.TickNode.class);
+	conf = tree.add((RenderTree.Node)null);
+	conf.ostate(frame());
+	basic = conf.add((RenderTree.Node)null);
+	basic();
     }
 
-    public abstract static class ConfContext extends RenderContext implements GLState.GlobalState {
-	public FBConfig cfg = new FBConfig(this, sz());
-	public FBConfig cur = new FBConfig(this, sz());
+    public static class WidgetContext extends RenderContext {
+	private final PView wdg;
 
-	protected abstract Coord sz();
-
-	public Global global(RenderList rl, Buffer ctx) {
-	    return(glob);
-	}
-
-	private final Global glob = new Global() {
-		public void postsetup(RenderList rl) {
-		    cfg.fin(cur);
-		    cur = cfg;
-		    cfg = new FBConfig(ConfContext.this, sz());
-		    if(cur.fb != null) {
-			for(RenderList.Slot s : rl.slots()) {
-			    if(s.os.get(ctx) == ConfContext.this)
-				cur.state.prep(s.os);
-			}
-		    }
-		}
-		public void prerender(RenderList rl, GOut g) {}
-		public void postrender(RenderList rl, GOut g) {}
-	    };
-    }
-
-    public class WidgetContext extends ConfContext {
-	protected Coord sz() {
-	    return(PView.this.sz);
-	}
-
-	public Glob glob() {
-	    return(ui.sess.glob);
+	public WidgetContext(PView wdg) {
+	    this.wdg = wdg;
 	}
 
 	public PView widget() {
-	    return(PView.this);
+	    return(wdg);
 	}
+
+	private static final ClassResolver<PView> ctxr = new ClassResolver<PView>()
+	    .add(Glob.class, wdg -> wdg.ui.sess.glob)
+	    .add(Session.class, wdg -> wdg.ui.sess);
+	public <T> T context(Class<T> cl) {return(ctxr.context(cl, wdg));}
+
+	public Pipe.Op basic(Object id) {return(wdg.basic(id));}
+	public void basic(Object id, Pipe.Op state) {wdg.basic(id, state);}
+
+	public String toString() {return(String.format("#<widgetctx %s>", wdg.getClass()));}
     }
 
-    public static abstract class RenderState extends GLState {
-	public void apply(GOut g) {
-	    BGL gl = g.gl;
-	    gl.glScissor(g.ul.x, g.root().sz.y - g.ul.y - g.sz.y, g.sz.x, g.sz.y);
-	    /* For the viewport, use the renderstate's indicated size
-	     * and offset explicitly, so as to not fail on partially
-	     * clipped GOuts. */
-	    Coord ul = ul();
-	    Coord sz = sz();
-	    gl.glViewport(ul.x, g.root().sz.y - ul.y - sz.y, sz.x, sz.y);
-
-	    gl.glAlphaFunc(GL.GL_GREATER, 0.5f);
-	    gl.glEnable(GL.GL_DEPTH_TEST);
-	    gl.glEnable(GL.GL_CULL_FACE);
-	    gl.glEnable(GL.GL_SCISSOR_TEST);
-	    gl.glDepthFunc(GL.GL_LEQUAL);
-	    gl.glClearDepth(1.0);
+    protected Coord rendersz() {
+	GSettings prefs = curprefs;
+	if(prefs != null) {
+	    float rscale = prefs.rscale.val;
+	    return(new Coord((int)Math.round(sz.x * rscale), (int)Math.round(sz.y * rscale)));
 	}
-	
-	public void unapply(GOut g) {
-	    BGL gl = g.gl;
-
-	    gl.glDisable(GL.GL_DEPTH_TEST);
-	    gl.glDisable(GL.GL_CULL_FACE);
-	    gl.glDisable(GL.GL_SCISSOR_TEST);
-
-	    gl.glViewport(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
-	    gl.glScissor(g.root().ul.x, g.root().ul.y, g.root().sz.x, g.root().sz.y);
-	}
-	
-	public void prep(Buffer b) {
-	    b.put(wnd, this);
-	}
-	
-	public abstract Coord ul();
-	public abstract Coord sz();
+	return(this.sz);
     }
 
-    private class WidgetRenderState extends RenderState {
-	public Coord ul() {
-	    return(rootpos());
-	}
-	
-	public Coord sz() {
-	    return(PView.this.sz);
-	}
-    }
-    
-    public PView(Coord sz) {
-	super(sz);
-	pstate = makeproj();
-	lm = new Light.Model();
-	lm.cc = GL2.GL_SEPARATE_SPECULAR_COLOR;
-    }
-    
-    protected GLState.Buffer basic(GOut g) {
-	GLState.Buffer buf = g.basicstate();
-	cstate.prep(buf);
-	rstate.prep(buf);
-	if(pstate != null)
-	    pstate.prep(buf);
-	camera().prep(buf);
-	if(ui.audio != null)
-	    ui.audio.prep(buf);
-	return(buf);
+    private final WidgetContext ctx = new WidgetContext(this);
+    private Pipe.Op conf() {
+	rsz = rendersz();
+	return(Pipe.Op.compose(new FrameConfig(rsz), ctx, curprefs));
     }
 
-    protected abstract GLState camera();
-    protected abstract void setup(RenderList rls);
-    
-    protected Projection makeproj() {
-	float field = 0.5f;
-	float aspect = ((float)sz.y) / ((float)sz.x);
-	return(Projection.frustum(-field, field, -aspect * field, aspect * field, 1, 5000));
+    private Pipe.Op curconf = null;
+    private Pipe.Op curconf() {
+	if(curconf == null)
+	    curconf = conf();
+	return(curconf);
+    }
+
+    private GSettings curprefs = null;
+    protected GSettings gprefs() {
+	if(ui == null)
+	    return(null);
+	return(ui.gprefs);
+    }
+
+    private Pipe.Op frame() {
+	return(Pipe.Op.compose(curconf(),
+			       new FrameInfo(),
+			       ((ui == null) || (ui.sess == null)) ? null : new Glob.FrameInfo(ui.sess.glob)));
+    }
+
+    protected void reconf() {
+	curconf = null;
+	conf.ostate(frame());
     }
 
     public void resize(Coord sz) {
 	super.resize(sz);
-	pstate = makeproj();
+	reconf();
     }
 
-    private final Rendered scene = new Rendered() {
-	    public void draw(GOut g) {
-	    }
-	    
-	    public boolean setup(RenderList rl) {
-		PView.this.setup(rl);
-		return(false);
-	    }
-	};
+    public Pipe.Op basic(Object id) {
+	try(Locked lk = tree.lock()) {
+	    return(basicstates.get(id));
+	}
+    }
 
-    protected Color clearcolor() {
-	return(Color.BLACK);
+    public void basic(Object id, Pipe.Op state) {
+	try(Locked lk = tree.lock()) {
+	    Pipe.Op prev;
+	    Collection<Pipe.Op> comb = null;
+	    if(state == null)
+		prev = basicstates.remove(id);
+	    else
+		prev = basicstates.put(id, state);
+	    if(!Utils.eq(prev, state)) {
+		comb = new ArrayList<>(basicstates.values());
+		try {
+		    Collection<Pipe.Op> dcomb = comb;
+		    basic.ostate(p -> {
+			    for(Pipe.Op op : dcomb)
+				op.apply(p);
+			});
+		} catch(RuntimeException e) {
+		    if(prev == null)
+			basicstates.remove(id);
+		    else
+			basicstates.put(id, prev);
+		    throw(e);
+		}
+	    }
+	}
+    }
+
+    /* XXX? Remove standard clearing and assume implementations to add
+     * explicit clearing slot? */
+    protected FColor clearcolor() {
+	return(FColor.BLACK);
+    }
+
+    /* I've no idea why this function is necessary. */
+    @SuppressWarnings("unchecked")
+    private static RenderList.Slot<Rendered> uglyJavaCWorkAround(RenderList.Slot<?> slot) {
+	return((RenderList.Slot<Rendered>)slot);
+    }
+
+    public void tick(double dt) {
+	super.tick(dt);
+	GSettings gprefs = gprefs();
+	if(gprefs != this.curprefs) {
+	    this.curprefs = gprefs;
+	    reconf();
+	}
+	conf.ostate(frame());
+	ticklist.tick(dt);
+	if(audio != null)
+	    audio.cycle();
+    }
+
+    private class Resampler extends PostProcessor {
+	public void run(GOut g, Texture2D.Sampler2D in) {
+	    g.image(new TexRaw(in, true), Coord.z, g.sz());
+	}
+    }
+
+    private GOut resolveout(GOut def, PostProcessor next) {
+	if(next == null)
+	    return(def);
+	if((next.buf != null) && !next.buf.tex.sz().equals(fragcol.sz())) {
+	    next.buf.dispose();
+	    next.buf = null;
+	}
+	if(next.buf == null) {
+	    Texture2D tex = new Texture2D(fragcol.sz(), DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null);
+	    next.buf = new Sampler2D(tex);
+	    next.buf.minfilter(Texture.Filter.LINEAR).magfilter(Texture.Filter.LINEAR);
+	    next.buf.swrap(Texture.Wrapping.CLAMP).twrap(Texture.Wrapping.CLAMP);
+	}
+	Pipe st = new BufPipe();
+	Area area = Area.sized(Coord.z, next.buf.tex.sz());
+	st.prep(new FrameInfo()).prep(new States.Viewport(area)).prep(new Ortho2D(area));
+	st.prep(new FragColor<>(next.buf.tex.image(0)));
+	return(new GOut(def.out, st, new Coord(area.sz())));
+    }
+
+    private PostProcessor pp_resamp = null;
+    protected void resolve(GOut g) {
+	List<PostProcessor> copy = new ArrayList<PostProcessor>(ctx.postproc());
+	if(!rsz.equals(g.sz())) {
+	    if(pp_resamp == null)
+		pp_resamp = new Resampler();
+	    copy.add(pp_resamp);
+	} else {
+	    if(pp_resamp != null) {
+		pp_resamp.dispose();
+		pp_resamp = null;
+	    }
+	}
+	Iterator<PostProcessor> post = copy.iterator();
+	PostProcessor next = post.hasNext() ? post.next() : null;
+	resolveout(g, next).image(new TexRaw(fragsamp, true), Coord.z);
+	while(next != null) {
+	    PostProcessor cur = next;
+	    next = post.hasNext() ? post.next() : null;
+	    cur.run(resolveout(g, next), cur.buf);
+	}
+    }
+
+    public void add(PostProcessor post) {ctx.add(post);}
+    public void remove(PostProcessor post) {ctx.remove(post);}
+
+    protected void envsetup() {
+	back = env.drawlist();
+	instancer = new InstanceList(tree);
+	instancer.add(back, Rendered.class);
+	instancer.asyncadd(tree, Rendered.class);
+    }
+
+    protected void envdispose() {
+	tree.remove(instancer);
+	back.dispose(); back = null;
+	instancer.dispose(); instancer = null;
+    }
+
+    protected void maindraw(Render out) {
+	back.draw(out);
+    }
+
+    public void gtick(Render out) {
+	ticklist.gtick(out);
     }
 
     public void draw(GOut g) {
-	if((g.sz.x < 1) || (g.sz.y < 1))
-	    return;
-	if((rls == null) || (rls.cfg != g.gc))
-	    rls = new RenderList(g.gc);
-	CPUProfile.Frame curf = null;
-	if(Config.profile)
-	    curf = prof.new Frame();
-	GLState.Buffer bk = g.st.copy();
-	GLState.Buffer def = basic(g);
-	if(g.gc.pref.fsaa.val)
-	    States.fsaa.prep(def);
-	try {
-	    lm.prep(def);
-	    new Light.LightList().prep(def);
-	    rls.setup(scene, def);
-	    if(curf != null)
-		curf.tick("setup");
-	    rls.fin();
-	    if(curf != null)
-		curf.tick("sort");
-	    GOut rg;
-	    if(cstate.cur.fb != null) {
-		GLState.Buffer gb = g.basicstate();
-		HavenPanel.OrthoState.fixed(cstate.cur.fb.sz()).prep(gb);
-		cstate.cur.fb.prep(gb);
-		cstate.cur.fb.prep(def);
-		rg = new GOut(g.gl, g.curgl, g.gc, g.st, gb, cstate.cur.fb.sz());
-	    } else {
-		rg = g;
+	if((back == null) || !back.compatible(g.out.env())) {
+	    if(env != null) {
+		envdispose();
+		env = null;
 	    }
-	    rg.st.set(def);
-	    Color cc = clearcolor();
-	    if((cc == null) && (cstate.cur.fb != null))
-		cc = new Color(0, 0, 0, 0);
-	    rg.apply();
-	    BGL gl = rg.gl;
-	    if(cc == null) {
-		gl.glClear(GL.GL_DEPTH_BUFFER_BIT);
-	    } else {
-		gl.glClearColor((float)cc.getRed() / 255f, (float)cc.getGreen() / 255f, (float)cc.getBlue() / 255f, (float)cc.getAlpha() / 255f);
-		gl.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT);
+	    env = g.out.env();
+	    envsetup();
+	}
+	lights();
+	FColor cc = clearcolor();
+	if(cc != null)
+	    g.out.clear(basic.state(), FragColor.fragcol, cc);
+	g.out.clear(basic.state(), 1.0);
+	try(Locked lk = tree.lock()) {
+	    instancer.commit(g.out);
+	    maindraw(g.out);
+	}
+	resolve(g);
+	list2d.draw(g);
+    }
+
+    public void dispose() {
+	if(audio != null) {
+	    audio.clear();
+	}
+	if(env != null) {
+	    envdispose();
+	    env = null;
+	}
+	super.dispose();
+    }
+
+    private static final Object id_fb = new Object(), id_view = new Object(), id_misc = new Object();
+    protected void basic() {
+	basic(id_fb, p -> {
+		FrameConfig fb = p.get(FrameConfig.slot);
+		if((fragcol == null) || !fragcol.sz().equals(fb.sz)) {
+		    if(fragcol != null)
+			fragcol.dispose();
+		    fragcol = new Texture2D(fb.sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null);
+		    fragsamp = new Sampler2D(fragcol);
+		}
+		if((depth == null) || !depth.sz().equals(fb.sz)) {
+		    if(depth != null)
+			depth.dispose();
+		    depth = new Texture2D(fb.sz, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null);
+		}
+		p.prep(new FragColor<>(fragcol.image(0))).prep(new DepthBuffer<>(depth.image(0)));
+	    });
+	basic(id_view, p -> {
+		FrameConfig fb = p.get(FrameConfig.slot);
+		Area area = Area.sized(Coord.z, fb.sz);
+		p.prep(new States.Viewport(area));
+		p.prep(Homo3D.state);
+	    });
+	basic(id_misc, Pipe.Op.compose(new States.Blending(States.Blending.Function.ADD, States.Blending.Factor.SRC_ALPHA, States.Blending.Factor.INV_SRC_ALPHA,
+							   States.Blending.Function.MAX, States.Blending.Factor.SRC_ALPHA, States.Blending.Factor.INV_SRC_ALPHA),
+				       new States.Depthtest(States.Depthtest.Test.LE),
+				       new States.Facecull()));
+	lights();
+    }
+
+    protected void attached() {
+	basic(ActAudio.class, this.audio = new ActAudio(ui.audio));
+    }
+
+    protected void lights() {
+	basic(Light.class, Pipe.Op.compose(lights, lights.compile()));
+    }
+
+    public interface Render2D extends RenderTree.Node {
+	public void draw(GOut g, Pipe state);
+    }
+
+    public static class ScreenList implements RenderList<Render2D> {
+	private final Set<Slot<? extends Render2D>> cur = new HashSet<>();
+
+	public void draw(GOut g) {
+	    List<Slot<? extends Render2D>> copy;
+	    synchronized(cur) {
+		copy = new ArrayList<>(cur);
 	    }
-	    if(curf != null)
-		curf.tick("cls");
-	    g.st.time = 0;
-	    rls.render(rg);
-	    if(cstate.cur.fb != null)
-		cstate.cur.resolve(g);
-	    if(curf != null) {
-		curf.add("apply", g.st.time);
-		curf.tick("render", g.st.time);
+	    for(Slot<? extends Render2D> slot : copy) {
+		slot.obj().draw(g, slot.state());
 	    }
-	} finally {
-	    g.st.set(bk);
 	}
-	for(RenderList.Slot s : rls.slots()) {
-	    if(!s.d)
-		break;
-	    if(s.r instanceof Render2D)
-		((Render2D)s.r).draw2d(g);
+
+	public void add(Slot<? extends Render2D> slot) {
+	    synchronized(cur) {
+		cur.add(slot);
+	    }
 	}
-	if(curf != null)
-	    curf.tick("2d");
-	if(curf != null)
-	    curf.fin();
-    }
-    
-    public interface Render2D extends Rendered {
-	public void draw2d(GOut g);
-    }
-    
-    public static abstract class Draw2D implements Render2D {
-	public void draw(GOut g) {}
-	
-	public boolean setup(RenderList r) {
-	    return(true);
+
+	public void remove(Slot<? extends Render2D> slot) {
+	    synchronized(cur) {
+		cur.remove(slot);
+	    }
 	}
-    }
 
-    public static Matrix4f camxf(GLState.Buffer buf) {
-	Camera cam_s = buf.get(cam);
-	return((cam_s == null)?Matrix4f.id:cam_s.fin(Matrix4f.id));
+	public void update(Slot<? extends Render2D> slot) {}
+	public void update(Pipe group, int[] statemask) {}
     }
-    public static Matrix4f camxf(GOut g) {return(camxf(g.st.cstate()));}
-
-    public static Matrix4f locxf(GLState.Buffer buf) {
-	Location.Chain loc_s = buf.get(loc);
-	return((loc_s == null)?Matrix4f.id:loc_s.fin(Matrix4f.id));
-    }
-    public static Matrix4f locxf(GOut g) {return(locxf(g.st.cstate()));}
-
-    public static Matrix4f mvxf(GOut g, GLState.Buffer buf) {
-	Camera cam_s = buf.get(cam);
-	Location.Chain loc_s = buf.get(loc);
-	Matrix4f ret = Matrix4f.id;
-	if(cam_s != null) ret = cam_s.fin(ret);
-	if(loc_s != null) ret = loc_s.fin(ret);
-	return(ret);
-    }
-    public static Matrix4f mvxf(GOut g) {return(mvxf(g, g.st.cstate()));}
-
-    public static Matrix4f pmvxf(GOut g, GLState.Buffer buf) {
-	Camera cam_s = buf.get(cam);
-	Location.Chain loc_s = buf.get(loc);
-	Matrix4f ret = g.st.proj;
-	if(cam_s != null) ret = cam_s.fin(ret);
-	if(loc_s != null) ret = loc_s.fin(ret);
-	return(ret);
-    }
-    public static Matrix4f pmvxf(GOut g) {return(pmvxf(g, g.st.cstate()));}
 }

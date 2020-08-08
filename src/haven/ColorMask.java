@@ -27,36 +27,30 @@
 package haven;
 
 import java.awt.Color;
-import haven.glsl.*;
-import static haven.glsl.Type.*;
+import haven.render.*;
+import haven.render.sl.*;
+import static haven.render.sl.Type.*;
 
-public class ColorMask extends GLState {
+public class ColorMask extends State {
     public static final Slot<ColorMask> slot = new Slot<ColorMask>(Slot.Type.DRAW, ColorMask.class);
-    public static final Uniform ccol = new Uniform(VEC4);
-    private final float[] col;
+    public static final Uniform ccol = new Uniform(VEC4, p -> p.get(slot).col, slot);
+    private final FColor col;
 
     private static final ShaderMacro sh = prog -> {
-	prog.fctx.fragcol.mod(in -> MiscLib.colblend.call(in, ccol.ref()), 100);
+	FragColor.fragcol(prog.fctx).mod(in -> MiscLib.colblend.call(in, ccol.ref()), 100);
     };
 
+    public ColorMask(FColor col) {
+	this.col = col;
+    }
+
     public ColorMask(Color col) {
-	this.col = Utils.c2fa(col);
+	this(new FColor(col));
     }
 
     public ShaderMacro shader() {return(sh);}
 
-    public void reapply(GOut g) {
-	g.gl.glUniform4fv(g.st.prog.uniform(ccol), 1, col, 0);
-    }
-
-    public void apply(GOut g) {
-	reapply(g);
-    }
-
-    public void unapply(GOut g) {
-    }
-
-    public void prep(Buffer buf) {
+    public void apply(Pipe buf) {
 	buf.put(slot, this);
     }
 }

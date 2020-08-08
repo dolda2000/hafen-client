@@ -28,16 +28,21 @@ package haven;
 
 import java.awt.Color;
 import java.util.*;
+import haven.render.*;
 import haven.Composited.Desc;
+import haven.Composited.MD;
+import haven.Composited.ED;
 
 public class Avaview extends PView {
     public static final Tex missing = Resource.loadtex("gfx/hud/equip/missing");
     public static final Coord dasz = missing.sz();
     public Color color = Color.WHITE;
+    public FColor clearcolor = FColor.BLACK;
     public long avagob;
     public Desc avadesc;
     public Resource.Resolver resmap = null;
     private Composited comp;
+    private RenderTree.Slot compslot;
     private List<Composited.MD> cmod = null;
     private List<Composited.ED> cequ = null;
     private final String camnm;
@@ -62,6 +67,14 @@ public class Avaview extends PView {
 	super(sz);
 	this.camnm = camnm;
 	this.avagob = avagob;
+	basic.add(new DirLight(Color.WHITE, Color.WHITE, Color.WHITE, new Coord3f(1, 1, 1).norm()), null);
+	makeproj();
+    }
+
+    protected void makeproj() {
+	float field = 0.5f;
+	float aspect = ((float)sz.y) / ((float)sz.x);
+	basic(Projection.class, Projection.frustum(-field, field, -aspect * field, aspect * field, 1, 5000));
     }
 
     public void uimsg(String msg, Object... args) {
@@ -75,6 +88,8 @@ public class Avaview extends PView {
 	    this.color = (Color)args[0];
 	} else if(msg == "pop") {
 	    pop(Desc.decode(ui.sess, args));
+	} else if(msg == "bg") {
+	    clearcolor = new FColor((Color)args[0]);
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -90,20 +105,43 @@ public class Avaview extends PView {
 	pop(ava, null);
     }
 
+    private Collection<ResData> nposes = null, lposes = null;
+    private boolean nposesold;
+    public void chposes(Collection<ResData> poses, boolean interp) {
+	nposes = poses;
+	nposesold = !interp;
+    }
+    private void updposes() {
+	if(nposes == null) {
+	    nposes = lposes;
+	    nposesold = true;
+	}
+    }
+
     private static final OwnerContext.ClassResolver<Avaview> ctxr = new OwnerContext.ClassResolver<Avaview>()
 	.add(Glob.class, v -> v.ui.sess.glob)
 	.add(Session.class, v -> v.ui.sess)
 	.add(Resource.Resolver.class, v -> (v.resmap == null ? v.ui.sess : v.resmap));
-    private class AvaOwner implements Sprite.Owner {
+    private class AvaOwner implements Sprite.Owner, Skeleton.ModOwner {
 	public Random mkrandoom() {return(new Random());}
 	public Resource getres() {return(null);}
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, Avaview.this));}
+	@Deprecated public Glob glob() {return(context(Glob.class));}
+
+	public Coord3f getc() {return(Coord3f.o);}
+	public double getv() {return(0);}
     }
+    private final AvaOwner avaowner = new AvaOwner();
 
     private void initcomp(Composite gc) {
 	if((comp == null) || (comp.skel != gc.comp.skel)) {
 	    comp = new Composited(gc.comp.skel);
-	    comp.eqowner = new AvaOwner();
+	    comp.eqowner = avaowner;
+	    if(compslot != null) {
+		compslot.remove();
+		compslot = null;
+	    }
+	    updposes();
 	}
     }
 
@@ -111,23 +149,9 @@ public class Avaview extends PView {
 	Skeleton.BoneOffset bo = base.layer(Skeleton.BoneOffset.class, camnm);
 	if(bo == null)
 	    throw(new Loading());
-	GLState.Buffer buf = new GLState.Buffer(null);
-	bo.forpose(comp.pose).prep(buf);
-	return(new LocationCam(buf.get(PView.loc)));
-    }
-
-    private Camera cam = null;
-    protected Camera camera() {
-	if(cam == null)
-	    throw(new Loading());
-	return(cam);
-    }
-
-    protected void setup(RenderList rl) {
-	if(comp == null)
-	    throw(new Loading());
-	rl.add(comp, null);
-	rl.add(new DirLight(Color.WHITE, Color.WHITE, Color.WHITE, new Coord3f(1, 1, 1).norm()), null);
+	Pipe buf = new BufPipe();
+	buf.prep(bo.forpose(comp.pose).get());
+	return(new LocationCam(buf.get(Homo3D.loc)));
     }
 
     private Composite getgcomp() {
@@ -143,37 +167,75 @@ public class Avaview extends PView {
 	return(gc);
     }
 
+    private static List<MD> copy1(List<MD> in) {
+	List<MD> ret = new ArrayList<>();
+	for(MD ob : in)
+	    ret.add(ob.clone());
+	return(ret);
+    }
+
+    private static List<ED> copy2(List<ED> in) {
+	List<ED> ret = new ArrayList<>();
+	for(ED ob : in)
+	    ret.add(ob.clone());
+	return(ret);
+    }
+
     private Indir<Resource> lbase = null;
     public void updcomp() {
+	/* XXX: This "retry mechanism" is quite ugly and should
+	 * probably be rewritten to use the Loader instead. */
 	if(avagob != -1) {
 	    Composite gc = getgcomp();
 	    if(gc == null)
 		throw(new Loading());
 	    initcomp(gc);
-	    if((cam == null) || (gc.base != lbase))
-		cam = makecam((lbase = gc.base).get(), comp, camnm);
+	    if(gc.base != lbase)
+		basic(Camera.class, makecam((lbase = gc.base).get(), comp, camnm));
 	    if(gc.comp.cmod != this.cmod)
-		comp.chmod(this.cmod = gc.comp.cmod);
+		comp.chmod(this.cmod = copy1(gc.comp.cmod));
 	    if(gc.comp.cequ != this.cequ)
-		comp.chequ(this.cequ = gc.comp.cequ);
+		comp.chequ(this.cequ = copy2(gc.comp.cequ));
 	} else if(avadesc != null) {
 	    Desc d = avadesc;
-	    if((d.base != lbase) || (cam == null) || (comp == null)) {
+	    if((d.base != lbase) || (comp == null)) {
 		lbase = d.base;
 		comp = new Composited(d.base.get().layer(Skeleton.Res.class).s);
-		comp.eqowner = new AvaOwner();
-		cam = makecam(d.base.get(), comp, camnm);
+		comp.eqowner = avaowner;
+		basic(Camera.class, makecam(d.base.get(), comp, camnm));
+		updposes();
 	    }
-	    if(d.mod != this.cmod)
-		comp.chmod(this.cmod = d.mod);
-	    if(d.equ != this.cequ)
-		comp.chequ(this.cequ = d.equ);
+	    if(d.mod != this.cmod) {
+		comp.chmod(d.mod);
+		this.cmod = d.mod;
+	    }
+	    if(d.equ != this.cequ) {
+		comp.chequ(d.equ);
+		this.cequ = d.equ;
+	    }
+	}
+	if(compslot == null) {
+	    compslot = basic.add(comp);
 	}
     }
 
     public void tick(double dt) {
-	if(comp != null)
-	    comp.tick((int)(dt * 1000));
+	super.tick(dt);
+	if(comp != null) {
+	    comp.tick(dt);
+	    if(nposes != null) {
+		try {
+		    Composited.Poses np = comp.new Poses(Composite.loadposes(nposes, avaowner, comp.skel, nposesold));
+		    np.set(nposesold ? 0 : 0.2f);
+		    lposes = nposes;
+		    nposes = null;
+		} catch(Loading e) {}
+	    }
+	}
+    }
+
+    protected FColor clearcolor() {
+	return(clearcolor);
     }
 
     public void draw(GOut g) {

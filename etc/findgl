@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import sys, zipfile
+import sys, zipfile, fnmatch
 from classfile import file
 
 classpath=["build/jogl.jar"]
@@ -51,13 +51,13 @@ classes = resolve(roots)
 for func in sys.argv[1:]:
     for cl in classes:
         for mth in cl.methods:
-            if cl.cp[mth.nm] == func:
-                sys.stdout.write("%s %s\n" % (func, cl.cp[cl.cp[cl.this].nm]))
+            if fnmatch.fnmatchcase(cl.cp[mth.nm], func):
+                sys.stdout.write("%s %s\n" % (cl.cp[mth.nm], cl.cp[cl.cp[cl.this].nm]))
         for fl in cl.fields:
             val = None
             if fl.const:
                 val = cl.cp[fl.const]
             if isinstance(val, file.constint):
                 val = val.val
-            if (cl.cp[fl.nm] == func) or (val is not None and str(val) == func):
+            if fnmatch.fnmatchcase(cl.cp[fl.nm], func) or (val is not None and str(val) == func):
                 sys.stdout.write("%s %s %r\n" % (cl.cp[fl.nm], cl.cp[cl.cp[cl.this].nm], val))

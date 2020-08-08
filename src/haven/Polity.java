@@ -75,7 +75,7 @@ public class Polity extends Widget {
 	public void drawitem(GOut g, Member m, int idx) {
 	    if(soughtitem(idx)) {
 		g.chcolor(255, 255, 0, 32);
-		g.frect(Coord.z, g.sz);
+		g.frect(Coord.z, g.sz());
 		g.chcolor();
 	    }
 	    if((mw instanceof MemberWidget) && Utils.eq(((MemberWidget)mw).id, m.id))

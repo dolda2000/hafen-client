@@ -27,7 +27,8 @@
 package haven;
 
 import java.util.*;
-import javax.media.opengl.*;
+import java.util.function.*;
+import haven.render.*;
 
 public class Skeleton {
     public final Map<String, Bone> bones = new HashMap<String, Bone>();
@@ -256,31 +257,34 @@ public class Skeleton {
 	    }
 	}
 	
-	public Location bonetrans(final int bone) {
-	    return(new Location(Matrix4f.identity()) {
-		    private int cseq = -1;
-		    
-		    public Matrix4f fin(Matrix4f p) {
+	/* XXX: It seems the return type of these should be something more generic. */
+	public Supplier<Pipe.Op> bonetrans(int bone) {
+	    return(new Supplier<Pipe.Op>() {
+		    int cseq = -1;
+		    Location cur;
+
+		    public Pipe.Op get() {
 			if(cseq != seq) {
 			    Matrix4f xf = Transform.makexlate(new Matrix4f(), new Coord3f(gpos[bone][0], gpos[bone][1], gpos[bone][2]));
 			    if(grot[bone][0] < 0.999999) {
 				float ang = (float)(Math.acos(grot[bone][0]) * 2.0);
 				xf = xf.mul1(Transform.makerot(new Matrix4f(), new Coord3f(grot[bone][1], grot[bone][2], grot[bone][3]).norm(), ang));
 			    }
-			    update(xf);
+			    cur = new Location(xf);
 			    cseq = seq;
 			}
-			return(super.fin(p));
+			return(cur);
 		    }
 		});
 	}
-	
-	public Location bonetrans2(final int bone) {
-	    return(new Location(Matrix4f.identity()) {
-		    private int cseq = -1;
-		    private float[] pos = new float[3], rot = new float[4];
-		    
-		    public Matrix4f fin(Matrix4f p) {
+
+	public Supplier<Pipe.Op> bonetrans2(int bone) {
+	    return(new Supplier<Pipe.Op>() {
+		    int cseq = -1;
+		    Location cur;
+		    float[] pos = new float[3], rot = new float[4];
+
+		    public Pipe.Op get() {
 			if(cseq != seq) {
 			    rot = qqmul(rot, grot[bone], qinv(rot, bindpose.grot[bone]));
 			    pos = vvadd(pos, gpos[bone], vqrot(pos, vinv(pos, bindpose.gpos[bone]), rot));
@@ -289,14 +293,15 @@ public class Skeleton {
 				float ang = (float)(Math.acos(rot[0]) * 2.0);
 				xf = xf.mul1(Transform.makerot(new Matrix4f(), new Coord3f(rot[1], rot[2], rot[3]).norm(), ang));
 			    }
-			    update(xf);
+			    cur = new Location(xf);
 			    cseq = seq;
 			}
-			return(super.fin(p));
+			return(cur);
 		    }
 		});
 	}
 
+	/* XXXRENDER
 	public class BoneAlign extends Location {
 	    private final Coord3f ref;
 	    private final int orig, tgt;
@@ -314,9 +319,9 @@ public class Skeleton {
 		    Coord3f cur = new Coord3f(gpos[tgt][0] - gpos[orig][0], gpos[tgt][1] - gpos[orig][1], gpos[tgt][2] - gpos[orig][2]).norm();
 		    Coord3f axis = cur.cmul(ref).norm();
 		    float ang = (float)Math.acos(cur.dmul(ref));
-		    /*
+		    /-
 		    System.err.println(cur + ", " + ref + ", " + axis + ", " + ang);
-		    */
+		    -/
 		    update(Transform.makexlate(new Matrix4f(), new Coord3f(gpos[orig][0], gpos[orig][1], gpos[orig][2]))
 			   .mul1(Transform.makerot(new Matrix4f(), axis, -ang)));
 		    cseq = seq;
@@ -324,6 +329,7 @@ public class Skeleton {
 		return(super.fin(p));
 	    }
 	}
+	*/
 
 	public void boneoff(int bone, float[] offtrans) {
 	    /* It would be nice if these "new float"s get
@@ -350,6 +356,7 @@ public class Skeleton {
 	    offtrans[ 9] = yz + xw;
 	}
 	
+	/* XXXRENDER
 	public final Rendered debug = new Rendered() {
 		public void draw(GOut g) {
 		    BGL gl = g.gl;
@@ -375,6 +382,7 @@ public class Skeleton {
 		    return(true);
 		}
 	    };
+	*/
     }
 
     public interface HasPose {
@@ -545,21 +553,46 @@ public class Skeleton {
     public static class Res extends Resource.Layer {
 	public final transient Skeleton s;
 	
+	private void read(Map<String, Bone> bones, Map<Bone, String> pm, Message buf, int ver) {
+	    if(ver == 0) {
+		while(!buf.eom()) {
+		    String bnm = buf.string();
+		    if((bnm.length() == 1) && (((int)bnm.charAt(0)) < 32)) {
+			read(bones, pm, buf, (int)bnm.charAt(0));
+			return;
+		    }
+		    Coord3f pos = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat());
+		    Coord3f rax = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
+		    float rang = (float)buf.cpfloat();
+		    String bp = buf.string();
+		    Bone b = new Bone(bnm, pos, rax, rang);
+		    if(bones.put(bnm, b) != null)
+			throw(new RuntimeException("Duplicate bone name: " + b.name));
+		    pm.put(b, bp);
+		}
+	    } else if(ver == 1) {
+		while(!buf.eom()) {
+		    String bnm = buf.string();
+		    String bp = buf.string();
+		    Coord3f pos = new Coord3f(buf.float32(), buf.float32(), buf.float32());
+		    float rang = buf.unorm16() * 2 * (float)Math.PI;
+		    float[] rax = new float[3];
+		    Utils.oct2uvec(rax, buf.snorm16(), buf.snorm16());
+		    Bone b = new Bone(bnm, pos, new Coord3f(rax[0], rax[1], rax[2]), rang);
+		    if(bones.put(bnm, b) != null)
+			throw(new RuntimeException("Duplicate bone name: " + b.name));
+		    pm.put(b, bp);
+		}
+	    } else {
+		throw(new AssertionError());
+	    }
+	}
+
 	public Res(Resource res, Message buf) {
 	    res.super();
 	    Map<String, Bone> bones = new HashMap<String, Bone>();
 	    Map<Bone, String> pm = new HashMap<Bone, String>();
-	    while(!buf.eom()) {
-		String bnm = buf.string();
-		Coord3f pos = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat());
-		Coord3f rax = new Coord3f((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
-		float rang = (float)buf.cpfloat();
-		String bp = buf.string();
-		Bone b = new Bone(bnm, pos, rax, rang);
-		if(bones.put(bnm, b) != null)
-		    throw(new RuntimeException("Duplicate bone name: " + b.name));
-		pm.put(b, bp);
-	    }
+	    read(bones, pm, buf, 0);
 	    for(Bone b : bones.values()) {
 		String bp = pm.get(b);
 		if(bp.length() == 0) {
@@ -686,7 +719,10 @@ public class Skeleton {
 	    float nt = time + (back?-dt:dt);
 	    switch(mode) {
 	    case LOOP:
-		nt %= len;
+		if(len == 0)
+		    nt = 0;
+		else
+		    nt %= len;
 		break;
 	    case ONCE:
 		if(nt > len) {
@@ -815,18 +851,23 @@ public class Skeleton {
 		} catch(Loading e) {
 		    return;
 		}
-		Gob n = gob.glob.oc.new Virtual(gob.rc, gob.a) {
-			public Coord3f getc() {
-			    return(new Coord3f(fc));
-			}
+		gob.glob.loader.defer(() -> {
+			Gob n = gob.glob.oc.new Virtual(gob.rc, gob.a) {
+				public Coord3f getc() {
+				    return(new Coord3f(fc));
+				}
 
-			public boolean setup(RenderList rl) {
-			    if(SpawnSprite.this.loc != null)
-				rl.prepc(SpawnSprite.this.loc);
-			    return(super.setup(rl));
-			}
-		    };
-		n.ols.add(new Gob.Overlay(-1, res, new MessageBuf(sdt)));
+				/* XXXRENDER
+				   public boolean setup(RenderList rl) {
+				   if(SpawnSprite.this.loc != null)
+				   rl.prepc(SpawnSprite.this.loc);
+				   return(super.setup(rl));
+				   }
+				*/
+			    };
+			n.addol(new Gob.Overlay(n, -1, res, new MessageBuf(sdt)), false);
+			gob.glob.oc.add(n);
+		    }, null);
 	    }
 	}
 
@@ -867,13 +908,13 @@ public class Skeleton {
 		}
 	    } else if(fmt == 1) {
 		for(int i = 0; i < frames.length; i++) {
-		    float tm = (buf.uint16() / 65535.0f) * len;
+		    float tm = buf.unorm16() * len;
 		    float[] trans = new float[3];
 		    for(int o = 0; o < 3; o++)
 			trans[o] = Utils.hfdec((short)buf.int16());
-		    float rang = (buf.uint16() / 65535.0f) * 2 * (float)Math.PI;
+		    float rang = buf.unorm16() * 2 * (float)Math.PI;
 		    float[] rax = new float[3];
-		    Utils.oct2uvec(rax, buf.int16() / 32767.0f, buf.int16() / 32767.0f);
+		    Utils.oct2uvec(rax, buf.snorm16(), buf.snorm16());
 		    frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang));
 		}
 	    }
@@ -883,7 +924,7 @@ public class Skeleton {
 	private FxTrack parsefx(int fmt, Message buf) {
 	    FxTrack.Event[] events = new FxTrack.Event[buf.uint16()];
 	    for(int i = 0; i < events.length; i++) {
-		float tm = (fmt == 0) ? (float)buf.cpfloat() : ((buf.uint16() / 65535.0f) * len);
+		float tm = (fmt == 0) ? (float)buf.cpfloat() : (buf.unorm16() * len);
 		int t = buf.uint8();
 		switch(t) {
 		case 0:
@@ -995,49 +1036,52 @@ public class Skeleton {
 	
 	public void init() {}
     }
-    
+
     @Resource.LayerName("boneoff")
     public static class BoneOffset extends Resource.Layer implements Resource.IDLayer<String> {
 	public final String nm;
-	public final transient Command[] prog;
-	private static final HatingJava[] opcodes = new HatingJava[256];
+	public final transient Function<Pose, Supplier<Pipe.Op>>[] prog;
+
+	@SuppressWarnings("unchecked")
+	private static final Function<Message, Function<Pose, Supplier<Pipe.Op>>>[] opcodes = new Function[256];
 	static {
-	    opcodes[0] = new HatingJava() {
-		    public Command make(Message buf) {
-			final float x = (float)buf.cpfloat();
-			final float y = (float)buf.cpfloat();
-			final float z = (float)buf.cpfloat();
-			return(new Command() {
-				public GLState make(Pose pose) {
-				    return(Location.xlate(new Coord3f(x, y, z)));
-				}
-			    });
-		    }
-		};
-	    opcodes[1] = new HatingJava() {
-		    public Command make(Message buf) {
-			final float ang = (float)buf.cpfloat();
-			final float ax = (float)buf.cpfloat();
-			final float ay = (float)buf.cpfloat();
-			final float az = (float)buf.cpfloat();
-			return(new Command() {
-				public GLState make(Pose pose) {
-				    return(Location.rot(new Coord3f(ax, ay, az), ang));
-				}
-			    });
-		    }
-		};
-	    opcodes[2] = new HatingJava() {
-		    public Command make(Message buf) {
-			final String bonenm = buf.string();
-			return(new Command() {
-				public GLState make(Pose pose) {
-				    Bone bone = pose.skel().bones.get(bonenm);
-				    return(pose.bonetrans(bone.idx));
-				}
-			    });
-		    }
-		};
+	    opcodes[0] = buf -> {
+		float x = (float)buf.cpfloat();
+		float y = (float)buf.cpfloat();
+		float z = (float)buf.cpfloat();
+		Location loc = Location.xlate(new Coord3f(x, y, z));
+		return(pose -> () -> loc);
+	    };
+	    opcodes[16] = buf -> {
+		float x = buf.float32();
+		float y = buf.float32();
+		float z = buf.float32();
+		Location loc = Location.xlate(new Coord3f(x, y, z));
+		return(pose -> () -> loc);
+	    };
+	    opcodes[1] = buf -> {
+		final float ang = (float)buf.cpfloat();
+		final float ax = (float)buf.cpfloat();
+		final float ay = (float)buf.cpfloat();
+		final float az = (float)buf.cpfloat();
+		Location loc = Location.rot(new Coord3f(ax, ay, az), ang);
+		return(pose -> () -> loc);
+	    };
+	    opcodes[17] = buf -> {
+		final float ang = buf.unorm16() * 2 * (float)Math.PI;
+		float[] ax = new float[3];
+		Utils.oct2uvec(ax, buf.snorm16(), buf.snorm16());
+		Location loc = Location.rot(new Coord3f(ax[0], ax[1], ax[2]), ang);
+		return(pose -> () -> loc);
+	    };
+	    opcodes[2] = buf -> {
+		final String bonenm = buf.string();
+		return(pose -> {
+			Bone bone = pose.skel().bones.get(bonenm);
+			return(pose.bonetrans(bone.idx));
+		    });
+	    };
+	    /* XXXRENDER
 	    opcodes[3] = new HatingJava() {
 		    public Command make(Message buf) {
 			float rx1 = (float)buf.cpfloat();
@@ -1056,37 +1100,39 @@ public class Skeleton {
 			    });
 		    }
 		};
-	}
-	
-	public interface Command {
-	    public GLState make(Pose pose);
+	    */
 	}
 
-	public interface HatingJava {
-	    public Command make(Message buf);
-	}
-	
+	@SuppressWarnings("unchecked")
 	public BoneOffset(Resource res, Message buf) {
 	    res.super();
 	    this.nm = buf.string();
-	    List<Command> cbuf = new LinkedList<Command>();
+	    List<Function<Pose, Supplier<Pipe.Op>>> cbuf = new LinkedList<>();
 	    while(!buf.eom())
-		cbuf.add(opcodes[buf.uint8()].make(buf));
-	    this.prog = cbuf.toArray(new Command[0]);
+		cbuf.add(opcodes[buf.uint8()].apply(buf));
+	    this.prog = cbuf.toArray(new Function[0]);
 	}
-	
+
 	public String layerid() {
 	    return(nm);
 	}
-	
+
 	public void init() {
 	}
-	
-	public GLState forpose(Pose pose) {
-	    GLState[] ls = new GLState[prog.length];
+
+	@SuppressWarnings("unchecked")
+	public Supplier<Pipe.Op> forpose(Pose pose) {
+	    if(prog.length == 1)
+		return(prog[0].apply(pose));
+	    Supplier<Pipe.Op>[] ls = new Supplier[prog.length];
 	    for(int i = 0; i < prog.length; i++)
-		ls[i] = prog[i].make(pose);
-	    return(GLState.compose(ls));
+		ls[i] = prog[i].apply(pose);
+	    return(() -> {
+		    Pipe.Op[] buf = new Pipe.Op[ls.length];
+		    for(int i = 0; i < ls.length; i++)
+			buf[i] = ls[i].get();
+		    return(Pipe.Op.compose(buf));
+		});
 	}
     }
 }

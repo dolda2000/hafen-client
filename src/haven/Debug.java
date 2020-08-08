@@ -35,8 +35,12 @@ public class Debug {
     public static boolean pk1, pk2, pk3, pk4;
     public static PrintWriter log = new PrintWriter(System.err);
 
-    public static void cycle() {
+    public static void cycle(int modflags) {
 	pk1 = kf1; pk2 = kf2; pk3 = kf3; pk4 = kf4;
+	kf1 = (modflags & 1) != 0;
+	kf2 = (modflags & 2) != 0;
+	kf3 = (modflags & 4) != 0;
+	kf4 = (modflags & 8) != 0;
     }
 
     public static void dumpimage(BufferedImage img, File path) {
