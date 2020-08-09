@@ -1151,7 +1151,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		clickdepth.image.tex.dispose();
 	    }
 	    clickid = new FragID<>(new Texture2D(sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null).image(0));
-	    clickloc = new ClickLocation<>(new Texture2D(sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null).image(0));
+	    clickloc = new ClickLocation<>(new Texture2D(sz, DataBuffer.Usage.STATIC, new VectorFormat(2, NumberFormat.UNORM16), null).image(0));
 	    clickdepth = new DepthBuffer<>(new Texture2D(sz, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null).image(0));
 	    curclickbasic = Pipe.Op.compose(Clicklist.clickbasic, clickid, clickdepth, new States.Viewport(Area.sized(Coord.z, sz)));
 	}
@@ -1161,8 +1161,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private void checkmapclick(Render out, Pipe.Op basic, Coord c, Consumer<Coord2d> cb) {
 	new Object() {
 	    MapMesh cut;
-	    Coord tile;
-	    Coord2d pixel;
+	    Coord2d pos;
 
 	    {
 		clmaplist.basic(Pipe.Op.compose(basic, clickloc));
@@ -1178,9 +1177,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			    this.cut = ((MapClick)cd.ci).cut;
 			ckdone(1);
 		    });
-		GOut.getpixel(out, clmaplist.basic, ClickLocation.fragloc, c, col -> {
-			tile = new Coord(col.getRed() - 1, col.getGreen() - 1);
-			pixel = new Coord2d((col.getBlue() * tilesz.x) / 255.0, (col.getAlpha() * tilesz.y) / 255.0);
+		out.pget(clmaplist.basic, ClickLocation.fragloc, Area.sized(c, new Coord(1, 1)), new VectorFormat(2, NumberFormat.FLOAT32), data -> {
+			pos = new Coord2d(data.getFloat(0), data.getFloat(4));
 			ckdone(2);
 		    });
 	    }
@@ -1189,10 +1187,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    void ckdone(int fl) {
 		synchronized(this) {
 		    if((dfl |= fl) == 3) {
-			if((cut == null) || !tile.isect(Coord.z, cut.sz))
+			if(cut == null)
 			    cb.accept(null);
 			else
-			    cb.accept(cut.ul.add(tile).mul(tilesz).add(pixel));
+			    cb.accept(new Coord2d(cut.ul).add(pos.mul(new Coord2d(cut.sz))).mul(tilesz));
 		    }
 		}
 	    }
