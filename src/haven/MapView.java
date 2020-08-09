@@ -939,7 +939,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    public Clickslot(Slot<? extends Rendered> bk, int id) {
 		this.bk = bk;
 		this.id = id;
-		this.idp = new SinglePipe<>(FragID.id, new FragID.ID(id2col(id)));
+		this.idp = new SinglePipe<>(FragID.id, new FragID.ID(id));
 	    }
 
 	    public Rendered obj() {
@@ -1045,19 +1045,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public <R> void add(RenderList<R> list, Class<? extends R> type) {}
 	public void remove(RenderList<?> list) {}
 
-	public static Color id2col(int id) {
-	    return(new Color(((id & 0x00000f) << 4) | ((id & 0x00f000) >> 12),
-			     ((id & 0x0000f0) << 0) | ((id & 0x0f0000) >> 16),
-			     ((id & 0x000f00) >> 4) | ((id & 0xf00000) >> 20)));
-	}
-
-	public static int col2id(Color col) {
-	    int r = col.getRed(), g = col.getGreen(), b = col.getBlue();
-	    return(((r & 0xf0) >> 4) | ((r & 0x0f) << 12) |
-		   ((g & 0xf0) >> 0) | ((g & 0x0f) << 16) |
-		   ((b & 0xf0) << 4) | ((b & 0x0f) << 20));
-	}
-
 	public void basic(Pipe.Op st) {
 	    try(Locked lk = lock()) {
 		DefPipe buf = new DefPipe();
@@ -1100,13 +1087,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void get(Render out, Coord c, Consumer<ClickData> cb) {
-	    GOut.getpixel(out, basic, FragID.fragid, c, col -> {
-		    int id = col2id(col);
+	    out.pget(basic, FragID.fragid, Area.sized(c, new Coord(1, 1)), new VectorFormat(1, NumberFormat.SINT32), data -> {
+		    int id = data.getInt(0);
 		    if(id == 0) {
 			cb.accept(null);
 			return;
 		    }
-		    Clickslot cs = idmap.get(col2id(col));
+		    Clickslot cs = idmap.get(id);
 		    if(cs == null) {
 			cb.accept(null);
 			return;
@@ -1150,7 +1137,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		clickloc.image.tex.dispose();
 		clickdepth.image.tex.dispose();
 	    }
-	    clickid = new FragID<>(new Texture2D(sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null).image(0));
+	    clickid = new FragID<>(new Texture2D(sz, DataBuffer.Usage.STATIC, new VectorFormat(1, NumberFormat.SINT32), null).image(0));
 	    clickloc = new ClickLocation<>(new Texture2D(sz, DataBuffer.Usage.STATIC, new VectorFormat(2, NumberFormat.UNORM16), null).image(0));
 	    clickdepth = new DepthBuffer<>(new Texture2D(sz, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null).image(0));
 	    curclickbasic = Pipe.Op.compose(Clicklist.clickbasic, clickid, clickdepth, new States.Viewport(Area.sized(Coord.z, sz)));
@@ -1167,8 +1154,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		clmaplist.basic(Pipe.Op.compose(basic, clickloc));
 		clmaplist.draw(out);
 		if(clickdb) {
-		    GOut.getimage(out, clmaplist.basic, FragID.fragid, Area.sized(Coord.z, clmaplist.sz()),
-				  img -> Debug.dumpimage(img, Debug.somedir("click1.png")));
+		    GOut.debugimage(out, clobjlist.basic, FragID.fragid, Area.sized(Coord.z, clobjlist.sz()), new VectorFormat(1, NumberFormat.SINT32),
+				    img -> Debug.dumpimage(img, Debug.somedir("click1.png")));
 		    GOut.getimage(out, clmaplist.basic, ClickLocation.fragloc, Area.sized(Coord.z, clmaplist.sz()),
 				  img -> Debug.dumpimage(img, Debug.somedir("click2.png")));
 		}
@@ -1201,7 +1188,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	clobjlist.basic(basic);
 	clobjlist.draw(out);
 	if(clickdb) {
-	    GOut.getimage(out, clobjlist.basic, FragID.fragid, Area.sized(Coord.z, clobjlist.sz()),
+	    GOut.debugimage(out, clobjlist.basic, FragID.fragid, Area.sized(Coord.z, clobjlist.sz()), new VectorFormat(1, NumberFormat.SINT32),
 			  img -> Debug.dumpimage(img, Debug.somedir("click3.png")));
 	}
 	clobjlist.get(out, c, cb);
