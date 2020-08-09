@@ -420,7 +420,7 @@ public class GOut {
 		Coord sz = area.sz();
 		byte[] pbuf = new byte[sz.x * sz.y * 4];
 		switch(fmt.cf) {
-		case UNORM8: case SNORM8: case UNORM16: case SNORM16: case UNORM32: case SNORM32: {
+		case UNORM8: case SNORM8: {
 		    data.get(pbuf);
 		    break;
 		}
