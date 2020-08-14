@@ -34,11 +34,10 @@ public class FragID<T extends Texture.Image> extends State {
     public static final Slot<FragID> tex = new Slot<>(Slot.Type.SYS, FragID.class);
     public static final Slot<ID> id = new Slot<>(Slot.Type.DRAW, ID.class)
 	.instanced(st -> ID.instancer);
-    public static final FragData fragid = new FragData(Type.VEC4, "fragid", p -> p.get(tex).image, tex);
-    private static final InstancedUniform uid = new InstancedUniform.Vec4("id", p -> {
+    public static final FragData fragid = new FragData(Type.INT, "fragid", p -> p.get(tex).image, tex);
+    private static final InstancedUniform uid = new InstancedUniform.Int("id", p -> {
 	    ID v = p.get(id);
-	    Color ret = (v == null) ? Color.BLACK : v.val;
-	    return(new float[] {ret.getRed() / 255f, ret.getGreen() / 255f, ret.getBlue() / 255f, ret.getAlpha() / 255f});
+	    return((v == null) ? 0 : v.val);
 	}, id);
     public final T image;
 
@@ -47,9 +46,9 @@ public class FragID<T extends Texture.Image> extends State {
     }
 
     public static class ID extends State implements InstanceBatch.AttribState {
-	public final Color val;
+	public final int val;
 
-	public ID(Color val) {
+	public ID(int val) {
 	    this.val = val;
 	}
 
@@ -57,16 +56,16 @@ public class FragID<T extends Texture.Image> extends State {
 	public void apply(Pipe p) {p.put(id, this);}
 
 	public int hashCode() {
-	    return(val.hashCode());
+	    return(val);
 	}
 
 	public boolean equals(Object o) {
 	    return((o instanceof ID) &&
-		   (((ID)o).val.equals(this.val)));
+		   (((ID)o).val == this.val));
 	}
 
 	static final Instancer<ID> instancer = new Instancer<ID>() {
-		final ID instanced = new ID(Color.BLACK) {
+		final ID instanced = new ID(0) {
 		    public ShaderMacro shader() {return(mkinstanced);}
 		};
 
@@ -80,7 +79,7 @@ public class FragID<T extends Texture.Image> extends State {
 	}
     }
 
-    public static final AutoVarying transfer = new AutoVarying(Type.VEC4) {
+    public static final AutoVarying transfer = new AutoVarying(Type.INT) {
 	    protected Interpol ipol(Context ctx) {return(Interpol.FLAT);}
 	    protected Expression root(VertexContext vctx) {
 		return(uid.ref());
@@ -88,7 +87,7 @@ public class FragID<T extends Texture.Image> extends State {
 	};
 
     public static Value fragid(FragmentContext fctx) {
-	return(fctx.mainvals.ext(fragid, () -> fctx.mainvals.new Value(Type.VEC4) {
+	return(fctx.mainvals.ext(fragid, () -> fctx.mainvals.new Value(Type.INT) {
 		public Expression root() {
 		    return(transfer.ref());
 		}
