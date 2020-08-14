@@ -106,6 +106,24 @@ public abstract class InstancedUniform {
 	}
     }
 
+    public static class Int extends InstancedUniform {
+	public static final VectorFormat fmt = new VectorFormat(1, NumberFormat.SINT32);
+	public final Function<Pipe, Integer> value;
+
+	public Int(String infix, Function<Pipe, Integer> value, Slot... deps) {
+	    super(Type.INT, infix, deps);
+	    this.value = value;
+	}
+
+	protected Object uniformval(Pipe state) {return(value.apply(state));}
+
+	protected VectorFormat attrfmt() {return(fmt);}
+
+	protected void attrfill(ByteBuffer buf, int offset, Pipe state) {
+	    buf.putInt(offset, value.apply(state));
+	}
+    }
+
     public static class IVec2 extends InstancedUniform {
 	public static final VectorFormat fmt = new VectorFormat(2, NumberFormat.SINT32);
 	public final Function<Pipe, int[]> value;
