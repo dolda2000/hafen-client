@@ -1291,7 +1291,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     public Coord3f screenxf(Coord3f mc) {
-	return(Homo3D.obj2view(new Coord3f(mc.x, -mc.y, mc.z), basic.state()));
+	return(Homo3D.obj2view(new Coord3f(mc.x, -mc.y, mc.z), basic.state(), Area.sized(this.sz)));
     }
 
     public Coord3f screenxf(Coord2d mc) {
