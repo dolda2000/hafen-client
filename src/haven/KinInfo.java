@@ -92,7 +92,7 @@ public class KinInfo extends GAttrib implements RenderTree.Node, PView.Render2D 
     }
     
     public void draw(GOut g, Pipe state) {
-	Coord sc = Homo3D.obj2view(new Coord3f(0, 0, 15), state).round2();
+	Coord sc = Homo3D.obj2view(new Coord3f(0, 0, 15), state, Area.sized(g.sz())).round2();
 	if(sc.isect(Coord.z, g.sz())) {
 	    double now = Utils.rtime();
 	    if(seen == 0)
