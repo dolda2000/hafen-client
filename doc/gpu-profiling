@@ -22,6 +22,19 @@ GTX 750
  * Disable all terrain (incl. flavobjs)
    * Tree-heavy wilderness scene
      * 8.3 -> 4.2 ms (4.1 ms, 98%)
+ * Terrain tests on mixed grass/wald/heath scene
+   * Disable all terrain, incl. flavobjs
+     * 6.50 -> 3.00 ms (3.5 ms, 117%)
+   * Disable all terrain, excl. flavobjs
+     * 6.50 -> 3.23 ms (3.3 ms, 101%)
+   * Disable all terrain-tile variations
+     * 6.50 -> 4.92 ms (1.6 ms, 32%)
+   * Disable all but 1 terrain-tile variations
+     * 6.50 -> 5.24 ms (1.3 ms, 24%)
+   * Disable all but 2 terrain-tile variations
+     * 6.50 -> 5.79 ms (0.7 ms, 12%)
+   * Disable terrain-material blending
+     * Null
  * Disable all gobs (not flavobjs)
    * Tree-heavy wilderness scene
      * 8.3 -> 5.2 ms (3.1 ms, 60%)

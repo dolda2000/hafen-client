@@ -351,6 +351,16 @@ public class RenderTree implements RenderList.Adapter {
     }
 
     public static class SlotRemoved extends IllegalStateException {
+	public final String node;
+
+	private SlotRemoved(String message, TreeSlot slot) {
+	    super(message);
+	    this.node = String.valueOf(slot.node);
+	}
+
+	private SlotRemoved(TreeSlot slot) {
+	    this(null, slot);
+	}
     }
 
     static class TreeSlot implements Slot {
@@ -420,7 +430,7 @@ public class RenderTree implements RenderList.Adapter {
 	public TreeSlot add(Node n, Pipe.Op state) {
 	    try(Locked lk = tree.lock()) {
 		if((parent != null) && (pidx < 0))
-		    throw(new SlotRemoved());
+		    throw(new SlotRemoved("adding " + String.valueOf(n), this));
 		TreeSlot ch = new TreeSlot(tree, this, n);
 		ch.cstate = state;
 		addch(ch);
@@ -474,7 +484,7 @@ public class RenderTree implements RenderList.Adapter {
 	public void remove() {
 	    try(Locked lk = tree.lock()) {
 		if((parent != null) && (pidx < 0))
-		    throw(new SlotRemoved());
+		    throw(new SlotRemoved(this));
 		while(nchildren > 0)
 		    children[nchildren - 1].remove();
 		parent.removech(this);
@@ -622,7 +632,7 @@ public class RenderTree implements RenderList.Adapter {
 
 	private void chstate(Pipe.Op cstate, Pipe.Op ostate) {
 	    if((parent != null) && (pidx < 0))
-		throw(new SlotRemoved());
+		throw(new SlotRemoved(this));
 	    if(stlock)
 		throw(new RuntimeException("attempted state change of locked slot"));
 	    if(this.dstate != null) {
@@ -660,7 +670,7 @@ public class RenderTree implements RenderList.Adapter {
 
 	public void update() {
 	    if((parent != null) && (pidx < 0))
-		throw(new SlotRemoved());
+		throw(new SlotRemoved(this));
 	    synchronized(tree.clients) {
 		tree.clients.forEach(cl -> cl.updated(this));
 	    }

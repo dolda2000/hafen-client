@@ -415,6 +415,36 @@ public class GOut {
 	getpixel(out, cur2d, FragColor.fragcol, c.add(tx), cb);
     }
 
+    public static void debugimage(Render g, Pipe state, FragData buf, Area area, VectorFormat fmt, Consumer<BufferedImage> cb) {
+	g.pget(state, buf, area, fmt, data -> {
+		Coord sz = area.sz();
+		byte[] pbuf = new byte[sz.x * sz.y * 4];
+		switch(fmt.cf) {
+		case UNORM8: case SNORM8: {
+		    data.get(pbuf);
+		    break;
+		}
+		case UINT32: case SINT32: {
+		    IntBuffer idat = data.asIntBuffer();
+		    for(int y = 0, soff = 0, doff = 0; y < sz.y; y++) {
+			for(int x = 0; x < sz.x; x++, soff++, doff += 4) {
+			    int raw = idat.get(soff);
+			    pbuf[doff + 0] = (byte)(((raw & 0x00000f) << 4) | ((raw & 0x00f000) >> 12));
+			    pbuf[doff + 1] = (byte)(((raw & 0x0000f0) << 0) | ((raw & 0x0f0000) >> 16));
+			    pbuf[doff + 2] = (byte)(((raw & 0x000f00) >> 4) | ((raw & 0xf00000) >> 20));
+			    pbuf[doff + 3] = (byte)255;
+			}
+		    }
+		    WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
+		    cb.accept(new BufferedImage(TexI.glcm, raster, false, null));
+		    break;
+		}
+		}
+		WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
+		cb.accept(new BufferedImage(TexI.glcm, raster, false, null));
+	    });
+    }
+
     public static void getimage(Render g, Pipe state, FragData buf, Area area, Consumer<BufferedImage> cb) {
 	g.pget(state, buf, area, new VectorFormat(4, NumberFormat.UNORM8), data -> {
 		Coord sz = area.sz();
