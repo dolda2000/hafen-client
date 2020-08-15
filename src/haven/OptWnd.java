@@ -280,6 +280,32 @@ public class OptWnd extends Window {
 		    );
 		}
 		*/
+		composer.add(new Label("UI scale (requires restart)"));
+		{
+		    Label dpy = new Label("");
+		    final int steps = 4;
+		    composer.addr(
+			new HSlider(UI.scale(160), -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.uiscale.val) / Math.log(2.0f))) {
+			    protected void added() {
+				dpy();
+			    }
+			    void dpy() {
+				dpy.settext(String.format("%.2f\u00d7", Math.pow(2, this.val / (double)steps)));
+			    }
+			    public void changed() {
+				try {
+				    float val = (float)Math.pow(2, this.val / (double)steps);
+				    ui.setgprefs(prefs = prefs.update(null, prefs.uiscale, val));
+				} catch(GSettings.SettingException e) {
+				    error(e.getMessage());
+				    return;
+				}
+				dpy();
+			    }
+			},
+			dpy
+		    );
+		}
 		composer.add(new Button(UI.scale(200), "Reset to defaults") {
 			public void click() {
 			    ui.setgprefs(GSettings.defaults());
