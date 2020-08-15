@@ -185,6 +185,15 @@ public class GSettings extends State implements Serializable {
 		    throw(new SettingException("Not a positive render-scale"));
 	    }
 	};
+    public FloatSetting uiscale = new FloatSetting("uiscale") {
+	public Float defval() {return(1.0f);}
+	public void validate(Environment env, Float val) {
+	    if(!Float.isFinite(val))
+		throw(new SettingException("Not a finite UI scale"));
+	    if(val <= 0)
+		throw(new SettingException("Not a positive UI scale"));
+	}
+    };
 
     public EnumSetting<JOGLPanel.SyncMode> syncmode = new EnumSetting<JOGLPanel.SyncMode>("syncmode", JOGLPanel.SyncMode.class) {
 	public JOGLPanel.SyncMode defval() {
