@@ -30,6 +30,7 @@ import java.util.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.InputEvent;
+import java.awt.image.BufferedImage;
 import static haven.Utils.el;
 import haven.render.Environment;
 import haven.render.Render;
@@ -54,6 +55,7 @@ public class UI {
     public GSettings gprefs = GSettings.load(true);
     private boolean gprefsdirty = false;
     public final ActAudio.Root audio = new ActAudio.Root();
+    private static final float scalef = Config.uiscale;
     
     {
 	lastevent = lasttick = Utils.rtime();
@@ -441,5 +443,45 @@ public class UI {
     public void destroy() {
 	root.destroy();
 	audio.clear();
+    }
+
+    static public float scale(float v) {
+	return v * scalef;
+    }
+
+    static public int scale(int v) {
+	return Math.round(scale((float) v));
+    }
+
+    static public Coord scale(Coord v) {
+	return v.mul(scalef);
+    }
+
+    static public Coord2d scale(Coord2d v) {
+	return v.mul(scalef);
+    }
+
+    static public <T extends Tex> ScaledTex<T> scale(T tex) {
+	return new ScaledTex<T>(tex, UI.scale(tex.sz()));
+    }
+
+    static public <T extends Tex> ScaledTex<T> scale(ScaledTex<T> tex) {
+	return tex;
+    }
+
+    static public ScaledBufferedImage scale(BufferedImage img) {
+	return new ScaledBufferedImage(img, UI.scale(Utils.imgsz(img)));
+    }
+
+    static public float unscale(float v) {
+	return v / scalef;
+    }
+
+    static public int unscale(int v) {
+	return Math.round(unscale((float) v));
+    }
+
+    static public Coord unscale(Coord v) {
+	return v.div(scalef);
     }
 }
