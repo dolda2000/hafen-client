@@ -1117,7 +1117,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	public void dispose() {
 	    if(instancer != null) {
-		instancer = null;
+		instancer.dispose();
 		instancer = null;
 	    }
 	    if(draw != null) {
