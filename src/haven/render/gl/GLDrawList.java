@@ -684,9 +684,16 @@ public class GLDrawList implements DrawList {
 	    DepthBuffer dbuf = pipe.get(DepthBuffer.slot);
 	    Object depth = env.prepfval((dbuf != null) ? dbuf.image : null);
 	    Object[] fvals = new Object[prog.fragdata.length];
-	    for(int i = 0; i < fvals.length; i++)
-		fvals[i] = env.prepfval(prog.fragdata[i].value.apply(pipe));
-	    FboState.make(env, depth, fvals).apply(gl);
+	    FragTarget[] fconf = new FragTarget[prog.fragdata.length];
+	    for(int i = 0; i < fvals.length; i++) {
+		Object fval = prog.fragdata[i].value.apply(pipe);
+		if(fval instanceof FragTarget)
+		    fval = (fconf[i] = (FragTarget)fval).buf;
+		else
+		    fconf[i] = FboState.NIL_CONF;
+		fvals[i] = env.prepfval(fval);
+	    }
+	    FboState.make(env, depth, fvals, fconf).apply(gl);
 	}
 
 	State.Slot[] depslots() {
