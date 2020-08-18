@@ -171,6 +171,15 @@ public class VertexBuilder {
     public static class LayoutBuilder {
 	private final List<Attribute> attr = new ArrayList<>();
 	private final List<VectorFormat> efmt = new ArrayList<>();
+	public final int bufidx;
+
+	public LayoutBuilder(int bufidx) {
+	    this.bufidx = bufidx;
+	}
+
+	public LayoutBuilder() {
+	    this(0);
+	}
 
 	public LayoutBuilder add(Attribute attr, VectorFormat efmt) {
 	    this.attr.add(attr);
@@ -193,7 +202,7 @@ public class VertexBuilder {
 	    off = (off + galign - 1) & ~(galign - 1);
 	    Input[] els = new Input[n];
 	    for(int i = 0; i < n; i++)
-		els[i] = new Input(attr.get(i), efmt.get(i), 0, offs[i], off);
+		els[i] = new Input(attr.get(i), efmt.get(i), bufidx, offs[i], off);
 	    return(new Layout(els));
 	}
 
