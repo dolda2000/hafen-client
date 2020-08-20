@@ -51,6 +51,10 @@ public class Area implements Iterable<Coord>, java.io.Serializable {
 	return(new Area(ul, ul.add(sz)));
     }
 
+    public static Area sized(Coord sz) {
+	return(new Area(Coord.z, sz));
+    }
+
     public Coord sz() {
 	return(br.sub(ul));
     }

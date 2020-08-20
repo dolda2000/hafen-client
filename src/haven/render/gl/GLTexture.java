@@ -131,6 +131,20 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
     }
 
+    public static boolean glattribint(NumberFormat fmt) {
+	switch(fmt) {
+	case UINT8:
+	case SINT8:
+	case UINT16:
+	case SINT16:
+	case UINT32:
+	case SINT32:
+	    return(true);
+	default:
+	    return(false);
+	}
+    }
+
     static int texifmt(Texture data) {
 	VectorFormat fmt = data.ifmt;
 	if(!data.srgb) {
@@ -142,6 +156,12 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		case UNORM16: return(GL3.GL_R16);
 		case SNORM16: return(GL3.GL_R16_SNORM);
 		case FLOAT16: return(GL3.GL_R16F);
+		case SINT8: return(GL3.GL_R8I);
+		case UINT8: return(GL3.GL_R8UI);
+		case SINT16: return(GL3.GL_R16I);
+		case UINT16: return(GL3.GL_R16UI);
+		case SINT32: return(GL3.GL_R32I);
+		case UINT32: return(GL3.GL_R32UI);
 		case DEPTH: return(GL3.GL_DEPTH_COMPONENT);
 		}
 	    case 2:
@@ -150,6 +170,12 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		case SNORM8: return(GL3.GL_RG8_SNORM);
 		case UNORM16: return(GL3.GL_RG16);
 		case SNORM16: return(GL3.GL_RG16_SNORM);
+		case SINT8: return(GL3.GL_RG8I);
+		case UINT8: return(GL3.GL_RG8UI);
+		case SINT16: return(GL3.GL_RG16I);
+		case UINT16: return(GL3.GL_RG16UI);
+		case SINT32: return(GL3.GL_RG32I);
+		case UINT32: return(GL3.GL_RG32UI);
 		case FLOAT16: return(GL3.GL_RG16F);
 		}
 	    case 3:
@@ -158,6 +184,12 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		case SNORM8: return(GL3.GL_RGB8_SNORM);
 		case UNORM16: return(GL3.GL_RGB16);
 		case SNORM16: return(GL3.GL_RGB16_SNORM);
+		case SINT8: return(GL3.GL_RGB8I);
+		case UINT8: return(GL3.GL_RGB8UI);
+		case SINT16: return(GL3.GL_RGB16I);
+		case UINT16: return(GL3.GL_RGB16UI);
+		case SINT32: return(GL3.GL_RGB32I);
+		case UINT32: return(GL3.GL_RGB32UI);
 		case FLOAT16: return(GL3.GL_RGB16F);
 		}
 	    case 4:
@@ -166,6 +198,12 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		case SNORM8: return(GL3.GL_RGBA8_SNORM);
 		case UNORM16: return(GL3.GL_RGBA16);
 		case SNORM16: return(GL3.GL_RGBA16_SNORM);
+		case SINT8: return(GL3.GL_RGBA8I);
+		case UINT8: return(GL3.GL_RGBA8UI);
+		case SINT16: return(GL3.GL_RGBA16I);
+		case UINT16: return(GL3.GL_RGBA16UI);
+		case SINT32: return(GL3.GL_RGBA32I);
+		case UINT32: return(GL3.GL_RGBA32UI);
 		case FLOAT16: return(GL3.GL_RGBA16F);
 		}
 	    }
@@ -191,15 +229,25 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	    return(GL3.GL_DEPTH_COMPONENT);
 	}
 	if((perm == null) || perm.idp()) {
-	    switch(efmt.nc) {
-	    case 1: return(GL3.GL_RED);
-	    case 2: return(GL3.GL_RG);
-	    case 3: return(GL.GL_RGB);
-	    case 4: return(GL.GL_RGBA);
+	    if(!glattribint(efmt.cf)) {
+		switch(efmt.nc) {
+		case 1: return(GL3.GL_RED);
+		case 2: return(GL3.GL_RG);
+		case 3: return(GL.GL_RGB);
+		case 4: return(GL.GL_RGBA);
+		}
+	    } else {
+		switch(efmt.nc) {
+		case 1: return(GL3.GL_RED_INTEGER);
+		case 2: return(GL3.GL_RG_INTEGER);
+		case 3: return(GL3.GL_RGB_INTEGER);
+		case 4: return(GL3.GL_RGBA_INTEGER);
+		}
 	    }
 	} else {
-	    if((efmt.nc == 3) && perm.equals(Swizzle.BGR))
+	    if((efmt.nc == 3) && perm.equals(Swizzle.BGR)) {
 		return(GL3.GL_BGR);
+	    }
 	    if((efmt.nc == 4) && perm.equals(Swizzle.BGRA))
 		return(GL3.GL_BGRA);
 	}
@@ -214,6 +262,12 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	case SNORM16: return(GL.GL_SHORT);
 	case UNORM32: return(GL.GL_UNSIGNED_INT);
 	case SNORM32: return(GL3.GL_INT);
+	case UINT8: return(GL.GL_UNSIGNED_BYTE);
+	case SINT8: return(GL.GL_BYTE);
+	case UINT16: return(GL.GL_UNSIGNED_SHORT);
+	case SINT16: return(GL.GL_SHORT);
+	case UINT32: return(GL.GL_UNSIGNED_INT);
+	case SINT32: return(GL3.GL_INT);
 	case FLOAT32: return(GL.GL_FLOAT);
 	}
 	throw(new IllegalArgumentException(String.format("externalformat2: %s", efmt)));

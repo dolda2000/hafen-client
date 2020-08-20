@@ -27,6 +27,7 @@
 package haven;
 
 import java.awt.Color;
+import java.awt.color.ColorSpace;
 import java.awt.image.*;
 import java.nio.*;
 import java.util.function.*;
@@ -413,6 +414,70 @@ public class GOut {
 
     public void getpixel(Coord c, Consumer<Color> cb) {
 	getpixel(out, cur2d, FragColor.fragcol, c.add(tx), cb);
+    }
+
+    public static void debugimage(Render g, Pipe state, FragData buf, Area area, VectorFormat fmt, Consumer<BufferedImage> cb) {
+	g.pget(state, buf, area, fmt, data -> {
+		Coord sz = area.sz();
+		switch(fmt.cf) {
+		case UNORM8: case SNORM8: {
+		    int b = fmt.nc;
+		    boolean a = b == 4;
+		    int[] offs = new int[b];
+		    for(int i = 0; i < b; i++) offs[i] = i;
+		    byte[] pbuf = new byte[sz.x * sz.y * b];
+		    data.get(pbuf);
+		    ComponentColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), null, a, false, a ? ComponentColorModel.TRANSLUCENT : ComponentColorModel.OPAQUE, java.awt.image.DataBuffer.TYPE_BYTE);
+		    SampleModel sm = new PixelInterleavedSampleModel(java.awt.image.DataBuffer.TYPE_BYTE, sz.x, sz.y, b, sz.x * b, offs);
+		    WritableRaster raster = Raster.createWritableRaster(sm, new DataBufferByte(pbuf, pbuf.length), null);
+		    cb.accept(new BufferedImage(cm, raster, false, null));
+		    break;
+		}
+		case UNORM16: case SNORM16: {
+		    int b = fmt.nc;
+		    boolean a = b == 4;
+		    int[] offs = new int[b];
+		    for(int i = 0; i < b; i++) offs[i] = i;
+		    short[] pbuf = new short[sz.x * sz.y * b];
+		    data.asShortBuffer().get(pbuf);
+		    ComponentColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), null, a, false, a ? ComponentColorModel.TRANSLUCENT : ComponentColorModel.OPAQUE, java.awt.image.DataBuffer.TYPE_USHORT);
+		    SampleModel sm = new PixelInterleavedSampleModel(java.awt.image.DataBuffer.TYPE_USHORT, sz.x, sz.y, b, sz.x * b, offs);
+		    WritableRaster raster = Raster.createWritableRaster(sm, new DataBufferUShort(pbuf, pbuf.length), null);
+		    cb.accept(new BufferedImage(cm, raster, false, null));
+		    break;
+		}
+		case FLOAT32: {
+		    int b = fmt.nc;
+		    boolean a = b == 4;
+		    int[] offs = new int[b];
+		    for(int i = 0; i < b; i++) offs[i] = i;
+		    float[] pbuf = new float[sz.x * sz.y * b];
+		    data.asFloatBuffer().get(pbuf);
+		    ComponentColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB), null, a, false, a ? ComponentColorModel.TRANSLUCENT : ComponentColorModel.OPAQUE, java.awt.image.DataBuffer.TYPE_FLOAT);
+		    SampleModel sm = new PixelInterleavedSampleModel(java.awt.image.DataBuffer.TYPE_FLOAT, sz.x, sz.y, b, sz.x * b, offs);
+		    WritableRaster raster = Raster.createWritableRaster(sm, new DataBufferFloat(pbuf, pbuf.length), null);
+		    cb.accept(new BufferedImage(cm, raster, false, null));
+		    break;
+		}
+		case UINT32: case SINT32: {
+		    byte[] pbuf = new byte[sz.x * sz.y * 3];
+		    IntBuffer idat = data.asIntBuffer();
+		    for(int y = 0, soff = 0, doff = 0; y < sz.y; y++) {
+			for(int x = 0; x < sz.x; x++, soff++, doff += 3) {
+			    int raw = idat.get(soff);
+			    pbuf[doff + 0] = (byte)(((raw & 0x00000f) << 4) | ((raw & 0x00f000) >> 12));
+			    pbuf[doff + 1] = (byte)(((raw & 0x0000f0) << 0) | ((raw & 0x0f0000) >> 16));
+			    pbuf[doff + 2] = (byte)(((raw & 0x000f00) >> 4) | ((raw & 0xf00000) >> 20));
+			}
+		    }
+		    ComponentColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), null, false, false, ComponentColorModel.OPAQUE, java.awt.image.DataBuffer.TYPE_BYTE);
+		    SampleModel sm = new PixelInterleavedSampleModel(java.awt.image.DataBuffer.TYPE_BYTE, sz.x, sz.y, 3, sz.x * 3, new int[] {0, 1, 2});
+		    WritableRaster raster = Raster.createWritableRaster(sm, new DataBufferByte(pbuf, pbuf.length), null);
+		    cb.accept(new BufferedImage(cm, raster, false, null));
+		    break;
+		}
+		}
+	    });
     }
 
     public static void getimage(Render g, Pipe state, FragData buf, Area area, Consumer<BufferedImage> cb) {
