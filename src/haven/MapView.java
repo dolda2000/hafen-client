@@ -1148,7 +1148,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	public void dispose() {
 	    if(instancer != null) {
-		instancer = null;
+		instancer.dispose();
 		instancer = null;
 	    }
 	    if(draw != null) {
@@ -1161,9 +1161,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public String stats() {
 	    if(back == null)
 		return("");
-	    if(instancer != null)
-	    return(String.format("Tree %s, Inst %s, Draw %s", master.stats(), instancer.stats(), draw.stats()));
-	    return(String.format("Tree %s, Draw %s", master.stats(), draw.stats()));
+	    return(String.format("Tree %s, Inst %s, Draw %s, Map %d", master.stats(), (instancer == null) ? null : instancer.stats(), draw.stats(), idmap.size()));
 	}
     }
 
