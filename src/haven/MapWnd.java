@@ -48,7 +48,7 @@ public class MapWnd extends Window {
     private final Locator player;
     private final Widget toolbar;
     private final Frame viewf, listf;
-    private final Button pmbtn, smbtn;
+    private final Button pmbtn, smbtn, mebtn, mibtn;
     private TextEntry namesel;
     private GroupSelector colsel;
     private Button mremove;
@@ -97,6 +97,16 @@ public class MapWnd extends Window {
 		public void click() {
 		    mflt = smarkers;
 		    markerseq = -1;
+		}
+	    });
+	mebtn = add(new Button(95, "Export...", false) {
+		public void click() {
+		    view.exportmap();
+		}
+	    });
+	mibtn = add(new Button(95, "Import...", false) {
+		public void click() {
+		    view.importmap();
 		}
 	    });
 	resize(sz);
@@ -273,11 +283,13 @@ public class MapWnd extends Window {
 
     public void resize(Coord sz) {
 	super.resize(sz);
-	listf.resize(listf.sz.x, sz.y - 120);
+	listf.resize(listf.sz.x, sz.y - 180);
 	listf.c = new Coord(sz.x - listf.sz.x, 0);
 	list.resize(listf.inner());
-	pmbtn.c = new Coord(sz.x - 200, sz.y - pmbtn.sz.y);
-	smbtn.c = new Coord(sz.x - 95, sz.y - smbtn.sz.y);
+	mebtn.c = new Coord(sz.x - 200, sz.y - mebtn.sz.y);
+	mibtn.c = new Coord(sz.x - 95, sz.y - mibtn.sz.y);
+	pmbtn.c = new Coord(sz.x - 200, mebtn.c.y - 30 - pmbtn.sz.y);
+	smbtn.c = new Coord(sz.x - 95, mibtn.c.y - 30 - smbtn.sz.y);
 	if(namesel != null) {
 	    namesel.c = listf.c.add(0, listf.sz.y + 10);
 	    if(colsel != null) {
