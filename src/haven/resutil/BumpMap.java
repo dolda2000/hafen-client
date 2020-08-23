@@ -78,6 +78,9 @@ public class BumpMap extends State {
 			}
 		    }, 1000);
 		*/
+
+		MeshMorph.get(prog.vctx).add(tanc.value(prog.vctx), MeshMorph.MorphType.DIR);
+		MeshMorph.get(prog.vctx).add(bitc.value(prog.vctx), MeshMorph.MorphType.DIR);
 	    }
 	};
 
@@ -118,18 +121,14 @@ public class BumpMap extends State {
     }
 
     @VertexBuf.ResName("tan2")
-    public static class Tangents extends VertexBuf.FloatData implements MorphedMesh.MorphData {
+    public static class Tangents extends VertexBuf.FloatData {
 	public Tangents(FloatBuffer data) {super(tan, 3, data);}
 	public Tangents(Resource res, Message buf, int nv) {this(VertexBuf.loadbuf2(Utils.wfbuf(nv * 3), buf));}
-	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
-	public Tangents dup() {return(new Tangents(Utils.bufcp(data)));}
     }
     @VertexBuf.ResName("bit2")
-    public static class BiTangents extends VertexBuf.FloatData implements MorphedMesh.MorphData {
+    public static class BiTangents extends VertexBuf.FloatData {
 	public BiTangents(FloatBuffer data) {super(bit, 3, data);}
 	public BiTangents(Resource res, Message buf, int nv) {this(VertexBuf.loadbuf2(Utils.wfbuf(nv * 3), buf));}
-	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
-	public BiTangents dup() {return(new BiTangents(Utils.bufcp(data)));}
     }
     @VertexBuf.ResName("tan")
     public static class TanDecode implements VertexBuf.DataCons {

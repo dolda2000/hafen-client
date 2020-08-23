@@ -43,6 +43,12 @@ public class VertexContext extends ShaderContext {
     public static final Variable gl_Position = new Variable.Implicit(Type.VEC4, new Symbol.Fix("gl_Position"));
     public static final Variable gl_PointSize = new Variable.Implicit(Type.FLOAT, new Symbol.Fix("gl_PointSize"));
 
+    public static final Variable gl_VertexID = new Variable.Implicit(Type.INT, new Symbol.Fix("gl_VertexID"));
+    public static final Variable gl_InstanceID = new Variable.Implicit(Type.INT, new Symbol.Fix("gl_InstanceID"));
+
+    public Expression vertid() {return(gl_VertexID.ref());}
+    public Expression instid() {return(gl_InstanceID.ref());}
+
     public final ValBlock.Value posv = mainvals.new Value(Type.VEC4, new Symbol.Gen("posv")) {
 	    {force();}
 
