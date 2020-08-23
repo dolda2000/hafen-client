@@ -1207,15 +1207,17 @@ public class MapFile {
 	}
     }
 
+    private static final byte[] EXPORT_SIG = "Haven Mapfile 1".getBytes(Utils.ascii);
     public void export(Message out, ExportFilter filter) {
-	out.addstring("Haven Exported Map 1");
+	out.addbytes(EXPORT_SIG);
 	for(Long sid : locked((Collection<Long> c) -> new ArrayList<>(c), lock.readLock()).apply(knownsegs)) {
 	    if(!filter.includeseg(sid))
 		continue;
-	    Segment seg = segments.get(sid);
+	    Segment seg;
 	    Collection<Pair<Coord, Long>> gridbuf = new ArrayList<>();
 	    lock.readLock().lock();
 	    try {
+		seg = segments.get(sid);
 		for(Map.Entry<Coord, Long> gd : seg.map.entrySet()) {
 		    if(filter.includegrid(seg, gd.getKey(), gd.getValue()))
 			gridbuf.add(new Pair<>(gd.getKey(), gd.getValue()));
@@ -1226,6 +1228,7 @@ public class MapFile {
 	    for(Pair<Coord, Long> gd : gridbuf) {
 		Grid grid = Grid.load(this, gd.b);
 		MessageBuf buf = new MessageBuf();
+		buf.adduint8(1);
 		buf.addint64(gd.b);
 		buf.addint64(seg.id);
 		buf.addint64(grid.mtime);
