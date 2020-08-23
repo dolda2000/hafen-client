@@ -30,6 +30,7 @@ import java.util.*;
 import java.lang.ref.*;
 
 public class WeakHashedSet<E> extends AbstractSet<E> {
+    private static final double loadfac = 0.5;
     private final ReferenceQueue<E> cleanq = new ReferenceQueue<>();
     public final Hash<? super E> hash;
     private Ref<E>[] tab;
@@ -140,7 +141,7 @@ public class WeakHashedSet<E> extends AbstractSet<E> {
 
     private void ckshrink() {
 	int nsz = tab.length;
-	while((nsz > 32) && (sz < (nsz * 3) / 16))
+	while((nsz > 32) && (sz < (loadfac * 0.25)))
 	    nsz >>= 1;
 	if(nsz < tab.length)
 	    resize(nsz);
@@ -177,7 +178,7 @@ public class WeakHashedSet<E> extends AbstractSet<E> {
 	    idx = nextidx(tab, idx);
 	}
 	tab[idx] = new Ref<>(el, cleanq);
-	if(++sz >= ((tab.length * 3) / 4))
+	if(++sz >= (tab.length * loadfac))
 	    resize(tab.length * 2);
 	return(true);
     }
@@ -236,5 +237,28 @@ public class WeakHashedSet<E> extends AbstractSet<E> {
 	if(ret == null)
 	    add(ret = el);
 	return(ret);
+    }
+
+    public String stats() {
+	Map<Integer, Integer> lens = new HashMap<>();
+	Ref[] tab = this.tab;
+	int i;
+	for(i = 0; tab[i] != null; i = nextidx(tab, i));
+	for(int n = 0, c = 0; n <= tab.length; n++, i = nextidx(tab, i)) {
+	    if(tab[i] == null) {
+		if(c > 0) {
+		    lens.compute(c, (k, v) -> (v == null) ? 1 : (v + 1));
+		    c = 0;
+		}
+	    } else {
+		c++;
+	    }
+	}
+	List<Integer> keys = new ArrayList<>(lens.keySet());
+	Collections.sort(keys);
+	StringBuilder buf = new StringBuilder();
+	for(Integer k : keys)
+	    buf.append(String.format("%d: %d\n", k, lens.get(k)));
+	return(buf.toString());
     }
 }

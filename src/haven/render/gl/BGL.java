@@ -628,6 +628,24 @@ public abstract class BGL {
 	    });
     }
 
+    public void glUniform2i(final ID location, final int v0, final int v1) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glUniform2i(location.glid(), v0, v1);}
+	    });
+    }
+
+    public void glUniform3i(final ID location, final int v0, final int v1, final int v2) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glUniform3i(location.glid(), v0, v1, v2);}
+	    });
+    }
+
+    public void glUniform4i(final ID location, final int v0, final int v1, final int v2, final int v3) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glUniform4i(location.glid(), v0, v1, v2, v3);}
+	    });
+    }
+
     public void glUniformMatrix3fv(final ID location, final int count, final boolean transpose, final float[] value, final int n) {
 	add(new Command() {
 		public void run(GL3 gl) {gl.glUniformMatrix3fv(location.glid(), count, transpose, value, n);}

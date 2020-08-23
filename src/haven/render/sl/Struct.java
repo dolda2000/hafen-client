@@ -68,6 +68,14 @@ public class Struct extends Type {
 	return(name.name(ctx));
     }
 
+    public int hashCode() {
+	return(fields.hashCode());
+    }
+
+    public boolean equals(Object o) {
+	return((o instanceof Struct) && Objects.equals(fields, ((Struct)o).fields));
+    }
+
     public class Definition extends Toplevel {
 	public void walk(Walker w) {}
 

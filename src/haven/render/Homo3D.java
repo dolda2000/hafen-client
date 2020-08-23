@@ -43,7 +43,7 @@ public class Homo3D {
     static final Uniform u_prj = new Uniform(MAT4, "proj", Homo3D::prjxf, prj);
     static final Uniform u_cam = new Uniform(MAT4, "cam", Homo3D::camxf, cam);
     static final InstancedUniform u_wxf = new InstancedUniform.Mat4("wxf", Homo3D::locxf, loc);
-    public final Value objv, mapv, eyev, eyen;
+    public final Value objv, mapv, eyev, objn, eyen;
 
     public static Matrix4f prjxf(Pipe p) {
 	Projection prj_s = p.get(prj);
@@ -76,9 +76,14 @@ public class Homo3D {
 		}
 	    };
 
+	objn = prog.vctx.mainvals.new Value(Type.VEC3, new Symbol.Gen("objn")) {
+		public Expression root() {
+		    return(normal.ref());
+		}
+	    };
 	eyen = prog.vctx.mainvals.new Value(Type.VEC3, new Symbol.Gen("eyen")) {
 		public Expression root() {
-		    return(mul(mat3(u_cam.ref()), mat3(u_wxf.ref()), normal.ref()));
+		    return(mul(mat3(u_cam.ref()), mat3(u_wxf.ref()), objn.depref()));
 		}
 	    };
 
