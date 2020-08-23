@@ -486,7 +486,7 @@ public class MapFileWidget extends Widget implements Console.Directory {
 	}
     }
 
-    private void exportmap(File path) {
+    public void exportmap(File path) {
 	GameUI gui = getparent(GameUI.class);
 	ExportWindow prog = new ExportWindow();
 	Thread th = new HackThread(() -> {
@@ -504,7 +504,7 @@ public class MapFileWidget extends Widget implements Console.Directory {
 	gui.adda(prog, gui.sz.div(2), 0.5, 1.0);
     }
 
-    private void importmap(File path) {
+    public void importmap(File path) {
 	GameUI gui = getparent(GameUI.class);
 	ImportWindow prog = new ImportWindow();
 	Thread th = new HackThread(() -> {
@@ -527,39 +527,45 @@ public class MapFileWidget extends Widget implements Console.Directory {
 	gui.adda(prog, gui.sz.div(2), 0.5, 1.0);
     }
 
+    public void exportmap() {
+	java.awt.EventQueue.invokeLater(() -> {
+		JFileChooser fc = new JFileChooser();
+		fc.setFileFilter(new FileNameExtensionFilter("Exported Haven map data", "hmap"));
+		if(fc.showSaveDialog(null) != JFileChooser.APPROVE_OPTION)
+		    return;
+		File path = fc.getSelectedFile();
+		if(path.getName().indexOf('.') < 0)
+		    path = new File(path.toString() + ".hmap");
+		exportmap(path);
+	    });
+    }
+
+    public void importmap() {
+	java.awt.EventQueue.invokeLater(() -> {
+		JFileChooser fc = new JFileChooser();
+		fc.setFileFilter(new FileNameExtensionFilter("Exported Haven map data", "hmap"));
+		if(fc.showOpenDialog(null) != JFileChooser.APPROVE_OPTION)
+		    return;
+		importmap(fc.getSelectedFile());
+	    });
+    }
+
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("exportmap", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    if(args.length > 1) {
+		    if(args.length > 1)
 			exportmap(new File(args[1]));
-		    } else {
-			java.awt.EventQueue.invokeLater(() -> {
-				JFileChooser fc = new JFileChooser();
-				fc.setFileFilter(new FileNameExtensionFilter("Exported Haven map data", "hmap"));
-				if(fc.showSaveDialog(null) != JFileChooser.APPROVE_OPTION)
-				    return;
-				File path = fc.getSelectedFile();
-				if(path.getName().indexOf('.') < 0)
-				    path = new File(path.toString() + ".hmap");
-				exportmap(path);
-			    });
-		    }
+		    else
+			exportmap();
 		}
 	    });
 	cmdmap.put("importmap", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    if(args.length > 1) {
+		    if(args.length > 1)
 			importmap(new File(args[1]));
-		    } else {
-			java.awt.EventQueue.invokeLater(() -> {
-				JFileChooser fc = new JFileChooser();
-				fc.setFileFilter(new FileNameExtensionFilter("Exported Haven map data", "hmap"));
-				if(fc.showOpenDialog(null) != JFileChooser.APPROVE_OPTION)
-				    return;
-				importmap(fc.getSelectedFile());
-			    });
-		    }
+		    else
+			importmap();
 		}
 	    });
     }
