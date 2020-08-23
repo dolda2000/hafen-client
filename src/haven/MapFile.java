@@ -1463,38 +1463,44 @@ public class MapFile {
 	    }
 	}
 
-	void reimport(Message data) {
+	void reimport(Message data) throws InterruptedException {
 	    if(!Arrays.equals(EXPORT_SIG, data.bytes(EXPORT_SIG.length)))
 		throw(new Message.FormatError("Invalid map file format"));
 	    data = new ZMessage(data);
-	    while(!data.eom()) {
-		String type = data.string();
-		int len = data.int32();
-		Message lay = new LimitMessage(data, len);
-		if(type.equals("grid")) {
-		    try {
-			importgrid(lay);
-		    } catch(RuntimeException exc) {
-			filter.handleerror(exc, "grid");
+	    try {
+		while(!data.eom()) {
+		    String type = data.string();
+		    int len = data.int32();
+		    Message lay = new LimitMessage(data, len);
+		    if(type.equals("grid")) {
+			try {
+			    importgrid(lay);
+			} catch(RuntimeException exc) {
+			    filter.handleerror(exc, "grid");
+			}
+		    } else if(type.equals("mark")) {
+			try {
+			    importmark(lay);
+			} catch(RuntimeException exc) {
+			    filter.handleerror(exc, "mark");
+			}
 		    }
-		} else if(type.equals("mark")) {
-		    try {
-			importmark(lay);
-		    } catch(RuntimeException exc) {
-			filter.handleerror(exc, "mark");
-		    }
+		    lay.skip();
+		    Utils.checkirq();
 		}
-		lay.skip();
+	    } catch(InterruptedException e) {
+		flush();
+		throw(e);
 	    }
 	    flush();
 	}
     }
 
-    public void reimport(Message data, ImportFilter filter) {
+    public void reimport(Message data, ImportFilter filter) throws InterruptedException {
 	new Importer(filter).reimport(data);
     }
 
-    public void reimport(InputStream fp, ImportFilter filter) {
+    public void reimport(InputStream fp, ImportFilter filter) throws InterruptedException {
 	reimport(new StreamMessage(fp, null), filter);
     }
 
