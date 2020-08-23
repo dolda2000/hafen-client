@@ -427,6 +427,15 @@ public class MapFileWidget extends Widget implements Console.Directory {
 		    }
 		}
 	    });
+	cmdmap.put("importmap", new Console.Command() {
+		public void run(Console cons, String[] args) throws IOException {
+		    try(InputStream in = new BufferedInputStream(new FileInputStream(args[1]))) {
+			file.reimport(in, MapFile.ImportFilter.all);
+		    } catch(Exception e) {
+			e.printStackTrace();
+		    }
+		}
+	    });
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);
