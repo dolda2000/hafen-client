@@ -453,13 +453,44 @@ public class MapFileWidget extends Widget implements Console.Directory {
 	}
     }
 
+    public static class ImportWindow extends Window {
+	private Thread th;
+	private volatile String prog = "Initializing...";
+
+	public ImportWindow() {
+	    super(new Coord(300, 65), "Importing map...", true);
+	    adda(new Button(100, "Cancel", false, this::cancel), asz.x / 2, 40, 0.5, 0.0);
+	}
+
+	public void run(Thread th) {
+	    (this.th = th).start();
+	}
+
+	public void cdraw(GOut g) {
+	    g.text(prog, new Coord(10, 10));
+	}
+
+	public void cancel() {
+	    th.interrupt();
+	}
+
+	public void tick(double dt) {
+	    if(!th.isAlive())
+		destroy();
+	}
+
+	public void prog(String prog) {
+	    this.prog = prog;
+	}
+    }
+
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("exportmap", new Console.Command() {
 		public void run(Console cons, String[] args) throws IOException {
 		    GameUI gui = getparent(GameUI.class);
 		    ExportWindow prog = new ExportWindow();
-		    Thread th = new Thread(() -> {
+		    Thread th = new HackThread(() -> {
 			    try {
 				try(OutputStream out = new BufferedOutputStream(new FileOutputStream(args[1]))) {
 				    file.export(out, MapFile.ExportFilter.all, prog);
@@ -476,11 +507,25 @@ public class MapFileWidget extends Widget implements Console.Directory {
 	    });
 	cmdmap.put("importmap", new Console.Command() {
 		public void run(Console cons, String[] args) throws IOException {
-		    try(InputStream in = new BufferedInputStream(new FileInputStream(args[1]))) {
-			file.reimport(in, MapFile.ImportFilter.all);
-		    } catch(Exception e) {
-			e.printStackTrace();
-		    }
+		    GameUI gui = getparent(GameUI.class);
+		    ImportWindow prog = new ImportWindow();
+		    Thread th = new HackThread(() -> {
+			    try {
+				prog.prog("Validing map data...");
+				try(InputStream in = new BufferedInputStream(new FileInputStream(args[1]))) {
+				    file.reimport(in, MapFile.ImportFilter.readonly);
+				}
+				prog.prog("Importing map data...");
+				try(InputStream in = new BufferedInputStream(new FileInputStream(args[1]))) {
+				    file.reimport(in, MapFile.ImportFilter.all);
+				}
+			    } catch(Exception e) {
+				e.printStackTrace(Debug.log);
+				gui.error("Could not import map: " + e.getMessage());
+			    }
+		    }, "Mapfile importer");
+		    prog.run(th);
+		    gui.adda(prog, gui.sz.div(2), 0.5, 1.0);
 		}
 	    });
     }
