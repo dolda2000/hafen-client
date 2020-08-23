@@ -1216,6 +1216,7 @@ public class MapFile {
     public void export(Message out, ExportFilter filter, ExportStatus prog) throws InterruptedException {
 	if(prog == null) prog = new ExportStatus() {};
 	out.addbytes(EXPORT_SIG);
+	ZMessage zout = new ZMessage(out);
 	Collection<Long> segbuf = locked((Collection<Long> c) -> new ArrayList<>(c), lock.readLock()).apply(knownsegs);
 	int nseg = 0;
 	for(Long sid : segbuf) {
@@ -1251,9 +1252,9 @@ public class MapFile {
 		}
 		buf.addbytes(grid.tiles);
 		byte[] od = buf.fin();
-		out.addstring("grid");
-		out.addint32(od.length);
-		out.addbytes(od);
+		zout.addstring("grid");
+		zout.addint32(od.length);
+		zout.addbytes(od);
 		Utils.checkirq();
 	    }
 	    nseg++;
@@ -1267,11 +1268,12 @@ public class MapFile {
 	    MessageBuf buf = new MessageBuf();
 	    savemarker(buf, mark);
 	    byte[] od = buf.fin();
-	    out.addstring("mark");
-	    out.addint32(od.length);
-	    out.addbytes(od);
+	    zout.addstring("mark");
+	    zout.addint32(od.length);
+	    zout.addbytes(od);
 	    Utils.checkirq();
 	}
+	zout.finish();
     }
 
     public void export(OutputStream out, ExportFilter filter, ExportStatus prog) throws InterruptedException {
@@ -1464,6 +1466,7 @@ public class MapFile {
 	void reimport(Message data) {
 	    if(!Arrays.equals(EXPORT_SIG, data.bytes(EXPORT_SIG.length)))
 		throw(new Message.FormatError("Invalid map file format"));
+	    data = new ZMessage(data);
 	    while(!data.eom()) {
 		String type = data.string();
 		int len = data.int32();
