@@ -418,13 +418,60 @@ public class MapFileWidget extends Widget implements Console.Directory {
 	return(super.tooltip(c, prev));
     }
 
+    public static class ExportWindow extends Window implements MapFile.ExportStatus {
+	private Thread th;
+	private volatile String prog = "Exporting map...";
+
+	public ExportWindow() {
+	    super(new Coord(300, 65), "Exporting map...", true);
+	    adda(new Button(100, "Cancel", false, this::cancel), asz.x / 2, 40, 0.5, 0.0);
+	}
+
+	public void run(Thread th) {
+	    (this.th = th).start();
+	}
+
+	public void cdraw(GOut g) {
+	    g.text(prog, new Coord(10, 10));
+	}
+
+	public void cancel() {
+	    th.interrupt();
+	}
+
+	public void tick(double dt) {
+	    if(!th.isAlive())
+		destroy();
+	}
+
+	public void grid(int cs, int ns, int cg, int ng) {
+	    this.prog = String.format("Exporting map cut %,d/%,d in segment %,d/%,d", cg, ng, cs, ns);
+	}
+
+	public void mark(int cm, int nm) {
+	    this.prog = String.format("Exporting marker", cm, nm);
+	}
+    }
+
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("exportmap", new Console.Command() {
 		public void run(Console cons, String[] args) throws IOException {
-		    try(OutputStream out = new BufferedOutputStream(new FileOutputStream(args[1]))) {
-			file.export(out, MapFile.ExportFilter.all);
-		    }
+		    GameUI gui = getparent(GameUI.class);
+		    ExportWindow prog = new ExportWindow();
+		    Thread th = new Thread(() -> {
+			    try {
+				try(OutputStream out = new BufferedOutputStream(new FileOutputStream(args[1]))) {
+				    file.export(out, MapFile.ExportFilter.all, prog);
+				}
+			    } catch(IOException e) {
+				e.printStackTrace(Debug.log);
+				gui.error("Unexpected error occurred when exporting map.");
+			    } catch(InterruptedException e) {
+			    }
+		    }, "Mapfile exporter");
+		    prog.run(th);
+		    gui.adda(prog, gui.sz.div(2), 0.5, 1.0);
 		}
 	    });
 	cmdmap.put("importmap", new Console.Command() {

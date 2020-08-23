@@ -1559,6 +1559,11 @@ public class Utils {
 	    });
     }
 
+    public static void checkirq() throws InterruptedException {
+	if(Thread.interrupted())
+	    throw(new InterruptedException());
+    }
+
     public static <T, F> Iterator<T> filter(Iterator<F> from, Class<T> filter) {
 	return(map(filter(from, filter::isInstance), filter::cast));
     }

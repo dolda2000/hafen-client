@@ -1207,10 +1207,18 @@ public class MapFile {
 	}
     }
 
+    public static interface ExportStatus {
+	public default void grid(int cs, int ns, int cg, int ng) {}
+	public default void mark(int cm, int nm) {}
+    }
+
     private static final byte[] EXPORT_SIG = "Haven Mapfile 1".getBytes(Utils.ascii);
-    public void export(Message out, ExportFilter filter) {
+    public void export(Message out, ExportFilter filter, ExportStatus prog) throws InterruptedException {
+	if(prog == null) prog = new ExportStatus() {};
 	out.addbytes(EXPORT_SIG);
-	for(Long sid : locked((Collection<Long> c) -> new ArrayList<>(c), lock.readLock()).apply(knownsegs)) {
+	Collection<Long> segbuf = locked((Collection<Long> c) -> new ArrayList<>(c), lock.readLock()).apply(knownsegs);
+	int nseg = 0;
+	for(Long sid : segbuf) {
 	    if(!filter.includeseg(sid))
 		continue;
 	    Segment seg;
@@ -1225,7 +1233,9 @@ public class MapFile {
 	    } finally {
 		lock.readLock().unlock();
 	    }
+	    int ngrid = 0;
 	    for(Pair<Coord, Long> gd : gridbuf) {
+		prog.grid(nseg, segbuf.size(), ngrid++, gridbuf.size());
 		Grid grid = Grid.load(this, gd.b);
 		MessageBuf buf = new MessageBuf();
 		buf.adduint8(1);
@@ -1244,9 +1254,14 @@ public class MapFile {
 		out.addstring("grid");
 		out.addint32(od.length);
 		out.addbytes(od);
+		Utils.checkirq();
 	    }
+	    nseg++;
 	}
-	for(Marker mark : locked((Collection<Marker> c) -> new ArrayList<>(c), lock.readLock()).apply(markers)) {
+	Collection<Marker> markbuf = locked((Collection<Marker> c) -> new ArrayList<>(c), lock.readLock()).apply(markers);
+	int nmark = 0;
+	for(Marker mark : markbuf) {
+	    prog.mark(nmark++, markbuf.size());
 	    if(!filter.includemark(mark))
 		continue;
 	    MessageBuf buf = new MessageBuf();
@@ -1255,12 +1270,13 @@ public class MapFile {
 	    out.addstring("mark");
 	    out.addint32(od.length);
 	    out.addbytes(od);
+	    Utils.checkirq();
 	}
     }
 
-    public void export(OutputStream out, ExportFilter filter) {
+    public void export(OutputStream out, ExportFilter filter, ExportStatus prog) throws InterruptedException {
 	StreamMessage msg = new StreamMessage(null, out);
-	export(msg, filter);
+	export(msg, filter, prog);
 	msg.flush();
     }
 
