@@ -38,6 +38,8 @@ import haven.MapFile.GridInfo;
 import haven.MapFile.Marker;
 import haven.MapFile.PMarker;
 import haven.MapFile.SMarker;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.*;
 import static haven.MCache.cmaps;
 import static haven.Utils.or;
 
@@ -484,48 +486,80 @@ public class MapFileWidget extends Widget implements Console.Directory {
 	}
     }
 
+    private void exportmap(File path) {
+	GameUI gui = getparent(GameUI.class);
+	ExportWindow prog = new ExportWindow();
+	Thread th = new HackThread(() -> {
+		try {
+		    try(OutputStream out = new BufferedOutputStream(new FileOutputStream(path))) {
+			file.export(out, MapFile.ExportFilter.all, prog);
+		    }
+		} catch(IOException e) {
+		    e.printStackTrace(Debug.log);
+		    gui.error("Unexpected error occurred when exporting map.");
+		} catch(InterruptedException e) {
+		}
+	}, "Mapfile exporter");
+	prog.run(th);
+	gui.adda(prog, gui.sz.div(2), 0.5, 1.0);
+    }
+
+    private void importmap(File path) {
+	GameUI gui = getparent(GameUI.class);
+	ImportWindow prog = new ImportWindow();
+	Thread th = new HackThread(() -> {
+		try {
+		    prog.prog("Validating map data...");
+		    try(InputStream in = new BufferedInputStream(new FileInputStream(path))) {
+			file.reimport(in, MapFile.ImportFilter.readonly);
+		    }
+		    prog.prog("Importing map data...");
+		    try(InputStream in = new BufferedInputStream(new FileInputStream(path))) {
+			file.reimport(in, MapFile.ImportFilter.all);
+		    }
+		} catch(InterruptedException e) {
+		} catch(Exception e) {
+		    e.printStackTrace(Debug.log);
+		    gui.error("Could not import map: " + e.getMessage());
+		}
+	}, "Mapfile importer");
+	prog.run(th);
+	gui.adda(prog, gui.sz.div(2), 0.5, 1.0);
+    }
+
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
 	cmdmap.put("exportmap", new Console.Command() {
-		public void run(Console cons, String[] args) throws IOException {
-		    GameUI gui = getparent(GameUI.class);
-		    ExportWindow prog = new ExportWindow();
-		    Thread th = new HackThread(() -> {
-			    try {
-				try(OutputStream out = new BufferedOutputStream(new FileOutputStream(args[1]))) {
-				    file.export(out, MapFile.ExportFilter.all, prog);
-				}
-			    } catch(IOException e) {
-				e.printStackTrace(Debug.log);
-				gui.error("Unexpected error occurred when exporting map.");
-			    } catch(InterruptedException e) {
-			    }
-		    }, "Mapfile exporter");
-		    prog.run(th);
-		    gui.adda(prog, gui.sz.div(2), 0.5, 1.0);
+		public void run(Console cons, String[] args) {
+		    if(args.length > 1) {
+			exportmap(new File(args[1]));
+		    } else {
+			java.awt.EventQueue.invokeLater(() -> {
+				JFileChooser fc = new JFileChooser();
+				fc.setFileFilter(new FileNameExtensionFilter("Exported Haven map data", "hmap"));
+				if(fc.showSaveDialog(null) != JFileChooser.APPROVE_OPTION)
+				    return;
+				File path = fc.getSelectedFile();
+				if(path.getName().indexOf('.') < 0)
+				    path = new File(path.toString() + ".hmap");
+				exportmap(path);
+			    });
+		    }
 		}
 	    });
 	cmdmap.put("importmap", new Console.Command() {
-		public void run(Console cons, String[] args) throws IOException {
-		    GameUI gui = getparent(GameUI.class);
-		    ImportWindow prog = new ImportWindow();
-		    Thread th = new HackThread(() -> {
-			    try {
-				prog.prog("Validing map data...");
-				try(InputStream in = new BufferedInputStream(new FileInputStream(args[1]))) {
-				    file.reimport(in, MapFile.ImportFilter.readonly);
-				}
-				prog.prog("Importing map data...");
-				try(InputStream in = new BufferedInputStream(new FileInputStream(args[1]))) {
-				    file.reimport(in, MapFile.ImportFilter.all);
-				}
-			    } catch(Exception e) {
-				e.printStackTrace(Debug.log);
-				gui.error("Could not import map: " + e.getMessage());
-			    }
-		    }, "Mapfile importer");
-		    prog.run(th);
-		    gui.adda(prog, gui.sz.div(2), 0.5, 1.0);
+		public void run(Console cons, String[] args) {
+		    if(args.length > 1) {
+			importmap(new File(args[1]));
+		    } else {
+			java.awt.EventQueue.invokeLater(() -> {
+				JFileChooser fc = new JFileChooser();
+				fc.setFileFilter(new FileNameExtensionFilter("Exported Haven map data", "hmap"));
+				if(fc.showOpenDialog(null) != JFileChooser.APPROVE_OPTION)
+				    return;
+				importmap(fc.getSelectedFile());
+			    });
+		    }
 		}
 	    });
     }
