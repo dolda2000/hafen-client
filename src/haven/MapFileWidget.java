@@ -457,7 +457,8 @@ public class MapFileWidget extends Widget implements Console.Directory {
 
     public static class ImportWindow extends Window {
 	private Thread th;
-	private volatile String prog = "Initializing...";
+	private volatile String prog = "Initializing";
+	private double sprog = -1;
 
 	public ImportWindow() {
 	    super(new Coord(300, 65), "Importing map...", true);
@@ -469,6 +470,11 @@ public class MapFileWidget extends Widget implements Console.Directory {
 	}
 
 	public void cdraw(GOut g) {
+	    String prog = this.prog;
+	    if(sprog >= 0)
+		prog = String.format("%s: %d%%", prog, (int)Math.floor(sprog * 100));
+	    else
+		prog = prog + "...";
 	    g.text(prog, new Coord(10, 10));
 	}
 
@@ -483,6 +489,11 @@ public class MapFileWidget extends Widget implements Console.Directory {
 
 	public void prog(String prog) {
 	    this.prog = prog;
+	    this.sprog = -1;
+	}
+
+	public void sprog(double sprog) {
+	    this.sprog = sprog;
 	}
     }
 
@@ -508,13 +519,22 @@ public class MapFileWidget extends Widget implements Console.Directory {
 	GameUI gui = getparent(GameUI.class);
 	ImportWindow prog = new ImportWindow();
 	Thread th = new HackThread(() -> {
+		long size = path.length();
+		class Updater extends CountingInputStream {
+		    Updater(InputStream bk) {super(bk);}
+
+		    protected void update(long val) {
+			super.update(val);
+			prog.sprog((double)pos / (double)size);
+		    }
+		}
 		try {
-		    prog.prog("Validating map data...");
-		    try(InputStream in = new BufferedInputStream(new FileInputStream(path))) {
+		    prog.prog("Validating map data");
+		    try(InputStream in = new Updater(new FileInputStream(path))) {
 			file.reimport(in, MapFile.ImportFilter.readonly);
 		    }
-		    prog.prog("Importing map data...");
-		    try(InputStream in = new BufferedInputStream(new FileInputStream(path))) {
+		    prog.prog("Importing map data");
+		    try(InputStream in = new Updater(new FileInputStream(path))) {
 			file.reimport(in, MapFile.ImportFilter.all);
 		    }
 		} catch(InterruptedException e) {
