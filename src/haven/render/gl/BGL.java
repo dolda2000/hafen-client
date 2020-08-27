@@ -37,6 +37,14 @@ public abstract class BGL {
     protected static abstract class Command {
 	public abstract void run(GL3 gl);
 	public void abort() {};
+
+	public String toString() {
+	    Class<?> cl = getClass();
+	    String nm = cl.getName();
+	    if(cl.getEnclosingMethod() != null)
+		nm = cl.getEnclosingMethod().getName();
+	    return(nm);
+	}
     }
 
     private static class BufState {
