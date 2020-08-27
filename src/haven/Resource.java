@@ -1120,6 +1120,17 @@ public class Resource implements Serializable {
 	}
     }
 
+    public static class ResourceClassNotFoundException extends ClassNotFoundException {
+	public final String clname;
+	public final Resource res;
+
+	public ResourceClassNotFoundException(String clname, Resource res) {
+	    super(String.format("Could not find class %s in resource %s", clname, res));
+	    this.clname = clname;
+	    this.res = res;
+	}
+    }
+
     @LayerName("codeentry")
     public class CodeEntry extends Layer {
 	private String clnm;
@@ -1178,7 +1189,7 @@ public class Resource implements Serializable {
 					    public Class<?> findClass(String name) throws ClassNotFoundException {
 						Code c = clmap.get(name);
 						if(c == null)
-						    throw(new ClassNotFoundException("Could not find class " + name + " in resource (" + Resource.this + ")"));
+						    throw(new ResourceClassNotFoundException(name, Resource.this));
 						return(defineClass(name, c.data, 0, c.data.length));
 					    }
 					};
