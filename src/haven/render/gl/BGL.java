@@ -80,6 +80,18 @@ public abstract class BGL {
 	    return(buf.toString());
 	}
 
+	public static String format(int[] a) {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append('[');
+	    for(int i = 0; i < a.length; i++) {
+		if(i > 0)
+		    buf.append(", ");
+		buf.append(Integer.toString(a[i]));
+	    }
+	    buf.append(']');
+	    return(buf.toString());
+	}
+
 	public String format(T ob) {
 	    StringBuilder buf = new StringBuilder();
 	    buf.append(nm);
@@ -96,6 +108,8 @@ public abstract class BGL {
 		buf.append("=");
 		if(argv instanceof float[]) {
 		    buf.append(format((float[])argv));
+		} else if(argv instanceof int[]) {
+		    buf.append(format((int[])argv));
 		} else {
 		    buf.append(String.valueOf(argv));
 		}
