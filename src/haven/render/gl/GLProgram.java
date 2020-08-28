@@ -263,6 +263,10 @@ public class GLProgram implements Disposable {
 	public int glid() {
 	    return(id);
 	}
+
+	public String toString() {
+	    return(String.format("#<gl.attrib %d %s>", id, name));
+	}
     }
 
     public abstract static class VarID implements BGL.ID, BGL.Request {
@@ -363,6 +367,10 @@ public class GLProgram implements Disposable {
 		if(id < 0)
 		    throw(new UnknownExternException("Uniform not resolvable in program: " + name, GLProgram.this, "uniform", name));
 		return(id);
+	    }
+
+	    public String toString() {
+		return(String.format("#<gl.uniform %d %s>", id, name));
 	    }
 	}
 
