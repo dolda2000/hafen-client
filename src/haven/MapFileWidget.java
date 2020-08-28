@@ -425,8 +425,8 @@ public class MapFileWidget extends Widget implements Console.Directory {
 	private volatile String prog = "Exporting map...";
 
 	public ExportWindow() {
-	    super(new Coord(300, 65), "Exporting map...", true);
-	    adda(new Button(100, "Cancel", false, this::cancel), asz.x / 2, 40, 0.5, 0.0);
+	    super(new Coord(300, 65), "Exporting map...");
+	    adda(new Button(100, "Cancel", this::cancel), asz.x / 2, 40, 0.5, 0.0);
 	}
 
 	public void run(Thread th) {
@@ -461,8 +461,8 @@ public class MapFileWidget extends Widget implements Console.Directory {
 	private double sprog = -1;
 
 	public ImportWindow() {
-	    super(new Coord(300, 65), "Importing map...", true);
-	    adda(new Button(100, "Cancel", false, this::cancel), asz.x / 2, 40, 0.5, 0.0);
+	    super(new Coord(300, 65), "Importing map...");
+	    adda(new Button(100, "Cancel", this::cancel), asz.x / 2, 40, 0.5, 0.0);
 	}
 
 	public void run(Thread th) {
