@@ -495,9 +495,14 @@ public class MCache {
 	return(g.gettile(tc.sub(g.ul)));
     }
 
-    public double getz(Coord tc) {
+    public double getfz(Coord tc) {
 	Grid g = getgridt(tc);
 	return(g.getz(tc.sub(g.ul)));
+    }
+
+    @Deprecated
+    public int getz(Coord tc) {
+	return((int)Math.round(getfz(tc)));
     }
 
     public double getcz(double px, double py) {
@@ -505,8 +510,8 @@ public class MCache {
 	Coord ul = new Coord(Utils.floordiv(px, tw), Utils.floordiv(py, th));
 	double sx = Utils.floormod(px, tw) / tw;
 	double sy = Utils.floormod(py, th) / th;
-	return(((1.0f - sy) * (((1.0f - sx) * getz(ul)) + (sx * getz(ul.add(1, 0))))) +
-	       (sy * (((1.0f - sx) * getz(ul.add(0, 1))) + (sx * getz(ul.add(1, 1))))));
+	return(((1.0f - sy) * (((1.0f - sx) * getfz(ul)) + (sx * getfz(ul.add(1, 0))))) +
+	       (sy * (((1.0f - sx) * getfz(ul.add(0, 1))) + (sx * getfz(ul.add(1, 1))))));
     }
 
     public double getcz(Coord2d pc) {
