@@ -120,7 +120,7 @@ public class MCache {
 
     public class Grid {
 	public final int tiles[] = new int[cmaps.x * cmaps.y];
-	public final int z[] = new int[cmaps.x * cmaps.y];
+	public final float z[] = new float[cmaps.x * cmaps.y];
 	public final int ol[] = new int[cmaps.x * cmaps.y];
 	public final Coord gc, ul;
 	public long id;
@@ -162,7 +162,7 @@ public class MCache {
 	    return(tiles[tc.x + (tc.y * cmaps.x)]);
 	}
 
-	public int getz(Coord tc) {
+	public double getz(Coord tc) {
 	    return(z[tc.x + (tc.y * cmaps.x)]);
 	}
 
@@ -495,7 +495,7 @@ public class MCache {
 	return(g.gettile(tc.sub(g.ul)));
     }
 
-    public int getz(Coord tc) {
+    public double getz(Coord tc) {
 	Grid g = getgridt(tc);
 	return(g.getz(tc.sub(g.ul)));
     }
