@@ -369,13 +369,13 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 
     public static class RidgeTile extends TerrainTile implements Ridges.RidgeTile {
 	public final Tiler.MCons rcons;
-	public final int rth;
+	public final double rth;
 
 	@ResName("trn-r")
 	public static class RFactory implements Tiler.Factory {
 	    public Tiler create(int id, Tileset set) {
 		TerrainTile base = new Factory().create(id, set);
-		int rth = 20;
+		double rth = 20;
 		Pipe.Op mat = null;
 		float texh = 11f;
 		for(Object rdesc : set.ta) {
@@ -387,7 +387,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 			if(desc.length > 3)
 			    texh = (Float)desc[3];
 		    } else if(p.equals("rthres")) {
-			rth = (Integer)desc[1];
+			rth = ((Number)desc[1]).doubleValue();
 		    }
 		}
 		if(mat == null)
@@ -396,13 +396,13 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	    }
 	}
 
-	public RidgeTile(int id, SNoise3 noise, NodeWrap base, Var[] var, Tileset transset, int rth, Pipe.Op rmat, float texh) {
+	public RidgeTile(int id, SNoise3 noise, NodeWrap base, Var[] var, Tileset transset, double rth, Pipe.Op rmat, float texh) {
 	    super(id, noise, base, var, transset);
 	    this.rth = rth;
 	    this.rcons = new Ridges.TexCons(rmat, texh);
 	}
 
-	public int breakz() {return(rth);}
+	public double breakz() {return(rth);}
 
 	public void model(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	    if(!m.data(Ridges.id).model(lc))
