@@ -194,7 +194,18 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	} catch(BGL.BGLException e) {
 	    if(dumpbgl)
 		e.dump.dump();
+	    Utils.setprefb("glcrash", true);
 	    throw(e);
+	}
+    }
+
+    {
+	if(Utils.getprefb("glcrash", false)) {
+	    Warning.warn("enabling GL debug-mode due to GL crash flag being set");
+	    Utils.setprefb("glcrash", false);
+	    if(errh != null)
+		errh.lsetprop("gl.debug", Boolean.TRUE);
+	    debuggl = true;
 	}
     }
 
