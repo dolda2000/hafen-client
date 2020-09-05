@@ -24,40 +24,41 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.sl;
+package haven;
 
-public class Array extends Type {
-    public final Type el;
-    public final int sz;
+import java.io.*;
 
-    public Array(Type el, int sz) {
-	this.el = el;
-	this.sz = sz;
+public class CountingInputStream extends InputStream {
+    public final InputStream bk;
+    public long pos = 0;
+
+    public CountingInputStream(InputStream bk) {
+	this.bk = bk;
     }
 
-    public Array(Type el) {
-	this(el, 0);
+    protected void update(long num) {
+	this.pos += num;
     }
 
-    public String name(Context ctx) {
-	if(sz > 0)
-	    return(el.name(ctx) + "[" + sz + "]");
-	else
-	    return(el.name(ctx) + "[]");
+    public long skip(long len) throws IOException {
+	long rv = bk.skip(len);
+	update(rv);
+	return(rv);
     }
 
-    public void use(Context ctx) {
-	el.use(ctx);
+    public int read(byte[] buf, int off, int len) throws IOException {
+	int rv = bk.read(buf, off, len);
+	update(rv);
+	return(rv);
     }
 
-    public int hashCode() {
-	return(el.hashCode() + sz);
+    public int read() throws IOException {
+	int rv = bk.read();
+	update(1);
+	return(rv);
     }
 
-    public boolean equals(Object o) {
-	if(!(o instanceof Array))
-	    return(false);
-	Array that = (Array)o;
-	return(this.el.equals(that.el) && (this.sz == that.sz));
+    public void close() throws IOException {
+	bk.close();
     }
 }

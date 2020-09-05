@@ -39,8 +39,9 @@ import haven.Surface.MeshVertex;
 import static haven.Utils.clip;
 
 public class Ridges extends MapMesh.Hooks {
+    private static final float EPSILON = 0.01f;
     public static final MapMesh.DataID<Ridges> id = MapMesh.makeid(Ridges.class);
-    public static final int segh = 8;
+    public static final double segh = 8;
     private static final Coord tilesz = MCache.tilesz2;
     public final MapMesh m;
     private final MapMesh.MapSurface ms;
@@ -50,7 +51,7 @@ public class Ridges extends MapMesh.Hooks {
     private final MPart[] gnd, ridge;
 
     public interface RidgeTile {
-	public int breakz();
+	public double breakz();
     }
 
     public static class RPart extends MPart {
@@ -138,27 +139,27 @@ public class Ridges extends MapMesh.Hooks {
 
     private boolean[] breaks() {
 	Scan ts = new Scan(new Coord(-1, -1), m.sz.add(2, 2));
-	int[] bz = new int[ts.l];
+	float[] bz = new float[ts.l];
 	Coord c = new Coord();
 	for(c.y = ts.ul.y; c.y < ts.br.y; c.y++) {
 	    for(c.x = ts.ul.x; c.x < ts.br.x; c.x++) {
 		MCache map = m.map;
 		Tiler t = map.tiler(map.gettile(m.ul.add(c)));
 		if(t instanceof RidgeTile)
-		    bz[ts.o(c)] = ((RidgeTile)t).breakz();
+		    bz[ts.o(c)] = (float)((RidgeTile)t).breakz() - EPSILON;
 		else
-		    bz[ts.o(c)] = Integer.MAX_VALUE;
+		    bz[ts.o(c)] = Float.POSITIVE_INFINITY;
 	    }
 	}
 	boolean[] breaks = new boolean[(m.sz.x + 1) * (m.sz.y + 1) * 2];
 	for(c.y = 0; c.y <= m.sz.y; c.y++) {
 	    for(c.x = 0; c.x <= m.sz.x; c.x++) {
 		Coord tc = m.ul.add(c);
-		int ul = m.map.getz(tc);
-		int xd = Math.abs(ul - m.map.getz(tc.add(1, 0)));
+		double ul = m.map.getfz(tc);
+		double xd = Math.abs(ul - m.map.getfz(tc.add(1, 0)));
 		if((xd > bz[ts.o(c.x, c.y)]) && (xd > bz[ts.o(c.x, c.y - 1)]))
 		    breaks[eo(c, 0)] = true;
-		int yd = Math.abs(ul - m.map.getz(tc.add(0, 1)));
+		double yd = Math.abs(ul - m.map.getfz(tc.add(0, 1)));
 		if((yd > bz[ts.o(c.x, c.y)]) && (yd > bz[ts.o(c.x - 1, c.y)]))
 		    breaks[eo(c, 3)] = true;
 	    }
@@ -177,7 +178,7 @@ public class Ridges extends MapMesh.Hooks {
     private static final Coord[] tccs = {new Coord(0, 0), new Coord(1, 0), new Coord(1, 1), new Coord(0, 1)};
     private boolean edgelc(Coord tc, int e) {
 	Coord gc = tc.add(m.ul);
-	return(m.map.getz(gc.add(tccs[e])) < m.map.getz(gc.add(tccs[(e + 1) % 4])));
+	return(m.map.getfz(gc.add(tccs[e])) < m.map.getfz(gc.add(tccs[(e + 1) % 4])));
     }
 
     private Vertex[] makeedge(Coord tc, int e) {
@@ -186,15 +187,15 @@ public class Ridges extends MapMesh.Hooks {
 	if(e == 2)
 	    return(makeedge(tc.add(0, 1), 0));
 	float eds = edgelc(tc, e)?1:-1;
-	int lo, hi; {
+	float lo, hi; {
 	    Coord gc = tc.add(m.ul);
-	    int z1 = m.map.getz(gc.add(tccs[e])), z2 = m.map.getz(gc.add(tccs[(e + 1) % 4]));
+	    float z1 = (float)m.map.getfz(gc.add(tccs[e])), z2 = (float)m.map.getfz(gc.add(tccs[(e + 1) % 4]));
 	    lo = Math.min(z1, z2); hi = Math.max(z1, z2);
 	}
-	int nseg = Math.max((hi - lo + (segh / 2)) / segh, 2) - 1;
+	int nseg = Math.max((int)Math.round((hi - lo) / segh), 2) - 1;
 	Vertex[] ret = new Vertex[nseg + 1];
 	Coord3f base = new Coord3f(tc.add(tccs[e]).add(tc.add(tccs[(e + 1) % 4])).mul(tilesz).mul(1, -1)).div(2); base.z = lo;
-	float segi = (float)(hi - lo) / (float)nseg;
+	float segi = (hi - lo) / nseg;
 	Random rnd = m.grnd(m.ul.add(tc));
 	rnd.setSeed(rnd.nextInt() + e);
 	float bb = (rnd.nextFloat() - 0.5f) * 3.5f;
@@ -243,10 +244,10 @@ public class Ridges extends MapMesh.Hooks {
 	    });
     }
 
-    private int[] tczs(Coord tc) {
-	int[] ret = new int[4];
+    private float[] tczs(Coord tc) {
+	float[] ret = new float[4];
 	for(int i = 0; i < 4; i++)
-	    ret[i] = m.map.getz(tc.add(m.ul).add(tccs[i]));
+	    ret[i] = (float)m.map.getfz(tc.add(m.ul).add(tccs[i]));
 	return(ret);
     }
 
@@ -269,10 +270,10 @@ public class Ridges extends MapMesh.Hooks {
     private int isdiag2(Coord tc, boolean[] b) {
 	if(b[0] && b[1] && b[2] && b[3]) {
 	    Coord gc = tc.add(m.ul);
-	    int bz = ((RidgeTile)m.map.tiler(m.map.gettile(gc))).breakz();
-	    if(Math.abs(m.map.getz(gc) - m.map.getz(gc.add(1, 1))) <= bz)
+	    double bz = ((RidgeTile)m.map.tiler(m.map.gettile(gc))).breakz() - EPSILON;
+	    if(Math.abs(m.map.getfz(gc) - m.map.getfz(gc.add(1, 1))) <= bz)
 		return(0);
-	    if(Math.abs(m.map.getz(gc.add(0, 1)) - m.map.getz(gc.add(1, 0))) <= bz)
+	    if(Math.abs(m.map.getfz(gc.add(0, 1)) - m.map.getfz(gc.add(1, 0))) <= bz)
 		return(1);
 	}
 	return(-1);
@@ -507,7 +508,7 @@ public class Ridges extends MapMesh.Hooks {
     private static final int[] cg2rfi = {0, 1, 4, 4, 1, 2, 4, 2, 3};
     private void modelcomplex(Coord tc, boolean[] breaks) {
 	Coord gc = tc.add(m.ul), pc = tc.mul(tilesz).mul(1, -1);
-	int[] tczs = tczs(tc);
+	float[] tczs = tczs(tc);
 	int s;
 	for(s = 0; !breaks[s] || !breaks[(s + 3) % 4]; s++);
 	Coord3f[] col;
@@ -706,14 +707,14 @@ public class Ridges extends MapMesh.Hooks {
 	Tiler t = map.tiler(map.gettile(tc));
 	if(!(t instanceof RidgeTile))
 	    return(false);
-	int bz = ((RidgeTile)t).breakz();
+	double bz = ((RidgeTile)t).breakz() - EPSILON;
 	for(Coord ec : tecs) {
 	    t = map.tiler(map.gettile(tc.add(ec)));
 	    if(t instanceof RidgeTile)
-		bz = Math.min(bz, ((RidgeTile)t).breakz());
+		bz = Math.min(bz, ((RidgeTile)t).breakz() - EPSILON);
 	}
 	for(int i = 0; i < 4; i++) {
-	    if(Math.abs(map.getz(tc.add(tccs[(i + 1) % 4])) - map.getz(tc.add(tccs[i]))) > bz)
+	    if(Math.abs(map.getfz(tc.add(tccs[(i + 1) % 4])) - map.getfz(tc.add(tccs[i]))) > bz)
 		return(true);
 	}
 	return(false);

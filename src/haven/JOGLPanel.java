@@ -463,6 +463,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    SyncMode syncmode = prefs.syncmode.val;
 		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
 		    GPUProfile.Frame curgf = Config.profilegpu ? gprof.new Frame(buf) : null;
+		    BufferBGL.Profile frameprof = false ? new BufferBGL.Profile() : null;
+		    if(frameprof != null) buf.submit(frameprof.start);
 		    buf.submit(new ProfileTick(rprofc, "wait"));
 		    Fence curframe = new Fence();
 		    if(syncmode == SyncMode.FRAME)
@@ -527,6 +529,10 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    else
 			rprofc = null;
 		    buf.submit(new FrameCycle());
+		    if(frameprof != null) {
+			buf.submit(frameprof.stop);
+			buf.submit(frameprof.dump(new java.io.File("frameprof")));
+		    }
 		    env.submit(buf);
 		    buf = null;
 		    if(curf != null) curf.tick("aux");

@@ -26,7 +26,9 @@
 
 package haven.render.gl;
 
+import haven.Utils;
 import java.util.*;
+import java.io.*;
 import javax.media.opengl.*;
 
 public class BufferBGL extends BGL {
@@ -35,6 +37,7 @@ public class BufferBGL extends BGL {
 		throw(new RuntimeException());
 	    }
 	};
+    private static Profile curprof = null;
     private Command[] list;
     private int n = 0;
 
@@ -45,6 +48,8 @@ public class BufferBGL extends BGL {
 
     public void run(GL3 gl) {
 	for(int i = 0; i < n; i++) {
+	    if(curprof != null)
+		curprof.register(list[i]);
 	    try {
 		list[i].run(gl);
 	    } catch(Exception exc) {
@@ -88,5 +93,49 @@ public class BufferBGL extends BGL {
 			});
 		}
 	    });
+    }
+
+    public static class Profile {
+	private double stime;
+	private int n;
+	private Command[] cmds = new Command[128];
+	private double[] times = new double[128];
+
+	private void register(Command cmd) {
+	    if(n >= cmds.length) {
+		cmds = Arrays.copyOf(cmds, cmds.length * 2);
+		times = Arrays.copyOf(times, cmds.length * 2);
+	    }
+	    cmds[n] = cmd;
+	    times[n] = Utils.rtime();
+	    n++;
+	}
+
+	public final Request start = gl -> {
+	    if(curprof != null)
+		throw(new IllegalStateException());
+	    curprof = this;
+	    stime = Utils.rtime();
+	};
+	public final Request stop = gl -> {
+	    if(curprof == null)
+		throw(new IllegalStateException());
+	    curprof = null;
+	};
+
+	public void dump(PrintStream out) {
+	    for(int i = 0; i < n; i++)
+		out.printf("%f\t%f\t%s\n", (times[i] - stime) * 1000, ((i < n - 1) ? times[i + 1] - times[i] : 0) * 1000, cmds[i]);
+	}
+
+	public Request dump(File out) {
+	    return(gl -> {
+		    try(OutputStream fp = new BufferedOutputStream(new FileOutputStream(out))) {
+			dump(new PrintStream(fp));
+		    } catch(IOException e) {
+			throw(new RuntimeException(e));
+		    }
+		});
+	}
     }
 }

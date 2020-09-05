@@ -31,7 +31,7 @@ import haven.render.*;
 
 public class AnimSprite extends Sprite {
     private final RenderTree.Node[] parts;
-    private final MeshAnim.Anim[] anims;
+    private final MeshAnim.Animation[] anims;
 
     public static final Factory fact = new Factory() {
 	    public Sprite create(Owner owner, Resource res, Message sdt) {
@@ -48,28 +48,22 @@ public class AnimSprite extends Sprite {
     private AnimSprite(Owner owner, Resource res, Message sdt) {
 	super(owner, res);
 	int mask = sdt.eom()?0xffff0000:decnum(sdt);
-	Collection<MeshAnim.Anim> anims = new LinkedList<MeshAnim.Anim>();
+	Collection<MeshAnim.Animation> anims = new LinkedList<>();
 	for(MeshAnim.Res ar : res.layers(MeshAnim.Res.class)) {
 	    if((ar.id < 0) || (((1 << ar.id) & mask) != 0))
 		anims.add(ar.make());
 	}
-	this.anims = anims.toArray(new MeshAnim.Anim[0]);
-	MorphedMesh.Morpher.Factory morph = MorphedMesh.combine(this.anims);
+	this.anims = anims.toArray(new MeshAnim.Animation[0]);
 	Collection<RenderTree.Node> rl = new LinkedList<>();
-	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
+	mesh: for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0))) {
-		boolean stat = true;
-		for(MeshAnim.Anim anim : anims) {
+		for(MeshAnim.Animation anim : anims) {
 		    if(anim.desc().animp(mr.m)) {
-			stat = false;
-			break;
+			rl.add(RUtils.StateTickNode.from(mr.mat.get().apply(anim.desc().apply(mr.m)), anim::state));
+			continue mesh;
 		    }
 		}
-		if(stat) {
-		    rl.add(mr.mat.get().apply(mr.m));
-		} else {
-		    rl.add(mr.mat.get().apply(new MorphedMesh(mr.m, morph)));
-		}
+		rl.add(mr.mat.get().apply(mr.m));
 	    }
 	}
 	parts = rl.toArray(new RenderTree.Node[0]);
@@ -83,7 +77,7 @@ public class AnimSprite extends Sprite {
     public boolean tick(double ddt) {
 	float dt = (float)ddt;
 	boolean ret = false;
-	for(MeshAnim.Anim anim : anims)
+	for(MeshAnim.Animation anim : anims)
 	    ret = ret | anim.tick(dt);
 	return(ret);
     }

@@ -34,9 +34,114 @@ import java.io.*;
 import java.lang.reflect.*;
 
 public abstract class BGL {
+    private static class Formatter<T> {
+	final Class<T> cl;
+	final String nm;
+	final Field[] args;
+	final String[] argn;
+
+	Formatter(Class<T> cl) {
+	    this.cl = cl;
+	    if(cl.getEnclosingMethod() == null)
+		nm = cl.getName();
+	    else
+		nm = cl.getEnclosingMethod().getName();
+	    Field[] fl = cl.getDeclaredFields();
+	    Field[] args = new Field[fl.length];
+	    String[] argn = new String[fl.length];
+	    int n = 0;
+	    for(int i = 0; i < fl.length; i++) {
+		Field f = fl[i];
+		String nm = f.getName();
+		if(nm.equals("this$0"))
+		    continue;
+		try {
+		    f.setAccessible(true);
+		} catch(SecurityException e) {}
+		args[n] = f;
+		if(nm.startsWith("val$"))
+		    nm = nm.substring(4);
+		argn[n] = nm;
+		n++;
+	    }
+	    this.args = Arrays.copyOf(args, n);
+	    this.argn = Arrays.copyOf(argn, n);
+	}
+
+	public static String format(float[] a) {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append('[');
+	    for(int i = 0; i < a.length; i++) {
+		if(i > 0)
+		    buf.append(", ");
+		buf.append(Float.toString(a[i]));
+	    }
+	    buf.append(']');
+	    return(buf.toString());
+	}
+
+	public static String format(int[] a) {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append('[');
+	    for(int i = 0; i < a.length; i++) {
+		if(i > 0)
+		    buf.append(", ");
+		buf.append(Integer.toString(a[i]));
+	    }
+	    buf.append(']');
+	    return(buf.toString());
+	}
+
+	public String format(T ob) {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append(nm);
+	    buf.append('(');
+	    for(int i = 0; i < args.length; i++) {
+		Field f = args[i];
+		Object argv = "<inv>";
+		try {
+		    argv = f.get(ob);
+		} catch(IllegalAccessException e) {}
+		if(i > 0)
+		    buf.append(", ");
+		buf.append(argn[i]);
+		buf.append("=");
+		if(argv instanceof float[]) {
+		    buf.append(format((float[])argv));
+		} else if(argv instanceof int[]) {
+		    buf.append(format((int[])argv));
+		} else {
+		    buf.append(String.valueOf(argv));
+		}
+	    }
+	    buf.append(')');
+	    return(buf.toString());
+	}
+
+	static final Map<Class<?>, Formatter<?>> cache = new HashMap<>();
+	@SuppressWarnings("unchecked")
+	static <T> Formatter<T> get(Class<T> cl) {
+	    Formatter<T> ret = (Formatter<T>)cache.get(cl);
+	    if(ret == null)
+		cache.put(cl, ret = new Formatter(cl));
+	    return(ret);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> String fmt(T ob) {
+	    Class<T> cl = (Class<T>)ob.getClass();
+	    Formatter<T> fmt = get(cl);
+	    return(fmt.format(ob));
+	}
+    }
+
     protected static abstract class Command {
 	public abstract void run(GL3 gl);
 	public void abort() {};
+
+	public String toString() {
+	    return(Formatter.fmt(this));
+	}
     }
 
     private static class BufState {
@@ -625,6 +730,24 @@ public abstract class BGL {
     public void glUniform1i(final ID location, final int v0) {
 	add(new Command() {
 		public void run(GL3 gl) {gl.glUniform1i(location.glid(), v0);}
+	    });
+    }
+
+    public void glUniform2i(final ID location, final int v0, final int v1) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glUniform2i(location.glid(), v0, v1);}
+	    });
+    }
+
+    public void glUniform3i(final ID location, final int v0, final int v1, final int v2) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glUniform3i(location.glid(), v0, v1, v2);}
+	    });
+    }
+
+    public void glUniform4i(final ID location, final int v0, final int v1, final int v2, final int v3) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glUniform4i(location.glid(), v0, v1, v2, v3);}
 	    });
     }
 

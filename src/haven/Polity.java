@@ -136,6 +136,12 @@ public class Polity extends Window {
 		g.aimage(rauth, sz.div(2), 0.5, 0.5);
 	    }
 	}
+
+	public Object tooltip(Coord c, Widget prev) {
+	    if(adrain > 0)
+		return(String.format("Drain: %,d/day", adrain));
+	    return(null);
+	}
     }
 
     public void uimsg(String msg, Object... args) {

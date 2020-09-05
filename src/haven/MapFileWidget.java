@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.util.function.*;
+import java.io.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import haven.MapFile.Segment;
@@ -37,10 +38,12 @@ import haven.MapFile.GridInfo;
 import haven.MapFile.Marker;
 import haven.MapFile.PMarker;
 import haven.MapFile.SMarker;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.*;
 import static haven.MCache.cmaps;
 import static haven.Utils.or;
 
-public class MapFileWidget extends Widget {
+public class MapFileWidget extends Widget implements Console.Directory {
     public final MapFile file;
     public Location curloc;
     private Locator setloc;
@@ -415,5 +418,178 @@ public class MapFileWidget extends Widget {
 	    }
 	}
 	return(super.tooltip(c, prev));
+    }
+
+    public static class ExportWindow extends Window implements MapFile.ExportStatus {
+	private Thread th;
+	private volatile String prog = "Exporting map...";
+
+	public ExportWindow() {
+	    super(new Coord(300, 65), "Exporting map...");
+	    adda(new Button(100, "Cancel", this::cancel), asz.x / 2, 40, 0.5, 0.0);
+	}
+
+	public void run(Thread th) {
+	    (this.th = th).start();
+	}
+
+	public void cdraw(GOut g) {
+	    g.text(prog, new Coord(10, 10));
+	}
+
+	public void cancel() {
+	    th.interrupt();
+	}
+
+	public void tick(double dt) {
+	    if(!th.isAlive())
+		destroy();
+	}
+
+	public void grid(int cs, int ns, int cg, int ng) {
+	    this.prog = String.format("Exporting map cut %,d/%,d in segment %,d/%,d", cg, ng, cs, ns);
+	}
+
+	public void mark(int cm, int nm) {
+	    this.prog = String.format("Exporting marker", cm, nm);
+	}
+    }
+
+    public static class ImportWindow extends Window {
+	private Thread th;
+	private volatile String prog = "Initializing";
+	private double sprog = -1;
+
+	public ImportWindow() {
+	    super(new Coord(300, 65), "Importing map...");
+	    adda(new Button(100, "Cancel", this::cancel), asz.x / 2, 40, 0.5, 0.0);
+	}
+
+	public void run(Thread th) {
+	    (this.th = th).start();
+	}
+
+	public void cdraw(GOut g) {
+	    String prog = this.prog;
+	    if(sprog >= 0)
+		prog = String.format("%s: %d%%", prog, (int)Math.floor(sprog * 100));
+	    else
+		prog = prog + "...";
+	    g.text(prog, new Coord(10, 10));
+	}
+
+	public void cancel() {
+	    th.interrupt();
+	}
+
+	public void tick(double dt) {
+	    if(!th.isAlive())
+		destroy();
+	}
+
+	public void prog(String prog) {
+	    this.prog = prog;
+	    this.sprog = -1;
+	}
+
+	public void sprog(double sprog) {
+	    this.sprog = sprog;
+	}
+    }
+
+    public void exportmap(File path) {
+	GameUI gui = getparent(GameUI.class);
+	ExportWindow prog = new ExportWindow();
+	Thread th = new HackThread(() -> {
+		try {
+		    try(OutputStream out = new BufferedOutputStream(new FileOutputStream(path))) {
+			file.export(out, MapFile.ExportFilter.all, prog);
+		    }
+		} catch(IOException e) {
+		    e.printStackTrace(Debug.log);
+		    gui.error("Unexpected error occurred when exporting map.");
+		} catch(InterruptedException e) {
+		}
+	}, "Mapfile exporter");
+	prog.run(th);
+	gui.adda(prog, gui.sz.div(2), 0.5, 1.0);
+    }
+
+    public void importmap(File path) {
+	GameUI gui = getparent(GameUI.class);
+	ImportWindow prog = new ImportWindow();
+	Thread th = new HackThread(() -> {
+		long size = path.length();
+		class Updater extends CountingInputStream {
+		    Updater(InputStream bk) {super(bk);}
+
+		    protected void update(long val) {
+			super.update(val);
+			prog.sprog((double)pos / (double)size);
+		    }
+		}
+		try {
+		    prog.prog("Validating map data");
+		    try(InputStream in = new Updater(new FileInputStream(path))) {
+			file.reimport(in, MapFile.ImportFilter.readonly);
+		    }
+		    prog.prog("Importing map data");
+		    try(InputStream in = new Updater(new FileInputStream(path))) {
+			file.reimport(in, MapFile.ImportFilter.all);
+		    }
+		} catch(InterruptedException e) {
+		} catch(Exception e) {
+		    e.printStackTrace(Debug.log);
+		    gui.error("Could not import map: " + e.getMessage());
+		}
+	}, "Mapfile importer");
+	prog.run(th);
+	gui.adda(prog, gui.sz.div(2), 0.5, 1.0);
+    }
+
+    public void exportmap() {
+	java.awt.EventQueue.invokeLater(() -> {
+		JFileChooser fc = new JFileChooser();
+		fc.setFileFilter(new FileNameExtensionFilter("Exported Haven map data", "hmap"));
+		if(fc.showSaveDialog(null) != JFileChooser.APPROVE_OPTION)
+		    return;
+		File path = fc.getSelectedFile();
+		if(path.getName().indexOf('.') < 0)
+		    path = new File(path.toString() + ".hmap");
+		exportmap(path);
+	    });
+    }
+
+    public void importmap() {
+	java.awt.EventQueue.invokeLater(() -> {
+		JFileChooser fc = new JFileChooser();
+		fc.setFileFilter(new FileNameExtensionFilter("Exported Haven map data", "hmap"));
+		if(fc.showOpenDialog(null) != JFileChooser.APPROVE_OPTION)
+		    return;
+		importmap(fc.getSelectedFile());
+	    });
+    }
+
+    private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
+    {
+	cmdmap.put("exportmap", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    if(args.length > 1)
+			exportmap(new File(args[1]));
+		    else
+			exportmap();
+		}
+	    });
+	cmdmap.put("importmap", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    if(args.length > 1)
+			importmap(new File(args[1]));
+		    else
+			importmap();
+		}
+	    });
+    }
+    public Map<String, Console.Command> findcmds() {
+	return(cmdmap);
     }
 }

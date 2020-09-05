@@ -202,7 +202,7 @@ public class VertexBuf {
     }
 
     @ResName("pos2")
-    public static class VertexData extends FloatData implements MorphedMesh.MorphData {
+    public static class VertexData extends FloatData {
 	public VertexData(FloatBuffer data) {
 	    super(Homo3D.vertex, 3, data);
 	}
@@ -210,12 +210,6 @@ public class VertexBuf {
 	public VertexData(Resource res, Message buf, int nv) {
 	    this(loadbuf2(Utils.wfbuf(nv * 3), buf));
 	}
-
-	/* XXX: It feels very much like morphing should be layered
-	 * strictly above VertexBuf, but I can't quite see an
-	 * alternative to this at this point. */
-	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.POS);}
-	public VertexData dup() {return(new VertexData(Utils.bufcp(data)));}
     }
     @ResName("pos")
     public static class VertexDecode implements DataCons {
@@ -225,7 +219,7 @@ public class VertexBuf {
     }
     
     @ResName("nrm2")
-    public static class NormalData extends FloatData implements MorphedMesh.MorphData {
+    public static class NormalData extends FloatData {
 	public NormalData(FloatBuffer data) {
 	    super(Homo3D.normal, 3, data);
 	}
@@ -233,9 +227,6 @@ public class VertexBuf {
 	public NormalData(Resource res, Message buf, int nv) {
 	    this(loadbuf2(Utils.wfbuf(nv * 3), buf));
 	}
-
-	public MorphedMesh.MorphType morphtype() {return(MorphedMesh.MorphType.DIR);}
-	public NormalData dup() {return(new NormalData(Utils.bufcp(data)));}
     }
     @ResName("nrm")
     public static class NormalDecode implements DataCons {
