@@ -375,7 +375,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	public static class RFactory implements Tiler.Factory {
 	    public Tiler create(int id, Tileset set) {
 		TerrainTile base = new Factory().create(id, set);
-		int rth = 20;
+		double rth = 20;
 		Pipe.Op mat = null;
 		float texh = 11f;
 		for(Object rdesc : set.ta) {
@@ -387,12 +387,12 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 			if(desc.length > 3)
 			    texh = (Float)desc[3];
 		    } else if(p.equals("rthres")) {
-			rth = (Integer)desc[1];
+			rth = ((Number)desc[1]).doubleValue();
 		    }
 		}
 		if(mat == null)
 		    throw(new RuntimeException("Ridge-tiles must be given a ridge material, in " + set.getres().name));
-		return(new RidgeTile(base.id, base.noise, base.base, base.var, base.transset, rth, mat, texh));
+		return(new RidgeTile(base.id, base.noise, base.base, base.var, base.transset, (int)rth, mat, texh));
 	    }
 	}
 
@@ -402,7 +402,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	    this.rcons = new Ridges.TexCons(rmat, texh);
 	}
 
-	public int breakz() {return(rth);}
+	public double breakz() {return(rth);}
 
 	public void model(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	    if(!m.data(Ridges.id).model(lc))
