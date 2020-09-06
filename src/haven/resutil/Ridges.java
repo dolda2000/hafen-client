@@ -146,7 +146,7 @@ public class Ridges extends MapMesh.Hooks {
 		MCache map = m.map;
 		Tiler t = map.tiler(map.gettile(m.ul.add(c)));
 		if(t instanceof RidgeTile)
-		    bz[ts.o(c)] = (float)((RidgeTile)t).breakz() - EPSILON;
+		    bz[ts.o(c)] = (float)((RidgeTile)t).breakz() + EPSILON;
 		else
 		    bz[ts.o(c)] = Float.POSITIVE_INFINITY;
 	    }
@@ -270,7 +270,7 @@ public class Ridges extends MapMesh.Hooks {
     private int isdiag2(Coord tc, boolean[] b) {
 	if(b[0] && b[1] && b[2] && b[3]) {
 	    Coord gc = tc.add(m.ul);
-	    double bz = ((RidgeTile)m.map.tiler(m.map.gettile(gc))).breakz() - EPSILON;
+	    double bz = ((RidgeTile)m.map.tiler(m.map.gettile(gc))).breakz() + EPSILON;
 	    if(Math.abs(m.map.getfz(gc) - m.map.getfz(gc.add(1, 1))) <= bz)
 		return(0);
 	    if(Math.abs(m.map.getfz(gc.add(0, 1)) - m.map.getfz(gc.add(1, 0))) <= bz)
@@ -707,11 +707,11 @@ public class Ridges extends MapMesh.Hooks {
 	Tiler t = map.tiler(map.gettile(tc));
 	if(!(t instanceof RidgeTile))
 	    return(false);
-	double bz = ((RidgeTile)t).breakz() - EPSILON;
+	double bz = ((RidgeTile)t).breakz() + EPSILON;
 	for(Coord ec : tecs) {
 	    t = map.tiler(map.gettile(tc.add(ec)));
 	    if(t instanceof RidgeTile)
-		bz = Math.min(bz, ((RidgeTile)t).breakz() - EPSILON);
+		bz = Math.min(bz, ((RidgeTile)t).breakz() + EPSILON);
 	}
 	for(int i = 0; i < 4; i++) {
 	    if(Math.abs(map.getfz(tc.add(tccs[(i + 1) % 4])) - map.getfz(tc.add(tccs[i]))) > bz)
