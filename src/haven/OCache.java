@@ -785,19 +785,35 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
+    private static final int[] compodmap = {OD_REM, OD_RESATTR, OD_FOLLOW, OD_MOVE, OD_RES, OD_LINBEG, OD_LINSTEP, OD_HOMING};
     public GobInfo receive(int fl, long id, int frame, Message msg) {
 	List<Delta> attrs = new ArrayList<>();
 	boolean hasrem = false;
 	GobInfo removed = null;
 	while(true) {
-	    int type = msg.uint8();
-	    if(type == OD_END) {
+	    int afl = 0, len, type = msg.uint8();
+	    if(type == OD_END)
 		break;
-	    } else if(type == OD_REM) {
+	    if((type & 0x80) == 0) {
+		len = (type & 0x78) >> 3;
+		if(len > 0)
+		    len++;
+		type = compodmap[type & 0x7];
+	    } else {
+		type = type & 0x7f;
+		if(((afl = msg.uint8()) & 0x80) == 0) {
+		    len = afl & 0x7f;
+		    afl = 0;
+		} else {
+		    len = msg.uint16();
+		}
+	    }
+	    Message delta = new MessageBuf(msg.bytes(len));
+	    if(type == OD_REM) {
 		removed = netremove(id, frame - 1);
 		hasrem = true;
 	    } else {
-		attrs.add(parse(type, msg));
+		attrs.add(parse(type, delta));
 	    }
 	}
 	if(hasrem)
