@@ -39,6 +39,10 @@ public class PMessage extends MessageBuf {
     public PMessage(int type) {
 	this.type = type;
     }
+    public PMessage(int type, Message msg, int len) {
+	super(msg, len);
+	this.type = type;
+    }
     public PMessage(int type, Message msg) {
 	super(msg);
 	this.type = type;
