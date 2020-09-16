@@ -33,4 +33,22 @@ public class DrawOffset extends GAttrib {
 	super(gob);
 	this.off = off;
     }
+
+    @OCache.DeltaType(OCache.OD_ZOFF)
+    public static class $zoff implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    float off = msg.int16() / 100.0f;
+	    if(off == 0) {
+		g.delattr(DrawOffset.class);
+	    } else {
+		DrawOffset dro = g.getattr(DrawOffset.class);
+		if(dro == null) {
+		    dro = new DrawOffset(g, new Coord3f(0, 0, off));
+		    g.setattr(dro);
+		} else {
+		    dro.off = new Coord3f(0, 0, off);
+		}
+	    }
+	}
+    }
 }

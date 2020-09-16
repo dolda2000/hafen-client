@@ -174,4 +174,134 @@ public class Composite extends Drawable {
     public Object staticp() {
 	return(null);
     }
+
+    @OCache.DeltaType(OCache.OD_COMPOSE)
+    public static class $composite implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    Indir<Resource> base = OCache.Delta.getres(g, msg.uint16());
+	    Drawable dr = g.getattr(Drawable.class);
+	    Composite cmp = (dr instanceof Composite)?(Composite)dr:null;
+	    if((cmp == null) || !cmp.base.equals(base)) {
+		cmp = new Composite(g, base);
+		g.setattr(cmp);
+	    }
+	}
+    }
+
+    @OCache.DeltaType(OCache.OD_CMPPOSE)
+    public static class $cmppose implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    List<ResData> poses = null, tposes = null;
+	    int pfl = msg.uint8();
+	    int pseq = msg.uint8();
+	    boolean interp = (pfl & 1) != 0;
+	    if((pfl & 2) != 0) {
+		poses = new LinkedList<ResData>();
+		while(true) {
+		    int resid = msg.uint16();
+		    if(resid == 65535)
+			break;
+		    Message sdt = Message.nil;
+		    if((resid & 0x8000) != 0) {
+			resid &= ~0x8000;
+			sdt = new MessageBuf(msg.bytes(msg.uint8()));
+		    }
+		    poses.add(new ResData(OCache.Delta.getres(g, resid), sdt));
+		}
+	    }
+	    float ttime = 0;
+	    if((pfl & 4) != 0) {
+		tposes = new LinkedList<ResData>();
+		while(true) {
+		    int resid = msg.uint16();
+		    if(resid == 65535)
+			break;
+		    Message sdt = Message.nil;
+		    if((resid & 0x8000) != 0) {
+			resid &= ~0x8000;
+			sdt = new MessageBuf(msg.bytes(msg.uint8()));
+		    }
+		    tposes.add(new ResData(OCache.Delta.getres(g, resid), sdt));
+		}
+		ttime = (msg.uint8() / 10.0f);
+	    }
+	    List<ResData> cposes = poses, ctposes = tposes;
+	    float cttime = ttime;
+	    Composite cmp = (Composite)g.getattr(Drawable.class);
+	    if(cmp.pseq != pseq) {
+		cmp.pseq = pseq;
+		if(poses != null)
+		    cmp.chposes(poses, interp);
+		if(tposes != null)
+		    cmp.tposes(tposes, WrapMode.ONCE, ttime);
+	    }
+	}
+    }
+
+    @OCache.DeltaType(OCache.OD_CMPMOD)
+    public static class $cmpmod implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    List<Composited.MD> mod = new LinkedList<Composited.MD>();
+	    int mseq = 0;
+	    while(true) {
+		int modid = msg.uint16();
+		if(modid == 65535)
+		    break;
+		Indir<Resource> modr = OCache.Delta.getres(g, modid);
+		List<ResData> tex = new LinkedList<ResData>();
+		while(true) {
+		    int resid = msg.uint16();
+		    if(resid == 65535)
+			break;
+		    Message sdt = Message.nil;
+		    if((resid & 0x8000) != 0) {
+			resid &= ~0x8000;
+			sdt = new MessageBuf(msg.bytes(msg.uint8()));
+		    }
+		    tex.add(new ResData(OCache.Delta.getres(g, resid), sdt));
+		}
+		Composited.MD md = new Composited.MD(modr, tex);
+		md.id = mseq++;
+		mod.add(md);
+	    }
+	    Composite cmp = (Composite)g.getattr(Drawable.class);
+	    cmp.chmod(mod);
+	}
+    }
+
+    @OCache.DeltaType(OCache.OD_CMPEQU)
+    public static class $cmpequ implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    List<Composited.ED> equ = new LinkedList<Composited.ED>();
+	    int eseq = 0;
+	    while(true) {
+		int h = msg.uint8();
+		if(h == 255)
+		    break;
+		int ef = h & 0x80;
+		int et = h & 0x7f;
+		String at = msg.string();
+		Indir<Resource> res;
+		int resid = msg.uint16();
+		Message sdt = Message.nil;
+		if((resid & 0x8000) != 0) {
+		    resid &= ~0x8000;
+		    sdt = new MessageBuf(msg.bytes(msg.uint8()));
+		}
+		res = OCache.Delta.getres(g, resid);
+		Coord3f off;
+		if((ef & 128) != 0) {
+		    int x = msg.int16(), y = msg.int16(), z = msg.int16();
+		    off = new Coord3f(x / 1000.0f, y / 1000.0f, z / 1000.0f);
+		} else {
+		    off = Coord3f.o;
+		}
+		Composited.ED ed = new Composited.ED(et, at, new ResData(res, sdt), off);
+		ed.id = eseq++;
+		equ.add(ed);
+	    }
+	    Composite cmp = (Composite)g.getattr(Drawable.class);
+	    cmp.chequ(equ);
+	}
+    }
 }

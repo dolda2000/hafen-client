@@ -65,4 +65,23 @@ public class Speaking extends GAttrib implements RenderTree.Node, PView.Render2D
 	Coord sc = Homo3D.obj2view(new Coord3f(0, 0, zo), state, Area.sized(g.sz())).round2();
 	draw(g, sc);
     }
+
+    @OCache.DeltaType(OCache.OD_SPEECH)
+    public static class $speak implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    float zo = msg.int16() / 100.0f;
+	    String text = msg.string();
+	    if(text.length() < 1) {
+		g.delattr(Speaking.class);
+	    } else {
+		Speaking m = g.getattr(Speaking.class);
+		if(m == null) {
+		    g.setattr(new Speaking(g, zo, text));
+		} else {
+		    m.zo = zo;
+		    m.update(text);
+		}
+	    }
+	}
+    }
 }

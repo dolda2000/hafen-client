@@ -71,4 +71,25 @@ public class ResDrawable extends Drawable {
     public Skeleton.Pose getpose() {
 	return(Skeleton.getpose(spr));
     }
+
+    @OCache.DeltaType(OCache.OD_RES)
+    public static class $cres implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    int resid = msg.uint16();
+	    MessageBuf sdt = MessageBuf.nil;
+	    if((resid & 0x8000) != 0) {
+		resid &= ~0x8000;
+		sdt = new MessageBuf(msg.bytes(msg.uint8()));
+	    }
+	    Indir<Resource> res = OCache.Delta.getres(g, resid);
+	    Drawable dr = g.getattr(Drawable.class);
+	    ResDrawable d = (dr instanceof ResDrawable)?(ResDrawable)dr:null;
+	    if((d != null) && (d.res == res) && !d.sdt.equals(sdt) && (d.spr != null) && (d.spr instanceof Sprite.CUpd)) {
+		((Sprite.CUpd)d.spr).update(sdt);
+		d.sdt = sdt;
+	    } else if((d == null) || (d.res != res) || !d.sdt.equals(sdt)) {
+		g.setattr(new ResDrawable(g, res, sdt));
+	    }
+	}
+    }
 }
