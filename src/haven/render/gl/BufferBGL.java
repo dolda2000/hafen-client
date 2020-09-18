@@ -53,7 +53,7 @@ public class BufferBGL extends BGL {
 	    try {
 		try {
 		    list[i].run(gl);
-		} catch(javax.media.opengl.GLException exc) {
+		} catch(com.jogamp.opengl.GLException exc) {
 		    /* How nice wouldn't it be if DebugGL could be
 		     * subclasseed to customize the errors. */
 		    checkdebuggl(exc);
