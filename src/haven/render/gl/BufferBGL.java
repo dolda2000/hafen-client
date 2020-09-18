@@ -51,10 +51,35 @@ public class BufferBGL extends BGL {
 	    if(curprof != null)
 		curprof.register(list[i]);
 	    try {
-		list[i].run(gl);
+		try {
+		    list[i].run(gl);
+		} catch(javax.media.opengl.GLException exc) {
+		    /* How nice wouldn't it be if DebugGL could be
+		     * subclasseed to customize the errors. */
+		    checkdebuggl(exc);
+		    throw(exc);
+		}
 	    } catch(Exception exc) {
 		throw(new BGLException(this, list[i], exc));
 	    }
+	}
+    }
+
+    private void checkdebuggl(Exception exc) {
+	String msg = exc.getMessage();
+	GLException wrap = null;
+	if(msg.indexOf("GL_INVALID_ENUM") >= 0) {
+	    wrap = new GLException.GLInvalidEnumException();
+	} else if(msg.indexOf("GL_INVALID_VALUE") >= 0) {
+	    wrap = new GLException.GLInvalidValueException();
+	} else if(msg.indexOf("GL_INVALID_OPERATION") >= 0) {
+	    wrap = new GLException.GLInvalidOperationException();
+	} else if(msg.indexOf("GL_OUT_OF_MEMORY") >= 0) {
+	    wrap = new GLException.GLOutOfMemoryException();
+	}
+	if(wrap != null) {
+	    wrap.initCause(exc);
+	    throw(wrap);
 	}
     }
 
