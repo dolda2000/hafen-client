@@ -4,7 +4,6 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.*;
 import javax.imageio.*;
-import javax.media.opengl.*;
 import com.jogamp.opengl.*;
 import com.jogamp.newt.event.*;
 import com.jogamp.newt.opengl.*;

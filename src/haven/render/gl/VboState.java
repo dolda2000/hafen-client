@@ -26,7 +26,7 @@
 
 package haven.render.gl;
 
-import javax.media.opengl.GL;
+import com.jogamp.opengl.GL;
 
 public class VboState extends GLState {
     public final GLBuffer buf;
