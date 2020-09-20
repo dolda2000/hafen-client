@@ -207,16 +207,12 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    private Indir<Resource> getres(int id) {
-	return(glob.sess.getres(id));
-    }
-
-    private static Indir<Resource> getres(Gob gob, int id) {
-	return(gob.glob.sess.getres(id));
-    }
-
     public interface Delta {
 	public void apply(Gob gob, Message msg);
+
+	public static Indir<Resource> getres(Gob gob, int id) {
+	    return(gob.glob.sess.getres(id));
+	}
     }
 
     @dolda.jglob.Discoverable
@@ -249,299 +245,6 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    @DeltaType(OD_RES)
-    public static class $cres implements Delta {
-	public void apply(Gob g, Message msg) {
-	    int resid = msg.uint16();
-	    MessageBuf sdt = MessageBuf.nil;
-	    if((resid & 0x8000) != 0) {
-		resid &= ~0x8000;
-		sdt = new MessageBuf(msg.bytes(msg.uint8()));
-	    }
-	    Indir<Resource> res = getres(g, resid);
-	    Drawable dr = g.getattr(Drawable.class);
-	    ResDrawable d = (dr instanceof ResDrawable)?(ResDrawable)dr:null;
-	    if((d != null) && (d.res == res) && !d.sdt.equals(sdt) && (d.spr != null) && (d.spr instanceof Sprite.CUpd)) {
-		((Sprite.CUpd)d.spr).update(sdt);
-		d.sdt = sdt;
-	    } else if((d == null) || (d.res != res) || !d.sdt.equals(sdt)) {
-		g.setattr(new ResDrawable(g, res, sdt));
-	    }
-	}
-    }
-
-    @DeltaType(OD_LINBEG)
-    public static class $linbeg implements Delta {
-	public void apply(Gob g, Message msg) {
-	    Coord2d s = msg.coord().mul(posres);
-	    Coord2d v = msg.coord().mul(posres);
-	    LinMove lm = g.getattr(LinMove.class);
-	    if((lm == null) || !lm.s.equals(s) || !lm.v.equals(v)) {
-		g.setattr(new LinMove(g, s, v));
-	    }
-	}
-    }
-
-    @DeltaType(OD_LINSTEP)
-    public static class $linstep implements Delta {
-	public void apply(Gob g, Message msg) {
-	    double t, e;
-	    int w = msg.int32();
-	    if(w == -1) {
-		t = e = -1;
-	    } else if((w & 0x80000000) == 0) {
-		t = w * 0x1p-10;
-		e = -1;
-	    } else {
-		t = (w & ~0x80000000) * 0x1p-10;
-		w = msg.int32();
-		e = (w < 0)?-1:(w * 0x1p-10);
-	    }
-	    Moving m = g.getattr(Moving.class);
-	    if((m == null) || !(m instanceof LinMove))
-		return;
-	    LinMove lm = (LinMove)m;
-	    if(t < 0)
-		g.delattr(Moving.class);
-	    else
-		lm.sett(t);
-	    if(e >= 0)
-		lm.e = e;
-	    else
-		lm.e = Double.NaN;
-	}
-    }
-
-    @DeltaType(OD_SPEECH)
-    public static class $speak implements Delta {
-	public void apply(Gob g, Message msg) {
-	    float zo = msg.int16() / 100.0f;
-	    String text = msg.string();
-	    if(text.length() < 1) {
-		g.delattr(Speaking.class);
-	    } else {
-		Speaking m = g.getattr(Speaking.class);
-		if(m == null) {
-		    g.setattr(new Speaking(g, zo, text));
-		} else {
-		    m.zo = zo;
-		    m.update(text);
-		}
-	    }
-	}
-    }
-
-    @DeltaType(OD_COMPOSE)
-    public static class $composite implements Delta {
-	public void apply(Gob g, Message msg) {
-	    Indir<Resource> base = getres(g, msg.uint16());
-	    Drawable dr = g.getattr(Drawable.class);
-	    Composite cmp = (dr instanceof Composite)?(Composite)dr:null;
-	    if((cmp == null) || !cmp.base.equals(base)) {
-		cmp = new Composite(g, base);
-		g.setattr(cmp);
-	    }
-	}
-    }
-
-    @DeltaType(OD_CMPPOSE)
-    public static class $cmppose implements Delta {
-	public void apply(Gob g, Message msg) {
-	    List<ResData> poses = null, tposes = null;
-	    int pfl = msg.uint8();
-	    int pseq = msg.uint8();
-	    boolean interp = (pfl & 1) != 0;
-	    if((pfl & 2) != 0) {
-		poses = new LinkedList<ResData>();
-		while(true) {
-		    int resid = msg.uint16();
-		    if(resid == 65535)
-			break;
-		    Message sdt = Message.nil;
-		    if((resid & 0x8000) != 0) {
-			resid &= ~0x8000;
-			sdt = new MessageBuf(msg.bytes(msg.uint8()));
-		    }
-		    poses.add(new ResData(getres(g, resid), sdt));
-		}
-	    }
-	    float ttime = 0;
-	    if((pfl & 4) != 0) {
-		tposes = new LinkedList<ResData>();
-		while(true) {
-		    int resid = msg.uint16();
-		    if(resid == 65535)
-			break;
-		    Message sdt = Message.nil;
-		    if((resid & 0x8000) != 0) {
-			resid &= ~0x8000;
-			sdt = new MessageBuf(msg.bytes(msg.uint8()));
-		    }
-		    tposes.add(new ResData(getres(g, resid), sdt));
-		}
-		ttime = (msg.uint8() / 10.0f);
-	    }
-	    List<ResData> cposes = poses, ctposes = tposes;
-	    float cttime = ttime;
-	    Composite cmp = (Composite)g.getattr(Drawable.class);
-	    if(cmp.pseq != pseq) {
-		cmp.pseq = pseq;
-		if(poses != null)
-		    cmp.chposes(poses, interp);
-		if(tposes != null)
-		    cmp.tposes(tposes, WrapMode.ONCE, ttime);
-	    }
-	}
-    }
-
-    @DeltaType(OD_CMPMOD)
-    public static class $cmpmod implements Delta {
-	public void apply(Gob g, Message msg) {
-	    List<Composited.MD> mod = new LinkedList<Composited.MD>();
-	    int mseq = 0;
-	    while(true) {
-		int modid = msg.uint16();
-		if(modid == 65535)
-		    break;
-		Indir<Resource> modr = getres(g, modid);
-		List<ResData> tex = new LinkedList<ResData>();
-		while(true) {
-		    int resid = msg.uint16();
-		    if(resid == 65535)
-			break;
-		    Message sdt = Message.nil;
-		    if((resid & 0x8000) != 0) {
-			resid &= ~0x8000;
-			sdt = new MessageBuf(msg.bytes(msg.uint8()));
-		    }
-		    tex.add(new ResData(getres(g, resid), sdt));
-		}
-		Composited.MD md = new Composited.MD(modr, tex);
-		md.id = mseq++;
-		mod.add(md);
-	    }
-	    Composite cmp = (Composite)g.getattr(Drawable.class);
-	    cmp.chmod(mod);
-	}
-    }
-
-    @DeltaType(OD_CMPEQU)
-    public static class $cmpequ implements Delta {
-	public void apply(Gob g, Message msg) {
-	    List<Composited.ED> equ = new LinkedList<Composited.ED>();
-	    int eseq = 0;
-	    while(true) {
-		int h = msg.uint8();
-		if(h == 255)
-		    break;
-		int ef = h & 0x80;
-		int et = h & 0x7f;
-		String at = msg.string();
-		Indir<Resource> res;
-		int resid = msg.uint16();
-		Message sdt = Message.nil;
-		if((resid & 0x8000) != 0) {
-		    resid &= ~0x8000;
-		    sdt = new MessageBuf(msg.bytes(msg.uint8()));
-		}
-		res = getres(g, resid);
-		Coord3f off;
-		if((ef & 128) != 0) {
-		    int x = msg.int16(), y = msg.int16(), z = msg.int16();
-		    off = new Coord3f(x / 1000.0f, y / 1000.0f, z / 1000.0f);
-		} else {
-		    off = Coord3f.o;
-		}
-		Composited.ED ed = new Composited.ED(et, at, new ResData(res, sdt), off);
-		ed.id = eseq++;
-		equ.add(ed);
-	    }
-	    Composite cmp = (Composite)g.getattr(Drawable.class);
-	    cmp.chequ(equ);
-	}
-    }
-
-    @DeltaType(OD_AVATAR)
-    public static class $avatar implements Delta {
-	public void apply(Gob g, Message msg) {
-	    List<Indir<Resource>> layers = new LinkedList<Indir<Resource>>();
-	    while(true) {
-		int layer = msg.uint16();
-		if(layer == 65535)
-		    break;
-		layers.add(getres(g, layer));
-	    }
-	    Avatar ava = g.getattr(Avatar.class);
-	    if(ava == null) {
-		ava = new Avatar(g);
-		g.setattr(ava);
-	    }
-	    ava.setlayers(layers);
-	}
-    }
-
-    @DeltaType(OD_ZOFF)
-    public static class $zoff implements Delta {
-	public void apply(Gob g, Message msg) {
-	    float off = msg.int16() / 100.0f;
-	    if(off == 0) {
-		g.delattr(DrawOffset.class);
-	    } else {
-		DrawOffset dro = g.getattr(DrawOffset.class);
-		if(dro == null) {
-		    dro = new DrawOffset(g, new Coord3f(0, 0, off));
-		    g.setattr(dro);
-		} else {
-		    dro.off = new Coord3f(0, 0, off);
-		}
-	    }
-	}
-    }
-
-    @DeltaType(OD_LUMIN)
-    public static class $lumin implements Delta {
-	public void apply(Gob g, Message msg) {
-	    Coord off = msg.coord();
-	    int sz = msg.uint16();
-	    int str = msg.uint8();
-	    g.setattr(new Lumin(g, off, sz, str));
-	}
-    }
-
-    @DeltaType(OD_FOLLOW)
-    public static class $follow implements Delta {
-	public void apply(Gob g, Message msg) {
-	    long oid = msg.uint32();
-	    if(oid != 0xffffffffl) {
-		Indir<Resource> xfres = getres(g, msg.uint16());
-		String xfname = msg.string();
-		g.setattr(new Following(g, oid, xfres, xfname));
-	    } else {
-		g.delattr(Following.class);
-	    }
-	}
-    }
-
-    @DeltaType(OD_HOMING)
-    public static class $homing implements Delta {
-	public void apply(Gob g, Message msg) {
-	    long oid = msg.uint32();
-	    if(oid == 0xffffffffl) {
-		g.delattr(Homing.class);
-	    } else {
-		Coord2d tc = msg.coord().mul(posres);
-		double v = msg.int32() * 0x1p-10 * 11;
-		Homing homo = g.getattr(Homing.class);
-		if((homo == null) || (homo.tgt != oid)) {
-		    g.setattr(new Homing(g, oid, tc, v));
-		} else {
-		    homo.tc = tc;
-		    homo.v = v;
-		}
-	    }
-	}
-    }
-
     @DeltaType(OD_OVERLAY)
     public static class $overlay implements Delta {
 	public void apply(Gob g, Message msg) {
@@ -561,7 +264,7 @@ public class OCache implements Iterable<Gob> {
 		} else {
 		    sdt = Message.nil;
 		}
-		res = getres(g, resid);
+		res = Delta.getres(g, resid);
 	    }
 	    Gob.Overlay ol = g.findol(olid);
 	    if(res != null) {
@@ -592,51 +295,10 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    @DeltaType(OD_HEALTH)
-    public static class $health implements Delta {
-	public void apply(Gob g, Message msg) {
-	    int hp = msg.uint8();
-	    g.setattr(new GobHealth(g, hp));
-	}
-    }
-
-    @DeltaType(OD_BUDDY)
-    public static class $buddy implements Delta {
-	public void apply(Gob g, Message msg) {
-	    String name = msg.string();
-	    if(name.length() > 0) {
-		int group = msg.uint8();
-		int btype = msg.uint8();
-		KinInfo b = g.getattr(KinInfo.class);
-		if(b == null) {
-		    g.setattr(new KinInfo(g, name, group, btype));
-		} else {
-		    b.update(name, group, btype);
-		}
-	    } else {
-		g.delattr(KinInfo.class);
-	    }
-	}
-    }
-
-    @DeltaType(OD_ICON)
-    public static class $icon implements Delta {
-	public void apply(Gob g, Message msg) {
-	    int resid = msg.uint16();
-	    Indir<Resource> res;
-	    if(resid == 65535) {
-		g.delattr(GobIcon.class);
-	    } else {
-		int ifl = msg.uint8();
-		g.setattr(new GobIcon(g, getres(g, resid)));
-	    }
-	}
-    }
-
     @DeltaType(OD_RESATTR)
     public static class $resattr implements Delta {
 	public void apply(Gob g, Message msg) {
-	    Indir<Resource> resid = getres(g, msg.uint16());
+	    Indir<Resource> resid = Delta.getres(g, msg.uint16());
 	    int len = msg.uint8();
 	    Message dat = (len > 0)?new MessageBuf(msg.bytes(len)):null;
 	    if(dat != null)

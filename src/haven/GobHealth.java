@@ -48,4 +48,12 @@ public class GobHealth extends GAttrib implements Gob.SetupMod {
     public double asfloat() {
 	return(((double)hp) / 4.0);
     }
+
+    @OCache.DeltaType(OCache.OD_HEALTH)
+    public static class $health implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    int hp = msg.uint8();
+	    g.setattr(new GobHealth(g, hp));
+	}
+    }
 }
