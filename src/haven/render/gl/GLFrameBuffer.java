@@ -29,7 +29,7 @@ package haven.render.gl;
 import haven.Coord;
 import haven.render.*;
 import java.util.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class GLFrameBuffer extends GLObject implements BGL.ID {
     public final Attachment[] color;
