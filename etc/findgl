@@ -4,7 +4,7 @@ import sys, zipfile, fnmatch
 from classfile import file
 
 classpath=["build/jogl.jar"]
-roots = ["javax/media/opengl/GL4bc"]
+roots = ["com/jogamp/opengl/GL4bc"]
 
 class notfound(LookupError):
     pass

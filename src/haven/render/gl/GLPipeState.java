@@ -30,7 +30,7 @@ import haven.*;
 import static haven.Utils.eq;
 import haven.render.*;
 import haven.render.States.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public abstract class GLPipeState<T extends State> {
     public State.Slot<? extends T> slot;

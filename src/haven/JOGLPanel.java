@@ -30,8 +30,8 @@ import java.util.*;
 import java.awt.Toolkit;
 import java.awt.Robot;
 import java.awt.Point;
-import javax.media.opengl.*;
-import javax.media.opengl.awt.*;
+import com.jogamp.opengl.*;
+import com.jogamp.opengl.awt.*;
 import haven.render.*;
 import haven.render.States;
 import haven.render.gl.*;
@@ -71,11 +71,11 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	GLProfile prof;
 	try {
 	    prof = GLProfile.getMaxProgrammableCore(true);
-	} catch(javax.media.opengl.GLException e) {
+	} catch(com.jogamp.opengl.GLException e) {
 	    try {
 		/* If not core, let GLEnvironment handle that. */
 		prof = GLProfile.getDefault();
-	    } catch(javax.media.opengl.GLException e2) {
+	    } catch(com.jogamp.opengl.GLException e2) {
 		e2.addSuppressed(e);
 		throw(new ProfileException(e2));
 	    }

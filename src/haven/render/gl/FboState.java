@@ -30,7 +30,7 @@ import static haven.Utils.eq;
 import haven.render.*;
 import haven.render.gl.GLFrameBuffer.*;
 import java.util.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class FboState extends GLState {
     public static final FragTarget NIL_CONF = new FragTarget(null);
