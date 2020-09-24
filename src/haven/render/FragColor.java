@@ -32,7 +32,14 @@ import static haven.Utils.eq;
 
 public class FragColor<T> extends State {
     public static final Slot<FragColor> slot = new Slot<>(Slot.Type.SYS, FragColor.class);
-    public static final FragData fragcol = new FragData(Type.VEC4, "fragcol", p -> p.get(slot).image, slot).primary();
+    public static final Slot<FragBlend> blend = new Slot<>(Slot.Type.SYS, FragBlend.class);
+    public static final FragData fragcol = new FragData(Type.VEC4, "fragcol", p -> {
+	    Object img = p.get(slot).image;
+	    FragBlend b = p.get(blend);
+	    if(b != null)
+		return(new FragTarget(img).blend(b.mode));
+	    return(img);
+    }, slot, blend).primary();
     public static final Object defcolor = new Object() {
 	    public String toString() {return("#<default color buffer>");}
 	};
@@ -46,6 +53,19 @@ public class FragColor<T> extends State {
 
     public FragColor(T image) {
 	this(image, false);
+    }
+
+    private static class FragBlend extends State {
+	final BlendMode mode;
+
+	FragBlend(BlendMode mode) {this.mode = mode;}
+
+	public void apply(Pipe buf) {buf.put(FragColor.blend, this);}
+	public ShaderMacro shader() {return(null);}
+    }
+
+    public static Pipe.Op blend(BlendMode mode) {
+	return(new FragBlend(mode));
     }
 
     private static class ColorValue extends ValBlock.Value {
