@@ -93,7 +93,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	super(mkcaps(), null, null);
 	base = new BufPipe();
 	base.prep(new FragColor<>(FragColor.defcolor)).prep(new DepthBuffer<>(DepthBuffer.defdepth));
-	base.prep(new States.Blending());
+	base.prep(FragColor.blend(new BlendMode()));
 	setSize(sz.x, sz.y);
 	setAutoSwapBufferMode(false);
 	addGLEventListener(new GLEventListener() {

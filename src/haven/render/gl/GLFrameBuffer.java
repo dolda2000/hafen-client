@@ -56,7 +56,7 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	this.depth = depth;
 	env.prepare(this);
 	env.prepare((GLRender r) -> {
-		r.state.apply(r.gl, new FboState(env, this, new int[0]));
+		r.state.apply(r.gl, new FboState(env, this, new int[0], null));
 		BGL gl = r.gl();
 		for(int i = 0; i < GLFrameBuffer.this.color.length; i++)
 		    GLFrameBuffer.this.color[i].attach(gl, this, GL.GL_COLOR_ATTACHMENT0 + i);
