@@ -29,7 +29,7 @@ package haven.render.gl;
 import java.util.*;
 import java.util.function.*;
 import java.nio.ByteBuffer;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 import haven.*;
 import haven.render.*;
 import haven.render.sl.*;

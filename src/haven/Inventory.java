@@ -27,13 +27,33 @@
 package haven;
 
 import java.util.*;
+import java.awt.image.WritableRaster;
 
 public class Inventory extends Widget implements DTarget {
-    public static final Tex invsq = Resource.loadtex("gfx/hud/invsq");
     public static final Coord sqsz = UI.scale(new Coord(33, 33));
+    public static final Tex invsq;
     public boolean dropul = true;
     public Coord isz;
     Map<GItem, WItem> wmap = new HashMap<GItem, WItem>();
+
+    static {
+	Coord sz = sqsz.add(1, 1);
+	WritableRaster buf = PUtils.imgraster(sz);
+	for(int i = 1, y = sz.y - 1; i < sz.x - 1; i++) {
+	    buf.setSample(i, 0, 0, 20); buf.setSample(i, 0, 1, 28); buf.setSample(i, 0, 2, 21); buf.setSample(i, 0, 3, 167);
+	    buf.setSample(i, y, 0, 20); buf.setSample(i, y, 1, 28); buf.setSample(i, y, 2, 21); buf.setSample(i, y, 3, 167);
+	}
+	for(int i = 1, x = sz.x - 1; i < sz.y - 1; i++) {
+	    buf.setSample(0, i, 0, 20); buf.setSample(0, i, 1, 28); buf.setSample(0, i, 2, 21); buf.setSample(0, i, 3, 167);
+	    buf.setSample(x, i, 0, 20); buf.setSample(x, i, 1, 28); buf.setSample(x, i, 2, 21); buf.setSample(x, i, 3, 167);
+	}
+	for(int y = 1; y < sz.y - 1; y++) {
+	    for(int x = 1; x < sz.x - 1; x++) {
+		buf.setSample(x, y, 0, 36); buf.setSample(x, y, 1, 52); buf.setSample(x, y, 2, 38); buf.setSample(x, y, 3, 125);
+	    }
+	}
+	invsq = new TexI(PUtils.rasterimg(buf));
+    }
 
     @RName("inv")
     public static class $_ implements Factory {

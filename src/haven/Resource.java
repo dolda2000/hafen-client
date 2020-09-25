@@ -884,8 +884,7 @@ public class Resource implements Serializable {
 	public final boolean nooff;
 	public final int id;
 	private int gay = -1;
-	public Coord sz;
-	public Coord o;
+	public Coord sz, o, tsz;
 		
 	public Image(Message buf) {
 	    z = buf.int16();
@@ -895,12 +894,28 @@ public class Resource implements Serializable {
 	    nooff = (fl & 2) != 0;
 	    id = buf.int16();
 	    o = cdec(buf);
+	    if((fl & 4) != 0) {
+		while(true) {
+		    String key = buf.string();
+		    if(key.equals(""))
+			break;
+		    int len = buf.uint8();
+		    if((len & 0x80) != 0)
+			len = buf.int32();
+		    Message val = new MessageBuf(buf.bytes(len));
+		    if(key.equals("tsz")) {
+			tsz = val.coord();
+		    }
+		}
+	    }
 	    try {
 		img = readimage(new MessageInputStream(buf));
 	    } catch(IOException e) {
 		throw(new LoadException(e, Resource.this));
 	    }
 	    sz = Utils.imgsz(img);
+	    if(tsz == null)
+		tsz = sz;
 	}
 		
 	public synchronized Tex tex() {

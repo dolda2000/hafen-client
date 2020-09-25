@@ -27,7 +27,7 @@
 package haven.render.gl;
 
 import java.util.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class GLDoubleBuffer {
     private List<Buffered> changed = null;

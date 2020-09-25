@@ -28,7 +28,7 @@ package haven.render.gl;
 
 import java.util.*;
 import java.nio.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 import haven.render.*;
 
 /*

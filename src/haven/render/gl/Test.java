@@ -4,7 +4,6 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.*;
 import javax.imageio.*;
-import javax.media.opengl.*;
 import com.jogamp.opengl.*;
 import com.jogamp.newt.event.*;
 import com.jogamp.newt.opengl.*;
@@ -220,7 +219,7 @@ public class Test implements GLEventListener, KeyListener {
     public void reshape(GLAutoDrawable wnd, int x, int y, int w, int h) {
 	Pipe base = new BufPipe();
 	Area area = Area.sized(new Coord(x, y), new Coord(w, h));
-	base.prep(new States.Viewport(area)).prep(new Ortho2D(area)).prep(new States.Blending());
+	base.prep(new States.Viewport(area)).prep(new Ortho2D(area)).prep(FragColor.blend(new BlendMode()));
 	base.prep(new FragColor<>(FragColor.defcolor)).prep(new DepthBuffer<>(DepthBuffer.defdepth));
 	// base.prep(new FragColor(new Texture2D(512, 512, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null).image(0)));
 	// base.prep(new DepthBuffer(new Texture2D(512, 512, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null).image(0)));

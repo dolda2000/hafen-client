@@ -26,7 +26,7 @@
 
 package haven.render.gl;
 
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class Vao0State extends VaoState {
     public final GLEnvironment env;

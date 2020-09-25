@@ -28,7 +28,7 @@ package haven.render.gl;
 
 import java.nio.*;
 import java.util.function.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 import haven.*;
 import haven.render.*;
 import haven.render.sl.*;
@@ -124,7 +124,7 @@ public class GLRender implements Render, Disposable {
 	else if(type == Type.SAMPLER2DMSARRAY)
 	    return(GL3.GL_TEXTURE_2D_MULTISAMPLE_ARRAY);
 	else if(type == Type.SAMPLER2DARRAY)
-	    return(GL.GL_TEXTURE_2D_ARRAY);
+	    return(GL3.GL_TEXTURE_2D_ARRAY);
 	else if(type == Type.SAMPLER2DSHADOW)
 	    return(GL.GL_TEXTURE_2D);
 	else if(type == Type.SAMPLERCUBE)
