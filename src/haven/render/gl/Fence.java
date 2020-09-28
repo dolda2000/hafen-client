@@ -26,7 +26,7 @@
 
 package haven.render.gl;
 
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class Fence implements BGL.Request {
     private int state;

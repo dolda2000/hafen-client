@@ -30,17 +30,58 @@ import static haven.Utils.eq;
 import haven.render.*;
 import haven.render.gl.GLFrameBuffer.*;
 import java.util.*;
-import javax.media.opengl.GL;
+import com.jogamp.opengl.*;
 
 public class FboState extends GLState {
+    public static final FragTarget NIL_CONF = new FragTarget(null);
+    public static final boolean[] BLEND_ALL = new boolean[0], BLEND_NONE = new boolean[0];
+    public static final boolean[] MASK_NONE = new boolean[0];
     public final GLEnvironment env;
     public final GLFrameBuffer fbo;
     public final int[] dbufs;
+    public final BlendMode blend;
+    public final boolean[] blendbufs;
+    public final boolean[] colormask;
 
-    public FboState(GLEnvironment env, GLFrameBuffer fbo, int[] dbufs) {
+    public FboState(GLEnvironment env, GLFrameBuffer fbo, int[] dbufs, FragTarget[] conf) {
 	this.env = env;
 	this.fbo = fbo;
 	this.dbufs = dbufs;
+	if(conf != null) {
+	    int n = conf.length;
+	    BlendMode blend = null;
+	    boolean blendall = true, masknone = true;
+	    boolean blendbufs[] = new boolean[n];
+	    boolean colormask[] = new boolean[n * 4];
+	    for(int i = 0; i < n; i++) {
+		if(conf[i].blend != null) {
+		    if(blend == null)
+			blend = conf[i].blend;
+		    else if(!blend.equals(conf[i].blend))
+			throw(new NotImplemented("OpenGL 3.0 does not support separate blend equations"));
+		    blendbufs[i] = true;
+		} else {
+		    blendall = false;
+		}
+		for(int o = 0, off = i * 4; o < 4; o++, off++)
+		    masknone &= !(colormask[off] = conf[i].mask[o]);
+	    }
+	    this.blend = blend;
+	    if(blendall)
+		this.blendbufs = BLEND_ALL;
+	    else if(blend == null)
+		this.blendbufs = BLEND_NONE;
+	    else
+		this.blendbufs = blendbufs;
+	    if(masknone)
+		this.colormask = MASK_NONE;
+	    else
+		this.colormask = colormask;
+	} else {
+	    this.blend = null;
+	    this.blendbufs = BLEND_NONE;
+	    this.colormask = MASK_NONE;
+	}
     }
 
     public void applydbufs(BGL gl) {
@@ -67,9 +108,74 @@ public class FboState extends GLState {
 	}
     }
 
+    public static int glblendfunc(BlendMode.Function fn) {
+	switch(fn) {
+	case ADD: return(GL.GL_FUNC_ADD);
+	case SUB: return(GL.GL_FUNC_SUBTRACT);
+	case RSUB: return(GL.GL_FUNC_REVERSE_SUBTRACT);
+	case MIN: return(GL3.GL_MIN);
+	case MAX: return(GL3.GL_MAX);
+	default: throw(new IllegalArgumentException(String.format("blend function: %s", fn)));
+	}
+    }
+
+    public static int glblendfac(BlendMode.Factor fac) {
+	switch(fac) {
+	case ZERO: return(GL.GL_ZERO);
+	case ONE: return(GL.GL_ONE);
+	case SRC_COLOR: return(GL.GL_SRC_COLOR);
+	case DST_COLOR: return(GL.GL_DST_COLOR);
+	case INV_SRC_COLOR: return(GL.GL_ONE_MINUS_SRC_COLOR);
+	case INV_DST_COLOR: return(GL.GL_ONE_MINUS_DST_COLOR);
+	case SRC_ALPHA: return(GL.GL_SRC_ALPHA);
+	case DST_ALPHA: return(GL.GL_DST_ALPHA);
+	case INV_SRC_ALPHA: return(GL.GL_ONE_MINUS_SRC_ALPHA);
+	case INV_DST_ALPHA: return(GL.GL_ONE_MINUS_DST_ALPHA);
+	case CONST_COLOR: return(GL3.GL_CONSTANT_COLOR);
+	case INV_CONST_COLOR: return(GL3.GL_ONE_MINUS_CONSTANT_COLOR);
+	case CONST_ALPHA: return(GL3.GL_CONSTANT_ALPHA);
+	case INV_CONST_ALPHA: return(GL3.GL_ONE_MINUS_CONSTANT_ALPHA);
+	default: throw(new IllegalArgumentException(String.format("blend factor: %s", fac)));
+	}
+    }
+
+    public void applyconf(BGL gl) {
+	if(blend == null) {
+	    gl.glDisable(GL.GL_BLEND);
+	} else {
+	    if(blendbufs == BLEND_ALL) {
+		gl.glEnable(GL.GL_BLEND);
+	    } else {
+		for(int i = 0; i < blendbufs.length; i++) {
+		    if(blendbufs[i])
+			gl.glEnablei(GL.GL_BLEND, i);
+		    else
+			gl.glDisablei(GL.GL_BLEND, i);
+		}
+	    }
+	    if(blend.cfn == blend.afn)
+		gl.glBlendEquation(glblendfunc(blend.cfn));
+	    else
+		gl.glBlendEquationSeparate(glblendfunc(blend.cfn), glblendfunc(blend.afn));
+	    if((blend.csrc == blend.asrc) && (blend.cdst == blend.adst))
+		gl.glBlendFunc(glblendfac(blend.csrc), glblendfac(blend.cdst));
+	    else
+		gl.glBlendFuncSeparate(glblendfac(blend.csrc), glblendfac(blend.cdst), glblendfac(blend.asrc), glblendfac(blend.adst));
+	    if(blend.color != null)
+		gl.glBlendColor(blend.color.r, blend.color.g, blend.color.b, blend.color.a);
+	}
+	if(colormask == MASK_NONE) {
+	    gl.glColorMask(true, true, true, true);
+	} else {
+	    for(int i = 0, b = 0; i < colormask.length; i += 4, b++)
+		gl.glColorMaski(b, !colormask[i + 0], !colormask[i + 1], !colormask[i + 2], !colormask[i + 3]);
+	}
+    }
+
     public void apply(BGL gl) {
 	gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo);
 	applydbufs(gl);
+	applyconf(gl);
     }
 
     public void unapply(BGL gl) {
@@ -85,6 +191,7 @@ public class FboState extends GLState {
 	if(this.fbo != that.fbo)
 	    gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, that.fbo);
 	that.applydbufs(gl);
+	that.applyconf(gl);
     }
 
     private static boolean compatiblep(GLFrameBuffer fbo, Attachment[] color, Attachment depth) {
@@ -119,7 +226,7 @@ public class FboState extends GLState {
 	return(new GLFrameBuffer(env, color, depth));
     }
 
-    private static FboState forfvals(GLEnvironment env, Object depthp, Object[] fvalsp) {
+    private static FboState forfvals(GLEnvironment env, Object depthp, Object[] fvalsp, FragTarget[] conf) {
 	Attachment depth = (Attachment)depthp;
 	Attachment[] color = new Attachment[fvalsp.length];
 	int nc = 0;
@@ -149,10 +256,10 @@ public class FboState extends GLState {
 		throw(new RuntimeException());
 	    }
 	}
-	return(new FboState(env, fbo, dbufs));
+	return(new FboState(env, fbo, dbufs, conf));
     }
 
-    public static FboState make(GLEnvironment env, Object depth, Object[] fvals) {
+    public static FboState make(GLEnvironment env, Object depth, Object[] fvals, FragTarget[] conf) {
 	boolean any = false, img = true, def = true;
 	if(depth != null) {
 	    any = true;
@@ -173,7 +280,7 @@ public class FboState extends GLState {
 	if(!any) {
 	    throw(new NotImplemented("empty framebuffer"));
 	} else if(img) {
-	    return(forfvals(env, depth, fvals));
+	    return(forfvals(env, depth, fvals, conf));
 	} else if(def) {
 	    if(depth == null)
 		throw(new IllegalArgumentException("The default OpenGL framebuffer cannot be depth-less"));
@@ -188,14 +295,14 @@ public class FboState extends GLState {
 			dbufs[i] = env.nilfbo_db;
 		}
 	    }
-	    return(new FboState(env, null, dbufs));
+	    return(new FboState(env, null, dbufs, conf));
 	} else {
 	    throw(new IllegalArgumentException(String.format("Illegal framebuffer configuration: depth=%s, colors=%s", depth, Arrays.asList(fvals))));
 	}
     }
 
-    public static void set(BGL gl, Applier st, Object depth, Object[] fvals) {
-	st.apply(gl, make(st.env, depth, fvals));
+    public static void set(BGL gl, Applier st, Object depth, Object[] fvals, FragTarget[] conf) {
+	st.apply(gl, make(st.env, depth, fvals, conf));
     }
 
     public static int slot = slotidx(FboState.class);
