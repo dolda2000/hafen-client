@@ -39,7 +39,7 @@ public class FastText {
     public static final int h;
     public static final FontMetrics meter;
     private static final TexI ct;
-    private static final int[] sx = new int[257];
+    private static final int[] sx = new int[256], cw = new int[256];
 
     private FastText() {}
 
@@ -52,22 +52,24 @@ public class FastText {
 	tmpl.dispose();
 	int cx = 0;
 	for(char i = 32; i < 256; i++) {
-	    cx += meter.stringWidth(Character.toString(i));
-	    sx[i + 1] = cx;
+	    cw[i] = meter.stringWidth(Character.toString(i));
+	    sx[i] = cx;
+	    cx += cw[i] + 2;
 	}
-	BufferedImage buf = TexI.mkbuf(new Coord(sx[256], meter.getAscent() + meter.getDescent()));
+	BufferedImage buf = TexI.mkbuf(new Coord(cx, meter.getAscent() + meter.getDescent()));
 	Graphics g = buf.getGraphics();
 	g.setFont(font);
 	for(char i = 32; i < 256; i++)
 	    g.drawString(Character.toString(i), sx[i], meter.getAscent());
 	g.dispose();
 	ct = new TexI(buf);
+	Debug.dumpimage(buf);
     }
 
     public static int textw(String text) {
 	int r = 0;
 	for(int i = 0; i < text.length(); i++)
-	    r += sx[text.charAt(i) + 1] - sx[text.charAt(i)];
+	    r += cw[text.charAt(i)];
 	return(r);
     }
     
@@ -83,9 +85,9 @@ public class FastText {
 	for(int i = 0; i < text.length(); i++) {
 	    char cc = text.charAt(i);
 	    int vo = i * 4, so = vo * 4, io = i * 6;
-	    int w = sx[cc + 1] - sx[cc];
+	    int w = cw[cc];
 	    short x1 = (short)lc.x, x2 = (short)(lc.x + w), y1 = (short)lc.y, y2 = (short)(lc.y + h);
-	    short tx1 = (short)(((sx[cc] * 65535) + (ct.tdim.x / 2)) / ct.tdim.x), tx2 = (short)(((sx[cc + 1] * 65535) + (ct.tdim.x / 2)) / ct.tdim.x);
+	    short tx1 = (short)(((sx[cc] * 65535) + (ct.tdim.x / 2)) / ct.tdim.x), tx2 = (short)((((sx[cc] + w) * 65535) + (ct.tdim.x / 2)) / ct.tdim.x);
 	    short ty1 = 0, ty2 = (short)((h * 65535) / ct.tdim.y);
 	    data[so +  0] = x1; data[so +  1] = y1; data[so +  2] = tx1; data[so +  3] = ty1;
 	    data[so +  4] = x1; data[so +  5] = y2; data[so +  6] = tx1; data[so +  7] = ty2;
