@@ -160,7 +160,7 @@ public class WItem extends Widget implements DTarget {
 	 * of one yet. */
 	GSprite spr = item.spr();
 	if((spr != null) && (spr != lspr)) {
-	    Coord sz = UI.scale(spr.sz());
+	    Coord sz = spr.sz();
 	    if((sz.x % sqsz.x) != 0)
 		sz.x = sqsz.x * ((sz.x / sqsz.x) + 1);
 	    if((sz.y % sqsz.y) != 0)
@@ -173,7 +173,7 @@ public class WItem extends Widget implements DTarget {
     public void draw(GOut g) {
 	GSprite spr = item.spr();
 	if(spr != null) {
-	    Coord sz = UI.scale(spr.sz());
+	    Coord sz = spr.sz();
 	    g.defstate();
 	    if(olcol.get() != null)
 		g.usestate(new ColorMask(olcol.get()));
