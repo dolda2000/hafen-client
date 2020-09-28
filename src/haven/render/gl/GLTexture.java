@@ -35,7 +35,7 @@ import haven.render.TextureCube.CubeImage;
 import haven.render.TextureCube.SamplerCube;
 import java.nio.*;
 import java.util.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public abstract class GLTexture extends GLObject implements BGL.ID {
     protected int id, state = 0;

@@ -26,7 +26,7 @@
 
 package haven.render.gl;
 
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class GLBuffer extends GLObject implements BGL.ID {
     private int id, state = 0;

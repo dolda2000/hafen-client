@@ -27,7 +27,7 @@
 package haven.render.gl;
 
 import java.util.function.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class GLFence extends GLQuery {
     public final Consumer<GL3> callback;

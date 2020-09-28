@@ -29,7 +29,7 @@ package haven.render.gl;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.io.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 import haven.Disposable;
 import haven.Utils;
 import haven.render.*;

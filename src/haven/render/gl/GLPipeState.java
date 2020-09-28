@@ -30,7 +30,7 @@ import haven.*;
 import static haven.Utils.eq;
 import haven.render.*;
 import haven.render.States.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public abstract class GLPipeState<T extends State> {
     public State.Slot<? extends T> slot;
@@ -120,59 +120,6 @@ public abstract class GLPipeState<T extends State> {
 	    }
 	};
 
-    public static final GLPipeState<Blending> blending = new GLPipeState<Blending>(States.blend) {
-	    private int func(Blending.Function fn) {
-		switch(fn) {
-		    case ADD: return(GL.GL_FUNC_ADD);
-		    case SUB: return(GL.GL_FUNC_SUBTRACT);
-		    case RSUB: return(GL.GL_FUNC_REVERSE_SUBTRACT);
-		    case MIN: return(GL3.GL_MIN);
-		    case MAX: return(GL3.GL_MAX);
-		    default: throw(new IllegalArgumentException(String.format("blend function: %s", fn)));
-		}
-	    }
-	    private int fac(Blending.Factor fac) {
-		switch(fac) {
-		    case ZERO: return(GL.GL_ZERO);
-		    case ONE: return(GL.GL_ONE);
-		    case SRC_COLOR: return(GL.GL_SRC_COLOR);
-		    case DST_COLOR: return(GL.GL_DST_COLOR);
-		    case INV_SRC_COLOR: return(GL.GL_ONE_MINUS_SRC_COLOR);
-		    case INV_DST_COLOR: return(GL.GL_ONE_MINUS_DST_COLOR);
-		    case SRC_ALPHA: return(GL.GL_SRC_ALPHA);
-		    case DST_ALPHA: return(GL.GL_DST_ALPHA);
-		    case INV_SRC_ALPHA: return(GL.GL_ONE_MINUS_SRC_ALPHA);
-		    case INV_DST_ALPHA: return(GL.GL_ONE_MINUS_DST_ALPHA);
-		    case CONST_COLOR: return(GL3.GL_CONSTANT_COLOR);
-		    case INV_CONST_COLOR: return(GL3.GL_ONE_MINUS_CONSTANT_COLOR);
-		    case CONST_ALPHA: return(GL3.GL_CONSTANT_ALPHA);
-		    case INV_CONST_ALPHA: return(GL3.GL_ONE_MINUS_CONSTANT_ALPHA);
-		    default: throw(new IllegalArgumentException(String.format("blend factor: %s", fac)));
-		}
-	    }
-
-	    public void apply(GLEnvironment env, BGL gl, Blending from, Blending to) {
-		if(to != null) {
-		    if(!eq(from, to)) {
-			if(to.cfn == to.afn)
-			    gl.glBlendEquation(func(to.cfn));
-			else
-			    gl.glBlendEquationSeparate(func(to.cfn), func(to.afn));
-			if((to.csrc == to.asrc) && (to.cdst == to.adst))
-			    gl.glBlendFunc(fac(to.csrc), fac(to.cdst));
-			else
-			    gl.glBlendFuncSeparate(fac(to.csrc), fac(to.cdst), fac(to.asrc), fac(to.adst));
-			if(to.color != null)
-			    gl.glBlendColor(to.color.r, to.color.g, to.color.b, to.color.a);
-		    }
-		    if(from == null)
-			gl.glEnable(GL.GL_BLEND);
-		} else {
-		    gl.glDisable(GL.GL_BLEND);
-		}
-	    }
-	};
-
     public static final GLPipeState<LineWidth> linewidth = new GLPipeState<LineWidth>(States.linewidth) {
 	    public void apply(GLEnvironment env, BGL gl, LineWidth from, LineWidth to) {
 		if(to != null) {
@@ -201,7 +148,7 @@ public abstract class GLPipeState<T extends State> {
 	    }
 	};
 
-    public static final GLPipeState<?>[] all = {viewport, scissor, facecull, depthtest, maskdepth, blending, linewidth, depthbias};
+    public static final GLPipeState<?>[] all = {viewport, scissor, facecull, depthtest, maskdepth, linewidth, depthbias};
     public static final GLPipeState<?>[] matching;
     static {
 	int max = all[0].slot.id;
