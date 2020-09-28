@@ -148,64 +148,6 @@ public abstract class States {
 	    public String toString() {return(String.format("#<maskdepth>"));}
 	};
 
-    public static final Slot<Blending> blend = new Slot<Blending>(Slot.Type.SYS, Blending.class);
-    public static class Blending extends Builtin {
-	public final Function cfn, afn;
-	public final Factor csrc, cdst, asrc, adst;
-	public final FColor color;
-
-	public enum Function {
-	    ADD, SUB, RSUB, MIN, MAX;
-	}
-	public enum Factor {
-	    ZERO, ONE,
-	    SRC_COLOR, DST_COLOR, INV_SRC_COLOR, INV_DST_COLOR,
-	    SRC_ALPHA, DST_ALPHA, INV_SRC_ALPHA, INV_DST_ALPHA,
-	    CONST_COLOR, INV_CONST_COLOR, CONST_ALPHA, INV_CONST_ALPHA,
-	}
-
-	public Blending(Function cfn, Factor csrc, Factor cdst, Function afn, Factor asrc, Factor adst, FColor color) {
-	    this.cfn = cfn; this.csrc = csrc; this.cdst = cdst;
-	    this.afn = afn; this.asrc = asrc; this.adst = adst;
-	    this.color = color;
-	}
-
-	public Blending(Function cfn, Factor csrc, Factor cdst, Function afn, Factor asrc, Factor adst) {
-	    this(cfn, csrc, cdst, afn, asrc, adst, null);
-	}
-	public Blending(Factor csrc, Factor cdst, Factor asrc, Factor adst) {
-	    this(Function.ADD, csrc, cdst, Function.ADD, asrc, adst);
-	}
-	public Blending(Function fn, Factor src, Factor dst) {
-	    this(fn, src, dst, fn, src, dst);
-	}
-	public Blending(Factor src, Factor dst) {
-	    this(Function.ADD, src, dst);
-	}
-	public Blending() {
-	    this(Factor.SRC_ALPHA, Factor.INV_SRC_ALPHA);
-	}
-
-	public int hashCode() {
-	    return(Objects.hash(cfn, csrc, cdst, afn, asrc, adst, color));
-	}
-
-	public boolean equals(Object o) {
-	    if(!(o instanceof Blending))
-		return(false);
-	    Blending that = (Blending)o;
-	    return((this.cfn == that.cfn) && (this.csrc == that.csrc) && (this.cdst == that.cdst) &&
-		   (this.afn == that.afn) && (this.asrc == that.asrc) && (this.adst == that.adst) &&
-		   Utils.eq(this.color, that.color));
-	}
-
-	public void apply(Pipe p) {p.put(blend, this);}
-
-	public static final Pipe.Op none = p -> {p.put(blend, null);};
-
-	public String toString() {return(String.format("#<blending %s(%s, %s) %s(%s %s)>", cfn, csrc, cdst, afn, asrc, adst));}
-    }
-
     public static final Slot<LineWidth> linewidth = new Slot<LineWidth>(Slot.Type.GEOM, LineWidth.class);
     public static class LineWidth extends Builtin {
 	public final float w;

@@ -29,21 +29,19 @@ package haven.rs;
 import haven.*;
 import haven.render.*;
 import haven.render.gl.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class GLOffscreen implements Context {
     public final GLProfile prof;
     public final GLAutoDrawable buf;
     private final Object dmon = new Object();
-    private final GLContext ctx;
     private GLEnvironment benv = null;
     private final Environment penv;
 
     public GLOffscreen() {
 	prof = GLProfile.getMaxProgrammableCore(true);
 	GLDrawableFactory df = GLDrawableFactory.getFactory(prof);
-	this.buf = df.createOffscreenAutoDrawable(null, caps(prof), null, 1, 1, null);
-	this.ctx = buf.getContext();
+	this.buf = df.createOffscreenAutoDrawable(null, caps(prof), null, 1, 1);
 	buf.addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
 		    redraw(d.getGL().getGL3());
@@ -87,9 +85,10 @@ public class GLOffscreen implements Context {
 
     private void redraw(GL3 gl) {
 	// gl = new TraceGL3(gl, System.err);
+	GLContext ctx = gl.getContext();
 	if(benv == null)
 	    benv = new GLEnvironment(gl, ctx, Area.sized(Coord.z, new Coord(1, 1)));
-	if(benv.ctx != buf.getContext())
+	if(benv.ctx != ctx)
 	    throw(new AssertionError());
 	benv.process(gl);
 	benv.finish(gl);

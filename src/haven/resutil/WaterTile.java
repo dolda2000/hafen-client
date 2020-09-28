@@ -184,7 +184,7 @@ public class WaterTile extends Tiler {
     }
 
     private static final State.Slot<State> surfslot = new State.Slot<>(State.Slot.Type.DRAW, State.class);
-    private static final Pipe.Op surfextra = Pipe.Op.compose(new States.DepthBias(2, 2), new States.Blending(States.Blending.Factor.ONE, States.Blending.Factor.ONE));
+    private static final Pipe.Op surfextra = Pipe.Op.compose(new States.DepthBias(2, 2), FragColor.blend(new BlendMode(BlendMode.Factor.ONE, BlendMode.Factor.ONE)));
     public static class BetterSurface extends State {
 	private final Uniform ssky = new Uniform(Type.SAMPLERCUBE, p -> sky);
 	private final Uniform snrm = new Uniform(Type.SAMPLER2D, p -> nrm.img);
