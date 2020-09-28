@@ -884,6 +884,7 @@ public class Resource implements Serializable {
 	public final int z, subz;
 	public final boolean nooff;
 	public final int id;
+	private float scale = 1;
 	private int gay = -1;
 	public Coord sz, o, tsz, ssz;
 
@@ -906,6 +907,8 @@ public class Resource implements Serializable {
 		    Message val = new MessageBuf(buf.bytes(len));
 		    if(key.equals("tsz")) {
 			tsz = val.coord();
+		    } else if(key.equals("scale")) {
+			scale = val.float32();
 		    }
 		}
 	    }
@@ -917,7 +920,7 @@ public class Resource implements Serializable {
 	    sz = Utils.imgsz(img);
 	    if(tsz == null)
 		tsz = sz;
-	    ssz = UI.scale(sz);
+	    ssz = new Coord(Math.round(UI.scale(sz.x / scale)), Math.round(UI.scale(sz.y / scale)));
 	}
 
 	public BufferedImage scaled() {
