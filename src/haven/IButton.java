@@ -26,10 +26,11 @@
 
 package haven;
 
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class IButton extends SIWidget {
-    ScaledBufferedImage up, down, hover;
+    BufferedImage up, down, hover;
     boolean h = false;
     boolean a = false;
     UI.Grab d = null;
@@ -37,15 +38,15 @@ public class IButton extends SIWidget {
     @RName("ibtn")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new IButton(Resource.loadimg((String)args[0]), Resource.loadimg((String)args[1])));
+	    return(new IButton(Resource.loadsimg((String)args[0]), Resource.loadsimg((String)args[1])));
 	}
     }
 
     public IButton(BufferedImage up, BufferedImage down, BufferedImage hover) {
-	super(UI.scale(Utils.imgsz(up)));
-	this.up = UI.scale(up);
-	this.down = UI.scale(down);
-	this.hover = UI.scale(hover);
+	super(Utils.imgsz(up));
+	this.up = up;
+	this.down = down;
+	this.hover = hover;
     }
 
     public IButton(BufferedImage up, BufferedImage down) {
@@ -53,12 +54,12 @@ public class IButton extends SIWidget {
     }
 
     public IButton(String base, String up, String down, String hover) {
-	this(Resource.loadimg(base + up), Resource.loadimg(base + down), Resource.loadimg(base + (hover == null?up:hover)));
+	this(Resource.loadsimg(base + up), Resource.loadsimg(base + down), Resource.loadsimg(base + (hover == null?up:hover)));
     }
 
     public void draw(BufferedImage buf) {
-	GraphicsWrapper g = new GraphicsWrapper(buf.getGraphics());
-	ScaledBufferedImage img;
+	Graphics g = buf.getGraphics();
+	BufferedImage img;
 	if(a)
 	    img = down;
 	else if(h)

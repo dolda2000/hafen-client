@@ -2209,12 +2209,12 @@ public class CharWnd extends Window {
 	    class TB extends IButton {
 		final Tabs.Tab tab;
 		TB(String nm, Tabs.Tab tab) {
-		    super(Resource.loadimg("gfx/hud/chr/" + nm + "u"), Resource.loadimg("gfx/hud/chr/" + nm + "d"));
+		    super("gfx/hud/chr/" + nm, "u", "d", null);
 		    this.tab = tab;
 		}
 
 		TB(String nm, Tabs.Tab tab, String tip) {
-		    super(Resource.loadimg("gfx/hud/chr/" + nm + "u"), Resource.loadimg("gfx/hud/chr/" + nm + "d"));
+		    super("gfx/hud/chr/" + nm, "u", "d", null);
 		    this.tab = tab;
 		    settip(tip);
 		}

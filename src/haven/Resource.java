@@ -1509,6 +1509,10 @@ public class Resource implements Serializable {
 	return(local().loadwait(name).layer(imgc).img);
     }
 
+    public static BufferedImage loadsimg(String name) {
+	return(local().loadwait(name).layer(imgc).scaled());
+    }
+
     public static Tex loadtex(String name) {
 	return(local().loadwait(name).layer(imgc).tex());
     }

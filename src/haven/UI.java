@@ -474,10 +474,6 @@ public class UI {
 	return tex;
     }
 
-    static public ScaledBufferedImage scale(BufferedImage img) {
-	return new ScaledBufferedImage(img, UI.scale(Utils.imgsz(img)));
-    }
-
     static public float unscale(float v) {
 	return v / scalef;
     }

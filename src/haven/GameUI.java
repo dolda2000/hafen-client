@@ -482,7 +482,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    final Tex inv;
 
 	    TButton(String nm, boolean g) {
-		super(Resource.loadimg("gfx/hud/buttons/" + nm + "u"), Resource.loadimg("gfx/hud/buttons/" + nm + "d"));
+		super("gfx/hud/buttons/" + nm, "u", "d", null);
 		if(g)
 		    inv = Resource.loadtex("gfx/hud/buttons/" + nm + "g");
 		else
@@ -1327,7 +1327,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    Tex glow;
 		    {
 			this.tooltip = RichText.render("Chat ($col[255,255,0]{Ctrl+C})", 0);
-			glow = new TexI(PUtils.rasterimg(PUtils.blurmask(up.getRaster().get(), 2, 2, Color.WHITE)));
+			glow = new TexI(PUtils.rasterimg(PUtils.blurmask(up.getRaster(), 2, 2, Color.WHITE)));
 		    }
 
 		    public void click() {

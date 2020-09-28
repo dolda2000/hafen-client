@@ -33,8 +33,8 @@ import java.awt.image.BufferedImage;
 public class TextEntry extends SIWidget {
     public static final Color defcol = new Color(255, 205, 109), dirtycol = new Color(255, 232, 209);
     public static final Text.Foundry fnd = new Text.Foundry(Text.serif, 12).aa(true);
-    public static final ScaledBufferedImage lcap = UI.scale(Resource.loadimg("gfx/hud/text/l"));
-    public static final ScaledBufferedImage rcap = UI.scale(Resource.loadimg("gfx/hud/text/r"));
+    public static final BufferedImage lcap = Resource.loadsimg("gfx/hud/text/l");
+    public static final BufferedImage rcap = Resource.loadsimg("gfx/hud/text/r");
     public static final BufferedImage mext = Resource.loadimg("gfx/hud/text/m");
     public static final Tex caret = Resource.loadtex("gfx/hud/text/caret");
     public static final int toffx = lcap.getWidth();
@@ -112,7 +112,7 @@ public class TextEntry extends SIWidget {
     }
 
     public void draw(BufferedImage img) {
-	GraphicsWrapper g = new GraphicsWrapper(img.getGraphics());
+	Graphics g = img.getGraphics();
 	String dtext = dtext();
 	tcache = fnd.render(dtext, (dshow && dirty)?dirtycol:defcol);
 	g.drawImage(mext, 0, 0, sz.x, sz.y, null);
