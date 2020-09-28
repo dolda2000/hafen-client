@@ -608,8 +608,14 @@ public class GLDrawList implements DrawList {
     private void delsetting(DepSetting set) {
 	settings.remove(set.key);
 	if(set.key.depid_v != null) {
-	    for(Pipe dp : set.key.depid_v)
-		delsettingp(set, dp);
+	    Pipe[] deps = set.key.depid_v;
+	    intern: for(int i = 0; i < deps.length; i++) {
+		for(int o = 0; o < i; o++) {
+		    if(deps[i] == deps[o])
+			continue intern;
+		}
+		delsettingp(set, deps[i]);
+	    }
 	} else if(set.key.depid_1 != null) {
 	    delsettingp(set, set.key.depid_1);
 	}
@@ -620,13 +626,14 @@ public class GLDrawList implements DrawList {
 	if(cur == null) {
 	    psettings.put(dp, set);
 	} else if(cur instanceof DepSetting) {
-	    if(cur != set)
-		psettings.put(dp, new DepSetting[] {(DepSetting)cur, set});
+	    if(cur == set)
+		throw(new RuntimeException());
+	    psettings.put(dp, new DepSetting[] {(DepSetting)cur, set});
 	} else if(cur instanceof DepSetting[]) {
 	    DepSetting[] sl = (DepSetting[])cur;
 	    for(int i = 0; i < sl.length; i++) {
 		if(sl[i] == set)
-		    return;
+		    throw(new RuntimeException());
 	    }
 	    if(sl[sl.length - 1] == null) {
 		for(int i = sl.length - 1; i > 0; i--) {
@@ -649,8 +656,14 @@ public class GLDrawList implements DrawList {
     private void addsetting(DepSetting set) {
 	settings.put(set.key, set);
 	if(set.key.depid_v != null) {
-	    for(Pipe dp : set.key.depid_v)
-		addsettingp(set, dp);
+	    Pipe[] deps = set.key.depid_v;
+	    intern: for(int i = 0; i < deps.length; i++) {
+		for(int o = 0; o < i; o++) {
+		    if(deps[i] == deps[o])
+			continue intern;
+		}
+		addsettingp(set, deps[i]);
+	    }
 	} else if(set.key.depid_1 != null) {
 	    addsettingp(set, set.key.depid_1);
 	}
@@ -684,9 +697,16 @@ public class GLDrawList implements DrawList {
 	    DepthBuffer dbuf = pipe.get(DepthBuffer.slot);
 	    Object depth = env.prepfval((dbuf != null) ? dbuf.image : null);
 	    Object[] fvals = new Object[prog.fragdata.length];
-	    for(int i = 0; i < fvals.length; i++)
-		fvals[i] = env.prepfval(prog.fragdata[i].value.apply(pipe));
-	    FboState.make(env, depth, fvals).apply(gl);
+	    FragTarget[] fconf = new FragTarget[prog.fragdata.length];
+	    for(int i = 0; i < fvals.length; i++) {
+		Object fval = prog.fragdata[i].value.apply(pipe);
+		if(fval instanceof FragTarget)
+		    fval = (fconf[i] = (FragTarget)fval).buf;
+		else
+		    fconf[i] = FboState.NIL_CONF;
+		fvals[i] = env.prepfval(fval);
+	    }
+	    FboState.make(env, depth, fvals, fconf).apply(gl);
 	}
 
 	State.Slot[] depslots() {
@@ -719,6 +739,10 @@ public class GLDrawList implements DrawList {
 
 	State.Slot[] depslots() {
 	    return(new State.Slot[] {setting.slot});
+	}
+
+	public String toString() {
+	    return(String.format("#<pipe-setting %s>", setting));
 	}
     }
 

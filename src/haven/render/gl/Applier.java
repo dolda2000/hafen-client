@@ -112,8 +112,15 @@ public class Applier {
 	for(i = 0; i < prog.uniforms.length; i++)
 	    nuvals[i] = env.prepuval(getuval(prog, i, tp));
 	Object[] nfvals = new Object[prog.fragdata.length];
-	for(i = 0; i < prog.fragdata.length; i++)
-	    nfvals[i] = env.prepfval(getfval(prog, i, tp));
+	FragTarget[] nfconf = new FragTarget[prog.fragdata.length];
+	for(i = 0; i < prog.fragdata.length; i++) {
+	    Object fval = getfval(prog, i, tp);
+	    if(fval instanceof FragTarget)
+		fval = (nfconf[i] = (FragTarget)fval).buf;
+	    else
+		nfconf[i] = FboState.NIL_CONF;
+	    nfvals[i] = env.prepfval(fval);
+	}
 	DepthBuffer sdbuf = (ns.length > DepthBuffer.slot.id) ? ((DepthBuffer)ns[DepthBuffer.slot.id]) : null;
 	Object ndbuf = env.prepfval((sdbuf != null) ? sdbuf.image : null);
 
@@ -129,7 +136,7 @@ public class Applier {
 	}
 	for(i = 0; i < prog.uniforms.length; i++)
 	    uvals[i] = nuvals[i];
-	FboState.set(null, this, ndbuf, nfvals);
+	FboState.set(null, this, ndbuf, nfvals, nfconf);
     }
 
     private void apply2(BGL gl, State[] ns, Pipe to) {
@@ -222,12 +229,20 @@ public class Applier {
 	    nuvals[i] = env.prepuval(getuval(prog, ui, to));
 	}
 	Object[] nfvals = null;
+	FragTarget[] nfconf = null;
 	Object ndbuf = null;
 	if(fdirty) {
 	    int fn = (prog == null) ? 0 : prog.fragdata.length;
 	    nfvals = new Object[fn];
-	    for(int i = 0; i < fn; i++)
-		nfvals[i] = env.prepfval(getfval(prog, i, to));
+	    nfconf = new FragTarget[fn];
+	    for(int i = 0; i < fn; i++) {
+		Object fval = getfval(prog, i, to);
+		if(fval instanceof FragTarget)
+		    fval = (nfconf[i] = (FragTarget)fval).buf;
+		else
+		    nfconf[i] = FboState.NIL_CONF;
+		nfvals[i] = env.prepfval(fval);
+	    }
 	    DepthBuffer sdbuf = to.get(DepthBuffer.slot);
 	    ndbuf = env.prepfval((sdbuf == null) ? null : sdbuf.image);
 	}
@@ -248,7 +263,7 @@ public class Applier {
 	for(int i = 0; i < un; i++)
 	    uapply(gl, prog, udirty[i], nuvals[i]);
 	if(fdirty)
-	    FboState.set(gl, this, ndbuf, nfvals);
+	    FboState.set(gl, this, ndbuf, nfvals, nfconf);
     }
 
     public void assume(Pipe to) {

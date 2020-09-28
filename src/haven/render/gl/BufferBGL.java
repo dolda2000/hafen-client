@@ -29,7 +29,7 @@ package haven.render.gl;
 import haven.Utils;
 import java.util.*;
 import java.io.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class BufferBGL extends BGL {
     public static final BufferBGL empty = new BufferBGL(0) {
@@ -53,7 +53,7 @@ public class BufferBGL extends BGL {
 	    try {
 		try {
 		    list[i].run(gl);
-		} catch(javax.media.opengl.GLException exc) {
+		} catch(com.jogamp.opengl.GLException exc) {
 		    /* How nice wouldn't it be if DebugGL could be
 		     * subclasseed to customize the errors. */
 		    checkdebuggl(exc);

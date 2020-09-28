@@ -26,7 +26,7 @@
 
 package haven.render.gl;
 
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public abstract class GLQuery extends GLObject {
     public GLQuery(GLEnvironment env) {

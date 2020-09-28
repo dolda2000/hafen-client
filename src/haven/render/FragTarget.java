@@ -24,45 +24,51 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render;
 
-import com.jogamp.opengl.GL;
+import java.util.*;
 
-public class VboState extends GLState {
-    public final GLBuffer buf;
+public class FragTarget {
+    public Object buf;
+    public final boolean mask[] = {false, false, false, false};
+    public BlendMode blend = null;
 
-    public VboState(GLBuffer buf) {
+    public FragTarget(Object buf) {
 	this.buf = buf;
     }
 
-    public void apply(BGL gl) {
-	gl.glBindBuffer(GL.GL_ARRAY_BUFFER, buf);
+    public FragTarget blend(BlendMode blend) {
+	this.blend = blend;
+	return(this);
     }
 
-    public void unapply(BGL gl) {
-	gl.glBindBuffer(GL.GL_ARRAY_BUFFER, null);
+    public FragTarget mask(boolean r, boolean g, boolean b, boolean a) {
+	mask[0] = r; mask[1] = g; mask[2] = b; mask[3] = a;
+	return(this);
     }
 
-    public void applyto(BGL gl, GLState to) {
-	((VboState)to).apply(gl);
+    public FragTarget mask(boolean[] mask) {
+	if(mask.length != 4)
+	    throw(new IllegalArgumentException());
+	for(int i = 0; i < 4; i++)
+	    this.mask[i] = mask[i];
+	return(this);
     }
 
-    public static void apply(BGL gl, Applier st, GLBuffer buf) {
-	if((st.glstates[slot] == null) || (((VboState)st.glstates[slot]).buf != buf))
-	    st.apply(gl, new VboState(buf));
+    public int hashCode() {
+	int ret = buf.hashCode();
+	ret = (ret * 31) + (mask[0] ? 8 : 0) + (mask[1] ? 4 : 0) + (mask[2] ? 2 : 0) + (mask[3] ? 1 : 0);
+	ret = (ret * 31) + ((blend == null) ? 0 : blend.hashCode());
+	return(ret);
     }
 
-    public static void set(Applier st, GLBuffer buf) {
-	if((st.glstates[slot] == null) || (((VboState)st.glstates[slot]).buf != buf))
-	    st.glstates[slot] = new VboState(buf);
+    public boolean equals(FragTarget that) {
+	return((this.buf == that.buf) && Arrays.equals(this.mask, that.mask) && Objects.equals(this.blend, that.blend));
     }
 
-    public static GLBuffer get(Applier st) {
-	if(st.glstates[slot] == null)
-	    return(null);
-	return(((VboState)st.glstates[slot]).buf);
+    public boolean equals(Object o) {
+	return((o instanceof FragTarget) && this.equals((FragTarget)o));
     }
 
-    public static int slot = slotidx(VboState.class);
-    public int slotidx() {return(slot);}
+    public String toString() {return(String.format("#<frag-target %s, %s>", buf, blend));}
 }
