@@ -35,7 +35,8 @@ import java.awt.image.BufferedImage;
 public class FastText {
     public static final VertexArray.Layout vf = new VertexArray.Layout(new VertexArray.Layout.Input(Ortho2D.pos, new VectorFormat(2, NumberFormat.SINT16), 0, 0, 8),
 								       new VertexArray.Layout.Input(ColorTex.texc, new VectorFormat(2, NumberFormat.UNORM16), 0, 4, 8));
-    public static final Font font = Text.sans;
+    public static final Font font = UI.scale(Text.sans, 10);
+    public static final int h;
     public static final FontMetrics meter;
     private static final TexI ct;
     private static final int[] sx = new int[257];
@@ -47,6 +48,7 @@ public class FastText {
 	Graphics tmpl = junk.getGraphics();
 	tmpl.setFont(font);
 	meter = tmpl.getFontMetrics();
+	h = meter.getHeight();
 	tmpl.dispose();
 	int cx = 0;
 	for(char i = 32; i < 256; i++) {

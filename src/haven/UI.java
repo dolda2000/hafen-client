@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.InputEvent;
@@ -459,6 +460,10 @@ public class UI {
 
     static public Coord2d scale(Coord2d v) {
 	return v.mul(scalef);
+    }
+
+    public static Font scale(Font f, float size) {
+	return(f.deriveFont(scale(size)));
     }
 
     static public <T extends Tex> ScaledTex<T> scale(T tex) {
