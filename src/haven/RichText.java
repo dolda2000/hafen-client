@@ -105,7 +105,7 @@ public class RichText extends Text {
 	public Image(Resource res, int id) {
 	    for(Resource.Image img : res.layers(Resource.imgc)) {
 		if(img.id == id) {
-		    this.img = img.img;
+		    this.img = img.scaled();
 		    break;
 		}
 	    }
