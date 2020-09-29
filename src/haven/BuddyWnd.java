@@ -229,7 +229,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	protected void changed(int group) {
 	}
 
-	public void select(int group) {
+	public void update(int group) {
 	    if(group == this.group)
 		return;
 	    if(this.group >= 0)
@@ -237,6 +237,10 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    this.group = group;
 	    if(group >= 0)
 		groups[group].select();
+	}
+
+	public void select(int group) {
+	    update(group);
 	    changed(group);
 	}
     }
