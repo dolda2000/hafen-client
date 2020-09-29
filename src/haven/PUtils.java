@@ -582,17 +582,7 @@ public class PUtils {
 	Coord sz = imgsz(img);
 	if(tsz.equals(sz))
 	    return(img);
-	if(tsz.x < sz.x) {
-	    return(convolvedown(img, tsz, uifilter));
-	} else {
-	    /* XXX: Implement convolveup for nicer-looking scaling */
-	    // return(convolveup(img, tsz, uifilter));
-	    BufferedImage ret = new BufferedImage(img.getColorModel(), byteraster(tsz, img.getRaster().getNumBands()), false, null);
-	    Graphics g = ret.getGraphics();
-	    g.drawImage(img, 0, 0, tsz.x, tsz.y, null);
-	    g.dispose();
-	    return(ret);
-	}
+	return(convolve(img, tsz, uifilter));
     }
 
     public static void main(String[] args) throws Exception {
