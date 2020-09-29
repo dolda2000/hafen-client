@@ -58,7 +58,7 @@ public class FboState extends GLState {
 		    if(blend == null)
 			blend = conf[i].blend;
 		    else if(!blend.equals(conf[i].blend))
-			throw(new NotImplemented("OpenGL 3.0 does not suppoty separate blend equations"));
+			throw(new NotImplemented("OpenGL 3.0 does not support separate blend equations"));
 		    blendbufs[i] = true;
 		} else {
 		    blendall = false;

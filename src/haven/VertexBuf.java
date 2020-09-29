@@ -390,13 +390,7 @@ public class VertexBuf {
 	for(Class<?> cl : dolda.jglob.Loader.get(ResName.class).classes()) {
 	    String nm = cl.getAnnotation(ResName.class).value();
 	    if(DataCons.class.isAssignableFrom(cl)) {
-		try {
-		    rnames.put(nm, cl.asSubclass(DataCons.class).newInstance());
-		} catch(InstantiationException e) {
-		    throw(new Error(e));
-		} catch(IllegalAccessException e) {
-		    throw(new Error(e));
-		}
+		rnames.put(nm, Utils.construct(cl.asSubclass(DataCons.class)));
 	    } else if(AttribData.class.isAssignableFrom(cl)) {
 		final java.lang.reflect.Constructor<? extends AttribData> cons;
 		try {

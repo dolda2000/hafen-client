@@ -826,13 +826,7 @@ public class Resource implements Serializable {
 	for(Class<?> cl : dolda.jglob.Loader.get(LayerName.class).classes()) {
 	    String nm = cl.getAnnotation(LayerName.class).value();
 	    if(LayerFactory.class.isAssignableFrom(cl)) {
-		try {
-		    addltype(nm, cl.asSubclass(LayerFactory.class).newInstance());
-		} catch(InstantiationException e) {
-		    throw(new Error(e));
-		} catch(IllegalAccessException e) {
-		    throw(new Error(e));
-		}
+		addltype(nm, Utils.construct(cl.asSubclass(LayerFactory.class)));
 	    } else if(Layer.class.isAssignableFrom(cl)) {
 		addltype(nm, cl.asSubclass(Layer.class));
 	    } else {
@@ -1083,7 +1077,7 @@ public class Resource implements Serializable {
 	String name();
 	Class<? extends Instancer> instancer() default Instancer.class;
 	public interface Instancer {
-	    public Object make(Class<?> cl) throws InstantiationException, IllegalAccessException;
+	    public Object make(Class<?> cl);
 	}
     }
 
@@ -1294,16 +1288,10 @@ public class Resource implements Serializable {
 		} else {
 		    T inst;
 		    Object rinst = AccessController.doPrivileged((PrivilegedAction<Object>)() -> {
-			    try {
-				if(entry.instancer() != PublishedCode.Instancer.class)
-				    return(entry.instancer().newInstance().make(acl));
-				else
-				    return(acl.newInstance());
-			    } catch(IllegalAccessException e) {
-				throw(new RuntimeException(e));
-			    } catch(InstantiationException e) {
-				throw(new RuntimeException(e));
-			    }
+			    if(entry.instancer() != PublishedCode.Instancer.class)
+				return(Utils.construct(entry.instancer()).make(acl));
+			    else
+				return(Utils.construct(acl));
 			});
 		    try {
 			inst = cl.cast(rinst);

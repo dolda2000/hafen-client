@@ -1384,6 +1384,14 @@ public class Utils {
 	}
     }
 
+    public static <T> T construct(Class<T> cl) {
+	try {
+	    return(construct(cl.getConstructor()));
+	} catch(NoSuchMethodException e) {
+	    throw(new RuntimeException(e));
+	}
+    }
+
     public static Object invoke(Method mth, Object ob, Object... args) {
 	try {
 	    return(mth.invoke(ob, args));
