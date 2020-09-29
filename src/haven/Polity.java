@@ -87,7 +87,7 @@ public class Polity extends Widget {
 		BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(m.id);
 		rn = (b == null) ? unk : (b.rname());
 	    }
-	    g.aimage(rn.tex(), new Coord(0, 10), 0, 0.5);
+	    g.aimage(rn.tex(), UI.scale(0, 10), 0, 0.5);
 	}
 
 	public void change(Member pm) {
