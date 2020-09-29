@@ -851,7 +851,7 @@ public class Widget {
 		    if(key == '\t') {
 			Widget f = focused;
 			while(true) {
-			    if((ev.getModifiers() & InputEvent.SHIFT_MASK) == 0) {
+			    if((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) == 0) {
 				Widget n = f.rnext();
 				f = ((n == null) || !n.hasparent(this))?child:n;
 			    } else {
