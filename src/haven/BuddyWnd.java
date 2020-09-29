@@ -230,6 +230,8 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	}
 
 	public void select(int group) {
+	    if(group == this.group)
+		return;
 	    if(this.group >= 0)
 		groups[this.group].unselect();
 	    this.group = group;
