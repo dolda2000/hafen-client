@@ -142,9 +142,9 @@ public class Widget {
     }
 
     public static class FactMaker implements Resource.PublishedCode.Instancer {
-	public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
+	public Factory make(Class<?> cl) {
 	    if(Factory.class.isAssignableFrom(cl))
-		return(cl.asSubclass(Factory.class).newInstance());
+		return(Utils.construct(cl.asSubclass(Factory.class)));
 	    try {
 		final Method mkm = cl.getDeclaredMethod("mkwidget", UI.class, Object[].class);
 		int mod = mkm.getModifiers();

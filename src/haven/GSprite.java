@@ -67,9 +67,9 @@ public abstract class GSprite implements Drawn {
 	    throw(new RuntimeException("Could not find any suitable constructor for dynamic sprite"));
 	}
 
-	public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
+	public Factory make(Class<?> cl) {
 	    if(Factory.class.isAssignableFrom(cl))
-		return(cl.asSubclass(Factory.class).newInstance());
+		return(Utils.construct(cl.asSubclass(Factory.class)));
 	    if(GSprite.class.isAssignableFrom(cl))
 		return(dynfact(cl.asSubclass(GSprite.class)));
 	    throw(new RuntimeException("Could not find construct sprite factory for dynamic sprite class " + cl));
