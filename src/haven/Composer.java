@@ -68,19 +68,22 @@ public class Composer {
         y += height + vmrgn;
     }
 
-    public <T extends Widget> void add(T child) {
+    public <T extends Widget> T add(T child) {
         wdg.add(child, new Coord(hpad, vpad + y));
         y += child.sz.y + vmrgn;
+	return(child);
     }
 
-    public <T extends Widget> void add(T child, int x) {
+    public <T extends Widget> T add(T child, int x) {
         wdg.add(child, new Coord(hpad + x, vpad + y));
         y += child.sz.y + vmrgn;
+	return(child);
     }
 
-    public <T extends Widget> void adda(T child, int x, double ax) {
+    public <T extends Widget> T adda(T child, int x, double ax) {
         wdg.adda(child, hpad + x, vpad + y, ax, 0);
         y += child.sz.y + vmrgn;
+	return(child);
     }
 
     public void addr(Widget ... children) {
