@@ -194,7 +194,7 @@ public class Skeleton {
 	return(p);
     }
 	
-    public class Pose {
+    public class Pose implements EquipTarget {
 	public float[][] lpos, gpos;
 	public float[][] lrot, grot;
 	private Pose from = null;
@@ -276,6 +276,13 @@ public class Skeleton {
 			return(cur);
 		    }
 		});
+	}
+
+	public Supplier<Pipe.Op> eqpoint(String name, Message dat) {
+	    Bone bone = bones.get(name);
+	    if(bone == null)
+		return(null);
+	    return(bonetrans(bone.idx));
 	}
 
 	public Supplier<Pipe.Op> bonetrans2(int bone) {
@@ -1040,24 +1047,24 @@ public class Skeleton {
     @Resource.LayerName("boneoff")
     public static class BoneOffset extends Resource.Layer implements Resource.IDLayer<String> {
 	public final String nm;
-	public final transient Function<Pose, Supplier<Pipe.Op>>[] prog;
+	public final transient Function<EquipTarget, Supplier<Pipe.Op>>[] prog;
 
 	@SuppressWarnings("unchecked")
-	private static final Function<Message, Function<Pose, Supplier<Pipe.Op>>>[] opcodes = new Function[256];
+	private static final Function<Message, Function<EquipTarget, Supplier<Pipe.Op>>>[] opcodes = new Function[256];
 	static {
 	    opcodes[0] = buf -> {
 		float x = (float)buf.cpfloat();
 		float y = (float)buf.cpfloat();
 		float z = (float)buf.cpfloat();
 		Location loc = Location.xlate(new Coord3f(x, y, z));
-		return(pose -> () -> loc);
+		return(equ -> () -> loc);
 	    };
 	    opcodes[16] = buf -> {
 		float x = buf.float32();
 		float y = buf.float32();
 		float z = buf.float32();
 		Location loc = Location.xlate(new Coord3f(x, y, z));
-		return(pose -> () -> loc);
+		return(equ -> () -> loc);
 	    };
 	    opcodes[1] = buf -> {
 		final float ang = (float)buf.cpfloat();
@@ -1065,21 +1072,18 @@ public class Skeleton {
 		final float ay = (float)buf.cpfloat();
 		final float az = (float)buf.cpfloat();
 		Location loc = Location.rot(new Coord3f(ax, ay, az), ang);
-		return(pose -> () -> loc);
+		return(equ -> () -> loc);
 	    };
 	    opcodes[17] = buf -> {
 		final float ang = buf.unorm16() * 2 * (float)Math.PI;
 		float[] ax = new float[3];
 		Utils.oct2uvec(ax, buf.snorm16(), buf.snorm16());
 		Location loc = Location.rot(new Coord3f(ax[0], ax[1], ax[2]), ang);
-		return(pose -> () -> loc);
+		return(equ -> () -> loc);
 	    };
 	    opcodes[2] = buf -> {
 		final String bonenm = buf.string();
-		return(pose -> {
-			Bone bone = pose.skel().bones.get(bonenm);
-			return(pose.bonetrans(bone.idx));
-		    });
+		return(equ -> equ.eqpoint(bonenm, Message.nil));
 	    };
 	    /* XXXRENDER
 	    opcodes[3] = new HatingJava() {
@@ -1107,7 +1111,7 @@ public class Skeleton {
 	public BoneOffset(Resource res, Message buf) {
 	    res.super();
 	    this.nm = buf.string();
-	    List<Function<Pose, Supplier<Pipe.Op>>> cbuf = new LinkedList<>();
+	    List<Function<EquipTarget, Supplier<Pipe.Op>>> cbuf = new LinkedList<>();
 	    while(!buf.eom())
 		cbuf.add(opcodes[buf.uint8()].apply(buf));
 	    this.prog = cbuf.toArray(new Function[0]);
@@ -1121,18 +1125,23 @@ public class Skeleton {
 	}
 
 	@SuppressWarnings("unchecked")
-	public Supplier<Pipe.Op> forpose(Pose pose) {
+	public Supplier<Pipe.Op> from(EquipTarget equ) {
 	    if(prog.length == 1)
-		return(prog[0].apply(pose));
+		return(prog[0].apply(equ));
 	    Supplier<Pipe.Op>[] ls = new Supplier[prog.length];
 	    for(int i = 0; i < prog.length; i++)
-		ls[i] = prog[i].apply(pose);
+		ls[i] = prog[i].apply(equ);
 	    return(() -> {
 		    Pipe.Op[] buf = new Pipe.Op[ls.length];
 		    for(int i = 0; i < ls.length; i++)
 			buf[i] = ls[i].get();
 		    return(Pipe.Op.compose(buf));
 		});
+	}
+
+	@Deprecated
+	public Supplier<Pipe.Op> forpose(Pose pose) {
+	    return(from(pose));
 	}
     }
 }

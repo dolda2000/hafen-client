@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.function.*;
 import haven.render.*;
 
-public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
+public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, EquipTarget {
     public Coord2d rc;
     public double a;
     public boolean virtual = false;
@@ -434,7 +434,16 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	}
     }
 
-    public void draw(GOut g) {}
+    public Supplier<Pipe.Op> eqpoint(String nm, Message dat) {
+	for(GAttrib attr : this.attr.values()) {
+	    if(attr instanceof EquipTarget) {
+		Supplier<Pipe.Op> ret = ((EquipTarget)attr).eqpoint(nm, dat);
+		if(ret != null)
+		    return(ret);
+	    }
+	}
+	return(null);
+    }
 
     public static class GobClick extends Clickable {
 	public final Gob gob;

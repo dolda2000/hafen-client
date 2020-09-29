@@ -150,7 +150,7 @@ public class Avaview extends PView {
 	if(bo == null)
 	    throw(new Loading());
 	Pipe buf = new BufPipe();
-	buf.prep(bo.forpose(comp.pose).get());
+	buf.prep(bo.from(comp).get());
 	return(new LocationCam(buf.get(Homo3D.loc)));
     }
 
