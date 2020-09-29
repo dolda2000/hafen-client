@@ -561,6 +561,7 @@ public class OptWnd extends Window {
 	main.add(new PButton(UI.scale(200), "Video settings", 'v', video));
 	main.add(new PButton(UI.scale(200), "Audio settings", 'a', audio));
 	main.add(new PButton(UI.scale(200), "Keybindings", 'k', keybind));
+	main.add(60);
 	if(gopts) {
 	    main.add(new Button(UI.scale(200), "Switch character") {
 		    public void click() {
