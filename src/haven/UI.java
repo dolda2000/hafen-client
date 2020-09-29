@@ -458,6 +458,10 @@ public class UI {
 	return(v.mul(scalef));
     }
 
+    public static Coord scale(int x, int y) {
+	return(scale(new Coord(x, y)));
+    }
+
     public static Coord2d scale(Coord2d v) {
 	return(v.mul(scalef));
     }
