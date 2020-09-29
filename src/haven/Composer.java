@@ -117,20 +117,25 @@ public class Composer {
     }
 
     public void addar(int totalw, Widget ... children) {
-        int maxh = 0;
+	if(children.length == 1) {
+	    adda(children[0], totalw / 2, 0.5);
+	    return;
+	}
+        int maxh = 0, wsum = 0;
         int maxw = 0;
         for (Widget child : children) {
+	    wsum += child.sz.x;
             maxw = Math.max(maxw, child.sz.x);
             maxh = Math.max(maxh, child.sz.y);
         }
-        double itemw = totalw / (double) children.length;
         int x = hpad;
+	int tpad = totalw - wsum, npad = children.length - 1, perror = 0;
         for (Widget child : children) {
-            wdg.add(child, new Coord(
-                (int)Math.round(x + (itemw - child.sz.x) / 2),
-                vpad + y + (maxh - child.sz.y) / 2)
-            );
-            x += itemw;
+            wdg.add(child, new Coord(x, vpad + y + (maxh - child.sz.y) / 2));
+	    x += child.sz.x;
+	    perror += tpad;
+	    x += perror / npad;
+	    perror %= npad;
         }
         y += maxh + vmrgn;
     }

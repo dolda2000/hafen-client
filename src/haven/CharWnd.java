@@ -2250,7 +2250,7 @@ public class CharWnd extends Window {
 	    );
 	}
 
-	resize(contentsz());
+	resize(contentsz().add(UI.scale(15, 10)));
     }
 
     public void addchild(Widget child, Object... args) {
