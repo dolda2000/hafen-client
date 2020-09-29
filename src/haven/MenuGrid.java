@@ -65,7 +65,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    this.bind = binding();
 	}
 
-	public BufferedImage img() {return(res.layer(Resource.imgc).img);}
+	public BufferedImage img() {return(res.layer(Resource.imgc).scaled());}
 	public String name() {return(res.layer(Resource.action).name);}
 	public KeyMatch hotkey() {
 	    char hk = res.layer(Resource.action).hk;
@@ -316,7 +316,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		    Pagina info = btn.pag;
 		    Tex btex;
 		    try {
-			btex = UI.scale(info.img.get());
+			btex = info.img.get();
 			g.image(btex, p.add(UI.scale(1), UI.scale(1)), btex.sz());
 		    } catch(NullPointerException e) {
 			System.err.println(btn);
@@ -337,7 +337,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			    info.fstart = now;
 			} else {
 			    double ph = (now - info.fstart) - (((x + (y * gsz.x)) * 0.15) % 1.0);
-			    Tex glow = UI.scale(glowmask(btn));
+			    Tex glow = glowmask(btn);
 			    if(ph < 1.25) {
 				g.chcolor(255, 255, 255, (int)(255 * ((Math.cos(ph * Math.PI * 2) * -0.5) + 0.5)));
 			    } else {
@@ -357,7 +357,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
 	super.draw(g);
 	if(dragging != null) {
-	    Tex dt = UI.scale(dragging.img.get());
+	    Tex dt = dragging.img.get();
 	    ui.drawafter(new UI.AfterDraw() {
 		    public void draw(GOut g) {
 			g.image(dt, ui.mc.add(dt.sz().div(2).inv()));
