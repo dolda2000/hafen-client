@@ -323,7 +323,7 @@ public class Widget {
 		    int e;
 		    for(e = i; (e < spec.length()) && Character.isDigit(spec.charAt(e)); e++);
 		    int v = Integer.parseInt(spec.substring(i - 1, e));
-		    st.push(st.empty() ? UI.scale(v) : v);
+		    st.push(v);
 		    i = e;
 		} else if(op == '!') {
 		    st.push(args[off++]);
@@ -407,7 +407,14 @@ public class Widget {
 			throw(new RuntimeException("Invalid division operands: " + a + " - " + b));
 		    }
 		} else if(op == 'S') {
-		    /* Noop for now. */
+		    Object a = st.pop();
+		    if(a instanceof Integer) {
+			st.push(UI.scale((Integer)a));
+		    } else if(a instanceof Coord) {
+			st.push(UI.scale((Coord)a));
+		    } else {
+			throw(new RuntimeException("Invalid scaling operand: " + a));
+		    }
 		} else if(Character.isWhitespace(op)) {
 		} else {
 		    throw(new RuntimeException("Unknown position operation: " + op));
@@ -421,10 +428,10 @@ public class Widget {
 
     public void addchild(Widget child, Object... args) {
 	if(args[0] instanceof Coord) {
-	    Coord c = (Coord) args[0];
-	    if (!(child instanceof FlowerMenu)) {
+	    Coord c = (Coord)args[0];
+	    String opt = (args.length > 1) ? (String)args[1] : "";
+	    if(opt.indexOf('u') < 0)
 		c = UI.scale(c);
-	    }
 	    add(child, c);
 	} else if(args[0] instanceof Coord2d) {
 	    add(child, ((Coord2d)args[0]).mul(new Coord2d(this.sz.sub(child.sz))).round());
