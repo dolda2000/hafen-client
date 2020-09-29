@@ -446,43 +446,43 @@ public class UI {
 	audio.clear();
     }
 
-    static public float scale(float v) {
-	return v * scalef;
+    public static float scale(float v) {
+	return(v * scalef);
     }
 
-    static public int scale(int v) {
-	return Math.round(scale((float) v));
+    public static int scale(int v) {
+	return(Math.round(scale((float) v)));
     }
 
-    static public Coord scale(Coord v) {
-	return v.mul(scalef);
+    public static Coord scale(Coord v) {
+	return(v.mul(scalef));
     }
 
-    static public Coord2d scale(Coord2d v) {
-	return v.mul(scalef);
+    public static Coord2d scale(Coord2d v) {
+	return(v.mul(scalef));
     }
 
-    public static Font scale(Font f, float size) {
+    static public Font scale(Font f, float size) {
 	return(f.deriveFont(scale(size)));
     }
 
-    static public <T extends Tex> ScaledTex<T> scale(T tex) {
-	return new ScaledTex<T>(tex, UI.scale(tex.sz()));
+    public static <T extends Tex> ScaledTex<T> scale(T tex) {
+	return(new ScaledTex<T>(tex, UI.scale(tex.sz())));
     }
 
-    static public <T extends Tex> ScaledTex<T> scale(ScaledTex<T> tex) {
-	return tex;
+    public static <T extends Tex> ScaledTex<T> scale(ScaledTex<T> tex) {
+	return(tex);
     }
 
-    static public float unscale(float v) {
-	return v / scalef;
+    public static float unscale(float v) {
+	return(v / scalef);
     }
 
-    static public int unscale(int v) {
-	return Math.round(unscale((float) v));
+    public static int unscale(int v) {
+	return(Math.round(unscale((float) v)));
     }
 
-    static public Coord unscale(Coord v) {
-	return v.div(scalef);
+    public static Coord unscale(Coord v) {
+	return(v.div(scalef));
     }
 }
