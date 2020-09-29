@@ -63,7 +63,6 @@ public class FastText {
 	    g.drawString(Character.toString(i), sx[i], meter.getAscent());
 	g.dispose();
 	ct = new TexI(buf);
-	Debug.dumpimage(buf);
     }
 
     public static int textw(String text) {
