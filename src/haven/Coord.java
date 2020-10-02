@@ -136,8 +136,8 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	return(div(new Coord(d, d)));
     }
 
-    public Coord div(float d) {
-        return(new Coord(Math.round(x / d), Math.round(y / d)));
+    public Coord div(double d) {
+        return(new Coord((int)Math.round(x / d), (int)Math.round(y / d)));
     }
 
     public Coord mod(Coord d) {

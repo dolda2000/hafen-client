@@ -56,7 +56,7 @@ public class UI {
     public GSettings gprefs = GSettings.load(true);
     private boolean gprefsdirty = false;
     public final ActAudio.Root audio = new ActAudio.Root();
-    private static final float scalef = Config.uiscale == null ? (float)Utils.getprefd("uiscale", 1.0) : Config.uiscale;
+    private static final double scalef = Config.uiscale == null ? Utils.getprefd("uiscale", 1.0) : Config.uiscale;
     
     {
 	lastevent = lasttick = Utils.rtime();
@@ -446,12 +446,16 @@ public class UI {
 	audio.clear();
     }
 
-    public static float scale(float v) {
+    public static double scale(double v) {
 	return(v * scalef);
     }
 
+    public static float scale(float v) {
+	return(v * (float)scalef);
+    }
+
     public static int scale(int v) {
-	return(Math.round(scale((float) v)));
+	return(Math.round(scale((float)v)));
     }
 
     public static Coord scale(Coord v) {
@@ -478,12 +482,16 @@ public class UI {
 	return(tex);
     }
 
-    public static float unscale(float v) {
+    public static double unscale(double v) {
 	return(v / scalef);
     }
 
+    public static float unscale(float v) {
+	return(v / (float)scalef);
+    }
+
     public static int unscale(int v) {
-	return(Math.round(unscale((float) v)));
+	return(Math.round(unscale((float)v)));
     }
 
     public static Coord unscale(Coord v) {
