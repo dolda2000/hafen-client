@@ -238,6 +238,21 @@ public class Utils {
 	}
     }
 
+    static double getprefd(String prefname, double def) {
+	try {
+	    return(prefs().getDouble(prefname, def));
+	} catch(SecurityException e) {
+	    return(def);
+	}
+    }
+    
+    static void setprefd(String prefname, double val) {
+	try {
+	    prefs().putDouble(prefname, val);
+	} catch(SecurityException e) {
+	}
+    }
+
     static boolean getprefb(String prefname, boolean def) {
 	try {
 	    return(prefs().getBoolean(prefname, def));

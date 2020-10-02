@@ -56,7 +56,7 @@ public class UI {
     public GSettings gprefs = GSettings.load(true);
     private boolean gprefsdirty = false;
     public final ActAudio.Root audio = new ActAudio.Root();
-    private static final float scalef = Config.uiscale == null ? GSettings.load(true).uiscale.val : Config.uiscale;
+    private static final float scalef = Config.uiscale == null ? (float)Utils.getprefd("uiscale", 1.0) : Config.uiscale;
     
     {
 	lastevent = lasttick = Utils.rtime();

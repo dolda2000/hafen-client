@@ -283,23 +283,19 @@ public class OptWnd extends Window {
 		composer.add(new Label("UI scale (requires restart)"));
 		{
 		    Label dpy = new Label("");
-		    final int steps = 4;
+		    final double smin = 1, smax = 4;
+		    final int steps = (int)Math.round((smax - smin) / 0.25);
 		    composer.addr(
-			new HSlider(UI.scale(160), -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.uiscale.val) / Math.log(2.0f))) {
+			new HSlider(UI.scale(160), 0, steps, (int)Math.round(steps * (Utils.getprefd("uiscale", 1.0) - smin) / (smax - smin))) {
 			    protected void added() {
 				dpy();
 			    }
 			    void dpy() {
-				dpy.settext(String.format("%.2f\u00d7", Math.pow(2, this.val / (double)steps)));
+				dpy.settext(String.format("%.2f\u00d7", smin + (((double)this.val / steps) * (smax - smin))));
 			    }
 			    public void changed() {
-				try {
-				    float val = (float)Math.pow(2, this.val / (double)steps);
-				    ui.setgprefs(prefs = prefs.update(null, prefs.uiscale, val));
-				} catch(GSettings.SettingException e) {
-				    error(e.getMessage());
-				    return;
-				}
+				double val = smin + (((double)this.val / steps) * (smax - smin));
+				Utils.setprefd("uiscale", val);
 				dpy();
 			    }
 			},
