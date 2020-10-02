@@ -117,22 +117,26 @@ public class CompImage {
 	while(true) {
 	    boolean a = false;
 	    int mh = 0;
+	    for(int c = 0; c < cells.length; c++) {
+		if(r >= cells[c].length)
+		    continue;
+		a = true;
+		mh = Math.max(mh, cells[c][r].sz().y);
+	    }
+	    if(!a)
+		break;
 	    for(int c = 0, x = 0; c < cells.length; c++) {
 		if(r >= cells[c].length)
 		    continue;
 		int j = (cj.length > c)?cj[c]:0;
-		a = true;
 		int cx = 0;
 		if(j == 1)
 		    cx = w[c] - cells[c][r].sz().x;
 		else if(j == 2)
 		    cx = (w[c] - cells[c][r].sz().x) / 2;
-		add(cells[c][r], base.add(x + cx, y));
+		add(cells[c][r], base.add(x + cx, y + ((mh - cells[c][r].sz().y) / 2)));
 		x += w[c] + _cs[c];
-		mh = Math.max(mh, cells[c][r].sz().y);
 	    }
-	    if(!a)
-		break;
 	    r++;
 	    y += mh + rs;
 	}
