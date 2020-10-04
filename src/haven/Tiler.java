@@ -219,9 +219,9 @@ public abstract class Tiler {
     }
     
     public static class FactMaker implements Resource.PublishedCode.Instancer {
-	public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
+	public Factory make(Class<?> cl) {
 	    if(Factory.class.isAssignableFrom(cl)) {
-		return(cl.asSubclass(Factory.class).newInstance());
+		return(Utils.construct(cl.asSubclass(Factory.class)));
 	    } else if(Tiler.class.isAssignableFrom(cl)) {
 		Class<? extends Tiler> tcl = cl.asSubclass(Tiler.class);
 		try {
@@ -256,13 +256,7 @@ public abstract class Tiler {
 		public Object run() {
 		    for(Class<?> cl : dolda.jglob.Loader.get(ResName.class).classes()) {
 			String nm = cl.getAnnotation(ResName.class).value();
-			try {
-			    rnames.put(nm, (Factory)cl.newInstance());
-			} catch(InstantiationException e) {
-			    throw(new Error(e));
-			} catch(IllegalAccessException e) {
-			    throw(new Error(e));
-			}
+			rnames.put(nm, Utils.construct(cl.asSubclass(Factory.class)));
 		    }
 		    return(null);
 		}
