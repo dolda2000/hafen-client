@@ -61,9 +61,9 @@ public abstract class Sprite implements RenderTree.Node {
     }
 
     public static class FactMaker implements Resource.PublishedCode.Instancer {
-	public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
+	public Factory make(Class<?> cl) {
 	    if(Factory.class.isAssignableFrom(cl))
-		return(cl.asSubclass(Factory.class).newInstance());
+		return(Utils.construct(cl.asSubclass(Factory.class)));
 	    try {
 		Function<Object[], Sprite> make = Utils.smthfun(cl, "mksprite", Sprite.class, Owner.class, Resource.class, Message.class);
 		return(new Factory() {
