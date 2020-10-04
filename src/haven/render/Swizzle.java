@@ -29,7 +29,7 @@ package haven.render;
 import haven.*;
 import java.util.Arrays;
 
-public class Swizzle {
+public class Swizzle implements java.io.Serializable {
     public static final Swizzle ID3 = id(3);
     public static final Swizzle ID4 = id(4);
     public static final Swizzle BGR = new Swizzle(2, 1, 0);

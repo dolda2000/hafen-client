@@ -36,7 +36,7 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
     public final Attachment depth;
     public final Coord sz;
     private int id;
-	
+
     public GLFrameBuffer(GLEnvironment env, Attachment[] color, Attachment depth) {
 	super(env);
 	if(color.length > 0) {
@@ -64,8 +64,8 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 		    GLFrameBuffer.this.depth.attach(gl, this, GL.GL_DEPTH_ATTACHMENT);
 		gl.bglSubmit(rgl -> {
 			int st = rgl.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER);
-			if(st != GL.GL_FRAMEBUFFER_COMPLETE)
-			    throw(new RuntimeException("FBO failed completeness test: " + GLException.constname(st)));
+			if(st == GL.GL_FRAMEBUFFER_COMPLETE)
+			    throw(new FormatException("FBO failed completeness test: " + GLException.constname(st), GLFrameBuffer.this));
 		    });
 	    });
 	register();
@@ -114,6 +114,27 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	for(Attachment c : color)
 	    unregister(c.tex);
 	super.dispose();
+    }
+
+    public static class FormatException extends RuntimeException {
+	public final Coord sz;
+	public final VectorFormat[] cfmt;
+	public final VectorFormat dfmt;
+
+	public FormatException(String message, GLFrameBuffer fbo) {
+	    super(message);
+	    this.sz = fbo.sz;
+	    cfmt = new VectorFormat[fbo.color.length];
+	    for(int i = 0; i < cfmt.length; i++) {
+		if(fbo.color[i] instanceof Attach2D) {
+		    cfmt[i] = ((Attach2D)fbo.color[i]).img.tex.ifmt;
+		}
+	    }
+	    if(fbo.depth instanceof Attach2D)
+		dfmt = ((Attach2D)fbo.depth).img.tex.ifmt;
+	    else
+		dfmt = null;
+	}
     }
 
     public static abstract class Attachment {
