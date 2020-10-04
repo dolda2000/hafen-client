@@ -73,7 +73,7 @@ public class ResDrawable extends Drawable implements EquipTarget {
 	return(Skeleton.getpose(spr));
     }
 
-    public Supplier<Pipe.Op> eqpoint(String nm, Message dat) {
+    public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat) {
 	if(spr instanceof EquipTarget)
 	    return(((EquipTarget)spr).eqpoint(nm, dat));
 	return(null);

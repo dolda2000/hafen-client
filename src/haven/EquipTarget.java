@@ -32,5 +32,5 @@ import java.util.function.*;
 public interface EquipTarget {
     public final Supplier<Pipe.Op> nil = () -> Pipe.Op.nil;
 
-    public Supplier<Pipe.Op> eqpoint(String nm, Message dat);
+    public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat);
 }

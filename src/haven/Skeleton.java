@@ -1050,7 +1050,7 @@ public class Skeleton {
 	public final transient Function<EquipTarget, Supplier<Pipe.Op>>[] prog;
 
 	@SuppressWarnings("unchecked")
-	private static final Function<Message, Function<EquipTarget, Supplier<Pipe.Op>>>[] opcodes = new Function[256];
+	private static final Function<Message, Function<EquipTarget, Supplier<? extends Pipe.Op>>>[] opcodes = new Function[256];
 	static {
 	    opcodes[0] = buf -> {
 		float x = (float)buf.cpfloat();
@@ -1111,7 +1111,7 @@ public class Skeleton {
 	public BoneOffset(Resource res, Message buf) {
 	    res.super();
 	    this.nm = buf.string();
-	    List<Function<EquipTarget, Supplier<Pipe.Op>>> cbuf = new LinkedList<>();
+	    List<Function<EquipTarget, Supplier<? extends Pipe.Op>>> cbuf = new LinkedList<>();
 	    while(!buf.eom())
 		cbuf.add(opcodes[buf.uint8()].apply(buf));
 	    this.prog = cbuf.toArray(new Function[0]);

@@ -434,10 +434,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	}
     }
 
-    public Supplier<Pipe.Op> eqpoint(String nm, Message dat) {
+    public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat) {
 	for(GAttrib attr : this.attr.values()) {
 	    if(attr instanceof EquipTarget) {
-		Supplier<Pipe.Op> ret = ((EquipTarget)attr).eqpoint(nm, dat);
+		Supplier<? extends Pipe.Op> ret = ((EquipTarget)attr).eqpoint(nm, dat);
 		if(ret != null)
 		    return(ret);
 	    }
