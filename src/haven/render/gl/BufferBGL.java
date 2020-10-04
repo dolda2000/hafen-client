@@ -28,6 +28,7 @@ package haven.render.gl;
 
 import haven.Utils;
 import java.util.*;
+import java.util.regex.*;
 import java.io.*;
 import com.jogamp.opengl.*;
 
@@ -65,6 +66,7 @@ public class BufferBGL extends BGL {
 	}
     }
 
+    private static final Pattern joglerrp = Pattern.compile("GL-Error 0x([0-9a-fA-F]+)\\s");
     private void checkdebuggl(Exception exc) {
 	String msg = exc.getMessage();
 	GLException wrap = null;
@@ -76,6 +78,15 @@ public class BufferBGL extends BGL {
 	    wrap = new GLException.GLInvalidOperationException();
 	} else if(msg.indexOf("GL_OUT_OF_MEMORY") >= 0) {
 	    wrap = new GLException.GLOutOfMemoryException();
+	} else {
+	    Matcher m = joglerrp.matcher(msg);
+	    if(m.find()) {
+		try {
+		    wrap = GLException.glexcfor(Integer.parseInt(m.group(1), 16));
+		} catch(NumberFormatException e) {
+		    exc.addSuppressed(e);
+		}
+	    }
 	}
 	if(wrap != null) {
 	    wrap.initCause(exc);
