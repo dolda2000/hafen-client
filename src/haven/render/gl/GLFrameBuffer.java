@@ -64,7 +64,7 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 		    GLFrameBuffer.this.depth.attach(gl, this, GL.GL_DEPTH_ATTACHMENT);
 		gl.bglSubmit(rgl -> {
 			int st = rgl.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER);
-			if(st == GL.GL_FRAMEBUFFER_COMPLETE)
+			if(st != GL.GL_FRAMEBUFFER_COMPLETE)
 			    throw(new FormatException("FBO failed completeness test: " + GLException.constname(st), GLFrameBuffer.this));
 		    });
 	    });
