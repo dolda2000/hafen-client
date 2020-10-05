@@ -58,7 +58,7 @@ public class Window extends Widget implements DTarget {
 	    }
 	};
     public static final IBox wbox = new IBox("gfx/hud/wnd", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb") {
-	    final Coord co = new Coord(3, 3), bo = new Coord(2, 2);
+	    final Coord co = UI.scale(3, 3), bo = UI.scale(2, 2);
 
 	    public Coord btloff() {return(super.btloff().sub(bo));}
 	    public Coord ctloff() {return(super.ctloff().sub(co));}
