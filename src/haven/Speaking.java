@@ -32,7 +32,7 @@ import haven.render.*;
 public class Speaking extends GAttrib implements RenderTree.Node, PView.Render2D {
     public static final IBox sb = new IBox("gfx/hud/emote", "tl", "tr", "bl", "br", "el", "er", "et", "eb");
     public static final Tex svans = Resource.loadtex("gfx/hud/emote/svans");
-    public static final int sx = 3;
+    public static final int sx = UI.scale(5);
     public float zo;
     public Text text;
 	
@@ -48,9 +48,8 @@ public class Speaking extends GAttrib implements RenderTree.Node, PView.Render2D
 	
     public void draw(GOut g, Coord c) {
 	Coord sz = text.sz();
-	if(sz.x < UI.scale(10))
-	    sz.x = UI.scale(10);
-	Coord tl = c.add(new Coord(sx, sb.cisz().y + sz.y + svans.sz().y - UI.scale(1)).inv());
+	sz.x = Math.max(sz.x, UI.scale(15));
+	Coord tl = c.sub(sx, sb.cisz().y + sz.y + svans.sz().y - sb.bb.sz().y);
 	Coord ftl = tl.add(sb.btloff());
 	g.chcolor(Color.WHITE);
 	g.frect(ftl, sz);
@@ -63,6 +62,6 @@ public class Speaking extends GAttrib implements RenderTree.Node, PView.Render2D
 
     public void draw(GOut g, Pipe state) {
 	Coord sc = Homo3D.obj2view(new Coord3f(0, 0, zo), state, Area.sized(g.sz())).round2();
-	draw(g, sc.add(UI.scale(3), 0));
+	draw(g, sc.add(sx, 0));
     }
 }
