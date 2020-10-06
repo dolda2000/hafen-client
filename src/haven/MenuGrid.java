@@ -36,7 +36,7 @@ import java.util.*;
 public class MenuGrid extends Widget implements KeyBinding.Bindable {
     public final static Tex bg = Resource.loadtex("gfx/hud/invsq");
     public final static Coord bgsz = bg.sz().add(-UI.scale(1), -UI.scale(1));
-    public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, UI.scale(10));
+    public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, UI.scale(10f));
     private static Coord gsz = new Coord(4, 4);
     public final Set<Pagina> paginae = new HashSet<Pagina>();
     public Pagina cur;

@@ -108,7 +108,7 @@ public class FightWnd extends Widget {
 	public <T> T context(Class<T> cl) {return(actxr.context(cl, FightWnd.this));}
 
 	public BufferedImage rendericon() {
-	    BufferedImage ret = res.get().layer(Resource.imgc).img;
+	    BufferedImage ret = res.get().layer(Resource.imgc).scaled();
 	    Graphics g = null;
 	    for(ItemInfo inf : info()) {
 		if(inf instanceof IconInfo) {
