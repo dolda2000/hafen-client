@@ -90,13 +90,7 @@ public class GOut {
     public void image(Resource.Image img, Coord c) {
 	if(img == null)
 	    return;
-	image(img.tex(), c.add(img.o));
-    }
-
-    public void image(Resource.Image img, Coord c, Coord sz) {
-	if(img == null)
-	    return;
-	image(img.tex(), c.add(img.o), sz);
+	image(img.tex(), c.add(UI.scale(img.o)));
     }
 
     /* Draw texture at c, quite simply. */
