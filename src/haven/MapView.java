@@ -845,7 +845,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if(now - lsmch > 0.1)
 		    ch = true;
 	    }
-	    if(ch) {
+	    if(ch || !smap.haspos()) {
 		smap = smap.setpos(smapcc.add(dir.neg().mul(1000f)), dir);
 		lsmch = now;
 	    }
