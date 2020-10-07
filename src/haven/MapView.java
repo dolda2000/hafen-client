@@ -266,7 +266,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    this.exact = exact;
 	}
 
-	public OrthoCam() {this(false);}
+	public OrthoCam() {this(true);}
 
 	public void tick2(double dt) {
 	    Coord3f cc = getcc();
@@ -329,11 +329,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public SOrthoCam(String... args) {
-	    PosixArgs opt = PosixArgs.getopt(args, "e");
+	    PosixArgs opt = PosixArgs.getopt(args, "en");
 	    for(char c : opt.parsed()) {
 		switch(c) {
 		case 'e':
 		    exact = true;
+		    break;
+		case 'n':
+		    exact = false;
 		    break;
 		}
 	    }
