@@ -59,13 +59,14 @@ public interface Waitable {
 	}
 
 	public void wnotify() {
+	    Collection<Waiter> list;
 	    synchronized(this) {
-		Collection<Waiter> list = waiters;
-		if(list != null) {
-		    waiters = null;
-		    for(Waiter w : list)
-			w.callback.run();
-		}
+		list = waiters;
+		waiters = null;
+	    }
+	    if(list != null) {
+		for(Waiter w : list)
+		    w.callback.run();
 	    }
 	}
 
