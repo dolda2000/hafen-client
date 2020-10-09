@@ -310,10 +310,13 @@ public class UI {
 	
     public void uimsg(int id, String msg, Object... args) {
 	Widget wdg = getwidget(id);
-	if(wdg != null)
-	    wdg.uimsg(msg.intern(), args);
-	else
+	if(wdg != null) {
+	    synchronized(this) {
+		wdg.uimsg(msg.intern(), args);
+	    }
+	} else {
 	    throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
+	}
     }
 	
     private void setmods(InputEvent ev) {
