@@ -1353,7 +1353,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 	
 	private Coord beltc(int i) {
-	    return(pagoff.add(((invsq.sz().x + UI.scale(2)) * i) + (UI.scale(10) * (i / 5)), 0));
+	    return(pagoff.add(UI.scale((36 * i) + (10 * (i / 5))), 0));
 	}
     
 	private int beltslot(Coord c) {
