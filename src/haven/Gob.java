@@ -511,8 +511,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     }
 
     public void added(RenderTree.Slot slot) {
-	if(!virtual)
-	    slot.ostate(curstate());
+	slot.ostate(curstate());
 	for(Overlay ol : ols) {
 	    if(ol.slots != null)
 		slot.add(ol);
