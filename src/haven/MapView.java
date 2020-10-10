@@ -1542,8 +1542,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	if(msg == "place") {
 	    Loader.Future<Plob> placing = this.placing;
 	    if(placing != null) {
-		if(!placing.cancel())
-		    placing.get().slot.remove();
+		if(!placing.cancel()) {
+		    Plob ob = placing.get();
+		    synchronized(ob) {
+			ob.slot.remove();
+		    }
+		}
 		this.placing = null;
 	    }
 	    int a = 0;
@@ -1578,8 +1582,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	} else if(msg == "unplace") {
 	    Loader.Future<Plob> placing = this.placing;
 	    if(placing != null) {
-		if(!placing.cancel())
-		    placing.get().slot.remove();
+		if(!placing.cancel()) {
+		    Plob ob = placing.get();
+		    synchronized(ob) {
+			ob.slot.remove();
+		    }
+		}
 		this.placing = null;
 	    }
 	} else if(msg == "move") {
