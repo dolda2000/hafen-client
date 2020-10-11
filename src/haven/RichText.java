@@ -44,7 +44,7 @@ public class RichText extends Text {
     static {
 	Map<Attribute, Object> a = new HashMap<Attribute, Object>();
 	a.put(TextAttribute.FAMILY, "SansSerif");
-	a.put(TextAttribute.SIZE, 10);
+	a.put(TextAttribute.SIZE, UI.scale(10));
 	std = new Parser(a);
 	stdf = new Foundry(std);
     }
@@ -105,7 +105,7 @@ public class RichText extends Text {
 	public Image(Resource res, int id) {
 	    for(Resource.Image img : res.layers(Resource.imgc)) {
 		if(img.id == id) {
-		    this.img = img.img;
+		    this.img = img.scaled();
 		    break;
 		}
 	    }

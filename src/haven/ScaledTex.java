@@ -26,40 +26,46 @@
 
 package haven;
 
-public class Chatwindow extends Window {
-    TextEntry in;
-    Textlog out;
-	
-    @RName("chat")
-    public static class $_ implements Factory {
-	public Widget create(UI ui, Object[] args) {
-	    return(new Chatwindow(UI.scale((Coord)args[0])));
-	}
+public class ScaledTex<T extends Tex> implements Tex {
+    private final T impl;
+    private final Coord sz;
+
+    public ScaledTex(T impl, Coord sz) {
+        this.impl = impl;
+	this.sz = sz;
     }
-	
-    public Chatwindow(Coord sz) {
-	super(sz, "Chat");
-	in = adda(new TextEntry(sz.x, ""), 0, asz.y, 0.0, 1.0);
-	in.canactivate = true;
-	out = add(new Textlog(new Coord(asz.x, in.c.y)), Coord.z);
+
+    public T impl() {
+	return impl;
     }
-	
-    public void uimsg(String msg, Object... args) {
-	if(msg == "log") {
-	    out.append((String)args[0]);
-	} else {
-	    super.uimsg(msg, args);
-	}
+
+    @Override
+    public Coord sz() {
+	return sz;
     }
-	
-    public void wdgmsg(Widget sender, String msg, Object... args) {
-	if(sender == in) {
-	    if(msg == "activate") {
-		wdgmsg("msg", args[0]);
-		in.settext("");
-		return;
-	    }
-	}
-	super.wdgmsg(sender, msg, args);
+
+    @Override
+    public void render(GOut g, Coord dul, Coord dbr, Coord tul, Coord tbr) {
+	impl.render(g, dul, dbr, tul, tbr);
+    }
+
+    @Override
+    public void render(GOut g, Coord c) {
+	impl.render(g, Coord.z, sz(), c, c.add(sz()));
+    }
+
+    @Override
+    public void crender(GOut g, Coord c, Coord dsz, Coord cul, Coord cbr) {
+	impl.crender(g, c, dsz, cul, cbr);
+    }
+
+    @Override
+    public void crender(GOut g, Coord c, Coord ul, Coord br) {
+	impl.crender(g, c, sz(), ul, br);;
+    }
+
+    @Override
+    public void dispose() {
+	impl.dispose();
     }
 }

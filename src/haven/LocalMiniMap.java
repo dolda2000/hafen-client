@@ -139,11 +139,11 @@ public class LocalMiniMap extends Widget {
     }
 
     public Coord p2c(Coord2d pc) {
-	return(pc.floor(tilesz).sub(cc).add(sz.div(2)));
+	return(UI.scale(pc.floor(tilesz)).sub(UI.scale(cc)).add(sz.div(2)));
     }
 
     public Coord2d c2p(Coord c) {
-	return(c.sub(sz.div(2)).add(cc).mul(tilesz).add(tilesz.div(2)));
+	return(UI.unscale(c.sub(sz.div(2))).add(cc).mul(tilesz).add(tilesz.div(2)));
     }
 
     public void drawicons(GOut g) {
@@ -155,7 +155,8 @@ public class LocalMiniMap extends Widget {
 		    if(icon != null) {
 			Coord gc = p2c(gob.rc);
 			Tex tex = icon.tex();
-			g.image(tex, gc.sub(tex.sz().div(2)));
+			Coord sz = GobIcon.sz(tex.sz());
+			g.image(tex, gc.sub(sz.div(2)), sz);
 		    }
 		} catch(Loading l) {}
 	    }
@@ -170,7 +171,7 @@ public class LocalMiniMap extends Widget {
 		    GobIcon icon = gob.getattr(GobIcon.class);
 		    if(icon != null) {
 			Coord gc = p2c(gob.rc);
-			Coord sz = icon.tex().sz();
+			Coord sz = GobIcon.sz(icon.tex().sz());
 			if(c.isect(gc.sub(sz.div(2)), sz))
 			    return(gob);
 		    }
@@ -222,8 +223,8 @@ public class LocalMiniMap extends Widget {
 	    }
 	}
 	if(cur != null) {
-	    g.image(MiniMap.bg, Coord.z);
-	    g.image(cur.img, cur.ul.sub(cc).add(sz.div(2)));
+	    g.image(MiniMap.bg, Coord.z, UI.scale(MiniMap.bg.sz()));
+	    g.image(cur.img, UI.scale(cur.ul.sub(cc)).add(sz.div(2)), UI.scale(cur.img.sz()));
 	    drawicons(g);
 	    try {
 		synchronized(ui.sess.glob.party.memb) {
@@ -238,7 +239,7 @@ public class LocalMiniMap extends Widget {
 			    continue;
 			Coord ptc = p2c(ppc);
 			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 255);
-			g.image(MiniMap.plx.layer(Resource.imgc).tex(), ptc.add(MiniMap.plx.layer(Resource.negc).cc.inv()));
+			MiniMap.drawplx(g, ptc);
 			g.chcolor();
 		    }
 		}

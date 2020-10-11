@@ -577,6 +577,14 @@ public class PUtils {
         throw(new IllegalArgumentException("Can only scale images up or down in both dimensions"));
     }
 
+    private static final Convolution uifilter = new Lanczos(3);
+    public static BufferedImage uiscale(BufferedImage img, Coord tsz) {
+	Coord sz = imgsz(img);
+	if(tsz.equals(sz))
+	    return(img);
+	return(convolve(img, tsz, uifilter));
+    }
+
     public static void main(String[] args) throws Exception {
 	Convolution[] filters = {
 	    box,

@@ -31,26 +31,9 @@ import static haven.Inventory.invsq;
 
 public class Equipory extends Widget implements DTarget {
     private static final Tex bg = Resource.loadtex("gfx/hud/equip/bg");
-    private static final int rx = 34 + bg.sz().x;
-    public static final Coord ecoords[] = {
-	new Coord(0, 0),
-	new Coord(rx, 0),
-	new Coord(0, 33),
-	new Coord(rx, 33),
-	new Coord(0, 66),
-	new Coord(rx, 66),
-	new Coord(0, 99),
-	new Coord(rx, 99),
-	new Coord(0, 132),
-	new Coord(rx, 132),
-	new Coord(0, 165),
-	new Coord(rx, 165),
-	new Coord(0, 198),
-	new Coord(rx, 198),
-	new Coord(0, 231),
-	new Coord(rx, 231),
-	new Coord(34, 0),
-    };
+    private static final int offx = UI.scale(34);
+    private static final int rx = offx + bg.sz().x;
+    public static final Coord ecoords[] = makecoords();
     public static final Tex[] ebgs = new Tex[ecoords.length];
     public static final Text[] etts = new Text[ecoords.length];
     static Coord isz;
@@ -111,7 +94,7 @@ public class Equipory extends Widget implements DTarget {
 
 		final FColor cc = new FColor(0, 0, 0, 0);
 		protected FColor clearcolor() {return(cc);}
-	    }, new Coord(34, 0));
+	    }, new Coord(offx, 0));
 	ava.color = null;
     }
 
@@ -178,7 +161,7 @@ public class Equipory extends Widget implements DTarget {
 	for(int i = 0; i < 16; i++) {
 	    if((slots & (1 << i)) != 0) {
 		g.chcolor(255, 255, 0, 64);
-		g.frect(ecoords[i].add(1, 1), invsq.sz().sub(2, 2));
+		g.frect(ecoords[i].add(UI.scale(1), UI.scale(1)), invsq.sz().sub(UI.scale(2), UI.scale(2)));
 		g.chcolor();
 	    }
 	    g.image(invsq, ecoords[i]);
@@ -204,5 +187,16 @@ public class Equipory extends Widget implements DTarget {
 
     public boolean iteminteract(Coord cc, Coord ul) {
 	return(false);
+    }
+
+    static Coord[] makecoords() {
+        Coord[] result = new Coord[2 * 8 + 1];
+        for (int i = 0; i < 8; ++i) {
+            int y = UI.scale(33 * i);
+            result[2 * i] = new Coord(0, y);
+            result[2 * i + 1] = new Coord(rx, y);
+        }
+        result[result.length - 1] = new Coord(offx, 0);
+        return result;
     }
 }

@@ -61,7 +61,7 @@ public class Img extends Widget {
 	if(img != null)
 	    g.image(img, Coord.z);
     }
-	
+
     public Img(Tex img) {
 	super(img.sz());
 	this.res = null;
@@ -96,5 +96,10 @@ public class Img extends Widget {
 	    return(true);
 	}
 	return(false);
+    }
+
+    public void init(Tex img) {
+	sz = img.sz();
+	this.img = img;
     }
 }

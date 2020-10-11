@@ -35,7 +35,6 @@ import java.net.*;
 import java.io.*;
 import java.security.*;
 import javax.imageio.*;
-import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class Resource implements Serializable {
@@ -874,13 +873,15 @@ public class Resource implements Serializable {
     @LayerName("image")
     public class Image extends Layer implements Comparable<Image>, IDLayer<Integer> {
 	public transient BufferedImage img;
-	transient private Tex tex;
+	private transient BufferedImage scaled;
+	private transient Tex tex;
 	public final int z, subz;
 	public final boolean nooff;
 	public final int id;
+	private float scale = 1;
 	private int gay = -1;
-	public Coord sz, o, tsz;
-		
+	public Coord sz, o, tsz, ssz;
+
 	public Image(Message buf) {
 	    z = buf.int16();
 	    subz = buf.int16();
@@ -900,6 +901,8 @@ public class Resource implements Serializable {
 		    Message val = new MessageBuf(buf.bytes(len));
 		    if(key.equals("tsz")) {
 			tsz = val.coord();
+		    } else if(key.equals("scale")) {
+			scale = val.float32();
 		    }
 		}
 	    }
@@ -911,19 +914,34 @@ public class Resource implements Serializable {
 	    sz = Utils.imgsz(img);
 	    if(tsz == null)
 		tsz = sz;
+	    ssz = new Coord(Math.round(UI.scale(sz.x / scale)), Math.round(UI.scale(sz.y / scale)));
 	}
-		
-	public synchronized Tex tex() {
-	    if(tex != null)
-		return(tex);
-	    tex = new TexI(img) {
-		    public String toString() {
-			return("TexI(" + Resource.this.name + ", " + id + ")");
+
+	public BufferedImage scaled() {
+	    if(scaled == null) {
+		synchronized(this) {
+		    if(scaled == null)
+			scaled = PUtils.uiscale(img, ssz);
+		}
+	    }
+	    return(scaled);
+	}
+
+	public Tex tex() {
+	    if(tex == null) {
+		synchronized(this) {
+		    if(tex == null) {
+			tex = new TexI(scaled()) {
+				public String toString() {
+				    return("TexI(" + Resource.this.name + ", " + id + ")");
+				}
+			    };
 		    }
-		};
+		}
+	    }
 	    return(tex);
 	}
-		
+
 	private boolean detectgay() {
 	    for(int y = 0; y < sz.y; y++) {
 		for(int x = 0; x < sz.x; x++) {
@@ -1477,6 +1495,10 @@ public class Resource implements Serializable {
 
     public static BufferedImage loadimg(String name) {
 	return(local().loadwait(name).layer(imgc).img);
+    }
+
+    public static BufferedImage loadsimg(String name) {
+	return(local().loadwait(name).layer(imgc).scaled());
     }
 
     public static Tex loadtex(String name) {

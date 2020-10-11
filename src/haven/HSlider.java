@@ -35,7 +35,7 @@ public class HSlider extends Widget {
     private UI.Grab drag = null;
 
     static {
-	BufferedImage vc = Resource.loadimg("gfx/hud/schain");
+	BufferedImage vc = Resource.loadsimg("gfx/hud/schain");
 	BufferedImage hc = TexI.mkbuf(new Coord(vc.getHeight(), vc.getWidth()));
 	for(int y = 0; y < vc.getHeight(); y++) {
 	    for(int x = 0; x < vc.getWidth(); x++)

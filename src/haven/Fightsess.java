@@ -33,16 +33,17 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 public class Fightsess extends Widget {
+    private static final Coord off = new Coord(UI.scale(32), UI.scale(32));
     public static final Tex cdframe = Resource.loadtex("gfx/hud/combat/cool");
     public static final Tex actframe = Buff.frame;
     public static final Coord actframeo = Buff.imgoff;
     public static final Tex indframe = Resource.loadtex("gfx/hud/combat/indframe");
-    public static final Coord indframeo = (indframe.sz().sub(32, 32)).div(2);
+    public static final Coord indframeo = (indframe.sz().sub(off)).div(2);
     public static final Tex indbframe = Resource.loadtex("gfx/hud/combat/indbframe");
-    public static final Coord indbframeo = (indframe.sz().sub(32, 32)).div(2);
+    public static final Coord indbframeo = (indframe.sz().sub(off)).div(2);
     public static final Tex useframe = Resource.loadtex("gfx/hud/combat/lastframe");
-    public static final Coord useframeo = (useframe.sz().sub(32, 32)).div(2);
-    public static final int actpitch = 50;
+    public static final Coord useframeo = (useframe.sz().sub(off)).div(2);
+    public static final int actpitch = UI.scale(50);
     public final Action[] actions;
     public int use = -1, useb = -1;
     public Coord pcc;
@@ -68,7 +69,7 @@ public class Fightsess extends Widget {
 
     @SuppressWarnings("unchecked")
     public Fightsess(int nact) {
-	pho = -40;
+	pho = -UI.scale(40);
 	this.actions = new Action[nact];
     }
 
@@ -91,7 +92,7 @@ public class Fightsess extends Widget {
 	if(raw == null)
 	    return;
 	pcc = map.screenxf(raw).round2();
-	pho = (int)(map.screenxf(raw.add(0, 0, 20)).round2().sub(pcc).y) - 20;
+	pho = (int)(map.screenxf(raw.add(0, 0, UI.scale(20))).round2().sub(pcc).y) - UI.scale(20);
     }
 
     private static final Resource tgtfx = Resource.local().loadwait("gfx/hud/combat/trgtarw");
@@ -129,12 +130,12 @@ public class Fightsess extends Widget {
 
     private static Coord actc(int i) {
 	int rl = 5;
-	return(new Coord((actpitch * (i % rl)) - (((rl - 1) * actpitch) / 2), 125 + ((i / rl) * actpitch)));
+	return(new Coord((actpitch * (i % rl)) - (((rl - 1) * actpitch) / 2), UI.scale(125) + ((i / rl) * actpitch)));
     }
 
-    private static final Coord cmc = new Coord(0, 67);
-    private static final Coord usec1 = new Coord(-65, 67);
-    private static final Coord usec2 = new Coord(65, 67);
+    private static final Coord cmc = UI.scale(new Coord(0, 67));
+    private static final Coord usec1 = UI.scale(new Coord(-65, 67));
+    private static final Coord usec2 = UI.scale(new Coord(65, 67));
     private Indir<Resource> lastact1 = null, lastact2 = null;
     private Text lastacttip1 = null, lastacttip2 = null;
     public void draw(GOut g) {
@@ -142,13 +143,13 @@ public class Fightsess extends Widget {
 	double now = Utils.rtime();
 
 	for(Buff buff : fv.buffs.children(Buff.class))
-	    buff.draw(g.reclip(pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
+	    buff.draw(g.reclip(pcc.add(-buff.c.x - Buff.cframe.sz().x - UI.scale(20), buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
 	if(fv.current != null) {
 	    for(Buff buff : fv.current.buffs.children(Buff.class))
-		buff.draw(g.reclip(pcc.add(buff.c.x + 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
+		buff.draw(g.reclip(pcc.add(buff.c.x + UI.scale(20), buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
 
-	    g.aimage(ip.get().tex(), pcc.add(-75, 0), 1, 0.5);
-	    g.aimage(oip.get().tex(), pcc.add(75, 0), 0, 0.5);
+	    g.aimage(ip.get().tex(), pcc.add(-UI.scale(75), 0), 1, 0.5);
+	    g.aimage(oip.get().tex(), pcc.add(UI.scale(75), 0), 0, 0.5);
 
 	    if(fv.lsrel.size() > 1)
 		fxon(fv.current.gobid, tgtfx);
@@ -159,7 +160,7 @@ public class Fightsess extends Widget {
 	    if(now < fv.atkct) {
 		double a = (now - fv.atkcs) / (fv.atkct - fv.atkcs);
 		g.chcolor(255, 0, 128, 224);
-		g.fellipse(cdc, new Coord(24, 24), Math.PI / 2 - (Math.PI * 2 * Math.min(1.0 - a, 1.0)), Math.PI / 2);
+		g.fellipse(cdc, UI.scale(new Coord(24, 24)), Math.PI / 2 - (Math.PI * 2 * Math.min(1.0 - a, 1.0)), Math.PI / 2);
 		g.chcolor();
 	    }
 	    g.image(cdframe, cdc.sub(cdframe.sz().div(2)));
@@ -242,7 +243,7 @@ public class Fightsess extends Widget {
     public static final String[] keytips = {"1", "2", "3", "4", "5", "Shift+1", "Shift+2", "Shift+3", "Shift+4", "Shift+5"};
     public Object tooltip(Coord c, Widget prev) {
 	for(Buff buff : fv.buffs.children(Buff.class)) {
-	    Coord dc = pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y);
+	    Coord dc = pcc.add(-buff.c.x - Buff.cframe.sz().x - UI.scale(20), buff.c.y + pho - Buff.cframe.sz().y);
 	    if(c.isect(dc, buff.sz)) {
 		Object ret = buff.tooltip(c.sub(dc), prevtt);
 		if(ret != null) {
@@ -253,7 +254,7 @@ public class Fightsess extends Widget {
 	}
 	if(fv.current != null) {
 	    for(Buff buff : fv.current.buffs.children(Buff.class)) {
-		Coord dc = pcc.add(buff.c.x + 20, buff.c.y + pho - Buff.cframe.sz().y);
+		Coord dc = pcc.add(buff.c.x + UI.scale(20), buff.c.y + pho - Buff.cframe.sz().y);
 		if(c.isect(dc, buff.sz)) {
 		    Object ret = buff.tooltip(c.sub(dc), prevtt);
 		    if(ret != null) {

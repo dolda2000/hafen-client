@@ -47,7 +47,7 @@ public class LoginScreen extends Widget {
 	super(bg.sz());
 	setfocustab(true);
 	add(new Img(bg), Coord.z);
-	optbtn = adda(new Button(100, "Options"), 10, sz.y - 10, 0, 1);
+	optbtn = adda(new Button(UI.scale(100), "Options"), UI.scale(10), sz.y - UI.scale(10), 0, 1);
     }
 
     private static abstract class Login extends Widget {
@@ -61,19 +61,25 @@ public class LoginScreen extends Widget {
 
 	private Pwbox(String username, boolean save) {
 	    setfocustab(true);
-	    add(new Label("User name", textf), Coord.z);
-	    add(user = new TextEntry(150, username), new Coord(0, 20));
-	    add(new Label("Password", textf), new Coord(0, 50));
-	    add(pass = new TextEntry(150, ""), new Coord(0, 70));
+	    resize(UI.scale(new Coord(150, 150)));
+	    Composer composer = new Composer(this);
+	    composer.add(new Label("User name", textf));
+	    user = new TextEntry(UI.scale(150), username);
+	    composer.add(user);
+	    composer.add(UI.scale(5));
+	    composer.add(new Label("Password", textf));
+	    pass = new TextEntry(UI.scale(150), "");
+	    composer.add(pass);
 	    pass.pw = true;
-	    add(savepass = new CheckBox("Remember me", true), new Coord(0, 100));
+	    savepass = new CheckBox("Remember me", true);
+	    composer.add(UI.scale(5));
+	    composer.add(savepass);
 	    savepass.a = save;
 	    if(user.text.equals(""))
 		setfocus(user);
 	    else
 		setfocus(pass);
-	    resize(new Coord(150, 150));
-	    LoginScreen.this.add(this, new Coord(345, 310));
+	    LoginScreen.this.add(this, LoginScreen.this.sz.mul(new Coord2d(345 / 800., 310 / 600.)).round());
 	}
 
 	public void wdgmsg(Widget sender, String name, Object... args) {
@@ -110,9 +116,10 @@ public class LoginScreen extends Widget {
 		
 	private Tokenbox(String username) {
 	    label = textfs.render("Identity is saved for " + username, java.awt.Color.WHITE);
-	    add(btn = new Button(100, "Forget me"), new Coord(75, 30));
-	    resize(new Coord(250, 100));
-	    LoginScreen.this.add(this, new Coord(295, 330));
+	    btn = new Button(UI.scale(100), "Forget me");
+	    resize(UI.scale(new Coord(250, 100)));
+	    add(btn, sz.div(2).sub(btn.sz.div(2)));
+	    LoginScreen.this.add(this, LoginScreen.this.sz.mul(new Coord2d(295. / 800., 330. / 600.)).round());
 	}
 		
 	Object[] data() {
@@ -150,7 +157,7 @@ public class LoginScreen extends Widget {
 	    adda(btn = new IButton("gfx/hud/buttons/login", "u", "d", "o") {
 		    protected void depress() {Audio.play(Button.lbtdown.stream());}
 		    protected void unpress() {Audio.play(Button.lbtup.stream());}
-		}, 419, 510, 0.5, 0.5);
+		}, (int)Math.round(sz.x * 419. / 800.), (int)Math.round(sz.y * 510. / 600.), 0.5, 0.5);
 	    progress(null);
 	}
     }
@@ -246,9 +253,9 @@ public class LoginScreen extends Widget {
     public void draw(GOut g) {
 	super.draw(g);
 	if(error != null)
-	    g.image(error.tex(), new Coord(420 - (error.sz().x / 2), 450));
+	    g.image(error.tex(), UI.scale(new Coord(420, 450)).sub((error.sz().x / 2), 0));
 	if(progress != null)
-	    g.image(progress.tex(), new Coord(420 - (progress.sz().x / 2), 350));
+	    g.image(progress.tex(), UI.scale(new Coord(420, 350)).sub((progress.sz().x / 2), 0));
     }
 
     public boolean keydown(KeyEvent ev) {

@@ -35,8 +35,8 @@ import java.util.*;
 
 public class MenuGrid extends Widget implements KeyBinding.Bindable {
     public final static Tex bg = Resource.loadtex("gfx/hud/invsq");
-    public final static Coord bgsz = bg.sz().add(-1, -1);
-    public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 10);
+    public final static Coord bgsz = bg.sz().add(-UI.scale(1), -UI.scale(1));
+    public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, UI.scale(10f));
     private static Coord gsz = new Coord(4, 4);
     public final Set<Pagina> paginae = new HashSet<Pagina>();
     public Pagina cur;
@@ -65,7 +65,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    this.bind = binding();
 	}
 
-	public BufferedImage img() {return(res.layer(Resource.imgc).img);}
+	public BufferedImage img() {return(res.layer(Resource.imgc).scaled());}
 	public String name() {return(res.layer(Resource.action).name);}
 	public KeyMatch hotkey() {
 	    char hk = res.layer(Resource.action).hk;
@@ -112,14 +112,14 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		tt = tt.substring(0, pos) + "$b{$col[255,128,0]{" + tt.charAt(pos) + "}}" + tt.substring(pos + 1);
 	    else if(key != KeyMatch.nil)
 		tt += " [$b{$col[255,128,0]{" + key.name() + "}}]";
-	    BufferedImage ret = ttfnd.render(tt, 300).img;
+	    BufferedImage ret = ttfnd.render(tt, UI.scale(300)).img;
 	    if(withpg) {
 		List<ItemInfo> info = info();
 		info.removeIf(el -> el instanceof ItemInfo.Name);
 		if(!info.isEmpty())
 		    ret = ItemInfo.catimgs(0, ret, ItemInfo.longtip(info));
 		if(pg != null)
-		    ret = ItemInfo.catimgs(0, ret, ttfnd.render("\n" + pg.text, 200).img);
+		    ret = ItemInfo.catimgs(0, ret, ttfnd.render("\n" + pg.text, UI.scale(200)).img);
 	    }
 	    return(ret);
 	}
@@ -270,7 +270,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     }
 
     public MenuGrid() {
-	super(bgsz.mul(gsz).add(1, 1));
+	super(bgsz.mul(gsz).add(UI.scale(1), UI.scale(1)));
     }
 
     private void updlayout() {
@@ -317,7 +317,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		    Tex btex;
 		    try {
 			btex = info.img.get();
-			g.image(btex, p.add(1, 1));
+			g.image(btex, p.add(UI.scale(1), UI.scale(1)), btex.sz());
 		    } catch(NullPointerException e) {
 			System.err.println(btn);
 			System.err.println(info.scm == this);
@@ -337,20 +337,19 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			    info.fstart = now;
 			} else {
 			    double ph = (now - info.fstart) - (((x + (y * gsz.x)) * 0.15) % 1.0);
+			    Tex glow = glowmask(btn);
 			    if(ph < 1.25) {
 				g.chcolor(255, 255, 255, (int)(255 * ((Math.cos(ph * Math.PI * 2) * -0.5) + 0.5)));
-				g.image(glowmask(btn), p.sub(4, 4));
-				g.chcolor();
 			    } else {
 				g.chcolor(255, 255, 255, 128);
-				g.image(glowmask(btn), p.sub(4, 4));
-				g.chcolor();
 			    }
+			    g.image(glow, p.sub(4, 4));
+			    g.chcolor();
 			}
 		    }
 		    if(btn == pressed) {
 			g.chcolor(new Color(0, 0, 0, 128));
-			g.frect(p.add(1, 1), btex.sz());
+			g.frect(p.add(UI.scale(1), UI.scale(1)), btex.sz());
 			g.chcolor();
 		    }
 		}

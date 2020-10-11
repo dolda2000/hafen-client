@@ -63,9 +63,9 @@ public class VMeter extends Widget {
     public void draw(GOut g) {
 	g.image(bg, Coord.z);
 	g.chcolor(cl);
-	int h = (sz.y - 6);
+	int h = (sz.y - UI.scale(6));
 	h = (h * amount) / 100;
-	g.image(fg, new Coord(0, 0), new Coord(0, sz.y - 3 - h), sz.add(0, h));
+	g.image(fg, new Coord(0, 0), new Coord(0, sz.y - UI.scale(3) - h), sz.add(0, h));
     }
 	
     public void uimsg(String msg, Object... args) {

@@ -208,7 +208,7 @@ public abstract class ItemInfo {
 	}
 
 	public void layout(Layout l) {
-	    BufferedImage t = tipimg((l.width == 0) ? 200 : l.width);
+	    BufferedImage t = tipimg((l.width == 0) ? UI.scale(200) : l.width);
 	    if(t != null)
 		l.cmp.add(t, new Coord(0, l.cmp.sz.y + 10));
 	}

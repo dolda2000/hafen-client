@@ -27,8 +27,10 @@
 package haven;
 
 public class CheckBox extends Widget {
-    public static final Tex lbox = Resource.loadtex("gfx/hud/chkbox"), lmark = Resource.loadtex("gfx/hud/chkmark");
-    public static final Tex sbox = Resource.loadtex("gfx/hud/chkboxs"), smark = Resource.loadtex("gfx/hud/chkmarks");
+    public static final Tex lbox = Resource.loadtex("gfx/hud/chkbox");
+    public static final Tex lmark = Resource.loadtex("gfx/hud/chkmark");
+    public static final Tex sbox = Resource.loadtex("gfx/hud/chkboxs");
+    public static final Tex smark = Resource.loadtex("gfx/hud/chkmarks");
     public final Tex box, mark;
     public final Coord loff;
     public boolean a = false;
@@ -47,12 +49,12 @@ public class CheckBox extends Widget {
 	this.lbl = Text.std.render(lbl, java.awt.Color.WHITE);
 	if(lg) {
 	    box = lbox; mark = lmark;
-	    loff = new Coord(0, -3);
+	    loff = new Coord(0, this.lbl.sz().y / 2);
 	} else {
 	    box = sbox; mark = smark;
-	    loff = new Coord(5, 0);
+	    loff = UI.scale(new Coord(5, 0));
 	}
-	sz = new Coord(box.sz().x + 5 + this.lbl.sz().x, Math.max(box.sz().y, this.lbl.sz().y));
+	sz = new Coord(box.sz().x + UI.scale(5) + this.lbl.sz().x, Math.max(box.sz().y, this.lbl.sz().y));
     }
 
     public CheckBox(String lbl) {
@@ -72,11 +74,12 @@ public class CheckBox extends Widget {
     }
 
     public void draw(GOut g) {
-	g.image(lbl.tex(), loff.add(box.sz().x, box.sz().y - lbl.sz().y));
-	g.image(box, Coord.z);
-	if(a)
-	    g.image(mark, Coord.z);
-	super.draw(g);
+        g.image(lbl.tex(), loff.add(box.sz().x, (sz.y - lbl.sz().y) / 2));
+        g.image(box, Coord.z.add(0, (sz.y - box.sz().y) / 2));
+        if (a) {
+            g.image(mark, Coord.z.add(0, (sz.y - mark.sz().y) / 2));
+        }
+        super.draw(g);
     }
 
     public void changed(boolean val) {

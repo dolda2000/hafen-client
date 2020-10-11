@@ -60,6 +60,19 @@ public class Frame extends Widget {
 	return(around(parent, new Area(tl, br)));
     }
 
+    public static Frame with(Widget child, boolean resize) {
+	if(resize) {
+	    Frame ret = new Frame(child.sz, false);
+	    child.resize(child.sz.sub(ret.box.bisz()));
+	    ret.add(child, 0, 0);
+	    return(ret);
+	} else {
+	    Frame ret = new Frame(child.sz, true);
+	    ret.add(child, 0, 0);
+	    return(ret);
+	}
+    }
+
     public Coord inner() {
 	return(sz.sub(box.bisz()));
     }
