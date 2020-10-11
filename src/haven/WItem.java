@@ -160,7 +160,7 @@ public class WItem extends Widget implements DTarget {
 	 * of one yet. */
 	GSprite spr = item.spr();
 	if((spr != null) && (spr != lspr)) {
-	    Coord sz = spr.sz();
+	    Coord sz = new Coord(spr.sz());
 	    if((sz.x % sqsz.x) != 0)
 		sz.x = sqsz.x * ((sz.x / sqsz.x) + 1);
 	    if((sz.y % sqsz.y) != 0)
