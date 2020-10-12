@@ -54,7 +54,7 @@ public class GobIcon extends GAttrib {
 		    } else {
 			BufferedImage buf = img.img;
 			buf = PUtils.rasterimg(PUtils.blurmask2(buf.getRaster(), 1, 1, Color.BLACK));
-			buf = PUtils.convolvedown(buf, sz, filter);
+			buf = PUtils.convolve(buf, sz, filter);
 			cache.put(res, new TexI(buf));
 		    }
 		}
