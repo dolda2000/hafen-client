@@ -1154,7 +1154,7 @@ public class ChatUI extends Widget {
     }
 
     public void resize(int w) {
-	resize(new Coord(w, sz.y));
+	resize(new Coord(Math.max(w, selw + marg.x + UI.scale(10) + marg.x), sz.y));
     }
     
     public void move(Coord base) {
