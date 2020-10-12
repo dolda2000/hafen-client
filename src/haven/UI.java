@@ -28,6 +28,9 @@ package haven;
 
 import java.util.*;
 import java.awt.Font;
+import java.awt.GraphicsEnvironment;
+import java.awt.GraphicsDevice;
+import java.awt.DisplayMode;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.InputEvent;
@@ -56,7 +59,7 @@ public class UI {
     public GSettings gprefs = GSettings.load(true);
     private boolean gprefsdirty = false;
     public final ActAudio.Root audio = new ActAudio.Root();
-    private static final double scalef = Config.uiscale == null ? Utils.getprefd("uiscale", 1.0) : Config.uiscale;
+    private static final double scalef = loadscale();
     
     {
 	lastevent = lasttick = Utils.rtime();
@@ -499,5 +502,34 @@ public class UI {
 
     public static Coord unscale(Coord v) {
 	return(v.div(scalef));
+    }
+
+    private static double maxscale = -1;
+    public static double maxscale() {
+	synchronized(UI.class) {
+	    if(maxscale < 0) {
+		double fscale = 1.0;
+		try {
+		    GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		    for(GraphicsDevice dev : env.getScreenDevices()) {
+			DisplayMode mode = dev.getDisplayMode();
+			double scale = Math.min(mode.getWidth() / 800.0, mode.getHeight() / 600.0);
+			fscale = Math.max(fscale, scale);
+		    }
+		} catch(Exception exc) {
+		    new Warning(exc, "could not determine maximum scaling factor").issue();
+		}
+		maxscale = fscale;
+	    }
+	    return(maxscale);
+	}
+    }
+
+    private static double loadscale() {
+	if(Config.uiscale != null)
+	    return(Config.uiscale);
+	double scale = Utils.getprefd("uiscale", 1.0);
+	scale = Math.max(Math.min(scale, maxscale()), 1.0);
+	return(scale);
     }
 }
