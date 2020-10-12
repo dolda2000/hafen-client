@@ -508,7 +508,7 @@ public class UI {
     public static double maxscale() {
 	synchronized(UI.class) {
 	    if(maxscale < 0) {
-		double fscale = 1.0;
+		double fscale = 1.25;
 		try {
 		    GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		    for(GraphicsDevice dev : env.getScreenDevices()) {
