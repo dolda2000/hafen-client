@@ -59,7 +59,7 @@ public class UI {
     public GSettings gprefs = GSettings.load(true);
     private boolean gprefsdirty = false;
     public final ActAudio.Root audio = new ActAudio.Root();
-    private static final double scalef = loadscale();
+    private static final double scalef;
     
     {
 	lastevent = lasttick = Utils.rtime();
@@ -531,5 +531,9 @@ public class UI {
 	double scale = Utils.getprefd("uiscale", 1.0);
 	scale = Math.max(Math.min(scale, maxscale()), 1.0);
 	return(scale);
+    }
+
+    static {
+	scalef = loadscale();
     }
 }
