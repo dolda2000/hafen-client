@@ -236,6 +236,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private void menubuttons(Widget bg) {
 	brpanel.add(new MenuButton("csearch", kb_srch, "Search actions...") {
 		public void click() {
+		    if(menu == null)
+			return;
 		    if(srchwnd == null) {
 			srchwnd = new MenuSearch(menu);
 			fitwdg(GameUI.this.add(srchwnd, Utils.getprefc("wndc-srch", new Coord(200, 200))));
