@@ -78,8 +78,16 @@ public abstract class Listbox<T> extends ListWidget<T> {
 	    change(item);
     }
 
+    public Coord idxc(int idx) {
+	return(new Coord(0, (idx - sb.val) * itemh));
+    }
+
+    public int idxat(Coord c) {
+	return((c.y / itemh) + sb.val);
+    }
+
     public T itemat(Coord c) {
-	int idx = (c.y / itemh) + sb.val;
+	int idx = idxat(c);
 	if(idx >= listitems())
 	    return(null);
 	return(listitem(idx));
