@@ -151,6 +151,11 @@ public class Button extends SIWidget {
 	if(action != null)
 	    action.run();
     }
+
+    public boolean gkeytype(java.awt.event.KeyEvent ev) {
+	click();
+	return(true);
+    }
     
     public void uimsg(String msg, Object... args) {
 	if(msg == "ch") {

@@ -157,6 +157,11 @@ public class TextEntry extends SIWidget {
 	    wdgmsg("activate", text);
     }
 
+    public boolean gkeytype(KeyEvent ev) {
+	activate(buf.line);
+	return(true);
+    }
+
     public boolean keydown(KeyEvent e) {
 	return(buf.key(e));
     }
