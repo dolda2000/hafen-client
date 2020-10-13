@@ -29,28 +29,27 @@ package haven;
 import java.awt.event.KeyEvent;
 
 public class LoginScreen extends Widget {
-    Login cur;
-    Text error;
-    IButton btn;
-    Button optbtn;
-    OptWnd opts;
-    static Text.Foundry textf, textfs;
-    static Tex bg = Resource.loadtex("gfx/loginscr");
-    Text progress = null;
-
-    static {
-	textf = new Text.Foundry(Text.sans, 16).aa(true);
+    public static final Text.Foundry
+	textf = new Text.Foundry(Text.sans, 16).aa(true),
 	textfs = new Text.Foundry(Text.sans, 14).aa(true);
-    }
+    public static final Tex bg = Resource.loadtex("gfx/loginscr");
+    public static final Position bgc = new Position(UI.scale(420, 300));
+    private Login cur;
+    private Text error, progress;
+    private IButton btn;
+    private Button optbtn;
+    private OptWnd opts;
 
     public LoginScreen() {
 	super(bg.sz());
 	setfocustab(true);
 	add(new Img(bg), Coord.z);
-	optbtn = adda(new Button(UI.scale(100), "Options"), UI.scale(10), sz.y - UI.scale(10), 0, 1);
+	optbtn = adda(new Button(UI.scale(100), "Options"), pos("cbl").add(10, -10), 0, 1);
     }
 
     private static abstract class Login extends Widget {
+	Login(Coord sz) {super(sz);}
+
 	abstract Object[] data();
 	abstract boolean enter();
     }
@@ -60,26 +59,20 @@ public class LoginScreen extends Widget {
 	CheckBox savepass;
 
 	private Pwbox(String username, boolean save) {
+	    super(UI.scale(150, 150));
 	    setfocustab(true);
-	    resize(UI.scale(new Coord(150, 150)));
-	    Composer composer = new Composer(this);
-	    composer.add(new Label("User name", textf));
-	    user = new TextEntry(UI.scale(150), username);
-	    composer.add(user);
-	    composer.add(UI.scale(5));
-	    composer.add(new Label("Password", textf));
-	    pass = new TextEntry(UI.scale(150), "");
-	    composer.add(pass);
+	    Widget prev = add(new Label("User name", textf), 0, 0);
+	    add(user = new TextEntry(UI.scale(150), username), prev.pos("bl").adds(0, 1));
+	    prev = add(new Label("Password", textf), user.pos("bl").adds(0, 10));
+	    add(pass = new TextEntry(UI.scale(150), ""), prev.pos("bl").adds(0, 1));
 	    pass.pw = true;
-	    savepass = new CheckBox("Remember me", true);
-	    composer.add(UI.scale(5));
-	    composer.add(savepass);
+	    add(savepass = new CheckBox("Remember me", true), pass.pos("bl").adds(0, 10));
 	    savepass.a = save;
 	    if(user.text.equals(""))
 		setfocus(user);
 	    else
 		setfocus(pass);
-	    LoginScreen.this.add(this, LoginScreen.this.sz.mul(new Coord2d(345 / 800., 310 / 600.)).round());
+	    LoginScreen.this.adda(this, bgc.adds(0, 10), 0.5, 0.0);
 	}
 
 	public void wdgmsg(Widget sender, String name, Object... args) {
@@ -111,15 +104,13 @@ public class LoginScreen extends Widget {
     }
 
     private class Tokenbox extends Login {
-	Text label;
 	Button btn;
 		
 	private Tokenbox(String username) {
-	    label = textfs.render("Identity is saved for " + username, java.awt.Color.WHITE);
-	    btn = new Button(UI.scale(100), "Forget me");
-	    resize(UI.scale(new Coord(250, 100)));
-	    add(btn, sz.div(2).sub(btn.sz.div(2)));
-	    LoginScreen.this.add(this, LoginScreen.this.sz.mul(new Coord2d(295. / 800., 330. / 600.)).round());
+	    super(UI.scale(250, 100));
+	    adda(new Label("Identity is saved for " + username, textfs), pos("cmid").y(0), 0.5, 0.0);
+	    adda(btn = new Button(UI.scale(100), "Forget me"), pos("cmid"), 0.5, 0.5);
+	    LoginScreen.this.adda(this, bgc.adds(0, 30), 0.5, 0.0);
 	}
 		
 	Object[] data() {
@@ -138,11 +129,6 @@ public class LoginScreen extends Widget {
 	    super.wdgmsg(sender, name, args);
 	}
 		
-	public void draw(GOut g) {
-	    g.image(label.tex(), new Coord((sz.x / 2) - (label.sz().x / 2), 0));
-	    super.draw(g);
-	}
-	
 	public boolean globtype(char k, KeyEvent ev) {
 	    if((k == 'f') && ((ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0)) {
 		LoginScreen.this.wdgmsg("forget");
@@ -157,7 +143,7 @@ public class LoginScreen extends Widget {
 	    adda(btn = new IButton("gfx/hud/buttons/login", "u", "d", "o") {
 		    protected void depress() {Audio.play(Button.lbtdown.stream());}
 		    protected void unpress() {Audio.play(Button.lbtup.stream());}
-		}, (int)Math.round(sz.x * 419. / 800.), (int)Math.round(sz.y * 510. / 600.), 0.5, 0.5);
+		}, bgc.adds(0, 210), 0.5, 0.5);
 	    progress(null);
 	}
     }
@@ -253,9 +239,9 @@ public class LoginScreen extends Widget {
     public void draw(GOut g) {
 	super.draw(g);
 	if(error != null)
-	    g.image(error.tex(), UI.scale(new Coord(420, 450)).sub((error.sz().x / 2), 0));
+	    g.aimage(error.tex(), bgc.adds(0, 150), 0.5, 0.0);
 	if(progress != null)
-	    g.image(progress.tex(), UI.scale(new Coord(420, 350)).sub((progress.sz().x / 2), 0));
+	    g.aimage(progress.tex(), bgc.adds(0, 50), 0.5, 0.0);
     }
 
     public boolean keydown(KeyEvent ev) {
