@@ -46,7 +46,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private List<Widget> meters = new LinkedList<Widget>();
     private Text lastmsg;
     private double msgtime;
-    private Window invwnd, equwnd, makewnd, srchwnd;
+    private Window invwnd, equwnd, makewnd, srchwnd, iconwnd;
     private Coord makewndc = Utils.getprefc("makewndc", new Coord(400, 200));
     public Inventory maininv;
     public CharWnd chrwdg;
@@ -193,6 +193,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public static final KeyBinding kb_claim = KeyBinding.get("ol-claim", KeyMatch.nil);
     public static final KeyBinding kb_vil = KeyBinding.get("ol-vil", KeyMatch.nil);
     public static final KeyBinding kb_rlm = KeyBinding.get("ol-rlm", KeyMatch.nil);
+    public static final KeyBinding kb_ico = KeyBinding.get("map-icons", KeyMatch.nil);
     private void mapbuttons() {
 	blpanel.add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims") {
 		public void click() {
@@ -230,6 +231,19 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}
 	    });
+	blpanel.add(new MenuButton("lbtn-ico", kb_ico, "Icon settings...") {
+		public void click() {
+		    if(mmap == null)
+			return;
+		    if(iconwnd == null) {
+			iconwnd = new GobIcon.SettingsWindow(mmap.iconconf, () -> Utils.defer(mmap::saveconf));
+			fitwdg(GameUI.this.add(iconwnd, Utils.getprefc("wndc-icon", new Coord(200, 200))));
+		    } else {
+			ui.destroy(iconwnd);
+			iconwnd = null;
+		    }
+		}
+	    }, 0, 0);
     }
 
     public static final KeyBinding kb_srch = KeyBinding.get("scm-srch", KeyMatch.forchar('Z', KeyMatch.C));
@@ -1008,6 +1022,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if((sender == srchwnd) && (msg == "close")) {
 	    ui.destroy(srchwnd);
 	    srchwnd = null;
+	    return;
+	} else if((sender == iconwnd) && (msg == "close")) {
+	    ui.destroy(iconwnd);
+	    iconwnd = null;
 	    return;
 	}
 	super.wdgmsg(sender, msg, args);
