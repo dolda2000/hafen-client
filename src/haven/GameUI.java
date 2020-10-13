@@ -231,7 +231,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}
 	    });
-	blpanel.add(new MenuButton("lbtn-ico", kb_ico, "Icon settings...") {
+	blpanel.add(new MenuButton("lbtn-ico", kb_ico, "Icon settings") {
 		public void click() {
 		    if(mmap == null)
 			return;
