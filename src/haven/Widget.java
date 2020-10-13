@@ -827,14 +827,17 @@ public class Widget {
 	return(KeyMatch.forchar((char)key, modmask, modmatch));
     }
 
+    public boolean gkeytype(KeyEvent ev) {
+	wdgmsg("activate", UI.modflags(ev));
+	return(true);
+    }
+
     public boolean globtype(char key, KeyEvent ev) {
 	KeyMatch gkey = this.gkey;
 	if(kb_gkey != null)
 	    gkey = kb_gkey.key();
-	if((gkey != null) && gkey.match(ev)) {
-	    wdgmsg("activate", UI.modflags(ev));
-	    return(true);
-	}
+	if((gkey != null) && gkey.match(ev))
+	    return(gkeytype(ev));
 	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
 	    if(wdg.globtype(key, ev))
 		return(true);
