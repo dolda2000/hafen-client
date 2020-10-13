@@ -32,7 +32,6 @@ import java.awt.image.*;
 
 public class GobIcon extends GAttrib {
     private static final int size = UI.scale(20);
-    private static final Coord sz = new Coord(size, size);
     public static final PUtils.Convolution filter = new PUtils.Hanning(1);
     private static final Map<Indir<Resource>, Tex> cache = new WeakHashMap<>();
     public final Indir<Resource> res;
@@ -54,7 +53,12 @@ public class GobIcon extends GAttrib {
 		    } else {
 			BufferedImage buf = img.img;
 			buf = PUtils.rasterimg(PUtils.blurmask2(buf.getRaster(), 1, 1, Color.BLACK));
-			buf = PUtils.convolve(buf, sz, filter);
+			Coord tsz;
+			if(buf.getWidth() > buf.getHeight())
+			    tsz = new Coord(size, (size * buf.getHeight()) / buf.getWidth());
+			else
+			    tsz = new Coord((size * buf.getWidth()) / buf.getHeight(), size);
+			buf = PUtils.convolve(buf, tsz, filter);
 			cache.put(res, new TexI(buf));
 		    }
 		}
@@ -111,9 +115,16 @@ public class GobIcon extends GAttrib {
 
 	    private Tex img = null;
 	    public Tex img() {
-		if(img == null)
-		    img = new TexI(PUtils.convolve(res.loadsaved(Resource.remote()).layer(Resource.imgc).img, new Coord(elh, elh), filter));
-		return(img);
+		if(this.img == null) {
+		    BufferedImage img = res.loadsaved(Resource.remote()).layer(Resource.imgc).img;
+		    Coord tsz;
+		    if(img.getWidth() > img.getHeight())
+			tsz = new Coord(elh, (elh * img.getHeight()) / img.getWidth());
+		    else
+			tsz = new Coord((elh * img.getWidth()) / img.getHeight(), elh);
+		    this.img = new TexI(PUtils.convolve(img, tsz, filter));
+		}
+		return(this.img);
 	    }
 	}
 
