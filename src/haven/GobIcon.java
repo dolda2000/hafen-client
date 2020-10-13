@@ -67,4 +67,31 @@ public class GobIcon extends GAttrib {
     public static Coord sz(Coord sz) {
 	return sz.mul((double) size / Math.max(sz.x, sz.y));
     }
+
+    public static class Setting implements java.io.Serializable {
+	public boolean show;
+    }
+
+    public static class Settings implements java.io.Serializable {
+	public Map<Resource.Spec, Setting> settings = new HashMap<>();
+	public int tag = -1;
+
+	public Setting get(Resource.Named res) {
+	    return(settings.get(res));
+	}
+
+	public Setting get(Resource res) {
+	    return(get(res.indir()));
+	}
+
+	public void receive(int tag, Resource.Spec[] res, Setting[] conf) {
+	    Map<Resource.Spec, Setting> nset = new HashMap<>(settings);
+	    for(int i = 0; i < res.length; i++) {
+		if(!nset.containsKey(res[i]))
+		    nset.put(res[i], conf[i]);
+	    }
+	    this.settings = nset;
+	    this.tag = tag;
+	}
+    }
 }

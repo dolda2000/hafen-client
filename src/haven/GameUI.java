@@ -958,6 +958,37 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    String nm = (String)args[3];
 	    if(mapfile != null)
 		mapfile.markobj(gobid, oid, res, nm);
+	} else if(msg == "map-icons") {
+	    if(mmap != null) {
+		GobIcon.Settings conf = mmap.iconconf;
+		int tag = (Integer)args[0];
+		if(args.length < 2) {
+		    if(conf.tag != tag)
+			wdgmsg("map-icons", conf.tag);
+		} else if(args[1] instanceof String) {
+		    Resource.Spec res = new Resource.Spec(null, (String)args[1], (Integer)args[2]);
+		    GobIcon.Setting cset = new GobIcon.Setting();
+		    cset.show = ((Integer)args[3]) != 0;
+		    conf.receive(tag, new Resource.Spec[] {res}, new GobIcon.Setting[] {cset});
+		    mmap.saveconf();
+		} else if(args[1] instanceof Object[]) {
+		    Object[] sub = (Object[])args[1];
+		    int a = 0;
+		    Collection<Resource.Spec> res = new ArrayList<>();
+		    Collection<GobIcon.Setting> csets = new ArrayList<>();
+		    while(a < sub.length) {
+			String resnm = (String)sub[a++];
+			int resver = (Integer)sub[a++];
+			int fl = (Integer)sub[a++];
+			res.add(new Resource.Spec(null, resnm, resver));
+			GobIcon.Setting cset = new GobIcon.Setting();
+			cset.show = ((fl & 1) != 0);
+			csets.add(cset);
+		    }
+		    conf.receive(tag, res.toArray(new Resource.Spec[0]), csets.toArray(new GobIcon.Setting[0]));
+		    mmap.saveconf();
+		}
+	    }
 	} else {
 	    super.uimsg(msg, args);
 	}

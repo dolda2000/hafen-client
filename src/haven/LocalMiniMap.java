@@ -39,6 +39,7 @@ import haven.resutil.Ridges;
 public class LocalMiniMap extends Widget {
     public final MapView mv;
     public MapFile save;
+    public GobIcon.Settings iconconf;
     private Coord cc = null;
     private MapTile cur = null;
     private final Map<Pair<Grid, Integer>, Defer.Future<MapTile>> cache = new LinkedHashMap<Pair<Grid, Integer>, Defer.Future<MapTile>>(5, 0.75f, true) {
@@ -134,6 +135,10 @@ public class LocalMiniMap extends Widget {
 	this.mv = mv;
     }
 
+    protected void attached() {
+	iconconf = loadconf();
+    }
+
     public void save(MapFile file) {
 	this.save = file;
     }
@@ -144,6 +149,35 @@ public class LocalMiniMap extends Widget {
 
     public Coord2d c2p(Coord c) {
 	return(UI.unscale(c.sub(sz.div(2))).add(cc).mul(tilesz).add(tilesz.div(2)));
+    }
+
+    private String confname() {
+	StringBuilder buf = new StringBuilder();
+	buf.append("mm-icons");
+	GameUI gui = getparent(GameUI.class);
+	if((gui != null) && (gui.genus != null))
+	    buf.append("/" + gui.genus);
+	if(ui.sess != null)
+	    buf.append("/" + ui.sess.username);
+	return(buf.toString());
+    }
+
+    private GobIcon.Settings loadconf() {
+	byte[] data = Utils.getprefb(confname(), null);
+	if(data == null)
+	    return(new GobIcon.Settings());
+	try {
+	    GobIcon.Settings ret = (GobIcon.Settings)Utils.deserialize(data);
+	    if(ret == null)
+		return(new GobIcon.Settings());
+	    return(ret);
+	} catch(Exception e) {
+	    return(new GobIcon.Settings());
+	}
+    }
+
+    public void saveconf() {
+	Utils.setprefb(confname(), Utils.serialize(iconconf));
     }
 
     public void drawicons(GOut g) {
