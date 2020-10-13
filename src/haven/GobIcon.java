@@ -121,15 +121,19 @@ public class GobIcon extends GAttrib {
 	private static final int elh = elf.height() + UI.scale(2);
 	private static final Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32), found = new Color(255, 255, 0, 32);
 	public class IconList extends Searchbox<Icon> {
-	    private final Coord showc;
+	    private Coord showc;
 	    private List<Icon> ordered = Collections.emptyList();
 	    private Map<Resource.Spec, Setting> cur = null;
 	    private boolean reorder = false;
 
 	    private IconList(int w, int h) {
 		super(w, h, elh);
-		this.showc = new Coord(w - ((elh - CheckBox.sbox.sz().y) / 2) - CheckBox.sbox.sz().x,
-				       ((elh - CheckBox.sbox.sz().y) / 2));
+		this.showc = showc();
+	    }
+
+	    private Coord showc() {
+		return(new Coord(sz.x - (sb.vis() ? sb.sz.x : 0) - ((elh - CheckBox.sbox.sz().y) / 2) - CheckBox.sbox.sz().x,
+				 ((elh - CheckBox.sbox.sz().y) / 2)));
 	    }
 
 	    public void tick(double dt) {
@@ -174,6 +178,11 @@ public class GobIcon extends GAttrib {
 		if(icon.name == null)
 		   return(false);
 		return(icon.name.text.toLowerCase().indexOf(txt.toLowerCase()) >= 0);
+	    }
+
+	    public void draw(GOut g) {
+		this.showc = showc();
+		super.draw(g);
 	    }
 
 	    protected void drawbg(GOut g) {}
