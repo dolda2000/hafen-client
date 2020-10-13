@@ -45,7 +45,6 @@ public class Widget {
     public Object tooltip = null;
     public KeyMatch gkey;
     public KeyBinding kb_gkey;
-    public boolean temp = false;
     private Widget prevtt;
     static Map<String, Factory> types = new TreeMap<String, Factory>();
 
@@ -214,12 +213,6 @@ public class Widget {
 	if(f == null)
 	    throw(new RuntimeException("No such widget type: " + name));
 	return(f);
-    }
-
-    public static Widget temporary() {
-        Widget result = new Widget();
-        result.temp = true;
-        return result;
     }
 
     public Widget(Coord sz) {
@@ -979,21 +972,68 @@ public class Widget {
     
     public void presize() {
     }
-	
+
+    public static class Position extends Coord {
+	public Position(int x, int y) {
+	    super(x, y);
+	}
+
+	public Position(Coord c) {
+	    this(c.x, c.y);
+	}
+
+	public Position add(int X, int Y) {return(new Position(x + X, y + Y));}
+	public Position add(Coord c) {return(add(c.x, c.y));}
+	public Position adds(int x, int y) {return(add(UI.scale(x), UI.scale(y)));}
+	public Position adds(Coord c) {return(add(UI.scale(c)));}
+
+	public Position sub(int X, int Y) {return(new Position(x - X, y - Y));}
+	public Position sub(Coord c) {return(sub(c.x, c.y));}
+	public Position subs(int x, int y) {return(sub(UI.scale(x), UI.scale(y)));}
+	public Position subs(Coord c) {return(sub(UI.scale(c)));}
+
+	public Position x(int X) {return(new Position(X, y));}
+	public Position y(int Y) {return(new Position(x, Y));}
+	public Position xs(int x) {return(x(UI.scale(x)));}
+	public Position ys(int y) {return(y(UI.scale(y)));}
+    }
+
+    public Position getpos(String nm) {
+	switch(nm) {
+	case "ul": return(new Position(this.c));
+	case "ur": return(new Position(this.c.add(this.sz.x, 0)));
+	case "br": return(new Position(this.c.add(this.sz)));
+	case "bl": return(new Position(this.c.add(0, this.sz.y)));
+	case "cbr": return(new Position(this.sz));
+	case "cur": return(new Position(this.sz.x, 0));
+	case "cbl": return(new Position(0, this.sz.y));
+	case "mid": return(new Position(this.c.add(this.sz.div(2))));
+	case "cmid": return(new Position(this.sz.div(2)));
+	default: return(null);
+	}
+    }
+
+    public Position pos(String nm) {
+	Position ret = getpos(nm);
+	if(ret == null)
+	    throw(new IllegalArgumentException(String.format("Illegal position anchor \"%s\" from widget %s", nm, this)));
+	return(ret);
+    }
+
     public void raise() {
 	synchronized((ui != null)?ui:new Object()) {
 	    unlink();
 	    link();
 	}
     }
-    
+
     public void lower() {
 	synchronized((ui != null)?ui:new Object()) {
 	    unlink();
 	    linkfirst();
 	}
     }
-    
+
     public <T> T getchild(Class<T> cl) {
 	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
 	    if(cl.isInstance(wdg))
@@ -1013,7 +1053,7 @@ public class Widget {
 	}
 	return(null);
     }
-    
+
     public Widget rprev() {
 	if(prev != null) {
 	    Widget lc = prev.lchild;
@@ -1230,27 +1270,28 @@ public class Widget {
 	public abstract void ntick(double a);
     }
 
-    public void optimize() {
-	for(Widget w = child; w != null; w = w.next) {
-	    if (w.temp) {
-		w.give(this);
-		w.destroy();
-	    } else {
-		w.optimize();
+    public static class Temporary extends Widget {
+	public void lower() {
+	    Widget last = parent.lchild;
+	    last.next = child;
+	    child.prev = last;
+	    for(Widget w = child; w != null; w = w.next) {
+		w.parent = parent;
+		w.c = w.c.add(c);
+	    }
+	    parent.lchild = lchild;
+	    child = null;
+	    lchild = null;
+	    destroy();
+	}
+
+	public static void optimize(Widget wdg) {
+	    for(Widget w = wdg.child; w != null; w = w.next) {
+		if (w instanceof Temporary)
+		    ((Temporary)w).lower();
+		else
+		    optimize(w);
 	    }
 	}
-    }
-
-    public void give(Widget parent) {
-	Widget last = parent.lchild;
-	last.next = child;
-	child.prev = last;
-	for(Widget w = child; w != null; w = w.next) {
-	    w.parent = parent;
-	    w.c = w.c.add(c);
-	}
-	parent.lchild = lchild;
-	child = null;
-	lchild = null;
     }
 }
