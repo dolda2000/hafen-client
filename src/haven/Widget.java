@@ -45,7 +45,6 @@ public class Widget {
     public Object tooltip = null;
     public KeyMatch gkey;
     public KeyBinding kb_gkey;
-    public boolean temp = false;
     private Widget prevtt;
     static Map<String, Factory> types = new TreeMap<String, Factory>();
 
@@ -214,12 +213,6 @@ public class Widget {
 	if(f == null)
 	    throw(new RuntimeException("No such widget type: " + name));
 	return(f);
-    }
-
-    public static Widget temporary() {
-        Widget result = new Widget();
-        result.temp = true;
-        return result;
     }
 
     public Widget(Coord sz) {
@@ -1230,27 +1223,28 @@ public class Widget {
 	public abstract void ntick(double a);
     }
 
-    public void optimize() {
-	for(Widget w = child; w != null; w = w.next) {
-	    if (w.temp) {
-		w.give(this);
-		w.destroy();
-	    } else {
-		w.optimize();
+    public static class Temporary extends Widget {
+	public void lower() {
+	    Widget last = parent.lchild;
+	    last.next = child;
+	    child.prev = last;
+	    for(Widget w = child; w != null; w = w.next) {
+		w.parent = parent;
+		w.c = w.c.add(c);
+	    }
+	    parent.lchild = lchild;
+	    child = null;
+	    lchild = null;
+	    destroy();
+	}
+
+	public static void optimize(Widget wdg) {
+	    for(Widget w = wdg.child; w != null; w = w.next) {
+		if (w instanceof Temporary)
+		    ((Temporary)w).lower();
+		else
+		    optimize(w);
 	    }
 	}
-    }
-
-    public void give(Widget parent) {
-	Widget last = parent.lchild;
-	last.next = child;
-	child.prev = last;
-	for(Widget w = child; w != null; w = w.next) {
-	    w.parent = parent;
-	    w.c = w.c.add(c);
-	}
-	parent.lchild = lchild;
-	child = null;
-	lchild = null;
     }
 }
