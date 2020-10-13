@@ -283,7 +283,7 @@ public class OptWnd extends Window {
 		composer.add(new Label("UI scale (requires restart)"));
 		{
 		    Label dpy = new Label("");
-		    final double smin = 1, smax = 4;
+		    final double smin = 1, smax = Math.floor(UI.maxscale() / 0.25) * 0.25;
 		    final int steps = (int)Math.round((smax - smin) / 0.25);
 		    composer.addr(
 			new HSlider(UI.scale(160), 0, steps, (int)Math.round(steps * (Utils.getprefd("uiscale", 1.0) - smin) / (smax - smin))) {
