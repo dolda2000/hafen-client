@@ -56,7 +56,7 @@ public class Resource implements Serializable {
     public final transient Pool pool;
     private boolean used = false;
 
-    public abstract static class Named implements Indir<Resource> {
+    public abstract static class Named implements Indir<Resource>, Serializable {
 	public final String name;
 	public final int ver;
 
