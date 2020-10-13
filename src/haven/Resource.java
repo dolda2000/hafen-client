@@ -105,6 +105,8 @@ public class Resource implements Serializable {
 
 	public static Resource loadsaved(Resource.Pool pool, Resource.Spec spec) {
 	    try {
+		if(spec.pool == null)
+		    return(pool.load(spec.name, spec.ver).get());
 		return(spec.get());
 	    } catch(Loading l) {
 		throw(l);
