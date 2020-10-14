@@ -31,9 +31,27 @@ import static haven.Inventory.invsq;
 
 public class Equipory extends Widget implements DTarget {
     private static final Tex bg = Resource.loadtex("gfx/hud/equip/bg");
-    private static final int offx = UI.scale(34);
-    private static final int rx = offx + bg.sz().x;
-    public static final Coord ecoords[] = makecoords();
+    private static final int
+	rx = invsq.sz().x + bg.sz().x,
+	yo = Inventory.sqsz.y;
+    public static final Coord bgc = new Coord(invsq.sz().x, 0);
+    public static final Coord ecoords[] = {
+	UI.scale( 0, 0 * yo),
+	UI.scale(rx, 0 * yo),
+	UI.scale( 0, 1 * yo),
+	UI.scale(rx, 2 * yo),
+	UI.scale( 0, 3 * yo),
+	UI.scale(rx, 3 * yo),
+	UI.scale( 0, 4 * yo),
+	UI.scale(rx, 4 * yo),
+	UI.scale( 0, 5 * yo),
+	UI.scale(rx, 5 * yo),
+	UI.scale( 0, 6 * yo),
+	UI.scale(rx, 6 * yo),
+	UI.scale( 0, 7 * yo),
+	UI.scale(rx, 7 * yo),
+	UI.scale(invsq.sz().x, 0 * yo),
+    };
     public static final Tex[] ebgs = new Tex[ecoords.length];
     public static final Text[] etts = new Text[ecoords.length];
     static Coord isz;
@@ -94,7 +112,7 @@ public class Equipory extends Widget implements DTarget {
 
 		final FColor cc = new FColor(0, 0, 0, 0);
 		protected FColor clearcolor() {return(cc);}
-	    }, new Coord(offx, 0));
+	    }, bgc);
 	ava.color = null;
     }
 
@@ -187,16 +205,5 @@ public class Equipory extends Widget implements DTarget {
 
     public boolean iteminteract(Coord cc, Coord ul) {
 	return(false);
-    }
-
-    static Coord[] makecoords() {
-        Coord[] result = new Coord[2 * 8 + 1];
-        for (int i = 0; i < 8; ++i) {
-            int y = UI.scale(33 * i);
-            result[2 * i] = new Coord(0, y);
-            result[2 * i + 1] = new Coord(rx, y);
-        }
-        result[result.length - 1] = new Coord(offx, 0);
-        return result;
     }
 }
