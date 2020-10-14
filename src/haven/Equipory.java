@@ -39,6 +39,8 @@ public class Equipory extends Widget implements DTarget {
 	UI.scale( 0, 0 * yo),
 	UI.scale(rx, 0 * yo),
 	UI.scale( 0, 1 * yo),
+	UI.scale(rx, 1 * yo),
+	UI.scale( 0, 2 * yo),
 	UI.scale(rx, 2 * yo),
 	UI.scale( 0, 3 * yo),
 	UI.scale(rx, 3 * yo),
@@ -176,7 +178,7 @@ public class Equipory extends Widget implements DTarget {
 	    } catch(Loading l) {
 	    }
 	}
-	for(int i = 0; i < 16; i++) {
+	for(int i = 0; i < ecoords.length; i++) {
 	    if((slots & (1 << i)) != 0) {
 		g.chcolor(255, 255, 0, 64);
 		g.frect(ecoords[i].add(1, 1), invsq.sz().sub(2, 2));
