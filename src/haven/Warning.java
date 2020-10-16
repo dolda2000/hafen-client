@@ -50,6 +50,8 @@ public class Warning extends Throwable {
     private static LinkedList<Warning> log = null;
     public void issue() {
 	System.err.printf("hafen: warning: %s\n", this);
+	if(getCause() != null)
+	    getCause().printStackTrace(System.err);
 	synchronized(Warning.class) {
 	    if(log == null) {
 		ErrorHandler errh = ErrorHandler.find();
