@@ -208,7 +208,7 @@ public class LocalMiniMap extends Widget {
 		    GobIcon icon = gob.getattr(GobIcon.class);
 		    if(icon != null) {
 			GobIcon.Setting conf = iconconf.get(icon.res.get());
-			if(conf.show) {
+			if((conf != null) && conf.show) {
 			    Coord gc = p2c(gob.rc);
 			    Coord sz = GobIcon.sz(icon.tex().sz());
 			    if(c.isect(gc.sub(sz.div(2)), sz))
