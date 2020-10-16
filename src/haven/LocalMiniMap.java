@@ -34,6 +34,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.*;
+import java.io.*;
 import haven.resutil.Ridges;
 
 public class LocalMiniMap extends Widget {
@@ -153,7 +154,7 @@ public class LocalMiniMap extends Widget {
 
     private String confname() {
 	StringBuilder buf = new StringBuilder();
-	buf.append("mm-icons");
+	buf.append("data/mm-icons");
 	GameUI gui = getparent(GameUI.class);
 	if((gui != null) && (gui.genus != null))
 	    buf.append("/" + gui.genus);
@@ -163,21 +164,33 @@ public class LocalMiniMap extends Widget {
     }
 
     private GobIcon.Settings loadconf() {
-	byte[] data = Utils.getprefb(confname(), null);
-	if(data == null)
+	if(ResCache.global == null)
 	    return(new GobIcon.Settings());
 	try {
-	    GobIcon.Settings ret = (GobIcon.Settings)Utils.deserialize(data);
-	    if(ret == null)
-		return(new GobIcon.Settings());
-	    return(ret);
+	    try(InputStream fp = ResCache.global.fetch(confname())) {
+		GobIcon.Settings ret = (GobIcon.Settings)Utils.deserialize(fp);
+		if(ret == null)
+		    return(new GobIcon.Settings());
+		return(ret);
+	    }
+	} catch(FileNotFoundException e) {
+	    return(new GobIcon.Settings());
 	} catch(Exception e) {
+	    new Warning(e, "failed to load icon-conf").issue();
 	    return(new GobIcon.Settings());
 	}
     }
 
     public void saveconf() {
-	Utils.setprefb(confname(), Utils.serialize(iconconf));
+	if(ResCache.global == null)
+	    return;
+	try {
+	    try(OutputStream fp = ResCache.global.store(confname())) {
+		Utils.serialize(iconconf, fp);
+	    }
+	} catch(Exception e) {
+	    new Warning(e, "failed to store icon-conf").issue();
+	}
     }
 
     public void drawicons(GOut g) {
