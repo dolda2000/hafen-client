@@ -167,11 +167,8 @@ public class LocalMiniMap extends Widget {
 	if(ResCache.global == null)
 	    return(new GobIcon.Settings());
 	try {
-	    try(InputStream fp = ResCache.global.fetch(confname())) {
-		GobIcon.Settings ret = (GobIcon.Settings)Utils.deserialize(fp);
-		if(ret == null)
-		    return(new GobIcon.Settings());
-		return(ret);
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(confname()))) {
+		return(GobIcon.Settings.load(fp));
 	    }
 	} catch(FileNotFoundException e) {
 	    return(new GobIcon.Settings());
@@ -185,8 +182,8 @@ public class LocalMiniMap extends Widget {
 	if(ResCache.global == null)
 	    return;
 	try {
-	    try(OutputStream fp = ResCache.global.store(confname())) {
-		Utils.serialize(iconconf, fp);
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.store(confname()))) {
+		iconconf.save(fp);
 	    }
 	} catch(Exception e) {
 	    new Warning(e, "failed to store icon-conf").issue();

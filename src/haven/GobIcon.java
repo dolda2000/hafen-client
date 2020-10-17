@@ -27,8 +27,9 @@
 package haven;
 
 import java.util.*;
-import java.awt.Color;
+import java.io.*;
 import java.awt.image.*;
+import java.awt.Color;
 
 public class GobIcon extends GAttrib {
     private static final int size = UI.scale(20);
@@ -72,11 +73,12 @@ public class GobIcon extends GAttrib {
 	return sz.mul((double) size / Math.max(sz.x, sz.y));
     }
 
-    public static class Setting implements java.io.Serializable {
+    public static class Setting implements Serializable {
 	public boolean show;
     }
 
-    public static class Settings implements java.io.Serializable {
+    public static class Settings implements Serializable {
+	public static final byte[] sig = "Icons".getBytes(Utils.ascii);
 	public Map<Resource.Spec, Setting> settings = new HashMap<>();
 	public int tag = -1;
 
@@ -96,6 +98,52 @@ public class GobIcon extends GAttrib {
 	    }
 	    this.settings = nset;
 	    this.tag = tag;
+	}
+
+	public void save(Message buf) {
+	    buf.addbytes(sig);
+	    buf.adduint8(1);
+	    buf.addint32(tag);
+	    for(Map.Entry<Resource.Spec, Setting> e : settings.entrySet()) {
+		buf.addstring(e.getKey().name);
+		buf.adduint16(e.getKey().ver);
+		buf.adduint8((byte)'s');
+		buf.adduint8(e.getValue().show ? 1 : 0);
+		buf.adduint8(0);
+	    }
+	    buf.addstring("");
+	}
+
+	public static Settings load(Message buf) {
+	    if(!Arrays.equals(buf.bytes(sig.length), sig))
+		throw(new Message.FormatError("Invalid signature"));
+	    int ver = buf.uint8();
+	    if(ver != 1)
+		throw(new Message.FormatError("Unknown version: " + ver));
+	    Settings ret = new Settings();
+	    ret.tag = buf.int32();
+	    while(true) {
+		String resnm = buf.string();
+		if(resnm.equals(""))
+		    break;
+		int resver = buf.uint16();
+		Resource.Spec res = new Resource.Spec(null, resnm, resver);
+		Setting set = new Setting();
+		data: while(true) {
+		    int datum = buf.uint8();
+		    switch(datum) {
+		    case (int)'s':
+			set.show = (buf.uint8() != 0);
+			break;
+		    case 0:
+			break data;
+		    default:
+			throw(new Message.FormatError("Unknown datum: " + datum));
+		    }
+		}
+		ret.settings.put(res, set);
+	    }
+	    return(ret);
 	}
     }
 
