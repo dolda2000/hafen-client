@@ -49,7 +49,7 @@ public class Warning extends Throwable {
     private static final int LOGSIZE = 10;
     private static LinkedList<Warning> log = null;
     public void issue() {
-	System.err.printf("hafen: warning: %s\n", this);
+	System.err.printf("hafen: warning: %s\n", (getClass() == Warning.class) ? getMessage() : toString());
 	if(getCause() != null)
 	    getCause().printStackTrace(System.err);
 	synchronized(Warning.class) {
