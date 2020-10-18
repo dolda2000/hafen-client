@@ -74,7 +74,7 @@ public class GobIcon extends GAttrib {
     }
 
     public static class Setting implements Serializable {
-	public boolean show;
+	public boolean show, defshow;
     }
 
     public static class Settings implements Serializable {
@@ -109,6 +109,8 @@ public class GobIcon extends GAttrib {
 		buf.adduint16(e.getKey().ver);
 		buf.adduint8((byte)'s');
 		buf.adduint8(e.getValue().show ? 1 : 0);
+		buf.adduint8((byte)'d');
+		buf.adduint8(e.getValue().defshow ? 1 : 0);
 		buf.adduint8(0);
 	    }
 	    buf.addstring("");
@@ -129,11 +131,16 @@ public class GobIcon extends GAttrib {
 		int resver = buf.uint16();
 		Resource.Spec res = new Resource.Spec(null, resnm, resver);
 		Setting set = new Setting();
+		boolean setdef = false;
 		data: while(true) {
 		    int datum = buf.uint8();
 		    switch(datum) {
 		    case (int)'s':
 			set.show = (buf.uint8() != 0);
+			break;
+		    case (int)'d':
+			set.defshow = (buf.uint8() != 0);
+			setdef = true;
 			break;
 		    case 0:
 			break data;
@@ -141,6 +148,8 @@ public class GobIcon extends GAttrib {
 			throw(new Message.FormatError("Unknown datum: " + datum));
 		    }
 		}
+		if(!setdef)
+		    set.defshow = set.show;
 		ret.settings.put(res, set);
 	    }
 	    return(ret);

@@ -982,7 +982,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		} else if(args[1] instanceof String) {
 		    Resource.Spec res = new Resource.Spec(null, (String)args[1], (Integer)args[2]);
 		    GobIcon.Setting cset = new GobIcon.Setting();
-		    cset.show = ((Integer)args[3]) != 0;
+		    cset.show = cset.defshow = ((Integer)args[3]) != 0;
 		    conf.receive(tag, new Resource.Spec[] {res}, new GobIcon.Setting[] {cset});
 		    mmap.saveconf();
 		} else if(args[1] instanceof Object[]) {
@@ -996,7 +996,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			int fl = (Integer)sub[a++];
 			res.add(new Resource.Spec(null, resnm, resver));
 			GobIcon.Setting cset = new GobIcon.Setting();
-			cset.show = ((fl & 1) != 0);
+			cset.show = cset.defshow = ((fl & 1) != 0);
 			csets.add(cset);
 		    }
 		    conf.receive(tag, res.toArray(new Resource.Spec[0]), csets.toArray(new GobIcon.Setting[0]));
