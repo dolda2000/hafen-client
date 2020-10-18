@@ -81,6 +81,7 @@ public class GobIcon extends GAttrib {
 	public static final byte[] sig = "Icons".getBytes(Utils.ascii);
 	public Map<Resource.Spec, Setting> settings = new HashMap<>();
 	public int tag = -1;
+	public boolean notify = false;
 
 	public Setting get(Resource.Named res) {
 	    return(settings.get(res));
@@ -102,8 +103,9 @@ public class GobIcon extends GAttrib {
 
 	public void save(Message buf) {
 	    buf.addbytes(sig);
-	    buf.adduint8(1);
+	    buf.adduint8(2);
 	    buf.addint32(tag);
+	    buf.adduint8(notify ? 1 : 0);
 	    for(Map.Entry<Resource.Spec, Setting> e : settings.entrySet()) {
 		buf.addstring(e.getKey().name);
 		buf.adduint16(e.getKey().ver);
@@ -120,10 +122,12 @@ public class GobIcon extends GAttrib {
 	    if(!Arrays.equals(buf.bytes(sig.length), sig))
 		throw(new Message.FormatError("Invalid signature"));
 	    int ver = buf.uint8();
-	    if(ver != 1)
+	    if((ver < 1) || (ver > 2))
 		throw(new Message.FormatError("Unknown version: " + ver));
 	    Settings ret = new Settings();
 	    ret.tag = buf.int32();
+	    if(ver >= 2)
+		ret.notify = (buf.uint8() != 0);
 	    while(true) {
 		String resnm = buf.string();
 		if(resnm.equals(""))
@@ -304,7 +308,16 @@ public class GobIcon extends GAttrib {
 	    super(Coord.z, "Icon settings");
 	    this.conf = conf;
 	    this.save = save;
-	    add(new IconList(UI.scale(250), 25), Coord.z);
+	    Widget prev = add(new IconList(UI.scale(250), 25), Coord.z);
+	    add(new CheckBox("Notification on newly seen icons") {
+		    {this.a = conf.notify;}
+
+		    public void changed(boolean val) {
+			conf.notify = val;
+			if(save != null)
+			    save.run();
+		    }
+		}, prev.pos("bl").adds(5, 5));
 	    pack();
 	}
     }
