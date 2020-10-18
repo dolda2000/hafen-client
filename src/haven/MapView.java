@@ -1320,8 +1320,18 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	g.line(bc, bc.add(Coord.sc(a - Math.PI / 4, -10)), 2);
     }
 
+    public HomoCoord4f clipxf(Coord3f mc, boolean doclip) {
+	HomoCoord4f ret = Homo3D.obj2clip(new Coord3f(mc.x, -mc.y, mc.z), basic.state());
+	if(doclip && ret.clipped()) {
+	    Projection s_prj = basic.state().get(Homo3D.prj);
+	    Matrix4f prj = (s_prj == null) ? Matrix4f.id : s_prj.fin(Matrix4f.id);
+	    ret = HomoCoord4f.lineclip(HomoCoord4f.fromclip(prj, Coord3f.o), ret);
+	}
+	return(ret);
+    }
+
     public Coord3f screenxf(Coord3f mc) {
-	return(Homo3D.obj2view(new Coord3f(mc.x, -mc.y, mc.z), basic.state(), Area.sized(this.sz)));
+	return(clipxf(mc, false).toview(Area.sized(this.sz)));
     }
 
     public Coord3f screenxf(Coord2d mc) {
