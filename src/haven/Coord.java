@@ -199,6 +199,24 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	return(ret);
     }
 
+    public Coord clip(Area area) {
+	int x = this.x, y = this.y;
+	if(x < area.ul.x) x = area.ul.x;
+	if(y < area.ul.y) y = area.ul.y;
+	if(x > area.br.x) x = area.br.x;
+	if(y > area.br.y) y = area.br.y;
+	return(((x == this.x) && (y == this.y)) ? this : new Coord(x, y));
+    }
+
+    public Coord clipi(Area area) {
+	int x = this.x, y = this.y;
+	if(x < area.ul.x) x = area.ul.x;
+	if(y < area.ul.y) y = area.ul.y;
+	if(x >= area.br.x) x = area.br.x - 1;
+	if(y >= area.br.y) y = area.br.y - 1;
+	return(((x == this.x) && (y == this.y)) ? this : new Coord(x, y));
+    }
+
     public Iterable<Coord> offsets(Coord... list) {
 	return(new Iterable<Coord>() {
 		public Iterator<Coord> iterator() {
