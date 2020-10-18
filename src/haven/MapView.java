@@ -1278,7 +1278,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    GOut.debugimage(out, clobjlist.basic, FragID.fragid, Area.sized(Coord.z, clobjlist.sz()), new VectorFormat(1, NumberFormat.SINT32),
 			  img -> Debug.dumpimage(img, Debug.somedir("click3.png")));
 	}
-	clobjlist.get(out, c, cb);
+	clobjlist.fuzzyget(out, c, 3, cb);
     }
     
     public void delay(Delayed d) {
