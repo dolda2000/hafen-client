@@ -142,6 +142,8 @@ public class PUtils {
 
     public static WritableRaster blit(WritableRaster dst, Raster src, Coord off) {
 	int w = src.getWidth(), h = src.getHeight(), b = src.getNumBands();
+	if((off.x < 0) || (off.y < 0) || (off.x + w > dst.getWidth()) || (off.y + h > dst.getHeight()))
+	    throw(new ArrayIndexOutOfBoundsException(String.format("Blit operation out of bounds: %s+%s on %s", imgsz(src), off, imgsz(dst))));
 	for(int y = 0; y < h; y++) {
 	    int dy = y + off.y;
 	    for(int x = 0; x < w; x++) {
