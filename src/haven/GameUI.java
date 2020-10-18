@@ -46,7 +46,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private List<Widget> meters = new LinkedList<Widget>();
     private Text lastmsg;
     private double msgtime;
-    private Window invwnd, equwnd, makewnd, srchwnd;
+    private Window invwnd, equwnd, makewnd, srchwnd, iconwnd;
     private Coord makewndc = Utils.getprefc("makewndc", new Coord(400, 200));
     public Inventory maininv;
     public CharWnd chrwdg;
@@ -193,6 +193,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public static final KeyBinding kb_claim = KeyBinding.get("ol-claim", KeyMatch.nil);
     public static final KeyBinding kb_vil = KeyBinding.get("ol-vil", KeyMatch.nil);
     public static final KeyBinding kb_rlm = KeyBinding.get("ol-rlm", KeyMatch.nil);
+    public static final KeyBinding kb_ico = KeyBinding.get("map-icons", KeyMatch.nil);
     private void mapbuttons() {
 	blpanel.add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims") {
 		public void click() {
@@ -230,6 +231,19 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}
 	    });
+	blpanel.add(new MenuButton("lbtn-ico", kb_ico, "Icon settings") {
+		public void click() {
+		    if(mmap == null)
+			return;
+		    if(iconwnd == null) {
+			iconwnd = new GobIcon.SettingsWindow(mmap.iconconf, () -> Utils.defer(mmap::saveconf));
+			fitwdg(GameUI.this.add(iconwnd, Utils.getprefc("wndc-icon", new Coord(200, 200))));
+		    } else {
+			ui.destroy(iconwnd);
+			iconwnd = null;
+		    }
+		}
+	    }, 0, 0);
     }
 
     public static final KeyBinding kb_srch = KeyBinding.get("scm-srch", KeyMatch.forchar('Z', KeyMatch.C));
@@ -958,6 +972,37 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    String nm = (String)args[3];
 	    if(mapfile != null)
 		mapfile.markobj(gobid, oid, res, nm);
+	} else if(msg == "map-icons") {
+	    if(mmap != null) {
+		GobIcon.Settings conf = mmap.iconconf;
+		int tag = (Integer)args[0];
+		if(args.length < 2) {
+		    if(conf.tag != tag)
+			wdgmsg("map-icons", conf.tag);
+		} else if(args[1] instanceof String) {
+		    Resource.Spec res = new Resource.Spec(null, (String)args[1], (Integer)args[2]);
+		    GobIcon.Setting cset = new GobIcon.Setting();
+		    cset.show = cset.defshow = ((Integer)args[3]) != 0;
+		    conf.receive(tag, new Resource.Spec[] {res}, new GobIcon.Setting[] {cset});
+		    mmap.saveconf();
+		} else if(args[1] instanceof Object[]) {
+		    Object[] sub = (Object[])args[1];
+		    int a = 0;
+		    Collection<Resource.Spec> res = new ArrayList<>();
+		    Collection<GobIcon.Setting> csets = new ArrayList<>();
+		    while(a < sub.length) {
+			String resnm = (String)sub[a++];
+			int resver = (Integer)sub[a++];
+			int fl = (Integer)sub[a++];
+			res.add(new Resource.Spec(null, resnm, resver));
+			GobIcon.Setting cset = new GobIcon.Setting();
+			cset.show = cset.defshow = ((fl & 1) != 0);
+			csets.add(cset);
+		    }
+		    conf.receive(tag, res.toArray(new Resource.Spec[0]), csets.toArray(new GobIcon.Setting[0]));
+		    mmap.saveconf();
+		}
+	    }
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -977,6 +1022,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if((sender == srchwnd) && (msg == "close")) {
 	    ui.destroy(srchwnd);
 	    srchwnd = null;
+	    return;
+	} else if((sender == iconwnd) && (msg == "close")) {
+	    ui.destroy(iconwnd);
+	    iconwnd = null;
 	    return;
 	}
 	super.wdgmsg(sender, msg, args);

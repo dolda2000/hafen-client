@@ -383,6 +383,7 @@ public class OptWnd extends Window {
 	    addbtn(scroll, width, "Display villages", GameUI.kb_vil);
 	    addbtn(scroll, width, "Display realms", GameUI.kb_rlm);
 	    addbtn(scroll, width, "Take screenshot", GameUI.kb_shoot);
+	    addbtn(scroll, width, "Minimap icons", GameUI.kb_ico);
 	    addbtn(scroll, width, "Toggle UI", GameUI.kb_hide);
 	    scroll.adda(new Label("Camera control"), width / 2, 0.5);
 	    addbtn(scroll, width, "Rotate left", MapView.kb_camleft);

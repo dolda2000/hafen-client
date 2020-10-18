@@ -34,11 +34,13 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.*;
+import java.io.*;
 import haven.resutil.Ridges;
 
 public class LocalMiniMap extends Widget {
     public final MapView mv;
     public MapFile save;
+    public GobIcon.Settings iconconf;
     private Coord cc = null;
     private MapTile cur = null;
     private final Map<Pair<Grid, Integer>, Defer.Future<MapTile>> cache = new LinkedHashMap<Pair<Grid, Integer>, Defer.Future<MapTile>>(5, 0.75f, true) {
@@ -134,6 +136,10 @@ public class LocalMiniMap extends Widget {
 	this.mv = mv;
     }
 
+    protected void attached() {
+	iconconf = loadconf();
+    }
+
     public void save(MapFile file) {
 	this.save = file;
     }
@@ -146,6 +152,44 @@ public class LocalMiniMap extends Widget {
 	return(UI.unscale(c.sub(sz.div(2))).add(cc).mul(tilesz).add(tilesz.div(2)));
     }
 
+    private String confname() {
+	StringBuilder buf = new StringBuilder();
+	buf.append("data/mm-icons");
+	GameUI gui = getparent(GameUI.class);
+	if((gui != null) && (gui.genus != null))
+	    buf.append("/" + gui.genus);
+	if(ui.sess != null)
+	    buf.append("/" + ui.sess.username);
+	return(buf.toString());
+    }
+
+    private GobIcon.Settings loadconf() {
+	if(ResCache.global == null)
+	    return(new GobIcon.Settings());
+	try {
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(confname()))) {
+		return(GobIcon.Settings.load(fp));
+	    }
+	} catch(FileNotFoundException e) {
+	    return(new GobIcon.Settings());
+	} catch(Exception e) {
+	    new Warning(e, "failed to load icon-conf").issue();
+	    return(new GobIcon.Settings());
+	}
+    }
+
+    public void saveconf() {
+	if(ResCache.global == null)
+	    return;
+	try {
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.store(confname()))) {
+		iconconf.save(fp);
+	    }
+	} catch(Exception e) {
+	    new Warning(e, "failed to store icon-conf").issue();
+	}
+    }
+
     public void drawicons(GOut g) {
 	OCache oc = ui.sess.glob.oc;
 	synchronized(oc) {
@@ -153,10 +197,13 @@ public class LocalMiniMap extends Widget {
 		try {
 		    GobIcon icon = gob.getattr(GobIcon.class);
 		    if(icon != null) {
-			Coord gc = p2c(gob.rc);
-			Tex tex = icon.tex();
-			Coord sz = GobIcon.sz(tex.sz());
-			g.image(tex, gc.sub(sz.div(2)), sz);
+			GobIcon.Setting conf = iconconf.get(icon.res.get());
+			if((conf != null) && conf.show) {
+			    Coord gc = p2c(gob.rc);
+			    Tex tex = icon.tex();
+			    Coord sz = GobIcon.sz(tex.sz());
+			    g.image(tex, gc.sub(sz.div(2)), sz);
+			}
 		    }
 		} catch(Loading l) {}
 	    }
@@ -170,10 +217,13 @@ public class LocalMiniMap extends Widget {
 		try {
 		    GobIcon icon = gob.getattr(GobIcon.class);
 		    if(icon != null) {
-			Coord gc = p2c(gob.rc);
-			Coord sz = GobIcon.sz(icon.tex().sz());
-			if(c.isect(gc.sub(sz.div(2)), sz))
-			    return(gob);
+			GobIcon.Setting conf = iconconf.get(icon.res.get());
+			if((conf != null) && conf.show) {
+			    Coord gc = p2c(gob.rc);
+			    Coord sz = GobIcon.sz(icon.tex().sz());
+			    if(c.isect(gc.sub(sz.div(2)), sz))
+				return(gob);
+			}
 		    }
 		} catch(Loading l) {}
 	    }

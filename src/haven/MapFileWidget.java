@@ -200,7 +200,7 @@ public class MapFileWidget extends Widget implements Console.Directory {
 		SMarker sm = (SMarker)m;
 		try {
 		    if(cc == null) {
-			Resource res = MapFile.loadsaved(Resource.remote(), sm.res);
+			Resource res = sm.res.loadsaved(Resource.remote());
 			img = res.layer(Resource.imgc);
 			imgsz = UI.scale(img.sz);
 			Resource.Neg neg = res.layer(Resource.negc);
