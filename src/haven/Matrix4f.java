@@ -112,6 +112,14 @@ public class Matrix4f {
 	float w = (m[ 3] * b[0]) + (m[ 7] * b[1]) + (m[11] * b[2]) + (m[15] * b[3]);
 	return(new float[] {x, y, z, w});
     }
+
+    public HomoCoord4f mul4(HomoCoord4f b) {
+	float x = (m[ 0] * b.x) + (m[ 4] * b.y) + (m[ 8] * b.z) + (m[12] * b.w);
+	float y = (m[ 1] * b.x) + (m[ 5] * b.y) + (m[ 9] * b.z) + (m[13] * b.w);
+	float z = (m[ 2] * b.x) + (m[ 6] * b.y) + (m[10] * b.z) + (m[14] * b.w);
+	float w = (m[ 3] * b.x) + (m[ 7] * b.y) + (m[11] * b.z) + (m[15] * b.w);
+	return(new HomoCoord4f(x, y, z, w));
+    }
     
     public Matrix4f mul(Matrix4f o) {
 	Matrix4f n = new Matrix4f();
