@@ -421,6 +421,12 @@ public class OptWnd extends Window {
 		cmd.set(key);
 	    }
 
+	    public void draw(GOut g) {
+		if(cmd.key() != key)
+		    super.set(cmd.key());
+		super.draw(g);
+	    }
+
 	    protected KeyMatch mkmatch(KeyEvent ev) {
 		return(KeyMatch.forevent(ev, ~cmd.modign));
 	    }
