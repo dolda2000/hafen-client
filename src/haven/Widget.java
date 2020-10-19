@@ -662,7 +662,7 @@ public class Widget {
 	    int a = 0;
 	    Object tt = args[a++];
 	    if(tt instanceof String) {
-		tooltip = Text.render((String)tt);
+		settip((String)tt);
 	    } else if(tt instanceof Integer) {
 		final Indir<Resource> tres = ui.sess.getres((Integer)tt);
 		tooltip = new Indir<Tex>() {
@@ -1150,14 +1150,52 @@ public class Widget {
 	}
     }
 
+    public class KeyboundTip implements Indir<Tex> {
+	public final String base;
+	private Tex rend = null;
+	private boolean hrend = false;
+	private KeyMatch rkey = null;
+
+	public KeyboundTip(String base) {
+	    this.base = base;
+	}
+
+	public KeyboundTip() {
+	    this(null);
+	}
+
+	public Tex get() {
+	    KeyMatch key = (kb_gkey == null) ? null : kb_gkey.key();
+	    if(!hrend || (rkey != key)) {
+		String tip;
+		if(base != null) {
+		    tip = RichText.Parser.quote(base);
+		    if((key != null) && (key != KeyMatch.nil))
+			tip = String.format("%s ($col[255,255,0]{%s})", tip, RichText.Parser.quote(kb_gkey.key().name()));
+		} else {
+		    if((key == null) || (key == KeyMatch.nil))
+			tip = null;
+		    else
+			tip = String.format("Keyboard shortcut: $col[255,255,0]{%s}", RichText.Parser.quote(kb_gkey.key().name()));
+		}
+		rend = (tip == null) ? null : RichText.render(tip, 0).tex();
+		hrend = true;
+		rkey = key;
+	    }
+	    return(rend);
+	}
+    }
+
     @Deprecated
     public Object tooltip(Coord c, boolean again) {
 	return(null);
     }
-    
+
     public Object tooltip(Coord c, Widget prev) {
 	if(prev != this)
 	    prevtt = null;
+	if((tooltip == null) && (kb_gkey != null))
+	    tooltip = new KeyboundTip();
 	if(tooltip != null) {
 	    prevtt = null;
 	    return(tooltip);
@@ -1179,7 +1217,7 @@ public class Widget {
     }
 
     public void settip(String text) {
-	tooltip = Text.render(text);
+	tooltip = new KeyboundTip(text);
     }
     
     public <T extends Widget> T getparent(Class<T> cl) {
