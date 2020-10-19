@@ -754,6 +754,10 @@ public class Widget {
 	draw(g, true);
     }
 	
+    public boolean checkhit(Coord c) {
+	return(true);
+    }
+
     public boolean mousedown(Coord c, int button) {
 	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
 	    if(!wdg.visible)
