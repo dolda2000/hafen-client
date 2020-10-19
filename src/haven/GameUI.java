@@ -1059,37 +1059,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public static class MenuButton extends IButton {
-	private final KeyBinding gkey;
-	private final String tt;
-
 	MenuButton(String base, KeyBinding gkey, String tooltip) {
 	    super("gfx/hud/" + base, "", "-d", "-h");
-	    this.gkey = gkey;
-	    this.tt = tooltip;
-	}
-
-	public void click() {}
-
-	public boolean globtype(char key, KeyEvent ev) {
-	    if(gkey.key().match(ev)) {
-		click();
-		return(true);
-	    }
-	    return(super.globtype(key, ev));
-	}
-
-	private RichText rtt = null;
-	public Object tooltip(Coord c, Widget prev) {
-	    if(!checkhit(c))
-		return(null);
-	    if((prev != this) || (rtt == null)) {
-		String tt = this.tt;
-		if(gkey.key() != KeyMatch.nil)
-		    tt += String.format(" ($col[255,255,0]{%s})", RichText.Parser.quote(gkey.key().name()));
-		if((rtt == null) || !rtt.text.equals(tt))
-		    rtt = RichText.render(tt, 0);
-	    }
-	    return(rtt.tex());
+	    setgkey(gkey);
+	    settip(tooltip);
 	}
     }
 
