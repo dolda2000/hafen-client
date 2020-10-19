@@ -91,8 +91,12 @@ public interface UIPanel extends Runnable {
 			}
 			ui.keydown(ke);
 			lastpress = ke;
+			if(ke.getKeyCode() == Debug.FRAME_DEBUG_KEY)
+			    Debug.fdk = true;
 		    } else if(ke.getID() == KeyEvent.KEY_RELEASED) {
 			ui.keyup(ke);
+			if(ke.getKeyCode() == Debug.FRAME_DEBUG_KEY)
+			    Debug.fdk = false;
 		    } else if(ke.getID() == KeyEvent.KEY_TYPED) {
 			KeyEvent lp = lastpress;
 			if((lp != null) && (lp.getKeyChar() == ke.getKeyChar())) {
