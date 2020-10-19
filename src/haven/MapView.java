@@ -1271,6 +1271,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	};
     }
     
+    private static int gobclfuzz = 3;
     private void checkgobclick(Render out, Pipe.Op basic, Coord c, Consumer<ClickData> cb) {
 	clobjlist.basic(basic);
 	clobjlist.draw(out);
@@ -1278,7 +1279,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    GOut.debugimage(out, clobjlist.basic, FragID.fragid, Area.sized(Coord.z, clobjlist.sz()), new VectorFormat(1, NumberFormat.SINT32),
 			  img -> Debug.dumpimage(img, Debug.somedir("click3.png")));
 	}
-	clobjlist.fuzzyget(out, c, 3, cb);
+	clobjlist.fuzzyget(out, c, gobclfuzz, cb);
     }
     
     public void delay(Delayed d) {
@@ -2091,6 +2092,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		public void run(Console cons, String[] args) {
 		    if((plobgran = Integer.parseInt(args[1])) < 0)
 			plobgran = 0;
+		}
+	    });
+	Console.setscmd("clickfuzz", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    if((gobclfuzz = Integer.parseInt(args[1])) < 0)
+			gobclfuzz = 0;
 		}
 	    });
 	Console.setscmd("clickdb", new Console.Command() {
