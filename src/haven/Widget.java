@@ -851,6 +851,8 @@ public class Widget {
 
     public void setgkey(KeyBinding gkey) {
 	kb_gkey = gkey;
+	if((tooltip == null) && (kb_gkey != null))
+	    tooltip = new KeyboundTip();
     }
 	
     public boolean keydown(KeyEvent ev) {
@@ -1202,8 +1204,6 @@ public class Widget {
     public Object tooltip(Coord c, Widget prev) {
 	if(prev != this)
 	    prevtt = null;
-	if((tooltip == null) && (kb_gkey != null))
-	    tooltip = new KeyboundTip();
 	if(tooltip != null) {
 	    prevtt = null;
 	    return(tooltip);
