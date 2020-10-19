@@ -688,7 +688,7 @@ public class Widget {
 		    int modign = 0;
 		    if(args.length > 2)
 			modign = (Integer)args[2];
-		    kb_gkey = KeyBinding.get("wgk/" + (String)args[1], key, modign);
+		    setgkey(KeyBinding.get("wgk/" + (String)args[1], key, modign));
 		} else {
 		    gkey = key;
 		}
@@ -847,6 +847,10 @@ public class Widget {
 		return(true);
 	}
 	return(false);
+    }
+
+    public void setgkey(KeyBinding gkey) {
+	kb_gkey = gkey;
     }
 	
     public boolean keydown(KeyEvent ev) {
