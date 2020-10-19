@@ -201,8 +201,7 @@ public class LocalMiniMap extends Widget {
 			if((conf != null) && conf.show) {
 			    Coord gc = p2c(gob.rc);
 			    Tex tex = icon.tex();
-			    Coord sz = GobIcon.sz(tex.sz());
-			    g.image(tex, gc.sub(sz.div(2)), sz);
+			    g.image(tex, gc.sub(tex.sz().div(2)));
 			}
 		    }
 		} catch(Loading l) {}
@@ -220,7 +219,7 @@ public class LocalMiniMap extends Widget {
 			GobIcon.Setting conf = iconconf.get(icon.res.get());
 			if((conf != null) && conf.show) {
 			    Coord gc = p2c(gob.rc);
-			    Coord sz = GobIcon.sz(icon.tex().sz());
+			    Coord sz = icon.tex().sz();
 			    if(c.isect(gc.sub(sz.div(2)), sz))
 				return(gob);
 			}

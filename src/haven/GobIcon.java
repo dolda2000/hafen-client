@@ -69,10 +69,6 @@ public class GobIcon extends GAttrib {
 	return(this.tex);
     }
 
-    public static Coord sz(Coord sz) {
-	return sz.mul((double) size / Math.max(sz.x, sz.y));
-    }
-
     public static class Setting implements Serializable {
 	public boolean show, defshow;
     }
