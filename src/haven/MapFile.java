@@ -711,7 +711,7 @@ public class MapFile {
 			int nd = 0;
 			for(int sy = 0; sy < 2; sy++) {
 			    for(int sx = 0; sx < 2; sx++) {
-				byte st = tmap[cg.gettile(new Coord(x * 2, y * 2))];
+				byte st = tmap[cg.gettile(new Coord((x * 2) + sx, (y * 2) + sy))];
 				st: {
 				    for(int i = 0; i < nd; i++) {
 					if(tc[i] == st) {
