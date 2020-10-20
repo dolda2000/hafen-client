@@ -471,8 +471,10 @@ public class MapFile {
 		float q = 0, E = 0.01f;
 		for(float z : zmap) {
 		    if(z > (min + E)) {
-			if((q == 0) || (q > z - min))
+			if(q == 0)
 			    q = z - min;
+			else
+			    q = Utils.gcd(q, z - min, E);
 		    }
 		}
 		float iq = 1.0f / q;
