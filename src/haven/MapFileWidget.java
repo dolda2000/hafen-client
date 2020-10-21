@@ -158,7 +158,25 @@ public class MapFileWidget extends Widget implements Console.Directory {
 	    if(grid != cgrid) {
 		if(img != null)
 		    img.cancel();
-		img = Defer.later(() -> new TexI(grid.render(sc.mul(cmaps))));
+		if(grid instanceof MapFile.ZoomGrid) {
+		    img = Defer.later(() -> new TexI(grid.render(sc.mul(cmaps))));
+		} else {
+		    img = Defer.later(new Defer.Callable<Tex>() {
+			    MapFile.View view = new MapFile.View(seg);
+
+			    public TexI call() {
+				try(Locked lk = new Locked(seg.file().lock.readLock())) {
+				    for(int y = -1; y <= 1; y++) {
+					for(int x = -1; x <= 1; x++) {
+					    view.addgrid(sc.add(x, y));
+					}
+				    }
+				    view.fin();
+				    return(new TexI(MapSource.drawmap(view, Area.sized(sc.mul(cmaps), cmaps))));
+				}
+			    }
+			});
+		}
 		cgrid = grid;
 	    }
 	    return((img == null)?null:img.get());

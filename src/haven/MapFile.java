@@ -954,6 +954,8 @@ public class MapFile {
 	    this.id = id;
 	}
 
+	public MapFile file() {return(MapFile.this);}
+
 	private class Cached implements Indir<Grid> {
 	    Grid loaded;
 	    Future<Grid> loading;
