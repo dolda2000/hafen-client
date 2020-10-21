@@ -71,66 +71,6 @@ public class LocalMiniMap extends Widget {
 	}
     }
 
-    private BufferedImage tileimg(int t, BufferedImage[] texes) {
-	BufferedImage img = texes[t];
-	if(img == null) {
-	    Resource r = ui.sess.glob.map.tilesetr(t);
-	    if(r == null)
-		return(null);
-	    Resource.Image ir = r.layer(Resource.imgc);
-	    if(ir == null)
-		return(null);
-	    img = ir.img;
-	    texes[t] = img;
-	}
-	return(img);
-    }
-    
-    public BufferedImage drawmap(Coord ul, Coord sz) {
-	BufferedImage[] texes = new BufferedImage[256];
-	MCache m = ui.sess.glob.map;
-	BufferedImage buf = TexI.mkbuf(sz);
-	Coord c = new Coord();
-	for(c.y = 0; c.y < sz.y; c.y++) {
-	    for(c.x = 0; c.x < sz.x; c.x++) {
-		int t = m.gettile(ul.add(c));
-		BufferedImage tex = tileimg(t, texes);
-		int rgb = 0;
-		if(tex != null)
-		    rgb = tex.getRGB(Utils.floormod(c.x + ul.x, tex.getWidth()),
-				     Utils.floormod(c.y + ul.y, tex.getHeight()));
-		buf.setRGB(c.x, c.y, rgb);
-	    }
-	}
-	for(c.y = 1; c.y < sz.y - 1; c.y++) {
-	    for(c.x = 1; c.x < sz.x - 1; c.x++) {
-		int t = m.gettile(ul.add(c));
-		Tiler tl = m.tiler(t);
-		if(tl instanceof Ridges.RidgeTile) {
-		    if(Ridges.brokenp(m, ul.add(c))) {
-			for(int y = c.y - 1; y <= c.y + 1; y++) {
-			    for(int x = c.x - 1; x <= c.x + 1; x++) {
-				Color cc = new Color(buf.getRGB(x, y));
-				buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y))?1:0.1).getRGB());
-			    }
-			}
-		    }
-		}
-	    }
-	}
-	for(c.y = 0; c.y < sz.y; c.y++) {
-	    for(c.x = 0; c.x < sz.x; c.x++) {
-		int t = m.gettile(ul.add(c));
-		if((m.gettile(ul.add(c).add(-1, 0)) > t) ||
-		   (m.gettile(ul.add(c).add( 1, 0)) > t) ||
-		   (m.gettile(ul.add(c).add(0, -1)) > t) ||
-		   (m.gettile(ul.add(c).add(0,  1)) > t))
-		    buf.setRGB(c.x, c.y, Color.BLACK.getRGB());
-	    }
-	}
-	return(buf);
-    }
-
     public LocalMiniMap(Coord sz, MapView mv) {
 	super(sz);
 	this.mv = mv;
@@ -257,7 +197,7 @@ public class LocalMiniMap extends Widget {
 			f = Defer.later(new Defer.Callable<MapTile> () {
 				public MapTile call() {
 				    Coord ul = plg.ul.sub(cmaps).add(1, 1);
-				    return(new MapTile(new TexI(drawmap(ul, cmaps.mul(3).sub(2, 2))), ul, plg, seq));
+				    return(new MapTile(new TexI(MapSource.drawmap(ui.sess.glob.map, Area.sized(ul, cmaps.mul(3).sub(2, 2)))), ul, plg, seq));
 				}
 			    });
 			cache.put(new Pair<Grid, Integer>(plg, seq), f);
