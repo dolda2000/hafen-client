@@ -1083,6 +1083,137 @@ public class MapFile {
 	}
     }
 
+    public static class View implements MapSource {
+	public final Segment seg;
+	private final Map<Coord, GridMap> grids = new HashMap<>();
+	private Resource.Spec[] nsets;
+	private Tileset[] tilesets;
+	private Tiler[] tiles;
+
+	public View(Segment seg) {
+	    this.seg = seg;
+	}
+
+	private class GridMap {
+	    final Grid grid;
+	    final Coord gc;
+	    int[] tilemap = null;
+
+	    GridMap(Grid grid, Coord gc) {this.grid = grid; this.gc = gc;}
+	}
+
+	public void addgrid(Coord gc) {
+	    if(!grids.containsKey(gc)) {
+		Grid grid = seg.grid(gc).get();
+		if(grid == null)
+		    grids.put(gc, null);
+		else
+		    grids.put(gc, new GridMap(grid, gc));
+	    }
+	}
+
+	private static class TileSort extends TopoSort<String> {
+	    TileSort() {super(Hash.eq);}
+
+	    protected List<String> pick(Collection<String> from) {
+		List<String> ret = new ArrayList<>(from);
+		Collections.sort(ret);
+		return(ret);
+	    }
+
+	    protected List<String> pickbad() {
+		Collection<Collection<String>> cycles = findcycles();
+		System.err.println("inconsistent tile ordering found: " + cycles);
+		List<String> ret = new ArrayList<>(Utils.el(cycles));
+		Collections.sort(ret);
+		return(ret);
+	    }
+	}
+
+	public void fin() {
+	    Map<String, Resource.Spec> vermap = new HashMap<>();
+	    TopoSort<String> tilesort = new TileSort();
+	    for(GridMap gm : grids.values()) {
+		if(gm == null)
+		    continue;
+		Grid g = gm.grid;
+		Collection<String> order = new ArrayList<>();
+		List<TileInfo> gtiles = new ArrayList<>(Arrays.asList(g.tilesets));
+		Collections.sort(gtiles, (a, b) -> (a.prio - b.prio));
+		for(TileInfo tinf : gtiles) {
+		    if(!vermap.containsKey(tinf.res.name) || (vermap.get(tinf.res.name).ver < tinf.res.ver))
+			vermap.put(tinf.res.name, tinf.res);
+		    order.add(tinf.res.name);
+		}
+		tilesort.add(order);
+	    }
+	    String[] ordered = tilesort.sort().toArray(new String[0]);
+	    Resource.Spec[] nsets = new Resource.Spec[ordered.length];
+	    for(int i = 0; i < ordered.length; i++)
+		nsets[i] = vermap.get(ordered[i]);
+	    Map<String, Integer> idx = new HashMap<>();
+	    for(int i = 0; i < nsets.length; i++)
+		idx.put(nsets[i].name, i);
+	    for(GridMap gm : grids.values()) {
+		if(gm == null)
+		    continue;
+		int[] xl = new int[gm.grid.tilesets.length];
+		for(int i = 0; i < xl.length; i++)
+		    xl[i] = idx.get(gm.grid.tilesets[i].res.name);
+		gm.tilemap = xl;
+	    }
+	    this.nsets = nsets;
+	    this.tilesets = new Tileset[nsets.length];
+	    this.tiles = new Tiler[nsets.length];
+	}
+
+	private Coord cachedgc = null;
+	private GridMap cached = null;
+	private GridMap getgrid(Coord gc) {
+	    if((cachedgc == null) || !cachedgc.equals(gc)) {
+		cached = grids.get(gc);
+		cachedgc = gc;
+	    }
+	    return(cached);
+	}
+
+	public int gettile(Coord tc) {
+	    Coord gc = tc.div(cmaps);
+	    Coord ul = gc.mul(cmaps);
+	    GridMap gm = getgrid(gc);
+	    if(gm == null)
+		return(-1);
+	    if(gm.tilemap == null)
+		throw(new IllegalStateException("Not finalized"));
+	    return(gm.tilemap[gm.grid.gettile(tc.sub(ul))]);
+	}
+
+	public double getfz(Coord tc) {
+	    Coord gc = tc.div(cmaps);
+	    Coord ul = gc.mul(cmaps);
+	    GridMap gm = getgrid(gc);
+	    if(gm == null)
+		return(0);
+	    return(gm.grid.getfz(tc.sub(ul)));
+	}
+
+	public Tileset tileset(int n) {
+	    if(tilesets[n] == null) {
+		Resource res = nsets[n].loadsaved(Resource.remote());
+		tilesets[n] = res.layer(Tileset.class);
+	    }
+	    return(tilesets[n]);
+	}
+
+	public Tiler tiler(int n) {
+	    if(tiles[n] == null) {
+		Tileset set = tileset(n);
+		tiles[n] = set.tfac().create(n, set);
+	    }
+	    return(tiles[n]);
+	}
+    }
+
     public final BackCache<Long, Segment> segments = new BackCache<>(5, id -> {
 	    checklock();
 	    InputStream fp;
