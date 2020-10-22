@@ -59,6 +59,7 @@ public class UI {
     public GSettings gprefs = GSettings.load(true);
     private boolean gprefsdirty = false;
     public final ActAudio.Root audio = new ActAudio.Root();
+    public final Loader loader;
     private static final double scalef;
     
     {
@@ -154,6 +155,12 @@ public class UI {
 	widgets.put(0, root);
 	rwidgets.put(root, 0);
 	this.sess = sess;
+	if(sess == null) {
+	    loader = new Loader();
+	} else {
+	    if((loader = sess.glob.loader) == null)
+		throw(new NullPointerException());
+	}
     }
 	
     public void setreceiver(Receiver rcvr) {
