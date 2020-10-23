@@ -60,6 +60,7 @@ public class UI {
     private boolean gprefsdirty = false;
     public final ActAudio.Root audio = new ActAudio.Root();
     public final Loader loader;
+    public final CommandQueue queue = new CommandQueue();
     private static final double scalef;
     
     {
@@ -160,6 +161,79 @@ public class UI {
 	} else {
 	    if((loader = sess.glob.loader) == null)
 		throw(new NullPointerException());
+	}
+    }
+
+    private static class Command {
+	final Collection<Integer> deps = new ArrayList<>();
+	final Collection<Integer> bars  = new ArrayList<>();
+	final Collection<Command> next = new ArrayList<>();
+	final Collection<Command> wait = new ArrayList<>();
+	final Runnable action;
+
+	Command(Runnable action) {
+	    this.action = action;
+	}
+
+	Command dep(int id, boolean bar) {
+	    deps.add(id);
+	    if(bar)
+		bars.add(id);
+	    return(this);
+	}
+    }
+
+    public class CommandQueue {
+	private final Map<Integer, Command> score = new HashMap<>();
+
+	private CommandQueue() {}
+
+	private void run(Command cmd) {
+	    try {
+		cmd.action.run();
+	    } finally {
+		finish(cmd);
+	    }
+	}
+
+	private void execute(Command cmd) {
+	    loader.defer(() -> run(cmd), null);
+	}
+
+	public void submit(Command cmd) {
+	    boolean ready = true;
+	    synchronized(this) {
+		for(Integer dep : cmd.deps) {
+		    Command last = score.get(dep);
+		    if(last != null) {
+			last.next.add(cmd);
+			cmd.wait.add(last);
+			ready = false;
+		    }
+		}
+		for(Integer bar : cmd.bars) {
+		    score.put(bar, cmd);
+		}
+	    }
+	    if(ready)
+		execute(cmd);
+	}
+
+	public void finish(Command cmd) {
+	    Collection<Command> ready = new ArrayList<>();
+	    synchronized(this) {
+		for(Command next : cmd.next) {
+		    next.wait.remove(cmd);
+		    if(next.wait.isEmpty())
+			ready.add(next);
+		}
+		for(Integer bar : cmd.bars) {
+		    if(score.get(bar) == cmd)
+			score.remove(bar);
+		}
+	    }
+	    for(Command next : ready)
+		execute(next);
 	}
     }
 	
