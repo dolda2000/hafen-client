@@ -738,6 +738,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	MapClick(MapMesh cut) {
 	    this.cut = cut;
 	}
+
+	public String toString() {
+	    return(String.format("#<mapclick %s>", cut));
+	}
     }
 
     private final ClickMap clickmap;
@@ -1205,12 +1209,16 @@ public class MapView extends PView implements DTarget, Console.Directory {
 				    img -> Debug.dumpimage(img, Debug.somedir("click2.png")));
 		}
 		clmaplist.get(out, c, cd -> {
+			if(clickdb)
+			    Debug.log.printf("map-id: %s\n", cd);
 			if(cd != null)
 			    this.cut = ((MapClick)cd.ci).cut;
 			ckdone(1);
 		    });
 		out.pget(clmaplist.basic, ClickLocation.fragloc, Area.sized(c, new Coord(1, 1)), new VectorFormat(2, NumberFormat.FLOAT32), data -> {
 			pos = new Coord2d(data.getFloat(0), data.getFloat(4));
+			if(clickdb)
+			    Debug.log.printf("map-pos: %s\n", pos);
 			ckdone(2);
 		    });
 	    }
@@ -1235,6 +1243,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	if(clickdb) {
 	    GOut.debugimage(out, clobjlist.basic, FragID.fragid, Area.sized(Coord.z, clobjlist.sz()), new VectorFormat(1, NumberFormat.SINT32),
 			  img -> Debug.dumpimage(img, Debug.somedir("click3.png")));
+	    Consumer<ClickData> ocb = cb;
+	    cb = cl -> {
+		Debug.log.printf("obj-id: %s\n", cl);
+		ocb.accept(cl);
+	    };
 	}
 	clobjlist.get(out, c, cb);
     }

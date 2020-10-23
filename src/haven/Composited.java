@@ -509,6 +509,10 @@ public class Composited implements RenderTree.Node {
 	    if(prev instanceof Gob.GobClick)
 		new CompositeClick((Gob.GobClick)prev).apply(p);
 	};
+
+	public String toString() {
+	    return(String.format("#<composite-click %s>", gi));
+	}
     }
 
     private void parts(RenderTree.Slot slot) {
