@@ -292,25 +292,27 @@ public class UI {
 	}
     }
 	
-    public void newwidget(int id, Widget.Factory type, int parent, Object[] pargs, Object... cargs) {
+    public void snewwidget(int id, Widget.Factory type, Object... cargs) {
 	synchronized(this) {
 	    Widget wdg = type.create(this, cargs);
 	    wdg.attach(this);
-	    if(parent != 65535) {
-		Widget pwdg = getwidget(parent);
-		if(pwdg == null)
-		    throw(new UIException("Null parent widget " + parent + " for " + id, String.valueOf(type), cargs));
-		pwdg.addchild(wdg, pargs);
-	    }
 	    bind(wdg, id);
 	}
     }
 
-    public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
-	newwidget(id, Widget.gettype2(type), parent, pargs, cargs);
+    public void snewwidget(int id, String name, Object... cargs) {
+	snewwidget(id, Widget.gettype3(name), cargs);
     }
 
-    public void addwidget(int id, int parent, Object[] pargs) {
+    public void newwidget(int id, Widget.Factory type, Object... cargs) {
+	queue.submit(new Command(() -> snewwidget(id, type, cargs)).dep(id, true));
+    }
+
+    public void newwidget(int id, String type, Object... cargs) throws InterruptedException {
+	queue.submit(new Command(() -> snewwidget(id, type, cargs)).dep(id, true));
+    }
+
+    public void saddwidget(int id, int parent, Object... pargs) {
 	synchronized(this) {
 	    Widget wdg = getwidget(id);
 	    if(wdg == null)
@@ -320,6 +322,22 @@ public class UI {
 		throw(new UIException("Null parent widget " + parent + " for " + id, null, pargs));
 	    pwdg.addchild(wdg, pargs);
 	}
+    }
+
+    public void addwidget(int id, int parent, Object... pargs) {
+	queue.submit(new Command(() -> saddwidget(id, parent, pargs)).dep(id, true).dep(parent, true));
+    }
+
+    public void newwidget(int id, Widget.Factory type, int parent, Object[] pargs, Object... cargs) {
+	newwidget(id, type, cargs);
+	if(parent != 65535)
+	    addwidget(id, parent, pargs);
+    }
+
+    public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
+	newwidget(id, type, cargs);
+	if(parent != 65535)
+	    addwidget(id, parent, pargs);
     }
 
     public abstract class Grab {
@@ -380,12 +398,16 @@ public class UI {
 	wdg.reqdestroy();
     }
     
-    public void destroy(int id) {
+    public void sdestroy(int id) {
 	synchronized(this) {
 	    Widget wdg = getwidget(id);
 	    if(wdg != null)
 		destroy(wdg);
 	}
+    }
+
+    public void destroy(int id) {
+	queue.submit(new Command(() -> sdestroy(id)).dep(id, true));
     }
 	
     public void wdgmsg(Widget sender, String msg, Object... args) {
@@ -398,7 +420,7 @@ public class UI {
 	    rcvr.rcvmsg(id, msg, args);
     }
 	
-    public void uimsg(int id, String msg, Object... args) {
+    public void suimsg(int id, String msg, Object... args) {
 	Widget wdg = getwidget(id);
 	if(wdg != null) {
 	    synchronized(this) {
@@ -409,6 +431,10 @@ public class UI {
 	}
     }
 	
+    public void uimsg(int id, String msg, Object... args) {
+	queue.submit(new Command(() -> suimsg(id, msg, args)).dep(id, true));
+    }
+
     private void setmods(InputEvent ev) {
 	int mod = ev.getModifiersEx();
 	modshift = (mod & InputEvent.SHIFT_DOWN_MASK) != 0;
