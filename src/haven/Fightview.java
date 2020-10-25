@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import static haven.Utils.uint32;
 
 public class Fightview extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/bosq");
@@ -264,21 +265,21 @@ public class Fightview extends Widget {
 
     public void uimsg(String msg, Object... args) {
         if(msg == "new") {
-            Relation rel = new Relation((Integer)args[0]);
+            Relation rel = new Relation(uint32((Integer)args[0]));
 	    rel.give((Integer)args[1]);
 	    rel.ip = (Integer)args[2];
 	    rel.oip = (Integer)args[3];
             lsrel.addFirst(rel);
             return;
         } else if(msg == "del") {
-            Relation rel = getrel((Integer)args[0]);
+            Relation rel = getrel(uint32((Integer)args[0]));
 	    rel.remove();
             lsrel.remove(rel);
 	    if(rel == current)
 		setcur(null);
             return;
         } else if(msg == "upd") {
-            Relation rel = getrel((Integer)args[0]);
+            Relation rel = getrel(uint32((Integer)args[0]));
 	    rel.give((Integer)args[1]);
 	    rel.ip = (Integer)args[2];
 	    rel.oip = (Integer)args[3];
@@ -287,12 +288,12 @@ public class Fightview extends Widget {
 	    use((args[0] == null)?null:ui.sess.getres((Integer)args[0]));
 	    return;
 	} else if(msg == "ruse") {
-	    Relation rel = getrel((Integer)args[0]);
+	    Relation rel = getrel(uint32((Integer)args[0]));
 	    rel.use((args[1] == null)?null:ui.sess.getres((Integer)args[1]));
 	    return;
         } else if(msg == "cur") {
             try {
-                Relation rel = getrel((Integer)args[0]);
+                Relation rel = getrel(uint32((Integer)args[0]));
                 lsrel.remove(rel);
                 lsrel.addFirst(rel);
 		setcur(rel);

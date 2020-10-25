@@ -967,7 +967,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    else
 		help.res = res;
 	} else if(msg == "map-mark") {
-	    long gobid = ((Integer)args[0]) & 0xffffffff;
+	    long gobid = Utils.uint32((Integer)args[0]);
 	    long oid = (Long)args[1];
 	    Indir<Resource> res = ui.sess.getres((Integer)args[2]);
 	    String nm = (String)args[3];

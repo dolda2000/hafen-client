@@ -66,7 +66,7 @@ public class Party {
 	    if(type == PD_LIST) {
 		ArrayList<Long> ids = new ArrayList<Long>();
 		while(true) {
-		    long id = msg.int32();
+		    long id = msg.uint32();
 		    if(id < 0)
 			break;
 		    ids.add(id);
@@ -84,11 +84,11 @@ public class Party {
 		memb = nmemb;
 		leader = memb.get(lid);
 	    } else if(type == PD_LEADER) {
-		Member m = memb.get((long)msg.int32());
+		Member m = memb.get(msg.uint32());
 		if(m != null)
 		    leader = m;
 	    } else if(type == PD_MEMBER) {
-		Member m = memb.get((long)msg.int32());
+		Member m = memb.get(msg.uint32());
 		Coord2d c = null;
 		boolean vis = msg.uint8() == 1;
 		if(vis)

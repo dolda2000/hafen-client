@@ -419,9 +419,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public Widget create(UI ui, Object[] args) {
 	    Coord sz = UI.scale((Coord)args[0]);
 	    Coord2d mc = ((Coord)args[1]).mul(posres);
-	    int pgob = -1;
+	    long pgob = -1;
 	    if(args.length > 2)
-		pgob = (Integer)args[2];
+		pgob = Utils.uint32((Integer)args[2]);
 	    return(new MapView(sz, ui.sess.glob, mc, pgob));
 	}
     }
@@ -1619,7 +1619,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(args[0] == null)
 		plgob = -1;
 	    else
-		plgob = (Integer)args[0];
+		plgob = Utils.uint32((Integer)args[0]);
 	} else if(msg == "flashol") {
 	    unflashol();
 	    olflash = (Integer)args[0];
