@@ -231,9 +231,9 @@ public class GobIcon extends GAttrib {
 			    if((a.name == null) && (b.name == null))
 				return(0);
 			    if(a.name == null)
-				return(-1);
-			    if(b.name == null)
 				return(1);
+			    if(b.name == null)
+				return(-1);
 			    return(a.name.text.compareTo(b.name.text));
 			});
 		}
