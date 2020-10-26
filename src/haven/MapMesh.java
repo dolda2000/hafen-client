@@ -570,4 +570,8 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	for(RenderTree.Node e : extras)
 	    slot.add(e);
     }
+
+    public String toString() {
+	return(String.format("#<map-mesh %s+%s>", ul, sz));
+    }
 }
