@@ -155,7 +155,7 @@ public class MapWnd extends Window {
 		Coord ploc = xlate(resolve(player));
 		if(ploc != null) {
 		    g.chcolor(255, 0, 0, 255);
-		    MiniMap.drawplx(g, ploc);
+		    LocalMiniMap.drawplx(g, ploc);
 		    g.chcolor();
 		}
 	    } catch(Loading l) {

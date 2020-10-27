@@ -38,6 +38,9 @@ import java.io.*;
 import haven.resutil.Ridges;
 
 public class LocalMiniMap extends Widget {
+    public static final Tex bg = Resource.loadtex("gfx/hud/mmap/ptex");
+    public static final Tex nomap = Resource.loadtex("gfx/hud/mmap/nomap");
+    public static final Resource plx = Resource.local().loadwait("gfx/hud/mmap/x");
     public final MapView mv;
     public MapFile save;
     public GobIcon.Settings iconconf;
@@ -178,6 +181,11 @@ public class LocalMiniMap extends Widget {
 	    this.cc = pl.rc.floor(tilesz);
     }
 
+    public static void drawplx(GOut g, Coord ptc) {
+	Tex tex = plx.layer(Resource.imgc).tex();
+	g.image(tex, ptc.sub(UI.scale(plx.layer(Resource.negc).cc)));
+    }
+
     public void draw(GOut g) {
 	if(cc == null)
 	    return;
@@ -212,7 +220,7 @@ public class LocalMiniMap extends Widget {
 	    }
 	}
 	if(cur != null) {
-	    g.image(MiniMap.bg, Coord.z, UI.scale(MiniMap.bg.sz()));
+	    g.image(bg, Coord.z, UI.scale(bg.sz()));
 	    g.image(cur.img, UI.scale(cur.ul.sub(cc)).add(sz.div(2)), UI.scale(cur.img.sz()));
 	    drawicons(g);
 	    try {
@@ -228,13 +236,13 @@ public class LocalMiniMap extends Widget {
 			    continue;
 			Coord ptc = p2c(ppc);
 			g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 255);
-			MiniMap.drawplx(g, ptc);
+			drawplx(g, ptc);
 			g.chcolor();
 		    }
 		}
 	    } catch(Loading l) {}
 	} else {
-	    g.image(MiniMap.nomap, Coord.z);
+	    g.image(nomap, Coord.z);
 	}
     }
 
