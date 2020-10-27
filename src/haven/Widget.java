@@ -189,7 +189,7 @@ public class Widget {
 		ver = Integer.parseInt(name.substring(p + 1));
 		name = name.substring(0, p);
 	    }
-	    Indir<Resource> res = Resource.remote().load(name, ver);
+	    Indir<Resource> res = Resource.remote().load(name, ver, 10);
 	    while(true) {
 		try {
 		    return(res.get().getcode(Factory.class, true));
