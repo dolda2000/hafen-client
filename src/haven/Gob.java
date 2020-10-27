@@ -455,6 +455,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    }
 	    return(ret);
 	}
+
+	public String toString() {
+	    return(String.format("#<gob-click %d %s>", gob.id, gob.getres()));
+	}
     }
 
     private class GobState implements Pipe.Op {
