@@ -62,7 +62,7 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 		    int parent = msg.uint16();
 		    Object[] pargs = msg.list();
 		    Object[] cargs = msg.list();
-		    ui.newwidget(id, type, parent, pargs, cargs);
+		    ui.newwidgetp(id, type, parent, pargs, cargs);
 		} else if(msg.type == RMessage.RMSG_WDGMSG) {
 		    int id = msg.uint16();
 		    String name = msg.string();

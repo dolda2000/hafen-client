@@ -328,13 +328,13 @@ public class UI {
 	queue.submit(new Command(() -> saddwidget(id, parent, pargs)).dep(id, true).dep(parent, true));
     }
 
-    public void newwidget(int id, Widget.Factory type, int parent, Object[] pargs, Object... cargs) {
+    public void newwidgetp(int id, Widget.Factory type, int parent, Object[] pargs, Object... cargs) {
 	newwidget(id, type, cargs);
 	if(parent != 65535)
 	    addwidget(id, parent, pargs);
     }
 
-    public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
+    public void newwidgetp(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
 	newwidget(id, type, cargs);
 	if(parent != 65535)
 	    addwidget(id, parent, pargs);
