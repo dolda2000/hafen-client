@@ -47,6 +47,7 @@ public class MapWnd extends Window implements Console.Directory {
     public final MiniMap view;
     public final MapView mv;
     public final MarkerList list;
+    public boolean hmarkers = false;
     private final Locator player;
     private final Widget toolbar;
     private final Frame viewf, listf;
@@ -66,6 +67,7 @@ public class MapWnd extends Window implements Console.Directory {
     private final static Comparator<Marker> namecmp = ((a, b) -> a.nm.compareTo(b.nm));
     private final static int btnw = UI.scale(95);
 
+    public static final KeyBinding kb_hmark = KeyBinding.get("mapwnd/hmark", KeyMatch.forchar('M', KeyMatch.C));
     public MapWnd(MapFile file, MapView mv, Coord sz, String title) {
 	super(sz, title, true);
 	this.file = file;
@@ -88,6 +90,15 @@ public class MapWnd extends Window implements Console.Directory {
 		    domark = true;
 		}
 	    }, Coord.z);
+	toolbar.add(new IButton("gfx/hud/mmap/hmark", "", "", "") {
+		{
+		    settip("Toggle marker display");
+		    kb_gkey = kb_hmark;
+		}
+		public void click() {
+		    hmarkers = !hmarkers;
+		}
+	    });
 	toolbar.pack();
 	listf = add(new Frame(UI.scale(new Coord(200, 200)), false));
 	list = listf.add(new MarkerList(listf.inner().x, 0));
@@ -119,6 +130,11 @@ public class MapWnd extends Window implements Console.Directory {
     private class View extends MiniMap {
 	View(MapFile file) {
 	    super(file);
+	}
+
+	public void drawmarkers(GOut g) {
+	    if(!hmarkers)
+		super.drawmarkers(g);
 	}
 
 	public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
