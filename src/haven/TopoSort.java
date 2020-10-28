@@ -128,10 +128,14 @@ public class TopoSort<T> {
 	if(!i.hasNext())
 	    return(this);
 	T last = i.next();
-	while(i.hasNext()) {
-	    T next = i.next();
-	    add(last, next);
-	    last = next;
+	if(i.hasNext()) {
+	    while(i.hasNext()) {
+		T next = i.next();
+		add(last, next);
+		last = next;
+	    }
+	} else {
+	    nodes.add(last);
 	}
 	return(this);
     }
