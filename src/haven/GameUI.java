@@ -42,6 +42,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Avaview portrait;
     public MenuGrid menu;
     public MapView map;
+    public GobIcon.Settings iconconf;
     public LocalMiniMap mmap;
     public Fightview fv;
     private List<Widget> meters = new LinkedList<Widget>();
@@ -190,6 +191,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	zerg.hide();
     }
 
+    protected void attached() {
+	iconconf = loadiconconf();
+    }
+
     public static final KeyBinding kb_map = KeyBinding.get("map", KeyMatch.forchar('A', KeyMatch.C));
     public static final KeyBinding kb_claim = KeyBinding.get("ol-claim", KeyMatch.nil);
     public static final KeyBinding kb_vil = KeyBinding.get("ol-vil", KeyMatch.nil);
@@ -234,10 +239,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    });
 	blpanel.add(new MenuButton("lbtn-ico", kb_ico, "Icon settings") {
 		public void click() {
-		    if(mmap == null)
+		    if(iconconf == null)
 			return;
 		    if(iconwnd == null) {
-			iconwnd = new GobIcon.SettingsWindow(mmap.iconconf, () -> Utils.defer(mmap::saveconf));
+			iconwnd = new GobIcon.SettingsWindow(iconconf, () -> Utils.defer(GameUI.this::saveiconconf));
 			fitwdg(GameUI.this.add(iconwnd, Utils.getprefc("wndc-icon", new Coord(200, 200))));
 		    } else {
 			ui.destroy(iconwnd);
@@ -692,7 +697,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		ui.destroy(mapfile);
 		mapfile = null;
 	    }
-	    mmap = blpanel.add(new LocalMiniMap(UI.scale(new Coord(133, 133)), map), minimapc);
+	    mmap = blpanel.add(new LocalMiniMap(UI.scale(new Coord(133, 133)), map, iconconf), minimapc);
 	    mmap.lower();
 	    ResCache mapstore = ResCache.global;
 	    if(Config.mapbase != null) {
@@ -904,6 +909,43 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
+    private String iconconfname() {
+	StringBuilder buf = new StringBuilder();
+	buf.append("data/mm-icons");
+	if(genus != null)
+	    buf.append("/" + genus);
+	if(ui.sess != null)
+	    buf.append("/" + ui.sess.username);
+	return(buf.toString());
+    }
+
+    private GobIcon.Settings loadiconconf() {
+	if(ResCache.global == null)
+	    return(new GobIcon.Settings());
+	try {
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(iconconfname()))) {
+		return(GobIcon.Settings.load(fp));
+	    }
+	} catch(java.io.FileNotFoundException e) {
+	    return(new GobIcon.Settings());
+	} catch(Exception e) {
+	    new Warning(e, "failed to load icon-conf").issue();
+	    return(new GobIcon.Settings());
+	}
+    }
+
+    public void saveiconconf() {
+	if(ResCache.global == null)
+	    return;
+	try {
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.store(iconconfname()))) {
+		iconconf.save(fp);
+	    }
+	} catch(Exception e) {
+	    new Warning(e, "failed to store icon-conf").issue();
+	}
+    }
+
     private Coord lastsavegrid = null;
     private void mapfiletick() {
 	MapView map = this.map;
@@ -1007,7 +1049,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    boolean has = conf.settings.containsKey(res);
 		    cset.show = cset.defshow = ((Integer)args[3]) != 0;
 		    conf.receive(tag, new Resource.Spec[] {res}, new GobIcon.Setting[] {cset});
-		    mmap.saveconf();
+		    saveiconconf();
 		    if(!has && conf.notify) {
 			ui.sess.glob.loader.defer(() -> {
 				Resource lres = Resource.remote().load(res.name, res.ver).get();
@@ -1031,7 +1073,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			csets.add(cset);
 		    }
 		    conf.receive(tag, res.toArray(new Resource.Spec[0]), csets.toArray(new GobIcon.Setting[0]));
-		    mmap.saveconf();
+		    saveiconconf();
 		}
 	    }
 	} else {

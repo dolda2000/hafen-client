@@ -42,7 +42,7 @@ public class LocalMiniMap extends Widget {
     public static final Tex nomap = Resource.loadtex("gfx/hud/mmap/nomap");
     public static final Resource plx = Resource.local().loadwait("gfx/hud/mmap/x");
     public final MapView mv;
-    public GobIcon.Settings iconconf;
+    public final GobIcon.Settings iconconf;
     private Coord cc = null;
     private MapTile cur = null;
     private final Map<Pair<Grid, Integer>, Defer.Future<MapTile>> cache = new LinkedHashMap<Pair<Grid, Integer>, Defer.Future<MapTile>>(5, 0.75f, true) {
@@ -73,13 +73,10 @@ public class LocalMiniMap extends Widget {
 	}
     }
 
-    public LocalMiniMap(Coord sz, MapView mv) {
+    public LocalMiniMap(Coord sz, MapView mv, GobIcon.Settings iconconf) {
 	super(sz);
 	this.mv = mv;
-    }
-
-    protected void attached() {
-	iconconf = loadconf();
+	this.iconconf = iconconf;
     }
 
     public Coord p2c(Coord2d pc) {
@@ -88,44 +85,6 @@ public class LocalMiniMap extends Widget {
 
     public Coord2d c2p(Coord c) {
 	return(UI.unscale(c.sub(sz.div(2))).add(cc).mul(tilesz).add(tilesz.div(2)));
-    }
-
-    private String confname() {
-	StringBuilder buf = new StringBuilder();
-	buf.append("data/mm-icons");
-	GameUI gui = getparent(GameUI.class);
-	if((gui != null) && (gui.genus != null))
-	    buf.append("/" + gui.genus);
-	if(ui.sess != null)
-	    buf.append("/" + ui.sess.username);
-	return(buf.toString());
-    }
-
-    private GobIcon.Settings loadconf() {
-	if(ResCache.global == null)
-	    return(new GobIcon.Settings());
-	try {
-	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(confname()))) {
-		return(GobIcon.Settings.load(fp));
-	    }
-	} catch(FileNotFoundException e) {
-	    return(new GobIcon.Settings());
-	} catch(Exception e) {
-	    new Warning(e, "failed to load icon-conf").issue();
-	    return(new GobIcon.Settings());
-	}
-    }
-
-    public void saveconf() {
-	if(ResCache.global == null)
-	    return;
-	try {
-	    try(StreamMessage fp = new StreamMessage(ResCache.global.store(confname()))) {
-		iconconf.save(fp);
-	    }
-	} catch(Exception e) {
-	    new Warning(e, "failed to store icon-conf").issue();
-	}
     }
 
     public void drawicons(GOut g) {
