@@ -397,10 +397,8 @@ public class MiniMap extends Widget {
     }
 
     public void drawicons(GOut g) {
-	if(Debug.kf3 && !Debug.pk3) System.err.println(ui.sess + " " + sessloc + " " + dloc.seg + " " + iconconf);
 	if((ui.sess == null) || (sessloc == null) || (dloc.seg != sessloc.seg) || (iconconf == null))
 	    return;
-	if(Debug.kf3 && !Debug.pk3) System.err.println(1);
 	OCache oc = ui.sess.glob.oc;
 	synchronized(oc) {
 	    for(Gob gob : oc) {
@@ -411,7 +409,6 @@ public class MiniMap extends Widget {
 			if((conf != null) && conf.show) {
 			    Coord gc = p2c(gob.rc);
 			    Tex tex = icon.tex();
-			    if(Debug.kf3 && !Debug.pk3) System.err.println(icon.res + " " + gc);
 			    g.image(tex, gc.sub(tex.sz().div(2)));
 			}
 		    }
