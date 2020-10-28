@@ -121,7 +121,7 @@ public class MapWnd extends Window implements Console.Directory {
 	    super(file);
 	}
 
-	public boolean clickmarker(DisplayMarker mark, int button, boolean press) {
+	public boolean clickmarker(DisplayMarker mark, Location cloc, int button, boolean press) {
 	    if((button == 1) && !press) {
 		list.change2(mark.m);
 		list.display(mark.m);
@@ -130,7 +130,7 @@ public class MapWnd extends Window implements Console.Directory {
 	    return(false);
 	}
 
-	public boolean clickloc(Location loc, int button, boolean press) {
+	public boolean clickloc(Location loc, Location cloc, int button, boolean press) {
 	    if(domark && (button == 1) && !press) {
 		Marker nm = new PMarker(loc.seg.id, loc.tc, "New marker", BuddyWnd.gc[new Random().nextInt(BuddyWnd.gc.length)]);
 		file.add(nm);

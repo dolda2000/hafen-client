@@ -173,6 +173,14 @@ public class MiniMap extends Widget {
 	return(loc.tc.sub(dloc.tc).div(scalef()).add(sz.div(2)));
     }
 
+    public Location xlate(Coord sc) {
+	Location dloc = this.dloc;
+	if(dloc == null)
+	    return(null);
+	Coord tc = sc.sub(sz.div(2)).mul(scalef()).add(dloc.tc);
+	return(new Location(dloc.seg, tc));
+    }
+
     private Locator sesslocator;
     public void tick(double dt) {
 	if(setloc != null) {
@@ -513,11 +521,11 @@ public class MiniMap extends Widget {
 	return(false);
     }
 
-    public boolean clickicon(DisplayIcon icon, int button, boolean press) {
+    public boolean clickicon(DisplayIcon icon, Location loc, int button, boolean press) {
 	return(false);
     }
 
-    public boolean clickmarker(DisplayMarker mark, int button, boolean press) {
+    public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
 	return(false);
     }
 
@@ -532,16 +540,13 @@ public class MiniMap extends Widget {
     private DisplayIcon dsicon;
     private DisplayMarker dsmark;
     public boolean mousedown(Coord c, int button) {
-	Coord tc = null;
-	if(dloc != null)
-	    tc = c.sub(sz.div(2)).mul(scalef()).add(curloc.tc);
-	if(tc != null) {
-	    dsloc = new Location(curloc.seg, tc);
+	dsloc = xlate(c);
+	if(dsloc != null) {
 	    dsicon = iconat(c);
-	    dsmark = markerat(tc);
-	    if((dsicon != null) && clickicon(dsicon, button, true))
+	    dsmark = markerat(dsloc.tc);
+	    if((dsicon != null) && clickicon(dsicon, dsloc, button, true))
 		return(true);
-	    if((dsmark != null) && clickmarker(dsmark, button, true))
+	    if((dsmark != null) && clickmarker(dsmark, dsloc, button, true))
 		return(true);
 	    if(clickloc(dsloc, button, true))
 		return(true);
@@ -581,12 +586,12 @@ public class MiniMap extends Widget {
 	    drag.remove();
 	    drag = null;
 	}
-	release: if(!dragging) {
-	    if((dsicon != null) && clickicon(dsicon, button, false))
+	release: if(!dragging && (dsloc != null)) {
+	    if((dsicon != null) && clickicon(dsicon, dsloc, button, false))
 		break release;
-	    if((dsmark != null) && clickmarker(dsmark, button, false))
+	    if((dsmark != null) && clickmarker(dsmark, dsloc, button, false))
 		break release;
-	    if((dsloc != null) && clickloc(dsloc, button, false))
+	    if(clickloc(dsloc, button, false))
 		break release;
 	}
 	dsloc = null;
