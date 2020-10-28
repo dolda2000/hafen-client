@@ -43,6 +43,7 @@ public class MiniMap extends Widget {
     public Location curloc;
     public Location sessloc;
     public GobIcon.Settings iconconf;
+    public List<DisplayIcon> icons = Collections.emptyList();
     private Locator setloc;
     private boolean follow;
     private int zoomlevel = 0;
@@ -203,6 +204,18 @@ public class MiniMap extends Widget {
 	follow = true;
     }
 
+    public static class DisplayIcon {
+	public final GobIcon icon;
+	public final Gob gob;
+	public Coord cc;
+
+	public DisplayIcon(GobIcon icon, Coord cc) {
+	    this.icon = icon;
+	    this.gob = icon.gob;
+	    this.cc = cc;
+	}
+    }
+
     public static class DisplayMarker {
 	public static final Resource.Image flagbg, flagfg;
 	public static final Coord flagcc;
@@ -329,6 +342,14 @@ public class MiniMap extends Widget {
 	return(UI.unscale((float)(1 << dlvl)));
     }
 
+    public Coord st2c(Coord tc) {
+	return(UI.scale(tc.add(sessloc.tc).sub(dloc.tc).div(1 << dlvl)).add(sz.div(2)));
+    }
+
+    public Coord p2c(Coord2d pc) {
+	return(st2c(pc.floor(tilesz)));
+    }
+
     private void redisplay(Location loc) {
 	Coord hsz = sz.div(2);
 	Coord zmaps = cmaps.mul(1 << zoomlevel);
@@ -388,17 +409,10 @@ public class MiniMap extends Widget {
 	}
     }
 
-    public Coord st2c(Coord tc) {
-	return(UI.scale(tc.add(sessloc.tc).sub(dloc.tc).div(1 << dlvl)).add(sz.div(2)));
-    }
-
-    public Coord p2c(Coord2d pc) {
-	return(st2c(pc.floor(tilesz)));
-    }
-
-    public void drawicons(GOut g) {
+    public List<DisplayIcon> findicons() {
 	if((ui.sess == null) || (sessloc == null) || (dloc.seg != sessloc.seg) || (iconconf == null))
-	    return;
+	    return(Collections.emptyList());
+	List<DisplayIcon> ret = new ArrayList<>();
 	OCache oc = ui.sess.glob.oc;
 	synchronized(oc) {
 	    for(Gob gob : oc) {
@@ -408,12 +422,23 @@ public class MiniMap extends Widget {
 			GobIcon.Setting conf = iconconf.get(icon.res.get());
 			if((conf != null) && conf.show) {
 			    Coord gc = p2c(gob.rc);
-			    Tex tex = icon.tex();
-			    g.image(tex, gc.sub(tex.sz().div(2)));
+			    ret.add(new DisplayIcon(icon, gc));
 			}
 		    }
 		} catch(Loading l) {}
 	    }
+	}
+	if(ret.size() == 0)
+	    return(Collections.emptyList());
+	return(ret);
+    }
+
+    public void drawicons(GOut g) {
+	for(DisplayIcon disp : icons) {
+	    try {
+		Tex tex = disp.icon.tex();
+		g.image(tex, disp.cc.sub(tex.sz().div(2)));
+	    } catch(Loading l) {}
 	}
     }
 
@@ -429,6 +454,7 @@ public class MiniMap extends Widget {
 	if(loc == null)
 	    return;
 	redisplay(loc);
+	icons = findicons();
 	drawparts(g);
     }
 
