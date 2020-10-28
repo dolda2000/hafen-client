@@ -449,6 +449,11 @@ public class MiniMap extends Widget {
 	return(ret);
     }
 
+    public static void drawplx(GOut g, Coord ptc) {
+	Tex tex = plx.layer(Resource.imgc).tex();
+	g.image(tex, ptc.sub(UI.scale(plx.layer(Resource.negc).cc)));
+    }
+
     public void drawicons(GOut g) {
 	for(DisplayIcon disp : icons) {
 	    try {
@@ -458,11 +463,25 @@ public class MiniMap extends Widget {
 	}
     }
 
+    public void drawparty(GOut g) {
+	synchronized(ui.sess.glob.party.memb) {
+	    for(Party.Member m : ui.sess.glob.party.memb.values()) {
+		try {
+		    Coord2d ppc = m.getc();
+		    g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 255);
+		    drawplx(g, p2c(ppc));
+		    g.chcolor();
+		} catch(Loading l) {}
+	    }
+	}
+    }
+
     public void drawparts(GOut g){
 	drawmap(g);
 	drawmarkers(g);
 	if(dlvl == 0)
 	    drawicons(g);
+	drawparty(g);
     }
 
     public void draw(GOut g) {

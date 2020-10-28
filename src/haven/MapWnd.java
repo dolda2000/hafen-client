@@ -167,15 +167,6 @@ public class MapWnd extends Window implements Console.Directory {
 	    g.frect(Coord.z, sz);
 	    g.chcolor();
 	    super.draw(g);
-	    try {
-		Coord ploc = xlate(resolve(player));
-		if(ploc != null) {
-		    g.chcolor(255, 0, 0, 255);
-		    LocalMiniMap.drawplx(g, ploc);
-		    g.chcolor();
-		}
-	    } catch(Loading l) {
-	    }
 	}
 
 	public Resource getcurs(Coord c) {
