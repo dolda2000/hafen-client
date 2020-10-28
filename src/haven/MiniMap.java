@@ -41,6 +41,8 @@ import static haven.OCache.posres;
 public class MiniMap extends Widget {
     public final MapFile file;
     public Location curloc;
+    public Location sessloc;
+    public GobIcon.Settings iconconf;
     private Locator setloc;
     private boolean follow;
     private int zoomlevel = 0;
@@ -52,6 +54,15 @@ public class MiniMap extends Widget {
 
     public MiniMap(MapFile file) {
 	this.file = file;
+    }
+
+    protected void attached() {
+	if(iconconf == null) {
+	    GameUI gui = getparent(GameUI.class);
+	    if(gui != null)
+		iconconf = gui.iconconf;
+	}
+	super.attached();
     }
 
     public static class Location {
@@ -67,6 +78,43 @@ public class MiniMap extends Widget {
 
     public interface Locator {
 	Location locate(MapFile file) throws Loading;
+    }
+
+    public static class SessionLocator implements Locator {
+	public final Session sess;
+	private MCache.Grid lastgrid = null;
+	private Location lastloc;
+
+	public SessionLocator(Session sess) {this.sess = sess;}
+
+	public Location locate(MapFile file) {
+	    MCache map = sess.glob.map;
+	    if(lastgrid != null) {
+		synchronized(map.grids) {
+		    if(map.grids.get(lastgrid.gc) == lastgrid)
+			return(lastloc);
+		}
+		lastgrid = null;
+		lastloc = null;
+	    }
+	    Collection<MCache.Grid> grids = new ArrayList<>();
+	    synchronized(map.grids) {
+		grids.addAll(map.grids.values());
+	    }
+	    for(MCache.Grid grid : grids) {
+		GridInfo info = file.gridinfo.get(grid.id);
+		if(info == null)
+		    continue;
+		Segment seg = file.segments.get(info.seg);
+		if(seg != null) {
+		    Location ret = new Location(seg, info.sc.sub(grid.gc).mul(cmaps));
+		    lastgrid = grid;
+		    lastloc = ret;
+		    return(ret);
+		}
+	    }
+	    throw(new Loading("No mapped grids found."));
+	}
     }
 
     public static class MapLocator implements Locator {
@@ -124,6 +172,7 @@ public class MiniMap extends Widget {
 	return(loc.tc.sub(dloc.tc).div(scalef()).add(sz.div(2)));
     }
 
+    private Locator sesslocator;
     public void tick(double dt) {
 	if(setloc != null) {
 	    try {
@@ -131,6 +180,14 @@ public class MiniMap extends Widget {
 		center(loc);
 		if(!follow)
 		    setloc = null;
+	    } catch(Loading l) {
+	    }
+	}
+	if((sesslocator == null) && (ui != null) && (ui.sess != null))
+	    sesslocator = new SessionLocator(ui.sess);
+	if(sesslocator != null) {
+	    try {
+		sessloc = resolve(sesslocator);
 	    } catch(Loading l) {
 	    }
 	}
@@ -331,9 +388,43 @@ public class MiniMap extends Widget {
 	}
     }
 
+    public Coord st2c(Coord tc) {
+	return(UI.scale(tc.add(sessloc.tc).sub(dloc.tc).div(1 << dlvl)).add(sz.div(2)));
+    }
+
+    public Coord p2c(Coord2d pc) {
+	return(st2c(pc.floor(tilesz)));
+    }
+
+    public void drawicons(GOut g) {
+	if(Debug.kf3 && !Debug.pk3) System.err.println(ui.sess + " " + sessloc + " " + dloc.seg + " " + iconconf);
+	if((ui.sess == null) || (sessloc == null) || (dloc.seg != sessloc.seg) || (iconconf == null))
+	    return;
+	if(Debug.kf3 && !Debug.pk3) System.err.println(1);
+	OCache oc = ui.sess.glob.oc;
+	synchronized(oc) {
+	    for(Gob gob : oc) {
+		try {
+		    GobIcon icon = gob.getattr(GobIcon.class);
+		    if(icon != null) {
+			GobIcon.Setting conf = iconconf.get(icon.res.get());
+			if((conf != null) && conf.show) {
+			    Coord gc = p2c(gob.rc);
+			    Tex tex = icon.tex();
+			    if(Debug.kf3 && !Debug.pk3) System.err.println(icon.res + " " + gc);
+			    g.image(tex, gc.sub(tex.sz().div(2)));
+			}
+		    }
+		} catch(Loading l) {}
+	    }
+	}
+    }
+
     public void drawparts(GOut g){
 	drawmap(g);
 	drawmarkers(g);
+	if(dlvl == 0)
+	    drawicons(g);
     }
 
     public void draw(GOut g) {
