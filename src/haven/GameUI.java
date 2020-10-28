@@ -38,7 +38,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private static final int blpw = UI.scale(142), brpw = UI.scale(142);
     public final String chrid, genus;
     public final long plid;
-    private final Hidepanel ulpanel, umpanel, urpanel, blpanel, brpanel, menupanel;
+    private final Hidepanel ulpanel, umpanel, urpanel, blpanel, mapmenupanel, brpanel, menupanel;
     public Avaview portrait;
     public MenuGrid menu;
     public MapView map;
@@ -150,7 +150,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    chat.show();
 	}
 	beltwdg.raise();
-	blpanel = add(new Hidepanel("gui-bl", null, new Coord(-1,  1)));
+	blpanel = add(new Hidepanel("gui-bl", null, new Coord(-1,  1)) {
+		public void move(double a) {
+		    super.move(a);
+		    mapmenupanel.move();
+		}
+	    });
+	mapmenupanel = add(new Hidepanel("mapmenu", new Indir<Coord>() {
+		public Coord get() {
+		    return(new Coord(0, Math.min(blpanel.c.y - mapmenupanel.sz.y + UI.scale(33), GameUI.this.sz.y - mapmenupanel.sz.y)));
+		}
+	    }, new Coord(-1, 0)));
 	brpanel = add(new Hidepanel("gui-br", null, new Coord( 1,  1)) {
 		public void move(double a) {
 		    super.move(a);
@@ -158,17 +168,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		}
 	    });
 	menupanel = add(new Hidepanel("menu", new Indir<Coord>() {
-		    public Coord get() {
-			return(new Coord(GameUI.this.sz.x, Math.min(brpanel.c.y - UI.scale(79), GameUI.this.sz.y - menupanel.sz.y)));
-		    }
-		}, new Coord(1, 0)));
+		public Coord get() {
+		    return(new Coord(GameUI.this.sz.x, Math.min(brpanel.c.y - UI.scale(79), GameUI.this.sz.y - menupanel.sz.y)));
+		}
+	    }, new Coord(1, 0)));
 	ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1)));
 	umpanel = add(new Hidepanel("gui-um", null, new Coord( 0, -1)));
 	urpanel = add(new Hidepanel("gui-ur", null, new Coord( 1, -1)));
 	Tex lbtnbg = Resource.loadtex("gfx/hud/lbtn-bg");
-	blpanel.add(new Img(Resource.loadtex("gfx/hud/blframe")), 0, lbtnbg.sz().y - UI.scale(33));
-	blpanel.add(new Img(lbtnbg), 0, 0);
-	minimapc = new Coord(UI.scale(4), UI.scale(34) + (lbtnbg.sz().y - UI.scale(33)));
+	mapmenupanel.add(new Img(lbtnbg), 0, 0);
+	blpanel.add(new Img(Resource.loadtex("gfx/hud/blframe")), 0, 0);
+	minimapc = new Coord(UI.scale(4), UI.scale(34));
 	Tex rbtnbg = Resource.loadtex("gfx/hud/csearch-bg");
 	Img brframe = brpanel.add(new Img(Resource.loadtex("gfx/hud/brframe")), rbtnbg.sz().x - UI.scale(22), 0);
 	menugridc = brframe.c.add(UI.scale(20), UI.scale(34));
@@ -202,7 +212,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public static final KeyBinding kb_rlm = KeyBinding.get("ol-rlm", KeyMatch.nil);
     public static final KeyBinding kb_ico = KeyBinding.get("map-icons", KeyMatch.nil);
     private void mapbuttons() {
-	blpanel.add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims") {
+	mapmenupanel.add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims") {
 		public void click() {
 		    if((map != null) && !map.visol(0)) {
 			map.enol(0); map.enol(1);
@@ -211,7 +221,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}
 	    }, 0, 0);
-	blpanel.add(new MenuButton("lbtn-vil", kb_vil, "Display village claims") {
+	mapmenupanel.add(new MenuButton("lbtn-vil", kb_vil, "Display village claims") {
 		public void click() {
 		    if((map != null) && !map.visol(2)) {
 			map.enol(2); map.enol(3);
@@ -220,7 +230,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}
 	    }, 0, 0);
-	blpanel.add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms") {
+	mapmenupanel.add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms") {
 		public void click() {
 		    if((map != null) && !map.visol(4)) {
 			map.enol(4); map.enol(5);
@@ -229,7 +239,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}
 	    }, 0, 0);
-	blpanel.add(new MenuButton("lbtn-map", kb_map, "Map") {
+	mapmenupanel.add(new MenuButton("lbtn-map", kb_map, "Map") {
 		public void click() {
 		    if((mapfile != null) && mapfile.show(!mapfile.visible)) {
 			mapfile.raise();
@@ -238,7 +248,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}
 	    });
-	blpanel.add(new MenuButton("lbtn-ico", kb_ico, "Icon settings") {
+	mapmenupanel.add(new MenuButton("lbtn-ico", kb_ico, "Icon settings") {
 		public void click() {
 		    if(iconconf == null)
 			return;
@@ -276,7 +286,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     /* Ice cream */
     private final IButton[] fold_br = new IButton[4];
-    private final IButton[] fold_bl = new IButton[2];
+    private final IButton[] fold_bl = new IButton[4];
     private void updfold(boolean reset) {
 	int br;
 	if(brpanel.tvis && menupanel.tvis)
@@ -290,7 +300,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	for(int i = 0; i < fold_br.length; i++)
 	    fold_br[i].show(i == br);
 
-	fold_bl[1].show(!blpanel.tvis);
+	int bl;
+	if(blpanel.tvis && mapmenupanel.tvis)
+	    bl = 0;
+	else if(blpanel.tvis && !mapmenupanel.tvis)
+	    bl = 1;
+	else if(!blpanel.tvis && !mapmenupanel.tvis)
+	    bl = 2;
+	else
+	    bl = 3;
+	for(int i = 0; i < fold_bl.length; i++)
+	    fold_bl[i].show(i == bl);
 
 	if(reset)
 	    resetui();
@@ -341,23 +361,37 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	final Tex lupbg = Resource.loadtex("gfx/hud/lbtn-upbg");
 	fold_bl[0] = new IButton("gfx/hud/lbtn-dwn", "", "-d", "-h") {
 		public void click() {
+		    mapmenupanel.cshow(false);
+		    updfold(true);
+		}
+	    };
+	fold_bl[1] = new IButton("gfx/hud/lbtn-dwn", "", "-d", "-h") {
+		public void click() {
 		    blpanel.cshow(false);
 		    updfold(true);
 		}
 	    };
-	fold_bl[1] = new IButton("gfx/hud/lbtn-up", "", "-d", "-h") {
+	fold_bl[2] = new IButton("gfx/hud/lbtn-up", "", "-d", "-h") {
 		public void draw(GOut g) {g.image(lupbg, Coord.z); super.draw(g);}
 		public void click() {
-		    blpanel.cshow(true);
+		    mapmenupanel.cshow(true);
 		    updfold(true);
 		}
 		public void presize() {
 		    this.c = new Coord(0, parent.sz.y - sz.y);
 		}
 	    };
-	blpanel.add(fold_bl[0], 0, 0);
-	adda(fold_bl[1], 0, 1);
-	fold_bl[1].lower();
+	fold_bl[3] = new IButton("gfx/hud/lbtn-dwn", "", "-d", "-h") {
+		public void click() {
+		    blpanel.cshow(true);
+		    updfold(true);
+		}
+	    };
+	mapmenupanel.add(fold_bl[0], 0, 0);
+	blpanel.add(fold_bl[1], 0, 0);
+	adda(fold_bl[2], 0, 1);
+	fold_bl[2].lower();
+	mapmenupanel.add(fold_bl[3], 0, 0);
 
 	updfold(false);
     }
