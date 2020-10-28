@@ -193,6 +193,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     protected void attached() {
 	iconconf = loadiconconf();
+	super.attached();
     }
 
     public static final KeyBinding kb_map = KeyBinding.get("map", KeyMatch.forchar('A', KeyMatch.C));
