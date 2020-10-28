@@ -620,4 +620,21 @@ public class MiniMap extends Widget {
 	}
 	return(super.tooltip(c, prev));
     }
+
+    public void mvclick(MapView mv, Coord mc, Location loc, Gob gob, int button) {
+	if(mc == null) mc = ui.mc;
+	if((sessloc != null) && (sessloc.seg == loc.seg)) {
+	    if(gob == null)
+		mv.wdgmsg("click", mc,
+			  loc.tc.sub(sessloc.tc).mul(tilesz).add(tilesz.div(2)).floor(posres),
+			  button, ui.modflags());
+	    else
+		mv.wdgmsg("click", mc,
+			  loc.tc.sub(sessloc.tc).mul(tilesz).add(tilesz.div(2)).floor(posres),
+			  button, ui.modflags(), 0,
+			  (int)gob.id,
+			  gob.rc.floor(posres),
+			  0, -1);
+	}
+    }
 }
