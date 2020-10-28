@@ -43,7 +43,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public MenuGrid menu;
     public MapView map;
     public GobIcon.Settings iconconf;
-    public LocalMiniMap mmap;
+    public MiniMap mmap;
     public Fightview fv;
     private List<Widget> meters = new LinkedList<Widget>();
     private Text lastmsg;
@@ -698,8 +698,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		ui.destroy(mapfile);
 		mapfile = null;
 	    }
-	    mmap = blpanel.add(new LocalMiniMap(UI.scale(new Coord(133, 133)), map, iconconf), minimapc);
-	    mmap.lower();
 	    ResCache mapstore = ResCache.global;
 	    if(Config.mapbase != null) {
 		try {
@@ -709,6 +707,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    if(mapstore != null) {
 		MapFile file = MapFile.load(mapstore, mapfilename());
+		mmap = blpanel.add(new CornerMap(UI.scale(new Coord(133, 133)), file), minimapc);
+		mmap.lower();
 		mapfile = new MapWnd(file, map, Utils.getprefc("wndsz-map", UI.scale(new Coord(700, 500))), "Map");
 		mapfile.hide();
 		add(mapfile, Utils.getprefc("wndc-map", new Coord(50, 50)));
@@ -947,6 +947,38 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
+    public class CornerMap extends MiniMap {
+	public CornerMap(Coord sz, MapFile file) {
+	    super(sz, file);
+	    follow(new MapLocator(map));
+	}
+
+	public boolean dragp(int button) {
+	    return(false);
+	}
+
+	public boolean clickicon(DisplayIcon icon, Location loc, int button, boolean press) {
+	    if(press) {
+		mvclick(map, null, loc, icon.gob, button);
+		return(true);
+	    }
+	    return(false);
+	}
+
+	public boolean clickloc(Location loc, int button, boolean press) {
+	    if(press) {
+		mvclick(map, null, loc, null, button);
+		return(true);
+	    }
+	    return(false);
+	}
+
+	public void draw(GOut g) {
+	    g.image(bg, Coord.z, UI.scale(bg.sz()));
+	    super.draw(g);
+	}
+    }
+
     private Coord lastsavegrid = null;
     private void mapfiletick() {
 	MapView map = this.map;
@@ -1038,44 +1070,42 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if(mapfile != null)
 		mapfile.markobj(gobid, oid, res, nm);
 	} else if(msg == "map-icons") {
-	    if(mmap != null) {
-		GobIcon.Settings conf = mmap.iconconf;
-		int tag = (Integer)args[0];
-		if(args.length < 2) {
-		    if(conf.tag != tag)
-			wdgmsg("map-icons", conf.tag);
-		} else if(args[1] instanceof String) {
-		    Resource.Spec res = new Resource.Spec(null, (String)args[1], (Integer)args[2]);
-		    GobIcon.Setting cset = new GobIcon.Setting();
-		    boolean has = conf.settings.containsKey(res);
-		    cset.show = cset.defshow = ((Integer)args[3]) != 0;
-		    conf.receive(tag, new Resource.Spec[] {res}, new GobIcon.Setting[] {cset});
-		    saveiconconf();
-		    if(!has && conf.notify) {
-			ui.sess.glob.loader.defer(() -> {
-				Resource lres = Resource.remote().load(res.name, res.ver).get();
-				Resource.Tooltip tip = lres.layer(Resource.tooltip);
-				if(tip != null)
-				    msg(String.format("%s added to list of seen icons.", tip.t));
-			    }, (Supplier<Object>)() -> null);
-		    }
-		} else if(args[1] instanceof Object[]) {
-		    Object[] sub = (Object[])args[1];
-		    int a = 0;
-		    Collection<Resource.Spec> res = new ArrayList<>();
-		    Collection<GobIcon.Setting> csets = new ArrayList<>();
-		    while(a < sub.length) {
-			String resnm = (String)sub[a++];
-			int resver = (Integer)sub[a++];
-			int fl = (Integer)sub[a++];
-			res.add(new Resource.Spec(null, resnm, resver));
-			GobIcon.Setting cset = new GobIcon.Setting();
-			cset.show = cset.defshow = ((fl & 1) != 0);
-			csets.add(cset);
-		    }
-		    conf.receive(tag, res.toArray(new Resource.Spec[0]), csets.toArray(new GobIcon.Setting[0]));
-		    saveiconconf();
+	    GobIcon.Settings conf = this.iconconf;
+	    int tag = (Integer)args[0];
+	    if(args.length < 2) {
+		if(conf.tag != tag)
+		    wdgmsg("map-icons", conf.tag);
+	    } else if(args[1] instanceof String) {
+		Resource.Spec res = new Resource.Spec(null, (String)args[1], (Integer)args[2]);
+		GobIcon.Setting cset = new GobIcon.Setting();
+		boolean has = conf.settings.containsKey(res);
+		cset.show = cset.defshow = ((Integer)args[3]) != 0;
+		conf.receive(tag, new Resource.Spec[] {res}, new GobIcon.Setting[] {cset});
+		saveiconconf();
+		if(!has && conf.notify) {
+		    ui.sess.glob.loader.defer(() -> {
+			    Resource lres = Resource.remote().load(res.name, res.ver).get();
+			    Resource.Tooltip tip = lres.layer(Resource.tooltip);
+			    if(tip != null)
+				msg(String.format("%s added to list of seen icons.", tip.t));
+			}, (Supplier<Object>)() -> null);
 		}
+	    } else if(args[1] instanceof Object[]) {
+		Object[] sub = (Object[])args[1];
+		int a = 0;
+		Collection<Resource.Spec> res = new ArrayList<>();
+		Collection<GobIcon.Setting> csets = new ArrayList<>();
+		while(a < sub.length) {
+		    String resnm = (String)sub[a++];
+		    int resver = (Integer)sub[a++];
+		    int fl = (Integer)sub[a++];
+		    res.add(new Resource.Spec(null, resnm, resver));
+		    GobIcon.Setting cset = new GobIcon.Setting();
+		    cset.show = cset.defshow = ((fl & 1) != 0);
+		    csets.add(cset);
+		}
+		conf.receive(tag, res.toArray(new Resource.Spec[0]), csets.toArray(new GobIcon.Setting[0]));
+		saveiconconf();
 	    }
 	} else {
 	    super.uimsg(msg, args);

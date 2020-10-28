@@ -39,6 +39,9 @@ import static haven.MCache.tilesz;
 import static haven.OCache.posres;
 
 public class MiniMap extends Widget {
+    public static final Tex bg = Resource.loadtex("gfx/hud/mmap/ptex");
+    public static final Tex nomap = Resource.loadtex("gfx/hud/mmap/nomap");
+    public static final Resource plx = Resource.local().loadwait("gfx/hud/mmap/x");
     public final MapFile file;
     public Location curloc;
     public Location sessloc;
@@ -53,8 +56,13 @@ public class MiniMap extends Widget {
     private int dlvl;
     private Location dloc;
 
-    public MiniMap(MapFile file) {
+    public MiniMap(Coord sz, MapFile file) {
+	super(sz);
 	this.file = file;
+    }
+
+    public MiniMap(MapFile file) {
+	this(Coord.z, file);
     }
 
     protected void attached() {
