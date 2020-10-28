@@ -485,6 +485,18 @@ public class MiniMap extends Widget {
 	return(false);
     }
 
+    public DisplayIcon iconat(Coord c) {
+	for(ListIterator<DisplayIcon> it = icons.listIterator(icons.size()); it.hasPrevious();) {
+	    DisplayIcon disp = it.previous();
+	    try {
+		Coord sz = disp.icon.tex().sz();
+		if(c.isect(disp.cc.sub(sz.div(2)), sz))
+		    return(disp);
+	    } catch(Loading l) {}
+	}
+	return(null);
+    }
+
     public DisplayMarker markerat(Coord tc) {
 	for(DisplayGrid dgrid : display) {
 	    if(dgrid == null)
@@ -497,11 +509,15 @@ public class MiniMap extends Widget {
 	return(null);
     }
 
-    public boolean clickloc(Location loc, int button) {
+    public boolean clickloc(Location loc, int button, boolean press) {
 	return(false);
     }
 
-    public boolean clickmarker(DisplayMarker mark, int button) {
+    public boolean clickicon(DisplayIcon icon, int button, boolean press) {
+	return(false);
+    }
+
+    public boolean clickmarker(DisplayMarker mark, int button, boolean press) {
 	return(false);
     }
 
@@ -512,16 +528,27 @@ public class MiniMap extends Widget {
 	return(button == 1);
     }
 
+    private Location dsloc;
+    private DisplayIcon dsicon;
+    private DisplayMarker dsmark;
     public boolean mousedown(Coord c, int button) {
 	Coord tc = null;
 	if(dloc != null)
 	    tc = c.sub(sz.div(2)).mul(scalef()).add(curloc.tc);
 	if(tc != null) {
-	    DisplayMarker mark = markerat(tc);
-	    if((mark != null) && clickmarker(mark, button))
+	    dsloc = new Location(curloc.seg, tc);
+	    dsicon = iconat(c);
+	    dsmark = markerat(tc);
+	    if((dsicon != null) && clickicon(dsicon, button, true))
 		return(true);
-	    if(clickloc(new Location(curloc.seg, tc), button))
+	    if((dsmark != null) && clickmarker(dsmark, button, true))
 		return(true);
+	    if(clickloc(dsloc, button, true))
+		return(true);
+	} else {
+	    dsloc = null;
+	    dsicon = null;
+	    dsmark = null;
 	}
 	if(dragp(button)) {
 	    Location loc = curloc;
@@ -554,6 +581,17 @@ public class MiniMap extends Widget {
 	    drag.remove();
 	    drag = null;
 	}
+	release: if(!dragging) {
+	    if((dsicon != null) && clickicon(dsicon, button, false))
+		break release;
+	    if((dsmark != null) && clickmarker(dsmark, button, false))
+		break release;
+	    if((dsloc != null) && clickloc(dsloc, button, false))
+		break release;
+	}
+	dsloc = null;
+	dsicon = null;
+	dsmark = null;
 	return(super.mouseup(c, button));
     }
 
