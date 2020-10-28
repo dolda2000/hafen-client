@@ -703,8 +703,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    if(mapstore != null) {
 		MapFile file = MapFile.load(mapstore, mapfilename());
-		mmap.save(file);
-		mapfile = new MapWnd(mmap.save, map, Utils.getprefc("wndsz-map", UI.scale(new Coord(700, 500))), "Map");
+		mapfile = new MapWnd(file, map, Utils.getprefc("wndsz-map", UI.scale(new Coord(700, 500))), "Map");
 		mapfile.hide();
 		add(mapfile, Utils.getprefc("wndc-map", new Coord(50, 50)));
 	    }
@@ -905,6 +904,27 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
+    private Coord lastsavegrid = null;
+    private void mapfiletick() {
+	MapView map = this.map;
+	MapWnd mapfile = this.mapfile;
+	if((map == null) || (mapfile == null))
+	    return;
+	Gob pl = ui.sess.glob.oc.getgob(map.plgob);
+	Coord gc;
+	if(pl == null)
+	    gc = map.cc.floor(MCache.tilesz).div(MCache.cmaps);
+	else
+	    gc = pl.rc.floor(MCache.tilesz).div(MCache.cmaps);
+	if(!Utils.eq(gc, lastsavegrid)) {
+	    try {
+		mapfile.file.update(ui.sess.glob.map, gc);
+		lastsavegrid = gc;
+	    } catch(Loading l) {
+	    }
+	}
+    }
+
     private double lastwndsave = 0;
     public void tick(double dt) {
 	super.tick(dt);
@@ -920,6 +940,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(afk && (idle <= 300)) {
 	    afk = false;
 	}
+	mapfiletick();
     }
     
     public void uimsg(String msg, Object... args) {

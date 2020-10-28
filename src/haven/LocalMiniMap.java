@@ -42,7 +42,6 @@ public class LocalMiniMap extends Widget {
     public static final Tex nomap = Resource.loadtex("gfx/hud/mmap/nomap");
     public static final Resource plx = Resource.local().loadwait("gfx/hud/mmap/x");
     public final MapView mv;
-    public MapFile save;
     public GobIcon.Settings iconconf;
     private Coord cc = null;
     private MapTile cur = null;
@@ -81,10 +80,6 @@ public class LocalMiniMap extends Widget {
 
     protected void attached() {
 	iconconf = loadconf();
-    }
-
-    public void save(MapFile file) {
-	this.save = file;
     }
 
     public Coord p2c(Coord2d pc) {
@@ -211,12 +206,8 @@ public class LocalMiniMap extends Widget {
 			cache.put(new Pair<Grid, Integer>(plg, seq), f);
 		    }
 		}
-		if(f.done()) {
+		if(f.done())
 		    cur = f.get();
-		    MapFile save = this.save;
-		    if(save != null)
-			save.update(ui.sess.glob.map, cur.grid.gc);
-		}
 	    }
 	}
 	if(cur != null) {

@@ -1741,11 +1741,7 @@ public class MapFile {
 	Collection<MCache.Grid> grids = new ArrayList<>();
 	for(Coord off : inout) {
 	    Coord gc = cgc.add(off);
-	    try {
-		grids.add(map.getgrid(gc));
-	    } catch(Loading l) {
-		continue;
-	    }
+	    grids.add(map.getgrid(gc));
 	}
 	if(!grids.isEmpty()) {
 	    synchronized(procmon) {
