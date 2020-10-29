@@ -98,13 +98,13 @@ public class MapWnd extends Window implements Console.Directory {
 		    domark = true;
 		}
 	    }, Coord.z);
-	toolbar.add(new IButton("gfx/hud/mmap/hmark", "", "", "") {
+	toolbar.add(new IButton("gfx/hud/mmap/hmark", "", "-d", "-h") {
 		{settip("Toggle marker display"); setgkey(kb_hmark);}
 		public void click() {
 		    hmarkers = !hmarkers;
 		}
 	    });
-	toolbar.add(new IButton("gfx/hud/mmap/wnd", "", "", "") {
+	toolbar.add(new IButton("gfx/hud/mmap/wnd", "", "-d", "-h") {
 		{settip("Toggle compact mode"); setgkey(kb_compact);}
 		public void click() {
 		    compact(!decohide());
