@@ -181,7 +181,7 @@ public class MapWnd extends Window implements Console.Directory {
 	private TextEntry namesel;
 
 	private Toolbox() {
-	    super(new Coord(200, 200));
+	    super(UI.scale(200, 200));
 	    listf = add(new Frame(UI.scale(new Coord(200, 200)), false), 0, 0);
 	    list = listf.add(new MarkerList(listf.inner().x, 0), 0, 0);
 	    pmbtn = add(new Button(btnw, "Placed", false) {
