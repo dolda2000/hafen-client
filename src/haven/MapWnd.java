@@ -67,6 +67,8 @@ public class MapWnd extends Window implements Console.Directory {
     private final static Comparator<Marker> namecmp = ((a, b) -> a.nm.compareTo(b.nm));
     private final static int btnw = UI.scale(95);
 
+    public static final KeyBinding kb_home = KeyBinding.get("mapwnd/home", KeyMatch.forcode(KeyEvent.VK_HOME, 0));
+    public static final KeyBinding kb_mark = KeyBinding.get("mapwnd/mark", KeyMatch.nil);
     public static final KeyBinding kb_hmark = KeyBinding.get("mapwnd/hmark", KeyMatch.forchar('M', KeyMatch.C));
     public MapWnd(MapFile file, MapView mv, Coord sz, String title) {
 	super(sz, title, true);
@@ -79,22 +81,19 @@ public class MapWnd extends Window implements Console.Directory {
 	toolbar = add(new Widget(Coord.z));
 	toolbar.add(new Img(Resource.loadtex("gfx/hud/mmap/fgwdg")), Coord.z);
 	toolbar.add(new IButton("gfx/hud/mmap/home", "", "-d", "-h") {
-		{tooltip = RichText.render("Follow ($col[255,255,0]{Home})", 0);}
+		{settip("Follow"); setgkey(kb_home);}
 		public void click() {
 		    recenter();
 		}
 	    }, Coord.z);
 	toolbar.add(new IButton("gfx/hud/mmap/mark", "", "-d", "-h") {
-		{tooltip = RichText.render("Add marker", 0);}
+		{settip("Add marker"); setgkey(kb_mark);}
 		public void click() {
 		    domark = true;
 		}
 	    }, Coord.z);
 	toolbar.add(new IButton("gfx/hud/mmap/hmark", "", "", "") {
-		{
-		    settip("Toggle marker display");
-		    kb_gkey = kb_hmark;
-		}
+		{settip("Toggle marker display"); setgkey(kb_hmark);}
 		public void click() {
 		    hmarkers = !hmarkers;
 		}
@@ -330,16 +329,6 @@ public class MapWnd extends Window implements Console.Directory {
     protected void drawframe(GOut g) {
 	g.image(sizer, ctl.add(csz).sub(sizer.sz()));
 	super.drawframe(g);
-    }
-
-    public boolean keydown(KeyEvent ev) {
-	if(super.keydown(ev))
-	    return(true);
-	if(ev.getKeyCode() == KeyEvent.VK_HOME) {
-	    recenter();
-	    return(true);
-	}
-	return(false);
     }
 
     private UI.Grab drag;
