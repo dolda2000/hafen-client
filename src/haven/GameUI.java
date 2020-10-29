@@ -361,6 +361,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	menupanel.add(fold_br[3], 0, 0);
 	fold_br[3].lower();
 
+	final Tex ldnbg = Resource.loadtex("gfx/hud/lbtn-bgs");
 	final Tex lupbg = Resource.loadtex("gfx/hud/lbtn-upbg");
 	fold_bl[0] = new IButton("gfx/hud/lbtn-dwn", "", "-d", "-h") {
 		public void click() {
@@ -369,6 +370,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		}
 	    };
 	fold_bl[1] = new IButton("gfx/hud/lbtn-dwn", "", "-d", "-h") {
+		public void draw(GOut g) {g.image(ldnbg, Coord.z); super.draw(g);}
 		public void click() {
 		    blpanel.cshow(false);
 		    updfold(true);
@@ -391,7 +393,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		}
 	    };
 	mapmenupanel.add(fold_bl[0], 0, 0);
-	blpanel.add(fold_bl[1], 0, 0);
+	blpanel.adda(fold_bl[1], 0, UI.scale(33), 0, 1);
 	adda(fold_bl[2], 0, 1);
 	fold_bl[2].lower();
 	mapmenupanel.add(fold_bl[3], 0, 0);
