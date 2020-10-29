@@ -273,7 +273,8 @@ public class MapWnd extends Window implements Console.Directory {
 		domark = false;
 		return(true);
 	    }
-	    return(super.mousedown(c, button));
+	    super.mousedown(c, button);
+	    return(true);
 	}
 
 	public void draw(GOut g) {
