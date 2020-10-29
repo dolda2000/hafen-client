@@ -468,6 +468,8 @@ public class MiniMap extends Widget {
 	    for(Party.Member m : ui.sess.glob.party.memb.values()) {
 		try {
 		    Coord2d ppc = m.getc();
+		    if(ppc == null)
+			continue;
 		    g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 255);
 		    drawplx(g, p2c(ppc));
 		    g.chcolor();
