@@ -1016,8 +1016,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private Coord lastsavegrid = null;
     private void mapfiletick() {
 	MapView map = this.map;
-	MapWnd mapfile = this.mapfile;
-	if((map == null) || (mapfile == null))
+	MiniMap mmap = this.mmap;
+	if((map == null) || (mmap == null))
 	    return;
 	Gob pl = ui.sess.glob.oc.getgob(map.plgob);
 	Coord gc;
@@ -1027,7 +1027,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    gc = pl.rc.floor(MCache.tilesz).div(MCache.cmaps);
 	if(!Utils.eq(gc, lastsavegrid)) {
 	    try {
-		mapfile.file.update(ui.sess.glob.map, gc);
+		mmap.file.update(ui.sess.glob.map, gc);
 		lastsavegrid = gc;
 	    } catch(Loading l) {
 	    }
