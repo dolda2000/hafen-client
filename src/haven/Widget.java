@@ -849,10 +849,11 @@ public class Widget {
 	return(false);
     }
 
-    public void setgkey(KeyBinding gkey) {
+    public Widget setgkey(KeyBinding gkey) {
 	kb_gkey = gkey;
 	if((tooltip == null) && (kb_gkey != null))
 	    tooltip = new KeyboundTip();
+	return(this);
     }
 	
     public boolean keydown(KeyEvent ev) {
@@ -1224,8 +1225,9 @@ public class Widget {
 	return(tooltip(c, prev == this));
     }
 
-    public void settip(String text) {
+    public Widget settip(String text) {
 	tooltip = new KeyboundTip(text);
+	return(this);
     }
     
     public <T extends Widget> T getparent(Class<T> cl) {
