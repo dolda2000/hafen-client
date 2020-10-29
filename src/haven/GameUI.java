@@ -241,10 +241,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }, 0, 0);
 	mapmenupanel.add(new MenuButton("lbtn-map", kb_map, "Map") {
 		public void click() {
-		    if((mapfile != null) && mapfile.show(!mapfile.visible)) {
-			mapfile.raise();
-			fitwdg(mapfile);
-			setfocus(mapfile);
+		    if(mapfile != null) {
+			if(mapfile.show(!mapfile.visible)) {
+			    mapfile.raise();
+			    fitwdg(mapfile);
+			    setfocus(mapfile);
+			}
+			Utils.setprefb("wndvis-map", mapfile.visible);
 		    }
 		}
 	    });
@@ -744,7 +747,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		mmap = blpanel.add(new CornerMap(UI.scale(new Coord(133, 133)), file), minimapc);
 		mmap.lower();
 		mapfile = new MapWnd(file, map, Utils.getprefc("wndsz-map", UI.scale(new Coord(700, 500))), "Map");
-		mapfile.hide();
+		mapfile.show(Utils.getprefb("wndvis-map", false));
 		add(mapfile, Utils.getprefc("wndc-map", new Coord(50, 50)));
 	    }
 	} else if(place == "menu") {
@@ -1152,6 +1155,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return;
 	} else if((sender == mapfile) && (msg == "close")) {
 	    mapfile.hide();
+	    Utils.setprefb("wndvis-map", false);
 	    return;
 	} else if((sender == help) && (msg == "close")) {
 	    ui.destroy(help);

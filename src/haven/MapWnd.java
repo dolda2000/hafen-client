@@ -116,11 +116,13 @@ public class MapWnd extends Window implements Console.Directory {
 		{settip("Toggle compact mode"); setgkey(kb_compact);}
 		public void click() {
 		    compact(!decohide());
+		    Utils.setprefb("compact-map", decohide());
 		}
 	    });
 	toolbar.pack();
 	tool = add(new Toolbox());;
 	resize(sz);
+	compact(Utils.getprefb("compact-map", false));
     }
 
     private static final int btnw = UI.scale(95);
