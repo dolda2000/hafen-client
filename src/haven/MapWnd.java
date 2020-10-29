@@ -156,7 +156,7 @@ public class MapWnd extends Window implements Console.Directory {
 	public void mousemove(Coord c) {
 	    if(drag != null) {
 		Coord nsz = parentpos(MapWnd.this, c).add(dragc);
-		nsz.x = Math.max(nsz.x, UI.scale(300));
+		nsz.x = Math.max(nsz.x, UI.scale(350));
 		nsz.y = Math.max(nsz.y, UI.scale(150));
 		MapWnd.this.resize(nsz);
 	    }
@@ -448,7 +448,7 @@ public class MapWnd extends Window implements Console.Directory {
     public void mousemove(Coord c) {
 	if(drag != null) {
 	    Coord nsz = c.add(dragc);
-	    nsz.x = Math.max(nsz.x, UI.scale(300));
+	    nsz.x = Math.max(nsz.x, UI.scale(350));
 	    nsz.y = Math.max(nsz.y, UI.scale(150));
 	    resize(nsz);
 	}
