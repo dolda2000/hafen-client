@@ -139,7 +139,7 @@ public class MapWnd extends Window implements Console.Directory {
 	private Coord dragc;
 	public boolean mousedown(Coord c, int button) {
 	    Coord cc = c.sub(sc);
-	    if((button == 1) && (cc.x < sizer.sz().x) && (cc.y < sizer.sz().y) && (cc.y >= sizer.sz().y - UI.scale(25) + (sizer.sz().x - cc.x))) {
+	    if((button == 1) && decohide() && (cc.x < sizer.sz().x) && (cc.y < sizer.sz().y) && (cc.y >= sizer.sz().y - UI.scale(25) + (sizer.sz().x - cc.x))) {
 		if(drag == null) {
 		    drag = ui.grabmouse(this);
 		    dragc = asz.sub(parentpos(MapWnd.this, c));
