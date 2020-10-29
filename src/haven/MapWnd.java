@@ -73,15 +73,7 @@ public class MapWnd extends Window implements Console.Directory {
 	this.file = file;
 	this.mv = mv;
 	this.player = new MapLocator(mv);
-	viewf = add(new Frame(Coord.z, true) {
-		public boolean mousedown(Coord c, int button) {
-		    if((button == 1) && checkhit(c)) {
-			MapWnd.this.drag(parentpos(MapWnd.this, c));
-			return(true);
-		    }
-		    return(super.mousedown(c, button));
-		}
-	    });
+	viewf = add(new ViewFrame());
 	view = viewf.add(new View(file));
 	recenter();
 	toolbar = add(new Widget(Coord.z));
@@ -123,6 +115,62 @@ public class MapWnd extends Window implements Console.Directory {
 	tool = add(new Toolbox());;
 	resize(sz);
 	compact(Utils.getprefb("compact-map", false));
+    }
+
+    private class ViewFrame extends Frame {
+	Coord sc = Coord.z;
+
+	ViewFrame() {
+	    super(Coord.z, true);
+	}
+
+	public void resize(Coord sz) {
+	    super.resize(sz);
+	    sc = sz.sub(box.bisz()).add(box.btloff()).sub(sizer.sz());
+	}
+
+	public void draw(GOut g) {
+	    super.draw(g);
+	    if(decohide())
+		g.image(sizer, sc);
+	}
+
+	private UI.Grab drag;
+	private Coord dragc;
+	public boolean mousedown(Coord c, int button) {
+	    Coord cc = c.sub(sc);
+	    if((button == 1) && (cc.x < sizer.sz().x) && (cc.y < sizer.sz().y) && (cc.y >= sizer.sz().y - UI.scale(25) + (sizer.sz().x - cc.x))) {
+		if(drag == null) {
+		    drag = ui.grabmouse(this);
+		    dragc = asz.sub(parentpos(MapWnd.this, c));
+		    return(true);
+		}
+	    }
+	    if((button == 1) && (checkhit(c) || ui.modshift)) {
+		MapWnd.this.drag(parentpos(MapWnd.this, c));
+		return(true);
+	    }
+	    return(super.mousedown(c, button));
+	}
+
+	public void mousemove(Coord c) {
+	    if(drag != null) {
+		Coord nsz = parentpos(MapWnd.this, c).add(dragc);
+		nsz.x = Math.max(nsz.x, UI.scale(300));
+		nsz.y = Math.max(nsz.y, UI.scale(150));
+		MapWnd.this.resize(nsz);
+	    }
+	    super.mousemove(c);
+	}
+
+	public boolean mouseup(Coord c, int button) {
+	    if((button == 1) && (drag != null)) {
+		drag.remove();
+		drag = null;
+		return(true);
+	    }
+	    return(super.mouseup(c, button));
+	}
     }
 
     private static final int btnw = UI.scale(95);
@@ -400,8 +448,8 @@ public class MapWnd extends Window implements Console.Directory {
     public void mousemove(Coord c) {
 	if(drag != null) {
 	    Coord nsz = c.add(dragc);
-	    nsz.x = Math.max(nsz.x, 300);
-	    nsz.y = Math.max(nsz.y, 150);
+	    nsz.x = Math.max(nsz.x, UI.scale(300));
+	    nsz.y = Math.max(nsz.y, UI.scale(150));
 	    resize(nsz);
 	}
 	super.mousemove(c);

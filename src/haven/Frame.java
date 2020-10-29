@@ -27,7 +27,7 @@
 package haven;
 
 public class Frame extends Widget {
-    private final IBox box;
+    public final IBox box;
 
     public Frame(Coord sz, boolean inner, IBox box) {
 	super(inner?sz.add(box.bisz()):sz);
