@@ -391,6 +391,11 @@ public class OptWnd extends Window {
 	    addbtn(scroll, width, "Zoom in", MapView.kb_camin);
 	    addbtn(scroll, width, "Zoom out", MapView.kb_camout);
 	    addbtn(scroll, width, "Reset", MapView.kb_camreset);
+	    scroll.adda(new Label("Map window"), width / 2, 0.5);
+	    addbtn(scroll, width, "Reset view", MapWnd.kb_home);
+	    addbtn(scroll, width, "Place marker", MapWnd.kb_mark);
+	    addbtn(scroll, width, "Toggle markers", MapWnd.kb_hmark);
+	    addbtn(scroll, width, "Compact mode", MapWnd.kb_compact);
 	    scroll.adda(new Label("Walking speed"), width / 2, 0.5);
 	    addbtn(scroll, width, "Increase speed", Speedget.kb_speedup);
 	    addbtn(scroll, width, "Decrease speed", Speedget.kb_speeddn);
