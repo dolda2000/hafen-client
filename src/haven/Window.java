@@ -45,6 +45,7 @@ public class Window extends Widget implements DTarget {
     public static final Tex bl = Resource.loadtex("gfx/hud/wnd/lg/bl");
     public static final Tex bm = Resource.loadtex("gfx/hud/wnd/lg/bm");
     public static final Tex br = Resource.loadtex("gfx/hud/wnd/lg/br");
+    public static final Tex sizer = Resource.loadtex("gfx/hud/wnd/sizer");
     public static final Coord tlm = UI.scale(new Coord(18, 30));
     public static final Coord brm = UI.scale(new Coord(13, 22));
     public static final Coord cpo = UI.scale(new Coord(36, 17));

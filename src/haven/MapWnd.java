@@ -378,7 +378,6 @@ public class MapWnd extends Window implements Console.Directory {
 	tool.list.display(m);
     }
 
-    private static final Tex sizer = Resource.loadtex("gfx/hud/wnd/sizer");
     protected void drawframe(GOut g) {
 	g.image(sizer, ctl.add(csz).sub(sizer.sz()));
 	super.drawframe(g);
