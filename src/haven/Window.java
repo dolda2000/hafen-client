@@ -77,13 +77,14 @@ public class Window extends Widget implements DTarget {
     public int cmw;
     private UI.Grab dm = null;
     private Coord doff;
+    public boolean decohide = false;
 
     @RName("wnd")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    Coord sz = UI.scale((Coord)args[0]);
-	    String cap = (args.length > 1)?(String)args[1]:null;
-	    boolean lg = (args.length > 2)?((Integer)args[2] != 0):false;
+	    String cap = (args.length > 1) ? (String)args[1] : null;
+	    boolean lg = (args.length > 2) ? ((Integer)args[2] != 0) : false;
 	    return(new Window(sz, cap, lg, Coord.z, Coord.z));
 	}
     }
@@ -91,7 +92,7 @@ public class Window extends Widget implements DTarget {
     public Window(Coord sz, String cap, boolean lg, Coord tlo, Coord rbo) {
 	this.tlo = tlo;
 	this.rbo = rbo;
-	this.mrgn = lg?dlmrgn:dsmrgn;
+	this.mrgn = lg ? dlmrgn : dsmrgn;
 	cbtn = add(new IButton(cbtni[0], cbtni[1], cbtni[2]));
 	chcap(cap);
 	resize2(sz);
@@ -118,6 +119,22 @@ public class Window extends Widget implements DTarget {
     }
 
     public void cdraw(GOut g) {
+    }
+
+    protected void drawbg(GOut g) {
+	Coord bgc = new Coord();
+	Coord cbr = ctl.add(csz);
+	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bg.sz().y) {
+	    for(bgc.x = ctl.x; bgc.x < cbr.x; bgc.x += bg.sz().x)
+		g.image(bg, bgc, ctl, cbr);
+	}
+	bgc.x = ctl.x;
+	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgl.sz().y)
+	    g.image(bgl, bgc, ctl, cbr);
+	bgc.x = cbr.x - bgr.sz().x;
+	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgr.sz().y)
+	    g.image(bgr, bgc, ctl, cbr);
+	cdraw(g.reclip(atl, asz));
     }
 
     protected void drawframe(GOut g) {
@@ -157,21 +174,15 @@ public class Window extends Widget implements DTarget {
 	g.image(br, tlo.add(wsz.sub(br.sz())));
     }
 
-    public void draw(GOut g) {
-	Coord bgc = new Coord();
-	Coord cbr = ctl.add(csz);
-	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bg.sz().y) {
-	    for(bgc.x = ctl.x; bgc.x < cbr.x; bgc.x += bg.sz().x)
-		g.image(bg, bgc, ctl, cbr);
+    protected void drawwnd(GOut g) {
+	if(!decohide) {
+	    drawbg(g);
+	    drawframe(g);
 	}
-	bgc.x = ctl.x;
-	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgl.sz().y)
-	    g.image(bgl, bgc, ctl, cbr);
-	bgc.x = cbr.x - bgr.sz().x;
-	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgr.sz().y)
-	    g.image(bgr, bgc, ctl, cbr);
-	cdraw(g.reclip(atl, asz));
-	drawframe(g);
+    }
+
+    public void draw(GOut g) {
+	drawwnd(g);
 	super.draw(g);
     }
 
@@ -198,7 +209,7 @@ public class Window extends Widget implements DTarget {
 	this.sz = wsz.add(tlo).add(rbo);
 	ctl = tlo.add(tlm);
 	atl = ctl.add(mrgn);
-	cmw = (cap == null)?0:(cap.sz().x);
+	cmw = (cap == null) ? 0 : cap.sz().x;
 	cmw = Math.max(cmw, wsz.x / 4);
 	cptl = new Coord(ctl.x, tlo.y);
 	cpsz = tlo.add(cpo.x + cmw, cm.sz().y).sub(cptl);
@@ -212,12 +223,23 @@ public class Window extends Widget implements DTarget {
 	resize2(sz);
     }
 
+    public void decohide(boolean h) {
+	this.decohide = h;
+	cbtn.show(!h);
+    }
+
+    public boolean decohide() {
+	return(decohide);
+    }
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "dt") {
 	    dt = (Integer)args[0] != 0;
 	} else if(msg == "cap") {
 	    String cap = (String)args[0];
-	    chcap(cap.equals("")?null:cap);
+	    chcap(cap.equals("") ? null : cap);
+	} else if(msg == "dhide") {
+	    decohide((Integer)args[0] != 0);
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -230,21 +252,26 @@ public class Window extends Widget implements DTarget {
 	    return(c.sub(atl));
     }
 
+    public void drag(Coord off) {
+	dm = ui.grabmouse(this);
+	doff = off;
+    }
+
     public boolean mousedown(Coord c, int button) {
 	if(super.mousedown(c, button)) {
 	    parent.setfocus(this);
 	    raise();
 	    return(true);
 	}
-	Coord cpc = c.sub(cptl);
-	if(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128))) {
-	    if(button == 1) {
-		dm = ui.grabmouse(this);
-		doff = c;
+	if(!decohide) {
+	    Coord cpc = c.sub(cptl);
+	    if(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128))) {
+		if(button == 1)
+		    drag(c);
+		parent.setfocus(this);
+		raise();
+		return(true);
 	    }
-	    parent.setfocus(this);
-	    raise();
-	    return(true);
 	}
 	return(false);
     }
