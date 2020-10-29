@@ -653,6 +653,8 @@ public class Widget {
 			setfocus(w);
 		}
 	    }
+	} else if(msg == "pack") {
+	    pack();
 	} else if(msg == "curs") {
 	    if(args.length == 0)
 		cursor = null;
