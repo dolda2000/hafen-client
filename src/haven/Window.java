@@ -172,17 +172,6 @@ public class Window extends Widget implements DTarget {
 	    g.image(bgr, bgc, ctl, cbr);
 	cdraw(g.reclip(atl, asz));
 	drawframe(g);
-	/*
-	wbox.draw(g, wtl, wsz);
-	if(cap != null) {
-	    int w = cap.sz().x;
-	    int y = wtl.y - capo;
-	    g.image(cl, new Coord(wtl.x + (wsz.x / 2) - (w / 2) - cl.sz().x, y));
-	    g.image(cm, new Coord(wtl.x + (wsz.x / 2) - (w / 2), y), new Coord(w, cm.sz().y));
-	    g.image(cr, new Coord(wtl.x + (wsz.x / 2) + (w / 2), y));
-	    g.image(cap.tex(), new Coord(wtl.x + (wsz.x / 2) - (w / 2), y + capio));
-	}
-	*/
 	super.draw(g);
     }
 
@@ -200,10 +189,6 @@ public class Window extends Widget implements DTarget {
 		max.y = br.y;
 	}
 	return(max);
-    }
-
-    private void placecbtn() {
-	cbtn.c = xlate(new Coord(ctl.x + csz.x - cbtn.sz.x, ctl.y).add(2, -2), false);
     }
 
     private void resize2(Coord sz) {
