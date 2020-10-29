@@ -67,7 +67,7 @@ public class MapWnd extends Window implements Console.Directory {
     public static final KeyBinding kb_home = KeyBinding.get("mapwnd/home", KeyMatch.forcode(KeyEvent.VK_HOME, 0));
     public static final KeyBinding kb_mark = KeyBinding.get("mapwnd/mark", KeyMatch.nil);
     public static final KeyBinding kb_hmark = KeyBinding.get("mapwnd/hmark", KeyMatch.forchar('M', KeyMatch.C));
-    public static final KeyBinding kb_compact = KeyBinding.get("mapwnd/compact", KeyMatch.forchar('M', KeyMatch.M));
+    public static final KeyBinding kb_compact = KeyBinding.get("mapwnd/compact", KeyMatch.nil);
     public MapWnd(MapFile file, MapView mv, Coord sz, String title) {
 	super(sz, title, true);
 	this.file = file;
