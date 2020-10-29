@@ -114,6 +114,11 @@ public class Button extends SIWidget {
 	this.cont = cont;
     }
 	
+    public Button action(Runnable action) {
+	this.action = action;
+	return(this);
+    }
+
     public void draw(BufferedImage img) {
 	Graphics g = img.getGraphics();
 	int yo = lg?((hl - hs) / 2):0;

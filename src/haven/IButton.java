@@ -68,6 +68,11 @@ public class IButton extends SIWidget {
 	this.action = () -> wdgmsg("activate");
     }
 
+    public IButton action(Runnable action) {
+	this.action = action;
+	return(this);
+    }
+
     public void draw(BufferedImage buf) {
 	Graphics g = buf.getGraphics();
 	BufferedImage img;
