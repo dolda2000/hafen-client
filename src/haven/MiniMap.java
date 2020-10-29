@@ -626,6 +626,7 @@ public class MiniMap extends Widget {
 	dsloc = null;
 	dsicon = null;
 	dsmark = null;
+	dragging = false;
 	return(super.mouseup(c, button));
     }
 
