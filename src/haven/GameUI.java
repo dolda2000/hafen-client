@@ -1169,16 +1169,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	super.wdgmsg(sender, msg, args);
     }
 
+    private static final int fitmarg = UI.scale(100);
     private Coord fitwdg(Widget wdg, Coord c) {
 	Coord ret = new Coord(c);
-	if(ret.x < 0)
-	    ret.x = 0;
-	if(ret.y < 0)
-	    ret.y = 0;
-	if(ret.x + wdg.sz.x > sz.x)
-	    ret.x = sz.x - wdg.sz.x;
-	if(ret.y + wdg.sz.y > sz.y)
-	    ret.y = sz.y - wdg.sz.y;
+	ret.x = Math.max(ret.x, Math.min(0, fitmarg - wdg.sz.x));
+	ret.y = Math.max(ret.y, Math.min(0, fitmarg - wdg.sz.y));
+	ret.x = Math.min(ret.x, sz.x - Math.min(fitmarg, wdg.sz.x));
+	ret.y = Math.min(ret.y, sz.y - Math.min(fitmarg, wdg.sz.y));
 	return(ret);
     }
 
