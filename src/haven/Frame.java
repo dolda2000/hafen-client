@@ -89,6 +89,16 @@ public class Frame extends Widget {
 	box.draw(g, Coord.z, sz);
     }
 
+    public boolean checkhit(Coord c) {
+	Coord ul = box.btloff();
+	if((c.x < ul.x) || (c.y < ul.y))
+	    return(true);
+	Coord br = sz.sub(box.bisz()).add(ul);
+	if((c.x >= br.x) || (c.y >= br.y))
+	    return(true);
+	return(false);
+    }
+
     public <T extends Widget> T addin(T child) {
 	child.resize(inner());
 	parent.add(child, this.c.add(box.btloff()));
