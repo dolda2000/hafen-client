@@ -476,10 +476,18 @@ public class Widget {
 	return(parent.xlate(parent.parentpos(in).add(c), true));
     }
 
+    public Coord parentpos(Widget in, Coord c) {
+	return(parentpos(in).add(c));
+    }
+
     public Coord rootpos() {
 	return(parentpos(ui.root));
     }
     
+    public Coord rootpos(Coord c) {
+	return(rootpos().add(c));
+    }
+
     public Coord rootxlate(Coord c) {
 	return(c.sub(rootpos()));
     }
