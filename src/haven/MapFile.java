@@ -1331,6 +1331,7 @@ public class MapFile {
 		    if(prev != null)
 			sg = sg.mergeprev(prev);
 		    sg.save(MapFile.this);
+		    seg.include(sg, info.sc);
 		}
 		if(seg.id != mseg) {
 		    if(merge == null)
