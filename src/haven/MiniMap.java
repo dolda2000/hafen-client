@@ -292,7 +292,8 @@ public class MiniMap extends Widget {
 	public final Area mapext;
 	public final Indir<? extends DataGrid> gref;
 	private DataGrid cgrid = null;
-	private Defer.Future<Tex> img = null;
+	private Tex img = null;
+	private Defer.Future<Tex> nextimg = null;
 
 	public DisplayGrid(Segment seg, Coord sc, int lvl, Indir<? extends DataGrid> gref) {
 	    this.file = seg.file();
@@ -305,12 +306,12 @@ public class MiniMap extends Widget {
 	public Tex img() {
 	    DataGrid grid = gref.get();
 	    if(grid != cgrid) {
-		if(img != null)
-		    img.cancel();
+		if(nextimg != null)
+		    nextimg.cancel();
 		if(grid instanceof MapFile.ZoomGrid) {
-		    img = Defer.later(() -> new TexI(grid.render(sc.mul(cmaps))));
+		    nextimg = Defer.later(() -> new TexI(grid.render(sc.mul(cmaps))));
 		} else {
-		    img = Defer.later(new Defer.Callable<Tex>() {
+		    nextimg = Defer.later(new Defer.Callable<Tex>() {
 			    MapFile.View view = new MapFile.View(seg);
 
 			    public TexI call() {
@@ -328,7 +329,12 @@ public class MiniMap extends Widget {
 		}
 		cgrid = grid;
 	    }
-	    return((img == null)?null:img.get());
+	    if(nextimg != null) {
+		try {
+		    img = nextimg.get();
+		} catch(Loading l) {}
+	    }
+	    return(img);
 	}
 
 	private Collection<DisplayMarker> markers = Collections.emptyList();
