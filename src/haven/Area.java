@@ -101,6 +101,12 @@ public class Area implements Iterable<Coord>, java.io.Serializable {
 	return(margin(new Coord(m, m)));
     }
 
+    public int ridx(Coord c) {
+	if(!contains(c))
+	    return(-1);
+	return((c.x - ul.x) + ((c.y - ul.y) * (br.x - ul.x)));
+    }
+
     public Iterator<Coord> iterator() {
 	return(new Iterator<Coord>() {
 		int x = ul.x, y = ul.y;
