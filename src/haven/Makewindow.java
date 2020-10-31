@@ -34,7 +34,6 @@ import java.awt.image.BufferedImage;
 import static haven.Inventory.invsq;
 
 public class Makewindow extends Widget {
-    Widget obtn, cbtn;
     List<Spec> inputs = Collections.emptyList();
     List<Spec> outputs = Collections.emptyList();
     List<Indir<Resource>> qmod = null;
@@ -154,8 +153,8 @@ public class Makewindow extends Widget {
     public Makewindow(String rcpnm) {
 	add(new Label("Input:"), new Coord(0, UI.scale(8)));
 	add(new Label("Result:"), new Coord(0, outy + UI.scale(8)));
-	obtn = add(new Button(UI.scale(85), "Craft"), UI.scale(new Coord(265, 75)));
-	cbtn = add(new Button(UI.scale(85), "Craft All"), UI.scale(new Coord(360, 75)));
+	add(new Button(UI.scale(85), "Craft"), UI.scale(new Coord(265, 75))).action(() -> wdgmsg("make", 0));
+	add(new Button(UI.scale(85), "Craft All"), UI.scale(new Coord(360, 75))).action(() -> wdgmsg("make", 1));
 	pack();
 	adda(new Label(rcpnm, nmf), sz.x, 0, 1, 0);
     }
@@ -314,20 +313,6 @@ public class Makewindow extends Widget {
 	}
     }
 
-    public void wdgmsg(Widget sender, String msg, Object... args) {
-	if(sender == obtn) {
-	    if(msg == "activate")
-		wdgmsg("make", 0);
-	    return;
-	}
-	if(sender == cbtn) {
-	    if(msg == "activate")
-		wdgmsg("make", 1);
-	    return;
-	}
-	super.wdgmsg(sender, msg, args);
-    }
-    
     public boolean globtype(char ch, java.awt.event.KeyEvent ev) {
 	if(ch == '\n') {
 	    wdgmsg("make", ui.modctrl?1:0);
