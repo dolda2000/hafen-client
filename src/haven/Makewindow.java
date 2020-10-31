@@ -150,11 +150,13 @@ public class Makewindow extends Widget {
 	}
     }
 
+    public static final KeyBinding kb_make = KeyBinding.get("make/one", KeyMatch.forcode(java.awt.event.KeyEvent.VK_ENTER, 0));
+    public static final KeyBinding kb_makeall = KeyBinding.get("make/all", KeyMatch.forcode(java.awt.event.KeyEvent.VK_ENTER, KeyMatch.C));
     public Makewindow(String rcpnm) {
 	add(new Label("Input:"), new Coord(0, UI.scale(8)));
 	add(new Label("Result:"), new Coord(0, outy + UI.scale(8)));
-	add(new Button(UI.scale(85), "Craft"), UI.scale(new Coord(265, 75))).action(() -> wdgmsg("make", 0));
-	add(new Button(UI.scale(85), "Craft All"), UI.scale(new Coord(360, 75))).action(() -> wdgmsg("make", 1));
+	add(new Button(UI.scale(85), "Craft"), UI.scale(new Coord(265, 75))).action(() -> wdgmsg("make", 0)).setgkey(kb_make);
+	add(new Button(UI.scale(85), "Craft All"), UI.scale(new Coord(360, 75))).action(() -> wdgmsg("make", 1)).setgkey(kb_makeall);
 	pack();
 	adda(new Label(rcpnm, nmf), sz.x, 0, 1, 0);
     }
@@ -281,7 +283,7 @@ public class Makewindow extends Widget {
 	    stip = ltip = null;
 	}
 	if(tspec == null)
-	    return(null);
+	    return(super.tooltip(mc, prev));
 	long now = System.currentTimeMillis();
 	boolean sh = true;
 	if(prev != this)
@@ -311,14 +313,6 @@ public class Makewindow extends Widget {
 	    }
 	    return(ltip);
 	}
-    }
-
-    public boolean globtype(char ch, java.awt.event.KeyEvent ev) {
-	if(ch == '\n') {
-	    wdgmsg("make", ui.modctrl?1:0);
-	    return(true);
-	}
-	return(super.globtype(ch, ev));
     }
 
     public static class Optional extends ItemInfo.Tip {
