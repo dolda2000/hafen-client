@@ -45,6 +45,7 @@ public class Window extends Widget implements DTarget {
     public static final Tex bl = Resource.loadtex("gfx/hud/wnd/lg/bl");
     public static final Tex bm = Resource.loadtex("gfx/hud/wnd/lg/bm");
     public static final Tex br = Resource.loadtex("gfx/hud/wnd/lg/br");
+    public static final Tex sizer = Resource.loadtex("gfx/hud/wnd/sizer");
     public static final Coord tlm = UI.scale(new Coord(18, 30));
     public static final Coord brm = UI.scale(new Coord(13, 22));
     public static final Coord cpo = UI.scale(new Coord(36, 17));
@@ -77,13 +78,14 @@ public class Window extends Widget implements DTarget {
     public int cmw;
     private UI.Grab dm = null;
     private Coord doff;
+    public boolean decohide = false;
 
     @RName("wnd")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    Coord sz = UI.scale((Coord)args[0]);
-	    String cap = (args.length > 1)?(String)args[1]:null;
-	    boolean lg = (args.length > 2)?((Integer)args[2] != 0):false;
+	    String cap = (args.length > 1) ? (String)args[1] : null;
+	    boolean lg = (args.length > 2) ? ((Integer)args[2] != 0) : false;
 	    return(new Window(sz, cap, lg, Coord.z, Coord.z));
 	}
     }
@@ -91,7 +93,7 @@ public class Window extends Widget implements DTarget {
     public Window(Coord sz, String cap, boolean lg, Coord tlo, Coord rbo) {
 	this.tlo = tlo;
 	this.rbo = rbo;
-	this.mrgn = lg?dlmrgn:dsmrgn;
+	this.mrgn = lg ? dlmrgn : dsmrgn;
 	cbtn = add(new IButton(cbtni[0], cbtni[1], cbtni[2]));
 	chcap(cap);
 	resize2(sz);
@@ -118,6 +120,22 @@ public class Window extends Widget implements DTarget {
     }
 
     public void cdraw(GOut g) {
+    }
+
+    protected void drawbg(GOut g) {
+	Coord bgc = new Coord();
+	Coord cbr = ctl.add(csz);
+	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bg.sz().y) {
+	    for(bgc.x = ctl.x; bgc.x < cbr.x; bgc.x += bg.sz().x)
+		g.image(bg, bgc, ctl, cbr);
+	}
+	bgc.x = ctl.x;
+	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgl.sz().y)
+	    g.image(bgl, bgc, ctl, cbr);
+	bgc.x = cbr.x - bgr.sz().x;
+	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgr.sz().y)
+	    g.image(bgr, bgc, ctl, cbr);
+	cdraw(g.reclip(atl, asz));
     }
 
     protected void drawframe(GOut g) {
@@ -157,32 +175,15 @@ public class Window extends Widget implements DTarget {
 	g.image(br, tlo.add(wsz.sub(br.sz())));
     }
 
+    protected void drawwnd(GOut g) {
+	if(!decohide) {
+	    drawbg(g);
+	    drawframe(g);
+	}
+    }
+
     public void draw(GOut g) {
-	Coord bgc = new Coord();
-	Coord cbr = ctl.add(csz);
-	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bg.sz().y) {
-	    for(bgc.x = ctl.x; bgc.x < cbr.x; bgc.x += bg.sz().x)
-		g.image(bg, bgc, ctl, cbr);
-	}
-	bgc.x = ctl.x;
-	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgl.sz().y)
-	    g.image(bgl, bgc, ctl, cbr);
-	bgc.x = cbr.x - bgr.sz().x;
-	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgr.sz().y)
-	    g.image(bgr, bgc, ctl, cbr);
-	cdraw(g.reclip(atl, asz));
-	drawframe(g);
-	/*
-	wbox.draw(g, wtl, wsz);
-	if(cap != null) {
-	    int w = cap.sz().x;
-	    int y = wtl.y - capo;
-	    g.image(cl, new Coord(wtl.x + (wsz.x / 2) - (w / 2) - cl.sz().x, y));
-	    g.image(cm, new Coord(wtl.x + (wsz.x / 2) - (w / 2), y), new Coord(w, cm.sz().y));
-	    g.image(cr, new Coord(wtl.x + (wsz.x / 2) + (w / 2), y));
-	    g.image(cap.tex(), new Coord(wtl.x + (wsz.x / 2) - (w / 2), y + capio));
-	}
-	*/
+	drawwnd(g);
 	super.draw(g);
     }
 
@@ -202,10 +203,6 @@ public class Window extends Widget implements DTarget {
 	return(max);
     }
 
-    private void placecbtn() {
-	cbtn.c = xlate(new Coord(ctl.x + csz.x - cbtn.sz.x, ctl.y).add(2, -2), false);
-    }
-
     private void resize2(Coord sz) {
 	asz = sz;
 	csz = asz.add(mrgn.mul(2));
@@ -213,7 +210,7 @@ public class Window extends Widget implements DTarget {
 	this.sz = wsz.add(tlo).add(rbo);
 	ctl = tlo.add(tlm);
 	atl = ctl.add(mrgn);
-	cmw = (cap == null)?0:(cap.sz().x);
+	cmw = (cap == null) ? 0 : cap.sz().x;
 	cmw = Math.max(cmw, wsz.x / 4);
 	cptl = new Coord(ctl.x, tlo.y);
 	cpsz = tlo.add(cpo.x + cmw, cm.sz().y).sub(cptl);
@@ -227,14 +224,23 @@ public class Window extends Widget implements DTarget {
 	resize2(sz);
     }
 
+    public void decohide(boolean h) {
+	this.decohide = h;
+	cbtn.show(!h);
+    }
+
+    public boolean decohide() {
+	return(decohide);
+    }
+
     public void uimsg(String msg, Object... args) {
-	if(msg == "pack") {
-	    pack();
-	} else if(msg == "dt") {
+	if(msg == "dt") {
 	    dt = (Integer)args[0] != 0;
 	} else if(msg == "cap") {
 	    String cap = (String)args[0];
-	    chcap(cap.equals("")?null:cap);
+	    chcap(cap.equals("") ? null : cap);
+	} else if(msg == "dhide") {
+	    decohide((Integer)args[0] != 0);
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -247,21 +253,26 @@ public class Window extends Widget implements DTarget {
 	    return(c.sub(atl));
     }
 
+    public void drag(Coord off) {
+	dm = ui.grabmouse(this);
+	doff = off;
+    }
+
     public boolean mousedown(Coord c, int button) {
 	if(super.mousedown(c, button)) {
 	    parent.setfocus(this);
 	    raise();
 	    return(true);
 	}
-	Coord cpc = c.sub(cptl);
-	if(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128))) {
-	    if(button == 1) {
-		dm = ui.grabmouse(this);
-		doff = c;
+	if(!decohide) {
+	    Coord cpc = c.sub(cptl);
+	    if(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128))) {
+		if(button == 1)
+		    drag(c);
+		parent.setfocus(this);
+		raise();
+		return(true);
 	    }
-	    parent.setfocus(this);
-	    raise();
-	    return(true);
 	}
 	return(false);
     }

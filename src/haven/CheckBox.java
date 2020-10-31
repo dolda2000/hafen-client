@@ -61,23 +61,6 @@ public class CheckBox extends Widget {
 	this(lbl, false);
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(button != 1)
-	    return(false);
-	set(!a);
-	return(true);
-    }
-
-    public boolean gkeytype(java.awt.event.KeyEvent ev) {
-	set(!a);
-	return(true);
-    }
-
-    public void set(boolean a) {
-	this.a = a;
-	changed(a);
-    }
-
     public void draw(GOut g) {
         g.image(lbl.tex(), loff.add(box.sz().x, (sz.y - lbl.sz().y) / 2));
         g.image(box, Coord.z.add(0, (sz.y - box.sz().y) / 2));
@@ -89,7 +72,28 @@ public class CheckBox extends Widget {
 
     public void changed(boolean val) {
 	if(canactivate)
-	    wdgmsg("ch", a?1:0);
+	    wdgmsg("ch", a ? 1 : 0);
+    }
+
+    public void set(boolean a) {
+	this.a = a;
+	changed(a);
+    }
+
+    public void click() {
+	set(!a);
+    }
+
+    public boolean mousedown(Coord c, int button) {
+	if(button != 1)
+	    return(false);
+	click();
+	return(true);
+    }
+
+    public boolean gkeytype(java.awt.event.KeyEvent ev) {
+	click();
+	return(true);
     }
 
     public void uimsg(String msg, Object... args) {

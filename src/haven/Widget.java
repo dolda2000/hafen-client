@@ -189,7 +189,7 @@ public class Widget {
 		ver = Integer.parseInt(name.substring(p + 1));
 		name = name.substring(0, p);
 	    }
-	    Indir<Resource> res = Resource.remote().load(name, ver);
+	    Indir<Resource> res = Resource.remote().load(name, ver, 10);
 	    while(true) {
 		try {
 		    return(res.get().getcode(Factory.class, true));
@@ -476,10 +476,18 @@ public class Widget {
 	return(parent.xlate(parent.parentpos(in).add(c), true));
     }
 
+    public Coord parentpos(Widget in, Coord c) {
+	return(parentpos(in).add(c));
+    }
+
     public Coord rootpos() {
 	return(parentpos(ui.root));
     }
     
+    public Coord rootpos(Coord c) {
+	return(rootpos().add(c));
+    }
+
     public Coord rootxlate(Coord c) {
 	return(c.sub(rootpos()));
     }
@@ -653,6 +661,8 @@ public class Widget {
 			setfocus(w);
 		}
 	    }
+	} else if(msg == "pack") {
+	    pack();
 	} else if(msg == "curs") {
 	    if(args.length == 0)
 		cursor = null;
@@ -662,7 +672,7 @@ public class Widget {
 	    int a = 0;
 	    Object tt = args[a++];
 	    if(tt instanceof String) {
-		tooltip = Text.render((String)tt);
+		settip((String)tt);
 	    } else if(tt instanceof Integer) {
 		final Indir<Resource> tres = ui.sess.getres((Integer)tt);
 		tooltip = new Indir<Tex>() {
@@ -688,7 +698,7 @@ public class Widget {
 		    int modign = 0;
 		    if(args.length > 2)
 			modign = (Integer)args[2];
-		    kb_gkey = KeyBinding.get("wgk/" + (String)args[1], key, modign);
+		    setgkey(KeyBinding.get("wgk/" + (String)args[1], key, modign));
 		} else {
 		    gkey = key;
 		}
@@ -754,6 +764,10 @@ public class Widget {
 	draw(g, true);
     }
 	
+    public boolean checkhit(Coord c) {
+	return(true);
+    }
+
     public boolean mousedown(Coord c, int button) {
 	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
 	    if(!wdg.visible)
@@ -843,6 +857,13 @@ public class Widget {
 		return(true);
 	}
 	return(false);
+    }
+
+    public Widget setgkey(KeyBinding gkey) {
+	kb_gkey = gkey;
+	if((tooltip == null) && (kb_gkey != null))
+	    tooltip = new KeyboundTip();
+	return(this);
     }
 	
     public boolean keydown(KeyEvent ev) {
@@ -1150,11 +1171,47 @@ public class Widget {
 	}
     }
 
+    public class KeyboundTip implements Indir<Tex> {
+	public final String base;
+	private Tex rend = null;
+	private boolean hrend = false;
+	private KeyMatch rkey = null;
+
+	public KeyboundTip(String base) {
+	    this.base = base;
+	}
+
+	public KeyboundTip() {
+	    this(null);
+	}
+
+	public Tex get() {
+	    KeyMatch key = (kb_gkey == null) ? null : kb_gkey.key();
+	    if(!hrend || (rkey != key)) {
+		String tip;
+		if(base != null) {
+		    tip = RichText.Parser.quote(base);
+		    if((key != null) && (key != KeyMatch.nil))
+			tip = String.format("%s ($col[255,255,0]{%s})", tip, RichText.Parser.quote(kb_gkey.key().name()));
+		} else {
+		    if((key == null) || (key == KeyMatch.nil))
+			tip = null;
+		    else
+			tip = String.format("Keyboard shortcut: $col[255,255,0]{%s}", RichText.Parser.quote(kb_gkey.key().name()));
+		}
+		rend = (tip == null) ? null : RichText.render(tip, 0).tex();
+		hrend = true;
+		rkey = key;
+	    }
+	    return(rend);
+	}
+    }
+
     @Deprecated
     public Object tooltip(Coord c, boolean again) {
 	return(null);
     }
-    
+
     public Object tooltip(Coord c, Widget prev) {
 	if(prev != this)
 	    prevtt = null;
@@ -1178,8 +1235,9 @@ public class Widget {
 	return(tooltip(c, prev == this));
     }
 
-    public void settip(String text) {
-	tooltip = Text.render(text);
+    public Widget settip(String text) {
+	tooltip = new KeyboundTip(text);
+	return(this);
     }
     
     public <T extends Widget> T getparent(Class<T> cl) {

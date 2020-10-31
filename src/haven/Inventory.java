@@ -73,7 +73,7 @@ public class Inventory extends Widget implements DTarget {
     }
 	
     public Inventory(Coord sz) {
-	super(invsq.sz().add(UI.scale(new Coord(-1, -1))).mul(sz).add(UI.scale(new Coord(1, 1))));
+	super(sqsz.mul(sz).add(1, 1));
 	isz = sz;
     }
     

@@ -408,6 +408,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    } else if(kb_camreset.key().match(ev)) {
 		tangl = angl + (float)Utils.cangle(-(float)Math.PI * 0.25f - angl);
 		chfield((float)(100 * Math.sqrt(2)));
+		return(true);
 	    }
 	    return(false);
 	}
@@ -419,9 +420,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public Widget create(UI ui, Object[] args) {
 	    Coord sz = UI.scale((Coord)args[0]);
 	    Coord2d mc = ((Coord)args[1]).mul(posres);
-	    int pgob = -1;
+	    long pgob = -1;
 	    if(args.length > 2)
-		pgob = (Integer)args[2];
+		pgob = Utils.uint32((Integer)args[2]);
 	    return(new MapView(sz, ui.sess.glob, mc, pgob));
 	}
     }
@@ -737,6 +738,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	MapClick(MapMesh cut) {
 	    this.cut = cut;
+	}
+
+	public String toString() {
+	    return(String.format("#<mapclick %s>", cut));
 	}
     }
 
@@ -1247,12 +1252,16 @@ public class MapView extends PView implements DTarget, Console.Directory {
 				    img -> Debug.dumpimage(img, Debug.somedir("click2.png")));
 		}
 		clmaplist.get(out, c, cd -> {
+			if(clickdb)
+			    Debug.log.printf("map-id: %s\n", cd);
 			if(cd != null)
 			    this.cut = ((MapClick)cd.ci).cut;
 			ckdone(1);
 		    });
 		out.pget(clmaplist.basic, ClickLocation.fragloc, Area.sized(c, new Coord(1, 1)), new VectorFormat(2, NumberFormat.FLOAT32), data -> {
 			pos = new Coord2d(data.getFloat(0), data.getFloat(4));
+			if(clickdb)
+			    Debug.log.printf("map-pos: %s\n", pos);
 			ckdone(2);
 		    });
 	    }
@@ -1278,6 +1287,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	if(clickdb) {
 	    GOut.debugimage(out, clobjlist.basic, FragID.fragid, Area.sized(Coord.z, clobjlist.sz()), new VectorFormat(1, NumberFormat.SINT32),
 			  img -> Debug.dumpimage(img, Debug.somedir("click3.png")));
+	    Consumer<ClickData> ocb = cb;
+	    cb = cl -> {
+		Debug.log.printf("obj-id: %s\n", cl);
+		ocb.accept(cl);
+	    };
 	}
 	clobjlist.fuzzyget(out, c, gobclfuzz, cb);
     }
@@ -1649,7 +1663,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(args[0] == null)
 		plgob = -1;
 	    else
-		plgob = (Integer)args[0];
+		plgob = Utils.uint32((Integer)args[0]);
 	} else if(msg == "flashol") {
 	    unflashol();
 	    olflash = (Integer)args[0];

@@ -27,7 +27,7 @@
 package haven;
 
 public class Frame extends Widget {
-    private final IBox box;
+    public final IBox box;
 
     public Frame(Coord sz, boolean inner, IBox box) {
 	super(inner?sz.add(box.bisz()):sz);
@@ -87,6 +87,16 @@ public class Frame extends Widget {
     public void draw(GOut g) {
 	super.draw(g);
 	box.draw(g, Coord.z, sz);
+    }
+
+    public boolean checkhit(Coord c) {
+	Coord ul = box.btloff();
+	if((c.x < ul.x) || (c.y < ul.y))
+	    return(true);
+	Coord br = sz.sub(box.bisz()).add(ul);
+	if((c.x >= br.x) || (c.y >= br.y))
+	    return(true);
+	return(false);
     }
 
     public <T extends Widget> T addin(T child) {
