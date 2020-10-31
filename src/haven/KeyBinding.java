@@ -91,7 +91,7 @@ public class KeyBinding {
 		if(!w.visible)
 		    continue;
 		Coord cc = w.xlate(w.c, true);
-		if(c.isect(cc, w.sz)) {
+		if(c.isect(cc, w.sz) && w.checkhit(c.sub(cc))) {
 		    KeyBinding ret = getbinding(w, c.add(cc.inv()));
 		    if(ret != null)
 			return(ret);

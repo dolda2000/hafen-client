@@ -1039,6 +1039,16 @@ public class Utils {
 	return((d - min) / (max - min));
     }
 
+    public static float gcd(float x, float y, float E) {
+	float a = Math.max(x, y), b = Math.min(x, y);
+	while(b > E) {
+	    float c = a % b;
+	    a = b;
+	    b = c;
+	}
+	return(a);
+    }
+
     public static double smoothstep(double d) {
 	return(d * d * (3 - (2 * d)));
     }

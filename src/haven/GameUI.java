@@ -38,11 +38,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private static final int blpw = UI.scale(142), brpw = UI.scale(142);
     public final String chrid, genus;
     public final long plid;
-    private final Hidepanel ulpanel, umpanel, urpanel, blpanel, brpanel, menupanel;
+    private final Hidepanel ulpanel, umpanel, urpanel, blpanel, mapmenupanel, brpanel, menupanel;
     public Avaview portrait;
     public MenuGrid menu;
     public MapView map;
-    public LocalMiniMap mmap;
+    public GobIcon.Settings iconconf;
+    public MiniMap mmap;
     public Fightview fv;
     private List<Widget> meters = new LinkedList<Widget>();
     private Text lastmsg;
@@ -149,7 +150,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    chat.show();
 	}
 	beltwdg.raise();
-	blpanel = add(new Hidepanel("gui-bl", null, new Coord(-1,  1)));
+	blpanel = add(new Hidepanel("gui-bl", null, new Coord(-1,  1)) {
+		public void move(double a) {
+		    super.move(a);
+		    mapmenupanel.move();
+		}
+	    });
+	mapmenupanel = add(new Hidepanel("mapmenu", new Indir<Coord>() {
+		public Coord get() {
+		    return(new Coord(0, Math.min(blpanel.c.y - mapmenupanel.sz.y + UI.scale(33), GameUI.this.sz.y - mapmenupanel.sz.y)));
+		}
+	    }, new Coord(-1, 0)));
 	brpanel = add(new Hidepanel("gui-br", null, new Coord( 1,  1)) {
 		public void move(double a) {
 		    super.move(a);
@@ -157,17 +168,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		}
 	    });
 	menupanel = add(new Hidepanel("menu", new Indir<Coord>() {
-		    public Coord get() {
-			return(new Coord(GameUI.this.sz.x, Math.min(brpanel.c.y - UI.scale(79), GameUI.this.sz.y - menupanel.sz.y)));
-		    }
-		}, new Coord(1, 0)));
+		public Coord get() {
+		    return(new Coord(GameUI.this.sz.x, Math.min(brpanel.c.y - UI.scale(79), GameUI.this.sz.y - menupanel.sz.y)));
+		}
+	    }, new Coord(1, 0)));
 	ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1)));
 	umpanel = add(new Hidepanel("gui-um", null, new Coord( 0, -1)));
 	urpanel = add(new Hidepanel("gui-ur", null, new Coord( 1, -1)));
 	Tex lbtnbg = Resource.loadtex("gfx/hud/lbtn-bg");
-	blpanel.add(new Img(Resource.loadtex("gfx/hud/blframe")), 0, lbtnbg.sz().y - UI.scale(33));
-	blpanel.add(new Img(lbtnbg), 0, 0);
-	minimapc = new Coord(UI.scale(4), UI.scale(34) + (lbtnbg.sz().y - UI.scale(33)));
+	mapmenupanel.add(new Img(lbtnbg), 0, 0);
+	blpanel.add(new Img(Resource.loadtex("gfx/hud/blframe")), 0, 0);
+	minimapc = new Coord(UI.scale(4), UI.scale(34));
 	Tex rbtnbg = Resource.loadtex("gfx/hud/csearch-bg");
 	Img brframe = brpanel.add(new Img(Resource.loadtex("gfx/hud/brframe")), rbtnbg.sz().x - UI.scale(22), 0);
 	menugridc = brframe.c.add(UI.scale(20), UI.scale(34));
@@ -190,13 +201,18 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	zerg.hide();
     }
 
+    protected void attached() {
+	iconconf = loadiconconf();
+	super.attached();
+    }
+
     public static final KeyBinding kb_map = KeyBinding.get("map", KeyMatch.forchar('A', KeyMatch.C));
     public static final KeyBinding kb_claim = KeyBinding.get("ol-claim", KeyMatch.nil);
     public static final KeyBinding kb_vil = KeyBinding.get("ol-vil", KeyMatch.nil);
     public static final KeyBinding kb_rlm = KeyBinding.get("ol-rlm", KeyMatch.nil);
     public static final KeyBinding kb_ico = KeyBinding.get("map-icons", KeyMatch.nil);
     private void mapbuttons() {
-	blpanel.add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims") {
+	mapmenupanel.add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims") {
 		public void click() {
 		    if((map != null) && !map.visol(0)) {
 			map.enol(0); map.enol(1);
@@ -205,7 +221,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}
 	    }, 0, 0);
-	blpanel.add(new MenuButton("lbtn-vil", kb_vil, "Display village claims") {
+	mapmenupanel.add(new MenuButton("lbtn-vil", kb_vil, "Display village claims") {
 		public void click() {
 		    if((map != null) && !map.visol(2)) {
 			map.enol(2); map.enol(3);
@@ -214,7 +230,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}
 	    }, 0, 0);
-	blpanel.add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms") {
+	mapmenupanel.add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms") {
 		public void click() {
 		    if((map != null) && !map.visol(4)) {
 			map.enol(4); map.enol(5);
@@ -223,21 +239,24 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    }
 		}
 	    }, 0, 0);
-	blpanel.add(new MenuButton("lbtn-map", kb_map, "Map") {
+	mapmenupanel.add(new MenuButton("lbtn-map", kb_map, "Map") {
 		public void click() {
-		    if((mapfile != null) && mapfile.show(!mapfile.visible)) {
-			mapfile.raise();
-			fitwdg(mapfile);
-			setfocus(mapfile);
+		    if(mapfile != null) {
+			if(mapfile.show(!mapfile.visible)) {
+			    mapfile.raise();
+			    fitwdg(mapfile);
+			    setfocus(mapfile);
+			}
+			Utils.setprefb("wndvis-map", mapfile.visible);
 		    }
 		}
 	    });
-	blpanel.add(new MenuButton("lbtn-ico", kb_ico, "Icon settings") {
+	mapmenupanel.add(new MenuButton("lbtn-ico", kb_ico, "Icon settings") {
 		public void click() {
-		    if(mmap == null)
+		    if(iconconf == null)
 			return;
 		    if(iconwnd == null) {
-			iconwnd = new GobIcon.SettingsWindow(mmap.iconconf, () -> Utils.defer(mmap::saveconf));
+			iconwnd = new GobIcon.SettingsWindow(iconconf, () -> Utils.defer(GameUI.this::saveiconconf));
 			fitwdg(GameUI.this.add(iconwnd, Utils.getprefc("wndc-icon", new Coord(200, 200))));
 		    } else {
 			ui.destroy(iconwnd);
@@ -270,7 +289,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     /* Ice cream */
     private final IButton[] fold_br = new IButton[4];
-    private final IButton[] fold_bl = new IButton[2];
+    private final IButton[] fold_bl = new IButton[4];
     private void updfold(boolean reset) {
 	int br;
 	if(brpanel.tvis && menupanel.tvis)
@@ -284,7 +303,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	for(int i = 0; i < fold_br.length; i++)
 	    fold_br[i].show(i == br);
 
-	fold_bl[1].show(!blpanel.tvis);
+	int bl;
+	if(blpanel.tvis && mapmenupanel.tvis)
+	    bl = 0;
+	else if(blpanel.tvis && !mapmenupanel.tvis)
+	    bl = 1;
+	else if(!blpanel.tvis && !mapmenupanel.tvis)
+	    bl = 2;
+	else
+	    bl = 3;
+	for(int i = 0; i < fold_bl.length; i++)
+	    fold_bl[i].show(i == bl);
 
 	if(reset)
 	    resetui();
@@ -332,26 +361,42 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	menupanel.add(fold_br[3], 0, 0);
 	fold_br[3].lower();
 
+	final Tex ldnbg = Resource.loadtex("gfx/hud/lbtn-bgs");
 	final Tex lupbg = Resource.loadtex("gfx/hud/lbtn-upbg");
 	fold_bl[0] = new IButton("gfx/hud/lbtn-dwn", "", "-d", "-h") {
+		public void click() {
+		    mapmenupanel.cshow(false);
+		    updfold(true);
+		}
+	    };
+	fold_bl[1] = new IButton("gfx/hud/lbtn-dwn", "", "-d", "-h") {
+		public void draw(GOut g) {g.image(ldnbg, Coord.z); super.draw(g);}
 		public void click() {
 		    blpanel.cshow(false);
 		    updfold(true);
 		}
 	    };
-	fold_bl[1] = new IButton("gfx/hud/lbtn-up", "", "-d", "-h") {
+	fold_bl[2] = new IButton("gfx/hud/lbtn-up", "", "-d", "-h") {
 		public void draw(GOut g) {g.image(lupbg, Coord.z); super.draw(g);}
 		public void click() {
-		    blpanel.cshow(true);
+		    mapmenupanel.cshow(true);
 		    updfold(true);
 		}
 		public void presize() {
 		    this.c = new Coord(0, parent.sz.y - sz.y);
 		}
 	    };
-	blpanel.add(fold_bl[0], 0, 0);
-	adda(fold_bl[1], 0, 1);
-	fold_bl[1].lower();
+	fold_bl[3] = new IButton("gfx/hud/lbtn-dwn", "", "-d", "-h") {
+		public void click() {
+		    blpanel.cshow(true);
+		    updfold(true);
+		}
+	    };
+	mapmenupanel.add(fold_bl[0], 0, 0);
+	blpanel.adda(fold_bl[1], 0, UI.scale(33), 0, 1);
+	adda(fold_bl[2], 0, 1);
+	fold_bl[2].lower();
+	mapmenupanel.add(fold_bl[3], 0, 0);
 
 	updfold(false);
     }
@@ -383,6 +428,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public void dispose() {
+	savewndpos();
 	Debug.log = new java.io.PrintWriter(System.err);
 	ui.cons.clearout();
 	super.dispose();
@@ -692,8 +738,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		ui.destroy(mapfile);
 		mapfile = null;
 	    }
-	    mmap = blpanel.add(new LocalMiniMap(UI.scale(new Coord(133, 133)), map), minimapc);
-	    mmap.lower();
 	    ResCache mapstore = ResCache.global;
 	    if(Config.mapbase != null) {
 		try {
@@ -703,9 +747,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    if(mapstore != null) {
 		MapFile file = MapFile.load(mapstore, mapfilename());
-		mmap.save(file);
-		mapfile = new MapWnd(mmap.save, map, Utils.getprefc("wndsz-map", UI.scale(new Coord(700, 500))), "Map");
-		mapfile.hide();
+		mmap = blpanel.add(new CornerMap(UI.scale(new Coord(133, 133)), file), minimapc);
+		mmap.lower();
+		mapfile = new MapWnd(file, map, Utils.getprefc("wndsz-map", UI.scale(new Coord(700, 500))), "Map");
+		mapfile.show(Utils.getprefb("wndvis-map", false));
 		add(mapfile, Utils.getprefc("wndc-map", new Coord(50, 50)));
 	    }
 	} else if(place == "menu") {
@@ -905,6 +950,99 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
     
+    private String iconconfname() {
+	StringBuilder buf = new StringBuilder();
+	buf.append("data/mm-icons");
+	if(genus != null)
+	    buf.append("/" + genus);
+	if(ui.sess != null)
+	    buf.append("/" + ui.sess.username);
+	return(buf.toString());
+    }
+
+    private GobIcon.Settings loadiconconf() {
+	if(ResCache.global == null)
+	    return(new GobIcon.Settings());
+	try {
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(iconconfname()))) {
+		return(GobIcon.Settings.load(fp));
+	    }
+	} catch(java.io.FileNotFoundException e) {
+	    return(new GobIcon.Settings());
+	} catch(Exception e) {
+	    new Warning(e, "failed to load icon-conf").issue();
+	    return(new GobIcon.Settings());
+	}
+    }
+
+    public void saveiconconf() {
+	if(ResCache.global == null)
+	    return;
+	try {
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.store(iconconfname()))) {
+		iconconf.save(fp);
+	    }
+	} catch(Exception e) {
+	    new Warning(e, "failed to store icon-conf").issue();
+	}
+    }
+
+    public class CornerMap extends MiniMap {
+	public CornerMap(Coord sz, MapFile file) {
+	    super(sz, file);
+	    follow(new MapLocator(map));
+	}
+
+	public boolean dragp(int button) {
+	    return(false);
+	}
+
+	public boolean clickicon(DisplayIcon icon, Location loc, int button, boolean press) {
+	    if(press) {
+		mvclick(map, null, loc, icon.gob, button);
+		return(true);
+	    }
+	    return(false);
+	}
+
+	public boolean clickloc(Location loc, int button, boolean press) {
+	    if(press) {
+		mvclick(map, null, loc, null, button);
+		return(true);
+	    }
+	    return(false);
+	}
+
+	public void draw(GOut g) {
+	    g.image(bg, Coord.z, UI.scale(bg.sz()));
+	    super.draw(g);
+	}
+    }
+
+    private Coord lastsavegrid = null;
+    private int lastsaveseq = -1;
+    private void mapfiletick() {
+	MapView map = this.map;
+	MiniMap mmap = this.mmap;
+	if((map == null) || (mmap == null))
+	    return;
+	Gob pl = ui.sess.glob.oc.getgob(map.plgob);
+	Coord gc;
+	if(pl == null)
+	    gc = map.cc.floor(MCache.tilesz).div(MCache.cmaps);
+	else
+	    gc = pl.rc.floor(MCache.tilesz).div(MCache.cmaps);
+	try {
+	    MCache.Grid grid = ui.sess.glob.map.getgrid(gc);
+	    if((grid != null) && (!Utils.eq(gc, lastsavegrid) || (lastsaveseq != grid.seq))) {
+		mmap.file.update(ui.sess.glob.map, gc);
+		lastsavegrid = gc;
+		lastsaveseq = grid.seq;
+	    }
+	} catch(Loading l) {
+	}
+    }
+
     private double lastwndsave = 0;
     public void tick(double dt) {
 	super.tick(dt);
@@ -920,6 +1058,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	} else if(afk && (idle <= 300)) {
 	    afk = false;
 	}
+	mapfiletick();
     }
     
     public void uimsg(String msg, Object... args) {
@@ -974,44 +1113,42 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if(mapfile != null)
 		mapfile.markobj(gobid, oid, res, nm);
 	} else if(msg == "map-icons") {
-	    if(mmap != null) {
-		GobIcon.Settings conf = mmap.iconconf;
-		int tag = (Integer)args[0];
-		if(args.length < 2) {
-		    if(conf.tag != tag)
-			wdgmsg("map-icons", conf.tag);
-		} else if(args[1] instanceof String) {
-		    Resource.Spec res = new Resource.Spec(null, (String)args[1], (Integer)args[2]);
-		    GobIcon.Setting cset = new GobIcon.Setting();
-		    boolean has = conf.settings.containsKey(res);
-		    cset.show = cset.defshow = ((Integer)args[3]) != 0;
-		    conf.receive(tag, new Resource.Spec[] {res}, new GobIcon.Setting[] {cset});
-		    mmap.saveconf();
-		    if(!has && conf.notify) {
-			ui.sess.glob.loader.defer(() -> {
-				Resource lres = Resource.remote().load(res.name, res.ver).get();
-				Resource.Tooltip tip = lres.layer(Resource.tooltip);
-				if(tip != null)
-				    msg(String.format("%s added to list of seen icons.", tip.t));
-			    }, (Supplier<Object>)() -> null);
-		    }
-		} else if(args[1] instanceof Object[]) {
-		    Object[] sub = (Object[])args[1];
-		    int a = 0;
-		    Collection<Resource.Spec> res = new ArrayList<>();
-		    Collection<GobIcon.Setting> csets = new ArrayList<>();
-		    while(a < sub.length) {
-			String resnm = (String)sub[a++];
-			int resver = (Integer)sub[a++];
-			int fl = (Integer)sub[a++];
-			res.add(new Resource.Spec(null, resnm, resver));
-			GobIcon.Setting cset = new GobIcon.Setting();
-			cset.show = cset.defshow = ((fl & 1) != 0);
-			csets.add(cset);
-		    }
-		    conf.receive(tag, res.toArray(new Resource.Spec[0]), csets.toArray(new GobIcon.Setting[0]));
-		    mmap.saveconf();
+	    GobIcon.Settings conf = this.iconconf;
+	    int tag = (Integer)args[0];
+	    if(args.length < 2) {
+		if(conf.tag != tag)
+		    wdgmsg("map-icons", conf.tag);
+	    } else if(args[1] instanceof String) {
+		Resource.Spec res = new Resource.Spec(null, (String)args[1], (Integer)args[2]);
+		GobIcon.Setting cset = new GobIcon.Setting();
+		boolean has = conf.settings.containsKey(res);
+		cset.show = cset.defshow = ((Integer)args[3]) != 0;
+		conf.receive(tag, new Resource.Spec[] {res}, new GobIcon.Setting[] {cset});
+		saveiconconf();
+		if(!has && conf.notify) {
+		    ui.sess.glob.loader.defer(() -> {
+			    Resource lres = Resource.remote().load(res.name, res.ver).get();
+			    Resource.Tooltip tip = lres.layer(Resource.tooltip);
+			    if(tip != null)
+				msg(String.format("%s added to list of seen icons.", tip.t));
+			}, (Supplier<Object>)() -> null);
 		}
+	    } else if(args[1] instanceof Object[]) {
+		Object[] sub = (Object[])args[1];
+		int a = 0;
+		Collection<Resource.Spec> res = new ArrayList<>();
+		Collection<GobIcon.Setting> csets = new ArrayList<>();
+		while(a < sub.length) {
+		    String resnm = (String)sub[a++];
+		    int resver = (Integer)sub[a++];
+		    int fl = (Integer)sub[a++];
+		    res.add(new Resource.Spec(null, resnm, resver));
+		    GobIcon.Setting cset = new GobIcon.Setting();
+		    cset.show = cset.defshow = ((fl & 1) != 0);
+		    csets.add(cset);
+		}
+		conf.receive(tag, res.toArray(new Resource.Spec[0]), csets.toArray(new GobIcon.Setting[0]));
+		saveiconconf();
 	    }
 	} else {
 	    super.uimsg(msg, args);
@@ -1024,6 +1161,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return;
 	} else if((sender == mapfile) && (msg == "close")) {
 	    mapfile.hide();
+	    Utils.setprefb("wndvis-map", false);
 	    return;
 	} else if((sender == help) && (msg == "close")) {
 	    ui.destroy(help);
@@ -1041,16 +1179,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	super.wdgmsg(sender, msg, args);
     }
 
+    private static final int fitmarg = UI.scale(100);
     private Coord fitwdg(Widget wdg, Coord c) {
 	Coord ret = new Coord(c);
-	if(ret.x < 0)
-	    ret.x = 0;
-	if(ret.y < 0)
-	    ret.y = 0;
-	if(ret.x + wdg.sz.x > sz.x)
-	    ret.x = sz.x - wdg.sz.x;
-	if(ret.y + wdg.sz.y > sz.y)
-	    ret.y = sz.y - wdg.sz.y;
+	ret.x = Math.max(ret.x, Math.min(0, fitmarg - wdg.sz.x));
+	ret.y = Math.max(ret.y, Math.min(0, fitmarg - wdg.sz.y));
+	ret.x = Math.min(ret.x, sz.x - Math.min(fitmarg, wdg.sz.x));
+	ret.y = Math.min(ret.y, sz.y - Math.min(fitmarg, wdg.sz.y));
 	return(ret);
     }
 
@@ -1059,37 +1194,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public static class MenuButton extends IButton {
-	private final KeyBinding gkey;
-	private final String tt;
-
 	MenuButton(String base, KeyBinding gkey, String tooltip) {
 	    super("gfx/hud/" + base, "", "-d", "-h");
-	    this.gkey = gkey;
-	    this.tt = tooltip;
-	}
-
-	public void click() {}
-
-	public boolean globtype(char key, KeyEvent ev) {
-	    if(gkey.key().match(ev)) {
-		click();
-		return(true);
-	    }
-	    return(super.globtype(key, ev));
-	}
-
-	private RichText rtt = null;
-	public Object tooltip(Coord c, Widget prev) {
-	    if(!checkhit(c))
-		return(null);
-	    if((prev != this) || (rtt == null)) {
-		String tt = this.tt;
-		if(gkey.key() != KeyMatch.nil)
-		    tt += String.format(" ($col[255,255,0]{%s})", RichText.Parser.quote(gkey.key().name()));
-		if((rtt == null) || !rtt.text.equals(tt))
-		    rtt = RichText.render(tt, 0);
-	    }
-	    return(rtt.tex());
+	    setgkey(gkey);
+	    settip(tooltip);
 	}
     }
 
