@@ -48,7 +48,7 @@ public class Makewindow extends Widget {
 	    return(new Makewindow((String)args[0]));
 	}
     }
-    
+
     private static final OwnerContext.ClassResolver<Makewindow> ctxr = new OwnerContext.ClassResolver<Makewindow>()
 	.add(Glob.class, wdg -> wdg.ui.sess.glob)
 	.add(Session.class, wdg -> wdg.ui.sess);
@@ -138,7 +138,7 @@ public class Makewindow extends Widget {
 	public Resource resource() {return(res.get());}
 	public GSprite sprite() {return(spr);}
     }
-	
+
     public void tick(double dt) {
 	for(Spec s : inputs) {
 	    if(s.spr != null)
@@ -160,7 +160,7 @@ public class Makewindow extends Widget {
 	pack();
 	adda(new Label(rcpnm, nmf), sz.x, 0, 1, 0);
     }
-	
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "inpop") {
 	    List<Spec> inputs = new LinkedList<Spec>();
@@ -195,7 +195,7 @@ public class Makewindow extends Widget {
 	    super.uimsg(msg, args);
 	}
     }
-	
+
     public void draw(GOut g) {
 	Coord c = new Coord(xoff, 0);
 	boolean popt = false;
@@ -236,7 +236,7 @@ public class Makewindow extends Widget {
 	}
 	super.draw(g);
     }
-    
+
     private long hoverstart;
     private Spec lasttip;
     private Indir<Object> stip, ltip;
@@ -331,7 +331,7 @@ public class Makewindow extends Widget {
 	public MakePrep(Owner owner) {
 	    super(owner);
 	}
-	
+
 	public Color olcol() {
 	    return(olcol);
 	}
