@@ -47,14 +47,14 @@ public class MiniMap extends Widget {
     public Location sessloc;
     public GobIcon.Settings iconconf;
     public List<DisplayIcon> icons = Collections.emptyList();
-    private Locator setloc;
-    private boolean follow;
-    private int zoomlevel = 0;
-    private DisplayGrid[] display;
-    private Area dgext, dtext;
-    private Segment dseg;
-    private int dlvl;
-    private Location dloc;
+    protected Locator setloc;
+    protected boolean follow;
+    protected int zoomlevel = 0;
+    protected DisplayGrid[] display;
+    protected Area dgext, dtext;
+    protected Segment dseg;
+    protected int dlvl;
+    protected Location dloc;
 
     public MiniMap(Coord sz, MapFile file) {
 	super(sz);
