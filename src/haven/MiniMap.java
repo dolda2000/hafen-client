@@ -508,7 +508,7 @@ public class MiniMap extends Widget {
 	return(dg.gref.get() != null);
     }
 
-    private boolean allowzoomout() {
+    protected boolean allowzoomout() {
 	DisplayGrid[] disp = this.display;
 	Area dext = this.dgext;
 	try {

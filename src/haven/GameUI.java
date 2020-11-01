@@ -1017,6 +1017,20 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    g.image(bg, Coord.z, UI.scale(bg.sz()));
 	    super.draw(g);
 	}
+
+	protected boolean allowzoomout() {
+	    /* XXX? The corner-map has the property that its size
+	     * makes it so that the one center grid will very commonly
+	     * touch at least one border, making indefinite zoom-out
+	     * possible. That will likely cause more problems than
+	     * it's worth given the resulting workload in generating
+	     * zoomgrids for very high zoom levels, especially when
+	     * done by mistake, so lock to an arbitrary five levels of
+	     * zoom, at least for now. */
+	    if(zoomlevel >= 5)
+		return(false);
+	    return(super.allowzoomout());
+	}
     }
 
     private Coord lastsavegrid = null;
