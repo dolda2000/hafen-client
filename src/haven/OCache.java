@@ -56,7 +56,7 @@ public class OCache implements Iterable<Gob> {
     public static final Coord2d posres = new Coord2d(0x1.0p-10, 0x1.0p-10).mul(11, 11);
     /* XXX: Use weak refs */
     private Collection<Collection<Gob>> local = new LinkedList<Collection<Gob>>();
-    private HashMultiMap<Long, Gob> objs = new HashMultiMap<Long, Gob>();
+    private MultiMap<Long, Gob> objs = new HashMultiMap<Long, Gob>();
     private Glob glob;
     private final Collection<ChangeCallback> cbs = new WeakList<ChangeCallback>();
 

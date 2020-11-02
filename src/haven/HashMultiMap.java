@@ -28,7 +28,7 @@ package haven;
 
 import java.util.*;
 
-public class HashMultiMap<K, V> {
+public class HashMultiMap<K, V> implements MultiMap<K, V> {
     private final HashMap<K, Object> bk = new HashMap<>();
     private int size = 0;
 
