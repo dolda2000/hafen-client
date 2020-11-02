@@ -315,17 +315,26 @@ public class UI {
     public void saddwidget(int id, int parent, Object... pargs) {
 	synchronized(this) {
 	    Widget wdg = getwidget(id);
-	    if(wdg == null)
-		throw(new UIException("Null child widget " + id + " added to " + parent, null, pargs));
 	    Widget pwdg = getwidget(parent);
+	    if(wdg == null)
+		throw(new UIException(String.format("Null child widget %d  added to %d (%s)", id, parent, pwdg), null, pargs));
 	    if(pwdg == null)
-		throw(new UIException("Null parent widget " + parent + " for " + id, null, pargs));
+		throw(new UIException(String.format("Null parent widget %d for %d (%s)", parent, id, wdg), null, pargs));
 	    pwdg.addchild(wdg, pargs);
 	}
     }
 
+    private final MultiMap<Integer, Integer> shadowchildren = new HashMultiMap<>();
+    private final Map<Integer, Integer> shadowparents = new HashMap<>();
+
     public void addwidget(int id, int parent, Object... pargs) {
-	queue.submit(new Command(() -> saddwidget(id, parent, pargs)).dep(id, true).dep(parent, true));
+	synchronized(shadowchildren) {
+	    Integer prev = shadowparents.put(id, parent);
+	    if(prev != null)
+		throw(new RuntimeException(String.format("widget %d already has parent %d when adding it to %d", id, prev, parent)));
+	    shadowchildren.put(parent, id);
+	    queue.submit(new Command(() -> saddwidget(id, parent, pargs)).dep(id, true).dep(parent, true));
+	}
     }
 
     public void newwidgetp(int id, Widget.Factory type, int parent, Object[] pargs, Object... cargs) {
@@ -407,7 +416,20 @@ public class UI {
     }
 
     public void destroy(int id) {
-	queue.submit(new Command(() -> sdestroy(id)).dep(id, true));
+	synchronized(shadowchildren) {
+	    Integer parent = shadowparents.remove(id);
+	    if(parent != null) {
+		if(shadowchildren.remove(parent, id) == null)
+		    throw(new AssertionError(String.format("mismatched shadow-tree indices when removing %d from %d", id, parent)));
+	    }
+	    for(Integer child : new ArrayList<>(shadowchildren.getall(id))) {
+		destroy(child);
+	    }
+	    Command cmd = new Command(() -> sdestroy(id)).dep(id, true);
+	    if(parent != null)
+		cmd.dep(parent, true);
+	    queue.submit(cmd);
+	}
     }
 	
     public void wdgmsg(Widget sender, String msg, Object... args) {
