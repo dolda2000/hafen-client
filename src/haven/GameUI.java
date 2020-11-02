@@ -1145,6 +1145,16 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	wdg.c = fitwdg(wdg, wdg.c);
     }
 
+    private void togglewnd(Window wnd) {
+	if(wnd != null) {
+	    if(wnd.show(!wnd.visible)) {
+		wnd.raise();
+		fitwdg(wnd);
+		setfocus(wnd);
+	    }
+	}
+    }
+
     public static class MenuButton extends IButton {
 	MenuButton(String base, KeyBinding gkey, String tooltip) {
 	    super("gfx/hud/" + base, "", "-d", "-h");
@@ -1162,48 +1172,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public class MainMenu extends Widget {
 	public MainMenu() {
 	    super(menubg.sz());
-	    add(new MenuButton("rbtn-inv", kb_inv, "Inventory") {
-		    public void click() {
-			if((invwnd != null) && invwnd.show(!invwnd.visible)) {
-			    invwnd.raise();
-			    fitwdg(invwnd);
-			}
-		    }
-		}, 0, 0);
-	    add(new MenuButton("rbtn-equ", kb_equ, "Equipment") {
-		    public void click() {
-			if((equwnd != null) && equwnd.show(!equwnd.visible)) {
-			    equwnd.raise();
-			    fitwdg(equwnd);
-			}
-		    }
-		}, 0, 0);
-	    add(new MenuButton("rbtn-chr", kb_chr, "Character Sheet") {
-		    public void click() {
-			if((chrwdg != null) && chrwdg.show(!chrwdg.visible)) {
-			    chrwdg.raise();
-			    fitwdg(chrwdg);
-			}
-		    }
-		}, 0, 0);
-	    add(new MenuButton("rbtn-bud", kb_bud, "Kith & Kin") {
-		    public void click() {
-			if(zerg.show(!zerg.visible)) {
-			    zerg.raise();
-			    fitwdg(zerg);
-			    setfocus(zerg);
-			}
-		    }
-		}, 0, 0);
-	    add(new MenuButton("rbtn-opt", kb_opt, "Options") {
-		    public void click() {
-			if(opts.show(!opts.visible)) {
-			    opts.raise();
-			    fitwdg(opts);
-			    setfocus(opts);
-			}
-		    }
-		}, 0, 0);
+	    add(new MenuButton("rbtn-inv", kb_inv, "Inventory"), 0, 0).action(() -> togglewnd(invwnd));
+	    add(new MenuButton("rbtn-equ", kb_equ, "Equipment"), 0, 0).action(() -> togglewnd(equwnd));
+	    add(new MenuButton("rbtn-chr", kb_chr, "Character Sheet"), 0, 0).action(() -> togglewnd(chrwdg));
+	    add(new MenuButton("rbtn-bud", kb_bud, "Kith & Kin"), 0, 0).action(() -> togglewnd(zerg));
+	    add(new MenuButton("rbtn-opt", kb_opt, "Options"), 0, 0).action(() -> togglewnd(opts));
 	}
 
 	public void draw(GOut g) {
@@ -1234,31 +1207,22 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims"), 0, 0).action(() -> toggleol(0));
 	    add(new MenuButton("lbtn-vil", kb_vil, "Display village claims"), 0, 0).action(() -> toggleol(2));
 	    add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms"), 0, 0).action(() -> toggleol(4));
-	    add(new MenuButton("lbtn-map", kb_map, "Map") {
-		    public void click() {
-			if(mapfile != null) {
-			    if(mapfile.show(!mapfile.visible)) {
-				mapfile.raise();
-				fitwdg(mapfile);
-				setfocus(mapfile);
-			    }
-			    Utils.setprefb("wndvis-map", mapfile.visible);
-			}
+	    add(new MenuButton("lbtn-map", kb_map, "Map")).action(() -> {
+		    togglewnd(mapfile);
+		    if(mapfile != null)
+			Utils.setprefb("wndvis-map", mapfile.visible);
+		});
+	    add(new MenuButton("lbtn-ico", kb_ico, "Icon settings"), 0, 0).action(() -> {
+		    if(iconconf == null)
+			return;
+		    if(iconwnd == null) {
+			iconwnd = new GobIcon.SettingsWindow(iconconf, () -> Utils.defer(GameUI.this::saveiconconf));
+			fitwdg(GameUI.this.add(iconwnd, Utils.getprefc("wndc-icon", new Coord(200, 200))));
+		    } else {
+			ui.destroy(iconwnd);
+			iconwnd = null;
 		    }
 		});
-	    add(new MenuButton("lbtn-ico", kb_ico, "Icon settings") {
-		    public void click() {
-			if(iconconf == null)
-			    return;
-			if(iconwnd == null) {
-			    iconwnd = new GobIcon.SettingsWindow(iconconf, () -> Utils.defer(GameUI.this::saveiconconf));
-			    fitwdg(GameUI.this.add(iconwnd, Utils.getprefc("wndc-icon", new Coord(200, 200))));
-			} else {
-			    ui.destroy(iconwnd);
-			    iconwnd = null;
-			}
-		    }
-		}, 0, 0);
 	}
 
 	public void draw(GOut g) {
