@@ -60,6 +60,7 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 		    int id = msg.uint16();
 		    String type = msg.string();
 		    int parent = msg.uint16();
+		    if(parent == 65535) parent = -1;
 		    Object[] pargs = msg.list();
 		    Object[] cargs = msg.list();
 		    ui.newwidgetp(id, type, parent, pargs, cargs);
