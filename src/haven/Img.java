@@ -26,9 +26,12 @@
 
 package haven;
 
+import java.awt.image.BufferedImage;
+
 public class Img extends Widget {
     private Indir<Resource> res;
     private Tex img;
+    private BufferedImage rimg;
     public boolean hit = false;
 	
     @RName("img")
@@ -50,11 +53,19 @@ public class Img extends Widget {
 	}
     }
 
+    public void setimg(Tex img) {
+	this.img = img;
+	resize(img.sz());
+	if(img instanceof TexI)
+	    rimg = ((TexI)img).back;
+	else
+	    rimg = null;
+    }
+
     public void draw(GOut g) {
 	if(res != null) {
 	    try {
-		img = res.get().layer(Resource.imgc).tex();
-		resize(img.sz());
+		setimg(res.get().layer(Resource.imgc).tex());
 		res = null;
 	    } catch(Loading e) {}
 	}
@@ -65,7 +76,7 @@ public class Img extends Widget {
     public Img(Tex img) {
 	super(img.sz());
 	this.res = null;
-	this.img = img;
+	setimg(img);
     }
 
     public Img(Indir<Resource> res) {
@@ -90,16 +101,19 @@ public class Img extends Widget {
 	}
     }
     
+    public boolean checkhit(Coord c) {
+	if(!c.isect(Coord.z, sz))
+	    return(false);
+	if((rimg == null) || rimg.getRaster().getNumBands() < 4)
+	    return(true);
+	return(rimg.getRaster().getSample(c.x, c.y, 3) >= 128);
+    }
+
     public boolean mousedown(Coord c, int button) {
-	if(hit) {
+	if(hit && checkhit(c)) {
 	    wdgmsg("click", c, button, ui.modflags());
 	    return(true);
 	}
 	return(false);
-    }
-
-    public void init(Tex img) {
-	sz = img.sz();
-	this.img = img;
     }
 }

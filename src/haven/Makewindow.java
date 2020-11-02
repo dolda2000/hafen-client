@@ -34,7 +34,6 @@ import java.awt.image.BufferedImage;
 import static haven.Inventory.invsq;
 
 public class Makewindow extends Widget {
-    Widget obtn, cbtn;
     List<Spec> inputs = Collections.emptyList();
     List<Spec> outputs = Collections.emptyList();
     List<Indir<Resource>> qmod = null;
@@ -49,7 +48,7 @@ public class Makewindow extends Widget {
 	    return(new Makewindow((String)args[0]));
 	}
     }
-    
+
     private static final OwnerContext.ClassResolver<Makewindow> ctxr = new OwnerContext.ClassResolver<Makewindow>()
 	.add(Glob.class, wdg -> wdg.ui.sess.glob)
 	.add(Session.class, wdg -> wdg.ui.sess);
@@ -139,7 +138,7 @@ public class Makewindow extends Widget {
 	public Resource resource() {return(res.get());}
 	public GSprite sprite() {return(spr);}
     }
-	
+
     public void tick(double dt) {
 	for(Spec s : inputs) {
 	    if(s.spr != null)
@@ -151,15 +150,17 @@ public class Makewindow extends Widget {
 	}
     }
 
+    public static final KeyBinding kb_make = KeyBinding.get("make/one", KeyMatch.forcode(java.awt.event.KeyEvent.VK_ENTER, 0));
+    public static final KeyBinding kb_makeall = KeyBinding.get("make/all", KeyMatch.forcode(java.awt.event.KeyEvent.VK_ENTER, KeyMatch.C));
     public Makewindow(String rcpnm) {
 	add(new Label("Input:"), new Coord(0, UI.scale(8)));
 	add(new Label("Result:"), new Coord(0, outy + UI.scale(8)));
-	obtn = add(new Button(UI.scale(85), "Craft"), UI.scale(new Coord(265, 75)));
-	cbtn = add(new Button(UI.scale(85), "Craft All"), UI.scale(new Coord(360, 75)));
+	add(new Button(UI.scale(85), "Craft"), UI.scale(new Coord(265, 75))).action(() -> wdgmsg("make", 0)).setgkey(kb_make);
+	add(new Button(UI.scale(85), "Craft All"), UI.scale(new Coord(360, 75))).action(() -> wdgmsg("make", 1)).setgkey(kb_makeall);
 	pack();
 	adda(new Label(rcpnm, nmf), sz.x, 0, 1, 0);
     }
-	
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "inpop") {
 	    List<Spec> inputs = new LinkedList<Spec>();
@@ -194,7 +195,7 @@ public class Makewindow extends Widget {
 	    super.uimsg(msg, args);
 	}
     }
-	
+
     public void draw(GOut g) {
 	Coord c = new Coord(xoff, 0);
 	boolean popt = false;
@@ -235,7 +236,7 @@ public class Makewindow extends Widget {
 	}
 	super.draw(g);
     }
-    
+
     private long hoverstart;
     private Spec lasttip;
     private Indir<Object> stip, ltip;
@@ -282,7 +283,7 @@ public class Makewindow extends Widget {
 	    stip = ltip = null;
 	}
 	if(tspec == null)
-	    return(null);
+	    return(super.tooltip(mc, prev));
 	long now = System.currentTimeMillis();
 	boolean sh = true;
 	if(prev != this)
@@ -314,28 +315,6 @@ public class Makewindow extends Widget {
 	}
     }
 
-    public void wdgmsg(Widget sender, String msg, Object... args) {
-	if(sender == obtn) {
-	    if(msg == "activate")
-		wdgmsg("make", 0);
-	    return;
-	}
-	if(sender == cbtn) {
-	    if(msg == "activate")
-		wdgmsg("make", 1);
-	    return;
-	}
-	super.wdgmsg(sender, msg, args);
-    }
-    
-    public boolean globtype(char ch, java.awt.event.KeyEvent ev) {
-	if(ch == '\n') {
-	    wdgmsg("make", ui.modctrl?1:0);
-	    return(true);
-	}
-	return(super.globtype(ch, ev));
-    }
-
     public static class Optional extends ItemInfo.Tip {
 	public static final Text text = RichText.render("$i{Optional}", 0);
 	public Optional(Owner owner) {
@@ -352,7 +331,7 @@ public class Makewindow extends Widget {
 	public MakePrep(Owner owner) {
 	    super(owner);
 	}
-	
+
 	public Color olcol() {
 	    return(olcol);
 	}
