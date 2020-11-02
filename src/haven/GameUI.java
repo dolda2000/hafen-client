@@ -1219,35 +1219,21 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public static final KeyBinding kb_ico = KeyBinding.get("map-icons", KeyMatch.nil);
     private static final Tex mapmenubg = Resource.loadtex("gfx/hud/lbtn-bg");
     public class MapMenu extends Widget {
+	private void toggleol(int id) {
+	    if(map != null) {
+		if(!map.visol(id)) {
+		    map.enol(id); map.enol(id + 1);
+		} else {
+		    map.disol(id); map.disol(id + 1);
+		}
+	    }
+	}
+
 	public MapMenu() {
 	    super(mapmenubg.sz());
-	    add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims") {
-		    public void click() {
-			if((map != null) && !map.visol(0)) {
-			    map.enol(0); map.enol(1);
-			} else {
-			    map.disol(0); map.disol(1);
-			}
-		    }
-		}, 0, 0);
-	    add(new MenuButton("lbtn-vil", kb_vil, "Display village claims") {
-		    public void click() {
-			if((map != null) && !map.visol(2)) {
-			    map.enol(2); map.enol(3);
-			} else {
-			    map.disol(2); map.disol(3);
-			}
-		    }
-		}, 0, 0);
-	    add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms") {
-		    public void click() {
-			if((map != null) && !map.visol(4)) {
-			    map.enol(4); map.enol(5);
-			} else {
-			    map.disol(4); map.disol(5);
-			}
-		    }
-		}, 0, 0);
+	    add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims"), 0, 0).action(() -> toggleol(0));
+	    add(new MenuButton("lbtn-vil", kb_vil, "Display village claims"), 0, 0).action(() -> toggleol(2));
+	    add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms"), 0, 0).action(() -> toggleol(4));
 	    add(new MenuButton("lbtn-map", kb_map, "Map") {
 		    public void click() {
 			if(mapfile != null) {
