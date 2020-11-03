@@ -317,7 +317,7 @@ public class UI {
 	    Widget wdg = getwidget(id);
 	    Widget pwdg = getwidget(parent);
 	    if(wdg == null)
-		throw(new UIException(String.format("Null child widget %d  added to %d (%s)", id, parent, pwdg), null, pargs));
+		throw(new UIException(String.format("Null child widget %d added to %d (%s)", id, parent, pwdg), null, pargs));
 	    if(pwdg == null)
 		throw(new UIException(String.format("Null parent widget %d for %d (%s)", parent, id, wdg), null, pargs));
 	    pwdg.addchild(wdg, pargs);
