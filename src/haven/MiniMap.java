@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.awt.Color;
 import haven.MapFile.Segment;
 import haven.MapFile.DataGrid;
 import haven.MapFile.Grid;
@@ -41,7 +42,7 @@ import static haven.OCache.posres;
 public class MiniMap extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/mmap/ptex");
     public static final Tex nomap = Resource.loadtex("gfx/hud/mmap/nomap");
-    public static final Resource plx = Resource.local().loadwait("gfx/hud/mmap/x");
+    public static final Tex plp = ((TexI)Resource.loadtex("gfx/hud/mmap/plp")).filter(haven.render.Texture.Filter.LINEAR);
     public final MapFile file;
     public Location curloc;
     public Location sessloc;
@@ -462,11 +463,6 @@ public class MiniMap extends Widget {
 	return(ret);
     }
 
-    public static void drawplx(GOut g, Coord ptc) {
-	Tex tex = plx.layer(Resource.imgc).tex();
-	g.image(tex, ptc.sub(UI.scale(plx.layer(Resource.negc).cc)));
-    }
-
     public void drawicons(GOut g) {
 	for(DisplayIcon disp : icons) {
 	    try {
@@ -484,6 +480,22 @@ public class MiniMap extends Widget {
 	g.chcolor();
     }
 
+    public void remparty() {
+	Set<Gob> memb = new HashSet<>();
+	synchronized(ui.sess.glob.party.memb) {
+	    for(Party.Member m : ui.sess.glob.party.memb.values()) {
+		Gob gob = m.getgob();
+		if(gob != null)
+		    memb.add(gob);
+	    }
+	}
+	for(Iterator<DisplayIcon> it = icons.iterator(); it.hasNext();) {
+	    DisplayIcon icon = it.next();
+	    if(memb.contains(icon.gob))
+		it.remove();
+	}
+    }
+
     public void drawparty(GOut g) {
 	synchronized(ui.sess.glob.party.memb) {
 	    for(Party.Member m : ui.sess.glob.party.memb.values()) {
@@ -492,7 +504,7 @@ public class MiniMap extends Widget {
 		    if(ppc == null)
 			continue;
 		    g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 255);
-		    drawplx(g, p2c(ppc));
+		    g.rotimage(plp, p2c(ppc), plp.sz().div(2), -m.geta() - (Math.PI / 2));
 		    g.chcolor();
 		} catch(Loading l) {}
 	    }
@@ -513,6 +525,7 @@ public class MiniMap extends Widget {
 	    return;
 	redisplay(loc);
 	icons = findicons();
+	remparty();
 	drawparts(g);
     }
 
