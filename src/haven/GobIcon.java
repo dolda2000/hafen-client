@@ -87,28 +87,40 @@ public class GobIcon extends GAttrib {
     }
 
     public static class Setting implements Serializable {
+	public Resource.Spec res;
 	public boolean show, defshow;
+
+	public Setting(Resource.Spec res) {
+	    this.res = res;
+	}
     }
 
     public static class Settings implements Serializable {
 	public static final byte[] sig = "Icons".getBytes(Utils.ascii);
-	public Map<Resource.Spec, Setting> settings = new HashMap<>();
+	public Map<String, Setting> settings = new HashMap<>();
 	public int tag = -1;
 	public boolean notify = false;
 
 	public Setting get(Resource.Named res) {
-	    return(settings.get(res));
+	    Setting ret = settings.get(res.name);
+	    if((ret != null) && (ret.res.ver < res.ver))
+		ret.res = new Resource.Spec(null, res.name, res.ver);
+	    return(ret);
 	}
 
 	public Setting get(Resource res) {
 	    return(get(res.indir()));
 	}
 
-	public void receive(int tag, Resource.Spec[] res, Setting[] conf) {
-	    Map<Resource.Spec, Setting> nset = new HashMap<>(settings);
-	    for(int i = 0; i < res.length; i++) {
-		if(!nset.containsKey(res[i]))
-		    nset.put(res[i], conf[i]);
+	public void receive(int tag, Setting[] conf) {
+	    Map<String, Setting> nset = new HashMap<>(settings);
+	    for(int i = 0; i < conf.length; i++) {
+		String nm = conf[i].res.name;
+		Setting prev = nset.get(nm);
+		if(prev == null)
+		    nset.put(nm, conf[i]);
+		else if(prev.res.ver < conf[i].res.ver)
+		    prev.res = conf[i].res;
 	    }
 	    this.settings = nset;
 	    this.tag = tag;
@@ -119,13 +131,13 @@ public class GobIcon extends GAttrib {
 	    buf.adduint8(2);
 	    buf.addint32(tag);
 	    buf.adduint8(notify ? 1 : 0);
-	    for(Map.Entry<Resource.Spec, Setting> e : settings.entrySet()) {
-		buf.addstring(e.getKey().name);
-		buf.adduint16(e.getKey().ver);
+	    for(Setting set : settings.values()) {
+		buf.addstring(set.res.name);
+		buf.adduint16(set.res.ver);
 		buf.adduint8((byte)'s');
-		buf.adduint8(e.getValue().show ? 1 : 0);
+		buf.adduint8(set.show ? 1 : 0);
 		buf.adduint8((byte)'d');
-		buf.adduint8(e.getValue().defshow ? 1 : 0);
+		buf.adduint8(set.defshow ? 1 : 0);
 		buf.adduint8(0);
 	    }
 	    buf.addstring("");
@@ -147,7 +159,7 @@ public class GobIcon extends GAttrib {
 		    break;
 		int resver = buf.uint16();
 		Resource.Spec res = new Resource.Spec(null, resnm, resver);
-		Setting set = new Setting();
+		Setting set = new Setting(res);
 		boolean setdef = false;
 		data: while(true) {
 		    int datum = buf.uint8();
@@ -167,7 +179,7 @@ public class GobIcon extends GAttrib {
 		}
 		if(!setdef)
 		    set.defshow = set.show;
-		ret.settings.put(res, set);
+		ret.settings.put(res.name, set);
 	    }
 	    return(ret);
 	}
@@ -178,19 +190,17 @@ public class GobIcon extends GAttrib {
 	private final Runnable save;
 
 	public static class Icon {
-	    public final Resource.Spec res;
 	    public final Setting conf;
 	    public Text name = null;
 
-	    public Icon(Resource.Spec res, Setting conf) {
-		this.res = res;
+	    public Icon(Setting conf) {
 		this.conf = conf;
 	    }
 
 	    private Tex img = null;
 	    public Tex img() {
 		if(this.img == null) {
-		    BufferedImage img = res.loadsaved(Resource.remote()).layer(Resource.imgc).img;
+		    BufferedImage img = conf.res.loadsaved(Resource.remote()).layer(Resource.imgc).img;
 		    Coord tsz;
 		    if(img.getWidth() > img.getHeight())
 			tsz = new Coord(elh, (elh * img.getHeight()) / img.getWidth());
@@ -208,7 +218,7 @@ public class GobIcon extends GAttrib {
 	public class IconList extends Searchbox<Icon> {
 	    private Coord showc;
 	    private List<Icon> ordered = Collections.emptyList();
-	    private Map<Resource.Spec, Setting> cur = null;
+	    private Map<String, Setting> cur = null;
 	    private boolean reorder = false;
 
 	    private IconList(int w, int h) {
@@ -222,12 +232,12 @@ public class GobIcon extends GAttrib {
 	    }
 
 	    public void tick(double dt) {
-		Map<Resource.Spec, Setting> cur = this.cur;
+		Map<String, Setting> cur = this.cur;
 		if(cur != conf.settings) {
 		    cur = conf.settings;
 		    ArrayList<Icon> ordered = new ArrayList<>();
-		    for(Map.Entry<Resource.Spec, Setting> e : cur.entrySet())
-			ordered.add(new Icon(e.getKey(), e.getValue()));
+		    for(Setting set : cur.values())
+			ordered.add(new Icon(set));
 		    this.cur = cur;
 		    this.ordered = ordered;
 		    reorder = true;
@@ -237,7 +247,7 @@ public class GobIcon extends GAttrib {
 		    for(Icon icon : ordered) {
 			if(icon.name == null) {
 			    try {
-				Resource.Tooltip name = icon.res.loadsaved(Resource.remote()).layer(Resource.tooltip);
+				Resource.Tooltip name = icon.conf.res.loadsaved(Resource.remote()).layer(Resource.tooltip);
 				icon.name = elf.render((name == null) ? "???" : name.t);
 			    } catch(Loading l) {
 				reorder = true;
