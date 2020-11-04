@@ -224,15 +224,19 @@ public class MiniMap extends Widget {
     public static class DisplayIcon {
 	public final GobIcon icon;
 	public final Gob gob;
+	public final GobIcon.Image img;
 	public Coord cc;
 	public double ang = 0.0;
 	public Color col = Color.WHITE;
+	public int z;
 
 	public DisplayIcon(GobIcon icon, Coord cc, double ang) {
 	    this.icon = icon;
 	    this.gob = icon.gob;
+	    this.img = icon.img();
 	    this.cc = cc;
 	    this.ang = ang;
+	    this.z = this.img.z;
 	}
     }
 
@@ -458,6 +462,7 @@ public class MiniMap extends Widget {
 		} catch(Loading l) {}
 	    }
 	}
+	Collections.sort(ret, (a, b) -> a.z - b.z);
 	if(ret.size() == 0)
 	    return(Collections.emptyList());
 	return(ret);
@@ -465,17 +470,15 @@ public class MiniMap extends Widget {
 
     public void drawicons(GOut g) {
 	for(DisplayIcon disp : icons) {
-	    try {
-		GobIcon.Image img = disp.icon.img();
-		if(disp.col != null)
-		    g.chcolor(disp.col);
-		else
-		    g.chcolor();
-		if(!img.rot)
-		    g.image(img.tex, disp.cc.sub(img.cc));
-		else
-		    g.rotimage(img.tex, disp.cc, img.cc, -disp.ang + img.ao);
-	    } catch(Loading l) {}
+	    GobIcon.Image img = disp.img;
+	    if(disp.col != null)
+		g.chcolor(disp.col);
+	    else
+		g.chcolor();
+	    if(!img.rot)
+		g.image(img.tex, disp.cc.sub(img.cc));
+	    else
+		g.rotimage(img.tex, disp.cc, img.cc, -disp.ang + img.ao);
 	}
 	g.chcolor();
     }
@@ -559,11 +562,9 @@ public class MiniMap extends Widget {
     public DisplayIcon iconat(Coord c) {
 	for(ListIterator<DisplayIcon> it = icons.listIterator(icons.size()); it.hasPrevious();) {
 	    DisplayIcon disp = it.previous();
-	    try {
-		GobIcon.Image img = disp.icon.img();
-		if(c.isect(disp.cc.sub(img.cc), img.tex.sz()))
-		    return(disp);
-	    } catch(Loading l) {}
+	    GobIcon.Image img = disp.img;
+	    if(c.isect(disp.cc.sub(img.cc), img.tex.sz()))
+		return(disp);
 	}
 	return(null);
     }

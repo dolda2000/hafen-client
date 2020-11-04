@@ -48,6 +48,7 @@ public class GobIcon extends GAttrib {
 	public Coord cc;
 	public boolean rot;
 	public double ao;
+	public int z;
 
 	public Image(Resource.Image rimg) {
 	    Tex tex = rimg.tex();
@@ -69,6 +70,10 @@ public class GobIcon extends GAttrib {
 		this.rot = true;
 		this.ao = Utils.float32d(data, 0) * (Math.PI / 180f);
 	    }
+	    this.z = rimg.z;
+	    data = rimg.kvdata.get("mm/z");
+	    if(data != null)
+		this.z = Utils.intvard(data, 0);
 	}
     }
 
