@@ -34,39 +34,56 @@ import java.awt.Color;
 public class GobIcon extends GAttrib {
     private static final int size = UI.scale(20);
     public static final PUtils.Convolution filter = new PUtils.Hanning(1);
-    private static final Map<Indir<Resource>, Tex> cache = new WeakHashMap<>();
+    private static final Map<Indir<Resource>, Image> cache = new WeakHashMap<>();
     public final Indir<Resource> res;
-    private Tex tex;
+    private Image img;
 
     public GobIcon(Gob g, Indir<Resource> res) {
 	super(g);
 	this.res = res;
     }
 
-    public Tex tex() {
-	if(this.tex == null) {
-	    synchronized(cache) {
-		if(!cache.containsKey(res)) {
-		    Resource.Image img = res.get().layer(Resource.imgc);
-		    Tex tex = img.tex();
-		    if ((tex.sz().x <= size) && (tex.sz().y <= size)) {
-			cache.put(res, tex);
-		    } else {
-			BufferedImage buf = img.img;
-			buf = PUtils.rasterimg(PUtils.blurmask2(buf.getRaster(), 1, 1, Color.BLACK));
-			Coord tsz;
-			if(buf.getWidth() > buf.getHeight())
-			    tsz = new Coord(size, (size * buf.getHeight()) / buf.getWidth());
-			else
-			    tsz = new Coord((size * buf.getWidth()) / buf.getHeight(), size);
-			buf = PUtils.convolve(buf, tsz, filter);
-			cache.put(res, new TexI(buf));
-		    }
-		}
-		this.tex = cache.get(res);
+    public static class Image {
+	public final Tex tex;
+	public Coord cc;
+	public boolean rot;
+	public double ao;
+
+	public Image(Resource.Image rimg) {
+	    Tex tex = rimg.tex();
+	    if ((tex.sz().x > size) || (tex.sz().y > size)) {
+		BufferedImage buf = rimg.img;
+		buf = PUtils.rasterimg(PUtils.blurmask2(buf.getRaster(), 1, 1, Color.BLACK));
+		Coord tsz;
+		if(buf.getWidth() > buf.getHeight())
+		    tsz = new Coord(size, (size * buf.getHeight()) / buf.getWidth());
+		else
+		    tsz = new Coord((size * buf.getWidth()) / buf.getHeight(), size);
+		buf = PUtils.convolve(buf, tsz, filter);
+		tex = new TexI(buf);
+	    }
+	    this.tex = tex;
+	    this.cc = tex.sz().div(2);
+	    byte[] data = rimg.kvdata.get("mm/rot");
+	    if(data != null) {
+		this.rot = true;
+		this.ao = Utils.float32d(data, 0) * (Math.PI / 180f);
 	    }
 	}
-	return(this.tex);
+    }
+
+    public Image img() {
+	if(this.img == null) {
+	    synchronized(cache) {
+		Image img = cache.get(res);
+		if(img == null) {
+		    img = new Image(res.get().layer(Resource.imgc));
+		    cache.put(res, img);
+		}
+		this.img = img;
+	    }
+	}
+	return(this.img);
     }
 
     public static class Setting implements Serializable {
