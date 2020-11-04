@@ -898,6 +898,7 @@ public class Resource implements Serializable {
 	public final int z, subz;
 	public final boolean nooff;
 	public final int id;
+	public final Map<String, byte[]> kvdata;
 	private float scale = 1;
 	private int gay = -1;
 	public Coord sz, o, tsz, ssz;
@@ -910,6 +911,7 @@ public class Resource implements Serializable {
 	    nooff = (fl & 2) != 0;
 	    id = buf.int16();
 	    o = cdec(buf);
+	    Map<String, byte[]> kvdata = new HashMap<>();
 	    if((fl & 4) != 0) {
 		while(true) {
 		    String key = buf.string();
@@ -918,14 +920,18 @@ public class Resource implements Serializable {
 		    int len = buf.uint8();
 		    if((len & 0x80) != 0)
 			len = buf.int32();
-		    Message val = new MessageBuf(buf.bytes(len));
+		    byte[] data = buf.bytes(len);
+		    Message val = new MessageBuf(data);
 		    if(key.equals("tsz")) {
 			tsz = val.coord();
 		    } else if(key.equals("scale")) {
 			scale = val.float32();
+		    } else {
+			kvdata.put(key, data);
 		    }
 		}
 	    }
+	    this.kvdata = kvdata.isEmpty() ? Collections.emptyMap() : kvdata;
 	    try {
 		img = readimage(new MessageInputStream(buf));
 	    } catch(IOException e) {
