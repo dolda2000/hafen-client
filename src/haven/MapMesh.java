@@ -576,7 +576,7 @@ public class MapMesh implements RenderTree.Node, Disposable {
 		    pos = Utils.extend(pos, vl * 3);
 		}
 		int pb = vn * 3;
-		pos[pb + 0] = d.v[i].x; pos[pb + 1] = d.v[i].y; pos[pb + 2] = d.v[i].z + 0.5f;
+		pos[pb + 0] = d.v[i].x; pos[pb + 1] = d.v[i].y; pos[pb + 2] = d.v[i].z;
 		return(imap[i] = vn++);
 	    }
 
