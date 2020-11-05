@@ -359,12 +359,26 @@ public class Utils {
     public static int int32d(byte[] buf, int off) {
 	return((int)uint32d(buf, off));
     }
-    
+
     public static long int64d(byte[] buf, int off) {
 	long b = 0;
 	for(int i = 0; i < 8; i++)
 	    b |= ((long)ub(buf[off + i])) << (i * 8);
 	return(b);
+    }
+
+    public static int intvard(byte[] buf, int off) {
+	int len = buf.length - off;
+	switch(len) {
+	case 4:
+	    return(int32d(buf, off));
+	case 2:
+	    return(int16d(buf, off));
+	case 1:
+	    return(buf[off]);
+	default:
+	    throw(new IllegalArgumentException(Integer.toString(len)));
+	}
     }
 
     public static void int64e(long num, byte[] buf, int off) {

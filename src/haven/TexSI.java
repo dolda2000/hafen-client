@@ -40,7 +40,13 @@ public class TexSI implements Tex {
 	return(br.sub(ul));
     }
 
-    public void render(GOut g, Coord dul, Coord dbr, Coord tul, Coord tbr) {
-	parent.render(g, dul, dbr, tul.add(ul), tbr.add(ul));
+    public void render(GOut g, float[] gc, float[] tc) {
+	float[] ptc = {
+	    tc[0] + ul.x, tc[1] + ul.y,
+	    tc[2] + ul.x, tc[3] + ul.y,
+	    tc[4] + ul.x, tc[5] + ul.y,
+	    tc[6] + ul.x, tc[7] + ul.y,
+	};
+	parent.render(g, gc, ptc);
     }
 }

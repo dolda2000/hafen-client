@@ -176,6 +176,28 @@ public class GOut {
 	}
     }
 
+    public void rotimage(Tex tex, Coord c, Coord rcc, double a) {
+	/* XXXRENDER: I do believe the rendering system should treat
+	 * the viewport and scissor areas as window coordinates,
+	 * rather than OpenGL coordinates, but it's not entirely
+	 * obvious to me right now how all of that should work
+	 * together. */
+	usestate(new States.Scissor(new Area(new Coord(ul.x, root.br.y - br.y), new Coord(br.x, root.br.y - ul.y))));
+	Coord sz = tex.sz();
+	float x = c.x + tx.x, y = c.y + tx.y;
+	float si = -(float)Math.sin(a), co = (float)Math.cos(a);
+	float l = -rcc.x, u = -rcc.y, r = sz.x - rcc.x, b = sz.y - rcc.y;
+	float[] gc = {
+	    x + (l * co) - (u * si), y + (l * si) + (u * co),
+	    x + (r * co) - (u * si), y + (r * si) + (u * co),
+	    x + (r * co) - (b * si), y + (r * si) + (b * co),
+	    x + (l * co) - (b * si), y + (l * si) + (b * co),
+	};
+	float[] tc = {0, 0, sz.x, 0, sz.x, sz.y, 0, sz.y};
+	tex.render(this, gc, tc);
+	usestate(States.scissor);
+    }
+
     /* Draw texture at c, with the extra state s applied. */
     public void image(Tex tex, Coord c, State s) {
 	Pipe bk = cur2d.copy();
