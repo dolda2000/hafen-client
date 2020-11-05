@@ -28,8 +28,21 @@ package haven;
 
 public interface Tex extends Disposable {
     public Coord sz();
+
+    public void render(GOut g, float[] gc, float[] tc);
+
     /* Render texture coordinates [tul, tbr) at [dul, dbr), scaling if necessary. */
-    public void render(GOut g, Coord dul, Coord dbr, Coord tul, Coord tbr);
+    public default void render(GOut g, Coord dul, Coord dbr, Coord tul, Coord tbr) {
+	float[] gc = {
+	    dul.x, dul.y, dbr.x, dul.y,
+	    dbr.x, dbr.y, dul.x, dbr.y,
+	};
+	float[] tc = {
+	    tul.x, tul.y, tbr.x, tul.y,
+	    tbr.x, tbr.y, tul.x, tbr.y,
+	};
+	render(g, gc, tc);
+    }
 
     public default void render(GOut g, Coord c) {
 	render(g, Coord.z, sz(), c, c.add(sz()));

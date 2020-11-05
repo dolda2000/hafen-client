@@ -1072,10 +1072,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    wdgmsg("map-icons", conf.tag);
 	    } else if(args[1] instanceof String) {
 		Resource.Spec res = new Resource.Spec(null, (String)args[1], (Integer)args[2]);
-		GobIcon.Setting cset = new GobIcon.Setting();
-		boolean has = conf.settings.containsKey(res);
+		GobIcon.Setting cset = new GobIcon.Setting(res);
+		boolean has = conf.settings.containsKey(res.name);
 		cset.show = cset.defshow = ((Integer)args[3]) != 0;
-		conf.receive(tag, new Resource.Spec[] {res}, new GobIcon.Setting[] {cset});
+		conf.receive(tag, new GobIcon.Setting[] {cset});
 		saveiconconf();
 		if(!has && conf.notify) {
 		    ui.sess.glob.loader.defer(() -> {
@@ -1088,18 +1088,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    } else if(args[1] instanceof Object[]) {
 		Object[] sub = (Object[])args[1];
 		int a = 0;
-		Collection<Resource.Spec> res = new ArrayList<>();
 		Collection<GobIcon.Setting> csets = new ArrayList<>();
 		while(a < sub.length) {
 		    String resnm = (String)sub[a++];
 		    int resver = (Integer)sub[a++];
 		    int fl = (Integer)sub[a++];
-		    res.add(new Resource.Spec(null, resnm, resver));
-		    GobIcon.Setting cset = new GobIcon.Setting();
+		    Resource.Spec res = new Resource.Spec(null, resnm, resver);
+		    GobIcon.Setting cset = new GobIcon.Setting(res);
 		    cset.show = cset.defshow = ((fl & 1) != 0);
 		    csets.add(cset);
 		}
-		conf.receive(tag, res.toArray(new Resource.Spec[0]), csets.toArray(new GobIcon.Setting[0]));
+		conf.receive(tag, csets.toArray(new GobIcon.Setting[0]));
 		saveiconconf();
 	    }
 	} else {
@@ -1270,7 +1269,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     private int uimode = 1;
     public void toggleui(int mode) {
-	Hidepanel[] panels = {blpanel, brpanel, ulpanel, umpanel, urpanel, menupanel};
+	Hidepanel[] panels = {blpanel, brpanel, ulpanel, umpanel, urpanel, menupanel, mapmenupanel};
 	switch(uimode = mode) {
 	case 0:
 	    for(Hidepanel p : panels)
@@ -1288,7 +1287,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public void resetui() {
-	Hidepanel[] panels = {blpanel, brpanel, ulpanel, umpanel, urpanel, menupanel};
+	Hidepanel[] panels = {blpanel, brpanel, ulpanel, umpanel, urpanel, menupanel, mapmenupanel};
 	for(Hidepanel p : panels)
 	    p.cshow(p.tvis);
 	uimode = 1;
