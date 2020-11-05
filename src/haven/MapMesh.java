@@ -561,6 +561,74 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	flat = new FastMesh(new VertexBuf(posa, loca), indb);
     }
 
+    private static final VertexArray.Layout gridfmt = new VertexArray.Layout(new VertexArray.Layout.Input(Homo3D.vertex, new VectorFormat(3, NumberFormat.FLOAT32), 0, 0, 12));
+    private RenderTree.Node consgrid() {
+	class Buf implements Tiler.MCons {
+	    int vn = 0, in = 0, vl = sz.x * sz.y * 4;
+	    float[] pos = new float[vl * 3];
+	    short[] ind = new short[sz.x * sz.y * 8];
+
+	    int getvert(Tiler.MPart d, int i, int[] imap) {
+		if(imap[i] >= 0)
+		    return(imap[i]);
+		if(vn >= vl) {
+		    vl *= 2;
+		    pos = Utils.extend(pos, vl * 3);
+		}
+		int pb = vn * 3;
+		pos[pb + 0] = d.v[i].x; pos[pb + 1] = d.v[i].y; pos[pb + 2] = d.v[i].z + 0.5f;
+		return(imap[i] = vn++);
+	    }
+
+	    public void faces(MapMesh m, Tiler.MPart d) {
+		byte[] ef = new byte[d.v.length];
+		int[] imap = new int[d.v.length];
+		for(int i = 0; i < imap.length; imap[i++] = -1);
+		for(int i = 0, ivn = 0; i < d.v.length; i++) {
+		    if(d.tcy[i] == 0.0f) ef[i] |= 1;
+		    if(d.tcx[i] == 1.0f) ef[i] |= 2;
+		    if(d.tcy[i] == 1.0f) ef[i] |= 4;
+		    if(d.tcx[i] == 0.0f) ef[i] |= 8;
+		}
+		for(int i = 0; i < d.f.length; i += 3) {
+		    for(int a = 0; a < 3; a++) {
+			int b = (a + 1) % 3;
+			if((ef[d.f[i + a]] & ef[d.f[i + b]]) != 0) {
+			    if(in + 2 > ind.length)
+				ind = Utils.extend(ind, ind.length * 2);
+			    ind[in++] = (short)getvert(d, d.f[i + a], imap);
+			    ind[in++] = (short)getvert(d, d.f[i + b], imap);
+			}
+		    }
+		}
+	    }
+	}
+	Buf buf = new Buf();
+	Coord c = new Coord();
+	for(c.y = 0; c.y < sz.y; c.y++) {
+	    for(c.x = 0; c.x < sz.x; c.x++) {
+		Coord gc = c.add(ul);
+		map.tiler(map.gettile(gc)).lay(this, c, gc, buf, false);
+	    }
+	}
+	float[] pos = buf.pos;
+	short[] ind = buf.ind;
+	if(pos.length != buf.vn * 3) pos = Utils.extend(pos, buf.vn * 3);
+	if(ind.length != buf.in) ind = Utils.extend(ind, buf.in);
+	VertexArray vdat = new VertexArray(gridfmt, new VertexArray.Buffer(pos.length * 4, DataBuffer.Usage.STATIC, DataBuffer.Filler.of(pos)));
+	return(new haven.render.Model(haven.render.Model.Mode.LINES, vdat, new haven.render.Model.Indices(ind.length, NumberFormat.UINT16, DataBuffer.Usage.STATIC, DataBuffer.Filler.of(ind))));
+    }
+
+    private RenderTree.Node grid = null;
+    public RenderTree.Node grid() {
+	if(grid == null)
+	    synchronized(this) {
+		if(grid == null)
+		    grid = consgrid();
+	    }
+	return(grid);
+    }
+
     public void dispose() {
 	for(Disposable p : dparts)
 	    p.dispose();
