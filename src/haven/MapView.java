@@ -1933,7 +1933,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return(super.keydown(ev));
     }
 
+    public static final KeyBinding kb_grid = KeyBinding.get("grid", KeyMatch.forchar('G', KeyMatch.C));
     public boolean globtype(char c, KeyEvent ev) {
+	if(kb_grid.key().match(ev)) {
+	    showgrid(gridlines == null);
+	    return(true);
+	}
 	return(false);
     }
 

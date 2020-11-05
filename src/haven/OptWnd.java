@@ -379,12 +379,14 @@ public class OptWnd extends Window {
 	    addbtn(scroll, width, "Search actions", GameUI.kb_srch);
 	    addbtn(scroll, width, "Toggle chat", GameUI.kb_chat);
 	    addbtn(scroll, width, "Quick chat", ChatUI.kb_quick);
-	    addbtn(scroll, width, "Display claims", GameUI.kb_claim);
-	    addbtn(scroll, width, "Display villages", GameUI.kb_vil);
-	    addbtn(scroll, width, "Display realms", GameUI.kb_rlm);
 	    addbtn(scroll, width, "Take screenshot", GameUI.kb_shoot);
 	    addbtn(scroll, width, "Minimap icons", GameUI.kb_ico);
 	    addbtn(scroll, width, "Toggle UI", GameUI.kb_hide);
+	    scroll.adda(new Label("Map options"), width / 2, 0.5);
+	    addbtn(scroll, width, "Display claims", GameUI.kb_claim);
+	    addbtn(scroll, width, "Display villages", GameUI.kb_vil);
+	    addbtn(scroll, width, "Display realms", GameUI.kb_rlm);
+	    addbtn(scroll, width, "Display grid-lines", MapView.kb_grid);
 	    scroll.adda(new Label("Camera control"), width / 2, 0.5);
 	    addbtn(scroll, width, "Rotate left", MapView.kb_camleft);
 	    addbtn(scroll, width, "Rotate right", MapView.kb_camright);
