@@ -733,6 +733,43 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
+    private static final Material gridmat = new Material(new BaseColor(128, 128, 0, 24), States.maskdepth, new MapMesh.OLOrder(-1));
+    private class GridLines extends MapRaster {
+	final Grid grid = new Grid<RenderTree.Node>() {
+		RenderTree.Node getcut(Coord cc) {
+		    return(map.getcut(cc).grid());
+		}
+	    };
+
+	private GridLines() {}
+
+	void tick() {
+	    super.tick();
+	    if(area != null)
+		grid.tick();
+	}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.ostate(gridmat);
+	    slot.add(grid);
+	    super.added(slot);
+	}
+
+	public void remove() {
+	    slot.remove();
+	}
+    }
+
+    GridLines gridlines = null;
+    public void showgrid(boolean show) {
+	if((gridlines == null) && show) {
+	    basic.add(gridlines = new GridLines());
+	} else if((gridlines != null) && !show) {
+	    gridlines.remove();
+	    gridlines = null;
+	}
+    }
+
     static class MapClick extends Clickable {
 	final MapMesh cut;
 
@@ -1496,6 +1533,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if(ols[i] != null)
 		    ols[i].tick();
 	    }
+	    if(gridlines != null)
+		gridlines.tick();
 	    clickmap.tick();
 	}
 	Loader.Future<Plob> placing = this.placing;
