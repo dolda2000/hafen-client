@@ -431,8 +431,8 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	return(gmmat.apply(buf.mkmesh()));
     }
 
-    private static class OLOrder extends MLOrder {
-	OLOrder(int z) {super(z);}
+    public static class OLOrder extends MLOrder {
+	public OLOrder(int z) {super(z);}
 
 	public int mainorder() {
 	    return(1002);
