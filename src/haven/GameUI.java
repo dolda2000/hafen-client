@@ -175,8 +175,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	ulpanel = add(new Hidepanel("gui-ul", null, new Coord(-1, -1)));
 	umpanel = add(new Hidepanel("gui-um", null, new Coord( 0, -1)));
 	urpanel = add(new Hidepanel("gui-ur", null, new Coord( 1, -1)));
-	Tex lbtnbg = Resource.loadtex("gfx/hud/lbtn-bg");
-	mapmenupanel.add(new Img(lbtnbg), 0, 0);
+	mapmenupanel.add(new MapMenu(), 0, 0);
 	blpanel.add(new Img(Resource.loadtex("gfx/hud/blframe")), 0, 0);
 	minimapc = new Coord(UI.scale(4), UI.scale(34));
 	Tex rbtnbg = Resource.loadtex("gfx/hud/csearch-bg");
@@ -184,7 +183,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	menugridc = brframe.c.add(UI.scale(20), UI.scale(34));
 	Img rbtnimg = brpanel.add(new Img(rbtnbg), 0, brpanel.sz.y - rbtnbg.sz().y);
 	menupanel.add(new MainMenu(), 0, 0);
-	mapbuttons();
 	menubuttons(rbtnimg);
 	foldbuttons();
 	portrait = ulpanel.add(new Avaview(Avaview.dasz, plid, "avacam") {
@@ -204,66 +202,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     protected void attached() {
 	iconconf = loadiconconf();
 	super.attached();
-    }
-
-    public static final KeyBinding kb_map = KeyBinding.get("map", KeyMatch.forchar('A', KeyMatch.C));
-    public static final KeyBinding kb_claim = KeyBinding.get("ol-claim", KeyMatch.nil);
-    public static final KeyBinding kb_vil = KeyBinding.get("ol-vil", KeyMatch.nil);
-    public static final KeyBinding kb_rlm = KeyBinding.get("ol-rlm", KeyMatch.nil);
-    public static final KeyBinding kb_ico = KeyBinding.get("map-icons", KeyMatch.nil);
-    private void mapbuttons() {
-	mapmenupanel.add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims") {
-		public void click() {
-		    if((map != null) && !map.visol(0)) {
-			map.enol(0); map.enol(1);
-		    } else {
-			map.disol(0); map.disol(1);
-		    }
-		}
-	    }, 0, 0);
-	mapmenupanel.add(new MenuButton("lbtn-vil", kb_vil, "Display village claims") {
-		public void click() {
-		    if((map != null) && !map.visol(2)) {
-			map.enol(2); map.enol(3);
-		    } else {
-			map.disol(2); map.disol(3);
-		    }
-		}
-	    }, 0, 0);
-	mapmenupanel.add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms") {
-		public void click() {
-		    if((map != null) && !map.visol(4)) {
-			map.enol(4); map.enol(5);
-		    } else {
-			map.disol(4); map.disol(5);
-		    }
-		}
-	    }, 0, 0);
-	mapmenupanel.add(new MenuButton("lbtn-map", kb_map, "Map") {
-		public void click() {
-		    if(mapfile != null) {
-			if(mapfile.show(!mapfile.visible)) {
-			    mapfile.raise();
-			    fitwdg(mapfile);
-			    setfocus(mapfile);
-			}
-			Utils.setprefb("wndvis-map", mapfile.visible);
-		    }
-		}
-	    });
-	mapmenupanel.add(new MenuButton("lbtn-ico", kb_ico, "Icon settings") {
-		public void click() {
-		    if(iconconf == null)
-			return;
-		    if(iconwnd == null) {
-			iconwnd = new GobIcon.SettingsWindow(iconconf, () -> Utils.defer(GameUI.this::saveiconconf));
-			fitwdg(GameUI.this.add(iconwnd, Utils.getprefc("wndc-icon", new Coord(200, 200))));
-		    } else {
-			ui.destroy(iconwnd);
-			iconwnd = null;
-		    }
-		}
-	    }, 0, 0);
     }
 
     public static final KeyBinding kb_srch = KeyBinding.get("scm-srch", KeyMatch.forchar('Z', KeyMatch.C));
@@ -1134,10 +1072,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    wdgmsg("map-icons", conf.tag);
 	    } else if(args[1] instanceof String) {
 		Resource.Spec res = new Resource.Spec(null, (String)args[1], (Integer)args[2]);
-		GobIcon.Setting cset = new GobIcon.Setting();
-		boolean has = conf.settings.containsKey(res);
+		GobIcon.Setting cset = new GobIcon.Setting(res);
+		boolean has = conf.settings.containsKey(res.name);
 		cset.show = cset.defshow = ((Integer)args[3]) != 0;
-		conf.receive(tag, new Resource.Spec[] {res}, new GobIcon.Setting[] {cset});
+		conf.receive(tag, new GobIcon.Setting[] {cset});
 		saveiconconf();
 		if(!has && conf.notify) {
 		    ui.sess.glob.loader.defer(() -> {
@@ -1150,18 +1088,17 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    } else if(args[1] instanceof Object[]) {
 		Object[] sub = (Object[])args[1];
 		int a = 0;
-		Collection<Resource.Spec> res = new ArrayList<>();
 		Collection<GobIcon.Setting> csets = new ArrayList<>();
 		while(a < sub.length) {
 		    String resnm = (String)sub[a++];
 		    int resver = (Integer)sub[a++];
 		    int fl = (Integer)sub[a++];
-		    res.add(new Resource.Spec(null, resnm, resver));
-		    GobIcon.Setting cset = new GobIcon.Setting();
+		    Resource.Spec res = new Resource.Spec(null, resnm, resver);
+		    GobIcon.Setting cset = new GobIcon.Setting(res);
 		    cset.show = cset.defshow = ((fl & 1) != 0);
 		    csets.add(cset);
 		}
-		conf.receive(tag, res.toArray(new Resource.Spec[0]), csets.toArray(new GobIcon.Setting[0]));
+		conf.receive(tag, csets.toArray(new GobIcon.Setting[0]));
 		saveiconconf();
 	    }
 	} else {
@@ -1207,6 +1144,16 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	wdg.c = fitwdg(wdg, wdg.c);
     }
 
+    private void togglewnd(Window wnd) {
+	if(wnd != null) {
+	    if(wnd.show(!wnd.visible)) {
+		wnd.raise();
+		fitwdg(wnd);
+		setfocus(wnd);
+	    }
+	}
+    }
+
     public static class MenuButton extends IButton {
 	MenuButton(String base, KeyBinding gkey, String tooltip) {
 	    super("gfx/hud/" + base, "", "-d", "-h");
@@ -1224,52 +1171,61 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public class MainMenu extends Widget {
 	public MainMenu() {
 	    super(menubg.sz());
-	    add(new MenuButton("rbtn-inv", kb_inv, "Inventory") {
-		    public void click() {
-			if((invwnd != null) && invwnd.show(!invwnd.visible)) {
-			    invwnd.raise();
-			    fitwdg(invwnd);
-			}
-		    }
-		}, 0, 0);
-	    add(new MenuButton("rbtn-equ", kb_equ, "Equipment") {
-		    public void click() {
-			if((equwnd != null) && equwnd.show(!equwnd.visible)) {
-			    equwnd.raise();
-			    fitwdg(equwnd);
-			}
-		    }
-		}, 0, 0);
-	    add(new MenuButton("rbtn-chr", kb_chr, "Character Sheet") {
-		    public void click() {
-			if((chrwdg != null) && chrwdg.show(!chrwdg.visible)) {
-			    chrwdg.raise();
-			    fitwdg(chrwdg);
-			}
-		    }
-		}, 0, 0);
-	    add(new MenuButton("rbtn-bud", kb_bud, "Kith & Kin") {
-		    public void click() {
-			if(zerg.show(!zerg.visible)) {
-			    zerg.raise();
-			    fitwdg(zerg);
-			    setfocus(zerg);
-			}
-		    }
-		}, 0, 0);
-	    add(new MenuButton("rbtn-opt", kb_opt, "Options") {
-		    public void click() {
-			if(opts.show(!opts.visible)) {
-			    opts.raise();
-			    fitwdg(opts);
-			    setfocus(opts);
-			}
-		    }
-		}, 0, 0);
+	    add(new MenuButton("rbtn-inv", kb_inv, "Inventory"), 0, 0).action(() -> togglewnd(invwnd));
+	    add(new MenuButton("rbtn-equ", kb_equ, "Equipment"), 0, 0).action(() -> togglewnd(equwnd));
+	    add(new MenuButton("rbtn-chr", kb_chr, "Character Sheet"), 0, 0).action(() -> togglewnd(chrwdg));
+	    add(new MenuButton("rbtn-bud", kb_bud, "Kith & Kin"), 0, 0).action(() -> togglewnd(zerg));
+	    add(new MenuButton("rbtn-opt", kb_opt, "Options"), 0, 0).action(() -> togglewnd(opts));
 	}
 
 	public void draw(GOut g) {
 	    g.image(menubg, Coord.z);
+	    super.draw(g);
+	}
+    }
+
+    public static final KeyBinding kb_map = KeyBinding.get("map", KeyMatch.forchar('A', KeyMatch.C));
+    public static final KeyBinding kb_claim = KeyBinding.get("ol-claim", KeyMatch.nil);
+    public static final KeyBinding kb_vil = KeyBinding.get("ol-vil", KeyMatch.nil);
+    public static final KeyBinding kb_rlm = KeyBinding.get("ol-rlm", KeyMatch.nil);
+    public static final KeyBinding kb_ico = KeyBinding.get("map-icons", KeyMatch.nil);
+    private static final Tex mapmenubg = Resource.loadtex("gfx/hud/lbtn-bg");
+    public class MapMenu extends Widget {
+	private void toggleol(int id) {
+	    if(map != null) {
+		if(!map.visol(id)) {
+		    map.enol(id); map.enol(id + 1);
+		} else {
+		    map.disol(id); map.disol(id + 1);
+		}
+	    }
+	}
+
+	public MapMenu() {
+	    super(mapmenubg.sz());
+	    add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims"), 0, 0).action(() -> toggleol(0));
+	    add(new MenuButton("lbtn-vil", kb_vil, "Display village claims"), 0, 0).action(() -> toggleol(2));
+	    add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms"), 0, 0).action(() -> toggleol(4));
+	    add(new MenuButton("lbtn-map", kb_map, "Map")).action(() -> {
+		    togglewnd(mapfile);
+		    if(mapfile != null)
+			Utils.setprefb("wndvis-map", mapfile.visible);
+		});
+	    add(new MenuButton("lbtn-ico", kb_ico, "Icon settings"), 0, 0).action(() -> {
+		    if(iconconf == null)
+			return;
+		    if(iconwnd == null) {
+			iconwnd = new GobIcon.SettingsWindow(iconconf, () -> Utils.defer(GameUI.this::saveiconconf));
+			fitwdg(GameUI.this.add(iconwnd, Utils.getprefc("wndc-icon", new Coord(200, 200))));
+		    } else {
+			ui.destroy(iconwnd);
+			iconwnd = null;
+		    }
+		});
+	}
+
+	public void draw(GOut g) {
+	    g.image(mapmenubg, Coord.z);
 	    super.draw(g);
 	}
     }
@@ -1313,7 +1269,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     private int uimode = 1;
     public void toggleui(int mode) {
-	Hidepanel[] panels = {blpanel, brpanel, ulpanel, umpanel, urpanel, menupanel};
+	Hidepanel[] panels = {blpanel, brpanel, ulpanel, umpanel, urpanel, menupanel, mapmenupanel};
 	switch(uimode = mode) {
 	case 0:
 	    for(Hidepanel p : panels)
@@ -1331,7 +1287,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public void resetui() {
-	Hidepanel[] panels = {blpanel, brpanel, ulpanel, umpanel, urpanel, menupanel};
+	Hidepanel[] panels = {blpanel, brpanel, ulpanel, umpanel, urpanel, menupanel, mapmenupanel};
 	for(Hidepanel p : panels)
 	    p.cshow(p.tvis);
 	uimode = 1;

@@ -90,21 +90,23 @@ public class TexI implements Tex {
 	st().data.minfilter(filter);
 	return(this);
     }
+    public TexI filter(Texture.Filter filter) {
+	magfilter(filter);
+	minfilter(filter);
+	return(this);
+    }
     public TexI wrapmode(Texture.Wrapping mode) {
 	st().data.wrapmode(mode);
 	return(this);
     }
 
-    public void render(GOut g, Coord dul, Coord dbr, Coord tul, Coord tbr) {
-	float tl = (float)tul.x / (float)tdim.x;
-	float tu = (float)tul.y / (float)tdim.y;
-	float tr = (float)tbr.x / (float)tdim.x;
-	float tb = (float)tbr.y / (float)tdim.y;
+    public void render(GOut g, float[] gc, float[] tc) {
+	float ix = 1.0f / tdim.x, iy = 1.0f / tdim.y;
 	float[] data = {
-	    dbr.x, dul.y, tr, tu,
-	    dbr.x, dbr.y, tr, tb,
-	    dul.x, dul.y, tl, tu,
-	    dul.x, dbr.y, tl, tb,
+	    gc[2], gc[3], tc[2] * ix, tc[3] * iy,
+	    gc[4], gc[5], tc[4] * ix, tc[5] * iy,
+	    gc[0], gc[1], tc[0] * ix, tc[1] * iy,
+	    gc[6], gc[7], tc[6] * ix, tc[7] * iy,
 	};
 	g.usestate(st());
 	g.drawt(Model.Mode.TRIANGLE_STRIP, data);
