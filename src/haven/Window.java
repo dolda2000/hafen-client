@@ -258,6 +258,13 @@ public class Window extends Widget implements DTarget {
 	doff = off;
     }
 
+    public boolean checkhit(Coord c) {
+	if(decohide)
+	    return(c.isect(atl, asz));
+	Coord cpc = c.sub(cptl);
+	return(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128)));
+    }
+
     public boolean mousedown(Coord c, int button) {
 	if(super.mousedown(c, button)) {
 	    parent.setfocus(this);
@@ -265,8 +272,7 @@ public class Window extends Widget implements DTarget {
 	    return(true);
 	}
 	if(!decohide) {
-	    Coord cpc = c.sub(cptl);
-	    if(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128))) {
+	    if(checkhit(c)) {
 		if(button == 1)
 		    drag(c);
 		parent.setfocus(this);
@@ -326,6 +332,8 @@ public class Window extends Widget implements DTarget {
     }
 
     public Object tooltip(Coord c, Widget prev) {
+	if(!checkhit(c))
+	    return(super.tooltip(c, prev));
 	Object ret = super.tooltip(c, prev);
 	if(ret != null)
 	    return(ret);
