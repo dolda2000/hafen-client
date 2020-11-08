@@ -733,6 +733,45 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
+    private static final Material gridmat = new Material(new BaseColor(255, 255, 255, 48), States.maskdepth, new MapMesh.OLOrder(-1),
+							 Location.xlate(new Coord3f(0, 0, 0.5f))   /* Apparently, there is no depth bias for lines. :P */
+							 );
+    private class GridLines extends MapRaster {
+	final Grid grid = new Grid<RenderTree.Node>() {
+		RenderTree.Node getcut(Coord cc) {
+		    return(map.getcut(cc).grid());
+		}
+	    };
+
+	private GridLines() {}
+
+	void tick() {
+	    super.tick();
+	    if(area != null)
+		grid.tick();
+	}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.ostate(gridmat);
+	    slot.add(grid);
+	    super.added(slot);
+	}
+
+	public void remove() {
+	    slot.remove();
+	}
+    }
+
+    GridLines gridlines = null;
+    public void showgrid(boolean show) {
+	if((gridlines == null) && show) {
+	    basic.add(gridlines = new GridLines());
+	} else if((gridlines != null) && !show) {
+	    gridlines.remove();
+	    gridlines = null;
+	}
+    }
+
     static class MapClick extends Clickable {
 	final MapMesh cut;
 
@@ -1496,6 +1535,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if(ols[i] != null)
 		    ols[i].tick();
 	    }
+	    if(gridlines != null)
+		gridlines.tick();
 	    clickmap.tick();
 	}
 	Loader.Future<Plob> placing = this.placing;
@@ -1894,7 +1935,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return(super.keydown(ev));
     }
 
+    public static final KeyBinding kb_grid = KeyBinding.get("grid", KeyMatch.forchar('G', KeyMatch.C));
     public boolean globtype(char c, KeyEvent ev) {
+	if(kb_grid.key().match(ev)) {
+	    showgrid(gridlines == null);
+	    return(true);
+	}
 	return(false);
     }
 
