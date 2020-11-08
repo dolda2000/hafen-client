@@ -113,8 +113,8 @@ public class MapWnd extends Window implements Console.Directory {
 	    });
 	toolbar.pack();
 	tool = add(new Toolbox());;
-	resize(sz);
 	compact(Utils.getprefb("compact-map", false));
+	resize(sz);
     }
 
     private class ViewFrame extends Frame {
@@ -156,7 +156,7 @@ public class MapWnd extends Window implements Console.Directory {
 	public void mousemove(Coord c) {
 	    if(drag != null) {
 		Coord nsz = parentpos(MapWnd.this, c).add(dragc);
-		nsz.x = Math.max(nsz.x, UI.scale(350));
+		nsz.x = Math.max(nsz.x, UI.scale(150));
 		nsz.y = Math.max(nsz.y, UI.scale(150));
 		MapWnd.this.resize(nsz);
 	    }
@@ -403,8 +403,13 @@ public class MapWnd extends Window implements Console.Directory {
     public void resize(Coord sz) {
 	super.resize(sz);
 	tool.resize(sz.y);
-	tool.c = new Coord(sz.x - tool.sz.x, 0);
-	viewf.resize(new Coord(sz.x - tool.sz.x - UI.scale(10), sz.y));
+	if(!decohide()) {
+	    tool.c = new Coord(sz.x - tool.sz.x, 0);
+	    viewf.resize(tool.pos("bl").subs(10, 0));
+	} else {
+	    viewf.resize(sz);
+	    tool.c = viewf.pos("ur").adds(10, 0);
+	}
 	view.resize(viewf.inner());
 	toolbar.c = viewf.c.add(0, viewf.sz.y - toolbar.sz.y).add(UI.scale(2), UI.scale(-2));
     }
@@ -416,6 +421,7 @@ public class MapWnd extends Window implements Console.Directory {
 	else
 	    newfocusable(tool);
 	decohide(a);
+	pack();
     }
 
     public void recenter() {
