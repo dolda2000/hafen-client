@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.awt.image.WritableRaster;
+import java.util.function.BiConsumer;
 
 public class Inventory extends Widget implements DTarget {
     public static final Coord sqsz = UI.scale(new Coord(33, 33));
@@ -58,7 +59,7 @@ public class Inventory extends Widget implements DTarget {
     @RName("inv")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new Inventory((Coord)args[0]));
+	    return(new ExtInventory((Coord)args[0]));
 	}
     }
 
@@ -79,12 +80,12 @@ public class Inventory extends Widget implements DTarget {
     
     public boolean mousewheel(Coord c, int amount) {
 	if(ui.modshift) {
-	    Inventory minv = getparent(GameUI.class).maininv;
-	    if(minv != this) {
+	    ExtInventory minv = getparent(GameUI.class).maininv;
+	    if(minv != this.parent) {
 		if(amount < 0)
 		    wdgmsg("invxf", minv.wdgid(), 1);
 		else if(amount > 0)
-		    minv.wdgmsg("invxf", this.wdgid(), 1);
+		    minv.wdgmsg("invxf", parent.wdgid(), 1);
 	    }
 	}
 	return(true);
@@ -130,5 +131,9 @@ public class Inventory extends Widget implements DTarget {
 	} else {
 	    super.uimsg(msg, args);
 	}
+    }
+
+    public void forEachItem(BiConsumer<GItem, WItem> consumer) {
+	wmap.forEach(consumer);
     }
 }
