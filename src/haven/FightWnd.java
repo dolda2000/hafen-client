@@ -680,7 +680,7 @@ public class FightWnd extends Widget {
 
 	public boolean keydown(KeyEvent ev) {
 	    if(edit != -1) {
-		if(ev.getKeyChar() == 27) {
+		if(key_esc.match(ev)) {
 		    edit = -1;
 		    redit = null;
 		    nmed = null;

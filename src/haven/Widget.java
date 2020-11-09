@@ -866,16 +866,18 @@ public class Widget {
 	return(this);
     }
 	
+    public static final KeyMatch key_act = KeyMatch.forcode(KeyEvent.VK_ENTER, 0);
+    public static final KeyMatch key_esc = KeyMatch.forcode(KeyEvent.VK_ESCAPE, 0);
+    public static final KeyMatch key_tab = KeyMatch.forcode(KeyEvent.VK_TAB, 0);
     public boolean keydown(KeyEvent ev) {
-	char key = ev.getKeyChar();
 	if(canactivate) {
-	    if(key == 10) {
+	    if(key_act.match(ev)) {
 		wdgmsg("activate");
 		return(true);
 	    }
 	}
 	if(cancancel) {
-	    if(key == 27) {
+	    if(key_esc.match(ev)) {
 		wdgmsg("cancel");
 		return(true);
 	    }
@@ -885,7 +887,7 @@ public class Widget {
 		if(focused.keydown(ev))
 		    return(true);
 		if(focustab) {
-		    if(key == '\t') {
+		    if(key_tab.match(ev)) {
 			Widget f = focused;
 			while(true) {
 			    if((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) == 0) {

@@ -312,7 +312,7 @@ public class Window extends Widget implements DTarget {
     public boolean keydown(java.awt.event.KeyEvent ev) {
 	if(super.keydown(ev))
 	    return(true);
-	if(ev.getKeyChar() == 27) {
+	if(key_esc.match(ev)) {
 	    wdgmsg("close");
 	    return(true);
 	}

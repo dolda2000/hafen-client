@@ -246,7 +246,7 @@ public class LoginScreen extends Widget {
     }
 
     public boolean keydown(KeyEvent ev) {
-	if(ev.getKeyChar() == 10) {
+	if(key_act.match(ev)) {
 	    if((cur != null) && cur.enter())
 		wdgmsg("login", cur.data());
 	    return(true);
