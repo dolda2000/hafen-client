@@ -1104,6 +1104,73 @@ public class Widget {
 	return(null);
     }
     
+    public class Children extends AbstractSequentialList<Widget> {
+	protected Children() {
+	}
+
+	public int size() {
+	    int n = 0;
+	    for(Widget ch : this)
+		n++;
+	    return(n);
+	}
+
+	public ListIterator<Widget> listIterator(int idx) {
+	    ListIterator<Widget> ret = new ListIterator<Widget>() {
+		    Widget next = child, prev = null;
+		    Widget last = null;
+		    int idx = -1;
+
+		    public boolean hasNext() {
+			return(next != null);
+		    }
+
+		    public boolean hasPrevious() {
+			return(prev != null);
+		    }
+
+		    public Widget next() {
+			if(next == null)
+			    throw(new NoSuchElementException());
+			last = next;
+			next = last.next;
+			prev = last;
+			idx++;
+			return(last);
+		    }
+
+		    public Widget previous() {
+			if(prev == null)
+			    throw(new NoSuchElementException());
+			last = prev;
+			next = last;
+			prev = last.prev;
+			idx--;
+			return(last);
+		    }
+
+		    public void add(Widget wdg) {throw(new UnsupportedOperationException());}
+		    public void set(Widget wdg) {throw(new UnsupportedOperationException());}
+		    public void remove() {
+			if(last == null)
+			    throw(new IllegalStateException());
+			if(next == last)
+			    next = next.next;
+			if(prev == last)
+			    prev = prev.prev;
+			last.destroy();
+			last = null;
+		    }
+
+		    public int nextIndex() {return(idx + 1);}
+		    public int previousIndex() {return(idx);}
+		};
+	    for(int i = 0; i < idx; i++)
+		ret.next();
+	    return(ret);
+	}
+    }
+
     public <T extends Widget> Set<T> children(final Class<T> cl) {
 	return(new AbstractSet<T>() {
 		public int size() {
