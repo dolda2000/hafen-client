@@ -28,15 +28,17 @@ package haven;
 
 import java.util.*;
 import haven.render.*;
+import haven.render.RenderTree.Node;
+import haven.render.RenderTree.Slot;
 
 public interface RenderLink {
-    public RenderTree.Node make();
+    public Node make();
     
     public static class MeshMat implements RenderLink {
 	public final Resource srcres;
 	public final Indir<Resource> mesh, mat;
 	public final int meshid, matid;
-	private RenderTree.Node res = null;
+	private Node res = null;
 
 	public MeshMat(Resource srcres, Indir<Resource> mesh, int meshid, Indir<Resource> mat, int matid) {
 	    this.srcres = srcres;
@@ -58,7 +60,7 @@ public interface RenderLink {
 	    return(new MeshMat(res, mesh, meshid, mat, matid));
 	}
 
-	public RenderTree.Node make() {
+	public Node make() {
 	    if(res == null) {
 		FastMesh m = null;
 		for(FastMesh.MeshRes mr : mesh.get().layers(FastMesh.MeshRes.class)) {
@@ -97,7 +99,7 @@ public interface RenderLink {
 	    return(new AmbientLink(res.pool.load(nm, ver)));
 	}
 
-	public RenderTree.Node make() {
+	public Node make() {
 	    return(new ActAudio.Ambience(res.get()));
 	}
     }
@@ -105,7 +107,7 @@ public interface RenderLink {
     public static class Collect implements RenderLink {
 	public final Indir<Resource> from;
 	public final int meshid, meshmask;
-	private RenderTree.Node res;
+	private Node res;
 
 	public Collect(Indir<Resource> from, int meshid, int meshmask) {
 	    this.from = from;
@@ -122,17 +124,17 @@ public interface RenderLink {
 	    return(new Collect(lres, meshid, meshmask));
 	}
 
-	public RenderTree.Node make() {
+	public Node make() {
 	    if(res == null) {
-		ArrayList<RenderTree.Node> cl = new ArrayList<>();
+		ArrayList<Node> cl = new ArrayList<>();
 		for(FastMesh.MeshRes mr : from.get().layers(FastMesh.MeshRes.class)) {
 		    if(((meshid >= 0) && (mr.id < 0)) || ((mr.id & meshmask) == meshid))
 			cl.add(mr.mat.get().apply(mr.m));
 		}
-		final RenderTree.Node[] ca = cl.toArray(new RenderTree.Node[0]);
-		res = new RenderTree.Node() {
-			public void added(RenderTree.Slot slot) {
-			    for(RenderTree.Node r : ca)
+		final Node[] ca = cl.toArray(new Node[0]);
+		res = new Node() {
+			public void added(Slot slot) {
+			    for(Node r : ca)
 				slot.add(r);
 			}
 		    };
