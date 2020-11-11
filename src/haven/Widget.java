@@ -1171,6 +1171,11 @@ public class Widget {
 	}
     }
 
+    public List<Widget> children() {
+	return(new Children());
+    }
+
+    /* XXX: Should be renamed to rchildren at this point. */
     public <T extends Widget> Set<T> children(final Class<T> cl) {
 	return(new AbstractSet<T>() {
 		public int size() {
