@@ -1124,37 +1124,50 @@ public class Widget {
 
 	public ListIterator<Widget> listIterator() {
 	    return(new ListIterator<Widget>() {
-		    Widget cur = null;
+		    Widget next = child, prev = null;
+		    Widget last = null;
 		    int idx = -1;
 
 		    public boolean hasNext() {
-			return((cur == null) ? (child != null) : (cur.next != null));
+			return(next != null);
 		    }
 
 		    public boolean hasPrevious() {
-			return(cur != null);
+			return(prev != null);
 		    }
 
 		    public Widget next() {
-			Widget ret = (cur == null) ? child : cur.next;
-			if(ret == null)
+			if(next == null)
 			    throw(new NoSuchElementException());
+			last = next;
+			next = last.next;
+			prev = last;
 			idx++;
-			return(cur = ret);
+			return(last);
 		    }
 
 		    public Widget previous() {
-			Widget ret = cur;
-			if(ret == null)
+			if(prev == null)
 			    throw(new NoSuchElementException());
+			last = prev;
+			next = last;
+			prev = last.prev;
 			idx--;
-			cur = ret.prev;
-			return(ret);
+			return(last);
 		    }
 
 		    public void add(Widget wdg) {throw(new UnsupportedOperationException());}
 		    public void set(Widget wdg) {throw(new UnsupportedOperationException());}
-		    public void remove() {throw(new UnsupportedOperationException());}
+		    public void remove() {
+			if(last == null)
+			    throw(new IllegalStateException());
+			if(next == last)
+			    next = next.next;
+			if(prev == last)
+			    prev = prev.prev;
+			last.destroy();
+			last = null;
+		    }
 
 		    public int nextIndex() {return(idx + 1);}
 		    public int previousIndex() {return(idx);}
