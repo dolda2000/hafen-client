@@ -1104,7 +1104,7 @@ public class Widget {
 	return(null);
     }
     
-    public class Children extends AbstractList<Widget> {
+    public class Children extends AbstractSequentialList<Widget> {
 	protected Children() {
 	}
 
@@ -1115,15 +1115,8 @@ public class Widget {
 	    return(n);
 	}
 
-	public Widget get(int idx) {
-	    Widget wdg = child;
-	    for(int i = 0; i < idx; i++)
-		wdg = wdg.next;
-	    return(wdg);
-	}
-
-	public ListIterator<Widget> listIterator() {
-	    return(new ListIterator<Widget>() {
+	public ListIterator<Widget> listIterator(int idx) {
+	    ListIterator<Widget> ret = new ListIterator<Widget>() {
 		    Widget next = child, prev = null;
 		    Widget last = null;
 		    int idx = -1;
@@ -1171,7 +1164,10 @@ public class Widget {
 
 		    public int nextIndex() {return(idx + 1);}
 		    public int previousIndex() {return(idx);}
-		});
+		};
+	    for(int i = 0; i < idx; i++)
+		ret.next();
+	    return(ret);
 	}
     }
 
