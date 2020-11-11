@@ -1104,6 +1104,64 @@ public class Widget {
 	return(null);
     }
     
+    public class Children extends AbstractList<Widget> {
+	protected Children() {
+	}
+
+	public int size() {
+	    int n = 0;
+	    for(Widget ch : this)
+		n++;
+	    return(n);
+	}
+
+	public Widget get(int idx) {
+	    Widget wdg = child;
+	    for(int i = 0; i < idx; i++)
+		wdg = wdg.next;
+	    return(wdg);
+	}
+
+	public ListIterator<Widget> listIterator() {
+	    return(new ListIterator<Widget>() {
+		    Widget cur = null;
+		    int idx = -1;
+
+		    public boolean hasNext() {
+			return((cur == null) ? (child != null) : (cur.next != null));
+		    }
+
+		    public boolean hasPrevious() {
+			return(cur != null);
+		    }
+
+		    public Widget next() {
+			Widget ret = (cur == null) ? child : cur.next;
+			if(ret == null)
+			    throw(new NoSuchElementException());
+			idx++;
+			return(cur = ret);
+		    }
+
+		    public Widget previous() {
+			Widget ret = cur;
+			if(ret == null)
+			    throw(new NoSuchElementException());
+			idx--;
+			cur = ret.prev;
+			return(ret);
+		    }
+
+		    public void add(Widget wdg) {throw(new UnsupportedOperationException());}
+		    public void set(Widget wdg) {throw(new UnsupportedOperationException());}
+		    public void remove() {throw(new UnsupportedOperationException());}
+
+		    public int nextIndex() {return(idx + 1);}
+		    public int previousIndex() {return(idx);}
+		});
+	}
+    }
+
     public <T extends Widget> Set<T> children(final Class<T> cl) {
 	return(new AbstractSet<T>() {
 		public int size() {
