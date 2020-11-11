@@ -91,15 +91,15 @@ public abstract class Sprite implements RenderTree.Node {
     public interface Factory {
 	public Sprite create(Owner owner, Resource res, Message sdt);
     }
-    
+
     public static class ResourceException extends RuntimeException {
 	public Resource res;
-		
+
 	public ResourceException(String msg, Resource res) {
 	    super(msg + " (" + res + ", from " + res.source + ")");
 	    this.res = res;
 	}
-		
+
 	public ResourceException(String msg, Throwable cause, Resource res) {
 	    super(msg + " (" + res + ", from " + res.source + ")", cause);
 	    this.res = res;
@@ -147,7 +147,7 @@ public abstract class Sprite implements RenderTree.Node {
 
     public void gtick(Render g) {
     }
-    
+
     public void dispose() {
     }
 }
