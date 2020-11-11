@@ -121,7 +121,7 @@ public class ChatUI extends Widget {
 		    p = m.end();
 		    continue;
 		}
-		RichText.Part lead = new RichText.TextPart(text.substring(0, m.start()), attrs);
+		RichText.Part lead = new RichText.TextPart(text.substring(p, m.start()), attrs);
 		if(ret == null) ret = lead; else ret.append(lead);
 		Map<Attribute, Object> na = new HashMap<Attribute, Object>(attrs);
 		na.putAll(urlstyle);
