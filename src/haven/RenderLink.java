@@ -28,11 +28,13 @@ package haven;
 
 import java.util.*;
 import haven.render.*;
+import haven.Sprite.Owner;
 import haven.render.RenderTree.Node;
 import haven.render.RenderTree.Slot;
 
 public interface RenderLink {
-    public Node make();
+    public Node make(Owner owner);
+    public default Node make() {return(make(null));}
     
     public static class MeshMat implements RenderLink {
 	public final Resource srcres;
@@ -60,7 +62,7 @@ public interface RenderLink {
 	    return(new MeshMat(res, mesh, meshid, mat, matid));
 	}
 
-	public Node make() {
+	public Node make(Owner owner) {
 	    if(res == null) {
 		FastMesh m = null;
 		for(FastMesh.MeshRes mr : mesh.get().layers(FastMesh.MeshRes.class)) {
@@ -99,7 +101,7 @@ public interface RenderLink {
 	    return(new AmbientLink(res.pool.load(nm, ver)));
 	}
 
-	public Node make() {
+	public Node make(Owner owner) {
 	    return(new ActAudio.Ambience(res.get()));
 	}
     }
@@ -124,7 +126,7 @@ public interface RenderLink {
 	    return(new Collect(lres, meshid, meshmask));
 	}
 
-	public Node make() {
+	public Node make(Owner owner) {
 	    if(res == null) {
 		ArrayList<Node> cl = new ArrayList<>();
 		for(FastMesh.MeshRes mr : from.get().layers(FastMesh.MeshRes.class)) {
