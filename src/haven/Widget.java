@@ -674,22 +674,7 @@ public class Widget {
 	    if(tt instanceof String) {
 		settip((String)tt);
 	    } else if(tt instanceof Integer) {
-		final Indir<Resource> tres = ui.sess.getres((Integer)tt);
-		tooltip = new Indir<Tex>() {
-		    Text t = null;
-		    public Tex get() {
-			if(t == null) {
-			    Resource.Pagina pag;
-			    try {
-				pag = tres.get().layer(Resource.pagina);
-			    } catch(Loading e) {
-				return(null);
-			    }
-			    t = RichText.render(pag.text, 300);
-			}
-			return(t.tex());
-		    }
-		};
+		tooltip = new PaginaTip(ui.sess.getres((Integer)tt));
 	    }
 	} else if(msg == "gk") {
 	    if(args[0] instanceof Integer) {
@@ -1242,6 +1227,50 @@ public class Widget {
 	    return((cursor == null)?null:cursor.get());
 	} catch(Loading l) {
 	    return(null);
+	}
+    }
+
+    public static class PaginaTip implements Indir<Tex> {
+	public final String title;
+	public final Indir<Resource> res;
+	private Tex rend;
+	private boolean hasrend = false;
+
+	public PaginaTip(Indir<Resource> res, String title) {
+	    this.res = res;
+	    this.title = title;
+	}
+
+	public PaginaTip(Indir<Resource> res) {
+	    this(res, null);
+	}
+
+	public Tex get() {
+	    if(!hasrend) {
+		render: {
+		    try {
+			Resource.Pagina pag = res.get().layer(Resource.pagina);
+			if(pag == null)
+			    break render;
+			String text;
+			if(title == null) {
+			    if(pag.text.length() == 0)
+				break render;
+			    text = pag.text;
+			} else {
+			    if(pag.text.length() == 0)
+				text = title;
+			    else
+				text = title + "\n\n" + pag.text;
+			}
+			rend = RichText.render(text, 300).tex();
+		    } catch(Loading l) {
+			return(null);
+		    }
+		}
+		hasrend = true;
+	    }
+	    return(rend);
 	}
     }
 
