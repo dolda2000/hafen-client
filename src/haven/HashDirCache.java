@@ -137,24 +137,56 @@ public class HashDirCache implements ResCache {
      * blocking interruptions until complete should be perfectly
      * okay. */
     private static LockedFile lock2(File path) throws IOException {
+	double[] retimes = {0.01, 0.1, 0.5, 1.0, 5.0};
 	boolean intr = false;
 	try {
-	    while(true) {
+	    Throwable last = null;
+	    for(int r = 0; true; r++) {
+		/* XXX: Sometimes, this is getting strange and weird
+		 * errors from the OS. On Windows, file sharing
+		 * violations are sometimes returned even though Java
+		 * always opens RandomAccessFiles in non-exclusive
+		 * mode. On Linux, I'm sometimes getting
+		 * OverlappingFileLockExceptions even though I'm
+		 * explicitly synchronizing access to the same file
+		 * chain down in lookup(). I've had zero luck in
+		 * trying to find a root cause for these errors, so
+		 * just assume the error is transient and retry. :P */
 		try {
-		    RandomAccessFile fp = null;
-		    try {
-			fp = new RandomAccessFile(path, "rw");
-			FileLock lk = fp.getChannel().lock();
-			LockedFile ret = new LockedFile(fp, lk);
-			fp = null;
-			return(ret);
-		    } finally {
-			if(fp != null)
-			    fp.close();
+		    while(true) {
+			try {
+			    RandomAccessFile fp = null;
+			    try {
+				fp = new RandomAccessFile(path, "rw");
+				FileLock lk = fp.getChannel().lock();
+				LockedFile ret = new LockedFile(fp, lk);
+				fp = null;
+				return(ret);
+			    } finally {
+				if(fp != null)
+				    fp.close();
+			    }
+			} catch(FileLockInterruptionException e) {
+			    Thread.currentThread().interrupted();
+			    intr = true;
+			}
 		    }
-		} catch(FileLockInterruptionException e) {
-		    Thread.currentThread().interrupted();
-		    intr = true;
+		} catch(RuntimeException | IOException exc) {
+		    if(last == null)
+			new Warning(exc, "weird error occurred when locking cache file " + path).issue();
+		    if(last != null)
+			exc.addSuppressed(last);
+		    last = exc;
+		    if(r < retimes.length) {
+			try {
+			    Thread.sleep((long)(retimes[r] * 1000));
+			} catch(InterruptedException irq) {
+			    Thread.currentThread().interrupted();
+			    intr = true;
+			}
+		    } else {
+			throw(exc);
+		    }
 		}
 	    }
 	} finally {
