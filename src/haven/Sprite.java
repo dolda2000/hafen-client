@@ -52,6 +52,13 @@ public abstract class Sprite implements RenderTree.Node {
 	public default Glob glob() {return(context(Glob.class));}
     }
 
+    public class RecOwner implements Owner {
+	public Random mkrandoom() {return(owner.mkrandoom());}
+	public <T> T context(Class<T> cl) {return(owner.context(cl));}
+
+	public Resource getres() {return(res);}
+    }
+
     public static interface CDel {
 	public void delete();
     }
