@@ -1207,7 +1207,7 @@ public class Resource implements Serializable {
 	private Collection<Indir<Resource>> classpath = new LinkedList<Indir<Resource>>();
 	transient private ClassLoader loader;
 	transient private Map<String, Class<?>> lpe = null;
-	transient private Map<Class<?>, Object> ipe = new HashMap<Class<?>, Object>();
+	transient private Map<String, Object> ipe = new HashMap<String, Object>();
 
 	public CodeEntry(Message buf) {
 	    while(!buf.eom()) {
@@ -1314,19 +1314,23 @@ public class Resource implements Serializable {
 	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
 	    if(entry == null)
 		throw(new RuntimeException("Tried to fetch non-published res-loaded class " + cl.getName() + " from " + Resource.this.name));
-	    Class<?> acl;
-	    synchronized(lpe) {
-		if((acl = lpe.get(entry.name())) == null) {
-		    if(fail)
-			throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
-		    return(null);
-		}
-	    }
 	    synchronized(ipe) {
 		Object pinst;
-		if((pinst = ipe.get(acl)) != null) {
-		    return(cl.cast(pinst));
+		if((pinst = ipe.get(entry.name())) != null) {
+		    try {
+			return(cl.cast(pinst));
+		    } catch(ClassCastException e) {
+			throw(new RuntimeException(String.format("Illegal entry-point class specified for %s in %s", entry.name(), Resource.this.name), e));
+		    }
 		} else {
+		    Class<?> acl;
+		    synchronized(lpe) {
+			if((acl = lpe.get(entry.name())) == null) {
+			    if(fail)
+				throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
+			    return(null);
+			}
+		    }
 		    T inst;
 		    Object rinst = AccessController.doPrivileged((PrivilegedAction<Object>)() -> {
 			    if(entry.instancer() != PublishedCode.Instancer.class)
@@ -1339,7 +1343,7 @@ public class Resource implements Serializable {
 		    } catch(ClassCastException e) {
 			throw(new ClassCastException("Published class in " + Resource.this.name + " is not of type " + cl));
 		    }
-		    ipe.put(acl, inst);
+		    ipe.put(entry.name(), inst);
 		    return(inst);
 		}
 	    }
