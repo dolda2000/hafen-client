@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import haven.render.*;
 import haven.Sprite.Owner;
 import haven.render.RenderTree.Node;
@@ -145,6 +146,59 @@ public interface RenderLink {
 	}
     }
 
+    public static class Parameters implements RenderLink {
+	public final Indir<Resource> res;
+	public final Object[] args;
+	private Resource lres;
+	private ArgLink link = null;
+
+	public Parameters(Indir<Resource> res, Object[] args) {
+	    this.res = res;
+	    this.args = args;
+	}
+
+	public static Parameters parse(Resource res, Message buf) {
+	    String nm = buf.string();
+	    int ver = buf.uint16();
+	    Object[] args = buf.list();
+	    return(new Parameters(res.pool.load(nm, ver), args));
+	}
+
+	public Node make(Owner owner) {
+	    if(link == null) {
+		if(lres == null)
+		    lres = res.get();
+		link = lres.getcode(ArgLink.class, true);
+	    }
+	    return(link.create(owner, lres, args));
+	}
+    }
+
+    public static class ArgMaker implements Resource.PublishedCode.Instancer {
+	public ArgLink make(Class<?> cl) {
+	    if(ArgLink.class.isAssignableFrom(cl)) {
+		return(Utils.construct(cl.asSubclass(ArgLink.class)));
+	    }
+	    try {
+		Function<Object[], Node> make = Utils.smthfun(cl, "mkrlink", Node.class, Owner.class, Resource.class, Object[].class);
+		return((owner, res, args) -> make.apply(new Object[] {owner, res, args}));
+	    } catch(NoSuchMethodException e) {}
+	    if(Node.class.isAssignableFrom(cl)) {
+		Class<? extends Node> scl = cl.asSubclass(Node.class);
+		try {
+		    Function<Object[], ? extends Node> make = Utils.consfun(scl, Owner.class, Resource.class, Object[].class);
+		    return((owner, res, args) -> make.apply(new Object[] {owner, res, args}));
+		} catch(NoSuchMethodException e) {}
+	    }
+	    throw(new RuntimeException("Could not find any suitable construct for dynamic renderlink"));
+	}
+    }
+
+    @Resource.PublishedCode(name = "rlink", instancer = ArgMaker.class)
+    public interface ArgLink {
+	public Node create(Owner owner, Resource res, Object... args);
+    }
+
     @Resource.LayerName("rlink")
     public class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public transient final RenderLink l;
@@ -169,6 +223,8 @@ public interface RenderLink {
 		l = AmbientLink.parse(res, buf);
 	    } else if(t == 2) {
 		l = Collect.parse(res, buf);
+	    } else if(t == 3) {
+		l = Parameters.parse(res, buf);
 	    } else {
 		throw(new Resource.LoadException("Invalid renderlink type: " + t, res));
 	    }
