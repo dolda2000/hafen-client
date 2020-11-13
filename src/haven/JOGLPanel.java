@@ -223,9 +223,15 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	public void run(GL3 gl) {
 	    long start = System.nanoTime();
 	    boolean iswap = iswap();
+	    if(debuggl)
+		haven.render.gl.GLException.checkfor(gl, null);
 	    if(iswap != aswap)
 		gl.setSwapInterval((aswap = iswap) ? 1 : 0);
+	    if(debuggl)
+		haven.render.gl.GLException.checkfor(gl, null);
 	    JOGLPanel.this.swapBuffers();
+	    if(debuggl)
+		haven.render.gl.GLException.checkfor(gl, null);
 	    ridletime += System.nanoTime() - start;
 	    framelag = JOGLPanel.this.frameno - frameno;
 	}
