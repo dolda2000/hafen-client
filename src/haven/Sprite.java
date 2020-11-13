@@ -52,11 +52,13 @@ public abstract class Sprite implements RenderTree.Node {
 	public default Glob glob() {return(context(Glob.class));}
     }
 
-    public class RecOwner implements Owner {
+    public class RecOwner implements Owner, Skeleton.HasPose {
 	public Random mkrandoom() {return(owner.mkrandoom());}
 	public <T> T context(Class<T> cl) {return(owner.context(cl));}
 
 	public Resource getres() {return(res);}
+
+	public Skeleton.Pose getpose() {return(Skeleton.getpose(Sprite.this));}
     }
 
     public static interface CDel {
