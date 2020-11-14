@@ -1119,7 +1119,11 @@ public class Resource implements Serializable {
 	Class<? extends Instancer> instancer() default Instancer.class;
 	public interface Instancer {
 	    public Object make(Class<?> cl);
+	    public static final Instancer simple = cl -> {
+		return(Utils.construct(cl));
+	    };
 	}
+	public static final Map<PublishedCode, Instancer> instancers = new WeakHashMap<>();
     }
 
     @LayerName("code")
@@ -1319,10 +1323,16 @@ public class Resource implements Serializable {
 		    if(acl == null)
 			return(null);
 		    inst = AccessController.doPrivileged((PrivilegedAction<Object>)() -> {
-			    if(entry.instancer() != PublishedCode.Instancer.class)
-				return(Utils.construct(entry.instancer()).make(acl));
-			    else
-				return(Utils.construct(acl));
+			    PublishedCode.Instancer mk;
+			    synchronized(PublishedCode.instancers) {
+				mk = PublishedCode.instancers.computeIfAbsent(entry, k -> {
+					if(k.instancer() == PublishedCode.Instancer.class)
+					    return(PublishedCode.Instancer.simple);
+					else
+					    return(Utils.construct(k.instancer()));
+				    });
+			    }
+			    return(mk.make(acl));
 			});
 		    ipe.put(entry.name(), inst);
 		}
