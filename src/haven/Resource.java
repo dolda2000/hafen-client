@@ -1118,8 +1118,13 @@ public class Resource implements Serializable {
 	String name();
 	Class<? extends Instancer> instancer() default Instancer.class;
 	public interface Instancer {
-	    public Object make(Class<?> cl);
-	    public static final Instancer simple = cl -> {
+	    public Object make(Class<?> cl, Object... args);
+
+	    public static final Instancer simple = (cl, args) -> {
+		try {
+		    Constructor<?> cons = cl.getConstructor(Object[].class);
+		    return(Utils.construct(cons, args));
+		} catch(NoSuchMethodException e) {}
 		return(Utils.construct(cl));
 	    };
 	}
@@ -1207,6 +1212,7 @@ public class Resource implements Serializable {
     public class CodeEntry extends Layer {
 	private final Map<String, Code> clmap = new HashMap<>();
 	private final Map<String, String> pe = new HashMap<>();
+	private final Map<String, Object[]> pa = new HashMap<>();
 	private final Collection<Indir<Resource>> classpath = new ArrayList<>();
 	transient private ClassLoader loader;
 	transient private final Map<String, Class<?>> lpe = new HashMap<>();
@@ -1215,13 +1221,15 @@ public class Resource implements Serializable {
 	public CodeEntry(Message buf) {
 	    while(!buf.eom()) {
 		int t = buf.uint8();
-		if(t == 1) {
+		if((t == 1) || (t == 3)) {
 		    while(true) {
 			String en = buf.string();
 			String cn = buf.string();
 			if(en.length() == 0)
 			    break;
 			pe.put(en, cn);
+			if(t == 3)
+			    pa.put(en, buf.list());
 		    }
 		} else if(t == 2) {
 		    while(true) {
@@ -1322,6 +1330,7 @@ public class Resource implements Serializable {
 		    Class<?> acl = getentry(cl, fail);
 		    if(acl == null)
 			return(null);
+		    Object[] args = pa.getOrDefault(entry.name(), new Object[0]);
 		    inst = AccessController.doPrivileged((PrivilegedAction<Object>)() -> {
 			    PublishedCode.Instancer mk;
 			    synchronized(PublishedCode.instancers) {
@@ -1332,7 +1341,7 @@ public class Resource implements Serializable {
 					    return(Utils.construct(k.instancer()));
 				    });
 			    }
-			    return(mk.make(acl));
+			    return(mk.make(acl, args));
 			});
 		    ipe.put(entry.name(), inst);
 		}

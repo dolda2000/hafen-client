@@ -75,7 +75,7 @@ public abstract class ItemInfo {
     }
 
     public static class FactMaker implements Resource.PublishedCode.Instancer {
-	public InfoFactory make(Class<?> cl) {
+	public InfoFactory make(Class<?> cl, Object... args) {
 	    if(InfoFactory.class.isAssignableFrom(cl))
 		return(Utils.construct(cl.asSubclass(InfoFactory.class)));
 	    try {

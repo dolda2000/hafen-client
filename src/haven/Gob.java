@@ -169,7 +169,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	}
 
 	public static class FactMaker implements Resource.PublishedCode.Instancer {
-	    public Factory make(Class<?> cl) {
+	    public Factory make(Class<?> cl, Object... args) {
 		if(Factory.class.isAssignableFrom(cl))
 		    return(Utils.construct(cl.asSubclass(Factory.class)));
 		if(ResAttr.class.isAssignableFrom(cl)) {
