@@ -67,9 +67,9 @@ public abstract class GSprite implements Drawn {
 	    throw(new RuntimeException("Could not find any suitable constructor for dynamic sprite"));
 	}
 
-	public Factory make(Class<?> cl, Resource ires, Object... args) {
+	public Factory make(Class<?> cl, Resource ires, Object... argv) {
 	    if(Factory.class.isAssignableFrom(cl))
-		return(Utils.construct(cl.asSubclass(Factory.class)));
+		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Factory.class), ires, argv));
 	    if(GSprite.class.isAssignableFrom(cl))
 		return(dynfact(cl.asSubclass(GSprite.class)));
 	    throw(new RuntimeException("Could not find construct sprite factory for dynamic sprite class " + cl));

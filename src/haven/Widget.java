@@ -142,9 +142,9 @@ public class Widget {
     }
 
     public static class FactMaker implements Resource.PublishedCode.Instancer {
-	public Factory make(Class<?> cl, Resource ires, Object... args) {
+	public Factory make(Class<?> cl, Resource ires, Object... argv) {
 	    if(Factory.class.isAssignableFrom(cl))
-		return(Utils.construct(cl.asSubclass(Factory.class)));
+		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Factory.class), ires, argv));
 	    try {
 		final Method mkm = cl.getDeclaredMethod("mkwidget", UI.class, Object[].class);
 		int mod = mkm.getModifiers();

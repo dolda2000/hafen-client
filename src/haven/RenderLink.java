@@ -176,9 +176,8 @@ public interface RenderLink {
 
     public static class ArgMaker implements Resource.PublishedCode.Instancer {
 	public ArgLink make(Class<?> cl, Resource ires, Object... argv) {
-	    if(ArgLink.class.isAssignableFrom(cl)) {
-		return(Utils.construct(cl.asSubclass(ArgLink.class)));
-	    }
+	    if(ArgLink.class.isAssignableFrom(cl))
+		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(ArgLink.class), ires, argv));
 	    try {
 		Function<Object[], Node> make = Utils.smthfun(cl, "mkrlink", Node.class, Owner.class, Resource.class, Object[].class);
 		return((owner, res, args) -> make.apply(new Object[] {owner, res, args}));
