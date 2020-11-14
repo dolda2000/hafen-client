@@ -70,7 +70,7 @@ public abstract class Sprite implements RenderTree.Node {
     }
 
     public static class FactMaker implements Resource.PublishedCode.Instancer {
-	public Factory make(Class<?> cl, Object... args) {
+	public Factory make(Class<?> cl, Resource ires, Object... args) {
 	    if(Factory.class.isAssignableFrom(cl)) {
 		try {
 		    Constructor<? extends Factory> cons = cl.asSubclass(Factory.class).getConstructor(Object[].class);

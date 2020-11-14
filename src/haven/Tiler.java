@@ -219,7 +219,7 @@ public abstract class Tiler {
     }
     
     public static class FactMaker implements Resource.PublishedCode.Instancer {
-	public Factory make(Class<?> cl, Object... args) {
+	public Factory make(Class<?> cl, Resource ires, Object... args) {
 	    if(Factory.class.isAssignableFrom(cl)) {
 		return(Utils.construct(cl.asSubclass(Factory.class)));
 	    } else if(Tiler.class.isAssignableFrom(cl)) {

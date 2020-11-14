@@ -175,7 +175,7 @@ public interface RenderLink {
     }
 
     public static class ArgMaker implements Resource.PublishedCode.Instancer {
-	public ArgLink make(Class<?> cl, Object... argv) {
+	public ArgLink make(Class<?> cl, Resource ires, Object... argv) {
 	    if(ArgLink.class.isAssignableFrom(cl)) {
 		return(Utils.construct(cl.asSubclass(ArgLink.class)));
 	    }

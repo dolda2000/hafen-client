@@ -1118,9 +1118,9 @@ public class Resource implements Serializable {
 	String name();
 	Class<? extends Instancer> instancer() default Instancer.class;
 	public interface Instancer {
-	    public Object make(Class<?> cl, Object... args);
+	    public Object make(Class<?> cl, Resource res, Object... args);
 
-	    public static final Instancer simple = (cl, args) -> {
+	    public static final Instancer simple = (cl, res, args) -> {
 		try {
 		    Constructor<?> cons = cl.getConstructor(Object[].class);
 		    return(Utils.construct(cons, args));
@@ -1341,7 +1341,7 @@ public class Resource implements Serializable {
 					    return(Utils.construct(k.instancer()));
 				    });
 			    }
-			    return(mk.make(acl, args));
+			    return(mk.make(acl, Resource.this, args));
 			});
 		    ipe.put(entry.name(), inst);
 		}
