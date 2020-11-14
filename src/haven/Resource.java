@@ -1120,6 +1120,22 @@ public class Resource implements Serializable {
 	public interface Instancer {
 	    public Object make(Class<?> cl, Resource res, Object... args);
 
+	    public static <T> T stdmake(Class<T> cl, Resource ires, Object[] args) {
+		try {
+		    Constructor<T> cons = cl.getConstructor(Resource.class, Object[].class);
+		    return(Utils.construct(cons, new Object[] {ires, args}));
+		} catch(NoSuchMethodException e) {}
+		try {
+		    Constructor<T> cons = cl.getConstructor(Object[].class);
+		    return(Utils.construct(cons, new Object[] {args}));
+		} catch(NoSuchMethodException e) {}
+		try {
+		    Constructor<T> cons = cl.getConstructor(Resource.class);
+		    return(Utils.construct(cons, new Object[] {ires}));
+		} catch(NoSuchMethodException e) {}
+		return(Utils.construct(cl));
+	    }
+
 	    public static final Instancer simple = (cl, res, args) -> {
 		try {
 		    Constructor<?> cons = cl.getConstructor(Object[].class);

@@ -71,13 +71,8 @@ public abstract class Sprite implements RenderTree.Node {
 
     public static class FactMaker implements Resource.PublishedCode.Instancer {
 	public Factory make(Class<?> cl, Resource ires, Object... args) {
-	    if(Factory.class.isAssignableFrom(cl)) {
-		try {
-		    Constructor<? extends Factory> cons = cl.asSubclass(Factory.class).getConstructor(Object[].class);
-		    return(Utils.construct(cons, new Object[] {args}));
-		} catch(NoSuchMethodException e) {}
-		return(Utils.construct(cl.asSubclass(Factory.class)));
-	    }
+	    if(Factory.class.isAssignableFrom(cl))
+		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Factory.class), ires, args));
 	    try {
 		Function<Object[], Sprite> make = Utils.smthfun(cl, "mksprite", Sprite.class, Owner.class, Resource.class, Message.class);
 		return(new Factory() {
