@@ -1201,13 +1201,12 @@ public class Resource implements Serializable {
 
     @LayerName("codeentry")
     public class CodeEntry extends Layer {
-	private String clnm;
-	private Map<String, Code> clmap = new TreeMap<String, Code>();
-	private Map<String, String> pe = new TreeMap<String, String>();
-	private Collection<Indir<Resource>> classpath = new LinkedList<Indir<Resource>>();
+	private final Map<String, Code> clmap = new HashMap<>();
+	private final Map<String, String> pe = new HashMap<>();
+	private final Collection<Indir<Resource>> classpath = new ArrayList<>();
 	transient private ClassLoader loader;
-	transient private Map<String, Class<?>> lpe = null;
-	transient private Map<String, Object> ipe = new HashMap<String, Object>();
+	transient private final Map<String, Class<?>> lpe = new HashMap<>();
+	transient private final Map<String, Object> ipe = new HashMap<>();
 
 	public CodeEntry(Message buf) {
 	    while(!buf.eom()) {
@@ -1239,7 +1238,7 @@ public class Resource implements Serializable {
 		clmap.put(c.name, c);
 	}
 
-	public ClassLoader loader(final boolean wait) {
+	public ClassLoader loader() {
 	    synchronized(CodeEntry.this) {
 		if(this.loader == null) {
 		    this.loader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
@@ -1248,7 +1247,7 @@ public class Resource implements Serializable {
 				if(classpath.size() > 0) {
 				    Collection<ClassLoader> loaders = new LinkedList<ClassLoader>();
 				    for(Indir<Resource> res : classpath) {
-					loaders.add((wait?Loading.waitfor(res):res.get()).layer(CodeEntry.class).loader(wait));
+					loaders.add(res.get().layer(CodeEntry.class).loader());
 				    }
 				    ret = new LibClassLoader(ret, loaders);
 				}
@@ -1270,39 +1269,39 @@ public class Resource implements Serializable {
 	    return(this.loader);
 	}
 
-	private void load() {
-	    synchronized(CodeEntry.class) {
-		if(lpe != null)
-		    return;
-		ClassLoader loader = loader(false);
-		lpe = new TreeMap<String, Class<?>>();
-		try {
-		    for(Map.Entry<String, String> e : pe.entrySet()) {
-			String name = e.getKey();
-			String clnm = e.getValue();
-			Class<?> cl = loader.loadClass(clnm);
-			lpe.put(name, cl);
+	private Class<?> getentry(Class<?> cl, boolean fail) {
+	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
+	    if(entry == null)
+		throw(new RuntimeException("Tried to fetch non-published res-loaded class " + cl.getName() + " from " + Resource.this.name));
+	    synchronized(CodeEntry.this) {
+		Class<?> ret = lpe.get(entry.name());
+		if(ret == null) {
+		    String clnm = pe.get(entry.name());
+		    if(clnm == null) {
+			if(fail)
+			    throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
+			return(null);
 		    }
-		} catch(ClassNotFoundException e) {
-		    throw(new LoadException(e, Resource.this));
+		    try {
+			ret = loader().loadClass(clnm);
+		    } catch(ClassNotFoundException e) {
+			throw(new LoadException(e, Resource.this));
+		    }
+		    lpe.put(entry.name(), ret);
 		}
+		return(ret);
 	    }
 	}
 
 	public <T> Class<? extends T> getcl(Class<T> cl, boolean fail) {
-	    load();
-	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
-	    if(entry == null)
-		throw(new RuntimeException("Tried to fetch non-published res-loaded class " + cl.getName() + " from " + Resource.this.name));
-	    Class<?> acl;
-	    synchronized(lpe) {
-		if((acl = lpe.get(entry.name())) == null) {
-		    if(fail)
-			throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
-		    return(null);
-		}
+	    Class<?> acl = getentry(cl, fail);
+	    if(acl == null)
+		return(null);
+	    try {
+		return(acl.asSubclass(cl));
+	    } catch(ClassCastException e) {
+		throw(new RuntimeException(String.format("Illegal entry-point class specified for %s in %s", cl.getName(), Resource.this.name), e));
 	    }
-	    return(acl.asSubclass(cl));
 	}
 
 	public <T> Class<? extends T> getcl(Class<T> cl) {
@@ -1310,41 +1309,27 @@ public class Resource implements Serializable {
 	}
 
 	public <T> T get(Class<T> cl, boolean fail) {
-	    load();
 	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
 	    if(entry == null)
 		throw(new RuntimeException("Tried to fetch non-published res-loaded class " + cl.getName() + " from " + Resource.this.name));
-	    synchronized(ipe) {
-		Object pinst;
-		if((pinst = ipe.get(entry.name())) != null) {
-		    try {
-			return(cl.cast(pinst));
-		    } catch(ClassCastException e) {
-			throw(new RuntimeException(String.format("Illegal entry-point class specified for %s in %s", entry.name(), Resource.this.name), e));
-		    }
-		} else {
-		    Class<?> acl;
-		    synchronized(lpe) {
-			if((acl = lpe.get(entry.name())) == null) {
-			    if(fail)
-				throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
-			    return(null);
-			}
-		    }
-		    T inst;
-		    Object rinst = AccessController.doPrivileged((PrivilegedAction<Object>)() -> {
+	    synchronized(CodeEntry.this) {
+		Object inst;
+		if((inst = ipe.get(entry.name())) == null) {
+		    Class<?> acl = getentry(cl, fail);
+		    if(acl == null)
+			return(null);
+		    inst = AccessController.doPrivileged((PrivilegedAction<Object>)() -> {
 			    if(entry.instancer() != PublishedCode.Instancer.class)
 				return(Utils.construct(entry.instancer()).make(acl));
 			    else
 				return(Utils.construct(acl));
 			});
-		    try {
-			inst = cl.cast(rinst);
-		    } catch(ClassCastException e) {
-			throw(new ClassCastException("Published class in " + Resource.this.name + " is not of type " + cl));
-		    }
 		    ipe.put(entry.name(), inst);
-		    return(inst);
+		}
+		try {
+		    return(cl.cast(inst));
+		} catch(ClassCastException e) {
+		    throw(new RuntimeException(String.format("Illegal entry-point class specified for %s in %s", entry.name(), Resource.this.name), e));
 		}
 	    }
 	}
