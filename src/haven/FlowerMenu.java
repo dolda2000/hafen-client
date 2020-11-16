@@ -251,7 +251,7 @@ public class FlowerMenu extends Widget {
 		kg.remove();
 	    }
 	    return(true);
-	} else if(key == 27) {
+	} else if(key_esc.match(ev)) {
 	    choose(null);
 	    kg.remove();
 	    return(true);

@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.function.*;
 import haven.render.*;
 
-public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
+public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Skeleton.HasPose {
     public Coord2d rc;
     public double a;
     public boolean virtual = false;
@@ -169,9 +169,9 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	}
 
 	public static class FactMaker implements Resource.PublishedCode.Instancer {
-	    public Factory make(Class<?> cl) {
+	    public Factory make(Class<?> cl, Resource ires, Object... argv) {
 		if(Factory.class.isAssignableFrom(cl))
-		    return(Utils.construct(cl.asSubclass(Factory.class)));
+		    return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Factory.class), ires, argv));
 		if(ResAttr.class.isAssignableFrom(cl)) {
 		    try {
 			final java.lang.reflect.Constructor<? extends ResAttr> cons = cl.asSubclass(ResAttr.class).getConstructor(Gob.class, Message.class);
@@ -583,6 +583,13 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	Drawable d = getattr(Drawable.class);
 	if(d != null)
 	    return(d.getres());
+	return(null);
+    }
+
+    public Skeleton.Pose getpose() {
+	Drawable d = getattr(Drawable.class);
+	if(d != null)
+	    return(d.getpose());
 	return(null);
     }
 

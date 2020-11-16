@@ -680,7 +680,7 @@ public class FightWnd extends Widget {
 
 	public boolean keydown(KeyEvent ev) {
 	    if(edit != -1) {
-		if(ev.getKeyChar() == 27) {
+		if(key_esc.match(ev)) {
 		    edit = -1;
 		    redit = null;
 		    nmed = null;
@@ -738,7 +738,7 @@ public class FightWnd extends Widget {
 	info = add(new ImageInfoBox(UI.scale(new Coord(223, 152))), UI.scale(new Coord(5, 35)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(info));
 
-	add(new Img(CharWnd.catf.render("Martial Arts & Combat Schools").tex()), 0, 0);
+	add(CharWnd.settip(new Img(CharWnd.catf.render("Martial Arts & Combat Schools").tex()), "gfx/hud/chr/tips/combat"), 0, 0);
 	actlist = add(new Actions(UI.scale(255), 8), UI.scale(new Coord(245, 35)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(actlist));
 

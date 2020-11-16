@@ -143,9 +143,12 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0)))
 		rbuf.add(animwrap(mr.mat.get().apply(mr.m), tbuf, gbuf));
 	}
+	Owner rec = null;
 	for(RenderLink.Res lr : res.layers(RenderLink.Res.class)) {
 	    if((lr.id < 0) || (((1 << lr.id) & mask) != 0)) {
-		RenderTree.Node r = lr.l.make();
+		if(rec == null)
+		    rec = new RecOwner();
+		RenderTree.Node r = lr.l.make(rec);
 		if(r instanceof Pipe.Op.Wrapping)
 		    r = animwrap((Pipe.Op.Wrapping)r, tbuf, gbuf);
 		rbuf.add(r);
