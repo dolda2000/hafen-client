@@ -44,7 +44,7 @@ public class RichText extends Text {
     static {
 	Map<Attribute, Object> a = new HashMap<Attribute, Object>();
 	a.put(TextAttribute.FAMILY, "SansSerif");
-	a.put(TextAttribute.SIZE, UI.scale(10));
+	a.put(TextAttribute.SIZE, UI.scale(10.0f));
 	std = new Parser(a);
 	stdf = new Foundry(std);
     }
@@ -708,7 +708,7 @@ public class RichText extends Text {
 		} else if(c == 'w') {
 		    width = Integer.parseInt(opt.arg);
 		} else if(c == 's') {
-		    a.put(TextAttribute.SIZE, UI.scale(Integer.parseInt(opt.arg)));
+		    a.put(TextAttribute.SIZE, UI.scale(Float.parseFloat(opt.arg)));
 		}
 	    }
 	    Foundry fnd = new Foundry(a);
