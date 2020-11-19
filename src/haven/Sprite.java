@@ -69,7 +69,7 @@ public abstract class Sprite implements RenderTree.Node {
 	public void update(Message sdt);
     }
 
-    public static class FactMaker implements Resource.PublishedCode.Instancer {
+    public static class FactMaker implements Resource.PublishedCode.Instancer<Factory> {
 	public Factory make(Class<?> cl, Resource ires, Object... args) {
 	    if(Factory.class.isAssignableFrom(cl))
 		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Factory.class), ires, args));

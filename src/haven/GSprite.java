@@ -54,7 +54,7 @@ public abstract class GSprite implements Drawn {
 	this.owner = owner;
     }
 
-    public static class FactMaker implements Resource.PublishedCode.Instancer {
+    public static class FactMaker implements Resource.PublishedCode.Instancer<Factory> {
 	private static Factory dynfact(Class<? extends GSprite> cl) {
 	    try {
 		final Constructor<? extends GSprite> cons = cl.getConstructor(Owner.class, Resource.class, Message.class);

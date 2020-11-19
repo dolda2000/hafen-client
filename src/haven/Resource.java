@@ -1117,8 +1117,8 @@ public class Resource implements Serializable {
     public @interface PublishedCode {
 	String name();
 	Class<? extends Instancer> instancer() default Instancer.class;
-	public interface Instancer {
-	    public Object make(Class<?> cl, Resource res, Object... args);
+	public interface Instancer<I> {
+	    public I make(Class<?> cl, Resource res, Object... args);
 
 	    public static <T> T stdmake(Class<T> cl, Resource ires, Object[] args) {
 		try {
@@ -1136,7 +1136,7 @@ public class Resource implements Serializable {
 		return(Utils.construct(cl));
 	    }
 
-	    public static final Instancer simple = (cl, res, args) -> {
+	    public static final Instancer<Object> simple = (cl, res, args) -> {
 		try {
 		    Constructor<?> cons = cl.getConstructor(Object[].class);
 		    return(Utils.construct(cons, args));
@@ -1348,7 +1348,7 @@ public class Resource implements Serializable {
 			return(null);
 		    Object[] args = pa.getOrDefault(entry.name(), new Object[0]);
 		    inst = AccessController.doPrivileged((PrivilegedAction<Object>)() -> {
-			    PublishedCode.Instancer mk;
+			    PublishedCode.Instancer<?> mk;
 			    synchronized(PublishedCode.instancers) {
 				mk = PublishedCode.instancers.computeIfAbsent(entry, k -> {
 					if(k.instancer() == PublishedCode.Instancer.class)

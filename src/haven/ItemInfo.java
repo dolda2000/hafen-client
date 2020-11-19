@@ -74,7 +74,7 @@ public abstract class ItemInfo {
 	}
     }
 
-    public static class FactMaker implements Resource.PublishedCode.Instancer {
+    public static class FactMaker implements Resource.PublishedCode.Instancer<InfoFactory> {
 	public InfoFactory make(Class<?> cl, Resource ires, Object... argv) {
 	    if(InfoFactory.class.isAssignableFrom(cl))
 		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(InfoFactory.class), ires, argv));
