@@ -37,7 +37,7 @@ import static haven.render.sl.Function.PDir.*;
 import static haven.render.sl.Type.*;
 
 public class AlphaTex extends State {
-    public static final Slot<AlphaTex> slot = new Slot<AlphaTex>(Slot.Type.DRAW, AlphaTex.class);
+    public static final Slot<AlphaTex> slot = new Slot<AlphaTex>(Slot.Type.GEOM, AlphaTex.class);
     public static final Attribute clipc = new Attribute(VEC2, "clipc");
     public static final MeshBuf.LayerID<MeshBuf.Vec2Layer> lclip = new MeshBuf.V2LayerID(clipc);
     private static final Uniform ctex = new Uniform(SAMPLER2D, p -> p.get(slot).tex, slot);

@@ -121,7 +121,7 @@ public class ChatUI extends Widget {
 		    p = m.end();
 		    continue;
 		}
-		RichText.Part lead = new RichText.TextPart(text.substring(0, m.start()), attrs);
+		RichText.Part lead = new RichText.TextPart(text.substring(p, m.start()), attrs);
 		if(ret == null) ret = lead; else ret.append(lead);
 		Map<Attribute, Object> na = new HashMap<Attribute, Object>(attrs);
 		na.putAll(urlstyle);
@@ -1066,12 +1066,12 @@ public class ChatUI extends Widget {
 		rqline = qfnd.render(pre + qline.line);
 		rqpre = pre.length();
 	    }
-	    c = br.sub(0, 20);
+	    c = br.sub(UI.scale(0, 20));
 	    g.image(rqline.tex(), c);
-	    int lx = rqline.advance(qline.point + rqpre);
-	    g.line(new Coord(br.x + lx + 1, br.y - 18), new Coord(br.x + lx + 1, br.y - 6), 1);
+	    int lx = rqline.advance(qline.point + rqpre) + UI.scale(1);
+	    g.line(new Coord(br.x + lx, br.y - UI.scale(18)), new Coord(br.x + lx, br.y - UI.scale(6)), 1);
 	} else {
-	    c = br.sub(0, 5);
+	    c = br.sub(UI.scale(0, 5));
 	}
 	double now = Utils.ntime();
 	synchronized(notifs) {

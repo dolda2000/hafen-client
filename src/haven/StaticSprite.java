@@ -58,7 +58,7 @@ public class StaticSprite extends Sprite {
 	this(owner, res, lsparts(res, sdt));
     }
     
-    public static RenderTree.Node[] lsparts(Resource res, Message sdt) {
+    public static RenderTree.Node[] lsparts(Owner owner, Resource res, Message sdt) {
 	int fl = sdt.eom()?0xffff0000:decnum(sdt);
 	Collection<RenderTree.Node> rl = new LinkedList<>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
@@ -67,11 +67,15 @@ public class StaticSprite extends Sprite {
 	}
 	for(RenderLink.Res lr : res.layers(RenderLink.Res.class)) {
 	    if((lr.id < 0) || (((1 << lr.id) & fl) != 0))
-		rl.add(lr.l.make());
+		rl.add(lr.l.make(owner));
 	}
 	if(res.layer(Resource.audio, "amb") != null)
 	    rl.add(new ActAudio.Ambience(res));
 	return(rl.toArray(new RenderTree.Node[0]));
+    }
+
+    public static RenderTree.Node[] lsparts(Resource res, Message sdt) {
+	return(lsparts(null, res, sdt));
     }
 
     public void added(RenderTree.Slot slot) {

@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.awt.Color;
 import haven.MapFile.Segment;
 import haven.MapFile.DataGrid;
 import haven.MapFile.Grid;
@@ -41,7 +42,7 @@ import static haven.OCache.posres;
 public class MiniMap extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/mmap/ptex");
     public static final Tex nomap = Resource.loadtex("gfx/hud/mmap/nomap");
-    public static final Resource plx = Resource.local().loadwait("gfx/hud/mmap/x");
+    public static final Tex plp = ((TexI)Resource.loadtex("gfx/hud/mmap/plp")).filter(haven.render.Texture.Filter.LINEAR);
     public final MapFile file;
     public Location curloc;
     public Location sessloc;
@@ -208,6 +209,7 @@ public class MiniMap extends Widget {
 	    } catch(Loading l) {
 	    }
 	}
+	icons = findicons(icons);
     }
 
     public void center(Locator loc) {
@@ -220,15 +222,32 @@ public class MiniMap extends Widget {
 	follow = true;
     }
 
-    public static class DisplayIcon {
+    public class DisplayIcon {
 	public final GobIcon icon;
 	public final Gob gob;
-	public Coord cc;
+	public final GobIcon.Image img;
+	public Coord2d rc = null;
+	public Coord sc = null;
+	public double ang = 0.0;
+	public Color col = Color.WHITE;
+	public int z;
+	public double stime;
 
-	public DisplayIcon(GobIcon icon, Coord cc) {
+	public DisplayIcon(GobIcon icon) {
 	    this.icon = icon;
 	    this.gob = icon.gob;
-	    this.cc = cc;
+	    this.img = icon.img();
+	    this.z = this.img.z;
+	    this.stime = Utils.rtime();
+	}
+
+	public void update(Coord2d rc, double ang) {
+	    this.rc = rc;
+	    this.ang = ang;
+	    if((this.rc == null) || (sessloc == null) || (dloc == null) || (dloc.seg != sessloc.seg))
+		this.sc = null;
+	    else
+		this.sc = p2c(this.rc);
 	}
     }
 
@@ -431,9 +450,15 @@ public class MiniMap extends Widget {
 	}
     }
 
-    public List<DisplayIcon> findicons() {
-	if((ui.sess == null) || (sessloc == null) || (dloc.seg != sessloc.seg) || (iconconf == null))
+    public List<DisplayIcon> findicons(Collection<? extends DisplayIcon> prev) {
+	if((ui.sess == null) || (iconconf == null))
 	    return(Collections.emptyList());
+	Map<Gob, DisplayIcon> pmap = Collections.emptyMap();
+	if(prev != null) {
+	    pmap = new HashMap<>();
+	    for(DisplayIcon disp : prev)
+		pmap.put(disp.gob, disp);
+	}
 	List<DisplayIcon> ret = new ArrayList<>();
 	OCache oc = ui.sess.glob.oc;
 	synchronized(oc) {
@@ -443,29 +468,57 @@ public class MiniMap extends Widget {
 		    if(icon != null) {
 			GobIcon.Setting conf = iconconf.get(icon.res.get());
 			if((conf != null) && conf.show) {
-			    Coord gc = p2c(gob.rc);
-			    ret.add(new DisplayIcon(icon, gc));
+			    DisplayIcon disp = pmap.get(gob);
+			    if(disp == null)
+				disp = new DisplayIcon(icon);
+			    disp.update(gob.rc, gob.a);
+			    KinInfo kin = gob.getattr(KinInfo.class);
+			    if((kin != null) && (kin.group < BuddyWnd.gc.length))
+				disp.col = BuddyWnd.gc[kin.group];
+			    ret.add(disp);
 			}
 		    }
 		} catch(Loading l) {}
 	    }
 	}
+	Collections.sort(ret, (a, b) -> a.z - b.z);
 	if(ret.size() == 0)
 	    return(Collections.emptyList());
 	return(ret);
     }
 
-    public static void drawplx(GOut g, Coord ptc) {
-	Tex tex = plx.layer(Resource.imgc).tex();
-	g.image(tex, ptc.sub(UI.scale(plx.layer(Resource.negc).cc)));
+    public void drawicons(GOut g) {
+	if((sessloc == null) || (dloc.seg != sessloc.seg))
+	    return;
+	for(DisplayIcon disp : icons) {
+	    if(disp.sc == null)
+		continue;
+	    GobIcon.Image img = disp.img;
+	    if(disp.col != null)
+		g.chcolor(disp.col);
+	    else
+		g.chcolor();
+	    if(!img.rot)
+		g.image(img.tex, disp.sc.sub(img.cc));
+	    else
+		g.rotimage(img.tex, disp.sc, img.cc, -disp.ang + img.ao);
+	}
+	g.chcolor();
     }
 
-    public void drawicons(GOut g) {
-	for(DisplayIcon disp : icons) {
-	    try {
-		Tex tex = disp.icon.tex();
-		g.image(tex, disp.cc.sub(tex.sz().div(2)));
-	    } catch(Loading l) {}
+    public void remparty() {
+	Set<Gob> memb = new HashSet<>();
+	synchronized(ui.sess.glob.party.memb) {
+	    for(Party.Member m : ui.sess.glob.party.memb.values()) {
+		Gob gob = m.getgob();
+		if(gob != null)
+		    memb.add(gob);
+	    }
+	}
+	for(Iterator<DisplayIcon> it = icons.iterator(); it.hasNext();) {
+	    DisplayIcon icon = it.next();
+	    if(memb.contains(icon.gob))
+		it.remove();
 	}
     }
 
@@ -477,7 +530,7 @@ public class MiniMap extends Widget {
 		    if(ppc == null)
 			continue;
 		    g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 255);
-		    drawplx(g, p2c(ppc));
+		    g.rotimage(plp, p2c(ppc), plp.sz().div(2), -m.geta() - (Math.PI / 2));
 		    g.chcolor();
 		} catch(Loading l) {}
 	    }
@@ -497,7 +550,7 @@ public class MiniMap extends Widget {
 	if(loc == null)
 	    return;
 	redisplay(loc);
-	icons = findicons();
+	remparty();
 	drawparts(g);
     }
 
@@ -531,11 +584,9 @@ public class MiniMap extends Widget {
     public DisplayIcon iconat(Coord c) {
 	for(ListIterator<DisplayIcon> it = icons.listIterator(icons.size()); it.hasPrevious();) {
 	    DisplayIcon disp = it.previous();
-	    try {
-		Coord sz = disp.icon.tex().sz();
-		if(c.isect(disp.cc.sub(sz.div(2)), sz))
-		    return(disp);
-	    } catch(Loading l) {}
+	    GobIcon.Image img = disp.img;
+	    if((disp.sc != null) && c.isect(disp.sc.sub(img.cc), img.tex.sz()))
+		return(disp);
 	}
 	return(null);
     }

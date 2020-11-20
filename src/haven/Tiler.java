@@ -219,9 +219,9 @@ public abstract class Tiler {
     }
     
     public static class FactMaker implements Resource.PublishedCode.Instancer {
-	public Factory make(Class<?> cl) {
+	public Factory make(Class<?> cl, Resource ires, Object... argv) {
 	    if(Factory.class.isAssignableFrom(cl)) {
-		return(Utils.construct(cl.asSubclass(Factory.class)));
+		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Factory.class), ires, argv));
 	    } else if(Tiler.class.isAssignableFrom(cl)) {
 		Class<? extends Tiler> tcl = cl.asSubclass(Tiler.class);
 		try {

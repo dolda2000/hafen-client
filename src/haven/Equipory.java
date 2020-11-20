@@ -37,9 +37,7 @@ public class Equipory extends Widget implements DTarget {
     public static final Coord bgc = new Coord(invsq.sz().x, 0);
     public static final Coord ecoords[] = {
 	new Coord( 0, 0 * yo),
-	new Coord(rx, 0 * yo),
 	new Coord( 0, 1 * yo),
-	new Coord(rx, 1 * yo),
 	new Coord( 0, 2 * yo),
 	new Coord(rx, 2 * yo),
 	new Coord( 0, 3 * yo),
@@ -52,7 +50,11 @@ public class Equipory extends Widget implements DTarget {
 	new Coord(rx, 6 * yo),
 	new Coord( 0, 7 * yo),
 	new Coord(rx, 7 * yo),
+	new Coord( 0, 8 * yo),
+	new Coord(rx, 8 * yo),
 	new Coord(invsq.sz().x, 0 * yo),
+	new Coord(rx, 0 * yo),
+	new Coord(rx, 1 * yo),
     };
     public static final Tex[] ebgs = new Tex[ecoords.length];
     public static final Text[] etts = new Text[ecoords.length];
@@ -74,7 +76,7 @@ public class Equipory extends Widget implements DTarget {
 	    }
 	}
     }
-    Map<GItem, WItem[]> wmap = new HashMap<GItem, WItem[]>();
+    Map<GItem, Collection<WItem>> wmap = new HashMap<>();
     private final Avaview ava;
 
     @RName("epry")
@@ -126,11 +128,13 @@ public class Equipory extends Widget implements DTarget {
 	if(child instanceof GItem) {
 	    add(child);
 	    GItem g = (GItem)child;
-	    WItem[] v = new WItem[args.length];
+	    ArrayList<WItem> v = new ArrayList<>();
 	    for(int i = 0; i < args.length; i++) {
 		int ep = (Integer)args[i];
-		v[i] = add(new WItem(g), ecoords[ep].add(1, 1));
+		if(ep < ecoords.length)
+		    v.add(add(new WItem(g), ecoords[ep].add(1, 1)));
 	    }
+	    v.trimToSize();
 	    wmap.put(g, v);
 	} else {
 	    super.addchild(child, args);

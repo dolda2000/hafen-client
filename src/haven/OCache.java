@@ -623,6 +623,12 @@ public class OCache implements Iterable<Gob> {
     }
 
     public static void resattr(Gob g, Indir<Resource> resid, Message dat) {
+	Resource res = resid.get();
+	GAttrib.Parser parser = res.getcode(GAttrib.Parser.class, false);
+	if(parser != null) {
+	    parser.apply(g, dat);
+	    return;
+	}
 	if(dat != null)
 	    g.setrattr(resid, dat);
 	else
