@@ -1890,33 +1890,22 @@ public class CharWnd extends Window {
 	final Tabs tabs = new Tabs(new Coord(15, 10), Coord.z, this);
         Tabs.Tab battr = tabs.add();
         {
-            Widget left = new Widget.Temporary();
-            {
-                base = new ArrayList<>();
-                base.add(new Attr(glob, "str", every));
-                base.add(new Attr(glob, "agi", other));
-                base.add(new Attr(glob, "int", every));
-                base.add(new Attr(glob, "con", other));
-                base.add(new Attr(glob, "prc", every));
-                base.add(new Attr(glob, "csm", other));
-                base.add(new Attr(glob, "dex", every));
-                base.add(new Attr(glob, "wil", other));
-                base.add(new Attr(glob, "psy", every));
-                Composer composer = new Composer(left);
-                left.add(settip(new Img(catf.render("Base Attributes").tex()), "gfx/hud/chr/tips/base"));
-                composer.add(offy);
-                composer.pad(wbox.btloff().add(margin1, 0));
-                for (Attr v : base) {
-                    composer.add(v);
-                }
-                Frame.around(left, base);
-                composer.add(UI.scale(16));
-                composer.hpad(0);
-                composer.add(settip(new Img(catf.render("Food Event Points").tex()), "gfx/hud/chr/tips/fep"));
-                feps = new FoodMeter();
-                composer.add(feps);
-            }
-            left.pack();
+	    Widget prev;
+	    prev = battr.add(settip(new Img(catf.render("Base Attributes").tex()), "gfx/hud/chr/tips/base"), Coord.z);
+	    base = new ArrayList<>();
+	    Attr aw;
+	    base.add(aw = battr.add(new Attr(glob, "str", every), prev.pos("bl").adds(5, 2).add(wbox.btloff())));
+	    base.add(aw = battr.add(new Attr(glob, "agi", other), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "int", every), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "con", other), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "prc", every), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "csm", other), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "dex", every), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "wil", other), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "psy", every), aw.pos("bl")));
+	    prev = Frame.around(battr, base);
+	    prev = battr.add(settip(new Img(catf.render("Food Event Points").tex()), "gfx/hud/chr/tips/fep"), prev.pos("bl").x(0).adds(0, 10));
+	    feps = battr.add(new FoodMeter(), prev.pos("bl").adds(5, 2));
 
             Widget right = new Widget.Temporary();
             {
@@ -1935,7 +1924,6 @@ public class CharWnd extends Window {
             }
             right.pack();
 
-            battr.add(left);
             battr.add(right, new Coord(width, 0));
             Widget.Temporary.optimize(battr);
         }
