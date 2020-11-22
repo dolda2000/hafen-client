@@ -133,44 +133,23 @@ public class HashDirCache implements ResCache {
 	LockedFile(RandomAccessFile f, FileLock l) {this.f = f; this.l = l;}
     }
 
-    /* These locks should never have to be waited for long at all, so
-     * blocking interruptions until complete should be perfectly
-     * okay. */
-    private static LockedFile lock2(File path) throws IOException {
+    private static RandomAccessFile open2(File path, String mode) throws IOException {
 	double[] retimes = {0.01, 0.1, 0.5, 1.0, 5.0};
+	Throwable last = null;
 	boolean intr = false;
 	try {
-	    Throwable last = null;
 	    for(int r = 0; true; r++) {
 		/* XXX: Sometimes, this is getting strange and weird
-		 * errors from the OS. On Windows, file sharing
-		 * violations are sometimes returned even though Java
-		 * always opens RandomAccessFiles in non-exclusive
-		 * mode. On Linux, I'm sometimes getting
-		 * OverlappingFileLockExceptions even though I'm
-		 * explicitly synchronizing access to the same file
-		 * chain down in lookup(). I've had zero luck in
-		 * trying to find a root cause for these errors, so
-		 * just assume the error is transient and retry. :P */
+		 * errors from the OS. On Windows, file sharing violations
+		 * are sometimes returned even though Java always opens
+		 * RandomAccessFiles in non-exclusive mode. On Linux, I'm
+		 * sometimes getting OverlappingFileLockExceptions even
+		 * though I'm explicitly synchronizing access to the same
+		 * file chain down in lookup(). I've had zero luck in
+		 * trying to find a root cause for these errors, so just
+		 * assume the error is transient and retry. :P */
 		try {
-		    while(true) {
-			try {
-			    RandomAccessFile fp = null;
-			    try {
-				fp = new RandomAccessFile(path, "rw");
-				FileLock lk = fp.getChannel().lock();
-				LockedFile ret = new LockedFile(fp, lk);
-				fp = null;
-				return(ret);
-			    } finally {
-				if(fp != null)
-				    fp.close();
-			    }
-			} catch(FileLockInterruptionException e) {
-			    Thread.currentThread().interrupted();
-			    intr = true;
-			}
-		    }
+		    return(new RandomAccessFile(path, mode));
 		} catch(RuntimeException | IOException exc) {
 		    if(last == null)
 			new Warning(exc, "weird error occurred when locking cache file " + path).issue();
@@ -195,6 +174,36 @@ public class HashDirCache implements ResCache {
 	}
     }
 
+    /* These locks should never have to be waited for long at all, so
+     * blocking interruptions until complete should be perfectly
+     * okay. */
+    private static LockedFile lock2(File path) throws IOException {
+        boolean intr = false;
+        try {
+            while(true) {
+                try {
+                    RandomAccessFile fp = null;
+                    try {
+                        fp = open2(path, "rw");
+                        FileLock lk = fp.getChannel().lock();
+                        LockedFile ret = new LockedFile(fp, lk);
+                        fp = null;
+                        return(ret);
+                    } finally {
+                        if(fp != null)
+                            fp.close();
+                    }
+                } catch(FileLockInterruptionException e) {
+                    Thread.currentThread().interrupted();
+                    intr = true;
+                }
+            }
+        } finally {
+            if(intr)
+                Thread.currentThread().interrupt();
+        }
+    }
+
     private static final Map<File, Object> monitors = new WeakHashMap<File, Object>();
     private File lookup(String name, boolean creat) throws IOException {
 	long h = namehash(idhash, name);
@@ -215,7 +224,7 @@ public class HashDirCache implements ResCache {
 		    File path = new File(base, String.format("%016x.%d", h, idx));
 		    if(!path.exists() && !creat)
 			return(null);
-		    RandomAccessFile fp = (idx == 0)?lf.f:new RandomAccessFile(path, "rw");
+		    RandomAccessFile fp = (idx == 0) ? lf.f : open2(path, "rw");
 		    try {
 			Header head = readhead(fp);
 			if(head == null) {
@@ -252,7 +261,7 @@ public class HashDirCache implements ResCache {
 			return(true);
 		    try {
 			for(; i < files.length; i++) {
-			    RandomAccessFile fp = new RandomAccessFile(files[i], "rw");
+			    RandomAccessFile fp = open2(files[i], "rw");
 			    try {
 				Header head = readhead(fp);
 				if(head == null)
@@ -290,7 +299,7 @@ public class HashDirCache implements ResCache {
 	final File path = lookup(name, true);
 	File dir = path.getParentFile();
 	final File tmp = File.createTempFile("cache", ".new", dir);
-	final RandomAccessFile fp = new RandomAccessFile(tmp, "rw");
+	final RandomAccessFile fp = open2(tmp, "rw");
 	writehead(fp, name);
 	return(new OutputStream() {
 		public void write(int b) throws IOException {
@@ -317,7 +326,7 @@ public class HashDirCache implements ResCache {
 	File path = lookup(name, false);
 	if(path == null)
 	    throw(new FileNotFoundException(name));
-	final RandomAccessFile fp = new RandomAccessFile(path, "r");
+	final RandomAccessFile fp = open2(path, "r");
 	Header head = readhead(fp);
 	if((head == null) || !head.cid.equals(id.toString()) || !head.name.equals(name))
 	    throw(new AssertionError());
