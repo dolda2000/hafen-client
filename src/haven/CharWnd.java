@@ -1907,57 +1907,33 @@ public class CharWnd extends Window {
 	    prev = battr.add(settip(new Img(catf.render("Food Event Points").tex()), "gfx/hud/chr/tips/fep"), prev.pos("bl").x(0).adds(0, 10));
 	    feps = battr.add(new FoodMeter(), prev.pos("bl").adds(5, 2));
 
-            Widget right = new Widget.Temporary();
-            {
-                Composer composer = new Composer(right);
-                right.add(settip(new Img(catf.render("Food Satiations").tex()), "gfx/hud/chr/tips/constip"));
-                composer.add(offy);
-                cons = new Constipations(attrw, base.size());
-                composer.pad(wbox.btloff().add(margin1, 0));
-                composer.add(cons);
-                Frame.around(right, Collections.singletonList(cons));
-                composer.add(UI.scale(16));
-                composer.hpad(0);
-                composer.add(settip(new Img(catf.render("Hunger Level").tex()), "gfx/hud/chr/tips/hunger"));
-                glut = new GlutMeter();
-                composer.add(glut);
-            }
-            right.pack();
-
-            battr.add(right, new Coord(width, 0));
-            Widget.Temporary.optimize(battr);
+	    prev = battr.add(settip(new Img(catf.render("Food Satiations").tex()), "gfx/hud/chr/tips/constip"), width, 0);
+	    cons = battr.add(new Constipations(attrw, base.size()), prev.pos("bl").adds(5, 2).add(wbox.btloff()));
+	    prev = Frame.around(battr, Collections.singletonList(cons));
+	    prev = battr.add(settip(new Img(catf.render("Hunger Level").tex()), "gfx/hud/chr/tips/hunger"), prev.pos("bl").x(width).adds(0, 10));
+	    glut = battr.add(new GlutMeter(), prev.pos("bl").adds(5, 2));
         }
 
         sattr = tabs.add();
 	{
-            Widget left = new Widget.Temporary();
-            int bottom;
-            {
-                skill = new ArrayList<>();
-                skill.add(new SAttr(glob, "unarmed", every));
-                skill.add(new SAttr(glob, "melee", other));
-                skill.add(new SAttr(glob, "ranged", every));
-                skill.add(new SAttr(glob, "explore", other));
-                skill.add(new SAttr(glob, "stealth", every));
-                skill.add(new SAttr(glob, "sewing", other));
-                skill.add(new SAttr(glob, "smithing", every));
-                skill.add(new SAttr(glob, "masonry", other));
-                skill.add(new SAttr(glob, "carpentry", every));
-                skill.add(new SAttr(glob, "cooking", other));
-                skill.add(new SAttr(glob, "farming", every));
-                skill.add(new SAttr(glob, "survive", other));
-                skill.add(new SAttr(glob, "lore", every));
-                Composer composer = new Composer(left);
-                left.add(settip(new Img(catf.render("Abilities").tex()), "gfx/hud/chr/tips/sattr"));
-                composer.add(offy);
-                composer.pad(wbox.btloff().add(margin1, 0));
-                for (SAttr v : skill) {
-                    composer.add(v);
-                }
-                Frame frame = Frame.around(left, skill);
-                bottom = frame.c.y + frame.sz.y;
-            }
-            left.pack();
+	    Widget prev;
+	    prev = sattr.add(settip(new Img(catf.render("Abilities").tex()), "gfx/hud/chr/tips/sattr"), Coord.z);
+	    skill = new ArrayList<>();
+	    SAttr aw;
+	    skill.add(aw = sattr.add(new SAttr(glob, "unarmed", every), prev.pos("bl").adds(5, 2).add(wbox.btloff())));
+	    skill.add(aw = sattr.add(new SAttr(glob, "melee", other), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "ranged", every), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "explore", other), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "stealth", every), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "sewing", other), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "smithing", every), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "masonry", other), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "carpentry", every), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "cooking", other), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "farming", every), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "survive", other), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "lore", every), aw.pos("bl")));
+	    Widget lframe = Frame.around(sattr, skill);
 
             Widget right = new Widget.Temporary();
             {
@@ -2007,11 +1983,10 @@ public class CharWnd extends Window {
                         }
                     }
                 );
-                Frame.around(right, Area.sized(new Coord(margin1, fy).add(wbox.btloff()), new Coord(attrw, bottom - fy - 2 * wbox.btloff().y)));
+                Frame.around(sattr, Area.sized(new Coord(margin1, fy).add(wbox.btloff()), new Coord(attrw, bottom - fy - 2 * wbox.btloff().y)));
             }
             right.pack();
 
-            sattr.add(left);
             sattr.add(right, new Coord(width, 0));
             Widget.Temporary.optimize(sattr);
 	}
