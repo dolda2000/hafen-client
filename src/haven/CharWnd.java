@@ -52,7 +52,6 @@ public class CharWnd extends Window {
     public static final int margin1 = UI.scale(5);
     public static final int margin2 = 2 * margin1;
     public static final int margin3 = 2 * margin2;
-    public static final int fontsize = UI.scale(16);
     public static final int offy = UI.scale(35);
     public final Collection<Attr> base;
     public final Collection<SAttr> skill;
@@ -756,7 +755,7 @@ public class CharWnd extends Window {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif," + fontsize + "]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
 	    if(cost > 0)
 		buf.append("Cost: " + cost + "\n\n");
 	    buf.append(res.layer(Resource.pagina).text);
@@ -789,7 +788,7 @@ public class CharWnd extends Window {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif," + fontsize + "]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
 	    buf.append(res.layer(Resource.pagina).text);
 	    return(buf.toString());
 	}
@@ -827,7 +826,7 @@ public class CharWnd extends Window {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif," + fontsize + "]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
 	    if(score > 0)
 		buf.append("Experience points: " + Utils.thformat(score) + "\n\n");
 	    buf.append(res.layer(Resource.pagina).text);
@@ -917,7 +916,7 @@ public class CharWnd extends Window {
 		StringBuilder buf = new StringBuilder();
 		Resource res = this.res.get();
 		buf.append("$img[" + res.name + "]\n\n");
-		buf.append("$b{$font[serif," + fontsize + "]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+		buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
 		buf.append(res.layer(Resource.pagina).text);
 		return(buf.toString());
 	    }
@@ -1129,7 +1128,7 @@ public class CharWnd extends Window {
 		StringBuilder buf = new StringBuilder();
 		Resource res = this.res.get();
 		buf.append("$img[" + res.name + "]\n\n");
-		buf.append("$b{$font[serif," + fontsize + "]{" + title() + "}}\n\n");
+		buf.append("$b{$font[serif,16]{" + title() + "}}\n\n");
 		Resource.Pagina pag = res.layer(Resource.pagina);
 		if((pag != null) && !pag.text.equals("")) {
 		    buf.append("\n");
@@ -1195,7 +1194,7 @@ public class CharWnd extends Window {
 	}
 
 	public static class QView extends Widget {
-	    public static final Text.Furnace qtfnd = new BlurFurn(new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD, fontsize)).aa(true), 2, 1, Color.BLACK);
+	    public static final Text.Furnace qtfnd = new BlurFurn(new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD), 16).aa(true), 2, 1, Color.BLACK);
 	    public static final Text.Foundry qcfnd = new Text.Foundry(Text.sans, 12).aa(true);
 	    public final QVInfo info;
 	    private Condition[] ccond;

@@ -32,7 +32,7 @@ public class Img extends Widget {
     private Indir<Resource> res;
     private Tex img;
     private BufferedImage rimg;
-    public boolean hit = false;
+    public boolean hit = false, opaque = false;
 	
     @RName("img")
     public static class $_ implements Factory {
@@ -47,8 +47,11 @@ public class Img extends Widget {
 		res = ui.sess.getres((Integer)args[a++]);
 	    }
 	    Img ret = new Img(res);
-	    if(args.length > a)
-		ret.hit = (Integer)args[a++] != 0;
+	    if(args.length > a) {
+		int fl = (Integer)args[a++];
+		ret.hit = (fl & 1) != 0;
+		ret.opaque = (fl & 2) != 0;
+	    }
 	    return(ret);
 	}
     }
@@ -104,7 +107,7 @@ public class Img extends Widget {
     public boolean checkhit(Coord c) {
 	if(!c.isect(Coord.z, sz))
 	    return(false);
-	if((rimg == null) || rimg.getRaster().getNumBands() < 4)
+	if(opaque || (rimg == null) || (rimg.getRaster().getNumBands() < 4))
 	    return(true);
 	return(rimg.getRaster().getSample(c.x, c.y, 3) >= 128);
     }
