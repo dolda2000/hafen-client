@@ -54,25 +54,14 @@ public abstract class GSprite implements Drawn {
 	this.owner = owner;
     }
 
-    public static class FactMaker implements Resource.PublishedCode.Instancer<Factory> {
-	private static Factory dynfact(Class<? extends GSprite> cl) {
-	    try {
-		final Constructor<? extends GSprite> cons = cl.getConstructor(Owner.class, Resource.class, Message.class);
-		return(new Factory() {
-			public GSprite create(Owner owner, Resource res, Message sdt) {
-			    return(Utils.construct(cons, owner, res, sdt));
-			}
-		    });
-	    } catch(NoSuchMethodException e) {}
-	    throw(new RuntimeException("Could not find any suitable constructor for dynamic sprite"));
-	}
-
-	public Factory make(Class<?> cl, Resource ires, Object... argv) {
-	    if(Factory.class.isAssignableFrom(cl))
-		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Factory.class), ires, argv));
-	    if(GSprite.class.isAssignableFrom(cl))
-		return(dynfact(cl.asSubclass(GSprite.class)));
-	    throw(new RuntimeException("Could not find construct sprite factory for dynamic sprite class " + cl));
+    public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<Factory> {
+	public FactMaker() {
+	    super(Factory.class);
+	    add(new Direct<>(Factory.class));
+	    add(new StaticCall<>(Factory.class, "mkgsprite", GSprite.class, new Class<?>[] {Owner.class, Resource.class, Message.class},
+				 (make) -> (owner, res, sdt) -> make.apply(new Object[] {owner, res, sdt})));
+	    add(new Construct<>(Factory.class, GSprite.class, new Class<?>[] {Owner.class, Resource.class, Message.class},
+				(cons) -> (owner, res, sdt) -> cons.apply(new Object[] {owner, res, sdt})));
 	}
     }
 

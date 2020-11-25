@@ -174,22 +174,14 @@ public interface RenderLink {
 	}
     }
 
-    public static class ArgMaker implements Resource.PublishedCode.Instancer<ArgLink> {
-	public ArgLink make(Class<?> cl, Resource ires, Object... argv) {
-	    if(ArgLink.class.isAssignableFrom(cl))
-		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(ArgLink.class), ires, argv));
-	    try {
-		Function<Object[], Node> make = Utils.smthfun(cl, "mkrlink", Node.class, Owner.class, Resource.class, Object[].class);
-		return((owner, res, args) -> make.apply(new Object[] {owner, res, args}));
-	    } catch(NoSuchMethodException e) {}
-	    if(Node.class.isAssignableFrom(cl)) {
-		Class<? extends Node> scl = cl.asSubclass(Node.class);
-		try {
-		    Function<Object[], ? extends Node> make = Utils.consfun(scl, Owner.class, Resource.class, Object[].class);
-		    return((owner, res, args) -> make.apply(new Object[] {owner, res, args}));
-		} catch(NoSuchMethodException e) {}
-	    }
-	    throw(new RuntimeException("Could not find any suitable construct for dynamic renderlink"));
+    public static class ArgMaker extends Resource.PublishedCode.Instancer.Chain<ArgLink> {
+	public ArgMaker() {
+	    super(ArgLink.class);
+	    add(new Direct<>(ArgLink.class));
+	    add(new StaticCall<>(ArgLink.class, "mkrlink", Node.class, new Class<?>[] {Owner.class, Resource.class, Object[].class},
+				 (make) -> (owner, res, args) -> make.apply(new Object[] {owner, res, args})));
+	    add(new Construct<>(ArgLink.class, Node.class, new Class<?>[] {Owner.class, Resource.class, Object[].class},
+				(cons) -> (owner, res, args) -> cons.apply(new Object[] {owner, res, args})));
 	}
     }
 
