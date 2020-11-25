@@ -74,27 +74,34 @@ public abstract class ItemInfo {
 	}
     }
 
-    public static class FactMaker implements Resource.PublishedCode.Instancer<InfoFactory> {
-	public InfoFactory make(Class<?> cl, Resource ires, Object... argv) {
-	    if(InfoFactory.class.isAssignableFrom(cl))
-		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(InfoFactory.class), ires, argv));
-	    try {
-		Function<Object[], ItemInfo> make = Utils.smthfun(cl, "mkinfo", ItemInfo.class, Owner.class, Object[].class);
-		return(new InfoFactory() {
-			public ItemInfo build(Owner owner, Raw raw, Object... args) {
-			    return(make.apply(new Object[]{owner, args}));
-			}
-		    });
-	    } catch(NoSuchMethodException e) {}
-	    try {
-		Function<Object[], ItemInfo> make = Utils.smthfun(cl, "mkinfo", ItemInfo.class, Owner.class, Raw.class, Object[].class);
-		return(new InfoFactory() {
-			public ItemInfo build(Owner owner, Raw raw, Object... args) {
-			    return(make.apply(new Object[]{owner, raw, args}));
-			}
-		    });
-	    } catch(NoSuchMethodException e) {}
-	    return(null);
+    public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<InfoFactory> {
+	public FactMaker() {super(InfoFactory.class);}
+	{
+	    add(new Direct<>(InfoFactory.class));
+	    add(new StaticCall<>(InfoFactory.class, "mkinfo", ItemInfo.class, new Class<?>[] {Owner.class, Object[].class},
+				 (make) -> new InfoFactory() {
+					 public ItemInfo build(Owner owner, Raw raw, Object... args) {
+					     return(make.apply(new Object[]{owner, args}));
+					 }
+				     }));
+	    add(new StaticCall<>(InfoFactory.class, "mkinfo", ItemInfo.class, new Class<?>[] {Owner.class, Raw.class, Object[].class},
+				 (make) -> new InfoFactory() {
+					 public ItemInfo build(Owner owner, Raw raw, Object... args) {
+					     return(make.apply(new Object[]{owner, raw, args}));
+					 }
+				     }));
+	    add(new Construct<>(InfoFactory.class, ItemInfo.class, new Class<?>[] {Owner.class, Object[].class},
+				(cons) -> new InfoFactory() {
+					public ItemInfo build(Owner owner, Raw raw, Object... args) {
+					    return(cons.apply(new Object[] {owner, args}));
+					}
+				    }));
+	    add(new Construct<>(InfoFactory.class, ItemInfo.class, new Class<?>[] {Owner.class, Raw.class, Object[].class},
+				(cons) -> new InfoFactory() {
+					public ItemInfo build(Owner owner, Raw raw, Object... args) {
+					    return(cons.apply(new Object[] {owner, raw, args}));
+					}
+				    }));
 	}
     }
     
