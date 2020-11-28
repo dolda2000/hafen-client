@@ -348,9 +348,11 @@ public class Widget {
 		} else if(op == 's') {
 		    st.push(((Widget)st.pop()).sz);
 		} else if(op == 'w') {
-		    synchronized(ui) {
-			st.push(ui.getwidget((Integer)st.pop()));
-		    }
+		    int id = (Integer)st.pop();
+		    Widget w = ui.getwidget(id);
+		    if(w == null)
+			throw(new RuntimeException("Invalid widget ID: " + id));
+		    st.push(w);
 		} else if(op == 'x') {
 		    st.push(((Coord)st.pop()).x);
 		} else if(op == 'y') {

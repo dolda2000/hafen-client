@@ -136,4 +136,18 @@ public class Debug {
 	    throw(new RuntimeException(e));
 	}
     }
+
+    public static class DataException extends RuntimeException {
+	public final Serializable data;
+
+	public DataException(String msg, Throwable cause, Serializable data) {
+	    super(msg, cause);
+	    this.data = data;
+	}
+
+	public DataException(String msg, Serializable data) {
+	    super(msg);
+	    this.data = data;
+	}
+    }
 }
