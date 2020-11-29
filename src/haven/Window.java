@@ -135,7 +135,6 @@ public class Window extends Widget implements DTarget {
 	bgc.x = cbr.x - bgr.sz().x;
 	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgr.sz().y)
 	    g.image(bgr, bgc, ctl, cbr);
-	cdraw(g.reclip(atl, asz));
     }
 
     protected void drawframe(GOut g) {
@@ -176,10 +175,11 @@ public class Window extends Widget implements DTarget {
     }
 
     protected void drawwnd(GOut g) {
-	if(!decohide) {
+	if(!decohide)
 	    drawbg(g);
+	cdraw(g.reclip(atl, asz));
+	if(!decohide)
 	    drawframe(g);
-	}
     }
 
     public void draw(GOut g) {
