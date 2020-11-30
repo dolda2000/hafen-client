@@ -574,6 +574,25 @@ public class GLEnvironment implements Environment {
 	    return(ret);
 	}
     }
+    GLTexture.Tex2DMS prepare(Texture2DMS tex) {
+	synchronized(tex) {
+	    GLTexture.Tex2DMS ret;
+	    if(!(tex.ro instanceof GLTexture.Tex2DMS) || ((ret = (GLTexture.Tex2DMS)tex.ro).env != this)) {
+		if(tex.ro != null)
+		    tex.ro.dispose();
+		tex.ro = ret = GLTexture.Tex2DMS.create(this, tex);
+	    }
+	    return(ret);
+	}
+    }
+    GLTexture.Tex2DMS prepare(Texture2DMS.Sampler2DMS smp) {
+	Texture2DMS tex = smp.tex;
+	synchronized(tex) {
+	    GLTexture.Tex2DMS ret = prepare(tex);
+	    ret.setsampler(smp);
+	    return(ret);
+	}
+    }
     GLTexture.TexCube prepare(TextureCube tex) {
 	synchronized(tex) {
 	    GLTexture.TexCube ret;
@@ -600,6 +619,8 @@ public class GLEnvironment implements Environment {
 		return(prepare((Texture2D.Sampler2D)val));
 	    if(val instanceof Texture3D.Sampler3D)
 		return(prepare((Texture3D.Sampler3D)val));
+	    if(val instanceof Texture2DMS.Sampler2DMS)
+		return(prepare((Texture2DMS.Sampler2DMS)val));
 	    else if(val instanceof TextureCube.SamplerCube)
 		return(prepare((TextureCube.SamplerCube)val));
 	}

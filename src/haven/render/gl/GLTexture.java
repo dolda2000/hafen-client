@@ -31,6 +31,7 @@ import haven.render.Texture.Image;
 import haven.render.Texture.Sampler;
 import haven.render.Texture2D.Sampler2D;
 import haven.render.Texture3D.Sampler3D;
+import haven.render.Texture2DMS.Sampler2DMS;
 import haven.render.TextureCube.CubeImage;
 import haven.render.TextureCube.SamplerCube;
 import java.nio.*;
@@ -450,6 +451,58 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 
 	public String toString() {
 	    return(String.format("#<gl.tex3d %d @ %08x %s>", id, System.identityHashCode(this), data));
+	}
+    }
+
+    public static class Tex2DMS extends GLTexture {
+	public final Texture2DMS data;
+	Sampler2DMS sampler;
+
+	public Tex2DMS(GLEnvironment env, Texture2DMS data) {
+	    super(env);
+	    this.data = data;
+	    int ifmt = texifmt(data);
+	    env.prepare((GLRender g) -> {
+		    if(g.state.prog() != null)
+			throw(new RuntimeException("program unexpectedly used in prep context"));
+		    BGL gl = g.gl();
+		    gl.glActiveTexture(GL.GL_TEXTURE0);
+		    bind(gl);
+		    gl.glTexImage2DMultisample(GL3.GL_TEXTURE_2D_MULTISAMPLE, data.s, ifmt, data.w, data.h, data.fixed);
+		    long mem = data.ifmt.size() * data.w * data.h * data.s; // Unknown, perhaps, but best known value
+		    setmem(GLEnvironment.MemStats.TEXTURES, mem);
+		    unbind(gl);
+		    gl.bglCheckErr();
+		});
+	}
+
+	public static Tex2DMS create(GLEnvironment env, Texture2DMS data) {
+	    FillBuffers.Array[] pixels = new FillBuffers.Array[data.images().size()];
+	    if(data.init != null)
+		throw(new RuntimeException("Multisample textures cannot be initialized with data"));
+	    return(new Tex2DMS(env, data));
+	}
+
+	public void setsampler(Sampler2DMS data) {
+	    if(sampler == data)
+		return;
+	    if(sampler != null) {
+		if(sampler.equals(data))
+		    return;
+		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple (different) samplers per texture"));
+	    }
+	    sampler = data;
+	}
+
+	public void bind(BGL gl) {
+	    gl.glBindTexture(GL3.GL_TEXTURE_2D_MULTISAMPLE, this);
+	}
+	public void unbind(BGL gl) {
+	    gl.glBindTexture(GL3.GL_TEXTURE_2D_MULTISAMPLE, null);
+	}
+
+	public String toString() {
+	    return(String.format("#<gl.tex2d-ms %d @ %08x %s>", id, System.identityHashCode(this), data));
 	}
     }
 
