@@ -433,8 +433,8 @@ public class CharWnd extends Window {
 	    super(new Coord(attrw, attrf.height() + UI.scale(2)));
 	    Resource res = Resource.local().loadwait("gfx/hud/chr/" + attr);
 	    this.nm = attr;
-	    this.img = res.layer(Resource.imgc).tex();
 	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
+	    this.img = new TexI(convolve(res.layer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
 	    this.attr = glob.cattr.get(attr);
 	    this.bg = bg;
 	}
