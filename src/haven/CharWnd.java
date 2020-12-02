@@ -231,7 +231,7 @@ public class CharWnd extends Window {
 		    BufferedImage ln = Text.render(String.format("%s: %s", ev.nm, Utils.odformat2(el.a, 2)), col).img;
 		    Resource.Image icon = el.res.get().layer(Resource.imgc);
 		    if(icon != null)
-			ln = ItemInfo.catimgsh(5, icon.img, ln);
+			ln = ItemInfo.catimgsh(5, convolve(icon.img, new Coord(ln.getHeight(), ln.getHeight()), iconfilter), ln);
 		    cur = ItemInfo.catimgs(0, cur, ln);
 		    sum += el.a;
 		}
