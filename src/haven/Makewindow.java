@@ -34,6 +34,8 @@ import java.awt.image.BufferedImage;
 import static haven.Inventory.invsq;
 
 public class Makewindow extends Widget {
+    public static final Coord qmodsz = UI.scale(20, 20);
+    private static final Map<Indir<Resource>, Tex> qmicons = new WeakHashMap<>();
     List<Spec> inputs = Collections.emptyList();
     List<Spec> outputs = Collections.emptyList();
     List<Indir<Resource>> qmod = null;
@@ -220,7 +222,7 @@ public class Makewindow extends Widget {
 	    c = new Coord(xoff, qmy);
 	    for(Indir<Resource> qm : qmod) {
 		try {
-		    Tex t = qm.get().layer(Resource.imgc).tex();
+		    Tex t = qmicons.computeIfAbsent(qm, res -> new TexI(PUtils.convolve(res.get().layer(Resource.imgc).img, qmodsz, CharWnd.iconfilter)));
 		    g.image(t, c);
 		    c = c.add(t.sz().x + UI.scale(1), 0);
 		} catch(Loading l) {
