@@ -48,7 +48,15 @@ public class Utils {
     static Coord imgsz(BufferedImage img) {
 	return(new Coord(img.getWidth(), img.getHeight()));
     }
-	
+
+    public static boolean checkhit(BufferedImage img, Coord c) {
+	if(!c.isect(Coord.z, imgsz(img)))
+	    return(false);
+	if(img.getRaster().getNumBands() < 4)
+	    return(true);
+	return(img.getRaster().getSample(c.x, c.y, 3) >= 128);
+    }
+
     public static void defer(final Runnable r) {
 	Defer.later(new Defer.Callable<Object>() {
 		public Object call() {
