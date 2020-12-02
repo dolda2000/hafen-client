@@ -34,8 +34,6 @@ import java.awt.image.BufferedImage;
 import static haven.Inventory.invsq;
 
 public class Makewindow extends Widget {
-    public static final Coord qmodsz = UI.scale(20, 20);
-    private static final Map<Indir<Resource>, Tex> qmicons = new WeakHashMap<>();
     List<Spec> inputs = Collections.emptyList();
     List<Spec> outputs = Collections.emptyList();
     List<Indir<Resource>> qmod = null;
@@ -198,6 +196,12 @@ public class Makewindow extends Widget {
 	}
     }
 
+    public static final Coord qmodsz = UI.scale(20, 20);
+    private static final Map<Indir<Resource>, Tex> qmicons = new WeakHashMap<>();
+    private static Tex qmicon(Indir<Resource> qm) {
+	return(qmicons.computeIfAbsent(qm, res -> new TexI(PUtils.convolve(res.get().layer(Resource.imgc).img, qmodsz, CharWnd.iconfilter))));
+    }
+
     public void draw(GOut g) {
 	Coord c = new Coord(xoff, 0);
 	boolean popt = false;
@@ -222,7 +226,7 @@ public class Makewindow extends Widget {
 	    c = new Coord(xoff, qmy);
 	    for(Indir<Resource> qm : qmod) {
 		try {
-		    Tex t = qmicons.computeIfAbsent(qm, res -> new TexI(PUtils.convolve(res.get().layer(Resource.imgc).img, qmodsz, CharWnd.iconfilter)));
+		    Tex t = qmicon(qm);
 		    g.image(t, c);
 		    c = c.add(t.sz().x + UI.scale(1), 0);
 		} catch(Loading l) {
@@ -249,7 +253,7 @@ public class Makewindow extends Widget {
 	    c = new Coord(xoff, qmy);
 	    try {
 		for(Indir<Resource> qm : qmod) {
-		    Coord tsz = qm.get().layer(Resource.imgc).tex().sz();
+		    Coord tsz = qmicon(qm).sz();
 		    if(mc.isect(c, tsz))
 			return(qm.get().layer(Resource.tooltip).t);
 		    c = c.add(tsz.x + UI.scale(1), 0);
