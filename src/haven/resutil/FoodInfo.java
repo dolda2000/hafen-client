@@ -52,13 +52,14 @@ public class FoodInfo extends ItemInfo.Tip {
     }
 
     public static class Event {
+	public static final Coord imgsz = new Coord(Text.std.height(), Text.std.height());
 	public final CharWnd.FoodMeter.Event ev;
 	public final BufferedImage img;
 	public final double a;
 
 	public Event(Resource res, double a) {
 	    this.ev = res.layer(CharWnd.FoodMeter.Event.class);
-	    this.img = res.layer(Resource.imgc).img;
+	    this.img = PUtils.convolve(res.layer(Resource.imgc).img, imgsz, CharWnd.iconfilter);
 	    this.a = a;
 	}
     }
