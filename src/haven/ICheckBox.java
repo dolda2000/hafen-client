@@ -116,7 +116,7 @@ public class ICheckBox extends Widget {
     public void set(boolean a) {set.accept(a);}
 
     public Runnable click = () -> set(!state());
-    public ICheckBox click(Runnable set) {this.click = click; return(this);}
+    public ICheckBox click(Runnable click) {this.click = click; return(this);}
     public void click() {click.run();}
 
     public boolean gkeytype(java.awt.event.KeyEvent ev) {
