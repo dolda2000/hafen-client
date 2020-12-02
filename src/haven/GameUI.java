@@ -1162,6 +1162,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
+    public static class MenuCheckBox extends ICheckBox {
+	MenuCheckBox(String base, KeyBinding gkey, String tooltip) {
+	    super("gfx/hud/" + base, "", "-d", "-h", "-dh");
+	    setgkey(gkey);
+	    settip(tooltip);
+	}
+    }
+
     public static final KeyBinding kb_inv = KeyBinding.get("inv", KeyMatch.forcode(KeyEvent.VK_TAB, 0));
     public static final KeyBinding kb_equ = KeyBinding.get("equ", KeyMatch.forchar('E', KeyMatch.C));
     public static final KeyBinding kb_chr = KeyBinding.get("chr", KeyMatch.forchar('T', KeyMatch.C));
@@ -1191,9 +1199,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public static final KeyBinding kb_ico = KeyBinding.get("map-icons", KeyMatch.nil);
     private static final Tex mapmenubg = Resource.loadtex("gfx/hud/lbtn-bg");
     public class MapMenu extends Widget {
-	private void toggleol(int id) {
+	private void toggleol(int id, boolean a) {
 	    if(map != null) {
-		if(!map.visol(id)) {
+		if(a) {
 		    map.enol(id); map.enol(id + 1);
 		} else {
 		    map.disol(id); map.disol(id + 1);
@@ -1203,9 +1211,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
 	public MapMenu() {
 	    super(mapmenubg.sz());
-	    add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims"), 0, 0).action(() -> toggleol(0));
-	    add(new MenuButton("lbtn-vil", kb_vil, "Display village claims"), 0, 0).action(() -> toggleol(2));
-	    add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms"), 0, 0).action(() -> toggleol(4));
+	    add(new MenuCheckBox("lbtn-claim", kb_claim, "Display personal claims"), 0, 0).changed(a -> toggleol(0, a));
+	    add(new MenuCheckBox("lbtn-vil", kb_vil, "Display village claims"), 0, 0).changed(a -> toggleol(2, a));
+	    add(new MenuCheckBox("lbtn-rlm", kb_rlm, "Display realms"), 0, 0).changed(a -> toggleol(4, a));
 	    add(new MenuButton("lbtn-map", kb_map, "Map")).action(() -> {
 		    togglewnd(mapfile);
 		    if(mapfile != null)
