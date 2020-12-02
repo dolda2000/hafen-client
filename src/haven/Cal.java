@@ -35,8 +35,8 @@ public class Cal extends Widget {
     static final Tex bg = Resource.loadtex("gfx/hud/calendar/glass");
     static final Tex[] dlnd = new Tex[4];
     static final Tex[] nlnd = new Tex[4];
-    static final Tex dsky = Resource.loadtex("gfx/hud/calendar/daysky");
-    static final Tex nsky = Resource.loadtex("gfx/hud/calendar/nightsky");
+    static final Resource.Image dsky = Resource.loadrimg("gfx/hud/calendar/daysky");
+    static final Resource.Image nsky = Resource.loadrimg("gfx/hud/calendar/nightsky");
     static final Resource.Anim sun = Resource.local().loadwait("gfx/hud/calendar/sun").layer(Resource.animc);
     static final Resource.Anim moon = Resource.local().loadwait("gfx/hud/calendar/moon").layer(Resource.animc);
 
@@ -54,7 +54,7 @@ public class Cal extends Widget {
     public void draw(GOut g) {
 	Astronomy a = ui.sess.glob.ast;
 	long now = System.currentTimeMillis();
-	g.image(a.night?nsky:dsky, Coord.z);
+	g.image(a.night ? nsky : dsky, Coord.z);
 	int mp = (int)Math.round(a.mp * (double)moon.f.length) % moon.f.length;
 	Resource.Image moon = Cal.moon.f[mp][0];
 	Resource.Image sun = Cal.sun.f[(int)((now / Cal.sun.d) % Cal.sun.f.length)][0];
@@ -66,5 +66,29 @@ public class Cal extends Widget {
 	g.image(sun, sc);
 	g.image((a.night ? nlnd : dlnd)[a.is], Coord.z);
 	g.image(bg, Coord.z);
+    }
+
+    public boolean checkhit(Coord c) {
+	return(Utils.checkhit(dsky.scaled(), c.sub(dsky.o)));
+    }
+
+    private static String ord(int i) {
+	if(((i % 100) / 10) != 1) {
+	    if((i % 10) == 1)
+		return(i + "st");
+	    else if((i % 10) == 2)
+		return(i + "nd");
+	    else if((i % 10) == 3)
+		return(i + "rd");
+	}
+	return(i + "th");
+    }
+
+    public Object tooltip(Coord c, Widget prev) {
+	if(checkhit(c)) {
+	    Astronomy a = ui.sess.glob.ast;
+	    return(String.format("%s day of the %s month of the %s year", ord((int)Math.floor(a.md) + 1), ord((int)Math.floor(a.ym) + 1), ord((int)Math.floor(a.years) + 1)));
+	}
+	return(super.tooltip(c, prev));
     }
 }
