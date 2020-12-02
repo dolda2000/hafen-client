@@ -37,7 +37,7 @@ public class Profwnd extends Window {
     private Tex sscl = null;
     
     public Profwnd(Profile prof, String title) {
-	super(new Coord(prof.hist.length + 50, h), title);
+	super(new Coord(prof.hist.length + UI.scale(50), h), title);
 	this.prof = prof;
     }
     
@@ -78,7 +78,7 @@ public class Profwnd extends Window {
 	g.chcolor(192, 192, 192, 128);
 	g.line(new Coord(0, sy), new Coord(prof.hist.length, sy), 1);
 	g.chcolor();
-	g.image(sscl, new Coord(prof.hist.length + 2, sy - (sscl.sz().y / 2)));
+	g.image(sscl, new Coord(prof.hist.length + UI.scale(2), sy - (sscl.sz().y / 2)));
     }
 
     public boolean keydown(java.awt.event.KeyEvent ev) {

@@ -66,6 +66,14 @@ public class AnimSprite extends Sprite {
 		rl.add(mr.mat.get().apply(mr.m));
 	    }
 	}
+	Owner rec = null;
+	for(RenderLink.Res lr : res.layers(RenderLink.Res.class)) {
+	    if((lr.id < 0) || (((1 << lr.id) & mask) != 0)) {
+		if(rec == null)
+		    rec = new RecOwner();
+		rl.add(lr.l.make(rec));
+	    }
+	}
 	parts = rl.toArray(new RenderTree.Node[0]);
     }
 

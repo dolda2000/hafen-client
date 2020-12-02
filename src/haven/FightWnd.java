@@ -36,7 +36,6 @@ import static haven.Window.wbox;
 import static haven.Inventory.invsq;
 
 public class FightWnd extends Widget {
-    private static final int fontsize = UI.scale(16);
     public final int nsave;
     public int maxact;
     public final Actions actlist;
@@ -56,7 +55,7 @@ public class FightWnd extends Widget {
     private static final OwnerContext.ClassResolver<FightWnd> actxr = new OwnerContext.ClassResolver<FightWnd>()
 	.add(Glob.class, wdg -> wdg.ui.sess.glob)
 	.add(Session.class, wdg -> wdg.ui.sess);
-    public static final Text.Foundry namef = new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD, fontsize)).aa(true);
+    public static final Text.Foundry namef = new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD), 16).aa(true);
     public class Action implements ItemInfo.ResOwner {
 	public final Indir<Resource> res;
 	private final int id;
@@ -70,7 +69,7 @@ public class FightWnd extends Widget {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif," + fontsize + "]{" + res.layer(Resource.tooltip).t + "}}\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n");
 	    Resource.Pagina pag = res.layer(Resource.pagina);
 	    if(pag != null)
 		buf.append(pag.text);
@@ -680,7 +679,7 @@ public class FightWnd extends Widget {
 
 	public boolean keydown(KeyEvent ev) {
 	    if(edit != -1) {
-		if(ev.getKeyChar() == 27) {
+		if(key_esc.match(ev)) {
 		    edit = -1;
 		    redit = null;
 		    nmed = null;
@@ -738,7 +737,7 @@ public class FightWnd extends Widget {
 	info = add(new ImageInfoBox(UI.scale(new Coord(223, 152))), UI.scale(new Coord(5, 35)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(info));
 
-	add(new Img(CharWnd.catf.render("Martial Arts & Combat Schools").tex()), 0, 0);
+	add(CharWnd.settip(new Img(CharWnd.catf.render("Martial Arts & Combat Schools").tex()), "gfx/hud/chr/tips/combat"), 0, 0);
 	actlist = add(new Actions(UI.scale(255), 8), UI.scale(new Coord(245, 35)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(actlist));
 

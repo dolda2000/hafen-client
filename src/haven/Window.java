@@ -135,7 +135,6 @@ public class Window extends Widget implements DTarget {
 	bgc.x = cbr.x - bgr.sz().x;
 	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgr.sz().y)
 	    g.image(bgr, bgc, ctl, cbr);
-	cdraw(g.reclip(atl, asz));
     }
 
     protected void drawframe(GOut g) {
@@ -176,10 +175,11 @@ public class Window extends Widget implements DTarget {
     }
 
     protected void drawwnd(GOut g) {
-	if(!decohide) {
+	if(!decohide)
 	    drawbg(g);
+	cdraw(g.reclip(atl, asz));
+	if(!decohide)
 	    drawframe(g);
-	}
     }
 
     public void draw(GOut g) {
@@ -258,6 +258,13 @@ public class Window extends Widget implements DTarget {
 	doff = off;
     }
 
+    public boolean checkhit(Coord c) {
+	if(decohide)
+	    return(c.isect(atl, asz));
+	Coord cpc = c.sub(cptl);
+	return(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128)));
+    }
+
     public boolean mousedown(Coord c, int button) {
 	if(super.mousedown(c, button)) {
 	    parent.setfocus(this);
@@ -265,8 +272,7 @@ public class Window extends Widget implements DTarget {
 	    return(true);
 	}
 	if(!decohide) {
-	    Coord cpc = c.sub(cptl);
-	    if(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128))) {
+	    if(checkhit(c)) {
 		if(button == 1)
 		    drag(c);
 		parent.setfocus(this);
@@ -306,7 +312,7 @@ public class Window extends Widget implements DTarget {
     public boolean keydown(java.awt.event.KeyEvent ev) {
 	if(super.keydown(ev))
 	    return(true);
-	if(ev.getKeyChar() == 27) {
+	if(key_esc.match(ev)) {
 	    wdgmsg("close");
 	    return(true);
 	}
@@ -326,6 +332,8 @@ public class Window extends Widget implements DTarget {
     }
 
     public Object tooltip(Coord c, Widget prev) {
+	if(!checkhit(c))
+	    return(super.tooltip(c, prev));
 	Object ret = super.tooltip(c, prev);
 	if(ret != null)
 	    return(ret);

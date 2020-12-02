@@ -182,7 +182,10 @@ public class GOut {
 	 * rather than OpenGL coordinates, but it's not entirely
 	 * obvious to me right now how all of that should work
 	 * together. */
-	usestate(new States.Scissor(new Area(new Coord(ul.x, root.br.y - br.y), new Coord(br.x, root.br.y - ul.y))));
+	Area clip = new Area(new Coord(ul.x, root.br.y - br.y), new Coord(br.x, root.br.y - ul.y));
+	if(!clip.positive())
+	    return;
+	usestate(new States.Scissor(clip));
 	Coord sz = tex.sz();
 	float x = c.x + tx.x, y = c.y + tx.y;
 	float si = -(float)Math.sin(a), co = (float)Math.cos(a);

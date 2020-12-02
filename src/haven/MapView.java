@@ -253,7 +253,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     static {camtypes.put("bad", FreeCam.class);}
     
     public class OrthoCam extends Camera {
-	public boolean exact;
+	public boolean exact = true;
 	protected float dist = 500.0f;
 	protected float elev = (float)Math.PI / 6.0f;
 	protected float angl = -(float)Math.PI / 4.0f;
@@ -261,12 +261,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private Coord dragorig = null;
 	private float anglorig;
 	protected Coord3f cc, jc;
-
-	public OrthoCam(boolean exact) {
-	    this.exact = exact;
-	}
-
-	public OrthoCam() {this(true);}
 
 	public void tick2(double dt) {
 	    Coord3f cc = getcc();
@@ -322,14 +316,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private float anglorig;
 	private float tangl = angl;
 	private float tfield = field;
+	private boolean isometric = true;
 	private final float pi2 = (float)(Math.PI * 2);
 
-	public SOrthoCam(boolean exact) {
-	    super(exact);
-	}
-
 	public SOrthoCam(String... args) {
-	    PosixArgs opt = PosixArgs.getopt(args, "en");
+	    PosixArgs opt = PosixArgs.getopt(args, "enif");
 	    for(char c : opt.parsed()) {
 		switch(c) {
 		case 'e':
@@ -337,6 +328,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    break;
 		case 'n':
 		    exact = false;
+		    break;
+		case 'i':
+		    isometric = true;
+		    break;
+		case 'f':
+		    isometric = false;
 		    break;
 		}
 	    }
@@ -376,7 +373,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void release() {
-	    if(tfield > 100)
+	    if(isometric && (tfield > 100))
 		tangl = (float)(Math.PI * 0.5 * (Math.floor(tangl / (Math.PI * 0.5)) + 0.5));
 	}
 
@@ -730,6 +727,45 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	public void remove() {
 	    slot.remove();
+	}
+    }
+
+    private static final Material gridmat = new Material(new BaseColor(255, 255, 255, 48), States.maskdepth, new MapMesh.OLOrder(-1),
+							 Location.xlate(new Coord3f(0, 0, 0.5f))   /* Apparently, there is no depth bias for lines. :P */
+							 );
+    private class GridLines extends MapRaster {
+	final Grid grid = new Grid<RenderTree.Node>() {
+		RenderTree.Node getcut(Coord cc) {
+		    return(map.getcut(cc).grid());
+		}
+	    };
+
+	private GridLines() {}
+
+	void tick() {
+	    super.tick();
+	    if(area != null)
+		grid.tick();
+	}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.ostate(gridmat);
+	    slot.add(grid);
+	    super.added(slot);
+	}
+
+	public void remove() {
+	    slot.remove();
+	}
+    }
+
+    GridLines gridlines = null;
+    public void showgrid(boolean show) {
+	if((gridlines == null) && show) {
+	    basic.add(gridlines = new GridLines());
+	} else if((gridlines != null) && !show) {
+	    gridlines.remove();
+	    gridlines = null;
 	}
     }
 
@@ -1496,6 +1532,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		if(ols[i] != null)
 		    ols[i].tick();
 	    }
+	    if(gridlines != null)
+		gridlines.tick();
 	    clickmap.tick();
 	}
 	Loader.Future<Plob> placing = this.placing;
@@ -1894,7 +1932,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	return(super.keydown(ev));
     }
 
+    public static final KeyBinding kb_grid = KeyBinding.get("grid", KeyMatch.forchar('G', KeyMatch.C));
     public boolean globtype(char c, KeyEvent ev) {
+	if(kb_grid.key().match(ev)) {
+	    showgrid(gridlines == null);
+	    return(true);
+	}
 	return(false);
     }
 
@@ -2061,13 +2104,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Camera restorecam() {
 	Class<? extends Camera> ct = camtypes.get(Utils.getpref("defcam", null));
 	if(ct == null)
-	    return(new SOrthoCam(true));
+	    return(new SOrthoCam());
 	String[] args = (String [])Utils.deserialize(Utils.getprefb("camargs", null));
 	if(args == null) args = new String[0];
 	try {
 	    return(makecam(ct, args));
 	} catch(Exception e) {
-	    return(new SOrthoCam(true));
+	    return(new SOrthoCam());
 	}
     }
 

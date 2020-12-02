@@ -191,7 +191,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		}
 	    }, UI.scale(new Coord(10, 10)));
 	buffs = ulpanel.add(new Bufflist(), UI.scale(new Coord(95, 65)));
-	umpanel.add(new Cal(), UI.scale(new Coord(0, 10)));
+	umpanel.add(new Cal(), Coord.z);
 	syslog = chat.add(new ChatUI.Log("System"));
 	opts = add(new OptWnd());
 	opts.hide();
@@ -456,7 +456,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
-    static class Hidewnd extends Window {
+    public static class Hidewnd extends Window {
 	Hidewnd(Coord sz, String cap, boolean lg) {
 	    super(sz, cap, lg);
 	}

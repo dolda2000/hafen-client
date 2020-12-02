@@ -1523,7 +1523,7 @@ public class MapFile {
 		int len = data.int32();
 		if(len != (cmaps.x * cmaps.y))
 		    throw(new Message.FormatError("Bad grid data dimensions: " + len));
-		tiles = data.bytes();
+		tiles = data.bytes(len);
 		zmap = DataGrid.loadz(data, String.format("%x", gid));
 	    } else {
 		tiles = data.bytes();

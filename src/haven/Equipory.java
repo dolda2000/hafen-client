@@ -37,9 +37,7 @@ public class Equipory extends Widget implements DTarget {
     public static final Coord bgc = new Coord(invsq.sz().x, 0);
     public static final Coord ecoords[] = {
 	new Coord( 0, 0 * yo),
-	new Coord(rx, 0 * yo),
 	new Coord( 0, 1 * yo),
-	new Coord(rx, 1 * yo),
 	new Coord( 0, 2 * yo),
 	new Coord(rx, 2 * yo),
 	new Coord( 0, 3 * yo),
@@ -52,7 +50,11 @@ public class Equipory extends Widget implements DTarget {
 	new Coord(rx, 6 * yo),
 	new Coord( 0, 7 * yo),
 	new Coord(rx, 7 * yo),
+	new Coord( 0, 8 * yo),
+	new Coord(rx, 8 * yo),
 	new Coord(invsq.sz().x, 0 * yo),
+	new Coord(rx, 0 * yo),
+	new Coord(rx, 1 * yo),
     };
     public static final Tex[] ebgs = new Tex[ecoords.length];
     public static final Text[] etts = new Text[ecoords.length];

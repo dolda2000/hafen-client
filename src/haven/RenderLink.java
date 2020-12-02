@@ -27,11 +27,177 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import haven.render.*;
+import haven.Sprite.Owner;
+import haven.render.RenderTree.Node;
+import haven.render.RenderTree.Slot;
 
 public interface RenderLink {
-    public RenderTree.Node make();
+    public Node make(Owner owner);
+    public default Node make() {return(make(null));}
     
+    public static class MeshMat implements RenderLink {
+	public final Resource srcres;
+	public final Indir<Resource> mesh, mat;
+	public final int meshid, matid;
+	private Node res = null;
+
+	public MeshMat(Resource srcres, Indir<Resource> mesh, int meshid, Indir<Resource> mat, int matid) {
+	    this.srcres = srcres;
+	    this.mesh = mesh;
+	    this.meshid = meshid;
+	    this.mat = mat;
+	    this.matid = matid;
+	}
+
+	public static MeshMat parse(Resource res, Message buf) {
+	    String meshnm = buf.string();
+	    int meshver = buf.uint16();
+	    int meshid = buf.int16();
+	    String matnm = buf.string();
+	    int matver = buf.uint16();
+	    int matid = buf.int16();
+	    Indir<Resource> mesh = meshnm.equals("") ? res.indir() : res.pool.load(meshnm, meshver);
+	    Indir<Resource> mat = matnm.equals("") ? res.indir() : res.pool.load(matnm, matver);
+	    return(new MeshMat(res, mesh, meshid, mat, matid));
+	}
+
+	public Node make(Owner owner) {
+	    if(res == null) {
+		FastMesh m = null;
+		for(FastMesh.MeshRes mr : mesh.get().layers(FastMesh.MeshRes.class)) {
+		    if((meshid < 0) || (mr.id == meshid)) {
+			m = mr.m;
+			break;
+		    }
+		}
+		Material M = null;
+		for(Material.Res mr : mat.get().layers(Material.Res.class)) {
+		    if((matid < 0) || (mr.id == matid)) {
+			M = mr.get();
+			break;
+		    }
+		}
+		if(m == null)
+		    throw(new Sprite.ResourceException("Could not find specified mesh by ID " + meshid, srcres));
+		if(M == null)
+		    throw(new Sprite.ResourceException("Could not find specified material by ID " + matid, srcres));
+		res = M.apply(m);
+	    }
+	    return(res);
+	}
+    }
+
+    public static class AmbientLink implements RenderLink {
+	public final Indir<Resource> res;
+
+	public AmbientLink(Indir<Resource> res) {
+	    this.res = res;
+	}
+
+	public static AmbientLink parse(Resource res, Message buf) {
+	    String nm = buf.string();
+	    int ver = buf.uint16();
+	    return(new AmbientLink(res.pool.load(nm, ver)));
+	}
+
+	public Node make(Owner owner) {
+	    return(new ActAudio.Ambience(res.get()));
+	}
+    }
+
+    public static class Collect implements RenderLink {
+	public final Indir<Resource> from;
+	public final int meshid, meshmask;
+	private Node res;
+
+	public Collect(Indir<Resource> from, int meshid, int meshmask) {
+	    this.from = from;
+	    this.meshid = meshid;
+	    this.meshmask = meshmask;
+	}
+
+	public static Collect parse(Resource res, Message buf) {
+	    String nm = buf.string();
+	    int ver = buf.uint16();
+	    Indir<Resource> lres = res.pool.load(nm, ver);
+	    int meshid = buf.int16();
+	    int meshmask = buf.eom() ? -1 : buf.int16();
+	    return(new Collect(lres, meshid, meshmask));
+	}
+
+	public Node make(Owner owner) {
+	    if(res == null) {
+		ArrayList<Node> cl = new ArrayList<>();
+		for(FastMesh.MeshRes mr : from.get().layers(FastMesh.MeshRes.class)) {
+		    if(((meshid >= 0) && (mr.id < 0)) || ((mr.id & meshmask) == meshid))
+			cl.add(mr.mat.get().apply(mr.m));
+		}
+		final Node[] ca = cl.toArray(new Node[0]);
+		res = new Node() {
+			public void added(Slot slot) {
+			    for(Node r : ca)
+				slot.add(r);
+			}
+		    };
+	    }
+	    return(res);
+	}
+    }
+
+    public static class Parameters implements RenderLink {
+	public final Indir<Resource> res;
+	public final Object[] args;
+	private Resource lres;
+	private ArgLink link = null;
+
+	public Parameters(Indir<Resource> res, Object[] args) {
+	    this.res = res;
+	    this.args = args;
+	}
+
+	public static Parameters parse(Resource res, Message buf) {
+	    String nm = buf.string();
+	    int ver = buf.uint16();
+	    Object[] args = buf.list();
+	    return(new Parameters(res.pool.load(nm, ver), args));
+	}
+
+	public Node make(Owner owner) {
+	    if(link == null) {
+		if(lres == null)
+		    lres = res.get();
+		link = lres.getcode(ArgLink.class, true);
+	    }
+	    return(link.create(owner, lres, args));
+	}
+    }
+
+    public static class ArgMaker implements Resource.PublishedCode.Instancer {
+	public ArgLink make(Class<?> cl, Resource ires, Object... argv) {
+	    if(ArgLink.class.isAssignableFrom(cl))
+		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(ArgLink.class), ires, argv));
+	    try {
+		Function<Object[], Node> make = Utils.smthfun(cl, "mkrlink", Node.class, Owner.class, Resource.class, Object[].class);
+		return((owner, res, args) -> make.apply(new Object[] {owner, res, args}));
+	    } catch(NoSuchMethodException e) {}
+	    if(Node.class.isAssignableFrom(cl)) {
+		Class<? extends Node> scl = cl.asSubclass(Node.class);
+		try {
+		    Function<Object[], ? extends Node> make = Utils.consfun(scl, Owner.class, Resource.class, Object[].class);
+		    return((owner, res, args) -> make.apply(new Object[] {owner, res, args}));
+		} catch(NoSuchMethodException e) {}
+	    }
+	    throw(new RuntimeException("Could not find any suitable construct for dynamic renderlink"));
+	}
+    }
+
+    @Resource.PublishedCode(name = "rlink", instancer = ArgMaker.class)
+    public interface ArgLink {
+	public Node create(Owner owner, Resource res, Object... args);
+    }
+
     @Resource.LayerName("rlink")
     public class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public transient final RenderLink l;
@@ -48,81 +214,18 @@ public interface RenderLink {
 		id = buf.int16();
 		t = buf.uint8();
 	    } else {
-		throw(new Resource.LoadException("Invalid renderlink version: " + lver, getres()));
+		throw(new Resource.LoadException("Invalid renderlink version: " + lver, res));
 	    }
 	    if(t == 0) {
-		String meshnm = buf.string();
-		int meshver = buf.uint16();
-		final int meshid = buf.int16();
-		String matnm = buf.string();
-		int matver = buf.uint16();
-		final int matid = buf.int16();
-		final Indir<Resource> mesh = meshnm.equals("")?res.indir():res.pool.load(meshnm, meshver);
-		final Indir<Resource> mat = matnm.equals("")?res.indir():res.pool.load(matnm, matver);
-		l = new RenderLink() {
-			RenderTree.Node res = null;
-			public RenderTree.Node make() {
-			    if(res == null) {
-				FastMesh m = null;
-				for(FastMesh.MeshRes mr : mesh.get().layers(FastMesh.MeshRes.class)) {
-				    if((meshid < 0) || (mr.id == meshid)) {
-					m = mr.m;
-					break;
-				    }
-				}
-				Material M = null;
-				for(Material.Res mr : mat.get().layers(Material.Res.class)) {
-				    if((matid < 0) || (mr.id == matid)) {
-					M = mr.get();
-					break;
-				    }
-				}
-				if(m == null)
-				    throw(new Sprite.ResourceException("Could not find specified mesh by ID " + meshid, getres()));
-				if(M == null)
-				    throw(new Sprite.ResourceException("Could not find specified material by ID " + matid, getres()));
-				res = M.apply(m);
-			    }
-			    return(res);
-			}
-		    };
+		l = MeshMat.parse(res, buf);
 	    } else if(t == 1) {
-		String nm = buf.string();
-		int ver = buf.uint16();
-		final Indir<Resource> amb = res.pool.load(nm, ver);
-		l = new RenderLink() {
-			public RenderTree.Node make() {
-			    return(new ActAudio.Ambience(amb.get()));
-			}
-		    };
+		l = AmbientLink.parse(res, buf);
 	    } else if(t == 2) {
-		String nm = buf.string();
-		int ver = buf.uint16();
-		final Indir<Resource> lres = res.pool.load(nm, ver);
-		final int meshid = buf.int16();
-		final int meshmask = buf.eom() ? -1 : buf.int16();
-		l = new RenderLink() {
-			RenderTree.Node res = null;
-			public RenderTree.Node make() {
-			    if(res == null) {
-				ArrayList<RenderTree.Node> cl = new ArrayList<>();
-				for(FastMesh.MeshRes mr : lres.get().layers(FastMesh.MeshRes.class)) {
-				    if(((meshid >= 0) && (mr.id < 0)) || ((mr.id & meshmask) == meshid))
-					cl.add(mr.mat.get().apply(mr.m));
-				}
-				final RenderTree.Node[] ca = cl.toArray(new RenderTree.Node[0]);
-				res = new RenderTree.Node() {
-					public void added(RenderTree.Slot slot) {
-					    for(RenderTree.Node r : ca)
-						slot.add(r);
-					}
-				    };
-			    }
-			    return(res);
-			}
-		    };
+		l = Collect.parse(res, buf);
+	    } else if(t == 3) {
+		l = Parameters.parse(res, buf);
 	    } else {
-		throw(new Resource.LoadException("Invalid renderlink type: " + t, getres()));
+		throw(new Resource.LoadException("Invalid renderlink type: " + t, res));
 	    }
 	}
 	

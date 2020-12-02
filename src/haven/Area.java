@@ -59,6 +59,10 @@ public class Area implements Iterable<Coord>, java.io.Serializable {
 	return(br.sub(ul));
     }
 
+    public boolean positive() {
+	return((br.x > ul.x) && (br.y > ul.y));
+    }
+
     public boolean contains(Coord c) {
 	return((c.x >= ul.x) && (c.y >= ul.y) && (c.x < br.x) && (c.y < br.y));
     }
