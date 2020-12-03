@@ -91,6 +91,12 @@ public class Debug {
 		    Utils.dumparr((float[])stuff[i], System.err, false);
 		} else if(stuff[i] instanceof short[]) {
 		    Utils.dumparr((short[])stuff[i], System.err, false);
+		} else if(stuff[i] instanceof boolean[]) {
+		    boolean[] ba = (boolean[])stuff[i];
+		    System.err.print('[');
+		    for(int o = 0; o < ba.length; o++)
+			System.err.print(ba[o] ? "\u22a4" : "\u22a5");
+		    System.err.print(']');
 		} else {
 		    System.err.print(stuff[i]);
 		}
