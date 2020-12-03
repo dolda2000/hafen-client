@@ -466,7 +466,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	
     public void disol(int ol) {
 	synchronized(ols) {
-	    if((ols[ol] != null) && (--ols[ol].rc <= 0)) {
+	    if((ols[ol] != null) && ((ols[ol].rc = Math.max(ols[ol].rc - 1, 0)) == 0)) {
 		ols[ol].remove();
 		ols[ol] = null;
 	    }

@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.util.function.*;
 import java.awt.image.BufferedImage;
 
 public class ICheckBox extends Widget {
@@ -77,11 +78,17 @@ public class ICheckBox extends Widget {
     }
 
     public void draw(GOut g) {
-	if(!a)
+	if(!state())
 	    g.image(h ? hoverup : up, Coord.z);
 	else
 	    g.image(h ? hoverdown : down, Coord.z);
         super.draw(g);
+    }
+
+    public Supplier<Boolean> state = () -> this.a;
+    public ICheckBox state(Supplier<Boolean> state) {this.state = state; return(this);}
+    public boolean state() {
+	return(state.get());
     }
 
     public boolean checkhit(Coord c) {
@@ -92,21 +99,25 @@ public class ICheckBox extends Widget {
 	return(img.getRaster().getSample(c.x, c.y, 3) >= 128);
     }
 
-    public void changed(boolean val) {
+    public Consumer<Boolean> changed = a -> {
 	if(canactivate)
 	    wdgmsg("ch", a ? 1 : 0);
-    }
+    };
+    public ICheckBox changed(Consumer<Boolean> changed) {this.changed = changed; return(this);}
+    public void changed(boolean val) {changed.accept(val);}
 
-    public void set(boolean a) {
+    public Consumer<Boolean> set = a -> {
 	if(this.a != a) {
 	    this.a = a;
 	    changed(a);
 	}
-    }
+    };
+    public ICheckBox set(Consumer<Boolean> set) {this.set = set; return(this);}
+    public void set(boolean a) {set.accept(a);}
 
-    public void click() {
-	set(!a);
-    }
+    public Runnable click = () -> set(!state());
+    public ICheckBox click(Runnable click) {this.click = click; return(this);}
+    public void click() {click.run();}
 
     public boolean gkeytype(java.awt.event.KeyEvent ev) {
 	click();
