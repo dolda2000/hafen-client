@@ -92,25 +92,18 @@ public class MapWnd extends Window implements Console.Directory {
 		    recenter();
 		}
 	    }, Coord.z);
-	toolbar.add(new IButton("gfx/hud/mmap/mark", "", "-d", "-h") {
-		{settip("Add marker"); setgkey(kb_mark);}
-		public void click() {
-		    domark = true;
-		}
-	    }, Coord.z);
-	toolbar.add(new IButton("gfx/hud/mmap/hmark", "", "-d", "-h") {
-		{settip("Toggle marker display"); setgkey(kb_hmark);}
-		public void click() {
-		    hmarkers = !hmarkers;
-		}
-	    });
-	toolbar.add(new IButton("gfx/hud/mmap/wnd", "", "-d", "-h") {
-		{settip("Toggle compact mode"); setgkey(kb_compact);}
-		public void click() {
-		    compact(!decohide());
-		    Utils.setprefb("compact-map", decohide());
-		}
-	    });
+	toolbar.add(new ICheckBox("gfx/hud/mmap/mark", "", "-d", "-h", "-dh"), Coord.z)
+	    .state(() -> domark).set(a -> domark = a)
+	    .settip("Add marker").setgkey(kb_mark);
+	toolbar.add(new ICheckBox("gfx/hud/mmap/hmark", "", "-d", "-h", "-dh"))
+	    .state(() -> hmarkers).set(a -> hmarkers = a)
+	    .settip("Hide markers").setgkey(kb_hmark);
+	toolbar.add(new ICheckBox("gfx/hud/mmap/wnd", "", "-d", "-h", "-dh"))
+	    .state(() -> decohide()).set(a -> {
+		    compact(a);
+		    Utils.setprefb("compact-map", a);
+		})
+	    .settip("Compact mode").setgkey(kb_compact);
 	toolbar.pack();
 	tool = add(new Toolbox());;
 	compact(Utils.getprefb("compact-map", false));
