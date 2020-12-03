@@ -72,9 +72,9 @@ public class Debug {
 
     public static void dump(Object... stuff) {
 	if(stuff.length > 0) {
-	    System.err.print(stuff[0]);
-	    for(int i = 1; i < stuff.length; i++) {
-		System.err.print(' ');
+	    for(int i = 0; i < stuff.length; i++) {
+		if(i > 0)
+		    System.err.print(' ');
 		if(stuff[i] instanceof Object[]) {
 		    System.err.print(Arrays.asList((Object[])stuff[i]));
 		} else if(stuff[i] instanceof byte[]) {
