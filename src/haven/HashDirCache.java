@@ -140,14 +140,13 @@ public class HashDirCache implements ResCache {
 	try {
 	    for(int r = 0; true; r++) {
 		/* XXX: Sometimes, this is getting strange and weird
-		 * errors from the OS. On Windows, file sharing violations
-		 * are sometimes returned even though Java always opens
-		 * RandomAccessFiles in non-exclusive mode. On Linux, I'm
-		 * sometimes getting OverlappingFileLockExceptions even
-		 * though I'm explicitly synchronizing access to the same
-		 * file chain down in lookup(). I've had zero luck in
-		 * trying to find a root cause for these errors, so just
-		 * assume the error is transient and retry. :P */
+		 * OS errors on Windows. For example, file sharing
+		 * violations are sometimes returned even though Java
+		 * always opens RandomAccessFiles in non-exclusive
+		 * mode, and other times, permission is spuriously
+		 * denied. I've had zero luck in trying to find a root
+		 * cause for these errors, so just assume the error is
+		 * transient and retry. :P */
 		try {
 		    return(new RandomAccessFile(path, mode));
 		} catch(RuntimeException | IOException exc) {
@@ -204,46 +203,65 @@ public class HashDirCache implements ResCache {
         }
     }
 
-    private static final Map<File, Object> monitors = new WeakHashMap<File, Object>();
+    private static final Map<File, int[]> monitors = new HashMap<File, int[]>();
+    private static boolean monwarned = false;
     private File lookup(String name, boolean creat) throws IOException {
 	long h = namehash(idhash, name);
 	File lfn = new File(base, String.format("%016x.0", h));
 	if(!lfn.exists() && !creat)
 	    return(null);
-	Object mon;
+	int[] mon;
 	synchronized(monitors) {
+	    if(!monwarned && (monitors.size() > 100)) {
+		Warning.warn("HashDirCache monitors growing suspiciously many: " + monitors.size());
+		monwarned = true;
+	    }
 	    /* Apparently, Java doesn't allow two threads in one JVM
 	     * to lock the same file... */
 	    if((mon = monitors.get(lfn)) == null)
-		monitors.put(lfn, mon = new Object());
+		monitors.put(lfn, mon = new int[] {1});
+	    else
+		mon[0]++;
 	}
-	synchronized(mon) {
-	    LockedFile lf = lock2(lfn);
-	    try {
-		for(int idx = 0; ; idx++) {
-		    File path = new File(base, String.format("%016x.%d", h, idx));
-		    if(!path.exists() && !creat)
-			return(null);
-		    RandomAccessFile fp = (idx == 0) ? lf.f : open2(path, "rw");
-		    try {
-			Header head = readhead(fp);
-			if(head == null) {
-			    if(!creat)
-				return(null);
-			    fp.setLength(0);
-			    writehead(fp, name);
-			    return(path);
+	try {
+	    synchronized(mon) {
+		LockedFile lf = lock2(lfn);
+		try {
+		    for(int idx = 0; ; idx++) {
+			File path = new File(base, String.format("%016x.%d", h, idx));
+			if(!path.exists() && !creat)
+			    return(null);
+			RandomAccessFile fp = (idx == 0) ? lf.f : open2(path, "rw");
+			try {
+			    Header head = readhead(fp);
+			    if(head == null) {
+				if(!creat)
+				    return(null);
+				fp.setLength(0);
+				writehead(fp, name);
+				return(path);
+			    }
+			    if(head.cid.equals(id.toString()) && head.name.equals(name))
+				return(path);
+			} finally {
+			    if(idx != 0)
+				fp.close();
 			}
-			if(head.cid.equals(id.toString()) && head.name.equals(name))
-			    return(path);
-		    } finally {
-			if(idx != 0)
-			    fp.close();
 		    }
+		} finally {
+		    lf.l.release();
+		    lf.f.close();
 		}
-	    } finally {
-		lf.l.release();
-		lf.f.close();
+	    }
+	} finally {
+	    synchronized(monitors) {
+		mon[0]--;
+		if(mon[0] < 0) {
+		    throw(new AssertionError(String.format("monitor refcount %d for %s (%s)", mon[0], lfn, name)));
+		} else if(mon[0] == 0) {
+		    if(monitors.remove(lfn) != mon)
+			throw(new AssertionError(String.format("monitor identity crisis for %s (%s)", lfn, name)));
+		}
 	    }
 	}
     }

@@ -71,7 +71,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    char hk = res.layer(Resource.action).hk;
 	    if(hk == 0)
 		return(KeyMatch.nil);
-	    return(KeyMatch.forchar(Character.toUpperCase(hk), 0));
+	    return(KeyMatch.forchar(Character.toUpperCase(hk), KeyMatch.MODS & ~KeyMatch.S, 0));
 	}
 	public KeyBinding binding() {
 	    return(KeyBinding.get("scm/" + res.name, hotkey()));

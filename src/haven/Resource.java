@@ -253,18 +253,25 @@ public class Resource implements Serializable {
     }
 
     public static class JarSource implements ResSource, Serializable {
+	public final String base;
+
+	public JarSource(String base) {
+	    this.base = base;
+	}
+
 	public InputStream get(String name) throws FileNotFoundException {
-	    InputStream s = Resource.class.getResourceAsStream("/res/" + name + ".res");
+	    String full = "/" + base + "/" + name + ".res";
+	    InputStream s = Resource.class.getResourceAsStream(full);
 	    if(s == null)
-		throw(new FileNotFoundException("Could not find resource locally: " + name));
+		throw(new FileNotFoundException("Could not find resource locally: " + full));
 	    return(s);
 	}
-	
+
 	public String toString() {
-	    return("local res source");
+	    return("local res source (" + base + ")");
 	}
     }
-    
+
     public static class HttpSource implements ResSource, Serializable {
 	private final transient SslHelper ssl;
 	public URL baseurl;
@@ -690,7 +697,7 @@ public class Resource implements Serializable {
 	if(_local == null) {
 	    synchronized(Resource.class) {
 		if(_local == null) {
-		    Pool local = new Pool(new JarSource());
+		    Pool local = new Pool(new JarSource("res"));
 		    try {
 			if(Config.resdir != null)
 			    local.add(new FileSource(new File(Config.resdir)));
@@ -711,7 +718,7 @@ public class Resource implements Serializable {
 	if(_remote == null) {
 	    synchronized(Resource.class) {
 		if(_remote == null) {
-		    Pool remote = new Pool(local());
+		    Pool remote = new Pool(local(), new JarSource("res-preload"));
 		    if(prscache != null)
 			remote.add(new CacheSource(prscache));
 		    _remote = remote;;
@@ -1558,16 +1565,20 @@ public class Resource implements Serializable {
 	return(indir);
     }
 
+    public static Image loadrimg(String name) {
+	return(local().loadwait(name).layer(imgc));
+    }
+
     public static BufferedImage loadimg(String name) {
-	return(local().loadwait(name).layer(imgc).img);
+	return(loadrimg(name).img);
     }
 
     public static BufferedImage loadsimg(String name) {
-	return(local().loadwait(name).layer(imgc).scaled());
+	return(loadrimg(name).scaled());
     }
 
     public static Tex loadtex(String name) {
-	return(local().loadwait(name).layer(imgc).tex());
+	return(loadrimg(name).tex());
     }
 
     public String toString() {

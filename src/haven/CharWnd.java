@@ -231,7 +231,7 @@ public class CharWnd extends Window {
 		    BufferedImage ln = Text.render(String.format("%s: %s", ev.nm, Utils.odformat2(el.a, 2)), col).img;
 		    Resource.Image icon = el.res.get().layer(Resource.imgc);
 		    if(icon != null)
-			ln = ItemInfo.catimgsh(5, icon.img, ln);
+			ln = ItemInfo.catimgsh(5, convolve(icon.img, new Coord(ln.getHeight(), ln.getHeight()), iconfilter), ln);
 		    cur = ItemInfo.catimgs(0, cur, ln);
 		    sum += el.a;
 		}
@@ -433,8 +433,8 @@ public class CharWnd extends Window {
 	    super(new Coord(attrw, attrf.height() + UI.scale(2)));
 	    Resource res = Resource.local().loadwait("gfx/hud/chr/" + attr);
 	    this.nm = attr;
-	    this.img = res.layer(Resource.imgc).tex();
 	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
+	    this.img = new TexI(convolve(res.layer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
 	    this.attr = glob.cattr.get(attr);
 	    this.bg = bg;
 	}
