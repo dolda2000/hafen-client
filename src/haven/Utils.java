@@ -1053,6 +1053,35 @@ public class Utils {
 	return((d - min) / (max - min));
     }
 
+    public static <E, O extends Comparable<? super O>> E max(Collection<E> from, Function<? super E, O> key) {
+	E ret = null;
+	O max = null;
+	for(E el : from) {
+	    O score = key.apply(el);
+	    if((max == null) || (score.compareTo(max) > 0)) {
+		ret = el;
+		max = score;
+	    }
+	}
+	return(ret);
+    }
+
+    public static <E, O extends Comparable<? super O>> E min(Collection<E> from, Function<? super E, O> key) {
+	E ret = null;
+	O max = null;
+	for(E el : from) {
+	    O score = key.apply(el);
+	    if((max == null) || (score.compareTo(max) < 0)) {
+		ret = el;
+		max = score;
+	    }
+	}
+	return(ret);
+    }
+
+    public static <E extends Comparable<? super E>> E max(Collection<E> from) {return(max(from, Function.identity()));}
+    public static <E extends Comparable<? super E>> E min(Collection<E> from) {return(min(from, Function.identity()));}
+
     public static float gcd(float x, float y, float E) {
 	float a = Math.max(x, y), b = Math.min(x, y);
 	while(b > E) {

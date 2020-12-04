@@ -245,6 +245,17 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	}
     }
 
+    @RName("grp")
+    public static class $grp implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    return(new GroupSelector((Integer)args[0]) {
+		    public void changed(int group) {
+			wdgmsg("ch", group);
+		    }
+		});
+	}
+    }
+
     private class BuddyInfo extends Widget {
 	private final Buddy buddy;
 	private final Avaview ava;
