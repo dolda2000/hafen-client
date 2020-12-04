@@ -1125,7 +1125,7 @@ public class MapFile {
 
 	    protected List<String> pickbad() {
 		Collection<Collection<String>> cycles = findcycles();
-		System.err.println("inconsistent tile ordering found: " + cycles);
+		// System.err.println("inconsistent tile ordering found: " + cycles);
 		List<String> ret = new ArrayList<>(Utils.el(cycles));
 		Collections.sort(ret);
 		return(ret);
