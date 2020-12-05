@@ -55,11 +55,12 @@ public class StaticSprite extends Sprite {
     }
     
     public StaticSprite(Owner owner, Resource res, Message sdt) {
-	this(owner, res, lsparts(res, sdt));
+	super(owner, res);
+	this.parts = lsparts(new RecOwner(), res, sdt);
     }
     
     public static RenderTree.Node[] lsparts(Owner owner, Resource res, Message sdt) {
-	int fl = sdt.eom()?0xffff0000:decnum(sdt);
+	int fl = sdt.eom() ? 0xffff0000 : decnum(sdt);
 	Collection<RenderTree.Node> rl = new LinkedList<>();
 	for(FastMesh.MeshRes mr : res.layers(FastMesh.MeshRes.class)) {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & fl) != 0)))
