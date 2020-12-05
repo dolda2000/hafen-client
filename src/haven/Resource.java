@@ -718,7 +718,7 @@ public class Resource implements Serializable {
 	if(_remote == null) {
 	    synchronized(Resource.class) {
 		if(_remote == null) {
-		    Pool remote = new Pool(local());
+		    Pool remote = new Pool(local(), new JarSource("res-preload"));
 		    if(prscache != null)
 			remote.add(new CacheSource(prscache));
 		    _remote = remote;;

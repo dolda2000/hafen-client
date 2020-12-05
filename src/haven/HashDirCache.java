@@ -140,14 +140,13 @@ public class HashDirCache implements ResCache {
 	try {
 	    for(int r = 0; true; r++) {
 		/* XXX: Sometimes, this is getting strange and weird
-		 * errors from the OS. On Windows, file sharing violations
-		 * are sometimes returned even though Java always opens
-		 * RandomAccessFiles in non-exclusive mode. On Linux, I'm
-		 * sometimes getting OverlappingFileLockExceptions even
-		 * though I'm explicitly synchronizing access to the same
-		 * file chain down in lookup(). I've had zero luck in
-		 * trying to find a root cause for these errors, so just
-		 * assume the error is transient and retry. :P */
+		 * OS errors on Windows. For example, file sharing
+		 * violations are sometimes returned even though Java
+		 * always opens RandomAccessFiles in non-exclusive
+		 * mode, and other times, permission is spuriously
+		 * denied. I've had zero luck in trying to find a root
+		 * cause for these errors, so just assume the error is
+		 * transient and retry. :P */
 		try {
 		    return(new RandomAccessFile(path, mode));
 		} catch(RuntimeException | IOException exc) {
