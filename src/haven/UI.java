@@ -213,6 +213,8 @@ public class UI {
 	
     public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
 	Widget.Factory f = Widget.gettype2(type);
+	if(f == null)
+	    throw(new UIException("Bad widget name", type, cargs));
 	synchronized(this) {
 	    Widget wdg = f.create(this, cargs);
 	    wdg.attach(this);
