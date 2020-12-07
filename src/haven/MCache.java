@@ -92,6 +92,50 @@ public class MCache implements MapSource {
 	private int reqs = 0;
     }
 
+    @Resource.LayerName("overlay")
+    public static class OverlayInfo extends Resource.Layer {
+	public final Collection<String> tags;
+	private final int matid;
+
+	public OverlayInfo(Resource res, Message buf) {
+	    res.super();
+	    int ver = buf.uint8();
+	    if(ver == 1) {
+		int matid = 0;
+		Collection<String> tags = Collections.emptyList();
+		Object[] data = buf.list();
+		for(Object argp : data) {
+		    Object[] arg = (Object[])argp;
+		    switch((String)arg[0]) {
+		    case "tags": {
+			ArrayList<String> tbuf = new ArrayList<>();
+			for(int i = 1; i < arg.length; i++)
+			    tbuf.add(((String)arg[i]).intern());
+			tbuf.trimToSize();
+			tags = tbuf;
+			break;
+		    }
+		    case "mat": {
+			matid = (Integer)arg[1];
+			break;
+		    }
+		    }
+		}
+		this.matid = matid;
+		this.tags = tags;
+	    } else {
+		throw(new Resource.LoadException("unknown overlay version: " + ver, res));
+	    }
+	}
+
+	public void init() {
+	}
+
+	public Material mat() {
+	    return(getres().layer(Material.Res.class, matid).get());
+	}
+    }
+
     public class Overlay {
 	private Coord c1, c2;
 	private int mask;
