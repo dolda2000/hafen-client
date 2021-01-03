@@ -325,7 +325,9 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
-    Disposable prevtooltip = null;
+    private Object prevtooltip = null;
+    private Indir<Tex> prevtooltex = null;
+    private Disposable freetooltex = null;
     private void drawtooltip(UI ui, GOut g) {
 	Object tooltip;
         try {
@@ -335,35 +337,43 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	} catch(Loading e) {
 	    tooltip = "...";
 	}
-	Tex tt = null;
-	if(prevtooltip != null) {
-	    /* Tooltip disposal the same frame seems to have a
-	     * tendency to cause some kind of weird CPU/GPU sync
-	     * point. Arguably this should be handled by the rendering
-	     * system somehow, but it's unclear what the actual root
-	     * cause is, and this is a cheap fix. */
-	    prevtooltip.dispose();
+	Indir<Tex> tt = null;
+	if(Utils.eq(tooltip, prevtooltip)) {
+	    tt = prevtooltex;
+	} else {
+	    if(freetooltex != null) {
+		freetooltex.dispose();
+		freetooltex = null;
+	    }
 	    prevtooltip = null;
-	}
-	Disposable free = null;
-	if(tooltip != null) {
-	    if(tooltip instanceof Text) {
-		tt = ((Text)tooltip).tex();
-	    } else if(tooltip instanceof Tex) {
-		tt = (Tex)tooltip;
-	    } else if(tooltip instanceof Indir<?>) {
-		Indir<?> t = (Indir<?>)tooltip;
-		Object o = t.get();
-		if(o instanceof Tex)
-		    tt = (Tex)o;
-	    } else if(tooltip instanceof String) {
-		if(((String)tooltip).length() > 0) {
-		    free = tt = new TexI(Text.render((String)tooltip).img, false);
+	    prevtooltex = null;
+	    Disposable free = null;
+	    if(tooltip != null) {
+		if(tooltip instanceof Text) {
+		    Tex t = ((Text)tooltip).tex();
+		    tt = () -> t;
+		} else if(tooltip instanceof Tex) {
+		    Tex t = (Tex)tooltip;
+		    tt = () -> t;
+		} else if(tooltip instanceof Indir<?>) {
+		    @SuppressWarnings("unchecked")
+		    Indir<Tex> c = (Indir<Tex>)tooltip;
+		    tt = c;
+		} else if(tooltip instanceof String) {
+		    if(((String)tooltip).length() > 0) {
+			Tex r = new TexI(Text.render((String)tooltip).img, false);
+			tt = () -> r;
+			free = r;
+		    }
 		}
 	    }
+	    prevtooltip = tooltip;
+	    prevtooltex = tt;
+	    freetooltex = free;
 	}
-	if(tt != null) {
-	    Coord sz = tt.sz();
+	Tex tex = (tt == null) ? null : tt.get();
+	if(tex != null) {
+	    Coord sz = tex.sz();
 	    Coord pos = ui.mc.add(sz.inv());
 	    if(pos.x < 0)
 		pos.x = 0;
@@ -374,9 +384,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    g.chcolor(35, 35, 35, 192);
 	    g.frect(pos.add(-2, -2), sz.add(4, 4));
 	    g.chcolor();
-	    g.image(tt, pos);
+	    g.image(tex, pos);
 	}
-	prevtooltip = free;
 	ui.lasttip = tooltip;
     }
 

@@ -1388,7 +1388,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return;
 	double now = Utils.rtime();
 	synchronized(polowners) {
-	    int y = (sz.y - polowners.values().stream().map(t -> t.text.sz().y).reduce(0, (a, b) -> a + b + 10)) / 2;
+	    int y = (sz.y / 3) - (polowners.values().stream().map(t -> t.text.sz().y).reduce(0, (a, b) -> a + b + 10) / 2);
 	    for(Iterator<PolText> i = polowners.values().iterator(); i.hasNext();) {
 		PolText t = i.next();
 		double poldt = now - t.tm;

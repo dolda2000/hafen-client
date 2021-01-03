@@ -239,7 +239,7 @@ public class ActAudio extends State {
 	    private final VolAdjust clip;
 	    private final Collection<RenderList.Slot<Ambience>> active = new ArrayList<>();
 	    private double lastupd = Utils.rtime();
-	    private boolean added = false;
+	    private boolean added = false, hasvol = false;
 	    
 	    public Glob(Resource res) {
 		this.res = res;
@@ -277,10 +277,15 @@ public class ActAudio extends State {
 		double td = Math.max(now - lastupd, 0.0);
 		synchronized(active) {
 		    double vacc = curvol();
-		    if(vacc < clip.vol)
-			clip.vol = Math.max(clip.vol - (td * 0.5), 0.0);
-		    else if(vacc > clip.vol)
-			clip.vol = Math.min(clip.vol + (td * 0.5), 1.0);
+		    if(hasvol) {
+			if(vacc < clip.vol)
+			    clip.vol = Math.max(clip.vol - (td * 0.5), 0.0);
+			else if(vacc > clip.vol)
+			    clip.vol = Math.min(clip.vol + (td * 0.5), 1.0);
+		    } else {
+			clip.vol = vacc;
+			hasvol = true;
+		    }
 		    if(active.isEmpty() && (clip.vol < 0.005)) {
 			list.amb.remove(clip);
 			return(true);

@@ -897,7 +897,7 @@ public class MapFile {
 		    throw(new Message.FormatError(String.format("Unknown zoomgrid data version for (%d, %d) in %x@%d: %d", sc.x, sc.y, seg, lvl, ver)));
 		}
 	    } catch(Message.BinError e) {
-		Debug.log.printf("Unknown zoomgrid data version for (%d, %d) in %x@%d: %s", sc.x, sc.y, seg, lvl, e);
+		Debug.log.printf("Could not load zoomgrid for (%d, %d) in %x@%d: %s", sc.x, sc.y, seg, lvl, e);
 		return(null);
 	    }
 	}
