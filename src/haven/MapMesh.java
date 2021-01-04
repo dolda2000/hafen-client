@@ -431,12 +431,30 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	return(gmmat.apply(buf.mkmesh()));
     }
 
-    public static class OLOrder extends MLOrder {
-	public OLOrder(int z) {super(z);}
+    public static class OLOrder extends Order<OLOrder> {
+	public final MCache.OverlayInfo id;
+
+	public OLOrder(MCache.OverlayInfo id) {
+	    this.id = id;
+	}
 
 	public int mainorder() {
 	    return(1002);
 	}
+
+	public boolean equals(Object x) {
+	    return((x instanceof OLOrder) && (((OLOrder)x).id == this.id));
+	}
+
+	public int hashCode() {
+	    return(System.identityHashCode(id));
+	}
+
+	private final static Comparator<OLOrder> cmp = (a, b) -> {
+	    return(Utils.idcmp.compare(a.id, b.id));
+	};
+
+	public Comparator<OLOrder> comparator() {return(cmp);}
     }
     private static final VertexArray.Layout olvfmt = new VertexArray.Layout(new VertexArray.Layout.Input(Homo3D.vertex, new VectorFormat(3, NumberFormat.FLOAT32), 0, 0, 16),
 									    new VertexArray.Layout.Input(Homo3D.normal, new VectorFormat(3, NumberFormat.SNORM8), 0, 12, 16));
@@ -510,8 +528,10 @@ public class MapMesh implements RenderTree.Node, Disposable {
 							new haven.render.Model.Indices(buf.fn, NumberFormat.UINT16, DataBuffer.Usage.STATIC,
 										       DataBuffer.Filler.of(Arrays.copyOf(buf.fl, buf.fn))));
 	class OL implements RenderTree.Node, Rendered, Disposable {
+	    final OLOrder order = new OLOrder(id);
+
 	    public void added(RenderTree.Slot slot) {
-		slot.ostate(new OLOrder(0));
+		slot.ostate(order);
 	    }
 
 	    public void draw(Pipe context, Render out) {
