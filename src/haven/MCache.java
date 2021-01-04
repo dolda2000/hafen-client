@@ -143,6 +143,10 @@ public class MCache implements MapSource {
 	public Material mat() {
 	    return(getres().layer(Material.Res.class, matid).get());
 	}
+
+	public String toString() {
+	    return(String.format("#<res-overlay %s %d>", getres().name, matid));
+	}
     }
 
     public class Overlay {
@@ -660,7 +664,8 @@ public class MCache implements MapSource {
 	    }
 	}
 	for(Overlay lol : ols) {
-	    if(lol.id != id);
+	    if(lol.id != id)
+		continue;
 	    Area la = lol.a.overlap(a);
 	    if(la != null) {
 		for(Coord lc : la)

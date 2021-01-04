@@ -521,6 +521,10 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	    public void dispose() {
 		mod.dispose();
 	    }
+
+	    public String toString() {
+		return(String.format("#<overlay %s>", id));
+	    }
 	}
 	return(new OL());
     }
