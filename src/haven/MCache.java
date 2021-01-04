@@ -161,7 +161,7 @@ public class MCache implements MapSource {
 	}
 
 	@Deprecated public Overlay(Coord c1, Coord c2, int mask) {
-	    this(new Area(c1, c2.add(1, 1)), olres.get(Integer.numberOfTrailingZeros(mask)).get().layer(ResOverlay.class));
+	    this(new Area(c1, c2.add(1, 1)), olres.get(Integer.numberOfTrailingZeros(mask)).layer(ResOverlay.class));
 	}
 
 	public void destroy() {
@@ -182,15 +182,15 @@ public class MCache implements MapSource {
     }
 
     /* XXX: To be abolished */
-    public static final Map<Integer, Indir<Resource>> olres = Utils.<Integer, Indir<Resource>>map()
-	.put(0, Resource.remote().load("gfx/tiles/overlay/cplot-f"))
-	.put(1, Resource.remote().load("gfx/tiles/overlay/cplot-o"))
-	.put(2, Resource.remote().load("gfx/tiles/overlay/vlg-f"))
-	.put(3, Resource.remote().load("gfx/tiles/overlay/vlg-o"))
-	.put(4, Resource.remote().load("gfx/tiles/overlay/realm-f"))
-	.put(5, Resource.remote().load("gfx/tiles/overlay/realm-o"))
-	.put(16, Resource.remote().load("gfx/tiles/overlay/cplot-s"))
-	.put(17, Resource.remote().load("gfx/tiles/overlay/sel"))
+    public static final Map<Integer, Resource> olres = Utils.<Integer, Resource>map()
+	.put(0, Resource.remote().loadwait("gfx/tiles/overlay/cplot-f"))
+	.put(1, Resource.remote().loadwait("gfx/tiles/overlay/cplot-o"))
+	.put(2, Resource.remote().loadwait("gfx/tiles/overlay/vlg-f"))
+	.put(3, Resource.remote().loadwait("gfx/tiles/overlay/vlg-o"))
+	.put(4, Resource.remote().loadwait("gfx/tiles/overlay/realm-f"))
+	.put(5, Resource.remote().loadwait("gfx/tiles/overlay/realm-o"))
+	.put(16, Resource.remote().loadwait("gfx/tiles/overlay/cplot-s"))
+	.put(17, Resource.remote().loadwait("gfx/tiles/overlay/sel"))
 	.map();
     public class Grid {
 	public final Coord gc, ul;
@@ -485,19 +485,19 @@ public class MCache implements MapSource {
 		Indir<Resource> olid;
 		if(type == 0) {
 		    if((fl & 1) == 1)
-			olid = olres.get(1);
+			olid = olres.get(1).indir();
 		    else
-			olid = olres.get(0);
+			olid = olres.get(0).indir();
 		} else if(type == 1) {
 		    if((fl & 1) == 1)
-			olid = olres.get(3);
+			olid = olres.get(3).indir();
 		    else
-			olid = olres.get(2);
+			olid = olres.get(2).indir();
 		} else if(type == 2) {
 		    if((fl & 1) == 1)
-			olid = olres.get(5);
+			olid = olres.get(5).indir();
 		    else
-			olid = olres.get(4);
+			olid = olres.get(4).indir();
 		} else {
 		    throw(new RuntimeException("Unknown plot type " + type));
 		}

@@ -481,11 +481,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
 
     @Deprecated public void enol(int id) {
-	enol(MCache.olres.get(id).get().layer(MCache.ResOverlay.class));
+	enol(MCache.olres.get(id).layer(MCache.ResOverlay.class));
     }
 
     @Deprecated public void disol(int id) {
-	disol(MCache.olres.get(id).get().layer(MCache.ResOverlay.class));
+	disol(MCache.olres.get(id).layer(MCache.ResOverlay.class));
     }
 
     private final Gobs gobs;
@@ -1738,7 +1738,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    int olflash = (Integer)args[0];
 	    for(int i = 0; i < 32; i++) {
 		if((olflash & (1 << i)) != 0)
-		    ols.add(MCache.olres.get(i));
+		    ols.add(MCache.olres.get(i).indir());
 	    }
 	    double tm = ((Number)args[1]).doubleValue() / 1000.0;
 	    flashol(ols, tm);
