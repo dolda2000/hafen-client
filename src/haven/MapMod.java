@@ -62,12 +62,10 @@ public class MapMod extends Window implements MapView.Grabber {
 	map = ui.sess.glob.map;
 	mv = getparent(GameUI.class).map;
 	grab = mv.new GrabXL(this);
-        mv.enol(MapView.selol);
         mv.grab(grab);
     }
 
     public void destroy() {
-        mv.disol(MapView.selol);
         if(!walkmod)
             mv.release(grab);
         if(ol != null)
