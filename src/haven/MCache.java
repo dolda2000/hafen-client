@@ -772,6 +772,8 @@ public class MCache implements MapSource {
 	Collection<OverlayInfo> ret = new ArrayList<>();
 	for(Coord gc : a.div(cmaps)) {
 	    Grid g = getgrid(gc);
+	    if(g.ols == null)
+		continue;
 	    for(Indir<Resource> res : g.ols) {
 		OverlayInfo id = res.get().layer(ResOverlay.class);
 		if(!ret.contains(id))
