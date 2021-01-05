@@ -200,7 +200,6 @@ public class MCache implements MapSource {
 	public boolean ol[][];
 	public long id;
 	public int seq = -1;
-	public String mnm;
 	private int olseq = -1;
 	private final Cut cuts[];
 	private Flavobjs[] fo = new Flavobjs[cutn.x * cutn.y];
@@ -444,12 +443,7 @@ public class MCache implements MapSource {
 	    }
 	}
 
-	public void fill(Message msg) {
-	    String mmname = msg.string().intern();
-	    if(mmname.equals(""))
-		mnm = null;
-	    else
-		mnm = mmname;
+	private void oldfill(Message msg) {
 	    int[] pfl = new int[256];
 	    while(true) {
 		int pidx = msg.uint8();
@@ -522,6 +516,149 @@ public class MCache implements MapSource {
 	    }
 	    this.ols = olids;
 	    this.ol = ols;
+	}
+
+	private void filltiles(Message buf) {
+	    while(true) {
+		int tileid = buf.uint8();
+		if(tileid == 255)
+		    break;
+		String resnm = buf.string();
+		int resver = buf.uint16();
+		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
+	    }
+	    for(int i = 0; i < tiles.length; i++) {
+		tiles[i] = buf.uint8();
+		if(nsets[tiles[i]] == null)
+		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
+	    }
+	}
+
+	private void fillz(Message buf) {
+	    int fmt = buf.uint8();
+	    if(fmt == 0) {
+		float z = buf.float32() * 11;
+		for(int i = 0; i < this.z.length; i++)
+		    this.z[i] = z;
+	    } else if(fmt == 1) {
+		float min = buf.float32() * 11, q = buf.float32() * 11;
+		for(int i = 0; i < z.length; i++)
+		    z[i] = min + (buf.uint8() * q);
+	    } else if(fmt == 2) {
+		float min = buf.float32() * 11, q = buf.float32() * 11;
+		for(int i = 0; i < z.length; i++)
+		    z[i] = min + (buf.uint16() * q);
+	    } else if(fmt == 3) {
+		for(int i = 0; i < z.length; i++)
+		    z[i] = buf.float32() * 11;
+	    } else {
+		throw(new Message.FormatError(String.format("Unknown z-map format: %d", fmt)));
+	    }
+	}
+
+	private Indir<Resource>[] fill_plots;
+	private void decplots(Message buf) {
+	    @SuppressWarnings("unchecked") Indir<Resource>[] pt = new Indir[256];
+	    while(!buf.eom()) {
+		int pidx = buf.uint8();
+		if(pidx == 255)
+		    break;
+		pt[pidx] = sess.getres(buf.uint16());
+	    }
+	    fill_plots = pt;
+	}
+
+	private void fillplots(Message buf) {
+	    if(fill_plots == null)
+		return;
+	    @SuppressWarnings("unchecked") Indir<Resource>[] olids = new Indir[0];
+	    boolean[][] ols = {};
+	    while(!buf.eom()) {
+		int pidx = buf.uint8();
+		if(pidx == 255)
+		    break;
+		int fl = buf.uint8();
+		Coord c1 = new Coord(buf.uint8(), buf.uint8());
+		Coord c2 = new Coord(buf.uint8(), buf.uint8());
+		boolean[] mask = new boolean[(c2.x - c1.x) * (c2.y - c1.y)];
+		if((fl & 1) != 0) {
+		    for(int i = 0, l = 0, m = buf.uint8(); i < mask.length; i++) {
+			mask[i] = (m & 1) != 0;
+			m >>= 1;
+			if(++l >= 8)
+			    m = buf.uint8();
+		    }
+		} else {
+		    for(int i = 0; i < mask.length; i++)
+			mask[i] = true;
+		}
+		Indir<Resource> olid = fill_plots[pidx];
+		if(olid == null)
+		    continue;
+		int oi;
+		find: {
+		    for(oi = 0; oi < olids.length; oi++) {
+			if(olids[oi] == olid)
+			    break find;
+		    }
+		    olids = Arrays.copyOf(olids, oi + 1);
+		    ols = Arrays.copyOf(ols, oi + 1);
+		    olids[oi] = olid;
+		}
+		boolean[] ol = ols[oi];
+		if(ol == null)
+		    ols[oi] = ol = new boolean[cmaps.x * cmaps.y];
+		for(int y = c1.y, mi = 0; y < c2.y; y++) {
+		    for(int x = c1.x; x < c2.x; x++) {
+			ol[x + (y * cmaps.x)] = mask[mi++];
+		    }
+		}
+	    }
+	    this.ols = olids;
+	    this.ol = ols;
+	    fill_plots = null;
+	}
+
+	private void subfill(Message msg) {
+	    while(!msg.eom()) {
+		String lnm = msg.string();
+		int len = msg.uint8();
+		if((len & 0x80) != 0)
+		    len = msg.int32();
+		Message buf = new LimitMessage(msg, len);
+		switch(lnm) {
+		case "z":
+		    subfill(new ZMessage(buf));
+		    break;
+		case "m":
+		    id = buf.int64();
+		    break;
+		case "t":
+		    filltiles(buf);
+		    break;
+		case "h":
+		    fillz(buf);
+		    break;
+		case "pi":
+		    decplots(buf);
+		    break;
+		case "p":
+		    fillplots(buf);
+		    break;
+		}
+		buf.skip();
+	    }
+	}
+
+	public void fill(Message msg) {
+	    int ver = msg.uint8();
+	    if(ver == 0) {
+		oldfill(msg);
+	    } else if(ver == 1) {
+		subfill(msg);
+	    } else {
+		throw(new RuntimeException("Unknown map data version " + ver));
+	    }
 	    invalidate();
 	    seq++;
 	}
