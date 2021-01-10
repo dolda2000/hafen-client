@@ -186,7 +186,7 @@ public abstract class PView extends Widget {
 
     private class Resampler extends PostProcessor {
 	public void run(GOut g, Texture2D.Sampler2D in) {
-	    g.image(new TexRaw(in, true), Coord.z, in.tex.sz());
+	    g.image(new TexRaw(in, true), Coord.z, g.sz());
 	}
     }
 
