@@ -719,8 +719,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
 	final Grid grid = new Grid<RenderTree.Node>() {
 		RenderTree.Node getcut(Coord cc) {
-		    if(Debug.ff)
-			Debug.dump(map.getolcut(id, cc));
 		    return(map.getolcut(id, cc));
 		}
 	    };
@@ -763,7 +761,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	try {
 	    for(Overlay ol : ols.values())
 		ol.used = false;
-	    if(Debug.ff) Debug.dump(terrain.area);
 	    if(terrain.area != null) {
 		for(OverlayInfo id : glob.map.getols(terrain.area.mul(MCache.cutsz))) {
 		    boolean vis = false;
@@ -775,7 +772,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			    }
 			}
 		    }
-		    if(Debug.ff) Debug.dump(id, vis);
 		    if(vis) {
 			Overlay ol = ols.get(id);
 			if(ol == null) {

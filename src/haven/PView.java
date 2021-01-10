@@ -186,7 +186,7 @@ public abstract class PView extends Widget {
 
     private class Resampler extends PostProcessor {
 	public void run(GOut g, Texture2D.Sampler2D in) {
-	    g.image(new TexRaw(in, true), Coord.z, g.sz());
+	    g.image(new TexRaw(in, true), Coord.z, in.tex.sz());
 	}
     }
 
@@ -213,7 +213,7 @@ public abstract class PView extends Widget {
     private PostProcessor pp_resamp = null;
     protected void resolve(GOut g) {
 	List<PostProcessor> copy = new ArrayList<PostProcessor>(ctx.postproc());
-	if(!rsz.equals(g.sz())) {
+	if(!rsz.equals(this.sz)) {
 	    if(pp_resamp == null)
 		pp_resamp = new Resampler();
 	    copy.add(pp_resamp);
