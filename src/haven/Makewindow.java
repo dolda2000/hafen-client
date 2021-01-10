@@ -330,6 +330,8 @@ public class Makewindow extends Widget {
 	public BufferedImage tipimg() {
 	    return(text.img);
 	}
+
+	public Tip shortvar() {return(this);}
     }
 
     public static class MakePrep extends ItemInfo implements GItem.ColorInfo {
