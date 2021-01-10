@@ -583,10 +583,13 @@ public class MCache implements MapSource {
 		boolean[] mask = new boolean[(c2.x - c1.x) * (c2.y - c1.y)];
 		if((fl & 1) != 0) {
 		    for(int i = 0, l = 0, m = buf.uint8(); i < mask.length; i++) {
+			if(l >= 8) {
+			    m = buf.uint8();
+			    l = 0;
+			}
 			mask[i] = (m & 1) != 0;
 			m >>= 1;
-			if(++l >= 8)
-			    m = buf.uint8();
+			l++;
 		    }
 		} else {
 		    for(int i = 0; i < mask.length; i++)
