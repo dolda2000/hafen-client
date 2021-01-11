@@ -231,9 +231,12 @@ public class ShadowMap extends State {
     }
 
     public void update(Render out, ShadowList data) {
-	Pipe bstate = new BufPipe().prep(curbasic);
+	/* XXX: FrameInfo, and potentially others, should quite
+	 * arguably be inherited from some parent context instead. */
+	Pipe.Op basic = Pipe.Op.compose(curbasic, new FrameInfo());
+	Pipe bstate = new BufPipe().prep(basic);
 	out.clear(bstate, 1.0);
-	data.basic(curbasic);
+	data.basic(basic);
 	data.draw(out);
 	if(false)
 	    GOut.getimage(out, lbuf.image(0), Debug::dumpimage);

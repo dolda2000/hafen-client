@@ -1339,7 +1339,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    clickdepth = new DepthBuffer<>(new Texture2D(sz, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null).image(0));
 	    curclickbasic = Pipe.Op.compose(Clicklist.clickbasic, clickid, clickdepth, new States.Viewport(Area.sized(Coord.z, sz)));
 	}
-	return(Pipe.Op.compose(curclickbasic, camera));
+	/* XXX: FrameInfo shouldn't be treated specially. Is a new
+	 * Slot.Type in order, perhaps? */
+	return(Pipe.Op.compose(curclickbasic, camera, conf.state().get(FrameInfo.slot)));
     }
 
     private void checkmapclick(Render out, Pipe.Op basic, Coord c, Consumer<Coord2d> cb) {
