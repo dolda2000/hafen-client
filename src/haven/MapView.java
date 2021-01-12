@@ -210,7 +210,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     }
     static {camtypes.put("follow", FollowCam.class);}
 
-    public class FreeCam extends Camera {
+    public class SimpleCam extends Camera {
 	private float dist = 50.0f;
 	private float elev = (float)Math.PI / 4.0f;
 	private float angl = 0.0f;
@@ -247,6 +247,64 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(d < 5)
 		d = 5;
 	    dist = d;
+	    return(true);
+	}
+    }
+
+    public class FreeCam extends Camera {
+	private float dist = 50.0f, tdist = dist;
+	private float elev = (float)Math.PI / 4.0f, telev = elev;
+	private float angl = 0.0f, tangl = angl;
+	private Coord dragorig = null;
+	private float elevorig, anglorig;
+	private final float pi2 = (float)(Math.PI * 2);
+	private Coord3f cc = null;
+
+	public void tick(double dt) {
+	    float cf = (1f - (float)Math.pow(500, -dt));
+	    angl = angl + ((tangl - angl) * cf);
+	    while(angl > pi2) {angl -= pi2; tangl -= pi2; anglorig -= pi2;}
+	    while(angl < 0)   {angl += pi2; tangl += pi2; anglorig += pi2;}
+	    if(Math.abs(tangl - angl) < 0.0001) angl = tangl;
+
+	    elev = elev + ((telev - elev) * cf);
+	    if(Math.abs(telev - elev) < 0.0001) elev = telev;
+
+	    dist = dist + ((tdist - dist) * cf);
+	    if(Math.abs(tdist - dist) < 0.0001) dist = tdist;
+
+	    Coord3f mc = getcc();
+	    mc.y = -mc.y;
+	    if((cc == null) || (Math.hypot(mc.x - cc.x, mc.y - cc.y) > 250))
+		cc = mc;
+	    else
+		cc = cc.add(mc.sub(cc).mul(cf));
+	    view = new haven.render.Camera(PointedCam.compute(cc.add(0.0f, 0.0f, 15f), dist, elev, angl));
+	}
+
+	public float angle() {
+	    return(angl);
+	}
+
+	public boolean click(Coord c) {
+	    elevorig = elev;
+	    anglorig = angl;
+	    dragorig = c;
+	    return(true);
+	}
+
+	public void drag(Coord c) {
+	    telev = elevorig - ((float)(c.y - dragorig.y) / 100.0f);
+	    if(telev < 0.0f) telev = 0.0f;
+	    if(telev > (Math.PI / 2.0)) telev = (float)Math.PI / 2.0f;
+	    tangl = anglorig + ((float)(c.x - dragorig.x) / 100.0f);
+	}
+
+	public boolean wheel(Coord c, int amount) {
+	    float d = tdist + (amount * 25);
+	    if(d < 5)
+		d = 5;
+	    tdist = d;
 	    return(true);
 	}
     }
