@@ -130,7 +130,7 @@ public class RichText extends Text {
 	    if(lh >= 0) {
 		h = (int)Math.round(lh * lm().getHeight());
 	    } else if(bh >= 0) {
-		h = (int)Math.round(lh * lm().getAscent());
+		h = (int)Math.round(bh * lm().getAscent());
 	    }
 	    if(h >= 0)
 		sz = new Coord((img.getWidth() * h) / img.getHeight(), h);
@@ -432,7 +432,7 @@ public class RichText extends Text {
 		}
 		Image img = new Image(res, id);
 		img.attrs = attrs;
-		for(;a < args.length; a++) {
+		for(; a < args.length; a++) {
 		    int p = args[a].indexOf('=');
 		    if(p < 0)
 			continue;
@@ -444,8 +444,9 @@ public class RichText extends Text {
 			} else if(v.endsWith("bl")) {
 			    img.bh = Double.parseDouble(v.substring(0, v.length() - 2));
 			} else {
-			    img.h = (int)Math.round(Double.parseDouble(v));
+			    img.h = (int)Math.round(UI.scale(Double.parseDouble(v)));
 			}
+			break;
 		    }
 		    }
 		}
