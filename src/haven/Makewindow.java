@@ -34,13 +34,13 @@ import java.awt.image.BufferedImage;
 import static haven.Inventory.invsq;
 
 public class Makewindow extends Widget {
-    List<Spec> inputs = Collections.emptyList();
-    List<Spec> outputs = Collections.emptyList();
-    List<Indir<Resource>> qmod = null;
-    static final Text qmodl = Text.render("Quality:");
-    static Coord boff = UI.scale(new Coord(7, 9));
-    final int xoff = UI.scale(45), qmy = UI.scale(38), outy = UI.scale(65);
-    public static final Text.Foundry nmf = new Text.Foundry(Text.serif, 20).aa(true);
+    public static final Text qmodl = Text.render("Quality:");
+    public static final Coord boff = UI.scale(new Coord(7, 9));
+    public String rcpnm;
+    public List<Spec> inputs = Collections.emptyList();
+    public List<Spec> outputs = Collections.emptyList();
+    public List<Indir<Resource>> qmod = null;
+    private final int xoff = UI.scale(45), qmy = UI.scale(38), outy = UI.scale(65);
 
     @RName("make")
     public static class $_ implements Factory {
@@ -158,7 +158,7 @@ public class Makewindow extends Widget {
 	add(new Button(UI.scale(85), "Craft"), UI.scale(new Coord(265, 75))).action(() -> wdgmsg("make", 0)).setgkey(kb_make);
 	add(new Button(UI.scale(85), "Craft All"), UI.scale(new Coord(360, 75))).action(() -> wdgmsg("make", 1)).setgkey(kb_makeall);
 	pack();
-	adda(new Label(rcpnm, nmf), sz.x, 0, 1, 0);
+	this.rcpnm = rcpnm;
     }
 
     public void uimsg(String msg, Object... args) {
