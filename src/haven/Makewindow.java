@@ -35,11 +35,13 @@ import static haven.Inventory.invsq;
 
 public class Makewindow extends Widget {
     public static final Text qmodl = Text.render("Quality:");
+    public static final Text tooll = Text.render("Tools:");
     public static final Coord boff = UI.scale(new Coord(7, 9));
     public String rcpnm;
     public List<Spec> inputs = Collections.emptyList();
     public List<Spec> outputs = Collections.emptyList();
-    public List<Indir<Resource>> qmod = null;
+    public List<Indir<Resource>> qmod = Collections.emptyList();
+    public List<Indir<Resource>> tools = new ArrayList<>();;
     private final int xoff = UI.scale(45), qmy = UI.scale(38), outy = UI.scale(65);
 
     @RName("make")
@@ -191,6 +193,8 @@ public class Makewindow extends Widget {
 	    for(Object arg : args)
 		qmod.add(ui.sess.getres((Integer)arg));
 	    this.qmod = qmod;
+	} else if(msg == "tool") {
+	    tools.add(ui.sess.getres((Integer)args[0]));
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -221,16 +225,37 @@ public class Makewindow extends Widget {
 	    c = c.add(Inventory.sqsz.x, 0);
 	    popt = opt;
 	}
-	if(qmod != null) {
-	    g.image(qmodl.tex(), new Coord(0, qmy + 4));
-	    c = new Coord(xoff, qmy);
-	    for(Indir<Resource> qm : qmod) {
-		try {
-		    Tex t = qmicon(qm);
-		    g.image(t, c);
-		    c = c.add(t.sz().x + UI.scale(1), 0);
-		} catch(Loading l) {
+	{
+	    int x = 0;
+	    if(!qmod.isEmpty()) {
+		g.aimage(qmodl.tex(), new Coord(x, qmy + (qmodsz.y / 2)), 0, 0.5);
+		x += qmodl.sz().x + UI.scale(5);
+		x = Math.max(x, xoff);
+		qmx = x;
+		for(Indir<Resource> qm : qmod) {
+		    try {
+			Tex t = qmicon(qm);
+			g.image(t, new Coord(x, qmy));
+			x += t.sz().x + UI.scale(1);
+		    } catch(Loading l) {
+		    }
 		}
+		x += UI.scale(25);
+	    }
+	    if(!tools.isEmpty()) {
+		g.aimage(tooll.tex(), new Coord(x, qmy + (qmodsz.y / 2)), 0, 0.5);
+		x += tooll.sz().x + UI.scale(5);
+		x = Math.max(x, xoff);
+		toolx = x;
+		for(Indir<Resource> tool : tools) {
+		    try {
+			Tex t = qmicon(tool);
+			g.image(t, new Coord(x, qmy));
+			x += t.sz().x + UI.scale(1);
+		    } catch(Loading l) {
+		    }
+		}
+		x += UI.scale(25);
 	    }
 	}
 	c = new Coord(xoff, outy);
@@ -243,19 +268,32 @@ public class Makewindow extends Widget {
 	super.draw(g);
     }
 
+    private int qmx, toolx;
     private long hoverstart;
     private Spec lasttip;
     private Indir<Object> stip, ltip;
     public Object tooltip(Coord mc, Widget prev) {
 	Spec tspec = null;
 	Coord c;
-	if(qmod != null) {
-	    c = new Coord(xoff, qmy);
+	if(!qmod.isEmpty()) {
+	    c = new Coord(qmx, qmy);
 	    try {
 		for(Indir<Resource> qm : qmod) {
 		    Coord tsz = qmicon(qm).sz();
 		    if(mc.isect(c, tsz))
 			return(qm.get().layer(Resource.tooltip).t);
+		    c = c.add(tsz.x + UI.scale(1), 0);
+		}
+	    } catch(Loading l) {
+	    }
+	}
+	if(!tools.isEmpty()) {
+	    c = new Coord(toolx, qmy);
+	    try {
+		for(Indir<Resource> tool : tools) {
+		    Coord tsz = qmicon(tool).sz();
+		    if(mc.isect(c, tsz))
+			return(tool.get().layer(Resource.tooltip).t);
 		    c = c.add(tsz.x + UI.scale(1), 0);
 		}
 	    } catch(Loading l) {
