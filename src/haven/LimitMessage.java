@@ -71,4 +71,8 @@ public class LimitMessage extends Message {
     public void overflow(int min) {
 	throw(new RuntimeException("LimitMessage is not writeable"));
     }
+
+    public String toString() {
+	return(String.format("#<limit-message %s, %d+%d left>", bk, left, rt - rh));
+    }
 }

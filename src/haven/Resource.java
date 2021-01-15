@@ -216,10 +216,12 @@ public class Resource implements Serializable {
     }
     
     public static class CacheSource implements ResSource, Serializable {
-	public transient ResCache cache;
+	public final transient ResCache cache;
+	public final String cachedesc;
 	
 	public CacheSource(ResCache cache) {
 	    this.cache = cache;
+	    this.cachedesc = String.valueOf(cache);
 	}
 	
 	public InputStream get(String name) throws IOException {
@@ -227,7 +229,7 @@ public class Resource implements Serializable {
 	}
 	
 	public String toString() {
-	    return("cache source backed by " + cache);
+	    return("cache source backed by " + cachedesc);
 	}
     }
 
@@ -908,7 +910,7 @@ public class Resource implements Serializable {
 	public final Map<String, byte[]> kvdata;
 	private float scale = 1;
 	private int gay = -1;
-	public Coord sz, o, tsz, ssz;
+	public Coord sz, o, so, tsz, ssz;
 
 	public Image(Message buf) {
 	    z = buf.int16();
@@ -918,6 +920,7 @@ public class Resource implements Serializable {
 	    nooff = (fl & 2) != 0;
 	    id = buf.int16();
 	    o = cdec(buf);
+	    so = UI.scale(o);
 	    Map<String, byte[]> kvdata = new HashMap<>();
 	    if((fl & 4) != 0) {
 		while(true) {
@@ -948,6 +951,13 @@ public class Resource implements Serializable {
 	    if(tsz == null)
 		tsz = sz;
 	    ssz = new Coord(Math.round(UI.scale(sz.x / scale)), Math.round(UI.scale(sz.y / scale)));
+	    if(tsz != null) {
+		/* This seems kind of ugly, but I'm not sure how to
+		 * otherwise handle upwards rounding of both offset
+		 * and size getting the image out of the intended
+		 * area. */
+		so = new Coord(Math.min(so.x, tsz.x - ssz.x), Math.min(so.y, sz.y - ssz.y));
+	    }
 	}
 
 	public BufferedImage scaled() {
