@@ -775,9 +775,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	int rc = 0;
 	boolean used;
 
-	final Grid grid = new Grid<RenderTree.Node>() {
+	final Grid base = new Grid<RenderTree.Node>() {
 		RenderTree.Node getcut(Coord cc) {
 		    return(map.getolcut(id, cc));
+		}
+	    };
+	final Grid outl = new Grid<RenderTree.Node>() {
+		RenderTree.Node getcut(Coord cc) {
+		    return(map.getololcut(id, cc));
 		}
 	    };
 
@@ -788,13 +793,16 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	void tick() {
 	    super.tick();
 	    if(area != null) {
-		grid.tick();
+		base.tick();
+		outl.tick();
 	    }
 	}
 
 	public void added(RenderTree.Slot slot) {
-	    slot.ostate(id.mat());
-	    slot.add(grid);
+	    slot.add(base, id.mat());
+	    Material omat = id.omat();
+	    if(omat != null)
+		slot.add(outl, omat);
 	    super.added(slot);
 	}
 
@@ -802,7 +810,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Loading ret = super.loading();
 	    if(ret != null)
 		return(ret);
-	    if((ret = grid.lastload) != null)
+	    if((ret = base.lastload) != null)
 		return(ret);
 	    return(null);
 	}
@@ -2141,9 +2149,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		return(Arrays.asList("show"));
 	    }
 
-	    public Material mat() {
-		return(mat);
-	    }
+	    public Material mat() {return(mat);}
 	};
     private class Selector implements Grabber {
 	Coord sc;
