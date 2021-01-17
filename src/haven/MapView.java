@@ -243,13 +243,14 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public boolean wheel(Coord c, int amount) {
-	    float d = dist + (amount * 5);
+	    float d = dist + (amount * 25);
 	    if(d < 5)
 		d = 5;
 	    dist = d;
 	    return(true);
 	}
     }
+    static {camtypes.put("worse", SimpleCam.class);}
 
     public class FreeCam extends Camera {
 	private float dist = 50.0f, tdist = dist;
@@ -261,7 +262,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private Coord3f cc = null;
 
 	public void tick(double dt) {
-	    float cf = (1f - (float)Math.pow(500, -dt));
+	    float cf = (1f - (float)Math.pow(500, -dt * 3));
 	    angl = angl + ((tangl - angl) * cf);
 	    while(angl > pi2) {angl -= pi2; tangl -= pi2; anglorig -= pi2;}
 	    while(angl < 0)   {angl += pi2; tangl += pi2; anglorig += pi2;}
