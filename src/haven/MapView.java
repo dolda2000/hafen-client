@@ -399,14 +399,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void tick2(double dt) {
+	    float cf = 1f - (float)Math.pow(500, -dt);
 	    Coord3f mc = getcc();
 	    mc.y = -mc.y;
 	    if((cc == null) || (Math.hypot(mc.x - cc.x, mc.y - cc.y) > 250))
 		cc = mc;
 	    else if(!exact || (mc.dist(cc) > 2))
-		cc = cc.add(mc.sub(cc).mul(1f - (float)Math.pow(500, -dt)));
+		cc = cc.add(mc.sub(cc).mul(cf));
 
-	    angl = angl + ((tangl - angl) * (1f - (float)Math.pow(500, -dt)));
+	    angl = angl + ((tangl - angl) * cf);
 	    while(angl > pi2) {angl -= pi2; tangl -= pi2; anglorig -= pi2;}
 	    while(angl < 0)   {angl += pi2; tangl += pi2; anglorig += pi2;}
 	    if(Math.abs(tangl - angl) < 0.001)
@@ -414,7 +415,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    else
 		jc = cc;
 
-	    field = field + ((tfield - field) * (1f - (float)Math.pow(500, -dt)));
+	    field = field + ((tfield - field) * cf);
 	    if(Math.abs(tfield - field) < 0.1)
 		field = tfield;
 	    else
