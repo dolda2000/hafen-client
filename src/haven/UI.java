@@ -466,12 +466,20 @@ public class UI {
 	return(Math.round(scale((float)v)));
     }
 
+    public static int rscale(double v) {
+	return((int)Math.round(v * scalef));
+    }
+
     public static Coord scale(Coord v) {
 	return(v.mul(scalef));
     }
 
     public static Coord scale(int x, int y) {
 	return(scale(new Coord(x, y)));
+    }
+
+    public static Coord rscale(double x, double y) {
+	return(new Coord(rscale(x), rscale(y)));
     }
 
     public static Coord2d scale(Coord2d v) {
