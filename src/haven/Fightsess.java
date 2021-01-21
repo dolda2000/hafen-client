@@ -95,27 +95,70 @@ public class Fightsess extends Widget {
 	pho = (int)(map.screenxf(raw.add(0, 0, UI.scale(20))).round2().sub(pcc).y) - UI.scale(20);
     }
 
-    private static final Resource tgtfx = Resource.local().loadwait("gfx/hud/combat/trgtarw");
-    private final Map<Pair<Long, Resource>, Sprite> cfx = new CacheMap<Pair<Long, Resource>, Sprite>();
-    private final Collection<Sprite> curfx = new ArrayList<Sprite>();
+    private static class Effect implements RenderTree.Node {
+	Sprite spr;
+	RenderTree.Slot slot;
+	boolean used = true;
 
-    private void fxon(long gobid, Resource fx) {
+	Effect(Sprite spr) {this.spr = spr;}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.add(spr);
+	}
+    }
+
+    private static final Resource tgtfx = Resource.local().loadwait("gfx/hud/combat/trgtarw");
+    private final Collection<Effect> curfx = new ArrayList<>();
+
+    private Effect fxon(long gobid, Resource fx, Effect cur) {
 	MapView map = getparent(GameUI.class).map;
 	Gob gob = ui.sess.glob.oc.getgob(gobid);
 	if((map == null) || (gob == null))
-	    return;
-	Pair<Long, Resource> id = new Pair<Long, Resource>(gobid, fx);
-	Sprite spr = cfx.get(id);
-	if(spr == null)
-	    cfx.put(id, spr = Sprite.create(null, fx, Message.nil));
-	// map.drawadd(gob.loc.apply(spr)); XXXRENDER
-	curfx.add(spr);
+	    return(null);
+	Pipe.Op place;
+	try {
+	    place = gob.placed.curplace();
+	} catch(Loading l) {
+	    return(null);
+	}
+	if((cur == null) || (cur.slot == null)) {
+	    try {
+		cur = new Effect(Sprite.create(null, fx, Message.nil));
+		cur.slot = map.basic.add(cur.spr, place);
+	    } catch(Loading l) {
+		return(null);
+	    }
+	    curfx.add(cur);
+	} else {
+	    cur.slot.cstate(place);
+	}
+	cur.used = true;
+	return(cur);
     }
 
     public void tick(double dt) {
-	for(Sprite spr : curfx)
-	    spr.tick((int)(dt * 1000));
+	for(Iterator<Effect> i = curfx.iterator(); i.hasNext();) {
+	    Effect fx = i.next();
+	    if(!fx.used) {
+		if(fx.slot != null) {
+		    fx.slot.remove();
+		    fx.slot = null;
+		}
+		i.remove();
+	    } else {
+		fx.used = false;
+		fx.spr.tick(dt);
+	    }
+	}
+    }
+
+    public void destroy() {
+	for(Effect fx : curfx) {
+	    if(fx.slot != null)
+		fx.slot.remove();
+	}
 	curfx.clear();
+	super.destroy();
     }
 
     private static final Text.Furnace ipf = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 18, new Color(128, 128, 255)).aa(true), 1, 1, new Color(48, 48, 96));
@@ -138,6 +181,7 @@ public class Fightsess extends Widget {
     private static final Coord usec2 = UI.scale(new Coord(65, 67));
     private Indir<Resource> lastact1 = null, lastact2 = null;
     private Text lastacttip1 = null, lastacttip2 = null;
+    private Effect curtgtfx;
     public void draw(GOut g) {
 	updatepos();
 	double now = Utils.rtime();
@@ -152,7 +196,7 @@ public class Fightsess extends Widget {
 	    g.aimage(oip.get().tex(), pcc.add(UI.scale(75), 0), 0, 0.5);
 
 	    if(fv.lsrel.size() > 1)
-		fxon(fv.current.gobid, tgtfx);
+		curtgtfx = fxon(fv.current.gobid, tgtfx, curtgtfx);
 	}
 
 	{
