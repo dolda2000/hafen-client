@@ -70,13 +70,20 @@ public class Debug {
 	return(new File(new File(home), basename));
     }
 
-    public static void dump(Object... stuff) {
+    private static void dump_r(Object... stuff) {
 	if(stuff.length > 0) {
 	    for(int i = 0; i < stuff.length; i++) {
 		if(i > 0)
 		    System.err.print(' ');
 		if(stuff[i] instanceof Object[]) {
-		    System.err.print(Arrays.asList((Object[])stuff[i]));
+		    Object[] oa = (Object[])stuff[i];
+		    System.err.print('[');
+		    for(int o = 0; o < oa.length; o++) {
+			if(o > 0)
+			    System.err.print(", ");
+			dump_r(oa[o]);
+		    }
+		    System.err.print(']');
 		} else if(stuff[i] instanceof byte[]) {
 		    byte[] ba = (byte[])stuff[i];
 		    if(ba.length < 32) {
@@ -102,6 +109,10 @@ public class Debug {
 		}
 	    }
 	}
+    }
+
+    public static void dump(Object... stuff) {
+	dump_r(stuff);
 	System.err.println();
     }
 
