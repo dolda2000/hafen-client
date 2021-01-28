@@ -653,7 +653,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(equwnd != null)
 	    Utils.setprefc("wndc-equ", equwnd.c);
 	if(chrwdg != null)
-	    Utils.setprefc("wndc-chr", chrwdg.sz);
+	    Utils.setprefc("wndc-chr", chrwdg.c);
 	if(zerg != null)
 	    Utils.setprefc("wndc-zerg", zerg.c);
 	if(mapfile != null) {
