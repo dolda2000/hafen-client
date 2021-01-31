@@ -70,7 +70,21 @@ public class UI {
     }
 
     public interface Runner {
-	public Session run(UI ui) throws InterruptedException;
+	public Runner run(UI ui) throws InterruptedException;
+	public default void init(UI ui) {}
+	public default String title() {return(null);}
+
+	public static class Proxy implements Runner {
+	    public final Runner back;
+
+	    public Proxy(Runner back) {
+		this.back = back;
+	    }
+
+	    public Runner run(UI ui) throws InterruptedException {return(back.run(ui));}
+	    public void init(UI ui) {back.init(ui);}
+	    public String title() {return(back.title());}
+	}
     }
 
     public interface Context {
@@ -148,12 +162,13 @@ public class UI {
 	}
     }
 	
-    public UI(Context uictx, Coord sz, Session sess) {
+    public UI(Context uictx, Coord sz, Runner fun) {
 	this.uictx = uictx;
 	root = new RootWidget(this, sz);
 	widgets.put(0, root);
 	rwidgets.put(root, 0);
-	this.sess = sess;
+	if(fun != null)
+	    fun.init(this);
     }
 	
     public void setreceiver(Receiver rcvr) {

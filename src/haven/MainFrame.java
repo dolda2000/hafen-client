@@ -238,29 +238,21 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	Thread ui = new HackThread(p, "Haven UI thread");
 	ui.start();
 	try {
-	    Session sess = null;
 	    try {
+		UI.Runner fun = null;
 		while(true) {
-		    UI.Runner fun;
-		    if(sess == null) {
-			Bootstrap bill = new Bootstrap(Config.defserv, Config.mainport);
-			if((Config.authuser != null) && (Config.authck != null)) {
-			    bill.setinitcookie(Config.authuser, Config.authck);
-			    Config.authck = null;
-			}
-			fun = bill;
+		    if(fun == null)
+			fun = new Bootstrap();
+		    String t = fun.title();
+		    if(t == null)
 			setTitle("Haven and Hearth");
-		    } else {
-			fun = new RemoteUI(sess);
-			setTitle("Haven and Hearth \u2013 " + sess.username);
-		    }
-		    sess = fun.run(p.newui(sess));
+		    else
+			setTitle("Haven and Hearth \u2013 " + t);
+		    fun = fun.run(p.newui(fun));
 		}
 	    } catch(InterruptedException e) {
 	    } finally {
 		p.newui(null);
-		if(sess != null)
-		    sess.close();
 	    }
 	    savewndstate();
 	} finally {

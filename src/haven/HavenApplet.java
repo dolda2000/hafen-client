@@ -150,18 +150,15 @@ public class HavenApplet extends Applet {
 		    Thread ui = new HackThread(h, "Haven UI thread");
 		    ui.start();
 		    try {
-			Session sess = null;
+			UI.Runner fun = null;
 			while(true) {
-			    UI.Runner fun;
-			    if(sess == null) {
+			    if(fun == null) {
 				Bootstrap bill = new Bootstrap(getCodeBase().getHost(), Config.mainport);
 				if((getParameter("username") != null) && (getParameter("authcookie") != null))
 				    bill.setinitcookie(getParameter("username"), Utils.hex2byte(getParameter("authcookie")));
 				fun = bill;
-			    } else {
-				fun = new RemoteUI(sess);
 			    }
-			    sess = fun.run(h.newui(sess));
+			    fun = fun.run(h.newui(fun));
 			}
 		    } catch(InterruptedException e) {
 		    } finally {

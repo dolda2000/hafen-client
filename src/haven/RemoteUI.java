@@ -27,8 +27,8 @@
 package haven;
 
 public class RemoteUI implements UI.Receiver, UI.Runner {
-    Session sess, ret;
-    UI ui;
+    public final Session sess;
+    private Session ret;
 	
     public RemoteUI(Session sess) {
 	this.sess = sess;
@@ -50,8 +50,7 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 	}
     }
 
-    public Session run(UI ui) throws InterruptedException {
-	this.ui = ui;
+    public UI.Runner run(UI ui) throws InterruptedException {
 	ui.setreceiver(this);
 	while(true) {
 	    PMessage msg;
@@ -80,12 +79,20 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 	    synchronized(sess) {
 		if(ret != null) {
 		    sess.close();
-		    return(ret);
+		    return(new RemoteUI(ret));
 		}
 		if(!sess.alive())
 		    return(null);
 		sess.wait();
 	    }
 	}
+    }
+
+    public void init(UI ui) {
+	ui.sess = sess;
+    }
+
+    public String title() {
+	return(sess.username);
     }
 }
