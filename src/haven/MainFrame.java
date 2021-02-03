@@ -232,6 +232,67 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	}
     }
 
+    private void argloop(String[] args) throws InterruptedException {
+	String username;
+	byte[] cookie;
+	if((Config.authuser != null) && (Config.authck != null)) {
+	    username = Config.authuser;
+	    cookie = Config.authck;
+	} else {
+	    if((username = Utils.getpref("tokenname@" + Config.defserv, null)) == null)
+		throw(new RuntimeException("No explicit or saved username"));
+	    String token = Utils.getpref("savedtoken@" + Config.defserv, null);
+	    if(token == null)
+		throw(new RuntimeException("No saved token"));
+	    try {
+		AuthClient cl = new AuthClient((Config.authserv == null) ? Config.defserv : Config.authserv, Config.authport);
+		try {
+		    if((username = cl.trytoken(username, Utils.hex2byte(token))) == null)
+			throw(new RuntimeException("Authentication with saved token failed"));
+		    cookie = cl.getcookie();
+		} finally {
+		    cl.close();
+		}
+	    } catch(IOException e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+	Session sess;
+	try {
+	    sess = new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Config.defserv), Config.mainport), username, cookie, (Object[])args);
+	} catch(IOException e) {
+	    throw(new RuntimeException(e));
+	}
+	synchronized(sess) {
+	    while(sess.state != "") {
+		if(sess.connfailed != 0)
+		    throw(new RuntimeException(String.format("connection failure: %d", sess.connfailed)));
+		sess.wait();
+	    }
+	}
+	UI.Runner fun = new RemoteUI(sess);
+	while(fun != null)
+	    fun = fun.run(p.newui(fun));
+    }
+
+    private void uiloop() throws InterruptedException {
+	if(Config.servargs == null) {
+	    UI.Runner fun = null;
+	    while(true) {
+		if(fun == null)
+		    fun = new Bootstrap();
+		String t = fun.title();
+		if(t == null)
+		    setTitle("Haven and Hearth");
+		else
+		    setTitle("Haven and Hearth \u2013 " + t);
+		fun = fun.run(p.newui(fun));
+	    }
+	} else {
+	    argloop(Config.servargs);
+	}
+    }
+
     public void run() {
 	if(Thread.currentThread() != this.mt)
 	    throw(new RuntimeException("MainFrame is being run from an invalid context"));
@@ -239,17 +300,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	ui.start();
 	try {
 	    try {
-		UI.Runner fun = null;
-		while(true) {
-		    if(fun == null)
-			fun = new Bootstrap();
-		    String t = fun.title();
-		    if(t == null)
-			setTitle("Haven and Hearth");
-		    else
-			setTitle("Haven and Hearth \u2013 " + t);
-		    fun = fun.run(p.newui(fun));
-		}
+		uiloop();
 	    } catch(InterruptedException e) {
 	    } finally {
 		p.newui(null);
