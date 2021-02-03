@@ -116,6 +116,7 @@ public abstract class TexRender implements Tex, Disposable {
 	}
     }
     public final TexClip clip = new TexClip(this);
+    public static final Pipe.Op noclip = p -> p.put(TexClip.slot, null);
 
     public void render(GOut g, float[] gc, float[] tc) {
 	Coord tdim = sz();
@@ -167,8 +168,7 @@ public abstract class TexRender implements Tex, Disposable {
 			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
 			}
 			buf.add(tex.draw);
-			if(clip)
-			    buf.add(tex.clip);
+			buf.add(clip ? tex.clip : noclip);
 		    }
 		});
 	}
