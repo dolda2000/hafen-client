@@ -32,10 +32,10 @@ import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
 
-public class MainFrame extends java.awt.Frame implements Runnable, Console.Directory {
+public class MainFrame extends java.awt.Frame implements Console.Directory {
     UIPanel p;
     private final ThreadGroup g;
-    public final Thread mt;
+    private Thread mt;
     DisplayMode fsmode = null, prefs = null;
 	
     static {
@@ -133,21 +133,10 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	cmdmap.put("fs", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    if(args.length >= 2) {
-			Runnable r;
-			if(Utils.atoi(args[1]) != 0) {
-			    r = new Runnable() {
-				    public void run() {
-					setfs();
-				    }
-				};
-			} else {
-			    r = new Runnable() {
-				    public void run() {
-					setwnd();
-				    }
-				};
-			}
-			getToolkit().getSystemEventQueue().invokeLater(r);
+			if(Utils.atoi(args[1]) != 0)
+			    getToolkit().getSystemEventQueue().invokeLater(MainFrame.this::setfs);
+			else
+			    getToolkit().getSystemEventQueue().invokeLater(MainFrame.this::setwnd);
 		    }
 		}
 	    });
@@ -179,7 +168,6 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    sz = isz;
 	}
 	this.g = new ThreadGroup(HackThread.tg(), "Haven client");
-	this.mt = new HackThread(this.g, this, "Haven main thread");
 	JOGLPanel p = new JOGLPanel(sz);
 	this.p = p;
 	if(fsmode == null) {
@@ -293,27 +281,36 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	}
     }
 
-    public void run() {
-	if(Thread.currentThread() != this.mt)
-	    throw(new RuntimeException("MainFrame is being run from an invalid context"));
-	Thread ui = new HackThread(p, "Haven UI thread");
-	ui.start();
+    private void run() {
+	synchronized(this) {
+	    if(this.mt != null)
+		throw(new RuntimeException("MainFrame is already running"));
+	    this.mt = Thread.currentThread();
+	}
 	try {
+	    Thread ui = new HackThread(p, "Haven UI thread");
+	    ui.start();
 	    try {
-		uiloop();
-	    } catch(InterruptedException e) {
+		try {
+		    uiloop();
+		} catch(InterruptedException e) {
+		} finally {
+		    p.newui(null);
+		}
+		savewndstate();
 	    } finally {
-		p.newui(null);
+		ui.interrupt();
+		try {
+		    ui.join(5000);
+		} catch(InterruptedException e) {}
+		if(ui.isAlive())
+		    Warning.warn("ui thread failed to terminate");
+		dispose();
 	    }
-	    savewndstate();
 	} finally {
-	    ui.interrupt();
-	    try {
-		ui.join(5000);
-	    } catch(InterruptedException e) {}
-	    if(ui.isAlive())
-		Warning.warn("ui thread failed to terminate");
-	    dispose();
+	    synchronized(this) {
+		this.mt = null;
+	    }
 	}
     }
     
@@ -434,13 +431,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	MainFrame f = new MainFrame(null);
 	if(Utils.getprefb("fullscreen", false))
 	    f.setfs();
-	f.mt.start();
-	try {
-	    f.mt.join();
-	} catch(InterruptedException e) {
-	    f.mt.interrupt();
-	    return;
-	}
+	f.run();
 	dumplist(Resource.remote().loadwaited(), Config.loadwaited);
 	dumplist(Resource.remote().cached(), Config.allused);
 	if(ResCache.global != null) {
@@ -473,11 +464,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    } catch(java.net.MalformedURLException e) {
 	    }
 	}
-	Thread main = new HackThread(g, new Runnable() {
-		public void run() {
-		    main2(args);
-		}
-	    }, "Haven main thread");
+	Thread main = new HackThread(g, () -> main2(args), "Haven main thread");
 	main.start();
     }
 	
