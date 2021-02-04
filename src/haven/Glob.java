@@ -177,7 +177,10 @@ public class Glob {
 		int is = (n < a.length) ? ((Number)a[n++]).intValue() : 1;
 		double sp = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
 		double sd = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
-		ast = new Astronomy(dt, mp, yt, night, mc, is, sp, sd);
+		double years = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
+		double ym = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
+		double md = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
+		ast = new Astronomy(dt, mp, yt, night, mc, is, sp, sd, years, ym, md);
 	    } else if(t == "light") {
 		synchronized(this) {
 		    tlightamb = (Color)a[n++];

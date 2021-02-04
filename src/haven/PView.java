@@ -213,7 +213,7 @@ public abstract class PView extends Widget {
     private PostProcessor pp_resamp = null;
     protected void resolve(GOut g) {
 	List<PostProcessor> copy = new ArrayList<PostProcessor>(ctx.postproc());
-	if(!rsz.equals(g.sz())) {
+	if(!rsz.equals(this.sz)) {
 	    if(pp_resamp == null)
 		pp_resamp = new Resampler();
 	    copy.add(pp_resamp);

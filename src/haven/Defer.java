@@ -227,9 +227,10 @@ public class Defer extends ThreadGroup {
 	}
     }
 
+    private static final AtomicInteger threadno = new AtomicInteger(0);
     private class Worker extends HackThread {
 	private Worker() {
-	    super(Defer.this, null, "Worker thread");
+	    super(Defer.this, null, "Worker thread #" + threadno.getAndIncrement());
 	    setDaemon(true);
 	    setPriority((Thread.NORM_PRIORITY + Thread.MIN_PRIORITY) / 2);
 	}

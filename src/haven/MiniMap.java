@@ -288,11 +288,10 @@ public class MiniMap extends Widget {
 		    if(cc == null) {
 			Resource res = sm.res.loadsaved(Resource.remote());
 			img = res.layer(Resource.imgc);
-			imgsz = UI.scale(img.sz);
 			Resource.Neg neg = res.layer(Resource.negc);
-			cc = (neg != null)?neg.cc:imgsz.div(2);
+			cc = (neg != null) ? neg.cc : img.ssz.div(2);
 			if(hit == null)
-			    hit = Area.sized(cc.inv(), imgsz);
+			    hit = Area.sized(cc.inv(), img.ssz);
 		    }
 		} catch(Loading l) {
 		} catch(Exception e) {

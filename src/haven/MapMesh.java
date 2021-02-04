@@ -431,76 +431,180 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	return(gmmat.apply(buf.mkmesh()));
     }
 
-    public static class OLOrder extends MLOrder {
-	public OLOrder(int z) {super(z);}
+    public static class OLOrder extends Order<OLOrder> {
+	public final MCache.OverlayInfo id;
+
+	public OLOrder(MCache.OverlayInfo id) {
+	    this.id = id;
+	}
 
 	public int mainorder() {
 	    return(1002);
 	}
+
+	public boolean equals(Object x) {
+	    return((x instanceof OLOrder) && (((OLOrder)x).id == this.id));
+	}
+
+	public int hashCode() {
+	    return(System.identityHashCode(id));
+	}
+
+	private final static Comparator<OLOrder> cmp = (a, b) -> {
+	    return(Utils.idcmp.compare(a.id, b.id));
+	};
+
+	public Comparator<OLOrder> comparator() {return(cmp);}
     }
-    public RenderTree.Node[] makeols() {
-	final MeshBuf buf = new MeshBuf();
-	final MapSurface ms = data(gnd);
-	final MeshBuf.Vertex[] vl = new MeshBuf.Vertex[ms.vl.length];
-	final haven.Surface.Normals sn = ms.data(haven.Surface.nrm);
+    private static final VertexArray.Layout olvfmt = new VertexArray.Layout(new VertexArray.Layout.Input(Homo3D.vertex, new VectorFormat(3, NumberFormat.FLOAT32), 0, 0, 16),
+									    new VertexArray.Layout.Input(Homo3D.normal, new VectorFormat(3, NumberFormat.SNORM8), 0, 12, 16));
+    private static class OLArray {
+	VertexArray dat;
+	int[] vl;
+
+	OLArray(VertexArray dat, int[] vl) {
+	    this.dat = dat;
+	    this.vl = vl;
+	}
+    }
+    private OLArray makeolvbuf() {
+	MapSurface ms = data(gnd);
+	int[] vl = new int[ms.vl.length];
+	haven.Surface.Normals sn = ms.data(haven.Surface.nrm);
+	for(int i = 0; i < vl.length; i++)
+	    vl[i] = -1;
+	VertexBuilder vbuf = new VertexBuilder(olvfmt);
 	class Buf implements Tiler.MCons {
-	    int[] fl = new int[16];
+	    public void faces(MapMesh m, Tiler.MPart d) {
+		for(Vertex v : d.v) {
+		    if(vl[v.vi] < 0) {
+			vbuf.set(0, v);
+			vbuf.set(1, sn.get(v));
+			vl[v.vi] = vbuf.emit();
+		    }
+		}
+	    }
+	}
+	Buf buf = new Buf();
+	for(int y = 0; y < sz.y; y++) {
+	    for(int x = 0; x < sz.x; x++) {
+		Coord gc = ul.add(x, y);
+		map.tiler(map.gettile(gc)).lay(this, new Coord(x, y), gc, buf, false);
+	    }
+	}
+	return(new OLArray(vbuf.finv(), vl));
+    }
+    private OLArray olvert = null;
+
+    private static class ShallowWrap implements RenderTree.Node, Rendered, Disposable {
+	final Rendered r;
+	final Pipe.Op st;
+
+	ShallowWrap(Rendered r, Pipe.Op st) {
+	    this.r = r;
+	    this.st = st;
+	}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.ostate(st);
+	}
+
+	public void draw(Pipe context, Render out) {
+	    r.draw(context, out);
+	}
+
+	public void dispose() {
+	    if(r instanceof Disposable)
+		((Disposable)r).dispose();
+	}
+    }
+
+    public RenderTree.Node makeol(MCache.OverlayInfo id) {
+	if(olvert == null)
+	    olvert = makeolvbuf();
+	class Buf implements Tiler.MCons {
+	    short[] fl = new short[16];
 	    int fn = 0;
 
 	    public void faces(MapMesh m, Tiler.MPart d) {
-		for(Vertex v : d.v) {
-		    if(vl[v.vi] == null)
-			vl[v.vi] = buf.new Vertex(v, sn.get(v));
-		}
 		while(fn + d.f.length > fl.length)
 		    fl = Utils.extend(fl, fl.length * 2);
 		for(int fi : d.f)
-		    fl[fn++] = d.v[fi].vi;
+		    fl[fn++] = (short)olvert.vl[d.v[fi].vi];
 	    }
 	}
 	Coord t = new Coord();
-	int[][] ol = new int[sz.x][sz.y];
+	Area a = Area.sized(ul, sz);
+	boolean[] ol = new boolean[a.area()];
+	map.getol(id, a, ol);
+	Buf buf = new Buf();
 	for(t.y = 0; t.y < sz.y; t.y++) {
 	    for(t.x = 0; t.x < sz.x; t.x++) {
-		ol[t.x][t.y] = map.getol(ul.add(t));
-	    }
-	}
-	Buf[] bufs = new Buf[32];
-	for(int i = 0; i < bufs.length; i++) {
-	    bufs[i] = new Buf();
-	    for(t.y = 0; t.y < sz.y; t.y++) {
-		for(t.x = 0; t.x < sz.x; t.x++) {
-		    if((ol[t.x][t.y] & (1 << i)) != 0) {
-			Coord gc = t.add(ul);
-			map.tiler(map.gettile(gc)).lay(this, t, gc, bufs[i], false);
-		    }
+		if(ol[t.x + (t.y * sz.x)]) {
+		    Coord gc = t.add(ul);
+		    map.tiler(map.gettile(gc)).lay(this, t, gc, buf, false);
 		}
 	    }
 	}
-	RenderTree.Node[] ret = new RenderTree.Node[32];
-	for(int i = 0; i < bufs.length; i++) {
-	    if(bufs[i].fn > 0) {
-		int[] fl = bufs[i].fl;
-		int fn = bufs[i].fn;
-		buf.clearfaces();
-		for(int o = 0; o < fn; o += 3)
-		    buf.new Face(vl[fl[o]], vl[fl[o + 1]], vl[fl[o + 2]]);
-		final FastMesh mesh = buf.mkmesh();
-		final int z = i;
-		class OL implements RenderTree.Node, Disposable {
-		    public void added(RenderTree.Slot slot) {
-			slot.ostate(new OLOrder(z));
-			slot.add(mesh);
-		    }
+	if(buf.fn == 0)
+	    return(null);
+	haven.render.Model mod = new haven.render.Model(haven.render.Model.Mode.TRIANGLES, olvert.dat,
+							new haven.render.Model.Indices(buf.fn, NumberFormat.UINT16, DataBuffer.Usage.STATIC,
+										       DataBuffer.Filler.of(Arrays.copyOf(buf.fl, buf.fn))));
+	return(new ShallowWrap(mod, new OLOrder(id)));
+    }
 
-		    public void dispose() {
-			mesh.dispose();
+    public RenderTree.Node makeolol(MCache.OverlayInfo id) {
+	if(olvert == null)
+	    olvert = makeolvbuf();
+	class Buf implements Tiler.MCons {
+	    int mask;
+	    short[] fl = new short[16];
+	    int fn = 0;
+
+	    public void faces(MapMesh m, Tiler.MPart d) {
+		byte[] ef = new byte[d.v.length];
+		for(int i = 0; i < d.v.length; i++) {
+		    if(d.tcy[i] == 0.0f) ef[i] |= 1;
+		    if(d.tcx[i] == 1.0f) ef[i] |= 2;
+		    if(d.tcy[i] == 1.0f) ef[i] |= 4;
+		    if(d.tcx[i] == 0.0f) ef[i] |= 8;
+		}
+		while(fn + (d.f.length * 2) > fl.length)
+		    fl = Utils.extend(fl, fl.length * 2);
+		for(int i = 0; i < d.f.length; i += 3) {
+		    for(int a = 0; a < 3; a++) {
+			int b = (a + 1) % 3;
+			if((ef[d.f[i + a]] & ef[d.f[i + b]] & mask) != 0) {
+			    fl[fn++] = (short)olvert.vl[d.v[d.f[i + a]].vi];
+			    fl[fn++] = (short)olvert.vl[d.v[d.f[i + b]].vi];
+			}
 		    }
 		}
-		ret[i] = new OL();
 	    }
 	}
-	return(ret);
+	Area a = Area.sized(ul, sz);
+	Area ma = a.margin(1);
+	boolean[] ol = new boolean[ma.area()];
+	map.getol(id, ma, ol);
+	Buf buf = new Buf();
+	for(Coord t : a) {
+	    if(ol[ma.ri(t)]) {
+		buf.mask = 0;
+		for(int d = 0; d < 4; d++) {
+		    if(!ol[ma.ri(t.add(Coord.uecw[d]))])
+			buf.mask |= 1 << d;
+		}
+		if(buf.mask != 0)
+		    map.tiler(map.gettile(t)).lay(this, t.sub(a.ul), t, buf, false);
+	    }
+	}
+	if(buf.fn == 0)
+	    return(null);
+	haven.render.Model mod = new haven.render.Model(haven.render.Model.Mode.LINES, olvert.dat,
+							new haven.render.Model.Indices(buf.fn, NumberFormat.UINT16, DataBuffer.Usage.STATIC,
+										       DataBuffer.Filler.of(Arrays.copyOf(buf.fl, buf.fn))));
+	return(new ShallowWrap(mod, Pipe.Op.compose(new OLOrder(id), new States.LineWidth(2))));
     }
 
     private void clean() {

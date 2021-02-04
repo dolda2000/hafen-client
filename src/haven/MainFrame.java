@@ -32,10 +32,10 @@ import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
 
-public class MainFrame extends java.awt.Frame implements Runnable, Console.Directory {
+public class MainFrame extends java.awt.Frame implements Console.Directory {
     UIPanel p;
     private final ThreadGroup g;
-    public final Thread mt;
+    private Thread mt;
     DisplayMode fsmode = null, prefs = null;
 	
     static {
@@ -133,21 +133,10 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	cmdmap.put("fs", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    if(args.length >= 2) {
-			Runnable r;
-			if(Utils.atoi(args[1]) != 0) {
-			    r = new Runnable() {
-				    public void run() {
-					setfs();
-				    }
-				};
-			} else {
-			    r = new Runnable() {
-				    public void run() {
-					setwnd();
-				    }
-				};
-			}
-			getToolkit().getSystemEventQueue().invokeLater(r);
+			if(Utils.atoi(args[1]) != 0)
+			    getToolkit().getSystemEventQueue().invokeLater(MainFrame.this::setfs);
+			else
+			    getToolkit().getSystemEventQueue().invokeLater(MainFrame.this::setwnd);
 		    }
 		}
 	    });
@@ -179,7 +168,6 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    sz = isz;
 	}
 	this.g = new ThreadGroup(HackThread.tg(), "Haven client");
-	this.mt = new HackThread(this.g, this, "Haven main thread");
 	JOGLPanel p = new JOGLPanel(sz);
 	this.p = p;
 	if(fsmode == null) {
@@ -232,45 +220,106 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	}
     }
 
-    public void run() {
-	if(Thread.currentThread() != this.mt)
-	    throw(new RuntimeException("MainFrame is being run from an invalid context"));
-	Thread ui = new HackThread(p, "Haven UI thread");
-	ui.start();
-	try {
-	    Session sess = null;
+    public static Session connect(Object[] args) {
+	String username;
+	byte[] cookie;
+	if((Config.authuser != null) && (Config.authck != null)) {
+	    username = Config.authuser;
+	    cookie = Config.authck;
+	} else {
+	    if((username = Utils.getpref("tokenname@" + Config.defserv, null)) == null)
+		throw(new RuntimeException("No explicit or saved username"));
+	    String token = Utils.getpref("savedtoken@" + Config.defserv, null);
+	    if(token == null)
+		throw(new RuntimeException("No saved token"));
 	    try {
-		while(true) {
-		    UI.Runner fun;
-		    if(sess == null) {
-			Bootstrap bill = new Bootstrap(Config.defserv, Config.mainport);
-			if((Config.authuser != null) && (Config.authck != null)) {
-			    bill.setinitcookie(Config.authuser, Config.authck);
-			    Config.authck = null;
-			}
-			fun = bill;
-			setTitle("Haven and Hearth");
-		    } else {
-			fun = new RemoteUI(sess);
-			setTitle("Haven and Hearth \u2013 " + sess.username);
-		    }
-		    sess = fun.run(p.newui(sess));
+		AuthClient cl = new AuthClient((Config.authserv == null) ? Config.defserv : Config.authserv, Config.authport);
+		try {
+		    if((username = cl.trytoken(username, Utils.hex2byte(token))) == null)
+			throw(new RuntimeException("Authentication with saved token failed"));
+		    cookie = cl.getcookie();
+		} finally {
+		    cl.close();
 		}
-	    } catch(InterruptedException e) {
-	    } finally {
-		p.newui(null);
-		if(sess != null)
-		    sess.close();
+	    } catch(IOException e) {
+		throw(new RuntimeException(e));
 	    }
-	    savewndstate();
+	}
+	Session sess;
+	try {
+	    sess = new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Config.defserv), Config.mainport), username, cookie, args);
+	} catch(IOException e) {
+	    throw(new RuntimeException(e));
+	}
+	boolean irq = false;
+	try {
+	    synchronized(sess) {
+		while(sess.state != "") {
+		    if(sess.connfailed != 0)
+			throw(new RuntimeException(String.format("connection failure: %d", sess.connfailed)));
+		    try {
+			sess.wait();
+		    } catch(InterruptedException e) {
+			irq = true;
+		    }
+		}
+	    }
 	} finally {
-	    ui.interrupt();
+	    if(irq)
+		Thread.currentThread().interrupt();
+	}
+	return(sess);
+    }
+
+    private void uiloop() throws InterruptedException {
+	UI.Runner fun = null;
+	while(true) {
+	    if(fun == null)
+		fun = new Bootstrap();
+	    String t = fun.title();
+	    if(t == null)
+		setTitle("Haven and Hearth");
+	    else
+		setTitle("Haven and Hearth \u2013 " + t);
+	    fun = fun.run(p.newui(fun));
+	}
+    }
+
+    private void run(UI.Runner task) {
+	synchronized(this) {
+	    if(this.mt != null)
+		throw(new RuntimeException("MainFrame is already running"));
+	    this.mt = Thread.currentThread();
+	}
+	try {
+	    Thread ui = new HackThread(p, "Haven UI thread");
+	    ui.start();
 	    try {
-		ui.join(5000);
-	    } catch(InterruptedException e) {}
-	    if(ui.isAlive())
-		Warning.warn("ui thread failed to terminate");
-	    dispose();
+		try {
+		    if(task == null) {
+			uiloop();
+		    } else {
+			while(task != null)
+			    task = task.run(p.newui(task));
+		    }
+		} catch(InterruptedException e) {
+		} finally {
+		    p.newui(null);
+		}
+		savewndstate();
+	    } finally {
+		ui.interrupt();
+		try {
+		    ui.join(5000);
+		} catch(InterruptedException e) {}
+		if(ui.isAlive())
+		    Warning.warn("ui thread failed to terminate");
+		dispose();
+	    }
+	} finally {
+	    synchronized(this) {
+		this.mt = null;
+	    }
 	}
     }
     
@@ -388,16 +437,13 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    return;
 	}
 	setupres();
+	UI.Runner fun = null;
+	if(Config.servargs != null)
+	    fun = new RemoteUI(connect(Config.servargs));
 	MainFrame f = new MainFrame(null);
 	if(Utils.getprefb("fullscreen", false))
 	    f.setfs();
-	f.mt.start();
-	try {
-	    f.mt.join();
-	} catch(InterruptedException e) {
-	    f.mt.interrupt();
-	    return;
-	}
+	f.run(fun);
 	dumplist(Resource.remote().loadwaited(), Config.loadwaited);
 	dumplist(Resource.remote().cached(), Config.allused);
 	if(ResCache.global != null) {
@@ -430,11 +476,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    } catch(java.net.MalformedURLException e) {
 	    }
 	}
-	Thread main = new HackThread(g, new Runnable() {
-		public void run() {
-		    main2(args);
-		}
-	    }, "Haven main thread");
+	Thread main = new HackThread(g, () -> main2(args), "Haven main thread");
 	main.start();
     }
 	

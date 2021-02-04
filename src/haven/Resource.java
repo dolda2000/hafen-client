@@ -216,10 +216,12 @@ public class Resource implements Serializable {
     }
     
     public static class CacheSource implements ResSource, Serializable {
-	public transient ResCache cache;
+	public final transient ResCache cache;
+	public final String cachedesc;
 	
 	public CacheSource(ResCache cache) {
 	    this.cache = cache;
+	    this.cachedesc = String.valueOf(cache);
 	}
 	
 	public InputStream get(String name) throws IOException {
@@ -227,7 +229,7 @@ public class Resource implements Serializable {
 	}
 	
 	public String toString() {
-	    return("cache source backed by " + cache);
+	    return("cache source backed by " + cachedesc);
 	}
     }
 
@@ -253,18 +255,25 @@ public class Resource implements Serializable {
     }
 
     public static class JarSource implements ResSource, Serializable {
+	public final String base;
+
+	public JarSource(String base) {
+	    this.base = base;
+	}
+
 	public InputStream get(String name) throws FileNotFoundException {
-	    InputStream s = Resource.class.getResourceAsStream("/res/" + name + ".res");
+	    String full = "/" + base + "/" + name + ".res";
+	    InputStream s = Resource.class.getResourceAsStream(full);
 	    if(s == null)
-		throw(new FileNotFoundException("Could not find resource locally: " + name));
+		throw(new FileNotFoundException("Could not find resource locally: " + full));
 	    return(s);
 	}
-	
+
 	public String toString() {
-	    return("local res source");
+	    return("local res source (" + base + ")");
 	}
     }
-    
+
     public static class HttpSource implements ResSource, Serializable {
 	private final transient SslHelper ssl;
 	public URL baseurl;
@@ -690,7 +699,7 @@ public class Resource implements Serializable {
 	if(_local == null) {
 	    synchronized(Resource.class) {
 		if(_local == null) {
-		    Pool local = new Pool(new JarSource());
+		    Pool local = new Pool(new JarSource("res"));
 		    try {
 			if(Config.resdir != null)
 			    local.add(new FileSource(new File(Config.resdir)));
@@ -711,7 +720,7 @@ public class Resource implements Serializable {
 	if(_remote == null) {
 	    synchronized(Resource.class) {
 		if(_remote == null) {
-		    Pool remote = new Pool(local());
+		    Pool remote = new Pool(local(), new JarSource("res-preload"));
 		    if(prscache != null)
 			remote.add(new CacheSource(prscache));
 		    _remote = remote;;
@@ -901,7 +910,7 @@ public class Resource implements Serializable {
 	public final Map<String, byte[]> kvdata;
 	private float scale = 1;
 	private int gay = -1;
-	public Coord sz, o, tsz, ssz;
+	public Coord sz, o, so, tsz, ssz;
 
 	public Image(Message buf) {
 	    z = buf.int16();
@@ -911,6 +920,7 @@ public class Resource implements Serializable {
 	    nooff = (fl & 2) != 0;
 	    id = buf.int16();
 	    o = cdec(buf);
+	    so = UI.scale(o);
 	    Map<String, byte[]> kvdata = new HashMap<>();
 	    if((fl & 4) != 0) {
 		while(true) {
@@ -941,6 +951,13 @@ public class Resource implements Serializable {
 	    if(tsz == null)
 		tsz = sz;
 	    ssz = new Coord(Math.round(UI.scale(sz.x / scale)), Math.round(UI.scale(sz.y / scale)));
+	    if(tsz != null) {
+		/* This seems kind of ugly, but I'm not sure how to
+		 * otherwise handle upwards rounding of both offset
+		 * and size getting the image out of the intended
+		 * area. */
+		so = new Coord(Math.min(so.x, tsz.x - ssz.x), Math.min(so.y, sz.y - ssz.y));
+	    }
 	}
 
 	public BufferedImage scaled() {
@@ -1647,16 +1664,20 @@ public class Resource implements Serializable {
 	return(indir);
     }
 
+    public static Image loadrimg(String name) {
+	return(local().loadwait(name).layer(imgc));
+    }
+
     public static BufferedImage loadimg(String name) {
-	return(local().loadwait(name).layer(imgc).img);
+	return(loadrimg(name).img);
     }
 
     public static BufferedImage loadsimg(String name) {
-	return(local().loadwait(name).layer(imgc).scaled());
+	return(loadrimg(name).scaled());
     }
 
     public static Tex loadtex(String name) {
-	return(local().loadwait(name).layer(imgc).tex());
+	return(loadrimg(name).tex());
     }
 
     public String toString() {

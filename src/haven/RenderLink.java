@@ -147,12 +147,14 @@ public interface RenderLink {
     }
 
     public static class Parameters implements RenderLink {
+	public final Resource from;
 	public final Indir<Resource> res;
 	public final Object[] args;
 	private Resource lres;
 	private ArgLink link = null;
 
-	public Parameters(Indir<Resource> res, Object[] args) {
+	public Parameters(Resource from, Indir<Resource> res, Object[] args) {
+	    this.from = from;
 	    this.res = res;
 	    this.args = args;
 	}
@@ -161,7 +163,7 @@ public interface RenderLink {
 	    String nm = buf.string();
 	    int ver = buf.uint16();
 	    Object[] args = buf.list();
-	    return(new Parameters(res.pool.load(nm, ver), args));
+	    return(new Parameters(res, res.pool.load(nm, ver), args));
 	}
 
 	public Node make(Owner owner) {
@@ -170,7 +172,7 @@ public interface RenderLink {
 		    lres = res.get();
 		link = lres.getcode(ArgLink.class, true);
 	    }
-	    return(link.create(owner, lres, args));
+	    return(link.create(owner, from, args));
 	}
     }
 

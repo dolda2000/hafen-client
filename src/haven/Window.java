@@ -46,16 +46,17 @@ public class Window extends Widget implements DTarget {
     public static final Tex bm = Resource.loadtex("gfx/hud/wnd/lg/bm");
     public static final Tex br = Resource.loadtex("gfx/hud/wnd/lg/br");
     public static final Tex sizer = Resource.loadtex("gfx/hud/wnd/sizer");
-    public static final Coord tlm = UI.scale(new Coord(18, 30));
-    public static final Coord brm = UI.scale(new Coord(13, 22));
-    public static final Coord cpo = UI.scale(new Coord(36, 17));
+    public static final Coord tlm = UI.scale(18, 30);
+    public static final Coord brm = UI.scale(13, 22);
+    public static final Coord cpo = UI.rscale(36, 16.4);
     public static final int capo = 7, capio = 2;
-    public static final Coord dlmrgn = UI.scale(new Coord(23, 14));
-    public static final Coord dsmrgn = UI.scale(new Coord(9, 9));
+    public static final Coord dlmrgn = UI.scale(23, 14);
+    public static final Coord dsmrgn = UI.scale(9, 9);
     public static final BufferedImage ctex = Resource.loadimg("gfx/hud/fonttex");
     public static final Text.Furnace cf = new Text.Imager(new PUtils.TexFurn(new Text.Foundry(Text.fraktur, 15).aa(true), ctex)) {
 	    protected BufferedImage proc(Text text) {
-		return(rasterimg(blurmask2(text.img.getRaster(), 1, 1, Color.BLACK)));
+		// return(rasterimg(blurmask2(text.img.getRaster(), 1, 1, Color.BLACK)));
+		return(rasterimg(blurmask2(text.img.getRaster(), UI.rscale(0.75), UI.rscale(1.0), Color.BLACK)));
 	    }
 	};
     public static final IBox wbox = new IBox("gfx/hud/wnd", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb") {
@@ -339,5 +340,14 @@ public class Window extends Widget implements DTarget {
 	    return(ret);
 	else
 	    return("");
+    }
+
+    public static void main(String[] args) {
+	Window wnd = new Window(new Coord(300, 200), "Inventory", true);
+	new haven.rs.DrawBuffer(haven.rs.Context.getdefault().env(), new Coord(512, 512))
+	    .draw(g -> {
+		    wnd.draw(g);
+		    g.getimage(img -> Debug.dumpimage(img, args[0]));
+	    });
     }
 }
