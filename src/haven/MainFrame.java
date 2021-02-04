@@ -220,7 +220,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
     }
 
-    private void argloop(String[] args) throws InterruptedException {
+    public static Session connect(Object[] args) {
 	String username;
 	byte[] cookie;
 	if((Config.authuser != null) && (Config.authck != null)) {
@@ -247,41 +247,45 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
 	Session sess;
 	try {
-	    sess = new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Config.defserv), Config.mainport), username, cookie, (Object[])args);
+	    sess = new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Config.defserv), Config.mainport), username, cookie, args);
 	} catch(IOException e) {
 	    throw(new RuntimeException(e));
 	}
-	synchronized(sess) {
-	    while(sess.state != "") {
-		if(sess.connfailed != 0)
-		    throw(new RuntimeException(String.format("connection failure: %d", sess.connfailed)));
-		sess.wait();
+	boolean irq = false;
+	try {
+	    synchronized(sess) {
+		while(sess.state != "") {
+		    if(sess.connfailed != 0)
+			throw(new RuntimeException(String.format("connection failure: %d", sess.connfailed)));
+		    try {
+			sess.wait();
+		    } catch(InterruptedException e) {
+			irq = true;
+		    }
+		}
 	    }
+	} finally {
+	    if(irq)
+		Thread.currentThread().interrupt();
 	}
-	UI.Runner fun = new RemoteUI(sess);
-	while(fun != null)
-	    fun = fun.run(p.newui(fun));
+	return(sess);
     }
 
     private void uiloop() throws InterruptedException {
-	if(Config.servargs == null) {
-	    UI.Runner fun = null;
-	    while(true) {
-		if(fun == null)
-		    fun = new Bootstrap();
-		String t = fun.title();
-		if(t == null)
-		    setTitle("Haven and Hearth");
-		else
-		    setTitle("Haven and Hearth \u2013 " + t);
-		fun = fun.run(p.newui(fun));
-	    }
-	} else {
-	    argloop(Config.servargs);
+	UI.Runner fun = null;
+	while(true) {
+	    if(fun == null)
+		fun = new Bootstrap();
+	    String t = fun.title();
+	    if(t == null)
+		setTitle("Haven and Hearth");
+	    else
+		setTitle("Haven and Hearth \u2013 " + t);
+	    fun = fun.run(p.newui(fun));
 	}
     }
 
-    private void run() {
+    private void run(UI.Runner task) {
 	synchronized(this) {
 	    if(this.mt != null)
 		throw(new RuntimeException("MainFrame is already running"));
@@ -292,7 +296,12 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    ui.start();
 	    try {
 		try {
-		    uiloop();
+		    if(task == null) {
+			uiloop();
+		    } else {
+			while(task != null)
+			    task = task.run(p.newui(task));
+		    }
 		} catch(InterruptedException e) {
 		} finally {
 		    p.newui(null);
@@ -428,10 +437,13 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    return;
 	}
 	setupres();
+	UI.Runner fun = null;
+	if(Config.servargs != null)
+	    fun = new RemoteUI(connect(Config.servargs));
 	MainFrame f = new MainFrame(null);
 	if(Utils.getprefb("fullscreen", false))
 	    f.setfs();
-	f.run();
+	f.run(fun);
 	dumplist(Resource.remote().loadwaited(), Config.loadwaited);
 	dumplist(Resource.remote().cached(), Config.allused);
 	if(ResCache.global != null) {
