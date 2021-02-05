@@ -958,15 +958,10 @@ public class Resource implements Serializable {
 		 * area. */
 		so = new Coord(Math.min(so.x, tsz.x - ssz.x), Math.min(so.y, sz.y - ssz.y));
 	    }
+	    scaled = PUtils.uiscale(img, ssz);
 	}
 
 	public BufferedImage scaled() {
-	    if(scaled == null) {
-		synchronized(this) {
-		    if(scaled == null)
-			scaled = PUtils.uiscale(img, ssz);
-		}
-	    }
 	    return(scaled);
 	}
 
