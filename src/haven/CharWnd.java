@@ -2260,6 +2260,8 @@ public class CharWnd extends Window {
     public void addchild(Widget child, Object... args) {
 	String place = (args[0] instanceof String)?(((String)args[0]).intern()):null;
 	if(place == "study") {
+	    if(child instanceof ExtInventory)
+		((ExtInventory) child).hideExtension();
 	    sattr.add(child, new Coord(width + margin1, offy).add(wbox.btloff()));
 	    Frame.around(sattr, Collections.singletonList(child));
 	    Widget inf = sattr.add(new StudyInfo(new Coord(attrw - UI.scale(150), child.sz.y), child), new Coord(width + margin1 + UI.scale(150), child.c.y).add(wbox.btloff().x, 0));

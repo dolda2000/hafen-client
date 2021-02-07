@@ -99,8 +99,18 @@ public abstract class Listbox<T> extends ListWidget<T> {
 	T item = itemat(c);
 	if((item == null) && (button == 1))
 	    change(null);
-	else if(item != null)
+	else if(item != null) {
+	    if(item instanceof Widget) {
+		Widget wdg = (Widget) item;
+		if(wdg.visible) {
+		    Coord cc = xlate(wdg.c.addy(c.y / itemh * itemh), true);
+		    if(c.isect(cc, wdg.sz) && wdg.mousedown(c.add(cc.inv()), button)) {
+			return(true);
+		    }
+		}
+	    }
 	    itemclick(item, button);
+	}
 	return(true);
     }
 

@@ -205,15 +205,18 @@ public class GobIcon extends GAttrib {
 	    private Tex img = null;
 	    public Tex img() {
 		if(this.img == null) {
-		    BufferedImage img = conf.res.loadsaved(Resource.remote()).layer(Resource.imgc).img;
-		    Coord tsz;
-		    if(img.getWidth() > img.getHeight())
-			tsz = new Coord(elh, (elh * img.getHeight()) / img.getWidth());
-		    else
-			tsz = new Coord((elh * img.getWidth()) / img.getHeight(), elh);
-		    this.img = new TexI(PUtils.convolve(img, tsz, filter));
+		    this.img = tex(conf.res.loadsaved(Resource.remote()).layer(Resource.imgc).img);
 		}
 		return(this.img);
+	    }
+
+	    public static Tex tex(BufferedImage img) {
+		Coord tsz;
+		if(img.getWidth() > img.getHeight())
+		    tsz = new Coord(elh, (elh * img.getHeight()) / img.getWidth());
+		else
+		    tsz = new Coord((elh * img.getWidth()) / img.getHeight(), elh);
+		return(new TexI(PUtils.convolve(img, tsz, filter)));
 	    }
 	}
 

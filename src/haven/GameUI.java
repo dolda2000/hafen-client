@@ -50,7 +50,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     private double msgtime;
     private Window invwnd, equwnd, makewnd, srchwnd, iconwnd;
     private Coord makewndc = Utils.getprefc("makewndc", new Coord(400, 200));
-    public Inventory maininv;
+    public ExtInventory maininv;
     public CharWnd chrwdg;
     public MapWnd mapfile;
     private Widget qqview;
@@ -703,7 +703,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			pack();
 		    }
 		};
-	    invwnd.add(maininv = (Inventory)child, Coord.z);
+	    invwnd.add(maininv = (ExtInventory)child, Coord.z);
 	    invwnd.pack();
 	    invwnd.hide();
 	    add(invwnd, Utils.getprefc("wndc-inv", new Coord(100, 100)));
