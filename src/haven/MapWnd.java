@@ -38,6 +38,7 @@ import haven.MiniMap.*;
 import haven.BuddyWnd.GroupSelector;
 import static haven.MCache.tilesz;
 import static haven.MCache.cmaps;
+import static haven.Utils.eq;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.*;
 
@@ -499,9 +500,10 @@ public class MapWnd extends Window implements Console.Directory {
 			    if(prev == null) {
 				view.file.add(new SMarker(info.seg, sc, rnm, oid, new Resource.Spec(Resource.remote(), res.name, res.ver)));
 			    } else {
-				if((prev.seg != info.seg) || !prev.tc.equals(sc)) {
+				if((prev.seg != info.seg) || !eq(prev.tc, sc) || !eq(prev.nm, rnm)) {
 				    prev.seg = info.seg;
 				    prev.tc = sc;
+				    prev.nm = rnm;
 				    view.file.update(prev);
 				}
 			    }
