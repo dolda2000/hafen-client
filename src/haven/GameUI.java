@@ -1642,7 +1642,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	cmdmap.put("tool", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    try {
-			add(gettype(args[1]).create(ui, new Object[0]), 200, 200);
+			Object[] wargs = new Object[args.length - 2];
+			for(int i = 0; i < wargs.length; i++)
+			    wargs[i] = args[i + 2];
+			add(gettype(args[1]).create(ui, wargs), 200, 200);
 		    } catch(RuntimeException e) {
 			e.printStackTrace(Debug.log);
 		    }
