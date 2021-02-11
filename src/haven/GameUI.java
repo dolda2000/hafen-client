@@ -350,12 +350,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			buf.append(src, off, len);
 			int p;
 			while((p = buf.indexOf("\n")) >= 0) {
-			    lines.add(buf.substring(0, p));
+			    String ln = buf.substring(0, p).replace("\t", "        ");
+			    lines.add(ln);
 			    buf.delete(0, p + 1);
 			}
 		    }
-		    for(String ln : lines)
+		    for(String ln : lines) {
 			syslog.append(ln, Color.WHITE);
+		    }
 		}
 		
 		public void close() {}
