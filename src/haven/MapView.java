@@ -1421,7 +1421,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		clmaplist.basic(Pipe.Op.compose(basic, clickloc));
 		clmaplist.draw(out);
 		if(clickdb) {
-		    GOut.debugimage(out, clobjlist.basic, FragID.fragid, Area.sized(Coord.z, clobjlist.sz()), new VectorFormat(1, NumberFormat.SINT32),
+		    GOut.debugimage(out, clmaplist.basic, FragID.fragid, Area.sized(Coord.z, clmaplist.sz()), new VectorFormat(1, NumberFormat.SINT32),
 				    img -> Debug.dumpimage(img, Debug.somedir("click1.png")));
 		    GOut.debugimage(out, clmaplist.basic, ClickLocation.fragloc, Area.sized(Coord.z, clmaplist.sz()), new VectorFormat(3, NumberFormat.UNORM16),
 				    img -> Debug.dumpimage(img, Debug.somedir("click2.png")));
