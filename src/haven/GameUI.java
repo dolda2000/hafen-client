@@ -777,7 +777,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    {add(cref);}
 
 		    protected Coord getc() {
-			return(new Coord(10, GameUI.this.sz.y - blpanel.sz.y - this.sz.y - 10));
+			return(new Coord(10, mapmenupanel.c.y - this.sz.y - 10));
 		    }
 
 		    public void cdestroy(Widget ch) {
