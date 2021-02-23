@@ -942,6 +942,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    return(false);
 	}
 
+	public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
+	    if(mark.m instanceof MapFile.SMarker) {
+		Gob gob = MarkerID.find(ui.sess.glob.oc, ((MapFile.SMarker)mark.m).oid);
+		if(gob != null)
+		    mvclick(map, null, loc, gob, button);
+	    }
+	    return(false);
+	}
+
 	public boolean clickicon(DisplayIcon icon, Location loc, int button, boolean press) {
 	    if(press) {
 		mvclick(map, null, loc, icon.gob, button);
