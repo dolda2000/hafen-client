@@ -232,7 +232,7 @@ public class MapWnd extends Window implements Console.Directory {
 	}
 
 	public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
-	    if((button == 1) && !press && !domark) {
+	    if((button == 1) && !decohide() && !press && !domark) {
 		focus(mark.m);
 		return(true);
 	    }
