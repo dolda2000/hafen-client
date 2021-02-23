@@ -127,10 +127,25 @@ public class HashDirCache implements ResCache {
 	fp.writeUTF(name);
     }
 
-    private static class LockedFile {
-	final RandomAccessFile f;
-	final FileLock l;
+    private static class LockedFile implements AutoCloseable {
+	RandomAccessFile f;
+	FileLock l;
 	LockedFile(RandomAccessFile f, FileLock l) {this.f = f; this.l = l;}
+
+	void release() throws IOException {
+	    if(l != null) {
+		l.release();
+		l = null;
+	    }
+	}
+
+	public void close() throws IOException {
+	    release();
+	    if(f != null) {
+		f.close();
+		f = null;
+	    }
+	}
     }
 
     private static RandomAccessFile open2(File path, String mode) throws IOException {
@@ -184,7 +199,7 @@ public class HashDirCache implements ResCache {
                     RandomAccessFile fp = null;
                     try {
                         fp = open2(path, "rw");
-                        FileLock lk = fp.getChannel().lock();
+                        FileLock lk = fp.getChannel().lock(0, 1, false);
                         LockedFile ret = new LockedFile(fp, lk);
                         fp = null;
                         return(ret);
@@ -203,9 +218,36 @@ public class HashDirCache implements ResCache {
         }
     }
 
+    private static class CacheFile implements AutoCloseable {
+	final File p;
+	final Header h;
+	RandomAccessFile f;
+
+	CacheFile(File p, Header h, LockedFile lf) throws IOException {
+	    this.p = p;
+	    this.h = h;
+	    this.f = lf.f;
+	    lf.release();
+	    lf.f = null;
+	}
+
+	RandomAccessFile acquire() {
+	    RandomAccessFile ret = this.f;
+	    this.f = null;
+	    return(ret);
+	}
+
+	public void close() throws IOException {
+	    if(f != null) {
+		f.close();
+		f = null;
+	    }
+	}
+    }
+
     private static final Map<File, int[]> monitors = new HashMap<File, int[]>();
     private static boolean monwarned = false;
-    private File lookup(String name, boolean creat) throws IOException {
+    private CacheFile lookup(String name, boolean creat) throws IOException {
 	long h = namehash(idhash, name);
 	File lfn = new File(base, String.format("%016x.0", h));
 	if(!lfn.exists() && !creat)
@@ -225,8 +267,7 @@ public class HashDirCache implements ResCache {
 	}
 	try {
 	    synchronized(mon) {
-		LockedFile lf = lock2(lfn);
-		try {
+		try(LockedFile lf = lock2(lfn)) {
 		    for(int idx = 0; ; idx++) {
 			File path = new File(base, String.format("%016x.%d", h, idx));
 			if(!path.exists() && !creat)
@@ -239,18 +280,18 @@ public class HashDirCache implements ResCache {
 				    return(null);
 				fp.setLength(0);
 				writehead(fp, name);
-				return(path);
+				head = new Header();
+				head.cid = id.toString();
+				head.name = name;
+				return(new CacheFile(path, head, lf));
 			    }
 			    if(head.cid.equals(id.toString()) && head.name.equals(name))
-				return(path);
+				return(new CacheFile(path, head, lf));
 			} finally {
 			    if(idx != 0)
 				fp.close();
 			}
 		    }
-		} finally {
-		    lf.l.release();
-		    lf.f.close();
 		}
 	    }
 	} finally {
@@ -314,10 +355,13 @@ public class HashDirCache implements ResCache {
     }
 
     public OutputStream store(String name) throws IOException {
-	final File path = lookup(name, true);
+	File path;
+	try(CacheFile cf = lookup(name, true)) {
+	    path = cf.p;
+	}
 	File dir = path.getParentFile();
-	final File tmp = File.createTempFile("cache", ".new", dir);
-	final RandomAccessFile fp = open2(tmp, "rw");
+	File tmp = File.createTempFile("cache", ".new", dir);
+	RandomAccessFile fp = open2(tmp, "rw");
 	writehead(fp, name);
 	return(new OutputStream() {
 		public void write(int b) throws IOException {
@@ -341,33 +385,33 @@ public class HashDirCache implements ResCache {
     }
 
     public InputStream fetch(String name) throws IOException {
-	File path = lookup(name, false);
-	if(path == null)
-	    throw(new FileNotFoundException(name));
-	final RandomAccessFile fp = open2(path, "r");
-	Header head = readhead(fp);
-	if((head == null) || !head.cid.equals(id.toString()) || !head.name.equals(name))
-	    throw(new AssertionError());
-	return(new InputStream() {
-		public int read() throws IOException {
-		    return(fp.read());
-		}
+	try(CacheFile cf = lookup(name, false)) {
+	    if(cf == null)
+		throw(new FileNotFoundException(name));
+	    RandomAccessFile fp = cf.acquire();
+	    return(new InputStream() {
+		    public int read() throws IOException {
+			return(fp.read());
+		    }
 
-		public int read(byte[] buf, int off, int len) throws IOException {
-		    return(fp.read(buf, off, len));
-		}
+		    public int read(byte[] buf, int off, int len) throws IOException {
+			return(fp.read(buf, off, len));
+		    }
 
-		public void close() throws IOException {
-		    fp.close();
-		}
-	    });
+		    public void close() throws IOException {
+			fp.close();
+		    }
+		});
+	}
     }
 
     public void remove(String name) throws IOException {
-	File path = lookup(name, false);
-	if(path == null)
-	    throw(new FileNotFoundException(name));
-	path.delete();
+	try(CacheFile cf = lookup(name, false)) {
+	    if(cf == null)
+		throw(new FileNotFoundException(name));
+	    cf.close();
+	    cf.p.delete();
+	}
     }
 
     public String toString() {
