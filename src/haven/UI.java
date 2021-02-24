@@ -308,8 +308,8 @@ public class UI {
     }
 	
     public void snewwidget(int id, Widget.Factory type, Object... cargs) {
+	Widget wdg = type.create(this, cargs);
 	synchronized(this) {
-	    Widget wdg = type.create(this, cargs);
 	    wdg.attach(this);
 	    bind(wdg, id);
 	}
