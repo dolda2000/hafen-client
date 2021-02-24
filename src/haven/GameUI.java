@@ -350,12 +350,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			buf.append(src, off, len);
 			int p;
 			while((p = buf.indexOf("\n")) >= 0) {
-			    lines.add(buf.substring(0, p));
+			    String ln = buf.substring(0, p).replace("\t", "        ");
+			    lines.add(ln);
 			    buf.delete(0, p + 1);
 			}
 		    }
-		    for(String ln : lines)
+		    for(String ln : lines) {
 			syslog.append(ln, Color.WHITE);
+		    }
 		}
 		
 		public void close() {}
@@ -653,7 +655,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(equwnd != null)
 	    Utils.setprefc("wndc-equ", equwnd.c);
 	if(chrwdg != null)
-	    Utils.setprefc("wndc-chr", chrwdg.sz);
+	    Utils.setprefc("wndc-chr", chrwdg.c);
 	if(zerg != null)
 	    Utils.setprefc("wndc-zerg", zerg.c);
 	if(mapfile != null) {
@@ -775,7 +777,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    {add(cref);}
 
 		    protected Coord getc() {
-			return(new Coord(10, GameUI.this.sz.y - blpanel.sz.y - this.sz.y - 10));
+			return(new Coord(10, mapmenupanel.c.y - this.sz.y - 10));
 		    }
 
 		    public void cdestroy(Widget ch) {
@@ -937,6 +939,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 
 	public boolean dragp(int button) {
+	    return(false);
+	}
+
+	public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
+	    if(mark.m instanceof MapFile.SMarker) {
+		Gob gob = MarkerID.find(ui.sess.glob.oc, ((MapFile.SMarker)mark.m).oid);
+		if(gob != null)
+		    mvclick(map, null, loc, gob, button);
+	    }
 	    return(false);
 	}
 
@@ -1640,7 +1651,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	cmdmap.put("tool", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    try {
-			add(gettype(args[1]).create(ui, new Object[0]), 200, 200);
+			Object[] wargs = new Object[args.length - 2];
+			for(int i = 0; i < wargs.length; i++)
+			    wargs[i] = args[i + 2];
+			add(gettype(args[1]).create(ui, wargs), 200, 200);
 		    } catch(RuntimeException e) {
 			e.printStackTrace(Debug.log);
 		    }

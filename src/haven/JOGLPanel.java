@@ -605,13 +605,13 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
-    public UI newui(Session sess) {
+    public UI newui(UI.Runner fun) {
 	if(ui != null) {
 	    synchronized(ui) {
 		ui.destroy();
 	    }
 	}
-	ui = new UI(this, new Coord(getSize()), sess);
+	ui = new UI(this, new Coord(getSize()), fun);
 	ui.env = this.env;
 	ui.root.guprof = uprof;
 	ui.root.grprof = rprof;

@@ -53,6 +53,14 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	this.hostname = hostname;
 	this.port = port;
     }
+
+    public Bootstrap() {
+	this(Config.defserv, Config.mainport);
+	if((Config.authuser != null) && (Config.authck != null)) {
+	    setinitcookie(Config.authuser, Config.authck);
+	    Config.authck = null;
+	}
+    }
     
     public void setinitcookie(String username, byte[] cookie) {
 	inituser = username;
@@ -67,7 +75,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	Utils.setpref(name + "@" + hostname, val);
     }
 
-    public Session run(UI ui) throws InterruptedException {
+    public UI.Runner run(UI ui) throws InterruptedException {
 	ui.setreceiver(this);
 	ui.bind(ui.root.add(new LoginScreen()), 1);
 	String loginname = getpref("loginname", "");
@@ -210,10 +218,9 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	    }
 	} while(true);
 	haven.error.ErrorHandler.setprop("usr", sess.username);
-	return(sess);
-	//(new RemoteUI(sess, ui)).start();
+	return(new RemoteUI(sess));
     }
-	
+
     public void rcvmsg(int widget, String msg, Object... args) {
 	synchronized(msgs) {
 	    msgs.add(new Message(widget, msg, args));

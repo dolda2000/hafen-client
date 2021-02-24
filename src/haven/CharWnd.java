@@ -427,7 +427,7 @@ public class CharWnd extends Window {
 	public final Color bg;
 	private double lvlt = 0.0;
 	private Text ct;
-	private int cbv, ccv;
+	private int cbv = -1, ccv = -1;
 
 	private Attr(Glob glob, String attr, Color bg) {
 	    super(new Coord(attrw, attrf.height() + UI.scale(2)));
@@ -435,7 +435,7 @@ public class CharWnd extends Window {
 	    this.nm = attr;
 	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
 	    this.img = new TexI(convolve(res.layer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
-	    this.attr = glob.cattr.get(attr);
+	    this.attr = glob.getcattr(attr);
 	    this.bg = bg;
 	}
 
@@ -492,7 +492,7 @@ public class CharWnd extends Window {
 	    this.nm = attr;
 	    this.img = new TexI(convolve(res.layer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
 	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
-	    this.attr = glob.cattr.get(attr);
+	    this.attr = glob.getcattr(attr);
 	    this.bg = bg;
 	    adda(new IButton("gfx/hud/buttons/add", "u", "d", null) {
 		    public void click() {adj(1);}
@@ -657,7 +657,7 @@ public class CharWnd extends Window {
 	    public String text(Integer v) {return(Utils.thformat(v));}
 	};
 	private final Text.UText<?> twt = new Text.UText<String>(Text.std) {
-	    public String value() {return(tw + "/" + ui.sess.glob.cattr.get("int").comp);}
+	    public String value() {return(tw + "/" + ui.sess.glob.getcattr("int").comp);}
 	};
 	private final Text.UText<?> tenct = new Text.UText<Integer>(Text.std) {
 	    public Integer value() {return(tenc);}
@@ -2293,7 +2293,15 @@ public class CharWnd extends Window {
     }
 
     public void uimsg(String nm, Object... args) {
-	if(nm == "exp") {
+	if(nm == "attr") {
+	    int a = 0;
+	    while(a < args.length) {
+		String attr = (String)args[a++];
+		int base = (Integer)args[a++];
+		int comp = (Integer)args[a++];
+		ui.sess.glob.cattr(attr, base, comp);
+	    }
+	} else if(nm == "exp") {
 	    exp = ((Number)args[0]).intValue();
 	}else if(nm == "enc") {
 	    enc = ((Number)args[0]).intValue();

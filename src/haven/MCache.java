@@ -95,18 +95,19 @@ public class MCache implements MapSource {
     public static interface OverlayInfo {
 	public Collection<String> tags();
 	public Material mat();
+	public default Material omat() {return(null);}
     }
 
     @Resource.LayerName("overlay")
     public static class ResOverlay extends Resource.Layer implements OverlayInfo {
 	public final Collection<String> tags;
-	private final int matid;
+	private final int matid, omatid;
 
 	public ResOverlay(Resource res, Message buf) {
 	    res.super();
 	    int ver = buf.uint8();
 	    if(ver == 1) {
-		int matid = 0;
+		int matid = 0, omatid = -1;
 		Collection<String> tags = Collections.emptyList();
 		Object[] data = buf.list();
 		for(Object argp : data) {
@@ -124,9 +125,14 @@ public class MCache implements MapSource {
 			matid = (Integer)arg[1];
 			break;
 		    }
+		    case "omat": {
+			omatid = (Integer)arg[1];
+			break;
+		    }
 		    }
 		}
 		this.matid = matid;
+		this.omatid = omatid;
 		this.tags = tags;
 	    } else {
 		throw(new Resource.LoadException("unknown overlay version: " + ver, res));
@@ -142,6 +148,11 @@ public class MCache implements MapSource {
 
 	public Material mat() {
 	    return(getres().layer(Material.Res.class, matid).get());
+	}
+	public Material omat() {
+	    if(omatid < 0)
+		return(null);
+	    return(getres().layer(Material.Res.class, omatid).get());
 	}
 
 	public String toString() {
@@ -208,6 +219,7 @@ public class MCache implements MapSource {
 	    MapMesh mesh;
 	    Defer.Future<MapMesh> dmesh;
 	    Map<OverlayInfo, RenderTree.Node> ols = new HashMap<>();
+	    Map<OverlayInfo, RenderTree.Node> olols = new HashMap<>();
 	}
 
 	private class Flavobj extends Gob {
@@ -344,6 +356,7 @@ public class MCache implements MapSource {
 		    cut.mesh = cut.dmesh.get();
 		    cut.dmesh = null;
 		    cut.ols.clear();
+		    cut.olols.clear();
 		    if(old != null)
 			old.dispose();
 		}
@@ -359,16 +372,28 @@ public class MCache implements MapSource {
 			if(r instanceof Disposable)
 			    ((Disposable)r).dispose();
 		    }
+		    for(RenderTree.Node r : cuts[i].olols.values()) {
+			if(r instanceof Disposable)
+			    ((Disposable)r).dispose();
+		    }
 		    cuts[i].ols.clear();
+		    cuts[i].olols.clear();
 		}
 		this.olseq = nseq;
 	    }
 	    Cut cut = geticut(cc);
-	    if(!cut.ols.containsKey(id))
+	    if(!cut.ols.containsKey(id)) {
 		cut.ols.put(id, getcut(cc).makeol(id));
+		cut.olols.put(id, getcut(cc).makeolol(id));
+	    }
 	    return(cut.ols.get(id));
 	}
 	
+	public RenderTree.Node getololcut(OverlayInfo id, Coord cc) {
+	    getolcut(id, cc);
+	    return(geticut(cc).olols.get(id));
+	}
+
 	private void buildcut(final Coord cc) {
 	    final Cut cut = geticut(cc);
 	    Defer.Future<?> prev = cut.dmesh;
@@ -437,6 +462,10 @@ public class MCache implements MapSource {
 		if(cut.mesh != null)
 		    cut.mesh.dispose();
 		for(RenderTree.Node r : cut.ols.values()) {
+		    if(r instanceof Disposable)
+			((Disposable)r).dispose();
+		}
+		for(RenderTree.Node r : cut.olols.values()) {
 		    if(r instanceof Disposable)
 			((Disposable)r).dispose();
 		}
@@ -613,7 +642,7 @@ public class MCache implements MapSource {
 		    ols[oi] = ol = new boolean[cmaps.x * cmaps.y];
 		for(int y = c1.y, mi = 0; y < c2.y; y++) {
 		    for(int x = c1.x; x < c2.x; x++) {
-			ol[x + (y * cmaps.x)] = mask[mi++];
+			ol[x + (y * cmaps.x)] |= mask[mi++];
 		    }
 		}
 	    }
@@ -831,6 +860,12 @@ public class MCache implements MapSource {
     public RenderTree.Node getolcut(OverlayInfo id, Coord cc) {
 	synchronized(grids) {
 	    return(getgrid(cc.div(cutn)).getolcut(id, cc.mod(cutn)));
+	}
+    }
+
+    public RenderTree.Node getololcut(OverlayInfo id, Coord cc) {
+	synchronized(grids) {
+	    return(getgrid(cc.div(cutn)).getololcut(id, cc.mod(cutn)));
 	}
     }
 

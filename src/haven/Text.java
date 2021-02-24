@@ -58,7 +58,7 @@ public class Text {
 	}
 	
 	public Coord base() {
-	    return(new Coord(0, m.getAscent()));
+	    return(new Coord(0, m.getLeading() + m.getAscent()));
 	}
 	
 	public int advance(int pos) {
@@ -141,9 +141,15 @@ public class Text {
 	}
 
 	public int height() {
-	    /* XXX: Should leading go into this, when it's mostly
-	     * supposed to be used for one-liners? */
-	    return(m.getAscent() + m.getDescent());
+	    /* XXX? The only font which seems to have leading > 0 is
+	     * the Moderne Fraktur font, for which the leading is
+	     * necessary to get the full ascent of some glyphs.
+	     * According to all specifications, this doesn't exactly
+	     * seem right, so I'm not sure if it's that font that is
+	     * buggy, or if this is actually as it should, but as it
+	     * doesn't seem to affect any other fonts, perhaps it
+	     * doesn't matter? */
+	    return(m.getHeight());
 	}
 
 	public Coord strsize(String text) {
@@ -175,7 +181,8 @@ public class Text {
 	    g.setFont(font);
 	    g.setColor(c);
 	    FontMetrics m = g.getFontMetrics();
-	    g.drawString(text, 0, m.getAscent());
+	    /* See height() comment. */
+	    g.drawString(text, 0, m.getLeading() + m.getAscent());
 	    g.dispose();
 	    return(new Line(text, img, m));
 	}
