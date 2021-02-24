@@ -38,6 +38,7 @@ import haven.MiniMap.*;
 import haven.BuddyWnd.GroupSelector;
 import static haven.MCache.tilesz;
 import static haven.MCache.cmaps;
+import static haven.Utils.eq;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.*;
 
@@ -92,25 +93,18 @@ public class MapWnd extends Window implements Console.Directory {
 		    recenter();
 		}
 	    }, Coord.z);
-	toolbar.add(new IButton("gfx/hud/mmap/mark", "", "-d", "-h") {
-		{settip("Add marker"); setgkey(kb_mark);}
-		public void click() {
-		    domark = true;
-		}
-	    }, Coord.z);
-	toolbar.add(new IButton("gfx/hud/mmap/hmark", "", "-d", "-h") {
-		{settip("Toggle marker display"); setgkey(kb_hmark);}
-		public void click() {
-		    hmarkers = !hmarkers;
-		}
-	    });
-	toolbar.add(new IButton("gfx/hud/mmap/wnd", "", "-d", "-h") {
-		{settip("Toggle compact mode"); setgkey(kb_compact);}
-		public void click() {
-		    compact(!decohide());
-		    Utils.setprefb("compact-map", decohide());
-		}
-	    });
+	toolbar.add(new ICheckBox("gfx/hud/mmap/mark", "", "-d", "-h", "-dh"), Coord.z)
+	    .state(() -> domark).set(a -> domark = a)
+	    .settip("Add marker").setgkey(kb_mark);
+	toolbar.add(new ICheckBox("gfx/hud/mmap/hmark", "", "-d", "-h", "-dh"))
+	    .state(() -> hmarkers).set(a -> hmarkers = a)
+	    .settip("Hide markers").setgkey(kb_hmark);
+	toolbar.add(new ICheckBox("gfx/hud/mmap/wnd", "", "-d", "-h", "-dh"))
+	    .state(() -> decohide()).set(a -> {
+		    compact(a);
+		    Utils.setprefb("compact-map", a);
+		})
+	    .settip("Compact mode").setgkey(kb_compact);
 	toolbar.pack();
 	tool = add(new Toolbox());;
 	compact(Utils.getprefb("compact-map", false));
@@ -238,15 +232,21 @@ public class MapWnd extends Window implements Console.Directory {
 	}
 
 	public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
-	    if((button == 1) && !press) {
-		focus(mark.m);
-		return(true);
+	    if(button == 1) {
+		if(!decohide() && !press && !domark) {
+		    focus(mark.m);
+		    return(true);
+		}
+	    } else if(mark.m instanceof SMarker) {
+		Gob gob = MarkerID.find(ui.sess.glob.oc, ((SMarker)mark.m).oid);
+		if(gob != null)
+		    mvclick(mv, null, loc, gob, button);
 	    }
 	    return(false);
 	}
 
 	public boolean clickicon(DisplayIcon icon, Location loc, int button, boolean press) {
-	    if(!press) {
+	    if(!press && !domark) {
 		mvclick(mv, null, loc, icon.gob, button);
 		return(true);
 	    }
@@ -493,6 +493,7 @@ public class MapWnd extends Window implements Console.Directory {
 				throw(new Loading());
 			    return;
 			}
+			gob.setattr(new MarkerID(gob, oid));
 			Coord tc = gob.rc.floor(tilesz);
 			MCache.Grid obg = ui.sess.glob.map.getgrid(tc.div(cmaps));
 			if(!view.file.lock.writeLock().tryLock())
@@ -506,9 +507,10 @@ public class MapWnd extends Window implements Console.Directory {
 			    if(prev == null) {
 				view.file.add(new SMarker(info.seg, sc, rnm, oid, new Resource.Spec(Resource.remote(), res.name, res.ver)));
 			    } else {
-				if((prev.seg != info.seg) || !prev.tc.equals(sc)) {
+				if((prev.seg != info.seg) || !eq(prev.tc, sc) || !eq(prev.nm, rnm)) {
 				    prev.seg = info.seg;
 				    prev.tc = sc;
+				    prev.nm = rnm;
 				    view.file.update(prev);
 				}
 			    }

@@ -97,6 +97,11 @@ public class RichText extends Text {
     
     public static class Image extends Part {
 	public BufferedImage img;
+	public int h = -1;
+	public double lh = -1, bh = -1;
+	public Map<? extends Attribute, ?> attrs;
+	public float imgscale = 1.0f;
+	private Coord sz = null;
 	
 	public Image(BufferedImage img) {
 	    this.img = img;
@@ -105,20 +110,40 @@ public class RichText extends Text {
 	public Image(Resource res, int id) {
 	    for(Resource.Image img : res.layers(Resource.imgc)) {
 		if(img.id == id) {
-		    this.img = img.scaled();
+		    this.img = img.img;
+		    this.imgscale = img.scale;
 		    break;
 		}
 	    }
 	    if(this.img == null)
 		throw(new RuntimeException("Found no image with id " + id + " in " + res.toString()));
 	}
+
+	private LineMetrics lm() {
+	    Font f = (Font)attrs.get(TextAttribute.FONT);
+	    if(f == null)
+		f = new Font(attrs);
+	    return(f.getLineMetrics("", rs.frc));
+	}
+
+	public void prepare(RState rs) {
+	    super.prepare(rs);
+	    sz = new Coord(Math.round(UI.scale(img.getWidth() / imgscale)), Math.round(UI.scale(img.getHeight() / imgscale)));
+	    if(lh >= 0) {
+		h = (int)Math.round(lh * lm().getHeight());
+	    } else if(bh >= 0) {
+		h = (int)Math.round(bh * lm().getAscent());
+	    }
+	    if(h >= 0)
+		sz = new Coord((img.getWidth() * h) / img.getHeight(), h);
+	}
 	
-	public int width() {return(img.getWidth());}
-	public int height() {return(img.getHeight());}
-	public int baseline() {return(img.getHeight() - 1);}
+	public int width() {return(sz.x);}
+	public int height() {return(sz.y);}
+	public int baseline() {return(sz.y - 1);}
 
 	public void render(Graphics2D g) {
-	    g.drawImage(img, x, y, null);
+	    g.drawImage(PUtils.uiscale(img, sz), x, y, null);
 	}
     }
 
@@ -398,11 +423,36 @@ public class RichText extends Text {
 
 	protected Part tag(PState s, String tn, String[] args, Map<? extends Attribute, ?> attrs) throws IOException {
 	    if(tn == "img") {
-		Resource res = respool.loadwait(args[0]);
+		int a = 0;
+		Resource res = respool.loadwait(args[a++]);
 		int id = -1;
-		if(args.length > 1)
-		    id = Integer.parseInt(args[1]);
-		return(new Image(res, id));
+		if(args.length > a) {
+		    try {
+			id = Integer.parseInt(args[a]);
+			a++;
+		    } catch(NumberFormatException e) {}
+		}
+		Image img = new Image(res, id);
+		img.attrs = attrs;
+		for(; a < args.length; a++) {
+		    int p = args[a].indexOf('=');
+		    if(p < 0)
+			continue;
+		    String k = args[a].substring(0, p), v = args[a].substring(p + 1);
+		    switch(k) {
+		    case "h": {
+			if(v.endsWith("ln")) {
+			    img.lh = Double.parseDouble(v.substring(0, v.length() - 2));
+			} else if(v.endsWith("bl")) {
+			    img.bh = Double.parseDouble(v.substring(0, v.length() - 2));
+			} else {
+			    img.h = (int)Math.round(UI.scale(Double.parseDouble(v)));
+			}
+			break;
+		    }
+		    }
+		}
+		return(img);
 	    } else {
 		Map<Attribute, Object> na = new HashMap<Attribute, Object>(attrs);
 		if(tn == "font") {

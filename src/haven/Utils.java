@@ -48,7 +48,15 @@ public class Utils {
     static Coord imgsz(BufferedImage img) {
 	return(new Coord(img.getWidth(), img.getHeight()));
     }
-	
+
+    public static boolean checkhit(BufferedImage img, Coord c) {
+	if(!c.isect(Coord.z, imgsz(img)))
+	    return(false);
+	if(img.getRaster().getNumBands() < 4)
+	    return(true);
+	return(img.getRaster().getSample(c.x, c.y, 3) >= 128);
+    }
+
     public static void defer(final Runnable r) {
 	Defer.later(new Defer.Callable<Object>() {
 		public Object call() {
@@ -1052,6 +1060,35 @@ public class Utils {
 	    return(1.0);
 	return((d - min) / (max - min));
     }
+
+    public static <E, O extends Comparable<? super O>> E max(Collection<E> from, Function<? super E, O> key) {
+	E ret = null;
+	O max = null;
+	for(E el : from) {
+	    O score = key.apply(el);
+	    if((max == null) || (score.compareTo(max) > 0)) {
+		ret = el;
+		max = score;
+	    }
+	}
+	return(ret);
+    }
+
+    public static <E, O extends Comparable<? super O>> E min(Collection<E> from, Function<? super E, O> key) {
+	E ret = null;
+	O max = null;
+	for(E el : from) {
+	    O score = key.apply(el);
+	    if((max == null) || (score.compareTo(max) < 0)) {
+		ret = el;
+		max = score;
+	    }
+	}
+	return(ret);
+    }
+
+    public static <E extends Comparable<? super E>> E max(Collection<E> from) {return(max(from, Function.identity()));}
+    public static <E extends Comparable<? super E>> E min(Collection<E> from) {return(min(from, Function.identity()));}
 
     public static float gcd(float x, float y, float E) {
 	float a = Math.max(x, y), b = Math.min(x, y);

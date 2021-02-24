@@ -251,6 +251,26 @@ public class MiniMap extends Widget {
 	}
     }
 
+    public static class MarkerID extends GAttrib {
+	public final long id;
+
+	public MarkerID(Gob gob, long id) {
+	    super(gob);
+	    this.id = id;
+	}
+
+	public static Gob find(OCache oc, long id) {
+	    synchronized(oc) {
+		for(Gob gob : oc) {
+		    MarkerID iattr = gob.getattr(MarkerID.class);
+		    if((iattr != null) && (iattr.id == id))
+			return(gob);
+		}
+	    }
+	    return(null);
+	}
+    }
+
     public static class DisplayMarker {
 	public static final Resource.Image flagbg, flagfg;
 	public static final Coord flagcc;
@@ -288,11 +308,10 @@ public class MiniMap extends Widget {
 		    if(cc == null) {
 			Resource res = sm.res.loadsaved(Resource.remote());
 			img = res.layer(Resource.imgc);
-			imgsz = UI.scale(img.sz);
 			Resource.Neg neg = res.layer(Resource.negc);
-			cc = (neg != null)?neg.cc:imgsz.div(2);
+			cc = (neg != null) ? neg.cc : img.ssz.div(2);
 			if(hit == null)
-			    hit = Area.sized(cc.inv(), imgsz);
+			    hit = Area.sized(cc.inv(), img.ssz);
 		    }
 		} catch(Loading l) {
 		} catch(Exception e) {
@@ -445,8 +464,11 @@ public class MiniMap extends Widget {
 	    DisplayGrid dgrid = display[dgext.ri(c)];
 	    if(dgrid == null)
 		continue;
-	    for(DisplayMarker mark : dgrid.markers(true))
+	    for(DisplayMarker mark : dgrid.markers(true)) {
+		if(filter(mark))
+		    continue;
 		mark.draw(g, mark.m.tc.sub(dloc.tc).div(scalef()).add(hsz));
+	    }
 	}
     }
 
@@ -491,7 +513,7 @@ public class MiniMap extends Widget {
 	if((sessloc == null) || (dloc.seg != sessloc.seg))
 	    return;
 	for(DisplayIcon disp : icons) {
-	    if(disp.sc == null)
+	    if((disp.sc == null) || filter(disp))
 		continue;
 	    GobIcon.Image img = disp.img;
 	    if(disp.col != null)
@@ -585,8 +607,20 @@ public class MiniMap extends Widget {
 	for(ListIterator<DisplayIcon> it = icons.listIterator(icons.size()); it.hasPrevious();) {
 	    DisplayIcon disp = it.previous();
 	    GobIcon.Image img = disp.img;
-	    if((disp.sc != null) && c.isect(disp.sc.sub(img.cc), img.tex.sz()))
+	    if((disp.sc != null) && c.isect(disp.sc.sub(img.cc), img.tex.sz()) && !filter(disp))
 		return(disp);
+	}
+	return(null);
+    }
+
+    public DisplayMarker findmarker(long id) {
+	for(DisplayGrid dgrid : display) {
+	    if(dgrid == null)
+		continue;
+	    for(DisplayMarker mark : dgrid.markers(false)) {
+		if((mark.m instanceof SMarker) && (((SMarker)mark.m).oid == id))
+		    return(mark);
+	    }
 	}
 	return(null);
     }
@@ -596,11 +630,22 @@ public class MiniMap extends Widget {
 	    if(dgrid == null)
 		continue;
 	    for(DisplayMarker mark : dgrid.markers(false)) {
-		if((mark.hit != null) && mark.hit.contains(tc.sub(mark.m.tc).div(scalef())))
+		if((mark.hit != null) && mark.hit.contains(tc.sub(mark.m.tc).div(scalef())) && !filter(mark))
 		    return(mark);
 	    }
 	}
 	return(null);
+    }
+
+    public boolean filter(DisplayIcon icon) {
+	MarkerID iattr = icon.gob.getattr(MarkerID.class);
+	if((iattr != null) && (findmarker(iattr.id) != null))
+	    return(true);
+	return(false);
+    }
+
+    public boolean filter(DisplayMarker marker) {
+	return(false);
     }
 
     public boolean clickloc(Location loc, int button, boolean press) {

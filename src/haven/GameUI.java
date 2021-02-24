@@ -350,12 +350,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 			buf.append(src, off, len);
 			int p;
 			while((p = buf.indexOf("\n")) >= 0) {
-			    lines.add(buf.substring(0, p));
+			    String ln = buf.substring(0, p).replace("\t", "        ");
+			    lines.add(ln);
 			    buf.delete(0, p + 1);
 			}
 		    }
-		    for(String ln : lines)
+		    for(String ln : lines) {
 			syslog.append(ln, Color.WHITE);
+		    }
 		}
 		
 		public void close() {}
@@ -653,7 +655,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(equwnd != null)
 	    Utils.setprefc("wndc-equ", equwnd.c);
 	if(chrwdg != null)
-	    Utils.setprefc("wndc-chr", chrwdg.sz);
+	    Utils.setprefc("wndc-chr", chrwdg.c);
 	if(zerg != null)
 	    Utils.setprefc("wndc-zerg", zerg.c);
 	if(mapfile != null) {
@@ -722,8 +724,13 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    chrwdg = add((CharWnd)child, Utils.getprefc("wndc-chr", new Coord(300, 50)));
 	    chrwdg.hide();
 	} else if(place == "craft") {
-	    final Widget mkwdg = child;
-	    makewnd = new Window(Coord.z, "Crafting", true) {
+	    String cap = "";
+	    Widget mkwdg = child;
+	    if(mkwdg instanceof Makewindow)
+		cap = ((Makewindow)mkwdg).rcpnm;
+	    if(cap.equals(""))
+		cap = "Crafting";
+	    makewnd = new Window(Coord.z, cap, true) {
 		    public void wdgmsg(Widget sender, String msg, Object... args) {
 			if((sender == this) && msg.equals("close")) {
 			    mkwdg.wdgmsg("close");
@@ -770,7 +777,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    {add(cref);}
 
 		    protected Coord getc() {
-			return(new Coord(10, GameUI.this.sz.y - blpanel.sz.y - this.sz.y - 10));
+			return(new Coord(10, mapmenupanel.c.y - this.sz.y - 10));
 		    }
 
 		    public void cdestroy(Widget ch) {
@@ -932,6 +939,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 
 	public boolean dragp(int button) {
+	    return(false);
+	}
+
+	public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
+	    if(mark.m instanceof MapFile.SMarker) {
+		Gob gob = MarkerID.find(ui.sess.glob.oc, ((MapFile.SMarker)mark.m).oid);
+		if(gob != null)
+		    mvclick(map, null, loc, gob, button);
+	    }
 	    return(false);
 	}
 
@@ -1144,6 +1160,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	wdg.c = fitwdg(wdg, wdg.c);
     }
 
+    private boolean wndstate(Window wnd) {
+	if(wnd == null)
+	    return(false);
+	return(wnd.visible);
+    }
+
     private void togglewnd(Window wnd) {
 	if(wnd != null) {
 	    if(wnd.show(!wnd.visible)) {
@@ -1162,6 +1184,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
+    public static class MenuCheckBox extends ICheckBox {
+	MenuCheckBox(String base, KeyBinding gkey, String tooltip) {
+	    super("gfx/hud/" + base, "", "-d", "-h", "-dh");
+	    setgkey(gkey);
+	    settip(tooltip);
+	}
+    }
+
     public static final KeyBinding kb_inv = KeyBinding.get("inv", KeyMatch.forcode(KeyEvent.VK_TAB, 0));
     public static final KeyBinding kb_equ = KeyBinding.get("equ", KeyMatch.forchar('E', KeyMatch.C));
     public static final KeyBinding kb_chr = KeyBinding.get("chr", KeyMatch.forchar('T', KeyMatch.C));
@@ -1171,11 +1201,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public class MainMenu extends Widget {
 	public MainMenu() {
 	    super(menubg.sz());
-	    add(new MenuButton("rbtn-inv", kb_inv, "Inventory"), 0, 0).action(() -> togglewnd(invwnd));
-	    add(new MenuButton("rbtn-equ", kb_equ, "Equipment"), 0, 0).action(() -> togglewnd(equwnd));
-	    add(new MenuButton("rbtn-chr", kb_chr, "Character Sheet"), 0, 0).action(() -> togglewnd(chrwdg));
-	    add(new MenuButton("rbtn-bud", kb_bud, "Kith & Kin"), 0, 0).action(() -> togglewnd(zerg));
-	    add(new MenuButton("rbtn-opt", kb_opt, "Options"), 0, 0).action(() -> togglewnd(opts));
+	    add(new MenuCheckBox("rbtn-inv", kb_inv, "Inventory"), 0, 0).state(() -> wndstate(invwnd)).click(() -> togglewnd(invwnd));
+	    add(new MenuCheckBox("rbtn-equ", kb_equ, "Equipment"), 0, 0).state(() -> wndstate(equwnd)).click(() -> togglewnd(equwnd));
+	    add(new MenuCheckBox("rbtn-chr", kb_chr, "Character Sheet"), 0, 0).state(() -> wndstate(chrwdg)).click(() -> togglewnd(chrwdg));
+	    add(new MenuCheckBox("rbtn-bud", kb_bud, "Kith & Kin"), 0, 0).state(() -> wndstate(zerg)).click(() -> togglewnd(zerg));
+	    add(new MenuCheckBox("rbtn-opt", kb_opt, "Options"), 0, 0).state(() -> wndstate(opts)).click(() -> togglewnd(opts));
 	}
 
 	public void draw(GOut g) {
@@ -1191,27 +1221,26 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public static final KeyBinding kb_ico = KeyBinding.get("map-icons", KeyMatch.nil);
     private static final Tex mapmenubg = Resource.loadtex("gfx/hud/lbtn-bg");
     public class MapMenu extends Widget {
-	private void toggleol(int id) {
+	private void toggleol(String tag, boolean a) {
 	    if(map != null) {
-		if(!map.visol(id)) {
-		    map.enol(id); map.enol(id + 1);
-		} else {
-		    map.disol(id); map.disol(id + 1);
-		}
+		if(a)
+		    map.enol(tag);
+		else
+		    map.disol(tag);
 	    }
 	}
 
 	public MapMenu() {
 	    super(mapmenubg.sz());
-	    add(new MenuButton("lbtn-claim", kb_claim, "Display personal claims"), 0, 0).action(() -> toggleol(0));
-	    add(new MenuButton("lbtn-vil", kb_vil, "Display village claims"), 0, 0).action(() -> toggleol(2));
-	    add(new MenuButton("lbtn-rlm", kb_rlm, "Display realms"), 0, 0).action(() -> toggleol(4));
-	    add(new MenuButton("lbtn-map", kb_map, "Map")).action(() -> {
+	    add(new MenuCheckBox("lbtn-claim", kb_claim, "Display personal claims"), 0, 0).changed(a -> toggleol("cplot", a));
+	    add(new MenuCheckBox("lbtn-vil", kb_vil, "Display village claims"), 0, 0).changed(a -> toggleol("vlg", a));
+	    add(new MenuCheckBox("lbtn-rlm", kb_rlm, "Display realms"), 0, 0).changed(a -> toggleol("realm", a));
+	    add(new MenuCheckBox("lbtn-map", kb_map, "Map")).state(() -> wndstate(mapfile)).click(() -> {
 		    togglewnd(mapfile);
 		    if(mapfile != null)
 			Utils.setprefb("wndvis-map", mapfile.visible);
 		});
-	    add(new MenuButton("lbtn-ico", kb_ico, "Icon settings"), 0, 0).action(() -> {
+	    add(new MenuCheckBox("lbtn-ico", kb_ico, "Icon settings"), 0, 0).state(() -> wndstate(iconwnd)).click(() -> {
 		    if(iconconf == null)
 			return;
 		    if(iconwnd == null) {
@@ -1622,7 +1651,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	cmdmap.put("tool", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    try {
-			add(gettype(args[1]).create(ui, new Object[0]), 200, 200);
+			Object[] wargs = new Object[args.length - 2];
+			for(int i = 0; i < wargs.length; i++)
+			    wargs[i] = args[i + 2];
+			add(gettype(args[1]).create(ui, wargs), 200, 200);
 		    } catch(RuntimeException e) {
 			e.printStackTrace(Debug.log);
 		    }

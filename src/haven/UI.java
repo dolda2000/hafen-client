@@ -72,7 +72,21 @@ public class UI {
     }
 
     public interface Runner {
-	public Session run(UI ui) throws InterruptedException;
+	public Runner run(UI ui) throws InterruptedException;
+	public default void init(UI ui) {}
+	public default String title() {return(null);}
+
+	public static class Proxy implements Runner {
+	    public final Runner back;
+
+	    public Proxy(Runner back) {
+		this.back = back;
+	    }
+
+	    public Runner run(UI ui) throws InterruptedException {return(back.run(ui));}
+	    public void init(UI ui) {back.init(ui);}
+	    public String title() {return(back.title());}
+	}
     }
 
     public interface Context {
@@ -150,12 +164,13 @@ public class UI {
 	}
     }
 	
-    public UI(Context uictx, Coord sz, Session sess) {
+    public UI(Context uictx, Coord sz, Runner fun) {
 	this.uictx = uictx;
 	root = new RootWidget(this, sz);
 	widgets.put(0, root);
 	rwidgets.put(root, 0);
-	this.sess = sess;
+	if(fun != null)
+	    fun.init(this);
 	if(sess == null) {
 	    loader = new Loader();
 	} else {
@@ -301,7 +316,10 @@ public class UI {
     }
 
     public void snewwidget(int id, String name, Object... cargs) {
-	snewwidget(id, Widget.gettype3(name), cargs);
+	Widget.Factory f = Widget.gettype3(name);
+	if(f == null)
+	    throw(new UIException("Bad widget name", name, cargs));
+	snewwidget(id, f, cargs);
     }
 
     public void newwidget(int id, Widget.Factory type, Object... cargs) {
@@ -596,12 +614,20 @@ public class UI {
 	return(Math.round(scale((float)v)));
     }
 
+    public static int rscale(double v) {
+	return((int)Math.round(v * scalef));
+    }
+
     public static Coord scale(Coord v) {
 	return(v.mul(scalef));
     }
 
     public static Coord scale(int x, int y) {
 	return(scale(new Coord(x, y)));
+    }
+
+    public static Coord rscale(double x, double y) {
+	return(new Coord(rscale(x), rscale(y)));
     }
 
     public static Coord2d scale(Coord2d v) {
