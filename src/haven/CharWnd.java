@@ -568,11 +568,11 @@ public class CharWnd extends Window {
 	private final Supplier<V> val;
 	private final Function<V, String> fmt;
 	private final Function<V, Color> col;
-	private final Coord oc;
+	private Coord oc;
 	private Color lc;
 	private V lv;
 
-        private RLabel(Supplier<V> val, Function<V, String> fmt, Function<V, Color> col, V ival, Coord oc) {
+        private RLabel(Supplier<V> val, Function<V, String> fmt, Function<V, Color> col, V ival) {
             super(fmt.apply(ival));
 	    this.val = val;
 	    this.fmt = fmt;
@@ -583,22 +583,25 @@ public class CharWnd extends Window {
 		setcolor(lc = col.apply(ival));
         }
 
-        public RLabel(Supplier<V> val, Function<V, String> fmt, Function<V, Color> col, Coord oc) {
-	    this(val, fmt, col, val.get(), oc);
+        public RLabel(Supplier<V> val, Function<V, String> fmt, Function<V, Color> col) {
+	    this(val, fmt, col, val.get());
 	}
 
-        public RLabel(Supplier<V> val, Function<V, String> fmt, Color col, Coord oc) {
-	    this(val, fmt, (Function<V, Color>)null, oc);
+        public RLabel(Supplier<V> val, Function<V, String> fmt, Color col) {
+	    this(val, fmt, (Function<V, Color>)null);
 	    setcolor(col);
 	}
 
 	protected void added() {
-	    c = oc.add(-sz.x, 0);
+	    if(oc == null) {
+		oc = new Coord(c.x + sz.x, c.y);
+	    }
+	    move(oc.add(-sz.x, 0));
 	}
 
 	public void settext(String text) {
 	    super.settext(text);
-	    c = oc.add(-sz.x, 0);
+	    move(oc.add(-sz.x, 0));
 	}
 
 	public void tick(double dt) {
@@ -617,12 +620,12 @@ public class CharWnd extends Window {
 	}
     }
 
-    public RLabel<?> explabel(Coord oc) {
-	return(new RLabel<Integer>(() -> exp, Utils::thformat, new Color(192, 192, 255), oc));
+    public RLabel<?> explabel() {
+	return(new RLabel<Integer>(() -> exp, Utils::thformat, new Color(192, 192, 255)));
     }
 
-    public RLabel<?> enclabel(Coord oc) {
-	return(new RLabel<Integer>(() -> enc, Utils::thformat, new Color(255, 255, 192), oc));
+    public RLabel<?> enclabel() {
+	return(new RLabel<Integer>(() -> enc, Utils::thformat, new Color(255, 255, 192)));
     }
 
     public static class StudyInfo extends Widget {
@@ -1926,11 +1929,11 @@ public class CharWnd extends Window {
 	    Widget bframe = sattr.adda(new Frame(new Coord(attrw, UI.scale(96)), true), prev.pos("bl").adds(5, 0).x, lframe.pos("br").y, 0.0, 1.0);
 	    int rx = bframe.pos("iur").subs(10, 0).x;
 	    prev = sattr.add(new Label("Experience points:"), bframe.pos("iul").adds(10, 5));
-	    sattr.add(enclabel(new Coord(rx, prev.pos("ul").y)));
+	    sattr.adda(enclabel(), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
 	    prev = sattr.add(new Label("Learning points:"), prev.pos("bl").adds(0, 2));
-	    sattr.add(explabel(new Coord(rx, prev.pos("ul").y)));
+	    sattr.adda(explabel(), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
 	    prev = sattr.add(new Label("Learning cost:"), prev.pos("bl").adds(0, 2));
-	    sattr.add(new RLabel<Integer>(() -> scost, Utils::thformat, n -> (n > exp) ? debuff : Color.WHITE, new Coord(rx, prev.pos("ul").y)));
+	    sattr.adda(new RLabel<Integer>(() -> scost, Utils::thformat, n -> (n > exp) ? debuff : Color.WHITE), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
 	    prev = sattr.adda(new Button(UI.scale(75), "Buy").action(() -> {
 			ArrayList<Object> args = new ArrayList<>();
 			for (SAttr attr : skill) {
@@ -1996,10 +1999,10 @@ public class CharWnd extends Window {
                     };
                     sktab.add(bbtn, new Coord(rx - UI.scale(50), y + wbox.btloff().y + (UI.scale(34) - bbtn.sz.y) / 2));
                     Label clbl = sktab.adda(new Label("Cost:"), new Coord(UI.scale(15), bbtn.c.y + (bbtn.sz.y / 2)), 0, 0.5);
-                    sktab.add(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost, exp),
+                    sktab.adda(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost, exp),
 						  n -> (n.a == null) ? "N/A" : String.format("%,d / %,d LP", n.a, n.b),
-						  n -> ((n.a == null) || (n.a > n.b)) ? debuff : Color.WHITE,
-						  new Coord(bbtn.c.x - margin2, clbl.c.y)));
+						  n -> ((n.a != null) && (n.a > n.b)) ? debuff : Color.WHITE),
+			       new Coord(bbtn.c.x - margin2, clbl.c.y), 1.0, 0.0);
                 }
 
                 Tabs.Tab credos = lists.add();
