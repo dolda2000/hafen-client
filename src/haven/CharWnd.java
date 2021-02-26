@@ -1935,60 +1935,39 @@ public class CharWnd extends Window {
 	    skill.add(aw = sattr.add(new SAttr(glob, "lore", every), aw.pos("bl")));
 	    Widget lframe = Frame.around(sattr, skill);
 
-            Widget right = new Widget.Temporary();
-            {
-                Composer composer = new Composer(right);
-                right.add(settip(new Img(catf.render("Study Report").tex()), "gfx/hud/chr/tips/study"));
-                composer.add(offy + UI.scale(151));
-                int fy = composer.y();
-                composer.add(margin1);
-                composer.vmrgn(margin1).hpad(UI.scale(15));
-                int rx = attrw - margin2;
-                composer.addrf(rx, new Label("Experience points:"), new EncLabel(rx));
-                composer.addrf(rx, new Label("Learning points:"), new ExpLabel(rx));
-                composer.addrf(rx,
-                    new Label("Learning cost:"),
-                    new RLabel(rx, "0") {
-                        int cc;
+	    prev = sattr.add(settip(new Img(catf.render("Study Report").tex()), "gfx/hud/chr/tips/study"), width, 0);
+	    Widget bframe = sattr.adda(new Frame(new Coord(attrw, UI.scale(96)), true), prev.pos("bl").adds(5, 0).x, lframe.pos("br").y, 0.0, 1.0);
+	    int rx = bframe.pos("iur").subs(10, 0).x;
+	    prev = sattr.add(new Label("Experience points:"), bframe.pos("iul").adds(10, 5));
+	    sattr.add(new EncLabel(new Coord(rx, prev.pos("ul").y)));
+	    prev = sattr.add(new Label("Learning points:"), prev.pos("bl").adds(0, 2));
+	    sattr.add(new ExpLabel(new Coord(rx, prev.pos("ul").y)));
+	    prev = sattr.add(new Label("Learning cost:"), prev.pos("bl").adds(0, 2));
+	    sattr.add(new RLabel(new Coord(rx, prev.pos("ul").y), "0") {
+			       int cc;
 
-                        public void draw(GOut g) {
-                            if (cc > exp)
-                                g.chcolor(debuff);
-                            super.draw(g);
-                            if (cc != scost)
-                                settext(Utils.thformat(cc = scost));
-                        }
-                    }
-                );
-                composer.hpad(rx - UI.scale(160))
-                    .hmrgn(margin2)
-                    .vmrgn(0);
-                composer.addr(
-                    new Button(UI.scale(75), "Reset") {
-                        public void click() {
-                            for (SAttr attr : skill)
-                                attr.reset();
-                        }
-                    },
-                    new Button(UI.scale(75), "Buy") {
-                        public void click() {
-                            ArrayList<Object> args = new ArrayList<>();
-                            for (SAttr attr : skill) {
-                                if (attr.tbv > 0) {
-                                    args.add(attr.attr.nm);
-                                    args.add(attr.attr.base + attr.tbv);
-                                }
-                            }
-                            CharWnd.this.wdgmsg("sattr", args.toArray(new Object[0]));
-                        }
-                    }
-                );
-                Frame.around(sattr, Area.sized(new Coord(margin1, fy).add(wbox.btloff()), new Coord(attrw, bottom - fy - 2 * wbox.btloff().y)));
-            }
-            right.pack();
-
-            sattr.add(right, new Coord(width, 0));
-            Widget.Temporary.optimize(sattr);
+			       public void draw(GOut g) {
+				   if (cc > exp)
+				       g.chcolor(debuff);
+				   super.draw(g);
+				   if (cc != scost)
+				       settext(Utils.thformat(cc = scost));
+			       }
+			   });
+	    prev = sattr.adda(new Button(UI.scale(75), "Buy").action(() -> {
+			ArrayList<Object> args = new ArrayList<>();
+			for (SAttr attr : skill) {
+			    if (attr.tbv > 0) {
+				args.add(attr.attr.nm);
+				args.add(attr.attr.base + attr.tbv);
+			    }
+			}
+			CharWnd.this.wdgmsg("sattr", args.toArray(new Object[0]));
+	    }), bframe.pos("ibr").subs(5, 5), 1.0, 1.0);
+	    sattr.adda(new Button(UI.scale(75), "Reset").action(() -> {
+			for (SAttr attr : skill)
+			    attr.reset();
+	    }), prev.pos("bl").subs(5, 0), 1.0, 1.0);
 	}
 
 	Tabs.Tab skills = tabs.add();
