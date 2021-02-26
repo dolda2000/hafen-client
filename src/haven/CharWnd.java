@@ -30,10 +30,10 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.*;
-
-import static haven.PUtils.*;
+import java.util.function.*;
 import haven.resutil.FoodInfo;
 import haven.resutil.Curiosity;
+import static haven.PUtils.*;
 
 /* XXX: There starts to seem to be reason to split the while character
  * sheet into some more modular structure, as it is growing quite
@@ -564,78 +564,65 @@ public class CharWnd extends Window {
 	}
     }
 
-    public static class RLabel extends Label {
-	private final int ox;
+    public static class RLabel<V> extends Label {
+	private final Supplier<V> val;
+	private final Function<V, String> fmt;
+	private final Function<V, Color> col;
 	private final Coord oc;
+	private Color lc;
+	private V lv;
 
-        public RLabel(Coord oc, String text) {
-            super(text);
-            ox = 0;
+        private RLabel(Supplier<V> val, Function<V, String> fmt, Function<V, Color> col, V ival, Coord oc) {
+            super(fmt.apply(ival));
+	    this.val = val;
+	    this.fmt = fmt;
+	    this.col = col;
+	    this.lv = ival;
             this.oc = oc;
+	    if(col != null)
+		setcolor(lc = col.apply(ival));
         }
 
-	public RLabel(int ox, String text) {
-	    super(text);
-	    this.ox = ox;
-	    oc = null;
+        public RLabel(Supplier<V> val, Function<V, String> fmt, Function<V, Color> col, Coord oc) {
+	    this(val, fmt, col, val.get(), oc);
+	}
+
+        public RLabel(Supplier<V> val, Function<V, String> fmt, Color col, Coord oc) {
+	    this(val, fmt, (Function<V, Color>)null, oc);
+	    setcolor(col);
 	}
 
 	protected void added() {
-            if (oc == null) {
-                c = new Coord(ox - sz.x, c.y);
-            } else {
-                c = oc.add(-sz.x, 0);
-            }
+	    c = oc.add(-sz.x, 0);
 	}
 
 	public void settext(String text) {
 	    super.settext(text);
-            if (oc == null) {
-                c = new Coord(ox - sz.x, c.y);
-            } else {
-                c = oc.add(-sz.x, 0);
-            }
+	    c = oc.add(-sz.x, 0);
+	}
+
+	public void tick(double dt) {
+	    V v = val.get();
+	    if(!Utils.eq(v, lv)) {
+		settext(fmt.apply(v));
+		lv = v;
+		if(col != null) {
+		    Color c = col.apply(v);
+		    if(!Utils.eq(c, lc)) {
+			setcolor(c);
+			lc = c;
+		    }
+		}
+	    }
 	}
     }
 
-    public class ExpLabel extends RLabel {
-	private int cexp;
-
-        public ExpLabel(Coord oc) {
-            super(oc, "0");
-            setcolor(new Color(192, 192, 255));
-        }
-
-	public ExpLabel(int ox) {
-	    super(ox, "0");
-	    setcolor(new Color(192, 192, 255));
-	}
-
-	public void draw(GOut g) {
-	    super.draw(g);
-	    if(exp != cexp)
-		settext(Utils.thformat(cexp = exp));
-	}
+    public RLabel<?> explabel(Coord oc) {
+	return(new RLabel<Integer>(() -> exp, Utils::thformat, new Color(192, 192, 255), oc));
     }
 
-    public class EncLabel extends RLabel {
-	private int cenc;
-
-        public EncLabel(Coord oc) {
-            super(oc, "0");
-            setcolor(new Color(255, 255, 192));
-        }
-
-	public EncLabel(int ox) {
-	    super(ox, "0");
-	    setcolor(new Color(255, 255, 192));
-	}
-
-	public void draw(GOut g) {
-	    super.draw(g);
-	    if(enc != cenc)
-		settext(Utils.thformat(cenc = enc));
-	}
+    public RLabel<?> enclabel(Coord oc) {
+	return(new RLabel<Integer>(() -> enc, Utils::thformat, new Color(255, 255, 192), oc));
     }
 
     public static class StudyInfo extends Widget {
@@ -1939,21 +1926,11 @@ public class CharWnd extends Window {
 	    Widget bframe = sattr.adda(new Frame(new Coord(attrw, UI.scale(96)), true), prev.pos("bl").adds(5, 0).x, lframe.pos("br").y, 0.0, 1.0);
 	    int rx = bframe.pos("iur").subs(10, 0).x;
 	    prev = sattr.add(new Label("Experience points:"), bframe.pos("iul").adds(10, 5));
-	    sattr.add(new EncLabel(new Coord(rx, prev.pos("ul").y)));
+	    sattr.add(enclabel(new Coord(rx, prev.pos("ul").y)));
 	    prev = sattr.add(new Label("Learning points:"), prev.pos("bl").adds(0, 2));
-	    sattr.add(new ExpLabel(new Coord(rx, prev.pos("ul").y)));
+	    sattr.add(explabel(new Coord(rx, prev.pos("ul").y)));
 	    prev = sattr.add(new Label("Learning cost:"), prev.pos("bl").adds(0, 2));
-	    sattr.add(new RLabel(new Coord(rx, prev.pos("ul").y), "0") {
-			       int cc;
-
-			       public void draw(GOut g) {
-				   if (cc > exp)
-				       g.chcolor(debuff);
-				   super.draw(g);
-				   if (cc != scost)
-				       settext(Utils.thformat(cc = scost));
-			       }
-			   });
+	    sattr.add(new RLabel<Integer>(() -> scost, Utils::thformat, n -> (n > exp) ? debuff : Color.WHITE, new Coord(rx, prev.pos("ul").y)));
 	    prev = sattr.adda(new Button(UI.scale(75), "Buy").action(() -> {
 			ArrayList<Object> args = new ArrayList<>();
 			for (SAttr attr : skill) {
@@ -2019,26 +1996,10 @@ public class CharWnd extends Window {
                     };
                     sktab.add(bbtn, new Coord(rx - UI.scale(50), y + wbox.btloff().y + (UI.scale(34) - bbtn.sz.y) / 2));
                     Label clbl = sktab.adda(new Label("Cost:"), new Coord(UI.scale(15), bbtn.c.y + (bbtn.sz.y / 2)), 0, 0.5);
-                    sktab.add(new RLabel(new Coord(bbtn.c.x - margin2, clbl.c.y), "N/A") {
-                        Integer cc = null;
-                        int cexp;
-
-                        public void draw(GOut g) {
-                            if ((cc != null) && (cc > exp))
-                                g.chcolor(debuff);
-                            super.draw(g);
-                            Integer cost = ((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost;
-                            if (!Utils.eq(cost, cc) || (cexp != exp)) {
-                                if (cost == null) {
-                                    settext("N/A");
-                                } else {
-                                    settext(String.format("%,d / %,d LP", cost, exp));
-                                }
-                                cc = cost;
-                                cexp = exp;
-                            }
-                        }
-                    });
+                    sktab.add(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost, exp),
+						  n -> (n.a == null) ? "N/A" : String.format("%,d / %,d LP", n.a, n.b),
+						  n -> ((n.a == null) || (n.a > n.b)) ? debuff : Color.WHITE,
+						  new Coord(bbtn.c.x - margin2, clbl.c.y)));
                 }
 
                 Tabs.Tab credos = lists.add();
