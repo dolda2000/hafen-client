@@ -52,7 +52,6 @@ public class CharWnd extends Window {
     public static final int margin1 = UI.scale(5);
     public static final int margin2 = 2 * margin1;
     public static final int margin3 = 2 * margin2;
-    public static final int offy = UI.scale(35);
     public final Collection<Attr> base;
     public final Collection<SAttr> skill;
     public final FoodMeter feps;
