@@ -629,42 +629,24 @@ public class CharWnd extends Window {
     }
 
     public static class StudyInfo extends Widget {
-	private static class Metric {
-	    public String name;
-	    public Text.UText<?> value;
-	    public Color color;
-
-	    public Metric(String name, Text.UText<?> value, Color color) {
-	        this.name = name;
-	        this.value = value;
-	        this.color = color;
-	    }
-	}
-	public Widget study;
+	public final Widget study;
 	public int texp, tw, tenc;
-	private final Text.UText<?> texpt = new Text.UText<Integer>(Text.std) {
-	    public Integer value() {return(texp);}
-	    public String text(Integer v) {return(Utils.thformat(v));}
-	};
-	private final Text.UText<?> twt = new Text.UText<String>(Text.std) {
-	    public String value() {return(tw + "/" + ui.sess.glob.getcattr("int").comp);}
-	};
-	private final Text.UText<?> tenct = new Text.UText<Integer>(Text.std) {
-	    public Integer value() {return(tenc);}
-	    public String text(Integer v) {return(Integer.toString(tenc));}
-	};
-	private final Metric[] metrics = {
-	    new Metric("Attention:", twt, new Color(255, 192, 255, 255)),
-	    new Metric("Experience cost:", tenct, new Color(255, 255, 192, 255)),
-	    new Metric("Learning points:", texpt, new Color(192, 192, 255, 255)),
-	};
 
 	private StudyInfo(Coord sz, Widget study) {
 	    super(sz);
 	    this.study = study;
-	    for (int i = 0; i < metrics.length; ++i) {
-		add(new Label(metrics[i].name), UI.scale(2), UI.scale(2 + i * 30));
-	    }
+	    Widget plbl, pval;
+	    plbl = add(new Label("Attention:"), UI.scale(2, 2));
+	    pval = adda(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(tw, (ui == null) ? 0 : ui.sess.glob.getcattr("int").comp),
+							   n -> String.format("%,d/%,d", n.a, n.b),
+							   new Color(255, 192, 255, 255)),
+			plbl.pos("br").adds(0, 2).x(sz.x - UI.scale(2)), 1.0, 0.0);
+	    plbl = add(new Label("Experience cost:"), pval.pos("bl").adds(0, 2).xs(2));
+	    pval = adda(new RLabel<Integer>(() -> tenc, Utils::thformat, new Color(255, 255, 192, 255)),
+			plbl.pos("br").adds(0, 2).x(sz.x - UI.scale(2)), 1.0, 0.0);
+	    pval = adda(new RLabel<Integer>(() -> texp, Utils::thformat, new Color(192, 192, 255, 255)),
+			pos("cbr").subs(2, 2), 1.0, 1.0);
+	    plbl = adda(new Label("Learning points:"), pval.pos("ul").subs(0, 2).xs(2), 0.0, 1.0);
 	}
 
 	private void upd() {
@@ -683,13 +665,9 @@ public class CharWnd extends Window {
 	    this.texp = texp; this.tw = tw; this.tenc = tenc;
 	}
 
-	public void draw(GOut g) {
+	public void tick(double dt) {
 	    upd();
-	    super.draw(g);
-	    for (int i = 0; i < metrics.length; ++i) {
-		g.chcolor(metrics[i].color);
-		g.aimage(metrics[i].value.get().tex(), new Coord(sz.x - UI.scale(4), UI.scale(17 + i * 30)), 1.0, 0.0);
-	    }
+	    super.tick(dt);
 	}
     }
 
