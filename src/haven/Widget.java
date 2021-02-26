@@ -1033,6 +1033,18 @@ public class Widget {
 	return(ret);
     }
 
+    public Coord addhlp(Coord c, int pad, Widget... children) {
+	int x = c.x, y = c.y;
+	int maxh = 0;
+	for(Widget child : children)
+	    maxh = Math.max(maxh, child.sz.y);
+	for(Widget child : children) {
+	    add(child, x, y + ((maxh - child.sz.y) / 2));
+	    x += child.sz.x + pad;
+	}
+	return(new Coord(x - pad, y + maxh));
+    }
+
     public int addhl(Coord c, int w, Widget... children) {
 	int x = c.x, y = c.y;
 	if(children.length == 1) {

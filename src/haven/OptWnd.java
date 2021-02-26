@@ -33,12 +33,18 @@ public class OptWnd extends Window {
     public Panel current;
 
     public void chpanel(Panel p) {
-	Coord cc = this.c.add(this.sz.div(2));
 	if(current != null)
 	    current.hide();
 	(current = p).show();
-	pack();
-	move(cc.sub(this.sz.div(2)));
+	cresize(p);
+    }
+
+    public void cresize(Widget ch) {
+	if(ch == current) {
+	    Coord cc = this.c.add(this.sz.div(2));
+	    pack();
+	    move(cc.sub(this.sz.div(2)));
+	}
     }
 
     public class PButton extends Button {
@@ -78,11 +84,12 @@ public class OptWnd extends Window {
     }
 
     public class VideoPanel extends Panel {
-	Panel prev;
+	private final Widget back;
+	private CPanel curcf;
 
 	public VideoPanel(Panel prev) {
 	    super();
-	    this.prev = prev;
+	    back = add(new PButton(UI.scale(200), "Back", 27, prev));
 	}
 
 	public class CPanel extends Widget {
@@ -90,10 +97,9 @@ public class OptWnd extends Window {
 
 	    public CPanel(GSettings gprefs) {
 		this.prefs = gprefs;
-		Composer composer = new Composer(this)
-		    .vmrgn(UI.scale(5))
-		    .hmrgn(UI.scale(5));
-		composer.add(new CheckBox("Render shadows") {
+		Widget prev;
+		int marg = UI.scale(5);
+		prev = add(new CheckBox("Render shadows") {
 			{a = prefs.lshadow.val;}
 
 			public void set(boolean val) {
@@ -106,34 +112,33 @@ public class OptWnd extends Window {
 			    }
 			    a = val;
 			}
-		    });
-		composer.add(new Label("Render scale"));
+		    }, Coord.z);
+		prev = add(new Label("Render scale"), prev.pos("bl").adds(0, 5));
 		{
 		    Label dpy = new Label("");
 		    final int steps = 4;
-		    composer.addr(
-			new HSlider(UI.scale(160), -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
-			    protected void added() {
-				dpy();
-			    }
-			    void dpy() {
-				dpy.settext(String.format("%.2f\u00d7", Math.pow(2, this.val / (double)steps)));
-			    }
-			    public void changed() {
-				try {
-				    float val = (float)Math.pow(2, this.val / (double)steps);
-				    ui.setgprefs(prefs = prefs.update(null, prefs.rscale, val));
-				} catch(GSettings.SettingException e) {
-				    error(e.getMessage());
-				    return;
-				}
-				dpy();
-			    }
-			},
-			dpy
-		    );
+		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+			   prev = new HSlider(UI.scale(160), -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   dpy.settext(String.format("%.2f\u00d7", Math.pow(2, this.val / (double)steps)));
+			       }
+			       public void changed() {
+				   try {
+				       float val = (float)Math.pow(2, this.val / (double)steps);
+				       ui.setgprefs(prefs = prefs.update(null, prefs.rscale, val));
+				   } catch(GSettings.SettingException e) {
+				       error(e.getMessage());
+				       return;
+				   }
+				   dpy();
+			       }
+			   },
+			   dpy);
 		}
-		composer.add(new CheckBox("Vertical sync") {
+		prev = add(new CheckBox("Vertical sync") {
 			{a = prefs.vsync.val;}
 
 			public void set(boolean val) {
@@ -146,73 +151,71 @@ public class OptWnd extends Window {
 			    }
 			    a = val;
 			}
-		    });
-		composer.add(new Label("Framerate limit (active window)"));
+		    }, prev.pos("bl").adds(0, 5));
+		prev = add(new Label("Framerate limit (active window)"), prev.pos("bl").adds(0, 5));
 		{
 		    Label dpy = new Label("");
 		    final int max = 250;
-		    composer.addr(
-			    new HSlider(UI.scale(160), 1, max, (prefs.hz.val == Float.POSITIVE_INFINITY) ? max : prefs.hz.val.intValue()) {
-			    protected void added() {
-				dpy();
-			    }
-			    void dpy() {
-				if(this.val == max)
-				    dpy.settext("None");
-				else
-				    dpy.settext(Integer.toString(this.val));
-			    }
-			    public void changed() {
-				try {
-				    if(this.val > 10)
-					this.val = (this.val / 2) * 2;
-				    float val = (this.val == max) ? Float.POSITIVE_INFINITY : this.val;
-				    ui.setgprefs(prefs = prefs.update(null, prefs.hz, val));
-				} catch(GSettings.SettingException e) {
-				    error(e.getMessage());
-				    return;
-				}
-				dpy();
-			    }
-			},
-			dpy
-		    );
+		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+			   prev = new HSlider(UI.scale(160), 1, max, (prefs.hz.val == Float.POSITIVE_INFINITY) ? max : prefs.hz.val.intValue()) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   if(this.val == max)
+				       dpy.settext("None");
+				   else
+				       dpy.settext(Integer.toString(this.val));
+			       }
+			       public void changed() {
+				   try {
+				       if(this.val > 10)
+					   this.val = (this.val / 2) * 2;
+				       float val = (this.val == max) ? Float.POSITIVE_INFINITY : this.val;
+				       ui.setgprefs(prefs = prefs.update(null, prefs.hz, val));
+				   } catch(GSettings.SettingException e) {
+				       error(e.getMessage());
+				       return;
+				   }
+				   dpy();
+			       }
+			   },
+			   dpy);
 		}
-		composer.add(new Label("Framerate limit (background window)"));
+		prev = add(new Label("Framerate limit (background window)"), prev.pos("bl").adds(0, 5));
 		{
 		    Label dpy = new Label("");
 		    final int max = 250;
-		    composer.addr(
-			    new HSlider(UI.scale(160), 1, max, (prefs.bghz.val == Float.POSITIVE_INFINITY) ? max : prefs.bghz.val.intValue()) {
-			    protected void added() {
-				dpy();
-			    }
-			    void dpy() {
-				if(this.val == max)
-				    dpy.settext("None");
-				else
-				    dpy.settext(Integer.toString(this.val));
-			    }
-			    public void changed() {
-				try {
-				    if(this.val > 10)
-					this.val = (this.val / 2) * 2;
-				    float val = (this.val == max) ? Float.POSITIVE_INFINITY : this.val;
-				    ui.setgprefs(prefs = prefs.update(null, prefs.bghz, val));
-				} catch(GSettings.SettingException e) {
-				    error(e.getMessage());
-				    return;
-				}
-				dpy();
-			    }
-			},
-			dpy
-		    );
+		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+			   prev = new HSlider(UI.scale(160), 1, max, (prefs.bghz.val == Float.POSITIVE_INFINITY) ? max : prefs.bghz.val.intValue()) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   if(this.val == max)
+				       dpy.settext("None");
+				   else
+				       dpy.settext(Integer.toString(this.val));
+			       }
+			       public void changed() {
+				   try {
+				       if(this.val > 10)
+					   this.val = (this.val / 2) * 2;
+				       float val = (this.val == max) ? Float.POSITIVE_INFINITY : this.val;
+				       ui.setgprefs(prefs = prefs.update(null, prefs.bghz, val));
+				   } catch(GSettings.SettingException e) {
+				       error(e.getMessage());
+				       return;
+				   }
+				   dpy();
+			       }
+			   },
+			   dpy);
 		}
-		composer.add(new Label("Frame sync mode"));
+		prev = add(new Label("Frame sync mode"), prev.pos("bl").adds(0, 5));
 		{
 		    boolean[] done = {false};
-		    RadioGroup grp = new RadioGroup(this, composer) {
+		    RadioGroup grp = new RadioGroup(this) {
 			    public void changed(int btn, String lbl) {
 				if(!done[0])
 				    return;
@@ -224,13 +227,12 @@ public class OptWnd extends Window {
 				}
 			    }
 			};
-		    composer.hmrgn(UI.scale(5));
-		    composer.add(new Label("\u2191 Better performance, worse latency"));
-		    grp.add("One-frame overlap");
-		    grp.add("Tick overlap");
-		    grp.add("CPU-sequential");
-		    grp.add("GPU-sequential");
-		    composer.add(new Label("\u2193 Worse performance, better latency"));
+		    prev = add(new Label("\u2191 Better performance, worse latency"), prev.pos("bl").adds(5, 2));
+		    prev = grp.add("One-frame overlap", prev.pos("bl").adds(0, 2));
+		    prev = grp.add("Tick overlap", prev.pos("bl").adds(0, 2));
+		    prev = grp.add("CPU-sequential", prev.pos("bl").adds(0, 2));
+		    prev = grp.add("GPU-sequential", prev.pos("bl").adds(0, 2));
+		    prev = add(new Label("\u2193 Worse performance, better latency"), prev.pos("bl").adds(0, 2));
 		    grp.check(prefs.syncmode.val.ordinal());
 		    done[0] = true;
 		}
@@ -280,74 +282,42 @@ public class OptWnd extends Window {
 		    );
 		}
 		*/
-		composer.add(new Label("UI scale (requires restart)"));
+		prev = add(new Label("UI scale (requires restart)"), prev.pos("bl").adds(0, 5).x(0));
 		{
 		    Label dpy = new Label("");
 		    final double smin = 1, smax = Math.floor(UI.maxscale() / 0.25) * 0.25;
 		    final int steps = (int)Math.round((smax - smin) / 0.25);
-		    composer.addr(
-			new HSlider(UI.scale(160), 0, steps, (int)Math.round(steps * (Utils.getprefd("uiscale", 1.0) - smin) / (smax - smin))) {
-			    protected void added() {
-				dpy();
-			    }
-			    void dpy() {
-				dpy.settext(String.format("%.2f\u00d7", smin + (((double)this.val / steps) * (smax - smin))));
-			    }
-			    public void changed() {
-				double val = smin + (((double)this.val / steps) * (smax - smin));
-				Utils.setprefd("uiscale", val);
-				dpy();
-			    }
-			},
-			dpy
-		    );
+		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+			   prev = new HSlider(UI.scale(160), 0, steps, (int)Math.round(steps * (Utils.getprefd("uiscale", 1.0) - smin) / (smax - smin))) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   dpy.settext(String.format("%.2f\u00d7", smin + (((double)this.val / steps) * (smax - smin))));
+			       }
+			       public void changed() {
+				   double val = smin + (((double)this.val / steps) * (smax - smin));
+				   Utils.setprefd("uiscale", val);
+				   dpy();
+			       }
+			   },
+			   dpy);
 		}
-		composer.add(new Button(UI.scale(200), "Reset to defaults") {
-			public void click() {
+		add(new Button(UI.scale(200), "Reset to defaults").action(() -> {
 			    ui.setgprefs(GSettings.defaults());
 			    curcf.destroy();
 			    curcf = null;
-			    back.destroy();
-			    back = null;
-			}
-		    });
+		}), prev.pos("bl").adds(0, 5));
 		pack();
 	    }
-	}
-
-	private CPanel curcf = null;
-	private PButton back = null;
-
-	public void attach(UI ui) {
-	    super.attach(ui);
-	    if (curcf != null && back != null) {
-		return;
-	    }
-	    if (curcf != null) {
-		curcf.destroy();
-	    }
-	    curcf = new CPanel(ui.gprefs);
-	    if (back != null) {
-		back.destroy();
-	    }
-	    back = new PButton(UI.scale(200), "Back", 27, prev);
-	    Composer composer = new Composer(this);
-	    composer.add(curcf);
-	    composer.add(back);
-	    pack();
 	}
 
 	public void draw(GOut g) {
 	    if((curcf == null) || (ui.gprefs != curcf.prefs)) {
 		if(curcf != null)
 		    curcf.destroy();
-		if(back != null)
-		    back.destroy();
-		curcf = new CPanel(ui.gprefs);
-		back = new PButton(UI.scale(200), "Back", 27, prev);
-		Composer composer = new Composer(this).vmrgn(UI.scale(5));
-		composer.add(curcf);
-		composer.add(back);
+		curcf = add(new CPanel(ui.gprefs), 0, 0);
+		back.move(curcf.pos("bl").adds(0, 15));
 		pack();
 	    }
 	    super.draw(g);
