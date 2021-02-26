@@ -2013,9 +2013,11 @@ public class CharWnd extends Window {
 
 	Tabs.Tab wounds;
 	{
+	    Widget prev;
+
 	    wounds = tabs.add();
-	    wounds.add(settip(new Img(catf.render("Health & Wounds").tex()), "gfx/hud/chr/tips/wounds"), new Coord(0, 0));
-	    this.wounds = wounds.add(new WoundList(attrw, 12), new Coord(width + margin1, offy).add(wbox.btloff()));
+	    prev = wounds.add(settip(new Img(catf.render("Health & Wounds").tex()), "gfx/hud/chr/tips/wounds"), 0, 0);
+	    this.wounds = wounds.add(new WoundList(attrw, 12), prev.pos("bl").x(width + margin1).add(wbox.btloff()));
 	    Frame.around(wounds, Collections.singletonList(this.wounds));
 	    woundbox = wounds.add(new Widget(new Coord(attrw, this.wounds.sz.y)) {
 		    public void draw(GOut g) {
@@ -2029,14 +2031,16 @@ public class CharWnd extends Window {
 			if(w == wound)
 			    wound = null;
 		    }
-		}, new Coord(margin1, offy).add(wbox.btloff()));
+		}, prev.pos("bl").adds(5, 0).add(wbox.btloff()));
 	    Frame.around(wounds, Collections.singletonList(woundbox));
 	}
 
 	Tabs.Tab quests;
 	{
+	    Widget prev;
+
 	    quests = tabs.add();
-	    quests.add(settip(new Img(catf.render("Quest Log").tex()), "gfx/hud/chr/tips/quests"), new Coord(0, 0));
+	    prev = quests.add(settip(new Img(catf.render("Quest Log").tex()), "gfx/hud/chr/tips/quests"), new Coord(0, 0));
 	    questbox = quests.add(new Widget(new Coord(attrw, height)) {
 		    public void draw(GOut g) {
 			g.chcolor(0, 0, 0, 128);
@@ -2049,25 +2053,25 @@ public class CharWnd extends Window {
 			if(w == quest)
 			    quest = null;
 		    }
-		}, new Coord(margin1, offy).add(wbox.btloff()));
+		}, prev.pos("bl").adds(5, 0).add(wbox.btloff()));
 	    Frame.around(quests, Collections.singletonList(questbox));
-	    Tabs lists = new Tabs(new Coord(width + margin1, offy), new Coord(attrw + wbox.bisz().x, 0), quests);
+	    Tabs lists = new Tabs(prev.pos("bl").x(width + margin1), Coord.z, quests);
 	    Tabs.Tab cqst = lists.add();
 	    {
-		this.cqst = cqst.add(new QuestList(attrw, 11), Coord.z.add(wbox.btloff()));
+		this.cqst = cqst.add(new QuestList(attrw, 11), wbox.btloff());
 		Frame.around(cqst, Collections.singletonList(this.cqst));
 	    }
 	    Tabs.Tab dqst = lists.add();
 	    {
-		this.dqst = dqst.add(new QuestList(attrw, 11), Coord.z.add(wbox.btloff()));
+		this.dqst = dqst.add(new QuestList(attrw, 11), wbox.btloff());
 		Frame.around(dqst, Collections.singletonList(this.dqst));
 	    }
 	    lists.pack();
 	    int bw = (lists.sz.x + margin1) / 2;
 	    int x = lists.c.x;
 	    int y = lists.c.y + lists.sz.y + margin1;
-	    quests.add(lists.new TabButton(bw - margin1, "Current", cqst), new Coord(x, y));
-	    quests.add(lists.new TabButton(bw - margin1, "Completed", dqst), new Coord(x + bw, y));
+	    quests.add(lists.new TabButton(bw - margin1, "Current", cqst),   x + bw * 0, y);
+	    quests.add(lists.new TabButton(bw - margin1, "Completed", dqst), x + bw * 1, y);
 	    questtab = quests;
 	}
 
