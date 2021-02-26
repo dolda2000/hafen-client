@@ -1862,7 +1862,7 @@ public class CharWnd extends Window {
 	    prev = battr.add(settip(new Img(catf.render("Base Attributes").tex()), "gfx/hud/chr/tips/base"), Coord.z);
 	    base = new ArrayList<>();
 	    Attr aw;
-	    base.add(aw = battr.add(new Attr(glob, "str", every), prev.pos("bl").adds(5, 2).add(wbox.btloff())));
+	    base.add(aw = battr.add(new Attr(glob, "str", every), prev.pos("bl").adds(5, 0).add(wbox.btloff())));
 	    base.add(aw = battr.add(new Attr(glob, "agi", other), aw.pos("bl")));
 	    base.add(aw = battr.add(new Attr(glob, "int", every), aw.pos("bl")));
 	    base.add(aw = battr.add(new Attr(glob, "con", other), aw.pos("bl")));
@@ -1876,7 +1876,7 @@ public class CharWnd extends Window {
 	    feps = battr.add(new FoodMeter(), prev.pos("bl").adds(5, 2));
 
 	    prev = battr.add(settip(new Img(catf.render("Food Satiations").tex()), "gfx/hud/chr/tips/constip"), width, 0);
-	    cons = battr.add(new Constipations(attrw, base.size()), prev.pos("bl").adds(5, 2).add(wbox.btloff()));
+	    cons = battr.add(new Constipations(attrw, base.size()), prev.pos("bl").adds(5, 0).add(wbox.btloff()));
 	    prev = Frame.around(battr, Collections.singletonList(cons));
 	    prev = battr.add(settip(new Img(catf.render("Hunger Level").tex()), "gfx/hud/chr/tips/hunger"), prev.pos("bl").x(width).adds(0, 10));
 	    glut = battr.add(new GlutMeter(), prev.pos("bl").adds(5, 2));
@@ -1888,7 +1888,7 @@ public class CharWnd extends Window {
 	    prev = sattr.add(settip(new Img(catf.render("Abilities").tex()), "gfx/hud/chr/tips/sattr"), Coord.z);
 	    skill = new ArrayList<>();
 	    SAttr aw;
-	    skill.add(aw = sattr.add(new SAttr(glob, "unarmed", every), prev.pos("bl").adds(5, 2).add(wbox.btloff())));
+	    skill.add(aw = sattr.add(new SAttr(glob, "unarmed", every), prev.pos("bl").adds(5, 0).add(wbox.btloff())));
 	    skill.add(aw = sattr.add(new SAttr(glob, "melee", other), aw.pos("bl")));
 	    skill.add(aw = sattr.add(new SAttr(glob, "ranged", every), aw.pos("bl")));
 	    skill.add(aw = sattr.add(new SAttr(glob, "explore", other), aw.pos("bl")));
@@ -1930,28 +1930,21 @@ public class CharWnd extends Window {
 
 	Tabs.Tab skills = tabs.add();
         {
-            Widget left = new Widget.Temporary();
-            LoadingTextBox info;
-            {
-                left.add(settip(new Img(catf.render("Lore & Skills").tex()), "gfx/hud/chr/tips/skills"));
-                info = new LoadingTextBox(new Coord(attrw, height), "", ifnd);
-                left.add(info, wbox.btloff().add(margin1, offy));
-                info.bg = new Color(0, 0, 0, 128);
-                Frame.around(skills, Collections.singletonList(info));
-            }
-            left.pack();
+	    Widget prev;
 
-            Widget right = new Widget.Temporary();
-            {
-                Composer composer = new Composer(right);
-                right.add(new Img(catf.render("Entries").tex()));
-                composer.add(offy);
-                Tabs lists = new Tabs(new Coord(margin1, composer.y()), new Coord(attrw + wbox.bisz().x, 0), right);
-                Tabs.Tab sktab = lists.add();
-                {
-                    Frame f = sktab.add(new Frame(new Coord(lists.sz.x, UI.scale(192)), false), 0, 0);
-                    int y = f.sz.y + margin1;
-                    skg = f.addin(new SkillGrid(Coord.z) {
+	    prev = skills.add(settip(new Img(catf.render("Lore & Skills").tex()), "gfx/hud/chr/tips/skills"), Coord.z);
+	    LoadingTextBox info = skills.add(new LoadingTextBox(new Coord(attrw, height), "", ifnd), prev.pos("bl").adds(5, 0).add(wbox.btloff()));
+	    info.bg = new Color(0, 0, 0, 128);
+	    Frame.around(skills, Collections.singletonList(info));
+
+	    prev = skills.add(new Img(catf.render("Entries").tex()), width, 0);
+	    Tabs lists = new Tabs(prev.pos("bl").adds(5, 0), new Coord(attrw + wbox.bisz().x, 0), skills);
+	    int gh = UI.scale(241);
+	    Tabs.Tab sktab = lists.add();
+	    {
+		Frame f = sktab.add(new Frame(new Coord(lists.sz.x, UI.scale(192)), false), 0, 0);
+		int y = f.sz.y + margin1;
+		skg = f.addin(new SkillGrid(Coord.z) {
                         public void change(Skill sk) {
                             Skill p = sel;
                             super.change(sk);
@@ -1963,30 +1956,23 @@ public class CharWnd extends Window {
                                 info.settext("");
                         }
                     });
-                    int rx = attrw + wbox.btloff().x - margin2;
-                    Frame.around(sktab, Area.sized(new Coord(0, y).add(wbox.btloff()), new Coord(attrw, UI.scale(34))));
-                    /*
-                    sktab.add(new Label("Learning points:"), new Coord(15, y + 10));
-                    sktab.add(new ExpLabel(new Coord(rx, y + 10)));
-                    */
-                    Button bbtn = new Button(UI.scale(50), "Buy") {
-                        public void click() {
+		Widget bf = sktab.adda(new Frame(new Coord(f.sz.x, UI.scale(44)), false), f.c.x, gh, 0.0, 1.0);
+		int rx = attrw + wbox.btloff().x - margin2;
+		Button bbtn = sktab.adda(new Button(UI.scale(50), "Buy").action(() -> {
                             if (skg.sel != null)
                                 CharWnd.this.wdgmsg("buy", skg.sel.nm);
-                        }
-                    };
-                    sktab.add(bbtn, new Coord(rx - UI.scale(50), y + wbox.btloff().y + (UI.scale(34) - bbtn.sz.y) / 2));
-                    Label clbl = sktab.adda(new Label("Cost:"), new Coord(UI.scale(15), bbtn.c.y + (bbtn.sz.y / 2)), 0, 0.5);
-                    sktab.adda(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost, exp),
-						  n -> (n.a == null) ? "N/A" : String.format("%,d / %,d LP", n.a, n.b),
-						  n -> ((n.a != null) && (n.a > n.b)) ? debuff : Color.WHITE),
-			       new Coord(bbtn.c.x - margin2, clbl.c.y), 1.0, 0.0);
-                }
+		}), bf.pos("ibr").subs(10, 0).y(bf.pos("mid").y), 1.0, 0.5);
+		Label clbl = sktab.adda(new Label("Cost:"), bf.pos("iul").adds(10, 0).y(bf.pos("mid").y), 0, 0.5);
+		sktab.adda(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost, exp),
+							      n -> (n.a == null) ? "N/A" : String.format("%,d / %,d LP", n.a, n.b),
+							      n -> ((n.a != null) && (n.a > n.b)) ? debuff : Color.WHITE),
+			   bbtn.pos("ul").subs(10, 0).y(bf.pos("mid").y), 1.0, 0.5);
+	    }
 
-                Tabs.Tab credos = lists.add();
-                {
-                    Frame f = credos.add(new Frame(new Coord(lists.sz.x, UI.scale(241)), false), 0, 0);
-                    this.credos = f.addin(new CredoGrid(Coord.z) {
+	    Tabs.Tab credos = lists.add();
+	    {
+		Frame f = credos.add(new Frame(new Coord(lists.sz.x, gh), false), 0, 0);
+		this.credos = f.addin(new CredoGrid(Coord.z) {
                         public void change(Credo cr) {
                             Credo p = sel;
                             super.change(cr);
@@ -1998,12 +1984,12 @@ public class CharWnd extends Window {
                                 info.settext("");
                         }
                     });
-                }
+	    }
 
-                Tabs.Tab exps = lists.add();
-                {
-                    Frame f = exps.add(new Frame(new Coord(lists.sz.x, UI.scale(241)), false), 0, 0);
-                    this.exps = f.addin(new ExpGrid(Coord.z) {
+	    Tabs.Tab exps = lists.add();
+	    {
+		Frame f = exps.add(new Frame(new Coord(lists.sz.x, gh), false), 0, 0);
+		this.exps = f.addin(new ExpGrid(Coord.z) {
                         public void change(Experience exp) {
                             Experience p = sel;
                             super.change(exp);
@@ -2015,20 +2001,14 @@ public class CharWnd extends Window {
                                 info.settext("");
                         }
                     });
-                }
-                lists.pack();
-                int bw = (lists.sz.x + margin1) / 3;
-                int x = lists.c.x;
-                int y = lists.c.y + lists.sz.y + margin1;
-                right.add(lists.new TabButton(bw - margin1, "Skills", sktab), new Coord(x, y));
-                right.add(lists.new TabButton(bw - margin1, "Credos", credos), new Coord(x + bw * 1, y));
-                right.add(lists.new TabButton(bw - margin1, "Lore", exps), new Coord(x + bw * 2, y));
-            }
-            right.pack();
-
-            skills.add(left);
-            skills.add(right, new Coord(width, 0));
-            Widget.Temporary.optimize(skills);
+	    }
+	    lists.pack();
+	    int bw = (lists.sz.x + margin1) / 3;
+	    int x = lists.c.x;
+	    int y = lists.c.y + lists.sz.y + margin1;
+	    skills.add(lists.new TabButton(bw - margin1, "Skills", sktab),  x + bw * 0, y);
+	    skills.add(lists.new TabButton(bw - margin1, "Credos", credos), x + bw * 1, y);
+	    skills.add(lists.new TabButton(bw - margin1, "Lore", exps),     x + bw * 2, y);
         }
 
 	Tabs.Tab wounds;
