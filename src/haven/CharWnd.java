@@ -2003,12 +2003,11 @@ public class CharWnd extends Window {
                     });
 	    }
 	    lists.pack();
-	    int bw = (lists.sz.x + margin1) / 3;
-	    int x = lists.c.x;
-	    int y = lists.c.y + lists.sz.y + margin1;
-	    skills.add(lists.new TabButton(bw - margin1, "Skills", sktab),  x + bw * 0, y);
-	    skills.add(lists.new TabButton(bw - margin1, "Credos", credos), x + bw * 1, y);
-	    skills.add(lists.new TabButton(bw - margin1, "Lore", exps),     x + bw * 2, y);
+	    int bw = ((lists.sz.x + margin1) / 3) - margin1;
+	    skills.addhl(lists.c.add(0, lists.sz.y + margin1), lists.sz.x,
+			 lists.new TabButton(bw, "Skills", sktab),
+			 lists.new TabButton(bw, "Credos", credos),
+			 lists.new TabButton(bw, "Lore",   exps));
         }
 
 	Tabs.Tab wounds;
@@ -2067,11 +2066,10 @@ public class CharWnd extends Window {
 		Frame.around(dqst, Collections.singletonList(this.dqst));
 	    }
 	    lists.pack();
-	    int bw = (lists.sz.x + margin1) / 2;
-	    int x = lists.c.x;
-	    int y = lists.c.y + lists.sz.y + margin1;
-	    quests.add(lists.new TabButton(bw - margin1, "Current", cqst),   x + bw * 0, y);
-	    quests.add(lists.new TabButton(bw - margin1, "Completed", dqst), x + bw * 1, y);
+	    int bw = ((lists.sz.x + margin1) / 2) - margin1;
+	    quests.addhl(lists.c.add(0, lists.sz.y + margin1), lists.sz.x,
+			 lists.new TabButton(bw, "Current",   cqst),
+			 lists.new TabButton(bw, "Completed", dqst));
 	    questtab = quests;
 	}
 
@@ -2080,11 +2078,6 @@ public class CharWnd extends Window {
 
 	    class TB extends IButton {
 		final Tabs.Tab tab;
-		TB(String nm, Tabs.Tab tab) {
-		    super("gfx/hud/chr/" + nm, "u", "d", null);
-		    this.tab = tab;
-		}
-
 		TB(String nm, Tabs.Tab tab, String tip) {
 		    super("gfx/hud/chr/" + nm, "u", "d", null);
 		    this.tab = tab;
@@ -2108,11 +2101,7 @@ public class CharWnd extends Window {
 
 	    fgt = tabs.add();
 
-	    Composer composer = new Composer(this)
-		.hpad(tabs.c.x)
-		.vpad(tabs.c.y + tabs.sz.y + margin2);
-	    composer.addar(
-		tabs.sz.x,
+	    this.addhl(new Coord(tabs.c.x, tabs.c.y + tabs.sz.y + margin2), tabs.sz.x,
 		new TB("battr", battr, "Base Attributes"),
 		new TB("sattr", sattr, "Abilities"),
 		new TB("skill", skills, "Lore & Skills"),
