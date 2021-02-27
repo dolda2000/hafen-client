@@ -84,6 +84,20 @@ public class Frame extends Widget {
 	    return(c.sub(box.btloff()));
     }
 
+    public Position getpos(String nm) {
+	switch(nm) {
+	case "iul": return(new Position(this.c.add(box.btloff())));
+	case "iur": return(new Position(this.c.add(this.sz.x - box.bbroff().x, box.btloff().y)));
+	case "ibr": return(new Position(this.c.add(this.sz).sub(box.bbroff())));
+	case "ibl": return(new Position(this.c.add(box.btloff().x, this.sz.y - box.bbroff().y)));
+	case "icul": return(new Position(box.btloff()));
+	case "icur": return(new Position(this.sz.x - box.bbroff().x, box.btloff().y));
+	case "icbr": return(new Position(this.sz.sub(box.bbroff())));
+	case "icbl": return(new Position(box.btloff().x, this.sz.y - box.bbroff().y));
+	default: return(super.getpos(nm));
+	}
+    }
+
     public void draw(GOut g) {
 	super.draw(g);
 	box.draw(g, Coord.z, sz);
