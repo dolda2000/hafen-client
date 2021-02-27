@@ -1469,29 +1469,4 @@ public class Widget {
 
 	public abstract void ntick(double a);
     }
-
-    public static class Temporary extends Widget {
-	public void lower() {
-	    Widget last = parent.lchild;
-	    last.next = child;
-	    child.prev = last;
-	    for(Widget w = child; w != null; w = w.next) {
-		w.parent = parent;
-		w.c = w.c.add(c);
-	    }
-	    parent.lchild = lchild;
-	    child = null;
-	    lchild = null;
-	    destroy();
-	}
-
-	public static void optimize(Widget wdg) {
-	    for(Widget w = wdg.child; w != null; w = w.next) {
-		if (w instanceof Temporary)
-		    ((Temporary)w).lower();
-		else
-		    optimize(w);
-	    }
-	}
-    }
 }
