@@ -1905,7 +1905,7 @@ public class CharWnd extends Window {
 
 	    prev = sattr.add(settip(new Img(catf.render("Study Report").tex()), "gfx/hud/chr/tips/study"), width, 0);
 	    studyc = prev.pos("bl").adds(5, 0);
-	    Widget bframe = sattr.adda(new Frame(new Coord(attrw, UI.scale(96)), true), prev.pos("bl").adds(5, 0).x, lframe.pos("br").y, 0.0, 1.0);
+	    Widget bframe = sattr.adda(new Frame(new Coord(attrw, UI.scale(105)), true), prev.pos("bl").adds(5, 0).x, lframe.pos("br").y, 0.0, 1.0);
 	    int rx = bframe.pos("iur").subs(10, 0).x;
 	    prev = sattr.add(new Label("Experience points:"), bframe.pos("iul").adds(10, 5));
 	    sattr.adda(enclabel(), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
