@@ -52,7 +52,7 @@ public class OptWnd extends Window {
 	public final int key;
 
 	public PButton(int w, String title, int key, Panel tgt) {
-	    super(w, title);
+	    super(w, title, false);
 	    this.tgt = tgt;
 	    this.key = key;
 	}
@@ -303,7 +303,7 @@ public class OptWnd extends Window {
 			   },
 			   dpy);
 		}
-		add(new Button(UI.scale(200), "Reset to defaults").action(() -> {
+		add(new Button(UI.scale(200), "Reset to defaults", false).action(() -> {
 			    ui.setgprefs(GSettings.defaults());
 			    curcf.destroy();
 			    curcf = null;
@@ -535,39 +535,33 @@ public class OptWnd extends Window {
 	audio = add(new Panel());
 	keybind = add(new BindingPanel(main));
 
-	Composer main = new Composer(this.main).vmrgn(UI.scale(-6));
-	main.add(new PButton(UI.scale(200), "Video settings", 'v', video));
-	main.add(new PButton(UI.scale(200), "Audio settings", 'a', audio));
-	main.add(new PButton(UI.scale(200), "Keybindings", 'k', keybind));
-	main.add(60);
+	int y = 0;
+	Widget prev;
+	y = main.add(new PButton(UI.scale(200), "Video settings", 'v', video), 0, y).pos("bl").adds(0, 5).y;
+	y = main.add(new PButton(UI.scale(200), "Audio settings", 'a', audio), 0, y).pos("bl").adds(0, 5).y;
+	y = main.add(new PButton(UI.scale(200), "Keybindings", 'k', keybind), 0, y).pos("bl").adds(0, 5).y;
+	y += UI.scale(60);
 	if(gopts) {
-	    main.add(new Button(UI.scale(200), "Switch character") {
-		    public void click() {
+	    y = main.add(new Button(UI.scale(200), "Switch character", false).action(() -> {
 			getparent(GameUI.class).act("lo", "cs");
-		    }
-		});
-	    main.add(new Button(UI.scale(200), "Log out") {
-		    public void click() {
+	    }), 0, y).pos("bl").adds(0, 5).y;
+	    y = main.add(new Button(UI.scale(200), "Log out", false).action(() -> {
 			getparent(GameUI.class).act("lo");
-		    }
-		});
+	    }), 0, y).pos("bl").adds(0, 5).y;
 	}
-	main.add(new Button(UI.scale(200), "Close") {
-		public void click() {
+	y = main.add(new Button(UI.scale(200), "Close", false).action(() -> {
 		    OptWnd.this.hide();
-		}
-	    });
+	}), 0, y).pos("bl").adds(0, 5).y;
 	this.main.pack();
 
-	Composer audio = new Composer(this.audio).vmrgn(UI.scale(5));
-	audio.add(new Label("Master audio volume"));
-	audio.add(new HSlider(UI.scale(200), 0, 1000, (int)(Audio.volume * 1000)) {
+	prev = audio.add(new Label("Master audio volume"), 0, 0);
+	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, (int)(Audio.volume * 1000)) {
 		public void changed() {
 		    Audio.setvolume(val / 1000.0);
 		}
-	    });
-	audio.add(new Label("In-game event volume"));
-	audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
+	    }, prev.pos("bl").adds(0, 2));
+	prev = audio.add(new Label("In-game event volume"), prev.pos("bl").adds(0, 15));
+	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
 		protected void attach(UI ui) {
 		    super.attach(ui);
 		    val = (int)(ui.audio.pos.volume * 1000);
@@ -575,9 +569,9 @@ public class OptWnd extends Window {
 		public void changed() {
 		    ui.audio.pos.setvolume(val / 1000.0);
 		}
-	    });
-	audio.add(new Label("Ambient volume"));
-	audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
+	    }, prev.pos("bl").adds(0, 2));
+	prev = audio.add(new Label("Ambient volume"), prev.pos("bl").adds(0, 5));
+	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
 		protected void attach(UI ui) {
 		    super.attach(ui);
 		    val = (int)(ui.audio.amb.volume * 1000);
@@ -585,9 +579,9 @@ public class OptWnd extends Window {
 		public void changed() {
 		    ui.audio.amb.setvolume(val / 1000.0);
 		}
-	    });
-	audio.add(new PButton(UI.scale(200), "Back", 27, this.main));
-	this.audio.pack();
+	    }, prev.pos("bl").adds(0, 2));
+	audio.add(new PButton(UI.scale(200), "Back", 27, this.main), prev.pos("bl").adds(0, 30));
+	audio.pack();
 
 	chpanel(this.main);
     }
