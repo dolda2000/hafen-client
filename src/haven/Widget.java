@@ -35,6 +35,7 @@ import java.awt.event.KeyEvent;
 public class Widget {
     public UI ui;
     public Coord c, sz;
+    public int z;
     public Widget next, prev, child, lchild, parent;
     public boolean focustab = false, focusctl = false, hasfocus = false, visible = true;
     private boolean attached = false;
@@ -442,21 +443,39 @@ public class Widget {
     }
 
     public void link() {
-	if(parent.lchild != null)
-	    parent.lchild.next = this;
-	if(parent.child == null)
+	Widget prev;
+	for(prev = parent.lchild; (prev != null) && (prev.z > this.z); prev = prev.prev);
+	if(prev != null) {
+	    if((this.next = prev.next) != null)
+		this.next.prev = this;
+	    else
+		parent.lchild = this;
+	    (this.prev = prev).next = this;
+	} else {
+	    if((this.next = parent.child) != null)
+		this.next.prev = this;
+	    else
+		parent.lchild = this;
 	    parent.child = this;
-	this.prev = parent.lchild;
-	parent.lchild = this;
+	}
     }
     
     public void linkfirst() {
-	if(parent.child != null)
-	    parent.child.prev = this;
-	if(parent.lchild == null)
+	Widget next;
+	for(next = parent.child; (next != null) && (next.z < this.z); next = next.next);
+	if(next != null) {
+	    if((this.prev = next.prev) != null)
+		this.prev.next = this;
+	    else
+		parent.child = this;
+	    (this.next = next).prev = this;
+	} else {
+	    if((this.prev = parent.lchild) != null)
+		this.prev.next = this;
+	    else
+		parent.child = this;
 	    parent.lchild = this;
-	this.next = parent.child;
-	parent.child = this;
+	}
     }
 	
     public void unlink() {
@@ -471,7 +490,7 @@ public class Widget {
 	next = null;
 	prev = null;
     }
-	
+
     public Coord xlate(Coord c, boolean in) {
 	return(c);
     }
@@ -975,6 +994,16 @@ public class Widget {
 	    parent.cresize(this);
     }
 
+    public void z(int z) {
+	if(z != this.z) {
+	    this.z = z;
+	    if(parent != null) {
+		unlink();
+		link();
+	    }
+	}
+    }
+
     public void move(Area a) {
 	move(a.ul);
 	resize(a.sz());
@@ -1035,6 +1064,40 @@ public class Widget {
 	if(ret == null)
 	    throw(new IllegalArgumentException(String.format("Illegal position anchor \"%s\" from widget %s", nm, this)));
 	return(ret);
+    }
+
+    public Coord addhlp(Coord c, int pad, Widget... children) {
+	int x = c.x, y = c.y;
+	int maxh = 0;
+	for(Widget child : children)
+	    maxh = Math.max(maxh, child.sz.y);
+	for(Widget child : children) {
+	    add(child, x, y + ((maxh - child.sz.y) / 2));
+	    x += child.sz.x + pad;
+	}
+	return(new Coord(x - pad, y + maxh));
+    }
+
+    public int addhl(Coord c, int w, Widget... children) {
+	int x = c.x, y = c.y;
+	if(children.length == 1) {
+	    adda(children[0], x + (w / 2), y, 0.5, 0.0);
+	    return(y + children[0].sz.y);
+	}
+	int maxh = 0, cw = 0;
+	for(Widget child : children) {
+	    cw += child.sz.x;
+	    maxh = Math.max(maxh, child.sz.y);
+	}
+	int tpad = w - cw, npad = children.length - 1, perror = 0;
+	for(Widget child : children) {
+	    add(child, x, y + ((maxh - child.sz.y) / 2));
+	    x += child.sz.x;
+	    perror += tpad;
+	    x += perror / npad;
+	    perror %= npad;
+	}
+	return(y + maxh);
     }
 
     public void raise() {
@@ -1438,30 +1501,5 @@ public class Widget {
 	}
 
 	public abstract void ntick(double a);
-    }
-
-    public static class Temporary extends Widget {
-	public void lower() {
-	    Widget last = parent.lchild;
-	    last.next = child;
-	    child.prev = last;
-	    for(Widget w = child; w != null; w = w.next) {
-		w.parent = parent;
-		w.c = w.c.add(c);
-	    }
-	    parent.lchild = lchild;
-	    child = null;
-	    lchild = null;
-	    destroy();
-	}
-
-	public static void optimize(Widget wdg) {
-	    for(Widget w = wdg.child; w != null; w = w.next) {
-		if (w instanceof Temporary)
-		    ((Temporary)w).lower();
-		else
-		    optimize(w);
-	    }
-	}
     }
 }

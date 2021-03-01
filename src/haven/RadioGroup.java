@@ -34,18 +34,12 @@ public class RadioGroup {
     private HashMap<String, RadioButton> map;
     private HashMap<RadioButton, String> rmap;
     private RadioButton checked;
-    private Composer composer;
 
     public RadioGroup(Widget parent) {
 	this.parent = parent;
 	btns = new ArrayList<RadioButton>();
 	map  = new HashMap<String, RadioButton>();
 	rmap = new HashMap<RadioButton, String>();
-    }
-
-    public RadioGroup(Widget parent, Composer composer) {
-        this(parent);
-        this.composer = composer;
     }
 
     public class RadioButton extends CheckBox {
@@ -65,17 +59,6 @@ public class RadioGroup {
 	    super.changed(val);
 	    lbl = Text.std.render(lbl.text, a ? java.awt.Color.YELLOW : java.awt.Color.WHITE);
 	}
-    }
-
-    public RadioButton add(String lbl) {
-        RadioButton rb = new RadioButton(lbl);
-        composer.add(rb);
-        btns.add(rb);
-        map.put(lbl, rb);
-        rmap.put(rb, lbl);
-        if(checked == null)
-            checked = rb;
-        return(rb);
     }
 
     public RadioButton add(String lbl, Coord c) {
