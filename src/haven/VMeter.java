@@ -79,4 +79,12 @@ public class VMeter extends Widget {
 	    super.uimsg(msg, args);
 	}
     }
+
+	@Override
+	public Object tooltip(Coord c, Widget prev) {
+	Widget p = this.parent;
+	if (p instanceof Window) {
+		return RichText.render("$b{$col[255,223,5]{" + amount + "/100}}", -1).tex();
+	} else return (null);
+	}
 }
