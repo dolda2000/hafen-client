@@ -201,6 +201,22 @@ public class UI {
 		bars.add(id);
 	    return(this);
 	}
+
+	private String fl(String id, Collection<?> l) {
+	    if(l.isEmpty())
+		return("");
+	    StringBuilder buf = new StringBuilder();
+	    buf.append(" (");
+	    buf.append(id);
+	    for(Object x : l)
+		buf.append(" " + x);
+	    buf.append(")");
+	    return(buf.toString());
+	}
+
+	public String toString() {
+	    return(String.format("#<cmd %08x %s%s%s>", System.identityHashCode(this), action, fl("deps", deps), fl("bars", bars)));
+	}
     }
 
     public class CommandQueue {
@@ -312,39 +328,47 @@ public class UI {
 	}
     }
 	
-    public void snewwidget(int id, Widget.Factory type, Object... cargs) {
-	Widget wdg = type.create(this, cargs);
-	synchronized(this) {
-	    wdg.attach(this);
-	    bind(wdg, id);
-	}
-    }
+    private class NewWidget implements Runnable {
+	final int id;
+	Widget.Factory type;
+	String typenm;
+	final Object[] cargs;
 
-    public void snewwidget(int id, String name, Object... cargs) {
-	Widget.Factory f = Widget.gettype3(name);
-	if(f == null)
-	    throw(new UIException("Bad widget name", name, cargs));
-	snewwidget(id, f, cargs);
+	NewWidget(int id, Widget.Factory type, Object... cargs) {
+	    this.id = id;
+	    this.type = type;
+	    this.cargs = cargs;
+	}
+
+	NewWidget(int id, String type, Object... cargs) {
+	    this.id = id;
+	    this.typenm = type;
+	    this.cargs = cargs;
+	}
+
+	Widget wdg = null;
+	public void run() {
+	    if((type == null) && ((type = Widget.gettype3(typenm)) == null))
+		throw(new UIException("Bad widget name", typenm, cargs));
+	    if(wdg == null)
+		wdg = type.create(UI.this, cargs);
+	    synchronized(UI.this) {
+		wdg.attach(UI.this);
+		bind(wdg, id);
+	    }
+	}
+
+	public String toString() {
+	    return(String.format("#<newwdg %d %s %s>", id, (typenm == null) ? type : typenm, Arrays.asList(cargs)));
+	}
     }
 
     public void newwidget(int id, Widget.Factory type, Object... cargs) {
-	queue.submit(new Command(() -> snewwidget(id, type, cargs)).dep(id, true));
+	queue.submit(new Command(new NewWidget(id, type, cargs)).dep(id, true));
     }
 
     public void newwidget(int id, String type, Object... cargs) throws InterruptedException {
-	queue.submit(new Command(() -> snewwidget(id, type, cargs)).dep(id, true));
-    }
-
-    public void saddwidget(int id, int parent, Object... pargs) {
-	synchronized(this) {
-	    Widget wdg = getwidget(id);
-	    Widget pwdg = getwidget(parent);
-	    if(wdg == null)
-		throw(new UIException(String.format("Null child widget %d added to %d (%s)", id, parent, pwdg), null, pargs));
-	    if(pwdg == null)
-		throw(new UIException(String.format("Null parent widget %d for %d (%s)", parent, id, wdg), null, pargs));
-	    pwdg.addchild(wdg, pargs);
-	}
+	queue.submit(new Command(new NewWidget(id, type, cargs)).dep(id, true));
     }
 
     private final MultiMap<Integer, Integer> shadowchildren = new HashMultiMap<>();
@@ -356,7 +380,24 @@ public class UI {
 	    if(prev != null)
 		throw(new RuntimeException(String.format("widget %d already has parent %d when adding it to %d", id, prev, parent)));
 	    shadowchildren.put(parent, id);
-	    queue.submit(new Command(() -> saddwidget(id, parent, pargs)).dep(id, true).dep(parent, true));
+	    Runnable act = new Runnable() {
+		    public void run() {
+			synchronized(UI.this) {
+			    Widget wdg = getwidget(id);
+			    Widget pwdg = getwidget(parent);
+			    if(wdg == null)
+				throw(new UIException(String.format("Null child widget %d added to %d (%s)", id, parent, pwdg), null, pargs));
+			    if(pwdg == null)
+				throw(new UIException(String.format("Null parent widget %d for %d (%s)", parent, id, wdg), null, pargs));
+			    pwdg.addchild(wdg, pargs);
+			}
+		    }
+
+		    public String toString() {
+			return(String.format("#<addwdg %d @ %d %s>", id, parent, Arrays.asList(pargs)));
+		    }
+	    };
+	    queue.submit(new Command(act).dep(id, true).dep(parent, true));
 	}
     }
 
@@ -429,14 +470,6 @@ public class UI {
 	removeid(wdg);
 	wdg.reqdestroy();
     }
-    
-    public void sdestroy(int id) {
-	synchronized(this) {
-	    Widget wdg = getwidget(id);
-	    if(wdg != null)
-		destroy(wdg);
-	}
-    }
 
     public void destroy(int id) {
 	synchronized(shadowchildren) {
@@ -448,7 +481,20 @@ public class UI {
 	    for(Integer child : new ArrayList<>(shadowchildren.getall(id))) {
 		destroy(child);
 	    }
-	    Command cmd = new Command(() -> sdestroy(id)).dep(id, true);
+	    Runnable act = new Runnable() {
+		    public void run() {
+			synchronized(UI.this) {
+			    Widget wdg = getwidget(id);
+			    if(wdg != null)
+				destroy(wdg);
+			}
+		    }
+
+		    public String toString() {
+			return(String.format("#<dstwdg %d>", id));
+		    }
+		};
+	    Command cmd = new Command(act).dep(id, true);
 	    if(parent != null)
 		cmd.dep(parent, true);
 	    queue.submit(cmd);
@@ -465,19 +511,24 @@ public class UI {
 	    rcvr.rcvmsg(id, msg, args);
     }
 	
-    public void suimsg(int id, String msg, Object... args) {
-	Widget wdg = getwidget(id);
-	if(wdg != null) {
-	    synchronized(this) {
-		wdg.uimsg(msg.intern(), args);
-	    }
-	} else {
-	    throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
-	}
-    }
-	
     public void uimsg(int id, String msg, Object... args) {
-	queue.submit(new Command(() -> suimsg(id, msg, args)).dep(id, true));
+	Runnable act = new Runnable() {
+		public void run() {
+		    Widget wdg = getwidget(id);
+		    if(wdg != null) {
+			synchronized(UI.this) {
+			    wdg.uimsg(msg.intern(), args);
+			}
+		    } else {
+			throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
+		    }
+		}
+
+		public String toString() {
+		    return(String.format("#<wdgmsg %d %s %s>", id, msg, Arrays.asList(args)));
+		}
+	    };
+	queue.submit(new Command(act).dep(id, true));
     }
 
     private void setmods(InputEvent ev) {
