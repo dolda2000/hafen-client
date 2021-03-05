@@ -54,7 +54,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Selector selection;
     private Coord3f camoff = new Coord3f(Coord3f.o);
     public double shake = 0.0;
-    public static int plobgran = 8;
+    public static int plobgran = Utils.getprefi("plobgran", 8);
     private static final Map<String, Class<? extends Camera>> camtypes = new HashMap<String, Class<? extends Camera>>();
     
     public interface Delayed {
@@ -2305,6 +2305,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		public void run(Console cons, String[] args) {
 		    if((plobgran = Integer.parseInt(args[1])) < 0)
 			plobgran = 0;
+		    Utils.setpref("plobgran", plobgran);
 		}
 	    });
 	Console.setscmd("clickfuzz", new Console.Command() {
