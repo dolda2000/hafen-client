@@ -2305,7 +2305,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		public void run(Console cons, String[] args) {
 		    if((plobgran = Integer.parseInt(args[1])) < 0)
 			plobgran = 0;
-		    Utils.setpref("plobgran", plobgran);
+		    Utils.setprefi("plobgran", plobgran);
 		}
 	    });
 	Console.setscmd("clickfuzz", new Console.Command() {
