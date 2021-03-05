@@ -112,8 +112,10 @@ public class Debug {
     }
 
     public static void dump(Object... stuff) {
-	dump_r(stuff);
-	System.err.println();
+	synchronized(System.err) {
+	    dump_r(stuff);
+	    System.err.println();
+	}
     }
 
     public static class DumpGL extends TraceGL4bc {
