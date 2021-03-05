@@ -162,6 +162,11 @@ public class UI {
 	    this.mname = mname;
 	    this.args = args;
 	}
+
+	public void printStackTrace(java.io.PrintStream out) {
+	    super.printStackTrace(out);
+	    out.printf("Message: %s; Arguments: %s\n", mname, Arrays.asList(args));
+	}
     }
 	
     public UI(Context uictx, Coord sz, Runner fun) {
