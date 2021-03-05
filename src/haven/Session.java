@@ -254,7 +254,8 @@ public class Session implements Resource.Resolver {
 		    }
 		}
 	    } else if((msg.type == RMessage.RMSG_NEWWDG) || (msg.type == RMessage.RMSG_WDGMSG) ||
-		      (msg.type == RMessage.RMSG_DSTWDG) || (msg.type == RMessage.RMSG_ADDWDG)) {
+		      (msg.type == RMessage.RMSG_DSTWDG) || (msg.type == RMessage.RMSG_ADDWDG) ||
+		      (msg.type == RMessage.RMSG_WDGBAR)) {
 		synchronized(uimsgs) {
 		    uimsgs.add(msg);
 		}
