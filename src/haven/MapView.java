@@ -377,9 +377,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private float tfield = field;
 	private boolean isometric = true;
 	private final float pi2 = (float)(Math.PI * 2);
+	private double tf = 1.0;
 
 	public SOrthoCam(String... args) {
-	    PosixArgs opt = PosixArgs.getopt(args, "enif");
+	    PosixArgs opt = PosixArgs.getopt(args, "enift:");
 	    for(char c : opt.parsed()) {
 		switch(c) {
 		case 'e':
@@ -394,11 +395,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		case 'f':
 		    isometric = false;
 		    break;
+		case 't':
+		    tf = Double.parseDouble(opt.arg);
+		    break;
 		}
 	    }
 	}
 
 	public void tick2(double dt) {
+	    dt *= tf;
 	    float cf = 1f - (float)Math.pow(500, -dt);
 	    Coord3f mc = getcc();
 	    mc.y = -mc.y;
