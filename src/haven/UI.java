@@ -225,11 +225,8 @@ public class UI {
 	private CommandQueue() {}
 
 	private void run(Command cmd) {
-	    try {
-		cmd.action.run();
-	    } finally {
-		finish(cmd);
-	    }
+	    cmd.action.run();
+	    finish(cmd);
 	}
 
 	private void execute(Command cmd) {
