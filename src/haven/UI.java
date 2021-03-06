@@ -324,7 +324,25 @@ public class UI {
 	    afterdraws.clear();
 	}
     }
-	
+
+    private Collection<Integer> or_deps = null, or_bars = null;
+
+    private void submitcmd(Command cmd) {
+	synchronized(queue) {
+	    if(or_deps != null) {
+		cmd.deps.clear();
+		cmd.deps.addAll(or_deps);
+		or_deps = null;
+	    }
+	    if(or_bars != null) {
+		cmd.bars.clear();
+		cmd.bars.addAll(or_bars);
+		or_bars = null;
+	    }
+	}
+	queue.submit(cmd);
+    }
+
     private class NewWidget implements Runnable {
 	final int id;
 	Widget.Factory type;
@@ -361,11 +379,11 @@ public class UI {
     }
 
     public void newwidget(int id, Widget.Factory type, Object... cargs) {
-	queue.submit(new Command(new NewWidget(id, type, cargs)).dep(id, true));
+	submitcmd(new Command(new NewWidget(id, type, cargs)).dep(id, true));
     }
 
     public void newwidget(int id, String type, Object... cargs) throws InterruptedException {
-	queue.submit(new Command(new NewWidget(id, type, cargs)).dep(id, true));
+	submitcmd(new Command(new NewWidget(id, type, cargs)).dep(id, true));
     }
 
     private final MultiMap<Integer, Integer> shadowchildren = new HashMultiMap<>();
@@ -394,7 +412,14 @@ public class UI {
 			return(String.format("#<addwdg %d @ %d %s>", id, parent, Arrays.asList(pargs)));
 		    }
 	    };
-	    queue.submit(new Command(act).dep(id, true).dep(parent, true));
+	    submitcmd(new Command(act).dep(id, true).dep(parent, true));
+	}
+    }
+
+    public void wdgbarrier(Collection<Integer> deps, Collection<Integer> bars) {
+	synchronized(queue) {
+	    or_deps = deps;
+	    or_bars = (bars == null) ? deps : bars;
 	}
     }
 
@@ -494,7 +519,7 @@ public class UI {
 	    Command cmd = new Command(act).dep(id, true);
 	    if(parent != null)
 		cmd.dep(parent, true);
-	    queue.submit(cmd);
+	    submitcmd(cmd);
 	}
     }
 	
@@ -525,7 +550,7 @@ public class UI {
 		    return(String.format("#<wdgmsg %d %s %s>", id, msg, Arrays.asList(args)));
 		}
 	    };
-	queue.submit(new Command(act).dep(id, true));
+	submitcmd(new Command(act).dep(id, true));
     }
 
     private void setmods(InputEvent ev) {
