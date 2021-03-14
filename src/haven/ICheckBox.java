@@ -26,13 +26,12 @@
 
 package haven;
 
-import java.util.function.*;
 import java.awt.image.BufferedImage;
 
-public class ICheckBox extends Widget {
+public class ICheckBox extends ACheckBox {
     public final Tex up, down, hoverup, hoverdown;
     private final BufferedImage img;
-    public boolean h, a;
+    public boolean h;
 
     @RName("ichk")
     public static class $_ implements Factory {
@@ -85,43 +84,12 @@ public class ICheckBox extends Widget {
         super.draw(g);
     }
 
-    public Supplier<Boolean> state = () -> this.a;
-    public ICheckBox state(Supplier<Boolean> state) {this.state = state; return(this);}
-    public boolean state() {
-	return(state.get());
-    }
-
     public boolean checkhit(Coord c) {
 	if(!c.isect(Coord.z, sz))
 	    return(false);
 	if((img == null) || img.getRaster().getNumBands() < 4)
 	    return(true);
 	return(img.getRaster().getSample(c.x, c.y, 3) >= 128);
-    }
-
-    public Consumer<Boolean> changed = a -> {
-	if(canactivate)
-	    wdgmsg("ch", a ? 1 : 0);
-    };
-    public ICheckBox changed(Consumer<Boolean> changed) {this.changed = changed; return(this);}
-    public void changed(boolean val) {changed.accept(val);}
-
-    public Consumer<Boolean> set = a -> {
-	if(this.a != a) {
-	    this.a = a;
-	    changed(a);
-	}
-    };
-    public ICheckBox set(Consumer<Boolean> set) {this.set = set; return(this);}
-    public void set(boolean a) {set.accept(a);}
-
-    public Runnable click = () -> set(!state());
-    public ICheckBox click(Runnable click) {this.click = click; return(this);}
-    public void click() {click.run();}
-
-    public boolean gkeytype(java.awt.event.KeyEvent ev) {
-	click();
-	return(true);
     }
 
     public boolean mousedown(Coord c, int button) {
@@ -140,13 +108,5 @@ public class ICheckBox extends Widget {
 	if(!checkhit(c))
 	    return(null);
 	return(super.tooltip(c, prev));
-    }
-
-    public void uimsg(String msg, Object... args) {
-	if(msg == "ch") {
-	    this.a = ((Integer)args[0]) != 0;
-	} else {
-	    super.uimsg(msg, args);
-	}
     }
 }
