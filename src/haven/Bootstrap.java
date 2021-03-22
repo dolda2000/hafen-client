@@ -187,27 +187,9 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		    ui.destroy(1);
 		    break retry;
 		} else if(sess.connfailed != 0) {
-		    String error;
-		    switch(sess.connfailed) {
-		    case 1:
-			error = "Invalid authentication token";
-			break;
-		    case 2:
-			error = "Already logged in";
-			break;
-		    case 3:
-			error = "Could not connect to server";
-			break;
-		    case 4:
-			error = "This client is too old";
-			break;
-		    case 5:
-			error = "Authentication token expired";
-			break;
-		    default:
+		    String error = sess.connerror;
+		    if(error == null)
 			error = "Connection failed";
-			break;
-		    }
 		    ui.uimsg(1, "error", error);
 		    sess = null;
 		    continue retry;

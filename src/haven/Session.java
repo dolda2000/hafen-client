@@ -49,6 +49,7 @@ public class Session implements Resource.Resolver {
     public static final int SESSERR_CONN = 3;
     public static final int SESSERR_PVER = 4;
     public static final int SESSERR_EXPR = 5;
+    public static final int SESSERR_MESG = 6;
 
     static final int ackthresh = 30;
 
@@ -57,6 +58,7 @@ public class Session implements Resource.Resolver {
     Thread rworker, sworker;
     Object[] args;
     public int connfailed = 0;
+    public String connerror = null;
     public String state = "conn";
     int tseq = 0, rseq = 0;
     int ackseq;
@@ -347,6 +349,28 @@ public class Session implements Resource.Resolver {
 				    state = "";
 				} else {
 				    connfailed = error;
+				    switch(connfailed) {
+				    case SESSERR_AUTH:
+					connerror = "Invalid authentication token";
+					break;
+				    case SESSERR_BUSY:
+					connerror = "Already logged in";
+					break;
+				    case SESSERR_CONN:
+					connerror = "Could not connect to server";
+					break;
+				    case SESSERR_PVER:
+					connerror = "This client is too old";
+					break;
+				    case SESSERR_EXPR:
+					connerror = "Authentication token expired";
+					break;
+				    case SESSERR_MESG:
+					connerror = msg.string();
+					break;
+				    default:
+					connerror = "Connection failed";
+				    }
 				    Session.this.close();
 				}
 				Session.this.notifyAll();
