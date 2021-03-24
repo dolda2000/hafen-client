@@ -423,6 +423,10 @@ public abstract class Message {
 		adduint8(T_FCOORD64);
 		addfloat64(((Coord2d)o).x);
 		addfloat64(((Coord2d)o).y);
+	    } else if(o instanceof Object[]) {
+		adduint8(T_TTOL);
+		addlist((Object[])o);
+		adduint8(T_END);
 	    } else {
 		throw(new RuntimeException("Cannot encode a " + o.getClass() + " as TTO"));
 	    }
