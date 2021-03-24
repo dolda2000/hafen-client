@@ -886,6 +886,15 @@ public class Utils {
 		if(o > 0) out.print(' ');
 		out.printf("%02x", arr[i + o]);
 	    }
+	    for(int o = (Math.min(width, arr.length - i) * 3) - 1, w = (width * 3) - 1 + 8; o < w; o++)
+		out.print(' ');
+	    for(int o = 0; (o < width) && (i + o < arr.length); o++) {
+		int b = arr[i + o] & 0xff;
+		if((b < 32) || (b >= 127))
+		    out.print('.');
+		else
+		    out.print((char)b);
+	    }
 	    out.print('\n');
 	}
     }
@@ -902,6 +911,15 @@ public class Utils {
 	    for(int o = 0; (o < width) && (i + o < arr.capacity()); o++) {
 		if(o > 0) out.print(' ');
 		out.printf("%02x", arr.get(i + o) & 0xff);
+	    }
+	    for(int o = (Math.min(width, arr.capacity() - i) * 3) - 1, w = (width * 3) - 1 + 8; o < w; o++)
+		out.print(' ');
+	    for(int o = 0; (o < width) && (i + o < arr.capacity()); o++) {
+		int b = arr.get(i + o) & 0xff;
+		if((b < 32) || (b >= 127))
+		    out.print('.');
+		else
+		    out.print((char)b);
 	    }
 	    out.print('\n');
 	}
