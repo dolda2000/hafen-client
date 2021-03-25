@@ -217,7 +217,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		    cookie = auth.getcookie();
 		    if(savepw) {
 			setpref("savedtoken-" + acctname, Utils.byte2hex(auth.gettoken()));
-			setpref("tokenname", acctname);
+			setpref("tokenname", tokenname = acctname);
 		    }
 		} catch(UnknownHostException e) {
 		    ui.uimsg(1, "error", "Could not locate server");
