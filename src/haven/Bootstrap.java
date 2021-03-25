@@ -172,8 +172,9 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			if(msg.name == "login") {
 			    break;
 			} else if(msg.name == "forget") {
-			    tokenname = "";
+			    setpref("savedtoken-" + tokenname, "");
 			    setpref("tokenname", "");
+			    tokenname = "";
 			    continue retry;
 			}
 		    }
