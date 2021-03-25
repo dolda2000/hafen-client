@@ -117,7 +117,7 @@ public class AuthClient {
 	public static TokenInfo forhost() {
 	    TokenInfo ret = new TokenInfo();
 	    if((ret.id = Utils.getprefb("token-id", ret.id)).length == 0) {
-		ret.id = new byte[32];
+		ret.id = new byte[16];
 		new java.security.SecureRandom().nextBytes(ret.id);
 		Utils.setprefb("token-id", ret.id);
 	    }
