@@ -30,7 +30,7 @@ import java.io.*;
 import java.net.*;
 import java.security.MessageDigest;
 
-public class AuthClient {
+public class AuthClient implements Closeable {
     private static final SslHelper ssl;
     private Socket sk;
     private InputStream skin;
