@@ -156,6 +156,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			    }
 			}
 			ui.uimsg(1, "error", "Launcher login expired");
+			inittoken = null;
 			continue retry;
 		    }
 		} catch(java.io.IOException e) {
