@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.io.*;
 import java.net.*;
 import java.util.*;
 
@@ -131,35 +132,33 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		initcookie = null;
 	    } else if((inituser != null) && (inittoken != null)) {
 		ui.uimsg(1, "prg", "Authenticating...");
-		try {
-		    authed: try(AuthClient auth = new AuthClient(authserver, authport)) {
-			if(!Arrays.equals(inittoken, getprefb("lasttoken-" + inituser, null, false))) {
-			    String authed = auth.trytoken(inituser, inittoken);
-			    setpref("lasttoken-" + inituser, Utils.byte2hex(inittoken));
-			    if(authed != null) {
-				acctname = authed;
-				cookie = auth.getcookie();
-				setpref("savedtoken-" + authed, Utils.byte2hex(auth.gettoken()));
-				setpref("tokenname", authed);
-				break authed;
-			    }
+		authed: try(AuthClient auth = new AuthClient(authserver, authport)) {
+		    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + inituser, null, false))) {
+			String authed = auth.trytoken(inituser, inittoken);
+			setpref("lasttoken-" + inituser, Utils.byte2hex(inittoken));
+			if(authed != null) {
+			    acctname = authed;
+			    cookie = auth.getcookie();
+			    setpref("savedtoken-" + authed, Utils.byte2hex(auth.gettoken()));
+			    setpref("tokenname", authed);
+			    break authed;
 			}
-			if((token = getprefb("savedtoken-" + inituser, null, false)) != null) {
-			    String authed = auth.trytoken(inituser, token);
-			    if(authed == null) {
-				setpref("savedtoken-" + inituser, "");
-			    } else {
-				acctname = authed;
-				cookie = auth.getcookie();
-				setpref("tokenname", authed);
-				break authed;
-			    }
-			}
-			ui.uimsg(1, "error", "Launcher login expired");
-			inittoken = null;
-			continue retry;
 		    }
-		} catch(java.io.IOException e) {
+		    if((token = getprefb("savedtoken-" + inituser, null, false)) != null) {
+			String authed = auth.trytoken(inituser, token);
+			if(authed == null) {
+			    setpref("savedtoken-" + inituser, "");
+			} else {
+			    acctname = authed;
+			    cookie = auth.getcookie();
+			    setpref("tokenname", authed);
+			    break authed;
+			}
+		    }
+		    ui.uimsg(1, "error", "Launcher login expired");
+		    inittoken = null;
+		    continue retry;
+		} catch(IOException e) {
 		    ui.uimsg(1, "error", e.getMessage());
 		    continue retry;
 		}
@@ -179,17 +178,15 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		    }
 		}
 		ui.uimsg(1, "prg", "Authenticating...");
-		try {
-		    try(AuthClient auth = new AuthClient(authserver, authport)) {
-			if((acctname = auth.trytoken(tokenname, token)) == null) {
-			    token = null;
-			    setpref("savedtoken-" + tokenname, "");
-			    ui.uimsg(1, "error", "Invalid save");
-			    continue retry;
-			}
-			cookie = auth.getcookie();
+		try(AuthClient auth = new AuthClient(authserver, authport)) {
+		    if((acctname = auth.trytoken(tokenname, token)) == null) {
+			token = null;
+			setpref("savedtoken-" + tokenname, "");
+			ui.uimsg(1, "error", "Invalid save");
+			continue retry;
 		    }
-		} catch(java.io.IOException e) {
+		    cookie = auth.getcookie();
+		} catch(IOException e) {
 		    ui.uimsg(1, "error", e.getMessage());
 		    continue retry;
 		}
@@ -208,24 +205,22 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		    }
 		}
 		ui.uimsg(1, "prg", "Authenticating...");
-		try {
-		    try(AuthClient auth = new AuthClient(authserver, authport)) {
-			try {
-			    acctname = creds.tryauth(auth);
-			} catch(AuthClient.Credentials.AuthException e) {
-			    ui.uimsg(1, "error", e.getMessage());
-			    continue retry;
-			}
-			cookie = auth.getcookie();
-			if(savepw) {
-			    setpref("savedtoken-" + acctname, Utils.byte2hex(auth.gettoken()));
-			    setpref("tokenname", acctname);
-			}
+		try(AuthClient auth = new AuthClient(authserver, authport)) {
+		    try {
+			acctname = creds.tryauth(auth);
+		    } catch(AuthClient.Credentials.AuthException e) {
+			ui.uimsg(1, "error", e.getMessage());
+			continue retry;
+		    }
+		    cookie = auth.getcookie();
+		    if(savepw) {
+			setpref("savedtoken-" + acctname, Utils.byte2hex(auth.gettoken()));
+			setpref("tokenname", acctname);
 		    }
 		} catch(UnknownHostException e) {
 		    ui.uimsg(1, "error", "Could not locate server");
 		    continue retry;
-		} catch(java.io.IOException e) {
+		} catch(IOException e) {
 		    ui.uimsg(1, "error", e.getMessage());
 		    continue retry;
 		}
