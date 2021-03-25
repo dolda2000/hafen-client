@@ -132,6 +132,8 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		initcookie = null;
 	    } else if((inituser != null) && (inittoken != null)) {
 		ui.uimsg(1, "prg", "Authenticating...");
+		byte[] inittoken = this.inittoken;
+		this.inittoken = null;
 		authed: try(AuthClient auth = new AuthClient(authserver, authport)) {
 		    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + inituser, null, false))) {
 			String authed = auth.trytoken(inituser, inittoken);
@@ -156,7 +158,6 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			}
 		    }
 		    ui.uimsg(1, "error", "Launcher login expired");
-		    inittoken = null;
 		    continue retry;
 		} catch(IOException e) {
 		    ui.uimsg(1, "error", e.getMessage());
