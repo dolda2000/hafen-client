@@ -73,6 +73,10 @@ public class LoginScreen extends Widget {
 		setfocus(user);
 	    else
 		setfocus(pass);
+	    savepass.settip("Saving your login does not save your password, but rather " +
+			    "a randomly generated token that will be used to log in. " +
+			    "You can manage your saved tokens in your Account Settings.",
+			    true);
 	    LoginScreen.this.adda(this, bgc.adds(0, 10), 0.5, 0.0);
 	}
 
