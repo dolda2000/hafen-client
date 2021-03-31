@@ -125,6 +125,7 @@ public class AuthClient implements Closeable {
 		try {
 		    ret.desc = InetAddress.getLocalHost().getHostName();
 		} catch(UnknownHostException e) {
+		    ret.desc = "";
 		}
 	    }
 	    return(ret);
