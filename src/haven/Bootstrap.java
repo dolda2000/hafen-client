@@ -238,7 +238,6 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	    while(true) {
 		if(sess.state == "") {
 		    setpref("loginname", loginname);
-		    ui.destroy(1);
 		    break retry;
 		} else if(sess.connfailed != 0) {
 		    String error = sess.connerror;
@@ -253,6 +252,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		}
 	    }
 	} while(true);
+	ui.destroy(1);
 	haven.error.ErrorHandler.setprop("usr", sess.username);
 	return(new RemoteUI(sess));
     }
