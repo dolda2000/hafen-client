@@ -73,6 +73,17 @@ public class MapFile {
 	return(store.store(mangle(String.format(ctl, args))));
     }
 
+    public static void warn(Throwable cause, String msg) {
+	Debug.log.printf("mapfile warning: %s\n", msg);
+	new Warning(cause, msg).issue();
+    }
+    public static void warn(Throwable cause, String fmt, Object... args) {
+	warn(cause, String.format(fmt, args));
+    }
+    public static void warn(String fmt, Object... args) {
+	warn(null, fmt, args);
+    }
+
     public static MapFile load(ResCache store, String filename) {
 	MapFile file = new MapFile(store, filename);
 	InputStream fp;
@@ -95,11 +106,11 @@ public class MapFile {
 			file.smarkers.put(((SMarker)mark).oid, (SMarker)mark);
 		}
 	    } else {
-		Debug.log.printf("mapfile warning: unknown mapfile index version: %d\n", ver);
+		warn("unknown mapfile index version: %d", ver);
 		return(null);
 	    }
 	} catch(Message.BinError e) {
-	    Debug.log.printf("mapfile warning: error when loading index: %s\n", e);
+	    warn(e, "error when loading index: %s", e);
 	    return(null);
 	}
 	return(file);
@@ -156,7 +167,7 @@ public class MapFile {
 		    throw(new Message.FormatError("Unknown gridinfo version: " + ver));
 		}
 	    } catch(Message.BinError e) {
-		Debug.log.printf("mapfile warning: error when loading gridinfo for %x: %s\n", id, e);
+		warn(e, "error when loading gridinfo for %x: %s", id, e);
 		return(null);
 	    }
 	}, (id, info) -> {
@@ -407,7 +418,7 @@ public class MapFile {
 		} catch(Loading l) {
 		    throw(l);
 		} catch(Exception e) {
-		    Debug.log.printf("mapfile warning: could not load tileset resource %s(v%d): %s\n", tilesets[t].res.name, tilesets[t].res.ver, e);
+		    warn(e, "could not load tileset resource %s(v%d): %s", tilesets[t].res.name, tilesets[t].res.ver, e);
 		}
 		if(r != null) {
 		    Resource.Image ir = r.layer(Resource.imgc);
@@ -660,7 +671,7 @@ public class MapFile {
 	    try {
 		fp = file.sfetch("grid-%x", id);
 	    } catch(IOException e) {
-		Debug.log.printf("mapfile warning: error when locating grid %x: %s\n", id, e);
+		warn(e, "error when locating grid %x: %s", id, e);
 		return(null);
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
@@ -685,7 +696,7 @@ public class MapFile {
 		    throw(new Message.FormatError(String.format("Unknown grid data version for %x: %d", id, ver)));
 		}
 	    } catch(Message.BinError e) {
-		Debug.log.printf("mapfile warning: error when loading grid %x: %s\n", id, e);
+		warn(e, "error when loading grid %x: %s", id, e);
 		return(null);
 	    }
 	}
@@ -863,7 +874,7 @@ public class MapFile {
 	    } catch(FileNotFoundException e) {
 		return(null);
 	    } catch(IOException e) {
-		Debug.log.printf("mapfile warning: error when locating zoomgrid (%d, %d) in %x@%d: %s\n", sc.x, sc.y, seg, lvl, e);
+		warn(e, "error when locating zoomgrid (%d, %d) in %x@%d: %s", sc.x, sc.y, seg, lvl, e);
 		return(null);
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
@@ -897,7 +908,7 @@ public class MapFile {
 		    throw(new Message.FormatError(String.format("Unknown zoomgrid data version for (%d, %d) in %x@%d: %d", sc.x, sc.y, seg, lvl, ver)));
 		}
 	    } catch(Message.BinError e) {
-		Debug.log.printf("Could not load zoomgrid for (%d, %d) in %x@%d: %s", sc.x, sc.y, seg, lvl, e);
+		warn(e, "could not load zoomgrid for (%d, %d) in %x@%d: %s", sc.x, sc.y, seg, lvl, e);
 		return(null);
 	    }
 	}
@@ -910,7 +921,7 @@ public class MapFile {
 		} catch(FileNotFoundException e) {
 		    return(lvl - 1);
 		} catch(IOException e) {
-		    Debug.log.printf("mapfile warning: error when invalidating zoomgrid (%d, %d) in %x@%d: %s\n", sc.x, sc.y, seg, lvl, e);
+		    warn(e, "error when invalidating zoomgrid (%d, %d) in %x@%d: %s", sc.x, sc.y, seg, lvl, e);
 		    return(lvl - 1);
 		}
 		try {
@@ -1248,7 +1259,7 @@ public class MapFile {
 		    throw(new Message.FormatError("Unknown segment data version: " + ver));
 		}
 	    } catch(Message.BinError e) {
-		Debug.log.printf("mapfile warning: error when loading segment %x: %s\n", id, e);
+		warn(e, "error when loading segment %x: %s", id, e);
 		return(null);
 	    }
 	}, (id, seg) -> {
@@ -1320,11 +1331,11 @@ public class MapFile {
 		if(moff == null) {
 		    Coord psc = seg.map.reverse().get(g.id);
 		    if(psc == null) {
-			Debug.log.printf("mapfile warning: grid %x is oddly gone from segment %x; was at %s\n", g.id, seg.id, info.sc);
+			warn("grid %x is oddly gone from segment %x; was at %s", g.id, seg.id, info.sc);
 			missing.add(g);
 			continue;
 		    } else if(!psc.equals(info.sc)) {
-			Debug.log.printf("mapfile warning: segment-offset mismatch for grid %x in segment %x: segment has %s, gridinfo has %s\n", g.id, seg.id, psc, info.sc);
+			warn("segment-offset mismatch for grid %x in segment %x: segment has %s, gridinfo has %s", g.id, seg.id, psc, info.sc);
 			missing.add(g);
 			continue;
 		    }
