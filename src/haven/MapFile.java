@@ -941,6 +941,10 @@ public class MapFile {
 	    ZoomCoord that = (ZoomCoord)o;
 	    return((this.lvl == that.lvl) && this.c.equals(that.c));
 	}
+
+	public String toString() {
+	    return(String.format("(%d, %d @ %d)", c.x, c.y, lvl));
+	}
     }
 
     public class Segment {
@@ -1057,10 +1061,15 @@ public class MapFile {
 	    map.put(sc, id);
 	    int zl = ZoomGrid.inval(MapFile.this, this.id, sc);
 	    synchronized(zcache) {
-		for(int lvl = 1; lvl < zl; lvl++) {
-		    ZoomCoord zc = new ZoomCoord(lvl, new Coord(sc.x & ~((1 << lvl) - 1), sc.y & ~((1 << lvl) - 1)));
-		    ByZCoord zg = zcache.get(zc);
-		    if(zg != null) {
+		/* XXX? Not sure how nice it is to iterate through the
+		 * entire zcache to do invalidations, but I also don't
+		 * think it ought to tend to be enormously large.
+		 * Perhaps keep a hierarchical zcache per level, and
+		 * only iterate all the levels? */
+		for(Map.Entry<ZoomCoord, ByZCoord> ent : zcache.entrySet()) {
+		    ZoomCoord zc = ent.getKey();
+		    if((zc.c.x == (sc.x & ~((1 << zc.lvl) - 1))) && (zc.c.y == (sc.y & ~((1 << zc.lvl) - 1)))) {
+			ByZCoord zg = ent.getValue();
 			zg.loading = loadzgrid(zc);
 			zg.loaded = null;
 		    }
