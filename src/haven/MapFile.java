@@ -1464,6 +1464,14 @@ public class MapFile {
 	    for(Pair<Coord, Long> gd : gridbuf) {
 		prog.grid(nseg, segbuf.size(), ngrid++, gridbuf.size());
 		Grid grid = Grid.load(this, gd.b);
+		if(grid == null) {
+		    /* This /should/ never happen, but for unknown
+		     * reasons (crashes? reboots?) some grids can be
+		     * included but missing. It's not like they'll be
+		     * coming back by any other means, however, so
+		     * just ignore them here. */
+		    continue;
+		}
 		MessageBuf buf = new MessageBuf();
 		buf.adduint8(2);
 		buf.addint64(gd.b);
