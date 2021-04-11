@@ -1032,6 +1032,7 @@ public class MapFile {
 	private class ByZCoord implements Indir<ZoomGrid> {
 	    final ZoomCoord zc;
 	    ZoomGrid loaded;
+	    boolean got = false;
 	    Future<ZoomGrid> loading;
 
 	    ByZCoord(ZoomCoord zc, Future<ZoomGrid> loading) {
@@ -1040,8 +1041,16 @@ public class MapFile {
 	    }
 
 	    public ZoomGrid get() {
-		if(loaded == null)
-		    loaded = loading.get(0);
+		if(loading != null) {
+		    try {
+			loaded = loading.get(0);
+			got = true;
+			loading = null;
+		    } catch(Loading l) {
+			if(!got)
+			    throw(l);
+		    }
+		}
 		return(loaded);
 	    }
 	}
@@ -1082,7 +1091,6 @@ public class MapFile {
 		    if((zc.c.x == (sc.x & ~((1 << zc.lvl) - 1))) && (zc.c.y == (sc.y & ~((1 << zc.lvl) - 1)))) {
 			ByZCoord zg = ent.getValue();
 			zg.loading = loadzgrid(zc);
-			zg.loaded = null;
 		    }
 		}
 	    }
