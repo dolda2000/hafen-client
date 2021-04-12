@@ -313,6 +313,8 @@ public class Audio {
 	    }
 	    return(ns);
 	}
+
+	public Resampler sp(double sp) {this.sp = sp; return(this);}
     }
 
     public static class Monitor implements CS {

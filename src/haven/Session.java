@@ -273,10 +273,17 @@ public class Session implements Resource.Resolver {
 	    } else if(msg.type == RMessage.RMSG_PARTY) {
 		glob.party.msg(msg);
 	    } else if(msg.type == RMessage.RMSG_SFX) {
-		Indir<Resource> res = getres(msg.uint16());
+		Indir<Resource> resid = getres(msg.uint16());
 		double vol = ((double)msg.uint16()) / 256.0;
 		double spd = ((double)msg.uint16()) / 256.0;
-		Audio.play(res);
+		glob.loader.defer(() -> {
+			Audio.CS clip = Audio.fromres(resid.get());
+			if(spd != 1.0)
+			    clip = new Audio.Resampler(clip).sp(spd);
+			if(vol != 1.0)
+			    clip = new Audio.VolAdjust(clip, vol);
+			Audio.play(clip);
+		    }, null);
 	    } else if(msg.type == RMessage.RMSG_CATTR) {
 		glob.cattr(msg);
 	    } else if(msg.type == RMessage.RMSG_MUSIC) {
