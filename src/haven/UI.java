@@ -469,6 +469,13 @@ public class UI {
 	audio.clear();
     }
 
+    public void sfx(Audio.CS clip) {
+	Audio.play(clip);
+    }
+    public void sfx(Resource clip) {
+	sfx(Audio.fromres(clip));
+    }
+
     public static double scale(double v) {
 	return(v * scalef);
     }

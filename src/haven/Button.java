@@ -184,11 +184,11 @@ public class Button extends SIWidget {
     }
 
     protected void depress() {
-	Audio.play(click);
+	ui.sfx(click);
     }
 
     protected void unpress() {
-	Audio.play(click);
+	ui.sfx(click);
     }
 
     public boolean mousedown(Coord c, int button) {
