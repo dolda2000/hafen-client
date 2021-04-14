@@ -29,6 +29,7 @@ package haven;
 import java.awt.RenderingHints;
 import java.io.*;
 import java.nio.*;
+import java.nio.file.*;
 import java.net.URL;
 import java.lang.ref.*;
 import java.lang.reflect.*;
@@ -80,7 +81,17 @@ public class Utils {
 	    }
 	}
     }
-	
+
+    public static Path path(String path) {
+	return(FileSystems.getDefault().getPath(path));
+    }
+
+    public static Path pj(Path base, String... els) {
+	for(String el : els)
+	    base = base.resolve(el);
+	return(base);
+    }
+
     public static int drawtext(Graphics g, String text, Coord c) {
 	java.awt.FontMetrics m = g.getFontMetrics();
 	g.drawString(text, c.x, c.y + m.getAscent());
