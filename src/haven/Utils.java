@@ -810,7 +810,7 @@ public class Utils {
 		    return(task.run());
 		} catch(RuntimeException | IOException exc) {
 		    if(last == null)
-			new Warning(exc, "weird I/O error occurred").issue();
+			new Warning(exc, "weird I/O error occurred on " + String.valueOf(task)).issue();
 		    if(last != null)
 			exc.addSuppressed(last);
 		    last = exc;
