@@ -372,11 +372,13 @@ public class HashDirCache implements ResCache {
 
 		public void close() throws IOException {
 		    st.close();
-		    try {
-			Files.move(tmp, path, StandardCopyOption.ATOMIC_MOVE);
-		    } catch(AtomicMoveNotSupportedException e) {
-			Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING);
-		    }
+		    Utils.ioretry(() -> {
+			    try {
+				return(Files.move(tmp, path, StandardCopyOption.ATOMIC_MOVE));
+			    } catch(AtomicMoveNotSupportedException e) {
+				return(Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING));
+			    }
+			});
 		}
 	    });
     }
