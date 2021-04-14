@@ -169,43 +169,14 @@ public class HashDirCache implements ResCache {
     }
 
     private static FileChannel open2(Path path, OpenOption... mode) throws IOException {
-	double[] retimes = {0.01, 0.1, 0.5, 1.0, 5.0};
-	Throwable last = null;
-	boolean intr = false;
-	try {
-	    for(int r = 0; true; r++) {
-		/* XXX: Sometimes, this is getting strange and weird
-		 * OS errors on Windows. For example, file sharing
-		 * violations are sometimes returned even though Java
-		 * always opens RandomAccessFiles in non-exclusive
-		 * mode, and other times, permission is spuriously
-		 * denied. I've had zero luck in trying to find a root
-		 * cause for these errors, so just assume the error is
-		 * transient and retry. :P */
-		try {
-		    return(FileChannel.open(path, mode));
-		} catch(RuntimeException | IOException exc) {
-		    if(last == null)
-			new Warning(exc, "weird error occurred when locking cache file " + path).issue();
-		    if(last != null)
-			exc.addSuppressed(last);
-		    last = exc;
-		    if(r < retimes.length) {
-			try {
-			    Thread.sleep((long)(retimes[r] * 1000));
-			} catch(InterruptedException irq) {
-			    Thread.currentThread().interrupted();
-			    intr = true;
-			}
-		    } else {
-			throw(exc);
-		    }
-		}
-	    }
-	} finally {
-	    if(intr)
-		Thread.currentThread().interrupt();
-	}
+	/* XXX: Sometimes, this is getting strange and weird OS errors
+	 * on Windows. For example, file sharing violations are
+	 * sometimes returned even though Java always opens
+	 * RandomAccessFiles in non-exclusive mode, and other times,
+	 * permission is spuriously denied. I've had zero luck in
+	 * trying to find a root cause for these errors, so just
+	 * assume the error is transient and retry. :P */
+	return(Utils.ioretry(() -> FileChannel.open(path, mode)));
     }
 
     /* These locks should never have to be waited for long at all, so
