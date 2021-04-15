@@ -1067,7 +1067,7 @@ public class MapFile {
 	}
 
 	public Indir<? extends DataGrid> grid(int lvl, Coord gc) {
-	    if((lvl < 0) || ((gc.x & ((1 << lvl) - 1)) != 0) || ((gc.x & ((1 << lvl) - 1)) != 0))
+	    if((lvl < 0) || ((gc.x & ((1 << lvl) - 1)) != 0) || ((gc.y & ((1 << lvl) - 1)) != 0))
 		throw(new IllegalArgumentException(String.format("%s %s", gc, lvl)));
 	    if(lvl == 0)
 		return(grid(gc));
