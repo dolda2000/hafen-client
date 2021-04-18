@@ -48,6 +48,7 @@ public class MapWnd extends Window implements Console.Directory {
     public final MiniMap view;
     public final MapView mv;
     public final Toolbox tool;
+    public final Collection<String> overlays = new HashSet<>();
     public boolean hmarkers = false;
     private final Locator player;
     private final Widget toolbar;
@@ -224,6 +225,21 @@ public class MapWnd extends Window implements Console.Directory {
     private class View extends MiniMap {
 	View(MapFile file) {
 	    super(file);
+	}
+
+	public void drawgrid(GOut g, Coord ul, DisplayGrid disp) {
+	    super.drawgrid(g, ul, disp);
+	    for(String tag : overlays) {
+		try {
+		    Tex img = disp.olimg(tag);
+		    if(img != null) {
+			g.chcolor(255, 255, 255, 64);
+			g.image(img, ul, UI.scale(img.sz()));
+		    }
+		} catch(Loading l) {
+		}
+	    }
+	    g.chcolor();
 	}
 
 	public void drawmarkers(GOut g) {
