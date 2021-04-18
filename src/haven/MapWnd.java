@@ -107,7 +107,7 @@ public class MapWnd extends Window implements Console.Directory {
 		    Utils.setprefb("compact-map", a);
 		})
 	    .settip("Compact mode").setgkey(kb_compact);
-	toolbar.add(new ICheckBox("gfx/hud/mmap/prov", "", "-d", "-h"))
+	toolbar.add(new ICheckBox("gfx/hud/mmap/prov", "", "-d", "-h", "-dh"))
 	    .changed(a -> toggleol("realm", a))
 	    .settip("Display provinces").setgkey(kb_prov);
 	toolbar.pack();
