@@ -398,6 +398,10 @@ public class MapFile {
 	    this.olid = olid;
 	    this.ol = ol;
 	}
+
+	public boolean get(Coord c) {
+	    return(ol[c.x + (c.y * cmaps.x)]);
+	}
     }
 
     public static class DataGrid {
@@ -505,7 +509,7 @@ public class MapFile {
 		Coord c = new Coord();
 		for(c.y = 0; c.y < cmaps.y; c.y++) {
 		    for(c.x = 0; c.x < cmaps.x; c.x++) {
-			if(ol.ol[c.x + (c.y * cmaps.x)]) {
+			if(ol.get(c)) {
 			    buf.setSample(c.x, c.y, 0, ((col.getRed()   * col.getAlpha()) + (buf.getSample(c.x, c.y, 1) * (255 - col.getAlpha()))) / 255);
 			    buf.setSample(c.x, c.y, 1, ((col.getGreen() * col.getAlpha()) + (buf.getSample(c.x, c.y, 1) * (255 - col.getAlpha()))) / 255);
 			    buf.setSample(c.x, c.y, 2, ((col.getBlue()  * col.getAlpha()) + (buf.getSample(c.x, c.y, 2) * (255 - col.getAlpha()))) / 255);
@@ -926,12 +930,49 @@ public class MapFile {
 		}
 	    }
 	    ZoomGrid ret = new ZoomGrid(seg.id, lvl, sc, infos, tiles, zmap, maxmtime);
+	    zoomols(ret.ols, lower);
 	    ret.save(file);
 	    return(ret);
 	}
 
+	private static void zoomols(Collection<Overlay> buf, DataGrid[] lower) {
+	    for(int gn = 0; gn < 4; gn++) {
+		int gx = gn % 2, gy = gn / 2;
+		DataGrid cg = lower[gn];
+		if(cg == null)
+		    continue;
+		Coord off = cmaps.div(2).mul(gx, gy);
+		for(Overlay ol : cg.ols) {
+		    Overlay zol = null;
+		    for(Overlay pol : buf) {
+			if(pol.olid.name.equals(ol.olid.name)) {
+			    zol = pol;
+			    break;
+			}
+		    }
+		    for(int y = 0; y < cmaps.y / 2; y++) {
+			for(int x = 0; x < cmaps.x / 2; x++) {
+			    int n = 0;
+			    for(int sy = 0; sy < 2; sy++) {
+				for(int sx = 0; sx < 2; sx++) {
+				    Coord sgc = new Coord((x * 2) + sx, (y * 2) + sy);
+				    if(ol.get(sgc))
+					n++;
+				}
+			    }
+			    if(n >= 2) {
+				if(zol == null)
+				    buf.add(zol = new Overlay(ol.olid, new boolean[cmaps.x * cmaps.y]));
+				zol.ol[(x + off.x) + ((y + off.y) * cmaps.x)] = true;
+			    }
+			}
+		    }
+		}
+	    }
+	}
+
 	public void save(Message fp) {
-	    fp.adduint8(2);
+	    fp.adduint8(3);
 	    ZMessage z = new ZMessage(fp);
 	    z.addint64(seg);
 	    z.addint32(lvl);
@@ -945,6 +986,7 @@ public class MapFile {
 	    }
 	    z.addbytes(tiles);
 	    savez(z, zmap);
+	    saveols(z, ols);
 	    z.finish();
 	}
 
@@ -974,7 +1016,7 @@ public class MapFile {
 		if(data.eom())
 		    return(null);
 		int ver = data.uint8();
-		if((ver >= 1) && (ver <= 2)) {
+		if((ver >= 1) && (ver <= 3)) {
 		    ZMessage z = new ZMessage(data);
 		    long storedseg = z.int64();
 		    if(storedseg != seg)
@@ -996,7 +1038,10 @@ public class MapFile {
 			zmap = loadz(z, String.format("(%d, %d) in %x@d", sc.x, sc.y, seg, lvl));
 		    else
 			zmap = new float[cmaps.x * cmaps.y];
-		    return(new ZoomGrid(seg, lvl, sc, tilesets.toArray(new TileInfo[0]), tiles, zmap, mtime));
+		    ZoomGrid g = new ZoomGrid(seg, lvl, sc, tilesets.toArray(new TileInfo[0]), tiles, zmap, mtime);
+		    if(ver >= 3)
+			loadols(g.ols, z, String.format("(%d, %d) in %x@d", sc.x, sc.y, seg, lvl));
+		    return(g);
 		} else {
 		    throw(new Message.FormatError(String.format("Unknown zoomgrid data version for (%d, %d) in %x@%d: %d", sc.x, sc.y, seg, lvl, ver)));
 		}
