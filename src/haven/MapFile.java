@@ -33,6 +33,7 @@ import java.io.*;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
+import haven.render.*;
 import haven.Defer.Future;
 import static haven.MCache.cmaps;
 
@@ -389,10 +390,25 @@ public class MapFile {
 	}
     }
 
+    public static class Overlay {
+	public final Resource.Spec olid;
+	public final boolean[] ol;
+
+	public Overlay(Resource.Spec olid, boolean[] ol) {
+	    this.olid = olid;
+	    this.ol = ol;
+	}
+
+	public boolean get(Coord c) {
+	    return(ol[c.x + (c.y * cmaps.x)]);
+	}
+    }
+
     public static class DataGrid {
 	public final TileInfo[] tilesets;
 	public final byte[] tiles;
 	public final float[] zmap;
+	public final Collection<Overlay> ols = new ArrayList<>();
 	public final long mtime;
 
 	public DataGrid(TileInfo[] tilesets, byte[] tiles, float[] zmap, long mtime) {
@@ -468,6 +484,43 @@ public class MapFile {
 	    return(PUtils.rasterimg(buf));
 	}
 
+	private static Color olcol(MCache.OverlayInfo olid) {
+	    /* XXX? */
+	    Material mat = olid.mat();
+	    BufPipe st = new BufPipe();
+	    mat.states.apply(st);
+	    if(st.get(BaseColor.slot) != null) {
+		FColor bc = st.get(BaseColor.slot).color;
+		return(new Color(Math.round(bc.r * 255), Math.round(bc.g * 255),
+				 Math.round(bc.b * 255), 255));
+	    }
+	    return(null);
+	}
+
+	public BufferedImage olrender(Coord off, String tag) {
+	    WritableRaster buf = PUtils.imgraster(cmaps);
+	    for(Overlay ol : ols) {
+		MCache.ResOverlay olid = ol.olid.loadsaved().layer(MCache.ResOverlay.class);;
+		if(!olid.tags().contains(tag))
+		    continue;
+		Color col = olcol(olid);
+		if(col == null)
+		    continue;
+		Coord c = new Coord();
+		for(c.y = 0; c.y < cmaps.y; c.y++) {
+		    for(c.x = 0; c.x < cmaps.x; c.x++) {
+			if(ol.get(c)) {
+			    buf.setSample(c.x, c.y, 0, ((col.getRed()   * col.getAlpha()) + (buf.getSample(c.x, c.y, 1) * (255 - col.getAlpha()))) / 255);
+			    buf.setSample(c.x, c.y, 1, ((col.getGreen() * col.getAlpha()) + (buf.getSample(c.x, c.y, 1) * (255 - col.getAlpha()))) / 255);
+			    buf.setSample(c.x, c.y, 2, ((col.getBlue()  * col.getAlpha()) + (buf.getSample(c.x, c.y, 2) * (255 - col.getAlpha()))) / 255);
+			    buf.setSample(c.x, c.y, 3, Math.max(buf.getSample(c.x, c.y, 3), col.getAlpha()));
+			}
+		    }
+		}
+	    }
+	    return(PUtils.rasterimg(buf));
+	}
+
 	public static void savez(Message fp, float[] zmap) {
 	    float min = zmap[0], max = zmap[0];
 	    for(float z : zmap) {
@@ -535,6 +588,40 @@ public class MapFile {
 	    return(ret);
 	}
 
+	public static void saveols(Message fp, Collection<Overlay> ols) {
+	    for(Overlay ol : ols) {
+		fp.addstring(ol.olid.name);
+		fp.adduint16(ol.olid.ver);
+		for(int i = 0; i < ol.ol.length; i += 8) {
+		    int b = 0;
+		    for(int o = 0; o < Math.min(8, ol.ol.length - i); o++) {
+			if(ol.ol[i + o])
+			    b |= 1 << o;
+		    }
+		    fp.adduint8(b);
+		}
+	    }
+	    fp.addstring("");
+	}
+
+	public static void loadols(Collection<Overlay> buf, Message fp, String nm) {
+	    while(true) {
+		String resnm = fp.string();
+		if(resnm.equals(""))
+		    break;
+		int resver = fp.uint16();
+		boolean[] ol = new boolean[cmaps.x * cmaps.y];
+		for(int i = 0, p = 0; i < ol.length; i += 8) {
+		    p = fp.uint8();
+		    for(int o = 0; o < Math.min(8, ol.length - i); o++) {
+			if((p & (1 << o)) != 0)
+			    ol[i + o] = true;
+		    }
+		}
+		buf.add(new Overlay(new Resource.Spec(Resource.remote(), resnm, resver), ol));
+	    }
+	}
+
 	public static final Resource.Spec notile = new Resource.Spec(Resource.remote(), "gfx/tiles/notile", -1);
 	public static final DataGrid nogrid;
 	static {
@@ -590,6 +677,12 @@ public class MapFile {
 		zmap[i] = cg.z[i];
 	    }
 	    Grid g = new Grid(cg.id, infos, tiles, zmap, System.currentTimeMillis());
+	    for(int i = 0; i < cg.ols.length; i++) {
+		if(cg.ol[i].length != (cmaps.x * cmaps.y))
+		    throw(new AssertionError(String.valueOf(cg.ol[i].length)));
+		Resource olres = Loading.waitfor(cg.ols[i]);
+		g.ols.add(new Overlay(new Resource.Spec(olres.pool, olres.name, olres.ver), Arrays.copyOf(cg.ol[i], cg.ol[i].length)));
+	    }
 	    g.norepl = norepl;
 	    g.useq = oseq;
 	    return(g);
@@ -639,7 +732,7 @@ public class MapFile {
 	}
 
 	public void save(Message fp) {
-	    fp.adduint8(3);
+	    fp.adduint8(4);
 	    ZMessage z = new ZMessage(fp);
 	    z.addint64(id);
 	    z.addint64(mtime);
@@ -651,6 +744,7 @@ public class MapFile {
 	    }
 	    z.addbytes(tiles);
 	    savez(z, zmap);
+	    saveols(z, ols);
 	    z.finish();
 	}
 
@@ -676,7 +770,7 @@ public class MapFile {
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
 		int ver = data.uint8();
-		if((ver >= 1) && (ver <= 3)) {
+		if((ver >= 1) && (ver <= 4)) {
 		    ZMessage z = new ZMessage(data);
 		    long storedid = z.int64();
 		    if(storedid != id)
@@ -691,7 +785,10 @@ public class MapFile {
 			zmap = loadz(z, String.format("%x", id));
 		    else
 			zmap = new float[cmaps.x * cmaps.y];
-		    return(new Grid(id, tilesets.toArray(new TileInfo[0]), tiles, zmap, mtime));
+		    Grid g = new Grid(id, tilesets.toArray(new TileInfo[0]), tiles, zmap, mtime);
+		    if(ver >= 4)
+			loadols(g.ols, z, String.format("%x", id));
+		    return(g);
 		} else {
 		    throw(new Message.FormatError(String.format("Unknown grid data version for %x: %d", id, ver)));
 		}
@@ -833,12 +930,49 @@ public class MapFile {
 		}
 	    }
 	    ZoomGrid ret = new ZoomGrid(seg.id, lvl, sc, infos, tiles, zmap, maxmtime);
+	    zoomols(ret.ols, lower);
 	    ret.save(file);
 	    return(ret);
 	}
 
+	private static void zoomols(Collection<Overlay> buf, DataGrid[] lower) {
+	    for(int gn = 0; gn < 4; gn++) {
+		int gx = gn % 2, gy = gn / 2;
+		DataGrid cg = lower[gn];
+		if(cg == null)
+		    continue;
+		Coord off = cmaps.div(2).mul(gx, gy);
+		for(Overlay ol : cg.ols) {
+		    Overlay zol = null;
+		    for(Overlay pol : buf) {
+			if(pol.olid.name.equals(ol.olid.name)) {
+			    zol = pol;
+			    break;
+			}
+		    }
+		    for(int y = 0; y < cmaps.y / 2; y++) {
+			for(int x = 0; x < cmaps.x / 2; x++) {
+			    int n = 0;
+			    for(int sy = 0; sy < 2; sy++) {
+				for(int sx = 0; sx < 2; sx++) {
+				    Coord sgc = new Coord((x * 2) + sx, (y * 2) + sy);
+				    if(ol.get(sgc))
+					n++;
+				}
+			    }
+			    if(n >= 2) {
+				if(zol == null)
+				    buf.add(zol = new Overlay(ol.olid, new boolean[cmaps.x * cmaps.y]));
+				zol.ol[(x + off.x) + ((y + off.y) * cmaps.x)] = true;
+			    }
+			}
+		    }
+		}
+	    }
+	}
+
 	public void save(Message fp) {
-	    fp.adduint8(2);
+	    fp.adduint8(3);
 	    ZMessage z = new ZMessage(fp);
 	    z.addint64(seg);
 	    z.addint32(lvl);
@@ -852,6 +986,7 @@ public class MapFile {
 	    }
 	    z.addbytes(tiles);
 	    savez(z, zmap);
+	    saveols(z, ols);
 	    z.finish();
 	}
 
@@ -881,7 +1016,7 @@ public class MapFile {
 		if(data.eom())
 		    return(null);
 		int ver = data.uint8();
-		if((ver >= 1) && (ver <= 2)) {
+		if((ver >= 1) && (ver <= 3)) {
 		    ZMessage z = new ZMessage(data);
 		    long storedseg = z.int64();
 		    if(storedseg != seg)
@@ -903,7 +1038,10 @@ public class MapFile {
 			zmap = loadz(z, String.format("(%d, %d) in %x@d", sc.x, sc.y, seg, lvl));
 		    else
 			zmap = new float[cmaps.x * cmaps.y];
-		    return(new ZoomGrid(seg, lvl, sc, tilesets.toArray(new TileInfo[0]), tiles, zmap, mtime));
+		    ZoomGrid g = new ZoomGrid(seg, lvl, sc, tilesets.toArray(new TileInfo[0]), tiles, zmap, mtime);
+		    if(ver >= 3)
+			loadols(g.ols, z, String.format("(%d, %d) in %x@d", sc.x, sc.y, seg, lvl));
+		    return(g);
 		} else {
 		    throw(new Message.FormatError(String.format("Unknown zoomgrid data version for (%d, %d) in %x@%d: %d", sc.x, sc.y, seg, lvl, ver)));
 		}

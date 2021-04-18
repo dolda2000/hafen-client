@@ -48,6 +48,7 @@ public class MapWnd extends Window implements Console.Directory {
     public final MiniMap view;
     public final MapView mv;
     public final Toolbox tool;
+    public final Collection<String> overlays = new java.util.concurrent.CopyOnWriteArraySet<>();
     public boolean hmarkers = false;
     private final Locator player;
     private final Widget toolbar;
@@ -69,6 +70,7 @@ public class MapWnd extends Window implements Console.Directory {
     public static final KeyBinding kb_mark = KeyBinding.get("mapwnd/mark", KeyMatch.nil);
     public static final KeyBinding kb_hmark = KeyBinding.get("mapwnd/hmark", KeyMatch.forchar('M', KeyMatch.C));
     public static final KeyBinding kb_compact = KeyBinding.get("mapwnd/compact", KeyMatch.forchar('A', KeyMatch.M));
+    public static final KeyBinding kb_prov = KeyBinding.get("mapwnd/prov", KeyMatch.nil);
     public MapWnd(MapFile file, MapView mv, Coord sz, String title) {
 	super(sz, title, true);
 	this.file = file;
@@ -105,10 +107,20 @@ public class MapWnd extends Window implements Console.Directory {
 		    Utils.setprefb("compact-map", a);
 		})
 	    .settip("Compact mode").setgkey(kb_compact);
+	toolbar.add(new ICheckBox("gfx/hud/mmap/prov", "", "-d", "-h"))
+	    .changed(a -> toggleol("realm", a))
+	    .settip("Display provinces").setgkey(kb_prov);
 	toolbar.pack();
 	tool = add(new Toolbox());;
 	compact(Utils.getprefb("compact-map", false));
 	resize(sz);
+    }
+
+    public void toggleol(String tag, boolean a) {
+	if(a)
+	    overlays.add(tag);
+	else
+	    overlays.remove(tag);
     }
 
     private class ViewFrame extends Frame {
@@ -224,6 +236,21 @@ public class MapWnd extends Window implements Console.Directory {
     private class View extends MiniMap {
 	View(MapFile file) {
 	    super(file);
+	}
+
+	public void drawgrid(GOut g, Coord ul, DisplayGrid disp) {
+	    super.drawgrid(g, ul, disp);
+	    for(String tag : overlays) {
+		try {
+		    Tex img = disp.olimg(tag);
+		    if(img != null) {
+			g.chcolor(255, 255, 255, 64);
+			g.image(img, ul, UI.scale(img.sz()));
+		    }
+		} catch(Loading l) {
+		}
+	    }
+	    g.chcolor();
 	}
 
 	public void drawmarkers(GOut g) {
