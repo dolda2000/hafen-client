@@ -389,10 +389,21 @@ public class MapFile {
 	}
     }
 
+    public static class Overlay {
+	public final Resource.Spec olid;
+	public final boolean[] ol;
+
+	public Overlay(Resource.Spec olid, boolean[] ol) {
+	    this.olid = olid;
+	    this.ol = ol;
+	}
+    }
+
     public static class DataGrid {
 	public final TileInfo[] tilesets;
 	public final byte[] tiles;
 	public final float[] zmap;
+	public final Collection<Overlay> ols = new ArrayList<>();
 	public final long mtime;
 
 	public DataGrid(TileInfo[] tilesets, byte[] tiles, float[] zmap, long mtime) {
@@ -535,6 +546,40 @@ public class MapFile {
 	    return(ret);
 	}
 
+	public static void saveols(Message fp, Collection<Overlay> ols) {
+	    for(Overlay ol : ols) {
+		fp.addstring(ol.olid.name);
+		fp.adduint16(ol.olid.ver);
+		for(int i = 0; i < ol.ol.length; i += 8) {
+		    int b = 0;
+		    for(int o = 0; o < Math.min(8, ol.ol.length - i); o++) {
+			if(ol.ol[i + o])
+			    b |= 1 << o;
+		    }
+		    fp.adduint8(b);
+		}
+	    }
+	    fp.addstring("");
+	}
+
+	public static void loadols(Collection<Overlay> buf, Message fp, String nm) {
+	    while(true) {
+		String resnm = fp.string();
+		if(resnm.equals(""))
+		    break;
+		int resver = fp.uint16();
+		boolean[] ol = new boolean[cmaps.x * cmaps.y];
+		for(int i = 0, p = 0; i < ol.length; i += 8) {
+		    p = fp.uint8();
+		    for(int o = 0; o < Math.min(8, ol.length - i); o++) {
+			if((p & (1 << o)) != 0)
+			    ol[i + o] = true;
+		    }
+		}
+		buf.add(new Overlay(new Resource.Spec(Resource.remote(), resnm, resver), ol));
+	    }
+	}
+
 	public static final Resource.Spec notile = new Resource.Spec(Resource.remote(), "gfx/tiles/notile", -1);
 	public static final DataGrid nogrid;
 	static {
@@ -590,6 +635,12 @@ public class MapFile {
 		zmap[i] = cg.z[i];
 	    }
 	    Grid g = new Grid(cg.id, infos, tiles, zmap, System.currentTimeMillis());
+	    for(int i = 0; i < cg.ols.length; i++) {
+		if(cg.ol[i].length != (cmaps.x * cmaps.y))
+		    throw(new AssertionError(String.valueOf(cg.ol[i].length)));
+		Resource olres = Loading.waitfor(cg.ols[i]);
+		g.ols.add(new Overlay(new Resource.Spec(olres.pool, olres.name, olres.ver), Arrays.copyOf(cg.ol[i], cg.ol[i].length)));
+	    }
 	    g.norepl = norepl;
 	    g.useq = oseq;
 	    return(g);
@@ -639,7 +690,7 @@ public class MapFile {
 	}
 
 	public void save(Message fp) {
-	    fp.adduint8(3);
+	    fp.adduint8(4);
 	    ZMessage z = new ZMessage(fp);
 	    z.addint64(id);
 	    z.addint64(mtime);
@@ -651,6 +702,7 @@ public class MapFile {
 	    }
 	    z.addbytes(tiles);
 	    savez(z, zmap);
+	    saveols(z, ols);
 	    z.finish();
 	}
 
@@ -676,7 +728,7 @@ public class MapFile {
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
 		int ver = data.uint8();
-		if((ver >= 1) && (ver <= 3)) {
+		if((ver >= 1) && (ver <= 4)) {
 		    ZMessage z = new ZMessage(data);
 		    long storedid = z.int64();
 		    if(storedid != id)
@@ -691,7 +743,10 @@ public class MapFile {
 			zmap = loadz(z, String.format("%x", id));
 		    else
 			zmap = new float[cmaps.x * cmaps.y];
-		    return(new Grid(id, tilesets.toArray(new TileInfo[0]), tiles, zmap, mtime));
+		    Grid g = new Grid(id, tilesets.toArray(new TileInfo[0]), tiles, zmap, mtime);
+		    if(ver >= 4)
+			loadols(g.ols, z, String.format("%x", id));
+		    return(g);
 		} else {
 		    throw(new Message.FormatError(String.format("Unknown grid data version for %x: %d", id, ver)));
 		}
