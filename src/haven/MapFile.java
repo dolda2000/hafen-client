@@ -33,6 +33,7 @@ import java.io.*;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
+import haven.render.*;
 import haven.Defer.Future;
 import static haven.MCache.cmaps;
 
@@ -473,6 +474,43 @@ public class MapFile {
 			buf.setSample(c.x, c.y, 1, 0);
 			buf.setSample(c.x, c.y, 2, 0);
 			buf.setSample(c.x, c.y, 3, 255);
+		    }
+		}
+	    }
+	    return(PUtils.rasterimg(buf));
+	}
+
+	private static Color olcol(MCache.OverlayInfo olid) {
+	    /* XXX? */
+	    Material mat = olid.mat();
+	    BufPipe st = new BufPipe();
+	    mat.states.apply(st);
+	    if(st.get(BaseColor.slot) != null) {
+		FColor bc = st.get(BaseColor.slot).color;
+		return(new Color(Math.round(bc.r * 255), Math.round(bc.g * 255),
+				 Math.round(bc.b * 255), 255));
+	    }
+	    return(null);
+	}
+
+	public BufferedImage olrender(Coord off, String tag) {
+	    WritableRaster buf = PUtils.imgraster(cmaps);
+	    for(Overlay ol : ols) {
+		MCache.ResOverlay olid = ol.olid.loadsaved().layer(MCache.ResOverlay.class);;
+		if(!olid.tags().contains(tag))
+		    continue;
+		Color col = olcol(olid);
+		if(col == null)
+		    continue;
+		Coord c = new Coord();
+		for(c.y = 0; c.y < cmaps.y; c.y++) {
+		    for(c.x = 0; c.x < cmaps.x; c.x++) {
+			if(ol.ol[c.x + (c.y * cmaps.x)]) {
+			    buf.setSample(c.x, c.y, 0, ((col.getRed()   * col.getAlpha()) + (buf.getSample(c.x, c.y, 1) * (255 - col.getAlpha()))) / 255);
+			    buf.setSample(c.x, c.y, 1, ((col.getGreen() * col.getAlpha()) + (buf.getSample(c.x, c.y, 1) * (255 - col.getAlpha()))) / 255);
+			    buf.setSample(c.x, c.y, 2, ((col.getBlue()  * col.getAlpha()) + (buf.getSample(c.x, c.y, 2) * (255 - col.getAlpha()))) / 255);
+			    buf.setSample(c.x, c.y, 3, Math.max(buf.getSample(c.x, c.y, 3), col.getAlpha()));
+			}
 		    }
 		}
 	    }
