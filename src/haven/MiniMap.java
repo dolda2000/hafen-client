@@ -474,19 +474,23 @@ public class MiniMap extends Widget {
 	}
     }
 
+    public void drawgrid(GOut g, Coord ul, DisplayGrid disp) {
+	try {
+	    Tex img = disp.img();
+	    if(img != null)
+		g.image(img, ul, UI.scale(img.sz()));
+	} catch(Loading l) {
+	}
+    }
+
     public void drawmap(GOut g) {
 	Coord hsz = sz.div(2);
 	for(Coord c : dgext) {
-	    Tex img;
-	    try {
-		DisplayGrid disp = display[dgext.ri(c)];
-		if((disp == null) || ((img = disp.img()) == null))
-		    continue;
-	    } catch(Loading l) {
-		continue;
-	    }
 	    Coord ul = UI.scale(c.mul(cmaps)).sub(dloc.tc.div(scalef())).add(hsz);
-	    g.image(img, ul, UI.scale(img.sz()));
+	    DisplayGrid disp = display[dgext.ri(c)];
+	    if(disp == null)
+		continue;
+	    drawgrid(g, ul, disp);
 	}
     }
 
