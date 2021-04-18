@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import java.awt.Color;
 import haven.MapFile.Segment;
 import haven.MapFile.DataGrid;
@@ -341,38 +342,69 @@ public class MiniMap extends Widget {
 	    mapext = Area.sized(sc.mul(cmaps.mul(1 << lvl)), cmaps.mul(1 << lvl));
 	}
 
-	public Tex img() {
-	    DataGrid grid = gref.get();
-	    if(grid != cgrid) {
-		if(nextimg != null)
-		    nextimg.cancel();
-		if(grid instanceof MapFile.ZoomGrid) {
-		    nextimg = Defer.later(() -> new TexI(grid.render(sc.mul(cmaps))));
-		} else {
-		    nextimg = Defer.later(new Defer.Callable<Tex>() {
-			    MapFile.View view = new MapFile.View(seg);
+	class CachedImage {
+	    final Function<DataGrid, Defer.Future<Tex>> src;
+	    DataGrid cgrid;
+	    Defer.Future<Tex> next;
+	    Tex img;
 
-			    public TexI call() {
-				try(Locked lk = new Locked(file.lock.readLock())) {
-				    for(int y = -1; y <= 1; y++) {
-					for(int x = -1; x <= 1; x++) {
-					    view.addgrid(sc.add(x, y));
+	    CachedImage(Function<DataGrid, Defer.Future<Tex>> src) {
+		this.src = src;
+	    }
+
+	    public Tex get() {
+		DataGrid grid = gref.get();
+		if(grid != cgrid) {
+		    if(next != null)
+			next.cancel();
+		    next = src.apply(grid);
+		    cgrid = grid;
+		}
+		if(next != null) {
+		    try {
+			img = next.get();
+		    } catch(Loading l) {}
+		}
+		return(img);
+	    }
+	}
+
+	private CachedImage img_c;
+	public Tex img() {
+	    if(img_c == null) {
+		img_c = new CachedImage(grid -> {
+			if(grid instanceof MapFile.ZoomGrid) {
+			    return(Defer.later(() -> new TexI(grid.render(sc.mul(cmaps)))));
+			} else {
+			    return(Defer.later(new Defer.Callable<Tex>() {
+				    MapFile.View view = new MapFile.View(seg);
+
+				    public TexI call() {
+					try(Locked lk = new Locked(file.lock.readLock())) {
+					    for(int y = -1; y <= 1; y++) {
+						for(int x = -1; x <= 1; x++) {
+						    view.addgrid(sc.add(x, y));
+						}
+					    }
+					    view.fin();
+					    return(new TexI(MapSource.drawmap(view, Area.sized(sc.mul(cmaps), cmaps))));
 					}
 				    }
-				    view.fin();
-				    return(new TexI(MapSource.drawmap(view, Area.sized(sc.mul(cmaps), cmaps))));
-				}
-			    }
-			});
-		}
-		cgrid = grid;
+				}));
+			}
+		});
 	    }
-	    if(nextimg != null) {
-		try {
-		    img = nextimg.get();
-		} catch(Loading l) {}
+	    return(img_c.get());
+	}
+
+	private Map<String, CachedImage> olimg_c = new HashMap<>();
+	public Tex olimg(String tag) {
+	    CachedImage ret;
+	    synchronized(olimg_c) {
+		if((ret = olimg_c.get(tag)) == null)
+		    olimg_c.put(tag, ret = new CachedImage(grid -> Defer.later(() -> new TexI(grid.olrender(sc.mul(cmaps), tag)))));
 	    }
-	    return(img);
+	    return(ret.get());
 	}
 
 	private Collection<DisplayMarker> markers = Collections.emptyList();
