@@ -245,7 +245,7 @@ public class CharWnd extends Window {
     public static class GlutMeter extends Widget {
 	public static final Tex frame = Resource.loadtex("gfx/hud/chr/glutm");
 	public static final Coord marg = new Coord(5, 5);
-	public Color fg, bg;
+	public Color fg = Color.BLACK, bg = Color.BLACK;
 	public double glut, lglut, gmod;
 	public String lbl;
 
