@@ -428,19 +428,21 @@ public class GLEnvironment implements Environment {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = ret = new StreamBuffer(this, buf.size());
-		    if(buf.init != null) {
-			StreamBuffer.Fill data = (StreamBuffer.Fill)buf.init.fill(buf, this);
-			StreamBuffer jdret = ret;
-			GLBuffer rbuf = ret.rbuf;
-			prepare((GLRender g) -> {
-				BGL gl = g.gl();
-				Vao0State.apply(this, gl, g.state, rbuf);
+		    StreamBuffer.Fill data = (buf.init == null) ? null : (StreamBuffer.Fill)buf.init.fill(buf, this);
+		    StreamBuffer jdret = ret;
+		    GLBuffer rbuf = ret.rbuf;
+		    prepare((GLRender g) -> {
+			    BGL gl = g.gl();
+			    Vao0State.apply(this, gl, g.state, rbuf);
+			    if(data == null) {
+				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), null, GL.GL_DYNAMIC_DRAW);
+			    } else {
 				ByteBuffer xfbuf = data.get();
 				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), xfbuf, GL.GL_DYNAMIC_DRAW);
 				jdret.put(gl, xfbuf);
-				rbuf.setmem(MemStats.INDICES, buf.size());
-			    });
-		    }
+			    }
+			    rbuf.setmem(MemStats.INDICES, buf.size());
+			});
 		}
 		return(ret);
 	    }
@@ -450,16 +452,14 @@ public class GLEnvironment implements Environment {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = ret = new GLBuffer(this);
-		    if(buf.init != null) {
-			FillBuffers.Array data = (FillBuffers.Array)buf.init.fill(buf, this);
-			GLBuffer jdret = ret;
-			prepare((GLRender g) -> {
-				BGL gl = g.gl();
-				Vao0State.apply(this, gl, g.state, jdret);
-				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
-				jdret.setmem(MemStats.INDICES, buf.size());
-			    });
-		    }
+		    FillBuffers.Array data = (buf.init == null) ? null : (FillBuffers.Array)buf.init.fill(buf, this);
+		    GLBuffer jdret = ret;
+		    prepare((GLRender g) -> {
+			    BGL gl = g.gl();
+			    Vao0State.apply(this, gl, g.state, jdret);
+			    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), (data == null) ? null : ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
+			    jdret.setmem(MemStats.INDICES, buf.size());
+			});
 		}
 		return(ret);
 	    }
@@ -485,19 +485,21 @@ public class GLEnvironment implements Environment {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = ret = new StreamBuffer(this, buf.size());
-		    if(buf.init != null) {
-			StreamBuffer.Fill data = (StreamBuffer.Fill)buf.init.fill(buf, this);
-			StreamBuffer jdret = ret;
-			GLBuffer rbuf = ret.rbuf;
-			prepare((GLRender g) -> {
-				BGL gl = g.gl();
-				VboState.apply(gl, g.state, rbuf);
+		    StreamBuffer.Fill data = (buf.init == null) ? null : (StreamBuffer.Fill)buf.init.fill(buf, this);
+		    StreamBuffer jdret = ret;
+		    GLBuffer rbuf = ret.rbuf;
+		    prepare((GLRender g) -> {
+			    BGL gl = g.gl();
+			    VboState.apply(gl, g.state, rbuf);
+			    if(data == null) {
+				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), null, GL.GL_DYNAMIC_DRAW);
+			    } else {
 				ByteBuffer xfbuf = data.get();
 				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), xfbuf, GL.GL_DYNAMIC_DRAW);
 				jdret.put(gl, xfbuf);
-				rbuf.setmem(MemStats.VERTICES, buf.size());
-			    });
-		    }
+			    }
+			    rbuf.setmem(MemStats.VERTICES, buf.size());
+			});
 		}
 		return(ret);
 	    }
@@ -507,16 +509,14 @@ public class GLEnvironment implements Environment {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = ret = new GLBuffer(this);
-		    if(buf.init != null) {
-			FillBuffers.Array data = (FillBuffers.Array)buf.init.fill(buf, this);
-			GLBuffer jdret = ret;
-			prepare((GLRender g) -> {
-				BGL gl = g.gl();
-				VboState.apply(gl, g.state, jdret);
-				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
-				jdret.setmem(MemStats.VERTICES, buf.size());
-			    });
-		    }
+		    FillBuffers.Array data = (buf.init == null) ? null : (FillBuffers.Array)buf.init.fill(buf, this);
+		    GLBuffer jdret = ret;
+		    prepare((GLRender g) -> {
+			    BGL gl = g.gl();
+			    VboState.apply(gl, g.state, jdret);
+			    gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), (data == null) ? null : ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
+			    jdret.setmem(MemStats.VERTICES, buf.size());
+			});
 		}
 		return(ret);
 	    }
