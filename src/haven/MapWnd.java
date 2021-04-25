@@ -632,9 +632,16 @@ public class MapWnd extends Window implements Console.Directory {
 	GameUI gui = getparent(GameUI.class);
 	ExportWindow prog = new ExportWindow();
 	Thread th = new HackThread(() -> {
+		boolean complete = false;
 		try {
-		    try(OutputStream out = new BufferedOutputStream(Files.newOutputStream(path))) {
-			file.export(out, MapFile.ExportFilter.all, prog);
+		    try {
+			try(OutputStream out = new BufferedOutputStream(Files.newOutputStream(path))) {
+			    file.export(out, MapFile.ExportFilter.all, prog);
+			}
+			complete = true;
+		    } finally {
+			if(!complete)
+			    Files.deleteIfExists(path);
 		    }
 		} catch(IOException e) {
 		    e.printStackTrace(Debug.log);
