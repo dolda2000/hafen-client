@@ -287,6 +287,8 @@ public class CharWnd extends Window {
 	public static final Color hilit = new Color(255, 255, 0, 48);
 	public static final Text.Foundry elf = attrf;
 	public static final int elh = elf.height() + UI.scale(2);
+	public static final int ellw = elf.strsize("...").x;
+	public static final int etmaxw = elf.strsize("100%").x;
 	public static final Convolution tflt = new Hanning(1);
 	public static final Color buffed = new Color(160, 255, 160), full = new Color(250, 230, 64), none = new Color(250, 19, 43);
 	public final List<El> els = new ArrayList<El>();
@@ -306,7 +308,12 @@ public class CharWnd extends Window {
 		    ItemSpec spec = new ItemSpec(OwnerContext.uictx.curry(ui), t, null);
 		    BufferedImage img = spec.image();
 		    String nm = spec.name();
-		    Text rnm = elf.render(nm);
+		    int maxw = sz.x - etmaxw - sb.sz.x - UI.scale(5) - elh;
+		    Text.Line rnm = elf.render(nm);
+		    if(rnm.sz().x > maxw) {
+			int len = rnm.charat(maxw - ellw);
+			rnm = elf.render(nm.substring(0, len) + "...");
+		    }
 		    BufferedImage buf = TexI.mkbuf(new Coord(elh + 5 + rnm.sz().x, elh));
 		    Graphics g = buf.getGraphics();
 		    g.drawImage(convolvedown(img, new Coord(elh, elh), tflt), 0, 0, null);
