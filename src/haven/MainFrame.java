@@ -29,6 +29,7 @@ package haven;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import java.lang.reflect.*;
 
@@ -483,11 +484,8 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     private static void dumplist(Collection<Resource> list, String fn) {
 	try {
 	    if(fn != null) {
-		Writer w = new OutputStreamWriter(new FileOutputStream(fn), "UTF-8");
-		try {
+		try(Writer w = Files.newBufferedWriter(Utils.path(fn), Utils.utf8)) {
 		    Resource.dumplist(list, w);
-		} finally {
-		    w.close();
 		}
 	    }
 	} catch(IOException e) {

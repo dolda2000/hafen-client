@@ -564,7 +564,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    buf.submit(new FrameCycle());
 		    if(frameprof != null) {
 			buf.submit(frameprof.stop);
-			buf.submit(frameprof.dump(new java.io.File("frameprof")));
+			buf.submit(frameprof.dump(Utils.path("frameprof")));
 		    }
 		    env.submit(buf);
 		    buf = null;
