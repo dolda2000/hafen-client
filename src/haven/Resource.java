@@ -703,7 +703,7 @@ public class Resource implements Serializable {
 		    Pool local = new Pool(new JarSource("res"));
 		    try {
 			if(Config.resdir != null)
-			    local.add(new FileSource(Utils.path(Config.resdir)));
+			    local.add(new FileSource(Config.resdir));
 		    } catch(Exception e) {
 			/* Ignore these. We don't want to be crashing the client
 			 * for users just because of errors in development

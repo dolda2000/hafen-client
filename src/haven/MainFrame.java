@@ -481,10 +481,10 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	main.start();
     }
 	
-    private static void dumplist(Collection<Resource> list, String fn) {
+    private static void dumplist(Collection<Resource> list, Path fn) {
 	try {
 	    if(fn != null) {
-		try(Writer w = Files.newBufferedWriter(Utils.path(fn), Utils.utf8)) {
+		try(Writer w = Files.newBufferedWriter(fn, Utils.utf8)) {
 		    Resource.dumplist(list, w);
 		}
 	    }

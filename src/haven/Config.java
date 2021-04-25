@@ -28,6 +28,7 @@ package haven;
 
 import java.net.URL;
 import java.io.PrintStream;
+import java.nio.file.Path;
 import static haven.Utils.getprop;
 
 public class Config {
@@ -45,10 +46,10 @@ public class Config {
     public static boolean profilegpu = getprop("haven.profilegpu", "off").equals("on");
     public static boolean par = true;
     public static boolean fscache = getprop("haven.fscache", "on").equals("on");
-    public static String resdir = getprop("haven.resdir", System.getenv("HAFEN_RESDIR"));
+    public static Path resdir = getpath("haven.resdir", System.getenv("HAFEN_RESDIR"));
     public static boolean nopreload = getprop("haven.nopreload", "no").equals("yes");
-    public static String loadwaited = getprop("haven.loadwaited", null);
-    public static String allused = getprop("haven.allused", null);
+    public static Path loadwaited = getpath("haven.loadwaited", null);
+    public static Path allused = getpath("haven.allused", null);
     public static int mainport = getint("haven.mainport", 1870);
     public static int authport = getint("haven.authport", 1871);
     public static boolean softres = getprop("haven.softres", "on").equals("on");
@@ -81,6 +82,13 @@ public class Config {
 	} catch(java.net.MalformedURLException e) {
 	    throw(new RuntimeException(e));
 	}
+    }
+
+    private static Path getpath(String name, String def) {
+	String val = getprop(name, def);
+	if((val == null) || val.equals(""))
+	    return(null);
+	return(Utils.path(val));
     }
 
     private static Double getfloat(String name, Double def) {
@@ -126,7 +134,7 @@ public class Config {
 		profilegpu = true;
 		break;
 	    case 'r':
-		resdir = opt.arg;
+		resdir = Utils.path(opt.arg);
 		break;
 	    case 'A':
 		int p = opt.arg.indexOf(':');
