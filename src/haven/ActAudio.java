@@ -155,6 +155,7 @@ public class ActAudio extends State {
     }
 
     public static class Root {
+	public final RootChannel aui = new RootChannel("aui");
 	public final RootChannel pos = new RootChannel("pos");
 	public final RootChannel amb = new RootChannel("amb");
 

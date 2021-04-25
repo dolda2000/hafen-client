@@ -470,7 +470,7 @@ public class UI {
     }
 
     public void sfx(Audio.CS clip) {
-	Audio.play(clip);
+	audio.aui.add(clip);
     }
     public void sfx(Resource clip) {
 	sfx(Audio.fromres(clip));
