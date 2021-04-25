@@ -313,6 +313,8 @@ public class Audio {
 	    }
 	    return(ns);
 	}
+
+	public Resampler sp(double sp) {this.sp = sp; return(this);}
     }
 
     public static class Monitor implements CS {
@@ -405,8 +407,6 @@ public class Audio {
     private static class Player extends HackThread {
 	private final CS stream;
 	private final int nch;
-	private final Object queuemon = new Object();
-	private Collection<Runnable> queue = new LinkedList<Runnable>();
 	private volatile boolean reopen = false;
 	
 	Player(CS stream) {
@@ -465,14 +465,6 @@ public class Audio {
 		    while(true) {
 			if(Thread.interrupted())
 			    throw(new InterruptedException());
-			synchronized(queuemon) {
-			    Collection<Runnable> queue = this.queue;
-			    if(queue.size() > 0) {
-				this.queue = new LinkedList<Runnable>();
-				for(Runnable r : queue)
-				    r.run();
-			    }
-			}
 			int ret = fillbuf(buf, 0, buf.length);
 			if(ret < 0)
 			    return;
@@ -538,13 +530,6 @@ public class Audio {
 	    ((Mixer)pl.stream).stop(clip);
     }
     
-    public static void queue(Runnable d) {
-	Player pl = ckpl(true);
-	synchronized(pl.queuemon) {
-	    pl.queue.add(d);
-	}
-    }
-
     private static Map<Resource, Resource.Audio> reslastc = new HashMap<Resource, Resource.Audio>();
     public static CS fromres(Resource res) {
 	Collection<Resource.Audio> clips = res.layers(Resource.audio);
@@ -570,18 +555,6 @@ public class Audio {
 	play(fromres(res));
     }
 
-    public static void play(final Indir<Resource> clip) {
-	queue(new Runnable() {
-		public void run() {
-		    try {
-			play(clip.get());
-		    } catch(Loading e) {
-			queue(this);
-		    }
-		}
-	    });
-    }
-    
     public static void main(String[] args) throws Exception {
 	Collection<Monitor> clips = new LinkedList<Monitor>();
 	for(int i = 0; i < args.length; i++) {
@@ -601,7 +574,7 @@ public class Audio {
     static {
 	Console.setscmd("sfx", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    play(Resource.remote().load(args[1]));
+		    play(Loading.waitfor(Resource.remote().load(args[1])));
 		}
 	    });
 	Console.setscmd("sfxvol", new Console.Command() {

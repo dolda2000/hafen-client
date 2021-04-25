@@ -33,6 +33,7 @@ import java.util.*;
 import java.util.function.*;
 import java.net.*;
 import java.io.*;
+import java.nio.file.*;
 import java.security.*;
 import javax.imageio.*;
 import java.awt.image.BufferedImage;
@@ -234,19 +235,19 @@ public class Resource implements Serializable {
     }
 
     public static class FileSource implements ResSource, Serializable {
-	File base;
+	public final Path base;
 	
-	public FileSource(File base) {
+	public FileSource(Path base) {
 	    this.base = base;
 	}
 	
-	public InputStream get(String name) throws FileNotFoundException {
-	    File cur = base;
+	public InputStream get(String name) throws IOException {
+	    Path cur = base;
 	    String[] parts = name.split("/");
 	    for(int i = 0; i < parts.length - 1; i++)
-		cur = new File(cur, parts[i]);
-	    cur = new File(cur, parts[parts.length - 1] + ".res");
-	    return(new FileInputStream(cur));
+		cur = cur.resolve(parts[i]);
+	    cur = cur.resolve(parts[parts.length - 1] + ".res");
+	    return(Files.newInputStream(cur));
 	}
 	
 	public String toString() {
@@ -702,7 +703,7 @@ public class Resource implements Serializable {
 		    Pool local = new Pool(new JarSource("res"));
 		    try {
 			if(Config.resdir != null)
-			    local.add(new FileSource(new File(Config.resdir)));
+			    local.add(new FileSource(Utils.path(Config.resdir)));
 		    } catch(Exception e) {
 			/* Ignore these. We don't want to be crashing the client
 			 * for users just because of errors in development
@@ -908,9 +909,9 @@ public class Resource implements Serializable {
 	public final boolean nooff;
 	public final int id;
 	public final Map<String, byte[]> kvdata;
-	private float scale = 1;
-	private int gay = -1;
+	public float scale = 1;
 	public Coord sz, o, so, tsz, ssz;
+	private int gay = -1;
 
 	public Image(Message buf) {
 	    z = buf.int16();
@@ -958,15 +959,10 @@ public class Resource implements Serializable {
 		 * area. */
 		so = new Coord(Math.min(so.x, tsz.x - ssz.x), Math.min(so.y, sz.y - ssz.y));
 	    }
+	    scaled = PUtils.uiscale(img, ssz);
 	}
 
 	public BufferedImage scaled() {
-	    if(scaled == null) {
-		synchronized(this) {
-		    if(scaled == null)
-			scaled = PUtils.uiscale(img, ssz);
-		}
-	    }
 	    return(scaled);
 	}
 
@@ -1718,21 +1714,22 @@ public class Resource implements Serializable {
 	    out.println(res.name + ":" + res.ver);
     }
 
-    public static void updateloadlist(File file, File resdir) throws Exception {
-	BufferedReader r = new BufferedReader(new FileReader(file));
-	Map<String, Integer> orig = new HashMap<String, Integer>();
-	String ln;
-	while((ln = r.readLine()) != null) {
-	    int pos = ln.indexOf(':');
-	    if(pos < 0) {
-		System.err.println("Weird line: " + ln);
-		continue;
+    public static void updateloadlist(Path file, Path resdir) throws Exception {
+	Map<String, Integer> orig;
+	try(BufferedReader r = Files.newBufferedReader(file)) {
+	    orig = new HashMap<>();
+	    String ln;
+	    while((ln = r.readLine()) != null) {
+		int pos = ln.indexOf(':');
+		if(pos < 0) {
+		    System.err.println("Weird line: " + ln);
+		    continue;
+		}
+		String nm = ln.substring(0, pos);
+		int ver = Integer.parseInt(ln.substring(pos + 1));
+		orig.put(nm, ver);
 	    }
-	    String nm = ln.substring(0, pos);
-	    int ver = Integer.parseInt(ln.substring(pos + 1));
-	    orig.put(nm, ver);
 	}
-	r.close();
 	Pool pool = new Pool(new FileSource(resdir));
 	for(String nm : orig.keySet())
 	    pool.load(nm);
@@ -1753,18 +1750,15 @@ public class Resource implements Serializable {
 		System.out.println(nm + ": " + ver + " -> " + res.ver);
 	    cur.add(res);
 	}
-	Writer w = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
-	try {
+	try(Writer w = Files.newBufferedWriter(file)) {
 	    dumplist(cur, w);
-	} finally {
-	    w.close();
 	}
     }
 
     public static void main(String[] args) throws Exception {
 	String cmd = args[0].intern();
 	if(cmd == "update") {
-	    updateloadlist(new File(args[1]), new File(args[2]));
+	    updateloadlist(Utils.path(args[1]), Utils.path(args[2]));
 	}
     }
 }

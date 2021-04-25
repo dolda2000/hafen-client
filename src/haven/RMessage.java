@@ -43,6 +43,7 @@ public class RMessage extends PMessage {
     public static final int RMSG_SESSKEY = 13;
     public static final int RMSG_FRAGMENT = 14;
     public static final int RMSG_ADDWDG = 15;
+    public static final int RMSG_WDGBAR = 16;
 
     public long last = 0;
     public int retx = 0;

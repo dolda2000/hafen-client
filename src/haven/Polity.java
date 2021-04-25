@@ -39,17 +39,28 @@ public class Polity extends Widget {
     public final Map<Integer, Member> idmap = new HashMap<Integer, Member>();
     protected Widget mw;
 
+    public static final Text unk = Text.render("???");
+    public static final Text self = Text.render("You", new Color(192, 192, 255));
     public class Member {
 	public final Integer id;
-	
-	private Member(Integer id) {
+
+	public Member(Integer id) {
 	    this.id = id;
+	}
+
+	public void draw(GOut g) {
+	    Text rn;
+	    if(id == null) {
+		rn = self;
+	    } else {
+		BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(id);
+		rn = (b == null) ? unk : (b.rname());
+	    }
+	    g.aimage(rn.tex(), UI.scale(0, 10), 0, 0.5);
 	}
     }
 
     public class MemberList extends Searchbox<Member> {
-	final Text unk = Text.render("???");
-	final Text self = Text.render("You", new Color(192, 192, 255));
 
 	public MemberList(int w, int h) {
 	    super(w, h, UI.scale(20));
@@ -80,14 +91,7 @@ public class Polity extends Widget {
 	    }
 	    if((mw instanceof MemberWidget) && Utils.eq(((MemberWidget)mw).id, m.id))
 		drawsel(g);
-	    Text rn;
-	    if(m.id == null) {
-		rn = self;
-	    } else {
-		BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(m.id);
-		rn = (b == null) ? unk : (b.rname());
-	    }
-	    g.aimage(rn.tex(), UI.scale(0, 10), 0, 0.5);
+	    m.draw(g);
 	}
 
 	public void change(Member pm) {
@@ -151,6 +155,11 @@ public class Polity extends Widget {
 	}
     }
 
+    protected Member parsememb(Object[] args) {
+	Integer id = (Integer)args[0];
+	return(new Member(id));
+    }
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "auth") {
 	    synchronized(this) {
@@ -161,11 +170,10 @@ public class Polity extends Widget {
 		aseq++;
 	    }
 	} else if(msg == "add") {
-	    Integer id = (Integer)args[0];
-	    Member pm = new Member(id);
+	    Member pm = parsememb(args);
 	    synchronized(this) {
 		memb.add(pm);
-		idmap.put(id, pm);
+		idmap.put(pm.id, pm);
 	    }
 	} else if(msg == "rm") {
 	    Integer id = (Integer)args[0];

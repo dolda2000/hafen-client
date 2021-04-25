@@ -83,6 +83,9 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	    case 4:
 		this.mask = buf.bytes(buf.int32());
 		break;
+	    case 5:
+		/* Linear color values, not relevant right now */
+		break;
 	    default:
 		throw(new Resource.LoadException("Unknown texture data part " + t + " in " + res.name, getres()));
 	    }

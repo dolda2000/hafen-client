@@ -27,11 +27,13 @@
 package haven;
 
 import java.io.*;
+import java.nio.file.*;
+import java.nio.channels.*;
 
 public class FileCache implements ResCache {
-    private final File base;
+    private final Path base;
     
-    public FileCache(File base) {
+    public FileCache(Path base) {
 	this.base = base;
     }
     
@@ -40,41 +42,45 @@ public class FileCache implements ResCache {
 	    String path = System.getProperty("user.home", null);
 	    if(path == null)
 		return(null);
-	    File home = new File(path);
-	    if(!home.exists() || !home.isDirectory() || !home.canRead() || !home.canWrite())
+	    Path home = Utils.path(path);
+	    if(!Files.exists(home) || !Files.isDirectory(home) || !Files.isReadable(home) || !Files.isWritable(home))
 		return(null);
-	    File base = new File(new File(new File(home, ".haven"), "hafen"), "cache");
-	    if(!base.exists() && !base.mkdirs())
-		return(null);
+	    Path base = Utils.pj(home, ".haven", "hafen", "cache");
+	    if(!Files.exists(base)) {
+		try {
+		    Files.createDirectories(base);
+		} catch(IOException e) {
+		    return(null);
+		}
+	    }
 	    return(new FileCache(base));
 	} catch(SecurityException e) {
 	    return(null);
 	}
     }
     
-    private File forres(String nm) {
-	File res = base;
+    private Path forres(String nm) {
+	Path res = base;
 	String[] comp = nm.split("/");
-	for(int i = 0; i < comp.length - 1; i++) {
-	    res = new File(res, comp[i]);
-	}
-	return(new File(res, comp[comp.length - 1] + ".cached"));
+	for(int i = 0; i < comp.length - 1; i++)
+	    res = res.resolve(comp[i]);
+	return(res.resolve(comp[comp.length - 1] + ".cached"));
     }
 
     public OutputStream store(String name) throws IOException {
-	final File nm = forres(name);
-	File dir = nm.getParentFile();
-	final File tmp = new File(dir, nm.getName() + ".new");
-	dir.mkdirs();
-	tmp.delete();
-	OutputStream ret = new FilterOutputStream(new FileOutputStream(tmp)) {
+	Path nm = forres(name);
+	Path dir = nm.getParent();
+	if(!Files.exists(dir))
+	    Files.createDirectories(dir);
+	Path tmp = dir.resolve(nm.getFileName().toString() + ".new");
+	Files.deleteIfExists(tmp);
+	OutputStream ret = new FilterOutputStream(Files.newOutputStream(tmp)) {
 		public void close() throws IOException {
 		    super.close();
-		    if(!tmp.renameTo(nm)) {
-			/* Apparently Java doesn't support atomic
-			 * renames on Windows... :-/ */
-			nm.delete();
-			tmp.renameTo(nm);
+		    try  {
+			Files.move(tmp, nm, StandardCopyOption.ATOMIC_MOVE);
+		    } catch(AtomicMoveNotSupportedException e) {
+			Files.move(tmp, nm, StandardCopyOption.REPLACE_EXISTING);
 		    }
 		}
 	    };
@@ -82,7 +88,7 @@ public class FileCache implements ResCache {
     }
     
     public InputStream fetch(String name) throws IOException {
-	return(new FileInputStream(forres(name)));
+	return(Files.newInputStream(forres(name)));
     }
     
     public String toString() {

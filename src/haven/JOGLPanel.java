@@ -95,13 +95,20 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	base.prep(new FragColor<>(FragColor.defcolor)).prep(new DepthBuffer<>(DepthBuffer.defdepth));
 	base.prep(FragColor.blend(new BlendMode()));
 	setSize(sz.x, sz.y);
-	setAutoSwapBufferMode(false);
 	addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
 		    redraw(d.getGL());
 		}
 
 		public void init(GLAutoDrawable d) {
+		    setAutoSwapBufferMode(false);
+		    /* XXX: This apparently fixes a scaling problem on
+		     * OSX, and doesn't seem to have any effect on
+		     * other platforms. It seems like a weird
+		     * workaround, and I do wonder if there isn't some
+		     * underlying bug in JOGL instead, but it hasn't
+		     * broken anything yet, so I guess why not. */
+		    setSurfaceScale(new float[] {1, 1});
 		}
 
 		public void reshape(GLAutoDrawable wdg, int x, int y, int w, int h) {

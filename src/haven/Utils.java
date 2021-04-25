@@ -29,6 +29,7 @@ package haven;
 import java.awt.RenderingHints;
 import java.io.*;
 import java.nio.*;
+import java.nio.file.*;
 import java.net.URL;
 import java.lang.ref.*;
 import java.lang.reflect.*;
@@ -80,7 +81,17 @@ public class Utils {
 	    }
 	}
     }
-	
+
+    public static Path path(String path) {
+	return(FileSystems.getDefault().getPath(path));
+    }
+
+    public static Path pj(Path base, String... els) {
+	for(String el : els)
+	    base = base.resolve(el);
+	return(base);
+    }
+
     public static int drawtext(Graphics g, String text, Coord c) {
 	java.awt.FontMetrics m = g.getFontMetrics();
 	g.drawString(text, c.x, c.y + m.getAscent());
@@ -783,7 +794,44 @@ public class Utils {
 	    off += ret;
 	}
     }
-    
+
+    public static interface IOFunction<T> {
+	/* Check exceptions banzai :P */
+	public T run() throws IOException;
+    }
+
+    public static <T> T ioretry(IOFunction<? extends T> task) throws IOException {
+	double[] retimes = {0.01, 0.1, 0.5, 1.0, 5.0};
+	Throwable last = null;
+	boolean intr = false;
+	try {
+	    for(int r = 0; true; r++) {
+		try {
+		    return(task.run());
+		} catch(RuntimeException | IOException exc) {
+		    if(last == null)
+			new Warning(exc, "weird I/O error occurred on " + String.valueOf(task)).issue();
+		    if(last != null)
+			exc.addSuppressed(last);
+		    last = exc;
+		    if(r < retimes.length) {
+			try {
+			    Thread.sleep((long)(retimes[r] * 1000));
+			} catch(InterruptedException irq) {
+			    Thread.currentThread().interrupted();
+			    intr = true;
+			}
+		    } else {
+			throw(exc);
+		    }
+		}
+	    }
+	} finally {
+	    if(intr)
+		Thread.currentThread().interrupt();
+	}
+    }
+
     private static void dumptg(ThreadGroup tg, PrintWriter out, int indent) {
 	for(int o = 0; o < indent; o++)
 	    out.print("    ");
@@ -886,6 +934,15 @@ public class Utils {
 		if(o > 0) out.print(' ');
 		out.printf("%02x", arr[i + o]);
 	    }
+	    for(int o = (Math.min(width, arr.length - i) * 3) - 1, w = (width * 3) - 1 + 8; o < w; o++)
+		out.print(' ');
+	    for(int o = 0; (o < width) && (i + o < arr.length); o++) {
+		int b = arr[i + o] & 0xff;
+		if((b < 32) || (b >= 127))
+		    out.print('.');
+		else
+		    out.print((char)b);
+	    }
 	    out.print('\n');
 	}
     }
@@ -902,6 +959,15 @@ public class Utils {
 	    for(int o = 0; (o < width) && (i + o < arr.capacity()); o++) {
 		if(o > 0) out.print(' ');
 		out.printf("%02x", arr.get(i + o) & 0xff);
+	    }
+	    for(int o = (Math.min(width, arr.capacity() - i) * 3) - 1, w = (width * 3) - 1 + 8; o < w; o++)
+		out.print(' ');
+	    for(int o = 0; (o < width) && (i + o < arr.capacity()); o++) {
+		int b = arr.get(i + o) & 0xff;
+		if((b < 32) || (b >= 127))
+		    out.print('.');
+		else
+		    out.print((char)b);
 	    }
 	    out.print('\n');
 	}

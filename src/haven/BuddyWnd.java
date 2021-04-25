@@ -34,16 +34,12 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     private List<Buddy> buddies = new ArrayList<Buddy>();
     private Map<Integer, Buddy> idmap = new HashMap<Integer, Buddy>();
     private BuddyList bl;
-    private Button sbalpha;
-    private Button sbgroup;
-    private Button sbstatus;
     private TextEntry pname, charpass, opass;
     private FlowerMenu menu;
     private BuddyInfo info = null;
     private Widget infof;
     public int serial = 0;
     public static final int width = UI.scale(263);
-    public static final int height = UI.scale(380);
     public static final int margin1 = UI.scale(5);
     public static final int margin2 = 2 * margin1;
     public static final int margin3 = 2 * margin2;
@@ -443,21 +439,21 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     }
 
     public BuddyWnd() {
-	super(new Coord(width, height));
+	super(new Coord(width, 0));
 	setfocustab(true);
-	Composer composer = new Composer(this).vmrgn(margin1).hmrgn(margin1);
-        composer.add(new Img(CharWnd.catf.render("Kin").tex()));
+	Widget prev;
+        prev = add(new Img(CharWnd.catf.render("Kin").tex()));
 
-	bl = new BuddyList(sz.x - Window.wbox.bisz().x, 7);
-        composer.add(bl, Window.wbox.btloff().x);
-	Frame.around(this, Collections.singletonList(bl));
+	bl = add(new BuddyList(sz.x - Window.wbox.bisz().x, 7), prev.pos("bl").add(Window.wbox.btloff()));
+	prev = Frame.around(this, Collections.singletonList(bl));
 
-	composer.add(new Label("Sort by:"));
-	int sbw = (sz.x - 20) / 3;
-	sbstatus = new Button(sbw, "Status")      { public void click() { setcmp(statuscmp); } };
-	sbgroup  = new Button(sbw, "Group")       { public void click() { setcmp(groupcmp); } };
-	sbalpha  = new Button(sbw, "Name")        { public void click() { setcmp(alphacmp); } };
-	composer.addr(sbstatus, sbgroup, sbalpha);
+	prev = add(new Label("Sort by:"), prev.pos("bl").adds(0, 5));
+	int sbw = ((sz.x + margin1) / 3) - margin1;
+	addhl(prev.pos("bl").adds(0, 2), sz.x,
+	      prev = new Button(sbw, "Status").action(() -> { setcmp(statuscmp); }),
+	             new Button(sbw, "Group" ).action(() -> { setcmp(groupcmp); }),
+	             new Button(sbw, "Name"  ).action(() -> { setcmp(alphacmp); })
+	      );
 	String sort = Utils.getpref("buddysort", "");
 	if(sort.equals("")) {
 	    bcmp = statuscmp;
@@ -467,48 +463,41 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    if(sort.equals("status")) bcmp = statuscmp;
 	}
 
-	composer.add(new Label("Presentation name:"));
-	pname = new TextEntry(sz.x, "") {
+	prev = add(new Label("Presentation name:"), prev.pos("bl").adds(0, 10));
+	pname = add(new TextEntry(sz.x, "") {
 		{dshow = true;}
 		public void activate(String text) {
 		    setpname(text);
 		}
-	    };
-	composer.add(pname);
-	composer.add(new Button(sbw, "Set") {
-		public void click() {
+	    }, prev.pos("bl").adds(0, 2));
+	prev = add(new Button(sbw, "Set").action(() -> {
 		    setpname(pname.text);
-		}
-	    });
+	}), pname.pos("bl").adds(0, 5));
 
-	composer.add(new Label("My hearth secret:"));
-	charpass = new TextEntry(sz.x, "") {
+	prev = add(new Label("My hearth secret:"), prev.pos("bl").adds(0, 10));
+	charpass = add(new TextEntry(sz.x, "") {
 		{dshow = true;}
 		public void activate(String text) {
 		    setpwd(text);
 		}
-	    };
-	composer.add(charpass);
-        composer.addr(
-	    new Button(sbw, "Set")    { public void click() {setpwd(charpass.text);} },
-	    new Button(sbw, "Clear")  { public void click() {setpwd("");} },
-	    new Button(sbw, "Random") { public void click() {setpwd(randpwd());} }
-        );
+	    }, prev.pos("bl").adds(0, 2));
+        addhl(charpass.pos("bl").adds(0, 5), sz.x,
+	      prev = new Button(sbw, "Set"   ).action(() -> { setpwd(charpass.text); }),
+	             new Button(sbw, "Clear" ).action(() -> { setpwd(""); }),
+	             new Button(sbw, "Random").action(() -> {setpwd(randpwd());})
+	      );
 
-	composer.add(new Label("Make kin by hearth secret:"));
-	opass = new TextEntry(sz.x, "") {
+	prev = add(new Label("Make kin by hearth secret:"), prev.pos("bl").adds(0, 10));
+	opass = add(new TextEntry(sz.x, "") {
 		public void activate(String text) {
 		    BuddyWnd.this.wdgmsg("bypwd", text);
 		    settext("");
 		}
-	    };
-	composer.add(opass);
-	composer.add(new Button(sbw, "Add kin") {
-		public void click() {
+	    }, prev.pos("bl").adds(0, 2));
+	prev = add(new Button(sbw, "Add kin").action(() -> {
 		    BuddyWnd.this.wdgmsg("bypwd", opass.text);
 		    opass.settext("");
-		}
-	    });
+	}), opass.pos("bl").adds(0, 5));
 	pack();
     }
 

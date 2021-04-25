@@ -224,7 +224,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	public final Map<String, String> rdat;
 	private transient short[] tmp;
 	public final int id, ref;
-	private int matid;
+	private int vbufid, matid;
 	
 	public MeshRes(Resource res, Message buf) {
 	    res.super();
@@ -251,7 +251,11 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 		}
 	    }
 	    this.rdat = Collections.unmodifiableMap(rdat);
-	    if((fl & ~15) != 0)
+	    if((fl & 16) != 0)
+		vbufid = buf.int16();
+	    else
+		vbufid = 0;
+	    if((fl & ~31) != 0)
 		throw(new Resource.LoadException("Unsupported flags in fastmesh: " + fl, getres()));
 	    short[] ind = new short[num * 3];
 	    for(int i = 0; i < num * 3; i++)
@@ -260,7 +264,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	}
 	
 	public void init() {
-	    VertexBuf v = getres().layer(VertexBuf.VertexRes.class).b;
+	    VertexBuf v = getres().layer(VertexBuf.VertexRes.class, vbufid).b;
 	    this.m = new ResourceMesh(v, this.tmp, this);
 	    this.tmp = null;
 	    if(matid >= 0) {

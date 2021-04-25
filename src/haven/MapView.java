@@ -54,7 +54,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Selector selection;
     private Coord3f camoff = new Coord3f(Coord3f.o);
     public double shake = 0.0;
-    public static int plobgran = 8;
+    public static int plobgran = Utils.getprefi("plobgran", 8);
     private static final Map<String, Class<? extends Camera>> camtypes = new HashMap<String, Class<? extends Camera>>();
     
     public interface Delayed {
@@ -377,9 +377,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private float tfield = field;
 	private boolean isometric = true;
 	private final float pi2 = (float)(Math.PI * 2);
+	private double tf = 1.0;
 
 	public SOrthoCam(String... args) {
-	    PosixArgs opt = PosixArgs.getopt(args, "enif");
+	    PosixArgs opt = PosixArgs.getopt(args, "enift:");
 	    for(char c : opt.parsed()) {
 		switch(c) {
 		case 'e':
@@ -394,11 +395,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		case 'f':
 		    isometric = false;
 		    break;
+		case 't':
+		    tf = Double.parseDouble(opt.arg);
+		    break;
 		}
 	    }
 	}
 
 	public void tick2(double dt) {
+	    dt *= tf;
 	    float cf = 1f - (float)Math.pow(500, -dt);
 	    Coord3f mc = getcc();
 	    mc.y = -mc.y;
@@ -1421,7 +1426,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		clmaplist.basic(Pipe.Op.compose(basic, clickloc));
 		clmaplist.draw(out);
 		if(clickdb) {
-		    GOut.debugimage(out, clobjlist.basic, FragID.fragid, Area.sized(Coord.z, clobjlist.sz()), new VectorFormat(1, NumberFormat.SINT32),
+		    GOut.debugimage(out, clmaplist.basic, FragID.fragid, Area.sized(Coord.z, clmaplist.sz()), new VectorFormat(1, NumberFormat.SINT32),
 				    img -> Debug.dumpimage(img, Debug.somedir("click1.png")));
 		    GOut.debugimage(out, clmaplist.basic, ClickLocation.fragloc, Area.sized(Coord.z, clmaplist.sz()), new VectorFormat(3, NumberFormat.UNORM16),
 				    img -> Debug.dumpimage(img, Debug.somedir("click2.png")));
@@ -2305,6 +2310,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		public void run(Console cons, String[] args) {
 		    if((plobgran = Integer.parseInt(args[1])) < 0)
 			plobgran = 0;
+		    Utils.setprefi("plobgran", plobgran);
 		}
 	    });
 	Console.setscmd("clickfuzz", new Console.Command() {

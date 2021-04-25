@@ -410,7 +410,7 @@ public class VertexBuf {
     }
 
     @Resource.LayerName("vbuf2")
-    public static class VertexRes extends Resource.Layer {
+    public static class VertexRes extends Resource.Layer implements Resource.IDLayer<Integer>{
 	public transient final VertexBuf b;
 	public final int id;
 	
@@ -455,5 +455,7 @@ public class VertexBuf {
 	}
 	
 	public void init() {}
+
+	public Integer layerid() {return(id);}
     }
 }
