@@ -27,6 +27,7 @@
 package haven;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
@@ -45,7 +46,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     private PagButton pressed, layout[][] = new PagButton[gsz.x][gsz.y];
     private UI.Grab grab;
     private int curoff = 0;
-    private boolean recons = true;
+    private boolean recons = true, showkeys = false;
 	
     @RName("scm")
     public static class $_ implements Factory {
@@ -87,6 +88,30 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    return(name());
 	}
 
+	private char bindchr(KeyMatch key) {
+	    if(key.modmatch != 0)
+		return(0);
+	    char vkey = key.chr;
+	    if((vkey == 0) && (key.keyname.length() == 1))
+		vkey = key.keyname.charAt(0);
+	    return(vkey);
+	}
+
+	public static final Text.Foundry keyfnd = new Text.Foundry(Text.sans.deriveFont(Font.BOLD), 10);
+	private Tex keyrend = null;
+	private boolean haskeyrend = false;
+	public Tex keyrend() {
+	    if(!haskeyrend) {
+		char vkey = bindchr(bind.key());
+		if(vkey != 0)
+		    keyrend = new TexI(Utils.outline2(keyfnd.render(Character.toString(vkey), Color.WHITE).img, Color.BLACK));
+		else
+		    keyrend = null;
+		haskeyrend = true;
+	    }
+	    return(keyrend);
+	}
+
 	private List<ItemInfo> info = null;
 	public List<ItemInfo> info() {
 	    if(info == null)
@@ -103,9 +128,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    String tt = name();
 	    KeyMatch key = bind.key();
 	    int pos = -1;
-	    char vkey = key.chr;
-	    if((vkey == 0) && (key.keyname.length() == 1))
-		vkey = key.keyname.charAt(0);
+	    char vkey = bindchr(key);
 	    if((vkey != 0) && (key.modmatch == 0))
 		pos = tt.toUpperCase().indexOf(Character.toUpperCase(vkey));
 	    if(pos >= 0)
@@ -149,7 +172,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    {pag.button = this;}
 
 	    public void use() {
-		pag.scm.cur = paginafor(pag.scm.cur.act().parent);
+		pag.scm.change(paginafor(pag.scm.cur.act().parent));
 		curoff = 0;
 	    }
 
@@ -323,6 +346,11 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			System.err.println(info.scm == this);
 			throw(e);
 		    }
+		    if(showkeys) {
+			Tex ki = btn.keyrend();
+			if(ki != null)
+			    g.aimage(ki, p.add(bgsz.x - UI.scale(2), UI.scale(1)), 1.0, 0.0);
+		    }
 		    if(info.meter > 0) {
 			double m = info.meter;
 			if(info.dtime > 0)
@@ -419,21 +447,25 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
     }
 
+    public void change(Pagina dst) {
+	this.cur = dst;
+	curoff = 0;
+	if(dst == null)
+	    showkeys = false;
+	updlayout();
+    }
+
     public void use(PagButton r, boolean reset) {
 	Collection<PagButton> sub = new ArrayList<>();
 	cons(r.pag, sub);
 	if(sub.size() > 0) {
-	    this.cur = r.pag;
-	    curoff = 0;
+	    change(r.pag);
 	} else {
 	    r.pag.newp = 0;
 	    r.use();
-	    if(reset) {
-		this.cur = null;
-		curoff = 0;
-	    }
+	    if(reset)
+		change(null);
 	}
-	updlayout();
     }
 
     public void tick(double dt) {
@@ -462,11 +494,9 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     public void uimsg(String msg, Object... args) {
 	if(msg == "goto") {
 	    if(args[0] == null)
-		cur = null;
+		change(null);
 	    else
-		cur = paginafor(ui.sess.getres((Integer)args[0]));
-	    curoff = 0;
-	    updlayout();
+		change(paginafor(ui.sess.getres((Integer)args[0])));
 	} else if(msg == "fill") {
 	    synchronized(paginae) {
 		int a = 0;
@@ -506,9 +536,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     public static final KeyBinding kb_next = KeyBinding.get("scm-next", KeyMatch.forchar('N', KeyMatch.S | KeyMatch.C | KeyMatch.M, KeyMatch.S));
     public boolean globtype(char k, KeyEvent ev) {
 	if(kb_root.key().match(ev) && (this.cur != null)) {
-	    this.cur = null;
-	    curoff = 0;
-	    updlayout();
+	    change(null);
 	    return(true);
 	} else if(kb_back.key().match(ev) && (this.cur != null)) {
 	    use(bk, false);
@@ -530,6 +558,8 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
 	if(pag != null) {
 	    use(pag, true);
+	    if(this.cur != null)
+		showkeys = true;
 	    return(true);
 	}
 	return(false);
