@@ -557,7 +557,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    }
 	}
 	if(pag != null) {
-	    use(pag, true);
+	    use(pag, (KeyMatch.mods(ev) & KeyMatch.S) == 0);
 	    if(this.cur != null)
 		showkeys = true;
 	    return(true);
