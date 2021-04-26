@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.io.*;
+import java.nio.file.*;
 import javax.sound.sampled.*;
 import dolda.xiphutil.*;
 
@@ -561,7 +562,7 @@ public class Audio {
 	    if(args[i].equals("-b")) {
 		bufsize = Integer.parseInt(args[++i]);
 	    } else {
-		Monitor c = new Monitor(new PCMClip(new FileInputStream(args[i]), 2));
+		Monitor c = new Monitor(new PCMClip(Files.newInputStream(Utils.path(args[i])), 2));
 		clips.add(c);
 	    }
 	}

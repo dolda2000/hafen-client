@@ -303,9 +303,9 @@ public class Text {
 	    Foundry f = new Foundry(font, size);
 	    f.aa = aa;
 	    Text t = f.renderwrap(opt.rest[0], width);
-	    java.io.OutputStream out = new java.io.FileOutputStream(opt.rest[1]);
-	    javax.imageio.ImageIO.write(t.img, "PNG", out);
-	    out.close();
+	    try(java.io.OutputStream out = java.nio.file.Files.newOutputStream(Utils.path(opt.rest[1]))) {
+		javax.imageio.ImageIO.write(t.img, "PNG", out);
+	    }
 	}
     }
 }
