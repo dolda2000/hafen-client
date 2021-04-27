@@ -48,7 +48,7 @@ public class KeyMatch {
 	this.modmatch = modmatch & MODS;
     }
 
-    private static int mods(KeyEvent ev) {
+    public static int mods(KeyEvent ev) {
 	int ret = 0;
 	if((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0) ret |= S;
 	if((ev.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0) ret |= C;
