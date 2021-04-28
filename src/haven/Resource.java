@@ -247,7 +247,11 @@ public class Resource implements Serializable {
 	    for(int i = 0; i < parts.length - 1; i++)
 		cur = cur.resolve(parts[i]);
 	    cur = cur.resolve(parts[parts.length - 1] + ".res");
-	    return(Files.newInputStream(cur));
+	    try {
+		return(Files.newInputStream(cur));
+	    } catch(NoSuchFileException e) {
+		throw((FileNotFoundException)new FileNotFoundException(name).initCause(e));
+	    }
 	}
 	
 	public String toString() {
