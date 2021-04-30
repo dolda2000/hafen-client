@@ -160,7 +160,8 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		if((curoff + 14) >= curbtns.size())
 		    curoff = 0;
 		else
-		    curoff += 14;
+		    curoff += (gsz.x * gsz.y) - 2;
+		updlayout();
 	    }
 
 	    public String name() {return("More...");}
