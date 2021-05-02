@@ -131,6 +131,12 @@ public class Audio {
 	    return(false);
 	}
 
+	public int size() {
+	    synchronized(clips) {
+		return(clips.size());
+	    }
+	}
+
 	public boolean empty() {
 	    synchronized(clips) {
 		return(clips.isEmpty());

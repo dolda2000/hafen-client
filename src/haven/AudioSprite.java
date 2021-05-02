@@ -83,7 +83,21 @@ public class AudioSprite {
 	}
 
 	public void added(RenderTree.Slot slot) {
-	    slot.add(clip);
+	    ActAudio list = slot.state().get(ActAudio.audio);
+	    /* There is a strong case to be made that audio-thread
+	     * overloading should be less heuristically prevented than
+	     * having a fixed per-mixer limit like this which may or
+	     * may not fit certain system requirements, but it isn't
+	     * immediately obvious what the correct solution would
+	     * be. Combined with the problem below, there may be a
+	     * case to be made that there should be a way to get rid
+	     * of audio clips apart from having to completely play
+	     * them through. */
+	    if((list == null) || (list.pos.size() > 64)) {
+		done = true;
+	    } else {
+		slot.add(clip);
+	    }
 	}
 
 	public boolean tick(double dt) {
