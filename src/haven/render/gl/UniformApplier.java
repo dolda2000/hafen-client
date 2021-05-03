@@ -218,6 +218,11 @@ public interface UniformApplier<T> {
 		    gl.glActiveTexture(GL.GL_TEXTURE0 + var.sampler);
 		    smp.bind(gl);
 		});
+	    TypeMapping.register(Type.SAMPLER2DARRAY, GLTexture.Tex2DArray.class, (gl, var, type, smp) -> {
+		    if(var.sampler < 0) throw(new RuntimeException());
+		    gl.glActiveTexture(GL.GL_TEXTURE0 + var.sampler);
+		    smp.bind(gl);
+		});
 	    TypeMapping.register(Type.SAMPLERCUBE, GLTexture.TexCube.class, (gl, var, type, smp) -> {
 		    if(var.sampler < 0) throw(new RuntimeException());
 		    gl.glActiveTexture(GL.GL_TEXTURE0 + var.sampler);
