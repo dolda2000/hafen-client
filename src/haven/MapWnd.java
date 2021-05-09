@@ -63,6 +63,7 @@ public class MapWnd extends Window implements Console.Directory {
     private List<ListMarker> markers = Collections.emptyList();
     private int markerseq = -1;
     private boolean domark = false;
+    private int olalpha = 64;
     private final Collection<Runnable> deferred = new LinkedList<>();
 
     private final static Predicate<Marker> pmarkers = (m -> m instanceof PMarker);
@@ -118,11 +119,18 @@ public class MapWnd extends Window implements Console.Directory {
 		    Utils.setprefb("compact-map", a);
 		})
 	    .settip("Compact mode").setgkey(kb_compact);
-	toolbar.add(new ICheckBox("gfx/hud/mmap/prov", "", "-d", "-h", "-dh"))
+	toolbar.add(new ICheckBox("gfx/hud/mmap/prov", "", "-d", "-h", "-dh") {
+		public boolean mousewheel(Coord c, int amount) {
+		    if(!checkhit(c) || !ui.modshift || !a)
+			return(super.mousewheel(c, amount));
+		    olalpha = Utils.clip(olalpha + (amount * 32), 32, 256);
+		    return(true);
+		}
+	    })
 	    .changed(a -> toggleol("realm", a))
 	    .settip("Display provinces").setgkey(kb_prov);
 	toolbar.pack();
-	tool = add(new Toolbox());;
+	tool = add(new Toolbox());
 	compact(Utils.getprefb("compact-map", false));
 	resize(sz);
     }
@@ -269,7 +277,7 @@ public class MapWnd extends Window implements Console.Directory {
 		try {
 		    Tex img = disp.olimg(tag);
 		    if(img != null) {
-			g.chcolor(255, 255, 255, 64);
+			g.chcolor(255, 255, 255, olalpha);
 			g.image(img, ul, UI.scale(img.sz()));
 		    }
 		} catch(Loading l) {
