@@ -61,6 +61,10 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	this(d.width, d.height);
     }
 
+    public static Coord of(int x, int y) {return(new Coord(x, y));}
+    public static Coord of(int x) {return(of(x, x));}
+    public static Coord of(Coord c) {return(of(c.x, c.y));}
+
     public static Coord sc(double a, double r) {
 	return(new Coord((int)Math.round(Math.cos(a) * r), -(int)Math.round(Math.sin(a) * r)));
     }

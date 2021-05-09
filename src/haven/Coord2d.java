@@ -49,6 +49,11 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
 	this(0, 0);
     }
 
+    public static Coord2d of(double x, double y) {return(new Coord2d(x, y));}
+    public static Coord2d of(double x) {return(of(x, x));}
+    public static Coord2d of(Coord c) {return(of(c.x, c.y));}
+    public static Coord2d of(Coord3f c) {return(of(c.x, c.y));}
+
     public boolean equals(double X, double Y) {
 	return((x == X) && (y == Y));
     }

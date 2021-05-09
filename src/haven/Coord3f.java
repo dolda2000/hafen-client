@@ -48,6 +48,9 @@ public class Coord3f {
     public Coord3f(Coord c) {
 	this(c.x, c.y, 0);
     }
+
+    public static Coord3f of(float x, float y, float z) {return(new Coord3f(x, y, z));}
+    public static Coord3f of(Coord3f c) {return(of(c.x, c.y, c.z));}
     
     public boolean equals(Coord3f o) {
 	return((o.x == x) && (o.y == y) && (o.z == z));
