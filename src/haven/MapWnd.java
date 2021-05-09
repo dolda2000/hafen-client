@@ -52,7 +52,7 @@ public class MapWnd extends Window implements Console.Directory {
     public final MapView mv;
     public final Toolbox tool;
     public final Collection<String> overlays = new java.util.concurrent.CopyOnWriteArraySet<>();
-    public Set<MarkerType> hmarkers = Collections.emptySet(), cmarkers = null;
+    public MarkerConfig markcfg = MarkerConfig.showall, cmarkers = null;
     private final Locator player;
     private final Widget toolbar;
     private final Frame viewf;
@@ -103,13 +103,13 @@ public class MapWnd extends Window implements Console.Directory {
 	    .state(() -> domark).set(a -> domark = a)
 	    .settip("Add marker").setgkey(kb_mark);
 	toolbar.add(new ICheckBox("gfx/hud/mmap/hmark", "", "-d", "-h", "-dh"))
-	    .state(() -> (hmarkers == null)).click(() -> {
-		    if(hmarkers == null)
-			hmarkers = Collections.emptySet();
-		    else if(hmarkers.isEmpty())
-			hmarkers = cmarkers;
+	    .state(() -> Utils.eq(markcfg, MarkerConfig.hideall)).click(() -> {
+		    if(Utils.eq(markcfg, MarkerConfig.hideall))
+			markcfg = MarkerConfig.showall;
+		    else if(Utils.eq(markcfg, MarkerConfig.showall) && (cmarkers != null))
+			markcfg = cmarkers;
 		    else
-			hmarkers = null;
+			markcfg = MarkerConfig.hideall;
 		})
 	    .settip("Hide markers").setgkey(kb_hmark);
 	toolbar.add(new ICheckBox("gfx/hud/mmap/wnd", "", "-d", "-h", "-dh"))
@@ -279,7 +279,7 @@ public class MapWnd extends Window implements Console.Directory {
 	}
 
 	public boolean filter(DisplayMarker mark) {
-	    return((hmarkers == null) || (!hmarkers.isEmpty() && hmarkers.contains(MarkerType.of(mark.m))));
+	    return(markcfg.filter(mark.m));
 	}
 
 	public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
@@ -494,11 +494,61 @@ public class MapWnd extends Window implements Console.Directory {
 	}
     }
 
-    public Set<MarkerType> curtypes() {
-	Set<MarkerType> ret = new HashSet<>();
-	for(Marker m : view.file.markers)
-	    ret.add(MarkerType.of(m));
-	return(ret);
+    public static class MarkerConfig {
+	public static final MarkerConfig showall = new MarkerConfig();
+	public static final MarkerConfig hideall = new MarkerConfig().showsel(true);
+	public Set<MarkerType> sel = Collections.emptySet();
+	public boolean showsel = false;
+
+	public MarkerConfig() {
+	}
+
+	public MarkerConfig(MarkerConfig from) {
+	    this.sel = from.sel;
+	    this.showsel = from.showsel;
+	}
+
+	public MarkerConfig showsel(boolean showsel) {
+	    MarkerConfig ret = new MarkerConfig(this);
+	    ret.showsel = showsel;
+	    return(ret);
+	}
+
+	public MarkerConfig add(MarkerType type) {
+	    MarkerConfig ret = new MarkerConfig(this);
+	    ret.sel = new HashSet<>(ret.sel);
+	    ret.sel.add(type);
+	    return(ret);
+	}
+
+	public MarkerConfig remove(MarkerType type) {
+	    MarkerConfig ret = new MarkerConfig(this);
+	    ret.sel = new HashSet<>(ret.sel);
+	    ret.sel.remove(type);
+	    return(ret);
+	}
+
+	public MarkerConfig toggle(MarkerType type) {
+	    if(sel.contains(type))
+		return(remove(type));
+	    else
+		return(add(type));
+	}
+
+	public boolean filter(MarkerType type) {
+	    return(sel.contains(type) != showsel);
+	}
+
+	public boolean filter(Marker mark) {
+	    return(sel.isEmpty() ? showsel : filter(MarkerType.of(mark)));
+	}
+
+	public boolean equals(MarkerConfig that) {
+	    return(Utils.eq(this.sel, that.sel) && (this.showsel == that.showsel));
+	}
+	public boolean equals(Object that) {
+	    return((that instanceof MarkerConfig) && equals((MarkerConfig)that));
+	}
     }
 
     public static class ListMarker {
@@ -534,7 +584,7 @@ public class MapWnd extends Window implements Console.Directory {
 	    g.frect(Coord.z, g.sz());
 	    try {
 		Tex icon = lm.type.icon();
-		if((hmarkers == null) || hmarkers.contains(lm.type))
+		if(markcfg.filter(lm.type))
 		    g.chcolor(255, 255, 255, 128);
 		else
 		    g.chcolor();
@@ -547,19 +597,9 @@ public class MapWnd extends Window implements Console.Directory {
 	}
 
 	private void toggletype(MarkerType type) {
-	    Set<MarkerType> nh;
-	    if(hmarkers == null) {
-		nh = curtypes();
-		nh.remove(type);
-	    } else {
-		nh = new HashSet<>(hmarkers);
-		if(nh.contains(type))
-		    nh.remove(type);
-		else
-		    nh.add(type);
-	    }
-	    hmarkers = nh;
-	    cmarkers = nh.isEmpty() ? null : nh;
+	    MarkerConfig nc = markcfg.toggle(type);
+	    markcfg = nc;
+	    cmarkers = nc.sel.isEmpty() ? null : nc;
 	}
 
 	public void itemclick(ListMarker lm, Coord c, int button) {
