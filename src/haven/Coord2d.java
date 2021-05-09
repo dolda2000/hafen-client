@@ -80,7 +80,7 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     }
 
     public Coord2d add(double X, double Y) {
-	return(new Coord2d(x + X, y + Y));
+	return(of(x + X, y + Y));
     }
 
     public Coord2d add(Coord2d b) {
@@ -88,11 +88,11 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     }
 
     public Coord2d inv() {
-	return(new Coord2d(-x, -y));
+	return(of(-x, -y));
     }
 
     public Coord2d sub(double X, double Y) {
-	return(new Coord2d(x - X, y - Y));
+	return(of(x - X, y - Y));
     }
 
     public Coord2d sub(Coord2d b) {
@@ -100,11 +100,11 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     }
 
     public Coord2d mul(double f) {
-	return(new Coord2d(x * f, y * f));
+	return(of(x * f, y * f));
     }
 
     public Coord2d mul(double X, double Y) {
-	return(new Coord2d(x * X, y * Y));
+	return(of(x * X, y * Y));
     }
 
     public Coord2d mul(Coord2d b) {
@@ -112,11 +112,11 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     }
 
     public Coord2d div(double f) {
-	return(new Coord2d(x / f, y / f));
+	return(of(x / f, y / f));
     }
 
     public Coord2d div(double X, double Y) {
-	return(new Coord2d(x / X, y / Y));
+	return(of(x / X, y / Y));
     }
 
     public Coord2d div(Coord2d b) {
@@ -124,15 +124,15 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     }
 
     public Coord round() {
-	return(new Coord((int)Math.round(x), (int)Math.round(y)));
+	return(Coord.of((int)Math.round(x), (int)Math.round(y)));
     }
 
     public Coord floor() {
-	return(new Coord((int)Math.floor(x), (int)Math.floor(y)));
+	return(Coord.of((int)Math.floor(x), (int)Math.floor(y)));
     }
 
     public Coord floor(double X, double Y) {
-	return(new Coord((int)Math.floor(x / X), (int)Math.floor(y / Y)));
+	return(Coord.of((int)Math.floor(x / X), (int)Math.floor(y / Y)));
     }
 
     public Coord floor(Coord2d f) {
@@ -140,11 +140,11 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     }
 
     public Coord2d mod() {
-	return(new Coord2d(x - Math.floor(x), y - Math.floor(y)));
+	return(of(x - Math.floor(x), y - Math.floor(y)));
     }
 
     public Coord2d mod(double X, double Y) {
-	return(new Coord2d(x - (Math.floor(x / X) * X), y - (Math.floor(y / Y) * Y)));
+	return(of(x - (Math.floor(x / X) * X), y - (Math.floor(y / Y) * Y)));
     }
 
     public Coord2d mod(Coord2d f) {
@@ -164,7 +164,7 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     }
 
     public static Coord2d sc(double a, double r) {
-	return(new Coord2d(Math.cos(a) * r, Math.sin(a) * r));
+	return(of(Math.cos(a) * r, Math.sin(a) * r));
     }
 
     public String toString() {
