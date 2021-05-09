@@ -33,6 +33,7 @@ import java.nio.file.*;
 import java.nio.channels.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
+import java.awt.image.*;
 import haven.MapFile.Marker;
 import haven.MapFile.PMarker;
 import haven.MapFile.SMarker;
@@ -58,15 +59,16 @@ public class MapWnd extends Window implements Console.Directory {
     private GroupSelector colsel;
     private Button mremove;
     private Predicate<Marker> mflt = pmarkers;
-    private Comparator<Marker> mcmp = namecmp;
-    private List<Marker> markers = Collections.emptyList();
+    private Comparator<ListMarker> mcmp = namecmp;
+    private List<ListMarker> markers = Collections.emptyList();
     private int markerseq = -1;
     private boolean domark = false;
     private final Collection<Runnable> deferred = new LinkedList<>();
 
     private final static Predicate<Marker> pmarkers = (m -> m instanceof PMarker);
     private final static Predicate<Marker> smarkers = (m -> m instanceof SMarker);
-    private final static Comparator<Marker> namecmp = ((a, b) -> a.nm.compareTo(b.nm));
+    private final static Comparator<ListMarker> namecmp = ((a, b) -> a.mark.nm.compareTo(b.mark.nm));
+    private final static Comparator<ListMarker> typecmp = Comparator.comparing((ListMarker lm) -> lm.type).thenComparing(namecmp);
 
     public static final KeyBinding kb_home = KeyBinding.get("mapwnd/home", KeyMatch.forcode(KeyEvent.VK_HOME, 0));
     public static final KeyBinding kb_mark = KeyBinding.get("mapwnd/mark", KeyMatch.nil);
@@ -185,7 +187,7 @@ public class MapWnd extends Window implements Console.Directory {
     public class Toolbox extends Widget {
 	public final MarkerList list;
 	private final Frame listf;
-	private final Button pmbtn, smbtn, mebtn, mibtn;
+	private final Button pmbtn, smbtn, nobtn, tobtn, mebtn, mibtn;
 	private TextEntry namesel;
 
 	private Toolbox() {
@@ -204,6 +206,18 @@ public class MapWnd extends Window implements Console.Directory {
 			markerseq = -1;
 		    }
 		});
+	    nobtn = add(new Button(btnw, "By name", false) {
+		    public void click() {
+			mcmp = namecmp;
+			markerseq = -1;
+		    }
+		});
+	    tobtn = add(new Button(btnw, "By type", false) {
+		    public void click() {
+			mcmp = typecmp;
+			markerseq = -1;
+		    }
+		});
 	    mebtn = add(new Button(btnw, "Export...", false) {
 		    public void click() {
 			exportmap();
@@ -218,13 +232,15 @@ public class MapWnd extends Window implements Console.Directory {
 
 	public void resize(int h) {
 	    super.resize(new Coord(sz.x, h));
-	    listf.resize(listf.sz.x, sz.y - UI.scale(180));
+	    listf.resize(listf.sz.x, sz.y - UI.scale(210));
 	    listf.c = new Coord(sz.x - listf.sz.x, 0);
 	    list.resize(listf.inner());
 	    mebtn.c = new Coord(0, sz.y - mebtn.sz.y);
 	    mibtn.c = new Coord(sz.x - btnw, sz.y - mibtn.sz.y);
-	    pmbtn.c = new Coord(0, mebtn.c.y - UI.scale(30) - pmbtn.sz.y);
-	    smbtn.c = new Coord(sz.x - btnw, mibtn.c.y - UI.scale(30) - smbtn.sz.y);
+	    nobtn.c = new Coord(0, mebtn.c.y - UI.scale(30) - nobtn.sz.y);
+	    tobtn.c = new Coord(sz.x - btnw, mibtn.c.y - UI.scale(30) - tobtn.sz.y);
+	    pmbtn.c = new Coord(0, nobtn.c.y - UI.scale(5) - pmbtn.sz.y);
+	    smbtn.c = new Coord(sz.x - btnw, tobtn.c.y - UI.scale(5) - smbtn.sz.y);
 	    if(namesel != null) {
 		namesel.c = listf.c.add(0, listf.sz.y + UI.scale(10));
 		if(colsel != null) {
@@ -336,7 +352,20 @@ public class MapWnd extends Window implements Console.Directory {
 	if(visible && (markerseq != view.file.markerseq)) {
 	    if(view.file.lock.readLock().tryLock()) {
 		try {
-		    List<Marker> markers = view.file.markers.stream().filter(mflt).collect(java.util.stream.Collectors.toList());
+		    Map<Marker, ListMarker> prev = new HashMap<>();
+		    for(ListMarker pm : this.markers)
+			prev.put(pm.mark, pm);
+		    List<ListMarker> markers = new ArrayList<>();
+		    for(Marker mark : view.file.markers) {
+			if(!mflt.test(mark))
+			    continue;
+			ListMarker lm = prev.get(mark);
+			if(lm == null)
+			    lm = new ListMarker(mark);
+			else
+			    lm.type = MarkerType.of(lm.mark);
+			markers.add(lm);
+		    }
 		    markers.sort(mcmp);
 		    this.markers = markers;
 		} finally {
@@ -346,13 +375,136 @@ public class MapWnd extends Window implements Console.Directory {
 	}
     }
 
+    public static abstract class MarkerType implements Comparable<MarkerType> {
+	public static final int iconsz = UI.scale(20);
+	private static final HashedSet<MarkerType> types = new HashedSet<>(Hash.eq);
+	public abstract Tex icon();
+
+	public static MarkerType of(Marker mark) {
+	    if(mark instanceof PMarker) {
+		return(types.intern(new PMarkerType(((PMarker)mark).color)));
+	    } else if(mark instanceof SMarker) {
+		return(types.intern(new SMarkerType(((SMarker)mark).res)));
+	    } else {
+		return(null);
+	    }
+	}
+
+	public int compareTo(MarkerType that) {
+	    return(this.getClass().getName().compareTo(that.getClass().getName()));
+	}
+    }
+
+    public static class PMarkerType extends MarkerType {
+	public final Color col;
+	private Tex icon = null;
+
+	public PMarkerType(Color col) {
+	    this.col = col;
+	}
+
+	public Tex icon() {
+	    if(icon == null) {
+		Resource.Image fg = MiniMap.DisplayMarker.flagfg, bg = MiniMap.DisplayMarker.flagbg;
+		WritableRaster buf = PUtils.imgraster(new Coord(Math.max(fg.o.x + fg.sz.x, bg.o.x + bg.sz.x),
+								Math.max(fg.o.y + fg.sz.y, bg.o.y + bg.sz.y)));
+		PUtils.blit(buf, PUtils.coercergba(fg.img).getRaster(), fg.o);
+		PUtils.colmul(buf, col);
+		PUtils.alphablit(buf, PUtils.coercergba(bg.img).getRaster(), bg.o);
+		icon = new TexI(PUtils.uiscale(PUtils.rasterimg(buf), new Coord(iconsz, iconsz)));
+	    }
+	    return(icon);
+	}
+
+	public boolean equals(PMarkerType that) {
+	    return(Utils.eq(this.col, that.col));
+	}
+	public boolean equals(Object that) {
+	    return((that instanceof PMarkerType) && equals((PMarkerType)that));
+	}
+
+	public int hashCode() {
+	    return(col.hashCode());
+	}
+
+	public int compareTo(PMarkerType that) {
+	    int a = Utils.index(BuddyWnd.gc, this.col), b = Utils.index(BuddyWnd.gc, that.col);
+	    if((a >= 0) && (b >= 0))
+		return(a - b);
+	    if((a < 0) && (b >= 0))
+		return(1);
+	    if((a >= 0) && (b < 0))
+		return(-1);
+	    return(Utils.idcmp.compare(this.col, that.col));
+	}
+	public int compareTo(MarkerType that) {
+	    if(that instanceof PMarkerType)
+		return(compareTo((PMarkerType)that));
+	    return(super.compareTo(that));
+	}
+    }
+
+    public static class SMarkerType extends MarkerType {
+	private Resource.Spec spec;
+	private Tex icon = null;
+
+	public SMarkerType(Resource.Spec spec) {
+	    this.spec = spec;
+	}
+
+	public Tex icon() {
+	    if(icon == null) {
+		BufferedImage img = spec.loadsaved().layer(Resource.imgc).img;
+		icon = new TexI(PUtils.uiscale(img, new Coord((iconsz * img.getWidth())/ img.getHeight(), iconsz)));
+	    }
+	    return(icon);
+	}
+
+	public boolean equals(SMarkerType that) {
+	    if(Utils.eq(this.spec.name, that.spec.name)) {
+		if(that.spec.ver > this.spec.ver) {
+		    this.spec = that.spec;
+		    this.icon = null;
+		}
+		return(true);
+	    }
+	    return(false);
+	}
+	public boolean equals(Object that) {
+	    return((that instanceof SMarkerType) && equals((SMarkerType)that));
+	}
+
+	public int hashCode() {
+	    return(spec.name.hashCode());
+	}
+
+	public int compareTo(SMarkerType that) {
+	    return(this.spec.name.compareTo(that.spec.name));
+	}
+	public int compareTo(MarkerType that) {
+	    if(that instanceof SMarkerType)
+		return(compareTo((SMarkerType)that));
+	    return(super.compareTo(that));
+	}
+    }
+
+    public static class ListMarker {
+	public final Marker mark;
+	public MarkerType type;
+
+	public ListMarker(Marker mark) {
+	    this.mark = mark;
+	    type = MarkerType.of(mark);
+	}
+    }
+
     public static final Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32), found = new Color(255, 255, 0, 32);
-    public class MarkerList extends Searchbox<Marker> {
+    public class MarkerList extends Searchbox<ListMarker> {
 	private final Text.Foundry fnd = CharWnd.attrf;
 
-	public Marker listitem(int idx) {return(markers.get(idx));}
+	public ListMarker listitem(int idx) {return(markers.get(idx));}
 	public int listitems() {return(markers.size());}
-	public boolean searchmatch(int idx, String txt) {return(markers.get(idx).nm.toLowerCase().indexOf(txt.toLowerCase()) >= 0);}
+	public boolean searchmatch(int idx, String txt) {return(markers.get(idx).mark.nm.toLowerCase().indexOf(txt.toLowerCase()) >= 0);}
 
 	public MarkerList(int w, int n) {
 	    super(w, n, UI.scale(20));
@@ -360,28 +512,32 @@ public class MapWnd extends Window implements Console.Directory {
 
 	private Function<String, Text> names = new CachedFunction<>(500, nm -> fnd.render(nm));
 	protected void drawbg(GOut g) {}
-	public void drawitem(GOut g, Marker mark, int idx) {
+	public void drawitem(GOut g, ListMarker lm, int idx) {
 	    if(soughtitem(idx)) {
 		g.chcolor(found);
 		g.frect(Coord.z, g.sz());
 	    }
 	    g.chcolor(((idx % 2) == 0)?every:other);
 	    g.frect(Coord.z, g.sz());
-	    if(mark instanceof PMarker)
-		g.chcolor(((PMarker)mark).color);
-	    else
-		g.chcolor();
-	    g.aimage(names.apply(mark.nm).tex(), new Coord(UI.scale(5), itemh / 2), 0, 0.5);
+	    g.chcolor();
+	    try {
+		Tex icon = lm.type.icon();
+		if(icon != null) {
+		    g.aimage(icon, new Coord(UI.scale(5), itemh / 2), 0, 0.5);
+		}
+	    } catch(Loading l) {
+	    }
+	    g.aimage(names.apply(lm.mark.nm).tex(), new Coord(UI.scale(5) + MarkerType.iconsz + 5, itemh / 2), 0, 0.5);
 	}
 
-	public void change(Marker mark) {
-	    change2(mark);
-	    if(mark != null)
-		view.center(new SpecLocator(mark.seg, mark.tc));
+	public void change(ListMarker lm) {
+	    change2(lm);
+	    if(lm != null)
+		view.center(new SpecLocator(lm.mark.seg, lm.mark.tc));
 	}
 
-	public void change2(Marker mark) {
-	    this.sel = mark;
+	public void change2(ListMarker lm) {
+	    this.sel = lm;
 
 	    if(tool.namesel != null) {
 		ui.destroy(tool.namesel);
@@ -394,7 +550,8 @@ public class MapWnd extends Window implements Console.Directory {
 		}
 	    }
 
-	    if(mark != null) {
+	    if(lm != null) {
+		Marker mark = lm.mark;
 		if(tool.namesel == null) {
 		    tool.namesel = tool.add(new TextEntry(UI.scale(200), "") {
 			    {dshow = true;}
@@ -458,8 +615,13 @@ public class MapWnd extends Window implements Console.Directory {
     }
 
     public void focus(Marker m) {
-	tool.list.change2(m);
-	tool.list.display(m);
+	for(ListMarker lm : markers) {
+	    if(lm.mark == m) {
+		tool.list.change2(lm);
+		tool.list.display(lm);
+		break;
+	    }
+	}
     }
 
     protected void drawframe(GOut g) {
@@ -485,7 +647,7 @@ public class MapWnd extends Window implements Console.Directory {
 	if(drag != null) {
 	    Coord nsz = c.add(dragc);
 	    nsz.x = Math.max(nsz.x, UI.scale(350));
-	    nsz.y = Math.max(nsz.y, UI.scale(150));
+	    nsz.y = Math.max(nsz.y, UI.scale(240));
 	    resize(nsz);
 	}
 	super.mousemove(c);
