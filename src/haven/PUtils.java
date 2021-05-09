@@ -38,7 +38,7 @@ public class PUtils {
     public static Coord imgsz(Raster img) {
 	return(new Coord(img.getWidth(), img.getHeight()));
     }
-	
+
     public static WritableRaster byteraster(Coord sz, int bands) {
 	return(Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, sz.x, sz.y, bands, null));
     }
@@ -62,6 +62,16 @@ public class PUtils {
 
     public static BufferedImage rasterimg(WritableRaster img) {
 	return(new BufferedImage(TexI.glcm, img, false, null));
+    }
+
+    public static BufferedImage coercergba(BufferedImage img) {
+	int w = img.getWidth(), h = img.getHeight();
+	WritableRaster buf = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h, 4, null);
+	BufferedImage tgt = new BufferedImage(TexI.glcm, buf, false, null);
+	Graphics g = tgt.createGraphics();
+	g.drawImage(img, 0, 0, w, h, 0, 0, w, h, null);
+	g.dispose();
+	return(tgt);
     }
 
     public static WritableRaster imggrow(WritableRaster img, int rad) {
