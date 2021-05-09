@@ -123,7 +123,7 @@ public class MapWnd extends Window implements Console.Directory {
 		public boolean mousewheel(Coord c, int amount) {
 		    if(!checkhit(c) || !ui.modshift || !a)
 			return(super.mousewheel(c, amount));
-		    olalpha = Utils.clip(olalpha + (amount * 32), 32, 256);
+		    olalpha = Utils.clip(olalpha + (amount * -32), 32, 256);
 		    return(true);
 		}
 	    })
