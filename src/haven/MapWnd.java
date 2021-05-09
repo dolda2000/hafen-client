@@ -52,7 +52,7 @@ public class MapWnd extends Window implements Console.Directory {
     public final MapView mv;
     public final Toolbox tool;
     public final Collection<String> overlays = new java.util.concurrent.CopyOnWriteArraySet<>();
-    public boolean hmarkers = false;
+    public Set<MarkerType> hmarkers = Collections.emptySet(), cmarkers = null;
     private final Locator player;
     private final Widget toolbar;
     private final Frame viewf;
@@ -103,7 +103,14 @@ public class MapWnd extends Window implements Console.Directory {
 	    .state(() -> domark).set(a -> domark = a)
 	    .settip("Add marker").setgkey(kb_mark);
 	toolbar.add(new ICheckBox("gfx/hud/mmap/hmark", "", "-d", "-h", "-dh"))
-	    .state(() -> hmarkers).set(a -> hmarkers = a)
+	    .state(() -> (hmarkers == null)).click(() -> {
+		    if(hmarkers == null)
+			hmarkers = Collections.emptySet();
+		    else if(hmarkers.isEmpty())
+			hmarkers = cmarkers;
+		    else
+			hmarkers = null;
+		})
 	    .settip("Hide markers").setgkey(kb_hmark);
 	toolbar.add(new ICheckBox("gfx/hud/mmap/wnd", "", "-d", "-h", "-dh"))
 	    .state(() -> decohide()).set(a -> {
@@ -271,9 +278,8 @@ public class MapWnd extends Window implements Console.Directory {
 	    g.chcolor();
 	}
 
-	public void drawmarkers(GOut g) {
-	    if(!hmarkers)
-		super.drawmarkers(g);
+	public boolean filter(DisplayMarker mark) {
+	    return((hmarkers == null) || (!hmarkers.isEmpty() && hmarkers.contains(MarkerType.of(mark.m))));
 	}
 
 	public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
@@ -488,6 +494,13 @@ public class MapWnd extends Window implements Console.Directory {
 	}
     }
 
+    public Set<MarkerType> curtypes() {
+	Set<MarkerType> ret = new HashSet<>();
+	for(Marker m : view.file.markers)
+	    ret.add(MarkerType.of(m));
+	return(ret);
+    }
+
     public static class ListMarker {
 	public final Marker mark;
 	public MarkerType type;
@@ -519,15 +532,41 @@ public class MapWnd extends Window implements Console.Directory {
 	    }
 	    g.chcolor(((idx % 2) == 0)?every:other);
 	    g.frect(Coord.z, g.sz());
-	    g.chcolor();
 	    try {
 		Tex icon = lm.type.icon();
-		if(icon != null) {
+		if((hmarkers == null) || hmarkers.contains(lm.type))
+		    g.chcolor(255, 255, 255, 128);
+		else
+		    g.chcolor();
+		if(icon != null)
 		    g.aimage(icon, new Coord(UI.scale(5), itemh / 2), 0, 0.5);
-		}
 	    } catch(Loading l) {
 	    }
-	    g.aimage(names.apply(lm.mark.nm).tex(), new Coord(UI.scale(5) + MarkerType.iconsz + 5, itemh / 2), 0, 0.5);
+	    g.chcolor();
+	    g.aimage(names.apply(lm.mark.nm).tex(), new Coord(UI.scale(10) + MarkerType.iconsz, itemh / 2), 0, 0.5);
+	}
+
+	private void toggletype(MarkerType type) {
+	    Set<MarkerType> nh;
+	    if(hmarkers == null) {
+		nh = curtypes();
+		nh.remove(type);
+	    } else {
+		nh = new HashSet<>(hmarkers);
+		if(nh.contains(type))
+		    nh.remove(type);
+		else
+		    nh.add(type);
+	    }
+	    hmarkers = nh;
+	    cmarkers = nh.isEmpty() ? null : nh;
+	}
+
+	public void itemclick(ListMarker lm, Coord c, int button) {
+	    if(c.x < UI.scale(5) + MarkerType.iconsz)
+		toggletype(lm.type);
+	    else
+		super.itemclick(lm, c, button);
 	}
 
 	public void change(ListMarker lm) {
