@@ -727,6 +727,7 @@ public class MapFile {
 		    ntiles[i] = this.tiles[i];
 	    }
 	    Grid g = new Grid(this.id, ntilesets, ntiles, this.zmap, this.mtime);
+	    g.ols.addAll(this.ols);
 	    g.useq = this.useq;
 	    return(g);
 	}
