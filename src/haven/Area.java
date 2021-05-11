@@ -47,12 +47,24 @@ public class Area implements Iterable<Coord>, java.io.Serializable {
 	return(a.ul.equals(ul) && a.br.equals(br));
     }
 
+    public static Area corn(Coord ul, Coord br) {
+	return(new Area(ul, br));
+    }
+
+    public static Area corni(Coord ul, Coord bri) {
+	return(new Area(ul, bri.add(1, 1)));
+    }
+
     public static Area sized(Coord ul, Coord sz) {
 	return(new Area(ul, ul.add(sz)));
     }
 
     public static Area sized(Coord sz) {
 	return(new Area(Coord.z, sz));
+    }
+
+    public static Area sizedi(Coord szi) {
+	return(new Area(Coord.z, szi.add(1, 1)));
     }
 
     public Coord sz() {
