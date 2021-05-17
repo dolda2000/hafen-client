@@ -548,15 +548,15 @@ public class Audio {
 	    ((Mixer)pl.stream).stop(clip);
     }
     
-    private static Map<Resource, Resource.Audio> reslastc = new HashMap<Resource, Resource.Audio>();
+    private static Map<Resource, Clip> reslastc = new HashMap<Resource, Clip>();
     public static CS fromres(Resource res) {
-	Collection<Resource.Audio> clips = res.layers(Resource.audio);
+	Collection<Clip> clips = res.layers(Audio.clip, null);
 	synchronized(reslastc) {
-	    Resource.Audio last = reslastc.get(res);
+	    Clip last = reslastc.get(res);
 	    int sz = clips.size();
-	    int s = (int)(Math.random() *  (((sz > 2) && (last != null))?(sz - 1):sz));
-	    Resource.Audio clip = null;
-	    for(Resource.Audio cp : clips) {
+	    int s = (int)(Math.random() * (((sz > 2) && (last != null)) ? (sz - 1) : sz));
+	    Clip clip = null;
+	    for(Clip cp : clips) {
 		if(cp == last)
 		    continue;
 		clip = cp;
