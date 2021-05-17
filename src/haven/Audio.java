@@ -218,6 +218,10 @@ public class Audio {
 	    this.clip = clip;
 	}
 
+	public VorbisClip(InputStream bs) throws IOException {
+	    this(new VorbisStream(bs));
+	}
+
 	public int get(double[][] dst, int ns) {
 	    int nch = dst.length;
 	    if(data == null)

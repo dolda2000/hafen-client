@@ -1427,7 +1427,7 @@ public class Resource implements Serializable {
 
 	public haven.Audio.CS stream() {
 	    try {
-		return(new haven.Audio.VorbisClip(new dolda.xiphutil.VorbisStream(new ByteArrayInputStream(coded))));
+		return(new haven.Audio.VorbisClip(new ByteArrayInputStream(coded)));
 	    } catch(IOException e) {
 		throw(new RuntimeException(e));
 	    }
