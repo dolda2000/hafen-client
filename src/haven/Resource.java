@@ -1408,19 +1408,22 @@ public class Resource implements Serializable {
 	}
     }
 
-    @LayerName("audio")
+    @LayerName("audio2")
     public class Audio extends Layer implements haven.Audio.Clip {
 	transient public byte[] coded;
 	public final String id;
 	public double bvol = 1.0;
 
-	public Audio(byte[] coded, String id) {
-	    this.coded = coded;
-	    this.id = id.intern();
-	}
-
 	public Audio(Message buf) {
-	    this(buf.bytes(), "cl");
+	    int ver = buf.uint8();
+	    if((ver >= 1) && (ver <= 2)) {
+		this.id = buf.string();
+		if(ver >= 2)
+		    bvol = buf.uint16() * 0.001;
+		this.coded = buf.bytes();
+	    } else {
+		throw(new LoadException("Unknown audio layer version: " + ver, getres()));
+	    }
 	}
 
 	public void init() {}
@@ -1435,24 +1438,6 @@ public class Resource implements Serializable {
 
 	public String layerid() {return(id);}
 	public double bvol() {return(bvol);}
-    }
-
-    @LayerName("audio2")
-    public static class Audio2 implements LayerFactory<Audio> {
-	public Audio cons(Resource res, Message buf) {
-	    int ver = buf.uint8();
-	    if((ver == 1) || (ver == 2)) {
-		String id = buf.string();
-		double bvol = 1.0;
-		if(ver == 2)
-		    bvol = buf.uint16() / 1000.0;
-		Audio ret = res.new Audio(buf.bytes(), id);
-		ret.bvol = bvol;
-		return(ret);
-	    } else {
-		throw(new LoadException("Unknown audio layer version: " + ver, res));
-	    }
-	}
     }
 
     @LayerName("midi")
