@@ -1409,7 +1409,7 @@ public class Resource implements Serializable {
     }
 
     @LayerName("audio")
-    public class Audio extends Layer implements IDLayer<String> {
+    public class Audio extends Layer implements haven.Audio.Clip {
 	transient public byte[] coded;
 	public final String id;
 	public double bvol = 1.0;
@@ -1433,9 +1433,8 @@ public class Resource implements Serializable {
 	    }
 	}
 
-	public String layerid() {
-	    return(id);
-	}
+	public String layerid() {return(id);}
+	public double bvol() {return(bvol);}
     }
 
     @LayerName("audio2")

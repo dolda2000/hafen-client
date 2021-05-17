@@ -51,6 +51,13 @@ public class Audio {
     public interface CS {
 	public int get(double[][] buf, int len);
     }
+
+    public interface Clip extends Resource.IDLayer<String> {
+	public CS stream();
+	public default String layerid() {return("");}
+	public default double bvol() {return(1.0);}
+    }
+    public static final Class<Clip> clip = Clip.class;
     
     public static class Mixer implements CS {
 	public final boolean cont;
