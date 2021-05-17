@@ -1526,6 +1526,30 @@ public class Resource implements Serializable {
 	return(null);
     }
 
+    public <L> Collection<L> layers(Class<L> cl, Predicate<? super L> sel) {
+	used = true;
+	if(sel == null)
+	    sel = l -> true;
+	Predicate<? super L> dsel = sel;
+	return(new DefaultCollection<L>() {
+		public Iterator<L> iterator() {
+		    return(Utils.filter(Utils.filter(layers.iterator(), cl), dsel));
+		}
+	    });
+    }
+
+    public <L> L layer(Class<L> cl, Predicate<? super L> sel) {
+	used = true;
+	for(Layer l : layers) {
+	    if(cl.isInstance(l)) {
+		L lc = cl.cast(l);
+		if((sel == null) || sel.test(lc))
+		    return(lc);
+	    }
+	}
+	return(null);
+    }
+
     public <I, L extends IDLayer<I>> L layer(Class<L> cl, I id) {
 	used = true;
 	for(Layer l : layers) {
