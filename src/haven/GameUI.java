@@ -164,7 +164,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
 		if(button == 1)
-		    GameUI.this.wdgmsg("belt", slot, 1, ui.modflags());
+		    act(slot, new MenuGrid.Interaction(1, ui.modflags()));
 		if(button == 3)
 		    GameUI.this.wdgmsg("setbelt", slot, null);
 		return(true);
