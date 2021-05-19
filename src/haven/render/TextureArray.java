@@ -24,24 +24,43 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render;
 
-import java.awt.Color;
-import haven.render.*;
+import haven.*;
+import java.util.*;
 
-public class GobHealth extends GAttrib implements Gob.SetupMod {
-    public final float hp;
-    public final MixColor fx;
-    
-    public GobHealth(Gob g, float hp) {
-	super(g);
-	this.hp = hp;
-	this.fx = new MixColor(255, 0, 0, 128 - Math.round(hp * 128));
+public abstract class TextureArray extends Texture {
+    public final int n;
+
+    public TextureArray(int n, DataBuffer.Usage usage, VectorFormat ifmt, VectorFormat efmt, DataBuffer.Filler<? super Image> init) {
+	super(usage, ifmt, efmt, init);
+	if(n < 0)
+	    throw(new IllegalArgumentException(String.format("Array texture layer count must be non-negative, not %d", n)));
+	this.n = n;
     }
-    
-    public Pipe.Op gobstate() {
-	if(hp >= 1)
-	    return(null);
-	return(fx);
+
+    public TextureArray(int n, DataBuffer.Usage usage, VectorFormat ifmt, DataBuffer.Filler<? super Image> init) {
+	this(n, usage, ifmt, ifmt, init);
+    }
+
+    public static class ArrayImage<T extends TextureArray> extends Image<T> {
+	public final int layer;
+
+	public ArrayImage(T tex, int w, int h, int d, int layer, int level) {
+	    super(tex, w, h, d, level);
+	    this.layer = layer;
+	}
+
+	public boolean equals(ArrayImage<?> that) {
+	    return(equals((Image)that) && (this.layer == that.layer));
+	}
+
+	public boolean equals(Object that) {
+	    return((that instanceof ArrayImage) && equals((ArrayImage<?>)that));
+	}
+
+	public String toString() {
+	    return(String.format("#<tex.arrayimage %s %d %dx%dx%d@%d>", tex, level, w, h, d, layer));
+	}
     }
 }

@@ -70,7 +70,7 @@ public class StaticSprite extends Sprite {
 	    if((lr.id < 0) || (((1 << lr.id) & fl) != 0))
 		rl.add(lr.l.make(owner));
 	}
-	if(res.layer(Resource.audio, "amb") != null)
+	if(res.layer(Audio.clip, "amb") != null)
 	    rl.add(new ActAudio.Ambience(res));
 	return(rl.toArray(new RenderTree.Node[0]));
     }

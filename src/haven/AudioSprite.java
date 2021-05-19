@@ -31,18 +31,12 @@ import haven.render.*;
 import haven.Audio.CS;
 
 public class AudioSprite {
-    public static List<Resource.Audio> clips(Resource res, String id)
-    {
-	List<Resource.Audio> cl = new ArrayList<Resource.Audio>();
-	for(Resource.Audio clip : res.layers(Resource.audio)) {
-	    if(clip.id == id)
-		cl.add(clip);
-	}
-	return(cl);
+    public static List<Audio.Clip> clips(Resource res, String id) {
+	return(new ArrayList<>(res.layers(Audio.clip, clip -> clip.layerid().equals(id))));
     }
 
-    public static Resource.Audio randoom(Resource res, String id) {
-	List<Resource.Audio> cl = clips(res, id);
+    public static Audio.Clip randoom(Resource res, String id) {
+	List<Audio.Clip> cl = clips(res, id);
 	if(!cl.isEmpty())
 	    return(cl.get((int)(Math.random() * cl.size())));
 	return(null);
@@ -51,17 +45,17 @@ public class AudioSprite {
     public static final Sprite.Factory fact = new Sprite.Factory() {
 	    public Sprite create(Sprite.Owner owner, Resource res, Message sdt) {
 		{
-		    Resource.Audio clip = randoom(res, "cl");
+		    Audio.Clip clip = randoom(res, "cl");
 		    if(clip != null)
 			return(new ClipSprite(owner, res, clip));
 		}
 		{
-		    List<Resource.Audio> clips = clips(res, "rep");
+		    List<Audio.Clip> clips = clips(res, "rep");
 		    if(!clips.isEmpty())
 			return(new RepeatSprite(owner, res, randoom(res, "beg"), clips, randoom(res, "end")));
 		}
 		{
-		    if((res.layer(Resource.audio, "amb") != null) || (res.layer(ClipAmbiance.Desc.class) != null))
+		    if((res.layer(Audio.clip, "amb") != null) || (res.layer(ClipAmbiance.Desc.class) != null))
 			return(new Ambience(owner, res));
 		}
 		return(null);
@@ -72,7 +66,7 @@ public class AudioSprite {
 	public final ActAudio.PosClip clip;
 	private boolean done = false;
 
-	public ClipSprite(Owner owner, Resource res, Resource.Audio clip) {
+	public ClipSprite(Owner owner, Resource res, Audio.Clip clip) {
 	    super(owner, res);
 	    this.clip = new ActAudio.PosClip(new Audio.Monitor(clip.stream()) {
 		    protected void eof() {
@@ -83,7 +77,21 @@ public class AudioSprite {
 	}
 
 	public void added(RenderTree.Slot slot) {
-	    slot.add(clip);
+	    ActAudio list = slot.state().get(ActAudio.audio);
+	    /* There is a strong case to be made that audio-thread
+	     * overloading should be less heuristically prevented than
+	     * having a fixed per-mixer limit like this which may or
+	     * may not fit certain system requirements, but it isn't
+	     * immediately obvious what the correct solution would
+	     * be. Combined with the problem below, there may be a
+	     * case to be made that there should be a way to get rid
+	     * of audio clips apart from having to completely play
+	     * them through. */
+	    if((list == null) || (list.pos.size() > 64)) {
+		done = true;
+	    } else {
+		slot.add(clip);
+	    }
 	}
 
 	public boolean tick(double dt) {
@@ -101,9 +109,9 @@ public class AudioSprite {
 
     public static class RepeatSprite extends Sprite implements Sprite.CDel {
 	private ActAudio.PosClip clip;
-	private final Resource.Audio end;
+	private final Audio.Clip end;
 
-	public RepeatSprite(Owner owner, Resource res, final Resource.Audio beg, final List<Resource.Audio> clips, Resource.Audio end) {
+	public RepeatSprite(Owner owner, Resource res, Audio.Clip beg, List<Audio.Clip> clips, Audio.Clip end) {
 	    super(owner, res);
 	    this.end = end;
 	    CS rep = new Audio.Repeater() {

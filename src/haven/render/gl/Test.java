@@ -3,6 +3,7 @@ package haven.render.gl;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.*;
+import java.nio.file.*;
 import javax.imageio.*;
 import com.jogamp.opengl.*;
 import com.jogamp.newt.event.*;
@@ -55,7 +56,7 @@ public class Test implements GLEventListener, KeyListener {
     static final Texture2D.Sampler2D tex;
     static {
 	try {
-	    try(InputStream in = new FileInputStream("/tmp/test.png")) {
+	    try(InputStream in = Files.newInputStream(Utils.path("/tmp/test.png"))) {
 		BufferedImage img = ImageIO.read(in);
 		texsz = new Coord(img.getWidth(), img.getHeight());
 		texdat = TexI.convert(img, texsz);

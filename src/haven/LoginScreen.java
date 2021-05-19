@@ -73,6 +73,10 @@ public class LoginScreen extends Widget {
 		setfocus(user);
 	    else
 		setfocus(pass);
+	    savepass.settip("Saving your login does not save your password, but rather " +
+			    "a randomly generated token that will be used to log in. " +
+			    "You can manage your saved tokens in your Account Settings.",
+			    true);
 	    LoginScreen.this.adda(this, bgc.adds(0, 10), 0.5, 0.0);
 	}
 
@@ -142,8 +146,8 @@ public class LoginScreen extends Widget {
     private void mklogin() {
 	synchronized(ui) {
 	    adda(btn = new IButton("gfx/hud/buttons/login", "u", "d", "o") {
-		    protected void depress() {Audio.play(Button.lbtdown.stream());}
-		    protected void unpress() {Audio.play(Button.lbtup.stream());}
+		    protected void depress() {ui.sfx(Button.clbtdown.stream());}
+		    protected void unpress() {ui.sfx(Button.clbtup.stream());}
 		}, bgc.adds(0, 210), 0.5, 0.5);
 	    progress(null);
 	}

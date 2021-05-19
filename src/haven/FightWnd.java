@@ -256,10 +256,8 @@ public class FightWnd extends Widget {
 	    int ty = (itemh - act.rnm.sz().y) / 2;
 	    g.image(act.rnm.tex(), new Coord(itemh + UI.scale(2), ty));
 	    g.aimage(act.ru.tex(), new Coord(sz.x - UI.scale(45), ty), 1.0, 0.0);
-	    Tex addtex = add[da == idx?1:0];
-	    g.aimage(addtex, new Coord(sz.x - UI.scale(5), itemh / 2), 1.0, 0.5);
-	    Tex subtex = sub[ds == idx?1:0];
-	    g.aimage(subtex, new Coord(sz.x - UI.scale(20), itemh / 2), 1.0, 0.5);
+	    g.aimage(add[da == idx?1:0], new Coord(sz.x - UI.scale(10), itemh / 2), 1.0, 0.5);
+	    g.aimage(sub[ds == idx?1:0], new Coord(sz.x - UI.scale(25), itemh / 2), 1.0, 0.5);
 	}
 
 	public void change(final Action act) {
@@ -734,34 +732,30 @@ public class FightWnd extends Widget {
 	    saves[i] = unused;
 
 	Widget p;
-	info = add(new ImageInfoBox(UI.scale(new Coord(223, 152))), UI.scale(new Coord(5, 35)).add(wbox.btloff()));
+	info = add(new ImageInfoBox(UI.scale(new Coord(223, 160))), UI.scale(new Coord(5, 35)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(info));
 
 	add(CharWnd.settip(new Img(CharWnd.catf.render("Martial Arts & Combat Schools").tex()), "gfx/hud/chr/tips/combat"), 0, 0);
-	actlist = add(new Actions(UI.scale(255), 8), UI.scale(new Coord(245, 35)).add(wbox.btloff()));
+	actlist = add(new Actions(UI.scale(250), 8), UI.scale(new Coord(245, 35)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(actlist));
 
-	p = add(new BView(), UI.scale(5), UI.scale(200));
-	count = add(new Label(""), p.c.add(p.sz.x + UI.scale(10), 0));
+	p = add(new BView(), UI.scale(5, 208));
+	count = add(new Label(""), p.pos("ur").adds(10, 0));
 
-	savelist = add(new Savelist(UI.scale(370), 3), UI.scale(new Coord(5, 238)).add(wbox.btloff()));
-	Frame.around(this, Collections.singletonList(savelist));
-	add(new Button(UI.scale(110), "Load", false) {
-		public void click() {
+	savelist = add(new Savelist(UI.scale(370), 3), p.pos("bl").adds(0, 2).add(wbox.btloff()));
+	p = Frame.around(this, Collections.singletonList(savelist));
+	p = add(new Button(UI.scale(110), "Load", false).action(() -> {
 		    load(savelist.sel);
 		    use(savelist.sel);
-		}
-	    }, UI.scale(395), UI.scale(238));
-	add(new Button(UI.scale(110), "Save", false) {
-		public void click() {
+	}), p.pos("ur").adds(10, 0));
+	p = add(new Button(UI.scale(110), "Save", false).action(() -> {
 		    if(savelist.sel < 0) {
 			getparent(GameUI.class).error("No save entry selected.");
 		    } else {
 			save(savelist.sel);
 			use(savelist.sel);
 		    }
-		}
-	    }, UI.scale(395), UI.scale(265));
+	}), p.pos("bl").adds(0, 2));
 	pack();
     }
 

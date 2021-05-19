@@ -30,19 +30,17 @@ import java.awt.Color;
 import java.util.*;
 
 public class IMeter extends Widget {
-    static Coord off = UI.scale(new Coord(22, 7));
-    static Coord fsz = UI.scale(new Coord(101, 24));
-    static Coord msz = UI.scale(new Coord(75, 10));
-    Indir<Resource> bg;
-    List<Meter> meters;
+    public static final Coord off = UI.scale(22, 7);
+    public static final Coord fsz = UI.scale(101, 24);
+    public static final Coord msz = UI.scale(75, 10);
+    public final Indir<Resource> bg;
+    public List<Meter> meters;
     
     @RName("im")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    Indir<Resource> bg = ui.sess.getres((Integer)args[0]);
-	    List<Meter> meters = new LinkedList<Meter>();
-	    for(int i = 1; i < args.length; i += 2)
-		meters.add(new Meter((Color)args[i], (Integer)args[i + 1]));
+	    List<Meter> meters = decmeters(args, 1);
 	    return(new IMeter(bg, meters));
 	}
     }
@@ -54,10 +52,10 @@ public class IMeter extends Widget {
     }
     
     public static class Meter {
-	Color c;
-	int a;
+	public final Color c;
+	public final double a;
 	
-	public Meter(Color c, int a) {
+	public Meter(Color c, double a) {
 	    this.c = c;
 	    this.a = a;
 	}
@@ -71,7 +69,7 @@ public class IMeter extends Widget {
 	    g.chcolor();
 	    for(Meter m : meters) {
 		int w = msz.x;
-		w = (w * m.a) / 100;
+		w = (int)Math.ceil(w * m.a);
 		g.chcolor(m.c);
 		g.frect(off, new Coord(w, msz.y));
 	    }
@@ -81,12 +79,17 @@ public class IMeter extends Widget {
 	}
     }
     
+    private static List<Meter> decmeters(Object[] args, int s) {
+	ArrayList<Meter> buf = new ArrayList<>();
+	for(int a = s; a < args.length; a += 2)
+	    buf.add(new Meter((Color)args[a], ((Number)args[a + 1]).doubleValue() * 0.01));
+	buf.trimToSize();
+	return(buf);
+    }
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "set") {
-	    List<Meter> meters = new LinkedList<Meter>();
-	    for(int i = 0; i < args.length; i += 2)
-		meters.add(new Meter((Color)args[i], (Integer)args[i + 1]));
-	    this.meters = meters;
+	    this.meters = decmeters(args, 0);
 	} else {
 	    super.uimsg(msg, args);
 	}

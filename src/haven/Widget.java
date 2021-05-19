@@ -35,6 +35,7 @@ import java.awt.event.KeyEvent;
 public class Widget {
     public UI ui;
     public Coord c, sz;
+    public int z;
     public Widget next, prev, child, lchild, parent;
     public boolean focustab = false, focusctl = false, hasfocus = false, visible = true;
     private boolean attached = false;
@@ -438,21 +439,39 @@ public class Widget {
     }
 
     public void link() {
-	if(parent.lchild != null)
-	    parent.lchild.next = this;
-	if(parent.child == null)
+	Widget prev;
+	for(prev = parent.lchild; (prev != null) && (prev.z > this.z); prev = prev.prev);
+	if(prev != null) {
+	    if((this.next = prev.next) != null)
+		this.next.prev = this;
+	    else
+		parent.lchild = this;
+	    (this.prev = prev).next = this;
+	} else {
+	    if((this.next = parent.child) != null)
+		this.next.prev = this;
+	    else
+		parent.lchild = this;
 	    parent.child = this;
-	this.prev = parent.lchild;
-	parent.lchild = this;
+	}
     }
     
     public void linkfirst() {
-	if(parent.child != null)
-	    parent.child.prev = this;
-	if(parent.lchild == null)
+	Widget next;
+	for(next = parent.child; (next != null) && (next.z < this.z); next = next.next);
+	if(next != null) {
+	    if((this.prev = next.prev) != null)
+		this.prev.next = this;
+	    else
+		parent.child = this;
+	    (this.next = next).prev = this;
+	} else {
+	    if((this.prev = parent.lchild) != null)
+		this.prev.next = this;
+	    else
+		parent.child = this;
 	    parent.lchild = this;
-	this.next = parent.child;
-	parent.child = this;
+	}
     }
 	
     public void unlink() {
@@ -467,7 +486,7 @@ public class Widget {
 	next = null;
 	prev = null;
     }
-	
+
     public Coord xlate(Coord c, boolean in) {
 	return(c);
     }
@@ -665,6 +684,8 @@ public class Widget {
 	    }
 	} else if(msg == "pack") {
 	    pack();
+	} else if(msg == "z") {
+	    z((Integer)args[0]);
 	} else if(msg == "curs") {
 	    if(args.length == 0)
 		cursor = null;
@@ -971,6 +992,16 @@ public class Widget {
 	    parent.cresize(this);
     }
 
+    public void z(int z) {
+	if(z != this.z) {
+	    this.z = z;
+	    if(parent != null) {
+		unlink();
+		link();
+	    }
+	}
+    }
+
     public void move(Area a) {
 	move(a.ul);
 	resize(a.sz());
@@ -1031,6 +1062,40 @@ public class Widget {
 	if(ret == null)
 	    throw(new IllegalArgumentException(String.format("Illegal position anchor \"%s\" from widget %s", nm, this)));
 	return(ret);
+    }
+
+    public Coord addhlp(Coord c, int pad, Widget... children) {
+	int x = c.x, y = c.y;
+	int maxh = 0;
+	for(Widget child : children)
+	    maxh = Math.max(maxh, child.sz.y);
+	for(Widget child : children) {
+	    add(child, x, y + ((maxh - child.sz.y) / 2));
+	    x += child.sz.x + pad;
+	}
+	return(new Coord(x - pad, y + maxh));
+    }
+
+    public int addhl(Coord c, int w, Widget... children) {
+	int x = c.x, y = c.y;
+	if(children.length == 1) {
+	    adda(children[0], x + (w / 2), y, 0.5, 0.0);
+	    return(y + children[0].sz.y);
+	}
+	int maxh = 0, cw = 0;
+	for(Widget child : children) {
+	    cw += child.sz.x;
+	    maxh = Math.max(maxh, child.sz.y);
+	}
+	int tpad = w - cw, npad = children.length - 1, perror = 0;
+	for(Widget child : children) {
+	    add(child, x, y + ((maxh - child.sz.y) / 2));
+	    x += child.sz.x;
+	    perror += tpad;
+	    x += perror / npad;
+	    perror %= npad;
+	}
+	return(y + maxh);
     }
 
     public void raise() {
@@ -1278,12 +1343,18 @@ public class Widget {
 
     public class KeyboundTip implements Indir<Tex> {
 	public final String base;
+	public final boolean rich;
 	private Tex rend = null;
 	private boolean hrend = false;
 	private KeyMatch rkey = null;
 
-	public KeyboundTip(String base) {
+	public KeyboundTip(String base, boolean rich) {
 	    this.base = base;
+	    this.rich = rich;
+	}
+
+	public KeyboundTip(String base) {
+	    this(base, false);
 	}
 
 	public KeyboundTip() {
@@ -1294,17 +1365,25 @@ public class Widget {
 	    KeyMatch key = (kb_gkey == null) ? null : kb_gkey.key();
 	    if(!hrend || (rkey != key)) {
 		String tip;
+		int w = 0;
 		if(base != null) {
-		    tip = RichText.Parser.quote(base);
-		    if((key != null) && (key != KeyMatch.nil))
-			tip = String.format("%s ($col[255,255,0]{%s})", tip, RichText.Parser.quote(kb_gkey.key().name()));
+		    if(rich) {
+			tip = base;
+			if((key != null) && (key != KeyMatch.nil))
+			    tip = String.format("%s\n\nKeyboard shortcut: $col[255,255,0]{%s}", tip, RichText.Parser.quote(kb_gkey.key().name()));
+			w = 300;
+		    } else {
+			tip = RichText.Parser.quote(base);
+			if((key != null) && (key != KeyMatch.nil))
+			    tip = String.format("%s ($col[255,255,0]{%s})", tip, RichText.Parser.quote(kb_gkey.key().name()));
+		    }
 		} else {
 		    if((key == null) || (key == KeyMatch.nil))
 			tip = null;
 		    else
 			tip = String.format("Keyboard shortcut: $col[255,255,0]{%s}", RichText.Parser.quote(kb_gkey.key().name()));
 		}
-		rend = (tip == null) ? null : RichText.render(tip, 0).tex();
+		rend = (tip == null) ? null : RichText.render(tip, w).tex();
 		hrend = true;
 		rkey = key;
 	    }
@@ -1340,9 +1419,13 @@ public class Widget {
 	return(tooltip(c, prev == this));
     }
 
-    public Widget settip(String text) {
-	tooltip = new KeyboundTip(text);
+    public Widget settip(String text, boolean rich) {
+	tooltip = new KeyboundTip(text, rich);
 	return(this);
+    }
+
+    public Widget settip(String text) {
+	return(settip(text, false));
     }
     
     public <T extends Widget> T getparent(Class<T> cl) {
@@ -1434,30 +1517,5 @@ public class Widget {
 	}
 
 	public abstract void ntick(double a);
-    }
-
-    public static class Temporary extends Widget {
-	public void lower() {
-	    Widget last = parent.lchild;
-	    last.next = child;
-	    child.prev = last;
-	    for(Widget w = child; w != null; w = w.next) {
-		w.parent = parent;
-		w.c = w.c.add(c);
-	    }
-	    parent.lchild = lchild;
-	    child = null;
-	    lchild = null;
-	    destroy();
-	}
-
-	public static void optimize(Widget wdg) {
-	    for(Widget w = wdg.child; w != null; w = w.next) {
-		if (w instanceof Temporary)
-		    ((Temporary)w).lower();
-		else
-		    optimize(w);
-	    }
-	}
     }
 }

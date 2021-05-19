@@ -355,6 +355,60 @@ public class GLRender implements Render, Disposable {
 	    default:
 		throw(new NotImplemented("update " + vbuf.usage + " vertex buffer"));
 	    }
+	} else if(buf instanceof Texture.Image) {
+	    Texture.Image img = (Texture.Image)buf;
+	    /* XXX: Textures marked for streaming usage should
+	     * probably support stream-buffers. Luckily, there are
+	     * currently no textures marked as such. */
+	    ByteBuffer data = ByteBuffer.wrap(((FillBuffers.Array)fill.fill(buf, env)).data);
+	    if(img.tex instanceof Texture2D) {
+		GLTexture.Tex2D tex = env.prepare((Texture2D)img.tex);
+		BGL gl = gl();
+		state.apply(gl, Pipe.nil);
+		gl.glActiveTexture(GL.GL_TEXTURE0);
+		tex.bind(gl);
+		gl.glTexImage2D(GL.GL_TEXTURE_2D, img.level, GLTexture.texifmt(tex.data), img.w, img.h, 0,
+				GLTexture.texefmt1(tex.data.ifmt, tex.data.efmt, tex.data.eperm),
+				GLTexture.texefmt2(tex.data.ifmt, tex.data.efmt),
+				data);
+		tex.unbind(gl);
+	    } else if(img.tex instanceof Texture3D) {
+		GLTexture.Tex3D tex = env.prepare((Texture3D)img.tex);
+		BGL gl = gl();
+		state.apply(gl, Pipe.nil);
+		gl.glActiveTexture(GL.GL_TEXTURE0);
+		tex.bind(gl);
+		gl.glTexImage3D(GL3.GL_TEXTURE_3D, img.level, GLTexture.texifmt(tex.data), img.w, img.h, img.d, 0,
+				GLTexture.texefmt1(tex.data.ifmt, tex.data.efmt, tex.data.eperm),
+				GLTexture.texefmt2(tex.data.ifmt, tex.data.efmt),
+				data);
+		tex.unbind(gl);
+	    } else if(img.tex instanceof Texture2DArray) {
+		TextureArray.ArrayImage<?> aimg = (TextureArray.ArrayImage<?>)buf;
+		GLTexture.Tex2DArray tex = env.prepare((Texture2DArray)img.tex);
+		BGL gl = gl();
+		state.apply(gl, Pipe.nil);
+		gl.glActiveTexture(GL.GL_TEXTURE0);
+		tex.bind(gl);
+		gl.glTexSubImage3D(GL3.GL_TEXTURE_2D_ARRAY, img.level,
+				   0, 0, aimg.layer, img.w, img.h, 1,
+				   GLTexture.texefmt1(tex.data.ifmt, tex.data.efmt, tex.data.eperm),
+				   GLTexture.texefmt2(tex.data.ifmt, tex.data.efmt),
+				   data);
+		tex.unbind(gl);
+	    } else if(img.tex instanceof TextureCube) {
+		TextureCube.CubeImage cimg = (TextureCube.CubeImage)buf;
+		GLTexture.TexCube tex = env.prepare((TextureCube)img.tex);
+		BGL gl = gl();
+		state.apply(gl, Pipe.nil);
+		gl.glActiveTexture(GL.GL_TEXTURE0);
+		tex.bind(gl);
+		gl.glTexImage2D(GLTexture.texface(cimg.face), img.level, GLTexture.texifmt(tex.data), img.w, img.h, 0,
+				GLTexture.texefmt1(tex.data.ifmt, tex.data.efmt, tex.data.eperm),
+				GLTexture.texefmt2(tex.data.ifmt, tex.data.efmt),
+				data);
+		tex.unbind(gl);
+	    }
 	} else {
 	    throw(new NotImplemented("updating buffer of type: " + buf.getClass().getName()));
 	}

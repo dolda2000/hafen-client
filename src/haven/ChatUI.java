@@ -1114,7 +1114,7 @@ public class ChatUI extends Widget {
 	synchronized(notifs) {
 	    notifs.addFirst(new Notification(chan, msg));
 	}
-	Audio.play(notifsfx);
+	ui.sfx(notifsfx);
     }
 
     private class Spring extends NormAnim {
