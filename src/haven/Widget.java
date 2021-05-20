@@ -273,7 +273,7 @@ public class Widget {
     }
 
     public <T extends Widget> T add(T child, int x, int y) {
-	return(add(child, new Coord(x, y)));
+	return(add(child, Coord.of(x, y)));
     }
 
     public <T extends Widget> T adda(T child, int x, int y, double ax, double ay) {
@@ -337,7 +337,7 @@ public class Widget {
 		} else if(op == 'c') {
 		    int y = (Integer)st.pop();
 		    int x = (Integer)st.pop();
-		    st.push(new Coord(x, y));
+		    st.push(Coord.of(x, y));
 		} else if(op == 'o') {
 		    Widget w = (Widget)st.pop();
 		    st.push(w.c.add(w.sz));
@@ -430,7 +430,7 @@ public class Widget {
 		c = UI.scale(c);
 	    add(child, c);
 	} else if(args[0] instanceof Coord2d) {
-	    add(child, ((Coord2d)args[0]).mul(new Coord2d(this.sz.sub(child.sz))).round());
+	    add(child, ((Coord2d)args[0]).mul(Coord2d.of(this.sz.sub(child.sz))).round());
 	} else if(args[0] instanceof String) {
 	    add(child, relpos((String)args[0], child, args, 1));
 	} else {
@@ -493,7 +493,7 @@ public class Widget {
 	
     public Coord parentpos(Widget in) {
 	if(in == this)
-	    return(new Coord(0, 0));
+	    return(Coord.z);
 	return(parent.xlate(parent.parentpos(in).add(c), true));
     }
 
@@ -1008,7 +1008,7 @@ public class Widget {
     }
 
     public void resize(int x, int y) {
-	resize(new Coord(x, y));
+	resize(Coord.of(x, y));
     }
 
     public void cresize(Widget ch) {
@@ -1073,7 +1073,7 @@ public class Widget {
 	    add(child, x, y + ((maxh - child.sz.y) / 2));
 	    x += child.sz.x + pad;
 	}
-	return(new Coord(x - pad, y + maxh));
+	return(Coord.of(x - pad, y + maxh));
     }
 
     public int addhl(Coord c, int w, Widget... children) {

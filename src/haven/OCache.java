@@ -53,7 +53,7 @@ public class OCache implements Iterable<Gob> {
     public static final int OD_ICON = 19;
     public static final int OD_RESATTR = 20;
     public static final int OD_END = 255;
-    public static final Coord2d posres = new Coord2d(0x1.0p-10, 0x1.0p-10).mul(11, 11);
+    public static final Coord2d posres = Coord2d.of(0x1.0p-10, 0x1.0p-10).mul(11, 11);
     /* XXX: Use weak refs */
     private Collection<Collection<Gob>> local = new LinkedList<Collection<Gob>>();
     private HashMultiMap<Long, Gob> objs = new HashMultiMap<Long, Gob>();
@@ -431,7 +431,7 @@ public class OCache implements Iterable<Gob> {
 	    Coord3f off;
 	    if((ef & 128) != 0) {
 		int x = msg.int16(), y = msg.int16(), z = msg.int16();
-		off = new Coord3f(x / 1000.0f, y / 1000.0f, z / 1000.0f);
+		off = Coord3f.of(x / 1000.0f, y / 1000.0f, z / 1000.0f);
 	    } else {
 		off = Coord3f.o;
 	    }
@@ -467,10 +467,10 @@ public class OCache implements Iterable<Gob> {
 	} else {
 	    DrawOffset dro = g.getattr(DrawOffset.class);
 	    if(dro == null) {
-		dro = new DrawOffset(g, new Coord3f(0, 0, off));
+		dro = new DrawOffset(g, Coord3f.of(0, 0, off));
 		g.setattr(dro);
 	    } else {
-		dro.off = new Coord3f(0, 0, off);
+		dro.off = Coord3f.of(0, 0, off);
 	    }
 	}
     }
