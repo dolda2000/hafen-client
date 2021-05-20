@@ -1707,7 +1707,7 @@ public class Utils {
 	return(new MapBuilder<K, V>(new HashMap<K, V>()));
     }
 
-    public static <F, T> Iterator<T> map(Iterator<F> from, Function<F, T> fn) {
+    public static <F, T> Iterator<T> map(Iterator<F> from, Function<? super F, ? extends T> fn) {
 	return(new Iterator<T>() {
 		boolean h = false;
 		T n;
@@ -1737,7 +1737,7 @@ public class Utils {
 	    });
     }
 
-    public static <E> Iterator<E> filter(Iterator<E> from, Predicate<E> filter) {
+    public static <E> Iterator<E> filter(Iterator<E> from, Predicate<? super E> filter) {
 	return(new Iterator<E>() {
 		boolean h = false;
 		E n;

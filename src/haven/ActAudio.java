@@ -240,14 +240,17 @@ public class ActAudio extends State {
 	public final double bvol;
 
 	public Ambience(Resource res, double bvol) {
-	    if(res.layer(Resource.audio, "amb") == null)
+	    Audio.Clip clip = res.layer(Audio.clip, "amb");
+	    if(clip == null)
 		throw(new RuntimeException("No ambient clip found in " + res));
+	    if(bvol < 0)
+		bvol = clip.bvol();
 	    this.res = res;
 	    this.bvol = bvol;
 	}
 
 	public Ambience(Resource res) {
-	    this(res, res.layer(Resource.audio, "amb").bvol);
+	    this(res, -1);
 	}
 
 	public static class Glob implements Global {
@@ -259,12 +262,13 @@ public class ActAudio extends State {
 	    
 	    public Glob(Resource res) {
 		this.res = res;
-		final Resource.Audio clip = res.layer(Resource.audio, "amb");
-		if(clip == null)
+		List<Audio.Clip> clips = new ArrayList<>(res.layers(Audio.clip, clip -> clip.layerid().equals("amb")));
+		if(clips.isEmpty())
 		    throw(new RuntimeException("No ambient clip found in " + res));
 		this.clip = new VolAdjust(new Audio.Repeater() {
+			Random rnd = new Random();
 			public CS cons() {
-			    return(clip.stream());
+			    return(clips.get(rnd.nextInt(clips.size())).stream());
 			}
 		    }, 0);
 	    }

@@ -2097,11 +2097,11 @@ public class CharWnd extends Window {
 		}
 
 		protected void depress() {
-		    ui.sfx(Button.lbtdown.stream());
+		    ui.sfx(Button.clbtdown.stream());
 		}
 
 		protected void unpress() {
-		    ui.sfx(Button.lbtup.stream());
+		    ui.sfx(Button.clbtup.stream());
 		}
 	    }
 

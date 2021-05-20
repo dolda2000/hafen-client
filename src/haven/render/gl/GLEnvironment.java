@@ -360,14 +360,10 @@ public class GLEnvironment implements Environment {
 	    if(disposed.isEmpty())
 		return(buf);
 	    copy = new ArrayList<>(disposed.size());
-	    int lseq = 0;	// XXX: This assertion should be safe to remove once initially verified.
 	    for(Iterator<GLObject> i = disposed.iterator(); i.hasNext();) {
 		GLObject obj = i.next();
-		if(obj.dispseq - lseq < 0)
-		    throw(new AssertionError());
 		if(obj.dispseq - tail > 0)
 		    break;
-		lseq = obj.dispseq;
 		copy.add(obj);
 		i.remove();
 	    }
