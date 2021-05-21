@@ -182,7 +182,7 @@ public class GOut {
 	 * rather than OpenGL coordinates, but it's not entirely
 	 * obvious to me right now how all of that should work
 	 * together. */
-	Area clip = new Area(new Coord(ul.x, root.br.y - br.y), new Coord(br.x, root.br.y - ul.y));
+	Area clip = Area.corn(Coord.of(ul.x, root.br.y - br.y), Coord.of(br.x, root.br.y - ul.y));
 	if(!clip.positive())
 	    return;
 	usestate(new States.Scissor(clip));
@@ -244,8 +244,8 @@ public class GOut {
     }
 
     public void frect2(Coord ul, Coord br) {
-	ul = new Coord(Math.max(ul.x + tx.x, this.ul.x), Math.max(ul.y + tx.y, this.ul.y));
-	br = new Coord(Math.min(br.x + tx.x, this.br.x), Math.min(br.y + tx.y, this.br.y));
+	ul = Coord.of(Math.max(ul.x + tx.x, this.ul.x), Math.max(ul.y + tx.y, this.ul.y));
+	br = Coord.of(Math.min(br.x + tx.x, this.br.x), Math.min(br.y + tx.y, this.br.y));
 	if((ul.x >= br.x) || (ul.y >= br.y))
 	    return;
 	float[] data = {br.x, ul.y, br.x, br.y, ul.x, ul.y, ul.x, br.y};
@@ -424,13 +424,9 @@ public class GOut {
 
     public GOut reclip2(Coord ul, Coord br) {
 	GOut g = new GOut(this);
-	g.ul = this.tx.add(ul);
-	g.br = this.tx.add(br);
-	g.tx = new Coord(g.ul);
-	g.ul.x = Math.max(g.ul.x, this.ul.x);
-	g.ul.y = Math.max(g.ul.y, this.ul.y);
-	g.br.x = Math.min(g.br.x, this.br.x);
-	g.br.y = Math.min(g.br.y, this.br.y);
+	g.tx = this.tx.add(ul);
+	g.ul = Coord.of(Math.max(this.tx.x + ul.x, this.ul.x), Math.max(this.tx.y + ul.y, this.ul.y));
+	g.br = Coord.of(Math.min(this.tx.x + br.x, this.br.x), Math.min(this.tx.y + br.y, this.br.y));
 	return(g);
     }
 
@@ -442,7 +438,7 @@ public class GOut {
 	GOut g = new GOut(this);
 	g.ul = this.tx.add(ul);
 	g.br = this.tx.add(br);
-	g.tx = new Coord(g.ul);
+	g.tx = g.ul;
 	return(g);
     }
 
@@ -451,7 +447,7 @@ public class GOut {
     }
 
     public static void getpixel(Render g, Pipe state, FragData buf, Coord c, Consumer<Color> cb) {
-	g.pget(state, buf, Area.sized(c, new Coord(1, 1)), new VectorFormat(4, NumberFormat.UNORM8), data -> {
+	g.pget(state, buf, Area.sized(c, Coord.of(1, 1)), new VectorFormat(4, NumberFormat.UNORM8), data -> {
 		Color result = new Color(data.get(0) & 0xff, data.get(1) & 0xff, data.get(2) & 0xff, data.get(3) & 0xff);
 		cb.accept(result);
 	    });
@@ -547,7 +543,7 @@ public class GOut {
 	if(img.tex.ifmt.cf == NumberFormat.DEPTH) {
 	    g.pget(img, new VectorFormat(1, NumberFormat.FLOAT32), data -> {
 		    FloatBuffer fdat = data.asFloatBuffer();
-		    Coord sz = new Coord(img.w, img.h);
+		    Coord sz = Coord.of(img.w, img.h);
 		    byte[] pbuf = new byte[sz.x * sz.y * 4];
 		    for(int y = 0, soff = 0, doff = 0; y < sz.y; y++) {
 			for(int x = 0; x < sz.x; x++, soff++, doff += 4) {
@@ -564,7 +560,7 @@ public class GOut {
 		});
 	} else {
 	    g.pget(img, new VectorFormat(4, NumberFormat.UNORM8), data -> {
-		    Coord sz = new Coord(img.w, img.h);
+		    Coord sz = Coord.of(img.w, img.h);
 		    byte[] pbuf = new byte[sz.x * sz.y * 4];
 		    data.get(pbuf);
 		    WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
