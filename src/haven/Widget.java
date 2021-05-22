@@ -1371,7 +1371,7 @@ public class Widget {
 			tip = base;
 			if((key != null) && (key != KeyMatch.nil))
 			    tip = String.format("%s\n\nKeyboard shortcut: $col[255,255,0]{%s}", tip, RichText.Parser.quote(kb_gkey.key().name()));
-			w = 300;
+			w = UI.scale(300);
 		    } else {
 			tip = RichText.Parser.quote(base);
 			if((key != null) && (key != KeyMatch.nil))
