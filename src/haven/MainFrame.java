@@ -330,9 +330,11 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	if(Config.resurl != null)
 	    Resource.addurl(Config.resurl);
 	if(ResCache.global != null) {
+	    /*
 	    try {
 		Resource.loadlist(Resource.remote(), ResCache.global.fetch("tmp/allused"), -10);
 	    } catch(IOException e) {}
+	    */
 	}
 	if(!Config.nopreload) {
 	    try {
