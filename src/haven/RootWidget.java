@@ -43,11 +43,11 @@ public class RootWidget extends ConsoleHost {
     public boolean globtype(char key, KeyEvent ev) {
 	if(!super.globtype(key, ev)) {
 	    if(key == '`') {
-		GameUI gi = findchild(GameUI.class);
 		if(Config.profile) {
 		    add(new Profwnd(guprof, "UI profile"), UI.scale(100, 100));
 		    add(new Profwnd(grprof, "GL profile"), UI.scale(500, 100));
 		    /* XXXRENDER
+		    GameUI gi = findchild(GameUI.class);
 		    if((gi != null) && (gi.map != null))
 			add(new Profwnd(gi.map.prof, "Map profile"), UI.scale(100, 250));
 		    */
