@@ -150,6 +150,15 @@ public abstract class Texture implements Disposable {
 	public Sampler<T> anisotropy(float v) {anisotropy = v; return(this);}
 	public Sampler<T> border(FColor v) {border = v; return(this);}
 
+	public int hashCode() {
+	    int ret = Objects.hash(magfilter, minfilter, mipfilter,
+				   swrap, twrap, rwrap,
+				   border);
+	    ret = (ret * 31) + Float.floatToIntBits(anisotropy);
+	    ret = (ret * 31) + System.identityHashCode(tex);
+	    return(ret);
+	}
+
 	private boolean equals(Sampler<?> that) {
 	    return((this.tex == that.tex) &&
 		   (this.magfilter == that.magfilter) && (this.minfilter == that.minfilter) && (this.mipfilter == that.mipfilter) &&
