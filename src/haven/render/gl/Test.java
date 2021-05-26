@@ -25,7 +25,7 @@ public class Test implements GLEventListener, KeyListener {
     Area shape;
 
     Test() {
-	GLCapabilities caps = new GLCapabilities(GLProfile.getDefault());
+	GLCapabilities caps = new GLCapabilities(GLProfile.getMaxProgrammableCore(true));
 	wnd = GLWindow.create(caps);
 	wnd.setTitle("Test");
 	wnd.setSize(1024, 768);
