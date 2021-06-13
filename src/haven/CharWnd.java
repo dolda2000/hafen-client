@@ -333,17 +333,17 @@ public class CharWnd extends Window {
 	    }
 	}
 
-	private WItem.ItemTip lasttip = null;
+	private ItemInfo.InfoTip lasttip = null;
 	public void draw(GOut g) {
-	    WItem.ItemTip tip = null;
-	    if(ui.lasttip instanceof WItem.ItemTip)
-		tip = (WItem.ItemTip)ui.lasttip;
+	    ItemInfo.InfoTip tip = null;
+	    if(ui.lasttip instanceof ItemInfo.InfoTip)
+		tip = (ItemInfo.InfoTip)ui.lasttip;
 	    if(tip != lasttip) {
 		for(El el : els)
 		    el.hl = false;
 		FoodInfo finf;
 		try {
-		    finf = (tip == null)?null:ItemInfo.find(FoodInfo.class, tip.item().info());
+		    finf = (tip == null)?null:ItemInfo.find(FoodInfo.class, tip.info());
 		} catch(Loading l) {
 		    finf = null;
 		}
