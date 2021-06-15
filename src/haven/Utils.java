@@ -1894,6 +1894,17 @@ public class Utils {
 		    throw(new Error("Triggered death"));
 		}
 	    });
+	Console.setscmd("sleep", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    long ms = (long)(Double.parseDouble(args[1]) * 1000);
+		    try {
+			Thread.sleep(ms);
+		    } catch(InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw(new RuntimeException(e));
+		    }
+		}
+	    });
 	Console.setscmd("lockdie", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    Object m1 = new Object(), m2 = new Object();
