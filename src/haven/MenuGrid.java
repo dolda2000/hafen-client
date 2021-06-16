@@ -442,7 +442,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		    BufferedImage ti = pag.rendertt(ttl);
 		    curtt = (ti == null) ? null : new TexI(ti);
 		} catch(Loading l) {
-		    return(null);
+		    return("...");
 		}
 		curttp = pag;
 		curttl = ttl;
