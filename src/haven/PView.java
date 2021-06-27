@@ -231,6 +231,7 @@ public abstract class PView extends Widget {
 	    next = post.hasNext() ? post.next() : null;
 	    cur.run(resolveout(g, next), cur.buf);
 	}
+	g.defstate();
     }
 
     public void add(PostProcessor post) {ctx.add(post);}
