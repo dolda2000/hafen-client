@@ -892,16 +892,26 @@ public class GLEnvironment implements Environment {
     }
 
     public void dispose() {
-	Collection<GLRender> copy;
-	synchronized(submitted) {
-	    copy = new ArrayList<>(submitted);
-	    submitted.clear();
-	    invalid = true;
+	{
+	    Collection<GLRender> copy;
+	    synchronized(submitted) {
+		copy = new ArrayList<>(submitted);
+		submitted.clear();
+		invalid = true;
+	    }
+	    for(GLRender cmd : copy) {
+		cmd.gl.abort();
+		sequnreg(cmd);
+	    }
 	}
-	for(GLRender cmd : copy) {
-	    cmd.gl.abort();
-	    sequnreg(cmd);
+	{
+	    Collection<GLQuery> copy;
+	    synchronized(drawmon) {
+		copy = new ArrayList<>(queries);
+		queries.clear();
+	    }
+	    for(GLQuery query : copy)
+		query.abort();
 	}
-	/* XXX: Provide a way to abort pending queries? */
     }
 }

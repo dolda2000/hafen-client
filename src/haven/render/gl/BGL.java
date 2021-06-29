@@ -203,6 +203,7 @@ public abstract class BGL {
     public void bglCreate(final GLObject ob) {
 	add(new Command() {
 		public void run(GL3 gl) {ob.create(gl);}
+		public void abort() {ob.abortcreate();}
 	    });
     }
 

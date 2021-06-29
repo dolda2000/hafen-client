@@ -24,19 +24,11 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render;
 
-import com.jogamp.opengl.*;
+public interface Abortable {
+    public void abort();
 
-public abstract class GLQuery extends GLObject {
-    public GLQuery(GLEnvironment env) {
-	super(env);
-    }
-
-    public abstract boolean check(GL3 gl);
-    public abstract void abort();
-
-    public void abortcreate() {
-	abort();
-    }
+    public static interface Runnable extends java.lang.Runnable, Abortable {}
+    public static interface Consumer<T> extends java.util.function.Consumer<T>, Abortable {}
 }
