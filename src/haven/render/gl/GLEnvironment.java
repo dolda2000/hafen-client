@@ -330,9 +330,11 @@ public class GLEnvironment implements Environment {
 	GLRender gcmd = (GLRender)cmd;
 	if(gcmd.env != this)
 	    throw(new IllegalArgumentException("environment mismatch"));
-	if(gcmd.gl != null) {
-	    synchronized(submitted) {
-		if(!invalid) {
+	boolean inv;
+	synchronized(submitted) {
+	    inv = invalid;
+	    if(gcmd.gl != null) {
+		if(!inv) {
 		    submitted.add(gcmd);
 		    submitted.notifyAll();
 		} else {
@@ -340,6 +342,8 @@ public class GLEnvironment implements Environment {
 		}
 	    }
 	}
+	if(inv)
+	    sequnreg(gcmd);
     }
 
     public void submitwait() throws InterruptedException {
