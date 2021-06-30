@@ -818,6 +818,26 @@ public class GLEnvironment implements Environment {
 	return(ret);
     }
 
+    public boolean compatible(DrawList ob) {
+	return((ob instanceof GLDrawList) && (((GLDrawList)ob).env == this));
+    }
+
+    public boolean compatible(Texture ob) {
+	return((ob.ro != null) && (ob.ro instanceof GLObject) && (((GLObject)ob.ro).env == this));
+    }
+
+    public boolean compatible(DataBuffer ob) {
+	if(ob instanceof Model.Indices) {
+	    Model.Indices buf = (Model.Indices)ob;
+	    return((buf.ro != null) && (buf.ro instanceof GLObject) && (((GLObject)buf.ro).env == this));
+	} else if(ob instanceof VertexArray.Buffer) {
+	    VertexArray.Buffer buf = (VertexArray.Buffer)ob;
+	    return((buf.ro != null) && (buf.ro instanceof GLObject) && (((GLObject)buf.ro).env == this));
+	} else {
+	    throw(new NotImplemented());
+	}
+    }
+
     private double lastpclean = Utils.rtime();
     public void clean() {
 	double now = Utils.rtime();

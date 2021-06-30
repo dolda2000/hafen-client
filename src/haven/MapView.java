@@ -1295,7 +1295,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void draw(Render out) {
-	    if((draw == null) || !draw.compatible(out.env())) {
+	    if((draw == null) || !out.env().compatible(draw)) {
 		if(draw != null)
 		    dispose();
 		draw = out.env().drawlist();

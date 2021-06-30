@@ -259,7 +259,7 @@ public abstract class PView extends Widget {
     }
 
     public void draw(GOut g) {
-	if((back == null) || !back.compatible(g.out.env())) {
+	if((back == null) || !g.out.env().compatible(back)) {
 	    if(env != null) {
 		envdispose();
 		env = null;

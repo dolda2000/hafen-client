@@ -192,7 +192,7 @@ public class ShadowMap extends State {
 	}
 
 	public void draw(Render out) {
-	    if((back == null) || !back.compatible(out.env())) {
+	    if((back == null) || !out.env().compatible(back)) {
 		if(back != null)
 		    back.dispose();
 		back = out.env().drawlist();
