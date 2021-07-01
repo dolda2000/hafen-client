@@ -323,6 +323,39 @@ public class Utils {
 	}
     }
 
+    public static List<String> getprefsl(String prefname, String[] def) {
+	byte[] enc = getprefb(prefname, null);
+	if(enc == null)
+	    return((def == null) ? null : Arrays.asList(def));
+	ByteBuffer buf = ByteBuffer.wrap(enc);
+	ArrayList<String> ret = new ArrayList<>();
+	for(int i = 0, s = 0; i < buf.capacity(); i++) {
+	    if(buf.get(i) == 0) {
+		buf.position(s).limit(i);
+		CharBuffer dec = utf8.decode(buf);
+		ret.add(dec.toString());
+		s = i + 1;
+		buf.limit(buf.capacity());
+	    }
+	}
+	ret.trimToSize();
+	return(ret);
+    }
+
+    public static void setprefsl(String prefname, Iterable<? extends CharSequence> val) {
+	ByteBuffer buf = ByteBuffer.allocate(1024);
+	for(CharSequence str : val) {
+	    ByteBuffer enc = utf8.encode(CharBuffer.wrap(str));
+	    buf = growbuf(buf, enc.remaining() + 1);
+	    buf.put(enc);
+	    buf.put((byte)0);
+	}
+	buf.flip();
+	byte[] enc = new byte[buf.remaining()];
+	buf.get(enc);
+	setprefb(prefname, enc);
+    }
+
     public static String getprop(String propname, String def) {
 	try {
 	    String ret;
