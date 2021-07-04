@@ -611,7 +611,7 @@ public class ChatUI extends Widget {
 			if(ev.getKeyCode() == KeyEvent.VK_UP) {
 			    if(hpos > 0) {
 				if(hpos == history.size())
-				    hcurrent = text;
+				    hcurrent = text();
 				rsettext(history.get(--hpos));
 			    }
 			    return(true);

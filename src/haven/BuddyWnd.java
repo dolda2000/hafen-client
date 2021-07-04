@@ -471,7 +471,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		}
 	    }, prev.pos("bl").adds(0, 2));
 	prev = add(new Button(sbw, "Set").action(() -> {
-		    setpname(pname.text);
+		    setpname(pname.text());
 	}), pname.pos("bl").adds(0, 5));
 
 	prev = add(new Label("My hearth secret:"), prev.pos("bl").adds(0, 10));
@@ -482,7 +482,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		}
 	    }, prev.pos("bl").adds(0, 2));
         addhl(charpass.pos("bl").adds(0, 5), sz.x,
-	      prev = new Button(sbw, "Set"   ).action(() -> { setpwd(charpass.text); }),
+	      prev = new Button(sbw, "Set"   ).action(() -> { setpwd(charpass.text()); }),
 	             new Button(sbw, "Clear" ).action(() -> { setpwd(""); }),
 	             new Button(sbw, "Random").action(() -> {setpwd(randpwd());})
 	      );
@@ -495,7 +495,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		}
 	    }, prev.pos("bl").adds(0, 2));
 	prev = add(new Button(sbw, "Add kin").action(() -> {
-		    BuddyWnd.this.wdgmsg("bypwd", opass.text);
+		    BuddyWnd.this.wdgmsg("bypwd", opass.text());
 		    opass.settext("");
 	}), opass.pos("bl").adds(0, 5));
 	pack();

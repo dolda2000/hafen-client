@@ -69,7 +69,7 @@ public class LoginScreen extends Widget {
 	    pass.pw = true;
 	    add(savepass = new CheckBox("Remember me", true), pass.pos("bl").adds(0, 10));
 	    savepass.a = save;
-	    if(user.text.equals(""))
+	    if(user.text().equals(""))
 		setfocus(user);
 	    else
 		setfocus(pass);
@@ -84,14 +84,14 @@ public class LoginScreen extends Widget {
 	}
 
 	Object[] data() {
-	    return(new Object[] {new AuthClient.NativeCred(user.text, pass.text), savepass.a});
+	    return(new Object[] {new AuthClient.NativeCred(user.text(), pass.text()), savepass.a});
 	}
 
 	boolean enter() {
-	    if(user.text.equals("")) {
+	    if(user.text().equals("")) {
 		setfocus(user);
 		return(false);
-	    } else if(pass.text.equals("")) {
+	    } else if(pass.text().equals("")) {
 		setfocus(pass);
 		return(false);
 	    } else {
