@@ -53,7 +53,8 @@ public abstract class ConsoleHost extends Widget {
 	    kg.remove();
 	}
 	
-	protected void done(String line) {
+	protected void done() {
+	    String line = line();
 	    history.add(line);
 	    try {
 		ui.cons.run(line);
@@ -70,12 +71,12 @@ public abstract class ConsoleHost extends Widget {
 	public boolean key(char c, int code, int mod) {
 	    if(c == 27) {
 		cancel();
-	    } else if((c == 8) && (mod == 0) && (line.length() == 0) && (point == 0)) {
+	    } else if((c == 8) && (mod == 0) && empty() && (point == 0)) {
 		cancel();
 	    } else if(code == KeyEvent.VK_UP) {
 		if(hpos > 0) {
 		    if(hpos == history.size())
-			hcurrent = line;
+			hcurrent = line();
 		    cmdline = new CommandLine(history.get(--hpos));
 		}
 	    } else if(code == KeyEvent.VK_DOWN) {
@@ -105,8 +106,8 @@ public abstract class ConsoleHost extends Widget {
     
     public void drawcmd(GOut g, Coord c) {
 	if(cmdline != null) {
-	    if((cmdtext == null) || (cmdtextf != cmdline.line))
-		cmdtext = cmdfoundry.render(":" + (cmdtextf = cmdline.line));
+	    if((cmdtext == null) || !cmdline.lneq(cmdtextf))
+		cmdtext = cmdfoundry.render(":" + (cmdtextf = cmdline.line()));
 	    g.image(cmdtext.tex(), c);
 	    int lx = cmdtext.advance(cmdline.point + 1);
 	    g.line(c.add(lx + UI.scale(1), UI.scale(2)), c.add(lx + UI.scale(1), UI.scale(14)), UI.scale(1));

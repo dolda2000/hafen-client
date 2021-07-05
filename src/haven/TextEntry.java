@@ -44,7 +44,6 @@ public class TextEntry extends SIWidget {
     public LineEdit buf;
     public int sx;
     public boolean pw = false;
-    @Deprecated public String text;
     private boolean dirty = false;
     private double focusstart;
     private Text.Line tcache = null;
@@ -65,14 +64,13 @@ public class TextEntry extends SIWidget {
     }
 
     public void rsettext(String text) {
-	buf = new LineEdit(this.text = text) {
-		protected void done(String line) {
-		    activate(line);
+	buf = new LineEdit(text) {
+		protected void done() {
+		    activate(line());
 		}
 		
 		protected void changed() {
 		    redraw();
-		    TextEntry.this.text = line;
 		    TextEntry.this.changed();
 		}
 	    };
@@ -88,7 +86,7 @@ public class TextEntry extends SIWidget {
 	if(name == "settext") {
 	    settext((String)args[0]);
 	} else if(name == "get") {
-	    wdgmsg("text", buf.line);
+	    wdgmsg("text", buf.line());
 	} else if(name == "pw") {
 	    pw = ((Integer)args[0]) != 0;
 	} else if(name == "dshow") {
@@ -102,12 +100,11 @@ public class TextEntry extends SIWidget {
 
     protected String dtext() {
 	if(pw) {
-	    String ret = "";
-	    for(int i = 0; i < buf.line.length(); i++)
-		ret += "\u2022";
-	    return(ret);
+	    char[] dp = new char[buf.length];
+	    java.util.Arrays.fill(dp, '\u2022');
+	    return(new String(dp));
 	} else {
-	    return(buf.line);
+	    return(buf.line());
 	}
     }
 
@@ -158,7 +155,7 @@ public class TextEntry extends SIWidget {
     }
 
     public boolean gkeytype(KeyEvent ev) {
-	activate(buf.line);
+	activate(buf.line());
 	return(true);
     }
 
@@ -184,6 +181,6 @@ public class TextEntry extends SIWidget {
     }
 
     public String text() {
-	return(this.text);
+	return(buf.line());
     }
 }

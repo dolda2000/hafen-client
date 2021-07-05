@@ -1130,9 +1130,9 @@ public class ChatUI extends Widget {
     public void drawsmall(GOut g, Coord br, int h) {
 	Coord c;
 	if(qline != null) {
-	    if((rqline == null) || !rqline.text.equals(qline.line)) {
+	    if((rqline == null) || !qline.lneq(rqline.text)) {
 		String pre = String.format("%s> ", qline.chan.name());
-		rqline = qfnd.render(pre + qline.line);
+		rqline = qfnd.render(pre + qline.line());
 		rqpre = pre.length();
 	    }
 	    c = br.sub(UI.scale(0, 20));
@@ -1247,9 +1247,9 @@ public class ChatUI extends Widget {
 	    qgrab.remove();
 	}
 	
-	protected void done(String line) {
-	    if(line.length() > 0)
-		chan.send(line);
+	protected void done() {
+	    if(!empty())
+		chan.send(line());
 	    cancel();
 	}
 

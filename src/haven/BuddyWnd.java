@@ -591,11 +591,11 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    bl.change(find(id));
 	} else if(msg == "pwd") {
 	    charpass.settext((String)args[0]);
-	    charpass.buf.point = charpass.buf.line.length();
+	    charpass.buf.point = charpass.buf.length;
 	    charpass.commit();
 	} else if(msg == "pname") {
 	    pname.settext((String)args[0]);
-	    pname.buf.point = pname.buf.line.length();
+	    pname.buf.point = pname.buf.length;
 	    pname.commit();
 	} else if(msg == "i-set") {
 	    Buddy b = (args[0] == null) ? null : find((Integer)args[0]);

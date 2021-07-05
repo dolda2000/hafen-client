@@ -615,7 +615,7 @@ public class FightWnd extends Widget {
 	    g.chcolor();
 	    if(n == edit) {
 		if(redit == null)
-		    redit = attrf.render(nmed.line);
+		    redit = attrf.render(nmed.line());
 		g.aimage(redit.tex(), new Coord(UI.scale(20), itemh / 2), 0.0, 0.5);
 		if(hasfocus && (((Utils.rtime() - focusstart) % 1.0) < 0.5)) {
 		    int cx = redit.advance(nmed.point);
@@ -641,8 +641,8 @@ public class FightWnd extends Widget {
 		    if(sel == usesave) {
 			edit = sel;
 			nmed = new LineEdit(saves[sel].text) {
-				protected void done(String line) {
-				    saves[edit] = attrf.render(line);
+				protected void done() {
+				    saves[edit] = attrf.render(line());
 				    edit = -1;
 				    nmed = null;
 				}

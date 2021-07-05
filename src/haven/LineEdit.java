@@ -31,7 +31,9 @@ import java.awt.event.*;
 import java.awt.datatransfer.*;
 
 public class LineEdit {
-    public String line = "";
+    public char[] buf = new char[16];
+    public int length = 0;
+    public int seq = 0;
     public int point = 0;
     private static Text tcache = null;
     private static final int C = 1;
@@ -40,6 +42,54 @@ public class LineEdit {
 
     public abstract class KeyHandler {
 	public abstract boolean key(char c, int code, int mod);
+    }
+
+    public String line() {
+	return(new String(buf, 0, length));
+    }
+    public String line(int off, int len) {
+	return(new String(buf, off, len));
+    }
+
+    private void line(String ln) {
+	if(buf.length < ln.length()) {
+	    Arrays.fill(buf, (char)0);
+	    buf = new char[ln.length() * 2];
+	}
+	ln.getChars(0, length = ln.length(), buf, 0);
+	seq++;
+    }
+
+    private char[] remove(int off, int len) {
+	System.arraycopy(buf, off + len, buf, off, (length -= len) - off);
+	seq++;
+	return(buf);
+    }
+    private char[] ensure(int off, int len) {
+	if(length + len > buf.length) {
+	    int nl = buf.length * 2;
+	    while(length + len > nl)
+		nl *= 2;
+	    char[] nb = Arrays.copyOf(buf, nl);
+	    Arrays.fill(buf, (char)0);
+	    buf = nb;
+	}
+	System.arraycopy(buf, off, buf, off + len, (length += len) - len - off);
+	seq++;
+	return(buf);
+    }
+
+    public boolean lneq(String ln) {
+	if(ln.length() != length)
+	    return(false);
+	for(int i = 0; i < length; i++) {
+	    if(buf[i] != ln.charAt(i))
+		return(false);
+	}
+	return(true);
+    }
+    public boolean empty() {
+	return(length == 0);
     }
 
     public class PCMode extends KeyHandler {
@@ -66,39 +116,36 @@ public class LineEdit {
 	
 	public boolean key(char c, int code, int mod) {
 	    if((c == 8) && (mod == 0)) {
-		if(point > 0) {
-		    line = line.substring(0, point - 1) + line.substring(point);
-		    point--;
-		}
+		if(point > 0)
+		    remove(--point, 1);
 	    } else if((c == 8) && (mod == C)) {
 		int b = wordstart(point);
-		line = line.substring(0, b) + line.substring(point);
+		remove(b, point - b);
 		point = b;
 	    } else if(c == 10) {
-		done(line);
+		done();
 	    } else if((c == 127) && (mod == 0)) {
-		if(point < line.length())
-		    line = line.substring(0, point) + line.substring(point + 1);
+		if(point < length)
+		    remove(point, 1);
 	    } else if((c == 127) && (mod == C)) {
 		int b = wordend(point);
-		line = line.substring(0, point) + line.substring(b);
+		remove(point, b - point);
 	    } else if((c >= 32) && (mod == 0)) {
-		line = line.substring(0, point) + c + line.substring(point);
-		point++;
+		ensure(point, 1)[point++] = c;
 	    } else if((code == KeyEvent.VK_LEFT) && (mod == 0)) {
 		if(point > 0)
 		    point--;
 	    } else if((code == KeyEvent.VK_LEFT) && (mod == C)) {
 		point = wordstart(point);
 	    } else if((code == KeyEvent.VK_RIGHT) && (mod == 0)) {
-		if(point < line.length())
+		if(point < length)
 		    point++;
 	    } else if((code == KeyEvent.VK_RIGHT) && (mod == C)) {
 		point = wordend(point);
 	    } else if((code == KeyEvent.VK_HOME) && (mod == 0)) {
 		point = 0;
 	    } else if((code == KeyEvent.VK_END) && (mod == 0)) {
-		point = line.length();
+		point = length;
 	    } else if((c == 'v') && (mod == C)) {
 		String cl = cliptext();
 		for(int i = 0; i < cl.length(); i++) {
@@ -107,7 +154,7 @@ public class LineEdit {
 			break;
 		    }
 		}
-		line = line.substring(0, point) + cl + line.substring(point);
+		cl.getChars(0, cl.length(), ensure(point, cl.length()), point);
 		point += cl.length();
 	    } else {
 		return(false);
@@ -128,13 +175,13 @@ public class LineEdit {
 	    private int point;
 	    
 	    private UndoState() {
-		this.line = LineEdit.this.line;
+		this.line = LineEdit.this.line();
 		this.point = LineEdit.this.point;
 	    }
 	}
 	
 	private void save() {
-	    if(!undolist.get(undolist.size() - 1).line.equals(line))
+	    if(!lneq(undolist.get(undolist.size() - 1).line))
 		undolist.add(new UndoState());
 	}
 	
@@ -177,40 +224,38 @@ public class LineEdit {
 	}
 
 	public boolean key(char c, int code, int mod) {
-	    if(mark > line.length())
-		mark = line.length();
+	    if(mark > length)
+		mark = length;
 	    String last = this.last;
 	    if((c == 8) && (mod == 0)) {
 		mode("erase");
-		if(point > 0) {
-		    line = line.substring(0, point - 1) + line.substring(point);
-		    point--;
-		}
+		if(point > 0)
+		    remove(--point, 1);
 	    } else if((c == 8) && ((mod == C) || (mod == M))) {
 		mode("backward-kill-word");
 		save();
 		int b = wordstart(point);
 		if(last == "backward-kill-word")
-		    yanklist.set(yanklist.size() - 1, line.substring(b, point) + yanklist.get(yanklist.size() - 1));
+		    yanklist.set(yanklist.size() - 1, line(b, point - b) + yanklist.get(yanklist.size() - 1));
 		else
-		    kill(line.substring(b, point));
-		line = line.substring(0, b) + line.substring(point);
+		    kill(line(b, point - b));
+		remove(b, point - b);
 		point = b;
 	    } else if(c == 10) {
-		done(line);
+		done();
 	    } else if((c == 'd') && (mod == C)) {
 		mode("erase");
-		if(point < line.length())
-		    line = line.substring(0, point) + line.substring(point + 1);
+		if(point < length)
+		    remove(point, 1);
 	    } else if((c == 'd') && (mod == M)) {
 		mode("kill-word");
 		save();
 		int b = wordend(point);
 		if(last == "kill-word")
-		    yanklist.set(yanklist.size() - 1, yanklist.get(yanklist.size() - 1) + line.substring(point, b));
+		    yanklist.set(yanklist.size() - 1, yanklist.get(yanklist.size() - 1) + line(point, b - point));
 		else
-		    kill(line.substring(point, b));
-		line = line.substring(0, point) + line.substring(b);
+		    kill(line(point, b - point));
+		remove(point, b - point);
 	    } else if((c == 'b') && (mod == C)) {
 		mode("move");
 		if(point > 0)
@@ -220,7 +265,7 @@ public class LineEdit {
 		point = wordstart(point);
 	    } else if((c == 'f') && (mod == C)) {
 		mode("move");
-		if(point < line.length())
+		if(point < length)
 		    point++;
 	    } else if((c == 'f') && (mod == M)) {
 		mode("move");
@@ -230,36 +275,41 @@ public class LineEdit {
 		point = 0;
 	    } else if((c == 'e') && (mod == C)) {
 		mode("move");
-		point = line.length();
+		point = length;
 	    } else if((c == 't') && (mod == C)) {
 		mode("transpose");
-		if((line.length() >= 2) && (point > 0)) {
-		    if(point < line.length()) {
-			line = line.substring(0, point - 1) + line.charAt(point) + line.charAt(point - 1) + line.substring(point + 1);
+		if((length >= 2) && (point > 0)) {
+		    if(point < length) {
+			char t = buf[point - 1];
+			buf[point - 1] = buf[point];
+			buf[point] = t;
 			point++;
 		    } else {
-			line = line.substring(0, point - 2) + line.charAt(point - 1) + line.charAt(point - 2);
+			char t = buf[point - 2];
+			buf[point - 2] = buf[point - 1];
+			buf[point - 1] = t;
 		    }
 		}
 	    } else if((c == 'k') && (mod == C)) {
 		mode("");
-		kill(line.substring(point));
-		line = line.substring(0, point);
+		kill(line(point, length - point));
+		length = point;
+		seq++;
 	    } else if((c == 'w') && (mod == M)) {
 		mode("");
 		if(mark < point) {
-		    kill(line.substring(mark, point));
+		    kill(line(mark, point - mark));
 		} else {
-		    kill(line.substring(point, mark));
+		    kill(line(point, mark - point));
 		}
 	    } else if((c == 'w') && (mod == C)) {
 		mode("");
 		if(mark < point) {
-		    kill(line.substring(mark, point));
-		    line = line.substring(0, mark) + line.substring(point);
+		    kill(line(mark, point - mark));
+		    remove(mark, point - mark);
 		} else {
-		    kill(line.substring(point, mark));
-		    line = line.substring(0, point) + line.substring(mark);
+		    kill(line(point, mark - point));
+		    remove(point, mark - point);
 		}
 	    } else if((c == 'y') && (mod == C)) {
 		mode("yank");
@@ -269,7 +319,7 @@ public class LineEdit {
 		if(yankpos > 0) {
 		    String yank = yanklist.get(--yankpos);
 		    mark = point;
-		    line = line.substring(0, point) + yank + line.substring(point);
+		    yank.getChars(0, yank.length(), ensure(point, yank.length()), point);
 		    point = mark + yank.length();
 		}
 	    } else if((c == 'y') && (mod == M)) {
@@ -277,7 +327,10 @@ public class LineEdit {
 		save();
 		if((last == "yank") && (yankpos > 0)) {
 		    String yank = yanklist.get(--yankpos);
-		    line = line.substring(0, mark) + yank + line.substring(point);
+		    if(yank.length() > point - mark)
+			yank.getChars(0, yank.length(), ensure(point, yank.length() - (point - mark)), mark);
+		    else
+			yank.getChars(0, yank.length(), remove(point, (point - mark) - yank.length()), mark);
 		    point = mark + yank.length();
 		}
 	    } else if((c == ' ') && (mod == C)) {
@@ -290,13 +343,12 @@ public class LineEdit {
 		    undopos = undolist.size() - 1;
 		if(undopos > 0) {
 		    UndoState s = undolist.get(--undopos);
-		    line = s.line;
+		    line(s.line);
 		    point = s.point;
 		}
 	    } else if((c >= 32) && (mod == 0)) {
-		mode("type");
-		line = line.substring(0, point) + c + line.substring(point);
-		point++;
+		mode("insert");
+		ensure(point, 1)[point++] = c;
 	    } else {
 		return(false);
 	    }
@@ -315,23 +367,23 @@ public class LineEdit {
     
     public LineEdit(String line) {
 	this();
-	this.line = line;
+	line(line);
 	this.point = line.length();
     }
     
     public void setline(String line) {
-	String prev = this.line;
-	this.line = line;
-	if(point > line.length())
-	    point = line.length();
-	if(!prev.equals(line))
+	if(!lneq(line)) {
+	    line(line);
+	    if(point > length)
+		point = length;
 	    changed();
+	}
     }
 
     public boolean key(char c, int code, int mod) {
-	String prev = line;
+	int pseq = this.seq;
 	boolean ret = mode.key(c, code, mod);
-	if(!prev.equals(line))
+	if(this.seq != pseq)
 	    changed();
 	return(ret);
     }
@@ -365,23 +417,23 @@ public class LineEdit {
     }
 
     private int wordstart(int from) {
-	while((from > 0) && !wordchar(line.charAt(from - 1))) from--;
-	while((from > 0) && wordchar(line.charAt(from - 1))) from--;
+	while((from > 0) && !wordchar(buf[from - 1])) from--;
+	while((from > 0) && wordchar(buf[from - 1])) from--;
 	return(from);
     }
     
     private int wordend(int from) {
-	while((from < line.length()) && !wordchar(line.charAt(from))) from++;
-	while((from < line.length()) && wordchar(line.charAt(from))) from++;
+	while((from < length) && !wordchar(buf[from])) from++;
+	while((from < length) && wordchar(buf[from])) from++;
 	return(from);
     }
 
-    protected void done(String line) {}
+    protected void done() {}
     protected void changed() {}
     
     public Text render(Text.Foundry f) {
-	if((tcache == null) || (tcache.text != line))
-	    tcache = f.render(line);
+	if((tcache == null) || !lneq(tcache.text))
+	    tcache = f.render(line());
 	return(tcache);
     }
     
