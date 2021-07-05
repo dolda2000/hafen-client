@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.util.*;
 import java.awt.event.KeyEvent;
 
 public class LoginScreen extends Widget {
@@ -34,159 +35,187 @@ public class LoginScreen extends Widget {
 	textfs = new Text.Foundry(Text.sans, 14).aa(true);
     public static final Tex bg = Resource.loadtex("gfx/loginscr");
     public static final Position bgc = new Position(UI.scale(420, 300));
-    private Login cur;
+    public final Credbox login;
+    public final String hostname;
     private Text error, progress;
-    private IButton btn;
     private Button optbtn;
     private OptWnd opts;
 
-    public LoginScreen() {
+    private String getpref(String name, String def) {
+	return(Utils.getpref(name + "@" + hostname, def));
+    }
+
+    private void setpref(String name, String val) {
+	Utils.setpref(name + "@" + hostname, val);
+    }
+
+    private byte[] gettoken(String name) {
+	String sv = getpref("savedtoken-" + name, null);
+	if(sv == null)
+	    return(null);
+	byte[] ret = Utils.hex2byte(sv);
+	if(ret.length == 0)
+	    return(null);
+	return(ret);
+    }
+
+    public LoginScreen(String hostname) {
 	super(bg.sz());
+	this.hostname = hostname;
 	setfocustab(true);
 	add(new Img(bg), Coord.z);
 	optbtn = adda(new Button(UI.scale(100), "Options"), pos("cbl").add(10, -10), 0, 1);
 	optbtn.setgkey(GameUI.kb_opt);
+	adda(login = new Credbox(), bgc.adds(0, 10), 0.5, 0.0).hide();
     }
 
-    private static abstract class Login extends Widget {
-	Login(Coord sz) {super(sz);}
+    public static final KeyBinding kb_savtoken = KeyBinding.get("login/savtoken", KeyMatch.forchar('R', KeyMatch.M));
+    public static final KeyBinding kb_deltoken = KeyBinding.get("login/deltoken", KeyMatch.forchar('F', KeyMatch.M));
+    public class Credbox extends Widget {
+	public final UserEntry user;
+	private final TextEntry pass;
+	private final CheckBox savetoken;
+	private final Button fbtn;
+	private final IButton exec;
+	private final Widget pwbox, tkbox;
+	private byte[] token = null;
+	private boolean inited = false;
 
-	abstract Object[] data();
-	abstract boolean enter();
-    }
+	public class UserEntry extends TextEntry {
+	    private UserEntry(int w) {
+		super(w, "");
+	    }
 
-    private class Pwbox extends Login {
-	TextEntry user, pass;
-	CheckBox savepass;
+	    protected void changed() {
+		checktoken();
+	    }
+	}
 
-	private Pwbox(String username, boolean save) {
-	    super(UI.scale(150, 150));
+	private Credbox() {
+	    super(UI.scale(200, 150));
 	    setfocustab(true);
 	    Widget prev = add(new Label("User name", textf), 0, 0);
-	    add(user = new TextEntry(UI.scale(150), username), prev.pos("bl").adds(0, 1));
-	    prev = add(new Label("Password", textf), user.pos("bl").adds(0, 10));
-	    add(pass = new TextEntry(UI.scale(150), ""), prev.pos("bl").adds(0, 1));
-	    pass.pw = true;
-	    add(savepass = new CheckBox("Remember me", true), pass.pos("bl").adds(0, 10));
-	    savepass.a = save;
-	    if(user.text().equals(""))
-		setfocus(user);
-	    else
-		setfocus(pass);
-	    savepass.settip("Saving your login does not save your password, but rather " +
+	    add(user = new UserEntry(UI.scale(this.sz.x)), prev.pos("bl").adds(0, 1));
+	    setfocus(user);
+
+	    add(pwbox = new Widget(Coord.z), user.pos("bl").adds(0, 10));
+	    pwbox.add(prev = new Label("Password", textf), Coord.z);
+	    pwbox.add(pass = new TextEntry(UI.scale(this.sz.x), ""), prev.pos("bl").adds(0, 1)).pw = true;
+	    pwbox.add(savetoken = new CheckBox("Remember me", true), pass.pos("bl").adds(0, 10));
+	    savetoken.setgkey(kb_savtoken);
+	    savetoken.settip("Saving your login does not save your password, but rather " +
 			    "a randomly generated token that will be used to log in. " +
 			    "You can manage your saved tokens in your Account Settings.",
 			    true);
-	    LoginScreen.this.adda(this, bgc.adds(0, 10), 0.5, 0.0);
+	    pwbox.pack();
+	    pwbox.hide();
+
+	    add(tkbox = new Widget(new Coord(this.sz.x, 0)), user.pos("bl").adds(0, 10));
+	    tkbox.adda(prev = new Label("Login saved", textfs), pos("cmid").y(0), 0.5, 0.0);
+	    tkbox.adda(fbtn = new Button(UI.scale(100), "Forget me"), pos("cmid").y(prev.pos("bl").y).adds(0, 5), 0.5, 0.0).action(this::forget);
+	    fbtn.setgkey(kb_deltoken);
+	    tkbox.pack();
+	    tkbox.hide();
+
+	    adda(exec = new IButton("gfx/hud/buttons/login", "u", "d", "o") {
+		    protected void depress() {ui.sfx(Button.clbtdown.stream());}
+		    protected void unpress() {ui.sfx(Button.clbtup.stream());}
+		    public void click() {enter();}
+		},
+		pos("cmid").y(Math.max(pwbox.pos("bl").y, tkbox.pos("bl").y)).adds(0, 20), 0.5, 0.0);
+	    pack();
 	}
 
-	public void wdgmsg(Widget sender, String name, Object... args) {
+	private void init() {
+	    if(inited)
+		return;
+	    inited = true;
+	    user.rsettext(getpref("loginname", ""));
+	    checktoken();
+	    if(pwbox.visible && !user.text().equals(""))
+		setfocus(pass);
 	}
 
-	Object[] data() {
-	    return(new Object[] {new AuthClient.NativeCred(user.text(), pass.text()), savepass.a});
+	private void checktoken() {
+	    if(this.token != null) {
+		Arrays.fill(this.token, (byte)0);
+		this.token = null;
+	    }
+	    byte[] token = gettoken(user.text());
+	    if(token == null) {
+		tkbox.hide();
+		pwbox.show();
+	    } else {
+		tkbox.show();
+		pwbox.hide();
+		this.token = token;
+	    }
 	}
 
-	boolean enter() {
+	private void forget() {
+	    setpref("savedtoken-" + user.text(), "");
+	    checktoken();
+	}
+
+	private void enter() {
 	    if(user.text().equals("")) {
 		setfocus(user);
-		return(false);
-	    } else if(pass.text().equals("")) {
+	    } else if(pwbox.visible && pass.text().equals("")) {
 		setfocus(pass);
-		return(false);
 	    } else {
-		return(true);
+		LoginScreen.this.wdgmsg("login", creds(), pwbox.visible && savetoken.state());
 	    }
 	}
 
-	public boolean globtype(char k, KeyEvent ev) {
-	    if((k == 'r') && ((ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0)) {
-		savepass.set(!savepass.a);
-		return(true);
-	    }
-	    return(false);
+	private AuthClient.Credentials creds() {
+	    byte[] token = this.token;
+	    if(token != null)
+		return(new AuthClient.TokenCred(user.text(), Arrays.copyOf(token, token.length)));
+	    else
+		return(new AuthClient.NativeCred(user.text(), pass.text()));
 	}
-    }
 
-    private class Tokenbox extends Login {
-	Button btn;
-		
-	private Tokenbox(String username) {
-	    super(UI.scale(250, 100));
-	    adda(new Label("Identity is saved for " + username, textfs), pos("cmid").y(0), 0.5, 0.0);
-	    adda(btn = new Button(UI.scale(100), "Forget me"), pos("cmid"), 0.5, 0.5);
-	    LoginScreen.this.adda(this, bgc.adds(0, 30), 0.5, 0.0);
-	}
-		
-	Object[] data() {
-	    return(new Object[0]);
-	}
-		
-	boolean enter() {
-	    return(true);
-	}
-		
-	public void wdgmsg(Widget sender, String name, Object... args) {
-	    if(sender == btn) {
-		LoginScreen.this.wdgmsg("forget");
-		return;
-	    }
-	    super.wdgmsg(sender, name, args);
-	}
-		
-	public boolean globtype(char k, KeyEvent ev) {
-	    if((k == 'f') && ((ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0)) {
-		LoginScreen.this.wdgmsg("forget");
+	public boolean keydown(KeyEvent ev) {
+	    if(key_act.match(ev)) {
+		enter();
 		return(true);
 	    }
-	    return(false);
+	    return(super.keydown(ev));
+	}
+
+	public void show() {
+	    if(!inited)
+		init();
+	    super.show();
 	}
     }
 
     private void mklogin() {
-	synchronized(ui) {
-	    adda(btn = new IButton("gfx/hud/buttons/login", "u", "d", "o") {
-		    protected void depress() {ui.sfx(Button.clbtdown.stream());}
-		    protected void unpress() {ui.sfx(Button.clbtup.stream());}
-		}, bgc.adds(0, 210), 0.5, 0.5);
-	    progress(null);
-	}
+	login.show();
+	progress(null);
     }
 
     private void error(String error) {
-	synchronized(ui) {
-	    if(this.error != null)
-		this.error = null;
-	    if(error != null)
-		this.error = textf.render(error, java.awt.Color.RED);
-	}
+	if(this.error != null)
+	    this.error = null;
+	if(error != null)
+	    this.error = textf.render(error, java.awt.Color.RED);
     }
 
     private void progress(String p) {
-	synchronized(ui) {
-	    if(progress != null)
-		progress = null;
-	    if(p != null)
-		progress = textf.render(p, java.awt.Color.WHITE);
-	}
+	if(progress != null)
+	    progress = null;
+	if(p != null)
+	    progress = textf.render(p, java.awt.Color.WHITE);
     }
 
     private void clear() {
-	if(cur != null) {
-	    ui.destroy(cur);
-	    cur = null;
-	    ui.destroy(btn);
-	    btn = null;
-	}
+	login.hide();
 	progress(null);
     }
 
     public void wdgmsg(Widget sender, String msg, Object... args) {
-	if(sender == btn) {
-	    if(cur.enter())
-		super.wdgmsg("login", cur.data());
-	    return;
-	} else if(sender == optbtn) {
+	if(sender == optbtn) {
 	    if(opts == null) {
 		opts = adda(new OptWnd(false) {
 			public void hide() {
@@ -213,22 +242,16 @@ public class LoginScreen extends Widget {
     }
 
     public void uimsg(String msg, Object... args) {
-	synchronized(ui) {
-	    if(msg == "passwd") {
-		clear();
-		cur = new Pwbox((String)args[0], (Boolean)args[1]);
-		mklogin();
-	    } else if(msg == "token") {
-		clear();
-		cur = new Tokenbox((String)args[0]);
-		mklogin();
-	    } else if(msg == "error") {
-		error((String)args[0]);
-	    } else if(msg == "prg") {
-		error(null);
-		clear();
-		progress((String)args[0]);
-	    }
+	if(msg == "login") {
+	    mklogin();
+	} else if(msg == "error") {
+	    error((String)args[0]);
+	} else if(msg == "prg") {
+	    error(null);
+	    clear();
+	    progress((String)args[0]);
+	} else {
+	    super.uimsg(msg, args);
 	}
     }
 
@@ -247,14 +270,5 @@ public class LoginScreen extends Widget {
 	    g.aimage(error.tex(), bgc.adds(0, 150), 0.5, 0.0);
 	if(progress != null)
 	    g.aimage(progress.tex(), bgc.adds(0, 50), 0.5, 0.0);
-    }
-
-    public boolean keydown(KeyEvent ev) {
-	if(key_act.match(ev)) {
-	    if((cur != null) && cur.enter())
-		wdgmsg("login", cur.data());
-	    return(true);
-	}
-	return(super.keydown(ev));
     }
 }

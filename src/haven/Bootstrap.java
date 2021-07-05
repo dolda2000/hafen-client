@@ -116,10 +116,9 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 
     public UI.Runner run(UI ui) throws InterruptedException {
 	ui.setreceiver(this);
-	ui.bind(ui.root.add(new LoginScreen()), 1);
+	ui.bind(ui.root.add(new LoginScreen(hostname)), 1);
 	String loginname = getpref("loginname", "");
 	boolean savepw = false;
-	String tokenname = getpref("tokenname", "");
 	transtoken();
 	String authserver = (Config.authserv == null) ? hostname : Config.authserv;
 	int authport = Config.authport;
@@ -142,7 +141,6 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			    acctname = authed;
 			    cookie = auth.getcookie();
 			    setpref("savedtoken-" + authed, Utils.byte2hex(auth.gettoken()));
-			    setpref("tokenname", authed);
 			    break authed;
 			}
 		    }
@@ -153,7 +151,6 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			} else {
 			    acctname = authed;
 			    cookie = auth.getcookie();
-			    setpref("tokenname", authed);
 			    break authed;
 			}
 		    }
@@ -163,38 +160,9 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		    ui.uimsg(1, "error", e.getMessage());
 		    continue retry;
 		}
-	    } else if((tokenname.length() > 0) && ((token = getprefb("savedtoken-" + tokenname, null, false)) != null)) {
-		savepw = true;
-		ui.uimsg(1, "token", tokenname);
-		while(true) {
-		    Message msg = getmsg();
-		    if(msg.id == 1) {
-			if(msg.name == "login") {
-			    break;
-			} else if(msg.name == "forget") {
-			    setpref("savedtoken-" + tokenname, "");
-			    setpref("tokenname", "");
-			    tokenname = "";
-			    continue retry;
-			}
-		    }
-		}
-		ui.uimsg(1, "prg", "Authenticating...");
-		try(AuthClient auth = new AuthClient(authserver, authport)) {
-		    if((acctname = auth.trytoken(tokenname, token)) == null) {
-			token = null;
-			setpref("savedtoken-" + tokenname, "");
-			ui.uimsg(1, "error", "Invalid save");
-			continue retry;
-		    }
-		    cookie = auth.getcookie();
-		} catch(IOException e) {
-		    ui.uimsg(1, "error", e.getMessage());
-		    continue retry;
-		}
 	    } else {
 		AuthClient.Credentials creds;
-		ui.uimsg(1, "passwd", loginname, savepw);
+		ui.uimsg(1, "login");
 		while(true) {
 		    Message msg = getmsg();
 		    if(msg.id == 1) {
@@ -217,7 +185,6 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		    cookie = auth.getcookie();
 		    if(savepw) {
 			setpref("savedtoken-" + acctname, Utils.byte2hex(auth.gettoken()));
-			setpref("tokenname", tokenname = acctname);
 		    }
 		} catch(UnknownHostException e) {
 		    ui.uimsg(1, "error", "Could not locate server");
