@@ -111,8 +111,8 @@ public class LoginScreen extends Widget {
 	    pwbox.hide();
 
 	    add(tkbox = new Widget(new Coord(this.sz.x, 0)), user.pos("bl").adds(0, 10));
-	    tkbox.adda(prev = new Label("Login saved", textfs), pos("cmid").y(0), 0.5, 0.0);
-	    tkbox.adda(fbtn = new Button(UI.scale(100), "Forget me"), pos("cmid").y(prev.pos("bl").y).adds(0, 5), 0.5, 0.0).action(this::forget);
+	    tkbox.add(prev = new Label("Login saved", textfs), UI.scale(0, 25));
+	    tkbox.adda(fbtn = new Button(UI.scale(100), "Forget me"), prev.pos("mid").x(this.sz.x), 1.0, 0.5).action(this::forget);
 	    fbtn.setgkey(kb_deltoken);
 	    tkbox.pack();
 	    tkbox.hide();
