@@ -122,7 +122,7 @@ public class LoginScreen extends Widget {
 		    protected void unpress() {ui.sfx(Button.clbtup.stream());}
 		    public void click() {enter();}
 		},
-		pos("cmid").y(Math.max(pwbox.pos("bl").y, tkbox.pos("bl").y)).adds(0, 20), 0.5, 0.0);
+		pos("cmid").y(Math.max(pwbox.pos("bl").y, tkbox.pos("bl").y)).adds(0, 35), 0.5, 0.0);
 	    pack();
 	}
 
