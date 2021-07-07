@@ -169,10 +169,14 @@ public class LoginScreen extends Widget {
 
 	private AuthClient.Credentials creds() {
 	    byte[] token = this.token;
-	    if(token != null)
-		return(new AuthClient.TokenCred(user.text(), Arrays.copyOf(token, token.length)));
-	    else
-		return(new AuthClient.NativeCred(user.text(), pass.text()));
+	    AuthClient.Credentials ret;
+	    if(token != null) {
+		ret = new AuthClient.TokenCred(user.text(), Arrays.copyOf(token, token.length));
+	    } else {
+		ret = new AuthClient.NativeCred(user.text(), pass.text());
+		pass.rsettext("");
+	    }
+	    return(ret);
 	}
 
 	public boolean keydown(KeyEvent ev) {
