@@ -85,8 +85,8 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	Utils.setpref(name + "@" + hostname, val);
     }
 
-    private byte[] getprefb(String name, byte[] def, boolean zerovalid) {
-	String sv = getpref(name, null);
+    private static byte[] getprefb(String name, String hostname, byte[] def, boolean zerovalid) {
+	String sv = Utils.getpref(name + "@" + hostname, null);
 	if(sv == null)
 	    return(def);
 	byte[] ret = Utils.hex2byte(sv);
@@ -103,6 +103,25 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	    setpref("savedtoken-" + tokenname, oldtoken);
 	    setpref("savedtoken", "");
 	}
+    }
+
+    public static byte[] gettoken(String user, String hostname) {
+	return(getprefb("savedtoken-" + user, hostname, null, false));
+    }
+
+    public static void rottokens(String user, String hostname, boolean creat, boolean rm) {
+	List<String> names = new ArrayList<>(Utils.getprefsl("saved-tokens@" + hostname, new String[] {}));
+	creat = creat || (!rm && names.contains(user));
+	if(rm || creat)
+	    names.remove(user);
+	if(creat)
+	    names.add(0, user);
+	Utils.setprefsl("saved-tokens@" + hostname, names);
+    }
+
+    public static void settoken(String user, String hostname, byte[] token) {
+	Utils.setpref("savedtoken-" + user + "@" + hostname, (token == null) ? "" : Utils.byte2hex(token));
+	rottokens(user, hostname, token != null, true);
     }
 
     private Message getmsg() throws InterruptedException {
@@ -134,20 +153,20 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		byte[] inittoken = this.inittoken;
 		this.inittoken = null;
 		authed: try(AuthClient auth = new AuthClient(authserver, authport)) {
-		    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + inituser, null, false))) {
+		    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + inituser, hostname, null, false))) {
 			String authed = auth.trytoken(inituser, inittoken);
 			setpref("lasttoken-" + inituser, Utils.byte2hex(inittoken));
 			if(authed != null) {
 			    acctname = authed;
 			    cookie = auth.getcookie();
-			    setpref("savedtoken-" + authed, Utils.byte2hex(auth.gettoken()));
+			    settoken(authed, hostname, auth.gettoken());
 			    break authed;
 			}
 		    }
-		    if((token = getprefb("savedtoken-" + inituser, null, false)) != null) {
+		    if((token = gettoken(inituser, hostname)) != null) {
 			String authed = auth.trytoken(inituser, token);
 			if(authed == null) {
-			    setpref("savedtoken-" + inituser, "");
+			    settoken(inituser, hostname, null);
 			} else {
 			    acctname = authed;
 			    cookie = auth.getcookie();
@@ -179,13 +198,13 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		    try {
 			acctname = creds.tryauth(auth);
 		    } catch(AuthClient.Credentials.AuthException e) {
+			settoken(creds.name(), hostname, null);
 			ui.uimsg(1, "error", e.getMessage());
 			continue retry;
 		    }
 		    cookie = auth.getcookie();
-		    if(savepw) {
-			setpref("savedtoken-" + acctname, Utils.byte2hex(auth.gettoken()));
-		    }
+		    if(savepw)
+			settoken(acctname, hostname, auth.gettoken());
 		} catch(UnknownHostException e) {
 		    ui.uimsg(1, "error", "Could not locate server");
 		    continue retry;
@@ -205,6 +224,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	    while(true) {
 		if(sess.state == "") {
 		    setpref("loginname", loginname);
+		    rottokens(loginname, hostname, false, false);
 		    break retry;
 		} else if(sess.connfailed != 0) {
 		    String error = sess.connerror;

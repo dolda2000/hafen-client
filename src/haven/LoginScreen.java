@@ -45,20 +45,6 @@ public class LoginScreen extends Widget {
 	return(Utils.getpref(name + "@" + hostname, def));
     }
 
-    private void setpref(String name, String val) {
-	Utils.setpref(name + "@" + hostname, val);
-    }
-
-    private byte[] gettoken(String name) {
-	String sv = getpref("savedtoken-" + name, null);
-	if(sv == null)
-	    return(null);
-	byte[] ret = Utils.hex2byte(sv);
-	if(ret.length == 0)
-	    return(null);
-	return(ret);
-    }
-
     public LoginScreen(String hostname) {
 	super(bg.sz());
 	this.hostname = hostname;
@@ -82,12 +68,47 @@ public class LoginScreen extends Widget {
 	private boolean inited = false;
 
 	public class UserEntry extends TextEntry {
+	    private final List<String> history = new ArrayList<>();
+	    private int hpos = -1;
+	    private String hcurrent;
+
 	    private UserEntry(int w) {
 		super(w, "");
+		history.addAll(Utils.getprefsl("saved-tokens@" + hostname, new String[] {}));
 	    }
 
 	    protected void changed() {
 		checktoken();
+	    }
+
+	    public void settext2(String text) {
+		rsettext(text);
+		changed();
+	    }
+
+	    public boolean keydown(KeyEvent ev) {
+		if(ConsoleHost.kb_histprev.key().match(ev)) {
+		    if(hpos < history.size() - 1) {
+			if(hpos < 0)
+			    hcurrent = text();
+			settext2(history.get(++hpos));
+		    }
+		} else if(ConsoleHost.kb_histnext.key().match(ev)) {
+		    if(hpos >= 0) {
+			if(--hpos < 0)
+			    settext2(hcurrent);
+			else
+			    settext2(history.get(hpos));
+		    }
+		} else {
+		    return(super.keydown(ev));
+		}
+		return(true);
+	    }
+
+	    public void init(String name) {
+		history.remove(name);
+		settext2(name);
 	    }
 	}
 
@@ -130,8 +151,7 @@ public class LoginScreen extends Widget {
 	    if(inited)
 		return;
 	    inited = true;
-	    user.rsettext(getpref("loginname", ""));
-	    checktoken();
+	    user.init(getpref("loginname", ""));
 	    if(pwbox.visible && !user.text().equals(""))
 		setfocus(pass);
 	}
@@ -141,7 +161,7 @@ public class LoginScreen extends Widget {
 		Arrays.fill(this.token, (byte)0);
 		this.token = null;
 	    }
-	    byte[] token = gettoken(user.text());
+	    byte[] token = Bootstrap.gettoken(user.text(), hostname);
 	    if(token == null) {
 		tkbox.hide();
 		pwbox.show();
@@ -153,7 +173,8 @@ public class LoginScreen extends Widget {
 	}
 
 	private void forget() {
-	    setpref("savedtoken-" + user.text(), "");
+	    String nm = user.text();
+	    Bootstrap.settoken(nm, hostname, null);
 	    checktoken();
 	}
 
