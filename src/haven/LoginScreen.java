@@ -79,6 +79,7 @@ public class LoginScreen extends Widget {
 
 	    protected void changed() {
 		checktoken();
+		savetoken.set(token != null);
 	    }
 
 	    public void settext2(String text) {
@@ -152,8 +153,6 @@ public class LoginScreen extends Widget {
 		return;
 	    inited = true;
 	    user.init(getpref("loginname", ""));
-	    if(pwbox.visible && !user.text().equals(""))
-		setfocus(pass);
 	}
 
 	private void checktoken() {
@@ -175,6 +174,7 @@ public class LoginScreen extends Widget {
 	private void forget() {
 	    String nm = user.text();
 	    Bootstrap.settoken(nm, hostname, null);
+	    savetoken.set(false);
 	    checktoken();
 	}
 
@@ -212,6 +212,9 @@ public class LoginScreen extends Widget {
 	    if(!inited)
 		init();
 	    super.show();
+	    checktoken();
+	    if(pwbox.visible && !user.text().equals(""))
+		setfocus(pass);
 	}
     }
 
