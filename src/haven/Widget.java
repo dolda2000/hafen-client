@@ -1456,6 +1456,10 @@ public class Widget {
 	return(show);
     }
 
+    public boolean visible() {
+	return(visible);
+    }
+
     public boolean tvisible() {
 	for(Widget w = this; w != null; w = w.parent) {
 	    if(!w.visible)
