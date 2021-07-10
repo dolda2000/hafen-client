@@ -96,6 +96,7 @@ public class Equipory extends Widget implements DTarget {
     protected void added() {
 	if(ava.avagob == -2)
 	    ava.avagob = getparent(GameUI.class).plid;
+	super.added();
     }
 
     public Equipory(long gobid) {

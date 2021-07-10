@@ -61,6 +61,7 @@ public class MapMod extends Window implements MapView.Grabber {
     protected void added() {
 	map = ui.sess.glob.map;
 	mv = getparent(GameUI.class).map;
+	super.added();
 	grab = mv.new GrabXL(this);
         mv.grab(grab);
     }
