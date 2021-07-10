@@ -126,9 +126,9 @@ public class LoginScreen extends Widget {
 	    pwbox.add(savetoken = new CheckBox("Remember me", true), pass.pos("bl").adds(0, 10));
 	    savetoken.setgkey(kb_savtoken);
 	    savetoken.settip("Saving your login does not save your password, but rather " +
-			    "a randomly generated token that will be used to log in. " +
-			    "You can manage your saved tokens in your Account Settings.",
-			    true);
+			     "a randomly generated token that will be used to log in. " +
+			     "You can manage your saved tokens in your Account Settings.",
+			     true);
 	    pwbox.pack();
 	    pwbox.hide();
 
