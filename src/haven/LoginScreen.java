@@ -218,6 +218,43 @@ public class LoginScreen extends Widget {
 	}
     }
 
+    public static class StatusLabel extends Widget {
+	public final HttpStatus stat;
+	public final double ax;
+
+	public StatusLabel(String host, double ax) {
+	    super(new Coord(UI.scale(150), FastText.h * 2));
+	    this.stat = new HttpStatus(host);
+	    this.ax = ax;
+	}
+
+	public void draw(GOut g) {
+	    int x = (int)Math.round(sz.x * ax);
+	    synchronized(stat) {
+		if(!stat.syn || (stat.status == ""))
+		    return;
+		if(stat.status == "up") {
+		    FastText.aprintf(g, new Coord(x, FastText.h * 0), ax, 0, "Server status: Up");
+		    FastText.aprintf(g, new Coord(x, FastText.h * 1), ax, 0, "Hearthlings playing: %,d", stat.users);
+		} else if(stat.status == "down") {
+		    FastText.aprintf(g, new Coord(x, FastText.h * 0), ax, 0, "Server status: Down");
+		} else if(stat.status == "shutdown") {
+		    FastText.aprintf(g, new Coord(x, FastText.h * 0), ax, 0, "Server status: Shutting down");
+		} else if(stat.status == "crashed") {
+		    FastText.aprintf(g, new Coord(x, FastText.h * 0), ax, 0, "Server status: Crashed");
+		}
+	    }
+	}
+
+	protected void added() {
+	    stat.start();
+	}
+
+	public void dispose() {
+	    stat.quit();
+	}
+    }
+
     private void mklogin() {
 	login.show();
 	progress(null);
