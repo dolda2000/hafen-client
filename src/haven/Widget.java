@@ -905,7 +905,7 @@ public class Widget {
 				Widget p = f.rprev();
 				f = ((p == null) || (p == this) || !p.hasparent(this))?lchild:p;
 			    }
-			    if(f.canfocus)
+			    if((f.canfocus && f.tvisible()) || (f == focused))
 				break;
 			}
 			setfocus(f);
@@ -1438,13 +1438,13 @@ public class Widget {
 
     public void hide() {
 	visible = false;
-	if(canfocus && (parent != null))
+	if(parent != null)
 	    parent.delfocusable(this);
     }
 
     public void show() {
 	visible = true;
-	if(canfocus && (parent != null))
+	if(parent != null)
 	    parent.newfocusable(this);
     }
 

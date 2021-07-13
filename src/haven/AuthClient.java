@@ -274,7 +274,7 @@ public class AuthClient implements Closeable {
 	}
 	
 	public String name() {
-	    throw(new UnsupportedOperationException());
+	    return(acctname);
 	}
 	
 	public String tryauth(AuthClient cl) throws IOException {
@@ -289,6 +289,10 @@ public class AuthClient implements Closeable {
 	    } else {
 		throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
 	    }
+	}
+
+	public void discard() {
+	    java.util.Arrays.fill(token, (byte)0);
 	}
     }
 
