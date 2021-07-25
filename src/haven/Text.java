@@ -104,8 +104,8 @@ public class Text {
 
     public static class Foundry extends Furnace {
 	private FontMetrics m;
-	Font font;
-	Color defcol;
+	public final Font font;
+	public final Color defcol;
 	public boolean aa = false;
 	private RichText.Foundry wfnd = null;
 		
