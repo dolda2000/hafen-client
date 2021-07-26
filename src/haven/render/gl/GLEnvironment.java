@@ -849,7 +849,7 @@ public class GLEnvironment implements Environment {
 
     private final Object seqmon = new Object();
     private boolean[] sequse = new boolean[16];
-    private int seqhead = 1, seqtail = 1;
+    private int seqhead = 1, seqtail = seqhead;
 
     private void seqresize(int nsz) {
 	boolean[] cseq = sequse, nseq = new boolean[nsz];
@@ -884,7 +884,7 @@ public class GLEnvironment implements Environment {
 		throw(new AssertionError());
 	    sequse[si] = false;
 	    if(seq == seqtail) {
-		while((seqtail < seqhead) && !sequse[seqtail & m])
+		while((seqhead - seqtail > 0) && !sequse[seqtail & m])
 		    seqtail++;
 	    }
 	    r.dispseq = 0;
