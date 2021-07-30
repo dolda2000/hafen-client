@@ -608,14 +608,14 @@ public class ChatUI extends Widget {
 		    }
 
 		    public boolean keydown(KeyEvent ev) {
-			if(ev.getKeyCode() == KeyEvent.VK_UP) {
+			if(ConsoleHost.kb_histprev.key().match(ev)) {
 			    if(hpos > 0) {
 				if(hpos == history.size())
 				    hcurrent = text();
 				rsettext(history.get(--hpos));
 			    }
 			    return(true);
-			} else if(ev.getKeyCode() == KeyEvent.VK_DOWN) {
+			} else if(ConsoleHost.kb_histnext.key().match(ev)) {
 			    if(hpos < history.size()) {
 				if(++hpos == history.size())
 				    rsettext(hcurrent);

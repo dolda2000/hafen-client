@@ -59,6 +59,8 @@ public abstract class Message {
 	};
 
     public static class BinError extends RuntimeException {
+	public Message msg;
+
 	public BinError(String message) {
 	    super(message);
 	}
@@ -67,6 +69,12 @@ public abstract class Message {
 	}
 	public BinError(Throwable cause) {
 	    super(cause);
+	}
+
+	public BinError msg(Message msg) {
+	    if(msg instanceof java.io.Serializable)
+		this.msg = msg;
+	    return(this);
 	}
     }
     public static class EOF extends BinError {
@@ -88,7 +96,7 @@ public abstract class Message {
     private void rensure(int len) {
 	while(len > rt - rh) {
 	    if(!underflow(rh + len - rt))
-		throw(new EOF("Required " + len + " bytes, got only " + (rt - rh)));
+		throw(new EOF("Required " + len + " bytes, got only " + (rt - rh)).msg(this));
 	}
     }
     private int rget(int len) {
@@ -134,7 +142,7 @@ public abstract class Message {
 	while(true) {
 	    if(l >= rt - rh) {
 		if(!underflow(256))
-		    throw(new EOF("Found no NUL (at length " + l + ")"));
+		    throw(new EOF("Found no NUL (at length " + l + ")").msg(this));
 	    }
 	    if(rbuf[l + rh] == 0) {
 		String ret = new String(rbuf, rh, l, Utils.utf8);
@@ -148,7 +156,7 @@ public abstract class Message {
 	while(n > 0) {
 	    if(rh >= rt) {
 		if(!underflow(Math.min(n, 1024)))
-		    throw(new EOF("Out of bytes to skip"));
+		    throw(new EOF("Out of bytes to skip").msg(this));
 	    }
 	    int s = Math.min(n, rt - rh);
 	    rh += s;
@@ -174,7 +182,7 @@ public abstract class Message {
 	while(len > 0) {
 	    if(rh >= rt) {
 		if(!underflow(Math.min(len, 1024)))
-		    throw(new EOF("Required " + olen + " bytes, got only " + (olen - len)));
+		    throw(new EOF("Required " + olen + " bytes, got only " + (olen - len)).msg(this));
 	    }
 	    int r = Math.min(len, rt - rh);
 	    System.arraycopy(rbuf, rh, b, off, r);
@@ -289,7 +297,7 @@ public abstract class Message {
 		ret.add(new Coord2d(float64(), float64()));
 		break;
 	    default:
-		throw(new FormatError("Encountered unknown type " + t + " in TTO list."));
+		throw(new FormatError("Encountered unknown type " + t + " in TTO list.").msg(this));
 	    }
 	}
 	return(ret.toArray());

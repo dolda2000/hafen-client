@@ -39,6 +39,8 @@ public abstract class ConsoleHost extends Widget {
     private String hcurrent;
     private UI.Grab kg;
     
+    public static final KeyBinding kb_histprev = KeyBinding.get("history/prev", KeyMatch.forcode(KeyEvent.VK_UP, 0));
+    public static final KeyBinding kb_histnext = KeyBinding.get("history/next", KeyMatch.forcode(KeyEvent.VK_DOWN, 0));
     private class CommandLine extends LineEdit {
 	private CommandLine() {
 	    super();
@@ -69,17 +71,24 @@ public abstract class ConsoleHost extends Widget {
 	}
 	
 	public boolean key(char c, int code, int mod) {
-	    if(c == 27) {
+	    if((c == 8) && (mod == 0) && empty() && (point == 0)) {
 		cancel();
-	    } else if((c == 8) && (mod == 0) && empty() && (point == 0)) {
+	    } else {
+		return(super.key(c, code, mod));
+	    }
+	    return(true);
+	}
+
+	public boolean key(KeyEvent ev) {
+	    if(key_esc.match(ev)) {
 		cancel();
-	    } else if(code == KeyEvent.VK_UP) {
+	    } else if(kb_histprev.key().match(ev)) {
 		if(hpos > 0) {
 		    if(hpos == history.size())
 			hcurrent = line();
 		    cmdline = new CommandLine(history.get(--hpos));
 		}
-	    } else if(code == KeyEvent.VK_DOWN) {
+	    } else if(kb_histnext.key().match(ev)) {
 		if(hpos < history.size()) {
 		    if(++hpos == history.size())
 			cmdline = new CommandLine(hcurrent);
@@ -87,7 +96,7 @@ public abstract class ConsoleHost extends Widget {
 			cmdline = new CommandLine(history.get(hpos));
 		}
 	    } else {
-		return(super.key(c, code, mod));
+		return(super.key(ev));
 	    }
 	    return(true);
 	}
