@@ -233,7 +233,7 @@ public class UI {
 	synchronized(this) {
 	    Widget wdg = f.create(this, cargs);
 	    wdg.attach(this);
-	    if(parent != 65535) {
+	    if(parent != -1) {
 		Widget pwdg = getwidget(parent);
 		if(pwdg == null)
 		    throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
