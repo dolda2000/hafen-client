@@ -29,9 +29,11 @@ package haven;
 import java.net.URL;
 import java.io.PrintStream;
 import java.nio.file.Path;
-import static haven.Utils.getprop;
+import java.util.Properties;
+import java.io.*;
 
 public class Config {
+    public static final Properties jarprops = getjarprops();
     public static String authuser = getprop("haven.authuser", null);
     public static String authserv = getprop("haven.authserv", null);
     public static String defserv = getprop("haven.defserv", "127.0.0.1");
@@ -57,7 +59,7 @@ public class Config {
     public static byte[] authck = null, inittoken = null;
     public static String prefspec = getprop("haven.prefspec", "hafen");
     public static final String confid = "";
-    
+
     static {
 	String p;
 	if((p = getprop("haven.authck", null)) != null)
@@ -65,7 +67,25 @@ public class Config {
 	if((p = getprop("haven.inittoken", null)) != null)
 	    inittoken = Utils.hex2byte(p);
     }
-    
+
+    private static Properties getjarprops() {
+	Properties ret = new Properties();
+	try(InputStream fp = Config.class.getResourceAsStream("boot-props")) {
+	    if(fp != null)
+		ret.load(fp);
+	} catch(IOException exc) {
+	    new Warning(exc, "error occurred when loading local properties");
+	}
+	return(ret);
+    }
+
+    private static String getprop(String name, String def) {
+	String ret = jarprops.getProperty(name);
+	if(ret != null)
+	    return(ret);
+	return(Utils.getprop(name, def));
+    }
+
     private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)
