@@ -352,8 +352,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     }
     
     static {
-	if((WebBrowser.self = JnlpBrowser.create()) == null)
-	    WebBrowser.self = DesktopBrowser.create();
+	WebBrowser.self = DesktopBrowser.create();
     }
 
     private static void netxsurgery() throws Exception {

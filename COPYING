@@ -34,18 +34,6 @@ respective licensing details are as follows:
       owned by JCraft, Inc. Its homepage is
       <http://www.jcraft.com/jorbis/>.
 
-    - lib/jnlp.jar:
-      I hate this file. I couldn't find any documentation whatsoever
-      on obtaining any JAR file for compiling against the JNLP
-      interfaces, so I had to resort to violence: I extracted the
-      interface "class" files from Sun's JNLP client's JAR file and
-      made this file containing only those interface classes.
-      
-      I don't really know which license they should be considered
-      being under, and they are probably, but not obviously, owned by
-      Sun Microsystems. If anyone can find a replacement for them, I'd
-      accept it at any time.
-
     - lib/jglob.jar
       This is a simple annotation processor for collecting various
       type lists in the source code. It was written by me, Fredrik

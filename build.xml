@@ -24,7 +24,6 @@
       <classpath>
 	<pathelement path="lib/jogl.jar" />
 	<pathelement path="lib/gluegen-rt.jar" />
-	<pathelement path="lib/jnlp.jar" />
 	<pathelement path="lib/jglob.jar" />
       </classpath>
       <compilerarg value="-Xlint:unchecked" />
