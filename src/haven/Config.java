@@ -56,17 +56,9 @@ public class Config {
     public static int authport = getint("haven.authport", 1871);
     public static boolean softres = getprop("haven.softres", "on").equals("on");
     public static Double uiscale = getfloat("haven.uiscale", null);
-    public static byte[] authck = null, inittoken = null;
+    public static byte[] authck = getbytes("haven.authck", null), inittoken = getbytes("haven.inittoken", null);
     public static String prefspec = getprop("haven.prefspec", "hafen");
     public static final String confid = "";
-
-    static {
-	String p;
-	if((p = getprop("haven.authck", null)) != null)
-	    authck = Utils.hex2byte(p);
-	if((p = getprop("haven.inittoken", null)) != null)
-	    inittoken = Utils.hex2byte(p);
-    }
 
     private static Properties getjarprops() {
 	Properties ret = new Properties();
@@ -91,6 +83,13 @@ public class Config {
 	if(val == null)
 	    return(def);
 	return(Integer.parseInt(val));
+    }
+
+    private static byte[] getbytes(String name, byte[] def) {
+	String val = getprop(name, null);
+	if(val == null)
+	    return(def);
+	return(Utils.hex2byte(val));
     }
 
     private static URL geturl(String name, String def) {
