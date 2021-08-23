@@ -28,9 +28,9 @@ package haven;
 
 import java.net.URL;
 import java.io.PrintStream;
-import java.nio.file.Path;
 import java.util.Properties;
 import java.io.*;
+import java.nio.file.*;
 
 public class Config {
     public static final Properties jarprops = getjarprops();
@@ -68,7 +68,19 @@ public class Config {
 	} catch(Exception exc) {
 	    /* XXX? Catch all exceptions? It just seems dumb to
 	     * potentially crash here for unforeseen reasons. */
-	    new Warning(exc, "error occurred when loading local properties").issue();
+	    new Warning(exc, "unexpected error occurred when loading local properties").issue();
+	}
+	try {
+	    Path jar = Utils.srcpath(Config.class);
+	    if(jar != null) {
+		try(InputStream fp = Files.newInputStream(jar.resolveSibling("haven-config.properties"))) {
+		    ret.load(fp);
+		} catch(NoSuchFileException exc) {
+		    /* That's quite alright. */
+		}
+	    }
+	} catch(Exception exc) {
+	    new Warning(exc, "unexpected error occurred when loading neighboring properties").issue();
 	}
 	return(ret);
     }

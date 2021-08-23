@@ -92,6 +92,20 @@ public class Utils {
 	return(base);
     }
 
+    public static Path srcpath(Class<?> cl) {
+	java.security.ProtectionDomain d = cl.getProtectionDomain();
+	if(d == null) throw(new IllegalArgumentException(String.valueOf(cl) + " has no prortection domain"));
+	java.security.CodeSource s = d.getCodeSource();
+	if(s == null) throw(new IllegalArgumentException(String.valueOf(cl) + " has no code source"));
+	URL url = s.getLocation();
+	if(url == null) throw(new IllegalArgumentException(String.valueOf(cl) + " has no location"));
+	try {
+	    return(Paths.get(url.toURI()));
+	} catch(java.net.URISyntaxException e) {
+	    throw(new IllegalArgumentException(String.valueOf(cl) + " has a malformed location", e));
+	}
+    }
+
     public static int drawtext(Graphics g, String text, Coord c) {
 	java.awt.FontMetrics m = g.getFontMetrics();
 	g.drawString(text, c.x, c.y + m.getAscent());
