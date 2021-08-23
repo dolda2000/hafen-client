@@ -65,7 +65,9 @@ public class Config {
 	try(InputStream fp = Config.class.getResourceAsStream("boot-props")) {
 	    if(fp != null)
 		ret.load(fp);
-	} catch(IOException exc) {
+	} catch(Exception exc) {
+	    /* XXX? Catch all exceptions? It just seems dumb to
+	     * potentially crash here for unforeseen reasons. */
 	    new Warning(exc, "error occurred when loading local properties");
 	}
 	return(ret);
