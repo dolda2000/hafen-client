@@ -68,7 +68,7 @@ public class Config {
 	} catch(Exception exc) {
 	    /* XXX? Catch all exceptions? It just seems dumb to
 	     * potentially crash here for unforeseen reasons. */
-	    new Warning(exc, "error occurred when loading local properties");
+	    new Warning(exc, "error occurred when loading local properties").issue();
 	}
 	return(ret);
     }
