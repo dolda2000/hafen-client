@@ -63,7 +63,7 @@
     <copy todir="build/classes/haven" file="etc/res-bgload" />
     <copy todir="build/classes/haven" file="etc/icon.png" />
   </target>
-  
+
   <target name="appletview" depends="build-env">
     <copy file="etc/applet.html" todir="build" />
   </target>
@@ -75,7 +75,7 @@
     </unjar>
   </target>
 
-  <target name="jar" depends="hafen-client,buildinfo,lib-classes">
+  <target name="jar" depends="hafen-client, buildinfo, lib-classes">
     <jar destfile="build/hafen.jar" update="true">
       <fileset dir="build/classes" />
       <fileset dir="build/classes-lib" />
@@ -86,7 +86,7 @@
     </jar>
     <chmod file="build/hafen.jar" perm="a+x" />
   </target>
-  
+
   <target name="res-jar" depends="build-env" unless="has-res-jar">
     <get src="http://www.havenandhearth.com/java/builtin-res.jar" dest="lib/ext/builtin-res.jar"
 	 usetimestamp="true" />
@@ -97,7 +97,7 @@
     <available property="lib-builtin-jar" file="lib/ext/builtin-res.jar" />
     <fail unless="lib-builtin-jar" message="builtin-res.jar not available" />
   </target>
-  
+
   <target name="jars" depends="build-env, jar, extlib/jogl">
     <copy todir="build" failonerror="false" quiet="true">
       <file name="lib/builtin-res.jar" />
@@ -132,21 +132,10 @@
   <target name="run" depends="bin">
     <java jar="bin/hafen.jar" fork="true" />
   </target>
-  
+
   <target name="clean">
     <delete dir="build" />
     <delete dir="lib/ext" />
     <delete dir="bin" />
-  </target>
-  
-  <target name="profile" depends="jars">
-    <nbprofiledirect>
-    </nbprofiledirect>
-      <java fork="true" jar="build/hafen.jar">
-        <jvmarg value="${profiler.info.jvmargs.agent}" />
-        <sysproperty key="haven.dbtext" value="on" />
-        <sysproperty key="haven.defserv" value="sh.seatribe.se" />
-        <sysproperty key="haven.resdir" value="/home/fredrik/src/hafen/res" />
-      </java>
   </target>
 </project>
