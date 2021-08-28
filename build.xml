@@ -1,6 +1,8 @@
 <?xml version="1.0" ?>
 
 <project name="hafen" default="deftgt">
+  <property name="ext-lib-base" value="http://www.havenandhearth.com/java" />
+
   <target name="build-env">
     <mkdir dir="build" />
     <mkdir dir="build/classes" />
@@ -27,9 +29,9 @@
   <target name="extlib/jogl" depends="extlib-env" unless="extlib/has-jogl">
     <mkdir dir="lib/ext/jogl" />
     <loadresource property="jogl-files">
-      <url url="http://www.havenandhearth.com/java/jogl/current/lib-files" />
+      <url url="${ext-lib-base}/jogl/current/lib-files" />
       <filterchain>
-	<prefixlines prefix="http://www.havenandhearth.com/java/jogl/current/" />
+	<prefixlines prefix="${ext-lib-base}/jogl/current/" />
       </filterchain>
     </loadresource>
     <get dest="lib/ext/jogl/" usetimestamp="true">
@@ -88,9 +90,9 @@
   </target>
 
   <target name="res-jar" depends="build-env" unless="has-res-jar">
-    <get src="http://www.havenandhearth.com/java/builtin-res.jar" dest="lib/ext/builtin-res.jar"
+    <get src="${ext-lib-base}/builtin-res.jar" dest="lib/ext/builtin-res.jar"
 	 usetimestamp="true" />
-    <get src="http://www.havenandhearth.com/java/hafen-res.jar" dest="lib/ext/hafen-res.jar"
+    <get src="${ext-lib-base}/hafen-res.jar" dest="lib/ext/hafen-res.jar"
 	 usetimestamp="true" />
     <available property="lib-res-jar" file="lib/ext/hafen-res.jar" />
     <fail unless="lib-res-jar" message="hafen-res.jar not available" />
