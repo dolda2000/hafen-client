@@ -1,14 +1,16 @@
 <?xml version="1.0" ?>
 
 <project name="hafen" default="deftgt">
+  <property name="ext-lib-base" value="http://www.havenandhearth.com/java" />
+
   <target name="build-env">
     <mkdir dir="build" />
     <mkdir dir="build/classes" />
-    <available property="has-res-jar" file="build/hafen-res.jar" />
+    <available property="has-res-jar" file="bin/builtin-res.jar" />
     <available property="has-buildinfo" file="build/classes/buildinfo" />
     <available property="unpacked-lib" file="build/classes-lib" />
   </target>
-  
+
   <target name="buildinfo" depends="build-env" unless="has-buildinfo">
     <exec executable="git" outputproperty="gitrev" failifexecutionfails="false">
       <arg line="rev-parse HEAD" />
@@ -18,12 +20,35 @@
     </echo>
   </target>
 
-  <target name="hafen-client" depends="build-env">
+
+  <target name="extlib-env">
+    <mkdir dir="lib/ext" />
+    <available property="extlib/has-jogl" file="lib/ext/jogl/has-jogl" />
+  </target>
+
+  <target name="extlib/jogl" depends="extlib-env" unless="extlib/has-jogl">
+    <mkdir dir="lib/ext/jogl" />
+    <loadresource property="jogl-files">
+      <url url="${ext-lib-base}/jogl/current/lib-files" />
+      <filterchain>
+	<prefixlines prefix="${ext-lib-base}/jogl/current/" />
+      </filterchain>
+    </loadresource>
+    <get dest="lib/ext/jogl/" usetimestamp="true">
+      <resourcelist>
+	<propertyresource name="jogl-files" />
+      </resourcelist>
+    </get>
+    <touch file="lib/ext/jogl/has-jogl" />
+  </target>
+
+
+  <target name="hafen-client" depends="build-env, extlib/jogl">
     <javac srcdir="src" destdir="build/classes" debug="on"
 	   source="1.8" target="1.8" includeantruntime="no">
       <classpath>
-	<pathelement path="lib/jogl.jar" />
-	<pathelement path="lib/gluegen-rt.jar" />
+	<pathelement path="lib/ext/jogl/jogl-all.jar" />
+	<pathelement path="lib/ext/jogl/gluegen-rt.jar" />
 	<pathelement path="lib/jnlp.jar" />
 	<pathelement path="lib/jglob.jar" />
       </classpath>
@@ -40,7 +65,7 @@
     <copy todir="build/classes/haven" file="etc/res-bgload" />
     <copy todir="build/classes/haven" file="etc/icon.png" />
   </target>
-  
+
   <target name="appletview" depends="build-env">
     <copy file="etc/applet.html" todir="build" />
   </target>
@@ -52,65 +77,67 @@
     </unjar>
   </target>
 
-  <target name="jar" depends="hafen-client,buildinfo,lib-classes">
+  <target name="jar" depends="hafen-client, buildinfo, lib-classes">
     <jar destfile="build/hafen.jar" update="true">
       <fileset dir="build/classes" />
       <fileset dir="build/classes-lib" />
       <manifest>
 	<attribute name="Main-Class" value="haven.MainFrame" />
-	<attribute name="Class-Path" value="jogl.jar gluegen-rt.jar builtin-res.jar hafen-res.jar" />
+	<attribute name="Class-Path" value="jogl-all.jar gluegen-rt.jar builtin-res.jar hafen-res.jar" />
       </manifest>
     </jar>
     <chmod file="build/hafen.jar" perm="a+x" />
   </target>
-  
+
   <target name="res-jar" depends="build-env" unless="has-res-jar">
-    <get src="http://www.havenandhearth.com/java/builtin-res.jar" dest="lib/builtin-res.jar"
+    <get src="${ext-lib-base}/builtin-res.jar" dest="lib/ext/builtin-res.jar"
 	 usetimestamp="true" />
-    <get src="http://www.havenandhearth.com/java/hafen-res.jar" dest="lib/hafen-res.jar"
+    <get src="${ext-lib-base}/hafen-res.jar" dest="lib/ext/hafen-res.jar"
 	 usetimestamp="true" />
-    <available property="lib-res-jar" file="lib/hafen-res.jar" />
+    <available property="lib-res-jar" file="lib/ext/hafen-res.jar" />
     <fail unless="lib-res-jar" message="hafen-res.jar not available" />
-    <available property="lib-builtin-jar" file="lib/builtin-res.jar" />
+    <available property="lib-builtin-jar" file="lib/ext/builtin-res.jar" />
     <fail unless="lib-builtin-jar" message="builtin-res.jar not available" />
   </target>
-  
-  <target name="jars" depends="build-env, jar, res-jar">
+
+  <target name="jars" depends="build-env, jar, extlib/jogl">
+    <copy todir="build" failonerror="false" quiet="true">
+      <file name="lib/builtin-res.jar" />
+      <file name="lib/hafen-res.jar" />
+    </copy>
     <copy todir="build">
-      <fileset dir="lib">
-	<include name="jogl.jar" />
-	<include name="gluegen-rt.jar" />
+      <fileset dir="lib/ext/jogl">
+	<include name="*.jar" />
+      </fileset>
+    </copy>
+    <copy file="local-config.properties" tofile="build/haven-config.properties" failonerror="false" quiet="true" />
+  </target>
+
+  <target name="bin" depends="jar, extlib/jogl, res-jar">
+    <mkdir dir="bin" />
+    <copy todir="bin">
+      <file name="build/hafen.jar" />
+      <fileset dir="lib/ext">
 	<include name="hafen-res.jar" />
 	<include name="builtin-res.jar" />
       </fileset>
-      <fileset dir="lib/jogl-natives" />
+      <fileset dir="lib/ext/jogl">
+	<include name="*.jar" />
+      </fileset>
     </copy>
+    <copy file="etc/ansgar-config.properties" tofile="bin/haven-config.properties" />
+    <chmod file="bin/hafen.jar" perm="a+x" />
   </target>
-  
-  <target name="deftgt" depends="jars, appletview" />
 
-  <target name="run" depends="jars">
-    <java jar="build/hafen.jar" fork="true">
-      <sysproperty key="haven.defserv" value="game.havenandhearth.com" />
-      <sysproperty key="haven.resurl" value="https://game.havenandhearth.com/res/" />
-      <sysproperty key="haven.cachebase" value="http://game.havenandhearth.com/render/" />
-      <sysproperty key="haven.mapbase" value="http://game.havenandhearth.com/java/" />
-      <sysproperty key="haven.dbtext" value="on" />
-    </java>
+  <target name="deftgt" depends="jars, bin, appletview" />
+
+  <target name="run" depends="bin">
+    <java jar="bin/hafen.jar" fork="true" />
   </target>
-  
+
   <target name="clean">
     <delete dir="build" />
-  </target>
-  
-  <target name="profile" depends="jars">
-    <nbprofiledirect>
-    </nbprofiledirect>
-      <java fork="true" jar="build/hafen.jar">
-        <jvmarg value="${profiler.info.jvmargs.agent}" />
-        <sysproperty key="haven.dbtext" value="on" />
-        <sysproperty key="haven.defserv" value="sh.seatribe.se" />
-        <sysproperty key="haven.resdir" value="/home/fredrik/src/hafen/res" />
-      </java>
+    <delete dir="lib/ext" />
+    <delete dir="bin" />
   </target>
 </project>
