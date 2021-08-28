@@ -4,11 +4,11 @@
   <target name="build-env">
     <mkdir dir="build" />
     <mkdir dir="build/classes" />
-    <available property="has-res-jar" file="build/builtin-res.jar" />
+    <available property="has-res-jar" file="bin/builtin-res.jar" />
     <available property="has-buildinfo" file="build/classes/buildinfo" />
     <available property="unpacked-lib" file="build/classes-lib" />
   </target>
-  
+
   <target name="buildinfo" depends="build-env" unless="has-buildinfo">
     <exec executable="git" outputproperty="gitrev" failifexecutionfails="false">
       <arg line="rev-parse HEAD" />
@@ -98,12 +98,12 @@
     <fail unless="lib-builtin-jar" message="builtin-res.jar not available" />
   </target>
   
-  <target name="jars" depends="build-env, jar, extlib/jogl, res-jar">
+  <target name="jars" depends="build-env, jar, extlib/jogl">
+    <copy todir="build" failonerror="false" quiet="true">
+      <file name="lib/builtin-res.jar" />
+      <file name="lib/hafen-res.jar" />
+    </copy>
     <copy todir="build">
-      <fileset dir="lib/ext">
-	<include name="hafen-res.jar" />
-	<include name="builtin-res.jar" />
-      </fileset>
       <fileset dir="lib/ext/jogl">
 	<include name="*.jar" />
       </fileset>
