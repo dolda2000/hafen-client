@@ -109,22 +109,33 @@
       </fileset>
     </copy>
   </target>
-  
-  <target name="deftgt" depends="jars, appletview" />
 
-  <target name="run" depends="jars">
-    <java jar="build/hafen.jar" fork="true">
-      <sysproperty key="haven.defserv" value="game.havenandhearth.com" />
-      <sysproperty key="haven.resurl" value="https://game.havenandhearth.com/res/" />
-      <sysproperty key="haven.cachebase" value="http://game.havenandhearth.com/render/" />
-      <sysproperty key="haven.mapbase" value="http://game.havenandhearth.com/java/" />
-      <sysproperty key="haven.dbtext" value="on" />
-    </java>
+  <target name="bin" depends="jar, extlib/jogl, res-jar">
+    <mkdir dir="bin" />
+    <copy todir="bin">
+      <file name="build/hafen.jar" />
+      <fileset dir="lib/ext">
+	<include name="hafen-res.jar" />
+	<include name="builtin-res.jar" />
+      </fileset>
+      <fileset dir="lib/ext/jogl">
+	<include name="*.jar" />
+      </fileset>
+    </copy>
+    <copy file="etc/ansgar-config.properties" tofile="bin/haven-config.properties" />
+    <chmod file="bin/hafen.jar" perm="a+x" />
+  </target>
+
+  <target name="deftgt" depends="jars, bin, appletview" />
+
+  <target name="run" depends="bin">
+    <java jar="bin/hafen.jar" fork="true" />
   </target>
   
   <target name="clean">
     <delete dir="build" />
     <delete dir="lib/ext" />
+    <delete dir="bin" />
   </target>
   
   <target name="profile" depends="jars">
