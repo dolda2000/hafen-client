@@ -108,6 +108,7 @@
 	<include name="*.jar" />
       </fileset>
     </copy>
+    <copy file="local-config.properties" tofile="build/haven-config.properties" failonerror="false" quiet="true" />
   </target>
 
   <target name="bin" depends="jar, extlib/jogl, res-jar">

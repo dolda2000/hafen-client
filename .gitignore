@@ -2,4 +2,5 @@
 /.project
 /build
 /bin
+/local-config.properties
 *~
