@@ -4,7 +4,7 @@
   <target name="build-env">
     <mkdir dir="build" />
     <mkdir dir="build/classes" />
-    <available property="has-res-jar" file="build/hafen-res.jar" />
+    <available property="has-res-jar" file="build/builtin-res.jar" />
     <available property="has-buildinfo" file="build/classes/buildinfo" />
     <available property="unpacked-lib" file="build/classes-lib" />
   </target>
@@ -18,12 +18,35 @@
     </echo>
   </target>
 
-  <target name="hafen-client" depends="build-env">
+
+  <target name="extlib-env">
+    <mkdir dir="lib/ext" />
+    <available property="extlib/has-jogl" file="lib/ext/jogl/has-jogl" />
+  </target>
+
+  <target name="extlib/jogl" depends="extlib-env" unless="extlib/has-jogl">
+    <mkdir dir="lib/ext/jogl" />
+    <loadresource property="jogl-files">
+      <url url="http://www.havenandhearth.com/java/jogl/current/lib-files" />
+      <filterchain>
+	<prefixlines prefix="http://www.havenandhearth.com/java/jogl/current/" />
+      </filterchain>
+    </loadresource>
+    <get dest="lib/ext/jogl/" usetimestamp="true">
+      <resourcelist>
+	<propertyresource name="jogl-files" />
+      </resourcelist>
+    </get>
+    <touch file="lib/ext/jogl/has-jogl" />
+  </target>
+
+
+  <target name="hafen-client" depends="build-env, extlib/jogl">
     <javac srcdir="src" destdir="build/classes" debug="on"
 	   source="1.8" target="1.8" includeantruntime="no">
       <classpath>
-	<pathelement path="lib/jogl.jar" />
-	<pathelement path="lib/gluegen-rt.jar" />
+	<pathelement path="lib/ext/jogl/jogl-all.jar" />
+	<pathelement path="lib/ext/jogl/gluegen-rt.jar" />
 	<pathelement path="lib/jnlp.jar" />
 	<pathelement path="lib/jglob.jar" />
       </classpath>
@@ -58,32 +81,32 @@
       <fileset dir="build/classes-lib" />
       <manifest>
 	<attribute name="Main-Class" value="haven.MainFrame" />
-	<attribute name="Class-Path" value="jogl.jar gluegen-rt.jar builtin-res.jar hafen-res.jar" />
+	<attribute name="Class-Path" value="jogl-all.jar gluegen-rt.jar builtin-res.jar hafen-res.jar" />
       </manifest>
     </jar>
     <chmod file="build/hafen.jar" perm="a+x" />
   </target>
   
   <target name="res-jar" depends="build-env" unless="has-res-jar">
-    <get src="http://www.havenandhearth.com/java/builtin-res.jar" dest="lib/builtin-res.jar"
+    <get src="http://www.havenandhearth.com/java/builtin-res.jar" dest="lib/ext/builtin-res.jar"
 	 usetimestamp="true" />
-    <get src="http://www.havenandhearth.com/java/hafen-res.jar" dest="lib/hafen-res.jar"
+    <get src="http://www.havenandhearth.com/java/hafen-res.jar" dest="lib/ext/hafen-res.jar"
 	 usetimestamp="true" />
-    <available property="lib-res-jar" file="lib/hafen-res.jar" />
+    <available property="lib-res-jar" file="lib/ext/hafen-res.jar" />
     <fail unless="lib-res-jar" message="hafen-res.jar not available" />
-    <available property="lib-builtin-jar" file="lib/builtin-res.jar" />
+    <available property="lib-builtin-jar" file="lib/ext/builtin-res.jar" />
     <fail unless="lib-builtin-jar" message="builtin-res.jar not available" />
   </target>
   
-  <target name="jars" depends="build-env, jar, res-jar">
+  <target name="jars" depends="build-env, jar, extlib/jogl, res-jar">
     <copy todir="build">
-      <fileset dir="lib">
-	<include name="jogl.jar" />
-	<include name="gluegen-rt.jar" />
+      <fileset dir="lib/ext">
 	<include name="hafen-res.jar" />
 	<include name="builtin-res.jar" />
       </fileset>
-      <fileset dir="lib/jogl-natives" />
+      <fileset dir="lib/ext/jogl">
+	<include name="*.jar" />
+      </fileset>
     </copy>
   </target>
   
@@ -101,6 +124,7 @@
   
   <target name="clean">
     <delete dir="build" />
+    <delete dir="lib/ext" />
   </target>
   
   <target name="profile" depends="jars">
