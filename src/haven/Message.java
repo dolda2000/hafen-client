@@ -47,6 +47,8 @@ public abstract class Message {
     public static final int T_FLOAT64 = 16;
     public static final int T_FCOORD32 = 18;
     public static final int T_FCOORD64 = 19;
+    public static final int T_FLOAT8 = 21;
+    public static final int T_FLOAT16 = 22;
 
     private final static byte[] empty = new byte[0];
     public int rh = 0, rt = 0, wh = 0, wt = 0;
@@ -283,6 +285,12 @@ public abstract class Message {
 		if((len & 128) != 0)
 		    len = int32();
 		ret.add(bytes(len));
+		break;
+	    case T_FLOAT8:
+		ret.add(float8());
+		break;
+	    case T_FLOAT16:
+		ret.add(float16());
 		break;
 	    case T_FLOAT32:
 		ret.add(float32());
