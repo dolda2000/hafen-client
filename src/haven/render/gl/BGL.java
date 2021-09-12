@@ -599,6 +599,17 @@ public abstract class BGL {
 	    });
     }
 
+    public void glObjectLabel(final int identifier, final ID name, final int length, final byte[] label) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glObjectLabel(identifier, name.glid(), length, label, 0);}
+	    });
+    }
+
+    public void glObjectLabel(int identifier, ID name, String label) {
+	byte[] enc = label.getBytes(haven.Utils.utf8);
+	glObjectLabel(identifier, name, enc.length, enc);
+    }
+
     public void glPixelStorei(final int pname, final int param) {
 	add(new Command() {
 		public void run(GL3 gl) {gl.glPixelStorei(pname, param);}
