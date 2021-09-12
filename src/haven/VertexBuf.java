@@ -94,8 +94,8 @@ public class VertexBuf {
 
     protected VertexArray fmtdata() {
 	Layout fmt = fmtfor(bufs);
-	this.dbuf = new VertexArray.Buffer(fmt.inputs[0].stride * num, DataBuffer.Usage.STATIC, this::fill).shared();
-	return(new VertexArray(fmt, dbuf).shared());
+	this.dbuf = new VertexArray.Buffer(fmt.inputs[0].stride * num, DataBuffer.Usage.STATIC, this::fill).shared().desc(this);
+	return(new VertexArray(fmt, dbuf).shared().desc(this));
     }
 
     public VertexArray data() {
