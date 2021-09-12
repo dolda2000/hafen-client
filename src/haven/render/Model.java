@@ -36,6 +36,7 @@ public class Model implements Rendered, RenderTree.Node, Disposable {
     public final int f, n;
     public final int ninst;
     public Disposable ro;
+    public Object desc;
 
     public enum Mode {
 	POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_STRIP, TRIANGLE_FAN
@@ -70,6 +71,7 @@ public class Model implements Rendered, RenderTree.Node, Disposable {
 	public final Filler<? super Indices> init;
 	public boolean shared = false;
 	public Disposable ro;
+	public Object desc;
 
 	public Indices(int n, NumberFormat fmt, Usage usage, Filler<? super Indices> init) {
 	    this.fmt = fmt;
@@ -95,6 +97,15 @@ public class Model implements Rendered, RenderTree.Node, Disposable {
 		}
 	    }
 	}
+
+	public String toString() {
+	    return(String.format("#<ind-buf %s %,d%s>", fmt, n, (desc == null) ? "" : " (" + desc + ")"));
+	}
+
+	public Indices desc(Object desc) {
+	    this.desc = desc;
+	    return(this);
+	}
     }
 
     public void dispose() {
@@ -112,5 +123,17 @@ public class Model implements Rendered, RenderTree.Node, Disposable {
 
     public void draw(Pipe state, Render out) {
 	out.draw(state, this);
+    }
+
+    public String toString() {
+	return(String.format("#<model %s %,d-%,d%s%s va:%s%s>",
+			     mode, f, n, (ninst == 1) ? "" : "i:" + ninst,
+			     (ind == null) ? "" : "ind:" + ind, va,
+			     (desc == null) ? "" : " (" + desc + ")"));
+    }
+
+    public Model desc(Object desc) {
+	this.desc = desc;
+	return(this);
     }
 }

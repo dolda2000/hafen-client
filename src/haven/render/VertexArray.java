@@ -36,6 +36,7 @@ public class VertexArray implements Disposable {
     public final Buffer[] bufs;
     public boolean shared = false;
     public Disposable ro;
+    public Object desc;
 
     public VertexArray(Layout fmt, Buffer... bufs) {
 	if(bufs.length != fmt.nbufs)
@@ -159,6 +160,7 @@ public class VertexArray implements Disposable {
 	public final Filler<? super Buffer> init;
 	public boolean shared = false;
 	public Disposable ro;
+	public Object desc;
 
 	public Buffer(int size, Usage usage, Filler<? super Buffer> init) {
 	    this.size = size;
@@ -187,6 +189,15 @@ public class VertexArray implements Disposable {
 		}
 	    }
 	}
+
+	public String toString() {
+	    return(String.format("#<vbuf %,d%s>", size, (desc == null) ? "" : " (" + desc + ")"));
+	}
+
+	public Buffer desc(Object desc) {
+	    this.desc = desc;
+	    return(this);
+	}
     }
 
     public VertexArray shared() {
@@ -205,5 +216,14 @@ public class VertexArray implements Disposable {
 	    if(!buf.shared)
 		buf.dispose();
 	}
+    }
+
+    public String toString() {
+	return(String.format("#<va %d inputs %d bufs%s>", fmt.inputs.length, bufs.length, (desc == null) ? "" : " (" + desc + ")"));
+    }
+
+    public VertexArray desc(Object desc) {
+	this.desc = desc;
+	return(this);
     }
 }

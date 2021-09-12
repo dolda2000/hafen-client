@@ -39,6 +39,7 @@ public abstract class Texture implements Disposable {
     public Swizzle eperm;
     public boolean shared = false;
     public Disposable ro;
+    public Object desc;
 
     public Texture(DataBuffer.Usage usage, VectorFormat ifmt, VectorFormat efmt, DataBuffer.Filler<? super Image> init) {
 	this.usage = usage;
@@ -172,6 +173,15 @@ public abstract class Texture implements Disposable {
     }
 
     public String toString() {
-	return(String.format("#<tex %s>", getClass().getName()));
+	return(String.format("#<tex %s%s>", getClass().getName(), descfmt()));
+    }
+
+    String descfmt() {
+	return((desc == null) ? "" : " (" + desc + ")");
+    }
+
+    public Texture desc(Object desc) {
+	this.desc = desc;
+	return(this);
     }
 }
