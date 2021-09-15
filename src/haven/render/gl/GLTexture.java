@@ -305,6 +305,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    BGL gl = g.gl();
 		    gl.glActiveTexture(GL.GL_TEXTURE0);
 		    bind(gl);
+		    if(env.labels && (data.desc != null))
+			gl.glObjectLabel(GL.GL_TEXTURE, this, String.valueOf(data.desc));
 		    if(pixels[0] != null)
 			gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, data.w, data.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[0].data));
 		    else
@@ -388,6 +390,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    BGL gl = g.gl();
 		    gl.glActiveTexture(GL.GL_TEXTURE0);
 		    bind(gl);
+		    if(env.labels && (data.desc != null))
+			gl.glObjectLabel(GL.GL_TEXTURE, this, String.valueOf(data.desc));
 		    if(pixels[0] != null)
 			gl.glTexImage3D(GL3.GL_TEXTURE_3D, 0, ifmt, data.w, data.h, data.d, 0, pfmt, pnum, ByteBuffer.wrap(pixels[0].data));
 		    else
@@ -473,6 +477,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    BGL gl = g.gl();
 		    gl.glActiveTexture(GL.GL_TEXTURE0);
 		    bind(gl);
+		    if(env.labels && (data.desc != null))
+			gl.glObjectLabel(GL.GL_TEXTURE, this, String.valueOf(data.desc));
 		    long mem = 0;
 		    for(int i = 0; i < nl; i++) {
 			ArrayImage<?> img = data.image(0, i);
@@ -558,6 +564,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    BGL gl = g.gl();
 		    gl.glActiveTexture(GL.GL_TEXTURE0);
 		    bind(gl);
+		    if(env.labels && (data.desc != null))
+			gl.glObjectLabel(GL.GL_TEXTURE, this, String.valueOf(data.desc));
 		    gl.glTexImage2DMultisample(GL3.GL_TEXTURE_2D_MULTISAMPLE, data.s, ifmt, data.w, data.h, data.fixed);
 		    long mem = data.ifmt.size() * data.w * data.h * data.s; // Unknown, perhaps, but best known value
 		    setmem(GLEnvironment.MemStats.TEXTURES, mem);
@@ -612,6 +620,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    BGL gl = g.gl();
 		    gl.glActiveTexture(GL.GL_TEXTURE0);
 		    bind(gl);
+		    if(env.labels && (data.desc != null))
+			gl.glObjectLabel(GL.GL_TEXTURE, this, String.valueOf(data.desc));
 		    long mem = 0;
 		    for(int i = 0; i < pixels.length; i++) {
 			CubeImage img = images[i];

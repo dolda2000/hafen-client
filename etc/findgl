@@ -3,7 +3,7 @@
 import sys, zipfile, fnmatch
 from classfile import file
 
-classpath=["build/jogl.jar"]
+classpath=["build/jogl-all.jar"]
 roots = ["com/jogamp/opengl/GL4bc"]
 
 class notfound(LookupError):

@@ -28,10 +28,12 @@ package haven;
 
 import java.net.URL;
 import java.io.PrintStream;
-import java.nio.file.Path;
-import static haven.Utils.getprop;
+import java.util.Properties;
+import java.io.*;
+import java.nio.file.*;
 
 public class Config {
+    public static final Properties jarprops = getjarprops();
     public static String authuser = getprop("haven.authuser", null);
     public static String authserv = getprop("haven.authserv", null);
     public static String defserv = getprop("haven.defserv", "127.0.0.1");
@@ -40,37 +42,75 @@ public class Config {
     public static URL screenurl = geturl("haven.screenurl", "");
     public static URL cachebase = geturl("haven.cachebase", "");
     public static URL mapbase = geturl("haven.mapbase", "");
-    public static boolean dbtext = getprop("haven.dbtext", "off").equals("on");
-    public static boolean bounddb = getprop("haven.bounddb", "off").equals("on");
-    public static boolean profile = getprop("haven.profile", "off").equals("on");
-    public static boolean profilegpu = getprop("haven.profilegpu", "off").equals("on");
+    public static boolean dbtext = getbool("haven.dbtext", false);
+    public static boolean bounddb = getbool("haven.bounddb", false);
+    public static boolean profile = getbool("haven.profile", false);
+    public static boolean profilegpu = getbool("haven.profilegpu", false);
     public static boolean par = true;
-    public static boolean fscache = getprop("haven.fscache", "on").equals("on");
+    public static boolean fscache = getbool("haven.fscache", true);
     public static Path resdir = getpath("haven.resdir", System.getenv("HAFEN_RESDIR"));
-    public static boolean nopreload = getprop("haven.nopreload", "no").equals("yes");
+    public static boolean nopreload = getbool("haven.nopreload", true);
     public static Path loadwaited = getpath("haven.loadwaited", null);
     public static Path allused = getpath("haven.allused", null);
     public static int mainport = getint("haven.mainport", 1870);
     public static int authport = getint("haven.authport", 1871);
-    public static boolean softres = getprop("haven.softres", "on").equals("on");
+    public static boolean softres = getbool("haven.softres", true);
     public static Double uiscale = getfloat("haven.uiscale", null);
-    public static byte[] authck = null, inittoken = null;
+    public static byte[] authck = getbytes("haven.authck", null), inittoken = getbytes("haven.inittoken", null);
     public static String prefspec = getprop("haven.prefspec", "hafen");
     public static final String confid = "";
-    
-    static {
-	String p;
-	if((p = getprop("haven.authck", null)) != null)
-	    authck = Utils.hex2byte(p);
-	if((p = getprop("haven.inittoken", null)) != null)
-	    inittoken = Utils.hex2byte(p);
+
+    private static Properties getjarprops() {
+	Properties ret = new Properties();
+	try(InputStream fp = Config.class.getResourceAsStream("boot-props")) {
+	    if(fp != null)
+		ret.load(fp);
+	} catch(Exception exc) {
+	    /* XXX? Catch all exceptions? It just seems dumb to
+	     * potentially crash here for unforeseen reasons. */
+	    new Warning(exc, "unexpected error occurred when loading local properties").issue();
+	}
+	try {
+	    Path jar = Utils.srcpath(Config.class);
+	    if(jar != null) {
+		try(InputStream fp = Files.newInputStream(jar.resolveSibling("haven-config.properties"))) {
+		    ret.load(fp);
+		} catch(NoSuchFileException exc) {
+		    /* That's quite alright. */
+		}
+	    }
+	} catch(Exception exc) {
+	    new Warning(exc, "unexpected error occurred when loading neighboring properties").issue();
+	}
+	return(ret);
     }
-    
+
+    private static String getprop(String name, String def) {
+	String ret = jarprops.getProperty(name);
+	if(ret != null)
+	    return(ret);
+	return(Utils.getprop(name, def));
+    }
+
     private static int getint(String name, int def) {
 	String val = getprop(name, null);
 	if(val == null)
 	    return(def);
 	return(Integer.parseInt(val));
+    }
+
+    private static boolean getbool(String name, boolean def) {
+	String val = getprop(name, null);
+	if(val == null)
+	    return(def);
+	return(Utils.parsebool(val));
+    }
+
+    private static byte[] getbytes(String name, byte[] def) {
+	String val = getprop(name, null);
+	if(val == null)
+	    return(def);
+	return(Utils.hex2byte(val));
     }
 
     private static URL geturl(String name, String def) {

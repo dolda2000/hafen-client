@@ -117,7 +117,7 @@ public class LoginScreen extends Widget {
 	    super(UI.scale(200, 150));
 	    setfocustab(true);
 	    Widget prev = add(new Label("User name", textf), 0, 0);
-	    add(user = new UserEntry(UI.scale(this.sz.x)), prev.pos("bl").adds(0, 1));
+	    add(user = new UserEntry(this.sz.x), prev.pos("bl").adds(0, 1));
 	    setfocus(user);
 
 	    add(pwbox = new Widget(Coord.z), user.pos("bl").adds(0, 10));
