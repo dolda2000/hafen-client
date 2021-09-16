@@ -30,69 +30,161 @@ import java.util.*;
 import java.awt.event.*;
 import java.awt.datatransfer.*;
 
-public class LineEdit {
-    public char[] buf = new char[16];
-    public int length = 0;
-    public int seq = 0;
-    public int point = 0;
-    private static Text tcache = null;
-    private static final int C = 1;
-    private static final int M = 2;
-    public KeyHandler mode;
+public interface ReadLine {
+    public static final int S = 1, C = 2, M = 4;
+    public char[] buffer();
+    public int length();
+    public int point();
+    public void point(int p);
+    public void setline(String line);
+    public boolean key(char c, int code, int mod);
 
-    public abstract class KeyHandler {
-	public abstract boolean key(char c, int code, int mod);
-    }
+    public default boolean empty() {return(length() == 0);}
+    public default String line() {return(new String(buffer(), 0, length()));}
+    public default Text render(Text.Foundry f) {return(f.render(line()));}
 
-    public String line() {
-	return(new String(buf, 0, length));
-    }
-    public String line(int off, int len) {
-	return(new String(buf, off, len));
-    }
-
-    private void line(String ln) {
-	if(buf.length < ln.length()) {
-	    Arrays.fill(buf, (char)0);
-	    buf = new char[ln.length() * 2];
-	}
-	ln.getChars(0, length = ln.length(), buf, 0);
-	seq++;
-    }
-
-    private char[] remove(int off, int len) {
-	System.arraycopy(buf, off + len, buf, off, (length -= len) - off);
-	seq++;
-	return(buf);
-    }
-    private char[] ensure(int off, int len) {
-	if(length + len > buf.length) {
-	    int nl = buf.length * 2;
-	    while(length + len > nl)
-		nl *= 2;
-	    char[] nb = Arrays.copyOf(buf, nl);
-	    Arrays.fill(buf, (char)0);
-	    buf = nb;
-	}
-	System.arraycopy(buf, off, buf, off + len, (length += len) - len - off);
-	seq++;
-	return(buf);
-    }
-
-    public boolean lneq(String ln) {
-	if(ln.length() != length)
+    public default boolean lneq(String ln) {
+	int len = length();
+	if(ln.length() != len)
 	    return(false);
-	for(int i = 0; i < length; i++) {
-	    if(buf[i] != ln.charAt(i))
+	char[] b = buffer();
+	for(int i = 0; i < len; i++) {
+	    if(b[i] != ln.charAt(i))
 		return(false);
 	}
 	return(true);
     }
-    public boolean empty() {
-	return(length == 0);
+
+    public default boolean key(KeyEvent ev) {
+	int mod = 0;
+	if((ev.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0) mod |= C;
+	if((ev.getModifiersEx() & (InputEvent.META_DOWN_MASK | InputEvent.ALT_DOWN_MASK)) != 0) mod |= M;
+
+	char c = ev.getKeyChar();
+	if(c == KeyEvent.CHAR_UNDEFINED)
+	    c = '\0';
+	if(((mod & C) != 0) && (c < 32)) {
+	    /* Undo Java's TTY Control-code mangling */
+	    if(ev.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+	    } else if(ev.getKeyCode() == KeyEvent.VK_ENTER) {
+	    } else if(ev.getKeyCode() == KeyEvent.VK_TAB) {
+	    } else if(ev.getKeyCode() == KeyEvent.VK_ESCAPE) {
+	    } else {
+		if((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0)
+		    c = (char)(c + 'A' - 1);
+		else
+		    c = (char)(c + 'a' - 1);
+	    }
+	}
+	return(key(c, ev.getKeyCode(), mod));
     }
 
-    public class PCMode extends KeyHandler {
+    public static interface Owner {
+	public default void changed(ReadLine buf) {}
+	public default void done(ReadLine buf) {}
+
+	public static final Owner nil = new Owner() {};
+    }
+
+    public static abstract class Base implements ReadLine {
+	public final Owner owner;
+	public char[] buf = new char[16];
+	public int length = 0;
+	public int point = 0;
+	public int seq = 0;
+
+	public Base(Owner owner, String init) {
+	    this.owner = (owner == null) ? Owner.nil : owner;
+	    line(init);
+	    point(length);
+	}
+
+	public String line(int off, int len) {
+	    return(new String(buf, off, len));
+	}
+
+	public void line(String ln) {
+	    if(buf.length < ln.length()) {
+		Arrays.fill(buf, (char)0);
+		buf = new char[ln.length() * 2];
+	    }
+	    ln.getChars(0, length = ln.length(), buf, 0);
+	    seq++;
+	}
+
+	public char[] remove(int off, int len) {
+	    System.arraycopy(buf, off + len, buf, off, (length -= len) - off);
+	    seq++;
+	    return(buf);
+	}
+
+	public char[] ensure(int off, int len) {
+	    if(length + len > buf.length) {
+		int nl = buf.length * 2;
+		while(length + len > nl)
+		    nl *= 2;
+		char[] nb = Arrays.copyOf(buf, nl);
+		Arrays.fill(buf, (char)0);
+		buf = nb;
+	    }
+	    System.arraycopy(buf, off, buf, off + len, (length += len) - len - off);
+	    seq++;
+	    return(buf);
+	}
+
+	public static boolean wordchar(char c) {
+	    return(Character.isLetterOrDigit(c));
+	}
+
+	public int wordstart(int from) {
+	    while((from > 0) && !wordchar(buf[from - 1])) from--;
+	    while((from > 0) && wordchar(buf[from - 1])) from--;
+	    return(from);
+	}
+
+	public int wordend(int from) {
+	    while((from < length) && !wordchar(buf[from])) from++;
+	    while((from < length) && wordchar(buf[from])) from++;
+	    return(from);
+	}
+
+	protected abstract boolean key2(char c, int code, int mod);
+
+	public boolean key(char c, int code, int mod) {
+	    int pseq = this.seq;
+	    boolean ret = key2(c, code, mod);
+	    if(this.seq != pseq)
+		owner.changed(this);
+	    return(ret);
+	}
+
+	public char[] buffer() {return(buf);}
+	public int length() {return(length);}
+	public int point() {return(point);}
+	public void point(int p) {point = p;}
+
+	public void setline(String line) {
+	    if(!lneq(line)) {
+		line(line);
+		if(point > length)
+		    point = length;
+		owner.changed(this);
+	    }
+	}
+
+	private Text tcache = null;
+	public Text render(Text.Foundry f) {
+	    if((tcache == null) || !lneq(tcache.text))
+		tcache = f.render(line());
+	    return(tcache);
+	}
+    }
+
+    public static class PCLine extends Base {
+	public PCLine(Owner owner, String init) {
+	    super(owner, init);
+	}
+
 	public String cliptext() {
 	    Clipboard c;
 	    if((c = java.awt.Toolkit.getDefaultToolkit().getSystemSelection()) != null) {
@@ -114,7 +206,7 @@ public class LineEdit {
 	    return("");
 	}
 	
-	public boolean key(char c, int code, int mod) {
+	public boolean key2(char c, int code, int mod) {
 	    if((c == 8) && (mod == 0)) {
 		if(point > 0)
 		    remove(--point, 1);
@@ -123,7 +215,7 @@ public class LineEdit {
 		remove(b, point - b);
 		point = b;
 	    } else if(c == 10) {
-		done();
+		owner.done(this);
 	    } else if((c == 127) && (mod == 0)) {
 		if(point < length)
 		    remove(point, 1);
@@ -162,21 +254,25 @@ public class LineEdit {
 	    return(true);
 	}
     }
-    
-    public class EmacsMode extends KeyHandler {
+
+    public static class EmacsLine extends Base {
 	private int mark, yankpos, undopos;
 	private String last = "";
 	private List<String> yanklist = new ArrayList<String>();
 	private List<UndoState> undolist = new ArrayList<UndoState>();
 	{undolist.add(new UndoState());}
+
+	public EmacsLine(Owner owner, String init) {
+	    super(owner, init);
+	}
 	
 	private class UndoState {
 	    private String line;
 	    private int point;
 	    
 	    private UndoState() {
-		this.line = LineEdit.this.line();
-		this.point = LineEdit.this.point;
+		this.line = line();
+		this.point = point();
 	    }
 	}
 	
@@ -223,7 +319,7 @@ public class LineEdit {
 	    return("");
 	}
 
-	public boolean key(char c, int code, int mod) {
+	public boolean key2(char c, int code, int mod) {
 	    if(mark > length)
 		mark = length;
 	    String last = this.last;
@@ -242,7 +338,7 @@ public class LineEdit {
 		remove(b, point - b);
 		point = b;
 	    } else if(c == 10) {
-		done();
+		owner.done(this);
 	    } else if((c == 'd') && (mod == C)) {
 		mode("erase");
 		if(point < length)
@@ -356,92 +452,12 @@ public class LineEdit {
 	}
     }
 
-    public LineEdit() {
-	String mode = Utils.getpref("editmode", "pc");
-	if(mode.equals("emacs")) {
-	    this.mode = new EmacsMode();
-	} else {
-	    this.mode = new PCMode();
+    public static ReadLine make(Owner owner, String init) {
+	switch(Utils.getpref("editmode", "pc")) {
+	case "emacs":
+	    return(new EmacsLine(owner, init));
+	default:
+	    return(new PCLine(owner, init));
 	}
-    }
-    
-    public LineEdit(String line) {
-	this();
-	line(line);
-	this.point = line.length();
-    }
-    
-    public void setline(String line) {
-	if(!lneq(line)) {
-	    line(line);
-	    if(point > length)
-		point = length;
-	    changed();
-	}
-    }
-
-    public boolean key(char c, int code, int mod) {
-	int pseq = this.seq;
-	boolean ret = mode.key(c, code, mod);
-	if(this.seq != pseq)
-	    changed();
-	return(ret);
-    }
-
-    public boolean key(KeyEvent ev) {
-	int mod = 0;
-	if((ev.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0) mod |= C;
-	if((ev.getModifiersEx() & (InputEvent.META_DOWN_MASK | InputEvent.ALT_DOWN_MASK)) != 0) mod |= M;
-
-	char c = ev.getKeyChar();
-	if(c == KeyEvent.CHAR_UNDEFINED)
-	    c = '\0';
-	if(((mod & C) != 0) && (c < 32)) {
-	    /* Undo Java's TTY Control-code mangling */
-	    if(ev.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
-	    } else if(ev.getKeyCode() == KeyEvent.VK_ENTER) {
-	    } else if(ev.getKeyCode() == KeyEvent.VK_TAB) {
-	    } else if(ev.getKeyCode() == KeyEvent.VK_ESCAPE) {
-	    } else {
-		if((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0)
-		    c = (char)(c + 'A' - 1);
-		else
-		    c = (char)(c + 'a' - 1);
-	    }
-	}
-	return(key(c, ev.getKeyCode(), mod));
-    }
-    
-    private static boolean wordchar(char c) {
-	return(Character.isLetterOrDigit(c));
-    }
-
-    private int wordstart(int from) {
-	while((from > 0) && !wordchar(buf[from - 1])) from--;
-	while((from > 0) && wordchar(buf[from - 1])) from--;
-	return(from);
-    }
-    
-    private int wordend(int from) {
-	while((from < length) && !wordchar(buf[from])) from++;
-	while((from < length) && wordchar(buf[from])) from++;
-	return(from);
-    }
-
-    protected void done() {}
-    protected void changed() {}
-    
-    public Text render(Text.Foundry f) {
-	if((tcache == null) || !lneq(tcache.text))
-	    tcache = f.render(line());
-	return(tcache);
-    }
-    
-    static {
-	Console.setscmd("editmode", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    Utils.setpref("editmode", args[1]);
-		}
-	    });
     }
 }

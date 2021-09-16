@@ -30,7 +30,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
-public class TextEntry extends SIWidget {
+public class TextEntry extends SIWidget implements ReadLine.Owner {
     public static final Color defcol = new Color(255, 205, 109), dirtycol = new Color(255, 232, 209);
     public static final Text.Foundry fnd = new Text.Foundry(Text.serif, 12).aa(true);
     public static final BufferedImage lcap = Resource.loadsimg("gfx/hud/text/l");
@@ -41,7 +41,7 @@ public class TextEntry extends SIWidget {
     public static final Coord coff = UI.scale(new Coord(-3, 0));
     public static final int wmarg = lcap.getWidth() + rcap.getWidth() + UI.scale(1);
     public boolean dshow = false;
-    public LineEdit buf;
+    public ReadLine buf;
     public int sx;
     public boolean pw = false;
     private boolean dirty = false;
@@ -64,16 +64,7 @@ public class TextEntry extends SIWidget {
     }
 
     public void rsettext(String text) {
-	buf = new LineEdit(text) {
-		protected void done() {
-		    activate(line());
-		}
-		
-		protected void changed() {
-		    redraw();
-		    TextEntry.this.changed();
-		}
-	    };
+	buf = ReadLine.make(this, text);
 	redraw();
     }
 
@@ -100,7 +91,7 @@ public class TextEntry extends SIWidget {
 
     protected String dtext() {
 	if(pw) {
-	    char[] dp = new char[buf.length];
+	    char[] dp = new char[buf.length()];
 	    java.util.Arrays.fill(dp, '\u2022');
 	    return(new String(dp));
 	} else {
@@ -125,7 +116,7 @@ public class TextEntry extends SIWidget {
     public void draw(GOut g) {
 	super.draw(g);
 	if(hasfocus) {
-	    int cx = tcache.advance(buf.point);
+	    int cx = tcache.advance(buf.point());
 	    int lx = cx - sx + 1;
 	    if(cx < sx) {sx = cx; redraw();}
 	    if(cx > sx + (sz.x - wmarg)) {sx = cx - (sz.x - wmarg); redraw();}
@@ -154,6 +145,15 @@ public class TextEntry extends SIWidget {
 	    wdgmsg("activate", text);
     }
 
+    public void done(ReadLine buf) {
+	activate(buf.line());
+    }
+
+    public void changed(ReadLine buf) {
+	redraw();
+	TextEntry.this.changed();
+    }
+
     public boolean gkeytype(KeyEvent ev) {
 	activate(buf.line());
 	return(true);
@@ -166,7 +166,7 @@ public class TextEntry extends SIWidget {
     public boolean mousedown(Coord c, int button) {
 	parent.setfocus(this);
 	if(tcache != null) {
-	    buf.point = tcache.charat(c.x + sx);
+	    buf.point(tcache.charat(c.x + sx));
 	}
 	return(true);
     }
