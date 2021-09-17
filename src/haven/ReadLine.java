@@ -205,7 +205,7 @@ public interface ReadLine {
 	    }
 	    return("");
 	}
-	
+
 	public boolean key2(char c, int code, int mod) {
 	    if((c == 8) && (mod == 0)) {
 		if(point > 0)
@@ -265,22 +265,22 @@ public interface ReadLine {
 	public EmacsLine(Owner owner, String init) {
 	    super(owner, init);
 	}
-	
+
 	private class UndoState {
 	    private String line;
 	    private int point;
-	    
+
 	    private UndoState() {
 		this.line = line();
 		this.point = point();
 	    }
 	}
-	
+
 	private void save() {
 	    if(!lneq(undolist.get(undolist.size() - 1).line))
 		undolist.add(new UndoState());
 	}
-	
+
 	private void mode(String mode) {
 	    if((mode == "") || (last != mode))
 		save();
@@ -306,7 +306,7 @@ public interface ReadLine {
 	    killclipboard();
 	    yanklist.add(text);
 	}
-	
+
 	private String cliptext(Clipboard c) {
 	    if(c == null)
 		return("");
