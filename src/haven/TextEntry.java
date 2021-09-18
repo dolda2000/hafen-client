@@ -120,7 +120,7 @@ public class TextEntry extends SIWidget implements ReadLine.Owner {
 	    int lx = cx - sx + 1;
 	    if(cx < sx) {sx = cx; redraw();}
 	    if(cx > sx + (sz.x - wmarg)) {sx = cx - (sz.x - wmarg); redraw();}
-	    if(((Utils.rtime() - focusstart) % 1.0) < 0.5)
+	    if(((Utils.rtime() - Math.max(focusstart, buf.mtime())) % 1.0) < 0.5)
 		g.image(caret, coff.add(toffx + lx, (sz.y - tcache.img.getHeight()) / 2));
 	}
     }

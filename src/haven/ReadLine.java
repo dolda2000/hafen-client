@@ -40,6 +40,7 @@ public interface ReadLine {
     public void mark(int m);
     public void setline(String line);
     public boolean key(char c, int code, int mod);
+    public double mtime();
 
     public default boolean empty() {return(length() == 0);}
     public default String line() {return(new String(buffer(), 0, length()));}
@@ -92,6 +93,7 @@ public interface ReadLine {
 	public int length = 0;
 	public int point = 0;
 	public int seq = 0;
+	public double mtime;
 
 	public Base(Owner owner, String init) {
 	    this.owner = (owner == null) ? Owner.nil : owner;
@@ -155,6 +157,8 @@ public interface ReadLine {
 	    boolean ret = key2(c, code, mod);
 	    if(this.seq != pseq)
 		owner.changed(this);
+	    if(ret)
+		mtime = Utils.rtime();
 	    return(ret);
 	}
 
@@ -162,6 +166,7 @@ public interface ReadLine {
 	public int length() {return(length);}
 	public int point() {return(point);}
 	public void point(int p) {point = p;}
+	public double mtime() {return(mtime);}
 
 	public void setline(String line) {
 	    if(!lneq(line)) {
