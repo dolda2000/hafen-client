@@ -182,7 +182,7 @@ public class TextEntry extends Widget implements ReadLine.Owner {
 
     public void mousemove(Coord c) {
 	if((d != null) && (tcache != null)) {
-	    int p = tcache.charat(c.x + sx);
+	    int p = tcache.charat(c.x + sx - toffx);
 	    if(buf.mark() < 0)
 		buf.mark(buf.point());
 	    buf.point(p);
@@ -192,7 +192,7 @@ public class TextEntry extends Widget implements ReadLine.Owner {
     public boolean mousedown(Coord c, int button) {
 	parent.setfocus(this);
 	if((button == 1) && (tcache != null)) {
-	    buf.point(tcache.charat(c.x + sx));
+	    buf.point(tcache.charat(c.x + sx - toffx));
 	    buf.mark(-1);
 	    d = ui.grabmouse(this);
 	}
