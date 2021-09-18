@@ -178,6 +178,14 @@ public interface ReadLine {
 		tcache = f.render(line());
 	    return(tcache);
 	}
+
+	static {
+	    Console.setscmd("editmode", new Console.Command() {
+		    public void run(Console cons, String[] args) {
+			Utils.setpref("editmode", args[1]);
+		    }
+		});
+	}
     }
 
     public static class PCLine extends Base {
