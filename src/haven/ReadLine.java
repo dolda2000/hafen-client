@@ -323,9 +323,10 @@ public interface ReadLine {
 		cl.getChars(0, cl.length(), ensure(point, cl.length()), point);
 		point += cl.length();
 	    } else if((c == 'c') && (mod == C)) {
-		if(mark >= 0) {
+		if(mark >= 0)
 		    clipset(java.awt.Toolkit.getDefaultToolkit().getSystemClipboard());
-		}
+		else
+		    return(false);
 	    } else {
 		return(false);
 	    }
