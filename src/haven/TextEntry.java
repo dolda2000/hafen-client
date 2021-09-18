@@ -48,6 +48,7 @@ public class TextEntry extends Widget implements ReadLine.Owner {
     private boolean dirty = false;
     private double focusstart;
     private Text.Line tcache = null;
+    private UI.Grab d = null;
 
     @RName("text")
     public static class $_ implements Factory {
@@ -171,13 +172,32 @@ public class TextEntry extends Widget implements ReadLine.Owner {
 	return(buf.key(e));
     }
 
+    public void mousemove(Coord c) {
+	if((d != null) && (tcache != null)) {
+	    int p = tcache.charat(c.x + sx);
+	    if(buf.mark() < 0)
+		buf.mark(buf.point());
+	    buf.point(p);
+	}
+    }
+
     public boolean mousedown(Coord c, int button) {
 	parent.setfocus(this);
-	if(tcache != null) {
+	if((button == 1) && (tcache != null)) {
 	    buf.point(tcache.charat(c.x + sx));
 	    buf.mark(-1);
+	    d = ui.grabmouse(this);
 	}
 	return(true);
+    }
+
+    public boolean mouseup(Coord c, int button) {
+	if((button == 1) && (d != null)) {
+	    d.remove();
+	    d = null;
+	    return(true);
+	}
+	return(false);
     }
 
     public void gotfocus() {
