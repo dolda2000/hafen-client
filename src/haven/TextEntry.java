@@ -78,6 +78,14 @@ public class TextEntry extends Widget implements ReadLine.Owner {
     public void uimsg(String name, Object... args) {
 	if(name == "settext") {
 	    settext((String)args[0]);
+	} else if(name == "sel") {
+	    if(args.length == 0) {
+		buf.select(0, buf.length());
+	    } else {
+		int f = (args[0] == null) ? buf.length() : Utils.clip((Integer)args[0], 0, buf.length());
+		int t = (args[1] == null) ? buf.length() : Utils.clip((Integer)args[1], 0, buf.length());
+		buf.select(f, t);
+	    }
 	} else if(name == "get") {
 	    wdgmsg("text", buf.line());
 	} else if(name == "pw") {
