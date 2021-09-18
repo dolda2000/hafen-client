@@ -31,17 +31,20 @@ import java.awt.event.*;
 import java.awt.datatransfer.*;
 
 public interface ReadLine {
-    public static final int S = 1, C = 2, M = 4;
+    public static final int S = UI.MOD_SHIFT, C = UI.MOD_CTRL, M = UI.MOD_META;
     public char[] buffer();
     public int length();
     public int point();
     public void point(int p);
+    public int mark();
+    public void mark(int m);
     public void setline(String line);
     public boolean key(char c, int code, int mod);
 
     public default boolean empty() {return(length() == 0);}
     public default String line() {return(new String(buffer(), 0, length()));}
     public default Text render(Text.Foundry f) {return(f.render(line()));}
+    public default void select(int from, int to) {mark(from); point(to);}
 
     public default boolean lneq(String ln) {
 	int len = length();
@@ -56,10 +59,7 @@ public interface ReadLine {
     }
 
     public default boolean key(KeyEvent ev) {
-	int mod = 0;
-	if((ev.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0) mod |= C;
-	if((ev.getModifiersEx() & (InputEvent.META_DOWN_MASK | InputEvent.ALT_DOWN_MASK)) != 0) mod |= M;
-
+	int mod = UI.modflags(ev);
 	char c = ev.getKeyChar();
 	if(c == KeyEvent.CHAR_UNDEFINED)
 	    c = '\0';
@@ -189,8 +189,21 @@ public interface ReadLine {
     }
 
     public static class PCLine extends Base {
+	public int mark = -1;
+
 	public PCLine(Owner owner, String init) {
 	    super(owner, init);
+	}
+
+	public void clipset(Clipboard c) {
+	    if(c != null) {
+		String text = line(Math.min(mark, point), Math.abs(point - mark));
+		java.awt.datatransfer.StringSelection xf = new java.awt.datatransfer.StringSelection(text);
+		try {
+		    c.setContents(xf, xf);
+		} catch(IllegalStateException e) {
+		}
+	    }
 	}
 
 	public String cliptext() {
@@ -214,39 +227,87 @@ public interface ReadLine {
 	    return("");
 	}
 
+	public int mark() {return(mark);}
+	public void mark(int mark) {this.mark = mark;}
+
+	public void setline(String line) {
+	    super.setline(line);
+	    mark = -1;
+	}
+
+	public void rmsel() {
+	    if(mark >= 0) {
+		int a = Math.min(point, mark), b = Math.max(point, mark);
+		remove(a, b - a);
+		point = a; mark = -1;
+	    }
+	}
+
+	private void cksel() {
+	    if(mark >= 0) {
+		clipset(java.awt.Toolkit.getDefaultToolkit().getSystemSelection());
+	    }
+	}
+
 	public boolean key2(char c, int code, int mod) {
+	    boolean s = (mod & S) != 0;
+	    mod &= ~S;
 	    if((c == 8) && (mod == 0)) {
-		if(point > 0)
-		    remove(--point, 1);
+		if(mark < 0) {
+		    if(point > 0)
+			remove(--point, 1);
+		} else {
+		    rmsel();
+		}
 	    } else if((c == 8) && (mod == C)) {
-		int b = wordstart(point);
-		remove(b, point - b);
-		point = b;
+		if(mark < 0) {
+		    int b = wordstart(point);
+		    remove(b, point - b);
+		    point = b;
+		} else {
+		    rmsel();
+		}
 	    } else if(c == 10) {
 		owner.done(this);
 	    } else if((c == 127) && (mod == 0)) {
-		if(point < length)
-		    remove(point, 1);
+		if(mark < 0) {
+		    if(point < length)
+			remove(point, 1);
+		} else {
+		    rmsel();
+		}
 	    } else if((c == 127) && (mod == C)) {
-		int b = wordend(point);
-		remove(point, b - point);
+		if(mark < 0) {
+		    int b = wordend(point);
+		    remove(point, b - point);
+		} else {
+		    rmsel();
+		}
 	    } else if((c >= 32) && (mod == 0)) {
+		rmsel();
 		ensure(point, 1)[point++] = c;
 	    } else if((code == KeyEvent.VK_LEFT) && (mod == 0)) {
+		mark = s ? (mark < 0) ? point : mark : -1;
 		if(point > 0)
 		    point--;
 	    } else if((code == KeyEvent.VK_LEFT) && (mod == C)) {
+		mark = s ? (mark < 0) ? point : mark : -1;
 		point = wordstart(point);
 	    } else if((code == KeyEvent.VK_RIGHT) && (mod == 0)) {
+		mark = s ? (mark < 0) ? point : mark : -1;
 		if(point < length)
 		    point++;
 	    } else if((code == KeyEvent.VK_RIGHT) && (mod == C)) {
+		mark = s ? (mark < 0) ? point : mark : -1;
 		point = wordend(point);
 	    } else if((code == KeyEvent.VK_HOME) && (mod == 0)) {
+		mark = s ? (mark < 0) ? point : mark : -1;
 		point = 0;
 	    } else if((code == KeyEvent.VK_END) && (mod == 0)) {
+		mark = s ? (mark < 0) ? point : mark : -1;
 		point = length;
 	    } else if((c == 'v') && (mod == C)) {
+		rmsel();
 		String cl = cliptext();
 		for(int i = 0; i < cl.length(); i++) {
 		    if(cl.charAt(i) < 32) {
@@ -256,15 +317,21 @@ public interface ReadLine {
 		}
 		cl.getChars(0, cl.length(), ensure(point, cl.length()), point);
 		point += cl.length();
+	    } else if((c == 'c') && (mod == C)) {
+		if(mark >= 0) {
+		    clipset(java.awt.Toolkit.getDefaultToolkit().getSystemClipboard());
+		}
 	    } else {
 		return(false);
 	    }
+	    cksel();
 	    return(true);
 	}
     }
 
     public static class EmacsLine extends Base {
 	private int mark, yankpos, undopos;
+	private boolean tmm;
 	private String last = "";
 	private List<String> yanklist = new ArrayList<String>();
 	private List<UndoState> undolist = new ArrayList<UndoState>();
@@ -326,6 +393,9 @@ public interface ReadLine {
 	    }
 	    return("");
 	}
+
+	public int mark() {return(tmm ? mark : -1);}
+	public void mark(int m) {this.mark = mark; tmm = true;}
 
 	public boolean key2(char c, int code, int mod) {
 	    if(mark > length)
@@ -450,6 +520,11 @@ public interface ReadLine {
 		    line(s.line);
 		    point = s.point;
 		}
+	    } else if((c == 'g') && (mod == C)) {
+		if(tmm)
+		    tmm = false;
+		else
+		    return(false);
 	    } else if((c >= 32) && (mod == 0)) {
 		mode("insert");
 		ensure(point, 1)[point++] = c;
