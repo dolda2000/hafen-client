@@ -401,9 +401,25 @@ public interface ReadLine {
 	}
 
 	public int mark() {return(tmm ? mark : -1);}
-	public void mark(int m) {this.mark = mark; tmm = true;}
+	public void mark(int m) {
+	    if(m < 0) {
+		tmm = false;
+	    } else {
+		this.mark = m;
+		tmm = true;
+	    }
+	}
+
+	public void rmsel() {
+	    if(tmm) {
+		int a = Math.min(point, mark), b = Math.max(point, mark);
+		remove(a, b - a);
+		point = mark = a; tmm = false;
+	    }
+	}
 
 	public boolean key2(char c, int code, int mod) {
+	    mod &= ~S;
 	    if(mark > length)
 		mark = length;
 	    String last = this.last;
@@ -533,6 +549,7 @@ public interface ReadLine {
 		    return(false);
 	    } else if((c >= 32) && (mod == 0)) {
 		mode("insert");
+		rmsel();
 		ensure(point, 1)[point++] = c;
 	    } else {
 		return(false);
