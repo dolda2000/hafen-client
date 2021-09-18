@@ -32,6 +32,7 @@ import java.awt.image.BufferedImage;
 
 public class TextEntry extends Widget implements ReadLine.Owner {
     public static final Color defcol = new Color(255, 205, 109), dirtycol = new Color(255, 232, 209);
+    public static final Color selcol = new Color(24, 80, 192);
     public static final Text.Foundry fnd = new Text.Foundry(Text.serif, 12).aa(true);
     public static final Tex lcap = Resource.loadtex("gfx/hud/text/l");
     public static final Tex rcap = Resource.loadtex("gfx/hud/text/r");
@@ -110,12 +111,20 @@ public class TextEntry extends Widget implements ReadLine.Owner {
 	Text.Line tcache = this.tcache;
 	if(tcache == null)
 	    this.tcache = tcache = fnd.render(dtext(), (dshow && dirty) ? dirtycol : defcol);
+	int point = buf.point(), mark = buf.mark();
 	g.image(mext, Coord.z, sz);
+	if(mark >= 0) {
+	    int px = tcache.advance(point) - sx, mx = tcache.advance(mark) - sx;
+	    g.chcolor(selcol);
+	    g.frect2(Coord.of(Math.min(px, mx) + toffx, (sz.y - tcache.sz().y) / 2),
+		     Coord.of(Math.max(px, mx) + toffx, (sz.y + tcache.sz().y) / 2));
+	    g.chcolor();
+	}
 	g.image(tcache.tex(), Coord.of(toffx - sx, (sz.y - tcache.sz().y) / 2));
 	g.image(lcap, Coord.z);
 	g.image(rcap, Coord.of(sz.x - rcap.sz().x, 0));
 	if(hasfocus) {
-	    int cx = tcache.advance(buf.point());
+	    int cx = tcache.advance(point);
 	    if(cx < sx) {sx = cx;}
 	    if(cx > sx + (sz.x - wmarg)) {sx = cx - (sz.x - wmarg);}
 	    int lx = cx - sx;
@@ -166,6 +175,7 @@ public class TextEntry extends Widget implements ReadLine.Owner {
 	parent.setfocus(this);
 	if(tcache != null) {
 	    buf.point(tcache.charat(c.x + sx));
+	    buf.mark(-1);
 	}
 	return(true);
     }
