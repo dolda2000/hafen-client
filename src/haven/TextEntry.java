@@ -38,7 +38,7 @@ public class TextEntry extends Widget implements ReadLine.Owner {
     public static final Tex mext = Resource.loadtex("gfx/hud/text/m");
     public static final Tex caret = Resource.loadtex("gfx/hud/text/caret");
     public static final int toffx = lcap.sz().x;
-    public static final Coord coff = UI.scale(new Coord(-3, 0));
+    public static final Coord coff = UI.scale(new Coord(-2, 0));
     public static final int wmarg = lcap.sz().x + rcap.sz().x + UI.scale(1);
     public boolean dshow = false;
     public ReadLine buf;
@@ -116,9 +116,9 @@ public class TextEntry extends Widget implements ReadLine.Owner {
 	g.image(rcap, Coord.of(sz.x - rcap.sz().x, 0));
 	if(hasfocus) {
 	    int cx = tcache.advance(buf.point());
-	    int lx = cx - sx + 1;
 	    if(cx < sx) {sx = cx;}
 	    if(cx > sx + (sz.x - wmarg)) {sx = cx - (sz.x - wmarg);}
+	    int lx = cx - sx;
 	    if(((Utils.rtime() - Math.max(focusstart, buf.mtime())) % 1.0) < 0.5)
 		g.image(caret, coff.add(toffx + lx, (sz.y - tcache.img.getHeight()) / 2));
 	}
