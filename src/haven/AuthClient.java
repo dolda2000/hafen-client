@@ -224,16 +224,8 @@ public class AuthClient implements Closeable {
 		throw(new IllegalArgumentException("Password hash must be 32 bytes"));
 	}
 	
-	private static byte[] ohdearjava(String a) {
-	    try {
-		return(digest(a.getBytes("utf-8")));
-	    } catch(UnsupportedEncodingException e) {
-		throw(new RuntimeException(e));
-	    }
-	}
-
 	public NativeCred(String username, String pw) {
-	    this(username, ohdearjava(pw));
+	    this(username, digest(pw.getBytes(Utils.utf8)));
 	}
 	
 	public String name() {
