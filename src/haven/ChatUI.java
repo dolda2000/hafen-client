@@ -1130,14 +1130,14 @@ public class ChatUI extends Widget {
     public void drawsmall(GOut g, Coord br, int h) {
 	Coord c;
 	if(qline != null) {
-	    if((rqline == null) || !rqline.text.equals(qline.line)) {
+	    if((rqline == null) || !qline.buf.lneq(rqline.text)) {
 		String pre = String.format("%s> ", qline.chan.name());
-		rqline = qfnd.render(pre + qline.line);
+		rqline = qfnd.render(pre + qline.buf.line());
 		rqpre = pre.length();
 	    }
 	    c = br.sub(UI.scale(0, 20));
 	    g.image(rqline.tex(), c);
-	    int lx = rqline.advance(qline.point + rqpre) + UI.scale(1);
+	    int lx = rqline.advance(qline.buf.point() + rqpre) + UI.scale(1);
 	    g.line(new Coord(br.x + lx, br.y - UI.scale(18)), new Coord(br.x + lx, br.y - UI.scale(6)), 1);
 	} else {
 	    c = br.sub(UI.scale(0, 5));
@@ -1235,10 +1235,12 @@ public class ChatUI extends Widget {
 	    sresize(savedh);
     }
 
-    private class QuickLine extends LineEdit {
+    private class QuickLine implements ReadLine.Owner {
+	public final ReadLine buf;
 	public final EntryChannel chan;
 	
 	private QuickLine(EntryChannel chan) {
+	    this.buf = ReadLine.make(this, "");
 	    this.chan = chan;
 	}
 	
@@ -1247,19 +1249,19 @@ public class ChatUI extends Widget {
 	    qgrab.remove();
 	}
 	
-	protected void done(String line) {
-	    if(line.length() > 0)
-		chan.send(line);
+	public void done(ReadLine buf) {
+	    if(!buf.empty())
+		chan.send(buf.line());
 	    cancel();
 	}
 
-	public boolean key(char c, int code, int mod) {
-	    if(c == 27) {
+	public boolean key(KeyEvent ev) {
+	    if(key_esc.match(ev)) {
 		cancel();
+		return(true);
 	    } else {
-		return(super.key(c, code, mod));
+		return(buf.key(ev));
 	    }
-	    return(true);
 	}
     }
 
