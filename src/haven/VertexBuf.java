@@ -354,6 +354,19 @@ public class VertexBuf {
 		dst.put(i, buf.uint8() * F);
 	    break;
 	}
+	case "uvech": {
+	    int i = 0;
+	    float F = 1.0f / 7.0f;
+	    float[] vb = new float[3];
+	    while(i < dst.capacity()) {
+		int v = buf.uint8();
+		Utils.oct2uvec(vb, Utils.sb((v & 0xf0) >> 4, 4) * F, Utils.sb(v & 0x0f, 4) * F);
+		dst.put(i++, vb[0]);
+		dst.put(i++, vb[1]);
+		dst.put(i++, vb[2]);
+	    }
+	    break;
+	}
 	case "uvec1": {
 	    int i = 0;
 	    float F = 1.0f / 127.0f;
