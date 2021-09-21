@@ -100,9 +100,17 @@ public abstract class ConsoleHost extends Widget implements ReadLine.Owner {
 	if(cmdline != null) {
 	    if((cmdtext == null) || !cmdline.lneq(cmdtextf))
 		cmdtext = cmdfoundry.render(":" + (cmdtextf = cmdline.line()));
+	    int point = cmdline.point(), mark = cmdline.mark();
+	    int px = cmdtext.advance(point + 1);
+	    if(mark >= 0) {
+		int mx = cmdtext.advance(mark + 1);
+		g.chcolor(TextEntry.selcol);
+		g.frect2(c.add(Math.min(mx, px) + UI.scale(1), UI.scale(2)),
+			 c.add(Math.max(mx, px) + UI.scale(1), UI.scale(14)));
+		g.chcolor();
+	    }
 	    g.image(cmdtext.tex(), c);
-	    int lx = cmdtext.advance(cmdline.point() + 1);
-	    g.line(c.add(lx + UI.scale(1), UI.scale(2)), c.add(lx + UI.scale(1), UI.scale(14)), UI.scale(1));
+	    g.line(c.add(px + UI.scale(1), UI.scale(2)), c.add(px + UI.scale(1), UI.scale(14)), UI.scale(1));
 	}
     }
     

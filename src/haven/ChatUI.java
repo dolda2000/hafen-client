@@ -1135,10 +1135,18 @@ public class ChatUI extends Widget {
 		rqline = qfnd.render(pre + qline.buf.line());
 		rqpre = pre.length();
 	    }
+	    int point = qline.buf.point(), mark = qline.buf.mark();
+	    int px = rqline.advance(point + rqpre) + UI.scale(1);
+	    if(mark >= 0) {
+		int mx = rqline.advance(mark + rqpre) + UI.scale(1);
+		g.chcolor(TextEntry.selcol);
+		g.frect2(Coord.of(br.x + Math.min(px, mx), br.y - UI.scale(18)),
+			 Coord.of(br.x + Math.max(px, mx), br.y - UI.scale(6)));
+		g.chcolor();
+	    }
 	    c = br.sub(UI.scale(0, 20));
 	    g.image(rqline.tex(), c);
-	    int lx = rqline.advance(qline.buf.point() + rqpre) + UI.scale(1);
-	    g.line(new Coord(br.x + lx, br.y - UI.scale(18)), new Coord(br.x + lx, br.y - UI.scale(6)), 1);
+	    g.line(Coord.of(br.x + px, br.y - UI.scale(18)), Coord.of(br.x + px, br.y - UI.scale(6)), 1);
 	} else {
 	    c = br.sub(UI.scale(0, 5));
 	}
