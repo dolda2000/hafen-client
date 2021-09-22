@@ -318,6 +318,18 @@ public class VertexBuf {
 		dst.put(i, Utils.mfdec((byte)buf.int8()));
 	    break;
 	}
+	case "sf9995": {
+	    int i = 0;
+	    float[] vb = new float[3];
+	    while(i < dst.capacity()) {
+		int w = buf.int32();
+		Utils.float9995d(w, vb);
+		dst.put(i++, vb[0]);
+		dst.put(i++, vb[1]);
+		dst.put(i++, vb[2]);
+	    }
+	    break;
+	}
 	case "sn4": {
 	    float F = buf.float32() / 2147483647.0f;
 	    for(int i = 0; i < dst.capacity(); i++)
