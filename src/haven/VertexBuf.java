@@ -354,6 +354,24 @@ public class VertexBuf {
 		dst.put(i, buf.uint8() * F);
 	    break;
 	}
+	case "rn4": {
+	    float m = buf.float32(), k = buf.float32() / 4294967295.0f;
+	    for(int i = 0; i < dst.capacity(); i++)
+		dst.put(i, (buf.uint32() * k) + m);
+	    break;
+	}
+	case "rn2": {
+	    float m = buf.float32(), k = buf.float32() / 65535.0f;
+	    for(int i = 0; i < dst.capacity(); i++)
+		dst.put(i, (buf.uint16() * k) + m);
+	    break;
+	}
+	case "rn1": {
+	    float m = buf.float32(), k = buf.float32() / 255.0f;
+	    for(int i = 0; i < dst.capacity(); i++)
+		dst.put(i, (buf.uint8() * k) + m);
+	    break;
+	}
 	case "uvech": {
 	    int i = 0;
 	    float F = 1.0f / 7.0f;
