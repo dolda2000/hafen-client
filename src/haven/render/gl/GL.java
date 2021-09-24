@@ -29,10 +29,34 @@ package haven.render.gl;
 import java.nio.*;
 
 public interface GL {
+    public static final int GL_BACK = com.jogamp.opengl.GL.GL_BACK;
+    public static final int GL_BLEND = com.jogamp.opengl.GL.GL_BLEND;
+    public static final int GL_COLOR_ATTACHMENT0 = com.jogamp.opengl.GL.GL_COLOR_ATTACHMENT0;
+    public static final int GL_CONSTANT_ALPHA = com.jogamp.opengl.GL3.GL_CONSTANT_ALPHA;
+    public static final int GL_CONSTANT_COLOR = com.jogamp.opengl.GL3.GL_CONSTANT_COLOR;
+    public static final int GL_DST_ALPHA = com.jogamp.opengl.GL.GL_DST_ALPHA;
+    public static final int GL_DST_COLOR = com.jogamp.opengl.GL.GL_DST_COLOR;
+    public static final int GL_FRAMEBUFFER = com.jogamp.opengl.GL.GL_FRAMEBUFFER;
+    public static final int GL_FUNC_ADD = com.jogamp.opengl.GL.GL_FUNC_ADD;
+    public static final int GL_FUNC_REVERSE_SUBTRACT = com.jogamp.opengl.GL.GL_FUNC_REVERSE_SUBTRACT;
+    public static final int GL_FUNC_SUBTRACT = com.jogamp.opengl.GL.GL_FUNC_SUBTRACT;
     public static final int GL_INVALID_ENUM = com.jogamp.opengl.GL.GL_INVALID_ENUM;
     public static final int GL_INVALID_VALUE = com.jogamp.opengl.GL.GL_INVALID_VALUE;
     public static final int GL_INVALID_OPERATION = com.jogamp.opengl.GL.GL_INVALID_OPERATION;
+    public static final int GL_MIN = com.jogamp.opengl.GL3.GL_MIN;
+    public static final int GL_MAX = com.jogamp.opengl.GL3.GL_MAX;
+    public static final int GL_NONE = com.jogamp.opengl.GL.GL_NONE;
+    public static final int GL_ONE = com.jogamp.opengl.GL.GL_ONE;
+    public static final int GL_ONE_MINUS_CONSTANT_ALPHA = com.jogamp.opengl.GL3.GL_ONE_MINUS_CONSTANT_ALPHA;
+    public static final int GL_ONE_MINUS_CONSTANT_COLOR = com.jogamp.opengl.GL3.GL_ONE_MINUS_CONSTANT_COLOR;
+    public static final int GL_ONE_MINUS_DST_ALPHA = com.jogamp.opengl.GL.GL_ONE_MINUS_DST_ALPHA;
+    public static final int GL_ONE_MINUS_DST_COLOR = com.jogamp.opengl.GL.GL_ONE_MINUS_DST_COLOR;
+    public static final int GL_ONE_MINUS_SRC_ALPHA = com.jogamp.opengl.GL.GL_ONE_MINUS_SRC_ALPHA;
+    public static final int GL_ONE_MINUS_SRC_COLOR = com.jogamp.opengl.GL.GL_ONE_MINUS_SRC_COLOR;
     public static final int GL_OUT_OF_MEMORY = com.jogamp.opengl.GL.GL_OUT_OF_MEMORY;
+    public static final int GL_SRC_ALPHA = com.jogamp.opengl.GL.GL_SRC_ALPHA;
+    public static final int GL_SRC_COLOR = com.jogamp.opengl.GL.GL_SRC_COLOR;
+    public static final int GL_ZERO = com.jogamp.opengl.GL.GL_ZERO;
 
     public void glActiveTexture(int texture);
     public void glAttachShader(int program, int shader);
@@ -70,7 +94,6 @@ public interface GL {
     public void glDisablei(int cap, int index);
     public void glDisableClientState(int cap);
     public void glDisableVertexAttribArray(int location);
-    public void glDisableVertexAttribArray(int location, int offset);
     public void glDrawBuffer(int buf);
     public void glDrawBuffers(int n, int[] bufs, int i);
     public void glDrawArraysInstanced(int mode, int first, int count, int primcount);
@@ -82,9 +105,9 @@ public interface GL {
     public void glEnablei(int cap, int index);
     public void glEnableClientState(int cap);
     public void glEnableVertexAttribArray(int location);
-    public void glEnableVertexAttribArray(int location, int offset);
     public void glFramebufferTexture2D(int target, int attachment, int textarget, int texture, int level);
     public void glFramebufferRenderbuffer(int target, int attachment, int rbtarget, int renderbuffer);
+    public void glGenBuffers(int n, int[] buffer, int i);
     public int glGetDebugMessageLog(int count, int bufsize, int[] sources, int[] types, int[] ids, int[] severities, int[] lengths, byte[] buffer);
     public int glGetError();
     public void glGetTexImage(int target, int level, int format, int type, Buffer pixels);
@@ -92,7 +115,6 @@ public interface GL {
     public void glLineWidth(float w);
     public void glLinkProgram(int program);
     public void glObjectLabel(int identifier, int name, int length, byte[] label);
-    public void glObjectLabel(int identifier, int name, String label);
     public void glPixelStorei(int pname, int param);
     public void glPointSize(float size);
     public void glPolygonMode(int face, int mode);
@@ -126,10 +148,7 @@ public interface GL {
     public void glUniformMatrix4fv(int location, int count, boolean transpose, float[] value, int n);
     public void glUseProgram(int program);
     public void glVertexAttribDivisor(int location, int divisor);
-    public void glVertexAttribDivisor(int location, int offset, int divisor);
     public void glVertexAttribPointer(int location, int size, int type, boolean normalized, int stride, long pointer);
-    public void glVertexAttribPointer(int location, int offset, int size, int type, boolean normalized, int stride, long pointer);
     public void glVertexAttribIPointer(int location, int size, int type, int stride, long pointer);
-    public void glVertexAttribIPointer(int location, int offset, int size, int type, int stride, long pointer);
     public void glViewport(int x, int y, int w, int h);
 }
