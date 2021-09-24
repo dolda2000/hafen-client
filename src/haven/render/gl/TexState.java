@@ -27,7 +27,6 @@
 package haven.render.gl;
 
 import java.util.*;
-import com.jogamp.opengl.GL;
 
 public class TexState extends GLState {
     public final GLTexture[] bound;

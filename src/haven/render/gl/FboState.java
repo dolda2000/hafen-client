@@ -30,7 +30,6 @@ import static haven.Utils.eq;
 import haven.render.*;
 import haven.render.gl.GLFrameBuffer.*;
 import java.util.*;
-import com.jogamp.opengl.*;
 
 public class FboState extends GLState {
     public static final FragTarget NIL_CONF = new FragTarget(null);
@@ -113,8 +112,8 @@ public class FboState extends GLState {
 	case ADD: return(GL.GL_FUNC_ADD);
 	case SUB: return(GL.GL_FUNC_SUBTRACT);
 	case RSUB: return(GL.GL_FUNC_REVERSE_SUBTRACT);
-	case MIN: return(GL3.GL_MIN);
-	case MAX: return(GL3.GL_MAX);
+	case MIN: return(GL.GL_MIN);
+	case MAX: return(GL.GL_MAX);
 	default: throw(new IllegalArgumentException(String.format("blend function: %s", fn)));
 	}
     }
@@ -131,10 +130,10 @@ public class FboState extends GLState {
 	case DST_ALPHA: return(GL.GL_DST_ALPHA);
 	case INV_SRC_ALPHA: return(GL.GL_ONE_MINUS_SRC_ALPHA);
 	case INV_DST_ALPHA: return(GL.GL_ONE_MINUS_DST_ALPHA);
-	case CONST_COLOR: return(GL3.GL_CONSTANT_COLOR);
-	case INV_CONST_COLOR: return(GL3.GL_ONE_MINUS_CONSTANT_COLOR);
-	case CONST_ALPHA: return(GL3.GL_CONSTANT_ALPHA);
-	case INV_CONST_ALPHA: return(GL3.GL_ONE_MINUS_CONSTANT_ALPHA);
+	case CONST_COLOR: return(GL.GL_CONSTANT_COLOR);
+	case INV_CONST_COLOR: return(GL.GL_ONE_MINUS_CONSTANT_COLOR);
+	case CONST_ALPHA: return(GL.GL_CONSTANT_ALPHA);
+	case INV_CONST_ALPHA: return(GL.GL_ONE_MINUS_CONSTANT_ALPHA);
 	default: throw(new IllegalArgumentException(String.format("blend factor: %s", fac)));
 	}
     }

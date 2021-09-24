@@ -26,15 +26,13 @@
 
 package haven.render.gl;
 
-import com.jogamp.opengl.*;
-
 public class Fence implements BGL.Request {
     private int state;
 
     public Fence() {
     }
 
-    public void run(GL3 gl) {
+    public void run(GL gl) {
 	synchronized(this) {
 	    state = 1;
 	    notifyAll();

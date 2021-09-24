@@ -40,6 +40,7 @@ public class JOGLWrap implements GL {
     public void glAttachShader(int program, int shader) {back.glAttachShader(program, shader);}
     public void glBindAttribLocation(int program, int index, String name) {back.glBindAttribLocation(program, index, name);}
     public void glBindBuffer(int target, int buffer) {back.glBindBuffer(target, buffer);}
+    public void glBindFragDataLocation(int program, int colornumber, String name) {back.glBindFragDataLocation(program, colornumber, name);}
     public void glBindFramebuffer(int target, int buffer) {back.glBindFramebuffer(target, buffer);}
     public void glBindRenderbuffer(int target, int buffer) {back.glBindRenderbuffer(target, buffer);}
     public void glBindTexture(int target, int texture) {back.glBindTexture(target, texture);}
@@ -51,19 +52,24 @@ public class JOGLWrap implements GL {
     public void glBlendFuncSeparate(int csfac, int cdfac, int asfac, int adfac) {back.glBlendFuncSeparate(csfac, cdfac, asfac, adfac);}
     public void glBufferData(int target, long size, Buffer data, int usage) {back.glBufferData(target, size, data, usage);}
     public void glBufferSubData(int target, long offset, long size, Buffer data) {back.glBufferSubData(target, offset, size, data);}
+    public int glCheckFramebufferStatus(int target) {return(back.glCheckFramebufferStatus(target));}
     public void glClear(int mask) {back.glClear(mask);}
     public void glClearColor(float r, float g, float b, float a) {back.glClearColor(r, g, b, a);}
     public void glClearDepth(double d) {back.glClearDepth(d);}
     public void glColorMask(boolean r, boolean g, boolean b, boolean a) {back.glColorMask(r, g, b, a);}
     public void glColorMaski(int buf, boolean r, boolean g, boolean b, boolean a) {back.glColorMaski(buf, r, g, b, a);}
+    public void glCompileShader(int shader) {back.glCompileShader(shader);}
+    public int glCreateProgram() {return(back.glCreateProgram());}
+    public int glCreateShader(int type) {return(back.glCreateShader(type));}
+    public void glCullFace(int mode) {back.glCullFace(mode);}
     public void glDeleteBuffers(int count, int[] buffers, int n) {back.glDeleteBuffers(count, buffers, n);}
     public void glDeleteFramebuffers(int count, int[] buffers, int n) {back.glDeleteFramebuffers(count, buffers, n);}
     public void glDeleteShader(int id) {back.glDeleteShader(id);}
+    public void glDeleteQueries(int count, int[] buffer, int i) {back.glDeleteQueries(count, buffer, i);}
     public void glDeleteProgram(int id) {back.glDeleteProgram(id);}
     public void glDeleteRenderbuffers(int count, int[] buffers, int n) {back.glDeleteRenderbuffers(count, buffers, n);}
     public void glDeleteTextures(int count, int[] buffers, int n) {back.glDeleteTextures(count, buffers, n);}
     public void glDeleteVertexArrays(int count, int[] buffers, int n) {back.glDeleteVertexArrays(count, buffers, n);}
-    public void glCullFace(int mode) {back.glCullFace(mode);}
     public void glDebugMessageControl(int source, int type, int severity, int count, int[] ids, boolean enabled) {back.glDebugMessageControl(source, type, severity, count, ids, 0, enabled);}
     public void glDeleteSync(long id) {back.glDeleteSync(id);}
     public void glDepthFunc(int func) {back.glDepthFunc(func);}
@@ -83,13 +89,26 @@ public class JOGLWrap implements GL {
     public void glEnablei(int cap, int index) {back.glEnablei(cap, index);}
     public void glEnableClientState(int cap) {back.glEnableClientState(cap);}
     public void glEnableVertexAttribArray(int location) {back.glEnableVertexAttribArray(location);}
+    public long glFenceSync(int condition, int flags) {return(back.glFenceSync(condition, flags));}
     public void glFramebufferTexture2D(int target, int attachment, int textarget, int texture, int level) {back.glFramebufferTexture2D(target, attachment, textarget, texture, level);}
     public void glFramebufferRenderbuffer(int target, int attachment, int rbtarget, int renderbuffer) {back.glFramebufferRenderbuffer(target, attachment, rbtarget, renderbuffer);}
     public void glGenBuffers(int n, int[] buffer, int i) {back.glGenBuffers(n, buffer, i);}
+    public void glGenFramebuffers(int n, int[] buffer, int i) {back.glGenFramebuffers(n, buffer, i);}
+    public void glGenQueries(int n, int[] buffer, int i) {back.glGenQueries(n, buffer, i);}
+    public void glGenTextures(int n, int[] buffer, int i) {back.glGenTextures(n, buffer, i);}
+    public void glGenVertexArrays(int n, int[] buffer, int i) {back.glGenVertexArrays(n, buffer, i);}
     public int glGetDebugMessageLog(int count, int bufsize, int[] sources, int[] types, int[] ids, int[] severities, int[] lengths, byte[] buffer) {return(back.glGetDebugMessageLog(count, bufsize, sources, 0, types, 0, ids, 0, severities, 0, lengths, 0, buffer, 0));}
     public int glGetError() {return(back.glGetError());}
+    public void glGetProgramInfoLog(int shader, int maxlength, int[] length, byte[] infolog) {back.glGetProgramInfoLog(shader, maxlength, length, 0, infolog, 0);}
+    public void glGetProgramiv(int shader, int pname, int[] buf, int i) {back.glGetProgramiv(shader, pname, buf, i);}
+    public void glGetQueryObjectiv(int id, int pname, int[] params, int i) {back.glGetQueryObjectiv(id, pname, params, i);}
+    public void glGetQueryObjecti64v(int id, int pname, long[] params, int i) {back.glGetQueryObjecti64v(id, pname, params, i);}
+    public void glGetShaderInfoLog(int shader, int maxlength, int[] length, byte[] infolog) {back.glGetShaderInfoLog(shader, maxlength, length, 0, infolog, 0);}
+    public void glGetShaderiv(int shader, int pname, int[] buf, int i) {back.glGetShaderiv(shader, pname, buf, i);}
+    public void glGetSynciv(long sync, int pname, int bufsize, int[] lengths, int i, int[] values, int o) {back.glGetSynciv(sync, pname, bufsize, lengths, i, values, o);}
     public void glGetTexImage(int target, int level, int format, int type, Buffer pixels) {back.glGetTexImage(target, level, format, type, pixels);}
     public void glGetTexImage(int target, int level, int format, int type, long offset) {back.glGetTexImage(target, level, format, type, offset);}
+    public int glGetUniformLocation(int program, String name) {return(back.glGetUniformLocation(program, name));}
     public void glLineWidth(float w) {back.glLineWidth(w);}
     public void glLinkProgram(int program) {back.glLinkProgram(program);}
     public void glObjectLabel(int identifier, int name, int length, byte[] label) {back.glObjectLabel(identifier, name, length, label, 0);}
@@ -97,12 +116,14 @@ public class JOGLWrap implements GL {
     public void glPointSize(float size) {back.glPointSize(size);}
     public void glPolygonMode(int face, int mode) {back.glPolygonMode(face, mode);}
     public void glPolygonOffset(float factor, float units) {back.glPolygonOffset(factor, units);}
+    public void glQueryCounter(int id, int target) {back.glQueryCounter(id, target);}
     public void glReadBuffer(int buf) {back.glReadBuffer(buf);}
     public void glReadPixels(int x, int y, int width, int height, int format, int type, Buffer data) {back.glReadPixels(x, y, width, height, format, type, data);}
     public void glReadPixels(int x, int y, int width, int height, int format, int type, long offset) {back.glReadPixels(x, y, width, height, format, type, offset);}
     public void glRenderbufferStorage(int target, int format, int width, int height) {back.glRenderbufferStorage(target, format, width, height);}
     public void glRenderbufferStorageMultisample(int target, int samples, int format, int width, int height) {back.glRenderbufferStorageMultisample(target, samples, format, width, height);}
     public void glSampleCoverage(float value, boolean invert) {back.glSampleCoverage(value, invert);}
+    public void glShaderSource(int shader, int count, String[] string, int[] lengths) {back.glShaderSource(shader, count, string, lengths, 0);}
     public void glScissor(int x, int y, int w, int h) {back.glScissor(x, y, w, h);}
     public void glTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, Buffer data) {back.glTexImage2D(target, level, internalformat, width, height, border, format, type, data);}
     public void glTexSubImage2D(int target, int level, int xoff, int yoff, int width, int height, int format, int type, Buffer data) {back.glTexSubImage2D(target, level, xoff, yoff, width, height, format, type, data);}

@@ -27,7 +27,6 @@
 package haven.render.gl;
 
 import java.util.*;
-import com.jogamp.opengl.*;
 
 public class GLDoubleBuffer {
     private List<Buffered> changed = null;
@@ -36,7 +35,7 @@ public class GLDoubleBuffer {
     public class Buffered implements BGL.Request {
 	private BufferBGL cur, next;
 
-	public void run(GL3 gl) {
+	public void run(GL gl) {
 	    if(cur != null)
 		cur.run(gl);
 	}
@@ -101,7 +100,7 @@ public class GLDoubleBuffer {
 
     public void put(BGL gl) {
 	gl.bglSubmit(new BGL.Request() {
-		public void run(GL3 gl) {put();}
+		public void run(GL gl) {put();}
 		public void abort() {put();}
 	    });
     }
