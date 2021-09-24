@@ -26,8 +26,6 @@
 
 package haven.render.gl;
 
-import com.jogamp.opengl.*;
-
 public class GLException extends RuntimeException {
     public int code;
     public String str;
@@ -65,7 +63,7 @@ public class GLException extends RuntimeException {
     }
 
     public static String constname(int val) {
-	return(constname(GL3.class, val));
+	return(constname(GL.class, val));
     }
 
     public static class GLInvalidEnumException extends GLException {

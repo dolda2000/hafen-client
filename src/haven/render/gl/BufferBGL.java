@@ -31,7 +31,6 @@ import java.util.*;
 import java.util.regex.*;
 import java.io.*;
 import java.nio.file.*;
-import com.jogamp.opengl.*;
 
 public class BufferBGL extends BGL {
     public static final BufferBGL empty = new BufferBGL(0) {
@@ -48,7 +47,7 @@ public class BufferBGL extends BGL {
     }
     public BufferBGL() {this(128);}
 
-    public void run(GL3 gl) {
+    public void run(GL gl) {
 	for(int i = 0; i < n; i++) {
 	    if(curprof != null)
 		curprof.register(list[i]);
