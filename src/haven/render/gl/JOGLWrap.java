@@ -98,6 +98,7 @@ public class JOGLWrap implements GL {
     public void glGenQueries(int n, int[] buffer, int i) {back.glGenQueries(n, buffer, i);}
     public void glGenTextures(int n, int[] buffer, int i) {back.glGenTextures(n, buffer, i);}
     public void glGenVertexArrays(int n, int[] buffer, int i) {back.glGenVertexArrays(n, buffer, i);}
+    public void glGetBufferSubData(int target, int offset, int size, ByteBuffer data) {back.glGetBufferSubData(target, offset, size, data);}
     public int glGetDebugMessageLog(int count, int bufsize, int[] sources, int[] types, int[] ids, int[] severities, int[] lengths, byte[] buffer) {return(back.glGetDebugMessageLog(count, bufsize, sources, 0, types, 0, ids, 0, severities, 0, lengths, 0, buffer, 0));}
     public int glGetError() {return(back.glGetError());}
     public void glGetFloatv(int pname, float[] data) {back.glGetFloatv(pname, data, 0);}

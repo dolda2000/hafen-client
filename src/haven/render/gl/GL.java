@@ -35,12 +35,14 @@ public interface GL {
     public static final int GL_BLEND = com.jogamp.opengl.GL.GL_BLEND;
     public static final int GL_BUFFER = com.jogamp.opengl.GL3.GL_BUFFER;
     public static final int GL_COLOR_ATTACHMENT0 = com.jogamp.opengl.GL.GL_COLOR_ATTACHMENT0;
+    public static final int GL_COLOR_BUFFER_BIT = com.jogamp.opengl.GL3.GL_COLOR_BUFFER_BIT;
     public static final int GL_COMPILE_STATUS = com.jogamp.opengl.GL3.GL_COMPILE_STATUS;
     public static final int GL_CONSTANT_ALPHA = com.jogamp.opengl.GL3.GL_CONSTANT_ALPHA;
     public static final int GL_CONSTANT_COLOR = com.jogamp.opengl.GL3.GL_CONSTANT_COLOR;
     public static final int GL_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH = com.jogamp.opengl.GL3.GL_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH;
     public static final int GL_DEBUG_OUTPUT = com.jogamp.opengl.GL3.GL_DEBUG_OUTPUT;
     public static final int GL_DEPTH_ATTACHMENT = com.jogamp.opengl.GL.GL_DEPTH_ATTACHMENT;
+    public static final int GL_DEPTH_BUFFER_BIT = com.jogamp.opengl.GL3.GL_DEPTH_BUFFER_BIT;
     public static final int GL_DST_ALPHA = com.jogamp.opengl.GL.GL_DST_ALPHA;
     public static final int GL_DST_COLOR = com.jogamp.opengl.GL.GL_DST_COLOR;
     public static final int GL_DYNAMIC_DRAW = com.jogamp.opengl.GL3.GL_DYNAMIC_DRAW;
@@ -72,6 +74,8 @@ public interface GL {
     public static final int GL_ONE_MINUS_SRC_ALPHA = com.jogamp.opengl.GL.GL_ONE_MINUS_SRC_ALPHA;
     public static final int GL_ONE_MINUS_SRC_COLOR = com.jogamp.opengl.GL.GL_ONE_MINUS_SRC_COLOR;
     public static final int GL_OUT_OF_MEMORY = com.jogamp.opengl.GL.GL_OUT_OF_MEMORY;
+    public static final int GL_PACK_ALIGNMENT = com.jogamp.opengl.GL3.GL_PACK_ALIGNMENT;
+    public static final int GL_PIXEL_PACK_BUFFER = com.jogamp.opengl.GL3.GL_PIXEL_PACK_BUFFER;
     public static final int GL_PROGRAM_POINT_SIZE = com.jogamp.opengl.GL3.GL_PROGRAM_POINT_SIZE;
     public static final int GL_QUERY_RESULT = com.jogamp.opengl.GL3.GL_QUERY_RESULT;
     public static final int GL_QUERY_RESULT_AVAILABLE = com.jogamp.opengl.GL3.GL_QUERY_RESULT_AVAILABLE;
@@ -81,16 +85,22 @@ public interface GL {
     public static final int GL_SRC_ALPHA = com.jogamp.opengl.GL.GL_SRC_ALPHA;
     public static final int GL_SRC_COLOR = com.jogamp.opengl.GL.GL_SRC_COLOR;
     public static final int GL_STATIC_DRAW = com.jogamp.opengl.GL3.GL_STATIC_DRAW;
+    public static final int GL_STREAM_DRAW = com.jogamp.opengl.GL3.GL_STREAM_DRAW;
+    public static final int GL_STREAM_READ = com.jogamp.opengl.GL3.GL_STREAM_READ;
     public static final int GL_SYNC_GPU_COMMANDS_COMPLETE = com.jogamp.opengl.GL3.GL_SYNC_GPU_COMMANDS_COMPLETE;
     public static final int GL_SYNC_STATUS = com.jogamp.opengl.GL3.GL_SYNC_STATUS;
     public static final int GL_TEXTURE = com.jogamp.opengl.GL3.GL_TEXTURE;
     public static final int GL_TEXTURE0 = com.jogamp.opengl.GL.GL_TEXTURE0;
+    public static final int GL_TEXTURE_1D = com.jogamp.opengl.GL3.GL_TEXTURE_1D;
+    public static final int GL_TEXTURE_1D_ARRAY = com.jogamp.opengl.GL3.GL_TEXTURE_1D_ARRAY;
     public static final int GL_TEXTURE_2D = com.jogamp.opengl.GL.GL_TEXTURE_2D;
     public static final int GL_TEXTURE_2D_ARRAY = com.jogamp.opengl.GL3.GL_TEXTURE_2D_ARRAY;
     public static final int GL_TEXTURE_2D_MULTISAMPLE = com.jogamp.opengl.GL3.GL_TEXTURE_2D_MULTISAMPLE;
+    public static final int GL_TEXTURE_2D_MULTISAMPLE_ARRAY = com.jogamp.opengl.GL3.GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
     public static final int GL_TEXTURE_3D = com.jogamp.opengl.GL3.GL_TEXTURE_3D;
     public static final int GL_TEXTURE_BORDER_COLOR = com.jogamp.opengl.GL3.GL_TEXTURE_BORDER_COLOR;
     public static final int GL_TEXTURE_CUBE_MAP = com.jogamp.opengl.GL3.GL_TEXTURE_CUBE_MAP;
+    public static final int GL_TEXTURE_CUBE_MAP_ARRAY = com.jogamp.opengl.GL3.GL_TEXTURE_CUBE_MAP_ARRAY;
     public static final int GL_TEXTURE_MIN_FILTER = com.jogamp.opengl.GL3.GL_TEXTURE_MIN_FILTER;
     public static final int GL_TEXTURE_MAG_FILTER = com.jogamp.opengl.GL3.GL_TEXTURE_MAG_FILTER;
     public static final int GL_TEXTURE_MAX_ANISOTROPY_EXT = com.jogamp.opengl.GL3.GL_TEXTURE_MAX_ANISOTROPY_EXT;
@@ -198,6 +208,12 @@ public interface GL {
     public static final int GL_GEQUAL = com.jogamp.opengl.GL3.GL_GEQUAL;
     public static final int GL_DEPTH_TEST = com.jogamp.opengl.GL3.GL_DEPTH_TEST;
     public static final int GL_POLYGON_OFFSET_FILL = com.jogamp.opengl.GL3.GL_POLYGON_OFFSET_FILL;
+    public static final int GL_POINTS = com.jogamp.opengl.GL3.GL_POINTS;
+    public static final int GL_LINES = com.jogamp.opengl.GL3.GL_LINES;
+    public static final int GL_LINE_STRIP = com.jogamp.opengl.GL3.GL_LINE_STRIP;
+    public static final int GL_TRIANGLES = com.jogamp.opengl.GL3.GL_TRIANGLES;
+    public static final int GL_TRIANGLE_STRIP = com.jogamp.opengl.GL3.GL_TRIANGLE_STRIP;
+    public static final int GL_TRIANGLE_FAN = com.jogamp.opengl.GL3.GL_TRIANGLE_FAN;
 
     public void glActiveTexture(int texture);
     public void glAttachShader(int program, int shader);
@@ -261,6 +277,7 @@ public interface GL {
     public void glGenQueries(int n, int[] buffer, int i);
     public void glGenTextures(int n, int[] buffer, int i);
     public void glGenVertexArrays(int n, int[] buffer, int i);
+    public void glGetBufferSubData(int target, int offset, int size, ByteBuffer data);
     public int glGetDebugMessageLog(int count, int bufsize, int[] sources, int[] types, int[] ids, int[] severities, int[] lengths, byte[] buffer);
     public int glGetError();
     public void glGetFloatv(int pname, float[] data);
