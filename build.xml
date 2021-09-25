@@ -46,8 +46,8 @@
   <target name="extlib-env">
     <mkdir dir="lib/ext" />
     <available property="extlib/has-jogl" file="lib/ext/jogl/has-jogl" />
-    <available property="extlib/has-lwjgl-base" file="lib/ext/lwjgl/has-base" />
-    <available property="extlib/has-lwjgl-gl" file="lib/ext/lwjgl/has-opengl" />
+    <available property="extlib/has-lwjgl-base" file="lib/ext/lwjgl/has-lwjgl-base" />
+    <available property="extlib/has-lwjgl-gl" file="lib/ext/lwjgl/has-lwjgl-gl" />
   </target>
 
   <target name="extlib/jogl" depends="extlib-env" unless="extlib/has-jogl">
@@ -55,34 +55,11 @@
   </target>
 
   <target name="extlib/lwjgl-base" depends="extlib-env" unless="extlib/has-lwjgl-base">
-    <mkdir dir="lib/ext/lwjgl" />
-    <loadresource property="lwjgl-base-files">
-      <url url="${ext-lib-base}/lwjgl/current/lwjgl/lib-files" />
-      <filterchain>
-	<prefixlines prefix="${ext-lib-base}/lwjgl/current/lwjgl/" />
-      </filterchain>
-    </loadresource>
-    <get dest="lib/ext/lwjgl/" usetimestamp="true">
-      <resourcelist>
-	<propertyresource name="lwjgl-base-files" />
-      </resourcelist>
-    </get>
-    <touch file="lib/ext/lwjgl/has-base" />
+    <extlib name="lwjgl-base" path="lib/ext/lwjgl" url="${ext-lib-base}/lwjgl/current/lwjgl" />
   </target>
 
   <target name="extlib/lwjgl-gl" depends="extlib-env, extlib/lwjgl-base" unless="extlib/has-lwjgl-gl">
-    <loadresource property="lwjgl-gl-files">
-      <url url="${ext-lib-base}/lwjgl/current/lwjgl-opengl/lib-files" />
-      <filterchain>
-	<prefixlines prefix="${ext-lib-base}/lwjgl/current/lwjgl-opengl/" />
-      </filterchain>
-    </loadresource>
-    <get dest="lib/ext/lwjgl/" usetimestamp="true">
-      <resourcelist>
-	<propertyresource name="lwjgl-gl-files" />
-      </resourcelist>
-    </get>
-    <touch file="lib/ext/lwjgl/has-opengl" />
+    <extlib name="lwjgl-gl" path="lib/ext/lwjgl" url="${ext-lib-base}/lwjgl/current/lwjgl-opengl" />
   </target>
 
 
