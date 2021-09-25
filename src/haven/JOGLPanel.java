@@ -35,6 +35,8 @@ import com.jogamp.opengl.awt.*;
 import haven.render.*;
 import haven.render.States;
 import haven.render.gl.*;
+import haven.render.jogl.*;
+import com.jogamp.opengl.GL;
 
 public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Directory, UI.Context {
     private static final boolean dumpbgl = true;
@@ -47,7 +49,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private volatile int frameno;
     private double uidle = 0.0, ridle = 0.0;
     private final Dispatcher ed;
-    private GLEnvironment env = null;
+    private JOGLEnvironment env = null;
     private UI ui;
     private Area shape;
     private Pipe base, wnd;
@@ -157,7 +159,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     }
 
     private final haven.error.ErrorHandler errh = haven.error.ErrorHandler.find();
-    private void setenv(GLEnvironment env) {
+    private void setenv(JOGLEnvironment env) {
 	if(this.env != null)
 	    this.env.dispose();
 	this.env = env;
@@ -180,7 +182,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	GLEnvironment env;
 	synchronized(this) {
 	    if((this.env == null) || (this.env.ctx != ctx)) {
-		setenv(new GLEnvironment(gl, ctx, shape));
+		setenv(new JOGLEnvironment(gl.getGL3(), ctx, shape));
 		initgl(gl);
 	    }
 	    env = this.env;
@@ -196,7 +198,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    if(debuggl) {
 		gl3 = new DebugGL3(gl3);
 	    }
-	    env.process(gl3);
+	    env.process(new JOGLWrap(gl3));
 	    long end = System.nanoTime();
 	} catch(BGL.BGLException e) {
 	    if(dumpbgl)
@@ -227,13 +229,13 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    this.frameno = frameno;
 	}
 
-	public void run(GL3 gl) {
+	public void run(haven.render.gl.GL gl) {
 	    long start = System.nanoTime();
 	    boolean iswap = iswap();
 	    if(debuggl)
 		haven.render.gl.GLException.checkfor(gl, null);
 	    if(iswap != aswap)
-		gl.setSwapInterval((aswap = iswap) ? 1 : 0);
+		((JOGLWrap)gl).back.setSwapInterval((aswap = iswap) ? 1 : 0);
 	    if(debuggl)
 		haven.render.gl.GLException.checkfor(gl, null);
 	    JOGLPanel.this.swapBuffers();
@@ -245,7 +247,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     }
 
     private class GLFinish implements BGL.Request {
-	public void run(GL3 gl) {
+	public void run(haven.render.gl.GL gl) {
 	    long start = System.nanoTime();
 	    gl.glFinish();
 	    /* Should this count towards idle time? Who knows. */
@@ -254,7 +256,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     }
 
     private class FrameCycle implements BGL.Request {
-	public void run(GL3 gl) {
+	public void run(haven.render.gl.GL gl) {
 	    long now = System.nanoTime();
 	    if(lastrcycle != 0) {
 		double fridle = (double)ridletime / (double)(now - lastrcycle);
@@ -277,7 +279,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    this.label = label;
 	}
 
-	public void run(GL3 gl) {
+	public void run(haven.render.gl.GL gl) {
 	    if(prev != null) {
 		if(prev.frame != null) {
 		    /* The reason frame would be null is if the
@@ -302,7 +304,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    this.label = label;
 	}
 
-	public void run(GL3 gl) {
+	public void run(haven.render.gl.GL gl) {
 	    if((prof != null) && (prof.frame != null))
 		prof.frame.tick(label);
 	}
