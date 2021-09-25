@@ -354,7 +354,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 			gl.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAX_ANISOTROPY_EXT, data.anisotropy);
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
-		    gl.glTexParameterfv(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
+		    gl.glTexParameterfv(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_BORDER_COLOR, data.border.to4a());
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
@@ -440,7 +440,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    gl.glTexParameteri(GL.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
 		    gl.glTexParameteri(GL.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
 		    gl.glTexParameteri(GL.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_R, wrapmode(data.rwrap));
-		    gl.glTexParameterfv(GL.GL_TEXTURE_3D, GL.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
+		    gl.glTexParameterfv(GL.GL_TEXTURE_3D, GL.GL_TEXTURE_BORDER_COLOR, data.border.to4a());
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
@@ -530,7 +530,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D_ARRAY, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D_ARRAY, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D_ARRAY, GL.GL_TEXTURE_WRAP_R, wrapmode(data.rwrap));
-		    gl.glTexParameterfv(GL.GL_TEXTURE_2D_ARRAY, GL.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
+		    gl.glTexParameterfv(GL.GL_TEXTURE_2D_ARRAY, GL.GL_TEXTURE_BORDER_COLOR, data.border.to4a());
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
@@ -671,7 +671,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 			gl.glTexParameterf(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_MAX_ANISOTROPY_EXT, data.anisotropy);
 		    gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
 		    gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
-		    gl.glTexParameterfv(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
+		    gl.glTexParameterfv(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_BORDER_COLOR, data.border.to4a());
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
