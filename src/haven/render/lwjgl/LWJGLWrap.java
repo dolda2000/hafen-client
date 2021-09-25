@@ -31,6 +31,8 @@ import haven.render.gl.GL;
 import org.lwjgl.opengl.*;
 
 public class LWJGLWrap implements GL {
+    public static final LWJGLWrap instance = new LWJGLWrap();
+
     private static ByteBuffer ckbuf(ByteBuffer buf, long size) {
 	if(buf.remaining() != size)
 	    throw(new AssertionError(buf.remaining() + " != " + size));
