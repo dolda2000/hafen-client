@@ -184,6 +184,20 @@ public interface GL {
     public static final int GL_TEXTURE_CUBE_MAP_NEGATIVE_X = com.jogamp.opengl.GL3.GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
     public static final int GL_TEXTURE_CUBE_MAP_NEGATIVE_Y = com.jogamp.opengl.GL3.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
     public static final int GL_TEXTURE_CUBE_MAP_NEGATIVE_Z = com.jogamp.opengl.GL3.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
+    public static final int GL_SCISSOR_TEST = com.jogamp.opengl.GL3.GL_SCISSOR_TEST;
+    public static final int GL_FRONT = com.jogamp.opengl.GL3.GL_FRONT;
+    public static final int GL_FRONT_AND_BACK = com.jogamp.opengl.GL3.GL_FRONT_AND_BACK;
+    public static final int GL_CULL_FACE = com.jogamp.opengl.GL3.GL_CULL_FACE;
+    public static final int GL_NEVER = com.jogamp.opengl.GL3.GL_NEVER;
+    public static final int GL_ALWAYS = com.jogamp.opengl.GL3.GL_ALWAYS;
+    public static final int GL_EQUAL = com.jogamp.opengl.GL3.GL_EQUAL;
+    public static final int GL_NOTEQUAL = com.jogamp.opengl.GL3.GL_NOTEQUAL;
+    public static final int GL_LESS = com.jogamp.opengl.GL3.GL_LESS;
+    public static final int GL_LEQUAL = com.jogamp.opengl.GL3.GL_LEQUAL;
+    public static final int GL_GREATER = com.jogamp.opengl.GL3.GL_GREATER;
+    public static final int GL_GEQUAL = com.jogamp.opengl.GL3.GL_GEQUAL;
+    public static final int GL_DEPTH_TEST = com.jogamp.opengl.GL3.GL_DEPTH_TEST;
+    public static final int GL_POLYGON_OFFSET_FILL = com.jogamp.opengl.GL3.GL_POLYGON_OFFSET_FILL;
 
     public void glActiveTexture(int texture);
     public void glAttachShader(int program, int shader);
