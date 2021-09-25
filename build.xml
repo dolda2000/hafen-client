@@ -21,25 +21,35 @@
   </target>
 
 
+  <macrodef name="extlib">
+    <attribute name="name" />
+    <attribute name="path" />
+    <attribute name="url" />
+    <sequential>
+      <local name="@{name}-files" />
+      <mkdir dir="@{path}" />
+      <loadresource property="@{name}-files">
+	<url url="@{url}/lib-files" />
+	<filterchain>
+	  <prefixlines prefix="@{url}/" />
+	</filterchain>
+      </loadresource>
+      <get dest="@{path}/" usetimestamp="true">
+	<resourcelist>
+	  <propertyresource name="@{name}-files" />
+	</resourcelist>
+      </get>
+      <touch file="@{path}/has-@{name}" />
+    </sequential>
+  </macrodef>
+
   <target name="extlib-env">
     <mkdir dir="lib/ext" />
     <available property="extlib/has-jogl" file="lib/ext/jogl/has-jogl" />
   </target>
 
   <target name="extlib/jogl" depends="extlib-env" unless="extlib/has-jogl">
-    <mkdir dir="lib/ext/jogl" />
-    <loadresource property="jogl-files">
-      <url url="${ext-lib-base}/jogl/current/lib-files" />
-      <filterchain>
-	<prefixlines prefix="${ext-lib-base}/jogl/current/" />
-      </filterchain>
-    </loadresource>
-    <get dest="lib/ext/jogl/" usetimestamp="true">
-      <resourcelist>
-	<propertyresource name="jogl-files" />
-      </resourcelist>
-    </get>
-    <touch file="lib/ext/jogl/has-jogl" />
+    <extlib name="jogl" path="lib/ext/jogl" url="${ext-lib-base}/jogl/current" />
   </target>
 
 
