@@ -19,7 +19,7 @@ import static haven.render.sl.Type.*;
 public class Test implements GLEventListener, KeyListener {
     static final FColor gay = new FColor(1.0f, 0.0f, 0.5f);
     GLWindow wnd;
-    GLEnvironment env;
+    JOGLEnvironment env;
     volatile boolean done;
     Pipe base;
     Area shape;
@@ -192,7 +192,7 @@ public class Test implements GLEventListener, KeyListener {
 	    if((env == null) || (wnd.getContext() != env.ctx)) {
 		if(env != null)
 		    System.err.println("switching contexts");
-		env = new GLEnvironment(gl, wnd.getContext(), shape);
+		env = new JOGLEnvironment(gl, wnd.getContext(), shape);
 		gl.setSwapInterval(1);
 	    }
 	    if(!env.shape().equals(shape))
@@ -200,7 +200,7 @@ public class Test implements GLEventListener, KeyListener {
 	    GLRender g = env.render();
 	    display(g);
 	    env.submit(g);
-	    env.process(gl);
+	    env.process(new JOGLWrap(gl));
 	} catch(BGL.BGLException e) {
 	    e.printStackTrace();
 	    e.dump.dump();
