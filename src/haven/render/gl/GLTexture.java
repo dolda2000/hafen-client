@@ -51,7 +51,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
     public void create(GL gl) {
 	ckstate(state, 0);
 	int[] buf = {0};
-	gl.glGenTextures(1, buf, 0);
+	gl.glGenTextures(1, buf);
 	GLException.checkfor(gl, env);
 	this.id = buf[0];
 	state = 1;
@@ -59,7 +59,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 
     protected void delete(GL gl) {
 	ckstate(state, 1);
-	gl.glDeleteTextures(1, new int[] {id}, 0);
+	gl.glDeleteTextures(1, new int[] {id});
 	state = 2;
 	setmem(null, 0);
     }

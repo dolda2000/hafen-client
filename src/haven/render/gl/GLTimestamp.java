@@ -40,7 +40,7 @@ public class GLTimestamp extends GLQuery {
 
     public void create(GL gl) {
 	int[] buf = {0};
-	gl.glGenQueries(1, buf, 0);
+	gl.glGenQueries(1, buf);
 	gl.glQueryCounter(buf[0], GL.GL_TIMESTAMP);
 	id = buf[0];
 	env.queries.add(this);
@@ -48,11 +48,11 @@ public class GLTimestamp extends GLQuery {
 
     public boolean check(GL gl) {
 	int[] rbuf = {0};
-	gl.glGetQueryObjectiv(id, GL.GL_QUERY_RESULT_AVAILABLE, rbuf, 0);
+	gl.glGetQueryObjectiv(id, GL.GL_QUERY_RESULT_AVAILABLE, rbuf);
 	if(rbuf[0] == 0)
 	    return(false);
 	long[] tbuf = {0};
-	gl.glGetQueryObjecti64v(id, GL.GL_QUERY_RESULT, tbuf, 0);
+	gl.glGetQueryObjecti64v(id, GL.GL_QUERY_RESULT, tbuf);
 	callback.accept(tbuf[0]);
 	return(true);
     }
@@ -63,6 +63,6 @@ public class GLTimestamp extends GLQuery {
     }
 
     public void delete(GL gl) {
-	gl.glDeleteQueries(1, new int[] {id}, 0);
+	gl.glDeleteQueries(1, new int[] {id});
     }
 }

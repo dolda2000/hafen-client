@@ -375,7 +375,7 @@ public abstract class BGL {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteBuffers(count, buf, 0);
+		    gl.glDeleteBuffers(count, buf);
 		}
 	    });
     }
@@ -386,7 +386,7 @@ public abstract class BGL {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteFramebuffers(count, buf, 0);
+		    gl.glDeleteFramebuffers(count, buf);
 		}
 	    });
     }
@@ -409,7 +409,7 @@ public abstract class BGL {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteRenderbuffers(count, buf, 0);
+		    gl.glDeleteRenderbuffers(count, buf);
 		}
 	    });
     }
@@ -420,7 +420,7 @@ public abstract class BGL {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteTextures(count, buf, 0);
+		    gl.glDeleteTextures(count, buf);
 		}
 	    });
     }
@@ -431,7 +431,7 @@ public abstract class BGL {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteVertexArrays(count, buf, 0);
+		    gl.glDeleteVertexArrays(count, buf);
 		}
 	    });
     }
@@ -492,7 +492,7 @@ public abstract class BGL {
 
     public void glDrawBuffers(final int n, final int[] bufs) {
 	add(new Command() {
-		public void run(GL gl) {gl.glDrawBuffers(n, bufs, 0);}
+		public void run(GL gl) {gl.glDrawBuffers(n, bufs);}
 	    });
     }
 
@@ -717,7 +717,7 @@ public abstract class BGL {
 
     public void glTexParameterfv(final int target, final int pname, final float[] param) {
 	add(new Command() {
-		public void run(GL gl) {gl.glTexParameterfv(target, pname, param, 0);}
+		public void run(GL gl) {gl.glTexParameterfv(target, pname, param);}
 	    });
     }
 
@@ -747,7 +747,7 @@ public abstract class BGL {
 
     public void glUniform3fv(final ID location, final int count, final float[] val) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniform3fv(location.glid(), count, val, 0);}
+		public void run(GL gl) {gl.glUniform3fv(location.glid(), count, val);}
 	    });
     }
 
@@ -759,7 +759,7 @@ public abstract class BGL {
 
     public void glUniform4fv(final ID location, final int count, final float[] val) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniform4fv(location.glid(), count, val, 0);}
+		public void run(GL gl) {gl.glUniform4fv(location.glid(), count, val);}
 	    });
     }
 
@@ -789,13 +789,13 @@ public abstract class BGL {
 
     public void glUniformMatrix3fv(final ID location, final int count, final boolean transpose, final float[] value) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniformMatrix3fv(location.glid(), count, transpose, value, 0);}
+		public void run(GL gl) {gl.glUniformMatrix3fv(location.glid(), count, transpose, value);}
 	    });
     }
 
     public void glUniformMatrix4fv(final ID location, final int count, final boolean transpose, final float[] value) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniformMatrix4fv(location.glid(), count, transpose, value, 0);}
+		public void run(GL gl) {gl.glUniformMatrix4fv(location.glid(), count, transpose, value);}
 	    });
     }
 

@@ -37,14 +37,14 @@ public class GLBuffer extends GLObject implements BGL.ID {
     public void create(GL gl) {
 	ckstate(state, 0);
 	int[] buf = new int[1];
-	gl.glGenBuffers(1, buf, 0);
+	gl.glGenBuffers(1, buf);
 	this.id = buf[0];
 	state = 1;
     }
     
     protected void delete(GL gl) {
 	ckstate(state, 1);
-	gl.glDeleteBuffers(1, new int[] {id}, 0);
+	gl.glDeleteBuffers(1, new int[] {id});
 	state = 2;
 	setmem(null, 0);
     }

@@ -193,10 +193,10 @@ public class GLProgram implements Disposable {
 	    gl.glShaderSource(this.id, 1, new String[] {text}, new int[] {text.length()});
 	    gl.glCompileShader(this.id);
 	    int[] buf = {0};
-	    gl.glGetShaderiv(this.id, GL.GL_COMPILE_STATUS, buf, 0);
+	    gl.glGetShaderiv(this.id, GL.GL_COMPILE_STATUS, buf);
 	    if(buf[0] != 1) {
 		String info = null;
-		gl.glGetShaderiv(this.id, GL.GL_INFO_LOG_LENGTH, buf, 0);
+		gl.glGetShaderiv(this.id, GL.GL_INFO_LOG_LENGTH, buf);
 		if(buf[0] > 0) {
 		    byte[] logbuf = new byte[buf[0]];
 		    gl.glGetShaderInfoLog(this.id, logbuf.length, buf, logbuf);
@@ -331,10 +331,10 @@ public class GLProgram implements Disposable {
 		gl.glBindFragDataLocation(this.id, i, fragnms[i]);
 	    gl.glLinkProgram(this.id);
 	    int[] buf = {0};
-	    gl.glGetProgramiv(this.id, GL.GL_LINK_STATUS, buf, 0);
+	    gl.glGetProgramiv(this.id, GL.GL_LINK_STATUS, buf);
 	    if(buf[0] != 1) {
 		String info = null;
-		gl.glGetProgramiv(this.id, GL.GL_INFO_LOG_LENGTH, buf, 0);
+		gl.glGetProgramiv(this.id, GL.GL_INFO_LOG_LENGTH, buf);
 		if(buf[0] > 0) {
 		    byte[] logbuf = new byte[buf[0]];
 		    gl.glGetProgramInfoLog(this.id, logbuf.length, buf, logbuf);
