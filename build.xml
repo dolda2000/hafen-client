@@ -24,6 +24,8 @@
   <target name="extlib-env">
     <mkdir dir="lib/ext" />
     <available property="extlib/has-jogl" file="lib/ext/jogl/has-jogl" />
+    <available property="extlib/has-lwjgl-base" file="lib/ext/lwjgl/has-base" />
+    <available property="extlib/has-lwjgl-gl" file="lib/ext/lwjgl/has-opengl" />
   </target>
 
   <target name="extlib/jogl" depends="extlib-env" unless="extlib/has-jogl">
@@ -42,13 +44,47 @@
     <touch file="lib/ext/jogl/has-jogl" />
   </target>
 
+  <target name="extlib/lwjgl-base" depends="extlib-env" unless="extlib/has-lwjgl-base">
+    <mkdir dir="lib/ext/lwjgl" />
+    <loadresource property="lwjgl-base-files">
+      <url url="${ext-lib-base}/lwjgl/current/lwjgl/lib-files" />
+      <filterchain>
+	<prefixlines prefix="${ext-lib-base}/lwjgl/current/lwjgl/" />
+      </filterchain>
+    </loadresource>
+    <get dest="lib/ext/lwjgl/" usetimestamp="true">
+      <resourcelist>
+	<propertyresource name="lwjgl-base-files" />
+      </resourcelist>
+    </get>
+    <touch file="lib/ext/lwjgl/has-base" />
+  </target>
 
-  <target name="hafen-client" depends="build-env, extlib/jogl">
+  <target name="extlib/lwjgl-gl" depends="extlib-env, extlib/lwjgl-base" unless="extlib/has-lwjgl-gl">
+    <loadresource property="lwjgl-gl-files">
+      <url url="${ext-lib-base}/lwjgl/current/lwjgl-opengl/lib-files" />
+      <filterchain>
+	<prefixlines prefix="${ext-lib-base}/lwjgl/current/lwjgl-opengl/" />
+      </filterchain>
+    </loadresource>
+    <get dest="lib/ext/lwjgl/" usetimestamp="true">
+      <resourcelist>
+	<propertyresource name="lwjgl-gl-files" />
+      </resourcelist>
+    </get>
+    <touch file="lib/ext/lwjgl/has-opengl" />
+  </target>
+
+
+  <target name="hafen-client" depends="build-env, extlib/jogl, extlib/lwjgl-gl">
     <javac srcdir="src" destdir="build/classes" debug="on"
 	   source="1.8" target="1.8" includeantruntime="no">
       <classpath>
 	<pathelement path="lib/ext/jogl/jogl-all.jar" />
 	<pathelement path="lib/ext/jogl/gluegen-rt.jar" />
+	<pathelement path="lib/ext/lwjgl/lwjgl.jar" />
+	<pathelement path="lib/ext/lwjgl/lwjgl-awt.jar" />
+	<pathelement path="lib/ext/lwjgl/lwjgl-opengl.jar" />
 	<pathelement path="lib/jnlp.jar" />
 	<pathelement path="lib/jglob.jar" />
       </classpath>
@@ -83,7 +119,7 @@
       <fileset dir="build/classes-lib" />
       <manifest>
 	<attribute name="Main-Class" value="haven.MainFrame" />
-	<attribute name="Class-Path" value="jogl-all.jar gluegen-rt.jar builtin-res.jar hafen-res.jar" />
+	<attribute name="Class-Path" value="jogl-all.jar gluegen-rt.jar lwjgl.jar lwjgl-awt.jar lwjgl-opengl.jar builtin-res.jar hafen-res.jar" />
       </manifest>
     </jar>
     <chmod file="build/hafen.jar" perm="a+x" />
@@ -100,20 +136,19 @@
     <fail unless="lib-builtin-jar" message="builtin-res.jar not available" />
   </target>
 
-  <target name="jars" depends="build-env, jar, extlib/jogl">
+  <target name="jars" depends="build-env, jar, extlib/jogl, extlib/lwjgl-gl">
     <copy todir="build" failonerror="false" quiet="true">
       <file name="lib/builtin-res.jar" />
       <file name="lib/hafen-res.jar" />
     </copy>
     <copy todir="build">
-      <fileset dir="lib/ext/jogl">
-	<include name="*.jar" />
-      </fileset>
+      <fileset dir="lib/ext/jogl"><include name="*.jar" /></fileset>
+      <fileset dir="lib/ext/lwjgl"><include name="*.jar" /></fileset>
     </copy>
     <copy file="local-config.properties" tofile="build/haven-config.properties" failonerror="false" quiet="true" />
   </target>
 
-  <target name="bin" depends="jar, extlib/jogl, res-jar">
+  <target name="bin" depends="jar, extlib/jogl, extlib/lwjgl-gl, res-jar">
     <mkdir dir="bin" />
     <copy todir="bin">
       <fileset dir="build">
@@ -123,9 +158,8 @@
 	<include name="hafen-res.jar" />
 	<include name="builtin-res.jar" />
       </fileset>
-      <fileset dir="lib/ext/jogl">
-	<include name="*.jar" />
-      </fileset>
+      <fileset dir="lib/ext/jogl"><include name="*.jar" /></fileset>
+      <fileset dir="lib/ext/lwjgl"><include name="*.jar" /></fileset>
     </copy>
     <copy file="etc/ansgar-config.properties" tofile="bin/haven-config.properties" />
     <chmod file="bin/hafen.jar" perm="a+x" />
