@@ -144,17 +144,17 @@ public abstract class BGL {
     }
 
     private static class BufState {
-	Buffer buf;
+	ByteBuffer buf;
 	int position, limit;
 
-	BufState(Buffer buf, int position) {
+	BufState(ByteBuffer buf, int position) {
 	    if((this.buf = buf) != null) {
 		this.position = position;
 		limit = buf.limit();
 	    }
 	}
 
-	BufState(Buffer buf) {
+	BufState(ByteBuffer buf) {
 	    if((this.buf = buf) != null) {
 		position = buf.position();
 		limit = buf.limit();
@@ -325,14 +325,14 @@ public abstract class BGL {
 	    });
     }
 
-    public void glBufferData(final int target, final long size, Buffer data, final int usage) {
+    public void glBufferData(final int target, final long size, ByteBuffer data, final int usage) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
 		public void run(GL gl) {ds.restore(); gl.glBufferData(target, size, ds.buf, usage);}
 	    });
     }
 
-    public void glBufferSubData(final int target, final long offset, final long size, Buffer data) {
+    public void glBufferSubData(final int target, final long offset, final long size, ByteBuffer data) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
 		public void run(GL gl) {ds.restore(); gl.glBufferSubData(target, offset, size, ds.buf);}
@@ -574,7 +574,7 @@ public abstract class BGL {
 	    });
     }
 
-    public void glGetTexImage(final int target, final int level, final int format, final int type, Buffer pixels) {
+    public void glGetTexImage(final int target, final int level, final int format, final int type, ByteBuffer pixels) {
 	add(new Command() {
 		public void run(GL gl) {gl.glGetTexImage(target, level, format, type, pixels);}
 	    });
@@ -639,7 +639,7 @@ public abstract class BGL {
 	    });
     }
 
-    public void glReadPixels(final int x, final int y, final int width, final int height, final int format, final int type, Buffer data) {
+    public void glReadPixels(final int x, final int y, final int width, final int height, final int format, final int type, ByteBuffer data) {
 	add(new Command() {
 		public void run(GL gl) {gl.glReadPixels(x, y, width, height, format, type, data);}
 	    });
@@ -675,14 +675,14 @@ public abstract class BGL {
 	    });
     }
 
-    public void glTexImage2D(final int target, final int level, final int internalformat, final int width, final int height, final int border, final int format, final int type, Buffer data) {
+    public void glTexImage2D(final int target, final int level, final int internalformat, final int width, final int height, final int border, final int format, final int type, ByteBuffer data) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
 		public void run(GL gl) {ds.restore(); gl.glTexImage2D(target, level, internalformat, width, height, border, format, type, ds.buf);}
 	    });
     }
 
-    public void glTexSubImage2D(final int target, final int level, final int xoff, final int yoff, final int width, final int height, final int format, final int type, Buffer data) {
+    public void glTexSubImage2D(final int target, final int level, final int xoff, final int yoff, final int width, final int height, final int format, final int type, ByteBuffer data) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
 		public void run(GL gl) {ds.restore(); gl.glTexSubImage2D(target, level, xoff, yoff, width, height, format, type, ds.buf);}
@@ -695,14 +695,14 @@ public abstract class BGL {
 	    });
     }
 
-    public void glTexImage3D(final int target, final int level, final int internalformat, final int width, final int height, final int depth, final int border, final int format, final int type, Buffer data) {
+    public void glTexImage3D(final int target, final int level, final int internalformat, final int width, final int height, final int depth, final int border, final int format, final int type, ByteBuffer data) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
 		public void run(GL gl) {ds.restore(); gl.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, ds.buf);}
 	    });
     }
 
-    public void glTexSubImage3D(final int target, final int level, final int xoff, final int yoff, final int zoff, final int width, final int height, final int depth, final int format, final int type, Buffer data) {
+    public void glTexSubImage3D(final int target, final int level, final int xoff, final int yoff, final int zoff, final int width, final int height, final int depth, final int format, final int type, ByteBuffer data) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
 		public void run(GL gl) {ds.restore(); gl.glTexSubImage3D(target, level, xoff, yoff, zoff, width, height, depth, format, type, ds.buf);}
