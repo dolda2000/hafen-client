@@ -1,4 +1,4 @@
-package haven.render.gl;
+package haven.render.jogl;
 
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -11,6 +11,7 @@ import com.jogamp.newt.opengl.*;
 import com.jogamp.opengl.util.Animator;
 import haven.*;
 import haven.render.*;
+import haven.render.gl.*;
 import haven.render.States;
 import haven.render.sl.*;
 import static haven.render.sl.Cons.*;

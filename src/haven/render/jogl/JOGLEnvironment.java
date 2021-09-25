@@ -24,10 +24,12 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render.jogl;
 
 import haven.*;
+import haven.render.gl.*;
 import com.jogamp.opengl.*;
+import haven.render.gl.GL;
 
 public class JOGLEnvironment extends GLEnvironment {
     public final GLContext ctx;

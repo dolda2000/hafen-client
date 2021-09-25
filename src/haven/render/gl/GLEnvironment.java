@@ -37,12 +37,12 @@ import static haven.render.DataBuffer.Usage.*;
 public abstract class GLEnvironment implements Environment {
     public static final boolean debuglog = false, labels = false;
     public final Caps caps;
+    public int nilfbo_id = 0, nilfbo_db = 0;
     final Object drawmon = new Object();
     final Object prepmon = new Object();
     final Collection<GLObject> disposed = new LinkedList<>();
     final List<GLQuery> queries = new LinkedList<>(); // Synchronized on drawmon
     final Queue<GLRender> submitted = new LinkedList<>();
-    int nilfbo_id = 0, nilfbo_db = 0;
     Area wnd;
     private GLRender prep = null;
     private Applier curstate = new Applier(this);

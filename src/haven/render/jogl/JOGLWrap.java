@@ -24,11 +24,13 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render.jogl;
 
 import java.util.regex.*;
 import java.nio.*;
 import com.jogamp.opengl.*;
+import haven.render.gl.GL;
+import haven.render.gl.GLException;
 
 public class JOGLWrap implements GL {
     public final GL3 back;
