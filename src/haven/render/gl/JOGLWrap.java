@@ -26,6 +26,7 @@
 
 package haven.render.gl;
 
+import java.util.regex.*;
 import java.nio.*;
 import com.jogamp.opengl.*;
 
@@ -155,4 +156,36 @@ public class JOGLWrap implements GL {
     public void glVertexAttribPointer(int location, int size, int type, boolean normalized, int stride, long pointer) {back.glVertexAttribPointer(location, size, type, normalized, stride, pointer);}
     public void glVertexAttribIPointer(int location, int size, int type, int stride, long pointer) {back.glVertexAttribIPointer(location, size, type, stride, pointer);}
     public void glViewport(int x, int y, int w, int h) {back.glViewport(x, y, w, h);}
+
+    private static final Pattern joglerrp = Pattern.compile("GL-Error 0x([0-9a-fA-F]+)\\s");
+    public void xlateexc(RuntimeException exc) {
+	/* How nice wouldn't it be if DebugGL could be
+	 * subclasseed to customize the errors. */
+	if(exc instanceof com.jogamp.opengl.GLException) {
+	    String msg = exc.getMessage();
+	    GLException wrap = null;
+	    if(msg.indexOf("GL_INVALID_ENUM") >= 0) {
+		wrap = new GLException.GLInvalidEnumException();
+	    } else if(msg.indexOf("GL_INVALID_VALUE") >= 0) {
+		wrap = new GLException.GLInvalidValueException();
+	    } else if(msg.indexOf("GL_INVALID_OPERATION") >= 0) {
+		wrap = new GLException.GLInvalidOperationException();
+	    } else if(msg.indexOf("GL_OUT_OF_MEMORY") >= 0) {
+		wrap = new GLException.GLOutOfMemoryException();
+	    } else {
+		Matcher m = joglerrp.matcher(msg);
+		if(m.find()) {
+		    try {
+			wrap = GLException.glexcfor(Integer.parseInt(m.group(1), 16));
+		    } catch(NumberFormatException e) {
+			exc.addSuppressed(e);
+		    }
+		}
+	    }
+	    if(wrap != null) {
+		wrap.initCause(exc);
+		throw(wrap);
+	    }
+	}
+    }
 }

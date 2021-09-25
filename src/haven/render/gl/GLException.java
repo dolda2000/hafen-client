@@ -29,12 +29,11 @@ package haven.render.gl;
 public class GLException extends RuntimeException {
     public int code;
     public String str;
-    private static com.jogamp.opengl.glu.GLU glu = new com.jogamp.opengl.glu.GLU();
 
     public GLException(int code) {
-	super("GL Error: " + code + " (" + glu.gluErrorString(code) + ")");
+	super("GL Error: " + code + " (" + constname(code) + ")");
 	this.code = code;
-	this.str = glu.gluErrorString(code);
+	this.str = constname(code);
     }
 
     public static String constname(Class<?> cl, int val) {

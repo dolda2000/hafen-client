@@ -334,4 +334,6 @@ public interface GL {
     public void glVertexAttribPointer(int location, int size, int type, boolean normalized, int stride, long pointer);
     public void glVertexAttribIPointer(int location, int size, int type, int stride, long pointer);
     public void glViewport(int x, int y, int w, int h);
+
+    public default void xlateexc(RuntimeException exc) {}
 }
