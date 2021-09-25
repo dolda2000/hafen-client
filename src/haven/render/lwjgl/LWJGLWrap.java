@@ -30,7 +30,7 @@ import java.nio.*;
 import haven.render.gl.GL;
 import org.lwjgl.opengl.*;
 
-public class LWJGLWrap {
+public class LWJGLWrap implements GL {
     private static ByteBuffer ckbuf(ByteBuffer buf, long size) {
 	if(buf.remaining() != size)
 	    throw(new AssertionError(buf.remaining() + " != " + size));
