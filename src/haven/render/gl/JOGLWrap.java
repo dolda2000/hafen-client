@@ -90,6 +90,7 @@ public class JOGLWrap implements GL {
     public void glEnableClientState(int cap) {back.glEnableClientState(cap);}
     public void glEnableVertexAttribArray(int location) {back.glEnableVertexAttribArray(location);}
     public long glFenceSync(int condition, int flags) {return(back.glFenceSync(condition, flags));}
+    public void glFinish() {back.glFinish();}
     public void glFramebufferTexture2D(int target, int attachment, int textarget, int texture, int level) {back.glFramebufferTexture2D(target, attachment, textarget, texture, level);}
     public void glFramebufferRenderbuffer(int target, int attachment, int rbtarget, int renderbuffer) {back.glFramebufferRenderbuffer(target, attachment, rbtarget, renderbuffer);}
     public void glGenBuffers(int n, int[] buffer, int i) {back.glGenBuffers(n, buffer, i);}
@@ -99,6 +100,9 @@ public class JOGLWrap implements GL {
     public void glGenVertexArrays(int n, int[] buffer, int i) {back.glGenVertexArrays(n, buffer, i);}
     public int glGetDebugMessageLog(int count, int bufsize, int[] sources, int[] types, int[] ids, int[] severities, int[] lengths, byte[] buffer) {return(back.glGetDebugMessageLog(count, bufsize, sources, 0, types, 0, ids, 0, severities, 0, lengths, 0, buffer, 0));}
     public int glGetError() {return(back.glGetError());}
+    public void glGetFloatv(int pname, float[] data) {back.glGetFloatv(pname, data, 0);}
+    public void glGetIntegerv(int pname, int[] data) {back.glGetIntegerv(pname, data, 0);}
+    public String glGetString(int name) {return(back.glGetString(name));}
     public void glGetProgramInfoLog(int shader, int maxlength, int[] length, byte[] infolog) {back.glGetProgramInfoLog(shader, maxlength, length, 0, infolog, 0);}
     public void glGetProgramiv(int shader, int pname, int[] buf, int i) {back.glGetProgramiv(shader, pname, buf, i);}
     public void glGetQueryObjectiv(int id, int pname, int[] params, int i) {back.glGetQueryObjectiv(id, pname, params, i);}
