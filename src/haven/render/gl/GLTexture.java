@@ -307,14 +307,14 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    if(env.labels && (data.desc != null))
 			gl.glObjectLabel(GL.GL_TEXTURE, this, String.valueOf(data.desc));
 		    if(pixels[0] != null)
-			gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, data.w, data.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[0].data));
+			gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, data.w, data.h, 0, pfmt, pnum, pixels[0].data());
 		    else
 			gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, data.w, data.h, 0, pfmt, pnum, null);
 		    long mem = data.ifmt.size() * data.w * data.h;
 		    for(int i = 1; i < pixels.length; i++) {
 			if(pixels[i] != null) {
 			    Image<?> img = data.image(i);
-			    gl.glTexImage2D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
+			    gl.glTexImage2D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, 0, pfmt, pnum, pixels[i].data());
 			    mem += data.ifmt.size() * img.w * img.h;
 			}
 		    }
@@ -392,14 +392,14 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    if(env.labels && (data.desc != null))
 			gl.glObjectLabel(GL.GL_TEXTURE, this, String.valueOf(data.desc));
 		    if(pixels[0] != null)
-			gl.glTexImage3D(GL.GL_TEXTURE_3D, 0, ifmt, data.w, data.h, data.d, 0, pfmt, pnum, ByteBuffer.wrap(pixels[0].data));
+			gl.glTexImage3D(GL.GL_TEXTURE_3D, 0, ifmt, data.w, data.h, data.d, 0, pfmt, pnum, pixels[0].data());
 		    else
 			gl.glTexImage3D(GL.GL_TEXTURE_3D, 0, ifmt, data.w, data.h, data.d, 0, pfmt, pnum, null);
 		    long mem = data.ifmt.size() * data.w * data.h * data.d;
 		    for(int i = 1; i < pixels.length; i++) {
 			if(pixels[i] != null) {
 			    Image<?> img = data.image(i);
-			    gl.glTexImage3D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, img.d, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
+			    gl.glTexImage3D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, img.d, 0, pfmt, pnum, pixels[i].data());
 			    mem += data.ifmt.size() * img.w * img.h * img.d;
 			}
 		    }
@@ -484,7 +484,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 			gl.glTexImage3D(GL.GL_TEXTURE_2D_ARRAY, i, ifmt, img.w, img.h, data.n, 0, pfmt, pnum, null);
 			for(int o = 0; o < data.n; o++) {
 			    if(pixels[o][i] != null) {
-				gl.glTexSubImage3D(GL.GL_TEXTURE_2D_ARRAY, i, 0, 0, o, img.w, img.h, 1, pfmt, pnum, ByteBuffer.wrap(pixels[o][i].data));
+				gl.glTexSubImage3D(GL.GL_TEXTURE_2D_ARRAY, i, 0, 0, o, img.w, img.h, 1, pfmt, pnum, pixels[o][i].data());
 				mem += data.ifmt.size() * img.w * img.h;
 			    }
 			}
@@ -626,7 +626,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 			CubeImage img = images[i];
 			int tgt = texface(img.face);
 			if(pixels[i] != null) {
-			    gl.glTexImage2D(tgt, img.level, ifmt, img.w, img.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
+			    gl.glTexImage2D(tgt, img.level, ifmt, img.w, img.h, 0, pfmt, pnum, pixels[i].data());
 			    mem += data.ifmt.size() * img.w * img.h;
 			} else if(img.level == 0) {
 			    gl.glTexImage2D(tgt, 0, ifmt, data.w, data.h, 0, pfmt, pnum, null);

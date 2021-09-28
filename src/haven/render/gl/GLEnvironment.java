@@ -450,7 +450,7 @@ public abstract class GLEnvironment implements Environment {
 		    prepare((GLRender g) -> {
 			    BGL gl = g.gl();
 			    Vao0State.apply(this, gl, g.state, jdret);
-			    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), (data == null) ? null : ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
+			    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), (data == null) ? null : data.data(), GL.GL_STATIC_DRAW);
 			    if(labels && (buf.desc != null))
 				gl.glObjectLabel(GL.GL_BUFFER, jdret, String.valueOf(buf.desc));
 			    jdret.setmem(MemStats.INDICES, buf.size());
@@ -511,7 +511,7 @@ public abstract class GLEnvironment implements Environment {
 		    prepare((GLRender g) -> {
 			    BGL gl = g.gl();
 			    VboState.apply(gl, g.state, jdret);
-			    gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), (data == null) ? null : ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
+			    gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), (data == null) ? null : data.data(), GL.GL_STATIC_DRAW);
 			    if(labels && (buf.desc != null))
 				gl.glObjectLabel(GL.GL_BUFFER, jdret, String.valueOf(buf.desc));
 			    jdret.setmem(MemStats.VERTICES, buf.size());
