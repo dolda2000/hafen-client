@@ -87,7 +87,10 @@ public class Test {
 	Render g = env.render();
 	draw(g);
 	env.submit(g);
-	p.runInContext(() -> env.process(LWJGLWrap.instance));
+	p.runInContext(() -> {
+		env.process(LWJGLWrap.instance);
+		p.swapBuffers();
+	    });
     }
 
     void run() {
