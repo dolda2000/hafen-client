@@ -44,7 +44,7 @@ import haven.render.*;
 public class StreamBuffer implements haven.Disposable {
     public final GLBuffer rbuf;
     public final int size;
-    private ByteBuffer[] xfbufs = {};
+    private SysBuffer[] xfbufs = {};
     private boolean[] used = {};
 
     public StreamBuffer(GLEnvironment env, int size) {
@@ -52,8 +52,8 @@ public class StreamBuffer implements haven.Disposable {
 	this.size = size;
     }
 
-    private ByteBuffer mkbuf() {
-	return(ByteBuffer.allocate(size).order(ByteOrder.nativeOrder()));
+    private SysBuffer mkbuf() {
+	return(rbuf.env.malloc(size));
     }
 
     public ByteBuffer get() {
@@ -62,9 +62,10 @@ public class StreamBuffer implements haven.Disposable {
 		if(!used[i]) {
 		    if(xfbufs[i] == null)
 			xfbufs[i] = mkbuf();
-		    xfbufs[i].rewind();
+		    ByteBuffer ret = xfbufs[i].data();
+		    ret.rewind();
 		    used[i] = true;
-		    return(xfbufs[i]);
+		    return(ret);
 		}
 	    }
 	    int n = xfbufs.length;
@@ -72,7 +73,7 @@ public class StreamBuffer implements haven.Disposable {
 	    used = Arrays.copyOf(used, Math.max(1, n * 2));
 	    xfbufs[n] = mkbuf();
 	    used[n] = true;
-	    return(xfbufs[n]);
+	    return(xfbufs[n].data());
 	}
     }
 
@@ -80,7 +81,7 @@ public class StreamBuffer implements haven.Disposable {
 	if(buf == null) throw(new NullPointerException());
 	synchronized(this) {
 	    for(int i = 0; i < xfbufs.length; i++) {
-		if(xfbufs[i] == buf) {
+		if(xfbufs[i].data() == buf) {
 		    if(!used[i])
 			throw(new RuntimeException());
 		    used[i] = false;
@@ -138,5 +139,9 @@ public class StreamBuffer implements haven.Disposable {
 
     public void dispose() {
 	rbuf.dispose();
+	for(int i = 0; i < xfbufs.length; i++) {
+	    if(xfbufs[i] != null)
+		xfbufs[i].dispose();
+	}
     }
 }

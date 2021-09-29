@@ -217,13 +217,14 @@ public class GLRender implements Render, Disposable {
 		    int jdsz = sz; GLBuffer jdvbuf = vbuf;
 		    gl.bglSubmit(new BGL.Request() {
 			    public void run(GL gl) {
-				ByteBuffer buf = ByteBuffer.wrap(new byte[jdsz]);
-				for(int i = 0; i < data.va.bufs.length; i++) {
-				    if(data.va.bufs[i].usage == EPHEMERAL)
-					buf.put(((HeapBuffer)bufs[i]).buf);
+				try(SysBuffer buf = env.malloc(jdsz)) {
+				    for(int i = 0; i < data.va.bufs.length; i++) {
+					if(data.va.bufs[i].usage == EPHEMERAL)
+					    buf.data().put(((HeapBuffer)bufs[i]).buf);
+				    }
+				    buf.data().flip();
+				    gl.glBufferData(GL.GL_ARRAY_BUFFER, jdsz, buf.data(), GL.GL_STREAM_DRAW);
 				}
-				buf.flip();
-				gl.glBufferData(GL.GL_ARRAY_BUFFER, jdsz, buf, GL.GL_STREAM_DRAW);
 			    }
 			});
 		}

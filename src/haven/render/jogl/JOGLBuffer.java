@@ -24,57 +24,22 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render.jogl;
 
 import java.nio.*;
-import haven.render.*;
-import haven.Disposable;
+import haven.render.gl.*;
 
-public class FillBuffers {
-    public static class Array implements FillBuffer {
-	private final GLEnvironment env;
-	private final int sz;
-	private boolean pushed = false;
-	private ByteBuffer data = null;
-	private Disposable free = null;
+public class JOGLBuffer implements SysBuffer {
+    public final ByteBuffer data;
 
-	public Array(GLEnvironment env, int sz) {
-	    this.env = env;
-	    this.sz = sz;
-	}
-
-	public int size() {return(sz);}
-	public boolean compatible(Environment env) {return(env instanceof GLEnvironment);}
-
-	public ByteBuffer push() {
-	    if(data == null) {
-		SysBuffer alloc = env.malloc(sz);
-		data = alloc.data();
-		free = alloc;
-		pushed = true;
-	    } else if(!pushed) {
-		throw(new IllegalStateException("already pulled"));
-	    }
-	    return(data);
-	}
-
-	public void pull(ByteBuffer buf) {
-	    if(data != null)
-		throw(new IllegalStateException("already " + (pushed ? "pushed" : "pulled")));
-	    SysBuffer cvt = env.subsume(buf, sz);
-	    data = cvt.data();
-	    free = cvt;
-	}
-
-	public ByteBuffer data() {
-	    if(pushed)
-		data.rewind();
-	    return((data == null) ? push() : data);
-	}
-
-	public void dispose() {
-	    if(free != null)
-		free.dispose();
-	}
+    public JOGLBuffer(int sz) {
+	this.data = ByteBuffer.allocate(sz).order(ByteOrder.nativeOrder());
     }
+
+    public JOGLBuffer(ByteBuffer data) {
+	this.data = data;
+    }
+
+    public ByteBuffer data() {return(data);}
+    public void dispose() {}
 }

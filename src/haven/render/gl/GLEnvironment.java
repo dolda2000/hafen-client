@@ -369,6 +369,9 @@ public abstract class GLEnvironment implements Environment {
 	return(buf);
     }
 
+    public abstract SysBuffer malloc(int sz);
+    public abstract SysBuffer subsume(ByteBuffer data, int sz);
+
     public FillBuffer fillbuf(DataBuffer tgt, int from, int to) {
 	if((from == 0) && (to == tgt.size())) {
 	    if((tgt instanceof VertexArray.Buffer) && (((VertexArray.Buffer)tgt).ro instanceof StreamBuffer))
@@ -376,7 +379,7 @@ public abstract class GLEnvironment implements Environment {
 	    if((tgt instanceof Model.Indices) && (((Model.Indices)tgt).ro instanceof StreamBuffer))
 		return(((StreamBuffer)(((Model.Indices)tgt).ro)).new Fill());
 	}
-	return(new FillBuffers.Array(to - from));
+	return(new FillBuffers.Array(this, to - from));
     }
 
     GLRender prepare() {

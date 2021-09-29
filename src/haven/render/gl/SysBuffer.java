@@ -27,54 +27,9 @@
 package haven.render.gl;
 
 import java.nio.*;
-import haven.render.*;
 import haven.Disposable;
 
-public class FillBuffers {
-    public static class Array implements FillBuffer {
-	private final GLEnvironment env;
-	private final int sz;
-	private boolean pushed = false;
-	private ByteBuffer data = null;
-	private Disposable free = null;
-
-	public Array(GLEnvironment env, int sz) {
-	    this.env = env;
-	    this.sz = sz;
-	}
-
-	public int size() {return(sz);}
-	public boolean compatible(Environment env) {return(env instanceof GLEnvironment);}
-
-	public ByteBuffer push() {
-	    if(data == null) {
-		SysBuffer alloc = env.malloc(sz);
-		data = alloc.data();
-		free = alloc;
-		pushed = true;
-	    } else if(!pushed) {
-		throw(new IllegalStateException("already pulled"));
-	    }
-	    return(data);
-	}
-
-	public void pull(ByteBuffer buf) {
-	    if(data != null)
-		throw(new IllegalStateException("already " + (pushed ? "pushed" : "pulled")));
-	    SysBuffer cvt = env.subsume(buf, sz);
-	    data = cvt.data();
-	    free = cvt;
-	}
-
-	public ByteBuffer data() {
-	    if(pushed)
-		data.rewind();
-	    return((data == null) ? push() : data);
-	}
-
-	public void dispose() {
-	    if(free != null)
-		free.dispose();
-	}
-    }
+public interface SysBuffer extends Disposable, AutoCloseable {
+    public ByteBuffer data();
+    public default void close() {dispose();}
 }

@@ -24,57 +24,36 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render.lwjgl;
 
 import java.nio.*;
-import haven.render.*;
-import haven.Disposable;
+import haven.render.gl.*;
+import org.lwjgl.system.*;
 
-public class FillBuffers {
-    public static class Array implements FillBuffer {
-	private final GLEnvironment env;
-	private final int sz;
-	private boolean pushed = false;
-	private ByteBuffer data = null;
-	private Disposable free = null;
+public class LWJGLBuffer implements SysBuffer {
+    private ByteBuffer data;
 
-	public Array(GLEnvironment env, int sz) {
-	    this.env = env;
-	    this.sz = sz;
-	}
+    public LWJGLBuffer(int sz) {
+	data = MemoryUtil.memAlloc(sz);
+    }
 
-	public int size() {return(sz);}
-	public boolean compatible(Environment env) {return(env instanceof GLEnvironment);}
+    public ByteBuffer data() {
+	if(data == null)
+	    throw(new IllegalStateException("already disposed"));
+	return(data);
+    }
 
-	public ByteBuffer push() {
-	    if(data == null) {
-		SysBuffer alloc = env.malloc(sz);
-		data = alloc.data();
-		free = alloc;
-		pushed = true;
-	    } else if(!pushed) {
-		throw(new IllegalStateException("already pulled"));
-	    }
-	    return(data);
-	}
+    public void dispose() {
+	if(data == null)
+	    throw(new IllegalStateException("already disposed"));
+	MemoryUtil.memFree(data);
+	data = null;
+    }
 
-	public void pull(ByteBuffer buf) {
-	    if(data != null)
-		throw(new IllegalStateException("already " + (pushed ? "pushed" : "pulled")));
-	    SysBuffer cvt = env.subsume(buf, sz);
-	    data = cvt.data();
-	    free = cvt;
-	}
-
-	public ByteBuffer data() {
-	    if(pushed)
-		data.rewind();
-	    return((data == null) ? push() : data);
-	}
-
-	public void dispose() {
-	    if(free != null)
-		free.dispose();
+    public void finalize() {
+	if(data != null) {
+	    haven.Warning.warn("LWJGL buffer leaked (" + data.capacity() + " bytes)");
+	    dispose();
 	}
     }
 }

@@ -26,6 +26,7 @@
 
 package haven.render.lwjgl;
 
+import java.nio.*;
 import haven.*;
 import haven.render.gl.*;
 import org.lwjgl.opengl.awt.*;
@@ -57,5 +58,17 @@ public class LWJGLEnvironment extends GLEnvironment {
 
     public LWJGLCaps mkcaps(GL initgl) {
 	return(new LWJGLCaps(initgl, this));
+    }
+
+    public SysBuffer malloc(int sz) {
+	return(new LWJGLBuffer(sz));
+    }
+
+    public SysBuffer subsume(ByteBuffer data, int sz) {
+	SysBuffer ret = new LWJGLBuffer(sz);
+	ByteBuffer cp = ret.data();
+	cp.put(data);
+	cp.rewind();
+	return(ret);
     }
 }

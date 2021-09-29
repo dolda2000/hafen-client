@@ -26,6 +26,7 @@
 
 package haven.render.jogl;
 
+import java.nio.*;
 import haven.*;
 import haven.render.gl.*;
 import com.jogamp.opengl.*;
@@ -60,5 +61,21 @@ public class JOGLEnvironment extends GLEnvironment {
 
     public JOGLCaps mkcaps(GL initgl) {
 	return(new JOGLCaps(initgl));
+    }
+
+    public SysBuffer malloc(int sz) {
+	return(new JOGLBuffer(sz));
+    }
+
+    public SysBuffer subsume(ByteBuffer data, int sz) {
+	if(data.remaining() < sz) {
+	    String msg = data.remaining() + " < " + sz;
+	    throw(new BufferUnderflowException() {
+		    public String getMessage() {return(msg);}
+		});
+	}
+	SysBuffer ret = new JOGLBuffer(data.duplicate());
+	data.position(data.position() + sz);
+	return(ret);
     }
 }
