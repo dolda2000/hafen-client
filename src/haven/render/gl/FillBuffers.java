@@ -35,8 +35,7 @@ public class FillBuffers {
 	private final GLEnvironment env;
 	private final int sz;
 	private boolean pushed = false;
-	private ByteBuffer data = null;
-	private Disposable free = null;
+	private SysBuffer mem = null;
 
 	public Array(GLEnvironment env, int sz) {
 	    this.env = env;
@@ -47,34 +46,37 @@ public class FillBuffers {
 	public boolean compatible(Environment env) {return(env instanceof GLEnvironment);}
 
 	public ByteBuffer push() {
-	    if(data == null) {
-		SysBuffer alloc = env.malloc(sz);
-		data = alloc.data();
-		free = alloc;
+	    if(mem == null) {
+		mem = env.malloc(sz);
 		pushed = true;
 	    } else if(!pushed) {
 		throw(new IllegalStateException("already pulled"));
 	    }
-	    return(data);
+	    return(mem.data());
 	}
 
 	public void pull(ByteBuffer buf) {
-	    if(data != null)
+	    if(mem != null)
 		throw(new IllegalStateException("already " + (pushed ? "pushed" : "pulled")));
-	    SysBuffer cvt = env.subsume(buf, sz);
-	    data = cvt.data();
-	    free = cvt;
+	    mem = env.subsume(buf, sz);
+	}
+
+	public SysBuffer mem() {
+	    if(mem == null)
+		push();
+	    return(mem);
 	}
 
 	public ByteBuffer data() {
+	    ByteBuffer data = mem().data();
 	    if(pushed)
 		data.rewind();
-	    return((data == null) ? push() : data);
+	    return(data);
 	}
 
 	public void dispose() {
-	    if(free != null)
-		free.dispose();
+	    if(mem != null)
+		mem.dispose();
 	}
     }
 }

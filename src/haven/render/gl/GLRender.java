@@ -204,7 +204,7 @@ public class GLRender implements Render, Disposable {
 			    }
 			}
 		    }
-		    gl.glBufferData(GL.GL_ARRAY_BUFFER, data.va.bufs[sbuf].size(), ((HeapBuffer)bufs[sbuf]).buf, GL.GL_STREAM_DRAW);
+		    gl.glBufferData(GL.GL_ARRAY_BUFFER, data.va.bufs[sbuf].size(), ((HeapBuffer)bufs[sbuf]).mem.data(), GL.GL_STREAM_DRAW);
 		    offsets[sbuf] = 0;
 		} else {
 		    int sz = 0;
@@ -220,7 +220,7 @@ public class GLRender implements Render, Disposable {
 				try(SysBuffer buf = env.malloc(jdsz)) {
 				    for(int i = 0; i < data.va.bufs.length; i++) {
 					if(data.va.bufs[i].usage == EPHEMERAL)
-					    buf.data().put(((HeapBuffer)bufs[i]).buf);
+					    buf.data().put(((HeapBuffer)bufs[i]).mem.data());
 				    }
 				    buf.data().flip();
 				    gl.glBufferData(GL.GL_ARRAY_BUFFER, jdsz, buf.data(), GL.GL_STREAM_DRAW);
@@ -252,7 +252,7 @@ public class GLRender implements Render, Disposable {
 	    } else {
 		if(data.ind.usage == EPHEMERAL) {
 		    Vao0State.apply(this.env, gl, state, env.tempindex.get());
-		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, data.ind.size(), ((HeapBuffer)indo).buf, GL.GL_STREAM_DRAW);
+		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, data.ind.size(), ((HeapBuffer)indo).mem.data(), GL.GL_STREAM_DRAW);
 		} else {
 		    throw(new NotImplemented("non-ephemeral index arrays"));
 		}
