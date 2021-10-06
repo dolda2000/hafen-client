@@ -77,9 +77,11 @@ public class Test {
 		(byte)125, 0, 86, 0, 0, (byte)255, 0, (byte)255,
 		(byte)175, 0, 86, 0, 0, 0, (byte)255, (byte)255,
 	    };
-	    g.draw(st, new Model(Model.Mode.TRIANGLES,
-				   new VertexArray(fmt, new VertexArray.Buffer(data.length, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
-				   null, 0, 3));
+	    Model mod = new Model(Model.Mode.TRIANGLES,
+				  new VertexArray(fmt, new VertexArray.Buffer(data.length, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
+				  null, 0, 3);
+	    g.draw(st, mod);
+	    mod.dispose();
 	}
     }
 

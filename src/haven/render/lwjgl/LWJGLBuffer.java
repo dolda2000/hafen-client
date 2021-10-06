@@ -30,10 +30,11 @@ import java.nio.*;
 import haven.render.gl.*;
 import org.lwjgl.system.*;
 
-public class LWJGLBuffer implements SysBuffer {
+public class LWJGLBuffer extends GLObject implements SysBuffer {
     private ByteBuffer data;
 
-    public LWJGLBuffer(int sz) {
+    public LWJGLBuffer(LWJGLEnvironment env, int sz) {
+	super(env);
 	data = MemoryUtil.memAlloc(sz);
     }
 
@@ -43,7 +44,9 @@ public class LWJGLBuffer implements SysBuffer {
 	return(data);
     }
 
-    public void dispose() {
+    public void create(GL gl) {throw(new UnsupportedOperationException());}
+
+    protected void delete(GL gl) {
 	if(data == null)
 	    throw(new IllegalStateException("already disposed"));
 	MemoryUtil.memFree(data);
@@ -51,9 +54,8 @@ public class LWJGLBuffer implements SysBuffer {
     }
 
     public void finalize() {
-	if(data != null) {
+	if(data != null)
 	    haven.Warning.warn("LWJGL buffer leaked (" + data.capacity() + " bytes)");
-	    dispose();
-	}
+	super.finalize();
     }
 }

@@ -61,11 +61,11 @@ public class LWJGLEnvironment extends GLEnvironment {
     }
 
     public SysBuffer malloc(int sz) {
-	return(new LWJGLBuffer(sz));
+	return(new LWJGLBuffer(this, sz));
     }
 
     public SysBuffer subsume(ByteBuffer data, int sz) {
-	SysBuffer ret = new LWJGLBuffer(sz);
+	SysBuffer ret = new LWJGLBuffer(this, sz);
 	ByteBuffer cp = ret.data();
 	cp.put(data);
 	cp.rewind();
