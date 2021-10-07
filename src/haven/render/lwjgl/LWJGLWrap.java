@@ -75,7 +75,12 @@ public class LWJGLWrap implements GL {
     public void glBlendEquationSeparate(int cmode, int amode) {GL30.glBlendEquationSeparate(cmode, amode);}
     public void glBlendFunc(int sfac, int dfac) {GL30.glBlendFunc(sfac, dfac);}
     public void glBlendFuncSeparate(int csfac, int cdfac, int asfac, int adfac) {GL30.glBlendFuncSeparate(csfac, cdfac, asfac, adfac);}
-    public void glBufferData(int target, long size, ByteBuffer data, int usage) {GL30.glBufferData(target, ckbuf(data, size), usage);}
+    public void glBufferData(int target, long size, ByteBuffer data, int usage) {
+	if(data == null)
+	    GL30.glBufferData(target, 0, usage);
+	else
+	    GL30.glBufferData(target, ckbuf(data, size), usage);
+    }
     public void glBufferSubData(int target, long offset, long size, ByteBuffer data) {GL30.glBufferSubData(target, offset, ckbuf(data, size));}
     public int glCheckFramebufferStatus(int target) {return(GL30.glCheckFramebufferStatus(target));}
     public void glClear(int mask) {GL30.glClear(mask);}
