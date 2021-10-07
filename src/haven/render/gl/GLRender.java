@@ -317,6 +317,7 @@ public class GLRender implements Render, Disposable {
 		Vao0State.apply(this.env, this.gl, state, (GLBuffer)env.prepare(ibuf));
 		BGL gl = gl();
 		gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), data.data(), GL.GL_STATIC_DRAW);
+		data.dispose();
 		break;
 	    }
 	    case STREAM: {
@@ -340,6 +341,7 @@ public class GLRender implements Render, Disposable {
 		VboState.apply(this.gl, state, (GLBuffer)env.prepare(vbuf));
 		BGL gl = gl();
 		gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), data.data(), GL.GL_STATIC_DRAW);
+		data.dispose();
 		break;
 	    }
 	    case STREAM: {
@@ -360,7 +362,8 @@ public class GLRender implements Render, Disposable {
 	    /* XXX: Textures marked for streaming usage should
 	     * probably support stream-buffers. Luckily, there are
 	     * currently no textures marked as such. */
-	    ByteBuffer data = ((FillBuffers.Array)fill.fill(buf, env)).data();
+	    FillBuffers.Array fbuf = (FillBuffers.Array)fill.fill(buf, env);
+	    ByteBuffer data = fbuf.data();
 	    if(img.tex instanceof Texture2D) {
 		GLTexture.Tex2D tex = env.prepare((Texture2D)img.tex);
 		BGL gl = gl();
@@ -409,6 +412,7 @@ public class GLRender implements Render, Disposable {
 				data);
 		tex.unbind(gl);
 	    }
+	    fbuf.dispose();
 	} else {
 	    throw(new NotImplemented("updating buffer of type: " + buf.getClass().getName()));
 	}
@@ -430,6 +434,7 @@ public class GLRender implements Render, Disposable {
 	    Vao0State.apply(this.env, this.gl, state, glbuf);
 	    BGL gl = gl();
 	    gl.glBufferSubData(GL.GL_ELEMENT_ARRAY_BUFFER, from, to - from, data.data());
+	    data.dispose();
 	} else if(buf instanceof VertexArray.Buffer) {
 	    VertexArray.Buffer vbuf = (VertexArray.Buffer)buf;
 	    FillBuffers.Array data = (FillBuffers.Array)fill.fill(buf, env, from, to);
@@ -438,6 +443,7 @@ public class GLRender implements Render, Disposable {
 	    VboState.apply(this.gl, state, glbuf);
 	    BGL gl = gl();
 	    gl.glBufferSubData(GL.GL_ARRAY_BUFFER, from, to - from, data.data());
+	    data.dispose();
 	} else {
 	    throw(new NotImplemented("updating buffer of type: " + buf.getClass().getName()));
 	}

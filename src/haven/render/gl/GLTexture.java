@@ -321,6 +321,10 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    setmem(GLEnvironment.MemStats.TEXTURES, mem);
 		    unbind(gl);
 		    gl.bglCheckErr();
+		    for(FillBuffers.Array buf : pixels) {
+			if(buf != null)
+			    buf.dispose();
+		    }
 		});
 	}
 
@@ -406,6 +410,10 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    setmem(GLEnvironment.MemStats.TEXTURES, mem);
 		    unbind(gl);
 		    gl.bglCheckErr();
+		    for(FillBuffers.Array buf : pixels) {
+			if(buf != null)
+			    buf.dispose();
+		    }
 		});
 	}
 
@@ -492,6 +500,12 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    setmem(GLEnvironment.MemStats.TEXTURES, mem);
 		    unbind(gl);
 		    gl.bglCheckErr();
+		    for(FillBuffers.Array[] lay : pixels) {
+			for(FillBuffers.Array buf : lay) {
+			    if(buf != null)
+				buf.dispose();
+			}
+		    }
 		});
 	}
 
@@ -636,6 +650,10 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    setmem(GLEnvironment.MemStats.TEXTURES, mem);
 		    unbind(gl);
 		    gl.bglCheckErr();
+		    for(FillBuffers.Array buf : pixels) {
+			if(buf != null)
+			    buf.dispose();
+		    }
 		});
 	}
 

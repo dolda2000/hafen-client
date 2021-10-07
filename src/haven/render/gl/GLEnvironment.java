@@ -457,6 +457,7 @@ public abstract class GLEnvironment implements Environment {
 			    if(labels && (buf.desc != null))
 				gl.glObjectLabel(GL.GL_BUFFER, jdret, String.valueOf(buf.desc));
 			    jdret.setmem(MemStats.INDICES, buf.size());
+			    if(data != null) data.dispose();
 			});
 		}
 		return(ret);
@@ -518,6 +519,7 @@ public abstract class GLEnvironment implements Environment {
 			    if(labels && (buf.desc != null))
 				gl.glObjectLabel(GL.GL_BUFFER, jdret, String.valueOf(buf.desc));
 			    jdret.setmem(MemStats.VERTICES, buf.size());
+			    if(data != null) data.dispose();
 			});
 		}
 		return(ret);
