@@ -80,8 +80,8 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 		    } else if(msg.type == RMessage.RMSG_WDGBAR) {
 			Collection<Integer> deps = new ArrayList<>();
 			while(!msg.eom()) {
-			    int dep = msg.uint16();
-			    if(dep == 0xffff)
+			    int dep = msg.int32();
+			    if(dep == -1)
 				break;
 			    deps.add(dep);
 			}
@@ -89,8 +89,8 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 			if(!msg.eom()) {
 			    bars = new ArrayList<>();
 			    while(!msg.eom()) {
-				int bar = msg.uint16();
-				if(bar == 0xffff)
+				int bar = msg.int32();
+				if(bar == -1)
 				    break;
 				bars.add(bar);
 			    }
