@@ -193,6 +193,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	public void dispose() {
 	    if(model != null)
 		model.dispose();
+	    attr.dispose();
 	}
 
 	public String toString() {
