@@ -31,6 +31,8 @@ import haven.render.gl.*;
 import org.lwjgl.system.*;
 
 public class LWJGLBuffer extends GLObject implements SysBuffer {
+    public static final boolean leakcause = false;
+    private Throwable init = leakcause ? new Throwable() : null;
     private ByteBuffer data;
 
     public LWJGLBuffer(LWJGLEnvironment env, int sz) {
@@ -55,7 +57,7 @@ public class LWJGLBuffer extends GLObject implements SysBuffer {
 
     public void finalize() {
 	if(data != null)
-	    haven.Warning.warn("LWJGL buffer leaked (" + data.capacity() + " bytes)");
+	    new haven.Warning(init , "LWJGL buffer " + this + " leaked (" + data.capacity() + " bytes)").issue();
 	super.finalize();
     }
 }
