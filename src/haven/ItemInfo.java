@@ -210,7 +210,7 @@ public abstract class ItemInfo {
 	public void layout(Layout l) {
 	    BufferedImage t = tipimg((l.width == 0) ? UI.scale(200) : l.width);
 	    if(t != null)
-		l.cmp.add(t, new Coord(0, l.cmp.sz.y + 10));
+		l.cmp.add(t, new Coord(0, l.cmp.sz.y + UI.scale(10)));
 	}
 
 	public int order() {return(10000);}
@@ -414,5 +414,9 @@ public abstract class ItemInfo {
 		    return(() -> ret);
 		});
 	}
+    }
+
+    public static interface InfoTip {
+	public List<ItemInfo> info();
     }
 }

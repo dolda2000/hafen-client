@@ -43,6 +43,7 @@ public abstract class GLObject implements Disposable {
     }
 
     public abstract void create(GL3 gl);
+    public void abortcreate() {}
     protected abstract void delete(GL3 gl);
 
     protected void dispose0() {

@@ -28,38 +28,50 @@ package haven;
 
 import java.util.*;
 import java.io.*;
+import java.nio.file.*;
 import java.nio.channels.*;
 import java.net.URI;
+import static haven.Utils.pj;
 
 public class HashDirCache implements ResCache {
-    private final File base;
+    private final Path base;
     public final URI id;
     private final long idhash;
 
-    public static File findbase() {
+    public static Path findbase() {
 	try {
 	    windows: {
 		String path = System.getenv("APPDATA");
 		if(path == null)
 		    break windows;
-		File appdata = new File(path);
-		if(!appdata.exists() || !appdata.isDirectory() || !appdata.canRead() || !appdata.canWrite())
+		Path appdata = Utils.path(path);
+		if(!Files.exists(appdata) || !Files.isDirectory(appdata) || !Files.isReadable(appdata) || !Files.isWritable(appdata))
 		    break windows;
-		File base = new File(new File(appdata, "Haven and Hearth"), "data");
-		if(!base.exists() && !base.mkdirs())
-		    break windows;
+		Path base = pj(appdata, "Haven and Hearth", "data");
+		if(!Files.exists(base)) {
+		    try {
+			Files.createDirectories(base);
+		    } catch(IOException e) {
+			break windows;
+		    }
+		}
 		return(base);
 	    }
 	    fallback: {
 		String path = System.getProperty("user.home", null);
 		if(path == null)
 		    break fallback;
-		File home = new File(path);
-		if(!home.exists() || !home.isDirectory() || !home.canRead() || !home.canWrite())
+		Path home = Utils.path(path);
+		if(!Files.exists(home) || !Files.isDirectory(home) || !Files.isReadable(home) || !Files.isWritable(home))
 		    break fallback;
-		File base = new File(new File(home, ".haven"), "data");
-		if(!base.exists() && !base.mkdirs())
-		    break fallback;
+		Path base = pj(home, ".haven", "data");
+		if(!Files.exists(base)) {
+		    try {
+			Files.createDirectories(base);
+		    } catch(IOException e) {
+			break fallback;
+		    }
+		}
 		return(base);
 	    }
 	} catch(SecurityException e) {
@@ -121,16 +133,24 @@ public class HashDirCache implements ResCache {
 	}
     }
 
+    private Header readhead(ReadableByteChannel ch) throws IOException {
+	return(readhead(new DataInputStream(Channels.newInputStream(ch))));
+    }
+
     private void writehead(DataOutput fp, String name) throws IOException {
 	fp.writeByte(1);
 	fp.writeUTF(id.toString());
 	fp.writeUTF(name);
     }
 
+    private void writehead(WritableByteChannel ch, String name) throws IOException {
+	writehead(new DataOutputStream(Channels.newOutputStream(ch)), name);
+    }
+
     private static class LockedFile implements AutoCloseable {
-	RandomAccessFile f;
+	FileChannel f;
 	FileLock l;
-	LockedFile(RandomAccessFile f, FileLock l) {this.f = f; this.l = l;}
+	LockedFile(FileChannel f, FileLock l) {this.f = f; this.l = l;}
 
 	void release() throws IOException {
 	    if(l != null) {
@@ -148,58 +168,29 @@ public class HashDirCache implements ResCache {
 	}
     }
 
-    private static RandomAccessFile open2(File path, String mode) throws IOException {
-	double[] retimes = {0.01, 0.1, 0.5, 1.0, 5.0};
-	Throwable last = null;
-	boolean intr = false;
-	try {
-	    for(int r = 0; true; r++) {
-		/* XXX: Sometimes, this is getting strange and weird
-		 * OS errors on Windows. For example, file sharing
-		 * violations are sometimes returned even though Java
-		 * always opens RandomAccessFiles in non-exclusive
-		 * mode, and other times, permission is spuriously
-		 * denied. I've had zero luck in trying to find a root
-		 * cause for these errors, so just assume the error is
-		 * transient and retry. :P */
-		try {
-		    return(new RandomAccessFile(path, mode));
-		} catch(RuntimeException | IOException exc) {
-		    if(last == null)
-			new Warning(exc, "weird error occurred when locking cache file " + path).issue();
-		    if(last != null)
-			exc.addSuppressed(last);
-		    last = exc;
-		    if(r < retimes.length) {
-			try {
-			    Thread.sleep((long)(retimes[r] * 1000));
-			} catch(InterruptedException irq) {
-			    Thread.currentThread().interrupted();
-			    intr = true;
-			}
-		    } else {
-			throw(exc);
-		    }
-		}
-	    }
-	} finally {
-	    if(intr)
-		Thread.currentThread().interrupt();
-	}
+    private static FileChannel open2(Path path, OpenOption... mode) throws IOException {
+	/* XXX: Sometimes, this is getting strange and weird OS errors
+	 * on Windows. For example, file sharing violations are
+	 * sometimes returned even though Java always opens
+	 * RandomAccessFiles in non-exclusive mode, and other times,
+	 * permission is spuriously denied. I've had zero luck in
+	 * trying to find a root cause for these errors, so just
+	 * assume the error is transient and retry. :P */
+	return(Utils.ioretry(() -> FileChannel.open(path, mode)));
     }
 
     /* These locks should never have to be waited for long at all, so
      * blocking interruptions until complete should be perfectly
      * okay. */
-    private static LockedFile lock2(File path) throws IOException {
+    private static LockedFile lock2(Path path) throws IOException {
         boolean intr = false;
         try {
             while(true) {
                 try {
-                    RandomAccessFile fp = null;
+                    FileChannel fp = null;
                     try {
-                        fp = open2(path, "rw");
-                        FileLock lk = fp.getChannel().lock(0, 1, false);
+                        fp = open2(path, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+                        FileLock lk = fp.lock(0, 1, false);
                         LockedFile ret = new LockedFile(fp, lk);
                         fp = null;
                         return(ret);
@@ -219,11 +210,11 @@ public class HashDirCache implements ResCache {
     }
 
     private static class CacheFile implements AutoCloseable {
-	final File p;
+	final Path p;
 	final Header h;
-	RandomAccessFile f;
+	FileChannel f;
 
-	CacheFile(File p, Header h, LockedFile lf) throws IOException {
+	CacheFile(Path p, Header h, LockedFile lf) throws IOException {
 	    this.p = p;
 	    this.h = h;
 	    this.f = lf.f;
@@ -231,8 +222,8 @@ public class HashDirCache implements ResCache {
 	    lf.f = null;
 	}
 
-	RandomAccessFile acquire() {
-	    RandomAccessFile ret = this.f;
+	FileChannel acquire() {
+	    FileChannel ret = this.f;
 	    this.f = null;
 	    return(ret);
 	}
@@ -245,12 +236,12 @@ public class HashDirCache implements ResCache {
 	}
     }
 
-    private static final Map<File, int[]> monitors = new HashMap<File, int[]>();
+    private static final Map<Path, int[]> monitors = new HashMap<>();
     private static boolean monwarned = false;
     private CacheFile lookup(String name, boolean creat) throws IOException {
 	long h = namehash(idhash, name);
-	File lfn = new File(base, String.format("%016x.0", h));
-	if(!lfn.exists() && !creat)
+	Path lfn = pj(base, String.format("%016x.0", h));
+	if(!Files.exists(lfn) && !creat)
 	    return(null);
 	int[] mon;
 	synchronized(monitors) {
@@ -269,16 +260,16 @@ public class HashDirCache implements ResCache {
 	    synchronized(mon) {
 		try(LockedFile lf = lock2(lfn)) {
 		    for(int idx = 0; ; idx++) {
-			File path = new File(base, String.format("%016x.%d", h, idx));
-			if(!path.exists() && !creat)
+			Path path = pj(base, String.format("%016x.%d", h, idx));
+			if(!Files.exists(path) && !creat)
 			    return(null);
-			RandomAccessFile fp = (idx == 0) ? lf.f : open2(path, "rw");
+			FileChannel fp = (idx == 0) ? lf.f : open2(path, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 			try {
 			    Header head = readhead(fp);
 			    if(head == null) {
 				if(!creat)
 				    return(null);
-				fp.setLength(0);
+				fp.truncate(0);
 				writehead(fp, name);
 				head = new Header();
 				head.cid = id.toString();
@@ -307,10 +298,16 @@ public class HashDirCache implements ResCache {
 	}
     }
 
-    private Iterator<String> list(boolean filter) {
-	final File[] files = base.listFiles(f -> (f.getName().length() >= 18) &&
-					    (f.getName().charAt(16) == '.') &&
-					    Utils.strcheck(f.getName().substring(17), Character::isDigit));
+    private static DirectoryStream.Filter<Path> fnfilter(java.util.function.Predicate<String> filter) {
+	return(p -> filter.test(p.getFileName().toString()));
+    }
+
+    private Iterator<String> list(boolean filter) throws IOException {
+	Iterator<Path> files =
+	    Files.newDirectoryStream(base, fnfilter(f -> (f.length() >= 18) &&
+						    (f.charAt(16) == '.') &&
+						    Utils.strcheck(f.substring(17), Character::isDigit)))
+	    .iterator();
 	return(new Iterator<String>() {
 		int i = 0;
 		String next = null;
@@ -319,8 +316,8 @@ public class HashDirCache implements ResCache {
 		    if(next != null)
 			return(true);
 		    try {
-			for(; i < files.length; i++) {
-			    RandomAccessFile fp = open2(files[i], "rw");
+			while(files.hasNext()) {
+			    FileChannel fp = open2(files.next(), StandardOpenOption.READ);
 			    try {
 				Header head = readhead(fp);
 				if(head == null)
@@ -350,36 +347,38 @@ public class HashDirCache implements ResCache {
 	    });
     }
 
-    private Iterator<String> list() {
+    private Iterator<String> list() throws IOException {
 	return(list(true));
     }
 
     public OutputStream store(String name) throws IOException {
-	File path;
+	Path path;
 	try(CacheFile cf = lookup(name, true)) {
 	    path = cf.p;
 	}
-	File dir = path.getParentFile();
-	File tmp = File.createTempFile("cache", ".new", dir);
-	RandomAccessFile fp = open2(tmp, "rw");
+	Path dir = path.getParent();
+	Path tmp = Files.createTempFile(dir, "cache", ".new");
+	FileChannel fp = open2(tmp, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 	writehead(fp, name);
+	OutputStream st = Channels.newOutputStream(fp);
 	return(new OutputStream() {
 		public void write(int b) throws IOException {
-		    fp.write(b);
+		    st.write(b);
 		}
 
 		public void write(byte[] buf, int off, int len) throws IOException {
-		    fp.write(buf, off, len);
+		    st.write(buf, off, len);
 		}
 
 		public void close() throws IOException {
-		    fp.close();
-		    if(!tmp.renameTo(path)) {
-			/* Apparently Java doesn't support atomic
-			 * renames on Windows... :-/ */
-			path.delete();
-			tmp.renameTo(path);
-		    }
+		    st.close();
+		    Utils.ioretry(() -> {
+			    try {
+				return(Files.move(tmp, path, StandardCopyOption.ATOMIC_MOVE));
+			    } catch(AtomicMoveNotSupportedException e) {
+				return(Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING));
+			    }
+			});
 		}
 	    });
     }
@@ -388,20 +387,8 @@ public class HashDirCache implements ResCache {
 	try(CacheFile cf = lookup(name, false)) {
 	    if(cf == null)
 		throw(new FileNotFoundException(name));
-	    RandomAccessFile fp = cf.acquire();
-	    return(new InputStream() {
-		    public int read() throws IOException {
-			return(fp.read());
-		    }
-
-		    public int read(byte[] buf, int off, int len) throws IOException {
-			return(fp.read(buf, off, len));
-		    }
-
-		    public void close() throws IOException {
-			fp.close();
-		    }
-		});
+	    FileChannel fp = cf.acquire();
+	    return(Channels.newInputStream(fp));
 	}
     }
 
@@ -410,7 +397,7 @@ public class HashDirCache implements ResCache {
 	    if(cf == null)
 		throw(new FileNotFoundException(name));
 	    cf.close();
-	    cf.p.delete();
+	    Files.deleteIfExists(cf.p);
 	}
     }
 

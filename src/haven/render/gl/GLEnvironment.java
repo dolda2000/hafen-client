@@ -36,7 +36,7 @@ import haven.render.sl.*;
 import static haven.render.DataBuffer.Usage.*;
 
 public class GLEnvironment implements Environment {
-    public static final boolean debuglog = false;
+    public static final boolean debuglog = false, labels = false;
     public final GLContext ctx;
     public final Caps caps;
     final Object drawmon = new Object();
@@ -330,9 +330,11 @@ public class GLEnvironment implements Environment {
 	GLRender gcmd = (GLRender)cmd;
 	if(gcmd.env != this)
 	    throw(new IllegalArgumentException("environment mismatch"));
-	if(gcmd.gl != null) {
-	    synchronized(submitted) {
-		if(!invalid) {
+	boolean inv;
+	synchronized(submitted) {
+	    inv = invalid;
+	    if(gcmd.gl != null) {
+		if(!inv) {
 		    submitted.add(gcmd);
 		    submitted.notifyAll();
 		} else {
@@ -340,6 +342,8 @@ public class GLEnvironment implements Environment {
 		}
 	    }
 	}
+	if(inv)
+	    sequnreg(gcmd);
     }
 
     public void submitwait() throws InterruptedException {
@@ -360,14 +364,10 @@ public class GLEnvironment implements Environment {
 	    if(disposed.isEmpty())
 		return(buf);
 	    copy = new ArrayList<>(disposed.size());
-	    int lseq = 0;	// XXX: This assertion should be safe to remove once initially verified.
 	    for(Iterator<GLObject> i = disposed.iterator(); i.hasNext();) {
 		GLObject obj = i.next();
-		if(obj.dispseq - lseq < 0)
-		    throw(new AssertionError());
 		if(obj.dispseq - tail > 0)
 		    break;
-		lseq = obj.dispseq;
 		copy.add(obj);
 		i.remove();
 	    }
@@ -428,19 +428,23 @@ public class GLEnvironment implements Environment {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = ret = new StreamBuffer(this, buf.size());
-		    if(buf.init != null) {
-			StreamBuffer.Fill data = (StreamBuffer.Fill)buf.init.fill(buf, this);
-			StreamBuffer jdret = ret;
-			GLBuffer rbuf = ret.rbuf;
-			prepare((GLRender g) -> {
-				BGL gl = g.gl();
-				Vao0State.apply(this, gl, g.state, rbuf);
+		    StreamBuffer.Fill data = (buf.init == null) ? null : (StreamBuffer.Fill)buf.init.fill(buf, this);
+		    StreamBuffer jdret = ret;
+		    GLBuffer rbuf = ret.rbuf;
+		    prepare((GLRender g) -> {
+			    BGL gl = g.gl();
+			    Vao0State.apply(this, gl, g.state, rbuf);
+			    if(data == null) {
+				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), null, GL.GL_DYNAMIC_DRAW);
+			    } else {
 				ByteBuffer xfbuf = data.get();
 				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), xfbuf, GL.GL_DYNAMIC_DRAW);
 				jdret.put(gl, xfbuf);
-				rbuf.setmem(MemStats.INDICES, buf.size());
-			    });
-		    }
+			    }
+			    if(labels && (buf.desc != null))
+				gl.glObjectLabel(GL3.GL_BUFFER, rbuf, String.valueOf(buf.desc));
+			    rbuf.setmem(MemStats.INDICES, buf.size());
+			});
 		}
 		return(ret);
 	    }
@@ -450,16 +454,16 @@ public class GLEnvironment implements Environment {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = ret = new GLBuffer(this);
-		    if(buf.init != null) {
-			FillBuffers.Array data = (FillBuffers.Array)buf.init.fill(buf, this);
-			GLBuffer jdret = ret;
-			prepare((GLRender g) -> {
-				BGL gl = g.gl();
-				Vao0State.apply(this, gl, g.state, jdret);
-				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
-				jdret.setmem(MemStats.INDICES, buf.size());
-			    });
-		    }
+		    FillBuffers.Array data = (buf.init == null) ? null : (FillBuffers.Array)buf.init.fill(buf, this);
+		    GLBuffer jdret = ret;
+		    prepare((GLRender g) -> {
+			    BGL gl = g.gl();
+			    Vao0State.apply(this, gl, g.state, jdret);
+			    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), (data == null) ? null : data.data(), GL.GL_STATIC_DRAW);
+			    if(labels && (buf.desc != null))
+				gl.glObjectLabel(GL3.GL_BUFFER, jdret, String.valueOf(buf.desc));
+			    jdret.setmem(MemStats.INDICES, buf.size());
+			});
 		}
 		return(ret);
 	    }
@@ -485,19 +489,23 @@ public class GLEnvironment implements Environment {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = ret = new StreamBuffer(this, buf.size());
-		    if(buf.init != null) {
-			StreamBuffer.Fill data = (StreamBuffer.Fill)buf.init.fill(buf, this);
-			StreamBuffer jdret = ret;
-			GLBuffer rbuf = ret.rbuf;
-			prepare((GLRender g) -> {
-				BGL gl = g.gl();
-				VboState.apply(gl, g.state, rbuf);
+		    StreamBuffer.Fill data = (buf.init == null) ? null : (StreamBuffer.Fill)buf.init.fill(buf, this);
+		    StreamBuffer jdret = ret;
+		    GLBuffer rbuf = ret.rbuf;
+		    prepare((GLRender g) -> {
+			    BGL gl = g.gl();
+			    VboState.apply(gl, g.state, rbuf);
+			    if(data == null) {
+				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), null, GL.GL_DYNAMIC_DRAW);
+			    } else {
 				ByteBuffer xfbuf = data.get();
 				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), xfbuf, GL.GL_DYNAMIC_DRAW);
 				jdret.put(gl, xfbuf);
-				rbuf.setmem(MemStats.VERTICES, buf.size());
-			    });
-		    }
+			    }
+			    if(labels && (buf.desc != null))
+				gl.glObjectLabel(GL3.GL_BUFFER, rbuf, String.valueOf(buf.desc));
+			    rbuf.setmem(MemStats.VERTICES, buf.size());
+			});
 		}
 		return(ret);
 	    }
@@ -507,16 +515,16 @@ public class GLEnvironment implements Environment {
 		    if(buf.ro != null)
 			buf.ro.dispose();
 		    buf.ro = ret = new GLBuffer(this);
-		    if(buf.init != null) {
-			FillBuffers.Array data = (FillBuffers.Array)buf.init.fill(buf, this);
-			GLBuffer jdret = ret;
-			prepare((GLRender g) -> {
-				BGL gl = g.gl();
-				VboState.apply(gl, g.state, jdret);
-				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
-				jdret.setmem(MemStats.VERTICES, buf.size());
-			    });
-		    }
+		    FillBuffers.Array data = (buf.init == null) ? null : (FillBuffers.Array)buf.init.fill(buf, this);
+		    GLBuffer jdret = ret;
+		    prepare((GLRender g) -> {
+			    BGL gl = g.gl();
+			    VboState.apply(gl, g.state, jdret);
+			    gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), (data == null) ? null : data.data(), GL.GL_STATIC_DRAW);
+			    if(labels && (buf.desc != null))
+				gl.glObjectLabel(GL3.GL_BUFFER, jdret, String.valueOf(buf.desc));
+			    jdret.setmem(MemStats.VERTICES, buf.size());
+			});
 		}
 		return(ret);
 	    }
@@ -574,6 +582,25 @@ public class GLEnvironment implements Environment {
 	    return(ret);
 	}
     }
+    GLTexture.Tex2DArray prepare(Texture2DArray tex) {
+	synchronized(tex) {
+	    GLTexture.Tex2DArray ret;
+	    if(!(tex.ro instanceof GLTexture.Tex2DArray) || ((ret = (GLTexture.Tex2DArray)tex.ro).env != this)) {
+		if(tex.ro != null)
+		    tex.ro.dispose();
+		tex.ro = ret = GLTexture.Tex2DArray.create(this, tex);
+	    }
+	    return(ret);
+	}
+    }
+    GLTexture.Tex2DArray prepare(Texture2DArray.Sampler2DArray smp) {
+	Texture2DArray tex = smp.tex;
+	synchronized(tex) {
+	    GLTexture.Tex2DArray ret = prepare(tex);
+	    ret.setsampler(smp);
+	    return(ret);
+	}
+    }
     GLTexture.Tex2DMS prepare(Texture2DMS tex) {
 	synchronized(tex) {
 	    GLTexture.Tex2DMS ret;
@@ -619,9 +646,11 @@ public class GLEnvironment implements Environment {
 		return(prepare((Texture2D.Sampler2D)val));
 	    if(val instanceof Texture3D.Sampler3D)
 		return(prepare((Texture3D.Sampler3D)val));
+	    if(val instanceof Texture2DArray.Sampler2DArray)
+		return(prepare((Texture2DArray.Sampler2DArray)val));
 	    if(val instanceof Texture2DMS.Sampler2DMS)
 		return(prepare((Texture2DMS.Sampler2DMS)val));
-	    else if(val instanceof TextureCube.SamplerCube)
+	    if(val instanceof TextureCube.SamplerCube)
 		return(prepare((TextureCube.SamplerCube)val));
 	}
 	return(val);
@@ -797,6 +826,26 @@ public class GLEnvironment implements Environment {
 	return(ret);
     }
 
+    public boolean compatible(DrawList ob) {
+	return((ob instanceof GLDrawList) && (((GLDrawList)ob).env == this));
+    }
+
+    public boolean compatible(Texture ob) {
+	return((ob.ro != null) && (ob.ro instanceof GLObject) && (((GLObject)ob.ro).env == this));
+    }
+
+    public boolean compatible(DataBuffer ob) {
+	if(ob instanceof Model.Indices) {
+	    Model.Indices buf = (Model.Indices)ob;
+	    return((buf.ro != null) && (buf.ro instanceof GLObject) && (((GLObject)buf.ro).env == this));
+	} else if(ob instanceof VertexArray.Buffer) {
+	    VertexArray.Buffer buf = (VertexArray.Buffer)ob;
+	    return((buf.ro != null) && (buf.ro instanceof GLObject) && (((GLObject)buf.ro).env == this));
+	} else {
+	    throw(new NotImplemented());
+	}
+    }
+
     private double lastpclean = Utils.rtime();
     public void clean() {
 	double now = Utils.rtime();
@@ -808,7 +857,7 @@ public class GLEnvironment implements Environment {
 
     private final Object seqmon = new Object();
     private boolean[] sequse = new boolean[16];
-    private int seqhead = 1, seqtail = 1;
+    private int seqhead = 1, seqtail = seqhead;
 
     private void seqresize(int nsz) {
 	boolean[] cseq = sequse, nseq = new boolean[nsz];
@@ -843,7 +892,7 @@ public class GLEnvironment implements Environment {
 		throw(new AssertionError());
 	    sequse[si] = false;
 	    if(seq == seqtail) {
-		while((seqtail < seqhead) && !sequse[seqtail & m])
+		while((seqhead - seqtail > 0) && !sequse[seqtail & m])
 		    seqtail++;
 	    }
 	    r.dispseq = 0;
@@ -871,16 +920,26 @@ public class GLEnvironment implements Environment {
     }
 
     public void dispose() {
-	Collection<GLRender> copy;
-	synchronized(submitted) {
-	    copy = new ArrayList<>(submitted);
-	    submitted.clear();
-	    invalid = true;
+	{
+	    Collection<GLRender> copy;
+	    synchronized(submitted) {
+		copy = new ArrayList<>(submitted);
+		submitted.clear();
+		invalid = true;
+	    }
+	    for(GLRender cmd : copy) {
+		cmd.gl.abort();
+		sequnreg(cmd);
+	    }
 	}
-	for(GLRender cmd : copy) {
-	    cmd.gl.abort();
-	    sequnreg(cmd);
+	{
+	    Collection<GLQuery> copy;
+	    synchronized(drawmon) {
+		copy = new ArrayList<>(queries);
+		queries.clear();
+	    }
+	    for(GLQuery query : copy)
+		query.abort();
 	}
-	/* XXX: Provide a way to abort pending queries? */
     }
 }

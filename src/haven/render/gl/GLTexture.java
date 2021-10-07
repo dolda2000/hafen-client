@@ -29,8 +29,10 @@ package haven.render.gl;
 import haven.render.*;
 import haven.render.Texture.Image;
 import haven.render.Texture.Sampler;
+import haven.render.TextureArray.ArrayImage;
 import haven.render.Texture2D.Sampler2D;
 import haven.render.Texture3D.Sampler3D;
+import haven.render.Texture2DArray.Sampler2DArray;
 import haven.render.Texture2DMS.Sampler2DMS;
 import haven.render.TextureCube.CubeImage;
 import haven.render.TextureCube.SamplerCube;
@@ -303,15 +305,17 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    BGL gl = g.gl();
 		    gl.glActiveTexture(GL.GL_TEXTURE0);
 		    bind(gl);
+		    if(env.labels && (data.desc != null))
+			gl.glObjectLabel(GL.GL_TEXTURE, this, String.valueOf(data.desc));
 		    if(pixels[0] != null)
-			gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, data.w, data.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[0].data));
+			gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, data.w, data.h, 0, pfmt, pnum, pixels[0].data());
 		    else
 			gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, ifmt, data.w, data.h, 0, pfmt, pnum, null);
 		    long mem = data.ifmt.size() * data.w * data.h;
 		    for(int i = 1; i < pixels.length; i++) {
 			if(pixels[i] != null) {
 			    Image<?> img = data.image(i);
-			    gl.glTexImage2D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
+			    gl.glTexImage2D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, 0, pfmt, pnum, pixels[i].data());
 			    mem += data.ifmt.size() * img.w * img.h;
 			}
 		    }
@@ -351,7 +355,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 			gl.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAX_ANISOTROPY_EXT, data.anisotropy);
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
 		    gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
-		    gl.glTexParameterfv(GL.GL_TEXTURE_2D, GL3.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
+		    gl.glTexParameterfv(GL.GL_TEXTURE_2D, GL3.GL_TEXTURE_BORDER_COLOR, data.border.to4a());
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
@@ -386,15 +390,17 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    BGL gl = g.gl();
 		    gl.glActiveTexture(GL.GL_TEXTURE0);
 		    bind(gl);
+		    if(env.labels && (data.desc != null))
+			gl.glObjectLabel(GL.GL_TEXTURE, this, String.valueOf(data.desc));
 		    if(pixels[0] != null)
-			gl.glTexImage3D(GL3.GL_TEXTURE_3D, 0, ifmt, data.w, data.h, data.d, 0, pfmt, pnum, ByteBuffer.wrap(pixels[0].data));
+			gl.glTexImage3D(GL3.GL_TEXTURE_3D, 0, ifmt, data.w, data.h, data.d, 0, pfmt, pnum, pixels[0].data());
 		    else
 			gl.glTexImage3D(GL3.GL_TEXTURE_3D, 0, ifmt, data.w, data.h, data.d, 0, pfmt, pnum, null);
 		    long mem = data.ifmt.size() * data.w * data.h * data.d;
 		    for(int i = 1; i < pixels.length; i++) {
 			if(pixels[i] != null) {
 			    Image<?> img = data.image(i);
-			    gl.glTexImage3D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, img.d, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
+			    gl.glTexImage3D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, img.d, 0, pfmt, pnum, pixels[i].data());
 			    mem += data.ifmt.size() * img.w * img.h * img.d;
 			}
 		    }
@@ -435,7 +441,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    gl.glTexParameteri(GL3.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
 		    gl.glTexParameteri(GL3.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
 		    gl.glTexParameteri(GL3.GL_TEXTURE_3D, GL3.GL_TEXTURE_WRAP_R, wrapmode(data.rwrap));
-		    gl.glTexParameterfv(GL3.GL_TEXTURE_3D, GL3.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
+		    gl.glTexParameterfv(GL3.GL_TEXTURE_3D, GL3.GL_TEXTURE_BORDER_COLOR, data.border.to4a());
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
@@ -454,6 +460,96 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
     }
 
+    public static class Tex2DArray extends GLTexture {
+	public final Texture2DArray data;
+	Sampler2DArray sampler;
+
+	public Tex2DArray(GLEnvironment env, Texture2DArray data, FillBuffers.Array[][] pixels) {
+	    super(env);
+	    this.data = data;
+	    int nl = data.images().size() / data.n;
+	    int ifmt = texifmt(data);
+	    int pfmt = texefmt1(data.ifmt, data.efmt, data.eperm);
+	    int pnum = texefmt2(data.ifmt, data.efmt);
+	    env.prepare((GLRender g) -> {
+		    if(g.state.prog() != null)
+			throw(new RuntimeException("program unexpectedly used in prep context"));
+		    BGL gl = g.gl();
+		    gl.glActiveTexture(GL.GL_TEXTURE0);
+		    bind(gl);
+		    if(env.labels && (data.desc != null))
+			gl.glObjectLabel(GL.GL_TEXTURE, this, String.valueOf(data.desc));
+		    long mem = 0;
+		    for(int i = 0; i < nl; i++) {
+			ArrayImage<?> img = data.image(0, i);
+			gl.glTexImage3D(GL3.GL_TEXTURE_2D_ARRAY, i, ifmt, img.w, img.h, data.n, 0, pfmt, pnum, null);
+			for(int o = 0; o < data.n; o++) {
+			    if(pixels[o][i] != null) {
+				gl.glTexSubImage3D(GL3.GL_TEXTURE_2D_ARRAY, i, 0, 0, o, img.w, img.h, 1, pfmt, pnum, pixels[o][i].data());
+				mem += data.ifmt.size() * img.w * img.h;
+			    }
+			}
+		    }
+		    setmem(GLEnvironment.MemStats.TEXTURES, mem);
+		    unbind(gl);
+		    gl.bglCheckErr();
+		});
+	}
+
+	public static Tex2DArray create(GLEnvironment env, Texture2DArray data) {
+	    int nl = data.images().size() / data.n;
+	    FillBuffers.Array[][] pixels = new FillBuffers.Array[data.n][nl];
+	    if(data.init != null) {
+		for(int lay = 0; lay < data.n; lay++) {
+		    pixels[lay] = new FillBuffers.Array[nl];
+		    for(int lev = 0; lev < nl; lev++)
+			pixels[lay][lev] = (FillBuffers.Array)data.init.fill(data.image(lay, lev), env);
+		}
+		data.init.done();
+	    }
+	    return(new Tex2DArray(env, data, pixels));
+	}
+
+	public void setsampler(Sampler2DArray data) {
+	    if(sampler == data)
+		return;
+	    if(sampler != null) {
+		if(sampler.equals(data))
+		    return;
+		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple (different) samplers per texture"));
+	    }
+	    env.prepare((GLRender g) -> {
+		    if(g.state.prog() != null)
+			throw(new RuntimeException("program unexpectedly used in prep context"));
+		    BGL gl = g.gl();
+		    gl.glActiveTexture(GL.GL_TEXTURE0);
+		    bind(gl);
+		    gl.glTexParameteri(GL3.GL_TEXTURE_2D_ARRAY, GL.GL_TEXTURE_MAG_FILTER, magfilter(data));
+		    gl.glTexParameteri(GL3.GL_TEXTURE_2D_ARRAY, GL.GL_TEXTURE_MIN_FILTER, minfilter(data));
+		    if(data.anisotropy > 0)
+			gl.glTexParameterf(GL3.GL_TEXTURE_2D_ARRAY, GL.GL_TEXTURE_MAX_ANISOTROPY_EXT, data.anisotropy);
+		    gl.glTexParameteri(GL3.GL_TEXTURE_2D_ARRAY, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
+		    gl.glTexParameteri(GL3.GL_TEXTURE_2D_ARRAY, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
+		    gl.glTexParameteri(GL3.GL_TEXTURE_2D_ARRAY, GL3.GL_TEXTURE_WRAP_R, wrapmode(data.rwrap));
+		    gl.glTexParameterfv(GL3.GL_TEXTURE_2D_ARRAY, GL3.GL_TEXTURE_BORDER_COLOR, data.border.to4a());
+		    unbind(gl);
+		    gl.bglCheckErr();
+		});
+	    sampler = data;
+	}
+
+	public void bind(BGL gl) {
+	    gl.glBindTexture(GL3.GL_TEXTURE_2D_ARRAY, this);
+	}
+	public void unbind(BGL gl) {
+	    gl.glBindTexture(GL3.GL_TEXTURE_2D_ARRAY, null);
+	}
+
+	public String toString() {
+	    return(String.format("#<gl.tex2d[] %d @ %08x %s>", id, System.identityHashCode(this), data));
+	}
+    }
+
     public static class Tex2DMS extends GLTexture {
 	public final Texture2DMS data;
 	Sampler2DMS sampler;
@@ -468,6 +564,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    BGL gl = g.gl();
 		    gl.glActiveTexture(GL.GL_TEXTURE0);
 		    bind(gl);
+		    if(env.labels && (data.desc != null))
+			gl.glObjectLabel(GL.GL_TEXTURE, this, String.valueOf(data.desc));
 		    gl.glTexImage2DMultisample(GL3.GL_TEXTURE_2D_MULTISAMPLE, data.s, ifmt, data.w, data.h, data.fixed);
 		    long mem = data.ifmt.size() * data.w * data.h * data.s; // Unknown, perhaps, but best known value
 		    setmem(GLEnvironment.MemStats.TEXTURES, mem);
@@ -522,12 +620,14 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    BGL gl = g.gl();
 		    gl.glActiveTexture(GL.GL_TEXTURE0);
 		    bind(gl);
+		    if(env.labels && (data.desc != null))
+			gl.glObjectLabel(GL.GL_TEXTURE, this, String.valueOf(data.desc));
 		    long mem = 0;
 		    for(int i = 0; i < pixels.length; i++) {
 			CubeImage img = images[i];
 			int tgt = texface(img.face);
 			if(pixels[i] != null) {
-			    gl.glTexImage2D(tgt, img.level, ifmt, img.w, img.h, 0, pfmt, pnum, ByteBuffer.wrap(pixels[i].data));
+			    gl.glTexImage2D(tgt, img.level, ifmt, img.w, img.h, 0, pfmt, pnum, pixels[i].data());
 			    mem += data.ifmt.size() * img.w * img.h;
 			} else if(img.level == 0) {
 			    gl.glTexImage2D(tgt, 0, ifmt, data.w, data.h, 0, pfmt, pnum, null);
@@ -572,7 +672,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 			gl.glTexParameterf(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_MAX_ANISOTROPY_EXT, data.anisotropy);
 		    gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_WRAP_S, wrapmode(data.swrap));
 		    gl.glTexParameteri(GL.GL_TEXTURE_CUBE_MAP, GL.GL_TEXTURE_WRAP_T, wrapmode(data.twrap));
-		    gl.glTexParameterfv(GL.GL_TEXTURE_CUBE_MAP, GL3.GL_TEXTURE_BORDER_COLOR, data.border.to4a(), 0);
+		    gl.glTexParameterfv(GL.GL_TEXTURE_CUBE_MAP, GL3.GL_TEXTURE_BORDER_COLOR, data.border.to4a());
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});

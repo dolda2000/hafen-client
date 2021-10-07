@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import java.awt.Color;
 import haven.MapFile.Segment;
 import haven.MapFile.DataGrid;
@@ -244,6 +245,9 @@ public class MiniMap extends Widget {
 	public void update(Coord2d rc, double ang) {
 	    this.rc = rc;
 	    this.ang = ang;
+	}
+
+	public void dispupdate() {
 	    if((this.rc == null) || (sessloc == null) || (dloc == null) || (dloc.seg != sessloc.seg))
 		this.sc = null;
 	    else
@@ -341,38 +345,69 @@ public class MiniMap extends Widget {
 	    mapext = Area.sized(sc.mul(cmaps.mul(1 << lvl)), cmaps.mul(1 << lvl));
 	}
 
-	public Tex img() {
-	    DataGrid grid = gref.get();
-	    if(grid != cgrid) {
-		if(nextimg != null)
-		    nextimg.cancel();
-		if(grid instanceof MapFile.ZoomGrid) {
-		    nextimg = Defer.later(() -> new TexI(grid.render(sc.mul(cmaps))));
-		} else {
-		    nextimg = Defer.later(new Defer.Callable<Tex>() {
-			    MapFile.View view = new MapFile.View(seg);
+	class CachedImage {
+	    final Function<DataGrid, Defer.Future<Tex>> src;
+	    DataGrid cgrid;
+	    Defer.Future<Tex> next;
+	    Tex img;
 
-			    public TexI call() {
-				try(Locked lk = new Locked(file.lock.readLock())) {
-				    for(int y = -1; y <= 1; y++) {
-					for(int x = -1; x <= 1; x++) {
-					    view.addgrid(sc.add(x, y));
+	    CachedImage(Function<DataGrid, Defer.Future<Tex>> src) {
+		this.src = src;
+	    }
+
+	    public Tex get() {
+		DataGrid grid = gref.get();
+		if(grid != cgrid) {
+		    if(next != null)
+			next.cancel();
+		    next = src.apply(grid);
+		    cgrid = grid;
+		}
+		if(next != null) {
+		    try {
+			img = next.get();
+		    } catch(Loading l) {}
+		}
+		return(img);
+	    }
+	}
+
+	private CachedImage img_c;
+	public Tex img() {
+	    if(img_c == null) {
+		img_c = new CachedImage(grid -> {
+			if(grid instanceof MapFile.ZoomGrid) {
+			    return(Defer.later(() -> new TexI(grid.render(sc.mul(cmaps)))));
+			} else {
+			    return(Defer.later(new Defer.Callable<Tex>() {
+				    MapFile.View view = new MapFile.View(seg);
+
+				    public TexI call() {
+					try(Locked lk = new Locked(file.lock.readLock())) {
+					    for(int y = -1; y <= 1; y++) {
+						for(int x = -1; x <= 1; x++) {
+						    view.addgrid(sc.add(x, y));
+						}
+					    }
+					    view.fin();
+					    return(new TexI(MapSource.drawmap(view, Area.sized(sc.mul(cmaps), cmaps))));
 					}
 				    }
-				    view.fin();
-				    return(new TexI(MapSource.drawmap(view, Area.sized(sc.mul(cmaps), cmaps))));
-				}
-			    }
-			});
-		}
-		cgrid = grid;
+				}));
+			}
+		});
 	    }
-	    if(nextimg != null) {
-		try {
-		    img = nextimg.get();
-		} catch(Loading l) {}
+	    return(img_c.get());
+	}
+
+	private Map<String, CachedImage> olimg_c = new HashMap<>();
+	public Tex olimg(String tag) {
+	    CachedImage ret;
+	    synchronized(olimg_c) {
+		if((ret = olimg_c.get(tag)) == null)
+		    olimg_c.put(tag, ret = new CachedImage(grid -> Defer.later(() -> new TexI(grid.olrender(sc.mul(cmaps), tag)))));
 	    }
-	    return(img);
+	    return(ret.get());
 	}
 
 	private Collection<DisplayMarker> markers = Collections.emptyList();
@@ -440,21 +475,27 @@ public class MiniMap extends Widget {
 		file.lock.readLock().unlock();
 	    }
 	}
+	for(DisplayIcon icon : icons)
+	    icon.dispupdate();
+    }
+
+    public void drawgrid(GOut g, Coord ul, DisplayGrid disp) {
+	try {
+	    Tex img = disp.img();
+	    if(img != null)
+		g.image(img, ul, UI.scale(img.sz()));
+	} catch(Loading l) {
+	}
     }
 
     public void drawmap(GOut g) {
 	Coord hsz = sz.div(2);
 	for(Coord c : dgext) {
-	    Tex img;
-	    try {
-		DisplayGrid disp = display[dgext.ri(c)];
-		if((disp == null) || ((img = disp.img()) == null))
-		    continue;
-	    } catch(Loading l) {
-		continue;
-	    }
 	    Coord ul = UI.scale(c.mul(cmaps)).sub(dloc.tc.div(scalef())).add(hsz);
-	    g.image(img, ul, UI.scale(img.sz()));
+	    DisplayGrid disp = display[dgext.ri(c)];
+	    if(disp == null)
+		continue;
+	    drawgrid(g, ul, disp);
 	}
     }
 

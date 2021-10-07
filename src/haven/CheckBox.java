@@ -26,14 +26,13 @@
 
 package haven;
 
-public class CheckBox extends Widget {
+public class CheckBox extends ACheckBox {
     public static final Tex lbox = Resource.loadtex("gfx/hud/chkbox");
     public static final Tex lmark = Resource.loadtex("gfx/hud/chkmark");
     public static final Tex sbox = Resource.loadtex("gfx/hud/chkboxs");
     public static final Tex smark = Resource.loadtex("gfx/hud/chkmarks");
     public final Tex box, mark;
     public final Coord loff;
-    public boolean a = false;
     Text lbl;
 
     @RName("chk")
@@ -64,43 +63,15 @@ public class CheckBox extends Widget {
     public void draw(GOut g) {
         g.image(lbl.tex(), loff.add(box.sz().x, (sz.y - lbl.sz().y) / 2));
         g.image(box, Coord.z.add(0, (sz.y - box.sz().y) / 2));
-        if (a) {
+        if(state())
             g.image(mark, Coord.z.add(0, (sz.y - mark.sz().y) / 2));
-        }
         super.draw(g);
     }
-
-    public void changed(boolean val) {
-	if(canactivate)
-	    wdgmsg("ch", a ? 1 : 0);
-    }
-
-    public void set(boolean a) {
-	this.a = a;
-	changed(a);
-    }
-
-    public void click() {
-	set(!a);
-    }
-
     public boolean mousedown(Coord c, int button) {
-	if(button != 1)
-	    return(false);
-	click();
-	return(true);
-    }
-
-    public boolean gkeytype(java.awt.event.KeyEvent ev) {
-	click();
-	return(true);
-    }
-
-    public void uimsg(String msg, Object... args) {
-	if(msg == "ch") {
-	    this.a = ((Integer)args[0]) != 0;
-	} else {
-	    super.uimsg(msg, args);
+	if(button == 1) {
+	    click();
+	    return(true);
 	}
+	return(super.mousedown(c, button));
     }
 }

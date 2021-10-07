@@ -560,7 +560,17 @@ public class OptWnd extends Window {
 		    Audio.setvolume(val / 1000.0);
 		}
 	    }, prev.pos("bl").adds(0, 2));
-	prev = audio.add(new Label("In-game event volume"), prev.pos("bl").adds(0, 15));
+	prev = audio.add(new Label("Interface sound volume"), prev.pos("bl").adds(0, 15));
+	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
+		protected void attach(UI ui) {
+		    super.attach(ui);
+		    val = (int)(ui.audio.aui.volume * 1000);
+		}
+		public void changed() {
+		    ui.audio.aui.setvolume(val / 1000.0);
+		}
+	    }, prev.pos("bl").adds(0, 2));
+	prev = audio.add(new Label("In-game event volume"), prev.pos("bl").adds(0, 5));
 	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
 		protected void attach(UI ui) {
 		    super.attach(ui);

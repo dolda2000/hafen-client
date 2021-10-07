@@ -31,24 +31,42 @@ import haven.render.*;
 
 public class FillBuffers {
     public static class Array implements FillBuffer {
-	public final byte[] data;
-	private ByteBuffer bv = null;
+	private final int sz;
+	private boolean pushed = false;
+	private ByteBuffer data = null;
 
 	public Array(int sz) {
-	    this.data = new byte[sz];
+	    this.sz = sz;
 	}
 
-	public int size() {return(data.length);}
+	public int size() {return(sz);}
 	public boolean compatible(Environment env) {return(env instanceof GLEnvironment);}
 
 	public ByteBuffer push() {
-	    if(bv == null)
-		bv = ByteBuffer.wrap(data).order(ByteOrder.nativeOrder());
-	    return(bv);
+	    if(data == null) {
+		data = ByteBuffer.allocate(sz).order(ByteOrder.nativeOrder());
+		pushed = true;
+	    } else if(!pushed) {
+		throw(new IllegalStateException("already pulled"));
+	    }
+	    return(data);
 	}
 
 	public void pull(ByteBuffer buf) {
-	    buf.get(data);
+	    if(buf.remaining() < sz) {
+		String msg = buf.remaining() + " < " + sz;
+		throw(new BufferUnderflowException() {
+			public String getMessage() {return(msg);}
+		    });
+	    }
+	    data = buf.duplicate();
+	    buf.position(buf.position() + sz);
+	}
+
+	public ByteBuffer data() {
+	    if(pushed)
+		data.rewind();
+	    return((data == null) ? ByteBuffer.allocate(sz) : data);
 	}
 
 	public void dispose() {

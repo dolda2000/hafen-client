@@ -95,13 +95,20 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	base.prep(new FragColor<>(FragColor.defcolor)).prep(new DepthBuffer<>(DepthBuffer.defdepth));
 	base.prep(FragColor.blend(new BlendMode()));
 	setSize(sz.x, sz.y);
-	setAutoSwapBufferMode(false);
 	addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
 		    redraw(d.getGL());
 		}
 
 		public void init(GLAutoDrawable d) {
+		    setAutoSwapBufferMode(false);
+		    /* XXX: This apparently fixes a scaling problem on
+		     * OSX, and doesn't seem to have any effect on
+		     * other platforms. It seems like a weird
+		     * workaround, and I do wonder if there isn't some
+		     * underlying bug in JOGL instead, but it hasn't
+		     * broken anything yet, so I guess why not. */
+		    setSurfaceScale(new float[] {1, 1});
 		}
 
 		public void reshape(GLAutoDrawable wdg, int x, int y, int w, int h) {
@@ -272,9 +279,14 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
 	public void run(GL3 gl) {
 	    if(prev != null) {
-		if(label != null)
-		    prev.frame.tick(label);
-		prev.frame.fin();
+		if(prev.frame != null) {
+		    /* The reason frame would be null is if the
+		     * environment has become invalid and the previous
+		     * cycle never ran. */
+		    if(label != null)
+			prev.frame.tick(label);
+		    prev.frame.fin();
+		}
 		prev = null;
 	    }
 	    frame = prof.new Frame();
@@ -291,7 +303,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
 
 	public void run(GL3 gl) {
-	    if(prof != null)
+	    if((prof != null) && (prof.frame != null))
 		prof.frame.tick(label);
 	}
     }
@@ -554,7 +566,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    buf.submit(new FrameCycle());
 		    if(frameprof != null) {
 			buf.submit(frameprof.stop);
-			buf.submit(frameprof.dump(new java.io.File("frameprof")));
+			buf.submit(frameprof.dump(Utils.path("frameprof")));
 		    }
 		    env.submit(buf);
 		    buf = null;

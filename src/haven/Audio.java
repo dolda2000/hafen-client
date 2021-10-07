@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.io.*;
+import java.nio.file.*;
 import javax.sound.sampled.*;
 import dolda.xiphutil.*;
 
@@ -50,6 +51,13 @@ public class Audio {
     public interface CS {
 	public int get(double[][] buf, int len);
     }
+
+    public interface Clip extends Resource.IDLayer<String> {
+	public CS stream();
+	public default String layerid() {return("");}
+	public default double bvol() {return(1.0);}
+    }
+    public static final Class<Clip> clip = Clip.class;
     
     public static class Mixer implements CS {
 	public final boolean cont;
@@ -130,6 +138,12 @@ public class Audio {
 	    return(false);
 	}
 
+	public int size() {
+	    synchronized(clips) {
+		return(clips.size());
+	    }
+	}
+
 	public boolean empty() {
 	    synchronized(clips) {
 		return(clips.isEmpty());
@@ -202,6 +216,10 @@ public class Audio {
 
 	public VorbisClip(VorbisStream clip) {
 	    this.clip = clip;
+	}
+
+	public VorbisClip(InputStream bs) throws IOException {
+	    this(new VorbisStream(bs));
 	}
 
 	public int get(double[][] dst, int ns) {
@@ -313,6 +331,8 @@ public class Audio {
 	    }
 	    return(ns);
 	}
+
+	public Resampler sp(double sp) {this.sp = sp; return(this);}
     }
 
     public static class Monitor implements CS {
@@ -405,8 +425,6 @@ public class Audio {
     private static class Player extends HackThread {
 	private final CS stream;
 	private final int nch;
-	private final Object queuemon = new Object();
-	private Collection<Runnable> queue = new LinkedList<Runnable>();
 	private volatile boolean reopen = false;
 	
 	Player(CS stream) {
@@ -465,14 +483,6 @@ public class Audio {
 		    while(true) {
 			if(Thread.interrupted())
 			    throw(new InterruptedException());
-			synchronized(queuemon) {
-			    Collection<Runnable> queue = this.queue;
-			    if(queue.size() > 0) {
-				this.queue = new LinkedList<Runnable>();
-				for(Runnable r : queue)
-				    r.run();
-			    }
-			}
 			int ret = fillbuf(buf, 0, buf.length);
 			if(ret < 0)
 			    return;
@@ -538,22 +548,15 @@ public class Audio {
 	    ((Mixer)pl.stream).stop(clip);
     }
     
-    public static void queue(Runnable d) {
-	Player pl = ckpl(true);
-	synchronized(pl.queuemon) {
-	    pl.queue.add(d);
-	}
-    }
-
-    private static Map<Resource, Resource.Audio> reslastc = new HashMap<Resource, Resource.Audio>();
+    private static Map<Resource, Clip> reslastc = new HashMap<Resource, Clip>();
     public static CS fromres(Resource res) {
-	Collection<Resource.Audio> clips = res.layers(Resource.audio);
+	Collection<Clip> clips = res.layers(Audio.clip, null);
 	synchronized(reslastc) {
-	    Resource.Audio last = reslastc.get(res);
+	    Clip last = reslastc.get(res);
 	    int sz = clips.size();
-	    int s = (int)(Math.random() *  (((sz > 2) && (last != null))?(sz - 1):sz));
-	    Resource.Audio clip = null;
-	    for(Resource.Audio cp : clips) {
+	    int s = (int)(Math.random() * (((sz > 2) && (last != null)) ? (sz - 1) : sz));
+	    Clip clip = null;
+	    for(Clip cp : clips) {
 		if(cp == last)
 		    continue;
 		clip = cp;
@@ -570,25 +573,13 @@ public class Audio {
 	play(fromres(res));
     }
 
-    public static void play(final Indir<Resource> clip) {
-	queue(new Runnable() {
-		public void run() {
-		    try {
-			play(clip.get());
-		    } catch(Loading e) {
-			queue(this);
-		    }
-		}
-	    });
-    }
-    
     public static void main(String[] args) throws Exception {
 	Collection<Monitor> clips = new LinkedList<Monitor>();
 	for(int i = 0; i < args.length; i++) {
 	    if(args[i].equals("-b")) {
 		bufsize = Integer.parseInt(args[++i]);
 	    } else {
-		Monitor c = new Monitor(new PCMClip(new FileInputStream(args[i]), 2));
+		Monitor c = new Monitor(new PCMClip(Files.newInputStream(Utils.path(args[i])), 2));
 		clips.add(c);
 	    }
 	}
@@ -601,7 +592,7 @@ public class Audio {
     static {
 	Console.setscmd("sfx", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    play(Resource.remote().load(args[1]));
+		    play(Loading.waitfor(Resource.remote().load(args[1])));
 		}
 	    });
 	Console.setscmd("sfxvol", new Console.Command() {

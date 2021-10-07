@@ -30,6 +30,7 @@ import haven.Utils;
 import java.util.*;
 import java.util.regex.*;
 import java.io.*;
+import java.nio.file.*;
 import com.jogamp.opengl.*;
 
 public class BufferBGL extends BGL {
@@ -164,9 +165,9 @@ public class BufferBGL extends BGL {
 		out.printf("%f\t%f\t%s\n", (times[i] - stime) * 1000, ((i < n - 1) ? times[i + 1] - times[i] : 0) * 1000, cmds[i]);
 	}
 
-	public Request dump(File out) {
+	public Request dump(Path out) {
 	    return(gl -> {
-		    try(OutputStream fp = new BufferedOutputStream(new FileOutputStream(out))) {
+		    try(OutputStream fp = new BufferedOutputStream(Files.newOutputStream(out))) {
 			dump(new PrintStream(fp));
 		    } catch(IOException e) {
 			throw(new RuntimeException(e));

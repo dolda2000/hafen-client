@@ -81,6 +81,6 @@ public class Texture2DMS extends Texture {
     }
 
     public String toString() {
-	return(String.format("#<tex2d-ms %sx%d %dx%d %d %s samples>", ifmt.cf, ifmt.nc, w, h, s, fixed ? "fixed" : "non-fixed"));
+	return(String.format("#<tex2d-ms %sx%d %dx%d %d %s samples%s>", ifmt.cf, ifmt.nc, w, h, s, fixed ? "fixed" : "non-fixed", descfmt()));
     }
 }

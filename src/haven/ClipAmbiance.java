@@ -71,7 +71,7 @@ public class ClipAmbiance implements RenderTree.Node {
 	}
 
 	private void addclip(final int chan, final int idx) {
-	    Resource.Audio clip = AudioSprite.randoom(chans[chan].getres(), chans[chan].cnms[idx]);
+	    Audio.Clip clip = AudioSprite.randoom(chans[chan].getres(), chans[chan].cnms[idx]);
 	    final CS[] clist = cur[chan];
 	    CS nc;
 	    synchronized(this) {

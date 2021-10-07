@@ -1,10 +1,26 @@
 #!/usr/bin/python3
 
-import sys, zipfile, fnmatch
+import sys, getopt, zipfile, fnmatch
 from classfile import file
 
-classpath=["build/jogl.jar"]
+classpath=["build/jogl-all.jar"]
 roots = ["com/jogamp/opengl/GL4bc"]
+
+def usage(out):
+    out.write("usage: findgl [-h] [-c CLASSPATH] [-r ROOTS] NAMES...\n")
+
+opts, args = getopt.getopt(sys.argv[1:], "hc:r:")
+for o, a in opts:
+    if o == "-h":
+        usage(sys.stdout)
+        sys.exit(0)
+    elif o == "-c":
+        classpath = a.split(':')
+    elif o == "-r":
+        roots = a.replace('.', '/').split(':')
+if len(args) < 1:
+    usage(sys.stderr)
+    sys.exit(1)
 
 class notfound(LookupError):
     pass
@@ -48,7 +64,7 @@ def resolve(roots):
 
 classes = resolve(roots)
 
-for func in sys.argv[1:]:
+for func in args:
     for cl in classes:
         for mth in cl.methods:
             if fnmatch.fnmatchcase(cl.cp[mth.nm], func):

@@ -39,7 +39,7 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 	
     public void rcvmsg(int id, String name, Object... args) {
 	PMessage msg = new PMessage(RMessage.RMSG_WDGMSG);
-	msg.adduint16(id);
+	msg.addint32(id);
 	msg.addstring(name);
 	msg.addlist(args);
 	sess.queuemsg(msg);
@@ -59,23 +59,22 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 		PMessage msg;
 		while((msg = sess.getuimsg()) != null) {
 		    if(msg.type == RMessage.RMSG_NEWWDG) {
-			int id = msg.uint16();
+			int id = msg.int32();
 			String type = msg.string();
-			int parent = msg.uint16();
-			if(parent == 0xffff) parent = -1;
+			int parent = msg.int32();
 			Object[] pargs = msg.list();
 			Object[] cargs = msg.list();
 			ui.newwidgetp(id, type, parent, pargs, cargs);
 		    } else if(msg.type == RMessage.RMSG_WDGMSG) {
-			int id = msg.uint16();
+			int id = msg.int32();
 			String name = msg.string();
 			ui.uimsg(id, name, msg.list());
 		    } else if(msg.type == RMessage.RMSG_DSTWDG) {
-			int id = msg.uint16();
+			int id = msg.int32();
 			ui.destroy(id);
 		    } else if(msg.type == RMessage.RMSG_ADDWDG) {
-			int id = msg.uint16();
-			int parent = msg.uint16();
+			int id = msg.int32();
+			int parent = msg.int32();
 			Object[] pargs = msg.list();
 			ui.addwidget(id, parent, pargs);
 		    } else if(msg.type == RMessage.RMSG_WDGBAR) {

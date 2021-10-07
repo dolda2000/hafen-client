@@ -27,13 +27,16 @@
 package haven;
 
 import java.awt.Color;
+import java.util.*;
 
-public class VMeter extends Widget {
-    static Tex bg = Resource.loadtex("gfx/hud/vm-frame");
-    static Tex fg = Resource.loadtex("gfx/hud/vm-tex");
-    Color cl;
-    int amount;
-	
+public class VMeter extends Widget implements ItemInfo.Owner {
+    public static final Tex bg = Resource.loadtex("gfx/hud/vm-frame");
+    public static final Tex fg = Resource.loadtex("gfx/hud/vm-tex");
+    private Color cl;
+    private int amount;
+    private ItemInfo.Raw rawinfo = null;
+    private List<ItemInfo> info = Collections.emptyList();
+
     @RName("vm")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
@@ -53,13 +56,13 @@ public class VMeter extends Widget {
 	    return(new VMeter((Integer)args[0], cl));
 	}
     }
-	
+
     public VMeter(int amount, Color cl) {
 	super(bg.sz());
 	this.amount = amount;
 	this.cl = cl;
     }
-	
+
     public void draw(GOut g) {
 	g.image(bg, Coord.z);
 	g.chcolor(cl);
@@ -67,7 +70,41 @@ public class VMeter extends Widget {
 	h = (h * amount) / 100;
 	g.image(fg, new Coord(0, 0), new Coord(0, sz.y - UI.scale(3) - h), sz.add(0, h));
     }
-	
+
+    private static final OwnerContext.ClassResolver<VMeter> ctxr = new OwnerContext.ClassResolver<VMeter>()
+	.add(Glob.class, wdg -> wdg.ui.sess.glob)
+	.add(Session.class, wdg -> wdg.ui.sess);
+    public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
+
+    public List<ItemInfo> info() {
+	if(info == null)
+	    info = ItemInfo.buildinfo(this, rawinfo);
+	return(info);
+    }
+
+    private double hoverstart;
+    private Tex shorttip, longtip;
+    public Object tooltip(Coord c, Widget prev) {
+	if(rawinfo == null)
+	    return(super.tooltip(c, prev));
+	double now = Utils.rtime();
+	if(prev != this)
+	    hoverstart = now;
+	try {
+	    if(now - hoverstart < 1.0) {
+		if(shorttip == null)
+		    shorttip = new TexI(ItemInfo.shorttip(info()));
+		return(shorttip);
+	    } else {
+		if(longtip == null)
+		    longtip = new TexI(ItemInfo.longtip(info()));
+		return(longtip);
+	    }
+	} catch(Loading e) {
+	    return("...");
+	}
+    }
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "set") {
 	    amount = (Integer)args[0];
@@ -75,6 +112,14 @@ public class VMeter extends Widget {
 		cl = (Color)args[1];
 	} else if(msg == "col") {
 	    cl = (Color)args[0];
+	} else if(msg == "tip") {
+	    if(args[0] instanceof Object[]) {
+		rawinfo = new ItemInfo.Raw((Object[])args[0]);
+		info = null;
+		shorttip = longtip = null;
+	    } else {
+		super.uimsg(msg, args);
+	    }
 	} else {
 	    super.uimsg(msg, args);
 	}

@@ -24,24 +24,11 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render;
 
-import java.awt.Color;
-import haven.render.*;
+public interface Abortable {
+    public void abort();
 
-public class GobHealth extends GAttrib implements Gob.SetupMod {
-    public final float hp;
-    public final MixColor fx;
-    
-    public GobHealth(Gob g, float hp) {
-	super(g);
-	this.hp = hp;
-	this.fx = new MixColor(255, 0, 0, 128 - Math.round(hp * 128));
-    }
-    
-    public Pipe.Op gobstate() {
-	if(hp >= 1)
-	    return(null);
-	return(fx);
-    }
+    public static interface Runnable extends java.lang.Runnable, Abortable {}
+    public static interface Consumer<T> extends java.util.function.Consumer<T>, Abortable {}
 }
