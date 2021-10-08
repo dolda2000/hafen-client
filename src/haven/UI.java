@@ -219,12 +219,20 @@ public class UI {
 	}
     }
 
+    private static final boolean cmdjitter = false;
     public class CommandQueue {
 	private final Map<Integer, Command> score = new HashMap<>();
 
 	private CommandQueue() {}
 
 	private void run(Command cmd) {
+	    if(cmdjitter) {
+		try {
+		    Thread.sleep((int)(Math.random() * 200));
+		} catch(InterruptedException e) {
+		    Thread.currentThread().interrupt();
+		}
+	    }
 	    cmd.action.run();
 	    finish(cmd);
 	}
