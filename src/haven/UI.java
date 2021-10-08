@@ -185,6 +185,8 @@ public class UI {
     }
 
     private static class Command {
+	static final java.util.concurrent.atomic.AtomicInteger nextid = new java.util.concurrent.atomic.AtomicInteger(0);
+	final int id = nextid.getAndIncrement();
 	final Collection<Integer> deps = new ArrayList<>();
 	final Collection<Integer> bars  = new ArrayList<>();
 	final Collection<Command> next = new ArrayList<>();
@@ -215,11 +217,12 @@ public class UI {
 	}
 
 	public String toString() {
-	    return(String.format("#<cmd %08x %s%s%s>", System.identityHashCode(this), action, fl("deps", deps), fl("bars", bars)));
+	    return(String.format("#<cmd %d %s%s%s>", this.id, action, fl("deps", deps), fl("bars", bars)));
 	}
     }
 
     private static final boolean cmdjitter = false;
+    private static final boolean cmddump = false;
     public class CommandQueue {
 	private final Map<Integer, Command> score = new HashMap<>();
 
@@ -238,6 +241,8 @@ public class UI {
 	}
 
 	private void execute(Command cmd) {
+	    if(cmddump)
+		System.err.printf("exec: %s\n", cmd);
 	    loader.defer(() -> run(cmd), null);
 	}
 
@@ -255,12 +260,20 @@ public class UI {
 		for(Integer bar : cmd.bars) {
 		    score.put(bar, cmd);
 		}
+		if(cmddump && !ready) {
+		    ArrayList<Integer> wait = new ArrayList<>();
+		    for(Command p : cmd.wait)
+			wait.add(p.id);
+		    System.err.printf("wait: %s on %s\n", cmd, wait);
+		}
 	    }
 	    if(ready)
 		execute(cmd);
 	}
 
 	public void finish(Command cmd) {
+	    if(cmddump)
+		System.err.printf("done: %s\n", cmd);
 	    Collection<Command> ready = new ArrayList<>();
 	    synchronized(this) {
 		for(Command next : cmd.next) {
