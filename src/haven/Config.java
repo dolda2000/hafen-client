@@ -36,7 +36,7 @@ public class Config {
     public static final Properties jarprops = getjarprops();
     public static String authuser = getprop("haven.authuser", null);
     public static String authserv = getprop("haven.authserv", null);
-    public static String defserv = getprop("haven.defserv", "127.0.0.1");
+    public static String defserv = getprop("haven.defserv", "localhost");
     public static String[] servargs = null;
     public static URL resurl = geturl("haven.resurl", "");
     public static URL screenurl = geturl("haven.screenurl", "");
