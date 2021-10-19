@@ -46,12 +46,12 @@ public abstract class RetryingInputStream extends InputStream {
 	return(ret);
     }
 
-    private static final double[] sleep = {0.01, 0.1, 0.5, 1.0, 2.0, 5.0};
+    private static final double[] sleep = {0.0, 0.01, 0.1, 0.5, 1.0, 2.0, 5.0};
     protected void retry(int retries, IOException lasterr) throws IOException {
 	if(lasterr instanceof FileNotFoundException)
 	    throw(lasterr);
 	if(retries >= sleep.length) {
-	    throw(new IOException("already retried 5 times", lasterr));
+	    throw(new IOException("already retried " + retries + " times", lasterr));
 	} else {
 	    try {
 		Thread.sleep((int)(sleep[retries] * 1000));

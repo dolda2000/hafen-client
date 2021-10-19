@@ -327,23 +327,23 @@ public class CharWnd extends Window {
 	    public Tex at() {
 		if(at == null) {
 		    Color c= (a > 1.0)?buffed:Utils.blendcol(none, full, a);
-		    at = elf.render(String.format("%d%%", (int)Math.ceil((1.0 - a) * 100)), c).tex();
+		    at = elf.render(String.format("%d%%", Math.max((int)Math.round((1.0 - a) * 100), 1)), c).tex();
 		}
 		return(at);
 	    }
 	}
 
-	private WItem.ItemTip lasttip = null;
+	private ItemInfo.InfoTip lasttip = null;
 	public void draw(GOut g) {
-	    WItem.ItemTip tip = null;
-	    if(ui.lasttip instanceof WItem.ItemTip)
-		tip = (WItem.ItemTip)ui.lasttip;
+	    ItemInfo.InfoTip tip = null;
+	    if(ui.lasttip instanceof ItemInfo.InfoTip)
+		tip = (ItemInfo.InfoTip)ui.lasttip;
 	    if(tip != lasttip) {
 		for(El el : els)
 		    el.hl = false;
 		FoodInfo finf;
 		try {
-		    finf = (tip == null)?null:ItemInfo.find(FoodInfo.class, tip.item().info());
+		    finf = (tip == null)?null:ItemInfo.find(FoodInfo.class, tip.info());
 		} catch(Loading l) {
 		    finf = null;
 		}
@@ -475,7 +475,8 @@ public class CharWnd extends Window {
 	    Coord cn = new Coord(0, sz.y / 2);
 	    g.aimage(img, cn.add(5, 0), 0, 0.5);
 	    g.aimage(rnm.tex(), cn.add(img.sz().x + margin2, 1), 0, 0.5);
-	    g.aimage(ct.tex(), cn.add(sz.x - UI.scale(7), 1), 1, 0.5);
+	    if(ct != null)
+		g.aimage(ct.tex(), cn.add(sz.x - UI.scale(7), 1), 1, 0.5);
 	}
 
 	public void lvlup() {

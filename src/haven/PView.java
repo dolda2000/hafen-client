@@ -231,6 +231,7 @@ public abstract class PView extends Widget {
 	    next = post.hasNext() ? post.next() : null;
 	    cur.run(resolveout(g, next), cur.buf);
 	}
+	g.defstate();
     }
 
     public void add(PostProcessor post) {ctx.add(post);}
@@ -258,7 +259,7 @@ public abstract class PView extends Widget {
     }
 
     public void draw(GOut g) {
-	if((back == null) || !back.compatible(g.out.env())) {
+	if((back == null) || !g.out.env().compatible(back)) {
 	    if(env != null) {
 		envdispose();
 		env = null;

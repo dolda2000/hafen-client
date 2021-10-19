@@ -128,7 +128,7 @@ public abstract class TexRender implements Tex, Disposable {
 	    gc[6], gc[7], tc[6] * ix, tc[7] * iy,
 	};
 	g.usestate(draw);
-	g.out.draw(g.state(), new Model(Model.Mode.TRIANGLE_STRIP, new VertexArray(vf_tex2d, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null, 0, 4));
+	g.out.draw1(g.state(), new Model(Model.Mode.TRIANGLE_STRIP, new VertexArray(vf_tex2d, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null, 0, 4));
 	g.usestate(ColorTex.slot);
     }
 

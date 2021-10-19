@@ -34,4 +34,9 @@ public abstract class GLQuery extends GLObject {
     }
 
     public abstract boolean check(GL3 gl);
+    public abstract void abort();
+
+    public void abortcreate() {
+	abort();
+    }
 }

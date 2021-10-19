@@ -415,4 +415,8 @@ public abstract class ItemInfo {
 		});
 	}
     }
+
+    public static interface InfoTip {
+	public List<ItemInfo> info();
+    }
 }

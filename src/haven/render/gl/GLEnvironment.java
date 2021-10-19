@@ -36,7 +36,7 @@ import haven.render.sl.*;
 import static haven.render.DataBuffer.Usage.*;
 
 public class GLEnvironment implements Environment {
-    public static final boolean debuglog = false;
+    public static final boolean debuglog = false, labels = false;
     public final GLContext ctx;
     public final Caps caps;
     final Object drawmon = new Object();
@@ -330,9 +330,11 @@ public class GLEnvironment implements Environment {
 	GLRender gcmd = (GLRender)cmd;
 	if(gcmd.env != this)
 	    throw(new IllegalArgumentException("environment mismatch"));
-	if(gcmd.gl != null) {
-	    synchronized(submitted) {
-		if(!invalid) {
+	boolean inv;
+	synchronized(submitted) {
+	    inv = invalid;
+	    if(gcmd.gl != null) {
+		if(!inv) {
 		    submitted.add(gcmd);
 		    submitted.notifyAll();
 		} else {
@@ -340,6 +342,8 @@ public class GLEnvironment implements Environment {
 		}
 	    }
 	}
+	if(inv)
+	    sequnreg(gcmd);
     }
 
     public void submitwait() throws InterruptedException {
@@ -437,6 +441,8 @@ public class GLEnvironment implements Environment {
 				gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), xfbuf, GL.GL_DYNAMIC_DRAW);
 				jdret.put(gl, xfbuf);
 			    }
+			    if(labels && (buf.desc != null))
+				gl.glObjectLabel(GL3.GL_BUFFER, rbuf, String.valueOf(buf.desc));
 			    rbuf.setmem(MemStats.INDICES, buf.size());
 			});
 		}
@@ -453,7 +459,9 @@ public class GLEnvironment implements Environment {
 		    prepare((GLRender g) -> {
 			    BGL gl = g.gl();
 			    Vao0State.apply(this, gl, g.state, jdret);
-			    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), (data == null) ? null : ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
+			    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), (data == null) ? null : data.data(), GL.GL_STATIC_DRAW);
+			    if(labels && (buf.desc != null))
+				gl.glObjectLabel(GL3.GL_BUFFER, jdret, String.valueOf(buf.desc));
 			    jdret.setmem(MemStats.INDICES, buf.size());
 			});
 		}
@@ -494,6 +502,8 @@ public class GLEnvironment implements Environment {
 				gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), xfbuf, GL.GL_DYNAMIC_DRAW);
 				jdret.put(gl, xfbuf);
 			    }
+			    if(labels && (buf.desc != null))
+				gl.glObjectLabel(GL3.GL_BUFFER, rbuf, String.valueOf(buf.desc));
 			    rbuf.setmem(MemStats.VERTICES, buf.size());
 			});
 		}
@@ -510,7 +520,9 @@ public class GLEnvironment implements Environment {
 		    prepare((GLRender g) -> {
 			    BGL gl = g.gl();
 			    VboState.apply(gl, g.state, jdret);
-			    gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), (data == null) ? null : ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
+			    gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), (data == null) ? null : data.data(), GL.GL_STATIC_DRAW);
+			    if(labels && (buf.desc != null))
+				gl.glObjectLabel(GL3.GL_BUFFER, jdret, String.valueOf(buf.desc));
 			    jdret.setmem(MemStats.VERTICES, buf.size());
 			});
 		}
@@ -814,6 +826,26 @@ public class GLEnvironment implements Environment {
 	return(ret);
     }
 
+    public boolean compatible(DrawList ob) {
+	return((ob instanceof GLDrawList) && (((GLDrawList)ob).env == this));
+    }
+
+    public boolean compatible(Texture ob) {
+	return((ob.ro != null) && (ob.ro instanceof GLObject) && (((GLObject)ob.ro).env == this));
+    }
+
+    public boolean compatible(DataBuffer ob) {
+	if(ob instanceof Model.Indices) {
+	    Model.Indices buf = (Model.Indices)ob;
+	    return((buf.ro != null) && (buf.ro instanceof GLObject) && (((GLObject)buf.ro).env == this));
+	} else if(ob instanceof VertexArray.Buffer) {
+	    VertexArray.Buffer buf = (VertexArray.Buffer)ob;
+	    return((buf.ro != null) && (buf.ro instanceof GLObject) && (((GLObject)buf.ro).env == this));
+	} else {
+	    throw(new NotImplemented());
+	}
+    }
+
     private double lastpclean = Utils.rtime();
     public void clean() {
 	double now = Utils.rtime();
@@ -825,7 +857,7 @@ public class GLEnvironment implements Environment {
 
     private final Object seqmon = new Object();
     private boolean[] sequse = new boolean[16];
-    private int seqhead = 1, seqtail = 1;
+    private int seqhead = 1, seqtail = seqhead;
 
     private void seqresize(int nsz) {
 	boolean[] cseq = sequse, nseq = new boolean[nsz];
@@ -860,7 +892,7 @@ public class GLEnvironment implements Environment {
 		throw(new AssertionError());
 	    sequse[si] = false;
 	    if(seq == seqtail) {
-		while((seqtail < seqhead) && !sequse[seqtail & m])
+		while((seqhead - seqtail > 0) && !sequse[seqtail & m])
 		    seqtail++;
 	    }
 	    r.dispseq = 0;
@@ -888,16 +920,26 @@ public class GLEnvironment implements Environment {
     }
 
     public void dispose() {
-	Collection<GLRender> copy;
-	synchronized(submitted) {
-	    copy = new ArrayList<>(submitted);
-	    submitted.clear();
-	    invalid = true;
+	{
+	    Collection<GLRender> copy;
+	    synchronized(submitted) {
+		copy = new ArrayList<>(submitted);
+		submitted.clear();
+		invalid = true;
+	    }
+	    for(GLRender cmd : copy) {
+		cmd.gl.abort();
+		sequnreg(cmd);
+	    }
 	}
-	for(GLRender cmd : copy) {
-	    cmd.gl.abort();
-	    sequnreg(cmd);
+	{
+	    Collection<GLQuery> copy;
+	    synchronized(drawmon) {
+		copy = new ArrayList<>(queries);
+		queries.clear();
+	    }
+	    for(GLQuery query : copy)
+		query.abort();
 	}
-	/* XXX: Provide a way to abort pending queries? */
     }
 }

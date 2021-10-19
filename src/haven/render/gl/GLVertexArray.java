@@ -156,6 +156,8 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 			}
 		    }
 		}
+		if(env.labels && (mod.desc != null))
+		    gl.glObjectLabel(GL2.GL_VERTEX_ARRAY, this, String.valueOf(mod.desc));
 	    });
     }
 

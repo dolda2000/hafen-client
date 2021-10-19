@@ -54,7 +54,7 @@ public class MenuSearch extends Window {
 	    double now = Utils.rtime();
 	    if(prevsel == sel) {
 		if((sel != null) && (now - lastcl < 0.5))
-		    menu.use(sel.btn, false);
+		    menu.use(sel.btn, new MenuGrid.Interaction(1, ui.modflags()), false);
 	    } else {
 		prevsel = sel;
 	    }
@@ -74,7 +74,7 @@ public class MenuSearch extends Window {
 
 		public void activate(String text) {
 		    if(rls.sel != null)
-			menu.use(rls.sel.btn, false);
+			menu.use(rls.sel.btn, new MenuGrid.Interaction(1, ui.modflags()), false);
 		    if(!ui.modctrl)
 			MenuSearch.this.wdgmsg("close");
 		}
@@ -85,7 +85,7 @@ public class MenuSearch extends Window {
 
     private void refilter() {
 	List<Result> found = new ArrayList<>();
-	String needle = sbox.text.toLowerCase();
+	String needle = sbox.text().toLowerCase();
 	for(Result res : this.cur) {
 	    if(res.btn.name().toLowerCase().indexOf(needle) >= 0)
 		found.add(res);

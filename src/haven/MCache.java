@@ -34,10 +34,10 @@ import haven.render.*;
 /* XXX: This whole file is a bit of a mess and could use a bit of a
  * rewrite some rainy day. Synchronization especially is quite hairy. */
 public class MCache implements MapSource {
-    public static final Coord2d tilesz = new Coord2d(11, 11);
+    public static final Coord2d tilesz = Coord2d.of(11, 11);
     public static final Coord tilesz2 = tilesz.round(); /* XXX: Remove me in due time. */
-    public static final Coord cmaps = new Coord(100, 100);
-    public static final Coord cutsz = new Coord(25, 25);
+    public static final Coord cmaps = Coord.of(100, 100);
+    public static final Coord cutsz = Coord.of(25, 25);
     public static final Coord cutn = cmaps.div(cutsz);
     public final Resource.Spec[] nsets = new Resource.Spec[256];
     @SuppressWarnings("unchecked")
@@ -404,7 +404,7 @@ public class MCache implements MapSource {
 		for(cc.x = 0; cc.x < cutn.x; cc.x++) {
 		    if((((nc.x < 0) && (cc.x == 0)) || ((nc.x > 0) && (cc.x == cutn.x - 1)) || (nc.x == 0)) &&
 		       (((nc.y < 0) && (cc.y == 0)) || ((nc.y > 0) && (cc.y == cutn.y - 1)) || (nc.y == 0))) {
-			buildcut(new Coord(cc));
+			buildcut(Coord.of(cc));
 		    }
 		}
 	    }
@@ -427,13 +427,13 @@ public class MCache implements MapSource {
 	private void invalidate() {
 	    for(int y = 0; y < cutn.y; y++) {
 		for(int x = 0; x < cutn.x; x++)
-		    buildcut(new Coord(x, y));
+		    buildcut(Coord.of(x, y));
 	    }
 	    fo = new Flavobjs[cutn.x * cutn.y];
 	    for(Coord ic : new Coord[] {
-		    new Coord(-1, -1), new Coord( 0, -1), new Coord( 1, -1),
-		    new Coord(-1,  0),                    new Coord( 1,  0),
-		    new Coord(-1,  1), new Coord( 0,  1), new Coord( 1,  1)}) {
+		    Coord.of(-1, -1), Coord.of( 0, -1), Coord.of( 1, -1),
+		    Coord.of(-1,  0),                   Coord.of( 1,  0),
+		    Coord.of(-1,  1), Coord.of( 0,  1), Coord.of( 1,  1)}) {
 		Grid ng = grids.get(gc.add(ic));
 		if(ng != null)
 		    ng.ivneigh(ic.inv());
@@ -517,8 +517,8 @@ public class MCache implements MapSource {
 		if(pidx == 255)
 		    break;
 		int fl = buf.uint8();
-		Coord c1 = new Coord(buf.uint8(), buf.uint8());
-		Coord c2 = new Coord(buf.uint8(), buf.uint8());
+		Coord c1 = Coord.of(buf.uint8(), buf.uint8());
+		Coord c2 = Coord.of(buf.uint8(), buf.uint8());
 		boolean[] mask = new boolean[(c2.x - c1.x) * (c2.y - c1.y)];
 		if((fl & 1) != 0) {
 		    for(int i = 0, l = 0, m = buf.uint8(); i < mask.length; i++) {
@@ -685,7 +685,7 @@ public class MCache implements MapSource {
 
     public double getcz(double px, double py) {
 	double tw = tilesz.x, th = tilesz.y;
-	Coord ul = new Coord(Utils.floordiv(px, tw), Utils.floordiv(py, th));
+	Coord ul = Coord.of(Utils.floordiv(px, tw), Utils.floordiv(py, th));
 	double sx = Utils.floormod(px, tw) / tw;
 	double sy = Utils.floormod(py, th) / th;
 	return(((1.0f - sy) * (((1.0f - sx) * getfz(ul)) + (sx * getfz(ul.add(1, 0))))) +
@@ -705,7 +705,7 @@ public class MCache implements MapSource {
     }
 
     public Coord3f getzp(Coord2d pc) {
-	return(new Coord3f((float)pc.x, (float)pc.y, (float)getcz(pc)));
+	return(Coord3f.of((float)pc.x, (float)pc.y, (float)getcz(pc)));
     }
 
     public Collection<OverlayInfo> getols(Area a) {
@@ -903,7 +903,7 @@ public class MCache implements MapSource {
     public void request(Coord gc) {
 	synchronized(req) {
 	    if(!req.containsKey(gc))
-		req.put(new Coord(gc), new Request());
+		req.put(Coord.of(gc), new Request());
 	}
     }
 
@@ -913,7 +913,7 @@ public class MCache implements MapSource {
 	for(rc.y = ul.y; rc.y <= br.y; rc.y++) {
 	    for(rc.x = ul.x; rc.x <= br.x; rc.x++) {
 		try {
-		    getcut(new Coord(rc));
+		    getcut(Coord.of(rc));
 		} catch(Loading e) {}
 	    }
 	}
