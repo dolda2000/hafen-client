@@ -169,7 +169,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    sz = isz;
 	}
 	this.g = new ThreadGroup(HackThread.tg(), "Haven client");
-	Panel pp = (Panel)(this.p = new JOGLPanel(sz));
+	Component pp = (Component)(this.p = new JOGLPanel(sz));
 	if(fsmode == null) {
 	    Coord pfm = Utils.getprefc("fsmode", null);
 	    if(pfm != null)
