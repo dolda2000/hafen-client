@@ -166,12 +166,13 @@ public class SslHelper {
 	IOException lerr = null;
 	for(InetAddress haddr : InetAddress.getAllByName(host)) {
 	    try {
-		sk = new HackSocket();
-		sk.connect(new InetSocketAddress(haddr, port));
+		Socket csk = new HackSocket();
+		csk.connect(new InetSocketAddress(haddr, port));
+		sk = csk;
 		break;
 	    } catch(IOException e) {
 		if(lerr != null)
-		    e.addSuppressed(e);
+		    e.addSuppressed(lerr);
 		lerr = e;
 	    }
 	}
