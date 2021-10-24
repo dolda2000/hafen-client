@@ -31,7 +31,6 @@ import java.net.*;
 import java.util.*;
 
 public class Bootstrap implements UI.Receiver, UI.Runner {
-    Session sess;
     String hostname;
     int port;
     Queue<Message> msgs = new LinkedList<Message>();
@@ -141,6 +140,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	transtoken();
 	String authserver = (Config.authserv == null) ? hostname : Config.authserv;
 	int authport = Config.authport;
+	Session sess;
 	retry: do {
 	    byte[] cookie, token;
 	    String acctname;
@@ -215,29 +215,39 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	    }
 	    ui.uimsg(1, "prg", "Connecting...");
 	    try {
-		sess = new Session(new InetSocketAddress(InetAddress.getByName(hostname), port), acctname, cookie);
+		InetAddress[] addrs = InetAddress.getAllByName(hostname);
+		if(addrs.length == 0)
+		    throw(new UnknownHostException(hostname));
+		connect: {
+		    for(int i = 0; i < addrs.length; i++) {
+			if(i > 0)
+			    ui.uimsg(1, "prg", String.format("Connecting (address %d/%d)...", i + 1, addrs.length));
+			sess = new Session(new InetSocketAddress(addrs[i], port), acctname, cookie);
+			while(true) {
+			    synchronized(sess) {
+				if(sess.state == "") {
+				    break connect;
+				} else if(sess.connfailed != 0) {
+				    String error = sess.connerror;
+				    if(error == null)
+					error = "Connection failed";;
+				    ui.uimsg(1, "error", error);
+				    break;
+				}
+				sess.wait();
+			    }
+			}
+		    }
+		    ui.uimsg(1, "error", "Could not connect to server");
+		    continue retry;
+		}
 	    } catch(UnknownHostException e) {
 		ui.uimsg(1, "error", "Could not locate server");
 		continue retry;
 	    }
-	    Thread.sleep(100);
-	    while(true) {
-		if(sess.state == "") {
-		    setpref("loginname", loginname);
-		    rottokens(loginname, hostname, false, false);
-		    break retry;
-		} else if(sess.connfailed != 0) {
-		    String error = sess.connerror;
-		    if(error == null)
-			error = "Connection failed";
-		    ui.uimsg(1, "error", error);
-		    sess = null;
-		    continue retry;
-		}
-		synchronized(sess) {
-		    sess.wait();
-		}
-	    }
+	    setpref("loginname", loginname);
+	    rottokens(loginname, hostname, false, false);
+	    break retry;
 	} while(true);
 	ui.destroy(1);
 	haven.error.ErrorHandler.setprop("usr", sess.username);
