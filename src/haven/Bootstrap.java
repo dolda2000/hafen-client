@@ -132,6 +132,23 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	}
     }
 
+    private static void preferhost(InetAddress[] hosts, SocketAddress prev) {
+	if((prev == null) || !(prev instanceof InetSocketAddress))
+	    return;
+	InetAddress host = ((InetSocketAddress)prev).getAddress();
+	Arrays.sort(hosts, (a, b) -> {
+		boolean pa = Utils.eq(a, host), pb = Utils.eq(b, host);
+		if(pa && pb)
+		    return(0);
+		else if(pa)
+		    return(-1);
+		else if(pb)
+		    return(1);
+		else
+		    return(0);
+	    });
+    }
+
     public UI.Runner run(UI ui) throws InterruptedException {
 	ui.setreceiver(this);
 	ui.bind(ui.root.add(new LoginScreen(hostname)), 1);
@@ -144,6 +161,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	retry: do {
 	    byte[] cookie, token;
 	    String acctname;
+	    SocketAddress authaddr = null;
 	    if(initcookie != null) {
 		acctname = inituser;
 		cookie = initcookie;
@@ -153,6 +171,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		byte[] inittoken = this.inittoken;
 		this.inittoken = null;
 		authed: try(AuthClient auth = new AuthClient(authserver, authport)) {
+		    authaddr = auth.address();
 		    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + inituser, hostname, null, false))) {
 			String authed = auth.trytoken(inituser, inittoken);
 			setpref("lasttoken-" + inituser, Utils.byte2hex(inittoken));
@@ -195,6 +214,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		}
 		ui.uimsg(1, "prg", "Authenticating...");
 		try(AuthClient auth = new AuthClient(authserver, authport)) {
+		    authaddr = auth.address();
 		    try {
 			acctname = creds.tryauth(auth);
 		    } catch(AuthClient.Credentials.AuthException e) {
@@ -218,6 +238,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		InetAddress[] addrs = InetAddress.getAllByName(hostname);
 		if(addrs.length == 0)
 		    throw(new UnknownHostException(hostname));
+		preferhost(addrs, authaddr);
 		connect: {
 		    for(int i = 0; i < addrs.length; i++) {
 			if(i > 0)
