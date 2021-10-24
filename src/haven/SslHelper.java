@@ -166,7 +166,7 @@ public class SslHelper {
 	for(InetAddress haddr : InetAddress.getAllByName(host)) {
 	    try {
 		Socket sk = new HackSocket();
-		sk.connect(new InetSocketAddress(haddr, port));
+		sk.connect(new InetSocketAddress(haddr, port), 5000);
 		return(connect(sk, host, port, true));
 	    } catch(IOException e) {
 		if(lerr != null)
