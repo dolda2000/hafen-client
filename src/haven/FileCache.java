@@ -88,7 +88,11 @@ public class FileCache implements ResCache {
     }
     
     public InputStream fetch(String name) throws IOException {
-	return(Files.newInputStream(forres(name)));
+	try {
+	    return(Files.newInputStream(forres(name)));
+	} catch(NoSuchFileException e) {
+	    throw((FileNotFoundException)new FileNotFoundException(name).initCause(e));
+	}
     }
     
     public String toString() {

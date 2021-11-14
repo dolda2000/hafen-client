@@ -24,22 +24,43 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render;
 
+import haven.*;
 import java.util.*;
 
-public class Profwnd extends Window {
-    public Profwnd(Profile prof, String title) {
-	super(Coord.z, title);
-	add(new Profdisp(prof), Coord.z);
-	pack();
+public abstract class TextureArray extends Texture {
+    public final int n;
+
+    public TextureArray(int n, DataBuffer.Usage usage, VectorFormat ifmt, VectorFormat efmt, DataBuffer.Filler<? super Image> init) {
+	super(usage, ifmt, efmt, init);
+	if(n < 0)
+	    throw(new IllegalArgumentException(String.format("Array texture layer count must be non-negative, not %d", n)));
+	this.n = n;
     }
 
-    public void wdgmsg(Widget sender, String msg, Object... args) {
-	if(msg.equals("close")) {
-	    ui.destroy(this);
-	} else {
-	    super.wdgmsg(sender, msg, args);
+    public TextureArray(int n, DataBuffer.Usage usage, VectorFormat ifmt, DataBuffer.Filler<? super Image> init) {
+	this(n, usage, ifmt, ifmt, init);
+    }
+
+    public static class ArrayImage<T extends TextureArray> extends Image<T> {
+	public final int layer;
+
+	public ArrayImage(T tex, int w, int h, int d, int layer, int level) {
+	    super(tex, w, h, d, level);
+	    this.layer = layer;
+	}
+
+	public boolean equals(ArrayImage<?> that) {
+	    return(equals((Image)that) && (this.layer == that.layer));
+	}
+
+	public boolean equals(Object that) {
+	    return((that instanceof ArrayImage) && equals((ArrayImage<?>)that));
+	}
+
+	public String toString() {
+	    return(String.format("#<tex.arrayimage %s %d %dx%dx%d@%d>", tex, level, w, h, d, layer));
 	}
     }
 }

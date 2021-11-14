@@ -30,24 +30,25 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
-public class TextEntry extends SIWidget {
+public class TextEntry extends Widget implements ReadLine.Owner {
     public static final Color defcol = new Color(255, 205, 109), dirtycol = new Color(255, 232, 209);
+    public static final Color selcol = new Color(24, 80, 192);
     public static final Text.Foundry fnd = new Text.Foundry(Text.serif, 12).aa(true);
-    public static final BufferedImage lcap = Resource.loadsimg("gfx/hud/text/l");
-    public static final BufferedImage rcap = Resource.loadsimg("gfx/hud/text/r");
-    public static final BufferedImage mext = Resource.loadimg("gfx/hud/text/m");
+    public static final Tex lcap = Resource.loadtex("gfx/hud/text/l");
+    public static final Tex rcap = Resource.loadtex("gfx/hud/text/r");
+    public static final Tex mext = Resource.loadtex("gfx/hud/text/m");
     public static final Tex caret = Resource.loadtex("gfx/hud/text/caret");
-    public static final int toffx = lcap.getWidth();
-    public static final Coord coff = UI.scale(new Coord(-3, 0));
-    public static final int wmarg = lcap.getWidth() + rcap.getWidth() + UI.scale(1);
+    public static final int toffx = lcap.sz().x;
+    public static final Coord coff = UI.scale(new Coord(-2, 0));
+    public static final int wmarg = lcap.sz().x + rcap.sz().x + UI.scale(1);
     public boolean dshow = false;
-    public LineEdit buf;
+    public ReadLine buf;
     public int sx;
     public boolean pw = false;
-    public String text;
     private boolean dirty = false;
     private double focusstart;
     private Text.Line tcache = null;
+    private UI.Grab d = null;
 
     @RName("text")
     public static class $_ implements Factory {
@@ -65,17 +66,7 @@ public class TextEntry extends SIWidget {
     }
 
     public void rsettext(String text) {
-	buf = new LineEdit(this.text = text) {
-		protected void done(String line) {
-		    activate(line);
-		}
-		
-		protected void changed() {
-		    redraw();
-		    TextEntry.this.text = line;
-		    TextEntry.this.changed();
-		}
-	    };
+	buf = ReadLine.make(this, text);
 	redraw();
     }
 
@@ -87,8 +78,16 @@ public class TextEntry extends SIWidget {
     public void uimsg(String name, Object... args) {
 	if(name == "settext") {
 	    settext((String)args[0]);
+	} else if(name == "sel") {
+	    if(args.length == 0) {
+		buf.select(0, buf.length());
+	    } else {
+		int f = (args[0] == null) ? buf.length() : Utils.clip((Integer)args[0], 0, buf.length());
+		int t = (args[1] == null) ? buf.length() : Utils.clip((Integer)args[1], 0, buf.length());
+		buf.select(f, t);
+	    }
 	} else if(name == "get") {
-	    wdgmsg("text", buf.line);
+	    wdgmsg("text", buf.line());
 	} else if(name == "pw") {
 	    pw = ((Integer)args[0]) != 0;
 	} else if(name == "dshow") {
@@ -102,43 +101,49 @@ public class TextEntry extends SIWidget {
 
     protected String dtext() {
 	if(pw) {
-	    String ret = "";
-	    for(int i = 0; i < buf.line.length(); i++)
-		ret += "\u2022";
-	    return(ret);
+	    char[] dp = new char[buf.length()];
+	    java.util.Arrays.fill(dp, '\u2022');
+	    return(new String(dp));
 	} else {
-	    return(buf.line);
+	    return(buf.line());
 	}
     }
 
-    public void draw(BufferedImage img) {
-	Graphics g = img.getGraphics();
-	String dtext = dtext();
-	tcache = fnd.render(dtext, (dshow && dirty)?dirtycol:defcol);
-	g.drawImage(mext, 0, 0, sz.x, sz.y, null);
-
-	g.drawImage(tcache.img, toffx - sx, (sz.y - tcache.img.getHeight()) / 2, null);
-
-	g.drawImage(lcap, 0, 0, null);
-	g.drawImage(rcap, sz.x - rcap.getWidth(), 0, null);
-
-	g.dispose();
+    protected void redraw() {
+	if(tcache != null) {
+	    tcache.tex().dispose();
+	    tcache = null;
+	}
     }
 
     public void draw(GOut g) {
-	super.draw(g);
+	Text.Line tcache = this.tcache;
+	if(tcache == null)
+	    this.tcache = tcache = fnd.render(dtext(), (dshow && dirty) ? dirtycol : defcol);
+	int point = buf.point(), mark = buf.mark();
+	g.image(mext, Coord.z, sz);
+	if(mark >= 0) {
+	    int px = tcache.advance(point) - sx, mx = tcache.advance(mark) - sx;
+	    g.chcolor(selcol);
+	    g.frect2(Coord.of(Math.min(px, mx) + toffx, (sz.y - tcache.sz().y) / 2),
+		     Coord.of(Math.max(px, mx) + toffx, (sz.y + tcache.sz().y) / 2));
+	    g.chcolor();
+	}
+	g.image(tcache.tex(), Coord.of(toffx - sx, (sz.y - tcache.sz().y) / 2));
+	g.image(lcap, Coord.z);
+	g.image(rcap, Coord.of(sz.x - rcap.sz().x, 0));
 	if(hasfocus) {
-	    int cx = tcache.advance(buf.point);
-	    int lx = cx - sx + 1;
-	    if(cx < sx) {sx = cx; redraw();}
-	    if(cx > sx + (sz.x - wmarg)) {sx = cx - (sz.x - wmarg); redraw();}
-	    if(((Utils.rtime() - focusstart) % 1.0) < 0.5)
+	    int cx = tcache.advance(point);
+	    if(cx < sx) {sx = cx;}
+	    if(cx > sx + (sz.x - wmarg)) {sx = cx - (sz.x - wmarg);}
+	    int lx = cx - sx;
+	    if(((Utils.rtime() - Math.max(focusstart, buf.mtime())) % 1.0) < 0.5)
 		g.image(caret, coff.add(toffx + lx, (sz.y - tcache.img.getHeight()) / 2));
 	}
     }
 
     public TextEntry(int w, String deftext) {
-	super(new Coord(w, UI.scale(mext.getHeight())));
+	super(new Coord(w, mext.sz().y));
 	rsettext(deftext);
 	setcanfocus(true);
     }
@@ -157,8 +162,17 @@ public class TextEntry extends SIWidget {
 	    wdgmsg("activate", text);
     }
 
+    public void done(ReadLine buf) {
+	activate(buf.line());
+    }
+
+    public void changed(ReadLine buf) {
+	redraw();
+	TextEntry.this.changed();
+    }
+
     public boolean gkeytype(KeyEvent ev) {
-	activate(buf.line);
+	activate(buf.line());
 	return(true);
     }
 
@@ -166,12 +180,32 @@ public class TextEntry extends SIWidget {
 	return(buf.key(e));
     }
 
+    public void mousemove(Coord c) {
+	if((d != null) && (tcache != null)) {
+	    int p = tcache.charat(c.x + sx - toffx);
+	    if(buf.mark() < 0)
+		buf.mark(buf.point());
+	    buf.point(p);
+	}
+    }
+
     public boolean mousedown(Coord c, int button) {
 	parent.setfocus(this);
-	if(tcache != null) {
-	    buf.point = tcache.charat(c.x + sx);
+	if((button == 1) && (tcache != null)) {
+	    buf.point(tcache.charat(c.x + sx - toffx));
+	    buf.mark(-1);
+	    d = ui.grabmouse(this);
 	}
 	return(true);
+    }
+
+    public boolean mouseup(Coord c, int button) {
+	if((button == 1) && (d != null)) {
+	    d.remove();
+	    d = null;
+	    return(true);
+	}
+	return(false);
     }
 
     public void gotfocus() {
@@ -181,5 +215,9 @@ public class TextEntry extends SIWidget {
     public void resize(int w) {
 	resize(w, sz.y);
 	redraw();
+    }
+
+    public String text() {
+	return(buf.line());
     }
 }

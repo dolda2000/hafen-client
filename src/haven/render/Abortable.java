@@ -24,22 +24,11 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render;
 
-import java.util.*;
+public interface Abortable {
+    public void abort();
 
-public class Profwnd extends Window {
-    public Profwnd(Profile prof, String title) {
-	super(Coord.z, title);
-	add(new Profdisp(prof), Coord.z);
-	pack();
-    }
-
-    public void wdgmsg(Widget sender, String msg, Object... args) {
-	if(msg.equals("close")) {
-	    ui.destroy(this);
-	} else {
-	    super.wdgmsg(sender, msg, args);
-	}
-    }
+    public static interface Runnable extends java.lang.Runnable, Abortable {}
+    public static interface Consumer<T> extends java.util.function.Consumer<T>, Abortable {}
 }

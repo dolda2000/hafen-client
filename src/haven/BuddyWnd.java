@@ -471,7 +471,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		}
 	    }, prev.pos("bl").adds(0, 2));
 	prev = add(new Button(sbw, "Set").action(() -> {
-		    setpname(pname.text);
+		    setpname(pname.text());
 	}), pname.pos("bl").adds(0, 5));
 
 	prev = add(new Label("My hearth secret:"), prev.pos("bl").adds(0, 10));
@@ -482,7 +482,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		}
 	    }, prev.pos("bl").adds(0, 2));
         addhl(charpass.pos("bl").adds(0, 5), sz.x,
-	      prev = new Button(sbw, "Set"   ).action(() -> { setpwd(charpass.text); }),
+	      prev = new Button(sbw, "Set"   ).action(() -> { setpwd(charpass.text()); }),
 	             new Button(sbw, "Clear" ).action(() -> { setpwd(""); }),
 	             new Button(sbw, "Random").action(() -> {setpwd(randpwd());})
 	      );
@@ -495,7 +495,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		}
 	    }, prev.pos("bl").adds(0, 2));
 	prev = add(new Button(sbw, "Add kin").action(() -> {
-		    BuddyWnd.this.wdgmsg("bypwd", opass.text);
+		    BuddyWnd.this.wdgmsg("bypwd", opass.text());
 		    opass.settext("");
 	}), opass.pos("bl").adds(0, 5));
 	pack();
@@ -591,11 +591,11 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    bl.change(find(id));
 	} else if(msg == "pwd") {
 	    charpass.settext((String)args[0]);
-	    charpass.buf.point = charpass.buf.line.length();
+	    charpass.buf.point(charpass.buf.length());
 	    charpass.commit();
 	} else if(msg == "pname") {
 	    pname.settext((String)args[0]);
-	    pname.buf.point = pname.buf.line.length();
+	    pname.buf.point(pname.buf.length());
 	    pname.commit();
 	} else if(msg == "i-set") {
 	    Buddy b = (args[0] == null) ? null : find((Integer)args[0]);

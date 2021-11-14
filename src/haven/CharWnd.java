@@ -287,6 +287,8 @@ public class CharWnd extends Window {
 	public static final Color hilit = new Color(255, 255, 0, 48);
 	public static final Text.Foundry elf = attrf;
 	public static final int elh = elf.height() + UI.scale(2);
+	public static final int ellw = elf.strsize("...").x;
+	public static final int etmaxw = elf.strsize("100%").x;
 	public static final Convolution tflt = new Hanning(1);
 	public static final Color buffed = new Color(160, 255, 160), full = new Color(250, 230, 64), none = new Color(250, 19, 43);
 	public final List<El> els = new ArrayList<El>();
@@ -306,7 +308,12 @@ public class CharWnd extends Window {
 		    ItemSpec spec = new ItemSpec(OwnerContext.uictx.curry(ui), t, null);
 		    BufferedImage img = spec.image();
 		    String nm = spec.name();
-		    Text rnm = elf.render(nm);
+		    int maxw = sz.x - etmaxw - sb.sz.x - UI.scale(5) - elh;
+		    Text.Line rnm = elf.render(nm);
+		    if(rnm.sz().x > maxw) {
+			int len = rnm.charat(maxw - ellw);
+			rnm = elf.render(nm.substring(0, len) + "...");
+		    }
 		    BufferedImage buf = TexI.mkbuf(new Coord(elh + 5 + rnm.sz().x, elh));
 		    Graphics g = buf.getGraphics();
 		    g.drawImage(convolvedown(img, new Coord(elh, elh), tflt), 0, 0, null);
@@ -320,23 +327,23 @@ public class CharWnd extends Window {
 	    public Tex at() {
 		if(at == null) {
 		    Color c= (a > 1.0)?buffed:Utils.blendcol(none, full, a);
-		    at = elf.render(String.format("%d%%", (int)Math.ceil((1.0 - a) * 100)), c).tex();
+		    at = elf.render(String.format("%d%%", Math.max((int)Math.round((1.0 - a) * 100), 1)), c).tex();
 		}
 		return(at);
 	    }
 	}
 
-	private WItem.ItemTip lasttip = null;
+	private ItemInfo.InfoTip lasttip = null;
 	public void draw(GOut g) {
-	    WItem.ItemTip tip = null;
-	    if(ui.lasttip instanceof WItem.ItemTip)
-		tip = (WItem.ItemTip)ui.lasttip;
+	    ItemInfo.InfoTip tip = null;
+	    if(ui.lasttip instanceof ItemInfo.InfoTip)
+		tip = (ItemInfo.InfoTip)ui.lasttip;
 	    if(tip != lasttip) {
 		for(El el : els)
 		    el.hl = false;
 		FoodInfo finf;
 		try {
-		    finf = (tip == null)?null:ItemInfo.find(FoodInfo.class, tip.item().info());
+		    finf = (tip == null)?null:ItemInfo.find(FoodInfo.class, tip.info());
 		} catch(Loading l) {
 		    finf = null;
 		}
@@ -468,7 +475,8 @@ public class CharWnd extends Window {
 	    Coord cn = new Coord(0, sz.y / 2);
 	    g.aimage(img, cn.add(5, 0), 0, 0.5);
 	    g.aimage(rnm.tex(), cn.add(img.sz().x + margin2, 1), 0, 0.5);
-	    g.aimage(ct.tex(), cn.add(sz.x - UI.scale(7), 1), 1, 0.5);
+	    if(ct != null)
+		g.aimage(ct.tex(), cn.add(sz.x - UI.scale(7), 1), 1, 0.5);
 	}
 
 	public void lvlup() {
@@ -2090,11 +2098,11 @@ public class CharWnd extends Window {
 		}
 
 		protected void depress() {
-		    ui.sfx(Button.lbtdown.stream());
+		    ui.sfx(Button.clbtdown.stream());
 		}
 
 		protected void unpress() {
-		    ui.sfx(Button.lbtup.stream());
+		    ui.sfx(Button.clbtup.stream());
 		}
 	    }
 

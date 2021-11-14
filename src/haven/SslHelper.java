@@ -162,9 +162,21 @@ public class SslHelper {
     }
 
     public SSLSocket connect(String host, int port) throws IOException {
-	Socket sk = new HackSocket();
-	sk.connect(new InetSocketAddress(host, port));
-	return(connect(sk, host, port, true));
+	IOException lerr = null;
+	for(InetAddress haddr : InetAddress.getAllByName(host)) {
+	    try {
+		Socket sk = new HackSocket();
+		sk.connect(new InetSocketAddress(haddr, port), 5000);
+		return(connect(sk, host, port, true));
+	    } catch(IOException e) {
+		if(lerr != null)
+		    e.addSuppressed(lerr);
+		lerr = e;
+	    }
+	}
+	if(lerr != null)
+	    throw(lerr);
+	throw(new UnknownHostException(host));
     }
 
     public boolean hasCreds() {

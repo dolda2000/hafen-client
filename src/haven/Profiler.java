@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.io.*;
+import java.nio.file.*;
 
 public class Profiler {
     private static Loop loop;
@@ -243,11 +244,8 @@ public class Profiler {
 
     public void output(String path) {
 	try {
-	    OutputStream out = new FileOutputStream(path);
-	    try {
+	    try(OutputStream out = Files.newOutputStream(Utils.path(path))) {
 		output(out);
-	    } finally {
-		out.close();
 	    }
 	} catch(IOException e) {
 	    e.printStackTrace();

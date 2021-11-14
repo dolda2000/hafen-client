@@ -245,6 +245,9 @@ public class MiniMap extends Widget {
 	public void update(Coord2d rc, double ang) {
 	    this.rc = rc;
 	    this.ang = ang;
+	}
+
+	public void dispupdate() {
 	    if((this.rc == null) || (sessloc == null) || (dloc == null) || (dloc.seg != sessloc.seg))
 		this.sc = null;
 	    else
@@ -472,6 +475,8 @@ public class MiniMap extends Widget {
 		file.lock.readLock().unlock();
 	    }
 	}
+	for(DisplayIcon icon : icons)
+	    icon.dispupdate();
     }
 
     public void drawgrid(GOut g, Coord ul, DisplayGrid disp) {

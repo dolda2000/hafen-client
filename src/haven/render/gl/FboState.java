@@ -91,7 +91,7 @@ public class FboState extends GLState {
 	    else if(dbufs.length == 1)
 		gl.glDrawBuffer(dbufs[0]);
 	    else
-		gl.glDrawBuffers(dbufs.length, dbufs, 0);
+		gl.glDrawBuffers(dbufs.length, dbufs);
 	}
 	/* Just set any valid read-buffer for completeness
 	 * checking. GLRender switches to the correct read-buffer

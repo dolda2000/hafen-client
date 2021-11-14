@@ -27,6 +27,7 @@
 package haven;
 
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import java.text.*;
 import java.awt.Graphics2D;
@@ -764,9 +765,9 @@ public class RichText extends Text {
 	    Foundry fnd = new Foundry(a);
 	    fnd.aa = aa;
 	    RichText t = fnd.render(opt.rest[0], width);
-	    java.io.OutputStream out = new java.io.FileOutputStream(opt.rest[1]);
-	    javax.imageio.ImageIO.write(t.img, "PNG", out);
-	    out.close();
+	    try(OutputStream out = Files.newOutputStream(Utils.path(opt.rest[1]))) {
+		javax.imageio.ImageIO.write(t.img, "PNG", out);
+	    }
 	} else if(cmd == "pagina") {
 	    PosixArgs opt = PosixArgs.getopt(args, 1, "aw:");
 	    boolean aa = false;
@@ -785,9 +786,9 @@ public class RichText extends Text {
 	    if(p == null)
 		throw(new Exception("No pagina in " + res + ", loaded from " + res.source));
 	    RichText t = fnd.render(p.text, width);
-	    java.io.OutputStream out = new java.io.FileOutputStream(opt.rest[1]);
-	    javax.imageio.ImageIO.write(t.img, "PNG", out);
-	    out.close();
+	    try(OutputStream out = Files.newOutputStream(Utils.path(opt.rest[1]))) {
+		javax.imageio.ImageIO.write(t.img, "PNG", out);
+	    }
 	}
     }
 }

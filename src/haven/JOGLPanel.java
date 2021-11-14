@@ -279,9 +279,14 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
 	public void run(GL3 gl) {
 	    if(prev != null) {
-		if(label != null)
-		    prev.frame.tick(label);
-		prev.frame.fin();
+		if(prev.frame != null) {
+		    /* The reason frame would be null is if the
+		     * environment has become invalid and the previous
+		     * cycle never ran. */
+		    if(label != null)
+			prev.frame.tick(label);
+		    prev.frame.fin();
+		}
 		prev = null;
 	    }
 	    frame = prof.new Frame();
@@ -298,7 +303,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
 
 	public void run(GL3 gl) {
-	    if(prof != null)
+	    if((prof != null) && (prof.frame != null))
 		prof.frame.tick(label);
 	}
     }
@@ -564,7 +569,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    buf.submit(new FrameCycle());
 		    if(frameprof != null) {
 			buf.submit(frameprof.stop);
-			buf.submit(frameprof.dump(new java.io.File("frameprof")));
+			buf.submit(frameprof.dump(Utils.path("frameprof")));
 		    }
 		    env.submit(buf);
 		    buf = null;

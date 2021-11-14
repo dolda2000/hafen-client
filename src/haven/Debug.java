@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.io.*;
+import java.nio.file.*;
 import java.awt.image.*;
 import com.jogamp.opengl.*;
 
@@ -47,27 +48,27 @@ public class Debug {
 	ff = fdk && !pfdk; pfdk = fdk;
     }
 
-    public static void dumpimage(BufferedImage img, File path) {
-	try {
-	    javax.imageio.ImageIO.write(img, "PNG", path);
+    public static void dumpimage(BufferedImage img, Path path) {
+	try(OutputStream fp = Files.newOutputStream(path)) {
+	    javax.imageio.ImageIO.write(img, "PNG", fp);
 	} catch(IOException e) {
 	    throw(new RuntimeException(e));
 	}
     }
 
     public static void dumpimage(BufferedImage img, String fn) {
-	dumpimage(img, new File(fn));
+	dumpimage(img, Utils.path(fn));
     }
 
     public static void dumpimage(BufferedImage img) {
 	dumpimage(img, "/tmp/test.png");
     }
 
-    public static File somedir(String basename) {
+    public static Path somedir(String basename) {
 	String home = System.getProperty("user.home", null);
 	if(home == null)
-	    return(new File(basename));
-	return(new File(new File(home), basename));
+	    return(Utils.path(basename));
+	return(Utils.path(home).resolve(basename));
     }
 
     private static void dump_r(Object... stuff) {
@@ -134,13 +135,8 @@ public class Debug {
 	}
 
 	public void dump(String fn) {
-	    try {
-		OutputStream out = new FileOutputStream(fn);
-		try {
-		    out.write(buf.toByteArray());
-		} finally {
-		    out.close();
-		}
+	    try(OutputStream out = Files.newOutputStream(Utils.path(fn))) {
+		out.write(buf.toByteArray());
 	    } catch(IOException e) {
 		throw(new RuntimeException(e));
 	    }
@@ -150,8 +146,8 @@ public class Debug {
     static int dumpseq = 0;
     public static PrintWriter getdump() {
 	try {
-	    return(new java.io.PrintWriter(new java.io.FileWriter("/tmp/dbdump-" + dumpseq++)));
-	} catch(java.io.IOException e) {
+	    return(new PrintWriter(Files.newBufferedWriter(Utils.path("/tmp/dbdump-" + dumpseq++))));
+	} catch(IOException e) {
 	    throw(new RuntimeException(e));
 	}
     }

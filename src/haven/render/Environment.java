@@ -33,6 +33,10 @@ public interface Environment extends haven.Disposable {
     public DrawList drawlist();
     public void submit(Render cmd);
 
+    public boolean compatible(DrawList ob);
+    public boolean compatible(Texture ob);
+    public boolean compatible(DataBuffer ob);
+
     public static class UnavailableException extends RuntimeException {
 	public UnavailableException(String msg) {
 	    super(msg);
@@ -60,5 +64,9 @@ public interface Environment extends haven.Disposable {
 	public void submit(Render cmd) {back().submit(cmd);}
 	public void dispose() {back().dispose();}
 	public Caps caps() {return(back().caps());}
+
+	public boolean compatible(DrawList ob) {return(back().compatible(ob));}
+	public boolean compatible(Texture ob) {return(back().compatible(ob));}
+	public boolean compatible(DataBuffer ob) {return(back().compatible(ob));}
     }
 }

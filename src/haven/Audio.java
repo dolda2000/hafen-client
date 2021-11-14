@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.io.*;
+import java.nio.file.*;
 import javax.sound.sampled.*;
 import dolda.xiphutil.*;
 
@@ -50,6 +51,13 @@ public class Audio {
     public interface CS {
 	public int get(double[][] buf, int len);
     }
+
+    public interface Clip extends Resource.IDLayer<String> {
+	public CS stream();
+	public default String layerid() {return("");}
+	public default double bvol() {return(1.0);}
+    }
+    public static final Class<Clip> clip = Clip.class;
     
     public static class Mixer implements CS {
 	public final boolean cont;
@@ -130,6 +138,12 @@ public class Audio {
 	    return(false);
 	}
 
+	public int size() {
+	    synchronized(clips) {
+		return(clips.size());
+	    }
+	}
+
 	public boolean empty() {
 	    synchronized(clips) {
 		return(clips.isEmpty());
@@ -202,6 +216,10 @@ public class Audio {
 
 	public VorbisClip(VorbisStream clip) {
 	    this.clip = clip;
+	}
+
+	public VorbisClip(InputStream bs) throws IOException {
+	    this(new VorbisStream(bs));
 	}
 
 	public int get(double[][] dst, int ns) {
@@ -530,15 +548,15 @@ public class Audio {
 	    ((Mixer)pl.stream).stop(clip);
     }
     
-    private static Map<Resource, Resource.Audio> reslastc = new HashMap<Resource, Resource.Audio>();
+    private static Map<Resource, Clip> reslastc = new HashMap<Resource, Clip>();
     public static CS fromres(Resource res) {
-	Collection<Resource.Audio> clips = res.layers(Resource.audio);
+	Collection<Clip> clips = res.layers(Audio.clip, null);
 	synchronized(reslastc) {
-	    Resource.Audio last = reslastc.get(res);
+	    Clip last = reslastc.get(res);
 	    int sz = clips.size();
-	    int s = (int)(Math.random() *  (((sz > 2) && (last != null))?(sz - 1):sz));
-	    Resource.Audio clip = null;
-	    for(Resource.Audio cp : clips) {
+	    int s = (int)(Math.random() * (((sz > 2) && (last != null)) ? (sz - 1) : sz));
+	    Clip clip = null;
+	    for(Clip cp : clips) {
 		if(cp == last)
 		    continue;
 		clip = cp;
@@ -561,7 +579,7 @@ public class Audio {
 	    if(args[i].equals("-b")) {
 		bufsize = Integer.parseInt(args[++i]);
 	    } else {
-		Monitor c = new Monitor(new PCMClip(new FileInputStream(args[i]), 2));
+		Monitor c = new Monitor(new PCMClip(Files.newInputStream(Utils.path(args[i])), 2));
 		clips.add(c);
 	    }
 	}

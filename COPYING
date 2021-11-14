@@ -13,27 +13,22 @@ respective licensing details are as follows:
    files is owned by Fredrik Tolf and Björn Johannessen.
 
  * The files in the `lib' directory are external libraries and are,
-   thus, owned by third parties. The owners and licenses of these
-   files are as follows:
+   thus, owned by third parties. All the files mentioned in the
+   `lib/ext' subdirectory are not actually distributed with this
+   source tree, but are donwloaded externally as part of the initial
+   build process. The owners and licenses of these files are as
+   follows:
    
-    - lib/gluegen-rt.jar, lib/jogl.jar:
-      These files are part of JOGL, the Java OpenGL
+    - lib/ext/jogl/:
+      The files in this subdirectory are part of JOGL, the Java OpenGL
       implementation. They are not compiled into the client binary,
       but just included for the compilation classpath.
       
-      They are, as far as I can tell, owned by Sun Microsystems, and
-      licensed under a BSD license. Please see its homepage,
-      <http://jogl.dev.java.net/>, for further and current details.
+      They are, as far as I can tell, co-owned by Sun Microsystems and
+      the JogAmp community, and licensed under a BSD license. Please
+      see its homepage, <http://jogamp.org/>, for further and current
+      details.
       
-    - lib/jogg.jar, lib/jorbis.jar:
-      These files are part of JCraft's open source implementation of
-      the OGG and Vorbis multimedia formats. They are extracted and
-      included in the Haven binary itself.
-      
-      They are licensed under the LPGL, version 2.1, and appear to be
-      owned by JCraft, Inc. Its homepage is
-      <http://www.jcraft.com/jorbis/>.
-
     - lib/jnlp.jar:
       I hate this file. I couldn't find any documentation whatsoever
       on obtaining any JAR file for compiling against the JNLP
@@ -46,29 +41,43 @@ respective licensing details are as follows:
       Sun Microsystems. If anyone can find a replacement for them, I'd
       accept it at any time.
 
-    - lib/jglob.jar
+    - lib/jglob.jar:
       This is a simple annotation processor for collecting various
       type lists in the source code. It was written by me, Fredrik
       Tolf, and can be considered to be in the public domain. Source
       code can be had at
       <http://www.dolda2000.com/gitweb/?p=jglob.git>.
 
-    - lib/haven-res.jar
-      This file is not actually distributed with this source tree, but
-      is downloaded from Haven's web server as part of the default
-      target of the Ant build file. It is the file containing all the
-      data files with game content. In particular, it is necessary for
-      actually connecting to our game server and playing, and it also
-      contains some graphics for "bootstrapping" the client (which
-      could be replaced if you so wish).
-      
-      Its contents are owned by us, Fredrik Tolf and Björn
-      Johannessen, and we reserve all rights to it.
+    - lib/ext/builtin-res.jar, lib/ext/hafen-res.jar:
+      These files contain varios data files with game content that are
+      not downloaded on-demand by the client from the website. In
+      particular, hafen-res.jar merely contains pre-downloaded copies
+      of some resources to avoid on-demand loading of files that are
+      almost certain to be needed, whereas builtin-res.jar contains
+      files that are used internally by the client and therefore needed
+      for "bootstrapping" the client. As such, hafen-res.jar could be
+      completely removed with only potential loss of performance
+      (rather than functionality), while as for builtin-res.jar, the
+      client would either have to be modified to not need it, or the
+      graphics in it would have to be replaced in order to run without
+      its more stringently licensed contents.
 
- * The files in the `src/dolda/xiphutil' are files constituting a
-   simple library for actually using JCraft's Jogg/Jorbis
-   libraries. It was written by me, Fredrik Tolf, and can be
-   considered to be in the public domain.
+      Their contents are owned by us, Fredrik Tolf and Björn
+      Johannessen, and we reserve all rights to them.
+
+ * The files in the `src/com/jcraft' directory are part of JCraft's
+   open source implementation of the OGG and Vorbis multimedia
+   formats. They have been extracted into the source tree to support
+   some local modifications.
+
+   They are licensed under the LPGL, version 2.1, and appear to be
+   owned by JCraft, Inc. Its homepage is
+   <http://www.jcraft.com/jorbis/>.
+
+ * The files in the `src/dolda/xiphutil' directory are files
+   constituting a simple library for actually using JCraft's
+   Jogg/Jorbis libraries. It was written by me, Fredrik Tolf, and can
+   be considered to be in the public domain.
 
  * The file `etc/icon.png' is the icon used for the main client
    window. You're perfectly free to copy it verbatim or replace it as
@@ -82,21 +91,21 @@ respective licensing details are as follows:
  * The build script, when run by Ant, will produce lots of stuff in
    the `build' directory. It comes from all over the source tree, and
    will thus be subject to various of the above licenses. Particularly
-   worthy of notice, however, is the `build/haven.jar' file, which is
-   the build script's primary output. It will consist of files compile
-   from the `src' directory, some resources from the `etc' directory
-   (including our amazing trademark icon), and the extracted JCraft
-   files. Thus, excepting our trademark, award-winning icon, it will
-   be LPGL and a little bit public domain. Then, obviously, you're
-   basically free to do whatever you like with it as long as you make
-   sure to distribute the corresponding source code (and remember to
-   honor our acclaimed, trademark icon).
+   worthy of notice, however, is the `build/hafen.jar' file, which is
+   the build script's primary output. It will consist of files
+   compiled from the `src' directory, some resources from the `etc'
+   directory (including our amazing trademark icon), and the extracted
+   JCraft files. Thus, excepting our trademark, award-winning icon, it
+   will be LPGL and a little bit public domain. Then, obviously,
+   you're basically free to do whatever you like with it as long as
+   you make sure to distribute the corresponding source code (and
+   remember to honor our acclaimed, trademark icon).
 
 It must be noticed that the Git repository which is the main keeper of
 this source tree contains, in historical versions, copies of the game
-resources (this was before the file `haven-res.jar' existed). In these
+resources (this was before the file `hafen-res.jar' existed). In these
 versions, they are located in a directory named `res'. They are
-subject to the same terms as `lib/haven-res.jar' as described
+subject to the same terms as `lib/ext/hafen-res.jar' as described
 above. You are free to copy them around verbatim as part of the Git
 repository. If, for any reason, you decide to publish a historical
 version of this source tree which contains these resources, or any
@@ -112,9 +121,8 @@ recipients.
 Do notice, however, that if you wish us to incorporate any changes you
 make into our mainline client, as published on Haven's & Hearth's
 website, we will require you to turn over the copyright ownership to
-us. Please see <http://www.havenandhearth.com/portal/doc-src> for
-details (the "Contributing Back" section).
+us. Please see the README for details (the "Contributing back" section).
 
 --
 
-This file was authored by Fredrik Tolf. It was last updated 2009-07-30.
+This file was authored by Fredrik Tolf. It was last updated 2021-08-29.

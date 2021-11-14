@@ -941,7 +941,7 @@ public class GLDrawList implements DrawList {
 	if(!(r instanceof GLRender))
 	    throw(new IllegalArgumentException());
 	GLRender g = (GLRender)r;
-	if(!compatible(g.env))
+	if(!g.env.compatible(this))
 	    throw(new IllegalArgumentException());
 	synchronized(this) {
 	    DrawSlot first = first(), last = null;
@@ -1039,10 +1039,6 @@ public class GLDrawList implements DrawList {
 		    orderupdate(group);
 	    }
 	}
-    }
-
-    public boolean compatible(Environment env) {
-	return(env == this.env);
     }
 
     public void dispose() {

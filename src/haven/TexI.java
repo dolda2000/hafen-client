@@ -73,6 +73,7 @@ public class TexI implements Tex {
 						      }
 						      return(buf);
 						  });
+		    tex.desc(this);
 		    Sampler2D data = new Sampler2D(tex);
 		    data.magfilter(Texture.Filter.NEAREST).minfilter(Texture.Filter.NEAREST);
 		    st = this.st = new ColorTex(data);

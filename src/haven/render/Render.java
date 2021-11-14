@@ -46,6 +46,11 @@ public interface Render extends Disposable {
     public void timestamp(Consumer<Long> callback);
     public void fence(Runnable callback);
 
+    public default void draw1(Pipe pipe, Model data) {
+	draw(pipe, data);
+	data.dispose();
+    }
+
     public default void draw(Pipe pipe, Model.Mode mode, short[] ind, VertexArray.Layout fmt, int n, float[] data) {
 	Model.Indices indb = null;
 	if(ind != null)

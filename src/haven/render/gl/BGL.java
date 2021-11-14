@@ -203,6 +203,7 @@ public abstract class BGL {
     public void bglCreate(final GLObject ob) {
 	add(new Command() {
 		public void run(GL3 gl) {ob.create(gl);}
+		public void abort() {ob.abortcreate();}
 	    });
     }
 
@@ -369,24 +370,24 @@ public abstract class BGL {
 	    });
     }
 
-    public void glDeleteBuffers(final int count, final ID[] buffers, final int n) {
+    public void glDeleteBuffers(final int count, final ID[] buffers) {
 	add(new Command() {
 		public void run(GL3 gl) {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteBuffers(count, buf, n);
+		    gl.glDeleteBuffers(count, buf, 0);
 		}
 	    });
     }
 
-    public void glDeleteFramebuffers(final int count, final ID[] buffers, final int n) {
+    public void glDeleteFramebuffers(final int count, final ID[] buffers) {
 	add(new Command() {
 		public void run(GL3 gl) {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteFramebuffers(count, buf, n);
+		    gl.glDeleteFramebuffers(count, buf, 0);
 		}
 	    });
     }
@@ -403,35 +404,35 @@ public abstract class BGL {
 	    });
     }
 
-    public void glDeleteRenderbuffers(final int count, final ID[] buffers, final int n) {
+    public void glDeleteRenderbuffers(final int count, final ID[] buffers) {
 	add(new Command() {
 		public void run(GL3 gl) {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteRenderbuffers(count, buf, n);
+		    gl.glDeleteRenderbuffers(count, buf, 0);
 		}
 	    });
     }
 
-    public void glDeleteTextures(final int count, final ID[] buffers, final int n) {
+    public void glDeleteTextures(final int count, final ID[] buffers) {
 	add(new Command() {
 		public void run(GL3 gl) {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteTextures(count, buf, n);
+		    gl.glDeleteTextures(count, buf, 0);
 		}
 	    });
     }
 
-    public void glDeleteVertexArrays(final int count, final ID[] buffers, final int n) {
+    public void glDeleteVertexArrays(final int count, final ID[] buffers) {
 	add(new Command() {
 		public void run(GL3 gl) {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteVertexArrays(count, buf, n);
+		    gl.glDeleteVertexArrays(count, buf, 0);
 		}
 	    });
     }
@@ -490,9 +491,9 @@ public abstract class BGL {
 	    });
     }
 
-    public void glDrawBuffers(final int n, final int[] bufs, final int i) {
+    public void glDrawBuffers(final int n, final int[] bufs) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDrawBuffers(n, bufs, i);}
+		public void run(GL3 gl) {gl.glDrawBuffers(n, bufs, 0);}
 	    });
     }
 
@@ -598,6 +599,17 @@ public abstract class BGL {
 	    });
     }
 
+    public void glObjectLabel(final int identifier, final ID name, final int length, final byte[] label) {
+	add(new Command() {
+		public void run(GL3 gl) {gl.glObjectLabel(identifier, name.glid(), length, label, 0);}
+	    });
+    }
+
+    public void glObjectLabel(int identifier, ID name, String label) {
+	byte[] enc = label.getBytes(haven.Utils.utf8);
+	glObjectLabel(identifier, name, enc.length, enc);
+    }
+
     public void glPixelStorei(final int pname, final int param) {
 	add(new Command() {
 		public void run(GL3 gl) {gl.glPixelStorei(pname, param);}
@@ -691,15 +703,22 @@ public abstract class BGL {
 	    });
     }
 
+    public void glTexSubImage3D(final int target, final int level, final int xoff, final int yoff, final int zoff, final int width, final int height, final int depth, final int format, final int type, Buffer data) {
+	final BufState ds = new BufState(data);
+	add(new Command() {
+		public void run(GL3 gl) {ds.restore(); gl.glTexSubImage3D(target, level, xoff, yoff, zoff, width, height, depth, format, type, ds.buf);}
+	    });
+    }
+
     public void glTexParameterf(final int target, final int pname, final float param) {
 	add(new Command() {
 		public void run(GL3 gl) {gl.glTexParameterf(target, pname, param);}
 	    });
     }
 
-    public void glTexParameterfv(final int target, final int pname, final float[] param, final int n) {
+    public void glTexParameterfv(final int target, final int pname, final float[] param) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glTexParameterfv(target, pname, param, n);}
+		public void run(GL3 gl) {gl.glTexParameterfv(target, pname, param, 0);}
 	    });
     }
 
@@ -727,9 +746,9 @@ public abstract class BGL {
 	    });
     }
 
-    public void glUniform3fv(final ID location, final int count, final float[] val, final int n) {
+    public void glUniform3fv(final ID location, final int count, final float[] val) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniform3fv(location.glid(), count, val, n);}
+		public void run(GL3 gl) {gl.glUniform3fv(location.glid(), count, val, 0);}
 	    });
     }
 
@@ -739,9 +758,9 @@ public abstract class BGL {
 	    });
     }
 
-    public void glUniform4fv(final ID location, final int count, final float[] val, final int n) {
+    public void glUniform4fv(final ID location, final int count, final float[] val) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniform4fv(location.glid(), count, val, n);}
+		public void run(GL3 gl) {gl.glUniform4fv(location.glid(), count, val, 0);}
 	    });
     }
 
@@ -769,15 +788,15 @@ public abstract class BGL {
 	    });
     }
 
-    public void glUniformMatrix3fv(final ID location, final int count, final boolean transpose, final float[] value, final int n) {
+    public void glUniformMatrix3fv(final ID location, final int count, final boolean transpose, final float[] value) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniformMatrix3fv(location.glid(), count, transpose, value, n);}
+		public void run(GL3 gl) {gl.glUniformMatrix3fv(location.glid(), count, transpose, value, 0);}
 	    });
     }
 
-    public void glUniformMatrix4fv(final ID location, final int count, final boolean transpose, final float[] value, final int n) {
+    public void glUniformMatrix4fv(final ID location, final int count, final boolean transpose, final float[] value) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniformMatrix4fv(location.glid(), count, transpose, value, n);}
+		public void run(GL3 gl) {gl.glUniformMatrix4fv(location.glid(), count, transpose, value, 0);}
 	    });
     }
 

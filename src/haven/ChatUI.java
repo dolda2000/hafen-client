@@ -571,6 +571,12 @@ public class ChatUI extends Widget {
 	}
 
 	public abstract String name();
+
+	private Indir<Resource> iconres = null;
+	public Channel icon(Indir<Resource> res) {iconres = res; return(this);}
+	public Resource.Image icon() {
+	    return((iconres == null) ? null : iconres.get().layer(Resource.imgc));
+	}
     }
     
     public static class Log extends Channel {
@@ -602,14 +608,14 @@ public class ChatUI extends Widget {
 		    }
 
 		    public boolean keydown(KeyEvent ev) {
-			if(ev.getKeyCode() == KeyEvent.VK_UP) {
+			if(ConsoleHost.kb_histprev.key().match(ev)) {
 			    if(hpos > 0) {
 				if(hpos == history.size())
-				    hcurrent = text;
+				    hcurrent = text();
 				rsettext(history.get(--hpos));
 			    }
 			    return(true);
-			} else if(ev.getKeyCode() == KeyEvent.VK_DOWN) {
+			} else if(ConsoleHost.kb_histnext.key().match(ev)) {
 			    if(hpos < history.size()) {
 				if(++hpos == history.size())
 				    rsettext(hcurrent);
@@ -846,7 +852,10 @@ public class ChatUI extends Widget {
     public static class $SChan implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    String name = (String)args[0];
-	    return(new SimpleChat(false, name));
+	    Channel ret = new SimpleChat(false, name);
+	    if(args.length > 1)
+		ret.icon(ui.sess.getres((Integer)args[1]));
+	    return(ret);
 	}
     }
     @RName("mchat")
@@ -854,20 +863,29 @@ public class ChatUI extends Widget {
 	public Widget create(UI ui, Object[] args) {
 	    String name = (String)args[0];
 	    int urgency = (Integer)args[1];
-	    return(new MultiChat(false, name, urgency));
+	    Channel ret = new MultiChat(false, name, urgency);
+	    if(args.length > 2)
+		ret.icon(ui.sess.getres((Integer)args[2]));
+	    return(ret);
 	}
     }
     @RName("pchat")
     public static class $PChat implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new PartyChat());
+	    Channel ret = new PartyChat();
+	    if(args.length > 0)
+		ret.icon(ui.sess.getres((Integer)args[0]));
+	    return(ret);
 	}
     }
     @RName("pmchat")
     public static class $PMChat implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    int other = (Integer)args[0];
-	    return(new PrivChat(true, other));
+	    Channel ret = new PrivChat(true, other);
+	    if(args.length > 1)
+		ret.icon(ui.sess.getres((Integer)args[1]));
+	    return(ret);
 	}
     }
 
@@ -903,22 +921,65 @@ public class ChatUI extends Widget {
     private class Selector extends Widget {
 	public final BufferedImage ctex = Resource.loadimg("gfx/hud/chantex");
 	public final Text.Foundry tf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, UI.scale(12))).aa(true);
-	public final Text.Furnace[] nf = {
-	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(80, 40, 0)),
-	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(0, 128, 255)),
-	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(255, 128, 0)),
-	    new PUtils.BlurFurn(new PUtils.TexFurn(tf, ctex), 1, 1, new Color(255, 0, 0)),
+	public final Color[] uc = {
+	    new Color(80, 40, 0),
+	    new Color(0, 128, 255),
+	    new Color(255, 128, 0),
+	    new Color(255, 0, 0),
 	};
 	private final List<DarkChannel> chls = new ArrayList<DarkChannel>();
+	private final int iconsz = UI.scale(16), ellw = tf.strsize("...").x, maxnmw = selw - iconsz;
 	private int s = 0;
 	
+	private Text namedeco(String name, BufferedImage img, Color col) {
+	    PUtils.tilemod(img.getRaster(), ctex.getRaster(), Coord.z);
+	    img = PUtils.rasterimg(PUtils.blurmask2(img.getRaster(), 1, 1, col));
+	    return(new Text(name, img));
+	}
+
+	public Text nmrender(String name, Color col) {
+	    return(namedeco(name, tf.render(name).img, col));
+	}
+
 	private class DarkChannel {
 	    public final Channel chan;
 	    public Text rname;
+	    public Tex ricon;
 	    private int urgency = 0;
+	    private Resource.Image icon;
 	    
 	    private DarkChannel(Channel chan) {
 		this.chan = chan;
+	    }
+
+	    public Text rname() {
+		String name = chan.name();
+		int urg = chan.urgency;
+		if((rname == null) || !rname.text.equals(name) || (urgency != urg)) {
+		    Text.Line raw = tf.render(name);
+		    if(raw.sz().x > maxnmw) {
+			int len = raw.charat(maxnmw - ellw);
+			raw = tf.render(name.substring(0, len) + "...");
+		    }
+		    BufferedImage img = raw.img;
+		    rname = namedeco(name, img, uc[urgency = urg]);
+		}
+		return(rname);
+	    }
+
+	    public Tex ricon() {
+		if((ricon == null) || (icon != chan.icon())) {
+		    Resource.Image img = chan.icon();
+		    if(img == null)
+			return(null);
+		    Coord sz;
+		    if(img.sz.x > img.sz.y)
+			sz = Coord.of(iconsz, (iconsz * img.sz.y) / img.sz.x);
+		    else
+			sz = Coord.of((iconsz * img.sz.x) / img.sz.y, iconsz);
+		    ricon = new TexI(PUtils.uiscale(img.img, sz));
+		}
+		return(ricon);
 	    }
 	}
 	
@@ -949,19 +1010,27 @@ public class ChatUI extends Widget {
 		while(i < chls.size()) {
 		    DarkChannel ch = chls.get(i);
 		    if(ch.chan == sel)
-			g.image(chanseld, new Coord(0, y));
-		    g.chcolor(255, 255, 255, 255);
-		    if((ch.rname == null) || !ch.rname.text.equals(ch.chan.name()) || (ch.urgency != ch.chan.urgency))
-			ch.rname = nf[ch.urgency = ch.chan.urgency].render(ch.chan.name());
-		    g.aimage(ch.rname.tex(), new Coord(sz.x / 2, y + UI.scale(8)), 0.5, 0.5);
-		    g.image(chandiv, new Coord(0, y + UI.scale(18)));
+			g.image(chanseld, Coord.of(0, y));
+		    Tex name = ch.rname().tex(), icon = null;
+		    try {
+			icon = ch.ricon();
+		    } catch(Loading l) {}
+		    int my = y + UI.scale(8);
+		    if(icon == null) {
+			g.aimage(name, Coord.of(sz.x / 2, my), 0.5, 0.5);
+		    } else {
+			int w = name.sz().x + icon.sz().x;
+			int x = (sz.x - w) / 2;
+			g.aimage(icon, Coord.of(x, my), 0.0, 0.5); x += icon.sz().x;
+			g.aimage(name, Coord.of(x, my), 0.0, 0.5);
+		    }
+		    g.image(chandiv, Coord.of(0, y + UI.scale(18)));
 		    y += offset;
 		    if(y >= sz.y)
 			break;
 		    i++;
 		}
 	    }
-	    g.chcolor();
 	}
 	
 	public boolean up() {
@@ -1052,7 +1121,7 @@ public class ChatUI extends Widget {
 	private Notification(Channel chan, Channel.Message msg) {
 	    this.chan = chan;
 	    this.msg = msg;
-	    this.chnm = chansel.nf[0].render(chan.name());
+	    this.chnm = chansel.nmrender(chan.name(), Color.BLACK);
 	}
     }
 
@@ -1061,15 +1130,23 @@ public class ChatUI extends Widget {
     public void drawsmall(GOut g, Coord br, int h) {
 	Coord c;
 	if(qline != null) {
-	    if((rqline == null) || !rqline.text.equals(qline.line)) {
+	    if((rqline == null) || !qline.buf.lneq(rqline.text)) {
 		String pre = String.format("%s> ", qline.chan.name());
-		rqline = qfnd.render(pre + qline.line);
+		rqline = qfnd.render(pre + qline.buf.line());
 		rqpre = pre.length();
+	    }
+	    int point = qline.buf.point(), mark = qline.buf.mark();
+	    int px = rqline.advance(point + rqpre) + UI.scale(1);
+	    if(mark >= 0) {
+		int mx = rqline.advance(mark + rqpre) + UI.scale(1);
+		g.chcolor(TextEntry.selcol);
+		g.frect2(Coord.of(br.x + Math.min(px, mx), br.y - UI.scale(18)),
+			 Coord.of(br.x + Math.max(px, mx), br.y - UI.scale(6)));
+		g.chcolor();
 	    }
 	    c = br.sub(UI.scale(0, 20));
 	    g.image(rqline.tex(), c);
-	    int lx = rqline.advance(qline.point + rqpre) + UI.scale(1);
-	    g.line(new Coord(br.x + lx, br.y - UI.scale(18)), new Coord(br.x + lx, br.y - UI.scale(6)), 1);
+	    g.line(Coord.of(br.x + px, br.y - UI.scale(18)), Coord.of(br.x + px, br.y - UI.scale(6)), 1);
 	} else {
 	    c = br.sub(UI.scale(0, 5));
 	}
@@ -1166,10 +1243,12 @@ public class ChatUI extends Widget {
 	    sresize(savedh);
     }
 
-    private class QuickLine extends LineEdit {
+    private class QuickLine implements ReadLine.Owner {
+	public final ReadLine buf;
 	public final EntryChannel chan;
 	
 	private QuickLine(EntryChannel chan) {
+	    this.buf = ReadLine.make(this, "");
 	    this.chan = chan;
 	}
 	
@@ -1178,19 +1257,19 @@ public class ChatUI extends Widget {
 	    qgrab.remove();
 	}
 	
-	protected void done(String line) {
-	    if(line.length() > 0)
-		chan.send(line);
+	public void done(ReadLine buf) {
+	    if(!buf.empty())
+		chan.send(buf.line());
 	    cancel();
 	}
 
-	public boolean key(char c, int code, int mod) {
-	    if(c == 27) {
+	public boolean key(KeyEvent ev) {
+	    if(key_esc.match(ev)) {
 		cancel();
+		return(true);
 	    } else {
-		return(super.key(c, code, mod));
+		return(buf.key(ev));
 	    }
-	    return(true);
 	}
     }
 

@@ -29,11 +29,12 @@ package haven;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import java.lang.reflect.*;
 
 public class MainFrame extends java.awt.Frame implements Console.Directory {
-    UIPanel p;
+    final UIPanel p;
     private final ThreadGroup g;
     private Thread mt;
     DisplayMode fsmode = null, prefs = null;
@@ -168,8 +169,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    sz = isz;
 	}
 	this.g = new ThreadGroup(HackThread.tg(), "Haven client");
-	JOGLPanel p = new JOGLPanel(sz);
-	this.p = p;
+	Component pp = (Component)(this.p = new JOGLPanel(sz));
 	if(fsmode == null) {
 	    Coord pfm = Utils.getprefc("fsmode", null);
 	    if(pfm != null)
@@ -181,10 +181,10 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
 	if(fsmode == null)
 	    fsmode = findmode(800, 600);
-	add(p);
+	add(pp);
 	pack();
 	setResizable(!Utils.getprefb("wndlock", false));
-	p.requestFocus();
+	pp.requestFocus();
 	seticon();
 	setVisible(true);
 	addWindowListener(new WindowAdapter() {
@@ -329,9 +329,11 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	if(Config.resurl != null)
 	    Resource.addurl(Config.resurl);
 	if(ResCache.global != null) {
+	    /*
 	    try {
 		Resource.loadlist(Resource.remote(), ResCache.global.fetch("tmp/allused"), -10);
 	    } catch(IOException e) {}
+	    */
 	}
 	if(!Config.nopreload) {
 	    try {
@@ -480,14 +482,11 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	main.start();
     }
 	
-    private static void dumplist(Collection<Resource> list, String fn) {
+    private static void dumplist(Collection<Resource> list, Path fn) {
 	try {
 	    if(fn != null) {
-		Writer w = new OutputStreamWriter(new FileOutputStream(fn), "UTF-8");
-		try {
+		try(Writer w = Files.newBufferedWriter(fn, Utils.utf8)) {
 		    Resource.dumplist(list, w);
-		} finally {
-		    w.close();
 		}
 	    }
 	} catch(IOException e) {

@@ -26,6 +26,7 @@
 
 package haven.render.gl;
 
+import haven.render.*;
 import java.util.function.*;
 import com.jogamp.opengl.*;
 
@@ -50,6 +51,11 @@ public class GLFence extends GLQuery {
 	    return(false);
 	callback.accept(gl);
 	return(true);
+    }
+
+    public void abort() {
+	if(callback instanceof Abortable)
+	    ((Abortable)callback).abort();
     }
 
     public void delete(GL3 gl) {
