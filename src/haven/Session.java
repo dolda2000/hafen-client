@@ -568,21 +568,22 @@ public class Session implements Resource.Resolver {
 		    }
 		}
 	    } catch(InterruptedException e) {
-		for(int i = 0; i < 5; i++) {
-		    sendmsg(new PMessage(MSG_CLOSE));
-		    long f = System.currentTimeMillis();
+		long f = System.currentTimeMillis(), l = 0;
+		synchronized(Session.this) {
 		    while(true) {
-			synchronized(Session.this) {
-			    if((state == "conn") || (state == "fin") || (state == "dead"))
-				break;
-			    state = "close";
-			    long now = System.currentTimeMillis();
-			    if(now - f > 500)
-				break;
-			    try {
-				Session.this.wait(500 - (now - f));
-			    } catch(InterruptedException e2) {}
+			if((state == "conn") || (state == "fin") || (state == "dead"))
+			    break;
+			state = "close";
+			long now = System.currentTimeMillis();
+			if(now - l >= 250) {
+			    sendmsg(new PMessage(MSG_CLOSE));
+			    l = now;
 			}
+			if(now - f >= 1500)
+			    break;
+			try {
+			    Session.this.wait(250 - (now - l));
+			} catch(InterruptedException e2) {}
 		    }
 		}
 	    } finally {
