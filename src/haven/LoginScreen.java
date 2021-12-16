@@ -122,7 +122,7 @@ public class LoginScreen extends Widget {
 
 	    add(pwbox = new Widget(Coord.z), user.pos("bl").adds(0, 10));
 	    pwbox.add(prev = new Label("Password", textf), Coord.z);
-	    pwbox.add(pass = new TextEntry(UI.scale(this.sz.x), ""), prev.pos("bl").adds(0, 1)).pw = true;
+	    pwbox.add(pass = new TextEntry(this.sz.x, ""), prev.pos("bl").adds(0, 1)).pw = true;
 	    pwbox.add(savetoken = new CheckBox("Remember me", true), pass.pos("bl").adds(0, 10));
 	    savetoken.setgkey(kb_savtoken);
 	    savetoken.settip("Saving your login does not save your password, but rather " +

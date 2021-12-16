@@ -32,9 +32,9 @@ import java.security.MessageDigest;
 
 public class AuthClient implements Closeable {
     private static final SslHelper ssl;
-    private Socket sk;
-    private InputStream skin;
-    private OutputStream skout;
+    private final Socket sk;
+    private final InputStream skin;
+    private final OutputStream skout;
     
     static {
 	ssl = new SslHelper();
@@ -50,7 +50,11 @@ public class AuthClient implements Closeable {
 	skin = sk.getInputStream();
 	skout = sk.getOutputStream();
     }
-    
+
+    public SocketAddress address() {
+	return(sk.getRemoteSocketAddress());
+    }
+
     private static byte[] digest(byte[] pw) {
 	MessageDigest dig;
 	try {

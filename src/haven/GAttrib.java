@@ -55,7 +55,7 @@ public abstract class GAttrib {
 	    slots.remove(slot);
     }
 
-    public static class ParserMaker implements Resource.PublishedCode.Instancer {
+    public static class ParserMaker implements Resource.PublishedCode.Instancer<Parser> {
 	public Parser make(Class<?> cl, Resource ires, Object... argv) {
 	    if(Parser.class.isAssignableFrom(cl))
 		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Parser.class), ires, argv));
