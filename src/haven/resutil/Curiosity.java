@@ -65,7 +65,7 @@ public class Curiosity extends ItemInfo.Tip {
     public BufferedImage tipimg() {
 	StringBuilder buf = new StringBuilder();
 	if(exp > 0)
-	    buf.append(String.format("Learning points: $col[192,192,255]{%s}\n", Utils.thformat(exp)));
+	    buf.append(String.format("Learning points: $col[192,192,255]{%s} ($col[192,192,255]{%s}/h)\n", Utils.thformat(exp), Utils.thformat(Math.round(exp / (time / 3600.0)))));
 	if(time > 0)
 	    buf.append(String.format("Study time: $col[192,255,192]{%s}\n", timefmt(time)));
 	if(mw > 0)
