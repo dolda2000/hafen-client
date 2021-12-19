@@ -36,26 +36,18 @@ public class VMeter extends LayerMeter {
     @RName("vm")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    Color cl;
-	    if(args.length > 4) {
-		cl = new Color((Integer)args[1],
-			       (Integer)args[2],
-			       (Integer)args[3],
-			       (Integer)args[4]);
-	    } else if(args.length > 3) {
-		cl = new Color((Integer)args[1],
-			       (Integer)args[2],
-			       (Integer)args[3]);
-	    } else {
-		cl = (Color)args[1];
-	    }
-	    return(new VMeter((Integer)args[0], cl));
+	    return(new VMeter(decmeters(args, 0)));
 	}
     }
 
-    public VMeter(int amount, Color color) {
+    public VMeter(List<Meter> meters) {
 	super(bg.sz());
-	set(amount * 0.01, color);
+	this.meters = meters;
+    }
+
+    @Deprecated
+    public VMeter(int amount, Color color) {
+	this(Collections.singletonList(new Meter(amount * 0.01, color)));
     }
 
     public void draw(GOut g) {
