@@ -29,13 +29,12 @@ package haven;
 import java.awt.Color;
 import java.util.*;
 
-public class IMeter extends Widget {
+public class IMeter extends LayerMeter {
     public static final Coord off = UI.scale(22, 7);
     public static final Coord fsz = UI.scale(101, 24);
     public static final Coord msz = UI.scale(75, 10);
     public final Indir<Resource> bg;
-    public List<Meter> meters;
-    
+
     @RName("im")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
@@ -44,23 +43,13 @@ public class IMeter extends Widget {
 	    return(new IMeter(bg, meters));
 	}
     }
-    
+
     public IMeter(Indir<Resource> bg, List<Meter> meters) {
 	super(fsz);
 	this.bg = bg;
 	this.meters = meters;
     }
-    
-    public static class Meter {
-	public final Color c;
-	public final double a;
-	
-	public Meter(Color c, double a) {
-	    this.c = c;
-	    this.a = a;
-	}
-    }
-    
+
     public void draw(GOut g) {
 	try {
 	    Tex bg = this.bg.get().layer(Resource.imgc).tex();
@@ -76,22 +65,6 @@ public class IMeter extends Widget {
 	    g.chcolor();
 	    g.image(bg, Coord.z);
 	} catch(Loading l) {
-	}
-    }
-    
-    private static List<Meter> decmeters(Object[] args, int s) {
-	ArrayList<Meter> buf = new ArrayList<>();
-	for(int a = s; a < args.length; a += 2)
-	    buf.add(new Meter((Color)args[a], ((Number)args[a + 1]).doubleValue() * 0.01));
-	buf.trimToSize();
-	return(buf);
-    }
-
-    public void uimsg(String msg, Object... args) {
-	if(msg == "set") {
-	    this.meters = decmeters(args, 0);
-	} else {
-	    super.uimsg(msg, args);
 	}
     }
 }
