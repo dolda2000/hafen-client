@@ -47,7 +47,7 @@ public class IMeter extends LayerMeter {
     public IMeter(Indir<Resource> bg, List<Meter> meters) {
 	super(fsz);
 	this.bg = bg;
-	this.meters = meters;
+	set(meters);
     }
 
     public void draw(GOut g) {

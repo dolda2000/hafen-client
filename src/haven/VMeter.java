@@ -42,7 +42,7 @@ public class VMeter extends LayerMeter {
 
     public VMeter(List<Meter> meters) {
 	super(bg.sz());
-	this.meters = meters;
+	set(meters);
     }
 
     @Deprecated

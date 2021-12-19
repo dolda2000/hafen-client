@@ -48,8 +48,12 @@ public abstract class LayerMeter extends Widget implements ItemInfo.Owner {
 	}
     }
 
+    public void set(List<Meter> meters) {
+	this.meters = meters;
+    }
+
     public void set(double a, Color c) {
-	this.meters = Collections.singletonList(new Meter(a, c));
+	set(Collections.singletonList(new Meter(a, c)));
     }
 
     public static List<Meter> decmeters(Object[] args, int s) {
@@ -110,7 +114,7 @@ public abstract class LayerMeter extends Widget implements ItemInfo.Owner {
 	    if(args.length == 1) {
 		set(((Number)args[0]).doubleValue() * 0.01, meters.isEmpty() ? Color.WHITE : meters.get(0).c);
 	    } else {
-		meters = decmeters(args, 0);
+		set(decmeters(args, 0));
 	    }
 	} else if(msg == "col") {
 	    set(meters.isEmpty() ? 0 : meters.get(0).a, (Color)args[0]);
