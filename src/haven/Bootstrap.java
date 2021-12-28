@@ -223,8 +223,10 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			continue retry;
 		    }
 		    cookie = auth.getcookie();
-		    if(savepw)
-			settoken(acctname, hostname, auth.gettoken());
+		    if(savepw) {
+			byte[] ntoken = (creds instanceof AuthClient.TokenCred) ? ((AuthClient.TokenCred)creds).token : auth.gettoken();
+			settoken(acctname, hostname, ntoken);
+		    }
 		} catch(UnknownHostException e) {
 		    ui.uimsg(1, "error", "Could not locate server");
 		    continue retry;
