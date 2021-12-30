@@ -113,17 +113,17 @@ public class BinEncoder {
 	long exp = (bits & 0x7ff0000000000000l) >>> 52;
 	long mnt = (bits & 0x000fffffffffffffl) >>>  0;
 	if(exp == 0x7ff) {
-	    writeint(dst, 0);
+	    writeint(buf, 0);
 	    if(mnt == 0) {
-		writeint(dst, (sgn == 0) ? 2 : 3);
+		writeint(buf, (sgn == 0) ? 2 : 3);
 	    } else {
-		writeint(dst, 4);
+		writeint(buf, 4);
 	    }
 	} else {
 	    if(exp == 0) {
 		if(mnt == 0) {
-		    writeint(dst, 0);
-		    writeint(dst, (sgn == 0) ? 0 : 1);
+		    writeint(buf, 0);
+		    writeint(buf, (sgn == 0) ? 0 : 1);
 		    return;
 		}
 		exp = 12 - 0x3ff - Long.numberOfLeadingZeros(mnt);
@@ -135,9 +135,12 @@ public class BinEncoder {
 		mnt >>= 1;
 	    if(sgn != 0)
 		mnt = -mnt;
-	    writeint(dst, mnt);
-	    writeint(dst, exp);
+	    writeint(buf, mnt);
+	    writeint(buf, exp);
 	}
+	byte[] enc = buf.toByteArray();
+	writeint(dst, enc.length);
+	dst.write(enc);
     }
 
     public void writeseq(OutputStream dst, Iterable<?> seq) throws IOException {
