@@ -658,6 +658,18 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	cmdmap.put("gldebug", (cons, args) -> {
 		debuggl = Utils.parsebool(args[1]);
 	    });
+	cmdmap.put("glcrash", (cons, args) -> {
+		GL gl = getGL();
+		new HackThread(() -> {
+			try {
+			    while(true) {
+				env.submitwait();
+				redraw(gl);
+			    }
+			} catch(InterruptedException e) {
+			}},
+		    "GL crasher").start();
+	    });
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);
