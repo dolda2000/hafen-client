@@ -11,8 +11,14 @@ public class BinEncoder {
     private final Map<Symbol, Integer> symtab = new IdentityHashMap<>();
     private Symbol[] rsymtab = new Symbol[64];
     private final Map<String, Integer> nstab = new IdentityHashMap<>();
-    private int nextsym = 0;
+    private int nextsym = 0, nextref = 0;
     private boolean memosymbols = true;
+    private Map<Object, Integer> reftab = null;
+
+    public BinEncoder backrefs(boolean backrefs) {
+	reftab = backrefs ? new IdentityHashMap<>() : null;
+	return(this);
+    }
 
     public static int enctag(int pri, int sec) {
 	return((sec << 3) | pri);
@@ -63,7 +69,7 @@ public class BinEncoder {
 		symtab.put(rsymtab[id] = sym, id);
 		Integer nsid = (sym.ns == "") ? null : nstab.get(sym.ns);
 		if(nsid == null) {
-		    dst.write(enctag(T_SYM, 0));
+		    writetag(dst, T_SYM, 0, sym);
 		    dst.write(0x1);
 		    writestr(dst, sym.ns);
 		    writestr(dst, sym.name);
@@ -71,14 +77,14 @@ public class BinEncoder {
 		    if(sym.ns != "")
 			nstab.put(sym.ns, id);
 		} else {
-		    dst.write(enctag(T_SYM, 0));
+		    writetag(dst, T_SYM, 0, sym);
 		    dst.write(0x3);
 		    writeint(dst, nsid);
 		    writestr(dst, sym.name);
 		    writeint(dst, id);
 		}
 	    } else {
-		dst.write(enctag(T_SYM, 0));
+		writetag(dst, T_SYM, 0, sym);
 		int b = 0x80 | (idx & 0x3f);
 		idx >>= 6;
 		if(idx != 0)
@@ -94,11 +100,11 @@ public class BinEncoder {
 	    }
 	} else {
 	    if(sym.ns.equals("")) {
-		dst.write(enctag(T_STR, STR_SYM));
+		writetag(dst, T_STR, STR_SYM, sym);
 		writestr(dst, sym.name);
 		return;
 	    }
-	    dst.write(enctag(T_SYM, 0));
+	    writetag(dst, T_SYM, 0, sym);
 	    dst.write(0);
 	    writestr(dst, sym.ns);
 	    writestr(dst, sym.name);
@@ -106,7 +112,7 @@ public class BinEncoder {
     }
 
     public void writefloat(OutputStream dst, double x) throws IOException {
-	dst.write(enctag(T_BIT, BIT_BFLOAT));
+	writetag(dst, T_BIT, BIT_BFLOAT, null);
 	ByteArrayOutputStream buf = new ByteArrayOutputStream();
 	long bits = Double.doubleToLongBits(x);
 	long sgn = (bits & 0x8000000000000000l) >>> 63;
@@ -170,12 +176,29 @@ public class BinEncoder {
 	} catch(Throwable t) {
 	    data = ObjectData.encode(new Unencodable(obj.getClass(), t));
 	}
-	dst.write(enctag(T_CON, CON_OBJ));
+	writetag(dst, T_CON, CON_OBJ, obj);
 	writesym(dst, Symbol.get("java/object", obj.getClass().getName()));
 	writemap(dst, data);
     }
 
+    private void writetag(OutputStream dst, int pri, int sec, Object datum) throws IOException {
+	dst.write(enctag(pri, sec));
+	if(reftab != null) {
+	    int ref = nextref++;
+	    if(datum != null)
+		reftab.putIfAbsent(datum, ref);
+	}
+    }
+
     public void write(OutputStream dst, Object datum) throws IOException {
+	if(reftab != null) {
+	    Integer ref = reftab.get(datum);
+	    if(ref != null) {
+		dst.write(enctag(T_INT, INT_REF));
+		writeint(dst, ref);
+		return;
+	    }
+	}
 	for(Object prev : stack) {
 	    if(prev == datum)
 		throw(new RuntimeException("circular reference: " + stack + " + " + datum));
@@ -183,36 +206,36 @@ public class BinEncoder {
 	int cks = stack.size();
 	stack.add(datum);
 	if(datum == null) {
-	    dst.write(enctag(T_NIL, 0));
+	    writetag(dst, T_NIL, 0, null);
 	} else if(datum == Boolean.FALSE) {
-	    dst.write(enctag(T_NIL, NIL_FALSE));
+	    writetag(dst, T_NIL, NIL_FALSE, null);
 	} else if(datum == Boolean.TRUE) {
-	    dst.write(enctag(T_NIL, NIL_TRUE));
+	    writetag(dst, T_NIL, NIL_TRUE, null);
 	} else if((datum instanceof Byte) || (datum instanceof Short) || (datum instanceof Integer) || (datum instanceof Long)) {
-	    dst.write(enctag(T_INT, 0));
+	    writetag(dst, T_INT, 0, null);
 	    writeint(dst, ((Number)datum).longValue());
 	} else if((datum instanceof Float) || (datum instanceof Double)) {
 	    writefloat(dst, ((Number)datum).doubleValue());
 	} else if(datum instanceof String) {
-	    dst.write(enctag(T_STR, 0));
+	    writetag(dst, T_STR, 0, datum);
 	    writestr(dst, (String)datum);
 	} else if(datum instanceof byte[]) {
-	    dst.write(enctag(T_BIT, 0));
+	    writetag(dst, T_BIT, 0, datum);
 	    writeint(dst, ((byte[])datum).length);
 	    dst.write((byte[])datum);
 	} else if(datum instanceof Symbol) {
 	    writesym(dst, (Symbol)datum);
 	} else if(datum.getClass().isArray()) {
-	    dst.write(enctag(T_CON, CON_SEQ));
+	    writetag(dst, T_CON, CON_SEQ, datum);
 	    writearray(dst, datum);
 	} else if(datum instanceof List) {
-	    dst.write(enctag(T_CON, CON_SEQ));
+	    writetag(dst, T_CON, CON_SEQ, datum);
 	    writeseq(dst, (List)datum);
 	} else if(datum instanceof Collection) {
-	    dst.write(enctag(T_CON, CON_SET));
+	    writetag(dst, T_CON, CON_SET, datum);
 	    writeseq(dst, (Collection)datum);
 	} else if(datum instanceof Map) {
-	    dst.write(enctag(T_CON, CON_MAP));
+	    writetag(dst, T_CON, CON_MAP, datum);
 	    writemap(dst, (Map)datum);
 	} else if(datum instanceof Class) {
 	    writesym(dst, Symbol.get("java/class", ((Class)datum).getName()));
