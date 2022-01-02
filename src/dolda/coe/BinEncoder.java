@@ -8,12 +8,9 @@ import static dolda.coe.BinaryData.*;
 public class BinEncoder {
     public static final java.nio.charset.Charset utf8 = java.nio.charset.Charset.forName("UTF-8");
     private final List<Object> stack = new ArrayList<>();
-    private final Map<Symbol, Integer> symtab = new IdentityHashMap<>();
-    private Symbol[] rsymtab = new Symbol[64];
-    private final Map<String, Integer> nstab = new IdentityHashMap<>();
-    private int nextsym = 0, nextref = 0;
-    private boolean memosymbols = true;
+    private int nextref = 0;
     private Map<Object, Integer> reftab = null;
+    private final Map<String, Integer> nstab = new IdentityHashMap<>();
 
     public BinEncoder backrefs(boolean backrefs) {
 	reftab = backrefs ? new IdentityHashMap<>() : null;
@@ -52,62 +49,23 @@ public class BinEncoder {
     }
 
     public void writesym(OutputStream dst, Symbol sym) throws IOException {
-	if(memosymbols) {
-	    Integer idx = symtab.get(sym);
-	    if(idx == null) {
-		int id = nextsym;
-		nextsym = (nextsym + 1) & 0xffff;
-		Symbol rem = (id >= rsymtab.length) ? null : rsymtab[id];
-		if(rem != null) {
-		    symtab.remove(rem);
-		    Integer nsid = nstab.get(rem.ns);
-		    if((nsid != null) && (nsid == id))
-			nstab.remove(rem.ns);
-		}
-		if(id >= rsymtab.length)
-		    rsymtab = Arrays.copyOf(rsymtab, rsymtab.length * 2);
-		symtab.put(rsymtab[id] = sym, id);
-		Integer nsid = (sym.ns == "") ? null : nstab.get(sym.ns);
-		if(nsid == null) {
-		    writetag(dst, T_SYM, 0, sym);
-		    dst.write(0x1);
-		    writestr(dst, sym.ns);
-		    writestr(dst, sym.name);
-		    writeint(dst, id);
-		    if(sym.ns != "")
-			nstab.put(sym.ns, id);
-		} else {
-		    writetag(dst, T_SYM, 0, sym);
-		    dst.write(0x3);
-		    writeint(dst, nsid);
-		    writestr(dst, sym.name);
-		    writeint(dst, id);
-		}
-	    } else {
-		writetag(dst, T_SYM, 0, sym);
-		int b = 0x80 | (idx & 0x3f);
-		idx >>= 6;
-		if(idx != 0)
-		    b |= 0x40;
-		dst.write(b);
-		while(idx != 0) {
-		    b = idx & 0x7f;
-		    idx >>= 7;
-		    if(idx != 0)
-			b |= 0x80;
-		    dst.write(b);
-		};
-	    }
-	} else {
-	    if(sym.ns.equals("")) {
-		writetag(dst, T_STR, STR_SYM, sym);
-		writestr(dst, sym.name);
-		return;
-	    }
+	if(sym.ns.equals("")) {
+	    writetag(dst, T_STR, STR_SYM, sym);
+	    writestr(dst, sym.name);
+	    return;
+	}
+	Integer nsref = nstab.get(sym.ns);
+	if(nsref != null) {
 	    writetag(dst, T_SYM, 0, sym);
+	    dst.write(1);
+	    writeint(dst, nsref);
+	    writestr(dst, sym.name);
+	} else {
+	    int ref = writetag(dst, T_SYM, 0, sym);
 	    dst.write(0);
 	    writestr(dst, sym.ns);
 	    writestr(dst, sym.name);
+	    nstab.put(sym.ns, ref);
 	}
     }
 
@@ -179,17 +137,20 @@ public class BinEncoder {
 	    data = ObjectData.encode(new Unencodable(obj.getClass(), t));
 	}
 	writetag(dst, T_CON, CON_OBJ, obj);
-	writesym(dst, Symbol.get("java/object", obj.getClass().getName()));
+	write(dst, Symbol.get("java/object", obj.getClass().getName()));
 	writemap(dst, data);
     }
 
-    private void writetag(OutputStream dst, int pri, int sec, Object datum) throws IOException {
+    private int writetag(OutputStream dst, int pri, int sec, Object datum) throws IOException {
 	dst.write(enctag(pri, sec));
 	if(reftab != null) {
 	    int ref = nextref++;
-	    if(datum != null)
+	    if(datum != null) {
 		reftab.putIfAbsent(datum, ref);
+		return(ref);
+	    }
 	}
+	return(-1);
     }
 
     public void write(OutputStream dst, Object datum) throws IOException {
