@@ -85,7 +85,7 @@ public interface ObjectData<T> {
 
     static Object init() {
 	register(Throwable.class, (t, buf) -> {
-		buf.put(s("traceback"), t.getStackTrace());
+		buf.put(s("stack"), t.getStackTrace());
 		try {
 		    buf.put(s("message"), t.getMessage());
 		} catch(Exception e) {
