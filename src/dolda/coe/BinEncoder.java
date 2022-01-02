@@ -114,35 +114,37 @@ public class BinEncoder {
     public void writefloat(OutputStream dst, double x) throws IOException {
 	writetag(dst, T_BIT, BIT_BFLOAT, null);
 	ByteArrayOutputStream buf = new ByteArrayOutputStream();
-	long bits = Double.doubleToLongBits(x);
-	long sgn = (bits & 0x8000000000000000l) >>> 63;
-	long exp = (bits & 0x7ff0000000000000l) >>> 52;
-	long mnt = (bits & 0x000fffffffffffffl) >>>  0;
-	if(exp == 0x7ff) {
-	    writeint(buf, 0);
-	    if(mnt == 0) {
-		writeint(buf, (sgn == 0) ? 2 : 3);
-	    } else {
-		writeint(buf, 4);
-	    }
-	} else {
-	    if(exp == 0) {
+	buffered: {
+	    long bits = Double.doubleToLongBits(x);
+	    long sgn = (bits & 0x8000000000000000l) >>> 63;
+	    long exp = (bits & 0x7ff0000000000000l) >>> 52;
+	    long mnt = (bits & 0x000fffffffffffffl) >>>  0;
+	    if(exp == 0x7ff) {
+		writeint(buf, 0);
 		if(mnt == 0) {
-		    writeint(buf, 0);
-		    writeint(buf, (sgn == 0) ? 0 : 1);
-		    return;
+		    writeint(buf, (sgn == 0) ? 2 : 3);
+		} else {
+		    writeint(buf, 4);
 		}
-		exp = 12 - 0x3ff - Long.numberOfLeadingZeros(mnt);
 	    } else {
-		exp -= 0x3ff;
-		mnt |= 0x0010000000000000l;
+		if(exp == 0) {
+		    if(mnt == 0) {
+			writeint(buf, 0);
+			writeint(buf, (sgn == 0) ? 0 : 1);
+			break buffered;
+		    }
+		    exp = 12 - 0x3ff - Long.numberOfLeadingZeros(mnt);
+		} else {
+		    exp -= 0x3ff;
+		    mnt |= 0x0010000000000000l;
+		}
+		while((mnt & 1l) == 0)
+		    mnt >>= 1;
+		if(sgn != 0)
+		    mnt = -mnt;
+		writeint(buf, mnt);
+		writeint(buf, exp);
 	    }
-	    while((mnt & 1l) == 0)
-		mnt >>= 1;
-	    if(sgn != 0)
-		mnt = -mnt;
-	    writeint(buf, mnt);
-	    writeint(buf, exp);
 	}
 	byte[] enc = buf.toByteArray();
 	writeint(dst, enc.length);
