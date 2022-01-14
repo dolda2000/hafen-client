@@ -170,10 +170,8 @@ public class BinEncoder {
 	stack.add(datum);
 	if(datum == null) {
 	    writetag(dst, T_NIL, 0, null);
-	} else if(datum == Boolean.FALSE) {
-	    writetag(dst, T_NIL, NIL_FALSE, null);
-	} else if(datum == Boolean.TRUE) {
-	    writetag(dst, T_NIL, NIL_TRUE, null);
+	} else if(datum instanceof Boolean) {
+	    writetag(dst, T_NIL, ((Boolean)datum).booleanValue() ? NIL_TRUE : NIL_FALSE, null);
 	} else if((datum instanceof Byte) || (datum instanceof Short) || (datum instanceof Integer) || (datum instanceof Long)) {
 	    writetag(dst, T_INT, 0, null);
 	    writeint(dst, ((Number)datum).longValue());
