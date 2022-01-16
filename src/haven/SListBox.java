@@ -185,7 +185,7 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
 	if(y < sb.val)
 	    sb.val = y;
 	else if(y + itemh >= sb.val + sz.y)
-	    sb.val = Math.max(sz.y - (y + itemh), 0);
+	    sb.val = Math.max((y + itemh) - sz.y, 0);
     }
 
     public void display(I item) {
