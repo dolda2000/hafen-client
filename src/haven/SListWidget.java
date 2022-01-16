@@ -71,8 +71,7 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	protected Text.Foundry foundry() {return(CharWnd.attrf);}
 
 	private Tex img = null;
-	private Text.Line text = null;
-	public void draw(GOut g) {
+	protected void drawicon(GOut g) {
 	    int m = margin(), h = sz.y - (m * 2);
 	    try {
 		if(this.img == null) {
@@ -90,6 +89,10 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	    } catch(Loading l) {
 		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.of(m), Coord.of(sz.y - (m * 2)));
 	    }
+	}
+
+	private Text.Line text = null;
+	protected void drawtext(GOut g) {
 	    int tx = sz.y + UI.scale(5);
 	    try {
 		if(this.text == null) {
@@ -106,6 +109,11 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 		g.image(missing, Coord.of(sz.y + UI.scale(5), (sz.y - this.text.sz().y) / 2));
 		missing.dispose();
 	    }
+	}
+
+	public void draw(GOut g) {
+	    drawicon(g);
+	    drawtext(g);
 	}
 
 	public void dispose() {
