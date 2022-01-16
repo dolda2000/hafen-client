@@ -161,6 +161,18 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
 	return(true);
     }
 
+    protected boolean unselect(int button) {
+	if(button == 1)
+	    change(null);
+	return(true);
+    }
+
+    public boolean mousedown(Coord c, int button) {
+	if(super.mousedown(c, button))
+	    return(true);
+	return(unselect(button));
+    }
+
     public void resize(Coord sz) {
 	super.resize(sz);
 	sb.resize(sz.y);
