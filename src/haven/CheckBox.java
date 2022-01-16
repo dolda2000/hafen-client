@@ -45,15 +45,18 @@ public class CheckBox extends ACheckBox {
     }
 
     public CheckBox(String lbl, boolean lg) {
-	this.lbl = Text.std.render(lbl, java.awt.Color.WHITE);
+	this.lbl = (lbl.length() > 0) ? Text.std.render(lbl, java.awt.Color.WHITE) : null;
 	if(lg) {
 	    box = lbox; mark = lmark;
-	    loff = new Coord(0, this.lbl.sz().y / 2);
+	    loff = UI.scale(0, 6);
 	} else {
 	    box = sbox; mark = smark;
-	    loff = UI.scale(new Coord(5, 0));
+	    loff = UI.scale(5, 0);
 	}
-	sz = new Coord(box.sz().x + UI.scale(5) + this.lbl.sz().x, Math.max(box.sz().y, this.lbl.sz().y));
+	if(this.lbl != null)
+	    sz = Coord.of(box.sz().x + UI.scale(5) + this.lbl.sz().x, Math.max(box.sz().y, this.lbl.sz().y));
+	else
+	    sz = box.sz();
     }
 
     public CheckBox(String lbl) {
@@ -61,7 +64,8 @@ public class CheckBox extends ACheckBox {
     }
 
     public void draw(GOut g) {
-        g.image(lbl.tex(), loff.add(box.sz().x, (sz.y - lbl.sz().y) / 2));
+	if(lbl != null)
+	    g.image(lbl.tex(), loff.add(box.sz().x, (sz.y - lbl.sz().y) / 2));
         g.image(box, Coord.z.add(0, (sz.y - box.sz().y) / 2));
         if(state())
             g.image(mark, Coord.z.add(0, (sz.y - mark.sz().y) / 2));
