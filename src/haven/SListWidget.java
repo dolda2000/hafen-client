@@ -108,11 +108,20 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	    }
 	}
 
+	public void dispose() {
+	    super.dispose();
+	    invalidate();
+	}
+
 	public void invalidate() {
-	    if(img != null)
+	    if(img != null) {
+		img.dispose();
 		img = null;
-	    if(text != null)
+	    }
+	    if(text != null) {
+		text.tex().dispose();
 		text = null;
+	    }
 	}
 
 	public static IconText of(Coord sz, Indir<Resource> res) {
