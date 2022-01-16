@@ -194,63 +194,90 @@ public class GobIcon extends GAttrib {
 	public final Settings conf;
 	private final Runnable save;
 
+	public static class Icon {
+	    public final Setting conf;
+	    public String name;
+
+	    public Icon(Setting conf) {this.conf = conf;}
+	}
+
 	private static final Text.Foundry elf = CharWnd.attrf;
 	private static final int elh = elf.height() + UI.scale(2);
-	public class IconList extends SListBox<Setting, IconList.IconLine> {
-	    private List<Setting> ordered = Collections.emptyList();
+	public class IconList extends SSearchBox<Icon, IconList.IconLine> {
+	    private List<Icon> ordered = Collections.emptyList();
 	    private Map<String, Setting> cur = null;
-	    private Map<Setting, String> reorder = null;
+	    private boolean reorder = false;
 
 	    private IconList(Coord sz) {
 		super(sz, elh);
 	    }
 
-	    public class IconLine extends ItemWidget<Setting> {
-		public IconLine(Coord sz, Setting conf) {
-		    super(IconList.this, sz, conf);
-		    Widget prev = adda(new CheckBox("").state(() -> conf.show).set(val -> {conf.show = val;}),
-				       sz.x - (sz.y / 2), sz.y / 2, 0.5, 0.5);
-		    add(SListWidget.IconText.of(Coord.of(prev.c.x - UI.scale(2), sz.y), () -> item.res.loadsaved(Resource.remote())), Coord.z);
+	    public class IconLine extends ItemWidget<Icon> {
+		public IconLine(Coord sz, Icon icon) {
+		    super(IconList.this, sz, icon);
+		    Widget prev = adda(new CheckBox("").state(() -> icon.conf.show).set(val -> {
+				icon.conf.show = val;
+				if(save != null)
+				    save.run();
+		    }),
+			sz.x - (sz.y / 2), sz.y / 2, 0.5, 0.5);
+		    add(SListWidget.IconText.of(Coord.of(prev.c.x - UI.scale(2), sz.y), () -> item.conf.res.loadsaved(Resource.remote())), Coord.z);
 		}
 	    }
 
-	    protected List<Setting> items() {return(ordered);}
-	    protected IconLine makeitem(Setting conf, int idx, Coord sz) {return(new IconLine(sz, conf));}
+	    protected boolean searchmatch(Icon icon, String text) {
+		return((icon.name != null) &&
+		       (icon.name.toLowerCase().indexOf(text.toLowerCase()) >= 0));
+	    }
+	    protected List<Icon> allitems() {return(ordered);}
+	    protected IconLine makeitem(Icon icon, int idx, Coord sz) {return(new IconLine(sz, icon));}
 
 	    public void tick(double dt) {
 		Map<String, Setting> cur = this.cur;
 		if(cur != conf.settings) {
 		    cur = conf.settings;
-		    ArrayList<Setting> ordered = new ArrayList<>(cur.values());
+		    ArrayList<Icon> ordered = new ArrayList<>(cur.size());
+		    for(Setting conf : cur.values())
+			ordered.add(new Icon(conf));
 		    this.cur = cur;
 		    this.ordered = ordered;
-		    reorder = new IdentityHashMap<>();
+		    reorder = true;
 		}
-		Map<Setting, String> order = reorder;
-		if(order != null) {
-		    reorder = null;
-		    for(Setting conf : ordered) {
-			if(!order.containsKey(conf)) {
+		if(reorder) {
+		    reorder = false;
+		    for(Icon icon : ordered) {
+			if(icon.name == null) {
 			    try {
-				Resource.Tooltip name = conf.res.loadsaved(Resource.remote()).layer(Resource.tooltip);
-				order.put(conf, (name == null) ? "???" : name.t);
+				Resource.Tooltip name = icon.conf.res.loadsaved(Resource.remote()).layer(Resource.tooltip);
+				icon.name = (name == null) ? "???" : name.t;
 			    } catch(Loading l) {
-				reorder = order;
+				reorder = true;
 			    }
 			}
 		    }
 		    Collections.sort(ordered, (a, b) -> {
-			    String an = order.get(a), bn = order.get(b);
-			    if((an == null) && (bn == null))
+			    if((a.name == null) && (b.name == null))
 				return(0);
-			    if(an == null)
+			    if(a.name == null)
 				return(1);
-			    if(bn == null)
+			    if(b.name == null)
 				return(-1);
-			    return(an.compareTo(bn));
+			    return(a.name.compareTo(b.name));
 			});
 		}
 		super.tick(dt);
+	    }
+
+	    public boolean keydown(java.awt.event.KeyEvent ev) {
+		if(ev.getKeyCode() == java.awt.event.KeyEvent.VK_SPACE) {
+		    if(sel != null) {
+			sel.conf.show = !sel.conf.show;
+			if(save != null)
+			    save.run();
+		    }
+		    return(true);
+		}
+		return(super.keydown(ev));
 	    }
 	}
 
