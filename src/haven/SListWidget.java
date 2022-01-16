@@ -71,7 +71,7 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	protected Text.Foundry foundry() {return(CharWnd.attrf);}
 
 	private Tex img = null;
-	private Text text = null;
+	private Text.Line text = null;
 	public void draw(GOut g) {
 	    int m = margin(), h = sz.y - (m * 2);
 	    try {
@@ -90,9 +90,16 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	    } catch(Loading l) {
 		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.of(m), Coord.of(sz.y - (m * 2)));
 	    }
+	    int tx = sz.y + UI.scale(5);
 	    try {
-		if(this.text == null)
-		    this.text = foundry().render(text());
+		if(this.text == null) {
+		    String text = text();
+		    this.text = foundry().render(text);
+		    if(tx + this.text.sz().x > sz.x) {
+			int len = this.text.charat(sz.x - tx - foundry().strsize("...").x);
+			this.text = foundry().render(text.substring(0, len) + "...");
+		    }
+		}
 		g.image(this.text.tex(), Coord.of(sz.y + UI.scale(5), (sz.y - this.text.sz().y) / 2));
 	    } catch(Loading l) {
 		Tex missing = foundry().render("...").tex();
