@@ -73,7 +73,8 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
 	    update = true;
 	if(!update) {
 	    for(int i = 0; i < h; i++) {
-		if((i + curo < items.size()) && (curi[i] != items.get(i + curo))) {
+		I item = (i + curo < items.size()) ? items.get(i + curo) : null;
+		if((curi[i] != item)) {
 		    update = true;
 		    break;
 		}
