@@ -98,7 +98,7 @@ public interface ObjectData<T> {
 	register(StackTraceElement.class, (el, buf) -> {
 		buf.put(s("file"), el.getFileName());
 		buf.put(s("line"), el.getLineNumber());
-		buf.put(s("class"), el.getClassName());
+		buf.put(s("classname"), el.getClassName());
 		buf.put(s("method"), el.getMethodName());
 		buf.put(s("native"), el.isNativeMethod());
 	    });
