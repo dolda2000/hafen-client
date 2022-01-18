@@ -122,6 +122,9 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
 	super.tick(dt);
     }
 
+    protected void drawbg(GOut g) {
+    }
+
     protected void drawbg(GOut g, I item, int idx, Area area) {
 	g.chcolor(((idx % 2) == 0) ? every : other);
 	g.frect2(area.ul, area.br);
@@ -141,6 +144,7 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
     }
 
     public void draw(GOut g) {
+	drawbg(g);
 	if(curi != null) {
 	    List<? extends I> items = items();
 	    int sy = sb.val;
