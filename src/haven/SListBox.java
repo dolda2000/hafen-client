@@ -136,7 +136,7 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
 
     protected void drawslot(GOut g, I item, int idx, Area area) {
 	drawbg(g, item, idx, area);
-	if(item == sel)
+	if((sel != null) && (sel == item))
 	    drawsel(g, item, idx, area);
     }
 
