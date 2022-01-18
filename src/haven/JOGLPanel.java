@@ -655,6 +655,14 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
+	cmdmap.put("renderer", (cons, args) -> {
+		cons.out.printf("Rendering backend: JOGL %s\n", JoglVersion.getInstance().getImplementationVersion());
+		if(env != null) {
+		    GLEnvironment.Caps caps = env.caps();
+		    cons.out.printf("Rendering device: %s, %s\n", caps.vendor(), caps.device());
+		    cons.out.printf("Driver version: %s\n", caps.driver());
+		}
+	    });
 	cmdmap.put("gldebug", (cons, args) -> {
 		debuggl = Utils.parsebool(args[1]);
 	    });
