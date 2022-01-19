@@ -198,4 +198,8 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
 	if(p >= 0)
 	    display(p);
     }
+
+    public void display() {
+	display(sel);
+    }
 }

@@ -127,7 +127,7 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 		img = null;
 	    }
 	    if(text != null) {
-		text.tex().dispose();
+		text.dispose();
 		text = null;
 	    }
 	}
