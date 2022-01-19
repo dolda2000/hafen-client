@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import java.io.*;
 import java.awt.image.*;
 import java.awt.Color;
@@ -93,7 +94,7 @@ public class GobIcon extends GAttrib {
 
     public static class Setting implements Serializable {
 	public Resource.Spec res;
-	public boolean show, defshow;
+	public boolean show, defshow, notify;
 
 	public Setting(Resource.Spec res) {
 	    this.res = res;
@@ -212,15 +213,18 @@ public class GobIcon extends GAttrib {
 		super(sz, elh);
 	    }
 
+	    private Consumer<Boolean> andsave(Consumer<Boolean> main) {
+		return(val -> {main.accept(val); if(save != null) save.run();});
+	    }
+
 	    public class IconLine extends ItemWidget<Icon> {
 		public IconLine(Coord sz, Icon icon) {
 		    super(IconList.this, sz, icon);
-		    Widget prev = adda(new CheckBox("").state(() -> icon.conf.show).set(val -> {
-				icon.conf.show = val;
-				if(save != null)
-				    save.run();
-		    }),
-			sz.x - (sz.y / 2), sz.y / 2, 0.5, 0.5);
+		    Widget prev;
+		    prev = adda(new CheckBox("").state(() -> icon.conf.notify).set(andsave(val -> icon.conf.notify = val)).settip("Notify"),
+				sz.x - UI.scale(2) - (sz.y / 2), sz.y / 2, 0.5, 0.5);
+		    prev = adda(new CheckBox("").state(() -> icon.conf.show).set(andsave(val -> icon.conf.show = val)).settip("Display"),
+				prev.c.x - UI.scale(2) - (sz.y / 2), sz.y / 2, 0.5, 0.5);
 		    add(SListWidget.IconText.of(Coord.of(prev.c.x - UI.scale(2), sz.y), () -> item.conf.res.loadsaved(Resource.remote())), Coord.z);
 		}
 	    }
