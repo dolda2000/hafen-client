@@ -349,7 +349,7 @@ public class GobIcon extends GAttrib {
 		super(sz, elh);
 	    }
 
-	    public class IconLine extends ItemWidget<Icon> {
+	    public class IconLine extends SListWidget.ItemWidget<Icon> {
 		public IconLine(Coord sz, Icon icon) {
 		    super(IconList.this, sz, icon);
 		    Widget prev;
