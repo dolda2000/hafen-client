@@ -29,6 +29,7 @@ package haven;
 import java.awt.Color;
 
 public class HRuler extends Widget {
+    public static final Color defcol = new Color(192, 192, 192, 128);
     public final Coord marg;
     public final Color color;
 
@@ -39,15 +40,30 @@ public class HRuler extends Widget {
     }
 
     public HRuler(int w, Coord marg) {
-	this(w, marg, new Color(192, 192, 192, 128));
+	this(w, marg, defcol);
     }
 
     private static Coord defmarg(int w) {
 	return(Coord.of(w / 10, UI.scale(2)));
     }
 
+    public HRuler(int w, Color color) {
+	this(w, defmarg(w), color);
+    }
+
     public HRuler(int w) {
 	this(w, defmarg(w));
+    }
+
+    @RName("hr")
+    public static class $_ implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    int w = (Integer)args[0];
+	    Color col = defcol;
+	    if(args.length > 1)
+		col = (Color)args[1];
+	    return(new HRuler(w, col));
+	}
     }
 
     public void draw(GOut g) {
