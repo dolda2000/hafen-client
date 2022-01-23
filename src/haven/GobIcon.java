@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import java.util.function.*;
 import java.io.*;
+import java.nio.file.*;
 import java.awt.image.*;
 import java.awt.Color;
 
@@ -95,6 +96,8 @@ public class GobIcon extends GAttrib {
     public static class Setting implements Serializable {
 	public Resource.Spec res;
 	public boolean show, defshow, notify;
+	public String resns;
+	public Path filens;
 
 	public Setting(Resource.Spec res) {
 	    this.res = res;

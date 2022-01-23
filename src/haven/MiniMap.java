@@ -28,6 +28,8 @@ package haven;
 
 import java.util.*;
 import java.util.function.*;
+import java.io.*;
+import java.nio.file.*;
 import java.awt.Color;
 import haven.MapFile.Segment;
 import haven.MapFile.DataGrid;
@@ -223,6 +225,82 @@ public class MiniMap extends Widget {
 	follow = true;
     }
 
+    private void error(String err) {
+	GameUI gui = getparent(GameUI.class);
+	if(gui != null)
+	    gui.error(err);
+    }
+
+    private Runnable resnotif(String nm) {
+	return(() -> {
+		Indir<Resource> resid = Resource.local().load(nm);
+		ui.sess.glob.loader.defer(() -> {
+			Resource res;
+			try {
+			    res = resid.get();
+			} catch(Loading l) {
+			    throw(l);
+			} catch(RuntimeException e) {
+			    error("Could not play " + nm);
+			    return;
+			}
+			Audio.CS clip = Audio.fromres(res);
+			ui.sfx(clip);
+		    }, null);
+	    });
+    }
+
+    private Runnable wavnotif(Path path) {
+	return(() -> {
+		ui.sess.glob.loader.defer(() -> {
+			Audio.CS clip;
+			InputStream fail = null;
+			try {
+			    fail = Files.newInputStream(path);
+			    clip = Audio.PCMClip.fromwav(new BufferedInputStream(fail));
+			    fail = null;
+			} catch(IOException e) {
+			    String msg = e.getMessage();
+			    if(e instanceof FileSystemException)
+				msg = "Could not open file";
+			    error("Could not play " + path + ": " + msg);
+			    return;
+			} finally {
+			    if(fail != null) {
+				try {
+				    fail.close();
+				} catch(IOException e) {
+				    new Warning(e, "unexpected error on close").issue();
+				}
+			    }
+			}
+			ui.sfx(clip);
+		    }, null);
+	    });
+    }
+
+    private static final Map<Object, Double> lastnotifs = new HashMap<>();
+    private Runnable notiflimit(Runnable bk, Object id) {
+	return(() -> {
+		double now = Utils.rtime();
+		synchronized(lastnotifs) {
+		    Double last = lastnotifs.get(id);
+		    if((last != null) && (now - last < 0.5))
+			return;
+		    lastnotifs.put(id, now);
+		}
+		bk.run();
+	    });
+    }
+
+    private Runnable iconnotif(GobIcon.Setting conf) {
+	if(conf.resns != null)
+	    return(notiflimit(resnotif(conf.resns), conf.resns));
+	if(conf.filens != null)
+	    return(notiflimit(wavnotif(conf.filens), conf.filens));
+	return(null);
+    }
+
     public static final Color notifcol = new Color(255, 128, 0, 255);
     public class DisplayIcon {
 	public final GobIcon icon;
@@ -235,6 +313,7 @@ public class MiniMap extends Widget {
 	public int z;
 	public double stime;
 	public boolean notify;
+	private Runnable snotify;
 
 	public DisplayIcon(GobIcon icon, GobIcon.Setting conf) {
 	    this.icon = icon;
@@ -242,7 +321,8 @@ public class MiniMap extends Widget {
 	    this.img = icon.img();
 	    this.z = this.img.z;
 	    this.stime = Utils.rtime();
-	    this.notify = conf.notify;
+	    if(this.notify = conf.notify)
+		this.snotify = iconnotif(conf);
 	}
 
 	public void update(Coord2d rc, double ang) {
@@ -279,6 +359,10 @@ public class MiniMap extends Widget {
 			g.image(img.tex, sc.sub(img.cc.mul(f)), img.tex.sz().mul(f));
 		    g.defstate();
 		}
+	    }
+	    if(snotify != null) {
+		snotify.run();
+		snotify = null;
 	    }
 	}
 
