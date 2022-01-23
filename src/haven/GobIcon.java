@@ -219,6 +219,17 @@ public class GobIcon extends GAttrib {
 		buf.adduint8(set.show ? 1 : 0);
 		buf.adduint8((byte)'d');
 		buf.adduint8(set.defshow ? 1 : 0);
+		if(set.notify) {
+		    buf.adduint8((byte)'n');
+		    buf.adduint8(1);
+		}
+		if(set.resns != null) {
+		    buf.adduint8((byte)'R');
+		    buf.addstring(set.resns);
+		} else if(set.filens != null) {
+		    buf.adduint8((byte)'W');
+		    buf.addstring(set.filens.toString());
+		}
 		buf.adduint8(0);
 	    }
 	    buf.addstring("");
@@ -251,6 +262,19 @@ public class GobIcon extends GAttrib {
 		    case (int)'d':
 			set.defshow = (buf.uint8() != 0);
 			setdef = true;
+			break;
+		    case (int)'n':
+			set.notify = (buf.uint8() != 0);
+			break;
+		    case (int)'R':
+			set.resns = buf.string();
+			break;
+		    case (int)'W':
+			try {
+			    set.filens = Utils.path(buf.string());
+			} catch(RuntimeException e) {
+			    new Warning(e, "could not read path").issue();
+			}
 			break;
 		    case 0:
 			break data;
@@ -475,6 +499,8 @@ public class GobIcon extends GAttrib {
 		    } else {
 			conf.resns = item.res;
 			conf.filens = item.wav;
+			if(save != null)
+			    save.run();
 		    }
 		}
 	    }
