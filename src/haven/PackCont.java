@@ -79,28 +79,30 @@ public abstract class PackCont extends Widget {
 
 	public LinPack margin(int margin) {this.margin = margin; return(this);}
 
-	public <T extends Widget> T last(T child) {
+	protected abstract Coord pad(int p);
+
+	public <T extends Widget> T last(T child, int pad) {
 	    order.add(child);
-	    return(add(child));
+	    return(add(child, pad(pad)));
 	}
 
-	public <T extends Widget> T insert(T child, int p) {
+	public <T extends Widget> T insert(T child, int p, int pad) {
 	    order.add(p, child);
-	    return(add(child));
+	    return(add(child, pad(pad)));
 	}
 
-	public <T extends Widget> T after(T child, Widget after) {
+	public <T extends Widget> T after(T child, Widget after, int pad) {
 	    int p = order.indexOf(after);
 	    if(p < 0)
 		throw(new IllegalArgumentException(after + " is not currently ordered"));
-	    return(insert(child, p + 1));
+	    return(insert(child, p + 1, pad));
 	}
 
-	public <T extends Widget> T before(T child, Widget after) {
+	public <T extends Widget> T before(T child, Widget after, int pad) {
 	    int p = order.indexOf(after);
 	    if(p < 0)
 		throw(new IllegalArgumentException(after + " is not currently ordered"));
-	    return(insert(child, p));
+	    return(insert(child, p, pad));
 	}
 
 	public void cdestroy(Widget ch) {
@@ -109,20 +111,24 @@ public abstract class PackCont extends Widget {
 	}
 
 	public static class VPack extends LinPack {
+	    protected Coord pad(int p) {return(Coord.of(p, 0));}
+
 	    protected void repack() {
 		int y = 0;
 		for(Widget ch : order) {
-		    ch.move(Coord.of(0, y));
+		    ch.move(Coord.of(ch.c.x, y));
 		    y += ch.sz.y + margin;
 		}
 	    }
 	}
 
 	public static class HPack extends LinPack {
+	    protected Coord pad(int p) {return(Coord.of(0, p));}
+
 	    protected void repack() {
 		int x = 0;
 		for(Widget ch : order) {
-		    ch.move(Coord.of(x, 0));
+		    ch.move(Coord.of(x, ch.c.y));
 		    x += ch.sz.x + margin;
 		}
 	    }

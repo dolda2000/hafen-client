@@ -423,7 +423,7 @@ public class GobIcon extends GAttrib {
 		    setbox = null;
 		}
 		if(icon != null) {
-		    setbox = cont.after(new IconSettings(sz.x, icon.conf), list);
+		    setbox = cont.after(new IconSettings(sz.x - UI.scale(10), icon.conf), list, UI.scale(5));
 		}
 	    }
 	}
@@ -521,7 +521,7 @@ public class GobIcon extends GAttrib {
 	    this.conf = conf;
 	    this.save = save;
 	    add(this.cont = new PackCont.LinPack.VPack(), Coord.z).margin(UI.scale(5)).packpar(true);
-	    list = cont.last(new IconList(UI.scale(250, 500)));
+	    list = cont.last(new IconList(UI.scale(250, 500)), 0);
 	    cont.last(new CheckBox("Notification on newly seen icons") {
 		    {this.a = conf.notify;}
 
@@ -530,7 +530,7 @@ public class GobIcon extends GAttrib {
 			if(save != null)
 			    save.run();
 		    }
-		});
+		}, UI.scale(5));
 	    cont.pack();
 	}
     }
