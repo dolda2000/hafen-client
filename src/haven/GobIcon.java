@@ -522,6 +522,7 @@ public class GobIcon extends GAttrib {
 	    this.save = save;
 	    add(this.cont = new PackCont.LinPack.VPack(), Coord.z).margin(UI.scale(5)).packpar(true);
 	    list = cont.last(new IconList(UI.scale(250, 500)), 0);
+	    cont.last(new HRuler(list.sz.x), 0);
 	    cont.last(new CheckBox("Notification on newly seen icons") {
 		    {this.a = conf.notify;}
 
