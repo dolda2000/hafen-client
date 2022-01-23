@@ -444,8 +444,9 @@ public class GobIcon extends GAttrib {
 			protected void unpress() {}
 			public void click() {play();}
 		    };
-		nb = new NotifBox(w - pb.sz.x - UI.scale(5));
-		addhl(prev.pos("bl").adds(0, 5), w, nb, pb);
+		prev = add(new Label("Sound to play on notification:"), prev.pos("bl").adds(0, 5));
+		nb = new NotifBox(w - pb.sz.x - UI.scale(15));
+		addhl(prev.pos("bl").adds(0, 2), w, Frame.with(nb, false), pb);
 		pack();
 	    }
 
