@@ -110,6 +110,23 @@ public abstract class PackCont extends Widget {
 	    super.cdestroy(ch);
 	}
 
+	public void addchild(Widget child, Object... args) {
+	    if(args.length == 0) {
+		last(child, 0);
+	    } else if(args[0] instanceof Integer) {
+		switch(((Integer)args[0]).intValue()) {
+		case (int)'l': last(child, (Integer)args[1]); break;
+		case (int)'i': insert(child, (Integer)args[1], (Integer)args[2]); break;
+		case (int)'a': after(child, ui.getwidget((Integer)args[1]), (Integer)args[2]); break;
+		case (int)'b': before(child, ui.getwidget((Integer)args[1]), (Integer)args[2]); break;
+		default:
+		    throw(new UI.UIException("Unknown child widget creation specification.", null, args));
+		}
+	    } else {
+		super.addchild(child, args);
+	    }
+	}
+
 	public static class VPack extends LinPack {
 	    protected Coord pad(int p) {return(Coord.of(p, 0));}
 
@@ -131,6 +148,16 @@ public abstract class PackCont extends Widget {
 		    ch.move(Coord.of(x, ch.c.y));
 		    x += ch.sz.x + margin;
 		}
+	    }
+	}
+
+	@RName("linpack")
+	public static class $linpack implements Factory {
+	    public Widget create(UI ui, Object[] args) {
+		LinPack ret = (((Integer)args[0]) == 0) ? new VPack() : new HPack();
+		if(args.length > 1)
+		    ret.margin(UI.scale((Integer)args[1]));
+		return(ret);
 	    }
 	}
     }
