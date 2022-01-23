@@ -93,6 +93,68 @@ public class GobIcon extends GAttrib {
 	return(this.img);
     }
 
+    private static Consumer<UI> resnotif(String nm) {
+	return(ui -> {
+		Indir<Resource> resid = Resource.local().load(nm);
+		ui.sess.glob.loader.defer(() -> {
+			Resource res;
+			try {
+			    res = resid.get();
+			} catch(Loading l) {
+			    throw(l);
+			} catch(RuntimeException e) {
+			    ui.error("Could not play " + nm);
+			    return;
+			}
+			Audio.CS clip = Audio.fromres(res);
+			ui.sfx(clip);
+		    }, null);
+	    });
+    }
+
+    private static Consumer<UI> wavnotif(Path path) {
+	return(ui -> {
+		ui.sess.glob.loader.defer(() -> {
+			Audio.CS clip;
+			InputStream fail = null;
+			try {
+			    fail = Files.newInputStream(path);
+			    clip = Audio.PCMClip.fromwav(new BufferedInputStream(fail));
+			    fail = null;
+			} catch(IOException e) {
+			    String msg = e.getMessage();
+			    if(e instanceof FileSystemException)
+				msg = "Could not open file";
+			    ui.error("Could not play " + path + ": " + msg);
+			    return;
+			} finally {
+			    if(fail != null) {
+				try {
+				    fail.close();
+				} catch(IOException e) {
+				    new Warning(e, "unexpected error on close").issue();
+				}
+			    }
+			}
+			ui.sfx(clip);
+		    }, null);
+	    });
+    }
+
+    private static final Map<Object, Double> lastnotifs = new HashMap<>();
+    private static Consumer<UI> notiflimit(Consumer<UI> bk, Object id) {
+	return(ui -> {
+		double now = Utils.rtime();
+		synchronized(lastnotifs) {
+		    Double last = lastnotifs.get(id);
+		    if((last != null) && (now - last < 0.5))
+			return;
+		    lastnotifs.put(id, now);
+		}
+		bk.accept(ui);
+	    });
+    }
+
     public static class Setting implements Serializable {
 	public Resource.Spec res;
 	public boolean show, defshow, notify;
@@ -101,6 +163,14 @@ public class GobIcon extends GAttrib {
 
 	public Setting(Resource.Spec res) {
 	    this.res = res;
+	}
+
+	public Consumer<UI> notification() {
+	    if(resns != null)
+		return(notiflimit(resnotif(resns), resns));
+	    if(filens != null)
+		return(notiflimit(wavnotif(filens), filens));
+	    return(null);
 	}
     }
 
