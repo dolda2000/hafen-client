@@ -85,7 +85,7 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 		    }
 		    this.img = new TexI(img);
 		}
-		g.image(this.img, Coord.of(m));
+		g.image(this.img, Coord.of(sz.y).sub(this.img.sz()).div(2));
 	    } catch(Loading l) {
 		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.of(m), Coord.of(sz.y - (m * 2)));
 	    }
