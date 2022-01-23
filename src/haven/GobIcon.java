@@ -32,6 +32,8 @@ import java.io.*;
 import java.nio.file.*;
 import java.awt.image.*;
 import java.awt.Color;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.*;
 
 public class GobIcon extends GAttrib {
     private static final int size = UI.scale(20);
@@ -264,15 +266,52 @@ public class GobIcon extends GAttrib {
 	}
     }
 
+    public static class NotificationSetting {
+	public final String name, res;
+	public final Path wav;
+
+	private NotificationSetting(String name, String res, Path wav) {this.name = name; this.res = res; this.wav = wav;}
+	public NotificationSetting(String name, String res) {this(name, res, null);}
+	public NotificationSetting(String name, Path wav)   {this(name, null, wav);}
+	public NotificationSetting(Path wav) {this(wav.getFileName().toString(), wav);}
+
+	public boolean act(Setting conf) {
+	    return(Utils.eq(conf.resns, this.res) && Utils.eq(conf.filens, wav));
+	}
+
+	public static final NotificationSetting nil = new NotificationSetting("None", null, null);
+	public static final NotificationSetting other = new NotificationSetting("Select file...", null, null);
+	public static final List<NotificationSetting> builtin;
+
+	static {
+	    List<NotificationSetting> buf = new ArrayList<>();
+	    buf.add(new NotificationSetting("Bell 1", "sfx/hud/mmap/bell1"));
+	    buf.add(new NotificationSetting("Bell 2", "sfx/hud/mmap/bell2"));
+	    buf.add(new NotificationSetting("Bell 3", "sfx/hud/mmap/bell3"));
+	    buf.add(new NotificationSetting("Wood 1", "sfx/hud/mmap/wood1"));
+	    buf.add(new NotificationSetting("Wood 2", "sfx/hud/mmap/wood2"));
+	    buf.add(new NotificationSetting("Wood 3", "sfx/hud/mmap/wood3"));
+	    buf.add(new NotificationSetting("Wood 4", "sfx/hud/mmap/wood4"));
+	    builtin = buf;
+	}
+    }
+
     public static class SettingsWindow extends Window {
 	public final Settings conf;
 	private final Runnable save;
+	private final PackCont.LinPack cont;
+	private final IconList list;
+	private Widget setbox;
 
 	public static class Icon {
 	    public final Setting conf;
 	    public String name;
 
 	    public Icon(Setting conf) {this.conf = conf;}
+	}
+
+	private <T> Consumer<T> andsave(Consumer<T> main) {
+	    return(val -> {main.accept(val); if(save != null) save.run();});
 	}
 
 	private static final Text.Foundry elf = CharWnd.attrf;
@@ -284,10 +323,6 @@ public class GobIcon extends GAttrib {
 
 	    private IconList(Coord sz) {
 		super(sz, elh);
-	    }
-
-	    private Consumer<Boolean> andsave(Consumer<Boolean> main) {
-		return(val -> {main.accept(val); if(save != null) save.run();});
 	    }
 
 	    public class IconLine extends ItemWidget<Icon> {
@@ -356,14 +391,111 @@ public class GobIcon extends GAttrib {
 		}
 		return(super.keydown(ev));
 	    }
+
+	    public void change(Icon icon) {
+		super.change(icon);
+		if(setbox != null) {
+		    setbox.destroy();
+		    setbox = null;
+		}
+		if(icon != null) {
+		    setbox = cont.after(new IconSettings(sz.x, icon.conf), list);
+		}
+	    }
+	}
+
+	public class IconSettings extends Widget {
+	    public final Setting conf;
+	    public final NotifBox nb;
+
+	    public IconSettings(int w, Setting conf) {
+		super(Coord.z);
+		this.conf = conf;
+		Widget prev = add(new CheckBox("Display").state(() -> conf.show).set(andsave(val -> conf.show = val)),
+				  0, 0);
+		add(new CheckBox("Notify").state(() -> conf.notify).set(andsave(val -> conf.notify = val)),
+		    w / 2, 0);
+		Button pb = new Button(UI.scale(50), "Play") {
+			protected void depress() {}
+			protected void unpress() {}
+			public void click() {play();}
+		    };
+		nb = new NotifBox(w - pb.sz.x - UI.scale(5));
+		addhl(prev.pos("bl").adds(0, 5), w, nb, pb);
+		pack();
+	    }
+
+	    public class NotifBox extends Dropbox<NotificationSetting> {
+		private final List<NotificationSetting> items = new ArrayList<>();
+
+		public NotifBox(int w) {
+		    super(w, 8, UI.scale(20));
+		    items.add(NotificationSetting.nil);
+		    for(NotificationSetting notif : NotificationSetting.builtin)
+			items.add(notif);
+		    if(conf.filens != null)
+			items.add(new NotificationSetting(conf.filens));
+		    items.add(NotificationSetting.other);
+		    for(NotificationSetting item : items) {
+			if(item.act(conf)) {
+			    sel = item;
+			    break;
+			}
+		    }
+		}
+
+		protected NotificationSetting listitem(int idx) {return(items.get(idx));}
+		protected int listitems() {return(items.size());}
+
+		protected void drawitem(GOut g, NotificationSetting item, int idx) {
+		    g.atext(item.name, Coord.of(0, g.sz().y / 2), 0.0, 0.5);
+		}
+
+		private void selectwav() {
+		    java.awt.EventQueue.invokeLater(() -> {
+			    JFileChooser fc = new JFileChooser();
+			    fc.setFileFilter(new FileNameExtensionFilter("PCM wave file", "wav"));
+			    if(fc.showOpenDialog(null) != JFileChooser.APPROVE_OPTION)
+				return;
+			    for(Iterator<NotificationSetting> i = items.iterator(); i.hasNext();) {
+				NotificationSetting item = i.next();
+				if(item.wav != null)
+				    i.remove();
+			    }
+			    NotificationSetting ws = new NotificationSetting(fc.getSelectedFile().toPath());
+			    items.add(items.indexOf(NotificationSetting.other), ws);
+			    change(ws);
+			});
+		}
+
+		public void change(NotificationSetting item) {
+		    super.change(item);
+		    if(item == NotificationSetting.other) {
+			selectwav();
+		    } else {
+			conf.resns = item.res;
+			conf.filens = item.wav;
+		    }
+		}
+	    }
+
+	    private void play() {
+		NotificationSetting sel = nb.sel;
+		if(sel == null) sel = NotificationSetting.nil;
+		if(sel.res != null)
+		    resnotif(sel.res).accept(ui);
+		else if(sel.wav != null)
+		    wavnotif(sel.wav).accept(ui);
+	    }
 	}
 
 	public SettingsWindow(Settings conf, Runnable save) {
 	    super(Coord.z, "Icon settings");
 	    this.conf = conf;
 	    this.save = save;
-	    Widget prev = add(new IconList(UI.scale(250, 500)), Coord.z);
-	    add(new CheckBox("Notification on newly seen icons") {
+	    add(this.cont = new PackCont.LinPack.VPack(), Coord.z).margin(UI.scale(5)).packpar(true);
+	    list = cont.last(new IconList(UI.scale(250, 500)));
+	    cont.last(new CheckBox("Notification on newly seen icons") {
 		    {this.a = conf.notify;}
 
 		    public void changed(boolean val) {
@@ -371,8 +503,8 @@ public class GobIcon extends GAttrib {
 			if(save != null)
 			    save.run();
 		    }
-		}, prev.pos("bl").adds(5, 5));
-	    pack();
+		});
+	    cont.pack();
 	}
     }
 }
