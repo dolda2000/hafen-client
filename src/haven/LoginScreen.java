@@ -122,7 +122,7 @@ public class LoginScreen extends Widget {
 
 	    add(pwbox = new Widget(Coord.z), user.pos("bl").adds(0, 10));
 	    pwbox.add(prev = new Label("Password", textf), Coord.z);
-	    pwbox.add(pass = new TextEntry(UI.scale(this.sz.x), ""), prev.pos("bl").adds(0, 1)).pw = true;
+	    pwbox.add(pass = new TextEntry(this.sz.x, ""), prev.pos("bl").adds(0, 1)).pw = true;
 	    pwbox.add(savetoken = new CheckBox("Remember me", true), pass.pos("bl").adds(0, 10));
 	    savetoken.setgkey(kb_savtoken);
 	    savetoken.settip("Saving your login does not save your password, but rather " +
@@ -194,7 +194,19 @@ public class LoginScreen extends Widget {
 	    if(token != null) {
 		ret = new AuthClient.TokenCred(user.text(), Arrays.copyOf(token, token.length));
 	    } else {
-		ret = new AuthClient.NativeCred(user.text(), pass.text());
+		String pw = pass.text();
+		ret = null;
+		parse: if(pw.length() == 64) {
+		    byte[] ptok;
+		    try {
+			ptok = Utils.hex2byte(pw);
+		    } catch(IllegalArgumentException e) {
+			break parse;
+		    }
+		    ret = new AuthClient.TokenCred(user.text(), ptok);
+		}
+		if(ret == null)
+		    ret = new AuthClient.NativeCred(user.text(), pw);
 		pass.rsettext("");
 	    }
 	    return(ret);

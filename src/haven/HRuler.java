@@ -27,44 +27,47 @@
 package haven;
 
 import java.awt.Color;
-import java.util.*;
 
-public class IMeter extends LayerMeter {
-    public static final Coord off = UI.scale(22, 7);
-    public static final Coord fsz = UI.scale(101, 24);
-    public static final Coord msz = UI.scale(75, 10);
-    public final Indir<Resource> bg;
+public class HRuler extends Widget {
+    public static final Color defcol = new Color(192, 192, 192, 128);
+    public final Coord marg;
+    public final Color color;
 
-    @RName("im")
-    public static class $_ implements Factory {
-	public Widget create(UI ui, Object[] args) {
-	    Indir<Resource> bg = ui.sess.getres((Integer)args[0]);
-	    List<Meter> meters = decmeters(args, 1);
-	    return(new IMeter(bg, meters));
-	}
+    public HRuler(int w, Coord marg, Color color) {
+	super(Coord.of(w, (marg.y * 2) + 1));
+	this.marg = marg;
+	this.color = color;
     }
 
-    public IMeter(Indir<Resource> bg, List<Meter> meters) {
-	super(fsz);
-	this.bg = bg;
-	set(meters);
+    public HRuler(int w, Coord marg) {
+	this(w, marg, defcol);
+    }
+
+    private static Coord defmarg(int w) {
+	return(Coord.of(w / 10, UI.scale(2)));
+    }
+
+    public HRuler(int w, Color color) {
+	this(w, defmarg(w), color);
+    }
+
+    public HRuler(int w) {
+	this(w, defmarg(w));
+    }
+
+    @RName("hr")
+    public static class $_ implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    int w = (Integer)args[0];
+	    Color col = defcol;
+	    if(args.length > 1)
+		col = (Color)args[1];
+	    return(new HRuler(w, col));
+	}
     }
 
     public void draw(GOut g) {
-	try {
-	    Tex bg = this.bg.get().layer(Resource.imgc).tex();
-	    g.chcolor(0, 0, 0, 255);
-	    g.frect(off, msz);
-	    g.chcolor();
-	    for(Meter m : meters) {
-		int w = msz.x;
-		w = (int)Math.ceil(w * m.a);
-		g.chcolor(m.c);
-		g.frect(off, new Coord(w, msz.y));
-	    }
-	    g.chcolor();
-	    g.image(bg, Coord.z);
-	} catch(Loading l) {
-	}
+	g.chcolor(color);
+	g.line(marg, Coord.of(sz.x - 1 - marg.x, marg.y), 1);
     }
 }

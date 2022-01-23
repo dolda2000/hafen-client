@@ -124,7 +124,7 @@ public class Button extends SIWidget {
 	Graphics g = img.getGraphics();
 	int yo = lg?((hl - hs) / 2):0;
 
-	g.drawImage(a?dt:ut, 4, yo + 4, sz.x - 8, hs - 8, null);
+	g.drawImage(a?dt:ut, UI.scale(4), yo + UI.scale(4), sz.x - UI.scale(8), hs - UI.scale(8), null);
 
 	Coord tc = sz.sub(Utils.imgsz(cont)).div(2);
 	if(a)
