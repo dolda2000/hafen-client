@@ -407,7 +407,7 @@ public class Audio {
     public static class Resampler implements CS {
 	public final CS bk;
 	public double irate, orate;
-	public double sp;
+	public double sp = 1.0;
 	private double ack;
 	private double[] lval = {0}, nval = {0};
 	private double[][] data = {};
@@ -441,7 +441,7 @@ public class Audio {
 		while(ack >= 1.0) {
 		    while(dp >= dl) {
 			if((dl = bk.get(data, 512)) < 0)
-			    return((sm > 0)?sm:-1);
+			    return( (sm > 0) ? sm : -1);
 			dp = 0;
 		    }
 		    for(int ch = 0; ch < nch; ch++) {
