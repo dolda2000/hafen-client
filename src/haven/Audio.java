@@ -164,48 +164,173 @@ public class Audio {
     }
 
     public static class PCMClip implements CS {
+	public static final int UN8 = 0, SN8 = 1, SN16 = 2, SN32 = 3;
 	public final InputStream clip;
-	public final int sch;
+	public final int sch, sfmt, ssz;
+	public int size = -1;
 	private final byte[] dbuf = new byte[256];
 	private int head = 0, tail = 0;
+	private boolean eof = false;
 
-	public PCMClip(InputStream clip, int nch) {
+	public PCMClip(InputStream clip, int nch, int sfmt) {
 	    this.clip = clip;
 	    this.sch = nch;
+	    switch(this.sfmt = sfmt) {
+	    case UN8:  ssz = 1; break;
+	    case SN8:  ssz = 1; break;
+	    case SN16: ssz = 2; break;
+	    case SN32: ssz = 4; break;
+	    default: throw(new IllegalArgumentException("sfmt " + sfmt));
+	    }
+	}
+
+	public PCMClip size(int size) {
+	    this.size = size;
+	    return(this);
+	}
+
+	private int read(byte[] buf, int off, int len) {
+	    if(eof)
+		return(-1);
+	    if(size >= 0)
+		len = Math.min(len, size);
+	    try {
+		int ret = clip.read(buf, off, len);
+		if(ret < 0) {
+		    eof = true;
+		    clip.close();
+		    return(-1);
+		}
+		if((size >= 0) && ((size -= ret) <= 0)) {
+		    eof = true;
+		    clip.close();
+		}
+		return(ret);
+	    } catch(IOException e) {
+		eof = true;
+		try {
+		    clip.close();
+		} catch(IOException e2) {}
+		return(-1);
+	    }
 	}
 
 	public int get(double[][] dst, int ns) {
 	    int nch = dst.length;
 	    double[] dec = new double[sch];
 	    for(int sm = 0; sm < ns; sm++) {
-		while(tail - head < 2 * sch) {
+		while(tail - head < ssz * sch) {
 		    if(head > 0) {
 			for(int i = 0; i < tail - head; i++)
 			    dbuf[i] = dbuf[head + i];
 			tail -= head;
 			head = 0;
 		    }
-		    try {
-			int ret = clip.read(dbuf, tail, dbuf.length - tail);
-			if(ret < 0)
-			    return((sm > 0)?sm:-1);
-			tail += ret;
-		    } catch(IOException e) {
-			return(-1);
-		    }
+		    int ret = read(dbuf, tail, dbuf.length - tail);
+		    if(ret < 0)
+			return((sm > 0) ? sm : -1);
+		    tail += ret;
 		}
 		for(int ch = 0; ch < sch; ch++) {
-		    int b1 = dbuf[head++] & 0xff;
-		    int b2 = dbuf[head++] & 0xff;
-		    int v = b1 + (b2 << 8);
-		    if(v >= 32768)
-			v -= 65536;
-		    dec[ch] = v * 0x1.0p-15;
+		    switch(sfmt) {
+		    case UN8:
+			dec[ch] = ((dbuf[head++] & 0xff) - 0x80) * 0x1.0p-7;
+			break;
+		    case SN8:
+			dec[ch] = dbuf[head++] * 0x1.0p-7;
+			break;
+		    case SN16:
+			dec[ch] = ((int)(short)((dbuf[head++] & 0xff) |
+						((dbuf[head++] & 0xff) << 8)))
+			    * 0x1.0p-15;
+			break;
+		    case SN32:
+			dec[ch] = ((dbuf[head++] & 0xff) |
+				   ((dbuf[head++] & 0xff) << 8) |
+				   ((dbuf[head++] & 0xff) << 16) |
+				   ((dbuf[head++] & 0xff) << 24))
+			    * 0x1.0p-31;
+			break;
+		    }
 		}
 		for(int ch = 0; ch < nch; ch++)
 		    dst[ch][sm] = dec[ch % sch];
 	    }
 	    return(ns);
+	}
+
+	public static CS fromwav(InputStream clip) throws IOException {
+	    if(s32(clip) != 0x46464952)
+		throw(new IOException("Not a WAVE file (non-RIFF header)"));
+	    int tsz = s32(clip);
+	    if(s32(clip) != 0x45564157)
+		throw(new IOException("Not a WAVE file (non-WAVE format)"));
+
+	    int nch = -1, rate = -1, fmt = -1;
+	    while(true) {
+		int id, sz;
+		try {
+		    id = s32(clip);
+		    sz = s32(clip);
+		} catch(EOFException e) {
+		    throw(new IOException("Malformed wave file (no data chunk)"));
+		}
+		if(id == 0x20746d66) {
+		    if(sz < 16)
+			throw(new IOException("Malformed wave file (too small fmt chunk)"));
+		    int law = u16(clip);
+		    if(law != 1)
+			throw(new IOException("Not a PCM wave file (" + law + ")"));
+		    nch = u16(clip);
+		    rate = s32(clip);
+		    int brate = s32(clip);
+		    int blsz = u16(clip);
+		    int bits = u16(clip);
+		    for(int i = 16; i < sz; i++)
+			u8(clip);
+		    if((bits & 7) != 0)
+			throw(new IOException("Malformed wave file (non-whole-byte sample size)"));
+		    int ssz = bits >> 3;
+		    if(((ssz * nch) != blsz) || ((ssz * nch * rate) != brate))
+			throw(new IOException("Malformed wave file (non-matching sample sizes)"));
+		    switch(ssz) {
+		    case 1: fmt = UN8;  break;
+		    case 2: fmt = SN16; break;
+		    case 4: fmt = SN32; break;
+		    default:
+			throw(new IOException("Unexpected sample format: " + ssz));
+		    }
+		} else if(id == 0x61746164) {
+		    if(nch < 0)
+			throw(new IOException("Malformed wave file (no fmt chunk)"));
+		    CS ret = new PCMClip(clip, nch, fmt).size(sz);
+		    int orate = Math.round(Audio.fmt.getSampleRate());
+		    if(rate != orate)
+			ret = new Resampler(ret, rate, orate);
+		    return(ret);
+		} else {
+		    byte[] disc = new byte[256];
+		    for(int r = 0; r < sz;) {
+			int rv = clip.read(disc, 0, Math.min(sz - r, disc.length));
+			if(rv < 0)
+			    throw(new EOFException("unexpected end-of-file"));
+			r += rv;
+		    }
+		}
+	    }
+	}
+
+	private static int u8(InputStream clip) throws IOException {
+	    int ret = clip.read();
+	    if(ret < 0)
+		throw(new EOFException("unexpected end-of-file"));
+	    return(ret & 0xff);
+	}
+	private static int u16(InputStream clip) throws IOException {
+	    return(u8(clip) | (u8(clip) << 8));
+	}
+	private static int s32(InputStream clip) throws IOException {
+	    return(u8(clip) | (u8(clip) << 8) | (u8(clip) << 16) | (u8(clip) << 24));
 	}
     }
 
@@ -579,7 +704,7 @@ public class Audio {
 	    if(args[i].equals("-b")) {
 		bufsize = Integer.parseInt(args[++i]);
 	    } else {
-		Monitor c = new Monitor(new PCMClip(Files.newInputStream(Utils.path(args[i])), 2));
+		Monitor c = new Monitor(PCMClip.fromwav(Files.newInputStream(Utils.path(args[i]))));
 		clips.add(c);
 	    }
 	}
