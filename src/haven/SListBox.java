@@ -1,0 +1,205 @@
+/*
+ *  This file is part of the Haven & Hearth game client.
+ *  Copyright (C) 2009 Fredrik Tolf <fredrik@dolda2000.com>, and
+ *                     Björn Johannessen <johannessen.bjorn@gmail.com>
+ *
+ *  Redistribution and/or modification of this file is subject to the
+ *  terms of the GNU Lesser General Public License, version 3, as
+ *  published by the Free Software Foundation.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  Other parts of this source tree adhere to other copying
+ *  rights. Please see the file `COPYING' in the root directory of the
+ *  source tree for details.
+ *
+ *  A copy the GNU Lesser General Public License is distributed along
+ *  with the source tree of which this file is a part in the file
+ *  `doc/LPGL-3'. If it is missing for any reason, please see the Free
+ *  Software Foundation's website at <http://www.fsf.org/>, or write
+ *  to the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ *  Boston, MA 02111-1307 USA
+ */
+
+package haven;
+
+import java.util.*;
+import java.awt.Color;
+
+public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
+    public static final Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32);
+    public final int itemh, marg;
+    public final Scrollbar sb;
+    private Map<I, W> curw = new IdentityHashMap<>();
+    private I[] curi;
+    private int n = -1, h, curo = 0, itemw = 0;
+
+    public SListBox(Coord sz, int itemh, int marg) {
+	super(sz);
+	this.itemh = itemh;
+	this.marg = marg;
+	this.sb = add(new Scrollbar(0, 0, 0));
+	resize(sz);
+    }
+    public SListBox(Coord sz, int itemh) {this(sz, itemh, 0);}
+
+    @SuppressWarnings("unchecked")
+    public void tick(double dt) {
+	boolean reset = false;
+	List<? extends I> items = items();
+	if(items.size() != n) {
+	    n = items.size();
+	    int th = (n == 0) ? 0 : (itemh + ((n - 1) * (itemh + marg)));
+	    sb.max = th - sz.y;
+	    sb.val = Math.min(sb.val, Math.max(th - sz.y, 0));
+	}
+	int itemw = sz.x - (sb.vis() ? sb.sz.x : 0);
+	if(itemw != this.itemw) {
+	    reset = true;
+	    this.itemw = itemw;
+	}
+	int sy = sb.val, off = sy / (itemh + marg);
+	if(reset) {
+	    for(W cw : curw.values())
+		cw.destroy();
+	    curi = null;
+	    curw.clear();
+	}
+	boolean update = false;
+	if((curi == null) || (curi.length != h) || (curo != off))
+	    update = true;
+	if(!update) {
+	    for(int i = 0; i < h; i++) {
+		I item = (i + curo < items.size()) ? items.get(i + curo) : null;
+		if((curi[i] != item)) {
+		    update = true;
+		    break;
+		}
+	    }
+	}
+	if(update) {
+	    I[] newi = (I[])new Object[h];
+	    Map<I, W> neww = new IdentityHashMap<>();
+	    Coord itemsz = Coord.of(itemw, itemh);
+	    for(int i = 0; i < h; i++) {
+		int np = i + off;
+		newi[i] = (np < items.size()) ? items.get(np) : null;
+		if(newi[i] != null) {
+		    W pw = curw.remove(newi[i]);
+		    if(pw == null)
+			neww.put(newi[i], add(makeitem(newi[i], np, itemsz)));
+		    else
+			neww.put(newi[i], pw);
+		}
+	    }
+	    for(W pw : curw.values())
+		pw.destroy();
+	    curi = newi;
+	    curw = neww;
+	    curo = off;
+	}
+	boolean updpos = update;
+	if(!updpos) {
+	    for(int i = 0; i < curi.length; i++) {
+		if(curi[i] != null) {
+		    W w = curw.get(curi[i]);
+		    if(w.c.y != ((i * (itemh + marg)) - sy)) {
+			updpos = true;
+			break;
+		    }
+		}
+	    }
+	}
+	if(updpos) {
+	    for(int i = 0; i < curi.length; i++) {
+		if(curi[i] != null)
+		    curw.get(curi[i]).move(Coord.of(0, ((i + curo) * (itemh + marg)) - sy));
+	    }
+	}
+	super.tick(dt);
+    }
+
+    protected void drawbg(GOut g) {
+    }
+
+    protected void drawbg(GOut g, I item, int idx, Area area) {
+	g.chcolor(((idx % 2) == 0) ? every : other);
+	g.frect2(area.ul, area.br);
+	g.chcolor();
+    }
+
+    protected void drawsel(GOut g, I item, int idx, Area area) {
+	g.chcolor(255, 255, 0, 128);
+	g.frect2(area.ul, area.br);
+	g.chcolor();
+    }
+
+    protected void drawslot(GOut g, I item, int idx, Area area) {
+	drawbg(g, item, idx, area);
+	if((sel != null) && (sel == item))
+	    drawsel(g, item, idx, area);
+    }
+
+    public void draw(GOut g) {
+	drawbg(g);
+	if(curi != null) {
+	    List<? extends I> items = items();
+	    int sy = sb.val;
+	    for(int i = 0; (i < curi.length) && (i + curo < items.size()); i++) {
+		drawslot(g, curi[i], i + curo, Area.sized(Coord.of(0, ((i + curo) * (itemh + marg)) - sy), Coord.of(itemw, itemh)));
+	    }
+	}
+	super.draw(g);
+    }
+
+    public boolean mousewheel(Coord c, int amount) {
+	if(super.mousewheel(c, amount))
+	    return(true);
+	int step = sz.y / 8;
+	if(sb.max > 0)
+	    step = Math.min(step, sb.max / 8);
+	step = Math.max(step, itemh);
+	sb.ch(step * amount);
+	return(true);
+    }
+
+    protected boolean unselect(int button) {
+	if(button == 1)
+	    change(null);
+	return(true);
+    }
+
+    public boolean mousedown(Coord c, int button) {
+	if(super.mousedown(c, button))
+	    return(true);
+	return(unselect(button));
+    }
+
+    public void resize(Coord sz) {
+	super.resize(sz);
+	sb.resize(sz.y);
+	sb.c = new Coord(sz.x - sb.sz.x, 0);
+	h = ((sz.y + itemh + marg - 2) / (itemh + marg)) + 1;
+    }
+
+    public void display(int idx) {
+	int y = idx * (itemh + marg);
+	if(y < sb.val)
+	    sb.val = y;
+	else if(y + itemh >= sb.val + sz.y)
+	    sb.val = Math.max((y + itemh) - sz.y, 0);
+    }
+
+    public void display(I item) {
+	int p = items().indexOf(item);
+	if(p >= 0)
+	    display(p);
+    }
+
+    public void display() {
+	display(sel);
+    }
+}
