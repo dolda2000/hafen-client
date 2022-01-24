@@ -185,17 +185,17 @@ public interface UniformApplier<T> {
 		});
 
 	    TypeMapping.register(Type.MAT3, float[].class, (gl, var, type, mat) -> {
-		    gl.glUniformMatrix3fv(var, 1, false, mat, 0);
+		    gl.glUniformMatrix3fv(var, 1, false, mat);
 		});
 	    TypeMapping.register(Type.MAT3, Matrix4f.class, (gl, var, type, mat) -> {
-		    gl.glUniformMatrix3fv(var, 1, false, mat.trim3(), 0);
+		    gl.glUniformMatrix3fv(var, 1, false, mat.trim3());
 		});
 
 	    TypeMapping.register(Type.MAT4, float[].class, (gl, var, type, mat) -> {
-		    gl.glUniformMatrix4fv(var, 1, false, mat, 0);
+		    gl.glUniformMatrix4fv(var, 1, false, mat);
 		});
 	    TypeMapping.register(Type.MAT4, Matrix4f.class, (gl, var, type, mat) -> {
-		    gl.glUniformMatrix4fv(var, 1, false, mat.m, 0);
+		    gl.glUniformMatrix4fv(var, 1, false, mat.m);
 		});
 	    TypeMapping.register(new Array(Type.MAT4), float[][].class, (gl, var, type, mats) -> {
 		    Array ary = (Array)type;
@@ -205,7 +205,7 @@ public interface UniformApplier<T> {
 			for(int o = 0; o < 16; o++)
 			    buf[m++] = mats[i][o];
 		    }
-		    gl.glUniformMatrix4fv(var, n, false, buf, 0);
+		    gl.glUniformMatrix4fv(var, n, false, buf);
 		});
 
 	    TypeMapping.register(Type.SAMPLER2D, GLTexture.Tex2D.class, (gl, var, type, smp) -> {

@@ -28,13 +28,14 @@ package haven;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
 import java.security.MessageDigest;
 
 public class AuthClient implements Closeable {
     private static final SslHelper ssl;
-    private Socket sk;
-    private InputStream skin;
-    private OutputStream skout;
+    private final Socket sk;
+    private final InputStream skin;
+    private final OutputStream skout;
     
     static {
 	ssl = new SslHelper();
@@ -50,7 +51,11 @@ public class AuthClient implements Closeable {
 	skin = sk.getInputStream();
 	skout = sk.getOutputStream();
     }
-    
+
+    public SocketAddress address() {
+	return(sk.getRemoteSocketAddress());
+    }
+
     private static byte[] digest(byte[] pw) {
 	MessageDigest dig;
 	try {
@@ -203,10 +208,6 @@ public class AuthClient implements Closeable {
 	public abstract String name();
 	public void discard() {}
 	
-	protected void finalize() {
-	    discard();
-	}
-	
 	public static class AuthException extends RuntimeException {
 	    public AuthException(String msg) {
 		super(msg);
@@ -216,24 +217,18 @@ public class AuthClient implements Closeable {
 
     public static class NativeCred extends Credentials {
 	public final String username;
-	private byte[] phash;
+	private final byte[] phash;
+	private final Runnable clean;
 	
 	public NativeCred(String username, byte[] phash) {
 	    this.username = username;
 	    if((this.phash = phash).length != 32)
 		throw(new IllegalArgumentException("Password hash must be 32 bytes"));
+	    clean = Finalizer.finalize(this, () -> Arrays.fill(phash, (byte)0));
 	}
 	
-	private static byte[] ohdearjava(String a) {
-	    try {
-		return(digest(a.getBytes("utf-8")));
-	    } catch(UnsupportedEncodingException e) {
-		throw(new RuntimeException(e));
-	    }
-	}
-
 	public NativeCred(String username, String pw) {
-	    this(username, ohdearjava(pw));
+	    this(username, digest(pw.getBytes(Utils.utf8)));
 	}
 	
 	public String name() {
@@ -255,22 +250,20 @@ public class AuthClient implements Closeable {
 	}
 	
 	public void discard() {
-	    if(phash != null) {
-		for(int i = 0; i < phash.length; i++)
-		    phash[i] = 0;
-		phash = null;
-	    }
+	    clean.run();
 	}
     }
 
     public static class TokenCred extends Credentials implements Serializable {
 	public final String acctname;
 	public final byte[] token;
+	private final Runnable clean;
 	
 	public TokenCred(String acctname, byte[] token) {
 	    this.acctname = acctname;
 	    if((this.token = token).length != 32)
 		throw(new IllegalArgumentException("Token must be 32 bytes"));
+	    clean = Finalizer.finalize(this, () -> Arrays.fill(token, (byte)0));
 	}
 	
 	public String name() {
@@ -292,7 +285,7 @@ public class AuthClient implements Closeable {
 	}
 
 	public void discard() {
-	    java.util.Arrays.fill(token, (byte)0);
+	    clean.run();
 	}
     }
 

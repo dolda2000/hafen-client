@@ -29,9 +29,9 @@ package haven;
 import java.util.*;
 import java.awt.event.KeyEvent;
 
-public abstract class ConsoleHost extends Widget {
+public abstract class ConsoleHost extends Widget implements ReadLine.Owner {
     public static Text.Foundry cmdfoundry = new Text.Foundry(Text.mono, 12, new java.awt.Color(245, 222, 179));
-    LineEdit cmdline = null;
+    public ReadLine cmdline = null;
     private Text.Line cmdtext = null;
     private String cmdtextf = null;
     private List<String> history = new ArrayList<String>();
@@ -41,63 +41,47 @@ public abstract class ConsoleHost extends Widget {
     
     public static final KeyBinding kb_histprev = KeyBinding.get("history/prev", KeyMatch.forcode(KeyEvent.VK_UP, 0));
     public static final KeyBinding kb_histnext = KeyBinding.get("history/next", KeyMatch.forcode(KeyEvent.VK_DOWN, 0));
-    private class CommandLine extends LineEdit {
-	private CommandLine() {
-	    super();
-	}
-	
-	private CommandLine(String line) {
-	    super(line);
-	}
 
-	private void cancel() {
-	    cmdline = null;
-	    kg.remove();
+    public void done(ReadLine buf) {
+	String line = buf.line();
+	history.add(line);
+	try {
+	    ui.cons.run(line);
+	} catch(Exception e) {
+	    String msg = e.getMessage();
+	    if(msg == null)
+		msg = e.toString();
+	    ui.cons.out.println(msg);
+	    error(msg);
 	}
-	
-	protected void done(String line) {
-	    history.add(line);
-	    try {
-		ui.cons.run(line);
-	    } catch(Exception e) {
-		String msg = e.getMessage();
-		if(msg == null)
-		    msg = e.toString();
-		ui.cons.out.println(msg);
-		error(msg);
-	    }
-	    cancel();
-	}
-	
-	public boolean key(char c, int code, int mod) {
-	    if((c == 8) && (mod == 0) && (line.length() == 0) && (point == 0)) {
-		cancel();
-	    } else {
-		return(super.key(c, code, mod));
-	    }
-	    return(true);
-	}
+	cancelcmd();
+    }
 
-	public boolean key(KeyEvent ev) {
+    private boolean cmdkey(KeyEvent ev) {
+	if(cmdline != null) {
 	    if(key_esc.match(ev)) {
-		cancel();
+		cancelcmd();
+	    } else if((ev.getKeyChar() == 8) && (KeyMatch.mods(ev) == 0) && cmdline.empty()) {
+		cancelcmd();
 	    } else if(kb_histprev.key().match(ev)) {
 		if(hpos > 0) {
 		    if(hpos == history.size())
-			hcurrent = line;
-		    cmdline = new CommandLine(history.get(--hpos));
+			hcurrent = cmdline.line();
+		    cmdline = ReadLine.make(this, history.get(--hpos));
 		}
 	    } else if(kb_histnext.key().match(ev)) {
 		if(hpos < history.size()) {
 		    if(++hpos == history.size())
-			cmdline = new CommandLine(hcurrent);
+			cmdline = ReadLine.make(this, hcurrent);
 		    else
-			cmdline = new CommandLine(history.get(hpos));
+			cmdline = ReadLine.make(this, history.get(hpos));
 		}
 	    } else {
-		return(super.key(ev));
+		return(cmdline.key(ev));
 	    }
 	    return(true);
+	} else {
+	    return(false);
 	}
     }
 
@@ -114,25 +98,36 @@ public abstract class ConsoleHost extends Widget {
     
     public void drawcmd(GOut g, Coord c) {
 	if(cmdline != null) {
-	    if((cmdtext == null) || (cmdtextf != cmdline.line))
-		cmdtext = cmdfoundry.render(":" + (cmdtextf = cmdline.line));
+	    if((cmdtext == null) || !cmdline.lneq(cmdtextf))
+		cmdtext = cmdfoundry.render(":" + (cmdtextf = cmdline.line()));
+	    int point = cmdline.point(), mark = cmdline.mark();
+	    int px = cmdtext.advance(point + 1);
+	    if(mark >= 0) {
+		int mx = cmdtext.advance(mark + 1);
+		g.chcolor(TextEntry.selcol);
+		g.frect2(c.add(Math.min(mx, px) + UI.scale(1), UI.scale(2)),
+			 c.add(Math.max(mx, px) + UI.scale(1), UI.scale(14)));
+		g.chcolor();
+	    }
 	    g.image(cmdtext.tex(), c);
-	    int lx = cmdtext.advance(cmdline.point + 1);
-	    g.line(c.add(lx + UI.scale(1), UI.scale(2)), c.add(lx + UI.scale(1), UI.scale(14)), UI.scale(1));
+	    g.line(c.add(px + UI.scale(1), UI.scale(2)), c.add(px + UI.scale(1), UI.scale(14)), UI.scale(1));
 	}
     }
     
     public void entercmd() {
 	kg = ui.grabkeys(this);
 	hpos = history.size();
-	cmdline = new CommandLine();
+	cmdline = ReadLine.make(this, "");
+    }
+
+    public void cancelcmd() {
+	cmdline = null;
+	kg.remove();
     }
 
     public boolean keydown(KeyEvent ev) {
-	if(cmdline != null) {
-	    cmdline.key(ev);
+	if(cmdkey(ev))
 	    return(true);
-	}
 	return(super.keydown(ev));
     }
     

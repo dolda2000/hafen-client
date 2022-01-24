@@ -208,7 +208,7 @@ public class MapWnd extends Window implements Console.Directory {
 	private Toolbox() {
 	    super(UI.scale(200, 200));
 	    listf = add(new Frame(UI.scale(new Coord(200, 200)), false), 0, 0);
-	    list = listf.add(new MarkerList(listf.inner().x, 0), 0, 0);
+	    list = listf.add(new MarkerList(Coord.of(listf.inner().x, 0)), 0, 0);
 	    pmbtn = add(new Button(btnw, "Placed", false) {
 		    public void click() {
 			mflt = pmarkers;
@@ -569,52 +569,46 @@ public class MapWnd extends Window implements Console.Directory {
 	}
     }
 
-    public static final Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32), found = new Color(255, 255, 0, 32);
-    public class MarkerList extends Searchbox<ListMarker> {
-	private final Text.Foundry fnd = CharWnd.attrf;
-
-	public ListMarker listitem(int idx) {return(markers.get(idx));}
-	public int listitems() {return(markers.size());}
-	public boolean searchmatch(int idx, String txt) {return(markers.get(idx).mark.nm.toLowerCase().indexOf(txt.toLowerCase()) >= 0);}
-
-	public MarkerList(int w, int n) {
-	    super(w, n, UI.scale(20));
+    public class MarkerList extends SSearchBox<ListMarker, Widget> {
+	public MarkerList(Coord sz) {
+	    super(sz, MarkerType.iconsz);
 	}
 
-	private Function<String, Text> names = new CachedFunction<>(500, nm -> fnd.render(nm));
-	protected void drawbg(GOut g) {}
-	public void drawitem(GOut g, ListMarker lm, int idx) {
-	    if(soughtitem(idx)) {
-		g.chcolor(found);
-		g.frect(Coord.z, g.sz());
-	    }
-	    g.chcolor(((idx % 2) == 0)?every:other);
-	    g.frect(Coord.z, g.sz());
-	    try {
-		Tex icon = lm.type.icon();
-		if(markcfg.filter(lm.type))
-		    g.chcolor(255, 255, 255, 128);
-		else
-		    g.chcolor();
-		if(icon != null)
-		    g.aimage(icon, new Coord(UI.scale(5), itemh / 2), 0, 0.5);
-	    } catch(Loading l) {
-	    }
-	    g.chcolor();
-	    g.aimage(names.apply(lm.mark.nm).tex(), new Coord(UI.scale(10) + MarkerType.iconsz, itemh / 2), 0, 0.5);
+	public List<ListMarker> allitems() {return(markers);}
+	public boolean searchmatch(ListMarker lm, String txt) {return(lm.mark.nm.toLowerCase().indexOf(txt.toLowerCase()) >= 0);}
+
+	public Widget makeitem(ListMarker lm, int idx, Coord sz) {
+	    Widget ret = new ItemWidget<ListMarker>(this, sz, lm);
+	    ret.add(new IconText(sz) {
+		    protected BufferedImage img() {throw(new RuntimeException());}
+		    protected String text() {return(lm.mark.nm);}
+
+		    protected void drawicon(GOut g) {
+			try {
+			    Tex icon = lm.type.icon();
+			    if(markcfg.filter(lm.type))
+				g.chcolor(255, 255, 255, 128);
+			    g.aimage(icon, Coord.of(sz.y / 2), 0.5, 0.5);
+			    g.chcolor();
+			} catch(Loading l) {
+			}
+		    }
+
+		    public boolean mousedown(Coord c, int button) {
+			if(c.x < sz.y) {
+			    toggletype(lm.type);
+			    return(true);
+			}
+			return(super.mousedown(c, button));
+		    }
+		}, Coord.z);
+	    return(ret);
 	}
 
 	private void toggletype(MarkerType type) {
 	    MarkerConfig nc = markcfg.toggle(type);
 	    markcfg = nc;
 	    cmarkers = nc.sel.isEmpty() ? null : nc;
-	}
-
-	public void itemclick(ListMarker lm, Coord c, int button) {
-	    if(c.x < UI.scale(5) + MarkerType.iconsz)
-		toggletype(lm.type);
-	    else
-		super.itemclick(lm, c, button);
 	}
 
 	public void change(ListMarker lm) {
@@ -651,7 +645,7 @@ public class MapWnd extends Window implements Console.Directory {
 			});
 		}
 		tool.namesel.settext(mark.nm);
-		tool.namesel.buf.point = mark.nm.length();
+		tool.namesel.buf.point(mark.nm.length());
 		tool.namesel.commit();
 		if(mark instanceof PMarker) {
 		    PMarker pm = (PMarker)mark;

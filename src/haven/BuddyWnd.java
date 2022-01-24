@@ -361,14 +361,35 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	}
     }
 
-    private class BuddyList extends Searchbox<Buddy> {
-	public BuddyList(int w, int h) {
-	    super(w, h, margin3);
+    private class BuddyList extends SSearchBox<Buddy, Widget> {
+	public BuddyList(Coord sz) {
+	    super(sz, margin3);
 	}
 
-	public Buddy listitem(int idx) {return(buddies.get(idx));}
-	public int listitems() {return(buddies.size());}
-	public boolean searchmatch(int idx, String txt) {return(buddies.get(idx).name.toLowerCase().indexOf(txt.toLowerCase()) >= 0);}
+	public List<Buddy> allitems() {return(buddies);}
+	public boolean searchmatch(Buddy b, String txt) {return(b.name.toLowerCase().indexOf(txt.toLowerCase()) >= 0);}
+
+	public Widget makeitem(Buddy b, int idx, Coord sz) {
+	    return(new ItemWidget<Buddy>(this, sz, b) {
+		    public void draw(GOut g) {
+			if(item.online == 1)
+			    g.aimage(online, Coord.of(sz.y / 2), 0.5, 0.5);
+			else if(item.online == 0)
+			    g.aimage(offline, Coord.of(sz.y / 2), 0.5, 0.5);
+			g.chcolor(gc[b.group]);
+			g.aimage(b.rname().tex(), Coord.of(sz.y + margin1, sz.y / 2), 0.0, 0.5);
+			g.chcolor();
+		    }
+
+		    public boolean mousedown(Coord c, int button) {
+			if(button == 1)
+			    change(item);
+			else if(button == 3)
+			    opts(b, ui.mc);
+			return(true);
+		    }
+		});
+	}
 
 	protected void drawbg(GOut g) {
 	    g.chcolor(0, 0, 0, 128);
@@ -376,19 +397,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    g.chcolor();
 	}
 
-	public void drawitem(GOut g, Buddy b, int idx) {
-	    if(soughtitem(idx)) {
-		g.chcolor(255, 255, 0, 32);
-		g.frect(Coord.z, g.sz());
-		g.chcolor();
-	    }
-	    if(b.online == 1)
-		g.image(online, Coord.z);
-	    else if(b.online == 0)
-		g.image(offline, Coord.z);
-	    g.chcolor(gc[b.group]);
-	    g.aimage(b.rname().tex(), UI.scale(new Coord(25, 10)), 0, 0.5);
-	    g.chcolor();
+	protected void drawbg(GOut g, Buddy item, int idx, Area area) {
 	}
 
 	public void draw(GOut g) {
@@ -428,14 +437,6 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		ui.root.add(menu, c);
 	    }
 	}
-
-	public void itemclick(Buddy b, int button) {
-	    if(button == 1) {
-		change(b);
-	    } else if(button == 3) {
-		opts(b, ui.mc);
-	    }
-	}
     }
 
     public BuddyWnd() {
@@ -444,7 +445,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	Widget prev;
         prev = add(new Img(CharWnd.catf.render("Kin").tex()));
 
-	bl = add(new BuddyList(sz.x - Window.wbox.bisz().x, 7), prev.pos("bl").add(Window.wbox.btloff()));
+	bl = add(new BuddyList(Coord.of(sz.x - Window.wbox.bisz().x, UI.scale(140))), prev.pos("bl").add(Window.wbox.btloff()));
 	prev = Frame.around(this, Collections.singletonList(bl));
 
 	prev = add(new Label("Sort by:"), prev.pos("bl").adds(0, 5));
@@ -591,11 +592,11 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    bl.change(find(id));
 	} else if(msg == "pwd") {
 	    charpass.settext((String)args[0]);
-	    charpass.buf.point = charpass.buf.line.length();
+	    charpass.buf.point(charpass.buf.length());
 	    charpass.commit();
 	} else if(msg == "pname") {
 	    pname.settext((String)args[0]);
-	    pname.buf.point = pname.buf.line.length();
+	    pname.buf.point(pname.buf.length());
 	    pname.commit();
 	} else if(msg == "i-set") {
 	    Buddy b = (args[0] == null) ? null : find((Integer)args[0]);

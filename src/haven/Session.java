@@ -577,7 +577,7 @@ public class Session implements Resource.Resolver {
 				break;
 			    state = "close";
 			    long now = System.currentTimeMillis();
-			    if(now - f > 500)
+			    if(now - f >= 500)
 				break;
 			    try {
 				Session.this.wait(500 - (now - f));

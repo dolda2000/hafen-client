@@ -47,8 +47,8 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	    throw(new RuntimeException("Invalid index array length"));
 	this.indb = ind;
 	this.model = new Model(Model.Mode.TRIANGLES, vert.data(),
-			       new Indices(num * 3, NumberFormat.UINT16, DataBuffer.Usage.STATIC, this::indfill).shared(),
-			       0, num * 3);
+			       new Indices(num * 3, NumberFormat.UINT16, DataBuffer.Usage.STATIC, this::indfill).shared().desc(this),
+			       0, num * 3).desc(this);
     }
 
     public FastMesh(VertexBuf vert, short[] ind) {
@@ -157,7 +157,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	    Model smod = FastMesh.this.model;
 	    model = new Model(smod.mode, (data != null) ? data : vert.data(),
 			      smod.ind, smod.f, smod.n,
-			      ninst);
+			      ninst).desc(this);
 	    if(batupd)
 		bat.instupdate();
 	}
@@ -193,6 +193,11 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	public void dispose() {
 	    if(model != null)
 		model.dispose();
+	    attr.dispose();
+	}
+
+	public String toString() {
+	    return(String.format("#<instmesh %s>", FastMesh.this));
 	}
     }
 

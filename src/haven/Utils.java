@@ -381,6 +381,10 @@ public class Utils {
 	}
     }
 
+    public static int sb(int n, int b) {
+	return((n << (32 - b)) >> (32 - b));
+    }
+
     public static int ub(byte b) {
 	return(((int)b) & 0xff);
     }

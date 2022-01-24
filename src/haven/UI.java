@@ -51,7 +51,7 @@ public class UI {
     public Session sess;
     public boolean modshift, modctrl, modmeta, modsuper;
     public Object lasttip;
-    double lastevent, lasttick;
+    public double lastevent, lasttick;
     public Widget mouseon;
     public Console cons = new WidgetConsole();
     private Collection<AfterDraw> afterdraws = new LinkedList<AfterDraw>();
@@ -205,8 +205,9 @@ public class UI {
 
     public void tick() {
 	double now = Utils.rtime();
-	root.tick(now - lasttick);
+	double delta = now - lasttick;
 	lasttick = now;
+	root.tick(delta);
 	if(gprefsdirty) {
 	    gprefs.save();
 	    gprefsdirty = false;
@@ -342,6 +343,13 @@ public class UI {
 	}
     }
 	
+    public void error(String msg) {
+	/* XXX: This should be generalized. */
+	GameUI gui = root.findchild(GameUI.class);
+	if(gui != null)
+	    gui.error(msg);
+    }
+
     private void setmods(InputEvent ev) {
 	int mod = ev.getModifiersEx();
 	modshift = (mod & InputEvent.SHIFT_DOWN_MASK) != 0;

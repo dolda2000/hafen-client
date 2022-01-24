@@ -104,6 +104,6 @@ public class Texture2DArray extends TextureArray {
     }
 
     public String toString() {
-	return(String.format("#<tex2d[] %sx%d %dx%d x %d>", ifmt.cf, ifmt.nc, w, h, n));
+	return(String.format("#<tex2d[] %sx%d %dx%d x %d%s>", ifmt.cf, ifmt.nc, w, h, n, descfmt()));
     }
 }

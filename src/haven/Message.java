@@ -37,6 +37,7 @@ public abstract class Message {
     public static final int T_UINT8 = 4;
     public static final int T_UINT16 = 5;
     public static final int T_COLOR = 6;
+    public static final int T_FCOLOR = 7;
     public static final int T_TTOL = 8;
     public static final int T_INT8 = 9;
     public static final int T_INT16 = 10;
@@ -47,6 +48,8 @@ public abstract class Message {
     public static final int T_FLOAT64 = 16;
     public static final int T_FCOORD32 = 18;
     public static final int T_FCOORD64 = 19;
+    public static final int T_FLOAT8 = 21;
+    public static final int T_FLOAT16 = 22;
 
     private final static byte[] empty = new byte[0];
     public int rh = 0, rt = 0, wh = 0, wt = 0;
@@ -198,6 +201,9 @@ public abstract class Message {
     public Color color() {
 	return(new Color(uint8(), uint8(), uint8(), uint8()));
     }
+    public FColor fcolor() {
+	return(new FColor(float32(), float32(), float32(), float32()));
+    }
     public float float8() {
 	return(Utils.mfdec((byte)int8()));
     }
@@ -269,6 +275,9 @@ public abstract class Message {
 	    case T_COLOR:
 		ret.add(color());
 		break;
+	    case T_FCOLOR:
+		ret.add(fcolor());
+		break;
 	    case T_TTOL:
 		ret.add(list());
 		break;
@@ -283,6 +292,12 @@ public abstract class Message {
 		if((len & 128) != 0)
 		    len = int32();
 		ret.add(bytes(len));
+		break;
+	    case T_FLOAT8:
+		ret.add(float8());
+		break;
+	    case T_FLOAT16:
+		ret.add(float16());
 		break;
 	    case T_FLOAT32:
 		ret.add(float32());
@@ -394,6 +409,11 @@ public abstract class Message {
 	Utils.float64e(num, wbuf, off);
 	return(this);
     }
+    public Message addfcolor(FColor color) {
+	addfloat32(color.r); addfloat32(color.g);
+	addfloat32(color.b); addfloat32(color.a);
+	return(this);
+    }
 
     public Message addlist(Object... args) {
 	for(Object o : args) {
@@ -421,6 +441,9 @@ public abstract class Message {
 	    } else if(o instanceof Color) {
 		adduint8(T_COLOR);
 		addcolor((Color)o);
+	    } else if(o instanceof FColor) {
+		adduint8(T_FCOLOR);
+		addfcolor((FColor)o);
 	    } else if(o instanceof Float) {
 		adduint8(T_FLOAT32);
 		addfloat32(((Float)o).floatValue());

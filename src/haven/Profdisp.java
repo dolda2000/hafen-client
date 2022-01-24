@@ -39,6 +39,7 @@ public class Profdisp extends Widget {
     public Profdisp(Profile prof) {
 	super(new Coord(prof.hist.length + UI.scale(50), h));
 	this.prof = prof;
+	setcanfocus(true);
     }
 
     private static final String[] units = {"s", "ms", "\u00b5s", "ns"};
