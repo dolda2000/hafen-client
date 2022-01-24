@@ -76,10 +76,6 @@
     <copy todir="build/classes/haven" file="etc/icon.png" />
   </target>
 
-  <target name="appletview" depends="build-env">
-    <copy file="etc/applet.html" todir="build" />
-  </target>
-
   <target name="lib-classes" depends="build-env" unless="unpacked-lib">
     <mkdir dir="build/classes-lib" />
     <unjar src="lib/jglob.jar" dest="build/classes-lib">
@@ -141,7 +137,7 @@
     <chmod file="bin/hafen.jar" perm="a+x" />
   </target>
 
-  <target name="deftgt" depends="jars, bin, appletview" />
+  <target name="deftgt" depends="jars, bin" />
 
   <target name="run" depends="bin">
     <java jar="bin/hafen.jar" fork="true" />
