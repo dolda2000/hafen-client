@@ -28,7 +28,7 @@ package haven.render;
 
 import haven.*;
 
-public class VectorFormat {
+public class VectorFormat implements java.io.Serializable {
     public final int nc;
     public final NumberFormat cf;
 

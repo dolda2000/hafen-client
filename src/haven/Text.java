@@ -27,11 +27,12 @@
 package haven;
 
 import java.awt.*;
+import java.awt.Graphics;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
-public class Text {
+public class Text implements Disposable {
     public static final Font serif = new Font("Serif", Font.PLAIN, 10);
     public static final Font sans  = new Font("Sans", Font.PLAIN, 10);
     public static final Font mono  = new Font("Monospaced", Font.PLAIN, 10);
@@ -57,7 +58,7 @@ public class Text {
 	}
 	
 	public Coord base() {
-	    return(new Coord(0, m.getAscent()));
+	    return(new Coord(0, m.getLeading() + m.getAscent()));
 	}
 	
 	public int advance(int pos) {
@@ -103,8 +104,8 @@ public class Text {
 
     public static class Foundry extends Furnace {
 	private FontMetrics m;
-	Font font;
-	Color defcol;
+	public final Font font;
+	public final Color defcol;
 	public boolean aa = false;
 	private RichText.Foundry wfnd = null;
 		
@@ -112,7 +113,7 @@ public class Text {
 	    font = f;
 	    this.defcol = defcol;
 	    BufferedImage junk = TexI.mkbuf(new Coord(10, 10));
-	    Graphics tmpl = junk.getGraphics();
+	    java.awt.Graphics tmpl = junk.getGraphics();
 	    tmpl.setFont(f);
 	    m = tmpl.getFontMetrics();
 	}
@@ -122,11 +123,11 @@ public class Text {
 	}
 	
 	public Foundry(Font font, int psz, Color defcol) {
-	    this(font.deriveFont((float)psz), defcol);
+	    this(font.deriveFont(UI.scale((float)psz)), defcol);
 	}
 
 	public Foundry(Font font, int psz) {
-	    this(font.deriveFont((float)psz));
+	    this(font.deriveFont(UI.scale((float)psz)));
 	}
 
 	@Deprecated
@@ -140,9 +141,15 @@ public class Text {
 	}
 
 	public int height() {
-	    /* XXX: Should leading go into this, when it's mostly
-	     * supposed to be used for one-liners? */
-	    return(m.getAscent() + m.getDescent());
+	    /* XXX? The only font which seems to have leading > 0 is
+	     * the Moderne Fraktur font, for which the leading is
+	     * necessary to get the full ascent of some glyphs.
+	     * According to all specifications, this doesn't exactly
+	     * seem right, so I'm not sure if it's that font that is
+	     * buggy, or if this is actually as it should, but as it
+	     * doesn't seem to affect any other fonts, perhaps it
+	     * doesn't matter? */
+	    return(m.getHeight());
 	}
 
 	public Coord strsize(String text) {
@@ -174,7 +181,8 @@ public class Text {
 	    g.setFont(font);
 	    g.setColor(c);
 	    FontMetrics m = g.getFontMetrics();
-	    g.drawString(text, 0, m.getAscent());
+	    /* See height() comment. */
+	    g.drawString(text, 0, m.getLeading() + m.getAscent());
 	    g.dispose();
 	    return(new Line(text, img, m));
 	}
@@ -273,14 +281,21 @@ public class Text {
 	    tex = new TexI(img);
 	return(tex);
     }
+
+    public void dispose() {
+	if(tex != null)
+	    tex.dispose();
+    }
     
     public static void main(String[] args) throws Exception {
 	String cmd = args[0].intern();
 	if(cmd == "render") {
-	    PosixArgs opt = PosixArgs.getopt(args, 1, "aw:f:s:");
+	    PosixArgs opt = PosixArgs.getopt(args, 1, "aw:f:s:c:");
 	    boolean aa = false;
 	    String font = "SansSerif";
-	    int width = 100, size = 10;
+	    int width = 100;
+	    float size = 10;
+	    Color col = Color.WHITE;
 	    for(char c : opt.parsed()) {
 		if(c == 'a') {
 		    aa = true;
@@ -289,15 +304,17 @@ public class Text {
 		} else if(c == 'w') {
 		    width = Integer.parseInt(opt.arg);
 		} else if(c == 's') {
-		    size = Integer.parseInt(opt.arg);
+		    size = Float.parseFloat(opt.arg);
+		} else if(c == 'c') {
+		    col = Color.decode(opt.arg);
 		}
 	    }
-	    Foundry f = new Foundry(font, size);
+	    Foundry f = new Foundry(new Font(font, Font.PLAIN, 10).deriveFont(size), col);
 	    f.aa = aa;
 	    Text t = f.renderwrap(opt.rest[0], width);
-	    java.io.OutputStream out = new java.io.FileOutputStream(opt.rest[1]);
-	    javax.imageio.ImageIO.write(t.img, "PNG", out);
-	    out.close();
+	    try(java.io.OutputStream out = java.nio.file.Files.newOutputStream(Utils.path(opt.rest[1]))) {
+		javax.imageio.ImageIO.write(t.img, "PNG", out);
+	    }
 	}
     }
 }

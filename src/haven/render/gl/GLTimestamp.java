@@ -26,8 +26,9 @@
 
 package haven.render.gl;
 
+import haven.render.*;
 import java.util.function.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class GLTimestamp extends GLQuery {
     public final Consumer<Long> callback;
@@ -55,6 +56,11 @@ public class GLTimestamp extends GLQuery {
 	gl.glGetQueryObjecti64v(id, GL3.GL_QUERY_RESULT, tbuf, 0);
 	callback.accept(tbuf[0]);
 	return(true);
+    }
+
+    public void abort() {
+	if(callback instanceof Abortable)
+	    ((Abortable)callback).abort();
     }
 
     public void delete(GL3 gl) {

@@ -26,7 +26,9 @@
 
 package haven.error;
 
+import haven.Utils;
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import java.util.regex.*;
 import java.text.*;
@@ -41,7 +43,7 @@ public class HtmlReporter {
     };
     public static final Class[] boring = {
 	RuntimeException.class,
-	javax.media.opengl.GLException.class,
+	com.jogamp.opengl.GLException.class,
     };
     
     public static class ErrorIdentity implements Comparable<ErrorIdentity> {
@@ -268,7 +270,7 @@ public class HtmlReporter {
 	return(t);
     }
 
-    public static void makeindex(OutputStream outs, Map<File, Report> reports, Map<File, Exception> failed) throws IOException {
+    public static void makeindex(OutputStream outs, Map<Path, Report> reports, Map<Path, Exception> failed) throws IOException {
 	PrintWriter out = new PrintWriter(new OutputStreamWriter(outs, "UTF-8"));
 	out.print(htmlhead("Error Index"));
 	out.println("<h1>Error Index</h1>");
@@ -277,11 +279,11 @@ public class HtmlReporter {
 	for(String pn : idxprops)
 	    props.add(pn);
 	
-	Map<ErrorIdentity, List<Map.Entry<File, Report>>> groups = new TreeMap<ErrorIdentity, List<Map.Entry<File, Report>>>();
-	for(Map.Entry<File, Report> rent : reports.entrySet()) {
+	Map<ErrorIdentity, List<Map.Entry<Path, Report>>> groups = new TreeMap<ErrorIdentity, List<Map.Entry<Path, Report>>>();
+	for(Map.Entry<Path, Report> rent : reports.entrySet()) {
 	    ErrorIdentity id = new ErrorIdentity(rent.getValue());
 	    if(groups.get(id) == null)
-		groups.put(id, new ArrayList<Map.Entry<File, Report>>());
+		groups.put(id, new ArrayList<Map.Entry<Path, Report>>());
 	    groups.get(id).add(rent);
 	}
 	for(ErrorIdentity id : groups.keySet()) {
@@ -293,9 +295,9 @@ public class HtmlReporter {
 		out.println("    <th>" + htmlq(pn) + "</th>");
 	    out.println("</tr>");
 	
-	    List<Map.Entry<File, Report>> reps = groups.get(id);
-	    Collections.sort(reps, new Comparator<Map.Entry<File, Report>>() {
-		    public int compare(Map.Entry<File, Report> a, Map.Entry<File, Report> b) {
+	    List<Map.Entry<Path, Report>> reps = groups.get(id);
+	    Collections.sort(reps, new Comparator<Map.Entry<Path, Report>>() {
+		    public int compare(Map.Entry<Path, Report> a, Map.Entry<Path, Report> b) {
 			long at = a.getValue().time, bt = b.getValue().time;
 			if(at > bt)
 			    return(-1);
@@ -305,13 +307,13 @@ public class HtmlReporter {
 			    return(0);
 		    }
 		});
-	    for(Map.Entry<File, Report> rent : reps) {
-		File file = rent.getKey();
+	    for(Map.Entry<Path, Report> rent : reps) {
+		Path file = rent.getKey();
 		Report rep = rent.getValue();
 		out.println("    <tr>");
 		out.print("        <td>");
-		out.println("<a href=\"" + htmlq(file.getName()) + ".html\">");
-		out.print(htmlq(file.getName()));
+		out.println("<a href=\"" + htmlq(file.getFileName().toString()) + ".html\">");
+		out.print(htmlq(file.getFileName().toString()));
 		out.println("</a></td>");
 		out.println("        <td>" + htmlq(dfmt.format(new Date(rep.time))) + "</td>");
 		for(String pn : props) {
@@ -330,10 +332,10 @@ public class HtmlReporter {
 	    out.println("<h2>Unreadable reports</h2>");
 	    out.println("<table>");
 	    out.println("<tr><th>File</th><th>Exception</th>");
-	    for(File file : failed.keySet()) {
+	    for(Path file : failed.keySet()) {
 		Exception exc = failed.get(file);
 		out.print("    <tr>");
-		out.print("<td>" + htmlq(file.getName()) + "</td><td>" + htmlq(exc.getClass().getName()) + ": " + htmlq(exc.getMessage()) + "</td>");
+		out.print("<td>" + htmlq(file.getFileName().toString()) + "</td><td>" + htmlq(exc.getClass().getName()) + ": " + htmlq(exc.getMessage()) + "</td>");
 		out.println("    </tr>");
 	    }
 	    out.println("</table>");
@@ -344,40 +346,28 @@ public class HtmlReporter {
     }
 
     public static void main(String[] args) throws Exception {
-	File indir = new File("/srv/haven/errors");
-	File outdir = new File("/srv/www/haven/errors");
-	Map<File, Report> reports = new HashMap<File, Report>();
-	Map<File, Exception> failed = new HashMap<File, Exception>();
+	Path indir = Utils.path("/srv/haven/errors");
+	Path outdir = Utils.path("/srv/www/haven/errors");
+	Map<Path, Report> reports = new HashMap<>(); 
+	Map<Path, Exception> failed = new HashMap<>();
 	
-	for(File f : indir.listFiles()) {
-	    if(f.getName().startsWith("err")) {
-		try {
-		    ObjectInputStream in = new ObjectInputStream(new FileInputStream(f));
-		    try {
-			reports.put(f, (Report)in.readObject());
-		    } finally {
-			in.close();
-		    }
+	for(Path f : Files.newDirectoryStream(indir)) {
+	    if(f.getFileName().startsWith("err")) {
+		try(ObjectInputStream in = new ObjectInputStream(Files.newInputStream(f))) {
+		    reports.put(f, (Report)in.readObject());
 		} catch(Exception e) {
 		    failed.put(f, e);
 		}
 	    }
 	}
 	
-	OutputStream out;
-	out = new FileOutputStream(new File(outdir, "index.html"));
-	try {
+	try(OutputStream out = Files.newOutputStream(outdir.resolve("index.html"))) {
 	    makeindex(out, reports, failed);
-	} finally {
-	    out.close();
 	}
 	
-	for(File f : reports.keySet()) {
-	    out = new FileOutputStream(new File(outdir, f.getName() + ".html"));
-	    try {
+	for(Path f : reports.keySet()) {
+	    try(OutputStream out = Files.newOutputStream(outdir.resolve(f.getFileName() + ".html"))) {
 		makereport(out, reports.get(f));
-	    } finally {
-		out.close();
 	    }
 	}
     }

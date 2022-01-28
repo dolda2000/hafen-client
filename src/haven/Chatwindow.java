@@ -33,15 +33,15 @@ public class Chatwindow extends Window {
     @RName("chat")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new Chatwindow((Coord)args[0]));
+	    return(new Chatwindow(UI.scale((Coord)args[0])));
 	}
     }
 	
     public Chatwindow(Coord sz) {
 	super(sz, "Chat");
-	in = add(new TextEntry(sz.x, ""), 0, sz.y - 20);
+	in = adda(new TextEntry(sz.x, ""), 0, asz.y, 0.0, 1.0);
 	in.canactivate = true;
-	out = add(new Textlog(new Coord(sz.x, sz.y - 20)), Coord.z);
+	out = add(new Textlog(new Coord(asz.x, in.c.y)), Coord.z);
     }
 	
     public void uimsg(String msg, Object... args) {

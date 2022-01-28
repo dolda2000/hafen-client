@@ -24,8 +24,11 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render;
 
-public interface Callback<T> {
-    public void done(T val);
+public interface Abortable {
+    public void abort();
+
+    public static interface Runnable extends java.lang.Runnable, Abortable {}
+    public static interface Consumer<T> extends java.util.function.Consumer<T>, Abortable {}
 }

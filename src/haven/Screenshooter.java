@@ -67,7 +67,7 @@ public class Screenshooter extends Window {
 		}
 	    }, new Coord(0, clbl.c.y + clbl.sz.y + 5));
 	this.pub = add(new CheckBox("Make public"), new Coord(0, comment.c.y + comment.sz.y + 5));
-	pub.a = true;
+	pub.a = false;
 	btnc = new Coord((comment.sz.x - 125) / 2, pub.c.y + pub.sz.y + 20);
 	btn = add(new Button(125, "Upload", false, this::upload), btnc);
 	pack();
@@ -326,7 +326,7 @@ public class Screenshooter extends Window {
     }
 
     public void upload() {
-	shot.comment = comment.text;
+	shot.comment = comment.text();
 	final Uploader th = new Uploader(decobox.a ? shot.ui : shot.map, shot, png);
 	th.start();
 	ui.destroy(btn);

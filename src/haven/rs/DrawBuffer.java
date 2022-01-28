@@ -53,7 +53,8 @@ public class DrawBuffer implements Disposable {
     public GOut graphics() {
 	Pipe state = new BufPipe();
 	state.prep(basic());
-	state.prep(new States.Blending());
+	state.prep(FragColor.blend(new BlendMode(BlendMode.Function.ADD, BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.INV_SRC_ALPHA,
+						 BlendMode.Function.MAX, BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.ONE)));
 	state.prep(new Ortho2D(Area.sized(Coord.z, this.sz)));
 	return(new GOut(env.render(), state, this.sz));
     }

@@ -38,7 +38,7 @@ public class Label extends Widget {
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    if(args.length > 1)
-		return(new Label((String)args[0], (Integer)args[1]));
+		return(new Label((String)args[0], UI.scale((Integer)args[1])));
 	    else
 		return(new Label((String)args[0]));
 	}
@@ -71,14 +71,21 @@ public class Label extends Widget {
     }
 	
     public void settext(String text) {
+	this.text.dispose();
 	this.text = f.render(texts = text, col);
 	sz = this.text.sz();
     }
 	
     public void setcolor(Color color) {
 	col = color;
+	this.text.dispose();
 	this.text = f.render(texts, col);
 	sz = this.text.sz();
+    }
+
+    public void dispose() {
+	super.dispose();
+	this.text.dispose();
     }
 	
     public void uimsg(String msg, Object... args) {

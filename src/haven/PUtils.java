@@ -38,7 +38,7 @@ public class PUtils {
     public static Coord imgsz(Raster img) {
 	return(new Coord(img.getWidth(), img.getHeight()));
     }
-	
+
     public static WritableRaster byteraster(Coord sz, int bands) {
 	return(Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, sz.x, sz.y, bands, null));
     }
@@ -62,6 +62,16 @@ public class PUtils {
 
     public static BufferedImage rasterimg(WritableRaster img) {
 	return(new BufferedImage(TexI.glcm, img, false, null));
+    }
+
+    public static BufferedImage coercergba(BufferedImage img) {
+	int w = img.getWidth(), h = img.getHeight();
+	WritableRaster buf = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h, 4, null);
+	BufferedImage tgt = new BufferedImage(TexI.glcm, buf, false, null);
+	Graphics g = tgt.createGraphics();
+	g.drawImage(img, 0, 0, w, h, 0, 0, w, h, null);
+	g.dispose();
+	return(tgt);
     }
 
     public static WritableRaster imggrow(WritableRaster img, int rad) {
@@ -142,6 +152,8 @@ public class PUtils {
 
     public static WritableRaster blit(WritableRaster dst, Raster src, Coord off) {
 	int w = src.getWidth(), h = src.getHeight(), b = src.getNumBands();
+	if((off.x < 0) || (off.y < 0) || (off.x + w > dst.getWidth()) || (off.y + h > dst.getHeight()))
+	    throw(new ArrayIndexOutOfBoundsException(String.format("Blit operation out of bounds: %s+%s on %s", imgsz(src), off, imgsz(dst))));
 	for(int y = 0; y < h; y++) {
 	    int dy = y + off.y;
 	    for(int x = 0; x < w; x++) {
@@ -409,8 +421,7 @@ public class PUtils {
 	public double support() {return(sz);}
     }
 
-    public static BufferedImage convolvedown(BufferedImage img, Coord tsz, Convolution filter) {
-	Raster in = img.getRaster();
+    public static WritableRaster convolvedown(Raster in, Coord tsz, Convolution filter) {
 	int w = in.getWidth(), h = in.getHeight(), nb = in.getNumBands();
 	double xf = (double)w / (double)tsz.x, ixf = 1.0 / xf;
 	double yf = (double)h / (double)tsz.y, iyf = 1.0 / yf;
@@ -486,7 +497,117 @@ public class PUtils {
 		}
 	    }
 	}
-	return(new BufferedImage(img.getColorModel(), res, false, null));
+	return(res);
+    }
+    public static BufferedImage convolvedown(BufferedImage img, Coord tsz, Convolution filter) {
+	return(new BufferedImage(img.getColorModel(), convolvedown(img.getRaster(), tsz, filter), false, null));
+    }
+
+    public static WritableRaster convolveup(Raster in, Coord tsz, Convolution filter) {
+	int w = in.getWidth(), h = in.getHeight(), nb = in.getNumBands();
+	double xf = (double)w / (double)tsz.x, ixf = 1.0 / xf;
+	double yf = (double)h / (double)tsz.y, iyf = 1.0 / yf;
+	double[] ca = new double[nb];
+	WritableRaster buf = byteraster(new Coord(tsz.x, h), nb);
+	double support = filter.support();
+
+	{
+	    double[] cf = new double[tsz.x * (int)Math.ceil(2 * support + 2)];
+	    int[] cl = new int[tsz.x];
+	    int[] cr = new int[tsz.x];
+	    for(int x = 0, ci = 0; x < tsz.x; x++) {
+		int si = ci;
+		double wa = 0.0;
+		cl[x] = Math.max((int)Math.ceil(((x + 0.5) * xf) - support - 0.5), 0);
+		cr[x] = Math.min((int)Math.floor(((x + 0.5) * xf) + support - 0.5), w - 1);
+		for(int sx = cl[x]; sx <= cr[x]; sx++) {
+		    double tx = (sx + 0.5) - ((x + 0.5) * xf);
+		    double fw = filter.cval(tx);
+		    wa += fw;
+		    cf[ci++] = fw;
+		}
+		wa = 1.0 / wa;
+		for(; si < ci; si++)
+		    cf[si] *= wa;
+	    }
+	    for(int y = 0; y < h; y++) {
+		for(int x = 0, ci = 0; x < tsz.x; x++) {
+		    for(int b = 0; b < nb; b++)
+			ca[b] = 0.0;
+		    for(int sx = cl[x]; sx <= cr[x]; sx++) {
+			double fw = cf[ci++];
+			for(int b = 0; b < nb; b++)
+			    ca[b] += in.getSample(sx, y, b) * fw;
+		    }
+		    for(int b = 0; b < nb; b++)
+			buf.setSample(x, y, b, Utils.clip((int)ca[b], 0, 255));
+		}
+	    }
+	}
+
+	WritableRaster res = byteraster(tsz, nb);
+	{
+	    double[] cf = new double[tsz.y * (int)Math.ceil(2 * support + 2)];
+	    int[] cu = new int[tsz.y];
+	    int[] cd = new int[tsz.y];
+	    for(int y = 0, ci = 0; y < tsz.y; y++) {
+		int si = ci;
+		double wa = 0.0;
+		cu[y] = Math.max((int)Math.ceil(((y + 0.5) * yf) - support - 0.5), 0);
+		cd[y] = Math.min((int)Math.floor(((y + 0.5) * yf) + support - 0.5), h - 1);
+		for(int sy = cu[y]; sy <= cd[y]; sy++) {
+		    double ty = (sy + 0.5) - ((y + 0.5) * yf);
+		    double fw = filter.cval(ty);
+		    wa += fw;
+		    cf[ci++] = fw;
+		}
+		wa = 1.0 / wa;
+		for(; si < ci; si++)
+		    cf[si] *= wa;
+	    }
+	    for(int x = 0; x < tsz.x; x++) {
+		for(int y = 0, ci = 0; y < tsz.y; y++) {
+		    for(int b = 0; b < nb; b++)
+			ca[b] = 0.0;
+		    for(int sy = cu[y]; sy <= cd[y]; sy++) {
+			double fw = cf[ci++];
+			for(int b = 0; b < nb; b++)
+			    ca[b] += buf.getSample(x, sy, b) * fw;
+		    }
+		    for(int b = 0; b < nb; b++)
+			res.setSample(x, y, b, Utils.clip((int)ca[b], 0, 255));
+		}
+	    }
+	}
+	return(res);
+    }
+    public static BufferedImage convolveup(BufferedImage img, Coord tsz, Convolution filter) {
+	return(new BufferedImage(img.getColorModel(), convolveup(img.getRaster(), tsz, filter), false, null));
+    }
+
+    public static WritableRaster convolve(Raster img, Coord tsz, Convolution filter) {
+        if((tsz.x <= img.getWidth()) && (tsz.y <= img.getHeight()))
+            return(convolvedown(img, tsz, filter));
+        if((tsz.x >= img.getWidth()) && (tsz.y >= img.getHeight()))
+            return(convolveup(img, tsz, filter));
+        throw(new IllegalArgumentException("Can only scale images up or down in both dimensions"));
+    }
+    public static BufferedImage convolve(BufferedImage img, Coord tsz, Convolution filter) {
+	return(new BufferedImage(img.getColorModel(), convolve(img.getRaster(), tsz, filter), false, null));
+    }
+
+    private static final Convolution uifilter = new Lanczos(3);
+    public static Raster uiscale(Raster img, Coord tsz) {
+	Coord sz = imgsz(img);
+	if(tsz.equals(sz))
+	    return(img);
+	return(convolve(img, tsz, uifilter));
+    }
+    public static BufferedImage uiscale(BufferedImage img, Coord tsz) {
+	Coord sz = imgsz(img);
+	if(tsz.equals(sz))
+	    return(img);
+	return(convolve(img, tsz, uifilter));
     }
 
     public static void main(String[] args) throws Exception {
@@ -499,12 +620,12 @@ public class PUtils {
 	    new Lanczos(3),
 	};
 	//BufferedImage in = Resource.loadimg("gfx/invobjs/herbs/crowberry");
-	BufferedImage in = javax.imageio.ImageIO.read(new java.io.File("/tmp/e.jpg"));
-	Coord tsz = new Coord(300, 300);
+	BufferedImage in = javax.imageio.ImageIO.read(new java.io.File("/tmp/e.png"));
+	Coord tsz = new Coord(40, 40);
 	for(int i = 0; i < filters.length; i++) {
-	    long start = System.nanoTime();
-	    BufferedImage out = convolvedown(in, tsz, filters[i]);
-	    System.err.println(System.nanoTime() - start);
+	    double start = Utils.rtime();
+	    BufferedImage out = convolve(in, tsz, filters[i]);
+	    System.err.println(Utils.rtime() - start);
 	    javax.imageio.ImageIO.write(out, "PNG", new java.io.File("/tmp/barda" + i + ".png"));
 	}
     }

@@ -26,8 +26,9 @@
 
 package haven.render.gl;
 
+import haven.render.*;
 import java.util.function.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class GLFence extends GLQuery {
     public final Consumer<GL3> callback;
@@ -50,6 +51,11 @@ public class GLFence extends GLQuery {
 	    return(false);
 	callback.accept(gl);
 	return(true);
+    }
+
+    public void abort() {
+	if(callback instanceof Abortable)
+	    ((Abortable)callback).abort();
     }
 
     public void delete(GL3 gl) {

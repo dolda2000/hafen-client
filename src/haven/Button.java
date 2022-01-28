@@ -32,22 +32,24 @@ import java.awt.Font;
 import java.awt.image.BufferedImage;
 
 public class Button extends SIWidget {
-    public static final BufferedImage bl = Resource.loadimg("gfx/hud/buttons/tbtn/left");
-    public static final BufferedImage br = Resource.loadimg("gfx/hud/buttons/tbtn/right");
-    public static final BufferedImage bt = Resource.loadimg("gfx/hud/buttons/tbtn/top");
-    public static final BufferedImage bb = Resource.loadimg("gfx/hud/buttons/tbtn/bottom");
-    public static final BufferedImage dt = Resource.loadimg("gfx/hud/buttons/tbtn/dtex");
-    public static final BufferedImage ut = Resource.loadimg("gfx/hud/buttons/tbtn/utex");
-    public static final BufferedImage bm = Resource.loadimg("gfx/hud/buttons/tbtn/mid");
+    public static final BufferedImage bl = Resource.loadsimg("gfx/hud/buttons/tbtn/left");
+    public static final BufferedImage br = Resource.loadsimg("gfx/hud/buttons/tbtn/right");
+    public static final BufferedImage bt = Resource.loadsimg("gfx/hud/buttons/tbtn/top");
+    public static final BufferedImage bb = Resource.loadsimg("gfx/hud/buttons/tbtn/bottom");
+    public static final BufferedImage dt = Resource.loadsimg("gfx/hud/buttons/tbtn/dtex");
+    public static final BufferedImage ut = Resource.loadsimg("gfx/hud/buttons/tbtn/utex");
+    public static final BufferedImage bm = Resource.loadsimg("gfx/hud/buttons/tbtn/mid");
     public static final int hs = bl.getHeight(), hl = bm.getHeight();
     public static final Resource click = Loading.waitfor(Resource.local().load("sfx/hud/btn"));
-    public static final Resource.Audio lbtdown = Loading.waitfor(Resource.local().load("sfx/hud/lbtn")).layer(Resource.audio, "down");
-    public static final Resource.Audio lbtup   = Loading.waitfor(Resource.local().load("sfx/hud/lbtn")).layer(Resource.audio, "up");
+    @Deprecated public static final Resource.Audio lbtdown = Loading.waitfor(Resource.local().load("sfx/hud/lbtn")).layer(Resource.audio, "down");
+    @Deprecated public static final Resource.Audio lbtup   = Loading.waitfor(Resource.local().load("sfx/hud/lbtn")).layer(Resource.audio, "up");
+    public static final Audio.Clip clbtdown = lbtdown, clbtup = lbtup;
+    public static final int margin = UI.scale(10);
     public boolean lg;
     public Text text;
     public BufferedImage cont;
     public Runnable action = null;
-    static Text.Foundry tf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, 12)).aa(true);
+    static Text.Foundry tf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, UI.scale(12f))).aa(true);
     static Text.Furnace nf = new PUtils.BlurFurn(new PUtils.TexFurn(tf, Window.ctex), 1, 1, new Color(80, 40, 0));
     private boolean a = false;
     private UI.Grab d = null;
@@ -56,20 +58,20 @@ public class Button extends SIWidget {
     public static class $Btn implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    if(args.length > 2)
-		return(new Button((Integer)args[0], (String)args[1], ((Integer)args[2]) != 0));
+		return(new Button(UI.scale((Integer)args[0]), (String)args[1], ((Integer)args[2]) != 0));
 	    else
-		return(new Button((Integer)args[0], (String)args[1]));
+		return(new Button(UI.scale((Integer)args[0]), (String)args[1]));
 	}
     }
     @RName("ltbtn")
     public static class $LTBtn implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(wrapped((Integer)args[0], (String)args[1]));
+	    return(wrapped(UI.scale((Integer)args[0]), (String)args[1]));
 	}
     }
 	
     public static Button wrapped(int w, String text) {
-	Button ret = new Button(w, tf.renderwrap(text, w - 10));
+	Button ret = new Button(w, tf.renderwrap(text, w - margin));
 	return(ret);
     }
         
@@ -113,14 +115,20 @@ public class Button extends SIWidget {
 	this.cont = cont;
     }
 	
+    public Button action(Runnable action) {
+	this.action = action;
+	return(this);
+    }
+
     public void draw(BufferedImage img) {
 	Graphics g = img.getGraphics();
 	int yo = lg?((hl - hs) / 2):0;
-	g.drawImage(a?dt:ut, 4, yo + 4, sz.x - 8, hs - 8, null);
+
+	g.drawImage(a?dt:ut, UI.scale(4), yo + UI.scale(4), sz.x - UI.scale(8), hs - UI.scale(8), null);
 
 	Coord tc = sz.sub(Utils.imgsz(cont)).div(2);
 	if(a)
-	    tc = tc.add(1, 1);
+	    tc = tc.add(UI.scale(1), UI.scale(1));
 	g.drawImage(cont, tc.x, tc.y, null);
 
 	g.drawImage(bl, 0, yo, null);
@@ -149,6 +157,11 @@ public class Button extends SIWidget {
 	if(action != null)
 	    action.run();
     }
+
+    public boolean gkeytype(java.awt.event.KeyEvent ev) {
+	click();
+	return(true);
+    }
     
     public void uimsg(String msg, Object... args) {
 	if(msg == "ch") {
@@ -172,11 +185,11 @@ public class Button extends SIWidget {
     }
 
     protected void depress() {
-	Audio.play(click);
+	ui.sfx(click);
     }
 
     protected void unpress() {
-	Audio.play(click);
+	ui.sfx(click);
     }
 
     public boolean mousedown(Coord c, int button) {

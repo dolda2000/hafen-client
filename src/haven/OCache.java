@@ -55,7 +55,7 @@ public class OCache implements Iterable<Gob> {
     public static final int OD_ICON = 19;
     public static final int OD_RESATTR = 20;
     public static final int OD_END = 255;
-    public static final Coord2d posres = new Coord2d(0x1.0p-10, 0x1.0p-10).mul(11, 11);
+    public static final Coord2d posres = Coord2d.of(0x1.0p-10, 0x1.0p-10).mul(11, 11);
     /* XXX: Use weak refs */
     private Collection<Collection<Gob>> local = new LinkedList<Collection<Gob>>();
     private HashMultiMap<Long, Gob> objs = new HashMultiMap<Long, Gob>();

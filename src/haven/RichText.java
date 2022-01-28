@@ -27,6 +27,7 @@
 package haven;
 
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import java.text.*;
 import java.awt.Graphics2D;
@@ -44,7 +45,7 @@ public class RichText extends Text {
     static {
 	Map<Attribute, Object> a = new HashMap<Attribute, Object>();
 	a.put(TextAttribute.FAMILY, "SansSerif");
-	a.put(TextAttribute.SIZE, 10);
+	a.put(TextAttribute.SIZE, UI.scale(10.0f));
 	std = new Parser(a);
 	stdf = new Foundry(std);
     }
@@ -97,6 +98,11 @@ public class RichText extends Text {
     
     public static class Image extends Part {
 	public BufferedImage img;
+	public int h = -1;
+	public double lh = -1, bh = -1;
+	public Map<? extends Attribute, ?> attrs;
+	public float imgscale = 1.0f;
+	private Coord sz = null;
 	
 	public Image(BufferedImage img) {
 	    this.img = img;
@@ -106,19 +112,39 @@ public class RichText extends Text {
 	    for(Resource.Image img : res.layers(Resource.imgc)) {
 		if(img.id == id) {
 		    this.img = img.img;
+		    this.imgscale = img.scale;
 		    break;
 		}
 	    }
 	    if(this.img == null)
 		throw(new RuntimeException("Found no image with id " + id + " in " + res.toString()));
 	}
+
+	private LineMetrics lm() {
+	    Font f = (Font)attrs.get(TextAttribute.FONT);
+	    if(f == null)
+		f = new Font(attrs);
+	    return(f.getLineMetrics("", rs.frc));
+	}
+
+	public void prepare(RState rs) {
+	    super.prepare(rs);
+	    sz = new Coord(Math.round(UI.scale(img.getWidth() / imgscale)), Math.round(UI.scale(img.getHeight() / imgscale)));
+	    if(lh >= 0) {
+		h = (int)Math.round(lh * lm().getHeight());
+	    } else if(bh >= 0) {
+		h = (int)Math.round(bh * lm().getAscent());
+	    }
+	    if(h >= 0)
+		sz = new Coord((img.getWidth() * h) / img.getHeight(), h);
+	}
 	
-	public int width() {return(img.getWidth());}
-	public int height() {return(img.getHeight());}
-	public int baseline() {return(img.getHeight() - 1);}
+	public int width() {return(sz.x);}
+	public int height() {return(sz.y);}
+	public int baseline() {return(sz.y - 1);}
 
 	public void render(Graphics2D g) {
-	    g.drawImage(img, x, y, null);
+	    g.drawImage(PUtils.uiscale(img, sz), x, y, null);
 	}
     }
 
@@ -398,19 +424,44 @@ public class RichText extends Text {
 
 	protected Part tag(PState s, String tn, String[] args, Map<? extends Attribute, ?> attrs) throws IOException {
 	    if(tn == "img") {
-		Resource res = respool.loadwait(args[0]);
+		int a = 0;
+		Resource res = respool.loadwait(args[a++]);
 		int id = -1;
-		if(args.length > 1)
-		    id = Integer.parseInt(args[1]);
-		return(new Image(res, id));
+		if(args.length > a) {
+		    try {
+			id = Integer.parseInt(args[a]);
+			a++;
+		    } catch(NumberFormatException e) {}
+		}
+		Image img = new Image(res, id);
+		img.attrs = attrs;
+		for(; a < args.length; a++) {
+		    int p = args[a].indexOf('=');
+		    if(p < 0)
+			continue;
+		    String k = args[a].substring(0, p), v = args[a].substring(p + 1);
+		    switch(k) {
+		    case "h": {
+			if(v.endsWith("ln")) {
+			    img.lh = Double.parseDouble(v.substring(0, v.length() - 2));
+			} else if(v.endsWith("bl")) {
+			    img.bh = Double.parseDouble(v.substring(0, v.length() - 2));
+			} else {
+			    img.h = (int)Math.round(UI.scale(Double.parseDouble(v)));
+			}
+			break;
+		    }
+		    }
+		}
+		return(img);
 	    } else {
 		Map<Attribute, Object> na = new HashMap<Attribute, Object>(attrs);
 		if(tn == "font") {
 		    na.put(TextAttribute.FAMILY, args[0]);
 		    if(args.length > 1)
-			na.put(TextAttribute.SIZE, Float.parseFloat(args[1]));
+			na.put(TextAttribute.SIZE, UI.scale(Float.parseFloat(args[1])));
 		} else if(tn == "size") {
-		    na.put(TextAttribute.SIZE, Float.parseFloat(args[0]));
+		    na.put(TextAttribute.SIZE, UI.scale(Float.parseFloat(args[0])));
 		} else if(tn == "b") {
 		    na.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
 		} else if(tn == "i") {
@@ -708,15 +759,15 @@ public class RichText extends Text {
 		} else if(c == 'w') {
 		    width = Integer.parseInt(opt.arg);
 		} else if(c == 's') {
-		    a.put(TextAttribute.SIZE, Integer.parseInt(opt.arg));
+		    a.put(TextAttribute.SIZE, UI.scale(Float.parseFloat(opt.arg)));
 		}
 	    }
 	    Foundry fnd = new Foundry(a);
 	    fnd.aa = aa;
 	    RichText t = fnd.render(opt.rest[0], width);
-	    java.io.OutputStream out = new java.io.FileOutputStream(opt.rest[1]);
-	    javax.imageio.ImageIO.write(t.img, "PNG", out);
-	    out.close();
+	    try(OutputStream out = Files.newOutputStream(Utils.path(opt.rest[1]))) {
+		javax.imageio.ImageIO.write(t.img, "PNG", out);
+	    }
 	} else if(cmd == "pagina") {
 	    PosixArgs opt = PosixArgs.getopt(args, 1, "aw:");
 	    boolean aa = false;
@@ -735,9 +786,9 @@ public class RichText extends Text {
 	    if(p == null)
 		throw(new Exception("No pagina in " + res + ", loaded from " + res.source));
 	    RichText t = fnd.render(p.text, width);
-	    java.io.OutputStream out = new java.io.FileOutputStream(opt.rest[1]);
-	    javax.imageio.ImageIO.write(t.img, "PNG", out);
-	    out.close();
+	    try(OutputStream out = Files.newOutputStream(Utils.path(opt.rest[1]))) {
+		javax.imageio.ImageIO.write(t.img, "PNG", out);
+	    }
 	}
     }
 }

@@ -20,8 +20,9 @@ public class CompilerClassLoader extends ClassLoader {
     
     public Class<?> findClass(String name) throws ClassNotFoundException {
 	for(Indir<Resource> res : useres) {
+	    ClassLoader loader = Loading.waitfor(() -> res.get().layer(Resource.CodeEntry.class).loader());
 	    try {
-		return(Loading.waitfor(res).layer(Resource.CodeEntry.class).loader(true).loadClass(name));
+		return(loader.loadClass(name));
 	    } catch(ClassNotFoundException e) {}
 	}
 	throw(new ClassNotFoundException(name + " was not found in any of the requested resources."));

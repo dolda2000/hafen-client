@@ -3,8 +3,8 @@ package haven.render.gl;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.*;
+import java.nio.file.*;
 import javax.imageio.*;
-import javax.media.opengl.*;
 import com.jogamp.opengl.*;
 import com.jogamp.newt.event.*;
 import com.jogamp.newt.opengl.*;
@@ -25,7 +25,7 @@ public class Test implements GLEventListener, KeyListener {
     Area shape;
 
     Test() {
-	GLCapabilities caps = new GLCapabilities(GLProfile.getDefault());
+	GLCapabilities caps = new GLCapabilities(GLProfile.getMaxProgrammableCore(true));
 	wnd = GLWindow.create(caps);
 	wnd.setTitle("Test");
 	wnd.setSize(1024, 768);
@@ -56,7 +56,7 @@ public class Test implements GLEventListener, KeyListener {
     static final Texture2D.Sampler2D tex;
     static {
 	try {
-	    try(InputStream in = new FileInputStream("/tmp/test.png")) {
+	    try(InputStream in = Files.newInputStream(Utils.path("/tmp/test.png"))) {
 		BufferedImage img = ImageIO.read(in);
 		texsz = new Coord(img.getWidth(), img.getHeight());
 		texdat = TexI.convert(img, texsz);
@@ -147,9 +147,9 @@ public class Test implements GLEventListener, KeyListener {
 		(byte)125, 0, 86, 0, 0, (byte)255, 0, (byte)255,
 		(byte)175, 0, 86, 0, 0, 0, (byte)255, (byte)255,
 	    };
-	    g.draw(pipe, new Model(Model.Mode.TRIANGLES,
-				   new VertexArray(fmt, new VertexArray.Buffer(data.length, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
-				   null, 0, 3));
+	    g.draw1(pipe, new Model(Model.Mode.TRIANGLES,
+				    new VertexArray(fmt, new VertexArray.Buffer(data.length, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
+				    null, 0, 3));
 	}
 
 	{
@@ -163,9 +163,9 @@ public class Test implements GLEventListener, KeyListener {
 		(byte)228, 0, (byte)228, 0, (byte)255, (byte)255,
 		(byte)225, 0, 100, 0, (byte)255, 0,
 	    };
-	    g.draw(pipe, new Model(Model.Mode.TRIANGLE_STRIP,
-				   new VertexArray(fmt, new VertexArray.Buffer(data.length, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
-				   null, 0, 4));
+	    g.draw1(pipe, new Model(Model.Mode.TRIANGLE_STRIP,
+				    new VertexArray(fmt, new VertexArray.Buffer(data.length, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
+				    null, 0, 4));
 	}
 
 	{
@@ -179,9 +179,9 @@ public class Test implements GLEventListener, KeyListener {
 		612, 612, 1, 0,
 		612, 100, 1, 1,
 	    };
-	    g.draw(pipe, new Model(Model.Mode.TRIANGLE_STRIP,
-				   new VertexArray(fmt, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
-				   null, 0, 4));
+	    g.draw1(pipe, new Model(Model.Mode.TRIANGLE_STRIP,
+				    new VertexArray(fmt, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))),
+				    null, 0, 4));
 	}
     }
 
@@ -220,7 +220,7 @@ public class Test implements GLEventListener, KeyListener {
     public void reshape(GLAutoDrawable wnd, int x, int y, int w, int h) {
 	Pipe base = new BufPipe();
 	Area area = Area.sized(new Coord(x, y), new Coord(w, h));
-	base.prep(new States.Viewport(area)).prep(new Ortho2D(area)).prep(new States.Blending());
+	base.prep(new States.Viewport(area)).prep(new Ortho2D(area)).prep(FragColor.blend(new BlendMode()));
 	base.prep(new FragColor<>(FragColor.defcolor)).prep(new DepthBuffer<>(DepthBuffer.defdepth));
 	// base.prep(new FragColor(new Texture2D(512, 512, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null).image(0)));
 	// base.prep(new DepthBuffer(new Texture2D(512, 512, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null).image(0)));

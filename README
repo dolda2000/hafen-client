@@ -1,0 +1,145 @@
+			Haven & Hearth Client
+
+This client is used to connect to the server for the Haven & Hearth
+online game and play said game. For details regarding the game itself,
+please refer to its main website at <http://www.havenandhearth.com/>.
+This file exists mainly to describe various technical aspects of the
+source tree.
+
+			    Getting a copy
+
+In case you are reading this README outside of a local copy of the
+source tree and wish to obtain one, the main way of doing so is by
+using the Git Version Control System. The public (read-only)
+repository is accessed via the following Git URL:
+
+<git://sh.seatribe.se/hafen-client>
+
+			    Build process
+
+In order to compile the source tree into a useful executable, the
+Apache Ant build system is needed. Running `ant' reads the `build.xml'
+file in the root directory of the source tree and performs the actions
+described by it to produce the executable output. There are two main
+outputs from the build process:
+
+ * The `build/hafen.jar' file is the main executable, but executed in
+   that environment, it is not configured to connect to the official
+   server, and by default it does not have the data files necessary to
+   execute properly; rather, it is intended for local development
+   against a local server, with locally supplied data files, and so if
+   you are coming to this project with the intent to connect to the
+   official server, this will not be what you are looking for, rather:
+
+ * The `bin' directory contains a copy of the above described
+   `hafen.jar', but along with all the data files and configuration
+   needed to connect to the official server. It can be executed with
+   no further configuration (as with `java -jar bin/hafen.jar') and
+   should work just like downloading the client from the main site.
+
+In order to remove intermediary compilation artifacts and other
+dynamic state and return the source tree to a supposedly pristine
+state, the `ant clean' target can be run. There may exist cases of
+incompatible changes where doing so may be necessary in order for the
+source tree to properly recompile. They should be rare, but if you are
+stuck on some hard-to-explain compilation or run-time issue, please
+try it before giving up.
+
+			External dependencies
+
+The main external dependencies of the source tree are having a local
+Java Development Kit (JDK) installed, and (as mentioned above) the
+Apache Ant build system. On a Debian-based Linux system, these can
+usually be installed via the `default-jdk' and `ant' packages. For
+other distributions or operating systems, please use local
+documentation or your own faculties.
+
+Other than that, the client also requires the Java OpenGL
+implementation (JOGL), and also some data files from the main
+website. By default, the initial build process will download these
+dependencies from the main website into the `lib/ext` directory of the
+source tree. Once downloaded, they will not usually be updated, or
+even checked for updates, so subsequent runs should not depend on
+network access. If you want to supply your own local version of JOGL,
+you can do so by putting its files directly into `lib/ext/jogl' and
+ensure that the `lib/ext/jogl/has-jogl' file exists. As long as it
+does, the build system will not try to overwrite any JOGL
+files. Contrarily, in order to have the build system update JOGL to
+the latest version from the main website, the `lib/ext/jogl/has-jogl'
+file can be manually removed. Please note that running `ant clean'
+will remove the entire `lib/ext' directory, and so will both update
+JOGL from the main website and remove any local copy of JOGL that you
+may have supplied.
+
+		     Cursory source tree overview
+
+The vast majority of files constituting the source code of the client
+reside in the `src/haven' directory. Given that standard Java
+directory structures tend to devolve into a bit of a dumping-ground of
+files of small and large relevance alike, some points of particular
+interest may be useful, as follows.
+
+ * MainFrame.java contains the main() function executed when running
+   the client normally. It constitutes the main window of the client
+   and starts everything running in it.
+
+ * Config.java loads all runtime configuration and handles any system
+   properties, command-line arguments and the like to modify said
+   configuration.
+
+ * JOGLPanel.java constitutes the main AWT component for running and
+   rendering the game, and also contains the main-loop and all the
+   event-dispatching machinery.
+
+ * Session.java handles the fundamentals of the main game protocol and
+   maintaining the connection to the server.
+
+ * Resource.java is used to load any data not part of the source code
+   itself, such as images, textures, audio clips, 3D models, &c&c.
+
+ * Widget.java contains the base class of all the UI widgets in the
+   client.
+
+			   Formatting style
+
+ * Indentation is done in blocks of 4 columns.
+
+ * The Tab character (ASCII 9) is used in the classical and only
+   correct way: It advances the cursor to the next column ordinal
+   divisible by 8. It does not advance the cursor by 8 columns, and it
+   most certainly does not advance the cursor by 4 or 2 columns. If
+   you use an IDE, you may want to check your settings on that one,
+   because they are often wrong.
+
+ * Line endings are neither Mac style (CR) nor Windows style (CRLF),
+   but Unix style (LF).
+
+ * Last but not least, I'm not extremely particular about naming, but
+   if it's one thing that I really dislike, it is camelCase. If you
+   wish me to accept back any modifications you may make, you will
+   certainly increase your chances of acceptance by avoiding it. Thank
+   you!
+
+			  Contributing back
+
+If you want me to accept back any changes that you might have made
+into the public client available from the website, the one main rule
+that we wish to enforce is that we want you to sign over ownership of
+the code you wish to contribute to us. That may seem draconian to
+some, but please keep in mind that it is fairly common, being
+practiced not least by the FSF, and it is too important for us to not
+lose ownership of future development to forgo.
+
+Generally, we would consider the code as owned by us as long as the
+copyright notices at the top of each source file mentions our and only
+our names, and as long as the same copyright notice is copied to any
+new source files you would create, and as long as you haven't made any
+changes to the contrary in the COPYING file.
+
+Other than that, it's mostly just a matter of technical details and
+getting in contact. It should be noted that, while there is a
+repository on GitHub for the client, it is mostly just for backup, and
+the GitHub account is not commonly used, so if you decide to send a
+GitHib Pull Request, do not be surprised if it goes unnoticed for an
+extended period of time. More certain ways of receiving a response
+include e-mail or private messages on the Haven & Hearth forums.

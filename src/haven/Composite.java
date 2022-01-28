@@ -228,6 +228,8 @@ public class Composite extends Drawable {
 	    List<ResData> cposes = poses, ctposes = tposes;
 	    float cttime = ttime;
 	    Composite cmp = (Composite)g.getattr(Drawable.class);
+	    if(cmp == null)
+		throw(new RuntimeException(String.format("cmppose on non-composed object: %s %s %s %s", poses, tposes, interp, ttime)));
 	    if(cmp.pseq != pseq) {
 		cmp.pseq = pseq;
 		if(poses != null)
@@ -265,6 +267,8 @@ public class Composite extends Drawable {
 		mod.add(md);
 	    }
 	    Composite cmp = (Composite)g.getattr(Drawable.class);
+	    if(cmp == null)
+		throw(new RuntimeException(String.format("cmpmod on non-composed object: %s", mod)));
 	    cmp.chmod(mod);
 	}
     }
@@ -292,7 +296,7 @@ public class Composite extends Drawable {
 		Coord3f off;
 		if((ef & 128) != 0) {
 		    int x = msg.int16(), y = msg.int16(), z = msg.int16();
-		    off = new Coord3f(x / 1000.0f, y / 1000.0f, z / 1000.0f);
+		    off = Coord3f.of(x / 1000.0f, y / 1000.0f, z / 1000.0f);
 		} else {
 		    off = Coord3f.o;
 		}
@@ -301,6 +305,8 @@ public class Composite extends Drawable {
 		equ.add(ed);
 	    }
 	    Composite cmp = (Composite)g.getattr(Drawable.class);
+	    if(cmp == null)
+		throw(new RuntimeException(String.format("cmpequ on non-composed object: %s", equ)));
 	    cmp.chequ(equ);
 	}
     }

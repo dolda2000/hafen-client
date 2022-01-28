@@ -43,17 +43,17 @@ public class RootWidget extends ConsoleHost {
     public boolean globtype(char key, KeyEvent ev) {
 	if(!super.globtype(key, ev)) {
 	    if(key == '`') {
-		GameUI gi = findchild(GameUI.class);
 		if(Config.profile) {
-		    add(new Profwnd(guprof, "UI profile"), new Coord(100, 100));
-		    add(new Profwnd(grprof, "GL profile"), new Coord(500, 100));
+		    add(new Profwnd(guprof, "UI profile"), UI.scale(100, 100));
+		    add(new Profwnd(grprof, "GL profile"), UI.scale(500, 100));
 		    /* XXXRENDER
+		    GameUI gi = findchild(GameUI.class);
 		    if((gi != null) && (gi.map != null))
-			add(new Profwnd(gi.map.prof, "Map profile"), new Coord(100, 250));
+			add(new Profwnd(gi.map.prof, "Map profile"), UI.scale(100, 250));
 		    */
 		}
 		if(Config.profilegpu) {
-		    add(new Profwnd(ggprof, "GPU profile"), new Coord(500, 250));
+		    add(new Profwnd(ggprof, "GPU profile"), UI.scale(500, 250));
 		}
 	    } else if(key == ':') {
 		entercmd();
@@ -66,7 +66,7 @@ public class RootWidget extends ConsoleHost {
 
     public void draw(GOut g) {
 	super.draw(g);
-	drawcmd(g, new Coord(20, sz.y - 20));
+	drawcmd(g, new Coord(UI.scale(20), sz.y - UI.scale(20)));
     }
     
     public void error(String msg) {

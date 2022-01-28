@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import haven.render.*;
 
 public abstract class GAttrib {
@@ -52,5 +53,26 @@ public abstract class GAttrib {
     public void removed(RenderTree.Slot slot) {
 	if(slots != null)
 	    slots.remove(slot);
+    }
+
+    public static class ParserMaker implements Resource.PublishedCode.Instancer<Parser> {
+	public Parser make(Class<?> cl, Resource ires, Object... argv) {
+	    if(Parser.class.isAssignableFrom(cl))
+		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Parser.class), ires, argv));
+	    try {
+		Function<Object[], Void> parse = Utils.smthfun(cl, "parse", Void.TYPE, Gob.class, Message.class);
+		return(new Parser() {
+			public void apply(Gob gob, Message sdt) {
+			    parse.apply(new Object[]{gob, sdt});
+			}
+		    });
+	    } catch(NoSuchMethodException e) {}
+	    return(null);
+	}
+    }
+
+    @Resource.PublishedCode(name = "objdelta", instancer = ParserMaker.class)
+    public static interface Parser {
+	public void apply(Gob gob, Message sdt);
     }
 }

@@ -28,7 +28,7 @@ package haven.render.gl;
 
 import haven.Disposable;
 import java.util.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public abstract class GLObject implements Disposable {
     public final GLEnvironment env;
@@ -43,6 +43,7 @@ public abstract class GLObject implements Disposable {
     }
 
     public abstract void create(GL3 gl);
+    public void abortcreate() {}
     protected abstract void delete(GL3 gl);
 
     protected void dispose0() {

@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.function.*;
 import haven.render.*;
 
-public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
+public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Skeleton.HasPose {
     public Coord2d rc;
     public double a;
     public boolean virtual = false;
@@ -168,10 +168,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    public ResAttr mkattr(Gob gob, Message dat);
 	}
 
-	public static class FactMaker implements Resource.PublishedCode.Instancer {
-	    public Factory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
+	public static class FactMaker implements Resource.PublishedCode.Instancer<Factory> {
+	    public Factory make(Class<?> cl, Resource ires, Object... argv) {
 		if(Factory.class.isAssignableFrom(cl))
-		    return(cl.asSubclass(Factory.class).newInstance());
+		    return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Factory.class), ires, argv));
 		if(ResAttr.class.isAssignableFrom(cl)) {
 		    try {
 			final java.lang.reflect.Constructor<? extends ResAttr> cons = cl.asSubclass(ResAttr.class).getConstructor(Gob.class, Message.class);
@@ -455,6 +455,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	    }
 	    return(ret);
 	}
+
+	public String toString() {
+	    return(String.format("#<gob-click %d %s>", gob.id, gob.getres()));
+	}
     }
 
     private class GobState implements Pipe.Op {
@@ -511,8 +515,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
     }
 
     public void added(RenderTree.Slot slot) {
-	if(!virtual)
-	    slot.ostate(curstate());
+	slot.ostate(curstate());
 	for(Overlay ol : ols) {
 	    if(ol.slots != null)
 		slot.add(ol);
@@ -580,6 +583,13 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner {
 	Drawable d = getattr(Drawable.class);
 	if(d != null)
 	    return(d.getres());
+	return(null);
+    }
+
+    public Skeleton.Pose getpose() {
+	Drawable d = getattr(Drawable.class);
+	if(d != null)
+	    return(d.getpose());
 	return(null);
     }
 

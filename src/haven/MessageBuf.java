@@ -26,7 +26,7 @@
 
 package haven;
 
-public class MessageBuf extends Message {
+public class MessageBuf extends Message implements java.io.Serializable {
     public static final MessageBuf nil = new MessageBuf();
     private final int oh;
 

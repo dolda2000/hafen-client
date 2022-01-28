@@ -26,23 +26,25 @@
 
 package haven.render.gl;
 
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class Vao0State extends VaoState {
     public final GLEnvironment env;
     public final BGL.ID[] enable;
     public final boolean[] instanced;
     public final GLBuffer ebo;
+    private final GLVertexArray vao0;
 
     public Vao0State(GLEnvironment env, BGL.ID[] enable, boolean[] instanced, GLBuffer ebo) {
 	this.env = env;
 	this.enable = enable;
 	this.instanced = instanced;
 	this.ebo = ebo;
+	this.vao0 = env.tempvao.get();
     }
 
     public void apply(BGL gl) {
-	gl.glBindVertexArray(env.tempvao.get());
+	gl.glBindVertexArray(vao0);
 	for(int i = 0; i < enable.length; i++) {
 	    gl.glEnableVertexAttribArray(enable[i]);
 	    if(instanced[i])

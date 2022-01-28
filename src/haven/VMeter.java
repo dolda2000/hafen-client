@@ -27,56 +27,36 @@
 package haven;
 
 import java.awt.Color;
+import java.util.*;
 
-public class VMeter extends Widget {
-    static Tex bg = Resource.loadtex("gfx/hud/vm-frame");
-    static Tex fg = Resource.loadtex("gfx/hud/vm-tex");
-    Color cl;
-    int amount;
-	
+public class VMeter extends LayerMeter {
+    public static final Tex bg = Resource.loadtex("gfx/hud/vm-frame");
+    public static final Tex fg = Resource.loadtex("gfx/hud/vm-tex");
+
     @RName("vm")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    Color cl;
-	    if(args.length > 4) {
-		cl = new Color((Integer)args[1],
-			       (Integer)args[2],
-			       (Integer)args[3],
-			       (Integer)args[4]);
-	    } else if(args.length > 3) {
-		cl = new Color((Integer)args[1],
-			       (Integer)args[2],
-			       (Integer)args[3]);
-	    } else {
-		cl = (Color)args[1];
-	    }
-	    return(new VMeter((Integer)args[0], cl));
+	    return(new VMeter(decmeters(args, 0)));
 	}
     }
-	
-    public VMeter(int amount, Color cl) {
+
+    public VMeter(List<Meter> meters) {
 	super(bg.sz());
-	this.amount = amount;
-	this.cl = cl;
+	set(meters);
     }
-	
+
+    @Deprecated
+    public VMeter(int amount, Color color) {
+	this(Collections.singletonList(new Meter(amount * 0.01, color)));
+    }
+
     public void draw(GOut g) {
 	g.image(bg, Coord.z);
-	g.chcolor(cl);
-	int h = (sz.y - 6);
-	h = (h * amount) / 100;
-	g.image(fg, new Coord(0, 0), new Coord(0, sz.y - 3 - h), sz.add(0, h));
-    }
-	
-    public void uimsg(String msg, Object... args) {
-	if(msg == "set") {
-	    amount = (Integer)args[0];
-	    if(args.length > 1)
-		cl = (Color)args[1];
-	} else if(msg == "col") {
-	    cl = (Color)args[0];
-	} else {
-	    super.uimsg(msg, args);
+	int h = (sz.y - UI.scale(6));
+	for(Meter m : meters) {
+	    g.chcolor(m.c);
+	    int mh = (int)Math.round(h * m.a);
+	    g.image(fg, new Coord(0, 0), new Coord(0, sz.y - UI.scale(3) - mh), sz.add(0, mh));
 	}
     }
 }

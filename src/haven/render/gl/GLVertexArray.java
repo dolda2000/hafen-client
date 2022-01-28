@@ -27,7 +27,7 @@
 package haven.render.gl;
 
 import java.util.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 import haven.Disposable;
 import haven.render.*;
 import haven.render.sl.Type;
@@ -156,6 +156,8 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 			}
 		    }
 		}
+		if(env.labels && (mod.desc != null))
+		    gl.glObjectLabel(GL2.GL_VERTEX_ARRAY, this, String.valueOf(mod.desc));
 	    });
     }
 

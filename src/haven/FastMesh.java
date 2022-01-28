@@ -47,8 +47,8 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	    throw(new RuntimeException("Invalid index array length"));
 	this.indb = ind;
 	this.model = new Model(Model.Mode.TRIANGLES, vert.data(),
-			       new Indices(num * 3, NumberFormat.UINT16, DataBuffer.Usage.STATIC, this::indfill).shared(),
-			       0, num * 3);
+			       new Indices(num * 3, NumberFormat.UINT16, DataBuffer.Usage.STATIC, this::indfill).shared().desc(this),
+			       0, num * 3).desc(this);
     }
 
     public FastMesh(VertexBuf vert, short[] ind) {
@@ -157,7 +157,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	    Model smod = FastMesh.this.model;
 	    model = new Model(smod.mode, (data != null) ? data : vert.data(),
 			      smod.ind, smod.f, smod.n,
-			      ninst);
+			      ninst).desc(this);
 	    if(batupd)
 		bat.instupdate();
 	}
@@ -193,6 +193,11 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	public void dispose() {
 	    if(model != null)
 		model.dispose();
+	    attr.dispose();
+	}
+
+	public String toString() {
+	    return(String.format("#<instmesh %s>", FastMesh.this));
 	}
     }
 
@@ -224,7 +229,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	public final Map<String, String> rdat;
 	private transient short[] tmp;
 	public final int id, ref;
-	private int matid;
+	private int vbufid, matid;
 	
 	public MeshRes(Resource res, Message buf) {
 	    res.super();
@@ -251,7 +256,11 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 		}
 	    }
 	    this.rdat = Collections.unmodifiableMap(rdat);
-	    if((fl & ~15) != 0)
+	    if((fl & 16) != 0)
+		vbufid = buf.int16();
+	    else
+		vbufid = 0;
+	    if((fl & ~31) != 0)
 		throw(new Resource.LoadException("Unsupported flags in fastmesh: " + fl, getres()));
 	    short[] ind = new short[num * 3];
 	    for(int i = 0; i < num * 3; i++)
@@ -260,7 +269,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	}
 	
 	public void init() {
-	    VertexBuf v = getres().layer(VertexBuf.VertexRes.class).b;
+	    VertexBuf v = getres().layer(VertexBuf.VertexRes.class, vbufid).b;
 	    this.m = new ResourceMesh(v, this.tmp, this);
 	    this.tmp = null;
 	    if(matid >= 0) {

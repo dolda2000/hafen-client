@@ -74,27 +74,34 @@ public abstract class ItemInfo {
 	}
     }
 
-    public static class FactMaker implements Resource.PublishedCode.Instancer {
-	public InfoFactory make(Class<?> cl) throws InstantiationException, IllegalAccessException {
-	    if(InfoFactory.class.isAssignableFrom(cl))
-		return(cl.asSubclass(InfoFactory.class).newInstance());
-	    try {
-		Function<Object[], ItemInfo> make = Utils.smthfun(cl, "mkinfo", ItemInfo.class, Owner.class, Object[].class);
-		return(new InfoFactory() {
-			public ItemInfo build(Owner owner, Raw raw, Object... args) {
-			    return(make.apply(new Object[]{owner, args}));
-			}
-		    });
-	    } catch(NoSuchMethodException e) {}
-	    try {
-		Function<Object[], ItemInfo> make = Utils.smthfun(cl, "mkinfo", ItemInfo.class, Owner.class, Raw.class, Object[].class);
-		return(new InfoFactory() {
-			public ItemInfo build(Owner owner, Raw raw, Object... args) {
-			    return(make.apply(new Object[]{owner, raw, args}));
-			}
-		    });
-	    } catch(NoSuchMethodException e) {}
-	    return(null);
+    public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<InfoFactory> {
+	public FactMaker() {super(InfoFactory.class);}
+	{
+	    add(new Direct<>(InfoFactory.class));
+	    add(new StaticCall<>(InfoFactory.class, "mkinfo", ItemInfo.class, new Class<?>[] {Owner.class, Object[].class},
+				 (make) -> new InfoFactory() {
+					 public ItemInfo build(Owner owner, Raw raw, Object... args) {
+					     return(make.apply(new Object[]{owner, args}));
+					 }
+				     }));
+	    add(new StaticCall<>(InfoFactory.class, "mkinfo", ItemInfo.class, new Class<?>[] {Owner.class, Raw.class, Object[].class},
+				 (make) -> new InfoFactory() {
+					 public ItemInfo build(Owner owner, Raw raw, Object... args) {
+					     return(make.apply(new Object[]{owner, raw, args}));
+					 }
+				     }));
+	    add(new Construct<>(InfoFactory.class, ItemInfo.class, new Class<?>[] {Owner.class, Object[].class},
+				(cons) -> new InfoFactory() {
+					public ItemInfo build(Owner owner, Raw raw, Object... args) {
+					    return(cons.apply(new Object[] {owner, args}));
+					}
+				    }));
+	    add(new Construct<>(InfoFactory.class, ItemInfo.class, new Class<?>[] {Owner.class, Raw.class, Object[].class},
+				(cons) -> new InfoFactory() {
+					public ItemInfo build(Owner owner, Raw raw, Object... args) {
+					    return(cons.apply(new Object[] {owner, raw, args}));
+					}
+				    }));
 	}
     }
     
@@ -208,9 +215,9 @@ public abstract class ItemInfo {
 	}
 
 	public void layout(Layout l) {
-	    BufferedImage t = tipimg((l.width == 0) ? 200 : l.width);
+	    BufferedImage t = tipimg((l.width == 0) ? UI.scale(200) : l.width);
 	    if(t != null)
-		l.cmp.add(t, new Coord(0, l.cmp.sz.y + 10));
+		l.cmp.add(t, new Coord(0, l.cmp.sz.y + UI.scale(10)));
 	}
 
 	public int order() {return(10000);}
@@ -414,5 +421,9 @@ public abstract class ItemInfo {
 		    return(() -> ret);
 		});
 	}
+    }
+
+    public static interface InfoTip {
+	public List<ItemInfo> info();
     }
 }

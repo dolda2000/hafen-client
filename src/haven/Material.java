@@ -65,32 +65,32 @@ public class Material implements Pipe.Op {
 
     @ResName("blend")
     public static class $blend implements ResCons {
-	private static States.Blending.Function fn(Resource res, char desc) {
+	private static BlendMode.Function fn(Resource res, char desc) {
 	    switch(desc) {
-	    case '+': return States.Blending.Function.ADD;
-	    case '-': return States.Blending.Function.SUB;
-	    case '_': return States.Blending.Function.RSUB;
-	    case '>': return States.Blending.Function.MAX;
-	    case '<': return States.Blending.Function.MIN;
+	    case '+': return BlendMode.Function.ADD;
+	    case '-': return BlendMode.Function.SUB;
+	    case '_': return BlendMode.Function.RSUB;
+	    case '>': return BlendMode.Function.MAX;
+	    case '<': return BlendMode.Function.MIN;
 	    default: throw(new Resource.LoadException("Unknown blend function: " + desc, res));
 	    }
 	}
 
-	private static States.Blending.Factor fac(Resource res, char desc) {
+	private static BlendMode.Factor fac(Resource res, char desc) {
 	    switch(desc) {
-	    case '0': return States.Blending.Factor.ZERO;
-	    case '1': return States.Blending.Factor.ONE;
-	    case 'a': return States.Blending.Factor.SRC_ALPHA;
-	    case 'A': return States.Blending.Factor.INV_SRC_ALPHA;
-	    case 'c': return States.Blending.Factor.SRC_COLOR;
-	    case 'C': return States.Blending.Factor.INV_SRC_COLOR;
+	    case '0': return BlendMode.Factor.ZERO;
+	    case '1': return BlendMode.Factor.ONE;
+	    case 'a': return BlendMode.Factor.SRC_ALPHA;
+	    case 'A': return BlendMode.Factor.INV_SRC_ALPHA;
+	    case 'c': return BlendMode.Factor.SRC_COLOR;
+	    case 'C': return BlendMode.Factor.INV_SRC_COLOR;
 	    default: throw(new Resource.LoadException("Unknown blend factor: " + desc, res));
 	    }
 	}
 
 	public Pipe.Op cons(Resource res, Object... args) {
-	    States.Blending.Function cfn, afn;
-	    States.Blending.Factor csrc, cdst, asrc, adst;
+	    BlendMode.Function cfn, afn;
+	    BlendMode.Factor csrc, cdst, asrc, adst;
 	    String desc = (String)args[0];
 	    if(desc.length() < 3)
 		throw(new Resource.LoadException("Bad blend description: " + desc, res));
@@ -104,7 +104,7 @@ public class Material implements Pipe.Op {
 		asrc = fac(res, desc.charAt(4));
 		adst = fac(res, desc.charAt(5));
 	    }
-	    return(new States.Blending(cfn, csrc, cdst, afn, asrc, adst));
+	    return(FragColor.blend(new BlendMode(cfn, csrc, cdst, afn, asrc, adst)));
 	}
     }
 
@@ -310,13 +310,7 @@ public class Material implements Pipe.Op {
 	    String nm = cl.getAnnotation(ResName.class).value();
 	    if(ResCons.class.isAssignableFrom(cl)) {
 		final ResCons scons;
-		try {
-		    scons = cl.asSubclass(ResCons.class).newInstance();
-		} catch(InstantiationException e) {
-		    throw(new Error(e));
-		} catch(IllegalAccessException e) {
-		    throw(new Error(e));
-		}
+		scons = Utils.construct(cl.asSubclass(ResCons.class));
 		rnames.put(nm, new ResCons2() {
 			public Res.Resolver cons(Resource res, Object... args) {
 			    final Pipe.Op ret = scons.cons(res, args);
@@ -329,13 +323,7 @@ public class Material implements Pipe.Op {
 			}
 		    });
 	    } else if(ResCons2.class.isAssignableFrom(cl)) {
-		try {
-		    rnames.put(nm, cl.asSubclass(ResCons2.class).newInstance());
-		} catch(InstantiationException e) {
-		    throw(new Error(e));
-		} catch(IllegalAccessException e) {
-		    throw(new Error(e));
-		}
+		rnames.put(nm, Utils.construct(cl.asSubclass(ResCons2.class)));
 	    } else if(Pipe.Op.class.isAssignableFrom(cl)) {
 		Constructor<? extends Pipe.Op> cons;
 		try {

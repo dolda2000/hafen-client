@@ -29,14 +29,14 @@ package haven.render.gl;
 import haven.Coord;
 import haven.render.*;
 import java.util.*;
-import javax.media.opengl.*;
+import com.jogamp.opengl.*;
 
 public class GLFrameBuffer extends GLObject implements BGL.ID {
     public final Attachment[] color;
     public final Attachment depth;
     public final Coord sz;
     private int id;
-	
+
     public GLFrameBuffer(GLEnvironment env, Attachment[] color, Attachment depth) {
 	super(env);
 	if(color.length > 0) {
@@ -56,7 +56,7 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	this.depth = depth;
 	env.prepare(this);
 	env.prepare((GLRender r) -> {
-		r.state.apply(r.gl, new FboState(env, this, new int[0]));
+		r.state.apply(r.gl, new FboState(env, this, new int[0], null));
 		BGL gl = r.gl();
 		for(int i = 0; i < GLFrameBuffer.this.color.length; i++)
 		    GLFrameBuffer.this.color[i].attach(gl, this, GL.GL_COLOR_ATTACHMENT0 + i);
@@ -65,7 +65,7 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 		gl.bglSubmit(rgl -> {
 			int st = rgl.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER);
 			if(st != GL.GL_FRAMEBUFFER_COMPLETE)
-			    throw(new RuntimeException("FBO failed completeness test: " + GLException.constname(st)));
+			    throw(new FormatException("FBO failed completeness test: " + GLException.constname(st), GLFrameBuffer.this));
 		    });
 	    });
 	register();
@@ -114,6 +114,27 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	for(Attachment c : color)
 	    unregister(c.tex);
 	super.dispose();
+    }
+
+    public static class FormatException extends RuntimeException {
+	public final Coord sz;
+	public final VectorFormat[] cfmt;
+	public final VectorFormat dfmt;
+
+	public FormatException(String message, GLFrameBuffer fbo) {
+	    super(message);
+	    this.sz = fbo.sz;
+	    cfmt = new VectorFormat[fbo.color.length];
+	    for(int i = 0; i < cfmt.length; i++) {
+		if(fbo.color[i] instanceof Attach2D) {
+		    cfmt[i] = ((Attach2D)fbo.color[i]).img.tex.ifmt;
+		}
+	    }
+	    if(fbo.depth instanceof Attach2D)
+		dfmt = ((Attach2D)fbo.depth).img.tex.ifmt;
+	    else
+		dfmt = null;
+	}
     }
 
     public static abstract class Attachment {

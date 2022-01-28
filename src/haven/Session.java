@@ -49,6 +49,7 @@ public class Session implements Resource.Resolver {
     public static final int SESSERR_CONN = 3;
     public static final int SESSERR_PVER = 4;
     public static final int SESSERR_EXPR = 5;
+    public static final int SESSERR_MESG = 6;
 
     static final int ackthresh = 30;
 
@@ -57,6 +58,7 @@ public class Session implements Resource.Resolver {
     Thread rworker, sworker;
     Object[] args;
     public int connfailed = 0;
+    public String connerror = null;
     public String state = "conn";
     int tseq = 0, rseq = 0;
     int ackseq;
@@ -254,7 +256,8 @@ public class Session implements Resource.Resolver {
 		    }
 		}
 	    } else if((msg.type == RMessage.RMSG_NEWWDG) || (msg.type == RMessage.RMSG_WDGMSG) ||
-		      (msg.type == RMessage.RMSG_DSTWDG) || (msg.type == RMessage.RMSG_ADDWDG)) {
+		      (msg.type == RMessage.RMSG_DSTWDG) || (msg.type == RMessage.RMSG_ADDWDG) ||
+		      (msg.type == RMessage.RMSG_WDGBAR)) {
 		synchronized(uimsgs) {
 		    uimsgs.add(msg);
 		}
@@ -270,10 +273,17 @@ public class Session implements Resource.Resolver {
 	    } else if(msg.type == RMessage.RMSG_PARTY) {
 		glob.party.msg(msg);
 	    } else if(msg.type == RMessage.RMSG_SFX) {
-		Indir<Resource> res = getres(msg.uint16());
+		Indir<Resource> resid = getres(msg.uint16());
 		double vol = ((double)msg.uint16()) / 256.0;
 		double spd = ((double)msg.uint16()) / 256.0;
-		Audio.play(res);
+		glob.loader.defer(() -> {
+			Audio.CS clip = Audio.fromres(resid.get());
+			if(spd != 1.0)
+			    clip = new Audio.Resampler(clip).sp(spd);
+			if(vol != 1.0)
+			    clip = new Audio.VolAdjust(clip, vol);
+			Audio.play(clip);
+		    }, null);
 	    } else if(msg.type == RMessage.RMSG_CATTR) {
 		glob.cattr(msg);
 	    } else if(msg.type == RMessage.RMSG_MUSIC) {
@@ -346,6 +356,28 @@ public class Session implements Resource.Resolver {
 				    state = "";
 				} else {
 				    connfailed = error;
+				    switch(connfailed) {
+				    case SESSERR_AUTH:
+					connerror = "Invalid authentication token";
+					break;
+				    case SESSERR_BUSY:
+					connerror = "Already logged in";
+					break;
+				    case SESSERR_CONN:
+					connerror = "Could not connect to server";
+					break;
+				    case SESSERR_PVER:
+					connerror = "This client is too old";
+					break;
+				    case SESSERR_EXPR:
+					connerror = "Authentication token expired";
+					break;
+				    case SESSERR_MESG:
+					connerror = msg.string();
+					break;
+				    default:
+					connerror = "Connection failed";
+				    }
 				    Session.this.close();
 				}
 				Session.this.notifyAll();
@@ -545,7 +577,7 @@ public class Session implements Resource.Resolver {
 				break;
 			    state = "close";
 			    long now = System.currentTimeMillis();
-			    if(now - f > 500)
+			    if(now - f >= 500)
 				break;
 			    try {
 				Session.this.wait(500 - (now - f));

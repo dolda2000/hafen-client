@@ -27,9 +27,14 @@
 package haven;
 
 import java.util.*;
+import java.awt.Font;
+import java.awt.GraphicsEnvironment;
+import java.awt.GraphicsDevice;
+import java.awt.DisplayMode;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.InputEvent;
+import java.awt.image.BufferedImage;
 import static haven.Utils.el;
 import haven.render.Environment;
 import haven.render.Render;
@@ -46,7 +51,7 @@ public class UI {
     public Session sess;
     public boolean modshift, modctrl, modmeta, modsuper;
     public Object lasttip;
-    double lastevent, lasttick;
+    public double lastevent, lasttick;
     public Widget mouseon;
     public Console cons = new WidgetConsole();
     private Collection<AfterDraw> afterdraws = new LinkedList<AfterDraw>();
@@ -54,6 +59,7 @@ public class UI {
     public GSettings gprefs = GSettings.load(true);
     private boolean gprefsdirty = false;
     public final ActAudio.Root audio = new ActAudio.Root();
+    private static final double scalef;
     
     {
 	lastevent = lasttick = Utils.rtime();
@@ -64,7 +70,21 @@ public class UI {
     }
 
     public interface Runner {
-	public Session run(UI ui) throws InterruptedException;
+	public Runner run(UI ui) throws InterruptedException;
+	public default void init(UI ui) {}
+	public default String title() {return(null);}
+
+	public static class Proxy implements Runner {
+	    public final Runner back;
+
+	    public Proxy(Runner back) {
+		this.back = back;
+	    }
+
+	    public Runner run(UI ui) throws InterruptedException {return(back.run(ui));}
+	    public void init(UI ui) {back.init(ui);}
+	    public String title() {return(back.title());}
+	}
     }
 
     public interface Context {
@@ -142,12 +162,13 @@ public class UI {
 	}
     }
 	
-    public UI(Context uictx, Coord sz, Session sess) {
+    public UI(Context uictx, Coord sz, Runner fun) {
 	this.uictx = uictx;
 	root = new RootWidget(this, sz);
 	widgets.put(0, root);
 	rwidgets.put(root, 0);
-	this.sess = sess;
+	if(fun != null)
+	    fun.init(this);
     }
 	
     public void setreceiver(Receiver rcvr) {
@@ -184,8 +205,9 @@ public class UI {
 
     public void tick() {
 	double now = Utils.rtime();
-	root.tick(now - lasttick);
+	double delta = now - lasttick;
 	lasttick = now;
+	root.tick(delta);
 	if(gprefsdirty) {
 	    gprefs.save();
 	    gprefsdirty = false;
@@ -207,10 +229,12 @@ public class UI {
 	
     public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
 	Widget.Factory f = Widget.gettype2(type);
+	if(f == null)
+	    throw(new UIException("Bad widget name", type, cargs));
 	synchronized(this) {
 	    Widget wdg = f.create(this, cargs);
 	    wdg.attach(this);
-	    if(parent != 65535) {
+	    if(parent != -1) {
 		Widget pwdg = getwidget(parent);
 		if(pwdg == null)
 		    throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
@@ -310,12 +334,22 @@ public class UI {
 	
     public void uimsg(int id, String msg, Object... args) {
 	Widget wdg = getwidget(id);
-	if(wdg != null)
-	    wdg.uimsg(msg.intern(), args);
-	else
+	if(wdg != null) {
+	    synchronized(this) {
+		wdg.uimsg(msg.intern(), args);
+	    }
+	} else {
 	    throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
+	}
     }
 	
+    public void error(String msg) {
+	/* XXX: This should be generalized. */
+	GameUI gui = root.findchild(GameUI.class);
+	if(gui != null)
+	    gui.error(msg);
+    }
+
     private void setmods(InputEvent ev) {
 	int mod = ev.getModifiersEx();
 	modshift = (mod & InputEvent.SHIFT_DOWN_MASK) != 0;
@@ -441,5 +475,105 @@ public class UI {
     public void destroy() {
 	root.destroy();
 	audio.clear();
+    }
+
+    public void sfx(Audio.CS clip) {
+	audio.aui.add(clip);
+    }
+    public void sfx(Resource clip) {
+	sfx(Audio.fromres(clip));
+    }
+
+    public static double scale(double v) {
+	return(v * scalef);
+    }
+
+    public static float scale(float v) {
+	return(v * (float)scalef);
+    }
+
+    public static int scale(int v) {
+	return(Math.round(scale((float)v)));
+    }
+
+    public static int rscale(double v) {
+	return((int)Math.round(v * scalef));
+    }
+
+    public static Coord scale(Coord v) {
+	return(v.mul(scalef));
+    }
+
+    public static Coord scale(int x, int y) {
+	return(scale(new Coord(x, y)));
+    }
+
+    public static Coord rscale(double x, double y) {
+	return(new Coord(rscale(x), rscale(y)));
+    }
+
+    public static Coord2d scale(Coord2d v) {
+	return(v.mul(scalef));
+    }
+
+    static public Font scale(Font f, float size) {
+	return(f.deriveFont(scale(size)));
+    }
+
+    public static <T extends Tex> ScaledTex<T> scale(T tex) {
+	return(new ScaledTex<T>(tex, UI.scale(tex.sz())));
+    }
+
+    public static <T extends Tex> ScaledTex<T> scale(ScaledTex<T> tex) {
+	return(tex);
+    }
+
+    public static double unscale(double v) {
+	return(v / scalef);
+    }
+
+    public static float unscale(float v) {
+	return(v / (float)scalef);
+    }
+
+    public static int unscale(int v) {
+	return(Math.round(unscale((float)v)));
+    }
+
+    public static Coord unscale(Coord v) {
+	return(v.div(scalef));
+    }
+
+    private static double maxscale = -1;
+    public static double maxscale() {
+	synchronized(UI.class) {
+	    if(maxscale < 0) {
+		double fscale = 1.25;
+		try {
+		    GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		    for(GraphicsDevice dev : env.getScreenDevices()) {
+			DisplayMode mode = dev.getDisplayMode();
+			double scale = Math.min(mode.getWidth() / 800.0, mode.getHeight() / 600.0);
+			fscale = Math.max(fscale, scale);
+		    }
+		} catch(Exception exc) {
+		    new Warning(exc, "could not determine maximum scaling factor").issue();
+		}
+		maxscale = fscale;
+	    }
+	    return(maxscale);
+	}
+    }
+
+    private static double loadscale() {
+	if(Config.uiscale != null)
+	    return(Config.uiscale);
+	double scale = Utils.getprefd("uiscale", 1.0);
+	scale = Math.max(Math.min(scale, maxscale()), 1.0);
+	return(scale);
+    }
+
+    static {
+	scalef = loadscale();
     }
 }

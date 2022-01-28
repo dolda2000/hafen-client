@@ -37,7 +37,7 @@ import java.awt.event.*;
 public interface UIPanel extends Runnable {
     public static final Cursor emptycurs = Toolkit.getDefaultToolkit().createCustomCursor(TexI.mkbuf(new Coord(1, 1)), new java.awt.Point(), "");
 
-    public UI newui(Session sess);
+    public UI newui(UI.Runner fun);
     public void background(boolean bg);
 
     /* Stuff that is inherited from AWT components, but that have to
@@ -91,8 +91,12 @@ public interface UIPanel extends Runnable {
 			}
 			ui.keydown(ke);
 			lastpress = ke;
+			if(ke.getKeyCode() == Debug.FRAME_DEBUG_KEY)
+			    Debug.fdk = true;
 		    } else if(ke.getID() == KeyEvent.KEY_RELEASED) {
 			ui.keyup(ke);
+			if(ke.getKeyCode() == Debug.FRAME_DEBUG_KEY)
+			    Debug.fdk = false;
 		    } else if(ke.getID() == KeyEvent.KEY_TYPED) {
 			KeyEvent lp = lastpress;
 			if((lp != null) && (lp.getKeyChar() == ke.getKeyChar())) {

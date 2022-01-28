@@ -47,7 +47,7 @@ public class Partyview extends Widget {
     }
 	
     Partyview(long ign) {
-	super(new Coord(84, 140));
+	super(UI.scale(new Coord(84, 140)));
 	this.ign = ign;
     }
 
@@ -64,7 +64,7 @@ public class Partyview extends Widget {
 		    continue;
 		Avaview w = avs.get(m);
 		if(w == null) {
-		    w = add(new Avaview(new Coord(27, 27), m.gobid, "avacam") {
+		    w = add(new Avaview(UI.scale(new Coord(27, 27)), m.gobid, "avacam") {
 			    private Tex tooltip = null;
 			    
 			    public Object tooltip(Coord c, Widget prev) {
@@ -100,7 +100,7 @@ public class Partyview extends Widget {
 		});
 	    int i = 0;
 	    for(Map.Entry<Member, Avaview> e : wl) {
-		e.getValue().c = new Coord((i % 2) * 43, (i / 2) * 43 + 24);
+		e.getValue().c = UI.scale(new Coord((i % 2) * 43, (i / 2) * 43 + 27));
 		i++;
 	    }
 	}
@@ -108,7 +108,7 @@ public class Partyview extends Widget {
 	    e.getValue().color = e.getKey().col;
 	}
 	if((avs.size() > 0) && (leave == null)) {
-	    leave = add(new Button(84, "Leave party"), Coord.z);
+	    leave = add(new Button(UI.scale(84), "Leave party"), Coord.z);
 	}
 	if((avs.size() == 0) && (leave != null)) {
 	    ui.destroy(leave);

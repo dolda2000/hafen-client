@@ -192,7 +192,7 @@ public class ShadowMap extends State {
 	}
 
 	public void draw(Render out) {
-	    if((back == null) || !back.compatible(out.env())) {
+	    if((back == null) || !out.env().compatible(back)) {
 		if(back != null)
 		    back.dispose();
 		back = out.env().drawlist();
@@ -215,6 +215,10 @@ public class ShadowMap extends State {
 	return(ret);
     }
 
+    public boolean haspos() {
+	return(lcam != null);
+    }
+
     public ShadowMap setpos(Coord3f base, Coord3f dir) {
 	DirCam lcam = new DirCam();
 	lcam.update(base, dir);
@@ -227,9 +231,12 @@ public class ShadowMap extends State {
     }
 
     public void update(Render out, ShadowList data) {
-	Pipe bstate = new BufPipe().prep(curbasic);
+	/* XXX: FrameInfo, and potentially others, should quite
+	 * arguably be inherited from some parent context instead. */
+	Pipe.Op basic = Pipe.Op.compose(curbasic, new FrameInfo());
+	Pipe bstate = new BufPipe().prep(basic);
 	out.clear(bstate, 1.0);
-	data.basic(curbasic);
+	data.basic(basic);
 	data.draw(out);
 	if(false)
 	    GOut.getimage(out, lbuf.image(0), Debug::dumpimage);
@@ -243,7 +250,9 @@ public class ShadowMap extends State {
 	public static final Uniform txf = new Uniform(MAT4, p -> {
 		ShadowMap sm = p.get(smap);
 		Matrix4f cm = Transform.rxinvert(p.get(Homo3D.cam).fin(Matrix4f.id));
-		Matrix4f txf = texbias.mul(sm.lproj.fin(Matrix4f.id)).mul(sm.lcam.fin(Matrix4f.id)).mul(cm);
+		Matrix4f proj = sm.lproj.fin(Matrix4f.id);
+		Matrix4f lcam = sm.lcam.fin(Matrix4f.id);
+		Matrix4f txf = texbias.mul(proj).mul(lcam).mul(cm);
 		return(txf);
 	    }, smap, Homo3D.cam);
 	public static final Uniform sl = new Uniform(INT, p -> {

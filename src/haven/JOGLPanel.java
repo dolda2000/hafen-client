@@ -30,8 +30,8 @@ import java.util.*;
 import java.awt.Toolkit;
 import java.awt.Robot;
 import java.awt.Point;
-import javax.media.opengl.*;
-import javax.media.opengl.awt.*;
+import com.jogamp.opengl.*;
+import com.jogamp.opengl.awt.*;
 import haven.render.*;
 import haven.render.States;
 import haven.render.gl.*;
@@ -71,11 +71,11 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	GLProfile prof;
 	try {
 	    prof = GLProfile.getMaxProgrammableCore(true);
-	} catch(javax.media.opengl.GLException e) {
+	} catch(com.jogamp.opengl.GLException e) {
 	    try {
 		/* If not core, let GLEnvironment handle that. */
 		prof = GLProfile.getDefault();
-	    } catch(javax.media.opengl.GLException e2) {
+	    } catch(com.jogamp.opengl.GLException e2) {
 		e2.addSuppressed(e);
 		throw(new ProfileException(e2));
 	    }
@@ -93,15 +93,22 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	super(mkcaps(), null, null);
 	base = new BufPipe();
 	base.prep(new FragColor<>(FragColor.defcolor)).prep(new DepthBuffer<>(DepthBuffer.defdepth));
-	base.prep(new States.Blending());
+	base.prep(FragColor.blend(new BlendMode()));
 	setSize(sz.x, sz.y);
-	setAutoSwapBufferMode(false);
 	addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
 		    redraw(d.getGL());
 		}
 
 		public void init(GLAutoDrawable d) {
+		    setAutoSwapBufferMode(false);
+		    /* XXX: This apparently fixes a scaling problem on
+		     * OSX, and doesn't seem to have any effect on
+		     * other platforms. It seems like a weird
+		     * workaround, and I do wonder if there isn't some
+		     * underlying bug in JOGL instead, but it hasn't
+		     * broken anything yet, so I guess why not. */
+		    setSurfaceScale(new float[] {1, 1});
 		}
 
 		public void reshape(GLAutoDrawable wdg, int x, int y, int w, int h) {
@@ -223,9 +230,15 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	public void run(GL3 gl) {
 	    long start = System.nanoTime();
 	    boolean iswap = iswap();
+	    if(debuggl)
+		haven.render.gl.GLException.checkfor(gl, null);
 	    if(iswap != aswap)
 		gl.setSwapInterval((aswap = iswap) ? 1 : 0);
+	    if(debuggl)
+		haven.render.gl.GLException.checkfor(gl, null);
 	    JOGLPanel.this.swapBuffers();
+	    if(debuggl)
+		haven.render.gl.GLException.checkfor(gl, null);
 	    ridletime += System.nanoTime() - start;
 	    framelag = JOGLPanel.this.frameno - frameno;
 	}
@@ -266,9 +279,14 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
 	public void run(GL3 gl) {
 	    if(prev != null) {
-		if(label != null)
-		    prev.frame.tick(label);
-		prev.frame.fin();
+		if(prev.frame != null) {
+		    /* The reason frame would be null is if the
+		     * environment has become invalid and the previous
+		     * cycle never ran. */
+		    if(label != null)
+			prev.frame.tick(label);
+		    prev.frame.fin();
+		}
 		prev = null;
 	    }
 	    frame = prof.new Frame();
@@ -285,7 +303,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
 
 	public void run(GL3 gl) {
-	    if(prof != null)
+	    if((prof != null) && (prof.frame != null))
 		prof.frame.tick(label);
 	}
     }
@@ -319,7 +337,9 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
-    Disposable prevtooltip = null;
+    private Object prevtooltip = null;
+    private Indir<Tex> prevtooltex = null;
+    private Disposable freetooltex = null;
     private void drawtooltip(UI ui, GOut g) {
 	Object tooltip;
         try {
@@ -329,35 +349,43 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	} catch(Loading e) {
 	    tooltip = "...";
 	}
-	Tex tt = null;
-	if(prevtooltip != null) {
-	    /* Tooltip disposal the same frame seems to have a
-	     * tendency to cause some kind of weird CPU/GPU sync
-	     * point. Arguably this should be handled by the rendering
-	     * system somehow, but it's unclear what the actual root
-	     * cause is, and this is a cheap fix. */
-	    prevtooltip.dispose();
+	Indir<Tex> tt = null;
+	if(Utils.eq(tooltip, prevtooltip)) {
+	    tt = prevtooltex;
+	} else {
+	    if(freetooltex != null) {
+		freetooltex.dispose();
+		freetooltex = null;
+	    }
 	    prevtooltip = null;
-	}
-	Disposable free = null;
-	if(tooltip != null) {
-	    if(tooltip instanceof Text) {
-		tt = ((Text)tooltip).tex();
-	    } else if(tooltip instanceof Tex) {
-		tt = (Tex)tooltip;
-	    } else if(tooltip instanceof Indir<?>) {
-		Indir<?> t = (Indir<?>)tooltip;
-		Object o = t.get();
-		if(o instanceof Tex)
-		    tt = (Tex)o;
-	    } else if(tooltip instanceof String) {
-		if(((String)tooltip).length() > 0) {
-		    free = tt = new TexI(Text.render((String)tooltip).img, false);
+	    prevtooltex = null;
+	    Disposable free = null;
+	    if(tooltip != null) {
+		if(tooltip instanceof Text) {
+		    Tex t = ((Text)tooltip).tex();
+		    tt = () -> t;
+		} else if(tooltip instanceof Tex) {
+		    Tex t = (Tex)tooltip;
+		    tt = () -> t;
+		} else if(tooltip instanceof Indir<?>) {
+		    @SuppressWarnings("unchecked")
+		    Indir<Tex> c = (Indir<Tex>)tooltip;
+		    tt = c;
+		} else if(tooltip instanceof String) {
+		    if(((String)tooltip).length() > 0) {
+			Tex r = new TexI(Text.render((String)tooltip).img, false);
+			tt = () -> r;
+			free = r;
+		    }
 		}
 	    }
+	    prevtooltip = tooltip;
+	    prevtooltex = tt;
+	    freetooltex = free;
 	}
-	if(tt != null) {
-	    Coord sz = tt.sz();
+	Tex tex = (tt == null) ? null : tt.get();
+	if(tex != null) {
+	    Coord sz = tex.sz();
 	    Coord pos = ui.mc.add(sz.inv());
 	    if(pos.x < 0)
 		pos.x = 0;
@@ -368,9 +396,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    g.chcolor(35, 35, 35, 192);
 	    g.frect(pos.add(-2, -2), sz.add(4, 4));
 	    g.chcolor();
-	    g.image(tt, pos);
+	    g.image(tex, pos);
 	}
-	prevtooltip = free;
 	ui.lasttip = tooltip;
     }
 
@@ -409,30 +436,30 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private long prevfree = 0, framealloc = 0;
     @SuppressWarnings("deprecation")
     private void drawstats(UI ui, GOut g, GLRender buf) {
-	int y = g.sz().y - 190;
-	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "FPS: %d (%d%%, %d%% idle, latency %d)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0), framelag);
+	int y = g.sz().y - UI.scale(190), dy = FastText.h;
+	FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "FPS: %d (%d%%, %d%% idle, latency %d)", fps, (int)(uidle * 100.0), (int)(ridle * 100.0), framelag);
 	Runtime rt = Runtime.getRuntime();
 	long free = rt.freeMemory(), total = rt.totalMemory();
 	if(free < prevfree)
 	    framealloc = ((prevfree - free) + (framealloc * 19)) / 20;
 	prevfree = free;
-	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d (%,d)", free, total - free, total, rt.maxMemory(), framealloc);
-	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "State slots: %d", State.Slot.numslots());
-	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "GL progs: %d", buf.env.numprogs());
-	FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "V-Mem: %s", buf.env.memstats());
+	FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "Mem: %,011d/%,011d/%,011d/%,011d (%,d)", free, total - free, total, rt.maxMemory(), framealloc);
+	FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "State slots: %d", State.Slot.numslots());
+	FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "GL progs: %d", buf.env.numprogs());
+	FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "V-Mem: %s", buf.env.memstats());
 	MapView map = ui.root.findchild(MapView.class);
 	if((map != null) && (map.back != null)) {
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Camera: %s", map.camstats());
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Mapview: %s", map.stats());
-	    // FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Click: Map: %s, Obj: %s", map.clmaplist.stats(), map.clobjlist.stats());
+	    FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "Camera: %s", map.camstats());
+	    FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "Mapview: %s", map.stats());
+	    // FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "Click: Map: %s, Obj: %s", map.clmaplist.stats(), map.clobjlist.stats());
 	}
 	if(ui.sess != null)
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Async: L %s, D %s", ui.sess.glob.loader.stats(), Defer.gstats());
+	    FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "Async: L %s, D %s", ui.sess.glob.loader.stats(), Defer.gstats());
 	else
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "Async: D %s", Defer.gstats());
+	    FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "Async: D %s", Defer.gstats());
 	int rqd = Resource.local().qdepth() + Resource.remote().qdepth();
 	if(rqd > 0)
-	    FastText.aprintf(g, new Coord(10, y -= 15), 0, 1, "RQ depth: %d (%d)", rqd, Resource.local().numloaded() + Resource.remote().numloaded());
+	    FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "RQ depth: %d (%d)", rqd, Resource.local().numloaded() + Resource.remote().numloaded());
     }
 
     private void display(UI ui, GLRender buf) {
@@ -542,7 +569,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    buf.submit(new FrameCycle());
 		    if(frameprof != null) {
 			buf.submit(frameprof.stop);
-			buf.submit(frameprof.dump(new java.io.File("frameprof")));
+			buf.submit(frameprof.dump(Utils.path("frameprof")));
 		    }
 		    env.submit(buf);
 		    buf = null;
@@ -590,13 +617,13 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	}
     }
 
-    public UI newui(Session sess) {
+    public UI newui(UI.Runner fun) {
 	if(ui != null) {
 	    synchronized(ui) {
 		ui.destroy();
 	    }
 	}
-	ui = new UI(this, new Coord(getSize()), sess);
+	ui = new UI(this, new Coord(getSize()), fun);
 	ui.env = this.env;
 	ui.root.guprof = uprof;
 	ui.root.grprof = rprof;
@@ -628,8 +655,28 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
+	cmdmap.put("renderer", (cons, args) -> {
+		cons.out.printf("Rendering backend: JOGL %s\n", JoglVersion.getInstance().getImplementationVersion());
+		if(env != null) {
+		    GLEnvironment.Caps caps = env.caps();
+		    cons.out.printf("Rendering device: %s, %s\n", caps.vendor(), caps.device());
+		    cons.out.printf("Driver version: %s\n", caps.driver());
+		}
+	    });
 	cmdmap.put("gldebug", (cons, args) -> {
 		debuggl = Utils.parsebool(args[1]);
+	    });
+	cmdmap.put("glcrash", (cons, args) -> {
+		GL gl = getGL();
+		new HackThread(() -> {
+			try {
+			    while(true) {
+				env.submitwait();
+				redraw(gl);
+			    }
+			} catch(InterruptedException e) {
+			}},
+		    "GL crasher").start();
 	    });
     }
     public Map<String, Console.Command> findcmds() {
