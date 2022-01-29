@@ -135,7 +135,10 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	public static IconText of(Coord sz, Indir<Resource> res) {
 	    return(new IconText(sz) {
 		    public BufferedImage img() {return(res.get().layer(Resource.imgc).img);}
-		    public String text() {return(res.get().layer(Resource.tooltip).t);}
+		    public String text() {
+			Resource.Tooltip name = res.get().layer(Resource.tooltip);
+			return((name == null) ? "???" : name.t);
+		    }
 		});
 	}
 
