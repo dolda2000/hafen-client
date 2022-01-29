@@ -468,7 +468,7 @@ public class MapWnd extends Window implements Console.Directory {
 
 	public Tex icon() {
 	    if(icon == null) {
-		BufferedImage img = spec.loadsaved().layer(Resource.imgc).img;
+		BufferedImage img = spec.loadsaved().flayer(Resource.imgc).img;
 		icon = new TexI(PUtils.uiscale(img, new Coord((iconsz * img.getWidth())/ img.getHeight(), iconsz)));
 	    }
 	    return(icon);

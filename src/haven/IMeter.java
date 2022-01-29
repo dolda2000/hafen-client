@@ -52,7 +52,7 @@ public class IMeter extends LayerMeter {
 
     public void draw(GOut g) {
 	try {
-	    Tex bg = this.bg.get().layer(Resource.imgc).tex();
+	    Tex bg = this.bg.get().flayer(Resource.imgc).tex();
 	    g.chcolor(0, 0, 0, 255);
 	    g.frect(off, msz);
 	    g.chcolor();

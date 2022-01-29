@@ -68,7 +68,7 @@ public class FightWnd extends Widget {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.flayer(Resource.tooltip).t + "}}\n\n");
 	    Resource.Pagina pag = res.layer(Resource.pagina);
 	    if(pag != null)
 		buf.append(pag.text);
@@ -95,14 +95,14 @@ public class FightWnd extends Widget {
 		if(rawinfo != null)
 		    info = ItemInfo.buildinfo(this, rawinfo);
 		else
-		    info = Arrays.asList(new ItemInfo.Name(this, res.get().layer(Resource.tooltip).t));
+		    info = Arrays.asList(new ItemInfo.Name(this, res.get().flayer(Resource.tooltip).t));
 	    }
 	    return(info);
 	}
 	public <T> T context(Class<T> cl) {return(actxr.context(cl, FightWnd.this));}
 
 	public BufferedImage rendericon() {
-	    BufferedImage ret = res.get().layer(Resource.imgc).scaled();
+	    BufferedImage ret = res.get().flayer(Resource.imgc).scaled();
 	    Graphics g = null;
 	    for(ItemInfo inf : info()) {
 		if(inf instanceof IconInfo) {
@@ -245,7 +245,7 @@ public class FightWnd extends Widget {
 		prev = adda(new IButton("gfx/hud/buttons/add", "u", "d", "h").action(() -> setu(item.u + 1)), sz.x - UI.scale(2), sz.y / 2, 1.0, 0.5);
 		prev = adda(new IButton("gfx/hud/buttons/sub", "u", "d", "h").action(() -> setu(item.u - 1)), prev.c.x - UI.scale(2), sz.y / 2, 1.0, 0.5);
 		prev = use = adda(new Label("0/0", attrf), prev.c.x - UI.scale(5), sz.y / 2, 1.0, 0.5);
-		add(IconText.of(Coord.of(prev.c.x - UI.scale(2), sz.y), act::rendericon, () -> act.res.get().layer(Resource.tooltip).t), Coord.z);
+		add(IconText.of(Coord.of(prev.c.x - UI.scale(2), sz.y), act::rendericon, () -> act.res.get().flayer(Resource.tooltip).t), Coord.z);
 	    }
 
 	    public void tick(double dt) {
@@ -339,7 +339,7 @@ public class FightWnd extends Widget {
 		loading = false;
 		for(Action act : acts) {
 		    try {
-			act.name = act.res.get().layer(Resource.tooltip).t;
+			act.name = act.res.get().flayer(Resource.tooltip).t;
 		    } catch(Loading l) {
 			act.name = "...";
 			loading = true;
@@ -353,7 +353,7 @@ public class FightWnd extends Widget {
 	public void draw(GOut g) {
 	    if(drag != null) {
 		try {
-		    Tex dt = drag.res.get().layer(Resource.imgc).tex();
+		    Tex dt = drag.res.get().flayer(Resource.imgc).tex();
 		    ui.drawafter(ag -> ag.image(dt, ui.mc.sub(dt.sz().div(2))));
 		} catch(Loading l) {
 		}
@@ -441,7 +441,7 @@ public class FightWnd extends Widget {
 			if(animoff[i] != null) {
 			    ic = ic.add(animoff[i].mul(Math.pow(1.0 - animpr[i], 3)));
 			}
-			Tex tex = act.res.get().layer(Resource.imgc).tex();
+			Tex tex = act.res.get().flayer(Resource.imgc).tex();
 			g.image(tex, ic);
 		    }
 		} catch(Loading l) {}

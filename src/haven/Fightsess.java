@@ -217,7 +217,7 @@ public class Fightsess extends Widget {
 	    }
 	    double lastuse = fv.lastuse;
 	    if(lastact != null) {
-		Tex ut = lastact.get().layer(Resource.imgc).tex();
+		Tex ut = lastact.get().flayer(Resource.imgc).tex();
 		Coord useul = pcc.add(usec1).sub(ut.sz().div(2));
 		g.image(ut, useul);
 		g.image(useframe, useul.sub(useframeo));
@@ -240,7 +240,7 @@ public class Fightsess extends Widget {
 		}
 		double lastuse = fv.current.lastuse;
 		if(lastact != null) {
-		    Tex ut = lastact.get().layer(Resource.imgc).tex();
+		    Tex ut = lastact.get().flayer(Resource.imgc).tex();
 		    Coord useul = pcc.add(usec2).sub(ut.sz().div(2));
 		    g.image(ut, useul);
 		    g.image(useframe, useul.sub(useframeo));
@@ -261,7 +261,7 @@ public class Fightsess extends Widget {
 	    try {
 		if(act != null) {
 		    Resource res = act.res.get();
-		    Tex img = res.layer(Resource.imgc).tex();
+		    Tex img = res.flayer(Resource.imgc).tex();
 		    Coord ic = ca.sub(img.sz().div(2));
 		    g.image(img, ic);
 		    if(now < act.ct) {
@@ -314,10 +314,10 @@ public class Fightsess extends Widget {
 	    Indir<Resource> act = (actions[i] == null) ? null : actions[i].res;
 	    try {
 		if(act != null) {
-		    Tex img = act.get().layer(Resource.imgc).tex();
+		    Tex img = act.get().flayer(Resource.imgc).tex();
 		    ca = ca.sub(img.sz().div(2));
 		    if(c.isect(ca, img.sz())) {
-			String tip = act.get().layer(Resource.tooltip).t;
+			String tip = act.get().flayer(Resource.tooltip).t;
 			if(kb_acts[i].key() != KeyMatch.nil)
 			    tip += " ($b{$col[255,128,0]{" + kb_acts[i].key().name() + "}})";
 			if((acttip == null) || !acttip.text.equals(tip))
@@ -330,11 +330,11 @@ public class Fightsess extends Widget {
 	try {
 	    Indir<Resource> lastact = this.lastact1;
 	    if(lastact != null) {
-		Coord usesz = lastact.get().layer(Resource.imgc).sz;
+		Coord usesz = lastact.get().flayer(Resource.imgc).sz;
 		Coord lac = pcc.add(usec1);
 		if(c.isect(lac.sub(usesz.div(2)), usesz)) {
 		    if(lastacttip1 == null)
-			lastacttip1 = Text.render(lastact.get().layer(Resource.tooltip).t);
+			lastacttip1 = Text.render(lastact.get().flayer(Resource.tooltip).t);
 		    return(lastacttip1);
 		}
 	    }
@@ -342,11 +342,11 @@ public class Fightsess extends Widget {
 	try {
 	    Indir<Resource> lastact = this.lastact2;
 	    if(lastact != null) {
-		Coord usesz = lastact.get().layer(Resource.imgc).sz;
+		Coord usesz = lastact.get().flayer(Resource.imgc).sz;
 		Coord lac = pcc.add(usec2);
 		if(c.isect(lac.sub(usesz.div(2)), usesz)) {
 		    if(lastacttip2 == null)
-			lastacttip2 = Text.render(lastact.get().layer(Resource.tooltip).t);
+			lastacttip2 = Text.render(lastact.get().flayer(Resource.tooltip).t);
 		    return(lastacttip2);
 		}
 	    }

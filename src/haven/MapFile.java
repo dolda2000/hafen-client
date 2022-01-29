@@ -500,7 +500,7 @@ public class MapFile {
 	public BufferedImage olrender(Coord off, String tag) {
 	    WritableRaster buf = PUtils.imgraster(cmaps);
 	    for(Overlay ol : ols) {
-		MCache.ResOverlay olid = ol.olid.loadsaved().layer(MCache.ResOverlay.class);;
+		MCache.ResOverlay olid = ol.olid.loadsaved().flayer(MCache.ResOverlay.class);
 		if(!olid.tags().contains(tag))
 		    continue;
 		Color col = olcol(olid);
@@ -1369,7 +1369,7 @@ public class MapFile {
 	public Tileset tileset(int n) {
 	    if(tilesets[n] == null) {
 		Resource res = nsets[n].loadsaved(Resource.remote());
-		tilesets[n] = res.layer(Tileset.class);
+		tilesets[n] = res.flayer(Tileset.class);
 	    }
 	    return(tilesets[n]);
 	}

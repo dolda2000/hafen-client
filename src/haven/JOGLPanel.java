@@ -414,7 +414,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    if(curs == null)
 			setCursor(null);
 		    else
-			setCursor(UIPanel.makeawtcurs(curs.layer(Resource.imgc).img, curs.layer(Resource.negc).cc));
+			setCursor(UIPanel.makeawtcurs(curs.flayer(Resource.imgc).img, curs.flayer(Resource.negc).cc));
 		} catch(Exception e) {
 		    cursmode = "tex";
 		}
@@ -426,8 +426,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    } else {
 		if(lastcursor == null)
 		    setCursor(emptycurs);
-		Coord dc = ui.mc.add(curs.layer(Resource.negc).cc.inv());
-		g.image(curs.layer(Resource.imgc), dc);
+		Coord dc = ui.mc.add(curs.flayer(Resource.negc).cc.inv());
+		g.image(curs.flayer(Resource.imgc), dc);
 	    }
 	}
 	lastcursor = curs;

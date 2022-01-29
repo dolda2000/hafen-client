@@ -142,7 +142,7 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	    }
 
 	    public BufferedImage img() {
-		return(res.get().layer(Resource.imgc).img);
+		return(res.get().flayer(Resource.imgc).img);
 	    }
 
 	    public String text() {

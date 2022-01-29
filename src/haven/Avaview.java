@@ -200,7 +200,7 @@ public class Avaview extends PView {
 	    Desc d = avadesc;
 	    if((d.base != lbase) || (comp == null)) {
 		lbase = d.base;
-		comp = new Composited(d.base.get().layer(Skeleton.Res.class).s);
+		comp = new Composited(d.base.get().flayer(Skeleton.Res.class).s);
 		comp.eqowner = avaowner;
 		basic(Camera.class, makecam(d.base.get(), comp, camnm));
 		updposes();

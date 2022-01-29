@@ -351,7 +351,7 @@ public class MiniMap extends Widget {
 		try {
 		    if(cc == null) {
 			Resource res = sm.res.loadsaved(Resource.remote());
-			img = res.layer(Resource.imgc);
+			img = res.flayer(Resource.imgc);
 			Resource.Neg neg = res.layer(Resource.negc);
 			cc = (neg != null) ? neg.cc : img.ssz.div(2);
 			if(hit == null)
