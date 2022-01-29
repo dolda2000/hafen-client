@@ -121,4 +121,23 @@ public class KinInfo extends GAttrib implements RenderTree.Node, PView.Render2D 
 	    seen = 0;
 	}
     }
+
+    @OCache.DeltaType(OCache.OD_BUDDY)
+    public static class $buddy implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    String name = msg.string();
+	    if(name.length() > 0) {
+		int group = msg.uint8();
+		int btype = msg.uint8();
+		KinInfo b = g.getattr(KinInfo.class);
+		if(b == null) {
+		    g.setattr(new KinInfo(g, name, group, btype));
+		} else {
+		    b.update(name, group, btype);
+		}
+	    } else {
+		g.delattr(KinInfo.class);
+	    }
+	}
+    }
 }
