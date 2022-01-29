@@ -69,6 +69,7 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	protected abstract String text();
 	protected int margin() {return(0);}
 	protected Text.Foundry foundry() {return(CharWnd.attrf);}
+	protected boolean valid(String text) {return(true);}
 
 	private Tex img = null;
 	protected void drawicon(GOut g) {
@@ -95,7 +96,7 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	protected void drawtext(GOut g) {
 	    int tx = sz.y + UI.scale(5);
 	    try {
-		if(this.text == null) {
+		if((this.text == null) || !valid(text.text)) {
 		    String text = text();
 		    this.text = foundry().render(text);
 		    if(tx + this.text.sz().x > sz.x) {
@@ -132,14 +133,26 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	    }
 	}
 
+	public static class FromRes extends IconText {
+	    public final Indir<Resource> res;
+
+	    public FromRes(Coord sz, Indir<Resource> res) {
+		super(sz);
+		this.res = res;
+	    }
+
+	    public BufferedImage img() {
+		return(res.get().layer(Resource.imgc).img);
+	    }
+
+	    public String text() {
+		Resource.Tooltip name = res.get().layer(Resource.tooltip);
+		return((name == null) ? "???" : name.t);
+	    }
+	}
+
 	public static IconText of(Coord sz, Indir<Resource> res) {
-	    return(new IconText(sz) {
-		    public BufferedImage img() {return(res.get().layer(Resource.imgc).img);}
-		    public String text() {
-			Resource.Tooltip name = res.get().layer(Resource.tooltip);
-			return((name == null) ? "???" : name.t);
-		    }
-		});
+	    return(new FromRes(sz, res));
 	}
 
 	public static IconText of(Coord sz, Supplier<BufferedImage> img, Supplier<String> text) {
