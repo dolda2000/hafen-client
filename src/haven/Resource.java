@@ -378,6 +378,17 @@ public class Resource implements Serializable {
 	}
     }
 
+    public static class LoadFailedException extends RuntimeException {
+	public final String name;
+	public final int ver;
+
+	public LoadFailedException(String name, int ver, LoadException cause) {
+	    super("Failed to load resource " + name + " (v" + ver + ")", cause);
+	    this.name = name;
+	    this.ver = ver;
+	}
+    }
+
     public static class Pool {
 	public int nloaders = 2;
 	private final Collection<Loader> loaders = new LinkedList<Loader>();
@@ -433,7 +444,7 @@ public class Resource implements Serializable {
 		    throw(new Loading(this));
 		}
 		if(error != null)
-		    throw(new RuntimeException("Delayed error in resource " + name + " (v" + ver + "), from " + error.src, error));
+		    throw(new LoadFailedException(name, ver, error));
 		return(res);
 	    }
 
