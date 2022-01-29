@@ -1590,6 +1590,12 @@ public class Resource implements Serializable {
 	    });
     }
 
+    public static class NoSuchLayerException extends NoSuchElementException {
+	public NoSuchLayerException(String message) {
+	    super(message);
+	}
+    }
+
     public <L extends Layer> L layer(Class<L> cl) {
 	used = true;
 	for(Layer l : layers) {
@@ -1597,6 +1603,11 @@ public class Resource implements Serializable {
 		return(cl.cast(l));
 	}
 	return(null);
+    }
+    public <L extends Layer> L flayer(Class<L> cl) {
+	L l = layer(cl);
+	if(l == null) throw(new NoSuchLayerException("no " + cl + " in " + name));
+	return(l);
     }
 
     public <L> Collection<L> layers(Class<L> cl, Predicate<? super L> sel) {
@@ -1633,6 +1644,11 @@ public class Resource implements Serializable {
 	    }
 	}
 	return(null);
+    }
+    public <I, L extends IDLayer<I>> L flayer(Class<L> cl, I id) {
+	L l = layer(cl, id);
+	if(l == null) throw(new NoSuchLayerException("no " + cl + " in " + name + " with id " + id));
+	return(l);
     }
 
     public boolean equals(Object other) {
