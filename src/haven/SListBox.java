@@ -182,7 +182,7 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
 	super.resize(sz);
 	sb.resize(sz.y);
 	sb.c = new Coord(sz.x - sb.sz.x, 0);
-	h = ((sz.y + itemh + marg - 2) / (itemh + marg)) + 1;
+	h = Math.max(((sz.y + itemh + marg - 2) / (itemh + marg)), 0) + 1;
     }
 
     public void display(int idx) {
