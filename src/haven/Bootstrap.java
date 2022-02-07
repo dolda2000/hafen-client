@@ -255,7 +255,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 				    if(error == null)
 					error = "Connection failed";;
 				    ui.uimsg(1, "error", error);
-				    break;
+				    continue retry;
 				}
 				sess.wait();
 			    }
