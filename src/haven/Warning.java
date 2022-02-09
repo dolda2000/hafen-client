@@ -52,6 +52,7 @@ public class Warning extends Throwable {
 	System.err.printf("hafen: warning: %s\n", (getClass() == Warning.class) ? getMessage() : toString());
 	if(getCause() != null)
 	    getCause().printStackTrace(System.err);
+	System.err.flush();
 	synchronized(Warning.class) {
 	    if(log == null) {
 		ErrorHandler errh = ErrorHandler.find();
