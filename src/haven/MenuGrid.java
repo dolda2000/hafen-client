@@ -225,7 +225,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	public static enum State {
 	    ENABLED, DISABLED {
 		public Indir<Tex> img(Pagina pag) {
-		    return(Utils.cache(() -> new TexI(PUtils.monochromize(pag.button().img(), Color.LIGHT_GRAY))));
+		    return(Utils.cache(() -> new TexI(PUtils.monochromize(PUtils.copy(pag.button().img()), Color.LIGHT_GRAY))));
 		}
 	    };
 
