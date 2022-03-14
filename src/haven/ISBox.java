@@ -64,7 +64,7 @@ public class ISBox extends Widget implements DTarget {
     public void draw(GOut g) {
         g.image(bg, Coord.z);
 	try {
-            Tex t = res.get().layer(Resource.imgc).tex();
+            Tex t = res.get().flayer(Resource.imgc).tex();
             Coord dc = new Coord(UI.scale(6), (bg.sz().y / 2) - (t.sz().y / 2));
             g.image(t, dc);
         } catch(Loading e) {}

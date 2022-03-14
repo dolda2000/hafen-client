@@ -375,8 +375,6 @@ public class Utils {
 	    String ret;
 	    if((ret = System.getProperty(propname)) != null)
 		return(ret);
-	    if((ret = System.getProperty("jnlp." + propname)) != null)
-		return(ret);
 	    return(def);
 	} catch(SecurityException e) {
 	    return(def);
@@ -1738,6 +1736,42 @@ public class Utils {
 	    return(Collections.unmodifiableMap(bk));
 	}
     }
+
+    public static class Range extends AbstractCollection<Integer> {
+	public final int min, max, step;
+
+	public Range(int min, int max, int step) {
+	    if(step == 0)
+		throw(new IllegalArgumentException());
+	    this.min = min; this.max = max; this.step = step;
+	}
+
+	public int size() {
+	    return(Math.max((max - min + step - 1) / step, 0));
+	}
+
+	public Iterator<Integer> iterator() {
+	    return(new Iterator<Integer>() {
+		    private int cur = min;
+
+		    public boolean hasNext() {
+			return((step > 0) ? (cur < max) : (cur > max));
+		    }
+
+		    public Integer next() {
+			if(!hasNext())
+			    throw(new NoSuchElementException());
+			int ret = cur;
+			cur += step;
+			return(ret);
+		    }
+		});
+	}
+    }
+
+    public static Collection<Integer> range(int min, int max, int step) {return(new Range(min, max, step));}
+    public static Collection<Integer> range(int min, int max) {return(range(min, max, 1));}
+    public static Collection<Integer> range(int max) {return(range(0, max));}
 
     public static <T> Indir<T> cache(Indir<T> src) {
 	return(new Indir<T>() {

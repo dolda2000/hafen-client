@@ -147,12 +147,12 @@ public class MCache implements MapSource {
 	}
 
 	public Material mat() {
-	    return(getres().layer(Material.Res.class, matid).get());
+	    return(getres().flayer(Material.Res.class, matid).get());
 	}
 	public Material omat() {
 	    if(omatid < 0)
 		return(null);
-	    return(getres().layer(Material.Res.class, omatid).get());
+	    return(getres().flayer(Material.Res.class, omatid).get());
 	}
 
 	public String toString() {
@@ -807,7 +807,7 @@ public class MCache implements MapSource {
 	    if(g.ols == null)
 		continue;
 	    for(Indir<Resource> res : g.ols) {
-		OverlayInfo id = res.get().layer(ResOverlay.class);
+		OverlayInfo id = res.get().flayer(ResOverlay.class);
 		if(!ret.contains(id))
 		    ret.add(id);
 	    }
@@ -936,7 +936,7 @@ public class MCache implements MapSource {
 		Resource res = tilesetr(i);
 		if(res == null)
 		    return(null);
-		csets[i] = new SoftReference<Tileset>(cset = res.layer(Tileset.class));
+		csets[i] = new SoftReference<Tileset>(cset = res.flayer(Tileset.class));
 	    }
 	    return(cset);
 	}

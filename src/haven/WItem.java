@@ -127,16 +127,25 @@ public class WItem extends Widget implements DTarget {
 
     private List<ItemInfo> info() {return(item.info());}
     public final AttrCache<Color> olcol = new AttrCache<>(this::info, info -> {
-	    Color ret = null;
+	    ArrayList<GItem.ColorInfo> ols = new ArrayList<>();
 	    for(ItemInfo inf : info) {
-		if(inf instanceof GItem.ColorInfo) {
-		    Color c = ((GItem.ColorInfo)inf).olcol();
-		    if(c != null)
-			ret = (ret == null) ? c : Utils.preblend(ret, c);
-		}
+		if(inf instanceof GItem.ColorInfo)
+		    ols.add((GItem.ColorInfo)inf);
 	    }
-	    Color fret = ret;
-	    return(() -> fret);
+	    if(ols.size() == 0)
+		return(() -> null);
+	    if(ols.size() == 1)
+		return(ols.get(0)::olcol);
+	    ols.trimToSize();
+	    return(() -> {
+		    Color ret = null;
+		    for(GItem.ColorInfo ci : ols) {
+			Color c = ci.olcol();
+			if(c != null)
+			    ret = (ret == null) ? c : Utils.preblend(ret, c);
+		    }
+		    return(ret);
+		});
 	});
     public final AttrCache<GItem.InfoOverlay<?>[]> itemols = new AttrCache<>(this::info, info -> {
 	    ArrayList<GItem.InfoOverlay<?>> buf = new ArrayList<>();

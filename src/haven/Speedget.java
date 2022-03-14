@@ -47,7 +47,7 @@ public class Speedget extends Widget {
 	tsz = new Coord(w, imgs[0][0].sz().y);
 	tips = new String[names.length];
 	for(int i = 0; i < names.length; i++) {
-	    tips[i] = Resource.local().loadwait("gfx/hud/meter/rmeter/" + names[i] + "-on").layer(Resource.tooltip).t;
+	    tips[i] = Resource.local().loadwait("gfx/hud/meter/rmeter/" + names[i] + "-on").flayer(Resource.tooltip).t;
 	}
     }
 

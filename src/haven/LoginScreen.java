@@ -194,7 +194,19 @@ public class LoginScreen extends Widget {
 	    if(token != null) {
 		ret = new AuthClient.TokenCred(user.text(), Arrays.copyOf(token, token.length));
 	    } else {
-		ret = new AuthClient.NativeCred(user.text(), pass.text());
+		String pw = pass.text();
+		ret = null;
+		parse: if(pw.length() == 64) {
+		    byte[] ptok;
+		    try {
+			ptok = Utils.hex2byte(pw);
+		    } catch(IllegalArgumentException e) {
+			break parse;
+		    }
+		    ret = new AuthClient.TokenCred(user.text(), ptok);
+		}
+		if(ret == null)
+		    ret = new AuthClient.NativeCred(user.text(), pw);
 		pass.rsettext("");
 	    }
 	    return(ret);

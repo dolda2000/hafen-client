@@ -574,6 +574,13 @@ public class UI {
 	    };
 	submitcmd(new Command(act).dep(id, true));
     }
+	
+    public void error(String msg) {
+	/* XXX: This should be generalized. */
+	GameUI gui = root.findchild(GameUI.class);
+	if(gui != null)
+	    gui.error(msg);
+    }
 
     private void setmods(InputEvent ev) {
 	int mod = ev.getModifiersEx();

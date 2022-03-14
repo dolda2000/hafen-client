@@ -60,22 +60,30 @@ public class Polity extends Widget {
 	}
     }
 
-    public class MemberList extends Searchbox<Member> {
-
-	public MemberList(int w, int h) {
-	    super(w, h, UI.scale(20));
+    public class MemberList extends SSearchBox<Member, Widget> {
+	public MemberList(Coord sz) {
+	    super(sz, UI.scale(20));
 	}
 
-	public Member listitem(int idx) {return(memb.get(idx));}
-	public int listitems() {return(memb.size());}
-	public String itemname(int idx) {
-	    Member m = memb.get(idx);
+	@Deprecated
+	public MemberList(int w, int h) {
+	    this(Coord.of(w, h * UI.scale(20)));
+	}
+
+	public List<Member> allitems() {return(memb);}
+	public String itemname(Member m) {
 	    if(m.id == null)
 		return("You");
 	    BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(m.id);
 	    return((b == null) ? "???" : b.name);
 	}
-	public boolean searchmatch(int idx, String txt) {return(itemname(idx).toLowerCase().indexOf(txt.toLowerCase()) >= 0);}
+	public boolean searchmatch(Member m, String txt) {return(itemname(m).toLowerCase().indexOf(txt.toLowerCase()) >= 0);}
+
+	protected Widget makeitem(Member m, int idx, Coord sz) {
+	    return(new ItemWidget<Member>(this, sz, m) {
+		    public void draw(GOut g) {item.draw(g);}
+		});
+	}
 
 	protected void drawbg(GOut g) {
 	    g.chcolor(0, 0, 0, 128);
@@ -83,15 +91,9 @@ public class Polity extends Widget {
 	    g.chcolor();
 	}
 
-	public void drawitem(GOut g, Member m, int idx) {
-	    if(soughtitem(idx)) {
-		g.chcolor(255, 255, 0, 32);
-		g.frect(Coord.z, g.sz());
-		g.chcolor();
-	    }
+	protected void drawslot(GOut g, Member m, int idx, Area area) {
 	    if((mw instanceof MemberWidget) && Utils.eq(((MemberWidget)mw).id, m.id))
-		drawsel(g);
-	    m.draw(g);
+		drawsel(g, m, idx, area);
 	}
 
 	public void change(Member pm) {

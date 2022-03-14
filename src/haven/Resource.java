@@ -378,6 +378,17 @@ public class Resource implements Serializable {
 	}
     }
 
+    public static class LoadFailedException extends RuntimeException {
+	public final String name;
+	public final int ver;
+
+	public LoadFailedException(String name, int ver, LoadException cause) {
+	    super("Failed to load resource " + name + " (v" + ver + ")", cause);
+	    this.name = name;
+	    this.ver = ver;
+	}
+    }
+
     public static class Pool {
 	public int nloaders = 2;
 	private final Collection<Loader> loaders = new LinkedList<Loader>();
@@ -433,7 +444,7 @@ public class Resource implements Serializable {
 		    throw(new Loading(this));
 		}
 		if(error != null)
-		    throw(new RuntimeException("Delayed error in resource " + name + " (v" + ver + "), from " + error.src, error));
+		    throw(new LoadFailedException(name, ver, error));
 		return(res);
 	    }
 
@@ -1590,6 +1601,12 @@ public class Resource implements Serializable {
 	    });
     }
 
+    public static class NoSuchLayerException extends NoSuchElementException {
+	public NoSuchLayerException(String message) {
+	    super(message);
+	}
+    }
+
     public <L extends Layer> L layer(Class<L> cl) {
 	used = true;
 	for(Layer l : layers) {
@@ -1597,6 +1614,11 @@ public class Resource implements Serializable {
 		return(cl.cast(l));
 	}
 	return(null);
+    }
+    public <L extends Layer> L flayer(Class<L> cl) {
+	L l = layer(cl);
+	if(l == null) throw(new NoSuchLayerException("no " + cl + " in " + name));
+	return(l);
     }
 
     public <L> Collection<L> layers(Class<L> cl, Predicate<? super L> sel) {
@@ -1633,6 +1655,11 @@ public class Resource implements Serializable {
 	    }
 	}
 	return(null);
+    }
+    public <I, L extends IDLayer<I>> L flayer(Class<L> cl, I id) {
+	L l = layer(cl, id);
+	if(l == null) throw(new NoSuchLayerException("no " + cl + " in " + name + " with id " + id));
+	return(l);
     }
 
     public boolean equals(Object other) {

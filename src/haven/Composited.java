@@ -221,7 +221,7 @@ public class Composited implements RenderTree.Node {
 
     public class LightEqu extends Equ<Light> {
 	private LightEqu(ED ed) {
-	    super(ed.res.res.get().layer(Light.Res.class).make(), ed);
+	    super(ed.res.res.get().flayer(Light.Res.class).make(), ed);
 	}
     }
 

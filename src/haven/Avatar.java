@@ -56,4 +56,23 @@ public class Avatar extends GAttrib {
 	    return(images);
 	}
     }
+
+    @OCache.DeltaType(OCache.OD_AVATAR)
+    public static class $avatar implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    List<Indir<Resource>> layers = new LinkedList<Indir<Resource>>();
+	    while(true) {
+		int layer = msg.uint16();
+		if(layer == 65535)
+		    break;
+		layers.add(OCache.Delta.getres(g, layer));
+	    }
+	    Avatar ava = g.getattr(Avatar.class);
+	    if(ava == null) {
+		ava = new Avatar(g);
+		g.setattr(ava);
+	    }
+	    ava.setlayers(layers);
+	}
+    }
 }

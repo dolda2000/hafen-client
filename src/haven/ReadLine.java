@@ -486,6 +486,7 @@ public interface ReadLine {
 			buf[point - 1] = t;
 		    }
 		}
+		seq++;
 	    } else if((c == 'k') && (mod == C)) {
 		mode("");
 		kill(line(point, length - point));

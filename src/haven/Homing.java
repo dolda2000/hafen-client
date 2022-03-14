@@ -64,4 +64,24 @@ public class Homing extends Moving {
     public void ctick(double dt) {
 	dist += v * (dt * 0.9);
     }
+
+    @OCache.DeltaType(OCache.OD_HOMING)
+    public static class $homing implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    long oid = msg.uint32();
+	    if(oid == 0xffffffffl) {
+		g.delattr(Homing.class);
+	    } else {
+		Coord2d tc = msg.coord().mul(OCache.posres);
+		double v = msg.int32() * 0x1p-10 * 11;
+		Homing homo = g.getattr(Homing.class);
+		if((homo == null) || (homo.tgt != oid)) {
+		    g.setattr(new Homing(g, oid, tc, v));
+		} else {
+		    homo.tc = tc;
+		    homo.v = v;
+		}
+	    }
+	}
+    }
 }

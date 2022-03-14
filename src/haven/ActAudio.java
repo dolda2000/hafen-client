@@ -240,9 +240,7 @@ public class ActAudio extends State {
 	public final double bvol;
 
 	public Ambience(Resource res, double bvol) {
-	    Audio.Clip clip = res.layer(Audio.clip, "amb");
-	    if(clip == null)
-		throw(new RuntimeException("No ambient clip found in " + res));
+	    Audio.Clip clip = res.flayer(Audio.clip, "amb");
 	    if(bvol < 0)
 		bvol = clip.bvol();
 	    this.res = res;

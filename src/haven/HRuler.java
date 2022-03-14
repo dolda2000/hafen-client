@@ -26,30 +26,48 @@
 
 package haven;
 
-import java.lang.reflect.*;
-import java.net.URL;
-import javax.jnlp.*;
+import java.awt.Color;
 
-public class JnlpBrowser extends WebBrowser {
-    private final BasicService basic;
-    
-    private JnlpBrowser(BasicService basic) {
-	this.basic = basic;
+public class HRuler extends Widget {
+    public static final Color defcol = new Color(192, 192, 192, 128);
+    public final Coord marg;
+    public final Color color;
+
+    public HRuler(int w, Coord marg, Color color) {
+	super(Coord.of(w, (marg.y * 2) + 1));
+	this.marg = marg;
+	this.color = color;
     }
-    
-    public static JnlpBrowser create() {
-	try {
-	    Class<? extends ServiceManager> cl = Class.forName("javax.jnlp.ServiceManager").asSubclass(ServiceManager.class);
-	    Method m = cl.getMethod("lookup", String.class);
-	    BasicService basic = (BasicService)m.invoke(null, "javax.jnlp.BasicService");
-	    return(new JnlpBrowser(basic));
-	} catch(Exception e) {
-	    return(null);
+
+    public HRuler(int w, Coord marg) {
+	this(w, marg, defcol);
+    }
+
+    private static Coord defmarg(int w) {
+	return(Coord.of(w / 10, UI.scale(2)));
+    }
+
+    public HRuler(int w, Color color) {
+	this(w, defmarg(w), color);
+    }
+
+    public HRuler(int w) {
+	this(w, defmarg(w));
+    }
+
+    @RName("hr")
+    public static class $_ implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    int w = (Integer)args[0];
+	    Color col = defcol;
+	    if(args.length > 1)
+		col = (Color)args[1];
+	    return(new HRuler(w, col));
 	}
     }
-    
-    public void show(URL url) {
-	if(!basic.showDocument(url))
-	    throw(new BrowserException("Could not launch browser"));
+
+    public void draw(GOut g) {
+	g.chcolor(color);
+	g.line(marg, Coord.of(sz.x - 1 - marg.x, marg.y), 1);
     }
 }

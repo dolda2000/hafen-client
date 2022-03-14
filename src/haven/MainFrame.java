@@ -351,62 +351,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     }
     
     static {
-	if((WebBrowser.self = JnlpBrowser.create()) == null)
-	    WebBrowser.self = DesktopBrowser.create();
-    }
-
-    private static void netxsurgery() throws Exception {
-	/* Force off NetX codebase classloading. */
-	Class<?> nxc;
-	try {
-	    nxc = Class.forName("net.sourceforge.jnlp.runtime.JNLPClassLoader");
-	} catch(ClassNotFoundException e1) {
-	    try {
-		nxc = Class.forName("netx.jnlp.runtime.JNLPClassLoader");
-	    } catch(ClassNotFoundException e2) {
-		throw(new Exception("No known NetX on classpath"));
-	    }
-	}
-	ClassLoader cl = MainFrame.class.getClassLoader();
-	if(!nxc.isInstance(cl)) {
-	    throw(new Exception("Not running from a NetX classloader"));
-	}
-	Field cblf, lf;
-	try {
-	    cblf = nxc.getDeclaredField("codeBaseLoader");
-	    lf = nxc.getDeclaredField("loaders");
-	} catch(NoSuchFieldException e) {
-	    throw(new Exception("JNLPClassLoader does not conform to its known structure"));
-	}
-	cblf.setAccessible(true);
-	lf.setAccessible(true);
-	Set<Object> loaders = new HashSet<Object>();
-	Stack<Object> open = new Stack<Object>();
-	open.push(cl);
-	while(!open.empty()) {
-	    Object cur = open.pop();
-	    if(loaders.contains(cur))
-		continue;
-	    loaders.add(cur);
-	    Object curl;
-	    try {
-		curl = lf.get(cur);
-	    } catch(IllegalAccessException e) {
-		throw(new Exception("Reflection accessibility not available even though set"));
-	    }
-	    for(int i = 0; i < Array.getLength(curl); i++) {
-		Object other = Array.get(curl, i);
-		if(nxc.isInstance(other))
-		    open.push(other);
-	    }
-	}
-	for(Object cur : loaders) {
-	    try {
-		cblf.set(cur, null);
-	    } catch(IllegalAccessException e) {
-		throw(new Exception("Reflection accessibility not available even though set"));
-	    }
-	}
+	WebBrowser.self = DesktopBrowser.create();
     }
 
     private static void javabughack() throws InterruptedException {
@@ -425,10 +370,6 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
 	/* Work around another deadl bug in Sun's JNLP client. */
 	javax.imageio.spi.IIORegistry.getDefaultInstance();
-	try {
-	    netxsurgery();
-	} catch(Exception e) {
-	}
     }
 
     private static void main2(String[] args) {
