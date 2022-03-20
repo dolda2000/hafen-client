@@ -191,9 +191,7 @@ public class GLEnvironment implements Environment {
     }
 
     public GLRender render() {
-	GLRender ret = new GLRender(this);
-	seqreg(ret);
-	return(ret);
+	return(new GLRender(this));
     }
 
     public GLDrawList drawlist() {
@@ -285,7 +283,7 @@ public class GLEnvironment implements Environment {
 		    } catch(Exception exc) {
 			throw(new BGL.BGLException(prep.gl, null, exc));
 		    }
-		    sequnreg(prep);
+		    prep.dispose();
 		}
 		for(GLRender cmd : copy) {
 		    BufferBGL xf = new BufferBGL(16);
@@ -298,7 +296,7 @@ public class GLEnvironment implements Environment {
 		    } catch(Exception exc) {
 			throw(new BGL.BGLException(cmd.gl, null, exc));
 		    }
-		    sequnreg(cmd);
+		    cmd.dispose();
 		}
 		checkqueries(gl);
 		disposeall().run(gl);
@@ -343,7 +341,7 @@ public class GLEnvironment implements Environment {
 	    }
 	}
 	if(inv)
-	    sequnreg(gcmd);
+	    gcmd.dispose();
     }
 
     public void submitwait() throws InterruptedException {
@@ -389,10 +387,8 @@ public class GLEnvironment implements Environment {
     }
 
     GLRender prepare() {
-	if(prep == null) {
+	if(prep == null)
 	    prep = new GLRender(this);
-	    seqreg(prep);
-	}
 	return(prep);
     }
     void prepare(GLObject obj) {
@@ -869,24 +865,23 @@ public class GLEnvironment implements Environment {
 	    Warning.warn("warning: dispose queue size increased to " + nsz);
     }
 
-    void seqreg(GLRender r) {
+    int seqreg() {
 	synchronized(seqmon) {
-	    if(r.dispseq != 0)
-		throw(new IllegalStateException());
-	    int seq = r.dispseq = seqhead;
+	    int seq = seqhead;
 	    if(++seqhead == 0)
 		seqhead = 1;
 	    if(seqhead - seqtail == sequse.length - 1)
 		seqresize(sequse.length << 1);
 	    sequse[seq & (sequse.length - 1)] = true;
+	    return(seq);
 	}
     }
 
-    void sequnreg(GLRender r) {
+    void sequnreg(int seq) {
+	if(seq == 0)
+	    return;
 	synchronized(seqmon) {
-	    if(r.dispseq == 0)
-		return;
-	    int seq = r.dispseq, m = sequse.length - 1;
+	    int m = sequse.length - 1;
 	    int si = seq & m;
 	    if(!sequse[si])
 		throw(new AssertionError());
@@ -895,13 +890,37 @@ public class GLEnvironment implements Environment {
 		while((seqhead - seqtail > 0) && !sequse[seqtail & m])
 		    seqtail++;
 	    }
-	    r.dispseq = 0;
 	}
     }
 
     int dispseq() {
 	synchronized(seqmon) {
 	    return(seqhead);
+	}
+    }
+
+    class Sequence implements Disposable {
+	public final int no;
+	private final Runnable clean;
+	private final String desc;
+	private volatile boolean cleaned = false;
+
+	Sequence(Object owner) {
+	    this.desc = owner.toString();
+	    this.no = seqreg();
+	    clean = Finalizer.finalize(owner, this::disposed);
+	}
+
+	private void disposed() {
+	    sequnreg(no);
+	    if(!cleaned) {
+		Warning.warn("warning: disposal sequence leaked: " + desc);
+	    }
+	}
+
+	public void dispose() {
+	    cleaned = true;
+	    clean.run();
 	}
     }
 
@@ -929,7 +948,7 @@ public class GLEnvironment implements Environment {
 	    }
 	    for(GLRender cmd : copy) {
 		cmd.gl.abort();
-		sequnreg(cmd);
+		cmd.dispose();
 	    }
 	}
 	{

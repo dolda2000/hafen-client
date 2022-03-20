@@ -28,6 +28,7 @@ package haven.render.gl;
 
 import java.nio.*;
 import java.util.function.*;
+import java.util.concurrent.atomic.*;
 import com.jogamp.opengl.*;
 import haven.*;
 import haven.render.*;
@@ -39,11 +40,13 @@ public class GLRender implements Render, Disposable {
     BufferBGL gl = null;
     final Applier state;
     Applier init = null;
-    int dispseq = 0;
+    private final GLEnvironment.Sequence seq;
+    private final AtomicBoolean disposed = new AtomicBoolean(false);
 
     GLRender(GLEnvironment env) {
 	this.env = env;
 	this.state = new Applier(env);
+	this.seq = env.new Sequence(this);
     }
 
     public GLEnvironment env() {return(env);}
@@ -150,13 +153,13 @@ public class GLRender implements Render, Disposable {
 	if(sub.env != this.env)
 	    throw(new IllegalArgumentException());
 	if(sub.gl == null) {
-	    sub.env.sequnreg(sub);
+	    sub.dispose();
 	    return;
 	}
 	state.apply(this.gl, sub.init);
 	BGL gl = gl();
 	gl.bglCallList(sub.gl);
-	gl.bglSubmit(rgl -> sub.env.sequnreg(sub));
+	gl.bglSubmit(rgl -> sub.dispose());
 	state.apply(null, sub.state);
     }
 
@@ -594,13 +597,6 @@ public class GLRender implements Render, Disposable {
     }
 
     public void dispose() {
-	env.sequnreg(this);
-    }
-
-    protected void finalize() {
-	if(dispseq != 0) {
-	    Warning.warn("warning: gl-render was leaked without being disposed");
-	    dispose();
-	}
+	seq.dispose();
     }
 }
