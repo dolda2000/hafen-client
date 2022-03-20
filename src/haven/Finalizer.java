@@ -191,6 +191,7 @@ public class Finalizer {
 		    Warning.warn("leak-check: %s already disposed", desc);
 		this.clean = true;
 	    }
+	    fin.run();
 	}
     }
 }
