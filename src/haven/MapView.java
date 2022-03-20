@@ -1298,7 +1298,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if((draw == null) || !out.env().compatible(draw)) {
 		if(draw != null)
 		    dispose();
-		draw = out.env().drawlist();
+		draw = out.env().drawlist().desc("click-list: " + this);
 		if(doinst) {
 		    instancer = new InstanceList(this);
 		    instancer.add(draw, Rendered.class);
