@@ -1042,7 +1042,9 @@ public class GLDrawList implements DrawList {
 	}
     }
 
+    private final Disposable lck = new Finalizer.LeakCheck(this);
     public void dispose() {
+	lck.dispose();
 	synchronized(this) {
 	    for(DrawSlot slot; (slot = root) != null; ) {
 		slot.remove();
@@ -1050,10 +1052,6 @@ public class GLDrawList implements DrawList {
 	    }
 	    disposed = true;
 	}
-    }
-
-    protected void finalize() {
-	dispose();
     }
 
     void treedump(java.io.PrintWriter out, DrawSlot slot) {
