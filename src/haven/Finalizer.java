@@ -175,7 +175,7 @@ public class Finalizer {
 	}
 
 	public LeakCheck(Object guarded) {
-	    this(guarded, guarded.toString());
+	    this(guarded, String.format("%s (%x)", guarded.toString(), System.identityHashCode(guarded)));
 	}
 
 	private void disposed() {
