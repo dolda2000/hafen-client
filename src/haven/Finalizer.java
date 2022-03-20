@@ -163,4 +163,34 @@ public class Finalizer {
     public static Runnable finalize(Object x, Runnable action) {
 	return(getgroup().add(x, action));
     }
+
+    public static class LeakCheck implements Disposable {
+	public final String desc;
+	private final Runnable fin;
+	private boolean clean = false;
+
+	public LeakCheck(Object guarded, String desc) {
+	    this.desc = desc;
+	    fin = Finalizer.finalize(guarded, this::disposed);
+	}
+
+	public LeakCheck(Object guarded) {
+	    this(guarded, guarded.toString());
+	}
+
+	private void disposed() {
+	    synchronized(this) {
+		if(!this.clean)
+		    Warning.warn("leak-check: %s leaked", desc);
+	    }
+	}
+
+	public void dispose() {
+	    synchronized(this) {
+		if(this.clean)
+		    Warning.warn("leak-check: %s already disposed", desc);
+		this.clean = true;
+	    }
+	}
+    }
 }
