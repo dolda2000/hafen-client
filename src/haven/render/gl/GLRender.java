@@ -370,9 +370,9 @@ public class GLRender implements Render, Disposable {
 		state.apply(gl, Pipe.nil);
 		gl.glActiveTexture(GL.GL_TEXTURE0);
 		tex.bind(gl);
-		gl.glTexImage2D(GL.GL_TEXTURE_2D, img.level, GLTexture.texifmt(tex.data), img.w, img.h, 0,
-				GLTexture.texefmt1(tex.data.ifmt, tex.data.efmt, tex.data.eperm),
-				GLTexture.texefmt2(tex.data.ifmt, tex.data.efmt),
+		gl.glTexImage2D(GL.GL_TEXTURE_2D, img.level, GLTexture.texifmt(img.tex), img.w, img.h, 0,
+				GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
+				GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
 				data);
 		tex.unbind(gl);
 	    } else if(img.tex instanceof Texture3D) {
@@ -381,9 +381,9 @@ public class GLRender implements Render, Disposable {
 		state.apply(gl, Pipe.nil);
 		gl.glActiveTexture(GL.GL_TEXTURE0);
 		tex.bind(gl);
-		gl.glTexImage3D(GL3.GL_TEXTURE_3D, img.level, GLTexture.texifmt(tex.data), img.w, img.h, img.d, 0,
-				GLTexture.texefmt1(tex.data.ifmt, tex.data.efmt, tex.data.eperm),
-				GLTexture.texefmt2(tex.data.ifmt, tex.data.efmt),
+		gl.glTexImage3D(GL3.GL_TEXTURE_3D, img.level, GLTexture.texifmt(img.tex), img.w, img.h, img.d, 0,
+				GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
+				GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
 				data);
 		tex.unbind(gl);
 	    } else if(img.tex instanceof Texture2DArray) {
@@ -395,8 +395,8 @@ public class GLRender implements Render, Disposable {
 		tex.bind(gl);
 		gl.glTexSubImage3D(GL3.GL_TEXTURE_2D_ARRAY, img.level,
 				   0, 0, aimg.layer, img.w, img.h, 1,
-				   GLTexture.texefmt1(tex.data.ifmt, tex.data.efmt, tex.data.eperm),
-				   GLTexture.texefmt2(tex.data.ifmt, tex.data.efmt),
+				   GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
+				   GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
 				   data);
 		tex.unbind(gl);
 	    } else if(img.tex instanceof TextureCube) {
@@ -406,9 +406,9 @@ public class GLRender implements Render, Disposable {
 		state.apply(gl, Pipe.nil);
 		gl.glActiveTexture(GL.GL_TEXTURE0);
 		tex.bind(gl);
-		gl.glTexImage2D(GLTexture.texface(cimg.face), img.level, GLTexture.texifmt(tex.data), img.w, img.h, 0,
-				GLTexture.texefmt1(tex.data.ifmt, tex.data.efmt, tex.data.eperm),
-				GLTexture.texefmt2(tex.data.ifmt, tex.data.efmt),
+		gl.glTexImage2D(GLTexture.texface(cimg.face), img.level, GLTexture.texifmt(img.tex), img.w, img.h, 0,
+				GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
+				GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
 				data);
 		tex.unbind(gl);
 	    }
