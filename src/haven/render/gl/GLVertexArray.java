@@ -241,5 +241,9 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	    for(int i = 0; (i < vaos.length) && (vaos[i] != null); i++)
 		vaos[i].dispose();
 	}
+
+	public String toString() {
+	    return(String.format("#<vao-idx %s n:%d>", mod, n));
+	}
     }
 }
