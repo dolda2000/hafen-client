@@ -536,9 +536,9 @@ public class GLEnvironment implements Environment {
 	    if(((idx = GLReference.get(mod.ro, GLVertexArray.ProgIndex.class)) == null) || (idx.env != this)) {
 		if(mod.ro != null)
 		    mod.ro.dispose();
-		mod.ro = new GLReference<>(idx = new GLVertexArray.ProgIndex(mod, this));
+		mod.ro = new GLReference<>(idx = new GLVertexArray.ProgIndex(this, mod));
 	    }
-	    return(idx.get(prog));
+	    return(idx.get(prog, mod));
 	}
     }
     GLTexture.Tex2D prepare(Texture2D tex) {
