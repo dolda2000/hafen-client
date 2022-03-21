@@ -151,6 +151,18 @@ public abstract class Texture implements Disposable {
 	public Sampler<T> anisotropy(float v) {anisotropy = v; return(this);}
 	public Sampler<T> border(FColor v) {border = v; return(this);}
 
+	public Sampler<T> copy(Sampler<?> that) {
+	    this.magfilter = that.magfilter;
+	    this.minfilter = that.minfilter;
+	    this.mipfilter = that.mipfilter;
+	    this.swrap = that.swrap;
+	    this.twrap = that.twrap;
+	    this.rwrap = that.rwrap;
+	    this.anisotropy = that.anisotropy;
+	    this.border = that.border;
+	    return(this);
+	}
+
 	public int parhash() {
 	    int ret = Objects.hash(magfilter, minfilter, mipfilter,
 				   swrap, twrap, rwrap,
