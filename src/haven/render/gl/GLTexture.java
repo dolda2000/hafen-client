@@ -290,6 +290,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	throw(new IllegalArgumentException(String.format("texface: %s", face)));
     }
 
+    public abstract Texture desc();
+
     public static class Tex2D extends GLTexture {
 	private final WeakReference<Texture2D> desc;
 	Sampler2D sampler;
@@ -369,8 +371,10 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public String toString() {
-	    return(String.format("#<gl.tex2d %d @ %08x %s>", id, System.identityHashCode(this), (desc == null) ? null : desc.get()));
+	    return(String.format("#<gl.tex2d %d @ %08x %s>", id, System.identityHashCode(this), desc()));
 	}
+
+	public Texture2D desc() {return((desc == null) ? null : desc.get());}
     }
 
     public static class Tex3D extends GLTexture {
@@ -453,8 +457,10 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public String toString() {
-	    return(String.format("#<gl.tex3d %d @ %08x %s>", id, System.identityHashCode(this), (desc == null) ? null : desc.get()));
+	    return(String.format("#<gl.tex3d %d @ %08x %s>", id, System.identityHashCode(this), desc()));
 	}
+
+	public Texture3D desc() {return((desc == null) ? null : desc.get());}
     }
 
     public static class Tex2DArray extends GLTexture {
@@ -541,8 +547,10 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public String toString() {
-	    return(String.format("#<gl.tex2d[] %d @ %08x %s>", id, System.identityHashCode(this), (desc == null) ? null : desc.get()));
+	    return(String.format("#<gl.tex2d[] %d @ %08x %s>", id, System.identityHashCode(this), desc()));
 	}
+
+	public Texture2DArray desc() {return((desc == null) ? null : desc.get());}
     }
 
     public static class Tex2DMS extends GLTexture {
@@ -586,8 +594,10 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public String toString() {
-	    return(String.format("#<gl.tex2d-ms %d @ %08x %s>", id, System.identityHashCode(this), (desc == null) ? null : desc.get()));
+	    return(String.format("#<gl.tex2d-ms %d @ %08x %s>", id, System.identityHashCode(this), desc()));
 	}
+
+	public Texture2DMS desc() {return((desc == null) ? null : desc.get());}
     }
 
     public static class TexCube extends GLTexture {
@@ -674,7 +684,9 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public String toString() {
-	    return(String.format("#<gl.texcube %d @ %08x %s>", id, System.identityHashCode(this), (desc == null) ? null : desc.get()));
+	    return(String.format("#<gl.texcube %d @ %08x %s>", id, System.identityHashCode(this), desc()));
 	}
+
+	public TextureCube desc() {return((desc == null) ? null : desc.get());}
     }
 }
