@@ -378,10 +378,11 @@ public class GLEnvironment implements Environment {
 
     public FillBuffer fillbuf(DataBuffer tgt, int from, int to) {
 	if((from == 0) && (to == tgt.size())) {
-	    if((tgt instanceof VertexArray.Buffer) && (((VertexArray.Buffer)tgt).ro instanceof StreamBuffer))
-		return(((StreamBuffer)(((VertexArray.Buffer)tgt).ro)).new Fill());
-	    if((tgt instanceof Model.Indices) && (((Model.Indices)tgt).ro instanceof StreamBuffer))
-		return(((StreamBuffer)(((Model.Indices)tgt).ro)).new Fill());
+	    StreamBuffer stb;
+	    if((tgt instanceof VertexArray.Buffer) && ((stb = GLReference.get(((VertexArray.Buffer)tgt).ro, StreamBuffer.class)) != null))
+		return(stb.new Fill());
+	    if((tgt instanceof Model.Indices) && ((stb = GLReference.get(((Model.Indices)tgt).ro, StreamBuffer.class)) != null))
+		return(stb.new Fill());
 	}
 	return(new FillBuffers.Array(to - from));
     }
@@ -420,10 +421,10 @@ public class GLEnvironment implements Environment {
 	    }
 	    case STREAM: {
 		StreamBuffer ret;
-		if(!(buf.ro instanceof StreamBuffer) || ((ret = ((StreamBuffer)buf.ro)).rbuf.env != this)) {
+		if(((ret = GLReference.get(buf.ro, StreamBuffer.class)) == null) || (ret.rbuf.env != this)) {
 		    if(buf.ro != null)
 			buf.ro.dispose();
-		    buf.ro = ret = new StreamBuffer(this, buf.size());
+		    buf.ro = new GLReference<>(ret = new StreamBuffer(this, buf.size()));
 		    StreamBuffer.Fill data = (buf.init == null) ? null : (StreamBuffer.Fill)buf.init.fill(buf, this);
 		    StreamBuffer jdret = ret;
 		    GLBuffer rbuf = ret.rbuf;
@@ -446,10 +447,10 @@ public class GLEnvironment implements Environment {
 	    }
 	    case STATIC: {
 		GLBuffer ret;
-		if(!(buf.ro instanceof GLBuffer) || ((ret = ((GLBuffer)buf.ro)).env != this)) {
+		if(((ret = GLReference.get(buf.ro, GLBuffer.class)) == null) || (ret.env != this)) {
 		    if(buf.ro != null)
 			buf.ro.dispose();
-		    buf.ro = ret = new GLBuffer(this);
+		    buf.ro = new GLReference<>(ret = new GLBuffer(this));
 		    FillBuffers.Array data = (buf.init == null) ? null : (FillBuffers.Array)buf.init.fill(buf, this);
 		    GLBuffer jdret = ret;
 		    prepare((GLRender g) -> {
@@ -481,10 +482,10 @@ public class GLEnvironment implements Environment {
 	    }
 	    case STREAM: {
 		StreamBuffer ret;
-		if(!(buf.ro instanceof StreamBuffer) || ((ret = ((StreamBuffer)buf.ro)).rbuf.env != this)) {
+		if(((ret = GLReference.get(buf.ro, StreamBuffer.class)) == null) || (ret.rbuf.env != this)) {
 		    if(buf.ro != null)
 			buf.ro.dispose();
-		    buf.ro = ret = new StreamBuffer(this, buf.size());
+		    buf.ro = new GLReference<>(ret = new StreamBuffer(this, buf.size()));
 		    StreamBuffer.Fill data = (buf.init == null) ? null : (StreamBuffer.Fill)buf.init.fill(buf, this);
 		    StreamBuffer jdret = ret;
 		    GLBuffer rbuf = ret.rbuf;
@@ -507,10 +508,10 @@ public class GLEnvironment implements Environment {
 	    }
 	    case STATIC: {
 		GLBuffer ret;
-		if(!(buf.ro instanceof GLBuffer) || ((ret = ((GLBuffer)buf.ro)).env != this)) {
+		if(((ret = GLReference.get(buf.ro, GLBuffer.class)) == null) || (ret.env != this)) {
 		    if(buf.ro != null)
 			buf.ro.dispose();
-		    buf.ro = ret = new GLBuffer(this);
+		    buf.ro = new GLReference<>(ret = new GLBuffer(this));
 		    FillBuffers.Array data = (buf.init == null) ? null : (FillBuffers.Array)buf.init.fill(buf, this);
 		    GLBuffer jdret = ret;
 		    prepare((GLRender g) -> {
@@ -532,10 +533,10 @@ public class GLEnvironment implements Environment {
     GLVertexArray prepare(Model mod, GLProgram prog) {
 	synchronized(mod) {
 	    GLVertexArray.ProgIndex idx;
-	    if(!(mod.ro instanceof GLVertexArray.ProgIndex) || ((idx = ((GLVertexArray.ProgIndex)mod.ro)).env != this)) {
+	    if(((idx = GLReference.get(mod.ro, GLVertexArray.ProgIndex.class)) == null) || (idx.env != this)) {
 		if(mod.ro != null)
 		    mod.ro.dispose();
-		mod.ro = idx = new GLVertexArray.ProgIndex(mod, this);
+		mod.ro = new GLReference<>(idx = new GLVertexArray.ProgIndex(mod, this));
 	    }
 	    return(idx.get(prog));
 	}
@@ -543,10 +544,10 @@ public class GLEnvironment implements Environment {
     GLTexture.Tex2D prepare(Texture2D tex) {
 	synchronized(tex) {
 	    GLTexture.Tex2D ret;
-	    if(!(tex.ro instanceof GLTexture.Tex2D) || ((ret = (GLTexture.Tex2D)tex.ro).env != this)) {
+	    if(((ret = GLReference.get(tex.ro, GLTexture.Tex2D.class)) == null) || (ret.env != this)) {
 		if(tex.ro != null)
 		    tex.ro.dispose();
-		tex.ro = ret = GLTexture.Tex2D.create(this, tex);
+		tex.ro = new GLReference<>(ret = GLTexture.Tex2D.create(this, tex));
 	    }
 	    return(ret);
 	}
@@ -562,10 +563,10 @@ public class GLEnvironment implements Environment {
     GLTexture.Tex3D prepare(Texture3D tex) {
 	synchronized(tex) {
 	    GLTexture.Tex3D ret;
-	    if(!(tex.ro instanceof GLTexture.Tex3D) || ((ret = (GLTexture.Tex3D)tex.ro).env != this)) {
+	    if(((ret = GLReference.get(tex.ro, GLTexture.Tex3D.class)) == null) || (ret.env != this)) {
 		if(tex.ro != null)
 		    tex.ro.dispose();
-		tex.ro = ret = GLTexture.Tex3D.create(this, tex);
+		tex.ro = new GLReference<>(ret = GLTexture.Tex3D.create(this, tex));
 	    }
 	    return(ret);
 	}
@@ -581,10 +582,10 @@ public class GLEnvironment implements Environment {
     GLTexture.Tex2DArray prepare(Texture2DArray tex) {
 	synchronized(tex) {
 	    GLTexture.Tex2DArray ret;
-	    if(!(tex.ro instanceof GLTexture.Tex2DArray) || ((ret = (GLTexture.Tex2DArray)tex.ro).env != this)) {
+	    if(((ret = GLReference.get(tex.ro, GLTexture.Tex2DArray.class)) == null) || (ret.env != this)) {
 		if(tex.ro != null)
 		    tex.ro.dispose();
-		tex.ro = ret = GLTexture.Tex2DArray.create(this, tex);
+		tex.ro = new GLReference<>(ret = GLTexture.Tex2DArray.create(this, tex));
 	    }
 	    return(ret);
 	}
@@ -600,10 +601,10 @@ public class GLEnvironment implements Environment {
     GLTexture.Tex2DMS prepare(Texture2DMS tex) {
 	synchronized(tex) {
 	    GLTexture.Tex2DMS ret;
-	    if(!(tex.ro instanceof GLTexture.Tex2DMS) || ((ret = (GLTexture.Tex2DMS)tex.ro).env != this)) {
+	    if(((ret = GLReference.get(tex.ro, GLTexture.Tex2DMS.class)) == null) || (ret.env != this)) {
 		if(tex.ro != null)
 		    tex.ro.dispose();
-		tex.ro = ret = GLTexture.Tex2DMS.create(this, tex);
+		tex.ro = new GLReference<>(ret = GLTexture.Tex2DMS.create(this, tex));
 	    }
 	    return(ret);
 	}
@@ -619,10 +620,10 @@ public class GLEnvironment implements Environment {
     GLTexture.TexCube prepare(TextureCube tex) {
 	synchronized(tex) {
 	    GLTexture.TexCube ret;
-	    if(!(tex.ro instanceof GLTexture.TexCube) || ((ret = (GLTexture.TexCube)tex.ro).env != this)) {
+	    if(((ret = GLReference.get(tex.ro, GLTexture.TexCube.class)) == null) || (ret.env != this)) {
 		if(tex.ro != null)
 		    tex.ro.dispose();
-		tex.ro = ret = GLTexture.TexCube.create(this, tex);
+		tex.ro = new GLReference<>(ret = GLTexture.TexCube.create(this, tex));
 	    }
 	    return(ret);
 	}
@@ -827,16 +828,19 @@ public class GLEnvironment implements Environment {
     }
 
     public boolean compatible(Texture ob) {
-	return((ob.ro != null) && (ob.ro instanceof GLObject) && (((GLObject)ob.ro).env == this));
+	GLObject ro = GLReference.get(ob.ro, GLObject.class);
+	return((ro != null) && (ro.env == this));
     }
 
     public boolean compatible(DataBuffer ob) {
 	if(ob instanceof Model.Indices) {
-	    Model.Indices buf = (Model.Indices)ob;
-	    return((buf.ro != null) && (buf.ro instanceof GLObject) && (((GLObject)buf.ro).env == this));
+	    Disposable ro = GLReference.get(((Model.Indices)ob).ro, Disposable.class);
+	    if(ro instanceof StreamBuffer) ro = ((StreamBuffer)ro).rbuf;
+	    return((ro != null) && (ro instanceof GLObject) && (((GLObject)ro).env == this));
 	} else if(ob instanceof VertexArray.Buffer) {
-	    VertexArray.Buffer buf = (VertexArray.Buffer)ob;
-	    return((buf.ro != null) && (buf.ro instanceof GLObject) && (((GLObject)buf.ro).env == this));
+	    Disposable ro = GLReference.get(((VertexArray.Buffer)ob).ro, Disposable.class);
+	    if(ro instanceof StreamBuffer) ro = ((StreamBuffer)ro).rbuf;
+	    return((ro != null) && (ro instanceof GLObject) && (((GLObject)ro).env == this));
 	} else {
 	    throw(new NotImplemented());
 	}

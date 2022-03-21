@@ -56,10 +56,6 @@ public abstract class GLObject implements Disposable {
 	}
     }
 
-    protected void finalize() {
-	dispose0();
-    }
-
     public Throwable disptrace = null;
     public void dispose() {
 	synchronized(this) {
