@@ -128,7 +128,7 @@ public class Model implements Rendered, RenderTree.Node, Disposable {
     public String toString() {
 	return(String.format("#<model %s %,d-%,d%s%s va:%s%s>",
 			     mode, f, n, (ninst == 1) ? "" : "i:" + ninst,
-			     (ind == null) ? "" : "ind:" + ind, va,
+			     (ind == null) ? "" : " ind:" + ind, va,
 			     (desc == null) ? "" : " (" + desc + ")"));
     }
 
