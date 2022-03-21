@@ -194,4 +194,20 @@ public class Finalizer {
 	    fin.run();
 	}
     }
+
+    public static class Reference<T extends Disposable> implements Disposable, Indir<T> {
+	public final T ob;
+	private final Runnable clean;
+
+	public Reference(T ob) {
+	    this.ob = ob;
+	    this.clean = Finalizer.finalize(this, ob::dispose);
+	}
+
+	public T get() {return(ob);}
+
+	public void dispose() {
+	    clean.run();
+	}
+    }
 }
