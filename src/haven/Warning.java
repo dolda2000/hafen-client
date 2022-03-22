@@ -58,8 +58,8 @@ public class Warning extends Throwable {
     public Warning level(int level) {this.level = level; return(this);}
     public Warning trace(boolean trace) {this.trace = trace; return(this);}
 
-    public void report(PrintStream out) {
-	out.printf("hafen: warning: %s\n", (getClass() == Warning.class) ? getMessage() : toString());
+    public void report(PrintStream out, String head) {
+	out.printf("%s%s\n", head, (getClass() == Warning.class) ? getMessage() : toString());
 	if(trace) {
 	    for(StackTraceElement frame : getStackTrace())
 		out.println("\tat " + frame);
@@ -72,13 +72,13 @@ public class Warning extends Throwable {
     private static final int LOGSIZE = 10;
     private static LinkedList<Warning> log = null;
     public void issue() {
-	report(System.err);
+	report(System.err, "haven: warning: ");
 	if(level >= ERROR) {
 	    /* XXX: Report in some user-visible way. */
 	}
 	if(level >= CRITICAL) {
 	    try(OutputStream fp = Files.newOutputStream(Debug.somedir("haven-errors.log"), StandardOpenOption.APPEND, StandardOpenOption.CREATE)) {
-		report(new PrintStream(fp));
+		report(new PrintStream(fp), String.format("%s: ", new Date()));
 	    } catch(IOException e) {
 		new Warning(e, "could not log critical warning").level(ERROR).issue();
 	    }
