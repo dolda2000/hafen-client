@@ -166,6 +166,8 @@ public class VertexArray implements Disposable {
 	    this.size = size;
 	    this.usage = usage;
 	    this.init = init;
+	    if(size == 0)
+		new haven.Warning("empty vertex-buffer").level(haven.Warning.CRITICAL).trace(true).issue();
 	}
 
 	public Buffer(ByteBuffer data, Usage usage) {

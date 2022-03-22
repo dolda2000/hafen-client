@@ -78,6 +78,8 @@ public class Model implements Rendered, RenderTree.Node, Disposable {
 	    this.n = n;
 	    this.usage = usage;
 	    this.init = init;
+	    if(n == 0)
+		new haven.Warning("empty index-buffer").level(haven.Warning.CRITICAL).trace(true).issue();
 	}
 
 	public int size() {
