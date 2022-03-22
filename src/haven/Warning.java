@@ -33,8 +33,8 @@ import haven.error.ErrorHandler;
 
 public class Warning extends Throwable {
     public static final int DEBUG = 0;
-    public static final int ERROR = 1;
-    public static final int CRITICAL = 2;
+    public static final int ERROR = 5;
+    public static final int CRITICAL = 10;
     public final double ctime = Utils.rtime();
     public int level = DEBUG;
     public boolean trace = false;
