@@ -33,12 +33,13 @@ import haven.render.Texture2D.Sampler2D;
 
 public abstract class RenderContext extends State implements OwnerContext {
     public static final Slot<RenderContext> slot = new Slot<>(Slot.Type.SYS, RenderContext.class);
-    private final Collection<PostProcessor> post = new ArrayList<>();
+    private final List<PostProcessor> post = new ArrayList<>();
 
     public static abstract class PostProcessor implements Disposable {
 	public Sampler2D buf = null;
 
 	public abstract void run(GOut g, Sampler2D in);
+	public int order() {return(0);}
 
 	public void dispose() {
 	    if(buf != null)
@@ -47,7 +48,10 @@ public abstract class RenderContext extends State implements OwnerContext {
     }
 
     public Collection<PostProcessor> postproc() {return(post);}
-    public void add(PostProcessor post) {this.post.add(post);}
+    public void add(PostProcessor post) {
+	this.post.add(post);
+	Collections.sort(this.post, Comparator.comparing(PostProcessor::order));
+    }
     public void remove(PostProcessor post) {this.post.remove(post);}
 
     public abstract Pipe.Op basic(Object id);
