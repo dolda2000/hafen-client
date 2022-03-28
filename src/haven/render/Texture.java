@@ -82,6 +82,7 @@ public abstract class Texture implements Disposable {
     }
 
     public abstract Collection<? extends Image<? extends Texture>> images();
+    public abstract Sampler<? extends Texture> sampler();
 
     public Texture srgb() {
 	this.srgb = true;
