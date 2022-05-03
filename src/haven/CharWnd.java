@@ -168,8 +168,8 @@ public class CharWnd extends Window {
 		    Collections.sort(enew, dcmp);
 		    els = enew;
 		    rtip = null;
+		    enew = null;
 		} catch(Loading l) {}
-		enew = null;
 	    }
 	    if(trev != null) {
 		try {
