@@ -120,6 +120,10 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	return(of((int)Math.round(x * f), (int)Math.round(y * f)));
     }
 
+    public Coord mul(double fx, double fy) {
+	return(of((int)Math.round(x * fx), (int)Math.round(y * fy)));
+    }
+
     public Coord inv() {
 	return(of(-x, -y));
     }
