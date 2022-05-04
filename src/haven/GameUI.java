@@ -927,7 +927,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 
     public static class Progress extends Widget {
 	private static final Resource.Anim progt = Resource.local().loadwait("gfx/hud/prog").layer(Resource.animc);
-	private Tex curi;
+	public double prog;
+	private TexI curi;
 
 	public Progress(double prog) {
 	    super(progt.f[0][0].ssz);
@@ -940,13 +941,25 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    WritableRaster buf = PUtils.imgraster(progt.f[fr][0].ssz);
 	    PUtils.blit(buf, progt.f[fr][0].scaled().getRaster(), Coord.z);
 	    PUtils.blendblit(buf, progt.f[fr + 1][0].scaled().getRaster(), Coord.z, bf);
-	    if(curi != null)
-		curi.dispose();
-	    curi = new TexI(PUtils.rasterimg(buf));
+	    if(this.curi != null)
+		this.curi.dispose();
+	    this.curi = new TexI(PUtils.rasterimg(buf));
+	    this.prog = prog;
 	}
 
 	public void draw(GOut g) {
 	    g.image(curi, Coord.z);
+	}
+
+	public boolean checkhit(Coord c) {
+	    return(Utils.checkhit(curi.back, c, 10));
+	}
+
+	public Object tooltip(Coord c, Widget prev) {
+	    if(checkhit(c)) {
+		return(String.format("%d%%", (int)Math.floor(prog * 100)));
+	    }
+	    return(super.tooltip(c, prev));
 	}
     }
 
