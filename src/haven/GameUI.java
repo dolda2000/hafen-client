@@ -929,6 +929,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	private static final Resource.Anim progt = Resource.local().loadwait("gfx/hud/prog").layer(Resource.animc);
 	public double prog;
 	private TexI curi;
+	private String tip;
 
 	public Progress(double prog) {
 	    super(progt.f[0][0].ssz);
@@ -944,6 +945,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if(this.curi != null)
 		this.curi.dispose();
 	    this.curi = new TexI(PUtils.rasterimg(buf));
+
+	    double d = Math.abs(prog - this.prog);
+	    int dec = Math.max(0, (int)Math.round(-Math.log10(d)) - 2);
+	    this.tip = String.format("%." + dec + "f%%", prog * 100);
 	    this.prog = prog;
 	}
 
@@ -956,9 +961,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 
 	public Object tooltip(Coord c, Widget prev) {
-	    if(checkhit(c)) {
-		return(String.format("%d%%", (int)Math.floor(prog * 100)));
-	    }
+	    if(checkhit(c))
+		return(tip);
 	    return(super.tooltip(c, prev));
 	}
     }
