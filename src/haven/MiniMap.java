@@ -661,6 +661,8 @@ public class MiniMap extends Widget {
     protected boolean allowzoomout() {
 	DisplayGrid[] disp = this.display;
 	Area dext = this.dgext;
+	if(dext)
+	    return(false);
 	try {
 	    for(int x = dext.ul.x; x < dext.br.x; x++) {
 		if(hascomplete(disp, dext, new Coord(x, dext.ul.y)) ||
