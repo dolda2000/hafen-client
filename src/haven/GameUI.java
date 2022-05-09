@@ -760,7 +760,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		}
 	    }
 	    if(mapstore != null) {
-		MapFile file = MapFile.load(mapstore, mapfilename());
+		MapFile file;
+		try {
+		    file = MapFile.load(mapstore, mapfilename());
+		} catch(java.io.IOException e) {
+		    /* XXX: Not quite sure what to do here. It's
+		     * certainly not obvious that overwriting the
+		     * existing mapfile with a new one is better. */
+		    throw(new RuntimeException("failed to load mapfile", e));
+		}
 		mmap = blpanel.add(new CornerMap(UI.scale(new Coord(133, 133)), file), minimapc);
 		mmap.lower();
 		mapfile = new MapWnd(file, map, Utils.getprefc("wndsz-map", UI.scale(new Coord(700, 500))), "Map");
