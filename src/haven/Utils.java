@@ -50,12 +50,15 @@ public class Utils {
 	return(new Coord(img.getWidth(), img.getHeight()));
     }
 
-    public static boolean checkhit(BufferedImage img, Coord c) {
+    public static boolean checkhit(BufferedImage img, Coord c, int thres) {
 	if(!c.isect(Coord.z, imgsz(img)))
 	    return(false);
 	if(img.getRaster().getNumBands() < 4)
 	    return(true);
-	return(img.getRaster().getSample(c.x, c.y, 3) >= 128);
+	return(img.getRaster().getSample(c.x, c.y, 3) >= thres);
+    }
+    public static boolean checkhit(BufferedImage img, Coord c) {
+	return(checkhit(img, c, 128));
     }
 
     public static void defer(final Runnable r) {
