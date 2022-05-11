@@ -111,6 +111,10 @@ public class ValBlock {
 	    if(!sdeps.contains(dep))
 		sdeps.add(dep);
 	}
+
+	public String toString() {
+	    return(String.format("#<value %s %s>", type, name));
+	}
     }
 
     public abstract class Group {
