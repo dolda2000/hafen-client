@@ -64,8 +64,9 @@ public class RenderedNormals extends State {
 
     public void apply(Pipe p) {p.put(slot, this);}
 
-    public static class Canon implements Pipe.Op, Disposable {
+    public static class Canon implements Pipe.Op, Disposable, RenderContext.Global {
 	public Texture2D tex = null;
+	private RenderedNormals state;
 	private int refcount = 0;
 
 	public void apply(Pipe p) {
@@ -74,13 +75,19 @@ public class RenderedNormals extends State {
 		if(tex != null)
 		    tex.dispose();
 		tex = new Texture2D(fb.sz, DataBuffer.Usage.STATIC, new VectorFormat(3, NumberFormat.SNORM8), null);
+		state = new RenderedNormals(tex.image(0));
 	    }
-	    p.prep(new RenderedNormals(tex.image(0)));
+	    p.prep(state);
 	}
 
 	public void dispose() {
 	    if(tex != null)
 		tex.dispose();
+	}
+
+	public void prerender(Render out) {
+	    if(state != null)
+		out.clear(new BufPipe().prep(new FragColor<>(tex.image(0))), FragColor.fragcol, new FColor(0, 0, -1));
 	}
     }
 
@@ -94,6 +101,7 @@ public class RenderedNormals extends State {
 	    if(ret == null) {
 		ret = new Canon();
 		ctx.basic(Canon.class, ret);
+		ctx.add(ret);
 	    }
 	    ret.refcount++;
 	}
@@ -110,6 +118,7 @@ public class RenderedNormals extends State {
 		throw(new IllegalStateException());
 	    if(--cur.refcount <= 0) {
 		ctx.basic(Canon.class, null);
+		ctx.put(cur);
 		cur.dispose();
 	    }
 	}
