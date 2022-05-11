@@ -33,6 +33,7 @@ public class ValBlock {
     private static final ThreadLocal<Value> processing = new ThreadLocal<Value>();
     private final Collection<Value> values = new LinkedList<Value>();
     private final Map<Object, Value> ext = new IdentityHashMap<Object, Value>();
+    private boolean lock = false;
 
     public abstract class Value {
 	public final Type type;
@@ -48,6 +49,8 @@ public class ValBlock {
 	public Value(Type type, Symbol name) {
 	    this.type = type;
 	    this.name = name;
+	    if(lock)
+		throw(new IllegalStateException("value-block is locked for construction while adding " + this));
 	    values.add(this);
 	}
 
@@ -220,6 +223,7 @@ public class ValBlock {
     }
 
     public void cons(Block blk) {
+	lock = true;
 	for(Value val : values)
 	    val.cons1();
 	for(Value val : values) {
