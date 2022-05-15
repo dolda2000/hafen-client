@@ -202,7 +202,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    String chrid = (String)args[0];
-	    int plid = (Integer)args[1];
+	    long plid = Utils.uint32((Integer)args[1]);
 	    String genus = "";
 	    if(args.length > 2)
 		genus = (String)args[2];
