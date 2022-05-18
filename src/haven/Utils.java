@@ -1899,6 +1899,12 @@ public class Utils {
 	return(dst);
     }
 
+    public static <T> Optional<T> ocast(Object x, Class<T> cl) {
+	if(cl.isInstance(x))
+	    return(Optional.of(cl.cast(x)));
+	return(Optional.empty());
+    }
+
     public static int sidcmp(Object a, Object b) {
 	int ah = System.identityHashCode(a);
 	int bh = System.identityHashCode(b);
