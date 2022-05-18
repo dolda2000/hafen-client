@@ -85,15 +85,13 @@ public class MapFile {
 	warn(null, fmt, args);
     }
 
-    public static MapFile load(ResCache store, String filename) {
+    public static MapFile load(ResCache store, String filename) throws IOException {
 	MapFile file = new MapFile(store, filename);
 	InputStream fp;
 	try {
 	    fp = file.sfetch("index");
 	} catch(FileNotFoundException e) {
 	    return(file);
-	} catch(IOException e) {
-	    return(null);
 	}
 	try(StreamMessage data = new StreamMessage(fp)) {
 	    int ver = data.uint8();
@@ -107,12 +105,10 @@ public class MapFile {
 			file.smarkers.put(((SMarker)mark).oid, (SMarker)mark);
 		}
 	    } else {
-		warn("unknown mapfile index version: %d", ver);
-		return(null);
+		throw(new IOException(String.format("unknown mapfile index version: %d", ver)));
 	    }
 	} catch(Message.BinError e) {
-	    warn(e, "error when loading index: %s", e);
-	    return(null);
+	    throw(new IOException(String.format("error when loading index: %s", e), e));
 	}
 	return(file);
     }
@@ -500,7 +496,7 @@ public class MapFile {
 	public BufferedImage olrender(Coord off, String tag) {
 	    WritableRaster buf = PUtils.imgraster(cmaps);
 	    for(Overlay ol : ols) {
-		MCache.ResOverlay olid = ol.olid.loadsaved().layer(MCache.ResOverlay.class);;
+		MCache.ResOverlay olid = ol.olid.loadsaved().flayer(MCache.ResOverlay.class);
 		if(!olid.tags().contains(tag))
 		    continue;
 		Color col = olcol(olid);
@@ -1369,7 +1365,7 @@ public class MapFile {
 	public Tileset tileset(int n) {
 	    if(tilesets[n] == null) {
 		Resource res = nsets[n].loadsaved(Resource.remote());
-		tilesets[n] = res.layer(Tileset.class);
+		tilesets[n] = res.flayer(Tileset.class);
 	    }
 	    return(tilesets[n]);
 	}

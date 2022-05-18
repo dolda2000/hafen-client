@@ -223,6 +223,7 @@ public class MiniMap extends Widget {
 	follow = true;
     }
 
+    public static final Color notifcol = new Color(255, 128, 0, 255);
     public class DisplayIcon {
 	public final GobIcon icon;
 	public final Gob gob;
@@ -233,13 +234,17 @@ public class MiniMap extends Widget {
 	public Color col = Color.WHITE;
 	public int z;
 	public double stime;
+	public boolean notify;
+	private Consumer<UI> snotify;
 
-	public DisplayIcon(GobIcon icon) {
+	public DisplayIcon(GobIcon icon, GobIcon.Setting conf) {
 	    this.icon = icon;
 	    this.gob = icon.gob;
 	    this.img = icon.img();
 	    this.z = this.img.z;
 	    this.stime = Utils.rtime();
+	    if(this.notify = conf.notify)
+		this.snotify = conf.notification();
 	}
 
 	public void update(Coord2d rc, double ang) {
@@ -252,6 +257,41 @@ public class MiniMap extends Widget {
 		this.sc = null;
 	    else
 		this.sc = p2c(this.rc);
+	}
+
+	public void draw(GOut g) {
+	    if(col != null)
+		g.chcolor(col);
+	    else
+		g.chcolor();
+	    if(!img.rot)
+		g.image(img.tex, sc.sub(img.cc));
+	    else
+		g.rotimage(img.tex, sc, img.cc, -ang + img.ao);
+	    if(notify) {
+		double t = (Utils.rtime() - stime) * 1.0;
+		if(t > 1) {
+		    notify = false;
+		} else {
+		    double f = 1.0 + (Math.pow(Math.sin(t * Math.PI * 1.5), 2) * 1.0);
+		    double a = (t < 0.5) ? 0.5 : (0.5 - (t - 0.5));
+		    g.usestate(new ColorMask(notifcol));
+		    g.chcolor(255, 255, 255, (int)Math.round(255 * a));
+		    if(!img.rot)
+			g.image(img.tex, sc.sub(img.cc.mul(f)), img.tex.sz().mul(f));
+		    g.defstate();
+		}
+	    }
+	    if(snotify != null) {
+		snotify.accept(ui);
+		snotify = null;
+	    }
+	}
+
+	public boolean force() {
+	    if(notify)
+		return(true);
+	    return(false);
 	}
     }
 
@@ -311,7 +351,7 @@ public class MiniMap extends Widget {
 		try {
 		    if(cc == null) {
 			Resource res = sm.res.loadsaved(Resource.remote());
-			img = res.layer(Resource.imgc);
+			img = res.flayer(Resource.imgc);
 			Resource.Neg neg = res.layer(Resource.negc);
 			cc = (neg != null) ? neg.cc : img.ssz.div(2);
 			if(hit == null)
@@ -531,9 +571,9 @@ public class MiniMap extends Widget {
 		    if(icon != null) {
 			GobIcon.Setting conf = iconconf.get(icon.res.get());
 			if((conf != null) && conf.show) {
-			    DisplayIcon disp = pmap.get(gob);
+			    DisplayIcon disp = pmap.remove(gob);
 			    if(disp == null)
-				disp = new DisplayIcon(icon);
+				disp = new DisplayIcon(icon, conf);
 			    disp.update(gob.rc, gob.a);
 			    KinInfo kin = gob.getattr(KinInfo.class);
 			    if((kin != null) && (kin.group < BuddyWnd.gc.length))
@@ -543,6 +583,10 @@ public class MiniMap extends Widget {
 		    }
 		} catch(Loading l) {}
 	    }
+	}
+	for(DisplayIcon disp : pmap.values()) {
+	    if(disp.force())
+		ret.add(disp);
 	}
 	Collections.sort(ret, (a, b) -> a.z - b.z);
 	if(ret.size() == 0)
@@ -556,31 +600,21 @@ public class MiniMap extends Widget {
 	for(DisplayIcon disp : icons) {
 	    if((disp.sc == null) || filter(disp))
 		continue;
-	    GobIcon.Image img = disp.img;
-	    if(disp.col != null)
-		g.chcolor(disp.col);
-	    else
-		g.chcolor();
-	    if(!img.rot)
-		g.image(img.tex, disp.sc.sub(img.cc));
-	    else
-		g.rotimage(img.tex, disp.sc, img.cc, -disp.ang + img.ao);
+	    disp.draw(g);
 	}
 	g.chcolor();
     }
 
     public void remparty() {
-	Set<Gob> memb = new HashSet<>();
+	Set<Long> memb = new HashSet<>();
 	synchronized(ui.sess.glob.party.memb) {
 	    for(Party.Member m : ui.sess.glob.party.memb.values()) {
-		Gob gob = m.getgob();
-		if(gob != null)
-		    memb.add(gob);
+		memb.add(m.gobid);
 	    }
 	}
 	for(Iterator<DisplayIcon> it = icons.iterator(); it.hasNext();) {
 	    DisplayIcon icon = it.next();
-	    if(memb.contains(icon.gob))
+	    if(memb.contains(icon.gob.id))
 		it.remove();
 	}
     }
@@ -627,6 +661,8 @@ public class MiniMap extends Widget {
     protected boolean allowzoomout() {
 	DisplayGrid[] disp = this.display;
 	Area dext = this.dgext;
+	if(dext == null)
+	    return(false);
 	try {
 	    for(int x = dext.ul.x; x < dext.br.x; x++) {
 		if(hascomplete(disp, dext, new Coord(x, dext.ul.y)) ||

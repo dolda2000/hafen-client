@@ -48,7 +48,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     private double uidle = 0.0, ridle = 0.0;
     private final Dispatcher ed;
     private GLEnvironment env = null;
-    private UI ui;
+    private UI ui, lockedui;
+    private final Object uilock = new Object();
     private Area shape;
     private Pipe base, wnd;
 
@@ -414,7 +415,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    if(curs == null)
 			setCursor(null);
 		    else
-			setCursor(UIPanel.makeawtcurs(curs.layer(Resource.imgc).img, curs.layer(Resource.negc).cc));
+			setCursor(UIPanel.makeawtcurs(curs.flayer(Resource.imgc).img, curs.flayer(Resource.negc).cc));
 		} catch(Exception e) {
 		    cursmode = "tex";
 		}
@@ -426,8 +427,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    } else {
 		if(lastcursor == null)
 		    setCursor(emptycurs);
-		Coord dc = ui.mc.add(curs.layer(Resource.negc).cc.inv());
-		g.image(curs.layer(Resource.imgc), dc);
+		Coord dc = ui.mc.add(curs.flayer(Resource.negc).cc.inv());
+		g.image(curs.flayer(Resource.imgc), dc);
 	    }
 	}
 	lastcursor = curs;
@@ -495,7 +496,11 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    double fwaited = 0;
 		    GLEnvironment env = this.env;
 		    buf = env.render();
-		    UI ui = this.ui;
+		    UI ui;
+		    synchronized(uilock) {
+			this.lockedui = ui = this.ui;
+			uilock.notifyAll();
+		    }
 		    Debug.cycle(ui.modflags());
 		    GSettings prefs = ui.gprefs;
 		    SyncMode syncmode = prefs.syncmode.val;
@@ -608,6 +613,10 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    prevframe = curframe;
 		}
 	    } finally {
+		synchronized(uilock) {
+		    lockedui = null;
+		    uilock.notifyAll();
+		}
 		if(buf != null)
 		    buf.dispose();
 		drawthread.interrupt();
@@ -618,20 +627,32 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     }
 
     public UI newui(UI.Runner fun) {
-	if(ui != null) {
-	    synchronized(ui) {
-		ui.destroy();
+	UI prevui, newui = new UI(this, new Coord(getSize()), fun);
+	newui.env = this.env;
+	if(getParent() instanceof Console.Directory)
+	    newui.cons.add((Console.Directory)getParent());
+	newui.cons.add(this);
+	synchronized(uilock) {
+	    prevui = this.ui;
+	    ui = newui;
+	    ui.root.guprof = uprof;
+	    ui.root.grprof = rprof;
+	    ui.root.ggprof = gprof;
+	    while((this.lockedui != null) && (this.lockedui == prevui)) {
+		try {
+		    uilock.wait();
+		} catch(InterruptedException e) {
+		    Thread.currentThread().interrupt();
+		    break;
+		}
 	    }
 	}
-	ui = new UI(this, new Coord(getSize()), fun);
-	ui.env = this.env;
-	ui.root.guprof = uprof;
-	ui.root.grprof = rprof;
-	ui.root.ggprof = gprof;
-	if(getParent() instanceof Console.Directory)
-	    ui.cons.add((Console.Directory)getParent());
-	ui.cons.add(this);
-	return(ui);
+	if(prevui != null) {
+	    synchronized(prevui) {
+		prevui.destroy();
+	    }
+	}
+	return(newui);
     }
 
     public void background(boolean bg) {
@@ -655,8 +676,28 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
+	cmdmap.put("renderer", (cons, args) -> {
+		cons.out.printf("Rendering backend: JOGL %s\n", JoglVersion.getInstance().getImplementationVersion());
+		if(env != null) {
+		    GLEnvironment.Caps caps = env.caps();
+		    cons.out.printf("Rendering device: %s, %s\n", caps.vendor(), caps.device());
+		    cons.out.printf("Driver version: %s\n", caps.driver());
+		}
+	    });
 	cmdmap.put("gldebug", (cons, args) -> {
 		debuggl = Utils.parsebool(args[1]);
+	    });
+	cmdmap.put("glcrash", (cons, args) -> {
+		GL gl = getGL();
+		new HackThread(() -> {
+			try {
+			    while(true) {
+				env.submitwait();
+				redraw(gl);
+			    }
+			} catch(InterruptedException e) {
+			}},
+		    "GL crasher").start();
 	    });
     }
     public Map<String, Console.Command> findcmds() {

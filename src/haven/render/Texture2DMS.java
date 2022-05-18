@@ -80,6 +80,8 @@ public class Texture2DMS extends Texture {
 	}
     }
 
+    public Sampler2DMS sampler() {return(new Sampler2DMS(this));}
+
     public String toString() {
 	return(String.format("#<tex2d-ms %sx%d %dx%d %d %s samples%s>", ifmt.cf, ifmt.nc, w, h, s, fixed ? "fixed" : "non-fixed", descfmt()));
     }

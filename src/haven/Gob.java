@@ -168,7 +168,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	    public ResAttr mkattr(Gob gob, Message dat);
 	}
 
-	public static class FactMaker implements Resource.PublishedCode.Instancer {
+	public static class FactMaker implements Resource.PublishedCode.Instancer<Factory> {
 	    public Factory make(Class<?> cl, Resource ires, Object... argv) {
 		if(Factory.class.isAssignableFrom(cl))
 		    return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Factory.class), ires, argv));

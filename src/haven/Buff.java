@@ -121,7 +121,7 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
 	    g.image(frame, Coord.z);
 	}
 	try {
-	    Tex img = res.get().layer(Resource.imgc).tex();
+	    Tex img = res.get().flayer(Resource.imgc).tex();
 	    g.image(img, imgoff);
 	    Tex nmeter = (this.nmeter >= 0) ? nmeter() : nmeteri.get();
 	    if(nmeter != null)
@@ -153,7 +153,7 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
 	    return(ItemInfo.shorttip(info()));
 	if(tt != null)
 	    return(Text.render(tt).img);
-	String ret = res.get().layer(Resource.tooltip).t;
+	String ret = res.get().flayer(Resource.tooltip).t;
 	if(ameter >= 0)
 	    ret = ret + " (" + ameter + "%)";
 	return(Text.render(ret).img);

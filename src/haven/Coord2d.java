@@ -163,6 +163,14 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
 	return(Math.hypot(x, y));
     }
 
+    public Coord2d norm(double n) {
+	return(mul(n / abs()));
+    }
+
+    public Coord2d norm() {
+	return(norm(1.0));
+    }
+
     public static Coord2d sc(double a, double r) {
 	return(of(Math.cos(a) * r, Math.sin(a) * r));
     }

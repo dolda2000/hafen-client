@@ -103,6 +103,8 @@ public class Texture2DArray extends TextureArray {
 	}
     }
 
+    public Sampler2DArray sampler() {return(new Sampler2DArray(this));}
+
     public String toString() {
 	return(String.format("#<tex2d[] %sx%d %dx%d x %d%s>", ifmt.cf, ifmt.nc, w, h, n, descfmt()));
     }

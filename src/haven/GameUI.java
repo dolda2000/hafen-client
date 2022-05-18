@@ -63,7 +63,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public WItem vhand;
     public ChatUI chat;
     public ChatUI.Channel syslog;
-    public double prog = -1;
+    public Progress prog = null;
     private boolean afk = false;
     public BeltSlot[] belt = new BeltSlot[144];
     public Belt beltwdg;
@@ -202,7 +202,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    String chrid = (String)args[0];
-	    int plid = (Integer)args[1];
+	    long plid = Utils.uint32((Integer)args[1]);
 	    String genus = "";
 	    if(args.length > 2)
 		genus = (String)args[2];
@@ -760,7 +760,15 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		}
 	    }
 	    if(mapstore != null) {
-		MapFile file = MapFile.load(mapstore, mapfilename());
+		MapFile file;
+		try {
+		    file = MapFile.load(mapstore, mapfilename());
+		} catch(java.io.IOException e) {
+		    /* XXX: Not quite sure what to do here. It's
+		     * certainly not obvious that overwriting the
+		     * existing mapfile with a new one is better. */
+		    throw(new RuntimeException("failed to load mapfile", e));
+		}
 		mmap = blpanel.add(new CornerMap(UI.scale(new Coord(133, 133)), file), minimapc);
 		mmap.lower();
 		mapfile = new MapWnd(file, map, Utils.getprefc("wndsz-map", UI.scale(new Coord(700, 500))), "Map");
@@ -924,29 +932,52 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
 	meters.remove(w);
     }
-    
-    private static final Resource.Anim progt = Resource.local().loadwait("gfx/hud/prog").layer(Resource.animc);
-    private Tex curprog = null;
-    private int curprogf, curprogb;
-    private void drawprog(GOut g, double prog) {
-	int fr = Utils.clip((int)Math.floor(prog * progt.f.length), 0, progt.f.length - 2);
-	int bf = Utils.clip((int)(((prog * progt.f.length) - fr) * 255), 0, 255);
-	if((curprog == null) || (curprogf != fr) || (curprogb != bf)) {
-	    if(curprog != null)
-		curprog.dispose();
+
+    public static class Progress extends Widget {
+	private static final Resource.Anim progt = Resource.local().loadwait("gfx/hud/prog").layer(Resource.animc);
+	public double prog;
+	private TexI curi;
+	private String tip;
+
+	public Progress(double prog) {
+	    super(progt.f[0][0].ssz);
+	    set(prog);
+	}
+
+	public void set(double prog) {
+	    int fr = Utils.clip((int)Math.floor(prog * progt.f.length), 0, progt.f.length - 2);
+	    int bf = Utils.clip((int)(((prog * progt.f.length) - fr) * 255), 0, 255);
 	    WritableRaster buf = PUtils.imgraster(progt.f[fr][0].ssz);
 	    PUtils.blit(buf, progt.f[fr][0].scaled().getRaster(), Coord.z);
 	    PUtils.blendblit(buf, progt.f[fr + 1][0].scaled().getRaster(), Coord.z, bf);
-	    curprog = new TexI(PUtils.rasterimg(buf)); curprogf = fr; curprogb = bf;
+	    if(this.curi != null)
+		this.curi.dispose();
+	    this.curi = new TexI(PUtils.rasterimg(buf));
+
+	    double d = Math.abs(prog - this.prog);
+	    int dec = Math.max(0, (int)Math.round(-Math.log10(d)) - 2);
+	    this.tip = String.format("%." + dec + "f%%", prog * 100);
+	    this.prog = prog;
 	}
-	g.aimage(curprog, new Coord(sz.x / 2, (sz.y * 4) / 10), 0.5, 0.5);
+
+	public void draw(GOut g) {
+	    g.image(curi, Coord.z);
+	}
+
+	public boolean checkhit(Coord c) {
+	    return(Utils.checkhit(curi.back, c, 10));
+	}
+
+	public Object tooltip(Coord c, Widget prev) {
+	    if(checkhit(c))
+		return(tip);
+	    return(super.tooltip(c, prev));
+	}
     }
 
     public void draw(GOut g) {
 	beltwdg.c = new Coord(chat.c.x, Math.min(chat.c.y - beltwdg.sz.y, sz.y - beltwdg.sz.y));
 	super.draw(g);
-	if(prog >= 0)
-	    drawprog(g, prog);
 	int by = sz.y;
 	if(chat.visible())
 	    by = Math.min(by, chat.c.y);
@@ -1111,10 +1142,18 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    String text = (String)args[0];
 	    msg(text);
 	} else if(msg == "prog") {
-	    if(args.length > 0)
-		prog = ((Number)args[0]).doubleValue() / 100.0;
-	    else
-		prog = -1;
+	    if(args.length > 0) {
+		double p = ((Number)args[0]).doubleValue() / 100.0;
+		if(prog == null)
+		    prog = adda(new Progress(p), 0.5, 0.35);
+		else
+		    prog.set(p);
+	    } else {
+		if(prog != null) {
+		    prog.reqdestroy();
+		    prog = null;
+		}
+	    }
 	} else if(msg == "setbelt") {
 	    int slot = (Integer)args[0];
 	    if(args.length < 2) {
@@ -1409,6 +1448,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	chat.move(new Coord(blpw, sz.y));
 	if(map != null)
 	    map.resize(sz);
+	if(prog != null)
+	    prog.move(sz.sub(prog.sz).mul(0.5, 0.35));
 	beltwdg.c = new Coord(blpw + UI.scale(10), sz.y - beltwdg.sz.y - UI.scale(5));
 	super.resize(sz);
     }

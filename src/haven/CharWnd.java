@@ -168,15 +168,15 @@ public class CharWnd extends Window {
 		    Collections.sort(enew, dcmp);
 		    els = enew;
 		    rtip = null;
+		    enew = null;
 		} catch(Loading l) {}
-		enew = null;
 	    }
 	    if(trev != null) {
 		try {
 		    Collections.sort(etr, dcmp);
 		    GameUI gui = getparent(GameUI.class);
 		    if(gui != null)
-			gui.msg(String.format("You gained " + Loading.waitfor(trev).layer(Event.class).nm), Color.WHITE);
+			gui.msg(String.format("You gained " + Loading.waitfor(trev).flayer(Event.class).nm), Color.WHITE);
 		    trol = new TexI(mktrol(etr, trev));
 		    trtm = Utils.rtime();
 		    trev = null;
@@ -226,7 +226,7 @@ public class CharWnd extends Window {
 		BufferedImage cur = null;
 		double sum = 0.0;
 		for(El el : els) {
-		    Event ev = el.res.get().layer(Event.class);
+		    Event ev = el.res.get().flayer(Event.class);
 		    Color col = Utils.blendcol(ev.col, Color.WHITE, 0.5);
 		    BufferedImage ln = Text.render(String.format("%s: %s", ev.nm, Utils.odformat2(el.a, 2)), col).img;
 		    Resource.Image icon = el.res.get().layer(Resource.imgc);
@@ -440,8 +440,8 @@ public class CharWnd extends Window {
 	    super(new Coord(attrw, attrf.height() + UI.scale(2)));
 	    Resource res = Resource.local().loadwait("gfx/hud/chr/" + attr);
 	    this.nm = attr;
-	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
-	    this.img = new TexI(convolve(res.layer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
+	    this.rnm = attrf.render(res.flayer(Resource.tooltip).t);
+	    this.img = new TexI(convolve(res.flayer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
 	    this.attr = glob.getcattr(attr);
 	    this.bg = bg;
 	}
@@ -498,14 +498,14 @@ public class CharWnd extends Window {
 	    super(new Coord(attrw, attrf.height() + UI.scale(2)));
 	    Resource res = Resource.local().loadwait("gfx/hud/chr/" + attr);
 	    this.nm = attr;
-	    this.img = new TexI(convolve(res.layer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
-	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
+	    this.img = new TexI(convolve(res.flayer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
+	    this.rnm = attrf.render(res.flayer(Resource.tooltip).t);
 	    this.attr = glob.getcattr(attr);
 	    this.bg = bg;
-	    adda(new IButton("gfx/hud/buttons/add", "u", "d", null) {
+	    adda(new IButton("gfx/hud/buttons/add", "u", "d", "h") {
 		    public void click() {adj(1);}
 		}, sz.x - margin1, sz.y / 2, 1, 0.5);
-	    adda(new IButton("gfx/hud/buttons/sub", "u", "d", null) {
+	    adda(new IButton("gfx/hud/buttons/sub", "u", "d", "h") {
 		    public void click() {adj(-1);}
 		}, sz.x - margin3, sz.y / 2, 1, 0.5);
 	}
@@ -712,7 +712,7 @@ public class CharWnd extends Window {
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
 	    public String value() {
 		try {
-		    return(res.get().layer(Resource.tooltip).t);
+		    return(res.get().flayer(Resource.tooltip).t);
 		} catch(Loading l) {
 		    return("...");
 		}
@@ -731,17 +731,17 @@ public class CharWnd extends Window {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.flayer(Resource.tooltip).t + "}}\n\n\n");
 	    if(cost > 0)
 		buf.append("Cost: " + cost + "\n\n");
-	    buf.append(res.layer(Resource.pagina).text);
+	    buf.append(res.flayer(Resource.pagina).text);
 	    return(buf.toString());
 	}
 
 	private Text tooltip = null;
 	public Text tooltip() {
 	    if(tooltip == null)
-		tooltip = Text.render(res.get().layer(Resource.tooltip).t);
+		tooltip = Text.render(res.get().flayer(Resource.tooltip).t);
 	    return(tooltip);
 	}
     }
@@ -764,15 +764,15 @@ public class CharWnd extends Window {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
-	    buf.append(res.layer(Resource.pagina).text);
+	    buf.append("$b{$font[serif,16]{" + res.flayer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append(res.flayer(Resource.pagina).text);
 	    return(buf.toString());
 	}
 
 	private Text tooltip = null;
 	public Text tooltip() {
 	    if(tooltip == null)
-		tooltip = Text.render(res.get().layer(Resource.tooltip).t);
+		tooltip = Text.render(res.get().flayer(Resource.tooltip).t);
 	    return(tooltip);
 	}
     }
@@ -785,7 +785,7 @@ public class CharWnd extends Window {
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
 	    public String value() {
 		try {
-		    return(res.get().layer(Resource.tooltip).t);
+		    return(res.get().flayer(Resource.tooltip).t);
 		} catch(Loading l) {
 		    return("...");
 		}
@@ -802,17 +802,17 @@ public class CharWnd extends Window {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.flayer(Resource.tooltip).t + "}}\n\n\n");
 	    if(score > 0)
 		buf.append("Experience points: " + Utils.thformat(score) + "\n\n");
-	    buf.append(res.layer(Resource.pagina).text);
+	    buf.append(res.flayer(Resource.pagina).text);
 	    return(buf.toString());
 	}
 
 	private Text tooltip = null;
 	public Text tooltip() {
 	    if(tooltip == null)
-		tooltip = Text.render(res.get().layer(Resource.tooltip).t);
+		tooltip = Text.render(res.get().flayer(Resource.tooltip).t);
 	    return(tooltip);
 	}
     }
@@ -828,7 +828,7 @@ public class CharWnd extends Window {
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
 	    public String value() {
 		try {
-		    return(res.get().layer(Resource.tooltip).t);
+		    return(res.get().flayer(Resource.tooltip).t);
 		} catch(Loading l) {
 		    return("...");
 		}
@@ -892,8 +892,8 @@ public class CharWnd extends Window {
 		StringBuilder buf = new StringBuilder();
 		Resource res = this.res.get();
 		buf.append("$img[" + res.name + "]\n\n");
-		buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
-		buf.append(res.layer(Resource.pagina).text);
+		buf.append("$b{$font[serif,16]{" + res.flayer(Resource.tooltip).t + "}}\n\n\n");
+		buf.append(res.flayer(Resource.pagina).text);
 		return(buf.toString());
 	    }
 
@@ -946,7 +946,7 @@ public class CharWnd extends Window {
 	public String title() {
 	    if(title != null)
 		return(title);
-	    return(res.get().layer(Resource.tooltip).t);
+	    return(res.get().flayer(Resource.tooltip).t);
 	}
 
 	public static class Condition {
@@ -991,7 +991,7 @@ public class CharWnd extends Window {
 			if(img == null) {
 			    try {
 				title = (done == QST_DONE?catf:failf).render(title()).tex();
-				img = res.get().layer(Resource.imgc).tex();
+				img = res.get().flayer(Resource.imgc).tex();
 				msg = (done == QST_DONE)?qcmp:qfail;
 				/*
 				resize(new Coord(Math.max(img.sz().x + 25 + title.sz().x, msg.sz().x),
@@ -1076,7 +1076,7 @@ public class CharWnd extends Window {
 	    public String title() {
 		if(title != null)
 		    return(title);
-		return(res.get().layer(Resource.tooltip).t);
+		return(res.get().flayer(Resource.tooltip).t);
 	    }
 
 	    public Condition[] conds() {
@@ -1416,7 +1416,7 @@ public class CharWnd extends Window {
 
 	protected void drawitem(GOut g, Skill sk) {
 	    if(sk.small == null)
-		sk.small = new TexI(convolvedown(sk.res.get().layer(Resource.imgc).img, UI.scale(new Coord(40, 40)), iconfilter));
+		sk.small = new TexI(convolvedown(sk.res.get().flayer(Resource.imgc).img, UI.scale(new Coord(40, 40)), iconfilter));
 	    g.image(sk.small, Coord.z);
 	}
 
@@ -1428,7 +1428,7 @@ public class CharWnd extends Window {
 	private void sksort(List<Skill> skills) {
 	    for(Skill sk : skills) {
 		try {
-		    sk.sortkey = sk.res.get().layer(Resource.tooltip).t;
+		    sk.sortkey = sk.res.get().flayer(Resource.tooltip).t;
 		} catch(Loading l) {
 		    sk.sortkey = sk.nm;
 		    loading = true;
@@ -1482,7 +1482,7 @@ public class CharWnd extends Window {
 
 	private Tex crtex(Credo cr) {
 	    if(cr.small == null)
-		cr.small = new TexI(convolvedown(cr.res.get().layer(Resource.imgc).img, crsz, iconfilter));
+		cr.small = new TexI(convolvedown(cr.res.get().flayer(Resource.imgc).img, crsz, iconfilter));
 	    return(cr.small);
 	}
 
@@ -1492,7 +1492,7 @@ public class CharWnd extends Window {
 	    CredoImg(Credo cr) {
 		super(crtex(cr));
 		this.cr = cr;
-		this.tooltip = Text.render(cr.res.get().layer(Resource.tooltip).t);
+		this.tooltip = Text.render(cr.res.get().flayer(Resource.tooltip).t);
 	    }
 
 	    public void draw(GOut g) {
@@ -1522,7 +1522,7 @@ public class CharWnd extends Window {
 	}
 
 	private void sort(List<Credo> buf) {
-	    Collections.sort(buf, Comparator.comparing(cr -> cr.res.get().layer(Resource.tooltip).t));
+	    Collections.sort(buf, Comparator.comparing(cr -> cr.res.get().flayer(Resource.tooltip).t));
 	}
 
 	private void update() {
@@ -1617,7 +1617,7 @@ public class CharWnd extends Window {
 
 	protected void drawitem(GOut g, Experience exp) {
 	    if(exp.small == null)
-		exp.small = new TexI(convolvedown(exp.res.get().layer(Resource.imgc).img, UI.scale(new Coord(40, 40)), iconfilter));
+		exp.small = new TexI(convolvedown(exp.res.get().flayer(Resource.imgc).img, UI.scale(new Coord(40, 40)), iconfilter));
 	    g.image(exp.small, Coord.z);
 	}
 
@@ -1632,7 +1632,7 @@ public class CharWnd extends Window {
 		loading = false;
 		for(Experience exp : seen.items) {
 		    try {
-			exp.sortkey = exp.res.get().layer(Resource.tooltip).t;
+			exp.sortkey = exp.res.get().flayer(Resource.tooltip).t;
 		    } catch(Loading l) {
 			exp.sortkey = "\uffff";
 			loading = true;
@@ -1678,7 +1678,7 @@ public class CharWnd extends Window {
 		loading = false;
 		for(Wound w : wounds) {
 		    try {
-			w.sortkey = w.res.get().layer(Resource.tooltip).t;
+			w.sortkey = w.res.get().flayer(Resource.tooltip).t;
 		    } catch(Loading l) {
 			w.sortkey = "\uffff";
 			loading = true;
@@ -1702,7 +1702,7 @@ public class CharWnd extends Window {
 	    int x = w.level * itemh;
 	    try {
 		if(w.small == null)
-		    w.small = new TexI(PUtils.convolvedown(w.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
+		    w.small = new TexI(PUtils.convolvedown(w.res.get().flayer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
 		g.image(w.small, new Coord(x, 0));
 		x += itemh + margin1;
 	    } catch(Loading e) {
@@ -1802,7 +1802,7 @@ public class CharWnd extends Window {
 	    g.chcolor();
 	    try {
 		if(q.small == null)
-		    q.small = new TexI(PUtils.convolvedown(q.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
+		    q.small = new TexI(PUtils.convolvedown(q.res.get().flayer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
 		g.image(q.small, Coord.z);
 	    } catch(Loading e) {
 		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));

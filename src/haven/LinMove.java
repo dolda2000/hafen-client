@@ -67,4 +67,46 @@ public class LinMove extends Moving {
 	    ts = false;
 	}
     }
+
+    @OCache.DeltaType(OCache.OD_LINBEG)
+    public static class $linbeg implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    Coord2d s = msg.coord().mul(OCache.posres);
+	    Coord2d v = msg.coord().mul(OCache.posres);
+	    LinMove lm = g.getattr(LinMove.class);
+	    if((lm == null) || !lm.s.equals(s) || !lm.v.equals(v)) {
+		g.setattr(new LinMove(g, s, v));
+	    }
+	}
+    }
+
+    @OCache.DeltaType(OCache.OD_LINSTEP)
+    public static class $linstep implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    double t, e;
+	    int w = msg.int32();
+	    if(w == -1) {
+		t = e = -1;
+	    } else if((w & 0x80000000) == 0) {
+		t = w * 0x1p-10;
+		e = -1;
+	    } else {
+		t = (w & ~0x80000000) * 0x1p-10;
+		w = msg.int32();
+		e = (w < 0)?-1:(w * 0x1p-10);
+	    }
+	    Moving m = g.getattr(Moving.class);
+	    if((m == null) || !(m instanceof LinMove))
+		return;
+	    LinMove lm = (LinMove)m;
+	    if(t < 0)
+		g.delattr(Moving.class);
+	    else
+		lm.sett(t);
+	    if(e >= 0)
+		lm.e = e;
+	    else
+		lm.e = Double.NaN;
+	}
+    }
 }

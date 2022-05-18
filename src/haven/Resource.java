@@ -378,6 +378,17 @@ public class Resource implements Serializable {
 	}
     }
 
+    public static class LoadFailedException extends RuntimeException {
+	public final String name;
+	public final int ver;
+
+	public LoadFailedException(String name, int ver, LoadException cause) {
+	    super("Failed to load resource " + name + " (v" + ver + ")", cause);
+	    this.name = name;
+	    this.ver = ver;
+	}
+    }
+
     public static class Pool {
 	public int nloaders = 2;
 	private final Collection<Loader> loaders = new LinkedList<Loader>();
@@ -433,7 +444,7 @@ public class Resource implements Serializable {
 		    throw(new Loading(this));
 		}
 		if(error != null)
-		    throw(new RuntimeException("Delayed error in resource " + name + " (v" + ver + "), from " + error.src, error));
+		    throw(new LoadFailedException(name, ver, error));
 		return(res);
 	    }
 
@@ -1151,8 +1162,8 @@ public class Resource implements Serializable {
     public @interface PublishedCode {
 	String name();
 	Class<? extends Instancer> instancer() default Instancer.class;
-	public interface Instancer {
-	    public Object make(Class<?> cl, Resource res, Object... args);
+	public interface Instancer<I> {
+	    public I make(Class<?> cl, Resource res, Object... args);
 
 	    public static <T> T stdmake(Class<T> cl, Resource ires, Object[] args) {
 		try {
@@ -1170,7 +1181,96 @@ public class Resource implements Serializable {
 		return(Utils.construct(cl));
 	    }
 
-	    public static final Instancer simple = (cl, res, args) -> {
+	    public static class Direct<I> implements Instancer<I> {
+		public final Class<I> type;
+
+		public Direct(Class<I> type) {
+		    this.type = type;
+		}
+
+		public I make(Class<?> cl, Resource res, Object... args) {
+		    if(!type.isAssignableFrom(cl))
+			return(null);
+		    return(stdmake(cl.asSubclass(type), res, args));
+		}
+	    }
+
+	    public static class StaticCall<I, R> implements Instancer<I> {
+		public final Class<I> type;
+		public final String name;
+		public final Class<R> rtype;
+		public final Class<?>[] args;
+		public final Function<Function<Object[], R>, I> maker;
+
+		public StaticCall(Class<I> type, String name, Class<R> rtype, Class<?>[] args, Function<Function<Object[], R>, I> maker) {
+		    this.type = type;
+		    this.name = name;
+		    this.rtype = rtype;
+		    this.args = args;
+		    this.maker = maker;
+		}
+
+		public I make(Class <?> cl, Resource res, Object... args) {
+		    Function<Object[], R> make;
+		    try {
+			make = Utils.smthfun(cl, name, rtype, this.args);
+		    } catch(NoSuchMethodException e) {
+			return(null);
+		    }
+		    return(maker.apply(make));
+		}
+	    }
+
+	    public static class Construct<I, R> implements Instancer<I> {
+		public final Class<I> type;
+		public final Class<R> rtype;
+		public final Class<?>[] args;
+		public final Function<Function<Object[], ? extends R>, I> maker;
+
+		public Construct(Class<I> type, Class<R> rtype, Class<?>[] args, Function<Function<Object[], ? extends R>, I> maker) {
+		    this.type = type;
+		    this.rtype = rtype;
+		    this.args = args;
+		    this.maker = maker;
+		}
+
+		public I make(Class <?> cl, Resource res, Object... args) {
+		    if(!rtype.isAssignableFrom(cl))
+			return(null);
+		    Class<? extends R> scl = cl.asSubclass(rtype);
+		    Function<Object[], ? extends R> cons;
+		    try {
+			cons = Utils.consfun(scl, this.args);
+		    } catch(NoSuchMethodException e) {
+			return(null);
+		    }
+		    return(maker.apply(cons));
+		}
+	    }
+
+	    public static class Chain<I> implements Instancer<I> {
+		public final Class<I> type;
+		private final Collection<Instancer<? extends I>> sub = new ArrayList<>();
+
+		public Chain(Class<I> type) {
+		    this.type = type;
+		}
+
+		public void add(Instancer<? extends I> el) {
+		    sub.add(el);
+		}
+
+		public I make(Class<?> cl, Resource res, Object... args) {
+		    for(Instancer<? extends I> el : sub) {
+			I inst = type.cast(el.make(cl, res, args));
+			if(inst != null)
+			    return(inst);
+		    }
+		    throw(new RuntimeException(String.format("Could not find any suitable constructor for %s in %s", type, cl)));
+		}
+	    }
+
+	    public static final Instancer<Object> simple = (cl, res, args) -> {
 		try {
 		    Constructor<?> cons = cl.getConstructor(Object[].class);
 		    return(Utils.construct(cons, args));
@@ -1382,7 +1482,7 @@ public class Resource implements Serializable {
 			return(null);
 		    Object[] args = pa.getOrDefault(entry.name(), new Object[0]);
 		    inst = AccessController.doPrivileged((PrivilegedAction<Object>)() -> {
-			    PublishedCode.Instancer mk;
+			    PublishedCode.Instancer<?> mk;
 			    synchronized(PublishedCode.instancers) {
 				mk = PublishedCode.instancers.computeIfAbsent(entry, k -> {
 					if(k.instancer() == PublishedCode.Instancer.class)
@@ -1501,6 +1601,12 @@ public class Resource implements Serializable {
 	    });
     }
 
+    public static class NoSuchLayerException extends NoSuchElementException {
+	public NoSuchLayerException(String message) {
+	    super(message);
+	}
+    }
+
     public <L extends Layer> L layer(Class<L> cl) {
 	used = true;
 	for(Layer l : layers) {
@@ -1508,6 +1614,11 @@ public class Resource implements Serializable {
 		return(cl.cast(l));
 	}
 	return(null);
+    }
+    public <L extends Layer> L flayer(Class<L> cl) {
+	L l = layer(cl);
+	if(l == null) throw(new NoSuchLayerException("no " + cl + " in " + name));
+	return(l);
     }
 
     public <L> Collection<L> layers(Class<L> cl, Predicate<? super L> sel) {
@@ -1544,6 +1655,11 @@ public class Resource implements Serializable {
 	    }
 	}
 	return(null);
+    }
+    public <I, L extends IDLayer<I>> L flayer(Class<L> cl, I id) {
+	L l = layer(cl, id);
+	if(l == null) throw(new NoSuchLayerException("no " + cl + " in " + name + " with id " + id));
+	return(l);
     }
 
     public boolean equals(Object other) {

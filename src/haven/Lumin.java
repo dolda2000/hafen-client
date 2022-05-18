@@ -36,4 +36,14 @@ public class Lumin extends GAttrib {
 	this.sz = sz;
 	this.str = str;
     }
+
+    @OCache.DeltaType(OCache.OD_LUMIN)
+    public static class $lumin implements OCache.Delta {
+	public void apply(Gob g, Message msg) {
+	    Coord off = msg.coord();
+	    int sz = msg.uint16();
+	    int str = msg.uint8();
+	    g.setattr(new Lumin(g, off, sz, str));
+	}
+    }
 }
