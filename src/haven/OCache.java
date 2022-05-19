@@ -300,17 +300,8 @@ public class OCache implements Iterable<Gob> {
 	public void apply(Gob g, Message msg) {
 	    Indir<Resource> resid = Delta.getres(g, msg.uint16());
 	    int len = msg.uint8();
-	    Message dat = (len > 0)?new MessageBuf(msg.bytes(len)):null;
-	    Resource res = resid.get();
-	    GAttrib.Parser parser = res.getcode(GAttrib.Parser.class, false);
-	    if(parser != null) {
-		parser.apply(g, dat);
-		return;
-	    }
-	    if(dat != null)
-		g.setrattr(resid, dat);
-	    else
-		g.delrattr(resid);
+	    Message dat = (len > 0) ? new MessageBuf(msg.bytes(len)) : null;
+	    resid.get().getcode(GAttrib.Parser.class, true).apply(g, dat);
 	}
     }
 
