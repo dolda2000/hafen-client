@@ -34,23 +34,20 @@ import java.nio.channels.*;
 
 public class Connection {
     private static final double ACK_HOLD = 0.030;
+    private static final double OBJACK_HOLD = 0.08, OBJACK_HOLD_MAX = 0.5;
     public final SocketAddress server;
     public final String username;
-    public final Glob glob;
+    private Glob glob;
+    private final Collection<RMessageHandler> rcbs = new ArrayList<>();
     private final DatagramChannel sk;
     private final Selector sel;
     private final SelectionKey key;
     private Worker worker;
     private int tseq;
 
-    public interface MessageHandler {
-	public void handle(Message msg);
-    }
-
-    private Connection(SocketAddress server, String username) {
+    public Connection(SocketAddress server, String username) {
 	this.server = server;
 	this.username = username;
-	this.glob = new Glob(null);
 	try {
 	    this.sk = DatagramChannel.open();
 	    sk.connect(server);
@@ -61,6 +58,25 @@ public class Connection {
 	} catch(IOException e) {
 	    throw(new RuntimeException(e));
 	}
+    }
+
+    public static interface RMessageHandler {
+	public void handle(PMessage msg);
+
+	public static final RMessageHandler dump = msg -> {
+	    System.err.println(msg.type);
+	    Utils.hexdump(msg.bytes(), System.err, -1);
+	};
+    }
+
+    public Connection add(RMessageHandler cb) {
+	rcbs.add(cb);
+	return(this);
+    }
+
+    public Connection glob(Glob glob) {
+	this.glob = glob;
+	return(this);
     }
 
     private class Worker extends HackThread {
@@ -238,6 +254,8 @@ public class Connection {
 	private double acktime = -1;
 
 	private void handlerel(RMessage msg) {
+	    for(RMessageHandler cb : rcbs)
+		cb.handle(msg);
 	}
 
 	private void gotrel(RMessage msg) {
@@ -370,7 +388,7 @@ public class Connection {
 	    PMessage msg = null;
 	    for(Iterator<ObjAck> i = objacks.values().iterator(); i.hasNext();) {
 		ObjAck ack = i.next();
-		double txtime = Math.min(ack.lrecv + 0.08, ack.frecv + 0.5);
+		double txtime = Math.min(ack.lrecv + OBJACK_HOLD, ack.frecv + OBJACK_HOLD_MAX);
 		if(txtime >= now) {
 		    if(msg == null) {
 			msg = new PMessage(Session.MSG_OBJACK);
@@ -499,22 +517,21 @@ public class Connection {
 	public SessionExprError() {super("Authentication token expired");}
     }
 
-    public static Connection connect(SocketAddress server, String username, byte[] cookie, Object... args) throws InterruptedException {
-	Connection conn = new Connection(server, username);
-	Connect init = conn.new Connect(cookie, args);
-	conn.start(init);
+    public void connect(byte[] cookie, Object... args) throws InterruptedException {
+	Connect init = new Connect(cookie, args);
+	start(init);
 	try {
 	    synchronized(init) {
 		while(init.result < 0)
 		    init.wait();
 	    }
 	} catch(InterruptedException e) {
-	    conn.close();
+	    close();
 	    throw(e);
 	}
 	if(init.result == 0)
-	    return(conn);
-	conn.close();
+	    return;
+	close();
 	switch(init.result) {
 	case Session.SESSERR_AUTH:
 	    throw(new SessionAuthError());
