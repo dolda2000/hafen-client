@@ -44,6 +44,7 @@ public class Connection {
     private final SelectionKey key;
     private Worker worker;
     private int tseq;
+    private boolean alive = true;
 
     public Connection(SocketAddress server, String username) {
 	this.server = server;
@@ -117,6 +118,10 @@ public class Connection {
 	    worker = new Worker(init);
 	    worker.start();
 	}
+    }
+
+    public boolean alive() {
+	return(alive && (worker != null));
     }
 
     private final ByteBuffer recvbuf = ByteBuffer.allocate(65536);
@@ -477,7 +482,7 @@ public class Connection {
 
 		try {
 		    Utils.checkirq();
-		    if(select(to)) {
+		    if(select(Math.max(to, 0))) {
 			PMessage msg;
 			while((msg = recv()) != null) {
 			    if(msg.type == Session.MSG_CLOSE)
@@ -514,6 +519,7 @@ public class Connection {
 	}
 
 	public Task run() {
+	    alive = false;
 	    int retries = 0;
 	    double last = 0;
 	    while(true) {
@@ -552,24 +558,31 @@ public class Connection {
     }
 
     public static class SessionError extends RuntimeException {
-	public SessionError(String reason) {
+	public final int code;
+
+	public SessionError(int code, String reason) {
 	    super(reason);
+	    this.code = code;
+	}
+
+	public SessionError(String reason) {
+	    this(-1, reason);
 	}
     }
     public static class SessionAuthError extends SessionError {
-	public SessionAuthError() {super("Invalid authentication token");}
+	public SessionAuthError() {super(Session.SESSERR_AUTH, "Invalid authentication token");}
     }
     public static class SessionBusyError extends SessionError {
-	public SessionBusyError() {super("Already logged in");}
+	public SessionBusyError() {super(Session.SESSERR_BUSY, "Already logged in");}
     }
     public static class SessionConnError extends SessionError {
-	public SessionConnError() {super("Could not connect to server");}
+	public SessionConnError() {super(Session.SESSERR_CONN, "Could not connect to server");}
     }
     public static class SessionPVerError extends SessionError {
-	public SessionPVerError() {super("This client is too old");}
+	public SessionPVerError() {super(Session.SESSERR_PVER, "This client is too old");}
     }
     public static class SessionExprError extends SessionError {
-	public SessionExprError() {super("Authentication token expired");}
+	public SessionExprError() {super(Session.SESSERR_EXPR, "Authentication token expired");}
     }
 
     public void connect(byte[] cookie, Object... args) throws InterruptedException {
@@ -599,7 +612,7 @@ public class Connection {
 	case Session.SESSERR_EXPR:
 	    throw(new SessionExprError());
 	case Session.SESSERR_MESG:
-	    throw(new SessionError(init.message));
+	    throw(new SessionError(Session.SESSERR_MESG, init.message));
 	default:
 	    throw(new SessionError("Connection failed: " + init.result));
 	}
