@@ -122,7 +122,6 @@ public class Connection {
 
     public void send(ByteBuffer msg) {
 	try {
-	    System.err.println(msg);
 	    sk.write(msg);
 	} catch(IOException e) {
 	    /* Generally assume errors are transient and treat them as
@@ -193,6 +192,7 @@ public class Connection {
 			    if((msg != null) && (msg.type == Session.MSG_SESS)) {
 				int error = msg.uint8();
 				if(error == 0) {
+				    result = 0;
 				    return(new Main());
 				} else {
 				    this.result = error;
