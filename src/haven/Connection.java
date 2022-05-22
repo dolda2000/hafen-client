@@ -167,7 +167,7 @@ public class Connection {
 
     private boolean select(double timeout) throws IOException {
 	sel.selectedKeys().clear();
-	sel.select((long)(timeout * 1000));
+	sel.select((long)Math.ceil(timeout * 1000));
 	return(key.isReadable());
     }
 
@@ -364,7 +364,7 @@ public class Connection {
 		    glob.oc.receive(delta);
 		ObjAck ack = objacks.get(id);
 		if(ack == null) {
-		    objacks.put(id, new ObjAck(id, fr, now));
+		    objacks.put(id, ack = new ObjAck(id, fr, now));
 		} else {
 		    if(fr > ack.frame)
 			ack.frame = fr;
@@ -449,7 +449,7 @@ public class Connection {
 	    for(Iterator<ObjAck> i = objacks.values().iterator(); i.hasNext();) {
 		ObjAck ack = i.next();
 		double txtime = Math.min(ack.lrecv + OBJACK_HOLD, ack.frecv + OBJACK_HOLD_MAX);
-		if(txtime >= now) {
+		if(txtime <= now) {
 		    if(msg == null) {
 			msg = new PMessage(Session.MSG_OBJACK);
 		    } else if(msg.size() > 1000 - 8) {
@@ -482,7 +482,9 @@ public class Connection {
 
 		try {
 		    Utils.checkirq();
-		    if(select(Math.max(to, 0))) {
+		    boolean readable = select(Math.max(to, 0));
+		    now = Utils.rtime();
+		    if(readable) {
 			PMessage msg;
 			while((msg = recv()) != null) {
 			    if(msg.type == Session.MSG_CLOSE)
@@ -495,7 +497,6 @@ public class Connection {
 		} catch(IOException e) {
 		    throw(new RuntimeException(e));
 		}
-		now = Utils.rtime();
 
 		pendto = min2(sendpending(), sendobjacks());
 		if((acktime > 0) && (now - acktime >= ACK_HOLD)) {
