@@ -111,14 +111,14 @@ public class Session implements Resource.Resolver {
 	private String resnm = null;
 	private int resver;
 	private Reference<Ref> ind;
-	
+
 	private CachedRes(int id) {
 	    resid = id;
 	}
-	
+
 	private class Ref implements Indir<Resource> {
 	    private Resource res;
-		    
+
 	    public Resource get() {
 		if(resnm == null)
 		    throw(new LoadingIndir(CachedRes.this));
@@ -126,7 +126,7 @@ public class Session implements Resource.Resolver {
 		    res = Resource.remote().load(resnm, resver, 0).get();
 		return(res);
 	    }
-	
+
 	    public String toString() {
 		if(res == null) {
 		    return("<res:" + resid + ">");
@@ -146,7 +146,7 @@ public class Session implements Resource.Resolver {
 		this.ind = new WeakReference<Ref>(ind = new Ref());
 	    return(ind);
 	}
-	
+
 	public void set(String nm, int ver) {
 	    Resource.remote().load(nm, ver, -5);
 	    synchronized(this) {
