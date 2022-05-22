@@ -36,6 +36,7 @@ public class Connection {
     private static final double ACK_HOLD = 0.030;
     public final SocketAddress server;
     public final String username;
+    public final Glob glob;
     private final DatagramChannel sk;
     private final Selector sel;
     private final SelectionKey key;
@@ -49,6 +50,7 @@ public class Connection {
     private Connection(SocketAddress server, String username) {
 	this.server = server;
 	this.username = username;
+	this.glob = new Glob(null);
 	try {
 	    this.sk = DatagramChannel.open();
 	    sk.connect(server);
@@ -103,20 +105,18 @@ public class Connection {
 
     private final ByteBuffer recvbuf = ByteBuffer.allocate(65536);
     private PMessage recv() throws IOException {
-	synchronized(recvbuf) {
-	    recvbuf.clear();
-	    int ret = sk.read(recvbuf);
-	    if(ret < 0) {
-		throw(new Error());
-	    } else if(ret == 0) {
-		return(null);
-	    } else {
-		recvbuf.flip();
-		byte type = recvbuf.get();
-		byte[] buf = new byte[recvbuf.remaining()];
-		recvbuf.get(buf);
-		return(new PMessage(type, buf));
-	    }
+	recvbuf.clear();
+	int ret = sk.read(recvbuf);
+	if(ret < 0) {
+	    throw(new Error());
+	} else if(ret == 0) {
+	    return(null);
+	} else {
+	    recvbuf.flip();
+	    byte type = recvbuf.get();
+	    byte[] buf = new byte[recvbuf.remaining()];
+	    recvbuf.get(buf);
+	    return(new PMessage(type, buf));
 	}
     }
 
@@ -218,8 +218,21 @@ public class Connection {
 	}
     }
 
+    private static class ObjAck {
+	long id;
+	int frame;
+	double frecv, lrecv;
+
+	ObjAck(long id, int frame, double recv) {
+	    this.id = id;
+	    this.frame = frame;
+	    this.frecv = this.lrecv = recv;
+	}
+    }
+
     private class Main implements Task {
 	private final Map<Short, RMessage> waiting = new HashMap<>();
+	private final Map<Long, ObjAck> objacks = new HashMap<>();
 	private double now, lasttx;
 	private short rseq, ackseq;
 	private double acktime = -1;
@@ -246,7 +259,6 @@ public class Connection {
 	    if(acktime < 0)
 		acktime = now;
 	    ackseq = seq;
-	    wake();
 	}
 
 	private void gotack(short seq) {
@@ -258,6 +270,27 @@ public class Connection {
 			i.remove();
 		    else
 			break;
+		}
+	    }
+	}
+
+	private void gotmapdata(Message msg) {
+	    glob.map.mapdata(msg);
+	}
+
+	private void gotobjdata(Message msg) {
+	    while(!msg.eom()) {
+		int fl = msg.uint8();
+		long id = msg.uint32();
+		int fr = msg.int32();
+		glob.oc.receive(fl, id, fr, msg);
+		ObjAck ack = objacks.get(id);
+		if(ack == null) {
+		    objacks.put(id, new ObjAck(id, fr, now));
+		} else {
+		    if(fr > ack.frame)
+			ack.frame = fr;
+		    ack.lrecv = now;
 		}
 	    }
 	}
@@ -287,12 +320,18 @@ public class Connection {
 		break;
 	    }
 	    case Session.MSG_MAPDATA: {
+		gotmapdata(msg);
 		break;
 	    }
 	    case Session.MSG_OBJDATA: {
+		gotobjdata(msg);
 		break;
 	    }
 	    }
+	}
+
+	private double min2(double a, double b) {
+	    return((a < 0) ? b : Math.min(a, b));
 	}
 
 	private double sendpending() {
@@ -319,17 +358,43 @@ public class Connection {
 			msg.retx++;
 			lasttx = now;
 		    } else {
-			if((mint < 0) || (txtime < mint))
-			    mint = txtime;
+			mint = min2(mint, txtime);
 		    }
 		}
 	    }
 	    return(mint);
 	}
 
+	private double sendobjacks() {
+	    double mint = -1;
+	    PMessage msg = null;
+	    for(Iterator<ObjAck> i = objacks.values().iterator(); i.hasNext();) {
+		ObjAck ack = i.next();
+		double txtime = Math.min(ack.lrecv + 0.08, ack.frecv + 0.5);
+		if(txtime >= now) {
+		    if(msg == null) {
+			msg = new PMessage(Session.MSG_OBJACK);
+		    } else if(msg.size() > 1000 - 8) {
+			send(msg);
+			msg = new PMessage(Session.MSG_OBJACK);
+		    }
+		    msg.adduint32(ack.id);
+		    msg.addint32(ack.frame);
+		    i.remove();
+		} else {
+		    mint = min2(mint, txtime);
+		}
+	    }
+	    if(msg != null) {
+		send(msg);
+		lasttx = now;
+	    }
+	    return(mint);
+	}
+
 	public Task run() {
 	    lasttx = now = Utils.rtime();
-	    double pendto = pending.isEmpty() ? -1 : now;
+	    double pendto = now;
 	    while(true) {
 		double to = 5 - (now - lasttx);
 		if(acktime > 0)
@@ -354,7 +419,7 @@ public class Connection {
 		}
 		now = Utils.rtime();
 
-		pendto = sendpending();
+		pendto = min2(sendpending(), sendobjacks());
 		if((acktime > 0) && (now - acktime >= ACK_HOLD)) {
 		    send((PMessage)new PMessage(Session.MSG_ACK).adduint16(ackseq));
 		    acktime = -1;
