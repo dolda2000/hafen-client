@@ -252,10 +252,38 @@ public class Connection {
 	private double now, lasttx;
 	private short rseq, ackseq;
 	private double acktime = -1;
+	private byte[] fragbuf = null;
+	private int fragtype;
 
-	private void handlerel(RMessage msg) {
-	    for(RMessageHandler cb : rcbs)
-		cb.handle(msg);
+	private void handlerel(PMessage msg) {
+	    if(msg.type == RMessage.RMSG_FRAGMENT) {
+		int head = msg.uint8();
+		if((head & 0x80) == 0) {
+		    if(fragbuf != null)
+			throw(new Session.MessageException("Got start fragment while still defragmenting", msg));
+		    fragbuf = msg.bytes();
+		    fragtype = head;
+		} else {
+		    if((head == 0x80) || (head == 0x81)) {
+			byte[] frag = msg.bytes();
+			byte[] curbuf = fragbuf;
+			byte[] newbuf = new byte[curbuf.length + frag.length];
+			System.arraycopy(curbuf, 0, newbuf, 0, curbuf.length);
+			System.arraycopy(frag, 0, newbuf, curbuf.length, frag.length);
+			fragbuf = newbuf;
+			if(head == 0x81) {
+			    PMessage nmsg = new PMessage(fragtype, fragbuf);
+			    fragbuf = null;
+			    handlerel(nmsg);
+			}
+		    } else {
+			throw(new Session.MessageException("Got invalid fragment type: " + head, msg));
+		    }
+		}
+	    } else {
+		for(RMessageHandler cb : rcbs)
+		    cb.handle(msg);
+	    }
 	}
 
 	private void gotrel(RMessage msg) {
@@ -293,7 +321,8 @@ public class Connection {
 	}
 
 	private void gotmapdata(Message msg) {
-	    glob.map.mapdata(msg);
+	    if(glob != null)
+		glob.map.mapdata(msg);
 	}
 
 	private void gotobjdata(Message msg) {
@@ -326,7 +355,8 @@ public class Connection {
 		    else
 			delta.attrs.add(attr);
 		}
-		glob.oc.receive(delta);
+		if(glob != null)
+		    glob.oc.receive(delta);
 		ObjAck ack = objacks.get(id);
 		if(ack == null) {
 		    objacks.put(id, new ObjAck(id, fr, now));
