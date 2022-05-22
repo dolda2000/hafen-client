@@ -301,7 +301,32 @@ public class Connection {
 		int fl = msg.uint8();
 		long id = msg.uint32();
 		int fr = msg.int32();
-		glob.oc.receive(fl, id, fr, msg);
+		OCache.ObjDelta delta = new OCache.ObjDelta(fl, id, fr);
+		while(true) {
+		    int afl = 0, len, type = msg.uint8();
+		    if(type == OCache.OD_END)
+			break;
+		    if((type & 0x80) == 0) {
+			len = (type & 0x78) >> 3;
+			if(len > 0)
+			    len++;
+			type = OCache.compodmap[type & 0x7];
+		    } else {
+			type = type & 0x7f;
+			if(((afl = msg.uint8()) & 0x80) == 0) {
+			    len = afl & 0x7f;
+			    afl = 0;
+			} else {
+			    len = msg.uint16();
+			}
+		    }
+		    PMessage attr = new PMessage(type, msg, len);
+		    if(type == OCache.OD_REM)
+			delta.rem = true;
+		    else
+			delta.attrs.add(attr);
+		}
+		glob.oc.receive(delta);
 		ObjAck ack = objacks.get(id);
 		if(ack == null) {
 		    objacks.put(id, new ObjAck(id, fr, now));

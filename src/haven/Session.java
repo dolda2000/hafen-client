@@ -213,7 +213,32 @@ public class Session implements Resource.Resolver {
 		int fl = msg.uint8();
 		long id = msg.uint32();
 		int frame = msg.int32();
-		oc.receive(fl, id, frame, msg);
+		OCache.ObjDelta delta = new OCache.ObjDelta(fl, id, frame);
+		while(true) {
+		    int afl = 0, len, type = msg.uint8();
+		    if(type == OCache.OD_END)
+			break;
+		    if((type & 0x80) == 0) {
+			len = (type & 0x78) >> 3;
+			if(len > 0)
+			    len++;
+			type = OCache.compodmap[type & 0x7];
+		    } else {
+			type = type & 0x7f;
+			if(((afl = msg.uint8()) & 0x80) == 0) {
+			    len = afl & 0x7f;
+			    afl = 0;
+			} else {
+			    len = msg.uint16();
+			}
+		    }
+		    PMessage attr = new PMessage(type, msg, len);
+		    if(type == OCache.OD_REM)
+			delta.rem = true;
+		    else
+			delta.attrs.add(attr);
+		}
+		oc.receive(delta);
 		synchronized(objacks) {
 		    if(objacks.containsKey(id)) {
 			ObjAck a = objacks.get(id);
