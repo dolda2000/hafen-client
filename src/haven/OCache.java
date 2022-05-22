@@ -55,6 +55,7 @@ public class OCache implements Iterable<Gob> {
     public static final int OD_ICON = 19;
     public static final int OD_RESATTR = 20;
     public static final int OD_END = 255;
+    public static final int[] compodmap = {OD_REM, OD_RESATTR, OD_FOLLOW, OD_MOVE, OD_RES, OD_LINBEG, OD_LINSTEP, OD_HOMING};
     public static final Coord2d posres = Coord2d.of(0x1.0p-10, 0x1.0p-10).mul(11, 11);
     /* XXX: Use weak refs */
     private Collection<Collection<Gob>> local = new LinkedList<Collection<Gob>>();
@@ -419,48 +420,32 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    private static final int[] compodmap = {OD_REM, OD_RESATTR, OD_FOLLOW, OD_MOVE, OD_RES, OD_LINBEG, OD_LINSTEP, OD_HOMING};
-    public GobInfo receive(int fl, long id, int frame, Message msg) {
-	List<PMessage> attrs = new ArrayList<>();
-	boolean hasrem = false;
-	GobInfo removed = null;
-	while(true) {
-	    int afl = 0, len, type = msg.uint8();
-	    if(type == OD_END)
-		break;
-	    if((type & 0x80) == 0) {
-		len = (type & 0x78) >> 3;
-		if(len > 0)
-		    len++;
-		type = compodmap[type & 0x7];
-	    } else {
-		type = type & 0x7f;
-		if(((afl = msg.uint8()) & 0x80) == 0) {
-		    len = afl & 0x7f;
-		    afl = 0;
-		} else {
-		    len = msg.uint16();
-		}
-	    }
-	    PMessage delta = new PMessage(type, msg, len);
-	    if(type == OD_REM) {
-		removed = netremove(id, frame - 1);
-		hasrem = true;
-	    } else {
-		attrs.add(delta);
-	    }
+    public static class ObjDelta {
+	public int fl, frame;
+	public long id;
+	public final List<PMessage> attrs = new LinkedList<>();
+	public boolean rem = false;
+
+	public ObjDelta(int fl, long id, int frame) {
+	    this.fl = fl;
+	    this.id = id;
+	    this.frame = frame;
 	}
-	if(hasrem)
-	    return(removed);
+	public ObjDelta() {}
+    }
+
+    public GobInfo receive(ObjDelta delta) {
+	if(delta.rem)
+	    return(netremove(delta.id, delta.frame - 1));
 	synchronized(netinfo) {
-	    if((fl & 1) != 0)
-		netremove(id, frame - 1);
-	    GobInfo ng = netget(id, frame);
+	    if((delta.fl & 1) != 0)
+		netremove(delta.id, delta.frame - 1);
+	    GobInfo ng = netget(delta.id, delta.frame);
 	    if(ng != null) {
 		synchronized(ng) {
-		    ng.frame = frame;
-		    ng.virtual = ((fl & 2) != 0);
-		    ng.pending.addAll(attrs);
+		    ng.frame = delta.frame;
+		    ng.virtual = ((delta.fl & 2) != 0);
+		    ng.pending.addAll(delta.attrs);
 		    ng.checkdirty(false);
 		}
 	    }
