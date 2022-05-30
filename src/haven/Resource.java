@@ -844,6 +844,13 @@ public class Resource implements Serializable {
 	public Resource getres() {
 	    return(Resource.this);
 	}
+
+	public String toString() {
+	    if(this instanceof IDLayer)
+		return(String.format("#<%s (%s) in %s>", getClass().getSimpleName(), ((IDLayer)this).layerid(), Resource.this.name));
+	    else
+		return(String.format("#<%s in %s>", getClass().getSimpleName(), Resource.this.name));
+	}
     }
 
     public interface LayerFactory<T extends Layer> {
