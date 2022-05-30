@@ -293,9 +293,20 @@ public class Resource implements Serializable {
     }
 
     public static class HttpSource implements ResSource, Serializable {
-	public static final String USER_AGENT = "Haven/1.0";
+	public static final String USER_AGENT;
 	private final transient SslHelper ssl;
 	public URL baseurl;
+
+	static {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append("Haven/1.0");
+	    if(!Config.confid.equals(""))
+		buf.append(" (" + Config.confid + ")");
+	    String jv = Utils.getprop("java.version", null);
+	    if((jv != null) && !jv.equals(""))
+		buf.append(" Java/" + jv);
+	    USER_AGENT = buf.toString();
+	}
 	
 	{
 	    ssl = new SslHelper();
