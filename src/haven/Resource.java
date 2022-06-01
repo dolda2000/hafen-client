@@ -1305,40 +1305,33 @@ public class Resource implements Serializable {
 	public void init() {}
     }
 
-    public class ResClassLoader extends ClassLoader {
-	public ResClassLoader(ClassLoader parent) {
+    public static class ResClassLoader extends ClassLoader {
+	public final CodeEntry entry;
+
+	public ResClassLoader(ClassLoader parent, CodeEntry entry) {
 	    super(parent);
+	    this.entry = entry;
 	}
-	
+
+	public Code findcode(String name) {
+	    return(entry.clmap.get(name));
+	}
+
+	public Class<?> findClass(String name) throws ClassNotFoundException {
+	    Code c = findcode(name);
+	    if(c == null)
+		throw(new ResourceClassNotFoundException(name, entry.getres()));
+	    return(defineClass(name, c.data, 0, c.data.length));
+	}
+
 	public Resource getres() {
-	    return(Resource.this);
+	    return(entry.getres());
 	}
 	
 	public String toString() {
-	    return("cl:" + Resource.this.toString());
+	    return("cl:" + entry.getres());
 	}
     };
-
-    public static Resource classres(final Class<?> cl) {
-	return(AccessController.doPrivileged(new PrivilegedAction<Resource>() {
-		    public Resource run() {
-			ClassLoader l = cl.getClassLoader();
-			if(l instanceof ResClassLoader)
-			    return(((ResClassLoader)l).getres());
-			throw(new RuntimeException("Cannot fetch resource of non-resloaded class " + cl));
-		    }
-		}));
-    }
-
-    public <T> T getcode(Class<T> cl, boolean fail) {
-	CodeEntry e = layer(CodeEntry.class);
-	if(e == null) {
-	    if(fail)
-		throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
-	    return(null);
-	}
-	return(e.get(cl, fail));
-    }
 
     public static class LibClassLoader extends ClassLoader {
 	private final ClassLoader[] classpath;
@@ -1424,16 +1417,8 @@ public class Resource implements Serializable {
 				    }
 				    ret = new LibClassLoader(ret, loaders);
 				}
-				if(clmap.size() > 0) {
-				    ret = new ResClassLoader(ret) {
-					    public Class<?> findClass(String name) throws ClassNotFoundException {
-						Code c = clmap.get(name);
-						if(c == null)
-						    throw(new ResourceClassNotFoundException(name, Resource.this));
-						return(defineClass(name, c.data, 0, c.data.length));
-					    }
-					};
-				}
+				if(clmap.size() > 0)
+				    ret = new ResClassLoader(ret, CodeEntry.this);
 				return(ret);
 			    }
 			});
@@ -1517,6 +1502,27 @@ public class Resource implements Serializable {
 	public <T> T get(Class<T> cl) {
 	    return(get(cl, true));
 	}
+    }
+
+    public static Resource classres(final Class<?> cl) {
+	return(AccessController.doPrivileged(new PrivilegedAction<Resource>() {
+		    public Resource run() {
+			ClassLoader l = cl.getClassLoader();
+			if(l instanceof ResClassLoader)
+			    return(((ResClassLoader)l).getres());
+			throw(new RuntimeException("Cannot fetch resource of non-resloaded class " + cl));
+		    }
+		}));
+    }
+
+    public <T> T getcode(Class<T> cl, boolean fail) {
+	CodeEntry e = layer(CodeEntry.class);
+	if(e == null) {
+	    if(fail)
+		throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
+	    return(null);
+	}
+	return(e.get(cl, fail));
     }
 
     @LayerName("audio2")
