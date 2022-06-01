@@ -336,7 +336,7 @@ public class Resource implements Serializable {
 
 	public InputStream get(String name) throws IOException {
 	    URL resurl = encodeurl(new URL(baseurl, name + ".res"));
-	    return(new RetryingInputStream() {
+	    RetryingInputStream ret = new RetryingInputStream() {
 		    protected InputStream create() throws IOException {
 			URLConnection c;
 			if(resurl.getProtocol().equals("https"))
@@ -353,7 +353,9 @@ public class Resource implements Serializable {
 			c.addRequestProperty("User-Agent", ua);
 			return(c.getInputStream());
 		    }
-		});
+		};
+	    ret.check();
+	    return(ret);
 	}
 
 	public String toString() {
