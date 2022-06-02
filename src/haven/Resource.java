@@ -1926,7 +1926,7 @@ public class Resource implements Serializable {
 		Matcher m = classpat.matcher(ln);
 		if(m.find()) {
 		    i.previous();
-		    i.add("/* From " + resnm + " v" + resver + " */");
+		    i.add("@haven.FromResource(name = \"" + resnm + "\", version = " + resver + ")");
 		    i.next();
 		    break;
 		}
