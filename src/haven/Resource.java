@@ -1895,7 +1895,6 @@ public class Resource implements Serializable {
 	    switch(c) {
 	    case 'h':
 		usage_getcode(System.out);
-		System.out.println("usage: haven.Resource get-code [-h] [-U RESOURCE-URL] RESOURCE-NAME [DEST-DIR]");
 		System.exit(0);
 		break;
 	    case 'q':
