@@ -1927,7 +1927,6 @@ public class Resource implements Serializable {
 		if(m.find()) {
 		    i.previous();
 		    i.add("@haven.FromResource(name = \"" + resnm + "\", version = " + resver + ")");
-		    i.next();
 		    break;
 		}
 		m = pkgpat.matcher(ln);
