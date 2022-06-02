@@ -31,6 +31,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.annotation.*;
 import java.util.*;
 import java.util.function.*;
+import java.util.regex.*;
 import java.net.*;
 import java.io.*;
 import java.nio.file.*;
@@ -1878,10 +1879,10 @@ public class Resource implements Serializable {
 		System.exit(1);
 	    }
 	}
-	ResSource src = new HttpSource(url);
+	ResSource source = new HttpSource(url);
 	Map<String, byte[]> code = new HashMap<>();
 	int resver;
-	try(InputStream inp = src.get(resnm)) {
+	try(InputStream inp = source.get(resnm)) {
 	    Message fp = new StreamMessage(inp);
 	    if(!Arrays.equals(RESOURCE_SIG, fp.bytes(RESOURCE_SIG.length))) {
 		System.err.println("get-code: invalid resource: " + resnm);
@@ -1905,20 +1906,39 @@ public class Resource implements Serializable {
 	} catch(FileNotFoundException e) {
 	    System.err.println("get-code: no such resource: " + resnm);
 	    System.exit(1);
+	    return;
 	} catch(IOException e) {
 	    System.err.println("get-code: error when fetching " + resnm + ": " + e);
 	    System.exit(1);
+	    return;
 	}
 	if(code.isEmpty()) {
 	    System.err.println("get-code: no source code found in resource: " + resnm);
 	    System.exit(1);
 	}
+	Pattern classpat = Pattern.compile("^(public\\s+)?(abstract\\s+)?(class|interface)\\s+(\\S+)");
+	Pattern pkgpat   = Pattern.compile("^package\\s+(\\S+)\\s*;");
 	for(String nm : code.keySet()) {
-	    Path out = Utils.pj(dst, nm);
+	    Path dir = dst;
+	    List<String> lines = new LinkedList<>(Arrays.asList(new String(code.get(nm), Utils.utf8).split("\n")));
+	    for(ListIterator<String> i = lines.listIterator(); i.hasNext();) {
+		String ln = i.next();
+		Matcher m = classpat.matcher(ln);
+		if(m.find()) {
+		    i.previous();
+		    i.add("/* From " + resnm + " v" + resver + " */");
+		    i.next();
+		    break;
+		}
+		m = pkgpat.matcher(ln);
+		if(m.find())
+		    dir = Utils.pj(dir, m.group(1).split("\\."));
+	    }
+	    Path out = Utils.pj(dir, nm);
 	    try {
 		if(!Files.isDirectory(out.getParent()))
 		    Files.createDirectories(out.getParent());
-		Files.write(out, code.get(nm));
+		Files.write(out, lines, Utils.utf8);
 		if(!quiet)
 		    System.err.println("wrote " + out);
 	    } catch(IOException e) {
