@@ -1309,6 +1309,7 @@ public class Resource implements Serializable {
     }
 
     public static class ResClassLoader extends ClassLoader {
+	public static final boolean OVERRIDE_ALL = false;
 	public final CodeEntry entry;
 
 	public ResClassLoader(ClassLoader parent, CodeEntry entry) {
@@ -1325,6 +1326,41 @@ public class Resource implements Serializable {
 	    if(c == null)
 		throw(new ResourceClassNotFoundException(name, entry.getres()));
 	    return(defineClass(name, c.data, 0, c.data.length));
+	}
+
+	public static FromResource getsource(Class<?> cl) {
+	    for(; cl != null; cl = cl.getEnclosingClass()) {
+		FromResource src = cl.getAnnotation(FromResource.class);
+		if(src != null)
+		    return(src);
+	    }
+	    return(null);
+	}
+
+	public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+	    synchronized(getClassLoadingLock(name)) {
+		Class<?> ret = findLoadedClass(name);
+		if(ret == null) {
+		    try {
+			ret = getParent().loadClass(name);
+			if(findcode(name) != null) {
+			    boolean override = OVERRIDE_ALL;
+			    FromResource src = getsource(ret);
+			    if((src != null) && src.name().equals(entry.getres().name) && (src.version() == entry.getres().ver))
+				override = true;
+			    Debug.dump(entry.getres(), name, override);
+			    if(!override)
+				ret = null;
+			}
+		    } catch(ClassNotFoundException e) {
+		    }
+		}
+		if(ret == null)
+		    ret = findClass(name);
+		if(resolve)
+		    resolveClass(ret);
+		return(ret);
+	    }
 	}
 
 	public Resource getres() {
@@ -1344,13 +1380,25 @@ public class Resource implements Serializable {
 	    this.classpath = classpath.toArray(new ClassLoader[0]);
 	}
 	
-	public Class<?> findClass(String name) throws ClassNotFoundException {
+	public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+	    /* XXX? This scheme seems a bit strange and weird, but I'm
+	     * not sure what the better alternative would be to still
+	     * allow selectively overriding resource classes. */
+	    Class<?> ret = null;
+	    try {
+		ret = getParent().loadClass(name);
+	    } catch(ClassNotFoundException e) {}
 	    for(ClassLoader lib : classpath) {
 		try {
-		    return(lib.loadClass(name));
+		    Class<?> found = lib.loadClass(name);
+		    if(found.getClassLoader() instanceof ResClassLoader)
+			ret = found;
+		    break;
 		} catch(ClassNotFoundException e) {}
 	    }
-	    throw(new ClassNotFoundException("Could not find " + name + " in any of " + Arrays.asList(classpath).toString()));
+	    if(ret == null)
+		throw(new ClassNotFoundException("Could not find " + name + " in any of " + Arrays.asList(classpath).toString()));
+	    return(ret);
 	}
     }
 
