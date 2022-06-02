@@ -1688,10 +1688,10 @@ public class Resource implements Serializable {
 	return(o.name.equals(this.name) && (o.ver == this.ver));
     }
 
+    private static final byte[] RESOURCE_SIG = "Haven Resource 1".getBytes(Utils.ascii);
     private void load(InputStream st) throws IOException {
 	Message in = new StreamMessage(st);
-	byte[] sig = "Haven Resource 1".getBytes(Utils.ascii);
-	if(!Arrays.equals(sig, in.bytes(sig.length)))
+	if(!Arrays.equals(RESOURCE_SIG, in.bytes(RESOURCE_SIG.length)))
 	    throw(new LoadException("Invalid res signature", this));
 	int ver = in.uint16();
 	List<Layer> layers = new LinkedList<Layer>();
@@ -1830,10 +1830,110 @@ public class Resource implements Serializable {
 	}
     }
 
+    private static void usage_getcode(PrintStream out) {
+	out.println("usage: haven.Resource get-code [-h] [-U RESOURCE-URL] RESOURCE-NAME [DEST-DIR]");
+    }
+
+    public static void cmd_getcode(String[] args) {
+	URL url = null;
+	PosixArgs opt = PosixArgs.getopt(args, "hqU:");
+	if(opt == null) {
+	    usage_getcode(System.err);
+	    System.exit(1);
+	}
+	boolean quiet = false;
+	for(char c : opt.parsed()) {
+	    switch(c) {
+	    case 'h':
+		usage_getcode(System.out);
+		System.out.println("usage: haven.Resource get-code [-h] [-U RESOURCE-URL] RESOURCE-NAME [DEST-DIR]");
+		System.exit(0);
+		break;
+	    case 'q':
+		quiet = true;
+		break;
+	    case 'U':
+		try {
+		    url = new URL(opt.arg);
+		} catch(MalformedURLException e) {
+		    System.err.println("get-code: malformed url: " + opt.arg);
+		    System.exit(1);
+		}
+		break;
+	    }
+	}
+	if(opt.rest.length < 1) {
+	    usage_getcode(System.err);
+	    System.exit(1);
+	}
+	String resnm = opt.rest[0];
+	Path dst = (opt.rest.length > 1) ? Utils.path(opt.rest[1]) : Utils.path("./src");
+	if(!Files.isDirectory(dst)) {
+	    System.err.println("get-code: destination directory does not exist: " + dst);
+	    System.exit(1);
+	}
+	if(url == null) {
+	    if((url = Config.resurl) == null) {
+		System.err.println("get-code: no resource URL configured");
+		System.exit(1);
+	    }
+	}
+	ResSource src = new HttpSource(url);
+	Map<String, byte[]> code = new HashMap<>();
+	int resver;
+	try(InputStream inp = src.get(resnm)) {
+	    Message fp = new StreamMessage(inp);
+	    if(!Arrays.equals(RESOURCE_SIG, fp.bytes(RESOURCE_SIG.length))) {
+		System.err.println("get-code: invalid resource: " + resnm);
+		System.exit(1);
+	    }
+	    resver = fp.uint16();
+	    while(!fp.eom()) {
+		String laynm = fp.string();
+		Message lay = new LimitMessage(fp, fp.int32());
+		if(laynm.equals("src")) {
+		    int fver = lay.uint8();
+		    if(fver == 1) {
+			String nm = lay.string();
+			code.put(nm, lay.bytes());
+		    } else {
+			System.err.println("get-code: warning: unknown source code layer version: " + fver);
+		    }
+		}
+		lay.skip();
+	    }
+	} catch(FileNotFoundException e) {
+	    System.err.println("get-code: no such resource: " + resnm);
+	    System.exit(1);
+	} catch(IOException e) {
+	    System.err.println("get-code: error when fetching " + resnm + ": " + e);
+	    System.exit(1);
+	}
+	if(code.isEmpty()) {
+	    System.err.println("get-code: no source code found in resource: " + resnm);
+	    System.exit(1);
+	}
+	for(String nm : code.keySet()) {
+	    Path out = Utils.pj(dst, nm);
+	    try {
+		if(!Files.isDirectory(out.getParent()))
+		    Files.createDirectories(out.getParent());
+		Files.write(out, code.get(nm));
+		if(!quiet)
+		    System.err.println("wrote " + out);
+	    } catch(IOException e) {
+		System.err.println("get-code: could not write " + nm + ": " + e);
+		System.exit(1);
+	    }
+	}
+    }
+
     public static void main(String[] args) throws Exception {
 	String cmd = args[0].intern();
-	if(cmd == "update") {
+	if(cmd == "update-list") {
 	    updateloadlist(Utils.path(args[1]), Utils.path(args[2]));
+	} else if(cmd == "get-code") {
+	    cmd_getcode(Utils.splice(args, 1));
 	}
     }
 }
