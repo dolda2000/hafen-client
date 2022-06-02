@@ -1994,12 +1994,98 @@ public class Resource implements Serializable {
 	}
     }
 
+    private static void usage_findupdates(PrintStream out) {
+	out.println("usage: haven.Resource find-updates [-h] [-U RESOURCE-URL] [SOURCE-DIR]");
+    }
+
+    public static void cmd_findupdates(String[] args) {
+	URL url = null;
+	PosixArgs opt = PosixArgs.getopt(args, "hU:");
+	if(opt == null) {
+	    usage_findupdates(System.err);
+	    System.exit(1);
+	}
+	for(char c : opt.parsed()) {
+	    switch(c) {
+	    case 'h':
+		usage_findupdates(System.out);
+		System.exit(0);
+		break;
+	    case 'U':
+		try {
+		    url = new URL(opt.arg);
+		} catch(MalformedURLException e) {
+		    System.err.println("get-code: malformed url: " + opt.arg);
+		    System.exit(1);
+		}
+		break;
+	    }
+	}
+	Path src = (opt.rest.length > 1) ? Utils.path(opt.rest[1]) : Utils.path("./src");
+	if(!Files.isDirectory(src)) {
+	    System.err.println("get-code: destination directory does not exist: " + src);
+	    System.exit(1);
+	}
+	if(url == null) {
+	    if((url = Config.resurl) == null) {
+		System.err.println("get-code: no resource URL configured");
+		System.exit(1);
+	    }
+	}
+	ResSource source = new HttpSource(url);
+	Pattern srcpat = Pattern.compile("@.*FromResource\\s*\\([^)]*name\\s*=\\s*\"([^\"]*)\"[^)]*version\\s*=\\s*(\\d+)[^)]*\\)");
+	Map<String, Integer> found = new HashMap<>();
+	try {
+	    for(Path sp : (Iterable<Path>)Files.walk(src)::iterator) {
+		if(Files.isRegularFile(sp) && sp.getFileName().toString().endsWith(".java")) {
+		    Matcher m = srcpat.matcher(new String(Files.readAllBytes(sp), Utils.utf8));
+		    if(m.find()) {
+			String nm = m.group(1);
+			int ver = Integer.parseInt(m.group(2));
+			Integer pver = found.get(nm);
+			if((pver != null) && (pver != ver)) {
+			    System.err.println("find-updates: warning: found conflicting versions of " + nm + ": " + ver + " and " + pver);
+			    found.put(nm, Math.min(ver, pver));
+			} else {
+			    found.put(nm, ver);
+			}
+		    }
+		}
+	    }
+	} catch(IOException e) {
+	    throw(new RuntimeException(e));
+	}
+	for(Map.Entry<String, Integer> ent : found.entrySet()) {
+	    String nm = ent.getKey();
+	    int fver = ent.getValue();
+	    try(InputStream in = source.get(nm)) {
+		Message fp = new StreamMessage(in);
+		if(!Arrays.equals(RESOURCE_SIG, fp.bytes(RESOURCE_SIG.length))) {
+		    System.err.println("find-updates: warning: remote resource in invalid: " + nm);
+		    continue;
+		}
+		int resver = fp.uint16();
+		if(resver > fver) {
+		    System.out.println(nm);
+		} else if(resver < fver) {
+		    System.err.println("find-updates: warning: " + nm + " is, strangely, newer locally (" + fver + " locally, " + resver + " remotely)");
+		}
+	    } catch(FileNotFoundException e) {
+		System.err.println("find-updates: warning: resource no longer found: " + nm);
+	    } catch(IOException e) {
+		System.err.println("find-updates: warning: error when checking " + nm + ": " + e);
+	    }
+	}
+    }
+
     public static void main(String[] args) throws Exception {
 	String cmd = args[0].intern();
 	if(cmd == "update-list") {
 	    updateloadlist(Utils.path(args[1]), Utils.path(args[2]));
 	} else if(cmd == "get-code") {
 	    cmd_getcode(Utils.splice(args, 1));
+	} else if(cmd == "find-updates") {
+	    cmd_findupdates(Utils.splice(args, 1));
 	}
     }
 }
