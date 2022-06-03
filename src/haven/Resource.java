@@ -293,9 +293,20 @@ public class Resource implements Serializable {
     }
 
     public static class HttpSource implements ResSource, Serializable {
-	public static final String USER_AGENT = "Haven/1.0";
+	public static final String USER_AGENT;
 	private final transient SslHelper ssl;
 	public URL baseurl;
+
+	static {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append("Haven/1.0");
+	    if(!Config.confid.equals(""))
+		buf.append(" (" + Config.confid + ")");
+	    String jv = Utils.getprop("java.version", null);
+	    if((jv != null) && !jv.equals(""))
+		buf.append(" Java/" + jv);
+	    USER_AGENT = buf.toString();
+	}
 	
 	{
 	    ssl = new SslHelper();
@@ -832,6 +843,13 @@ public class Resource implements Serializable {
 	
 	public Resource getres() {
 	    return(Resource.this);
+	}
+
+	public String toString() {
+	    if(this instanceof IDLayer)
+		return(String.format("#<%s (%s) in %s>", getClass().getSimpleName(), ((IDLayer)this).layerid(), Resource.this.name));
+	    else
+		return(String.format("#<%s in %s>", getClass().getSimpleName(), Resource.this.name));
 	}
     }
 

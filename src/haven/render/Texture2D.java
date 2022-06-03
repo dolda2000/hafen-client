@@ -98,6 +98,8 @@ public class Texture2D extends Texture {
 	}
     }
 
+    public Sampler2D sampler() {return(new Sampler2D(this));}
+
     public String toString() {
 	return(String.format("#<tex2d %sx%d %dx%d%s>", ifmt.cf, ifmt.nc, w, h, descfmt()));
     }

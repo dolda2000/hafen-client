@@ -539,28 +539,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
-    @Deprecated private String oltag(int id) {
-	switch(id) {
-	case 0: case 1:
-	    return("cplot");
-	case 2: case 3:
-	    return("vlg");
-	case 4: case 5:
-	    return("realm");
-	case 16:
-	    return("cplot-s");
-	case 17:
-	    return("sel");
-	}
-	return("n/a");
-    }
-    @Deprecated public void enol(int id) {
-	enol(oltag(id));
-    }
-    @Deprecated public void disol(int id) {
-	disol(oltag(id));
-    }
-
     private final Gobs gobs;
     private class Gobs implements RenderTree.Node, OCache.ChangeCallback {
 	final OCache oc = glob.oc;
@@ -1849,15 +1827,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		plgob = -1;
 	    else
 		plgob = Utils.uint32((Integer)args[0]);
-	} else if(msg == "flashol") {
-	    Collection<String> ols = new ArrayList<>();
-	    int olflash = (Integer)args[0];
-	    for(int i = 0; i < 32; i++) {
-		if((olflash & (1 << i)) != 0)
-		    ols.add(oltag(i));
-	    }
-	    double tm = ((Number)args[1]).doubleValue() / 1000.0;
-	    flashol(ols, tm);
 	} else if(msg == "flashol2") {
 	    Collection<String> ols = new LinkedList<>();
 	    double tm = ((Number)args[0]).doubleValue() / 100.0;

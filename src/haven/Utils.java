@@ -50,12 +50,15 @@ public class Utils {
 	return(new Coord(img.getWidth(), img.getHeight()));
     }
 
-    public static boolean checkhit(BufferedImage img, Coord c) {
+    public static boolean checkhit(BufferedImage img, Coord c, int thres) {
 	if(!c.isect(Coord.z, imgsz(img)))
 	    return(false);
 	if(img.getRaster().getNumBands() < 4)
 	    return(true);
-	return(img.getRaster().getSample(c.x, c.y, 3) >= 128);
+	return(img.getRaster().getSample(c.x, c.y, 3) >= thres);
+    }
+    public static boolean checkhit(BufferedImage img, Coord c) {
+	return(checkhit(img, c, 128));
     }
 
     public static void defer(final Runnable r) {
@@ -1894,6 +1897,12 @@ public class Utils {
 	while(o.hasNext())
 	    dst.add(o.next());
 	return(dst);
+    }
+
+    public static <T> Optional<T> ocast(Object x, Class<T> cl) {
+	if(cl.isInstance(x))
+	    return(Optional.of(cl.cast(x)));
+	return(Optional.empty());
     }
 
     public static int sidcmp(Object a, Object b) {
