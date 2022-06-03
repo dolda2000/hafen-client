@@ -1355,7 +1355,6 @@ public class Resource implements Serializable {
 			    FromResource src = getsource(ret);
 			    if((src != null) && ((src.name().equals(entry.getres().name) && (src.version() == entry.getres().ver)) || src.override()))
 				override = true;
-			    Debug.dump(entry.getres(), name, override);
 			    if(!override)
 				ret = null;
 			}
