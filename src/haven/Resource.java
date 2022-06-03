@@ -1887,17 +1887,18 @@ public class Resource implements Serializable {
     }
 
     private static void usage_getcode(PrintStream out) {
-	out.println("usage: haven.Resource get-code [-h] [-U RESOURCE-URL] RESOURCE-NAME [DEST-DIR]");
+	out.println("usage: haven.Resource get-code [-h] [-U RESOURCE-URL] [-o DEST-DIR] RESOURCE-NAME...");
     }
 
     public static void cmd_getcode(String[] args) {
 	URL url = null;
-	PosixArgs opt = PosixArgs.getopt(args, "hqU:");
+	PosixArgs opt = PosixArgs.getopt(args, "hqo:U:");
 	if(opt == null) {
 	    usage_getcode(System.err);
 	    System.exit(1);
 	}
 	boolean quiet = false;
+	Path dst = Utils.path("./src");
 	for(char c : opt.parsed()) {
 	    switch(c) {
 	    case 'h':
@@ -1906,6 +1907,9 @@ public class Resource implements Serializable {
 		break;
 	    case 'q':
 		quiet = true;
+		break;
+	    case 'o':
+		dst = Utils.path(opt.arg);
 		break;
 	    case 'U':
 		try {
@@ -1921,8 +1925,6 @@ public class Resource implements Serializable {
 	    usage_getcode(System.err);
 	    System.exit(1);
 	}
-	String resnm = opt.rest[0];
-	Path dst = (opt.rest.length > 1) ? Utils.path(opt.rest[1]) : Utils.path("./src");
 	if(!Files.isDirectory(dst)) {
 	    System.err.println("get-code: destination directory does not exist: " + dst);
 	    System.exit(1);
@@ -1934,69 +1936,71 @@ public class Resource implements Serializable {
 	    }
 	}
 	ResSource source = new HttpSource(url);
-	Map<String, byte[]> code = new HashMap<>();
-	int resver;
-	try(InputStream inp = source.get(resnm)) {
-	    Message fp = new StreamMessage(inp);
-	    if(!Arrays.equals(RESOURCE_SIG, fp.bytes(RESOURCE_SIG.length))) {
-		System.err.println("get-code: invalid resource: " + resnm);
-		System.exit(1);
-	    }
-	    resver = fp.uint16();
-	    while(!fp.eom()) {
-		String laynm = fp.string();
-		Message lay = new LimitMessage(fp, fp.int32());
-		if(laynm.equals("src")) {
-		    int fver = lay.uint8();
-		    if(fver == 1) {
-			String nm = lay.string();
-			code.put(nm, lay.bytes());
-		    } else {
-			System.err.println("get-code: warning: unknown source code layer version: " + fver);
+	for(String resnm : opt.rest) {
+	    Map<String, byte[]> code = new HashMap<>();
+	    int resver;
+	    try(InputStream inp = source.get(resnm)) {
+		Message fp = new StreamMessage(inp);
+		if(!Arrays.equals(RESOURCE_SIG, fp.bytes(RESOURCE_SIG.length))) {
+		    System.err.println("get-code: invalid resource: " + resnm);
+		    System.exit(1);
+		}
+		resver = fp.uint16();
+		while(!fp.eom()) {
+		    String laynm = fp.string();
+		    Message lay = new LimitMessage(fp, fp.int32());
+		    if(laynm.equals("src")) {
+			int fver = lay.uint8();
+			if(fver == 1) {
+			    String nm = lay.string();
+			    code.put(nm, lay.bytes());
+			} else {
+			    System.err.println("get-code: warning: unknown source code layer version: " + fver);
+			}
 		    }
+		    lay.skip();
 		}
-		lay.skip();
-	    }
-	} catch(FileNotFoundException e) {
-	    System.err.println("get-code: no such resource: " + resnm);
-	    System.exit(1);
-	    return;
-	} catch(IOException e) {
-	    System.err.println("get-code: error when fetching " + resnm + ": " + e);
-	    System.exit(1);
-	    return;
-	}
-	if(code.isEmpty()) {
-	    System.err.println("get-code: no source code found in resource: " + resnm);
-	    System.exit(1);
-	}
-	Pattern classpat = Pattern.compile("^(public\\s+)?(abstract\\s+)?(class|interface)\\s+(\\S+)");
-	Pattern pkgpat   = Pattern.compile("^package\\s+(\\S+)\\s*;");
-	for(String nm : code.keySet()) {
-	    Path dir = dst;
-	    List<String> lines = new LinkedList<>(Arrays.asList(new String(code.get(nm), Utils.utf8).split("\n")));
-	    for(ListIterator<String> i = lines.listIterator(); i.hasNext();) {
-		String ln = i.next();
-		Matcher m = classpat.matcher(ln);
-		if(m.find()) {
-		    i.previous();
-		    i.add("@haven.FromResource(name = \"" + resnm + "\", version = " + resver + ")");
-		    break;
-		}
-		m = pkgpat.matcher(ln);
-		if(m.find())
-		    dir = Utils.pj(dir, m.group(1).split("\\."));
-	    }
-	    Path out = Utils.pj(dir, nm);
-	    try {
-		if(!Files.isDirectory(out.getParent()))
-		    Files.createDirectories(out.getParent());
-		Files.write(out, lines, Utils.utf8);
-		if(!quiet)
-		    System.err.println("wrote " + out);
-	    } catch(IOException e) {
-		System.err.println("get-code: could not write " + nm + ": " + e);
+	    } catch(FileNotFoundException e) {
+		System.err.println("get-code: no such resource: " + resnm);
 		System.exit(1);
+		return;
+	    } catch(IOException e) {
+		System.err.println("get-code: error when fetching " + resnm + ": " + e);
+		System.exit(1);
+		return;
+	    }
+	    if(code.isEmpty()) {
+		System.err.println("get-code: no source code found in resource: " + resnm);
+		System.exit(1);
+	    }
+	    Pattern classpat = Pattern.compile("^(public\\s+)?(abstract\\s+)?(class|interface)\\s+(\\S+)");
+	    Pattern pkgpat   = Pattern.compile("^package\\s+(\\S+)\\s*;");
+	    for(String nm : code.keySet()) {
+		Path dir = dst;
+		List<String> lines = new LinkedList<>(Arrays.asList(new String(code.get(nm), Utils.utf8).split("\n")));
+		for(ListIterator<String> i = lines.listIterator(); i.hasNext();) {
+		    String ln = i.next();
+		    Matcher m = classpat.matcher(ln);
+		    if(m.find()) {
+			i.previous();
+			i.add("@haven.FromResource(name = \"" + resnm + "\", version = " + resver + ")");
+			break;
+		    }
+		    m = pkgpat.matcher(ln);
+		    if(m.find())
+			dir = Utils.pj(dir, m.group(1).split("\\."));
+		}
+		Path out = Utils.pj(dir, nm);
+		try {
+		    if(!Files.isDirectory(out.getParent()))
+			Files.createDirectories(out.getParent());
+		    Files.write(out, lines, Utils.utf8);
+		    if(!quiet)
+			System.err.println("wrote " + out);
+		} catch(IOException e) {
+		    System.err.println("get-code: could not write " + nm + ": " + e);
+		    System.exit(1);
+		}
 	    }
 	}
     }
