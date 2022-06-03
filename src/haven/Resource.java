@@ -1898,7 +1898,7 @@ public class Resource implements Serializable {
 	    System.exit(1);
 	}
 	boolean quiet = false;
-	Path dst = Utils.path("./src");
+	Path dst = Utils.path("src");
 	for(char c : opt.parsed()) {
 	    switch(c) {
 	    case 'h':
@@ -2032,7 +2032,7 @@ public class Resource implements Serializable {
 		break;
 	    }
 	}
-	Path src = (opt.rest.length > 1) ? Utils.path(opt.rest[1]) : Utils.path("./src");
+	Path src = (opt.rest.length > 1) ? Utils.path(opt.rest[1]) : Utils.path("src");
 	if(!Files.isDirectory(src)) {
 	    System.err.println("get-code: destination directory does not exist: " + src);
 	    System.exit(1);
