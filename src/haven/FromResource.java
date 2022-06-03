@@ -33,4 +33,5 @@ import java.lang.annotation.*;
 public @interface FromResource {
     public String name();
     public int version();
+    public boolean override() default false;
 }

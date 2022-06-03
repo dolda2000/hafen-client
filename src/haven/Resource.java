@@ -1353,7 +1353,7 @@ public class Resource implements Serializable {
 			if(findcode(name) != null) {
 			    boolean override = OVERRIDE_ALL;
 			    FromResource src = getsource(ret);
-			    if((src != null) && src.name().equals(entry.getres().name) && (src.version() == entry.getres().ver))
+			    if((src != null) && ((src.name().equals(entry.getres().name) && (src.version() == entry.getres().ver)) || src.override()))
 				override = true;
 			    Debug.dump(entry.getres(), name, override);
 			    if(!override)
