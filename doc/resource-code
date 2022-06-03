@@ -49,7 +49,7 @@ specified with the `-o' command-line argument. For example:
 If need be, the `get-code' command can also fetch multiple resources
 in one invocation. For example:
 
- > java -cp bin/hafen.jar haven.Resource get-code ui/tt/name ui/tt/food
+ > java -cp bin/hafen.jar haven.Resource get-code ui/tt/name ui/tt/wear
 
 All sub-commands use standard Posix command-line syntax and support
 the `-h' option to print a brief usage message for shorthand use. For
