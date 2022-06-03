@@ -166,7 +166,7 @@ the unmodified resource code. Using the branch name
 `upstream-resources' here (for illustrative purposes only), this would
 be done by creating the branch from the upstream history,
 `origin/master', fetch the resource code there, commit said code, and
-then merging the `upstream-resource' branch into your main development
+then merge the `upstream-resource' branch into your main development
 branch. Assuming that your main development branch is named `master',
 the procedure might look like this:
 
