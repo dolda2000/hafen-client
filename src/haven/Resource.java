@@ -1328,6 +1328,9 @@ public class Resource implements Serializable {
     }
 
     public static class ResClassLoader extends ClassLoader {
+	/* Please make sure you have read and understood
+	 * doc/resource-code if you feel tempted to change
+	 * OVERRIDE_ALL to true. */
 	public static final boolean OVERRIDE_ALL = false;
 	public final CodeEntry entry;
 
