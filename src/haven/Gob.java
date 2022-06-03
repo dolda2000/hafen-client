@@ -171,7 +171,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	public static class FactMaker implements Resource.PublishedCode.Instancer<Factory> {
 	    public Factory make(Class<?> cl, Resource ires, Object... argv) {
 		if(Factory.class.isAssignableFrom(cl))
-		    return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Factory.class), ires, argv));
+		    return(Resource.PublishedCode.Instancer.stdmake(Factory.class, cl.asSubclass(Factory.class), ires, argv));
 		if(ResAttr.class.isAssignableFrom(cl)) {
 		    try {
 			final java.lang.reflect.Constructor<? extends ResAttr> cons = cl.asSubclass(ResAttr.class).getConstructor(Gob.class, Message.class);
