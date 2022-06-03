@@ -1351,12 +1351,22 @@ public class Resource implements Serializable {
 		    try {
 			ret = getParent().loadClass(name);
 			if(findcode(name) != null) {
-			    boolean override = OVERRIDE_ALL;
+			    boolean override = false;
 			    FromResource src = getsource(ret);
-			    if((src != null) && ((src.name().equals(entry.getres().name) && (src.version() == entry.getres().ver)) || src.override()))
+			    if((src != null) && ((src.name().equals(getres().name) && (src.version() == getres().ver)) || src.override()))
 				override = true;
-			    if(!override)
-				ret = null;
+			    if(!override) {
+				String fmt;
+				if(OVERRIDE_ALL) {
+				    fmt = "local copy of %s (%s) would be overridden by code from %s";
+				} else {
+				    fmt = "local copy of %s (%s) is overridden by code from %s; please refer to doc/resource-code";
+				    ret = null;
+				}
+				Warning.warn(fmt, name,
+					     (src == null) ? "unannotated" : String.format("fetched from %s v%d", src.name(), src.version()),
+					     String.format("%s v%d", getres().name, getres().ver));
+			    }
 			}
 		    } catch(ClassNotFoundException e) {
 		    }
