@@ -347,10 +347,7 @@ public class Resource implements Serializable {
 			 * a bug in its internal cache where it refuses to
 			 * reload a URL even when it has changed. */
 			c.setUseCaches(false);
-			String ua = USER_AGENT;
-			if(!Config.confid.equals(""))
-			    ua += " (" + Config.confid + ")";
-			c.addRequestProperty("User-Agent", ua);
+			c.addRequestProperty("User-Agent", USER_AGENT);
 			return(c.getInputStream());
 		    }
 		});
