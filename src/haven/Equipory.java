@@ -118,7 +118,6 @@ public class Equipory extends Widget implements DTarget {
 		final FColor cc = new FColor(0, 0, 0, 0);
 		protected FColor clearcolor() {return(cc);}
 	    }, bgc);
-	ava.color = null;
     }
 
     public static interface SlotInfo {

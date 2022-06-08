@@ -36,7 +36,6 @@ import haven.Composited.ED;
 public class Avaview extends PView {
     public static final Tex missing = Resource.loadtex("gfx/hud/equip/missing");
     public static final Coord dasz = missing.sz();
-    public Color color = Color.WHITE;
     public FColor clearcolor = FColor.BLACK;
     public long avagob;
     public Desc avadesc;
@@ -46,6 +45,39 @@ public class Avaview extends PView {
     private List<Composited.MD> cmod = null;
     private List<Composited.ED> cequ = null;
     private final String camnm;
+
+    public static class ProxyFrame<T extends Widget> extends Frame {
+	public final T ch;
+	public Color color = Color.WHITE;
+
+	public ProxyFrame(T child, boolean resize) {
+	    super(child.sz, !resize);
+	    this.ch = child;
+	    if(resize)
+		ch.resize(inner());
+	    add(child, Coord.z);
+	}
+
+	public void drawframe(GOut g) {
+	    if(color != null) {
+		g.chcolor(color);
+		box.draw(g, Coord.z, sz);
+	    }
+	}
+
+	public void uimsg(String msg, Object... args) {
+	    if(msg == "col") {
+		color = (Color)args[0];
+	    } else {
+		ch.uimsg(msg, args);
+	    }
+	}
+
+	public void wdgmsg(Widget sender, String msg, Object... args) {
+	    if(sender == ch)
+		wdgmsg(msg, args);
+	}
+    }
 
     @RName("av")
     public static class $_ implements Factory {
@@ -59,7 +91,7 @@ public class Avaview extends PView {
 		sz = UI.scale((Coord)args[1]);
 	    if((args.length > 2) && (args[2] != null))
 		camnm = (String)args[2];
-	    return(new Avaview(sz, avagob, camnm));
+	    return(new ProxyFrame<>(new Avaview(sz, avagob, camnm), true));
 	}
     }
 
@@ -84,8 +116,6 @@ public class Avaview extends PView {
 	    else
 		this.avagob = Utils.uint32((Integer)args[0]);
 	    this.avadesc = null;
-	} else if(msg == "col") {
-	    this.color = (Color)args[0];
 	} else if(msg == "pop") {
 	    pop(Desc.decode(ui.sess, args));
 	} else if(msg == "bg") {
@@ -270,10 +300,6 @@ public class Avaview extends PView {
 	    } catch(Loading e) {
 		g.image(missing, Coord.z, sz);
 	    }
-	}
-	if(color != null) {
-	    g.chcolor(color);
-	    Window.wbox.draw(g, Coord.z, sz);
 	}
     }
 

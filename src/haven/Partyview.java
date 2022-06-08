@@ -113,8 +113,10 @@ public class Partyview extends Widget {
 	    if(leave.show(!avs.isEmpty()))
 		pack();
 	}
+	/*
 	for(Map.Entry<Member, Avaview> e : avs.entrySet())
 	    e.getValue().color = e.getKey().col;
+	*/
     }
 
     public void tick(double dt) {

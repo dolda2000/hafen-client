@@ -219,10 +219,15 @@ public class Charlist extends Widget {
 	    }
 	} else if(msg == "biggu") {
 	    int id = (Integer)args[0];
-	    if(id < 0)
+	    if(id < 0) {
 		avalink = null;
-	    else
-		avalink = (Avaview)ui.getwidget(id);
+	    } else {
+		Widget tgt = ui.getwidget(id);
+		if(tgt instanceof Avaview.ProxyFrame)
+		    avalink = (Avaview)((Avaview.ProxyFrame)tgt).ch;
+		else if(tgt instanceof Avaview)
+		    avalink = (Avaview)tgt;
+	    }
 	} else {
 	    super.uimsg(msg, args);
 	}
