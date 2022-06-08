@@ -29,6 +29,7 @@ package haven;
 import haven.Party.Member;
 
 import java.util.*;
+import java.awt.Color;
 import java.util.Map.Entry;
 
 public class Partyview extends Widget {
@@ -130,6 +131,35 @@ public class Partyview extends Widget {
 	super.wdgmsg(sender, msg, args);
     }
 	
+    public void uimsg(String msg, Object... args) {
+	if(msg == "list") {
+	    Map<Long, Member> nmemb = new TreeMap<>(), cmemb = party.memb;
+	    for(int a = 0; a < args.length; a++) {
+		long id = Utils.uint32((Integer)args[a]);
+		Member m = cmemb.get(id);
+		if(m == null)
+		    m = party.new Member(id);
+		nmemb.put(id, m);
+	    }
+	    party.memb = nmemb;
+	} else if(msg == "ldr") {
+	    party.leader = party.memb.get(Utils.uint32((Integer)args[0]));
+	} else if(msg == "m") {
+	    int a = 0;
+	    Member m = party.memb.get(Utils.uint32((Integer)args[a++]));
+	    if(m != null) {
+		Coord2d c = null;
+		if((a < args.length) && (args[a] instanceof Coord))
+		    c = ((Coord)args[a++]).mul(OCache.posres);
+		if((a < args.length) && (args[a] instanceof Color))
+		    m.col = (Color)args[a++];
+		m.setc(c);
+	    }
+	} else {
+	    super.uimsg(msg, args);
+	}
+    }
+
     public void draw(GOut g) {
 	update();
 	super.draw(g);

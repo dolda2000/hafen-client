@@ -68,6 +68,12 @@ public class Party {
 	    return(c);
 	}
 
+	void setc(Coord2d c) {
+	    if((this.c != null) && (c != null))
+		ma = this.c.angle(c);
+	    this.c = c;
+	}
+
 	public double geta() {
 	    return(Double.isNaN(oa) ? ma : oa);
 	}
@@ -106,9 +112,7 @@ public class Party {
 		    c = msg.coord().mul(OCache.posres);
 		Color col = msg.color();
 		if(m != null) {
-		    if((m.c != null) && (c != null))
-			m.ma = m.c.angle(c);
-		    m.c = c;
+		    m.setc(c);
 		    m.col = col;
 		}
 	    }
