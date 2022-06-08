@@ -199,11 +199,16 @@ public class Avaview extends PView {
 	} else if(avadesc != null) {
 	    Desc d = avadesc;
 	    if((d.base != lbase) || (comp == null)) {
-		lbase = d.base;
-		comp = new Composited(d.base.get().flayer(Skeleton.Res.class).s);
+		Resource base = d.base.get();
+		comp = new Composited(base.flayer(Skeleton.Res.class).s);
 		comp.eqowner = avaowner;
-		basic(Camera.class, makecam(d.base.get(), comp, camnm));
+		lbase = d.base;
+		basic(Camera.class, makecam(base, comp, camnm));
 		updposes();
+		if(compslot != null) {
+		    compslot.remove();
+		    compslot = null;
+		}
 	    }
 	    if(d.mod != this.cmod) {
 		comp.chmod(d.mod);
