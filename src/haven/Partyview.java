@@ -48,7 +48,7 @@ public class Partyview extends Widget {
     }
 
     Partyview(Party party, long ign) {
-	super(UI.scale(Avaview.dasz.x, 140));
+	super(Coord.of(Avaview.dasz.x, 140));
 	this.party = party;
 	this.ign = ign;
 	this.leave = add(new Button(sz.x, "Leave"), Coord.z);
