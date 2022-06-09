@@ -114,7 +114,7 @@ public class Fightview extends Widget {
 
     public class Rellist extends SListBox<Relation, Relbox> {
 	public Rellist(int h) {
-	    super(Coord.of(bg.sz().x, ((bg.sz().y + ymarg) * 5) - ymarg), bg.sz().y, ymarg);
+	    super(Coord.of(bg.sz().x, ((bg.sz().y + ymarg) * h) - ymarg), bg.sz().y, ymarg);
 	}
 
 	protected List<Relation> items() {
