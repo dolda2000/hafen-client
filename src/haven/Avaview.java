@@ -76,6 +76,8 @@ public class Avaview extends PView {
 	public void wdgmsg(Widget sender, String msg, Object... args) {
 	    if(sender == ch)
 		wdgmsg(msg, args);
+	    else
+		super.wdgmsg(sender, msg, args);
 	}
     }
 
