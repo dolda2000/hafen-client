@@ -29,22 +29,32 @@ package haven;
 import java.util.*;
 import java.awt.Color;
 
-public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
+public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> implements Scrollable {
     public static final Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32);
     public final int itemh, marg;
     public final Scrollbar sb;
     private Map<I, W> curw = new IdentityHashMap<>();
     private I[] curi;
     private int n = -1, h, curo = 0, itemw = 0;
+    private int maxy = 0, cury = 0;
 
     public SListBox(Coord sz, int itemh, int marg) {
 	super(sz);
 	this.itemh = itemh;
 	this.marg = marg;
-	this.sb = add(new Scrollbar(0, 0, 0));
+	if(autoscroll())
+	    this.sb = add(new Scrollbar(0, this));
+	else
+	    this.sb = null;
 	resize(sz);
     }
     public SListBox(Coord sz, int itemh) {this(sz, itemh, 0);}
+
+    protected boolean autoscroll() {return(true);}
+    public int scrollmin() {return(0);}
+    public int scrollmax() {return(maxy);}
+    public int scrollval() {return(cury);}
+    public void scrollval(int val) {cury = val;}
 
     @SuppressWarnings("unchecked")
     public void tick(double dt) {
@@ -53,15 +63,15 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
 	if(items.size() != n) {
 	    n = items.size();
 	    int th = (n == 0) ? 0 : (itemh + ((n - 1) * (itemh + marg)));
-	    sb.max = th - sz.y;
-	    sb.val = Math.min(sb.val, Math.max(th - sz.y, 0));
+	    maxy = th - sz.y;
+	    cury = Math.min(cury, Math.max(maxy, 0));
 	}
-	int itemw = sz.x - (sb.vis() ? sb.sz.x : 0);
+	int itemw = sz.x - (((sb != null) && sb.vis()) ? sb.sz.x : 0);
 	if(itemw != this.itemw) {
 	    reset = true;
 	    this.itemw = itemw;
 	}
-	int sy = sb.val, off = sy / (itemh + marg);
+	int sy = cury, off = sy / (itemh + marg);
 	if(reset) {
 	    for(W cw : curw.values())
 		cw.destroy();
@@ -147,7 +157,7 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
 	drawbg(g);
 	if(curi != null) {
 	    List<? extends I> items = items();
-	    int sy = sb.val;
+	    int sy = cury;
 	    for(int i = 0; (i < curi.length) && (i + curo < items.size()); i++) {
 		drawslot(g, curi[i], i + curo, Area.sized(Coord.of(0, ((i + curo) * (itemh + marg)) - sy), Coord.of(itemw, itemh)));
 	    }
@@ -159,10 +169,10 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
 	if(super.mousewheel(c, amount))
 	    return(true);
 	int step = sz.y / 8;
-	if(sb.max > 0)
-	    step = Math.min(step, sb.max / 8);
+	if(maxy > 0)
+	    step = Math.min(step, maxy / 8);
 	step = Math.max(step, itemh);
-	sb.ch(step * amount);
+	cury = Math.max(Math.min(cury + (step * amount), maxy), 0);
 	return(true);
     }
 
@@ -180,17 +190,19 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> {
 
     public void resize(Coord sz) {
 	super.resize(sz);
-	sb.resize(sz.y);
-	sb.c = new Coord(sz.x - sb.sz.x, 0);
+	if(sb != null) {
+	    sb.resize(sz.y);
+	    sb.c = new Coord(sz.x - sb.sz.x, 0);
+	}
 	h = Math.max(((sz.y + itemh + marg - 2) / (itemh + marg)), 0) + 1;
     }
 
     public void display(int idx) {
 	int y = idx * (itemh + marg);
-	if(y < sb.val)
-	    sb.val = y;
-	else if(y + itemh >= sb.val + sz.y)
-	    sb.val = Math.max((y + itemh) - sz.y, 0);
+	if(y < cury)
+	    cury = y;
+	else if(y + itemh >= cury + sz.y)
+	    cury = Math.max((y + itemh) - sz.y, 0);
     }
 
     public void display(I item) {
