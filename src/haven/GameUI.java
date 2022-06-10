@@ -259,7 +259,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	menupanel.add(new MainMenu(), 0, 0);
 	menubuttons(rbtnimg);
 	foldbuttons();
-	portrait = add(Frame.with(new Avaview(Avaview.dasz, plid, "avacam"), true), UI.scale(10, 10));
+	portrait = ulpanel.add(Frame.with(new Avaview(Avaview.dasz, plid, "avacam"), true), UI.scale(10, 10));
 	buffs = ulpanel.add(new Bufflist(), portrait.c.x + portrait.sz.x + UI.scale(10), portrait.c.y + ((IMeter.fsz.y + UI.scale(2)) * 2) + UI.scale(5 - 2));
 	umpanel.add(new Cal(), Coord.z);
 	syslog = chat.add(new ChatUI.Log("System"));
