@@ -84,7 +84,7 @@ public class Charlist extends Widget {
 	public Charbox(Char chr) {
 	    super(bg.sz());
 	    this.chr = chr;
-	    Widget avaf = adda(Frame.with(this.ava = new Avaview(Avaview.dasz, -1, "avacam"), true), Coord.of(sz.y / 2), 0.5, 0.5);
+	    Widget avaf = adda(Frame.with(this.ava = new Avaview(Avaview.dasz, -1, "avacam"), false), Coord.of(sz.y / 2), 0.5, 0.5);
 	    add(new Img(tf.render(chr.name).tex()), avaf.pos("ur").adds(5, 0));
 	    adda(new Button(UI.scale(100), "Play"), pos("cbr").subs(10, 2), 1.0, 1.0).action(() -> Charlist.this.wdgmsg("play", chr.name));
 	}

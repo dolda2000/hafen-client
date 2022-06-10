@@ -33,7 +33,7 @@ public class Fightview extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/bosq");
     public static final int height = 5;
     public static final int ymarg = UI.scale(5);
-    public static final int width = UI.scale(165);
+    public static final int width = UI.scale(175);
     public static final Coord avasz = Coord.of(bg.sz().y - UI.scale(6));
     public static final Coord cavac = new Coord(width - Avaview.dasz.x - UI.scale(10), UI.scale(10));
     public static final Coord cgivec = new Coord(cavac.x - UI.scale(35), cavac.y);
@@ -148,7 +148,7 @@ public class Fightview extends Widget {
 
 	public Mainrel(Relation rel) {
 	    this.rel = rel;
-	    Widget avaf = add(Frame.with(ava = new Avaview(Avaview.dasz, rel.gobid, "avacam"), true));
+	    Widget avaf = add(Frame.with(ava = new Avaview(Avaview.dasz, rel.gobid, "avacam"), false));
 	    ava.canactivate = true;
 	    adda(give = new GiveButton(0), avaf.pos("ul").subs(5, 0), 1.0, 0.0);
 	    adda(purs = new Button(UI.scale(70), "Pursue"), give.pos("br").adds(0, 5), 1.0, 0.0);
