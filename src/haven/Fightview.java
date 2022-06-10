@@ -88,9 +88,10 @@ public class Fightview extends Widget {
 	public Relbox(Relation rel) {
 	    super(bg.sz());
 	    this.rel = rel;
-	    adda(ava = new Avaview(avasz, rel.gobid, "avacam"), UI.scale(25), sz.y / 2, 0.0, 0.5).canactivate = true;
+	    Widget avaf = adda(Frame.with(ava = new Avaview(avasz, rel.gobid, "avacam"), true), UI.scale(25), sz.y / 2, 0.0, 0.5);
+	    ava.canactivate = true;
 	    add(give = new GiveButton(0, UI.scale(15, 15)), UI.scale(5, 4));
-	    adda(purs = new Button(UI.scale(70), "Pursue"), ava.c.x + ava.sz.x + UI.scale(5), ava.c.y + (ava.sz.y / 2), 0.0, 0.5);
+	    adda(purs = new Button(UI.scale(70), "Pursue"), avaf.c.x + avaf.sz.x + UI.scale(5), avaf.c.y + (avaf.sz.y / 2), 0.0, 0.5);
 	}
 
 	public void draw(GOut g) {
@@ -147,8 +148,9 @@ public class Fightview extends Widget {
 
 	public Mainrel(Relation rel) {
 	    this.rel = rel;
-	    add(ava = new Avaview(Avaview.dasz, rel.gobid, "avacam")).canactivate = true;
-	    adda(give = new GiveButton(0), ava.pos("ul").subs(5, 0), 1.0, 0.0);
+	    Widget avaf = add(Frame.with(ava = new Avaview(Avaview.dasz, rel.gobid, "avacam"), true));
+	    ava.canactivate = true;
+	    adda(give = new GiveButton(0), avaf.pos("ul").subs(5, 0), 1.0, 0.0);
 	    adda(purs = new Button(UI.scale(70), "Pursue"), give.pos("br").adds(0, 5), 1.0, 0.0);
 	    lpack();
 	}
