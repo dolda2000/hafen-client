@@ -494,6 +494,10 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    move();
 	}
 
+	public void cresize(Widget ch) {
+	    sz = contentsz();
+	}
+
 	public boolean mshow(final boolean vis) {
 	    clearanims(Anim.class);
 	    if(vis)
