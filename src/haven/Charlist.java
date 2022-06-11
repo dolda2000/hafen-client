@@ -84,8 +84,8 @@ public class Charlist extends Widget {
 	public Charbox(Char chr) {
 	    super(bg.sz());
 	    this.chr = chr;
-	    this.ava = adda(new Avaview(Avaview.dasz, -1, "avacam"), Coord.of(sz.y / 2), 0.5, 0.5);
-	    add(new Img(tf.render(chr.name).tex()), this.ava.pos("ur").adds(5, 0));
+	    Widget avaf = adda(Frame.with(this.ava = new Avaview(Avaview.dasz, -1, "avacam"), false), Coord.of(sz.y / 2), 0.5, 0.5);
+	    add(new Img(tf.render(chr.name).tex()), avaf.pos("ur").adds(5, 0));
 	    adda(new Button(UI.scale(100), "Play"), pos("cbr").subs(10, 2), 1.0, 1.0).action(() -> Charlist.this.wdgmsg("play", chr.name));
 	}
 
@@ -215,10 +215,15 @@ public class Charlist extends Widget {
 	    }
 	} else if(msg == "biggu") {
 	    int id = (Integer)args[0];
-	    if(id < 0)
+	    if(id < 0) {
 		avalink = null;
-	    else
-		avalink = (Avaview)ui.getwidget(id);
+	    } else {
+		Widget tgt = ui.getwidget(id);
+		if(tgt instanceof Avaview.ProxyFrame)
+		    avalink = (Avaview)((Avaview.ProxyFrame)tgt).ch;
+		else if(tgt instanceof Avaview)
+		    avalink = (Avaview)tgt;
+	    }
 	} else {
 	    super.uimsg(msg, args);
 	}

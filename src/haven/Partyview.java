@@ -37,7 +37,7 @@ public class Partyview extends Widget {
     public final Party party;
     public final long ign;
     private final Button leave;
-    private Map<Member, Avaview> avs = Collections.emptyMap();
+    private Map<Member, MemberView> avs = Collections.emptyMap();
     private Map<Long, Member> om = null;
 
     @RName("pv")
@@ -48,7 +48,7 @@ public class Partyview extends Widget {
     }
 
     Partyview(Party party, long ign) {
-	super(Coord.of(Avaview.dasz.x, 140));
+	super(Coord.of(Avaview.dasz.x + Window.wbox.bisz().x, 140));
 	this.party = party;
 	this.ign = ign;
 	this.leave = add(new Button(sz.x, "Leave"), Coord.z);
@@ -61,14 +61,27 @@ public class Partyview extends Widget {
 	update();
     }
 
-    public static class MemberView extends Avaview {
+    public static class MemberView extends Frame {
 	public final Member m;
+	public Color color = Color.WHITE;
 	private Tex tooltip = null;
 
 	public MemberView(Coord sz, Member m) {
-	    super(sz, m.gobid, "avacam");
+	    super(sz, false);
 	    this.m = m;
-	    canactivate = true;
+	    add(new Avaview(this.sz.sub(box.bisz()), m.gobid, "avacam"), Coord.z).canactivate = true;
+	}
+
+	public void wdgmsg(Widget sender, String msg, Object... args) {
+	    if(sender instanceof Avaview)
+		wdgmsg(msg, args);
+	    else
+		super.wdgmsg(sender, msg, args);
+	}
+
+	public void drawframe(GOut g) {
+	    g.chcolor(color);
+	    box.draw(g, Coord.z, sz);
 	}
 
 	public Object tooltip(Coord c, Widget prev) {
@@ -85,19 +98,19 @@ public class Partyview extends Widget {
     private void update() {
 	int asz = (sz.x - marg) / 2;
 	if(party.memb != this.om) {
-	    Map<Member, Avaview> old = new HashMap<>(this.avs);
-	    Map<Member, Avaview> avs = null;
+	    Map<Member, MemberView> old = new HashMap<>(this.avs);
+	    Map<Member, MemberView> avs = null;
 	    for(Member m : party.memb.values()) {
 		if(m.gobid == ign)
 		    continue;
-		Avaview ava = old.remove(m);
+		MemberView ava = old.remove(m);
 		if(ava == null)
 		    ava = add(new MemberView(Coord.of(asz), m));
 		if(avs == null)
 		    avs = new HashMap<>();
 		avs.put(m, ava);
 	    }
-	    for(Avaview ava : old.values())
+	    for(MemberView ava : old.values())
 		ava.reqdestroy();
 	    if(avs == null)
 		avs = Collections.emptyMap();
@@ -113,7 +126,7 @@ public class Partyview extends Widget {
 	    if(leave.show(!avs.isEmpty()))
 		pack();
 	}
-	for(Map.Entry<Member, Avaview> e : avs.entrySet())
+	for(Map.Entry<Member, MemberView> e : avs.entrySet())
 	    e.getValue().color = e.getKey().col;
     }
 
