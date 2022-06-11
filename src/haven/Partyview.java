@@ -102,7 +102,7 @@ public class Partyview extends Widget {
 	    if(avs == null)
 		avs = Collections.emptyMap();
 	    List<Member> order = new ArrayList<>(avs.keySet());
-	    Collections.sort(order, Comparator.comparing(m -> m.gobid));
+	    Collections.sort(order, Comparator.comparing(m -> m.seq));
 	    int i = 0;
 	    for(Member m : order) {
 		avs.get(m).move(leave.pos("bl").add((i % 2) * (sz.x - asz), (i / 2) * (asz + marg) + marg));
