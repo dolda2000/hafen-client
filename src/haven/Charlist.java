@@ -219,8 +219,8 @@ public class Charlist extends Widget {
 		avalink = null;
 	    } else {
 		Widget tgt = ui.getwidget(id);
-		if(tgt instanceof Avaview.ProxyFrame)
-		    avalink = (Avaview)((Avaview.ProxyFrame)tgt).ch;
+		if(tgt instanceof ProxyFrame)
+		    avalink = (Avaview)((ProxyFrame)tgt).ch;
 		else if(tgt instanceof Avaview)
 		    avalink = (Avaview)tgt;
 	    }
