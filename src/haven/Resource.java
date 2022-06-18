@@ -549,19 +549,14 @@ public class Resource implements Serializable {
 
 	private void handle(Queued res) {
 	    for(ResSource src : sources) {
-		try {
-		    InputStream in = src.get(res.name);
+		try(InputStream in = src.get(res.name)) {
 		    res.found = true;
-		    try {
-			Resource ret = new Resource(this, res.name, res.ver);
-			ret.source = src;
-			ret.load(in);
-			res.res = ret;
-			res.error = null;
-			break;
-		    } finally {
-			in.close();
-		    }
+		    Resource ret = new Resource(this, res.name, res.ver);
+		    ret.source = src;
+		    ret.load(in);
+		    res.res = ret;
+		    res.error = null;
+		    break;
 		} catch(Throwable t) {
 		    if(!(t instanceof FileNotFoundException))
 			res.found = true;
