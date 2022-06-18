@@ -1784,7 +1784,9 @@ public class Resource implements Serializable {
 		continue;
 	    }
 	    Message buf = new LimitMessage(in, len);
-	    layers.add(lc.cons(this, buf));
+	    Layer l = lc.cons(this, buf);
+	    if(l != null)
+		layers.add(l);
 	    buf.skip();
 	}
 	this.layers = layers;
