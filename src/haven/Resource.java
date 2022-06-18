@@ -389,14 +389,51 @@ public class Resource implements Serializable {
 	}
     }
 
-    public static class LoadFailedException extends RuntimeException {
+    public static class BadResourceException extends RuntimeException {
 	public final String name;
 	public final int ver;
 
-	public LoadFailedException(String name, int ver, LoadException cause) {
-	    super("Failed to load resource " + name + " (v" + ver + ")", cause);
+	public BadResourceException(String name, int ver, String message, Throwable cause) {
+	    super(message, cause);
 	    this.name = name;
 	    this.ver = ver;
+	}
+
+	public BadResourceException(String name, int ver, String message) {
+	    this(name, ver, message, null);
+	}
+
+	public BadResourceException(String name, int ver, Throwable cause) {
+	    this(name, ver, null, cause);
+	}
+
+	public BadResourceException(String name, int ver) {
+	    this(name, ver, null, null);
+	}
+    }
+
+    public static class LoadFailedException extends BadResourceException {
+	public LoadFailedException(String name, int ver, LoadException cause) {
+	    super(name, ver, cause);
+	}
+
+	public String getMessage() {
+	    return(String.format("Failed to load resource %s (v%d)", name, ver));
+	}
+    }
+
+    public static class BadVersionException extends BadResourceException {
+	public final int curver;
+	public final String cursrc;
+
+	public BadVersionException(String name, int ver, int curver, ResSource cursrc) {
+	    super(name, ver);
+	    this.curver = curver;
+	    this.cursrc = String.valueOf(cursrc);
+	}
+
+	public String getMessage() {
+	    return(String.format("Weird version number on %s (%d > %d), loaded from %s", name, curver, ver, cursrc));
 	}
     }
 
@@ -536,7 +573,7 @@ public class Resource implements Serializable {
 		    if((ver == -1) || (cur.ver == ver)) {
 			return(cur.indir());
 		    } else if(ver < cur.ver) {
-			throw(new RuntimeException(String.format("Weird version number on %s (%d > %d), loaded from %s", cur.name, cur.ver, ver, cur.source)));
+			throw(new BadVersionException(name, ver, cur.ver, cur.source));
 		    }
 		}
 		synchronized(queue) {
@@ -544,7 +581,7 @@ public class Resource implements Serializable {
 		    if(cq != null) {
 			if(ver != -1) {
 			    if(ver < cq.ver) {
-				throw(new RuntimeException(String.format("Weird version number on %s (%d > %d)", cq.name, cq.ver, ver)));
+				throw(new BadVersionException(name, ver, cq.ver, null));
 			    } else if(ver == cq.ver) {
 				cq.boostprio(prio);
 				return(cq);
