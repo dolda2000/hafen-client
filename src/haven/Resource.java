@@ -422,6 +422,12 @@ public class Resource implements Serializable {
 	}
     }
 
+    public static class NoSuchResourceException extends LoadFailedException {
+	public NoSuchResourceException(String name, int ver, LoadException cause) {
+	    super(name, ver, cause);
+	}
+    }
+
     public static class BadVersionException extends BadResourceException {
 	public final int curver;
 	public final String cursrc;
@@ -471,6 +477,7 @@ public class Resource implements Serializable {
 	    volatile boolean done = false;
 	    Resource res;
 	    LoadException error;
+	    boolean found = false;
 
 	    Queued(String name, int ver, int prio) {
 		super(name, ver);
@@ -494,8 +501,11 @@ public class Resource implements Serializable {
 		    boostprio(1);
 		    throw(new Loading(this));
 		}
-		if(error != null)
+		if(error != null) {
+		    if(!found)
+			throw(new NoSuchResourceException(name, ver, error));
 		    throw(new LoadFailedException(name, ver, error));
+		}
 		return(res);
 	    }
 
@@ -541,6 +551,7 @@ public class Resource implements Serializable {
 	    for(ResSource src : sources) {
 		try {
 		    InputStream in = src.get(res.name);
+		    res.found = true;
 		    try {
 			Resource ret = new Resource(this, res.name, res.ver);
 			ret.source = src;
@@ -552,6 +563,8 @@ public class Resource implements Serializable {
 			in.close();
 		    }
 		} catch(Throwable t) {
+		    if(!(t instanceof FileNotFoundException))
+			res.found = true;
 		    LoadException error;
 		    if(t instanceof LoadException)
 			error = (LoadException)t;
