@@ -120,10 +120,15 @@ public class Session implements Resource.Resolver {
 	    private Resource res;
 		    
 	    public Resource get() {
-		if(resnm == null)
-		    throw(new LoadingIndir(CachedRes.this));
-		if(res == null)
-		    res = Resource.remote().load(resnm, resver, 0).get();
+		if(res == null) {
+		    synchronized(CachedRes.this) {
+			if(res == null) {
+			    if(resnm == null)
+				throw(new LoadingIndir(CachedRes.this));
+			    res = Resource.remote().load(resnm, resver, 0).get();
+			}
+		    }
+		}
 		return(res);
 	    }
 	
