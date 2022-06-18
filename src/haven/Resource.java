@@ -429,11 +429,14 @@ public class Resource implements Serializable {
 	public BadVersionException(String name, int ver, int curver, ResSource cursrc) {
 	    super(name, ver);
 	    this.curver = curver;
-	    this.cursrc = String.valueOf(cursrc);
+	    this.cursrc = (cursrc == null) ? null : String.valueOf(cursrc);
 	}
 
 	public String getMessage() {
-	    return(String.format("Weird version number on %s (%d > %d), loaded from %s", name, curver, ver, cursrc));
+	    if(cursrc == null)
+		return(String.format("Obsolete version %d of %s requested, loaded version is %d", ver, name, curver));
+	    else
+		return(String.format("Obsolete version %d of %s requested, loaded version is %d, from %s", ver, name, curver, cursrc));
 	}
     }
 
