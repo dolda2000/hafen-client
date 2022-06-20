@@ -314,8 +314,6 @@ public class Session implements Resource.Resolver {
 			    clip = new Audio.VolAdjust(clip, vol);
 			Audio.play(clip);
 		    }, null);
-	    } else if(msg.type == RMessage.RMSG_CATTR) {
-		glob.cattr(msg);
 	    } else if(msg.type == RMessage.RMSG_MUSIC) {
 		String resnm = msg.string();
 		int resver = msg.uint16();
