@@ -36,11 +36,14 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
     public boolean virtual = false;
     int clprio = 0;
     public long id;
+    public boolean removed = false;
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     public final Collection<Overlay> ols = new ArrayList<Overlay>();
     public final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
     private final Collection<SetupMod> setupmods = new ArrayList<>();
+    private final LinkedList<Runnable> deferred = new LinkedList<>();
+    private Loader.Future<?> deferral = null;
 
     public static class Overlay implements RenderTree.Node {
 	public final int id;
@@ -165,9 +168,47 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	}
     }
 
+    void removed() {
+	removed = false;
+    }
+
+    private void deferred() {
+	while(true) {
+	    Runnable task;
+	    synchronized(deferred) {
+		task = deferred.peek();
+		if(task == null) {
+		    deferral = null;
+		    return;
+		}
+	    }
+	    synchronized(this) {
+		if(!removed)
+		    task.run();
+	    }
+	    if(task instanceof Disposable)
+		((Disposable)task).dispose();
+	    synchronized(deferred) {
+		if(deferred.poll() != task)
+		    throw(new RuntimeException());
+	    }
+	}
+    }
+
+    public void defer(Runnable task) {
+	synchronized(deferred) {
+	    deferred.add(task);
+	    if(deferral == null)
+		deferral = glob.loader.defer(this::deferred, null);
+	}
+    }
+
     public void addol(Overlay ol, boolean async) {
-	if(!async)
-	    ol.init();
+	if(async) {
+	    defer(() -> addol(ol, false));
+	    return;
+	}
+	ol.init();
 	ol.add0();
 	ols.add(ol);
     }
