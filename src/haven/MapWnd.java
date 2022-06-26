@@ -766,7 +766,9 @@ public class MapWnd extends Window implements Console.Directory {
 				throw(new Loading());
 			    return;
 			}
-			gob.setattr(new MarkerID(gob, oid));
+			synchronized(gob) {
+			    gob.setattr(new MarkerID(gob, oid));
+			}
 			Coord tc = gob.rc.floor(tilesz);
 			MCache.Grid obg = ui.sess.glob.map.getgrid(tc.div(cmaps));
 			if(!view.file.lock.writeLock().tryLock())
