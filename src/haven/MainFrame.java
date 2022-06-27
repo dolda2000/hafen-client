@@ -229,7 +229,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	} else {
 	    if((username = Utils.getpref("tokenname@" + Config.defserv, null)) == null)
 		throw(new RuntimeException("No explicit or saved username"));
-	    String token = Utils.getpref("savedtoken@" + Config.defserv, null);
+	    String token = Utils.getpref("savedtoken-" + username + "@" + Config.defserv, null);
 	    if(token == null)
 		throw(new RuntimeException("No saved token"));
 	    try {
