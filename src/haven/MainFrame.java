@@ -207,7 +207,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     }
 	
     private void savewndstate() {
-	if(prefs == null) {
+	if(!fullscreen) {
 	    if(getExtendedState() == NORMAL)
 		/* Apparent, getSize attempts to return the "outer
 		 * size" of the window, including WM decorations, even
@@ -405,7 +405,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    }
 	}
 	MainFrame f = new MainFrame(null);
-	if(Utils.getprefb("fullscreen", false))
+	if(Config.fullscreen)
 	    f.setfs();
 	f.run(fun);
 	dumplist(Resource.remote().loadwaited(), Config.loadwaited);

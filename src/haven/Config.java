@@ -48,6 +48,7 @@ public class Config {
     public static boolean par = true;
     public static Path resdir = getpath("haven.resdir", System.getenv("HAFEN_RESDIR"));
     public static boolean nopreload = getbool("haven.nopreload", true);
+    public static boolean fullscreen = getbool("haven.fullscreen", false);
     public static Path loadwaited = getpath("haven.loadwaited", null);
     public static Path allused = getpath("haven.allused", null);
     public static int mainport = getint("haven.mainport", 1870);
@@ -142,6 +143,7 @@ public class Config {
 	out.println("  -d                 Display debug text");
 	out.println("  -P                 Enable profiling");
 	out.println("  -G                 Enable GPU profiling");
+	out.println("  -f                 Fullscreen mode");
 	out.println("  -U URL             Use specified external resource URL");
 	out.println("  -r DIR             Use specified resource directory (or HAVEN_RESDIR)");
 	out.println("  -A AUTHSERV[:PORT] Use specified authentication server");
@@ -151,7 +153,7 @@ public class Config {
     }
 
     public static void cmdline(String[] args) {
-	PosixArgs opt = PosixArgs.getopt(args, "hdPGU:r:A:u:C:p:");
+	PosixArgs opt = PosixArgs.getopt(args, "hdPGfU:r:A:u:C:p:");
 	if(opt == null) {
 	    usage(System.err);
 	    System.exit(1);
@@ -170,6 +172,9 @@ public class Config {
 		break;
 	    case 'G':
 		profilegpu = true;
+		break;
+	    case 'f':
+		fullscreen = true;
 		break;
 	    case 'r':
 		resdir = Utils.path(opt.arg);
