@@ -43,18 +43,15 @@ public class Config {
     public static URL cachebase = geturl("haven.cachebase", "");
     public static URL mapbase = geturl("haven.mapbase", "");
     public static boolean dbtext = getbool("haven.dbtext", false);
-    public static boolean bounddb = getbool("haven.bounddb", false);
     public static boolean profile = getbool("haven.profile", false);
     public static boolean profilegpu = getbool("haven.profilegpu", false);
     public static boolean par = true;
-    public static boolean fscache = getbool("haven.fscache", true);
     public static Path resdir = getpath("haven.resdir", System.getenv("HAFEN_RESDIR"));
     public static boolean nopreload = getbool("haven.nopreload", true);
     public static Path loadwaited = getpath("haven.loadwaited", null);
     public static Path allused = getpath("haven.allused", null);
     public static int mainport = getint("haven.mainport", 1870);
     public static int authport = getint("haven.authport", 1871);
-    public static boolean softres = getbool("haven.softres", true);
     public static Double uiscale = getfloat("haven.uiscale", null);
     public static byte[] authck = getbytes("haven.authck", null), inittoken = getbytes("haven.inittoken", null);
     public static String prefspec = getprop("haven.prefspec", "hafen");
