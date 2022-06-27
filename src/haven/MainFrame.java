@@ -71,7 +71,8 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    setUndecorated(true);
 	    setVisible(true);
 	    dev.setFullScreenWindow(this);
-	    dev.setDisplayMode(fsmode);
+	    if(fsmode != null)
+		dev.setDisplayMode(fsmode);
 	    pack();
 	} catch(Exception e) {
 	    throw(new RuntimeException(e));
@@ -83,7 +84,8 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	if(prefs == null)
 	    return;
 	try {
-	    dev.setDisplayMode(prefs);
+	    if(prefs != null)
+		dev.setDisplayMode(prefs);
 	    dev.setFullScreenWindow(null);
 	    setVisible(false);
 	    dispose();
@@ -122,7 +124,10 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    });
 	cmdmap.put("fsmode", new Console.Command() {
 		public void run(Console cons, String[] args) throws Exception {
-		    if(args.length == 3) {
+		    if((args.length < 2) || args[1].equals("none")) {
+			fsmode = null;
+			Utils.setprefc("fsmode", Coord.z);
+		    } else if(args.length == 3) {
 			DisplayMode mode = findmode(Integer.parseInt(args[1]), Integer.parseInt(args[2]));
 			if(mode == null)
 			    throw(new Exception("No such mode is available"));
@@ -172,15 +177,9 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	Component pp = (Component)(this.p = new JOGLPanel(sz));
 	if(fsmode == null) {
 	    Coord pfm = Utils.getprefc("fsmode", null);
-	    if(pfm != null)
+	    if((pfm != null) && !pfm.equals(Coord.z))
 		fsmode = findmode(pfm.x, pfm.y);
 	}
-	if(fsmode == null) {
-	    DisplayMode cm = getGraphicsConfiguration().getDevice().getDisplayMode();
-	    fsmode = findmode(cm.getWidth(), cm.getHeight());
-	}
-	if(fsmode == null)
-	    fsmode = findmode(800, 600);
 	add(pp);
 	pack();
 	setResizable(!Utils.getprefb("wndlock", false));
