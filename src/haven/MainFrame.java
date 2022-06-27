@@ -220,6 +220,12 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
     }
 
+    public static class ConnectionError extends RuntimeException {
+	public ConnectionError(String mesg) {
+	    super(mesg);
+	}
+    }
+
     public static Session connect(Object[] args) {
 	String username;
 	byte[] cookie;
@@ -227,16 +233,20 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    username = Config.authuser;
 	    cookie = Config.authck;
 	} else {
-	    if((username = Utils.getpref("tokenname@" + Config.defserv, null)) == null)
-		throw(new RuntimeException("No explicit or saved username"));
+	    if(Config.authuser != null) {
+		username = Config.authuser;
+	    } else {
+		if((username = Utils.getpref("tokenname@" + Config.defserv, null)) == null)
+		    throw(new ConnectionError("no explicit or saved username for host: " + Config.defserv));
+	    }
 	    String token = Utils.getpref("savedtoken-" + username + "@" + Config.defserv, null);
 	    if(token == null)
-		throw(new RuntimeException("No saved token"));
+		throw(new ConnectionError("no saved token for user: " + username));
 	    try {
 		AuthClient cl = new AuthClient((Config.authserv == null) ? Config.defserv : Config.authserv, Config.authport);
 		try {
 		    if((username = cl.trytoken(username, Utils.hex2byte(token))) == null)
-			throw(new RuntimeException("Authentication with saved token failed"));
+			throw(new ConnectionError("authentication with saved token failed"));
 		    cookie = cl.getcookie();
 		} finally {
 		    cl.close();
@@ -255,8 +265,11 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	try {
 	    synchronized(sess) {
 		while(sess.state != "") {
-		    if(sess.connfailed != 0)
-			throw(new RuntimeException(String.format("connection failure: %d", sess.connfailed)));
+		    if(sess.connfailed != 0) {
+			if(sess.connerror != null)
+			    throw(new ConnectionError(sess.connerror));
+			throw(new ConnectionError(String.format("connection failure: %d", sess.connfailed)));
+		    }
 		    try {
 			sess.wait();
 		    } catch(InterruptedException e) {
@@ -381,8 +394,14 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
 	setupres();
 	UI.Runner fun = null;
-	if(Config.servargs != null)
-	    fun = new RemoteUI(connect(Config.servargs));
+	if(Config.servargs != null) {
+	    try {
+		fun = new RemoteUI(connect(Config.servargs));
+	    } catch(ConnectionError e) {
+		System.err.println("hafen: " + e.getMessage());
+		System.exit(1);
+	    }
+	}
 	MainFrame f = new MainFrame(null);
 	if(Utils.getprefb("fullscreen", false))
 	    f.setfs();
