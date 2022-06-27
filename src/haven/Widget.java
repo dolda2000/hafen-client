@@ -670,6 +670,8 @@ public class Widget {
 	    pack();
 	} else if(msg == "z") {
 	    z((Integer)args[0]);
+	} else if(msg == "show") {
+	    show((Integer)args[0] != 0);
 	} else if(msg == "curs") {
 	    if(args.length == 0)
 		cursor = null;
