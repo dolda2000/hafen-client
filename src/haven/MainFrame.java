@@ -37,7 +37,9 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     final UIPanel p;
     private final ThreadGroup g;
     private Thread mt;
+    boolean fullscreen;
     DisplayMode fsmode = null, prefs = null;
+    Coord prefssz = null;
 	
     static {
 	try {
@@ -62,17 +64,20 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	
     public void setfs() {
 	GraphicsDevice dev = getGraphicsConfiguration().getDevice();
-	if(prefs != null)
+	if(fullscreen)
 	    return;
-	prefs = dev.getDisplayMode();
+	fullscreen = true;
+	prefssz = new Coord(getSize());
 	try {
 	    setVisible(false);
 	    dispose();
 	    setUndecorated(true);
 	    setVisible(true);
 	    dev.setFullScreenWindow(this);
-	    if(fsmode != null)
+	    if(fsmode != null) {
+		prefs = dev.getDisplayMode();
 		dev.setDisplayMode(fsmode);
+	    }
 	    pack();
 	} catch(Exception e) {
 	    throw(new RuntimeException(e));
@@ -81,7 +86,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	
     public void setwnd() {
 	GraphicsDevice dev = getGraphicsConfiguration().getDevice();
-	if(prefs == null)
+	if(!fullscreen)
 	    return;
 	try {
 	    if(prefs != null)
@@ -90,15 +95,13 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    setVisible(false);
 	    dispose();
 	    setUndecorated(false);
+	    if(prefssz != null)
+		setSize(prefssz.x, prefssz.y);
 	    setVisible(true);
 	} catch(Exception e) {
 	    throw(new RuntimeException(e));
 	}
-	prefs = null;
-    }
-
-    public boolean hasfs() {
-	return(prefs != null);
+	fullscreen = false;
     }
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
