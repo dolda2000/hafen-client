@@ -476,6 +476,7 @@ public class Session implements Resource.Resolver {
 			    if(++retries > 5) {
 				synchronized(Session.this) {
 				    connfailed = SESSERR_CONN;
+				    connerror = "Could not connect to server";
 				    Session.this.notifyAll();
 				    return;
 				}
