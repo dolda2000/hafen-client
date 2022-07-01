@@ -380,7 +380,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private double tf = 1.0;
 
 	public SOrthoCam(String... args) {
-	    PosixArgs opt = PosixArgs.getopt(args, "enift:");
+	    PosixArgs opt = PosixArgs.getopt(args, "enift:Z:");
 	    for(char c : opt.parsed()) {
 		switch(c) {
 		case 'e':
@@ -397,6 +397,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    break;
 		case 't':
 		    tf = Double.parseDouble(opt.arg);
+		    break;
+		case 'Z':
+		    field = tfield = Float.parseFloat(opt.arg);
 		    break;
 		}
 	    }
