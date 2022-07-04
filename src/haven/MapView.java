@@ -1870,17 +1870,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    out.clear(bstate, FragID.fragid, FColor.BLACK);
 	    out.clear(bstate, 1.0);
 	    checkmapclick(out, basic, pc, mc -> {
-		    /* XXX: This is somewhat doubtfully nice, but running
-		     * it in the defer group would cause unnecessary
-		     * latency, and it shouldn't really be a problem. */
-		    new HackThread(() -> {
-			    synchronized(ui) {
-				if(mc != null)
-				    hit(pc, mc);
-				else
-				    nohit(pc);
-			    }
-		    }, "Hit-test callback").start();
+		    synchronized(ui) {
+			if(mc != null)
+			    hit(pc, mc);
+			else
+			    nohit(pc);
+		    }
 		});
 	    env.submit(out);
 	}
@@ -1919,21 +1914,16 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			done = true;
 	    }
 	    if(done) {
-		/* XXX: This is somewhat doubtfully nice, but running
-		 * it in the defer group would cause unnecessary
-		 * latency, and it shouldn't really be a problem. */
-		new HackThread(() -> {
-			synchronized(ui) {
-			    if(mapcl != null) {
-				if(objcl == null)
-				    hit(pc, mapcl, null);
-				else
-				    hit(pc, mapcl, objcl);
-			    } else {
-				nohit(pc);
-			    }
-			}
-		}, "Hit-test callback").start();
+		synchronized(ui) {
+		    if(mapcl != null) {
+			if(objcl == null)
+			    hit(pc, mapcl, null);
+			else
+			    hit(pc, mapcl, objcl);
+		    } else {
+			nohit(pc);
+		    }
+		}
 	    }
 	}
 	
