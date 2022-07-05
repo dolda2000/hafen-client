@@ -169,7 +169,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
     }
 
     void removed() {
-	removed = false;
+	removed = true;
     }
 
     private void deferred() {
