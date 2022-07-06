@@ -50,12 +50,15 @@ public class Utils {
 	return(new Coord(img.getWidth(), img.getHeight()));
     }
 
-    public static boolean checkhit(BufferedImage img, Coord c) {
+    public static boolean checkhit(BufferedImage img, Coord c, int thres) {
 	if(!c.isect(Coord.z, imgsz(img)))
 	    return(false);
 	if(img.getRaster().getNumBands() < 4)
 	    return(true);
-	return(img.getRaster().getSample(c.x, c.y, 3) >= 128);
+	return(img.getRaster().getSample(c.x, c.y, 3) >= thres);
+    }
+    public static boolean checkhit(BufferedImage img, Coord c) {
+	return(checkhit(img, c, 128));
     }
 
     public static void defer(final Runnable r) {
@@ -231,12 +234,45 @@ public class Utils {
 	return((raw - 186) * (1.0 / 31.0));
     }
 
-    public static synchronized Preferences prefs() {
+    private static Map<Object, Object> sysprefs() {
+	try {
+	    Properties buf = new Properties();
+	    Optional<Path> pfile = Optional.ofNullable(System.getProperty("haven.prefs", null)).map(Utils::path);
+	    if(pfile.isPresent() && Files.exists(pfile.get())) {
+		try(InputStream fp = Files.newInputStream(pfile.get())) {
+		    buf.load(fp);
+		} catch(IOException e) {
+		    new Warning(e, "could not read preferences file").level(Warning.ERROR).issue();
+		}
+	    }
+	    for(Map.Entry<?, ?> ent : System.getProperties().entrySet()) {
+		if((ent.getKey() instanceof String) && (ent.getValue() instanceof String) &&
+		   ((String)ent.getKey()).startsWith("haven.prefs."))
+		{
+		    buf.put(((String)ent.getKey()).substring(12), (String)ent.getValue());
+		}
+	    }
+	    return(buf);
+	} catch(SecurityException e) {
+	    return(Collections.emptyMap());
+	}
+    }
+
+    public static Preferences prefs() {
 	if(prefs == null) {
-	    Preferences node = Preferences.userNodeForPackage(Utils.class);
-	    if(Config.prefspec != null)
-		node = node.node(Config.prefspec);
-	    prefs = node;
+	    synchronized(Utils.class) {
+		if(prefs == null) {
+		    Map<Object, Object> sysprefs = sysprefs();
+		    if(!sysprefs.isEmpty()) {
+			prefs = new MapPrefs("haven", sysprefs);
+		    } else {
+			Preferences node = Preferences.userNodeForPackage(Utils.class);
+			if(Config.prefspec != null)
+			    node = node.node(Config.prefspec);
+			prefs = node;
+		    }
+		}
+	    }
 	}
 	return(prefs);
     }
@@ -374,8 +410,6 @@ public class Utils {
 	try {
 	    String ret;
 	    if((ret = System.getProperty(propname)) != null)
-		return(ret);
-	    if((ret = System.getProperty("jnlp." + propname)) != null)
 		return(ret);
 	    return(def);
 	} catch(SecurityException e) {
@@ -1739,6 +1773,42 @@ public class Utils {
 	}
     }
 
+    public static class Range extends AbstractCollection<Integer> {
+	public final int min, max, step;
+
+	public Range(int min, int max, int step) {
+	    if(step == 0)
+		throw(new IllegalArgumentException());
+	    this.min = min; this.max = max; this.step = step;
+	}
+
+	public int size() {
+	    return(Math.max((max - min + step - 1) / step, 0));
+	}
+
+	public Iterator<Integer> iterator() {
+	    return(new Iterator<Integer>() {
+		    private int cur = min;
+
+		    public boolean hasNext() {
+			return((step > 0) ? (cur < max) : (cur > max));
+		    }
+
+		    public Integer next() {
+			if(!hasNext())
+			    throw(new NoSuchElementException());
+			int ret = cur;
+			cur += step;
+			return(ret);
+		    }
+		});
+	}
+    }
+
+    public static Collection<Integer> range(int min, int max, int step) {return(new Range(min, max, step));}
+    public static Collection<Integer> range(int min, int max) {return(range(min, max, 1));}
+    public static Collection<Integer> range(int max) {return(range(0, max));}
+
     public static <T> Indir<T> cache(Indir<T> src) {
 	return(new Indir<T>() {
 		private T val;
@@ -1860,6 +1930,12 @@ public class Utils {
 	while(o.hasNext())
 	    dst.add(o.next());
 	return(dst);
+    }
+
+    public static <T> Optional<T> ocast(Object x, Class<T> cl) {
+	if(cl.isInstance(x))
+	    return(Optional.of(cl.cast(x)));
+	return(Optional.empty());
     }
 
     public static int sidcmp(Object a, Object b) {

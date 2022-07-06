@@ -34,13 +34,13 @@ import java.awt.Graphics;
 
 public abstract class ItemInfo {
     public final Owner owner;
-    
+
     public interface Owner extends OwnerContext {
 	@Deprecated
 	public default Glob glob() {return(context(Glob.class));}
 	public List<ItemInfo> info();
     }
-    
+
     public interface ResOwner extends Owner {
 	public Resource resource();
     }
@@ -48,7 +48,7 @@ public abstract class ItemInfo {
     public interface SpriteOwner extends ResOwner {
 	public GSprite sprite();
     }
-    
+
     public static class Raw {
 	public final Object[] data;
 	public final double time;
@@ -104,11 +104,11 @@ public abstract class ItemInfo {
 				    }));
 	}
     }
-    
+
     public ItemInfo(Owner owner) {
 	this.owner = owner;
     }
-    
+
     public static class Layout {
 	private final List<Tip> tips = new ArrayList<Tip>();
 	private final Map<ID, Tip> itab = new HashMap<ID, Tip>();
@@ -162,15 +162,15 @@ public abstract class ItemInfo {
 	}
 	public int order() {return(100);}
     }
-    
+
     public static class AdHoc extends Tip {
 	public final Text str;
-	
+
 	public AdHoc(Owner owner, String str) {
 	    super(owner);
 	    this.str = Text.render(str);
 	}
-	
+
 	public BufferedImage tipimg() {
 	    return(str.img);
 	}
@@ -178,16 +178,16 @@ public abstract class ItemInfo {
 
     public static class Name extends Tip {
 	public final Text str;
-	
+
 	public Name(Owner owner, Text str) {
 	    super(owner);
 	    this.str = str;
 	}
-	
+
 	public Name(Owner owner, String str) {
 	    this(owner, Text.render(str));
 	}
-	
+
 	public BufferedImage tipimg() {
 	    return(str.img);
 	}
@@ -199,6 +199,27 @@ public abstract class ItemInfo {
 		    public BufferedImage tipimg() {return(str.img);}
 		    public int order() {return(0);}
 		});
+	}
+
+	public static interface Dynamic {
+	    public String name();
+	}
+
+	public static class Default implements InfoFactory {
+	    public ItemInfo build(Owner owner, Object... args) {
+		if(owner instanceof SpriteOwner) {
+		    GSprite spr = ((SpriteOwner)owner).sprite();
+		    if(spr instanceof Dynamic)
+			return(new Name(owner, ((Dynamic)spr).name()));
+		}
+		if(!(owner instanceof ResOwner))
+		    return(null);
+		Resource res = ((ResOwner)owner).resource();
+		Resource.Tooltip tt = res.layer(Resource.tooltip);
+		if(tt == null)
+		    throw(new RuntimeException("Item resource " + res + " is missing default tooltip"));
+		return(new Name(owner, tt.t));
+	    }
 	}
     }
 
@@ -234,10 +255,10 @@ public abstract class ItemInfo {
 	
 	public BufferedImage tipimg() {
 	    BufferedImage stip = longtip(sub);
-	    BufferedImage img = TexI.mkbuf(new Coord(stip.getWidth() + 10, stip.getHeight() + 15));
+	    BufferedImage img = TexI.mkbuf(Coord.of(stip.getWidth(), stip.getHeight()).add(UI.scale(10, 15)));
 	    Graphics g = img.getGraphics();
 	    g.drawImage(ch.img, 0, 0, null);
-	    g.drawImage(stip, 10, 15, null);
+	    g.drawImage(stip, UI.scale(10), UI.scale(15), null);
 	    g.dispose();
 	    return(img);
 	}

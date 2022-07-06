@@ -58,7 +58,7 @@ public abstract class GAttrib {
     public static class ParserMaker implements Resource.PublishedCode.Instancer<Parser> {
 	public Parser make(Class<?> cl, Resource ires, Object... argv) {
 	    if(Parser.class.isAssignableFrom(cl))
-		return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Parser.class), ires, argv));
+		return(Resource.PublishedCode.Instancer.stdmake(Parser.class, cl.asSubclass(Parser.class), ires, argv));
 	    try {
 		Function<Object[], Void> parse = Utils.smthfun(cl, "parse", Void.TYPE, Gob.class, Message.class);
 		return(new Parser() {

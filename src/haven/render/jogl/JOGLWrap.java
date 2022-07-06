@@ -57,6 +57,9 @@ public class JOGLWrap implements GL {
     public void glBufferSubData(int target, long offset, long size, ByteBuffer data) {back.glBufferSubData(target, offset, size, data);}
     public int glCheckFramebufferStatus(int target) {return(back.glCheckFramebufferStatus(target));}
     public void glClear(int mask) {back.glClear(mask);}
+    public void glClearBufferfv(int buffer, int drawbuffer, float[] value) {back.glClearBufferfv(buffer, drawbuffer, value, 0);}
+    public void glClearBufferiv(int buffer, int drawbuffer, int[] value) {back.glClearBufferiv(buffer, drawbuffer, value, 0);}
+    public void glClearBufferuiv(int buffer, int drawbuffer, int[] value) {back.glClearBufferuiv(buffer, drawbuffer, value, 0);}
     public void glClearColor(float r, float g, float b, float a) {back.glClearColor(r, g, b, a);}
     public void glClearDepth(double d) {back.glClearDepth(d);}
     public void glColorMask(boolean r, boolean g, boolean b, boolean a) {back.glColorMask(r, g, b, a);}

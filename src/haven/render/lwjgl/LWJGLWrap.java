@@ -84,6 +84,9 @@ public class LWJGLWrap implements GL {
     public void glBufferSubData(int target, long offset, long size, ByteBuffer data) {GL30.glBufferSubData(target, offset, ckbuf(data, size));}
     public int glCheckFramebufferStatus(int target) {return(GL30.glCheckFramebufferStatus(target));}
     public void glClear(int mask) {GL30.glClear(mask);}
+    public void glClearBufferfv(int buffer, int drawbuffer, float[] value) {GL30.glClearBufferfv(buffer, drawbuffer, value);}
+    public void glClearBufferiv(int buffer, int drawbuffer, int[] value) {GL30.glClearBufferiv(buffer, drawbuffer, value);}
+    public void glClearBufferuiv(int buffer, int drawbuffer, int[] value) {GL30.glClearBufferuiv(buffer, drawbuffer, value);}
     public void glClearColor(float r, float g, float b, float a) {GL30.glClearColor(r, g, b, a);}
     public void glClearDepth(double d) {GL30.glClearDepth(d);}
     public void glColorMask(boolean r, boolean g, boolean b, boolean a) {GL30.glColorMask(r, g, b, a);}

@@ -233,6 +233,9 @@ public interface GL {
     public void glBufferSubData(int target, long offset, long size, ByteBuffer data);
     public int glCheckFramebufferStatus(int target);
     public void glClear(int mask);
+    public void glClearBufferfv(int buffer, int drawbuffer, float[] value);
+    public void glClearBufferiv(int buffer, int drawbuffer, int[] value);
+    public void glClearBufferuiv(int buffer, int drawbuffer, int[] value);
     public void glClearColor(float r, float g, float b, float a);
     public void glClearDepth(double d);
     public void glColorMask(boolean r, boolean g, boolean b, boolean a);

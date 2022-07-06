@@ -41,6 +41,7 @@ public class Finalizer {
     private Function<Runnable, Thread> ctx;
     private Thread th;
     private Ref list;
+    private int n;
 
     public Finalizer(Function<Runnable, Thread> ctx) {
 	this.ctx = ctx;
@@ -69,6 +70,7 @@ public class Finalizer {
 		    next.prev = this;
 		list = this;
 		linked = true;
+		n++;
 	    }
 	}
 
@@ -84,6 +86,7 @@ public class Finalizer {
 		    list = next;
 		linked = false;
 		next = prev = null;
+		n--;
 	    }
 	}
 

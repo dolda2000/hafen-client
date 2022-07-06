@@ -161,6 +161,7 @@ public abstract class TexL extends TexRender {
 		if(ret.env == env)
 		    return(ret);
 		ret.dispose();
+		this.decode = null;
 	    }
 	}
     }

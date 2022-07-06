@@ -345,6 +345,24 @@ public abstract class BGL {
 	    });
     }
 
+    public void glClearBufferfv(final int buffer, final int drawbuffer, final float[] value) {
+	add(new Command() {
+		public void run(GL gl) {gl.glClearBufferfv(buffer, drawbuffer, value);}
+	    });
+    }
+
+    public void glClearBufferiv(final int buffer, final int drawbuffer, final int[] value) {
+	add(new Command() {
+		public void run(GL gl) {gl.glClearBufferiv(buffer, drawbuffer, value);}
+	    });
+    }
+
+    public void glClearBufferuiv(final int buffer, final int drawbuffer, final int[] value) {
+	add(new Command() {
+		public void run(GL gl) {gl.glClearBufferuiv(buffer, drawbuffer, value);}
+	    });
+    }
+
     public void glClearColor(final float r, final float g, final float b, final float a) {
 	add(new Command() {
 		public void run(GL gl) {gl.glClearColor(r, g, b, a);}

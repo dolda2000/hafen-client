@@ -468,7 +468,7 @@ public class MapWnd extends Window implements Console.Directory {
 
 	public Tex icon() {
 	    if(icon == null) {
-		BufferedImage img = spec.loadsaved().layer(Resource.imgc).img;
+		BufferedImage img = spec.loadsaved().flayer(Resource.imgc).img;
 		icon = new TexI(PUtils.uiscale(img, new Coord((iconsz * img.getWidth())/ img.getHeight(), iconsz)));
 	    }
 	    return(icon);
@@ -582,6 +582,7 @@ public class MapWnd extends Window implements Console.Directory {
 	    ret.add(new IconText(sz) {
 		    protected BufferedImage img() {throw(new RuntimeException());}
 		    protected String text() {return(lm.mark.nm);}
+		    protected boolean valid(String text) {return(Utils.eq(text, text()));}
 
 		    protected void drawicon(GOut g) {
 			try {
@@ -765,7 +766,9 @@ public class MapWnd extends Window implements Console.Directory {
 				throw(new Loading());
 			    return;
 			}
-			gob.setattr(new MarkerID(gob, oid));
+			synchronized(gob) {
+			    gob.setattr(new MarkerID(gob, oid));
+			}
 			Coord tc = gob.rc.floor(tilesz);
 			MCache.Grid obg = ui.sess.glob.map.getgrid(tc.div(cmaps));
 			if(!view.file.lock.writeLock().tryLock())

@@ -26,53 +26,9 @@
 
 package haven;
 
-import java.util.*;
-
-public class Avatar extends GAttrib {
-    public List<Indir<Resource>> layers = null;
-    private List<Resource.Image> images = null;
-
-    public Avatar(Gob gob) {
-	super(gob);
-    }
-	
-    void setlayers(List<Indir<Resource>> layers) {
-	synchronized(this) {
-	    this.layers = layers;
-	    this.images = null;
-	}
-    }
-
-    public List<Resource.Image> images() {
-	synchronized(this) {
-	    if((images == null) && (layers != null)) {
-		List<Resource.Image> nimg = new ArrayList<>(layers.size());
-		for(Indir<Resource> res : layers) {
-		    nimg.add(res.get().layer(Resource.imgc));
-		}
-		Collections.sort(nimg);
-		images = nimg;
-	    }
-	    return(images);
-	}
-    }
-
-    @OCache.DeltaType(OCache.OD_AVATAR)
-    public static class $avatar implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
-	    List<Indir<Resource>> layers = new LinkedList<Indir<Resource>>();
-	    while(true) {
-		int layer = msg.uint16();
-		if(layer == 65535)
-		    break;
-		layers.add(OCache.Delta.getres(g, layer));
-	    }
-	    Avatar ava = g.getattr(Avatar.class);
-	    if(ava == null) {
-		ava = new Avatar(g);
-		g.setattr(ava);
-	    }
-	    ava.setlayers(layers);
-	}
-    }
+public interface Scrollable {
+    public int scrollmin();
+    public int scrollmax();
+    public int scrollval();
+    public void scrollval(int val);
 }

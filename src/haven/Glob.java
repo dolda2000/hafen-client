@@ -255,7 +255,7 @@ public class Glob {
 		    ret.add((Weather)val);
 		} else {
 		    try {
-			Class<? extends Weather> cl = cur.getKey().get().layer(Resource.CodeEntry.class).getcl(Weather.class);
+			Class<? extends Weather> cl = cur.getKey().get().flayer(Resource.CodeEntry.class).getcl(Weather.class);
 			Weather w = Utils.construct(cl.getConstructor(Object[].class), new Object[] {val});
 			cur.setValue(w);
 			ret.add(w);
@@ -296,17 +296,6 @@ public class Glob {
 		cattr.put(nm, a);
 	    } else {
 		a.update(base, comp);
-	    }
-	}
-    }
-
-    public void cattr(Message msg) {
-	synchronized(cattr) {
-	    while(!msg.eom()) {
-		String nm = msg.string();
-		int base = msg.int32();
-		int comp = msg.int32();
-		cattr(nm, base, comp);
 	    }
 	}
     }

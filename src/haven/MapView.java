@@ -380,7 +380,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private double tf = 1.0;
 
 	public SOrthoCam(String... args) {
-	    PosixArgs opt = PosixArgs.getopt(args, "enift:");
+	    PosixArgs opt = PosixArgs.getopt(args, "enift:Z:");
 	    for(char c : opt.parsed()) {
 		switch(c) {
 		case 'e':
@@ -397,6 +397,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		    break;
 		case 't':
 		    tf = Double.parseDouble(opt.arg);
+		    break;
+		case 'Z':
+		    field = tfield = Float.parseFloat(opt.arg);
 		    break;
 		}
 	    }
@@ -537,28 +540,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    else
 		oltags.remove(tag);;
 	}
-    }
-
-    @Deprecated private String oltag(int id) {
-	switch(id) {
-	case 0: case 1:
-	    return("cplot");
-	case 2: case 3:
-	    return("vlg");
-	case 4: case 5:
-	    return("realm");
-	case 16:
-	    return("cplot-s");
-	case 17:
-	    return("sel");
-	}
-	return("n/a");
-    }
-    @Deprecated public void enol(int id) {
-	enol(oltag(id));
-    }
-    @Deprecated public void disol(int id) {
-	disol(oltag(id));
     }
 
     private final Gobs gobs;
@@ -1849,15 +1830,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		plgob = -1;
 	    else
 		plgob = Utils.uint32((Integer)args[0]);
-	} else if(msg == "flashol") {
-	    Collection<String> ols = new ArrayList<>();
-	    int olflash = (Integer)args[0];
-	    for(int i = 0; i < 32; i++) {
-		if((olflash & (1 << i)) != 0)
-		    ols.add(oltag(i));
-	    }
-	    double tm = ((Number)args[1]).doubleValue() / 1000.0;
-	    flashol(ols, tm);
 	} else if(msg == "flashol2") {
 	    Collection<String> ols = new LinkedList<>();
 	    double tm = ((Number)args[0]).doubleValue() / 100.0;
@@ -1898,17 +1870,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    out.clear(bstate, FragID.fragid, FColor.BLACK);
 	    out.clear(bstate, 1.0);
 	    checkmapclick(out, basic, pc, mc -> {
-		    /* XXX: This is somewhat doubtfully nice, but running
-		     * it in the defer group would cause unnecessary
-		     * latency, and it shouldn't really be a problem. */
-		    new HackThread(() -> {
-			    synchronized(ui) {
-				if(mc != null)
-				    hit(pc, mc);
-				else
-				    nohit(pc);
-			    }
-		    }, "Hit-test callback").start();
+		    synchronized(ui) {
+			if(mc != null)
+			    hit(pc, mc);
+			else
+			    nohit(pc);
+		    }
 		});
 	    env.submit(out);
 	}
@@ -1947,21 +1914,16 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			done = true;
 	    }
 	    if(done) {
-		/* XXX: This is somewhat doubtfully nice, but running
-		 * it in the defer group would cause unnecessary
-		 * latency, and it shouldn't really be a problem. */
-		new HackThread(() -> {
-			synchronized(ui) {
-			    if(mapcl != null) {
-				if(objcl == null)
-				    hit(pc, mapcl, null);
-				else
-				    hit(pc, mapcl, objcl);
-			    } else {
-				nohit(pc);
-			    }
-			}
-		}, "Hit-test callback").start();
+		synchronized(ui) {
+		    if(mapcl != null) {
+			if(objcl == null)
+			    hit(pc, mapcl, null);
+			else
+			    hit(pc, mapcl, objcl);
+		    } else {
+			nohit(pc);
+		    }
+		}
 	    }
 	}
 	

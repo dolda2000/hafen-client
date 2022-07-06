@@ -68,7 +68,7 @@ public class Img extends Widget {
     public void draw(GOut g) {
 	if(res != null) {
 	    try {
-		setimg(res.get().layer(Resource.imgc).tex());
+		setimg(res.get().flayer(Resource.imgc).tex());
 		res = null;
 	    } catch(Loading e) {}
 	}

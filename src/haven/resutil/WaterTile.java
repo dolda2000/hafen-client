@@ -347,7 +347,7 @@ public class WaterTile extends Tiler {
 		String p = (String)desc[0];
 		if(p.equals("bottom") /* Backwards compatibility */ || p.equals("gnd") || p.equals("trn")) {
 		    Resource bres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
-		    Tileset ts = bres.layer(Tileset.class);
+		    Tileset ts = bres.flayer(Tileset.class);
 		    Tiler b = ts.tfac().create(id, ts);
 		    bottom = (Tiler.MCons)b;
 		}

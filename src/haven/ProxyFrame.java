@@ -26,53 +26,39 @@
 
 package haven;
 
-import java.util.*;
+import java.awt.Color;
 
-public class Avatar extends GAttrib {
-    public List<Indir<Resource>> layers = null;
-    private List<Resource.Image> images = null;
+public class ProxyFrame<T extends Widget> extends Frame {
+    public final T ch;
+    public Color color = Color.WHITE;
 
-    public Avatar(Gob gob) {
-	super(gob);
+    public ProxyFrame(T child, boolean resize) {
+	super(child.sz, !resize);
+	this.ch = child;
+	if(resize)
+	    ch.resize(inner());
+	add(child, Coord.z);
     }
-	
-    void setlayers(List<Indir<Resource>> layers) {
-	synchronized(this) {
-	    this.layers = layers;
-	    this.images = null;
+
+    public void drawframe(GOut g) {
+	if(color != null) {
+	    g.chcolor(color);
+	    box.draw(g, Coord.z, sz);
 	}
     }
 
-    public List<Resource.Image> images() {
-	synchronized(this) {
-	    if((images == null) && (layers != null)) {
-		List<Resource.Image> nimg = new ArrayList<>(layers.size());
-		for(Indir<Resource> res : layers) {
-		    nimg.add(res.get().layer(Resource.imgc));
-		}
-		Collections.sort(nimg);
-		images = nimg;
-	    }
-	    return(images);
+    public void uimsg(String msg, Object... args) {
+	if(msg == "col") {
+	    color = (Color)args[0];
+	} else {
+	    ch.uimsg(msg, args);
 	}
     }
 
-    @OCache.DeltaType(OCache.OD_AVATAR)
-    public static class $avatar implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
-	    List<Indir<Resource>> layers = new LinkedList<Indir<Resource>>();
-	    while(true) {
-		int layer = msg.uint16();
-		if(layer == 65535)
-		    break;
-		layers.add(OCache.Delta.getres(g, layer));
-	    }
-	    Avatar ava = g.getattr(Avatar.class);
-	    if(ava == null) {
-		ava = new Avatar(g);
-		g.setattr(ava);
-	    }
-	    ava.setlayers(layers);
-	}
+    public void wdgmsg(Widget sender, String msg, Object... args) {
+	if(sender == ch)
+	    wdgmsg(msg, args);
+	else
+	    super.wdgmsg(sender, msg, args);
     }
 }

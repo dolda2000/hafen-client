@@ -50,7 +50,8 @@ public class LWJGLPanel extends AWTGLCanvas implements Runnable, UIPanel, UI.Con
     private double uidle = 0.0, ridle = 0.0;
     private final Dispatcher ed;
     private LWJGLEnvironment env = null;
-    private UI ui;
+    private UI ui, lockedui;
+    private final Object uilock = new Object();
     private Area shape;
     private Pipe base, wnd;
 
@@ -306,7 +307,7 @@ public class LWJGLPanel extends AWTGLCanvas implements Runnable, UIPanel, UI.Con
 		    if(curs == null)
 			setCursor(null);
 		    else
-			setCursor(UIPanel.makeawtcurs(curs.layer(Resource.imgc).img, curs.layer(Resource.negc).cc));
+			setCursor(UIPanel.makeawtcurs(curs.flayer(Resource.imgc).img, curs.flayer(Resource.negc).cc));
 		} catch(Exception e) {
 		    cursmode = "tex";
 		}
@@ -318,8 +319,8 @@ public class LWJGLPanel extends AWTGLCanvas implements Runnable, UIPanel, UI.Con
 	    } else {
 		if(lastcursor == null)
 		    setCursor(emptycurs);
-		Coord dc = ui.mc.add(curs.layer(Resource.negc).cc.inv());
-		g.image(curs.layer(Resource.imgc), dc);
+		Coord dc = ui.mc.add(curs.flayer(Resource.negc).cc.inv());
+		g.image(curs.flayer(Resource.imgc), dc);
 	    }
 	}
 	lastcursor = curs;
@@ -387,7 +388,11 @@ public class LWJGLPanel extends AWTGLCanvas implements Runnable, UIPanel, UI.Con
 		    double fwaited = 0;
 		    GLEnvironment env = this.env;
 		    buf = env.render();
-		    UI ui = this.ui;
+		    UI ui;
+		    synchronized(uilock) {
+			this.lockedui = ui = this.ui;
+			uilock.notifyAll();
+		    }
 		    Debug.cycle(ui.modflags());
 		    GSettings prefs = ui.gprefs;
 		    SyncMode syncmode = prefs.syncmode.val;
@@ -500,6 +505,10 @@ public class LWJGLPanel extends AWTGLCanvas implements Runnable, UIPanel, UI.Con
 		    prevframe = curframe;
 		}
 	    } finally {
+		synchronized(uilock) {
+		    lockedui = null;
+		    uilock.notifyAll();
+		}
 		if(buf != null)
 		    buf.dispose();
 		drawthread.interrupt();
@@ -510,19 +519,31 @@ public class LWJGLPanel extends AWTGLCanvas implements Runnable, UIPanel, UI.Con
     }
 
     public UI newui(UI.Runner fun) {
-	if(ui != null) {
-	    synchronized(ui) {
-		ui.destroy();
+	UI prevui, newui = new UI(this, new Coord(getSize()), fun);
+	newui.env = this.env;
+	if(getParent() instanceof Console.Directory)
+	    newui.cons.add((Console.Directory)getParent());
+	synchronized(uilock) {
+	    prevui = this.ui;
+	    ui = newui;
+	    ui.root.guprof = uprof;
+	    ui.root.grprof = rprof;
+	    ui.root.ggprof = gprof;
+	    while((this.lockedui != null) && (this.lockedui == prevui)) {
+		try {
+		    uilock.wait();
+		} catch(InterruptedException e) {
+		    Thread.currentThread().interrupt();
+		    break;
+		}
 	    }
 	}
-	ui = new UI(this, new Coord(getSize()), fun);
-	ui.env = this.env;
-	ui.root.guprof = uprof;
-	ui.root.grprof = rprof;
-	ui.root.ggprof = gprof;
-	if(getParent() instanceof Console.Directory)
-	    ui.cons.add((Console.Directory)getParent());
-	return(ui);
+	if(prevui != null) {
+	    synchronized(prevui) {
+		prevui.destroy();
+	    }
+	}
+	return(newui);
     }
 
     public void background(boolean bg) {

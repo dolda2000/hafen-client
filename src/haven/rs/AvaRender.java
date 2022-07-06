@@ -37,7 +37,7 @@ import haven.Composited.MD;
 
 public class AvaRender {
     public static Composited compose(Resource base, List<MD> mod, List<ED> equ) {
-	Composited comp = new Composited(base.layer(Skeleton.Res.class).s);
+	Composited comp = new Composited(base.flayer(Skeleton.Res.class).s);
 	comp.chmod(mod);
 	comp.chequ(equ);
 	return(comp);
@@ -54,7 +54,7 @@ public class AvaRender {
 	Camera tcam;
 	while(true) {
 	    try {
-		Skeleton.BoneOffset camoff = base.get().layer(Skeleton.BoneOffset.class, camnm);
+		Skeleton.BoneOffset camoff = base.get().flayer(Skeleton.BoneOffset.class, camnm);
 		tcomp = compose(base.get(), mod, equ);
 		Pipe buf = new BufPipe();
 		buf.prep(camoff.forpose(tcomp.pose).get());

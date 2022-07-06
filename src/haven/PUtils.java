@@ -60,6 +60,10 @@ public class PUtils {
 	return(ret);
     }
 
+    public static BufferedImage copy(BufferedImage src) {
+	return(rasterimg(copy(src.getRaster())));
+    }
+
     public static BufferedImage rasterimg(WritableRaster img) {
 	return(new BufferedImage(TexI.glcm, img, false, null));
     }
@@ -338,26 +342,19 @@ public class PUtils {
     
     public static BufferedImage monochromize(BufferedImage img, Color col) {
 	Coord sz = Utils.imgsz(img);
-	BufferedImage ret = TexI.mkbuf(sz);
-	Raster src = img.getRaster();
-	WritableRaster dst = ret.getRaster();
-	boolean hasalpha = (src.getNumBands() == 4);
+	WritableRaster buf = img.getRaster();
 	for(int y = 0; y < sz.y; y++) {
 	    for(int x = 0; x < sz.x; x++) {
-		int r = src.getSample(x, y, 0),
-		    g = src.getSample(x, y, 1),
-		    b = src.getSample(x, y, 2);
-		int a = hasalpha?src.getSample(x, y, 3):255;
-		int max = Math.max(r, Math.max(g, b)),
-		    min = Math.min(r, Math.min(g, b));
-		int val = (max + min) / 2;
-		dst.setSample(x, y, 0, (col.getRed()   * val) / 255);
-		dst.setSample(x, y, 1, (col.getGreen() * val) / 255);
-		dst.setSample(x, y, 2, (col.getBlue()  * val) / 255);
-		dst.setSample(x, y, 3, (col.getAlpha() * a) / 255);
+		int r = buf.getSample(x, y, 0),
+		    g = buf.getSample(x, y, 1),
+		    b = buf.getSample(x, y, 2);
+		int val = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+		buf.setSample(x, y, 0, (col.getRed()   * val) / 255);
+		buf.setSample(x, y, 1, (col.getGreen() * val) / 255);
+		buf.setSample(x, y, 2, (col.getBlue()  * val) / 255);
 	    }
 	}
-	return(ret);
+	return(img);
     }
 
     public static interface Convolution {

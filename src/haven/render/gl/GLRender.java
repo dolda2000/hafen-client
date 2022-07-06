@@ -511,12 +511,12 @@ public class GLRender implements Render, Disposable {
 			    data.put(bo, t);
 			}
 		    }
-		    callback.accept(data);
+		    env.callback(() -> callback.accept(data));
 		}
 
 		public void abort() {
 		    if(callback instanceof Abortable)
-			((Abortable)callback).abort();
+			env.callback(() -> ((Abortable)callback).abort());
 		}
 	    }));
 	gl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, null);
@@ -570,27 +570,27 @@ public class GLRender implements Render, Disposable {
 			    }
 			}
 		    }
-		    callback.accept(data);
+		    env.callback(() -> callback.accept(data));
 		}
 
 		public void abort() {
 		    if(callback instanceof Abortable)
-			((Abortable)callback).abort();
+			env.callback(() -> ((Abortable)callback).abort());
 		}
 	    }));
 	gl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, null);
     }
 
     public void timestamp(Consumer<Long> callback) {
-	gl().bglCreate(new GLTimestamp(env, callback));
+	gl().bglCreate(new GLTimestamp(env, ts -> env.callback(() -> callback.accept(ts))));
     }
 
     public void fence(Runnable callback) {
 	gl().bglSubmit(new BGL.Request() {
-		public void run(GL g) {callback.run();}
+		public void run(GL g) {env.callback(callback);}
 		public void abort() {
 		    if(callback instanceof Abortable)
-			((Abortable)callback).abort();
+			env.callback(() -> ((Abortable)callback).abort());
 		}
 	    });
     }

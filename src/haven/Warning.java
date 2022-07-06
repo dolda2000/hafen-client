@@ -27,9 +27,18 @@
 package haven;
 
 import java.util.*;
+import java.io.*;
+import java.nio.file.*;
 import haven.error.ErrorHandler;
 
 public class Warning extends Throwable {
+    public static final int DEBUG = 0;
+    public static final int ERROR = 5;
+    public static final int CRITICAL = 10;
+    public final double ctime = Utils.rtime();
+    public int level = DEBUG;
+    public boolean trace = false;
+
     public Warning(Throwable cause, String message) {
 	super(message, cause);
     }
@@ -46,12 +55,34 @@ public class Warning extends Throwable {
 	super(cause);
     }
 
+    public Warning level(int level) {this.level = level; return(this);}
+    public Warning trace(boolean trace) {this.trace = trace; return(this);}
+
+    public void report(PrintStream out, String head) {
+	out.printf("%s%s\n", head, (getClass() == Warning.class) ? getMessage() : toString());
+	if(trace) {
+	    for(StackTraceElement frame : getStackTrace())
+		out.println("\tat " + frame);
+	}
+	if(getCause() != null)
+	    getCause().printStackTrace(out);
+	out.flush();
+    }
+
     private static final int LOGSIZE = 10;
     private static LinkedList<Warning> log = null;
     public void issue() {
-	System.err.printf("hafen: warning: %s\n", (getClass() == Warning.class) ? getMessage() : toString());
-	if(getCause() != null)
-	    getCause().printStackTrace(System.err);
+	report(System.err, "haven: warning: ");
+	if(level >= ERROR) {
+	    /* XXX: Report in some user-visible way. */
+	}
+	if(level >= CRITICAL) {
+	    try(OutputStream fp = Files.newOutputStream(Debug.somedir("haven-errors.log"), StandardOpenOption.APPEND, StandardOpenOption.CREATE)) {
+		report(new PrintStream(fp), String.format("%s: ", new Date()));
+	    } catch(IOException e) {
+		new Warning(e, "could not log critical warning").level(ERROR).issue();
+	    }
+	}
 	synchronized(Warning.class) {
 	    if(log == null) {
 		ErrorHandler errh = ErrorHandler.find();
@@ -66,7 +97,11 @@ public class Warning extends Throwable {
 	}
     }
 
+    public static void warn(int level, String fmt, Object... args) {
+	new Warning(fmt, args).level(level).issue();
+    }
+
     public static void warn(String fmt, Object... args) {
-	new Warning(fmt, args).issue();
+	warn(DEBUG, fmt, args);
     }
 }

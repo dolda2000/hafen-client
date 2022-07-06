@@ -42,6 +42,8 @@ public abstract class GLEnvironment implements Environment {
     final Object prepmon = new Object();
     final Collection<GLObject> disposed = new LinkedList<>();
     final List<GLQuery> queries = new LinkedList<>(); // Synchronized on drawmon
+    final Queue<Runnable> callbacks = new LinkedList<>();
+    Thread cbthread = null;
     final Queue<GLRender> submitted = new LinkedList<>();
     Area wnd;
     private GLRender prep = null;
@@ -197,6 +199,52 @@ public abstract class GLEnvironment implements Environment {
 
     public Area shape() {
 	return(wnd);
+    }
+
+    private void ckcbt() {
+	synchronized(callbacks) {
+	    if(!callbacks.isEmpty() && (cbthread == null)) {
+		cbthread = new HackThread(this::cbloop, "Render-query callback thread");
+		cbthread.start();
+	    }
+	}
+    }
+
+    private void cbloop() {
+	try {
+	    double last = Utils.rtime(), now = last;
+	    while(true) {
+		Runnable cb;
+		synchronized(callbacks) {
+		    while(callbacks.isEmpty()) {
+			if(now - last >= 5) {
+			    cbthread = null;
+			    return;
+			}
+			callbacks.wait((int)((last + 6 - now) * 1000));
+			now = Utils.rtime();
+		    }
+		    cb = callbacks.remove();
+		    last = now;
+		}
+		cb.run();
+	    }
+	} catch(InterruptedException e) {
+	} finally {
+	    synchronized(callbacks) {
+		if(cbthread == Thread.currentThread())
+		    cbthread = null;
+		ckcbt();
+	    }
+	}
+    }
+
+    void callback(Runnable cb) {
+	synchronized(callbacks) {
+	    callbacks.add(cb);
+	    callbacks.notifyAll();
+	    ckcbt();
+	}
     }
 
     private void checkqueries(GL gl) {

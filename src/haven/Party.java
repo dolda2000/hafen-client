@@ -30,19 +30,21 @@ import java.util.*;
 import java.awt.Color;
 
 public class Party {
-    Map<Long, Member> memb = new TreeMap<Long, Member>();
-    Member leader = null;
     public static final int PD_LIST = 0;
     public static final int PD_LEADER = 1;
     public static final int PD_MEMBER = 2;
-    private Glob glob;
-	
+    public Map<Long, Member> memb = new TreeMap<Long, Member>();
+    public Member leader = null;
+    private final Glob glob;
+    private int mseq = 0;
+
     public Party(Glob glob) {
 	this.glob = glob;
     }
-	
+
     public class Member {
 	public final long gobid;
+	public final int seq;
 	private Coord2d c = null;
 	private double ma = Math.random() * Math.PI * 2;
 	private double oa = Double.NaN;
@@ -50,12 +52,13 @@ public class Party {
 
 	public Member(long gobid) {
 	    this.gobid = gobid;
+	    this.seq = mseq++;
 	}
 
 	public Gob getgob() {
 	    return(glob.oc.getgob(gobid));
 	}
-	
+
 	public Coord2d getc() {
 	    Gob gob;
 	    try {
@@ -68,11 +71,17 @@ public class Party {
 	    return(c);
 	}
 
+	void setc(Coord2d c) {
+	    if((this.c != null) && (c != null))
+		ma = this.c.angle(c);
+	    this.c = c;
+	}
+
 	public double geta() {
 	    return(Double.isNaN(oa) ? ma : oa);
 	}
     }
-	
+
     public void msg(Message msg) {
 	while(!msg.eom()) {
 	    int type = msg.uint8();
@@ -106,9 +115,7 @@ public class Party {
 		    c = msg.coord().mul(OCache.posres);
 		Color col = msg.color();
 		if(m != null) {
-		    if((m.c != null) && (c != null))
-			m.ma = m.c.angle(c);
-		    m.c = c;
+		    m.setc(c);
 		    m.col = col;
 		}
 	    }

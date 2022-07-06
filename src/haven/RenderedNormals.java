@@ -33,7 +33,7 @@ import static haven.Utils.eq;
 
 public class RenderedNormals extends State {
     public static final Slot<RenderedNormals> slot = new Slot<>(Slot.Type.SYS, RenderedNormals.class);
-    public static final FragData fragnorm = new FragData(Type.VEC4, "fragnorm", p -> ((p.get(States.maskdepth.slot) == null) ? p.get(slot).img : null), slot, States.maskdepth.slot);
+    public static final FragData fragnorm = new FragData(Type.VEC3, "fragnorm", p -> ((p.get(States.maskdepth.slot) == null) ? p.get(slot).img : null), slot, States.maskdepth.slot);
     public final Texture.Image<?> img;
 
     public RenderedNormals(Texture.Image<?> img) {
@@ -47,9 +47,9 @@ public class RenderedNormals extends State {
 
     private static final ShaderMacro shader = prog -> {
 	Homo3D.frageyen(prog.fctx);
-	ValBlock.Value val = prog.fctx.mainvals.ext(fragnorm, () -> prog.fctx.mainvals.new Value(Type.VEC4) {
+	ValBlock.Value val = prog.fctx.mainvals.ext(fragnorm, () -> prog.fctx.mainvals.new Value(Type.VEC3) {
 		public Expression root() {
-		    return(vec4(mul(add(Homo3D.frageyen(prog.fctx).depref(), l(1.0)), l(0.5)), l(1.0)));
+		    return(Homo3D.frageyen(prog.fctx).depref());
 		}
 
 		protected void cons2(Block blk) {
@@ -64,8 +64,9 @@ public class RenderedNormals extends State {
 
     public void apply(Pipe p) {p.put(slot, this);}
 
-    public static class Canon implements Pipe.Op, Disposable {
+    public static class Canon implements Pipe.Op, Disposable, RenderContext.Global {
 	public Texture2D tex = null;
+	private RenderedNormals state;
 	private int refcount = 0;
 
 	public void apply(Pipe p) {
@@ -73,14 +74,20 @@ public class RenderedNormals extends State {
 	    if((tex == null) || !tex.sz().equals(fb.sz)) {
 		if(tex != null)
 		    tex.dispose();
-		tex = new Texture2D(fb.sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null);
+		tex = new Texture2D(fb.sz, DataBuffer.Usage.STATIC, new VectorFormat(3, NumberFormat.SNORM8), null);
+		state = new RenderedNormals(tex.image(0));
 	    }
-	    p.prep(new RenderedNormals(tex.image(0)));
+	    p.prep(state);
 	}
 
 	public void dispose() {
 	    if(tex != null)
 		tex.dispose();
+	}
+
+	public void prerender(Render out) {
+	    if(state != null)
+		out.clear(new BufPipe().prep(new FragColor<>(tex.image(0))), FragColor.fragcol, new FColor(0, 0, -1));
 	}
     }
 
@@ -94,6 +101,7 @@ public class RenderedNormals extends State {
 	    if(ret == null) {
 		ret = new Canon();
 		ctx.basic(Canon.class, ret);
+		ctx.add(ret);
 	    }
 	    ret.refcount++;
 	}
@@ -110,6 +118,7 @@ public class RenderedNormals extends State {
 		throw(new IllegalStateException());
 	    if(--cur.refcount <= 0) {
 		ctx.basic(Canon.class, null);
+		ctx.put(cur);
 		cur.dispose();
 	    }
 	}
