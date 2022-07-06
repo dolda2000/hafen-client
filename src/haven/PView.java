@@ -272,10 +272,12 @@ public abstract class PView extends Widget {
 	if(cc != null)
 	    g.out.clear(basic.state(), FragColor.fragcol, cc);
 	g.out.clear(basic.state(), 1.0);
+	ctx.prerender(g.out);
 	try(Locked lk = tree.lock()) {
 	    instancer.commit(g.out);
 	    maindraw(g.out);
 	}
+	ctx.postrender(g.out);
 	resolve(g);
 	list2d.draw(g);
     }

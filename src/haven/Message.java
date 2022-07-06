@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import dolda.coe.*;
 import java.awt.Color;
 
 public abstract class Message {
@@ -229,17 +230,26 @@ public abstract class Message {
     public float unorm8() {
 	return(uint8() / 0xffp0f);
     }
+    public float mnorm8() {
+	return(uint8() / 0x100p0f);
+    }
     public float snorm16() {
 	return(Utils.clip(int16(), -0x7fff, 0x7fff) / 0x7fffp0f);
     }
     public float unorm16() {
 	return(uint16() / 0xffffp0f);
     }
+    public float mnorm16() {
+	return(uint16() / 0x10000p0f);
+    }
     public double snorm32() {
 	return(Utils.clip(int32(), -0x7fffffff, 0x7fffffff) / 0x7fffffffp0);
     }
     public double unorm32() {
 	return(uint32() / 0xffffffffp0);
+    }
+    public double mnorm32() {
+	return(uint32() / 0x100000000p0);
     }
 
     public Object[] list() {
@@ -463,5 +473,20 @@ public abstract class Message {
 	    }
 	}
 	return(this);
+    }
+
+    static {
+	ObjectData.register(Message.class, (msg, buf) -> {
+		if((msg.rbuf.length > 0) || (msg.rh != 0) || (msg.rt != 0)) {
+		    buf.put(Symbol.get("read-buf"), msg.rbuf);
+		    buf.put(Symbol.get("read-head"), msg.rh);
+		    buf.put(Symbol.get("read-tail"), msg.rt);
+		}
+		if((msg.wbuf.length > 0) || (msg.wh != 0) || (msg.wt != 0)) {
+		    buf.put(Symbol.get("write-buf"), msg.wbuf);
+		    buf.put(Symbol.get("write-head"), msg.wh);
+		    buf.put(Symbol.get("write-tail"), msg.wt);
+		}
+	    });
     }
 }

@@ -300,17 +300,6 @@ public class Glob {
 	}
     }
 
-    public void cattr(Message msg) {
-	synchronized(cattr) {
-	    while(!msg.eom()) {
-		String nm = msg.string();
-		int base = msg.int32();
-		int comp = msg.int32();
-		cattr(nm, base, comp);
-	    }
-	}
-    }
-
     public static class FrameInfo extends State {
 	public static final Slot<FrameInfo> slot = new Slot<>(Slot.Type.SYS, FrameInfo.class);
 	public static final Uniform u_globtime = new Uniform(Type.FLOAT, "globtime", p -> {

@@ -26,11 +26,13 @@
 
 package haven;
 
+import java.util.*;
+
 public class Frame extends Widget {
     public final IBox box;
 
     public Frame(Coord sz, boolean inner, IBox box) {
-	super(inner?sz.add(box.bisz()):sz);
+	super(inner ? sz.add(box.bisz()) : sz);
 	this.box = box;
     }
 
@@ -58,6 +60,10 @@ public class Frame extends Widget {
 	    if(wbr.y > br.y) br.y = wbr.y;
 	}
 	return(around(parent, new Area(tl, br)));
+    }
+
+    public static Frame around(Widget parent, Widget... ch) {
+	return(around(parent, Arrays.asList(ch)));
     }
 
     public static Frame with(Widget child, boolean resize) {
@@ -98,9 +104,13 @@ public class Frame extends Widget {
 	}
     }
 
+    public void drawframe(GOut g) {
+	box.draw(g, Coord.z, sz);
+    }
+
     public void draw(GOut g) {
 	super.draw(g);
-	box.draw(g, Coord.z, sz);
+	drawframe(g);
     }
 
     public boolean checkhit(Coord c) {

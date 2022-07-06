@@ -670,6 +670,8 @@ public class Widget {
 	    pack();
 	} else if(msg == "z") {
 	    z((Integer)args[0]);
+	} else if(msg == "show") {
+	    show((Integer)args[0] != 0);
 	} else if(msg == "curs") {
 	    if(args.length == 0)
 		cursor = null;
@@ -1354,18 +1356,18 @@ public class Widget {
 		    if(rich) {
 			tip = base;
 			if((key != null) && (key != KeyMatch.nil))
-			    tip = String.format("%s\n\nKeyboard shortcut: $col[255,255,0]{%s}", tip, RichText.Parser.quote(kb_gkey.key().name()));
+			    tip = String.format("%s\n\nKeyboard shortcut: $col[255,255,0]{%s}", tip, RichText.Parser.quote(key.name()));
 			w = UI.scale(300);
 		    } else {
 			tip = RichText.Parser.quote(base);
 			if((key != null) && (key != KeyMatch.nil))
-			    tip = String.format("%s ($col[255,255,0]{%s})", tip, RichText.Parser.quote(kb_gkey.key().name()));
+			    tip = String.format("%s ($col[255,255,0]{%s})", tip, RichText.Parser.quote(key.name()));
 		    }
 		} else {
 		    if((key == null) || (key == KeyMatch.nil))
 			tip = null;
 		    else
-			tip = String.format("Keyboard shortcut: $col[255,255,0]{%s}", RichText.Parser.quote(kb_gkey.key().name()));
+			tip = String.format("Keyboard shortcut: $col[255,255,0]{%s}", RichText.Parser.quote(key.name()));
 		}
 		rend = (tip == null) ? null : RichText.render(tip, w).tex();
 		hrend = true;

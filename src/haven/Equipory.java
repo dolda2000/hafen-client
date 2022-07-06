@@ -112,13 +112,12 @@ public class Equipory extends Widget implements DTarget {
 		}
 
 		{
-		    basic.add(new Outlines(true));
+		    basic.add(new Outlines(false));
 		}
 
 		final FColor cc = new FColor(0, 0, 0, 0);
 		protected FColor clearcolor() {return(cc);}
 	    }, bgc);
-	ava.color = null;
     }
 
     public static interface SlotInfo {
