@@ -159,6 +159,10 @@ public class GLRender implements Render, Disposable {
 	state.apply(this.gl, sub.init);
 	BGL gl = gl();
 	gl.bglCallList(sub.gl);
+	gl.bglSubmit(new BGL.Request() {
+		public void run(GL3 gl) {abort();}
+		public void abort() {sub.dispose();}
+	    });
 	gl.bglSubmit(rgl -> sub.dispose());
 	state.apply(null, sub.state);
     }
