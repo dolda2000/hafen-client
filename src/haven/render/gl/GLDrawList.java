@@ -1042,7 +1042,7 @@ public class GLDrawList implements DrawList {
 	}
     }
 
-    private final Disposable lck = new Finalizer.LeakCheck(this);
+    private final Disposable lck = Finalizer.leakcheck(this);
     public void dispose() {
 	lck.dispose();
 	synchronized(this) {

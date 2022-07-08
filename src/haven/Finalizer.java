@@ -407,6 +407,9 @@ public class Finalizer {
 	}
     }
 
+    public static Disposable leakcheck(Object guarded, String desc) {return(new LeakCheck(guarded, desc));}
+    public static Disposable leakcheck(Object guarded) {return(new LeakCheck(guarded));}
+
     public static class Disposer implements Cleaner, Formattable {
 	public final Disposable tgt;
 
