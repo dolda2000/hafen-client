@@ -27,17 +27,42 @@
 package haven.render.lwjgl;
 
 import java.nio.*;
+import haven.*;
 import haven.render.gl.*;
 import org.lwjgl.system.*;
 
 public class LWJGLBuffer extends GLObject implements SysBuffer {
-    public static final boolean leakcause = false;
-    private Throwable init = leakcause ? new Throwable() : null;
+    public static final boolean LEAK_CAUSE = false;
     private ByteBuffer data;
+    private final Cleanup clean;
+
+    private static class Cleanup implements Finalizer.Cleaner, Disposable {
+	private final Throwable init = LEAK_CAUSE ? new Throwable() : null;
+	private final ByteBuffer data;
+	private final Runnable fin;
+	private boolean clean;
+
+	Cleanup(LWJGLBuffer ob) {
+	    this.data = ob.data;
+	    fin = Finalizer.finalize(ob, this);
+	}
+
+	public void clean() {
+	    if(!clean)
+		new Warning(init , "LWJGL buffer leaked (" + data.capacity() + " bytes)").issue();
+	    MemoryUtil.memFree(data);
+	}
+
+	public void dispose() {
+	    clean = true;
+	    fin.run();
+	}
+    }
 
     public LWJGLBuffer(LWJGLEnvironment env, int sz) {
 	super(env);
 	data = MemoryUtil.memAlloc(sz);
+	clean = new Cleanup(this);
     }
 
     public ByteBuffer data() {
@@ -51,12 +76,7 @@ public class LWJGLBuffer extends GLObject implements SysBuffer {
     protected void delete(GL gl) {
 	if(data == null)
 	    throw(new IllegalStateException("already disposed"));
-	MemoryUtil.memFree(data);
 	data = null;
-    }
-
-    public void finalize() {
-	if(data != null)
-	    new haven.Warning(init , "LWJGL buffer " + this + " leaked (" + data.capacity() + " bytes)").issue();
+	clean.dispose();
     }
 }
