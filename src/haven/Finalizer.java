@@ -51,12 +51,16 @@ public class Finalizer {
 	this(tgt -> new HackThread(tgt, "Finalization thread"));
     }
 
+    public static interface Cleaner {
+	public void clean();
+    }
+
     private class Ref extends PhantomReference<Object> implements Runnable {
-	final Runnable action;
+	final Cleaner action;
 	boolean linked;
 	Ref next, prev;
 
-	Ref(Object x, Runnable action) {
+	Ref(Object x, Cleaner action) {
 	    super(x, queue);
 	    this.action = action;
 	}
@@ -97,7 +101,7 @@ public class Finalizer {
 		clear();
 	    }
 	    if(linked)
-		action.run();
+		action.clean();
 	}
 
 	public void clear() {
@@ -141,7 +145,7 @@ public class Finalizer {
 	}
     }
 
-    public Runnable add(Object x, Runnable action) {
+    public Runnable add(Object x, Cleaner action) {
 	synchronized(this) {
 	    Ref ret = new Ref(x, action);
 	    ret.add();
@@ -163,7 +167,7 @@ public class Finalizer {
 		}));
     }
 
-    public static Runnable finalize(Object x, Runnable action) {
+    public static Runnable finalize(Object x, Cleaner action) {
 	return(getgroup().add(x, action));
     }
 
