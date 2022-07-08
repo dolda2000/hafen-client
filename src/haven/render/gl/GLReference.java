@@ -24,13 +24,21 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render;
+package haven.render.gl;
 
-import haven.Disposable;
+import haven.*;
 
-public interface DrawList extends RenderList<Rendered>, Disposable {
-    public void draw(Render out);
+public class GLReference<T extends Disposable> extends Finalizer.Reference<T> {
+    public GLReference(T ob) {
+	super(ob);
+    }
 
-    public default String stats() {return("");}
-    public default DrawList desc(Object desc) {return(this);}
+    public static <T extends Disposable> T get(Object ro, Class<T> type) {
+	if(!(ro instanceof GLReference))
+	    return(null);
+	GLReference<?> ref = (GLReference<?>)ro;
+	if(!type.isInstance(ref.ob))
+	    return(null);
+	return(type.cast(ref.ob));
+    }
 }

@@ -30,6 +30,7 @@ import java.util.*;
 import java.nio.*;
 import com.jogamp.opengl.*;
 import haven.render.*;
+import haven.Finalizer;
 
 /*
  * This buffer exist only to conserve allocation bandwidth, by keeping
@@ -99,10 +100,22 @@ public class StreamBuffer implements haven.Disposable {
     }
 
     public class Fill implements FillBuffer {
-	public ByteBuffer data;
+	public final ByteBuffer data;
+	private final boolean[] clear;
+	private final Runnable clean;
 
 	public Fill() {
-	    data = StreamBuffer.this.get();
+	    boolean[] clear = this.clear = new boolean[] {false};
+	    StreamBuffer bref = StreamBuffer.this;
+	    ByteBuffer data = this.data = bref.get();
+	    clean = Finalizer.finalize(this, () -> {
+		    synchronized(clear) {
+			if(!clear[0]) {
+			    bref.put(data);
+			    clear[0] = true;
+			}
+		    }
+		});
 	}
 
 	public int size() {return(size);}
@@ -117,24 +130,17 @@ public class StreamBuffer implements haven.Disposable {
 	}
 
 	ByteBuffer get() {
-	    synchronized(this) {
+	    synchronized(clear) {
 		ByteBuffer ret = this.data;
-		this.data = null;
+		clear[0] = true;
 		ret.rewind();
 		return(ret);
 	    }
 	}
 
 	public void dispose() {
-	    synchronized(this) {
-		if(data != null) {
-		    put(data);
-		    data = null;
-		}
-	    }
+	    clean.run();
 	}
-
-	protected void finalize() {dispose();}
     }
 
     public void dispose() {

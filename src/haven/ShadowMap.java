@@ -203,7 +203,7 @@ public class ShadowMap extends State {
 	    if((back == null) || !out.env().compatible(back)) {
 		if(back != null)
 		    back.dispose();
-		back = out.env().drawlist();
+		back = out.env().drawlist().desc("shadow-list: " + this);
 		back.asyncadd(this, Rendered.class);
 	    }
 	    back.draw(out);
