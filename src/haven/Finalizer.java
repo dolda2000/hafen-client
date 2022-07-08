@@ -283,15 +283,18 @@ public class Finalizer {
     }
 
     public static class LeakCheck implements Disposable, Cleaner, Formattable {
+	private static boolean leaking = false;
 	public final String desc;
 	private final Runnable fin;
 	private final Class<?> cls;
+	private final Throwable create;
 	private boolean clean = false;
 
 	public LeakCheck(Object guarded, String desc) {
 	    this.desc = desc;
 	    fin = Finalizer.finalize(guarded, this);
 	    cls = guarded.getClass();
+	    create = leaking ? new Throwable() : null;
 	}
 
 	public LeakCheck(Object guarded) {
@@ -300,8 +303,10 @@ public class Finalizer {
 
 	public void clean() {
 	    synchronized(this) {
-		if(!this.clean)
-		    Warning.warn("leak-check: %s leaked", desc);
+		if(!this.clean) {
+		    new Warning(create, String.format("leak-check: %s leaked", desc)).issue();
+		    leaking = true;
+		}
 	    }
 	}
 
