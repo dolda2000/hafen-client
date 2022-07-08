@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import java.util.function.*;
 import java.lang.ref.*;
+import java.lang.reflect.*;
 import java.security.*;
 
 /* Java is deprecating Object.finalize (understandably enough), but
@@ -37,6 +38,7 @@ import java.security.*;
  * left with little choice but to implement my own. At least it's not
  * particularly complicated. */
 public class Finalizer {
+    private static boolean CHECK_CYCLES = false;
     private final ReferenceQueue<Object> queue = new ReferenceQueue<>();
     private Function<Runnable, Thread> ctx;
     private Thread th;
@@ -150,6 +152,8 @@ public class Finalizer {
     }
 
     public Runnable add(Object x, Cleaner action) {
+	if(CHECK_CYCLES)
+	    checkcycle(x, action);
 	synchronized(this) {
 	    Ref ret = new Ref(x, action);
 	    ret.add();
@@ -280,6 +284,85 @@ public class Finalizer {
 
     public Snapshot snapshot() {
 	return(new Snapshot(this));
+    }
+
+    private static void checkcycle(Object ref, Object root) {
+	Map<Object, Object> back = new IdentityHashMap<>();
+	Map<Object, Object> btyp = new IdentityHashMap<>();
+	Map<Object, Integer> blen = new IdentityHashMap<>();
+	Map<Object, Object> closed = new IdentityHashMap<>();
+	Queue<Object> open = new LinkedList<>();
+	open.add(root);
+	closed.put(root, root);
+	back.put(root, null);
+	blen.put(root, 0);
+	while(!open.isEmpty()) {
+	    Object ob = open.remove();
+	    if(ob == ref) {
+		List<Object> path = new ArrayList<>();
+		for(Object prev = ob; prev != null; prev = back.get(prev))
+		    path.add(prev);
+		path.remove(path.size() - 1);
+		Collections.reverse(path);
+		StringBuilder buf = new StringBuilder();
+		for(Object el : path) {
+		    Object pref = btyp.get(el);
+		    buf.append(back.get(el));
+		    if(pref instanceof Integer)
+			buf.append(" [" + pref + "]");
+		    else if(pref instanceof Field)
+			buf.append(" -> " + ((Field)pref).getName());
+		    buf.append("\n");
+		}
+		throw(new RuntimeException("cycle found:\n" + buf));
+	    }
+	    int clen = blen.get(ob);
+	    closed.put(ob, ob);
+	    if(ob instanceof Reference) {
+	    } else if(ob instanceof Object[]) {
+		Object[] arr = (Object[])ob;
+		for(int i = 0; i < arr.length; i++) {
+		    if(arr[i] == null)
+			continue;
+		    Integer slen = blen.get(arr[i]);
+		    if((slen != null) && (slen <= clen + 1))
+			continue;
+		    back.put(arr[i], ob);
+		    btyp.put(arr[i], Integer.valueOf(i));
+		    blen.put(arr[i], clen + 1);
+		    if(!closed.containsKey(arr[i])) {
+			open.add(arr[i]);
+			closed.put(arr[i], arr[i]);
+		    }
+		}
+	    } else {
+		for(Class<?> cl = ob.getClass(); cl != null; cl = cl.getSuperclass()) {
+		    for(Field f : cl.getDeclaredFields()) {
+			if((f.getModifiers() & Modifier.STATIC) != 0)
+			    continue;
+			f.setAccessible(true);
+			Object nx;
+			try {
+			    nx = f.get(ob);
+			} catch(IllegalAccessException e) {
+			    throw(new RuntimeException(e));
+			}
+			if(nx == null)
+			    continue;
+			Integer slen = blen.get(nx);
+			if((slen != null) && (slen <= clen + 1))
+			    continue;
+			back.put(nx, ob);
+			btyp.put(nx, f);
+			blen.put(nx, clen + 1);
+			if(!closed.containsKey(nx)) {
+			    open.add(nx);
+			    closed.put(nx, nx);
+			}
+		    }
+		}
+	    }
+	}
     }
 
     public static class LeakCheck implements Disposable, Cleaner, Formattable {
