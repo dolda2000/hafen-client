@@ -881,7 +881,7 @@ public class Utils {
     }
 
     public static interface IOFunction<T> {
-	/* Check exceptions banzai :P */
+	/* Checked exceptions banzai :P */
 	public T run() throws IOException;
     }
 
