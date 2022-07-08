@@ -171,21 +171,21 @@ public class Finalizer {
 	return(getgroup().add(x, action));
     }
 
-    public static class LeakCheck implements Disposable {
+    public static class LeakCheck implements Disposable, Cleaner {
 	public final String desc;
 	private final Runnable fin;
 	private boolean clean = false;
 
 	public LeakCheck(Object guarded, String desc) {
 	    this.desc = desc;
-	    fin = Finalizer.finalize(guarded, this::disposed);
+	    fin = Finalizer.finalize(guarded, this);
 	}
 
 	public LeakCheck(Object guarded) {
 	    this(guarded, String.format("%s (%x)", guarded.toString(), System.identityHashCode(guarded)));
 	}
 
-	private void disposed() {
+	public void clean() {
 	    synchronized(this) {
 		if(!this.clean)
 		    Warning.warn("leak-check: %s leaked", desc);
