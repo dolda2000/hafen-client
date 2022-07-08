@@ -348,6 +348,12 @@ public class GLProgram implements Disposable {
 	    gl.glDeleteProgram(id);
 	}
 
+	public void dispose() {
+	    super.dispose();
+	    for(ShaderOb sh : shaders)
+		sh.dispose();
+	}
+
 	public int glid() {
 	    return(this.id);
 	}

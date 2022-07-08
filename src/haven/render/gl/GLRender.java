@@ -28,6 +28,7 @@ package haven.render.gl;
 
 import java.nio.*;
 import java.util.function.*;
+import java.util.concurrent.atomic.*;
 import haven.*;
 import haven.render.*;
 import haven.render.sl.*;
@@ -38,11 +39,13 @@ public class GLRender implements Render, Disposable {
     BufferBGL gl = null;
     final Applier state;
     Applier init = null;
-    int dispseq = 0;
+    private final GLEnvironment.Sequence seq;
+    private final AtomicBoolean disposed = new AtomicBoolean(false);
 
     GLRender(GLEnvironment env) {
 	this.env = env;
 	this.state = new Applier(env);
+	this.seq = env.new Sequence(this);
     }
 
     public GLEnvironment env() {return(env);}
@@ -149,13 +152,17 @@ public class GLRender implements Render, Disposable {
 	if(sub.env != this.env)
 	    throw(new IllegalArgumentException());
 	if(sub.gl == null) {
-	    sub.env.sequnreg(sub);
+	    sub.dispose();
 	    return;
 	}
 	state.apply(this.gl, sub.init);
 	BGL gl = gl();
 	gl.bglCallList(sub.gl);
-	gl.bglSubmit(rgl -> sub.env.sequnreg(sub));
+	gl.bglSubmit(new BGL.Request() {
+		public void run(GL gl) {abort();}
+		public void abort() {sub.dispose();}
+	    });
+	gl.bglSubmit(rgl -> sub.dispose());
 	state.apply(null, sub.state);
     }
 
@@ -370,9 +377,9 @@ public class GLRender implements Render, Disposable {
 		state.apply(gl, Pipe.nil);
 		gl.glActiveTexture(GL.GL_TEXTURE0);
 		tex.bind(gl);
-		gl.glTexImage2D(GL.GL_TEXTURE_2D, img.level, GLTexture.texifmt(tex.data), img.w, img.h, 0,
-				GLTexture.texefmt1(tex.data.ifmt, tex.data.efmt, tex.data.eperm),
-				GLTexture.texefmt2(tex.data.ifmt, tex.data.efmt),
+		gl.glTexImage2D(GL.GL_TEXTURE_2D, img.level, GLTexture.texifmt(img.tex), img.w, img.h, 0,
+				GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
+				GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
 				data);
 		tex.unbind(gl);
 	    } else if(img.tex instanceof Texture3D) {
@@ -381,9 +388,9 @@ public class GLRender implements Render, Disposable {
 		state.apply(gl, Pipe.nil);
 		gl.glActiveTexture(GL.GL_TEXTURE0);
 		tex.bind(gl);
-		gl.glTexImage3D(GL.GL_TEXTURE_3D, img.level, GLTexture.texifmt(tex.data), img.w, img.h, img.d, 0,
-				GLTexture.texefmt1(tex.data.ifmt, tex.data.efmt, tex.data.eperm),
-				GLTexture.texefmt2(tex.data.ifmt, tex.data.efmt),
+		gl.glTexImage3D(GL.GL_TEXTURE_3D, img.level, GLTexture.texifmt(img.tex), img.w, img.h, img.d, 0,
+				GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
+				GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
 				data);
 		tex.unbind(gl);
 	    } else if(img.tex instanceof Texture2DArray) {
@@ -395,8 +402,8 @@ public class GLRender implements Render, Disposable {
 		tex.bind(gl);
 		gl.glTexSubImage3D(GL.GL_TEXTURE_2D_ARRAY, img.level,
 				   0, 0, aimg.layer, img.w, img.h, 1,
-				   GLTexture.texefmt1(tex.data.ifmt, tex.data.efmt, tex.data.eperm),
-				   GLTexture.texefmt2(tex.data.ifmt, tex.data.efmt),
+				   GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
+				   GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
 				   data);
 		tex.unbind(gl);
 	    } else if(img.tex instanceof TextureCube) {
@@ -406,9 +413,9 @@ public class GLRender implements Render, Disposable {
 		state.apply(gl, Pipe.nil);
 		gl.glActiveTexture(GL.GL_TEXTURE0);
 		tex.bind(gl);
-		gl.glTexImage2D(GLTexture.texface(cimg.face), img.level, GLTexture.texifmt(tex.data), img.w, img.h, 0,
-				GLTexture.texefmt1(tex.data.ifmt, tex.data.efmt, tex.data.eperm),
-				GLTexture.texefmt2(tex.data.ifmt, tex.data.efmt),
+		gl.glTexImage2D(GLTexture.texface(cimg.face), img.level, GLTexture.texifmt(img.tex), img.w, img.h, 0,
+				GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
+				GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
 				data);
 		tex.unbind(gl);
 	    }
@@ -600,13 +607,6 @@ public class GLRender implements Render, Disposable {
     }
 
     public void dispose() {
-	env.sequnreg(this);
-    }
-
-    protected void finalize() {
-	if(dispseq != 0) {
-	    Warning.warn("warning: gl-render was leaked without being disposed");
-	    dispose();
-	}
+	seq.dispose();
     }
 }

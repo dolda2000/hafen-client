@@ -238,7 +238,7 @@ public abstract class PView extends Widget {
     public void remove(PostProcessor post) {ctx.remove(post);}
 
     protected void envsetup() {
-	back = env.drawlist();
+	back = env.drawlist().desc("pview: " + this);
 	instancer = new InstanceList(tree);
 	instancer.add(back, Rendered.class);
 	instancer.asyncadd(tree, Rendered.class);

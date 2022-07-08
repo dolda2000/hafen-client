@@ -36,6 +36,7 @@ import haven.render.Texture2DArray.Sampler2DArray;
 import haven.render.Texture2DMS.Sampler2DMS;
 import haven.render.TextureCube.CubeImage;
 import haven.render.TextureCube.SamplerCube;
+import java.lang.ref.*;
 import java.nio.*;
 import java.util.*;
 
@@ -288,13 +289,15 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	throw(new IllegalArgumentException(String.format("texface: %s", face)));
     }
 
+    public abstract Texture desc();
+
     public static class Tex2D extends GLTexture {
-	public final Texture2D data;
+	private final WeakReference<Texture2D> desc;
 	Sampler2D sampler;
 
 	public Tex2D(GLEnvironment env, Texture2D data, FillBuffers.Array[] pixels) {
 	    super(env);
-	    this.data = data;
+	    this.desc = new WeakReference<>(data);
 	    int ifmt = texifmt(data);
 	    int pfmt = texefmt1(data.ifmt, data.efmt, data.eperm);
 	    int pnum = texefmt2(data.ifmt, data.efmt);
@@ -339,12 +342,10 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public void setsampler(Sampler2D data) {
-	    if(sampler == data)
-		return;
 	    if(sampler != null) {
-		if(sampler.equals(data))
+		if(sampler.parequals(data))
 		    return;
-		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple (different) samplers per texture"));
+		throw(new IllegalArgumentException("OpenGL 3.0 does not support multiple (different) samplers per texture"));
 	    }
 	    env.prepare((GLRender g) -> {
 		    if(g.state.prog() != null)
@@ -362,7 +363,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
-	    sampler = data;
+	    (sampler = new Sampler2D(null)).copy(data);
 	}
 
 	public void bind(BGL gl) {
@@ -373,17 +374,19 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public String toString() {
-	    return(String.format("#<gl.tex2d %d @ %08x %s>", id, System.identityHashCode(this), data));
+	    return(String.format("#<gl.tex2d %d @ %08x %s>", id, System.identityHashCode(this), desc()));
 	}
+
+	public Texture2D desc() {return((desc == null) ? null : desc.get());}
     }
 
     public static class Tex3D extends GLTexture {
-	public final Texture3D data;
+	private final WeakReference<Texture3D> desc;
 	Sampler3D sampler;
 
 	public Tex3D(GLEnvironment env, Texture3D data, FillBuffers.Array[] pixels) {
 	    super(env);
-	    this.data = data;
+	    this.desc = new WeakReference<>(data);
 	    int ifmt = texifmt(data);
 	    int pfmt = texefmt1(data.ifmt, data.efmt, data.eperm);
 	    int pnum = texefmt2(data.ifmt, data.efmt);
@@ -428,12 +431,10 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public void setsampler(Sampler3D data) {
-	    if(sampler == data)
-		return;
 	    if(sampler != null) {
-		if(sampler.equals(data))
+		if(sampler.parequals(data))
 		    return;
-		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple (different) samplers per texture"));
+		throw(new IllegalArgumentException("OpenGL 3.0 does not support multiple (different) samplers per texture"));
 	    }
 	    env.prepare((GLRender g) -> {
 		    if(g.state.prog() != null)
@@ -452,7 +453,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
-	    sampler = data;
+	    (sampler = new Sampler3D(null)).copy(data);
 	}
 
 	public void bind(BGL gl) {
@@ -463,17 +464,19 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public String toString() {
-	    return(String.format("#<gl.tex3d %d @ %08x %s>", id, System.identityHashCode(this), data));
+	    return(String.format("#<gl.tex3d %d @ %08x %s>", id, System.identityHashCode(this), desc()));
 	}
+
+	public Texture3D desc() {return((desc == null) ? null : desc.get());}
     }
 
     public static class Tex2DArray extends GLTexture {
-	public final Texture2DArray data;
+	private final WeakReference<Texture2DArray> desc;
 	Sampler2DArray sampler;
 
 	public Tex2DArray(GLEnvironment env, Texture2DArray data, FillBuffers.Array[][] pixels) {
 	    super(env);
-	    this.data = data;
+	    this.desc = new WeakReference<>(data);
 	    int nl = data.images().size() / data.n;
 	    int ifmt = texifmt(data);
 	    int pfmt = texefmt1(data.ifmt, data.efmt, data.eperm);
@@ -524,12 +527,10 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public void setsampler(Sampler2DArray data) {
-	    if(sampler == data)
-		return;
 	    if(sampler != null) {
-		if(sampler.equals(data))
+		if(sampler.parequals(data))
 		    return;
-		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple (different) samplers per texture"));
+		throw(new IllegalArgumentException("OpenGL 3.0 does not support multiple (different) samplers per texture"));
 	    }
 	    env.prepare((GLRender g) -> {
 		    if(g.state.prog() != null)
@@ -548,7 +549,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
-	    sampler = data;
+	    (sampler = new Sampler2DArray(null)).copy(data);
 	}
 
 	public void bind(BGL gl) {
@@ -559,17 +560,18 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public String toString() {
-	    return(String.format("#<gl.tex2d[] %d @ %08x %s>", id, System.identityHashCode(this), data));
+	    return(String.format("#<gl.tex2d[] %d @ %08x %s>", id, System.identityHashCode(this), desc()));
 	}
+
+	public Texture2DArray desc() {return((desc == null) ? null : desc.get());}
     }
 
     public static class Tex2DMS extends GLTexture {
-	public final Texture2DMS data;
-	Sampler2DMS sampler;
+	private final WeakReference<Texture2DMS> desc;
 
 	public Tex2DMS(GLEnvironment env, Texture2DMS data) {
 	    super(env);
-	    this.data = data;
+	    this.desc = new WeakReference<>(data);
 	    int ifmt = texifmt(data);
 	    env.prepare((GLRender g) -> {
 		    if(g.state.prog() != null)
@@ -595,14 +597,6 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public void setsampler(Sampler2DMS data) {
-	    if(sampler == data)
-		return;
-	    if(sampler != null) {
-		if(sampler.equals(data))
-		    return;
-		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple (different) samplers per texture"));
-	    }
-	    sampler = data;
 	}
 
 	public void bind(BGL gl) {
@@ -613,17 +607,19 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public String toString() {
-	    return(String.format("#<gl.tex2d-ms %d @ %08x %s>", id, System.identityHashCode(this), data));
+	    return(String.format("#<gl.tex2d-ms %d @ %08x %s>", id, System.identityHashCode(this), desc()));
 	}
+
+	public Texture2DMS desc() {return((desc == null) ? null : desc.get());}
     }
 
     public static class TexCube extends GLTexture {
-	public final TextureCube data;
+	private final WeakReference<TextureCube> desc;
 	SamplerCube sampler;
 
 	public TexCube(GLEnvironment env, TextureCube data, CubeImage[] images, FillBuffers.Array[] pixels) {
 	    super(env);
-	    this.data = data;
+	    this.desc = new WeakReference<>(data);
 	    int ifmt = texifmt(data);
 	    int pfmt = texefmt1(data.ifmt, data.efmt, data.eperm);
 	    int pnum = texefmt2(data.ifmt, data.efmt);
@@ -673,10 +669,11 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public void setsampler(SamplerCube data) {
-	    if(sampler == data)
-		return;
-	    if(sampler != null)
-		throw(new IllegalArgumentException("OpenGL 2.0 does not support multiple samplers per texture"));
+	    if(sampler != null) {
+		if(sampler.parequals(data))
+		    return;
+		throw(new IllegalArgumentException("OpenGL 3.0 does not support multiple (different) samplers per texture"));
+	    }
 	    env.prepare((GLRender g) -> {
 		    if(g.state.prog() != null)
 			throw(new RuntimeException("program unexpectedly used in prep context"));
@@ -693,7 +690,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    unbind(gl);
 		    gl.bglCheckErr();
 		});
-	    sampler = data;
+	    (sampler = new SamplerCube(null)).copy(data);
 	}
 
 	public void bind(BGL gl) {
@@ -704,7 +701,9 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
 
 	public String toString() {
-	    return(String.format("#<gl.texcube %d @ %08x %s>", id, System.identityHashCode(this), data));
+	    return(String.format("#<gl.texcube %d @ %08x %s>", id, System.identityHashCode(this), desc()));
 	}
+
+	public TextureCube desc() {return((desc == null) ? null : desc.get());}
     }
 }

@@ -40,6 +40,7 @@ public class GLDrawList implements DrawList {
     public static final int idx_pst = 2;
     public static final int idx_uni = idx_pst + GLPipeState.all.length;
     public final GLEnvironment env;
+    public Object desc;
     private final Map<SettingKey, DepSetting> settings = new HashMap<>();
     private final Map<Slot<? extends Rendered>, DrawSlot> slotmap = new IdentityHashMap<>();
     private final Map<Pipe, Object> psettings = new IdentityHashMap<>();
@@ -1041,7 +1042,9 @@ public class GLDrawList implements DrawList {
 	}
     }
 
+    private final Disposable lck = Finalizer.leakcheck(this);
     public void dispose() {
+	lck.dispose();
 	synchronized(this) {
 	    for(DrawSlot slot; (slot = root) != null; ) {
 		slot.remove();
@@ -1049,10 +1052,6 @@ public class GLDrawList implements DrawList {
 	    }
 	    disposed = true;
 	}
-    }
-
-    protected void finalize() {
-	dispose();
     }
 
     void treedump(java.io.PrintWriter out, DrawSlot slot) {
@@ -1079,5 +1078,14 @@ public class GLDrawList implements DrawList {
 
     public String stats() {
 	return(String.format("%,d", btsubsize(root)));
+    }
+
+    public String toString() {
+	return(String.format("#<gl-drawlist %s>%s", env, (desc == null) ? "" : " (" + desc + ")"));
+    }
+
+    public GLDrawList desc(Object desc) {
+	this.desc = desc;
+	return(this);
     }
 }

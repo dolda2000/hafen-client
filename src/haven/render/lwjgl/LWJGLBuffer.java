@@ -58,6 +58,5 @@ public class LWJGLBuffer extends GLObject implements SysBuffer {
     public void finalize() {
 	if(data != null)
 	    new haven.Warning(init , "LWJGL buffer " + this + " leaked (" + data.capacity() + " bytes)").issue();
-	super.finalize();
     }
 }
