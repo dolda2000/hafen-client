@@ -26,9 +26,10 @@
 
 package haven;
 
-import java.awt.Toolkit;
+import java.util.*;
 import haven.render.*;
 import haven.render.gl.*;
+import java.awt.Toolkit;
 import haven.JOGLPanel.SyncMode;
 
 public interface GLPanel extends UIPanel, UI.Context {
@@ -37,7 +38,8 @@ public interface GLPanel extends UIPanel, UI.Context {
     public Pipe basestate();
     public void glswap(GL gl);
 
-    public static class Loop {
+    public static class Loop implements Console.Directory {
+	public static boolean gldebug = false;
 	public final GLPanel p;
 	public final CPUProfile uprof = new CPUProfile(300), rprof = new CPUProfile(300);
 	public final GPUProfile gprof = new GPUProfile(300);
@@ -439,6 +441,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 		newui.cons.add((Console.Directory)p.getParent());
 	    if(this instanceof Console.Directory)
 		newui.cons.add((Console.Directory)this);
+	    newui.cons.add(this);
 	    synchronized(uilock) {
 		prevui = this.ui;
 		ui = newui;
@@ -460,6 +463,27 @@ public interface GLPanel extends UIPanel, UI.Context {
 		}
 	    }
 	    return(newui);
+	}
+
+	private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
+	{
+	    cmdmap.put("gldebug", (cons, args) -> {
+		    gldebug = Utils.parsebool(args[1]);
+		});
+	}
+	public Map<String, Console.Command> findcmds() {
+	    return(cmdmap);
+	}
+
+	{
+	    if(Utils.getprefb("glcrash", false)) {
+		Warning.warn("enabling GL debug-mode due to GL crash flag being set");
+		Utils.setprefb("glcrash", false);
+		haven.error.ErrorHandler errh = haven.error.ErrorHandler.find();
+		if(errh != null)
+		    errh.lsetprop("gl.debug", Boolean.TRUE);
+		gldebug = true;
+	    }
 	}
     }
 }

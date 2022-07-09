@@ -86,7 +86,11 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel {
     public Pipe basestate() {return(wnd);}
 
     public void glswap(GL gl) {
+	if(main.gldebug)
+	    GLException.checkfor(gl, null);
 	swapBuffers();
+	if(main.gldebug)
+	    GLException.checkfor(gl, null);
     }
 
     private void reshape(Area shape) {

@@ -151,7 +151,6 @@ public class JOGLPanel extends GLCanvas implements GLPanel, Console.Directory {
 	}
     }
 
-    private boolean debuggl = false;
     private void redraw(GL gl) {
 	GLContext ctx = gl.getContext();
 	GLEnvironment env;
@@ -170,7 +169,7 @@ public class JOGLPanel extends GLCanvas implements GLPanel, Console.Directory {
 		System.err.println("\n-----\n\n");
 		gl3 = new TraceGL3(gl3, System.err);
 	    }
-	    if(debuggl) {
+	    if(main.gldebug) {
 		gl3 = new DebugGL3(gl3);
 	    }
 	    env.process(new JOGLWrap(gl3));
@@ -180,16 +179,6 @@ public class JOGLPanel extends GLCanvas implements GLPanel, Console.Directory {
 		e.dump.dump();
 	    Utils.setprefb("glcrash", true);
 	    throw(e);
-	}
-    }
-
-    {
-	if(Utils.getprefb("glcrash", false)) {
-	    Warning.warn("enabling GL debug-mode due to GL crash flag being set");
-	    Utils.setprefb("glcrash", false);
-	    if(errh != null)
-		errh.lsetprop("gl.debug", Boolean.TRUE);
-	    debuggl = true;
 	}
     }
 
@@ -206,14 +195,14 @@ public class JOGLPanel extends GLCanvas implements GLPanel, Console.Directory {
 
     public void glswap(haven.render.gl.GL gl) {
 	boolean iswap = iswap();
-	if(debuggl)
+	if(main.gldebug)
 	    haven.render.gl.GLException.checkfor(gl, null);
 	if(iswap != aswap)
 	    ((JOGLWrap)gl).back.setSwapInterval((aswap = iswap) ? 1 : 0);
-	if(debuggl)
+	if(main.gldebug)
 	    haven.render.gl.GLException.checkfor(gl, null);
 	JOGLPanel.this.swapBuffers();
-	if(debuggl)
+	if(main.gldebug)
 	    haven.render.gl.GLException.checkfor(gl, null);
     }
 
@@ -296,9 +285,6 @@ public class JOGLPanel extends GLCanvas implements GLPanel, Console.Directory {
 		    cons.out.printf("Rendering device: %s, %s\n", caps.vendor(), caps.device());
 		    cons.out.printf("Driver version: %s\n", caps.driver());
 		}
-	    });
-	cmdmap.put("gldebug", (cons, args) -> {
-		debuggl = Utils.parsebool(args[1]);
 	    });
 	cmdmap.put("glcrash", (cons, args) -> {
 		GL gl = getGL();
