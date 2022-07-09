@@ -439,8 +439,8 @@ public interface GLPanel extends UIPanel, UI.Context {
 	    newui.env = p.env();
 	    if(p.getParent() instanceof Console.Directory)
 		newui.cons.add((Console.Directory)p.getParent());
-	    if(this instanceof Console.Directory)
-		newui.cons.add((Console.Directory)this);
+	    if(p instanceof Console.Directory)
+		newui.cons.add((Console.Directory)p);
 	    newui.cons.add(this);
 	    synchronized(uilock) {
 		prevui = this.ui;
