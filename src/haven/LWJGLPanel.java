@@ -38,7 +38,7 @@ import haven.render.lwjgl.*;
 import haven.JOGLPanel.SyncMode;
 import static org.lwjgl.opengl.GL30.*;
 
-public class LWJGLPanel extends AWTGLCanvas implements GLPanel {
+public class LWJGLPanel extends AWTGLCanvas implements GLPanel, Console.Directory {
     private static final boolean dumpbgl = true;
     private LWJGLEnvironment env = null;
     private Area shape;
@@ -175,5 +175,20 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel {
 		Point rp = getLocationOnScreen();
 		awtrobot.mouseMove(rp.x + c.x, rp.y + c.y);
 	    });
+    }
+
+    private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
+    {
+	cmdmap.put("renderer", (cons, args) -> {
+		cons.out.printf("Rendering backend: LWJGL %s\n", org.lwjgl.Version.getVersion());
+		if(env != null) {
+		    GLEnvironment.Caps caps = env.caps();
+		    cons.out.printf("Rendering device: %s, %s\n", caps.vendor(), caps.device());
+		    cons.out.printf("Driver version: %s\n", caps.driver());
+		}
+	    });
+    }
+    public Map<String, Console.Command> findcmds() {
+	return(cmdmap);
     }
 }
