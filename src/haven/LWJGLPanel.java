@@ -43,7 +43,7 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel {
     private LWJGLEnvironment env = null;
     private Area shape;
     private Pipe base, wnd;
-    private final Loop main = new Loop();
+    private final Loop main = new Loop(this);
 
     private static GLData mkcaps() {
 	GLData caps = new GLData();
@@ -147,12 +147,6 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel {
 		drawthread.join();
 	    }
 	} catch(InterruptedException e) {
-	}
-    }
-
-    private class Loop extends GLPanel.Loop {
-	private Loop() {
-	    super(LWJGLPanel.this);
 	}
     }
 
