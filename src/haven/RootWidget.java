@@ -74,11 +74,8 @@ public class RootWidget extends ConsoleHost {
     }
 
     public Object tooltip(Coord c, Widget prev) {
-	Object ret = super.tooltip(c, prev);
-	if(ret != null)
-	    return(ret);
 	if(modtip && (ui.modflags() != 0))
 	    return(KeyMatch.modname(ui.modflags()));
-	return(null);
+	return(super.tooltip(c, prev));
     }
 }
