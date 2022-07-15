@@ -1298,7 +1298,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void get(Render out, Coord c, Consumer<ClickData> cb) {
-	    out.pget(basic, FragID.fragid, Area.sized(c, new Coord(1, 1)), new VectorFormat(1, NumberFormat.SINT32), data -> {
+	    out.pget(basic, FragID.fragid, Area.sized(Coord.of(c.x, sz().y - c.y), new Coord(1, 1)), new VectorFormat(1, NumberFormat.SINT32), data -> {
 		    int id = data.getInt(0);
 		    if(id == 0) {
 			cb.accept(null);
@@ -1314,11 +1314,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void fuzzyget(Render out, Coord c, int rad, Consumer<ClickData> cb) {
-	    Area area = new Area(c.sub(rad, rad), c.add(rad + 1, rad + 1)).overlap(Area.sized(Coord.z, this.sz()));
+	    Coord gc = Coord.of(c.x, sz().y - c.y);
+	    Area area = new Area(gc.sub(rad, rad), gc.add(rad + 1, rad + 1)).overlap(Area.sized(Coord.z, this.sz()));
 	    out.pget(basic, FragID.fragid, area, new VectorFormat(1, NumberFormat.SINT32), data -> {
 		    Clickslot cs;
 		    {
-			int id = data.getInt(area.ridx(c) * 4);
+			int id = data.getInt(area.ridx(gc) * 4);
 			if((id != 0) && ((cs = idmap.get(id)) != null)) {
 			    cb.accept(new ClickData(cs.bk.state().get(Clickable.slot), (RenderTree.Slot)cs.bk.cast(RenderTree.Node.class)));
 			    return;
@@ -1330,7 +1331,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			int id = data.getInt(area.ridx(fc) * 4);
 			if((id == 0) || ((cs = idmap.get(id)) == null))
 			    continue;
-			int r = (int)Math.round(fc.dist(c) * 10);
+			int r = (int)Math.round(fc.dist(gc) * 10);
 			if(r < maxr) {
 			    score.clear();
 			    maxr = r;
@@ -1419,7 +1420,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			    this.cut = ((MapClick)cd.ci).cut;
 			ckdone(1);
 		    });
-		out.pget(clmaplist.basic, ClickLocation.fragloc, Area.sized(c, new Coord(1, 1)), new VectorFormat(2, NumberFormat.FLOAT32), data -> {
+		out.pget(clmaplist.basic, ClickLocation.fragloc, Area.sized(Coord.of(c.x, clmaplist.sz().y - c.y), new Coord(1, 1)), new VectorFormat(2, NumberFormat.FLOAT32), data -> {
 			pos = new Coord2d(data.getFloat(0), data.getFloat(4));
 			if(clickdb)
 			    Debug.log.printf("map-pos: %s\n", pos);

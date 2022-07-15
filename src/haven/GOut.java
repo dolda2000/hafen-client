@@ -457,9 +457,26 @@ public class GOut {
 	getpixel(out, cur2d, FragColor.fragcol, c.add(tx), cb);
     }
 
+    public static ByteBuffer flipimage(VectorFormat fmt, int w, ByteBuffer data) {
+	int el = fmt.size();
+	int h = data.capacity() / el / w;
+	for(int y = 0; y < h / 2; y++) {
+	    int to = y * w * el, bo = (h - y - 1) * w * el;
+	    if(y == 0)
+		Debug.dump(fmt, el, w, h, data, to, bo);
+	    for(int o = 0; o < w * el; o++, to++, bo++) {
+		byte t = data.get(to);
+		data.put(to, data.get(bo));
+		data.put(bo, t);
+	    }
+	}
+	return(data);
+    }
+
     public static void debugimage(Render g, Pipe state, FragData buf, Area area, VectorFormat fmt, Consumer<BufferedImage> cb) {
 	g.pget(state, buf, area, fmt, data -> {
 		Coord sz = area.sz();
+		flipimage(fmt, sz.x, data);
 		switch(fmt.cf) {
 		case UNORM8: case SNORM8: {
 		    int b = fmt.nc;
@@ -522,8 +539,10 @@ public class GOut {
     }
 
     public static void getimage(Render g, Pipe state, FragData buf, Area area, Consumer<BufferedImage> cb) {
-	g.pget(state, buf, area, new VectorFormat(4, NumberFormat.UNORM8), data -> {
+	VectorFormat fmt = new VectorFormat(4, NumberFormat.UNORM8);
+	g.pget(state, buf, area, fmt, data -> {
 		Coord sz = area.sz();
+		flipimage(fmt, sz.x, data);
 		byte[] pbuf = new byte[sz.x * sz.y * 4];
 		data.get(pbuf);
 		WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
@@ -539,11 +558,14 @@ public class GOut {
 	getimage(Coord.z, sz(), cb);
     }
 
-    public static void getimage(Render g, Texture.Image<?> img, Consumer<BufferedImage> cb) {
+    public static void getimage(Render g, Texture.Image<?> img, boolean flip, Consumer<BufferedImage> cb) {
 	if(img.tex.ifmt.cf == NumberFormat.DEPTH) {
-	    g.pget(img, new VectorFormat(1, NumberFormat.FLOAT32), data -> {
+	    VectorFormat fmt = new VectorFormat(1, NumberFormat.FLOAT32);
+	    g.pget(img, fmt, data -> {
 		    FloatBuffer fdat = data.asFloatBuffer();
 		    Coord sz = Coord.of(img.w, img.h);
+		    if(flip)
+			flipimage(fmt, sz.x, data);
 		    byte[] pbuf = new byte[sz.x * sz.y * 4];
 		    for(int y = 0, soff = 0, doff = 0; y < sz.y; y++) {
 			for(int x = 0; x < sz.x; x++, soff++, doff += 4) {
@@ -559,8 +581,11 @@ public class GOut {
 		    cb.accept(new BufferedImage(TexI.glcm, raster, false, null));
 		});
 	} else {
-	    g.pget(img, new VectorFormat(4, NumberFormat.UNORM8), data -> {
+	    VectorFormat fmt = new VectorFormat(4, NumberFormat.UNORM8);
+	    g.pget(img, fmt, data -> {
 		    Coord sz = Coord.of(img.w, img.h);
+		    if(flip)
+			flipimage(fmt, sz.x, data);
 		    byte[] pbuf = new byte[sz.x * sz.y * 4];
 		    data.get(pbuf);
 		    WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
@@ -569,7 +594,7 @@ public class GOut {
 	}
     }
 
-    public void getimage(Texture.Image<?> img, Consumer<BufferedImage> cb) {
-	getimage(out, img, cb);
+    public void getimage(Texture.Image<?> img, boolean flip, Consumer<BufferedImage> cb) {
+	getimage(out, img, flip, cb);
     }
 }
