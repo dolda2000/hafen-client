@@ -450,7 +450,9 @@ public class GLRender implements Render, Disposable {
 	}
     }
 
-    public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback) {
+    public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, ByteBuffer dstbuf, Consumer<ByteBuffer> callback) {
+	if(dstbuf.remaining() < fmt.size() * area.area())
+	    throw(new IllegalArgumentException("destination buffer needs at least " + fmt.size() * area.area() + " bytes, has only " + dstbuf.remaining()));
 	state.apply(this.gl, pipe);
 	GLProgram prog = state.prog();
 	FboState fc = (FboState)state.glstates[FboState.slot];
@@ -487,13 +489,11 @@ public class GLRender implements Render, Disposable {
 	gl.bglCreate(new GLFence(env, new Abortable.Consumer<GL3>() {
 		public void accept(GL3 cgl) {
 		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, pbo.glid());
-		    ByteBuffer data = Utils.mkbbuf(fmt.size() * area.area()).order(ByteOrder.nativeOrder());
-		    cgl.glGetBufferSubData(GL3.GL_PIXEL_PACK_BUFFER, 0, fmt.size() * area.area(), data);
+		    cgl.glGetBufferSubData(GL3.GL_PIXEL_PACK_BUFFER, 0, fmt.size() * area.area(), dstbuf);
 		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, 0);
 		    pbo.dispose();
 		    GLException.checkfor(cgl, env);
-		    data.rewind();
-		    env.callback(() -> callback.accept(data));
+		    env.callback(() -> callback.accept(dstbuf));
 		}
 
 		public void abort() {
@@ -504,12 +504,14 @@ public class GLRender implements Render, Disposable {
 	gl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, null);
     }
 
-    public void pget(Texture.Image img, VectorFormat fmt, Consumer<ByteBuffer> callback) {
-	BGL gl = gl();
+    public void pget(Texture.Image img, VectorFormat fmt, ByteBuffer dstbuf, Consumer<ByteBuffer> callback) {
+	final int dsz = fmt.size() * img.w * img.h * img.d;
+	if(dstbuf.remaining() < dsz)
+	    throw(new IllegalArgumentException("destination buffer needs at least " + dsz + " bytes, has only " + dstbuf.remaining()));
 
+	BGL gl = gl();
 	state.apply(gl, new Applier(env));
 	GLBuffer pbo = new GLBuffer(env);
-	final int dsz = fmt.size() * img.w * img.h * img.d;
 	gl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, pbo);
 	gl.glBufferData(GL3.GL_PIXEL_PACK_BUFFER, dsz, null, GL3.GL_STREAM_READ);
 	gl.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
@@ -531,13 +533,11 @@ public class GLRender implements Render, Disposable {
 	gl.bglCreate(new GLFence(env, new Abortable.Consumer<GL3>() {
 		public void accept(GL3 cgl) {
 		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, pbo.glid());
-		    ByteBuffer data = Utils.mkbbuf(dsz).order(ByteOrder.nativeOrder());
-		    cgl.glGetBufferSubData(GL3.GL_PIXEL_PACK_BUFFER, 0, dsz, data);
+		    cgl.glGetBufferSubData(GL3.GL_PIXEL_PACK_BUFFER, 0, dsz, dstbuf);
 		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, 0);
 		    pbo.dispose();
 		    GLException.checkfor(cgl, env);
-		    data.rewind();
-		    env.callback(() -> callback.accept(data));
+		    env.callback(() -> callback.accept(dstbuf));
 		}
 
 		public void abort() {
