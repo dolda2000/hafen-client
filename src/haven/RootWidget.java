@@ -30,6 +30,7 @@ import java.awt.event.KeyEvent;
 
 public class RootWidget extends ConsoleHost {
     public static final Resource defcurs = Resource.local().loadwait("gfx/hud/curs/arw");
+    public boolean modtip = false;
     Profile guprof, grprof, ggprof;
     boolean afk = false;
 	
@@ -70,5 +71,11 @@ public class RootWidget extends ConsoleHost {
     }
     
     public void error(String msg) {
+    }
+
+    public Object tooltip(Coord c, Widget prev) {
+	if(modtip && (ui.modflags() != 0))
+	    return(KeyMatch.modname(ui.modflags()));
+	return(super.tooltip(c, prev));
     }
 }
