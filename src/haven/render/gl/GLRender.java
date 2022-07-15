@@ -456,7 +456,9 @@ public class GLRender implements Render, Disposable {
 	}
     }
 
-    public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback) {
+    public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, ByteBuffer dstbuf, Consumer<ByteBuffer> callback) {
+	if(dstbuf.remaining() < fmt.size() * area.area())
+	    throw(new IllegalArgumentException("destination buffer needs at least " + fmt.size() * area.area() + " bytes, has only " + dstbuf.remaining()));
 	state.apply(this.gl, pipe);
 	GLProgram prog = state.prog();
 	FboState fc = (FboState)state.glstates[FboState.slot];
@@ -470,12 +472,6 @@ public class GLRender implements Render, Disposable {
 	if(n < 0)
 	    throw(new IllegalArgumentException(String.format("%s is not on current framebuffer", buf)));
 	BGL gl = gl();
-	Area wnd;
-	if(fc.fbo == null)
-	    wnd = env.wnd;
-	else
-	    wnd = Area.sized(Coord.z, fc.fbo.sz);
-	int gly = wnd.br.y - area.br.y;
 	Coord sz = area.sz();
 
 	/*
@@ -495,30 +491,15 @@ public class GLRender implements Render, Disposable {
 	gl.glBufferData(GL.GL_PIXEL_PACK_BUFFER, fmt.size() * area.area(), null, GL.GL_STREAM_READ);
 	gl.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
 	gl.glReadBuffer(fc.dbufs[n]);
-	gl.glReadPixels(area.ul.x, gly, sz.x, sz.y, GLTexture.texefmt1(fmt, fmt, null), GLTexture.texefmt2(fmt, fmt), 0);
+	gl.glReadPixels(area.ul.x, area.ul.y, sz.x, sz.y, GLTexture.texefmt1(fmt, fmt, null), GLTexture.texefmt2(fmt, fmt), 0);
 	gl.bglCreate(new GLFence(env, new Abortable.Consumer<GL>() {
 		public void accept(GL cgl) {
 		    cgl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, pbo.glid());
-		    ByteBuffer data = Utils.mkbbuf(fmt.size() * area.area()).order(ByteOrder.nativeOrder());
-		    cgl.glGetBufferSubData(GL.GL_PIXEL_PACK_BUFFER, 0, fmt.size() * area.area(), data);
+		    cgl.glGetBufferSubData(GL.GL_PIXEL_PACK_BUFFER, 0, fmt.size() * area.area(), dstbuf);
 		    cgl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, 0);
 		    pbo.dispose();
 		    GLException.checkfor(cgl, env);
-		    data.rewind();
-		    /* XXX: It's not particularly nice to do the
-		     * flipping on the dispatch thread, but OpenGL
-		     * does not seem to offer any GPU-assisted
-		     * flipping. */
-		    int el = fmt.size();
-		    for(int y = 0; y < sz.y / 2; y++) {
-			int to = y * sz.x * el, bo = (sz.y - y - 1) * sz.x * el;
-			for(int o = 0; o < sz.x * el; o++, to++, bo++) {
-			    byte t = data.get(to);
-			    data.put(to, data.get(bo));
-			    data.put(bo, t);
-			}
-		    }
-		    env.callback(() -> callback.accept(data));
+		    env.callback(() -> callback.accept(dstbuf));
 		}
 
 		public void abort() {
@@ -529,12 +510,14 @@ public class GLRender implements Render, Disposable {
 	gl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, null);
     }
 
-    public void pget(Texture.Image img, VectorFormat fmt, Consumer<ByteBuffer> callback) {
-	BGL gl = gl();
+    public void pget(Texture.Image img, VectorFormat fmt, ByteBuffer dstbuf, Consumer<ByteBuffer> callback) {
+	final int dsz = fmt.size() * img.w * img.h * img.d;
+	if(dstbuf.remaining() < dsz)
+	    throw(new IllegalArgumentException("destination buffer needs at least " + dsz + " bytes, has only " + dstbuf.remaining()));
 
+	BGL gl = gl();
 	state.apply(gl, new Applier(env));
 	GLBuffer pbo = new GLBuffer(env);
-	final int dsz = fmt.size() * img.w * img.h * img.d;
 	gl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, pbo);
 	gl.glBufferData(GL.GL_PIXEL_PACK_BUFFER, dsz, null, GL.GL_STREAM_READ);
 	gl.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
@@ -556,28 +539,11 @@ public class GLRender implements Render, Disposable {
 	gl.bglCreate(new GLFence(env, new Abortable.Consumer<GL>() {
 		public void accept(GL cgl) {
 		    cgl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, pbo.glid());
-		    ByteBuffer data = Utils.mkbbuf(dsz).order(ByteOrder.nativeOrder());
-		    cgl.glGetBufferSubData(GL.GL_PIXEL_PACK_BUFFER, 0, dsz, data);
+		    cgl.glGetBufferSubData(GL.GL_PIXEL_PACK_BUFFER, 0, dsz, dstbuf);
 		    cgl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, 0);
 		    pbo.dispose();
 		    GLException.checkfor(cgl, env);
-		    data.rewind();
-		    /* XXX: It's not particularly nice to do the
-		     * flipping on the dispatch thread, but OpenGL
-		     * does not seem to offer any GPU-assisted
-		     * flipping. */
-		    if(img.d == 1) {
-			int el = fmt.size();
-			for(int y = 0; y < img.h / 2; y++) {
-			    int to = y * img.w * el, bo = (img.h - y - 1) * img.w * el;
-			    for(int o = 0; o < img.w * el; o++, to++, bo++) {
-				byte t = data.get(to);
-				data.put(to, data.get(bo));
-				data.put(bo, t);
-			    }
-			}
-		    }
-		    env.callback(() -> callback.accept(data));
+		    env.callback(() -> callback.accept(dstbuf));
 		}
 
 		public void abort() {
