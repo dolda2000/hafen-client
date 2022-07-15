@@ -212,6 +212,7 @@ public class GLEnvironment implements Environment {
 	synchronized(callbacks) {
 	    if(!callbacks.isEmpty() && (cbthread == null)) {
 		cbthread = new HackThread(this::cbloop, "Render-query callback thread");
+		cbthread.setDaemon(true);
 		cbthread.start();
 	    }
 	}
