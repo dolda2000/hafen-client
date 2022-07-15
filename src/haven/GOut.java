@@ -462,8 +462,6 @@ public class GOut {
 	int h = data.capacity() / el / w;
 	for(int y = 0; y < h / 2; y++) {
 	    int to = y * w * el, bo = (h - y - 1) * w * el;
-	    if(y == 0)
-		Debug.dump(fmt, el, w, h, data, to, bo);
 	    for(int o = 0; o < w * el; o++, to++, bo++) {
 		byte t = data.get(to);
 		data.put(to, data.get(bo));
