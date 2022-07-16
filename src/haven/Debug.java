@@ -119,6 +119,14 @@ public class Debug {
 	}
     }
 
+    public static void sleep(double t) {
+	try {
+	    Thread.sleep((int)(t * 1000));
+	} catch(InterruptedException e) {
+	    Thread.currentThread().interrupt();
+	}
+    }
+
     public static class DumpGL extends TraceGL4bc {
 	public final ByteArrayOutputStream buf;
 
