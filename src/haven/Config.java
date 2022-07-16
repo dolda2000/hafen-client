@@ -55,6 +55,7 @@ public class Config {
     public static int authport = getint("haven.authport", 1871);
     public static Double uiscale = getfloat("haven.uiscale", null);
     public static byte[] authck = getbytes("haven.authck", null), inittoken = getbytes("haven.inittoken", null);
+    public static Path streamout = getpath("haven.streamout", null);
     public static String prefspec = getprop("haven.prefspec", "hafen");
     public static final String confid = "";
 

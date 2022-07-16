@@ -463,6 +463,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "RQ depth: %d (%d)", rqd, Resource.local().numloaded() + Resource.remote().numloaded());
     }
 
+    private StreamOut streamout = null;
+
     private void display(UI ui, GLRender buf) {
 	buf.clear(wnd, FragColor.fragcol, FColor.BLACK);
 	Pipe state = wnd.copy();
@@ -475,6 +477,16 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    drawstats(ui, g, buf);
 	drawtooltip(ui, g);
 	drawcursor(ui, g);
+	if(Config.streamout != null) {
+	    if(streamout == null) {
+		try {
+		    streamout = new StreamOut(shape.sz(), Config.streamout);
+		} catch(java.io.IOException e) {
+		    throw(new RuntimeException(e));
+		}
+	    }
+	    streamout.accept(buf, state);
+	}
     }
 
     public void run() {
