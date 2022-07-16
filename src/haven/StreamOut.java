@@ -73,15 +73,18 @@ public class StreamOut {
 		    obuf = null;
 		}
 		try {
-		    while(data.remaining() > 0)
-			out.write(data);
+		    for(int y = sz.y - 1; y >= 0; y--) {
+			data.position(y * sz.x * 3).limit((y + 1) * sz.x * 3);
+			while(data.remaining() > 0)
+			    out.write(data);
+		    }
 		} catch(IOException e) {
 		    new Warning(e, "stream-out error").issue();
 		    running = false;
 		    break;
 		}
 		synchronized(this) {
-		    data.rewind();
+		    data.clear();
 		    free.add(data);
 		}
 		last = Utils.rtime();
