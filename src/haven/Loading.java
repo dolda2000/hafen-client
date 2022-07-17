@@ -122,6 +122,7 @@ public class Loading extends RuntimeException implements Waitable {
 	    try {
 		return(x.get());
 	    } catch(Loading l) {
+		l.boostprio(10);
 		l.waitfor();
 	    }
 	}
