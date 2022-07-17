@@ -384,8 +384,9 @@ public class Resource implements Serializable {
 	    }
 	}
 
-	public void boostprio(int prio) {
+	public boolean boostprio(int prio) {
 	    res.boostprio(prio);
+	    return(true);
 	}
     }
 
