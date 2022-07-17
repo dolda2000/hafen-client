@@ -93,12 +93,16 @@ public class Debug {
 			System.err.println();
 			Utils.hexdump(ba, System.err, 0);
 		    }
-		} else if(stuff[i] instanceof int[]) {
-		    Utils.dumparr((int[])stuff[i], System.err, false);
-		} else if(stuff[i] instanceof float[]) {
-		    Utils.dumparr((float[])stuff[i], System.err, false);
 		} else if(stuff[i] instanceof short[]) {
 		    Utils.dumparr((short[])stuff[i], System.err, false);
+		} else if(stuff[i] instanceof int[]) {
+		    Utils.dumparr((int[])stuff[i], System.err, false);
+		} else if(stuff[i] instanceof long[]) {
+		    Utils.dumparr((long[])stuff[i], System.err, false);
+		} else if(stuff[i] instanceof float[]) {
+		    Utils.dumparr((float[])stuff[i], System.err, false);
+		} else if(stuff[i] instanceof double[]) {
+		    Utils.dumparr((double[])stuff[i], System.err, false);
 		} else if(stuff[i] instanceof boolean[]) {
 		    boolean[] ba = (boolean[])stuff[i];
 		    System.err.print('[');
