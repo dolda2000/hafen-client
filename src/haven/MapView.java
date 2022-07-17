@@ -678,6 +678,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			    cuts.put(cc, new Pair<>(cut, slot.add(draw, cs)));
 			}
 		    } catch(Loading l) {
+			l.boostprio(5);
 			curload = l;
 		    }
 		}
@@ -705,6 +706,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		area = new Area(cc.sub(view, view), cc.add(view, view).add(1, 1));
 		lastload = null;
 	    } catch(Loading l) {
+		l.boostprio(5);
 		lastload = l;
 	    }
 	}
@@ -833,6 +835,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 				basic.add(ol = new Overlay(id));
 				ols.put(id, ol);
 			    } catch(Loading l) {
+				l.boostprio(2);
 				continue;
 			    }
 			}
@@ -848,6 +851,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		}
 	    }
 	} catch(Loading l) {
+	    l.boostprio(2);
 	}
 	for(Overlay ol : ols.values())
 	    ol.tick();
@@ -1621,6 +1625,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    glob.map.reqarea(cc.floor(tilesz).sub(MCache.cutsz.mul(view + 1)),
 			     cc.floor(tilesz).add(MCache.cutsz.mul(view + 1)));
 	} catch(Loading e) {
+	    e.boostprio(6);
 	    lastload = e;
 	    String text = e.getMessage();
 	    if(text == null)
@@ -1629,9 +1634,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    g.frect(Coord.z, sz);
 	    g.chcolor(Color.WHITE);
 	    g.atext(text, sz.div(2), 0.5, 0.5);
-	    if(e instanceof Resource.Loading) {
-		((Resource.Loading)e).boostprio(5);
-	    }
 	}
     }
     
@@ -1646,6 +1648,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    camoff.z = (float)((Math.random() - 0.5) * shake);
 	    camera.tick(dt);
 	} catch(Loading e) {
+	    e.boostprio(5);
 	    camload = e;
 	}
 	basic(Camera.class, camera);

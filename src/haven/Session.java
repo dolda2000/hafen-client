@@ -103,6 +103,11 @@ public class Session implements Resource.Resolver {
 		}
 	    }
 	}
+
+	public boolean boostprio(int prio) {
+	    res.boostprio(prio);
+	    return(true);
+	}
     }
 
     private static class CachedRes {
@@ -111,6 +116,7 @@ public class Session implements Resource.Resolver {
 	private String resnm = null;
 	private int resver;
 	private Reference<Ref> ind;
+	private int prio = -6;
 	
 	private CachedRes(int id) {
 	    resid = id;
@@ -125,7 +131,7 @@ public class Session implements Resource.Resolver {
 			if(res == null) {
 			    if(resnm == null)
 				throw(new LoadingIndir(CachedRes.this));
-			    res = Resource.remote().load(resnm, resver, 0).get();
+			    res = Resource.remote().load(resnm, resver, prio).get();
 			}
 		    }
 		}
@@ -146,14 +152,19 @@ public class Session implements Resource.Resolver {
 	}
 
 	private Ref get() {
-	    Ref ind = (this.ind == null)?null:(this.ind.get());
+	    Ref ind = (this.ind == null) ? null : (this.ind.get());
 	    if(ind == null)
 		this.ind = new WeakReference<Ref>(ind = new Ref());
 	    return(ind);
 	}
 	
+	public void boostprio(int prio) {
+	    if(this.prio < prio)
+		this.prio = prio;
+	}
+
 	public void set(String nm, int ver) {
-	    Resource.remote().load(nm, ver, -5);
+	    Resource.remote().load(nm, ver, -10);
 	    synchronized(this) {
 		this.resnm = nm;
 		this.resver = ver;
@@ -174,8 +185,14 @@ public class Session implements Resource.Resolver {
 	}
     }
 
+    public Indir<Resource> getres(int id, int prio) {
+	CachedRes res = cachedres(id);
+	res.boostprio(prio);
+	return(res.get());
+    }
+
     public Indir<Resource> getres(int id) {
-	return(cachedres(id).get());
+	return(getres(id, 0));
     }
 
     private class ObjAck {

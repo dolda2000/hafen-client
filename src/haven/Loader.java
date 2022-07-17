@@ -74,6 +74,7 @@ public class Loader {
 				done = true;
 			    }
 			} catch(Loading l) {
+			    l.boostprio(1);
 			    curload = l;
 			    l.waitfor(() -> {
 				    synchronized(queue) {
