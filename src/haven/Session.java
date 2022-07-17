@@ -164,7 +164,7 @@ public class Session implements Resource.Resolver {
 	}
 
 	public void set(String nm, int ver) {
-	    Resource.remote().load(nm, ver, -5);
+	    Resource.remote().load(nm, ver, -10);
 	    synchronized(this) {
 		this.resnm = nm;
 		this.resver = ver;
