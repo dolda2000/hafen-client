@@ -287,7 +287,10 @@ public class Utils {
 
     public static void setpref(String prefname, String val) {
 	try {
-	    prefs().put(prefname, val);
+	    if(val == null)
+		prefs().remove(prefname);
+	    else
+		prefs().put(prefname, val);
 	} catch(SecurityException e) {
 	}
     }
