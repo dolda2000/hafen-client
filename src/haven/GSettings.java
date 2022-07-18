@@ -65,6 +65,7 @@ public class GSettings extends State implements Serializable {
     public abstract class Setting<T> implements Serializable, Cloneable {
 	public final String nm;
 	public T val;
+	public boolean set;
 
 	public Setting(String nm) {
 	    this.nm = nm.intern();
@@ -73,6 +74,17 @@ public class GSettings extends State implements Serializable {
 	public abstract T parse(String val);
 	public void validate(Environment env, T val) {}
 	public abstract T defval();
+
+	public String reduce(T val) {
+	    return(String.valueOf(val));}
+	;
+	public T restore(String prs) {
+	    try {
+		return(parse(prs));
+	    } catch(SettingException e) {
+		return(null);
+	    }
+	}
 
 	@SuppressWarnings("unchecked")
 	public Setting<T> clone() {
@@ -117,6 +129,14 @@ public class GSettings extends State implements Serializable {
 	    if(f == null)
 		throw(new SettingException("No such setting: " + val));
 	    return(f);
+	}
+
+	public E restore(String prs) {
+	    try {
+		return(Enum.valueOf(real, prs));
+	    } catch(IllegalArgumentException e) {
+		return(null);
+	    }
 	}
     }
 
@@ -206,9 +226,10 @@ public class GSettings extends State implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> Setting<T> update(Setting<T> set, T val) {
+    private static <T> Setting<T> update(Setting<T> set, T val) {
 	Setting<T> ret = set.clone();
 	ret.val = val;
+	ret.set = true;
 	return(ret);
     }
 
@@ -251,6 +272,7 @@ public class GSettings extends State implements Serializable {
 
     private static <T> void setdef(Setting<T> set) {
 	set.val = set.defval();
+	set.set = false;
     }
     public static GSettings defaults() {
 	GSettings ret = new GSettings();
@@ -264,29 +286,60 @@ public class GSettings extends State implements Serializable {
 	return(ret);
     }
 
-    private Object savedata() {
+    private static <T> String reduce0(Setting<T> s) {
+	return(s.reduce(s.val));
+    }
+    public void save() {
 	try {
-	    Map<String, Object> ret = new HashMap<String, Object>();
 	    for(Field f : settings) {
 		Setting<?> s = (Setting<?>)f.get(this);
-		ret.put(s.nm, s.val);
+		String pnm = "gconf/" + s.nm;
+		if(s.set)
+		    Utils.setpref(pnm, reduce0(s));
+		else
+		    Utils.setpref(pnm, null);
 	    }
-	    return(ret);
 	} catch(IllegalAccessException e) {
 	    throw(new AssertionError(e));
 	}
     }
 
-    public void save() {
-	Utils.setprefb("gconf", Utils.serialize(savedata()));
+    private static <T> Setting<T> restore0(Setting<T> s, String prs) {
+	T val = s.restore(prs);
+	if(val == null)
+	    throw(new SettingException("could not restore value for " + s.nm + ": " + prs));
+	return(update(s, val));
+    }
+    public static GSettings load(boolean failsafe) {
+	convertold();
+	GSettings gs = defaults();
+	try {
+	    for(Field f : settings) {
+		Setting<?> s = (Setting<?>)f.get(gs);
+		String pnm = "gconf/" + s.nm;
+		String prs = Utils.getpref(pnm, null);
+		if(prs != null) {
+		    try {
+			f.set(gs, restore0(s, prs));
+		    } catch(SettingException e) {
+			if(!failsafe)
+			    throw(e);
+		    }
+		}
+	    }
+	} catch(IllegalAccessException e) {
+	    throw(new AssertionError(e));
+	}
+	return(gs);
     }
 
+    /* XXX: Remove oldload at some point in the future. */
     @SuppressWarnings("unchecked")
     private <T> Setting<T> iExistOnlyToIntroduceATypeVariableSinceJavaSucks(Setting<T> s, Object val) {
 	return(update(s, (T)val));
     }
 
-    public static GSettings load(Object data, boolean failsafe) {
+    private static GSettings oldload(Object data, boolean failsafe) {
 	GSettings gs = defaults();
 	Map<?, ?> dat = (Map)data;
 	try {
@@ -307,10 +360,10 @@ public class GSettings extends State implements Serializable {
 	return(gs);
     }
 
-    public static GSettings load(boolean failsafe) {
+    private static GSettings oldload(boolean failsafe) {
 	byte[] data = Utils.getprefb("gconf", null);
 	if(data == null) {
-	    return(defaults());
+	    return(null);
 	} else {
 	    Object dat;
 	    try {
@@ -320,8 +373,25 @@ public class GSettings extends State implements Serializable {
 	    }
 	    if(dat == null)
 		return(defaults());
-	    return(load(dat, failsafe));
+	    return(oldload(dat, failsafe));
 	}
+    }
+
+    private static void convertold() {
+	GSettings old = oldload(true);
+	if(old == null)
+	    return;
+	try {
+	    for(Field f : settings) {
+		Setting<?> s = (Setting<?>)f.get(old);
+		if(Utils.eq(s.val, s.defval()))
+		    s.set = false;
+	    }
+	} catch(IllegalAccessException e) {
+	    throw(new AssertionError(e));
+	}
+	old.save();
+	Utils.setpref("gconf", null);
     }
 
     public haven.render.sl.ShaderMacro shader() {return(null);}
