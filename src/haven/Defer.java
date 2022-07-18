@@ -102,6 +102,11 @@ public class Defer extends ThreadGroup {
 		}
 	    }
 	}
+
+	public boolean boostprio(int prio) {
+	    future.boostprio(prio);
+	    return(true);
+	}
     }
 
     public class Future<T> implements Runnable, Prioritized {
