@@ -363,7 +363,7 @@ public class GSettings extends State implements Serializable {
     private static GSettings oldload(boolean failsafe) {
 	byte[] data = Utils.getprefb("gconf", null);
 	if(data == null) {
-	    return(null);
+	    return(defaults());
 	} else {
 	    Object dat;
 	    try {
@@ -378,6 +378,8 @@ public class GSettings extends State implements Serializable {
     }
 
     private static void convertold() {
+	if(Utils.getprefb("gconf-cvt", false))
+	    return;
 	GSettings old = oldload(true);
 	if(old == null)
 	    return;
@@ -391,7 +393,7 @@ public class GSettings extends State implements Serializable {
 	    throw(new AssertionError(e));
 	}
 	old.save();
-	Utils.setpref("gconf", null);
+	Utils.setprefb("gconf-cvt", true);
     }
 
     public haven.render.sl.ShaderMacro shader() {return(null);}
