@@ -176,6 +176,10 @@ public class Loader {
 		return(done || (cancelled && (running != null)));
 	    }
 	}
+
+	public Loading lastload() {
+	    return(curload);
+	}
     }
 
     private void loop() {

@@ -629,6 +629,19 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		}
 	    }
 	}
+
+	public Loading loading() {
+	    synchronized(this) {
+		if(adding.isEmpty())
+		    return(null);
+		for(Loader.Future<?> t : adding.values()) {
+		    Loading l = t.lastload();
+		    if(l != null)
+			return(l);
+		}
+	    }
+	    return(new Loading("Loading objects..."));
+	}
     }
 
     private class MapRaster extends RenderTree.Node.Track1 {
@@ -1637,8 +1650,25 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
     
+    private double initload = -2;
+    private boolean initdraw = false;
+    private void checkload() {
+	if(initload == -1)
+	    return;
+	double now = Utils.rtime();
+	if(initload == -2) {
+	    delay2(g -> initdraw = true);
+	    initload = now;
+	}
+	if((terrain.loading() == null) && (gobs.loading() == null) && initdraw) {
+	    wdgmsg("initload", now - initload);
+	    initload = -1;
+	}
+    }
+
     public void tick(double dt) {
 	super.tick(dt);
+	checkload();
 	camload = null;
 	try {
 	    if((shake = shake * Math.pow(100, -dt)) < 0.01)
