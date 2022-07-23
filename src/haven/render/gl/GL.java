@@ -66,6 +66,7 @@ public interface GL {
     public static final int GL_MIN = com.jogamp.opengl.GL3.GL_MIN;
     public static final int GL_MINOR_VERSION = com.jogamp.opengl.GL3.GL_MINOR_VERSION;
     public static final int GL_NONE = com.jogamp.opengl.GL.GL_NONE;
+    public static final int GL_NUM_EXTENSIONS = com.jogamp.opengl.GL3.GL_NUM_EXTENSIONS;
     public static final int GL_ONE = com.jogamp.opengl.GL.GL_ONE;
     public static final int GL_ONE_MINUS_CONSTANT_ALPHA = com.jogamp.opengl.GL3.GL_ONE_MINUS_CONSTANT_ALPHA;
     public static final int GL_ONE_MINUS_CONSTANT_COLOR = com.jogamp.opengl.GL3.GL_ONE_MINUS_CONSTANT_COLOR;
@@ -286,6 +287,7 @@ public interface GL {
     public void glGetFloatv(int pname, float[] data);
     public void glGetIntegerv(int pname, int[] data);
     public String glGetString(int name);
+    public String glGetStringi(int name, int index);
     public void glGetProgramInfoLog(int shader, int maxlength, int[] length, byte[] infolog);
     public void glGetProgramiv(int shader, int pname, int[] buf);
     public void glGetQueryObjectiv(int id, int pname, int[] params);

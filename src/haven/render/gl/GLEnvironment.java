@@ -114,7 +114,14 @@ public abstract class GLEnvironment implements Environment {
 	    this.vendor = gl.glGetString(GL.GL_VENDOR);
 	    this.version = gl.glGetString(GL.GL_VERSION);
 	    this.renderer = gl.glGetString(GL.GL_RENDERER);
-	    this.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
+	    if(major >= 3) {
+		this.exts = new ArrayList<>();
+		for(int i = 0, n = glgeti(gl, GL.GL_NUM_EXTENSIONS); i < n; i++)
+		    this.exts.add(gl.glGetStringi(GL.GL_EXTENSIONS, i));
+	    } else {
+		this.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
+	    }
+	    Debug.dump(major, minor, vendor, version, renderer, exts);
 	    this.maxtargets = glcondi(gl, GL.GL_MAX_COLOR_ATTACHMENTS, 1);
 	    {
 		int glslver = 0;

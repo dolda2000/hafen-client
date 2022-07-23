@@ -110,6 +110,7 @@ public class JOGLWrap implements GL {
     public void glGetFloatv(int pname, float[] data) {back.glGetFloatv(pname, data, 0);}
     public void glGetIntegerv(int pname, int[] data) {back.glGetIntegerv(pname, data, 0);}
     public String glGetString(int name) {return(back.glGetString(name));}
+    public String glGetStringi(int name, int index) {return(back.glGetStringi(name, index));}
     public void glGetProgramInfoLog(int shader, int maxlength, int[] length, byte[] infolog) {back.glGetProgramInfoLog(shader, maxlength, length, 0, infolog, 0);}
     public void glGetProgramiv(int shader, int pname, int[] buf) {back.glGetProgramiv(shader, pname, buf, 0);}
     public void glGetQueryObjectiv(int id, int pname, int[] params) {back.glGetQueryObjectiv(id, pname, params, 0);}

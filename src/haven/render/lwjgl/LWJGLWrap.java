@@ -137,6 +137,7 @@ public class LWJGLWrap implements GL {
     public void glGetFloatv(int pname, float[] data) {GL30.glGetFloatv(pname, data);}
     public void glGetIntegerv(int pname, int[] data) {GL30.glGetIntegerv(pname, data);}
     public String glGetString(int name) {return(GL30.glGetString(name));}
+    public String glGetStringi(int name, int index) {return(GL30.glGetStringi(name, index));}
     public void glGetProgramInfoLog(int shader, int maxlength, int[] length, byte[] infolog) {GL30.glGetProgramInfoLog(shader, length, ckbuf(ByteBuffer.wrap(infolog), maxlength));}
     public void glGetProgramiv(int shader, int pname, int[] buf) {GL30.glGetProgramiv(shader, pname, buf);}
     public void glGetQueryObjectiv(int id, int pname, int[] params) {GL30.glGetQueryObjectiv(id, pname, params);}
