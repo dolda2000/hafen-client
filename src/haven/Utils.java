@@ -287,7 +287,10 @@ public class Utils {
 
     public static void setpref(String prefname, String val) {
 	try {
-	    prefs().put(prefname, val);
+	    if(val == null)
+		prefs().remove(prefname);
+	    else
+		prefs().put(prefname, val);
 	} catch(SecurityException e) {
 	}
     }
@@ -961,6 +964,21 @@ public class Utils {
 	if(term) out.println();
     }
 
+    public static void dumparr(double[] arr, PrintStream out, boolean term) {
+	if(arr == null) {
+	    out.print("null");
+	} else {
+	    out.print('[');
+	    boolean f = true;
+	    for(double v : arr) {
+		if(!f) out.print(", "); f = false;
+		out.print(v);
+	    }
+	    out.print(']');
+	}
+	if(term) out.println();
+    }
+
     public static void dumparr(float[] arr, PrintStream out, boolean term) {
 	if(arr == null) {
 	    out.print("null");
@@ -970,6 +988,21 @@ public class Utils {
 	    for(float v : arr) {
 		if(!f) out.print(", "); f = false;
 		out.print(v);
+	    }
+	    out.print(']');
+	}
+	if(term) out.println();
+    }
+
+    public static void dumparr(long[] arr, PrintStream out, boolean term) {
+	if(arr == null) {
+	    out.print("null");
+	} else {
+	    out.print('[');
+	    boolean f = true;
+	    for(long i : arr) {
+		if(!f) out.print(", "); f = false;
+		out.print(i);
 	    }
 	    out.print(']');
 	}

@@ -629,6 +629,19 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		}
 	    }
 	}
+
+	public Loading loading() {
+	    synchronized(this) {
+		if(adding.isEmpty())
+		    return(null);
+		for(Loader.Future<?> t : adding.values()) {
+		    Loading l = t.lastload();
+		    if(l != null)
+			return(l);
+		}
+	    }
+	    return(new Loading("Loading objects..."));
+	}
     }
 
     private class MapRaster extends RenderTree.Node.Track1 {
@@ -678,6 +691,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			    cuts.put(cc, new Pair<>(cut, slot.add(draw, cs)));
 			}
 		    } catch(Loading l) {
+			l.boostprio(5);
 			curload = l;
 		    }
 		}
@@ -705,6 +719,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		area = new Area(cc.sub(view, view), cc.add(view, view).add(1, 1));
 		lastload = null;
 	    } catch(Loading l) {
+		l.boostprio(5);
 		lastload = l;
 	    }
 	}
@@ -833,6 +848,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 				basic.add(ol = new Overlay(id));
 				ols.put(id, ol);
 			    } catch(Loading l) {
+				l.boostprio(2);
 				continue;
 			    }
 			}
@@ -848,6 +864,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		}
 	    }
 	} catch(Loading l) {
+	    l.boostprio(2);
 	}
 	for(Overlay ol : ols.values())
 	    ol.tick();
@@ -1621,6 +1638,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    glob.map.reqarea(cc.floor(tilesz).sub(MCache.cutsz.mul(view + 1)),
 			     cc.floor(tilesz).add(MCache.cutsz.mul(view + 1)));
 	} catch(Loading e) {
+	    e.boostprio(6);
 	    lastload = e;
 	    String text = e.getMessage();
 	    if(text == null)
@@ -1629,14 +1647,28 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    g.frect(Coord.z, sz);
 	    g.chcolor(Color.WHITE);
 	    g.atext(text, sz.div(2), 0.5, 0.5);
-	    if(e instanceof Resource.Loading) {
-		((Resource.Loading)e).boostprio(5);
-	    }
 	}
     }
     
+    private double initload = -2;
+    private boolean initdraw = false;
+    private void checkload() {
+	if(initload == -1)
+	    return;
+	double now = Utils.rtime();
+	if(initload == -2) {
+	    delay2(g -> initdraw = true);
+	    initload = now;
+	}
+	if((terrain.loading() == null) && (gobs.loading() == null) && initdraw) {
+	    wdgmsg("initload", now - initload);
+	    initload = -1;
+	}
+    }
+
     public void tick(double dt) {
 	super.tick(dt);
+	checkload();
 	camload = null;
 	try {
 	    if((shake = shake * Math.pow(100, -dt)) < 0.01)
@@ -1646,6 +1678,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    camoff.z = (float)((Math.random() - 0.5) * shake);
 	    camera.tick(dt);
 	} catch(Loading e) {
+	    e.boostprio(5);
 	    camload = e;
 	}
 	basic(Camera.class, camera);
