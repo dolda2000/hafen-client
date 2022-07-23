@@ -121,7 +121,6 @@ public abstract class GLEnvironment implements Environment {
 	    } else {
 		this.exts = Arrays.asList(gl.glGetString(GL.GL_EXTENSIONS).split(" "));
 	    }
-	    Debug.dump(major, minor, vendor, version, renderer, exts);
 	    this.maxtargets = glcondi(gl, GL.GL_MAX_COLOR_ATTACHMENTS, 1);
 	    {
 		int glslver = 0;
