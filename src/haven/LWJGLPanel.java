@@ -48,6 +48,8 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel, Console.Director
     private static GLData mkcaps() {
 	GLData caps = new GLData();
 	caps.profile = GLData.Profile.CORE;
+	caps.majorVersion = 3;
+	caps.minorVersion = 3;
 	return(caps);
     }
 
