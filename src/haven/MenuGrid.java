@@ -534,7 +534,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		int a = 0;
 		while(a < args.length) {
 		    int fl = (Integer)args[a++];
-		    Pagina pag = paginafor(ui.sess.getres((Integer)args[a++]));
+		    Pagina pag = paginafor(ui.sess.getres((Integer)args[a++], -2));
 		    if((fl & 1) != 0) {
 			pag.state(Pagina.State.ENABLED);
 			pag.meter = 0;

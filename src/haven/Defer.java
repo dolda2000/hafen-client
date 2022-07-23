@@ -102,13 +102,18 @@ public class Defer extends ThreadGroup {
 		}
 	    }
 	}
+
+	public boolean boostprio(int prio) {
+	    future.boostprio(prio);
+	    return(true);
+	}
     }
 
     public class Future<T> implements Runnable, Prioritized {
 	public final Callable<T> task;
 	private final AccessControlContext secctx;
 	private final Waitable.Queue wq = new Waitable.Queue();
-	private int prio = 0;
+	private int prio = -1;
 	private T val;
 	private volatile String state = "";
 	private Throwable exc = null;
@@ -161,6 +166,7 @@ public class Defer extends ThreadGroup {
 		this.exc = new CancelledException(exc);
 		chstate("done");
 	    } catch(Loading exc) {
+		exc.boostprio(prio);
 		lastload = exc;
 	    } catch(Throwable exc) {
 		this.exc = exc;
