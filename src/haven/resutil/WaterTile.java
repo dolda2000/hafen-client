@@ -327,19 +327,6 @@ public class WaterTile extends Tiler {
 	    this.basez = basez;
 	}
 
-	private static final Instancer<ObFog> instancer = new Instancer<ObFog>() {
-		final ObFog instanced = new ObFog(0) {
-		    public ShaderMacro shader() {return(mkinstanced);}
-		};
-
-		public ObFog inststate(ObFog uinst, InstanceBatch bat) {
-		    return(instanced);
-		}
-	    };
-	public InstancedAttribute[] attribs() {
-	    return(new InstancedAttribute[] {cbasez.attrib});
-	}
-
 	public boolean equals(ObFog that) {return(this.basez == that.basez);}
 	public boolean equals(Object x) {return((x instanceof ObFog) && equals((ObFog)x));}
 	public int hashCode() {return(Float.floatToIntBits(basez));}
@@ -356,6 +343,20 @@ public class WaterTile extends Tiler {
 	public ShaderMacro shader() {return(shader);}
 
 	public void apply(Pipe p) {p.put(slot, this);}
+
+	private static final Instancer<ObFog> instancer = new Instancer<ObFog>() {
+		final ObFog instanced = new ObFog(0) {
+		    final ShaderMacro shader = ShaderMacro.compose(mkinstanced, ObFog.shader);
+		    public ShaderMacro shader() {return(shader);}
+		};
+
+		public ObFog inststate(ObFog uinst, InstanceBatch bat) {
+		    return(instanced);
+		}
+	    };
+	public InstancedAttribute[] attribs() {
+	    return(new InstancedAttribute[] {cbasez.attrib});
+	}
     }
 
     @ResName("water")
