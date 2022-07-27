@@ -313,28 +313,31 @@ public class WaterTile extends Tiler {
     public static final BottomFog waterfog = new BottomFog();
     private static final Pipe.Op botmat = Pipe.Op.compose(waterfog, new States.DepthBias(4, 4));
 
-    public static final Pipe.Op obfog = new State.StandAlone(State.Slot.Type.DRAW) {
-	    {
-		slot.instanced = new Instancable<StandAlone>() {
-			Instancer<StandAlone> dummy = Instancer.dummy();
-			public Instancer<StandAlone> instid(StandAlone st) {
-			    if(st == null)
-				return(dummy);
-			    return(null);
-			}
-		    };
-	    }
-	final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
+    public static class ObFog extends State {
+	public static final Slot<ObFog> slot = new Slot<>(State.Slot.Type.DRAW, ObFog.class);
+	public final float basez;
+
+	public ObFog(float basez) {
+	    this.basez = basez;
+	}
+
+	public boolean equals(ObFog that) {return(this.basez == that.basez);}
+	public boolean equals(Object x) {return((x instanceof ObFog) && equals((ObFog)x));}
+	public int hashCode() {return(Float.floatToIntBits(basez));}
+
+	private static final Uniform cbasez = new Uniform(Type.FLOAT, p -> p.get(slot).basez, slot);
+	private static final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
 		protected Expression root(VertexContext vctx) {
-		    return(sub(pick(MapView.maploc.ref(), "z"), pick(Homo3D.get(vctx.prog).mapv.depref(), "z")));
+		    return(sub(cbasez.ref(), pick(Homo3D.get(vctx.prog).mapv.depref(), "z")));
 		}
 	    };
-
-	final ShaderMacro shader = prog -> {
+	private static final ShaderMacro shader = prog -> {
 	    FragColor.fragcol(prog.fctx).mod(in -> BottomFog.rgbmix.call(in, BottomFog.mfogcolor, clamp(div(fragd.ref(), l(BottomFog.maxdepth)), l(0.0), l(1.0))), 1000);
 	};
 	public ShaderMacro shader() {return(shader);}
-    };
+
+	public void apply(Pipe p) {p.put(slot, this);}
+    }
 
     @ResName("water")
     public static class Fac implements Factory {
@@ -398,11 +401,7 @@ public class WaterTile extends Tiler {
     }
 
     public Pipe.Op drawstate(Glob glob, Coord3f c) {
-	/* XXXRENDER
-	if(cfg.pref.wsurf.val)
-	    return(obfog);
-	return(null);
-	*/
-	return(obfog);
+	float mz = glob.map.getcz(c.x, c.y);
+	return(new ObFog(mz));
     }
 }
