@@ -313,19 +313,38 @@ public class WaterTile extends Tiler {
     public static final BottomFog waterfog = new BottomFog();
     private static final Pipe.Op botmat = Pipe.Op.compose(waterfog, new States.DepthBias(4, 4));
 
-    public static class ObFog extends State {
-	public static final Slot<ObFog> slot = new Slot<>(State.Slot.Type.DRAW, ObFog.class);
+    public static class ObFog extends State implements InstanceBatch.AttribState {
+	public static final Slot<ObFog> slot = new Slot<>(State.Slot.Type.DRAW, ObFog.class)
+	    .instanced(new Instancable<ObFog>() {
+		    final Instancer<ObFog> nil = Instancer.dummy();
+		    public Instancer<ObFog> instid(ObFog st) {
+			return((st == null) ? nil : instancer);
+		    }
+		});
 	public final float basez;
 
 	public ObFog(float basez) {
 	    this.basez = basez;
 	}
 
+	private static final Instancer<ObFog> instancer = new Instancer<ObFog>() {
+		final ObFog instanced = new ObFog(0) {
+		    public ShaderMacro shader() {return(mkinstanced);}
+		};
+
+		public ObFog inststate(ObFog uinst, InstanceBatch bat) {
+		    return(instanced);
+		}
+	    };
+	public InstancedAttribute[] attribs() {
+	    return(new InstancedAttribute[] {cbasez.attrib});
+	}
+
 	public boolean equals(ObFog that) {return(this.basez == that.basez);}
 	public boolean equals(Object x) {return((x instanceof ObFog) && equals((ObFog)x));}
 	public int hashCode() {return(Float.floatToIntBits(basez));}
 
-	private static final Uniform cbasez = new Uniform(Type.FLOAT, p -> p.get(slot).basez, slot);
+	private static final InstancedUniform cbasez = new InstancedUniform.Float1("basez", p -> p.get(slot).basez, slot);
 	private static final AutoVarying fragd = new AutoVarying(Type.FLOAT) {
 		protected Expression root(VertexContext vctx) {
 		    return(sub(cbasez.ref(), pick(Homo3D.get(vctx.prog).mapv.depref(), "z")));
