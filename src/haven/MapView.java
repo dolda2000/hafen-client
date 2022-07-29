@@ -1078,27 +1078,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(idx);
 	}, RenderContext.slot, Light.lights);
 
-    public static final Uniform maploc = new Uniform(Type.VEC3, p -> {
-	    Coord3f orig = Homo3D.locxf(p).mul4(Coord3f.o);
-	    try {
-		orig.z = p.get(RenderContext.slot).context(Glob.class).map.getcz(orig.x, -orig.y);
-	    } catch(Loading l) {
-		/* XXX: WaterTile's obfog effect is the only thing
-		 * that uses maploc, in order to get the precise water
-		 * surface level. Arguably, maploc should be
-		 * eliminated entirely and the obfog should pass the
-		 * water level in a uniform instead. However, this
-		 * works better for now, because with such a mechanic,
-		 * Skeleton.FxTrack audio sprites would never complete
-		 * if they get outside the map and stuck as constantly
-		 * loading and never playing. Either way, when
-		 * loading, the likely quite slight deviation between
-		 * origin-Z and map-Z level probably doesn't matter a
-		 * whole lot, but solve pl0x. */
-	    }
-	    return(orig);
-	}, Homo3D.loc, RenderContext.slot);
-
     private final Map<RenderTree.Node, RenderTree.Slot> rweather = new HashMap<>();
     private void updweather() {
 	Glob.Weather[] wls = glob.weather().toArray(new Glob.Weather[0]);
