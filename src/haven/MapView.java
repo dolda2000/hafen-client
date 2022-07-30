@@ -54,7 +54,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Selector selection;
     private Coord3f camoff = new Coord3f(Coord3f.o);
     public double shake = 0.0;
-    public static int plobgran = Utils.getprefi("plobgran", 8);
+    public static double plobpgran = Utils.getprefd("plobpgran", 8);
+    public static double plobagran = Utils.getprefd("plobagran", 16);
     private static final Map<String, Class<? extends Camera>> camtypes = new HashMap<String, Class<? extends Camera>>();
     
     public interface Delayed {
@@ -1078,27 +1079,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    return(idx);
 	}, RenderContext.slot, Light.lights);
 
-    public static final Uniform maploc = new Uniform(Type.VEC3, p -> {
-	    Coord3f orig = Homo3D.locxf(p).mul4(Coord3f.o);
-	    try {
-		orig.z = p.get(RenderContext.slot).context(Glob.class).map.getcz(orig.x, -orig.y);
-	    } catch(Loading l) {
-		/* XXX: WaterTile's obfog effect is the only thing
-		 * that uses maploc, in order to get the precise water
-		 * surface level. Arguably, maploc should be
-		 * eliminated entirely and the obfog should pass the
-		 * water level in a uniform instead. However, this
-		 * works better for now, because with such a mechanic,
-		 * Skeleton.FxTrack audio sprites would never complete
-		 * if they get outside the map and stuck as constantly
-		 * loading and never playing. Either way, when
-		 * loading, the likely quite slight deviation between
-		 * origin-Z and map-Z level probably doesn't matter a
-		 * whole lot, but solve pl0x. */
-	    }
-	    return(orig);
-	}, Homo3D.loc, RenderContext.slot);
-
     private final Map<RenderTree.Node, RenderTree.Slot> rweather = new HashMap<>();
     private void updweather() {
 	Glob.Weather[] wls = glob.weather().toArray(new Glob.Weather[0]);
@@ -1709,7 +1689,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public static class StdPlace implements PlobAdjust {
 	boolean freerot = false;
-	Coord2d gran = (plobgran == 0)?null:new Coord2d(1.0 / plobgran, 1.0 / plobgran).mul(tilesz);
+	Coord2d gran = (plobpgran == 0) ? null : new Coord2d(1.0 / plobpgran, 1.0 / plobpgran).mul(tilesz);
 
 	public void adjust(Plob plob, Coord pc, Coord2d mc, int modflags) {
 	    Coord2d nc;
@@ -1734,7 +1714,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if((modflags & 2) == 0)
 		na = (Math.PI / 4) * Math.round((plob.a + (amount * Math.PI / 4)) / (Math.PI / 4));
 	    else
-		na = plob.a + amount * Math.PI / 16;
+		na = plob.a + amount * Math.PI / plobagran;
 	    na = Utils.cangle(na);
 	    plob.move(na);
 	    return(true);
@@ -2304,9 +2284,16 @@ public class MapView extends PView implements DTarget, Console.Directory {
     static {
 	Console.setscmd("placegrid", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    if((plobgran = Integer.parseInt(args[1])) < 0)
-			plobgran = 0;
-		    Utils.setprefi("plobgran", plobgran);
+		    if((plobpgran = Double.parseDouble(args[1])) < 0)
+			plobpgran = 0;
+		    Utils.setprefd("plobpgran", plobpgran);
+		}
+	    });
+	Console.setscmd("placeangle", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    if((plobagran = Double.parseDouble(args[1])) < 2)
+			plobagran = 2;
+		    Utils.setprefd("plobagran", plobagran);
 		}
 	    });
 	Console.setscmd("clickfuzz", new Console.Command() {
