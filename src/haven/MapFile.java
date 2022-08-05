@@ -46,6 +46,7 @@ public class MapFile {
     public final Map<Long, SMarker> smarkers = new HashMap<>();
     public int markerseq = 0;
     public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Random rnd = new Random();
 
     public MapFile(ResCache store, String filename) {
 	this.store = store;
@@ -1517,7 +1518,7 @@ public class MapFile {
 	    if(!missing.isEmpty()) {
 		Segment seg;
 		if(mseg == -1) {
-		    seg = new Segment(Utils.el(missing).id);
+		    seg = new Segment(rnd.nextLong());
 		    moff = Coord.z;
 		    if(debug) Debug.log.printf("mapfile: creating new segment %x\n", seg.id);
 		} else {
