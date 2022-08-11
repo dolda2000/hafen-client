@@ -72,7 +72,7 @@ public class FoodInfo extends ItemInfo.Tip {
     }
 
     public BufferedImage tipimg() {
-	String head = String.format("Energy: $col[128,128,255]{%s%%}, Hunger: $col[255,192,128]{%s%%}", Utils.odformat2(end * 100, 2), Utils.odformat2(glut * 100, 2));
+	String head = String.format("Energy: $col[128,128,255]{%s%%}, Hunger: $col[255,192,128]{%s\u2030}", Utils.odformat2(end * 100, 2), Utils.odformat2(glut * 1000, 2));
 	if(cons != 0)
 	    head += String.format(", Satiation: $col[192,192,128]{%s%%}", Utils.odformat2(cons * 100, 2));
 	BufferedImage base = RichText.render(head, 0).img;

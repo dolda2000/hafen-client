@@ -277,7 +277,7 @@ public class CharWnd extends Window {
 	private Tex rtip = null;
 	public Object tooltip(Coord c, Widget prev) {
 	    if(rtip == null) {
-		rtip = RichText.render(String.format("%s: %d%%\nFood efficacy: %d%%", lbl, Math.round((lglut) * 100), Math.round(gmod * 100)), -1).tex();
+		rtip = RichText.render(String.format("%s: %d\u2030\nFood efficacy: %d%%", lbl, Math.round((lglut) * 1000), Math.round(gmod * 100)), -1).tex();
 	    }
 	    return(rtip);
 	}
