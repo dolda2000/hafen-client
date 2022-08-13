@@ -1037,7 +1037,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
-    public class CornerMap extends MiniMap {
+    public class CornerMap extends MiniMap implements Console.Directory {
 	public CornerMap(Coord sz, MapFile file) {
 	    super(sz, file);
 	    follow(new MapLocator(map));
@@ -1089,6 +1089,22 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if(zoomlevel >= 5)
 		return(false);
 	    return(super.allowzoomout());
+	}
+	private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
+	{
+	    cmdmap.put("rmseg", new Console.Command() {
+		    public void run(Console cons, String[] args) {
+			MiniMap.Location loc = curloc;
+			if(loc != null) {
+			    try(Locked lk = new Locked(file.lock.writeLock())) {
+				file.segments.remove(loc.seg.id);
+			    }
+			}
+		    }
+		});
+	}
+	public Map<String, Console.Command> findcmds() {
+	    return(cmdmap);
 	}
     }
 

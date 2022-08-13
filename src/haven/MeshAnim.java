@@ -274,6 +274,7 @@ public class MeshAnim extends State {
     public abstract class Animation {
 	public abstract Animated state();
 	public abstract boolean tick(float dt);
+	public abstract void age();
 	public MeshAnim desc() {return(MeshAnim.this);}
     }
 
@@ -303,6 +304,10 @@ public class MeshAnim extends State {
 		    rv = true;
 	    }
 	    return(rv);
+	}
+
+	public void age() {
+	    tick((float)Math.random() * len);
 	}
 
 	public Animated state() {
@@ -338,6 +343,11 @@ public class MeshAnim extends State {
 		}
 	    }
 	    return(false);
+	}
+
+	public void age() {
+	    setfr(rnd.nextInt(frames.length));
+	    fp = rnd.nextFloat() * fl;
 	}
 
 	public Animated state() {
