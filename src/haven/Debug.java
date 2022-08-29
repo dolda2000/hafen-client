@@ -123,6 +123,12 @@ public class Debug {
 	}
     }
 
+    public static <T> T dump1(T thing, boolean cond) {
+	if(cond)
+	    dump(thing);
+	return(thing);
+    }
+
     public static void sleep(double t) {
 	try {
 	    Thread.sleep((int)(t * 1000));
