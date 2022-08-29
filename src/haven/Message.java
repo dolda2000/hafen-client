@@ -51,6 +51,15 @@ public abstract class Message {
     public static final int T_FCOORD64 = 19;
     public static final int T_FLOAT8 = 21;
     public static final int T_FLOAT16 = 22;
+    public static final int T_SNORM8 = 23;
+    public static final int T_UNORM8 = 24;
+    public static final int T_MNORM8 = 25;
+    public static final int T_SNORM16 = 26;
+    public static final int T_UNORM16 = 27;
+    public static final int T_MNORM16 = 28;
+    public static final int T_SNORM32 = 29;
+    public static final int T_UNORM32 = 30;
+    public static final int T_MNORM32 = 31;
 
     private final static byte[] empty = new byte[0];
     public int rh = 0, rt = 0, wh = 0, wt = 0;
@@ -321,6 +330,15 @@ public abstract class Message {
 	    case T_FCOORD64:
 		ret.add(new Coord2d(float64(), float64()));
 		break;
+	    case T_SNORM8:  ret.add( snorm8()); break;
+	    case T_SNORM16: ret.add(snorm16()); break;
+	    case T_SNORM32: ret.add(snorm32()); break;
+	    case T_UNORM8:  ret.add( unorm8()); break;
+	    case T_UNORM16: ret.add(unorm16()); break;
+	    case T_UNORM32: ret.add(unorm32()); break;
+	    case T_MNORM8:  ret.add( mnorm8()); break;
+	    case T_MNORM16: ret.add(mnorm16()); break;
+	    case T_MNORM32: ret.add(mnorm32()); break;
 	    default:
 		throw(new FormatError("Encountered unknown type " + t + " in TTO list.").msg(this));
 	    }
