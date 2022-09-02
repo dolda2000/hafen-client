@@ -86,7 +86,8 @@ public class RUtils {
     public abstract static class StateNode<R extends RenderTree.Node> implements Node {
 	public final R r;
 	private final Collection<Slot> slots = new ArrayList<>(1);
-	private Op cstate = null;
+	private Op cstate;
+	private boolean inited = false;
 
 	public StateNode(R r) {
 	    this.r = r;
@@ -96,8 +97,6 @@ public class RUtils {
 
 	public void update() {
 	    Op nstate = state();
-	    if(nstate == null)
-		throw(new NullPointerException("state"));
 	    if(Utils.eq(cstate, nstate))
 		return;
 	    for(Slot slot : slots)
@@ -106,10 +105,8 @@ public class RUtils {
 	}
 
 	public void added(Slot slot) {
-	    if(cstate == null) {
-		if((cstate = state()) == null)
-		    throw(new NullPointerException("state"));
-	    }
+	    if(!inited)
+		cstate = state();
 	    slot.ostate(cstate);
 	    slot.add(r);
 	    slots.add(slot);
