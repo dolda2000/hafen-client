@@ -39,14 +39,7 @@ public class Config {
     public static String authserv = getprop("haven.authserv", null);
     public static String defserv = getprop("haven.defserv", "localhost");
     public static String[] servargs = null;
-    public static boolean dbtext = getbool("haven.dbtext", false);
-    public static boolean profile = getbool("haven.profile", false);
-    public static boolean profilegpu = getbool("haven.profilegpu", false);
     public static boolean par = true;
-    public static boolean nopreload = getbool("haven.nopreload", true);
-    public static boolean fullscreen = getbool("haven.fullscreen", false);
-    public static Path loadwaited = getpath("haven.loadwaited", null);
-    public static Path allused = getpath("haven.allused", null);
     public static int mainport = getint("haven.mainport", 1870);
     public static int authport = getint("haven.authport", 1871);
     public static byte[] authck = getbytes("haven.authck", null), inittoken = getbytes("haven.inittoken", null);
@@ -162,7 +155,7 @@ public class Config {
 	    return(val);
 	}
 
-	private void set(T val) {
+	public void set(T val) {
 	    inited = true;
 	    this.val = val;
 	}
@@ -232,16 +225,16 @@ public class Config {
 		System.exit(0);
 		break;
 	    case 'd':
-		dbtext = true;
+		UIPanel.dbtext.set(true);
 		break;
 	    case 'P':
-		profile = true;
+		UIPanel.profile.set(true);
 		break;
 	    case 'G':
-		profilegpu = true;
+		UIPanel.profilegpu.set(true);
 		break;
 	    case 'f':
-		fullscreen = true;
+		MainFrame.initfullscreen.set(true);
 		break;
 	    case 'r':
 		Resource.resdir.set(Utils.path(opt.arg));
@@ -288,27 +281,9 @@ public class Config {
     }
 
     static {
-	Console.setscmd("stats", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    dbtext = Utils.parsebool(args[1]);
-		}
-	    });
 	Console.setscmd("par", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    par = Utils.parsebool(args[1]);
-		}
-	    });
-	Console.setscmd("profile", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    if(args[1].equals("none") || args[1].equals("off")) {
-			profile = profilegpu = false;
-		    } else if(args[1].equals("cpu")) {
-			profile = true;
-		    } else if(args[1].equals("gpu")) {
-			profilegpu = true;
-		    } else if(args[1].equals("all")) {
-			profile = profilegpu = true;
-		    }
 		}
 	    });
     }

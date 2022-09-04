@@ -471,7 +471,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	synchronized(ui) {
 	    ui.draw(g);
 	}
-	if(Config.dbtext)
+	if(dbtext.get())
 	    drawstats(ui, g, buf);
 	drawtooltip(ui, g);
 	drawcursor(ui, g);
@@ -504,8 +504,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    Debug.cycle(ui.modflags());
 		    GSettings prefs = ui.gprefs;
 		    SyncMode syncmode = prefs.syncmode.val;
-		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
-		    GPUProfile.Frame curgf = Config.profilegpu ? gprof.new Frame(buf) : null;
+		    CPUProfile.Frame curf = profile.get() ? uprof.new Frame() : null;
+		    GPUProfile.Frame curgf = profilegpu.get() ? gprof.new Frame(buf) : null;
 		    BufferBGL.Profile frameprof = false ? new BufferBGL.Profile() : null;
 		    if(frameprof != null) buf.submit(frameprof.start);
 		    buf.submit(new ProfileTick(rprofc, "wait"));
@@ -567,7 +567,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 		    }
 		    if(syncmode != SyncMode.FRAME)
 			buf.submit(curframe);
-		    if(Config.profile)
+		    if(profile.get())
 			buf.submit(rprofc = new ProfileCycle(rprof, rprofc, "aux"));
 		    else
 			rprofc = null;
@@ -702,5 +702,29 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);
+    }
+
+    /* XXX: This should be in UIPanel, but Java is dumb and needlessly forbids it. */
+    static {
+	Console.setscmd("stats", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    dbtext.set(Utils.parsebool(args[1]));
+		}
+	    });
+	Console.setscmd("profile", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    if(args[1].equals("none") || args[1].equals("off")) {
+			profile.set(false);
+			profilegpu.set(false);
+		    } else if(args[1].equals("cpu")) {
+			profile.set(true);
+		    } else if(args[1].equals("gpu")) {
+			profilegpu.set(true);
+		    } else if(args[1].equals("all")) {
+			profile.set(true);
+			profilegpu.set(true);
+		    }
+		}
+	    });
     }
 }

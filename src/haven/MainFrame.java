@@ -34,6 +34,7 @@ import java.util.*;
 import java.lang.reflect.*;
 
 public class MainFrame extends java.awt.Frame implements Console.Directory {
+    public static final Config.Variable<Boolean> initfullscreen = Config.Variable.propb("haven.fullscreen", false);
     final UIPanel p;
     private final ThreadGroup g;
     private Thread mt;
@@ -338,6 +339,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
     }
     
+    public static final Config.Variable<Boolean> nopreload = Config.Variable.propb("haven.nopreload", false);
     public static void setupres() {
 	if(ResCache.global != null)
 	    Resource.setcache(ResCache.global);
@@ -350,7 +352,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    } catch(IOException e) {}
 	    */
 	}
-	if(!Config.nopreload) {
+	if(!nopreload.get()) {
 	    try {
 		InputStream pls;
 		pls = Resource.class.getResourceAsStream("res-preload");
@@ -364,7 +366,24 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    }
 	}
     }
-    
+
+    public static final Config.Variable<Path> loadwaited = Config.Variable.propp("haven.loadwaited", "");
+    public static final Config.Variable<Path> allused = Config.Variable.propp("haven.allused", "");
+    public static void resdump() {
+	dumplist(Resource.remote().loadwaited(), loadwaited.get());
+	dumplist(Resource.remote().cached(), allused.get());
+	if(ResCache.global != null) {
+	    try {
+		Writer w = new OutputStreamWriter(ResCache.global.store("tmp/allused"), "UTF-8");
+		try {
+		    Resource.dumplist(Resource.remote().used(), w);
+		} finally {
+		    w.close();
+		}
+	    } catch(IOException e) {}
+	}
+    }
+
     static {
 	WebBrowser.self = DesktopBrowser.create();
     }
@@ -405,21 +424,10 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    }
 	}
 	MainFrame f = new MainFrame(null);
-	if(Config.fullscreen)
+	if(initfullscreen.get())
 	    f.setfs();
 	f.run(fun);
-	dumplist(Resource.remote().loadwaited(), Config.loadwaited);
-	dumplist(Resource.remote().cached(), Config.allused);
-	if(ResCache.global != null) {
-	    try {
-		Writer w = new OutputStreamWriter(ResCache.global.store("tmp/allused"), "UTF-8");
-		try {
-		    Resource.dumplist(Resource.remote().used(), w);
-		} finally {
-		    w.close();
-		}
-	    } catch(IOException e) {}
-	}
+	resdump();
 	System.exit(0);
     }
     
