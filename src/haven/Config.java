@@ -29,6 +29,7 @@ package haven;
 import java.net.URL;
 import java.io.PrintStream;
 import java.util.Properties;
+import java.util.function.*;
 import java.io.*;
 import java.nio.file.*;
 
@@ -134,6 +135,67 @@ public class Config {
 	if(val == null)
 	    return(def);
 	return(Double.parseDouble(val));
+    }
+
+    public static final URL parseurl(String url) {
+	if((url == null) || url.equals(""))
+	    return(null);
+	try {
+	    return(new URL(url));
+	} catch(java.net.MalformedURLException e) {
+	    throw(new RuntimeException(e));
+	}
+    }
+
+    public static class Variable<T> {
+	public final Function<Config, T> init;
+	private boolean inited = false;
+	private T val;
+
+	private Variable(Function<Config, T> init) {
+	    this.init = init;
+	}
+
+	public T get() {
+	    if(!inited)
+		val = init.apply(null);
+	    return(val);
+	}
+
+	public static <V> Variable<V> prop(String name, Function<String, V> parse, Supplier<V> defval) {
+	    return(new Variable<>(cfg -> {
+			String pv = getprop(name, null);
+			return((pv == null) ? defval.get() : parse.apply(pv));
+	    }));
+	}
+
+	public static Variable<String> prop(String name, String defval) {
+	    return(prop(name, Function.identity(), () -> defval));
+	}
+	public static Variable<Integer> propi(String name, int defval) {
+	    return(prop(name, Integer::parseInt, () -> defval));
+	}
+	public static Variable<Boolean> propb(String name, boolean defval) {
+	    return(prop(name, Utils::parsebool, () -> defval));
+	}
+	public static Variable<Double> propf(String name, double defval) {
+	    return(prop(name, Double::parseDouble, () -> defval));
+	}
+	public static Variable<byte[]> propb(String name, byte[] defval) {
+	    return(prop(name, Utils::hex2byte, () -> defval));
+	}
+	public static Variable<URL> propu(String name, URL defval) {
+	    return(prop(name, Config::parseurl, () -> defval));
+	}
+	public static Variable<URL> propu(String name, String defval) {
+	    return(propu(name, parseurl(defval)));
+	}
+	public static Variable<Path> propp(String name, Path defval) {
+	    return(prop(name, Utils::path, () -> defval));
+	}
+	public static Variable<Path> propp(String name, String defval) {
+	    return(propp(name, Utils.path(defval)));
+	}
     }
 
     private static void usage(PrintStream out) {
