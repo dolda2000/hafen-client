@@ -121,7 +121,7 @@ public class OCache implements Iterable<Gob> {
 		g.ctick(dt);
 	    }
 	};
-	if(!Config.par)
+	if(!Config.par.get())
 	    copy.forEach(task);
 	else
 	    copy.parallelStream().forEach(task);
@@ -133,7 +133,7 @@ public class OCache implements Iterable<Gob> {
 	    for(Gob ob : this)
 		copy.add(ob);
 	}
-	if(!Config.par) {
+	if(!Config.par.get()) {
 	    copy.forEach(ob -> {
 		    synchronized(ob) {
 			ob.gtick(g);

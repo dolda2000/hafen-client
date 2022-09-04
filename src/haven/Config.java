@@ -35,15 +35,14 @@ import java.nio.file.*;
 
 public class Config {
     public static final Properties jarprops = getjarprops();
+    public static final Variable<Boolean> par = Variable.propb("haven.par", true);
     public static String authuser = getprop("haven.authuser", null);
     public static String authserv = getprop("haven.authserv", null);
     public static String defserv = getprop("haven.defserv", "localhost");
     public static String[] servargs = null;
-    public static boolean par = true;
     public static int mainport = getint("haven.mainport", 1870);
     public static int authport = getint("haven.authport", 1871);
     public static byte[] authck = getbytes("haven.authck", null), inittoken = getbytes("haven.inittoken", null);
-    public static String prefspec = getprop("haven.prefspec", "hafen");
     public static final String confid = "";
 
     private static Properties getjarprops() {
@@ -263,7 +262,7 @@ public class Config {
 		authck = Utils.hex2byte(opt.arg);
 		break;
 	    case 'p':
-		prefspec = opt.arg;
+		Utils.prefspec.set(opt.arg);
 		break;
 	    }
 	}
@@ -283,7 +282,7 @@ public class Config {
     static {
 	Console.setscmd("par", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    par = Utils.parsebool(args[1]);
+		    par.set(Utils.parsebool(args[1]));
 		}
 	    });
     }
