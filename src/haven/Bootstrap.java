@@ -31,6 +31,14 @@ import java.net.*;
 import java.util.*;
 
 public class Bootstrap implements UI.Receiver, UI.Runner {
+    public static final Config.Variable<String> authuser = Config.Variable.prop("haven.authuser", null);
+    public static final Config.Variable<String> authserv = Config.Variable.prop("haven.authserv", null);
+    public static final Config.Variable<String> defserv = Config.Variable.prop("haven.defserv", "localhost");
+    public static final Config.Variable<Integer> mainport = Config.Variable.propi("haven.mainport", 1870);
+    public static final Config.Variable<Integer> authport = Config.Variable.propi("haven.authport", 1871);
+    public static final Config.Variable<byte[]> authck = Config.Variable.propb("haven.authck", null);
+    public static final Config.Variable<byte[]> authtoken = Config.Variable.propb("haven.inittoken", null);
+    public static boolean useinitauth = true;
     String hostname;
     int port;
     Queue<Message> msgs = new LinkedList<Message>();
@@ -56,13 +64,15 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
     }
 
     public Bootstrap() {
-	this(Config.defserv, Config.mainport);
-	if((Config.authuser != null) && (Config.authck != null)) {
-	    setinitcookie(Config.authuser, Config.authck);
-	    Config.authck = null;
-	} else if((Config.authuser != null) && (Config.inittoken != null)) {
-	    setinittoken(Config.authuser, Config.inittoken);
-	    Config.inittoken = null;
+	this(defserv.get(), mainport.get());
+	if(useinitauth) {
+	    if((authuser.get() != null) && (authck.get() != null)) {
+		setinitcookie(authuser.get(), authck.get());
+		useinitauth = false;
+	    } else if((authuser.get() != null) && (authtoken.get() != null)) {
+		setinittoken(authuser.get(), authtoken.get());
+		useinitauth = false;
+	    }
 	}
     }
 
@@ -155,8 +165,8 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	String loginname = getpref("loginname", "");
 	boolean savepw = false;
 	transtoken();
-	String authserver = (Config.authserv == null) ? hostname : Config.authserv;
-	int authport = Config.authport;
+	String authserver = (authserv.get() == null) ? hostname : authserv.get();
+	int authport = Bootstrap.authport.get();
 	Session sess;
 	retry: do {
 	    byte[] cookie, token;

@@ -36,13 +36,7 @@ import java.nio.file.*;
 public class Config {
     public static final Properties jarprops = getjarprops();
     public static final Variable<Boolean> par = Variable.propb("haven.par", true);
-    public static String authuser = getprop("haven.authuser", null);
-    public static String authserv = getprop("haven.authserv", null);
-    public static String defserv = getprop("haven.defserv", "localhost");
     public static String[] servargs = null;
-    public static int mainport = getint("haven.mainport", 1870);
-    public static int authport = getint("haven.authport", 1871);
-    public static byte[] authck = getbytes("haven.authck", null), inittoken = getbytes("haven.inittoken", null);
     public static final String confid = "";
 
     private static Properties getjarprops() {
@@ -241,10 +235,10 @@ public class Config {
 	    case 'A':
 		int p = opt.arg.indexOf(':');
 		if(p >= 0) {
-		    authserv = opt.arg.substring(0, p);
-		    authport = Integer.parseInt(opt.arg.substring(p + 1));
+		    Bootstrap.authserv.set(opt.arg.substring(0, p));
+		    Bootstrap.authport.set(Integer.parseInt(opt.arg.substring(p + 1)));
 		} else {
-		    authserv = opt.arg;
+		    Bootstrap.authserv.set(opt.arg);
 		}
 		break;
 	    case 'U':
@@ -256,10 +250,10 @@ public class Config {
 		}
 		break;
 	    case 'u':
-		authuser = opt.arg;
+		Bootstrap.authuser.set(opt.arg);
 		break;
 	    case 'C':
-		authck = Utils.hex2byte(opt.arg);
+		Bootstrap.authck.set(Utils.hex2byte(opt.arg));
 		break;
 	    case 'p':
 		Utils.prefspec.set(opt.arg);
@@ -269,10 +263,10 @@ public class Config {
 	if(opt.rest.length > 0) {
 	    int p = opt.rest[0].indexOf(':');
 	    if(p >= 0) {
-		defserv = opt.rest[0].substring(0, p);
-		mainport = Integer.parseInt(opt.rest[0].substring(p + 1));
+		Bootstrap.defserv.set(opt.rest[0].substring(0, p));
+		Bootstrap.mainport.set(Integer.parseInt(opt.rest[0].substring(p + 1)));
 	    } else {
-		defserv = opt.rest[0];
+		Bootstrap.defserv.set(opt.rest[0]);
 	    }
 	}
 	if(opt.rest.length > 1)

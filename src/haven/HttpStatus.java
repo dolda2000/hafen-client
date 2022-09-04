@@ -55,7 +55,7 @@ public class HttpStatus extends HackThread {
     }
 
     public HttpStatus() {
-	this(defsrc(Config.defserv));
+	this(defsrc(Bootstrap.defserv.get()));
     }
 
     private void handle(String... words) {

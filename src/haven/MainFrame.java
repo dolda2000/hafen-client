@@ -232,21 +232,21 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     public static Session connect(Object[] args) {
 	String username;
 	byte[] cookie;
-	if((Config.authuser != null) && (Config.authck != null)) {
-	    username = Config.authuser;
-	    cookie = Config.authck;
+	if((Bootstrap.authuser.get() != null) && (Bootstrap.authck.get() != null)) {
+	    username = Bootstrap.authuser.get();
+	    cookie = Bootstrap.authck.get();
 	} else {
-	    if(Config.authuser != null) {
-		username = Config.authuser;
+	    if(Bootstrap.authuser.get() != null) {
+		username = Bootstrap.authuser.get();
 	    } else {
-		if((username = Utils.getpref("tokenname@" + Config.defserv, null)) == null)
-		    throw(new ConnectionError("no explicit or saved username for host: " + Config.defserv));
+		if((username = Utils.getpref("tokenname@" + Bootstrap.defserv.get(), null)) == null)
+		    throw(new ConnectionError("no explicit or saved username for host: " + Bootstrap.defserv.get()));
 	    }
-	    String token = Utils.getpref("savedtoken-" + username + "@" + Config.defserv, null);
+	    String token = Utils.getpref("savedtoken-" + username + "@" + Bootstrap.defserv.get(), null);
 	    if(token == null)
 		throw(new ConnectionError("no saved token for user: " + username));
 	    try {
-		AuthClient cl = new AuthClient((Config.authserv == null) ? Config.defserv : Config.authserv, Config.authport);
+		AuthClient cl = new AuthClient((Bootstrap.authserv.get() == null) ? Bootstrap.defserv.get() : Bootstrap.authserv.get(), Bootstrap.authport.get());
 		try {
 		    if((username = cl.trytoken(username, Utils.hex2byte(token))) == null)
 			throw(new ConnectionError("authentication with saved token failed"));
@@ -260,7 +260,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
 	Session sess;
 	try {
-	    sess = new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Config.defserv), Config.mainport), username, cookie, args);
+	    sess = new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Bootstrap.defserv.get()), Bootstrap.mainport.get()), username, cookie, args);
 	} catch(IOException e) {
 	    throw(new RuntimeException(e));
 	}
