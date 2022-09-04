@@ -39,7 +39,6 @@ public class Config {
     public static String authserv = getprop("haven.authserv", null);
     public static String defserv = getprop("haven.defserv", "localhost");
     public static String[] servargs = null;
-    public static URL resurl = geturl("haven.resurl", "");
     public static URL screenurl = geturl("haven.screenurl", "");
     public static URL cachebase = geturl("haven.cachebase", "");
     public static URL mapbase = geturl("haven.mapbase", "");
@@ -168,6 +167,11 @@ public class Config {
 	    return(val);
 	}
 
+	private void set(T val) {
+	    inited = true;
+	    this.val = val;
+	}
+
 	public static <V> Variable<V> prop(String name, Function<String, V> parse, Supplier<V> defval) {
 	    return(new Variable<>(cfg -> {
 			String pv = getprop(name, null);
@@ -258,7 +262,7 @@ public class Config {
 		break;
 	    case 'U':
 		try {
-		    resurl = new URL(opt.arg);
+		    Resource.resurl.set(new URL(opt.arg));
 		} catch(java.net.MalformedURLException e) {
 		    System.err.println(e);
 		    System.exit(1);

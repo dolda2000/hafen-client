@@ -410,8 +410,8 @@ public class HashDirCache implements ResCache {
 	try {
 	    if(Config.cachebase != null)
 		return(get(Config.cachebase.toURI()));
-	    if(Config.resurl != null)
-		return(get(Config.resurl.toURI()));
+	    if(Resource.resurl.get() != null)
+		return(get(Resource.resurl.get().toURI()));
 	    return(get("default"));
 	} catch(Exception e) {
 	    return(null);
