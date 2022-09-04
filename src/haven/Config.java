@@ -137,6 +137,12 @@ public class Config {
 	return(Double.parseDouble(val));
     }
 
+    public static final Path parsepath(String p) {
+	if((p == null) || p.equals(""))
+	    return(null);
+	return(Utils.path(p));
+    }
+
     public static final URL parseurl(String url) {
 	if((url == null) || url.equals(""))
 	    return(null);
@@ -191,10 +197,10 @@ public class Config {
 	    return(propu(name, parseurl(defval)));
 	}
 	public static Variable<Path> propp(String name, Path defval) {
-	    return(prop(name, Utils::path, () -> defval));
+	    return(prop(name, Config::parsepath, () -> defval));
 	}
 	public static Variable<Path> propp(String name, String defval) {
-	    return(propp(name, Utils.path(defval)));
+	    return(propp(name, parsepath(defval)));
 	}
     }
 
