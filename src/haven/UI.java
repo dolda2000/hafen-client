@@ -565,9 +565,10 @@ public class UI {
 	}
     }
 
+    public static final Config.Variable<Double> uiscale = Config.Variable.propf("haven.uiscale", null);
     private static double loadscale() {
-	if(Config.uiscale != null)
-	    return(Config.uiscale);
+	if(uiscale.get() != null)
+	    return(uiscale.get());
 	double scale = Utils.getprefd("uiscale", 1.0);
 	scale = Math.max(Math.min(scale, maxscale()), 1.0);
 	return(scale);

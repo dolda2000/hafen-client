@@ -30,10 +30,11 @@ import java.util.*;
 import java.io.*;
 import java.nio.file.*;
 import java.nio.channels.*;
-import java.net.URI;
+import java.net.*;
 import static haven.Utils.pj;
 
 public class HashDirCache implements ResCache {
+    public static final Config.Variable<URL> cachebase = Config.Variable.propu("haven.cachebase", "");
     private final Path base;
     public final URI id;
     private final long idhash;
@@ -408,8 +409,8 @@ public class HashDirCache implements ResCache {
     public static HashDirCache create() {
 	HashDirCache ret;
 	try {
-	    if(Config.cachebase != null)
-		return(get(Config.cachebase.toURI()));
+	    if(cachebase.get() != null)
+		return(get(cachebase.get().toURI()));
 	    if(Resource.resurl.get() != null)
 		return(get(Resource.resurl.get().toURI()));
 	    return(get("default"));

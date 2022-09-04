@@ -753,9 +753,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		mapfile = null;
 	    }
 	    ResCache mapstore = ResCache.global;
-	    if(Config.mapbase != null) {
+	    if(MapFile.mapbase.get() != null) {
 		try {
-		    mapstore = HashDirCache.get(Config.mapbase.toURI());
+		    mapstore = HashDirCache.get(MapFile.mapbase.get().toURI());
 		} catch(java.net.URISyntaxException e) {
 		}
 	    }
@@ -1400,8 +1400,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(key == ':') {
 	    entercmd();
 	    return(true);
-	} else if((Config.screenurl != null) && kb_shoot.key().match(ev)) {
-	    Screenshooter.take(this, Config.screenurl);
+	} else if((Screenshooter.screenurl.get() != null) && kb_shoot.key().match(ev)) {
+	    Screenshooter.take(this, Screenshooter.screenurl.get());
 	    return(true);
 	} else if(kb_hide.key().match(ev)) {
 	    toggleui();
