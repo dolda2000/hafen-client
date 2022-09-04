@@ -38,6 +38,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
     public static final Config.Variable<Integer> authport = Config.Variable.propi("haven.authport", 1871);
     public static final Config.Variable<byte[]> authck = Config.Variable.propb("haven.authck", null);
     public static final Config.Variable<byte[]> authtoken = Config.Variable.propb("haven.inittoken", null);
+    public static final Config.Variable<String[]> servargs = Config.Variable.def(() -> null);
     public static boolean useinitauth = true;
     String hostname;
     int port;

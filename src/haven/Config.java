@@ -35,8 +35,7 @@ import java.nio.file.*;
 
 public class Config {
     public static final Properties jarprops = getjarprops();
-    public static final Variable<Boolean> par = Variable.propb("haven.par", true);
-    public static String[] servargs = null;
+    public static final Variable<Boolean> par = Variable.def(() -> true);
     public static final String confid = "";
 
     private static Properties getjarprops() {
@@ -151,6 +150,10 @@ public class Config {
 	public void set(T val) {
 	    inited = true;
 	    this.val = val;
+	}
+
+	public static <V> Variable<V> def(Supplier<V> defval) {
+	    return(new Variable<>(cfg -> defval.get()));
 	}
 
 	public static <V> Variable<V> prop(String name, Function<String, V> parse, Supplier<V> defval) {
@@ -270,7 +273,7 @@ public class Config {
 	    }
 	}
 	if(opt.rest.length > 1)
-	    servargs = Utils.splice(opt.rest, 1);
+	    Bootstrap.servargs.set(Utils.splice(opt.rest, 1));
     }
 
     static {

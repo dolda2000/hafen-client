@@ -415,9 +415,9 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
 	setupres();
 	UI.Runner fun = null;
-	if(Config.servargs != null) {
+	if(Bootstrap.servargs.get() != null) {
 	    try {
-		fun = new RemoteUI(connect(Config.servargs));
+		fun = new RemoteUI(connect(Bootstrap.servargs.get()));
 	    } catch(ConnectionError e) {
 		System.err.println("hafen: " + e.getMessage());
 		System.exit(1);
