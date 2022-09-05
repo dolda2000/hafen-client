@@ -115,8 +115,14 @@ public class Config {
 	}
 
 	public T get() {
-	    if(!inited)
-		val = init.apply(Config.get());
+	    if(!inited) {
+		synchronized(this) {
+		    if(!inited) {
+			val = init.apply(Config.get());
+			inited = true;
+		    }
+		}
+	    }
 	    return(val);
 	}
 
