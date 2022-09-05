@@ -34,9 +34,20 @@ import java.io.*;
 import java.nio.file.*;
 
 public class Config {
-    public static final Properties jarprops = getjarprops();
     public static final Variable<Boolean> par = Variable.def(() -> true);
     public static final String confid = "";
+    private static Config global = null;
+    public final Properties jarprops = getjarprops();
+
+    public static Config get() {
+	if(global != null)
+	    return(global);
+	synchronized(Config.class) {
+	    if(global == null)
+		global = new Config();
+	    return(global);
+	}
+    }
 
     private static Properties getjarprops() {
 	Properties ret = new Properties();
@@ -63,57 +74,11 @@ public class Config {
 	return(ret);
     }
 
-    private static String getprop(String name, String def) {
+    public String getprop(String name, String def) {
 	String ret = jarprops.getProperty(name);
 	if(ret != null)
 	    return(ret);
 	return(Utils.getprop(name, def));
-    }
-
-    private static int getint(String name, int def) {
-	String val = getprop(name, null);
-	if(val == null)
-	    return(def);
-	return(Integer.parseInt(val));
-    }
-
-    private static boolean getbool(String name, boolean def) {
-	String val = getprop(name, null);
-	if(val == null)
-	    return(def);
-	return(Utils.parsebool(val));
-    }
-
-    private static byte[] getbytes(String name, byte[] def) {
-	String val = getprop(name, null);
-	if(val == null)
-	    return(def);
-	return(Utils.hex2byte(val));
-    }
-
-    private static URL geturl(String name, String def) {
-	String val = getprop(name, def);
-	if(val.equals(""))
-	    return(null);
-	try {
-	    return(new URL(val));
-	} catch(java.net.MalformedURLException e) {
-	    throw(new RuntimeException(e));
-	}
-    }
-
-    private static Path getpath(String name, String def) {
-	String val = getprop(name, def);
-	if((val == null) || val.equals(""))
-	    return(null);
-	return(Utils.path(val));
-    }
-
-    private static Double getfloat(String name, Double def) {
-	String val = getprop(name, null);
-	if(val == null)
-	    return(def);
-	return(Double.parseDouble(val));
     }
 
     public static final Path parsepath(String p) {
@@ -143,7 +108,7 @@ public class Config {
 
 	public T get() {
 	    if(!inited)
-		val = init.apply(null);
+		val = init.apply(Config.get());
 	    return(val);
 	}
 
@@ -158,7 +123,7 @@ public class Config {
 
 	public static <V> Variable<V> prop(String name, Function<String, V> parse, Supplier<V> defval) {
 	    return(new Variable<>(cfg -> {
-			String pv = getprop(name, null);
+			String pv = cfg.getprop(name, null);
 			return((pv == null) ? defval.get() : parse.apply(pv));
 	    }));
 	}
