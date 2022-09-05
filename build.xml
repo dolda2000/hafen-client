@@ -11,6 +11,7 @@
   </target>
 
   <target name="make-buildinfo" depends="build-env">
+    <touch file="build/classes/buildinfo" datetime="01/01/2000 12:00 am" />
     <loadproperties srcFile="build/classes/buildinfo" prefix="buildinfo." />
     <exec executable="git" outputproperty="git-rev" failifexecutionfails="false">
       <arg line="rev-parse HEAD" />
