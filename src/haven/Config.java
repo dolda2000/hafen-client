@@ -34,11 +34,12 @@ import java.io.*;
 import java.nio.file.*;
 
 public class Config {
+    public static final Properties jarprops = getjarprops();
+    public static final String confid = jarprops.getProperty("config.client-id", "");
     public static final Variable<Boolean> par = Variable.def(() -> true);
-    public static final String confid = "";
-    private static Config global = null;
-    public final Properties jarprops = getjarprops();
+    public final Properties localprops = getlocalprops();
 
+    private static Config global = null;
     public static Config get() {
 	if(global != null)
 	    return(global);
@@ -59,6 +60,11 @@ public class Config {
 	     * potentially crash here for unforeseen reasons. */
 	    new Warning(exc, "unexpected error occurred when loading local properties").issue();
 	}
+	return(ret);
+    }
+
+    private static Properties getlocalprops() {
+	Properties ret = new Properties();
 	try {
 	    Path jar = Utils.srcpath(Config.class);
 	    if(jar != null) {
@@ -75,8 +81,10 @@ public class Config {
     }
 
     public String getprop(String name, String def) {
-	String ret = jarprops.getProperty(name);
-	if(ret != null)
+	String ret;
+	if((ret = jarprops.getProperty(name)) != null)
+	    return(ret);
+	if((ret = localprops.getProperty(name)) != null)
 	    return(ret);
 	return(Utils.getprop(name, def));
     }
