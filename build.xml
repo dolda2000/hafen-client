@@ -7,16 +7,23 @@
     <mkdir dir="build" />
     <mkdir dir="build/classes" />
     <available property="has-res-jar" file="bin/builtin-res.jar" />
-    <available property="has-buildinfo" file="build/classes/buildinfo" />
     <available property="unpacked-lib" file="build/classes-lib" />
   </target>
 
-  <target name="buildinfo" depends="build-env" unless="has-buildinfo">
-    <exec executable="git" outputproperty="gitrev" failifexecutionfails="false">
+  <target name="make-buildinfo" depends="build-env">
+    <loadproperties srcFile="build/classes/buildinfo" prefix="buildinfo." />
+    <exec executable="git" outputproperty="git-rev" failifexecutionfails="false">
       <arg line="rev-parse HEAD" />
     </exec>
+    <condition property="buildinfo-unchanged">
+      <equals arg1="${buildinfo.git-rev}" arg2="${git-rev}" />
+    </condition>
+  </target>
+
+  <target name="buildinfo" depends="make-buildinfo" unless="buildinfo-unchanged">
+    <echo message="Updating buildinfo" />
     <echo file="build/classes/buildinfo" xml:space="default">
-      git-rev = ${gitrev}
+      git-rev = ${git-rev}
     </echo>
   </target>
 
