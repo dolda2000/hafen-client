@@ -127,8 +127,10 @@ public class Config {
 	}
 
 	public void set(T val) {
-	    inited = true;
-	    this.val = val;
+	    synchronized(this) {
+		inited = true;
+		this.val = val;
+	    }
 	}
 
 	public static <V> Variable<V> def(Supplier<V> defval) {
