@@ -387,7 +387,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	Tex tex = (tt == null) ? null : tt.get();
 	if(tex != null) {
 	    Coord sz = tex.sz();
-	    Coord pos = ui.mc.add(sz.inv());
+	    Coord pos = ui.mc.sub(sz).sub(curshotspot);
 	    if(pos.x < 0)
 		pos.x = 0;
 	    if(pos.y < 0)
@@ -404,6 +404,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 
     private String cursmode = "tex";
     private Resource lastcursor = null;
+    private Coord curshotspot = Coord.z;
     private void drawcursor(UI ui, GOut g) {
 	Resource curs;
 	synchronized(ui) {
@@ -412,22 +413,27 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	if(cursmode == "awt") {
 	    if(curs != lastcursor) {
 		try {
-		    if(curs == null)
+		    if(curs == null) {
+			curshotspot = Coord.z;
 			setCursor(null);
-		    else
-			setCursor(UIPanel.makeawtcurs(curs.flayer(Resource.imgc).img, curs.flayer(Resource.negc).cc));
+		    } else {
+			curshotspot = curs.flayer(Resource.negc).cc;
+			setCursor(UIPanel.makeawtcurs(curs.flayer(Resource.imgc).img, curshotspot));
+		    }
 		} catch(Exception e) {
 		    cursmode = "tex";
 		}
 	    }
 	} else if(cursmode == "tex") {
 	    if(curs == null) {
+		curshotspot = Coord.z;
 		if(lastcursor != null)
 		    setCursor(null);
 	    } else {
 		if(lastcursor == null)
 		    setCursor(emptycurs);
-		Coord dc = ui.mc.add(curs.flayer(Resource.negc).cc.inv());
+		curshotspot = UI.scale(curs.flayer(Resource.negc).cc);
+		Coord dc = ui.mc.sub(curshotspot);
 		g.image(curs.flayer(Resource.imgc), dc);
 	    }
 	}
