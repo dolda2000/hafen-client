@@ -427,7 +427,7 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	    } else {
 		if(lastcursor == null)
 		    setCursor(emptycurs);
-		Coord dc = ui.mc.add(curs.flayer(Resource.negc).cc.inv());
+		Coord dc = ui.mc.add(UI.scale(curs.flayer(Resource.negc).cc).inv());
 		g.image(curs.flayer(Resource.imgc), dc);
 	    }
 	}
