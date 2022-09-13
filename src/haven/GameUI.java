@@ -121,7 +121,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    if(local && (menu != null)) {
 		if(res != null) {
-		    MenuGrid.Pagina pag = menu.paginafor(slot.res);
+		    MenuGrid.Pagina pag;
+		    /* XXX: This is a hack. The pagina system needs to be remade. */
+		    if(res != null)
+			pag = menu.paginafor(res.indir());
+		    else
+			pag = menu.paginafor(slot.res);
 		    try {
 			MenuGrid.PagButton btn = pag.button();
 			menu.use(btn, iact, false);

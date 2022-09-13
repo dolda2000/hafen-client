@@ -955,25 +955,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
-    private final Material[] olmats;
-    {
-	olmats = new Material[32];
-	olmats[0] = olmat(255, 0, 128, 32);
-	olmats[1] = olmat(0, 0, 255, 32);
-	olmats[2] = olmat(255, 0, 0, 32);
-	olmats[3] = olmat(128, 0, 255, 32);
-	olmats[4] = olmat(255, 255, 255, 32);
-	olmats[5] = olmat(0, 255, 128, 32);
-	olmats[6] = olmat(0, 0, 0, 64);
-	olmats[16] = olmat(0, 255, 0, 32);
-	olmats[17] = olmat(255, 255, 0, 32);
-    }
-
-    private Material olmat(int r, int g, int b, int a) {
-	return(new Material(new BaseColor(r, g, b, a),
-			    States.maskdepth));
-    }
-
     public String camstats() {
 	String cc;
 	try {
