@@ -616,6 +616,9 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	}
     }
 
+    public static Order clickmain = Rendered.deflt;
+    public static Order clickpost = new Order.Default(100);
+
     private void consflat() {
 	class Buf implements Tiler.MCons {
 	    final float tpx = 1.0f / sz.x, tpy = 1.0f / sz.y;

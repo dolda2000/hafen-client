@@ -215,7 +215,7 @@ public abstract class Tiler {
     public abstract void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask);
 
     public Pipe.Op clickstate() {
-	return(Pipe.Op.nil);
+	return(MapMesh.clickmain);
     }
     
     public Pipe.Op drawstate(Glob glob, Coord3f c) {
