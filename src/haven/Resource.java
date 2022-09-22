@@ -40,6 +40,8 @@ import javax.imageio.*;
 import java.awt.image.BufferedImage;
 
 public class Resource implements Serializable {
+    public static final Config.Variable<URL> resurl = Config.Variable.propu("haven.resurl", "");
+    public static final Config.Variable<Path> resdir = Config.Variable.propp("haven.resdir", System.getenv("HAFEN_RESDIR"));
     private static ResCache prscache;
     public static ThreadGroup loadergroup = null;
     private static Map<String, LayerFactory<?>> ltypes = new TreeMap<String, LayerFactory<?>>();
@@ -786,8 +788,8 @@ public class Resource implements Serializable {
 		if(_local == null) {
 		    Pool local = new Pool(new JarSource("res"));
 		    try {
-			if(Config.resdir != null)
-			    local.add(new FileSource(Config.resdir));
+			if(resdir.get() != null)
+			    local.add(new FileSource(resdir.get()));
 		    } catch(Exception e) {
 			/* Ignore these. We don't want to be crashing the client
 			 * for users just because of errors in development
@@ -1994,7 +1996,7 @@ public class Resource implements Serializable {
 	    System.exit(1);
 	}
 	if(url == null) {
-	    if((url = Config.resurl) == null) {
+	    if((url = resurl.get()) == null) {
 		System.err.println("get-code: no resource URL configured");
 		System.exit(1);
 	    }
@@ -2102,7 +2104,7 @@ public class Resource implements Serializable {
 	    System.exit(1);
 	}
 	if(url == null) {
-	    if((url = Config.resurl) == null) {
+	    if((url = resurl.get()) == null) {
 		System.err.println("get-code: no resource URL configured");
 		System.exit(1);
 	    }

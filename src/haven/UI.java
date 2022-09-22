@@ -40,7 +40,7 @@ import haven.render.Environment;
 import haven.render.Render;
 
 public class UI {
-    public static int MOD_SHIFT = 1, MOD_CTRL = 2, MOD_META = 4, MOD_SUPER = 8;
+    public static int MOD_SHIFT = KeyMatch.S, MOD_CTRL = KeyMatch.C, MOD_META = KeyMatch.M, MOD_SUPER = KeyMatch.SUPER;
     public RootWidget root;
     private final LinkedList<Grab> keygrab = new LinkedList<Grab>(), mousegrab = new LinkedList<Grab>();
     private final Map<Integer, Widget> widgets = new TreeMap<Integer, Widget>();
@@ -565,9 +565,10 @@ public class UI {
 	}
     }
 
+    public static final Config.Variable<Double> uiscale = Config.Variable.propf("haven.uiscale", null);
     private static double loadscale() {
-	if(Config.uiscale != null)
-	    return(Config.uiscale);
+	if(uiscale.get() != null)
+	    return(uiscale.get());
 	double scale = Utils.getprefd("uiscale", 1.0);
 	scale = Math.max(Math.min(scale, maxscale()), 1.0);
 	return(scale);

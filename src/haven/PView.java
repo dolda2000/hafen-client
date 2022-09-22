@@ -290,6 +290,7 @@ public abstract class PView extends Widget {
 	    envdispose();
 	    env = null;
 	}
+	tree.dispose();
 	super.dispose();
     }
 

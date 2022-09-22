@@ -121,7 +121,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    if(local && (menu != null)) {
 		if(res != null) {
-		    MenuGrid.Pagina pag = menu.paginafor(slot.res);
+		    MenuGrid.Pagina pag;
+		    /* XXX: This is a hack. The pagina system needs to be remade. */
+		    if(res != null)
+			pag = menu.paginafor(res.indir());
+		    else
+			pag = menu.paginafor(slot.res);
 		    try {
 			MenuGrid.PagButton btn = pag.button();
 			menu.use(btn, iact, false);
@@ -753,9 +758,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		mapfile = null;
 	    }
 	    ResCache mapstore = ResCache.global;
-	    if(Config.mapbase != null) {
+	    if(MapFile.mapbase.get() != null) {
 		try {
-		    mapstore = HashDirCache.get(Config.mapbase.toURI());
+		    mapstore = HashDirCache.get(MapFile.mapbase.get().toURI());
 		} catch(java.net.URISyntaxException e) {
 		}
 	    }
@@ -1037,7 +1042,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
-    public class CornerMap extends MiniMap {
+    public class CornerMap extends MiniMap implements Console.Directory {
 	public CornerMap(Coord sz, MapFile file) {
 	    super(sz, file);
 	    follow(new MapLocator(map));
@@ -1089,6 +1094,22 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if(zoomlevel >= 5)
 		return(false);
 	    return(super.allowzoomout());
+	}
+	private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
+	{
+	    cmdmap.put("rmseg", new Console.Command() {
+		    public void run(Console cons, String[] args) {
+			MiniMap.Location loc = curloc;
+			if(loc != null) {
+			    try(Locked lk = new Locked(file.lock.writeLock())) {
+				file.segments.remove(loc.seg.id);
+			    }
+			}
+		    }
+		});
+	}
+	public Map<String, Console.Command> findcmds() {
+	    return(cmdmap);
 	}
     }
 
@@ -1350,7 +1371,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    super(mapmenubg.sz());
 	    add(new MenuCheckBox("lbtn-claim", kb_claim, "Display personal claims"), 0, 0).changed(a -> toggleol("cplot", a));
 	    add(new MenuCheckBox("lbtn-vil", kb_vil, "Display village claims"), 0, 0).changed(a -> toggleol("vlg", a));
-	    add(new MenuCheckBox("lbtn-rlm", kb_rlm, "Display realms"), 0, 0).changed(a -> toggleol("realm", a));
+	    add(new MenuCheckBox("lbtn-rlm", kb_rlm, "Display provinces"), 0, 0).changed(a -> toggleol("prov", a));
 	    add(new MenuCheckBox("lbtn-map", kb_map, "Map")).state(() -> wndstate(mapfile)).click(() -> {
 		    togglewnd(mapfile);
 		    if(mapfile != null)
@@ -1384,8 +1405,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(key == ':') {
 	    entercmd();
 	    return(true);
-	} else if((Config.screenurl != null) && kb_shoot.key().match(ev)) {
-	    Screenshooter.take(this, Config.screenurl);
+	} else if((Screenshooter.screenurl.get() != null) && kb_shoot.key().match(ev)) {
+	    Screenshooter.take(this, Screenshooter.screenurl.get());
 	    return(true);
 	} else if(kb_hide.key().match(ev)) {
 	    toggleui();

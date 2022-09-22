@@ -27,14 +27,15 @@
 package haven;
 
 public class Scrollbar extends Widget {
-    static final Tex schain = Resource.loadtex("gfx/hud/schain");
-    static final Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
+    public static final Tex schain = Resource.loadtex("gfx/hud/schain");
+    public static final Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
+    public static final int width = sflarp.sz().x;
     public Scrollable ctl;
     public int val, min, max;
     private UI.Grab drag = null;
 
     public Scrollbar(int h, int min, int max) {
-	super(new Coord(sflarp.sz().x, h));
+	super(new Coord(width, h));
 	this.min = min;
 	this.max = max;
 	this.val = min;

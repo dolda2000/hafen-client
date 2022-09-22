@@ -35,6 +35,7 @@ import haven.render.*;
 import haven.render.Pipe;
 
 public class StreamOut {
+    public static final Config.Variable<Path> path = Config.Variable.propp("haven.streamout", "");
     public final WritableByteChannel out;
     public final Coord sz;
     private final Queue<ByteBuffer> free = new LinkedList<>();

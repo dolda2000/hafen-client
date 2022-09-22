@@ -44,7 +44,7 @@ public class RootWidget extends ConsoleHost {
     public boolean globtype(char key, KeyEvent ev) {
 	if(!super.globtype(key, ev)) {
 	    if(key == '`') {
-		if(Config.profile) {
+		if(UIPanel.profile.get()) {
 		    add(new Profwnd(guprof, "UI profile"), UI.scale(100, 100));
 		    add(new Profwnd(grprof, "GL profile"), UI.scale(500, 100));
 		    /* XXXRENDER
@@ -53,7 +53,7 @@ public class RootWidget extends ConsoleHost {
 			add(new Profwnd(gi.map.prof, "Map profile"), UI.scale(100, 250));
 		    */
 		}
-		if(Config.profilegpu) {
+		if(UIPanel.profilegpu.get()) {
 		    add(new Profwnd(ggprof, "GPU profile"), UI.scale(500, 250));
 		}
 	    } else if(key == ':') {

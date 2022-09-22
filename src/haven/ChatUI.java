@@ -978,6 +978,7 @@ public class ChatUI extends Widget {
 		    else
 			sz = Coord.of((iconsz * img.sz.x) / img.sz.y, iconsz);
 		    ricon = new TexI(PUtils.uiscale(img.img, sz));
+		    icon = img;
 		}
 		return(ricon);
 	    }

@@ -38,6 +38,7 @@ import haven.Defer.Future;
 import static haven.MCache.cmaps;
 
 public class MapFile {
+    public static final Config.Variable<java.net.URL> mapbase = Config.Variable.propu("haven.mapbase", "");
     public static boolean debug = false;
     public final ResCache store;
     public final String filename;
@@ -46,6 +47,7 @@ public class MapFile {
     public final Map<Long, SMarker> smarkers = new HashMap<>();
     public int markerseq = 0;
     public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Random rnd = new Random();
 
     public MapFile(ResCache store, String filename) {
 	this.store = store;
@@ -1388,6 +1390,8 @@ public class MapFile {
 		return(null);
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
+		if(data.eom())
+		    return(null);
 		int ver = data.uint8();
 		if(ver == 1) {
 		    Segment seg = new Segment(id);
@@ -1407,23 +1411,32 @@ public class MapFile {
 	    }
 	}, (id, seg) -> {
 	    checklock();
-	    OutputStream fp;
-	    try {
-		fp = sstore("seg-%x", seg.id);
-	    } catch(IOException e) {
-		throw(new StreamMessage.IOError(e));
+	    if(seg == null) {
+		try(OutputStream fp = sstore("seg-%x", id)) {
+		} catch(IOException e) {
+		    throw(new StreamMessage.IOError(e));
+		}
+		if(knownsegs.remove(id))
+		    defersave();
+	    } else {
+		OutputStream fp;
+		try {
+		    fp = sstore("seg-%x", seg.id);
+		} catch(IOException e) {
+		    throw(new StreamMessage.IOError(e));
+		}
+		try(StreamMessage out = new StreamMessage(fp)) {
+		    out.adduint8(1);
+		    ZMessage z = new ZMessage(out);
+		    z.addint64(seg.id);
+		    z.addint32(seg.map.size());
+		    for(Map.Entry<Coord, Long> e : seg.map.entrySet())
+			z.addcoord(e.getKey()).addint64(e.getValue());
+		    z.finish();
+		}
+		if(knownsegs.add(id))
+		    defersave();
 	    }
-	    try(StreamMessage out = new StreamMessage(fp)) {
-		out.adduint8(1);
-		ZMessage z = new ZMessage(out);
-		z.addint64(seg.id);
-		z.addint32(seg.map.size());
-		for(Map.Entry<Coord, Long> e : seg.map.entrySet())
-		    z.addcoord(e.getKey()).addint64(e.getValue());
-		z.finish();
-	    }
-	    if(knownsegs.add(id))
-		defersave();
 	});
 
     private void merge(Segment dst, Segment src, Coord soff) {
@@ -1506,7 +1519,7 @@ public class MapFile {
 	    if(!missing.isEmpty()) {
 		Segment seg;
 		if(mseg == -1) {
-		    seg = new Segment(Utils.el(missing).id);
+		    seg = new Segment(rnd.nextLong());
 		    moff = Coord.z;
 		    if(debug) Debug.log.printf("mapfile: creating new segment %x\n", seg.id);
 		} else {

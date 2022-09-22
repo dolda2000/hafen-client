@@ -252,11 +252,11 @@ public class Composited implements RenderTree.Node {
 	    }
 	    if((bt == null) && !ed.at.equals(""))
 		throw(new RuntimeException("Transformation " + ed.at + " for equipment " + ed.res + " on skeleton " + skel + " could not be resolved"));
-	    Supplier<Pipe.Op> dbt = bt;
+	    Supplier<Pipe.Op> dbt = (bt != null) ? bt : () -> null;
 	    if((ed.off.x != 0.0f) || (ed.off.y != 0.0f) || (ed.off.z != 0.0f))
 		this.et = () -> Pipe.Op.compose(dbt.get(), Location.xlate(ed.off));
 	    else
-		this.et = bt;
+		this.et = dbt;
 	}
 
 	public void tick(double dt) {

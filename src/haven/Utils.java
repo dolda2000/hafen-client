@@ -258,6 +258,7 @@ public class Utils {
 	}
     }
 
+    public static final Config.Variable<String> prefspec = Config.Variable.prop("haven.prefspec", "hafen");
     public static Preferences prefs() {
 	if(prefs == null) {
 	    synchronized(Utils.class) {
@@ -267,8 +268,8 @@ public class Utils {
 			prefs = new MapPrefs("haven", sysprefs);
 		    } else {
 			Preferences node = Preferences.userNodeForPackage(Utils.class);
-			if(Config.prefspec != null)
-			    node = node.node(Config.prefspec);
+			if(prefspec.get() != null)
+			    node = node.node(prefspec.get());
 			prefs = node;
 		    }
 		}

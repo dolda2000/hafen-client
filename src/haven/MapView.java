@@ -54,7 +54,8 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Selector selection;
     private Coord3f camoff = new Coord3f(Coord3f.o);
     public double shake = 0.0;
-    public static int plobgran = Utils.getprefi("plobgran", 8);
+    public static double plobpgran = Utils.getprefd("plobpgran", 8);
+    public static double plobagran = Utils.getprefd("plobagran", 16);
     private static final Map<String, Class<? extends Camera>> camtypes = new HashMap<String, Class<? extends Camera>>();
     
     public interface Delayed {
@@ -954,25 +955,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
-    private final Material[] olmats;
-    {
-	olmats = new Material[32];
-	olmats[0] = olmat(255, 0, 128, 32);
-	olmats[1] = olmat(0, 0, 255, 32);
-	olmats[2] = olmat(255, 0, 0, 32);
-	olmats[3] = olmat(128, 0, 255, 32);
-	olmats[4] = olmat(255, 255, 255, 32);
-	olmats[5] = olmat(0, 255, 128, 32);
-	olmats[6] = olmat(0, 0, 0, 64);
-	olmats[16] = olmat(0, 255, 0, 32);
-	olmats[17] = olmat(255, 255, 0, 32);
-    }
-
-    private Material olmat(int r, int g, int b, int a) {
-	return(new Material(new BaseColor(r, g, b, a),
-			    States.maskdepth));
-    }
-
     public String camstats() {
 	String cc;
 	try {
@@ -1688,7 +1670,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public static class StdPlace implements PlobAdjust {
 	boolean freerot = false;
-	Coord2d gran = (plobgran == 0)?null:new Coord2d(1.0 / plobgran, 1.0 / plobgran).mul(tilesz);
+	Coord2d gran = (plobpgran == 0) ? null : new Coord2d(1.0 / plobpgran, 1.0 / plobpgran).mul(tilesz);
 
 	public void adjust(Plob plob, Coord pc, Coord2d mc, int modflags) {
 	    Coord2d nc;
@@ -1713,7 +1695,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if((modflags & 2) == 0)
 		na = (Math.PI / 4) * Math.round((plob.a + (amount * Math.PI / 4)) / (Math.PI / 4));
 	    else
-		na = plob.a + amount * Math.PI / 16;
+		na = plob.a + amount * Math.PI / plobagran;
 	    na = Utils.cangle(na);
 	    plob.move(na);
 	    return(true);
@@ -2283,9 +2265,16 @@ public class MapView extends PView implements DTarget, Console.Directory {
     static {
 	Console.setscmd("placegrid", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    if((plobgran = Integer.parseInt(args[1])) < 0)
-			plobgran = 0;
-		    Utils.setprefi("plobgran", plobgran);
+		    if((plobpgran = Double.parseDouble(args[1])) < 0)
+			plobpgran = 0;
+		    Utils.setprefd("plobpgran", plobpgran);
+		}
+	    });
+	Console.setscmd("placeangle", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    if((plobagran = Double.parseDouble(args[1])) < 2)
+			plobagran = 2;
+		    Utils.setprefd("plobagran", plobagran);
 		}
 	    });
 	Console.setscmd("clickfuzz", new Console.Command() {

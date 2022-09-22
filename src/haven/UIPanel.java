@@ -35,6 +35,9 @@ import java.awt.image.BufferedImage;
 import java.awt.event.*;
 
 public interface UIPanel extends Runnable {
+    public static final Config.Variable<Boolean> dbtext = Config.Variable.propb("haven.dbtext", false);
+    public static final Config.Variable<Boolean> profile = Config.Variable.propb("haven.profile", false);
+    public static final Config.Variable<Boolean> profilegpu = Config.Variable.propb("haven.profilegpu", false);
     public static final Cursor emptycurs = Toolkit.getDefaultToolkit().createCustomCursor(TexI.mkbuf(new Coord(1, 1)), new java.awt.Point(), "");
 
     public UI newui(UI.Runner fun);
