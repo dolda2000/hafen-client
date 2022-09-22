@@ -38,6 +38,7 @@ public class Debug {
     public static boolean pk1, pk2, pk3, pk4;
     public static boolean fdk, pfdk, ff;
     public static PrintWriter log = new PrintWriter(System.err);
+    public static List<String> framestats = new ArrayList<>();
 
     public static void cycle(int modflags) {
 	pk1 = kf1; pk2 = kf2; pk3 = kf3; pk4 = kf4;
@@ -127,6 +128,15 @@ public class Debug {
 	if(cond)
 	    dump(thing);
 	return(thing);
+    }
+
+    public static <T> T statprint(T line, boolean cond) {
+	if(cond) {
+	    synchronized(framestats) {
+		framestats.add(String.valueOf(line));
+	    }
+	}
+	return(line);
     }
 
     public static void sleep(double t) {
