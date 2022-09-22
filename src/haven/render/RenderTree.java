@@ -794,6 +794,11 @@ public class RenderTree implements RenderList.Adapter, Disposable {
 		}
 	    }
 	}
+
+	public static class Nil implements Node {
+	    public String toString() {return("#<nil>");}
+	}
+	public static final Node nil = new Nil();
     }
 
     public Iterable<Slot> slots() {
