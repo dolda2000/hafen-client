@@ -343,11 +343,26 @@ public class UI {
 	}
     }
 	
+    public static interface MessageWidget {
+	public void msg(String msg);
+	public void error(String msg);
+
+	public static MessageWidget find(Widget w) {
+	    for(Widget ch = w.child; ch != null; ch = ch.next) {
+		MessageWidget ret = find(ch);
+		if(ret != null)
+		    return(ret);
+	    }
+	    if(w instanceof MessageWidget)
+		return((MessageWidget)w);
+	    return(null);
+	}
+    }
+
     public void error(String msg) {
-	/* XXX: This should be generalized. */
-	GameUI gui = root.findchild(GameUI.class);
-	if(gui != null)
-	    gui.error(msg);
+	MessageWidget h = MessageWidget.find(root);
+	if(h != null)
+	    h.error(msg);
     }
 
     private void setmods(InputEvent ev) {

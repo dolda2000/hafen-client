@@ -33,7 +33,7 @@ import java.awt.event.KeyEvent;
 import java.awt.image.WritableRaster;
 import static haven.Inventory.invsq;
 
-public class GameUI extends ConsoleHost implements Console.Directory {
+public class GameUI extends ConsoleHost implements Console.Directory, UI.MessageWidget {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
     private static final int blpw = UI.scale(142), brpw = UI.scale(142);
     public final String chrid, genus;
