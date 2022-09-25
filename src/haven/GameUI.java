@@ -34,7 +34,7 @@ import java.awt.image.WritableRaster;
 import static haven.Inventory.invsq;
 
 public class GameUI extends ConsoleHost implements Console.Directory, UI.MessageWidget {
-    public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
+    public static final Text.Foundry msgfoundry = RootWidget.msgfoundry;
     private static final int blpw = UI.scale(142), brpw = UI.scale(142);
     public final String chrid, genus;
     public final long plid;
@@ -1497,24 +1497,22 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	msg(msg, color, color);
     }
 
-    private static final Resource errsfx = Resource.local().loadwait("sfx/error");
     private double lasterrsfx = 0;
     public void error(String msg) {
 	msg(msg, new Color(192, 0, 0), new Color(255, 0, 0));
 	double now = Utils.rtime();
 	if(now - lasterrsfx > 0.1) {
-	    ui.sfx(errsfx);
+	    ui.sfx(RootWidget.errsfx);
 	    lasterrsfx = now;
 	}
     }
 
-    private static final Resource msgsfx = Resource.local().loadwait("sfx/msg");
     private double lastmsgsfx = 0;
     public void msg(String msg) {
 	msg(msg, Color.WHITE, Color.WHITE);
 	double now = Utils.rtime();
 	if(now - lastmsgsfx > 0.1) {
-	    ui.sfx(msgsfx);
+	    ui.sfx(RootWidget.msgsfx);
 	    lastmsgsfx = now;
 	}
     }
