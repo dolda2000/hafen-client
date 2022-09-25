@@ -86,7 +86,17 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget {
 	    }
 	}
     }
-    
+
+    public void uimsg(String msg, Object... args) {
+	if(msg == "err") {
+	    ui.error((String)args[0]);
+	} else if(msg == "msg") {
+	    ui.msg((String)args[0]);
+	} else {
+	    super.uimsg(msg, args);
+	}
+    }
+
     public void msg(String msg, Color color) {
 	lastmsg = msgfoundry.render(msg, color);
 	msgtime = Utils.rtime();

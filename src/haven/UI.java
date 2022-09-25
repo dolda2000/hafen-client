@@ -365,6 +365,12 @@ public class UI {
 	    h.error(msg);
     }
 
+    public void msg(String msg) {
+	MessageWidget h = MessageWidget.find(root);
+	if(h != null)
+	    h.msg(msg);
+    }
+
     private void setmods(InputEvent ev) {
 	int mod = ev.getModifiersEx();
 	modshift = (mod & InputEvent.SHIFT_DOWN_MASK) != 0;
